@@ -623,7 +623,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
     /** Trusted erasure consumer only, after canonical admission is blocked. Never a public photo endpoint. */
     async eraseForScope(scope: WorkRecoveryScope, id: string, intent: FirebaseErasureIntent, proof: FirebaseErasureDescriptor) {
       if (!objects.remove || !journal.read) fail('photo_cleanup_unavailable', 503);
-      if (!['child-delete', 'account-delete'].includes(intent.type) || scope.ownerUserId !== intent.scope.ownerUserId || scope.workspaceId !== intent.scope.workspaceId
+      if (!['child-delete', 'account-delete', 'class-delete'].includes(intent.type) || scope.ownerUserId !== intent.scope.ownerUserId || scope.workspaceId !== intent.scope.workspaceId
         || scope.storageEpoch !== intent.scope.storageEpoch || intent.type === 'child-delete' && scope.childId !== intent.scope.childId) fail('photo_cleanup_binding');
       if (!same(await journal.read(intent, proof), intent)) fail('photo_integrity', 503);
       const first = await options.database.runTransaction(async tx => {

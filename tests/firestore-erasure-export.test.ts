@@ -15,6 +15,7 @@ import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { createFirebaseRequestHandler } from '../server/firebase-app.ts';
 import type { FirebaseAuthPort } from '../server/firebase-auth.ts';
 import { createAccountApi } from '../src/client/account-api.ts';
+import { FIREBASE_BACKUP_COLLECTION_SUFFIXES } from '../server/firestore-backup.ts';
 
 test('F04 scoped export and journal-backed erasure preserve original operations and isolate another owner', async () => {
   const fixture = serialFirestoreFixture(); let now = Date.parse('2026-10-12T12:00:00Z');
@@ -88,7 +89,7 @@ test('F04 scoped export and journal-backed erasure preserve original operations 
   await assert.rejects(exporter.page('owner', { section: 'care', childId: child }));
   now += 121_000;
   let state = await cleaner.advance('owner', submission.operation.opId);
-  for (let i = 0; state.state !== 'completed' && i < 100; i++) state = await cleaner.advance('owner', submission.operation.opId);
+  for (let i = 0; state.state !== 'completed' && i < FIREBASE_BACKUP_COLLECTION_SUFFIXES.length + 8; i++) state = await cleaner.advance('owner', submission.operation.opId);
   assert.equal(state.state, 'completed');
   assert.equal([...fixture.records.keys()].filter(key => key.startsWith(options.namespace + '_document_operations/')).length, 0);
   await assert.rejects(authority.createChild({ userId: 'owner', operationId: creationIds.get('owner')!, displayName: '合成孩子' }),
@@ -103,7 +104,7 @@ test('F04 scoped export and journal-backed erasure preserve original operations 
   await assert.rejects(authority.runTransaction('owner', null, async () => true));
   now += 121_000;
   state = await cleaner.advance('owner', prepared.operationId);
-  for (let i = 0; state.state !== 'completed' && i < 100; i++) state = await cleaner.advance('owner', prepared.operationId);
+  for (let i = 0; state.state !== 'completed' && i < FIREBASE_BACKUP_COLLECTION_SUFFIXES.length + 8; i++) state = await cleaner.advance('owner', prepared.operationId);
   assert.equal(state.state, 'completed'); assert.deepEqual(removedAuth, ['owner']);
   assert.equal((await client.deletionStatus(prepared, signal)).state, 'completed');
   await assert.rejects(erasures.status('owner', prepared.operationId, 'z'.repeat(43)));

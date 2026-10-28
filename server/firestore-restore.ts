@@ -1,5 +1,5 @@
 import { replayAvatarLifecycle, assertRestoredAvatarRelations, restoredAvatarCleanupRecords, mergeAvatarCopyResponsibilities } from './firestore-restore-avatars.ts';
-import { isSharingAuthorityPath, sharingErasedBy } from './firestore-sharing-records.ts';
+import { isSharingAuthorityPath, sharingErasedBy, sharedSpaceSchema } from './firestore-sharing-records.ts';
 import { replaySharingAuthority } from './firestore-restore-sharing.ts';
 import type { AvatarObjectDescriptor, AvatarCleanupRecord } from './avatar-data.ts';
 import { replayChatFileErasures, assertRestoredChatFileRelations } from './firestore-restore-chat-files.ts';
@@ -17,7 +17,7 @@ import { firestoreAuthoritySchemas as authority } from './firestore-authority.ts
 import { FirestoreDomainData, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { firestorePhotoSchemas as photos } from './firestore-photos.ts';
 import { firestoreOnlineRecordSchema, firestoreOnlineErasureBarrierSchema, firestoreSharedResultSchema } from './firestore-online-receipts.ts';
-import { firebaseErasureIntentHash, firebaseErasureIntentSchema, firebaseErasureDescriptorSchema, type FirebaseErasureIntent, type FirebaseErasureDescriptor } from './firebase-erasure-journal.ts';
+import { erasureCoversScope, firebaseErasureIntentHash, firebaseErasureIntentSchema, firebaseErasureDescriptorSchema, type FirebaseErasureIntent, type FirebaseErasureDescriptor } from './firebase-erasure-journal.ts';
 import type { FirebasePhotoObjectDescriptor } from './firebase-photo-objects.ts';
 import { firebaseBackupDocumentDigest, type FirebaseBackupDocument } from './firestore-backup.ts';
 import { assertFirestoreRestoreContent } from './firestore-restore-content.ts';
@@ -76,8 +76,20 @@ export function assertFirebaseRestoreAuthority(records: readonly FirestoreRestor
   const workspaces=unique(rows(records,'workspace',authority.workspace),row=>row.value.id);
   const children=unique(rows(records,'child',authority.child),row=>row.value.id);
   const invitations=unique(rows(records,'authority-invitation',authority.invitation),row=>row.value.email);
+  const spaces=unique(rows(records,'shared-space',sharedSpaceSchema),row=>row.value.id);
+  const classes=new Map([...spaces].filter(([,row])=>row.value.kind==='class'));
   requireValue(rows(records,'control',authority.control).length===1);
-  requireValue(accounts.size===owners.size && accounts.size===workspaces.size);
+  requireValue(accounts.size===owners.size && accounts.size+classes.size===workspaces.size);
+  for(const [id,classroom]of classes){
+    const workspace=workspaces.get(id)?.value;
+    requireValue(Boolean(workspace && workspace.ownerUserId==='space:'+id
+      && classroom.value.storageIdentity.ownerUserId===workspace.ownerUserId && classroom.value.storageIdentity.workspaceId===id));
+    if(classroom.value.teacherSpaceId){
+      const parent=spaces.get(classroom.value.teacherSpaceId)?.value;
+      requireValue(Boolean(parent&&parent.kind==='teachers'&&!parent.teacherSpaceId));
+      if(classroom.value.state==='active')requireValue(parent!.state==='active'&&accounts.has(parent!.managerUserId));
+    } else if(classroom.value.state==='active')requireValue(accounts.has(classroom.value.managerUserId));
+  }
   for (const [id,account] of accounts) {
     const identity=identities.get(id)?.value,owner=owners.get(id)?.value,workspace=owner&&workspaces.get(owner.workspaceId)?.value;
     requireValue(Boolean(owner && workspace && workspace.ownerUserId===id));
@@ -166,15 +178,17 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   requireValue(input.erasures.length<=2000,'restore_limit');
   const journal=input.erasures.map(value=>firebaseErasureIntentSchema.parse(value));
   unique(journal,value=>canonical([value.scope.ownerUserId,value.operationId]));
-  const scopeJournal=journal.filter(intent=>['child-delete','account-delete'].includes(intent.type));
+  const scopeJournal=journal.filter(intent=>['child-delete','account-delete','class-delete'].includes(intent.type));
+  // A closed class may still be waiting for independent journal IO; do not restore around that obligation.
+  for(const {value}of rows(live,'scope-erasure',firestoreScopeErasureSchema))if(value.intent.type==='class-delete')
+    requireValue(value.state==='completed' && scopeJournal.some(intent=>canonical(intent)===canonical(value.intent)),'restore_pending_scope_cleanup');
   // Complete original-object erasure first; recovery must not discard an unresolved cleanup obligation.
   for(const intent of scopeJournal) {
     const job=rows(live,'scope-erasure',firestoreScopeErasureSchema).find(row=>row.value.intent.operationId===intent.operationId
       &&canonical(row.value.intent)===canonical(intent));
     requireValue(job?.value.state==='completed','restore_pending_scope_cleanup');
   }
-  const erasedByScope=(owner:string,workspace:string,child:string)=>scopeJournal.some(intent=>intent.scope.ownerUserId===owner
-    && (intent.type==='account-delete'||intent.scope.workspaceId===workspace&&intent.scope.childId===child));
+  const erasedByScope=(ownerUserId:string,workspaceId:string,childId:string)=>scopeJournal.some(intent=>erasureCoversScope(intent,{ownerUserId,workspaceId,childId}));
   const scopeRemoved=new Set<string>();
   for(const record of decoded) {
     if(record.context.family==='knowledge')continue;
@@ -182,7 +196,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     const accountErased=scopeJournal.some(v=>v.type==='account-delete'&&v.scope.ownerUserId===scope.ownerUserId);
     const body=record.value as Record<string,any>;
     const matches=accountErased||erasedByScope(scope.ownerUserId,scope.workspaceId,scope.childId)
-      || scopeJournal.some(intent => sharingErasedBy(kind, body, intent.scope, intent.type === 'account-delete'))
+      || scopeJournal.some(intent => sharingErasedBy(kind, body, intent.scope, intent.type === 'account-delete',intent.type==='class-delete'))
       || ['online-receipt','authority-operation','document-operation','change-projection','change'].includes(kind)
         && erasedByScope(scope.ownerUserId,body.result?.scope?.workspaceId??body.result?.child?.workspaceId??scope.workspaceId,
           body.childId??body.result?.child?.id??body.result?.childId??body.result?.scope?.childId??NIL)
@@ -293,7 +307,11 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   for(const intent of journal.filter(v=>v.type==='photo-delete'||v.type==='voice-delete'||v.type==='file-delete'||v.type==='avatar-delete')) {
     if(erasedByScope(intent.scope.ownerUserId,intent.scope.workspaceId,intent.scope.childId))continue;
     const epoch=newEpochByWorkspace.get(intent.scope.workspaceId);if(!epoch)continue;
-    const owner=accounts.find(row=>row.value.userId===intent.scope.ownerUserId);requireValue(Boolean(owner),'restore_erasure_binding');
+    const owner=accounts.find(row=>row.value.userId===intent.scope.ownerUserId);
+    const classroom=rows(decoded,'shared-space',sharedSpaceSchema).find(row=>row.value.kind==='class'
+      && row.value.id===intent.scope.workspaceId && row.value.storageIdentity.workspaceId===intent.scope.workspaceId
+      && row.value.storageIdentity.ownerUserId===intent.scope.ownerUserId);
+    requireValue(Boolean(owner||classroom),'restore_erasure_binding');
     const id=JSON.stringify([intent.scope.ownerUserId,intent.operationId]);
     const existing=decoded.find(row=>row.context.kind==='online-receipt'&&row.context.id===id);
     if(existing)continue;

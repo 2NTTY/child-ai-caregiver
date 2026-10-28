@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { sharingCommandSchema } from '../src/shared/sharing-control.ts';
+import { sharingCommandSchema, classRosterQuerySchema } from '../src/shared/sharing-control.ts';
 import type { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { apiError, jsonResponse } from './workspace-api.ts';
 
 export type SharingControl = Pick<ReturnType<typeof createFirestoreSharingStore>, 'spacesPage' | 'spaceView' | 'membersPage'
-  | 'sharesPage' | 'invitationsPage' | 'executeCommand' | 'controlOperation' | 'childView'>;
+  | 'sharesPage' | 'invitationsPage' | 'executeCommand' | 'controlOperation' | 'childView' | 'classesPage' | 'classRosterPage' | 'teacherSpacesPage' | 'teacherClassesPage'>;
 
 export async function handleSharingControlRequest(request: Request, userId: string, store: SharingControl,
   isCurrentUser: (userId: string) => Promise<boolean>, readJson: (request: Request) => Promise<unknown>): Promise<Response> {
@@ -12,12 +12,20 @@ export async function handleSharingControlRequest(request: Request, userId: stri
   if (expected !== userId) return apiError(expected ? 'identity_changed' : 'account_precondition_required', '請重新登入後再試。', expected ? 409 : 428);
   const url = new URL(request.url), path = url.pathname.slice('/api/shared-spaces'.length);
   try {
-    if ([...url.searchParams.keys()].some(key => key !== 'cursor') || url.searchParams.getAll('cursor').length > 1)
+    const rosterPath = /^\/([^/]+)\/roster$/u.exec(path);
+    if ([...url.searchParams.keys()].some(key => key !== 'cursor' && !(rosterPath && key === 'query'))
+      || url.searchParams.getAll('cursor').length > 1 || url.searchParams.getAll('query').length > 1)
       return apiError('invalid_input', '請重新讀取資料。', 400);
     const cursor = url.searchParams.get('cursor') ?? undefined;
     if (cursor !== undefined) z.string().min(1).max(8192).parse(cursor);
     let value: unknown;
     if (request.method === 'GET' && path === '') value = await store.spacesPage(userId, cursor);
+    else if (request.method === 'GET' && path === '/classes') value = await store.classesPage(userId, cursor);
+    else if (request.method === 'GET' && path === '/teachers') value = await store.teacherSpacesPage(userId, cursor);
+    else if (request.method === 'GET' && /^\/teachers\/[^/]+\/classes$/u.test(path))
+      value = await store.teacherClassesPage(userId,z.uuid().parse(path.split('/')[2]),cursor);
+    else if (request.method === 'GET' && rosterPath) value = await store.classRosterPage(userId,z.uuid().parse(rosterPath[1]),cursor,
+      classRosterQuerySchema.parse(url.searchParams.get('query') ?? ''));
     else if (request.method === 'POST' && path === '/commands' && !cursor) {
       const input = sharingCommandSchema.parse(await readJson(request));
       if (!await isCurrentUser(userId)) return apiError('identity_changed', '登入身份已改變。', 409);

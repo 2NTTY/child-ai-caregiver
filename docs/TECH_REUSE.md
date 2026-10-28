@@ -372,3 +372,12 @@ Web 的 ImagePicker 不提供原生裁切，採固定 react-easy-crop 6.2.4（MI
 **原生接點固定版本（同日已實作、未開放）：**`@react-native-google-signin/google-signin` 16.1.5（MIT；peer Expo ≥52.0.40）與 `@invertase/react-native-apple-authentication` 2.5.1（Apache-2.0），復用已裝 `expo-crypto` 57.0.3。版本／integrity 已向 npm registry 核對，沒有新增轉接身份系統或升級其他套件。npm 11.8.0 安裝只增加兩個無 runtime dependencies 的套件；保留原 lock 排列與舊 entries，避免 npm 重排造成無關差異。
 
 Google 採已定方案的免費 [Original API](https://react-native-google-signin.github.io/docs/original)，不是付費 Universal：其 Android 底層 Legacy Google Sign-In 已棄用但文件仍列可用，這是原版限制，不假稱最新版底層 Credential Manager；後續棄用通知／真機相容須核。沿官方 [Expo plugin](https://react-native-google-signin.github.io/docs/setting-up/expo) 的明確 iOS URL scheme 模式，以 Web client ID 取得 token 後交 Firebase JS；不引入 RNFirebase 或改 Android 既有通知 descriptor。Apple 沿[原版](https://github.com/invertase/react-native-apple-authentication) 的 iOS entitlement、Android Services ID／HTTPS callback，SDK 自動 hash nonce；原 nonce 交 Firebase credential，不能重複 hash。套件接線／bundle 與原生簽署／真登入仍分開驗證。
+
+<a id="s12-sharing-reuse"></a>
+## S12-W02：Android 分享接收（2026-10-27）
+
+沿已裝 `expo-sharing` 57.0.21、Expo FileSystem 與原草稿／照片／錄音／檔案服務。已讀本機固定版 `Sharing.d.ts`、`useIncomingShare.ts`、config plugin 和 Android intent parser；[SDK 57 官方文件](https://docs.expo.dev/versions/v57.0.0/sdk/sharing/) 支援原始 payload、清除、Android intent filter 及 Router `+native-intent`。選 `getSharedPayloads` 而不直接使用 `useIncomingShare`，因目前 hook 自動呼叫 resolver，連網址亦可能產生網絡讀取；薄 adapter 只讀本機內容，不重造原生分享。
+
+原版標記 incoming sharing 為 experimental；iOS 現行 extension 會打開主 App，官方明示這不是 Apple 支援方式，故本包不啟用。iOS 仍承接原計劃的標準 Share Extension，沒有以 Android 接線替代。新 Android binary／真機接收未驗，不以固定版靜態讀碼或合成 transport 判定設備成功。
+
+**2026-10-28 原版缺陷及限定補丁：**固定版 `SimpleShareIntentDataParser` 將單份 `text/plain` 視為 `EXTRA_TEXT` 而漏掉只有 `EXTRA_STREAM` 的 TXT，其餘文字串流又回報 text 類別。採 [patch-package](https://github.com/ds300/patch-package) **8.0.1／MIT**，由標準 postinstall 套用 `frontend/patches/expo-sharing+57.0.21.patch`：有 stream 先走原 URI parser，文字檔案保留為 file；其餘 SDK 原文不變。補丁隨 EAS／Docker 安裝輸入保存，錯配時令安裝失敗，不靜默失效；沒有自行建立原生分享模組。升級 SDK 時核對是否已修復再移除補丁，不能沿用到未知版本。原始碼核對與真 Android 編譯／URI grant 證據分開。
