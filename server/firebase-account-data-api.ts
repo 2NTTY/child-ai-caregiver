@@ -7,6 +7,8 @@ import type { createFirestoreAccountExport } from './firestore-account-export.ts
 import type { createHandoverService } from './handover-service.ts';
 import type { createHandoverUploadService } from './handover-upload-service.ts';
 import { handleHandoverUpload } from './firebase-handover-upload-api.ts';
+import { handleHandoverImport } from './firebase-handover-import-api.ts';
+import type { createHandoverImportService } from './handover-import-service.ts';
 import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
 
@@ -14,6 +16,7 @@ export interface FirebaseAccountDataPort {
   erasures: FirestoreErasureStore;
   exporter: ReturnType<typeof createFirestoreAccountExport>;
   packages?: ReturnType<typeof createHandoverService>;
+  packageImports?: ReturnType<typeof createHandoverImportService>;
   packageUploads?: ReturnType<typeof createHandoverUploadService>;
 }
 /** Native Firebase proof replaces server-side password handling; public recovery uses only the secret receipt. */
@@ -26,15 +29,17 @@ export async function handleFirebaseAccountData(request: Request, auth: Firebase
   const user = (await auth.getSession({ headers: request.headers }))?.user;
   if (!user) domainReject('unauthorized', 401);
   if (request.headers.get('x-expected-user-id') !== user.id) domainReject('identity_changed');
+  const sameIdentity = async () => { if ((await auth.getSession({ headers: request.headers }))?.user.id !== user.id) domainReject('identity_changed'); };
+  if (path === '/api/account/package-imports' || path.startsWith('/api/account/package-imports/')) {
+    if (!services.packageImports) domainReject('package_service_unavailable', 503);
+    return handleHandoverImport(request, user.id, services.packageImports, readJson, sameIdentity);
+  }
   if (path === '/api/account/package-uploads' || path.startsWith('/api/account/package-uploads/')) {
     if (!services.packageUploads) domainReject('package_service_unavailable', 503);
-    return handleHandoverUpload(request, user.id, services.packageUploads, readJson, async () => {
-      if ((await auth.getSession({ headers: request.headers }))?.user.id !== user.id) domainReject('identity_changed');
-    });
+    return handleHandoverUpload(request, user.id, services.packageUploads, readJson, sameIdentity);
   }
   if (path === '/api/account/packages' || path.startsWith('/api/account/packages/')) {
     const packages = services.packages; if (!packages) domainReject('package_service_unavailable', 503);
-    const sameIdentity = async () => { if ((await auth.getSession({ headers: request.headers }))?.user.id !== user.id) domainReject('identity_changed'); };
     const route = /^\/api\/account\/packages\/([0-9a-f-]{36})(?:\/(download|cancel|reconcile))?$/iu.exec(path);
     if (request.method === 'POST' && path === '/api/account/packages') {
       const result = await packages.create(user.id, await readJson(request)); await sameIdentity();

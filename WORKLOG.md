@@ -4250,3 +4250,11 @@
 - 接續 #369／`d085558`，沿原 authority、ZIP verifier、加密 immutable Storage 及工作台帳接預留／串流上載／查回／取消。Node 保留身份／同源／容量控制，資料包不整份緩衝；上載技術摘要與真正領域匯入分開，沒有新增套件或另一種資料格式。
 - reader 與真本機 HTTP 各一條流程通過，後者用首 17 bytes 入場後才供應剩餘內容證明串流，兼核身份、原操作、加密讀回及取消後遲到物件清理。獨立 review 找到 live 上載責任未合併至還原準備，新增一條實際 prepareFirebaseRestore red→green 流程關閉；保留快照後物件與帳戶的清理 scope，還原結果不可讀。原 EACCES／fixture／錯誤映射與型別修正見[證據](artifacts/verification/P4_HANDOVER_UPLOADS_20261029.json)。
 - 正式 runtime、maintenance、帳戶 erasure 及 backup registry 已接同一服務，索引只有定義。本批未部署、無模型／通知／設備或全量測試；公開領域匯入、共用畫面、其他領域／歷史、完整私人備份及簽章配置仍待接，不把上載後端當成 HANDOVER01 完成。
+
+<a id="log-20261029-p4-handover-runner"></a>
+### 2026-10-29：P4 已驗包至正式匯入 worker
+
+- #370／`9058011` 之上接原 account API、已驗上載、持久批次及正式 worker。Server 推導來源／完整性／數量，逐項交易核對來源、目前目標與 lease；有限批次沿原游標喚醒。原操作查回不要求再次存在來源檔案，取消後接續同一批次，不重做成功項。
+- 一條正式組裝入口的合成流程通過：原操作與隔離、部分完成／取消／接續、重投遞及下載後來源取消。非空未接歷史留下失敗批次，不截斷冒稱成功。五入口型別圖零診斷；實際 fixture／身份 helper／上載 root scope 修正與限制見[證據](artifacts/verification/P4_HANDOVER_RUNNER_20261029.json)。
+- 只有記錄／概況／待辦目前值的領域 adapter；完整歷史、其他模組、畫面與完整備份待續，未部署或做真服務驗收，D PR 不動。
+- Review 另找到讀包耗時可造成零進度循環，以模擬 75 秒讀取重現後修正項目預算起點，仍保留原 lease，零進度則明確失敗。已成功的接續 op 在來源清理後重送也有實際 red→green，先查原控制收據；client 長操作期限由 B 同步修正、分開提交。

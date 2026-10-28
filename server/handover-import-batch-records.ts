@@ -2,13 +2,14 @@ import { z } from 'zod';
 import { workRecoveryScopeSchema } from './firestore-work-continuation-recovery.ts';
 import { handoverImportResolutionSchema } from './handover-import-records.ts';
 import { firestoreDomainHash } from './firestore-domain-data.ts';
+import { handoverImportSectionSchema, handoverImportTargetSchema } from '../src/shared/handover-imports.ts';
 
 const uuid = z.uuid(), hash = z.string().regex(/^[a-f0-9]{64}$/u), time = z.iso.datetime({ offset: true });
 const count = z.number().int().nonnegative().max(2147483646), text = z.string().min(1).max(256);
-export const importBatchSectionSchema = z.enum(['care', 'profile', 'tasks']);
-export const importBatchTargetSchema = z.object({ sourceChildId: uuid, target: z.object({ childId: uuid, spaceId: uuid.nullable() }).strict(),
-  sections: z.array(importBatchSectionSchema).min(1).max(3).refine(value => new Set(value).size === value.length) }).strict();
+export const importBatchSectionSchema = handoverImportSectionSchema;
+export const importBatchTargetSchema = handoverImportTargetSchema;
 export const importBatchRequestSchema = z.object({ opId: uuid, uploadId: uuid,
+  uploadVersion: count.min(1).optional(), inputFingerprint: hash.optional(),
   source: z.object({ serverId: text, accountId: text, packageId: uuid, packageVersion: count.min(1), manifestSha256: hash }).strict(),
   integrity: z.enum(['trusted', 'untrusted_signer', 'missing_proof']), acceptedManifestSha256: hash.nullable(),
   targets: z.array(importBatchTargetSchema).min(1).max(10000), totalItems: count,

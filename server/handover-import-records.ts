@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { importProvenanceLinkSchema } from '../src/shared/import-provenance.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
+import { handoverImportResolutionSchema } from '../src/shared/handover-imports.ts';
+export { handoverImportResolutionSchema } from '../src/shared/handover-imports.ts';
 
 const uuid = z.uuid(), hash = z.string().regex(/^[a-f0-9]{64}$/u), time = z.iso.datetime({ offset: true });
 const version = z.number().int().nonnegative().max(2147483647);
@@ -9,11 +11,6 @@ export const handoverSourceIdentitySchema = importProvenanceLinkSchema.shape.sou
 });
 export type HandoverSourceIdentity = z.infer<typeof handoverSourceIdentitySchema>;
 export const handoverImportResourceSchema = z.object({ id: uuid, version }).strict();
-export const handoverImportResolutionSchema = z.discriminatedUnion('mode', [
-  z.object({ mode: z.literal('preserve') }).strict(),
-  z.object({ mode: z.literal('replace_current'), targetId: uuid, expectedVersion: version }).strict(),
-  z.object({ mode: z.literal('restore_deleted'), targetId: uuid, expectedVersion: version }).strict(),
-]);
 export type HandoverImportResolution = z.infer<typeof handoverImportResolutionSchema>;
 export const handoverImportItemSchema = z.object({ opId: uuid, batchId: uuid, fingerprint: hash,
   actorUserId: z.string().min(1).max(256), at: time, source: importProvenanceLinkSchema,

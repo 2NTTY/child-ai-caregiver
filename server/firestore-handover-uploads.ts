@@ -66,6 +66,14 @@ export function createFirestoreHandoverUploads(options: FirestoreDomainOptions &
     });
   }
   return {
+    async assertImportableIn(b: Binding, id: string, version: number) {
+      // The operation may be committing a child's data; the staged package still belongs to the actor's account scope.
+      const job = await owned({ ...b, scope: { ...b.scope, childId: '00000000-0000-0000-0000-000000000000' } }, id);
+      if (job.state !== 'ready' || job.cleaned || job.version !== version || job.generation !== b.generation
+        || job.authorizationVersion !== b.authorizationVersion) domainReject('package_upload_changed');
+      const checkDeadline = () => { if (Date.parse(job.expiresAt) <= clock()) domainReject('package_expired'); };
+      checkDeadline(); return checkDeadline;
+    },
     async create(owner: string, raw: unknown) {
       const request = domainParse(handoverUploadCommandSchema, raw), fingerprint = firestoreDomainHash(request);
       return authority.runTransaction(owner, null, async b => {

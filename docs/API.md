@@ -1139,7 +1139,7 @@ Account export可直接驗讀空head／null內容，不因未裝avatar內容port
 
 匯入 care／profile／task 的 DTO 增加可選 `importedFrom`，care／profile 的 `confirmationBasis` 可為 `imported_source`。此時 `confirmedBy`／`confirmedAt` 是來源標記，不能因 UID 字串相同就顯示為目前用戶已核對；實際匯入者另見來源鏈。普通更正改回本地確認但保留來源。care、summary、task、contact client 接受相容 schema；共用 care／profile 投影以來源確認或來源資料顯示，不新增採納流程。多次匯入只沿 `imported_source` 追溯原依據，遇未知即停，不把更舊的確認補成目前確認。現有提交接口不接受客戶端自行提供這些權威欄位，內部 prepared 接點也不代表 HTTP 匯入已開放。
 
-內部逐項匯入結果保存 `opId`、`batchId`、來源／包版本、操作者、時間、`created／updated／skipped／conflict`、原因及目標 ID／版本，不返回原正文。相同 opId／指紋查回原結果；變更參數拒絕。明確覆蓋或手動恢復須另用原業務規則綁目前目標 ID／expectedVersion；預設保留本地修改和刪除。帳戶分頁匯出可讀 `import_history`／`import_mappings`，目前仍沒有正式 HTTP 匯入或批次啟動入口，不能把任意客戶端 row 當成已驗包資料。
+內部逐項匯入結果保存 `opId`、`batchId`、來源／包版本、操作者、時間、`created／updated／skipped／conflict`、原因及目標 ID／版本，不返回原正文。相同 opId／指紋查回原結果；變更參數拒絕。明確覆蓋或手動恢復須另用原業務規則綁目前目標 ID／expectedVersion；預設保留本地修改和刪除。帳戶分頁匯出可讀 `import_history`／`import_mappings`。HTTP 批次入口只接受選擇與原操作，由 Server 開啟已驗上載推導來源，不能把任意客戶端 row 當成已驗包資料；目前支援範圍及未接部分見下方匯入接線。
 
 FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共享孩子選擇；Agent 仍按後續接線。`withResource` 在同一 Firestore 交易核對目前操作者准入、空間／成員、選定模組、來源成員世代及原孩子狀態，提供分開的 `actorUserId`／原儲存 `scope`，以及空間、成員、分享和雙方授權版本 basis。領域 adapter 必須明確消費此 binding 並排除私人項目；不能把 binding 當成整個孩子的通行證。舊未指定共享的業務方法維持本人範圍。
 
@@ -1211,8 +1211,10 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 - 混合聊天屬發起帳戶，讀取／搜尋按目前子範圍授權；單孩匯出無法可靠分離時明示，完整混合對話須有權並明確選入全部範圍，不藉匯出擴權。
 - 匯入各狀態均提供有界紀錄查回：操作者／時間、包與版本／內容識別、完整性結果、目標／選擇、來源鏈、操作／批次及逐項資源／版本／原因、接續結果。格式錯誤無包 ID 時記未知與原因，亦非無紀錄失敗。
 - 保存、業務結果、收據、change cursor 及 outbox 沿同一 Firestore 交易邊界；大包使用可恢復的有界批次，不承諾整包單交易。部分成功不當全成功；模型／通知等外部呼叫在交易外。
-- 匯入批次內部契約固定已驗包、manifest、來源孩子到目標的映射、領域及差異處理；worker 必須持有目前持久 lease。每筆原操作與批次位置／計數同交易提交，取消或租約過期不能在檢查後再提交下一筆。取消／失敗保留已完成部分，明確接續沿同一批次及位置，只建立新的工作世代；操作紀錄保留取消／接續與失敗原因。恢復備份不自動續跑匯入，須重新驗包及現在權限。這是待接公開上載／批次入口的內部契約，不接受 HTTP 客戶端自報已驗內容。
-- 上載接線（後端已接、未部署）：`POST /api/account/package-uploads` 以原 opId、檔名、大小及 SHA-256 預留，`POST /:id/content` 用 `application/zip` 有界串流交付；`GET /:id` 查原結果，`POST /:id/cancel` 帶原取消 opId／expectedVersion。最多 256 MiB／每帳戶四份未清理暫存；Node 沿原同源、session、expected-user 與兩個大型請求容量。先驗大小／hash／容器與範圍，再保存私人加密物件及技術驗證結果。上載不是匯入，不修改業務資料或啟動來源指令。失敗／取消亦留無正文紀錄；副作用未知只查原物件供清理，不重新上載或假稱成功。暫存沿既有 24 小時到期，帳戶刪除及隔離還原保留物件清理義務；無可信簽章只顯示實際狀態，後續可明示選擇繼續，不能偽稱內容正確。正式匯入 worker、共用 client／畫面及完整領域仍未接，上載接點不代表用戶匯入流程已完成。
+- 匯入批次內部契約固定已驗包、manifest、來源孩子到目標的映射、領域及差異處理；worker 必須持有目前持久 lease。每筆原操作與批次位置／計數同交易提交，取消或租約過期不能在檢查後再提交下一筆。取消／失敗保留已完成部分，明確接續沿同一批次及位置，只建立新的工作世代；操作紀錄保留取消／接續與失敗原因。恢復備份不自動續跑匯入，須重新驗包及現在權限。不接受 HTTP 客戶端自報已驗內容。
+- 上載接線（後端已接、未部署）：`POST /api/account/package-uploads` 以原 opId、檔名、大小及 SHA-256 預留，`POST /:id/content` 用 `application/zip` 有界串流交付；`GET /:id` 查原結果，`POST /:id/cancel` 帶原取消 opId／expectedVersion。最多 256 MiB／每帳戶四份未清理暫存；Node 沿原同源、session、expected-user 與兩個大型請求容量。先驗大小／hash／容器與範圍，再保存私人加密物件及技術驗證結果。上載不是匯入，不修改業務資料或啟動來源指令。失敗／取消亦留無正文紀錄；副作用未知只查原物件供清理，不重新上載或假稱成功。暫存沿既有 24 小時到期，帳戶刪除及隔離還原保留物件清理義務；無可信簽章只顯示實際狀態，後續可明示選擇繼續，不能偽稱內容正確。
+- 匯入接線（後端已接、未部署）：`POST /api/account/package-imports` 帶 `opId/uploadId/expectedUploadVersion/acceptedManifestSha256/targets/resolutions`；最多 100 個固定來源孩子映射，不接受來源身分、row、數量或 worker lease。Server 重新開啟相同不可變包，按目標推導涵蓋項數。`GET /:id` 查原批次；`POST /:id/cancel`、`/:id/resume` 帶 `opId/expectedVersion`，回同一批次／逐項計數，不披露儲存身份、lease 或原始正文。worker 每次最多 100 筆並保留期限空間；未完成沿原游標補喚醒，不新建匯入。每項交易重查上載版本／有效期及目前目標權限，來源取消不得在已下載檔案上繼續寫入。已提交原操作可在來源到期後查回，不重驗後重做。
+- 本段領域仍只有記錄／概況／待辦目前值；選入模組的非空歷史尚未接時留下 `failed/package_section_not_connected` 批次及實際項數，零領域寫入，不能默默跳過。完整歷史／其他領域、無包身份的驗證失敗紀錄、逐項結果畫面、班級／期間、完整私人備份與簽章配置仍待接；本段不代表完整用戶匯入已可用。恢復後的 interrupted 批次不自動續跑。
 - provider 連結在同流程取得必要同意，配置 Apple private relay 合法郵件來源；Google／Apple-only 重新驗證用其 provider，不要求密碼。註冊准入與家庭／教師空間資格分開。
 - P5 Server 能力／地址核對與憑據隔離另隨 S06-W04 擴充；資料副本匯入不會切換權威 Server、搬移執行授權或恢復舊投遞。普通登入及裝置撤銷不依賴已取消的配對端點。
 
