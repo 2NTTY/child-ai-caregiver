@@ -15,6 +15,8 @@ import { openRecoveryEnvelope, type OpenedRecoveryEnvelope } from './firestore-r
 import { workRecoveryDocumentId } from './firestore-work-continuation-recovery.ts';
 import { firestorePhotoSchemas, type createFirestorePhotoStore } from './firestore-photos.ts';
 import { type FirestoreErasureOptions, type FirestoreErasureStore, type FirestoreScopeErasure } from './firestore-erasure.ts';
+import { firestoreHandoverJobSchema, handoverJobIncludesScope } from './firestore-handover-jobs.ts';
+import type { createHandoverService } from './handover-service.ts';
 
 // New domains join the existing backup registry and must carry authenticated recovery scope.
 const collections = FIREBASE_BACKUP_COLLECTION_SUFFIXES.filter(suffix => !['_erasures', '_erasure_receipts', '_sessions', '_adk', '_root_budget', '_ai_usage'].includes(suffix)
@@ -25,6 +27,7 @@ export interface FirestoreErasureCleanupOptions extends FirestoreErasureOptions 
   avatars?: Pick<FirestoreAvatarCleanup, 'eraseForScope'>;
   voices?: Pick<FirestoreVoiceStore, 'eraseForScope'>;
   files?: Pick<FirestoreChatFilesStore, 'eraseForScope'>;
+  handover?: Pick<ReturnType<typeof createHandoverService>, 'erase'>;
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'eraseForScope'>;
   deleteAgentSession(userId: string, runId: string): Promise<void>;
   eraseAgentUserPage(userId: string): Promise<boolean>;
@@ -59,6 +62,7 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
       return (row.value as { consumedBy?: string }).consumedBy === scope.ownerUserId;
     if (scope.ownerUserId !== candidate.ownerUserId) return false;
     if (job.intent.type === 'account-delete' || job.intent.type==='class-delete') return true;
+    if (row.context.kind === 'handover-export') return handoverJobIncludesScope(firestoreHandoverJobSchema.parse(row.value), scope);
     if (row.context.kind === 'authority-operation') {
       const result = (row.value as any).result;
       // Child creation receipts are intentionally stored under the owner-wide NIL scope.
@@ -134,6 +138,10 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
         const photo = firestorePhotoSchemas.photo.parse(opened.value);
         if (!await options.photos.eraseForScope(photo.scope, photo.id, job.intent, job.journal!)) return erasures.result(job);
         continue;
+      }
+      if (opened.context.kind === 'handover-export') {
+        if (!options.handover) domainReject('package_cleanup_unavailable', 503);
+        if (!await options.handover.erase(firestoreHandoverJobSchema.parse(opened.value))) return erasures.result(job);
       }
       if (['avatar-head', 'avatar-upload', 'avatar-cleanup'].includes(opened.context.kind)) {
         if (!options.avatars) domainReject('avatar_unavailable', 503);

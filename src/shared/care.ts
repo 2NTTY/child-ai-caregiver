@@ -1,3 +1,4 @@
+import type { ImportProvenance } from './import-provenance.ts';
 export const CARE_KINDS = ["note", "feeding", "sleep", "diaper", "temperature", "measurement", "appointment"] as const;
 export type CareKind = typeof CARE_KINDS[number];
 export interface CareDetails {
@@ -8,7 +9,8 @@ export interface CareDetails {
 export interface CareValues { text: string; details: CareDetails; source: string }
 export interface CareRevision extends CareValues {
   version: number; confirmedBy: string; confirmedAt: string; reason: string;
-  confirmationBasis?: "explicit" | "preauthorized_user_statement";
+  confirmationBasis?: "explicit" | "preauthorized_user_statement" | "imported_source";
+  importedFrom?: ImportProvenance;
 }
 export interface CareRecord extends CareRevision { id: string; childId: string; authorUserId: string; createdAt: string }
 export interface CareCursor { createdAt: string; id: string; changeSeq?: string }
@@ -23,6 +25,8 @@ export interface ChildProfileData {
 export interface ChildProfile {
   childId: string; version: number; data: ChildProfileData | null;
   confirmedBy: string | null; confirmedAt: string | null; reason: string | null;
+  confirmationBasis?: "explicit" | "imported_source";
+  importedFrom?: ImportProvenance;
 }
 export interface CareSearch { query?: string; kind?: CareKind; cursor?: CareCursor }
 export interface HistoryPage<T> { revisions: T[]; nextBeforeVersion: number | null }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ImportProvenance } from './import-provenance.ts';
 
 const text = (maximum: number) => z.string().max(maximum).refine(value => value.trim().length > 0);
 export const taskTimeZoneSchema = z.string().max(100).refine(value => {
@@ -31,12 +32,13 @@ export interface TaskOccurrence {
   terminalBasisVersion: number | null;
 }
 export interface CareTask {
+  importedFrom?: ImportProvenance;
   id: string; childId: string; version: number; title: string; details: string;
   kind: TaskValues["kind"]; assigneeUserId: string; createdBy: string; createdAt: string; updatedAt: string;
   occurrence: TaskOccurrence;
 }
 export interface TaskRevision {
-  task: CareTask; action: "create" | TaskChange["action"]; actorUserId: string;
+  task: CareTask; action: "create" | "import" | TaskChange["action"]; actorUserId: string;
   basisVersion: number; note: string; at: string;
 }
 export interface TaskAssignee { userId: string; name: string }

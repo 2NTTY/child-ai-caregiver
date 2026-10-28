@@ -86,18 +86,19 @@ export interface FirebasePhotoSdkBucket {
 
 /** Storage 7.22's legacy download transport cannot reliably finish or cancel. Use its native auth client. */
 export function readFirebaseStorageResponse(bucket: Pick<FirebasePhotoSdkBucket, "name" | "storage">,
-  objectName: string, generation: string, maximum: number): Readable {
+  objectName: string, generation: string, maximum: number, timeoutMs = FIREBASE_PHOTO_TIMEOUT_MS): Readable {
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 300_000) throw new Error("Invalid media timeout");
   const response = new PassThrough(), controller = new AbortController();
   let media: Readable | undefined;
   const unavailable = () => new Error("storage_media_unavailable");
-  const deadline = setTimeout(() => response.destroy(unavailable()), FIREBASE_PHOTO_TIMEOUT_MS);
+  const deadline = setTimeout(() => response.destroy(unavailable()), timeoutMs);
   response.once("close", () => { clearTimeout(deadline); controller.abort(); media?.destroy(); });
   void (async () => {
     const result = await bucket.storage.authClient.request({
       url: "https://storage.googleapis.com/storage/v1/b/" + encodeURIComponent(bucket.name) + "/o/" + encodeURIComponent(objectName),
       method: "GET", params: { alt: "media", generation },
       headers: { Range: "bytes=0-" + maximum, "Accept-Encoding": "identity", "Cache-Control": "no-store" },
-      timeout: FIREBASE_PHOTO_TIMEOUT_MS, retry: false, maxRedirects: 0, responseType: "stream", signal: controller.signal,
+      timeout: timeoutMs, retry: false, maxRedirects: 0, responseType: "stream", signal: controller.signal,
       // Return error headers without Gaxios buffering their body or OAuth refreshing/replaying the GET.
       validateStatus: () => true,
     });
