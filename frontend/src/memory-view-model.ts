@@ -1,30 +1,31 @@
 import { z } from "zod";
+import type { FactSource, LocalFactSource, MemoryFact, MemoryTopic } from "../../src/shared/memory";
 
 // Presentation-only data and local preview actions. These are not HTTP contracts.
 export type MemoryRole = "owner" | "caregiver" | "viewer";
 export type MemoryVisibility = "private" | "family";
 export type FactStatus = "candidate" | "confirmed" | "inactive";
 export type TopicStatus = "pending" | "answered" | "snoozed" | "resolved";
-export type FactSourceView = { kind: "manual"; description: string }
-  | { kind: "care_record"; description: string; recordId: string; version: number }
-  | { kind: "private_chat"; description: string; messageId?: string };
+export type FactSourceView = FactSource;
 export interface MemoryFactView {
   id: string; childId: string; key: string; content: string; source: FactSourceView;
   validUntil: string | null; visibility: MemoryVisibility; intendedVisibility: MemoryVisibility;
   status: FactStatus; version: number; authorSelf: boolean; reason: string;
   applicable: boolean; confirmedBy: string | null; confirmedAt: string | null; sourceState: "current" | "changed";
+  importedFrom?: MemoryFact["importedFrom"]; confirmationBasis?: MemoryFact["confirmationBasis"];
 }
 export interface MemoryTopicView {
   id: string; childId: string; title: string; note: string; visibility: MemoryVisibility;
   status: TopicStatus; mayAsk: boolean; version: number; authorSelf: boolean; updatedAt: string;
   resumeAfter: string | null; reopenReason: string | null; reopenedFrom: string | null;
+  importedFrom?: MemoryTopic["importedFrom"];
 }
 export interface MemorySummaryView {
   id: string; version: number; text: string; createdAt: string; previousId: string | null;
   coveredMessageIds: string[]; lastCoveredMessageId: string;
 }
 export interface MemorySourceChoice {
-  id: string; label: string; kind: FactSourceView["kind"]; current: boolean;
+  id: string; label: string; kind: LocalFactSource["kind"]; current: boolean;
   recordId?: string; version?: number; messageId?: string;
 }
 export interface MemoryPreviewData {
@@ -82,7 +83,8 @@ export function factConfirmationLabel(fact: MemoryFactView) {
   if (!fact.confirmedBy && !fact.confirmedAt) return "尚未確認";
   return `確認者：${fact.confirmedBy ?? "未提供"} · 確認時間：${fact.confirmedAt ?? "未提供"}`;
 }
-export function factSourceLabel(source: FactSourceView) {
+export function factSourceLabel(source: FactSourceView): string {
+  if (source.kind === "imported") return `匯入資料包：${source.description.trim() ? source.description : "未提供"} · 原來源 ${factSourceLabel(source.original)}`;
   const kind = source.kind === "manual" ? "手動描述" : source.kind === "care_record" ? "照顧記錄" : "私人聊天";
   return `${kind}：${source.description.trim() ? source.description : "未提供"}${source.kind === "care_record" ? ` · 來源版本 ${source.version}` : ""}`;
 }

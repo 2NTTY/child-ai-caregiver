@@ -4295,3 +4295,10 @@
 - 共用 owner／畫面可選擇已讀衝突作覆蓋或明確恢復，沿同一匯入服務及 expectedVersion 保存。主 review 發現重跑原 targets 會一併匯入取消批次未選的項目，故新增向後相容 `resolutionOnly`，只提交選定目前值、不處理其他項目或歷史；原批次／收據保持不變，unknown 只查同操作。
 - 正式 API／client／worker 一條流程、既有領域一條及 owner 兩條通過；局部型別圖零診斷。獨立後端 review 與增量覆核未見剩餘確定 P1／P2，主模型覆核共用畫面。保留初始缺路由、測試 fixture、selected-only red 與型別修正記錄，詳見[證據](artifacts/verification/P4_HANDOVER_CONFLICT_RESULTS_20261029.json)。
 - 一個索引只加入定義，尚未部署；不重跑 bundle／設備、無模型／通知。正文差異、其他領域、完整備份、班級／期間及原生大型包仍待接，不把本切片或合併當整個 HANDOVER01／P4 完成；D PR 未改動。
+
+<a id="log-20261029-p4-handover-memory-source"></a>
+### 2026-10-29 — P4-HANDOVER01 記憶來源與領域接點
+
+接回暫停前成果，保留外來來源、原確認者及本地匯入身份；一般新增不能偽造 imported 來源。事實／話題沿原交易、版本、修訂、唯一鍵與刪除服務，候選與終態不升格／復活。本人更正後改用本地確認，來源鏈保留。匯出改沿目前記憶讀取，避免來源失效後仍輸出 current。共用表單可保留或明確改選來源，外來 ID 不建本地連結。
+
+一條領域流程、原 client／UI 18 項及受影響型別圖通過；獨立 review 的終態／候選缺口已修正。初次保存的 undefined 序列化、review red 與型別失敗均保留於[證據](artifacts/verification/P4_HANDOVER_MEMORY_SOURCE_20261029.json)。這是完整記憶匯入的預備接點，私人交代／摘要／歷史、worker 與公開模組選擇仍待接；未部署，不聲稱 HANDOVER01 或 P4 完成，不重跑模型／雲端／設備及已驗功能。

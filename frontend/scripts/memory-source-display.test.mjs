@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import ts from 'typescript';
+import { z } from 'zod';
 import * as references from '../src/memory-reference-view-model.ts';
 import * as memory from '../src/memory-view-model.ts';
 
@@ -19,7 +20,7 @@ const metadata = (tree, label) => nodes(tree).filter(item => item.props?.label =
 const button = (tree, label) => nodes(tree).find(item => item.type === 'AppButton' && item.props.label === label
   || item.type === 'Pressable' && item.props.accessibilityLabel?.startsWith(`${label}：`));
 const deepFreeze = value => { if (value && typeof value === 'object') { Object.values(value).forEach(deepFreeze); Object.freeze(value); } return value; };
-let current, production, family, workspace;
+let current, production, family, workspace, managementOwner, factForm;
 let openedURLs = [], linkReject = false;
 const hooks = {
   useState(initial) {
@@ -27,14 +28,18 @@ const hooks = {
     if (!(index in instance.slots)) instance.slots[index] = typeof initial === 'function' ? initial() : initial;
     return [instance.slots[index], value => { instance.slots[index] = typeof value === 'function' ? value(instance.slots[index]) : value; }];
   },
-  useRef: initial => ({ current: initial }), useLayoutEffect: noop, useId: () => 'synthetic-tabs',
+  useRef: initial => ({ current: initial }), useEffect: noop, useLayoutEffect: noop, useId: () => 'synthetic-tabs',
 };
 function load(relative) {
   const source = readFileSync(path.join(root, relative), 'utf8');
   const module = { exports: {} };
   const imports = {
     'expo-router': { useRouter: () => ({ push: noop }) },
-    react: hooks, 'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
+    react: hooks, 'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' }, zod: { z },
+    'react-hook-form': { Controller: 'Controller', useForm({ defaultValues }) {
+      factForm ??= { ...defaultValues };
+      return { control: {}, watch: () => factForm, handleSubmit: submit => () => submit(factForm) };
+    } },
     'react-native': { StyleSheet: { create: value => value }, View: 'View', Pressable: 'Pressable', Linking: { openURL: url => { openedURLs.push(url); return linkReject ? Promise.reject(new Error('Synthetic unavailable source')) : Promise.resolve(); } } }, 'react-native-paper': { Text: 'Text' },
   };
   const require = name => imports[name]
@@ -44,7 +49,7 @@ function load(relative) {
     ?? (name.endsWith('/MemoryReferenceWorkspace') ? { useMemoryReferenceWorkspace: () => workspace } : undefined)
     ?? (name.endsWith('/ProductionProvider') ? { useProduction: () => production } : undefined)
     ?? (name.endsWith('/SettingsDomains') ? { useProductionSettingsDomains: () => ({ family }) } : undefined)
-    ?? (name.endsWith('/TaskKnowledgeDomains') ? { useProductionTaskKnowledgeMemory: () => null } : undefined)
+    ?? (name.endsWith('/TaskKnowledgeDomains') ? { useProductionTaskKnowledgeMemory: () => managementOwner ?? null } : undefined)
     ?? (name.endsWith('/useContainerWidth') ? { useContainerWidth: () => ({ width: 390, ref: null, onLayout: noop }) } : undefined)
     ?? (name.endsWith('/theme') ? { colors: {}, radius: {}, spacing: {}, readingType: {}, workspaceType: {} } : undefined)
     ?? (name.endsWith('/branding') ? { brand: { name: '育伴港' } } : undefined)
@@ -166,6 +171,67 @@ test('private-chat sources preserve kind and description without raw message UUI
   assert.deepEqual(metadata(view.tree, '原訊息'), []);
   assert.equal(nodes(view.tree).some(item => item.props?.href || item.props?.accessibilityRole === 'link' || /Link/.test(item.type?.name ?? item.type)), false);
   assert.deepEqual(nodes(view.tree).filter(item => item.type === 'AppButton').map(item => item.props.label), ['收起版本記錄']);
+});
+
+test('imported memory retains foreign source descriptions without mapping its confirmer or references to local identities', () => {
+  const source = { kind: 'imported', description: '合成資料包來源', sourceState: 'current',
+    original: { kind: 'care_record', description: '合成外來照顧描述', recordId: 'foreign-care-id', version: 7 } };
+  const value = fact({ source, confirmationBasis: 'imported_source', confirmedBy: self });
+  setWorkspace(value, [fact({ source, confirmationBasis: 'imported_source', confirmedBy: memberId, version: 2 })]);
+  const snapshot = structuredClone(workspace), view = factCard();
+  assert.equal(button(view.tree, '收起來源').props.accessibilityLabel, '收起來源：匯入資料包');
+  assert.match(content(view.tree), /匯入資料包：合成資料包來源/);
+  assert.match(content(view.tree), /照顧記錄：合成外來照顧描述.*來源版本 7/);
+  assert.deepEqual(metadata(view.tree, '確認者'), [`來源確認：${self}`]);
+  button(view.tree, '查看版本記錄').props.onPress(); rerender(view);
+  assert.deepEqual(metadata(view.tree, '確認者'), [`來源確認：${self}`, `來源確認：${memberId}`]);
+  assert.equal(nodes(view.tree).some(item => item.props?.href || item.props?.accessibilityRole === 'link'), false);
+  assert.deepEqual(workspace, snapshot);
+  setWorkspace(fact({ source, confirmedBy: self }));
+  assert.deepEqual(metadata(factCard().tree, '確認者'), ['你'], 'local reconfirmation stays local even when the source remains imported');
+  const hidden = { ...source, original: { kind: 'private_chat', description: '合成外來私人描述' } };
+  setWorkspace(fact({ source: hidden, confirmationBasis: 'imported_source', confirmedBy: self }));
+  const privateView = factCard(); assert.match(content(privateView.tree), /私人聊天：合成外來私人描述/);
+  assert.deepEqual(metadata(privateView.tree, '原訊息'), []); assert.equal('messageId' in hidden.original, false);
+});
+
+test('the real memory editor retains its imported basis exactly and offers imported sources only for that existing basis', () => {
+  const source = { kind: 'imported', description: '合成資料包來源', sourceState: 'current',
+    original: { kind: 'private_chat', description: '合成外來私人描述' } };
+  const basis = fact({ source, authorSelf: true, confirmationBasis: 'imported_source' }), submitted = [];
+  managementOwner = { facts: [basis], topics: [], role: 'owner', sharedMode: false, busy: false, lost: false,
+    value: { scopeKey: 'scope-a', model: { online: true, longTerm: { data: { histories: {} } } } },
+    management: { locked: false, operation: 'idle', pending: null, busy: false, epoch: 1,
+      markDirty: noop, discard: noop, submit: intent => submitted.push(intent) } };
+  const { TaskKnowledgeMemoryManagement } = load('src/production/TaskKnowledgeMemoryManagement.tsx');
+  const outer = render(TaskKnowledgeMemoryManagement);
+  button(outer.tree, '管理記憶').props.onPress(); rerender(outer);
+  button(outer.tree, '人工確認／更正／停用／刪除').props.onPress(); rerender(outer);
+  const editorNode = nodes(outer.tree).find(item => item.type?.name === 'FactEditor'); assert.ok(editorNode);
+  factForm = null; const editor = render(editorNode.type, editorNode.props);
+  const field = name => nodes(editor.tree).find(item => item.type === 'Controller' && item.props.name === name)
+    .props.render({ field: { value: factForm[name], onChange: value => { factForm[name] = value; } } });
+  assert.ok(field('sourceKind').props.options.some(item => item.value === 'imported'));
+  assert.equal(field('sourceDescription').props.disabled, true);
+  factForm.reason = '合成本地更正';
+  const confirm = () => {
+    nodes(editor.tree).find(item => item.type === 'AppCheckbox' && item.props.label.startsWith('我已核對原內容')).props.onChange(true);
+    rerender(editor); button(editor.tree, '確認提交這次人工操作').props.onPress();
+  };
+  confirm(); assert.equal(submitted.length, 1);
+  assert.equal(submitted[0].input.values.source, editorNode.props.basis.source);
+  assert.equal('messageId' in submitted[0].input.values.source.original, false);
+  assert.equal('confirmationBasis' in submitted[0].input, false);
+  field('sourceKind').props.onChange('manual'); rerender(editor);
+  field('sourceDescription').props.onChangeText('合成明確本地描述'); rerender(editor);
+  confirm(); assert.deepEqual(submitted[1].input.values.source, { kind: 'manual', description: '合成明確本地描述' });
+  button(outer.tree, '人工新增候選事實').props.onPress(); rerender(outer);
+  const createNode = nodes(outer.tree).find(item => item.type?.name === 'FactEditor'); assert.equal(createNode.props.basis, null);
+  factForm = null; const create = render(createNode.type, createNode.props);
+  const sourceSelect = nodes(create.tree).find(item => item.type === 'Controller' && item.props.name === 'sourceKind')
+    .props.render({ field: { value: factForm.sourceKind, onChange: noop } });
+  assert.equal(sourceSelect.props.options.some(item => item.value === 'imported'), false);
+  managementOwner = null; factForm = null;
 });
 
 test('empty source descriptions reuse the existing short placeholder and care-record information stays intact', () => {

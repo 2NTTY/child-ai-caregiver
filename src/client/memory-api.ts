@@ -3,6 +3,7 @@ import type { ConversationSummary, FactConfirm, FactCreate, SharedFactCreate, Fa
 import type { SharedSelection } from '../shared/sharing.ts';
 import type { OnlineReceipt } from "../shared/online.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
+import { importProvenanceSchema } from "../shared/import-provenance.ts";
 
 export class MemoryApiError extends Error {
   readonly status: number;
@@ -44,17 +45,21 @@ const str = (value: unknown): value is string => typeof value === "string";
 const nullable = (value: unknown): value is string | null => value === null || str(value);
 const version = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value > 0;
 const visibility = (value: unknown): boolean => value === "private" || value === "family";
-const source = (value: unknown): boolean => object(value) && str(value.description) && (
+const localSource = (value: unknown): boolean => object(value) && str(value.description) && (
   value.kind === "manual" ||
   (value.kind === "care_record" && str(value.recordId) && version(value.version)) ||
   (value.kind === "private_chat" && (value.messageId === undefined || str(value.messageId)))
 );
+const source = (value: unknown): boolean => localSource(value) || object(value) && value.kind === "imported" && str(value.description)
+  && localSource(value.original) && ["current", "changed"].includes(String(value.sourceState));
+const provenance = (value: Record<string, unknown>) => value.importedFrom === undefined || importProvenanceSchema.safeParse(value.importedFrom).success;
 const fact = (value: unknown): value is MemoryFact => object(value) && str(value.id) && str(value.childId) && visibility(value.visibility) && visibility(value.intendedVisibility) &&
   ["candidate", "confirmed", "inactive"].includes(String(value.status)) && version(value.version) && str(value.createdBy) && nullable(value.confirmedBy) && nullable(value.confirmedAt) &&
-  str(value.key) && str(value.content) && source(value.source) && nullable(value.validUntil) && str(value.reason) && typeof value.applicable === "boolean" && ["current", "changed"].includes(String(value.sourceState));
+  str(value.key) && str(value.content) && source(value.source) && nullable(value.validUntil) && str(value.reason) && typeof value.applicable === "boolean" && ["current", "changed"].includes(String(value.sourceState))
+  && provenance(value) && (value.confirmationBasis === undefined || value.confirmationBasis === "imported_source");
 const topic = (value: unknown): value is MemoryTopic => object(value) && str(value.id) && str(value.childId) && visibility(value.visibility) && str(value.title) && str(value.note) &&
   ["pending", "answered", "snoozed", "resolved"].includes(String(value.status)) && version(value.version) && str(value.updatedBy) && str(value.updatedAt) &&
-  nullable(value.resumeAfter) && nullable(value.reopenReason) && nullable(value.reopenedFrom) && typeof value.mayAsk === "boolean";
+  nullable(value.resumeAfter) && nullable(value.reopenReason) && nullable(value.reopenedFrom) && typeof value.mayAsk === "boolean" && provenance(value);
 const summary = (value: unknown): value is ConversationSummary => object(value) && str(value.id) && str(value.childId) && version(value.version) && str(value.text) && str(value.createdAt) &&
   nullable(value.previousId) && Array.isArray(value.coveredMessageIds) && value.coveredMessageIds.every(str) && str(value.lastCoveredMessageId);
 function page<T>(value: unknown, guard: (value: unknown) => value is T, childId: string): MemoryPage<T> {

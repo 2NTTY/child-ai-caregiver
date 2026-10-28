@@ -76,6 +76,9 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
   avatars?: Pick<FirebaseAvatarApiPort, 'content'>;
 }) {
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), avatarData = createFirestoreAvatarData(options);
+  const memory = createFirestoreMemoryStore({ ...options, care: createFirestoreCareStore(options), chat: createFirestoreChatStore({
+    database: options.database, cipher: options.cipher, projectId: options.projectId, namespace: options.namespace,
+  }) });
   function version(binding: FirestoreAuthorityTransaction) {
     return firestoreDomainHash([binding.scope.ownerUserId, binding.scope.workspaceId, binding.scope.storageEpoch, binding.authorizationVersion, binding.changeSeq]);
   }
@@ -175,6 +178,9 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             const item = z.object({ id: z.uuid().optional(), childId: z.uuid(), version: z.number().int().positive() }).passthrough().parse(value);
             const kind = section === 'care_history' ? 'care' : section === 'profile_history' ? 'profile' : section === 'memory_fact_history' ? 'fact' : 'topic';
             if (await contentVisible(data, binding, kind, kind === 'profile' ? item.childId : z.uuid().parse(item.id), item.version)) items.push(value);
+          } else if (section === 'memory_facts' || section === 'memory_topics') {
+            const current = section === 'memory_facts' ? await memory.readFact(binding, context.id) : await memory.readTopic(binding, context.id);
+            if (current) items.push(current);
           } else if (suffix === 'voice_assets') {
             const voice=firestoreVoiceRowSchema.parse(value);
             if (['deleting','deleted'].includes(voice.state)) continue;
@@ -211,9 +217,6 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
               await createFirestoreSharedInputStore(options).read(binding, id); items.push(value);
             }
           } else if (section === 'summary_history') {
-            const memory = createFirestoreMemoryStore({ ...options, care: createFirestoreCareStore(options), chat: createFirestoreChatStore({
-              database: options.database, cipher: options.cipher, projectId: options.projectId, namespace: options.namespace,
-            }) });
             const summary = await memory.readSummaryRevision(binding, value);
             if (summary) items.push(summary);
           } else if (section === 'native_push_bindings') {

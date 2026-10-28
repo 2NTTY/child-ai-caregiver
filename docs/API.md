@@ -978,6 +978,10 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 <a id="memory-keyed-recall"></a>
 ### 記憶原項與有界召回
 
+**HANDOVER01 記憶來源接點（已實作，未部署；尚未開放整個記憶模組匯入）：**事實可返回 `source.kind=imported`，包含原來源描述、平面的 `original` 來源及匯出時的 `sourceState`，另附 `importedFrom`。外來記錄／訊息 ID 只供追溯，不作本地來源讀取或導航。`confirmationBasis=imported_source` 表示原來源確認者，不是目前用戶重新確認；本人之後確認或更正已確認事實，改用本地確認身份並移除該標記，保留來源鏈。普通新增不得自行提交 imported 來源；編輯只可原樣保留既有來源，或明確改選本地來源。Web／Android 共用表單及結果解析承接此契約。
+
+內部匯入沿原記憶服務交易、版本、唯一鍵、修訂與刪除義務；候選不變成已確認，終態話題不能因匯入新版原地重新啟動。話題原 `reopenedFrom` 留在來源鏈，不當成本地關聯。帳戶／文檔包匯出事實及話題時沿目前授權讀取並重新計算來源有效性。私人交代、摘要、來源歷史及統一匯入 worker 的記憶模組接線仍待後續完成；未接非空 section 維持明確拒絕，不能略過後回報全部成功。
+
 正式 Firestore 聊天工具沿同一業務服務：`read_memory_facts.keys` 可直接讀最多四個已知事實鍵／話題標題，返回目前有效性、原來源及話題終態；與 factId／afterId 互斥。未命中只表示這些正規化鍵未有目前指標，歷史與候選仍可按原 ID／搜尋核對。回覆超出工具容量時要求縮窄鍵，不靜默截斷成完整結果。
 
 `read_private_instructions.memoryKeys` 在 query 為空、afterId=null 時直接定位最多四項私人交代，返回 missingKeys 及 `legacyUnkeyedNotSearched:true`；舊無鍵或同義內容沿原有界搜尋。`save_private_instruction.memoryKey`／`revise_private_instruction.memoryKey` 是可選的穩定主題／事情鍵，非任意權限或事實確認。新保存遇同鍵、同標題及正文，返回原資源 ID／版本及新操作收據 `memoryOutcome:duplicate`，不新增內容版本、變更序號或提醒；同鍵不同內容回 `instruction_key_conflict`，須讀原項再帶 expectedVersion 更正。舊無鍵交代可在同一更新補鍵；已綁定鍵不能藉此更名覆蓋另一項。收據 outcome 的 created／updated／duplicate 與照護完成或外發無關。
