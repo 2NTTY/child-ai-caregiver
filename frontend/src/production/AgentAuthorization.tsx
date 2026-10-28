@@ -69,14 +69,14 @@ export function AgentAuthorization() {
           <AppButton label="明確重試原操作" variant="secondary" disabled={!mayRetryAuthorization(state)} onPress={actions.retryOriginal} />
         </View> : null}
       </SectionCard>
-      <SectionCard><SectionHeader title="本人私人備註" density="compact" subtitle="每頁 20 項，只供本人查看；來源是本人交代，不代表已確認健康事實。" />
+      <SectionCard><SectionHeader title="本人私人備註" density="compact" subtitle="每頁 20 項，只供本人查看；包括本人及匯入交代，不代表已確認健康事實。" />
         <AppTextField label="搜尋私人備註" value={state.queryDraft} maxLength={200} disabled={locked && !quietNotesRead || !!state.pending} editable={!locked && !state.pending} onChangeText={actions.setQuery} />
         <AppButton label="讀取私人備註" variant="quiet" loading={state.notesState === "loading"} disabled={locked || state.notesState === "denied" || state.pending?.kind === "policy"} preserveFocusWhenDisabled={quietNotesRead} onPress={() => actions.readNotes()} />
         {state.notesState === "failed" ? <Text accessibilityRole="alert" style={styles.warning}>{state.notes.length ? "未能重新核對私人備註，以下保留上次讀取的內容；刪除已停用。" : "未能讀取私人備註，暫時不能刪除。"}</Text> : null}
         {hasNotesSnapshot ? state.notes.length ? state.notes.map(note => <View key={note.id} style={styles.note}>
           <Text style={styles.body}>{note.title}</Text><Text selectable style={styles.body}>{note.text}</Text>
-          <Text style={styles.meta}>本人交代 · 版本 {note.version} · {new Date(note.updatedAt).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</Text>
-          <Text selectable style={styles.meta}>來源聊天：{note.sourceMessageId}</Text>
+          <Text style={styles.meta}>{note.provenance === "imported_source" ? "匯入交代" : "本人交代"} · 版本 {note.version} · {new Date(note.updatedAt).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</Text>
+          {note.provenance === "user_statement" && note.sourceMessageId ? <Text selectable style={styles.meta}>來源聊天：{note.sourceMessageId}</Text> : null}
           <AppButton label="刪除此私人備註" variant="quiet" disabled={!owner.authorizationOwner.mayDelete(note.id)} preserveFocusWhenDisabled={quietNotesRead} onPress={() => setDeleteSelection({ id: note.id, version: note.version, scopeKey })} />
         </View>) : state.online ? <EmptyListCard title="已載入頁面暫無符合搜尋的私人備註" detail={state.nextAfterId ? "仍有備註未載入，可繼續讀取。" : undefined} /> : <Text style={styles.meta}>私人備註尚未重新核對。</Text> : null}
         {state.nextAfterId ? <AppButton label="讀取下一頁" variant="quiet" disabled={locked || !!state.pending || state.notesState !== "ready"} preserveFocusWhenDisabled={quietNotesRead} onPress={() => actions.readNotes(true)} /> : null}
