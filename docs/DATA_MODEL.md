@@ -886,8 +886,8 @@ v1 匯入讀取器復用同一 ZIP verifier 及匯出 section 表，先核全部
 
 逐項匯入以目標儲存身份／孩子及來源 Server、帳戶、孩子、section、資源 ID 建立映射，不含名稱或包路徑。來源版本／hash 與最後寫入的目標版本分開保存；同來源同版本異內容列衝突，舊版略過，新版只在目標未被本地改動時直接更新。預設不復活已刪資料；明確覆蓋／恢復須綁定當前目標 ID／版本，care 的手動恢復建立新本地資源並更新映射，保留舊刪除屏障及來源鏈。每個原 opId 的 metadata 收據與映射、領域寫入同交易，查回不含原正文。所有匯入項記錄都保留原 batch／包／manifest、來源、目標及實際結果，不因略過或衝突而失去記錄；工作級失敗／取消及上載紀錄由批次台帳承接。
 
-首段內部實作使用加密 `handover_import_items`／`handover_import_mappings`，均屬目標孩子 scope；新收據也更新 changes cursor，令帳戶匯出不能跨新增紀錄靜默續讀。同 opId 只返回原 metadata，不能在相同操作上改參數或重新嘗試衝突。映射只在業務成功時推進，不因略過或衝突改成已同步。原 backup／scope 清理 registry 納入兩個 collection；還原重綁 epoch，保存原來源映射及收據，並仍由完整恢復流程重放刪除紀錄。帳戶 JSON 匯出的 `import_history`／`import_mappings` 是唯讀追溯資料，不是可再次執行的工作。正式批次取消／lease、上載、整包恢復及待辦新版更新尚未由這一段交付；未接更新明確回報 `task_update_not_connected`，不取消重建冒充更新。
+首段內部實作使用加密 `handover_import_items`／`handover_import_mappings`，均屬目標孩子 scope；新收據也更新 changes cursor，令帳戶匯出不能跨新增紀錄靜默續讀。同 opId 只返回原 metadata，不能在相同操作上改參數或重新嘗試衝突。映射只在業務成功時推進，不因略過或衝突改成已同步。原 backup／scope 清理 registry 納入兩個 collection；還原重綁 epoch，保存原來源映射及收據，並仍由完整恢復流程重放刪除紀錄。帳戶 JSON 匯出的 `import_history`／`import_mappings` 是唯讀追溯資料，不是可再次執行的工作。正式批次取消／lease、上載及整包恢復尚未交付。
 
-匯入 care／profile 以 `confirmationBasis=imported_source` 保留原確認標記；交易及還原核對真正匯入者的當前授權，不要求外部確認者是本地成員。本人之後更正改回 `explicit`，來源鏈仍保留。空 profile 不作清除目前概況的指令。匯入待辦以新資源／發生實例保存原狀態，負責人改為目前目標的有效身份；completed／cancelled／needs_review 不先建立一次 scheduled outbox。這些 prepared 接點尚不是完整匯入服務；來源映射、原操作收據與領域 commit 須在後續同一交易提交，不能把單次領域保存當成防重完成。
+匯入 care／profile 以 `confirmationBasis=imported_source` 保留原確認標記；交易及還原核對真正匯入者的當前授權，不要求外部確認者是本地成員。本人之後更正改回 `explicit`，來源鏈仍保留。空 profile 不作清除目前概況的指令。首次匯入待辦以新資源／發生實例保存原狀態，負責人改為目前目標的有效身份；completed／cancelled／needs_review 不先建立一次 scheduled outbox。同來源後續版本原位更新本地 task／occurrence，保留建立者、建立時間及原投遞證據；記錄 `import` 修訂、真正匯入者及本地 basisVersion，不挪用來源 terminalBasisVersion。來源變更不能繞過本地版本衝突或 unknown 停發；新 scheduled 版本只沿原任務 outbox／目前通知設定處理，舊 pending／leased 作廢。來源映射、收據、業務及 outbox 同交易；公開批次與共用匯入頁仍未完成。
 
 用戶備份／還原與伺服器災難恢復分開：後者仍隔離還原、重放持久刪除日誌、核對 Auth／撤權與附件 generation、更新 epoch、停止舊工作。手動差異還原預設保留目前較新修改／刪除；明確整批選擇覆蓋衝突或恢復已刪項時，保存新操作、來源映射及可追溯的新版本／身份，不抹去原刪除日誌，不放寬自動恢復的防復活。P5 才搬遷完整 Server 權威及工作，沿單主／不丟新寫入回退；P4 匯入不轉移舊執行權。

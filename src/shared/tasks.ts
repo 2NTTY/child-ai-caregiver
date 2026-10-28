@@ -38,7 +38,7 @@ export interface CareTask {
   occurrence: TaskOccurrence;
 }
 export interface TaskRevision {
-  task: CareTask; action: "create" | TaskChange["action"]; actorUserId: string;
+  task: CareTask; action: "create" | "import" | TaskChange["action"]; actorUserId: string;
   basisVersion: number; note: string; at: string;
 }
 export interface TaskAssignee { userId: string; name: string }
