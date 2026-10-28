@@ -1,0 +1,68 @@
+{
+  "package": "S12-W02 Android system share input",
+  "date": "2026-10-28",
+  "base": "fd5f43265bbe0be3db4a843a0305bfc3e12efdb8",
+  "branch": "codex/p4-android-share-input",
+  "status": "implemented; independent review fixes and targeted checks complete; Android JS exported; no new APK or deployment",
+  "reuse": "Existing Expo Sharing 57.0.21, Router, FileSystem and original draft/media services. Added only patch-package 8.0.1 with the pinned raw Android text-stream parser patch; no new backend/model interface.",
+  "checksBeforeInterruption": [
+    {
+      "command": "node --test frontend/scripts/incoming-share.test.mts",
+      "result": "First two cases passed; initial missing factory export reproduced before implementation."
+    },
+    {
+      "command": "node --test --test-name-pattern='failed native cleanup' frontend/scripts/incoming-share.test.mts",
+      "result": "One added case passed after reproducing old-account native input acceptance when clear failed. Pending native cleanup now runs before accepting input. Three inbox cases verified across these scoped runs, not a claimed single 3/3 rerun."
+    },
+    {
+      "command": "node --test frontend/scripts/incoming-share-target.test.mts",
+      "result": "One passed after missing-module RED; existing draft text/attachments, scope and late response rules."
+    },
+    {
+      "command": "node --test frontend/scripts/incoming-share-native.test.cjs",
+      "result": "One passed by native adapter implementer. Missing config and unsafe file/own-provider URI regressions RED then GREEN; fixture registration corrected before asserting the actual rejection defect. Scoped native TypeScript program had no diagnostics."
+    },
+    {
+      "command": "node --test frontend/scripts/incoming-share-ui.test.mjs",
+      "result": "Four passed by UI implementer using the existing no-DOM harness; identity, shared scope, draft preservation and route/startup wiring. Same-child selection explicitly preserves drafts."
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc --project frontend/tsconfig.json --noEmit --pretty false",
+      "result": "Exit 2 with four existing diagnostics: dashboard ref, PreparationWorkspace optional callbacks twice, task-knowledge-read-window previous inference. No full typecheck pass claimed."
+    }
+  ],
+  "recovery": "Codex startup snapshot cf53081 retained all 23 changed files. Restored without committing the automatic snapshot into the feature branch. The interrupted reviewer had no available final result; one replacement read-only review was requested, with no repeated product tests. Ignored dependency directories were also absent after restart; existing lock dependencies restored offline with scripts disabled. First new-package metadata query inherited offline mode and returned ENOTCACHED; explicit registry read succeeded. No product test batch was retried for this tooling issue.",
+  "notVerifiedOrDelivered": [
+    "Android intent-filter change requires a new signed APK and actual external-app share receipt; no EAS build or device acceptance performed.",
+    "No cloud, model, notification, backend migration, deployment or upload. One local Android JS export only; existing send/save services reused for unsent input.",
+    "iOS standard Share Extension, structured HANDOVER import and the remaining S12/P4 scope are pending.",
+    "D Agent PRs and P3/P5 boundaries remain unchanged."
+  ],
+  "review": {
+    "method": "One completed independent Sol read-only review after the interrupted reviewer was lost",
+    "findings": [
+      "Original attachments could be disposed without a share-screen leave guard",
+      "Child A-to-B-to-A could admit late preparation",
+      "Pinned upstream parser loses text/plain streams or mislabels text files as chat text"
+    ],
+    "resolution": "Reused the existing attachment guard; synchronous scope generation invalidates pending input permanently; standard pinned dependency patch prioritizes EXTRA_STREAM and classifies text streams as files. No deferred minor findings."
+  },
+  "afterReview": [
+    {
+      "command": "node --test --test-name-pattern='share screen shows|switching away|pinned raw Android' frontend/scripts/incoming-share-ui.test.mjs frontend/scripts/incoming-share-parser.test.cjs",
+      "result": "3/3 passed after all three failed for the reported defects. Parser check proves installed source/patch shape, not native compilation or URI grants."
+    },
+    {
+      "command": "node node_modules/patch-package/index.js --patch-dir frontend/patches --error-on-fail",
+      "result": "Pinned Expo Sharing 57.0.21 patch applied successfully. postinstall and both Docker dependency stages include the patch; no cloud build performed."
+    },
+    {
+      "command": "npm run build:android-ui --workspace frontend",
+      "result": "Exit 0; new route/provider linked into Android Hermes bundle index-d8a3be4567efb74ceeabc8c6249238a3.hbc (9.2 MB). JS export is not an APK/native compile or device acceptance."
+    },
+    {
+      "command": "git diff HEAD --check",
+      "result": "Passed before final evidence update; final staged check required before commit."
+    }
+  ]
+}

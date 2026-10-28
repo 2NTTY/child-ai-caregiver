@@ -4120,3 +4120,11 @@
 - 主模型處理原收據恢復、清單投影及契約；兩個限定 Sol 分別接照片與媒體元件，另一位 Sol 獨立唯讀 review。review 發現 pending 鎖擋原刪除重試，定向 RED→GREEN；另核實受理收據不是日誌完成，查回後沿原 opId 接續端點，不假報刪除完成。
 - 新增及既有 client／HTTP 投影檢查通過；型別只剩四項既存診斷。額外三個舊檢查受 jsdom 缺失及舊 fixture 缺 owner 阻擋，不安裝新依賴或重跑整批；失敗照存。精確範圍見[證據](artifacts/verification/P4_SHARED_ATTACHMENT_PAGES_20261027.json)。
 - 沒有 Web 建置、部署、雲端、模型、通知或設備驗收；共享上載／Agent、AUTH01 與完整 P4 尚未完成。D PR、P3 未驗項及 P5 保留。
+
+<a id="log-20261028-p4-android-share-input"></a>
+### 2026-10-28：P4 Android 系統分享首包
+
+- 從 `fd5f432` 復用 Expo Sharing 原生接收、Router 與原草稿／媒體服務，補本機有界收件箱及個人孩子選擇；不自動上載、抓網址、送聊天或呼叫模型。暫停修改由恢復快照 `cf53081` 接回，沒有重做已核接點。
+- 獨立 review 三項重要問題已修：原附件離頁守衛、孩子切換後不可復原的接收世代、固定 SDK 的 TXT／文字串流解析。最後一項使用 `patch-package` 8.0.1 標準補丁及原 license，沿安裝與 Docker／EAS 輸入，不另造 native module。
+- 三項回歸先紅後綠；原定向證據復用，本機 Android JS 匯出通過。前端四項原型別診斷保持，Kotlin／新 APK／外部 App chooser 與 URI grant 尚未實機核對；精確命令與工具失敗見[證據](artifacts/verification/P4_ANDROID_SHARE_INPUT_20261028.json)。
+- 零模型／通知／部署／付費資源，沒有改 D PR。新 intent filter 必須新 binary，不能以 OTA 冒充啟用；iOS extension、HANDOVER01 統一匯入及其他 P4 仍待完成。

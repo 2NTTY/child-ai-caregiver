@@ -65,7 +65,8 @@
           "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
           "source": "node_modules/expo-sharing/LICENSE"
         }
-      ]
+      ],
+      "localPatch": "frontend/patches/expo-sharing+57.0.21.patch"
     },
     {
       "name": "expo-image-picker",
@@ -1187,6 +1188,23 @@
           "source": "LICENSE"
         }
       ]
+    },
+    {
+      "name": "patch-package",
+      "version": "8.0.1",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": "https://github.com/ds300/patch-package",
+      "tarball": "https://registry.npmjs.org/patch-package/-/patch-package-8.0.1.tgz",
+      "integrity": "sha512-VsKRIA8f5uqHQ7NGhwIna6Bx6D9s/1iXlA1hthBVBEbkq+t4kXD0HHt+rJhf/Z+Ci0F/HCB2hvn0qLdLG+Qxlw==",
+      "files": [
+        {
+          "path": "licenses/patch-package/LICENSE",
+          "sha256": "655e803db63d51b48a040e4fafe8bb5b11c4433379686252996c5cf382455a3e",
+          "source": "node_modules/patch-package/LICENSE"
+        }
+      ],
+      "recordedOn": "2026-10-28"
     }
   ],
   "lockfileLicenseDeclarations": {
