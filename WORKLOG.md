@@ -4243,3 +4243,10 @@
 - 接續 #368／`8e86e28`，固定已驗來源、目標及模組，沿現有 background queue／lease，批次進度、領域修改與逐項收據同交易提交。取消／接續保留原批次及位置，舊工作世代與重複來源行不再推進；個人與班級使用同一範圍核對。備份 codec 保留進度但停止原批次，兩項 scope 清理索引只寫入定義。
 - 一條連貫合成流程通過；四入口型別圖零診斷。獨立 review 找到初檢後 lease 可在領域讀取期間過期，已在寫入前再核並補有實際失敗的回歸斷言。最初 fixture／型別錯誤及不精準的期限探針仍記錄於[證據](artifacts/verification/P4_HANDOVER_BATCHES_20261029.json)，沒有重跑前包或全量測試。
 - 尚未接公開上載、正式匯入 worker、HTTP／共用 UI、其他資料域與完整備份；批次只含無正文的追查 metadata，不以此聲稱正式匯入可用。零模型、通知、雲端、設備或部署；D 的工作未改動。
+
+<a id="log-20261029-p4-handover-uploads"></a>
+### 2026-10-29：P4 資料包上載與暫存清理
+
+- 接續 #369／`d085558`，沿原 authority、ZIP verifier、加密 immutable Storage 及工作台帳接預留／串流上載／查回／取消。Node 保留身份／同源／容量控制，資料包不整份緩衝；上載技術摘要與真正領域匯入分開，沒有新增套件或另一種資料格式。
+- reader 與真本機 HTTP 各一條流程通過，後者用首 17 bytes 入場後才供應剩餘內容證明串流，兼核身份、原操作、加密讀回及取消後遲到物件清理。獨立 review 找到 live 上載責任未合併至還原準備，新增一條實際 prepareFirebaseRestore red→green 流程關閉；保留快照後物件與帳戶的清理 scope，還原結果不可讀。原 EACCES／fixture／錯誤映射與型別修正見[證據](artifacts/verification/P4_HANDOVER_UPLOADS_20261029.json)。
+- 正式 runtime、maintenance、帳戶 erasure 及 backup registry 已接同一服務，索引只有定義。本批未部署、無模型／通知／設備或全量測試；公開領域匯入、共用畫面、其他領域／歷史、完整私人備份及簽章配置仍待接，不把上載後端當成 HANDOVER01 完成。

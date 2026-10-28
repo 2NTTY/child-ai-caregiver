@@ -15,10 +15,12 @@ export function createFirebaseWorkerServices(runtime: Awaited<ReturnType<typeof 
     const worker = runtime.reminders;
     const dispatcher = createFirestoreTaskDispatcher({ ...options, delivery });
     const maintenance = createFirestoreBackgroundMaintenance({ ...options, knowledge: runtime.knowledgeRefresh,
-      journal: runtime.journal, photos: runtime.photos, voices: runtime.voices, files: runtime.files, avatars: runtime.avatarCleanup, handover: runtime.handover, erasures: runtime.erasures, cleanup: runtime.erasureCleanup });
+      journal: runtime.journal, photos: runtime.photos, voices: runtime.voices, files: runtime.files, avatars: runtime.avatarCleanup, handover: runtime.handover, handoverUploads: runtime.handoverUploads, erasures: runtime.erasures, cleanup: runtime.erasureCleanup });
     const background = createFirestoreBackgroundQueue({ ...options, readControl: tx => authority.readControl(tx),
       transport: backgroundDelivery, signal: controller.signal,
       async execute(job, signal) {
+        if (job.kind === 'handover-upload-cleanup') return job.scope.ownerUserId === 'system:task-dispatch'
+          ? maintenance.process(job, signal) : runtime.handoverUploads.cleanup(job.scope, job.resourceId, signal);
         if (job.kind === 'handover-cleanup') return job.scope.ownerUserId === 'system:task-dispatch'
           ? maintenance.process(job, signal) : runtime.handover.cleanup(job.scope, job.resourceId, signal);
         if (['knowledge-check', 'photo-cleanup', 'voice-cleanup', 'file-cleanup', 'avatar-cleanup', 'scope-erasure'].includes(job.kind)) return maintenance.process(job, signal);

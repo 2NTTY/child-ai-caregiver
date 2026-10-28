@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-29）：[P4-HANDOVER01](#p4-handover01) 資料包匯入。**#360～#368 的格式、儲存、持久個人匯出、共用入口、驗包續讀、來源顯示及逐項映射／收據／待辦更新已合併未部署。[逐項交易](artifacts/verification/P4_HANDOVER_ITEMS_20261029.json)及[待辦更新](artifacts/verification/P4_HANDOVER_TASK_UPDATES_20261029.json)的有效證據保留；`codex/p4-handover-import-batches` 先接固定目標／來源的持久批次、逐項進度與 lease／取消同交易核對，再接上載、完整領域及共用入口。原確認者不冒稱目前用戶，待辦沿普通任務規則、不搬舊投遞或授權。匯出仍只支援本人孩子全期間；正式匯入、其餘領域、班級／期間、完整私人備份與簽章配置未完成。後端、共用入口、領域準備分開驗證，不把分段交付當作整包完成。
+**當前入口（2026-10-29）：[P4-HANDOVER01](#p4-handover01) 資料包匯入。**#360～#369 的格式、儲存、匯出、驗包、來源顯示、逐項保存及持久批次已合併未部署；[批次證據](artifacts/verification/P4_HANDOVER_BATCHES_20261029.json)保留 lease／取消／還原核對。`codex/p4-handover-import-upload` 接有界串流上載、加密暫存、驗包結果、到期／刪帳清理及原操作查回，再接正式匯入 worker、完整領域及共用入口。原確認者不冒稱目前用戶，待辦沿普通任務規則、不搬舊投遞或授權。匯出仍只支援本人孩子全期間；正式匯入、其餘領域、班級／期間、完整私人備份與簽章配置未完成。後端、共用入口、領域準備分開驗證，不把分段交付當作整包完成。
 
 **已合併未部署：**#358 班級解散與 #359 待辦身份接線，[清理](artifacts/verification/P4_CLASS_ERASURE_20261028.json)及[提醒證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)不重跑。選其他成員、班級 Agent 與外部通知仍待接續，不借管理員 key、不改 D PR。整個 CLASS01／P4、P3／P5 的未完成項不變。
 
