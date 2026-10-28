@@ -148,7 +148,9 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions &
       ...(m.teacherSpace?{teacherSpaceId:m.teacherSpace.id,teacherSpaceVersion:m.teacherSpace.version}:{}) };
     if (input.expectedBasis && firestoreDomainHash(input.expectedBasis) !== firestoreDomainHash(basis)) domainReject('sharing_scope_changed');
     return authority.withSharedSource(b, grant.source, { spaceId: s.id, basis: Object.freeze(basis), role: m.role, module: input.module,
-      modules: Object.freeze([...grant.modules]), mode: input.mode }, binding =>
+      modules: Object.freeze([...grant.modules]), mode: input.mode,
+      ...(s.kind === 'class' ? { classMember: Object.freeze({ userId, spaceId:s.id, membershipId:m.membershipId,
+        membershipScopeId:m.teacherSpace?.id ?? s.id }) } : {}) }, binding =>
       use(Object.freeze({ transaction: b.transaction, actorUserId: userId, scope: binding.scope, binding,
         role: m.role, module: input.module, includePrivate: false as const, basis: Object.freeze(basis) })));
   }

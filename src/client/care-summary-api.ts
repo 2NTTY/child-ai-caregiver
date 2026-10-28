@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { importProvenanceSchema } from '../shared/import-provenance.ts';
 import { CARE_KINDS } from "../shared/care.ts";
 import {
   preparationInput, summaryQuery, type CareSummary, type PreparationInput, type SummaryQuery, type VisitPreparation,
@@ -42,6 +43,7 @@ const age = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("approximate"), rawValue: z.string(), unit: z.enum(["days", "weeks", "months", "years"]), asOf: day }).strict(),
 ]);
 const profile = z.object({
+  confirmationBasis: z.enum(['explicit', 'imported_source']).optional(), importedFrom: importProvenanceSchema.optional(),
   childId: z.uuid(), version,
   data: z.object({
     age, dueDate: day.nullable(), gestationalWeeksRaw: z.string().nullable(), region: z.string().nullable(),
@@ -53,7 +55,7 @@ const profile = z.object({
 const record = z.object({
   id: z.uuid(), childId: z.uuid(), authorUserId: user, createdAt: dateTime, version: positiveVersion,
   text: z.string(), source: z.string(), confirmedBy: user, confirmedAt: dateTime, reason: z.string(),
-  confirmationBasis: z.enum(["explicit", "preauthorized_user_statement"]).optional(),
+  confirmationBasis: z.enum(["explicit", "preauthorized_user_statement", 'imported_source']).optional(), importedFrom: importProvenanceSchema.optional(),
   details: z.object({
     kind: careKind,
     quantity: z.object({ rawValue: z.string(), unit: z.string(), precision: z.enum(["exact", "approximate"]) }).strict().nullable(),
@@ -63,6 +65,7 @@ const record = z.object({
   }).strict(),
 }).strict();
 const task = taskValuesSchema.omit({ dueAt: true, timeZone: true }).extend({
+  importedFrom: importProvenanceSchema.optional(),
   id: z.uuid(), childId: z.uuid(), version: positiveVersion, createdBy: user, createdAt: dateTime, updatedAt: dateTime,
   occurrence: z.object({
     id: z.uuid(), dueAt: taskDueAtSchema, timeZone: taskTimeZoneSchema,

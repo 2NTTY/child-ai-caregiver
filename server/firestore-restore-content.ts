@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { KNOWLEDGE_EMBEDDING } from '../src/shared/knowledge.ts';
 import { FirestoreRestoreCodecError, type FirestoreRestoreDecoded, type FirestoreRestoreDomainKind } from './firestore-restore-codec.ts';
 import { firestoreTaskSchema, firestoreTaskRevisionSchema, firestoreReminderOutboxSchema, firestoreDomainHash } from './firestore-domain-data.ts';
-import { firestoreTaskReminderSchema, firestoreTaskReminderBatchSchema, firestoreTaskNotificationOutboxSchema } from './firestore-task-worker.ts';
+import { firestoreTaskReminderSchema, firestoreTaskReminderBatchSchema, firestoreTaskNotificationOutboxSchema, firestoreTaskRecipientBatchKey } from './firestore-task-worker.ts';
 import { firestoreFamilyDocumentSchemas } from './firestore-family-documents.ts';
 import { firestoreFamilyDocumentSnapshotSchemas, firestoreDocumentSnapshotSchema } from './firestore-family-document-snapshots.ts';
 import { assertDocumentCapacity } from './family-document-edits.ts';
@@ -63,8 +63,8 @@ export function assertFirestoreRestoreContent(records: readonly FirestoreRestore
     const reminder = parsed(firestoreTaskReminderSchema, record), expected = scope(record), historical = revision(reminder.taskId, reminder.taskVersion, expected);
     const batch = parsed(firestoreTaskReminderBatchSchema, domain('task-reminder-batch', reminder.batchId, { ...expected, childId: NIL }));
     const notification = parsed(firestoreTaskNotificationOutboxSchema, domain('task-notification-outbox', reminder.id, expected));
-    if (historical.occurrence.id !== reminder.occurrenceId || batch.category !== historical.kind || batch.recipientUserId !== expected.ownerUserId
-      || historical.kind === 'appointment' && batch.key !== reminder.occurrenceId
+    if (historical.occurrence.id !== reminder.occurrenceId || batch.category !== historical.kind || batch.recipientUserId !== historical.assigneeUserId
+      || historical.kind === 'appointment' && batch.key !== firestoreTaskRecipientBatchKey(expected, historical.assigneeUserId, reminder.occurrenceId)
       || notification.reminderId !== reminder.id || notification.taskId !== reminder.taskId || notification.taskVersion !== reminder.taskVersion
       || notification.occurrenceId !== reminder.occurrenceId || notification.createdAt !== reminder.createdAt) fail();
   }
@@ -74,7 +74,7 @@ export function assertFirestoreRestoreContent(records: readonly FirestoreRestore
     const reminder = parsed(firestoreTaskReminderSchema, domain('task-reminder', notification.reminderId, expected));
     if (historical.occurrence.id !== notification.occurrenceId || reminder.id !== notification.id || reminder.taskId !== notification.taskId
       || reminder.taskVersion !== notification.taskVersion || reminder.occurrenceId !== notification.occurrenceId
-      || reminder.createdAt !== notification.createdAt || notification.recipientUserId !== expected.ownerUserId) fail();
+      || reminder.createdAt !== notification.createdAt || notification.recipientUserId !== historical.assigneeUserId) fail();
   }
 
   const snapshotChunks = new Map<string, FirestoreRestoreDecoded[]>();

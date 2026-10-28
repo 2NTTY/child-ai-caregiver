@@ -19,6 +19,7 @@ const loaded = { exports: {} };
 // Actual component, React, RHF and Zod. Only visual controls and production boundary are synthetic.
 new Function('require', 'module', 'exports', code)(name => {
   if (name.endsWith('/ProductionProvider')) return { useProduction: () => snapshot };
+  if (name === './HandoverControls') return { HandoverControls: () => null };
   if (name.endsWith('/file-export')) return { exportText() { throw new Error('Not part of this test'); } };
   if (name === 'react-native') return { StyleSheet: { create: x => x }, View: p => e('div', {}, p.children) };
   if (name === 'react-native-paper') return { Text: p => e('p', { role: p.accessibilityLiveRegion ? 'status' : undefined }, p.children) };
