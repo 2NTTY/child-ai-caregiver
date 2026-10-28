@@ -282,7 +282,7 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
     });
   }
   async function eraseForScope(scope: WorkRecoveryScope, id: string, intent: FirebaseErasureIntent, proof: FirebaseErasureDescriptor) {
-    if (!['child-delete', 'account-delete'].includes(intent.type) || !erasureCoversVoice(intent, scope, id)
+    if (!['child-delete', 'account-delete', 'class-delete'].includes(intent.type) || !erasureCoversVoice(intent, scope, id)
       || firestoreDomainHash(await options.journal.read(intent, proof)) !== firestoreDomainHash(intent)) domainReject('voice_delete_binding', 503);
     const exists = await options.database.runTransaction(async tx => {
       const snapshot = await tx.get(ref(id)); if (!snapshot.exists) return false;

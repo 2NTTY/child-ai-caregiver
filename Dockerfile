@@ -3,6 +3,7 @@ FROM node:24.19.0-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY frontend/package.json ./frontend/package.json
+COPY frontend/patches ./frontend/patches
 RUN npm install --global npm@11.8.0 --no-audit --no-fund \
     && npm ci --no-audit --no-fund
 
@@ -50,6 +51,7 @@ ENV NODE_ENV=production \
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY frontend/package.json ./frontend/package.json
+COPY frontend/patches ./frontend/patches
 RUN npm install --global npm@11.8.0 --no-audit --no-fund \
     && npm ci --omit=dev --no-audit --no-fund \
     && npm cache clean --force

@@ -1,0 +1,53 @@
+{
+  "package": "P4-CLASS01 roster and shared management UI slice",
+  "date": "2026-10-28",
+  "base": "5536d99957fd69c53ff839bd43c8c46bb6ab4bbe",
+  "environment": "Node 24, serial synthetic Firestore, actual authority/store/HTTP/client; no cloud, model, notification or device calls",
+  "checks": [
+    {
+      "name": "50-child class control through the real API client",
+      "command": "node --experimental-test-module-mocks --test tests/class-control.test.ts",
+      "red": "Creating kind=class rejected invalid_input400 by the previous client contract",
+      "green": "1/1 passed",
+      "coverage": ["class create", "50 separate canonical children including repeated names", "20-entry roster pagination", "query-bound search continuation", "family list compatibility", "original operation replay and lookup", "version conflict", "outsider and viewer rejection", "revocation and redacted receipt"]
+    },
+    {
+      "name": "Affected existing family control compatibility",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='shared space control lists are bounded' tests/firestore-sharing.test.ts",
+      "result": "1/1 passed; no unrelated sharing suites rerun"
+    },
+    {
+      "name": "Affected server, shared contract and client TypeScript graph",
+      "method": "TypeScript compiler API using tsconfig.server.json, roots firestore-sharing, sharing-control-api, sharing-control, sharing-api, class-control.test",
+      "result": "0 affected diagnostics; 0 dependency diagnostics"
+    },
+    {
+      "name": "Shared class controller with original unknown operation and identity cleanup",
+      "command": "node --test --test-name-pattern='class management' frontend/src/production/sharing-controller.test.mts",
+      "result": "1/1 passed by the bounded frontend implementer; main reviewed the test and changed paths",
+      "priorFailures": ["RED: class list route was not wired", "Node strip-only rejected a parameter property; replaced with normal field assignment"],
+      "coverage": ["mode-specific list", "original add receipt after lost response", "empty filtered page with continuation", "new query resets cursor", "cross-kind invitation remains a success", "late response rejected after identity change"]
+    },
+    {
+      "name": "Affected existing family controller compatibility",
+      "command": "node --test --test-name-pattern='sharing management keeps original' frontend/src/production/sharing-controller.test.mts",
+      "result": "1/1 passed"
+    },
+    {
+      "name": "Frontend affected TypeScript graph",
+      "result": "No new diagnostics. Two pre-existing diagnostics remain: dashboard _layout.tsx:50 TS2322 Pressable ref; task-knowledge-read-window.ts:14 TS7022. HEAD overlay of the only changed diagnostic file reproduces the same results. This is not a clean whole-project typecheck."
+    },
+    {
+      "name": "Web export including the new classes route",
+      "command": "npm 11.8.0 run build:web",
+      "result": "Passed; final export includes /(dashboard)/classes after the review copy correction",
+      "toolFailure": "Initial offline npx lookup used the sandbox cache and returned ENOTCACHED before build. Reused the existing pinned npm 11.8.0 installation directly; no dependency installation."
+    },
+    {
+      "name": "Independent review and diff checks",
+      "result": "Sol readonly whole-slice review found one misleading empty-list message when another page exists. Main changed the presentation to indicate continuation, inspected the condition and rebuilt Web; no new test for this reversible copy condition. git diff --check passed. No other actionable findings in reviewed scope."
+    }
+  ],
+  "pending": ["teacher-space association and detachment", "class background authority and physical dissolution cleanup", "true Firestore competition", "deployment and device acceptance"],
+  "limits": "This slice does not complete CLASS01 or P4. Reuses P4_CLASS_STORAGE_20261028.json; no repeated storage/restore acceptance. No full test suite or Computer Use."
+}

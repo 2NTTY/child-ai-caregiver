@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { sharedSpaceViewSchema, sharedSpacePageSchema, sharedMemberPageSchema, sharedGrantPageSchema, sharedInvitePageSchema, sharedChildViewSchema,
-  sharingCommandSchema, sharingOperationSchema, type SharingCommand, type SharingOperation } from "../shared/sharing-control.ts";
+  sharingCommandSchema, sharingOperationSchema, classRosterQuerySchema, type SharingCommand, type SharingOperation } from "../shared/sharing-control.ts";
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
 
 export class SharingApiError extends Error {
@@ -38,12 +38,20 @@ export function createSharingApi(baseUrl = "", fetcher: typeof fetch = fetch) {
   }
   async function page<T>(schema: z.ZodType<{ items: T[]; nextCursor: string | null }>, path: string, userId: string, signal: AbortSignal, cursor?: string) {
     if (cursor !== undefined && (!cursor || cursor.length > 8192)) throw new SharingApiError(400, "invalid_input");
-    const result = checked(schema, await request(path + (cursor === undefined ? "" : "?" + new URLSearchParams({ cursor })), userId, signal));
+    const result = checked(schema, await request(path + (cursor === undefined ? "" : (path.includes('?') ? '&' : '?') + new URLSearchParams({ cursor })), userId, signal));
     if (result.nextCursor === "" || cursor !== undefined && result.nextCursor === cursor) throw new SharingApiError(0, "sharing_response_invalid");
     return result;
   }
   return {
     spaces: (userId: string, signal: AbortSignal, cursor?: string) => page(sharedSpacePageSchema, "", userId, signal, cursor),
+    classes: (userId: string, signal: AbortSignal, cursor?: string) => page(sharedSpacePageSchema, '/classes', userId, signal, cursor),
+    teachers: (userId: string, signal: AbortSignal, cursor?: string) => page(sharedSpacePageSchema, '/teachers', userId, signal, cursor),
+    teacherClasses: (spaceId:string,userId:string,signal:AbortSignal,cursor?:string) =>
+      page(sharedSpacePageSchema,'/teachers/'+identifier(spaceId)+'/classes',userId,signal,cursor),
+    roster(spaceId: string, userId: string, signal: AbortSignal, cursor?: string, query = '') {
+      const parsed = classRosterQuerySchema.safeParse(query); if (!parsed.success) throw new SharingApiError(400, 'invalid_input');
+      return page(sharedGrantPageSchema, '/' + identifier(spaceId) + '/roster?' + new URLSearchParams({query:parsed.data}), userId, signal, cursor);
+    },
     async space(spaceId: string, userId: string, signal: AbortSignal) {
       const space = checked(sharedSpaceViewSchema, await request("/" + identifier(spaceId), userId, signal));
       if (space.id !== spaceId) throw new SharingApiError(0, "sharing_response_invalid"); return space;

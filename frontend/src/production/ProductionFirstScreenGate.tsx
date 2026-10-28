@@ -31,7 +31,7 @@ export function ProductionFirstScreenGate({ width, launch, children }: { width: 
   const report = useCallback((value: Report) => {
     if (value.key === currentKey.current) setReadiness(current => current?.key === value.key && current.state === value.state ? current : value);
   }, []);
-  const state = pathname === "/admin" ? (recordsState.auth === "checking" ? "loading" : "ready")
+  const state = pathname === "/share" ? "ready" : pathname === "/admin" ? (recordsState.auth === "checking" ? "loading" : "ready")
     : sharedChild.target && account.gate==='ready' ? readiness?.key===key?readiness.state:'loading'
     : productionStartupReadiness(recordsState, scopeKey, readiness?.key === key && (!settingsActive || activeSection) ? readiness.state : "loading");
   const retryRef = useRef<{ key: string; retry(additional?: readonly string[]): void } | null>(null);
