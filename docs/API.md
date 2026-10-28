@@ -1147,7 +1147,11 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 
 **家庭管理接口：**`GET /api/shared-spaces` 讀本人活動空間；`GET /:spaceId` 讀目前角色及空間版本，`GET /:spaceId/{members|shares|invitations}` 分頁讀控制資料，邀請列表僅限管理員。每次最多檢查 20 筆，`nextCursor` 不透明並綁本人／儲存世代及列表種類；空間子列表亦綁空間版本，變更後重新讀取。不返回內部儲存 scope、密文、私人聊天或邀請 token；分享列表只含仍有效的孩子稱呼、模組及撤回資格。稱呼是辨識已分享孩子的必要標籤，不授予其餘 profile 內容。
 
-`POST /api/shared-spaces/commands` 使用共用 `SharingCommand`：建立家庭、發出／接受／撤回邀請、設定／撤回模組、角色／撤權、提出／接受轉交、退出及解散。沿原服務交易核對角色、版本及原 `operationId`，不複製權限或另建身份系統；教師空間建立留 CLASS01。CLASS01 的內部 `class` 儲存類型及名冊建立方法尚未開放至此 HTTP 契約，舊列表不投影該類型；須連同班級 owner／畫面及背景身份接線才開放，不能直接把 enum 放寬便宣稱班級可用。邀請 token 只在原發出操作的回應／有權查回中提供，由管理員自行傳送，不自動寄信。`GET /api/shared-spaces/operations/:operationId` 回 `{operation}`，不存在為 null；逾時先查原操作，仍不存在才可重送同一指令／ID，不能換 ID。查回再核目前成員資格，邀請 token 另核目前管理員；撤權／解散後只返回原操作身份、動作及 `redacted=true`，不回舊空間內容或 token，效果已提交而不重做。退出／解散只保留無正文終態收據。提交成功後的結果查回失敗仍屬 unknown，不能按 HTTP 4xx 一概斷言從未提交。
+`POST /api/shared-spaces/commands` 使用共用 `SharingCommand`：建立家庭／獨立班級、發出／接受／撤回邀請、設定／撤回個人模組分享、角色／撤權、提出／接受轉交、退出及解散家庭。沿原服務交易核對角色、版本及原 `operationId`，不複製權限或另建身份系統；教師空間建立與班級解散清理仍留 CLASS01 後續，班級解散目前明確回 `class_dissolution_unavailable`。邀請 token 只在原發出操作的回應／有權查回中提供，由管理員自行傳送，不自動寄信。`GET /api/shared-spaces/operations/:operationId` 回 `{operation}`，不存在為 null；逾時先查原操作，仍不存在才可重送同一指令／ID，不能換 ID。查回再核目前成員資格，邀請 token 另核目前管理員；撤權／解散後只返回原操作身份、動作及 `redacted=true`，不回舊空間內容、孩子 ID 或 token，效果已提交而不重做。退出／解散只保留無正文終態收據。提交成功後的結果查回失敗仍屬 unknown，不能按 HTTP 4xx 一概斷言從未提交。
+
+**獨立班級名冊（接線中，尚未部署）：**`GET /api/shared-spaces/classes` 分頁讀本人的活動班級；原 `/api/shared-spaces` 家庭列表不混入新類型。建立沿 `create` 的 `kind=class`，`addClassChild` 帶班級 ID、`expectedVersion`、原 `operationId` 及孩子稱呼，直接建立該班權威孩子，毋須先建教師空間。成功收據另回 `childId`，查回重核孩子及目前權限；已不在目前資料中的結果只回遮蔽收據，不從舊收據復活。這與匯入包不同，不按同名稱呼自動合併。
+
+`GET /api/shared-spaces/:spaceId/roster?query=…&cursor=…` 復用分享列表 DTO，班級孩子不提供撤回個人分享（`canWithdraw=false`）。每頁最多核對 20 個本班項目，搜尋稱呼使用 NFKC／大小寫正規化後的包含匹配；正文仍加密，不建明文姓名索引。游標綁操作者、儲存世代、班級版本及已正規化查詢，不能跨範圍或換條件續讀。零筆命中而有 `nextCursor` 只代表這頁沒有命中，畫面須提供續讀並明示搜尋未完；無游標才可說沒有更多結果。每頁重新核角色、孩子狀態及原權威稱呼，不從舊 roster 副本讀取。教師空間關係、班級背景工作與清理未接通前，不將本段當完整 CLASS01／正式交付。
 
 以上讀寫均核已登入身份及 `x-expected-user-id`，寫入沿既有 Web 同源／原生 transport；回應前再核身份並 `no-store`。家庭管理不依賴已選孩子，退出頁面不丟失同一身份的未知操作；切身份後清理本機草稿、token 與遲到結果。共享原件選擇不自動切換私人聊天或擴大目前頁面的資料範圍。
 
