@@ -2,9 +2,14 @@ import { z } from 'zod';
 import { resolveApiBaseUrl } from '../config/api-base-url.ts';
 import { handoverCancelCommandSchema, handoverExportCommandSchema, handoverExportPageSchema, handoverExportViewSchema,
   type HandoverExportCommand, type HandoverExportView } from '../shared/handover-jobs.ts';
+import { handoverUploadCommandSchema, handoverUploadViewSchema, type HandoverUploadCommand, type HandoverUploadView } from '../shared/handover-uploads.ts';
+import { handoverImportCommandSchema, handoverImportControlSchema, handoverImportViewSchema,
+  type HandoverImportCommand, type HandoverImportView } from '../shared/handover-imports.ts';
 
 type CancelCommand = z.infer<typeof handoverCancelCommandSchema>;
 type ExportPage = z.infer<typeof handoverExportPageSchema>;
+type ImportControl = z.infer<typeof handoverImportControlSchema>;
+type RequestOptions = { collection?: 'packages' | 'package-uploads' | 'package-imports'; rawBody?: boolean; timeoutMs?: number };
 export interface HandoverApi {
   setIdentity(userId: string | null): void;
   create(userId: string, command: HandoverExportCommand, signal: AbortSignal): Promise<HandoverExportView>;
@@ -14,6 +19,14 @@ export interface HandoverApi {
   reconcile(userId: string, id: string, signal: AbortSignal): Promise<HandoverExportView>;
   download<T>(userId: string, id: string, expectedBytes: number, signal: AbortSignal,
     consume: (response: Response, isCurrent: () => boolean) => Promise<T>): Promise<T>;
+  reserveUpload(userId: string, command: HandoverUploadCommand, signal: AbortSignal): Promise<HandoverUploadView>;
+  getUpload(userId: string, id: string, signal: AbortSignal): Promise<HandoverUploadView>;
+  cancelUpload(userId: string, id: string, command: CancelCommand, signal: AbortSignal): Promise<HandoverUploadView>;
+  uploadContent(userId: string, id: string, body: BodyInit, signal: AbortSignal): Promise<HandoverUploadView>;
+  createImport(userId: string, command: HandoverImportCommand, signal: AbortSignal): Promise<HandoverImportView>;
+  getImport(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportView>;
+  cancelImport(userId: string, id: string, command: ImportControl, signal: AbortSignal): Promise<HandoverImportView>;
+  resumeImport(userId: string, id: string, command: ImportControl, signal: AbortSignal): Promise<HandoverImportView>;
 }
 export class HandoverApiError extends Error {
   readonly status: number; readonly code: string;
@@ -31,7 +44,7 @@ function identifier(value: string) {
 }
 
 export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): HandoverApi {
-  const base = resolveApiBaseUrl(baseUrl), api = (base.endsWith('/api') ? base : base + '/api') + '/account/packages';
+  const base = resolveApiBaseUrl(baseUrl), api = (base.endsWith('/api') ? base : base + '/api') + '/account';
   let identity: string | null = null, generation = 0;
   const active = new Set<AbortController>();
   function setIdentity(userId: string | null) {
@@ -40,7 +53,7 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
     for (const controller of active) controller.abort(); active.clear();
   }
   async function request<T>(userId: string, path: string, signal: AbortSignal, body: unknown, accept: string, timeoutMs: number,
-    consume: (response: Response, isCurrent: () => boolean) => Promise<T>): Promise<T> {
+    consume: (response: Response, isCurrent: () => boolean) => Promise<T>, options: RequestOptions = {}): Promise<T> {
     if (typeof userId !== 'string' || !userId || userId.length > 256) throw new HandoverApiError(400, 'invalid_input');
     if (identity !== userId) throw new HandoverApiError(409, 'session_changed');
     const ticket = generation, controller = new AbortController();
@@ -57,9 +70,9 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
     try {
       const pending = (async () => {
         if (!isCurrent()) throw failure();
-        response = await fetcher(api + path, { method: body === undefined ? 'GET' : 'POST', credentials: 'include', cache: 'no-store',
-          headers: { Accept: accept, 'x-expected-user-id': userId, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
-          ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: controller.signal });
+        response = await fetcher(api + '/' + (options.collection ?? 'packages') + path, { method: body === undefined ? 'GET' : 'POST', credentials: 'include', cache: 'no-store',
+          headers: { Accept: accept, 'x-expected-user-id': userId, ...(body === undefined ? {} : { 'Content-Type': options.rawBody ? 'application/zip' : 'application/json' }) },
+          ...(body === undefined ? {} : { body: options.rawBody ? body as BodyInit : JSON.stringify(body) }), signal: controller.signal });
         if (!isCurrent()) { release(); throw failure(); }
         if (!response.ok) {
           let code = 'handover_unavailable';
@@ -83,15 +96,21 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
       controller.signal.removeEventListener('abort', onAbort); release();
     }
   }
-  function json<T>(userId: string, path: string, signal: AbortSignal, schema: z.ZodType<T>, body?: unknown, matches?: (value: T) => boolean): Promise<T> {
-    return request(userId, path, signal, body, 'application/json', 20_000, async response => {
+  function json<T>(userId: string, path: string, signal: AbortSignal, schema: z.ZodType<T>, body?: unknown, matches?: (value: T) => boolean,
+    options: RequestOptions = {}): Promise<T> {
+    return request(userId, path, signal, body, 'application/json', options.timeoutMs ?? 20_000, async response => {
       let value: unknown;
       try { value = await response.json(); } catch { throw invalidResponse(); }
       const result = checked(schema, value); if (matches && !matches(result)) throw invalidResponse(); return result;
-    });
+    }, options);
   }
   async function view(userId: string, id: string, signal: AbortSignal, suffix = '', body?: unknown) {
     return json(userId, '/' + identifier(id) + suffix, signal, handoverExportViewSchema, body, result => result.id === id);
+  }
+  async function resourceView<T extends { id: string }>(collection: RequestOptions['collection'], schema: z.ZodType<T>, userId: string,
+    id: string, signal: AbortSignal, suffix = '', body?: unknown, options: Pick<RequestOptions, 'rawBody' | 'timeoutMs'> = {}) {
+    return json(userId, '/' + identifier(id) + suffix, signal, schema, body, result => result.id === id,
+      { collection, ...options });
   }
   return {
     setIdentity,
@@ -111,6 +130,33 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
       return view(userId, id, signal, '/cancel', parsed.data);
     },
     reconcile: (userId, id, signal) => view(userId, id, signal, '/reconcile', {}),
+    async reserveUpload(userId, input, signal) {
+      const parsed = handoverUploadCommandSchema.safeParse(input); if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
+      return json(userId, '', signal, handoverUploadViewSchema, parsed.data, result => result.id === parsed.data.opId, { collection: 'package-uploads' });
+    },
+    getUpload: (userId, id, signal) => resourceView('package-uploads', handoverUploadViewSchema, userId, id, signal),
+    async cancelUpload(userId, id, input, signal) {
+      const parsed = handoverCancelCommandSchema.safeParse(input); if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
+      return resourceView('package-uploads', handoverUploadViewSchema, userId, id, signal, '/cancel', parsed.data);
+    },
+    async uploadContent(userId, id, body, signal) {
+      if (body === undefined || body === null) throw new HandoverApiError(400, 'invalid_input');
+      return resourceView('package-uploads', handoverUploadViewSchema, userId, id, signal, '/content', body, { rawBody: true, timeoutMs: 300_000 });
+    },
+    async createImport(userId, input, signal) {
+      const parsed = handoverImportCommandSchema.safeParse(input); if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
+      return json(userId, '', signal, handoverImportViewSchema, parsed.data,
+        result => result.id === parsed.data.opId && result.uploadId === parsed.data.uploadId, { collection: 'package-imports', timeoutMs: 300_000 });
+    },
+    getImport: (userId, id, signal) => resourceView('package-imports', handoverImportViewSchema, userId, id, signal),
+    async cancelImport(userId, id, input, signal) {
+      const parsed = handoverImportControlSchema.safeParse(input); if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
+      return resourceView('package-imports', handoverImportViewSchema, userId, id, signal, '/cancel', parsed.data);
+    },
+    async resumeImport(userId, id, input, signal) {
+      const parsed = handoverImportControlSchema.safeParse(input); if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
+      return resourceView('package-imports', handoverImportViewSchema, userId, id, signal, '/resume', parsed.data, { timeoutMs: 300_000 });
+    },
     async download(userId, id, expectedBytes, signal, consume) {
       identifier(id);
       if (!Number.isSafeInteger(expectedBytes) || expectedBytes <= 0 || expectedBytes > 256 * 1024 * 1024) throw new HandoverApiError(400, 'invalid_input');
