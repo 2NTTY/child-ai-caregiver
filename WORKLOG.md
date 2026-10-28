@@ -4194,3 +4194,11 @@
 - 同一合成流程從正式 HTTP／worker 經 ZIP／加密／Storage 替身返回下載，涵蓋原操作、失聯上載只核原物件、隔離、取消、maintenance 清理及還原義務；1/1 通過。獨立本地串流 port 1/1，六入口型別圖零診斷，diff check 通過。未重跑已通過的 #360／#361；只有受影響流程因接線與 review 修正補驗。
 - review 找到舊快照遺失較新上載／清理工作、ready 包未持續核頭像兩項缺口；已合併 live 清理義務、保持原物件地址且禁下載，並保存及交易內重核 avatar basis。獨立覆核關閉。其餘失敗屬嚴格 content DTO、多一個 metadata 接點及合成 SDK fixture 缺項，根因／原證據見[核對記錄](artifacts/verification/P4_HANDOVER_JOBS_20261028.json)。
 - 一項複合索引與私密欄位排除只有定義，未套用雲端；零模型、通知、手機或部署。共用畫面、正式匯入、班級／期間、完整私人備份與簽章配置仍未完成；下一包接共用入口，不把本段當作 HANDOVER01 完成。
+
+<a id="log-20261028-p4-handover-ui"></a>
+### 2026-10-28：P4 Web／Android 共用資料包匯出入口
+
+- 接續 #362／`bb0d21e`，設定頁使用正式 ProductionOwner、身份及 client，選本人孩子／模組、背景狀態、下載及取消；原請求 unknown 先查同 ID，不另建操作。現有分批 JSON 下載保留，未冒稱完整備份／匯入已接。
+- 原 client 與 owner 兩條連貫合成流程各 1/1；五入口型別圖零診斷。Web 匯出成功後，review 找到 409 身份失效未清理、403 已刪孩子令請求鎖住兩項缺口，已以同一 owner 流程補紅綠並由獨立 reviewer 關閉；最終型別另核，不重跑前批後端、設備或完整套件。[分層證據](artifacts/verification/P4_HANDOVER_UI_20261028.json)。
+- Android 復用已裝 Expo FileSystem 的 writableStream 與系統分享，完整長度核對後才交付；Web 使用有界 Blob，未宣稱全部瀏覽器都落磁碟。原生實機／視覺及雲端交付待驗；沒有新增依賴、模型、通知、GCP 修改或 OTA。
+- 下一段接統一匯入及領域服務、來源／衝突與完整資料範圍；目前只支持本人孩子全期間匯出，HANDOVER01、P4 及既有 P3 待驗均未完成。
