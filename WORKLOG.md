@@ -4265,3 +4265,10 @@
 - B 接續 #371／`894c281`，沿原 HandoverApi 增八個上載／匯入方法，Web／Android 共用身份 generation、abort、原操作及錯誤查回。ZIP body 不經 JSON，沒有第二套 transport 或自動重送。
 - 只補一條連貫 client 檢查，缺方法原紅→綠；獨立 review 的建立／接續 20 秒期限缺口亦經斷言原紅→綠，兩項讀包操作及上載改為 300 秒，查回／取消維持 20 秒。合併前沿用已核五入口型別圖，不重跑其他功能。[證據](artifacts/verification/P4_HANDOVER_CLIENT_IMPORT_20261029.json)。
 - 只交共用 transport，檔案選取、owner／畫面、完整領域／歷史及正式部署仍待續；未跑真服務、模型或手機，不動 D PR。
+
+<a id="log-20261029-p4-handover-source-history"></a>
+### 2026-10-29：P4 來源歷史、再次交接與刪除一致性
+
+- 接續 #372／`ef1e0d2`，verified reader 以綁定游標分目前值與來源歷史兩階段；記錄、概況及待辦舊版本保存在獨立來源紀錄，同交易提交逐項收據及批次進度。不偽造本地操作、不更改目前值或重啟舊提醒；再次交接保留原始證據及本地對應關係。
+- 共用當前權限、刪除及 history floor，來源紀錄可有界讀取／匯出；永久刪除遮蔽後分批清理，還原重放刪除紀錄。reader 一條、正式 account API／worker 與來源生命週期兩條局部流程通過，六入口型別圖零診斷；主模型及獨立 review 未發現剩餘確定 P1／P2。原紅測試、logical ID／restore metadata 修正及 fixture 失敗見[證據](artifacts/verification/P4_HANDOVER_SOURCE_HISTORY_20261029.json)。
+- 新索引只有定義，未部署、未做真雲端還原，無模型／通知／設備或全量測試。下一步接共用匯入 owner／畫面；其餘領域、班級／期間匯出、完整私人備份及簽章配置未完成，D 工作未改動。

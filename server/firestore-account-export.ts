@@ -25,6 +25,8 @@ import { firestoreNativeBindingSchema, firestoreNativeDeliverySchema } from './f
 import { firestorePushBindingSchema, firestorePushDeliverySchema } from './firestore-web-push.ts';
 import { firestoreTelegramBindingSchema, firestoreTelegramDeliverySchema } from './firestore-telegram.ts';
 import { firestoreContactRequestSchema, firestoreContactConsentSchema, firestoreContactGrantSchema } from './firestore-contact.ts';
+import { historyModule, sourceHistoryRecordSchema, sourceHistoryExport, sourceHistoryId, sourceHistoryMetadata } from './handover-history-records.ts';
+import { validateSourceHistory, sourceHistoryVisible } from './handover-source-history.ts';
 
 /** Product sections only. Auth credentials, model keys, protocol state and cost/admission ledgers are never exported. */
 const sections = {
@@ -64,7 +66,8 @@ const sections = {
 const global = new Set(['self_avatar', 'self_avatar_content', 'native_push_bindings', 'native_push_deliveries', 'notification_deliveries', 'manifest', 'account', 'children', 'notification_preferences', 'push_bindings', 'push_deliveries', 'telegram_bindings', 'telegram_deliveries']);
 const querySchema = z.object({ section: z.string().max(80), childId: z.uuid().optional(),
   scopeVersion: z.string().regex(/^[a-f0-9]{64}$/u).optional(), cursor: z.string().max(16000).optional() }).strict();
-const cursorSchema = z.object({ userId: z.string(), section: z.string(), childId: z.uuid().nullable(), scopeVersion: z.string(), after: z.string().max(2000) }).strict();
+const cursorSchema = z.object({ userId: z.string(), section: z.string(), childId: z.uuid().nullable(), scopeVersion: z.string(), after: z.string().max(2000),
+  phase: z.literal('source').optional() }).strict();
 export function createFirestoreAccountExport(options: FirestoreAuthorityOptions & {
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'content'>;
   voices?: Pick<FirestoreVoiceStore,'content'|'readMetadata'>;
@@ -92,6 +95,8 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
       const previous = input.cursor ? decode(input.cursor, owner) : null;
       if (previous && (previous.userId !== owner || previous.section !== section || previous.childId !== (input.childId ?? null)
         || previous.scopeVersion !== scopeVersion)) domainReject('invalid_export_cursor', 400);
+      const sourceModule = historyModule(section);
+      if (previous?.phase === 'source' && !sourceModule) domainReject('invalid_export_cursor', 400);
       let items: unknown[] = [], nextCursor: string | null = null;
       const photos: { id: string; version: number }[] = [], voices: {id:string;version:number}[]=[], files: {id:string;version:number}[]=[];
       let avatar: AvatarHeadRecord | null = null;
@@ -111,6 +116,23 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
         if (history.next) nextCursor = encode({ userId: owner, section, childId: null, scopeVersion, after: history.next });
       } else if (section === 'account') {
         items = [{ id: owner, email: binding.identityEmail, workspaceId: binding.scope.workspaceId, createdAt: binding.workspaceCreatedAt }];
+      } else if (previous?.phase === 'source') {
+        const tags = data.tags(binding.scope), limit = 10;
+        let query: Query = data.collection('handover_source_history').where('workspaceTag', '==', tags.workspaceTag)
+          .where('epochTag', '==', tags.epochTag).where('userTag', '==', tags.userTag).where('childTag', '==', tags.childTag)
+          .where('module', '==', sourceModule).orderBy(FieldPath.documentId()).limit(limit + 1);
+        if (previous.after) query = query.startAfter(previous.after);
+        const found = await binding.transaction.get(query);
+        for (const row of found.docs.slice(0, limit)) {
+          const value = validateSourceHistory(data.open('handover-source-history', row.get('historyId'), binding.scope, sourceHistoryRecordSchema, row));
+          const id = sourceHistoryId(binding.scope, value), metadata = sourceHistoryMetadata(value);
+          if (id !== row.get('historyId') || data.ref('handover_source_history', 'handover-source-history', id).path !== row.ref.path
+            || row.get('recordVersion') !== 1 || value.evidence.module !== sourceModule
+            || Object.entries(metadata).some(([key, expected]) => row.get(key) !== expected)) domainReject('export_scope_changed');
+          if (await sourceHistoryVisible(data, binding, value)) items.push(sourceHistoryExport(value));
+        }
+        if (found.size > limit) nextCursor = encode({ userId: owner, section, childId: input.childId ?? null, scopeVersion,
+          phase: 'source', after: found.docs[limit - 1].id });
       } else {
         const [suffix, kinds] = sections[section as keyof typeof sections], tags = data.tags(binding.scope);
         let query: Query = data.collection(suffix);
@@ -210,6 +232,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
         }
         if (found.size > limit) nextCursor = encode({ userId: owner, section, childId: input.childId ?? null, scopeVersion,
           after: suffix === 'photos' ? found.docs[limit - 1].get('sortKey') : found.docs[limit - 1].id });
+        else if (sourceModule) nextCursor = encode({ userId: owner, section, childId: input.childId ?? null, scopeVersion, phase: 'source', after: '' });
       }
       return { section, items, nextCursor, complete: nextCursor === null, scopeVersion, notices: ['歷史版本供追溯；不代表仍適用的最新建議。'], photos, voices, files, avatar };
     });

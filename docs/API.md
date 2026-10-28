@@ -1214,7 +1214,9 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 - 匯入批次內部契約固定已驗包、manifest、來源孩子到目標的映射、領域及差異處理；worker 必須持有目前持久 lease。每筆原操作與批次位置／計數同交易提交，取消或租約過期不能在檢查後再提交下一筆。取消／失敗保留已完成部分，明確接續沿同一批次及位置，只建立新的工作世代；操作紀錄保留取消／接續與失敗原因。恢復備份不自動續跑匯入，須重新驗包及現在權限。不接受 HTTP 客戶端自報已驗內容。
 - 上載接線（後端已接、未部署）：`POST /api/account/package-uploads` 以原 opId、檔名、大小及 SHA-256 預留，`POST /:id/content` 用 `application/zip` 有界串流交付；`GET /:id` 查原結果，`POST /:id/cancel` 帶原取消 opId／expectedVersion。最多 256 MiB／每帳戶四份未清理暫存；Node 沿原同源、session、expected-user 與兩個大型請求容量。先驗大小／hash／容器與範圍，再保存私人加密物件及技術驗證結果。上載不是匯入，不修改業務資料或啟動來源指令。失敗／取消亦留無正文紀錄；副作用未知只查原物件供清理，不重新上載或假稱成功。暫存沿既有 24 小時到期，帳戶刪除及隔離還原保留物件清理義務；無可信簽章只顯示實際狀態，後續可明示選擇繼續，不能偽稱內容正確。
 - 匯入接線（後端已接、未部署）：`POST /api/account/package-imports` 帶 `opId/uploadId/expectedUploadVersion/acceptedManifestSha256/targets/resolutions`；最多 100 個固定來源孩子映射，不接受來源身分、row、數量或 worker lease。Server 重新開啟相同不可變包，按目標推導涵蓋項數。`GET /:id` 查原批次；`POST /:id/cancel`、`/:id/resume` 帶 `opId/expectedVersion`，回同一批次／逐項計數，不披露儲存身份、lease 或原始正文。worker 每次最多 100 筆並保留期限空間；未完成沿原游標補喚醒，不新建匯入。每項交易重查上載版本／有效期及目前目標權限，來源取消不得在已下載檔案上繼續寫入。已提交原操作可在來源到期後查回，不重驗後重做。
-- 本段領域仍只有記錄／概況／待辦目前值；選入模組的非空歷史尚未接時留下 `failed/package_section_not_connected` 批次及實際項數，零領域寫入，不能默默跳過。完整歷史／其他領域、無包身份的驗證失敗紀錄、逐項結果畫面、班級／期間、完整私人備份與簽章配置仍待接；本段不代表完整用戶匯入已可用。恢復後的 interrupted 批次不自動續跑。
+- 記錄／概況／待辦模組先匯入目前值，再處理來源歷史；包內排列不改此順序。原始修訂保留來源作者及時間，另以 `yuyoufang-source-revision:1` 保存和匯出，不占本地修訂編號、不改現在值或重播提醒。缺少已匯入父資源、來源版本超過已保存現值或父資源已刪時留下逐項 conflict，不靜默棄掉歷史；同來源同版異內容亦列衝突。
+- `GET /api/account/package-imports/source-history?childId=…&module=care|profile|tasks&resourceId=…` 有界讀取來源歷史，選填 `spaceId`、`cursor`；每頁最多十項，游標綁操作者、目標、模組、儲存世代與目前授權／變更版本。本人或共享資料皆經同一授權服務；返回 `{items,nextCursor,complete}`，每項含本地目標及原始 evidence，不返回內部 opId 或儲存身份。讀取、JSON／ZIP 匯出均重核目前父資源；刪除／historyFloor 即時遮蔽正文。
+- 其他領域、無包身份的驗證失敗紀錄、逐項結果畫面、班級／期間匯出、完整私人備份與簽章配置仍待接；本段不代表完整用戶匯入已可用。恢復後的 interrupted 批次不自動續跑。上述後端尚未部署。
 - provider 連結在同流程取得必要同意，配置 Apple private relay 合法郵件來源；Google／Apple-only 重新驗證用其 provider，不要求密碼。註冊准入與家庭／教師空間資格分開。
 - P5 Server 能力／地址核對與憑據隔離另隨 S06-W04 擴充；資料副本匯入不會切換權威 Server、搬移執行授權或恢復舊投遞。普通登入及裝置撤銷不依賴已取消的配對端點。
 

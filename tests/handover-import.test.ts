@@ -15,6 +15,57 @@ import { writePersonalHandoverPackage } from '../server/handover-export.ts';
 import { writeHandoverArchive } from '../server/handover-archive.ts';
 import { openHandoverImport } from '../server/handover-import.ts';
 
+test('verified import section filters bind cursors while unfiltered reads retain their original order', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'handover-filter-')), childId = randomUUID(), scopeVersion = 'a'.repeat(64);
+  const selection = { childIds: [childId], modules: ['care', 'profile'] as ('care' | 'profile')[] };
+  const row = (id: string, version: number) => ({ id, childId, version });
+  const pages = [
+    { section: 'children', childId: null, scopeVersion, items: [{ id: childId, displayName: 'Synthetic child' }] },
+    { section: 'care_history', childId, scopeVersion, items: [row('care-history-1', 1), row('care-history-2', 2)] },
+    { section: 'profile_history', childId, scopeVersion, items: [row('profile-history', 1)] },
+    { section: 'care', childId, scopeVersion, items: [row('care-current-1', 3), row('care-current-2', 4)] },
+    { section: 'profile', childId, scopeVersion, items: [row('profile-current', 2)] },
+  ];
+  async function* entries() {
+    for (let index = 0; index < pages.length; index++) yield { path: `data/${index}.json`, mediaType: 'application/json', content: Buffer.from(JSON.stringify(pages[index])) };
+    yield { path: 'summary.md', mediaType: 'text/markdown', content: Buffer.from('Synthetic package') };
+  }
+  try {
+    const archive = await writeHandoverArchive({ directory, header: { format: 'yuyoufang-data', version: 1, packageId: randomUUID(), packageVersion: 1,
+      createdAt: '2026-10-29T01:00:00Z', purpose: 'handover', source: { serverId: 'https://source.example.test', accountId: 'source' },
+      selection: { ...selection, period: null } }, entries: entries(),
+      coverage: () => pages.map(page => ({ section: page.section, childId: page.childId, scopeVersion, items: page.items.length, complete: true as const })) });
+    const reader = await openHandoverImport({ path: archive.path });
+    try {
+      const request = { selection, acknowledgedManifestSha256: reader.manifestSha256 };
+      const current = await reader.readPage({ ...request, sections: ['care', 'profile'], limit: 1 });
+      assert.deepEqual(current.rows.map(item => item.value.id), ['care-current-1']); assert.equal(current.rows[0].source.path, 'data/3.json');
+      assert.ok(current.nextCursor);
+      const nextCurrent = await reader.readPage({ ...request, sections: ['profile', 'care'], cursor: current.nextCursor, limit: 1 });
+      assert.equal(nextCurrent.rows[0].value.id, 'care-current-2'); assert.equal(nextCurrent.rows[0].source.rowIndex, 1);
+      const history = await reader.readPage({ ...request, sections: ['care_history', 'profile_history'], limit: 1 });
+      assert.equal(history.rows[0].value.id, 'care-history-1'); assert.equal(history.rows[0].source.path, 'data/1.json'); assert.ok(history.nextCursor);
+      const nextHistory = await reader.readPage({ ...request, sections: ['profile_history', 'care_history'], cursor: history.nextCursor, limit: 1 });
+      assert.equal(nextHistory.rows[0].value.id, 'care-history-2'); assert.equal(nextHistory.rows[0].source.rowIndex, 1);
+      await assert.rejects(reader.readPage({ ...request, sections: ['care_history', 'profile_history'], cursor: current.nextCursor }), { code: 'invalid_package_cursor' });
+      await assert.rejects(reader.readPage({ ...request, sections: ['care', 'profile'], cursor: history.nextCursor }), { code: 'invalid_package_cursor' });
+      const allCurrent = await reader.readPage({ ...request, sections: ['care', 'profile'] });
+      assert.deepEqual(allCurrent.rows.map(item => item.value.id), ['care-current-1', 'care-current-2', 'profile-current']); assert.equal(allCurrent.nextCursor, null);
+      const allHistory = await reader.readPage({ ...request, sections: ['care_history', 'profile_history'] });
+      assert.deepEqual(allHistory.rows.map(item => item.value.id), ['care-history-1', 'care-history-2', 'profile-history']); assert.equal(allHistory.nextCursor, null);
+      const original = await reader.readPage({ ...request, limit: 1 }); assert.equal(original.rows[0].section, 'children'); assert.ok(original.nextCursor);
+      const originalHash = createHash('sha256').update(JSON.stringify({ childIds: [childId], modules: ['care', 'profile'] })).digest('hex');
+      assert.equal(original.nextCursor.selectionHash, originalHash);
+      assert.equal((await reader.readPage({ ...request, cursor: original.nextCursor, limit: 1 })).rows[0].value.id, 'care-history-1');
+      await assert.rejects(reader.readPage({ ...request, cursor: current.nextCursor }), { code: 'invalid_package_cursor' });
+      await assert.rejects(reader.readPage({ ...request, sections: ['care'], cursor: original.nextCursor }), { code: 'invalid_package_cursor' });
+      for (const sections of [[], ['care', 'care'], ['children'], ['tasks']]) await assert.rejects(reader.readPage({ ...request, sections }));
+      await assert.rejects(reader.readPage({ selection, sections: ['care'] }), { code: 'package_trust_acknowledgement_required' });
+      await assert.rejects(reader.readPage({ ...request, sections: ['care'], limit: 101 }), { code: 'invalid_package_limit' });
+    } finally { await reader.close(); }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
 test('verified import keeps source statements, binds paging and rejects inconsistent scope before handing rows to writers', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'handover-import-'));
   const fixture = serialFirestoreFixture(), options = { database: fixture.database,

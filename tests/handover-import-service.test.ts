@@ -19,7 +19,7 @@ import { writeHandoverArchive } from '../server/handover-archive.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { emptyCareDetails } from '../src/shared/care.ts';
 
-test('verified packages reach formal import worker, retain partial progress and reject unsupported coverage or cancelled sources', async t => {
+test('verified packages reach formal import worker, retain partial progress and import history before rejecting cancelled sources', async t => {
   const realNow = Date.now.bind(Date); let elapsed = 0, slowRead = false;
   t.mock.method(Date, 'now', () => realNow() + elapsed);
   const directory = await mkdtemp(join(tmpdir(), 'handover-runner-'));
@@ -65,8 +65,8 @@ test('verified packages reach formal import worker, retain partial progress and 
   async function upload(history = false) {
     const scopeVersion = 'a'.repeat(64), pages = [
       { section: 'children', childId: null, items: [{ id: sourceChild, displayName: 'Source child' }] },
+      { section: 'care_history', childId: sourceChild, items: history ? [originals[0]] : [] },
       { section: 'care', childId: sourceChild, items: originals },
-      { section: 'care_history', childId: sourceChild, items: history ? [{ childId: sourceChild, version: 1 }] : [] },
     ];
     async function* entries() { for (let i = 0; i < pages.length; i++) yield { path: `data/${i}.json`, mediaType: 'application/json',
       content: Buffer.from(JSON.stringify({ ...pages[i], scopeVersion })) }; yield { path: 'summary.md', mediaType: 'text/markdown', content: Buffer.from('Test') }; }
@@ -112,8 +112,17 @@ test('verified packages reach formal import worker, retain partial progress and 
     const repeated = await (await call('', command)).json(); assert.equal(repeated.state, 'completed');
     const blocked = await upload(true), blockedCommand = { ...command, opId: randomUUID(), uploadId: blocked.id,
       expectedUploadVersion: blocked.version, acceptedManifestSha256: blocked.preview!.manifestSha256 };
-    const failed = await (await call('', blockedCommand)).json(); assert.equal(failed.state, 'failed'); assert.equal(failed.error, 'package_section_not_connected');
-    assert.equal(failed.processedItems, 0); assert.equal(failed.totalItems, 3);
+    const withHistory = await (await call('', blockedCommand)).json(); assert.equal(withHistory.state, 'queued');
+    assert.equal(withHistory.processedItems, 0); assert.equal(withHistory.totalItems, 3);
+    for (let i = 0; i < 3; i++) { await worker.background.process(await nextDelivery()); elapsed += 2000; }
+    const histories = await service.get('recipient', blockedCommand.opId); assert.equal(histories.state, 'completed');
+    assert.deepEqual(histories.counts, { created: 1, updated: 0, conflict: 0, skipped: 2 });
+    const storedHistory = [...fixture.records].filter(([path]) => path.includes('_handover_source_history/'))
+      .map(([path, data]) => codec.decode({ path, data }).value as any);
+    assert.equal(storedHistory.length, 1);
+    const historyPage = await (await call('/source-history?' + new URLSearchParams({ childId: recipientChild, module: 'care', resourceId: storedHistory[0].resource.id }))).json();
+    assert.equal(historyPage.items[0].evidence.value.text, originals[0]!.text);
+    await assert.rejects(call('/source-history?' + new URLSearchParams({ childId: recipientChild, module: 'care', resourceId: storedHistory[0].resource.id }), undefined, 'other'));
     const revoked = await upload(), revokedCommand = { ...command, opId: randomUUID(), uploadId: revoked.id,
       expectedUploadVersion: revoked.version, acceptedManifestSha256: revoked.preview!.manifestSha256 };
     const before = [...fixture.records.keys()].filter(path => path.includes('_handover_import_items/')).length;

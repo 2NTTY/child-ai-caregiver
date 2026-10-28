@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { importProvenanceSchema } from './import-provenance.ts';
 
 const uuid = z.uuid(), hash = z.string().regex(/^[a-f0-9]{64}$/u);
 const count = z.number().int().nonnegative().max(2147483646);
@@ -34,3 +35,12 @@ export const handoverImportViewSchema = z.object({ id: uuid, version: count.posi
 }).strict();
 export type HandoverImportCommand = z.infer<typeof handoverImportCommandSchema>;
 export type HandoverImportView = z.infer<typeof handoverImportViewSchema>;
+export const handoverSourceRevisionSchema = z.object({ format: z.literal('yuyoufang-source-revision:1'), childId: uuid,
+  resource: z.object({ id: uuid, version: resourceVersion.positive() }).strict(),
+  evidence: z.object({ module: handoverImportSectionSchema, source: importProvenanceSchema,
+    value: z.record(z.string(), z.unknown()) }).strict(),
+}).strict();
+export const handoverSourceHistoryQuerySchema = z.object({ childId: uuid, spaceId: uuid.nullable().default(null),
+  module: handoverImportSectionSchema, resourceId: uuid, cursor: z.string().max(16000).optional() }).strict();
+export const handoverSourceHistoryPageSchema = z.object({ items: z.array(handoverSourceRevisionSchema).max(10),
+  nextCursor: z.string().max(16000).nullable(), complete: z.boolean() }).strict();

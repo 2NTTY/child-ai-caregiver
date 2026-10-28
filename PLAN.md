@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-29）：[P4-HANDOVER01](#p4-handover01) 資料包匯入。**#360～#371 的格式、儲存、匯出、驗包、來源顯示、逐項保存、持久批次、有界上載及正式匯入 worker 已合併未部署；[上載證據](artifacts/verification/P4_HANDOVER_UPLOADS_20261029.json)保留取消及還原清理核對。`codex/p4-handover-import-client` 接共用上載／匯入 transport，已有[證據](artifacts/verification/P4_HANDOVER_CLIENT_IMPORT_20261029.json)；下一段補歷史／完整領域及匯入畫面。已接後端：Server 推導來源與數量，每項提交重核上載及目標，有限批次沿原游標續讀；選入未接的資料域／歷史時整批留下失敗結果，不截斷冒稱完成。再補完整領域及共用畫面。原確認者不冒稱目前用戶，待辦沿普通任務規則、不搬舊投遞或授權。匯出仍只支援本人孩子全期間；完整匯入、其餘領域、班級／期間、完整私人備份與簽章配置未完成。後端、共用入口、領域準備分開驗證，不把分段交付當作整包完成。
+**當前入口（2026-10-29）：[P4-HANDOVER01](#p4-handover01) 資料包匯入。**#360～#372 的格式、儲存、匯出、驗包、來源顯示、逐項保存、持久批次、有界上載、正式匯入 worker 及共用 client 已合併未部署；[worker](artifacts/verification/P4_HANDOVER_RUNNER_20261029.json)／[client 證據](artifacts/verification/P4_HANDOVER_CLIENT_IMPORT_20261029.json)保留 review 修正。`codex/p4-handover-import-history` 已接記錄／概況／待辦的來源歷史，局部檢查及 review 完成，[證據](artifacts/verification/P4_HANDOVER_SOURCE_HISTORY_20261029.json)區分本地操作與來源版本、刪除遮蔽及合成還原；不改目前值或重播提醒。合併後接共用匯入畫面。Server 推導來源與數量，每項提交重核上載及目標，有限批次沿原游標續讀；未接資料仍明確失敗，不截斷冒稱完成。原確認者不冒稱目前用戶，待辦沿普通任務規則、不搬舊投遞或授權。匯出仍只支援本人孩子全期間；完整匯入、其餘領域、班級／期間、完整私人備份與簽章配置未完成。後端、共用入口、領域準備分開驗證，不把分段交付當作整包完成。
 
 **已合併未部署：**#358 班級解散與 #359 待辦身份接線，[清理](artifacts/verification/P4_CLASS_ERASURE_20261028.json)及[提醒證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)不重跑。選其他成員、班級 Agent 與外部通知仍待接續，不借管理員 key、不改 D PR。整個 CLASS01／P4、P3／P5 的未完成項不變。
 

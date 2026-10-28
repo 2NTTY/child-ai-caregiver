@@ -8,10 +8,14 @@ export async function handleHandoverImport(request: Request, owner: string, serv
   readJson: (request: Request) => Promise<unknown>, sameIdentity: () => Promise<void>) {
   const url = new URL(request.url), root = '/api/account/package-imports';
   const route = /^\/api\/account\/package-imports\/([0-9a-f-]{36})(?:\/(cancel|resume))?$/iu.exec(url.pathname);
-  if (url.search) domainReject('invalid_input', 400);
+  if (url.search && url.pathname !== root + '/source-history') domainReject('invalid_input', 400);
   const respond = async (result: unknown, status = 200) => { await sameIdentity(); return Response.json(result, { status,
     headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie, Authorization' } }); };
   try {
+    if (request.method === 'GET' && url.pathname === root + '/source-history') {
+      const entries = [...url.searchParams]; if (new Set(entries.map(([key]) => key)).size !== entries.length) domainReject('invalid_input', 400);
+      return respond(await service.history(owner, Object.fromEntries(entries)));
+    }
     if (request.method === 'POST' && url.pathname === root) return respond(await service.create(owner, await readJson(request), request.signal), 201);
     if (!route) domainReject('not_found', 404);
     const id = domainParse(z.uuid(), route[1]);
