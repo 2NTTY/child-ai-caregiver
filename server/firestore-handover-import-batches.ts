@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { FieldPath, type DocumentSnapshot, type Query } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { historyModule } from './handover-history-records.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
@@ -11,12 +12,14 @@ import { importBatchRequestSchema, importBatchSchema, importBatchControlSchema, 
   type HandoverImportBatchControl, type HandoverImportBatchRequest } from './handover-import-batch-records.ts';
 import type { HandoverImportRow } from './handover-import.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
+import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
 const controlSchema = z.object({ opId: z.uuid(), expectedVersion: z.number().int().positive().max(2147483646) }).strict();
 const stepSchema = z.object({ position: z.number().int().nonnegative(), cursor: z.string().min(1).max(16384).nullable(),
   nextCursor: z.string().min(1).max(16384).nullable() }).strict();
 const actorScope = (b: Binding): WorkRecoveryScope => ({ ...b.scope, childId: NIL });
+const listCursorSchema = z.object({ scope: z.string().regex(/^[a-f0-9]{64}$/u), after: z.string().regex(/^[a-f0-9]{64}$/u) }).strict();
 
 /** Internal verified-package coordinator. Public clients never supply verified rows, counts or worker leases. */
 export function createFirestoreHandoverImportBatches(options: FirestoreDomainOptions & { serverClock?: () => number;
@@ -25,9 +28,9 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
   const items = createFirestoreHandoverImportItems(options), clock = options.serverClock ?? Date.now;
   const at = () => new Date(clock()).toISOString();
   const ref = (owner: string, id: string) => data.ref('handover_import_batches', 'handover-import-batch', importBatchId(owner, id));
-  async function read(b: Binding, id: string) {
+  async function read(b: Binding, id: string, existing?: DocumentSnapshot) {
     domainParse(z.uuid(), id);
-    const scope = actorScope(b), snapshot = await b.transaction.get(ref(b.actorUserId, id));
+    const scope = actorScope(b), snapshot = existing ?? await b.transaction.get(ref(b.actorUserId, id));
     if (!snapshot.exists) domainReject('import_batch_not_found', 404);
     const job = data.open('handover-import-batch', importBatchId(b.actorUserId, id), scope, importBatchSchema, snapshot);
     if (!validImportBatch(job) || job.id !== id || job.version !== snapshot.get('recordVersion') || job.scope.ownerUserId !== b.actorUserId
@@ -105,6 +108,37 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
     });
   }
   return {
+    async list(owner: string, cursor?: string) {
+      let previous: z.infer<typeof listCursorSchema> | undefined;
+      if (cursor !== undefined) {
+        if (cursor.length > 2048) domainReject('invalid_cursor', 400);
+        try { previous = listCursorSchema.parse(JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'))); }
+        catch { domainReject('invalid_cursor', 400); }
+      }
+      return authority.runTransaction(owner, null, async b => {
+        const scope = actorScope(b), scopeHash = firestoreDomainHash(scope);
+        if (previous && previous.scope !== scopeHash) domainReject('invalid_cursor', 400);
+        let query: Query = data.collection('handover_import_batches');
+        for (const [key, value] of Object.entries(data.tags(scope))) query = query.where(key, '==', value);
+        query = query.orderBy(FieldPath.documentId()).limit(21);
+        if (previous) query = query.startAfter(previous.after);
+        const rows = (await b.transaction.get(query)).docs, page = rows.slice(0, 20);
+        const listed = await Promise.all(page.map(async row => {
+          const raw = row.data(), context = openRecoveryEnvelope({ ...options, locator: raw.recovery,
+            envelope: { family: 'domain', version: raw.version, recordVersion: raw.recordVersion, ciphertext: raw.ciphertext } }).context;
+          if (context.family !== 'domain' || context.kind !== 'handover-import-batch' || firestoreDomainHash(context.scope) !== scopeHash)
+            domainReject('import_batch_binding', 500);
+          let identity: [string, string];
+          try { identity = domainParse(z.tuple([z.literal(owner), z.uuid()]), JSON.parse(context.id), 'import_batch_binding', 500); }
+          catch { domainReject('import_batch_binding', 500); }
+          const expected = ref(owner, identity[1]);
+          if (row.id !== expected.id || row.ref.path !== expected.path) domainReject('import_batch_binding', 500);
+          return read(b, identity[1], row);
+        }));
+        return { items: listed, nextCursor: rows.length > 20
+          ? Buffer.from(JSON.stringify({ scope: scopeHash, after: page.at(-1)!.id })).toString('base64url') : null };
+      });
+    },
     async create(owner: string, raw: unknown, preflightError?: string) {
       const request = domainParse(importBatchRequestSchema, raw), fingerprint = firestoreDomainHash(request);
       if (preflightError) domainParse(z.string().regex(/^[a-z][a-z0-9_]{0,79}$/u), preflightError);

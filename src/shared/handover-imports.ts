@@ -35,6 +35,8 @@ export const handoverImportViewSchema = z.object({ id: uuid, version: count.posi
 }).strict();
 export type HandoverImportCommand = z.infer<typeof handoverImportCommandSchema>;
 export type HandoverImportView = z.infer<typeof handoverImportViewSchema>;
+export const handoverImportPageSchema = z.object({ items: z.array(handoverImportViewSchema).max(20),
+  nextCursor: z.string().max(2048).nullable() }).strict();
 export const handoverSourceRevisionSchema = z.object({ format: z.literal('yuyoufang-source-revision:1'), childId: uuid,
   resource: z.object({ id: uuid, version: resourceVersion.positive() }).strict(),
   evidence: z.object({ module: handoverImportSectionSchema, source: importProvenanceSchema,

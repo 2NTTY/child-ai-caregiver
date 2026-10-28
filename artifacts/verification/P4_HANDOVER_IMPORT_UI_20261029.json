@@ -1,0 +1,25 @@
+{
+  "workPackage": "P4-HANDOVER01 shared import entry and persistent batch discovery",
+  "date": "2026-10-29",
+  "base": "cac3e401e572fa7498af43a900f7de4f0ac36cbd",
+  "branch": "codex/p4-handover-import-ui",
+  "reuse": ["Existing HandoverApi and identity-scoped transport", "Existing Firestore authority and export-list cursor pattern", "Shared Paper controls and account owner", "Browser file input and installed Expo FileSystem picker", "Pinned existing noble-hashes 2.4.0 incremental SHA-256"],
+  "checks": [
+    { "command": "node --experimental-test-module-mocks --test tests/handover-import-service.test.ts", "result": "1 passed", "log": "tmp/handover-import-list-green.log",
+      "coverage": ["formal account API through shared client", "bounded 20+1 batch discovery after reopening", "account and cursor isolation", "encrypted envelope identity and metadata validation"] },
+    { "command": "node --experimental-test-module-mocks --test tests/handover-import-owner.test.ts", "result": "1 passed", "log": "tmp/handover-import-owner-review-green.log",
+      "coverage": ["incremental hash and declared-size mismatch", "untrusted proof acknowledgement", "unknown create and original-operation lookup", "server batch discovery after owner recreation", "identity change rejects late results and releases local files", "failed upload validation recovers the new version before cancellation"] },
+    { "check": "Affected TypeScript dependency graphs", "serverRoots": 3, "frontendRoots": 3, "diagnostics": 0, "log": "tmp/handover-import-ui-types.log" },
+    { "check": "Owner correction TypeScript dependency graph", "roots": 2, "diagnostics": 0, "log": "tmp/handover-import-owner-types-reviewed.log" },
+    { "check": "Web Expo export", "result": "passed", "log": "tmp/handover-import-web-build.log" },
+    { "check": "Android Expo export", "result": "passed outside sandbox", "log": "tmp/handover-import-android-build-host.log", "scope": "Local Hermes bundle only; no cloud build, upload or device acceptance" }
+  ],
+  "review": "Main review of the batch-list implementation and UI; independent Sol review of owner and file lifecycle. The confirmed P2 upload-400 recovery issue was reproduced, corrected and re-reviewed without repeating unrelated checks.",
+  "preservedFailures": [
+    { "log": "tmp/handover-import-list-red.log", "cause": "GET collection route was absent before implementation" },
+    { "log": "tmp/handover-import-owner-red.log", "cause": "Owner module was not implemented yet; this is an implementation-absence check, not proof of an existing product regression" },
+    { "log": "tmp/handover-import-owner-review-red.log", "cause": "Validation error cleared the only original-upload lookup and left its old version; corrected" },
+    { "log": "tmp/handover-import-android-build.log", "cause": "Hermes could not write index.hbc in sandbox temporary directory; same export succeeded outside sandbox without product changes" }
+  ],
+  "limits": ["No real browser or native picker acceptance, cloud, model, notification or deployment", "Native uses existing 20 MiB attachment bound because installed Expo fetch buffers bodies; Web supports 256 MiB", "Only current care/profile/tasks and their source revisions are imported", "Existing target children only; class/shared target is the currently selected writable child", "Conflict replacement/restoration UI, other modules, class/period export, complete backup and production signing remain pending", "Unsubmitted file selection is local; committed batches are rediscovered from Server; orphaned upload discovery after full client restart remains pending"]
+}

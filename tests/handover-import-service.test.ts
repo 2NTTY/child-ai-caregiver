@@ -18,6 +18,9 @@ import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.t
 import { writeHandoverArchive } from '../server/handover-archive.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { emptyCareDetails } from '../src/shared/care.ts';
+import { FirestoreDomainData, FirestoreDomainError, firestoreDomainHash } from '../server/firestore-domain-data.ts';
+import { importBatchId, importBatchMetadata, importBatchSchema } from '../server/handover-import-batch-records.ts';
+import { createHandoverApi } from '../src/client/handover-api.ts';
 
 test('verified packages reach formal import worker, retain partial progress and import history before rejecting cancelled sources', async t => {
   const realNow = Date.now.bind(Date); let elapsed = 0, slowRead = false;
@@ -95,6 +98,8 @@ test('verified packages reach formal import worker, retain partial progress and 
     const command = { opId: randomUUID(), uploadId: uploaded.id, expectedUploadVersion: uploaded.version,
       acceptedManifestSha256: uploaded.preview!.manifestSha256, targets: [{ sourceChildId: sourceChild, target: { childId: recipientChild, spaceId: null }, sections: ['care'] }], resolutions: [] };
     const created = await (await call('', command)).json(); assert.equal(created.state, 'queued'); assert.equal(created.totalItems, 2);
+    const initialList = await (await call('')).json(); assert.deepEqual(initialList.items.map((item: any) => item.id), [command.opId]);
+    assert.equal(initialList.nextCursor, null);
     assert.equal((await (await call('', command)).json()).id, command.opId);
     await assert.rejects(call('', { ...command, acceptedManifestSha256: null }), { code: 'operation_conflict' });
     await assert.rejects(call('/' + command.opId, undefined, 'other'), { code: 'import_batch_not_found' });
@@ -132,5 +137,44 @@ test('verified packages reach formal import worker, retain partial progress and 
     assert.equal([...fixture.records.keys()].filter(path => path.includes('_handover_import_items/')).length, before);
     await uploads.cancel('recipient', uploaded.id, { opId: randomUUID(), expectedVersion: uploaded.version });
     assert.equal((await service.resume('recipient', command.opId, resumeCommand, controller.signal)).state, 'completed');
+    const data = new FirestoreDomainData(options), entries = [...fixture.records].filter(([path]) => path.includes('_handover_import_batches/'));
+    const template = codec.decode({ path: entries[0][0], data: entries[0][1] }).value as any;
+    assert.equal(template.scope.childId, '00000000-0000-0000-0000-000000000000');
+    const expectedIds = new Set(entries.map(([path, value]) => (codec.decode({ path, data: value }).value as any).id));
+    for (let i = entries.length; i < 21; i++) {
+      const id = randomUUID(), request = { ...template.request, opId: id }, batch = { ...template, id, request, fingerprint: firestoreDomainHash(request) };
+      const logicalId = importBatchId('recipient', id), target = data.ref('handover_import_batches', 'handover-import-batch', logicalId);
+      assert.notEqual(target.id, id, 'The stored document ID is a hash, not the public batch UUID');
+      fixture.records.set(target.path, { ...data.tags(batch.scope), ...importBatchMetadata(batch),
+        ...data.seal('handover-import-batch', logicalId, batch.scope, importBatchSchema, batch, batch.version) }); expectedIds.add(id);
+    }
+    const listFetcher: typeof fetch = async (input, init) => {
+      assert.ok(init);
+      assert.equal(init?.method, 'GET'); assert.equal(init.credentials, 'include'); assert.equal(init.cache, 'no-store');
+      const url = new URL(String(input)), owner = new Headers(init.headers).get('x-expected-user-id')!;
+      assert.equal(url.pathname, '/api/account/package-imports');
+      try { return (await call(url.search, undefined, owner))!; }
+      catch (error) { if (error instanceof FirestoreDomainError) return Response.json({ error: { code: error.code } }, { status: error.status }); throw error; }
+    };
+    const firstClient = createHandoverApi('https://local.test', listFetcher); firstClient.setIdentity('recipient');
+    const firstPage = await firstClient.listImports('recipient', controller.signal); assert.equal(firstPage.items.length, 20); assert.ok(firstPage.nextCursor);
+    const restoredClient = createHandoverApi('https://local.test', listFetcher); restoredClient.setIdentity('recipient');
+    const lastPage = await restoredClient.listImports('recipient', controller.signal, firstPage.nextCursor);
+    assert.equal(lastPage.items.length, 1); assert.equal(lastPage.nextCursor, null);
+    assert.deepEqual(new Set([...firstPage.items, ...lastPage.items].map(item => item.id)), expectedIds);
+    restoredClient.setIdentity('other'); assert.deepEqual((await restoredClient.listImports('other', controller.signal)).items, []);
+    await assert.rejects(restoredClient.listImports('other', controller.signal, firstPage.nextCursor), { status: 400, code: 'invalid_cursor' });
+    await assert.rejects(call('?cursor=invalid'), { code: 'invalid_cursor' });
+    await assert.rejects(call('?cursor=one&cursor=two'), { code: 'invalid_input' });
+    await assert.rejects(call('?other=value'), { code: 'invalid_input' });
+    const oldScopeCursor = JSON.parse(Buffer.from(firstPage.nextCursor, 'base64url').toString('utf8'));
+    oldScopeCursor.scope = firestoreDomainHash({ ...template.scope, storageEpoch: randomUUID() });
+    await assert.rejects(call('?cursor=' + Buffer.from(JSON.stringify(oldScopeCursor)).toString('base64url')), { code: 'invalid_cursor' });
+    const firstRef = data.ref('handover_import_batches', 'handover-import-batch', importBatchId('recipient', firstPage.items[0].id));
+    const originalRow = fixture.records.get(firstRef.path)!; fixture.records.set(firstRef.path, { ...originalRow, state: 'tampered' });
+    try { await assert.rejects(call(''), { code: 'import_batch_binding' }); }
+    finally { fixture.records.set(firstRef.path, originalRow); }
+    const loopingClient = createHandoverApi('https://local.test', async () => Response.json({ items: [], nextCursor: 'loop' })); loopingClient.setIdentity('recipient');
+    await assert.rejects(loopingClient.listImports('recipient', controller.signal, 'loop'), { code: 'handover_response_invalid' });
   } finally { controller.abort(); await rm(directory, { recursive: true, force: true }); }
 });
