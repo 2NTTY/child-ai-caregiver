@@ -8,7 +8,7 @@ import { SHARING_SCOPE, sharedSpaceSchema, sharedMembershipSchema, resourceShare
   sharedOperationSchema, sharedAccessBasisSchema, sharedModuleSchema, sharingRestoreSchemas, sharingMetadata,
   type SharingKind } from './firestore-sharing-records.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
-import { sharingCommandSchema, sharingOperationSchema, sharedSpaceViewSchema, sharedChildViewSchema, type SharingCommand, type SharingOperation,
+import { sharingCommandSchema, sharingOperationSchema, sharedSpaceViewSchema, sharedChildViewSchema, classRosterQuerySchema, type SharingCommand, type SharingOperation,
   type SharedSpaceView, type SharedMemberView, type SharedGrantView, type SharedInviteView, type SharedPage } from '../src/shared/sharing-control.ts';
 import { sharingUserTag } from './firestore-sharing-records.ts';
 
@@ -142,14 +142,16 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
   }
   async function controlPage<T>(userId: string, kind: 'shared-membership' | 'resource-share' | 'shared-invitation',
     spaceId: string | null, cursor: string | undefined,
-    project: (b: FirestoreAuthorityTransaction, row: any, s: Space | null, m: Member | null) => Promise<T | null>): Promise<SharedPage<T>> {
+    project: (b: FirestoreAuthorityTransaction, row: any, s: Space | null, m: Member | null) => Promise<T | null>,
+    selection?: { cursorScope: string; requireClass?: boolean }): Promise<SharedPage<T>> {
     if (spaceId !== null) domainParse(z.uuid(), spaceId);
     if (cursor !== undefined) domainParse(z.string().min(1).max(8192), cursor);
     return authority.runTransaction(userId, null, async b => {
       const s = spaceId ? await space(b.transaction, spaceId) : null;
       const m = s ? await member(b.transaction, s.id, userId) : null;
+      if (selection?.requireClass && s?.kind !== 'class') domainReject('class_required',400);
       if (kind === 'shared-invitation') manager(s!, m!);
-      const cursorId = JSON.stringify([kind, spaceId]);
+      const cursorId = JSON.stringify(selection ? [kind, spaceId, selection.cursorScope] : [kind, spaceId]);
       let after: string | undefined;
       if (cursor) {
         let saved;
@@ -180,15 +182,42 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
       return { items, nextCursor };
     });
   }
+  async function grantView(b: FirestoreAuthorityTransaction, row: z.infer<typeof resourceShareSchema>, s: Space, m: Member): Promise<SharedGrantView | null> {
+    if (row.state !== 'active') domainReject('sharing_binding',500);
+    try {
+      return await inResourceTransaction(b,{spaceId:s.id,childId:row.childId,module:row.modules[0],mode:'read'},async access=>{
+        const child=await access.binding.readChild(row.childId);
+        return child ? {childId:row.childId,childName:child.displayName,modules:row.modules,sharedBy:row.sharedBy,
+          version:row.version,canWithdraw:s.kind!=='class' && (row.sharedBy===b.actorUserId || m.role==='owner')} : null;
+      });
+    } catch(error) {
+      if([403,404].includes((error as {status?:number}).status??0))return null;
+      throw error;
+    }
+  }
   const api = {
     inResourceTransaction,
     spacesPage(userId: string, cursor?: string): Promise<SharedPage<SharedSpaceView>> {
       return controlPage(userId, 'shared-membership', null, cursor, async (b, row: Member) => {
         if (row.state !== 'active') domainReject('sharing_binding', 500);
         const s = (await read(b.transaction, 'shared-space', row.spaceId, sharedSpaceSchema))!;
-        // Class UI/contracts are delivered separately; old clients cannot parse the new internal kind.
+        // Keep the existing family list compatible; classes have a separate collection view.
         return s.state === 'active' && s.kind !== 'class' ? view(s, row) : null;
       });
+    },
+    classesPage(userId:string,cursor?:string):Promise<SharedPage<SharedSpaceView>> {
+      return controlPage(userId,'shared-membership',null,cursor,async(b,row:Member)=>{
+        if(row.state!=='active')domainReject('sharing_binding',500);
+        const s=(await read(b.transaction,'shared-space',row.spaceId,sharedSpaceSchema))!;
+        return s.state==='active'&&s.kind==='class'?view(s,row):null;
+      },{cursorScope:'classes'});
+    },
+    classRosterPage(userId:string,spaceId:string,cursor?:string,rawQuery=''):Promise<SharedPage<SharedGrantView>> {
+      const query=domainParse(classRosterQuerySchema,rawQuery);
+      return controlPage(userId,'resource-share',spaceId,cursor,async(b,row:z.infer<typeof resourceShareSchema>,s,m)=>{
+        const item=await grantView(b,row,s!,m!);
+        return item && (!query || item.childName.normalize('NFKC').toLocaleLowerCase('zh-HK').includes(query)) ? item : null;
+      },{cursorScope:JSON.stringify(['class-roster',query]),requireClass:true});
     },
     spaceView(userId: string, spaceId: string): Promise<SharedSpaceView> {
       domainParse(z.uuid(), spaceId);
@@ -211,19 +240,7 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
       });
     },
     sharesPage(userId: string, spaceId: string, cursor?: string): Promise<SharedPage<SharedGrantView>> {
-      return controlPage(userId, 'resource-share', spaceId, cursor, async (b, row: z.infer<typeof resourceShareSchema>, _s, m) => {
-        if (row.state !== 'active') domainReject('sharing_binding', 500);
-        try {
-          return await inResourceTransaction(b, { spaceId, childId:row.childId, module:row.modules[0], mode:'read' }, async access => {
-            const child = await access.binding.readChild(row.childId);
-            return child ? { childId:row.childId, childName:child.displayName, modules:row.modules, sharedBy:row.sharedBy,
-              version:row.version, canWithdraw:row.sharedBy === userId || m!.role === 'owner' } : null;
-          });
-        } catch (error) {
-          if ([403,404].includes((error as { status?: number }).status ?? 0)) return null;
-          throw error;
-        }
-      });
+      return controlPage(userId, 'resource-share', spaceId, cursor, (b,row:z.infer<typeof resourceShareSchema>,s,m)=>grantView(b,row,s!,m!));
     },
     controlOperation(userId: string, operationId: string): Promise<SharingOperation | null> {
       domainParse(z.uuid(), operationId);
@@ -232,25 +249,32 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
         if (!snapshot.exists) return null;
         const receipt = data.open('shared-operation', id, b.scope, sharedOperationSchema, snapshot);
         if (receipt.actorUserId !== userId || receipt.operationId !== operationId) domainReject('sharing_binding', 500);
-        const actions = { 'create-space':'create', 'invite-member':'invite', 'accept-invitation':'acceptInvitation',
+        const actions = { 'create-space':'create', 'add-class-child':'addClassChild', 'invite-member':'invite', 'accept-invitation':'acceptInvitation',
           'share-resource':'share', 'unshare-resource':'unshare', 'propose-transfer':'proposeTransfer', 'accept-transfer':'acceptTransfer',
           'leave-space':'leave', 'update-member':'updateMember', 'revoke-invitation':'revokeInvitation', 'dissolve-space':'dissolve' } as const;
         const action = actions[receipt.action as keyof typeof actions];
         if (!action) domainReject('sharing_binding', 500);
         if (action === 'leave' || action === 'dissolve') return sharingOperationSchema.parse({ operationId, action, space:null, exit:receipt.result });
-        const raw = receipt.result as Space | { space:Space; token:string };
+        const raw = receipt.result as Space | { space:Space; token?:string; child?:{id:string} };
         const saved = domainParse(sharedSpaceSchema, 'space' in raw ? raw.space : raw, 'sharing_binding', 500);
         let s: Space, m: Member;
         try {
           s = await space(b.transaction, saved.id); m = await member(b.transaction, s.id, userId);
           if (action === 'invite') manager(s, m);
+          if (action === 'addClassChild') {
+            const childId=domainParse(z.uuid(),'child' in raw ? raw.child?.id : undefined,'sharing_binding',500);
+            await inResourceTransaction(b,{spaceId:s.id,childId,module:'profile',mode:'read'},async access=>{
+              if(!await access.binding.readChild(childId))domainReject('not_found',404);
+            });
+          }
         } catch (error) {
           if ([403,404].includes((error as { status?:number }).status ?? 0))
             return sharingOperationSchema.parse({ operationId, action, space:null, redacted:true });
           throw error;
         }
         return sharingOperationSchema.parse({ operationId, action, space:view(saved, m),
-          ...('space' in raw ? { invitationToken:raw.token } : {}) });
+          ...(action==='invite' && 'space' in raw ? {invitationToken:raw.token}:{}),
+          ...(action==='addClassChild' && 'space' in raw ? {childId:raw.child?.id}:{}) });
       });
     },
     async executeCommand(userId: string, raw: SharingCommand): Promise<SharingOperation> {
@@ -315,7 +339,7 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
           write(b.transaction, 'shared-membership', key(id, userId), { spaceId: id, userId, label:b.identityEmail, membershipId: randomUUID(), role: 'owner', state: 'active', version: 1, stateVersion: 1, joinedAt: now() }, true)] };
       });
     },
-    /** Internal class roster creation; public contracts remain gated until the whole class slice is connected. */
+    /** Uses the canonical child service and the actor's original control receipt. */
     addClassChild(userId: string, raw: {operationId:string;spaceId:string;expectedVersion:number;displayName:string}) {
       const input=domainParse(change.extend({displayName:z.string().trim().min(1).max(160)}).strict(),raw), childId=randomUUID();
       return mutate(userId,'add-class-child',input,async b=>{
@@ -457,6 +481,7 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
       const input = domainParse(change.strict(), raw);
       return mutate(userId, 'dissolve-space', input, async b => {
         const { s, m } = await current(b, input); manager(s, m);
+        if(s.kind==='class')domainReject('class_dissolution_unavailable',409);
         const value = updated(s, { state: 'dissolved', transferTargetUserId: null });
         return { value: { spaceId: s.id, version: value.version, state: 'dissolved' as const }, writes: [write(b.transaction, 'shared-space', s.id, value)] };
       });
