@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-28）：[P4-HANDOVER01](#p4-handover01) 持久文檔包與共用入口。**#360 格式與 #361 儲存接點已合併；基線 `d8124fa`、分支 `codex/p4-handover-export` 已接個人匯出台帳、正式 API／worker、本地 Storage 串流、原物件查回、取消／到期／還原清理。連貫合成流程及局部型別已核，review 兩項缺口已關閉；尚未部署或接共用畫面，見[證據](artifacts/verification/P4_HANDOVER_JOBS_20261028.json)。下一段接共用匯出入口，再完成匯入台帳及領域保存；私人備份完整範圍、班級目標、期間過濾、去重／衝突、簽章配置及中斷恢復全部保留。此段不支持的期間明確拒絕，不截斷冒充完整成果，不搬執行授權或舊投遞工作。
+**當前入口（2026-10-28）：[P4-HANDOVER01](#p4-handover01) 共用資料包入口與匯入。**#360／#361 格式、儲存及 #362（`bb0d21e`）持久個人匯出後端已合併。`codex/p4-handover-ui` 接同一 Web／Android 設定入口、孩子／模組選擇、背景狀態、原操作恢復及下載；只替換必要平台出口，沒有新增依賴。現階段只支援本人孩子的全期間匯出，匯入、班級／期間選擇、完整私人備份、來源去重／衝突與簽章配置仍未完成，整包未部署。下一段接匯入台帳與領域保存，保留普通任務規則及持久紀錄；不搬執行授權或舊投遞工作。後端[證據](artifacts/verification/P4_HANDOVER_JOBS_20261028.json)與[共用入口證據](artifacts/verification/P4_HANDOVER_UI_20261028.json)分開，不把分段交付當作整包完成。
 
 **已合併未部署：**#358 班級解散與 #359 待辦身份接線，[清理](artifacts/verification/P4_CLASS_ERASURE_20261028.json)及[提醒證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)不重跑。選其他成員、班級 Agent 與外部通知仍待接續，不借管理員 key、不改 D PR。整個 CLASS01／P4、P3／P5 的未完成項不變。
 
