@@ -4236,3 +4236,10 @@
 - 接續 #367／`3ed6c29`，沿原任務交易更新原 ID／發生實例、來源、修訂、outbox 及逐項收據；預設保留本地完成／取消等版本變動，明確覆蓋仍核目前版本，未知投遞繼續停發。`import` 修訂接回共用 client／標示，不增加一般 change 命令。
 - 一條 connected flow red→green／1 pass，三入口型別圖零診斷；最初混用 Server／前端解析模式的診斷已分開配置核對。原失敗及限制見[證據](artifacts/verification/P4_HANDOVER_TASK_UPDATES_20261029.json)。獨立 Sol review 無確定 blocker／Important 問題；不重測前包，無模型、雲端、通知、設備或部署。
 - C 負責後端／契約，B 負責 client／共用修訂顯示，各自單作者提交。正式匯入仍待上載、持久批次及入口，不把內部更新能力或合併當成 HANDOVER01 完成。
+
+<a id="log-20261029-p4-handover-batches"></a>
+### 2026-10-29：P4 持久匯入批次與逐項原子進度
+
+- 接續 #368／`8e86e28`，固定已驗來源、目標及模組，沿現有 background queue／lease，批次進度、領域修改與逐項收據同交易提交。取消／接續保留原批次及位置，舊工作世代與重複來源行不再推進；個人與班級使用同一範圍核對。備份 codec 保留進度但停止原批次，兩項 scope 清理索引只寫入定義。
+- 一條連貫合成流程通過；四入口型別圖零診斷。獨立 review 找到初檢後 lease 可在領域讀取期間過期，已在寫入前再核並補有實際失敗的回歸斷言。最初 fixture／型別錯誤及不精準的期限探針仍記錄於[證據](artifacts/verification/P4_HANDOVER_BATCHES_20261029.json)，沒有重跑前包或全量測試。
+- 尚未接公開上載、正式匯入 worker、HTTP／共用 UI、其他資料域與完整備份；批次只含無正文的追查 metadata，不以此聲稱正式匯入可用。零模型、通知、雲端、設備或部署；D 的工作未改動。

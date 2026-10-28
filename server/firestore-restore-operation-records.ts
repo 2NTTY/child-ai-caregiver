@@ -15,8 +15,12 @@ import { firestorePushBindingSchema, firestorePushDeliverySchema, firestorePushE
 import { firestoreTelegramBindingSchema, firestoreTelegramDeliverySchema, firestoreTelegramChallengeSchema, firestoreTelegramRecoverySchemas as telegram } from './firestore-telegram.ts';
 import { firestoreContactConsentSchema, firestoreContactGrantSchema, firestoreContactRequestSchema, firestoreContactRecoverySchemas as contact } from './firestore-contact.ts';
 import { firestoreHandoverJobSchema, assertHandoverJobIdentity, handoverJobMetadata } from './firestore-handover-jobs.ts';
+import { importBatchSchema, importBatchControlSchema, importBatchId, importBatchControlId,
+  importBatchMetadata, importBatchControlMetadata, validImportBatch } from './handover-import-batch-records.ts';
 
 export const operationRestoreSchemas = {
+  'handover-import-batch': { suffix: 'handover_import_batches', schema: importBatchSchema },
+  'handover-import-control': { suffix: 'handover_import_controls', schema: importBatchControlSchema },
   'handover-export': { suffix: 'handover_exports', schema: firestoreHandoverJobSchema },
   'background-work': { suffix: 'background_work', schema: firestoreBackgroundWorkSchema },
   'background-reference': { suffix: 'background_references', schema: background.reference },
@@ -70,6 +74,19 @@ export function restoreOperationRecord(data: FirestoreDomainData, context: Fires
   const metadata: Record<string, unknown> = {};
   check(context.family === 'domain' && context.envelopeVersion === 1 && version >= 1);
   switch (kind) {
+    case 'handover-import-batch': {
+      const job = importBatchSchema.parse(raw);
+      check(validImportBatch(job) && same(job.scope, scope) && id === importBatchId(scope.ownerUserId, job.id) && version === job.version);
+      // Restore keeps evidence and counts, but never revives a previous execution or trusts an old upload.
+      const next = target ? { ...job, scope: outputScope, state: 'interrupted' as const, claim: null, error: 'package_restored' } : job;
+      value = next; Object.assign(metadata, importBatchMetadata(next)); break;
+    }
+    case 'handover-import-control': {
+      const event = importBatchControlSchema.parse(raw);
+      check(scope.childId === SYSTEM.childId && id === importBatchControlId(scope.ownerUserId, event.opId)
+        && event.actorUserId === scope.ownerUserId && version === 1);
+      value = event; Object.assign(metadata, importBatchControlMetadata(event)); break;
+    }
     case 'handover-export': {
       const job = firestoreHandoverJobSchema.parse(raw);
       assertHandoverJobIdentity(job, scope, id, version);
