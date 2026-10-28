@@ -4,7 +4,7 @@ import { Text } from "react-native-paper";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import type { FactSource, FactValues } from "../../../src/shared/memory";
-import { canManageMemory, factStatusLabels, topicStatusLabels, visibilityLabels, type MemoryFactView, type MemoryTopicView } from "../memory-view-model";
+import { canManageMemory, factSourceLabel, factStatusLabels, topicStatusLabels, visibilityLabels, type MemoryFactView, type MemoryTopicView } from "../memory-view-model";
 import { AppButton, AppSelect, AppTextField } from "../components/ui";
 import { AppCheckbox } from "../components/AppCheckbox";
 import { AppDialog } from "../components/AppDialog";
@@ -20,9 +20,12 @@ type Owner = NonNullable<ReturnType<typeof useProductionTaskKnowledgeMemory>>;
 type Editor = { kind: "fact"; item: MemoryFactView | null } | { kind: "topic"; item: MemoryTopicView | null };
 const text = (max: number) => z.string().max(max).refine(value => !!value.trim() && !/[\u0000\uD800-\uDFFF]/u.test(value));
 const raw = (max: number) => z.string().max(max).refine(value => !/[\u0000\uD800-\uDFFF]/u.test(value));
-const sourceSchema = z.discriminatedUnion("kind", [z.object({ kind: z.literal("manual"), description: text(500) }),
-  z.object({ kind: z.literal("care_record"), description: text(500), recordId: z.uuid(), version: z.number().int().min(1).max(2147483646) }),
-  z.object({ kind: z.literal("private_chat"), description: text(500), messageId: z.uuid() })]);
+const manualSourceSchema = z.object({ kind: z.literal("manual"), description: text(500) });
+const recordSourceSchema = z.object({ kind: z.literal("care_record"), description: text(500), recordId: z.uuid(), version: z.number().int().min(1).max(2147483646) });
+const privateSourceSchema = z.object({ kind: z.literal("private_chat"), description: text(500), messageId: z.uuid() });
+const sourceSchema = z.discriminatedUnion("kind", [manualSourceSchema, recordSourceSchema, privateSourceSchema,
+  z.object({ kind: z.literal("imported"), description: text(500), sourceState: z.enum(["current", "changed"]),
+    original: z.discriminatedUnion("kind", [manualSourceSchema, recordSourceSchema, privateSourceSchema.extend({ messageId: z.uuid().optional() })]) })]);
 const valuesSchema = z.object({ key: text(100), content: text(4000), source: sourceSchema, validUntil: z.iso.datetime({ offset: true }).nullable() });
 
 export function TaskKnowledgeMemoryManagement() {
@@ -48,12 +51,13 @@ export function TaskKnowledgeMemoryManagement() {
       <Text style={s.title}>已取得的事實</Text>
       {owner.facts.map(item => <View key={item.id} style={s.smallStack}><Text selectable style={s.body}>{item.key}：{item.content}</Text>
         <Text style={s.meta}>{factStatusLabels[item.status]} · {visibilityLabels[item.visibility]} · 版本 {item.version} · {item.sourceState === "changed" ? "來源已改變" : "來源目前版本"}</Text>
+        {item.source.kind === "imported" ? <Text style={s.meta}>{factSourceLabel(item.source)}</Text> : null}
         {canManageMemory(role, item) ? <AppButton label="人工確認／更正／停用／刪除" variant="quiet" density="compact" disabled={owner.busy || management.locked} onPress={() => edit({ kind: "fact", item: structuredClone(item) })} /> : null}
       </View>)}
       {owner.value.model.longTerm.data?.hasMoreFacts ? <AppButton label="載入更多事實" variant="quiet" disabled={owner.busy || !!management.pending} onPress={() => owner.value.reads?.loadMoreFacts?.()} /> : null}
       <Text style={s.title}>已取得的話題</Text>
       {owner.topics.map(item => <View key={item.id} style={s.smallStack}><Text selectable style={s.body}>{item.title} · {item.note}</Text>
-        <Text style={s.meta}>{topicStatusLabels[item.status]} · {visibilityLabels[item.visibility]} · 版本 {item.version}</Text>
+        <Text style={s.meta}>{topicStatusLabels[item.status]} · {visibilityLabels[item.visibility]} · 版本 {item.version}{item.importedFrom ? " · 匯入資料包" : ""}</Text>
         {canManageMemory(role, item) ? <AppButton label="人工更新／按原因重開／刪除" variant="quiet" density="compact" disabled={owner.busy || management.locked} onPress={() => edit({ kind: "topic", item: structuredClone(item) })} /> : null}
       </View>)}
       {owner.hasMoreTopics ? <AppButton label="載入更多話題" variant="quiet" disabled={owner.busy || !!management.pending} onPress={owner.moreTopics} /> : null}
@@ -100,15 +104,18 @@ function FactEditor({ owner, basis }: { owner: Owner; basis: MemoryFactView | nu
   const needsShared = !basis ? owner.sharedMode : mode === "confirm" ? basis.intendedVisibility === "family" : mode === "revise" && basis.visibility === "family";
   useEffect(() => { setConfirmed(false); setShared(false); }, [basis?.version]);
   function edited() { management.markDirty(); setConfirmed(false); setShared(false); setError(""); }
-  function values(value: FactFields): FactValues {
-    const source: FactSource = value.sourceKind === "manual" ? { kind: "manual", description: value.sourceDescription }
+  function values(value: FactFields): FactValues | null {
+    if (value.sourceKind === "imported" && basis?.source.kind !== "imported") return null;
+    const source: FactSource = value.sourceKind === "imported" && basis?.source.kind === "imported" ? basis.source
+      : value.sourceKind === "manual" ? { kind: "manual", description: value.sourceDescription }
       : value.sourceKind === "care_record" ? { kind: "care_record", description: value.sourceDescription, recordId: value.recordId, version: /^\d+$/.test(value.sourceVersion) ? Number(value.sourceVersion) : NaN }
         : { kind: "private_chat", description: value.sourceDescription, ...(value.messageId ? { messageId: value.messageId } : {}) };
     return { key: value.key, content: value.content, source, validUntil: value.validUntil || null };
   }
   const submit = handleSubmit(value => {
     if (disabled || !confirmed || needsShared && !shared) return;
-    const payload = values(value), parsed = valuesSchema.safeParse(payload);
+    const payload = values(value); if (!payload) { setError("新增記憶不能自行指定匯入來源。"); return; }
+    const parsed = valuesSchema.safeParse(payload);
     if (["create", "revise", "confirm"].includes(mode) && !parsed.success) { setError("請核對欄目、內容、來源描述、來源識別／版本及含時區有效期；不會截短原文。"); return; }
     if ((mode === "revise" || mode === "deactivate") && !text(500).safeParse(value.reason).success) { setError("請填寫 1 至 500 字的原因。"); return; }
     if (!basis) {
@@ -130,14 +137,15 @@ function FactEditor({ owner, basis }: { owner: Owner; basis: MemoryFactView | nu
     else if (mode === "delete") management.submit({ kind: "delete_fact", basis, input: { expectedVersion: basis.version, confirmDelete: true } });
   });
   function field(name: "key" | "content" | "sourceDescription" | "recordId" | "sourceVersion" | "messageId" | "reason", label: string, multiline = false) {
-    return <Controller name={name} control={control} render={({ field: input }) => <AppTextField label={label} value={input.value} multiline={multiline} disabled={name === "reason" ? disabled : !editingValues} onChangeText={value => { edited(); input.onChange(value); }} />} />;
+    return <Controller name={name} control={control} render={({ field: input }) => <AppTextField label={label} value={input.value} multiline={multiline} disabled={name === "reason" ? disabled : !editingValues || name === "sourceDescription" && draft.sourceKind === "imported"} onChangeText={value => { edited(); input.onChange(value); }} />} />;
   }
   const history = basis ? owner.value.model.longTerm.data?.histories[basis.id] : null;
   return <View style={s.stack}>
     <Text style={s.meta}>{basis ? `${visibilityLabels[basis.visibility]} · ${factStatusLabels[basis.status]} · 原版本 ${basis.version}` : owner.sharedMode ? "新增共享事實會由你核對內容及來源，再明確確認與有權家庭成員共享。" : "新增會先成為只供本人查看的候選，沒有由 AI 寫入已確認事實。"}</Text>
     {basis ? <AppSelect label="這次人工操作" value={mode} options={[{ value: "confirm", label: "確認候選／重新確認停用事實" }, { value: "revise", label: "更正內容及來源" }, { value: "deactivate", label: "標記停用" }, { value: "delete", label: "永久刪除及全部歷史" }]} disabled={disabled} onChange={value => { edited(); setMode(value); }} /> : null}
     {field("key", "記憶欄目（最多 100 字）")}{field("content", "內容（最多 4,000 字）", true)}
-    <Controller name="sourceKind" control={control} render={({ field }) => <AppSelect label="來源類型" value={field.value} options={[{ value: "manual", label: "人工描述" }, { value: "care_record", label: "已保存照顧記錄" }, ...(!owner.sharedMode || basis ? [{ value: "private_chat", label: "本人私人聊天" }] : [])]} disabled={!editingValues} onChange={value => { edited(); field.onChange(value); }} />} />
+    <Controller name="sourceKind" control={control} render={({ field }) => <AppSelect label="來源類型" value={field.value} options={[...(basis?.source.kind === "imported" ? [{ value: "imported", label: "保留匯入資料包來源" }] : []), { value: "manual", label: "人工描述" }, { value: "care_record", label: "已保存照顧記錄" }, ...(!owner.sharedMode || basis ? [{ value: "private_chat", label: "本人私人聊天" }] : [])]} disabled={!editingValues} onChange={value => { edited(); field.onChange(value); }} />} />
+    {draft.sourceKind === "imported" && basis?.source.kind === "imported" ? <Text style={s.meta}>{factSourceLabel(basis.source)}</Text> : null}
     {field("sourceDescription", "原來源描述（最多 500 字）", true)}
     {draft.sourceKind === "care_record" ? <>{field("recordId", "原照顧記錄識別")}{field("sourceVersion", "原照顧記錄版本")}</> : draft.sourceKind === "private_chat" ? field("messageId", "原私人聊天訊息識別（不可猜測）") : null}
     {basis?.source.kind === "private_chat" && !basis.source.messageId ? <Text style={s.warning}>私人訊息識別已隱藏；不能猜測補回。如需更正，請明確改用人工來源描述。</Text> : null}
@@ -200,10 +208,11 @@ function TopicEditor({ owner, basis }: { owner: Owner; basis: MemoryTopicView | 
       {history?.cursor ? <AppButton label="載入更舊話題版本" variant="quiet" disabled={owner.busy} onPress={() => owner.topicHistory(basis.id, basis.version, true)} /> : null}</> : null}
   </View>;
 }
-function sameFactSource(left: FactSource, right: FactSource) {
+function sameFactSource(left: FactSource, right: FactSource): boolean {
   if (left.kind !== right.kind || left.description !== right.description) return false;
   if (left.kind === "care_record") return right.kind === "care_record" && left.recordId === right.recordId && left.version === right.version;
   if (left.kind === "private_chat") return right.kind === "private_chat" && left.messageId === right.messageId;
+  if (left.kind === "imported") return right.kind === "imported" && left.sourceState === right.sourceState && sameFactSource(left.original, right.original);
   return true;
 }
 function MemoryOriginalIntent({ intent }: { intent: MemoryManagementIntent }) {
