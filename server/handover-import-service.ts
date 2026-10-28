@@ -118,6 +118,9 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     } finally { await opened?.dispose(); }
   }
   return { create: start, process, history: createFirestoreHandoverImportItems(options).history,
+    async list(owner: string, cursor?: string) {
+      const page = await batches.list(owner, cursor); return { items: page.items.map(view), nextCursor: page.nextCursor };
+    },
     async get(owner: string, id: string) { return view(await batches.get(owner, id)); },
     async cancel(owner: string, id: string, command: unknown) { return view(await batches.cancel(owner, id, command)); },
     async resume(owner: string, id: string, command: unknown, signal: AbortSignal) {

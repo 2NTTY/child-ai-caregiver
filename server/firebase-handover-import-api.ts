@@ -8,10 +8,15 @@ export async function handleHandoverImport(request: Request, owner: string, serv
   readJson: (request: Request) => Promise<unknown>, sameIdentity: () => Promise<void>) {
   const url = new URL(request.url), root = '/api/account/package-imports';
   const route = /^\/api\/account\/package-imports\/([0-9a-f-]{36})(?:\/(cancel|resume))?$/iu.exec(url.pathname);
-  if (url.search && url.pathname !== root + '/source-history') domainReject('invalid_input', 400);
+  if (url.search && url.pathname !== root + '/source-history' && !(request.method === 'GET' && url.pathname === root)) domainReject('invalid_input', 400);
   const respond = async (result: unknown, status = 200) => { await sameIdentity(); return Response.json(result, { status,
     headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie, Authorization' } }); };
   try {
+    if (request.method === 'GET' && url.pathname === root) {
+      const entries = [...url.searchParams];
+      if (entries.some(([key]) => key !== 'cursor') || entries.length > 1) domainReject('invalid_input', 400);
+      return respond(await service.list(owner, url.searchParams.get('cursor') ?? undefined));
+    }
     if (request.method === 'GET' && url.pathname === root + '/source-history') {
       const entries = [...url.searchParams]; if (new Set(entries.map(([key]) => key)).size !== entries.length) domainReject('invalid_input', 400);
       return respond(await service.history(owner, Object.fromEntries(entries)));
