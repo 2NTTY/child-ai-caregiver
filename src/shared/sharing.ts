@@ -4,7 +4,9 @@ const version = z.number().int().positive().max(2147483647);
 export const sharedModuleSchema = z.enum(['profile', 'care', 'memory', 'tasks', 'documents', 'growth', 'concerns', 'attachments']);
 export type SharedModule = z.infer<typeof sharedModuleSchema>;
 export const sharedAccessBasisSchema = z.object({ spaceVersion: version, membershipVersion: version, shareVersion: version,
-  actorAuthorizationVersion: z.string().regex(/^\d+$/u), sourceAuthorizationVersion: z.string().regex(/^\d+$/u) }).strict();
+  teacherSpaceId:z.uuid().optional(), teacherSpaceVersion:version.optional(),
+  actorAuthorizationVersion: z.string().regex(/^\d+$/u), sourceAuthorizationVersion: z.string().regex(/^\d+$/u) }).strict()
+  .refine(value=>(value.teacherSpaceId===undefined)===(value.teacherSpaceVersion===undefined));
 export const sharedSelectionSchema = z.object({ spaceId: z.uuid(), expectedBasis: sharedAccessBasisSchema.optional() }).strict();
 export type SharedAccessBasis = z.infer<typeof sharedAccessBasisSchema>;
 export type SharedSelection = z.infer<typeof sharedSelectionSchema>;

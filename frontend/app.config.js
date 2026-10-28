@@ -23,6 +23,12 @@ export default ({ config }) => {
   const providers = [...new Set((process.env.EXPO_PUBLIC_AUTH_PROVIDERS ?? '').split(',').map(value => value.trim()).filter(Boolean))];
   if (providers.some(provider => !['google.com', 'apple.com'].includes(provider))) throw new Error('Unknown authentication provider');
   const plugins = [...(config.plugins ?? [])], ios = { ...config.ios };
+  const sharingIndex = plugins.findIndex(entry => (Array.isArray(entry) ? entry[0] : entry) === 'expo-sharing');
+  const existingSharing = sharingIndex >= 0 && Array.isArray(plugins[sharingIndex]) ? plugins[sharingIndex][1] ?? {} : {};
+  const sharingPlugin = ['expo-sharing', { ...existingSharing,
+    android: { ...existingSharing.android, enabled: true, singleShareMimeTypes: ['*/*'], multipleShareMimeTypes: ['*/*'] },
+    ios: { ...existingSharing.ios, enabled: false } }];
+  if (sharingIndex < 0) plugins.push(sharingPlugin); else plugins[sharingIndex] = sharingPlugin;
   if (providers.includes('google.com') && (isIos || isAndroid)) {
     const oauthId = /^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/;
     if (!oauthId.test(process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '')) throw new Error('Configure the Google Web client ID');

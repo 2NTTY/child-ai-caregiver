@@ -22,7 +22,7 @@ export function replayVoiceErasures(data:FirestoreDomainData,codec:FirestoreRest
   for(const {value,record} of old.values()) if(value.deletion&&!removed.has(record.path))
     requireValue(journal.some(i=>canonical(i)===canonical(value.deletion!.intent)),'restore_erasure_missing');
   for(const [id,intent] of intents) {
-    if(journal.some(i=>['child-delete','account-delete'].includes(i.type)&&erasureCoversVoice(i,intent.scope,id)))continue;
+    if(journal.some(i=>['child-delete','account-delete','class-delete'].includes(i.type)&&erasureCoversVoice(i,intent.scope,id)))continue;
     const source=current.get(id)??old.get(id);requireValue(source,'restore_cleanup_evidence_missing');
     const row=source.value;requireValue(erasureCoversVoice(intent,row.objectScope,id));
     if(row.deletion)requireValue(canonical(row.deletion.intent)===canonical(intent));

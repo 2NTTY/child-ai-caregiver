@@ -1,5 +1,5 @@
 import { avatarHeadId, avatarCleanupId, avatarHeadRecordSchema, avatarUploadRecordSchema, avatarCleanupRecordSchema } from './avatar-data.ts';
-import { sharingErasedBy } from './firestore-sharing-records.ts';
+import { sharingErasedBy, sharedOperationSchema } from './firestore-sharing-records.ts';
 import type { FirestoreAvatarCleanup } from './firestore-avatar-cleanup.ts';
 import { firestoreChatFileRowSchema, type FirestoreChatFilesStore } from './firestore-chat-files.ts';
 import { firestoreVoiceRowSchema, type FirestoreVoiceStore } from './firestore-voice.ts';
@@ -54,11 +54,11 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
   }
   function matches(job: FirestoreScopeErasure, row: OpenedRecoveryEnvelope) {
     const scope = job.intent.scope, candidate = row.context.scope;
-    if (sharingErasedBy(row.context.kind, row.value, scope, job.intent.type === 'account-delete')) return true;
+    if (sharingErasedBy(row.context.kind, row.value, scope, job.intent.type === 'account-delete',job.intent.type==='class-delete')) return true;
     if (job.intent.type === 'account-delete' && row.context.kind === 'authority-invitation')
       return (row.value as { consumedBy?: string }).consumedBy === scope.ownerUserId;
     if (scope.ownerUserId !== candidate.ownerUserId) return false;
-    if (job.intent.type === 'account-delete') return true;
+    if (job.intent.type === 'account-delete' || job.intent.type==='class-delete') return true;
     if (row.context.kind === 'authority-operation') {
       const result = (row.value as any).result;
       // Child creation receipts are intentionally stored under the owner-wide NIL scope.
@@ -115,7 +115,7 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
     }
     if (stage === 'auth') {
       if (job.intent.type === 'account-delete') await options.eraseAuthUser(owner);
-      await authority.finishErasure(job.intent.scope, job.intent.type === 'account-delete' ? 'account' : 'child');
+      await authority.finishErasure(job.intent.scope, job.intent.type === 'account-delete' ? 'account' : job.intent.type==='class-delete'?'class':'child');
       return checkpoint(job, null, true);
     }
     if (stage === 'agent-user') {
@@ -157,6 +157,7 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
         const voice = firestoreVoiceRowSchema.parse(opened.value);
         if (!await options.voices.eraseForScope(voice.scope,voice.id,job.intent,job.journal!)) return erasures.result(job);
       }
+      if(job.intent.type==='class-delete' && opened.context.kind==='child')await authority.finishClassChildErasure(opened.context.scope);
       if (retainBarrier(opened, job)) continue;
       if (opened.context.kind === 'agent-run' || opened.context.kind === 'run')
         await options.deleteAgentSession(owner, opened.context.id);
@@ -169,6 +170,10 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
         // Deleting these keys would let an old create operation acquire a new identity.
         if (fresh.context.kind === 'authority-operation') {
           await authority.redactOperation(tx, fresh.context.id, fresh.context.scope);
+        } else if(fresh.context.kind==='shared-operation') {
+          const value=sharedOperationSchema.parse(fresh.value);
+          tx.set(current.ref,{...erasures.data.tags(fresh.context.scope),...erasures.data.seal('shared-operation',fresh.context.id,
+            fresh.context.scope,sharedOperationSchema,{...value,result:null,erased:true})});
         } else if (fresh.context.kind === 'online-receipt') {
           const value = fresh.value as any;
           const operationId = value.operation?.opId ?? value.operationId;

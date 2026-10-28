@@ -674,6 +674,15 @@
       ]
     },
     {
+      "collectionGroup": "yuban_authority_shared_spaces",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "teacherSpaceId", "order": "ASCENDING" },
+        { "fieldPath": "active", "order": "ASCENDING" },
+        { "fieldPath": "entryId", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "yuban_authority_memory_fact_revisions",
       "queryScope": "COLLECTION",
       "fields": [

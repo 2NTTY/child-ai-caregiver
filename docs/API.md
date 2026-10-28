@@ -1147,7 +1147,19 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 
 **家庭管理接口：**`GET /api/shared-spaces` 讀本人活動空間；`GET /:spaceId` 讀目前角色及空間版本，`GET /:spaceId/{members|shares|invitations}` 分頁讀控制資料，邀請列表僅限管理員。每次最多檢查 20 筆，`nextCursor` 不透明並綁本人／儲存世代及列表種類；空間子列表亦綁空間版本，變更後重新讀取。不返回內部儲存 scope、密文、私人聊天或邀請 token；分享列表只含仍有效的孩子稱呼、模組及撤回資格。稱呼是辨識已分享孩子的必要標籤，不授予其餘 profile 內容。
 
-`POST /api/shared-spaces/commands` 使用共用 `SharingCommand`：建立家庭、發出／接受／撤回邀請、設定／撤回模組、角色／撤權、提出／接受轉交、退出及解散。沿原服務交易核對角色、版本及原 `operationId`，不複製權限或另建身份系統；教師空間建立留 CLASS01。邀請 token 只在原發出操作的回應／有權查回中提供，由管理員自行傳送，不自動寄信。`GET /api/shared-spaces/operations/:operationId` 回 `{operation}`，不存在為 null；逾時先查原操作，仍不存在才可重送同一指令／ID，不能換 ID。查回再核目前成員資格，邀請 token 另核目前管理員；撤權／解散後只返回原操作身份、動作及 `redacted=true`，不回舊空間內容或 token，效果已提交而不重做。退出／解散只保留無正文終態收據。提交成功後的結果查回失敗仍屬 unknown，不能按 HTTP 4xx 一概斷言從未提交。
+`POST /api/shared-spaces/commands` 使用共用 `SharingCommand`：建立家庭／獨立班級／教師空間、發出／接受／撤回邀請、設定／撤回個人模組分享、角色／撤權、提出／接受轉交、退出及解散班級／家庭／沒有班級的教師空間。沿原服務交易核對角色、版本及原 `operationId`，不複製權限或另建身份系統；班級解散沿下述持久清理契約，未提供清理服務的組裝回 `class_dissolution_unavailable`。邀請 token 只在原發出操作的回應／有權查回中提供，由管理員自行傳送，不自動寄信。`GET /api/shared-spaces/operations/:operationId` 回 `{operation}`，不存在為 null；逾時先查原操作，仍不存在才可重送同一指令／ID，不能換 ID。查回再核目前成員資格，邀請 token 另核目前管理員；撤權／解散後只返回原操作身份、動作及 `redacted=true`，不回舊空間內容、孩子 ID 或 token，效果已提交而不重做。退出／解散只保留無正文終態收據。提交成功後的結果查回失敗仍屬 unknown，不能按 HTTP 4xx 一概斷言從未提交。
+
+**獨立班級名冊（接線中，尚未部署）：**`GET /api/shared-spaces/classes` 分頁讀本人的活動班級；原 `/api/shared-spaces` 家庭列表不混入新類型。建立沿 `create` 的 `kind=class`，`addClassChild` 帶班級 ID、`expectedVersion`、原 `operationId` 及孩子稱呼，直接建立該班權威孩子，毋須先建教師空間。成功收據另回 `childId`，查回重核孩子及目前權限；已不在目前資料中的結果只回遮蔽收據，不從舊收據復活。這與匯入包不同，不按同名稱呼自動合併。
+
+`GET /api/shared-spaces/:spaceId/roster?query=…&cursor=…` 復用分享列表 DTO，班級孩子不提供撤回個人分享（`canWithdraw=false`）。每頁最多核對 20 個本班項目，搜尋稱呼使用 NFKC／大小寫正規化後的包含匹配；正文仍加密，不建明文姓名索引。游標綁操作者、儲存世代、班級版本及已正規化查詢，不能跨範圍或換條件續讀。零筆命中而有 `nextCursor` 只代表這頁沒有命中，畫面須提供續讀並明示搜尋未完；無游標才可說沒有更多結果。每頁重新核角色、孩子狀態及原權威稱呼，不從舊 roster 副本讀取。教師空間關係見下段；班級背景工作與清理未接通前，不將本段當完整 CLASS01／正式交付。
+
+**教師空間關係（已接線，未部署）：**教師空間沿同一 `create(kind=teachers)`、成員、轉交及原操作接口；`GET /api/shared-spaces/teachers` 提供本人空間，`GET /api/shared-spaces/teachers/:spaceId/classes` 提供其班級，各頁最多 20 筆並支援游標。原家庭列表只回家庭。`attachClass` 帶 `spaceId`、`expectedVersion`、`teacherSpaceId`、`expectedTeacherVersion` 及 `operationId`，由班級管理員加入自己所屬且非唯讀的教師空間。資料仍在原班級 workspace；加入後班級的成員角色及管理權即時取自父空間，不再接受逐班邀請或角色修改（`class_members_managed_by_teachers`）。原有直接成員及邀請的世代失效，避免日後移出時恢復舊存取。
+
+`detachClass` 由空間管理員指定目前空間成員為獨立班級負責人；指定本人可直接完成，指定他人只保存待接收，對方以 `acceptClassDetach` 接受後完成。父空間管理權換人後，前管理員尚未接受的移出安排失效。完成時原班級、孩子及資料 ID 保持，新的直接管理成員與新世代原子保存，原空間成員即失去存取。父空間與成員版本加入班級授權 basis 及續讀游標；移出／加入核兩邊版本，不能只檢查班級版本。班級還在空間內時，其成員退出及管理權轉交從教師空間進行；解散含班級的教師空間不得使資料成為孤兒，須先處理班級歸屬，實體清理另按班級生命週期接續。
+
+兩項移出 command 沿原 `spaceId／expectedVersion／operationId`，並帶 `expectedTeacherVersion`；提出移出另帶 `targetUserId`。班級 view 增加 `teacherSpaceId`、附屬時的 `teacherSpaceName／teacherSpaceVersion` 及目前有效的 `detachTargetUserId`；這些欄位不加入舊家庭 view。原操作查回仍重核目前存取，沒有權限只回遮蔽收據；不以保存的舊管理員當目前權限。`teacher_space_has_classes` 表示尚有附屬班級，不執行解散。Web／Android 共用 `/teachers` 管理入口，不要求先選孩子。
+
+**CLASS01 解散接線（已實作及合成核對，未部署）：**班級沿既有 `dissolve` 指令及確認，附屬班級另帶 `expectedTeacherVersion`，核目前有效管理員及兩邊版本。交易關閉班級及其 workspace，保存原操作與持久清理請求；回 `exit.cleanupState=pending`，不能解讀為實體資料已全部刪除。既有背景工作先寫入並核實獨立 `class-delete` 日誌，再分頁清理班級資料、修訂及附件；原 `GET operations/:operationId` 回目前 `pending／completed`。清理不刪個人登入／裝置會話或別人的私人原件；已刪班級的舊收據只留身份與效果，不能重做或讀回正文。家庭／教師空間原回應不增加清理欄位。未設清理服務的組裝仍拒絕班級解散，不能假成功。
 
 以上讀寫均核已登入身份及 `x-expected-user-id`，寫入沿既有 Web 同源／原生 transport；回應前再核身份並 `no-store`。家庭管理不依賴已選孩子，退出頁面不丟失同一身份的未知操作；切身份後清理本機草稿、token 與遲到結果。共享原件選擇不自動切換私人聊天或擴大目前頁面的資料範圍。
 
@@ -1204,3 +1216,14 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 正式啟用須另核 Firebase 目前的同電郵帳號設定：官方 Google provider 在部分情況會自動連結，而 allowDuplicateEmails 會改變 profile／email 回傳。不能以空按鈕配置以外的假設當成已符合明確連結，也不直接變更現有 UID／電郵准入規則；限制及來源見 [TECH_REUSE](TECH_REUSE.md#p4-auth-providers)。
 
 **AUTH01 原生 provider adapter（已實作、未開放）：**Google／Apple 原生 SDK 只取得供應商 credential，再交 Firebase JS 的 `signInWithCredential`／`linkWithCredential`；業務登入仍經同一 session exchange。平台 adapter 不自建 session、不自行寫 Firebase 用戶 email 或合併 UID。Google 要求實際 Web OAuth client ID，iOS 另需 iOS client ID／URL scheme；Apple 每次產生新 nonce／state，供應商回覆及 Firebase credential 驗證後才回中央流程。缺平台配置不暴露可用方式；新原生依賴須新 binary，不能強推舊 runtime OTA。仍不啟用雲端 provider；自動連結與邀請 gate 沿上文。
+
+<a id="p4-system-share-input"></a>
+## S12-W02：系統分享進入共用草稿（Android 已接線，待新 binary）
+
+外部系統分享是未提交輸入，不是 Agent 指令、上載授權或匯入結果。Android 復用 Expo Sharing 的原始 payload 與 Router intent；網址只作原文，不在接收時抓取或解析。`/share` 在登入後顯示待處理項目，選定個人孩子後才加入既有草稿。已有文字追加而不覆寫；每則一份附件沿既有規則，已有附件時保留兩邊輸入並說明，不能靜默取代。
+
+- 接收清單只在設備程序記憶體中保留；未送出資料不跨端同步。重啟後來源可能須重新分享，不能宣稱已保存至 Server。
+- 帳號變更清除原清單與原生 intent；未登入接收可待首次登入後選擇目標。讀取期間切換孩子／撤權，遲到的本機副本必須釋放，不加入新範圍。
+- 照片／錄音／一般檔案沿現有 bytes、格式、大小、hash、暫存與原送出服務；不新增 HTTP 上載接口、模型呼叫或預覽解析服務。原始 URI 不加入聊天文字、URL 參數或日誌。
+- 收件箱最多持有 20 項；超量明示，不能截斷後回報全部接受。用戶逐項加入／捨棄輸入，不因此要求逐條批准 Agent 業務操作。
+- 新 Android intent filter 需要新 binary，OTA 不代替；Web 平台 adapter 為空實作，不宣稱網站已有 OS 分享接收。iOS 標準 extension 及 HANDOVER01 資料包匯入仍待接線，不把一般檔案傳送算成資料包導入。

@@ -11,3 +11,4 @@ package-lock.json text eol=lf
 server/migrations/*.sql text eol=lf
 
 _archive/legacy-web-2026-10-07/** -text
+frontend/patches/*.patch text eol=lf whitespace=-blank-at-eol
