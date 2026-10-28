@@ -1,0 +1,19 @@
+{
+  "package": "P4-HANDOVER01 / shared source attribution projection",
+  "date": "2026-10-29", "baseCommit": "b2f72e1ccf2c338cac6233fd975bfac8331387b0",
+  "branch": "codex/p4-handover-source-labels",
+  "checks": [
+    { "command": "node --experimental-test-module-mocks --test frontend/src/production/care-profile-projections.test.mts",
+      "result": "1 passed", "log": "tmp/care-profile-source-chain-green.log",
+      "covers": ["External same-string UID never projected as local confirmation", "Preauthorized statement survives repeated imports",
+        "Unknown provenance stops traversal", "Local explicit correction remains local despite retained provenance"] },
+    { "command": "node tmp/check-handover-label-types.cjs", "roots": 2, "diagnostics": 0, "log": "tmp/handover-label-types.log" },
+    { "command": "git diff --check", "result": "passed" }
+  ],
+  "failuresRetained": [
+    { "log": "tmp/care-profile-source-projection-red.log", "cause": "External same-string confirmer displayed as current user" },
+    { "log": "tmp/care-profile-source-chain-red.log", "cause": "First implementation lost original preauthorization after a second import" }
+  ],
+  "review": "Independent read-only review; no confirmed Important or Critical findings",
+  "notValidatedOrDelivered": ["Formal import workflow", "Browser/device visuals", "Build, deployment or OTA"]
+}
