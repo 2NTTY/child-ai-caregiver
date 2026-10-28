@@ -184,7 +184,12 @@ export class SharingController {
     } finally { this.finish(ticket); }
   }
   async checkOriginal() {
-    if (!this.state.pending) return; const ticket = this.begin("check"); if (!ticket) return;
+    if (!this.state.pending) {
+      const receipt = this.state.receipt;
+      if (receipt?.action === "dissolve" && receipt.exit?.cleanupState === "pending") await this.checkCleanupReceipt(receipt);
+      return;
+    }
+    const ticket = this.begin("check"); if (!ticket) return;
     const pending = this.state.pending;
     try {
       const operation = await this.api.operation(pending.command.operationId, ticket.userId, ticket.controller.signal);
@@ -193,6 +198,20 @@ export class SharingController {
       else this.update({ pending: { ...pending, checked: true, unknown: true }, notice: "暫未查到原結果。可以再次查核，或由你明確選擇繼續剛才的操作。" });
     } catch (error) { if (this.current(ticket)) this.update({ pending: { ...pending, checked: false, unknown: true }, notice: "原結果仍未確認。" + errorText(error, this.mode),
       ...(error instanceof SharingApiError && [401, 403, 404].includes(error.status) ? { selected: null, teacherSpaces: page(), teacherClasses: page(), teacherClassesLoaded: false, members: page(), shares: page(), invitations: page() } : {}) }); }
+    finally { this.finish(ticket); }
+  }
+  private async checkCleanupReceipt(receipt: SharingOperation) {
+    const ticket = this.begin("check"); if (!ticket) return;
+    try {
+      const operation = await this.api.operation(receipt.operationId, ticket.userId, ticket.controller.signal);
+      if (!this.current(ticket)) return;
+      if (!operation || operation.operationId !== receipt.operationId || operation.action !== "dissolve"
+        || operation.exit?.spaceId !== receipt.exit?.spaceId || operation.exit?.version !== receipt.exit?.version
+        || operation.exit?.state !== "dissolved" || !operation.exit.cleanupState)
+        throw new SharingApiError(0, "sharing_response_invalid");
+      this.update({ receipt: operation, notice: operation.exit.cleanupState === "completed"
+        ? "班級所屬資料清理已完成。" : "班級已關閉，所屬資料仍在清理中。請稍後沿原操作查核。" });
+    } catch (error) { if (this.current(ticket)) this.update({ notice: "未能核對班級清理進度；已受理的解散不會重新提交。" + errorText(error, this.mode) }); }
     finally { this.finish(ticket); }
   }
   async retryOriginal() {
