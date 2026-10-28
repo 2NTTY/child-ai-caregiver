@@ -29,6 +29,7 @@ export function useProductionSharing(mode: SharingMode = "family") {
   const expected = auth === "signedIn" && account.gate === "ready" && identityKey ? identityKey + ":sharing:" + mode + ":" + sessionGeneration : null;
   const state: SharingState = current.identityKey === expected && current.userId === userId ? current : {
     ...current, identityKey: null, userId: null, online, loaded: false, busy: null, spaces: { items: [], nextCursor: null }, selected: null, rosterQuery: "", rosterLoaded: false,
+    teacherSpaces: { items: [], nextCursor: null }, teacherClasses: { items: [], nextCursor: null }, teacherClassesLoaded: false,
     members: { items: [], nextCursor: null }, shares: { items: [], nextCursor: null }, invitations: { items: [], nextCursor: null },
     pending: null, invitationToken: null, receipt: null, notice: null,
   };
