@@ -29,7 +29,7 @@ export const firestoreTaskStorageSchema = z.object({
 }).strict();
 export const firestoreTaskSchema: z.ZodType<CareTask> = firestoreTaskStorageSchema.transform(({ createdViaShare: _proof, classAssignment: _assignment, ...task }) => task);
 export const firestoreTaskRevisionStorageSchema = z.object({ task: firestoreTaskStorageSchema,
-  action: z.enum(['create', 'reschedule', 'complete', 'cancel', 'resolve']), actorUserId: bounded(256),
+  action: z.enum(['create', 'reschedule', 'complete', 'cancel', 'resolve', 'import']), actorUserId: bounded(256),
   basisVersion: z.number().int().nonnegative().max(2147483647), note: z.string().max(1000), at: datetime,
   changedViaShare: sharedWriteAttributionSchema.optional() }).strict();
 export const firestoreTaskRevisionSchema: z.ZodType<TaskRevision> = firestoreTaskRevisionStorageSchema.transform(({ changedViaShare: _proof, ...revision }) =>

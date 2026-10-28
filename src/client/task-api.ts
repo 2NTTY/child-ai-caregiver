@@ -48,7 +48,7 @@ const pageSchema = z.object({ items: z.array(taskSchema),
   eligibleAssignees: z.array(z.object({ userId: z.string().min(1).max(128), name: z.string() })), nextAfterId: z.uuid().nullable(),
   reminders: z.array(reminderSchema).optional(), work: z.array(workSchema).optional(), workerEnabled: z.boolean().optional() });
 const historySchema = z.object({ revisions: z.array(z.object({ task: taskSchema,
-  action: z.enum(["create", "reschedule", "complete", "cancel", "resolve"]), actorUserId: z.string().min(1).max(128),
+  action: z.enum(["create", "reschedule", "complete", "cancel", "resolve", "import"]), actorUserId: z.string().min(1).max(128),
   basisVersion: z.number().int().min(0).max(2147483646), note: z.string().max(1000), at: dateTime })), nextBeforeVersion: version.nullable() });
 type Target = { childId: string; taskId?: string; expectedVersion?: number };
 

@@ -48,7 +48,7 @@ export interface FirestoreTasksQuery {
 export interface FirestoreOnlineStore {
   readImportTask(binding: FirestoreAuthorityTransaction, childId: string, taskId: string): Promise<CareTask | null>;
   prepareImportedTask(binding: FirestoreAuthorityTransaction, childId: string, operationId: string,
-    row: HandoverImportRow, integrity: HandoverIntegrity): Promise<{ task: CareTask; changeSeq: string; commit(): void }>;
+    row: HandoverImportRow, integrity: HandoverIntegrity, target?: { id: string; expectedVersion: number }): Promise<{ task: CareTask; changeSeq: string; commit(): void }>;
   spaces(userId: string): Promise<Workspace[]>;
   context(userId: string, command: OnlineCommand): Promise<OnlineContext>;
   submit(userId: string, submission: OnlineSubmission, context?: NativeRequestContext): Promise<OnlineReceipt>;
@@ -159,17 +159,27 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
   } };
 
   async function prepareTask(binding: FirestoreAuthorityTransaction, childId: string, oldId: string | undefined, raw: unknown, operationId: string,
-    imported?: { state: CareTask['occurrence']['state']; provenance: NonNullable<CareTask['importedFrom']> }) {
+    imported?: { state: CareTask['occurrence']['state']; provenance: NonNullable<CareTask['importedFrom']>; expectedVersion?: number }) {
     domainParse(uuid, operationId); if (oldId) domainParse(uuid, oldId);
     const userId = binding.sharedAccess?.classMember?.userId ?? binding.scope.ownerUserId, actorUserId = binding.actorUserId,
       candidateId = randomUUID(), occurrenceId = randomUUID(), at = new Date().toISOString();
     domainParse(uuid, childId); await requireChild(binding, childId);
     const scope = scopeFor(binding, childId);
-    const input = oldId ? domainParse(taskChangeSchema, raw) : domainParse(taskCreateSchema, raw);
+    const input = oldId && !imported ? domainParse(taskChangeSchema, raw) : domainParse(taskCreateSchema, raw);
     const old = oldId ? await readTask(binding, scope, oldId) : null;
     if (oldId && !old) domainReject('not_found', 404);
     let task: CareTask, revision: TaskRevision;
-    if (old) {
+    if (old && imported) {
+      const expectedVersion = domainParse(z.number().int().positive().max(2147483646), imported.expectedVersion);
+      if (old.version !== expectedVersion) domainReject('version_conflict');
+      const create = domainParse(taskCreateSchema, input);
+      if (create.values.assigneeUserId !== userId) domainReject('assignee_not_eligible', 400);
+      const { dueAt, timeZone, ...values } = create.values;
+      // Keep the local occurrence and its delivery evidence. Source revisions cannot replay a reminder.
+      task = { ...old, ...values, version: old.version + 1, updatedAt: at, importedFrom: imported.provenance,
+        occurrence: { ...old.occurrence, dueAt, timeZone, state: imported.state, terminalBasisVersion: null } };
+      revision = { task, action: 'import', actorUserId, basisVersion: expectedVersion, note: '', at };
+    } else if (old) {
       const change = domainParse(taskChangeSchema, input);
       if (change.action === 'reschedule' && change.assigneeUserId !== userId) domainReject('assignee_not_eligible', 400);
       task = changeTask(old, change, at);
@@ -211,7 +221,7 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
     const invalidateDocuments = await prepareContextChange(data, binding);
     const createdViaShare = old ? old.createdViaShare : sharedWriteAttribution(binding, task.id, 1);
     const changedViaShare = sharedWriteAttribution(binding, task.id, task.version);
-    const classAssignment = !old || 'action' in input && input.action === 'reschedule'
+    const classAssignment = !old || imported || 'action' in input && input.action === 'reschedule'
       ? binding.sharedAccess?.classMember : old.classAssignment;
     const storedTask = firestoreTaskStorageSchema.parse({ ...task, ...(createdViaShare ? { createdViaShare } : {}),
       ...(classAssignment ? { classAssignment } : {}) });
@@ -296,14 +306,14 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
       const value = await readTask(binding, scopeFor(binding, childId), taskId);
       return value ? firestoreTaskSchema.parse(value) : null;
     },
-    async prepareImportedTask(binding, childId, operationId, row, integrity) {
+    async prepareImportedTask(binding, childId, operationId, row, integrity, target) {
       if (row.section !== 'tasks') domainReject('invalid_package_data', 400);
       const source = domainParse(firestoreTaskSchema, row.value, 'invalid_package_data');
       const provenance = makeImportProvenance(row, integrity, binding.actorUserId, new Date().toISOString());
       const assigneeUserId = binding.sharedAccess?.classMember?.userId ?? binding.scope.ownerUserId;
-      return prepareTask(binding, childId, undefined, { confirm: true, values: { title: source.title, details: source.details,
+      return prepareTask(binding, childId, target?.id, { confirm: true, values: { title: source.title, details: source.details,
         kind: source.kind, assigneeUserId, dueAt: source.occurrence.dueAt, timeZone: source.occurrence.timeZone } }, operationId,
-      { state: source.occurrence.state, provenance });
+      { state: source.occurrence.state, provenance, ...(target ? { expectedVersion: target.expectedVersion } : {}) });
     },
     notificationPreferences(userId) { return authority.runTransaction(userId, null, readPreferences); },
     async spaces(userId) {

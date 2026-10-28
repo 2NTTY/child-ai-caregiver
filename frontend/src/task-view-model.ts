@@ -16,7 +16,7 @@ export interface TaskView {
   occurrence: { id: string; dueAt: string; timeZone: string; state: TaskState; terminalBasisVersion: number | null };
 }
 export interface TaskRevisionView {
-  task: TaskView; action: "create" | TaskAction; actorUserId: string;
+  task: TaskView; action: "create" | "import" | TaskAction; actorUserId: string;
   basisVersion: number; note: string; at: string;
 }
 export interface TaskAssigneeView { userId: string; name: string }
@@ -62,8 +62,8 @@ export interface TasksActions {
 export const taskStateLabels: Record<TaskState, string> = {
   scheduled: "待處理", completed: "已完成", cancelled: "已取消", needs_review: "待覆核 · 已停催",
 };
-export const taskActionLabels: Record<TaskDraftMode, string> = {
-  create: "新增事項", reschedule: "改期／轉派", complete: "完成事項", cancel: "取消事項", resolve: "核對完成或取消",
+export const taskActionLabels: Record<TaskRevisionView["action"], string> = {
+  create: "新增事項", import: "匯入更新", reschedule: "改期／轉派", complete: "完成事項", cancel: "取消事項", resolve: "核對完成或取消",
 };
 export const taskWorkLabels: Record<TaskWorkView["status"], string> = {
   pending: "待處理", processed: "已處理", stopped: "已停止", failed: "失敗", unknown: "結果未知",

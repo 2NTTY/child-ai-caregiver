@@ -94,8 +94,6 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       const locallyChanged = mapping ? currentVersion !== mapping.target.version : section === 'profile' && (current as ChildProfile).data !== null;
       if (!deleted && locallyChanged && resolution.mode !== 'replace_current') return finish('conflict', 'target_changed');
       if (!deleted && !locallyChanged && mapping && sourceValue.version === mapping.sourceVersion) return finish('skipped', 'already_imported');
-      // Task replacement needs an explicit domain import revision; never emulate it by cancelling and recreating silently.
-      if (section === 'tasks' && mapping && current) return finish('conflict', 'task_update_not_connected');
       if (section === 'care') {
         const prepared = await care.prepareImportedRecord(b, opId, raw.row, raw.integrity,
           current ? { id: (current as CareRecord).id, expectedVersion: current.version } : undefined);
@@ -105,8 +103,9 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
         const prepared = await care.prepareImportedProfile(b, opId, raw.row, raw.integrity, currentVersion);
         return finish(currentVersion > 0 ? 'updated' : 'created', null, { id: prepared.value.childId, version: prepared.value.version }, prepared);
       }
-      const prepared = await online.prepareImportedTask(b, target.childId, opId, raw.row, raw.integrity);
-      return finish('created', null, { id: prepared.task.id, version: prepared.task.version }, prepared);
+      const prepared = await online.prepareImportedTask(b, target.childId, opId, raw.row, raw.integrity,
+        current ? { id: (current as CareTask).id, expectedVersion: current.version } : undefined);
+      return finish(current ? 'updated' : 'created', null, { id: prepared.task.id, version: prepared.task.version }, prepared);
     });
   }
   return { apply, get(userId: string, raw: Target, opId: string, section: Section) {
