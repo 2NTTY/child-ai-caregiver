@@ -14,8 +14,14 @@ export const SHARING_SCOPE: WorkRecoveryScope = Object.freeze({ ownerUserId: 'sy
 export const sharedSpaceSchema = z.object({ id: z.uuid(), kind: z.enum(['family', 'teachers', 'class']), name: z.string().trim().min(1).max(160),
   version, state: z.enum(['active', 'dissolved']), managerUserId: user, managerGeneration: z.uuid(),
   storageIdentity: z.object({ ownerUserId: user, workspaceId: z.uuid() }).strict(),
-  transferTargetUserId: user.nullable(), createdAt: at, updatedAt: at }).strict();
+  teacherSpaceId:z.uuid().nullable().optional(), directMembershipGeneration:z.uuid().optional(),
+  detachTargetUserId:user.nullable().optional(), detachManagerGeneration:z.uuid().nullable().optional(), detachTargetMembershipId:z.uuid().nullable().optional(),
+  transferTargetUserId: user.nullable(), createdAt: at, updatedAt: at }).strict()
+  .refine(value=>!value.teacherSpaceId || value.kind==='class' && value.teacherSpaceId!==value.id && !!value.directMembershipGeneration)
+  .refine(value=>[value.detachTargetUserId,value.detachManagerGeneration,value.detachTargetMembershipId].every(item=>item==null)
+    || !!value.teacherSpaceId && [value.detachTargetUserId,value.detachManagerGeneration,value.detachTargetMembershipId].every(Boolean));
 export const sharedMembershipSchema = z.object({ spaceId: z.uuid(), userId: user, label:z.string().min(1).max(320).optional(), membershipId: z.uuid(), version, stateVersion: version,
+  spaceGeneration:z.uuid().optional(),
   role: z.enum(['owner', 'caregiver', 'viewer']), state: z.enum(['active', 'revoked']), joinedAt: at }).strict();
 export const resourceShareSchema = z.object({ spaceId: z.uuid(), childId: z.uuid(), source: workRecoveryScopeSchema,
   modules: z.array(sharedModuleSchema).min(1).max(8), version, state: z.enum(['active', 'revoked']), sharedBy: user,
@@ -41,7 +47,9 @@ export function sharingUserTag(userId: string) { return firestoreDomainHash(['sh
 
 /** Only routing metadata; resource bodies remain under their original owner-bound encryption. */
 export function sharingMetadata(kind: SharingKind, value: any): Record<string, unknown> {
-  if (kind === 'shared-space') return { entryId: value.id, managerTag: sharingUserTag(value.managerUserId), active: value.state === 'active' };
+  if (kind === 'shared-space') return { entryId: value.id,
+    managerTag: sharingUserTag(value.kind==='class'&&value.teacherSpaceId ? 'space:'+value.teacherSpaceId : value.managerUserId), active: value.state === 'active',
+    ...(value.teacherSpaceId !== undefined ? {teacherSpaceId:value.teacherSpaceId} : {}) };
   if (kind === 'shared-membership') return { entryId: value.userId, spaceId: value.spaceId, memberTag: sharingUserTag(value.userId), active: value.state === 'active' };
   if (kind === 'resource-share') return { entryId: value.childId, spaceId: value.spaceId, sourceUserTag: sharingUserTag(value.source.ownerUserId), active: value.state === 'active' };
   if (kind === 'shared-invitation') return { entryId: value.id, spaceId: value.spaceId, active: value.state === 'issued' };
@@ -104,6 +112,7 @@ export async function assertNoManagedSharedSpaces(data: FirestoreDomainData, tx:
     const id = z.uuid().parse(snapshot.get('entryId'));
     const space = data.open('shared-space', id, SHARING_SCOPE, sharedSpaceSchema, snapshot);
     if (space.id !== id || space.managerUserId !== userId || space.state !== 'active') domainReject('sharing_binding', 500);
+    if(space.kind==='class'&&space.teacherSpaceId)domainReject('sharing_binding',500);
     domainReject('space_transfer_or_dissolve_required');
   }
 }
