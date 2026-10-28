@@ -31,6 +31,7 @@ export function createFirebaseWorkerServices(runtime: Awaited<ReturnType<typeof 
         };
         if (!await validIdentity()) return { state: 'stopped' };
         if (job.kind === 'handover-export') return runtime.handover.processExport(job, signal);
+        if (job.kind === 'handover-import') return runtime.handoverImports.process(job, signal);
         if (job.kind === 'voice-transcription') {
           if (!runtime.product.transcribeVoice) throw new Error('Voice transcription not connected');
           return runtime.product.transcribeVoice(job, validIdentity, signal);

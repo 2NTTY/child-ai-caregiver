@@ -64,7 +64,7 @@ export function createHandoverUploadService(options: FirestoreDomainOptions & {
     if (artifact) await options.objects.remove({ scope: job.scope, packageId: job.id, descriptor: artifact, signal });
     await uploads.cleaned(job); return { state: 'completed' };
   }
-  return { create: uploads.create, get: uploads.get, cancel: uploads.cancel, receive, open, cleanup,
+  return { create: uploads.create, get: uploads.get, cancel: uploads.cancel, receive, open, cleanup, assertImportableIn: uploads.assertImportableIn,
     async erase(job: HandoverUploadRecord, signal?: AbortSignal) {
       return (await cleanup(job.scope, job.id, signal ?? AbortSignal.timeout(300_000))).state === 'completed';
     } };

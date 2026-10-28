@@ -18,7 +18,8 @@ const stepSchema = z.object({ position: z.number().int().nonnegative(), cursor: 
 const actorScope = (b: Binding): WorkRecoveryScope => ({ ...b.scope, childId: NIL });
 
 /** Internal verified-package coordinator. Public clients never supply verified rows, counts or worker leases. */
-export function createFirestoreHandoverImportBatches(options: FirestoreDomainOptions & { serverClock?: () => number }) {
+export function createFirestoreHandoverImportBatches(options: FirestoreDomainOptions & { serverClock?: () => number;
+  sourceGuard?: (b: Binding, request: HandoverImportBatchRequest) => Promise<() => void> }) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), sharing = createFirestoreSharingStore(options);
   const items = createFirestoreHandoverImportItems(options), clock = options.serverClock ?? Date.now;
   const at = () => new Date(clock()).toISOString();
@@ -77,16 +78,19 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
       ...data.seal('handover-import-control', identity, job.scope, importBatchControlSchema, value) };
     return () => b.transaction.create(data.ref('handover_import_controls', 'handover-import-control', identity), envelope);
   }
+  async function repeatedControl(b: Binding, job: Batch, opId: string, fingerprint: string) {
+    const identity = importBatchControlId(b.actorUserId, opId);
+    const snapshot = await b.transaction.get(data.ref('handover_import_controls', 'handover-import-control', identity));
+    if (!snapshot.exists) return false;
+    const prior = data.open('handover-import-control', identity, b.scope, importBatchControlSchema, snapshot);
+    if (prior.fingerprint !== fingerprint || prior.actorUserId !== b.actorUserId || prior.batchId !== job.id) domainReject('operation_conflict');
+    return true;
+  }
   async function control(owner: string, id: string, raw: unknown, action: 'cancel' | 'resume') {
     const input = domainParse(controlSchema, raw), fingerprint = firestoreDomainHash({ id, action, input });
     return authority.runTransaction(owner, null, async b => {
-      const job = await read(b, id), identity = importBatchControlId(owner, input.opId);
-      const snapshot = await b.transaction.get(data.ref('handover_import_controls', 'handover-import-control', identity));
-      if (snapshot.exists) {
-        const prior = data.open('handover-import-control', identity, b.scope, importBatchControlSchema, snapshot);
-        if (prior.fingerprint !== fingerprint || prior.actorUserId !== owner || prior.batchId !== id) domainReject('operation_conflict');
-        return job;
-      }
+      const job = await read(b, id);
+      if (await repeatedControl(b, job, input.opId, fingerprint)) return job;
       if (job.version !== input.expectedVersion) domainReject('version_conflict');
       if (action === 'cancel' ? !['queued', 'running'].includes(job.state) : !['cancelled', 'failed'].includes(job.state)) domainReject('import_batch_stopped');
       const scopes = action === 'resume' ? await targetScopes(b, job.request) : job.targetScopes;
@@ -100,22 +104,29 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
     });
   }
   return {
-    async create(owner: string, raw: unknown) {
+    async create(owner: string, raw: unknown, preflightError?: string) {
       const request = domainParse(importBatchRequestSchema, raw), fingerprint = firestoreDomainHash(request);
+      if (preflightError) domainParse(z.string().regex(/^[a-z][a-z0-9_]{0,79}$/u), preflightError);
       return authority.runTransaction(owner, null, async b => {
         if ((await b.transaction.get(ref(owner, request.opId))).exists) {
           const prior = await read(b, request.opId); if (prior.fingerprint !== fingerprint) domainReject('operation_conflict'); return prior;
         }
-        const scopes = await targetScopes(b, request);
+        const scopes = await targetScopes(b, request), assertSource = await options.sourceGuard?.(b, request);
         const job: Batch = { id: request.opId, version: 1, request, fingerprint, scope: b.scope, targetScopes: scopes,
-          createdAt: at(), updatedAt: at(), state: request.totalItems === 0 ? 'completed' : 'queued',
+          createdAt: at(), updatedAt: at(), state: preflightError ? 'failed' : request.totalItems === 0 ? 'completed' : 'queued',
           generation: b.generation, authorizationVersion: b.authorizationVersion, execution: 1,
-          position: 0, cursor: null, counts: { created: 0, updated: 0, skipped: 0, conflict: 0 }, claim: null, error: null };
+          position: 0, cursor: null, counts: { created: 0, updated: 0, skipped: 0, conflict: 0 }, claim: null, error: preflightError ?? null };
         const work = job.state === 'queued' ? await enqueue(b, job) : null;
-        const save = prepareSave(b, job); save(); work?.commit(); return job;
+        const save = prepareSave(b, job); assertSource?.(); save(); work?.commit(); return job;
       });
     },
     get(owner: string, id: string) { return authority.runTransaction(owner, null, b => read(b, id)); },
+    async replayControl(owner: string, id: string, raw: unknown, action: 'cancel' | 'resume') {
+      const input = domainParse(controlSchema, raw), fingerprint = firestoreDomainHash({ id, action, input });
+      return authority.runTransaction(owner, null, async b => {
+        const job = await read(b, id); return await repeatedControl(b, job, input.opId, fingerprint) ? job : null;
+      });
+    },
     cancel: (owner: string, id: string, command: unknown) => control(owner, id, command, 'cancel'),
     resume: (owner: string, id: string, command: unknown) => control(owner, id, command, 'resume'),
     async claim(work: FirestoreBackgroundWork) {
@@ -141,6 +152,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
       const item = await items.apply(owner, { opId, batchId: job.id, target: selected.target, row: input.row,
         integrity: job.request.integrity, resolution }, async (actor, target) => {
         const latest = await read(actor, job.id), assertCurrentLease = await held(actor, work, latest);
+        const assertSource = await options.sourceGuard?.(actor, latest.request);
         if (latest.state !== 'running' || !latest.claim || latest.claim.token !== work.lease?.token || latest.claim.workId !== work.id) domainReject('import_batch_stopped');
         if (latest.fingerprint !== job.fingerprint || firestoreDomainHash(target.scope) !== firestoreDomainHash(latest.targetScopes[index])) domainReject('import_target_changed');
         if (latest.position !== step.position || latest.cursor !== step.cursor) domainReject('import_cursor_changed');
@@ -150,7 +162,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
           // A prior row receipt implies its progress committed too; never count a replay at another position.
           if (repeated) domainReject('import_cursor_changed');
           // Domain preparation awaited reads after held(); reject expiration before any domain write.
-          assertCurrentLease();
+          assertCurrentLease(); assertSource?.();
           const next: Batch = { ...latest, version: latest.version + 1, position, cursor: step.nextCursor, updatedAt: at(),
             state: completed ? 'completed' : 'running', claim: completed ? null : latest.claim,
             counts: { ...latest.counts, [result.outcome]: latest.counts[result.outcome] + 1 } };
