@@ -139,7 +139,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </View>
       </View>
 
-      {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.noticeText}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
+      <View style={[styles.notice, !notice && styles.noticeEmpty]}><Text accessibilityLiveRegion="polite" style={styles.noticeText}>{notice ?? ""}</Text>{notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.noticeDismiss}><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}</View>
       <View style={styles.body}>
         <MotionEntrance ref={routeSurface} nativeID="main-content" role="main" tabIndex={-1} preset="route" triggerKey={pathname} scopeKey={motionScope} style={styles.content} testID="motion-route">{children}</MotionEntrance>
         {compact && pathname === "/" ? <MobileQuickInputDock key={motionScope} supportedKinds={["voice", "text"]} /> : null}
@@ -195,6 +195,9 @@ const styles = StyleSheet.create({
   scenarioSelected: { backgroundColor: colors.teal, borderColor: colors.teal },
   scenarioText: { fontFamily: chineseFont, fontSize: typeScale.caption, color: colors.ink, fontWeight: "700" },
   scenarioSelectedText: { color: colors.white },
+  noticeDismiss: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
+  // Keep the empty live text mounted; never use display:none/aria-hidden for it.
+  noticeEmpty: { height: 0, minHeight: 0, paddingVertical: 0, overflow: "hidden" },
   notice: { backgroundColor: colors.paleAmber, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, flexDirection: "row", alignItems: "center", gap: spacing.md },
   noticeText: { flex: 1, fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.caption },
   body: { flex: 1, flexDirection: "row", minHeight: 0 },
