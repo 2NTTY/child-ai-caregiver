@@ -76,7 +76,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {!compact && width >= 1280 ? <ChildKeyFacts hints={hints} child={selectedChild} load={model.profileLoad} /> : null}
           <View testID="header-actions" style={styles.topActions}><NotificationBell /></View>
         </View>
-        {notice ? <View style={styles.notice}><Text accessibilityLiveRegion="polite" style={styles.noticeText}>{notice}</Text><Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.dismiss}><AppIcon name="close" size={20} importantForAccessibility="no" /></Pressable></View> : null}
+        <View style={[styles.notice, !notice && styles.noticeEmpty]}><Text accessibilityLiveRegion="polite" style={styles.noticeText}>{notice ?? ""}</Text>{notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.dismiss}><AppIcon name="close" size={20} importantForAccessibility="no" /></Pressable> : null}</View>
         <MotionEntrance ref={routeSurface} preset="route" triggerKey={pathname} scopeKey={motionScope} style={styles.content} testID="motion-route"><ReaderPositionProvider pathname={pathname} scopeKey={scopeKey ?? null} identityKey={identityKey ?? null} isCurrent={current}>{children}</ReaderPositionProvider></MotionEntrance>
       </MotionScopeBoundary>
       {compact ? <View role="navigation" accessibilityLabel="主要工作區" testID="mobile-bottom-navigation" style={[styles.bottomNav, { paddingBottom: Math.max(8, insets.bottom) }]}>
@@ -94,6 +94,8 @@ const styles = StyleSheet.create({
   stage: { flex: 1, minWidth: 0, minHeight: 0 }, content: { flex: 1, minWidth: 0, minHeight: 0 },
   topbar: { minHeight: 64, flexShrink: 0, backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingHorizontal: 24, flexDirection: "row", alignItems: "center", gap: 16 },
   compactTopbar: { paddingHorizontal: 16, gap: 8 }, topActions: { marginLeft: "auto", flexShrink: 0 },
+  // Keep the empty live text mounted; never use display:none/aria-hidden for it.
+  noticeEmpty: { height: 0, minHeight: 0, paddingVertical: 0, overflow: "hidden" },
   notice: { backgroundColor: colors.paleAmber, paddingLeft: 16, paddingRight: 8, flexDirection: "row", alignItems: "center", gap: 8 }, noticeText: { flex: 1, fontFamily: chineseFont, color: colors.warningInk, fontSize: 16, lineHeight: 26 }, dismiss: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
   bottomNav: { flexShrink: 0, minHeight: 64, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.softLine, flexDirection: "row", gap: 8, paddingHorizontal: 8, paddingTop: 8 },
   bottomNavItem: { flex: 1, minWidth: 44, minHeight: 48, paddingVertical: 4, alignItems: "center", justifyContent: "center", gap: 4, borderRadius: 8 },
