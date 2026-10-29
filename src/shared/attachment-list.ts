@@ -13,6 +13,7 @@ export const attachmentListCursorSchema = z.string().min(1).max(ATTACHMENT_LIST_
 export const attachmentListQuerySchema = z.object({
   limit: z.number().int().positive().max(ATTACHMENT_LIST_BOUNDS.maxLimit).optional(),
   cursor: attachmentListCursorSchema.nullable().optional(),
+  includeImported: z.boolean().optional(),
 }).strict();
 export type AttachmentListQuery = z.infer<typeof attachmentListQuerySchema>;
 export const attachmentListPageFields = {

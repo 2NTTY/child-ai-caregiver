@@ -80,7 +80,7 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
     return descriptor;
   }
   function view(row: FirestoreVoiceRow, b?: FirestoreAuthorityTransaction): VoiceAttachment {
-    if (b?.sharedAccess && (row.state !== 'ready' || !row.messageId)) domainReject('not_found', 404);
+    if (b?.sharedAccess && (row.state !== 'ready' || !row.messageId && !row.importedFrom)) domainReject('not_found', 404);
     return { id: row.id, childId: row.scope.childId, version: row.version, createdAt: row.createdAt,
       state: row.state === "reserved" && row.upload ? row.upload.unknown ? "unknown" : "uploading" : row.state,
       fileName: row.metadata?.fileName ?? null, mimeType: row.metadata?.mimeType ?? null, bytes: row.metadata?.bytes ?? null, sha256: row.metadata?.sha256 ?? null,
@@ -231,7 +231,7 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
         return row;
       }
       if (op.prior) domainReject('operation_erased');
-      if (b.sharedAccess && (row.state !== 'ready' || !row.messageId)) domainReject('not_found', 404);
+      if (b.sharedAccess && (row.state !== 'ready' || !row.messageId && !row.importedFrom)) domainReject('not_found', 404);
       if (row.version !== expectedVersion) domainReject('version_conflict');
       const intent: FirebaseErasureIntent = { type: 'voice-delete', scope: row.objectScope, assetId: id,
         operationId: b.sharedAccess ? sharedSourceOperationId(actor.actorUserId, operationId) : operationId, at: now() };
@@ -367,6 +367,13 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
       domainReject('voice_changed');
     return { kind: 'voice_interpretation' as const, voiceId: reference.id, voiceVersion: reference.version, sha256: reference.sha256, sourceMessageId: messageId };
   }
+  async function readImportedEvidence(b: FirestoreAuthorityTransaction, messageId: string | null, reference: VoiceMessageReference) {
+    reference = domainParse(voiceMessageReferenceSchema, reference);
+    const row = await read(b, reference.id); current(row);
+    if (!row.importedFrom || row.state !== 'ready' || !row.descriptor || row.messageId !== messageId || row.version !== reference.version
+      || ['sha256', 'mimeType', 'bytes', 'durationMs'].some(key => row.descriptor![key as keyof VoiceObjectDescriptor] !== reference[key as keyof VoiceMessageReference]))
+      domainReject('voice_changed');
+  }
   async function agentAudio(userId: string, childId: string, messageId: string, reference: VoiceMessageReference) {
     await authority.runTransaction(userId, childId, b => readEvidence(b, messageId, reference));
     const original = await content(userId, childId, reference.id);
@@ -403,7 +410,17 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
   }
   const { content, list, get } = readers(authority);
 
-  return { list, get, prepareImportReservation, prepareImportPublication,
+  return { list, get, prepareImportReservation, prepareImportPublication, readImportedEvidence,
+    async readImportState(b: FirestoreAuthorityTransaction, id: string): Promise<{ value: { id: string; version: number; importSourceHash?: string } | null; version: number }> {
+      try {
+        const row = await read(b, id);
+        return { value: row.state === 'ready' ? { id: row.id, version: row.version, importSourceHash: row.importedFrom?.current.sourceHash } : null, version: row.version };
+      } catch (error) {
+        if (error instanceof FirestoreDomainError && error.status === 404 && error.code === 'not_found'
+          && !(await b.transaction.get(ref(id))).exists) return { value: null, version: 0 };
+        throw error;
+      }
+    },
     uploadImported: (userId: string, childId: string, id: string, expectedVersion: number, base64: string, stage: AttachmentImportStage,
       signal?: AbortSignal, selection?: SharedSelection) => upload(userId, childId, id, expectedVersion, base64, signal, { stage, selection }),
     forSharedSpace: (selection: SharedSelection) => ({ ...readers(sharedAttachmentReads(options, selection)),

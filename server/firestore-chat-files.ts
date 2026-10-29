@@ -11,7 +11,7 @@ import { z } from "zod";
 import type { DocumentSnapshot } from "@google-cloud/firestore";
 import { chatFileReservationSchema, type ChatFileAttachment, type ChatFileReservation, chatFileMessageReferenceSchema, type ChatFileMessageReference } from "../src/shared/chat-files.ts";
 import { createFirestoreAuthority, sharedSourceOperationId, type FirestoreAuthorityTransaction } from "./firestore-authority.ts";
-import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from "./firestore-domain-data.ts";
+import { FirestoreDomainData, FirestoreDomainError, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from "./firestore-work-continuation-recovery.ts";
 import { chatFileObjectDescriptorSchema, type ChatFileObjects, type ChatFileObjectDescriptor } from "./firebase-chat-file-objects.ts";
 import { decodeChatFileBase64, ChatFileError } from "./chat-file-bytes.ts";
@@ -78,7 +78,7 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
     return descriptor;
   }
   function view(row: FirestoreChatFileRow, b?: FirestoreAuthorityTransaction): ChatFileAttachment {
-    if (b?.sharedAccess && (row.state !== 'ready' || !row.messageId)) domainReject('not_found', 404);
+    if (b?.sharedAccess && (row.state !== 'ready' || !row.messageId && !row.importedFrom)) domainReject('not_found', 404);
     return { id: row.id, childId: row.scope.childId, version: row.version, createdAt: row.createdAt,
       state: row.state === "reserved" && row.upload ? row.upload.unknown ? "unknown" : "uploading" : row.state,
       fileName: row.metadata?.fileName ?? null, mimeType: row.metadata?.mimeType ?? null, bytes: row.metadata?.bytes ?? null, sha256: row.metadata?.sha256 ?? null,
@@ -229,7 +229,7 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
         return row;
       }
       if (op.prior) domainReject('operation_erased');
-      if (b.sharedAccess && (row.state !== 'ready' || !row.messageId)) domainReject('not_found', 404);
+      if (b.sharedAccess && (row.state !== 'ready' || !row.messageId && !row.importedFrom)) domainReject('not_found', 404);
       if (row.version !== expectedVersion) domainReject('version_conflict');
       const intent: FirebaseErasureIntent = { type: 'file-delete', scope: row.objectScope, assetId: id,
         operationId: b.sharedAccess ? sharedSourceOperationId(actor.actorUserId, operationId) : operationId, at: now() };
@@ -378,6 +378,16 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
   const { content, list, get } = readers(authority);
 
   return { list, get, prepareImportReservation, prepareImportPublication,
+    async readImportState(b: FirestoreAuthorityTransaction, id: string): Promise<{ value: { id: string; version: number; importSourceHash?: string } | null; version: number }> {
+      try {
+        const row = await read(b, id);
+        return { value: row.state === 'ready' ? { id: row.id, version: row.version, importSourceHash: row.importedFrom?.current.sourceHash } : null, version: row.version };
+      } catch (error) {
+        if (error instanceof FirestoreDomainError && error.status === 404 && error.code === 'not_found'
+          && !(await b.transaction.get(ref(id))).exists) return { value: null, version: 0 };
+        throw error;
+      }
+    },
     uploadImported: (userId: string, childId: string, id: string, expectedVersion: number, base64: string, stage: AttachmentImportStage,
       signal?: AbortSignal, selection?: SharedSelection) => upload(userId, childId, id, expectedVersion, base64, signal, { stage, selection }),
     forSharedSpace: (selection: SharedSelection) => ({ ...readers(sharedAttachmentReads(options, selection)),

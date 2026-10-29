@@ -572,6 +572,17 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
       }
     },
     prepareImportReservation, prepareImportPublication,
+    async readImportState(binding: FirestoreAuthorityTransaction, id: string): Promise<{ value: { id: string; version: number } | null; version: number }> {
+      parse(uuid, id, true);
+      try {
+        const row = await readRow(binding, id);
+        return { value: row.state === 'ready' ? { id: row.id, version: row.version } : null, version: row.version };
+      } catch (error) {
+        if (error instanceof FirestoreDomainError && error.status === 404 && error.code === 'not_found'
+          && !(await binding.transaction.get(rowRef(id))).exists) return { value: null, version: 0 };
+        throw error;
+      }
+    },
     uploadImported(userId: string, childId: string, id: string, base64: string, stage: AttachmentImportStage, selection?: SharedSelection): Promise<PhotoAttachment> {
       return service.upload(userId, childId, id, base64, { stage, selection });
     },

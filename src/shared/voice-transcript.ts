@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { VOICE_LIMITS, voiceMessageReferenceSchema } from './voice.ts';
+import { importProvenanceSchema } from './import-provenance.ts';
 export const voiceTranscriptDraftSchema = z.object({
   complete: z.boolean(),
   segments: z.array(z.object({ text: z.string().trim().min(1).max(2000),
@@ -16,9 +17,15 @@ export const voiceTranscriptSchema = z.object({ voice: voiceMessageReferenceSche
   content: voiceTranscriptDraftSchema.nullable(),
 }).strict();
 export type VoiceTranscript = z.infer<typeof voiceTranscriptSchema>;
+/** Retained text belongs to an imported original, not to a replayable transcription attempt. */
+export const importedVoiceTranscriptSchema = voiceTranscriptSchema.extend({ messageId: z.uuid().nullable(),
+  importedFrom: importProvenanceSchema,
+  origin: voiceTranscriptSchema.pick({ messageId: true, version: true, state: true, reason: true }),
+}).strict();
+export const storedVoiceTranscriptSchema = z.union([voiceTranscriptSchema, importedVoiceTranscriptSchema]);
 
 /** Shared wire view only; stored evidence still requires its original private message identity. */
-export const voiceTranscriptViewSchema = z.union([voiceTranscriptSchema, voiceTranscriptSchema.extend({
+export const voiceTranscriptViewSchema = z.union([voiceTranscriptSchema, importedVoiceTranscriptSchema, voiceTranscriptSchema.extend({
   messageId: z.null(), sharedSpaceId: z.uuid(),
-})]);
+}), importedVoiceTranscriptSchema.extend({ messageId: z.null(), sharedSpaceId: z.uuid() })]);
 export type VoiceTranscriptView = z.infer<typeof voiceTranscriptViewSchema>;

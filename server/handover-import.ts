@@ -24,16 +24,22 @@ type PageIndex = { path: string; section: string; childId: string | null; items:
 const contentSections = new Set(['photo_content', 'voice_content', 'file_content', 'child_avatar_content']);
 const attachmentSections = { photos: ['photo_content', 'photoId'], voices: ['voice_content', 'voiceId'], files: ['file_content', 'fileId'],
   child_avatar: ['child_avatar_content', 'childId'] } as const;
-type AttachmentSection = keyof typeof attachmentSections;
+export type AttachmentSection = keyof typeof attachmentSections;
+export interface HandoverAttachmentContent {
+  section: string; sourceId: string; sourceVersion: number; attachmentPath: string; mimeType: string; bytes: number; sha256: string; content: Buffer;
+}
 const attachmentReferenceSchema = z.object({ attachmentPath: z.string(), bytes: z.number().int().nonnegative(), sha256: hash,
   mimeType: z.string().min(1).max(200) });
 type AttachmentReference = z.infer<typeof attachmentReferenceSchema>;
 const positiveVersion = z.number().int().positive();
 const retainedProvenance = { importedFrom: importProvenanceSchema.optional() };
-const voiceTransferSchema = voiceAttachmentSchema.extend(retainedProvenance);
-const fileTransferSchema = chatFileAttachmentSchema.extend(retainedProvenance);
-const avatarTransferSchema = avatarStateSchema.extend(retainedProvenance);
-const photoTransferSchema = z.object({ id: uuid, childId: uuid, version: positiveVersion, state: z.enum(['reserved', 'ready']), metadata: photoMetadataSchema }).passthrough();
+export const voiceTransferSchema = voiceAttachmentSchema.extend(retainedProvenance);
+export const fileTransferSchema = chatFileAttachmentSchema.extend(retainedProvenance);
+const { canManage: ignoredAvatarCapability, ...avatarTransferFields } = avatarStateSchema.shape;
+export const avatarTransferSchema = z.object({ ...avatarTransferFields, ...retainedProvenance }).strict()
+  .refine(({ importedFrom, ...state }) => avatarStateSchema.safeParse({ ...state, canManage: false }).success);
+export const photoTransferSchema = z.object({ id: uuid, childId: uuid, version: positiveVersion, state: z.enum(['reserved', 'ready']), metadata: photoMetadataSchema,
+  ...retainedProvenance }).passthrough();
 const attachmentContentSchemas = {
   photos: attachmentReferenceSchema.extend({ photoId: uuid, version: positiveVersion }).strict(),
   voices: attachmentReferenceSchema.extend({ voiceId: uuid, version: positiveVersion }).strict(),
@@ -161,9 +167,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
     }
     return {
       manifest: structuredClone(manifest), manifestSha256, integrity, children: structuredClone(children), close: archive.close,
-      async readAttachmentContent(row: HandoverImportRow, acknowledgedManifestSha256?: string): Promise<null | {
-        section: string; sourceId: string; sourceVersion: number; attachmentPath: string; mimeType: string; bytes: number; sha256: string; content: Buffer;
-      }> {
+      async readAttachmentContent(row: HandoverImportRow, acknowledgedManifestSha256?: string): Promise<HandoverAttachmentContent | null> {
         if (!Object.hasOwn(attachmentSections, row.section) || !row.childId) fail('invalid_package_scope');
         const section = row.section as AttachmentSection;
         select({ childIds: [row.childId], modules: ['attachments'] }, acknowledgedManifestSha256, [section]);
@@ -174,7 +178,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
         let sourceId: string, sourceVersion: number, ready: boolean, metadata: { mimeType: string; bytes: number; sha256: string } | null = null;
         let asset: z.infer<typeof avatarAssetSchema> | null = null;
         if (section === 'child_avatar') {
-          const head = parse(avatarTransferSchema, { ...row.value, canManage: false }, 'invalid_package_attachment_metadata');
+          const head = parse(avatarTransferSchema, row.value, 'invalid_package_attachment_metadata');
           if (head.target.kind !== 'child' || head.target.childId !== row.childId) fail('invalid_package_scope');
           sourceId = head.target.childId; sourceVersion = head.version; asset = head.asset; ready = asset !== null; metadata = asset;
         } else if (section === 'photos') {

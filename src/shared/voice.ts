@@ -37,9 +37,9 @@ export const voiceMessageReferenceSchema = voiceFileMetadataSchema.extend({ id: 
 export type VoiceMessageReference = z.infer<typeof voiceMessageReferenceSchema>;
 export const voiceLinkInputSchema = z.object({ id: z.uuid(), expectedVersion: z.number().int().positive() }).strict();
 
-/** Metadata only; no unlinked or removed recordings enter the library. */
+/** Metadata only; servers include unlinked published imports only when explicitly requested. */
 export const voiceAttachmentPageSchema = z.object({
-  items: z.array(voiceAttachmentSchema.refine(value => value.state === 'ready' && (value.sharedSpaceId ? value.messageId === null : value.messageId !== null)
+  items: z.array(voiceAttachmentSchema.refine(value => value.state === 'ready' && (!value.sharedSpaceId || value.messageId === null)
     && value.fileName !== null && value.mimeType !== null && value.bytes !== null && value.sha256 !== null && value.durationMs !== null))
     .max(ATTACHMENT_LIST_BOUNDS.maxLimit), ...attachmentListPageFields,
 }).strict().refine(consistentAttachmentPage);

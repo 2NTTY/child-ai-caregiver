@@ -4390,3 +4390,12 @@
 七項定向流程、受影響十五根型別圖及 diff 檢查有通過證據；沿用已通過項，不全量重測。照片過期由真正 maintenance／queue／consumer 接回原清理；還原從密文重建清理分類。補驗發現匯出仍帶未發布 metadata，已按發布狀態遮蔽。測試 fixture 的操作 ID、既有工作數量、Date.now／new Date 時鐘及清理紀錄終態假設均已更正，原失敗保留；詳見[證據](artifacts/verification/P4_HANDOVER_ATTACHMENT_STAGING_20261030.json)。獨立唯讀 review 未報未解 blocker。
 
 這是內部保存前置，未開放完整附件／聊天匯入。統一批次、來源映射、逐項收據、聊天／轉錄及共用選項仍待接；不把單獨交易發布等同整個批次已接通。沒有部署、雲端／模型／設備測試，不改 D 的 Agent PR。HANDOVER01 及 P4 目標保持未完成。
+
+<a id="log-20261030-p4-handover-attachment-pipeline"></a>
+### 2026-10-30 — P4-HANDOVER01 附件批次與原轉錄
+
+接續同分支 `dd956e0`，將既有文件／錄音／照片／頭像服務注入原匯入 worker。預留與外部物件寫入分開，發布時再核權、取消、租約／世代、版本和原操作，與來源映射、逐項收據及進度同交易。完整合成 ZIP 經原上載／service／queue／worker 處理六行，真加密物件 adapter 配合合成 bucket 完成讀回；原轉錄保留，不建立轉錄工作。不是 GCP 或真 Firestore 競爭驗收。
+
+獨立 review 發現頭像內容行缺來源 target、共享未連訊息錄音被舊讀取條件拒絕，以及共享刪除仍拒絕已發布匯入附件；均重現後沿原權限／journal 修正。主模型另重現並修正還原世代改變導致預留 ID 改變，以及本地連訊息後誤報內容衝突。只補受影響檢查，沒有重跑原物件／頭像／刪除完整矩陣。原語音聊天一條相容流程、原批次進度一條及驗包配對一條仍通過；七根局部型別圖零診斷。最初 schema 缺口、Zod refined schema 用法和 fixture 型別診斷保留於[證據](artifacts/verification/P4_HANDOVER_ATTACHMENT_PIPELINE_20261030.json)。
+
+當前僅完成附件 backend；共用選項／library／轉錄 client 仍待接，私人聊天與附件關聯也未完成。共享附件「已發布但無訊息」與私人草稿不同，允許原模組權限下讀取／刪除；未發布仍不可見。文件／錄音連訊息只改 metadata，不當成位元內容被更改；刪除不因此失效。共用前端相容標籤須先交付，避免新增 enum 破壞既有型別，之後再接可用選項。沒有部署、模型、通知或設備操作；P4 目標不結案，D／P3／P5 邊界不變。

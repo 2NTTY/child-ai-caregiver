@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { avatarTargetSchema, avatarCommitInputSchema, avatarRemoveInputSchema, avatarReserveInputSchema, type AvatarCommitInput, type AvatarTarget, type AvatarUpload, type AvatarState } from '../src/shared/avatars.ts';
 import type { OnlineSubmission, OnlineReceipt } from '../src/shared/online.ts';
-import { avatarBinding, avatarHeadRecordSchema, type AvatarBinding } from './avatar-data.ts';
+import { AVATAR_NIL, avatarBinding, avatarHeadRecordSchema, type AvatarBinding } from './avatar-data.ts';
 import { assertAvatarHeadWritable, avatarPublicState, avatarPublicUpload, AVATAR_PENDING_SCAN_LIMIT } from './avatar-policy.ts';
 import { createFirestoreAvatarData } from './firestore-avatar-data.ts';
 import { prepareAvatarReservation } from './avatar-reservations.ts';
@@ -29,6 +29,7 @@ export interface FirestoreAvatarsOptions extends FirestoreAuthorityOptions {
 /** Complete domain assembly is gated separately on lifecycle adapters; this factory never enables itself. */
 export function createFirestoreAvatarStore(options: FirestoreAvatarsOptions): FirebaseAvatarApiPort & {
   submitOnline(userId: string, submission: OnlineSubmission): Promise<OnlineReceipt>;
+  readImportState(authority: FirestoreAuthorityTransaction): Promise<{ value: { id: string; version: number } | null; version: number }>;
   prepareImportReservation(authority: FirestoreAuthorityTransaction, input: unknown, ids: { uploadId: string; assetId: string }, stage: AttachmentImportStage): Promise<{ value: AvatarUpload; commit(): void }>;
   uploadImported(userId: string, childId: string, uploadId: string, bytes: Buffer, stage: AttachmentImportStage, signal: AbortSignal, selection?: SharedSelection): Promise<AvatarUpload>;
   prepareImportPublication(authority: FirestoreAuthorityTransaction, uploadId: string, stage: AttachmentImportStage, provenance: ImportProvenance): Promise<{ value: AvatarState; changeSeq: string | null; commit(): void }>;
@@ -189,6 +190,15 @@ export function createFirestoreAvatarStore(options: FirestoreAvatarsOptions): Fi
   }
   return {
     prepareImportReservation, prepareImportPublication,
+    async readImportState(authority) {
+      const childId = authority.scope.childId;
+      if (childId === AVATAR_NIL) domainReject('invalid_scope', 400);
+      if (!await authority.readChild(childId)) domainReject('not_found', 404);
+      const head = await store.head(authority, avatarBinding(authority.scope, { kind: 'child', childId }));
+      if (head.removal?.state === 'pending') return { value: null, version: head.version };
+      const state = avatarPublicState(head, false);
+      return { value: state.asset ? { id: childId, version: state.version } : null, version: state.version };
+    },
     uploadImported(userId, childId, uploadId, bytes, stage, signal, selection) { return guard(async () => {
       const target = domainParse(avatarTargetSchema, { kind: 'child', childId });
       const importRun: AvatarRun = (actor, selected, task) => {
