@@ -916,7 +916,8 @@ test("reading an invalidated memory fact removes its previously selected deliver
   };
   const memory: Pick<Parameters<typeof createProductAgentTools>[0]["memory"], "getFact" | "context"> = {
     getFact: async () => fact,
-    context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false,
+    context: async () => ({ profile: { childId, version: 0, data: null,
+      confirmedBy: null, confirmedAt: null, reason: null }, profileApplicable: false,
       facts: [fact], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [],
       truncated: { facts: false, topics: false, messages: false } }),
   };
