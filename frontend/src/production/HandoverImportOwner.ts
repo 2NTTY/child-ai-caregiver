@@ -20,7 +20,7 @@ export function handoverResultResourceSection(row: HandoverImportResult): Handov
 }
 export function canReadHandoverSourceHistory(row: HandoverImportResult) {
   const section = handoverResultResourceSection(row);
-  return !!row.recordedResource && (section === 'memory_facts' || section === 'memory_topics' || section === 'summary_history');
+  return !!row.recordedResource && (section === 'memory_facts' || section === 'memory_topics' || section === 'summary_history' || section === 'private_sources');
 }
 export function handoverSourceHistoryKey(item: HandoverSourceHistoryPage['items'][number]) {
   const source = item.evidence.source.current.source;
@@ -170,13 +170,15 @@ export class HandoverImportOwner {
   openSourceHistory = async (resultId: string) => {
     if (this.state.pending || this.state.busy && !this.historyTicket) return;
     const results = this.state.results, row = results?.items.find(item => item.id === resultId);
+    const section = row ? handoverResultResourceSection(row) : null;
     const batch = this.state.items.find(item => item.id === results?.batchId);
     const target = batch?.targets.find(item => item.sourceChildId === results?.sourceChildId)?.target;
     if (!results?.loaded || results.error || !row || !target || !canReadHandoverSourceHistory(row)
+      || section === 'private_sources' && target.spaceId !== null
       || row.batchId !== results.batchId || row.sourceChildId !== results.sourceChildId || row.module !== results.module) return;
     this.stopHistoryRead();
     this.update({ sourceHistory: { batchId: results.batchId, resultId, revision: ++this.historyRevision,
-      query: { ...target, module: handoverResultResourceSection(row)!, resourceId: row.recordedResource!.id },
+      query: { ...target, module: section!, resourceId: row.recordedResource!.id },
       items: [], page: 0, nextCursor: null, complete: false, loaded: false, loading: false, error: null } });
     await this.readSourceHistory();
   };

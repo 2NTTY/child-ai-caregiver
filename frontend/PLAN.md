@@ -3,11 +3,11 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
-## 記憶匯入共用接線（2026-10-30）
+## 私人來源匯入共用接線（2026-10-30）
 
-沿根 [P4-HANDOVER01](../PLAN.md#active) 與已合併後端 #382／`e32ed5f1` 接記憶模組選擇、實際資源類型、所選衝突及來源歷史閱讀。復用現有匯入 owner、受控 client、Paper 表單和來源披露；Web／Android 使用同一份程式，不改設計。私人交代與摘要不藉匯入變成共享資料，外來摘要不作本地聊天／活動摘要連結。
+沿根 [P4-HANDOVER01](../PLAN.md#active) 與後端 #385／`55df510b`，由 `codex/p4-handover-source-ui` 接私人來源選擇、結果及管理歷史閱讀。復用既有 Web／Android owner、client、Paper 元件與版面；sources 只可選本人孩子，來源舊模型摘錄只作歷史描述，不代表本地授權，管理歷史亦不等於正文修訂。
 
-已完成共用介面接線，尚未發布。owner／client 的六項檢查、共用元件的一項檢查及七個入口的 TypeScript 依賴圖通過；復用後端證據，沒有重跑真模型、瀏覽器或設備流程。來源歷史只讀 Server 當前授權結果，切換身份／範圍或撤權時清理；有私人交代或摘要的記憶只可匯入本人孩子。驗證與限制見[本包證據](verification/P4_HANDOVER_MEMORY_UI_20261030.json)。完整範圍及剩餘模組只見根 PLAN；以下保留原前端設計交付歷史，不作目前遠端或部署狀態。
+記憶共用接線 #383 及[有效證據](verification/P4_HANDOVER_MEMORY_UI_20261030.json)保留，不重測已通過流程。私人來源 owner／client 六項、實際共用元件一項及七根局部型別圖已核；原管理修訂按文字顯示，不解讀外來標記或連結。詳見[本包證據](verification/P4_HANDOVER_SOURCE_UI_20261030.json)。未部署、未作設備核對。其他模組、完整備份及部署門檻只見根 PLAN。以下保留原前端設計交付歷史，不作目前遠端或部署狀態。
 
 ## 頁面專屬歷史與安靜讀取（2026-10-23；source36／artifactfix1 本地交付）
 

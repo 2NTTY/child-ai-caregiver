@@ -30,7 +30,7 @@ const nodes = tree => !tree || typeof tree !== 'object' ? [] : Array.isArray(tre
 const text = tree => tree == null || tree === false ? '' : Array.isArray(tree) ? tree.map(text).join(' ') : typeof tree === 'object' ? text(tree.props?.children) : String(tree);
 const control = (tree, label) => nodes(tree).find(node => node.props?.label === label);
 
-test('shared import components label memory resources, read literal source history and retain private target limits', () => {
+test('shared import components label resources, read literal source histories and retain private target limits', () => {
   const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
   const calls = [], controller = { openSourceHistory: value => calls.push(['open', value]), closeSourceHistory: () => calls.push(['close']),
     readSourceHistory: more => calls.push(['more', more]), resolveResults: (mode, ids) => calls.push(['resolve', mode, ids]), selectResults: noop, readResults: noop, closeResults: noop };
@@ -47,10 +47,18 @@ test('shared import components label memory resources, read literal source histo
   historyButtons[0].props.onPress(); assert.deepEqual(calls.pop(), ['open', rows[0].id]);
   control(resultView.tree, '選取此已刪項目作明確恢復').props.onChange(true); again(resultView);
   control(resultView.tree, '恢復所選已刪項目（1 項）').props.onPress(); assert.deepEqual(calls.pop(), ['resolve', 'restore_deleted', [rows[3].id]]);
+  const sourceRows = ['input_processing', 'input_linked', 'inputs_capacity'].map((reason, n) => ({ ...rows[0], id: id(60 + n), module: 'sources', resourceSection: 'private_sources',
+    sourceSection: n === 1 ? 'private_source_history' : null, outcome: 'conflict', reason }));
+  const sourceView = render(HandoverImportResults, { controller, batch: { ...batch, targets: [{ ...batch.targets[0], sections: ['sources'] }] },
+    results: { ...results, module: 'sources', items: sourceRows }, identityKey: 'owner:1', locked: false });
+  for (const label of ['私人來源', '私人來源管理歷史', '抓取或提取尚未結清', '已連結照護記錄', '接收對象的私人來源容量已滿']) assert.ok(text(sourceView.tree).includes(label), label);
+  control(sourceView.tree, '查看來源歷史').props.onPress(); assert.deepEqual(calls.pop(), ['open', sourceRows[0].id]);
   const { HandoverImportHistory } = load('HandoverImportHistory');
   for (const [module, value, expected] of [['memory_facts', { key: 'Original key', content: 'Original fact' }, 'Original fact'],
     ['memory_topics', { title: 'Original title', note: 'Original topic note' }, 'Original topic note'],
-    ['summary_history', { text: '<img src=x onerror=alert(1)>', coveredMessageIds: ['foreign-message'], lastCoveredMessageId: 'foreign-message' }, '<img src=x onerror=alert(1)>']]) {
+    ['summary_history', { text: '<img src=x onerror=alert(1)>', coveredMessageIds: ['foreign-message'], lastCoveredMessageId: 'foreign-message' }, '<img src=x onerror=alert(1)>'],
+    ['private_sources', { version: 4, previousVersion: 3, reason: 'Original management reason', changedAt: '2026-10-30T00:00:00Z',
+      management: { intention: 'Original intention', purpose: 'answer_reference', enabled: true, modelExcerpt: '<b>Original excerpt</b>' } }, '<b>Original excerpt</b>']]) {
     const history = { resultId: rows[0].id, query: { module }, page: 1, complete: false, loaded: true, loading: false, nextCursor: 'next',
       items: [{ resource: { id: id(30), version: 1 }, evidence: { module, value, source: { current: { source: {
         serverId: 'https://source.test', accountId: 'foreign-account', childId: id(2), resourceId: id(20), resourceVersion: 2 } }, previous: [] } } }] };
@@ -58,6 +66,10 @@ test('shared import components label memory resources, read literal source histo
     assert.ok(text(view.tree).includes(expected)); assert.ok(text(view.tree).includes('foreign-account')); assert.ok(text(view.tree).includes('來源版本'));
     assert.equal(nodes(view.tree).some(node => node.props?.href || node.props?.dangerouslySetInnerHTML || node.type === 'Markdown'), false);
     if (module === 'summary_history') assert.match(text(view.tree), /外來摘要歷史/);
+    if (module === 'private_sources') {
+      for (const label of ['管理歷史，不是正文修訂', '原摘錄不代表本地授權', 'Original intention', '回答參考', '已啟用', 'Original management reason', '2026-10-30T00:00:00Z']) assert.ok(text(view.tree).includes(label), label);
+      assert.match(text(view.tree), /3\s+→\s+4/);
+    }
     control(view.tree, '載入更多來源歷史').props.onPress(); assert.deepEqual(calls.pop(), ['more', true]);
   }
   const state = { identityKey: 'owner:1', userId: 'owner', busy: null, pending: null, items: [], loaded: true, uploads: [], uploadsLoaded: true,
@@ -79,4 +91,13 @@ test('shared import components label memory resources, read literal source histo
   state.upload.preview.coverage[0].items = 0; destination().props.onChange(`private:${id(3)}`); again(view);
   control(view.tree, '記憶與摘要').props.onChange(true); again(view); destination().props.onChange(`shared:${id(4)}:${id(5)}`); again(view);
   assert.equal(control(view.tree, '記憶與摘要').props.disabled, false); assert.equal(control(view.tree, '記憶與摘要').props.checked, true);
+  state.upload.preview.header.selection.modules = ['sources']; state.upload.preview.integrity = 'trusted';
+  state.upload.preview.coverage = [{ childId: id(2), section: 'private_sources', items: 1 }, { childId: id(2), section: 'private_source_history', items: 1 }];
+  again(view); control(view.tree, 'Source child').props.onChange(true); again(view);
+  destination().props.onChange(`private:${id(3)}`); again(view);
+  assert.equal(control(view.tree, '私人來源').props.disabled, false); assert.equal(control(view.tree, '私人來源').props.checked, true);
+  assert.equal(control(view.tree, '開始匯入').props.disabled, false);
+  destination().props.onChange(`shared:${id(4)}:${id(5)}`); again(view);
+  assert.equal(control(view.tree, '私人來源').props.disabled, true); assert.equal(control(view.tree, '私人來源').props.checked, false);
+  assert.equal(control(view.tree, '開始匯入').props.disabled, true); assert.match(text(view.tree), /私人來源只可匯入本人孩子/);
 });
