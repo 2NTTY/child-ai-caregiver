@@ -5,15 +5,20 @@ import { Platform, View, useWindowDimensions, type LayoutChangeEvent } from "rea
 export function useContainerWidth() {
   const viewportWidth = useWindowDimensions().width;
   const ref = useRef<View>(null);
+  const measuredNode = useRef<{ node: HTMLElement | null; viewportWidth: number } | null>(null);
   const [measured, setMeasured] = useState<number | null>(null);
   const update = useCallback((width: number) => {
     if (width > 0) setMeasured(current => current === width ? current : width);
   }, []);
-  // No dependency list: the measured node may first appear after data loading
-  // or become visible after a tab change without remounting this hook.
+  // Object refs are also used by composed-ref callers. Check attachment cheaply
+  // each commit, but read geometry only for a new node or viewport width. RNW
+  // already owns ResizeObserver and supplies later size/visibility via onLayout.
   useLayoutEffect(() => {
     if (Platform.OS !== "web") return;
     const node = ref.current as unknown as HTMLElement | null;
+    const previous = measuredNode.current;
+    if (previous?.node === node && previous.viewportWidth === viewportWidth) return;
+    measuredNode.current = { node, viewportWidth };
     if (node) update(node.getBoundingClientRect().width);
   });
   const onLayout = useCallback((event: LayoutChangeEvent) => {
@@ -25,5 +30,5 @@ export function useContainerWidth() {
     }
     update(event.nativeEvent.layout.width);
   }, [update]);
-  return { ref, onLayout, width: measured ?? viewportWidth };
+  return { ref, onLayout, width: measured ?? viewportWidth, hasMeasuredWidth: measured !== null };
 }

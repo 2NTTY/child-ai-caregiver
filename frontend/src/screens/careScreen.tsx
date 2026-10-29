@@ -3,7 +3,6 @@ import { useEffect, useRef, useState, type Ref } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { useLocalSearchParams, useRouter, usePathname } from "expo-router";
-import { careKindOptions, type CareKind } from "../care-view-model";
 import { useQuietReadFocus } from "../components/useQuietReadFocus";
 import { ReadStateNotice } from "../components/ReadStateNotice";
 import { PageFrame } from "../components/PageFrame";
@@ -22,7 +21,8 @@ import { useProduction } from "../production/ProductionProvider";
 import { useProductionCareProfile } from "../production/CareProfileDomains";
 import { useDomainEnvironment } from "../production/useDomainEnvironment";
 import { useCareWorkspace } from "../workspaces/CareWorkspace";
-import { PhotoWorkspace } from "./photosScreen";
+import { useCareRouteNavigation, type CareRecordNavigation } from "../navigation/useCareRouteNavigation";
+import { CarePhotoWorkspace } from "./photosScreen";
 import { chineseFont, colors, radius, readingType, spacing } from "../theme";
 
 function confirmablePending(entry: AgentPendingDiscovery["entries"][number]) {
@@ -129,24 +129,19 @@ export function AgentPendingReview() {
   </View>;
 }
 
-function CareWorkspace({ initialKind, initialRecordId }: { initialKind?: CareKind; initialRecordId?: string }) {
+function CareRouteWorkspace({ scopeKey }: { scopeKey: string }) {
+  const workspace = useCareWorkspace(), recovery = useProductionCareProfile(), env = useDomainEnvironment();
+  const navigation = useCareRouteNavigation(scopeKey, workspace, !!recovery?.pending, env.canStartWrite());
+  return <CareWorkspace key={scopeKey} navigation={navigation} />;
+}
+function CareWorkspace({ navigation }: { navigation: CareRecordNavigation }) {
   const workspace = useCareWorkspace(), recovery = useProductionCareProfile();
   const { agentPending, online } = useProduction();
   const env = useDomainEnvironment(), externalLocked = !env.canStartWrite();
-  const router = useRouter(), navigate = usePreviewNavigation(), initialized = useRef(""), manualCreateTrigger = useRef<View>(null);
-  useEffect(() => {
-    if (!workspace) { initialized.current = ""; return; }
-    if (recovery?.pending || initialKind && (!workspace.model.online || workspace.model.access !== "editable" || externalLocked)) return;
-    if (initialRecordId && ["loading", "loading_more"].includes(workspace.model.list.state)) return;
-    const key = workspace.scopeKey + ":" + (initialKind ?? "") + ":" + (initialRecordId ?? "");
-    if (initialized.current === key) return;
-    initialized.current = key;
-    if (initialRecordId) workspace.actions.openRecord(initialRecordId);
-    else if (initialKind) workspace.actions.startCreate(initialKind);
-  }, [workspace?.scopeKey, workspace?.model.list.state, workspace?.model.online, workspace?.model.access, recovery?.pending, externalLocked, initialKind, initialRecordId]);
+  const router = useRouter(), navigate = usePreviewNavigation(), manualCreateTrigger = useRef<View>(null);
   if (!workspace) return <PageFrame title="核對與記錄" density="compact"><ReadStateNotice state="loading" message="正在讀取記錄…" /></PageFrame>;
-  const { model, actions } = workspace, panelOpen = !!model.detail || !!model.draft || !!model.deletion;
-  return <CareRecordsView manualCreateFocusRef={manualCreateTrigger} model={model} actions={actions} initialRecordId={model.detail?.record.id ?? initialRecordId}
+  const { model, actions } = workspace, panelOpen = !!navigation.recordId && !!model.detail || !!model.draft || !!model.deletion;
+  return <CareRecordsView manualCreateFocusRef={manualCreateTrigger} model={model} actions={actions} navigation={navigation}
     manualCreateAction={!panelOpen && model.access === "editable" ? <CareCreateButton buttonRef={manualCreateTrigger} disabled={!model.online || !!recovery?.pending || externalLocked} onPress={() => actions.startCreate()} /> : undefined}
     onReviewHistory={() => navigate(() => router.push("/history?category=review"))}
     onOlderPending={() => navigate(() => router.push("/history?category=review&status=pending&older=1"))}
@@ -155,15 +150,13 @@ function CareWorkspace({ initialKind, initialRecordId }: { initialKind?: CareKin
 
 export default function CarePage() {
   const pathname = usePathname(), { model, actions, scopeKey } = useProduction();
-  const { compose, view, record, recordId } = useLocalSearchParams<{ compose?: string; view?: string | string[]; record?: string; recordId?: string }>();
-  const requestedView = Array.isArray(view) ? view[0] : view;
-  const initialKind = careKindOptions.find(item => item.value === compose)?.value;
+  const { view } = useLocalSearchParams<{ view?: string | string[] }>();
+  const requestedView = typeof view === "string" ? view : undefined;
   const child = model.children.find(item => item.id === model.selectedChildId);
   const router = useRouter(), navigate = usePreviewNavigation();
   if (pathname !== "/care") return null;
-  if (child && requestedView === "photos") return <PhotoWorkspace key={scopeKey ?? "no-child"} capturePreferred={false} onCare={() => navigate(() => router.push("/care"))} />;
-  const initialRecordId = typeof recordId === "string" ? recordId : typeof record === "string" ? record : undefined;
-  return child && scopeKey ? <CareWorkspace key={scopeKey} initialKind={initialKind} initialRecordId={initialRecordId} />
+  if (child && requestedView === "photos") return <CarePhotoWorkspace scopeKey={scopeKey} onCare={() => navigate(() => router.push("/care"))} />;
+  return child && scopeKey ? <CareRouteWorkspace scopeKey={scopeKey} />
     : <PageFrame density="compact" title="核對與記錄" description="選擇有權查看的孩子，再核對 Agent 整理的內容。"><SectionCard><Text>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }
 

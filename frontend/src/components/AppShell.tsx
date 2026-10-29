@@ -7,12 +7,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { brand } from "../branding";
 import { MotionEntrance, MotionScopeBoundary } from "../motion";
+import { RouteTextLink } from "./RouteTextLink";
 import { BrandLogo } from "./BrandLogo";
 import { Text } from "react-native-paper";
 import { AppIcon } from "./AppIcon";
 
 import { MobileNavSelection } from "./navigation/MobileNavSelection";
-import { navigationItems, type AppPath, type NavigationItem } from "./navigation/app-navigation";
+import { handbookNavigationChapters, navigationItems, type AppPath, type NavigationItem } from "./navigation/app-navigation";
 import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
 
@@ -20,24 +21,17 @@ import { NotificationBell } from "./NotificationBell";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, spacing, typeScale } from "../theme";
 
 import { useProductionSwitchReadiness } from "../production/ProductionFirstScreenGate";
-import { useProductionHome as useProduction } from "../production/useProductionHome";
-
-const journalChapters = [
-  { label: "每天照顧", keys: ["home", "chat", "tasks", "growth"] },
-  { label: "記錄手冊", keys: ["care", "summary", "history", "profile"] },
-  { label: "參考資料", keys: ["memory", "photos", "sources"] },
-  { label: "家庭與設定", keys: ["settings", "contact", "family", "guide", "more"] },
-] as const;
+import { useProductionShell as useProduction } from "../production/useProductionShell";
 
 function NavItem({ item, active, compact = false }: { item: NavigationItem; active: boolean; compact?: boolean }) {
   const [pressed, setPressed] = useState(false);
   return <PreviewLink href={item.href}><Pressable
     accessibilityRole="link" accessibilityLabel={item.label} accessibilityState={{ selected: active }} aria-current={active ? "page" : undefined}
-    onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)} onHoverIn={() => setPressed(true)} onHoverOut={() => setPressed(false)}
+    onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)} onBlur={() => setPressed(false)} onHoverIn={() => setPressed(true)} onHoverOut={() => setPressed(false)}
     style={StyleSheet.flatten([compact ? styles.bottomNavItem : styles.navItem, active && !compact && styles.navActive, pressed && styles.navPressed])}
   >
     {compact && active ? <MobileNavSelection /> : null}
-    <AppIcon name={item.icon} size={compact ? mobileIcons.navigation : 21} color={active ? colors.deepTeal : colors.muted} />
+    {compact ? <AppIcon name={item.icon} size={mobileIcons.navigation} color={active ? colors.deepTeal : colors.muted} /> : null}
     <Text numberOfLines={1} style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.navActiveText]}>{compact ? item.short : item.label}</Text>
   </Pressable></PreviewLink>;
 }
@@ -49,7 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const compact = width < 1024;
-  const chapter = journalChapters.find(group => group.keys.some(key => navigationItems[key].href === pathname)) ?? journalChapters[0];
+  const chapter = handbookNavigationChapters.find(group => group.keys.some(key => navigationItems[key].href === pathname)) ?? handbookNavigationChapters[0];
   const [skipFocused, setSkipFocused] = useState(false);
   const { model, actions, notice, dismissNotice, scopeKey, identityKey } = useProduction();
   const routeSurface = useRef<View>(null);
@@ -75,11 +69,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         <PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={StyleSheet.flatten([styles.brandLink, compact && styles.brandLinkCompact])}>
           <BrandLogo style={[styles.logo, compact && styles.logoCompact]} decorative />
         </Pressable></PreviewLink>
-        {!compact ? <View role="navigation" accessibilityLabel="主要章節" style={styles.chapters}>{journalChapters.map(group => <PreviewLink key={group.label} href={navigationItems[group.keys[0]].href}>
+        {!compact ? <View role="navigation" accessibilityLabel="主要章節" style={styles.chapters}>{handbookNavigationChapters.map(group => <PreviewLink key={group.label} href={navigationItems[group.keys[0]].href}>
           <Pressable accessibilityRole="link" accessibilityLabel={group.label} aria-current={chapter === group ? "true" : undefined}
             style={StyleSheet.flatten([styles.chapter, chapter === group && styles.chapterActive])}>
             <Text style={[styles.chapterText, chapter === group && styles.chapterActiveText]}>{group.label}</Text>
           </Pressable></PreviewLink>)}</View> : null}
+        {!compact ? <RouteTextLink href="/chat" label="問助手" /> : null}
         <View style={styles.identity}><ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} compact /></View>
         <View testID="header-actions" style={styles.topActions}><NotificationBell /></View>
       </View>
@@ -106,10 +101,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, backgroundColor: colors.canvas },
-  masthead: { minHeight: 72, flexDirection: "row", alignItems: "center", gap: spacing.xl, paddingHorizontal: spacing.xxl, backgroundColor: colors.white },
+  masthead: { minHeight: 72, flexDirection: "row", alignItems: "center", gap: spacing.lg, paddingHorizontal: spacing.xl, backgroundColor: colors.white },
   mastheadCompact: { minHeight: 68, paddingHorizontal: spacing.md, gap: spacing.sm },
-  chapters: { flex: 1, flexDirection: "row", gap: spacing.sm, alignSelf: "stretch" },
-  chapter: { justifyContent: "center", paddingHorizontal: spacing.md, borderBottomWidth: 3, borderBottomColor: "transparent" },
+  chapters: { flex: 1, minWidth: 0, flexDirection: "row", gap: spacing.sm, alignSelf: "stretch" },
+  chapter: { justifyContent: "center", paddingHorizontal: spacing.sm, borderBottomWidth: 3, borderBottomColor: "transparent" },
   chapterActive: { borderBottomColor: colors.teal },
   chapterText: { fontFamily: chineseFont, fontSize: 15, fontWeight: "600", color: colors.muted },
   chapterActiveText: { color: colors.ink, fontWeight: "800" },

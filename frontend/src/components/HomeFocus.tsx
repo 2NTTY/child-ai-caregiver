@@ -1,10 +1,9 @@
-import { BackgroundSurface } from "./appearance/BackgroundSurface";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import type { HomeActions, HomeViewModel } from "../view-model";
-import { selectHomeOverview } from "../home-overview";
+import { selectHomeOverview, type HomeOverviewSection } from "../home-overview";
 import { chineseFont, colors, readingType, spacing, workspaceType } from "../theme";
-import { AppButton, SectionCard, SectionHeader, TextLink } from "./ui";
+import { AppButton, SectionCard, SectionHeader } from "./ui";
 import { OperationNotice } from "./OperationNotice";
 import { ReadStateNotice } from "./ReadStateNotice";
 import { HomeOverviewItems } from "./HomeOverviewItems";
@@ -25,26 +24,32 @@ export function HomeFocus({ model, actions, full = false }: { model: HomeViewMod
       message={section.detail ?? (section.state === "ready" && !section.items.length ? "目前沒有待辦事項" : undefined)}>
       {["error", "stale", "unavailable"].includes(section.state) ? <AppButton label="重新讀取" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}
     </ReadStateNotice>
-    {canShowItems ? <HomeOverviewItems items={visibleItems} actions={actions} /> : null}
+    {canShowItems ? <HomeOverviewItems items={visibleItems} /> : null}
     {section.state === "ready" && section.items.length > 0 && section.detail ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{section.detail}</Text> : null}
     {!full && canShowItems && section.items.length > visibleItems.length ? <Text style={styles.meta}>另有 {section.items.length - visibleItems.length} 項，可在資訊側欄查看。</Text> : null}
   </SectionCard>;
 }
 
 // A short projection of the same authorized attention source used by the information rail.
-export function HomeActionSummary({ model, actions }: { model: HomeViewModel; actions: HomeActions }) {
-  const overview = selectHomeOverview(model);
-  if (!overview) return null;
-  const section = overview.attention;
-  return <BackgroundSurface padded frosted testID="home-action-summary" style={styles.summary}>
+export function HomeActionSummary({ section, online, onRefresh }: { section: HomeOverviewSection; online: boolean; onRefresh(): void }) {
+  const groups = section.groups?.filter(group => group.items.length > 0);
+  const moreLoaded = !!section.coverage?.moreLoaded || !!groups?.some(group => group.items.length > 2);
+  const coverage = section.coverage
+    ? [moreLoaded ? "另有已載入事項，請到待辦查看。" : null, section.coverage.moreUnloaded ? "尚有未載入的事項。" : null].filter(Boolean).join(" ")
+    : section.detail ?? (moreLoaded ? "另有已載入事項，請到待辦查看。" : "");
+  return <View testID="home-action-summary" style={styles.summary}>
 
     <ReadStateNotice state={section.state === "ready" ? section.items.length ? "ready" : "empty" : section.state}
       message={section.detail ?? (section.state === "ready" && !section.items.length ? "目前沒有待辦事項" : undefined)}>
-      {["error", "stale", "unavailable"].includes(section.state) ? <AppButton label="重新讀取待辦" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}
+      {["error", "stale", "unavailable"].includes(section.state) ? <AppButton label="重新讀取待辦" density="compact" variant="quiet" disabled={!online} onPress={onRefresh} /> : null}
     </ReadStateNotice>
-    {["ready", "stale", "loading"].includes(section.state) ? <HomeOverviewItems items={section.items} actions={actions} compact /> : null}
-    {section.state === "ready" && section.items.length > 0 && section.detail ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{section.detail}</Text> : null}
-  </BackgroundSurface>;
+    {["ready", "stale", "loading"].includes(section.state) ? groups
+      ? groups.map(group => <View key={group.key} testID={`home-task-group-${group.key}`} style={styles.summary}>
+        {group.key !== "scheduled" || groups.length > 1 ? <Text accessibilityRole="header" aria-level={3} style={styles.title}>{group.label}</Text> : null}
+        <HomeOverviewItems items={group.items.slice(0, 2)} compact />
+      </View>) : <HomeOverviewItems items={section.items} compact /> : null}
+    {section.state === "ready" && section.items.length > 0 && coverage ? <Text testID="home-task-coverage" accessibilityLiveRegion="polite" style={styles.meta}>{coverage}</Text> : null}
+  </View>;
 }
 
 const styles = StyleSheet.create({ summary: { gap: spacing.sm, minWidth: 0 }, heading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm }, title: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta } });

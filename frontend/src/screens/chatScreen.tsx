@@ -3,7 +3,7 @@ import { ChatFileMessage } from '../production/ChatFileMessage';
 import { VoiceMessage } from '../production/VoiceMessage';
 import { OfficialHelpCards } from '../components/chat/OfficialHelpCards';
 import { AGENT_PROGRESS_LABELS } from '../../../src/shared/agent-feedback';
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "expo-router";
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type PressableStateCallbackType, type ScrollView as NativeScrollView } from "react-native";
 import { Text } from "react-native-paper";
@@ -63,6 +63,10 @@ function ChatContents({ compact, onPaneLayout, onToolbarLayout, onComposerLayout
   const child = model.children.find(item => item.id === model.selectedChildId);
   const draft = child ? chat.drafts[child.id] : undefined;
   const phase = draft?.phase ?? "draft", busy = chat.busy !== null;
+  const replyIndex = useMemo(() => ({
+    recent: new Set(chat.messages.slice(-chat.limit).map(message => message.id)),
+    answered: new Set(chat.messages.filter(message => message.role === "model").map(message => message.inReplyTo)),
+  }), [chat.messages, chat.limit]);
   const scrollRef = useRef<NativeScrollView | null>(null), timelineRef = useRef<ChatTimelineControls | null>(null);
   const [followRequest, setFollowRequest] = useState<string>();
   const detailsTrigger = useRef<View | null>(null);
@@ -163,8 +167,8 @@ function ChatContents({ compact, onPaneLayout, onToolbarLayout, onComposerLayout
         const sourcesMatch = run?.text === message.text || !!run?.text && !!run.stopReasonLabel
           && (run.status === "stopped" || run.status === "unknown")
           && message.text === `這次回覆未完成：${run.stopReasonLabel}。\n\n${run.text}`;
-        const pendingReply = message.role === "user" && message.authorUserId === chat.userId && chat.messages.slice(-chat.limit).some(item => item.id === message.id)
-          && !chat.messages.some(item => item.role === "model" && item.inReplyTo === message.id);
+        const pendingReply = message.role === "user" && message.authorUserId === chat.userId && replyIndex.recent.has(message.id)
+          && !replyIndex.answered.has(message.id);
         return <ChatMessage message={{ id: message.id, role: message.role === "model" ? "assistant" : "user", text: message.text,
           phase: run ? runPhases[run.status] : undefined, sources: sourcesMatch ? run.citations : undefined }}
           phaseLabel={run?.status === "running" ? "運行仍在處理" : undefined} onLocateSource={locateSource}

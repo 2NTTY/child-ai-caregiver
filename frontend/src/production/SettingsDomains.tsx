@@ -1,4 +1,5 @@
-import { createContext, memo, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { usePathname } from "expo-router";
+import { createContext, memo, use, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { Controller, useForm } from "react-hook-form";
@@ -14,7 +15,7 @@ import { FormErrorSummary, FormFieldMessage } from "../components/FormErrorSumma
 import { WebPushSettingsCard, TelegramSettingsCard } from "../components/notifications/ChannelCards";
 import { useContainerWidth } from "../components/useContainerWidth";
 import { chineseFont, colors, readingType, spacing } from "../theme";
-import { useProduction } from "./ProductionProvider";
+import { useProductionIdentity } from "./ProductionProvider";
 import { useDomainEnvironment, useDomainWriteGuard } from "./useDomainEnvironment";
 import type { useProductionFamily } from "./useProductionFamily";
 import { useProductionModelSettings } from "./useProductionModelSettings";
@@ -31,16 +32,19 @@ type PublishedPersonal = { key: string; domains: PersonalDomains };
 type PublishedContact = { key: string; domains: ReturnType<typeof useProductionContact> };
 const noop = () => {};
 export function ProductionSettingsDomains({ children }: { children: ReactNode }) {
-  const env = useDomainEnvironment(), { recordsState } = useProduction();
+  const env = useDomainEnvironment(), { children: knownChildren } = useProductionIdentity();
   const identityScope = JSON.stringify([env.identityKey, env.owner.getSnapshot().sessionGeneration]);
   const childScope = JSON.stringify([env.scopeKey, env.role, env.owner.getSnapshot().sessionGeneration]);
   const [personal, publishPersonal] = useState<PublishedPersonal | null>(null), [contact, publishContact] = useState<PublishedContact | null>(null);
   const personalDomains = personal?.key === identityScope && env.currentIdentity() ? personal.domains : emptyPersonalDomains(env);
   const contactDomains = contact?.key === childScope && env.current() ? contact.domains : emptyContactDomain(env);
   return <PersonalContext.Provider value={personalDomains}><ContactContext.Provider value={contactDomains}>
-    <SettingsIdentityBridge key={identityScope} ownerKey={identityScope} env={env} childrenVersion={recordsState.children} publish={publishPersonal} />
+    <SettingsIdentityBridge key={identityScope} ownerKey={identityScope} env={env} childrenVersion={knownChildren} publish={publishPersonal} />
     <SettingsChildBridge key={childScope} ownerKey={childScope} env={env} publish={publishContact} />
-    {children}
+    <NotificationPreferencesDraftProvider key={`notification-draft:${identityScope}`} domain={personalDomains.preferences}
+      isCurrent={() => env.currentIdentity() && identityScope === JSON.stringify([env.owner.getSnapshot().identityKey, env.owner.getSnapshot().sessionGeneration])}>
+      {children}
+    </NotificationPreferencesDraftProvider>
   </ContactContext.Provider></PersonalContext.Provider>;
 }
 const SettingsIdentityBridge = memo(function SettingsIdentityBridge({ env, ownerKey, childrenVersion: _childrenVersion, publish }: {
@@ -83,10 +87,10 @@ function emptyContactDomain(env: SettingsEnvironment): ReturnType<typeof useProd
     actions: { refresh: noop, markDirty: noop, discard: noop, save: noop, setOriginalConsent: noop, retryOriginal: noop } };
 }
 export function useProductionSettingsDomains() {
-  const domains = useContext(PersonalContext); if (!domains) throw new Error("ProductionSettingsDomains must be mounted once in the private host"); return domains;
+  const domains = use(PersonalContext); if (!domains) throw new Error("ProductionSettingsDomains must be mounted once in the private host"); return domains;
 }
 export function useProductionContactDomain() {
-  const contact = useContext(ContactContext); if (!contact) throw new Error("ProductionSettingsDomains must be mounted once in the private host"); return contact;
+  const contact = use(ContactContext); if (!contact) throw new Error("ProductionSettingsDomains must be mounted once in the private host"); return contact;
 }
 interface RecoveryProps { busy: boolean; confirmed: boolean; reviewed: boolean; consent: boolean; online: boolean; onRead: () => void; onConfirm: (value: boolean) => void; onRetry: () => void; children?: ReactNode }
 function SettingsOriginalRecovery({ busy, confirmed, reviewed, consent, online, onRead, onConfirm, onRetry, children }: RecoveryProps) {
@@ -127,18 +131,14 @@ export function ProductionNotificationPreferences() {
   const { preferences: domain } = useProductionSettingsDomains();
   return <NotificationPreferencesForm key={domain.scopeKey} domain={domain} />;
 }
-function NotificationPreferencesForm({ domain }: { domain: PersonalDomains["preferences"] }) {
-  const formId = useId();
+function useNotificationPreferencesDraft(domain: PersonalDomains["preferences"], isCurrent: () => boolean) {
+  const pathname = usePathname(), active = pathname === "/settings";
   const [reviewNotice, setReviewNotice] = useState("");
   const [review, setReview] = useState<{ values: ProductionPreferenceValues; expectedVersion: number; basis: string } | null>(null);
   const { version: _version, ...defaults } = DEFAULT_NOTIFICATION_PREFERENCES;
   const form = useForm<ProductionPreferenceValues>({ defaultValues: defaults, resolver: zodResolver(preferenceSchema), mode: "onSubmit", shouldFocusError: false });
-  const locked = domain.busy || !!domain.original || !domain.online || !domain.fresh;
   const preferenceBasis = JSON.stringify(domain.preferences ? [domain.preferences.version, domain.preferences.timeZone, domain.preferences.quietStart, domain.preferences.quietEnd, domain.preferences.allowAppointmentDuringQuiet] : null);
   const previousBasis = useRef(preferenceBasis);
-  const needsAttention = !domain.fresh || !!domain.original || domain.busy || !domain.online;
-  const fields = [{ name: "timeZone", label: "通知時區" }, { name: "quietStart", label: "安靜時段開始" }, { name: "quietEnd", label: "安靜時段結束" }] as const;
-  const errors = fields.flatMap(field => form.formState.errors[field.name]?.message ? [{ field: field.name, label: field.label, message: form.formState.errors[field.name]!.message! }] : []);
   useEffect(() => {
     if (previousBasis.current !== preferenceBasis) {
       if (review || form.formState.isDirty) setReviewNotice("通知偏好已改變，原確認已失效；請重新核對草稿及目前版本。");
@@ -152,10 +152,47 @@ function NotificationPreferencesForm({ domain }: { domain: PersonalDomains["pref
   useEffect(() => { if (!domain.online) setReview(null); }, [domain.online]);
   const setDraftEditing = domain.setDraftEditing;
   useEffect(() => {
-    setDraftEditing(form.formState.isDirty || !!review);
+    setDraftEditing(active && (form.formState.isDirty || !!review));
     return () => setDraftEditing(false);
-  }, [form.formState.isDirty, !!review, setDraftEditing]);
-  useDomainWriteGuard(form.formState.isDirty || !!review, false, "account", false);
+  }, [active, form.formState.isDirty, !!review, setDraftEditing]);
+  const previousPath = useRef(pathname);
+  useEffect(() => {
+    // Only an accepted departure changes this path. Chapter PUSH/Back retains the same RHF controller.
+    if (previousPath.current === "/settings" && !active) {
+      const { version: _savedVersion, ...values } = domain.preferences ?? DEFAULT_NOTIFICATION_PREFERENCES;
+      form.reset(values); setReview(null); setReviewNotice("");
+    }
+    previousPath.current = pathname;
+  }, [pathname, active, domain.preferences, form.reset]);
+  const guards = useRef(new Set<string>());
+  const registerGuard = useCallback((id: string) => { guards.current.add(id); return () => { guards.current.delete(id); }; }, []);
+  return { form, review, setReview, reviewNotice, setReviewNotice, preferenceBasis, registerGuard,
+    retainedGuardIds: () => isCurrent() ? [...guards.current] : [], isCurrent };
+}
+const NotificationDraftContext = createContext<ReturnType<typeof useNotificationPreferencesDraft> | null>(null);
+/** Keep the existing form with its identity-scoped owner, not a remountable route entry. */
+export function NotificationPreferencesDraftProvider({ domain, children, isCurrent }: {
+  domain: PersonalDomains["preferences"]; children: ReactNode; isCurrent: () => boolean;
+}) {
+  const draft = useNotificationPreferencesDraft(domain, isCurrent);
+  return <NotificationDraftContext value={draft}>{children}</NotificationDraftContext>;
+}
+function useNotificationDraft() {
+  const draft = use(NotificationDraftContext);
+  if (!draft) throw new Error("NotificationPreferencesDraftProvider must outlive Settings route entries");
+  return draft;
+}
+export function useSettingsRetainedDrafts() { return useNotificationDraft().retainedGuardIds; }
+function NotificationPreferencesForm({ domain }: { domain: PersonalDomains["preferences"] }) {
+  const formId = useId();
+  const { form, review, setReview, reviewNotice, setReviewNotice, preferenceBasis, registerGuard, isCurrent } = useNotificationDraft();
+  const locked = domain.busy || !!domain.original || !domain.online || !domain.fresh;
+  const needsAttention = !domain.fresh || !!domain.original || domain.busy || !domain.online;
+  const guardId = useDomainWriteGuard(form.formState.isDirty || !!review, false, "account", false, undefined,
+    { pathname: "/settings", routeName: "settings", isCurrent });
+  useLayoutEffect(() => registerGuard(guardId), [guardId, registerGuard]);
+  const fields = [{ name: "timeZone", label: "通知時區" }, { name: "quietStart", label: "安靜時段開始" }, { name: "quietEnd", label: "安靜時段結束" }] as const;
+  const errors = fields.flatMap(field => form.formState.errors[field.name]?.message ? [{ field: field.name, label: field.label, message: form.formState.errors[field.name]!.message! }] : []);
   function input(name: "timeZone" | "quietStart" | "quietEnd", label: string) {
     return <Controller name={name} control={form.control} render={({ field, fieldState }) => <View>
       {name === "timeZone" ? <AppTimeZoneSelect ref={field.ref} id={`${formId}-${name}`} value={field.value} disabled={locked} onBlur={field.onBlur}

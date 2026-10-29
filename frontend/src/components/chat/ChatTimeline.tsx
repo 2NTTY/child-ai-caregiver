@@ -1,5 +1,5 @@
 import { useId, useImperativeHandle, useLayoutEffect, useRef, useState, type MutableRefObject, type ReactNode } from "react";
-import { Pressable, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type ScrollView } from "react-native";
+import { Platform, Pressable, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type ScrollView, type ViewStyle } from "react-native";
 import { Text } from "react-native-paper";
 import { AppScrollView } from "../AppScrollView";
 import { AppIcon } from "../AppIcon";
@@ -15,6 +15,13 @@ import { useChatReadingAnchor } from "./useChatReadingAnchor";
 import { ChatProgressIndicator } from "./ChatMessage";
 
 export interface ChatTimelineControls { followLatest(): void; holdReadingPosition(): void }
+
+// Web keeps revealed readers in the DOM while the browser can skip offscreen layout.
+// `auto` remembers each measured height; 240px is only the first unseen estimate.
+// Native continues to use its existing maintainVisibleContentPosition adapter.
+const deferredLayout: ViewStyle | undefined = Platform.OS === "web"
+  ? { contentVisibility: "auto", containIntrinsicSize: "auto 240px" } as ViewStyle
+  : undefined;
 
 // Items are already-authorized display rows in chronological order; this component does not fetch or persist messages.
 export function ChatTimeline<T extends { id: string }>({ items, renderItem, header, footer, emptyState, presentation = "standard", compact = false, recentLimit = 20, scrollRef, controlsRef, followRequest, newReplyId, history }: {
@@ -156,7 +163,7 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
 function TimelineEntry({ id, scopeKey, arriving, children }: { id: string; scopeKey: string; arriving: boolean; children: ReactNode }) {
   // Keep the original arrival decision throughout this mount, including streaming updates.
   const [animateOnMount] = useState(arriving);
-  return <View testID="chat-timeline-entry" nativeID={`chat-entry-${id}`} style={styles.item}>
+  return <View testID="chat-timeline-entry" nativeID={`chat-entry-${id}`} style={[styles.item, deferredLayout]}>
     <MotionEntrance triggerKey={id} scopeKey={scopeKey} preset="message" animateOnMount={animateOnMount}>{children}</MotionEntrance>
   </View>;
 }

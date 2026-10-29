@@ -1,5 +1,5 @@
-import { useLayoutEffect, useRef, useState, type ReactNode, type Ref } from "react";
-import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewProps, type ViewStyle } from "react-native";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type Ref } from "react";
+import { Platform, Pressable, StyleSheet, View, TextInput as NativeTextInput, useWindowDimensions, type StyleProp, type ViewProps, type ViewStyle } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { AppIcon } from "./AppIcon";
 import { Button, Portal, Text, TextInput } from "react-native-paper";
@@ -14,6 +14,7 @@ import { HorizontalOverflowRail } from "./HorizontalOverflowRail";
 import { BackgroundSurface } from "./appearance/BackgroundSurface";
 import { useQuietReadFocus } from "./useQuietReadFocus";
 import { AppStatusBadge } from "./AppStatusBadge";
+import { isKeyboardTabPress, unmodifiedTabKey, type TabKeyboardEvent } from "./tab-keyboard";
 
 export function AppButton({ label, accessibilityLabel = label, onPress, variant = "primary", density = "standard", disabled = false, loading = false, preserveFocusWhenDisabled = false, expanded, style, ref }: {
   label: string;
@@ -31,7 +32,7 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
 }) {
   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   const touch = useInteractionDensity();
-  const [focused, setFocused] = useState(false);
+  const [focused, setFocused] = useState(false), [hovered, setHovered] = useState(false);
   const unavailable = disabled || loading;
   const readFocus = useQuietReadFocus(unavailable, preserveFocusWhenDisabled);
   const buttonRef = (node: View | null) => { readFocus.host.current = node; if (typeof ref === "function") return ref(node); else if (ref) ref.current = node; };
@@ -41,30 +42,31 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
   // Disclosure state belongs on the actual control; Paper Button replaces it internally.
   if (expanded !== undefined) return <Pressable ref={buttonRef} accessibilityRole="button" accessibilityLabel={accessibilityLabel}
     accessibilityState={{ expanded, disabled: unavailable, busy: loading }} aria-expanded={expanded} aria-disabled={unavailable} aria-busy={loading}
-    disabled={readFocus.nativeDisabled} onPress={press} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+    disabled={readFocus.nativeDisabled} onPress={press} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)}
     style={({ pressed }) => [styles.button, styles.buttonContent, styles.disclosureButton, density === "compact" && styles.compactButtonContent,
-      (compact || touch) && styles.mobileTarget, visuallyDisabled && styles.disabledOutlineButton, focused && styles.focusedButton, pressed && !unavailable && styles.buttonPressed, style]}>
+      (compact || touch) && styles.mobileTarget, visuallyDisabled && styles.disabledOutlineButton, focused && styles.focusedButton, (hovered || pressed) && !unavailable && styles.buttonPressed, style]}>
     <Text style={[styles.buttonLabel, styles.disclosureLabel, compact && mobileType.itemTitle, visuallyDisabled && styles.disabledLabel]}>{label}</Text>
     <AppIcon name={expanded ? "chevron-up" : "chevron-down"} size={18} color={visuallyDisabled ? colors.muted : colors.ink} />
   </Pressable>;
   return (
     <Button
       ref={buttonRef}
-      mode={filled ? "contained" : "outlined"}
+      mode={filled ? "contained" : variant === "quiet" ? "text" : "outlined"}
       icon={variant === "danger" || variant === "danger-secondary" ? ({ color, size }) => <AppIcon name="alert-outline" color={color} size={size} importantForAccessibility="no" /> : undefined}
-      buttonColor={variant === "danger" ? colors.errorInk : variant === "accent" ? colors.accent : filled ? undefined : "transparent"}
+      buttonColor={variant === "danger" ? colors.errorInk : variant === "accent" ? hovered && !unavailable ? colors.accentPressed : colors.accent : variant === "primary" ? hovered && !unavailable ? colors.inkPressed : colors.ink : "transparent"}
       textColor={variant === "danger" ? colors.white : variant === "danger-secondary" ? colors.errorInk : variant === "accent" ? colors.onAccent : variant === "secondary" || variant === "quiet" ? colors.ink : undefined}
       rippleColor={variant === "primary" || variant === "danger" ? colors.darkActionRipple : undefined}
       theme={{ colors: { surfaceDisabled: colors.softLine, onSurfaceDisabled: colors.muted } }}
       onPress={press}
+      onPointerEnter={event => { if (event.nativeEvent.pointerType === "mouse") setHovered(true); }} onPointerLeave={() => setHovered(false)}
       disabled={readFocus.nativeDisabled}
       loading={loading}
       compact={density === "compact"}
       contentStyle={[styles.buttonContent, density === "compact" && styles.compactButtonContent, (compact || touch) && styles.mobileTarget]}
-      labelStyle={[styles.buttonLabel, compact && mobileType.itemTitle]}
-      style={[styles.button, (variant === "secondary" || variant === "quiet") && styles.outlineButton,
-        variant === "quiet" && styles.quietButton, variant === "danger-secondary" && styles.secondaryDangerButton,
-        visuallyDisabled && (filled ? styles.disabledFilledButton : styles.disabledOutlineButton), style]}
+      labelStyle={styles.buttonLabel}
+      style={[styles.button, variant === "secondary" && styles.outlineButton,
+        variant === "quiet" && styles.quietButton, hovered && !unavailable && !filled && styles.buttonHovered, variant === "danger-secondary" && styles.secondaryDangerButton,
+        visuallyDisabled && (filled ? styles.disabledFilledButton : variant === "quiet" ? styles.disabledQuietButton : styles.disabledOutlineButton), style]}
       accessibilityLabel={accessibilityLabel}
     >
       {label}
@@ -72,14 +74,24 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
   );
 }
 
-type AppTextFieldProps = Omit<React.ComponentProps<typeof TextInput>, "ref"> & { ref?: Ref<React.ComponentRef<typeof TextInput>> };
-export function AppTextField({ style, outlineStyle, contentStyle, multiline, label, mode, ref, onFocus, onBlur, onChangeText, placeholder, accessibilityLabel, ...props }: AppTextFieldProps) {
+type PaperInputRenderProps = Parameters<NonNullable<React.ComponentProps<typeof TextInput>["render"]>>[0];
+/** RNW 0.21 filters `name`; Paper's render seam preserves its real input and ref contract. */
+function NamedWebInput({ name, inputProps }: { name: string; inputProps: PaperInputRenderProps }) {
+  const inputRef = useCallback((node: React.ComponentRef<typeof NativeTextInput> | null) => {
+    if (node) (node as unknown as HTMLElement).setAttribute("name", name);
+    inputProps.ref?.(node);
+  }, [name, inputProps.ref]);
+  return <NativeTextInput {...inputProps} ref={inputRef} />;
+}
+
+type AppTextFieldProps = Omit<React.ComponentProps<typeof TextInput>, "ref"> & { ref?: Ref<React.ComponentRef<typeof TextInput>>; name?: string };
+export function AppTextField({ style, outlineStyle, contentStyle, multiline, label, mode, ref, name, render, onFocus, onBlur, onChangeText, placeholder, accessibilityLabel, ...props }: AppTextFieldProps) {
   const [focused, setFocused] = useState(false);
   const [uncontrolledValue, setUncontrolledValue] = useState(props.defaultValue ?? "");
   const nativeLabel = Platform.OS !== "web" && mode !== "flat" && !multiline && typeof label === "string";
   // Paper's inactive label waits for its animated text measurement. Use the native placeholder until focus or text.
   const showNativePlaceholder = nativeLabel && !focused && !(props.value ?? uncontrolledValue);
-  return <TextInput {...props} multiline={multiline} label={showNativePlaceholder ? undefined : label}
+  return <TextInput {...props} render={render ?? (Platform.OS === "web" && name ? inputProps => <NamedWebInput name={name} inputProps={inputProps} /> : undefined)} multiline={multiline} label={showNativePlaceholder ? undefined : label}
     placeholder={showNativePlaceholder ? label : placeholder} accessibilityLabel={accessibilityLabel ?? (nativeLabel ? label : undefined)}
     onFocus={nativeLabel ? event => { setFocused(true); onFocus?.(event); } : onFocus}
     onBlur={nativeLabel ? event => { setFocused(false); onBlur?.(event); } : onBlur}
@@ -238,52 +250,67 @@ export function UnderlineTabs<T extends string>({ id, label, items, value, onCha
   value: T;
   onChange: (next: T) => void;
 }) {
-  const compact = useWindowDimensions().width < mobileLayout.breakpoint;
+  const viewportWidth = useWindowDimensions().width;
+  const compact = viewportWidth < mobileLayout.breakpoint;
   const touch = useInteractionDensity();
   const controls = useRef(new Map<T, View>());
   const [positions, setPositions] = useState<Record<string, { x: number; width: number }>>({});
   const [revealRevision, setRevealRevision] = useState(0);
+  const [focused, setFocused] = useState(value);
+  useEffect(() => { setFocused(value); }, [value]);
+  const focusKey = items.some(item => item.key === focused) ? focused : value;
   const selection = positions[value];
-  function measureWebTabs() {
+  const revealKey = Platform.OS === "web" ? focusKey : value;
+  const reveal = positions[revealKey];
+  const measureWebTabs = useCallback(() => {
     if (Platform.OS !== "web") return;
     const next: typeof positions = {};
     controls.current.forEach((control, key) => {
       const node = control as unknown as HTMLElement;
-      // These share the marker's positioned parent, without screen zoom or transforms.
+      // Overflow reveal uses physical row offsets, not scaled screen coordinates.
       next[key] = { x: node.offsetLeft, width: node.offsetWidth };
     });
     setPositions(current => Object.keys(current).length === Object.keys(next).length
       && Object.keys(next).every(key => current[key]?.x === next[key].x && current[key]?.width === next[key].width) ? current : next);
-  }
-  // RN Web observes each tab's size, not position. A preceding badge can move a
-  // tab without resizing it; measure the whole row after commits and any resize.
-  useLayoutEffect(measureWebTabs);
+  }, []);
+  // RNW owns resize observation. A changed label/count/order or selected weight
+  // can move siblings; unrelated parent renders (even fresh item arrays) cannot.
+  const layoutKey = JSON.stringify(items.map(item => [item.key, item.label, item.count]));
+  useLayoutEffect(measureWebTabs, [measureWebTabs, layoutKey, value, viewportWidth, touch]);
   function select(key: T) {
     setRevealRevision(revision => revision + 1);
     onChange(key);
   }
-  function move(event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }, index: number) {
-    const key = event.nativeEvent?.key ?? event.key;
+  function move(event: TabKeyboardEvent, index: number) {
+    const input = unmodifiedTabKey(event);
+    if (!input) return;
+    const { key, repeat } = input;
+    if (key === "Enter" || key === " " || key === "Spacebar") {
+      event.preventDefault();
+      if (!repeat) select(items[index].key);
+      return;
+    }
     const next = key === "ArrowLeft" ? (index + items.length - 1) % items.length
       : key === "ArrowRight" ? (index + 1) % items.length : key === "Home" ? 0 : key === "End" ? items.length - 1 : null;
     if (next === null || !items[next]) return;
     event.preventDefault();
-    select(items[next].key);
+    setFocused(items[next].key);
+    setRevealRevision(revision => revision + 1);
     (controls.current.get(items[next].key) as unknown as HTMLElement | undefined)?.focus({ preventScroll: true });
   }
   return <HorizontalOverflowRail tabIndex={-1} style={styles.tabsScroll} rowTestID={`${id}-rail`} hintTestID={`${id}-scroll-hint`}
     items={items.flatMap(item => positions[item.key] ? [{ key: item.key, ...positions[item.key] }] : [])}
-    revealTarget={selection ? { key: value, ...selection } : undefined} revealRevision={revealRevision} hintLabel={`查看更多${label ?? "分頁"}`}
+    revealTarget={reveal ? { key: revealKey, ...reveal } : undefined} revealRevision={revealRevision} hintLabel={`查看更多${label ?? "分頁"}`}
     onRevealItem={key => { if (Platform.OS === "web") (controls.current.get(key as T) as unknown as HTMLElement | undefined)?.focus({ preventScroll: true }); }}>
     <View accessibilityRole="tablist" accessibilityLabel={label} aria-orientation="horizontal" style={styles.tabs} onLayout={Platform.OS === "web" ? measureWebTabs : undefined}>
     {items.map((item, index) => <Pressable
       key={item.key} nativeID={tabId(id, item.key)} onLayout={event => { if (Platform.OS === "web") { measureWebTabs(); return; } const { x, width } = event.nativeEvent.layout; setPositions(current => current[item.key]?.x === x && current[item.key]?.width === width ? current : { ...current, [item.key]: { x, width } }); }} ref={instance => { if (instance) controls.current.set(item.key, instance); else controls.current.delete(item.key); }}
-      accessibilityRole="tab" accessibilityLabel={item.count === undefined ? item.label : `${item.label} ${item.count}`} aria-controls={tabPanelId(id, item.key)} tabIndex={value === item.key ? 0 : -1}
-      accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key} onPress={() => select(item.key)}
-      {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }) => move(event, index) } : {})}
-      style={({ pressed }) => [styles.tab, item.count !== undefined && styles.countedTab, (compact || touch) && styles.mobileTarget, !selection && value === item.key && styles.tabActive, pressed && styles.tabPressed]}
+      accessibilityRole="tab" accessibilityLabel={item.count === undefined ? item.label : `${item.label} ${item.count}`} aria-controls={tabPanelId(id, item.key)} tabIndex={focusKey === item.key ? 0 : -1} onFocus={() => setFocused(item.key)}
+      accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key} onPress={event => { if (Platform.OS !== "web" || !isKeyboardTabPress(event)) select(item.key); }}
+      {...(Platform.OS === "web" ? { onKeyDown: (event: TabKeyboardEvent) => move(event, index) } : {})}
+      style={({ pressed }) => [styles.tab, item.count !== undefined && styles.countedTab, (compact || touch) && styles.mobileTarget, (Platform.OS === "web" || !selection) && value === item.key && styles.tabActive, pressed && styles.tabPressed]}
     ><Text style={[styles.tabText, value === item.key && styles.tabTextActive]}>{item.label}</Text>{item.count !== undefined ? <SelectionCount count={item.count} /> : null}</Pressable>)}
-    <MotionSelectionMarker x={selection?.x ?? 0} width={selection?.width ?? 0} selectionKey={`${id}:${value}`} />
+    {Platform.OS !== "web" ? <MotionSelectionMarker x={selection?.x ?? 0} width={selection?.width ?? 0} selectionKey={`${id}:${value}`} /> : null}
     </View>
   </HorizontalOverflowRail>;
 }
@@ -305,9 +332,10 @@ const styles = StyleSheet.create({
   button: { maxWidth: "100%", borderRadius: radius.small },
   buttonContent: { minHeight: 44, paddingHorizontal: 4 },
   compactButtonContent: { minHeight: 40 },
-  buttonLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "700" },
+  buttonLabel: { fontFamily: chineseFont, fontSize: 16, lineHeight: 24, fontWeight: "600" },
   outlineButton: { borderColor: colors.controlOutline },
   quietButton: { alignSelf: "flex-start" },
+  buttonHovered: { backgroundColor: colors.paleTeal }, disabledQuietButton: { backgroundColor: "transparent" },
   secondaryDangerButton: { alignSelf: "flex-start", borderColor: colors.errorInk },
   disabledFilledButton: { backgroundColor: colors.softLine },
   disabledOutlineButton: { backgroundColor: "transparent", borderColor: colors.line },

@@ -7,13 +7,13 @@ import { useTasksWorkspace } from '../workspaces/TasksWorkspace';
 import { useGrowthWorkspace } from '../workspaces/GrowthWorkspace';
 import { usePreparationWorkspace } from '../workspaces/PreparationWorkspace';
 import { useProductionSettingsDomains, useProductionContactDomain } from './SettingsDomains';
-import { useProduction } from './ProductionProvider';
+import { useProductionChrome } from './ProductionProvider';
 import { headerOperationHints, type HeaderOperationInput } from '../header-operation-hints';
 import { clearOperationReveal, discardOperationRevealOutside, requestOperationReveal, type OperationRevealTarget } from '../operation-reveal';
 
 /** Existing public owners only. No extra reads, inferred counts or global attention promise. */
 export function useHeaderOperationHints() {
-  const production = useProduction(), care = useCareWorkspace(), profile = useProfileWorkspace(), tasks = useTasksWorkspace();
+  const production = useProductionChrome(), care = useCareWorkspace(), profile = useProfileWorkspace(), tasks = useTasksWorkspace();
   const growth = useGrowthWorkspace(), preparation = usePreparationWorkspace();
   const contact = useProductionContactDomain(), { modelSettings } = useProductionSettingsDomains();
   const router = useRouter(), pathname = usePathname(), leave = usePreviewNavigation();

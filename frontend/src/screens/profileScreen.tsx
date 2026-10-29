@@ -62,7 +62,7 @@ function ProfileContent() {
       </> : null}
 
     </ManualFormDialog>
-      {child?.accessRole === "owner" ? <AppButton label="管理" accessibilityLabel="管理目前孩子" variant="quiet" density="compact" expanded={managementOpen} onPress={() => setManagementOpen(value => !value)} /> : null}
+      {child?.accessRole === "owner" ? <AppButton label="孩子管理" accessibilityLabel="管理目前孩子" variant="quiet" density="compact" expanded={managementOpen} onPress={() => setManagementOpen(value => !value)} /> : null}
     </View>
     {child?.accessRole === "owner" ? <MotionDisclosure expanded={managementOpen} scopeKey={`${identityKey}:${child.id}`} testID="profile-child-management">
       <SectionCard><Text>目前孩子：{child.displayName}</Text>
@@ -73,7 +73,7 @@ function ProfileContent() {
   </View>;
   if (!workspace) return <>{childPicker}<SectionCard><Text>{child ? "正在讀取孩子檔案…" : "先填一個稱呼建立孩子，便可以跟助手交代事情；其他資料可稍後補充。"}</Text></SectionCard></>;
   const { model, actions } = workspace;
-  return <ProfileView openRequest={profileOpenRequest} model={model} actions={actions} childPicker={childPicker} onOpenCare={() => homeActions.open("care")}
+  return <ProfileView openRequest={profileOpenRequest} model={model} actions={actions} childPicker={childPicker}
     childDeletionActive={!!recordsState.deletion || creating || createUnknown} previewControls={null}
     writeNotice={<OperationNotice state={model.operation.state} title={model.operation.resultUnavailable ? "原操作已確認 · 待重讀結果" : "檔案操作"}
       visible={model.operation.state !== "needs_confirmation"} message={model.operation.message}

@@ -17,7 +17,16 @@ import {SummaryDisclosure} from './SummaryDisclosure';
 import {SummaryRecords} from './SummaryRecords';
 import {summaryStyles as s} from './summary-styles';
 
-export function SummaryView({model, actions, onRecord, onTask, onAgent, previewTools, recoveryMode = false, onReturn}: {model: SummaryViewModel; actions: SummaryActions; onRecord: (id: string) => void; onTask: (id: string) => void; onAgent?: () => void; previewTools?: React.ReactNode; recoveryMode?: boolean; onReturn?: () => void}) {
+type SummaryCommonProps = {
+  model: SummaryViewModel; actions: SummaryActions; onRecord(id: string): void; onTask(id: string): void;
+  onAgent?(): void; previewTools?: React.ReactNode; recoveryMode?: never;
+};
+export type SummaryViewProps = SummaryCommonProps & (
+  | { mode: 'report'; onReturn?: never }
+  | { mode: 'recovery'; onReturn(): void }
+);
+export function SummaryView({model, actions, onRecord, onTask, onAgent, previewTools, mode: variant, onReturn}: SummaryViewProps) {
+  const recoveryMode = variant === 'recovery';
   const queryLayout = useContainerWidth(), wideQuery = queryLayout.width >= 680;
   const tabsId = useId();
   const [draftStatus, setDraftStatus] = useState<PreparationDraftStatus | null>(null);
@@ -45,7 +54,7 @@ export function SummaryView({model, actions, onRecord, onTask, onAgent, previewT
   const currentDraftStatus = draftStatus?.scopeKey === model.scopeKey && draftStatus.formEpoch === model.formEpoch ? draftStatus : null;
   const queryChanged = !!page && !sameSummaryPeriod(page.period, model.query);
   return <PageFrame density="compact" title={recoveryMode ? `${model.childName}的舊共享準備與原操作查核` : `${model.childName}的照顧摘要`} description={recoveryMode ? "查看舊共享準備、來源與原操作結果。" : "回看已確認的照顧資料與近期觀察。"}>
-    {recoveryMode && onReturn ? <AppButton label="返回成長" variant="secondary" onPress={onReturn} /> : null}
+    {recoveryMode ? <AppButton label="返回成長" variant="secondary" onPress={onReturn} /> : null}
     <StatusAnnouncement eventKey={`${model.operation}:${model.notice}`} message={model.notice} urgent={model.operation === 'failed'} />
     <StatusAnnouncement eventKey={model.access} message={model.access === 'lost' ? '已無權存取；舊資料及未提交內容已清除。' : ''} urgent={model.access === 'lost'} />
     <View style={s.periodToolbar}>

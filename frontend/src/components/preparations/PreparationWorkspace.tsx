@@ -1,7 +1,9 @@
+import { Link, type Href } from "expo-router";
+import type { PreparationNavigation } from "../../navigation/useGrowthRouteNavigation";
 import { HistoryCardGrid } from "../history/HistoryCards";
 import { EmptyListCard } from "../EmptyListCard";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { Platform, Pressable, StyleSheet, View, type ScrollView } from "react-native";
+import { Platform, Pressable, StyleSheet, View, type ScrollView, type TextStyle } from "react-native";
 import { Text } from "react-native-paper";
 import {
   canArchivePreparation, canChangePreparation, preparationDateLabel, preparationPurposeLabel, preparationPurposes, searchPreparationHistory,
@@ -11,13 +13,14 @@ import { usePreparationWorkspace, type PreparationWorkspaceValue } from "../../w
 import { WriteRecoveryNotice } from "../WriteRecoveryNotice";
 import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
-import { AppIcon, type AppIconName } from "../AppIcon";
+import { AppIcon } from "../AppIcon";
 import { AppStatusBadge, type AppStatusTone } from "../AppStatusBadge";
 import { AppButton, AppSelect } from "../ui";
 import { useContainerWidth } from "../useContainerWidth";
 import { FormDialog, ManualFormDialog } from "../FormDialog";
 import { DocumentCreateForm } from "./DocumentCreateForm";
 import { JournalSection } from "../journal/JournalLayout";
+import { OwnedRouteTextLink } from "../OwnedRouteTextLink";
 
 const stateLabels: Record<PreparationDocumentView["readState"], { label: string; tone: AppStatusTone; detail: string }> = {
   ready: { label: "可查閱", tone: "success", detail: "" },
@@ -44,32 +47,39 @@ function PreparationEmptyState({ workspace, history = false }: { workspace: Prep
   return <View testID="preparation-empty" style={styles.empty}><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{title}</Text>{detail ? <Text style={styles.meta}>{detail}</Text> : null}</View>;
 }
 
-function PreparationMetadata({ icon, label, value }: { icon: AppIconName; label: string; value: string }) {
+function PreparationMetadata({ label, value }: { label: string; value: string }) {
   return <View accessible accessibilityLabel={`${label}：${value}`} style={styles.metadataItem}>
-    <AppIcon name={icon} size={14} /><Text style={styles.meta}>{value}</Text>
+    <Text style={styles.meta}>{label}</Text><Text selectable style={styles.metadataValue}>{value}</Text>
   </View>;
 }
 
-function PreparationRow({ document, selected, onPress, rowRef, history = false }: { document: PreparationDocumentView; selected: boolean; history?: boolean; onPress(): void; rowRef(node: View | null): void }) {
+function PreparationRow({ document, selected, onPress, rowRef, history = false, href }: { href?: Href; document: PreparationDocumentView; selected: boolean; history?: boolean; onPress(): void; rowRef(node: View | null): void }) {
   const state = stateLabels[document.readState], revision = document.revision;
-  const [focused, setFocused] = useState(false), [hovered, setHovered] = useState(false);
-  return <Pressable ref={rowRef} testID={`preparation-row-${document.id}`} accessibilityRole="button"
+  const [focused, setFocused] = useState(false), [hovered, setHovered] = useState(false), [pressed, setPressed] = useState(false);
+  const control = <Pressable ref={rowRef} testID={`preparation-row-${document.id}`} accessibilityRole={href ? "link" : "button"} aria-current={href && selected ? "true" : undefined}
     accessibilityLabel={`開啟${revision?.title ?? "暫不能查看的準備單"}`} accessibilityState={{ selected }} aria-selected={selected}
-    onPress={onPress} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)}
-    style={({ pressed }) => [styles.documentRow, history && styles.historyCard, selected && (history ? styles.selectedHistoryRow : styles.selectedRow), hovered && styles.pressedRow, focused && styles.focusedRow, pressed && (selected ? styles.selectedPressedRow : styles.pressedRow)]}>
-    <View style={styles.row}><PreparationMetadata icon="preparation-outline" label="用途" value={preparationPurposeLabel(document.purpose)} /><AppStatusBadge label={document.status === "archived" && document.readState === "ready" ? "已歸檔" : state.label} tone={document.status === "archived" && document.readState === "ready" ? "neutral" : state.tone} /></View>
+    onPress={href ? undefined : onPress} onFocus={() => setFocused(true)} onBlur={() => { setFocused(false); setPressed(false); }} onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)} onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)}
+    style={StyleSheet.flatten([styles.documentRow, history && styles.historyCard, selected && (history ? styles.selectedHistoryRow : styles.selectedRow), hovered && styles.pressedRow, focused && styles.focusedRow, pressed && (selected ? styles.selectedPressedRow : styles.pressedRow)])}>
     <Text numberOfLines={history ? 2 : undefined} accessibilityRole="header" aria-level={3} style={styles.rowTitle}>{revision?.title ?? "暫不能查看的準備單"}</Text>
     <Text numberOfLines={history ? 3 : undefined} style={styles.body}>{revision?.summary ?? state.detail}</Text>
+    <View style={styles.row}><PreparationMetadata label="用途" value={preparationPurposeLabel(document.purpose)} /><AppStatusBadge label={document.status === "archived" && document.readState === "ready" ? "已歸檔" : state.label} tone={document.status === "archived" && document.readState === "ready" ? "neutral" : state.tone} /></View>
     {document.status === "archived" || revision?.eventDate || !history ? <View style={styles.row}>
-      {document.status === "archived" ? <PreparationMetadata icon="history" label="歸檔日期" value={`歸檔 ${preparationDateLabel(document.archivedAt)}`} />
-        : revision?.eventDate ? <PreparationMetadata icon="calendar-outline" label="使用日期" value={`使用 ${preparationDateLabel(revision.eventDate)}`} /> : null}
+      {document.status === "archived" ? <PreparationMetadata label="歸檔日期" value={preparationDateLabel(document.archivedAt)} />
+        : revision?.eventDate ? <PreparationMetadata label="使用日期" value={preparationDateLabel(revision.eventDate)} /> : null}
       {!history ? <View style={styles.openAction}><Text style={styles.openLabel}>打開準備單</Text><AppIcon name="chevron-right" size={16} color={colors.teal} /></View> : null}
     </View> : null}
   </Pressable>;
+  return href ? <Link href={href} asChild onPress={event => {
+    type Click = { defaultPrevented?: boolean; button?: number; metaKey?: boolean; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean };
+    const click = event as unknown as Click & { nativeEvent?: Click };
+    if (Platform.OS === "web" && [click, click.nativeEvent].some(value => value && (value.defaultPrevented || value.metaKey || value.ctrlKey || value.shiftKey || value.altKey || value.button !== undefined && value.button !== 0))) return;
+    event.preventDefault(); onPress();
+  }}>{control}</Link> : control;
+
 }
 
-function PreparationDocumentDetail({ document, workspace, onClose, onHistory, onPrepareQuestion, hideReturnAction = false }: {
-  document: PreparationDocumentView; workspace: PreparationWorkspaceValue; onClose(): void; onHistory?(): void; onPrepareQuestion?: (question: string) => void; hideReturnAction?: boolean;
+function PreparationDocumentDetail({ document, workspace, onClose, onPrepareQuestion, hideReturnAction = false }: {
+  document: PreparationDocumentView; workspace: PreparationWorkspaceValue; onClose(): void; onPrepareQuestion?: (question: string) => void; hideReturnAction?: boolean;
 }) {
   const [sourceOpen, setSourceOpen] = useState(false), [archiveAsked, setArchiveAsked] = useState(false);
   const [checkingItem, setCheckingItem] = useState<{ sectionId: string; itemId: string } | null>(null);
@@ -97,21 +107,20 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
     else if (shownCheckSnapshot.current !== checkSnapshot || !keepReadControls && !keepFailedReadControls) shownCheckSnapshot.current = null;
   }, [canCheck, checkSnapshot, keepReadControls, keepFailedReadControls]);
   const canArchive = canArchivePreparation(document, workspace.model.scope) && !pending && workspace.model.capabilities?.archive === true;
-  const checked = revision?.sections.flatMap(section => section.kind === "checklist" ? section.items : []) ?? [];
   useLayoutEffect(() => { setArchiveAsked(false); setSourceOpen(false); }, [document.id, document.version, document.readState, workspace.scopeKey]);
   useLayoutEffect(() => { if (!pending) setCheckingItem(null); }, [pending]);
   return <View testID="preparation-document-detail" style={styles.document}>
     {!hideReturnAction ? <AppButton label={archived ? "返回歸檔清單" : "返回準備單清單"} variant="secondary" density="compact" onPress={onClose} /> : null}
     <View style={styles.documentHeader}>
       <Text accessibilityRole="header" aria-level={2} style={styles.documentTitle}>{revision?.title ?? "暫不能查看這份準備"}</Text>
-      {revision ? <Text style={styles.body}>{revision.summary}</Text> : null}
-      <View style={styles.row}><PreparationMetadata icon="preparation-outline" label="用途" value={preparationPurposeLabel(document.purpose)} />
-        <PreparationMetadata icon="account-child-outline" label="孩子" value={workspace.model.child.displayName} />
+      {revision ? <Text selectable style={styles.reading}>{revision.summary}</Text> : null}
+      <View style={styles.row}><PreparationMetadata label="用途" value={preparationPurposeLabel(document.purpose)} />
+        <PreparationMetadata label="孩子" value={workspace.model.child.displayName} />
         <AppStatusBadge label={archived ? "已歸檔" : state.label} tone={archived ? "neutral" : state.tone} /></View>
       {revision ? <View style={styles.row}>
-        {revision.eventDate ? <PreparationMetadata icon="calendar-outline" label="使用日期" value={`使用 ${preparationDateLabel(revision.eventDate)}`} /> : null}
-        <PreparationMetadata icon="history" label="更新日期" value={`更新 ${preparationDateLabel(revision.updatedAt)}`} />
-        <PreparationMetadata icon="file-document-outline" label="資料截至" value={`資料截至 ${preparationDateLabel(revision.sourceAsOf)}`} />
+        {revision.eventDate ? <PreparationMetadata label="使用日期" value={preparationDateLabel(revision.eventDate)} /> : null}
+        <PreparationMetadata label="更新日期" value={preparationDateLabel(revision.updatedAt)} />
+        <PreparationMetadata label="資料截至" value={preparationDateLabel(revision.sourceAsOf)} />
       </View> : null}
     </View>
     {state.detail && !content ? <View style={styles.warning}><AppStatusBadge label={state.label} tone={state.tone} /><Text style={styles.body}>{state.detail}</Text></View> : null}
@@ -123,26 +132,26 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
       {!content.invalidated ? <AppButton label={content.error ? "重試讀取這個版本" : "繼續載入這個版本"} variant="quiet" disabled={content.busy || !reading?.online} onPress={() => reading?.continueVersion()} /> : null}
     </View> : null}
     {document.historical ? <View style={styles.row}><AppStatusBadge label="較早修訂，唯讀" tone="info" /><AppButton label="回到目前正文" variant="quiet" onPress={() => reading?.closeVersion()} /></View> : null}
-    {revision?.sections.map(section => <JournalSection key={section.id} title={section.title} style={styles.section}
-      action={section.kind === "checklist" ? <Text style={styles.meta}>{checked.filter(item => item.checked).length}／{checked.length} 項已核對</Text> : undefined}>
+    {revision?.sections.map(section => <JournalSection key={section.id} title={section.title} level={3} style={styles.section}
+      action={section.kind === "checklist" ? <Text style={styles.meta}>{section.items.filter(item => item.checked).length}／{section.items.length} 項已核對</Text> : undefined}>
       {section.items.map((item, index) => section.kind === "checklist"
-        ? archived || !canCheck && !(keepReadControls || keepFailedReadControls || keepCheckingControl && (!!workspace.model.checkSave || checkingItem?.sectionId === section.id && checkingItem.itemId === item.id)) ? <View key={item.id} style={styles.textRow}><Text style={styles.checkMark}>{item.checked ? "☑" : "☐"}</Text><Text style={styles.reading}>{item.text}</Text></View>
-          : <AppCheckbox key={item.id} label={item.text} checked={!!item.checked} disabled={!canCheck} onChange={value => {
+        ? archived || !canCheck && !(keepReadControls || keepFailedReadControls || keepCheckingControl && (!!workspace.model.checkSave || checkingItem?.sectionId === section.id && checkingItem.itemId === item.id)) ? <View key={item.id} style={styles.textRow}><Text style={styles.checkMark}>{item.checked ? "☑" : "☐"}</Text><Text selectable style={[styles.reading, styles.itemText]}>{item.text}</Text></View>
+          : <AppCheckbox key={item.id} label={item.text} labelStyle={styles.reading} checked={!!item.checked} disabled={!canCheck} onChange={value => {
             if (!canCheck) return;
             setCheckingItem({ sectionId: section.id, itemId: item.id });
             workspace.actions.checkItem(document.id, document.version, section.id, item.id, value);
           }} />
-        : <View key={item.id} style={styles.textRow}><Text style={styles.bullet}>{section.kind === "questions" ? `${index + 1}.` : "·"}</Text><Text style={styles.reading}>{item.text}</Text></View>)}
+        : <View key={item.id} style={styles.textRow}><Text style={styles.bullet}>{section.kind === "questions" ? `${index + 1}.` : "·"}</Text><Text selectable style={[styles.reading, styles.itemText]}>{item.text}</Text></View>)}
     </JournalSection>)}
     {revision ? <View style={styles.section}>
       <AppButton label="來源與版本" variant="quiet" density="compact" expanded={sourceOpen} onPress={() => { setSourceOpen(value => !value); if (!sourceOpen && index && !index.started) reading?.loadVersions(document.id); }} />
       {sourceOpen ? <View style={styles.stack}>
         <Text style={styles.meta}>正文版本 {revision.number} · 文件版本 {document.version}</Text>
         {document.sources.map(source => <View key={source.id} style={styles.stack}>
-          <PreparationMetadata icon="file-document-outline" label="來源" value={source.label} />
+          <PreparationMetadata label="來源" value={source.label} />
           <View style={styles.row}>
-            <PreparationMetadata icon={source.visibility === "private" ? "lock-outline" : "account-group-outline"} label="來源可見範圍" value={source.visibility === "private" ? "私人來源" : "家庭來源"} />
-            <PreparationMetadata icon="calendar-outline" label="來源日期" value={preparationDateLabel(source.updatedAt)} />
+            <PreparationMetadata label="來源可見範圍" value={source.visibility === "private" ? "私人來源" : "家庭來源"} />
+            <PreparationMetadata label="來源日期" value={preparationDateLabel(source.updatedAt)} />
             {source.version !== revision.sourceRefs.find(ref => ref.id === source.id)?.version ? <Text style={styles.warningText}>已有較新版本</Text> : null}
           </View>
         </View>)}
@@ -167,7 +176,7 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
         {workspace.model.archiveNotice ? <Text style={styles.meta}>{workspace.model.archiveNotice}</Text> : null}
         <View style={styles.actions}><AppButton label="歸檔這份準備" onPress={() => workspace.actions.archiveDocument(document.id, document.version)} /><AppButton label="繼續使用" variant="secondary" onPress={() => setArchiveAsked(false)} /></View>
       </View> : null}
-    </View> : onHistory ? <AppButton label="查看準備單歷史" variant="secondary" onPress={onHistory} /> : null}
+    </View> : null}
   </View>;
 }
 
@@ -177,11 +186,14 @@ function PreparationListGrid({ history, children }: { history: boolean; children
 
 type ReadingProps = { scrollRef?: RefObject<ScrollView | null>; getScrollPosition?(): number };
 
-function PreparationReader({ workspace, documents, history = false, onHistory, onPrepareQuestion, scrollRef, getScrollPosition }: ReadingProps & {
-  workspace: PreparationWorkspaceValue; documents: readonly PreparationDocumentView[]; history?: boolean; onHistory?(): void; onPrepareQuestion?: (question: string) => void;
+function PreparationReader({ workspace, documents, history = false, onHistory, onPrepareQuestion, scrollRef, getScrollPosition, navigation }: ReadingProps & {
+  navigation?: PreparationNavigation; workspace: PreparationWorkspaceValue; documents: readonly PreparationDocumentView[]; history?: boolean; onHistory?(): void; onPrepareQuestion?: (question: string) => void;
 }) {
   const layout = useContainerWidth(), wide = layout.width >= 840;
-  const selected = workspace.model.selected?.status === (history ? "archived" : "active") && documents.some(item => item.id === workspace.model.selected!.id) ? workspace.model.selected : null;
+  const selected = workspace.model.selected?.status === (history ? "archived" : "active")
+    && (history && navigation ? navigation.selectedId === workspace.model.selected.id : documents.some(item => item.id === workspace.model.selected!.id)) ? workspace.model.selected : null;
+  const selectDocument = history && navigation ? navigation.open : workspace.actions.selectDocument;
+  const closeDocument = history && navigation ? navigation.close : workspace.actions.closeDocument;
   const archivedSelection = !history && workspace.model.justArchivedId;
   const rowRefs = useRef(new Map<string, View>()), listRef = useRef<View>(null), panelRef = useRef<View>(null);
   const returnFocus = useRef<View>(null), readerKey = useRef<string | null>(null);
@@ -234,32 +246,34 @@ function PreparationReader({ workspace, documents, history = false, onHistory, o
   return <View ref={layout.ref} onLayout={layout.onLayout} style={styles.stack}>
     {archivedSelection ? <View accessibilityLiveRegion="polite" testID="preparation-archive-success" style={styles.archiveNote}>
       <AppStatusBadge label={workspace.model.dataLabel?.startsWith("Server") ? "已歸檔" : "已在本次預覽歸檔"} tone="success" /><Text style={styles.body}>這份準備單已移到歷史，使用時的版本仍保留。</Text>
-      {onHistory ? <AppButton label="到歷史查看" variant="secondary" onPress={onHistory} /> : null}
-      <AppButton label="繼續看其他準備" variant="quiet" density="compact" onPress={workspace.actions.closeDocument} />
+      {onHistory ? <OwnedRouteTextLink href="/history?category=preparations" label="到歷史查看" onOpen={onHistory} /> : null}
+      <AppButton label="繼續看其他準備" variant="quiet" density="compact" onPress={closeDocument} />
     </View> : null}
     <View style={[styles.stack, !history && wide && selected && styles.split]}>
       {history || !selected || wide ? <View ref={listRef} tabIndex={-1} accessibilityLabel={history ? "已歸檔準備單清單" : "準備單清單"} testID="preparation-document-list" style={[styles.list, !history && wide && selected && styles.listColumn]}>
-        {documents.length ? <PreparationListGrid history={history}>{documents.map(document => <PreparationRow history={history} key={document.id} document={document} selected={selected?.id === document.id}
+        {documents.length ? <PreparationListGrid history={history}>{documents.map(document => <PreparationRow history={history} key={document.id} href={navigation?.href(document.id)} document={document} selected={selected?.id === document.id}
           rowRef={node => { if (node) rowRefs.current.set(document.id, node); else rowRefs.current.delete(document.id); }}
-          onPress={() => { returnFocus.current = rowRefs.current.get(document.id) ?? null; if (!history) anchor.current = { id: document.id, y: getScrollPosition?.() ?? 0, scope: workspace.scopeKey }; workspace.actions.selectDocument(document.id); }} />)}</PreparationListGrid>
+          onPress={() => { returnFocus.current = rowRefs.current.get(document.id) ?? null; if (!history) anchor.current = { id: document.id, y: getScrollPosition?.() ?? 0, scope: workspace.scopeKey }; selectDocument(document.id); }} />)}</PreparationListGrid>
           : <PreparationEmptyState workspace={workspace} history={history} />}
       </View> : null}
       {!history && selected ? <View ref={panelRef} tabIndex={-1} style={[styles.detailColumn, wide && styles.detailWide]}><PreparationDocumentDetail key={`${workspace.scopeKey}:${selected.id}`} document={selected} workspace={workspace}
-        onClose={workspace.actions.closeDocument} onHistory={onHistory} onPrepareQuestion={onPrepareQuestion} /></View> : null}
+        onClose={closeDocument} onPrepareQuestion={onPrepareQuestion} /></View> : null}
     </View>
     {history ? <FormDialog key={readerKey.current} visible={!!selected && workspace.model.condition !== "lost"} scopeKey={workspace.scopeKey} formKey={readerKey.current ?? undefined} title="準備單詳情" dismissMode="local"
-      returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={workspace.actions.closeDocument}
+      returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={closeDocument}
       recovery={workspace.model.operation ? <WriteRecoveryNotice plainLanguage showReference={false} operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
       closeOutcome={{ revision: workspace.model, ready: !workspace.model.selected }}>
-      {selected ? <PreparationDocumentDetail document={selected} workspace={workspace} onClose={workspace.actions.closeDocument} onPrepareQuestion={onPrepareQuestion} hideReturnAction /> : null}
+      {selected ? <PreparationDocumentDetail document={selected} workspace={workspace} onClose={closeDocument} onPrepareQuestion={onPrepareQuestion} hideReturnAction /> : null}
     </FormDialog> : null}
   </View>;
 }
 
-export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewControls, scrollRef, getScrollPosition }: ReadingProps & {
-  onHistory?(): void; onPrepareQuestion?: (question: string) => void; previewControls?: ReactNode;
+export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewControls, scrollRef, getScrollPosition, navigation }: ReadingProps & {
+  navigation?: PreparationNavigation; onHistory?(): void; onPrepareQuestion?: (question: string) => void; previewControls?: ReactNode;
 }) {
-  const workspace = usePreparationWorkspace();
+  const supplied = usePreparationWorkspace();
+  const workspace = supplied && navigation ? { ...supplied, model: { ...supplied.model, selected: supplied.model.selected?.id === navigation.selectedId ? supplied.model.selected : null },
+    actions: { ...supplied.actions, selectDocument: navigation.open, closeDocument: navigation.close } } : supplied;
   const [purpose, setPurpose] = useState<PreparationPurpose>("appointment");
   if (!workspace) return <Text style={styles.meta}>先選擇有權查看的孩子，再打開準備單。</Text>;
   const active = workspace.model.documents.filter(document => document.status === "active");
@@ -275,7 +289,7 @@ export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewCont
   return <View testID="preparation-workspace" style={styles.workspace}>
     <View style={styles.workspaceHeading}><View style={styles.headingCopy}><Text accessibilityRole="header" aria-level={2} style={styles.workspaceTitle}>{selected ? "手上的準備單" : "待用準備單"}</Text>
       <Text style={styles.meta}>{!workspace.model.online || !["ready", "empty", "read_only"].includes(workspace.model.condition) ? "資料尚待核對" : `${active.length} 份已載入`}。使用後可歸檔，保留當時版本。</Text></View>
-      <View style={styles.actions}>{!selected && onHistory ? <AppButton label="查看已歸檔" variant="quiet" density="compact" onPress={onHistory} /> : null}{manualCreate}</View></View>
+      <View style={styles.actions}>{!selected && onHistory ? <OwnedRouteTextLink href="/history?category=preparations" label="查看已歸檔" onOpen={onHistory} /> : null}{manualCreate}</View></View>
     {!selected ? <View testID="preparation-list-actions" style={styles.prepareStrip}>
       <View style={styles.headingCopy}><Text style={styles.sectionTitle}>準備下一次見面</Text><Text style={styles.meta}>先選用途，再與助手核對日期及需要。</Text></View>
       <View style={styles.intentControls}><View style={styles.purposeField}><AppSelect label="用途" value={purpose} options={preparationPurposes.map(item => ({ value: item.key, label: item.label }))} onChange={setPurpose} /></View>
@@ -291,7 +305,8 @@ export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewCont
     </View> : null}
     {workspace.model.operation ? <WriteRecoveryNotice plainLanguage showReference={false} operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
     {workspace.model.condition === "refresh_failed" ? <Text testID="preparation-refresh-error" accessibilityRole="alert" style={styles.warningText}>{active.length ? "更新失敗，顯示上次內容" : "準備單更新失敗"}</Text> : null}
-    <PreparationReader workspace={workspace} documents={active} onHistory={onHistory} onPrepareQuestion={onPrepareQuestion} scrollRef={scrollRef} getScrollPosition={getScrollPosition} />
+    {navigation?.message ? <View testID="preparation-route-notice" accessibilityRole="alert" style={styles.warning}><Text style={styles.warningText}>{navigation.message}</Text><AppButton label="返回準備單清單" variant="quiet" onPress={navigation.close} /></View> : null}
+    <PreparationReader navigation={navigation} workspace={workspace} documents={active} onHistory={onHistory} onPrepareQuestion={onPrepareQuestion} scrollRef={scrollRef} getScrollPosition={getScrollPosition} />
     {!selected && workspace.model.reading?.activeHasMore ? <AppButton label={workspace.model.reading.pageBusy ? "正在載入…" : "載入更多準備單"} variant="quiet" disabled={workspace.model.reading.pageBusy || !workspace.model.reading.online} onPress={() => workspace.model.reading?.loadMoreDocuments("active")} /> : null}
     {workspace.model.reading?.pageError ? <Text accessibilityRole="alert" style={styles.warningText}>未能載入更多文件，已取得的內容保留。</Text> : null}
     <View testID="preparation-secondary-actions" style={styles.intentControls}>
@@ -302,8 +317,8 @@ export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewCont
   </View>;
 }
 
-export function PreparationHistoryView({ searchText, dateRange, onPrepareQuestion, previewControls, scrollRef, getScrollPosition }: ReadingProps & {
-  searchText: string; dateRange: PreparationDateRange; onPrepareQuestion?: (question: string) => void; previewControls?: ReactNode;
+export function PreparationHistoryView({ searchText, dateRange, onPrepareQuestion, previewControls, scrollRef, getScrollPosition, navigation }: ReadingProps & {
+  navigation?: PreparationNavigation; searchText: string; dateRange: PreparationDateRange; onPrepareQuestion?: (question: string) => void; previewControls?: ReactNode;
 }) {
   const workspace = usePreparationWorkspace();
   const reading = workspace?.model.reading;
@@ -321,7 +336,8 @@ export function PreparationHistoryView({ searchText, dateRange, onPrepareQuestio
     <Text style={styles.meta}>只搜尋可查看的已歸檔準備單：標題、內容、用途及來源名稱。日期按歸檔時間，並非使用日期。{available ? "只涵蓋目前已載入資料。" : "目前尚未取得可確認的結果。"}</Text>
     {unknownDates ? <Text style={styles.meta}>{unknownDates} 份未提供歸檔時間，套用日期範圍時不會把它們歸入任何日期。</Text> : null}
     {available ? <Text style={styles.meta}>{documents.length} 份符合</Text> : null}
-    <PreparationReader workspace={workspace} documents={documents} history onPrepareQuestion={onPrepareQuestion} scrollRef={scrollRef} getScrollPosition={getScrollPosition} />
+    {navigation?.message ? <View testID="preparation-history-route-notice" accessibilityRole="alert" style={styles.warning}><Text style={styles.warningText}>{navigation.message}</Text><AppButton label="返回歸檔清單" variant="quiet" onPress={navigation.close} /></View> : null}
+    <PreparationReader navigation={navigation} workspace={workspace} documents={documents} history onPrepareQuestion={onPrepareQuestion} scrollRef={scrollRef} getScrollPosition={getScrollPosition} />
     {reading && (!reading.archiveStarted || reading.archiveHasMore || reading.pageError) ? <AppButton label={reading.pageBusy ? "正在載入歸檔…" : reading.pageError || !reading.archiveReady && reading.archiveStarted ? "重試載入歸檔" : "載入更多歸檔"} variant="quiet" disabled={reading.pageBusy || !reading.online} onPress={() => reading.loadMoreDocuments("archived")} /> : null}
     {reading?.pageError ? <Text accessibilityRole="alert" style={styles.warningText}>未能載入更多歸檔，已取得的內容保留。</Text> : null}
   </View>;
@@ -334,19 +350,21 @@ const styles = StyleSheet.create({
   prepareStrip: { gap: spacing.md, padding: spacing.lg, backgroundColor: colors.paleTeal },
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 28, fontWeight: "700" },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flexShrink: 1 },
-  metadataItem: { flexDirection: "row", alignItems: "center", gap: spacing.xs, minWidth: 0, maxWidth: "100%", flexShrink: 1 },
+  metadataItem: { gap: spacing.xs, minWidth: 0, maxWidth: "100%", flexShrink: 1 },
+  metadataValue: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flexShrink: 1 },
   intentControls: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm }, purposeField: { width: 220, maxWidth: "100%", flexShrink: 0 },
   list: { gap: 0, minWidth: 0, backgroundColor: colors.paper, borderTopWidth: 1, borderTopColor: colors.line }, listColumn: { flex: 0.8 }, detailColumn: { minWidth: 0, backgroundColor: colors.paper, padding: spacing.lg, borderTopWidth: 3, borderTopColor: colors.teal }, detailWide: { flex: 1.4 }, split: { flexDirection: "row", alignItems: "flex-start" },
   historyCard: { flexGrow: 1 },
-  documentRow: { gap: spacing.sm, padding: spacing.lg, backgroundColor: colors.paper, borderBottomWidth: 1, borderBottomColor: colors.line, borderLeftWidth: 3, borderLeftColor: "transparent", minWidth: 0 },
+  documentRow: { minHeight: 80, gap: spacing.sm, padding: spacing.lg, backgroundColor: colors.paper, borderBottomWidth: 1, borderBottomColor: colors.line, borderLeftWidth: 3, borderLeftColor: "transparent", minWidth: 0 },
   selectedRow: { borderLeftColor: colors.teal, backgroundColor: colors.paleTeal }, selectedHistoryRow: { backgroundColor: colors.paleTeal }, pressedRow: { backgroundColor: colors.paleTeal }, selectedPressedRow: { backgroundColor: colors.selectedNav }, focusedRow: { borderLeftColor: colors.teal },
   openAction: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   rowTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 17, lineHeight: 26, fontWeight: "700" }, openLabel: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, fontWeight: "700" },
   document: { gap: spacing.lg, maxWidth: 820, minWidth: 0 }, documentHeader: { gap: spacing.sm, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line },
   documentTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 24, lineHeight: 34, fontWeight: "700" },
-  section: { gap: spacing.md, paddingVertical: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.softLine },
-  textRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm }, reading: { fontFamily: chineseFont, color: colors.ink, fontSize: 16, lineHeight: 27, flex: 1, minWidth: 0 },
-  bullet: { fontFamily: chineseFont, color: colors.teal, fontSize: 16, lineHeight: 27, minWidth: 18 }, checkMark: { color: colors.teal, fontSize: 21, lineHeight: 27 },
+  section: { gap: spacing.md, paddingVertical: spacing.lg },
+  textRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm }, reading: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, minWidth: 0, maxWidth: 720, ...(Platform.OS === "web" ? { maxWidth: "72ch" } as unknown as TextStyle : {}) },
+  itemText: { flex: 1 },
+  bullet: { fontFamily: chineseFont, color: colors.teal, fontSize: 16, lineHeight: 26, minWidth: 18 }, checkMark: { color: colors.teal, fontSize: 21, lineHeight: 26 },
   warning: { backgroundColor: colors.paleAmber, borderRadius: radius.small, padding: spacing.md, gap: spacing.sm }, warningText: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool },
   archiveNote: { backgroundColor: colors.quietSurface, borderRadius: radius.small, borderWidth: 1, borderColor: colors.line, padding: spacing.md, gap: spacing.md },
   footer: { gap: spacing.md }, actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }, empty: { paddingVertical: spacing.lg, gap: spacing.sm },

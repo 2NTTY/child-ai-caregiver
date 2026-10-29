@@ -1,11 +1,13 @@
+import { parseSettingsRoute, serializeSettingsRoute } from "../navigation/route-state";
+import { useGuardedNavigation } from "../navigation/useGuardedNavigation";
 import { AvatarView } from '../components/avatar/AvatarView';
 import { AvatarEditor } from '../components/avatar/AvatarEditor';
 import { useProductionAvatar } from '../production/useProductionAvatar';
 import { AdminEntry } from '../production/AdminEntry';
 import { EmptyListCard } from "../components/EmptyListCard";
 import { useContainerWidth } from "../components/useContainerWidth";
-import { useEffect, useId, useState } from "react";
-import { useLocalSearchParams, usePathname } from "expo-router";
+import { useEffect, useId } from "react";
+import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { useProductionVisibleSettingsSection } from "../production/ProductionFirstScreenGate";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -14,12 +16,15 @@ import { BackgroundSettings } from "../components/appearance/BackgroundSettings"
 import { MotionSettings } from "../components/appearance/MotionSettings";
 import { PageFrame } from "../components/PageFrame";
 import { AppButton, AppTabPanel, SectionHeader, TextLink } from "../components/ui";
+import { useProfileWorkspace } from "../workspaces/ProfileWorkspace";
+import { projectScopedHomeChildren } from "../production/scoped-child-projection";
 import { useProduction } from "../production/ProductionProvider";
 import { AccountDataControls, AccountSecurityControls } from "../components/account/AccountDataControls";
 import { AgentAuthorization } from "../production/AgentAuthorization";
 import { ModelSettingsView } from "../components/model-settings/ModelSettingsView";
-import { ProductionChannelSettings, ProductionNotificationPreferences, useProductionSettingsDomains } from "../production/SettingsDomains";
+import { ProductionChannelSettings, ProductionNotificationPreferences, useSettingsRetainedDrafts, useProductionSettingsDomains } from "../production/SettingsDomains";
 import { AppIcon } from "../components/AppIcon";
+import { SettingsChapterHeading } from "../components/settings/SettingsChapterHeading";
 import { SettingsNavigation } from "../components/settings/SettingsNavigation";
 import { SettingsSection as SectionCard } from "../components/settings/SettingsSection";
 import { chineseFont, colors, readingType, spacing, typeScale } from "../theme";
@@ -43,24 +48,28 @@ export default function SettingsPage() {
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
   const { model, actions, user, scopeKey, authorization, signOut, recordsState, online } = useProduction();
+  const profile = useProfileWorkspace();
+  const scopedChildren = projectScopedHomeChildren(model.children, model.selectedChildId, scopeKey, profile);
   const { modelSettings } = useProductionSettingsDomains();
-  const { section } = useLocalSearchParams<{ section?: string | string[] }>();
-  const requestedSection = Array.isArray(section) ? section[0] : section;
-  const initialTab = tabs.find(item => item.key === requestedSection)?.key ?? "account";
-  const [tab, setTab] = useState<SettingsTab>(initialTab);
-  useProductionVisibleSettingsSection(tab);
-  useEffect(() => { setTab(initialTab); }, [initialTab]);
-  useEffect(() => { if (authorization.pending) setTab("assistant"); }, [authorization.pending]);
+  const route = parseSettingsRoute(useLocalSearchParams()), router = useRouter(), navigate = useGuardedNavigation();
+  const tab = authorization.pending ? "assistant" : route.section;
+  const retainedDrafts = useSettingsRetainedDrafts();
+  const setTab = (section: SettingsTab) => { if (section !== tab) navigate(() => router.push({ pathname: "/settings", params: serializeSettingsRoute({ section }) }), "navigation", retainedDrafts()); };
+  useProductionVisibleSettingsSection(pathname === "/settings" ? tab : undefined);
+  useEffect(() => { if (pathname === "/settings" && authorization.pending && route.section !== "assistant") router.setParams({ section: "assistant" }); }, [pathname, authorization.pending, route.section, router]);
   const tabsId = useId();
   const accountName = user?.name ?? "";
   const compactNavigation = width < 720;
-  return <PageFrame density="compact" title="設定手冊" description="選擇一個章節處理。本人設定沿用於所有孩子；孩子授權仍按目前對象核對。">
+  const chapter = tabs.find(item => item.key === tab)!;
+  if (pathname !== "/settings") return null;
+  return <PageFrame density="compact" title="設定手冊" description="本人設定與孩子授權，分開核對。">
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[styles.workspace, compactNavigation && styles.workspaceStack]}>
-    <View style={styles.accountContext}><AvatarView name={accountName} uri={avatar.state.uri} size={44} /><View style={styles.identityText}><Text style={styles.identityName}>{accountName || "未命名"}</Text><Text style={styles.muted}>{user?.email ?? "尚未讀取電郵"}</Text></View></View>
-    <SettingsNavigation id={tabsId} items={tabs} value={tab} onChange={setTab} compact={compactNavigation} />
+    <View style={[styles.chapterWorkspace, compactNavigation && styles.chapterWorkspaceCompact]}><View style={compactNavigation ? styles.compactIndex : styles.chapterIndex}>
+    <SettingsNavigation id={tabsId} items={tabs} value={tab} onChange={setTab} compact={compactNavigation} /></View>
     <View style={styles.settingsContent}>
-    <View style={styles.chapterHeading}><Text accessibilityRole="header" aria-level={2} style={styles.chapterTitle}>{tabs.find(item => item.key === tab)?.label}</Text><Text style={styles.muted}>{tabs.find(item => item.key === tab)?.description}。{tab === "children" ? "只列出目前可存取的孩子。" : tab === "assistant" ? "此章適用於目前孩子。" : "此章適用於本人。"}</Text></View>
-    <AppTabPanel tabsId={tabsId} tabKey="account" active={tab === "account"} style={styles.sections}>
+    <SettingsChapterHeading section={tab} title={chapter.label} description={`${chapter.description}。${tab === "children" ? "只列出目前可存取的孩子。" : tab === "assistant" ? "此章適用於目前孩子。" : "此章適用於本人。"}`} compact={compactNavigation} active={pathname === "/settings"} />
+    <AppTabPanel hasTabList={!compactNavigation} tabsId={tabsId} tabKey="account" active={tab === "account"} style={styles.sections}>
+    <View style={styles.accountContext}><AvatarView name={accountName} uri={avatar.state.uri} size={44} /><View style={styles.identityText}><Text style={styles.identityName}>{accountName || "未命名"}</Text><Text style={styles.muted}>{user?.email ?? "尚未讀取電郵"}</Text></View></View>
       <View style={styles.sectionGroup}>
         <SectionCard><SectionHeader density="compact" title="個人資料" />
           <Text style={styles.body}>更新本人頭像。電郵與登入身份見上方帳戶資料。</Text>
@@ -82,26 +91,26 @@ export default function SettingsPage() {
         </SectionCard>
       </View>
     </AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="children" active={tab === "children"}><SectionCard>
-      {model.children.length === 0 ? recordsState.childrenLoadedAt && !recordsState.childrenLoading && !recordsState.childrenError && online ? <EmptyListCard title="目前沒有孩子檔案" /> : <Text style={styles.body}>{recordsState.childrenLoading ? "正在讀取孩子列表…" : recordsState.childrenError ? "孩子列表未能讀取，請重新核對。" : "孩子列表尚未核對。"}</Text> : model.children.map(child => <Pressable key={child.id} accessibilityRole="button" accessibilityLabel={`查看${child.displayName}的檔案`} onPress={() => leave(() => { actions.selectChild(child.id); actions.open("profile"); })} style={({ pressed }) => [styles.listRow, pressed && styles.pressed]}><View style={styles.miniAvatar}><Text style={styles.avatarText}>{child.displayName.slice(0, 1)}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{child.displayName}</Text><Text style={styles.muted}>{child.ageLabel} · {child.profileConfirmed ? "已確認" : "待核對"}</Text></View><AppIcon name="arrow-right" size={18} /></Pressable>)}
+    <AppTabPanel hasTabList={!compactNavigation} tabsId={tabsId} tabKey="children" active={tab === "children"}><SectionCard>
+      {model.children.length === 0 ? recordsState.childrenLoadedAt && !recordsState.childrenLoading && !recordsState.childrenError && online ? <EmptyListCard title="目前沒有孩子檔案" /> : <Text style={styles.body}>{recordsState.childrenLoading ? "正在讀取孩子列表…" : recordsState.childrenError ? "孩子列表未能讀取，請重新核對。" : "孩子列表尚未核對。"}</Text> : scopedChildren.map(child => <Pressable key={child.id} accessibilityRole="button" accessibilityLabel={`查看${child.displayName}的檔案`} onPress={() => actions.openChildProfile(child.id)} style={({ pressed }) => [styles.listRow, pressed && styles.pressed]}><View style={styles.miniAvatar}><Text style={styles.avatarText}>{child.displayName.slice(0, 1)}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{child.displayName}</Text><Text style={styles.muted}>{child.ageLabel} · {child.profileConfirmed ? "已確認" : "待核對"}</Text></View><AppIcon name="arrow-right" size={18} /></Pressable>)}
 
     </SectionCard></AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="family" active={tab === "family"}><SectionCard><Text style={styles.muted}>家庭協作尚未開放。本人聯絡與授權仍可管理。</Text>
+    <AppTabPanel hasTabList={!compactNavigation} tabsId={tabsId} tabKey="family" active={tab === "family"}><SectionCard><Text style={styles.muted}>家庭協作尚未開放。本人聯絡與授權仍可管理。</Text>
       <View style={styles.timeRow}><AppButton label="聯絡" variant="quiet" onPress={() => actions.open("contact")} /></View>
     </SectionCard></AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="preferences" active={tab === "preferences"} style={styles.sections}>
+    <AppTabPanel hasTabList={!compactNavigation} tabsId={tabsId} tabKey="preferences" active={tab === "preferences"} style={styles.sections}>
       <MotionSettings />
       <BackgroundSettings />
     </AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="notifications" active={tab === "notifications"} style={styles.sections}>
+    <AppTabPanel hasTabList={!compactNavigation} tabsId={tabsId} tabKey="notifications" active={tab === "notifications"} style={styles.sections}>
       <ProductionNotificationPreferences />
       <ProductionChannelSettings />
     </AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="assistant" active={tab === "assistant"}>
+    <AppTabPanel hasTabList={!compactNavigation} tabsId={tabsId} tabKey="assistant" active={tab === "assistant"}>
       {scopeKey ? <AgentAuthorization key={scopeKey} /> : <SectionCard><Text style={styles.body}>先選擇孩子。</Text></SectionCard>}
     </AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="model" active={tab === "model"}><ModelSettingsView model={modelSettings.model} actions={modelSettings.actions} active={pathname === "/settings" && tab === "model"} /></AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="privacy" active={tab === "privacy"} style={styles.sections}>
+    <AppTabPanel hasTabList={!compactNavigation} tabsId={tabsId} tabKey="model" active={tab === "model"}><ModelSettingsView model={modelSettings.model} actions={modelSettings.actions} active={pathname === "/settings" && tab === "model"} /></AppTabPanel>
+    <AppTabPanel hasTabList={!compactNavigation} tabsId={tabsId} tabKey="privacy" active={tab === "privacy"} style={styles.sections}>
       <View style={styles.sectionGroup}><SectionCard><SectionHeader density="compact" title="私隱" />
         <LabeledValue label="私人聊天" value="只對本人可見" /><LabeledValue label="共享資料" value="按孩子及家庭角色授權" />
       </SectionCard>
@@ -117,16 +126,17 @@ export default function SettingsPage() {
     </AppTabPanel>
     </View>
     </View>
+    </View>
   </PageFrame>;
 }
 
 const styles = StyleSheet.create({
   workspace: { width: "100%", minWidth: 0, gap: spacing.xl },
   workspaceStack: { flexDirection: "column", gap: spacing.lg },
-  settingsContent: { width: "100%", minWidth: 0, gap: spacing.lg, paddingTop: spacing.md },
-  accountContext: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.lg, backgroundColor: colors.paleTeal, minWidth: 0 },
-  chapterHeading: { gap: spacing.xs, minWidth: 0 },
-  chapterTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 24, lineHeight: 34, fontWeight: "700" },
+  chapterWorkspace: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xl, minWidth: 0 },
+  chapterWorkspaceCompact: { flexDirection: "column", gap: spacing.lg }, chapterIndex: { width: 152, flexShrink: 0 }, compactIndex: { width: "100%" },
+  settingsContent: { flex: 1, width: "100%", minWidth: 0, gap: spacing.lg },
+  accountContext: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingBottom: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.line, minWidth: 0 },
   scopeNote: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line, paddingBottom: spacing.md },
   pressed: { backgroundColor: colors.pressedOverlay },
   sections: { gap: spacing.xl, width: "100%", minWidth: 0 },

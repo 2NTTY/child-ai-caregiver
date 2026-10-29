@@ -2,7 +2,7 @@ import { usePreviewLeaveGuard } from "./PreviewNavigationGuard";
 import { useEffect, useRef, useState } from "react";
 import type { HomeChild } from "../view-model";
 import { emptyPhotoDraft, type PhotoDraftFields } from "../photo-view-model";
-import type { SourceCreate, SourceDirect, SourceInput, SourceOperation, SourcePhase, SourceConfirmationKind, SourcesViewModel } from "../shared-input-view-model";
+import type { SourceCreate, SourceDirect, SourceInput, SourceSelectionIntent, SourceOperation, SourcePhase, SourceConfirmationKind, SourcesViewModel } from "../shared-input-view-model";
 import { sourceConfirmationProjection, validSourceExcerpt } from "../components/shared-inputs/source-form";
 import { previewPublicSources, sourceFixture } from "./sourceFixture";
 import { createSourceIntake, confirmSourceIntake, validSourceIntakeText, proposeSourceIntake, sourceIntakeIsUnresolved, sourceIntakeReadResult, type SourceIntake, type SourceIntakeReadOutcome, type SourceIntakeConnectionOutcome, type SourceIntakeProposal } from "../source-intake";
@@ -232,7 +232,7 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
       const intake = createSourceIntake(intakeIntention);
       receipt("create", () => { clearEditor(); put(value); setIntakes(previous => ({ ...previous, [value.id]: intake })); setExcerpt(value.text.length <= 10000 ? value.text : ""); });
     },
-    openInput(input: SourceInput) { if (!canChoose || !online || load !== "ready") return; clearEditor(); put(input); setExcerpt(input.text.length <= 10000 ? input.text : ""); setOperation(idle()); setNotice(""); },
+    openInput(input: SourceInput, intent?: SourceSelectionIntent) { if (intent && !intent.isCurrent()) return; if (selected?.id === input.id) { intent?.onOpened(); return; } if (!canChoose || !online || load !== "ready") return; clearEditor(); put(input); setExcerpt(input.text.length <= 10000 ? input.text : ""); setOperation(idle()); setNotice(""); intent?.onOpened(); },
     newInput() { if (!canChoose || !canCreate) return; clearEditor(); setOperation(idle()); setNotice("本頁未保存草稿已清除；已保存來源仍在清單。"); },
     recreateWithText() { if (!fresh || !canCreate || !canChoose || !selected || selected.kind !== "personal_source" || direct) return; const seed = copy(selected), intention = selectedIntake?.intention ?? ""; clearEditor(); setComposerSeed(seed); setIntakeIntention(intention); setOperation(idle()); setNotice("原來源仍保留。請自行貼上正文；保存後會建立另一項私人來源，不會更新或訂閱原項。"); },
     setFetchConsent, setModelConsent, setSharedConsent,

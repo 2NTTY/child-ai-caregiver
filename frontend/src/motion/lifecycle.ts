@@ -16,7 +16,3 @@ export function planListProjection(previousIds: readonly string[], nextIds: read
   return { sameScope, retainUntilLayout: sameScope, animate: sameScope && animate,
     focusRemovedIds: sameScope ? previousIds.filter(id => !next.has(id)) : [] };
 }
-
-export function disclosureStartHeight(expanded: boolean, inFlight: boolean, measured: number, current: number) {
-  return inFlight ? Math.max(0, current) : expanded ? 0 : Math.max(0, measured);
-}

@@ -1,7 +1,7 @@
 import { JournalAside, JournalColumns, JournalMain, JournalSection } from "../journal/JournalLayout";
 import { AppStatusBadge } from "../AppStatusBadge";
 import type {ReactNode} from 'react';
-import {View} from 'react-native';
+import {Platform, View, type ViewStyle} from 'react-native';
 import {Text} from 'react-native-paper';
 import {careKindOptions} from '../../care-view-model';
 import type {SummaryPage, SummaryRecord} from '../../summary-view-model';
@@ -14,6 +14,11 @@ import {EmptyListCard} from '../EmptyListCard';
 import {SummaryDisclosure} from './SummaryDisclosure';
 import {summaryStyles as s} from './summary-styles';
 
+// Keep original bodies mounted for browser find and local evidence state. Only
+// Web can skip offscreen layout; the estimate is replaced by measured row height.
+const deferredRowLayout: ViewStyle | undefined = Platform.OS === 'web'
+  ? {contentVisibility: 'auto', containIntrinsicSize: 'auto 240px'} as ViewStyle : undefined;
+
 type SummaryMotion = {scopeKey: string; triggerKey: MotionTrigger; eligible: boolean};
 const kindLabel = (kind: SummaryRecord['kind']) => careKindOptions.find(item => item.value === kind)!.label;
 
@@ -24,7 +29,7 @@ function Readout<T>({value, regionKey, motion, children}: {value: T; regionKey: 
 }
 
 function RecordSource({record, onRecord, motion}: {record: SummaryRecord; onRecord: (id: string) => void; motion: SummaryMotion}) {
-  return <View style={s.item} testID={`summary-record-${record.id}`}>
+  return <View style={[s.item, deferredRowLayout]} testID={`summary-record-${record.id}`}>
     <Readout value={record} regionKey={`summary-record-${record.id}-text`} motion={motion}>{shown => <>
       <Text style={s.title}>{kindLabel(shown.kind)}</Text><Text selectable style={s.reading}>{shown.text}</Text>
       {shown.quantity ? <Text style={s.body}>原數值：{shown.quantity.precision === 'approximate' ? '約 ' : ''}{shown.quantity.rawValue} {shown.quantity.unit}</Text> : null}
@@ -51,7 +56,7 @@ function TaskSource({task, onTask, motion, group}: {task: TaskView; onTask: (id:
   </View>;
 }
 
-function MetricResult({metric, records, onRecord, scopeKey}: {metric: SummaryPage['metrics'][number]; records: SummaryRecord[]; onRecord: (id: string) => void; scopeKey: string}) {
+function MetricResult({metric, recordById, onRecord, scopeKey}: {metric: SummaryPage['metrics'][number]; recordById: ReadonlyMap<string, SummaryRecord>; onRecord: (id: string) => void; scopeKey: string}) {
   const value = metric.total ?? (metric.min === metric.max ? metric.min : `${metric.min}–${metric.max}`);
   return <View style={s.metric}>
     <Text style={s.title}>{kindLabel(metric.kind)}</Text>
@@ -62,7 +67,7 @@ function MetricResult({metric, records, onRecord, scopeKey}: {metric: SummaryPag
     <SummaryDisclosure label={`核對${kindLabel(metric.kind)}的統計來源`} scopeKey={scopeKey}>
       <Text style={s.meta}>最小 {metric.min} {metric.unit} · 最大 {metric.max} {metric.unit}</Text>
       {metric.recordIds.map(id => {
-        const record = records.find(item => item.id === id);
+        const record = recordById.get(id);
         return <View key={id} style={s.sourceRow}>
           {record ? <Text selectable style={s.body}>{record.text}</Text> : <Text style={s.meta}>此來源未列於目前記錄內容，請開啟原記錄核對。</Text>}
           <Text selectable style={s.meta}>來源記錄：{id}</Text>
@@ -73,25 +78,31 @@ function MetricResult({metric, records, onRecord, scopeKey}: {metric: SummaryPag
   </View>;
 }
 
-export function SummaryRecords({page, onRecord, onTask, motion, emptyReady = false}: {page: SummaryPage; onRecord: (id: string) => void; onTask: (id: string) => void; motion: SummaryMotion; emptyReady?: boolean}) {
-  const availableKinds = careKindOptions.filter(kind => page.counts[kind.value] > 0);
-  return <>
-    <JournalColumns>
-      <JournalMain><JournalSection level={3} title="期間記錄" description={`已載入 ${page.records.length} 筆；逐筆閱讀，隨時回到原始依據與更正歷史。`}>
-    <View style={s.reportSection}>
-        {page.records.length ? page.records.map(record => <RecordSource key={record.id} record={record} onRecord={onRecord} motion={motion} />) : emptyReady ? <EmptyListCard title="本期間已載入的記錄清單為空" detail="沒有記錄不等於沒有發生。" icon="notebook-outline" testID="summary-records-empty" /> : null}
-    </View>
-      </JournalSection></JournalMain>
-      <JournalAside>
-    <View testID="summary-counts" style={s.reportSection}>
-      <SummaryDisclosure label="記錄分類與數值統計" scopeKey={motion.scopeKey}>
-      <View style={s.row}>{availableKinds.map(kind => <Text key={kind.value} style={s.count}>{kind.label} {page.counts[kind.value]} 筆</Text>)}</View>
-      <Text style={s.meta}>只納入事件時間在上述期間內的已確認記錄；以下數值只代表已記錄樣本，並非完整期間的總量。</Text>
-      {page.metrics.length ? <View style={s.metrics}>{page.metrics.map(metric => <MetricResult key={`${metric.kind}:${metric.unit}`} metric={metric} records={page.records} onRecord={onRecord} scopeKey={`${motion.scopeKey}:${metric.kind}:${metric.unit}`} />)}</View> : emptyReady ? <EmptyListCard title="已載入的記錄沒有數值統計" detail="只代表本期間已取得的記錄，並非完整期間的總量。" icon="chart-bar" testID="summary-metrics-empty" /> : null}
-      </SummaryDisclosure>
-    </View>
+type SummaryReadingProps = { page: SummaryPage; onRecord(id: string): void; onTask(id: string): void; motion: SummaryMotion; emptyReady?: boolean };
 
-    <View style={[s.reportSection, s.chapterSection]}>
+// Pure slots share authoritative rows, not a second projection or selection owner.
+function summarySections({ page, onRecord, onTask, motion, emptyReady = false }: SummaryReadingProps) {
+  const availableKinds = careKindOptions.filter(kind => page.counts[kind.value] > 0);
+  const recordById = new Map<string, SummaryRecord>();
+  if (page.metrics.length) for (const record of page.records) {
+    const id = record.id;
+    // Preserve the original find() first-match result if an input repeats an ID.
+    if (!recordById.has(id)) recordById.set(id, record);
+  }
+  return {
+    records: <View style={s.reportSection}>
+      {page.records.length ? page.records.map(record => <RecordSource key={record.id} record={record} onRecord={onRecord} motion={motion} />)
+        : emptyReady ? <EmptyListCard title="本期間已載入的記錄清單為空" detail="沒有記錄不等於沒有發生。" icon="notebook-outline" testID="summary-records-empty" /> : null}
+    </View>,
+    statistics: <View testID="summary-counts" style={s.reportSection}>
+      <SummaryDisclosure label="記錄分類與數值統計" scopeKey={motion.scopeKey} appearance="list">
+        <View style={s.row}>{availableKinds.map(kind => <Text key={kind.value} style={s.count}>{kind.label} {page.counts[kind.value]} 筆</Text>)}</View>
+        <Text style={s.meta}>只納入事件時間在上述期間內的已確認記錄；以下數值只代表已記錄樣本，並非完整期間的總量。</Text>
+        {page.metrics.length ? <View style={s.metrics}>{page.metrics.map(metric => <MetricResult key={`${metric.kind}:${metric.unit}`} metric={metric} recordById={recordById} onRecord={onRecord} scopeKey={`${motion.scopeKey}:${metric.kind}:${metric.unit}`} />)}</View>
+          : emptyReady ? <EmptyListCard title="已載入的記錄沒有數值統計" detail="只代表本期間已取得的記錄，並非完整期間的總量。" icon="chart-bar" testID="summary-metrics-empty" /> : null}
+      </SummaryDisclosure>
+    </View>,
+    notes: <View style={[s.reportSection, s.chapterSection]}>
       <SectionHeader level={3} density="compact" title="閱讀時要留意" />
       {emptyReady && !page.missing.unknownEventTime && !page.missing.invalidQuantities && !page.missing.emptyKinds.length && !page.conflicts.length ? <Text style={s.meta}>本次摘要沒有列出的缺項或待覆核安排，仍只代表已取得的記錄。</Text> : null}
       {page.missing.unknownEventTime > 0 ? <Text style={s.warning}>有 {page.missing.unknownEventTime} 筆記錄的事件時間未知，未能歸入本期間。</Text> : null}
@@ -99,11 +110,35 @@ export function SummaryRecords({page, onRecord, onTask, motion, emptyReady = fal
       {page.missing.invalidQuantities > 0 ? <Text style={s.warning}>有 {page.missing.invalidQuantities} 個數值未能納入統計。</Text> : null}
       {page.missing.emptyKinds.length ? <Text style={s.body}>已載入的記錄未列出：{page.missing.emptyKinds.map(kindLabel).join('、')}。沒有記錄不等於沒有發生。</Text> : null}
       {page.conflicts.length ? <View style={s.attention}><Text style={s.title}>{page.conflicts.length} 項安排待覆核</Text>{page.conflicts.map(task => <TaskSource key={task.id} task={task} onTask={onTask} motion={motion} group="conflict" />)}</View> : null}
-    </View>
-    <View style={[s.reportSection, s.chapterSection]}><SectionHeader level={3} density="compact" title="預約與跟進" count={page.appointments.length} icon="calendar-outline" /><Text style={s.meta}>家庭台帳中的安排不代表機構已確認預約。</Text>
-      {page.appointments.length ? page.appointments.map(task => <TaskSource key={task.id} task={task} onTask={onTask} motion={motion} group="appointment" />) : emptyReady ? <EmptyListCard title="已載入的待處理預約清單為空" detail="只代表目前取得的家庭安排。" icon="calendar-outline" testID="summary-appointments-empty" /> : null}
-    </View>
-      </JournalAside>
-    </JournalColumns>
-  </>;
+    </View>,
+    appointments: <View style={[s.reportSection, s.chapterSection]}>
+      <SectionHeader level={3} density="compact" title="預約與跟進" count={page.appointments.length} />
+      <Text style={s.meta}>家庭台帳中的安排不代表機構已確認預約。</Text>
+      {page.appointments.length ? page.appointments.map(task => <TaskSource key={task.id} task={task} onTask={onTask} motion={motion} group="appointment" />)
+        : emptyReady ? <EmptyListCard title="已載入的待處理預約清單為空" detail="只代表目前取得的家庭安排。" icon="calendar-outline" testID="summary-appointments-empty" /> : null}
+    </View>,
+  };
+}
+
+/** A continuous report: original prose stays inline beside its supporting context. */
+export function SummaryRecords(props: SummaryReadingProps) {
+  const sections = summarySections(props);
+  return <JournalColumns>
+    <JournalMain><JournalSection level={3} title="期間記錄" description={`已載入 ${props.page.records.length} 筆；逐筆閱讀，隨時回到原始依據與更正歷史。`}>{sections.records}</JournalSection></JournalMain>
+    <JournalAside>{sections.statistics}{sections.notes}{sections.appointments}</JournalAside>
+  </JournalColumns>;
+}
+
+/** A short overview: unresolved facts stay exposed; supporting readers open in place. */
+export function SummaryOverviewRecords(props: SummaryReadingProps) {
+  const { page, motion, emptyReady } = props, sections = summarySections(props);
+  const hasIssues = page.missing.unknownEventTime > 0 || page.missing.invalidQuantities > 0 || page.missing.emptyKinds.length > 0 || page.conflicts.length > 0;
+  return <View style={s.stack} testID="summary-overview-records">
+    {hasIssues ? sections.notes : null}
+    {page.records.length ? <SummaryDisclosure label={`閱讀本期間 ${page.records.length} 筆原始記錄`} scopeKey={`${motion.scopeKey}:records`} appearance="list">{sections.records}</SummaryDisclosure>
+      : emptyReady ? sections.records : null}
+    {page.appointments.length ? <SummaryDisclosure label={`閱讀 ${page.appointments.length} 項預約與跟進`} scopeKey={`${motion.scopeKey}:appointments`} appearance="list">{sections.appointments}</SummaryDisclosure>
+      : emptyReady ? <Text style={s.meta}>已載入的家庭安排沒有待處理預約。</Text> : null}
+    {sections.statistics}
+  </View>;
 }

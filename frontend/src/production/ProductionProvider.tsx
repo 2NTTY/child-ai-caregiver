@@ -1,7 +1,9 @@
+import { MemoryReaderViewStateHost } from "../navigation/MemoryReaderViewState";
+import { NavigationAuthorityProvider } from "../navigation/NavigationAuthority";
 import { useNativePushNavigation } from "./useNativePushNavigation";
 import { useProductionActivity } from "./useProductionActivity";
 import { createProductionTransport } from "./production-transport";
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, use, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { usePathname, useRouter, type Href } from "expo-router";
 import { Linking, Platform } from "react-native";
@@ -18,7 +20,7 @@ import type { HomeActions } from "../view-model";
 import { ProductionOwner } from "./ProductionOwner";
 import { AccountCallbackGate } from "../components/account/AccountCallbackGate";
 import { projectProductionHome } from "./home-projection";
-import { productionDestinations } from "./routes";
+import { homeTargetHref } from "../home-target";
 import { useOnlineUpdates } from "../../../src/client/use-online-updates";
 
 function initialOnline() { return Platform.OS !== "web" || typeof navigator === "undefined" || navigator.onLine; }
@@ -66,7 +68,7 @@ function useProductionValue(owner: ProductionOwner) {
     })().catch(() => { if (owner.getSnapshot().identityKey === identity) setLocalNotice("通知事項未能開啟，請在待辦重新讀取。"); }); }, target.childId ? "child" : undefined);
   }, setLocalNotice);
   const visibleDraft = draft.scope === snapshot.scopeKey ? draft : emptyAssistantDraft;
-  const model = useMemo(() => projectProductionHome(snapshot), [snapshot]);
+  const model = useMemo(() => projectProductionHome({ records: snapshot.records, scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey }), [snapshot.records, snapshot.scopeKey, snapshot.identityKey]);
   const chatDraft = snapshot.chat.selectedChildId ? snapshot.chat.drafts[snapshot.chat.selectedChildId] : undefined;
 
   useLayoutEffect(() => {
@@ -111,14 +113,42 @@ function useProductionValue(owner: ProductionOwner) {
     }
     return owner.draftOwner.add(snapshot.scopeKey, attachment, replaceId);
   };
+  const selectChild = useCallback((id: string) => {
+    if (!snapshot.identityKey || current.current.identityKey !== snapshot.identityKey || id === model.selectedChildId) return;
+    leave(() => { if (current.current.identityKey === snapshot.identityKey) void owner.controller.selectChild(id); }, "child");
+  }, [owner, snapshot.identityKey, model.selectedChildId, leave]);
+  const dismissNotice = useCallback(() => { setLocalNotice(null); setDismissedNotice(snapshot.records.notice); }, [snapshot.records.notice]);
   const actions: HomeActions = {
-    selectChild(id) {
-      if (!snapshot.identityKey || current.current.identityKey !== snapshot.identityKey || id === model.selectedChildId) return;
-      leave(() => { if (current.current.identityKey === snapshot.identityKey) void owner.controller.selectChild(id); }, "child");
-    },
+    selectChild(id) { selectChild(id); },
     refresh: () => { void refresh(); },
     reviewOperation: () => { leave(() => router.push("/guide"), "workspace"); },
-    open(destination) { leave(() => router.push(productionDestinations[destination] as Href), "workspace"); },
+    open(target) {
+      const identity = snapshot.identityKey, scope = snapshot.scopeKey;
+      leave(() => {
+        const live = owner.getSnapshot();
+        if (current.current.identityKey !== identity || current.current.scopeKey !== scope || live.identityKey !== identity || live.scopeKey !== scope) return;
+        router.push(homeTargetHref(target));
+      }, "workspace");
+    },
+    openChildProfile(id) {
+      const identity = snapshot.identityKey, scope = snapshot.scopeKey;
+      leave(() => {
+        const before = owner.getSnapshot();
+        if (!identity || before.identityKey !== identity || before.scopeKey !== scope || current.current.identityKey !== identity || current.current.scopeKey !== scope) return;
+        try {
+          // RecordsController publishes accepted selection synchronously, before reloading records.
+          // Route now; completion of that read must never redirect a later user navigation.
+          if (before.records.selectedChildId !== id) void owner.controller.selectChild(id).catch(() => {
+            if (owner.getSnapshot().identityKey === identity) setLocalNotice("孩子資料未能重新讀取，請在檔案頁核對。");
+          });
+          const selected = owner.getSnapshot();
+          if (selected.identityKey !== identity || !selected.scopeKey || selected.records.selectedChildId !== id) return;
+          router.push("/profile");
+        } catch {
+          if (owner.getSnapshot().identityKey === identity) setLocalNotice("孩子檔案未能開啟，請重新核對孩子列表。");
+        }
+      }, "navigation");
+    },
     openAgentPhoto(original) {
       if (!currentScope() || current.current.pathname !== "/") { original.dispose?.(); return; }
       if (addAgentAttachment(photoAttachment(original))) openAgentDraft();
@@ -163,7 +193,7 @@ function useProductionValue(owner: ProductionOwner) {
       downloadNextPart: (save: (text: string, filename: string, isCurrent: () => boolean) => void | Promise<void>) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.downloadNextPart(save); },
       clearDownload: () => { if (current.current.identityKey === snapshot.identityKey) owner.accountOwner.clearDownload(); },
     },
-    dismissNotice: () => { setLocalNotice(null); setDismissedNotice(snapshot.records.notice); },
+    dismissNotice, shellSelectChild: selectChild,
     homeIntroductionPending: snapshot.homeIntroductionPending, markHomeIntroductionPresented: owner.markHomeIntroductionPresented,
     chatState: snapshot.chat, chatController: owner.chatController,
     chatDraft: chatDraft?.text ?? "", setChatDraft: (value: string) => { if (currentScope()) owner.chatController.setText(value); },
@@ -260,14 +290,21 @@ function useProductionValue(owner: ProductionOwner) {
 export type ProductionContextValue = ReturnType<typeof useProductionValue>;
 const ProductionContext = createContext<ProductionContextValue | null>(null);
 // Owner-only guards do not need route, draft or read-projection notifications.
-// Identity and child consumers must continue using the reactive production value.
+// Identity/domain consumers have their own reactive slice; neither subscribes to composer text.
 const ProductionOwnerContext = createContext<ProductionOwner | null>(null);
+export type ProductionIdentityValue = Pick<ProductionContextValue, 'owner' | 'scopeKey' | 'identityKey' | 'userId' | 'user' | 'auth' | 'selectedChildId' | 'online' | 'apiBaseUrl' | 'queryClient'> & {
+  children: ProductionContextValue['recordsState']['children'];
+  writeReady: boolean;
+};
+const ProductionIdentityContext = createContext<ProductionIdentityValue | null>(null);
+export type ProductionChromeValue = Pick<ProductionContextValue, 'model' | 'notice' | 'dismissNotice' | 'scopeKey' | 'identityKey'> & { selectChild: HomeActions['selectChild'] };
+const ProductionChromeContext = createContext<ProductionChromeValue | null>(null);
 
-export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || (Platform.OS === "web" ? "/api" : "https://ex-machina.eu.org/api") }: { children: ReactNode; apiBaseUrl?: string }) {
+export function ProductionOwnerHost({ children, apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || (Platform.OS === "web" ? "/api" : "https://ex-machina.eu.org/api") }: { children?: ReactNode; apiBaseUrl?: string }) {
   const [owner] = useState(() => new ProductionOwner(apiBaseUrl.replace(/\/$/, ""), initialOnline(), undefined, undefined, undefined, { legacyTrial: process.env.EXPO_PUBLIC_ACCOUNT_LEGACY_TRIAL === "true" }, createProductionTransport(apiBaseUrl)));
-  const value = useProductionValue(owner);
+  const snapshot = useSyncExternalStore(owner.subscribe, owner.getSnapshot, owner.getSnapshot);
   const activity = useProductionActivity();
-  useOnlineUpdates(owner.apiBaseUrl, value.auth === "signedIn" && value.account.gate === "ready" ? value.userId : null, activity.online ?? value.online, async reason => {
+  useOnlineUpdates(owner.apiBaseUrl, snapshot.records.auth === "signedIn" && snapshot.account.gate === "ready" ? snapshot.records.user?.id ?? null : null, activity.online ?? snapshot.records.online, async reason => {
     await owner.refresh();
     owner.invalidatePrivateReads(false, reason !== "unavailable");
   }, owner.fetcher, activity.active, () => owner.chatController.refreshOriginalReply());
@@ -298,24 +335,57 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
     // Signed-in ready scopes refresh through the same changes-cursor observer, avoiding duplicate reads.
     if (state.auth !== "signedIn" || !owner.accountOwner.isReady()) void owner.refresh();
   }, [owner, activity.active, activity.online]);
-  return <QueryClientProvider client={owner.queryClient}><ProductionOwnerContext.Provider value={owner}><ProductionContext.Provider value={value}><AccountCallbackGate>{children}</AccountCallbackGate>
+  return <ProductionOwnerContext value={owner}><MemoryReaderViewStateHost read={owner.getSnapshot} subscribe={owner.subscribe}>{children}</MemoryReaderViewStateHost></ProductionOwnerContext>;
+}
+
+/** Static rendering has no custom client entry; each isolated tree owns one session. */
+export function ProductionProvider({ children, apiBaseUrl }: { children: ReactNode; apiBaseUrl?: string }) {
+  const owner = use(ProductionOwnerContext);
+  return owner ? <ProductionProjection owner={owner}>{children}</ProductionProjection>
+    : <ProductionOwnerHost apiBaseUrl={apiBaseUrl}><ProductionProvider>{children}</ProductionProvider></ProductionOwnerHost>;
+}
+
+function ProductionProjection({ children, owner }: { children: ReactNode; owner: ProductionOwner }) {
+  const value = useProductionValue(owner);
+  const writeReady = owner.canStartDomainWrite();
+  const identity = useMemo<ProductionIdentityValue>(() => ({
+    owner, scopeKey: value.scopeKey, identityKey: value.identityKey, userId: value.userId, user: value.user, auth: value.auth,
+    selectedChildId: value.selectedChildId, online: value.online, children: value.recordsState.children,
+    apiBaseUrl: owner.apiBaseUrl, queryClient: owner.queryClient, writeReady,
+  }), [owner, value.scopeKey, value.identityKey, value.userId, value.user, value.auth, value.selectedChildId, value.online, value.recordsState.children, writeReady]);
+  const chrome = useMemo<ProductionChromeValue>(() => ({ model: value.model, notice: value.notice, dismissNotice: value.dismissNotice,
+    scopeKey: value.scopeKey, identityKey: value.identityKey, selectChild: value.shellSelectChild,
+  }), [value.model, value.notice, value.dismissNotice, value.scopeKey, value.identityKey, value.shellSelectChild]);
+  return <QueryClientProvider client={owner.queryClient}><ProductionIdentityContext value={identity}><ProductionChromeContext value={chrome}><ProductionContext value={value}><NavigationAuthorityProvider identityKey={value.identityKey} scopeKey={value.scopeKey} read={owner.getSnapshot} subscribe={owner.subscribe}><AccountCallbackGate>{children}</AccountCallbackGate>
     <DeleteChildDialog state={value.recordsState} confirmationKey={owner.childDeletionConfirmationKey()} getConfirmationKey={owner.childDeletionConfirmationKey} controller={owner.controller} />
     <AppDialog visible={value.logoutConfirmation} onDismiss={value.cancelLogout}>
       <AppDialog.Title>登出並清除未提交內容？</AppDialog.Title>
       <AppDialog.Content><Text>這次登出會清除本頁的文字及照片草稿。已提交但結果未知的操作仍須沿原操作查核。</Text></AppDialog.Content>
       <AppDialog.Actions><AppButton label="繼續編輯" variant="quiet" onPress={value.cancelLogout} /><AppButton label="確認登出" variant="danger" onPress={() => { void value.signOut(true); }} /></AppDialog.Actions>
     </AppDialog>
-  </ProductionContext.Provider></ProductionOwnerContext.Provider></QueryClientProvider>;
+  </NavigationAuthorityProvider></ProductionContext></ProductionChromeContext></ProductionIdentityContext></QueryClientProvider>;
 }
 
 export function useProductionOwner() {
-  const owner = useContext(ProductionOwnerContext);
+  const owner = use(ProductionOwnerContext);
   if (!owner) throw new Error("ProductionProvider is required for production owners");
   return owner;
 }
 
+export function useProductionIdentity() {
+  const value = use(ProductionIdentityContext);
+  if (!value) throw new Error("ProductionProvider is required for production identity");
+  return value;
+}
+
+export function useProductionChrome() {
+  const value = use(ProductionChromeContext);
+  if (!value) throw new Error("ProductionProvider is required for production chrome");
+  return value;
+}
+
 export function useProduction() {
-  const value = useContext(ProductionContext);
+  const value = use(ProductionContext);
   if (!value) throw new Error("ProductionProvider is required for production pages");
   return value;
 }

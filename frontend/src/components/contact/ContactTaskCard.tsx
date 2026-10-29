@@ -1,3 +1,4 @@
+import { RouteTextLink } from "../RouteTextLink";
 import { JournalSection } from "../journal/JournalLayout";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { contactGrantStatus } from "./contact-status";
@@ -14,25 +15,25 @@ import {summaryTime} from '../../summary-view-model';
 import {taskStateLabels} from '../../task-view-model';
 import {AppCheckbox} from '../AppCheckbox';
 import {AppDateTimeField, AppTimeZoneSelect} from '../DateTimeFields';
-import {AppButton, AppSelect, SectionCard, SectionHeader} from '../ui';
+import {AppButton, AppSelect} from '../ui';
 import {contactBackupRecipients, contactGrantFormSchema, contactGrantProjection, contactRevokeProjection, emptyContactGrant, type GrantFormValues} from './contact-form';
 import {MotionDisclosure, MotionFeedback} from '../../motion';
 import {useContactFeedback} from './contact-motion';
 import {contactStyles as s} from './contact-styles';
 
-type ContactTaskProps = {task: TaskView; missing: boolean; model: ContactViewModel; actions: ContactActions; onTask: (id: string) => void};
+type ContactTaskProps = {task: TaskView; missing: boolean; model: ContactViewModel; actions: ContactActions};
 export function ContactTaskCard(props: ContactTaskProps) {
   const {task, model} = props, page = model.page!;
   const grant = page.grants.find(item => item.taskId === task.id), primary = page.recipients.find(item => item.userId === task.assigneeUserId);
   const feedback = useContactFeedback(model, `grant:${task.id}`, JSON.stringify(grant ? [grant.enabled, grant.taskVersion, grant.validUntil, grant.allowFollowUp, grant.allowFallback, grant.backupUserId] : null));
-  return <SectionCard testID={`contact-task-${task.id}`}><SectionHeader density="compact" title={task.title} icon="clipboard-check-outline" />
-    <View style={s.row}><AppStatusBadge label={taskStateLabels[task.occurrence.state]} tone={task.occurrence.state === "completed" ? "success" : task.occurrence.state === "needs_review" ? "warning" : task.occurrence.state === "cancelled" ? "neutral" : "info"} /><Text style={s.meta}>目前任務版本 {task.version}</Text></View><Text style={s.meta}>到期：{summaryTime(task.occurrence.dueAt, task.occurrence.timeZone)} · {task.occurrence.timeZone}</Text>
+  return <JournalSection level={3} testID={`contact-task-${task.id}`} title={task.title}>
+    <View style={s.row}><AppStatusBadge label={taskStateLabels[task.occurrence.state]} tone={task.occurrence.state === "completed" ? "success" : task.occurrence.state === "needs_review" ? "warning" : task.occurrence.state === "cancelled" ? "neutral" : "info"} /><Text style={s.meta}>目前任務版本 {task.version}</Text></View><Text style={s.meta}>到期：{summaryTime(task.occurrence.dueAt, task.occurrence.timeZone)}（{task.occurrence.timeZone}）</Text>
     <Text style={s.body}>主要接收者：{contactName(page, task.assigneeUserId)}（依任務負責人）</Text><Text style={s.meta}>目前渠道：{primary?.channels.map(channel => contactChannelLabels[channel]).join('、') || '沒有可接收渠道'}</Text>
-    <MotionFeedback active={model.operation === 'saved' && !model.busy && !model.pending && model.load === 'ready'} triggerKey={feedback.trigger} scopeKey={feedback.scopeKey} testID={`contact-task-feedback-${task.id}`}>{grant ? <View style={s.box}><AppStatusBadge {...contactGrantStatus(grant, task.version)} /><Text style={s.meta}>已保存授權版本 {grant.version} · 任務依據 {grant.taskVersion}</Text><Text style={s.meta}>期限：{summaryTime(grant.validUntil)} · 跟進：{grant.allowFollowUp ? '最多一次' : '不允許'} · 已知失敗切換：{grant.allowFallback ? '允許' : '不允許'}</Text><Text style={s.meta}>後備：{grant.backupUserId ? contactName(page, grant.backupUserId) : '沒有'}</Text>{grant.enabled && (Date.parse(grant.validUntil) <= Date.now() || grant.taskVersion !== task.version) ? <Text style={s.warning}>保存的授權已過期或任務依據已變；不能當作目前可執行。仍可明確撤回。</Text> : null}</View> : <AppStatusBadge label="尚無已保存聯絡授權" tone="neutral" />}</MotionFeedback>
+    <MotionFeedback active={model.operation === 'saved' && !model.busy && !model.pending && model.load === 'ready'} triggerKey={feedback.trigger} scopeKey={feedback.scopeKey} testID={`contact-task-feedback-${task.id}`}>{grant ? <View style={s.box}><AppStatusBadge {...contactGrantStatus(grant, task.version)} /><Text style={s.meta}>已保存授權版本 {grant.version}（依據任務 {grant.taskVersion}）</Text><Text style={s.meta}>期限：{summaryTime(grant.validUntil)}</Text><Text style={s.meta}>跟進：{grant.allowFollowUp ? '最多一次' : '不允許'}</Text><Text style={s.meta}>已知失敗切換：{grant.allowFallback ? '允許' : '不允許'}</Text><Text style={s.meta}>後備：{grant.backupUserId ? contactName(page, grant.backupUserId) : '沒有'}</Text>{grant.enabled && (Date.parse(grant.validUntil) <= Date.now() || grant.taskVersion !== task.version) ? <Text style={s.warning}>保存的授權已過期或任務依據已變；不能當作目前可執行。仍可明確撤回。</Text> : null}</View> : <AppStatusBadge label="尚無已保存聯絡授權" tone="neutral" />}</MotionFeedback>
     <ContactTaskForm key={model.epoch} {...props} />
-  </SectionCard>;
+  </JournalSection>;
 }
-function ContactTaskForm({task, missing, model, actions, onTask}: ContactTaskProps) {
+function ContactTaskForm({task, missing, model, actions}: ContactTaskProps) {
   const page = model.page!, grant = page.grants.find(item => item.taskId === task.id), primary = page.recipients.find(item => item.userId === task.assigneeUserId), backups = contactBackupRecipients(page, task.assigneeUserId);
   const basis = useRef({taskVersion: task.version, grantVersion: grant?.version ?? 0}), [open, setOpen] = useState(false), [confirm, setConfirm] = useState(false), [revoke, setRevoke] = useState(false), [adopt, setAdopt] = useState(false);
   const defaults: GrantFormValues = grant ? {...emptyContactGrant(), allowFollowUp: grant.allowFollowUp, allowFallback: grant.allowFallback, backupUserId: grant.backupUserId ?? '', validUntil: grant.validUntil, timeZone: task.occurrence.timeZone} : {...emptyContactGrant(), timeZone: task.occurrence.timeZone};
@@ -48,15 +49,15 @@ function ContactTaskForm({task, missing, model, actions, onTask}: ContactTaskPro
   const backupOptions = [{value: '', label: '沒有指定後備接收者'}, ...backups.map(item => ({value: item.userId, label: item.name})), ...(!backupValid ? [{value: values.backupUserId, label: '原後備已不符合資格（保留原選項）'}] : [])];
   return <>
     {missing ? <Text style={s.warning}>這是保留草稿的原任務；已不在目前有限清單。沒有推定已刪除，不能據此提交新授權。</Text> : null}
-    <View style={s.row}><AppButton label="查看這個任務" variant="quiet" onPress={() => onTask(task.id)} /><AppButton expanded={open} label={open ? '收起任務聯絡選項' : '管理任務聯絡授權'} variant="secondary" onPress={() => setOpen(value => !value)} /></View>
+    <View style={s.row}><RouteTextLink href={{pathname: "/tasks", params: {taskId: task.id}}} label="查看這個任務" /><AppButton expanded={open} label={open ? '收起任務聯絡選項' : '管理任務聯絡授權'} variant="secondary" onPress={() => setOpen(value => !value)} /></View>
     <MotionDisclosure expanded={open} scopeKey={`${model.scopeKey}:${task.id}`}><View style={s.stack}>
-      <Text style={s.meta}>未提交選項基準：任務 {basis.current.taskVersion} · 授權 {basis.current.grantVersion}</Text>
+      <Text style={s.meta}>未提交選項基準：任務 {basis.current.taskVersion}／授權 {basis.current.grantVersion}</Text>
       <Text style={s.body}>只在任務到期時發送一般提示；不包含孩子原文或任意訊息，不會立即發送。</Text>
       {!eligible ? <Text style={s.warning}>只有已排期且負責人已同意可用渠道的任務可開啟授權。已有授權仍可撤回。</Text> : null}
-      <JournalSection title="接收者與跟進範圍"><Controller name="allowFollowUp" control={control} render={({field}) => <AppCheckbox label="允許最多一次到期後跟進" checked={field.value} disabled={!editable} onChange={value => {field.onChange(value); edit();}} />} />
+      <JournalSection level={4} title="接收者與跟進範圍"><Controller name="allowFollowUp" control={control} render={({field}) => <AppCheckbox label="允許最多一次到期後跟進" checked={field.value} disabled={!editable} onChange={value => {field.onChange(value); edit();}} />} />
       <Controller name="allowFallback" control={control} render={({field}) => <AppCheckbox label="只在明確投遞失敗時允許渠道及後備切換" checked={field.value} disabled={!editable} onChange={value => {field.onChange(value); if (!value) setValue('backupUserId', '', {shouldDirty: true}); edit();}} />} />
       <Controller name="backupUserId" control={control} render={({field}) => <AppSelect label="後備接收者" value={field.value} options={backupOptions} disabled={!editable || !values.allowFallback} onChange={value => {field.onChange(value); edit();}} />} />
-      </JournalSection><JournalSection title="授權期限"><Controller name="timeZone" control={control} render={({field}) => <AppTimeZoneSelect value={field.value} disabled={!editable} onChange={value => {field.onChange(value); edit();}} />} />
+      </JournalSection><JournalSection level={4} title="授權期限"><Controller name="timeZone" control={control} render={({field}) => <AppTimeZoneSelect value={field.value} disabled={!editable} onChange={value => {field.onChange(value); edit();}} />} />
       <Controller name="validUntil" control={control} render={({field}) => <AppDateTimeField label="聯絡授權期限" timeZone={values.timeZone} value={field.value} disabled={!editable} onChange={value => {field.onChange(value); edit();}} />} />
       </JournalSection>
       {!parsed.success ? <HelperText type="error">{parsed.error.issues[0]?.message}</HelperText> : null}

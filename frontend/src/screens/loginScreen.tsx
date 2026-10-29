@@ -1,136 +1,122 @@
 import { useEffect, useId, useRef, useState } from "react";
-
-import { BrandLogo } from "../components/BrandLogo";
-import { useIsFocused, useRouter } from "expo-router";
-import { Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
-import { AppScrollView as ScrollView } from "../components/AppScrollView";
+import { useRouter } from "expo-router";
+import { useIsFocused } from "expo-router/react-navigation";
+import { Image, KeyboardAvoidingView, Platform, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text, TextInput } from "react-native-paper";
+import { Controller, useForm, useFormState } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { BrandLogo } from "../components/BrandLogo";
+import { AppScrollView as ScrollView } from "../components/AppScrollView";
 import { AppButton, AppTextField } from "../components/ui";
-import { MotionDisclosure } from "../motion";
-import { MotionSelectionMarker } from "../motion/MotionSelectionMarker";
-import { AppIcon } from "../components/AppIcon";
-import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
-import { useFirstScreenImage } from "../startup/FirstScreenGate";
-import { useContainerSize } from "../components/useContainerSize";
+import { FormErrorSummary, FormFieldMessage } from "../components/FormErrorSummary";
+import { loginFormSchemas, type LoginFormValues, type LoginMode } from "../components/auth/login-form";
+import { chineseFont, colors, readingType, spacing } from "../theme";
 import { useProduction } from "../production/ProductionProvider";
 
 const harbourArt = require("../../assets/images/harbour-family-hero.png");
-const harbourSourceSize = { width: 1672, height: 941 };
-type Mode = "signIn" | "signUp";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const focused = useIsFocused();
+  const router = useRouter(), focused = useIsFocused();
   const { authenticate, refresh, identityKey, auth, online, recordsState, account, accountActions, owner } = useProduction();
   useEffect(() => { if (focused && identityKey) router.replace("/"); }, [focused, identityKey, router]);
-  const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const narrow = width < 900;
-  const { ref: storyRef, size: storySize, onLayout: onStoryLayout } = useContainerSize(!narrow);
-  const artworkScale = Math.min(storySize.width / harbourSourceSize.width, storySize.height / harbourSourceSize.height);
-  const startupImage = useFirstScreenImage("login-hero", artworkScale > 0);
-  const [mode, setMode] = useState<Mode>("signIn");
-  const modeScope = useId();
-  const modeControls = useRef(new Map<Mode, View>());
-  const [modePositions, setModePositions] = useState<Partial<Record<Mode, { x: number; width: number }>>>({});
-  const modeSelection = modePositions[mode];
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
+  const insets = useSafeAreaInsets(), { width } = useWindowDimensions(), narrow = width < 900;
+  const [mode, setMode] = useState<LoginMode>("signIn"), [passwordVisible, setPasswordVisible] = useState(false), [artworkFailed, setArtworkFailed] = useState(false);
+  const formId = useId(), intent = useRef(0), active = useRef(focused);
+  active.current = focused;
+  useEffect(() => { active.current = focused; return () => { active.current = false; intent.current++; }; }, [focused]);
+  const { control, handleSubmit, setFocus, resetField, clearErrors, getValues } = useForm<LoginFormValues>({
+    defaultValues: { name: "", email: "", password: "" }, resolver: zodResolver(loginFormSchemas[mode]), shouldFocusError: false,
+  });
+  const { errors } = useFormState({ control });
   const busy = recordsState.busy === "auth" || auth === "checking" || !!account.busy;
   const canSubmit = online && auth !== "unavailable" && !identityKey && !!account.status && !busy;
-  useEffect(() => { setPassword(""); setPasswordVisible(false); }, [identityKey, online]);
-
-  function selectMode(next: Mode) { setMode(next); setPassword(""); setPasswordVisible(false); setResult(null); }
-  function moveMode(event: { key?: string; nativeEvent?: { key?: string }; preventDefault(): void }) {
-    const key = event.nativeEvent?.key ?? event.key;
-    const next = key === "ArrowLeft" || key === "ArrowRight" ? mode === "signIn" ? "signUp" : "signIn" : key === "Home" ? "signIn" : key === "End" ? "signUp" : null;
-    if (!next) return;
-    event.preventDefault(); selectMode(next);
-    (modeControls.current.get(next) as unknown as HTMLElement | undefined)?.focus();
+  useEffect(() => { resetField("password"); setPasswordVisible(false); intent.current++; }, [identityKey, online, resetField]);
+  const fields: { field: keyof LoginFormValues; label: string }[] = [
+    ...(mode === "signUp" ? [{ field: "name" as const, label: "稱呼" }] : []),
+    { field: "email", label: "電郵地址" }, { field: "password", label: "密碼" },
+  ];
+  const errorEntries = fields.flatMap(item => errors[item.field]?.message ? [{ ...item, message: String(errors[item.field]?.message) }] : []);
+  function clearPassword() { resetField("password"); setPasswordVisible(false); }
+  function selectMode(next: LoginMode) { intent.current++; setMode(next); clearPassword(); clearErrors(); }
+  function submit() {
+    if (!canSubmit || !active.current) return;
+    const submittedIntent = ++intent.current;
+    void handleSubmit(async values => {
+      // Resolver completion must not submit a superseded form or bypass current owner admission.
+      const live = owner.getSnapshot();
+      if (intent.current !== submittedIntent || !active.current || live.identityKey || live.records.auth !== "signedOut"
+        || !live.records.online || live.records.busy || live.account.busy || !live.account.status) return;
+      const credentials = { ...values }; clearPassword();
+      try { await authenticate(mode, credentials); }
+      finally { clearPassword(); }
+    }, invalid => {
+      if (intent.current !== submittedIntent || !active.current) return;
+      const first = fields.find(item => invalid[item.field]);
+      if (first) setFocus(first.field);
+    })();
   }
-  async function submit() {
-    if (mode === "signUp" && !name.trim()) { setResult("請填寫稱呼。"); return; }
-    if (!/^\S+@\S+\.\S+$/.test(email.trim())) { setResult("請輸入有效電郵地址。"); return; }
-    if (password.length > 128) { setResult("密碼最多 128 個字元。"); return; }
-    if (!password) { setResult("請輸入密碼。"); return; }
-    if (mode === "signUp" && password.length < 12) { setResult("建立帳戶需要至少 12 個字元的密碼。"); return; }
-    setResult(null);
-    const credentials = { name, email, password }; setPassword(""); setPasswordVisible(false);
-    try { await authenticate(mode, credentials); }
-    finally { setPassword(""); }
-  }
-
-  return <KeyboardAvoidingView style={styles.scroll} behavior={Platform.OS === "ios" ? "padding" : undefined}><ScrollView style={styles.scroll} contentContainerStyle={[styles.root, narrow && styles.rootStack, { paddingTop: insets.top, paddingBottom: insets.bottom }]} keyboardShouldPersistTaps="handled">
-    {!narrow ? <View ref={storyRef} testID="login-story-column" style={[styles.story, styles.storyDesktop]} onLayout={onStoryLayout}>
-      <View testID="login-story-content" style={styles.storyContent}>
-        <BrandLogo style={styles.storyLogo} />
-        <Text accessibilityRole="header" aria-level={1} style={styles.storyTitle}>每一天的照顧，
-都有跡可尋。</Text>
-        <Text style={styles.storyLead}>把零碎的觀察記低，把重要的事情核對清楚。孩子的照顧手冊，由這裏開始。</Text>
-        <View style={styles.storyIllustration}>
-          {!startupImage.fallback ? <Image testID="login-background-image" source={harbourArt} resizeMode="contain" onLoad={startupImage.onLoad} onError={startupImage.onError} accessibilityLabel="香港海旁照顧者與孩子插畫" style={styles.journalArt} /> : null}
+  function requestEmail(kind: "verification" | "reset") { intent.current++; clearPassword(); clearErrors(); void accountActions.requestEmail(kind, getValues("email")); }
+  const field = (name: keyof LoginFormValues) => <Controller key={name} name={name} control={control} render={({ field: input, fieldState }) => {
+    const id = `${formId}-${name}`, password = name === "password";
+    return <View style={styles.field}>
+      <AppTextField ref={input.ref} nativeID={id} name={name} label={name === "name" ? "稱呼" : name === "email" ? "電郵地址" : mode === "signUp" ? "密碼（至少 12 個字元）" : "密碼"}
+        accessibilityLabel={name === "name" ? "稱呼" : name === "email" ? "電郵地址" : "密碼"}
+        value={input.value} onChangeText={input.onChange} onBlur={input.onBlur} editable={!busy}
+        autoComplete={name === "name" ? "name" : name === "email" ? "email" : mode === "signUp" ? "new-password" : "current-password"}
+        keyboardType={name === "email" ? "email-address" : "default"} autoCapitalize={name === "name" ? "words" : "none"} autoCorrect={name === "name"} spellCheck={name === "name"}
+        secureTextEntry={password && !passwordVisible} returnKeyType={password ? "go" : "next"}
+        onSubmitEditing={password ? submit : () => setFocus(name === "name" ? "email" : "password")}
+        error={!!fieldState.error} aria-invalid={!!fieldState.error} aria-describedby={fieldState.error ? `${id}-message` : undefined}
+        right={password ? <TextInput.Icon icon={passwordVisible ? "eye-off" : "eye"} accessibilityLabel={passwordVisible ? "隱藏密碼" : "顯示密碼"} disabled={busy}
+          forceTextInputFocus={false} onPress={() => setPasswordVisible(value => !value)} /> : undefined} />
+      <FormFieldMessage id={`${id}-message`} error={fieldState.error?.message} />
+    </View>;
+  }} />;
+  return <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <ScrollView style={styles.root} contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top, paddingBottom: insets.bottom }]} keyboardShouldPersistTaps="handled">
+      <View style={[styles.layout, narrow && styles.stacked]}>
+        <View testID="login-form-column" style={[styles.formSide, narrow && styles.compactForm]}>
+          <BrandLogo style={styles.logo} />
+          <View style={styles.form}>
+            <Text accessibilityRole="header" aria-level={1} style={styles.title}>{mode === "signIn" ? "登入" : "建立帳戶"}</Text>
+            {mode === "signUp" && account.status?.registration === "invite" ? <Text style={styles.body}>目前只接受獲邀電郵註冊；完成電郵驗證及資料使用確認後，即可新增孩子。</Text>
+              : account.status?.registration === "trial" ? <Text style={styles.body}>目前為試用模式，請使用合成資料。</Text> : null}
+            <FormErrorSummary entries={errorEntries} onFocus={name => setFocus(name as keyof LoginFormValues)} />
+            {mode === "signUp" ? field("name") : null}{field("email")}{field("password")}
+            <AppButton label={mode === "signIn" ? "登入" : "建立帳戶"} loading={busy} disabled={!canSubmit} onPress={submit} />
+            {account.notice || recordsState.notice ? <Text accessibilityLiveRegion="polite" style={styles.notice}>{account.notice ?? recordsState.notice}</Text> : null}
+            {!online ? <Text style={styles.notice}>目前未能連線，請連線後再試。</Text> : null}
+            {auth === "unavailable" ? <AppButton label="重新檢查登入狀態" disabled={!online} variant="secondary" onPress={() => { void refresh(); }} /> : null}
+            {account.gate === "error" ? <AppButton label="重新確認帳戶服務" variant="secondary" disabled={!online} onPress={() => { void owner.accountOwner.loadStatus(); }} /> : null}
+            <View style={styles.recovery}>
+              {mode === "signIn" ? <AppButton label="忘記密碼" variant="quiet" disabled={!online || busy || !account.status?.mailConfigured} onPress={() => requestEmail("reset")} /> : null}
+              <AppButton label="重寄驗證指引" variant="quiet" disabled={!online || busy || !account.status?.mailConfigured} onPress={() => requestEmail("verification")} />
+            </View>
+            <View style={styles.modeChoice}><AppButton label={mode === "signIn" ? "建立帳戶" : "已有帳戶，登入"} variant="quiet" disabled={busy} onPress={() => selectMode(mode === "signIn" ? "signUp" : "signIn")} /></View>
+          </View>
         </View>
-        <View style={styles.storyPromise}><AppIcon name="shield-check-outline" size={22} /><Text style={styles.feature}>私人聊天與共享記錄分開，資料由你掌握。</Text></View>
+        {!narrow ? <View testID="login-story-column" style={styles.aside}>
+          <View testID="login-art-frame" style={styles.artFrame}>
+            {artworkFailed ? <View testID="login-art-fallback" style={styles.artFallback}><Text style={styles.fallbackCopy}>把觀察記低，{`\n`}把重要的決定核對清楚。</Text></View>
+              : <Image testID="login-background-image" source={harbourArt} resizeMode="contain" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" onError={() => setArtworkFailed(true)} style={styles.art} />}
+          </View>
+          <Text style={styles.asideCopy}>孩子的觀察、安排與原文，留在同一本照顧手冊。</Text>
+        </View> : null}
       </View>
-    </View> : null}
-    <View testID="login-form-column" style={[styles.formSide, narrow ? styles.formCompact : styles.formDesktop]}>
-      <View style={styles.formHeader}>{narrow ? <BrandLogo style={styles.formLogo} /> : null}<Text style={styles.formTagline}>你的家庭照顧手冊</Text></View>
-      <View style={styles.formCard}>
-
-        <Text accessibilityRole="header" aria-level={narrow ? 1 : 2} style={styles.formTitle}>{mode === "signIn" ? "歡迎回來" : "建立帳戶"}</Text>
-        <Text style={styles.formIntro}>{mode === "signIn" ? "登入後，繼續整理孩子的照顧資料。" : "先建立自己的帳戶，再新增孩子的資料。"}</Text>
-        {mode === "signUp" && account.status?.registration === "invite" ? <Text style={styles.formNote}>目前只接受獲邀電郵註冊；完成電郵驗證及資料使用確認後，即可新增孩子。</Text> : account.status?.registration === "trial" ? <Text style={styles.formNote}>目前為試用模式，請依服務說明使用合成資料。</Text> : null}
-        <View accessibilityRole="tablist" accessibilityLabel="登入方式" style={styles.modeTabs}>
-          {([{ key: "signIn", label: "電郵登入" }, { key: "signUp", label: "註冊帳戶" }] as const).map(item => <Pressable key={item.key}
-            ref={instance => { if (instance) modeControls.current.set(item.key, instance); else modeControls.current.delete(item.key); }}
-            accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: mode === item.key }} aria-selected={mode === item.key} tabIndex={mode === item.key ? 0 : -1}
-            onPress={() => selectMode(item.key)} onLayout={event => { const { x, width } = event.nativeEvent.layout; setModePositions(current => current[item.key]?.x === x && current[item.key]?.width === width ? current : { ...current, [item.key]: { x, width } }); }}
-            {...(Platform.OS === "web" ? { onKeyDown: moveMode } : {})}
-            style={({ pressed }) => [styles.modeTab, mode === item.key && styles.modeActive, mode === item.key && !modeSelection && styles.modeInitialMarker, pressed && styles.pressed]}>
-            <Text style={[styles.modeText, mode === item.key && styles.modeTextActive]}>{item.label}</Text></Pressable>)}
-          <MotionSelectionMarker x={modeSelection?.x ?? 0} width={modeSelection?.width ?? 0} selectionKey={`${modeScope}:${mode}`} />
-        </View>
-        <MotionDisclosure expanded={mode === "signUp"} scopeKey={modeScope} testID="login-name-disclosure"><AppTextField label="稱呼" accessibilityLabel="稱呼" value={name} onChangeText={setName} autoComplete="name" /></MotionDisclosure>
-        <AppTextField label="電郵地址" accessibilityLabel="電郵地址" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" />
-        <AppTextField label={mode === "signUp" ? "密碼（至少 12 個字元）" : "密碼"} accessibilityLabel="密碼" value={password} onChangeText={setPassword}
-          secureTextEntry={!passwordVisible} autoCapitalize="none" autoCorrect={false} autoComplete={mode === "signUp" ? "new-password" : "current-password"}
-          returnKeyType="go" onSubmitEditing={() => { if (canSubmit) void submit(); }}
-          right={<TextInput.Icon icon={passwordVisible ? "eye-off" : "eye"} accessibilityLabel={passwordVisible ? "隱藏密碼" : "顯示密碼"}
-            forceTextInputFocus={false} onPress={() => setPasswordVisible(value => !value)} />} />
-        <View style={styles.recoveryRow}>
-        <Pressable accessibilityRole="button" accessibilityLabel="重新要求驗證指引"
-          disabled={!online || busy || !account.status?.mailConfigured} accessibilityState={{ disabled: !online || busy || !account.status?.mailConfigured }}
-          onPress={() => { setPassword(""); setResult(null); void accountActions.requestEmail("verification", email); }}
-          style={({ pressed }) => [styles.recoveryLink, pressed && styles.pressed]}><Text style={styles.recoveryText}>重寄驗證</Text></Pressable>
-        {mode === "signIn" ? <Pressable accessibilityRole="button" accessibilityLabel="忘記密碼" disabled={!online || busy || !account.status?.mailConfigured}
-          accessibilityState={{ disabled: !online || busy || !account.status?.mailConfigured }}
-          onPress={() => { setPassword(""); setResult(null); void accountActions.requestEmail("reset", email); }}
-          style={({ pressed }) => [styles.recoveryLink, pressed && styles.pressed]}><Text style={styles.recoveryText}>忘記密碼？</Text></Pressable> : null}
-        </View>
-        <AppButton label={mode === "signIn" ? "登入" : "建立帳戶"} loading={busy} disabled={!canSubmit} onPress={() => { void submit(); }} />
-        {result || account.notice || recordsState.notice ? <Text accessibilityLiveRegion="polite" style={styles.result}>{result ?? account.notice ?? recordsState.notice}</Text> : null}
-        {!online ? <Text style={styles.formNote}>目前未能連線，請連線後再試。</Text> : null}
-        {auth === "unavailable" ? <AppButton label="重新檢查登入狀態" disabled={!online} variant="secondary" onPress={() => { void refresh(); }} /> : null}
-        {account.gate === "error" ? <AppButton label="重新確認帳戶服務" variant="secondary" disabled={!online} onPress={() => { void owner.accountOwner.loadStatus(); }} /> : null}
-
-      </View>
-    </View>
-  </ScrollView></KeyboardAvoidingView>;
+    </ScrollView>
+  </KeyboardAvoidingView>;
 }
 
 const styles = StyleSheet.create({
-  storyIllustration: { width: "100%", aspectRatio: 1672 / 941, marginVertical: spacing.xl },
-  journalArt: { width: "100%", height: "100%" },
-  storyPromise: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.xl },
-  formCompact: { minHeight: 0, paddingVertical: spacing.xl, paddingHorizontal: spacing.lg },
-  storyDesktop: { width: "52%", minWidth: 0, flexShrink: 1 },
-  formDesktop: { flexGrow: 0, flexShrink: 0, flexBasis: "48%", minWidth: 400, paddingHorizontal: spacing.xxl },
-  scroll: { flex: 1, backgroundColor: colors.white }, root: { flexGrow: 1, minHeight: "100%", flexDirection: "row" }, rootStack: { flexDirection: "column" }, pressed: { backgroundColor: colors.pressedOverlay },
-  story: { width: "52%", minHeight: 620, backgroundColor: colors.canvas, overflow: "hidden" }, storyContent: { flex: 1, paddingHorizontal: 56, paddingVertical: 48, justifyContent: "center", gap: spacing.lg }, storyLogo: { width: 190, height: 60, alignSelf: "flex-start" }, storyTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 44, lineHeight: 59, fontWeight: "700", maxWidth: 520 }, storyLead: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.body, lineHeight: 26, maxWidth: 570 }, feature: { flex: 1, minWidth: 0, fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "600" },
-  formSide: { flex: 1, minWidth: 0, minHeight: 620, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl, gap: spacing.xl }, formHeader: { width: "100%", maxWidth: 440, alignItems: "flex-start", gap: spacing.xs }, formLogo: { width: 180, height: 58 }, formTagline: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small }, formCard: { width: "100%", maxWidth: 440, gap: spacing.md }, formTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.heading, fontWeight: "800" }, formIntro: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
-  modeTabs: { flexDirection: "row", borderRadius: radius.small, backgroundColor: colors.neutralSurface, padding: spacing.xs, gap: spacing.xs }, modeTab: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radius.small }, modeActive: { backgroundColor: colors.white }, modeInitialMarker: { borderBottomWidth: 2, borderBottomColor: colors.teal }, modeText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" }, modeTextActive: { color: colors.deepTeal }, recoveryRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", columnGap: spacing.md }, recoveryLink: { minHeight: 44, paddingHorizontal: spacing.xs, justifyContent: "center", borderRadius: radius.small }, recoveryText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, textDecorationLine: "underline" }, result: { fontFamily: chineseFont, color: colors.deepTeal, backgroundColor: colors.paleTeal, borderRadius: radius.small, padding: spacing.md, fontSize: typeScale.small, lineHeight: 22 }, formNote: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 19 },
+  root: { flex: 1, backgroundColor: colors.canvas }, scrollContent: { flexGrow: 1, justifyContent: "center" },
+  layout: { width: "100%", maxWidth: 1280, alignSelf: "center", flexDirection: "row", alignItems: "center", minWidth: 0 }, stacked: { flexDirection: "column", alignItems: "stretch" },
+  formSide: { flexGrow: 1, flexBasis: 480, minWidth: 0, padding: spacing.xxl, gap: spacing.xl, backgroundColor: colors.paper }, compactForm: { flexBasis: "auto", paddingHorizontal: spacing.lg, paddingVertical: spacing.xl },
+  logo: { width: 172, height: 52, alignSelf: "flex-start" }, form: { width: "100%", maxWidth: 440, gap: spacing.md }, field: { gap: spacing.xs },
+  title: { fontFamily: chineseFont, color: colors.ink, fontSize: 30, lineHeight: 40, fontWeight: "700" }, body: { fontFamily: chineseFont, color: colors.muted, ...readingType.body },
+  notice: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, borderLeftWidth: 3, borderLeftColor: colors.teal, paddingLeft: spacing.md },
+  recovery: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }, modeChoice: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
+  aside: { flexGrow: 1, flexBasis: 520, minWidth: 0, gap: spacing.lg, padding: spacing.xxl }, artFrame: { width: "100%", aspectRatio: 1672 / 941 }, art: { width: "100%", height: "100%" },
+  artFallback: { flex: 1, justifyContent: "center" }, fallbackCopy: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: 24, lineHeight: 36, fontWeight: "600" },
+  asideCopy: { fontFamily: chineseFont, color: colors.muted, ...readingType.body, maxWidth: 420 },
 });

@@ -13,7 +13,7 @@ function LegacyWorkspace({ child, online, identity, server, onIdentity, onServer
 }) {
   const { actions } = usePreview();
   const preview = useSummaryPreview(child, online, identity, server), [tools, setTools] = useState(false);
-  return <SummaryView model={preview.model} actions={preview.actions} recoveryMode onReturn={onReturn}
+  return <SummaryView model={preview.model} actions={preview.actions} mode="recovery" onReturn={onReturn}
     onRecord={() => actions.open("care")} onTask={() => actions.open("tasks")}
     onAgent={() => actions.prepareQuestion(`想請你幫我整理或更新${child.displayName}的到診準備：先核對預約、要問的問題、原始觀察和攜帶清單；未確認的內容請先讓我核對。`)}
     previewTools={<SectionCard><SectionHeader density="compact" title="預覽工具" subtitle={tools ? "保留原保存及查核流程；不遷移至新版準備單、不呼叫 Server 或外發。" : undefined} icon="information-outline" />

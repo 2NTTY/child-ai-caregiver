@@ -1,7 +1,6 @@
 import { useHeaderOperationHints } from "../production/useHeaderOperationHints";
-import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
+import { PreviewLink } from "../preview/PreviewNavigationGuard";
 import { useRef, useState, type ReactNode } from "react";
-import { useRouter } from "expo-router";
 import { KeyboardAvoidingView, Pressable, StyleSheet, View } from "react-native";
 import { brand } from "../branding";
 import { AppIcon } from "./AppIcon";
@@ -16,13 +15,11 @@ import { ChildKeyFacts } from "./ChildKeyFacts";
 
 export function NativeAppShell({ children }: { children: ReactNode }) {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const leave = usePreviewNavigation();
   const operationHints = useHeaderOperationHints();
   const { model, actions, notice, dismissNotice } = useProduction();
   return <View style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
     <View style={styles.header}>
-      <Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} onPress={() => leave(() => router.push("/"), "workspace")} style={styles.brand}><BrandLogo style={styles.logo} decorative /></Pressable>
+      <PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={StyleSheet.flatten(styles.brand)}><BrandLogo style={styles.logo} decorative /></Pressable></PreviewLink>
       <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} compact />
       <View testID="header-actions" style={styles.actions}><NotificationBell /></View>
     </View>

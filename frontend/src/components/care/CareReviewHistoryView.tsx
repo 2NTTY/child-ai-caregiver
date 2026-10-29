@@ -1,3 +1,4 @@
+import type { CareRecordNavigation } from "../../navigation/useCareRouteNavigation";
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -19,7 +20,7 @@ import { CareReviewPagination } from "./CareReviewPagination";
 import { BackgroundSurface } from "../appearance/BackgroundSurface";
 
 export type CareReviewStatusFilter = "all" | "written" | "important_pending" | CareCaptureReview["reviewState"];
-type Props = { pendingReview?: { content: ReactNode; loadedCount?: string }; model: CareRecordsViewModel; actions: CareRecordsActions; searchText?: string; initialStatus?: CareReviewStatusFilter; olderOnly?: boolean; initialRecordId?: string; onOlderPending?: () => void; onHistory?: () => void; manualCreateFocusRef?: RefObject<View | null>; manualCreateAction?: ReactNode };
+type Props = { navigation?: CareRecordNavigation; pendingReview?: { content: ReactNode; loadedCount?: string }; model: CareRecordsViewModel; actions: CareRecordsActions; searchText?: string; initialStatus?: CareReviewStatusFilter; olderOnly?: boolean; initialRecordId?: string; onOlderPending?: () => void; onHistory?: () => void; manualCreateFocusRef?: RefObject<View | null>; manualCreateAction?: ReactNode };
 
 // Both entry points consume the same scoped review owner, never a copied candidate store.
 export function CareWriteNotice({ model, actions }: { model: CareRecordsViewModel; actions: CareRecordsActions }) {
@@ -30,16 +31,19 @@ export function CareWriteNotice({ model, actions }: { model: CareRecordsViewMode
   </OperationNotice>;
 }
 export function CareReviewHistoryView(props: Props) { return <><CareWriteNotice model={props.model} actions={props.actions} /><CareReviewWorkspace {...props} history /></>; }
-export function CareReviewWorkspace({ model, actions, searchText, initialStatus = "all", olderOnly = false, initialRecordId, onOlderPending, onHistory, manualCreateFocusRef, manualCreateAction, pendingReview, history = false }: Props & { history?: boolean }) {
+export function CareReviewWorkspace({ model, actions, navigation, searchText, initialStatus = "all", olderOnly = false, initialRecordId, onOlderPending, onHistory, manualCreateFocusRef, manualCreateAction, pendingReview, history = false }: Props & { history?: boolean }) {
   const review = authorizedCareCaptureReview(model), window = careReviewWindow(careReviewChronological(review.items));
   const [localQuery, setLocalQuery] = useState("");
   const [status, setStatus] = useState<CareReviewStatusFilter>(initialStatus);
-  const [tab, setTab] = useState<CareReviewTab>("pending");
+  const [localTab, setTab] = useState<CareReviewTab>("pending");
+  const tab = navigation?.tab ?? localTab;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [sourceKey, setSourceKey] = useState("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [recordOpen, setRecordOpen] = useState(false);
+  const [localRecordOpen, setRecordOpen] = useState(false);
+  const recordOpen = navigation ? !!navigation.recordId && model.detail?.record.id === navigation.recordId : localRecordOpen;
+  const requestedMissing = !!navigation?.recordId && !recordOpen;
   const tabsId = useId(), layout = useContainerWidth(), wide = layout.width >= 760;
   const compactToolbar = !!manualCreateAction && layout.width < 360;
   const returnToCreate = useRef(false);
@@ -66,7 +70,7 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
   // it to another tab so the user can finish reading the result before going back.
   const selected = review.items.find(item => item.id === selectedId) ?? null;
   const locked = ["saving", "unknown"].includes(model.operation.state), occupied = locked || !!model.draft || !!model.deletion;
-  const showPanel = !!selected || recordOpen && !!model.detail || !!model.deletion;
+  const showPanel = !!selected || recordOpen && !!model.detail || !!model.deletion || requestedMissing;
   const listVisible = history || wide || !showPanel;
   const canEdit = model.access === "editable" && model.list.state !== "loading";
   const reading = ["loading", "loading_more"].includes(model.list.state);
@@ -74,6 +78,16 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
   const previousDraft = useRef(model.draft);
   useEffect(() => { closeFocusRequest.current = null; setPage(0); setSelectedId(null); setRecordOpen(false); setLocalQuery(""); setStatus(initialStatus); setTab("pending"); setSourceKey("all"); setFiltersOpen(false); }, [model.scopeKey, initialStatus, olderOnly]);
   useEffect(() => { setPage(0); setSelectedId(null); setRecordOpen(false); }, [query, status, sourceKey]);
+  useEffect(() => {
+    if (!navigation) return;
+    setPage(0); setSelectedId(null);
+  }, [navigation?.tab]);
+  const previousRouteRecord = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (!navigation || previousRouteRecord.current === navigation.recordId) return;
+    if (previousRouteRecord.current !== undefined || navigation.recordId !== null) focusRequested.current = true;
+    previousRouteRecord.current = navigation.recordId;
+  }, [navigation?.recordId]);
   useEffect(() => { if (initialRecordId && model.detail?.record.id === initialRecordId) { if (!history) setTab("recorded"); setRecordOpen(true); } }, [initialRecordId, model.detail?.record.id, history]);
   useEffect(() => {
     if (previousDraft.current && !previousDraft.current.captureSnapshot && !model.draft && model.operation.state === "saved" && model.detail) { if (!history) setTab("recorded"); setSelectedId(null); setRecordOpen(true); }
@@ -123,11 +137,17 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
     else { setRecordOpen(false); if (selection) setSelectedId(null); }
     actions.closePanel();
   };
-  const closeSelection = () => { if (occupied) return; actions.closePanel(); setSelectedId(null); setRecordOpen(false); focusRequested.current = true; };
-  const panelActions = { ...actions, closePanel: () => { if (history) { closeHistory(false); return; } if (!locked) { actions.closePanel(); setRecordOpen(false); closeFocusRequest.current = model.draft ? null : { scopeKey: model.scopeKey, model }; } } };
-  const openRecord = (id: string) => { if (occupied) return; setRecordOpen(true); focusRequested.current = !history; actions.openRecord(id); };
-  const changeTab = (next: CareReviewTab) => { if (occupied) return; actions.closePanel(); setTab(next); setPage(0); setRecordOpen(false); setSelectedId(null); };
-  const detailContent = model.deletion ? <CareRecordDelete model={model} actions={panelActions} /> : recordOpen && model.detail ? <CareRecordDetail detail={model.detail} actions={panelActions} canEdit={model.access === "editable"} online={model.online} reading={reading} active={!history} /> : selected ? <CareCaptureDetail capture={selected} wide={!history && wide && layout.width * 0.68 - spacing.lg * 2 - 1 >= 640} readiness={ready?.reason ?? ""} confirmLabel={model.submitLabel}
+  const closeSelection = () => { if (occupied) return; if (navigation) { navigation.close(); setSelectedId(null); return; } actions.closePanel(); setSelectedId(null); setRecordOpen(false); focusRequested.current = true; };
+  const panelActions = { ...actions, closePanel: () => { if (navigation) { navigation.close(); return; } if (history) { closeHistory(false); return; } if (!locked) { actions.closePanel(); setRecordOpen(false); closeFocusRequest.current = model.draft ? null : { scopeKey: model.scopeKey, model }; } } };
+  const openRecord = (id: string) => { if (occupied) return; if (navigation) { navigation.open(id); return; } setRecordOpen(true); focusRequested.current = !history; actions.openRecord(id); };
+  const changeTab = (next: CareReviewTab) => { if (occupied) return; if (navigation) { navigation.changeTab(next); return; } actions.closePanel(); setTab(next); setPage(0); setRecordOpen(false); setSelectedId(null); };
+  const missingError = requestedMissing && model.detailRead?.id === navigation?.recordId && model.detailRead.state === "error";
+  const detailContent = model.deletion ? <CareRecordDelete model={model} actions={panelActions} /> : recordOpen && model.detail ? <CareRecordDetail detail={model.detail} actions={panelActions} canEdit={model.access === "editable"} online={model.online} reading={reading} active={!history} /> : requestedMissing && navigation ? <ReadStateNotice state={navigation.waiting ? "unavailable" : missingError ? "error" : "loading"}
+          title={navigation.waiting ? "原操作待確認，暫未切換記錄" : missingError ? "這項記錄暫不能開啟" : "正在核對所選記錄…"}
+          message={missingError ? "它目前未能讀取或核對。沒有改開其他記錄。" : ""}>
+          {missingError ? <AppButton label="重新核對所選記錄" variant="quiet" disabled={!model.online || occupied} onPress={navigation.retry} /> : null}
+          <AppButton label="返回記錄清單" variant="quiet" disabled={occupied} onPress={navigation.close} />
+        </ReadStateNotice> : selected ? <CareCaptureDetail capture={selected} wide={!history && wide && layout.width * 0.68 - spacing.lg * 2 - 1 >= 640} readiness={ready?.reason ?? ""} confirmLabel={model.submitLabel}
           canConfirm={selected.writeState === "not_saved" && !!ready?.allowed && !occupied && model.online} canConfirmImportant={selected.writeState === "saved" && !!ready?.allowed && !occupied && model.online}
           onConfirmImportant={actions.confirmImportantRecord && selected.savedRecord ? () => actions.confirmImportantRecord?.(selected.id, selected.version, selected.sourceVersion, selected.savedRecord!.id, selected.savedRecord!.current.version, model.scopeKey ?? "") : undefined} canEdit={canEdit && !occupied && (selected.writeState === "saved" || !!ready?.allowed)} canSkip={canEdit && !occupied && !!review.capabilities?.skip && careReviewUsesCareOwner(selected) && selected.reviewRequirement !== "required" && (!selected.operationValidity || selected.operationValidity.state === "active")}
           onConfirm={actions.confirmCapture ? () => actions.confirmCapture?.(selected.id, selected.version, selected.sourceVersion) : undefined}
@@ -147,7 +167,7 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
     <ReviewContent history={history} tabsId={tabsId} tab={tab}>
     <View style={[s.columns, !history && wide && showPanel && s.split]}>
       <View ref={listRef} tabIndex={-1} style={[s.listColumn, !history && wide && showPanel && s.narrowList, !listVisible && s.hidden]} testID="care-review-list" pointerEvents={listVisible ? "auto" : "none"} aria-hidden={!listVisible} accessibilityElementsHidden={!listVisible} importantForAccessibility={listVisible ? "auto" : "no-hide-descendants"}>
-        {!history && tab === "recorded" ? <CareSavedRecordsList model={model} actions={{ ...actions, openRecord }} /> : !history && pendingReview ? pendingReview.content : <>
+        {!history && tab === "recorded" ? <CareSavedRecordsList model={model} actions={{ ...actions, openRecord }} recordHref={navigation?.href} /> : !history && pendingReview ? pendingReview.content : <>
         {showFilters ? <View style={s.filterBar}><Text style={s.filterContext}>{sourceKey === "all" ? history ? "所有已載入對話" : tab === "pending" ? "重要內容優先" : "已保存，有誤時可更正" : sourceGroups.find(group => group.key === sourceKey)?.label ?? "所選對話"}{query ? " · 已搜尋" : ""}</Text>
           <AppButton label={filtersOpen ? "收起篩選" : "篩選"} expanded={filtersOpen} density="compact" variant="quiet" disabled={occupied} onPress={() => { if (!occupied) setFiltersOpen(value => !value); }} />
         </View> : null}
@@ -188,7 +208,7 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
         </>}
       </View>
       {!history && showPanel ? <View ref={panelRef} tabIndex={-1} style={[s.detailColumn, wide && s.detailDivider]} testID="care-review-detail-panel">
-        {!model.draft && !model.deletion ? <AppButton label={wide ? "收起內容" : "返回記錄清單"} variant="quiet" density="compact" disabled={occupied} onPress={closeSelection} /> : null}
+        {!model.draft && !model.deletion && !requestedMissing ? <AppButton label={wide ? "收起內容" : "返回記錄清單"} variant="quiet" density="compact" disabled={occupied} onPress={closeSelection} /> : null}
         {detailContent}
       </View> : null}
     </View>

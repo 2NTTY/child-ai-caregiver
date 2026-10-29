@@ -206,6 +206,7 @@ export function usePersonalHistory(env: TaskKnowledgeEnvironment) {
     access: runtime.lost ? "revoked" as const : "active" as const,
     work: runtime.lost ? emptyRead<WorkPage>(env.scopeKey) : onlineRead(work),
     history: runtime.lost ? emptyRead<PersonalHistorySearch>(env.scopeKey) : onlineRead(history),
+    get selectedMessageId() { return runtime.lost ? null : selectedMessageId.current; },
     message: runtime.lost ? emptyRead<HistoryMessageRead>(env.scopeKey) : onlineRead(message),
     notificationUnavailable,
     notifications: runtime.lost ? emptyRead<PersonalMessagesPage>(env.scopeKey) : onlineRead(notifications),

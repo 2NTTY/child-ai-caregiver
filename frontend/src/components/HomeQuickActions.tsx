@@ -1,65 +1,46 @@
-import { BackgroundSurface } from "./appearance/BackgroundSurface";
 import { useState } from "react";
 import { usePathname } from "expo-router";
-import { Platform, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
-import type { HomeActions, HomeViewModel } from "../view-model";
-import { homeAgentScope } from "../home-agent-entry";
-import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing } from "../theme";
+import type { PhotoOriginal } from "../photo-view-model";
+import { chineseFont, colors, readingType, spacing } from "../theme";
 import { AppIcon } from "./AppIcon";
 import { PhotoFilePicker, type PhotoFilePickerProps } from "./photos/PhotoFilePicker";
+import { RouteActionLink } from "./RouteTextLink";
 
 type HomeQuickActionsProps = {
-  model: HomeViewModel; actions: HomeActions; docked?: boolean;
+  childId: string; scopeKey: string | null; available: boolean; onPhoto(original: PhotoOriginal): void;
   captureOriginal?: PhotoFilePickerProps["captureOriginal"];
 };
-
 export function HomeQuickActions(props: HomeQuickActionsProps) {
   const active = usePathname() === "/";
-  // Replacing the scope unmounts the picker, stops capture and discards late file reads.
-  return <HomeAgentCapture key={JSON.stringify([homeAgentScope(props.model), active])} {...props} active={active} />;
+  // Replace the picker on route or authority change; late local reads are discarded by its owner.
+  return <HomeAgentCapture key={JSON.stringify([props.scopeKey, props.childId, active])} {...props} active={active} />;
 }
-
-function HomeAgentCapture({ model, actions, docked = false, captureOriginal, active }: HomeQuickActionsProps & { active: boolean }) {
-  const child = model.children.find(item => item.id === model.selectedChildId);
-  const [error, setError] = useState<string | null>(null);
-  const [opening, setOpening] = useState(false);
-  const available = !!child && active && (model.scopeKey !== undefined ? !!model.scopeKey : model.profileLoad === "ready");
-  return <BackgroundSurface padded frosted testID="home-quick-actions" style={[styles.section, docked && styles.docked]}>
-
-    <View style={styles.captureRow}><PhotoFilePicker disabled={!available || opening} capturePreferred captureOriginal={captureOriginal}
-      onPick={original => { setError(null); setOpening(true); actions.openAgentPhoto(original); }} onError={setError}
-      renderTrigger={trigger => <Pressable testID="home-agent-camera" accessibilityRole="button" accessibilityLabel="拍照給助手"
-        accessibilityHint={trigger.unavailableReason ?? "開啟相機，拍攝後在目前孩子的對話中檢視；不會自動上傳或保存"}
-        accessibilityState={{ disabled: trigger.disabled, busy: trigger.reading || opening }} aria-disabled={trigger.disabled} aria-busy={trigger.reading || opening}
-        disabled={trigger.disabled} onPress={() => { setError(null); trigger.onPress(); }}
-        style={({ pressed }) => [styles.capture, trigger.disabled && styles.disabled, pressed && !trigger.disabled && styles.capturePressed]}>
-        <AppIcon name="camera-outline" size={mobileIcons.primary} color={colors.onAccent} />
-        <Text style={styles.captureTitle}>{trigger.reading ? "正在讀取照片" : opening ? "正在開啟對話" : "拍照給助手"}</Text>
-      </Pressable>} />
-    <View testID="mobile-quick-actions" style={styles.secondaryActions}>
-      <Pressable accessibilityRole="button" accessibilityLabel="用文字告訴助手" accessibilityState={{ disabled: !available || opening }} aria-disabled={!available || opening}
-        disabled={!available || opening} onPress={() => actions.open("chat")} style={({ pressed }) => [styles.secondary, (!available || opening) && styles.disabled, pressed && available && !opening && styles.pressed]}>
-        <AppIcon name="message-text-outline" size={mobileIcons.content} /><Text style={styles.label}>用文字說</Text>
-      </Pressable>
-
-    </View></View>
-    {Platform.OS !== "web" && !captureOriginal ? <Text style={styles.note}>相機暫不可用，可先用文字輸入。</Text> : null}
+function HomeAgentCapture({ onPhoto, available, active, captureOriginal }: HomeQuickActionsProps & { active: boolean }) {
+  const [error, setError] = useState<string | null>(null), [hovered, setHovered] = useState(false);
+  const enabled = available && active;
+  return <View testID="home-quick-actions" style={styles.section}>
+    <View testID="mobile-quick-actions" style={styles.actions}>
+      {enabled ? <RouteActionLink href="/chat" label="與助手聊一聊" accessibilityLabel="在目前孩子的私人對話中提問" /> : <Text style={styles.note}>核對孩子後即可開始對話。</Text>}
+      <PhotoFilePicker disabled={!enabled} capturePreferred captureOriginal={captureOriginal}
+        onPick={original => { setError(null); onPhoto(original); }} onError={setError}
+        renderTrigger={trigger => <Pressable testID="home-agent-camera" accessibilityRole="button" accessibilityLabel="拍照加入對話"
+          accessibilityHint={trigger.unavailableReason ?? "拍攝後先檢視，不會自動上傳或保存"}
+          accessibilityState={{ disabled: trigger.disabled, busy: trigger.reading }} aria-disabled={trigger.disabled} aria-busy={trigger.reading}
+          disabled={trigger.disabled} onPress={() => { setError(null); trigger.onPress(); }} onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)}
+          style={({ pressed }) => [styles.capture, trigger.disabled && styles.disabled, (hovered || pressed) && !trigger.disabled && styles.pressed]}>
+          <AppIcon name="camera-outline" size={20} color={colors.deepTeal} /><Text style={styles.captureLabel}>{trigger.reading ? "正在讀取照片…" : "也可以拍照"}</Text>
+        </Pressable>} />
+    </View>
+    <Text style={styles.note}>先在對話核對，再自行送出。</Text>
     {error ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}
-  </BackgroundSurface>;
+  </View>;
 }
-
 const styles = StyleSheet.create({
-  section: { gap: spacing.md, paddingTop: spacing.md },
-  docked: { flexShrink: 0, borderRadius: 0, borderWidth: 0, borderTopWidth: 1, paddingVertical: spacing.sm },
-  heading: { fontFamily: chineseFont, color: colors.ink, ...mobileType.itemTitle, fontWeight: "700" },
-  captureRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
-  capture: { minWidth: 0, minHeight: 48, flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, backgroundColor: colors.accent, borderRadius: radius.small },
-  captureTitle: { fontFamily: chineseFont, color: colors.onAccent, ...mobileType.body, fontWeight: "700" },
-  secondaryActions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  secondary: { backgroundColor: "transparent", borderWidth: 1, borderColor: colors.controlOutline, borderRadius: 10, flexDirection: "row", minWidth: mobileLayout.touchTarget, minHeight: mobileLayout.touchTarget, alignItems: "center", justifyContent: "center", gap: spacing.xs, paddingHorizontal: spacing.sm },
-  label: { fontFamily: chineseFont, color: colors.ink, ...mobileType.label, textAlign: "center" },
-  note: { fontFamily: chineseFont, color: colors.muted, ...mobileType.caption },
-  error: { fontFamily: chineseFont, color: colors.warningInk, ...mobileType.body },
-  pressed: { backgroundColor: colors.pressedOverlay }, capturePressed: { backgroundColor: colors.accentPressed }, disabled: { opacity: 0.5 },
+  section: { gap: spacing.sm, minWidth: 0 }, actions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md },
+  capture: { minWidth: 44, minHeight: 48, flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, backgroundColor: "transparent", borderRadius: 8 },
+  captureLabel: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: 16, lineHeight: 24, fontWeight: "600" },
+  note: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta }, error: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.body },
+  pressed: { backgroundColor: colors.paleTeal }, disabled: { opacity: 0.5 },
 });

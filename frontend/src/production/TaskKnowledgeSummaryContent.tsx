@@ -8,7 +8,8 @@ import { ReadStateNotice } from "../components/ReadStateNotice";
 import { AppDateField, AppTimeZoneSelect } from "../components/DateTimeFields";
 import { AppButton, AppSelect, SectionCard, SectionHeader } from "../components/ui";
 import { PreparationCard } from "../components/summary/PreparationCard";
-import { SummaryRecords } from "../components/summary/SummaryRecords";
+import { JournalSection } from "../components/journal/JournalLayout";
+import { SummaryOverviewRecords, SummaryRecords } from "../components/summary/SummaryRecords";
 import { SummaryDisclosure } from "../components/summary/SummaryDisclosure";
 import { summaryPeriodSchema } from "../components/summary/summary-form";
 import { summaryPeriodLabel, summaryTime } from "../summary-view-model";
@@ -16,16 +17,26 @@ import { summaryStyles as s } from "../components/summary/summary-styles";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useProductionTaskKnowledgeSummary } from "./TaskKnowledgeDomains";
 
-export function TaskKnowledgeSummaryContent({ preparation = false, presentation = "full", scopeKey, childId, onRecord, onTask, onAgent }: {
-  presentation?: "full" | "overview"; scopeKey?: string; childId?: string; preparation?: boolean; onRecord(id: string): void; onTask(id: string): void; onAgent?(): void;
-}) {
+type SummaryContentCommonProps = {
+  onRecord(id: string): void; onTask(id: string): void; preparation?: never; presentation?: never;
+};
+export type TaskKnowledgeSummaryContentProps = SummaryContentCommonProps & (
+  | { mode: "overview"; scopeKey: string; childId: string }
+  | { mode: "report" }
+  | { mode: "legacy-preparation"; onAgent?(): void }
+);
+export function TaskKnowledgeSummaryContent(props: TaskKnowledgeSummaryContentProps) {
+  const { onRecord, onTask } = props;
+  const preparation = props.mode === "legacy-preparation", compact = props.mode === "overview";
+  const scopeKey = props.mode === "overview" ? props.scopeKey : undefined;
+  const childId = props.mode === "overview" ? props.childId : undefined;
+  const onAgent = props.mode === "legacy-preparation" ? props.onAgent : undefined;
   const owner = useProductionTaskKnowledgeSummary();
   const [open, setOpen] = useState(false), navigate = usePreviewNavigation();
   const latest = useRef(owner); latest.current = owner;
   useEffect(() => () => { const value = latest.current; if (value?.model.dirty && !value.model.pending && !value.model.busy) value.actions.discard(); }, []);
   if (!owner) return <ReadStateNotice state="loading" message="正在讀取摘要…" />;
   const { model, actions } = owner, page = model.page;
-  const compact = presentation === "overview" && !preparation;
   if (compact && (!scopeKey || !childId || model.scopeKey !== scopeKey || page && page.childId !== childId)) return <Text style={s.body}>正在核對這位孩子的生活記錄來源…</Text>;
   if (compact && model.access === "lost") return <Text accessibilityRole="alert" style={s.body}>已無權讀取這位孩子的生活記錄。</Text>;
   const emptyReady = !!page && model.online && !model.readFailed && !model.pending && model.access !== "lost"
@@ -33,8 +44,8 @@ export function TaskKnowledgeSummaryContent({ preparation = false, presentation 
   const canRetry = model.online && !model.busy && !model.readFailed && model.access === "editable" && !!page?.canManage && !!model.pending?.checked && !model.pending.confirmed;
   const locked = model.busy || !!model.pending || model.access === "lost";
   const quietRead = model.busy && emptyReady;
-  const summaryContent = <SectionCard><SectionHeader density="compact" title={preparation ? "單一到診準備" : "近期記錄與安排"} subtitle={model.dataLabel}
-      action={model.readFailed || model.pending ? <AppButton label={model.pending ? "查原收據及更新摘要" : "重新讀取摘要"} variant="secondary" density="compact" disabled={!model.online || model.busy || model.access === "lost" || !summaryPeriodSchema.safeParse(model.query).success} onPress={actions.refresh} /> : undefined} />
+  const summaryContent = <JournalSection title={preparation ? "單一到診準備" : compact ? "這段日子的記錄" : "近期記錄與安排"} description={preparation ? model.dataLabel : undefined}
+      action={model.readFailed || model.pending ? <AppButton label={model.pending ? "查原收據及更新摘要" : "重新讀取摘要"} variant="secondary" density="compact" disabled={!model.online || model.busy || model.access === "lost" || !summaryPeriodSchema.safeParse(model.query).success} onPress={actions.refresh} /> : undefined}>
       <SummaryDisclosure label="選擇摘要期間" scopeKey={model.scopeKey}>
         <AppDateField label="摘要開始日" value={model.query.startDay} disabled={locked} preserveFocusWhenDisabled={quietRead} onChange={startDay => actions.updateQuery({ ...model.query, startDay })} />
         <AppSelect label="摘要期間" value={model.query.period} options={[{ value: "day", label: "一日" }, { value: "week", label: "連續七日" }]} disabled={locked} preserveFocusWhenDisabled={quietRead} onChange={period => actions.updateQuery({ ...model.query, period })} />
@@ -46,9 +57,10 @@ export function TaskKnowledgeSummaryContent({ preparation = false, presentation 
       {model.notice ? <Text accessibilityLiveRegion="polite" style={s.meta}>{model.notice}</Text> : null}
       {page ? <><Text style={s.meta}>{summaryPeriodLabel(page.period)} · 整理於 {summaryTime(page.generatedAt, page.period.timeZone)}</Text>
         {preparation ? <AppButton label={model.access === "editable" ? "查看／人工修改共享到診準備" : "查看共享到診準備"} variant="secondary" disabled={model.access === "lost"} onPress={() => setOpen(true)} />
+          : compact ? <SummaryOverviewRecords page={page} onRecord={onRecord} onTask={onTask} emptyReady={emptyReady} motion={{ scopeKey: model.scopeKey, triggerKey: null, eligible: false }} />
           : <SummaryRecords page={page} onRecord={onRecord} onTask={onTask} emptyReady={emptyReady} motion={{ scopeKey: model.scopeKey, triggerKey: null, eligible: false }} />}
       </> : model.access === "lost" ? <Text style={s.body}>已無權讀取這位孩子的摘要。</Text> : model.busy ? <ReadStateNotice state="loading" scopeKey={model.scopeKey} message="正在讀取摘要…" /> : !model.readFailed ? <Text style={s.body}>摘要尚未取得。</Text> : null}
-    </SectionCard>;
+    </JournalSection>;
   const pendingContent = model.pending ? <SectionCard><SectionHeader density="compact" title={model.pending.confirmed ? "原保存已確認，摘要待讀回" : "原保存結果待核對"} />
       <Text style={s.warning}>{model.pending.confirmed ? "不能再次提交；先查收據及讀取最新摘要。" : "原內容、版本及操作識別保留，不能另建一次保存。"}</Text>
       <SummaryDisclosure label="原保存內容與依據" scopeKey={model.scopeKey}>

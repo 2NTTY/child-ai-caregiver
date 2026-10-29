@@ -11,7 +11,7 @@ export type HistoryRecoveryError = { retry(): void; leave(): void };
 // Cancellation consumes history-action activation: a repeated browser Back may be
 // non-cancellable. Restore that known same-document entry before Expo sees popstate.
 // Never push replacement entries, intercept cross-document moves, or replay stale intent.
-export function guardBrowserHistory(target: HistoryGuardWindow, shouldBlock: () => boolean, request: (action: () => void) => void, reportError: (error: HistoryRecoveryError | null) => void = () => {}) {
+export function guardBrowserHistory(target: HistoryGuardWindow, shouldBlock: (from: URL, to: URL) => boolean, request: (action: () => void, from: URL, to: URL) => void, reportError: (error: HistoryRecoveryError | null) => void = () => {}) {
   const navigation = target.navigation;
   if (!navigation) return () => {};
   let approved: { from: string; to: string } | null = null;
@@ -52,7 +52,7 @@ export function guardBrowserHistory(target: HistoryGuardWindow, shouldBlock: () 
       if (disposed || ticket !== revision || navigation.currentEntry?.key !== from.key) return;
       approved = { from: from.key, to: to.key };
       target.history.go(to.index - from.index);
-    });
+    }, new URL(from.url!), new URL(to.url!));
   };
   const navigate = (event: Event) => {
     const next = event as TraverseEvent;
@@ -65,7 +65,7 @@ export function guardBrowserHistory(target: HistoryGuardWindow, shouldBlock: () 
     approved = null;
     if (allowed) return;
     const from = new URL(current.url), to = new URL(next.destination.url);
-    if (!recovery && (from.pathname === to.pathname && from.search === to.search || !shouldBlock())) { revision++; return; }
+    if (!recovery && (from.pathname === to.pathname && from.search === to.search || !shouldBlock(from, to))) { revision++; return; }
     if (event.cancelable) {
       event.preventDefault();
       if (!recovery) ask(current, next.destination);

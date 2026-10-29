@@ -1,3 +1,4 @@
+import type { CareRecordNavigation } from "../../navigation/useCareRouteNavigation";
 import { type ReactNode, type RefObject } from "react";
 import { StyleSheet, type View } from "react-native";
 import { Text } from "react-native-paper";
@@ -8,9 +9,9 @@ import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { CareReviewWorkspace, CareWriteNotice } from "./CareReviewHistoryView";
 import { AppButton } from "../ui";
 
-export function CareRecordsView({ model, actions, pendingReview, onReviewHistory, onOlderPending, initialRecordId, manualCreateFocusRef, manualCreateAction }: {
+export function CareRecordsView({ model, actions, pendingReview, onReviewHistory, onOlderPending, navigation, manualCreateFocusRef, manualCreateAction }: {
   model: CareRecordsViewModel; actions: CareRecordsActions; pendingReview?: { content: ReactNode; loadedCount?: string };
-  onReviewHistory?: () => void; onOlderPending?: () => void; initialRecordId?: string; manualCreateFocusRef?: RefObject<View | null>; manualCreateAction?: ReactNode;
+  onReviewHistory?: () => void; onOlderPending?: () => void; navigation: CareRecordNavigation; manualCreateFocusRef?: RefObject<View | null>; manualCreateAction?: ReactNode;
 }) {
   return <PageFrame title="核對與記錄" description="先對照原話與整理內容，確認後才成為家庭記錄。" density="compact" scrollTestID="care-page-scroll"
     headerActions={model.access === "lost" ? undefined : <>{manualCreateAction}{onReviewHistory ? <AppButton label="核對歷史" variant="quiet" onPress={onReviewHistory} /> : null}</>}>
@@ -19,7 +20,7 @@ export function CareRecordsView({ model, actions, pendingReview, onReviewHistory
       {model.access === "read_only" ? <Text style={styles.warning}>你可閱讀及對照內容；確認寫入或更正須由擁有人或照顧者處理。</Text> : null}
     </BackgroundSurface> : null}
     <CareWriteNotice model={model} actions={actions} />
-    {model.access === "lost" ? <BackgroundSurface padded><Text style={styles.warning}>已無權查看這個孩子；原文、提案、記錄與草稿已隱藏。</Text></BackgroundSurface> : <CareReviewWorkspace pendingReview={pendingReview} manualCreateFocusRef={manualCreateFocusRef} model={model} actions={actions} initialRecordId={initialRecordId} onOlderPending={onOlderPending} onHistory={onReviewHistory} />}
+    {model.access === "lost" ? <BackgroundSurface padded><Text style={styles.warning}>已無權查看這個孩子；原文、提案、記錄與草稿已隱藏。</Text></BackgroundSurface> : <CareReviewWorkspace pendingReview={pendingReview} manualCreateFocusRef={manualCreateFocusRef} model={model} actions={actions} navigation={navigation} onOlderPending={onOlderPending} onHistory={onReviewHistory} />}
   </PageFrame>;
 }
 const styles = StyleSheet.create({ warning: { fontFamily: chineseFont, ...readingType.tool, color: colors.warningInk } });

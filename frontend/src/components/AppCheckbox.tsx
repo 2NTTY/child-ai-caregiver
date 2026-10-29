@@ -1,12 +1,12 @@
 import type { Ref } from "react";
-import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type StyleProp, type TextStyle } from "react-native";
 import { Text } from "react-native-paper";
 import { AppIcon } from "./AppIcon";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, spacing, typeScale } from "../theme";
 
-export function AppCheckbox({ label, accessibilityLabel = label, description, checked, disabled = false, onChange, strikeThrough = false, ref, id, invalid, describedBy, onBlur }: {
+export function AppCheckbox({ label, accessibilityLabel = label, description, checked, disabled = false, onChange, strikeThrough = false, ref, id, invalid, describedBy, onBlur, labelStyle }: {
   label: string; accessibilityLabel?: string; description?: string; checked: boolean; disabled?: boolean; onChange: (checked: boolean) => void; strikeThrough?: boolean;
-  ref?: Ref<View>; id?: string; invalid?: boolean; describedBy?: string; onBlur?: () => void;
+  labelStyle?: StyleProp<TextStyle>; ref?: Ref<View>; id?: string; invalid?: boolean; describedBy?: string; onBlur?: () => void;
 }) {
   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   function toggle() { if (!disabled) onChange(!checked); }
@@ -16,7 +16,7 @@ export function AppCheckbox({ label, accessibilityLabel = label, description, ch
       if ((event.nativeEvent?.key ?? event.key) === " ") { event.preventDefault(); toggle(); }
     } } : {})}>
     <View aria-hidden importantForAccessibility="no-hide-descendants"><AppIcon name={checked ? "checkbox-marked" : "checkbox-blank-outline"} size={compact ? mobileIcons.content : 24} color={disabled ? colors.muted : colors.teal} /></View>
-    <View style={styles.copy}><Text style={[styles.label, compact && mobileType.body, checked && strikeThrough && styles.completed]}>{label}</Text>{description ? <Text style={styles.description}>{description}</Text> : null}</View>
+    <View style={styles.copy}><Text style={[styles.label, compact && mobileType.body, checked && strikeThrough && styles.completed, labelStyle]}>{label}</Text>{description ? <Text style={styles.description}>{description}</Text> : null}</View>
   </Pressable>;
 }
 const styles = StyleSheet.create({ row: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: spacing.sm }, copy: { flex: 1, minWidth: 0, gap: spacing.xs },

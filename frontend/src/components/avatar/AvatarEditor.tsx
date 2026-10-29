@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import type { AvatarLane, AvatarSnapshot } from '../../production/AvatarOwner';
 import { chineseFont, colors, readingType, spacing } from '../../theme';
@@ -8,7 +8,7 @@ import { FormDialog } from '../FormDialog';
 import { StatusAnnouncement } from '../StatusAnnouncement';
 import { AvatarPicker } from './AvatarPicker';
 import { AvatarView } from './AvatarView';
-import { AvatarCropPreview } from './AvatarCropPreview';
+import { AvatarCropSurface } from './AvatarCropSurface';
 
 export function AvatarEditor({ lane, state, name, kind }: { lane: AvatarLane; state: AvatarSnapshot; name: string; kind: 'self' | 'child' }) {
   const [openKey, setOpenKey] = useState<string | null>(null), [removeVersion, setRemoveVersion] = useState<number | null>(null);
@@ -19,6 +19,25 @@ export function AvatarEditor({ lane, state, name, kind }: { lane: AvatarLane; st
   const removeReview = removeVersion !== null && removeVersion === state.avatar?.version && !!state.avatar?.canManage && state.available;
   const locked = state.busy || state.unknown;
   const selected = state.selected;
+  type CropReceipt = { key: string | null; selected: AvatarSnapshot['selected'] };
+  const readyRef = useRef<CropReceipt | null>(null);
+  const [readyReceipt, setReadyReceipt] = useState<CropReceipt | null>(null);
+  const onCropReady = useCallback((ready: boolean) => {
+    const current = lane.getSnapshot();
+    if (ready && selected && current.key === state.key && current.selected === selected) {
+      const receipt = { key: state.key, selected }; readyRef.current = receipt; setReadyReceipt(receipt);
+    } else if (readyRef.current?.key === state.key && readyRef.current.selected === selected) {
+      readyRef.current = null; setReadyReceipt(null);
+    }
+  }, [lane, selected, state.key]);
+  // Native selection already includes the system's reviewed crop; only the deferred Web reader needs this receipt.
+  const cropReady = Platform.OS !== 'web' || (!!selected && readyReceipt?.key === state.key && readyReceipt.selected === selected);
+  const save = () => {
+    const current = lane.getSnapshot(), receipt = readyRef.current;
+    if (!selected || current.key !== state.key || current.selected !== selected) return;
+    if (Platform.OS === 'web' && (receipt?.key !== current.key || receipt.selected !== current.selected)) return;
+    setRemoveVersion(null); void lane.save();
+  };
   const close = () => { if (!locked && lane.cancelSelection()) { setOpenKey(null); setRemoveVersion(null); } };
   return <>
     <AppButton ref={trigger} label={kind === 'self' ? '調整本人頭像' : '調整孩子頭像'} variant="quiet" density="compact" disabled={!state.key}
@@ -28,14 +47,14 @@ export function AvatarEditor({ lane, state, name, kind }: { lane: AvatarLane; st
       <Text style={styles.note}>{kind === 'self' ? '只供本人查看，不會顯示為其他家庭成員的真人頭像。' : '只供目前有權查看這位孩子的成員使用。'}圖片不會加入聊天、照片或模型分析。</Text>
       <StatusAnnouncement eventKey={`${state.key}:${state.busy}:${state.unknown}:${state.notice}`} message={state.busy ? '正在核對頭像操作…' : state.notice ?? ''} urgent={state.unknown} />
       {state.loading ? <Text style={styles.note}>正在讀取頭像…</Text> : null}
-      {selected ? <AvatarCropPreview key={selected.uri} image={selected} crop={state.crop} maxZoom={state.policy?.maxCropZoom ?? 1}
-        locked={locked} onChange={crop => lane.setCrop(crop)} /> : <AvatarView name={name} uri={state.uri} size={88} />}
+      {selected ? <AvatarCropSurface key={selected.uri} image={selected} crop={state.crop} maxZoom={state.policy?.maxCropZoom ?? 1}
+        locked={locked} onReadyChange={onCropReady} onChange={crop => lane.setCrop(crop)} /> : <AvatarView name={name} uri={state.uri} size={88} />}
       {state.notice ? <Text style={styles.note}>{state.notice}</Text> : null}
       {!state.available && !locked ? <AppButton label="重新連接頭像服務" variant="secondary" disabled={!state.online || state.loading} onPress={() => { void lane.load(); }} /> : null}
       {state.available && !state.avatar?.canManage ? <Text style={styles.note}>目前只可查看頭像，沒有修改權限。</Text> : null}
       <View style={styles.actions}>
         <AvatarPicker lane={lane} state={state} />
-        {selected ? <><AppButton label="保存頭像" disabled={locked || state.conflict || !state.online || !state.available || !state.avatar?.canManage} loading={state.busy} onPress={() => { setRemoveVersion(null); void lane.save(); }} />
+        {selected ? <><AppButton label="保存頭像" disabled={!cropReady || locked || state.conflict || !state.online || !state.available || !state.avatar?.canManage} loading={state.busy} onPress={save} />
           <AppButton label="取消選圖" variant="quiet" disabled={locked} onPress={() => lane.cancelSelection()} /></> : null}
         {state.avatar?.asset && state.avatar.canManage && !selected ? <AppButton label="移除頭像" variant="danger-secondary" disabled={locked || !state.online || !state.available} onPress={() => setRemoveVersion(state.avatar!.version)} /> : null}
       </View>

@@ -2,7 +2,7 @@ import { Platform } from "react-native";
 import { MD3LightTheme, configureFonts } from "react-native-paper";
 
 export const colors = {
-  // Harbour journal palette. Legacy role names keep existing domain components compatible.
+  // Care handbook palette. Legacy role names keep existing domain components compatible.
   ink: "#183747",
   teal: "#176A80",
   deepTeal: "#14556B",
@@ -15,9 +15,9 @@ export const colors = {
   amber: "#A38B19",
   paleAmber: "#FFF7D8",
   // Destructive actions and errors share a vivid red, separate from the brand palette.
-  coral: "#D61F26",
+  coral: "#C51C23",
   paleCoral: "#FEF2F2",
-  errorInk: "#D61F26",
+  errorInk: "#C51C23",
   white: "#FFFFFF",
   muted: "#506571",
   line: "#B9CCD2",
@@ -43,7 +43,7 @@ export const colors = {
   statusUnknown: "#FFF7D8",
   statusWarmLine: "#A38B19",
   statusUnknownLine: "#A38B19",
-  statusFailedLine: "#D61F26",
+  statusFailedLine: "#C51C23",
   warningInk: "#5E4F0C",
   overlay: "rgba(24, 55, 71, 0.24)",
 } as const;
@@ -54,14 +54,14 @@ export const typeScale = { caption: 12, small: 14, body: 16, title: 20, heading:
 export const readingLayout = { maxWidth: 880, compactInset: 16, wideInset: 24 } as const;
 export const readingType = {
   body: { fontSize: 16, lineHeight: 26 },
-  tool: { fontSize: 14, lineHeight: 22 },
-  meta: { fontSize: 12, lineHeight: 18 },
+  tool: { fontSize: 15, lineHeight: 24 },
+  meta: { fontSize: 13, lineHeight: 20 },
 } as const;
 export const workspaceType = {
   title: { fontSize: 24, lineHeight: 32, fontWeight: "700" as const },
   section: { fontSize: 16, lineHeight: 24, fontWeight: "700" as const },
   row: { fontSize: 14, lineHeight: 20 },
-  meta: { fontSize: 12, lineHeight: 18 },
+  meta: { fontSize: 13, lineHeight: 20 },
 } as const;
 export const iconTokens = { strokeWidth: 1.8, small: 18, navigation: 22, feature: 28 } as const;
 // Mobile sizes are logical units. Text retains the platform's font scaling and intrinsic height.
@@ -74,11 +74,11 @@ export const mobileIcons = { inline: 16, content: 20, navigation: 22, primary: 2
 export const mobileType = {
   heading: { fontSize: 22, lineHeight: 28 },
   sectionTitle: { fontSize: 16, lineHeight: 24 },
-  itemTitle: { fontSize: 14, lineHeight: 20 },
-  body: { fontSize: 14, lineHeight: 20 },
+  itemTitle: { fontSize: 16, lineHeight: 24 },
+  body: { fontSize: 16, lineHeight: 26 },
   bodyLarge: { fontSize: 16, lineHeight: 24 },
-  label: { fontSize: 12, lineHeight: 16 },
-  caption: { fontSize: 12, lineHeight: 16 },
+  label: { fontSize: 14, lineHeight: 22 },
+  caption: { fontSize: 13, lineHeight: 20 },
 } as const;
 export const chineseFont = Platform.select({ web: "'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', sans-serif", default: undefined });
 

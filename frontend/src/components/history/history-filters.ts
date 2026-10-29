@@ -21,17 +21,17 @@ export type HistoryFilterAction =
   | { type: "scope"; scope: string; category: HistoryCategory };
 
 export function normalizeHistoryCategory(value: string | string[] | undefined): HistoryCategory {
-  const candidate = Array.isArray(value) ? value[0] : value;
+  const candidate = typeof value === "string" ? value : undefined;
   return historyCategories.find(item => item.key === candidate)?.key ?? "tasks";
 }
 
 export function normalizeReviewHistoryStatus(value: string | string[] | undefined): "all" | "pending" | "written" | "confirmed" | "skipped" {
-  const candidate = Array.isArray(value) ? value[0] : value;
+  const candidate = typeof value === "string" ? value : undefined;
   return candidate === "pending" || candidate === "written" || candidate === "confirmed" || candidate === "skipped" ? candidate : "all";
 }
 
 export function normalizeHistoryOlderOnly(value: string | string[] | undefined): boolean {
-  return (Array.isArray(value) ? value[0] : value) === "1";
+  return (typeof value === "string" ? value : undefined) === "1";
 }
 
 export function createHistoryFilters(scope: string, category: HistoryCategory): HistoryFilters {

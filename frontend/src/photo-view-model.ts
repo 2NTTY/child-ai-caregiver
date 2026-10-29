@@ -27,6 +27,7 @@ export type PhotoOperation = {
   phase: PhotoPhase | null; reference: string | null; message: string; checked: boolean;
 };
 export type PhotoReplacement = { kind: "original"; original: PhotoOriginal } | { kind: "item"; item: PhotoItem } | { kind: "clear" };
+export type PhotoSelectionIntent = { isCurrent(): boolean; onOpened(): void };
 export type PhotosViewModel = {
   childName: string; online: boolean; access: "editable" | "read_only" | "lost";
   load: "ready" | "loading" | "error"; canCreate: boolean; capacityReached: boolean;
@@ -34,6 +35,7 @@ export type PhotosViewModel = {
   original: PhotoOriginal | null; source: string; sourceError: string; draft: PhotoDraftFields; formKey: number;
   reviewed: PhotoDraftFields | null; modelConsent: boolean; sharedConsent: boolean;
   operation: PhotoOperation; notice: string; reservationUnidentified: boolean;
+  recoveryPhotoId?: string | null;
   replacement: PhotoReplacement | null; deletion: boolean; deleteScope: boolean; deleteFinal: boolean;
   busy: boolean; fresh: boolean; formLocked: boolean; canPick: boolean; canUpload: boolean; canExtract: boolean; canConfirm: boolean; canDelete: boolean;
 };
@@ -42,7 +44,7 @@ export type PhotosActions = {
   readThumbnail?: (item: PhotoItem, signal: AbortSignal) => Promise<{ uri: string; dispose: () => void } | null>;
   pickOriginal: (original: PhotoOriginal) => void; reportFileError: (message: string) => void;
   discardRecordDraft?: () => void;
-  openPhoto: (item: PhotoItem) => void; clearEditor: () => void;
+  openPhoto: (item: PhotoItem, intent?: PhotoSelectionIntent) => void; clearEditor: () => void;
   confirmReplacement: () => void; cancelReplacement: () => void;
   editSource: (source: string) => void; upload: () => void; refresh: () => void;
   setModelConsent: (checked: boolean) => void; extract: () => void; adoptCandidate: () => void;

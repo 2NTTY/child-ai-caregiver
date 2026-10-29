@@ -1,4 +1,5 @@
-import type { HomeDestination, HomeViewModel } from "./view-model.ts";
+import type { HomeTarget } from "./home-target.ts";
+import type { HomeViewModel } from "./view-model.ts";
 import type { AgentProposalStatus, AgentRunStatus } from "./agent-view-model.ts";
 
 // Presentation only: the owning adapter supplies authorized items in display order.
@@ -9,11 +10,13 @@ export interface HomeOverviewItem {
   detail: string;
   statusLabel: string;
   sourceLabel?: string;
-  action: { label: string; destination: HomeDestination };
+  action: { label: string; target: HomeTarget };
 }
 export interface HomeOverviewSection {
   state: "ready" | "loading" | "error" | "stale" | "unavailable";
   items: HomeOverviewItem[];
+  coverage?: { moreLoaded: boolean; moreUnloaded: boolean };
+  groups?: { key: "scheduled" | "review" | "undated"; label: string; items: HomeOverviewItem[] }[];
   detail?: string;
 }
 // An explicit Agent selection, never inferred from the task list or care records.
@@ -24,7 +27,7 @@ export interface HomeAgentImportantItem extends HomeOverviewItem {
   proposal?: { id: string; version: number; status: AgentProposalStatus; expiresAt: string };
 }
 export interface HomeAgentImportantSection {
-  state: "ready" | "loading" | "error" | "unavailable";
+  state: "ready" | "loading" | "error" | "unavailable" | "unsupported";
   items: HomeAgentImportantItem[];
   loadedAt: string | null;
   detail?: string;

@@ -1,5 +1,5 @@
 import { JournalSection } from "../journal/JournalLayout";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View, type TextStyle } from "react-native";
 import { Text } from "react-native-paper";
 import { profileAgeUnitOptions, type ProfileDataView, type ProfileRevisionView } from "../../profile-view-model";
 import { chineseFont, colors, spacing, typeScale , readingType } from "../../theme";
@@ -51,18 +51,18 @@ export function ProfileReadingSummary({ data, compact }: { data: ProfileDataView
   const ageLabel = age.kind === "unknown" ? null : age.kind === "birth_date" ? `出生日期 ${age.date}`
     : `約 ${age.rawValue} ${profileAgeUnitOptions.find(item => item.value === age.unit)?.label ?? age.unit}（截至 ${age.asOf}）`;
   const groups = [
-    { title: "基本資料", rows: [
+    { key: "care", title: "健康與照顧", rows: [
+      { label: "過敏資料", value: data.allergies }, { label: "特別需要", value: data.specialNeeds }, { label: "照顧偏好", value: data.preferences },
+    ] },
+    { key: "background", title: "基本資料", rows: [
       { label: "年齡資料", value: ageLabel }, { label: "地區", value: data.region }, { label: "語言", value: data.language },
       { label: "預產期", value: data.dueDate }, { label: "出生孕週原文", value: data.gestationalWeeksRaw },
-    ] },
-    { title: "健康與照顧", rows: [
-      { label: "過敏資料", value: data.allergies }, { label: "特別需要", value: data.specialNeeds }, { label: "照顧偏好", value: data.preferences },
     ] },
   ];
   return <View testID="profile-reading-groups" style={[styles.groups, compact && styles.groupsStacked]}>{groups.map(group => {
     const known = group.rows.filter(row => row.value !== null), unknown = group.rows.filter(row => row.value === null);
-    return <JournalSection key={group.title} title={group.title} style={[styles.group, compact && styles.groupFull]}>
-      {known.map(row => <View key={row.label} style={styles.readingFact}><Text style={styles.readingLabel}>{row.label}</Text><Text style={styles.body}>{row.value}</Text></View>)}
+    return <JournalSection key={group.key} title={group.title} level={3} testID={`profile-${group.key}-knowledge`} style={[styles.group, group.key === "care" && styles.careMain, compact && styles.groupFull]}>
+      {known.map(row => <View key={row.label} testID="profile-reading-fact" style={styles.readingFact}><Text style={styles.readingLabel}>{row.label}</Text><Text selectable style={styles.readingBody}>{row.value}</Text></View>)}
       {unknown.length ? <Text style={[styles.meta, known.length > 0 && styles.unknownDivider]}>未知：{unknown.map(row => row.label).join("、")}</Text> : null}
     </JournalSection>;
   })}</View>;
@@ -82,9 +82,11 @@ export function ProfileRevisionDetails({ revision }: { revision: ProfileRevision
 const styles = StyleSheet.create({
   groups: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xxl, minWidth: 0 },
   groupsStacked: { flexDirection: "column" },
-  group: { flex: 1, minWidth: 0, gap: spacing.md },
+  group: { flexGrow: 1, flexShrink: 1, flexBasis: 220, minWidth: 0, gap: spacing.lg },
+  careMain: { flexGrow: 2, flexBasis: 420 },
   groupFull: { flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: "auto", width: "100%" },
-  readingFact: { gap: spacing.xs, minWidth: 0, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingBottom: spacing.md },
+  readingFact: { gap: spacing.xs, minWidth: 0 },
+  readingBody: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, flexShrink: 1, maxWidth: 720, ...(Platform.OS === "web" ? { maxWidth: "72ch" } as unknown as TextStyle : {}) },
   readingLabel: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   unknownDivider: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
   keyFacts: { flexDirection: "row", flexWrap: "wrap", gap: spacing.lg },

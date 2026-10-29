@@ -44,6 +44,8 @@ export type SourcesViewModel = {
   readFresh?: boolean;
   busy: boolean; fresh: boolean; formLocked: boolean; canChoose: boolean; canFetch: boolean; canExtract: boolean; canConfirm: boolean; canDelete: boolean;
 };
+/** Read-only navigation acknowledgement; never a new source or write owner. */
+export type SourceSelectionIntent = { isCurrent(): boolean; onOpened(): void };
 export type SourcesActions = {
   intake?: SourceIntakeActions;
   management?: {
@@ -51,7 +53,7 @@ export type SourcesActions = {
     beginContentEdit(): void; editContent(value: SourcePersonalContent): void; cancelContentEdit(): void; history(): void;
   };
   discardDraft?(kind: "composer" | "record" | "management"): void;
-  refresh(): void; create(input: SourceCreate): void; openInput(input: SourceInput): void; newInput(): void; recreateWithText(): void;
+  refresh(): void; create(input: SourceCreate): void; openInput(input: SourceInput, intent?: SourceSelectionIntent): void; newInput(): void; recreateWithText(): void;
   setFetchConsent(value: boolean): void; fetchContent(): void; setExcerpt(value: string): void; setModelConsent(value: boolean): void; extract(): void;
   adoptCandidate(): void; editDraft(draft: PhotoDraftFields): void; reviewDraft(draft: PhotoDraftFields): void;
   setConfirmationKind(kind: SourceConfirmationKind): void; setSharedConsent(value: boolean): void; setChildFactConsent(value: boolean): void; confirm(): void;

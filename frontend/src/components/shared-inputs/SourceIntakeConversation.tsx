@@ -14,14 +14,14 @@ export function SourceIntakeConversation({ model, actions }: { model: SourcesVie
     const locked = !model.fresh || !source.canManage || model.access !== "editable" || !!model.direct;
     const enabled = source.management?.enabled !== false;
     return <SectionCard surface="plain" style={s.workflowSection} testID="source-intake-conversation">
-      <SectionHeader density="compact" title="整理這份私人來源" subtitle="先查看保存原文，再核對用途及摘錄授權。" icon="star-four-points" />
+      <SectionHeader density="compact" title="這份來源可以怎樣用" subtitle="先查看保存原文，再核對用途及摘錄授權。" />
       <Text selectable style={s.body}>你的說明：{source.management?.intention || intake.intention || "用途尚未設定。"}</Text>
-      <Text style={s.meta}>{source.text.trim() ? `已保存 ${source.text.length.toLocaleString("en-HK")} 字原文，可在下方查看。` : "連結已保存，尚未取得正文。"}</Text>
+      <Text style={s.meta}>{source.text.trim() ? `已保存 ${source.text.length.toLocaleString("en-HK")} 字原文，仍只屬本人私人。` : "連結已保存，尚未取得正文。"}</Text>
       {!enabled ? <Text style={s.warning}>來源已停用；重新啟用並保存後才可讀取或提取。</Text> : null}
       {intake.stage === "awaiting_read" || intake.stage === "unavailable" ? <AppButton label="查看保存狀態並整理用途" variant="secondary" disabled={locked || !enabled} onPress={adapter.read} /> : null}
       {intake.stage === "clarifying" ? <><Text style={s.body}>請填寫用途、來源性質及時效。</Text><AppButton label="填寫來源設定" disabled={locked} onPress={adapter.propose} /></> : null}
       <SourceIntakeEditor model={model} actions={actions} />
-      {adapter.discuss ? <><AppButton label="交給 Agent 討論" variant="secondary" disabled={locked || !enabled || !!model.managementDraft?.dirty} onPress={adapter.discuss} />
+      {adapter.discuss ? <><AppButton label="向助手問這份來源" variant="secondary" disabled={locked || !enabled || !!model.managementDraft?.dirty} onPress={adapter.discuss} />
         <Text style={s.meta}>只把來源識別及已保存用途帶到聊天草稿，由你核對後送出。先保存修改；不會自動發起模型請求。</Text></> : null}
     </SectionCard>;
   }
@@ -32,7 +32,7 @@ export function SourceIntakeConversation({ model, actions }: { model: SourcesVie
       : intake.stage === "connection_unknown" ? "接入結果未知，須查核" : "用途已確認，正式接入未連線";
   const step = ["awaiting_read", "reading", "read_unknown", "unavailable"].includes(intake.stage) ? 0 : intake.stage === "clarifying" ? 1 : intake.stage === "review" ? 2 : 3;
   return <SectionCard surface="plain" style={s.workflowSection} testID="source-intake-conversation">
-    <SectionHeader density="compact" title="和助手整理這份來源" subtitle="合成流程示範：沒有讀取網頁、呼叫模型或接入回答。" icon="star-four-points" />
+    <SectionHeader density="compact" title="和助手整理這份來源" subtitle="合成流程示範：沒有讀取網頁、呼叫模型或接入回答。" />
     <View style={s.intakeSteps} accessibilityLabel={`目前步驟：${stageLabel}`}>{["查看來源", "釐清用途", "核對建議", "正式接入"].map((label, index) => <View key={label} style={[s.intakeStep, index === step && s.intakeStepCurrent]}><Text style={index === step ? s.stepActiveText : s.meta}>{index + 1} · {label}</Text></View>)}</View>
     <StatusAnnouncement eventKey={`${source.id}:${intake.stage}`} message={stageLabel} urgent={intake.stage === "unavailable"} />
     <AppStatusBadge label={stageLabel} tone={intake.stage === "reading" || intake.stage === "clarifying" ? "info" : "warning"} />

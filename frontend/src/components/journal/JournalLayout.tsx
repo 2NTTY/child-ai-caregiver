@@ -4,9 +4,9 @@ import { Text } from "react-native-paper";
 import { chineseFont, colors, spacing } from "../../theme";
 
 /** Presentation-only slots; domain providers retain all state and actions. */
-export function JournalHeading({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
+export function JournalHeading({ title, description, actions, compact = false }: { title: string; description?: string; actions?: ReactNode; compact?: boolean }) {
   return <View style={styles.heading}>
-    <View style={styles.headingCopy}><Text accessibilityRole="header" aria-level={1} style={styles.title}>{title}</Text>
+    <View style={styles.headingCopy}><Text accessibilityRole="header" aria-level={1} style={[styles.title, compact && styles.compactTitle]}>{title}</Text>
       {description ? <Text style={styles.description}>{description}</Text> : null}</View>
     {actions ? <View style={styles.actions}>{actions}</View> : null}
   </View>;
@@ -37,8 +37,9 @@ export function JournalAside({ children, style }: { children: ReactNode; style?:
 const styles = StyleSheet.create({
   heading: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: spacing.lg, paddingBottom: spacing.xl },
   headingCopy: { minWidth: 0, flexShrink: 1, gap: spacing.sm },
-  title: { fontFamily: chineseFont, color: colors.ink, fontSize: 32, lineHeight: 42, fontWeight: "700", letterSpacing: -0.6 },
-  description: { fontFamily: chineseFont, color: colors.muted, fontSize: 14, lineHeight: 23, maxWidth: 720 },
+  title: { fontFamily: chineseFont, color: colors.ink, fontSize: 34, lineHeight: 44, fontWeight: "700", letterSpacing: -0.6 },
+  compactTitle: { fontSize: 26, lineHeight: 36 },
+  description: { fontFamily: chineseFont, color: colors.muted, fontSize: 16, lineHeight: 26, maxWidth: 720 },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "center", maxWidth: "100%" },
   section: { minWidth: 0, gap: spacing.lg, paddingVertical: spacing.lg },
   sectionHeading: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, alignItems: "center", justifyContent: "space-between" },

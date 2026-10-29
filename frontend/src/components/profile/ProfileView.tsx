@@ -1,12 +1,12 @@
 import type { OperationOpenRequest } from "../../operation-reveal";
 import { BackgroundSurface } from "../appearance/BackgroundSurface";
-import { AppStatusBadge } from "../AppStatusBadge";
+import { RouteTextLink } from "../RouteTextLink";
 import { useContainerWidth } from "../useContainerWidth";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { JournalSection } from "../journal/JournalLayout";
-import { AppButton, SectionCard, SectionHeader, TextLink } from "../ui";
+import { AppButton, SectionCard, SectionHeader } from "../ui";
 import { profileDataFromForm, type ProfileActions, type ProfileViewModel } from "../../profile-view-model";
 import { chineseFont, colors, radius, spacing, typeScale , readingType } from "../../theme";
 import { ManualFormDialog } from "../FormDialog";
@@ -15,9 +15,9 @@ import { ProfileDataSummary, ProfileReadingSummary, ProfileRevisionDetails, Prof
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { MotionDisclosure, MotionReveal } from "../../motion";
 
-export function ProfileView({ model, actions: sourceActions, childPicker, writeNotice, previewControls, onOpenCare, childDeletionActive = false, onLayoutReady, openRequest }: {
+export function ProfileView({ model, actions: sourceActions, childPicker, writeNotice, previewControls, childDeletionActive = false, onLayoutReady, openRequest }: {
   model: ProfileViewModel; actions: ProfileActions; childPicker: ReactNode; writeNotice: ReactNode;
-  previewControls: ReactNode; onOpenCare: () => void; childDeletionActive?: boolean; onLayoutReady?: () => void; openRequest?: OperationOpenRequest;
+  previewControls: ReactNode; childDeletionActive?: boolean; onLayoutReady?: () => void; openRequest?: OperationOpenRequest;
 }) {
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
@@ -63,9 +63,8 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={styles.reading}>
       <View style={styles.identityRow}>
         {model.child ? <View style={styles.identity}>
-          <View style={styles.avatar} importantForAccessibility="no-hide-descendants"><Text style={styles.avatarText}>{model.child.name.slice(0, 1)}</Text></View>
           <View style={styles.identityCopy}><Text accessibilityRole="header" aria-level={2} style={styles.childName}>{model.child.name}</Text>
-            <AppStatusBadge label={model.current?.data ? "已確認檔案" : model.reading ? "正在讀取檔案" : "尚未確認檔案"} tone={model.current?.data ? "success" : model.reading ? "info" : "warning"} />
+            <Text style={styles.meta}>{model.current?.data ? `目前已確認第 ${model.current.version} 版` : model.reading ? "正在讀取檔案…" : model.current ? "目前沒有已確認檔案" : "尚未取得檔案"}</Text>
           </View>
         </View> : <Text accessibilityRole="header" aria-level={2} style={styles.childName}>尚未有孩子</Text>}
         {model.access === "editable" ? <ManualFormDialog openRequest={openRequest ? { ...openRequest, scopeKey } : undefined} formKey={model.formKey} label={model.child ? "編輯檔案" : "填寫檔案"} title="編輯孩子檔案" scopeKey={scopeKey} disabled={childDeletionActive} onClose={actions.discardDraft} recovery={writeNotice}><View style={styles.editor}><SectionHeader density="compact" title={model.child ? "核對檔案草稿" : "本地檔案草稿"}
@@ -103,7 +102,7 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
         {model.access === "read_only" ? <Text style={styles.notice}>目前為唯讀，可查看檔案及歷史。</Text> : null}
         <View style={styles.readingActions}>
           <AppButton label="檔案詳情" accessibilityLabel="檔案詳情" variant="quiet" density="compact" expanded={detailsOpen} onPress={() => setDetailsOpen(value => !value)} />
-          <TextLink label="開啟核對" onPress={onOpenCare} />
+          <RouteTextLink label="核對照顧記錄" href="/care" />
         </View>
         <MotionDisclosure expanded={detailsOpen} scopeKey={scopeKey} testID="profile-details-disclosure">
           <JournalSection title="資料來源與版本" style={styles.details}>
@@ -111,16 +110,14 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
           </JournalSection>
         </MotionDisclosure>
       </> : <SectionCard><Text style={styles.body}>新增孩子後，可以在這裏核對檔案。</Text></SectionCard>}
-      <JournalSection title="孩子與檔案管理" description="頭像、建立孩子及管理操作在這裏處理；不改動上方已確認的檔案。" style={styles.management}>{childPicker}</JournalSection>
+      <JournalSection title="頭像與孩子管理" style={styles.management}>{childPicker}</JournalSection>
       {previewControls}
     </View>
   </>);
 }
 const styles = StyleSheet.create({
-  identityRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.lg, minWidth: 0, padding: spacing.lg, backgroundColor: colors.paleTeal, borderRadius: radius.small },
+  identityRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.lg, minWidth: 0 },
   identity: { flexDirection: "row", alignItems: "center", gap: spacing.md, flexGrow: 1, flexShrink: 1, minWidth: 0 },
-  avatar: { width: 48, height: 48, flexShrink: 0, borderRadius: radius.medium, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },
-  avatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.title, fontWeight: "700" },
   identityCopy: { flex: 1, minWidth: 0, gap: spacing.xs, alignItems: "flex-start" },
   childName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, lineHeight: 30, fontWeight: "700", flexShrink: 1 },
   editor: { gap: spacing.md },

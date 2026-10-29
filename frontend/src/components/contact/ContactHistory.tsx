@@ -1,3 +1,5 @@
+import { JournalSection } from "../journal/JournalLayout";
+import { RouteTextLink } from "../RouteTextLink";
 import { EmptyListCard } from "../EmptyListCard";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { contactAttemptTones, contactRequestTones } from "./contact-status";
@@ -8,7 +10,7 @@ import type {ContactActions, ContactAttempt, ContactViewModel} from '../../conta
 import {contactAttemptLabels, contactChannelLabels, contactMayAcknowledge, contactName, contactRequestLabels} from '../../contact-view-model';
 import {summaryTime} from '../../summary-view-model';
 import {AppCheckbox} from '../AppCheckbox';
-import {AppButton, SectionCard, SectionHeader} from '../ui';
+import {AppButton} from '../ui';
 import {MotionDisclosure, MotionFeedback} from '../../motion';
 import {contactStyles as s} from './contact-styles';
 
@@ -16,25 +18,24 @@ function Attempt({attempt, model, actions, title}: {attempt: ContactAttempt; mod
   const [confirm, setConfirm] = useState(false), page = model.page!;
   useEffect(() => setConfirm(false), [model.confirmationEpoch]);
   const mayAck = !model.locked && contactMayAcknowledge(attempt, model.userId);
-  return <View style={s.box} testID={`contact-attempt-${attempt.id}`}><View style={s.row}><Text style={s.body}>{contactName(page, attempt.recipientUserId)} · {contactChannelLabels[attempt.channel]}</Text><AppStatusBadge label={contactAttemptLabels[attempt.status]} tone={contactAttemptTones[attempt.status]} /></View>
+  return <View style={s.box} testID={`contact-attempt-${attempt.id}`}><View style={s.row}><Text style={s.body}>{contactName(page, attempt.recipientUserId)}（{contactChannelLabels[attempt.channel]}）</Text><AppStatusBadge label={contactAttemptLabels[attempt.status]} tone={contactAttemptTones[attempt.status]} /></View>
     {attempt.reason ? <Text style={s.meta}>記錄理由：{attempt.reason}</Text> : null}
     <MotionFeedback active={model.operation === 'saved'} triggerKey={attempt.acknowledgedAt ?? 'unacknowledged'} scopeKey={`${model.scopeKey}:${attempt.id}`}>{attempt.acknowledgedAt ? <View style={s.stack}><AppStatusBadge label="本人已確認收到" tone="success" /><Text style={s.meta}>{summaryTime(attempt.acknowledgedAt)}；事項完成狀態未改變。</Text></View> : <Text style={s.meta}>沒有收到確認；渠道接受不等於本人已讀。</Text>}</MotionFeedback>
-    {contactMayAcknowledge(attempt, model.userId) ? <><AppCheckbox label="我確認本人已收到這次一般提示" checked={confirm} disabled={!mayAck} onChange={setConfirm} /><AppButton label="確認本人已收到提示" variant="secondary" disabled={!mayAck || !confirm} onPress={() => {setConfirm(false); actions.save({kind: 'acknowledge', attemptId: attempt.id, input: {confirmReceived: true}}, [title, `${contactChannelLabels[attempt.channel]} · 本人確認收到`, '不改變渠道結果或任務完成狀態']);}} /></> : null}
+    {contactMayAcknowledge(attempt, model.userId) ? <><AppCheckbox label="我確認本人已收到這次一般提示" checked={confirm} disabled={!mayAck} onChange={setConfirm} /><AppButton label="確認本人已收到提示" variant="secondary" disabled={!mayAck || !confirm} onPress={() => {setConfirm(false); actions.save({kind: 'acknowledge', attemptId: attempt.id, input: {confirmReceived: true}}, [title, `${contactChannelLabels[attempt.channel]}：本人確認收到`, '不改變渠道結果或任務完成狀態']);}} /></> : null}
   </View>;
 }
-export function ContactHistory({model, actions, onTask}: {model: ContactViewModel; actions: ContactActions; onTask: (id: string) => void}) {
+export function ContactHistory({model, actions}: {model: ContactViewModel; actions: ContactActions}) {
   const page = model.page!, [open, setOpen] = useState<string | null>(null);
   const emptyReady = model.load === "ready" && model.online && model.access !== "lost";
-  return <SectionCard testID="contact-history" surface="plain" style={s.section}><SectionHeader density="compact" title="聯絡及收到紀錄" icon="history" subtitle="只查看已記錄結果，不會發送或補發通知。" />
+  return <JournalSection testID="contact-history" style={s.section} title="聯絡及收到紀錄" description="渠道接受、本人收到與事項完成分別記錄；查看不會補發通知。">
     <Text style={s.meta}>{page.historyLimited ? '僅顯示最近 50 個請求內已載入的紀錄，並非完整歷史。' : '顯示本次已載入紀錄。'}</Text>
-    <Text style={s.meta}>渠道接受、本人確認收到與事項完成各自記錄；未知不當失敗，也不由前端觸發後備。</Text>
     {!page.requests.length && emptyReady ? <EmptyListCard title="已載入資料中暫無聯絡紀錄" detail="只代表本次已取得的資料，不代表從未發送。" /> : null}
     {page.requests.map(request => {const task = page.tasks.find(item => item.id === request.taskId), title = task?.title ?? '原任務未在目前有限清單'; return <View key={request.id} style={s.item} testID={`contact-request-${request.id}`}>
-      <Text style={s.title}>{title}</Text><View style={s.row}><AppStatusBadge label={contactRequestLabels[request.state]} tone={contactRequestTones[request.state]} /><Text style={s.meta}>{request.phase === 'initial' ? '首次聯絡' : '一次跟進'}</Text></View><Text style={s.meta}>{summaryTime(request.createdAt)}</Text>
+      <Text accessibilityRole="header" aria-level={3} style={s.title}>{title}</Text><View style={s.row}><AppStatusBadge label={contactRequestLabels[request.state]} tone={contactRequestTones[request.state]} /><Text style={s.meta}>{request.phase === 'initial' ? '首次聯絡' : '一次跟進'}</Text></View><Text style={s.meta}>{summaryTime(request.createdAt)}</Text>
       {request.state === 'coalesced' ? <Text style={s.meta}>普通提示已合併，不表示另一個提示已成功投遞或收到。</Text> : null}
       {request.reason ? <Text style={s.meta}>記錄理由：{request.reason}</Text> : null}
-      <View style={s.row}><AppButton expanded={open === request.id} label={open === request.id ? '收起這次聯絡紀錄' : '查看這次聯絡紀錄'} variant="quiet" onPress={() => setOpen(value => value === request.id ? null : request.id)} /><AppButton label="查看原任務" variant="quiet" onPress={() => onTask(request.taskId)} /></View>
+      <View style={s.row}><AppButton expanded={open === request.id} label={open === request.id ? '收起這次聯絡紀錄' : '查看這次聯絡紀錄'} variant="quiet" onPress={() => setOpen(value => value === request.id ? null : request.id)} /><RouteTextLink href={{pathname: "/tasks", params: {taskId: request.taskId}}} label="查看原任務" /></View>
       <MotionDisclosure expanded={open === request.id} scopeKey={`${model.scopeKey}:${request.id}`}><View style={s.stack}>{!request.attempts.length ? emptyReady ? <EmptyListCard title="這個請求暫無已列出的投遞嘗試" /> : null : request.attempts.map(attempt => <Attempt key={attempt.id} attempt={attempt} model={model} actions={actions} title={title} />)}</View></MotionDisclosure>
     </View>;})}
-  </SectionCard>;
+  </JournalSection>;
 }

@@ -7,7 +7,7 @@ import { AppButton, TextLink } from "./ui";
 export function HomeGuideCallout({ status, onOpenGuide, onOpenSettings }: {
   status: GuideStatus; onOpenGuide: () => void; onOpenSettings: () => void;
 }) {
-  if (status === "complete") return null;
+  if (status === "complete" || status === "not_required") return null;
   const needsGuide = status === "first_login" || status === "incomplete";
   if (!needsGuide) return <View testID="home-guide-unknown" style={styles.unknown}>
     <Text style={styles.unknownTitle}>暫時無法讀取設定狀態</Text>

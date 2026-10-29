@@ -1,9 +1,9 @@
+import type { SourceReaderNavigation } from "../../navigation/useSourceRouteSelection";
 import { JournalSection } from "../journal/JournalLayout";
 import { EmptyListCard } from "../EmptyListCard";
-import { AppStatusBadge } from "../AppStatusBadge";
 import { useContainerWidth } from "../useContainerWidth";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { View } from "react-native";
+import { View, type ScrollView as NativeScrollView } from "react-native";
 import { AppScrollView as ScrollView } from "../AppScrollView";
 import { Text } from "react-native-paper";
 import type { SourcesActions, SourcesViewModel } from "../../shared-input-view-model";
@@ -19,19 +19,29 @@ import { SourceComposer } from "./SourceComposer";
 import { SourceDetails, sourceTime } from "./SourceDetails";
 import { SourceRecordForm } from "./SourceRecordForm";
 import { SourceIntakeConversation } from "./SourceIntakeConversation";
-import { sourceIntakePurposeLabel, sourceIntakeIsUnresolved, sourcePurposeOptions } from "../../source-intake";
+import { sourceIntakeIsUnresolved, sourcePurposeOptions } from "../../source-intake";
 import { sourceStyles as s } from "./source-styles";
 import { ReadStateNotice } from "../ReadStateNotice";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { MotionList } from "../../motion";
 import { useContentListMotion } from "./useContentListMotion";
 import { useContentDeletionFocus } from "./useContentDeletionFocus";
+import { useSourceReaderReturn } from "./useSourceReaderReturn";
+import { RouteTextLink } from "../RouteTextLink";
+import { SourceIndexLink } from "./SourceIndexLink";
 
 
-export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord, previewControls, production = false }: {
-  model: SourcesViewModel; actions: SourcesActions; onPhotos: () => void; onRecord: (id: string) => void; previewControls: ReactNode; production?: boolean;
+export function SourcesView({ model, actions: sourceActions, previewControls, production = false, reader }: {
+  model: SourcesViewModel; actions: SourcesActions; previewControls: ReactNode; production?: boolean; reader?: SourceReaderNavigation;
 }) {
   const navigate = usePreviewNavigation();
+  const [closedReaderId, setClosedReaderId] = useState<string | null>(null);
+  const readerId = reader ? reader.sourceId : model.selected?.id === closedReaderId ? null : model.selected?.id ?? null;
+  const readerVisible = readerId !== null && model.selected !== null;
+  const listHeading = useRef<View>(null), readerHeading = useRef<View>(null), scrollRef = useRef<NativeScrollView>(null);
+  const readerReturn = useSourceReaderReturn({ scopeKey: model.scopeKey, selectedId: readerVisible ? model.selected!.id : null, listRef: listHeading, readerRef: readerHeading, scrollRef });
+  const canReturn = reader?.canReturn ?? (!model.direct && !["saving", "unknown", "unconfirmed", "confirmed_unavailable"].includes(model.operation.state));
+  const returnToIndex = () => { if (reader) reader.returnToIndex(); else if (canReturn) setClosedReaderId(model.selected?.id ?? null); };
   const [composerScope, setComposerScope] = useState<string | null>(null);
   const composerTrigger = useRef<View>(null);
   useEffect(() => { if (model.selected && model.operation.phase === "create" && model.operation.state === "saved") setComposerScope(null); }, [model.selected?.id, model.operation.phase, model.operation.state]);
@@ -73,12 +83,12 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
   const readState = model.load === "loading" ? "loading" : model.load === "error" ? "error" : !model.online || !readFresh ? "stale" : "ready";
   const readMessage = readState === "loading" ? "正在讀取私人來源…" : readState === "error" ? model.notice || "未能讀取來源，請重試。"
     : readState === "stale" ? !model.online ? "目前離線。本頁文字草稿保留，沒有離線提交；恢復連線後請手動重新讀取。" : "來源最新狀態尚未核對，請重新讀取。" : "";
-  return <PageFrame density="compact" title="來源目錄" description="保存你有權提供的資料，再逐項核對原文、用途及版本。完整來源保持本人私人。">
+  return <PageFrame scrollRef={scrollRef} onScroll={readerReturn.onScroll} scrollTestID="sources-scroll" density="compact" title="私人來源" description="讀回原文，再決定如何使用；完整來源只屬本人。">
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "目前沒有存取權限。舊原文、候選、草稿及操作已清除。" : ""} urgent={model.access === "lost"} />
     <View style={s.toolbar}><View style={s.scope}><Text style={s.meta}>目前範圍</Text><Text style={s.title}>{model.childName} · {model.accountName}本人</Text></View><View style={s.row}>
       {model.operation.state === "conflict" ? <AppButton label="重新核對來源版本" variant="secondary" disabled={!model.online || model.busy || model.access === "lost"} onPress={actions.refresh} /> : null}
       <AppButton ref={composerTrigger} label="手動新增來源" variant="secondary" disabled={!model.canChoose || !model.canCreate} onPress={() => navigate(() => { actions.newInput(); setComposerScope(model.scopeKey); })} />
-      <AppButton label="照片與記錄" variant="quiet" onPress={onPhotos} />
+      <RouteTextLink label="照片與記錄" href="/photos" intent="navigation" />
     </View></View>
     {model.access !== "lost" ? <ReadStateNotice state={readState} message={readMessage}>
       {model.load === "error" || !model.online ? <AppButton label="重新讀取來源" variant="quiet" disabled={!model.online || model.busy} onPress={actions.refresh} /> : null}
@@ -87,24 +97,31 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
     {model.access === "read_only" ? <Text style={s.warning}>唯讀權限：可查看自己的私人來源，不能新增、提取、確認或刪除。</Text> : null}
     {model.access === "editable" && !model.canCreate ? <Text style={s.warning}>{production ? "目前不能新增來源" : "合成新增容量限制"}；已有來源及人工草稿仍可核對。</Text> : null}
     <SourceStatus model={model.load === "error" && model.operation.state === "none" && model.access !== "lost" ? { ...model, notice: "" } : model} actions={actions} production={production} />
+    {reader?.message ? <ReadStateNotice state="unavailable" message={reader.message}><AppButton label="重新讀取來源清單" variant="quiet" disabled={!model.online || model.busy} onPress={actions.refresh} /></ReadStateNotice> : null}
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[s.columns, !columns && s.single]}>
-      <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="我的私人來源清單" style={[s.aside, !columns && s.full]}><JournalSection testID="source-list" title="我的私人來源" description={listResultAvailable && readFresh ? `已載入 ${model.items.length} 項；原文、備註及候選只有本人可讀取。` : "最新清單尚待核對。"}>
-        {listResultAvailable && readFresh && model.items.length === 0 ? <EmptyListCard title="暫時沒有私人來源" detail="可先說明用途，或手動加入你有權提供的資料。" /> : null}
+      <View testID="source-index" ref={deletionFocus.listRef} aria-hidden={!columns && readerVisible} style={[s.aside, !columns && s.full, !columns && readerVisible && s.hidden]}>
+        <View ref={listHeading} testID="source-index-heading" tabIndex={-1} accessibilityRole="header" aria-level={2} accessibilityLabel="我的私人來源" style={s.indexHeading}>
+          <Text style={s.title}>我的私人來源</Text><Text style={s.meta}>{listResultAvailable && readFresh ? `已載入 ${model.items.length} 項` : "最新清單尚待核對"}</Text>
+        </View>
+        {listResultAvailable && readFresh && model.items.length === 0 ? <EmptyListCard title="暫時沒有私人來源" detail="加入你有權提供的資料，保存後再核對用途。" /> : null}
         <MotionList items={model.items} keyExtractor={input => input.id} scopeKey={listScope} regionKey="source-list" eligible={listMotion} testID="source-list-motion" renderItem={(input, row) => {
           const readiness = sourceReadiness(input, model);
-          return <View style={[s.item, model.selected?.id === input.id && s.itemSelected]} testID={`source-item-${input.id}`}>
-          <Text style={s.title}>{input.sourceLabel}</Text><View style={s.row}><AppStatusBadge label={readiness.label} tone={readiness.tone} />{input.recordId ? <AppStatusBadge label="已連結家庭記錄" tone="success" /> : null}</View>
-          <Text style={s.meta}>保存於 {sourceTime(input.createdAt)}</Text>
-          {model.intake ? <Text style={s.meta}>{model.intake.mode === "production" ? input.management ? `${sourcePurposeOptions.find(option => option.value === input.management?.purpose)?.label} · ${input.management.enabled ? "可使用" : "已停用"}` : "用途尚未設定" : sourceIntakePurposeLabel(model.intakeByInputId?.[input.id])}</Text> : null}
-          <AppButton ref={node => deletionFocus.rowRef(input.id, node)} label={model.selected?.id === input.id ? "目前來源" : "查看來源"} accessibilityLabel={`查看私人來源：${input.sourceLabel}`} variant={model.selected?.id === input.id ? "secondary" : "quiet"} disabled={row.exiting || !canRead || !model.online || model.load !== "ready"} onPress={() => {if (!row.exiting) actions.openInput(input);}} />
-        </View>; }} />
-      </JournalSection></View>
-      <View style={[s.main, s.editorSurface, !columns && s.full]}>
-        {!model.selected ? <JournalSection title="選一份來源開始閱讀" description="從目錄開啟原文與版本資料，或使用上方入口加入新來源。"><Text style={s.meta}>新增來源、允許模型處理及確認家庭共享是分開的操作。</Text></JournalSection> : null}
-        {model.selected ? <View style={s.detailHeading}><Text style={s.meta}>目前來源 · 版本 {model.selected.version}</Text><Text accessibilityRole="header" aria-level={2} style={s.detailTitle}>{model.selected.sourceLabel}</Text><Text style={s.meta}>私人保存、整理用途和家庭共享分開核對</Text></View> : null}
+          const purpose = input.management ? sourcePurposeOptions.find(option => option.value === input.management?.purpose)?.label ?? "用途待核對" : "用途尚未設定";
+          return <SourceIndexLink key={input.id} ref={node => { deletionFocus.rowRef(input.id, node); readerReturn.rowRef(input.id, node); }}
+            href={reader?.href(input.id) ?? { pathname: "/sources", params: { sourceId: input.id } }} label={input.sourceLabel}
+            detail={`${purpose} · ${sourceTime(input.createdAt)}`} status={readiness.label}
+            selected={readerVisible && model.selected?.id === input.id} disabled={row.exiting || !canRead || !model.online || model.load !== "ready"}
+            onOpen={() => { if (row.exiting) return; readerReturn.remember(input.id); if (reader) reader.open(input.id); else navigate(() => { actions.openInput(input); setClosedReaderId(null); }); }} />;
+        }} />
+      </View>
+      <View testID="source-reader" aria-hidden={!readerVisible} style={[s.main, !columns && s.full, !readerVisible && s.hidden]}>
+        <View style={s.readerNavigation}><AppButton label="返回來源目錄" variant="quiet" disabled={!canReturn} onPress={returnToIndex} /><Text style={s.meta}>原文與用途</Text></View>
+        {model.selected ? <View ref={readerHeading} testID="source-reader-heading" tabIndex={-1} accessibilityRole="header" aria-level={2} accessibilityLabel={model.selected.sourceLabel} style={s.detailHeading}>
+          <Text style={s.detailTitle}>{model.selected.sourceLabel}</Text><Text style={s.meta}>版本 {model.selected.version} · {model.childName} · 本人私人</Text>
+        </View> : null}
 
         {model.selected ? <>
-          <SourceDetails key={model.selected.id} model={model} actions={actions} onRecord={onRecord} resultTrigger={resultTrigger} showTools={showManual} />
+          <SourceDetails key={model.selected.id} model={model} actions={actions} resultTrigger={resultTrigger} showTools={showManual} />
           <SourceIntakeConversation key={`intake-${model.selected.id}`} model={model} actions={actions} />
           {!model.intake?.selected && actions.intake ? <SectionCard surface="plain" style={s.workflowSection}><SectionHeader density="compact" title="來源用途尚未設定" subtitle="舊來源不會自動推算用途、可信度或有效期。" />
             <AppButton label="自行填寫接入資料" variant="secondary" disabled={!model.fresh || !model.selected.canManage || model.access !== "editable"} onPress={actions.intake.editManually} />
@@ -113,7 +130,7 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
         </> : null}
         {showManual && model.selected?.management?.enabled !== false && model.selected?.text.trim() && !model.selected.recordId && model.access === "editable" ? <ManualFormDialog formKey={model.formKey} label="人工核對記錄" scopeKey={`${listScope}:${model.selected.id}`} onClose={() => actions.discardDraft?.("record")} recovery={<SourceStatus model={model} actions={actions} production={production} />}><SourceRecordForm key={model.formKey} model={model} actions={actions} /></ManualFormDialog> : null}
       </View>
-
+      {columns && !readerVisible ? <View style={s.main}><JournalSection title="把一份來源攤開來讀" description="從目錄選擇原文；保存、允許模型處理與家庭共享是分開的決定。"><Text style={s.meta}>選中後，原文和相關用途會在這裏接續。</Text></JournalSection></View> : null}
     </View>
     <FormDialog formKey={model.formKey} visible={composerScope === model.scopeKey && model.access !== "lost"} scopeKey={model.scopeKey} title="新增私人來源" returnFocusRef={composerTrigger}
       onClose={() => { actions.discardDraft?.("composer"); setComposerScope(null); }} recovery={<SourceStatus model={model} actions={actions} production={production} />}>

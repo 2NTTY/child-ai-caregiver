@@ -301,20 +301,33 @@ export function usePhotoInputSources() {
     create: input => { if (!model.fresh || !model.canChoose || !model.canCreate || state.selected || !sharedInputCreateSchema.safeParse(input).success || input.kind === "public_source" && !state.sources.some(source => source.id === input.sourceId) || !envRef.current.canStartWrite()) return;
       const entry: PendingSource = { kind: "create", input: { ...input }, checked: false, confirmed: false };
       void run(signal => sendWrite(entry, signal), "create"); },
-    openInput: item => {
-      // Reselecting the current row must not replace either of its local drafts.
-      if (ref.current.selected?.id === item.id || !canRead()) return;
+    openInput: (item, intent) => {
+      if (!current() || intent && !intent.isCurrent()) return;
+      // Returning from the index to this reader retains both local drafts.
+      if (ref.current.selected?.id === item.id) { intent?.onOpened(); return; }
+      if (!canRead()) return;
       navigate(() => {
         // Approval can arrive after a write, access change, or newer selection.
-        if (ref.current.selected?.id === item.id || !canRead()) return;
+        if (!current() || intent && !intent.isCurrent()) return;
+        if (ref.current.selected?.id === item.id) { intent?.onOpened(); return; }
+        if (!canRead()) return;
         void run(async signal => {
-          const next = await readResource(item.id, signal, () => api.input(envRef.current.childId!, item.id, signal, envRef.current.userId!)); if (!current() || !next) return;
+          const next = await readResource(item.id, signal, async () => {
+            try { return await api.input(envRef.current.childId!, item.id, signal, envRef.current.userId!); }
+            catch (error) {
+              // A superseded reader cannot clear the newer reading context. Access loss still wins.
+              if (intent && !intent.isCurrent() && !(error instanceof SharedInputApiError && ([401, 403].includes(error.status) || error.onlineCode === "session_changed"))) return null;
+              throw error;
+            }
+          });
+          if (!current() || !next || intent && !intent.isCurrent()) return;
           clearEditor(); put(next); update({ excerpt: initialExcerpt(next), operation: noOperation(), load: "ready" });
           syncManagement(next);
           if (!next.recordId && (next.fetchState === "unknown" || next.fetchState === "running" || next.extraction.state === "unknown" || next.extraction.state === "running")) {
             const kind = next.fetchState === "unknown" || next.fetchState === "running" ? "fetch" : "extract";
             update({ direct: { kind, basis: next, excerpt: next.extraction.excerpt ?? "", checked: false } }); op(kind, "unknown", "這項輸入有未查明處理。先查核同一輸入，不會開始新的取得或提取。");
           }
+          intent?.onOpened();
         });
       });
     },

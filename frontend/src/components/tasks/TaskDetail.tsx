@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View, type TextStyle } from "react-native";
 import { Text } from "react-native-paper";
 import { currentTaskMetadata, taskActionLabels, taskCompletionLabel, type TasksActions, type TasksViewModel } from "../../task-view-model";
 import { chineseFont, colors, readingType, spacing } from "../../theme";
@@ -34,7 +34,7 @@ export function TaskDetail({ model, actions, hideCloseAction = false }: { model:
       <AppButton label="取消事項" variant="quiet" disabled={!writable} onPress={() => actions.startChange(task.id, "cancel")} />
     </View> : null}
     {model.access === "editable" && task.occurrence.state === "needs_review" ? <AppButton label="核對完成或取消" disabled={!writable} onPress={() => actions.startChange(task.id, "resolve")} /> : null}
-    <JournalSection title={ended ? "處理結果" : "提醒安排"} style={styles.reminder}><Text style={styles.body}>{reminderSummary}</Text>
+    <JournalSection title={ended ? "處理結果" : "提醒安排"} level={3} testID="task-reminder-context" style={styles.reminder}><Text style={styles.body}>{reminderSummary}</Text>
     {task.occurrence.state === "completed" ? <Text style={styles.meta}>{taskCompletionLabel(task, model.scheduleContext.timeZone)}</Text> : null}
     {work?.status === "unknown" ? <Text style={styles.warning}>提醒處理結果未確定，請先核對；不能當作已通知或已完成。</Text> : work?.status === "failed" ? <Text style={styles.warning}>提醒處理未成功，請展開記錄核對。</Text> : null}</JournalSection>
     <AppButton label={model.historyOpen ? "收起安排記錄" : "查看安排記錄"} expanded={model.historyOpen} density="compact" variant="secondary" style={styles.historyButton} disabled={locked} onPress={actions.showHistory} />
@@ -50,7 +50,7 @@ export function TaskDetail({ model, actions, hideCloseAction = false }: { model:
         <Text style={styles.meta}>操作人：{taskAssigneeLabel(revision.actorUserId, model.eligibleAssignees)}；原基準版本 {revision.basisVersion}</Text>
         <Text style={styles.meta}>記錄時間：{taskDisplayTime(revision.at, revision.task.occurrence.timeZone)}</Text>
         <TaskSnapshot task={revision.task} assignees={model.eligibleAssignees} />
-        <Text style={styles.reading}>原因／備註：{revision.note || "沒有備註"}</Text>
+        <Text selectable style={styles.reading}>原因／備註：{revision.note || "沒有備註"}</Text>
       </View>)}
       {model.hasMoreHistory ? <AppButton label="載入較早記錄" variant="secondary" disabled={!model.online || locked} onPress={actions.loadOlderHistory} /> : <Text style={styles.meta}>已展示目前已載入的全部版本。</Text>}
     </View></MotionDisclosure>
@@ -59,11 +59,11 @@ export function TaskDetail({ model, actions, hideCloseAction = false }: { model:
 const styles = StyleSheet.create({
   detail: { minWidth: 0, gap: spacing.lg }, detailHeader: { gap: spacing.md }, closeButton: { alignSelf: "flex-start", flexShrink: 0 },
   title: { fontFamily: chineseFont, color: colors.ink, fontSize: 24, lineHeight: 34, fontWeight: "700" },
-  reminder: { borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.line, gap: spacing.sm },
+  reminder: { gap: spacing.sm },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }, history: { gap: spacing.md }, historyButton: { alignSelf: "flex-start" },
   revision: { paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.line, gap: spacing.sm },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool },
-  reading: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },
+  reading: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, maxWidth: 720, ...Platform.select({ web: { maxWidth: "72ch" } as unknown as TextStyle }) },
   warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool },
   label: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },

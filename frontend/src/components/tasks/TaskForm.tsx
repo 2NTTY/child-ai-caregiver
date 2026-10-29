@@ -1,5 +1,6 @@
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useNavigationAuthority } from "../../navigation/NavigationAuthority";
 import { Platform, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -17,6 +18,10 @@ import { JournalSection } from "../journal/JournalLayout";
 export function TaskForm({ model, actions }: { model: TasksViewModel; actions: TasksActions }) {
   const draft = model.draft!;
   const formId = useId();
+  const authority = useNavigationAuthority();
+  const reviewRegion = useRef<View>(null);
+  const reviewIntent = useRef<{ key: string; childId: string; model: TasksViewModel; origin: Element | null;
+    current(): boolean; previousReviewed: TaskFormValues | null; values: TaskFormValues | null } | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const { control, handleSubmit, getValues, setFocus, formState: { isDirty, errors } } = useForm<TaskFormValues>({ defaultValues: draft.initialValues,
     resolver: zodResolver(taskFormSchema(draft.mode, model.eligibleAssignees)), mode: "onSubmit", shouldFocusError: false });
@@ -35,13 +40,61 @@ export function TaskForm({ model, actions }: { model: TasksViewModel; actions: T
   const busy = ["saving", "unknown"].includes(model.operation.state);
   const timeZone = useWatch({ control, name: "timeZone" });
   const locked = busy || model.operation.state === "conflict" || model.reading || model.access !== "editable";
+  useLayoutEffect(() => {
+    const intent = reviewIntent.current;
+    if (!intent) return;
+    if (intent.key !== draft.key || intent.childId !== model.child.id || locked || !intent.current()) {
+      reviewIntent.current = null; return;
+    }
+    if (!intent.values || model === intent.model) return;
+    const accepted = draft.reviewedValues;
+    if (!accepted || accepted === intent.previousReviewed || model.operation.state !== "needs_confirmation"
+      || !Object.entries(intent.values).every(([name, value]) => accepted[name as keyof TaskFormValues] === value)) {
+      if (model !== intent.model) reviewIntent.current = null;
+      return;
+    }
+    // Only this accepted publication may consume the local preview intent.
+    reviewIntent.current = null;
+    const node = reviewRegion.current as unknown as HTMLElement | null;
+    if (Platform.OS !== "web" || !node?.isConnected || document.activeElement !== intent.origin
+      || node.closest('[hidden], [inert], [aria-hidden="true"]')) return;
+    node.focus({ preventScroll: true });
+    if (document.activeElement === node) node.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
+  });
+  useLayoutEffect(() => {
+    if (Platform.OS !== "web") return;
+    const moved = (event: FocusEvent) => {
+      if (reviewIntent.current && event.target !== reviewIntent.current.origin) reviewIntent.current = null;
+    };
+    const blurred = (event: Event) => { if (event.target === window) reviewIntent.current = null; };
+    document.addEventListener("focusin", moved, true);
+    window.addEventListener("blur", blurred);
+    return () => {
+      reviewIntent.current = null;
+      document.removeEventListener("focusin", moved, true);
+      window.removeEventListener("blur", blurred);
+    };
+  }, []);
   useEffect(() => {
     if (Platform.OS !== "web" || (!isDirty && !busy)) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [isDirty, busy]);
-  function edited() { setConfirmed(false); actions.editDraft(); }
+  function edited() { reviewIntent.current = null; setConfirmed(false); actions.editDraft(); }
+  function preview() {
+    const intent = Platform.OS === "web" ? { key: draft.key, childId: model.child.id, model,
+      previousReviewed: draft.reviewedValues, origin: document.activeElement, current: () => !authority || authority.isCurrent(), values: null as TaskFormValues | null } : null;
+    reviewIntent.current = intent;
+    void handleSubmit(values => {
+      if (intent && reviewIntent.current === intent) intent.values = { ...values };
+      setConfirmed(false); actions.reviewDraft(values);
+    }, invalidFields => {
+      if (reviewIntent.current === intent) reviewIntent.current = null;
+      const first = visibleFields.find(item => invalidFields[item.name]?.message);
+      if (first) setFocus(first.name);
+    })();
+  }
   function field(name: "title" | "details" | "dueAt" | "timeZone" | "note", label: string, help?: string, multiline = false) {
     return <Controller name={name} control={control} render={({ field: input, fieldState }) => <View>
       <AppTextField ref={input.ref} nativeID={fieldId(name)} label={label} accessibilityLabel={label} value={input.value} multiline={multiline}
@@ -89,12 +142,9 @@ export function TaskForm({ model, actions }: { model: TasksViewModel; actions: T
     </View>} /> : null}
     {draft.mode !== "create" ? field("note", draft.mode === "complete" ? "完成備註（可選）" : "原因（必填）", undefined, true) : null}
     <View style={styles.submitSection}><Text style={styles.meta}>離線時可整理本次草稿；關閉、重新載入、切換孩子或撤權會清除。沒有跨關閉草稿保存。</Text>
-    <AppButton label="預覽家庭共享內容" disabled={locked} onPress={handleSubmit(values => { setConfirmed(false); actions.reviewDraft(values); }, invalidFields => {
-      const first = visibleFields.find(item => invalidFields[item.name]?.message);
-      if (first) setFocus(first.name);
-    })} /></View>
-    {draft.reviewedValues ? <View style={styles.review}>
-      <Text style={styles.label}>預覽內容 · 尚未保存</Text><TaskDraftSummary mode={draft.mode} values={draft.reviewedValues} assignees={model.eligibleAssignees} />
+    <AppButton label="預覽家庭共享內容" disabled={locked} onPress={preview} /></View>
+    {draft.reviewedValues ? <View ref={reviewRegion} tabIndex={-1} role="region" accessibilityLabel="已核對的家庭共享內容" testID="task-reviewed-content" style={styles.review}>
+      <Text accessibilityRole="header" aria-level={3} style={styles.label}>預覽內容 · 尚未保存</Text><TaskDraftSummary mode={draft.mode} values={draft.reviewedValues} assignees={model.eligibleAssignees} />
       <Text style={styles.meta}>只確認孩子所屬家庭的共享安排。建立事項不代表機構確認預約，也不代表已通知照顧者。</Text>
       <AppCheckbox label={confirmationLabel} checked={confirmed} onChange={setConfirmed} disabled={locked} />
       <AppButton label={draft.mode === "create" ? "確認建立共享事項" : "確認保存更改"} onPress={() => { if (confirmed) actions.submitReviewed(); }}

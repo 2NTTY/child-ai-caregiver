@@ -8,6 +8,7 @@ export interface AvatarCropPreviewProps {
   image: Pick<AvatarImage, 'uri' | 'width' | 'height'>;
   crop: AvatarCrop; maxZoom: number; locked: boolean;
   onChange(crop: AvatarCrop): void;
+  onReadyChange?(ready: boolean): void;
 }
 
 /** Native selection already returns the system crop; do not ask users to crop it again. */

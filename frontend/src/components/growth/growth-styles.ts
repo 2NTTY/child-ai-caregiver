@@ -1,5 +1,6 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet, type TextStyle } from "react-native";
 import { chineseFont,colors,radius,spacing,typeScale, workspaceType, readingType } from "../../theme";
+const prose: TextStyle = { fontFamily: chineseFont, ...readingType.body, color: colors.ink, minWidth: 0, maxWidth: 720, ...(Platform.OS === "web" ? { maxWidth: "72ch" } as unknown as TextStyle : {}) };
 const timelineDotTop = 3;
 const timelineDotSize = 10;
 export const growthStyles=StyleSheet.create({
@@ -17,10 +18,10 @@ export const growthStyles=StyleSheet.create({
   concernManagementLabel:{fontFamily:chineseFont,...readingType.tool,color:colors.ink,fontWeight:"600"},
   concernManagementMenu:{alignSelf:"flex-start",maxWidth:"100%",gap:spacing.xs,padding:spacing.sm,borderWidth:1,borderColor:colors.softLine,borderRadius:radius.small,backgroundColor:colors.controlSurface},
   indexAside:{width:280,minWidth:0,gap:spacing.lg},concernIndex:{borderTopWidth:1,borderTopColor:colors.line},
-  concernRow:{backgroundColor:"transparent",borderLeftWidth:3,borderLeftColor:"transparent",paddingVertical:spacing.lg,paddingHorizontal:spacing.md,gap:spacing.sm,minHeight:88,borderBottomWidth:1,borderBottomColor:colors.line},concernSelected:{backgroundColor:colors.paleTeal,borderLeftColor:colors.teal},pressed:{backgroundColor:colors.paleTeal},selectedPressed:{backgroundColor:colors.selectedNav},
+  concernRow:{backgroundColor:"transparent",borderWidth:1,borderColor:"transparent",borderLeftWidth:3,paddingVertical:spacing.lg,paddingHorizontal:spacing.md,gap:spacing.sm,minHeight:88,borderBottomColor:colors.line},concernSelected:{backgroundColor:colors.paleTeal,borderLeftColor:colors.teal},concernFocused:{borderColor:colors.deepTeal},concernLinkTitle:{flex:1,textDecorationLine:"underline"},pressed:{backgroundColor:colors.paleTeal},selectedPressed:{backgroundColor:colors.selectedNav},
   eyebrow:{fontFamily:chineseFont,...readingType.meta,color:colors.muted,fontWeight:"700"},concernTitle:{fontFamily:chineseFont,...workspaceType.title,color:colors.ink},concernHeading:{gap:spacing.md,paddingBottom:spacing.lg,borderBottomWidth:1,borderBottomColor:colors.line},
-  concernSummary:{fontFamily:chineseFont,fontSize:16,lineHeight:28,color:colors.ink},
-  reading:{fontFamily:chineseFont,...readingType.body,color:colors.ink},timelinePanel:{paddingVertical:spacing.sm,gap:spacing.lg,minWidth:0},
+  concernSummary:prose,
+  reading:prose,timelinePanel:{paddingVertical:spacing.sm,gap:spacing.lg,minWidth:0},
   timeline:{paddingLeft:spacing.sm},timelineEvent:{paddingLeft:spacing.lg+2,paddingBottom:spacing.xl,gap:spacing.sm},
   timelineLine:{position:"absolute",left:0,width:2,backgroundColor:colors.line,zIndex:0},
   timelineLineBefore:{top:0,height:timelineDotTop},timelineLineAfter:{top:timelineDotTop+timelineDotSize,bottom:0},
