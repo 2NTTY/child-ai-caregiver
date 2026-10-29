@@ -4369,3 +4369,13 @@
 同一合成流程涵蓋十三個原修訂、長 Unicode 正文、隔離、版本、重複／衝突、完整匯出及 restore codec／內容檢查。獨立 review 發現防重 ID 含 storageEpoch；新增真 codec 換世代後重放，先重現 created 錯誤，再改用穩定資料身份，原修訂 skipped／異內容 conflict 均通過。三根型別圖零診斷，聚焦覆核無剩餘 blocker；失敗及範圍見[證據](artifacts/verification/P4_HANDOVER_DOCUMENT_HISTORY_20261030.json)。
 
 到診準備原修訂、統一 worker／逐項收據／映射與共用文件選項仍待接，沒有開放部分文件模組或宣稱 HANDOVER01 完成。沒有部署、真模型、雲端、設備或全量測試；合成還原不代替真災難恢復。
+
+
+<a id="log-20261030-p4-handover-document-pipeline"></a>
+### 2026-10-30 — P4-HANDOVER01 文件／準備單統一匯入
+
+沿 #390 原快照／準備單服務，把五個 documents section 接入同一 worker；其他目前值先完成，文件／準備單其次，來源歷史最後。正文按已驗包內的穩定身份定位，逐項收據、映射及批次進度與業務保存同交易；版本索引只記略過，不建立重複文件。原準備修訂可分頁匯出再交接，來源正文沿原分段儲存。
+
+同一合成 worker 流程核保存、歷史、重送、版本衝突、明確覆蓋、隔離、再匯出及 codec；reader 定向流程核定位與遮蔽。review 找到 stale 狀態誤拒及跨模組預約讀取，已修；共享補驗亦定位到 care change 範圍不符，改用 documents 範圍，保留權限閘。兩條檢查及四根後端型別圖通過，失敗詳見[證據](artifacts/verification/P4_HANDOVER_DOCUMENT_PIPELINE_20261030.json)。
+
+共用結果標籤須先作向前相容，後端合併後再接文件選擇及歷史閱讀。未部署、未跑真模型／雲端／設備／全量；不把內部接線稱為完整 HANDOVER01 或 P4 已交付。

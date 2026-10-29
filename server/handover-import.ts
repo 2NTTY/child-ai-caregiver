@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { HANDOVER_SECTIONS, handoverSelectionSchema } from '../src/shared/handover.ts';
 import { HandoverArchiveError, handoverLimits, openHandoverArchive } from './handover-archive.ts';
+import { familyDocumentTransferSchema, documentTransferVersionSchema, documentTransferContentSchema, type DocumentTransferContent } from './family-document-transfer.ts';
+import { canonicalJson } from './online-routing.ts';
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/u), uuid = z.uuid();
 const selectionSchema = z.object({ childIds: handoverSelectionSchema.shape.childIds, modules: handoverSelectionSchema.shape.modules }).strict()
@@ -47,6 +49,10 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
   const { manifest, manifestSha256, integrity } = archive;
   const pages: PageIndex[] = [], children: { id: string; displayName: string }[] = [];
   const attachments = new Map<string, { childId: string; mimeType: string; bytes: number }>();
+  const documentRows = new Set<string>(), documentContent = new Map<string, { path: string; rowIndex: number } | null>();
+  const documentIdentity = (childId: string, documentId: string, snapshotId: string, version: number) => JSON.stringify([childId, documentId, snapshotId, version]);
+  const documentRowBinding = (section: string, childId: string | null, path: string, rowIndex: number, value: Record<string, unknown>) =>
+    createHash('sha256').update(canonicalJson({ section, childId, path, rowIndex, value })).digest('hex');
   const entries = new Map(manifest.entries.map(entry => [entry.path, entry]));
   const expected = new Map(manifest.coverage.map(row => [key(row.section, row.childId), row]));
   const seen = new Map<string, number>(), childIds = new Set(manifest.selection.childIds);
@@ -72,11 +78,19 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
       const count = (seen.get(pageKey) ?? 0) + page.items.length;
       if (count > expected.get(pageKey)!.items) fail('invalid_package_coverage');
       seen.set(pageKey, count);
-      for (const row of page.items) {
+      for (const [rowIndex, row] of page.items.entries()) {
         if (page.section === 'children') {
           const child = parse(z.object({ id: uuid, displayName: z.string().min(1).max(160) }), row, 'invalid_package_data');
           if (!childIds.delete(child.id)) fail('invalid_package_scope'); children.push(child);
         } else assertScopedRow(page.section, page.childId!, row);
+        // Index only identities and locators. Document business validation remains on demand.
+        if (page.section === 'documents' || page.section === 'document_versions')
+          documentRows.add(documentRowBinding(page.section, page.childId, entry.path, rowIndex, row));
+        if (page.section === 'document_content' && typeof row.documentId === 'string' && typeof row.snapshotId === 'string'
+          && typeof row.snapshotVersion === 'number') {
+          const identity = documentIdentity(page.childId!, row.documentId, row.snapshotId, row.snapshotVersion);
+          documentContent.set(identity, documentContent.has(identity) ? null : { path: entry.path, rowIndex });
+        }
         if (contentSections.has(page.section)) {
           const ref = parse(z.object({ attachmentPath: z.string(), bytes: z.number().int().nonnegative(), sha256: hash,
             mimeType: z.string().min(1).max(200) }), row, 'invalid_package_attachment');
@@ -109,6 +123,30 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
     }
     return {
       manifest: structuredClone(manifest), manifestSha256, integrity, children: structuredClone(children), close: archive.close,
+      async readDocumentContent(row: HandoverImportRow, acknowledgedManifestSha256?: string): Promise<DocumentTransferContent | null> {
+        if ((row.section !== 'documents' && row.section !== 'document_versions') || !row.childId) fail('invalid_package_scope');
+        select({ childIds: [row.childId], modules: ['documents'] }, acknowledgedManifestSha256, [row.section]);
+        const source = row.source;
+        if (source.serverId !== manifest.source.serverId || source.accountId !== manifest.source.accountId
+          || source.packageId !== manifest.packageId || source.packageVersion !== manifest.packageVersion || source.manifestSha256 !== manifestSha256
+          || !documentRows.has(documentRowBinding(row.section, row.childId, source.path, source.rowIndex, row.value))) fail('invalid_package_scope');
+        const document = row.section === 'documents' ? parse(familyDocumentTransferSchema, row.value, 'invalid_package_document_metadata') : null;
+        const revision = document ? null : parse(documentTransferVersionSchema, row.value, 'invalid_package_document_metadata');
+        if (document && document.currentSnapshot === null) return null;
+        const identity = document ? { documentId: document.id, snapshotId: document.currentSnapshot!.id, snapshotVersion: document.currentSnapshot!.version } : revision!;
+        const location = documentContent.get(documentIdentity(row.childId, identity.documentId, identity.snapshotId, identity.snapshotVersion));
+        if (location === undefined) fail('package_document_content_missing');
+        if (location === null) fail('package_document_content_duplicate');
+        const page = await read(location.path);
+        if (page.section !== 'document_content' || page.childId !== row.childId) fail('invalid_package_scope');
+        const content = parse(documentTransferContentSchema, page.items[location.rowIndex], 'invalid_package_document_content');
+        if (content.documentId !== identity.documentId || content.snapshotId !== identity.snapshotId || content.snapshotVersion !== identity.snapshotVersion)
+          fail('package_document_content_mismatch');
+        const { snapshot: _snapshot, ...version } = content;
+        if (document ? document.childId !== row.childId || document.currentSnapshot!.readable === content.invalidated
+          : canonicalJson(version) !== canonicalJson(revision)) fail('package_document_content_mismatch');
+        return content;
+      },
       async readPage(request: { selection: HandoverImportSelection; acknowledgedManifestSha256?: string; sections?: string[]; cursor?: HandoverImportCursor | null; limit?: number }) {
         const { selection, selectionHash, allows } = select(request.selection, request.acknowledgedManifestSha256, request.sections);
         const limit = parse(z.number().int().min(1).max(100), request.limit ?? 50, 'invalid_package_limit');

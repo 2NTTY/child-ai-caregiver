@@ -177,7 +177,8 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
         const save = prepareSave(b, next); assertCurrentLease(); save(); return next;
       });
     },
-    async apply(work: FirestoreBackgroundWork, input: { position: number; cursor: string | null; nextCursor: string | null; row: HandoverImportRow }) {
+    async apply(work: FirestoreBackgroundWork, input: { position: number; cursor: string | null; nextCursor: string | null; row: HandoverImportRow;
+      documentContent?: import('./family-document-transfer.ts').DocumentTransferContent | null }) {
       const step = domainParse(stepSchema, { position: input.position, cursor: input.cursor, nextCursor: input.nextCursor });
       const owner = work.scope.ownerUserId, job = await authority.runTransaction(owner, null, b => read(b, work.resourceId));
       const index = job.request.targets.findIndex(target => target.sourceChildId === input.row.childId), selected = job.request.targets[index];
@@ -190,7 +191,8 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
         && row.resourceId === (input.row.value.id ?? input.row.value.childId))?.resolution ?? { mode: 'preserve' as const };
       let committed: Batch | undefined;
       const item = await items.apply(owner, { opId, batchId: job.id, target: selected.target, row: input.row,
-        integrity: job.request.integrity, resolution }, async (actor, target) => {
+        integrity: job.request.integrity, resolution,
+        ...(input.documentContent === undefined ? {} : { documentContent: input.documentContent }) }, async (actor, target) => {
         const latest = await read(actor, job.id), assertCurrentLease = await held(actor, work, latest);
         const assertSource = await options.sourceGuard?.(actor, latest.request);
         if (latest.state !== 'running' || !latest.claim || latest.claim.token !== work.lease?.token || latest.claim.workId !== work.id) domainReject('import_batch_stopped');

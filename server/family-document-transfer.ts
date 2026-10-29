@@ -24,10 +24,12 @@ export const familyDocumentTransferSchema = z.object({
   && new Set(value.recentSnapshotIds).size === value.recentSnapshotIds.length
   && !value.recentSnapshotIds.includes(value.currentSnapshot?.id ?? ''));
 export type FamilyDocumentTransfer = z.infer<typeof familyDocumentTransferSchema>;
-export const documentTransferContentSchema = z.object({ documentId: z.uuid(), snapshotId: z.uuid(), snapshotVersion: version,
-  generatedAt: z.iso.datetime({ offset: true }), invalidated: z.boolean(), snapshot: firestoreDocumentSnapshotSchema.nullable(),
-  origin: documentSourceRevisionSchema.optional(),
-}).strict().refine(value => value.invalidated === (value.snapshot === null)
+const revisionFields = { documentId: z.uuid(), snapshotId: z.uuid(), snapshotVersion: version,
+  generatedAt: z.iso.datetime({ offset: true }), invalidated: z.boolean(), origin: documentSourceRevisionSchema.optional() };
+export const documentTransferVersionSchema = z.object(revisionFields).strict()
+  .refine(value => !value.origin || value.origin.invalidated === value.invalidated);
+export const documentTransferContentSchema = z.object({ ...revisionFields, snapshot: firestoreDocumentSnapshotSchema.nullable() })
+  .strict().refine(value => value.invalidated === (value.snapshot === null)
   && (!value.snapshot || value.snapshot.id === value.snapshotId && value.snapshot.version === value.snapshotVersion
     && value.snapshot.generatedAt === value.generatedAt)
   && (!value.origin || value.origin.invalidated === value.invalidated));

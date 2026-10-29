@@ -66,7 +66,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
     currentSnapshot: DocumentSnapshot | null, current?: { id: string; expectedVersion: number }): Promise<{
       value: { id: string; version: number }; changeSeq: string; commit(): void }>;
   prepareImportedRevision(binding: FirestoreAuthorityTransaction, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
-    target: { id: string; expectedVersion: number }): Promise<{ outcome: 'created' | 'skipped' | 'conflict'; snapshotId: string; commit?: () => void }>;
+    target: { id: string; expectedVersion: number }): Promise<{ outcome: 'created' | 'skipped' | 'conflict'; snapshotId: string; changeSeq?: string; commit?: () => void }>;
   readSourceVersion(userId: string, childId: string, id: string, snapshotId: string): Promise<(DocumentTransferContent & { origin: DocumentSourceRevision }) | null>;
   listSourceVersions(userId: string, childId: string, id: string, cursor?: string | null): Promise<{
     items: Array<Omit<DocumentTransferContent, 'snapshot'> & { origin: DocumentSourceRevision }>; nextCursor: string | null } | null>;
@@ -334,7 +334,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
       const prepared = body ? snapshots.prepare(scope, parent.id, body, sourceRevision)
         : snapshots.prepareRedacted(scope, parent.id, snapshotId, parent.version, sourceRevision);
       const change = await binding.prepareChange(opId, 'documents', false, scope.childId);
-      return { outcome: 'created', snapshotId, commit() { change.commit(); prepared.commit(binding.transaction); } };
+      return { outcome: 'created', snapshotId, changeSeq: change.changeSeq, commit() { change.commit(); prepared.commit(binding.transaction); } };
     },
     async readSourceVersion(userId, childId, id, snapshotId) {
       uuid.parse(id); uuid.parse(snapshotId);

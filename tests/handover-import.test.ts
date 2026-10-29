@@ -15,6 +15,70 @@ import { writePersonalHandoverPackage } from '../server/handover-export.ts';
 import { writeHandoverArchive } from '../server/handover-archive.ts';
 import { openHandoverImport } from '../server/handover-import.ts';
 
+test('verified document content locators pair reverse pages and reject missing, duplicate or mismatched source rows on demand', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'handover-document-reader-')), childId = randomUUID(), scopeVersion = 'a'.repeat(64);
+  const documentId = randomUUID(), snapshotId = randomUUID(), missingId = randomUUID(), duplicateId = randomUUID(), invalidatedId = randomUUID(), staleId = randomUUID();
+  const snapshot = { id: snapshotId, version: 1, generatedAt: '2026-10-30T00:00:00Z', sourceBasis: 'b'.repeat(64), title: 'Original document',
+    summary: 'Original body', ageLabel: '', period: { from: '2026-10-01', to: '2026-10-31' }, eventDate: null, coverageNote: '', sections: [], sources: [], changes: [] };
+  const body = { documentId, snapshotId, snapshotVersion: 1, generatedAt: snapshot.generatedAt, invalidated: false, snapshot };
+  const staleContent = { ...body, documentId: staleId, invalidated: true, snapshot: null };
+  const { snapshot: _snapshot, ...version } = body;
+  const metadata = { format: 'yuyoufang-document:1', id: documentId, childId, version: 1, kind: 'preparation', purpose: 'appointment',
+    request: { kind: 'preparation', purpose: 'appointment', title: 'Original request', eventDate: null, period: snapshot.period },
+    createdAt: '2026-10-30T00:00:00.000000Z', status: 'active', archivedAt: null, autoRefresh: false, readState: 'ready', invalidated: false,
+    currentSnapshot: { id: snapshotId, version: 1, readable: true }, recentSnapshotIds: [] };
+  const selection = { childIds: [childId], modules: ['documents', 'care'] as ('documents' | 'care')[] };
+  const pages = [
+    { section: 'document_content', childId, scopeVersion, items: [body] },
+    { section: 'document_content', childId, scopeVersion, items: [{ ...body, documentId: duplicateId }, { ...body, documentId: duplicateId },
+      { ...body, documentId: invalidatedId, invalidated: true, snapshot: null }, staleContent] },
+    { section: 'document_versions', childId, scopeVersion, items: [version, { ...version, generatedAt: '2026-10-30T01:00:00Z' }] },
+    { section: 'visit_preparation_history', childId, scopeVersion, items: [] },
+    { section: 'visit_preparation', childId, scopeVersion, items: [] },
+    { section: 'documents', childId, scopeVersion, items: [metadata, { ...metadata, id: randomUUID(), currentSnapshot: null, readState: 'stale' },
+      { ...metadata, id: missingId }, { ...metadata, id: duplicateId }, { ...metadata, id: invalidatedId }, { id: randomUUID(), childId },
+      { ...metadata, id: staleId, readState: 'stale', currentSnapshot: { ...metadata.currentSnapshot, readable: false } }] },
+    { section: 'care', childId, scopeVersion, items: [{ id: randomUUID(), childId, text: 'Unrelated care remains readable' }] },
+    { section: 'care_history', childId, scopeVersion, items: [] },
+    { section: 'children', childId: null, scopeVersion, items: [{ id: childId, displayName: 'Synthetic child' }] },
+  ];
+  async function* entries() {
+    for (let index = 0; index < pages.length; index++) yield { path: `data/${index}.json`, mediaType: 'application/json', content: Buffer.from(JSON.stringify(pages[index])) };
+    yield { path: 'summary.md', mediaType: 'text/markdown', content: Buffer.from('Synthetic documents') };
+  }
+  try {
+    const archive = await writeHandoverArchive({ directory, header: { format: 'yuyoufang-data', version: 1, packageId: randomUUID(), packageVersion: 1,
+      createdAt: '2026-10-30T00:00:00Z', purpose: 'handover', source: { serverId: 'https://source.test', accountId: 'source' }, selection: { ...selection, period: null } },
+      entries: entries(), coverage: () => selection.modules.flatMap(module => (module === 'care' ? ['care', 'care_history']
+        : ['documents', 'document_versions', 'document_content', 'visit_preparation', 'visit_preparation_history']).map(section => ({ section, childId, scopeVersion,
+          items: pages.filter(page => page.section === section).reduce((sum, page) => sum + page.items.length, 0), complete: true as const })))
+        .concat([{ section: 'children', childId: null as any, scopeVersion, items: 1, complete: true }]) });
+    const reader = await openHandoverImport({ path: archive.path });
+    try {
+      const acknowledged = reader.manifestSha256;
+      const care = await reader.readPage({ selection: { childIds: [childId], modules: ['care'] }, sections: ['care'], acknowledgedManifestSha256: acknowledged });
+      assert.equal(care.rows[0].value.text, 'Unrelated care remains readable', 'unselected malformed document metadata cannot block another module');
+      const documents = (await reader.readPage({ selection, sections: ['documents'], acknowledgedManifestSha256: acknowledged })).rows;
+      const versions = (await reader.readPage({ selection, sections: ['document_versions'], acknowledgedManifestSha256: acknowledged })).rows;
+      await assert.rejects(reader.readDocumentContent(documents[0]), { code: 'package_trust_acknowledgement_required' });
+      assert.deepEqual(await reader.readDocumentContent(documents[0], acknowledged), body, 'current metadata finds content exported on an earlier page');
+      assert.deepEqual(await reader.readDocumentContent(versions[0], acknowledged), body);
+      assert.equal(await reader.readDocumentContent(documents[1], acknowledged), null);
+      assert.deepEqual(await reader.readDocumentContent(documents[6], acknowledged), staleContent, 'a stale document may retain invalidated=false while its current body is withheld');
+      await assert.rejects(reader.readDocumentContent(documents[2], acknowledged), { code: 'package_document_content_missing' });
+      await assert.rejects(reader.readDocumentContent(documents[3], acknowledged), { code: 'package_document_content_duplicate' });
+      await assert.rejects(reader.readDocumentContent(documents[4], acknowledged), { code: 'package_document_content_mismatch' });
+      await assert.rejects(reader.readDocumentContent(versions[1], acknowledged), { code: 'package_document_content_mismatch' });
+      await assert.rejects(reader.readDocumentContent(documents[5], acknowledged), { code: 'invalid_package_document_metadata' });
+      for (const source of [{ ...documents[0].source, packageId: randomUUID() }, { ...documents[0].source, manifestSha256: 'f'.repeat(64) },
+        { ...documents[0].source, rowIndex: 1 }, { ...documents[0].source, path: versions[0].source.path }])
+        await assert.rejects(reader.readDocumentContent({ ...documents[0], source }, acknowledged), { code: 'invalid_package_scope' });
+      await assert.rejects(reader.readDocumentContent({ ...documents[0], value: { ...documents[0].value, id: missingId } }, acknowledged), { code: 'invalid_package_scope' });
+      await assert.rejects(reader.readDocumentContent(care.rows[0], acknowledged), { code: 'invalid_package_scope' });
+    } finally { await reader.close(); }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
 test('verified import section filters bind cursors while unfiltered reads retain their original order', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'handover-filter-')), childId = randomUUID(), scopeVersion = 'a'.repeat(64);
   const selection = { childIds: [childId], modules: ['care', 'profile'] as ('care' | 'profile')[] };
