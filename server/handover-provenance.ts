@@ -24,13 +24,15 @@ export function makeImportProvenance(row: HandoverImportRow, integrity: Handover
   const identities = new Set<string>();
   const result = importProvenanceSchema.safeParse({ current: {
     source: { serverId: row.source.serverId, accountId: row.source.accountId, childId: row.childId,
-      section: row.section, resourceId: row.section === 'profile' ? row.childId : value.id, resourceVersion: value.version,
+      section: row.section, resourceId: row.section === 'profile' || row.section === 'visit_preparation' ? row.childId : value.id, resourceVersion: value.version,
       authorUserId: value.authorUserId ?? value.createdBy ?? value.updatedBy ?? null, createdAt: value.createdAt ?? value.updatedAt ?? null,
       confirmedBy: value.confirmedBy ?? null, confirmedAt: value.confirmedAt ?? null,
       confirmationBasis: value.confirmationBasis ?? null, assigneeUserId: value.assigneeUserId ?? null,
       ...(row.section === 'memory_topics' ? { reopenedFrom: value.reopenedFrom ?? null } : {}),
       ...(row.section === 'instructions' ? { sourceMessageId: value.sourceMessageId ?? null, statementProvenance: value.provenance } : {}),
-      ...(row.section === 'summary_history' ? { previousSummaryId: value.previousId ?? null } : {}) },
+      ...(row.section === 'summary_history' ? { previousSummaryId: value.previousId ?? null } : {}),
+      ...(row.section === 'visit_preparation' ? { preparation: { appointmentTaskId: value.appointmentTaskId,
+        reviewed: value.reviewed, reviewedBasis: value.reviewedBasis } } : {}) },
     sourceHash: createHash('sha256').update(canonicalJson(value)).digest('hex'),
     packageId: row.source.packageId, packageVersion: row.source.packageVersion, manifestSha256: row.source.manifestSha256,
     integrity, importedBy, importedAt,
