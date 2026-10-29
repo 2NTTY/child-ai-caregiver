@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const text = z.string().min(1).max(256), time = z.iso.datetime({ offset: true });
-const sourceSchema = z.object({ serverId: text, accountId: text, childId: z.uuid(), section: z.enum(['care', 'profile', 'tasks', 'memory_facts', 'memory_topics', 'instructions', 'summary_history', 'private_sources', 'documents']),
+const sourceSchema = z.object({ serverId: text, accountId: text, childId: z.uuid(), section: z.enum(['care', 'profile', 'tasks', 'memory_facts', 'memory_topics', 'instructions', 'summary_history', 'private_sources', 'documents', 'visit_preparation']),
   resourceId: z.uuid(), resourceVersion: z.number().int().nonnegative().max(2147483647),
   authorUserId: text.nullable(), createdAt: time.nullable(), confirmedBy: text.nullable(), confirmedAt: time.nullable(),
   confirmationBasis: z.enum(['explicit', 'preauthorized_user_statement', 'imported_source']).nullable(),
@@ -10,6 +10,8 @@ const sourceSchema = z.object({ serverId: text, accountId: text, childId: z.uuid
   sourceMessageId: z.uuid().nullable().optional(),
   statementProvenance: z.enum(['user_statement', 'imported_source']).optional(),
   previousSummaryId: z.uuid().nullable().optional(),
+  preparation: z.object({ appointmentTaskId: z.uuid().nullable(), reviewed: z.boolean(),
+    reviewedBasis: z.string().min(3).max(128).nullable() }).strict().optional(),
 }).strict();
 export const importProvenanceLinkSchema = z.object({ source: sourceSchema, sourceHash: z.string().regex(/^[a-f0-9]{64}$/u),
   packageId: z.uuid(), packageVersion: z.number().int().positive(), manifestSha256: z.string().regex(/^[a-f0-9]{64}$/u),

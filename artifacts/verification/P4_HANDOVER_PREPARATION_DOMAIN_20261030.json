@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-30",
+  "workPackage": "P4-HANDOVER01",
+  "base": "5f2d1c4047d75ffe4ed06a546a908e0014cd6bcd",
+  "branch": "codex/p4-handover-preparation-import",
+  "status": "visit_preparation_domain_prepared_not_deployed",
+  "scope": [
+    "Internal prepared import reuses original preparation and revision collections, encryption, version and change transaction",
+    "Original questions, checklist, period, author and review/appointment evidence are retained without importing foreign authority",
+    "Local appointment mapping validates child, task kind, scheduled state and version; no mapping means no foreign task link",
+    "Original public DTO remains compatible; local edits retain internal provenance and original-operation receipts"
+  ],
+  "verification": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-preparation-domain.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "covers": ["Original service readback", "Existing strict client parsing before/after local edit", "Foreign appointment and review separation", "Source provenance", "Other account rejection", "Expected-version conflict", "Original-operation retry", "Mapped local appointment/version check", "Preparation without commit leaves data unchanged", "Local revisions", "Restore codec decoding"]
+    },
+    { "check": "Scoped TypeScript graph: account export, restore codec, preparation domain test including client", "roots": 3, "diagnostics": 0 },
+    { "check": "git diff --check", "result": "passed" }
+  ],
+  "retainedFailures": [
+    "Initial red: the original summary service had no prepareImported method.",
+    "Independent review found public importedFrom broke the existing strict client. The same flow reproduced CareSummaryApiError, then passed after the server retained provenance internally and preserved the original DTO."
+  ],
+  "review": "Independent Sol review identified the client compatibility issue; main reproduced and fixed it. Focused follow-up found no blocker.",
+  "pending": ["Complete source document and visit-preparation revisions", "Existing batch worker, item receipts and mapping integration", "Shared document import option and results", "Deployment and full module round trip"],
+  "notRun": ["Real models", "Cloud database", "Browser/device", "Full suite", "Deployment"],
+  "limitations": "This is an internal preparer, not a new public import API. Batch-level original-operation receipts and deduplication are still owned by the upcoming existing pipeline integration. Original-operation retry verified here is the existing normal preparation edit path. Synthetic transaction/codec checks do not prove cloud contention or disaster recovery."
+}

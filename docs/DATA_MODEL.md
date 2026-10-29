@@ -902,6 +902,8 @@ v1 匯入讀取器復用同一 ZIP verifier 及匯出 section 表，先核全部
 
 文件傳送資料以原 `documents`／`document_snapshots`／`document_chunks` 為權威，不另存可修改副本。`yuyoufang-document:1` 匯出記錄包含文件 ID／版本、原 request、建立／歸檔狀態、autoRefresh 偏好、目前快照的 ID／版本／可讀性及最近快照 ID 索引；所有修訂及正文仍以獨立分頁匯出。遮蔽的正文行保留快照身份及 invalidated 狀態，不能把來源失效當成沒有該修訂。傳送格式不包含目前來源授權選擇或整理工作內部狀態；原偏好不構成匯入帳戶的執行授權。
 
+到診準備匯入復用 `visit_preparations`／`visit_preparation_revisions`；每個目標孩子仍只有一份目前值，本地版本連續遞增。新增可選 `importedFrom`，來源 section 為 `visit_preparation`、resourceId 為來源孩子；來源 link 的 preparation 留原 appointmentTaskId、reviewed／reviewedBasis，原作者及時間沿共同 provenance 保存。匯入的本地 reviewed=false、reviewedBasis=null，不能讓外部依據符合目前資料世代；預約只接受已驗本地映射。後續本地修改保留來源鏈，公開 DTO 仍不披露此內部欄位。交易、修訂、授權匯出、刪除及 restore codec 使用既有集合／加密，沒有新增集合或搬庫。完整來源修訂與批次映射仍待接，不把目前值的本地匯入修訂稱為完整原歷史。
+
 文件預備匯入沿原資料權威建立本地 ID／版本，更新仍核 expectedVersion，`importedFrom` 保留來源鏈。原快照引用以加密 manifest 的 `copy` 保存原快照身份、來源 hash 與原完整度 hash；正文及公開 DTO 沿既有格式，不把內部證據作新公開授權。讀取時由 Server 驗證 manifest 後才提供相關來源證據給原有效性／修改函式，不能由客戶端或模型設定。新本地引用不加入原證據 hash；其版本更正仍令內容失效。原包報告只描述原範圍；明確 refresh 啟動收件帳戶的整理，保留匹配的指定引用，但統計只計本地獲授權資料。此時 detached 轉 false，恢復原本的本地來源更新判斷。完整歷史／準備資料、統一批次及共用選項仍待接，codec 可讀不等於災難還原已驗。
 
 私人來源沿相同映射、收據及批次處理；`private_source_history` 的 evidence.module 為 `private_sources`，原 inputId／version 連接來源身份。保留完整原管理修訂，不將目前正文快照另存為同版管理歷史；避免同一來源／版本異類內容相撞。權威正文仍在 shared_inputs／shared_input_parts，匯入歷史不能恢復抓取、模型或外發授權；讀取及匯出重核本人範圍和現行父來源。單來源刪除已有即時 tombstone，獨立災難還原刪除重放仍屬 S15 待補，不由本輪歷史保存宣稱完成。

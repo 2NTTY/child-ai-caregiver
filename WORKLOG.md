@@ -4351,3 +4351,12 @@
 一條新合成流程及原準備單代表流程通過，三根型別圖零診斷。獨立 review 找到報告重建 loaded 時遺漏證據；同一流程先重現 document_edits_need_review，再修正 API／worker 共用的 reportBatch 傳遞與保存，完成原引用保留及完整報告更新。原缺方法、PDF purpose／scanned 型別誤用及 review 失敗均保留於[證據](artifacts/verification/P4_HANDOVER_DOCUMENT_DOMAIN_20261030.json)；聚焦覆核無剩餘 blocker。
 
 只完成內部預備接點，完整原修訂／準備資料、統一 worker／逐項原操作收據／來源映射及共用選項待接；不當作文件匯入、完整備份或 P4 已完成。沒有部署、模型、雲端、設備或全量測試，codec 核對不代替真還原。
+
+<a id="log-20261030-p4-handover-preparation-domain"></a>
+### 2026-10-30 — P4-HANDOVER01 到診準備權威預備匯入
+
+由 #388／`5f2d1c40` 接原到診準備服務，沿同一目前值、修訂、加密及 changes 交易保存問題、清單與期間。來源鏈保留原預約與核對依據；外來 ID 不作本地預約，只有已映射且版本／終態有效的本地任務才可關聯。匯入不假稱收件帳戶已核對，普通修改、原操作收據及舊客戶端繼續沿原流程。
+
+一條必要合成流程及三根型別圖通過；最初缺方法的失敗保留。獨立 review 找到公開 importedFrom 不相容舊 strict client；沿原 client 重現 CareSummaryApiError 後，改成只在內部／授權匯出保留來源，公開 DTO 不變，同一流程補驗通過，聚焦覆核無 blocker。[證據](artifacts/verification/P4_HANDOVER_PREPARATION_DOMAIN_20261030.json)包括版本、隔離、原修改防重、預約映射與 codec；沒有模型、雲端、設備或全量測試。
+
+本包只是完整文件模組的權威前置，不開放部分模組假裝完整匯入。完整原文件／準備資料歷史、統一 worker／逐項收據／來源映射及共用選項仍待接；沒有部署，codec 不代替真災難還原，HANDOVER01／P4 仍未完成。
