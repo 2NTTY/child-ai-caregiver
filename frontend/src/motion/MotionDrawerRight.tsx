@@ -13,7 +13,7 @@ export interface MotionDrawerRightProps extends MotionViewProps {
   onBackdropPress?: () => void;
 }
 
-/** A single live surface. Width and translation always use the same progress. */
+/** A single live surface. Dock allocation stays stable while its surface slides. */
 export function MotionDrawerRight({ open, width, scopeKey, mode, eligible = true, animateOnMount = false, surfaceRef, onBackdropPress, children, style, ...props }: MotionDrawerRightProps) {
   const preferences = useMotionPreferences();
   const progress = useSharedValue(!animateOnMount && open && eligible ? 1 : 0);
@@ -47,7 +47,9 @@ export function MotionDrawerRight({ open, width, scopeKey, mode, eligible = true
     });
   }, [open, width, scopeKey, eligible, preferences.enabled, preferences.epoch, progress, complete]);
   useLayoutEffect(() => { mounted.current = true; return () => { mounted.current = false; generation.current += 1; cancelAnimation(progress); }; }, [progress]);
-  const frame = useAnimatedStyle(() => ({ width: drawerGeometry(width, progress.value, mode).frameWidth }));
+  // Keep the closing surface visible for its exit without resizing the page every frame.
+  // Semantics follow open immediately; present is only decorative exit retention.
+  const frame = { width: mode === "dock" && !visible ? 0 : width };
   const surface = useAnimatedStyle(() => ({ transform: [{ translateX: drawerGeometry(width, progress.value, mode).translateX }] }));
   return <>
     {visible && onBackdropPress ? <MotionBackdrop open={open && eligible} onPress={onBackdropPress} progress={progress} phase={phase} kind="drawer-backdrop" /> : null}

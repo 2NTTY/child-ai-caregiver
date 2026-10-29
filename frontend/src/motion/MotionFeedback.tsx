@@ -1,7 +1,7 @@
 import { motionData, type MotionViewProps } from "./viewProps";
 import { useLayoutEffect, useRef } from "react";
-import type { ViewProps } from "react-native";
-import Animated, { cancelAnimation, interpolateColor, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { StyleSheet, View } from "react-native";
+import Animated, { cancelAnimation, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useMotionPreferences } from "./preferences";
 import { motionTokens } from "./tokens";
 import type { MotionTrigger } from "./MotionReveal";
@@ -25,6 +25,13 @@ export function MotionFeedback({ active, triggerKey, scopeKey, animateOnMount = 
     } else progress.value = 0;
   }, [active, triggerKey, scopeKey, animateOnMount, preferences.enabled, preferences.epoch, progress]);
   useLayoutEffect(() => () => cancelAnimation(progress), [progress]);
-  const animatedStyle = useAnimatedStyle(() => ({ backgroundColor: interpolateColor(progress.value, [0, 1], ["rgba(226,236,227,0)", motionTokens.feedback.color]) }));
-  return <Animated.View {...props} {...motionData({ ...props.dataSet, motionKind: "feedback" })} style={[style, animatedStyle]}>{children}</Animated.View>;
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
+  const shape = StyleSheet.flatten(style);
+  return <View {...props} {...motionData({ ...props.dataSet, motionKind: "feedback" })} style={style}>
+    <Animated.View pointerEvents="none" accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
+      style={[StyleSheet.absoluteFillObject, { backgroundColor: motionTokens.feedback.color,
+        borderRadius: shape?.borderRadius, borderTopLeftRadius: shape?.borderTopLeftRadius, borderTopRightRadius: shape?.borderTopRightRadius,
+        borderBottomLeftRadius: shape?.borderBottomLeftRadius, borderBottomRightRadius: shape?.borderBottomRightRadius }, animatedStyle]} />
+    {children}
+  </View>;
 }
