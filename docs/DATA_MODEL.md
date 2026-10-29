@@ -715,6 +715,8 @@ SYSTEM 維護游標只用於有限來源排程／清理；原加密 recovery sco
 
 `shared_inputs` 是本人／孩子範圍內加密的私人來源；`shared_input_parts` 依同一來源版本分段保存正文；`shared_input_management_revisions` 保存有界讀取的管理歷史。正文及 URL 不建公共索引；query projection 只含 opaque scope tags、ID、live／版本及排序欄位。個別來源刪除後原收據正文、選段及修訂讀取一併關閉；範圍清理涵蓋三個 collections，歷史不成為可獨立修改的來源。
 
+P4 匯入預備接點沿同一集合／分段格式，新增可選 `importedFrom`；原資料缺欄位保持相容。來源身份／版本及包 hash 只作來源鏈，當前 owner、child、資源 ID 與版本仍由目的地交易建立。一般 input DTO 不加欄位，授權匯出才附來源鏈。來源用途與正文保留，來源 `modelExcerpt` 授權、fetch／extraction lease／run、recordId／confirmationKind 不移作本地執行狀態；外來 `public_source` 保存為私人副本，不綁本地官方登記 ID。已有目標版本、未結清工作及本地照護關聯須先核對，不靜默覆蓋。此段已接領域預備方法與原讀取／匯出，統一匯入 worker、來源管理歷史保存及共用選項尚待接續。
+
 原 online 收據對私人來源使用 ID／版本 pointer，解參考須重核目前授權、live 及版本；不能用舊 create 收據繞過刪除或讀到不同版本。領域寫入、修訂、changes 與收據仍在原 authority 交易，取得外部資料／模型呼叫在交易外。備份登記包含上述 collections；F07 還原須逐格式重綁，未接 codec 仍拒絕完成。
 
 #### 隔離還原的加密閉包

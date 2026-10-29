@@ -12,6 +12,10 @@ import { createFirestoreAuthority, type FirestoreAuthorityTransaction as Binding
 import { FirestoreDomainData, domainParse, domainReject, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreCareStore } from './firestore-care.ts';
 import type { FirestoreOnlineMutation } from './firestore-online.ts';
+import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
+import type { HandoverIntegrity } from '../src/shared/handover.ts';
+import type { HandoverImportRow } from './handover-import.ts';
+import { makeImportProvenance } from './handover-provenance.ts';
 
 const uuid = z.uuid(), version = z.number().int().positive().max(2147483646), time = z.iso.datetime({ offset: true });
 const text = (max: number) => z.string().max(max).refine(value => !/[\u0000\uD800-\uDFFF]/u.test(value));
@@ -27,7 +31,12 @@ export const firestoreSharedInputSchema = z.object({ id: uuid, childId: uuid, ow
   bodyHash: hash, parts: z.number().int().min(1).max(4), fetchState: z.enum(['not_requested', 'running', 'ready', 'failed', 'unknown']),
   fetchLease: leaseSchema.nullable(), extraction: extractionSchema, extractionLease: leaseSchema.nullable(),
   recordId: uuid.nullable(), confirmationKind: z.enum(['reference', 'family_record']).nullable(), management: sourceManagementSchema.nullable(),
+  importedFrom: importProvenanceSchema.optional(),
 }).strict();
+/** Exported product data, without storage envelopes or transferable worker leases. */
+export const sharedInputImportSchema = firestoreSharedInputSchema.omit({ bodyHash: true, parts: true, fetchLease: true, extractionLease: true })
+  .extend({ text: text(64000), canManage: z.boolean(), sourceLabel: text(200).min(1),
+    sourceUrl: sharedInputCreateSchema.options[0].shape.sourceUrl });
 export const firestoreSharedInputPartSchema = z.object({ inputId: uuid, index: z.number().int().min(0).max(3), version, text: text(16001) }).strict();
 export const firestoreSourceManagementRevisionSchema = z.object({ inputId: uuid, childId: uuid, ownerUserId: z.string().min(1).max(256),
   version, previousVersion: version, changedAt: time, reason: text(500), previousManagement: sourceManagementSchema.nullable(),
@@ -49,6 +58,9 @@ export interface FirestoreSharedInputStore extends SharedInputStore {
   read(binding: Binding, id: string): Promise<SharedInput>;
   prepareCreate(binding: Binding, opId: string, input: SharedInputCreate, management?: SourceManagement): Promise<Prepared<SharedInput>>;
   prepareManage(binding: Binding, opId: string, id: string, change: SourceManagementChange): Promise<Prepared<SharedInput>>;
+  readImportState(binding: Binding, id: string): Promise<{ value: z.infer<typeof sharedInputImportSchema> | null; version: number }>;
+  prepareImported(binding: Binding, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
+    current?: { id: string; expectedVersion: number }): Promise<Prepared<SharedInput>>;
 }
 
 /** Private source text never enters the public knowledge index. Writes share original online/Agent receipts. */
@@ -80,7 +92,7 @@ export function createFirestoreSharedInputStore(options: FirestoreDomainOptions)
     return { row, text: body };
   }
   function view(item: Loaded): SharedInput {
-    const { bodyHash: _hash, parts: _parts, fetchLease, extractionLease, ...row } = item.row;
+    const { bodyHash: _hash, parts: _parts, fetchLease, extractionLease, importedFrom: _source, ...row } = item.row;
     return { ...row, canManage: true, text: item.text,
       fetchState: row.fetchState === 'running' && (!fetchLease || Date.parse(fetchLease.until) <= Date.now()) ? 'unknown' : row.fetchState,
       extraction: { ...row.extraction, state: row.extraction.state === 'running' && (!extractionLease || Date.parse(extractionLease.until) <= Date.now()) ? 'unknown' : row.extraction.state } };
@@ -159,6 +171,51 @@ export function createFirestoreSharedInputStore(options: FirestoreDomainOptions)
     const save = write(b, item, oldParts), history = revision(b, item, previous, input.reason), change = await b.prepareChange(opId, 'care', false);
     return { value: view(item), changeSeq: change.changeSeq, commit() { change.commit(); save(); history(); } };
   }
+  function personal(b: Binding) {
+    if (b.sharedAccess || b.actorUserId !== b.scope.ownerUserId) domainReject('private_scope_unavailable', 403);
+  }
+  async function readImportState(b: Binding, id: string) {
+    personal(b); domainParse(uuid, id);
+    const snap = await b.transaction.get(rowRef(id));
+    if (!snap.exists) return { value: null, version: 0 };
+    if (snap.get('live') === false) {
+      const deleted = open(b, 'shared-input-tombstone', id, firestoreSharedInputTombstoneSchema, snap);
+      if (deleted.id !== id || deleted.childId !== b.scope.childId || deleted.version !== snap.get('recordVersion')) domainReject('input_binding', 500);
+      return { value: null, version: deleted.version };
+    }
+    const item = await load(b, id);
+    return { value: sharedInputImportSchema.parse({ ...view(item), ...(item.row.importedFrom ? { importedFrom: item.row.importedFrom } : {}) }), version: item.row.version };
+  }
+  async function prepareImported(b: Binding, opId: string, raw: HandoverImportRow, integrity: HandoverIntegrity,
+    current?: { id: string; expectedVersion: number }): Promise<Prepared<SharedInput>> {
+    personal(b);
+    if (raw.section !== 'private_sources') domainReject('invalid_package_data', 400);
+    const source = domainParse(sharedInputImportSchema, raw.value, 'invalid_package_data', 400);
+    if (source.sha256 !== (source.text.trim() ? digest(source.text) : null)) domainReject('invalid_package_data', 400);
+    const previous = current ? await load(b, current.id) : null;
+    if (previous && current) {
+      versionMatches(previous.row, current.expectedVersion);
+      if (previous.row.recordId) domainReject('input_linked');
+      if ([previous.row.fetchState, previous.row.extraction.state].some(state => state === 'running' || state === 'unknown')) domainReject('input_processing');
+    } else {
+      const count = await b.transaction.get(query(b, 'shared_inputs').where('live', '==', true).limit(50));
+      if (count.size >= 50) domainReject('inputs_capacity');
+    }
+    const id = previous?.row.id ?? randomUUID();
+    if (!previous && (await b.transaction.get(rowRef(id))).exists) domainReject('input_conflict');
+    const at = new Date().toISOString(), importedFrom = makeImportProvenance(raw, integrity, b.actorUserId, at);
+    const row: Row = { id, childId: b.scope.childId, ownerUserId: b.scope.ownerUserId,
+      version: (previous?.row.version ?? 0) + 1, createdAt: previous?.row.createdAt ?? at,
+      kind: source.kind === 'public_source' ? 'personal_source' : source.kind, sourceId: null,
+      sourceLabel: source.sourceLabel, sourceUrl: source.sourceUrl, sourceDateText: source.sourceDateText, sourceNotes: source.sourceNotes,
+      sha256: source.sha256, retrievedAt: null, bodyHash: digest(source.text), parts: 1,
+      fetchState: source.text.trim() ? 'ready' : 'not_requested', fetchLease: null, extraction: emptyExtraction(), extractionLease: null,
+      recordId: null, confirmationKind: null, management: source.management ? { ...source.management, modelExcerpt: null } : null, importedFrom };
+    const item = { row, text: source.text }, save = write(b, item, previous?.row.parts ?? 0);
+    const history = previous && row.management ? revision(b, item, previous.row.management, '從資料包更新私人來源；來源身份沿匯入紀錄追溯') : () => {};
+    const change = await b.prepareChange(opId, 'care', false);
+    return { value: view(item), changeSeq: change.changeSeq, commit() { change.commit(); save(); history(); } };
+  }
   async function prepareConfirm(b: Binding, opId: string, id: string, raw: unknown) {
     const input = domainParse(confirmationSchema, raw), item = await load(b, id), row = item.row;
     versionMatches(row, input.expectedVersion);
@@ -193,6 +250,7 @@ export function createFirestoreSharedInputStore(options: FirestoreDomainOptions)
       && (lease.resourceVersion === undefined || lease.resourceVersion === row.version) && lease.authorizationVersion === b.authorizationVersion && lease.generation === b.generation && Date.parse(lease.until) > Date.now();
   };
   const store: FirestoreSharedInputStore = {
+    prepareImported, readImportState,
     prepareCreate, prepareManage, read: async (b, id) => view(await load(b, id)),
     async list(owner, child) {
       return authority.runTransaction(owner, child, async b => {

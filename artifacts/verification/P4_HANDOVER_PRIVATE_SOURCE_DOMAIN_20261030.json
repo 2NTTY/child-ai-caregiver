@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-30",
+  "workPackage": "P4-HANDOVER01",
+  "base": "b3ce87f1489f089db11d822d48ce7145b2a4617b",
+  "branch": "codex/p4-handover-private-sources",
+  "status": "domain_preparation_implemented_not_deployed",
+  "scope": [
+    "Prepared import writes reuse the existing private source store, encrypted parts, capacity, authority and change transaction",
+    "Original public source IDs, model-excerpt grants, extraction/fetch work and foreign care record links are not local execution authority",
+    "Imported provenance is retained for authorized export without changing the existing strict public input DTO",
+    "Updates preserve the local ID and check its version; in-flight work and linked care records are not overwritten"
+  ],
+  "verification": [
+    { "command": "node --experimental-test-module-mocks --test tests/handover-private-source-domain.test.ts", "passed": 1, "failed": 0,
+      "covers": ["Long body parts", "Public source becomes a private copy", "No transferred grant or run", "Original store re-open", "Other account denied", "Provenance export", "Version conflict and same-ID update", "Restore codec decode", "Deletion and export masking"] },
+    { "command": "node --experimental-test-module-mocks --test tests/firestore-shared-inputs.test.ts", "passed": 1, "failed": 0, "note": "Existing client/Agent source flow passed in the initial combined check; it was not rerun for test-only corrections." },
+    { "check": "Scoped TypeScript dependency graph: account export, restore codec and new domain test", "roots": 3, "diagnostics": 0 }
+  ],
+  "retainedFailures": [
+    "Initial test failed because prepareImported was not connected.",
+    "The first implementation lacked private_sources in the provenance section enum; the explicit schema extension resolved invalid_package_provenance.",
+    "The new test incorrectly referenced fixture.rows rather than the existing fixture.records.",
+    "Scoped typecheck found the test omitted the required photo port and treated unknown export data as typed; the test now uses the established unused-port stub and the real import schema."
+  ],
+  "pending": ["Unified import worker and item receipts", "Source management history and original source snapshots", "Shared import selection/result UI", "Full package round-trip and cleanup/restore replay"],
+  "review": "Independent read-only review found no definite P1/P2 or required minor; main review checked the existing client contract and retained pending boundaries.",
+  "notRun": ["Real models", "External fetch", "Cloud database", "Browser/device", "Full suite", "Deployment"],
+  "limitations": "The in-memory Firestore fixture does not prove native indexes or concurrency. Codec decoding is not a real backup restore. This preparatory API is not exposed as a new public import endpoint."
+}
