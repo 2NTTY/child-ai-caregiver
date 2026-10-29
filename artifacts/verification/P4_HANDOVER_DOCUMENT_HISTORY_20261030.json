@@ -1,0 +1,32 @@
+{
+  "package": "P4-HANDOVER01 source document revision prerequisites",
+  "date": "2026-10-30",
+  "baseCommit": "76863f1a43c86e4cc1e9860d6d3334a79719dfc0",
+  "branch": "codex/p4-handover-source-document-revisions",
+  "implementation": [
+    "Existing encrypted snapshot/chunk storage retains full source revisions independently of local versions",
+    "Bounded source-history listing, fixed-snapshot reading and complete authorized re-export with provenance",
+    "Redacted revisions retain authenticated identity without body chunks",
+    "Restore codec preserves the source-history projection and accepted foreign task evidence",
+    "Stable source identity deduplicates across restored storage epochs"
+  ],
+  "verification": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-document-history.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "covers": ["Thirteen source revisions over two pages", "Multichunk Unicode body", "Separate local/source versions", "Redacted body remains absent", "Account isolation", "Expected-version conflict", "Duplicate and different-content outcomes", "Complete account re-export", "Restore content validation", "Actual restore codec changes epochs, then original revision stays skipped and changed content conflicts"]
+    },
+    { "check": "Scoped TypeScript graph: account export, restore codec and document history flow", "roots": 3, "diagnostics": 0 },
+    { "check": "git diff --check", "result": "passed" }
+  ],
+  "retainedFailures": [
+    "Initial fixture exceeded the existing summary size limit; replaced with valid long sections/items without changing product limits.",
+    "Valid red flow initially failed because prepareImportedRevision was absent.",
+    "Independent review found the deterministic ID included storageEpoch. Added actual codec restore/replay to the same flow; it reproduced created instead of skipped. Stable owner/workspace/child identity fixed it; the same flow then passed."
+  ],
+  "review": "Independent Sol read-only review; epoch finding reproduced and fixed by main. Focused follow-up reported no remaining blocker.",
+  "pending": ["Visit-preparation source revisions", "Unified import worker, item receipts and source mapping", "Shared document import option and results", "Deployment and complete document-module round trip"],
+  "notRun": ["Real models", "Cloud database", "Browser/device", "Full suite", "Deployment"],
+  "limitations": "Internal domain preparers and readers only; full public import remains pending. Serial in-memory Firestore plus the production codec does not prove cloud contention, deployed indexes or a real disaster restore. Existing snapshot index definition was inspected; no new collection/index is introduced."
+}

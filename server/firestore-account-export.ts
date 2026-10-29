@@ -166,10 +166,19 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             const work = await binding.readWork(context.id); if (!work) domainReject('export_scope_changed'); items.push(work);
           } else if (section === 'document_content' || section === 'document_versions') {
             const manifest = firestoreSnapshotManifestSchema.parse(value);
+            if (manifest.sourceRevision) {
+              const imported = await createFirestoreFamilyDocumentStore({ ...options, transaction: binding })
+                .readSourceVersion(owner, binding.scope.childId, manifest.documentId, manifest.snapshotId);
+              if (imported) {
+                if (section === 'document_content') items.push(imported);
+                else { const { snapshot: _body, ...metadata } = imported; items.push(metadata); }
+              }
+              continue;
+            }
             const snapshot = await createFirestoreFamilyDocumentStore({ ...options, transaction: binding })
               .readExportSnapshot(owner, binding.scope.childId, manifest.documentId, manifest.snapshotId, manifest.snapshotVersion);
             const identity = { documentId: manifest.documentId, snapshotId: manifest.snapshotId, snapshotVersion: manifest.snapshotVersion };
-            items.push(section === 'document_content' ? { ...identity, snapshot, invalidated: snapshot === null }
+            items.push(section === 'document_content' ? { ...identity, generatedAt: manifest.generatedAt, snapshot, invalidated: snapshot === null }
               : { ...identity, generatedAt: manifest.generatedAt, invalidated: snapshot === null });
           } else if (section === 'documents') {
             const item = await createFirestoreFamilyDocumentStore({ ...options, transaction: binding }).readExportMetadata(owner, binding.scope.childId, context.id);

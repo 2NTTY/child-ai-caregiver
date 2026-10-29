@@ -8,6 +8,7 @@ import { firestoreTaskReminderSchema, firestoreTaskReminderBatchSchema, firestor
 import { firestoreFamilyDocumentSchemas } from './firestore-family-documents.ts';
 import { firestoreFamilyDocumentSnapshotSchemas, firestoreDocumentSnapshotSchema } from './firestore-family-document-snapshots.ts';
 import { assertDocumentCapacity } from './family-document-edits.ts';
+import { copiedDocumentSource } from './family-document-copy.ts';
 import { firestoreKnowledgeSchemas } from './firestore-knowledge.ts';
 import { knowledgeLexicalIndex, emptyLexicalHash } from './knowledge-lexical-index.ts';
 import { embeddingDocument, internalKnowledgeSource, knowledgeHash, parseKnowledgeSource, sourceVersionHash } from './knowledge-inputs.ts';
@@ -93,7 +94,7 @@ export function assertFirestoreRestoreContent(records: readonly FirestoreRestore
     if (new Set(ids).size !== ids.length) fail();
     for (const id of ids) {
       const manifest = parsed(firestoreFamilyDocumentSnapshotSchemas.manifest, domain('document-snapshot', id, expected));
-      if (manifest.documentId !== metadata.id || manifest.childId !== metadata.childId || manifest.snapshotVersion > metadata.version) fail();
+      if (manifest.documentId !== metadata.id || manifest.childId !== metadata.childId || manifest.snapshotVersion > metadata.version || manifest.sourceRevision) fail();
     }
   }
   for (const record of rows('family-document')) documentPointers(parsed(firestoreFamilyDocumentSchemas.metadata, record), scope(record));
@@ -110,6 +111,7 @@ export function assertFirestoreRestoreContent(records: readonly FirestoreRestore
       || record.context.family === 'knowledge' || record.context.recordVersion !== manifest.snapshotVersion) fail();
     const chunks = snapshotChunks.get(manifest.snapshotId) ?? [];
     if (chunks.length !== manifest.count) fail('restore_content_missing');
+    if (manifest.sourceRevision?.invalidated) continue; // Authenticated metadata-only history must never reconstruct a body.
     const parts = new Map<number, string>();
     for (const chunkRecord of chunks) {
       const chunk = parsed(firestoreFamilyDocumentSnapshotSchemas.chunk, chunkRecord);
@@ -122,7 +124,7 @@ export function assertFirestoreRestoreContent(records: readonly FirestoreRestore
     const snapshot = parsedSnapshot.data; try { assertDocumentCapacity(snapshot); } catch { fail('restore_content_invalid'); }
     if (snapshot.id !== manifest.snapshotId || snapshot.version !== manifest.snapshotVersion || snapshot.generatedAt !== manifest.generatedAt) fail();
     for (const source of snapshot.sources) {
-      if (source.kind === 'task') revision(source.resourceId, source.version, expected);
+      if (source.kind === 'task' && !copiedDocumentSource(manifest.copy, source)) revision(source.resourceId, source.version, expected);
       // Other source kinds are authenticated historical excerpts. Deleting or correcting
       // the original may intentionally leave only its snapshot; currentness is checked by
       // the document service before presentation, never inferred from a restored excerpt.
