@@ -72,11 +72,28 @@ Server／worker 須明確設定 `P2_AGENT_ENABLED=true` 並已套用 migration 0
 
 `propose_task／propose_task_change／propose_fact` 只保存私人候選。明確接受後，任務／已確認事實與候選結果在同一交易寫入；家庭共享需額外明確確認。受限聯絡工具按 [W07 授權](#proactive-contact-http) 執行，入列、聯絡結果與照護完成分開。候選 24 小時過期；任務改期／完成／取消沿用原版本及終態規則，事實保留原私人訊息來源，不靠最終文字重做副作用。
 
+記憶查回問句（例如「有冇記住…？」）不因提到事實便新增候選；明示陳述加後續問句則分開判斷，仍只能建立待確認候選，不等於本人已批准保存。來源核對沿實際本人原訊息，保留孩子稱呼及明確有效短期限，不將「今晚／明早」無條件改成永久。已確認記憶可以作相關證據，不授予免審、擴大共享或新操作權限。
+
 `read_context` 按入口區分本人／家庭；私人摘要只在取得完整批次時透過 `stage_private_summary` 暫存，運行結束再核對來源版本及精確覆蓋，衝突保留原摘要。摘要及候選不成為確認事實。`search_knowledge` 使用既有 public retriever 與同一運行預算；`present_answer` 核對引用 ID、官方類別及當前有效版本，回傳結構不等於已驗證語義支持。
 
 ADK 2.1.0 執行邊界：版本化指令與 Server 控制 metadata 經 InstructionProvider 提供，input.context 獨立放入有標籤的 user Content 資料 part；原使用者訊息仍第一個 part，原生附件、歷史及工具關聯保留。正文中的 `{name}`／`{name?}` 不作 state 展開或刪除，資料內容不能授權，也不能聲稱封裝本身保證抵禦所有 prompt injection。
 
-每輪 Server runtime metadata 的 `budget` 包含 `usedBeforeThisCall`、`remaining.modelCallsIncludingThisCall`、剩餘工具／查詢向量／時間、`reserveForFinish`、`nonTerminalToolCallsAvailable` 及 `phase`；是運行即時快照，不是新操作授權或聊天歷史。生成餘額包含本輪尚待預留的呼叫，以及共用根 run 的委派／審核。reserveForFinish 的一次生成只指呈現，不包含獨立語義審核；產品指引因此要求需要審核時在呈現前保留至少兩次（呈現＋審核），有餘額才容許一次修正及重核。這是規劃提示，不新增配額或改變 Server 的審核豁免判斷。模型自行選擇必要步驟，`finish` 階段只保留當前已有 terminal 的 schema／toolsDict／ANY allowedFunctionNames；沒有 terminal 的抽取流程沿原輸出契約。原生成／工具／配額／取消計數不重設，Server 仍拒絕未提供工具及混批；未完成或證據不足不能假造成功。
+每輪 Server runtime metadata 的 `budget` 包含 `usedBeforeThisCall`、`remaining.modelCallsIncludingThisCall`、剩餘工具／查詢向量／時間、`reserveForFinish`、`reserveForDeliveryReview`、`nonTerminalToolCallsAvailable` 及 `phase`；是即時規劃快照，不是新操作授權或聊天歷史。生成餘額包含共用根 run 的委派／審核。普通 `product-interactive` 不固定預留審核：沒有審核義務時 `reserveForFinish.modelCalls=1`、`reserveForDeliveryReview.modelCalls=0`；義務建立後分別為 2（呈現＋審核）與 1。有餘額才可修訂／重核，不增加原上限。
+
+每次 provider attempt（包括 retry 及 tool-free 角色）由 gateway 經同一 `AgentBudget.admitModel` 串行准入，在輪到該次准入時重新讀取 Server 的 live 審核義務。義務有效時，一般生成、tool-work 及 `delivery_repair` 不可使用最後一次，返回 `model_limit`；只有 Server 指定的 `delivery_review` 或 `data-compose` 內部獨立 reviewer 的 `compose_review` 可用預留，仍受原硬上限、每日計量、取消及權限檢查。角色不能來自模型參數、提示或 attempt key；durable attempt 身份／fingerprint 不變。無義務時普通流程可使用最後一次生成；義務在額度耗盡後才建立仍須明示未完成，不能補送免費核對或新開 run。
+
+`beforeModelCallback` 只處理工具／指令裁剪，不是預算唯一權威：`finish` 階段只保留當前已有 terminal 的 schema／toolsDict／ANY allowedFunctionNames；沒有 terminal 的抽取流程沿原輸出契約。主聊天保持模型→工具→結果循環，模型按需選步驟；原生成／工具／配額／取消計數不重設，Server 仍拒絕未提供工具及混批。`completeText.purpose` 與 `onProviderStart` 只由 Server 呼叫端設定；callback 在所有準備與准入通過、真正呼叫 provider 前發出，觀察故障不得改變結果。`reviewing` 只接 review／rereview，不接 repair，拒絕或零模型呼叫不假報進度。
+
+<a id="agent-delivery-review-contract"></a>
+**聊天交付審核：**Server 在每個 run 維持單調 `review → evidence → citation → official_citation` 義務，分別投影為 `required／evidenceRequired／citationRequired／officialEvidenceRequired`；planning、逐 attempt 准入及最後交付共用同一狀態。`requireDeliveryReview` 只供受信任 Server 任務選擇，不接受 HTTP body 或模型自報。普通無引用文字及只是檢索到但未使用的來源不一律觸發 reviewer；真正主張綁定 `citationIds`（即使只有一個來源）須獨立核對，既有照護／私人原件及編製成果審核保留。正向安全偵測不是完整語義分類器，不能以無命中當授權或所有風險均已識別。
+
+待交付主張在工具驗證時建立的義務不能靠刪引用、改 `kind`、repair、記憶 grounding 或模型宣稱已審來降級。live citation binding 只是最低結構要求：已有 citation 義務須有實際段落 `citationIds` 連到合格 live source，不能用未引用的已載入記憶或僅 `sources.length>0` 滿足；已有官方引用義務不能整輪降為只有私人來源。每個實際引用仍核 live／scope／version 等硬條件，`caregiving／safety_help` 段落沿其目前有效 kind 做既有官方引用校驗；這些條件不構成逐句語義支持證明。獨立 reviewer 須讀原稿＋新稿＋issues＋evidence，逐段核對每個需支持的主張，包括 repair 刪除引用卻保留的主張；mocked `pass` 只驗流程，不能證明語義品質。不增設 per-claim IDs 或新分類器。
+
+嚴格有界純補問、Server 替換的已核來源原文／固定安全文字及真收據，在首輪或 repair 後均可直接交付並返回 `review:null`，但不清除已有狀態；問號、客套字眼及模型自寫操作成功均不是收據。預算收尾只在相關工具全部成功、唯一當前有效待確認問題及重新核權成立時使用 Server 固定 pending 收據，不恢復未核模型正文，不把候選當保存成功。這不新增所有照護或記憶寫入一律必審的政策。
+
+獨立 reviewer 只讀同一成果與原件。`userRequest` 僅取同 run 已核實的本人當次訊息，不為審核另抓歷史；最多一次 repair，且須餘下兩次生成供修訂及 rereview。重核同時取得原 draft 與 repair issues，兩者都是資料，不能授權或修改規則。review output 仍為 `pass／revise／insufficient_evidence`。`draftHash` 綁請求、正文、來源版本／content hash／分類、實際 excerpt hash／完整度、原件及修正上下文；批准另綁 user／workspace／child、授權與資料版本、可見範圍、prompt 及 `p3-m01-chat-delivery-review/2` policy。來源或語義綁定改變便不能沿用批准，舊 `/1` 不跨版復用。
+
+相關已確認記憶與引用須在審核前選成同一穩定來源集合，用於 payload、hash、重驗及 binding；最多 12 項，超出拒絕而非在最後截斷或混入無關事實。當前權限、來源／版本／hash、撤回、到期及可見範圍在通過後仍重查；無來源、審核拒絕、預算不足與其他未完成分開回報。審核停止只保留再次重驗仍有效的來源及固定未完成提示，不展示未核正文或重做已成功／unknown 操作。候選實作、檢查及未驗狀態見 [修復包](../PLAN.md#agent-review-repair01)，不由本契約推定已部署或完整驗收。
 
 `present_answer` 為 terminal 工具。一般階段成功接受後，ADK skipSummarization 結束循環，既有 finalize 仍重驗引用及目前授權；unknown 停止並保留原台帳。gateway 在執行任何 handler 前拒絕 terminal 與其他工具的同一 response，不能先展示再截掉未完成副作用。
 

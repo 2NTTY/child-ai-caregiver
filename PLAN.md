@@ -80,6 +80,48 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **保留的前批交付：**[MODEL-SELF03](#model-self03)可由用戶在 Web／Android 自行填寫憑證與模型試用；#270 共用導航及 #271 延後聯合補驗已合併，導航接線已隨 `382d217` Web／Android OTA 發布，真機效果待核。依使用者指示，[DEV02](#dev-agent02)最後引用／審核及聯合補驗等待四個 Agent 真正完成且協作者先自行檢查，不提前重跑或接管。iOS 不以新模型驗收取代這些缺口。
 
+<a id="agent-review-repair01"></a>
+### AGENT-REVIEW-REPAIR01：D 的六項 Agent PR 修復與最新需求對齊（候選，未驗收完成）
+
+**範圍與授權：**使用者要求繼續修 PR、可捨棄不合最新想法的原 D 設計，合併前自行 review 並報告；毋須另發 PR comment。本包取代上文及歷史包「不改 D PR／等待協作者」對這六項來源修復的限制，不解除 DEV02 真模型聯合補驗、語音或設備驗收的原 gate。主聊天仍是同一 ADK 模型→工具→結果循環，不改成每輪固定跑四角色。
+
+#### 基線、來源與邊界
+
+- 候選使用隔離工作目錄，基線 `191bcef6064da99d98806245982ef0cc52fcebc0`（#379）。原修復基線 `9058011751974c6cf0da84f27327a4e15d04dd91` 是其 ancestor。39 個非 PLAN／API 路徑已接續；本節及 API 只局部整合 D 相關契約，保留 #378／#379 的 P4 匯入來源、私人交代共用路徑及 schema，不用舊整檔覆蓋新基線。
+- 原來源於 2026-10-28 18:03 UTC 讀回，當時均未合併；這是來源身份，不代表目前遠端狀態：
+
+| 原 PR | 固定來源 head |
+|---|---|
+| #254 | `a196ec5f6c520d113706d700b86f10762db48497` |
+| #262 | `7bd24b3fa1c075ad1bb4c7856c0dd2ea8b131d57` |
+| #263 | `9614898f64ba2d049734caa7a9c107961f726b0c` |
+| #265 | `bd7d3e16a0baafc1fdd6210b1f3c2e63d91697dc` |
+| #273 | `905662996406235430b06285ca15611dd57257a0` |
+| #353 | `cdb71a9a393767cec105e87349a05cc5e40f1e22` |
+
+- #265 已含 #262／#263 的非重複成果；保留原作者 `CheungHiuTung-2526` 歸屬，整合／修正不冒充原作者。
+- 只用合成資料、正式專案模組及 mocked provider／store；零真模型、家庭資料、GCP 或部署。不新增來源卡、班級／匯入功能、配額或權限；不重做前端。
+- 最新需求整理在獨立 draft PR #375 的需求文件 v0.10／REQ-008；本包不覆寫該文件。新增「所有高風險照護／記憶變更都必須審核」仍是未批准提案，不當作本輪已實作政策；既有照護、原件及編製成果審核則不移除。
+
+#### 保留、修正與捨棄
+
+- **保留：**按需工具／編製、真正 claim→citation 的獨立引用核對（單來源亦須核對）、既有成果審核、來源當前有效性、確認及原操作收據。審核失敗只可留下即時重驗仍有效的來源與固定未完成提示，不洩露未核正文或偽稱成功。
+- **捨棄：**普通互動一律 reviewer／固定留一次 review 的 blanket 設計；僅取得未使用來源不觸發審核，普通無引用文字不因無法分類而一律追加模型。既有正向安全偵測不是完整語義分類器，不能宣稱覆蓋所有風險。
+- **替代：**Server 在每個 run 維持單調義務：`review → evidence → citation → official_citation`，由受信任任務選擇或實際待交付主張建立；planning、逐 attempt admission 及最終交付共用即時狀態。刪引用、改 `kind`、repair 或模型自報已核對不能降級。live citation binding 是最低結構要求：須有實際 `citationIds` 連到合格來源，未引用的已載入記憶不算；已有官方引用義務不能整輪改成只有私人來源。每個實際引用仍核 live／scope／version 等硬條件，但不因此證明每句均被支持。逐段每個需支持的主張，包括 repair 刪引用卻保留的主張，由獨立 reviewer 讀原稿＋新稿＋issues＋evidence 核對；mocked `pass` 只能驗流程，不能證明語義品質。不增加 per-claim IDs 或新分類器。
+- **預算：**無義務時保留完整普通生成餘額；建立義務後才預留最後一次核對。gateway 逐次串行准入（含 retry／tool-free role）讀 live state，不採排隊前的舊 snapshot；只有 Server 指定的 `delivery_review／compose_review` 可用預留，修訂不豁免。義務太遲建立而已無餘額仍明示未完成，不加額、重開 run 或重做未知副作用。
+- **安全例外：**嚴格有界純補問、Server 替換的已核原文／固定文字及真收據可直接交付，首輪或 repair 後均返回 `review:null`，但不清除已有義務；問號、禮貌字眼、模型寫成「已保存」或記憶 grounding 都不是豁免。只有全部相關工具成功、唯一當前有效確認問題及再核權通過，才可用固定待確認收據收尾；候選不等於正式保存。
+- **原修復續留：**「有冇記住」等查回問句不新建記憶；本人明示陳述與後續問句分開，候選保留本人孩子稱呼、來源及明確短期限。選相關、未撤回／未過期記憶作證據；同一有界來源集合用於 hash／payload／live revalidation／binding，超過 12 項拒絕而非最後截斷。私人／家庭邊界與原確認不變。
+- **證據與進度：**只把本輪 Server 已核實的 `userRequest` 送審，不補抓歷史；重核帶同原 draft／修正 issues。hash 綁請求、正文、實際 excerpt／完整度／來源類別、版本及修正上下文，通過另綁對象／可見範圍／授權與資料版本／prompt／policy；policy `/2` 不沿用舊語義批准。`reviewing` 只在審核 provider 真正開始時發出，準備、拒絕、零呼叫及 repair 不假報正在核對。穩定契約見 [API](docs/API.md#agent-delivery-review-contract)。
+
+#### 驗證狀態與收尾 gate
+
+- **已核範圍：**2026-10-29 02:26 UTC 的 `delivery-final.json` 記錄 54／54 通過（11 項 obligation／binding＋43 項原交付回歸），該輪來源前後未變；收據 SHA-256 `c86c677fa5689db53ce12490e54fa69e38ab8c5757f4a1b938d95f3d003d69a2`。先前新 state／evidence／request／repair-context 紅測試，以及 32／43 與 52／53 回歸失敗均保留；後者的舊 fixture 未使用 Server 指定的新 repair-context hash，修正 fixture 後才取得本輪結果。`--test-force-exit` 不證明應用所有非同步 handle 均已清理，程序組結束另核。
+- **接續證據：**02:29 UTC 的 `runtime-final.json` 記錄 67／67 通過，限當輪 obligation／budget／gateway／runtime 契約及 runtime 測試；收據 SHA-256 `9ed4c8f619dbc02ff2bb0e7b877328c7eb08426c80c6111330f9780f38558643`。獨立 review 發現的證據／引用降級及 repair 例外問題修正後，02:37 UTC 的 `reviewer-findings-green.json` 記錄 59／59 通過（16 項 obligation／binding＋43 項原交付回歸），收據 SHA-256 `cbf0490ff33b4c4ebf81736fda85121edf42d862c92ef4a58cc3248c5220e818`；兩輪來源前後未變，原 finding／紅證據保留。後輪交付修正不追溯改稱較早 runtime 批次已涵蓋最新全部差異。
+- **其後交集：**`product-intersection.json` 的 62 項為 60 通過／2 失敗，兩項 fixture 仍假定全工具／blanket 審核；修正 fixture 後，02:46 UTC 的 `policy-product-green.json` 以 obligation＋product 兩檔核對 22／22 通過，未重跑整批 62。02:47 UTC 的 `media-compose-budget.json` 核對 photo／voice review、data-compose、role-budget 四檔 17／17 通過。三批分列，不相加為最新候選完整驗收。
+- 獨立 code-only review 已覆核三項程式 finding 的修正；本節的結構／語義分界另按 review 收窄。原紅、修正及每輪 source hashes 留在本地合成檢查收據，不納公開提交、不刊私人路徑；檔名只供識別，不是公開下載連結。各輪結果只適用所記錄版本。CI 的 19 檔 gate 與型別仍待驗；完整聯合驗收、真模型／正式服務及設備品質尚未核定，合成測試不代驗。
+- 下一步：凍結審閱過的精確 candidate，完成必要 CI／型別 gate 及來源歸屬核對，保留首次失敗與環境限制，再更新本節結果。文件／prompt 須由已指定 Astra xhigh 親寫及核對。
+- 交付前核精確 candidate tree／head、證據 hashes、遠端狀態及必要檢查，先報告 review 結果，才按既有授權正常提交／合併；不強推、不繞保護、不以空 CI 或合併代替驗收。本節不宣稱已 commit／push／merge 或部署。
+
 <a id="four-fix01"></a>
 ### FIX-FOUR01：照片恢復、通知登記競態與原生 PDF（待驗收）
 
