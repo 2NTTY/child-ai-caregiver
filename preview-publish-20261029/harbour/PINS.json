@@ -33,11 +33,11 @@
     {
       "destination": "frontend/src/components/AppShell.tsx",
       "beforeSha256": "b8c6954a08b505ed34513c2fe1f143f4587150a8434bbf47313fbd53abd97224",
-      "sha256": "b8ce0171178941071d338c64894064e643fff1f57d2e6a6545ae89d5e2bef4ca",
-      "bytes": 16973,
-      "gitBlob": "d9b291cf0e1477b4e3f887d33b6c8d66e695cb5d",
+      "sha256": "6a8d4fd261d1f1c2847b6fded55eff9a24e50ab5390415d35dcc5a50ef5f2648",
+      "bytes": 18314,
+      "gitBlob": "a6c19d8b50dc0d24755e32798e00eb8b1d17be48",
       "mode": "100644",
-      "committedIn": "ad3b7978bc5853a29eaa429126271ec4815c4055"
+      "committedIn": "4050c0a16d0a9735923434abc9749ecd416d7926"
     },
     {
       "destination": "frontend/src/components/NativeAppShell.tsx",
@@ -61,7 +61,7 @@
   "entrypoint": "frontend/index.js",
   "packageManagerMetadata": "npm@11.8.0",
   "lockSha256": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",
-  "sourcePinsSha256": "388ff30b38226a7e2bf6317bbbbedfeea5f1419fb5c0e88cf9f76974ebc00d78",
+  "sourcePinsSha256": "ddda917ea9eae797e044ed82013a0d9418ca1abed4f8e8f532c96d6b46ba6b0e",
   "shared": {
     "experiments/dispatch.js": {
       "bytes": 4651,

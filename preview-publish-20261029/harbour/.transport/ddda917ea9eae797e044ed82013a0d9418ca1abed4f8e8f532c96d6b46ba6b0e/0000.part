@@ -330,11 +330,11 @@
       "sha256": "6b96e19c2fd59d02ee50c53f6774cbb73a8cc96b0b707d0367aeaba85091280c"
     },
     {
-      "bytes": 16973,
-      "gitBlob": "d9b291cf0e1477b4e3f887d33b6c8d66e695cb5d",
+      "bytes": 18314,
+      "gitBlob": "a6c19d8b50dc0d24755e32798e00eb8b1d17be48",
       "mode": "100644",
       "path": "frontend/src/components/AppShell.tsx",
-      "sha256": "b8ce0171178941071d338c64894064e643fff1f57d2e6a6545ae89d5e2bef4ca"
+      "sha256": "6a8d4fd261d1f1c2847b6fded55eff9a24e50ab5390415d35dcc5a50ef5f2648"
     },
     {
       "bytes": 1742,

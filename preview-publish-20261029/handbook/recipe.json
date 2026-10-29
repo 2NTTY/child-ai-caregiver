@@ -5,7 +5,7 @@
   "variant": "journal",
   "productCommit": "bc308157a48c3f2448898533dcf722385ee57f03",
   "productTree": "c73aece2a1539ef6dbe9fc680167f159282aea25",
-  "sourceAcquisition": "Original productCommit/productTree are provenance. Fresh detached checkout of the separately pinned clean published build commit contains the reviewed Task owner correction. Full shared build-input namespace and exact candidate pins are verified; no export-time source overlay or product edit.",
+  "sourceAcquisition": "Original productCommit/productTree remain provenance. Fresh detached checkout of the separately pinned published build commit contains the cumulative reviewed corrections, including the AppShell explicit-dismiss focus fix. Unchanged shared build-input verifier admits the exact full namespace and candidate pins; no export-time source overlay or product edit.",
   "sourcePins": {
     "package.json": "358da37ef3fb424225d755ea1123caf3ca04bbc803a9a427a27d46470b324ca0",
     "package-lock.json": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",
@@ -22,7 +22,7 @@
     "frontend/app.config.js": "4a065de9ffe8b904cce48703b8e7a22f47790f96752b4ccdd9a9a0a974dc57ec",
     "frontend/tsconfig.json": "1571bfb7783a106586c8431560a1e1377d409c6e763fce900d979abdb297a85d",
     "frontend/src/production/task-knowledge-tasks.ts": "f50d5b3404a83cf8b429b4e5373474ff4770cedb02b083e8679c61b4ed6d1dfd",
-    "frontend/src/components/AppShell.tsx": "043b1ae372b11c2e1c5382a9f81c18bf31a9defe5a7ead4353cd3a1bd2818e23",
+    "frontend/src/components/AppShell.tsx": "a5387a72e2b1b5bddc529fc6d5c55ede66d22e9dc194ac68a4d579135780c6d8",
     "frontend/src/components/NativeAppShell.tsx": "57f93273070df9644a0f934e9c908df5deb4e2d0cf4a382c0adb2cbdcc41bd38",
     "frontend/src/motion/MotionFeedback.tsx": "89ce054eb9f5a579e376dff5111cc5763b50fb8d564133dd4e3f48a81e146061",
     "frontend/src/components/ui.tsx": "c0992a2e0f2c7a6e6a689f1f029da38c05f5cf6c8c83b357dffd2bf65f1dc050"
@@ -45,11 +45,11 @@
     {
       "destination": "frontend/src/components/AppShell.tsx",
       "beforeSha256": "154e94c24210ec6d83779a69c5c86226a5bd26f8b2693c8b17baa76716096c73",
-      "sha256": "043b1ae372b11c2e1c5382a9f81c18bf31a9defe5a7ead4353cd3a1bd2818e23",
-      "bytes": 11415,
-      "gitBlob": "5699e5ae50007d506713f1e1ee818220bcdb6a36",
+      "sha256": "a5387a72e2b1b5bddc529fc6d5c55ede66d22e9dc194ac68a4d579135780c6d8",
+      "bytes": 12756,
+      "gitBlob": "1bc8c07174f1705acc64e2bc8bb6d7c205c35080",
       "mode": "100644",
-      "committedIn": "18c2e0c8875a16d8d38b940f033fa0134bb2221f"
+      "committedIn": "72a00c860118e254e05249b471efb2a676aaaa42"
     },
     {
       "destination": "frontend/src/components/NativeAppShell.tsx",

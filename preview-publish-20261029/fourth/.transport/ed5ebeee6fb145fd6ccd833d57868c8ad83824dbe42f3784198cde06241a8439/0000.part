@@ -519,8 +519,8 @@
     },
     {
       "path": "frontend/src/components/AppShell.tsx",
-      "bytes": 16509,
-      "sha256": "03e2a7eb6dafea7e4d93b4ea30d258aa196e570b28d6a6b1a80347925c7731c0"
+      "bytes": 17850,
+      "sha256": "9bed8f3964942ce73094c789e35c39f1d508faf565f6434fd2bbb7ba0b3f4c76"
     },
     {
       "path": "frontend/src/components/AppStatusBadge.tsx",

@@ -5,7 +5,7 @@
   "variant": "uiux-upgrade",
   "productCommit": "f1c60c6ae2928e5407dabccbd04a504f691e39cf",
   "productTree": "f7619a5e1c59256d914c2b3693a768921f0c489d",
-  "sourceAcquisition": "Original f1 productCommit/productTree remain provenance. Fresh detached checkout of the separately pinned clean published build commit contains the cumulative reviewed source corrections, including the Fourth TaskDetail history-read focus fix. Unchanged shared build-input verifier admits its exact full namespace; PRODUCT_INPUTS and productSourceDelta bind the exact candidate bytes and cumulative provenance. No export-time overlay or product edit.",
+  "sourceAcquisition": "Original productCommit/productTree remain provenance. Fresh detached checkout of the separately pinned published build commit contains the cumulative reviewed corrections, including the AppShell explicit-dismiss focus fix. Unchanged shared build-input verifier admits the exact full namespace and candidate pins; no export-time source overlay or product edit.",
   "productSourceDelta": [
     {
       "destination": "frontend/src/production/task-knowledge-tasks.ts",
@@ -19,11 +19,11 @@
     {
       "destination": "frontend/src/components/AppShell.tsx",
       "beforeSha256": "afacdd8286e5f078192c62993596ba94301ca2435c714d779109fe8a7de228fc",
-      "sha256": "03e2a7eb6dafea7e4d93b4ea30d258aa196e570b28d6a6b1a80347925c7731c0",
-      "bytes": 16509,
-      "gitBlob": "9a8592d3cdb4a512f8fd6f1f7774594c6ece4963",
+      "sha256": "9bed8f3964942ce73094c789e35c39f1d508faf565f6434fd2bbb7ba0b3f4c76",
+      "bytes": 17850,
+      "gitBlob": "94fbcfd800bc429e6f99e6e6ab1c7ab73d93eff3",
       "mode": "100644",
-      "committedIn": "e678b0faf29db948bf3d69597c37e625c65e4a44"
+      "committedIn": "76493c5e0747cb5da908fdb708879fd96509d093"
     },
     {
       "destination": "frontend/src/components/NativeAppShell.tsx",
@@ -95,7 +95,7 @@
     "src/client/family-documents-api.ts": "3db16e774b3bfc4dc94f11073302923e6a3be5be996f74da81a023f0d5b76454",
     "frontend/src/production/useFamilyDocuments.ts": "44a936f40e0fe24d54f3d8a3404dfa82dd23da250318760a9a55584ef2bfff62",
     "frontend/src/production/task-knowledge-tasks.ts": "402f8f70b8849df532056a8436c45b482ba7bfc53fe3d2d5aa3a65650129df5b",
-    "frontend/src/components/AppShell.tsx": "03e2a7eb6dafea7e4d93b4ea30d258aa196e570b28d6a6b1a80347925c7731c0",
+    "frontend/src/components/AppShell.tsx": "9bed8f3964942ce73094c789e35c39f1d508faf565f6434fd2bbb7ba0b3f4c76",
     "frontend/src/components/NativeAppShell.tsx": "09c8df093fdecad461f7d818ebe1bbb1d01a8644a0fdde7804ea770dab0f1e04",
     "frontend/src/motion/MotionDisclosure.tsx": "f7af15d27b7826f108941430dc92dcaa951abbf8fbf60d6854b1f033cd7423a9",
     "frontend/src/motion/MotionDrawerRight.tsx": "8c57de828d7dc821c5abbb67dd45842ed59892e27aeef15bc6505a9784652017",
@@ -104,7 +104,7 @@
     "frontend/src/components/tasks/TaskDetail.tsx": "bbe798606b24b9567a4d0316a1beebfa0bff1bcf84d10af410d339138ea28ea7"
   },
   "inputManifest": "PRODUCT_INPUTS.json",
-  "inputManifestSha256": "f6b2a8318dcb86ba9655aff20f9de3edcfee95fa36c162d70318840ebc615996",
+  "inputManifestSha256": "ed5ebeee6fb145fd6ccd833d57868c8ad83824dbe42f3784198cde06241a8439",
   "entrypoint": "frontend/index.js -> runtime web stub -> own web-foundation -> browser-history-events -> installed expo-router/entry; root layout retains own ProductionProvider/FirstScreenGate; no Application/OwnerHost substitution",
   "lockFile": "package-lock.json",
   "lockSha256": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",
@@ -194,7 +194,7 @@
   "fixtureBaseSha256": "7f7baa579563687cf664a2f5d0f671a4e2a209df5e596b82b3e5f4951017ea57",
   "outputContract": "Fourth-only contribution: 36 route shells and fourth payloads, fresh source-map-bound assets, exact-reviewed favicon, fourth fixture/helper/safety. Parent keeps historical original and canonical four dispatcher. Public GitHub artifact contains only sanitized site plus public-safe proof. Full raw/maps validated remotely and retained only on runner until teardown; NEVER uploaded or described as private GitHub artifacts.",
   "expectedOutputBytes": null,
-  "expectedOutputBytesReason": "No export of this Fourth focus build has run; do not invent its size.",
+  "expectedOutputBytesReason": "No export of this notice-focus build has run; do not invent its size.",
   "publication": "BLOCKED_UNTIL_NATIVE_BROWSER_ACCEPTANCE",
   "remainingGates": [
     "independent recipe/source review",

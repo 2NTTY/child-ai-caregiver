@@ -27,15 +27,15 @@
       "recipeReady": true,
       "recipeFiles": {
         "orchestrator/care/assemble_preview.py": "64992c168a32da56afba8b45fc134b8d4c28d55b81a4bc27ed6626b5bae43547",
-        "orchestrator/care/recipe.json": "92d76367144992211c22fa4f737238afa9d271c69efdd40b2c84b5f5980be325",
+        "orchestrator/care/recipe.json": "eb31f9cc2878b8c91f47758480fcc834d1fd803cef918e14ff36be002a644c4a",
         "orchestrator/care/fixtures/care.js": "aaa6920f9cf5b11b3ae67b5dc9ba34fd9d7907075b5e638719329480c370f554",
         "orchestrator/care/overlay/frontend/scripts/task-pristine-close.test.cjs": "c8e474a4942eb18bcd60131eddfedff3c986da9783148a306abea769a595d522",
         "orchestrator/care/overlay/frontend/src/production/task-knowledge-tasks.ts": "86eff8d17b6d5023d4cd662d347a619ca288c97f24d5dc65e6c12e2d95c85bcd"
       },
-      "buildCommit": "71c030f0d7cf1feefe2573a41c7e8e9856d4d7d8",
-      "buildTree": "994ed8ca84a2a575f0b95279597d50afbf26ad58",
+      "buildCommit": "520d4c88a74faf460a464c38931cd9e1a84e0ec8",
+      "buildTree": "c0abef888f7bf10054a0b7b07cfc85b78b259073",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "1cf189b37f3308d1f71fbeb6fd1c8cfcb4f92a5b742ca44831702b11ead0ca1e",
+      "buildInputsManifestSha256": "e8d6f69e4d9be952be611557a1813081761333130412790f1208309e930b8923",
       "candidateChanges": [
         {
           "source": "orchestrator/care/overlay/frontend/src/production/task-knowledge-tasks.ts",
@@ -47,11 +47,11 @@
         {
           "destination": "frontend/src/components/AppShell.tsx",
           "beforeSha256": "aa0dd4530737feaa5eef49cf1cd0d92191d3366909a454cfe330606adc88020e",
-          "sha256": "af99569e3c746a031023af7c300e812061d4418427367b134508d2d7f5097166",
-          "bytes": 9940,
-          "gitBlob": "24a89ab108e9c6b3c518a187f06fee26ad5202ba",
+          "sha256": "2e6296b94cc201789ad0be03305f78733e8c9d78801337863cdedd7e1a3acefd",
+          "bytes": 11281,
+          "gitBlob": "c654bd2450fe45a2b67f4daae0907c6cd9b6b31b",
           "mode": "100644",
-          "committedIn": "92043cdce9ef7da8491880d2218b8f22822ef1ed"
+          "committedIn": "520d4c88a74faf460a464c38931cd9e1a84e0ec8"
         },
         {
           "destination": "frontend/src/components/NativeAppShell.tsx",
@@ -116,16 +116,16 @@
         "harbour/adapt.py": "fdb74839721d05be13fe64cff584cb8001345536cc26dbaf306012caf604569e",
         "harbour/prepare.py": "94b3242841f9e72c7d678919aae360a18694d160665fb95eb08d1dcb9cc426fd",
         "harbour/verify_graph.mjs": "45badd99474d4fea922a2fead2c5fe339013dc34a3f84d5487d1bbfdfff663d4",
-        "harbour/PINS.json": "ba5810a0bf563119493e572d2edca90853f2afdb9c995f545e138d5b1927d371",
-        "harbour/source-pins.json": "388ff30b38226a7e2bf6317bbbbedfeea5f1419fb5c0e88cf9f76974ebc00d78",
+        "harbour/PINS.json": "41308894ea5ee461c3c9549e3edb51f67cb7d2a6827d305a65e08980a157a76b",
+        "harbour/source-pins.json": "ddda917ea9eae797e044ed82013a0d9418ca1abed4f8e8f532c96d6b46ba6b0e",
         "harbour/shared/experiments/dispatch.js": "0b27cef6a7d8a93798996942171cd5a74ebc77c3e05947ff61ec238d64cb863f",
         "harbour/shared/experiments/fixtures/harbour.js": "a4e0f2d87d4fe9225530c5318faf729dc1bea24b4fa9694c19fa8f1952d5d1dd",
         "harbour/shared/experiments/preview-navigation-identity-v1-r2.js": "bb0eca035d78b763c72924285f04ec124093ea4ced53e3f37d90f2b8dfb1bcd9"
       },
-      "buildCommit": "56be26ec51afbb1df4c7f24dbc28b9dea1e0ae99",
-      "buildTree": "6d8f6e71a9f870bcb3d13a342dc64e65b4609235",
+      "buildCommit": "4050c0a16d0a9735923434abc9749ecd416d7926",
+      "buildTree": "fcc2393ea5f6bf6963fbf9b281f24bd02de76ea2",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "1cf189b37f3308d1f71fbeb6fd1c8cfcb4f92a5b742ca44831702b11ead0ca1e",
+      "buildInputsManifestSha256": "e8d6f69e4d9be952be611557a1813081761333130412790f1208309e930b8923",
       "candidateChanges": [
         {
           "destination": "frontend/src/production/task-knowledge-tasks.ts",
@@ -157,11 +157,11 @@
         {
           "destination": "frontend/src/components/AppShell.tsx",
           "beforeSha256": "b8c6954a08b505ed34513c2fe1f143f4587150a8434bbf47313fbd53abd97224",
-          "sha256": "b8ce0171178941071d338c64894064e643fff1f57d2e6a6545ae89d5e2bef4ca",
-          "bytes": 16973,
-          "gitBlob": "d9b291cf0e1477b4e3f887d33b6c8d66e695cb5d",
+          "sha256": "6a8d4fd261d1f1c2847b6fded55eff9a24e50ab5390415d35dcc5a50ef5f2648",
+          "bytes": 18314,
+          "gitBlob": "a6c19d8b50dc0d24755e32798e00eb8b1d17be48",
           "mode": "100644",
-          "committedIn": "ad3b7978bc5853a29eaa429126271ec4815c4055"
+          "committedIn": "4050c0a16d0a9735923434abc9749ecd416d7926"
         },
         {
           "destination": "frontend/src/components/NativeAppShell.tsx",
@@ -191,15 +191,15 @@
       "recipeReady": true,
       "recipeFiles": {
         "handbook/assemble_preview.py": "1930650f7304da1fceee5b412cf3eca9548c944a287b930a1139396408ae983c",
-        "handbook/recipe.json": "8243957e9a87a0002bac495523f2fb492bc978941d04573f6a81228d2feef989",
+        "handbook/recipe.json": "91ac7c4124ecf1221a7da240127966ac3209e5d23432eb613edc92ce1543ef83",
         "handbook/overlay/experiments/dispatch.js": "0b27cef6a7d8a93798996942171cd5a74ebc77c3e05947ff61ec238d64cb863f",
         "handbook/overlay/experiments/fixtures/journal.js": "a4e0f2d87d4fe9225530c5318faf729dc1bea24b4fa9694c19fa8f1952d5d1dd",
         "handbook/overlay/experiments/preview-navigation-identity-v1-r2.js": "bb0eca035d78b763c72924285f04ec124093ea4ced53e3f37d90f2b8dfb1bcd9"
       },
-      "buildCommit": "a8181ff0c3b58acedfea85c4a977b7435d657dea",
-      "buildTree": "702ad7e707dd755786e060915748b65f80ef56a5",
+      "buildCommit": "72a00c860118e254e05249b471efb2a676aaaa42",
+      "buildTree": "8af71f2826cec47d5625053b68b87aba2ab52722",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "1cf189b37f3308d1f71fbeb6fd1c8cfcb4f92a5b742ca44831702b11ead0ca1e",
+      "buildInputsManifestSha256": "e8d6f69e4d9be952be611557a1813081761333130412790f1208309e930b8923",
       "candidateChanges": [
         {
           "destination": "frontend/src/production/task-knowledge-tasks.ts",
@@ -213,11 +213,11 @@
         {
           "destination": "frontend/src/components/AppShell.tsx",
           "beforeSha256": "154e94c24210ec6d83779a69c5c86226a5bd26f8b2693c8b17baa76716096c73",
-          "sha256": "043b1ae372b11c2e1c5382a9f81c18bf31a9defe5a7ead4353cd3a1bd2818e23",
-          "bytes": 11415,
-          "gitBlob": "5699e5ae50007d506713f1e1ee818220bcdb6a36",
+          "sha256": "a5387a72e2b1b5bddc529fc6d5c55ede66d22e9dc194ac68a4d579135780c6d8",
+          "bytes": 12756,
+          "gitBlob": "1bc8c07174f1705acc64e2bc8bb6d7c205c35080",
           "mode": "100644",
-          "committedIn": "18c2e0c8875a16d8d38b940f033fa0134bb2221f"
+          "committedIn": "72a00c860118e254e05249b471efb2a676aaaa42"
         },
         {
           "destination": "frontend/src/components/NativeAppShell.tsx",
@@ -263,9 +263,9 @@
         "fourth/assemble.py": "338d94ff617a505db2fde4fbe498fd1e78753ea5191cb9f8889a935175944353",
         "fourth/verify_source.py": "5fc896364e3cde4526f996d087133132faeed4b0de88cdd777613a4ef088542f",
         "fourth/verify_graph.mjs": "a363a9473d39eae99a7bef592fac9e5ae12b8a8c19d50f825dc69a2e17df9247",
-        "fourth/PRODUCT_INPUTS.json": "f6b2a8318dcb86ba9655aff20f9de3edcfee95fa36c162d70318840ebc615996",
+        "fourth/PRODUCT_INPUTS.json": "ed5ebeee6fb145fd6ccd833d57868c8ad83824dbe42f3784198cde06241a8439",
         "fourth/protocol.json": "d6f110463664e68e32f81015f089d92e1a719732713e0dadb350ac10c9026423",
-        "fourth/recipe.json": "79f5c904d6ac4672547e6c4519b330778b3784d90eec96be716f0ff07940807a",
+        "fourth/recipe.json": "af59b1080d3c62d54e9ddebacfa48e27fb8c4fc369b6f89e2b3e3d44f9eb9b14",
         "fourth/adapter/admission.js": "8ef2f9ba7246722bde347330f002dd378ee27b265b906c4af833351015c4ff2b",
         "fourth/adapter/fixture-patches.json": "5c0e14a3182453b2f35ae557c731fd3bf392cada9306410aa75f5c1ada1f965e",
         "fourth/adapter/startup-guard.js": "1835436d1630bdcada4a63aed87cbc581ac40e39cc77fe9606648eceff185912",
@@ -275,10 +275,10 @@
         "fourth/overlay/experiments/preview-navigation-identity-fourth-v1.js": "ef238ce5675840b1a5313d98b4458bd5eb08829f7af189862551e7e9194c915f",
         "fourth/tests/admission.mjs": "a84d8be911727985500615e47d55ed8bb1a7664ba19cf0a63863e27618744aa5"
       },
-      "buildCommit": "1abaf5b07eedf908c384ea4ba0319eed0cc2bda3",
-      "buildTree": "9b77fe0f20b951272243510650122f9d8fa22e7b",
+      "buildCommit": "76493c5e0747cb5da908fdb708879fd96509d093",
+      "buildTree": "bf3ea11faf2bc58f664518c79575686ebb2bba84",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "1cf189b37f3308d1f71fbeb6fd1c8cfcb4f92a5b742ca44831702b11ead0ca1e",
+      "buildInputsManifestSha256": "e8d6f69e4d9be952be611557a1813081761333130412790f1208309e930b8923",
       "candidateChanges": [
         {
           "destination": "frontend/src/production/task-knowledge-tasks.ts",
@@ -292,11 +292,11 @@
         {
           "destination": "frontend/src/components/AppShell.tsx",
           "beforeSha256": "afacdd8286e5f078192c62993596ba94301ca2435c714d779109fe8a7de228fc",
-          "sha256": "03e2a7eb6dafea7e4d93b4ea30d258aa196e570b28d6a6b1a80347925c7731c0",
-          "bytes": 16509,
-          "gitBlob": "9a8592d3cdb4a512f8fd6f1f7774594c6ece4963",
+          "sha256": "9bed8f3964942ce73094c789e35c39f1d508faf565f6434fd2bbb7ba0b3f4c76",
+          "bytes": 17850,
+          "gitBlob": "94fbcfd800bc429e6f99e6e6ab1c7ab73d93eff3",
           "mode": "100644",
-          "committedIn": "e678b0faf29db948bf3d69597c37e625c65e4a44"
+          "committedIn": "76493c5e0747cb5da908fdb708879fd96509d093"
         },
         {
           "destination": "frontend/src/components/NativeAppShell.tsx",
