@@ -1,0 +1,23 @@
+{
+  "package": "P4-HANDOVER01 chat label compatibility",
+  "base": "70c4762117ea23c427e644a0ece4dce21f254f74",
+  "branch": "codex/p4-handover-chat-labels",
+  "scope": "Three forward-compatible label entries across two shared components; selectors unchanged.",
+  "checks": [
+    {
+      "method": "Two-root scoped frontend TypeScript graph",
+      "result": "0 diagnostics",
+      "evidence": "tmp/handover-chat-labels-types.log"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "review": "Main inspected labels and ensured required contract keys and previous selectors are preserved.",
+  "limits": [
+    "No product/model/device/full-suite tests",
+    "No deployment",
+    "History UI follows backend merge"
+  ]
+}

@@ -9,10 +9,10 @@ import { chineseFont, colors, readingType, spacing } from '../../theme';
 import { HandoverImportHistory } from './HandoverImportHistory';
 
 const modules: Record<HandoverImportView['targets'][number]['sections'][number], string> & Record<string, string> = {
-  care: '照護記錄', profile: '孩子資料', tasks: '待辦', memory: '記憶與摘要', sources: '私人來源', documents: '文件與準備單', attachments: '附件' };
+  care: '照護記錄', profile: '孩子資料', tasks: '待辦', memory: '記憶與摘要', sources: '私人來源', documents: '文件與準備單', attachments: '附件', chat: '私人聊天歷史' };
 const resources: Record<HandoverImportResourceSection, string> & Record<string, string> = { care: '照護記錄', profile: '孩子資料', tasks: '待辦',
   memory_facts: '記憶事實', memory_topics: '記憶話題', instructions: '私人交代', summary_history: '摘要歷史', private_sources: '私人來源',
-  documents: '文件', visit_preparation: '到診準備', files: '檔案', voices: '語音原檔', photos: '照片', child_avatar: '孩子頭像' };
+  documents: '文件', visit_preparation: '到診準備', files: '檔案', voices: '語音原檔', photos: '照片', child_avatar: '孩子頭像', chat: '聊天訊息', chat_imports: '匯入對話' };
 const sourceSectionLabels: Record<NonNullable<HandoverImportResult['sourceSection']>, string> & Record<string, string> = {
   care_history: '照護記錄來源歷史', profile_history: '孩子資料來源歷史', task_history: '待辦來源歷史',
   memory_fact_history: '記憶事實來源歷史', memory_topic_history: '記憶話題來源歷史', private_source_history: '私人來源管理歷史',
