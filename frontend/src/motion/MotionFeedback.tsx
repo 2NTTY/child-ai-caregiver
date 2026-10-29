@@ -29,7 +29,7 @@ export function MotionFeedback({ active, triggerKey, scopeKey, animateOnMount = 
   const shape = StyleSheet.flatten(style);
   return <View {...props} {...motionData({ ...props.dataSet, motionKind: "feedback" })} style={style}>
     <Animated.View pointerEvents="none" accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-      style={[StyleSheet.absoluteFillObject, { backgroundColor: motionTokens.feedback.color,
+      style={[StyleSheet.absoluteFill, { backgroundColor: motionTokens.feedback.color,
         borderRadius: shape?.borderRadius, borderTopLeftRadius: shape?.borderTopLeftRadius, borderTopRightRadius: shape?.borderTopRightRadius,
         borderBottomLeftRadius: shape?.borderBottomLeftRadius, borderBottomRightRadius: shape?.borderBottomRightRadius }, animatedStyle]} />
     {children}
