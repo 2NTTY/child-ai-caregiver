@@ -1,4 +1,5 @@
 import { randomUUID, createHash } from 'node:crypto';
+import { FieldPath } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { documentRequestSchema, documentChangeSchema, documentPatchSchema, documentExportSchema, documentListQuerySchema, documentContentQuerySchema,
   type FamilyDocument, type DocumentSnapshot } from '../src/shared/family-documents.ts';
@@ -23,12 +24,13 @@ import { prepareFirestoreBackgroundWork, firestoreBackgroundReference, type Fire
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { sharedAccessBasisSchema, sharedSelectionSchema, type SharedSelection } from '../src/shared/sharing.ts';
 import { sharedWriteAttribution, sharedWriteAttributionSchema, validSharedAttribution } from './shared-write-attribution.ts';
-import { familyDocumentTransferSchema, type FamilyDocumentTransfer } from './family-document-transfer.ts';
+import { familyDocumentTransferSchema, documentTransferContentSchema, type FamilyDocumentTransfer, type DocumentTransferContent } from './family-document-transfer.ts';
 import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
 import type { HandoverImportRow } from './handover-import.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
 import { makeImportProvenance } from './handover-provenance.ts';
-import { copiedDocumentCoverage, copiedDocumentSource, newDocumentCopy, IMPORTED_DOCUMENT_NOTE } from './family-document-copy.ts';
+import { copiedDocumentCoverage, copiedDocumentSource, newDocumentCopy, documentSourceRevisionSchema, IMPORTED_DOCUMENT_NOTE,
+  type DocumentSourceRevision } from './family-document-copy.ts';
 import { firestoreDocumentSnapshotSchema } from './firestore-family-document-snapshots.ts';
 
 const uuid = z.uuid(), version = z.number().int().positive().max(2147483647), datetime = z.iso.datetime({ offset: true });
@@ -63,6 +65,11 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
   prepareImported(binding: FirestoreAuthorityTransaction, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     currentSnapshot: DocumentSnapshot | null, current?: { id: string; expectedVersion: number }): Promise<{
       value: { id: string; version: number }; changeSeq: string; commit(): void }>;
+  prepareImportedRevision(binding: FirestoreAuthorityTransaction, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
+    target: { id: string; expectedVersion: number }): Promise<{ outcome: 'created' | 'skipped' | 'conflict'; snapshotId: string; commit?: () => void }>;
+  readSourceVersion(userId: string, childId: string, id: string, snapshotId: string): Promise<(DocumentTransferContent & { origin: DocumentSourceRevision }) | null>;
+  listSourceVersions(userId: string, childId: string, id: string, cursor?: string | null): Promise<{
+    items: Array<Omit<DocumentTransferContent, 'snapshot'> & { origin: DocumentSourceRevision }>; nextCursor: string | null } | null>;
   readExportSnapshot(userId: string, childId: string, id: string, snapshotId: string, version: number): Promise<DocumentSnapshot | null> } {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), snapshots = new FirestoreFamilyDocumentSnapshots(options);
   const care = createFirestoreCareStore(options), chat = createFirestoreChatStore(options);
@@ -296,6 +303,79 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
         change.commit(); prepared?.commit(binding.transaction); binding.transaction.set(data.ref('documents', 'family-document', id), envelope);
       } };
     },
+    async prepareImportedRevision(binding, opId, raw, integrity, target) {
+      uuid.parse(opId);
+      if (raw.section !== 'document_content') reject('invalid_package_data', 400);
+      const input = domainParse(documentTransferContentSchema, raw.value, 'invalid_package_data', 400);
+      const scope = await child(binding, binding.scope.childId), parent = await find(binding, scope, uuid.parse(target.id));
+      if (!parent || parent.version !== target.expectedVersion) reject('document_changed');
+      const accepted = parent.importedFrom?.current.source;
+      if (!accepted || accepted.serverId !== raw.source.serverId || accepted.accountId !== raw.source.accountId
+        || accepted.childId !== raw.childId || accepted.resourceId !== input.documentId
+        || input.snapshotVersion > accepted.resourceVersion) reject('history_parent_version_unavailable');
+      const key = fingerprint(['document-source-revision', scope.ownerUserId, scope.workspaceId, scope.childId, parent.id, raw.source.serverId, raw.source.accountId,
+        raw.childId, input.documentId, input.snapshotId, input.snapshotVersion]);
+      const snapshotId = firestoreBackgroundReference({ id: key }), inputHash = fingerprint(input);
+      const prior = await snapshots.manifest(binding.transaction, scope, parent.id, snapshotId);
+      if (prior) return { outcome: prior.sourceRevision?.inputHash === inputHash ? 'skipped' : 'conflict', snapshotId };
+      const importedFrom = makeImportProvenance({ ...raw, section: 'documents', value: { childId: raw.childId, id: input.documentId,
+        version: input.snapshotVersion, snapshotId: input.snapshotId,
+        ...(input.origin ? { importedFrom: input.origin.importedFrom } : {}) } }, integrity, binding.actorUserId, new Date().toISOString());
+      importedFrom.current.sourceHash = inputHash;
+      const sourceRevision = documentSourceRevisionSchema.parse({ importedFrom,
+        sourceSnapshot: { id: input.snapshotId, version: input.snapshotVersion, generatedAt: input.generatedAt }, invalidated: input.invalidated, inputHash });
+      const body = input.snapshot ? { ...structuredClone(input.snapshot), id: snapshotId, version: parent.version } : null;
+      if (body) {
+        if (body.sections.some(section => section.items.some(item => item.sourceIds.some(id => !body.sources.some(source => source.id === id)))))
+          reject('invalid_package_data', 400);
+        snapshots.bindCopy(body, newDocumentCopy(input.snapshot!, importedFrom));
+        if (!body.coverageNote.includes(IMPORTED_DOCUMENT_NOTE)) body.coverageNote += '\n' + IMPORTED_DOCUMENT_NOTE;
+      }
+      const prepared = body ? snapshots.prepare(scope, parent.id, body, sourceRevision)
+        : snapshots.prepareRedacted(scope, parent.id, snapshotId, parent.version, sourceRevision);
+      const change = await binding.prepareChange(opId, 'documents', false, scope.childId);
+      return { outcome: 'created', snapshotId, commit() { change.commit(); prepared.commit(binding.transaction); } };
+    },
+    async readSourceVersion(userId, childId, id, snapshotId) {
+      uuid.parse(id); uuid.parse(snapshotId);
+      return read(userId, childId, async (binding, scope) => {
+        const parent = await find(binding, scope, id); if (!parent) return null;
+        const manifest = await snapshots.manifest(binding.transaction, scope, id, snapshotId);
+        if (!manifest?.sourceRevision) return null;
+        if (manifest.snapshotVersion > parent.version) domainReject('snapshot_binding', 500);
+        const snapshot = await snapshots.read(binding.transaction, scope, id, snapshotId, manifest.snapshotVersion);
+        return { documentId: id, snapshotId, snapshotVersion: manifest.snapshotVersion, generatedAt: manifest.generatedAt,
+          invalidated: manifest.sourceRevision.invalidated, snapshot, origin: manifest.sourceRevision };
+      });
+    },
+    async listSourceVersions(userId, childId, id, rawCursor = null) {
+      uuid.parse(id);
+      return read(userId, childId, async (binding, scope) => {
+        const parent = await find(binding, scope, id); if (!parent) return null;
+        const aad = `document-source-versions:1:${userId}:${childId}:${id}`;
+        const basis = fingerprint([scope, authorityVersion(binding), parent.version, binding.changeSeq]);
+        let after: string | null = null;
+        if (rawCursor) {
+          try {
+            const value = z.object({ basis: z.literal(basis), after: z.string().min(1).max(2000) }).strict()
+              .parse(JSON.parse(options.cipher.decrypt(Buffer.from(rawCursor, 'base64url').toString(), aad)));
+            after = value.after;
+          } catch { reject('invalid_input', 400); }
+        }
+        let q = query('document_snapshots', scope).where('documentId', '==', id).where('snapshotVersion', '==', 0)
+          .orderBy('snapshotVersion', 'desc').orderBy(FieldPath.documentId(), 'desc');
+        if (after) q = q.startAfter(0, after);
+        const rows = await binding.transaction.get(q.limit(11));
+        const items: Array<Omit<DocumentTransferContent, 'snapshot'> & { origin: DocumentSourceRevision }> = [];
+        for (const row of rows.docs.slice(0, 10)) {
+          const manifest = await snapshots.manifest(binding.transaction, scope, id, uuid.parse(row.get('snapshotId')));
+          if (!manifest?.sourceRevision || manifest.snapshotVersion > parent.version) domainReject('snapshot_binding', 500);
+          items.push({ documentId: id, snapshotId: manifest.snapshotId, snapshotVersion: manifest.snapshotVersion,
+            generatedAt: manifest.generatedAt, invalidated: manifest.sourceRevision.invalidated, origin: manifest.sourceRevision });
+        }
+        return { items, nextCursor: rows.size > 10 ? Buffer.from(options.cipher.encrypt(JSON.stringify({ basis, after: rows.docs[9].id }), aad)).toString('base64url') : null };
+      });
+    },
     async readExportSnapshot(userId, childId, id, snapshotId, version) {
       return read(userId, childId, async (binding, scope) => {
         if (!await find(binding, scope, id)) return null;
@@ -361,7 +441,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
       uuid.parse(id); return read(userId, childId, async (binding, scope) => {
         if (!await find(binding, scope, id)) return null;
         const cursor = rawCursor ? decodeDocumentCursor(rawCursor, 'versions', userId, childId, id) : null;
-        let q = query('document_snapshots', scope).where('documentId', '==', id).orderBy('snapshotVersion', 'desc');
+        let q = query('document_snapshots', scope).where('documentId', '==', id).where('snapshotVersion', '>', 0).orderBy('snapshotVersion', 'desc');
         if (cursor) q = q.where('snapshotVersion', '<=', cursor.high).where('snapshotVersion', '<', cursor.after);
         const rows = await binding.transaction.get(q.limit(11)), loaded = await sources(binding, scope), values: DocumentSnapshot[] = [];
         for (const row of rows.docs.slice(0, 10)) {

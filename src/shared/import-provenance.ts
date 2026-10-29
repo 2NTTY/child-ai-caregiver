@@ -10,6 +10,7 @@ const sourceSchema = z.object({ serverId: text, accountId: text, childId: z.uuid
   sourceMessageId: z.uuid().nullable().optional(),
   statementProvenance: z.enum(['user_statement', 'imported_source']).optional(),
   previousSummaryId: z.uuid().nullable().optional(),
+  snapshotId: z.uuid().optional(),
   preparation: z.object({ appointmentTaskId: z.uuid().nullable(), reviewed: z.boolean(),
     reviewedBasis: z.string().min(3).max(128).nullable() }).strict().optional(),
 }).strict();

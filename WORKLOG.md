@@ -4360,3 +4360,12 @@
 一條必要合成流程及三根型別圖通過；最初缺方法的失敗保留。獨立 review 找到公開 importedFrom 不相容舊 strict client；沿原 client 重現 CareSummaryApiError 後，改成只在內部／授權匯出保留來源，公開 DTO 不變，同一流程補驗通過，聚焦覆核無 blocker。[證據](artifacts/verification/P4_HANDOVER_PREPARATION_DOMAIN_20261030.json)包括版本、隔離、原修改防重、預約映射與 codec；沒有模型、雲端、設備或全量測試。
 
 本包只是完整文件模組的權威前置，不開放部分模組假裝完整匯入。完整原文件／準備資料歷史、統一 worker／逐項收據／來源映射及共用選項仍待接；沒有部署，codec 不代替真災難還原，HANDOVER01／P4 仍未完成。
+
+<a id="log-20261030-p4-handover-document-history"></a>
+### 2026-10-30 — P4-HANDOVER01 文件來源修訂
+
+由 #389／`76863f1a` 沿原文件快照及分段保存完整來源歷史，不改目前正文或本地版本。來源清單每頁十項、正文固定版讀取，匯出保留來源鏈及全部歷史；失效版本只留無正文 metadata。沒有新增集合或重新建立文件服務。
+
+同一合成流程涵蓋十三個原修訂、長 Unicode 正文、隔離、版本、重複／衝突、完整匯出及 restore codec／內容檢查。獨立 review 發現防重 ID 含 storageEpoch；新增真 codec 換世代後重放，先重現 created 錯誤，再改用穩定資料身份，原修訂 skipped／異內容 conflict 均通過。三根型別圖零診斷，聚焦覆核無剩餘 blocker；失敗及範圍見[證據](artifacts/verification/P4_HANDOVER_DOCUMENT_HISTORY_20261030.json)。
+
+到診準備原修訂、統一 worker／逐項收據／映射與共用文件選項仍待接，沒有開放部分文件模組或宣稱 HANDOVER01 完成。沒有部署、真模型、雲端、設備或全量測試；合成還原不代替真災難恢復。

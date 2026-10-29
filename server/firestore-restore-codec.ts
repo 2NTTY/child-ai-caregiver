@@ -26,7 +26,7 @@ import { openRecoveryEnvelope, sealRecoveryLocator, type FirestoreRecoveryContex
 import { workRecoveryAad, workRecoverySchemas, workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { firestoreAuthoritySchemas as authority } from './firestore-authority.ts';
 import { firestoreFamilyDocumentSchemas as documents, validDocumentOperationAttribution } from './firestore-family-documents.ts';
-import { firestoreFamilyDocumentSnapshotSchemas as snapshots } from './firestore-family-document-snapshots.ts';
+import { firestoreFamilyDocumentSnapshotSchemas as snapshots, documentSnapshotIndexVersion } from './firestore-family-document-snapshots.ts';
 import { firestorePhotoSchemas as photos, photoObjectScope } from './firestore-photos.ts';
 import { firestoreKnowledgeSchemas as knowledge } from './firestore-knowledge.ts';
 import { firestoreOnlineRecordSchema, firestoreOnlineErasureBarrierSchema } from './firestore-online-receipts.ts';
@@ -547,7 +547,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       }
       case 'family-document': { const row = parse(documents.metadata, value); Object.assign(metadata, { documentId: row.id, status: row.status, createdAt: row.createdAt, autoRefresh: row.autoRefresh }); break; }
       case 'document-operation': value = { ...parse(documents.operation, value), storageEpoch: scope.storageEpoch }; break;
-      case 'document-snapshot': { const row = parse(snapshots.manifest, value); Object.assign(metadata, { documentId: row.documentId, snapshotId: row.snapshotId, snapshotVersion: row.snapshotVersion }); break; }
+      case 'document-snapshot': { const row = parse(snapshots.manifest, value); Object.assign(metadata, { documentId: row.documentId, snapshotId: row.snapshotId, snapshotVersion: documentSnapshotIndexVersion(row) }); break; }
       case 'document-snapshot-chunk': for (const name of Object.keys(metadata)) delete metadata[name]; break;
       case 'voice-asset': {
         const row = parse(firestoreVoiceRowSchema, value); let descriptor = row.descriptor;

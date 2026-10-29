@@ -14,6 +14,15 @@ export const documentCopySchema = z.object({
 }).strict().refine(value => value.importedFrom.current.source.section === 'documents'
   && value.sourceSnapshot.version <= value.importedFrom.current.source.resourceVersion);
 export type DocumentCopy = z.infer<typeof documentCopySchema>;
+/** Immutable source history, separate from the recipient's local revision counter. */
+export const documentSourceRevisionSchema = z.object({ importedFrom: importProvenanceSchema,
+  sourceSnapshot: z.object({ id: z.uuid(), version: z.number().int().positive().max(2147483647),
+    generatedAt: z.iso.datetime({ offset: true }) }).strict(), invalidated: z.boolean(), inputHash: hash,
+}).strict().refine(value => value.importedFrom.current.source.section === 'documents'
+  && value.sourceSnapshot.id === value.importedFrom.current.source.snapshotId
+  && value.sourceSnapshot.version === value.importedFrom.current.source.resourceVersion
+  && value.inputHash === value.importedFrom.current.sourceHash);
+export type DocumentSourceRevision = z.infer<typeof documentSourceRevisionSchema>;
 export const IMPORTED_DOCUMENT_NOTE = '匯入副本：引用及完整度描述原資料包的資料，不代表收件帳戶已核對或目前孩子的完整資料。';
 export const documentCopyHash = (value: unknown) => createHash('sha256').update(canonicalJson(value)).digest('hex');
 export const copiedDocumentSource = (copy: DocumentCopy | undefined, source: DocumentSource) =>

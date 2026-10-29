@@ -5,7 +5,8 @@ import { documentPeriodSchema, reportCoverageSchema, type DocumentSnapshot } fro
 import { assertDocumentCapacity } from './family-document-edits.ts';
 import { FirestoreDomainData, domainParse, domainReject, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
-import { documentCopySchema, retainDocumentCopy, IMPORTED_DOCUMENT_NOTE, type DocumentCopy } from './family-document-copy.ts';
+import { documentCopySchema, documentSourceRevisionSchema, retainDocumentCopy, IMPORTED_DOCUMENT_NOTE,
+  type DocumentCopy, type DocumentSourceRevision } from './family-document-copy.ts';
 
 const version = z.number().int().positive().max(2147483647), uuid = z.uuid(), text = z.string().max(240000);
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/u);
@@ -25,10 +26,17 @@ export const firestoreDocumentSnapshotSchema: z.ZodType<DocumentSnapshot> = z.ob
 const CHUNK_BYTES = 48 * 1024, MAX_CHUNKS = 20;
 const chunkSchema = z.object({ index: z.number().int().nonnegative().max(MAX_CHUNKS - 1), text }).strict();
 export const firestoreSnapshotManifestSchema = z.object({ documentId: uuid, childId: uuid, snapshotId: uuid, snapshotVersion: version,
-  generatedAt: z.iso.datetime({ offset: true }), totalBytes: z.number().int().positive().max(960000), totalCharacters: z.number().int().positive().max(240000),
-  count: z.number().int().positive().max(MAX_CHUNKS), hash: z.string().regex(/^[a-f0-9]{64}$/u), copy: documentCopySchema.optional() }).strict();
+  generatedAt: z.iso.datetime({ offset: true }), totalBytes: z.number().int().nonnegative().max(960000), totalCharacters: z.number().int().nonnegative().max(240000),
+  count: z.number().int().nonnegative().max(MAX_CHUNKS), hash: z.string().regex(/^[a-f0-9]{64}$/u), copy: documentCopySchema.optional(),
+  sourceRevision: documentSourceRevisionSchema.optional(),
+}).strict().refine(value => value.sourceRevision?.invalidated
+  ? value.count === 0 && value.totalBytes === 0 && value.totalCharacters === 0 && value.hash === hash('') && !value.copy
+  : value.count > 0 && value.totalBytes > 0 && value.totalCharacters > 0)
+  .refine(value => !value.sourceRevision || value.generatedAt === value.sourceRevision.sourceSnapshot.generatedAt);
 export type FirestoreSnapshotManifest = z.infer<typeof firestoreSnapshotManifestSchema>;
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
+/** Zero is only a query projection for source history; the manifest retains its actual local binding version. */
+export const documentSnapshotIndexVersion = (value: FirestoreSnapshotManifest) => value.sourceRevision ? 0 : value.snapshotVersion;
 const chunkId = (snapshotId: string, index: number) => JSON.stringify([snapshotId, index]);
 
 /** Immutable bounded encrypted chunks preserve the full existing 240000-character snapshot capacity. */
@@ -48,7 +56,7 @@ export class FirestoreFamilyDocumentSnapshots {
         snapshot.coverageNote += '\n' + IMPORTED_DOCUMENT_NOTE;
     }
   }
-  prepare(scope: WorkRecoveryScope, documentId: string, raw: DocumentSnapshot) {
+  prepare(scope: WorkRecoveryScope, documentId: string, raw: DocumentSnapshot, sourceRevision?: DocumentSourceRevision) {
     const snapshot = domainParse(firestoreDocumentSnapshotSchema, raw, 'invalid_document', 500); assertDocumentCapacity(snapshot);
     const serialized = JSON.stringify(snapshot), parts: string[] = []; let part = '', bytes = 0;
     for (const char of serialized) {
@@ -59,8 +67,9 @@ export class FirestoreFamilyDocumentSnapshots {
     if (part) parts.push(part);
     const manifest = domainParse(firestoreSnapshotManifestSchema, { documentId, childId: scope.childId, snapshotId: snapshot.id,
       snapshotVersion: snapshot.version, generatedAt: snapshot.generatedAt, totalBytes: Buffer.byteLength(serialized), totalCharacters: serialized.length,
-      count: parts.length, hash: hash(serialized), ...(this.copy(raw) ? { copy: this.copy(raw) } : {}) }, 'invalid_document', 500);
-    const manifestEnvelope = { ...this.data.tags(scope), documentId, snapshotId: snapshot.id, snapshotVersion: snapshot.version,
+      count: parts.length, hash: hash(serialized), ...(this.copy(raw) ? { copy: this.copy(raw) } : {}),
+      ...(sourceRevision ? { sourceRevision } : {}) }, 'invalid_document', 500);
+    const manifestEnvelope = { ...this.data.tags(scope), documentId, snapshotId: snapshot.id, snapshotVersion: documentSnapshotIndexVersion(manifest),
       ...this.data.seal('document-snapshot', snapshot.id, scope, firestoreSnapshotManifestSchema, manifest, snapshot.version) };
     const chunks = parts.map((value, index) => this.data.seal('document-snapshot-chunk', chunkId(snapshot.id, index), scope,
       chunkSchema, { index, text: value }, snapshot.version));
@@ -69,11 +78,23 @@ export class FirestoreFamilyDocumentSnapshots {
       chunks.forEach((value, index) => transaction.create(this.data.ref('document_chunks', 'document-snapshot-chunk', chunkId(snapshot.id, index)), value));
     } };
   }
-  async read(transaction: Transaction, scope: WorkRecoveryScope, documentId: string, snapshotId: string, snapshotVersion?: number): Promise<DocumentSnapshot | null> {
+  prepareRedacted(scope: WorkRecoveryScope, documentId: string, snapshotId: string, snapshotVersion: number, sourceRevision: DocumentSourceRevision) {
+    if (!sourceRevision.invalidated) domainReject('invalid_document', 500);
+    const manifest = domainParse(firestoreSnapshotManifestSchema, { documentId, childId: scope.childId, snapshotId, snapshotVersion,
+      generatedAt: sourceRevision.sourceSnapshot.generatedAt, count: 0, totalBytes: 0, totalCharacters: 0, hash: hash(''), sourceRevision }, 'invalid_document', 500);
+    const envelope = { ...this.data.tags(scope), documentId, snapshotId, snapshotVersion: documentSnapshotIndexVersion(manifest),
+      ...this.data.seal('document-snapshot', snapshotId, scope, firestoreSnapshotManifestSchema, manifest, snapshotVersion) };
+    return { manifest, commit: (transaction: Transaction) => transaction.create(this.data.ref('document_snapshots', 'document-snapshot', snapshotId), envelope) };
+  }
+  async manifest(transaction: Transaction, scope: WorkRecoveryScope, documentId: string, snapshotId: string): Promise<FirestoreSnapshotManifest | null> {
     const ref = this.data.ref('document_snapshots', 'document-snapshot', snapshotId), row = await transaction.get(ref); if (!row.exists) return null;
     const manifest = this.data.open('document-snapshot', snapshotId, scope, firestoreSnapshotManifestSchema, row);
     if (manifest.documentId !== documentId || manifest.childId !== scope.childId || manifest.snapshotId !== snapshotId
-      || manifest.snapshotVersion !== row.get('recordVersion')) domainReject('snapshot_binding', 500);
+      || manifest.snapshotVersion !== row.get('recordVersion') || documentSnapshotIndexVersion(manifest) !== row.get('snapshotVersion')) domainReject('snapshot_binding', 500);
+    return manifest;
+  }
+  async read(transaction: Transaction, scope: WorkRecoveryScope, documentId: string, snapshotId: string, snapshotVersion?: number): Promise<DocumentSnapshot | null> {
+    const manifest = await this.manifest(transaction, scope, documentId, snapshotId); if (!manifest || manifest.sourceRevision?.invalidated) return null;
     if (snapshotVersion !== undefined && manifest.snapshotVersion !== snapshotVersion) return null;
     const rows = await transaction.getAll(...Array.from({ length: manifest.count }, (_, index) => this.data.ref('document_chunks', 'document-snapshot-chunk', chunkId(snapshotId, index))));
     const parts = rows.map((row, index) => {
