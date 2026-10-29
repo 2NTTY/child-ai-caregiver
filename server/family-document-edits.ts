@@ -2,9 +2,12 @@ import { randomUUID } from "node:crypto";
 import type { DocumentPatch, DocumentSnapshot, DocumentSource, DocumentSection } from "../src/shared/family-documents.ts";
 import { FamilyError } from "./family-access.ts";
 import type { FamilyDocumentSources } from "./family-document-sources.ts";
+import { copiedDocumentSource } from './family-document-copy.ts';
 
 const invalid = () => new FamilyError(400, "invalid_document_edit");
-const currentSources = (loaded: FamilyDocumentSources) => new Map([...loaded.entries, ...(loaded.legacyConcernSources?.values() ?? []), ...(loaded.referencedSources?.values() ?? [])].map(source => [source.id, source]));
+const currentSources = (loaded: FamilyDocumentSources, previous?: DocumentSnapshot) => new Map([...loaded.entries,
+  ...(loaded.legacyConcernSources?.values() ?? []), ...(loaded.referencedSources?.values() ?? []),
+  ...(previous?.sources.filter(source => copiedDocumentSource(loaded.importedEvidence?.get(previous.id), source)) ?? [])].map(source => [source.id, source]));
 export const documentPatchIsStructural = (patch: DocumentPatch) => patch.edits.every(edit => ["remove_section", "move_section", "remove_item", "move_item"].includes(edit.op));
 export function assertDocumentCapacity(snapshot: DocumentSnapshot) {
   if (snapshot.sections.length > 50 || snapshot.sections.reduce((total, section) => total + section.items.length, 0) > 500
@@ -21,7 +24,7 @@ function move<T extends { id: string }>(items: T[], id: string, beforeId: string
 }
 /** Typed sequential edits; caller validates authority/version and persists once in its transaction. */
 export function applyFamilyDocumentPatch(previous: DocumentSnapshot, patch: DocumentPatch, loaded: FamilyDocumentSources, version: number, seed?: { id: string; generatedAt: string }): DocumentSnapshot {
-  const snapshot = structuredClone(previous), available = currentSources(loaded), original = new Map(previous.sources.map(source => [source.id, source]));
+  const snapshot = structuredClone(previous), available = currentSources(loaded, previous), original = new Map(previous.sources.map(source => [source.id, source]));
   const replacedSources = new Set<string>();
   const invalidSources = previous.sources.filter(source => {
     const sourceNow = available.get(source.id); return !sourceNow || sourceNow.version !== source.version || sourceNow.text !== source.text;
@@ -108,7 +111,7 @@ export function applyFamilyDocumentPatch(previous: DocumentSnapshot, patch: Docu
 /** Generated sections update normally, while explicit edits and section order remain authoritative. */
 export function preserveFamilyDocumentEdits(next: DocumentSnapshot, previous: DocumentSnapshot | null, loaded: FamilyDocumentSources): DocumentSnapshot {
   if (!previous?.editProtection) { assertDocumentCapacity(next); return next; }
-  const protection = previous.editProtection, available = currentSources(loaded);
+  const protection = previous.editProtection, available = currentSources(loaded, previous);
   const protectedIds = new Set(protection.sectionIds), removedIds = new Set(protection.removedSectionIds);
   const sections = previous.sections.filter(section => protectedIds.has(section.id));
   const referenced = new Set(sections.flatMap(section => section.items.flatMap(item => item.sourceIds)));

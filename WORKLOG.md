@@ -4342,3 +4342,12 @@
 一條必要合成流程通過，涵蓋原請求與編輯標題區分、歸檔、正文續頁、其他帳號拒絕及來源失效後身份保留／正文遮蔽；三根受影響型別圖零診斷。保留最初缺欄位、測試漏 scopeVersion 及 fixture 不支援文件 ID 游標的失敗；修正測試沿用已有 serial fixture，未改產品分頁規則或放寬斷言。獨立唯讀 review 無 actionable 問題，詳見[證據](artifacts/verification/P4_HANDOVER_DOCUMENT_EXPORT_20261030.json)。
 
 這是可還原文件的必要匯出前置，匯入保存、來源副本證據、完整原修訂／準備資料與共用選項仍待接續，沒有部署或宣稱 HANDOVER01／P4 完成；未跑模型、雲端、設備或全量測試。
+
+<a id="log-20261030-p4-handover-document-domain"></a>
+### 2026-10-30 — P4-HANDOVER01 文件權威預備匯入
+
+以 #387／`617ab255` 接原文件權威。匯入沿同一加密快照及版本／changes 交易保存，來源鏈放 metadata，原引用與完整度的確切 hash 放加密 manifest。外來 ID 不作本地權限，普通讀取、局部修改、清單及 PDF 仍走原服務。新本地引用繼續隨來源更正失效；明確 refresh 才用收件帳戶資料重新整理，原受保護引用保留但不計成本地期間統計。
+
+一條新合成流程及原準備單代表流程通過，三根型別圖零診斷。獨立 review 找到報告重建 loaded 時遺漏證據；同一流程先重現 document_edits_need_review，再修正 API／worker 共用的 reportBatch 傳遞與保存，完成原引用保留及完整報告更新。原缺方法、PDF purpose／scanned 型別誤用及 review 失敗均保留於[證據](artifacts/verification/P4_HANDOVER_DOCUMENT_DOMAIN_20261030.json)；聚焦覆核無剩餘 blocker。
+
+只完成內部預備接點，完整原修訂／準備資料、統一 worker／逐項原操作收據／來源映射及共用選項待接；不當作文件匯入、完整備份或 P4 已完成。沒有部署、模型、雲端、設備或全量測試，codec 核對不代替真還原。

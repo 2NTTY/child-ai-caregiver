@@ -24,12 +24,19 @@ import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { sharedAccessBasisSchema, sharedSelectionSchema, type SharedSelection } from '../src/shared/sharing.ts';
 import { sharedWriteAttribution, sharedWriteAttributionSchema, validSharedAttribution } from './shared-write-attribution.ts';
 import { familyDocumentTransferSchema, type FamilyDocumentTransfer } from './family-document-transfer.ts';
+import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
+import type { HandoverImportRow } from './handover-import.ts';
+import type { HandoverIntegrity } from '../src/shared/handover.ts';
+import { makeImportProvenance } from './handover-provenance.ts';
+import { copiedDocumentCoverage, copiedDocumentSource, newDocumentCopy, IMPORTED_DOCUMENT_NOTE } from './family-document-copy.ts';
+import { firestoreDocumentSnapshotSchema } from './firestore-family-document-snapshots.ts';
 
 const uuid = z.uuid(), version = z.number().int().positive().max(2147483647), datetime = z.iso.datetime({ offset: true });
 const metadataSchema = z.object({ id: uuid, childId: uuid, ownerUserId: z.string().min(1).max(256), version, request: documentRequestSchema,
   currentId: uuid.nullable(), historyIds: z.array(uuid).max(10), status: z.enum(['active', 'archived']), archivedAt: datetime.nullable(),
   autoRefresh: z.boolean(), createdAt: z.iso.datetime({ precision: 6 }), progress: firestoreDocumentReportSchema.nullable().optional(),
-  sourceSelection: sharedSelectionSchema.extend({ actorUserId: z.string().min(1).max(256), expectedBasis: sharedAccessBasisSchema }).optional() }).strict();
+  sourceSelection: sharedSelectionSchema.extend({ actorUserId: z.string().min(1).max(256), expectedBasis: sharedAccessBasisSchema }).optional(),
+  importedFrom: importProvenanceSchema.optional() }).strict();
 type Metadata = z.infer<typeof metadataSchema>;
 const operationSchema = z.object({ ownerUserId: z.string().min(1).max(256), childId: uuid, storageEpoch: uuid, operationId: uuid,
   fingerprint: z.string().regex(/^[a-f0-9]{64}$/u), document: metadataSchema, changedViaShare: sharedWriteAttributionSchema.optional() }).strict();
@@ -52,6 +59,10 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
 }): FamilyDocumentStore & { processRefresh(job: FirestoreBackgroundWork): Promise<{ state: 'completed' | 'stopped' }>;
   forSharedSpace(selection: SharedSelection): ReturnType<typeof createFirestoreFamilyDocumentStore>;
   readExportMetadata(userId: string, childId: string, id: string): Promise<FamilyDocumentTransfer | null>;
+  readImportState(binding: FirestoreAuthorityTransaction, id: string): Promise<{ value: FamilyDocumentTransfer | null; version: number }>;
+  prepareImported(binding: FirestoreAuthorityTransaction, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
+    currentSnapshot: DocumentSnapshot | null, current?: { id: string; expectedVersion: number }): Promise<{
+      value: { id: string; version: number }; changeSeq: string; commit(): void }>;
   readExportSnapshot(userId: string, childId: string, id: string, snapshotId: string, version: number): Promise<DocumentSnapshot | null> } {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), snapshots = new FirestoreFamilyDocumentSnapshots(options);
   const care = createFirestoreCareStore(options), chat = createFirestoreChatStore(options);
@@ -103,7 +114,13 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
     return reader.load({ ...binding, scope });
   }
   async function supplement(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, loaded: FamilyDocumentSources, values: DocumentSnapshot[]) {
-    await reader.supplement({ ...binding, scope }, loaded, values);
+    loaded.importedEvidence ??= new Map();
+    for (const value of values) {
+      const copy = snapshots.copy(value); if (copy) loaded.importedEvidence.set(value.id, copy);
+    }
+    // Imported evidence is a selected local copy, not an ID to query in another account.
+    await reader.supplement({ ...binding, scope }, loaded, values.map(value => ({ ...value,
+      sources: value.sources.filter(source => !copiedDocumentSource(snapshots.copy(value), source)) })));
   }
   async function reportBatch(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, row: Metadata,
     loaded: FamilyDocumentSources, previous: DocumentSnapshot | null): Promise<DocumentSnapshot | undefined> {
@@ -117,6 +134,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
     if (state.stage !== 'done') return undefined;
     if (previous) await supplement(binding, scope, loaded, [previous]);
     const snapshot = completeReportSnapshot(state, row.version, previous, loaded);
+    snapshots.inheritCopy(snapshot, previous, true);
     if (row.sourceSelection) snapshot.coverageNote += ' 本報告只涵蓋本次獲授權的資料模組；未選模組不在統計內。';
     return snapshot;
   }
@@ -134,12 +152,17 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
     const item: FamilyDocument = { id: row.id, childId: row.childId, kind: row.request.kind, purpose: row.request.purpose, version: row.version,
       status: row.status, archivedAt: row.archivedAt, autoRefresh: row.autoRefresh, current: valid ? values.current : null,
       ...(values.current ? { manifest: documentManifest(values.current, !valid) } : {}), history: values.history.filter(value => documentSnapshotValid(value, loaded)),
-      readState: !valid ? 'invalidated' : !options.sharing && !row.sourceSelection && !values.current!.reportCoverage && values.current!.sourceBasis !== documentSourceBasis(loaded, row.request) ? 'stale' : 'ready' };
+      readState: !valid ? 'invalidated' : !options.sharing && !row.sourceSelection && !loaded.importedEvidence?.get(values.current!.id)?.detached
+        && !values.current!.reportCoverage && values.current!.sourceBasis !== documentSourceBasis(loaded, row.request) ? 'stale' : 'ready' };
     if (row.request.kind === 'growth_report') {
       const effective = effectiveReportRequest(row.request), state = row.progress;
       const current = state && currentConcernScan(state) && !state.blocked && state.sourceRevision === loaded.sourceRevision && state.request.period.to === effective.period.to
         && (state.validUntil === null || Date.parse(state.validUntil) > Date.now());
-      item.report = { mode: row.request.reportMode ?? 'fixed', phase: current && state.stage !== 'done' ? 'building'
+      const copiedReport = !(current && state.stage !== 'done') && valid && copiedDocumentCoverage(loaded.importedEvidence?.get(values.current!.id), values.current!);
+      item.report = copiedReport ? { mode: row.request.reportMode ?? 'fixed', phase: 'complete',
+        processedSources: values.current!.reportCoverage!.scanned,
+        sourceRevision: values.current!.reportCoverage!.sourceRevision, periodKind: reportPeriodKind(values.current!.period),
+        period: values.current!.period, title: values.current!.title } : { mode: row.request.reportMode ?? 'fixed', phase: current && state.stage !== 'done' ? 'building'
         : current && valid ? 'complete' : 'needs_update', processedSources: state?.processedSources ?? 0,
         sourceRevision: loaded.sourceRevision!, periodKind: reportPeriodKind(effective.period), period: effective.period, title: row.request.title };
       if (item.report.phase !== 'complete') item.readState = 'stale';
@@ -168,7 +191,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
         && (item.request.reportMode ?? 'fixed') === (request.reportMode ?? 'fixed')
         && (request.reportMode === 'living' || canonicalJson(item.request.period) === canonicalJson(request.period))) reject('report_exists');
     }
-    if (rows.docs.length >= 50) reject('document_limit', 400);
+    if (rows.docs.filter(row => row.get('documentId') !== except).length >= 50) reject('document_limit', 400);
   }
   async function mutate(userId: string, childId: string, opId: string, payload: unknown,
     prepare: (binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, loaded: FamilyDocumentSources) => Promise<{ row: Metadata; snapshot?: DocumentSnapshot }>) {
@@ -213,6 +236,17 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
   async function read<T>(userId: string, childId: string, operation: (binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope) => Promise<T>) {
     uuid.parse(childId); return runDocumentTransaction(userId, childId, binding => operation(binding, { ...binding.scope }));
   }
+  async function transfer(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, row: Metadata) {
+    const loaded = await sources(binding, scope), values = await bodies(binding, scope, row);
+    await supplement(binding, scope, loaded, [...(values.current ? [values.current] : []), ...values.history]);
+    const item = safe(row, loaded, values);
+    return familyDocumentTransferSchema.parse({ format: 'yuyoufang-document:1', id: row.id, childId: row.childId,
+      version: row.version, kind: row.request.kind, purpose: row.request.purpose, request: row.request,
+      createdAt: row.createdAt, status: row.status, archivedAt: row.archivedAt, autoRefresh: row.autoRefresh,
+      readState: item.readState, invalidated: item.readState === 'invalidated',
+      currentSnapshot: values.current ? { id: values.current.id, version: values.current.version, readable: item.current !== null } : null,
+      recentSnapshotIds: [...row.historyIds], ...(row.importedFrom ? { importedFrom: row.importedFrom } : {}) });
+  }
   return {
     forSharedSpace(selection) {
       if (options.transaction) domainReject('shared_transaction_scope', 403);
@@ -222,16 +256,45 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
       uuid.parse(id);
       return read(userId, childId, async (binding, scope) => {
         const row = await find(binding, scope, id); if (!row) return null;
-        const loaded = await sources(binding, scope), values = await bodies(binding, scope, row);
-        await supplement(binding, scope, loaded, [...(values.current ? [values.current] : []), ...values.history]);
-        const item = safe(row, loaded, values);
-        return familyDocumentTransferSchema.parse({ format: 'yuyoufang-document:1', id: row.id, childId: row.childId,
-          version: row.version, kind: row.request.kind, purpose: row.request.purpose, request: row.request,
-          createdAt: row.createdAt, status: row.status, archivedAt: row.archivedAt, autoRefresh: row.autoRefresh,
-          readState: item.readState, invalidated: item.readState === 'invalidated',
-          currentSnapshot: values.current ? { id: values.current.id, version: values.current.version,
-            readable: item.current !== null } : null, recentSnapshotIds: [...row.historyIds] });
+        return transfer(binding, scope, row);
       });
+    },
+    async readImportState(binding, id) {
+      uuid.parse(id); const scope = await child(binding, binding.scope.childId), row = await find(binding, scope, id);
+      return { value: row ? await transfer(binding, scope, row) : null, version: row?.version ?? 0 };
+    },
+    async prepareImported(binding, opId, raw, integrity, rawSnapshot, current) {
+      uuid.parse(opId);
+      if (raw.section !== 'documents') reject('invalid_package_data', 400);
+      const source = domainParse(familyDocumentTransferSchema, raw.value, 'invalid_package_data', 400);
+      if (source.childId !== raw.childId) reject('invalid_package_scope', 400);
+      const body = rawSnapshot === null ? null : domainParse(firestoreDocumentSnapshotSchema, rawSnapshot, 'invalid_package_data', 400);
+      if (Boolean(source.currentSnapshot?.readable) !== Boolean(body) || body && (body.id !== source.currentSnapshot?.id
+        || body.version !== source.currentSnapshot.version) || source.currentSnapshot === null && body) reject('invalid_package_data', 400);
+      if (body && body.sections.some(section => section.items.some(item => item.sourceIds.some(id => !body.sources.some(value => value.id === id)))))
+        reject('invalid_package_data', 400);
+      const scope = await child(binding, binding.scope.childId), previous = current ? await find(binding, scope, current.id) : null;
+      if (current && (!previous || previous.version !== current.expectedVersion || previous.version >= 2147483647)) reject('document_changed');
+      if (source.status === 'active') await activeCount(binding, scope, source.request, previous?.id);
+      const at = new Date().toISOString(), id = previous?.id ?? randomUUID();
+      if (!previous && (await binding.transaction.get(data.ref('documents', 'family-document', id))).exists) reject('document_changed');
+      const importedFrom = makeImportProvenance(raw, integrity, binding.actorUserId, at);
+      const nextVersion = (previous?.version ?? 0) + 1;
+      const snapshot: DocumentSnapshot | null = body ? { ...structuredClone(body), id: randomUUID(), version: nextVersion } : null;
+      if (snapshot && !snapshot.coverageNote.includes(IMPORTED_DOCUMENT_NOTE)) snapshot.coverageNote += '\n' + IMPORTED_DOCUMENT_NOTE;
+      if (snapshot && body) snapshots.bindCopy(snapshot, newDocumentCopy(body, importedFrom));
+      const row: Metadata = { id, childId: scope.childId, ownerUserId: scope.ownerUserId, version: nextVersion,
+        request: source.request, currentId: snapshot?.id ?? null,
+        historyIds: previous ? [...(previous.currentId ? [previous.currentId] : []), ...previous.historyIds].slice(0, 10) : [],
+        status: source.status, archivedAt: source.archivedAt, autoRefresh: false, progress: null,
+        createdAt: previous?.createdAt ?? at.replace(/(\.\d{3})Z$/u, '$1000Z'), importedFrom };
+      const prepared = snapshot ? snapshots.prepare(scope, id, snapshot) : null;
+      const change = await binding.prepareChange(opId, 'documents', false, scope.childId);
+      const envelope = { ...data.tags(scope), documentId: id, status: row.status, createdAt: row.createdAt, autoRefresh: false,
+        ...data.seal('family-document', id, scope, metadataSchema, row, row.version) };
+      return { value: { id, version: row.version }, changeSeq: change.changeSeq, commit() {
+        change.commit(); prepared?.commit(binding.transaction); binding.transaction.set(data.ref('documents', 'family-document', id), envelope);
+      } };
     },
     async readExportSnapshot(userId, childId, id, snapshotId, version) {
       return read(userId, childId, async (binding, scope) => {
@@ -350,6 +413,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
         const row = { ...original, version: original.version + 1 }; let snapshot: DocumentSnapshot | undefined;
         if (input.action === 'refresh') {
           if (row.status !== 'active') reject('document_changed');
+          if (row.importedFrom && row.request.kind === 'growth_report') row.autoRefresh = true;
           if (binding.sharedAccess) row.sourceSelection = { actorUserId: userId, spaceId: binding.sharedAccess.spaceId, expectedBasis: binding.sharedAccess.basis };
           else delete row.sourceSelection;
           if (fingerprint(original.sourceSelection ?? null) !== fingerprint(row.sourceSelection ?? null)) row.progress = null;
@@ -360,7 +424,8 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
           if (row.progress?.blocked) row.progress.blocked = false;
         } else if (input.action === 'check_item' || input.action === 'check_items') {
           if (row.status !== 'active' || !values.current || !documentSnapshotValid(values.current, loaded)
-            || !binding.sharedAccess && !row.sourceSelection && !values.current.reportCoverage && values.current.sourceBasis !== documentSourceBasis(loaded, row.request)) reject('source_changed');
+            || !binding.sharedAccess && !row.sourceSelection && !loaded.importedEvidence?.get(values.current.id)?.detached
+              && !values.current.reportCoverage && values.current.sourceBasis !== documentSourceBasis(loaded, row.request)) reject('source_changed');
           snapshot = structuredClone(values.current);
           const checks = input.action === 'check_item' ? [input] : input.checks;
           const updates = checks.map(check => {
@@ -377,7 +442,8 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
           if (input.action === 'restore') await activeCount(binding, scope, row.request, row.id);
           row.status = input.action === 'archive' ? 'archived' : 'active'; row.archivedAt = input.action === 'archive' ? seed.generatedAt : null;
         }
-        if (snapshot) { row.historyIds = [...(row.currentId ? [row.currentId] : []), ...row.historyIds].slice(0, 10); row.currentId = snapshot.id; }
+        if (snapshot) { snapshots.inheritCopy(snapshot, values.current, input.action === 'refresh');
+          row.historyIds = [...(row.currentId ? [row.currentId] : []), ...row.historyIds].slice(0, 10); row.currentId = snapshot.id; }
         return { row, snapshot };
       });
     },

@@ -67,7 +67,7 @@ export function completeReportSnapshot(state: ReportAccumulator, version: number
   const loaded: FamilyDocumentSources = { profile: state.profile, sourceRevision: state.sourceRevision, limited: false,
     entries: state.selected.map(input => input.source), domains: new Map(state.selected.map(input => [input.source.id, input.domain])), questions: new Set(),
     activeConcernIds: new Set(state.selected.filter(input => input.activeConcern).map(input => input.source.id)),
-    referencedSources: referenceSources?.referencedSources };
+    referencedSources: referenceSources?.referencedSources, importedEvidence: referenceSources?.importedEvidence };
   // The full current prefix is relevant only to explicit protected edits, never to report counts.
   for (const source of referenceSources?.entries ?? []) if (!loaded.entries.some(item => item.id === source.id)) {
     loaded.referencedSources ??= new Map(); loaded.referencedSources.set(source.id, source);

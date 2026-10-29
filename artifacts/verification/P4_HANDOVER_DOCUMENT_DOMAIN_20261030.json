@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-30",
+  "workPackage": "P4-HANDOVER01",
+  "base": "617ab255cb9e03d7ce8d2e5cfd51b6f53267548b",
+  "branch": "codex/p4-handover-document-import",
+  "status": "document_domain_preparation_implemented_not_deployed",
+  "scope": [
+    "Prepared document import reuses the original encrypted metadata, snapshots, scope/version checks and change transaction",
+    "Server-authored encrypted manifest evidence binds selected original source quotes and report coverage without granting foreign resource authority",
+    "Normal read, typed patch, checklist and PDF snapshot methods operate on the same imported document",
+    "Local references remain version-sensitive; explicit refresh resumes current local source tracking and retains protected original evidence outside local report statistics"
+  ],
+  "verification": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-document-domain.test.ts",
+      "passed": 1, "failed": 0,
+      "covers": ["Independent copy and original-source changes", "Other account denied", "Checklist and local edits", "Same PDF snapshot", "Provenance export", "Expected-version conflict and same-ID replacement", "Mismatched/invalidated source identity rejected", "New local reference invalidation", "Imported report coverage", "Full local refresh retaining a protected source section", "Preparation staleness after explicit local refresh", "Restore codec decoding"]
+    },
+    {
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='canonical task-backed preparation' tests/firestore-family-documents.test.ts",
+      "passed": 1, "failed": 0, "note": "One existing ordinary document flow, not the whole file or suite."
+    },
+    { "check": "Scoped TypeScript graph: account export, restore codec and new domain test", "roots": 3, "diagnostics": 0 },
+    { "check": "git diff --check", "result": "passed" }
+  ],
+  "retainedFailures": [
+    "Initial red: prepareImported was absent.",
+    "First verification found a test using unsupported PDF purpose personal and an implementation assuming report scanned was an object rather than the existing number; both now use the existing contracts.",
+    "Independent review found report-core dropped importedEvidence before preserving protected edits. The extended same flow reproduced document_edits_need_review, then passed after propagation and common reportBatch inheritance were fixed."
+  ],
+  "review": "Independent Sol review found the report-evidence propagation issue; main reproduced and fixed it. Focused follow-up found no remaining blocker.",
+  "pending": ["Complete foreign revision and visit-preparation data import", "Unified import worker, item receipts and deduplication mapping", "Shared document import option/results/history", "Deployment and full package round trip"],
+  "notRun": ["Real models", "Cloud database", "Browser/device", "Full suite", "Deployment"],
+  "limitations": "The internal preparer is not an exposed import API. Original operation deduplication remains the responsibility of the upcoming existing batch/receipt integration. Only current document data was prepared here; foreign revisions were not silently inserted as local revisions. Synthetic transaction and codec checks do not prove cloud concurrency or a disaster restore."
+}

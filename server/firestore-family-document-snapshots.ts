@@ -5,6 +5,7 @@ import { documentPeriodSchema, reportCoverageSchema, type DocumentSnapshot } fro
 import { assertDocumentCapacity } from './family-document-edits.ts';
 import { FirestoreDomainData, domainParse, domainReject, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
+import { documentCopySchema, retainDocumentCopy, IMPORTED_DOCUMENT_NOTE, type DocumentCopy } from './family-document-copy.ts';
 
 const version = z.number().int().positive().max(2147483647), uuid = z.uuid(), text = z.string().max(240000);
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/u);
@@ -25,7 +26,7 @@ const CHUNK_BYTES = 48 * 1024, MAX_CHUNKS = 20;
 const chunkSchema = z.object({ index: z.number().int().nonnegative().max(MAX_CHUNKS - 1), text }).strict();
 export const firestoreSnapshotManifestSchema = z.object({ documentId: uuid, childId: uuid, snapshotId: uuid, snapshotVersion: version,
   generatedAt: z.iso.datetime({ offset: true }), totalBytes: z.number().int().positive().max(960000), totalCharacters: z.number().int().positive().max(240000),
-  count: z.number().int().positive().max(MAX_CHUNKS), hash: z.string().regex(/^[a-f0-9]{64}$/u) }).strict();
+  count: z.number().int().positive().max(MAX_CHUNKS), hash: z.string().regex(/^[a-f0-9]{64}$/u), copy: documentCopySchema.optional() }).strict();
 export type FirestoreSnapshotManifest = z.infer<typeof firestoreSnapshotManifestSchema>;
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
 const chunkId = (snapshotId: string, index: number) => JSON.stringify([snapshotId, index]);
@@ -33,7 +34,20 @@ const chunkId = (snapshotId: string, index: number) => JSON.stringify([snapshotI
 /** Immutable bounded encrypted chunks preserve the full existing 240000-character snapshot capacity. */
 export class FirestoreFamilyDocumentSnapshots {
   private readonly data: FirestoreDomainData;
+  private readonly copies = new WeakMap<DocumentSnapshot, DocumentCopy>();
   constructor(options: FirestoreDomainOptions) { this.data = new FirestoreDomainData(options); }
+  copy(snapshot: DocumentSnapshot) { return this.copies.get(snapshot); }
+  bindCopy(snapshot: DocumentSnapshot, raw: DocumentCopy) { this.copies.set(snapshot, documentCopySchema.parse(raw)); }
+  inheritCopy(snapshot: DocumentSnapshot, previous: DocumentSnapshot | null, refresh = false) {
+    const copy = previous ? this.copy(previous) : undefined;
+    if (copy) {
+      const retained = retainDocumentCopy(copy, snapshot);
+      if (refresh) retained.detached = false;
+      this.bindCopy(snapshot, retained);
+      if (Object.keys(retained.sourceHashes).length && !snapshot.coverageNote.includes(IMPORTED_DOCUMENT_NOTE))
+        snapshot.coverageNote += '\n' + IMPORTED_DOCUMENT_NOTE;
+    }
+  }
   prepare(scope: WorkRecoveryScope, documentId: string, raw: DocumentSnapshot) {
     const snapshot = domainParse(firestoreDocumentSnapshotSchema, raw, 'invalid_document', 500); assertDocumentCapacity(snapshot);
     const serialized = JSON.stringify(snapshot), parts: string[] = []; let part = '', bytes = 0;
@@ -45,7 +59,7 @@ export class FirestoreFamilyDocumentSnapshots {
     if (part) parts.push(part);
     const manifest = domainParse(firestoreSnapshotManifestSchema, { documentId, childId: scope.childId, snapshotId: snapshot.id,
       snapshotVersion: snapshot.version, generatedAt: snapshot.generatedAt, totalBytes: Buffer.byteLength(serialized), totalCharacters: serialized.length,
-      count: parts.length, hash: hash(serialized) }, 'invalid_document', 500);
+      count: parts.length, hash: hash(serialized), ...(this.copy(raw) ? { copy: this.copy(raw) } : {}) }, 'invalid_document', 500);
     const manifestEnvelope = { ...this.data.tags(scope), documentId, snapshotId: snapshot.id, snapshotVersion: snapshot.version,
       ...this.data.seal('document-snapshot', snapshot.id, scope, firestoreSnapshotManifestSchema, manifest, snapshot.version) };
     const chunks = parts.map((value, index) => this.data.seal('document-snapshot-chunk', chunkId(snapshot.id, index), scope,
@@ -72,6 +86,7 @@ export class FirestoreFamilyDocumentSnapshots {
     let parsed: unknown; try { parsed = JSON.parse(serialized); } catch { domainReject('invalid_document', 500); }
     const snapshot = domainParse(firestoreDocumentSnapshotSchema, parsed, 'invalid_document', 500); assertDocumentCapacity(snapshot);
     if (snapshot.id !== snapshotId || snapshot.version !== manifest.snapshotVersion || snapshot.generatedAt !== manifest.generatedAt) domainReject('snapshot_binding', 500);
+    if (manifest.copy) this.bindCopy(snapshot, manifest.copy);
     return snapshot;
   }
 }
