@@ -32,7 +32,7 @@ export function makeImportProvenance(row: HandoverImportRow, integrity: Handover
       ...(row.section === 'instructions' ? { sourceMessageId: value.sourceMessageId ?? null, statementProvenance: value.provenance } : {}),
       ...(row.section === 'summary_history' ? { previousSummaryId: value.previousId ?? null } : {}),
       ...(row.section === 'documents' && value.snapshotId ? { snapshotId: value.snapshotId } : {}),
-      ...(row.section === 'visit_preparation' ? { preparation: { appointmentTaskId: value.appointmentTaskId,
+      ...(row.section === 'visit_preparation' && typeof value.reviewed === 'boolean' ? { preparation: { appointmentTaskId: value.appointmentTaskId,
         reviewed: value.reviewed, reviewedBasis: value.reviewedBasis } } : {}) },
     sourceHash: createHash('sha256').update(canonicalJson(value)).digest('hex'),
     packageId: row.source.packageId, packageVersion: row.source.packageVersion, manifestSha256: row.source.manifestSha256,

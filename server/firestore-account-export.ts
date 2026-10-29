@@ -98,7 +98,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
       const previous = input.cursor ? decode(input.cursor, owner) : null;
       if (previous && (previous.userId !== owner || previous.section !== section || previous.childId !== (input.childId ?? null)
         || previous.scopeVersion !== scopeVersion)) domainReject('invalid_export_cursor', 400);
-      const sourceModule = historyModule(section);
+      const sourceModule = section === 'document_versions' || section === 'document_content' ? undefined : historyModule(section);
       if (previous?.phase === 'source' && !sourceModule) domainReject('invalid_export_cursor', 400);
       let items: unknown[] = [], nextCursor: string | null = null;
       const photos: { id: string; version: number }[] = [], voices: {id:string;version:number}[]=[], files: {id:string;version:number}[]=[];

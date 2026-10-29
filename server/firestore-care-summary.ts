@@ -43,7 +43,7 @@ export function createFirestoreCareSummary(options: FirestoreDomainOptions, care
     const revisionId = JSON.stringify([b.scope.childId, raw.version]);
     const revisionRef = data.ref('visit_preparation_revisions', 'visit-preparation-revision', revisionId);
     if ((await b.transaction.get(revisionRef)).exists) domainReject('revision_conflict');
-    const change = await b.prepareChange(opId, 'care', false);
+    const change = await b.prepareChange(opId, b.sharedAccess?.module === 'documents' ? 'documents' : 'care', false);
     const value = domainParse(firestorePreparationSchema, { ...raw, reviewedBasis: raw.reviewed ? basis(b, change.changeSeq) : null });
     const metadata = { ...data.tags(b.scope), entityId: value.childId, entityVersion: value.version };
     const current = { ...metadata, ...data.seal('visit-preparation', value.childId, b.scope, firestorePreparationSchema, value, value.version) };
@@ -117,6 +117,7 @@ export function createFirestoreCareSummary(options: FirestoreDomainOptions, care
       if ((old?.version ?? 0) !== expectedVersion || expectedVersion >= 2147483646) domainReject('version_conflict');
       let appointmentTaskId: string | null = null;
       if (appointment) {
+        if (b.sharedAccess && !b.sharedAccess.modules?.includes('tasks')) domainReject('module_not_shared', 403);
         domainParse(z.uuid(), appointment.targetTaskId);
         if (appointment.sourceTaskId !== source.appointmentTaskId) domainReject('appointment_changed');
         const found = await b.transaction.get(data.ref('tasks', 'task', appointment.targetTaskId));

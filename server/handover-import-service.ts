@@ -13,7 +13,7 @@ import { createFirestoreHandoverImportItems } from './firestore-handover-import-
 type Uploads = ReturnType<typeof createHandoverUploadService>;
 type Opened = Awaited<ReturnType<Uploads['open']>>;
 const supported = new Set<string>([...handoverImportResourceSectionSchema.options, ...Object.keys(historyModules)]);
-const cursorSchema = z.object({ target: z.number().int().nonnegative(), phase: z.enum(['current', 'history']).optional(), page: z.object({ manifestSha256: z.string(), selectionHash: z.string(),
+const cursorSchema = z.object({ target: z.number().int().nonnegative(), phase: z.enum(['current', 'documents', 'history']).optional(), page: z.object({ manifestSha256: z.string(), selectionHash: z.string(),
   pageIndex: z.number().int().nonnegative(), rowIndex: z.number().int().nonnegative() }).strict().nullable() }).strict();
 type Cursor = z.infer<typeof cursorSchema>;
 const codeOf = (error: unknown) => error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
@@ -80,22 +80,29 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       const selected = job.request.resolutionOnly ? job.request.resolutions.filter(row => row.sourceChildId === target.sourceChildId) : null;
       if (selected?.length === 0) { cursor = { target: cursor.target + 1, phase: 'current', page: null }; continue; }
       // Existing in-flight cursors keep their old reader selection. New batches always establish parents first.
+      const currentSections = target.sections.flatMap(module => [...HANDOVER_SECTIONS[module]]).filter(section => !Object.hasOwn(historyModules, section));
       const sections = selected ? [...new Set(selected.map(row => row.section))] : cursor.phase === undefined ? undefined : cursor.phase === 'current'
-        ? target.sections.flatMap(module => [...HANDOVER_SECTIONS[module]]).filter(section => !Object.hasOwn(historyModules, section))
+        ? currentSections.filter(section => section !== 'documents' && section !== 'visit_preparation')
+        : cursor.phase === 'documents' ? currentSections.filter(section => section === 'documents' || section === 'visit_preparation')
         : Object.entries(historyModules).filter(([, section]) => target.sections.includes(handoverImportModuleOf(section))).map(([section]) => section);
+      const afterPhase = (): Cursor => !selected && cursor.phase === 'current' ? { target: cursor.target, phase: 'documents', page: null }
+        : !selected && cursor.phase === 'documents' ? { target: cursor.target, phase: 'history', page: null }
+        : { target: cursor.target + 1, ...(cursor.phase ? { phase: 'current' as const } : {}), page: null };
+      if (sections?.length === 0) { cursor = afterPhase(); continue; }
       const page = await opened.reader.readPage({ selection: { childIds: [target.sourceChildId], modules: target.sections }, sections,
         acknowledgedManifestSha256: job.request.acceptedManifestSha256 ?? undefined, cursor: cursor.page as HandoverImportCursor | null, limit: 1 });
-      const next: Cursor = page.nextCursor ? { ...cursor, page: page.nextCursor } : cursor.phase === 'current' && !selected
-        ? { target: cursor.target, phase: 'history', page: null } : { target: cursor.target + 1, ...(cursor.phase ? { phase: 'current' as const } : {}), page: null };
+      const next: Cursor = page.nextCursor ? { ...cursor, page: page.nextCursor } : afterPhase();
       const row = page.rows[0]; cursor = next;
       if (!row || row.section === 'children') continue;
       if (selected) {
         const value = row.value as { id?: unknown } | null;
-        const id = row.section === 'profile' ? row.childId : value && typeof value === 'object' ? value.id : undefined;
+        const id = row.section === 'profile' || row.section === 'visit_preparation' ? row.childId : value && typeof value === 'object' ? value.id : undefined;
         if (!selected.some(item => item.section === row.section && item.resourceId === id)) continue;
       }
       if (!supported.has(row.section)) domainReject('package_section_not_connected', 400);
-      return { row, start, after: JSON.stringify(next) };
+      const documentContent = row.section === 'documents' || row.section === 'document_versions'
+        ? await opened.reader.readDocumentContent(row, job.request.acceptedManifestSha256 ?? undefined) : undefined;
+      return { row, start, after: JSON.stringify(next), ...(documentContent === undefined ? {} : { documentContent }) };
     }
     return null;
   }
@@ -113,7 +120,8 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       while (current && processed < maxItems && Date.now() < until) {
         signal.throwIfAborted();
         const following = await locate(opened, job, current.after);
-        const result = await batches.apply(work, { position: job.position, cursor: job.cursor, row: current.row, nextCursor: following?.start ?? null });
+        const result = await batches.apply(work, { position: job.position, cursor: job.cursor, row: current.row, nextCursor: following?.start ?? null,
+          ...(current.documentContent === undefined ? {} : { documentContent: current.documentContent }) });
         job = result.batch; processed++;
         if (job.state === 'completed') return { state: 'completed' as const };
         current = following;

@@ -1,0 +1,79 @@
+{
+  "package": "P4-HANDOVER01 document and preparation import pipeline",
+  "date": "2026-10-30",
+  "base": "0999402d8f6aca9987c884d3ef430b495f369c80",
+  "branch": "codex/p4-handover-document-pipeline",
+  "scope": [
+    "Original verified archive and worker; current rows before document rows before history",
+    "Exact current snapshot locator, source history, atomic receipt/progress/mapping",
+    "Document conflict resolution, original operation retry and no duplicate history",
+    "Preparation history pagination/export and next-hop provenance, original domain save",
+    "Document-only shared scope cannot link tasks; personal scope can link its mapped appointment"
+  ],
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-document-pipeline.test.ts",
+      "result": "1 passed",
+      "evidence": "tmp/document-pipeline-review-green.log"
+    },
+    {
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern=\"verified document content locators\" tests/handover-import.test.ts",
+      "result": "1 passed",
+      "evidence": "tmp/handover-document-reader-stale-green.log"
+    },
+    {
+      "command": "node tmp/check-document-pipeline.cjs",
+      "roots": [
+        "server/handover-import-service.ts",
+        "server/firestore-restore-codec.ts",
+        "tests/handover-document-pipeline.test.ts",
+        "tests/handover-import.test.ts"
+      ],
+      "result": "0 diagnostics",
+      "evidence": "tmp/document-pipeline-types-final.log"
+    },
+    {
+      "command": "node tmp/check-source-ui.cjs",
+      "result": "7 roots, 0 diagnostics after PR #391 integration",
+      "evidence": "tmp/document-pipeline-ui-integrated.log"
+    },
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-import-service.test.ts",
+      "result": "1 passed; existing worker partial progress, history and cancelled-source path",
+      "evidence": "tmp/document-pipeline-legacy-phase.log"
+    }
+  ],
+  "failuresRetained": [
+    "Initial unsupported documents command; implementation then rejected history provenance missing childId; corrected scope binding.",
+    "Expanded test initially omitted exporter scopeVersion on cursor; test corrected to use the public continuation contract.",
+    "Review found legitimate stale metadata rejected by reader; red then corrected snapshot-readable check.",
+    "Review found cross-module appointment lookup; targeted flow also exposed care change kind in document shared transaction. Corrected current grant check and document change channel.",
+    "Expanded shared contract exposes 5 frontend type errors in missing labels; independent same-baseline compatibility delivery precedes backend merge."
+  ],
+  "review": {
+    "reviewer": "existing Sol reviewer",
+    "result": "Two findings repaired; focused follow-up found no remaining blocker"
+  },
+  "notVerified": [
+    "Real Firestore concurrency/IAM",
+    "Cloud or device tests",
+    "Full browser import flow",
+    "Deployment",
+    "Disaster recovery"
+  ],
+  "cost": {
+    "modelCalls": 0,
+    "cloudOperations": 0,
+    "notifications": 0
+  },
+  "remaining": [
+    "Common document selection and history UI",
+    "Other modules and complete personal backup",
+    "Class/period exports, difference preview and signing configuration"
+  ],
+  "compatibility": {
+    "pr": 391,
+    "merge": "a4b495b4ae6584ab405b1b48f134ce17b3e428cc",
+    "result": "Original and expanded contracts pass scoped frontend types"
+  }
+}
