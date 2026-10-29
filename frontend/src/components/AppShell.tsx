@@ -42,6 +42,28 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { model, actions, notice, dismissNotice, scopeKey, identityKey, owner } = useProduction();
   const hints = useHeaderOperationHints(), readiness = useProductionSwitchReadiness();
   const routeSurface = useRef<View>(null), previousPath = useRef(pathname);
+  const noticeDismissRef = useRef<View>(null);
+  function dismissShellNotice() {
+    const trigger = noticeDismissRef.current as unknown as HTMLElement | null;
+    const surface = routeSurface.current as unknown as HTMLElement | null;
+    // Only restore focus when explicitly removing the focused close control.
+    if (Platform.OS === "web" && trigger?.isConnected && trigger.contains(trigger.ownerDocument.activeElement)
+      && surface?.isConnected && surface.ownerDocument === trigger.ownerDocument) {
+      const target = [surface.querySelector<HTMLElement>('[data-page-surface="true"]'),
+        surface.querySelector<HTMLElement>('[role="heading"],h1,h2'), surface].find(node => {
+        if (!node?.isConnected || node.ownerDocument !== trigger.ownerDocument
+          || node.closest('[hidden], [inert], [aria-hidden="true"], [disabled], [aria-disabled="true"]')
+          || node.getClientRects().length === 0) return false;
+        const visibility = node.ownerDocument.defaultView?.getComputedStyle(node).visibility;
+        return visibility !== "hidden" && visibility !== "collapse";
+      });
+      if (target) {
+        try { target.tabIndex = -1; target.focus({ preventScroll: true }); }
+        catch { /* Focus recovery must not prevent dismissal. */ }
+      }
+    }
+    dismissNotice();
+  }
   const motionScope = scopeKey ?? identityKey ?? "signed-out";
   const current = () => { const snapshot = owner.getSnapshot(); return snapshot.scopeKey === scopeKey && snapshot.identityKey === identityKey; };
   useEffect(() => {
@@ -76,7 +98,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {!compact && width >= 1280 ? <ChildKeyFacts hints={hints} child={selectedChild} load={model.profileLoad} /> : null}
           <View testID="header-actions" style={styles.topActions}><NotificationBell /></View>
         </View>
-        <View style={[styles.notice, !notice && styles.noticeEmpty]}><Text accessibilityLiveRegion="polite" style={styles.noticeText}>{notice ?? ""}</Text>{notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.dismiss}><AppIcon name="close" size={20} importantForAccessibility="no" /></Pressable> : null}</View>
+        <View style={[styles.notice, !notice && styles.noticeEmpty]}><Text accessibilityLiveRegion="polite" style={styles.noticeText}>{notice ?? ""}</Text>{notice ? <Pressable ref={noticeDismissRef} accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissShellNotice} style={styles.dismiss}><AppIcon name="close" size={20} importantForAccessibility="no" /></Pressable> : null}</View>
         <MotionEntrance ref={routeSurface} preset="route" triggerKey={pathname} scopeKey={motionScope} style={styles.content} testID="motion-route"><ReaderPositionProvider pathname={pathname} scopeKey={scopeKey ?? null} identityKey={identityKey ?? null} isCurrent={current}>{children}</ReaderPositionProvider></MotionEntrance>
       </MotionScopeBoundary>
       {compact ? <View role="navigation" accessibilityLabel="主要工作區" testID="mobile-bottom-navigation" style={[styles.bottomNav, { paddingBottom: Math.max(8, insets.bottom) }]}>
