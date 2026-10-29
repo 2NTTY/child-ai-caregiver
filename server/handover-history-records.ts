@@ -1,10 +1,14 @@
 import { z } from 'zod';
-import { handoverSourceRevisionSchema } from '../src/shared/handover-imports.ts';
+import { handoverSourceRevisionSchema, type HandoverImportResourceSection } from '../src/shared/handover-imports.ts';
 import { firestoreDomainHash } from './firestore-domain-data.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 
-export const historyModules = { care_history: 'care', profile_history: 'profile', task_history: 'tasks' } as const;
-export type HistoryModule = (typeof historyModules)[keyof typeof historyModules];
+export const historyModules = { care_history: 'care', profile_history: 'profile', task_history: 'tasks',
+  memory_fact_history: 'memory_facts', memory_topic_history: 'memory_topics' } as const;
+export type HistoryModule = HandoverImportResourceSection;
+export function historyResourceForContent(kind: 'care' | 'profile' | 'fact' | 'topic'): HandoverImportResourceSection {
+  return kind === 'fact' ? 'memory_facts' : kind === 'topic' ? 'memory_topics' : kind;
+}
 export function historyModule(section: string): HistoryModule | undefined {
   return Object.hasOwn(historyModules, section) ? historyModules[section as keyof typeof historyModules] : undefined;
 }

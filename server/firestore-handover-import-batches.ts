@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { handoverImportModuleOf, handoverImportResourceSectionSchema } from '../src/shared/handover-imports.ts';
 import { FieldPath, type DocumentSnapshot, type Query } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { historyModule } from './handover-history-records.ts';
@@ -177,7 +178,8 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
       const step = domainParse(stepSchema, { position: input.position, cursor: input.cursor, nextCursor: input.nextCursor });
       const owner = work.scope.ownerUserId, job = await authority.runTransaction(owner, null, b => read(b, work.resourceId));
       const index = job.request.targets.findIndex(target => target.sourceChildId === input.row.childId), selected = job.request.targets[index];
-      if (!selected || !selected.sections.includes((historyModule(input.row.section) ?? input.row.section) as any)) domainReject('invalid_package_scope', 400);
+      const resourceSection = domainParse(handoverImportResourceSectionSchema, historyModule(input.row.section) ?? input.row.section, 'invalid_package_scope', 400);
+      if (!selected || !selected.sections.includes(handoverImportModuleOf(resourceSection))) domainReject('invalid_package_scope', 400);
       const { path, rowIndex, ...source } = input.row.source;
       if (firestoreDomainHash(source) !== firestoreDomainHash(job.request.source)) domainReject('invalid_package_scope', 400);
       const opId = firestoreBackgroundReference({ id: firestoreDomainHash(['handover-import-row', owner, job.id, path, rowIndex]) });

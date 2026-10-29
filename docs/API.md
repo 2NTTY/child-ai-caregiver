@@ -1005,6 +1005,8 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 
 HANDOVER01 私人交代預備接點（已實作、未部署，公開記憶匯入仍待接）：同一 `AgentPrivateNote` 可返回 `provenance=imported_source`、`sourceMessageId=null` 及 `importedFrom`；原訊息 ID／陳述類型保存在來源鏈，不建本地聊天連結。原有 `user_statement` 資料保持有本地來源訊息。client／Server 共用欄位 schema；既有列表、主題鍵查找及刪除直接讀寫同一資源。本人之後透過正式 Agent 更正時仍核當前 run／授權／原文，保存當前來源訊息及 user_statement，保留匯入來源鏈；匯入本身不開啟 Agent 保存授權、不建立假 run。共享目標、摘要與批次接線仍待完成，不能將私人交代預備接口當成整個 memory 模組可用。
 
+memory 匯入契約（後端已接、共用畫面待接、未部署）：產品模組 `memory` 與實際來源類型 `memory_facts`／`memory_topics`／`instructions`／`summary_history` 分開；映射、衝突及原操作均包含實際類型，事實／話題來源修訂沿原歷史接口。匯入摘要只屬可追溯的歷史成果，`coverageScope=imported_source` 明示外來覆蓋；保留原來源及原訊息 ID，不能成為本地活動摘要、推進訊息 watermark 或把外來 ID 當作本地訊息。正文放原摘要集合，更新追加新本地 ID／版本並以 previousId 連原歷史，不覆蓋先前快照；原 previousId 留來源鏈。公開選項須連同讀取接點完成才標示可用；未連接的非空內容仍明確拒絕。
+
 `search_history` 增加可選 `createdFrom`（包含）／`createdBefore`（不包含），指保存時間，不能冒充事情發生時間。先沿既有排序索引限制範圍，再做原有最多 100 筆授權正文掃描與十項命中；cursor 同時綁定此範圍、本人／孩子／世代／變更版本及查詢。舊無範圍 cursor 相容。已知事情資源仍用原工作 resource ID／version 直接讀，不建立第二份權威資料。
 
 
@@ -1237,13 +1239,13 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 - 匯入批次內部契約固定已驗包、manifest、來源孩子到目標的映射、領域及差異處理；worker 必須持有目前持久 lease。每筆原操作與批次位置／計數同交易提交，取消或租約過期不能在檢查後再提交下一筆。取消／失敗保留已完成部分，明確接續沿同一批次及位置，只建立新的工作世代；操作紀錄保留取消／接續與失敗原因。恢復備份不自動續跑匯入，須重新驗包及現在權限。不接受 HTTP 客戶端自報已驗內容。
 - 上載接線（後端已接、未部署）：`POST /api/account/package-uploads` 以原 opId、檔名、大小及 SHA-256 預留，`POST /:id/content` 用 `application/zip` 有界串流交付；`GET /:id` 查原結果，`POST /:id/cancel` 帶原取消 opId／expectedVersion。最多 256 MiB／每帳戶四份未清理暫存；Node 沿原同源、session、expected-user 與兩個大型請求容量。先驗大小／hash／容器與範圍，再保存私人加密物件及技術驗證結果。上載不是匯入，不修改業務資料或啟動來源指令。失敗／取消亦留無正文紀錄；副作用未知只查原物件供清理，不重新上載或假稱成功。暫存沿既有 24 小時到期，帳戶刪除及隔離還原保留物件清理義務；無可信簽章只顯示實際狀態，後續可明示選擇繼續，不能偽稱內容正確。
 - 匯入接線（後端已接、未部署）：`POST /api/account/package-imports` 帶 `opId/uploadId/expectedUploadVersion/acceptedManifestSha256/targets/resolutions`；最多 100 個固定來源孩子映射，不接受來源身分、row、數量或 worker lease。Server 重新開啟相同不可變包，按目標推導涵蓋項數。`GET /:id` 查原批次；`POST /:id/cancel`、`/:id/resume` 帶 `opId/expectedVersion`，回同一批次／逐項計數，不披露儲存身份、lease 或原始正文。worker 每次最多 100 筆並保留期限空間；未完成沿原游標補喚醒，不新建匯入。每項交易重查上載版本／有效期及目前目標權限，來源取消不得在已下載檔案上繼續寫入。已提交原操作可在來源到期後查回，不重驗後重做。
-- 記錄／概況／待辦模組先匯入目前值，再處理來源歷史；包內排列不改此順序。原始修訂保留來源作者及時間，另以 `yuyoufang-source-revision:1` 保存和匯出，不占本地修訂編號、不改現在值或重播提醒。缺少已匯入父資源、來源版本超過已保存現值或父資源已刪時留下逐項 conflict，不靜默棄掉歷史；同來源同版異內容亦列衝突。
+- 記錄／概況／待辦／記憶模組先匯入目前值，再處理來源歷史；包內排列不改此順序。原始修訂保留來源作者及時間，另以 `yuyoufang-source-revision:1` 保存和匯出，不占本地修訂編號、不改現在值或重播提醒。缺少已匯入父資源、來源版本超過已保存現值或父資源已刪時留下逐項 conflict，不靜默棄掉歷史；同來源同版異內容亦列衝突。記憶 facts/topics 復用原唯一鍵、候選、終態、確認與版本規則；名稱衝突為逐項 conflict，不按同名合併。私人交代及摘要只可進本人範圍，匯入不建立背景／Agent 執行授權。
 - `GET /api/account/package-imports?cursor=…` 返回本人匯入批次 `{items,nextCursor}`，每頁最多二十項；沿帳戶／儲存世代範圍及穩定游標，不掃全庫。重開頁面由 Server 查回原批次，再讀其目前進度，不重送建立命令；列表僅含同一安全批次 DTO，不披露原始資料。
-- 逐項結果（已接線、未部署）：`GET /api/account/package-imports/:id/items?sourceChildId=…&module=care|profile|tasks[&cursor]` 從原批次固定目標推導接收資料範圍，重核本人及該模組目前權限；每頁最多二十筆候選，分頁可能因同一接收孩子的其他來源項目而少於二十筆，按 `nextCursor/complete` 判斷覆蓋。返回來源／接收資源 ID、版本、時間、建立／更新／略過／衝突及原因，不披露正文。結果保留原收據；可處理的目前值衝突另帶最新接收版本及 `replace_current/restore_deleted` 選擇。游標綁批次、來源孩子、模組、權限及資料版本，資料改變需重讀。來源歷史、較舊來源或同版異內容不能以覆蓋選項略過核對。
+- 逐項結果（已接線、未部署）：`GET /api/account/package-imports/:id/items?sourceChildId=…&module=care|profile|tasks|memory[&cursor]` 從原批次固定目標推導接收資料範圍，重核本人及該模組目前權限；每頁最多二十筆候選，分頁可能因同一接收孩子的其他來源項目而少於二十筆，按 `nextCursor/complete` 判斷覆蓋。返回來源／接收資源 ID、版本、時間、建立／更新／略過／衝突及原因，不披露正文。結果保留原收據；可處理的目前值衝突另帶最新接收版本及 `replace_current/restore_deleted` 選擇。游標綁批次、來源孩子、模組、權限及資料版本，資料改變需重讀。來源歷史、較舊來源或同版異內容不能以覆蓋選項略過核對。
 - 衝突處理沿原 `POST /api/account/package-imports` 的 `resolutions`，明確選擇帶 `resolutionOnly:true` 建立新操作，重新核原包 hash、目標及每項 expectedVersion；不改寫原批次／收據。此模式要求非空明確決定，只處理所選來源目前值，不處理未選項目或來源歷史，總數為選定項數；省略欄位維持原全範圍匯入。worker、游標、取消及接續仍走同一台帳，成功項不重做保存或提醒。原操作 unknown 仍只查原 ID。未完成原批次先取消或接續，畫面不另開並發解決批次；過期包需重新取得，不能假裝仍可執行。
 - 上載恢復（已接線、未部署）：`GET /api/account/package-uploads?cursor=…` 有界列出本人目前儲存世代、仍有清理義務的上載，每頁最多二十項，返回 `{items,nextCursor}`；項目沿上載 DTO 但省略 `preview`，不一次披露每包完整名冊。游標綁同一帳戶／世代。選取時再 `GET /:id` 核當前狀態：`ready` 可沿原檔案繼續選範圍，其他狀態可查回或取消；重開不得自動重傳內容。清理完成即退出列表，失敗／取消的清理尚未完成則如實保留；列表不能取消已提交匯入或改寫批次終態。本機原檔已失去時，未完成上載應明示取消／重新選取，不假稱能續傳。
-- `GET /api/account/package-imports/source-history?childId=…&module=care|profile|tasks&resourceId=…` 有界讀取來源歷史，選填 `spaceId`、`cursor`；每頁最多十項，游標綁操作者、目標、模組、儲存世代與目前授權／變更版本。本人或共享資料皆經同一授權服務；返回 `{items,nextCursor,complete}`，每項含本地目標及原始 evidence，不返回內部 opId 或儲存身份。讀取、JSON／ZIP 匯出均重核目前父資源；刪除／historyFloor 即時遮蔽正文。
-- 逐項結果共用 owner／畫面已接；只展示 metadata 與版本，不冒稱已有正文差異預覽。其他領域、無包身份的驗證失敗紀錄、班級／期間匯出、完整私人備份與簽章配置仍待接；本段不代表完整用戶匯入已可用。恢復後的 interrupted 批次不自動續跑。上述後端尚未部署。
+- `GET /api/account/package-imports/source-history?childId=…&module=care|profile|tasks|memory_facts|memory_topics|summary_history&resourceId=…` 有界讀取來源歷史，選填 `spaceId`、`cursor`；每頁最多十項，游標綁操作者、目標、模組、儲存世代與目前授權／變更版本。本人或共享資料皆經同一授權服務；返回 `{items,nextCursor,complete}`，每項含本地目標及原始 evidence，不返回內部 opId 或儲存身份。讀取、JSON／ZIP 匯出均重核目前父資源；刪除／historyFloor 即時遮蔽正文。
+- 記錄／概況／待辦逐項結果共用 owner／畫面已接；新增記憶選項與實際資源類型待前端接線。memory 結果另帶 resourceSection，衝突決定以它指定事實／話題／交代／摘要，不以 memory 作來源身份；舊三模組 DTO 不新增欄位。現有畫面只展示 metadata 與版本，不冒稱已有正文差異預覽。其他領域、無包身份的驗證失敗紀錄、班級／期間匯出、完整私人備份與簽章配置仍待接；本段不代表完整用戶匯入已可用。恢復後的 interrupted 批次不自動續跑。上述後端尚未部署。
 - provider 連結在同流程取得必要同意，配置 Apple private relay 合法郵件來源；Google／Apple-only 重新驗證用其 provider，不要求密碼。註冊准入與家庭／教師空間資格分開。
 - P5 Server 能力／地址核對與憑據隔離另隨 S06-W04 擴充；資料副本匯入不會切換權威 Server、搬移執行授權或恢復舊投遞。普通登入及裝置撤銷不依賴已取消的配對端點。
 

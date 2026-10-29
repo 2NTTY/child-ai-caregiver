@@ -46,7 +46,11 @@ export function validMemoryFactAttribution(value: z.infer<typeof firestoreFactSt
     && (!value.changedViaShare || validSharedAttribution(value.changedViaShare, scope, value.id, value.version, value.changedViaShare.actorUserId));
 }
 const summarySchema = z.object({ id: uuid, childId: uuid, version, text: z.string().min(1).max(6000), createdAt: time,
-  previousId: uuid.nullable(), coveredMessageIds: z.array(uuid).min(1).max(50), lastCoveredMessageId: uuid }).strict();
+  previousId: uuid.nullable(), coveredMessageIds: z.array(uuid).min(1).max(50), lastCoveredMessageId: uuid,
+  coverageScope: z.literal('imported_source').optional(), importedFrom: importProvenanceSchema.optional(),
+}).strict().refine(value => value.coverageScope === 'imported_source' ? value.importedFrom?.current.source.section === 'summary_history'
+  : value.importedFrom === undefined);
+export { summarySchema as firestoreSummarySchema };
 const summaryDependencySchema = z.object({ kind: z.enum(['profile', 'fact', 'topic', 'care']), id: uuid, version: z.number().int().nonnegative(), validUntil: time.nullable() }).strict();
 const summaryBatchSchema = z.object({ dependencies: z.array(summaryDependencySchema).max(64), sourceCoverageComplete: z.boolean().optional(), authorizationVersion: z.string(),
   lastMessageSortKey: z.string().regex(/^[0-9]{19}$/u), replaces: uuid.nullable() }).strict();
@@ -63,6 +67,9 @@ export interface FirestoreMemoryStore extends MemoryStore {
   forSharedSpace(spaceId: string): MemoryStore;
   mutation: FirestoreOnlineMutation;
   readSummaryRevision(binding: Binding, raw: unknown): Promise<ConversationSummary | null>;
+  readImportedSummary(binding: Binding, id: string): Promise<ConversationSummary | null>;
+  prepareImportedSummary(binding: Binding, operationId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
+    current?: { id: string; expectedVersion: number }): Promise<Prepared<ConversationSummary>>;
   prepareMaintenance(userId: string, childId: string): Promise<SummaryInput | null>;
   prepareSummaryWrite(binding: Binding, raw: unknown, operationId: string): Promise<Prepared<ConversationSummary>>;
   readFact(binding: Binding, id: string): Promise<MemoryFact | null>;
@@ -334,6 +341,10 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
   }
   async function readSummaryRevision(binding: Binding, raw: unknown) {
     const saved = domainParse(savedSummarySchema, raw);
+    if (saved.summary.coverageScope === 'imported_source') {
+      if (saved.summary.childId !== binding.scope.childId || binding.sharedAccess || saved.batch) domainReject('summary_binding', 500);
+      return saved.summary;
+    }
     if (saved.batch) return await batchValid(binding, saved) ? saved.summary : null;
     const current = await summaryBasis(binding);
     return saved.basis === current.basis && (!saved.validUntil || Date.parse(saved.validUntil) > Date.now()) ? saved.summary : null;
@@ -344,7 +355,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     const batches: { saved: SavedSummary; valid: boolean; row: DocumentSnapshot }[] = [], cache = new Map<string, DocumentSnapshot>();
     for (const row of rows.docs.slice(0, 4)) {
       const saved = open(binding, 'conversation-summary', row.get('entityId'), savedSummarySchema, row);
-      if (!saved.batch || row.get('lastMessageSortKey') !== saved.batch.lastMessageSortKey) domainReject('summary_binding', 500);
+      if (saved.summary.coverageScope || !saved.batch || row.get('lastMessageSortKey') !== saved.batch.lastMessageSortKey) domainReject('summary_binding', 500);
       batches.push({ saved, row, valid: await batchValid(binding, saved, cache) });
     }
     return { batches, more: rows.size > 4 };
@@ -352,6 +363,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
   async function summaryInput(binding: Binding) {
     const id = summaryId(binding), row = await binding.transaction.get(data.ref('conversation_summary_heads', 'conversation-summary-head', id));
     const saved = row.exists ? open(binding, 'conversation-summary-head', id, savedSummarySchema, row) : null;
+    if (saved?.summary.coverageScope) domainReject('summary_binding', 500);
     const current = await summaryBasis(binding);
     const usable = saved !== null && (saved.batch ? await batchValid(binding, saved)
       : saved.basis === current.basis && (saved.validUntil === null || Date.parse(saved.validUntil) > Date.now()));
@@ -527,6 +539,33 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
       };
     },
     mutation, prepareSummaryWrite, readSummaryRevision,
+    readImportedSummary: async (binding, id) => {
+      domainParse(uuid, id);
+      if (binding.sharedAccess || binding.actorUserId !== binding.scope.ownerUserId) domainReject('private_scope_unavailable', 403);
+      const row = await binding.transaction.get(data.ref('conversation_summaries', 'conversation-summary', id));
+      if (!row.exists) return null;
+      const saved = open(binding, 'conversation-summary', id, savedSummarySchema, row);
+      if (saved.summary.id !== id || saved.summary.childId !== binding.scope.childId || saved.summary.version !== row.get('recordVersion')
+        || saved.summary.coverageScope !== 'imported_source' || saved.batch || row.get('currentBatch') === true) domainReject('summary_binding', 500);
+      return saved.summary;
+    },
+    prepareImportedSummary: async (binding, operationId, row, integrity, current) => {
+      if (binding.sharedAccess || binding.actorUserId !== binding.scope.ownerUserId) domainReject('private_scope_unavailable', 403);
+      if (row.section !== 'summary_history') domainReject('invalid_package_data', 400);
+      const source = domainParse(summarySchema, row.value, 'invalid_package_data', 400);
+      const previous = current ? await store.readImportedSummary(binding, current.id) : null;
+      if (current && (!previous || previous.version !== current.expectedVersion)) domainReject('version_conflict');
+      const importedFrom = makeImportProvenance(row, integrity, binding.actorUserId, new Date().toISOString());
+      const value: ConversationSummary = { ...source, id: randomUUID(), childId: binding.scope.childId,
+        version: (previous?.version ?? 0) + 1, previousId: previous?.id ?? null, coverageScope: 'imported_source', importedFrom };
+      const ref = data.ref('conversation_summaries', 'conversation-summary', value.id);
+      if ((await binding.transaction.get(ref)).exists) domainReject('version_conflict');
+      const saved = { summary: value, basis: '0'.repeat(64), validUntil: null, lastSortKey: '0'.repeat(19) };
+      const envelope = { ...data.tags(binding.scope), entityId: value.id, entityVersion: value.version, currentBatch: false,
+        ...data.seal('conversation-summary', value.id, binding.scope, savedSummarySchema, saved, value.version) };
+      const change = await binding.prepareChange(operationId, 'memory', false);
+      return { value, changeSeq: change.changeSeq, commit() { change.commit(); binding.transaction.create(ref, envelope); } };
+    },
     prepareMaintenance: (u, c) => authority.runTransaction(u, c, async binding => {
       const state = await summaryInput(binding);
       if (state.saved?.batch) {

@@ -1,0 +1,41 @@
+{
+  "package": "P4-HANDOVER01 memory import pipeline backend",
+  "date": "2026-10-30",
+  "base": "755b8b78cd4d39aff3f98d65d91ecdb7923b69e6",
+  "branch": "codex/p4-handover-memory-pipeline",
+  "implemented": [
+    "The memory product module uses the existing upload, archive, import worker and transactional domain services for facts, topics, private instructions, imported summaries and fact/topic source revisions.",
+    "Mappings, selected conflict decisions and receipts use actual resource kinds; memory results expose resourceSection while existing care/profile/task results keep their previous shape.",
+    "Imported summaries remain append-only historical records in the original summary collection, with original coverage and provenance. They never create an active local head or advance local message coverage.",
+    "Current read authorization, bounded source history export, physical deletion and independent-journal restore replay cover imported fact/topic evidence. Private instructions and summaries cannot be imported into shared access.",
+    "Restore metadata recognizes authenticated imported summaries and the existing summary batch query fields."
+  ],
+  "verification": {
+    "command": "node --experimental-test-module-mocks --test tests/handover-memory-pipeline.test.ts tests/handover-source-history.test.ts",
+    "result": "2 passed, 0 failed",
+    "coverage": [
+      "One connected synthetic archive/upload/formal import service and worker flow imports all six memory sections; normal reads, results and historical reads return the same records.",
+      "Repeating the package skips all six records; a local fact change conflicts, and selected-only replacement changes only that source resource.",
+      "Another account is rejected. Deletion hides the source revision immediately, the actual cleanup consumer removes it, and replay against a prior synthetic snapshot removes it again.",
+      "Imported summary updates retain the older snapshot and create a new local version without an active head.",
+      "The existing care source-history round-trip and deletion/restore flow still passes after the shared history changes."
+    ],
+    "types": "TypeScript dependency graph rooted at server/handover-import-service.ts, server/firestore-restore-codec.ts, server/firestore-restore-content-erasure.ts and tests/handover-memory-pipeline.test.ts: 0 diagnostics.",
+    "review": "Independent read-only whole-branch review found no definite P1/P2 blockers; primary reviewed shared contracts and the summary append-only check. Frontend and cloud deployment were outside this review.",
+    "diffCheck": "passed"
+  },
+  "retainedFailures": [
+    "Desktop restart removed node_modules; the first command could not resolve zod. Exact locked dependencies were restored before the functional check.",
+    "The initial connected memory flow failed with package_section_not_connected before extending the module/resource dispatch.",
+    "Restore decoding rejected summary query metadata; the codec metadata whitelist and imported-summary validation were aligned.",
+    "Selected memory conflict resolution was rejected by the persisted request schema using product modules instead of actual resource kinds; both schemas now use the same mapping.",
+    "The deletion regression retained three source-history records instead of two: fact/topic cleanup skipped the source-history stage. The shared consumer now visits that stage for every supported content kind.",
+    "Scoped typing exposed optional summary/nullability and a mismatched test export dependency; these were corrected without weakening assertions."
+  ],
+  "notVerified": [
+    "Real Firestore contention, production query/index readiness and cloud restore were not exercised by the serial fixture.",
+    "Memory selection, resource-specific conflict choices and historical reading in the shared Web/Android UI follow in a dependent frontend package after this backend package merges.",
+    "No deployment, model calls, external notifications, device checks, full suite or product-wide build was performed.",
+    "Other import modules, complete private backup, class/period export, content differences, signing configuration and native large-package delivery remain open."
+  ]
+}

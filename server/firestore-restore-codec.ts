@@ -155,7 +155,7 @@ const domainEnvelopeSchema = z.object({ format: z.literal('yuban-firestore-domai
   ciphertext: z.string().min(1), recovery: z.unknown() }).strict();
 // messageSentAt is untrusted query metadata; operation restores rebuild it from authenticated content.
 const privateMetadata = new Set(['opId', 'batchId', 'section', 'outcome', 'targetId', 'targetVersion', 'entryId', 'managerTag', 'memberTag', 'sourceUserTag', 'active', 'spaceId', 'messageSentAt', 'targetTag', 'actorTag', 'uploadId', 'pending', 'complete', 'nextAttemptAt', 'summaryPending', 'cleanupState', 'cleanupAt', 'retryAt', 'updatedAt', 'workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey', 'stage',
-  'historyId', 'module', 'teacherSpaceId', 'taskId', 'taskVersion', 'occurrenceId', 'documentId', 'status', 'autoRefresh', 'snapshotId', 'snapshotVersion', 'assetId', 'scopeTag',
+  'historyId', 'module', 'currentBatch', 'lastMessageSortKey', 'teacherSpaceId', 'taskId', 'taskVersion', 'occurrenceId', 'documentId', 'status', 'autoRefresh', 'snapshotId', 'snapshotVersion', 'assetId', 'scopeTag',
   'live', 'state', 'cleaned', 'dueAt', 'leaseUntil', 'dispatchId', 'dispatchRouting', 'entityId', 'entityVersion', 'historyFloor', 'messageId', 'visibility', 'validUntil', 'runId', 'triggerKind', 'workId', 'confirmationId', 'askingRunId', 'askMessageId', 'expiresAt', 'proposalId', 'authorizationVersion', 'receiptId', 'noteId', 'concernId', 'eventId', 'sequence', 'attentionId', 'id', 'dispatch', 'route', 'enabled', 'nextCheckAt', 'operationId', 'bindingId', 'deliveryId', 'challengeId', 'unresolved', 'requestId', 'attemptIds']);
 
 /** Pure authenticated record conversion. No reads, writes, permissions, journal replay or object transfer occur here. */
