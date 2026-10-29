@@ -24,6 +24,11 @@ import { KNOWLEDGE_EMBEDDING } from '../src/shared/knowledge.ts';
 import { knowledgeHash, sourceVersionHash, parseKnowledgeSource, embeddingDocument } from '../server/knowledge-inputs.ts';
 import { firebaseErasureIntentHash } from '../server/firebase-erasure-journal.ts';
 import type { FirebasePhotoObjectDescriptor } from '../server/firebase-photo-objects.ts';
+import { firestoreChatFileRowSchema } from '../server/firestore-chat-files.ts';
+import { firestoreVoiceRowSchema } from '../server/firestore-voice.ts';
+import { chatFileObjectAddress } from '../server/firebase-chat-file-objects.ts';
+import { voiceObjectAddress } from '../server/firebase-voice-objects.ts';
+import type { ImportProvenance } from '../src/shared/import-provenance.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000', projectId = 'synthetic-restore-project', namespace = 'synthetic_restore';
@@ -49,6 +54,48 @@ function authorityRecord(f: ReturnType<typeof fixture>, kind: 'control' | 'works
   return { path: namespace + '/' + firestoreDomainHash([kind, id]), data: { format: 'yuban-work-recovery', version: 1, ciphertext,
     recovery: sealRecoveryLocator({ ...f.options, ciphertext, context: { family: 'authority', kind, id, scope: current, envelopeVersion: 1, aad } }) } };
 }
+
+test('restore derives attachment import cleanup indexes from sealed publication state', () => {
+  const f = fixture(), bucketName = 'synthetic-private';
+  const stage = { batchId: randomUUID(), operationId: randomUUID(), actorUserId: scope.ownerUserId, sourceHash: digest };
+  const provenance = (section: 'files' | 'voices' | 'photos'): ImportProvenance => ({ current: {
+    source: { serverId: 'source', accountId: 'source-parent', childId: randomUUID(), section, resourceId: randomUUID(), resourceVersion: 1,
+      authorUserId: null, createdAt: at, confirmedBy: null, confirmedAt: null, confirmationBasis: null, assigneeUserId: null },
+    sourceHash: digest, packageId: randomUUID(), packageVersion: 1, manifestSha256: digest, integrity: 'trusted', importedBy: scope.ownerUserId, importedAt: at,
+  }, previous: [] });
+  for (const section of ['files', 'voices', 'photos'] as const) {
+    const id = randomUUID(), mimeType = section === 'voices' ? 'audio/wav' : section === 'photos' ? 'image/png' : 'text/plain';
+    const address = (current: WorkRecoveryScope) => section === 'photos'
+      ? 'photos/v1/' + createHash('sha256').update(JSON.stringify(['yuban-photo-object', 1, projectId, namespace, current])).digest('hex') + '/' + id
+      : (section === 'voices' ? voiceObjectAddress : chatFileObjectAddress)({ projectId, namespace, bucketName }, current, id).objectName;
+    const descriptor = { objectName: address(scope), generation: '1', cipherSha256: digest, sha256: digest, bytes: 20, mimeType,
+      ...(section === 'voices' ? { durationMs: 1000 } : {}) };
+    const kind = section === 'photos' ? 'photo' : section === 'voices' ? 'voice-asset' : 'chat-file-asset';
+    const suffix = section === 'photos' ? 'photos' : section === 'voices' ? 'voice_assets' : 'chat_file_assets';
+    const schema = section === 'photos' ? firestorePhotoSchemas.photo : section === 'voices' ? firestoreVoiceRowSchema : firestoreChatFileRowSchema;
+    for (const published of [false, true]) {
+      const row = schema.parse({ id, scope, version: 1, createdAt: at, state: published ? 'ready' : 'reserved',
+        metadata: { fileName: 'import.bin', mimeType, bytes: 20, sha256: digest, ...(section === 'photos' ? { source: 'Imported source' } : {}) },
+        descriptor, upload: null, deletion: null, importStage: stage, ...(published ? { importedFrom: provenance(section) } : {}),
+        ...(section === 'photos' ? { reservationOperationId: stage.operationId } : { updatedAt: at, fingerprint: digest, objectScope: scope, messageId: null }),
+      });
+      const original = record(f.data, suffix, kind, id, scope, schema as z.ZodType<unknown>, row);
+      const replacement = { ...descriptor, objectName: address(nextScope) };
+      const target = { ...input(), photoDescriptors: new Map(section === 'photos' ? [[id, replacement as FirebasePhotoObjectDescriptor]] : []),
+        ...(section === 'voices' ? { voiceObjectBucketName: bucketName, voiceDescriptors: new Map([[id, { ...replacement, mimeType: 'audio/wav' as const, durationMs: 1000 }]]) } : {}),
+        ...(section === 'files' ? { chatFileObjectBucketName: bucketName, chatFileDescriptors: new Map([[id, replacement]]) } : {}),
+      };
+      const changed = f.codec.transform(f.codec.decode(original), target);
+      if (section === 'photos') assert.equal(changed.data.importPending, !published);
+      else assert.equal(changed.data.cleanupState, published ? null : 'unlinked');
+      // Query metadata is never trusted when rebuilding maintenance indexes.
+      assert.doesNotThrow(() => f.codec.decode(changed));
+      const forged = { ...original, data: { ...original.data, ...(section === 'photos' ? { importPending: published } : { cleanupState: published ? 'unlinked' : null }) } };
+      const again = f.codec.transform(f.codec.decode(forged), target);
+      assert.equal(again.data[section === 'photos' ? 'importPending' : 'cleanupState'], section === 'photos' ? !published : published ? null : 'unlinked');
+    }
+  }
+});
 
 test('restore authenticates actual canonical/domain writers, rebinds epochs and IDs, and preserves original operation fingerprints/results', async () => {
   const f = fixture(), authority = createFirestoreAuthority(f.options), online = createFirestoreOnlineStore(f.options);

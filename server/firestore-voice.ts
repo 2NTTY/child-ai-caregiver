@@ -17,6 +17,8 @@ import { FirestoreDomainData, FirestoreDomainError, domainParse, domainReject, f
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from "./firestore-work-continuation-recovery.ts";
 import { voiceObjectDescriptorSchema, type VoiceObjects, type VoiceObjectDescriptor } from "./firebase-voice-objects.ts";
 import { decodeVoiceBase64, VoiceFileError } from "./voice-files.ts";
+import { importProvenanceSchema, type ImportProvenance } from '../src/shared/import-provenance.ts';
+import { attachmentImportStageSchema, checkedAttachmentImportStage, type AttachmentImportStage, type AttachmentImportAccess } from './handover-attachment-stage.ts';
 
 const uuid = z.uuid(), at = z.iso.datetime({ offset: true });
 const uploadSchema = z.object({ token: uuid, startedAt: at, unknown: z.boolean() }).strict();
@@ -27,6 +29,7 @@ export const firestoreVoiceRowSchema = z.object({
   metadata: voiceReservationSchema.omit({ opId: true }).nullable(),
   state: z.enum(["reserved", "ready", "deleting", "deleted"]), upload: uploadSchema.nullable(),
   descriptor: voiceObjectDescriptorSchema.nullable(), messageId: uuid.nullable(),
+  importStage: attachmentImportStageSchema.optional(), importedFrom: importProvenanceSchema.optional(),
   deletion: z.object({ intent: firebaseErasureIntentSchema, proof: firebaseErasureDescriptorSchema.nullable(), expectedVersion: z.number().int().positive(),
     actorUserId: z.string().min(1).max(256).optional(), actorOperationId: uuid.optional(), attribution: sharedWriteAttributionSchema.optional(),
     integrity: voiceReservationSchema.pick({ bytes: true, sha256: true, mimeType: true }),
@@ -35,6 +38,9 @@ export const firestoreVoiceRowSchema = z.object({
 }).strict().refine(v => (['deleting', 'deleted'].includes(v.state)) === (v.metadata === null)
   && (v.metadata === null) === (v.deletion !== null)
   && (v.state !== "ready" || v.descriptor !== null)
+  && (!v.importStage || v.state !== 'ready' || !!v.importedFrom)
+  && (!v.importedFrom || !!v.importStage && v.importedFrom.current.source.section === 'voices'
+    && v.importedFrom.current.sourceHash === v.importStage.sourceHash && v.importedFrom.current.importedBy === v.importStage.actorUserId)
   && (!v.deletion || erasureCoversVoice(v.deletion.intent, v.objectScope, v.id))
   && (!v.deletion || validSharedAttribution(v.deletion.attribution, v.scope, v.id, v.deletion.expectedVersion + 1, v.deletion.actorUserId ?? v.scope.ownerUserId))
   && (!v.deletion?.attribution || !!v.deletion.actorOperationId)
@@ -63,7 +69,7 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
   }
   function envelope(row: FirestoreVoiceRow) {
     return { ...data.tags(row.scope), scopeTag: scopeTag(row.scope), assetId: row.id, state: row.state,
-      createdAt: row.createdAt, updatedAt: row.updatedAt, messageId: row.messageId, cleanupState: row.deletion?.cleanup ?? (row.messageId === null ? 'unlinked' : null), cleanupAt: row.deletion?.nextCheckAt ?? null,
+      createdAt: row.createdAt, updatedAt: row.updatedAt, messageId: row.messageId, cleanupState: row.deletion?.cleanup ?? (row.messageId === null && !(row.importedFrom && row.state === 'ready') ? 'unlinked' : null), cleanupAt: row.deletion?.nextCheckAt ?? null,
       ...data.seal("voice-asset", row.id, row.scope, firestoreVoiceRowSchema, row, row.version) };
   }
   function current(row: FirestoreVoiceRow) { if (["deleting", "deleted"].includes(row.state)) domainReject("voice_deleted", 410); }
@@ -87,41 +93,64 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
     if (prior) receipts.assertSame(b, prior, submission);
     return { prior, submission };
   }
-  async function reserve(userId: string, childId: string, raw: VoiceReservation) {
+  async function prepareReservation(b: FirestoreAuthorityTransaction, raw: VoiceReservation, importStage?: AttachmentImportStage) {
     const input = domainParse(voiceReservationSchema, raw), { opId: id, ...metadata } = input;
-    const fingerprint = firestoreDomainHash(["voice-reserve", input]), createdAt = now();
-    return authority.runTransaction(userId, childId, async b => {
+    const fingerprint = firestoreDomainHash(importStage ? ['voice-import-reserve', input, importStage] : ["voice-reserve", input]), createdAt = now();
+    const childId = b.scope.childId;
       if (!await b.readChild(childId)) domainReject("not_found", 404);
-      const op = await operation(b, id, '/api/children/' + childId + '/voices', input);
+      const op = importStage ? null : await operation(b, id, '/api/children/' + childId + '/voices', input);
       const existing = await b.transaction.get(ref(id));
       if (existing.exists) {
         const prior = open(existing, b.scope, id); if (prior.fingerprint !== fingerprint) domainReject("operation_conflict");
-        return view(prior);
+        if (importStage) current(prior);
+        return { value: view(prior), commit() {} };
       }
-      if (op.prior) domainReject('operation_erased');
+      if (op?.prior) domainReject('operation_erased');
       // Only a few unfinished uploads may occupy a user's child scope at once.
       const pending = await b.transaction.get(data.collection("voice_assets").where("scopeTag", "==", scopeTag(b.scope))
         .where("state", "==", "reserved").limit(3));
       if (pending.size >= 3) domainReject("voice_pending_capacity");
       const change = await b.prepareChange(id, "chat", false);
       const row: FirestoreVoiceRow = { id, scope: { ...b.scope }, objectScope: { ...b.scope }, version: 1, createdAt,
-        updatedAt: createdAt, fingerprint, metadata, state: "reserved", upload: null, descriptor: null, messageId: null, deletion: null };
-      const saved = receipts.prepareConfirmed(b, op.submission, { childId, changeSeq: change.changeSeq, statusCode: 201,
-        result: { voiceId: id, action: 'voice_reserve', accepted: true } });
-      change.commit(); b.transaction.create(ref(id), envelope(row)); saved.commit(); return view(row);
-    });
+        updatedAt: createdAt, fingerprint, metadata, state: "reserved", upload: null, descriptor: null, messageId: null, deletion: null,
+        ...(importStage ? { importStage } : {}) };
+      const saved = op ? receipts.prepareConfirmed(b, op.submission, { childId, changeSeq: change.changeSeq, statusCode: 201,
+        result: { voiceId: id, action: 'voice_reserve', accepted: true } }) : null;
+      return { value: view(row), commit() { change.commit(); b.transaction.create(ref(id), envelope(row)); saved?.commit(); } };
   }
-  async function finish(userId: string, childId: string, original: FirestoreVoiceRow, descriptor: VoiceObjectDescriptor) {
+  async function reserve(userId: string, childId: string, raw: VoiceReservation) {
+    return authority.runTransaction(userId, childId, async b => { const prepared = await prepareReservation(b, raw); prepared.commit(); return prepared.value; });
+  }
+  function prepareImportReservation(b: FirestoreAuthorityTransaction, raw: VoiceReservation, stage: AttachmentImportStage) {
+    return prepareReservation(b, raw, checkedAttachmentImportStage(b, stage));
+  }
+  function uploadTransaction<T>(userId: string, childId: string, access: AttachmentImportAccess | undefined,
+    use: (b: FirestoreAuthorityTransaction) => Promise<T>) {
+    const checked = (b: FirestoreAuthorityTransaction) => {
+      if (access) checkedAttachmentImportStage(b, access.stage);
+      return use(b);
+    };
+    return access?.selection ? withSharedAttachmentWrite(options, userId, childId, access.selection, checked)
+      : authority.runTransaction(userId, childId, checked);
+  }
+  function checkImportAccess(b: FirestoreAuthorityTransaction, row: FirestoreVoiceRow, access?: AttachmentImportAccess) {
+    if (access) {
+      if (!row.importStage) domainReject('operation_conflict');
+      checkedAttachmentImportStage(b, access.stage, row.importStage);
+    } else if (row.importStage && row.state !== 'ready') domainReject('voice_import_pending');
+  }
+  async function finish(userId: string, childId: string, original: FirestoreVoiceRow, descriptor: VoiceObjectDescriptor, access?: AttachmentImportAccess) {
     const checked = checkedDescriptor(original, descriptor);
-    return authority.runTransaction(userId, childId, async b => {
+    return uploadTransaction(userId, childId, access, async b => {
       const row = await read(b, original.id); current(row);
+      checkImportAccess(b, row, access);
       if (row.fingerprint !== original.fingerprint || row.upload?.token !== original.upload?.token) domainReject("voice_upload_changed");
-      if (row.state === "ready") {
+      if (row.state === "ready" || row.importStage && row.descriptor) {
         if (firestoreDomainHash(row.descriptor) !== firestoreDomainHash(checked)) domainReject("voice_integrity", 503);
         return view(row);
       }
       const change = await b.prepareChange(randomUUID(), "chat", false);
-      const updated: FirestoreVoiceRow = { ...row, version: row.version + 1, state: "ready", descriptor: checked, updatedAt: now() };
+      const updated: FirestoreVoiceRow = { ...row, version: row.version + 1, state: row.importStage ? 'reserved' : "ready", descriptor: checked, updatedAt: now() };
       change.commit(); b.transaction.set(ref(row.id), envelope(updated)); return view(updated);
     });
   }
@@ -135,13 +164,14 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
       tx.set(ref(row.id), envelope({ ...row, version: row.version + 1, upload: definitelyNotWritten ? null : { ...row.upload, unknown: true }, updatedAt: now() }));
     });
   }
-  async function upload(userId: string, childId: string, id: string, expectedVersion: number, base64: string, signal?: AbortSignal) {
+  async function upload(userId: string, childId: string, id: string, expectedVersion: number, base64: string, signal?: AbortSignal, access?: AttachmentImportAccess) {
     domainParse(uuid, id); domainParse(z.number().int().min(1), expectedVersion);
     let bytes: Buffer;
     try { bytes = decodeVoiceBase64(base64); } catch { domainReject('invalid_voice', 400); }
     const sha256 = createHash("sha256").update(bytes).digest("hex"), token = randomUUID();
-    const admission = await authority.runTransaction(userId, childId, async b => {
+    const admission = await uploadTransaction(userId, childId, access, async b => {
       const row = await read(b, id); current(row);
+      checkImportAccess(b, row, access);
       if (row.metadata?.sha256 !== sha256 || row.metadata.bytes !== bytes.length) domainReject("voice_hash_mismatch", 400);
       if (row.state === "ready" || row.upload) return { row, admitted: false };
       if (row.version !== expectedVersion) domainReject("version_conflict");
@@ -149,11 +179,11 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
       b.transaction.set(ref(id), envelope(next)); return { row: next, admitted: true };
     });
     if (admission.row.state === "ready") return view(admission.row);
-    if (!admission.admitted) return reconcile(userId, childId, id);
+    if (!admission.admitted) return reconcile(userId, childId, id, access);
     try {
       const descriptor = await options.objects.write(admission.row.objectScope, id, base64, admission.row.metadata!.mimeType, signal);
       await captureLateObject(admission.row, descriptor);
-      return await finish(userId, childId, admission.row, descriptor);
+      return await finish(userId, childId, admission.row, descriptor, access);
     } catch (e) {
       // VoiceFileError is raised by validation before Storage is called.
       await settleUploadFailure(admission.row, e instanceof VoiceFileError);
@@ -227,7 +257,7 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
       if (!(await authority.readControl(tx)).enabled) return null;
       const row = open(await tx.get(ref(id)), scope, id);
       if (row.deletion) return row;
-      if (row.messageId || clock() < Date.parse(row.createdAt) + 86400_000) return null;
+      if (row.messageId || row.importedFrom && row.state === 'ready' || clock() < Date.parse(row.createdAt) + 86400_000) return null;
       const { bytes, sha256, mimeType } = row.metadata!;
       const intent: FirebaseErasureIntent = { type:'voice-delete',scope:row.objectScope,assetId:id,operationId:randomUUID(),at:now() };
       const updated: FirestoreVoiceRow = { ...row,version:row.version+1,state:'deleting',metadata:null,updatedAt:now(),
@@ -295,13 +325,29 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
     if (!exists) return true;
     return (await cleanupDeleted(scope, id)).state === 'complete';
   }
-  async function reconcile(userId: string, childId: string, id: string) {
-    const row = await authority.runTransaction(userId, childId, async b => { const found = await read(b, id); current(found); return found; });
+  async function reconcile(userId: string, childId: string, id: string, access?: AttachmentImportAccess) {
+    const row = await uploadTransaction(userId, childId, access, async b => { const found = await read(b, id); current(found); checkImportAccess(b, found, access); return found; });
     if (row.state === "ready" || !row.upload) return view(row);
     const descriptor = await options.objects.inspect(row.objectScope, id);
-    if (descriptor) return finish(userId, childId, row, descriptor);
+    if (descriptor) return finish(userId, childId, row, descriptor, access);
     await settleUploadFailure(row);
-    return authority.runTransaction(userId, childId, async b => view(await read(b, id)));
+    return uploadTransaction(userId, childId, access, async b => view(await read(b, id)));
+  }
+  async function prepareImportPublication(b: FirestoreAuthorityTransaction, id: string, rawStage: AttachmentImportStage, rawProvenance: ImportProvenance) {
+    const row = await read(b, id); current(row);
+    if (!row.importStage) domainReject('operation_conflict');
+    const stage = checkedAttachmentImportStage(b, rawStage, row.importStage), importedFrom = domainParse(importProvenanceSchema, rawProvenance);
+    if (importedFrom.current.source.section !== 'voices' || importedFrom.current.sourceHash !== stage.sourceHash
+      || importedFrom.current.importedBy !== stage.actorUserId) domainReject('operation_conflict');
+    if (row.state === 'ready') {
+      if (firestoreDomainHash(row.importedFrom) !== firestoreDomainHash(importedFrom)) domainReject('operation_conflict');
+      return { value: view(row), changeSeq: null, commit() {} };
+    }
+    if (!row.descriptor) domainReject('voice_not_available');
+    checkedDescriptor(row, row.descriptor);
+    const change = await b.prepareChange(stage.operationId, 'chat', false);
+    const next: FirestoreVoiceRow = { ...row, state: 'ready', version: row.version + 1, importedFrom, updatedAt: now() };
+    return { value: view(next), changeSeq: change.changeSeq, commit() { change.commit(); b.transaction.set(ref(id), envelope(next)); } };
   }
   async function prepareLink(b: FirestoreAuthorityTransaction, id: string, expectedVersion: number, messageId: string) {
     const row = await read(b, id); current(row);
@@ -357,7 +403,10 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
   }
   const { content, list, get } = readers(authority);
 
-  return { list, get, forSharedSpace: (selection: SharedSelection) => ({ ...readers(sharedAttachmentReads(options, selection)),
+  return { list, get, prepareImportReservation, prepareImportPublication,
+    uploadImported: (userId: string, childId: string, id: string, expectedVersion: number, base64: string, stage: AttachmentImportStage,
+      signal?: AbortSignal, selection?: SharedSelection) => upload(userId, childId, id, expectedVersion, base64, signal, { stage, selection }),
+    forSharedSpace: (selection: SharedSelection) => ({ ...readers(sharedAttachmentReads(options, selection)),
     delete: (userId: string, childId: string, id: string, version: number, opId: string) => deleteVoice(userId, childId, id, version, opId, selection) }), reserve, upload, reconcile, content, prepareLink, agentAudio, authorizeAudio, readEvidence, delete: deleteVoice, cleanupDeleted, expireUnlinked, eraseForScope,
     readMetadata: async (b: FirestoreAuthorityTransaction, id: string) => view(await read(b,id), b) };
 }

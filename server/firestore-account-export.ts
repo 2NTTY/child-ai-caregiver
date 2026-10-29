@@ -109,7 +109,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
         avatar = await avatarData.head(binding, avatarBinding(binding.scope, target));
         const { canManage: _canManage, ...current } = avatarPublicState(avatar, false);
         // Only the current normalized image/version is exportable; no uploads, raw inputs or storage descriptors.
-        if (!section.endsWith('_content')) items.push(current);
+        if (!section.endsWith('_content')) items.push({ ...current, ...(avatar.importedFrom ? { importedFrom: avatar.importedFrom } : {}) });
       } else if (section === 'manifest') {
         items = [{ format: 'yuban-personal-data:1', sections: ['account', ...Object.keys(sections)].map(key => ({ section: key,
           childScoped: !global.has(key), required: true })), scope: '本人可讀的業務資料；不包含憑據、模型 key 或內部協定狀態。' }];
@@ -192,18 +192,18 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             if (current) items.push(current);
           } else if (suffix === 'voice_assets') {
             const voice=firestoreVoiceRowSchema.parse(value);
-            if (['deleting','deleted'].includes(voice.state)) continue;
+            if (['deleting','deleted'].includes(voice.state) || voice.importStage && !voice.importedFrom) continue;
             if (!options.voices) domainReject('voice_export_unavailable',503);
             const current=await options.voices.readMetadata(binding,voice.id);
             if (section==='voice_content') { if(current.state==='ready')voices.push({id:voice.id,version:current.version}); }
-            else items.push(current);
+            else items.push({ ...current, ...(voice.importedFrom ? { importedFrom: voice.importedFrom } : {}) });
           } else if (suffix === 'chat_file_assets') {
             const file=firestoreChatFileRowSchema.parse(value);
-            if (['deleting','deleted'].includes(file.state)) continue;
+            if (['deleting','deleted'].includes(file.state) || file.importStage && !file.importedFrom) continue;
             if (!options.files) domainReject('chat_file_export_unavailable',503);
             const current=await options.files.readMetadata(binding,file.id);
             if (section==='file_content') { if(current.state==='ready')files.push({id:file.id,version:current.version}); }
-            else items.push(current);
+            else items.push({ ...current, ...(file.importedFrom ? { importedFrom: file.importedFrom } : {}) });
           } else if (suffix === 'voice_transcripts') {
             const stored=firestoreVoiceTranscriptSchema.parse(value), source=await binding.transaction.get(data.ref('voice_assets','voice-asset',stored.value.voice.id));
             if (!source.exists||['deleting','deleted'].includes(source.get('state'))) continue;
@@ -211,12 +211,13 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             items.push(await options.transcripts.readIn(binding,stored.value.voice.id));
           } else if (suffix === 'photos') {
             const photo = firestorePhotoSchemas.photo.parse(value);
-            if (!['ready', 'reserved'].includes(photo.state)) continue;
+            if (!['ready', 'reserved'].includes(photo.state) || photo.importStage && !photo.importedFrom) continue;
             if (section === 'photo_content') {
               if (photo.state === 'ready') photos.push({ id: photo.id, version: photo.version });
             } else items.push({ id: photo.id, childId: photo.scope.childId, metadata: photo.metadata, version: photo.version,
               state: photo.state, visibility: photo.visibility ?? 'private', recordId: photo.recordId ?? null,
-              extraction: photo.extraction ? { state: photo.extraction.state, draft: photo.extraction.draft, processedAt: photo.extraction.processedAt } : null });
+              extraction: photo.extraction ? { state: photo.extraction.state, draft: photo.extraction.draft, processedAt: photo.extraction.processedAt } : null,
+              ...(photo.importedFrom ? { importedFrom: photo.importedFrom } : {}) });
           } else if (section === 'private_sources' && context.kind === 'shared-input') {
             const source = await createFirestoreSharedInputStore(options).readImportState(binding, context.id);
             if (source.value) items.push(source.value);

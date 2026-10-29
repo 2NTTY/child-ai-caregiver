@@ -1,4 +1,4 @@
-import { sharedAttachmentReads, attachmentReadFence } from './firestore-attachment-access.ts';
+import { sharedAttachmentReads, attachmentReadFence, withSharedAttachmentWrite } from './firestore-attachment-access.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { sharedWriteAttributionSchema, sharedWriteAttribution, validSharedAttribution } from './shared-write-attribution.ts';
 import type { SharedSelection } from '../src/shared/sharing.ts';
@@ -23,6 +23,8 @@ import { firebaseErasureIntentSchema, firebaseErasureDescriptorSchema, firebaseE
 import type { OnlineSubmission, OnlineReceipt } from "../src/shared/online.ts";
 import { onlineSubmissionSchema } from "./online-routing.ts";
 import { createFirestoreOnlineReceipts, isFirestoreOnlinePending } from "./firestore-online-receipts.ts";
+import { importProvenanceSchema, type ImportProvenance } from '../src/shared/import-provenance.ts';
+import { attachmentImportStageSchema, checkedAttachmentImportStage, type AttachmentImportStage, type AttachmentImportAccess } from './handover-attachment-stage.ts';
 const NIL = "00000000-0000-0000-0000-000000000000";
 const SYSTEM: WorkRecoveryScope = { ownerUserId: "system:photos", workspaceId: NIL, childId: NIL, storageEpoch: NIL };
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER), version = integer.min(1).max(2147483647);
@@ -40,10 +42,14 @@ const extractionSchema = z.object({ state: z.enum(['not_requested', 'running', '
 const rowSchema = z.object({ id: uuid, scope: workRecoveryScopeSchema, reservationOperationId: uuid, createdAt: at, version,
   state: z.enum(["reserved", "ready", "deleting", "deleted"]), metadata: photoMetadataSchema.nullable(),
   objectScope: workRecoveryScopeSchema.optional(),
+  importStage: attachmentImportStageSchema.optional(), importedFrom: importProvenanceSchema.optional(),
   descriptor: firebasePhotoObjectDescriptorSchema.nullable(), upload: uploadSchema.nullable(), deletion: deletionSchema.nullable(),
   visibility: z.enum(['private', 'shared']).optional(), recordId: uuid.nullable().optional(), extraction: extractionSchema.optional() }).strict()
   .refine(row => (row.state === "deleted") === (row.metadata === null)
     && (row.state !== "ready" || row.descriptor !== null)
+    && (!row.importStage || row.state !== 'ready' || !!row.importedFrom)
+    && (!row.importedFrom || !!row.importStage && row.importedFrom.current.source.section === 'photos'
+      && row.importedFrom.current.sourceHash === row.importStage.sourceHash && row.importedFrom.current.importedBy === row.importStage.actorUserId)
     && ((row.state === "deleting" || row.state === "deleted") === (row.deletion !== null))
     && (!row.deletion || validSharedAttribution(row.deletion.attribution,row.scope,row.id,row.deletion.expectedVersion+1,row.deletion.actorUserId??row.scope.ownerUserId))
     && (!row.deletion?.attribution || !!row.deletion.actorOperationId)
@@ -101,6 +107,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
   function writeRow(binding: FirestoreAuthorityTransaction, row: Row) {
     binding.transaction.set(rowRef(row.id), { assetId: row.id, scopeTag: tag(row.scope),
       sortKey: row.createdAt + "/" + row.id, live: row.state === "reserved" || row.state === "ready",
+      importPending: !!row.importStage && row.state === 'reserved',
       ...seal("photo", row.id, row.scope, rowSchema, row, row.version) });
   }
   function checkedRow(snapshot: DocumentSnapshot, scope: WorkRecoveryScope, id: string): Row {
@@ -228,6 +235,59 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
       writeQuotas(binding, quota); sharedWrite?.commit(); change.commit(); return sharedWrite ? sharedWrite.receipt : photo;
     }));
   }
+  async function prepareImportReservation(binding: FirestoreAuthorityTransaction, id: string, value: PhotoMetadata, rawStage: AttachmentImportStage) {
+    parse(uuid, id, true); const metadata = parse(photoMetadataSchema, value, true), stage = checkedAttachmentImportStage(binding, rawStage);
+    if (!await binding.readChild(binding.scope.childId)) fail('not_found', 404);
+    const snapshot = await binding.transaction.get(rowRef(id));
+    if (snapshot.exists) {
+      const row = checkedRow(snapshot, binding.scope, id); active(row);
+      if (!row.importStage || !same(row.metadata, metadata)) fail('operation_conflict');
+      checkedAttachmentImportStage(binding, stage, row.importStage);
+      return { value: view(row), commit() {} };
+    }
+    const quota = await quotas(binding);
+    if (quota.child.count + 1 > PHOTO_LIMITS.count || quota.child.bytes + metadata.bytes > PHOTO_LIMITS.childBytes
+      || quota.global.activeBytes + quota.global.cleanupBytes + metadata.bytes > PHOTO_LIMITS.totalBytes
+      || quota.global.activeCount + quota.global.cleanupCount + 1 > PHOTO_LIMITS.totalCount) fail('photo_capacity');
+    const change = await binding.prepareChange(id, 'care', false);
+    const row: Row = { scope: { ...binding.scope }, id, reservationOperationId: id, createdAt: now(), version: 1,
+      state: 'reserved', metadata, descriptor: null, upload: null, deletion: null, importStage: stage };
+    quota.child.bytes += metadata.bytes; quota.child.count++; quota.global.activeBytes += metadata.bytes; quota.global.activeCount++;
+    return { value: view(row), commit() { writeRow(binding, row); writeQuotas(binding, quota); change.commit(); } };
+  }
+  async function prepareImportPublication(binding: FirestoreAuthorityTransaction, id: string, stage: AttachmentImportStage, raw: ImportProvenance) {
+    const row = await readRow(binding, id); active(row);
+    if (!row.importStage) fail('operation_conflict');
+    checkedAttachmentImportStage(binding, stage, row.importStage);
+    const provenance = parse(importProvenanceSchema, raw, true);
+    if (provenance.current.source.section !== 'photos' || provenance.current.sourceHash !== stage.sourceHash
+      || provenance.current.importedBy !== binding.actorUserId) fail('operation_conflict');
+    if (row.state === 'ready') {
+      if (!same(row.importedFrom, provenance)) fail('operation_conflict');
+      return { value: view(row), changeSeq: null, commit() {} };
+    }
+    if (!row.descriptor) fail('photo_import_pending');
+    descriptor(photoObjectScope(row), id, row.descriptor, row.metadata);
+    const quota = await quotas(binding); occupied(row, quota);
+    const change = await binding.prepareChange(stage.operationId, 'care', false);
+    const published: Row = { ...row, state: 'ready', version: row.version + 1, importedFrom: provenance };
+    return { value: view(published), changeSeq: change.changeSeq, commit() { writeRow(binding, published); change.commit(); } };
+  }
+  function uploadTransaction<T>(userId: string, childId: string, access: AttachmentImportAccess | undefined,
+    use: (binding: FirestoreAuthorityTransaction) => Promise<T>) {
+    const checked = (binding: FirestoreAuthorityTransaction) => {
+      if (access) checkedAttachmentImportStage(binding, access.stage);
+      return use(binding);
+    };
+    return access?.selection ? withSharedAttachmentWrite(options, userId, childId, access.selection, checked)
+      : authority.runTransaction(userId, childId, checked);
+  }
+  function checkImportAccess(binding: FirestoreAuthorityTransaction, row: Row, access?: AttachmentImportAccess) {
+    if (access) {
+      if (!row.importStage) fail('operation_conflict');
+      checkedAttachmentImportStage(binding, access.stage, row.importStage);
+    } else if (row.importStage && row.state !== 'ready') fail('photo_import_pending');
+  }
   async function deleteOperation(userId: string, childId: string, id: string, expectedVersion: number, operationId: string,
     submission?: OnlineSubmission): Promise<{ deleted: true; cleanupPending: true } | OnlineReceipt> {
     ids(userId, childId, id); parse(version, expectedVersion, true); parse(uuid, operationId, true);
@@ -303,9 +363,9 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
     });
   }
   /** Complete only an already accepted source deletion; current membership cannot cancel its cleanup. */
-  async function finishSharedDeletion(scope: WorkRecoveryScope, id: string, operationId: string) {
+  async function finishAcceptedDeletion(scope: WorkRecoveryScope, id: string, operationId: string) {
     const first=await options.database.runTransaction(async tx=>checkedRow(await tx.get(rowRef(id)),scope,id));
-    if (!first.deletion?.actorOperationId) return;
+    if (!first.deletion || !first.deletion.actorOperationId && !first.importStage) return;
     if (first.deletion.intent.operationId!==operationId) fail('photo_cleanup_binding');
     if (first.state==='deleted' && first.deletion.journal) return;
     if (first.state!=='deleting' || !journal.read) fail('photo_cleanup_unavailable',503);
@@ -373,7 +433,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
         });
       });
       if(first.receipt)return first.receipt;
-      await finishSharedDeletion(first.scope!,id,sourceOpId);
+      await finishAcceptedDeletion(first.scope!,id,sourceOpId);
       return authority.runTransaction(userId,null,async actor=>{
         const saved=await onlinePrior(actor,submission,opId);if(!saved)fail('photo_integrity',503);
         const receipt=await receipts.disclose(actor,saved);if(receipt.state!=='confirmed')fail('photo_deleting');return receipt;
@@ -433,7 +493,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
             return row;
           });
           const scanned = rows.slice(0, limit), complete = rows.length <= limit;
-          const visible = binding.sharedAccess ? scanned.filter(row => row.state === 'ready') : scanned;
+          const visible = scanned.filter(row => row.state === 'ready' || !binding.sharedAccess && !row.importStage);
           return {fence, page: {photos: visible.map(row => view(row, binding)), canCreate: !binding.sharedAccess, complete,
             nextCursor: complete ? null : {scopeTag,sortKey:scanned.at(-1)!.createdAt+'/'+scanned.at(-1)!.id,...(sharedFence?{sharedFence}:{})}}};
         });
@@ -511,11 +571,16 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
         throw error;
       }
     },
-    async upload(userId: string, childId: string, id: string, base64: string): Promise<PhotoAttachment> {
+    prepareImportReservation, prepareImportPublication,
+    uploadImported(userId: string, childId: string, id: string, base64: string, stage: AttachmentImportStage, selection?: SharedSelection): Promise<PhotoAttachment> {
+      return service.upload(userId, childId, id, base64, { stage, selection });
+    },
+    async upload(userId: string, childId: string, id: string, base64: string, access?: AttachmentImportAccess): Promise<PhotoAttachment> {
       ids(userId, childId, id); const candidate = randomUUID(), startedAt = now();
       return guard(async () => {
-        const first = await authority.runTransaction(userId, childId, async binding => {
+        const first = await uploadTransaction(userId, childId, access, async binding => {
           const row = await readRow(binding, id); active(row); const quota = await quotas(binding); occupied(row, quota);
+          checkImportAccess(binding, row, access);
           let bytes: Buffer; try { bytes = decodePhoto(base64, row.metadata.mimeType); } catch { fail("invalid_photo", 400); }
           if (bytes.length !== row.metadata.bytes || photoHash(bytes) !== row.metadata.sha256) fail("photo_hash_mismatch", 400);
           if (row.upload && (row.upload.authorizationVersion !== binding.authorizationVersion || row.upload.generation !== binding.generation)) {
@@ -524,21 +589,22 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
             row.upload = { ...row.upload, authorizationVersion: binding.authorizationVersion, generation: binding.generation };
             writeRow(binding, row);
           }
-          const mode = row.state === "ready" ? "read" : row.upload ? "recover" : "write";
+          const mode = row.state === "ready" || row.importStage && row.descriptor ? "read" : row.upload ? "recover" : "write";
           if (!row.upload) { row.upload = { id: candidate, reservationOperationId: row.reservationOperationId, sha256: row.metadata.sha256,
             bytes: row.metadata.bytes, mimeType: row.metadata.mimeType, authorizationVersion: binding.authorizationVersion,
             generation: binding.generation, startedAt }; writeRow(binding, row); }
-          return { row, mode, scope: { ...binding.scope }, authorizationVersion: binding.authorizationVersion, generation: binding.generation };
+          return { row, mode, scope: { ...binding.scope }, authorizationVersion: binding.authorizationVersion, generation: binding.generation, fence: attachmentReadFence(binding) };
         });
         const metadata = first.row.metadata!;
         let uploaded: FirebasePhotoObjectDescriptor;
         if (first.mode === "read") { await objects.read(photoObjectScope(first.row), id, first.row.descriptor!); uploaded = first.row.descriptor!; }
         else uploaded = await objects[first.mode as "write" | "recover"](photoObjectScope(first.row), id, { base64, mimeType: metadata.mimeType });
         const actual = descriptor(photoObjectScope(first.row), id, uploaded, metadata);
-        const final = await authority.runTransaction(userId, childId, async binding => {
+        const final = await uploadTransaction(userId, childId, access, async binding => {
           const row = await readRow(binding, id);
+          checkImportAccess(binding, row, access);
           if (!same(binding.scope, first.scope) || binding.authorizationVersion !== first.authorizationVersion || binding.generation !== first.generation
-            || row.upload?.id !== first.row.upload!.id) fail("upload_scope_changed", 403);
+            || attachmentReadFence(binding) !== first.fence || row.upload?.id !== first.row.upload!.id) fail("upload_scope_changed", 403);
           if (row.state === "deleted") {
             const snapshot = await binding.transaction.get(cleanupRef(id));
             if (!snapshot.exists) fail("photo_integrity", 503);
@@ -555,10 +621,10 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
             row.descriptor = actual; writeRow(binding, row); return { blocked: true as const, photo: null }; }
           active(row); const quota = await quotas(binding); occupied(row, quota);
           if (!same(row.metadata, metadata) || row.reservationOperationId !== first.row.reservationOperationId) fail("photo_integrity", 503);
-          if (row.state === "ready") { if (!same(row.descriptor, actual)) fail("photo_integrity", 503); return { blocked: false as const, photo: view(row) }; }
+          if (row.state === "ready" || row.importStage && row.descriptor) { if (!same(row.descriptor, actual)) fail("photo_integrity", 503); return { blocked: false as const, photo: view(row) }; }
           if (row.version !== first.row.version) fail("version_conflict");
           const change = await binding.prepareChange(row.upload!.id, "care", false);
-          row.state = "ready"; row.version++; row.descriptor = actual; writeRow(binding, row); change.commit();
+          row.state = row.importStage ? 'reserved' : "ready"; row.version++; row.descriptor = actual; writeRow(binding, row); change.commit();
           return { blocked: false as const, photo: view(row) };
         });
         if (final.blocked) fail("photo_deleting", 409); return final.photo!;
@@ -566,6 +632,31 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
     },
     async delete(userId: string, childId: string, id: string, expectedVersion: number, operationId: string): Promise<{ deleted: true; cleanupPending: true }> {
       return deleteOperation(userId, childId, id, expectedVersion, operationId) as Promise<{ deleted: true; cleanupPending: true }>;
+    },
+    /** A staged import is not a published photo. Expiry fences it before the ordinary cleanup consumer runs. */
+    async expireImport(rawScope: WorkRecoveryScope, rawId: string): Promise<boolean> {
+      const scope = parse(workRecoveryScopeSchema, rawScope, true), id = parse(uuid, rawId, true), operationId = randomUUID();
+      return options.database.runTransaction(async tx => {
+        if (!(await authority.readControl(tx)).enabled) return false;
+        const snap = await tx.get(rowRef(id)); if (!snap.exists) return false;
+        const row = checkedRow(snap, scope, id);
+        if (!row.importStage || row.importedFrom || row.state !== 'reserved' || Date.parse(now()) < Date.parse(row.createdAt) + 86400_000) return false;
+        const binding = { scope, transaction: tx } as FirestoreAuthorityTransaction;
+        const quota = await quotas(binding); occupied(row, quota);
+        if ((await tx.get(cleanupRef(id))).exists) fail('photo_integrity', 503);
+        const expectedVersion = row.version, metadata = row.metadata!, fingerprint = firestoreDomainHash(['delete', id, expectedVersion]);
+        const intent: FirebaseErasureIntent = { type: 'photo-delete', scope, assetId: id, operationId, at: now() };
+        const cleanup: FirestorePhotoCleanup = { scope, ...(row.objectScope ? { objectScope: row.objectScope } : {}), photoId: id, operationId,
+          state: row.descriptor ? 'known' : 'unresolved', uploadStarted: !!row.upload, upload: row.upload,
+          sha256: metadata.sha256, bytes: metadata.bytes, mimeType: metadata.mimeType, descriptor: row.descriptor, journal: null };
+        row.state = 'deleting'; row.version++; row.deletion = { intent, fingerprint, expectedVersion, journal: null };
+        quota.child.bytes -= metadata.bytes; quota.child.count--; quota.global.activeBytes -= metadata.bytes; quota.global.activeCount--;
+        quota.global.cleanupBytes += metadata.bytes; quota.global.cleanupCount++;
+        tx.create(cleanupRef(id), { scopeTag: tag(scope), state: cleanup.state, ...seal('photo-cleanup', id, scope, firestorePhotoCleanupSchema, cleanup) });
+        writeRow(binding, row); writeQuotas(binding, quota);
+        writeOperation(binding, { scope, operationId, action: 'delete', fingerprint, photoId: id, state: 'pending', result: null });
+        return true;
+      });
     },
     /** Operator/worker only. The immutable erasure intent is authority even after account revocation. */
     async cleanupDeleted(scopeInput: WorkRecoveryScope, idInput: string, operationInput: string): Promise<{ state: "complete" | "pending" }> {
@@ -588,7 +679,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
         return { cleanup: { ...cleanup, journal: cleanup.journal }, global, intent: row.deletion.intent };
       };
       return guard(async () => {
-        await finishSharedDeletion(scope,id,operationId);
+        await finishAcceptedDeletion(scope,id,operationId);
         const first = await options.database.runTransaction(inspect);
         if (!first) return { state: "complete" };
         if (first.cleanup.state !== "known" || !first.cleanup.descriptor) {

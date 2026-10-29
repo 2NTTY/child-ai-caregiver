@@ -1,0 +1,50 @@
+{
+  "package": "P4-HANDOVER01 verified attachment pairing and staged domain publication",
+  "date": "2026-10-30",
+  "base": "6ce86a934b5dd4d9e00a4cf9f868ab2c76ff4059",
+  "branch": "codex/p4-handover-chat-attachments",
+  "scope": [
+    "Authenticated archive metadata/content pairing for photos, voice, files and child avatar",
+    "Existing domain stores reserve and stage objects; deferred publication joins caller transaction",
+    "Lost write replies inspect the same object; publication rollback leaves no readable result",
+    "Imported standalone objects survive draft expiry; unpublished photo staging uses original cleanup queue",
+    "Restore derives maintenance indexes from sealed state; authorized export preserves provenance and hides staging",
+    "Avatar uses original normalization and lifecycle, not a separate image implementation"
+  ],
+  "checks": [
+    { "command": "node --experimental-test-module-mocks --test --test-name-pattern=\"verified attachment content locators\" tests/handover-import.test.ts", "result": "1 passed", "evidence": "tmp/handover-attachment-reader-provenance.log" },
+    { "command": "node --experimental-test-module-mocks --test tests/handover-attachment-staging.test.ts", "result": "1 passed", "evidence": "tmp/handover-attachment-export-green.log" },
+    { "command": "node --experimental-test-module-mocks --test tests/handover-voice-staging.test.ts", "result": "1 passed", "evidence": "tmp/handover-voice-staging-final.log" },
+    { "command": "node --experimental-test-module-mocks --test tests/handover-avatar-staging.test.ts", "result": "1 passed", "evidence": "tmp/handover-avatar-stage-green.log" },
+    { "command": "node --experimental-test-module-mocks --test --test-name-pattern=\"imported photos keep staged bytes\" tests/firestore-photos.test.ts", "result": "1 passed", "evidence": "tmp/handover-photo-expiry-green.log" },
+    { "command": "node --experimental-test-module-mocks --test --test-name-pattern=\"maintenance expires staged photo imports\" tests/firestore-photos.test.ts", "result": "1 passed", "evidence": "tmp/handover-photo-import-maintenance-clock.log" },
+    { "command": "node --experimental-test-module-mocks --test --test-name-pattern=\"restore derives attachment import\" tests/firestore-restore-codec.test.ts", "result": "1 passed", "evidence": "tmp/handover-attachment-restore-green.log" },
+    { "command": "node tmp/check-attachment-import.cjs", "method": "TypeScript API, tsconfig.server.json, noEmit, affected roots and their dependency graph", "roots": ["server/firestore-chat-files.ts", "server/firestore-voice.ts", "server/firestore-photos.ts", "server/firestore-avatars.ts", "server/handover-import.ts", "server/handover-attachment-stage.ts", "tests/handover-attachment-staging.test.ts", "tests/handover-import.test.ts", "tests/handover-voice-staging.test.ts", "tests/handover-avatar-staging.test.ts", "tests/firestore-photos.test.ts", "server/firestore-background-maintenance.ts", "server/firestore-restore-codec.ts", "tests/firestore-restore-codec.test.ts", "server/firestore-account-export.ts"], "result": "15 roots, 0 diagnostics", "evidence": "tmp/handover-attachment-types-final-corrected.log" },
+    { "command": "git diff --check", "result": "passed" }
+  ],
+  "failuresRetained": [
+    "Initial reader/staging/expiry methods absent: focused red tests before implementation; no full suite",
+    "File fixture initially expected immediate physical deletion; corrected to invoke existing cleanup consumer",
+    "Voice fixture counted existing child-created work as new transcription work; corrected baseline, retained no-new-work assertion",
+    "Initial scoped compiler used root config and reported unrelated unref types; switched to actual server config without editing unrelated code",
+    "Restore fixture initially attempted retransforming the same storage epoch; corrected source record, then reproduced unlinked cleanup metadata on a published import",
+    "Maintenance fixture initially mixed reservation/publication operation IDs, then assumed one total delivery despite original child-change jobs",
+    "Maintenance fixture mocked Date.now only, leaving new Date at real time; original queue correctly withheld future work. Native Date mock fixes clock; existing cleanup deletes its record rather than writing complete",
+    "Export test reproduced unpublished staging metadata in account export; sealed publication state now gates it",
+    "Final scoped compiler found UUID-template Map lookup type in new maintenance fixture; local type annotation corrected, no runtime change"
+  ],
+  "review": [
+    "Independent Sol read-only reader review: no actionable findings",
+    "Independent Sol read-only domain staging review: no actionable findings; excluded later restore/maintenance",
+    "Independent incremental review of restore/export/reader provenance: no P1/P2 findings",
+    "Main reviewed real maintenance queue and corrected synthetic clock assumptions; only photo-cleanup delivery executed"
+  ],
+  "limitations": [
+    "Internal primitives only: unified import batch/mapping/progress, imported chat and transcript references remain unconnected",
+    "No public attachments/chat import selector enabled; no complete module or P4 completion claim",
+    "No deployment, cloud SDK/IAM, real model, notification, browser or device test",
+    "Synthetic Firestore and object transports do not prove real transaction contention, storage or disaster recovery",
+    "Avatar codec uses the existing synthetic codec boundary; real image behavior is not retested",
+    "D Agent PR and P3/P5 scopes untouched"
+  ]
+}

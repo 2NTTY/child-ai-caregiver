@@ -13,16 +13,22 @@ import type { FirestoreAvatarData } from './firestore-avatar-data.ts';
 import type { FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import type { FirebaseAvatarUploadAdmission } from './firebase-avatar-api.ts';
 import { domainParse, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
+import { checkedAttachmentImportStage, type AttachmentImportStage } from './handover-attachment-stage.ts';
 
 export type AvatarRun = <T>(userId: string, target: AvatarTarget,
   task: (authority: FirestoreAuthorityTransaction, binding: AvatarBinding) => Promise<T>) => Promise<T>;
 export function createAvatarUploads(options: { run: AvatarRun; store: FirestoreAvatarData; codec: Pick<AvatarCodec, 'normalize'>;
-  objects: Pick<AvatarObjects, 'write' | 'inspect'>; config: AvatarConfig; now(): number }) {
-  const { run, store, codec, objects, config, now } = options, ingress = createAvatarIngress(config.admission);
+  objects: Pick<AvatarObjects, 'write' | 'inspect'>; config: AvatarConfig; now(): number;
+  ingress?: ReturnType<typeof createAvatarIngress>; importStage?: AttachmentImportStage }) {
+  const { run, store, codec, objects, config, now } = options, ingress = options.ingress ?? createAvatarIngress(config.admission);
   async function owned(authority: FirestoreAuthorityTransaction, binding: AvatarBinding, id: string) {
     domainParse(z.uuid(), id);
     const row = await store.upload(authority, binding, id);
-    if (!row || row.actorUserId !== authority.scope.ownerUserId || !sameAvatarBinding(row.binding, binding)) domainReject('not_found', 404);
+    if (!row || row.actorUserId !== authority.actorUserId || !sameAvatarBinding(row.binding, binding)) domainReject('not_found', 404);
+    if (options.importStage) {
+      if (!row.importStage) domainReject('operation_conflict');
+      checkedAttachmentImportStage(authority, options.importStage, row.importStage);
+    } else if (row.importStage) domainReject('avatar_import_pending');
     return row;
   }
   function sameLease(row: AvatarUploadRecord, expected: AvatarUploadRecord, authority: FirestoreAuthorityTransaction) {

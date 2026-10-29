@@ -5,7 +5,7 @@ import type { Firestore } from "@google-cloud/firestore";
 import { createFirestoreAuthority, FirestoreAuthorityError } from "../server/firestore-authority.ts";
 import { createFirestorePhotoStore, FirestorePhotoError, firestorePhotoCleanupSchema } from "../server/firestore-photos.ts";
 import { handleFirebasePhotoRequest } from "../server/firebase-photo-api.ts";
-import { FirestoreDomainData, FirestoreDomainError } from "../server/firestore-domain-data.ts";
+import { FirestoreDomainData, FirestoreDomainError, FIRESTORE_TASK_DISPATCH_SCOPE } from "../server/firestore-domain-data.ts";
 import { createStorageCipher } from "../server/storage-crypto.ts";
 import { photoHash } from "../server/photo-files.ts";
 import { PHOTO_LIMITS, type PhotoMetadata } from "../src/shared/photos.ts";
@@ -20,6 +20,12 @@ import type { WorkRecoveryScope } from "../server/firestore-work-continuation-re
 import { createFirestoreOnlineStore } from "../server/firestore-online.ts";
 import { firestoreOnlineConfirmedSchema, firestoreOnlineRecordSchema } from "../server/firestore-online-receipts.ts";
 import type { OnlineSubmission } from "../src/shared/online.ts";
+import type { ImportProvenance } from '../src/shared/import-provenance.ts';
+import { createFirestoreBackgroundMaintenance } from '../server/firestore-background-maintenance.ts';
+import { createFirestoreBackgroundQueue, firestoreBackgroundWorkSchema, firestoreBackgroundRecoverySchemas, type FirestoreBackgroundDelivery } from '../server/firestore-background-work.ts';
+import { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
+import { createFirestoreErasureStore } from '../server/firestore-erasure.ts';
+import { createFirestoreErasureCleanup } from '../server/firestore-erasure-cleanup.ts';
 const OWNER = "synthetic-photo-owner", PNG = Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]), Buffer.alloc(4), Buffer.from("IHDR"), Buffer.alloc(8)]);
 const BASE64 = PNG.toString("base64"), META: PhotoMetadata = { fileName: "private-synthetic.png", source: "private-synthetic-source",
   mimeType: "image/png", bytes: PNG.length, sha256: photoHash(PNG) };
@@ -34,14 +40,14 @@ function fixture() {
       await assert.rejects(native(async tx => { discarded.push(await callback(tx)); throw marker; }, options), error => error === marker); }
     const result = await native(callback, options); if (loseReply) { loseReply = false; throw new Error("synthetic lost transaction reply"); } return result;
   } } as unknown as Firestore;
-  let failReceiptSeal = false;
+  let failReceiptSeal = false, nowMs = Date.parse('2026-10-11T12:00:00.000Z');
   const cipher = createStorageCipher(Buffer.alloc(32, 34));
   const options = { database, cipher: {
     encrypt(text: string, context: string) { if (failReceiptSeal && context.includes('"online-receipt"')) throw new Error("synthetic receipt seal failure");
       return cipher.encrypt(text, context); },
     decrypt: cipher.decrypt,
   }, projectId: "synthetic-photo-project",
-    namespace: "unit_photos", serverClock: () => Date.parse("2026-10-11T12:00:00.000Z") };
+    namespace: "unit_photos", serverClock: () => nowMs };
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
   const stored = new Map<string, { base64: string; descriptor: FirebasePhotoObjectDescriptor }>();
   const calls = { write: 0, recover: 0, read: 0 }, intents: FirebaseErasureIntent[] = [];
@@ -115,12 +121,112 @@ function fixture() {
     function sorted(value: any): any { if(Array.isArray(value))return value.map(sorted);if(value&&typeof value==="object")return Object.fromEntries(Object.keys(value).sort().map(key=>[key,sorted(value[key])]));return value; }
     return JSON.parse(options.cipher.decrypt(global.ciphertext,JSON.stringify(sorted(context))));
   }
-  return {fake,database,options,authority,data,store,online,command,shared,stored,calls,intents,discarded,prepare,identity,cleanup,quotas,
+  return {fake,database,options,authority,data,store,online,command,shared,stored,calls,intents,discarded,prepare,identity,cleanup,quotas,journal,now:()=>nowMs,
+    advance:(ms:number)=>{nowMs+=ms;},
     failReceiptSeal:(value=true)=>{failReceiptSeal=value;},
     loseObject:()=>{loseObjectReply=true;}, journalUnknown:(value=true)=>{journalUnknown=value;},
     afterWrite:(hook?:()=>Promise<void>)=>{afterWrite=hook;},afterRead:(hook?:()=>Promise<void>)=>{afterRead=hook;},
     loseNextReply:()=>{loseReply=true;},discardNext:()=>{discard=true;} };
 }
+
+test('maintenance expires staged photo imports through the real queue while retaining published originals', async t => {
+  const f = fixture(); t.mock.timers.enable({ apis: ['Date'], now: f.now() });
+  const childId = (await f.prepare()).child.id, stagedId = randomUUID(), publishedId = randomUUID();
+  const stages = new Map([stagedId, publishedId].map(id => [id, { batchId: randomUUID(), operationId: randomUUID(), actorUserId: OWNER, sourceHash: 'a'.repeat(64) }]));
+  const stage = (id: typeof stagedId) => stages.get(id)!;
+  for (const id of [stagedId, publishedId]) {
+    await f.authority.runTransaction(OWNER, childId, async b => { const prepared = await f.store.prepareImportReservation(b, id, META, stage(id)); prepared.commit(); });
+    await f.store.uploadImported(OWNER, childId, id, BASE64, stage(id));
+  }
+  const provenance: ImportProvenance = { current: { source: { serverId: 'source', accountId: 'source-parent', childId: randomUUID(), section: 'photos', resourceId: randomUUID(), resourceVersion: 1,
+    authorUserId: null, createdAt: '2026-10-01T00:00:00Z', confirmedBy: null, confirmedAt: null, confirmationBasis: null, assigneeUserId: null },
+    sourceHash: stage(publishedId).sourceHash, packageId: randomUUID(), packageVersion: 1, manifestSha256: 'b'.repeat(64), integrity: 'trusted', importedBy: OWNER,
+    importedAt: new Date(f.now()).toISOString() }, previous: [] };
+  const published = await f.authority.runTransaction(OWNER, childId, async b => {
+    const prepared = await f.store.prepareImportPublication(b, publishedId, stage(publishedId), provenance); prepared.commit(); return prepared.value;
+  });
+  const scope = await f.authority.runTransaction(OWNER, childId, b => Promise.resolve(b.scope));
+  assert.equal(f.fake.records.get(f.data.ref('photos', 'photo', stagedId).path)?.importPending, true);
+  assert.equal(f.fake.records.get(f.data.ref('photos', 'photo', publishedId).path)?.importPending, false);
+  assert.equal(f.stored.size, 2);
+  // Same production assembly as avatar-maintenance-memory, with the real photo lifecycle ports.
+  const unavailable = async (): Promise<never> => { throw Error('Unrelated external effect must not run'); };
+  const erasures = createFirestoreErasureStore({ ...f.options, journal: f.journal });
+  const cleanup = createFirestoreErasureCleanup({ ...f.options, journal: f.journal, erasures, photos: f.store,
+    deleteAgentSession: unavailable, eraseAgentUserPage: unavailable, eraseDeviceSessions: unavailable, eraseAuthUser: unavailable });
+  const knowledge = createFirestoreKnowledgeRefresh({ ...f.options, definitions: [], readControl: tx => f.authority.readControl(tx) });
+  const maintenance = createFirestoreBackgroundMaintenance({ ...f.options, enabled: true, journal: f.journal, knowledge, photos: f.store, erasures, cleanup });
+  const deliveries: FirestoreBackgroundDelivery[] = [], executed: string[] = [];
+  const queue = createFirestoreBackgroundQueue({ ...f.options, enabled: true, readControl: tx => f.authority.readControl(tx),
+    transport: { async enqueue(job) { deliveries.push(job); return { state: 'confirmed' }; }, probe: unavailable },
+    execute(job, signal) { executed.push(job.kind); assert.equal(job.kind, 'photo-cleanup'); return maintenance.process(job, signal); } });
+  f.advance(86400_001); t.mock.timers.tick(86400_001);
+  assert.ok(await maintenance.tick()); await queue.dispatch();
+  const photoDeliveries: FirestoreBackgroundDelivery[] = [];
+  for (const delivery of deliveries) {
+    const row = await f.data.ref('background_work', 'background-work', delivery.id).get(), raw = row.data()!;
+    const route = f.data.open('background-route', delivery.id, FIRESTORE_TASK_DISPATCH_SCOPE, firestoreBackgroundRecoverySchemas.route,
+      { exists: true, data: () => raw.route } as any);
+    const job = f.data.open('background-work', delivery.id, route.scope, firestoreBackgroundWorkSchema, row);
+    if (job.kind === 'photo-cleanup') photoDeliveries.push(delivery);
+  }
+  assert.equal(photoDeliveries.length, 1);
+  assert.equal((await queue.process(photoDeliveries[0])).state, 'completed'); assert.deepEqual(executed, ['photo-cleanup']);
+  assert.equal(f.fake.records.has(f.data.ref('photo_cleanup', 'photo-cleanup', stagedId).path), false); assert.equal(f.stored.size, 1);
+  assert.ok([...f.stored.keys()].every(name => name.endsWith('/' + publishedId)));
+  assert.equal((await f.store.get(OWNER, childId, publishedId)).version, published.version);
+  assert.equal((await f.store.content(OWNER, childId, publishedId)).base64, BASE64);
+  assert.equal(f.quotas(scope).activeCount, 1); assert.equal(f.quotas(scope).cleanupCount, 0);
+  assert.equal(f.intents.length, 1); assert.equal(f.intents[0].assetId, stagedId);
+});
+
+test('imported photos keep staged bytes private and publish with the import transaction without extracting again', async () => {
+  const f = fixture(), childId = (await f.prepare()).child.id, id = randomUUID();
+  const stage = { batchId: randomUUID(), operationId: randomUUID(), actorUserId: OWNER, sourceHash: 'a'.repeat(64) };
+  const reserve = () => f.authority.runTransaction(OWNER, childId, async b => {
+    const prepared = await f.store.prepareImportReservation(b, id, META, stage); prepared.commit(); return prepared.value;
+  });
+  const first = await reserve(); assert.deepEqual(await reserve(), first);
+  assert.equal((await f.store.list(OWNER, childId)).photos.length, 0);
+  await assert.rejects(f.store.upload(OWNER, childId, id, BASE64), rejects('photo_import_pending'));
+  f.loseObject();
+  await assert.rejects(f.store.uploadImported(OWNER, childId, id, BASE64, stage), rejects('photo_object_unavailable'));
+  const staged = await f.store.uploadImported(OWNER, childId, id, BASE64, stage);
+  assert.equal(staged.state, 'reserved'); assert.equal(f.calls.write, 1); assert.equal(f.calls.recover, 1);
+  await assert.rejects(f.store.content(OWNER, childId, id), rejects('not_found'));
+  const provenance: ImportProvenance = { current: { source: { serverId: 'source', accountId: 'source-parent', childId: randomUUID(), section: 'photos', resourceId: randomUUID(), resourceVersion: 3,
+    authorUserId: null, createdAt: '2026-10-01T00:00:00Z', confirmedBy: null, confirmedAt: null, confirmationBasis: null, assigneeUserId: null },
+    sourceHash: stage.sourceHash, packageId: randomUUID(), packageVersion: 1, manifestSha256: 'b'.repeat(64), integrity: 'trusted', importedBy: OWNER, importedAt: '2026-10-11T12:00:00.000Z' }, previous: [] };
+  const receipt = f.database.collection('synthetic_import_receipts').doc(stage.operationId);
+  const publish = (rollback = false) => f.authority.runTransaction(OWNER, childId, async b => {
+    const prepared = await f.store.prepareImportPublication(b, id, stage, provenance);
+    prepared.commit(); b.transaction.set(receipt, { id });
+    if (rollback) throw Error('Synthetic import rollback'); return prepared.value;
+  });
+  await assert.rejects(publish(true), /Synthetic import rollback/u);
+  assert.equal((await f.database.runTransaction(tx => tx.get(receipt))).exists, false);
+  await assert.rejects(f.store.content(OWNER, childId, id), rejects('not_found'));
+  const published = await publish(); assert.equal(published.state, 'ready'); assert.deepEqual(await publish(), published);
+  assert.equal(published.extraction.state, 'not_requested'); assert.equal(published.recordId, null);
+  assert.equal((await f.store.list(OWNER, childId)).photos.length, 1);
+  assert.equal((await f.store.content(OWNER, childId, id)).base64, BASE64);
+  await assert.rejects(f.authority.runTransaction(OWNER, childId, b => f.store.prepareImportPublication(b, id, { ...stage, sourceHash: 'c'.repeat(64) }, provenance)), { code: 'operation_conflict' });
+  const scope = await f.authority.runTransaction(OWNER, childId, b => Promise.resolve(b.scope));
+  const abandonedId = randomUUID(), abandonedStage = { ...stage, operationId: randomUUID() };
+  await f.authority.runTransaction(OWNER, childId, async b => {
+    const prepared = await f.store.prepareImportReservation(b, abandonedId, META, abandonedStage); prepared.commit();
+  });
+  f.advance(86400_001);
+  assert.equal(await f.store.expireImport(scope, id), false, 'published imports are never expired');
+  assert.equal(await f.store.expireImport(scope, abandonedId), true);
+  await assert.rejects(f.store.uploadImported(OWNER, childId, abandonedId, BASE64, abandonedStage), rejects('photo_deleting'));
+  const abandonedCleanup = await f.cleanup(scope, abandonedId);
+  assert.equal((await f.store.cleanupDeleted(scope, abandonedId, abandonedCleanup.operationId)).state, 'complete');
+  const deletionId = randomUUID(); await f.store.delete(OWNER, childId, id, published.version, deletionId);
+  assert.equal((await f.store.cleanupDeleted(scope, id, deletionId)).state, 'complete');
+  assert.equal(f.stored.size, 0); assert.equal(f.quotas(scope).activeCount, 0); assert.equal(f.quotas(scope).cleanupCount, 0);
+  await assert.rejects(publish(), rejects('photo_deleted'));
+});
 
 test('F04 photo candidate confirmation writes one canonical record and deletion invalidates that record', async () => {
   const f = fixture(), created = await f.prepare(), childId = created.child.id, path = '/api/children/' + childId + '/photos';

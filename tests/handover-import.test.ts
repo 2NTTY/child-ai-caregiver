@@ -14,6 +14,85 @@ import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { writePersonalHandoverPackage } from '../server/handover-export.ts';
 import { writeHandoverArchive } from '../server/handover-archive.ts';
 import { openHandoverImport } from '../server/handover-import.ts';
+import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
+
+test('verified attachment content locators bind photo voice file and avatar bytes without accepting forged or incomplete pairs', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'handover-attachment-reader-')), childId = randomUUID(), emptyChild = randomUUID(), unexpectedChild = randomUUID();
+  const childIds = [childId, emptyChild, unexpectedChild], scopeVersion = 'a'.repeat(64), at = '2026-10-30T00:00:00Z';
+  const selection = { childIds, modules: ['attachments', 'care'] as ('attachments' | 'care')[] };
+  const pages = childIds.flatMap(child => [...HANDOVER_SECTIONS.attachments, ...HANDOVER_SECTIONS.care].map(section => ({ section: section as string,
+    childId: child as string | null, scopeVersion, items: [] as Record<string, unknown>[] })));
+  pages.push({ section: 'children', childId: null, scopeVersion, items: childIds.map(id => ({ id, displayName: 'Synthetic child' })) });
+  const rows = (section: string, child = childId) => pages.find(page => page.section === section && page.childId === child)!.items;
+  const priorImport = (section: 'files' | 'voices' | 'child_avatar') => ({ current: {
+    source: { serverId: 'earlier-source', accountId: 'earlier-parent', childId, section, resourceId: randomUUID(), resourceVersion: 1,
+      authorUserId: null, createdAt: at, confirmedBy: null, confirmedAt: null, confirmationBasis: null, assigneeUserId: null },
+    sourceHash: scopeVersion, packageId: randomUUID(), packageVersion: 1, manifestSha256: scopeVersion, integrity: 'trusted', importedBy: 'source', importedAt: at,
+  }, previous: [] });
+  const hash = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex'), photoBytes = Buffer.from('photo'), voiceBytes = Buffer.from('voice'), fileBytes = Buffer.from('file'), avatarBytes = Buffer.from('avatar');
+  const blobs: { path: string; bytes: Buffer; mimeType: string }[] = [];
+  function body(section: string, sourceId: string, version: number, mimeType: string, bytes: Buffer, child = childId, asset?: unknown) {
+    const path = `attachments/${blobs.length}.bin`; blobs.push({ path, bytes, mimeType });
+    const identity = section === 'child_avatar_content' ? { target: { kind: 'child', childId: child }, version, asset }
+      : { [section === 'photo_content' ? 'photoId' : section === 'voice_content' ? 'voiceId' : 'fileId']: sourceId, version };
+    rows(section, child).push({ ...identity, attachmentPath: path, mimeType, bytes: bytes.length, sha256: hash(bytes) });
+  }
+  const photo = (patch: Record<string, unknown> = {}) => ({ id: randomUUID(), childId, version: 2, state: 'ready',
+    metadata: { fileName: 'original.png', mimeType: 'image/png', bytes: photoBytes.length, sha256: hash(photoBytes), source: 'Original source' }, ...patch });
+  const ready = photo(), reserved = photo({ state: 'reserved' }), missing = photo(), duplicate = photo(), badHash = photo(), badVersion = photo(), badMime = photo(), badBytes = photo(), pendingBody = photo({ state: 'reserved' });
+  badHash.metadata = { ...badHash.metadata, sha256: 'f'.repeat(64) }; badBytes.metadata = { ...badBytes.metadata, bytes: photoBytes.length + 1 };
+  rows('photos').push(ready, reserved, missing, duplicate, badHash, badVersion, badMime, badBytes, pendingBody, { id: randomUUID(), childId });
+  for (const item of [ready, duplicate, duplicate, badHash, badVersion, badMime, badBytes, pendingBody]) body('photo_content', item.id, item === badVersion ? 1 : 2,
+    item === badMime ? 'image/jpeg' : 'image/png', photoBytes);
+  const voice = { id: randomUUID(), childId, version: 3, createdAt: at, state: 'ready', fileName: 'original.wav', mimeType: 'audio/wav', bytes: voiceBytes.length,
+    durationMs: 1000, sha256: hash(voiceBytes), messageId: null, importedFrom: priorImport('voices') };
+  const file = { id: randomUUID(), childId, version: 4, createdAt: at, state: 'ready', fileName: 'original.pdf', mimeType: 'application/pdf', bytes: fileBytes.length,
+    sha256: hash(fileBytes), messageId: null, importedFrom: priorImport('files') };
+  rows('voices').push(voice, { ...voice, id: randomUUID(), state: 'unknown', durationMs: null }); rows('files').push(file, { ...file, id: randomUUID(), state: 'uploading' });
+  body('voice_content', voice.id, 3, voice.mimeType, voiceBytes); body('file_content', file.id, 4, file.mimeType, fileBytes);
+  const asset = { id: randomUUID(), mimeType: 'image/jpeg', bytes: avatarBytes.length, sha256: hash(avatarBytes), width: 256, height: 256 };
+  rows('child_avatar').push({ target: { kind: 'child', childId }, version: 5, asset, updatedAt: at, importedFrom: priorImport('child_avatar') },
+    { target: { kind: 'child', childId }, version: 5, asset: { ...asset, width: 128, height: 128 }, updatedAt: at });
+  rows('child_avatar', emptyChild).push({ target: { kind: 'child', childId: emptyChild }, version: 0, asset: null, updatedAt: null });
+  rows('child_avatar', unexpectedChild).push({ target: { kind: 'child', childId: unexpectedChild }, version: 0, asset: null, updatedAt: null });
+  body('child_avatar_content', childId, 5, 'image/jpeg', avatarBytes, childId, asset);
+  body('child_avatar_content', unexpectedChild, 0, 'image/jpeg', avatarBytes, unexpectedChild, asset);
+  rows('care').push({ id: randomUUID(), childId, text: 'Unselected attachment metadata is not a care failure' });
+  pages.sort((left, right) => Number(!left.section.endsWith('_content')) - Number(!right.section.endsWith('_content')));
+  async function* entries() { for (const blob of blobs) yield { path: blob.path, mediaType: blob.mimeType, content: blob.bytes };
+    for (let index = 0; index < pages.length; index++) yield { path: `data/${index}.json`, mediaType: 'application/json', content: Buffer.from(JSON.stringify(pages[index])) };
+    yield { path: 'summary.md', mediaType: 'text/markdown', content: Buffer.from('Synthetic attachments') }; }
+  try {
+    const archive = await writeHandoverArchive({ directory, header: { format: 'yuyoufang-data', version: 1, packageId: randomUUID(), packageVersion: 1, createdAt: at,
+      purpose: 'handover', source: { serverId: 'https://source.invalid', accountId: 'source' }, selection: { ...selection, period: null } }, entries: entries(),
+      coverage: () => pages.map(page => ({ section: page.section, childId: page.childId, items: page.items.length, scopeVersion, complete: true as const })) });
+    const reader = await openHandoverImport({ path: archive.path });
+    try {
+      const acknowledged = reader.manifestSha256;
+      assert.equal((await reader.readPage({ selection: { childIds: [childId], modules: ['care'] }, sections: ['care'], acknowledgedManifestSha256: acknowledged })).rows.length, 1);
+      const source = (await reader.readPage({ selection, sections: ['photos', 'voices', 'files', 'child_avatar'], acknowledgedManifestSha256: acknowledged })).rows;
+      const found = (id: string) => source.find(row => row.value.id === id)!;
+      const avatar = source.filter(row => row.section === 'child_avatar' && row.childId === childId);
+      await assert.rejects(reader.readAttachmentContent(found(ready.id)), { code: 'package_trust_acknowledgement_required' });
+      for (const [row, bytes, id, version] of [[found(ready.id), photoBytes, ready.id, 2], [found(voice.id), voiceBytes, voice.id, 3], [found(file.id), fileBytes, file.id, 4], [avatar[0], avatarBytes, childId, 5]] as const) {
+        const content = await reader.readAttachmentContent(row, acknowledged); assert.ok(content); assert.deepEqual(content.content, bytes);
+        assert.deepEqual(Object.keys(content).sort(), ['section', 'sourceId', 'sourceVersion', 'attachmentPath', 'mimeType', 'bytes', 'sha256', 'content'].sort());
+        assert.equal(content.sourceId, id); assert.equal(content.sourceVersion, version); assert.equal(content.section, row.section); content.content.fill(0);
+      }
+      for (const row of [found(reserved.id), source.find(row => row.value.state === 'unknown')!, source.find(row => row.value.state === 'uploading')!, source.find(row => row.section === 'child_avatar' && row.childId === emptyChild)!])
+        assert.equal(await reader.readAttachmentContent(row, acknowledged), null);
+      await assert.rejects(reader.readAttachmentContent(found(missing.id), acknowledged), { code: 'package_attachment_content_missing' });
+      await assert.rejects(reader.readAttachmentContent(found(duplicate.id), acknowledged), { code: 'package_attachment_content_duplicate' });
+      for (const row of [found(badHash.id), found(badVersion.id), found(badMime.id), found(badBytes.id), avatar[1]])
+        await assert.rejects(reader.readAttachmentContent(row, acknowledged), { code: 'package_attachment_content_mismatch' });
+      for (const row of [found(pendingBody.id), source.find(row => row.section === 'child_avatar' && row.childId === unexpectedChild)!])
+        await assert.rejects(reader.readAttachmentContent(row, acknowledged), { code: 'package_attachment_content_unexpected' });
+      const original = found(ready.id);
+      for (const changed of [{ ...original, source: { ...original.source, accountId: 'other' } }, { ...original, source: { ...original.source, rowIndex: 1 } },
+        { ...original, value: { ...original.value, version: 99 } }]) await assert.rejects(reader.readAttachmentContent(changed, acknowledged), { code: 'invalid_package_scope' });
+    } finally { await reader.close(); }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
 
 test('verified document content locators pair reverse pages and reject missing, duplicate or mismatched source rows on demand', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'handover-document-reader-')), childId = randomUUID(), scopeVersion = 'a'.repeat(64);
