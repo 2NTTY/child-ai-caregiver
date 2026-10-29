@@ -1,0 +1,26 @@
+{
+  "workPackage": "P4-HANDOVER01 verified import runner",
+  "date": "2026-10-29",
+  "base": "9058011751974c6cf0da84f27327a4e15d04dd91",
+  "reuse": "Existing ZIP verifier, encrypted uploads, durable batch/items, authority and canonical background queue/worker; no new dependency",
+  "checks": [
+    { "test": "handover-import-service", "result": "one connected flow passed after review regressions", "log": "tmp/handover-import-slow-open-green.log",
+      "coverage": ["real archive/upload and account handler", "formal worker assembly with synthetic external services", "fixed source/counts and original operation", "partial completion, cancel/resume and duplicate delivery", "unsupported history leaves failed batch without partial writes", "upload cancelled after opening stops item transaction", "completed resume replay survives source cancellation", "simulated 75-second archive open still commits progress within original lease"] },
+    { "test": "focused TypeScript graph", "roots": 5, "diagnostics": 0, "log": "tmp/handover-import-runner-types-reviewed.log" }
+  ],
+  "retainedFailures": [
+    "Initial missing service module; fixture configuration corrected to existing strict Storage and dispatcher contracts",
+    "New account route initially referenced an export-local identity helper; helper shared at account scope",
+    "Source guard initially read root-scoped upload as a child-scoped resource; regression exposed package_upload_binding and fix retains actor account scope within same transaction",
+    "Synthetic delivery selector initially assumed old deferred execution would disappear; corrected to inspect canonical batch execution, without changing queue or claim fences",
+    "Completed resume initially reopened a cancelled source; prior control receipt lookup fixed after red/green regression",
+    "Review found slow archive open could consume the whole item window and defer without progress; 75-second simulated read regression red/green, item window now starts after open and zero-progress timeout is explicit"
+  ],
+  "review": { "reviewer": "independent Sol read-only review", "result": "worker timing finding repaired with red/green; client timeout finding handled separately by B; no other definite blocker" },
+  "limits": [
+    "Synthetic serial Firestore/Storage, no real cloud concurrency or IAM evidence",
+    "Only current care/profile/tasks have domain adapters; nonempty selected history is explicitly failed, not omitted",
+    "Full history/domains, invalid-package attempt audit without package identity, per-item UI, class/period, full private backup and trust configuration remain pending",
+    "No model, notification, cloud, device, deployment or full-suite checks"
+  ]
+}

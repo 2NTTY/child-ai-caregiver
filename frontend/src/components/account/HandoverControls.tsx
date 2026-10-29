@@ -10,6 +10,7 @@ import { exportPackage, useFileExportAvailable } from '../../platform/file-expor
 import { AppCheckbox } from '../AppCheckbox';
 import { FormDialog } from '../FormDialog';
 import { AppButton } from '../ui';
+import { HandoverImportControls } from './HandoverImportControls';
 import { chineseFont, colors, readingType, spacing } from '../../theme';
 
 const moduleLabels: Record<typeof HANDOVER_MODULES[number], string> = {
@@ -48,7 +49,7 @@ export function HandoverControls() {
   return <View style={styles.group}>
     <Text style={styles.title}>交接與備份資料包</Text>
     <Text style={styles.body}>選擇孩子及資料，以 ZIP 保存結構化內容、附件與閱讀摘要。檔案保留 24 小時，可稍後回來下載。</Text>
-    <Text style={styles.body}>目前可匯出所選孩子的全部期間；匯入、班級及整個帳戶備份仍待接通。</Text>
+    <Text style={styles.body}>目前可匯出所選孩子的全部期間；班級匯出及整個帳戶備份仍待接通。</Text>
     <AppButton label="選擇要匯出的資料" variant="secondary" disabled={locked || !!pending || !selectable.length}
       onPress={() => { setChildren([]); setModules([]); setPurpose('handover'); setOpen(true); }} />
     {!selectable.length ? <Text style={styles.body}>未有可匯出的本人孩子資料。</Text> : null}
@@ -73,6 +74,7 @@ export function HandoverControls() {
     </View>)}
     {state.nextCursor ? <AppButton label="載入更多資料包" variant="quiet" disabled={locked} onPress={() => { void controller.load(true); }} /> : null}
     {state.notice ? <Text accessibilityLiveRegion="polite" style={styles.body}>{state.notice}</Text> : null}
+    <HandoverImportControls />
     <FormDialog visible={open} scopeKey={identityKey!} title="選擇匯出資料" dismissMode="local" onClose={() => setOpen(false)}>
       <View style={styles.group}>
         <Text style={styles.body}>只包含勾選範圍。私人聊天、記憶及來源如需交給別人，請按需要選取；交出後對方保留獨立副本。</Text>

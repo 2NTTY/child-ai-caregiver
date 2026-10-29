@@ -382,6 +382,13 @@ SHA-256／Ed25519 沿 Node 標準 crypto；簽章金鑰及可信來源配置由�
 
 目前只核容器 round-trip 與正式授權分頁 exporter 的本機連貫流程；公開 API、持久匯入、全模組／期間與共用畫面尚待接線，不能宣稱用戶備份／還原已交付。版本／integrity 以根 package-lock 為準，未執行安裝 scripts、模型或雲端操作。
 
+<a id="handover-picker-reuse"></a>
+### 資料包選取與雜湊（2026-10-29）
+
+共用匯入沿瀏覽器原生 file input／Blob 與既有 Expo FileSystem 57.0.7 `File.pickFileAsync`，不新增另一套選檔器。固定已在鎖檔的 [@noble/hashes 2.4.0](https://github.com/paulmillr/noble-hashes)（MIT）為前端直接依賴，以 `sha256.create().update` 分段校驗；沒有自製 hash 或更換框架。npm 重新整理的無關排序已還原；保留本依賴及既有 ZIP 所需 buffer-crc32 的 production 依賴標記。
+
+本機固定版 Expo fetch `RequestUtils.normalizeBodyInitAsync` 會完整緩衝 Blob／stream，FileSystem UploadTask 則未提供既有 `redirect:error` 控制。首批原生匯入沿現有附件 20 MiB 上限，清楚引導更大包用 Web；Web 保留 Server 的 256 MiB。原生大型包仍未完成，不為此繞過共用身份 transport 或宣稱端到端串流上載。來源副本僅在 App 私人暫存，完成／登出釋放，取消後不刪手機原檔。
+
 <a id="s12-sharing-reuse"></a>
 ## S12-W02：Android 分享接收（2026-10-27）
 
