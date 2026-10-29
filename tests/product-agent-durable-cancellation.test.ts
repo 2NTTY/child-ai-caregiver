@@ -292,9 +292,10 @@ function agentOptions(h: ReturnType<typeof harness>, onModel: () => Promise<void
     usage: { reserve: async () => true, record: async () => {} }, provider: { generate: async (_request, signal) => {
       signals.push(signal); calls++;
       if (calls === 1) await onModel();
+      // This cancellation fixture only reads context; it must not claim a saved proposal.
       return { content: { role: "model", parts: [{ functionCall: calls === 1
         ? { id: "read-context", name: "read_context", args: {} }
-        : { id: "answer", name: "present_answer", args: { kind: "clarification", paragraphs: [{ text: "已儲存任務候選，仍待你確認。", citationIds: [] }] } } }] }, finishReason: FinishReason.STOP };
+        : { id: "answer", name: "present_answer", args: { kind: "clarification", paragraphs: [{ text: "請問寶寶幾個月大？", citationIds: [] }] } } }] }, finishReason: FinishReason.STOP };
     } } });
   const options = { runtime, store: { ...h.stores(), consumeConfirmation: async () => null },
     memory: { context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false,
@@ -593,6 +594,13 @@ test("local abort follows committed cancellation and a failed database cancellat
     assert.equal(a.signals[0].aborted, !fail); assert.equal(h.state.runs[0].state, fail ? "running" : "stopped");
     h.fail(null); release(); const result = await pending;
     assert.equal(result?.status, fail ? "completed" : "stopped");
+    assert.equal(result?.stopReason, fail ? null : "cancelled");
+    assert.deepEqual(a.observe(), fail ? { calls: 2, toolReads: 1 } : { calls: 1, toolReads: 0 });
+    assert.deepEqual([h.state.actions, h.state.proposals, h.state.contacts], [[], [], []]);
+    const beforeRetry = a.observe();
+    assert.deepEqual(await agent.reply(userId, childId, messageId, async () => true), result);
+    assert.deepEqual(a.observe(), beforeRetry, "Reading the original result must not repeat model or tool execution");
+    assert.equal(h.state.runs.length, 1);
     assert.equal(await agent.cancelReply(userId, childId, messageId, async () => false), false);
   });
 });
