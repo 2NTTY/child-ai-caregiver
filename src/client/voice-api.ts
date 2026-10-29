@@ -1,7 +1,7 @@
 import { voiceAttachmentPageSchema, type VoiceAttachmentPage } from '../shared/voice.ts';
 import { attachmentListQuerySchema, type AttachmentListQuery } from '../shared/attachment-list.ts';
 import { z } from 'zod';
-import { voiceTranscriptSchema, voiceTranscriptViewSchema } from '../shared/voice-transcript.ts';
+import { storedVoiceTranscriptSchema, voiceTranscriptViewSchema } from '../shared/voice-transcript.ts';
 import { VOICE_LIMITS, voiceAttachmentSchema, voiceReservationSchema, type VoiceAttachment, type VoiceReservation } from '../shared/voice.ts';
 import { readBlobBytes, sha256Bytes } from './blob-bytes.ts';
 import { sharedSelectionSchema, type SharedSelection } from '../shared/sharing.ts';
@@ -48,6 +48,7 @@ export function createVoiceApi(fetcher: typeof fetch, origin = '', hash: typeof 
       const input = attachmentListQuerySchema.parse(query), params = new URLSearchParams();
       if (input.limit !== undefined) params.set('limit', String(input.limit));
       if (input.cursor != null) params.set('cursor', input.cursor);
+      if (input.includeImported !== undefined) params.set('includeImported', String(input.includeImported));
       const response = await request(base(childId) + (params.size ? '?' + params : ''), userId, signal);
       let raw: unknown; try { raw = await response.json(); } catch { throw new VoiceApiError(0, 'voice_response_invalid'); }
       if (signal.aborted) throw new VoiceApiError(0, 'identity_changed');
@@ -83,7 +84,7 @@ export function createVoiceApi(fetcher: typeof fetch, origin = '', hash: typeof 
     },
     async transcript(childId: string, id: string, signal: AbortSignal, userId: string) {
       const response = await request(base(childId, id) + '/transcript', userId, signal);
-      const parsed = z.object({ transcript: sharing ? voiceTranscriptViewSchema : voiceTranscriptSchema }).strict().safeParse(await response.json());
+      const parsed = z.object({ transcript: sharing ? voiceTranscriptViewSchema : storedVoiceTranscriptSchema }).strict().safeParse(await response.json());
       if (signal.aborted) throw new VoiceApiError(0, 'identity_changed');
       if (!parsed.success || parsed.data.transcript.voice.id !== id
         || (sharing && (!('sharedSpaceId' in parsed.data.transcript) || parsed.data.transcript.sharedSpaceId !== sharing.spaceId

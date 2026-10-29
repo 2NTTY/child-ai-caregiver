@@ -47,6 +47,7 @@ export function createChatFileApi(fetcher: typeof fetch, origin = '', hash: type
       const input = attachmentListQuerySchema.parse(query), params = new URLSearchParams();
       if (input.limit !== undefined) params.set('limit', String(input.limit));
       if (input.cursor != null) params.set('cursor', input.cursor);
+      if (input.includeImported !== undefined) params.set('includeImported', String(input.includeImported));
       const response = await request(base(childId) + (params.size ? '?' + params : ''), userId, signal);
       let raw: unknown; try { raw = await response.json(); } catch { throw new ChatFileApiError(0, 'file_response_invalid'); }
       if (signal.aborted) throw new ChatFileApiError(0, 'identity_changed');

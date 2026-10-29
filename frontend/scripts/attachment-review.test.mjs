@@ -21,10 +21,10 @@ function reader() {
 }
 
 test('an empty scanned page retains its cursor and uses the server policy instead of a hard-coded limit', async () => {
-  const h = reader(); assert.deepEqual(h.calls[0].query, {});
+  const h = reader(); assert.deepEqual(h.calls[0].query, {includeImported: true});
   h.requests[0].resolve(page([], 'synthetic-cursor')); await h.settle();
   assert.equal(h.value().state, 'ready'); assert.equal(h.value().items.length, 0); assert.equal(h.value().hasMore, true);
-  h.value().loadMore(); assert.deepEqual(h.calls[1].query, {cursor: 'synthetic-cursor'});
+  h.value().loadMore(); assert.deepEqual(h.calls[1].query, {includeImported: true, cursor: 'synthetic-cursor'});
   h.requests[1].resolve(page([item('file-b')])); await h.settle(); assert.equal(h.value().items[0].id, 'file-b'); assert.equal(h.value().hasMore, false); h.unmount();
 });
 
@@ -46,7 +46,7 @@ test('scope-changed clears prior pages and cursor, with an explicit fresh first-
   const h = reader(); h.requests[0].resolve(page([item('file-a')], 'cursor-a')); await h.settle();
   h.value().loadMore(); h.requests[1].reject({status: 409, code: 'attachment_scope_changed'}); await h.settle();
   assert.equal(h.value().items.length, 0); assert.equal(h.value().hasMore, false); assert.equal(h.value().state, 'error');
-  h.value().refresh(); assert.deepEqual(h.calls[2].query, {}); h.unmount();
+  h.value().refresh(); assert.deepEqual(h.calls[2].query, {includeImported: true}); h.unmount();
 });
 
 test('a missing list API is unavailable rather than a successful empty library', async () => {
@@ -87,7 +87,7 @@ test('quiet invalidation preserves the loaded depth and old snapshot until fresh
   assert.deepEqual(h.value().items.map(value => value.id), ['file-a', 'file-b']);
   h.value().loadMore(); assert.equal(h.calls.length, 3, 'More must not reenter a cursor during quiet refresh');
   h.requests[2].resolve(page([item('fresh-a')], 'fresh-cursor-a')); await h.settle();
-  assert.deepEqual(h.calls[3].query, {cursor: 'fresh-cursor-a'}); assert.equal(h.value().items[0].id, 'file-a');
+  assert.deepEqual(h.calls[3].query, {includeImported: true, cursor: 'fresh-cursor-a'}); assert.equal(h.value().items[0].id, 'file-a');
   h.requests[3].resolve(page([item('fresh-b')], 'fresh-cursor-b')); await h.settle();
   assert.deepEqual(h.value().items.map(value => value.id), ['fresh-a', 'fresh-b']); assert.equal(h.value().cursor, 'fresh-cursor-b'); assert.equal(h.value().depth, 2); h.unmount();
 });

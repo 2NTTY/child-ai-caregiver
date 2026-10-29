@@ -30,6 +30,41 @@ const nodes = tree => !tree || typeof tree !== 'object' ? [] : Array.isArray(tre
 const text = tree => tree == null || tree === false ? '' : Array.isArray(tree) ? tree.map(text).join(' ') : typeof tree === 'object' ? text(tree.props?.children) : String(tree);
 const control = (tree, label) => nodes(tree).find(node => node.props?.label === label);
 
+test('shared attachment import selector submits authorized targets and renders supplements without history actions', async () => {
+  const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+  const state = { identityKey: 'owner:1', userId: 'owner', busy: null, pending: null, items: [], loaded: true, uploads: [], uploadsLoaded: true,
+    upload: { id: id(10), state: 'ready', filename: 'attachments.zip', bytes: 3, expiresAt: '2026-11-01T00:00:00Z', preview: {
+      integrity: 'trusted', manifestSha256: 'a'.repeat(64), header: { selection: { modules: ['attachments'] }, source: { serverId: 'source' } },
+      children: [{ id: id(2), displayName: 'Source child' }], coverage: [{ childId: id(2), section: 'voices', items: 1 }] } } };
+  const sent = [], controller = { subscribe: noop, getSnapshot: () => state, create: async (...value) => sent.push(value) };
+  const shared = { identityKey: 'owner:1', userId: 'owner', phase: 'ready', target: { spaceId: id(4), childId: id(5) },
+    view: { spaceId: id(4), childId: id(5), childName: 'Shared child', spaceName: 'Family', role: 'caregiver', modules: ['attachments'] } };
+  production = { owner: { handoverImportOwner: controller, sharedChild: { subscribe: noop, getSnapshot: () => shared } },
+    identityKey: 'owner:1', userId: 'owner', online: true, account: { gate: 'ready', busy: null, deletion: { phase: 'idle' } },
+    recordsState: { children: [{ id: id(3), displayName: 'Own child', accessRole: 'owner' }] } };
+  const view = render(load('HandoverImportControls').HandoverImportControls);
+  control(view.tree, '查看上載與匯入選擇').props.onPress(); again(view);
+  assert.equal(control(view.tree, 'Source child').props.disabled, false);
+  control(view.tree, 'Source child').props.onChange(true); again(view);
+  const destination = () => nodes(view.tree).find(node => node.type === 'AppSelect' && node.props.label.startsWith('接收「'));
+  destination().props.onChange(`private:${id(3)}`); again(view);
+  assert.equal(control(view.tree, '附件').props.checked, true);
+  destination().props.onChange(`shared:${id(4)}:${id(5)}`); again(view);
+  assert.equal(control(view.tree, '開始匯入').props.disabled, false);
+  control(view.tree, '開始匯入').props.onPress(); await Promise.resolve();
+  assert.deepEqual(sent[0], [[{ sourceChildId: id(2), target: { childId: id(5), spaceId: id(4) }, sections: ['attachments'] }], false]);
+  shared.view.role = 'viewer'; again(view); assert.equal(control(view.tree, '開始匯入').props.disabled, true);
+  const rows = ['files','voices','photos','child_avatar'].map((resourceSection,n) => ({ id: id(20+n), batchId: id(1), sourceChildId: id(2),
+    module: 'attachments', resourceSection, sourceSection: n === 1 ? 'voice_transcripts' : null, sourceResourceId: id(30+n), sourceVersion: 2,
+    outcome: n === 1 ? 'skipped' : 'created', reason: n === 1 ? 'attachment_supplement_already_imported' : null,
+    recordedResource: { id: id(40+n), version: 1 }, currentResource: null, availableResolution: null, at: '2026-10-30T00:00:00Z' }));
+  const result = render(load('HandoverImportResults').HandoverImportResults, { controller, identityKey: 'owner:1', locked: false,
+    batch: { id: id(1), state: 'completed', targets: [{ sourceChildId: id(2), target: { childId: id(5), spaceId: id(4) }, sections: ['attachments'] }] },
+    results: { batchId: id(1), sourceChildId: id(2), module: 'attachments', items: rows, loaded: true, nextCursor: null, error: null } });
+  for (const label of ['檔案','語音轉錄文字','照片','孩子頭像','這份附件補充資料已保存。']) assert.ok(text(result.tree).includes(label),label);
+  assert.equal(nodes(result.tree).some(node => node.props?.label === '查看來源歷史'),false);
+});
+
 test('shared import components label resources, read literal source histories and retain private target limits', () => {
   const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
   const calls = [], controller = { openSourceHistory: value => calls.push(['open', value]), closeSourceHistory: () => calls.push(['close']),

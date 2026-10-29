@@ -1,0 +1,25 @@
+{
+  "package": "P4-HANDOVER01 shared attachment import and library wiring",
+  "date": "2026-10-30",
+  "base": "2ee17e2ba8a2079ab68cace1a6751fd964d26a24",
+  "branch": "codex/p4-handover-attachment-ui",
+  "scope": [
+    "Existing import selector accepts attachments for private or currently authorized shared targets",
+    "Existing file/voice list clients transmit includeImported; library keeps the flag on every page and refresh",
+    "Private transcript client reads retained imported transcripts through the shared schema",
+    "Explicit library mode permits detached ready media while normal chat retains exact message binding and scope/version/hash checks"
+  ],
+  "checks": [
+    { "command": "node --test --test-name-pattern=\"shared attachment import selector\" frontend/scripts/handover-import-ui.test.mjs", "result": "1 passed after observed red selector assertion", "evidence": "Tool output in this task; the original red/green log files were overwritten by a parallel test using the same names, so no retained-file claim is made" },
+    { "command": "node --experimental-test-module-mocks --test frontend/scripts/attachment-contract-integration.test.mjs frontend/scripts/attachment-review.test.mjs frontend/scripts/shared-attachment-media.test.mjs", "result": "23 passed; two new cases were observed red then green", "evidence": "tmp/handover-attachment-library-final.log" },
+    { "command": "node tmp/check-attachment-ui.cjs", "method": "frontend/tsconfig.json, six changed implementation roots and their dependency graph", "result": "0 diagnostics", "evidence": "tmp/handover-attachment-ui-types.log" },
+    { "command": "node --experimental-test-module-mocks --test --test-name-pattern=\"library voice without a stored transcript\" frontend/scripts/shared-attachment-media.test.mjs", "result": "1 passed after observed missing-transcript red; other 23 checks were not rerun", "evidence": "tmp/library-missing-transcript-green.log" }
+  ],
+  "review": { "finding": "A voice without a retained transcript lost its playback control because transcript 404 invalidated the entire media query", "status": "Fixed and verified only in library mode for explicit 404/not_found; original audio is reauthorized before playback. Other identity, permission and binding failures remain errors." },
+  "limits": [
+    "No build, cloud, model, notification, browser or device test; existing backend evidence reused",
+    "No deployment or native binary change",
+    "Private chat import, remaining modules, complete backup and P4 delivery are not complete",
+    "D PR and P3/P5 work remain unchanged"
+  ]
+}
