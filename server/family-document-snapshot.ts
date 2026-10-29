@@ -3,12 +3,14 @@ import type { CareRecord, ChildProfile } from "../src/shared/care.ts";
 import type { DocumentRequest, DocumentSection, DocumentSnapshot, DocumentSource } from "../src/shared/family-documents.ts";
 import { canonicalJson } from "./online-routing.ts";
 import { preserveFamilyDocumentEdits } from "./family-document-edits.ts";
+import { copiedDocumentCoverage, copiedDocumentSource, type DocumentCopy } from './family-document-copy.ts';
 
 export interface FamilyDocumentSources {
   sourceRevision?: string; profile: ChildProfile; entries: DocumentSource[]; domains: Map<string, DocumentSection["domain"]>;
   questions: Set<string>; activeConcernIds: Set<string>; limited: boolean;
   legacyConcernSources?: Map<string, DocumentSource>;
   referencedSources?: Map<string, DocumentSource>; checkedReferences?: Set<string>;
+  importedEvidence?: Map<string, DocumentCopy>;
 }
 export const labels = { note: "共享文字記錄", feeding: "餵食記錄", sleep: "睡眠記錄", diaper: "尿片記錄",
   temperature: "體溫記錄", measurement: "量度記錄", appointment: "到診記錄" } as const;
@@ -50,10 +52,12 @@ export function documentSourceBasis(loaded: FamilyDocumentSources, request: Docu
     .sort((a, b) => a.id.localeCompare(b.id)) })).digest("hex");
 }
 export function documentSnapshotValid(snapshot: DocumentSnapshot, loaded: FamilyDocumentSources): boolean {
-  if (snapshot.reportCoverage) return snapshot.reportCoverage.sourceRevision === loaded.sourceRevision
+  const copy = loaded.importedEvidence?.get(snapshot.id);
+  if (snapshot.reportCoverage && !copiedDocumentCoverage(copy, snapshot)) return snapshot.reportCoverage.sourceRevision === loaded.sourceRevision
     && (snapshot.reportCoverage.validUntil === null || Date.parse(snapshot.reportCoverage.validUntil) > Date.now());
   const current = new Map([...loaded.entries, ...(loaded.referencedSources?.values() ?? [])].map(source => [source.id, source]));
   return snapshot.sources.every(source => {
+    if (copiedDocumentSource(copy, source)) return true;
     const available = current.get(source.id) ?? (source.kind === "concern" ? loaded.legacyConcernSources?.get(source.id) : undefined);
     return available?.version === source.version && available?.text === source.text;
   });
