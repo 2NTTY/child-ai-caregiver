@@ -864,7 +864,7 @@ FAMILY-B 管理列表及共享孩子選擇復用上述五類資料，沒有新�
 
 **HANDOVER01 容器契約（實作中，未開放）：**使用標準 ZIP，根目錄為 `manifest.json`、`summary.md` 與可選 `proof.json`；結構化分頁放 `data/`，附件 bytes 放 `attachments/`。manifest 固定格式版本、包 ID／版本、來源 Server／帳戶、用途、選定孩子／模組／期間、各區段來源版本與完整度，以及每份資料／附件的實際 bytes、SHA-256 與 MIME。原資源 ID／版本與原確認者留在結構化資料，不以 ZIP 路徑或姓名當資源身份。
 
-記憶來源接點（實作、未部署）：`memory_facts`／`memory_topics` 復用原集合、修訂、context basis、唯一鍵及刪除屏障。事實的 imported 來源保存原本地來源類型／識別及匯出有效性快照；跨人獨立副本不再查原帳戶，也不能把外來識別當成本地權限。`importedFrom` 區分原作者／確認者與本地匯入者；儲存／還原用本地匯入者及共享寫入證據驗權，外來確認者只作來源描述。候選維持私人且未確認，格式互相矛盾的狀態拒絕；共享目標不藉匯入放寬既有私人範圍。話題來源鏈另保留原 `reopenedFrom`，目前資源不建立外來本地連結；已結束資源須沿既有重開操作，不能以新版匯入喚醒。完整 memory 模組的交代／摘要／歷史與匯入台帳仍待接，不能以此預備接口宣稱完成。
+記憶來源接點（實作、未部署）：`memory_facts`／`memory_topics` 復用原集合、修訂、context basis、唯一鍵及刪除屏障。事實的 imported 來源保存原本地來源類型／識別及匯出有效性快照；跨人獨立副本不再查原帳戶，也不能把外來識別當成本地權限。`importedFrom` 區分原作者／確認者與本地匯入者；儲存／還原用本地匯入者及共享寫入證據驗權，外來確認者只作來源描述。候選維持私人且未確認，格式互相矛盾的狀態拒絕；共享目標不藉匯入放寬既有私人範圍。話題來源鏈另保留原 `reopenedFrom`，目前資源不建立外來本地連結；已結束資源須沿既有重開操作，不能以新版匯入喚醒。完整 memory 模組的交代／摘要／來源歷史已接統一匯入台帳；共用選擇與結果畫面仍待接，後端未部署。
 
 簽章使用 Node 標準 Ed25519，對確切 manifest UTF-8 bytes 簽署；公開金鑰以 SPKI DER 保存，key ID 為其 SHA-256。驗證先核簽章與全部 entry hash，再以 Server 配置的可信公鑰核來源；包自帶公鑰不能自行成為可信來源。無簽章或有效但未受信任的簽章只屬「缺可信證明」，需明示後選擇繼續；錯誤簽章／hash、重複或未列出的檔案、路徑逃逸及不相容格式拒絕。完整性不代表內容正確。簽章金鑰獨立於應用層加密 key，不自動建立或傳送生產金鑰。
 
@@ -890,13 +890,15 @@ v1 匯入讀取器復用同一 ZIP verifier 及匯出 section 表，先核全部
 
 首段領域接點為 care／profile／tasks 的 `importedFrom`：保存本次來源 Server、帳戶、孩子、section、原資源 ID／版本及內容 hash，原作者／確認者／確認時間／確認依據／負責人，以及包 ID／版本、manifest hash、完整性結果與實際匯入者。前次來源鏈平坦保留並去除相同鏈節，仍受單筆既有加密容量限制；超限拒絕該項，不截斷來源。外部身份只供追溯，不能成為本地成員或執行授權。
 
+匯入歷史摘要沿 `conversation_summaries` 保存，`coverageScope=imported_source` 與 `importedFrom` 同時存在；保留外來 coveredMessageIds／lastCoveredMessageId，不能據此讀本地訊息或推進 watermark。每次更新追加新本地 ID／版本，previousId 連先前本地快照；原 previousId 留來源鏈。不得寫入 conversation_summary_heads／currentBatch，維護查詢不將它當待修復的本地摘要；只供本人按需追溯。還原沿原 schema 核對上述不變條件。
+
 逐項匯入以目標儲存身份／孩子及來源 Server、帳戶、孩子、section、資源 ID 建立映射，不含名稱或包路徑。來源版本／hash 與最後寫入的目標版本分開保存；同來源同版本異內容列衝突，舊版略過，新版只在目標未被本地改動時直接更新。預設不復活已刪資料；明確覆蓋／恢復須綁定當前目標 ID／版本，care 的手動恢復建立新本地資源並更新映射，保留舊刪除屏障及來源鏈。每個原 opId 的 metadata 收據與映射、領域寫入同交易，查回不含原正文。所有匯入項記錄都保留原 batch／包／manifest、來源、目標及實際結果，不因略過或衝突而失去記錄；工作級失敗／取消及上載紀錄由批次台帳承接。
 
 內部實作使用加密 `handover_import_items`／`handover_import_mappings`，均屬目標孩子 scope；新收據也更新 changes cursor，令帳戶匯出不能跨新增紀錄靜默續讀。同 opId 只返回原 metadata，不能在相同操作上改參數或重新嘗試衝突。映射只在業務成功時推進，不因略過或衝突改成已同步。原 backup／scope 清理 registry 納入兩個 collection；還原重綁 epoch，保存原來源映射及收據，並仍由完整恢復流程重放刪除紀錄。帳戶 JSON 匯出的 `import_history`／`import_mappings` 是唯讀追溯資料，不是可再次執行的工作。正式批次取消／lease 及上載已接未部署，完整匯入／備份仍待交付。
 
 來源歷史另存加密 `handover_source_history`，每筆連結本地資源 ID／匯入時版本與不可變來源 evidence（領域、原修訂、來源鏈）；原作者／確認者不改成匯入者，本地實際匯入者／時間／操作分開保存。以目標及來源身份／版本確定 ID，同版異內容列衝突；不追加本地修訂或觸發舊提醒。逐項收據可帶 `sourceSection` 區分來源歷史與目前值，與批次進度同交易提交。再次交接沿同一 wrapper 保留原 evidence，依目前包的父資源映射連到新目標，不改寫原來源。
 
-`care_history/profile_history/task_history` 匯出先分頁讀本地修訂，再以同一加密 scope cursor 的來源階段讀來源歷史；空頁而仍有游標不是完成。來源歷史讀回沿目前模組授權及父資源版本／刪除狀態，profile 的 historyFloor 亦適用。新增歷史不改當前事實，但推進 change cursor；實體刪除在原持久清理工作加入來源歷史階段，仍有界及可接續。備份／帳戶／孩子／班級清理 registry 納入新 collection，恢復重建可信 metadata 並按獨立刪除紀錄移除舊 evidence，不能從原快照恢復已刪正文。
+`care_history/profile_history/task_history/memory_fact_history/memory_topic_history` 匯出先分頁讀本地修訂，再以同一加密 scope cursor 的來源階段讀來源歷史；空頁而仍有游標不是完成。來源歷史讀回沿目前模組授權及父資源版本／刪除狀態，profile 的 historyFloor 亦適用。新增歷史不改當前事實，但推進 change cursor；實體刪除在原持久清理工作加入來源歷史階段，仍有界及可接續。備份／帳戶／孩子／班級清理 registry 納入新 collection，恢復重建可信 metadata 並按獨立刪除紀錄移除舊 evidence，不能從原快照恢復已刪正文。
 
 匯入 care／profile 以 `confirmationBasis=imported_source` 保留原確認標記；交易及還原核對真正匯入者的當前授權，不要求外部確認者是本地成員。本人之後更正改回 `explicit`，來源鏈仍保留。空 profile 不作清除目前概況的指令。首次匯入待辦以新資源／發生實例保存原狀態，負責人改為目前目標的有效身份；completed／cancelled／needs_review 不先建立一次 scheduled outbox。同來源後續版本原位更新本地 task／occurrence，保留建立者、建立時間及原投遞證據；記錄 `import` 修訂、真正匯入者及本地 basisVersion，不挪用來源 terminalBasisVersion。來源變更不能繞過本地版本衝突或 unknown 停發；新 scheduled 版本只沿原任務 outbox／目前通知設定處理，舊 pending／leased 作廢。來源映射、收據、業務及 outbox 同交易；公開批次與共用匯入頁仍未完成。
 

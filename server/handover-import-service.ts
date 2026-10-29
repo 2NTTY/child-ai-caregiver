@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
-import { handoverImportCommandSchema, handoverImportResultQuerySchema, handoverImportViewSchema, type HandoverImportCommand } from '../src/shared/handover-imports.ts';
+import { handoverImportCommandSchema, handoverImportResultQuerySchema, handoverImportViewSchema, handoverImportResourceSectionSchema, handoverImportModuleOf, type HandoverImportCommand } from '../src/shared/handover-imports.ts';
 import { createFirestoreHandoverImportBatches } from './firestore-handover-import-batches.ts';
 import { domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { createHandoverUploadService } from './handover-upload-service.ts';
@@ -12,7 +12,7 @@ import { createFirestoreHandoverImportItems } from './firestore-handover-import-
 
 type Uploads = ReturnType<typeof createHandoverUploadService>;
 type Opened = Awaited<ReturnType<Uploads['open']>>;
-const supported = new Set(['care', 'profile', 'tasks', ...Object.keys(historyModules)]);
+const supported = new Set<string>([...handoverImportResourceSectionSchema.options, ...Object.keys(historyModules)]);
 const cursorSchema = z.object({ target: z.number().int().nonnegative(), phase: z.enum(['current', 'history']).optional(), page: z.object({ manifestSha256: z.string(), selectionHash: z.string(),
   pageIndex: z.number().int().nonnegative(), rowIndex: z.number().int().nonnegative() }).strict().nullable() }).strict();
 type Cursor = z.infer<typeof cursorSchema>;
@@ -80,8 +80,9 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       const selected = job.request.resolutionOnly ? job.request.resolutions.filter(row => row.sourceChildId === target.sourceChildId) : null;
       if (selected?.length === 0) { cursor = { target: cursor.target + 1, phase: 'current', page: null }; continue; }
       // Existing in-flight cursors keep their old reader selection. New batches always establish parents first.
-      const sections = selected ? [...new Set(selected.map(row => row.section))] : cursor.phase === undefined ? undefined : cursor.phase === 'current' ? [...target.sections]
-        : Object.entries(historyModules).filter(([, module]) => target.sections.includes(module)).map(([section]) => section);
+      const sections = selected ? [...new Set(selected.map(row => row.section))] : cursor.phase === undefined ? undefined : cursor.phase === 'current'
+        ? target.sections.flatMap(module => [...HANDOVER_SECTIONS[module]]).filter(section => !Object.hasOwn(historyModules, section))
+        : Object.entries(historyModules).filter(([, section]) => target.sections.includes(handoverImportModuleOf(section))).map(([section]) => section);
       const page = await opened.reader.readPage({ selection: { childIds: [target.sourceChildId], modules: target.sections }, sections,
         acknowledgedManifestSha256: job.request.acceptedManifestSha256 ?? undefined, cursor: cursor.page as HandoverImportCursor | null, limit: 1 });
       const next: Cursor = page.nextCursor ? { ...cursor, page: page.nextCursor } : cursor.phase === 'current' && !selected

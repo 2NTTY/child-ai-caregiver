@@ -5,6 +5,9 @@ import type { HandoverImportRow } from './handover-import.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
 import { makeImportProvenance } from './handover-provenance.ts';
 import { contentVisible } from './firestore-disclosure.ts';
+import { firestoreFactSchema, firestoreTopicSchema, firestoreSummarySchema } from './firestore-memory.ts';
+import { createFirestorePrivateInstructions, firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
+import { z } from 'zod';
 import { sourceHistoryExportSchema, sourceHistoryRecordSchema, sourceHistoryId, sourceHistoryMetadata,
   type SourceHistoryRecord, type HistoryModule } from './handover-history-records.ts';
 
@@ -13,15 +16,16 @@ function parseRevision(module: HistoryModule, raw: unknown) {
     const value = domainParse(firestoreTaskRevisionSchema, raw, 'invalid_package_data');
     return { value: value as unknown as Record<string, unknown>, resource: value.task };
   }
-  const value = module === 'care' ? domainParse(firestoreCareSchema, raw, 'invalid_package_data')
-    : domainParse(firestoreProfileSchema, raw, 'invalid_package_data');
+  const schemas = { care: firestoreCareSchema, profile: firestoreProfileSchema, memory_facts: firestoreFactSchema,
+    memory_topics: firestoreTopicSchema, instructions: firestorePrivateInstructionSchema, summary_history: firestoreSummarySchema };
+  const value = domainParse(schemas[module] as z.ZodType<{ childId: string; version: number; id?: string }>, raw, 'invalid_package_data');
   return { value: value as unknown as Record<string, unknown>, resource: value };
 }
 export function validateSourceHistory<T extends Pick<SourceHistoryRecord, 'evidence'>>(value: T): T {
   const { evidence } = value, original = parseRevision(evidence.module, evidence.value), source = evidence.source.current.source;
   if (firestoreDomainHash(original.value) !== evidence.source.current.sourceHash || evidence.module !== source.section
     || original.resource.childId !== source.childId || original.resource.version !== source.resourceVersion
-    || (evidence.module === 'profile' ? original.resource.childId : (original.resource as { id: string }).id) !== source.resourceId)
+    || (evidence.module === 'profile' ? original.resource.childId : domainParse(z.uuid(), original.resource.id)) !== source.resourceId)
     domainReject('source_history_binding', 500);
   return value;
 }
@@ -40,11 +44,34 @@ export function parseHistoryRow(row: HandoverImportRow, module: HistoryModule, i
   const provenance = makeImportProvenance({ ...row, section: module, value: source as unknown as Record<string, unknown> }, integrity, actor, now);
   provenance.current.sourceHash = firestoreDomainHash(parsed.value);
   return { evidence: { module, source: provenance, value: parsed.value }, provenance,
-    parentId: module === 'profile' ? source.childId : (source as { id: string }).id, parentVersion: source.version };
+    parentId: module === 'profile' ? source.childId : domainParse(z.uuid(), source.id), parentVersion: source.version };
 }
 export async function sourceHistoryVisible(data: FirestoreDomainData, b: Binding, value: SourceHistoryRecord) {
   if (value.childId !== b.scope.childId) domainReject('source_history_binding', 500);
-  if (value.evidence.module !== 'tasks') return contentVisible(data, b, value.evidence.module, value.resource.id, value.resource.version);
+  const section = value.evidence.module;
+  if (section === 'care' || section === 'profile') return contentVisible(data, b, section, value.resource.id, value.resource.version);
+  if (section === 'memory_facts' || section === 'memory_topics') {
+    const kind = section === 'memory_facts' ? 'fact' : 'topic';
+    if (!await contentVisible(data, b, kind, value.resource.id, value.resource.version)) return false;
+    const row = await b.transaction.get(data.ref(section, 'memory-' + kind, value.resource.id));
+    const current = data.open('memory-' + kind, value.resource.id, b.scope,
+      z.object({ visibility: z.enum(['private', 'family']) }).passthrough(), row);
+    // Sharing a current resource never widens the visibility of an older private source revision.
+    return !b.sharedAccess || current.visibility === 'family' && value.evidence.value.visibility === 'family';
+  }
+  if (section === 'instructions') {
+    if (b.sharedAccess || b.actorUserId !== b.scope.ownerUserId) return false;
+    const current = await createFirestorePrivateInstructions(data).read(b, value.resource.id);
+    return !!current && current.version >= value.resource.version;
+  }
+  if (section === 'summary_history') {
+    if (b.sharedAccess || b.actorUserId !== b.scope.ownerUserId) return false;
+    const row = await b.transaction.get(data.ref('conversation_summaries', 'conversation-summary', value.resource.id));
+    if (!row.exists) return false;
+    const current = data.open('conversation-summary', value.resource.id, b.scope, z.object({ summary: firestoreSummarySchema }).passthrough(), row).summary;
+    if (current.id !== value.resource.id || current.childId !== b.scope.childId || current.version !== row.get('recordVersion')) domainReject('source_history_binding', 500);
+    return current.coverageScope === 'imported_source' && row.get('currentBatch') !== true && current.version >= value.resource.version;
+  }
   const row = await b.transaction.get(data.ref('tasks', 'task', value.resource.id)); if (!row.exists) return false;
   const task = data.open('task', value.resource.id, b.scope, firestoreTaskSchema, row);
   if (task.childId !== b.scope.childId || task.id !== value.resource.id || task.version !== row.get('recordVersion')) domainReject('source_history_binding', 500);

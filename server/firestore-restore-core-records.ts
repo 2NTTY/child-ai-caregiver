@@ -167,6 +167,10 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   if (kind === 'memory-reopened') { requireValue(z.uuid().safeParse(id).success && recordVersion === 1); return {}; }
   const value = firestoreMemoryRecoverySchemas.summary.parse(raw);
   requireValue(value.summary.childId === scope.childId && value.summary.version === recordVersion);
+  if (value.summary.coverageScope === 'imported_source') {
+    requireValue(kind === 'conversation-summary' && id === value.summary.id && !value.batch && original.currentBatch !== true);
+    return { entityId: value.summary.id, entityVersion: value.summary.version, currentBatch: false };
+  }
   if (kind === 'conversation-summary-head') { equalId(id, [scope.ownerUserId, scope.childId]); return {}; }
   requireValue(id === value.summary.id);
   return { entityId: value.summary.id, entityVersion: value.summary.version, ...(value.batch ? {

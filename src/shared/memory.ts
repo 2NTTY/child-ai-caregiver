@@ -36,6 +36,8 @@ export interface TopicReopen { expectedVersion: number; reason: string }
 export interface ConversationSummary {
   id: string; childId: string; version: number; text: string; createdAt: string;
   previousId: string | null; coveredMessageIds: string[]; lastCoveredMessageId: string;
+  /** Imported history keeps source message IDs; it never advances local summary coverage. */
+  coverageScope?: 'imported_source'; importedFrom?: ImportProvenance;
 }
 export interface SummaryInput { previous: ConversationSummary | null; previousVersion: number; basis: string; messages: ChatMessage[]; moreUncovered: boolean; summaryMode?: "isolated_batch"; repairOf?: string; currentSources?: unknown[]; unavailableReason?: "fact_metadata_pending" | "message_requires_continuation" }
 export interface MemoryView {
