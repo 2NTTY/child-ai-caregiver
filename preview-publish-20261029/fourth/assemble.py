@@ -123,13 +123,38 @@ def audit_maps(source,raw):
     if not required.issubset({row['path'] for row in matched}):raise ValueError('Fourth original entry/owner/guard absent from maps')
     return {'matched':matched,'generated':generated,'contexts':contexts,'assetFamilies':families,'mapFiles':len(maps)}
 
+GRAPH_STAGES = {'ARGUMENTS','RUNTIME_DEPENDENCIES','BUNDLE_DISCOVERY','BUNDLE_MAP','BUNDLE_PREFIX','SELECTED_SOURCE_BINDING','BUNDLE_FACTORIES','GRAPH_EDGES','ENTRY_BINDING','ROUTER_NODES','REGISTRATION_WEB','ORIGINAL_EDGES','FACTORY_MARKERS','ROUTER_CONTEXT','INPUT_READBACK','SAFE_PROOF'}
+GRAPH_CODES = {'ERR_ASSERTION','MODULE_NOT_FOUND','ENOENT','EACCES','BABEL_PARSER_SYNTAX_ERROR','OTHER'}
+
+class GraphVerifierFailure(ValueError):
+    """Safe diagnostic already stripped of private exception data."""
+
+
+def graph_failure(stderr,returncode):
+    """Only a fixed bounded failure schema may cross the private subprocess boundary."""
+    stage='SUBPROCESS';code='UNSTRUCTURED_FAILURE';detail=''
+    try:
+        if not 0<len(stderr)<=1024:raise ValueError('Envelope budget')
+        value=json.loads(stderr)
+        if not isinstance(value,dict) or set(value)!={'format','stage','code','errorSha256','line','column'}:raise ValueError('Envelope keys')
+        if value['format']!='fourth-graph-failure-v1' or value['stage'] not in GRAPH_STAGES or value['code'] not in GRAPH_CODES:raise ValueError('Envelope enum')
+        if not isinstance(value['errorSha256'],str) or not re.fullmatch('[0-9a-f]{64}',value['errorSha256']):raise ValueError('Envelope digest')
+        if any(type(value[k]) is not int or not 0<=value[k]<=10000 for k in ['line','column']):raise ValueError('Envelope source position')
+        stage=value['stage'];code=value['code'];detail=' errorSha256='+value['errorSha256']+' line='+str(value['line'])+' column='+str(value['column'])
+    except (ValueError,TypeError,KeyError):pass
+    return 'Fourth full graph verifier failed: exit='+str(returncode)+' stage='+stage+' code='+code+detail+' stderrSha256='+sha(stderr)
+
+
 def audit_entry(source,raw):
     """Remote-only AST/VLQ full module graph; no line-only module approximation."""
     recipe=json.loads((HERE/'recipe.json').read_text());verifier=HERE/'verify_graph.mjs'
     if sha(verifier.read_bytes())!=recipe['graphVerifierSha256']:raise ValueError('Graph verifier source drift')
-    result=subprocess.run(['node','--max-old-space-size=4096',str(verifier),str(source),str(raw)],capture_output=True,timeout=180,check=False)
-    if result.returncode!=0:raise ValueError('Fourth full graph verifier failed, exit '+str(result.returncode)+'; raw parser stderr is not copied into public proof')
-    if result.stderr or len(result.stdout)>1024*1024:raise ValueError('Unexpected graph proof output')
+    try:
+        result=subprocess.run(['node','--max-old-space-size=4096',str(verifier),str(source),str(raw)],capture_output=True,timeout=180,check=False)
+    except subprocess.TimeoutExpired as error:
+        raise GraphVerifierFailure('Fourth full graph verifier failed: stage=SUBPROCESS code=TIMEOUT stderrSha256='+sha(error.stderr or b'')) from None
+    if result.returncode!=0:raise GraphVerifierFailure(graph_failure(result.stderr,result.returncode))
+    if result.stderr or len(result.stdout)>1024*1024:raise GraphVerifierFailure('Fourth full graph verifier failed: stage=SUBPROCESS code=UNEXPECTED_OUTPUT stderrSha256='+sha(result.stderr)+' stdoutSha256='+sha(result.stdout))
     scan_public('graph-proof.json',result.stdout);return json.loads(result.stdout)
 
 
@@ -186,4 +211,8 @@ def main():
     proof.parent.mkdir(parents=True,exist_ok=True);proof.write_bytes(proof_data)
     print(json.dumps({'productCommit':receipt['productCommit'],'payloads':len(payloads),'publicFiles':len(receipt['publicFiles']),'publicBytes':sum(row['bytes'] for row in receipt['publicFiles']),'browser':'NOT_RUN'}))
 
-if __name__=='__main__':main()
+if __name__=='__main__':
+    try:main()
+    except GraphVerifierFailure as error:
+        print(str(error),file=sys.stderr)
+        sys.exit(1)

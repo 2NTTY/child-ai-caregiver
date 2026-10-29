@@ -5,12 +5,15 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
+const sha = value => crypto.createHash('sha256').update(value).digest('hex');
+let stage = 'ARGUMENTS';
+function main() {
 assert.equal(process.argv.length, 4, 'source and raw arguments required');
 const source = path.resolve(process.argv[2]), rawRoot = path.resolve(process.argv[3]);
+stage = 'RUNTIME_DEPENDENCIES';
 const req = createRequire(path.join(source, 'frontend/package.json'));
 const parser = req('@babel/parser');
 const { TraceMap, decodedMappings } = req('@jridgewell/trace-mapping');
-const sha = value => crypto.createHash('sha256').update(value).digest('hex');
 const selectedSources = new Set(['/frontend/index.js','/frontend/src/production/ProductionProvider.tsx','/frontend/src/platform/runtime.ts','/frontend/app/_layout.tsx','/frontend/src/preview/PreviewNavigationGuard.tsx','/frontend/src/production/ProductionFirstScreenGate.tsx']);
 const selectedSuffixes=['/expo-router/entry.js','/expo-router/entry-classic.js','/expo-router/build/qualified-entry.js','/expo-router/build/renderRootComponent.js'];
 const retainSource=name=>selectedSources.has(name)||selectedSuffixes.some(suffix=>name.endsWith(suffix));
@@ -36,6 +39,7 @@ function parseSpan(span,startLine,file,map,decoded,retainFactory,isLast,isEntry)
  return{record:{argumentCount:call.arguments.length,id:id.value,sources:[...sources],factorySha256:sha(body),factoryBytes:Buffer.byteLength(body),factory:retainFactory&&[...sources].some(s=>retainSource(s))?Buffer.from(body).toString():undefined,empty:factory.body.body.length===0,dependencies:numeric,dependencyProof:dep,file,spanStartLine:startLine,spanLines:span.split('\n').length,spanBytes:Buffer.byteLength(span),factorySourceRange:{startLine:startLine+factory.loc.start.line-1,startColumn:factory.loc.start.column,endLine:startLine+factory.loc.end.line-1,endColumn:factory.loc.end.column}},boot,statementCount:ast.program.body.length};
 }
 function parseBundle(file) {
+  stage = 'BUNDLE_MAP';
   const full = path.join(rawRoot, '_expo/static/js/web', file);
   const raw = readPinned(full), text = raw.toString();
   assert(Buffer.from(text).equals(raw), 'Exact UTF-8');
@@ -44,6 +48,7 @@ function parseBundle(file) {
   assert.equal(map.sources.length, map.sourcesContent.length);
   const starts = [...text.matchAll(/^__d\(/gm)].map(m => m.index);
   assert(starts.length, 'Actual module registrations required');
+  stage = 'BUNDLE_PREFIX';
   const prefix = text.slice(0, starts[0]), prefixAst = parser.parse(prefix, { sourceType: 'script' });
   assert.equal(prefixAst.program.directives.length, 0);
   for (const n of prefixAst.program.body) {
@@ -52,6 +57,7 @@ function parseBundle(file) {
   }
   const isEntry = file.startsWith('index-');
   if (!isEntry) assert.equal(prefixAst.program.body.length, 0);
+  stage = 'SELECTED_SOURCE_BINDING';
   const selectedSourceContents = {};
   for (let i = 0; i < map.sources.length; i++) {
     const name = map.sources[i];
@@ -60,6 +66,7 @@ function parseBundle(file) {
     assert.equal(map.sourcesContent[i], bytes.toString(), 'Selected source map bytes');
     selectedSourceContents[name] = map.sourcesContent[i];
   }
+  stage = 'BUNDLE_FACTORIES';
   const records = [], bootCalls = [], coverage = crypto.createHash('sha256');
   coverage.update(prefix);
   let coveredBytes = Buffer.byteLength(prefix), startLine = prefix.split('\n').length, maxSpanBytes = 0;
@@ -77,6 +84,7 @@ function parseBundle(file) {
   assert(isEntry ? bootCalls.length > 0 : bootCalls.length === 0);
   return { records, summary: { file, ids: records.map(r => r.id), sha256: sha(raw), mapSha256: sha(mapRaw), prefixSha256: sha(prefix), bootCalls, maxSpanBytes, exactFullByteCoverage: true }, selectedSourceContents };
 }
+stage = 'BUNDLE_DISCOVERY';
 const folder = path.join(rawRoot, '_expo/static/js/web');
 const files = fs.readdirSync(folder).filter(n => n.endsWith('.js')).sort();
 assert(files.length>0);assert.equal(files.filter(file=>file.startsWith('index-')).length,1);
@@ -89,6 +97,7 @@ for (const file of files) {
   }
   bundles.push(parsed.summary); Object.assign(selected, parsed.selectedSourceContents);
 }
+stage = 'GRAPH_EDGES';
 let numericEdges = 0, asyncPaths = 0;
 for (const row of modules.values()) {
   for (const slot of row.dependencyProof.slots) if (slot.kind === 'module') {
@@ -111,6 +120,7 @@ const identity = id => {
   return row.sources.length ? row.sources.join('|') : 'unmapped:' + row.factorySha256;
 };
 const suffix = name => { const matches=[...modules.values()].filter(row=>row.sources.some(s=>s.endsWith(name)));assert.equal(matches.length,1,name);return matches[0]; };
+stage = 'ENTRY_BINDING';
 const entry=bySource('/frontend/index.js'),owner=bySource('/frontend/src/production/ProductionProvider.tsx');
 assert.equal(entry.dependencies.length,4);
 const slots=entry.dependencies.map((id,slot)=>({slot,id,sources:modules.get(id).sources}));
@@ -119,11 +129,17 @@ assert.equal(selected['/frontend/src/platform/runtime.ts'],'// Web keeps its bro
 assert.deepEqual(slots[1].sources,['/frontend/src/platform/web-foundation.web.ts']);
 assert.deepEqual(slots[2].sources,['/frontend/src/preview/browser-history-events.ts']);
 assert(slots[3].sources[0].endsWith('/expo-router/entry.js'));
-const nodes={entry,owner,routerEntry:suffix('/expo-router/entry.js'),classic:suffix('/expo-router/entry-classic.js'),qualified:suffix('/expo-router/build/qualified-entry.js'),render:suffix('/expo-router/build/renderRootComponent.js'),ctx:suffix('/expo-router/_ctx.web.js'),expoRoot:suffix('/expo-router/build/ExpoRoot.js'),head:suffix('/expo-router/build/head/index.js'),expo:suffix('/expo/src/Expo.ts'),register:suffix('/expo/src/launch/registerRootComponent.tsx'),layout:bySource('/frontend/app/_layout.tsx'),guard:bySource('/frontend/src/preview/PreviewNavigationGuard.tsx'),gate:bySource('/frontend/src/production/ProductionFirstScreenGate.tsx')};
+stage = 'ROUTER_NODES';
+const nodes={entry,owner,routerEntry:suffix('/expo-router/entry.js'),classic:suffix('/expo-router/entry-classic.js'),qualified:suffix('/expo-router/build/qualified-entry.js'),render:suffix('/expo-router/build/renderRootComponent.js'),ctx:suffix('/expo-router/_ctx.web.js'),expoRoot:suffix('/expo-router/build/ExpoRoot.js'),head:suffix('/expo-router/build/head/index.js'),expo:suffix('/expo/src/Expo.ts'),layout:bySource('/frontend/app/_layout.tsx'),guard:bySource('/frontend/src/preview/PreviewNavigationGuard.tsx'),gate:bySource('/frontend/src/production/ProductionFirstScreenGate.tsx')};
+stage = 'REGISTRATION_WEB';
+nodes.register=suffix('/expo/src/launch/registerRootComponent.web.tsx');
+stage = 'ORIGINAL_EDGES';
 const expectedEdges=[['routerEntry','classic'],['classic','qualified'],['classic','render'],['qualified','ctx'],['qualified','expoRoot'],['qualified','head'],['render','expo'],['expo','register'],['layout','owner'],['layout','guard'],['layout','gate']];
 for(const [parent,child] of expectedEdges)assert(nodes[parent].dependencies.includes(nodes[child].id),parent+' -> '+child);
+stage = 'FACTORY_MARKERS';
 for(const marker of ['.ExpoRoot','.ctx','.Provider'])assert(nodes.qualified.factory.includes(marker));
 assert(nodes.render.factory.includes('registerRootComponent'));
+stage = 'ROUTER_CONTEXT';
 assert.equal(nodes.ctx.dependencies.length,1);const context=modules.get(nodes.ctx.dependencies[0]);
 assert.equal(context.sources.length,1);assert(context.sources[0].startsWith('/frontend/app?ctx='));
 const indexBundle=bundles.find(row=>row.file.startsWith('index-'));
@@ -135,6 +151,21 @@ const contextTargets=context.dependencies.map((id,i)=>{
  const rel=path.relative(source,targets[i]).split(path.sep).join('/');assert(rel.startsWith('frontend/app/')&&!rel.includes('..'));assert.deepEqual(modules.get(id).sources,['/'+rel]);return rel;
 });
 assert(contextTargets.includes('frontend/app/_layout.tsx'));assert.equal(indexBundle.bootCalls.at(-1),entry.id);
+stage = 'INPUT_READBACK';
 for(const [file,hash] of rawBefore)assert.equal(sha(fs.readFileSync(file)),hash,'Verifier input drift');
+stage = 'SAFE_PROOF';
 const proof={status:'FOURTH_REMOTE_FULL_FACTORY_AST_AND_MODULE_EDGE_CLOSURE_NOT_BROWSER',registeredModules:modules.size,numericEdges,asyncPaths,bundles,entry:{id:entry.id,factorySha256:entry.factorySha256,dependencies:slots},platform:{id:platform.id,emptyFactory:true,sourceSha256:sha(selected['/frontend/src/platform/runtime.ts'])},originalEdges:expectedEdges.map(([parent,child])=>({parent,child,from:nodes[parent].id,to:nodes[child].id})),contextTargets,exactFullByteCoverage:true,inputPrePostHashes:true};
 const serialized=JSON.stringify(proof);assert(!serialized.includes(source)&&!serialized.includes(rawRoot),'Private path in graph receipt');process.stdout.write(serialized+'\n');
+
+}
+try { main(); }
+catch (error) {
+  // Never serialize message/stack/actual/expected: they may contain raw code or private paths.
+  const codes = new Set(['ERR_ASSERTION','MODULE_NOT_FOUND','ENOENT','EACCES','BABEL_PARSER_SYNTAX_ERROR']);
+  const stack = typeof error?.stack === 'string' ? error.stack : String(error);
+  const location = stack.match(/\/verify_graph\.mjs:(\d+):(\d+)\)?(?:\n|$)/);
+  process.stderr.write(JSON.stringify({format:'fourth-graph-failure-v1',stage,
+    code:codes.has(error?.code)?error.code:'OTHER',errorSha256:sha(stack),
+    line:location?Number(location[1]):0,column:location?Number(location[2]):0})+'\n');
+  process.exitCode = 1;
+}

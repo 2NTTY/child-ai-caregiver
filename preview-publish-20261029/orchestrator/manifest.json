@@ -114,12 +114,12 @@
         ]
       ],
       "recipeFiles": {
-        "fourth/assemble.py": "def9b93385945be223446feadf16b025378442941c6aff71fb050e88e359958c",
+        "fourth/assemble.py": "338d94ff617a505db2fde4fbe498fd1e78753ea5191cb9f8889a935175944353",
         "fourth/verify_source.py": "99b0b7936bbfeef3be7c4ad732882d30f14bf5304b4b26f45bdeb6eeb63023dc",
-        "fourth/verify_graph.mjs": "b00cd14140ac691a5ff56af220b2a11f0d1e8da0a2e2a23969f122bde221af16",
+        "fourth/verify_graph.mjs": "a363a9473d39eae99a7bef592fac9e5ae12b8a8c19d50f825dc69a2e17df9247",
         "fourth/PRODUCT_INPUTS.json": "7d45951ca36373e319bd8b9c3b138f1a50987c538bfd35912dc545605bbc6ca1",
         "fourth/protocol.json": "d6f110463664e68e32f81015f089d92e1a719732713e0dadb350ac10c9026423",
-        "fourth/recipe.json": "be05fd89fb6b04a0bd22cf71ee7df13b4798148036423994d1bac5e89ff7ed3a",
+        "fourth/recipe.json": "1599fbab39943492bfb0ed0b8da89bd388a282a7cf2584e9871d0a9b71138a11",
         "fourth/adapter/admission.js": "8ef2f9ba7246722bde347330f002dd378ee27b265b906c4af833351015c4ff2b",
         "fourth/adapter/fixture-patches.json": "5c0e14a3182453b2f35ae557c731fd3bf392cada9306410aa75f5c1ada1f965e",
         "fourth/adapter/startup-guard.js": "1835436d1630bdcada4a63aed87cbc581ac40e39cc77fe9606648eceff185912",
