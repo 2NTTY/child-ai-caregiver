@@ -1,5 +1,9 @@
 # 育伴港前端現況
 
+**2026-10-30 正式共用接線：**記憶匯入 #383 已合併，私人來源後端 #385 已合併；共用選擇／結果／管理歷史已於 `codex/p4-handover-source-ui` 接通並完成必要合成核對，尚未部署。有效檢查及當前範圍見 [PLAN](PLAN.md#active)，正式服務觀察見[根 STATUS](../STATUS.md#deployment)。
+
+## 2026-10-23 原設計交付快照（歷史狀態）
+
 2026-10-23 source36／artifactfix1 已完成本地來源與有界驗收，正作交付。相對基底 `5a39776f703bc436528b858f393621bcf8030b03` 精確89檔（45產品＋44測試）；559inputs、417個輸出第一方文字來源＋1PNG鏈、隔離Router context、安全validator及archive readback均已核。原36錯源artifact已撤回，並非重新修改產品guard。新版尚未更新公開站點；最後已記錄公開版仍是Site87／snapshot31（04:59:33.978 UTC）。[PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253)維持draft／未合併；需求文件不在本次修改。
 
 source36定向30／30；先前各版結果保留而不相加。正確artifact的同scope503 settled保留checkbox、原生pointer／Space／Enter不寫入、聚焦後再次讀取保留focus／scroll／高度，有界GUI通過；不是全站、真機或逐幀零閃動。完整TypeScript仍未過（兩環境137，原因未知），CI未新查，自然OS app-switch／Android／完整讀屏與全尺寸未完成。只用合成資料，沒有正式刪除、模型或後端部署。精確身份、原圖、原紅與下一步見[PLAN#active](PLAN.md#active)及[本輪收據](../docs/verification/frontend-2026-10-23/focus-layout-29/snapshot36-artifactfix1/README.md)。

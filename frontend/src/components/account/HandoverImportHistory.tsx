@@ -8,8 +8,10 @@ const object = (value: unknown): Record<string, unknown> | null => value !== nul
 const content = (value: Record<string, unknown>, key: string) => typeof value[key] === 'string' && value[key] ? value[key] as string : '未提供';
 const factStates: Record<string, string> = { candidate: '待確認候選', confirmed: '已確認', inactive: '已停用' };
 const topicStates: Record<string, string> = { pending: '待處理', answered: '已回答', snoozed: '已暫緩', resolved: '已解決' };
+const sourcePurposes: Record<string, string> = { answer_reference: '回答參考', record_candidate: '記錄候選', track_topic: '追蹤話題' };
+const revisionNumber = (value: unknown) => typeof value === 'number' && Number.isSafeInteger(value) ? value : '未提供';
 
-/** Three known memory resources, rendered as source text without interpreting foreign references or markup. */
+/** Known source histories rendered as text without interpreting foreign references or markup. */
 export function HandoverImportHistory({ controller, history, locked }: {
   controller: HandoverImportOwner; history: HandoverSourceHistoryState; locked: boolean;
 }) {
@@ -23,9 +25,10 @@ export function HandoverImportHistory({ controller, history, locked }: {
     {history.items.map(item => {
       const { module, value, source: provenance } = item.evidence, source = provenance.current.source;
       const factSource = object(value.source), original = factSource?.kind === 'imported' ? object(factSource.original) : factSource;
+      const management = object(value.management);
       const messageIds = Array.isArray(value.coveredMessageIds) ? value.coveredMessageIds.filter((id): id is string => typeof id === 'string') : [];
       return <View key={handoverSourceHistoryKey(item)} style={styles.item}>
-        <Text style={styles.title}>{module === 'memory_facts' ? '記憶事實來源歷史' : module === 'memory_topics' ? '記憶話題來源歷史' : '外來摘要歷史'}</Text>
+        <Text style={styles.title}>{module === 'memory_facts' ? '記憶事實來源歷史' : module === 'memory_topics' ? '記憶話題來源歷史' : module === 'private_sources' ? '私人來源管理歷史' : '外來摘要歷史'}</Text>
         <Text style={styles.body}>來源版本 {source.resourceVersion} · 本地接收版本 {item.resource.version}</Text>
         {module === 'memory_facts' ? <>
           <Text style={styles.body}>記憶欄目：{content(value, 'key')}</Text>
@@ -39,6 +42,14 @@ export function HandoverImportHistory({ controller, history, locked }: {
           <Text selectable style={styles.content}>{content(value, 'note')}</Text>
           <Text style={styles.body}>來源狀態：{topicStates[String(value.status)] ?? '未提供'}</Text>
           <Text style={styles.body}>來源更新者：{content(value, 'updatedBy')} · 時間：{content(value, 'updatedAt')}</Text>
+        </> : module === 'private_sources' ? <>
+          <Text style={styles.body}>管理歷史，不是正文修訂；原摘錄不代表本地授權。</Text>
+          <Text selectable style={styles.content}>原管理意圖：{management ? content(management, 'intention') : '未提供'}</Text>
+          <Text style={styles.body}>原管理用途：{sourcePurposes[String(management?.purpose)] ?? '未提供'} · {management?.enabled === true ? '已啟用' : management?.enabled === false ? '已停用' : '啟用狀態未提供'}</Text>
+          <Text selectable style={styles.content}>原模型摘錄：{management ? content(management, 'modelExcerpt') : '未提供'}</Text>
+          <Text style={styles.body}>原管理版本：{revisionNumber(value.previousVersion)} → {revisionNumber(value.version)}</Text>
+          <Text selectable style={styles.body}>變更原因：{content(value, 'reason')}</Text>
+          <Text style={styles.body}>變更時間：{content(value, 'changedAt')}</Text>
         </> : <>
           <Text style={styles.body}>此為外來摘要歷史，覆蓋來源訊息，不是本地活動摘要。</Text>
           <Text selectable style={styles.content}>{content(value, 'text')}</Text>

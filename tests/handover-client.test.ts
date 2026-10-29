@@ -14,11 +14,12 @@ test('source history reuses authenticated transport and validates destination, r
       sourceHash: 'a'.repeat(64), packageId: randomUUID(), packageVersion: 1, manifestSha256: 'b'.repeat(64), integrity: 'trusted', importedBy: 'owner', importedAt: '2026-10-30T00:00:00Z' }, previous: [] },
     value: { title: 'Foreign topic', note: '<script>literal source text</script>' } } };
   let response: unknown = { items: [item], nextCursor: null, complete: true }, held: ((response: Response) => void) | null = null, holding = false, calls = 0;
+  let expectedModule = 'memory_topics', expectedSpace: string | null = spaceId;
   const api = createHandoverApi('https://example.test', async (input, init) => {
     calls++; const url = new URL(String(input)); assert.equal(url.pathname, '/api/account/package-imports/source-history');
     assert.equal(init?.method, 'GET'); assert.equal(init?.cache, 'no-store'); assert.equal(new Headers(init?.headers).get('x-expected-user-id'), 'owner');
-    assert.equal(url.searchParams.get('childId'), childId); assert.equal(url.searchParams.get('resourceId'), resourceId); assert.equal(url.searchParams.get('module'), 'memory_topics');
-    assert.equal(url.searchParams.get('spaceId'), spaceId);
+    assert.equal(url.searchParams.get('childId'), childId); assert.equal(url.searchParams.get('resourceId'), resourceId); assert.equal(url.searchParams.get('module'), expectedModule);
+    assert.equal(url.searchParams.get('spaceId'), expectedSpace);
     return holding ? new Promise(resolve => { held = resolve; }) : Response.json(response);
   });
   api.setIdentity('owner'); const query = { childId, spaceId, resourceId, module: 'memory_topics' as const };
@@ -28,8 +29,18 @@ test('source history reuses authenticated transport and validates destination, r
   response = { items: [], nextCursor: 'same', complete: false };
   await assert.rejects(api.sourceHistory('owner', { ...query, cursor: 'same' }, signal), { code: 'handover_response_invalid' });
   const before = calls; await assert.rejects(api.sourceHistory('owner', { ...query, childId: 'wrong' }, signal), { code: 'invalid_input' }); assert.equal(calls, before);
-  holding = true; const pending = api.sourceHistory('owner', query, signal), rejected = assert.rejects(pending, { code: 'session_changed' });
-  api.setIdentity('other'); held!(Response.json({ items: [item], nextCursor: null, complete: true })); await rejected;
+  const sourceQuery = { ...query, module: 'private_sources' as const, spaceId: null };
+  const sourceItem = { ...item, evidence: { ...item.evidence, module: 'private_sources',
+    source: { ...item.evidence.source, current: { ...item.evidence.source.current, source: { ...item.evidence.source.current.source, section: 'private_sources' } } },
+    value: { inputId: item.evidence.source.current.source.resourceId, childId: item.evidence.source.current.source.childId, ownerUserId: 'external',
+      version: 2, previousVersion: 1, changedAt: '2026-10-30T00:00:00Z', reason: 'Original management change', previousManagement: null,
+      management: { intention: 'Original use', purpose: 'answer_reference', nature: 'external_material', timeScope: 'recent', validityText: '', enabled: true, modelExcerpt: 'Original excerpt' } } } };
+  expectedModule = 'private_sources'; expectedSpace = null; response = { items: [sourceItem], nextCursor: null, complete: true };
+  assert.deepEqual((await api.sourceHistory('owner', sourceQuery, signal)).items, [sourceItem]);
+  response = { items: [item], nextCursor: null, complete: true };
+  await assert.rejects(api.sourceHistory('owner', sourceQuery, signal), { code: 'handover_response_invalid' });
+  holding = true; const pending = api.sourceHistory('owner', sourceQuery, signal), rejected = assert.rejects(pending, { code: 'session_changed' });
+  api.setIdentity('other'); held!(Response.json({ items: [sourceItem], nextCursor: null, complete: true })); await rejected;
 });
 
 test('handover upload and import commands retain original operations and cancel stale transport', async context => {

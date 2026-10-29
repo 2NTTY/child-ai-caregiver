@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-30）：[P4-HANDOVER01](#p4-handover01) 私人來源統一匯入。**記憶 #382／#383 及來源領域 #384 已合併未部署；沿原 shared-input 的交易內保存／更新、來源鏈及舊 DTO 相容已有[領域證據](artifacts/verification/P4_HANDOVER_PRIVATE_SOURCE_DOMAIN_20261030.json)。`codex/p4-handover-source-pipeline` 以 `87826f19` 已接統一 worker、逐項收據及原管理歷史，[連貫流程與局部型別](artifacts/verification/P4_HANDOVER_PRIVATE_SOURCE_PIPELINE_20261030.json)已核；後續共用介面依此接口接回。私人來源只進本人範圍；管理歷史保留原用途與變更，不能冒充完整正文修訂。匯入不繼承模型片段授權、抓取／提取 run 或照護記錄關聯，不自動抓網站／呼叫模型。沿原分段、版本、容量及權限；刪除父資源後所有披露入口遮蔽歷史，單來源刪除的獨立還原重放缺口留 S15 收束，不把 codec 解碼當真還原。其餘模組、正文差異、班級／期間、完整私人備份、簽章配置及原生大型包仍待完成；依賴包等前包合併，不改 D PR。
+**當前入口（2026-10-30）：[P4-HANDOVER01](#p4-handover01) 私人來源統一匯入。**記憶 #382／#383 及來源領域 #384 已合併未部署；沿原 shared-input 的交易內保存／更新、來源鏈及舊 DTO 相容已有[領域證據](artifacts/verification/P4_HANDOVER_PRIVATE_SOURCE_DOMAIN_20261030.json)。後端 #385 已接統一 worker、逐項收據及原管理歷史，[連貫流程與局部型別](artifacts/verification/P4_HANDOVER_PRIVATE_SOURCE_PIPELINE_20261030.json)已核；`codex/p4-handover-source-ui` 以 `55df510b` 已接共用選擇、結果及管理歷史閱讀，復用同一 owner／client；[前端必要證據](frontend/verification/P4_HANDOVER_SOURCE_UI_20261030.json)保留。私人來源只進本人範圍；管理歷史保留原用途與變更，不能冒充完整正文修訂。匯入不繼承模型片段授權、抓取／提取 run 或照護記錄關聯，不自動抓網站／呼叫模型。沿原分段、版本、容量及權限；刪除父資源後所有披露入口遮蔽歷史，單來源刪除的獨立還原重放缺口留 S15 收束，不把 codec 解碼當真還原。其餘模組、正文差異、班級／期間、完整私人備份、簽章配置及原生大型包仍待完成；依賴包等前包合併，不改 D PR。
 
 **已合併未部署：**#358 班級解散與 #359 待辦身份接線，[清理](artifacts/verification/P4_CLASS_ERASURE_20261028.json)及[提醒證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)不重跑。選其他成員、班級 Agent 與外部通知仍待接續，不借管理員 key、不改 D PR。整個 CLASS01／P4、P3／P5 的未完成項不變。
 

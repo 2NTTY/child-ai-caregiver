@@ -156,6 +156,30 @@ test('source history stays bound to its result target and clears on selection, i
   owner.syncContext('alice', 'history-c', true); await owner.load(); owner.selectResults(batch.id, uuid(2), 'memory'); await owner.readResults();
   api.sourceHistory = async () => { throw new HandoverApiError(403, 'forbidden'); };
   await owner.openSourceHistory(uuid(5)); assert.equal(owner.getSnapshot().sourceHistory, null); assert.equal(owner.getSnapshot().results, null);
+  let sourceBatch = { ...batch, id: uuid(30), targets: [{ sourceChildId: uuid(2), target: { childId: uuid(3), spaceId: null as string | null }, sections: ['sources' as const] }] };
+  const sourceRow = { ...row(7), batchId: sourceBatch.id, module: 'sources' as const, resourceSection: 'private_sources' as const };
+  const originalEvidence = evidence(uuid(17), 2);
+  const sourceEvidence = { ...originalEvidence, evidence: { ...originalEvidence.evidence, module: 'private_sources',
+    source: { current: { source: { ...originalEvidence.evidence.source.current.source, section: 'private_sources' } } },
+    value: { inputId: uuid(20), childId: uuid(2), ownerUserId: 'external', version: 2, previousVersion: 1,
+      changedAt: '2026-10-30T00:00:00Z', reason: 'Original change', previousManagement: null,
+      management: { intention: 'Original use', purpose: 'answer_reference', nature: 'external_material', timeScope: 'recent', validityText: '', enabled: true, modelExcerpt: 'Private original excerpt' } } } };
+  const sourcePage = { items: [sourceEvidence], nextCursor: null, complete: true } as any;
+  api.listImports = async () => ({ items: [sourceBatch], nextCursor: null });
+  api.importResults = async () => ({ batchId: sourceBatch.id, sourceChildId: uuid(2), module: 'sources', items: [sourceRow], nextCursor: null, complete: true } as any);
+  api.sourceHistory = async (_u, query) => { queries.push(query); return sourcePage; };
+  owner.syncContext('alice', 'private-history', true); await owner.load(); owner.selectResults(sourceBatch.id, uuid(2), 'sources'); await owner.readResults();
+  await owner.openSourceHistory(sourceRow.id);
+  assert.deepEqual(queries.at(-1), { childId: uuid(3), spaceId: null, module: 'private_sources', resourceId: uuid(17) });
+  assert.deepEqual(owner.getSnapshot().sourceHistory?.items, [sourceEvidence]);
+  api.sourceHistory = () => new Promise(resolve => { late = resolve; });
+  const privateLate = owner.readSourceHistory(); owner.syncContext('bob', 'private-history-other', true); late(sourcePage); await privateLate;
+  assert.equal(owner.getSnapshot().sourceHistory, null, 'late private management history cannot enter another identity');
+  sourceBatch = { ...sourceBatch, targets: [{ ...sourceBatch.targets[0], target: { childId: uuid(3), spaceId: uuid(4) } }] };
+  api.sourceHistory = async (_u, query) => { queries.push(query); return sourcePage; };
+  owner.syncContext('alice', 'shared-history', true); await owner.load(); owner.selectResults(sourceBatch.id, uuid(2), 'sources'); await owner.readResults();
+  const beforeShared = queries.length; await owner.openSourceHistory(sourceRow.id);
+  assert.equal(queries.length, beforeShared, 'private management history never uses a shared target');
 });
 
 test('reopened import owner discovers staged packages without resending contents and rejects late identity results', async () => {

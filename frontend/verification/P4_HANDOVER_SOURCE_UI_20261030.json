@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-30",
+  "workPackage": "P4-HANDOVER01",
+  "branch": "codex/p4-handover-source-ui",
+  "base": "55df510b22f0fd047a7ba53adeeb5996de250250",
+  "status": "implemented_not_deployed",
+  "scope": [
+    "Shared Web/Android private-source selection, actual resource labels and domain refusal messages",
+    "Personal targets only, without changing existing shared memory and other module destinations",
+    "Authenticated management-history query derived from the fixed batch target and recorded resource",
+    "Original management fields render as literal source text, not a body revision or local model grant",
+    "Existing owner cancellation, identity cleanup, original operations and selected conflict handling are reused"
+  ],
+  "verification": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-import-owner.test.ts tests/handover-client.test.ts frontend/scripts/handover-import-ui.test.mjs",
+      "passed": 6,
+      "failed": 1,
+      "note": "All owner/client cases passed; component failure was a whitespace expectation in the harness, retained below."
+    },
+    {
+      "command": "node --experimental-test-module-mocks --test frontend/scripts/handover-import-ui.test.mjs",
+      "passed": 1,
+      "failed": 0
+    },
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-import-owner.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "note": "Final source fixture alignment only; other passed tests not repeated."
+    },
+    {
+      "check": "TypeScript dependency graph for seven affected UI/owner/client/test entrypoints",
+      "roots": 7,
+      "diagnostics": 0
+    },
+    {
+      "check": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "retainedFailures": [
+    "Initial new owner/component cases failed before private-source labels and reading were connected.",
+    "The component harness inserts spaces between text children; a literal version-transition comparison failed. The assertion now matches whitespace while retaining both versions and the arrow.",
+    "The first main-model scoped type command used a nonexistent client root; it was corrected to the existing handover-api.ts without changing project configuration."
+  ],
+  "reusedEvidence": [
+    "artifacts/verification/P4_HANDOVER_PRIVATE_SOURCE_PIPELINE_20261030.json"
+  ],
+  "notRun": [
+    "Full test suite",
+    "Production build",
+    "Browser/device",
+    "Native Firestore",
+    "Models",
+    "Notifications",
+    "Deployment"
+  ],
+  "limitations": [
+    "The component check executes shared components using synthetic React/native primitives; it is not real-device evidence.",
+    "Other import domains, full package round-trip and S15 per-source erasure restore remain incomplete."
+  ],
+  "review": "Independent read-only review found no material issues. Main review checked shared selection, target-bound history, literal fields, final test logs and scoped type diagnostics."
+}
