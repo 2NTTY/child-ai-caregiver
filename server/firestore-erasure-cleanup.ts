@@ -17,6 +17,8 @@ import { firestorePhotoSchemas, type createFirestorePhotoStore } from './firesto
 import { type FirestoreErasureOptions, type FirestoreErasureStore, type FirestoreScopeErasure } from './firestore-erasure.ts';
 import { firestoreHandoverJobSchema, handoverJobIncludesScope } from './firestore-handover-jobs.ts';
 import type { createHandoverService } from './handover-service.ts';
+import type { createHandoverUploadService } from './handover-upload-service.ts';
+import { handoverUploadRecordSchema } from './handover-upload-records.ts';
 
 // New domains join the existing backup registry and must carry authenticated recovery scope.
 const collections = FIREBASE_BACKUP_COLLECTION_SUFFIXES.filter(suffix => !['_erasures', '_erasure_receipts', '_sessions', '_adk', '_root_budget', '_ai_usage'].includes(suffix)
@@ -28,6 +30,7 @@ export interface FirestoreErasureCleanupOptions extends FirestoreErasureOptions 
   voices?: Pick<FirestoreVoiceStore, 'eraseForScope'>;
   files?: Pick<FirestoreChatFilesStore, 'eraseForScope'>;
   handover?: Pick<ReturnType<typeof createHandoverService>, 'erase'>;
+  handoverUploads?: Pick<ReturnType<typeof createHandoverUploadService>, 'erase'>;
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'eraseForScope'>;
   deleteAgentSession(userId: string, runId: string): Promise<void>;
   eraseAgentUserPage(userId: string): Promise<boolean>;
@@ -142,6 +145,10 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
       if (opened.context.kind === 'handover-export') {
         if (!options.handover) domainReject('package_cleanup_unavailable', 503);
         if (!await options.handover.erase(firestoreHandoverJobSchema.parse(opened.value))) return erasures.result(job);
+      }
+      if (opened.context.kind === 'handover-upload') {
+        if (!options.handoverUploads) domainReject('package_cleanup_unavailable', 503);
+        if (!await options.handoverUploads.erase(handoverUploadRecordSchema.parse(opened.value))) return erasures.result(job);
       }
       if (['avatar-head', 'avatar-upload', 'avatar-cleanup'].includes(opened.context.kind)) {
         if (!options.avatars) domainReject('avatar_unavailable', 503);
