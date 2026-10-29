@@ -301,12 +301,15 @@ export function usePhotoInputSources() {
     create: input => { if (!model.fresh || !model.canChoose || !model.canCreate || state.selected || !sharedInputCreateSchema.safeParse(input).success || input.kind === "public_source" && !state.sources.some(source => source.id === input.sourceId) || !envRef.current.canStartWrite()) return;
       const entry: PendingSource = { kind: "create", input: { ...input }, checked: false, confirmed: false };
       void run(signal => sendWrite(entry, signal), "create"); },
-    openInput: item => {
+    openInput: (item, onAccepted) => {
       // Reselecting the current row must not replace either of its local drafts.
-      if (ref.current.selected?.id === item.id || !canRead()) return;
+      if (!canRead()) return;
+      if (ref.current.selected?.id === item.id) { onAccepted?.(); return; }
+      const admittedScope = envRef.current.scopeKey;
       navigate(() => {
         // Approval can arrive after a write, access change, or newer selection.
-        if (ref.current.selected?.id === item.id || !canRead()) return;
+        if (envRef.current.scopeKey !== admittedScope || !canRead()) return;
+        if (ref.current.selected?.id === item.id) { onAccepted?.(); return; }
         void run(async signal => {
           const next = await readResource(item.id, signal, () => api.input(envRef.current.childId!, item.id, signal, envRef.current.userId!)); if (!current() || !next) return;
           clearEditor(); put(next); update({ excerpt: initialExcerpt(next), operation: noOperation(), load: "ready" });
@@ -315,12 +318,13 @@ export function usePhotoInputSources() {
             const kind = next.fetchState === "unknown" || next.fetchState === "running" ? "fetch" : "extract";
             update({ direct: { kind, basis: next, excerpt: next.extraction.excerpt ?? "", checked: false } }); op(kind, "unknown", "這項輸入有未查明處理。先查核同一輸入，不會開始新的取得或提取。");
           }
+          if (current() && envRef.current.scopeKey === admittedScope) onAccepted?.();
         });
       });
     },
-    newInput: () => { if (model.canChoose) { clearEditor(); update({ operation: noOperation(), notice: "" }); } },
-    recreateWithText: () => { if (!model.canChoose || !state.canCreate || selected?.kind !== "personal_source") return; const seed = selected;
-      clearEditor(); update({ composerSeed: seed, operation: noOperation(), notice: "原來源仍保留。請自行貼上正文，保存後會建立另一項私人來源。" }); },
+    newInput: onAccepted => { if (model.canChoose) { clearEditor(); update({ operation: noOperation(), notice: "" }); onAccepted?.(); } },
+    recreateWithText: onAccepted => { if (!model.canChoose || !state.canCreate || selected?.kind !== "personal_source") return; const seed = selected;
+      clearEditor(); update({ composerSeed: seed, operation: noOperation(), notice: "原來源仍保留。請自行貼上正文，保存後會建立另一項私人來源。" }); onAccepted?.(); },
     setFetchConsent: fetchConsent => { if (isFresh && managed && (!state.direct || state.direct.checked && state.direct.kind === "fetch")) update({ fetchConsent }); },
     fetchContent: () => startDirect("fetch"),
     setExcerpt: excerpt => { if (!formLocked && !state.direct) update({ excerpt, ...consentReset }); },

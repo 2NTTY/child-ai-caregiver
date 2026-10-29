@@ -1,3 +1,5 @@
+import { useRouteNavigation } from "../navigation/useRouteNavigation";
+import { parseGrowthRoute, serializeGrowthRoute } from "../navigation/route-state";
 import { useEffect, useRef } from "react";
 import { Redirect, useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { Text } from "react-native-paper";
@@ -14,9 +16,9 @@ import { PageFrame } from "../components/PageFrame";
 export function GrowthScreen() {
   const { model, actions, scopeKey } = useProduction(), workspace = useGrowthWorkspace(), tasks = useTasksWorkspace();
   const preparations = usePreparationWorkspace();
-  const { tab: requestedTab } = useLocalSearchParams<{ tab?: string | string[] }>();
-  const requested = Array.isArray(requestedTab) ? requestedTab[0] : requestedTab;
-  const tab = requested === "preparation" ? "preparation" : "concerns";
+  const route = useRouteNavigation(scopeKey, ["concernId","documentId"], "/growth");
+  const requested = route.params.tab;
+  const routeState = parseGrowthRoute(route.params), tab = routeState.tab;
   const router = useRouter(), navigate = usePreviewNavigation(), pathname = usePathname();
   const current = useRef({ scopeKey, pathname, requested, mounted: true });
   current.current = { scopeKey, pathname, requested, mounted: true };
@@ -29,7 +31,7 @@ export function GrowthScreen() {
     }, intent);
   }
   const child = model.children.find(item => item.id === model.selectedChildId);
-  const openTask = (id: string) => guarded(() => { tasks?.actions.selectTask(id); router.push("/tasks"); });
+  const openTask = (id: string) => guarded(() => { router.push({pathname:"/tasks",params:{taskId:id}}); });
   if (pathname !== "/growth") return null;
   // Compatibility routes reuse the same dashboard owners; no data or operation is migrated.
   if (requested === "archive") return <Redirect href="/summary?tab=archive" />;
@@ -38,7 +40,9 @@ export function GrowthScreen() {
     <AppButton label="查看子女檔案" onPress={() => actions.open("profile")} />
   </SectionCard></PageFrame>;
   return <GrowthView key={workspace.scopeKey} model={workspace.model} actions={workspace.actions} tab={tab}
-    onTabChange={next => { if (next !== tab) guarded(() => { preparations?.actions.closeDocument(); router.setParams({ tab: next }); }, "workspace"); }}
+    requestedDocumentId={routeState.documentId} onDocumentChange={(documentId,replace=false)=>route.navigate(serializeGrowthRoute({...routeState,documentId}),replace?"replace":"push",!replace)}
+    selectedConcernId={routeState.concernId} onConcernChange={concernId => route.navigate(serializeGrowthRoute({...routeState,concernId}))}
+    onTabChange={next => { if (next !== tab) route.navigate(serializeGrowthRoute({...routeState,tab:next})); }}
     onTask={openTask}
     onRecord={id => guarded(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))}
     onHistory={() => guarded(() => router.push("/history?category=growth"))}

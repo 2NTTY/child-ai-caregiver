@@ -1,10 +1,11 @@
-import { createContext, memo, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, memo, use, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
+import { usePathname } from "expo-router";
 import { Text } from "react-native-paper";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { DEFAULT_NOTIFICATION_PREFERENCES } from "../../../src/shared/family.ts";
+import { DEFAULT_NOTIFICATION_PREFERENCES, type NotificationPreferences } from "../../../src/shared/family.ts";
 import { AppCheckbox } from "../components/AppCheckbox";
 import { Switch } from "../components/AppSwitch";
 import { AppTimeField, AppTimeZoneSelect } from "../components/DateTimeFields";
@@ -14,7 +15,7 @@ import { FormErrorSummary, FormFieldMessage } from "../components/FormErrorSumma
 import { WebPushSettingsCard, TelegramSettingsCard } from "../components/notifications/ChannelCards";
 import { useContainerWidth } from "../components/useContainerWidth";
 import { chineseFont, colors, readingType, spacing } from "../theme";
-import { useProduction } from "./ProductionProvider";
+import { useProductionIdentity } from "./ProductionProvider";
 import { useDomainEnvironment, useDomainWriteGuard } from "./useDomainEnvironment";
 import type { useProductionFamily } from "./useProductionFamily";
 import { useProductionModelSettings } from "./useProductionModelSettings";
@@ -31,16 +32,16 @@ type PublishedPersonal = { key: string; domains: PersonalDomains };
 type PublishedContact = { key: string; domains: ReturnType<typeof useProductionContact> };
 const noop = () => {};
 export function ProductionSettingsDomains({ children }: { children: ReactNode }) {
-  const env = useDomainEnvironment(), { recordsState } = useProduction();
+  const env = useDomainEnvironment(), { children: authorizedChildren } = useProductionIdentity();
   const identityScope = JSON.stringify([env.identityKey, env.owner.getSnapshot().sessionGeneration]);
   const childScope = JSON.stringify([env.scopeKey, env.role, env.owner.getSnapshot().sessionGeneration]);
   const [personal, publishPersonal] = useState<PublishedPersonal | null>(null), [contact, publishContact] = useState<PublishedContact | null>(null);
   const personalDomains = personal?.key === identityScope && env.currentIdentity() ? personal.domains : emptyPersonalDomains(env);
   const contactDomains = contact?.key === childScope && env.current() ? contact.domains : emptyContactDomain(env);
   return <PersonalContext.Provider value={personalDomains}><ContactContext.Provider value={contactDomains}>
-    <SettingsIdentityBridge key={identityScope} ownerKey={identityScope} env={env} childrenVersion={recordsState.children} publish={publishPersonal} />
+    <SettingsIdentityBridge key={identityScope} ownerKey={identityScope} env={env} childrenVersion={authorizedChildren} publish={publishPersonal} />
     <SettingsChildBridge key={childScope} ownerKey={childScope} env={env} publish={publishContact} />
-    {children}
+    <NotificationPreferencesDraftProvider key={`notification-draft:${identityScope}`} domain={personalDomains.preferences} isCurrent={() => env.currentIdentity() && identityScope === JSON.stringify([env.owner.getSnapshot().identityKey, env.owner.getSnapshot().sessionGeneration])}>{children}</NotificationPreferencesDraftProvider>
   </ContactContext.Provider></PersonalContext.Provider>;
 }
 const SettingsIdentityBridge = memo(function SettingsIdentityBridge({ env, ownerKey, childrenVersion: _childrenVersion, publish }: {
@@ -127,21 +128,29 @@ export function ProductionNotificationPreferences() {
   const { preferences: domain } = useProductionSettingsDomains();
   return <NotificationPreferencesForm key={domain.scopeKey} domain={domain} />;
 }
-function NotificationPreferencesForm({ domain }: { domain: PersonalDomains["preferences"] }) {
-  const formId = useId();
+const preferenceValuesKey = (value: ProductionPreferenceValues) => JSON.stringify([value.timeZone, value.quietStart, value.quietEnd, value.allowAppointmentDuringQuiet]);
+const preferenceBasisKey = (value: NotificationPreferences | null) => value ? JSON.stringify([value.version, preferenceValuesKey(value)]) : "null";
+function useNotificationPreferencesDraft(domain: PersonalDomains["preferences"], isCurrent: () => boolean) {
+  const pathname = usePathname();
+  const active = pathname === "/settings";
+  const currentPath = useRef(pathname); currentPath.current = pathname;
+  const editRevision = useRef(0);
+  const savedReadback = useRef<{ basis: string; previousBasis: string; values: string; revision: number } | null>(null);
   const [reviewNotice, setReviewNotice] = useState("");
   const [review, setReview] = useState<{ values: ProductionPreferenceValues; expectedVersion: number; basis: string } | null>(null);
   const { version: _version, ...defaults } = DEFAULT_NOTIFICATION_PREFERENCES;
   const form = useForm<ProductionPreferenceValues>({ defaultValues: defaults, resolver: zodResolver(preferenceSchema), mode: "onSubmit", shouldFocusError: false });
-  const locked = domain.busy || !!domain.original || !domain.online || !domain.fresh;
-  const preferenceBasis = JSON.stringify(domain.preferences ? [domain.preferences.version, domain.preferences.timeZone, domain.preferences.quietStart, domain.preferences.quietEnd, domain.preferences.allowAppointmentDuringQuiet] : null);
+  const preferenceBasis = preferenceBasisKey(domain.preferences);
   const previousBasis = useRef(preferenceBasis);
-  const needsAttention = !domain.fresh || !!domain.original || domain.busy || !domain.online;
-  const fields = [{ name: "timeZone", label: "通知時區" }, { name: "quietStart", label: "安靜時段開始" }, { name: "quietEnd", label: "安靜時段結束" }] as const;
-  const errors = fields.flatMap(field => form.formState.errors[field.name]?.message ? [{ field: field.name, label: field.label, message: form.formState.errors[field.name]!.message! }] : []);
   useEffect(() => {
     if (previousBasis.current !== preferenceBasis) {
-      if (review || form.formState.isDirty) setReviewNotice("通知偏好已改變，原確認已失效；請重新核對草稿及目前版本。");
+      const receipt = savedReadback.current;
+      const ownCompleted = receipt && !review && isCurrent() && receipt.basis === preferenceBasis
+        && receipt.previousBasis === previousBasis.current && receipt.revision === editRevision.current
+        && receipt.values === preferenceValuesKey(form.getValues());
+      savedReadback.current = null;
+      if (ownCompleted) setReviewNotice("");
+      else if (review || form.formState.isDirty) setReviewNotice("通知偏好已改變，原確認已失效；請重新核對草稿及目前版本。");
       setReview(null); previousBasis.current = preferenceBasis;
     }
     if (domain.preferences) {
@@ -152,40 +161,88 @@ function NotificationPreferencesForm({ domain }: { domain: PersonalDomains["pref
   useEffect(() => { if (!domain.online) setReview(null); }, [domain.online]);
   const setDraftEditing = domain.setDraftEditing;
   useEffect(() => {
-    setDraftEditing(form.formState.isDirty || !!review);
+    setDraftEditing(active && (form.formState.isDirty || !!review));
     return () => setDraftEditing(false);
-  }, [form.formState.isDirty, !!review, setDraftEditing]);
-  useDomainWriteGuard(form.formState.isDirty || !!review, false, "account", false);
+  }, [active, form.formState.isDirty, !!review, setDraftEditing]);
+  const previousPath = useRef(pathname);
+  useEffect(() => {
+    // Only an accepted departure reaches a different path. Same-path chapter
+    // remounts retain this exact RHF instance; cancellation never resets it.
+    if (previousPath.current === "/settings" && !active) {
+      savedReadback.current = null; editRevision.current++;
+      const { version: _savedVersion, ...values } = domain.preferences ?? DEFAULT_NOTIFICATION_PREFERENCES;
+      form.reset(values); setReview(null); setReviewNotice("");
+    }
+    previousPath.current = pathname;
+  }, [pathname, active, domain.preferences, form.reset]);
+  const guards = useRef(new Set<string>());
+  const registerGuard = useCallback((id: string) => { guards.current.add(id); return () => { guards.current.delete(id); }; }, []);
+  const retainedGuardIds = () => isCurrent() ? [...guards.current] : [];
+  const editReview = () => { editRevision.current++; savedReadback.current = null; setReview(null); };
+  const submitReview = () => {
+    if (!review || domain.busy || domain.original || !domain.online || !domain.fresh || review.basis !== preferenceBasis || !isCurrent()) return;
+    const submitted = review, revision = editRevision.current, values = preferenceValuesKey(submitted.values);
+    savedReadback.current = null;
+    domain.save(submitted.values, submitted.expectedVersion, next => {
+      if (!isCurrent() || currentPath.current !== "/settings" || revision !== editRevision.current
+        || preferenceValuesKey(form.getValues()) !== values || preferenceValuesKey(next) !== values) return;
+      savedReadback.current = { basis: preferenceBasisKey(next), previousBasis: submitted.basis, values, revision };
+    });
+    setReview(null);
+  };
+  return { form, review, setReview, editReview, submitReview, reviewNotice, setReviewNotice, preferenceBasis, registerGuard, retainedGuardIds, isCurrent };
+}
+const NotificationDraftContext = createContext<ReturnType<typeof useNotificationPreferencesDraft> | null>(null);
+/** The original form controller lives with the identity-scoped Settings host, not with a route entry. */
+export function NotificationPreferencesDraftProvider({ domain, children, isCurrent }: { domain: PersonalDomains["preferences"]; children: ReactNode; isCurrent: () => boolean }) {
+  const draft = useNotificationPreferencesDraft(domain, isCurrent);
+  return <NotificationDraftContext.Provider value={draft}>{children}</NotificationDraftContext.Provider>;
+}
+function useNotificationDraft() {
+  const draft = use(NotificationDraftContext);
+  if (!draft) throw new Error("NotificationPreferencesDraftProvider must outlive Settings route entries");
+  return draft;
+}
+export function useSettingsRetainedDrafts() { return useNotificationDraft().retainedGuardIds; }
+function NotificationPreferencesForm({ domain }: { domain: PersonalDomains["preferences"] }) {
+  const formId = useId();
+  const { form, review, setReview, editReview, submitReview, reviewNotice, setReviewNotice, preferenceBasis, registerGuard, isCurrent } = useNotificationDraft();
+  const locked = domain.busy || !!domain.original || !domain.online || !domain.fresh;
+  const guardId = useDomainWriteGuard(form.formState.isDirty || !!review, false, "account", false, undefined, { pathname: "/settings", routeName: "settings", isCurrent });
+  useLayoutEffect(() => registerGuard(guardId), [guardId, registerGuard]);
+  const fields = [{ name: "timeZone", label: "通知時區" }, { name: "quietStart", label: "安靜時段開始" }, { name: "quietEnd", label: "安靜時段結束" }] as const;
+  const errors = fields.flatMap(field => form.formState.errors[field.name]?.message ? [{ field: field.name, label: field.label, message: form.formState.errors[field.name]!.message! }] : []);
   function input(name: "timeZone" | "quietStart" | "quietEnd", label: string) {
     return <Controller name={name} control={form.control} render={({ field, fieldState }) => <View>
       {name === "timeZone" ? <AppTimeZoneSelect ref={field.ref} id={`${formId}-${name}`} value={field.value} disabled={locked} onBlur={field.onBlur}
-        invalid={!!fieldState.error} describedBy={fieldState.error ? `${formId}-${name}-message` : undefined} onChange={value => { field.onChange(value); setReview(null); }} />
+        invalid={!!fieldState.error} describedBy={fieldState.error ? `${formId}-${name}-message` : undefined} onChange={value => { editReview(); field.onChange(value); }} />
         : <AppTimeField ref={field.ref} id={`${formId}-${name}`} errorId={`${formId}-${name}-message`} label={label} value={field.value} disabled={locked} error={fieldState.error?.message}
-          onBlur={field.onBlur} onChange={value => { field.onChange(value); setReview(null); }} />}
+          onBlur={field.onBlur} onChange={value => { editReview(); field.onChange(value); }} />}
       {name === "timeZone" ? <FormFieldMessage id={`${formId}-${name}-message`} error={fieldState.error?.message} /> : null}
     </View>} />;
   }
   return <SectionCard><SectionHeader density="compact" title="通知偏好" subtitle="設定本人的安靜時段，不會綁定通知渠道或授權發送。"
     action={!domain.original && (!domain.fresh || form.formState.isDirty || !!review) ? <AppButton label="重新讀取" accessibilityLabel="重新讀取通知偏好" variant="quiet" density="compact" disabled={!domain.online || domain.busy} onPress={domain.refresh} /> : undefined} />
     {!domain.online ? <Text style={styles.meta}>目前離線；恢復連線並重新讀取後才可保存。</Text> : null}
-    {needsAttention && domain.notice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{domain.notice}</Text> : null}
+    {!domain.preferences && domain.notice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{domain.notice}</Text> : null}
     {!domain.preferences && !domain.notice ? <Text style={styles.meta}>{domain.busy ? "正在讀取通知偏好…" : "尚未讀取通知偏好，請重新讀取。"}</Text> : null}
-    {domain.original ? <SettingsOriginalRecovery busy={domain.busy} confirmed={domain.original.confirmed} reviewed={domain.original.reviewed} consent={domain.original.consent}
-      online={domain.online} onRead={domain.refresh} onConfirm={domain.confirmOriginal} onRetry={domain.retryOriginal}>
-      <Text style={styles.meta}>原版本 {domain.original.input.expectedVersion} · {domain.original.input.timeZone} · {domain.original.input.quietStart}–{domain.original.input.quietEnd}</Text>
-    </SettingsOriginalRecovery> : null}
     <FormErrorSummary entries={errors} onFocus={field => form.setFocus(field as "timeZone" | "quietStart" | "quietEnd")} />
     <View style={styles.timeRow}><View style={styles.timeField}>{input("quietStart", "安靜時段開始")}</View><View style={styles.timeField}>{input("quietEnd", "安靜時段結束")}</View></View>
     {input("timeZone", "通知時區")}
     <Controller name="allowAppointmentDuringQuiet" control={form.control} render={({ field }) => <View style={styles.switchRow}>
       <View style={styles.copy}><Text style={styles.title}>預約提醒例外</Text><Text style={styles.meta}>只在本人明確開啟後容許例外；預設關閉。</Text></View>
-      <Switch accessibilityLabel="預約提醒例外" value={field.value} disabled={locked} onValueChange={value => { field.onChange(value); setReview(null); }} />
+      <Switch accessibilityLabel="預約提醒例外" value={field.value} disabled={locked} onValueChange={value => { editReview(); field.onChange(value); }} />
     </View>} />
     <AppButton label="核對通知偏好" disabled={locked} onPress={form.handleSubmit(values => { if (!locked && domain.preferences) { setReviewNotice(""); setReview({ values, expectedVersion: domain.preferences.version, basis: preferenceBasis }); } })} />
     {reviewNotice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{reviewNotice}</Text> : null}
     {review ? <View style={styles.recovery}><Text style={styles.title}>待確認 · 尚未保存 · 版本 {review.expectedVersion}</Text><Text style={styles.body}>{review.values.timeZone}；安靜時段 {review.values.quietStart}–{review.values.quietEnd}；預約例外{review.values.allowAppointmentDuringQuiet ? "開啟" : "關閉"}。</Text>
-      <AppButton label="確認保存本人偏好" disabled={locked || review.basis !== preferenceBasis} onPress={() => { if (locked || review.basis !== preferenceBasis) return; domain.save(review.values, review.expectedVersion); setReview(null); }} /><AppButton label="返回修改" variant="quiet" onPress={() => setReview(null)} /></View> : null}
-    {!needsAttention && domain.notice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{domain.notice}</Text> : null}
+      <AppButton label="確認保存本人偏好" disabled={locked || review.basis !== preferenceBasis} onPress={submitReview} /><AppButton label="返回修改" variant="quiet" onPress={() => setReview(null)} /></View> : null}
+    {/* Keep the published outcome and its original recovery beside the submit controls. */}
+    {domain.preferences && domain.notice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{domain.notice}</Text> : null}
+    {domain.original ? <SettingsOriginalRecovery busy={domain.busy} confirmed={domain.original.confirmed} reviewed={domain.original.reviewed} consent={domain.original.consent}
+      online={domain.online} onRead={domain.refresh} onConfirm={domain.confirmOriginal} onRetry={domain.retryOriginal}>
+      <Text style={styles.meta}>原版本 {domain.original.input.expectedVersion} · {domain.original.input.timeZone} · {domain.original.input.quietStart}–{domain.original.input.quietEnd}</Text>
+    </SettingsOriginalRecovery> : null}
     <Text style={styles.meta}>設定頁籤之間會保留草稿；離頁須確認捨棄，待查操作須先處理。重新載入不能恢復本次草稿。</Text>
   </SectionCard>;
 }

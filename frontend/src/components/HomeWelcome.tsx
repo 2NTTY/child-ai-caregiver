@@ -7,8 +7,8 @@ import { HomeBackground } from "./appearance/HomeBackground";
 
 // Keep the brand illustration, but give daily care content the first-screen space.
 // Introduction acknowledgement still follows the real data-readiness boundary.
-export function HomeWelcome({ introductionPending, onIntroductionPresented, compact = false }: {
-  introductionPending: boolean; onIntroductionPresented?: () => void; scopeKey: string; compact?: boolean;
+export function HomeWelcome({ introductionPending, onIntroductionPresented, compact = false, childName }: {
+  introductionPending: boolean; onIntroductionPresented?: () => void; scopeKey: string; compact?: boolean; childName?: string;
 }) {
   const ready = useFirstScreenReady();
   const acknowledged = useRef(false);
@@ -22,13 +22,15 @@ export function HomeWelcome({ introductionPending, onIntroductionPresented, comp
       <HomeBackground useCustomImage={false} surface={colors.paper} containIllustration webCssFade fadeStart={compact ? 0.50 : 0.48} fadeEnd={0.91} />
     </View>
     <View style={styles.copy}>
+      {childName ? <Text style={styles.context}>{childName} · {new Intl.DateTimeFormat("zh-HK", { timeZone: "Asia/Hong_Kong", month: "long", day: "numeric" }).format(new Date())}</Text> : null}
       <Text accessibilityRole="header" aria-level={1} style={[styles.title, compact && styles.compactTitle]}>今日照顧</Text>
     </View>
   </View>;
 }
 const styles = StyleSheet.create({
   card: { minHeight: 104, borderRadius: radius.medium, overflow: "hidden", backgroundColor: colors.paper, justifyContent: "center" },
-  compact: { minHeight: 80 }, copy: { width: "70%", padding: spacing.lg },
+  compact: { minHeight: 80 }, copy: { width: "70%", padding: spacing.lg, gap: spacing.xs },
+  context: { fontFamily: chineseFont, color: colors.muted, fontSize: 13, lineHeight: 20 },
   title: { fontFamily: chineseFont, color: colors.ink, fontSize: 30, lineHeight: 40, fontWeight: "700", letterSpacing: -0.5 },
   compactTitle: { fontSize: 24, lineHeight: 32 },
 });

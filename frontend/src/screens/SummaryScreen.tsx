@@ -1,3 +1,5 @@
+import { useRouteNavigation } from "../navigation/useRouteNavigation";
+import { parseSummaryRoute, serializeSummaryRoute } from "../navigation/route-state";
 import { AvatarView } from '../components/avatar/AvatarView';
 import { useProductionAvatar } from '../production/useProductionAvatar';
 import { useEffect, useLayoutEffect, useRef } from "react";
@@ -34,8 +36,8 @@ export function SummaryScreen() {
   const growth = useGrowthWorkspace(), documents = useProductionFamilyDocuments(), layout = useContainerWidth();
   const fileExportAvailable = useFileExportAvailable();
   const router = useRouter(), navigate = usePreviewNavigation(), pathname = usePathname();
-  const { tab: requestedTab } = useLocalSearchParams<{ tab?: string | string[] }>();
-  const tab = normalizeSummaryTab(requestedTab);
+  const route = useRouteNavigation(productionScope,["documentId"], "/summary"), routeState=parseSummaryRoute(route.params);
+  const tab=routeState.tab;
   const child = model.children.find(item => item.id === model.selectedChildId);
   const scopeKey = productionScope ?? "";
   const scrollRef = useRef<ScrollView>(null);
@@ -57,7 +59,7 @@ export function SummaryScreen() {
   function changeTab(next: SummaryRouteTab) {
     if (next === tab) return;
     guarded(() => {
-      router.setParams({ tab: next });
+      route.navigate(serializeSummaryRoute({...routeState,tab:next}),"push",false);
     }, "navigation");
   }
   function openProfileHistory() {
@@ -77,19 +79,20 @@ export function SummaryScreen() {
             measurements={profile?.measurements} profileSource={profile?.profileSource}
             companion={<ChildOverviewConcerns model={growth?.model ?? null} scopeKey={scopeKey} childId={child.id} onOpen={() => guarded(() => router.push("/growth?tab=concerns"))} />}
             onOpenMeasurement={recordId => guarded(() => router.push({ pathname: "/care", params: { record: recordId } }))} />
-            <TaskKnowledgeSummaryContent presentation="overview" scopeKey={scopeKey} childId={child.id} onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))} onTask={id => guarded(() => router.push(`/tasks?taskId=${encodeURIComponent(id)}`))} />
+            <TaskKnowledgeSummaryContent mode="overview" scopeKey={scopeKey} childId={child.id} onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))} onTask={id => guarded(() => router.push(`/tasks?taskId=${encodeURIComponent(id)}`))} />
           </> : null}
         </AppTabPanel>
         <AppTabPanel tabsId="child-growth-tabs" tabKey="archive" active={tab === "archive"}>
           {tab === "archive" ? growth ? <>
             <GrowthArchive key={growth.scopeKey} model={growth.model} wide={layout.width >= 880} scrollRef={scrollRef} active
+              requestedDocumentId={routeState.documentId} onDocumentChange={documentId => route.navigate(serializeSummaryRoute({ ...routeState, documentId }))}
               onRecord={id => guarded(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))}
               onExportReport={fileExportAvailable ? documents?.exportReport : undefined} exportBusy={documents?.exportBusy}
               footerActions={<AppButton label="前往原始記錄" variant="secondary" density="compact" onPress={() => guarded(() => router.push("/care"))} />} />
             <FamilyReportControls scopeKey={growth.scopeKey} online={growth.model.online} onRefresh={growth.actions.refresh} />
           </> : <ReadStateNotice state="loading" scopeKey={scopeKey} message="正在讀取成長檔案…" /> : null}
         </AppTabPanel>
-        {tab === "legacy-preparation" ? <TaskKnowledgeSummaryContent preparation onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))}
+        {tab === "legacy-preparation" ? <TaskKnowledgeSummaryContent mode="legacy-preparation" onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))}
           onTask={id => guarded(() => router.push(`/tasks?taskId=${encodeURIComponent(id)}`))} onAgent={() => actions.prepareQuestion("想核對這份到診準備的問題與來源：")} /> : null}
       </>}
     </View>

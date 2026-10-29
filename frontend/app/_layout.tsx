@@ -23,11 +23,14 @@ export default function RootLayout() {
         <style id="harbour-desk-accessibility">{`
 html { color-scheme: light; }
 :focus-visible { outline: 3px solid #245C50; outline-offset: 3px; }
+[data-field-frame]:focus-within > div { outline: 2px solid #245C50; outline-offset: 2px; border-radius: 8px; }
 [data-testid="workspace-skip-link"] { top: -100px; }
 [data-testid="workspace-skip-link"]:focus { top: 12px; }
-[role="heading"] { scroll-margin-top: 24px; text-wrap: balance; }
-button, a, [role="button"] { touch-action: manipulation; }
+h1, h2, h3, h4, h5, h6, [role="heading"] { scroll-margin-top: 24px; text-wrap: balance; }
+button, a, [role="button"] { touch-action: manipulation; -webkit-tap-highlight-color: rgba(36, 92, 80, 0.16); }
 [role="dialog"] { overscroll-behavior: contain; }
+@media (hover: hover) and (pointer: fine) { [data-hover-surface="true"]:hover:not([aria-disabled="true"]) { background-color: rgba(36, 92, 80, 0.08); } }
+@media (pointer: fine) { html { overscroll-behavior: none; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
         `}</style>
       </Head>

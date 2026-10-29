@@ -9,6 +9,7 @@ import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppButton, AppSelect, AppTextField, SectionCard, SectionHeader } from "../ui";
 import { AppDateTimeField, AppTimeZoneSelect } from "../DateTimeFields";
+import { useFormPublicationReveal } from "../FormActionReveal";
 import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
 import { TaskDraftSummary, TaskSnapshot } from "./TaskContent";
 import { taskFormSchema } from "./task-form";
@@ -16,6 +17,7 @@ import { taskFormSchema } from "./task-form";
 export function TaskForm({ model, actions }: { model: TasksViewModel; actions: TasksActions }) {
   const draft = model.draft!;
   const formId = useId();
+  const feedback = useFormPublicationReveal({ scopeKey: model.child.id, formKey: draft.key, reviewedValues: draft.reviewedValues, state: model.operation.state, revision: model });
   const [confirmed, setConfirmed] = useState(false);
   const { control, handleSubmit, getValues, setFocus, formState: { isDirty, errors } } = useForm<TaskFormValues>({ defaultValues: draft.initialValues,
     resolver: zodResolver(taskFormSchema(draft.mode, model.eligibleAssignees)), mode: "onSubmit", shouldFocusError: false });
@@ -51,8 +53,8 @@ export function TaskForm({ model, actions }: { model: TasksViewModel; actions: T
   }
   const canRebase = !!model.latest && draft.mode !== "create" && taskChangeAllowed(model.latest, draft.mode);
   const confirmationLabel = "我已核對內容、負責人、時間及版本，確認這次家庭共享安排";
-  return <SectionCard surface="plain"><SectionHeader density="compact" title={taskActionLabels[draft.mode]} subtitle={draft.basis ? `以版本 ${draft.basis.version} 作基準；草稿尚未保存。` : "先填寫，再核對家庭共享範圍。"} />
-    <FormErrorSummary headingLevel={3} entries={errorEntries} onFocus={name => {
+  return <SectionCard surface="plain"><SectionHeader headingLevel={3} density="compact" title={taskActionLabels[draft.mode]} subtitle={draft.basis ? `以版本 ${draft.basis.version} 作基準；草稿尚未保存。` : "先填寫，再核對家庭共享範圍。"} />
+    <FormErrorSummary headingLevel={4} entries={errorEntries} onFocus={name => {
       const target = visibleFields.find(item => item.name === name);
       if (target) setFocus(target.name);
     }} />
@@ -88,15 +90,19 @@ export function TaskForm({ model, actions }: { model: TasksViewModel; actions: T
     </View>} /> : null}
     {draft.mode !== "create" ? field("note", draft.mode === "complete" ? "完成備註（可選）" : "原因（必填）", undefined, true) : null}
     <Text style={styles.meta}>離線時可整理本次草稿；關閉、重新載入、切換孩子或撤權會清除。沒有跨關閉草稿保存。</Text>
-    <AppButton label="預覽家庭共享內容" disabled={locked} onPress={handleSubmit(values => { setConfirmed(false); actions.reviewDraft(values); }, invalidFields => {
-      const first = visibleFields.find(item => invalidFields[item.name]?.message);
-      if (first) setFocus(first.name);
-    })} />
-    {draft.reviewedValues ? <View style={styles.review}>
+    <AppButton label="預覽家庭共享內容" disabled={locked} onPress={() => {
+      const intent = feedback.beginReview();
+      void handleSubmit(values => { intent.reviewed(values); setConfirmed(false); actions.reviewDraft(values); }, invalidFields => {
+        intent.cancel();
+        const first = visibleFields.find(item => invalidFields[item.name]?.message);
+        if (first) setFocus(first.name);
+      })();
+    }} />
+    {draft.reviewedValues ? <View ref={feedback.reviewRef} testID="task-draft-review" style={styles.review}>
       <Text style={styles.label}>預覽內容 · 尚未保存</Text><TaskDraftSummary mode={draft.mode} values={draft.reviewedValues} assignees={model.eligibleAssignees} />
       <Text style={styles.meta}>只確認孩子所屬家庭的共享安排。建立事項不代表機構確認預約，也不代表已通知照顧者。</Text>
       <AppCheckbox label={confirmationLabel} checked={confirmed} onChange={setConfirmed} disabled={locked} />
-      <AppButton label={draft.mode === "create" ? "確認建立共享事項" : "確認保存更改"} onPress={() => { if (confirmed) actions.submitReviewed(); }}
+      <AppButton label={draft.mode === "create" ? "確認建立共享事項" : "確認保存更改"} onPress={() => { if (confirmed) { feedback.beginSubmit(); actions.submitReviewed(); } }}
         disabled={!confirmed || !model.online || locked || model.operation.state !== "needs_confirmation"} />
       <AppButton label="繼續修改草稿" variant="quiet" disabled={locked} onPress={edited} />
     </View> : null}

@@ -82,7 +82,7 @@ export function AppDateField({ label, value, onChange, onBlur, disabled = false,
     restoreFocus.current = false;
   }
   return <View ref={readFocus.host}><AppTextField nativeID={id} aria-invalid={!!error} tabIndex={quietRead ? -1 : undefined} readOnly={quietRead ? true : undefined} aria-describedby={[describedBy, error ? messageId : undefined].filter(Boolean).join(" ") || undefined} ref={instance => { field.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} label={label} accessibilityLabel={label} value={value} onChangeText={next => { if (!disabled) onChange(next); }} onBlur={onBlur} disabled={readFocus.nativeDisabled} error={!!error}
-    placeholder="YYYY-MM-DD" right={<TextInput.Icon icon="calendar-month-outline" accessibilityLabel={`選擇${label}`} forceTextInputFocus={!disabled} disabled={readFocus.nativeDisabled} onPress={() => { if (!disabled) { restoreFocus.current = false; setOpen(true); } }} />} />
+    placeholder="例如 2026-10-26…" right={<TextInput.Icon icon="calendar-month-outline" accessibilityLabel={`選擇${label}`} forceTextInputFocus={!disabled} disabled={readFocus.nativeDisabled} onPress={() => { if (!disabled) { restoreFocus.current = false; setOpen(true); } }} />} />
     {error ? <HelperText nativeID={messageId} type="error">{error}</HelperText> : null}
     <DatePickerDialog label={label} value={value} visible={open && !disabled} onDismiss={dismiss} onClosed={closed} onConfirm={next => { onChange(next); dismiss(); }} />
   </View>;
@@ -93,7 +93,7 @@ export function AppTimeField({ label, value, onChange, onBlur, disabled = false,
   const [open, setOpen] = useState(false);
   const field = useRef<React.ElementRef<typeof TextInput>>(null);
   function dismiss() { setOpen(false); if (Platform.OS === "web") field.current?.focus(); }
-  return <View><AppTextField nativeID={id} aria-invalid={!!error} aria-describedby={[describedBy, error ? messageId : undefined].filter(Boolean).join(" ") || undefined} ref={instance => { field.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} label={label} accessibilityLabel={label} value={value} onChangeText={onChange} onBlur={onBlur} disabled={disabled} error={!!error} placeholder="HH:mm"
+  return <View><AppTextField nativeID={id} aria-invalid={!!error} aria-describedby={[describedBy, error ? messageId : undefined].filter(Boolean).join(" ") || undefined} ref={instance => { field.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} label={label} accessibilityLabel={label} value={value} onChangeText={onChange} onBlur={onBlur} disabled={disabled} error={!!error} placeholder="例如 09:30…"
     right={<TextInput.Icon icon="clock-outline" accessibilityLabel={`選擇${label}`} disabled={disabled} onPress={() => setOpen(true)} />} />
     {error ? <HelperText nativeID={messageId} type="error">{error}</HelperText> : null}
     <TimePickerDialog label={label} value={value} visible={open && !disabled} onDismiss={dismiss} onConfirm={next => { onChange(next); dismiss(); }} />

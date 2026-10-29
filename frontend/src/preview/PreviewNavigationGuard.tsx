@@ -1,3 +1,4 @@
+import { useNavigationScope } from "../navigation/NavigationScope";
 import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -8,15 +9,17 @@ import { AppButton } from "../components/ui";
 import { chineseFont, colors, typeScale } from "../theme";
 import { isProductionRouteConnected } from "../production/routes";
 import { guardBrowserHistory, type HistoryGuardWindow, type HistoryRecoveryError } from "./browser-history-guard";
+import { currentBrowserTraversal, type BrowserTraversalReceipt } from "./browser-history-events";
 
 export type LeaveScope = "child" | "account";
 export type LeavePendingKind = "saving" | "unknown";
 type LeaveIntent = "navigation" | "workspace" | "child";
 export type LeavePromptCopy = { message: string; actionLabel: string };
-type LeaveState = { dirty: boolean; pending: boolean; scope: LeaveScope; copy?: LeavePromptCopy; retainedInWorkspace?: boolean; pendingKind?: LeavePendingKind };
+export type LeaveRouteRetention = { pathname: string; routeName: string; isCurrent(): boolean };
+type LeaveState = { retainedRoute?: LeaveRouteRetention; dirty: boolean; pending: boolean; scope: LeaveScope; copy?: LeavePromptCopy; retainedInWorkspace?: boolean; pendingKind?: LeavePendingKind };
 type RetainedDrafts = readonly string[];
 type LeaveRequest = { blocked: boolean; action: () => void; intent: LeaveIntent; copy?: LeavePromptCopy; pendingKind?: LeavePendingKind };
-type Guard = { register(id: string, value: LeaveState): void; remove(id: string): void; request(action: () => void, intent?: LeaveIntent, retained?: RetainedDrafts): void };
+type Guard = { register(id: string, value: LeaveState): void; remove(id: string): void; has(id: string): boolean; request(action: () => void, intent?: LeaveIntent, retained?: RetainedDrafts): void };
 const Context = createContext<Guard | null>(null);
 
 // Only a provider that outlives dashboard pages can retain pending operations on a route change.
@@ -24,6 +27,54 @@ export function navigationStates(entries: readonly (readonly [string, LeaveState
   return entries.filter(([, value]) => intent !== "child" || value.scope === "child")
     .map(([id, value]) => intent === "workspace" && value.retainedInWorkspace ? { ...value, dirty: false, pending: false }
       : retained.includes(id) && intent !== "child" ? { ...value, dirty: false } : value);
+}
+// Only a known stack removal within the same named route can retain this UI draft.
+// Unknown actions, another navigator, a non-current source and tabs stay guarded.
+export function retainsRouteOnRemoval(state: { type: string; key: string; index: number; routes: readonly { key: string; name: string }[] } | undefined,
+  action: { type: string; target?: string; source?: string; payload?: unknown }, retained: LeaveRouteRetention) {
+  if (!state) return false;
+  const source = state.routes[state.index];
+  if (!retained.isCurrent() || state.type !== "stack" || source?.name !== retained.routeName
+    || action.target && action.target !== state.key || action.source && action.source !== source.key) return false;
+  const count = action.type === "GO_BACK" ? 1 : action.type === "POP" && action.payload && typeof action.payload === "object" && "count" in action.payload ? action.payload.count : null;
+  return typeof count === "number" && Number.isSafeInteger(count) && count > 0 && state.index >= count
+    && state.routes[state.index - count]?.name === retained.routeName;
+}
+type RemovalState = { type: string; key: string; index: number; routes: readonly { key: string; name: string; state?: unknown }[] };
+const object = (value: unknown): Record<string, unknown> | null => value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+// Expo's missing history-record fallback resets to a parsed, keyless route tree.
+// During a real same-page traversal, keep the existing draft host instead. This
+// does not admit arbitrary RESETs or alter entries in browser history.
+export function retainedBrowserResetParams(states: readonly RemovalState[], action: { type: string; target?: string; source?: string; payload?: unknown },
+  retained: LeaveRouteRetention, traversal: BrowserTraversalReceipt | null): Record<string, unknown> | null {
+  if (!traversal?.isCurrent() || !retained.isCurrent() || action.type !== "RESET" || action.source !== undefined
+    || traversal.destination.pathname !== retained.pathname) return null;
+  const target = states.findIndex(state => state.key === action.target);
+  if (target < 0) return null;
+  let parsed = object(action.payload);
+  for (let index = target; index >= 0; index--) {
+    const state = states[index], current = state.routes[state.index];
+    if (state.type !== "stack" || !current || !parsed || parsed.key !== undefined || parsed.type !== undefined
+      || parsed.index !== undefined && parsed.index !== 0 || !Array.isArray(parsed.routes) || parsed.routes.length !== 1) return null;
+    const route = object(parsed.routes[0]);
+    if (!route || route.key !== undefined || route.name !== current.name) return null;
+    if (index > 0) {
+      if (object(current.state)?.key !== states[index - 1].key) return null;
+      parsed = object(route.state);
+    } else {
+      const url = traversal.destination;
+      if (current.name !== retained.routeName || route.state !== undefined || route.path !== url.pathname + url.search + url.hash) return null;
+      const params = route.params === undefined ? {} : object(route.params);
+      if (!params) return null;
+      const keys = [...new Set(url.searchParams.keys())];
+      if (Object.keys(params).length !== keys.length || keys.some(key => {
+        const values = url.searchParams.getAll(key), value = params[key];
+        return values.length === 1 ? value !== values[0] : !Array.isArray(value) || value.length !== values.length || value.some((item, i) => item !== values[i]);
+      })) return null;
+      return params;
+    }
+  }
+  return null;
 }
 function staysInDashboard(from: string, href: Href) {
   const to = typeof href === "string" ? href.split(/[?#]/)[0] : href.pathname;
@@ -52,11 +103,21 @@ export function PreviewNavigationGuard({ children }: { children: ReactNode }) {
     }
     else action();
   }, []);
-  const guard = useRef<Guard>({ register: (id, value) => entries.current.set(id, value), remove: id => entries.current.delete(id), request: leave }).current;
+  const guard = useRef<Guard>({ register: (id, value) => entries.current.set(id, value), remove: id => entries.current.delete(id), has: id => entries.current.has(id), request: leave }).current;
   useEffect(() => {
     if (Platform.OS !== "web") return;
+    const retainedFor = (from: URL, to: URL) => from.origin === to.origin && from.pathname === to.pathname
+      ? [...entries.current.entries()].filter(([, value]) => value.retainedRoute?.pathname === from.pathname && value.retainedRoute.isCurrent()).map(([id]) => id) : [];
     return guardBrowserHistory(window as unknown as HistoryGuardWindow,
-      () => [...entries.current.values()].some(value => value.dirty || value.pending), leave, setHistoryError);
+      (from, to) => statesFor("navigation", retainedFor(from, to)).some(value => value.dirty || value.pending),
+      (action, from, to) => {
+        const captured = [...entries.current.entries()].filter(([, value]) => value.retainedRoute);
+        leave(() => {
+          // A delayed browser approval must not act on a replacement identity/form.
+          if (captured.some(([id, value]) => !entries.current.has(id) || !value.retainedRoute!.isCurrent() || !entries.current.get(id)?.retainedRoute?.isCurrent())) return;
+          action();
+        }, "navigation", retainedFor(from, to));
+      }, setHistoryError);
   }, [leave]);
   return <Context.Provider value={guard}>{children}
     {historyError ? <View accessibilityRole="alert" testID="history-recovery-error" style={styles.recovery}>
@@ -89,7 +150,11 @@ export function usePreviewNavigation() {
 export function PreviewLink({ href, children }: { href: Href; children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const leave = usePreviewNavigation();
+  const leave = usePreviewNavigation(), scope = useNavigationScope();
+  const hrefKey = JSON.stringify(href);
+  const current = useRef({ pathname, hrefKey, scopeKey: scope?.key, mounted: true });
+  current.current = { pathname, hrefKey, scopeKey: scope?.key, mounted: true };
+  useEffect(() => { current.current.mounted = true; return () => { current.current.mounted = false; }; }, []);
   return <Link href={href} asChild onPress={event => {
     if (event.defaultPrevented) return;
     // Preserve browser modifier, non-primary and target semantics. Ordinary
@@ -102,16 +167,44 @@ export function PreviewLink({ href, children }: { href: Href; children: ReactNod
     }
     event.preventDefault();
     if (href === pathname) return;
-    leave(() => router.push(href), staysInDashboard(pathname, href) ? "workspace" : "navigation");
+    leave(() => {
+      const live = current.current;
+      if (!live.mounted || live.pathname !== pathname || live.hrefKey !== hrefKey || live.scopeKey !== scope?.key || scope && !scope.isCurrent()) return;
+      router.push(href);
+    }, staysInDashboard(pathname, href) ? "workspace" : "navigation");
   }}>{children}</Link>;
 }
 
-export function usePreviewLeaveGuard(dirty: boolean, pending = false, scope: LeaveScope = "child", copy?: LeavePromptCopy, retainedInWorkspace = false, pendingKind?: LeavePendingKind) {
+export function usePreviewLeaveGuard(dirty: boolean, pending = false, scope: LeaveScope = "child", copy?: LeavePromptCopy, retainedInWorkspace = false, pendingKind?: LeavePendingKind, retainedRoute?: LeaveRouteRetention) {
   const guard = useContext(Context);
   const id = useId();
   const navigation = useNavigation();
-  useLayoutEffect(() => { guard?.register(id, { dirty, pending, scope, copy, retainedInWorkspace, pendingKind }); return () => guard?.remove(id); }, [guard, id, dirty, pending, scope, copy?.message, copy?.actionLabel, retainedInWorkspace, pendingKind]);
-  usePreventRemove(!!guard && (dirty || pending), ({ data }) => guard?.request(() => navigation.dispatch(data.action)));
+  useLayoutEffect(() => { guard?.register(id, { dirty, pending, scope, copy, retainedInWorkspace, pendingKind, retainedRoute }); return () => guard?.remove(id); }, [guard, id, dirty, pending, scope, copy?.message, copy?.actionLabel, retainedInWorkspace, pendingKind, retainedRoute?.pathname, retainedRoute?.routeName, retainedRoute?.isCurrent]);
+  usePreventRemove(!!guard && (dirty || pending), ({ data }) => {
+    if (!retainedRoute) { guard?.request(() => navigation.dispatch(data.action)); return; }
+    const source = navigation.getState();
+    const traversal = Platform.OS === "web" ? currentBrowserTraversal(window) : null;
+    const states: RemovalState[] = [];
+    for (let cursor: typeof navigation | undefined = navigation; cursor; cursor = cursor.getParent()) {
+      const state = cursor.getState();
+      if (!state) break;
+      states.push(state);
+    }
+    const params = retainedBrowserResetParams(states, data.action, retainedRoute, traversal);
+    const retained = params || retainsRouteOnRemoval(source, data.action, retainedRoute) ? [id] : [];
+    guard?.request(() => {
+      if (retainedRoute) {
+        const current = navigation.getState();
+        if (!retainedRoute.isCurrent() || source && (!current || current.key !== source.key || current.routes[current.index]?.key !== source.routes[source.index]?.key)) return;
+      }
+      if (params && source) {
+        if (!guard?.has(id) || !traversal?.isCurrent()) return;
+        navigation.dispatch({ type: "REPLACE_PARAMS", target: source.key, source: source.routes[source.index]?.key, payload: { params } });
+        return;
+      }
+      navigation.dispatch(data.action);
+    }, "navigation", retained);
+  });
   useEffect(() => {
     if (Platform.OS !== "web" || !guard || !(dirty || pending)) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };

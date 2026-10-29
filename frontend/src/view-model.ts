@@ -1,3 +1,4 @@
+import type { HomeTarget } from "./home-target";
 import type { HomeOverviewView } from "./home-overview.ts";
 import type { PhotoOriginal } from "./photo-view-model.ts";
 
@@ -18,6 +19,7 @@ export interface HomeChild {
   regionLabel: string;
   allergiesLabel: string | null;
   profileConfirmed: boolean;
+  profileState?: "confirmed" | "optional" | "unread";
 }
 
 export interface HomeRecord {
@@ -41,7 +43,7 @@ export type HomeFocusView =
   | { kind: "none"; detail?: string }
   | { kind: "unavailable"; detail: string }
   | { kind: "task" | "growth"; title: string; detail: string; whyNow?: string; sourceLabel?: string;
-      action: { label: string; destination: HomeDestination } };
+      action: { label: string } & ({ target: HomeTarget } | { destination: HomeDestination }) };
 
 export interface HomeViewModel {
   // A production owner supplies a stable server/user/session/child/role scope.
@@ -63,10 +65,10 @@ export interface HomeViewModel {
 export type HomeDestination = "chat" | "care" | "profile" | "family" | "memory" | "settings" | "guide" | "tasks" | "photos" | "sources" | "growth" | "summary" | "contact";
 
 export interface HomeActions {
-  selectChild(id: string): void;
+  selectChild(id: string, thenOpen?: "profile"): void;
   refresh(): void;
   reviewOperation(): void;
-  open(destination: HomeDestination): void;
+  open(target: HomeDestination | HomeTarget): void;
   openAgentPhoto(original: PhotoOriginal): void;
   composeCare(kind: HomeRecord["kind"]): void;
   prepareQuestion(question: string): void;

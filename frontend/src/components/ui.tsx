@@ -1,5 +1,5 @@
-import { useLayoutEffect, useRef, useState, type ReactNode, type Ref } from "react";
-import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewProps, type ViewStyle } from "react-native";
+import { useId, useLayoutEffect, useRef, useState, type ReactNode, type Ref, type KeyboardEvent } from "react";
+import { Platform, Pressable, StyleSheet, View, TextInput as NativeTextInput, useWindowDimensions, type StyleProp, type ViewProps, type ViewStyle } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { AppIcon } from "./AppIcon";
 import { Button, Portal, Text, TextInput } from "react-native-paper";
@@ -72,25 +72,40 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
   );
 }
 
-type AppTextFieldProps = Omit<React.ComponentProps<typeof TextInput>, "ref"> & { ref?: Ref<React.ComponentRef<typeof TextInput>> };
-export function AppTextField({ style, outlineStyle, contentStyle, multiline, label, mode, ref, onFocus, onBlur, onChangeText, placeholder, accessibilityLabel, ...props }: AppTextFieldProps) {
+type AppTextFieldProps = Omit<React.ComponentProps<typeof TextInput>, "ref"> & { name?: string; ref?: Ref<React.ComponentRef<typeof TextInput>> };
+export function AppTextField({ style, outlineStyle, contentStyle, multiline, label, mode, ref, onFocus, onBlur, onChangeText, placeholder, accessibilityLabel, name, ...props }: AppTextFieldProps) {
   const [focused, setFocused] = useState(false);
   const [uncontrolledValue, setUncontrolledValue] = useState(props.defaultValue ?? "");
+  const generatedId = useId();
+  const inputId = props.nativeID ?? generatedId;
+  const semanticLabel = accessibilityLabel ?? (typeof label === "string" ? label : undefined);
+  const inputName = name ?? semanticLabel ?? inputId;
   const nativeLabel = Platform.OS !== "web" && mode !== "flat" && !multiline && typeof label === "string";
   // Paper's inactive label waits for its animated text measurement. Use the native placeholder until focus or text.
   const showNativePlaceholder = nativeLabel && !focused && !(props.value ?? uncontrolledValue);
-  return <TextInput {...props} multiline={multiline} label={showNativePlaceholder ? undefined : label}
-    placeholder={showNativePlaceholder ? label : placeholder} accessibilityLabel={accessibilityLabel ?? (nativeLabel ? label : undefined)}
+  const input = <TextInput {...props} nativeID={inputId} autoComplete={props.autoComplete ?? "off"}
+    spellCheck={props.spellCheck ?? (props.keyboardType === "email-address" || props.inputMode === "email" || props.inputMode === "url" || props.secureTextEntry ? false : undefined)}
+    render={props.render ?? (Platform.OS === "web" ? nativeProps => <NativeTextInput {...nativeProps} ref={node => {
+      // RN Web's TextInput filters `name`; keep its native control and attach only
+      // this HTML form semantic through Paper's supported render/ref adapter.
+      if (typeof nativeProps.ref === "function") nativeProps.ref(node);
+      (node as unknown as HTMLElement | null)?.setAttribute("name", inputName);
+    }} /> : undefined)} multiline={multiline} label={showNativePlaceholder ? undefined : label}
+    placeholder={showNativePlaceholder ? label : placeholder} accessibilityLabel={semanticLabel}
     onFocus={nativeLabel ? event => { setFocused(true); onFocus?.(event); } : onFocus}
     onBlur={nativeLabel ? event => { setFocused(false); onBlur?.(event); } : onBlur}
     onChangeText={nativeLabel ? (value: string) => { if (props.value === undefined) setUncontrolledValue(value); onChangeText?.(value); } : onChangeText}
     ref={(instance: React.ComponentRef<typeof TextInput> | null) => { if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }}
     mode={mode ?? "outlined"} style={[styles.input, style]} outlineStyle={mode === "flat" ? undefined : [styles.inputOutline, showNativePlaceholder && styles.nativePlaceholderOutline, outlineStyle]}
     contentStyle={[multiline && label ? styles.multilineContent : undefined, contentStyle]} />;
+  // An associated HTML label preserves Paper's mature control and existing flex layout.
+  return Platform.OS === "web" ? <label htmlFor={inputId} data-field-frame style={{ display: "contents" }}>{input}</label> : input;
 }
 
+const countFormat = new Intl.NumberFormat("zh-HK");
+
 function SelectionCount({ count }: { count: number | string }) {
-  return <View style={styles.selectionCount} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"><Text style={styles.selectionCountText}>{count}</Text></View>;
+  return <View style={styles.selectionCount} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"><Text style={styles.selectionCountText}>{typeof count === "number" ? countFormat.format(count) : count}</Text></View>;
 }
 
 export function AppSelectionTrigger({ label, count, onPress, onBlur, disabled = false, preserveFocusWhenDisabled = false, expanded, ref, calendar = false, id, invalid, describedBy }: {
@@ -166,20 +181,21 @@ export function SectionCard({ children, style, testID, surface = "regular" }: { 
   return <View testID={testID} style={[styles.card, compact && styles.mobileCard, surface === "inset" && styles.insetCard, surface === "plain" && styles.plainCard, style]}>{children}</View>;
 }
 
-export function SectionHeader({ title, subtitle, action, icon, count, density = "regular" }: { title: string; subtitle?: string; action?: ReactNode; icon?: React.ComponentProps<typeof AppIcon>["name"]; count?: number; density?: "regular" | "compact" }) {
+export function SectionHeader({ title, subtitle, action, icon, count, density = "regular", headingLevel = 2 }: { headingLevel?: 2 | 3 | 4; title: string; subtitle?: string; action?: ReactNode; icon?: React.ComponentProps<typeof AppIcon>["name"]; count?: number; density?: "regular" | "compact" }) {
+  const countLabel = count === undefined ? "" : countFormat.format(count);
   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   if (compact) return <View style={styles.mobileHeader}>
     <View style={styles.mobileHeaderRow}><View style={styles.mobileHeaderTitle}>
       {icon ? <AppIcon name={icon} size={mobileIcons.content} color={colors.teal} importantForAccessibility="no" /> : null}
-      <Text accessibilityRole="header" aria-level={2} style={[styles.sectionTitle, mobileType.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>
-      {count !== undefined ? <View style={styles.count}><Text accessibilityLabel={`${count} 項`} style={styles.countText}>{count}</Text></View> : null}
+      <Text accessibilityRole="header" aria-level={headingLevel} style={[styles.sectionTitle, mobileType.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>
+      {count !== undefined ? <View style={styles.count}><Text accessibilityLabel={`${countLabel} 項`} style={styles.countText}>{countLabel}</Text></View> : null}
     </View>{action ? <View style={styles.mobileHeaderAction}>{action}</View> : null}</View>
     {subtitle ? <Text style={[styles.sectionSubtitle, mobileType.caption]}>{subtitle}</Text> : null}
   </View>;
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.headerText}>
-        <View style={styles.sectionTitleRow}>{icon ? <AppIcon name={icon} size={24} color={colors.teal} importantForAccessibility="no" /> : null}<Text accessibilityRole="header" aria-level={2} style={[styles.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>{count !== undefined ? <View style={styles.count}><Text accessibilityLabel={`${count} 項`} style={styles.countText}>{count}</Text></View> : null}</View>
+        <View style={styles.sectionTitleRow}>{icon ? <AppIcon name={icon} size={24} color={colors.teal} importantForAccessibility="no" /> : null}<Text accessibilityRole="header" aria-level={headingLevel} style={[styles.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>{count !== undefined ? <View style={styles.count}><Text accessibilityLabel={`${countLabel} 項`} style={styles.countText}>{countLabel}</Text></View> : null}</View>
         {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
       </View>
       {action}
@@ -214,7 +230,7 @@ export function TextLink({ label, onPress }: { label: string; onPress: () => voi
   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   const touch = useInteractionDensity();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.link, (compact || touch) && styles.mobileTarget, pressed && styles.linkPressed]}>
+    <Pressable {...(Platform.OS === "web" ? { dataSet: { hoverSurface: "true" } } : {})} accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.link, (compact || touch) && styles.mobileTarget, pressed && styles.linkPressed]}>
       <Text style={[styles.linkText, compact && mobileType.label]}>{label}</Text><AppIcon name="arrow-right" size={compact ? mobileIcons.inline : 17} color={colors.ink} />
     </Pressable>
   );
@@ -255,35 +271,38 @@ export function UnderlineTabs<T extends string>({ id, label, items, value, onCha
     setPositions(current => Object.keys(current).length === Object.keys(next).length
       && Object.keys(next).every(key => current[key]?.x === next[key].x && current[key]?.width === next[key].width) ? current : next);
   }
-  // RN Web observes each tab's size, not position. A preceding badge can move a
-  // tab without resizing it; measure the whole row after commits and any resize.
-  useLayoutEffect(measureWebTabs);
+  // The overflow rail needs offsets, but the Web selected marker is pure CSS.
+  // Label/count changes and actual RNW resize are explicit measurement triggers.
+  const layoutSignature = JSON.stringify(items.map(item => [item.key, item.label, item.count]));
+  useLayoutEffect(measureWebTabs, [layoutSignature, compact, touch]);
   function select(key: T) {
     setRevealRevision(revision => revision + 1);
     onChange(key);
   }
-  function move(event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }, index: number) {
+  function move(event: KeyboardEvent<HTMLElement>, index: number) {
+    // Modified keys belong to browser / assistive shortcuts, not tab roving.
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     const key = event.nativeEvent?.key ?? event.key;
+    if (key === " " || key === "Spacebar") { event.preventDefault(); if (!(event as { repeat?: boolean }).repeat) select(items[index].key); return; }
     const next = key === "ArrowLeft" ? (index + items.length - 1) % items.length
       : key === "ArrowRight" ? (index + 1) % items.length : key === "Home" ? 0 : key === "End" ? items.length - 1 : null;
     if (next === null || !items[next]) return;
     event.preventDefault();
-    select(items[next].key);
-    (controls.current.get(items[next].key) as unknown as HTMLElement | undefined)?.focus({ preventScroll: true });
+    (controls.current.get(items[next].key) as unknown as HTMLElement | undefined)?.focus();
   }
   return <HorizontalOverflowRail tabIndex={-1} style={styles.tabsScroll} rowTestID={`${id}-rail`} hintTestID={`${id}-scroll-hint`}
-    items={items.flatMap(item => positions[item.key] ? [{ key: item.key, ...positions[item.key] }] : [])}
+    layoutRevision={layoutSignature} items={items.flatMap(item => positions[item.key] ? [{ key: item.key, ...positions[item.key] }] : [])}
     revealTarget={selection ? { key: value, ...selection } : undefined} revealRevision={revealRevision} hintLabel={`查看更多${label ?? "分頁"}`}
     onRevealItem={key => { if (Platform.OS === "web") (controls.current.get(key as T) as unknown as HTMLElement | undefined)?.focus({ preventScroll: true }); }}>
     <View accessibilityRole="tablist" accessibilityLabel={label} aria-orientation="horizontal" style={styles.tabs} onLayout={Platform.OS === "web" ? measureWebTabs : undefined}>
     {items.map((item, index) => <Pressable
       key={item.key} nativeID={tabId(id, item.key)} onLayout={event => { if (Platform.OS === "web") { measureWebTabs(); return; } const { x, width } = event.nativeEvent.layout; setPositions(current => current[item.key]?.x === x && current[item.key]?.width === width ? current : { ...current, [item.key]: { x, width } }); }} ref={instance => { if (instance) controls.current.set(item.key, instance); else controls.current.delete(item.key); }}
-      accessibilityRole="tab" accessibilityLabel={item.count === undefined ? item.label : `${item.label} ${item.count}`} aria-controls={tabPanelId(id, item.key)} tabIndex={value === item.key ? 0 : -1}
+      {...(Platform.OS === "web" ? { dataSet: { routeTabKey: item.key } } : {})} accessibilityRole="tab" accessibilityLabel={item.count === undefined ? item.label : `${item.label} ${item.count}`} aria-controls={tabPanelId(id, item.key)} tabIndex={value === item.key ? 0 : -1}
       accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key} onPress={() => select(item.key)}
-      {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }) => move(event, index) } : {})}
-      style={({ pressed }) => [styles.tab, item.count !== undefined && styles.countedTab, (compact || touch) && styles.mobileTarget, !selection && value === item.key && styles.tabActive, pressed && styles.tabPressed]}
+      {...(Platform.OS === "web" ? { onKeyDown: (event: KeyboardEvent<HTMLElement>) => move(event, index) } : {})}
+      style={({ pressed }) => [styles.tab, item.count !== undefined && styles.countedTab, (compact || touch) && styles.mobileTarget, (Platform.OS === "web" || !selection) && value === item.key && styles.tabActive, pressed && styles.tabPressed]}
     ><Text style={[styles.tabText, value === item.key && styles.tabTextActive]}>{item.label}</Text>{item.count !== undefined ? <SelectionCount count={item.count} /> : null}</Pressable>)}
-    <MotionSelectionMarker x={selection?.x ?? 0} width={selection?.width ?? 0} selectionKey={`${id}:${value}`} />
+    {Platform.OS !== "web" ? <MotionSelectionMarker x={selection?.x ?? 0} width={selection?.width ?? 0} selectionKey={`${id}:${value}`} /> : null}
     </View>
   </HorizontalOverflowRail>;
 }
@@ -337,7 +356,7 @@ const styles = StyleSheet.create({
   mobileHeaderTitle: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   mobileHeaderAction: { flexShrink: 0, maxWidth: "48%" },
   count: { minWidth: 24, paddingHorizontal: spacing.xs, borderRadius: radius.pill, backgroundColor: colors.paleTeal, alignItems: "center" },
-  countText: { fontFamily: chineseFont, color: colors.deepTeal, ...mobileType.caption, fontWeight: "700" },
+  countText: { fontVariant: ["tabular-nums"], fontFamily: chineseFont, color: colors.deepTeal, ...mobileType.caption, fontWeight: "700" },
   pill: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderRadius: radius.pill, paddingHorizontal: 11, paddingVertical: 6 },
   connectionPill: { alignSelf: "center", borderWidth: 1, borderColor: colors.line },
   onlineConnection: { backgroundColor: colors.controlSurface },

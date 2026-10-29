@@ -21,10 +21,10 @@ import { GrowthOperationRecovery } from "./GrowthOperationRecovery";
 import { growthRefreshNotice } from "../../growth-view-model";
 import { growthStyles as s } from "./growth-styles";
 
-export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPrepareQuestion,onPreparationHistory,previewTools,managementTools,tab="concerns",onTabChange}:{
+export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPrepareQuestion,onPreparationHistory,previewTools,managementTools,tab="concerns",onTabChange,selectedConcernId,onConcernChange,requestedDocumentId,onDocumentChange}:{
   model:GrowthViewModel;actions:GrowthActions;onTask:(id:string)=>void;onRecord?:(id?:string)=>void;onHistory?:()=>void;onChat?:()=>void;
   onPrepareQuestion?:(question:string)=>void;onPreparationHistory?:()=>void;previewTools?:React.ReactNode;managementTools?:React.ReactNode;
-  tab?:"concerns"|"preparation";onTabChange:(tab:"concerns"|"preparation")=>void;
+  requestedDocumentId?:string|null;onDocumentChange?:(id:string|null,replace?:boolean)=>void;selectedConcernId:string|null;onConcernChange:(id:string|null)=>void;tab?:"concerns"|"preparation";onTabChange:(tab:"concerns"|"preparation")=>void;
 }){
   const containerLayout = useContainerWidth();
   const wide = containerLayout.width >= 880;
@@ -32,11 +32,9 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPre
   const scrollRef = useRef<ScrollView>(null), scrollPosition = useRef(0);
   useLayoutEffect(() => { scrollPosition.current = 0; scrollRef.current?.scrollTo({ y: 0, animated: false }); }, [model.scopeKey, tab]);
   const page=model.access === "lost" ? null : model.page;
-  const [selectedConcern, setSelectedConcern] = useState<string | null>(null);
   const concerns = page?.concerns?.state === "ready" ? page.concerns.items.filter(item => item.childId === model.childId) : [];
   const listedConcerns = concerns.filter(item => item.status !== "closed");
-  const concern = listedConcerns.find(item => item.id === selectedConcern) ?? listedConcerns[0] ?? null;
-  useEffect(() => { setSelectedConcern(null); }, [model.scopeKey, model.access === "lost"]);
+  const concern = selectedConcernId ? listedConcerns.find(item => item.id === selectedConcernId) ?? null : listedConcerns[0] ?? null;
   const refreshed = model.notice === growthRefreshNotice;
   const showLoading = model.load === "loading" && !page;
   const showStatus = !model.online || model.access !== "editable" || model.load === "error" || !!model.notice && !refreshed || model.refreshPending;
@@ -82,8 +80,8 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPre
         {page ? <>
           <View style={wide ? s.columns : s.stack}>
             {listedConcerns.length ? <BackgroundSurface padded style={wide ? s.indexAside : s.full} testID="growth-index-surface">
-              {wide ? <GrowthConcernIndex items={listedConcerns} selectedId={concern?.id ?? null} onSelect={setSelectedConcern} />
-                : listedConcerns.length ? <AppSelect label="選擇關注" showLabel={false} value={concern?.id ?? ""} options={listedConcerns.map(item => ({value: item.id, label: item.title}))} onChange={setSelectedConcern} /> : null}
+              {wide ? <GrowthConcernIndex items={listedConcerns} selectedId={concern?.id ?? null} onSelect={onConcernChange} />
+                : listedConcerns.length ? <AppSelect label="選擇關注" showLabel={false} value={concern?.id ?? ""} options={listedConcerns.map(item => ({value: item.id, label: item.title}))} onChange={onConcernChange} /> : null}
             </BackgroundSurface> : null}
             <BackgroundSurface padded style={[wide && listedConcerns.length ? s.main : s.full, s.detailPaper]} testID="growth-detail-surface">
               {sourceNotice ? <Text style={s.warning}>{sourceNotice}</Text> : null}
@@ -98,8 +96,8 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPre
                   onConfirm={() => actions.archiveConcern(concern.id, concern.version, page.authorityVersion)} /> : null}
               </GrowthConcernActions>
               {concern ? <GrowthConcernTimeline concern={concern} page={page} onRecord={onRecord} onTask={onTask} />
-                : page.concerns?.state === "ready" && model.load !== "error" ? model.online ? <EmptyListCard title="暫無持續關注" detail="可以先與助手討論想留意的成長近況。" testID="growth-concerns-empty" /> : null : <View style={s.archiveEmpty} testID="growth-concerns-unavailable">
-                  <Text accessibilityRole="header" style={s.concernTitle}>{model.load === "error" || page.concerns?.state === "error" ? "關注歷程未能讀取" : page.concerns?.state === "loading" ? "正在讀取關注歷程" : "關注歷程尚未接通"}</Text>
+                : selectedConcernId ? <View testID="growth-target-unavailable"><Text style={s.body}>目前不能查看這項內容；目標可能未載入或已不能存取。</Text><AppButton label="返回關注清單" variant="secondary" onPress={()=>onConcernChange(null)} /></View> : page.concerns?.state === "ready" && model.load !== "error" ? model.online ? <EmptyListCard title="暫無持續關注" detail="可以先與助手討論想留意的成長近況。" testID="growth-concerns-empty" /> : null : <View style={s.archiveEmpty} testID="growth-concerns-unavailable">
+                  <Text accessibilityRole="header" aria-level={2} style={s.concernTitle}>{model.load === "error" || page.concerns?.state === "error" ? "關注歷程未能讀取" : page.concerns?.state === "loading" ? "正在讀取關注歷程" : "關注歷程尚未接通"}</Text>
                 </View>}
             </BackgroundSurface>
           </View>
@@ -108,7 +106,7 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPre
         </> : null}
       </AppTabPanel>
       <AppTabPanel tabsId="growth-workspace" tabKey="preparation" active={tab === "preparation"} style={s.stack}>
-        {tab === "preparation" ? <PreparationWorkspace onPrepareQuestion={onPrepareQuestion} onHistory={onPreparationHistory}
+        {tab === "preparation" ? <PreparationWorkspace requestedDocumentId={requestedDocumentId} onDocumentChange={onDocumentChange} onPrepareQuestion={onPrepareQuestion} onHistory={onPreparationHistory}
           scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} /> : null}
       </AppTabPanel>
     </View>

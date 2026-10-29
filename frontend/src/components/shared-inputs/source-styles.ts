@@ -1,6 +1,7 @@
 import { StyleSheet } from "react-native";
 import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../../theme";
 export const sourceStyles = StyleSheet.create({
+  hidden: { display: "none" },
   stack: { gap: spacing.md }, row: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
   toolbar: { gap: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line, paddingBottom: spacing.lg },
   scope: { gap: spacing.xs },
@@ -22,7 +23,8 @@ export const sourceStyles = StyleSheet.create({
   warning: { fontFamily: chineseFont, ...readingType.tool, color: colors.warningInk },
   error: { fontFamily: chineseFont, ...readingType.meta, color: colors.errorInk },
   section: { gap: spacing.sm }, review: { paddingVertical: spacing.md, paddingLeft: spacing.md, borderLeftWidth: 2, borderColor: colors.line, gap: spacing.sm },
-  original: { maxHeight: 320, borderWidth: 1, borderColor: colors.line, borderRadius: radius.small }, originalContent: { padding: spacing.md },
-   item: { borderBottomWidth: 1, borderBottomColor: colors.softLine, borderLeftWidth: 2, borderLeftColor: "transparent", padding: spacing.md, gap: spacing.xs },
+  readerToolbar: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  contextTitle: { fontFamily: chineseFont, ...readingType.tool, color: colors.muted, fontWeight: "700", marginTop: spacing.lg },
+   item: { borderBottomWidth: 1, borderBottomColor: colors.softLine, borderLeftWidth: 2, borderLeftColor: "transparent", paddingVertical: spacing.md, paddingHorizontal: spacing.sm, gap: spacing.xs },
   group: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.sm },
 });

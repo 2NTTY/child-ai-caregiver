@@ -1,3 +1,4 @@
+import type { HomeTarget } from "./home-target";
 import type { HomeDestination, HomeViewModel } from "./view-model.ts";
 import type { AgentProposalStatus, AgentRunStatus } from "./agent-view-model.ts";
 
@@ -9,7 +10,8 @@ export interface HomeOverviewItem {
   detail: string;
   statusLabel: string;
   sourceLabel?: string;
-  action: { label: string; destination: HomeDestination };
+  action: { label: string; target: HomeTarget };
+  group?: "scheduled" | "undated" | "review";
 }
 export interface HomeOverviewSection {
   state: "ready" | "loading" | "error" | "stale" | "unavailable";
@@ -24,7 +26,7 @@ export interface HomeAgentImportantItem extends HomeOverviewItem {
   proposal?: { id: string; version: number; status: AgentProposalStatus; expiresAt: string };
 }
 export interface HomeAgentImportantSection {
-  state: "ready" | "loading" | "error" | "unavailable";
+  state: "ready" | "loading" | "error" | "unavailable" | "unsupported";
   items: HomeAgentImportantItem[];
   loadedAt: string | null;
   detail?: string;
@@ -57,7 +59,7 @@ export function selectHomeOverview(model: HomeViewModel): HomeOverviewView | nul
       : focus.kind === "none" ? { state: "ready", items: [], detail: focus.detail }
         : { state: "ready", items: [{ id: `focus:${model.selectedChildId}:${focus.kind}`, title: focus.title,
           detail: focus.detail, statusLabel: focus.whyNow ?? (focus.kind === "task" ? "待查看安排" : "待核對關注"),
-          sourceLabel: focus.sourceLabel, action: focus.action }] },
+          sourceLabel: focus.sourceLabel, action: { label: focus.action.label, target: "target" in focus.action ? focus.action.target : { destination: focus.action.destination } } }] },
     ongoing: { state: "unavailable", items: [], detail: "暫時無法顯示持續關注" },
   };
 }

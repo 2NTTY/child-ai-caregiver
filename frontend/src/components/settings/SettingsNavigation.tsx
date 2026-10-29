@@ -1,5 +1,5 @@
 import { BackgroundSurface } from "../appearance/BackgroundSurface";
-import { useRef } from "react";
+import { useRef, type KeyboardEvent } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { UnderlineTabs } from "../ui";
@@ -10,12 +10,15 @@ export function SettingsNavigation<T extends string>({ id, items, value, onChang
 }) {
   const controls = useRef(new Map<T, View>());
   if (compact) return <View style={styles.compact}><UnderlineTabs id={id} label="設定分類" items={items} value={value} onChange={onChange} /></View>;
-  function move(event: { key?: string; nativeEvent?: { key?: string }; preventDefault(): void }, index: number) {
+  function move(event: KeyboardEvent<HTMLElement>, index: number) {
+    // Match compact tabs: preserve modified browser / assistive shortcuts.
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     const key = event.nativeEvent?.key ?? event.key;
+    if (key === " " || key === "Spacebar") { event.preventDefault(); if (!(event as { repeat?: boolean }).repeat) onChange(items[index].key); return; }
     const next = key === "ArrowDown" ? (index + 1) % items.length : key === "ArrowUp" ? (index - 1 + items.length) % items.length : key === "Home" ? 0 : key === "End" ? items.length - 1 : null;
     if (next === null) return;
-    event.preventDefault(); onChange(items[next].key);
-    (controls.current.get(items[next].key) as unknown as HTMLElement | undefined)?.focus({ preventScroll: true });
+    event.preventDefault();
+    (controls.current.get(items[next].key) as unknown as HTMLElement | undefined)?.focus();
   }
   return <BackgroundSurface frosted activeStyle={{ paddingVertical: spacing.md }} style={styles.navigation}>
     <Text style={styles.eyebrow}>設定分類</Text>
@@ -24,7 +27,7 @@ export function SettingsNavigation<T extends string>({ id, items, value, onChang
         ref={node => { if (node) controls.current.set(item.key, node); else controls.current.delete(item.key); }}
         accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key}
         aria-controls={`${id}-panel-${encodeURIComponent(item.key)}`} tabIndex={value === item.key ? 0 : -1} onPress={() => onChange(item.key)}
-        {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault(): void }) => move(event, index) } : {})}
+        {...(Platform.OS === "web" ? { dataSet: { routeTabKey: item.key, hoverSurface: "true" }, onKeyDown: (event: KeyboardEvent<HTMLElement>) => move(event, index) } : {})}
         style={({ pressed }) => [styles.item, value === item.key && styles.selected, pressed && (value === item.key ? styles.selectedPressed : styles.pressed)]}>
         <Text style={[styles.label, value === item.key && styles.selectedLabel]}>{item.label}</Text>
       </Pressable>)}

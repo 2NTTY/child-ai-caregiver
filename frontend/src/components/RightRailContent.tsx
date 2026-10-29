@@ -1,3 +1,4 @@
+import { selectHomeOverview } from "../home-overview";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { AppScrollView as ScrollView } from "./AppScrollView";
@@ -15,7 +16,7 @@ export function RightRailContent({ model, actions, contextPath = "/" }: { model:
     : contextPath === "/tasks" ? { title: "行動安排", label: "家庭日常交接", destination: "family" as const }
     : { title: "照顧空間", label: "前往助手", destination: "chat" as const };
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.cards}>
-    {child ? <HomeFocus model={model} actions={actions} full /> : <SectionCard><Text style={styles.meta}>選擇孩子後，再查看對應的待辦與提醒。</Text></SectionCard>}
+    {child ? <HomeFocus section={selectHomeOverview(model)?.attention ?? null} operation={model.operation} connection={model.connection} onOpen={actions.open} onRefresh={actions.refresh} onReviewOperation={actions.reviewOperation} full /> : <SectionCard><Text style={styles.meta}>選擇孩子後，再查看對應的待辦與提醒。</Text></SectionCard>}
     {child ? <View style={styles.routeContext}><Text style={styles.contextEyebrow}>{child.displayName} · {routeContext.title}</Text>
       <TextLink label={routeContext.label} onPress={() => actions.open(routeContext.destination)} />
     </View> : null}

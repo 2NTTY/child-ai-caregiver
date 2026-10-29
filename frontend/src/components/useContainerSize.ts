@@ -1,22 +1,18 @@
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { Platform, View, type LayoutChangeEvent } from "react-native";
 
-/** Read mounted Web image geometry before paint; retain native layout updates. */
+/** Read attachment/enable transitions and native layout, not every form edit. */
 export function useContainerSize(enabled = true) {
-  const ref = useRef<View>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const update = useCallback((width: number, height: number) => {
     setSize(current => current.width === width && current.height === height ? current : { width, height });
   }, []);
-  // The container can first mount after a breakpoint or background-mode change.
-  useLayoutEffect(() => {
-    if (!enabled || Platform.OS !== "web") return;
-    const node = ref.current as unknown as HTMLElement | null;
-    if (node) {
-      const { width, height } = node.getBoundingClientRect();
+  const ref = useCallback((node: View | null) => {
+    if (enabled && Platform.OS === "web" && node) {
+      const { width, height } = (node as unknown as HTMLElement).getBoundingClientRect();
       update(width, height);
     }
-  });
+  }, [enabled, update]);
   const onLayout = useCallback((event: LayoutChangeEvent) => {
     if (enabled) update(event.nativeEvent.layout.width, event.nativeEvent.layout.height);
   }, [enabled, update]);

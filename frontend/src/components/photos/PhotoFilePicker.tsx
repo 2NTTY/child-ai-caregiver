@@ -23,7 +23,7 @@ export function PhotoFilePicker({ disabled, onPick, onError, selectOriginal = se
       const original = await pick();
       if (generation.current !== started || disabledRef.current) { original?.dispose?.(); return; }
       if (original) onPick(original);
-    } catch { if (generation.current === started) onError("未能取得照片。請核對相機權限，並選擇 4 MiB 以內的 JPEG／PNG；現有草稿保留。"); }
+    } catch { if (generation.current === started) onError("未能取得照片。請核對相機權限，並選擇 4 MiB 以內的 JPEG／PNG；現有草稿保留。"); }
     finally { if (generation.current === started) setReading(false); }
   }
   if (renderTrigger) {

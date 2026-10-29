@@ -104,7 +104,7 @@ function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEli
     : proposal.status === "accepted" ? "已接受；本次快照未提供保存收據，不能據此確認已保存。"
       : "已略過，沒有以此決定執行候選事項。";
   return <View testID={`agent-proposal-${proposal.id}`} style={pending ? styles.entry : styles.resultEntry}>
-    <View style={styles.top}><Text accessibilityRole="header" style={pending ? styles.proposalContext : styles.title}>{pending ? proposalContextLabel(proposal) : proposal.title}</Text>
+    <View style={styles.top}><Text accessibilityRole="header" aria-level={3} style={pending ? styles.proposalContext : styles.title}>{pending ? proposalContextLabel(proposal) : proposal.title}</Text>
       <MotionFeedback active={confirmed} triggerKey={confirmed ? decisionIntent?.serial ?? null : null} scopeKey={`${scopeKey}:${proposal.id}`} testID="agent-proposal-feedback"><AppStatusBadge label={expired && pending ? "已過期" : agentProposalLabels[proposal.status]} tone={proposal.status === "accepted" && proposal.result && Object.hasOwn(receiptDescriptions, proposal.result.kind) ? "success" : pending ? "warning" : "neutral"} /></MotionFeedback></View>
     {pending ? <>
       <View testID={`agent-change-content-${proposal.id}`} style={styles.changeContent}>
@@ -276,12 +276,12 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
         ? [pending.length ? `${pending.length} 項待你確認` : null, handled.length ? `${handled.length} 項已處理` : null].filter(Boolean).join(" · ")
         : ready && model.online && run.status === "completed" && !problems.length ? "本次沒有待確認事項。" : "請核對以下結果；尚未確認的結果不代表已保存。"}</Text> : null}
       {pending.length ? <View testID="agent-pending-proposals" style={styles.proposalGroup}>
-        {!activityHeading && !proposalOnly ? <Text accessibilityRole="header" style={styles.title}>待你確認</Text> : null}
+        {!activityHeading && !proposalOnly ? <Text accessibilityRole="header" aria-level={2} style={styles.title}>待你確認</Text> : null}
         {pending.map(proposal => <ProposalCard preserveDecisionFocusOnRead={preserveDecisionFocusOnRead} key={proposal.id} proposal={proposal} model={model} actions={actions} scopeKey={scopeKey} readTrigger={readTrigger} readEligible={readEligible} decisionIntent={decisionIntent} />)}
       </View> : null}
       {pendingContent}
       {handled.length ? <View testID="agent-handled-proposals" style={styles.section}>
-        <Text accessibilityRole="header" style={styles.title}>已處理</Text>
+        <Text accessibilityRole="header" aria-level={2} style={styles.title}>已處理</Text>
         {handled.map(proposal => <ProposalCard key={proposal.id} proposal={proposal} model={model} actions={actions} scopeKey={scopeKey} readTrigger={readTrigger} readEligible={readEligible} decisionIntent={decisionIntent} />)}
       </View> : null}
       {!proposalOnly && !targetUnavailable ? <RunAnswer key={`answer-${run.id}`} run={run} activity={activity} actions={actions} onLocateSource={onLocateSource} /> : null}

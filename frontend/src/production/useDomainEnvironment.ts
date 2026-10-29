@@ -1,12 +1,11 @@
 import { useEffect, useId, useMemo } from "react";
-import { usePreviewLeaveGuard, type LeavePendingKind, type LeaveScope } from "../preview/PreviewNavigationGuard";
-import { useProduction, useProductionOwner } from "./ProductionProvider";
+import { usePreviewLeaveGuard, type LeavePendingKind, type LeaveRouteRetention, type LeaveScope } from "../preview/PreviewNavigationGuard";
+import { useProductionIdentity, useProductionOwner } from "./ProductionProvider";
 
 /** One Server identity/scope for domain owners; never creates another business store. */
 export function useDomainEnvironment() {
-  const { owner, scopeKey, identityKey, userId, selectedChildId, online, recordsState, apiBaseUrl, queryClient } = useProduction();
-  const child = recordsState.children.find(item => item.id === selectedChildId);
-  const writeReady = owner.canStartDomainWrite();
+  const { owner, scopeKey, identityKey, userId, selectedChildId, online, children, apiBaseUrl, queryClient, writeReady } = useProductionIdentity();
+  const child = children.find(item => item.id === selectedChildId);
   return useMemo(() => ({
     owner, scopeKey: scopeKey ?? "", identityKey: identityKey ?? "", userId,
     childId: scopeKey ? selectedChildId : null, childName: child?.displayName ?? "", role: child?.accessRole ?? null,
@@ -20,10 +19,10 @@ export function useDomainEnvironment() {
 }
 
 /** Preserve unknown operations across navigation and block logout while outcome is unresolved. */
-export function useDomainWriteGuard(dirty: boolean, pending: boolean, scope: LeaveScope = "child", retainedInWorkspace = true, pendingKind?: LeavePendingKind) {
+export function useDomainWriteGuard(dirty: boolean, pending: boolean, scope: LeaveScope = "child", retainedInWorkspace = true, pendingKind?: LeavePendingKind, retainedRoute?: LeaveRouteRetention) {
   const owner = useProductionOwner();
   const id = useId();
-  const leaveGuardId = usePreviewLeaveGuard(dirty, pending, scope, undefined, retainedInWorkspace, pendingKind);
+  const leaveGuardId = usePreviewLeaveGuard(dirty, pending, scope, undefined, retainedInWorkspace, pendingKind, retainedRoute);
   useEffect(() => { owner.setDomainPending(id, pending); return () => owner.setDomainPending(id, false); }, [owner, id, pending]);
   return leaveGuardId;
 }

@@ -22,12 +22,12 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
   const width = containerLayout.width;
   useLayoutEffect(() => {
     if (Platform.OS === "web") {
-      const node = containerLayout.ref.current as unknown as HTMLElement | null;
+      const node = containerLayout.hostRef.current as unknown as HTMLElement | null;
       // The initial viewport-width fallback may still select the wrong column layout.
       if (!node || Math.abs(node.getBoundingClientRect().width - width) >= 1) return;
     }
     onLayoutReady?.();
-  }, [containerLayout.ref, width, onLayoutReady]);
+  }, [containerLayout.hostRef, width, onLayoutReady]);
   const [revisionTrigger, setRevisionTrigger] = useState<number | null>(null);
   const requestSerial = useRef(0);
   const actions: ProfileActions = {...sourceActions, submitReviewed: () => {
@@ -67,7 +67,7 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
             <AppStatusBadge label={model.current?.data ? "已確認檔案" : model.reading ? "正在讀取檔案" : "尚未確認檔案"} tone={model.current?.data ? "success" : model.reading ? "info" : "warning"} />
           </View>
         </View> : <Text accessibilityRole="header" aria-level={2} style={styles.childName}>尚未有孩子</Text>}
-        {model.access === "editable" ? <ManualFormDialog openRequest={openRequest ? { ...openRequest, scopeKey } : undefined} formKey={model.formKey} label={model.child ? "編輯檔案" : "填寫檔案"} title="編輯孩子檔案" scopeKey={scopeKey} disabled={childDeletionActive} onClose={actions.discardDraft} recovery={writeNotice}><View style={styles.editor}><SectionHeader density="compact" title={model.child ? "核對檔案草稿" : "本地檔案草稿"}
+        {model.access === "editable" ? <ManualFormDialog openRequest={openRequest ? { ...openRequest, scopeKey } : undefined} formKey={model.formKey} label={model.child ? "編輯檔案" : "填寫檔案"} title="編輯孩子檔案" scopeKey={scopeKey} disabled={childDeletionActive} onClose={actions.discardDraft} recovery={writeNotice}><View style={styles.editor}><SectionHeader headingLevel={3} density="compact" title={model.child ? "核對檔案草稿" : "本地檔案草稿"}
           subtitle={model.child ? `修改基準：版本 ${model.basis?.version ?? 0}；更正會新增版本。` : "僅作前端草稿，不建立真孩子或家庭共享資料。"} />
           <ProfileForm key={model.formKey} initialValues={model.initialValues} editable={editable}
             canReview={canReview && model.intent !== "delete"} draftOnly={!model.child} onEdit={actions.editDraft} onReview={actions.reviewDraft} />

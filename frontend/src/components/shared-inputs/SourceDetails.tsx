@@ -1,8 +1,8 @@
+import { LiteralValue } from "../LiteralValue";
 import { EmptyListCard } from "../EmptyListCard";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { useState } from "react";
 import { View } from "react-native";
-import { AppScrollView as ScrollView } from "../AppScrollView";
 import { Text } from "react-native-paper";
 import { DateTime } from "luxon";
 import type { SourcesActions, SourcesViewModel } from "../../shared-input-view-model";
@@ -17,7 +17,7 @@ import { sourceNatureOptions, sourcePurposeOptions, sourceTimeOptions } from "..
 export function sourceTime(value: string | null) { if (!value) return "未取得"; const date = DateTime.fromISO(value).setZone("Asia/Hong_Kong"); return date.isValid ? date.toFormat("yyyy年M月d日 HH:mm") : "時間未能核對"; }
 
 export function SourceDetails({ model, actions, onRecord, resultTrigger = null, showTools = true }: { model: SourcesViewModel; actions: SourcesActions; onRecord: (id: string) => void; resultTrigger?: number | null; showTools?: boolean }) {
-  const [showText, setShowText] = useState(false);
+  const [showText, setShowText] = useState(true);
   const [showTechnical, setShowTechnical] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const selected = model.selected;
@@ -34,7 +34,13 @@ export function SourceDetails({ model, actions, onRecord, resultTrigger = null, 
   const candidateTrigger = !model.busy && !candidateEligible ? null : resultTrigger;
   const textTrigger = !model.busy && !textEligible ? null : resultTrigger;
   return <>
-    <SectionCard surface="plain" style={s.workflowSection} testID="source-details"><SectionHeader density="compact" title={selected.sourceLabel} subtitle="私人來源" icon="link-variant" />
+    <SectionCard surface="plain" style={s.workflowSection} testID="source-details">{hasText && enabled ? <View style={s.section}>
+        <View style={s.readerToolbar}><Text accessibilityRole="header" aria-level={3} style={s.title}>保存原文</Text><AppButton expanded={showText} label={showText ? "收起保存原文" : `查看完整原文（${selected.text.length.toLocaleString("en-HK")} 字）`} variant="quiet" density="compact" onPress={() => setShowText(value => !value)} /></View>
+        <MotionDisclosure expanded={showText} scopeKey={scopeKey}>
+          <MotionReveal value={selected.text} contentKey={selected.text} scopeKey={scopeKey} regionKey="source-original-text" triggerKey={textTrigger} eligible={textEligible} testID="source-original-motion">{shown => <Text selectable testID="source-full-text" style={s.reading}>{shown}</Text>}</MotionReveal>
+        </MotionDisclosure>
+      </View> : null}
+      <Text accessibilityRole="header" aria-level={3} style={s.contextTitle}>來源脈絡</Text>
       <Text style={s.body}>來源日期原文：{selected.sourceDateText || "未提供"}</Text>
       {selected.sourceUrl ? <Text selectable style={s.body}>網址：{selected.sourceUrl}</Text> : <Text style={s.meta}>沒有來源網址。</Text>}
       {selected.sourceNotes ? <Text selectable style={s.body}>私人備註：{selected.sourceNotes}</Text> : null}
@@ -47,16 +53,12 @@ export function SourceDetails({ model, actions, onRecord, resultTrigger = null, 
         {selected.kind === "personal_source" ? <><Text style={s.meta}>公開可直接訪問的 HTML 才可取得。需要登入的內容請自行貼上；不會登入你的帳戶。</Text>
           {model.intake?.mode === "production" && actions.management ? <AppButton label="原地貼上正文" accessibilityLabel="原地編輯私人來源正文" variant="secondary" disabled={!enabled || !model.fresh || !canManage || !!selected.recordId || !!direct} onPress={actions.management.beginContentEdit} />
             : <AppButton label="自行貼上正文" accessibilityLabel="返回新增私人來源並自行貼上正文" variant="secondary" disabled={!model.fresh || !model.canCreate || !model.canChoose || !!direct} onPress={actions.recreateWithText} />}</> : null}
-      </> : <><AppButton expanded={enabled && showText} label={showText ? "收起保存原文" : `查看完整原文（${selected.text.length.toLocaleString("en-HK")} 字）`} variant="secondary" disabled={!enabled} onPress={() => setShowText(value => !value)} />
-      </>}
+      </> : null}
       {!enabled ? <Text style={s.warning}>這份來源已停用。重新啟用並保存後才可查看原文或提取。</Text> : null}
-      <MotionDisclosure expanded={enabled && showText && hasText} scopeKey={scopeKey}>
-        <MotionReveal value={selected.text} contentKey={selected.text} scopeKey={scopeKey} regionKey="source-original-text" triggerKey={textTrigger} eligible={textEligible} testID="source-original-motion">{shown => <ScrollView nestedScrollEnabled style={s.original} contentContainerStyle={s.originalContent}><Text selectable testID="source-full-text" style={s.reading}>{shown}</Text></ScrollView>}</MotionReveal>
-      </MotionDisclosure>
       <View style={s.group}><AppButton expanded={showTechnical} label={showTechnical ? "收起來源技術資料" : "顯示來源技術資料"} variant="quiet" density="compact" onPress={() => setShowTechnical(value => !value)} />
         <MotionDisclosure expanded={showTechnical} scopeKey={scopeKey} style={s.stack}><Text style={s.meta}>版本 {selected.version}</Text><Text style={s.meta}>本站保存：{sourceTime(selected.createdAt)}</Text>
           <Text style={s.meta}>取得正文：{sourceTime(selected.retrievedAt)}</Text>
-          <Text selectable style={s.meta}>正文 SHA-256：{selected.sha256 || "尚未有正文完整性資料"}</Text></MotionDisclosure>
+          <Text selectable style={s.meta}>正文 SHA-256：{selected.sha256 ? <LiteralValue value={selected.sha256} /> : "尚未有正文完整性資料"}</Text></MotionDisclosure>
       </View>
       {model.intake?.mode === "synthetic" ? <View style={s.group}>
         <Text style={s.meta}>來源原地修改與停用尚未有正式接線；不會把編輯用途草稿當成更新原文。</Text>

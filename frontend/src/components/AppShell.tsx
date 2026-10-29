@@ -11,7 +11,6 @@ import { BrandLogo } from "./BrandLogo";
 import { Text } from "react-native-paper";
 import { AppIcon } from "./AppIcon";
 import { AgentEntryButton } from "./AgentEntryButton";
-import { MobileQuickInputDock } from "./agent/MobileQuickInputDock";
 import { MoreNavButton } from "./navigation/MoreNavButton";
 import { MobileNavSelection } from "./navigation/MobileNavSelection";
 import { desktopNavigationGroups, isMoreNavigationPath, navigationItems, type AppPath, type NavigationItem } from "./navigation/app-navigation";
@@ -33,6 +32,7 @@ import type { HomeActions, HomeViewModel } from "../view-model";
 function NavItem({ item, active, compact = false }: { item: NavigationItem; active: boolean; compact?: boolean }) {
   const [pressed, setPressed] = useState(false);
   return <PreviewLink href={item.href}><Pressable
+    {...(Platform.OS === "web" ? { dataSet: { hoverSurface: "true" } } : {})}
     accessibilityRole="link" accessibilityLabel={item.label} accessibilityState={{ selected: active }} aria-current={active ? "page" : undefined}
     onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)}
     style={StyleSheet.flatten([compact ? styles.bottomNavItem : styles.navItem, active && !compact && styles.navActive, pressed && styles.navPressed])}
@@ -142,7 +142,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.noticeText}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
       <View style={styles.body}>
         <MotionEntrance ref={routeSurface} preset="route" triggerKey={pathname} scopeKey={motionScope} style={styles.content} testID="motion-route">{children}</MotionEntrance>
-        {compact && pathname === "/" ? <MobileQuickInputDock key={motionScope} supportedKinds={["voice", "text"]} /> : null}
         {wide ? <MotionDrawerRight open={railOpen} width={310} mode="dock" scopeKey={motionScope} testID="motion-context-rail"><RightRail {...railProps} /></MotionDrawerRight> : null}
       </View>
       </MotionScopeBoundary>

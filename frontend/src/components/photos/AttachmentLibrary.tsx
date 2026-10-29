@@ -23,6 +23,7 @@ export type AttachmentReviewPage = {
 };
 export type AttachmentReviewCollections = { voices: AttachmentReviewPage; files: AttachmentReviewPage };
 export const PHOTO_READ_WINDOW = 4;
+export const ORIGINAL_MEDIA_READ_WINDOW = 6;
 
 function PhotoThumbnail({ item, scopeKey, readThumbnail }: { item: PhotoItem; scopeKey: string; readThumbnail?: PhotosActions['readThumbnail'] }) {
   const host = useRef<View>(null), read = useRef(readThumbnail); read.current = readThumbnail;
@@ -104,6 +105,10 @@ function OriginalMediaCard({ item }: { item: AttachmentReviewItem }) {
 
 export function OriginalMediaLibrary({ page, kind, onChat }: { page?: AttachmentReviewPage; kind: 'voice' | 'file'; onChat?: () => void }) {
   const title = kind === 'voice' ? '語音' : '影片與文件';
+  const [window, setWindow] = useState(0);
+  const count = page?.items.length ?? 0;
+  const last = Math.max(0, Math.ceil(count / ORIGINAL_MEDIA_READ_WINDOW) - 1), current = Math.min(window, last);
+  const visible = page?.items.slice(current * ORIGINAL_MEDIA_READ_WINDOW, (current + 1) * ORIGINAL_MEDIA_READ_WINDOW) ?? [];
   const state = !page ? 'unavailable' : page.state === 'ready' && !page.online ? 'stale' : page.state === 'ready' && !page.items.length && !page.hasMore ? 'empty' : page.state;
   return <View style={styles.stack} testID={`attachment-library-${kind}`}>
     <SectionHeader density="compact" title={title} icon={kind === 'voice' ? 'microphone-outline' : 'file-document-outline'} />
@@ -112,7 +117,12 @@ export function OriginalMediaLibrary({ page, kind, onChat }: { page?: Attachment
     <ReadStateNotice state={state} message={page?.message || (!page ? '附件清單尚未接通；可返回原聊天查看。' : state === 'empty' ? `目前沒有可讀取的${title}附件。` : state === 'loading' ? `正在讀取${title}…` : state === 'error' ? '暫時未能讀取附件，請重新讀取。' : '')}>
       {page && ['error', 'unavailable', 'stale'].includes(state) ? <AppButton label={`重新讀取${title}`} variant="quiet" disabled={!page.online || page.busy && !page.refreshing} onPress={page.refresh} /> : null}
     </ReadStateNotice>
-    {page?.items.map(item => <OriginalMediaCard key={item.id} item={item} />)}
+    {visible.map(item => <OriginalMediaCard key={`${item.id}:${item.version}`} item={item} />)}
+    {last > 0 ? <View style={styles.pager} testID={`attachment-${kind}-pager`}>
+      <AppButton label={`上一組${title}`} variant="quiet" disabled={current === 0} onPress={() => setWindow(current - 1)} />
+      <Text style={styles.meta}>第 {current + 1}／{last + 1} 組 · 已載入 {count} 項</Text>
+      <AppButton label={`下一組${title}`} variant="quiet" disabled={current === last} onPress={() => setWindow(current + 1)} />
+    </View> : null}
     {page?.hasMore ? <View style={styles.stack}>{!page.items.length ? <Text style={styles.meta}>這次尚未找到可顯示附件，可繼續讀取；不代表沒有其他附件。</Text> : null}
       <AppButton label={`載入更多${title}`} variant="quiet" disabled={!page.online || page.busy && !page.refreshing} loading={page.busy && !page.refreshing} onPress={page.loadMore} /></View> : null}
   </View>;

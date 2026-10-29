@@ -1,7 +1,10 @@
+import { useRouteNavigation } from "../navigation/useRouteNavigation";
+import { parseHistoryRoute, serializeHistoryRoute } from "../navigation/route-state";
+import { usePrivateRoutePresentation } from "../navigation/RoutePresentation";
 import { Workspace } from "../components/workspace/Workspace";
 import { HistoryCategoryNavigation } from "../components/history/HistoryCategoryNavigation";
 import { BackgroundSurface } from "../components/appearance/BackgroundSurface";
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { StyleSheet, View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
@@ -28,8 +31,10 @@ import { usePreparationWorkspace } from "../workspaces/PreparationWorkspace";
 import { useGrowthWorkspace } from "../workspaces/GrowthWorkspace";
 import { chineseFont, colors, readingType, spacing } from "../theme";
 
-function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOnly }: { scope: string; initialCategory: HistoryCategory; initialReviewStatus: CareReviewStatusFilter; olderOnly: boolean }) {
+function HistoryWorkspace({ scope, route }: { scope: string; route: ReturnType<typeof useRouteNavigation> }) {
   const router = useRouter(), navigate = usePreviewNavigation();
+  const routeState=parseHistoryRoute(route.params);
+  const [privateView,setPrivateQuery,rememberScroll]=usePrivateRoutePresentation("history");
   const { actions: homeActions } = useProduction();
   const tasks = useTasksWorkspace();
   const preparations = usePreparationWorkspace();
@@ -37,11 +42,17 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
   const growth = useGrowthWorkspace();
   const personal = usePersonalHistoryWorkspace();
   const profile = useProfileWorkspace();
-  const [filters, dispatch] = useReducer(historyFilterReducer, undefined, () => createHistoryFilters(scope, initialCategory));
+  const filters = { ...createHistoryFilters(scope, routeState.category), from:routeState.from??"", to:routeState.to??"", searchText:privateView.query };
+  function dispatch(action: HistoryFilterAction, guarded = true) {
+    const next=historyFilterReducer(filters,action);
+    setPrivateQuery(next.searchText);
+    if(next.category!==filters.category || next.from!==filters.from || next.to!==filters.to || next.searchText!==filters.searchText && (!!routeState.recordId || routeState.page!==0))route.navigate(serializeHistoryRoute({...routeState,category:next.category,from:next.from||null,to:next.to||null,recordId:null,page:0}),action.type==="category"?"push":"replace", guarded);
+  }
   const [dateDraft, setDateDraft] = useState<{ scope: string; category: HistoryCategory; from: string; to: string } | null>(null);
   const dateTrigger = useRef<View>(null);
   const layout = useContainerWidth(), compact = layout.width < 880;
-  const scrollRef = useRef<ScrollView>(null), scrollPosition = useRef(0);
+  const scrollRef = useRef<ScrollView>(null), scrollPosition = useRef(privateView.scroll);
+  useLayoutEffect(() => { scrollRef.current?.scrollTo({ y: privateView.scroll, animated: false }); }, []);
   const current = historyCategories.find(item => item.key === filters.category)!;
   const dateRange = historyDateRange(filters.from, filters.to);
   const dateErrors = dateDraft ? historyDateErrors(dateDraft.from, dateDraft.to) : {};
@@ -65,7 +76,6 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
   const hasDates = supportsDates && !!(filters.from || filters.to);
   const hasFilters = !!filters.searchText || hasDates;
   const dateDialogVisible = !!dateDraft && dateDraft.scope === scope && dateDraft.category === filters.category && showSearch && supportsDates;
-  useEffect(() => { dispatch({ type: "category", value: initialCategory }); }, [initialCategory]);
   useEffect(() => { setDateDraft(null); }, [scope, filters.category]);
 
   function filter(action: HistoryFilterAction) {
@@ -73,42 +83,41 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
     tasks?.actions.closePanel();
     preparations?.actions.closeDocument();
     care?.actions.closePanel();
-    dispatch(action);
+    dispatch(action, false);
   }
   function category(next: HistoryCategory) {
     if (next === filters.category) return;
-    navigate(() => {
+    route.run(() => {
       tasks?.actions.closePanel();
       preparations?.actions.closeDocument();
       care?.actions.closePanel();
-      dispatch({ type: "category", value: next });
-      router.setParams({ category: next, status: undefined, older: undefined });
-    }, "workspace");
+      dispatch({ type: "category", value: next }, false);
+    });
   }
-  const results = taskCategory ? dateRange ? <TaskHistoryView searchText={filters.searchText} dateRange={dateRange} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} />
+  const results = taskCategory ? dateRange ? <TaskHistoryView requestedTaskId={routeState.recordId} onTaskChange={recordId => route.navigate(serializeHistoryRoute({ ...routeState, recordId }), recordId ? "push" : "replace")} searchText={filters.searchText} dateRange={dateRange} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} />
     : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
-    : preparationCategory ? dateRange ? <PreparationHistoryView onPrepareQuestion={homeActions.prepareQuestion} searchText={filters.searchText} dateRange={dateRange} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} />
+    : preparationCategory ? dateRange ? <PreparationHistoryView requestedDocumentId={routeState.recordId} onDocumentChange={(recordId,replace=false) => route.navigate(serializeHistoryRoute({ ...routeState, recordId }), replace || !recordId ? "replace" : "push", !replace)} onPrepareQuestion={homeActions.prepareQuestion} searchText={filters.searchText} dateRange={dateRange} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
-    : reviewCategory ? care ? <CareReviewHistoryView key={care.scopeKey} model={care.model} actions={care.actions} searchText={filters.searchText} initialStatus={initialReviewStatus} olderOnly={olderOnly} />
+    : reviewCategory ? care ? <CareReviewHistoryView requestedReviewId={routeState.recordId} onReviewChange={recordId => route.navigate(serializeHistoryRoute({ ...routeState, recordId }), recordId ? "push" : "replace")} key={care.scopeKey} model={care.model} actions={care.actions} searchText={filters.searchText} initialStatus={routeState.status} olderOnly={routeState.older} routeView={{ status: routeState.status, page: routeState.page }} onRouteViewChange={next => route.navigate(serializeHistoryRoute({ ...routeState, ...next, recordId: null }), "replace")} />
       : <Text style={styles.meta}>正在讀取核對記錄…</Text>
-    : careCategory ? care ? <CareSavedRecordsView key={care.scopeKey} model={care.model} actions={care.actions} />
+    : careCategory ? care ? <CareSavedRecordsView key={care.scopeKey} model={care.model} actions={care.actions} requestedRecordId={routeState.recordId} onRecordChange={(recordId,accepted=false) => route.navigate(serializeHistoryRoute({ ...routeState, recordId }), recordId ? "push" : "replace", !accepted)} />
       : <Text style={styles.meta}>正在讀取已保存記錄…</Text>
-    : profileCategory ? profile ? <ProfileHistoryView key={profile.scopeKey} scopeKey={profile.scopeKey} model={profile.model} actions={profile.actions} />
+    : profileCategory ? profile ? <ProfileHistoryView requestedVersionId={routeState.recordId} onVersionChange={recordId => route.navigate(serializeHistoryRoute({ ...routeState, recordId }), recordId ? "push" : "replace")} key={profile.scopeKey} scopeKey={profile.scopeKey} model={profile.model} actions={profile.actions} />
       : <Text style={styles.meta}>正在讀取孩子檔案…</Text>
-    : growthCategory ? dateRange ? <GrowthHistoryView key={growth?.scopeKey ?? scope} searchText={filters.searchText} dateRange={dateRange}
-      onRecord={id => navigate(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))} onTask={id => navigate(() => { tasks?.actions.selectTask(id); router.push("/tasks"); })} />
+    : growthCategory ? dateRange ? <GrowthHistoryView key={growth?.scopeKey ?? scope} requestedConcernId={routeState.recordId} onConcernChange={recordId => route.navigate(serializeHistoryRoute({ ...routeState, recordId }), recordId ? "push" : "replace")} searchText={filters.searchText} dateRange={dateRange}
+      onRecord={id => navigate(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))} onTask={id => navigate(() => router.push({pathname:"/tasks",params:{taskId:id}}))} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
-    : personalCategory ? dateRange ? conversationCategory ? <PersonalConversationHistoryView searchText={filters.searchText} dateRange={dateRange} onPrepareQuestion={homeActions.prepareQuestion} />
-      : <PersonalNotificationHistoryView searchText={filters.searchText} dateRange={dateRange} />
+    : personalCategory ? dateRange ? conversationCategory ? <PersonalConversationHistoryView requestedMessageId={routeState.recordId} onMessageChange={recordId => route.navigate(serializeHistoryRoute({ ...routeState, recordId }), recordId ? "push" : "replace")} searchText={filters.searchText} dateRange={dateRange} onPrepareQuestion={homeActions.prepareQuestion} />
+      : <PersonalNotificationHistoryView requestedNotificationId={routeState.recordId} onNotificationChange={recordId => route.navigate(serializeHistoryRoute({ ...routeState, recordId }), recordId ? "push" : "replace")} searchText={filters.searchText} dateRange={dateRange} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
     : <View testID={`history-unavailable-${filters.category}`}  style={styles.unavailable}>
-      <Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}暫未可在這裏查閱</Text>
+      <Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{current.label}暫未可在這裏查閱</Text>
       <Text style={styles.body}>{current.unavailable}</Text>
     </View>;
 
   const resultSurface = <View style={styles.results}>{results}</View>;
   return <PageFrame density="compact" title="歷史資料庫" description="按分類找回原文、已完成安排與過往修改；每一項仍連回原資料。" scrollRef={scrollRef} scrollTestID="history-scroll"
-    onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
+    onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; rememberScroll(scrollPosition.current); }}>
     <View ref={layout.ref} onLayout={layout.onLayout} style={styles.workspace}>
       <Workspace.Provider title="歷史資料庫" compact={compact}><Workspace.Split>
         <Workspace.Aside style={!compact ? styles.categoryRail : undefined}><HistoryCategoryNavigation value={filters.category} compact={compact} onChange={category} /></Workspace.Aside>
@@ -156,10 +165,11 @@ export default function HistoryScreen() {
   const { model, actions, scopeKey } = useProduction();
   const personal = usePersonalHistoryWorkspace();
   const child = model.children.find(item => item.id === model.selectedChildId);
-  const scope = scopeKey ?? personal?.scopeKey ?? "";
+  const scope = scopeKey ?? (normalizeHistoryCategory(category) === "notifications" ? personal?.scopeKey : null) ?? "";
+  const route = useRouteNavigation(scope, ["recordId"], "/history");
   if (pathname !== "/history") return null;
   if (!child && normalizeHistoryCategory(category) !== "notifications") return <PageFrame title="歷史" density="compact" description="按分類查閱過往資料。"><Text style={styles.body}>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></PageFrame>;
-  return <HistoryWorkspace key={scope} scope={scope} initialCategory={normalizeHistoryCategory(category)} initialReviewStatus={normalizeReviewHistoryStatus(status)} olderOnly={normalizeHistoryOlderOnly(older)} />;
+  return <HistoryWorkspace key={scope} scope={scope} route={route} />;
 }
 
 const styles = StyleSheet.create({

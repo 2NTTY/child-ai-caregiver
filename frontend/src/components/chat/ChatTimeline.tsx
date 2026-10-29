@@ -1,5 +1,5 @@
 import { useId, useImperativeHandle, useLayoutEffect, useRef, useState, type MutableRefObject, type ReactNode } from "react";
-import { Pressable, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type ScrollView } from "react-native";
+import { Platform, Pressable, StyleSheet, View, type ViewStyle, type NativeScrollEvent, type NativeSyntheticEvent, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import { AppScrollView } from "../AppScrollView";
 import { AppIcon } from "../AppIcon";
@@ -156,10 +156,14 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
 function TimelineEntry({ id, scopeKey, arriving, children }: { id: string; scopeKey: string; arriving: boolean; children: ReactNode }) {
   // Keep the original arrival decision throughout this mount, including streaming updates.
   const [animateOnMount] = useState(arriving);
-  return <View testID="chat-timeline-entry" nativeID={`chat-entry-${id}`} style={styles.item}>
+  return <View testID="chat-timeline-entry" nativeID={`chat-entry-${id}`} style={[styles.item, Platform.OS === "web" && skippedLayoutStyle]}>
     <MotionEntrance triggerKey={id} scopeKey={scopeKey} preset="message" animateOnMount={animateOnMount}>{children}</MotionEntrance>
   </View>;
 }
+
+// Browser-native skipped layout keeps searchable/focusable DOM and reader-local state.
+// This is not a mounted-node bound; native keeps the existing progressive timeline.
+const skippedLayoutStyle = { contentVisibility: "auto", containIntrinsicSize: "auto 180px" } as unknown as ViewStyle;
 
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, position: "relative" }, scroll: { flex: 1 },

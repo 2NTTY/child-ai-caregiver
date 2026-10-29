@@ -14,16 +14,16 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
 }) {
   return <HomeWorkspace.Provider state={model} actions={actions}>
     <ScrollView testID="mobile-home-scroll" style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-      <HomeWelcome compact introductionPending={introductionPending} onIntroductionPresented={onIntroductionPresented} scopeKey={homeAgentScope(model) ?? model.caregiverName} />
+      <HomeWelcome compact introductionPending={introductionPending} onIntroductionPresented={onIntroductionPresented} scopeKey={homeAgentScope(model) ?? model.caregiverName} childName={model.children.find(child => child.id === model.selectedChildId)?.displayName} />
       <BackgroundSurface padded frosted testID="home-reading-panel" style={styles.content} role="region" accessibilityLabel="今日" tabIndex={-1}
         {...(Platform.OS === "web" ? { dataSet: { pageSurface: "true" } } : {})}>
-        <HomeWorkspace.Setup /><HomeWorkspace.Important /><HomeWorkspace.Tasks /><HomeWorkspace.Ongoing /><HomeWorkspace.Shortcuts />
+        <HomeWorkspace.Setup /><HomeWorkspace.Important /><HomeWorkspace.Capture /><HomeWorkspace.Tasks /><HomeWorkspace.Ongoing /><HomeWorkspace.Shortcuts />
       </BackgroundSurface>
     </ScrollView>
   </HomeWorkspace.Provider>;
 }
 const styles = StyleSheet.create({
   scroll: { flex: 1, minHeight: 0 },
-  page: { padding: mobileLayout.pageInset, paddingTop: 20, paddingBottom: 96, gap: spacing.lg, width: "100%", maxWidth: 650, alignSelf: "center" },
+  page: { padding: mobileLayout.pageInset, paddingTop: spacing.md, paddingBottom: spacing.xl, gap: spacing.sm, width: "100%", maxWidth: 650, alignSelf: "center" },
   content: { gap: spacing.lg },
 });

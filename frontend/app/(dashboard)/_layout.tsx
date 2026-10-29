@@ -4,7 +4,6 @@ import { Platform, Pressable, type View } from "react-native";
 import { MoreNavButton } from "../../src/components/navigation/MoreNavButton";
 import { isMoreNavigationPath, navigationItems } from "../../src/components/navigation/app-navigation";
 import { MobileNavSelection } from "../../src/components/navigation/MobileNavSelection";
-import { MobileQuickInputDock } from "../../src/components/agent/MobileQuickInputDock";
 import { AppIcon } from "../../src/components/AppIcon";
 import { AppBackdrop } from "../../src/components/appearance/AppBackdrop";
 import { AppShell } from "../../src/components/AppShell";
@@ -42,7 +41,6 @@ function NativeDashboardTabs() {
   const scopeKey = childScope ?? identityKey ?? "signed-out";
   return <Tabs screenLayout={({ children }) => <NativeKeyboardPane><MotionScopeBoundary scopeKey={scopeKey} resetKey={identityKey ?? "signed-out"} readiness={switchReadiness.state} readinessKey={switchReadiness.key} onRetry={switchReadiness.retry} onReturn={actions.selectChild} canReturn={id => model.children.some(child => child.id === id)} childKey={selectedChildId} eligible={!!childScope} style={{ flex: 1 }}>
     <MotionEntrance preset="route" triggerKey={pathname} scopeKey={scopeKey} style={{ flex: 1 }} testID="motion-route"><ConnectedRoute>{children}</ConnectedRoute></MotionEntrance>
-    {pathname === "/" ? <MobileQuickInputDock key={scopeKey} supportedKinds={["voice", "text"]} /> : null}
   </MotionScopeBoundary></NativeKeyboardPane>} screenListeners={({ navigation, route }) => ({ tabPress: event => {
     event.preventDefault(); leave(() => navigation.navigate(route.name), "workspace");
   } })} screenOptions={{ sceneStyle: { backgroundColor: "transparent" }, headerShown: false, tabBarActiveTintColor: colors.teal, tabBarActiveBackgroundColor: colors.selectedNav, tabBarInactiveTintColor: colors.muted, tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.line, minHeight: mobileLayout.tabMinHeight + insets.bottom }, tabBarItemStyle: { minHeight: mobileLayout.touchTarget }, tabBarLabelStyle: mobileType.caption, tabBarHideOnKeyboard: false,

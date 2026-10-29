@@ -1,9 +1,10 @@
+import { useMemoryReaderPresentation, type MemoryReaderDisclosure } from "../../navigation/RoutePresentation";
 import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { EmptyListCard } from "../EmptyListCard";
-import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Linking, Pressable, StyleSheet, View } from "react-native";
+import { useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Linking, Platform, Pressable, StyleSheet, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { usePreviewNavigation } from "../../preview/PreviewNavigationGuard";
+import { PreviewLink, usePreviewNavigation } from "../../preview/PreviewNavigationGuard";
 import type { PersonalLibraryItem } from "../../../../src/shared/personal-library";
 import { historyMessageQuestion, personalWorkQuestion } from "../../history-view-model";
 import { PersistentWorkCards } from "../history/PersistentWorkCards";
@@ -13,7 +14,7 @@ import { factIsApplicable, factSourceLabel, factStatusLabels, factUnavailableRea
 import { memoryClarificationQuestion, memoryConfirmerLabel, memoryDateLabel, visibleKnowledgeReferences, visibleMemoryFacts, visibleMemoryHistory,
   type KnowledgeReferenceView, type MemoryConfirmerDisplay, type MemoryReadProjection, type MemoryReferenceModel, type MemoryReferenceWorkspaceValue } from "../../memory-reference-view-model";
 import { useMemoryReferenceWorkspace } from "../../workspaces/MemoryReferenceWorkspace";
-import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../../theme";
+import { chineseFont, colors, radius, readingLayout, readingType, spacing, workspaceType } from "../../theme";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { AppIcon, type AppIconName } from "../AppIcon";
 import { ReadStateNotice } from "../ReadStateNotice";
@@ -41,24 +42,26 @@ const factSources: Record<MemoryFactView["source"]["kind"], { label: string; ico
   care_record: { label: "照顧記錄", icon: "notebook-outline" },
   manual: { label: "手動描述", icon: "pencil-outline" },
 };
-function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
+type FactReaderState = MemoryReaderDisclosure;
+const closedFactReader: FactReaderState = { details: false, historyOpen: false };
+function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion, readerState, onReaderState }: {
   fact: Readonly<MemoryFactView>; model: MemoryReferenceModel; workspace: MemoryReferenceWorkspaceValue; onQuestion?: (fact: Readonly<MemoryFactView>) => void;
-  confirmerDisplay?: MemoryConfirmerDisplay;
+  confirmerDisplay?: MemoryConfirmerDisplay; readerState: FactReaderState; onReaderState(state: FactReaderState): void;
 }) {
-  const [details, setDetails] = useState(false), [historyOpen, setHistoryOpen] = useState(false);
+  const { details, historyOpen } = readerState;
   const history = model.longTerm.data?.histories[fact.id];
   const versions = visibleMemoryHistory(model, fact);
   const currentHistory = history?.factVersion === fact.version ? history : undefined;
   const available = factIsApplicable(fact);
   const source = factSources[fact.source.kind];
-  return <View testID={`memory-reference-fact-${fact.id}`} style={styles.card}>
-    <View style={styles.titleRow}><Text accessibilityRole="header" aria-level={3} style={styles.factTopic}>{fact.key}</Text>
+  return <View testID={`memory-reference-fact-${fact.id}`} style={[styles.card, styles.factReader]}>
+    <View style={styles.titleRow}><Text accessibilityRole="header" aria-level={2} style={styles.factTopic}>{fact.key}</Text>
       <AppStatusBadge label={factStatusLabels[fact.status]} tone={fact.status === "confirmed" && available ? "success" : fact.status === "candidate" ? "warning" : "neutral"} /></View>
-    <Text selectable style={styles.factContent}>{fact.content}</Text>
+    <Text selectable style={styles.body}>{fact.content}</Text>
     <View style={styles.factContext}>
       <View style={styles.metadataLine}><AppIcon name={fact.visibility === "private" ? "lock-outline" : "account-group-outline"} size={15} /><Text accessibilityLabel={`可見範圍：${visibilityLabels[fact.visibility]}`} style={styles.meta}>{visibilityLabels[fact.visibility]}</Text></View>
       <Pressable testID={`memory-fact-source-${fact.id}`} accessibilityRole="button" accessibilityLabel={`${details ? "收起" : "查看"}來源：${source.label}`} accessibilityState={{ expanded: details }} aria-expanded={details}
-        onPress={() => { setDetails(value => !value); setHistoryOpen(false); }} style={({ pressed }) => [styles.sourceTrigger, pressed && styles.sourcePressed]}>
+        onPress={() => { onReaderState({ details: !details, historyOpen: false }); }} style={({ pressed }) => [styles.sourceTrigger, pressed && styles.sourcePressed]}>
         <AppIcon name={source.icon} size={15} color={colors.deepTeal} /><Text style={styles.sourceLabel}>{source.label}</Text><AppIcon name={details ? "chevron-up" : "chevron-down"} size={14} color={colors.deepTeal} />
       </Pressable>
     </View>
@@ -75,7 +78,7 @@ function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
       {fact.source.kind === "care_record" ? <Metadata label="原記錄">{fact.source.recordId} · 版本 {fact.source.version}</Metadata> : null}
       <AppButton label={historyOpen ? "收起版本記錄" : "查看版本記錄"} expanded={historyOpen} variant="quiet" density="compact" onPress={() => {
         if (!historyOpen && !currentHistory && model.online) workspace.reads?.readFactHistory?.(fact.id, fact.version);
-        setHistoryOpen(value => !value);
+        onReaderState({ details, historyOpen: !historyOpen });
       }} />
       {historyOpen ? <View style={styles.history}>
         {currentHistory?.state === "loading" ? <Text style={styles.meta}>正在讀取版本記錄…</Text>
@@ -121,7 +124,7 @@ function ReferenceCard({ source }: { source: KnowledgeReferenceView }) {
   const [details, setDetails] = useState(false), [technical, setTechnical] = useState(false), [linkFailed, setLinkFailed] = useState(false);
   const sourceUrl = readableReferenceUrl(source.url);
   return <View testID={`memory-reference-source-${source.sourceId}-${source.chunkId}`} style={styles.card}>
-    <Text accessibilityRole="header" style={styles.cardTitle}>{source.title}</Text>
+    <Text accessibilityRole="header" aria-level={3} style={styles.cardTitle}>{source.title}</Text>
     <Text style={styles.meta}>{source.publisher}</Text>
     {source.section ? <Text style={styles.meta}>{source.section}</Text> : null}
     <Text selectable style={styles.body}>{source.sourceExcerpt}</Text>
@@ -149,7 +152,7 @@ function ReferenceCard({ source }: { source: KnowledgeReferenceView }) {
 function CatalogCard({ source }: { source: PersonalLibraryItem }) {
   const [details, setDetails] = useState(false), [linkFailed, setLinkFailed] = useState(false);
   return <View style={styles.card} testID={`memory-catalog-source-${source.sourceId}`}>
-    <Text accessibilityRole="header" style={styles.cardTitle}>{source.title}</Text><Text style={styles.meta}>{source.publisher}</Text>
+    <Text accessibilityRole="header" aria-level={3} style={styles.cardTitle}>{source.title}</Text><Text style={styles.meta}>{source.publisher}</Text>
     <Text style={styles.meta}>覆核於 {memoryDateLabel(source.checkedAt)}</Text>
     <View style={styles.actions}><AppButton label="閱讀來源" variant="quiet" density="compact" onPress={() => { setLinkFailed(false); void Linking.openURL(source.url).catch(() => setLinkFailed(true)); }} />
       <AppButton label={details ? "收起來源資料" : "查看來源資料"} expanded={details} variant="quiet" density="compact" onPress={() => setDetails(value => !value)} /></View>
@@ -167,7 +170,7 @@ function ReferenceSection({ model, workspace }: { model: MemoryReferenceModel; w
     {!["loading", "error", "unavailable"].includes(model.references.state) ? groups.map(group => {
       const entries = sources.filter(source => source.classification === group.key);
       const catalogEntries = catalog?.filter(source => source.classification === group.key);
-      return <View key={group.key} style={styles.section}><BackgroundSurface padded><Text accessibilityRole="header" style={styles.sectionTitle}>{group.title}</Text><Text style={styles.meta}>{group.detail}</Text></BackgroundSurface>
+      return <View key={group.key} style={styles.section}><BackgroundSurface padded><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{group.title}</Text><Text style={styles.meta}>{group.detail}</Text></BackgroundSurface>
         {catalogEntries ? catalogEntries.length ? catalogEntries.map(source => <CatalogCard key={`${source.sourceId}:${source.versionId}`} source={source} />) : model.references.state === "ready" && model.online ? <EmptyListCard title={`已載入資料中暫無${group.title}`} detail={model.references.data.hasMore ? "仍有來源未載入，可繼續讀取。" : undefined} /> : <BackgroundSurface padded><Text style={styles.meta}>最新來源尚未核對</Text></BackgroundSurface> : entries.length ? entries.map(source => <ReferenceCard key={`${source.sourceId}:${source.versionId}:${source.chunkId}`} source={source} />)
           : model.references.state === "ready" && model.online ? <EmptyListCard title={`已載入資料中暫無${group.title}`} detail={model.references.data.hasMore ? "仍有來源未載入，可繼續讀取。" : undefined} /> : <BackgroundSurface padded><Text style={styles.meta}>最新來源尚未核對</Text></BackgroundSurface>}
       </View>;
@@ -178,11 +181,12 @@ function ReferenceSection({ model, workspace }: { model: MemoryReferenceModel; w
       : <BackgroundSurface padded><Text style={styles.meta}>仍有來源未載入</Text></BackgroundSurface> : null}
   </View>;
 }
-type MemoryReferenceViewProps = { tabActions?: ReactNode; confirmerDisplay?: MemoryConfirmerDisplay; onPrepareQuestion?: (question: string) => void };
-function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuestion, tabActions }: MemoryReferenceViewProps & { workspace: MemoryReferenceWorkspaceValue }) {
+type MemoryReferenceViewProps = { factHref?:(id:string)=>Href; tab?:Tab; onTabChange?:(tab:Tab)=>void; selectedFactId?:string|null; onFactChange?:(id:string|null)=>void; tabActions?: ReactNode; confirmerDisplay?: MemoryConfirmerDisplay; onPrepareQuestion?: (question: string) => void };
+function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuestion, tabActions, tab:routeTab, onTabChange, selectedFactId, onFactChange, factHref }: MemoryReferenceViewProps & { workspace: MemoryReferenceWorkspaceValue }) {
   const { model } = workspace;
   const router = useRouter(), navigate = usePreviewNavigation();
-  const [tab, setTab] = useState<Tab>("long"), [otherOpen, setOtherOpen] = useState(false);
+  const [localTab, setLocalTab] = useState<Tab>("long"), [otherOpen, setOtherOpen] = useState(false);
+  const tab=routeTab??localTab, setTab=onTabChange??setLocalTab;
   const tabsId = useId(), container = useContainerWidth();
   const current = useRef<MemoryReferenceWorkspaceValue | null>(workspace);
   current.current = workspace;
@@ -190,15 +194,54 @@ function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuest
     current.current = workspace;
     return () => { if (current.current === workspace) current.current = null; };
   }, [workspace]);
-  const facts = visibleMemoryFacts(model), confirmed = facts.filter(fact => fact.status === "confirmed"), other = facts.filter(fact => fact.status !== "confirmed");
+  const facts = useMemo(() => visibleMemoryFacts(model), [model]);
+  const factById = useMemo(() => new Map(facts.map(fact => [fact.id, fact])), [facts]);
+  const confirmed = facts.filter(fact => fact.status === "confirmed"), other = facts.filter(fact => fact.status !== "confirmed");
+  const [localFactId, setLocalFactId] = useState<string | null>(null);
+  const activeId = selectedFactId === undefined ? localFactId : selectedFactId;
+  const activeFact = activeId ? factById.get(activeId) : undefined;
+  const { readerStates, setReaderStates, returnTo } = useMemoryReaderPresentation(workspace.scopeKey);
+  const readerKey = (fact: Readonly<MemoryFactView>) => `${workspace.scopeKey}:${fact.id}:${fact.version}`;
+  const focusedRow = useRef<string | null>(null);
+  const readerRef = useRef<View>(null), previousActiveId = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    const changed = previousActiveId.current !== activeId;
+    previousActiveId.current = activeId;
+    if (activeId && tab === "long") returnTo.current = activeId;
+    if (changed && activeId && tab === "long") readerRef.current?.focus();
+  }, [activeId, tab]);
+  const rowRefs = useRef(new Map<string, View>()), listRef = useRef<View>(null);
+  const selectFact = (id: string | null) => { if (onFactChange) onFactChange(id); else setLocalFactId(id); };
+  const returnToList = () => selectFact(null);
+  useLayoutEffect(() => {
+    if (!activeId && tab === "long" && returnTo.current) {
+      const target = rowRefs.current.get(returnTo.current) ?? listRef.current;
+      returnTo.current = null; target?.focus();
+    }
+  }, [activeId, tab, facts]);
+  useLayoutEffect(() => {
+    if (!activeId && tab === "long" && focusedRow.current && !factById.has(focusedRow.current)) {
+      focusedRow.current = null; listRef.current?.focus();
+    }
+    const valid = new Set(facts.map(readerKey));
+    setReaderStates(previous => Object.keys(previous).some(key => !valid.has(key))
+      ? Object.fromEntries(Object.entries(previous).filter(([key]) => valid.has(key))) : previous);
+  }, [facts, activeId, tab]);
   const onQuestion = onPrepareQuestion ? (fact: Readonly<MemoryFactView>) => {
     // A stale card callback cannot use the next child or a replaced fact version.
     if (current.current !== workspace || !visibleMemoryFacts(current.current.model).some(item => item.id === fact.id && item.version === fact.version)) return;
     onPrepareQuestion(memoryClarificationQuestion(model.childName, fact));
   } : undefined;
-  function renderFact(fact: Readonly<MemoryFactView>) {
-    return <View key={`${fact.id}:${fact.version}`} style={[styles.factSlot, container.width < 760 && styles.fullWidth]}>
-      <FactCard fact={fact} model={model} workspace={workspace} confirmerDisplay={confirmerDisplay} onQuestion={onQuestion} /></View>;
+  function renderFactRow(fact: Readonly<MemoryFactView>) {
+    const href = factHref?.(fact.id), link = Platform.OS === "web" && !!href;
+    const row = <Pressable key={fact.id} ref={node => { if (node) rowRefs.current.set(fact.id, node); else rowRefs.current.delete(fact.id); }}
+      testID={`memory-fact-row-${fact.id}`} accessibilityRole={link ? "link" : "button"} accessibilityLabel={`閱讀記憶：${fact.key}`}
+      onFocus={() => { focusedRow.current = fact.id; }} onBlur={() => { if (focusedRow.current === fact.id) focusedRow.current = null; }}
+      onPress={link ? undefined : () => selectFact(fact.id)} style={styles.factRow}>
+      <Text style={styles.factTopic}>{fact.key}</Text><Text style={styles.factContent} numberOfLines={2}>{fact.content}</Text>
+      <Text style={styles.meta}>{visibilityLabels[fact.visibility]} · {factStatusLabels[fact.status]} · 閱讀來源與版本</Text>
+    </Pressable>;
+    return link ? <PreviewLink key={fact.id} href={href!}>{row}</PreviewLink> : row;
   }
   return <View ref={container.ref} onLayout={container.onLayout} style={styles.root}>
     <TabToolbar actions={tabActions} stacked={container.width < 480}><UnderlineTabs id={tabsId} label="記憶與參考分類" items={tabs} value={tab} onChange={setTab} /></TabToolbar>
@@ -227,23 +270,35 @@ function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuest
     </View></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="long" active={tab === "long"}><View style={styles.section}>
       <ReadNotice read={model.longTerm} unavailable="記憶資料暫未提供">
-        <View style={styles.section}><BackgroundSurface padded><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>已確認事實</Text></BackgroundSurface>
-          {confirmed.length ? <View style={styles.factGrid}>{confirmed.map(renderFact)}</View> : model.longTerm.state === "ready" && model.online ? <EmptyListCard title="已載入資料中沒有已確認事實" detail={model.longTerm.data.hasMoreFacts ? "仍有記憶未載入，可繼續讀取。" : undefined} /> : <BackgroundSurface padded><Text style={styles.meta}>已確認事實尚未重新核對</Text></BackgroundSurface>}
+        <View style={styles.section}>
+          {activeId ? <>
+            <AppButton label="返回記憶清單" variant="secondary" onPress={returnToList} />
+            <View ref={readerRef} tabIndex={-1} accessibilityLabel="記憶詳情">
+            {activeFact ? tab === "long" ? <FactCard key={readerKey(activeFact)} fact={activeFact} model={model} workspace={workspace}
+              confirmerDisplay={confirmerDisplay} onQuestion={onQuestion} readerState={readerStates[readerKey(activeFact)] ?? closedFactReader}
+              onReaderState={next => { if (current.current === workspace) setReaderStates(previous => ({ ...previous, [readerKey(activeFact)]: next })); }} /> : null
+              : <Text style={styles.warning}>目前不能查看這項內容；記憶可能未載入或已不能存取。</Text>}
+            </View>
+          </> : <View ref={listRef} tabIndex={-1} accessibilityLabel="記憶清單" style={styles.section}>
+            <BackgroundSurface padded><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>已確認事實</Text></BackgroundSurface>
+            {confirmed.length ? <View style={styles.factGrid}>{confirmed.map(renderFactRow)}</View> : model.longTerm.state === "ready" && model.online ? <EmptyListCard title="已載入資料中沒有已確認事實" detail={model.longTerm.data.hasMoreFacts ? "仍有記憶未載入，可繼續讀取。" : undefined} /> : <BackgroundSurface padded><Text style={styles.meta}>已確認事實尚未重新核對</Text></BackgroundSurface>}
+            {other.length ? <View style={styles.section}><AppButton label={otherOpen ? "收起待核對與停用資料" : `待核對與停用資料（已載入 ${other.length} 項）`} expanded={otherOpen} variant="quiet" onPress={() => setOtherOpen(value => !value)} />
+              {otherOpen ? <View style={styles.factGrid}>{other.map(renderFactRow)}</View> : null}</View> : null}
+          </View>}
         </View>
         {model.longTerm.data?.hasMoreFacts ? workspace.reads?.loadMoreFacts ? <AppButton label="載入更多記憶" variant="quiet" disabled={!model.online} onPress={workspace.reads.loadMoreFacts} />
           : <BackgroundSurface padded><Text style={styles.meta}>仍有記憶未載入</Text></BackgroundSurface> : null}
         <SummaryCard key={`${model.longTerm.data?.summary?.id}:${model.longTerm.data?.summary?.version}`} summary={model.longTerm.data?.summary ?? null} emptyReady={model.longTerm.state === "ready" && model.online} />
-        {other.length ? <View style={styles.section}><AppButton label={otherOpen ? "收起待核對與停用資料" : `待核對與停用資料（已載入 ${other.length} 項）`} expanded={otherOpen} variant="quiet" onPress={() => setOtherOpen(value => !value)} />
-          {otherOpen ? <View style={styles.factGrid}>{other.map(renderFact)}</View> : null}</View> : null}
+
       </ReadNotice>
     </View></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="references" active={tab === "references"}><ReferenceSection model={model} workspace={workspace} /></AppTabPanel>
   </View>;
 }
-export function MemoryReferenceView({ confirmerDisplay, onPrepareQuestion, tabActions }: MemoryReferenceViewProps) {
+export function MemoryReferenceView({ confirmerDisplay, onPrepareQuestion, tabActions, ...route }: MemoryReferenceViewProps) {
   const workspace = useMemoryReferenceWorkspace();
   const currentDisplay = workspace && confirmerDisplay?.scopeKey === workspace.scopeKey && confirmerDisplay.childId === workspace.model.childId ? confirmerDisplay : undefined;
-  return workspace ? <ScopedMemoryReferenceView key={workspace.scopeKey} workspace={workspace} tabActions={tabActions} confirmerDisplay={currentDisplay} onPrepareQuestion={onPrepareQuestion} />
+  return workspace ? <ScopedMemoryReferenceView {...route} key={workspace.scopeKey} workspace={workspace} tabActions={tabActions} confirmerDisplay={currentDisplay} onPrepareQuestion={onPrepareQuestion} />
     : <ReadStateNotice state="unavailable" title="暫不能查看記憶與參考" message="請先選擇有權查看的孩子。">{tabActions}</ReadStateNotice>;
 }
 const styles = StyleSheet.create({
@@ -252,8 +307,9 @@ const styles = StyleSheet.create({
   section: { gap: spacing.md, minWidth: 0 },
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section },
   factGrid: { flexDirection: "row", flexWrap: "wrap", alignItems: "stretch", gap: spacing.md, minWidth: 0 },
-  factSlot: { flexGrow: 1, flexBasis: "47%", minWidth: 0 }, fullWidth: { flexBasis: "100%" },
+  factRow: { width: "100%", minWidth: 0, minHeight: 44, padding: spacing.md, gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line },
   card: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radius.medium, padding: spacing.lg, gap: spacing.sm, minWidth: 0 },
+  factReader: { width: "100%", maxWidth: readingLayout.maxWidth, alignSelf: "flex-start" },
   titleRow: { flexDirection: "row", alignItems: "flex-start", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 },
   cardTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, flexShrink: 1 },
   factTopic: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flex: 1, minWidth: 0 },

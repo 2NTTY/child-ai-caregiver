@@ -57,12 +57,13 @@ export function useFirstScreenReady() { return useContext(FirstScreenContext).re
 export function useFirstScreenImage(image: FirstScreenImage, layoutReady = true) {
   const { outcomes, settle } = useContext(FirstScreenContext);
   const [loaded, setLoaded] = useState(false);
+  const [failedImage, setFailedImage] = useState<FirstScreenImage | null>(null);
   const onLoad = useCallback(() => { setLoaded(true); }, []);
-  const onError = useCallback(() => { settle(image, "fallback"); }, [image, settle]);
+  const onError = useCallback(() => { setFailedImage(image); settle(image, "fallback"); }, [image, settle]);
   // RN Web 0.21.2 Image already waits for HTMLImageElement.decode before onLoad.
   // Wait for the actual image geometry too, then reveal this mounted tree.
   useLayoutEffect(() => { if (loaded && layoutReady) settle(image, "loaded"); }, [image, loaded, layoutReady, settle]);
-  return { onLoad, onError, fallback: outcomes[image] === "fallback" };
+  return { onLoad, onError, fallback: failedImage === image || outcomes[image] === "fallback" };
 }
 
 const styles = StyleSheet.create({

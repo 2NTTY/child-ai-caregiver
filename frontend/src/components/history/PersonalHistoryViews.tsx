@@ -16,7 +16,8 @@ import { HistoryCardGrid, HistoryEntryCard } from "./HistoryCards";
 import { HistoryMessageDetail } from "./HistoryMessageDetail";
 import { useMotionPreferences } from "../../motion/preferences";
 
-export function PersonalConversationHistoryView({ searchText, dateRange, onPrepareQuestion }: {
+export function PersonalConversationHistoryView({ searchText, dateRange, onPrepareQuestion, requestedMessageId, onMessageChange }: {
+  requestedMessageId?: string | null; onMessageChange?: (id: string | null) => void;
   searchText: string; dateRange: HistoryDateRange; onPrepareQuestion(question: string): void;
 }) {
   const owner = usePersonalHistoryWorkspace(), current = useRef(owner); current.current = owner;
@@ -41,12 +42,23 @@ export function PersonalConversationHistoryView({ searchText, dateRange, onPrepa
     }, 300);
     return () => clearTimeout(timer);
   }, [scope, searchText, owner?.online]);
+  const requested = useRef("");
+  useEffect(() => {
+    if (!owner || !scope || requestedMessageId === undefined || owner.access === "revoked") return;
+    const key = `${scope}:${requestedMessageId ?? "list"}`;
+    if (requested.current === key) return;
+    if (!requestedMessageId) { requested.current = key; setSelection(null); opened.current = null; owner.actions.closeMessage(); return; }
+    if (!owner.online || !visiblePersonalHistory(owner.history, dateRange).some(item => item.id === requestedMessageId)) return;
+    requested.current = key; opened.current = {scope, id: requestedMessageId};
+    setSelection({scope, id: requestedMessageId, filterKey}); owner.actions.readMessage(requestedMessageId);
+  }, [owner, scope, requestedMessageId, filterKey]);
   if (!owner) return <ReadStateNotice headingLevel={3} state="unavailable" title="對話歷史暫未提供" />;
   const read = owner.history, matches = visiblePersonalHistory(read, dateRange);
-  const visible = owner.access !== "revoked" && selection && selection.scope === scope && selection.filterKey === filterKey;
+  const visible = owner.access !== "revoked" && selection && selection.scope === scope && selection.filterKey === filterKey && (requestedMessageId === undefined || selection.id === requestedMessageId);
   const selectedRead = owner.message.scopeKey === scope && (!owner.message.data || owner.message.data.id === selection?.id);
-  const close = () => { opened.current = null; setSelection(null); owner.actions.closeMessage(); };
+  const close = () => { if (onMessageChange) onMessageChange(null); else { opened.current = null; setSelection(null); owner.actions.closeMessage(); } };
   return <View ref={listRef} tabIndex={-1} accessibilityLabel="助手對話歷史" style={styles.list}>
+    {requestedMessageId && !matches.some(item => item.id === requestedMessageId) && read.state !== "loading" ? <Text style={styles.meta}>指定訊息未在已載入搜尋結果中；請沿原清單繼續搜尋，不會改開另一則訊息。</Text> : null}
     <Text style={styles.meta}>搜尋你與這位孩子的私人對話；日期只篩目前已搜尋的範圍。</Text>
     <SummaryDisclosure label="搜尋範圍說明" scopeKey={scope ?? ""}><Text style={styles.meta}>每次最多掃 100 則，返回最多 10 個命中。較早內容可繼續搜尋。</Text></SummaryDisclosure>
     {read.state === "loading" ? <ReadStateNotice headingLevel={3} state="loading" title="正在搜尋對話…" />
@@ -61,7 +73,7 @@ export function PersonalConversationHistoryView({ searchText, dateRange, onPrepa
           disabled={!owner.online || owner.busy.message} onPress={() => {
             if (!scope || current.current?.scopeKey !== scope || current.current.access === "revoked") return;
             returnFocus.current = cards.current.get(match.id) ?? null;
-            opened.current = { scope, id: match.id }; setSelection({ scope, id: match.id, filterKey }); owner.actions.readMessage(match.id);
+            if (onMessageChange) onMessageChange(match.id); else { opened.current = { scope, id: match.id }; setSelection({ scope, id: match.id, filterKey }); owner.actions.readMessage(match.id); }
           }}>
           <Text numberOfLines={4} style={styles.body}>{match.excerpt}</Text>
           <Text style={styles.meta}>{match.role === "user" ? "你的訊息" : "助手回覆"} · {memoryDateLabel(match.createdAt)}</Text>
@@ -84,13 +96,14 @@ export function PersonalConversationHistoryView({ searchText, dateRange, onPrepa
   </View>;
 }
 
-export function PersonalNotificationHistoryView({ searchText, dateRange }: { searchText: string; dateRange: HistoryDateRange }) {
+export function PersonalNotificationHistoryView({ searchText, dateRange, requestedNotificationId, onNotificationChange }: { searchText: string; dateRange: HistoryDateRange; requestedNotificationId?: string | null; onNotificationChange?: (id: string | null) => void }) {
   const owner = usePersonalHistoryWorkspace();
-  return <PersonalNotificationContent owner={owner} searchText={searchText} dateRange={dateRange} />;
+  return <PersonalNotificationContent owner={owner} searchText={searchText} dateRange={dateRange} requestedNotificationId={requestedNotificationId} onNotificationChange={onNotificationChange} />;
 }
 
 /** Both entry points render the same personal owner; Portal receives this owner explicitly. */
-export function PersonalNotificationContent({ owner, searchText = "", dateRange = { from: null, to: null }, recent = false }: {
+export function PersonalNotificationContent({ owner, searchText = "", dateRange = { from: null, to: null }, recent = false, requestedNotificationId, onNotificationChange }: {
+  requestedNotificationId?: string | null; onNotificationChange?: (id: string | null) => void;
   owner: PersonalHistoryOwner | null; searchText?: string; dateRange?: HistoryDateRange; recent?: boolean;
 }) {
   const motion = useMotionPreferences();
@@ -99,7 +112,7 @@ export function PersonalNotificationContent({ owner, searchText = "", dateRange 
   const filterKey = JSON.stringify([searchText, dateRange.from, dateRange.to]);
   const [selection, setSelection] = useState<{ scope: string; id: string; version: string; filterKey: string } | null>(null);
   const returnFocus = useRef<View>(null), listRef = useRef<View>(null), cards = useRef(new Map<string, View>());
-  const selected = !recent && owner && owner.access !== "revoked" && selection && selection.scope === scope && selection.filterKey === filterKey
+  const selected = !recent && owner && owner.access !== "revoked" && selection && selection.scope === scope && selection.filterKey === filterKey && (requestedNotificationId === undefined || selection.id === requestedNotificationId)
     ? owner.notifications.data?.items.find(item => item.id === selection.id && notificationVersion(item) === selection.version) : null;
   useEffect(() => { if (selection && !selected) setSelection(null); }, [selection, selected]);
   useEffect(() => { setSelection(null); }, [scope, filterKey, owner?.access]);
@@ -107,6 +120,16 @@ export function PersonalNotificationContent({ owner, searchText = "", dateRange 
     const latest = current.current;
     if (scope && latest?.online && latest.notifications.state === "unavailable" && !latest.notificationUnavailable) latest.actions.loadNotifications();
   }, [scope, owner?.online]);
+  const requested = useRef("");
+  useEffect(() => {
+    if (!owner || !scope || requestedNotificationId === undefined || owner.access === "revoked") return;
+    const key = `${scope}:${requestedNotificationId ?? "list"}`;
+    if (requested.current === key) return;
+    if (!requestedNotificationId) { requested.current = key; setSelection(null); return; }
+    const item = owner.notifications.data?.items.find(item => item.id === requestedNotificationId);
+    if (!item) return;
+    requested.current = key; setSelection({scope, id: item.id, version: notificationVersion(item), filterKey});
+  }, [owner, scope, requestedNotificationId, filterKey]);
   if (!owner) return <ReadStateNotice headingLevel={recent ? 2 : 3} state="unavailable" title="本人消息暫未提供" />;
   const read = owner.notifications;
   const matches = visiblePersonalMessages(read.data?.items ?? [], searchText, dateRange), items = recent ? matches.slice(0, 5) : matches;
@@ -120,6 +143,7 @@ export function PersonalNotificationContent({ owner, searchText = "", dateRange 
       : read.state === "unavailable" ? <ReadStateNotice headingLevel={recent ? 2 : 3} state="unavailable" title={owner.notificationUnavailable ? "消息內容暫未提供" : owner.online ? "正在準備消息…" : "連線後才可讀取消息"}>{owner.notificationUnavailable ? retry : null}</ReadStateNotice>
       : <>
         {read.state === "stale" || !owner.online ? <ReadStateNotice headingLevel={recent ? 2 : 3} state="stale" title="目前顯示較早的消息" /> : null}
+        {requestedNotificationId && !selected ? <Text style={styles.meta}>指定消息未載入，或其版本／權限已改變。可返回原清單繼續讀取。</Text> : null}
         {!recent ? <Text style={styles.meta}>搜尋與日期只篩已載入消息。</Text> : null}
         {recent ? items.map(item => <BackgroundSurface padded key={item.id} style={styles.entry} testID="personal-notification-entry">
           <Text style={styles.meta}>{notificationTime(item.sentAt)} · {item.scope.kind === "child" ? item.scope.childName : "本人帳戶"}</Text>
@@ -135,7 +159,7 @@ export function PersonalNotificationContent({ owner, searchText = "", dateRange 
             accessibilityLabel={`閱讀消息：${(content.title ?? content.body).slice(0, 100)}；預覽來自${messageChannelLabel(content.channel)}`}
             onPress={() => {
               if (!scope || current.current?.scopeKey !== scope || current.current.access === "revoked") return;
-              returnFocus.current = cards.current.get(item.id) ?? null; setSelection({ scope, id: item.id, version: notificationVersion(item), filterKey });
+              returnFocus.current = cards.current.get(item.id) ?? null; if (onNotificationChange) onNotificationChange(item.id); else setSelection({ scope, id: item.id, version: notificationVersion(item), filterKey });
             }}>
             {content.title ? <Text numberOfLines={2} style={styles.title}>{content.title}</Text> : null}
             <Text numberOfLines={3} style={styles.body}>{content.body}</Text>
@@ -153,11 +177,11 @@ export function PersonalNotificationContent({ owner, searchText = "", dateRange 
         {read.state === "stale" ? retry : null}
       </>}
     {!recent ? <FormDialog visible={!!selected} scopeKey={scope ?? ""} formKey={selection ? `${selection.id}:${selection.version}` : undefined} title="消息內容"
-      dismissMode="local" returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={() => setSelection(null)}>
+      dismissMode="local" returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={() => onNotificationChange ? onNotificationChange(null) : setSelection(null)}>
       {selected ? <View style={styles.list} testID="notification-history-detail">
         <Text style={styles.meta}>{notificationTime(selected.sentAt)} · {selected.scope.kind === "child" ? selected.scope.childName : "本人帳戶"}</Text>
         {selected.contents.map(content => <View key={content.channel} style={styles.channelDetail}>
-          <Text accessibilityRole="header" style={styles.channel}>{messageChannelLabel(content.channel)}</Text>
+          <Text accessibilityRole="header" aria-level={3} style={styles.channel}>{messageChannelLabel(content.channel)}</Text>
           {content.title ? <Text selectable style={styles.title}>{content.title}</Text> : null}
           <Text selectable style={styles.body}>{content.body}</Text>
           <Text style={styles.meta}>{notificationTime(content.sentAt)}</Text>

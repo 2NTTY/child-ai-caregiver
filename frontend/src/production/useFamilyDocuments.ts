@@ -427,6 +427,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     reading, documents: preparationDocuments, selected: selectedPreparation, condition,
     online: env.online, notice, justArchivedId, dataLabel: "Server 家庭共享多用途文件；依據來源及版本整理。", archiveNotice: "只歸檔文件，原來源及任務保留。",
     checkSave: runtime.lost || !checks.dirty ? undefined : checks.paused ?? (checkSaving ? "saving" : "queued"),
+    checkFeedback: runtime.lost ? [] : checks.feedback,
     canReapplyChecks: checks.paused === "conflict" && !pending && !busy && load === "ready" && env.online && !!visible?.canManage,
     operation: runtime.lost ? undefined : operation, capabilities: { archive: !locked, checkItem: !checkLocked, restore: !locked, refresh: !locked, create: !locked },
     busy, locked, editingLocked, createDraft: runtime.lost ? null : createDraft, dirty, epoch, retainedDraftId: pending?.attempt.kind === "create" && !pending.reconfirm ? pending.draftId ?? null : null, authorityVersion: visible?.authorityVersion ?? "" }, actions: {

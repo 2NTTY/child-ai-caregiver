@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { careKindOptions, type CareFilter, type CareRecordsActions, type CareRecordsViewModel } from "../../care-view-model";
@@ -15,12 +15,37 @@ import { CareRecordForm } from "./CareRecordForm";
 import { CareRecordDelete } from "./CareRecordDelete";
 import { HistoryCardGrid, HistoryEntryCard } from "../history/HistoryCards";
 
+type RouteSelection = { requestedRecordId?: string | null; onRecordChange?: (id: string | null, accepted?: boolean) => void };
+
 // History consumes the same Care owner. The current page replaces, never appends to, the visible list.
-export function CareSavedRecordsView(props: { model: CareRecordsViewModel; actions: CareRecordsActions }) { return <View accessibilityLabel="已保存記錄"><CareWriteNotice {...props} /><CareSavedRecordsBody {...props} history /></View>; }
+export function CareSavedRecordsView(props: { model: CareRecordsViewModel; actions: CareRecordsActions } & RouteSelection) { return <View accessibilityLabel="已保存記錄"><CareWriteNotice {...props} /><CareSavedRecordsBody {...props} history /></View>; }
 export function CareSavedRecordsList(props: { model: CareRecordsViewModel; actions: CareRecordsActions }) { return <CareSavedRecordsBody {...props} inlineDetail={false} />; }
-function CareSavedRecordsBody({ model, actions, inlineDetail = true, history = false }: { model: CareRecordsViewModel; actions: CareRecordsActions; inlineDetail?: boolean; history?: boolean }) {
+function CareSavedRecordsBody({ model, actions: ownerActions, inlineDetail = true, history = false, requestedRecordId, onRecordChange }: { model: CareRecordsViewModel; actions: CareRecordsActions; inlineDetail?: boolean; history?: boolean } & RouteSelection) {
   const [query, setQuery] = useState(model.list.activeQuery), [kind, setKind] = useState<CareFilter>(model.list.activeKind);
   const occupied = ["saving", "unknown"].includes(model.operation.state) || !!model.draft || !!model.deletion;
+  const requested = useRef("");
+  const visibleDetail = requestedRecordId === undefined || occupied || model.detail?.record.id === requestedRecordId ? model.detail : null;
+  useEffect(() => {
+    if (requestedRecordId === undefined || occupied || model.access === "lost") return;
+    const key = `${model.scopeKey}:${requestedRecordId ?? "list"}`;
+    if (requested.current === key) return;
+    requested.current = key;
+    if (requestedRecordId) ownerActions.openRecord(requestedRecordId);
+    else if (model.detail) ownerActions.closePanel();
+  }, [model, requestedRecordId, occupied]);
+  const closeRequested = useRef<{ model: CareRecordsViewModel; scope: string | undefined } | null>(null);
+  useEffect(() => {
+    const request = closeRequested.current;
+    if (!request || request.model === model) return;
+    closeRequested.current = null;
+    if (request.scope === model.scopeKey && !model.detail && !model.draft && !model.deletion && model.operation.state === "none") onRecordChange?.(null, true);
+  }, [model, onRecordChange]);
+  const actions = onRecordChange ? { ...ownerActions, openRecord: (id: string) => onRecordChange(id), closePanel() {
+    // FormDialog has already admitted a draft close; the owner can still refuse
+    // an in-flight/unknown attempt. URL acknowledgement must follow that owner.
+    closeRequested.current = { model, scope: model.scopeKey };
+    ownerActions.closePanel();
+  } } : ownerActions;
   const listRef = useRef<View>(null), cardRefs = useRef(new Map<string, View>());
   const context = JSON.stringify([model.scopeKey ?? model.child.id, model.child.id, model.access, model.list.activeQuery, model.list.activeKind, model.list.page ?? 1]);
   const anchor = useRef<{ id: string; context: string } | null>(null);
@@ -29,7 +54,7 @@ function CareSavedRecordsBody({ model, actions, inlineDetail = true, history = f
   // Keep one modal focus owner across reading, correction and deletion.
   const readerKey = useRef<string | null>(null);
   if (history && model.detail && !model.draft && !model.deletion) readerKey.current = `${model.scopeKey ?? model.child.id}:${model.detail.record.id}`;
-  const dialogVisible = history && model.access !== "lost" && !!(model.detail || model.draft || model.deletion);
+  const dialogVisible = history && model.access !== "lost" && !!(visibleDetail || model.draft || model.deletion);
   const loading = ["loading", "loading_more"].includes(model.list.state);
   const hasSnapshot = model.list.hasSnapshot ?? model.list.records.length > 0;
   const filtered = !!model.list.activeQuery.trim() || model.list.activeKind !== "all";
@@ -41,6 +66,7 @@ function CareSavedRecordsBody({ model, actions, inlineDetail = true, history = f
   if (!history && inlineDetail && model.deletion) return <CareRecordDelete model={model} actions={actions} />;
   if (!history && inlineDetail && model.detail) return <CareRecordDetail detail={model.detail} actions={actions} canEdit={model.access === "editable"} online={model.online} />;
   return <><View ref={history ? listRef : undefined} tabIndex={history ? -1 : undefined} accessibilityLabel={history ? "已保存照顧記錄清單" : undefined} testID={history ? "care-history-list" : undefined} style={s.workspace}>
+    {requestedRecordId && !visibleDetail && !loading ? <Text style={s.meta}>指定記錄尚未載入或已不能存取；請查看清單或重新讀取。</Text> : null}
     {showSearch ? <><AppTextField label="搜尋已保存記錄" accessibilityLabel="搜尋已保存記錄" value={query} onChangeText={setQuery} maxLength={200} disabled={occupied} />
     <View style={s.controls}><View style={s.filter}><AppSelect<CareFilter> label="種類" value={kind} options={[{ value: "all", label: "全部" }, ...careKindOptions]} onChange={setKind} disabled={occupied} /></View>
       <AppButton label="搜尋" density="compact" disabled={occupied || loading || !model.online} onPress={() => actions.search(query, kind)} /></View></> : null}
@@ -63,7 +89,7 @@ function CareSavedRecordsBody({ model, actions, inlineDetail = true, history = f
     {history ? <FormDialog key={readerKey.current} dismissMode={model.draft || model.deletion ? "guarded" : "local"} formKey={model.draft?.key ?? readerKey.current ?? undefined} visible={dialogVisible} scopeKey={model.scopeKey ?? model.child.id}
       title={model.draft ? "記錄資料" : model.deletion ? "刪除照顧記錄" : "照顧記錄詳情"} returnFocusRef={returnFocusRef} fallbackFocusRef={!anchor.current || anchor.current.context === context ? listRef : undefined} onClose={actions.closePanel}
       closeOutcome={{ revision: model, ready: !model.detail && !model.draft && !model.deletion && model.operation.state === "none" }} recovery={<CareWriteNotice model={model} actions={actions} />}>
-      {model.draft ? <CareRecordForm key={model.draft.key} model={model} actions={actions} /> : model.deletion ? <CareRecordDelete model={model} actions={actions} /> : model.detail ? <CareRecordDetail detail={model.detail} actions={actions} canEdit={model.access === "editable"} online={model.online} reading={loading} active={false} onReturnToList={actions.closePanel} /> : null}
+      {model.draft ? <CareRecordForm key={model.draft.key} model={model} actions={actions} /> : model.deletion ? <CareRecordDelete model={model} actions={actions} /> : visibleDetail ? <CareRecordDetail detail={visibleDetail} actions={actions} canEdit={model.access === "editable"} online={model.online} reading={loading} active={false} onReturnToList={actions.closePanel} /> : null}
     </FormDialog> : null}
   </>;
 }

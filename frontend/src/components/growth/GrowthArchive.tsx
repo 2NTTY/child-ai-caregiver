@@ -39,7 +39,8 @@ function SourceDisclosure({sources, onRecord}: {sources: GrowthArchiveSource[]; 
   </View>)}</View>;
 }
 
-export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport, exportBusy, active = true, footerActions, footerDetails}: {
+export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport, exportBusy, active = true, footerActions, footerDetails, requestedDocumentId, onDocumentChange}: {
+  requestedDocumentId?: string | null; onDocumentChange?: (id: string | null) => void;
   model: GrowthViewModel; wide: boolean; scrollRef: RefObject<ScrollView | null>; onRecord?: (id?: string) => void;
   onExportReport?: GrowthReportExportHandler;
   exportBusy?: boolean;
@@ -50,7 +51,8 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
   const reading = authorized ? model.page?.archive?.reading : undefined;
   const touch = useInteractionDensity();
   const compactControls = useWindowDimensions().width >= mobileLayout.breakpoint && !touch;
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [localSelectedKey, setLocalSelectedKey] = useState<string | null>(null);
+  const selectedKey = requestedDocumentId === undefined ? localSelectedKey : requestedDocumentId;
   const [historyOpen, setHistoryOpen] = useState(false);
   const [filter, setFilter] = useState<ArchiveFilter>("all");
   const [opened, setOpened] = useState<string[]>([]);
@@ -88,7 +90,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
   useEffect(() => () => { exportAttempt.current.generation++; exportAttempt.current.pending = false; }, []);
   useEffect(() => {
     previousContext.current = contextKey;
-    setSelectedKey(null); setHistoryOpen(false); setFilter("all"); setPurpose("family"); setExportKey(null);
+    setLocalSelectedKey(null); setHistoryOpen(false); setFilter("all"); setPurpose("family"); setExportKey(null);
     setIncludeSources(true); setIncludeRevision(false); jumpToReport.current = false;
   }, [contextKey]);
   useEffect(() => { if (historyOpen) reading?.ensureArchived(); }, [historyOpen, reading?.archiveStarted, reading?.pageBusy, contextKey]);
@@ -116,7 +118,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
   function selectArchive(item: ArchiveReadingItem) {
     if (latest.current.contextKey !== contextKey || !archiveReadingView(latest.current.model).items.some(value => value.key === item.key
       && value.snapshot.id === item.snapshot.id && value.snapshot.version === item.snapshot.version)) return;
-    reading?.closeVersion(); jumpToReport.current = true; setSelectedKey(item.key); setHistoryOpen(false);
+    reading?.closeVersion(); jumpToReport.current = true; if (onDocumentChange) onDocumentChange(item.key); else setLocalSelectedKey(item.key); setHistoryOpen(false);
   }
   const readableSource = (id: string) => archive ? archiveReadableSource(model, archive, id) : undefined;
   function openRecord(source: GrowthArchiveSource) {
@@ -202,7 +204,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
           <AppButton label={index.busy ? "正在讀取修訂…" : index.started ? index.hasMore ? "載入「" + index.title + "」更多修訂" : "「" + index.title + "」已載入修訂" : "查看「" + index.title + "」較早修訂"} variant="quiet" disabled={index.busy || !reading.online || index.started && !index.hasMore && !index.error} onPress={() => reading.loadVersions(index.documentId)} />
           {index.error ? <Text accessibilityRole="alert" style={s.warning}>未能讀取較早修訂，請再試一次。</Text> : null}
           {index.versions.map(version => <AppButton key={version.snapshotId} label={"版本 " + version.snapshotVersion + " · " + growthTime(version.generatedAt) + (version.invalidated ? " · 來源已失效" : "")} variant="quiet" density="compact" disabled={version.invalidated || !reading.online}
-            onPress={() => { reading.readVersion(index.documentId, version.snapshotId, version.snapshotVersion); setSelectedKey(version.snapshotId + ":" + version.snapshotVersion); jumpToReport.current = true; }} />)}
+            onPress={() => { reading.readVersion(index.documentId, version.snapshotId, version.snapshotVersion); if (onDocumentChange) onDocumentChange(version.snapshotId + ":" + version.snapshotVersion); else setLocalSelectedKey(version.snapshotId + ":" + version.snapshotVersion); jumpToReport.current = true; }} />)}
         </View>)}
         {reading.content && !reading.content.complete ? <View style={s.smallStack} testID="growth-version-content">
           <Text style={s.body}>{reading.content.invalidated ? "這個版本的來源已失效，正文已隱藏。" : reading.content.error ? "這個版本未能讀取，可沿同一版本繼續。" : reading.content.busy ? "正在讀取這個版本…" : "已讀取 " + reading.content.loadedCharacters + "／" + reading.content.totalCharacters + " 字，完成後可閱讀正文。"}</Text>
@@ -228,8 +230,9 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
     {footerDetails}
   </View>;
   if (!archive) return <View style={s.stack}>{periods}<View style={s.archiveEmpty} testID="growth-archive-unavailable">
-    <Text accessibilityRole="header" style={s.concernTitle}>{state === "ready" ? "暫時沒有可閱讀的成長報告" : stateCopy[state].title}</Text>
-    <Text style={s.body}>{state === "ready" ? rangePeriods ? "可翻閱其他已取得的期間與版本。" : "可翻閱其他已取得的年度與季度。" : stateCopy[state].detail}</Text>
+    <Text accessibilityRole="header" aria-level={2} style={s.concernTitle}>{selectedKey ? "目前不能查看這份成長報告" : state === "ready" ? "暫時沒有可閱讀的成長報告" : stateCopy[state].title}</Text>
+    <Text style={s.body}>{selectedKey ? "指定版本可能未載入或已不能存取。請翻閱已取得的期間，或返回目前報告。" : state === "ready" ? rangePeriods ? "可翻閱其他已取得的期間與版本。" : "可翻閱其他已取得的年度與季度。" : stateCopy[state].detail}</Text>
+    {selectedKey ? <AppButton label="返回目前報告" variant="secondary" onPress={() => onDocumentChange ? onDocumentChange(null) : setLocalSelectedKey(null)} /> : null}
   </View>{footerActions || footerDetails ? footer : null}</View>;
   const sections = standardGrowthReportSections(model, archive);
   const feedback = exportOpen && exportFeedback?.key === exportIntentKey ? exportFeedback : null;
@@ -240,7 +243,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
       <View style={a.headerRow}>
         <View style={a.headerCopy}>
           <Text style={a.kicker}>{selected?.period?.kind === "range" ? "成長報告" : selected?.key === current?.key ? "標準成長報告" : selected?.period?.label ?? "成長報告"}</Text>
-          <Text accessibilityRole="header" style={a.reportTitle}>{archive.title ?? `${model.childName}的成長報告`}</Text>
+          <Text accessibilityRole="header" aria-level={2} style={a.reportTitle}>{archive.title ?? `${model.childName}的成長報告`}</Text>
         </View>
         <AppButton label="導出報告" variant="accent" onPress={() => {clearExportFeedback(); setExportKey(selected?.key ?? null); setExportOpen(true);}} />
       </View>
@@ -255,7 +258,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
         onChange={Platform.OS === "web" ? setChapter : goTo} onSelectionClosed={Platform.OS === "web" ? goTo : undefined} /> : null}
       {sections.map((section, index) => <View key={section.id} ref={node => {if (node) sectionRefs.current.set(section.id, node); else sectionRefs.current.delete(section.id);}} tabIndex={-1}
         style={[a.reportSection, index > 0 && a.reportSectionDivider]} testID={`growth-report-${section.id}`}>
-        <Text accessibilityRole="header" style={a.reportSectionTitle}>{section.title}</Text>
+        <Text accessibilityRole="header" aria-level={3} style={a.reportSectionTitle}>{section.title}</Text>
         {section.id === "profile" ? <View style={a.profileFacts} testID="growth-report-profile-facts">
           <View style={a.profileFact}><Text style={s.meta}>孩子</Text><Text style={s.title}>{model.childName}</Text></View>
           <View style={a.profileFact}><Text style={s.meta}>年齡</Text><Text style={s.body}>{archive.ageLabel || "未提供"}</Text></View>

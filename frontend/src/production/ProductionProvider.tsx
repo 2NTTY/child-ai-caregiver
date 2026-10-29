@@ -1,7 +1,10 @@
+import { NavigationScopeProvider } from "../navigation/NavigationScope";
+import { RoutePresentationProvider } from "../navigation/RoutePresentation";
+import { selectChildForProfile } from "./child-navigation";
 import { useNativePushNavigation } from "./useNativePushNavigation";
 import { useProductionActivity } from "./useProductionActivity";
 import { createProductionTransport } from "./production-transport";
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useCallback, use, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { usePathname, useRouter, type Href } from "expo-router";
 import { Linking, Platform } from "react-native";
@@ -18,7 +21,7 @@ import type { HomeActions } from "../view-model";
 import { ProductionOwner } from "./ProductionOwner";
 import { AccountCallbackGate } from "../components/account/AccountCallbackGate";
 import { projectProductionHome } from "./home-projection";
-import { productionDestinations } from "./routes";
+import { homeTargetHref } from "../home-target";
 import { useOnlineUpdates } from "../../../src/client/use-online-updates";
 
 function initialOnline() { return Platform.OS !== "web" || typeof navigator === "undefined" || navigator.onLine; }
@@ -66,7 +69,7 @@ function useProductionValue(owner: ProductionOwner) {
     })().catch(() => { if (owner.getSnapshot().identityKey === identity) setLocalNotice("通知事項未能開啟，請在待辦重新讀取。"); }); }, target.childId ? "child" : undefined);
   }, setLocalNotice);
   const visibleDraft = draft.scope === snapshot.scopeKey ? draft : emptyAssistantDraft;
-  const model = useMemo(() => projectProductionHome(snapshot), [snapshot]);
+  const model = useMemo(() => projectProductionHome(snapshot), [snapshot.records, snapshot.scopeKey, snapshot.identityKey]);
   const chatDraft = snapshot.chat.selectedChildId ? snapshot.chat.drafts[snapshot.chat.selectedChildId] : undefined;
 
   useLayoutEffect(() => {
@@ -111,14 +114,22 @@ function useProductionValue(owner: ProductionOwner) {
     }
     return owner.draftOwner.add(snapshot.scopeKey, attachment, replaceId);
   };
-  const actions: HomeActions = {
-    selectChild(id) {
-      if (!snapshot.identityKey || current.current.identityKey !== snapshot.identityKey || id === model.selectedChildId) return;
-      leave(() => { if (current.current.identityKey === snapshot.identityKey) void owner.controller.selectChild(id); }, "child");
+  const actions = useMemo<HomeActions>(() => ({
+    selectChild(id, thenOpen) {
+      if (!snapshot.identityKey || current.current.identityKey !== snapshot.identityKey || id === model.selectedChildId && !thenOpen) return;
+      const identity = snapshot.identityKey;
+      leave(() => {
+        if (current.current.identityKey !== identity) return;
+        if (thenOpen === "profile") selectChildForProfile(owner, identity, id, () => router.push("/profile"));
+        else void owner.controller.selectChild(id);
+      }, thenOpen === "profile" ? "navigation" : "child");
     },
     refresh: () => { void refresh(); },
     reviewOperation: () => { leave(() => router.push("/guide"), "workspace"); },
-    open(destination) { leave(() => router.push(productionDestinations[destination] as Href), "workspace"); },
+    open(target) {
+      const scope = snapshot.scopeKey, identity = snapshot.identityKey;
+      leave(() => { if (owner.getSnapshot().scopeKey === scope && owner.getSnapshot().identityKey === identity) router.push(homeTargetHref(target)); }, "workspace");
+    },
     openAgentPhoto(original) {
       if (!currentScope() || current.current.pathname !== "/") { original.dispose?.(); return; }
       if (addAgentAttachment(photoAttachment(original))) openAgentDraft();
@@ -126,7 +137,8 @@ function useProductionValue(owner: ProductionOwner) {
     composeCare() { leave(() => router.push("/care"), "workspace"); },
     prepareQuestion(question) {
       if (!currentScope()) return;
-      if (chatDraft?.text.trim()) setLocalNotice("保留你原本未送出的問題；可在草稿入口核對後修改。");
+      const chat = owner.chatController.getSnapshot();
+      if (chat.selectedChildId && chat.drafts[chat.selectedChildId]?.text.trim()) setLocalNotice("保留你原本未送出的問題；可在草稿入口核對後修改。");
       else owner.chatController.setText(question);
       openAgentDraft(true);
     },
@@ -139,7 +151,19 @@ function useProductionValue(owner: ProductionOwner) {
       owner.controller.reviewDeleteChild();
     },
     completeGuidePreview() { setLocalNotice("引導完成狀態尚未接線；你可以繼續使用已接通的入口。"); },
-  };
+  }), [owner, snapshot.scopeKey, snapshot.identityKey, model.selectedChildId, pathname, router, leave, refresh]);
+  const setChatDraft = useCallback((value: string) => { if (currentScope()) owner.chatController.setText(value); }, [owner, snapshot.scopeKey]);
+  const dismissNotice = useCallback(() => { setLocalNotice(null); setDismissedNotice(snapshot.records.notice); }, [snapshot.records.notice]);
+  const attachSavedPhoto = useCallback((photo: PhotoMessageReference) => {
+      if(!currentScope())return;
+      leave(() => {
+        if(!currentScope()||!owner.chatWritesAllowed()||owner.draftOwner.getSnapshot().attachments.length){setLocalNotice('請先送出或移除目前聊天附件。');return;}
+        const chat=owner.chatController.getSnapshot(), draft=chat.selectedChildId?chat.drafts[chat.selectedChildId]:undefined;
+        if(chat.busy||draft&&draft.phase!=='draft'){setLocalNotice('請先處理目前訊息的保存結果。');return;}
+        owner.draftOwner.add(snapshot.scopeKey,{id:`saved-photo-${photo.id}`,kind:'photo',fileName:photo.fileName,mimeType:photo.mimeType,bytes:photo.bytes,photoReference:photo});
+        router.push('/chat');
+      },'workspace');
+    }, [owner, snapshot.scopeKey, pathname, leave, router]);
   const notice = localNotice ?? (snapshot.records.notice === dismissedNotice ? null : snapshot.records.notice);
   return {
     apiBaseUrl: owner.apiBaseUrl, owner, controller: owner.controller, recordsState: snapshot.records,
@@ -163,10 +187,10 @@ function useProductionValue(owner: ProductionOwner) {
       downloadNextPart: (save: (text: string, filename: string, isCurrent: () => boolean) => void | Promise<void>) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.downloadNextPart(save); },
       clearDownload: () => { if (current.current.identityKey === snapshot.identityKey) owner.accountOwner.clearDownload(); },
     },
-    dismissNotice: () => { setLocalNotice(null); setDismissedNotice(snapshot.records.notice); },
+    dismissNotice,
     homeIntroductionPending: snapshot.homeIntroductionPending, markHomeIntroductionPresented: owner.markHomeIntroductionPresented,
     chatState: snapshot.chat, chatController: owner.chatController,
-    chatDraft: chatDraft?.text ?? "", setChatDraft: (value: string) => { if (currentScope()) owner.chatController.setText(value); },
+    chatDraft: chatDraft?.text ?? "", setChatDraft,
     sendChat: async () => {
       if(!currentScope()||!owner.chatWritesAllowed())return;
       const attachments=owner.draftOwner.getSnapshot().attachments;
@@ -185,16 +209,7 @@ function useProductionValue(owner: ProductionOwner) {
     },
     fileUpload, checkFileUpload: () => {if(currentScope())void owner.fileOwner.check();},
     photoUpload, checkPhotoUpload: () => {if(currentScope())void owner.photoOwner.check();},
-    attachSavedPhoto: (photo: PhotoMessageReference) => {
-      if(!currentScope())return;
-      leave(() => {
-        if(!currentScope()||!owner.chatWritesAllowed()||owner.draftOwner.getSnapshot().attachments.length){setLocalNotice('請先送出或移除目前聊天附件。');return;}
-        const chat=owner.chatController.getSnapshot(), draft=chat.selectedChildId?chat.drafts[chat.selectedChildId]:undefined;
-        if(chat.busy||draft&&draft.phase!=='draft'){setLocalNotice('請先處理目前訊息的保存結果。');return;}
-        owner.draftOwner.add(snapshot.scopeKey,{id:`saved-photo-${photo.id}`,kind:'photo',fileName:photo.fileName,mimeType:photo.mimeType,bytes:photo.bytes,photoReference:photo});
-        router.push('/chat');
-      },'workspace');
-    },
+    attachSavedPhoto,
     voiceUpload, checkVoiceUpload: () => {if(currentScope())void owner.voiceOwner.check();},
     requestChatReply: async (id: string) => { if (!currentScope() || !owner.chatWritesAllowed()) return; const known = new Set(owner.chatController.getSnapshot().messages.map(item => item.id)); await owner.chatController.requestReply(id); if (currentScope() && owner.chatController.getSnapshot().messages.some(item => !known.has(item.id))) owner.invalidatePrivateReads(); },
     agentModel: agent.model, agentInbox: agent.inbox, agentRuns: agent.runs, agentPending: agent.pending,
@@ -259,15 +274,43 @@ function useProductionValue(owner: ProductionOwner) {
 
 export type ProductionContextValue = ReturnType<typeof useProductionValue>;
 const ProductionContext = createContext<ProductionContextValue | null>(null);
-// Owner-only guards do not need route, draft or read-projection notifications.
-// Identity and child consumers must continue using the reactive production value.
+// Narrow contexts publish only when their semantic inputs change. The broad
+// facade remains for mixed consumers; no second store or domain owner is added.
+export type ProductionIdentityValue = Pick<ProductionContextValue, "owner" | "scopeKey" | "identityKey" | "userId" | "user" | "selectedChildId" | "online" | "apiBaseUrl" | "queryClient" | "auth" | "sessionGeneration"> & {
+  children: ProductionContextValue["recordsState"]["children"]; writeReady: boolean;
+};
+export type ProductionHomeValue = Pick<ProductionContextValue, "model" | "actions" | "notice" | "dismissNotice" | "scopeKey" | "identityKey" | "homeIntroductionPending" | "markHomeIntroductionPresented">;
+export type ProductionDraftValue = Pick<ProductionContextValue, "chatDraft" | "setChatDraft" | "agentAttachments" | "agentDraftScope">;
+export type ProductionCommandsValue = Pick<ProductionContextValue, "actions" | "attachSavedPhoto">;
 const ProductionOwnerContext = createContext<ProductionOwner | null>(null);
+const ProductionIdentityContext = createContext<ProductionIdentityValue | null>(null);
+const ProductionHomeContext = createContext<ProductionHomeValue | null>(null);
+const ProductionDraftContext = createContext<ProductionDraftValue | null>(null);
+const ProductionCommandsContext = createContext<ProductionCommandsValue | null>(null);
 
-export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || (Platform.OS === "web" ? "/api" : "https://ex-machina.eu.org/api") }: { children: ReactNode; apiBaseUrl?: string }) {
+function useProductionSlices(value: ProductionContextValue) {
+  // Re-evaluate through all existing owner subscriptions: Agent, authorization,
+  // media unknown, account, chat phase and domain-pending changes can lock writes.
+  const writeReady = value.owner.canStartDomainWrite();
+  const identity = useMemo<ProductionIdentityValue>(() => ({ owner: value.owner, scopeKey: value.scopeKey, identityKey: value.identityKey,
+    userId: value.userId, user: value.user, selectedChildId: value.selectedChildId, online: value.online, apiBaseUrl: value.apiBaseUrl,
+    queryClient: value.queryClient, auth: value.auth, sessionGeneration: value.sessionGeneration, children: value.recordsState.children, writeReady }),
+  [value.owner, value.scopeKey, value.identityKey, value.userId, value.user, value.selectedChildId, value.online, value.apiBaseUrl,
+    value.queryClient, value.auth, value.sessionGeneration, value.recordsState.children, writeReady]);
+  const home = useMemo<ProductionHomeValue>(() => ({ model: value.model, actions: value.actions, notice: value.notice, dismissNotice: value.dismissNotice,
+    scopeKey: value.scopeKey, identityKey: value.identityKey, homeIntroductionPending: value.homeIntroductionPending, markHomeIntroductionPresented: value.markHomeIntroductionPresented }),
+  [value.model, value.actions, value.notice, value.dismissNotice, value.scopeKey, value.identityKey, value.homeIntroductionPending, value.markHomeIntroductionPresented]);
+  const draft = useMemo<ProductionDraftValue>(() => ({ chatDraft: value.chatDraft, setChatDraft: value.setChatDraft, agentAttachments: value.agentAttachments, agentDraftScope: value.agentDraftScope }),
+    [value.chatDraft, value.setChatDraft, value.agentAttachments, value.agentDraftScope]);
+  const commands = useMemo<ProductionCommandsValue>(() => ({ actions: value.actions, attachSavedPhoto: value.attachSavedPhoto }), [value.actions, value.attachSavedPhoto]);
+  return { identity, home, draft, commands };
+}
+
+export function ProductionOwnerHost({ children, apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || (Platform.OS === "web" ? "/api" : "https://ex-machina.eu.org/api") }: { children?: ReactNode; apiBaseUrl?: string }) {
   const [owner] = useState(() => new ProductionOwner(apiBaseUrl.replace(/\/$/, ""), initialOnline(), undefined, undefined, undefined, { legacyTrial: process.env.EXPO_PUBLIC_ACCOUNT_LEGACY_TRIAL === "true" }, createProductionTransport(apiBaseUrl)));
-  const value = useProductionValue(owner);
+  const snapshot = useSyncExternalStore(owner.subscribe, owner.getSnapshot, owner.getSnapshot);
   const activity = useProductionActivity();
-  useOnlineUpdates(owner.apiBaseUrl, value.auth === "signedIn" && value.account.gate === "ready" ? value.userId : null, activity.online ?? value.online, async reason => {
+  useOnlineUpdates(owner.apiBaseUrl, snapshot.records.auth === "signedIn" && snapshot.account.gate === "ready" ? snapshot.records.user?.id ?? null : null, activity.online ?? snapshot.records.online, async reason => {
     await owner.refresh();
     owner.invalidatePrivateReads(false, reason !== "unavailable");
   }, owner.fetcher, activity.active, () => owner.chatController.refreshOriginalReply());
@@ -298,24 +341,58 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
     // Signed-in ready scopes refresh through the same changes-cursor observer, avoiding duplicate reads.
     if (state.auth !== "signedIn" || !owner.accountOwner.isReady()) void owner.refresh();
   }, [owner, activity.active, activity.online]);
-  return <QueryClientProvider client={owner.queryClient}><ProductionOwnerContext.Provider value={owner}><ProductionContext.Provider value={value}><AccountCallbackGate>{children}</AccountCallbackGate>
+  return <ProductionOwnerContext value={owner}>{children}</ProductionOwnerContext>;
+}
+
+/** Static rendering bypasses the custom client entry; its isolated tree still owns one session. */
+export function ProductionProvider({ children, apiBaseUrl }: { children: ReactNode; apiBaseUrl?: string }) {
+  const owner = use(ProductionOwnerContext);
+  return owner ? <ProductionProjection owner={owner}>{children}</ProductionProjection>
+    : <ProductionOwnerHost apiBaseUrl={apiBaseUrl}><ProductionProvider>{children}</ProductionProvider></ProductionOwnerHost>;
+}
+
+function ProductionProjection({ children, owner }: { children: ReactNode; owner: ProductionOwner }) {
+  const value = useProductionValue(owner);
+  const slices = useProductionSlices(value);
+  return <QueryClientProvider client={owner.queryClient}><ProductionContext.Provider value={value}><ProductionIdentityContext.Provider value={slices.identity}><ProductionHomeContext.Provider value={slices.home}><ProductionDraftContext.Provider value={slices.draft}><ProductionCommandsContext.Provider value={slices.commands}><AccountCallbackGate><NavigationScopeProvider identityKey={value.identityKey} scopeKey={value.scopeKey} getSnapshot={owner.getSnapshot}><RoutePresentationProvider scopeKey={value.scopeKey ?? value.identityKey}>{children}</RoutePresentationProvider></NavigationScopeProvider></AccountCallbackGate>
     <DeleteChildDialog state={value.recordsState} confirmationKey={owner.childDeletionConfirmationKey()} getConfirmationKey={owner.childDeletionConfirmationKey} controller={owner.controller} />
     <AppDialog visible={value.logoutConfirmation} onDismiss={value.cancelLogout}>
       <AppDialog.Title>登出並清除未提交內容？</AppDialog.Title>
       <AppDialog.Content><Text>這次登出會清除本頁的文字及照片草稿。已提交但結果未知的操作仍須沿原操作查核。</Text></AppDialog.Content>
       <AppDialog.Actions><AppButton label="繼續編輯" variant="quiet" onPress={value.cancelLogout} /><AppButton label="確認登出" variant="danger" onPress={() => { void value.signOut(true); }} /></AppDialog.Actions>
     </AppDialog>
-  </ProductionContext.Provider></ProductionOwnerContext.Provider></QueryClientProvider>;
+  </ProductionCommandsContext.Provider></ProductionDraftContext.Provider></ProductionHomeContext.Provider></ProductionIdentityContext.Provider></ProductionContext.Provider></QueryClientProvider>;
 }
 
 export function useProductionOwner() {
-  const owner = useContext(ProductionOwnerContext);
+  const owner = use(ProductionOwnerContext);
   if (!owner) throw new Error("ProductionProvider is required for production owners");
   return owner;
 }
 
 export function useProduction() {
-  const value = useContext(ProductionContext);
+  const value = use(ProductionContext);
   if (!value) throw new Error("ProductionProvider is required for production pages");
+  return value;
+}
+
+export function useProductionIdentity() {
+  const value = use(ProductionIdentityContext);
+  if (!value) throw new Error("ProductionProvider is required for identity consumers");
+  return value;
+}
+export function useProductionHomeValue() {
+  const value = use(ProductionHomeContext);
+  if (!value) throw new Error("ProductionProvider is required for home consumers");
+  return value;
+}
+export function useProductionDraft() {
+  const value = use(ProductionDraftContext);
+  if (!value) throw new Error("ProductionProvider is required for draft consumers");
+  return value;
+}
+export function useProductionCommands() {
+  const value = use(ProductionCommandsContext);
+  if (!value) throw new Error("ProductionProvider is required for command consumers");
   return value;
 }

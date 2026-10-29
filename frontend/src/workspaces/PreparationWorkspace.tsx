@@ -24,6 +24,7 @@ export interface PreparationWorkspaceValue {
     capabilities?: { archive: boolean; checkItem: boolean; restore?: boolean; refresh?: boolean; create?: boolean };
     busy?: boolean; locked?: boolean; dirty?: boolean; epoch?: number; authorityVersion?: string;
     checkSave?: "queued" | "saving" | "conflict" | "unknown";
+    checkFeedback?: readonly { documentId: string; items: readonly { sectionId: string; itemId: string }[] }[];
     canReapplyChecks?: boolean;
   };
   actions: {

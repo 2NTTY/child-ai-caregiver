@@ -14,6 +14,13 @@ export function createPreparationCheckBuffer() {
     get dirty() { return drafts.size > 0 || flight !== null; },
     get flight() { return flight; },
     get paused() { return paused; },
+    // Read-only presentation targets from the existing buffer. An unknown
+    // request belongs only to its frozen flight, not other queued documents.
+    get feedback() {
+      const affected = paused === "unknown" && flight ? [{ documentId: flight.id, items: flight.input.checks }]
+        : paused === "conflict" ? [...drafts].map(([documentId, draft]) => ({ documentId, items: [...draft.values.values()] })) : [];
+      return affected.map(({ documentId, items }) => ({ documentId, items: items.map(({ sectionId, itemId }) => ({ sectionId, itemId })) }));
+    },
     edit(doc: FamilyDocument, authority: string, check: DocumentCheck, now: number) {
       if (paused || !usable(doc) || !itemAt(doc, check)) return false;
       const draft = drafts.get(doc.id) ?? { version: doc.version, authority, values: new Map(), editedAt: now, flush: false };

@@ -14,7 +14,9 @@ import {SummaryDisclosure} from './SummaryDisclosure';
 import {summaryStyles as s} from './summary-styles';
 
 type SummaryMotion = {scopeKey: string; triggerKey: MotionTrigger; eligible: boolean};
-const kindLabel = (kind: SummaryRecord['kind']) => careKindOptions.find(item => item.value === kind)!.label;
+const sampleCount = new Intl.NumberFormat("zh-HK");
+const kindLabels = new Map(careKindOptions.map(item => [item.value, item.label]));
+const kindLabel = (kind: SummaryRecord['kind']) => kindLabels.get(kind)!;
 
 // Controls use the authoritative row; only read-only text crosses a motion snapshot.
 function Readout<T>({value, regionKey, motion, children}: {value: T; regionKey: string; motion: SummaryMotion; children: (shown: T) => ReactNode}) {
@@ -50,18 +52,18 @@ function TaskSource({task, onTask, motion, group}: {task: TaskView; onTask: (id:
   </View>;
 }
 
-function MetricResult({metric, records, onRecord, scopeKey}: {metric: SummaryPage['metrics'][number]; records: SummaryRecord[]; onRecord: (id: string) => void; scopeKey: string}) {
+function MetricResult({metric, records, onRecord, scopeKey}: {metric: SummaryPage['metrics'][number]; records: ReadonlyMap<string, SummaryRecord>; onRecord: (id: string) => void; scopeKey: string}) {
   const value = metric.total ?? (metric.min === metric.max ? metric.min : `${metric.min}–${metric.max}`);
   return <View style={s.metric}>
     <Text style={s.title}>{kindLabel(metric.kind)}</Text>
-    <Text style={s.metricValue}>{value} <Text style={s.metricUnit}>{metric.unit}</Text></Text>
-    <Text style={s.body}>{metric.samples} 筆已確認數值{metric.total !== null ? '的合計' : metric.samples === 1 ? '的記錄值' : '的範圍'}</Text>
-    <Text style={s.meta}>其中 {metric.approximate} 筆為約數</Text>
-    {metric.total !== null ? <Text style={s.meta}>單筆範圍 {metric.min}–{metric.max} {metric.unit}</Text> : <Text style={s.meta}>合計未提供，保留原單位</Text>}
+    <Text style={s.metricValue}>{value}{"\u00a0"}<Text style={s.metricUnit}>{metric.unit}</Text></Text>
+    <Text style={s.body}>{sampleCount.format(metric.samples)} 筆已確認數值{metric.total !== null ? '的合計' : metric.samples === 1 ? '的記錄值' : '的範圍'}</Text>
+    <Text style={s.meta}>其中 {sampleCount.format(metric.approximate)} 筆為約數</Text>
+    {metric.total !== null ? <Text style={s.meta}>單筆範圍 {metric.min}–{metric.max}{"\u00a0"}{metric.unit}</Text> : <Text style={s.meta}>合計未提供，保留原單位</Text>}
     <SummaryDisclosure label={`核對${kindLabel(metric.kind)}的統計來源`} scopeKey={scopeKey}>
-      <Text style={s.meta}>最小 {metric.min} {metric.unit} · 最大 {metric.max} {metric.unit}</Text>
+      <Text style={s.meta}>最小 {metric.min}{"\u00a0"}{metric.unit} · 最大 {metric.max}{"\u00a0"}{metric.unit}</Text>
       {metric.recordIds.map(id => {
-        const record = records.find(item => item.id === id);
+        const record = records.get(id);
         return <View key={id} style={s.sourceRow}>
           {record ? <Text selectable style={s.body}>{record.text}</Text> : <Text style={s.meta}>此來源未列於目前記錄內容，請開啟原記錄核對。</Text>}
           <Text selectable style={s.meta}>來源記錄：{id}</Text>
@@ -73,13 +75,14 @@ function MetricResult({metric, records, onRecord, scopeKey}: {metric: SummaryPag
 }
 
 export function SummaryRecords({page, onRecord, onTask, motion, emptyReady = false}: {page: SummaryPage; onRecord: (id: string) => void; onTask: (id: string) => void; motion: SummaryMotion; emptyReady?: boolean}) {
+  const recordsById = new Map(page.records.map(record => [record.id, record]));
   const availableKinds = careKindOptions.filter(kind => page.counts[kind.value] > 0);
   return <>
     <View testID="summary-counts" style={s.reportSection}>
       <SectionHeader density="compact" title="已記錄的情況" />
-      <View style={s.row}>{availableKinds.map(kind => <Text key={kind.value} style={s.count}>{kind.label} {page.counts[kind.value]} 筆</Text>)}</View>
+      <View style={s.row}>{availableKinds.map(kind => <Text key={kind.value} style={s.count}>{kind.label} {sampleCount.format(page.counts[kind.value])} 筆</Text>)}</View>
       <Text style={s.meta}>只納入事件時間在上述期間內的已確認記錄；以下數值只代表已記錄樣本，並非完整期間的總量。</Text>
-      {page.metrics.length ? <View style={s.metrics}>{page.metrics.map(metric => <MetricResult key={`${metric.kind}:${metric.unit}`} metric={metric} records={page.records} onRecord={onRecord} scopeKey={`${motion.scopeKey}:${metric.kind}:${metric.unit}`} />)}</View> : emptyReady ? <EmptyListCard title="已載入的記錄沒有數值統計" detail="只代表本期間已取得的記錄，並非完整期間的總量。" icon="chart-bar" testID="summary-metrics-empty" /> : null}
+      {page.metrics.length ? <View style={s.metrics}>{page.metrics.map(metric => <MetricResult key={`${metric.kind}:${metric.unit}`} metric={metric} records={recordsById} onRecord={onRecord} scopeKey={`${motion.scopeKey}:${metric.kind}:${metric.unit}`} />)}</View> : emptyReady ? <EmptyListCard title="已載入的記錄沒有數值統計" detail="只代表本期間已取得的記錄，並非完整期間的總量。" icon="chart-bar" testID="summary-metrics-empty" /> : null}
     </View>
     <View style={[s.reportSection, s.chapterSection]}>
       <SectionHeader density="compact" title="閱讀時要留意" />

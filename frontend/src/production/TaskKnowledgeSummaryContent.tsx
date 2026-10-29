@@ -17,18 +17,33 @@ import { summaryStyles as s } from "../components/summary/summary-styles";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useProductionTaskKnowledgeSummary } from "./TaskKnowledgeDomains";
 
-export function TaskKnowledgeSummaryContent({ preparation = false, presentation = "full", scopeKey, childId, onRecord, onTask, onAgent }: {
-  presentation?: "full" | "overview"; scopeKey?: string; childId?: string; preparation?: boolean; onRecord(id: string): void; onTask(id: string): void; onAgent?(): void;
-}) {
+type SummaryContentCommon = { onRecord(id: string): void; onTask(id: string): void; preparation?: never; presentation?: never };
+export type TaskKnowledgeSummaryContentProps = SummaryContentCommon & (
+  { mode: "overview"; scopeKey: string; childId: string; onAgent?: never }
+  | { mode: "report"; scopeKey?: never; childId?: never; onAgent?: never }
+  | { mode: "legacy-preparation"; scopeKey?: never; childId?: never; onAgent?(): void }
+);
+export function TaskKnowledgeSummaryContent({ mode, scopeKey, childId, onRecord, onTask, onAgent }: TaskKnowledgeSummaryContentProps) {
+  const preparation = mode === "legacy-preparation", compact = mode === "overview";
   const owner = useProductionTaskKnowledgeSummary();
   const [open, setOpen] = useState(false), navigate = usePreviewNavigation();
   const [reviewScope, setReviewScope] = useState<string | null>(null);
   useEffect(() => { setReviewScope(null); }, [owner?.model.scopeKey, owner?.model.access === "lost", scopeKey, childId]);
   const latest = useRef(owner); latest.current = owner;
-  useEffect(() => () => { const value = latest.current; if (value?.model.dirty && !value.model.pending && !value.model.busy) value.actions.discard(); }, []);
+  // The form owns its RHF values locally. A real, guarded departure discards
+  // those values, so its owner marker must also clear. StrictMode's immediate
+  // effect replay is not a departure and cancels this one-microtask cleanup.
+  const lifetime = useRef(0);
+  useEffect(() => {
+    const mounted = ++lifetime.current;
+    return () => queueMicrotask(() => {
+      if (lifetime.current !== mounted) return;
+      const value = latest.current;
+      if (value?.model.dirty && !value.model.pending && !value.model.busy) value.actions.discard();
+    });
+  }, []);
   if (!owner) return <ReadStateNotice state="loading" message="正在讀取摘要…" />;
   const { model, actions } = owner, page = model.page;
-  const compact = presentation === "overview" && !preparation;
   if (compact && (!scopeKey || !childId || model.scopeKey !== scopeKey || page && page.childId !== childId)) return <Text style={s.body}>正在核對這位孩子的生活記錄來源…</Text>;
   if (compact && model.access === "lost") return <ChildOverviewRecentRecords model={model} scopeKey={scopeKey!} childId={childId!} onRecord={onRecord} onReview={() => {}} />;
   const reviewVisible = compact && reviewScope === model.scopeKey && model.access !== "lost";

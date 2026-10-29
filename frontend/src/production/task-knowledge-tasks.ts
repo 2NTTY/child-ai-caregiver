@@ -22,7 +22,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
   const [detailRead, setDetailRead] = useState<TasksViewModel["detailRead"]>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null), [draft, setDraft] = useState<TaskDraft | null>(null);
   const [latest, setLatest] = useState<TaskView | null>(null), [operation, setOperation] = useState(none);
-  const [histories, setHistories] = useState<Record<string, { taskVersion: number; items: TaskRevisionView[]; cursor: number | null }>>({});
+  const [histories, setHistories] = useState<Record<string, { taskVersion: number; items: TaskRevisionView[]; cursor: number | null; state: "loading" | "ready" | "error"; retryBefore: number | null; message: string }>>({});
   const [historyOpen, setHistoryOpen] = useState(false), [loadingMore, setLoadingMore] = useState(false);
   const busy = useRef(false), attempt = useRef<Attempt | null>(null), committed = useRef(false), checked = useRef(false);
   const readThrough = useRef<string | null>(null);
@@ -130,15 +130,24 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
   const selected = items.find(item => item.id === selectedId) ?? null;
   const locked = busy.current || pending || operation.state === "conflict" || runtime.lost;
   const readHistory = (before: number | null = null) => {
-    if (!selected || busy.current || !env.online || !runtime.live()) return;
+    if (!selected || busy.current || locked || draft || !env.online || !runtime.live()) return;
     const basis = selected; busy.current = true; setReading(true); setHistoryOpen(true);
+    setHistories(previous => ({ ...previous, [basis.id]: {
+      ...(previous[basis.id]?.taskVersion === basis.version ? previous[basis.id]! : { taskVersion: basis.version, items: [], cursor: null }),
+      state: "loading", retryBefore: before, message: "",
+    } }));
     void runtime.request(async (signal, current) => {
       try {
         const value = await runtime.read(["history", basis.id, before], next => verified(inner => api.history(env.childId!, basis.id, before, inner), next), signal);
         if (current()) setHistories(previous => ({ ...previous, [basis.id]: {
-          taskVersion: basis.version, items: before === null ? value.revisions : [...(previous[basis.id]?.items ?? []), ...value.revisions.filter(item => !previous[basis.id]?.items.some(old => old.task.version === item.task.version))], cursor: value.nextBeforeVersion,
+          taskVersion: basis.version, items: before === null ? value.revisions : [...(previous[basis.id]?.items ?? []), ...value.revisions.filter(item => !previous[basis.id]?.items.some(old => old.task.version === item.task.version))], cursor: value.nextBeforeVersion, state: "ready", retryBefore: null, message: "",
         } }));
-      } catch (error) { if (current() && !runtime.accessError(error)) setOperation(previous => ({ ...previous, message: "任務歷史尚未讀取；完成時間不會以安排時間代替。" })); }
+      } catch (error) {
+        if (current() && !runtime.accessError(error)) setHistories(previous => ({ ...previous, [basis.id]: {
+          ...previous[basis.id]!, state: "error", retryBefore: before,
+          message: before === null ? "任務歷史尚未讀取；完成時間不會以安排時間代替。" : "較早的安排記錄未能讀取；已載入的版本仍保留。",
+        } }));
+      }
       finally { if (current()) { busy.current = false; setReading(false); if (queuedSelection.current) { const { id, intent } = queuedSelection.current; queuedSelection.current = null; selectLatest.current(id, intent); } } }
     });
   };
@@ -180,6 +189,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
     hasMoreTasks: !!page?.nextAfterId && !runtime.lost, loadingMoreTasks: loadingMore,
     workerEnabled: page?.workerEnabled, work: runtime.lost ? [] : page?.work ?? [], reminders: runtime.lost ? [] : page?.reminders ?? [],
     history: runtime.lost || !selected ? [] : histories[selected.id]?.items ?? [], historyOpen,
+    historyRead: runtime.lost || !selected ? { state: "unread", message: "", page: "initial" } : { state: histories[selected.id]?.state ?? "unread", message: histories[selected.id]?.message ?? "", page: (histories[selected.id]?.retryBefore ?? null) === null ? "initial" : "older" },
     hasMoreHistory: !!selected && !!histories[selected.id]?.cursor, draft: runtime.lost ? null : draft,
     latest: runtime.lost ? null : latest, operation: runtime.lost ? none : operation,
   }, actions: {
@@ -217,6 +227,11 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
       if (locked || draft) return;
       if (historyOpen) setHistoryOpen(false); else readHistory();
     }, loadOlderHistory() { if (selected && histories[selected.id]?.cursor) readHistory(histories[selected.id]!.cursor); },
+    retryHistory() {
+      if (!selected) return;
+      const history = histories[selected.id];
+      if (history && history.taskVersion === selected.version && history.state === "error") readHistory(history.retryBefore);
+    },
     loadMoreTasks() {
       const after = page?.nextAfterId;
       if (!after || busy.current || !env.online || !runtime.live() || pending) return;

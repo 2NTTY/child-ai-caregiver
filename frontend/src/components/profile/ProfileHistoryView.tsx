@@ -12,13 +12,13 @@ import { ProfileRevisionSummary } from "./ProfileSummary";
 
 // Read-only consumer of the existing child-scoped profile owner. Entering this
 // category requests only the first page; older versions remain owner-paginated.
-export function ProfileHistoryView({ model, actions, scopeKey }: { model: ProfileViewModel; actions: ProfileActions; scopeKey: string }) {
+export function ProfileHistoryView({ model, actions, scopeKey, requestedVersionId, onVersionChange }: { model: ProfileViewModel; actions: ProfileActions; scopeKey: string; requestedVersionId?: string | null; onVersionChange?: (id: string | null) => void }) {
   const [selection, setSelection] = useState<{ scope: string; version: number } | null>(null);
   const returnFocus = useRef<View>(null), listRef = useRef<View>(null), cards = useRef(new Map<number, View>());
   const requested = useRef<{ scope: string; current: ProfileViewModel["current"] } | null>(null);
   const scope = `${scopeKey}:${model.access}`;
   useEffect(() => { setSelection(null); }, [scope]);
-  const selected = selection?.scope === scope && model.access !== "lost" ? model.history.find(revision => revision.version === selection.version) : null;
+  const selected = selection?.scope === scope && (requestedVersionId === undefined || String(selection.version) === requestedVersionId) && model.access !== "lost" ? model.history.find(revision => revision.version === selection.version) : null;
   useEffect(() => { if (selection && !selected) setSelection(null); }, [selection, selected]);
   const pending = ["saving", "unknown", "conflict"].includes(model.operation.state);
   const locked = !model.online || model.reading || pending;
@@ -35,11 +35,18 @@ export function ProfileHistoryView({ model, actions, scopeKey }: { model: Profil
     requested.current = { scope, current: model.current };
     actions.showHistory();
   }, [scopeKey, scope, model.access, model.child, locked, currentReady, neverConfirmed, model.historyOpen, model.notice, model.current, actions]);
+  useEffect(() => {
+    if (requestedVersionId === undefined || model.access === "lost") return;
+    if (!requestedVersionId) { setSelection(null); return; }
+    const revision = model.history.find(item => String(item.version) === requestedVersionId);
+    if (revision) setSelection(value => value?.scope === scope && value.version === revision.version ? value : {scope, version: revision.version});
+  }, [requestedVersionId, model.history, scope]);
   if (model.access === "lost") return <ReadStateNotice headingLevel={3} state="unavailable" title="孩子權限已失效" message="檔案及修改歷史已隱藏。" />;
   if (!model.child) return <ReadStateNotice headingLevel={3} state="unavailable" title="先選擇有權查看的孩子" />;
   const emptyReady = model.online && !model.reading && !pending && !model.notice && currentReady
     && (neverConfirmed || model.historyOpen && !model.history.length);
   return <View ref={listRef} tabIndex={-1} accessibilityLabel="檔案修改記錄" style={styles.list} testID="profile-history">
+    {requestedVersionId && !selected && !model.reading ? <Text style={styles.meta}>指定版本尚未載入或已不能存取；請沿原清單載入較早版本。</Text> : null}
     {model.current && model.current.version > 0 ? <Text style={styles.meta}>目前版本 {model.current.version}</Text> : null}
     {model.access === "read_only" ? <Text style={styles.meta}>目前為唯讀，可查看檔案修改記錄。</Text> : null}
     {!model.online ? <ReadStateNotice headingLevel={3} state="stale" title="目前離線" message="已載入版本保留，最新修改歷史尚未核對。" /> : null}
@@ -53,14 +60,14 @@ export function ProfileHistoryView({ model, actions, scopeKey }: { model: Profil
     <HistoryCardGrid testID="profile-history-cards">{model.history.map(revision => <HistoryEntryCard key={revision.version} testID={`profile-history-version-${revision.version}`}
       cardRef={node => { if (node) cards.current.set(revision.version, node); else cards.current.delete(revision.version); }}
       accessibilityLabel={`查看檔案版本 ${revision.version}：${revision.reason ?? "確認記錄"}`}
-      onPress={() => { returnFocus.current = cards.current.get(revision.version) ?? null; setSelection({ scope, version: revision.version }); }}>
+      onPress={() => { returnFocus.current = cards.current.get(revision.version) ?? null; if (onVersionChange) onVersionChange(String(revision.version)); else setSelection({ scope, version: revision.version }); }}>
       <Text numberOfLines={3} style={styles.title}>{revision.reason ?? "已確認的孩子檔案"}</Text>
       <Text numberOfLines={2} style={styles.body}>{revision.data?.source ?? "資料來源未知"}</Text>
       <Text style={styles.meta}>版本 {revision.version} · {revision.confirmedAtLabel ?? "確認時間未知"}</Text>
       <Text numberOfLines={1} style={styles.meta}>確認人：{revision.confirmedByLabel ?? "未知"}</Text>
     </HistoryEntryCard>)}</HistoryCardGrid>
     <FormDialog visible={!!selected} scopeKey={scope} formKey={selected?.version} title={`檔案版本 ${selected?.version ?? ""}`}
-      dismissMode="local" returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={() => setSelection(null)}>
+      dismissMode="local" returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={() => onVersionChange ? onVersionChange(null) : setSelection(null)}>
       {selected ? <ProfileRevisionSummary revision={selected} /> : null}
     </FormDialog>
     {emptyReady ? <EmptyListCard testID="profile-history-empty" title={neverConfirmed ? "尚未有檔案修改記錄" : model.hasMoreHistory ? "這一頁沒有較早版本" : "沒有較早的檔案版本"}

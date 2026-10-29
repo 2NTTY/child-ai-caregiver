@@ -13,7 +13,7 @@ export interface MotionDrawerRightProps extends MotionViewProps {
   onBackdropPress?: () => void;
 }
 
-/** A single live surface. Width and translation always use the same progress. */
+/** A single live surface. Dock layout settles immediately; only its surface translates. */
 export function MotionDrawerRight({ open, width, scopeKey, mode, eligible = true, animateOnMount = false, surfaceRef, onBackdropPress, children, style, ...props }: MotionDrawerRightProps) {
   const preferences = useMotionPreferences();
   const progress = useSharedValue(!animateOnMount && open && eligible ? 1 : 0);
@@ -22,6 +22,7 @@ export function MotionDrawerRight({ open, width, scopeKey, mode, eligible = true
   const generation = useRef(0);
   const mounted = useRef(true);
   const node = useRef<View>(null);
+  const origin = useRef<HTMLElement | null>(null);
   const [present, setPresent] = useState(open && eligible);
   const [phase, setPhase] = useState("settled");
   const visible = eligible && (open || (present && currentScope.current === scopeKey));
@@ -35,8 +36,17 @@ export function MotionDrawerRight({ open, width, scopeKey, mode, eligible = true
     currentScope.current = scopeKey;
     const token = ++generation.current;
     cancelAnimation(progress);
-    if (Platform.OS === "web" && node.current) (node.current as unknown as HTMLElement).inert = !open || !eligible;
     const target = open && eligible;
+    if (Platform.OS === "web" && node.current) {
+      const surface = node.current as unknown as HTMLElement;
+      if (target && !old.open && !surface.contains(document.activeElement)) origin.current = document.activeElement as HTMLElement | null;
+      if (!target && surface.contains(document.activeElement)) {
+        const before = origin.current;
+        if (before?.isConnected && !before.hasAttribute("disabled") && before.getAttribute("aria-disabled") !== "true"
+          && !before.closest('[inert],[aria-hidden="true"]')) before.focus({ preventScroll: true });
+      }
+      surface.inert = !target;
+    }
     const interrupted = old.scopeKey !== scopeKey || old.width !== width || old.epoch !== preferences.epoch || !preferences.enabled || !eligible;
     if (interrupted || old.open === open) {
       progress.value = target ? 1 : 0; setPresent(target); setPhase("settled"); return;
@@ -47,11 +57,11 @@ export function MotionDrawerRight({ open, width, scopeKey, mode, eligible = true
     });
   }, [open, width, scopeKey, eligible, preferences.enabled, preferences.epoch, progress, complete]);
   useLayoutEffect(() => { mounted.current = true; return () => { mounted.current = false; generation.current += 1; cancelAnimation(progress); }; }, [progress]);
-  const frame = useAnimatedStyle(() => ({ width: drawerGeometry(width, progress.value, mode).frameWidth }));
-  const surface = useAnimatedStyle(() => ({ transform: [{ translateX: drawerGeometry(width, progress.value, mode).translateX }] }));
+  const frame = { width: drawerGeometry(width, open && eligible ? 1 : 0, mode, open && eligible).frameWidth };
+  const surface = useAnimatedStyle(() => ({ transform: [{ translateX: drawerGeometry(width, progress.value, mode, open && eligible).translateX }] }));
   return <>
     {visible && onBackdropPress ? <MotionBackdrop open={open && eligible} onPress={onBackdropPress} progress={progress} phase={phase} kind="drawer-backdrop" /> : null}
-    <Animated.View {...motionData({ motionKind: "drawer-right", motionMode: mode, motionPhase: phase })} style={[styles.frame, frame]} pointerEvents={open && eligible ? "auto" : "none"}>
+    <Animated.View {...motionData({ motionKind: "drawer-right", motionMode: mode, motionPhase: phase })} style={[styles.frame, frame, { pointerEvents: open && eligible ? "auto" : "none" }]}>
     {visible ? <Animated.View {...props} ref={(value: View | null) => {
       node.current = value;
       if (typeof surfaceRef === "function") surfaceRef(value); else if (surfaceRef) surfaceRef.current = value;

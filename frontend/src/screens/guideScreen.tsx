@@ -62,7 +62,7 @@ export default function GuideScreen() {
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
   return <PageFrame density="compact" title="使用引導">
     <View style={styles.intro}>
-      <Text style={styles.introTitle}>{needsGuide ? "從你需要的一步開始" : "隨時重看使用方法"}</Text>
+      <Text style={styles.introTitle}>{needsGuide ? "從你需要的主題開始" : "隨時重看使用方法"}</Text>
       <View style={styles.accountRow} testID="guide-account-actions" accessibilityLabel="目前帳戶">
         <Text style={[styles.body, styles.accountCopy]}>{user?.name} · {user?.email}</Text>
         <AppButton label="登出" variant="quiet" density="compact" disabled={!recordsState.online || !!recordsState.busy} onPress={() => { void signOut(); }} />
@@ -106,28 +106,22 @@ export default function GuideScreen() {
       </View>
     </View>
     <View ref={layout.ref} onLayout={layout.onLayout} style={[styles.workspace, narrow && styles.workspaceNarrow]}>
-      <View style={[styles.steps, narrow && styles.stepsNarrow]} accessibilityLabel="使用引導步驟">
-        <Text style={styles.eyebrow}>使用路徑 · 3 步</Text>
-        {steps.map((item, index) => <Pressable key={item.title} accessibilityRole="button" accessibilityLabel={`第 ${index + 1} 步：${item.title}${index === currentStep ? "，目前閱讀" : ""}`}
+      <View style={[styles.steps, narrow && styles.stepsNarrow]} accessibilityLabel="使用引導主題">
+        <Text style={styles.eyebrow}>按需要閱讀</Text>
+        {steps.map((item, index) => <Pressable key={item.title} accessibilityRole="button" accessibilityLabel={`${item.title}${index === currentStep ? "，目前閱讀" : ""}`}
           accessibilityState={{ selected: index === currentStep }} onPress={() => setCurrentStep(index)}
           style={({ pressed }) => [styles.step, index === currentStep && styles.stepActive, pressed && (index === currentStep ? styles.selectedPressed : styles.pressed)]}>
-          <View style={[styles.stepNumber, index === currentStep && styles.stepNumberActive]}><Text style={[styles.stepNumberText, index === currentStep && styles.stepNumberTextActive]}>{index + 1}</Text></View>
           <View style={styles.stepCopy}><Text style={styles.stepTitle}>{item.title}</Text>{index === currentStep ? <Text style={styles.meta}>目前閱讀</Text> : null}</View>
           <AppIcon name="chevron-right" size={18} />
         </Pressable>)}
       </View>
       <View style={styles.reading} testID="guide-current-step">
-        <Text style={styles.eyebrow}>第 {currentStep + 1} 步，共 {steps.length} 步</Text>
         <Text accessibilityRole="header" aria-level={2} style={styles.readingTitle}>{step.title}</Text>
         <Text style={styles.lead}>{step.description}</Text>
         <View style={styles.actions}><AppButton label={step.action} onPress={() => actions.open(step.destination)} /></View>
-        <View style={styles.checklist}>{step.points.map((point, index) => <View key={point.title} style={styles.point}>
-          <Text style={styles.pointNumber}>{String(index + 1).padStart(2, "0")}</Text><View style={styles.pointCopy}><Text style={styles.pointTitle}>{point.title}</Text><Text style={styles.body}>{point.body}</Text></View>
+        <View style={styles.checklist}>{step.points.map(point => <View key={point.title} style={styles.point}>
+          <View style={styles.pointCopy}><Text accessibilityRole="header" aria-level={3} style={styles.pointTitle}>{point.title}</Text><Text style={styles.body}>{point.body}</Text></View>
         </View>)}</View>
-        <View style={styles.stepControls}>
-          <AppButton label="上一步" variant="quiet" disabled={currentStep === 0} onPress={() => setCurrentStep(value => value - 1)} />
-          <AppButton label="下一步" variant="secondary" disabled={currentStep === steps.length - 1} onPress={() => setCurrentStep(value => value + 1)} />
-        </View>
       </View>
     </View>
 
@@ -154,15 +148,13 @@ const styles = StyleSheet.create({
   eyebrow: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, fontWeight: "700" },
   step: { minHeight: 64, flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, borderRadius: radius.small, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.controlSurface },
   stepActive: { backgroundColor: colors.paleTeal, borderColor: colors.line }, stepCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
-  stepNumber: { width: 32, height: 32, borderRadius: radius.pill, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center" },
-  stepNumberActive: { backgroundColor: colors.ink, borderColor: colors.ink }, stepNumberText: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" }, stepNumberTextActive: { color: colors.white },
   stepTitle: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
   reading: { backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, padding: spacing.lg, flex: 1, flexBasis: "auto", width: "100%", minWidth: 0, maxWidth: 720, gap: spacing.md },
   readingTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.title }, lead: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },
   checklist: { marginVertical: spacing.md }, point: { flexDirection: "row", gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine, paddingVertical: spacing.lg },
-  pointNumber: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, paddingTop: spacing.xs }, pointCopy: { flex: 1, minWidth: 0, gap: spacing.sm },
+  pointCopy: { flex: 1, minWidth: 0, gap: spacing.sm },
   pointTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section }, body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
-  actions: { alignItems: "flex-start" }, stepControls: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
+  actions: { alignItems: "flex-start" },
   start: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.lg, backgroundColor: colors.paleTeal, padding: spacing.lg, borderRadius: radius.medium }, startCopy: { flex: 1, flexBasis: 260, minWidth: 0, gap: spacing.sm },
   previewFooter: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.sm, alignItems: "flex-start" }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
 });

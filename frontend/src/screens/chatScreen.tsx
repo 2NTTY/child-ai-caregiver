@@ -3,7 +3,7 @@ import { ChatFileMessage } from '../production/ChatFileMessage';
 import { VoiceMessage } from '../production/VoiceMessage';
 import { OfficialHelpCards } from '../components/chat/OfficialHelpCards';
 import { AGENT_PROGRESS_LABELS } from '../../../src/shared/agent-feedback';
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "expo-router";
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type PressableStateCallbackType, type ScrollView as NativeScrollView } from "react-native";
 import { Text } from "react-native-paper";
@@ -15,7 +15,7 @@ import { ChatMessage, ChatProgressIndicator } from "../components/chat/ChatMessa
 import { ChatTimeline, type ChatTimelineControls } from "../components/chat/ChatTimeline";
 import { locateCitationSource } from "../components/chat/locateCitationSource";
 import { chatColors, chatFont, chatLayout, chatType } from "../components/chat/chat-presentation";
-import { useProduction } from "../production/ProductionProvider";
+import { useProduction, useProductionDraft, useProductionIdentity } from "../production/ProductionProvider";
 import { AgentConversation } from "../production/AgentConversation";
 import { ChatPhotoMessage } from "../production/ChatPhotoMessage";
 import { usePreviewLeaveGuard, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
@@ -25,30 +25,29 @@ import type { ChatReplyPhase } from "../chat-view-model";
 
 const attachmentLeaveCopy = { message: "離開將移除未送出的附件；文字仍在本次暫存保留。", actionLabel: "移除附件並離開" };
 // All widths use layout units (Web onLayout uses offsetWidth), never zoomed DOM rectangles.
-const activityRail = { width: 152, inset: 8, gap: 16 };
-const activityRailMinimum = chatLayout.maxWidth + 2 * (activityRail.width + activityRail.inset + activityRail.gap);
 const runPhases = { running: "thinking", completed: "complete", stopped: "stopped", unknown: "unknown" } satisfies Record<string, ChatReplyPhase>;
 export default function ChatPage() {
-  const { scopeKey } = useProduction();
+  const { scopeKey } = useProductionIdentity();
   const customBackground = useCustomBackground();
   const viewportWidth = useWindowDimensions().width;
-  const [paneWidth, setPaneWidth] = useState(0), [pageWidth, setPageWidth] = useState(0);
+  const [paneWidth, setPaneWidth] = useState(0);
   return <View style={[styles.root, customBackground && styles.customRoot]} role="region" accessibilityLabel="助手" tabIndex={-1} {...(Platform.OS === "web" ? { dataSet: { pageSurface: "true" } } : {})}>
-    <View testID="chat-page-layout" style={styles.pageLayout} onLayout={event => setPageWidth(event.nativeEvent.layout.width)}>
+    <View testID="chat-page-layout" style={styles.pageLayout}>
       <ChatContents key={scopeKey ?? "no-authorized-child"} compact={(paneWidth || viewportWidth) < mobileLayout.breakpoint}
-        externalActivity={pageWidth >= activityRailMinimum} onPaneLayout={event => setPaneWidth(event.nativeEvent.layout.width)} />
+        onPaneLayout={event => setPaneWidth(event.nativeEvent.layout.width)} />
     </View>
   </View>;
 }
-function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
-  compact: boolean; externalActivity?: boolean; onPaneLayout?(event: LayoutChangeEvent): void;
+function ChatContents({ compact, onPaneLayout }: {
+  compact: boolean; onPaneLayout?(event: LayoutChangeEvent): void;
 }) {
   const pathname = usePathname(), router = useRouter(), navigate = usePreviewNavigation();
   const viewport = useWindowDimensions();
   const shortViewport = Platform.OS === "web" && viewport.height < 500;
-  const { model, actions, scopeKey, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
+  const { model, actions, scopeKey, chatState: chat, chatController,
     addAgentAttachment, removeAgentAttachment, composerFocusRequest, sendChat, requestChatReply, agentRuns, agentModel,
     voiceUpload, checkVoiceUpload, fileUpload, checkFileUpload, photoUpload, checkPhotoUpload, agentPending, readAgentPending, authorization, chatWritesAllowed, selectAgentRun, openAgentSource } = useProduction();
+  const { chatDraft, setChatDraft, agentAttachments } = useProductionDraft();
   const child = model.children.find(item => item.id === model.selectedChildId);
   const draft = child ? chat.drafts[child.id] : undefined;
   const phase = draft?.phase ?? "draft", busy = chat.busy !== null;
@@ -58,6 +57,10 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   const [detailsOpen, setDetailsOpen] = useState(false), [privacyOpen, setPrivacyOpen] = useState(false);
   const previous = useRef({ ids: new Set(chat.messages.map(item => item.id)), busy: chat.busy });
   const lastMessage = chat.messages[chat.messages.length - 1];
+  const replyIndex = useMemo(() => ({
+    recentIds: new Set(chat.messages.slice(-chat.limit).map(message => message.id)),
+    repliedTo: new Set(chat.messages.filter(message => message.role === "model" && message.inReplyTo).map(message => message.inReplyTo)),
+  }), [chat.messages, chat.limit]);
   const newReplyId = lastMessage?.role === "model" && !previous.current.ids.has(lastMessage.id) && previous.current.busy === "reply" ? lastMessage.id : undefined;
   useLayoutEffect(() => { previous.current = { ids: new Set(chat.messages.map(item => item.id)), busy: chat.busy }; }, [chat.messages, chat.busy]);
   useEffect(() => { if (agentModel.pendingDecision) setDetailsOpen(true); }, [agentModel.pendingDecision?.runId, agentModel.pendingDecision?.proposalId]);
@@ -102,7 +105,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
     {voiceUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳原錄音；確認保存後才開始處理…</Text>:null}
     {voiceUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{voiceUpload.notice}</Text>:null}
     {voiceUpload.unknown?<AppButton label="查核原錄音上傳" disabled={voiceUpload.busy||!chat.online} onPress={checkVoiceUpload}/>:null}
-    {chat.available === false ? <Text style={styles.meta}>AI 暫未開放，已保存訊息可稍後再要求回覆。</Text> : null}
+    {chat.available === false ? <Text style={styles.body}>AI 暫未開放，已保存訊息可稍後再要求回覆。</Text> : null}
     {!chat.online ? <Text accessibilityRole="alert" style={styles.warning}>{chat.messages.length ? "目前離線，所示聊天是上次讀取的快照；草稿仍保留。" : "目前離線，草稿仍保留。"}</Text> : null}
     {progressLabel ? <View testID="chat-operation-status" style={styles.progressRow}>
       <View style={styles.progressCopy}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.progressLabel}>{progressLabel}</Text></View>
@@ -132,7 +135,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   const empty = !child ? <SectionCard><Text style={styles.body}>先選擇孩子。</Text><AppButton label="重新讀取子女檔案" onPress={actions.refresh} /></SectionCard>
     : chat.loading && !chat.loadedAt ? <BackgroundSurface padded frosted style={styles.emptyState}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取聊天…</Text></BackgroundSurface>
       : confirmedEmptyChat && !busy && !agentAttachments.length && phase === "draft" ? <BackgroundSurface padded frosted testID="chat-empty-prompt" style={styles.emptyState}>
-        <Text accessibilityRole="header" style={[styles.emptyTitle, compact && styles.compactEmptyTitle]}>今天需要處理甚麼？</Text></BackgroundSurface> : null;
+        <Text accessibilityRole="header" aria-level={2} style={[styles.emptyTitle, compact && styles.compactEmptyTitle]}>今天需要處理甚麼？</Text></BackgroundSurface> : null;
   return <>
     <StatusAnnouncement eventKey={chat.loading && !!chat.loadedAt ? "refreshing" : "settled"} message={chat.loading && !!chat.loadedAt ? "正在重新核對聊天。" : ""} />
     <BackgroundSurface frosted testID="chat-top-toolbar" style={[styles.toolbar, compact && styles.compactColumn, shortViewport && styles.shortToolbar]}>
@@ -152,8 +155,8 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
         const sourcesMatch = run?.text === message.text || !!run?.text && !!run.stopReasonLabel
           && (run.status === "stopped" || run.status === "unknown")
           && message.text === `這次回覆未完成：${run.stopReasonLabel}。\n\n${run.text}`;
-        const pendingReply = message.role === "user" && message.authorUserId === chat.userId && chat.messages.slice(-chat.limit).some(item => item.id === message.id)
-          && !chat.messages.some(item => item.role === "model" && item.inReplyTo === message.id);
+        const pendingReply = message.role === "user" && message.authorUserId === chat.userId && replyIndex.recentIds.has(message.id)
+          && !replyIndex.repliedTo.has(message.id);
         return <ChatMessage message={{ id: message.id, role: message.role === "model" ? "assistant" : "user", text: message.text,
           phase: run ? runPhases[run.status] : undefined, sources: sourcesMatch ? run.citations : undefined }}
           phaseLabel={run?.status === "running" ? "運行仍在處理" : undefined} onLocateSource={locateSource}
@@ -209,7 +212,6 @@ const styles = StyleSheet.create({
   toolbar: { width: "100%", flexShrink: 0, paddingHorizontal: chatLayout.wideInset,
     minHeight: 78, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, borderBottomWidth: 1, borderBottomColor: chatColors.line, backgroundColor: chatColors.surface },
   shortToolbar: { minHeight: 48 },
-  externalToolbar: { position: "absolute", top: 0, right: activityRail.inset, width: activityRail.width, paddingHorizontal: 8, zIndex: 1 },
   compactColumn: { paddingHorizontal: chatLayout.compactInset }, toolbarActions: { flexDirection: "row", alignItems: "center", gap: 4, flexShrink: 1 },
   toolbarTitle: { flex: 1, minWidth: 0, gap: 2 },
   pageTitle: { fontFamily: chatFont, fontSize: 21, lineHeight: 30, fontWeight: "700", color: chatColors.ink },

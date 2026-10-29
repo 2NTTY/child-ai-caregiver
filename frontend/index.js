@@ -1,5 +1,10 @@
+// Expo's runtime must precede entry side effects for web Fast Refresh.
+import "@expo/metro-runtime";
 import "./src/platform/runtime";
-// Register native window history observation before Expo installs its router listener.
+// Observe native browser traversal before Expo installs its router listener.
 import "./src/preview/browser-history-events";
-// Expo Router must remain the final entry import (web, native and static rendering).
-import "expo-router/entry";
+import { App } from "./src/entry/Application";
+import { renderRootComponent } from "expo-router/build/renderRootComponent";
+
+// Preserve Expo's registration, splash handling and platform entry behavior.
+renderRootComponent(App);

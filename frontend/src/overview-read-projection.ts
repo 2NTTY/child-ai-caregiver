@@ -16,8 +16,15 @@ export function overviewConcerns(model: GrowthViewModel | null, scopeKey: string
   const source = model.page.concerns;
   if (!source || source.state !== "ready") return empty(source?.state === "error" ? "error" : source?.state === "loading" ? "loading" : "unavailable");
   const items = source.items.filter(item => item.childId === childId && item.status === "following" && !item.archivedAt).map(concern => {
-    const observation = concern.events.filter(event => event.kind === "observation" && Number.isFinite(Date.parse(event.at)) && Date.parse(event.at) <= now)
-      .slice().sort((a, b) => Date.parse(b.at) - Date.parse(a.at) || a.id.localeCompare(b.id))[0] ?? null;
+    let observation: GrowthConcernEvent | null = null, latestAt = -Infinity;
+    for (const event of concern.events) {
+      if (event.kind !== "observation") continue;
+      const at = Date.parse(event.at);
+      if (!Number.isFinite(at) || !(at <= now)) continue;
+      if (!observation || at > latestAt || at === latestAt && event.id.localeCompare(observation.id) < 0) {
+        observation = event; latestAt = at;
+      }
+    }
     return { concern, observation };
   }).sort((a, b) => (b.observation ? Date.parse(b.observation.at) : -Infinity) - (a.observation ? Date.parse(a.observation.at) : -Infinity)
     || a.concern.id.localeCompare(b.concern.id)).slice(0, 2);

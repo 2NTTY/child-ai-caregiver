@@ -49,6 +49,8 @@ export interface TasksViewModel {
   hasMoreTasks: boolean; loadingMoreTasks: boolean;
   workerEnabled?: boolean; work: TaskWorkView[]; reminders: TaskReminderView[];
   history: TaskRevisionView[]; historyOpen: boolean; hasMoreHistory: boolean;
+  // Selected-task read lifecycle; older preloaded preview adapters may omit it.
+  historyRead?: { state: "unread" | "loading" | "ready" | "error"; message: string; page: "initial" | "older" };
   draft: TaskDraft | null; latest: TaskView | null; operation: WriteOperationView;
 }
 export type TaskSelectionIntent = "open" | "toggle";
@@ -56,7 +58,7 @@ export interface TasksActions {
   selectTask(id: string, intent?: TaskSelectionIntent): void; closePanel(): void;
   startCreate(): void; startChange(id: string, action: TaskAction): void;
   reviewDraft(values: TaskFormValues): void; editDraft(): void; submitReviewed(): void;
-  useLatestVersion(): void; showHistory(): void; loadOlderHistory(): void;
+  useLatestVersion(): void; showHistory(): void; loadOlderHistory(): void; retryHistory?(): void;
   loadMoreTasks(): void;
 }
 export const taskStateLabels: Record<TaskState, string> = {

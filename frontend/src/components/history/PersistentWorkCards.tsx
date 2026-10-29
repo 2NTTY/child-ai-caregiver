@@ -12,7 +12,7 @@ export function PersistentWorkCards({ items, online, busy, onMessage, onResource
   onMessage?: (id: string) => void; onResource?: (path: string) => void; onContinue?: (work: AgentWork) => void;
 }) {
   return <View style={styles.list}>{items.map(work => <View key={work.id} style={styles.card} testID={`personal-work-${work.id}`}>
-    <View style={styles.row}><Text accessibilityRole="header" style={styles.title}>{work.goal}</Text><AppStatusBadge label={personalWorkStatusLabels[work.status]} /></View>
+    <View style={styles.row}><Text accessibilityRole="header" aria-level={3} style={styles.title}>{work.goal}</Text><AppStatusBadge label={personalWorkStatusLabels[work.status]} /></View>
     <Text style={styles.meta}>Agent 整理 · 供接續工作核對</Text>
     {work.focus ? <Text selectable style={styles.body}>{work.focus}</Text> : null}
     {work.questions.length ? <View style={styles.list}><Text style={styles.label}>待答問題</Text>{work.questions.map((question, index) => <Text selectable key={index} style={styles.body}>{index + 1}. {question}</Text>)}</View> : null}

@@ -31,6 +31,7 @@ export function useAttachmentList<T extends Original>(api: ListApi<T>) {
     update({ ...previous, state: previous.depth ? previous.state : 'loading', busy: true, refreshing: !more && previous.depth > 0, message: previous.depth ? previous.message : '' });
     try {
       const items = more ? [...previous.items] : [];
+      const positions = new Map(items.map((item, index) => [item.id, index]));
       let cursor = more ? previous.cursor : null, depth = more ? previous.depth : 0;
       // Rebuild the loaded depth from fresh cursors; commit only after the whole read succeeds.
       // Empty scan pages still count toward that depth and retain their continuation cursor.
@@ -38,8 +39,8 @@ export function useAttachmentList<T extends Original>(api: ListApi<T>) {
         const page = await api.list(e.childId, cursor === null ? {} : { cursor }, controller.signal, e.userId);
         if (!current()) return;
         for (const item of page.items) {
-          const existing = items.findIndex(value => value.id === item.id);
-          if (existing === -1) items.push(item); else items[existing] = item;
+          const existing = positions.get(item.id);
+          if (existing === undefined) { positions.set(item.id, items.length); items.push(item); } else items[existing] = item;
         }
         depth++; cursor = page.nextCursor;
         if (cursor === null) break;

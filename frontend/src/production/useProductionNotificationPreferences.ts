@@ -40,7 +40,7 @@ export function useProductionNotificationPreferences(env: SettingsEnvironment) {
     } catch (error) { if (request.current()) failed(error, entry ?? undefined); }
     finally { request.finish(!!pending.current); }
   };
-  const save = async (input: ProductionPreferenceValues, expectedVersion: number, retry = false) => {
+  const save = async (input: ProductionPreferenceValues, expectedVersion: number, retry = false, onSaved?: (value: Readonly<NotificationPreferences>) => void) => {
     if (!env.userId || !fresh || denied || !values.current || !retry && (pending.current || api.hasPendingOnline?.())) return;
     if (!retry && expectedVersion !== values.current.version) { setNotice("通知偏好版本已改變，請重新核對草稿及目前版本。"); return; }
     const entry: OriginalPreference = retry ? pending.current! : { input: { ...input, expectedVersion }, confirmed: false, reviewed: false, consent: false };
@@ -51,6 +51,10 @@ export function useProductionNotificationPreferences(env: SettingsEnvironment) {
       await api.savePreferences(entry.input, request.signal, env.userId); entry.confirmed = true;
       if (request.current()) env.invalidate();
       const next = await read(request.signal); if (!request.current()) return;
+      // This optional presentation receipt precedes the matching publication;
+      // it is not a second owner and cannot change a confirmed write's outcome.
+      try { onSaved?.(Object.freeze({ ...next })); } catch { /* Presentation failure must not mark an acknowledged write as failed. */ }
+      if (!request.current()) return;
       setPreferences(next); setFresh(true); retain(null); setNotice("通知偏好已保存並讀取目前版本。");
     } catch (error) { if (request.current()) failed(error, entry); }
     finally { request.finish(!!pending.current); }
@@ -60,7 +64,7 @@ export function useProductionNotificationPreferences(env: SettingsEnvironment) {
   useSettingsRefresh(env, () => { void refresh(); }, !requests.busy && !original, true, draftEditing);
   useDomainWriteGuard(false, !!original || requests.writing, "account");
   return { scopeKey: JSON.stringify([env.identityKey, env.owner.getSnapshot().sessionGeneration]), setDraftEditing, preferences: env.currentIdentity() ? preferences : null, online: env.online, busy: requests.busy, original, fresh, notice,
-    refresh: () => { void refresh(); }, save: (input: ProductionPreferenceValues, expectedVersion: number) => { void save(input, expectedVersion); },
+    refresh: () => { void refresh(); }, save: (input: ProductionPreferenceValues, expectedVersion: number, onSaved?: (value: Readonly<NotificationPreferences>) => void) => { void save(input, expectedVersion, false, onSaved); },
     confirmOriginal(value: boolean) { if (pending.current?.reviewed) { pending.current.consent = value; retain(pending.current); } },
     retryOriginal() { if (pending.current) void save(pending.current.input, pending.current.input.expectedVersion, true); } };
 }

@@ -1,3 +1,5 @@
+import { useSourceRouteSelection, type SourceRouteChange } from "../navigation/useSourceRouteSelection";
+import { usePhotoRouteSelection, type PhotoRouteChange } from "../navigation/usePhotoRouteSelection";
 import { readBlobBytes } from "../../../src/client/blob-bytes";
 import { photoPreview, photoSha256 } from "../platform/photo-bytes";
 import { copyPhotoOriginal } from "./photo-original";
@@ -14,7 +16,7 @@ import { SourcesView } from "../components/shared-inputs/SourcesView";
 import { AppButton, SectionCard, SectionHeader } from "../components/ui";
 import { photoTime, emptyPhotoDraft, samePhotoOriginal, type PhotoDraftFields, type PhotoItem, type PhotoOperation, type PhotoOriginal, type PhotoReplacement, type PhotosActions, type PhotosViewModel } from "../photo-view-model";
 import { useDomainEnvironment, useDomainWriteGuard } from "./useDomainEnvironment";
-import { useProduction } from "./ProductionProvider";
+import { useProductionIdentity, useProductionCommands } from "./ProductionProvider";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { usePhotoInputSources } from "./usePhotoInputSources";
 import { useAttachmentReview } from "./useAttachmentReview";
@@ -461,21 +463,33 @@ export function ProductionPhotoInputDomains({ children }: { children: ReactNode 
     {env.scopeKey ? <ScopedPhotoInputBridge key={env.scopeKey} scopeKey={env.scopeKey} publish={setPublished} /> : null}
   </PhotoInputContext.Provider>;
 }
-export function ProductionPhotosWorkspace({ onCare, capturePreferred = false }: { onCare: () => void; capturePreferred?: boolean }) {
+export function ProductionPhotosWorkspace({ onCare, capturePreferred = false, requestedPhotoId, tab, onPhotoChange, onTabChange, onPhotoAdmission }: {
+  onCare: () => void; capturePreferred?: boolean; requestedPhotoId?: string | null; tab?: "photos"|"voices"|"files";
+  onPhotoChange?: PhotoRouteChange; onPhotoAdmission?: (action: () => void) => void; onTabChange?: (tab:"photos"|"voices"|"files")=>void;
+}) {
   const domain = useContext(PhotoInputContext)?.photos;
-  const attachments = useAttachmentReview(), { actions, attachSavedPhoto } = useProduction();
-  return domain ? <PhotosView production model={domain.model} actions={domain.actions} onCare={onCare} onChat={() => actions.open("chat")}
+  const attachments = useAttachmentReview(), { actions, attachSavedPhoto } = useProductionCommands();
+  const selection = usePhotoRouteSelection(domain, requestedPhotoId, onPhotoChange, onPhotoAdmission, tab);
+  return domain ? <PhotosView mode="production" model={domain.model} actions={selection.actions!} onCare={onCare} onChat={() => actions.open("chat")}
+    tab={tab} onTabChange={onTabChange} requestedPhotoId={selection.activeId} missingTarget={selection.missing} onReturnToList={onPhotoChange ? accepted => { const apply = () => { onPhotoChange(null, true, true); accepted(); }; if (onPhotoAdmission) onPhotoAdmission(apply); else apply(); } : undefined}
     onChatPhoto={photo => attachSavedPhoto({id:photo.id,version:photo.version,fileName:photo.fileName,mimeType:photo.mimeType,bytes:photo.bytes,sha256:photo.sha256,source:photo.source})}
-    attachments={attachments} capturePreferred={capturePreferred} scopeKey={domain.scopeKey} /> : null;
+    attachments={attachments} input={{ capturePreferred }} scopeKey={domain.scopeKey} /> : null;
 }
-export function ProductionSourcesWorkspace({ onPhotos, onRecord }: { onPhotos: () => void; onRecord: (id: string) => void }) {
+export function ProductionSourcesWorkspace({ onPhotos, onRecord, requestedSourceId, onSourceChange }: {
+  onPhotos: () => void; onRecord: (id: string) => void; requestedSourceId?:string|null; onSourceChange?:SourceRouteChange;
+}) {
   const domain = useContext(PhotoInputContext)?.sources;
-  return domain ? <SourcesView production model={domain.model} actions={domain.actions} onPhotos={onPhotos} onRecord={onRecord} previewControls={null} /> : null;
+  const selection = useSourceRouteSelection(domain, requestedSourceId, onSourceChange);
+  useEffect(()=>{
+    if(domain?.model.selected && domain.model.operation.phase==="create" && domain.model.operation.state==="saved" && domain.model.selected.id!==requestedSourceId)onSourceChange?.(domain.model.selected.id,true,true);
+  },[domain?.model.selected?.id,domain?.model.operation.state,domain?.model.operation.phase]);
+  return domain ? <SourcesView production model={domain.model} actions={selection.actions!} requestedSourceId={selection.activeId}
+    onSourceChange={onSourceChange} onPhotos={onPhotos} onRecord={onRecord} previewControls={null} /> : null;
 }
 export function AgentPhotoInput({ original, composerGuardId }: { original: PhotoOriginal; composerGuardId: string }) {
   const domain = useContext(PhotoInputContext)?.photos;
   const navigate = usePreviewNavigation(), router = useRouter();
-  const { owner, scopeKey } = useProduction();
+  const { owner, scopeKey } = useProductionIdentity();
   const [navigationRequested, setNavigationRequested] = useState(false);
   const continueTransfer = () => {
     if (!domain?.canContinueComposerOriginal(original)) return;

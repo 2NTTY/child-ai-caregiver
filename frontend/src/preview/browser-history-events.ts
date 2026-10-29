@@ -1,16 +1,30 @@
-type PopstateTarget = Pick<Window, "addEventListener" | "removeEventListener">;
-type Channel = { dispatch: EventListener; delegate: EventListener | null; early: boolean };
+type PopstateTarget = Pick<Window, "addEventListener" | "removeEventListener"> & Partial<Pick<Window, "location">>;
+export type BrowserTraversalReceipt = { destination: URL; isCurrent(): boolean };
+type Channel = { dispatch: EventListener; delegate: EventListener | null; early: boolean; revision: number; traversal: BrowserTraversalReceipt | null; traversalEvent: Event | null };
 const channels = new WeakMap<PopstateTarget, Channel>();
 
 function channelFor(target: PopstateTarget) {
   let channel = channels.get(target);
   if (!channel) {
-    const created: Channel = { dispatch: event => created.delegate?.(event), delegate: null, early: false };
+    const created: Channel = { dispatch: event => {
+      const revision = ++created.revision, href = target.location?.href;
+      const receipt = href ? { destination: new URL(href), isCurrent: () => channels.get(target) === created && created.revision === revision && target.location?.href === href } : null;
+      created.traversal = receipt; created.traversalEvent = event;
+      // Native event dispatch may checkpoint microtasks between listeners. Keep
+      // this receipt available for the event, not merely its first JS callback.
+      // After dispatch, eventPhase is NONE; only an already captured ticket lives.
+      created.delegate?.(event);
+    }, delegate: null, early: false, revision: 0, traversal: null, traversalEvent: null };
     target.addEventListener("popstate", created.dispatch, true);
     channels.set(target, created);
     channel = created;
   }
   return channel;
+}
+
+export function currentBrowserTraversal(target: PopstateTarget): BrowserTraversalReceipt | null {
+  const channel = channels.get(target);
+  return channel?.traversalEvent && channel.traversalEvent.eventPhase !== 0 ? channel.traversal : null;
 }
 
 // Native Window events may run at-target in registration order. Capture alone

@@ -15,7 +15,8 @@ import { StatusAnnouncement } from "../StatusAnnouncement";
 import { growthStyles as s } from "./growth-styles";
 import { chineseFont, colors, mobileLayout, radius, spacing } from "../../theme";
 
-export function GrowthHistoryView({ searchText, dateRange, onRecord, onTask }: {
+export function GrowthHistoryView({ searchText, dateRange, onRecord, onTask, requestedConcernId, onConcernChange }: {
+  requestedConcernId?: string | null; onConcernChange?: (id: string | null) => void;
   searchText: string; dateRange: { from: string | null; to: string | null };
   onRecord?: (id?: string) => void; onTask: (id: string) => void;
 }) {
@@ -29,12 +30,22 @@ export function GrowthHistoryView({ searchText, dateRange, onRecord, onTask }: {
   const knownSelection = selection && workspace && selection.scopeKey === workspace.scopeKey && workspace.model.page?.concerns?.state === "ready"
     ? workspace.model.page.concerns.items.find(item => item.id === selection.id && item.version === selection.version) : null;
   useEffect(() => { if (selection && !knownSelection) setSelection(null); }, [selection, knownSelection]);
+  const requested = useRef("");
+  useEffect(() => {
+    if (!workspace || requestedConcernId === undefined || workspace.model.access === "lost") return;
+    const key = `${workspace.scopeKey}:${requestedConcernId ?? "list"}`;
+    if (requested.current === key) return;
+    if (!requestedConcernId) { requested.current = key; setSelection(null); return; }
+    const item = growthArchivedConcerns(workspace.model, searchText, dateRange).find(item => item.id === requestedConcernId);
+    if (!item) return;
+    requested.current = key; setSelection({scopeKey: workspace.scopeKey, id: item.id, version: item.version});
+  }, [workspace, requestedConcernId, searchText, dateRange.from, dateRange.to]);
   if (!workspace) return <Text style={s.meta}>正在讀取關注歷史。</Text>;
   const { model, actions, scopeKey } = workspace;
   if (model.access === "lost") return <Text style={s.warning}>已無權查看這位孩子的關注歷史。</Text>;
   if (!model.page || model.page.concerns?.state !== "ready") return <View style={s.stack}><GrowthOperationRecovery model={model} actions={actions} includeRefresh /><Text style={s.meta}>{model.load === "loading" ? "正在讀取關注歷史。" : "暫未能讀取關注歷史。"}</Text></View>;
   const archived = growthArchivedConcerns(model, searchText, dateRange);
-  const selected = selection?.scopeKey === scopeKey ? archived.find(item => item.id === selection.id && item.version === selection.version) : null;
+  const selected = selection?.scopeKey === scopeKey && (requestedConcernId === undefined || selection.id === requestedConcernId) ? archived.find(item => item.id === selection.id && item.version === selection.version) : null;
   const notice = model.operation === "saved" && model.notice.startsWith("已結束這條關注") ? "已結束關注。"
     : model.operation === "saved" && model.notice.startsWith("已恢復這條關注") ? "已恢復關注。" : model.notice;
   const restore = (concern: typeof archived[number]) => <Button mode="text" compact accessibilityLabel={`恢復關注：${concern.title}`} style={styles.restoreAction}
@@ -43,6 +54,7 @@ export function GrowthHistoryView({ searchText, dateRange, onRecord, onTask }: {
     disabled={model.locked || model.dirty || !growthConcernCanRestore(concern)}
     onPress={event => { event.stopPropagation(); actions.restoreConcern(concern.id, concern.version, model.page!.authorityVersion); }}>恢復</Button>;
   return <View ref={listRef} tabIndex={-1} accessibilityLabel="關注歷史" style={s.stack} testID="growth-history">
+    {requestedConcernId && !selected && model.load !== "loading" ? <Text style={s.meta}>指定關注尚未載入，或其版本／權限已改變。請從原清單選擇。</Text> : null}
     <StatusAnnouncement eventKey={`${model.operation}:${notice}`} message={notice} urgent={model.operation === "failed"} />
     {notice ? <Text style={model.operation === "unknown" || model.operation === "failed" || model.operation === "conflict" ? s.warning : s.body}>{notice}</Text> : null}
     {!selected ? <GrowthOperationRecovery model={model} actions={actions} includeRefresh /> : null}
@@ -53,16 +65,16 @@ export function GrowthHistoryView({ searchText, dateRange, onRecord, onTask }: {
       <HistoryCardGrid testID="growth-history-cards">{archived.map(concern => <Pressable key={concern.id} testID={`growth-history-${concern.id}`}
         ref={node => { if (node) cards.current.set(concern.id, node); else cards.current.delete(concern.id); }}
         accessibilityRole="button" accessibilityLabel={`查看已結束關注：${concern.title}`}
-        onPress={() => { returnFocus.current = cards.current.get(concern.id) ?? null; setSelection({ scopeKey, id: concern.id, version: concern.version }); }}
+        onPress={() => { returnFocus.current = cards.current.get(concern.id) ?? null; if (onConcernChange) onConcernChange(concern.id); else setSelection({ scopeKey, id: concern.id, version: concern.version }); }}
         onFocus={() => setFocusedId(concern.id)} onBlur={() => setFocusedId(null)} onHoverIn={() => setHoveredId(concern.id)} onHoverOut={() => setHoveredId(null)}
         style={({ pressed }) => [styles.concernListCard, hoveredId === concern.id && styles.readHovered, focusedId === concern.id && styles.readFocused, pressed && styles.readPressed]}>
-        <Text numberOfLines={2} accessibilityRole="header" style={s.title}>{concern.title}</Text>
+        <Text numberOfLines={2} accessibilityRole="header" aria-level={3} style={s.title}>{concern.title}</Text>
         <Text numberOfLines={3} style={s.body}>{concern.reason}</Text>
         <View style={styles.concernRow}><Text style={[s.meta, styles.concernSummary]}>{concern.archivedAt && !Number.isNaN(Date.parse(concern.archivedAt)) ? `結束於 ${new Date(concern.archivedAt).toLocaleDateString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "numeric", day: "numeric" })}` : "結束日期未提供"}</Text>
           <AppIcon name="chevron-right" size={18} color={colors.muted} importantForAccessibility="no" /></View>
       </Pressable>)}</HistoryCardGrid>
       <FormDialog visible={!!selected} scopeKey={scopeKey} formKey={selected ? `${selected.id}:${selected.version}` : undefined} title={selected?.title ?? "關注歷史"}
-        returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={() => setSelection(null)}>
+        returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={() => onConcernChange ? onConcernChange(null) : setSelection(null)}>
         {selected ? <View style={s.stack} testID={`growth-history-detail-${selected.id}`}>
           {notice ? <Text style={model.operation === "unknown" || model.operation === "failed" || model.operation === "conflict" ? s.warning : s.body}>{notice}</Text> : null}
           <GrowthOperationRecovery model={model} actions={actions} includeRefresh />

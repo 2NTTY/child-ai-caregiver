@@ -232,9 +232,9 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
       const intake = createSourceIntake(intakeIntention);
       receipt("create", () => { clearEditor(); put(value); setIntakes(previous => ({ ...previous, [value.id]: intake })); setExcerpt(value.text.length <= 10000 ? value.text : ""); });
     },
-    openInput(input: SourceInput) { if (!canChoose || !online || load !== "ready") return; clearEditor(); put(input); setExcerpt(input.text.length <= 10000 ? input.text : ""); setOperation(idle()); setNotice(""); },
-    newInput() { if (!canChoose || !canCreate) return; clearEditor(); setOperation(idle()); setNotice("本頁未保存草稿已清除；已保存來源仍在清單。"); },
-    recreateWithText() { if (!fresh || !canCreate || !canChoose || !selected || selected.kind !== "personal_source" || direct) return; const seed = copy(selected), intention = selectedIntake?.intention ?? ""; clearEditor(); setComposerSeed(seed); setIntakeIntention(intention); setOperation(idle()); setNotice("原來源仍保留。請自行貼上正文；保存後會建立另一項私人來源，不會更新或訂閱原項。"); },
+    openInput(input: SourceInput, onAccepted?: () => void) { if (!canChoose || !online || load !== "ready") return; if (selected?.id !== input.id) { clearEditor(); put(input); setExcerpt(input.text.length <= 10000 ? input.text : ""); setOperation(idle()); setNotice(""); } onAccepted?.(); },
+    newInput(onAccepted?: () => void) { if (!canChoose || !canCreate) return; clearEditor(); setOperation(idle()); setNotice("本頁未保存草稿已清除；已保存來源仍在清單。"); onAccepted?.(); },
+    recreateWithText(onAccepted?: () => void) { if (!fresh || !canCreate || !canChoose || !selected || selected.kind !== "personal_source" || direct) return; const seed = copy(selected), intention = selectedIntake?.intention ?? ""; clearEditor(); setComposerSeed(seed); setIntakeIntention(intention); setOperation(idle()); setNotice("原來源仍保留。請自行貼上正文；保存後會建立另一項私人來源，不會更新或訂閱原項。"); onAccepted?.(); },
     setFetchConsent, setModelConsent, setSharedConsent,
     setChildFactConsent(value: boolean) { setChildFactConsent(value); setSharedConsent(false); },
     setExcerpt(value: string) { if (direct || pending.current || busy) return; setExcerpt(value); setExcerptDirty(true); setModelConsent(false); },

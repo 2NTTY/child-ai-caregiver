@@ -23,7 +23,7 @@ export function PhotoFilePicker({ disabled, onPick, onError, capturePreferred = 
   async function readOriginal(file: File) {
     if (disabledRef.current || reading) return;
     if (!["image/jpeg", "image/png"].includes(file.type) || file.size < 1 || file.size > photoLimits.bytes || file.name.length > 200) {
-      onError("只接受 JPEG／PNG 原照片，每張最多 4 MiB，檔名最多 200 字。現有照片與草稿保留。"); return;
+      onError("只接受 JPEG／PNG 原照片，每張最多 4 MiB，檔名最多 200 字。現有照片與草稿保留。"); return;
     }
     const started = ++generation.current; setReading(true);
     try {
@@ -53,9 +53,9 @@ export function PhotoFilePicker({ disabled, onPick, onError, capturePreferred = 
       onCapture={file => { setCameraOpen(false); void readOriginal(file); }} /> : null}</>;
   return <View style={photoStyles.stack}>{ordinaryInput}
     {capturePreferred ? <>{captureInput}
-      <AppButton label={reading ? "正在讀取原照片" : "拍照或選圖"} variant="secondary" disabled={disabled || reading} loading={reading} onPress={() => cameraInput.current?.click()} />
+      <AppButton label={reading ? "正在讀取原照片…" : "拍照或選圖"} variant="secondary" disabled={disabled || reading} loading={reading} onPress={() => cameraInput.current?.click()} />
       <Text style={photoStyles.meta}>手機瀏覽器可由系統提供拍照；是否可用由瀏覽器決定。電腦通常會開啟選檔，也可改用下方選擇原照片。</Text></> : null}
-    <AppButton label={reading ? "正在讀取原照片" : "選擇原照片"} variant="secondary" disabled={disabled || reading} loading={reading} onPress={() => input.current?.click()} />
+    <AppButton label={reading ? "正在讀取原照片…" : "選擇原照片"} variant="secondary" disabled={disabled || reading} loading={reading} onPress={() => input.current?.click()} />
     <Text style={photoStyles.meta}>原檔尚未上傳；關閉或重新載入會清除本次輸入。</Text>
   </View>;
 }

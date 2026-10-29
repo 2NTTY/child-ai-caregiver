@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { careKindOptions, type CareFormValues, type CareRecordsActions, type CareRecordsViewModel } from "../../care-view-model";
 import { chineseFont, colors, radius, spacing, typeScale } from "../../theme";
 import { AppButton, AppSelect, AppTextField, SectionCard, SectionHeader } from "../ui";
+import { useFormPublicationReveal } from "../FormActionReveal";
 import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
 import { careFormSchema } from "./care-form";
 import { CareRevisionContent, CareValueSummary } from "./CareRecordDetail";
@@ -25,6 +26,7 @@ const formFields = [
 export function CareRecordForm({ model, actions }: { model: CareRecordsViewModel; actions: CareRecordsActions }) {
   const draft = model.draft!;
   const formId = useId();
+  const feedback = useFormPublicationReveal({ scopeKey: model.scopeKey ?? model.child.id, formKey: draft.key, reviewedValues: draft.reviewedValues, state: model.operation.state, revision: model });
   const { control, handleSubmit, getValues, setFocus, formState: { isDirty, errors } } = useForm<CareFormValues>({ defaultValues: draft.initialValues, resolver: zodResolver(careFormSchema(draft.mode)), mode: "onSubmit", shouldFocusError: false });
   const visibleFields = formFields.filter(item => item.name !== "reason" || draft.mode === "revise");
   const errorEntries = visibleFields.flatMap(item => {
@@ -35,6 +37,8 @@ export function CareRecordForm({ model, actions }: { model: CareRecordsViewModel
   usePreviewLeaveGuard(isDirty);
   const locked = ["saving", "unknown", "conflict"].includes(model.operation.state);
   const busy = ["saving", "unknown"].includes(model.operation.state);
+  const recoveryLabel = feedback.canRevealRecovery
+    ? ({ unknown: "結果未知，查看查核原操作", failed: "未能保存，查看原因", conflict: "版本衝突，查看原因" } as Partial<Record<string, string>>)[model.operation.state] : undefined;
   useEffect(() => {
     if (Platform.OS !== "web" || (!isDirty && !busy)) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
@@ -49,12 +53,12 @@ export function CareRecordForm({ model, actions }: { model: CareRecordsViewModel
       <FormFieldMessage id={`${fieldId(name)}-message`} error={fieldState.error?.message} help={help} />
     </View>} />;
   }
-  return <SectionCard surface="plain"><SectionHeader density="compact" title={draft.captureSnapshot ? "調整待確認提案" : draft.mode === "create" ? "新增共享記錄" : "更正記錄"}
+  return <SectionCard surface="plain"><SectionHeader headingLevel={3} density="compact" title={draft.captureSnapshot ? "調整待確認提案" : draft.mode === "create" ? "新增共享記錄" : "更正記錄"}
     subtitle={draft.basis ? `以版本 ${draft.basis.current.version} 作基準；草稿尚未保存。` : "填寫後先核對內容及家庭共享範圍。"} />
     {draft.captureSnapshot ? <View style={styles.review}><Text style={styles.label}>原始輸入（保留不改寫）</Text>
       {model.review?.items.find(item => item.id === draft.captureId)?.sourceState === "ready" ? <Text selectable style={styles.meta}>{draft.captureSnapshot.originalText}</Text> : <Text style={styles.noticeTitle}>原始來源已變更或不可用，舊原文暫不顯示；請重新核對提案。</Text>}
       <Text style={styles.meta}>只調整下方將要寫入的內容；私人原文不會自動共享。</Text></View> : null}
-    <FormErrorSummary entries={errorEntries} onFocus={name => {
+    <FormErrorSummary headingLevel={4} entries={errorEntries} onFocus={name => {
       const target = visibleFields.find(item => item.name === name);
       if (target) setFocus(target.name);
     }} />
@@ -78,13 +82,20 @@ export function CareRecordForm({ model, actions }: { model: CareRecordsViewModel
     <Text style={styles.meta}>目前這個表單只保存時間原文。未確認實際事件日期／時間的記錄，不會納入按期間計算的照顧摘要；加入日期不能代替事件時間。</Text>
     {draft.mode === "revise" ? field("reason", "更正原因", "更正原因草稿") : null}
     <Text style={styles.meta}>離線時可整理本次表單；關閉、重新載入或切換孩子會清除草稿。</Text>
-    <AppButton label="預覽共享內容" disabled={locked} onPress={handleSubmit(actions.reviewDraft, invalidFields => {
-      const first = visibleFields.find(item => invalidFields[item.name]?.message);
-      if (first) setFocus(first.name);
-    })} />
-    {draft.reviewedValues ? <View style={styles.review}><Text style={styles.noticeTitle}>待確認 · 尚未保存</Text>
+    <AppButton label="預覽共享內容" disabled={locked} onPress={() => {
+      const intent = feedback.beginReview();
+      void handleSubmit(values => { intent.reviewed(values); actions.reviewDraft(values); }, invalidFields => {
+        intent.cancel();
+        const first = visibleFields.find(item => invalidFields[item.name]?.message);
+        if (first) setFocus(first.name);
+      })();
+    }} />
+    {draft.reviewedValues ? <View ref={feedback.reviewRef} testID="care-draft-review" style={styles.review}><Text style={styles.noticeTitle}>待確認 · 尚未保存</Text>
       <CareValueSummary values={draft.reviewedValues} /><Text style={styles.meta}>與孩子所屬家庭共享。這次確認不代表已通知照顧者，也不代表預約機構已確認。</Text>
-      <AppButton label={model.submitLabel} onPress={actions.submitReviewed} disabled={!model.online || model.list.state === "loading" || model.operation.state !== "needs_confirmation"} loading={model.operation.state === "saving"} />
+      <AppButton label={recoveryLabel ?? model.submitLabel} onPress={() => {
+        if (recoveryLabel) feedback.revealRecovery();
+        else { feedback.beginSubmit(); actions.submitReviewed(); }
+      }} disabled={!recoveryLabel && (!model.online || model.list.state === "loading" || model.operation.state !== "needs_confirmation")} loading={model.operation.state === "saving"} />
       <AppButton label="繼續修改" variant="quiet" disabled={busy} onPress={actions.editDraft} />
     </View> : null}
     {model.operation.state === "conflict" && model.operation.latest && draft.basis ? <View style={styles.review}>

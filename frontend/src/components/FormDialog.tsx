@@ -1,10 +1,11 @@
 import type { OperationOpenRequest } from "../operation-reveal";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View, type ScrollView } from "react-native";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { spacing } from "../theme";
 import { AppDialog } from "./AppDialog";
 import { AppScrollView } from "./AppScrollView";
+import { FormActionRevealProvider } from "./FormActionReveal";
 import { AppButton } from "./ui";
 
 /** Presentation only: the existing form and owner still own drafts, writes and recovery. */
@@ -17,6 +18,7 @@ export function FormDialog({ visible, scopeKey, title, children, recovery, onClo
   dismissMode?: "guarded" | "local";
 }) {
   const leave = usePreviewNavigation();
+  const scrollRef = useRef<ScrollView>(null);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const generation = useRef({ visible, scopeKey, formKey, value: 0 });
@@ -64,8 +66,10 @@ export function FormDialog({ visible, scopeKey, title, children, recovery, onClo
   // RN Modal already portals natively; a Paper Portal here would lose page/owner contexts.
   return <AppDialog visible={visible} onDismiss={close} onClosed={closed} accessibilityLabel={title} style={styles.dialog} testID="manual-form-dialog">
     <AppDialog.Title>{title}</AppDialog.Title>
-    <AppDialog.ScrollArea style={styles.scrollArea}><AppScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-      {visible ? <>{recovery}{children}</> : null}
+    <AppDialog.ScrollArea style={styles.scrollArea}><AppScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+      <FormActionRevealProvider active={visible} boundary={JSON.stringify([scopeKey, formKey, openedGeneration])} scrollRef={scrollRef} hasRecovery={!!recovery}>
+        {visible ? <>{recovery}{children}</> : null}
+      </FormActionRevealProvider>
     </AppScrollView></AppDialog.ScrollArea>
     <AppDialog.Actions><AppButton label="關閉" accessibilityLabel={`關閉${title}`} variant="quiet" onPress={close} /></AppDialog.Actions>
   </AppDialog>;

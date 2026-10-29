@@ -3,8 +3,7 @@ import {chineseFont, colors, radius, spacing, typeScale, readingType } from '../
 export const contactStyles = StyleSheet.create({
   hidden: {display: 'none'}, pageStack: {gap: spacing.lg, minWidth: 0}, section: {gap: spacing.md, minWidth: 0, paddingTop: spacing.lg, borderTopWidth: 1, borderTopColor: colors.softLine},
   toolbar: {flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md}, copy: {flexGrow: 1, flexShrink: 1, minWidth: 0, gap: spacing.xs},
-  reachability: {flexDirection: 'row', gap: spacing.lg, padding: spacing.lg, backgroundColor: colors.paper, borderWidth: 1, borderRadius: radius.medium, borderColor: colors.line}, reachabilityStack: {flexDirection: 'column'},
-  checkpoint: {flexGrow: 1, flexShrink: 1, flexBasis: 'auto', gap: spacing.sm, minWidth: 0}, step: {fontFamily: chineseFont, ...readingType.meta, color: colors.deepTeal, fontWeight: '700'},
+  deliveryContext: {gap: spacing.sm, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine},
   consentSurface: {backgroundColor: colors.quietSurface}, editor: {gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md},
   taskIndex: {flex: 0.9, minWidth: 0}, taskDetail: {flex: 1.3, gap: spacing.md, minWidth: 0},
   taskRow: {backgroundColor: colors.paper, borderRadius: radius.small, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, paddingHorizontal: spacing.sm, borderTopWidth: 1, borderTopColor: colors.softLine, minWidth: 0},

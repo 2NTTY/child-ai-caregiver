@@ -51,7 +51,7 @@ export type SourcesActions = {
     beginContentEdit(): void; editContent(value: SourcePersonalContent): void; cancelContentEdit(): void; history(): void;
   };
   discardDraft?(kind: "composer" | "record" | "management"): void;
-  refresh(): void; create(input: SourceCreate): void; openInput(input: SourceInput): void; newInput(): void; recreateWithText(): void;
+  refresh(): void; create(input: SourceCreate): void; openInput(input: SourceInput, onAccepted?: () => void): void; newInput(onAccepted?: () => void): void; recreateWithText(onAccepted?: () => void): void;
   setFetchConsent(value: boolean): void; fetchContent(): void; setExcerpt(value: string): void; setModelConsent(value: boolean): void; extract(): void;
   adoptCandidate(): void; editDraft(draft: PhotoDraftFields): void; reviewDraft(draft: PhotoDraftFields): void;
   setConfirmationKind(kind: SourceConfirmationKind): void; setSharedConsent(value: boolean): void; setChildFactConsent(value: boolean): void; confirm(): void;

@@ -10,8 +10,15 @@ import { TaskSnapshot, TaskSnapshotMetadata, TaskWorkerMetadata, taskAssigneeLab
 
 export function TaskDetail({ model, actions, hideCloseAction = false }: { model: TasksViewModel; actions: TasksActions; hideCloseAction?: boolean }) {
   const task = model.selected!;
+  const historyState = model.historyRead?.state ?? "ready";
   const compactHeader = useWindowDimensions().width < 650;
   const locked = model.reading || ["saving", "unknown", "conflict"].includes(model.operation.state);
+  const historyFeedback = historyState === "ready" ? null : <View testID="task-history-feedback" style={styles.historyFeedback}>
+        {historyState === "loading" ? <Text style={styles.reading}>正在讀取安排記錄…</Text>
+          : historyState === "error" ? <><Text style={styles.readingWarning}>{model.historyRead?.message}</Text>
+            {actions.retryHistory ? <AppButton label="重試讀取安排記錄" variant="secondary" disabled={!model.online || locked || !!model.draft} onPress={actions.retryHistory} /> : null}</>
+            : historyState === "unread" ? <Text style={styles.reading}>尚未讀取安排記錄。</Text> : null}
+      </View>;
   const writable = model.access === "editable" && !locked;
   const metadata = currentTaskMetadata(task, model.eligibleAssignees, model.work, model.reminders);
   const work = metadata.work;
@@ -40,6 +47,7 @@ export function TaskDetail({ model, actions, hideCloseAction = false }: { model:
     {work?.status === "unknown" ? <Text style={styles.warning}>提醒處理結果未確定，請先核對；不能當作已通知或已完成。</Text> : work?.status === "failed" ? <Text style={styles.warning}>提醒處理未成功，請展開記錄核對。</Text> : null}
     <AppButton label={model.historyOpen ? "收起安排記錄" : "查看安排記錄"} expanded={model.historyOpen} density="compact" variant="secondary" style={styles.historyButton} disabled={locked} onPress={actions.showHistory} />
     <MotionDisclosure expanded={model.historyOpen} scopeKey={`${model.child.id}:${task.id}`}><View style={styles.history}>
+      {model.historyRead?.page !== "older" ? historyFeedback : null}
       {ended ? <Text style={styles.body}>這項事項已結束，不能直接重開。如需另做，請明確新增另一項事項。</Text> : null}
       <Text style={styles.label}>目前安排記錄 · 版本 {task.version}</Text>
       <Text style={styles.meta}>原始安排時間：{taskDisplayTime(task.occurrence.dueAt, task.occurrence.timeZone)}</Text>
@@ -53,16 +61,18 @@ export function TaskDetail({ model, actions, hideCloseAction = false }: { model:
         <TaskSnapshot task={revision.task} assignees={model.eligibleAssignees} />
         <Text style={styles.reading}>原因／備註：{revision.note || "沒有備註"}</Text>
       </View>)}
-      {model.hasMoreHistory ? <AppButton label="載入較早記錄" variant="secondary" disabled={!model.online || locked} onPress={actions.loadOlderHistory} /> : <Text style={styles.meta}>已展示目前已載入的全部版本。</Text>}
+      {model.historyRead?.page === "older" ? historyFeedback : null}
+      {historyState === "ready" ? model.hasMoreHistory ? <AppButton label="載入較早記錄" variant="secondary" disabled={!model.online || locked} onPress={actions.loadOlderHistory} /> : <Text style={styles.meta}>{model.history.length ? "已展示目前已載入的全部版本。" : "這次讀取未有版本記錄。"}</Text> : null}
     </View></MotionDisclosure>
   </SectionCard>;
 }
 const styles = StyleSheet.create({
   detailHeader: { gap: spacing.sm }, closeButton: { alignSelf: "flex-end", flexShrink: 0, minWidth: 120 },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }, history: { gap: spacing.md }, historyButton: { alignSelf: "flex-start" },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }, historyFeedback: { gap: spacing.sm }, history: { gap: spacing.md }, historyButton: { alignSelf: "flex-start" },
   revision: { paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.line, gap: spacing.sm },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool },
   reading: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },
+  readingWarning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.body },
   warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool },
   label: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },

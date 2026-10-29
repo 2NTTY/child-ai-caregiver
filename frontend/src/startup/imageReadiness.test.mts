@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { firstScreenImagesSettled, requiredFirstScreenImages, settleFirstScreenImage } from "./imageReadiness.ts";
 
-test("decorative home artwork never blocks ready care data", () => {
+test("decorative home and login artwork never block ready content", () => {
   assert.deepEqual(requiredFirstScreenImages("/", 390), []);
   assert.deepEqual(requiredFirstScreenImages("/", 1440), []);
-  assert.deepEqual(requiredFirstScreenImages("/login", 1440), ["login-hero"]);
+  assert.deepEqual(requiredFirstScreenImages("/login", 1440), []);
   assert.deepEqual(requiredFirstScreenImages("/login", 390), []);
   assert.deepEqual(requiredFirstScreenImages("/chat", 1440), []);
 });

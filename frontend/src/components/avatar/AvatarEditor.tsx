@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import type { AvatarLane, AvatarSnapshot } from '../../production/AvatarOwner';
 import { chineseFont, colors, readingType, spacing } from '../../theme';
@@ -19,6 +19,12 @@ export function AvatarEditor({ lane, state, name, kind }: { lane: AvatarLane; st
   const removeReview = removeVersion !== null && removeVersion === state.avatar?.version && !!state.avatar?.canManage && state.available;
   const locked = state.busy || state.unknown;
   const selected = state.selected;
+  const previewKey = selected ? `${state.key}:${selected.uri}` : null;
+  const [readyPreview, setReadyPreview] = useState<string | null>(null);
+  const onPreviewReady = useCallback((ready: boolean) => {
+    setReadyPreview(current => ready ? previewKey : current === previewKey ? null : current);
+  }, [previewKey]);
+  const previewReady = Platform.OS !== 'web' || !!previewKey && readyPreview === previewKey;
   const close = () => { if (!locked && lane.cancelSelection()) { setOpenKey(null); setRemoveVersion(null); } };
   return <>
     <AppButton ref={trigger} label={kind === 'self' ? '調整本人頭像' : '調整孩子頭像'} variant="quiet" density="compact" disabled={!state.key}
@@ -29,13 +35,13 @@ export function AvatarEditor({ lane, state, name, kind }: { lane: AvatarLane; st
       <StatusAnnouncement eventKey={`${state.key}:${state.busy}:${state.unknown}:${state.notice}`} message={state.busy ? '正在核對頭像操作…' : state.notice ?? ''} urgent={state.unknown} />
       {state.loading ? <Text style={styles.note}>正在讀取頭像…</Text> : null}
       {selected ? <AvatarCropPreview key={selected.uri} image={selected} crop={state.crop} maxZoom={state.policy?.maxCropZoom ?? 1}
-        locked={locked} onChange={crop => lane.setCrop(crop)} /> : <AvatarView name={name} uri={state.uri} size={88} />}
+        locked={locked} onReady={onPreviewReady} onChange={crop => lane.setCrop(crop)} /> : <AvatarView name={name} uri={state.uri} size={88} />}
       {state.notice ? <Text style={styles.note}>{state.notice}</Text> : null}
       {!state.available && !locked ? <AppButton label="重新連接頭像服務" variant="secondary" disabled={!state.online || state.loading} onPress={() => { void lane.load(); }} /> : null}
       {state.available && !state.avatar?.canManage ? <Text style={styles.note}>目前只可查看頭像，沒有修改權限。</Text> : null}
       <View style={styles.actions}>
         <AvatarPicker lane={lane} state={state} />
-        {selected ? <><AppButton label="保存頭像" disabled={locked || state.conflict || !state.online || !state.available || !state.avatar?.canManage} loading={state.busy} onPress={() => { setRemoveVersion(null); void lane.save(); }} />
+        {selected ? <><AppButton label="保存頭像" disabled={!previewReady || locked || state.conflict || !state.online || !state.available || !state.avatar?.canManage} loading={state.busy} onPress={() => { setRemoveVersion(null); void lane.save(); }} />
           <AppButton label="取消選圖" variant="quiet" disabled={locked} onPress={() => lane.cancelSelection()} /></> : null}
         {state.avatar?.asset && state.avatar.canManage && !selected ? <AppButton label="移除頭像" variant="danger-secondary" disabled={locked || !state.online || !state.available} onPress={() => setRemoveVersion(state.avatar!.version)} /> : null}
       </View>

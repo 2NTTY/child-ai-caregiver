@@ -1,6 +1,6 @@
 import { HistoryCardGrid } from "../history/HistoryCards";
 import { EmptyListCard } from "../EmptyListCard";
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Platform, Pressable, StyleSheet, View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import {
@@ -9,6 +9,7 @@ import {
 } from "../../preparation-view-model";
 import { usePreparationWorkspace, type PreparationWorkspaceValue } from "../../workspaces/PreparationWorkspace";
 import { WriteRecoveryNotice } from "../WriteRecoveryNotice";
+import { useNavigationScope } from "../../navigation/NavigationScope";
 import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppIcon, type AppIconName } from "../AppIcon";
@@ -66,8 +67,8 @@ function PreparationRow({ document, selected, onPress, rowRef, history = false, 
   </Pressable>;
 }
 
-function PreparationDocumentDetail({ document, workspace, onClose, onHistory, onPrepareQuestion, hideReturnAction = false }: {
-  document: PreparationDocumentView; workspace: PreparationWorkspaceValue; onClose(): void; onHistory?(): void; onPrepareQuestion?: (question: string) => void; hideReturnAction?: boolean;
+function PreparationDocumentDetail({ document, workspace, onClose, onHistory, onPrepareQuestion, hideReturnAction = false, onCheckRecovery }: {
+  document: PreparationDocumentView; workspace: PreparationWorkspaceValue; onClose(): void; onHistory?(): void; onPrepareQuestion?: (question: string) => void; hideReturnAction?: boolean; onCheckRecovery?(documentId: string): void;
 }) {
   const [sourceOpen, setSourceOpen] = useState(false), [archiveAsked, setArchiveAsked] = useState(false);
   const [checkingItem, setCheckingItem] = useState<{ sectionId: string; itemId: string } | null>(null);
@@ -97,7 +98,13 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
   const canArchive = canArchivePreparation(document, workspace.model.scope) && !pending && workspace.model.capabilities?.archive === true;
   const checked = revision?.sections.flatMap(section => section.kind === "checklist" ? section.items : []) ?? [];
   useLayoutEffect(() => { setArchiveAsked(false); setSourceOpen(false); }, [document.id, document.version, document.readState, workspace.scopeKey]);
-  useLayoutEffect(() => { if (!pending) setCheckingItem(null); }, [pending]);
+  useLayoutEffect(() => { if (!workspace.model.checkSave) setCheckingItem(null); }, [workspace.model.checkSave]);
+  const feedbackItems = !archived && !document.historical && document.readState === "ready" && document.childId === workspace.model.scope.childId
+    ? workspace.model.checkFeedback?.find(value => value.documentId === document.id)?.items.filter(value =>
+      revision?.sections.some(section => section.kind === "checklist" && section.id === value.sectionId && section.items.some(item => item.id === value.itemId))) ?? [] : [];
+  const feedbackItem = feedbackItems.find(value => value.sectionId === checkingItem?.sectionId && value.itemId === checkingItem.itemId) ?? feedbackItems[0];
+  const feedbackText = workspace.model.checkSave === "unknown" ? "勾選結果尚未確認，本機修改仍保留。"
+    : workspace.model.checkSave === "conflict" ? "清單需要重新核對，未保存的修改仍保留。" : null;
   return <View testID="preparation-document-detail" style={styles.document}>
     {!hideReturnAction ? <AppButton label={archived ? "返回歸檔清單" : "返回準備單清單"} variant="secondary" density="compact" onPress={onClose} /> : null}
     <View style={styles.documentHeader}>
@@ -123,12 +130,16 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
     {revision?.sections.map(section => <View key={section.id} style={styles.section}>
       <View style={styles.row}><Text accessibilityRole="header" aria-level={3} style={styles.sectionTitle}>{section.title}</Text>{section.kind === "checklist" ? <Text style={styles.meta}>{section.items.filter(item => item.checked).length}／{section.items.length} 項</Text> : null}</View>
       {section.items.map((item, index) => section.kind === "checklist"
-        ? archived || !canCheck && !(keepReadControls || keepFailedReadControls || keepCheckingControl && (!!workspace.model.checkSave || checkingItem?.sectionId === section.id && checkingItem.itemId === item.id)) ? <View key={item.id} style={styles.textRow}><Text style={styles.checkMark}>{item.checked ? "☑" : "☐"}</Text><Text style={styles.reading}>{item.text}</Text></View>
-          : <AppCheckbox key={item.id} label={item.text} checked={!!item.checked} disabled={!canCheck} onChange={value => {
+        ? <Fragment key={item.id}>{archived || !canCheck && !(keepReadControls || keepFailedReadControls || keepCheckingControl && (!!workspace.model.checkSave || checkingItem?.sectionId === section.id && checkingItem.itemId === item.id)) ? <View style={styles.textRow}><Text style={styles.checkMark}>{item.checked ? "☑" : "☐"}</Text><Text style={styles.reading}>{item.text}</Text></View>
+          : <AppCheckbox label={item.text} checked={!!item.checked} disabled={!canCheck} onChange={value => {
             if (!canCheck) return;
             setCheckingItem({ sectionId: section.id, itemId: item.id });
             workspace.actions.checkItem(document.id, document.version, section.id, item.id, value);
-          }} />
+          }} />}{feedbackText && onCheckRecovery && feedbackItem?.sectionId === section.id && feedbackItem.itemId === item.id
+            ? <View testID="preparation-check-feedback" style={styles.stack}>
+              <Text style={styles.reading}>{feedbackText}</Text>
+              <AppButton label="查看勾選處理方式" variant="secondary" onPress={() => onCheckRecovery(document.id)} />
+            </View> : null}</Fragment>
         : <View key={item.id} style={styles.textRow}><Text style={styles.bullet}>{section.kind === "questions" ? `${index + 1}.` : "·"}</Text><Text style={styles.reading}>{item.text}</Text></View>)}
     </View>)}
     {revision ? <View style={styles.section}>
@@ -175,8 +186,9 @@ function PreparationListGrid({ history, children }: { history: boolean; children
 
 type ReadingProps = { scrollRef?: RefObject<ScrollView | null>; getScrollPosition?(): number };
 
-function PreparationReader({ workspace, documents, history = false, onHistory, onPrepareQuestion, scrollRef, getScrollPosition }: ReadingProps & {
+function PreparationReader({ workspace, documents, history = false, onHistory, onPrepareQuestion, scrollRef, getScrollPosition, onCheckRecovery }: ReadingProps & {
   workspace: PreparationWorkspaceValue; documents: readonly PreparationDocumentView[]; history?: boolean; onHistory?(): void; onPrepareQuestion?: (question: string) => void;
+  onCheckRecovery?(documentId: string): void;
 }) {
   const layout = useContainerWidth(), wide = layout.width >= 840;
   const selected = workspace.model.selected?.status === (history ? "archived" : "active") && documents.some(item => item.id === workspace.model.selected!.id) ? workspace.model.selected : null;
@@ -242,7 +254,7 @@ function PreparationReader({ workspace, documents, history = false, onHistory, o
           onPress={() => { returnFocus.current = rowRefs.current.get(document.id) ?? null; if (!history) anchor.current = { id: document.id, y: getScrollPosition?.() ?? 0, scope: workspace.scopeKey }; workspace.actions.selectDocument(document.id); }} />)}</PreparationListGrid>
           : <PreparationEmptyState workspace={workspace} history={history} />}
       </View> : null}
-      {!history && selected ? <View ref={panelRef} tabIndex={-1} style={styles.detailColumn}><PreparationDocumentDetail key={`${workspace.scopeKey}:${selected.id}`} document={selected} workspace={workspace}
+      {!history && selected ? <View ref={panelRef} tabIndex={-1} style={styles.detailColumn}><PreparationDocumentDetail key={`${workspace.scopeKey}:${selected.id}`} document={selected} workspace={workspace} onCheckRecovery={onCheckRecovery}
         onClose={workspace.actions.closeDocument} onHistory={onHistory} onPrepareQuestion={onPrepareQuestion} /></View> : null}
     </View>
     {history ? <FormDialog key={readerKey.current} visible={!!selected && workspace.model.condition !== "lost"} scopeKey={workspace.scopeKey} formKey={readerKey.current ?? undefined} title="準備單詳情" dismissMode="local"
@@ -254,33 +266,86 @@ function PreparationReader({ workspace, documents, history = false, onHistory, o
   </View>;
 }
 
-export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewControls, scrollRef, getScrollPosition }: ReadingProps & {
+function useRequestedPreparation(requestedDocumentId?: string | null, onDocumentChange?: (id: string | null, replace?: boolean) => void) {
+  const original = usePreparationWorkspace();
+
+  const requested = useRef("");
+  const retained = !!original && (original.model.dirty || ["saving", "unknown", "conflict"].includes(original.model.operation?.state ?? "none") || !!original.model.operation?.recovery);
+  const activeId = retained && original?.model.selected ? original.model.selected.id : requestedDocumentId;
+  useEffect(() => { if (activeId !== requestedDocumentId && activeId) onDocumentChange?.(activeId, true); }, [activeId, requestedDocumentId]);
+  useEffect(()=>{
+    if(!requestedDocumentId) {
+      requested.current="";
+      if (requestedDocumentId === null && original?.model.selected && !original.model.busy && !original.model.dirty && !original.model.operation?.recovery) original.actions.closeDocument();
+    }
+    if(!original || retained || !requestedDocumentId || original.model.condition==="lost" || original.model.busy)return;
+    const key=`${original.scopeKey}:${requestedDocumentId}`;
+    if(requested.current===key || !original.model.documents.some(item=>item.id===requestedDocumentId))return;
+    requested.current=key;original.actions.selectDocument(requestedDocumentId);
+  },[original,requestedDocumentId,retained]);
+  const closeRequested = useRef<{ model: PreparationWorkspaceValue["model"]; scope: string } | null>(null);
+  useEffect(() => {
+    const request = closeRequested.current;
+    if (!request || !original || request.model === original.model) return;
+    closeRequested.current = null;
+    if (request.scope === original.scopeKey && !original.model.selected) onDocumentChange?.(null, true);
+  }, [original, onDocumentChange]);
+  const workspace = original && onDocumentChange ? {...original,model:{...original.model,selected:original.model.selected?.id===activeId?original.model.selected:null},actions:{...original.actions,selectDocument:onDocumentChange,closeDocument:()=>{
+    closeRequested.current = {model: original.model, scope: original.scopeKey};
+    original.actions.closeDocument();
+  }}} : original;
+  return workspace;
+}
+
+export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewControls, scrollRef, getScrollPosition, requestedDocumentId, onDocumentChange }: ReadingProps & {
+  requestedDocumentId?:string|null; onDocumentChange?:(id:string|null,replace?:boolean)=>void;
   onHistory?(): void; onPrepareQuestion?: (question: string) => void; previewControls?: ReactNode;
 }) {
-  const workspace = usePreparationWorkspace();
+  const workspace = useRequestedPreparation(requestedDocumentId, onDocumentChange);
   const [purpose, setPurpose] = useState<PreparationPurpose>("appointment");
+  const recoveryRef = useRef<View>(null), latest = useRef(workspace);
+  const navigationScope = useNavigationScope();
+  latest.current = workspace;
+  function revealCheckRecovery(documentId: string) {
+    // Explicit, synchronous presentation only. No publication effect, delayed
+    // focus ticket, read, retry or write is created by viewing the original UI.
+    if (!workspace || latest.current !== workspace || navigationScope && !navigationScope.isCurrent()
+      || workspace.model.selected?.id !== documentId || !workspace.model.checkFeedback?.some(value => value.documentId === documentId)
+      || !["conflict", "unknown"].includes(workspace.model.checkSave ?? "")) return;
+    if (Platform.OS !== "web") { scrollRef?.current?.scrollTo({ y: 0, animated: false }); return; }
+    const target = recoveryRef.current as unknown as HTMLElement | null;
+    const viewport = (scrollRef?.current as ScrollView & { getScrollableNode?(): HTMLElement } | null)?.getScrollableNode?.();
+    if (!target?.isConnected || !viewport?.contains(target) || target.closest('[aria-hidden="true"],[hidden],[inert]')) return;
+    const area = viewport.getBoundingClientRect(), box = target.getBoundingClientRect();
+    if (area.height <= 0 || box.height <= 0) return;
+    if (box.top < area.top || box.bottom > area.bottom) scrollRef?.current?.scrollTo({ y: Math.max(0, viewport.scrollTop + box.top - area.top), animated: false });
+    target.focus({ preventScroll: true });
+  }
   if (!workspace) return <Text style={styles.meta}>先選擇有權查看的孩子，再打開準備單。</Text>;
   const active = workspace.model.documents.filter(document => document.status === "active");
   const selected = workspace.model.selected?.status === "active";
   const quietRead = !!workspace.model.busy && workspace.model.online && ["ready", "empty", "read_only"].includes(workspace.model.condition)
     && !workspace.model.dirty && (!workspace.model.operation || workspace.model.operation.state === "none");
   return <View testID="preparation-workspace" style={styles.workspace}>
+    {requestedDocumentId && !active.some(item=>item.id===requestedDocumentId) && !workspace.model.busy ? <View><Text style={styles.warningText}>目前不能查看這項內容；準備單可能未載入或已不能存取。</Text><AppButton label="返回準備單清單" variant="secondary" onPress={()=>onDocumentChange?.(null)} /></View> : null}
+    <View ref={recoveryRef} testID="preparation-check-recovery" role="region" accessibilityLabel="勾選保存與恢復" tabIndex={-1} style={styles.stack}>
     <Text testID="preparation-check-save" style={styles.meta}>{workspace.model.checkSave === "queued" ? "勾選尚未同步，稍後自動保存。"
       : workspace.model.checkSave === "saving" ? "正在背景保存，可繼續勾選。"
-      : workspace.model.checkSave === "unknown" ? "勾選結果待核對，未保存的修改仍保留。"
+      : workspace.model.checkSave === "unknown" ? "勾選結果尚未確認，本機修改仍保留。"
       : workspace.model.checkSave === "conflict" ? "清單需要重新核對，未保存的修改仍保留。" : "勾選會在背景自動保存。"}</Text>
     {workspace.model.checkSave === "conflict" && workspace.model.canReapplyChecks ? <View style={styles.row}>
       {workspace.actions.reapplyChecks ? <AppButton label="按目前版本重新套用勾選" variant="quiet" onPress={workspace.actions.reapplyChecks} /> : null}
       {workspace.actions.discardChecks ? <AppButton label="捨棄未保存勾選" variant="quiet" onPress={workspace.actions.discardChecks} /> : null}
     </View> : null}
     {workspace.model.operation ? <WriteRecoveryNotice plainLanguage showReference={false} operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
+    </View>
     {workspace.model.condition === "refresh_failed" ? <Text testID="preparation-refresh-error" accessibilityRole="alert" style={styles.warningText}>{active.length ? "更新失敗，顯示上次內容" : "準備單更新失敗"}</Text> : null}
     {!selected ? <Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>待用準備單{!workspace.model.online || !["ready", "empty", "read_only"].includes(workspace.model.condition) ? "" : ` · ${active.length} 份`}</Text> : null}
     {!selected ? <View testID="preparation-list-actions" style={styles.intentControls}>
       <AppButton label="到助手準備下一份" variant="secondary" density="compact" disabled={!workspace.model.online || workspace.model.condition === "lost" || !onPrepareQuestion} onPress={() => onPrepareQuestion?.(`請幫我為${workspace.model.child.displayName}整理一份${preparationPurposeLabel(purpose)}。先和我確認用途、日期、已知安排及仍未確定的資料。`)} />
       <View style={styles.purposeField}><AppSelect label="用途" value={purpose} options={preparationPurposes.map(item => ({ value: item.key, label: item.label }))} onChange={setPurpose} /></View>
     </View> : null}
-    <PreparationReader workspace={workspace} documents={active} onHistory={onHistory} onPrepareQuestion={onPrepareQuestion} scrollRef={scrollRef} getScrollPosition={getScrollPosition} />
+    <PreparationReader workspace={workspace} documents={active} onCheckRecovery={scrollRef ? revealCheckRecovery : undefined} onHistory={onHistory} onPrepareQuestion={onPrepareQuestion} scrollRef={scrollRef} getScrollPosition={getScrollPosition} />
     {!selected && workspace.model.reading?.activeHasMore ? <AppButton label={workspace.model.reading.pageBusy ? "正在載入…" : "載入更多準備單"} variant="quiet" disabled={workspace.model.reading.pageBusy || !workspace.model.reading.online} onPress={() => workspace.model.reading?.loadMoreDocuments("active")} /> : null}
     {workspace.model.reading?.pageError ? <Text accessibilityRole="alert" style={styles.warningText}>未能載入更多文件，已取得的內容保留。</Text> : null}
     <View testID="preparation-secondary-actions" style={styles.intentControls}>
@@ -298,10 +363,11 @@ export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewCont
   </View>;
 }
 
-export function PreparationHistoryView({ searchText, dateRange, onPrepareQuestion, previewControls, scrollRef, getScrollPosition }: ReadingProps & {
+export function PreparationHistoryView({ searchText, dateRange, onPrepareQuestion, previewControls, scrollRef, getScrollPosition, requestedDocumentId, onDocumentChange }: ReadingProps & {
+  requestedDocumentId?: string | null; onDocumentChange?: (id: string | null, replace?: boolean) => void;
   searchText: string; dateRange: PreparationDateRange; onPrepareQuestion?: (question: string) => void; previewControls?: ReactNode;
 }) {
-  const workspace = usePreparationWorkspace();
+  const workspace = useRequestedPreparation(requestedDocumentId, onDocumentChange);
   const reading = workspace?.model.reading;
   useEffect(() => { reading?.ensureArchived(); }, [workspace?.scopeKey, reading?.archiveStarted, reading?.pageBusy]);
   if (!workspace) return <Text style={styles.meta}>先選擇有權查看的孩子，再查看準備單歷史。</Text>;
@@ -311,6 +377,7 @@ export function PreparationHistoryView({ searchText, dateRange, onPrepareQuestio
   const unknownDates = workspace.model.documents.filter(document => document.status === "archived" && !document.archivedAt).length;
   return <View testID="preparation-history" style={styles.workspace}>
     {previewControls}
+    {requestedDocumentId && !workspace.model.selected && !workspace.model.busy ? <Text style={styles.warningText}>指定準備單尚未載入或已不能存取；可繼續讀取原清單。</Text> : null}
     {workspace.model.operation ? <WriteRecoveryNotice plainLanguage showReference={false} operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
     {workspace.actions.refresh && (["unavailable", "refresh_failed", "unknown"].includes(workspace.model.condition) || workspace.model.operation?.recovery === "check") ? <AppButton label="重新載入" variant="quiet" density="compact" disabled={workspace.model.busy || !workspace.model.online || workspace.model.condition === "lost"} onPress={workspace.actions.refresh} /> : null}
     {workspace.model.condition === "refresh_failed" ? <Text testID="preparation-refresh-error" accessibilityRole="alert" style={styles.warningText}>{documents.length ? "更新失敗，顯示上次內容" : "準備單更新失敗"}</Text> : null}

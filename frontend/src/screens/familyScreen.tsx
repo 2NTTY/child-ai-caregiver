@@ -12,7 +12,7 @@ import { chineseFont, colors, radius, readingType, spacing } from "../theme";
 export default function FamilyPage() {
   const { actions } = useProduction();
   const [pressedKey, setPressedKey] = useState<string | null>(null);
-  return <PageFrame density="compact" title="家庭協調" description="家庭成員與協作權限集中在這裏；本人提醒設定保持獨立。">
+  return <PageFrame density="compact" title="家庭協調" description="家庭協作尚未開放；你仍可管理本人聯絡授權與通知。">
     <View style={styles.availability} testID="family-availability">
       <View style={styles.icon} accessible={false}><AppIcon name="account-group-outline" size={28} color={colors.teal} /></View>
       <View style={styles.copy}><AppStatusBadge label="尚未開放" /><Text accessibilityRole="header" aria-level={2} style={styles.title}>家庭協作尚未開放</Text>

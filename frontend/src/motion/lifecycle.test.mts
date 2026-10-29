@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canApplyInitialPreference, disclosureStartHeight, isCurrentPresentation, planListProjection } from "./lifecycle.ts";
+import { canApplyInitialPreference, isCurrentPresentation, planListProjection } from "./lifecycle.ts";
 
 test("a committed swap can reveal only its own presentation", () => {
   const b = { generation: 2, scopeKey: "synthetic-A", epoch: 0 };
@@ -26,11 +26,4 @@ test("reduced-motion removal hands off focus before same-scope rows drop", () =>
   const changedScope = planListProjection(["a", "b", "c"], ["d"], "scope-a", "scope-b", true);
   assert.equal(changedScope.retainUntilLayout, false);
   assert.deepEqual(changedScope.focusRemovedIds, []);
-});
-
-test("disclosure reversal starts at its current interpolated height", () => {
-  assert.equal(disclosureStartHeight(false, true, 200, 73), 73);
-  assert.equal(disclosureStartHeight(true, true, 200, 81), 81);
-  assert.equal(disclosureStartHeight(true, false, 200, 200), 0);
-  assert.equal(disclosureStartHeight(false, false, 200, 0), 200);
 });

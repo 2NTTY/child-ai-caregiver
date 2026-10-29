@@ -1,4 +1,4 @@
-import { createContext, Fragment, useContext, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { createContext, Fragment, useContext, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type ScrollView as NativeScrollView, type StyleProp, type TextStyle } from "react-native";
 import { Text } from "react-native-paper";
 import type { ChatCitationView } from "../../chat-view-model";
@@ -82,9 +82,10 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
     setTabWidth(current => current === width ? current : width);
   }, [windowWidth, sourceLayoutKey, tabWidth]);
   // Retain only an ID during collapse; the live collection controls data access.
-  const selected = sources.find(source => source.id === (selectedId ?? presentedId));
+  const sourceById = useMemo(() => new Map(sources.map(source => [source.id, source])), [sources]);
+  const selected = sourceById.get(selectedId ?? presentedId ?? "");
   const expanded = selectedId !== null && selected !== undefined;
-  const markerId = sources.find(source => source.id === (selectedId ?? locatedId))?.id ?? null;
+  const markerId = sourceById.get(selectedId ?? locatedId ?? "")?.id ?? null;
   const selection = markerId ? tabLayouts[markerId] : undefined;
   function revealSource(id: string) {
     const target = sourceRefs.current.get(id) ?? null;
@@ -148,7 +149,7 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
       <View testID="answer-sources" style={styles.footer}>
         {degraded ? <Text testID="answer-sources-degraded" style={styles.warning}>{CHAT_SOURCE_COPY.degradedWarning}</Text> : null}
         {sources.length ? <View ref={panelRef} testID="answer-source-panel" style={styles.panel}>
-          <View style={styles.footerHeading}><Text accessibilityRole="header" style={styles.footerTitle}>{CHAT_SOURCE_COPY.footerTitle}</Text>
+          <View style={styles.footerHeading}><Text accessibilityRole="header" aria-level={2} style={styles.footerTitle}>{CHAT_SOURCE_COPY.footerTitle}</Text>
             {origin && onLocateSource ? <AppButton label={CHAT_SOURCE_COPY.returnToCitation} variant="quiet" density="compact" onPress={returnToCitation} /> : null}
           </View>
           <HorizontalOverflowRail ref={tabScrollRef} testID="answer-source-tabs" rowTestID="answer-source-tab-row" accessibilityLabel={CHAT_SOURCE_COPY.tabAccessibilityLabel}
@@ -176,15 +177,15 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
           <MotionEntrance preset="panel" triggerKey={expanded ? panelTrigger : null} scopeKey={groupId} enabled={expanded} testID="answer-source-content-motion" style={styles.details}>
             {selected ? <>
             <View testID="source-detail-group" style={styles.detailGroup}>
-              <Text accessibilityRole="header" style={styles.groupTitle}>{CHAT_SOURCE_COPY.quoteGroupTitle}</Text>
-              <View style={styles.detail}><Text accessibilityRole="header" style={styles.sourceTitle}>{selected.title}</Text>
+              <Text accessibilityRole="header" aria-level={3} style={styles.groupTitle}>{CHAT_SOURCE_COPY.quoteGroupTitle}</Text>
+              <View style={styles.detail}><Text accessibilityRole="header" aria-level={4} style={styles.sourceTitle}>{selected.title}</Text>
                 <Text style={styles.meta}>{selected.publisher} · {classificationLabels[selected.classification]}</Text></View>
               <Detail label={CHAT_SOURCE_COPY.section} value={selected.section} />
               <View style={styles.quote}><Text selectable style={styles.quoteBody}>{selected.excerpt}</Text></View>
               {selected.classification === "synthetic" ? <Text style={styles.meta}>{CHAT_SOURCE_COPY.syntheticNotice}</Text> : null}
             </View>
             <View testID="source-detail-group" style={[styles.detailGroup, styles.dividedGroup]}>
-              <Text accessibilityRole="header" style={styles.groupTitle}>{CHAT_SOURCE_COPY.datesGroupTitle}</Text>
+              <Text accessibilityRole="header" aria-level={3} style={styles.groupTitle}>{CHAT_SOURCE_COPY.datesGroupTitle}</Text>
               <Detail label={CHAT_SOURCE_COPY.sourceDate} value={selected.sourceDate ?? CHAT_SOURCE_COPY.missingTime} />
               <Detail label={CHAT_SOURCE_COPY.validUntil} value={sourceTime(selected.validUntil)} />
               <Detail label={CHAT_SOURCE_COPY.applicability} value={selected.applicabilityLabel} />
