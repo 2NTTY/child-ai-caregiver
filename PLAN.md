@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-30）：[P4-HANDOVER01](#p4-handover01) 記憶匯入後端收束及共用畫面接線。**`codex/p4-handover-memory-pipeline` 以 `755b8b78` 為基線，復用 #378／#379 的[記憶來源](artifacts/verification/P4_HANDOVER_MEMORY_SOURCE_20261029.json)及[私人交代](artifacts/verification/P4_HANDOVER_INSTRUCTIONS_20261029.json)接點。統一上載／匯入 worker 已接事實、話題、私人交代、歷史摘要及事實／話題來源修訂；產品模組與實際資源類型分開，保留原映射、版本、衝突及收據。匯入摘要保存於原摘要權威，只作可追溯歷史，不成為本地活動 head、不推進訊息 watermark；刪除清理與還原重放涵蓋新增來源歷史。必要合成流程及受影響型別證據見[本包紀錄](artifacts/verification/P4_HANDOVER_MEMORY_PIPELINE_20261030.json)，不代表真 Firestore 競爭或部署。後端包合併後再由穩定基線接共用模組選擇、逐項類型與歷史閱讀，兩者就緒前不發布；尚未聲稱 UI 完成。其餘模組、正文差異、班級／期間、完整私人備份、簽章配置及原生大型包仍待完成；不改 D PR。
+**當前入口（2026-10-30）：[P4-HANDOVER01](#p4-handover01) 記憶匯入介面收束，再接其餘資料模組。**後端 #382／`de14012c` 已合併，統一 worker 已保存記憶事實、話題、私人交代、歷史摘要與來源修訂；匯入摘要只作原權威內的可追溯歷史，不成為活動 head 或推進訊息 watermark。刪除／還原及必要合成流程見[後端證據](artifacts/verification/P4_HANDOVER_MEMORY_PIPELINE_20261030.json)。`codex/p4-handover-memory-ui` 以 `e32ed5f1` 接共用模組選擇、實際資源類型、所選衝突及唯讀來源歷史；讀取沿正式 client／owner，保留身份與範圍清理，不把外來摘要連成本地聊天。受影響 owner／client／元件及型別結果見[前端證據](frontend/verification/P4_HANDOVER_MEMORY_UI_20261030.json)，未部署或代驗設備。其餘模組、正文差異、班級／期間、完整私人備份、簽章配置及原生大型包仍待完成；各包合併後才開始其依賴包，不改 D PR。
 
 **已合併未部署：**#358 班級解散與 #359 待辦身份接線，[清理](artifacts/verification/P4_CLASS_ERASURE_20261028.json)及[提醒證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)不重跑。選其他成員、班級 Agent 與外部通知仍待接續，不借管理員 key、不改 D PR。整個 CLASS01／P4、P3／P5 的未完成項不變。
 

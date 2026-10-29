@@ -3,6 +3,12 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+## 記憶匯入共用接線（2026-10-30）
+
+沿根 [P4-HANDOVER01](../PLAN.md#active) 與已合併後端 #382／`e32ed5f1` 接記憶模組選擇、實際資源類型、所選衝突及來源歷史閱讀。復用現有匯入 owner、受控 client、Paper 表單和來源披露；Web／Android 使用同一份程式，不改設計。私人交代與摘要不藉匯入變成共享資料，外來摘要不作本地聊天／活動摘要連結。
+
+已完成共用介面接線，尚未發布。owner／client 的六項檢查、共用元件的一項檢查及七個入口的 TypeScript 依賴圖通過；復用後端證據，沒有重跑真模型、瀏覽器或設備流程。來源歷史只讀 Server 當前授權結果，切換身份／範圍或撤權時清理；有私人交代或摘要的記憶只可匯入本人孩子。驗證與限制見[本包證據](verification/P4_HANDOVER_MEMORY_UI_20261030.json)。完整範圍及剩餘模組只見根 PLAN；以下保留原前端設計交付歷史，不作目前遠端或部署狀態。
+
 ## 頁面專屬歷史與安靜讀取（2026-10-23；source36／artifactfix1 本地交付）
 
 沿用 `dot/frontend-simplify-20261021`／[PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253)，本輪以 `5a39776f703bc436528b858f393621bcf8030b03` 為基底，PR 仍 draft／未合併；此為交付時已知狀態，未另查 CI。新版尚未更新公開站點；最後已記錄的公開版本仍為04:59:33.978 UTC的Site87／snapshot31（Sites source `b1fb6db5cd7820cd2183a732f866d8673973bb10`），不把本地結果當新公開驗收。

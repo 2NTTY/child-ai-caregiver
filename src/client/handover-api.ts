@@ -6,12 +6,15 @@ import { handoverUploadCommandSchema, handoverUploadViewSchema, handoverUploadPa
   type HandoverUploadCommand, type HandoverUploadView, type HandoverUploadPage } from '../shared/handover-uploads.ts';
 import { handoverImportCommandSchema, handoverImportControlSchema, handoverImportViewSchema, handoverImportPageSchema,
   handoverImportResultQuerySchema, handoverImportResultPageSchema,
+  handoverSourceHistoryQuerySchema, handoverSourceHistoryPageSchema,
   type HandoverImportResultQuery, type HandoverImportResultPage, type HandoverImportCommand, type HandoverImportView } from '../shared/handover-imports.ts';
 
 type CancelCommand = z.infer<typeof handoverCancelCommandSchema>;
 type ExportPage = z.infer<typeof handoverExportPageSchema>;
 type ImportControl = z.infer<typeof handoverImportControlSchema>;
 type ImportPage = z.infer<typeof handoverImportPageSchema>;
+export type HandoverSourceHistoryQuery = z.infer<typeof handoverSourceHistoryQuerySchema>;
+export type HandoverSourceHistoryPage = z.infer<typeof handoverSourceHistoryPageSchema>;
 type RequestOptions = { collection?: 'packages' | 'package-uploads' | 'package-imports'; rawBody?: boolean; timeoutMs?: number };
 export interface HandoverApi {
   setIdentity(userId: string | null): void;
@@ -31,6 +34,7 @@ export interface HandoverApi {
   getImport(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportView>;
   listImports(userId: string, signal: AbortSignal, cursor?: string): Promise<ImportPage>;
   importResults(userId: string, id: string, query: HandoverImportResultQuery, signal: AbortSignal): Promise<HandoverImportResultPage>;
+  sourceHistory(userId: string, query: HandoverSourceHistoryQuery, signal: AbortSignal): Promise<HandoverSourceHistoryPage>;
   cancelImport(userId: string, id: string, command: ImportControl, signal: AbortSignal): Promise<HandoverImportView>;
   resumeImport(userId: string, id: string, command: ImportControl, signal: AbortSignal): Promise<HandoverImportView>;
 }
@@ -174,6 +178,17 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
         result => result.batchId === id && result.sourceChildId === parsed.data.sourceChildId && result.module === parsed.data.module
           && result.complete === (result.nextCursor === null) && (!parsed.data.cursor || result.nextCursor !== parsed.data.cursor)
           && result.items.every(item => item.batchId === id && item.sourceChildId === result.sourceChildId && item.module === result.module),
+        { collection: 'package-imports' });
+    },
+    async sourceHistory(userId, query, signal) {
+      const parsed = handoverSourceHistoryQuerySchema.safeParse(query);
+      if (!parsed.success || parsed.data.cursor === '') throw new HandoverApiError(400, 'invalid_input');
+      const input = parsed.data, search = new URLSearchParams({ childId: input.childId, module: input.module, resourceId: input.resourceId });
+      if (input.spaceId !== null) search.set('spaceId', input.spaceId);
+      if (input.cursor !== undefined) search.set('cursor', input.cursor);
+      return json(userId, `/source-history?${search}`, signal, handoverSourceHistoryPageSchema, undefined,
+        page => page.complete === (page.nextCursor === null) && page.nextCursor !== '' && (!input.cursor || page.nextCursor !== input.cursor)
+          && page.items.every(item => item.childId === input.childId && item.resource.id === input.resourceId && item.evidence.module === input.module),
         { collection: 'package-imports' });
     },
     async cancelImport(userId, id, input, signal) {
