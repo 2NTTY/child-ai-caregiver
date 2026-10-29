@@ -31,6 +31,16 @@
       ],
       "result": "0 diagnostics",
       "evidence": "tmp/document-pipeline-types-final.log"
+    },
+    {
+      "command": "node tmp/check-source-ui.cjs",
+      "result": "7 roots, 0 diagnostics after PR #391 integration",
+      "evidence": "tmp/document-pipeline-ui-integrated.log"
+    },
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-import-service.test.ts",
+      "result": "1 passed; existing worker partial progress, history and cancelled-source path",
+      "evidence": "tmp/document-pipeline-legacy-phase.log"
     }
   ],
   "failuresRetained": [
@@ -60,5 +70,10 @@
     "Common document selection and history UI",
     "Other modules and complete personal backup",
     "Class/period exports, difference preview and signing configuration"
-  ]
+  ],
+  "compatibility": {
+    "pr": 391,
+    "merge": "a4b495b4ae6584ab405b1b48f134ce17b3e428cc",
+    "result": "Original and expanded contracts pass scoped frontend types"
+  }
 }
