@@ -15,7 +15,7 @@ import { chineseFont, colors, readingType, spacing } from '../../theme';
 type Section = HandoverImportCommand['targets'][number]['sections'][number];
 type Choice = { target: string; sections: Section[] };
 const sections: Section[] = ['care', 'profile', 'tasks', 'memory', 'sources'];
-const labels: Record<Section, string> = { care: '照護記錄', profile: '孩子資料', tasks: '待辦', memory: '記憶與摘要', sources: '私人來源' };
+const labels: Record<Section | 'documents', string> = { care: '照護記錄', profile: '孩子資料', tasks: '待辦', memory: '記憶與摘要', sources: '私人來源', documents: '文件與準備單' };
 const states: Record<HandoverImportView['state'], string> = {
   queued: '已排隊', running: '正在匯入', completed: '已完成', cancelled: '已取消', failed: '未能完成', interrupted: '還原後已中斷',
 };

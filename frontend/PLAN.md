@@ -3,6 +3,10 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+## 文件匯入相容標籤（2026-10-30）
+
+`codex/p4-handover-document-labels` 從共同基線 `0999402d` 補共用結果的文件／準備單／來源修訂名稱及版本索引略過原因。沿原版面，不提前開放文件選項；後端統一 worker 合併後再接完整選擇及歷史閱讀。七根局部型別圖零診斷，純標籤不跑設備或產品測試。詳見[證據](verification/P4_HANDOVER_DOCUMENT_LABELS_20261030.json)。原私人來源已驗結果保留，部署與完整匯入仍待根 PLAN 接續。
+
 ## 私人來源匯入共用接線（2026-10-30）
 
 沿根 [P4-HANDOVER01](../PLAN.md#active) 與後端 #385／`55df510b`，由 `codex/p4-handover-source-ui` 接私人來源選擇、結果及管理歷史閱讀。復用既有 Web／Android owner、client、Paper 元件與版面；sources 只可選本人孩子，來源舊模型摘錄只作歷史描述，不代表本地授權，管理歷史亦不等於正文修訂。
