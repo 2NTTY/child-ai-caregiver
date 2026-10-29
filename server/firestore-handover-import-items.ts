@@ -14,6 +14,7 @@ import { createFirestoreOnlineStore } from './firestore-online.ts';
 import { createFirestoreMemoryStore, firestoreFactSchema, firestoreTopicSchema, firestoreSummarySchema } from './firestore-memory.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
 import { createFirestorePrivateInstructions, firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
+import { createFirestoreSharedInputStore, sharedInputImportSchema } from './firestore-shared-inputs.ts';
 import { handoverImportModuleOf, handoverImportResourceSectionSchema, type HandoverImportModule, type HandoverImportResourceSection } from '../src/shared/handover-imports.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { makeImportProvenance } from './handover-provenance.ts';
@@ -38,13 +39,20 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), sharing = createFirestoreSharingStore(options);
   const care = createFirestoreCareStore(options), online = createFirestoreOnlineStore(options);
   const memory = createFirestoreMemoryStore({ ...options, care, chat: createFirestoreChatStore(options) }), notes = createFirestorePrivateInstructions(data);
+  const sources = createFirestoreSharedInputStore(options);
   const sectionSchema = handoverImportResourceSectionSchema;
   const schemas = { care: firestoreCareSchema, profile: firestoreProfileSchema, tasks: firestoreTaskSchema,
-    memory_facts: firestoreFactSchema, memory_topics: firestoreTopicSchema, instructions: firestorePrivateInstructionSchema, summary_history: firestoreSummarySchema };
-  const access = <T>(userId: string, target: Target, section: Section | HandoverImportModule, mode: 'read' | 'write', use: (b: Binding, actor: Binding) => Promise<T>) => target.spaceId
-    ? authority.runTransaction(userId, null, actor => sharing.inResourceTransaction(actor,
-      { spaceId: target.spaceId!, childId: target.childId, module: section === 'memory' ? section : handoverImportModuleOf(section), mode }, value => use(value.binding, actor)))
-    : authority.runTransaction(userId, target.childId, b => use(b, b));
+    memory_facts: firestoreFactSchema, memory_topics: firestoreTopicSchema, instructions: firestorePrivateInstructionSchema, summary_history: firestoreSummarySchema,
+    private_sources: sharedInputImportSchema };
+  const access = <T>(userId: string, target: Target, section: Section | HandoverImportModule, mode: 'read' | 'write', use: (b: Binding, actor: Binding) => Promise<T>) => {
+    const module = section === 'memory' || section === 'sources' ? section : handoverImportModuleOf(section);
+    if (target.spaceId) {
+      if (module === 'sources') domainReject('private_scope_unavailable', 403);
+      return authority.runTransaction(userId, null, actor => sharing.inResourceTransaction(actor,
+        { spaceId: target.spaceId!, childId: target.childId, module, mode }, value => use(value.binding, actor)));
+    }
+    return authority.runTransaction(userId, target.childId, b => use(b, b));
+  };
   async function receipt(b: Binding, opId: string, section: Section, existing?: DocumentSnapshot) {
     const id = handoverImportItemId(b.scope, opId), ref = data.ref('handover_import_items', 'handover-import-item', id);
     const row = existing ?? await b.transaction.get(ref);
@@ -65,10 +73,11 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
     const careState = section === 'care' && mapping ? await care.readImportRecordState(b, mapping.target.id) : null;
     const memoryState = mapping && (section === 'memory_facts' || section === 'memory_topics')
       ? await memory.readImportState(b, section === 'memory_facts' ? 'facts' : 'topics', mapping.target.id) : null;
+    const sourceState = mapping && section === 'private_sources' ? await sources.readImportState(b, mapping.target.id) : null;
     const current = section === 'profile' ? await care.readProfile(b)
       : !mapping ? null : section === 'care' ? careState!.value : section === 'tasks' ? await online.readImportTask(b, b.scope.childId, mapping.target.id)
-      : memoryState ? memoryState.value : section === 'instructions' ? await notes.read(b, mapping.target.id) : await memory.readImportedSummary(b, mapping.target.id);
-    const currentVersion = current?.version ?? careState?.version ?? memoryState?.version ?? 0;
+      : sourceState ? sourceState.value : memoryState ? memoryState.value : section === 'instructions' ? await notes.read(b, mapping.target.id) : await memory.readImportedSummary(b, mapping.target.id);
+    const currentVersion = current?.version ?? careState?.version ?? memoryState?.version ?? sourceState?.version ?? 0;
     const currentId = current ? 'id' in current ? current.id : current.childId : mapping?.target.id ?? (section === 'profile' ? b.scope.childId : null);
     const deleted = mapping !== null && (current === null || section === 'profile' && (current as ChildProfile).data === null)
       || section === 'profile' && currentVersion > 0 && (current as ChildProfile).data === null;
@@ -99,7 +108,8 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       const resultResource = currentId ? { id: currentId, version: currentVersion } : null;
       async function finish(outcome: HandoverImportItem['outcome'], reason: string | null, resource = resultResource,
         prepared?: { changeSeq: string; commit(): void }, historyCommit?: () => void) {
-        const auditChange = prepared ? null : await b.prepareChange(opId, handoverImportModuleOf(section), false);
+        const module = handoverImportModuleOf(section);
+        const auditChange = prepared ? null : await b.prepareChange(opId, module === 'sources' ? 'care' : module, false);
         const item = handoverImportItemSchema.parse({ opId, batchId, fingerprint, actorUserId: b.actorUserId, at: provenance.current.importedAt,
           ...(history ? { sourceSection: raw.row.section } : {}),
           source: provenance.current, outcome, reason, resource, changeSeq: prepared?.changeSeq ?? auditChange!.changeSeq });
@@ -153,14 +163,15 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       const expected = current ? { id: currentId!, expectedVersion: current.version } : undefined;
       let prepared;
       try {
-        prepared = section === 'memory_facts' ? await memory.prepareImportedFact(b, opId, raw.row, raw.integrity, expected)
+        prepared = section === 'private_sources' ? await sources.prepareImported(b, opId, raw.row, raw.integrity, expected)
+          : section === 'memory_facts' ? await memory.prepareImportedFact(b, opId, raw.row, raw.integrity, expected)
           : section === 'memory_topics' ? await memory.prepareImportedTopic(b, opId, raw.row, raw.integrity, expected)
           : section === 'instructions' ? await notes.prepareImported(b, opId, raw.row, raw.integrity, expected)
           : await memory.prepareImportedSummary(b, opId, raw.row, raw.integrity, expected);
       } catch (error) {
         // Domain refusals are per-item results, not permission to merge unrelated identities or revive terminal work.
         const code = (error as { code?: string }).code;
-        if (code && ['fact_key_conflict', 'topic_exists', 'instruction_key_conflict', 'terminal_topic'].includes(code)) return finish('conflict', code);
+        if (code && ['fact_key_conflict', 'topic_exists', 'instruction_key_conflict', 'terminal_topic', 'input_processing', 'input_linked', 'inputs_capacity'].includes(code)) return finish('conflict', code);
         throw error;
       }
       const resource = { id: prepared.value.id, version: prepared.value.version };
@@ -213,7 +224,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
             if (currentResource && !stale) availableResolution = live.deleted ? 'restore_deleted' : live.locallyChanged ? 'replace_current' : null;
           }
           result.push({ id: value.opId, batchId: value.batchId, sourceChildId: selection.sourceChildId, module: selection.module,
-            ...(selection.module === 'memory' ? { resourceSection } : {}),
+            ...(selection.module === 'memory' || selection.module === 'sources' ? { resourceSection } : {}),
             sourceResourceId: value.source.source.resourceId, sourceVersion: value.source.source.resourceVersion, sourceSection: value.sourceSection ?? null,
             at: value.at, outcome: value.outcome, reason: value.reason, recordedResource: value.resource, currentResource, availableResolution });
         }
