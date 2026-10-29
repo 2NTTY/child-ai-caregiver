@@ -270,8 +270,8 @@ export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewCont
       : workspace.model.checkSave === "unknown" ? "勾選結果待核對，未保存的修改仍保留。"
       : workspace.model.checkSave === "conflict" ? "清單需要重新核對，未保存的修改仍保留。" : "勾選會在背景自動保存。"}</Text>
     {workspace.model.checkSave === "conflict" && workspace.model.canReapplyChecks ? <View style={styles.row}>
-      <AppButton label="按目前版本重新套用勾選" variant="quiet" onPress={workspace.actions.reapplyChecks} />
-      <AppButton label="捨棄未保存勾選" variant="quiet" onPress={workspace.actions.discardChecks} />
+      {workspace.actions.reapplyChecks ? <AppButton label="按目前版本重新套用勾選" variant="quiet" onPress={workspace.actions.reapplyChecks} /> : null}
+      {workspace.actions.discardChecks ? <AppButton label="捨棄未保存勾選" variant="quiet" onPress={workspace.actions.discardChecks} /> : null}
     </View> : null}
     {workspace.model.operation ? <WriteRecoveryNotice plainLanguage showReference={false} operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
     {workspace.model.condition === "refresh_failed" ? <Text testID="preparation-refresh-error" accessibilityRole="alert" style={styles.warningText}>{active.length ? "更新失敗，顯示上次內容" : "準備單更新失敗"}</Text> : null}
