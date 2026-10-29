@@ -1,5 +1,5 @@
-import { HandoverApiError, type HandoverApi } from '../../../src/client/handover-api.ts';
-import { handoverImportCommandSchema, type HandoverImportCommand, type HandoverImportView,
+import { HandoverApiError, type HandoverApi, type HandoverSourceHistoryQuery, type HandoverSourceHistoryPage } from '../../../src/client/handover-api.ts';
+import { handoverImportCommandSchema, handoverImportModuleOf, type HandoverImportResourceSection, type HandoverImportCommand, type HandoverImportView,
   type HandoverImportResult, type HandoverImportResultQuery } from '../../../src/shared/handover-imports.ts';
 import { handoverUploadCommandSchema, type HandoverUploadCommand, type HandoverUploadView } from '../../../src/shared/handover-uploads.ts';
 import { handoverErrorText } from './HandoverOwner.ts';
@@ -14,22 +14,41 @@ export interface HandoverImportResultsState {
   batchId: string; sourceChildId: string; module: HandoverImportResultQuery['module']; revision: number;
   items: HandoverImportResult[]; nextCursor: string | null; loaded: boolean; error: string | null;
 }
+export function handoverResultResourceSection(row: HandoverImportResult): HandoverImportResourceSection | null {
+  const section = row.resourceSection ?? (row.module === 'care' || row.module === 'profile' || row.module === 'tasks' ? row.module : null);
+  return section && handoverImportModuleOf(section) === row.module ? section : null;
+}
+export function canReadHandoverSourceHistory(row: HandoverImportResult) {
+  const section = handoverResultResourceSection(row);
+  return !!row.recordedResource && (section === 'memory_facts' || section === 'memory_topics' || section === 'summary_history');
+}
+export function handoverSourceHistoryKey(item: HandoverSourceHistoryPage['items'][number]) {
+  const source = item.evidence.source.current.source;
+  return JSON.stringify([item.resource.id, item.evidence.module, source.serverId, source.accountId, source.childId, source.resourceId, source.resourceVersion]);
+}
+export interface HandoverSourceHistoryState {
+  batchId: string; resultId: string; query: Omit<HandoverSourceHistoryQuery, 'cursor'>; revision: number;
+  items: HandoverSourceHistoryPage['items']; page: number; nextCursor: string | null; complete: boolean;
+  loaded: boolean; loading: boolean; error: string | null;
+}
 export interface HandoverImportState {
   userId: string | null; identityKey: string | null; online: boolean; loaded: boolean;
   upload: HandoverUploadView | null; items: HandoverImportView[]; nextCursor: string | null;
   uploads: UploadSummary[]; uploadsLoaded: boolean; uploadsCursor: string | null;
   results: HandoverImportResultsState | null;
+  sourceHistory: HandoverSourceHistoryState | null;
   busy: 'pick' | 'read' | 'write' | 'check' | null; pending: Pending | null; notice: string | null;
 }
 const empty = (userId: string | null, identityKey: string | null, online: boolean): HandoverImportState => ({
   userId, identityKey, online, loaded: false, upload: null, items: [], nextCursor: null,
-  uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, busy: null, pending: null, notice: null });
+  uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, sourceHistory: null, busy: null, pending: null, notice: null });
 type Ticket = { epoch: number; userId: string; controller: AbortController };
 /** Device drafts only; uploaded packages, import authority and progress remain on the Server. */
 export class HandoverImportOwner {
   private state = empty(null, null, false); private epoch = 0; private active: AbortController | null = null;
   private file: SelectedPackage | null = null; private listeners = new Set<() => void>();
   private resultsTicket: Ticket | null = null; private resultsRevision = 0;
+  private historyTicket: Ticket | null = null; private historyRevision = 0;
   private api: HandoverApi; private accessError: (error: HandoverApiError) => void;
   constructor(api: HandoverApi, accessError: (error: HandoverApiError) => void = () => {}) { this.api = api; this.accessError = accessError; }
   getSnapshot = () => this.state;
@@ -40,6 +59,7 @@ export class HandoverImportOwner {
     if (userId !== this.state.userId || identityKey !== this.state.identityKey) {
       this.epoch++; this.active?.abort(); this.active = null; this.release(); this.api.setIdentity(null); this.api.setIdentity(userId);
       this.resultsTicket = null; this.resultsRevision++;
+      this.historyTicket = null; this.historyRevision++;
       this.state = empty(userId, identityKey, online); this.update({});
     } else this.update({ online });
   }
@@ -56,7 +76,7 @@ export class HandoverImportOwner {
       this.syncContext(null, null, this.state.online); this.accessError(error); return;
     }
     this.update({ notice: importErrorText(error) });
-    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.update({ upload: null, items: [], loaded: false, uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, pending: null }); this.accessError(error); }
+    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.update({ upload: null, items: [], loaded: false, uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, sourceHistory: null, pending: null }); this.accessError(error); }
   }
   private put(row: HandoverImportView) { this.update({ items: this.state.items.some(x => x.id === row.id)
     ? this.state.items.map(x => x.id === row.id ? row : x) : [row, ...this.state.items] }); }
@@ -105,23 +125,24 @@ export class HandoverImportOwner {
     }
   }
   selectResults = (batchId: string, sourceChildId: string, module: HandoverImportResultQuery['module']) => {
-    if (this.state.pending || this.state.busy && !this.resultsTicket) return;
+    if (this.state.pending || this.state.busy && !this.resultsTicket && !this.historyTicket) return;
     const batch = this.state.items.find(row => row.id === batchId);
     if (!batch?.targets.some(target => target.sourceChildId === sourceChildId && target.sections.includes(module))) return;
-    this.stopResultsRead();
-    this.update({ results: { batchId, sourceChildId, module, revision: ++this.resultsRevision,
+    this.stopResultsRead(); this.stopHistoryRead();
+    this.update({ sourceHistory: null, results: { batchId, sourceChildId, module, revision: ++this.resultsRevision,
       items: [], nextCursor: null, loaded: false, error: null } });
   };
   closeResults = () => {
-    if (this.state.busy && !this.resultsTicket) return;
-    this.stopResultsRead(); this.update({ results: null });
+    if (this.state.busy && !this.resultsTicket && !this.historyTicket) return;
+    this.stopResultsRead(); this.stopHistoryRead(); this.update({ results: null, sourceHistory: null });
   };
   readResults = async (more = false) => {
     const previous = this.state.results; if (!previous || more && !previous.nextCursor) return;
+    if (this.historyTicket) this.stopHistoryRead();
     const t = this.begin('read'); if (!t) return;
     const results = more ? { ...previous, error: null } : { ...previous, revision: ++this.resultsRevision,
       items: [], nextCursor: null, loaded: false, error: null };
-    this.resultsTicket = t; this.update({ results });
+    this.resultsTicket = t; this.update({ results, ...(!more ? { sourceHistory: null } : {}) });
     try {
       const page = await this.api.importResults(t.userId, results.batchId, { sourceChildId: results.sourceChildId, module: results.module,
         ...(more ? { cursor: previous.nextCursor! } : {}) }, t.controller.signal);
@@ -132,11 +153,52 @@ export class HandoverImportOwner {
         items: more ? [...results.items, ...page.items.filter(row => !results.items.some(item => item.id === row.id))] : page.items } });
     } catch (error) {
       if (this.current(t) && this.state.results?.revision === results.revision) {
-        this.update({ results: { ...results, error: importErrorText(error), nextCursor: null,
+        this.update({ sourceHistory: null, results: { ...results, error: importErrorText(error), nextCursor: null,
           items: [], loaded: false, revision: ++this.resultsRevision } });
         this.error(t, error);
       }
     } finally { if (this.resultsTicket === t) this.resultsTicket = null; this.finish(t); }
+  };
+  private stopHistoryRead() {
+    const ticket = this.historyTicket; this.historyTicket = null;
+    if (ticket) {
+      ticket.controller.abort();
+      if (this.state.sourceHistory?.loading) this.update({ sourceHistory: { ...this.state.sourceHistory, loading: false } });
+      if (this.active === ticket.controller) { this.active = null; this.update({ busy: null }); }
+    }
+  }
+  openSourceHistory = async (resultId: string) => {
+    if (this.state.pending || this.state.busy && !this.historyTicket) return;
+    const results = this.state.results, row = results?.items.find(item => item.id === resultId);
+    const batch = this.state.items.find(item => item.id === results?.batchId);
+    const target = batch?.targets.find(item => item.sourceChildId === results?.sourceChildId)?.target;
+    if (!results?.loaded || results.error || !row || !target || !canReadHandoverSourceHistory(row)
+      || row.batchId !== results.batchId || row.sourceChildId !== results.sourceChildId || row.module !== results.module) return;
+    this.stopHistoryRead();
+    this.update({ sourceHistory: { batchId: results.batchId, resultId, revision: ++this.historyRevision,
+      query: { ...target, module: handoverResultResourceSection(row)!, resourceId: row.recordedResource!.id },
+      items: [], page: 0, nextCursor: null, complete: false, loaded: false, loading: false, error: null } });
+    await this.readSourceHistory();
+  };
+  closeSourceHistory = () => { this.stopHistoryRead(); this.update({ sourceHistory: null }); };
+  readSourceHistory = async (more = false) => {
+    const previous = this.state.sourceHistory; if (!previous || more && !previous.nextCursor) return;
+    const t = this.begin('read'); if (!t) return;
+    const history = more ? { ...previous, loading: true, error: null } : { ...previous, revision: ++this.historyRevision,
+      items: [], page: 0, nextCursor: null, complete: false, loaded: false, loading: true, error: null };
+    this.historyTicket = t; this.update({ sourceHistory: history });
+    try {
+      const page = await this.api.sourceHistory(t.userId, { ...history.query, ...(more ? { cursor: previous.nextCursor! } : {}) }, t.controller.signal);
+      if (!this.current(t) || this.state.sourceHistory?.revision !== history.revision) return;
+      const known = new Set(history.items.map(handoverSourceHistoryKey));
+      this.update({ sourceHistory: { ...history, loaded: true, loading: false, page: history.page + 1, nextCursor: page.nextCursor, complete: page.complete,
+        items: [...history.items, ...page.items.filter(item => { const key = handoverSourceHistoryKey(item); if (known.has(key)) return false; known.add(key); return true; })] } });
+    } catch (error) {
+      if (this.current(t) && this.state.sourceHistory?.revision === history.revision) {
+        this.update({ sourceHistory: { ...history, loading: false, loaded: false, items: [], page: 0, nextCursor: null, complete: false, error: importErrorText(error) } });
+        this.error(t, error);
+      }
+    } finally { if (this.historyTicket === t) this.historyTicket = null; this.finish(t); }
   };
   resolveResults = async (mode: 'replace_current' | 'restore_deleted', ids: string[]) => {
     const results = this.state.results, original = this.state.items.find(row => row.id === results?.batchId);
@@ -144,8 +206,9 @@ export class HandoverImportOwner {
       || !['completed', 'cancelled', 'failed'].includes(original.state) || !ids.length || new Set(ids).size !== ids.length) return;
     const rows = ids.map(id => results.items.find(row => row.id === id));
     if (rows.some(row => !row || row.sourceSection !== null || row.outcome !== 'conflict' || row.availableResolution !== mode || !row.currentResource
+      || !handoverResultResourceSection(row)
       || row.batchId !== results.batchId || row.sourceChildId !== results.sourceChildId || row.module !== results.module)) return;
-    const resolutions: HandoverImportCommand['resolutions'] = rows.map(row => ({ sourceChildId: row!.sourceChildId, section: row!.module,
+    const resolutions: HandoverImportCommand['resolutions'] = rows.map(row => ({ sourceChildId: row!.sourceChildId, section: handoverResultResourceSection(row!)!,
       resourceId: row!.sourceResourceId, resolution: { mode, targetId: row!.currentResource!.id, expectedVersion: row!.currentResource!.version } }));
     const t = this.begin('read'); if (!t) return; let submit = false;
     try {
@@ -161,7 +224,7 @@ export class HandoverImportOwner {
         || upload.preview.header.packageVersion !== batch.packageVersion) throw new HandoverApiError(409, 'import_source_changed');
       const command = handoverImportCommandSchema.parse({ opId: crypto.randomUUID(), uploadId: batch.uploadId, expectedUploadVersion: upload.version,
         acceptedManifestSha256: batch.integrity === 'trusted' ? null : batch.manifestSha256, targets: batch.targets, resolutions, resolutionOnly: true });
-      this.update({ pending: { kind: 'create', command, checked: true }, results: null }); submit = true;
+      this.update({ pending: { kind: 'create', command, checked: true }, results: null, sourceHistory: null }); submit = true;
     } catch (error) { this.error(t, error); } finally { this.finish(t); }
     if (submit && this.current(t)) await this.retryOriginal();
   };
@@ -269,6 +332,7 @@ export function importErrorText(error: unknown) {
     invalid_import_cursor: '逐項結果已變更，請重新讀取第一頁。', import_results_changed: '逐項結果或接收範圍已變更，請重新讀取。',
     import_resolution_not_available: '原批次仍在執行或不能處理衝突，請先查看其最新狀態。',
     import_source_changed: '原資料包與批次不一致，不能用來處理這些衝突。',
+    source_history_scope_changed: '來源歷史或目前權限已變更，請重新讀取。', invalid_history_cursor: '來源歷史續讀位置無效，請重新讀取第一頁。',
   };
   return messages[code] ?? handoverErrorText(error);
 }

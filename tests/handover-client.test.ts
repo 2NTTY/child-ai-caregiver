@@ -6,6 +6,32 @@ import type { HandoverExportCommand, HandoverExportView } from '../src/shared/ha
 import type { HandoverUploadCommand, HandoverUploadView } from '../src/shared/handover-uploads.ts';
 import type { HandoverImportCommand, HandoverImportView } from '../src/shared/handover-imports.ts';
 
+test('source history reuses authenticated transport and validates destination, resource and pagination bindings', async () => {
+  const childId = randomUUID(), resourceId = randomUUID(), spaceId = randomUUID(), signal = new AbortController().signal;
+  const item = { format: 'yuyoufang-source-revision:1', childId, resource: { id: resourceId, version: 1 }, evidence: { module: 'memory_topics',
+    source: { current: { source: { serverId: 'https://source.test', accountId: 'external', childId: randomUUID(), section: 'memory_topics', resourceId: randomUUID(),
+      resourceVersion: 2, authorUserId: null, createdAt: null, confirmedBy: null, confirmedAt: null, confirmationBasis: null, assigneeUserId: null },
+      sourceHash: 'a'.repeat(64), packageId: randomUUID(), packageVersion: 1, manifestSha256: 'b'.repeat(64), integrity: 'trusted', importedBy: 'owner', importedAt: '2026-10-30T00:00:00Z' }, previous: [] },
+    value: { title: 'Foreign topic', note: '<script>literal source text</script>' } } };
+  let response: unknown = { items: [item], nextCursor: null, complete: true }, held: ((response: Response) => void) | null = null, holding = false, calls = 0;
+  const api = createHandoverApi('https://example.test', async (input, init) => {
+    calls++; const url = new URL(String(input)); assert.equal(url.pathname, '/api/account/package-imports/source-history');
+    assert.equal(init?.method, 'GET'); assert.equal(init?.cache, 'no-store'); assert.equal(new Headers(init?.headers).get('x-expected-user-id'), 'owner');
+    assert.equal(url.searchParams.get('childId'), childId); assert.equal(url.searchParams.get('resourceId'), resourceId); assert.equal(url.searchParams.get('module'), 'memory_topics');
+    assert.equal(url.searchParams.get('spaceId'), spaceId);
+    return holding ? new Promise(resolve => { held = resolve; }) : Response.json(response);
+  });
+  api.setIdentity('owner'); const query = { childId, spaceId, resourceId, module: 'memory_topics' as const };
+  assert.deepEqual((await api.sourceHistory('owner', query, signal)).items, [item]);
+  response = { items: [{ ...item, resource: { id: randomUUID(), version: 1 } }], nextCursor: null, complete: true };
+  await assert.rejects(api.sourceHistory('owner', query, signal), { code: 'handover_response_invalid' });
+  response = { items: [], nextCursor: 'same', complete: false };
+  await assert.rejects(api.sourceHistory('owner', { ...query, cursor: 'same' }, signal), { code: 'handover_response_invalid' });
+  const before = calls; await assert.rejects(api.sourceHistory('owner', { ...query, childId: 'wrong' }, signal), { code: 'invalid_input' }); assert.equal(calls, before);
+  holding = true; const pending = api.sourceHistory('owner', query, signal), rejected = assert.rejects(pending, { code: 'session_changed' });
+  api.setIdentity('other'); held!(Response.json({ items: [item], nextCursor: null, complete: true })); await rejected;
+});
+
 test('handover upload and import commands retain original operations and cancel stale transport', async context => {
   const sourceChildId = randomUUID(), targetChildId = randomUUID(), packageId = randomUUID(), manifestSha256 = 'a'.repeat(64);
   const uploadCommand: HandoverUploadCommand = { opId: randomUUID(), filename: 'synthetic.zip', bytes: 4, sha256: 'b'.repeat(64) };

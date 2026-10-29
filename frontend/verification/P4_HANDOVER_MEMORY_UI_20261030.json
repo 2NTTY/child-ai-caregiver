@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-30",
+  "workPackage": "P4-HANDOVER01",
+  "branch": "codex/p4-handover-memory-ui",
+  "base": "e32ed5f126708635ac233be3d21ca560fccb8f2f",
+  "status": "implemented_not_deployed",
+  "scope": [
+    "Shared Web/Android memory selection and resource-specific result labels",
+    "Selected-only resolutions use the Server resourceSection and current version",
+    "Authenticated source history uses the recorded local resource and fixed batch target",
+    "Identity, scope and permission changes discard stale or private history",
+    "Private instructions and summaries remain personal; family facts/topics retain shared destinations"
+  ],
+  "verification": [
+    { "command": "node --experimental-test-module-mocks --test tests/handover-import-owner.test.ts tests/handover-client.test.ts", "passed": 6, "failed": 0 },
+    { "command": "node --experimental-test-module-mocks --test frontend/scripts/handover-import-ui.test.mjs", "passed": 1, "failed": 0 },
+    { "check": "TypeScript dependency graph for seven changed entrypoints using the existing frontend config plus Node types for Node tests", "sourceFiles": 1487, "diagnostics": 0 },
+    { "command": "node --experimental-test-module-mocks --test tests/handover-import-owner.test.ts frontend/scripts/handover-import-ui.test.mjs", "reason": "Final cancellation regression and summary restoration contract alignment", "passed": 4, "failed": 0 },
+    { "check": "git diff --check", "result": "passed" }
+  ],
+  "retainedFailures": [
+    "Owner/client and component checks initially failed before the new connections existed.",
+    "The initial scoped typecheck used frontend-only ambient types for Node tests and returned 30 diagnostics; adding the existing Node types resolved these without changing project configuration.",
+    "Interrupting a pending history read through the owner API left loading true. The same scenario was added to the owner check and passed after cancellation cleared loading.",
+    "The initial UI excluded summary restoration even when the Server offered it. Removed that extra restriction; the final regression verifies only the selected summary is submitted with the Server-provided target and expected version."
+  ],
+  "review": {
+    "independent": "Read-only review found no definite P1/P2 or required minor before the final main-model contract alignment.",
+    "main": "Checked actual shared components, owner/client binding, verification output and the Server resolution contract."
+  },
+  "reusedEvidence": ["artifacts/verification/P4_HANDOVER_MEMORY_PIPELINE_20261030.json"],
+  "notRun": ["Full test suite", "Production build", "Browser or device acceptance", "Real database concurrency", "Models", "Notifications", "Deployment"],
+  "limitations": [
+    "The component check runs the actual shared components with synthetic React/native primitives; it is not browser or device evidence.",
+    "Source history is read-only, not a current/source body comparison.",
+    "Other import domains and the remaining full handover acceptance are still incomplete."
+  ]
+}

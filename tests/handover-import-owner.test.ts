@@ -87,11 +87,75 @@ test('import owner preserves unknown operations, resumes server batches and clea
     resolution: { mode: 'replace_current', targetId: target, expectedVersion: 7 } }]);
   const decidedWrites = writes; await owner.retryOriginal(); assert.equal(writes, decidedWrites, 'unknown resolution is not resubmitted');
   await owner.checkOriginal(); assert.equal(originalLookups.at(-1), decided.opId); assert.equal(writes, decidedWrites);
+  const memoryBatch = { ...originalBatch, id: '00000000-0000-4000-8000-000000000006', targets: [{ ...targets[0], sections: ['memory' as const] }] };
+  const memoryResult = { ...result, id: '00000000-0000-4000-8000-000000000007', batchId: memoryBatch.id,
+    module: 'memory' as const, resourceSection: 'memory_topics' as const, currentResource: { id: target, version: 9, deleted: false } };
+  const ambiguous = { ...memoryResult, id: '00000000-0000-4000-8000-000000000008', resourceSection: undefined };
+  const summaryResult = { ...memoryResult, id: '00000000-0000-4000-8000-000000000009', resourceSection: 'summary_history' as const,
+    sourceResourceId: '00000000-0000-4000-8000-000000000010', reason: 'target_deleted', currentResource: { id: target, version: 0, deleted: true },
+    availableResolution: 'restore_deleted' as const };
+  api.getImport = async (_u, batchId) => batchId === memoryBatch.id ? memoryBatch : batchId === originalBatch.id ? originalBatch : batch;
+  await owner.refresh(memoryBatch.id); owner.selectResults(memoryBatch.id, id, 'memory');
+  api.importResults = async () => ({ batchId: memoryBatch.id, sourceChildId: id, module: 'memory', items: [memoryResult, ambiguous, summaryResult], nextCursor: null, complete: true });
+  await owner.readResults();
+  await owner.resolveResults('replace_current', [ambiguous.id]); assert.equal(writes, decidedWrites, 'memory cannot infer its resource section');
+  await owner.resolveResults('replace_current', [memoryResult.id]); assert.equal(writes, decidedWrites + 1);
+  assert.equal(decided.resolutionOnly, true); assert.deepEqual(decided.targets, memoryBatch.targets);
+  assert.deepEqual(decided.resolutions, [{ sourceChildId: id, section: 'memory_topics', resourceId: id,
+    resolution: { mode: 'replace_current', targetId: target, expectedVersion: 9 } }]);
+  await owner.checkOriginal();
+  owner.selectResults(memoryBatch.id, id, 'memory'); await owner.readResults();
+  await owner.resolveResults('restore_deleted', [summaryResult.id]); assert.equal(writes, decidedWrites + 2);
+  assert.equal(decided.resolutionOnly, true); assert.deepEqual(decided.targets, memoryBatch.targets);
+  assert.deepEqual(decided.resolutions, [{ sourceChildId: id, section: 'summary_history', resourceId: summaryResult.sourceResourceId,
+    resolution: { mode: 'restore_deleted', targetId: target, expectedVersion: 0 } }], 'only the selected summary follows the Server resolution and exact version');
+  await owner.checkOriginal();
   owner.selectResults(originalBatch.id, id, 'care');
   api.importResults = () => new Promise(resolve => { resultRead = resolve; });
   const lateResults = owner.readResults(); owner.syncContext('bob', 'results-other-session', true);
   resultRead({ batchId: originalBatch.id, sourceChildId: id, module: 'care', items: [result], nextCursor: null, complete: true }); await lateResults;
   assert.equal(owner.getSnapshot().results, null, 'late results do not enter another identity');
+});
+
+test('source history stays bound to its result target and clears on selection, identity and permission changes', async () => {
+  const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+  const batch = { id: uuid(1), targets: [{ sourceChildId: uuid(2), target: { childId: uuid(3), spaceId: uuid(4) }, sections: ['memory'] }] } as HandoverImportView;
+  const row = (n: number) => ({ id: uuid(n), batchId: batch.id, sourceChildId: uuid(2), module: 'memory', resourceSection: 'memory_topics',
+    recordedResource: { id: uuid(n + 10), version: 1 }, sourceSection: null });
+  const evidence = (resource: string, version = 1) => ({ format: 'yuyoufang-source-revision:1', childId: uuid(3), resource: { id: resource, version: 1 },
+    evidence: { module: 'memory_topics', source: { current: { source: { serverId: 'https://source.test', accountId: 'external', childId: uuid(2),
+      section: 'memory_topics', resourceId: uuid(20), resourceVersion: version } } }, value: { title: 'Foreign topic', note: 'Original content' } } });
+  const page = (resource: string, version = 1, nextCursor: string | null = null) => ({ items: [evidence(resource, version)], nextCursor, complete: nextCursor === null });
+  const queries: any[] = [];
+  const api = { setIdentity() {}, async listImports() { return { items: [batch], nextCursor: null }; },
+    async importResults(_u: string, _batch: string, query: { cursor?: string }) { return { batchId: batch.id, sourceChildId: uuid(2), module: 'memory', items: [row(5), row(6)], nextCursor: query.cursor ? null : 'results-next', complete: !!query.cursor }; },
+    async sourceHistory(_u: string, query: any) { queries.push(query); return query.cursor ? { ...page(query.resourceId, 2), items: [evidence(query.resourceId), evidence(query.resourceId, 2)] } : page(query.resourceId, 1, 'next'); },
+  } as unknown as HandoverApi;
+  const owner = new HandoverImportOwner(api); owner.syncContext('alice', 'history-a', true); await owner.load();
+  owner.selectResults(batch.id, uuid(2), 'memory'); await owner.readResults();
+  await owner.openSourceHistory(uuid(5));
+  assert.deepEqual(queries[0], { childId: uuid(3), spaceId: uuid(4), module: 'memory_topics', resourceId: uuid(15) });
+  assert.equal(owner.getSnapshot().sourceHistory?.page, 1); assert.equal(owner.getSnapshot().sourceHistory?.complete, false);
+  await owner.readSourceHistory(true); assert.equal(owner.getSnapshot().sourceHistory?.items.length, 2); assert.equal(owner.getSnapshot().sourceHistory?.page, 2);
+  let late!: (value: any) => void;
+  api.sourceHistory = () => new Promise(resolve => { late = resolve; });
+  const interruptedHistory = owner.readSourceHistory(); assert.equal(owner.getSnapshot().sourceHistory?.loading, true);
+  await owner.readResults(true); assert.equal(owner.getSnapshot().sourceHistory?.loading, false, 'appending results stops an interrupted history loading state');
+  late(page(uuid(15))); await interruptedHistory; assert.equal(owner.getSnapshot().sourceHistory?.loading, false);
+  api.sourceHistory = async () => { throw new HandoverApiError(409, 'source_history_scope_changed'); };
+  await owner.readSourceHistory(); assert.deepEqual(owner.getSnapshot().sourceHistory?.items, []); assert.ok(owner.getSnapshot().sourceHistory?.error);
+  api.sourceHistory = async (_u, query) => query.resourceId === uuid(15) ? new Promise(resolve => { late = resolve; }) : page(query.resourceId) as any;
+  const oldResult = owner.openSourceHistory(uuid(5)); await owner.openSourceHistory(uuid(6));
+  late(page(uuid(15))); await oldResult; assert.equal(owner.getSnapshot().sourceHistory?.resultId, uuid(6));
+  api.sourceHistory = () => new Promise(resolve => { late = resolve; });
+  const oldScope = owner.readSourceHistory(); owner.selectResults(batch.id, uuid(2), 'memory');
+  assert.equal(owner.getSnapshot().sourceHistory, null); late(page(uuid(16))); await oldScope;
+  await owner.readResults(); const oldIdentity = owner.openSourceHistory(uuid(5));
+  owner.syncContext('bob', 'history-b', true); late(page(uuid(15))); await oldIdentity;
+  assert.equal(owner.getSnapshot().sourceHistory, null);
+  owner.syncContext('alice', 'history-c', true); await owner.load(); owner.selectResults(batch.id, uuid(2), 'memory'); await owner.readResults();
+  api.sourceHistory = async () => { throw new HandoverApiError(403, 'forbidden'); };
+  await owner.openSourceHistory(uuid(5)); assert.equal(owner.getSnapshot().sourceHistory, null); assert.equal(owner.getSnapshot().results, null);
 });
 
 test('reopened import owner discovers staged packages without resending contents and rejects late identity results', async () => {
