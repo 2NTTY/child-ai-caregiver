@@ -24,7 +24,8 @@
     "frontend/src/production/task-knowledge-tasks.ts": "f50d5b3404a83cf8b429b4e5373474ff4770cedb02b083e8679c61b4ed6d1dfd",
     "frontend/src/components/AppShell.tsx": "043b1ae372b11c2e1c5382a9f81c18bf31a9defe5a7ead4353cd3a1bd2818e23",
     "frontend/src/components/NativeAppShell.tsx": "57f93273070df9644a0f934e9c908df5deb4e2d0cf4a382c0adb2cbdcc41bd38",
-    "frontend/src/motion/MotionFeedback.tsx": "87ca508c32da3d25670c2b7806525605ab2c7b5971784611f4be54aa1d22acca"
+    "frontend/src/motion/MotionFeedback.tsx": "89ce054eb9f5a579e376dff5111cc5763b50fb8d564133dd4e3f48a81e146061",
+    "frontend/src/components/ui.tsx": "c0992a2e0f2c7a6e6a689f1f029da38c05f5cf6c8c83b357dffd2bf65f1dc050"
   },
   "overlayPins": {
     "experiments/dispatch.js": "0b27cef6a7d8a93798996942171cd5a74ebc77c3e05947ff61ec238d64cb863f",
@@ -62,11 +63,20 @@
     {
       "destination": "frontend/src/motion/MotionFeedback.tsx",
       "beforeSha256": "ce16b44e5ac57643ef49b7c2c6391deb7dfa53a7c87021ff59ef66654b8d047c",
-      "sha256": "87ca508c32da3d25670c2b7806525605ab2c7b5971784611f4be54aa1d22acca",
-      "bytes": 2628,
-      "gitBlob": "0997e6d9c31eed1f645795fa20feb630d0df727c",
+      "sha256": "89ce054eb9f5a579e376dff5111cc5763b50fb8d564133dd4e3f48a81e146061",
+      "bytes": 2622,
+      "gitBlob": "6f9e087deb33e4494841c5b722939efee26197fd",
       "mode": "100644",
-      "committedIn": "af6156298f344c784998f5fff5863d5ebeaa22fd"
+      "committedIn": "a8181ff0c3b58acedfea85c4a977b7435d657dea"
+    },
+    {
+      "destination": "frontend/src/components/ui.tsx",
+      "beforeSha256": "62a0a4cb1f9d6c5137527aa5b48a197838981b85472609cdc38c7255d8befe91",
+      "sha256": "c0992a2e0f2c7a6e6a689f1f029da38c05f5cf6c8c83b357dffd2bf65f1dc050",
+      "bytes": 32222,
+      "gitBlob": "a86d6afaa76de6e2609b2f772c7a2c72c8221442",
+      "mode": "100644",
+      "committedIn": "c4fde13170855dd4b53c54007994824ac550b45e"
     }
   ],
   "entrypoint": "frontend/index.js -> frontend/src/entry/Application.tsx -> ExpoRoot wrapper ProductionOwnerHost",

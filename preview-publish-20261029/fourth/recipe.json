@@ -55,11 +55,20 @@
     {
       "destination": "frontend/src/motion/MotionFeedback.tsx",
       "beforeSha256": "ce16b44e5ac57643ef49b7c2c6391deb7dfa53a7c87021ff59ef66654b8d047c",
-      "sha256": "87ca508c32da3d25670c2b7806525605ab2c7b5971784611f4be54aa1d22acca",
-      "bytes": 2628,
-      "gitBlob": "0997e6d9c31eed1f645795fa20feb630d0df727c",
+      "sha256": "89ce054eb9f5a579e376dff5111cc5763b50fb8d564133dd4e3f48a81e146061",
+      "bytes": 2622,
+      "gitBlob": "6f9e087deb33e4494841c5b722939efee26197fd",
       "mode": "100644",
-      "committedIn": "4ece1682c5ff46692103f32c93465b56408392ba"
+      "committedIn": "3a421f6f116853f79e417fa0099a6a13c77197bc"
+    },
+    {
+      "destination": "frontend/src/components/ui.tsx",
+      "beforeSha256": "8a403c7c884e8d07f5bbd7a34df7cbc066bc4c1eba58cfea741ef7191d7c5a2b",
+      "sha256": "4dd4699227ccb9ad73369aad33a4b564c12f75004c7f2959857d81cde3fde223",
+      "bytes": 29915,
+      "gitBlob": "e6118eb54d8a5cbbabd9bcdebdb03d30f211989e",
+      "mode": "100644",
+      "committedIn": "d5e72ba1c764601a60d70673a3756186da6469d2"
     }
   ],
   "sourcePins": {
@@ -81,10 +90,11 @@
     "frontend/src/components/NativeAppShell.tsx": "09c8df093fdecad461f7d818ebe1bbb1d01a8644a0fdde7804ea770dab0f1e04",
     "frontend/src/motion/MotionDisclosure.tsx": "f7af15d27b7826f108941430dc92dcaa951abbf8fbf60d6854b1f033cd7423a9",
     "frontend/src/motion/MotionDrawerRight.tsx": "8c57de828d7dc821c5abbb67dd45842ed59892e27aeef15bc6505a9784652017",
-    "frontend/src/motion/MotionFeedback.tsx": "87ca508c32da3d25670c2b7806525605ab2c7b5971784611f4be54aa1d22acca"
+    "frontend/src/motion/MotionFeedback.tsx": "89ce054eb9f5a579e376dff5111cc5763b50fb8d564133dd4e3f48a81e146061",
+    "frontend/src/components/ui.tsx": "4dd4699227ccb9ad73369aad33a4b564c12f75004c7f2959857d81cde3fde223"
   },
   "inputManifest": "PRODUCT_INPUTS.json",
-  "inputManifestSha256": "327b37a9d665e08e32288566b6cb8546c69a473a921224971b85408504687a95",
+  "inputManifestSha256": "00b1d2bbbc20ebe17df3a3e97e1d024bc7f7cd7887be4c74546463f3a2b05232",
   "entrypoint": "frontend/index.js -> runtime web stub -> own web-foundation -> browser-history-events -> installed expo-router/entry; root layout retains own ProductionProvider/FirstScreenGate; no Application/OwnerHost substitution",
   "lockFile": "package-lock.json",
   "lockSha256": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",

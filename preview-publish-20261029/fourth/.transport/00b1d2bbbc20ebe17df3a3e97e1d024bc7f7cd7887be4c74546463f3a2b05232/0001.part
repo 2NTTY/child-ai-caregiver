@@ -501,8 +501,8 @@
     },
     {
       "path": "frontend/src/components/ui.tsx",
-      "bytes": 29901,
-      "sha256": "8a403c7c884e8d07f5bbd7a34df7cbc066bc4c1eba58cfea741ef7191d7c5a2b"
+      "bytes": 29915,
+      "sha256": "4dd4699227ccb9ad73369aad33a4b564c12f75004c7f2959857d81cde3fde223"
     },
     {
       "path": "frontend/src/components/useContainerSize.ts",
@@ -611,8 +611,8 @@
     },
     {
       "path": "frontend/src/motion/MotionFeedback.tsx",
-      "bytes": 2628,
-      "sha256": "87ca508c32da3d25670c2b7806525605ab2c7b5971784611f4be54aa1d22acca"
+      "bytes": 2622,
+      "sha256": "89ce054eb9f5a579e376dff5111cc5763b50fb8d564133dd4e3f48a81e146061"
     },
     {
       "path": "frontend/src/motion/MotionInlineSwap.tsx",

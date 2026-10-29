@@ -51,17 +51,17 @@
     {
       "destination": "frontend/src/motion/MotionFeedback.tsx",
       "beforeSha256": "ce16b44e5ac57643ef49b7c2c6391deb7dfa53a7c87021ff59ef66654b8d047c",
-      "sha256": "87ca508c32da3d25670c2b7806525605ab2c7b5971784611f4be54aa1d22acca",
-      "bytes": 2628,
-      "gitBlob": "0997e6d9c31eed1f645795fa20feb630d0df727c",
+      "sha256": "89ce054eb9f5a579e376dff5111cc5763b50fb8d564133dd4e3f48a81e146061",
+      "bytes": 2622,
+      "gitBlob": "6f9e087deb33e4494841c5b722939efee26197fd",
       "mode": "100644",
-      "committedIn": "3d8a0d1a903148e6c665e8ad845e204578389a42"
+      "committedIn": "56be26ec51afbb1df4c7f24dbc28b9dea1e0ae99"
     }
   ],
   "entrypoint": "frontend/index.js",
   "packageManagerMetadata": "npm@11.8.0",
   "lockSha256": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",
-  "sourcePinsSha256": "b76b787a7a662f798d8e12ad8416ab06a081620f38480f1b53599a58a64cdbfb",
+  "sourcePinsSha256": "388ff30b38226a7e2bf6317bbbbedfeea5f1419fb5c0e88cf9f76974ebc00d78",
   "shared": {
     "experiments/dispatch.js": {
       "bytes": 4651,
