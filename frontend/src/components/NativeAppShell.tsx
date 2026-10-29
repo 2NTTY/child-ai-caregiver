@@ -2,7 +2,7 @@ import { useHeaderOperationHints } from "../production/useHeaderOperationHints";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "expo-router";
-import { KeyboardAvoidingView, Pressable, StyleSheet, View } from "react-native";
+import { AccessibilityInfo, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
 import { brand } from "../branding";
 import { MotionDrawerOverlay } from "../motion";
 import { AppIcon } from "./AppIcon";
@@ -23,6 +23,13 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const operationHints = useHeaderOperationHints();
   const { model, actions, notice, dismissNotice, scopeKey, identityKey } = useProduction();
+  const announcedNotice = useRef<string | null>(null);
+  useEffect(() => {
+    // Live Text covers Android. iOS needs its explicit queued announcement API.
+    if (announcedNotice.current === notice) return;
+    announcedNotice.current = notice;
+    if (Platform.OS === "ios" && notice) AccessibilityInfo.announceForAccessibilityWithOptions(notice, { queue: true });
+  }, [notice]);
   const [railOpen, setRailOpen] = useState(false);
   const selectedChild = model.children.find(item => item.id === model.selectedChildId);
   const motionScope = scopeKey ?? identityKey ?? "signed-out";
@@ -39,7 +46,7 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
       </View>
 
     </View>
-    {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.notice}><Text style={[styles.meta, {flex: 1}]}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
+    <View style={[styles.notice, !notice && styles.noticeEmpty]}><Text accessibilityLiveRegion="polite" style={[styles.meta, {flex: 1}]}>{notice ?? ""}</Text>{notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.noticeDismiss}><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}</View>
     <View style={styles.content}>{children}</View>
     <MotionDrawerOverlay open={overlayOpen} scopeKey={`${motionScope}:${pathname}`} label="照顧資訊側欄" onRequestClose={() => setRailOpen(false)}>
       <View style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom }}><RightRail model={model} actions={actions} contextPath={pathname} overlay onClose={() => setRailOpen(false)} /></View>
@@ -64,6 +71,9 @@ const styles = StyleSheet.create({
   logo: { width: 124, height: 44 },
   actions: { flexShrink: 0, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   content: { flex: 1 },
+  noticeDismiss: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
+  // Keep the empty live text mounted; never use display:none/aria-hidden for it.
+  noticeEmpty: { height: 0, minHeight: 0, paddingVertical: 0, overflow: "hidden" },
   notice: { minHeight: 48, flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.paleAmber, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
 });
