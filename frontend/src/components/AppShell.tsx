@@ -85,7 +85,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {chapter.keys.map(key => <NavItem key={key} item={navigationItems[key]} active={active(navigationItems[key].href)} />)}
       </ScrollView> : null}
 
-      {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.noticeText}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
+      <View style={[styles.notice, !notice && styles.noticeEmpty]}><Text accessibilityLiveRegion="polite" style={styles.noticeText}>{notice ?? ""}</Text>{notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.noticeDismiss}><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}</View>
       <View style={styles.body}>
         <MotionEntrance ref={routeSurface} role="main" tabIndex={-1} accessibilityLabel="主要內容" preset="route" triggerKey={pathname} scopeKey={motionScope} style={styles.content} testID="motion-route">{children}</MotionEntrance>
       </View>
@@ -125,6 +125,9 @@ const styles = StyleSheet.create({
   stage: { flex: 1, minWidth: 0, minHeight: 0 },
   scopePane: { flex: 1, minWidth: 0, minHeight: 0 },
   topActions: { marginLeft: "auto", flexShrink: 0, flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  noticeDismiss: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
+  // Keep the empty live text mounted; never use display:none/aria-hidden for it.
+  noticeEmpty: { height: 0, minHeight: 0, paddingVertical: 0, overflow: "hidden" },
   notice: { backgroundColor: colors.paleAmber, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, flexDirection: "row", alignItems: "center", gap: spacing.md },
   noticeText: { flex: 1, fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.caption },
   body: { flex: 1, flexDirection: "row", minHeight: 0 },

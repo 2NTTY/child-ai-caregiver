@@ -1,7 +1,7 @@
 import { useHeaderOperationHints } from "../production/useHeaderOperationHints";
 import { PreviewLink } from "../preview/PreviewNavigationGuard";
-import { useRef, useState, type ReactNode } from "react";
-import { KeyboardAvoidingView, Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { AccessibilityInfo, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
 import { brand } from "../branding";
 import { AppIcon } from "./AppIcon";
 import { BrandLogo } from "./BrandLogo";
@@ -17,6 +17,13 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
   const insets = useSafeAreaInsets();
   const operationHints = useHeaderOperationHints();
   const { model, actions, notice, dismissNotice } = useProduction();
+  const announcedNotice = useRef<string | null>(null);
+  useEffect(() => {
+    // Live Text covers Android. iOS needs its explicit queued announcement API.
+    if (announcedNotice.current === notice) return;
+    announcedNotice.current = notice;
+    if (Platform.OS === "ios" && notice) AccessibilityInfo.announceForAccessibilityWithOptions(notice, { queue: true });
+  }, [notice]);
   return <View style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
     <View style={styles.header}>
       <PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={StyleSheet.flatten(styles.brand)}><BrandLogo style={styles.logo} decorative /></Pressable></PreviewLink>
@@ -24,7 +31,7 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
       <View testID="header-actions" style={styles.actions}><NotificationBell /></View>
     </View>
     {operationHints.length > 0 ? <View style={styles.hints}><ChildKeyFacts hints={operationHints} child={model.children.find(item => item.id === model.selectedChildId)} load={model.profileLoad} /></View> : null}
-    {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.notice}><Text style={[styles.meta, {flex: 1}]}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
+    <View style={[styles.notice, !notice && styles.noticeEmpty]}><Text accessibilityLiveRegion="polite" style={[styles.meta, {flex: 1}]}>{notice ?? ""}</Text>{notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.noticeDismiss}><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}</View>
     <View style={styles.content}>{children}</View>
 
   </View>;
@@ -47,6 +54,9 @@ const styles = StyleSheet.create({
   logo: { width: 86, height: 34 }, hints: { minHeight: 48, paddingHorizontal: spacing.md, backgroundColor: colors.white },
   actions: { flexShrink: 0, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   content: { flex: 1 },
+  noticeDismiss: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
+  // Keep the empty live text mounted; never use display:none/aria-hidden for it.
+  noticeEmpty: { height: 0, minHeight: 0, paddingVertical: 0, overflow: "hidden" },
   notice: { minHeight: 48, flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.paleAmber, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
 });
