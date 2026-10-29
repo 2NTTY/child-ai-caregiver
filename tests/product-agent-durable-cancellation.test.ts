@@ -103,6 +103,16 @@ function harness(seed = true) {
       if (sql.startsWith("SELECT id ") && actionReferenceIds) return rows(actionReferenceIds.map(id => ({ id })).slice(0, values[3]));
       return rows(current.actions.slice(0, sql.includes("LIMIT $4") ? values[3] : 8));
     }
+    if (sql === "SELECT version FROM agent_operation_policies WHERE user_id=$1 AND child_id=$2") {
+      assert.deepEqual(values, [userId, childId]);
+      return rows(); // No operation policy is configured in this synthetic workspace.
+    }
+    if (sql === "SELECT * FROM agent_confirmations WHERE owner_user_id=$1 AND child_id=$2 AND asking_run_id=$3 AND state IN ('waiting','asked') AND expires_at>clock_timestamp() ORDER BY created_at,id LIMIT 9") {
+      assert.deepEqual(values, [userId, childId, current.runs[0]?.id]);
+      return rows(current.confirmations.filter(row => row.owner_user_id === values[0] && row.child_id === values[1]
+        && row.asking_run_id === values[2] && (row.state === "waiting" || row.state === "asked")
+        && row.expires_at instanceof Date && row.expires_at.getTime() > Date.now()).slice(0, 9));
+    }
     if (sql.includes("SELECT c.*") && sql.includes("FROM agent_confirmations c")) {
       assert.deepEqual(values, [userId, childId, messageId]); assert.match(sql, /LIMIT 2/u);
       return rows(current.confirmations.slice(0, 2).map(row => ({ ...row, verified_response_id:
@@ -593,7 +603,9 @@ test("local abort follows committed cancellation and a failed database cancellat
     else assert.equal(await agent.cancelReply(userId, childId, messageId, async () => true), true);
     assert.equal(a.signals[0].aborted, !fail); assert.equal(h.state.runs[0].state, fail ? "running" : "stopped");
     h.fail(null); release(); const result = await pending;
-    assert.equal(result?.status, fail ? "completed" : "stopped");
+    assert.equal(result?.status, fail ? "completed" : "stopped", JSON.stringify({
+      status: result?.status, stopReason: result?.stopReason, tools: result?.tools, observed: a.observe(),
+    }));
     assert.equal(result?.stopReason, fail ? null : "cancelled");
     assert.deepEqual(a.observe(), fail ? { calls: 2, toolReads: 1 } : { calls: 1, toolReads: 0 });
     assert.deepEqual([h.state.actions, h.state.proposals, h.state.contacts], [[], [], []]);
