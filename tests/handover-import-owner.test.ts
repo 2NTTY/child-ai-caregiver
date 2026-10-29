@@ -5,6 +5,8 @@ import { HandoverApiError, type HandoverApi } from '../src/client/handover-api.t
 import type { HandoverUploadView } from '../src/shared/handover-uploads.ts';
 import type { HandoverImportView } from '../src/shared/handover-imports.ts';
 import { packageHash } from '../frontend/src/platform/package-import-hash.ts';
+import { FamilyDocumentApiError } from '../src/client/family-documents-api.ts';
+import { handoverSourceHistoryKey } from '../frontend/src/production/HandoverImportOwner.ts';
 
 test('import owner preserves unknown operations, resumes server batches and clears identity-bound files', async () => {
   const bytes = new ReadableStream<Uint8Array>({ start(c) { c.enqueue(new Uint8Array([97])); c.enqueue(new Uint8Array([98, 99])); c.close(); } });
@@ -180,6 +182,65 @@ test('source history stays bound to its result target and clears on selection, i
   owner.syncContext('alice', 'shared-history', true); await owner.load(); owner.selectResults(sourceBatch.id, uuid(2), 'sources'); await owner.readResults();
   const beforeShared = queries.length; await owner.openSourceHistory(sourceRow.id);
   assert.equal(queries.length, beforeShared, 'private management history never uses a shared target');
+});
+
+test('document import owner binds resource decisions and one paged source body to current authority and selection', async () => {
+  const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+  const batch = { id: uuid(1), version: 1, state: 'completed', uploadId: uuid(2), packageId: uuid(3), packageVersion: 1, manifestSha256: 'a'.repeat(64), integrity: 'trusted',
+    targets: [{ sourceChildId: uuid(4), target: { childId: uuid(5), spaceId: uuid(6) }, sections: ['documents'] }] } as HandoverImportView;
+  const rows = ['documents', 'visit_preparation'].map((resourceSection, i) => ({ id: uuid(10 + i), batchId: batch.id, sourceChildId: uuid(4), module: 'documents', resourceSection,
+    sourceResourceId: uuid(20 + i), sourceVersion: 4, sourceSection: null, outcome: 'conflict', reason: 'target_changed', recordedResource: { id: uuid(30 + i), version: 1 },
+    currentResource: { id: uuid(30 + i), version: 9 + i, deleted: false }, availableResolution: 'replace_current' }));
+  const history = [40, 41].map(n => ({ childId: uuid(5), resource: { id: uuid(30), version: 1 }, evidence: { module: 'documents',
+    source: { current: { source: { serverId: 'https://foreign.test', accountId: 'foreign', childId: uuid(4), resourceId: uuid(20), resourceVersion: 4 } } },
+    value: { documentId: uuid(30), snapshotId: uuid(n), snapshotVersion: 1, generatedAt: '2026-10-30T00:00:00Z', invalidated: false } } }));
+  let decided: any, mode = 'normal', late!: (value: any) => void;
+  const calls: any[] = [];
+  const api = { setIdentity() {}, async listImports() { return { items: [batch], nextCursor: null }; }, async getImport() { return batch; },
+    async getUpload() { return { id: batch.uploadId, state: 'ready', version: 2, preview: { manifestSha256: batch.manifestSha256, header: { packageId: batch.packageId, packageVersion: 1 } } }; },
+    async createImport(_user: string, command: any) { decided = command; return { ...batch, id: command.opId, state: 'queued' }; },
+    async importResults() { return { batchId: batch.id, sourceChildId: uuid(4), module: 'documents', items: rows, nextCursor: null, complete: true }; },
+    async sourceHistory(_user: string, query: any) { return { items: query.module === 'documents' ? history : [], nextCursor: null, complete: true }; },
+  } as unknown as HandoverApi;
+  const snapshot = (id: string) => ({ id, version: 1, generatedAt: '2026-10-30T00:00:00Z', sourceBasis: 'b'.repeat(64), title: 'Original title', summary: 'Source text '.repeat(500),
+    ageLabel: '', period: { from: '2026-10-01', to: '2026-10-31' }, eventDate: null, coverageNote: '', sections: [], sources: [], changes: [] });
+  const page = (query: any, changed = false, invalidated = false) => { const value = JSON.stringify(snapshot(query.snapshotId)), end = Math.min(value.length, query.offset + 4000);
+    return { documentId: uuid(30), documentVersion: 15, authorityVersion: changed ? 'changed' : 'current-authority', snapshotId: query.snapshotId, snapshotVersion: 1,
+      offset: query.offset, text: value.slice(query.offset, end), totalCharacters: value.length, nextOffset: end === value.length ? null : end, complete: end === value.length,
+      invalidated, contentKind: invalidated ? 'redacted_manifest_json' : 'snapshot_json' }; };
+  const owner = new HandoverImportOwner(api, () => {}, async (user, target, id, query, signal) => {
+    calls.push({ user, target, id, query, signal });
+    if (mode === 'held') return new Promise(resolve => { late = resolve; });
+    if (mode === 'forbidden') throw new FamilyDocumentApiError(403, 'forbidden');
+    return page(query, mode === 'changed', mode === 'invalidated') as any;
+  });
+  const select = async () => { await owner.load(); owner.selectResults(batch.id, uuid(4), 'documents'); await owner.readResults(); await owner.openSourceHistory(rows[0].id); };
+  owner.syncContext('alice', 'documents-a', true); await select();
+  assert.equal(owner.getSnapshot().sourceHistory?.items.length, 2);
+  const keys = owner.getSnapshot().sourceHistory!.items.map(handoverSourceHistoryKey); assert.notEqual(keys[0], keys[1], 'distinct snapshots of one source version have separate keys');
+  await owner.resolveResults('replace_current', rows.map(row => row.id));
+  assert.equal(decided.resolutionOnly, true); assert.deepEqual(decided.resolutions.map((item: any) => [item.section, item.resolution.expectedVersion]), [['documents', 9], ['visit_preparation', 10]]);
+  await select(); await owner.openDocumentContent(keys[0]);
+  assert.equal(calls.length, 1); assert.deepEqual(calls[0].target, batch.targets[0].target); assert.equal(calls[0].id, uuid(30));
+  assert.deepEqual(calls[0].query, { snapshotId: uuid(40), snapshotVersion: 1, offset: 0 });
+  assert.equal(owner.getSnapshot().sourceHistory?.documentContent?.documentVersion, 15, 'current document version is independent of import binding version');
+  assert.equal(owner.getSnapshot().sourceHistory?.documentContent?.snapshot, null); assert.equal(owner.getSnapshot().sourceHistory?.documentContent?.complete, false);
+  await owner.readDocumentContent(); assert.equal(calls[1].query.offset, 4000);
+  assert.deepEqual(owner.getSnapshot().sourceHistory?.documentContent?.snapshot, snapshot(uuid(40))); assert.equal(owner.getSnapshot().sourceHistory?.documentContent?.text, '');
+  mode = 'held'; const closed = owner.openDocumentContent(keys[1]); owner.closeSourceHistory(); assert.equal(calls.at(-1).signal.aborted, true);
+  late(page({ snapshotId: uuid(41), offset: 0 })); await closed; assert.equal(owner.getSnapshot().sourceHistory, null);
+  await select(); const switched = owner.openDocumentContent(keys[0]); owner.selectResults(batch.id, uuid(4), 'documents');
+  late(page({ snapshotId: uuid(40), offset: 0 })); await switched; assert.equal(owner.getSnapshot().sourceHistory, null, 'switching results clears the only body buffer');
+  mode = 'normal'; await select(); await owner.openDocumentContent(keys[0]); mode = 'changed'; await owner.readDocumentContent();
+  assert.equal(owner.getSnapshot().sourceHistory?.documentContent?.text, ''); assert.equal(owner.getSnapshot().sourceHistory?.documentContent?.snapshot, null);
+  assert.ok(owner.getSnapshot().sourceHistory?.documentContent?.error);
+  mode = 'normal'; await owner.openDocumentContent(keys[0]); mode = 'invalidated'; await owner.readDocumentContent();
+  assert.equal(owner.getSnapshot().sourceHistory?.documentContent?.invalidated, true); assert.equal(owner.getSnapshot().sourceHistory?.documentContent?.text, '');
+  history[1].evidence.value.invalidated = true; const beforeInvalidated = calls.length; await owner.openDocumentContent(keys[1]);
+  assert.equal(calls.length, beforeInvalidated, 'invalidated metadata never starts a content read'); history[1].evidence.value.invalidated = false;
+  mode = 'forbidden'; await owner.openDocumentContent(keys[1]); assert.equal(owner.getSnapshot().sourceHistory, null); assert.equal(owner.getSnapshot().results, null);
+  mode = 'normal'; await select(); mode = 'held'; const identity = owner.openDocumentContent(keys[0]); owner.syncContext('bob', 'documents-b', true);
+  late(page({ snapshotId: uuid(40), offset: 0 })); await identity; assert.equal(owner.getSnapshot().sourceHistory, null);
 });
 
 test('reopened import owner discovers staged packages without resending contents and rejects late identity results', async () => {

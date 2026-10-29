@@ -3,6 +3,12 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+## 文件／準備單匯入與來源閱讀（2026-10-30）
+
+基線為 #392／`edb2a999`，`codex/p4-handover-document-ui` 接共用文件模組選擇、逐項結果、原到診準備歷史及按需文件正文。沿同一 owner、正式 API、固定快照分段及目前權限；只加必要控制，不重做版面。文件來源清單只帶 metadata，按使用者選取才讀正文，不一次載入全部修訂。閱讀／結果／身份切換須清走舊 buffer；來源失效不能繼續顯示正文。
+
+已接通文件模組選擇、準備單唯讀來源歷史及原文件固定版分段閱讀；沿既有 schema／API，不另建正文服務。五項共用元件／owner 檢查、原 API 讀回一項、自動共享範圍失效一項及九根局部型別圖通過。review 發現的自動撤權舊正文／遲到回應已修，帳戶原匯入操作保留；聚焦覆核無剩餘阻塞。詳見[證據](verification/P4_HANDOVER_DOCUMENT_UI_20261030.json)。待合併、未部署／未作設備驗收；完整 P4 仍按根 [PLAN](../PLAN.md#active) 接續，下方已驗結果不重跑。
+
 ## 文件匯入相容標籤（2026-10-30）
 
 `codex/p4-handover-document-labels` 從共同基線 `0999402d` 補共用結果的文件／準備單／來源修訂名稱及版本索引略過原因。沿原版面，不提前開放文件選項；後端統一 worker 合併後再接完整選擇及歷史閱讀。七根局部型別圖零診斷，純標籤不跑設備或產品測試。詳見[證據](verification/P4_HANDOVER_DOCUMENT_LABELS_20261030.json)。原私人來源已驗結果保留，部署與完整匯入仍待根 PLAN 接續。

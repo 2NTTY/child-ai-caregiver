@@ -9,6 +9,7 @@ import "./helpers/frontend-source-loader.mjs";
 import { createAccountApi } from "../src/client/account-api.ts";
 import { SERVICE_POLICY_VERSION } from "../src/shared/account-service.ts";
 import type { ChatApi } from "../src/client/chat-api.ts";
+import { handoverSourceHistoryKey } from "../frontend/src/production/HandoverImportOwner.ts";
 
 const { ProductionOwner } = await import("../frontend/src/production/ProductionOwner.ts");
 
@@ -72,6 +73,67 @@ test("ProductionOwner's first non-null child scope is B, never A", async () => {
   } finally { owner.dispose(); }
   assert.deepEqual(unexpectedFetches, []);
 });
+test("ProductionOwner invalidates shared import reading without discarding the account operation", async () => {
+  const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`, f = fixture();
+  f.state.children = [{ ...children[0], id: uuid(1) }];
+  const spaceId = uuid(2), childId = uuid(3), sourceChildId = uuid(4), documentId = uuid(5), snapshotId = uuid(6), batchId = uuid(7);
+  const at = "2026-10-30T00:00:00Z", hash = "a".repeat(64);
+  const batch = { id: batchId, version: 1, uploadId: uuid(8), packageId: uuid(9), packageVersion: 1, manifestSha256: hash, integrity: "trusted",
+    targets: [{ sourceChildId, target: { childId, spaceId }, sections: ["documents"] }], state: "failed", totalItems: 1, processedItems: 1,
+    counts: { created: 1, updated: 0, skipped: 0, conflict: 0 }, error: "package_import_failed", createdAt: at, updatedAt: at };
+  const result = { id: uuid(10), batchId, sourceChildId, module: "documents", resourceSection: "documents", sourceResourceId: uuid(11), sourceVersion: 1,
+    sourceSection: null, at, outcome: "created", reason: null, recordedResource: { id: documentId, version: 1 }, currentResource: null, availableResolution: null };
+  const history = { format: "yuyoufang-source-revision:1", childId, resource: { id: documentId, version: 1 }, evidence: { module: "documents",
+    value: { documentId, snapshotId, snapshotVersion: 1, generatedAt: at, invalidated: false }, source: { current: {
+      source: { serverId: "https://source.invalid", accountId: "external", childId: sourceChildId, section: "documents", resourceId: uuid(11), resourceVersion: 1,
+        authorUserId: null, createdAt: at, confirmedBy: null, confirmedAt: null, confirmationBasis: null, assigneeUserId: null },
+      sourceHash: hash, packageId: batch.packageId, packageVersion: 1, manifestSha256: hash, integrity: "trusted", importedBy: alice.id, importedAt: at }, previous: [] } } };
+  const snapshot = { id: snapshotId, version: 1, generatedAt: at, sourceBasis: hash, title: "Private source document", summary: "Private original body",
+    ageLabel: "", period: { from: "2026-10-01", to: "2026-10-31" }, eventDate: null, coverageNote: "", sections: [], sources: [], changes: [] };
+  const text = JSON.stringify(snapshot), content = { page: { documentId, documentVersion: 12, authorityVersion: "current-authority", snapshotId, snapshotVersion: 1,
+    offset: 0, text, totalCharacters: text.length, nextOffset: null, complete: true, invalidated: false, contentKind: "snapshot_json" } };
+  let hold = false, bodySignal: AbortSignal | null = null, release!: (response: Response) => void;
+  const chat: ChatApi = { getSession: async () => alice, listMessages: async () => ({ messages: [], limit: 100 }), getStatus: async () => true,
+    getUsage: async () => ({ day: "2026-10-30", attempts: 0, inputTokens: 0, outputTokens: 0, cachedTokens: 0, unknownUsageAttempts: 0 }),
+    saveMessage: async () => { throw Error("No writes"); }, requestReply: async () => { throw Error("No models"); } };
+  const account = createAccountApi("/api", async (_input, init) => Response.json({ enabled: true, registration: "invite", mailConfigured: false,
+    policyVersion: SERVICE_POLICY_VERSION, notice: "Synthetic account status", user: new Headers(init?.headers).get("x-expected-user-id") === null ? null
+      : { id: alice.id, emailVerified: true, acknowledged: true, acknowledgementVersion: SERVICE_POLICY_VERSION } }));
+  const owner = new ProductionOwner("/api", true, f.api, chat, undefined, { api: account }, { platform: "web", publicOrigin: "https://example.invalid",
+    fetcher: async (input, init) => {
+      const url = new URL(String(input), "https://example.invalid");
+      assert.equal(new Headers(init?.headers).get("x-expected-user-id"), alice.id);
+      if (url.pathname === `/api/shared-spaces/${spaceId}/children/${childId}`) return Response.json({ spaceId, spaceName: "Family", childId, childName: "Shared child",
+        role: "caregiver", modules: ["documents"], basis: { spaceVersion: 1, membershipVersion: 1, shareVersion: 1, actorAuthorizationVersion: "1", sourceAuthorizationVersion: "1" } });
+      if (url.pathname.endsWith("/content")) { assert.equal(url.searchParams.get("spaceId"), spaceId); assert.equal(url.searchParams.get("snapshotId"), snapshotId);
+        if (hold) { bodySignal = init!.signal as AbortSignal; return new Promise<Response>(done => { release = done; }); } return Response.json(content); }
+      if (url.pathname.endsWith("/items")) return Response.json({ batchId, sourceChildId, module: "documents", items: [result], nextCursor: null, complete: true });
+      if (url.pathname.endsWith("/source-history")) return Response.json({ items: [history], nextCursor: null, complete: true });
+      if (url.pathname.endsWith("/resume")) return Response.json({ error: { code: "handover_unavailable" } }, { status: 503 });
+      if (url.pathname === "/api/account/package-imports") return Response.json({ items: [batch], nextCursor: null });
+      throw Error(`Unexpected request ${url.pathname}`);
+    } });
+  try {
+    await owner.controller.restoreSession(); await new Promise<void>(done => setImmediate(done));
+    await owner.selectSharedChild(spaceId, childId); assert.ok(owner.getSnapshot().scopeKey);
+    const identity = owner.getSnapshot().identityKey, imports = owner.handoverImportOwner;
+    const open = async () => { await imports.load(); imports.selectResults(batchId, sourceChildId, "documents"); await imports.readResults();
+      await imports.openSourceHistory(result.id);
+      assert.ok(imports.getSnapshot().sourceHistory, JSON.stringify({ notice: imports.getSnapshot().notice, results: imports.getSnapshot().results }));
+      await imports.openDocumentContent(handoverSourceHistoryKey(imports.getSnapshot().sourceHistory!.items[0])); };
+    await open(); assert.equal(imports.getSnapshot().sourceHistory?.documentContent?.snapshot?.summary, snapshot.summary);
+    owner.sharedChild.invalidate(); const completedCleared = imports.getSnapshot().sourceHistory === null;
+    await owner.sharedChild.refresh(); hold = true; const pendingRead = open(); await new Promise<void>(done => setImmediate(done)); assert.ok(bodySignal);
+    owner.sharedChild.invalidate(); const aborted = (bodySignal as AbortSignal).aborted, readingCleared = imports.getSnapshot().sourceHistory === null;
+    release(Response.json(content)); await pendingRead; const lateIgnored = imports.getSnapshot().sourceHistory === null;
+    await owner.sharedChild.refresh(); await imports.control(batchId, "resume"); const pending = imports.getSnapshot().pending; assert.equal(pending?.kind, "resume");
+    owner.sharedChild.invalidate();
+    assert.deepEqual({ completedCleared, aborted, readingCleared, lateIgnored, pendingPreserved: imports.getSnapshot().pending === pending,
+      identityPreserved: owner.getSnapshot().identityKey === identity },
+    { completedCleared: true, aborted: true, readingCleared: true, lateIgnored: true, pendingPreserved: true, identityPreserved: true });
+  } finally { owner.dispose(); }
+});
+
 test("account and endpoint preferences stay isolated without generation keys", async () => {
   const store = storage(), a = createWebChildSelectionPreferences("/api", () => store), other = createWebChildSelectionPreferences("https://other.example/api", () => store);
   a.write(alice.id, { childId: "B", workspaceId: "family" });

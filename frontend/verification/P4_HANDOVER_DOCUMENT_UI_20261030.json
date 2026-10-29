@@ -1,0 +1,75 @@
+{
+  "base": "edb2a9993158abccd7a81246eda7decaa1ce4f2d",
+  "branch": "codex/p4-handover-document-ui",
+  "scope": "Shared Web/Android document import selection, actual resource results, read-only preparation history and on-demand fixed-snapshot document reading through the existing API",
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-import-owner.test.ts frontend/scripts/handover-import-ui.test.mjs",
+      "passed": 5,
+      "log": "tmp/handover-document-ui-reviewed.log"
+    },
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-document-pipeline.test.ts",
+      "passed": 1,
+      "log": "tmp/document-ui-original-api.log",
+      "addition": "Use the real documents client and HTTP handler to read the imported source snapshot through the existing content endpoint"
+    },
+    {
+      "command": "node tmp/check-document-pipeline.cjs",
+      "roots": 4,
+      "diagnostics": 0,
+      "log": "tmp/document-ui-api-types.log"
+    },
+    {
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern=\"ProductionOwner invalidates shared import reading\" tests/child-selection.test.ts",
+      "passed": 1,
+      "log": "tmp/handover-document-ui-scope-green.log",
+      "redLog": "tmp/handover-document-ui-scope-regression-red.log"
+    },
+    {
+      "command": "node tmp/check-document-ui-final.cjs",
+      "roots": 9,
+      "diagnostics": 0,
+      "log": "tmp/document-ui-final-types-green.log"
+    }
+  ],
+  "reusedEvidence": [
+    "artifacts/verification/P4_HANDOVER_DOCUMENT_PIPELINE_20261030.json",
+    "frontend/verification/P4_HANDOVER_DOCUMENT_LABELS_20261030.json"
+  ],
+  "failuresRetained": [
+    "Initial owner/component assertions were red before the UI implementation; their red/green logs remain local.",
+    "The initial native Node loader rejected a constructor parameter property; it was replaced with an ordinary field. This harness/loader failure is distinct from the feature assertions.",
+    "Independent review found automatic shared-scope invalidation did not clear source history; manual child switching alone was insufficient.",
+    "The new scope fixture initially used the wrong result-list path; it was corrected to the real client /items endpoint before the regression was established.",
+    "A command with a nonmatching test-name filter only loaded the file and is excluded from passing evidence: tmp/handover-document-ui-scope-no-match.log.",
+    "Scoped type checking found a test-only callback control-flow narrowing error; an explicit AbortSignal assertion fixed it without changing runtime assertions. The failure remains in tmp/document-ui-final-types.log."
+  ],
+  "notRun": [
+    "Full test suite",
+    "Web build",
+    "Cloud or model calls",
+    "Browser or device acceptance",
+    "Deployment"
+  ],
+  "remaining": [
+    "Production rollout and actual-device evidence",
+    "Other import modules, full personal backup, class/period scope, signature configuration and native large packages remain P4 work"
+  ],
+  "review": {
+    "independent": true,
+    "resolved": "Automatic scope invalidation now closes source history in ProductionOwner.sync; the focused rereview found no remaining blocker",
+    "retests": 0
+  },
+  "sourceSha256": {
+    "frontend/src/production/HandoverImportOwner.ts": "74e0fdc0a1f8d3970f6cec85f13f690d071080af8a0328f9b6ca2fdca8cb426b",
+    "frontend/src/production/ProductionOwner.ts": "bec920e402edc8fa1eea99f6d290703940dd5a7c8fba64a9811720de2c342de2",
+    "frontend/src/components/account/HandoverImportControls.tsx": "21d6b8e09ff427fa3b393f31221ba63efa1875f574112b816d5c6f6b3ca746bf",
+    "frontend/src/components/account/HandoverImportHistory.tsx": "ee2cc775dc023a2c94e7d3de42174a13c981c659b6c71265058548d12bdb43a8",
+    "frontend/src/components/account/HandoverImportResults.tsx": "d30225500f5bd842eda70c2749a7798386724da7cd92a52f6e21dfedd982a100",
+    "frontend/scripts/handover-import-ui.test.mjs": "ffc167240ab91b309d6760dda105200c8aa2d1d7be2e7ee52ec6c00a854d2222",
+    "tests/handover-import-owner.test.ts": "7588a8c02fcb8d264b8db4324e3fa60275a3f98c41afff4139337aeea5659174",
+    "tests/handover-document-pipeline.test.ts": "d54db7304fefe49c2f4e1078081a3d21dee207381ea49e29e94c2b515b95fa07",
+    "tests/child-selection.test.ts": "372e407f35b0dc31d1b34cfbbf0c7555fc316198869bb95b96b07357c7e9a1a8"
+  }
+}

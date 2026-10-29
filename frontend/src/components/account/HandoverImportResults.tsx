@@ -9,7 +9,7 @@ import { chineseFont, colors, readingType, spacing } from '../../theme';
 import { HandoverImportHistory } from './HandoverImportHistory';
 
 const modules = { care: '照護記錄', profile: '孩子資料', tasks: '待辦', memory: '記憶與摘要', sources: '私人來源', documents: '文件與準備單' };
-const resources: Record<HandoverImportResourceSection | 'documents' | 'visit_preparation', string> = { care: '照護記錄', profile: '孩子資料', tasks: '待辦',
+const resources: Record<HandoverImportResourceSection, string> = { care: '照護記錄', profile: '孩子資料', tasks: '待辦',
   memory_facts: '記憶事實', memory_topics: '記憶話題', instructions: '私人交代', summary_history: '摘要歷史', private_sources: '私人來源',
   documents: '文件', visit_preparation: '到診準備' };
 const historyLabels = { care_history: '照護記錄來源歷史', profile_history: '孩子資料來源歷史', task_history: '待辦來源歷史',

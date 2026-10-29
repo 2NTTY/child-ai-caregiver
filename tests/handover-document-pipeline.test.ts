@@ -23,6 +23,8 @@ import { createFirestoreAccountExport } from '../server/firestore-account-export
 import { parseHistoryRow } from '../server/handover-source-history.ts';
 import { createFirestoreHandoverImportItems } from '../server/firestore-handover-import-items.ts';
 import { createFirestoreSharingStore } from '../server/firestore-sharing.ts';
+import { handleFamilyDocumentRequest } from '../server/family-document-api.ts';
+import { createFamilyDocumentsApi, parseFamilyDocumentSnapshot } from '../src/client/family-documents-api.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 
 test('documents and visit preparation traverse the original package worker with full source history and receipts', async () => {
@@ -99,7 +101,15 @@ test('documents and visit preparation traverse the original package worker with 
     assert.deepEqual(preparation.questions, ['Updated question']); assert.equal(preparation.version, 1); assert.equal(preparation.reviewed, false);
     const history = await service.history('recipient', { childId, module: 'visit_preparation', resourceId: childId });
     assert.equal(history.items.length, 2); assert.equal(history.items[0].evidence.source.current.source.childId, sourceChild);
-    assert.equal((await service.history('recipient', { childId, module: 'documents', resourceId: localId })).items.length, 2);
+    const documentHistory = await service.history('recipient', { childId, module: 'documents', resourceId: localId });
+    assert.equal(documentHistory.items.length, 2);
+    const sourceSnapshot = documentHistory.items[0].evidence.value;
+    const documentApi = createFamilyDocumentsApi('http://localhost', (async (url, init) => handleFamilyDocumentRequest(
+      new Request(url, init), 'recipient', documents, async () => true)) as typeof fetch);
+    const content = await documentApi.readContent(childId, localId, { snapshotId: sourceSnapshot.snapshotId as string,
+      snapshotVersion: sourceSnapshot.snapshotVersion as number, offset: 0 }, controller.signal, 'recipient');
+    assert.equal(content.invalidated, false); assert.equal(content.complete, true);
+    assert.equal(parseFamilyDocumentSnapshot(JSON.parse(content.text), content.snapshotId, content.snapshotVersion).title, 'Original document');
     await assert.rejects(service.history('other', { childId, module: 'documents', resourceId: localId }));
     const repeated = { ...command, opId: randomUUID() }; await service.create('recipient', repeated, controller.signal);
     assert.equal((await run(repeated.opId)).counts.skipped, 8);
