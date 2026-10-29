@@ -14,7 +14,7 @@ import { chineseFont, colors, readingType, spacing } from '../../theme';
 
 type Section = HandoverImportCommand['targets'][number]['sections'][number];
 type Choice = { target: string; sections: Section[] };
-const sections: Section[] = ['care', 'profile', 'tasks', 'memory', 'sources', 'documents'];
+const sections: Section[] = ['care', 'profile', 'tasks', 'memory', 'sources', 'documents', 'attachments'];
 const labels: Record<Section, string> & Record<string, string> = { care: '照護記錄', profile: '孩子資料', tasks: '待辦', memory: '記憶與摘要', sources: '私人來源', documents: '文件與準備單', attachments: '附件' };
 const states: Record<HandoverImportView['state'], string> = {
   queued: '已排隊', running: '正在匯入', completed: '已完成', cancelled: '已取消', failed: '未能完成', interrupted: '還原後已中斷',
@@ -173,7 +173,7 @@ export function HandoverImportControls() {
             : upload.state === 'cancelled' || upload.state === 'expired' ? '上載已停止，Server 會按原工作清理；毋須再次取消。' : '此上載目前不可匯入，請取消後重新選取。'}</Text> : <>
             <Text style={styles.body}>{integrityLabels[preview.integrity]}。來源：{preview.header.source.serverId}</Text>
             {preview.integrity !== 'trusted' ? <AppCheckbox label="我知悉此資料包沒有可信來源證明，仍選擇繼續" checked={accepted} disabled={writeLocked} onChange={setAccepted} /> : null}
-            <Text style={styles.body}>可匯入孩子資料、照護記錄、待辦、記憶、私人來源及文件與準備單，包含各模組歷史。記憶包括事實、話題、私人交代及摘要歷史；私人聊天、附件、持續關注與成長整理尚未接通。</Text>
+            <Text style={styles.body}>可匯入孩子資料、照護記錄、待辦、記憶、私人來源、文件與準備單及附件。附件包含可讀的照片、錄音、檔案、孩子頭像及原有語音轉錄；其他已開放模組包含各自歷史。私人聊天、持續關注與成長整理尚未接通。</Text>
             <Text style={styles.body}>請逐位指定接收對象，不會按名字自動配對。預設保留接收對象目前的修改及刪除。</Text>
             <Text style={styles.body}>共享或班級對象只列出目前選中且可寫的孩子；如需其他對象，先切換至該孩子後再回來。</Text>
             {!available.length ? <Text style={styles.body}>此資料包未包含目前可匯入的模組。</Text> : null}
@@ -190,7 +190,7 @@ export function HandoverImportControls() {
                   {choice.target && !destination ? <Text style={styles.body}>原接收對象現不可用，請重新選擇。</Text> : null}
                   {destination?.spaceId && personalMemory.has(child.id) && available.includes('memory') ? <Text style={styles.body}>這位來源孩子的記憶含私人交代或摘要歷史，只可匯入本人孩子；共享對象仍可選其他已開放模組。</Text> : null}
                   {destination?.spaceId && available.includes('sources') ? <Text style={styles.body}>私人來源只可匯入本人孩子；共享對象仍可選其他已開放模組。</Text> : null}
-                  {available.map(section => <AppCheckbox key={section} label={labels[section]} accessibilityLabel={`${child.displayName}：${labels[section]}及歷史`}
+                  {available.map(section => <AppCheckbox key={section} label={labels[section]} accessibilityLabel={`${child.displayName}：${labels[section]}${section === 'attachments' ? '及原轉錄' : '及歷史'}`}
                     description={destination && !availableFor(child.id, section, destination) ? '此來源與接收對象目前不能使用此模組。' : undefined}
                     checked={choice.sections.includes(section)} disabled={writeLocked || !!destination && !availableFor(child.id, section, destination) && !choice.sections.includes(section)}
                     onChange={checked => chooseSection(child.id, section, checked)} />)}

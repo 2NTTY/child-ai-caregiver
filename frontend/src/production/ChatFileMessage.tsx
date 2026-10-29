@@ -9,17 +9,17 @@ import { exportAttachment } from '../platform/file-export';
 import { AppButton } from '../components/ui';
 
 /** Presentation only: the shared API authorizes every download of the original. */
-export function ChatFileMessage({ messageId, file, compact = false, api: apiOverride }: { messageId: string | null; file: ChatFileMessageReference; compact?: boolean; api?: ChatFileApi }) {
+export function ChatFileMessage({ messageId, file, compact = false, api: apiOverride, library = false }: { messageId: string | null; file: ChatFileMessageReference; compact?: boolean; api?: ChatFileApi; library?: boolean }) {
   const env = useDomainEnvironment(), api = env.sharedMode ? apiOverride : apiOverride ?? env.owner.fileApi;
-  const mayRead = env.sharedMode ? !!apiOverride && !!env.sharing && env.allows('attachments') && messageId === null : messageId !== null;
+  const mayRead = env.sharedMode ? !!apiOverride && !!env.sharing && env.allows('attachments') && messageId === null : library || messageId !== null;
   const [busy, setBusy] = useState(false), [notice, setNotice] = useState<string | null>(null);
   const request = useRef<AbortController | null>(null), live = useRef(true);
-  useEffect(() => { live.current = true; setBusy(false); setNotice(null); return () => { live.current = false; request.current?.abort(); request.current = null; }; }, [env.scopeKey]);
+  useEffect(() => { live.current = true; setBusy(false); setNotice(null); return () => { live.current = false; request.current?.abort(); request.current = null; }; }, [env.scopeKey, file.id, file.version, messageId, library]);
   const matches = (value: Awaited<ReturnType<ChatFileApi['get']>>) => value.childId === env.childId && value.id === file.id
     && value.version === file.version && value.sha256 === file.sha256 && (env.sharedMode
       ? !!env.sharing && value.sharedSpaceId === env.sharing.spaceId && value.messageId === null && messageId === null
-      : value.sharedSpaceId === undefined && messageId !== null && value.messageId === messageId);
-  const metadata = useQuery({ queryKey: ['production', env.scopeKey, 'chat-file', file.id, file.version],
+      : value.sharedSpaceId === undefined && (messageId !== null ? value.messageId === messageId : library && value.messageId === null));
+  const metadata = useQuery({ queryKey: ['production', env.scopeKey, 'chat-file', file.id, file.version, messageId, library],
     enabled: mayRead && !!env.childId && !!env.userId && env.online, retry: false,
     queryFn: async ({ signal }) => {
       if (!mayRead || !api || !env.current() || signal.aborted) throw Error('chat_file_scope_unavailable');

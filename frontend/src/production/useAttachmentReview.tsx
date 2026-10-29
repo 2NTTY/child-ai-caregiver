@@ -38,7 +38,7 @@ export function useAttachmentList<T extends Original>(api: ListApi<T>,selectedEn
       // Rebuild the loaded depth from fresh cursors; commit only after the whole read succeeds.
       // Empty scan pages still count toward that depth and retain their continuation cursor.
       for (let index = 0; index < (more ? 1 : Math.max(1, previous.depth)); index++) {
-        const page = await api.list(e.childId, cursor === null ? {} : { cursor }, controller.signal, e.userId);
+        const page = await api.list(e.childId, { includeImported: true, ...(cursor === null ? {} : { cursor }) }, controller.signal, e.userId);
         if (!current()) return;
         for (const item of page.items) {
           const existing = items.findIndex(value => value.id === item.id);
@@ -92,10 +92,10 @@ export function useAttachmentReview(): AttachmentReviewCollections {
     voices: { ...voices,shared:env.sharedMode,controls:voiceDeletion.controls,items: voices.items.map(item => ({ id: item.id, kind: 'voice', title: item.fileName!, createdAtLabel: photoTime(item.createdAt),
       sizeLabel: `${Math.ceil(item.durationMs! / 1000)} 秒 · ${sizeLabel(item.bytes!)}`, sourceLabel, version: item.version,
       remove:voiceDeletion.canDelete?()=>voiceDeletion.remove(item):undefined,
-      content: <VoiceMessage key={`${env.scopeKey}:${item.id}:${item.version}`} api={env.sharedMode?voiceApi:undefined} messageId={item.messageId} voice={{ id: item.id, version: item.version, mimeType: item.mimeType!, bytes: item.bytes!, durationMs: item.durationMs!, sha256: item.sha256! }} /> })) },
+      content: <VoiceMessage key={`${env.scopeKey}:${item.id}:${item.version}`} api={env.sharedMode?voiceApi:undefined} library messageId={item.messageId} voice={{ id: item.id, version: item.version, mimeType: item.mimeType!, bytes: item.bytes!, durationMs: item.durationMs!, sha256: item.sha256! }} /> })) },
     files: { ...files,shared:env.sharedMode,controls:fileDeletion.controls,items: files.items.map(item => ({ id: item.id, kind: item.mimeType!.startsWith('video/') ? 'video' : 'file', title: item.fileName!, createdAtLabel: photoTime(item.createdAt),
       sizeLabel: sizeLabel(item.bytes!), sourceLabel, version: item.version,
       remove:fileDeletion.canDelete?()=>fileDeletion.remove(item):undefined,
-      content: <ChatFileMessage key={`${env.scopeKey}:${item.id}:${item.version}`} api={env.sharedMode?fileApi:undefined} compact messageId={item.messageId} file={{ id: item.id, version: item.version, mimeType: item.mimeType!, bytes: item.bytes!, sha256: item.sha256! }} /> })) },
+      content: <ChatFileMessage key={`${env.scopeKey}:${item.id}:${item.version}`} api={env.sharedMode?fileApi:undefined} library compact messageId={item.messageId} file={{ id: item.id, version: item.version, mimeType: item.mimeType!, bytes: item.bytes!, sha256: item.sha256! }} /> })) },
   };
 }

@@ -11,29 +11,36 @@ import {AppButton} from '../components/ui';
 import {chineseFont,colors,spacing} from '../theme';
 
 /** Reads the original audio and transcript; neither is copied into editable chat text. */
-export function VoiceMessage({messageId,voice,initialOffsetMs,api:apiOverride}:{messageId:string|null;voice:VoiceMessageReference;initialOffsetMs?:number;api?:VoiceApi}){
+export function VoiceMessage({messageId,voice,initialOffsetMs,api:apiOverride,library=false}:{messageId:string|null;voice:VoiceMessageReference;initialOffsetMs?:number;api?:VoiceApi;library?:boolean}){
   const env=useDomainEnvironment(),api=env.sharedMode?apiOverride:apiOverride??env.owner.voiceApi;
-  const mayRead=env.sharedMode?!!apiOverride&&!!env.sharing&&env.allows('attachments')&&messageId===null:messageId!==null;
+  const mayRead=env.sharedMode?!!apiOverride&&!!env.sharing&&env.allows('attachments')&&messageId===null:library||messageId!==null;
   const [opened,setOpened]=useState(false),[playing,setPlaying]=useState(false),[notice,setNotice]=useState<string|null>(null);
   const [preview,setPreview]=useState<{scopeKey:string;uri:string;dispose():void}|null>(null),[seek,setSeek]=useState<{seconds:number;request:number}>();
   const previewRef=useRef(preview),request=useRef<AbortController|null>(null),live=useRef(true);
   const clear=()=>{request.current?.abort();request.current=null;previewRef.current?.dispose();previewRef.current=null;setPreview(null);};
-  useEffect(()=>{live.current=true;setOpened(false);setPlaying(false);setNotice(null);setPreview(null);setSeek(undefined);return()=>{live.current=false;request.current?.abort();request.current=null;previewRef.current?.dispose();previewRef.current=null;};},[env.scopeKey]);
+  useEffect(()=>{live.current=true;setOpened(false);setPlaying(false);setNotice(null);setPreview(null);setSeek(undefined);return()=>{live.current=false;request.current?.abort();request.current=null;previewRef.current?.dispose();previewRef.current=null;};},[env.scopeKey,voice.id,voice.version,messageId,library]);
   const matchesMessage=(value:{messageId:string|null;sharedSpaceId?:string})=>env.sharedMode
     ?!!env.sharing&&value.sharedSpaceId===env.sharing.spaceId&&value.messageId===null&&messageId===null
-    :value.sharedSpaceId===undefined&&messageId!==null&&value.messageId===messageId;
+    :value.sharedSpaceId===undefined&&(messageId!==null?value.messageId===messageId:library&&value.messageId===null);
   const matches=(value:Awaited<ReturnType<VoiceApi['get']>>)=>value.childId===env.childId&&value.id===voice.id
     &&value.version===voice.version&&value.sha256===voice.sha256&&matchesMessage(value);
-  const read=useQuery({queryKey:['production',env.scopeKey,'voice',voice.id,voice.version],enabled:mayRead&&opened&&!!env.childId&&!!env.userId&&env.online,
+  const read=useQuery({queryKey:['production',env.scopeKey,'voice',voice.id,voice.version,messageId,library],enabled:mayRead&&opened&&!!env.childId&&!!env.userId&&env.online,
     queryFn:async({signal})=>{
       if(!mayRead||!api||!env.current()||signal.aborted)throw Error('voice_scope_unavailable');
       const attachment=await api.get(env.childId!,voice.id,signal,env.userId!);
       if(!matches(attachment))throw Error('voice_changed');
       if(attachment.state!=='ready')return {attachment,transcript:null};
       if(signal.aborted||!env.current())throw Error('voice_scope_unavailable');
-      const transcript=await api.transcript(env.childId!,voice.id,signal,env.userId!);
-      if(!matchesMessage(transcript)||transcript.voice.id!==voice.id||transcript.voice.version!==voice.version||transcript.voice.sha256!==voice.sha256)throw Error('voice_changed');
-      return {attachment,transcript};
+      try{
+        const transcript=await api.transcript(env.childId!,voice.id,signal,env.userId!);
+        if(signal.aborted||!env.current())throw Error('voice_scope_unavailable');
+        if(!matchesMessage(transcript)||transcript.voice.id!==voice.id||transcript.voice.version!==voice.version||transcript.voice.sha256!==voice.sha256)throw Error('voice_changed');
+        return {attachment,transcript};
+      }catch(error){
+        if(!library||!(error instanceof VoiceApiError)||error.status!==404||error.code!=='not_found')throw error;
+        if(signal.aborted||!env.current())throw Error('voice_scope_unavailable');
+        return {attachment,transcript:null};
+      }
     },retry:false});
   useEffect(()=>{if(read.isError||read.data&&read.data.attachment.state!=='ready')clear();
     if(read.error instanceof VoiceApiError&&[401,403].includes(read.error.status))env.accessError(read.error);
