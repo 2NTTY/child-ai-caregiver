@@ -1,0 +1,13 @@
+{
+  "package": "P4-HANDOVER01 attachment label compatibility",
+  "date": "2026-10-30",
+  "base": "6ce86a934b5dd4d9e00a4cf9f868ab2c76ff4059",
+  "branch": "codex/p4-handover-attachment-labels",
+  "scope": "Two shared components add forward-compatible attachment resource, supplement and reason labels. Selectable modules remain unchanged. Existing owner governs history access.",
+  "checks": [
+    { "method": "TypeScript API using frontend/tsconfig.json, two changed component roots and dependency graph", "result": "0 diagnostics", "evidence": "tmp/handover-attachment-labels-types.log" },
+    { "command": "git diff --check", "result": "passed" }
+  ],
+  "review": "Main verified the diff and removed a redundant presentation-side history predicate; original owner already excludes all attachment resources.",
+  "limits": ["No attachment selector enabled", "No product/model/device/full-suite test", "No deployment", "Full attachment client wiring follows the merged backend", "D PR untouched"]
+}
