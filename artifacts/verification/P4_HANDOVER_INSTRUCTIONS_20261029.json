@@ -1,0 +1,30 @@
+{
+  "package": "P4-HANDOVER01 private instruction prerequisites",
+  "date": "2026-10-29",
+  "base": "6df6c4dc94908af91fdf51e09d662878bdbdea78",
+  "implemented": [
+    "Ordinary Agent actions and verified import preparation reuse the same private instruction records, key index, version and context-change write path.",
+    "Imported notes retain foreign message/provenance metadata and have no local sourceMessageId; import does not invent an Agent run or enable a policy.",
+    "Authorized later Agent revision uses its real source message and keeps import provenance; normal list, key search, deletion and restore use the existing paths.",
+    "Shared Web/Android client uses the common note schema and labels imported instructions without foreign chat links."
+  ],
+  "verification": {
+    "domain": "tests/handover-instructions-domain.test.ts passed; includes actual actions list/key search/policy, authorized Agent revision, conflict, deletion replay and restore codec.",
+    "existingAgentLifecycle": "tests/firestore-memory-lifecycle.test.ts passed once after extracting the common write path; no model calls.",
+    "clientUi": "node --experimental-test-module-mocks --test --test-name-pattern 'private note' tests/agent-receipt-contract.test.ts: 2 passed, 0 failed.",
+    "types": "Scoped server and frontend dependency graphs: 3 roots each, 0 diagnostics after test nullability correction.",
+    "review": "Independent read-only domain review found no definite P1/P2. Primary reviewed the shared schema, client and UI changes.",
+    "diffCheck": "passed"
+  },
+  "retainedFailures": [
+    "New domain test first failed because the common private instruction data adapter did not exist.",
+    "Client/UI regressions reproduced rejection/mislabeling of imported notes before the compatibility changes.",
+    "An existing broad UI loader failed on ChatPhotoMessage, and the full receipt test file had two existing Conversation/AppStatusBadge loader failures. No unrelated chat code was changed; final verification selected the two affected private-note cases.",
+    "Initial scoped typecheck found four nullable test-result accesses; explicit assertions/optional access fixed them."
+  ],
+  "pending": [
+    "Public full memory import coordinator, summaries, source histories and shared class target behavior remain incomplete.",
+    "No bundle, browser, device, live cloud, model, notification or deployment verification was performed.",
+    "Collaborator Agent PRs, P3 and P5 remain separate."
+  ]
+}

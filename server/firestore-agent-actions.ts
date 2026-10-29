@@ -15,16 +15,14 @@ import { prepareContextChange } from './firestore-context-basis.ts';
 import { normalizedFactKey } from './memory-policy.ts';
 import { groundedRecordTime } from './agent-record-time.ts';
 import { groundedRecordQuantity, type QuantityGrounding } from './agent-record-quantity.ts';
+import { createFirestorePrivateInstructions, firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
+export { firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
 
 const uuid = z.uuid(), time = z.iso.datetime({ offset: true }), version = z.number().int().min(0).max(2147483646);
 const permissions = z.object({ version, recordKinds: agentPolicyUpdateSchema.shape.recordKinds,
   allowPrivateNotes: z.boolean(), allowSelfTasks: z.boolean(), allowRecordCorrections: z.boolean(),
   reminderConsentVersion: agentPolicyUpdateSchema.shape.reminderConsentVersion, reminderBindings: agentPolicyUpdateSchema.shape.reminderBindings }).strict();
 export const firestoreAgentPolicySchema = z.object({ value: permissions, authorizationVersion: z.string() }).strict();
-export const firestorePrivateInstructionSchema = z.object({
-  id: uuid, childId: uuid, version: version.min(1), title: z.string().min(1).max(100), text: z.string().min(1).max(2000),
-  sourceMessageId: uuid, createdAt: time, updatedAt: time, provenance: z.literal('user_statement'), memoryKey: z.string().min(1).max(100).optional(),
-}).strict();
 export const firestoreAgentActionReceiptSchema = z.object({
   id: uuid, runId: uuid, kind: z.enum(['save_record', 'revise_record', 'save_private_note', 'revise_private_note', 'create_self_task', 'change_self_task']),
   resource: z.object({ kind: z.enum(['care_record', 'private_note', 'task']), id: uuid, version: version.min(1) }).strict(),
@@ -43,7 +41,6 @@ export const firestoreAgentActionSavedSchema = z.object({
 export const firestoreAgentActionCallSchema = z.object({ receiptId: uuid }).strict();
 export const firestoreAgentManualSchema = z.object({ childId: uuid, kind: z.enum(['policy', 'delete_note']),
   hash: z.string().regex(/^[a-f0-9]{64}$/u), result: z.union([permissions.extend({ effective: z.boolean() }), z.boolean(), z.null()]) }).strict();
-const instructionKeySchema = z.object({ id: uuid }).strict();
 const deletion = z.object({ expectedVersion: version.min(1), confirmDelete: z.literal(true), operationId: uuid }).strict();
 type Saved = z.infer<typeof firestoreAgentActionSavedSchema>;
 export interface FirestoreAgentActions extends AgentActionsStore {
@@ -56,6 +53,7 @@ export function createFirestoreAgentActions(options: {
   runs: FirestoreAgentRuns; proposals: FirestoreAgentProposals; care: FirestoreCareStore; online: FirestoreOnlineStore;
 }): FirestoreAgentActions {
   const { runs, proposals, care, online } = options, { authority, data } = runs;
+  const instructions = createFirestorePrivateInstructions(data);
   const empty = (): AgentOperationPolicy => ({ version: 0, effective: false, recordKinds: [], allowPrivateNotes: false,
     allowRecordCorrections: false, allowSelfTasks: false, reminderConsentVersion: null, reminderBindings: [] });
   const scopedId = (b: Binding) => JSON.stringify([b.scope.ownerUserId, b.scope.childId]);
@@ -75,23 +73,7 @@ export function createFirestoreAgentActions(options: {
     if (saved.value.version !== row.get('recordVersion')) domainReject('policy_binding', 500);
     return { ...saved.value, effective: saved.authorizationVersion === b.authorizationVersion };
   }
-  async function readNote(b: Binding, id: string): Promise<AgentPrivateNote | null> {
-    domainParse(uuid, id); const row = await b.transaction.get(data.ref('private_instructions', 'private-instruction', id));
-    if (!row.exists) return null;
-    const value = open(b, 'private-instruction', id, firestorePrivateInstructionSchema, row);
-    if (value.id !== id || value.childId !== b.scope.childId || value.version !== row.get('recordVersion')) domainReject('instruction_binding', 500);
-    return value;
-  }
-  const instructionKey = (b: Binding, key: string) => JSON.stringify([b.scope.ownerUserId, b.scope.childId, 'instructions', 'private', normalizedFactKey(key)]);
-  async function noteByKey(b: Binding, key: string) {
-    const id = instructionKey(b, key), row = await b.transaction.get(data.ref('memory_keys', 'memory-key', id));
-    if (!row.exists) return null;
-    const pointer = open(b, 'memory-key', id, instructionKeySchema, row);
-    const note = await readNote(b, pointer.id);
-    // Deleted notes never become readable through a stale pointer after recovery.
-    if (note && note.memoryKey !== normalizedFactKey(key)) domainReject('instruction_key_binding', 500);
-    return note;
-  }
+  const readNote = instructions.read, instructionKey = instructions.keyId, noteByKey = instructions.byKey;
   async function readReceipts(b: Binding, runId: string) {
     const rows = await b.transaction.get(scoped(b, 'agent_action_receipts').where('runId', '==', runId).orderBy('receiptId').limit(9));
     if (rows.size > 8) domainReject('agent_action_limit');
@@ -266,16 +248,9 @@ export function createFirestoreAgentActions(options: {
             const memoryKey = old?.memoryKey ?? key;
             const value: AgentPrivateNote = { id: old?.id ?? randomUUID(), childId: scope.childId, version: (old?.version ?? 0) + 1,
               title: input.title, text: input.text, sourceMessageId: run.sourceMessageId, provenance: 'user_statement',
-              createdAt: old?.createdAt ?? at, updatedAt: at, ...(memoryKey ? { memoryKey } : {}) };
-            const envelope = { ...data.tags(b.scope), noteId: value.id, createdAt: value.createdAt,
-              ...data.seal('private-instruction', value.id, b.scope, firestorePrivateInstructionSchema, value, value.version) };
-            const keyId = memoryKey ? instructionKey(b, memoryKey) : null;
-            const keyEnvelope = keyId ? { ...data.tags(b.scope), ...data.seal('memory-key', keyId, b.scope, instructionKeySchema, { id: value.id }) } : null;
-            const context = await prepareContextChange(data, b), change = await b.prepareChange(receiptId, 'memory', false);
-            prepared = { changeSeq: change.changeSeq, commit() {
-              context(); change.commit(); b.transaction.set(data.ref('private_instructions', 'private-instruction', value.id), envelope);
-              if (keyId && keyEnvelope) b.transaction.set(data.ref('memory_keys', 'memory-key', keyId), keyEnvelope);
-            } };
+              createdAt: old?.createdAt ?? at, updatedAt: at, ...(memoryKey ? { memoryKey } : {}),
+              ...(old?.importedFrom ? { importedFrom: old.importedFrom } : {}) };
+            prepared = await instructions.prepareWrite(b, receiptId, value, old);
             resource = { kind: 'private_note', id: value.id, version: value.version }; state = old ? 'updated' : 'saved';
             memoryOutcome = old ? 'updated' : 'created';
           }

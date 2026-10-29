@@ -40,7 +40,12 @@ const factSources: Record<MemoryFactView["source"]["kind"], { label: string; ico
   private_chat: { label: "私人聊天", icon: "message-text-outline" },
   care_record: { label: "照顧記錄", icon: "notebook-outline" },
   manual: { label: "手動描述", icon: "pencil-outline" },
+  imported: { label: "匯入資料包", icon: "file-document-outline" },
 };
+function factConfirmer(fact: Readonly<MemoryFactView>, display?: MemoryConfirmerDisplay) {
+  return fact.confirmationBasis === "imported_source" && fact.confirmedBy !== null
+    ? `來源確認：${fact.confirmedBy}` : memoryConfirmerLabel(fact.confirmedBy, display);
+}
 function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
   fact: Readonly<MemoryFactView>; model: MemoryReferenceModel; workspace: MemoryReferenceWorkspaceValue; onQuestion?: (fact: Readonly<MemoryFactView>) => void;
   confirmerDisplay?: MemoryConfirmerDisplay;
@@ -68,11 +73,12 @@ function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
       <Metadata label="來源">{factSourceLabel(fact.source)}</Metadata>
       <Metadata label="記憶版本">{fact.version}</Metadata>
       <Metadata label="來源狀態">{fact.sourceState === "current" ? "目前版本" : "來源已更改，須重新核對"}</Metadata>
-      <Metadata label="確認者">{memoryConfirmerLabel(fact.confirmedBy, confirmerDisplay)}</Metadata>
+      <Metadata label="確認者">{factConfirmer(fact, confirmerDisplay)}</Metadata>
       <Metadata label="確認時間">{memoryDateLabel(fact.confirmedAt)}</Metadata>
       {fact.validUntil ? <Metadata label="有效至">{memoryDateLabel(fact.validUntil)}</Metadata> : null}
       {fact.reason ? <Metadata label="最近變更原因">{fact.reason}</Metadata> : null}
       {fact.source.kind === "care_record" ? <Metadata label="原記錄">{fact.source.recordId} · 版本 {fact.source.version}</Metadata> : null}
+      {fact.source.kind === "imported" && fact.source.original.kind === "care_record" ? <Metadata label="來源原記錄">{fact.source.original.recordId} · 版本 {fact.source.original.version}</Metadata> : null}
       <AppButton label={historyOpen ? "收起版本記錄" : "查看版本記錄"} expanded={historyOpen} variant="quiet" density="compact" onPress={() => {
         if (!historyOpen && !currentHistory && model.online) workspace.reads?.readFactHistory?.(fact.id, fact.version);
         setHistoryOpen(value => !value);
@@ -85,7 +91,7 @@ function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
             <Text style={styles.cardTitle}>版本 {version.version} · {factStatusLabels[version.status]}</Text>
             <Text selectable style={styles.body}>{version.content}</Text>
             <Text style={styles.meta}>{visibilityLabels[version.visibility]} · {factSourceLabel(version.source)}</Text>
-            <Metadata label="確認者">{memoryConfirmerLabel(version.confirmedBy, confirmerDisplay)}</Metadata>
+            <Metadata label="確認者">{factConfirmer(version, confirmerDisplay)}</Metadata>
             <Metadata label="確認時間">{memoryDateLabel(version.confirmedAt)}</Metadata>
             {version.validUntil ? <Metadata label="有效至">{memoryDateLabel(version.validUntil)}</Metadata> : null}
             <Metadata label="適用狀態">{factUnavailableReason(version)}</Metadata>

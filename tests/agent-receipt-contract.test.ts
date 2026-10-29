@@ -64,6 +64,62 @@ test("receipt HTTP 200 accepts legacy receipts and every declared status-only qu
   }
 });
 
+test("private note client accepts imported instructions and legacy notes while enforcing their source bindings", async () => {
+  const note = { id: oldReceipt.resource.id, childId, version: 1, title: 'Synthetic instruction', text: 'Synthetic private statement',
+    sourceMessageId: runId, provenance: 'user_statement', createdAt: oldReceipt.createdAt, updatedAt: oldReceipt.createdAt };
+  const importedFrom = { current: { source: { serverId: 'https://source.test', accountId: 'source-account', childId,
+    section: 'instructions', resourceId: oldReceipt.id, resourceVersion: 3, authorUserId: 'source-actor', createdAt: oldReceipt.createdAt,
+    confirmedBy: null, confirmedAt: null, confirmationBasis: null, assigneeUserId: null, sourceMessageId: runId },
+    sourceHash: 'a'.repeat(64), packageId: runId, packageVersion: 1, manifestSha256: 'b'.repeat(64), integrity: 'trusted',
+    importedBy: 'synthetic-user', importedAt: oldReceipt.createdAt }, previous: [] };
+  const imported = { ...note, provenance: 'imported_source', sourceMessageId: null, importedFrom };
+  const notes = (items: unknown[]) => createAgentActionsApi('/api', async () => Response.json({ notes: { items, nextAfterId: null } }));
+  assert.deepEqual((await notes([note]).listNotes(childId, signal(), 'synthetic-user')).items, [note]);
+  assert.deepEqual((await notes([imported]).listNotes(childId, signal(), 'synthetic-user')).items, [imported]);
+  const corrected = { ...note, importedFrom };
+  assert.deepEqual((await notes([corrected]).listNotes(childId, signal(), 'synthetic-user')).items, [corrected]);
+  for (const invalid of [{ ...note, sourceMessageId: null }, { ...imported, sourceMessageId: runId },
+    { ...imported, importedFrom: undefined }, { ...imported, importedFrom: { ...importedFrom,
+      current: { ...importedFrom.current, source: { ...importedFrom.current.source, section: 'care' } } } }]) {
+    await assert.rejects(notes([invalid]).listNotes(childId, signal(), 'synthetic-user'), AgentActionsApiError);
+  }
+});
+
+test("private notes label imported instructions without exposing foreign chat references or changing deletion", () => {
+  const at = oldReceipt.createdAt, foreignMessage = 'foreign-message-reference';
+  const imported = { id: oldReceipt.resource.id, childId, version: 3, title: 'Synthetic imported instruction', text: 'Synthetic body',
+    sourceMessageId: null, provenance: 'imported_source', importedFrom: { current: { source: { sourceMessageId: foreignMessage } } }, createdAt: at, updatedAt: at };
+  const local = { ...imported, id: oldReceipt.id, provenance: 'user_statement', sourceMessageId: runId };
+  const authorization = { policy: null, policyState: 'idle', draft: { recordKinds: [], allowPrivateNotes: false, allowSelfTasks: false,
+    allowRecordCorrections: false, reminders: false }, notesState: 'ready', notes: [imported, local], online: true };
+  let selected: unknown = null; const deleted: string[] = [];
+  const jsx = (type: unknown, props: unknown) => ({ type, props });
+  const placeholder = new Proxy({}, { get: (_target, key) => String(key) });
+  const { AgentAuthorization } = load('frontend/src/production/AgentAuthorization.tsx', {
+    react: { useState: () => [selected, (value: unknown) => { selected = value; }], useEffect() {} },
+    'react/jsx-runtime': { jsx, jsxs: jsx }, 'react-native': { View: 'View', StyleSheet: { create: (value: unknown) => value } },
+    'react-native-paper': { Text: 'Text' }, 'expo-router': { useRouter: () => ({ push() {} }) },
+    './ProductionProvider': { useProduction: () => ({ authorization, scopeKey: 'scope-a',
+      authorizationActions: { deleteNote: (id: string) => deleted.push(id) },
+      owner: { authorizationOwner: { mayDelete: () => true, getSnapshot: () => authorization } } }) },
+    './AgentAuthorizationOwner': { mayRetryAuthorization: () => false, maySavePolicy: () => false, reminderEligible: () => false },
+    './routes': { isProductionRouteConnected: () => false },
+    '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => (action: () => void) => action() },
+    '../theme': { colors: {}, readingType: {}, spacing: {} }, '../components/EmptyListCard': placeholder,
+    '../components/AppCheckbox': placeholder, '../components/AppDialog': placeholder, '../components/StatusAnnouncement': placeholder, '../components/ui': placeholder,
+  });
+  const content = (tree: any): string => tree == null ? '' : Array.isArray(tree) ? tree.map(content).join(' ')
+    : typeof tree === 'object' ? content(tree.props?.children) : String(tree);
+  const nodes = (tree: any): any[] => !tree || typeof tree !== 'object' ? [] : Array.isArray(tree) ? tree.flatMap(nodes) : [tree, ...nodes(tree.props?.children)];
+  const view = AgentAuthorization(), text = content(view);
+  assert.match(text, /匯入交代/); assert.match(text, /本人交代/); assert.equal(text.includes(foreignMessage), false);
+  assert.equal(nodes(view).filter(item => item.type === 'Text' && content(item).startsWith('來源聊天：')).length, 1);
+  assert.ok(text.includes(runId));
+  nodes(view).find(item => item.props?.label === '刪除此私人備註').props.onPress();
+  nodes(AgentAuthorization()).find(item => item.props?.label === '確認刪除').props.onPress();
+  assert.deepEqual(deleted, [imported.id]);
+});
+
 test("receipt parsing stays strict about status, private measurement fields, identity and duplicate receipts", async () => {
   for (const grounding of [null, {}, { status: "exact" }, { status: "removed", quantity: null },
     { status: "source_supported", rawValue: "120", unit: "ml" }, { status: "removed", sourceQuote: "Synthetic private phrase" }])

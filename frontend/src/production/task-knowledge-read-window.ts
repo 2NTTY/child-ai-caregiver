@@ -11,7 +11,7 @@ export async function readLoadedIdWindow<T extends { items: { id: string }[]; ne
     if (!current()) throw new Error("Obsolete task or memory read");
     const page = await readPage(after);
     if (!current()) throw new Error("Obsolete task or memory read");
-    let previous = after;
+    let previous: string | null = after;
     for (const item of page.items) {
       if (previous !== null && item.id <= previous) throw new Error("Invalid task or memory page order");
       previous = item.id;

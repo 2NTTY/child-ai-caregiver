@@ -17,6 +17,8 @@ type PageIndex = { path: string; section: string; childId: string | null; items:
 const contentSections = new Set(['photo_content', 'voice_content', 'file_content', 'child_avatar_content']);
 const moduleBySection = new Map<string, keyof typeof HANDOVER_SECTIONS>(Object.entries(HANDOVER_SECTIONS)
   .flatMap(([module, sections]) => sections.map(section => [section, module as keyof typeof HANDOVER_SECTIONS] as const)));
+const sectionFilterSchema = z.array(z.string().min(1).max(80)).min(1).max(moduleBySection.size)
+  .refine(value => new Set(value).size === value.length);
 const key = (section: string, childId: string | null) => JSON.stringify([section, childId]);
 function fail(code: string): never { throw new HandoverArchiveError(code); }
 function parse<T>(schema: z.ZodType<T>, raw: unknown, code: string): T {
@@ -90,20 +92,25 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
     if (childIds.size || [...expected].some(([id, coverage]) => !seen.has(id) || seen.get(id) !== coverage.items)) fail('invalid_package_coverage');
     if (manifest.entries.some(entry => entry.path.startsWith('attachments/') && !attachments.has(entry.path))) fail('invalid_package_attachment');
 
-    function select(raw: HandoverImportSelection, acknowledged?: string) {
+    function select(raw: HandoverImportSelection, acknowledged?: string, rawSections?: string[]) {
       const selection = parse(selectionSchema, raw, 'invalid_package_selection');
       if (selection.childIds.some(id => !manifest.selection.childIds.includes(id))
         || selection.modules.some(module => !manifest.selection.modules.includes(module))) fail('package_scope_unavailable');
       if (integrity !== 'trusted' && acknowledged !== manifestSha256) fail('package_trust_acknowledgement_required');
-      const selectionHash = createHash('sha256').update(JSON.stringify({ childIds: [...selection.childIds].sort(), modules: [...selection.modules].sort() })).digest('hex');
-      const allows = (page: PageIndex) => page.section === 'children' || selection.childIds.includes(page.childId!)
-        && selection.modules.includes(moduleBySection.get(page.section)!);
+      const sections = rawSections === undefined ? undefined : parse(sectionFilterSchema, rawSections, 'invalid_package_selection').sort();
+      if (sections?.some(section => {
+        const module = moduleBySection.get(section); return module === undefined || !selection.modules.includes(module);
+      })) fail('package_scope_unavailable');
+      const selectionHash = createHash('sha256').update(JSON.stringify({ childIds: [...selection.childIds].sort(), modules: [...selection.modules].sort(),
+        ...(sections === undefined ? {} : { sections }) })).digest('hex');
+      const allows = (page: PageIndex) => page.section === 'children' ? sections === undefined : selection.childIds.includes(page.childId!)
+        && selection.modules.includes(moduleBySection.get(page.section)!) && (sections === undefined || sections.includes(page.section));
       return { selection, selectionHash, allows };
     }
     return {
       manifest: structuredClone(manifest), manifestSha256, integrity, children: structuredClone(children), close: archive.close,
-      async readPage(request: { selection: HandoverImportSelection; acknowledgedManifestSha256?: string; cursor?: HandoverImportCursor | null; limit?: number }) {
-        const { selection, selectionHash, allows } = select(request.selection, request.acknowledgedManifestSha256);
+      async readPage(request: { selection: HandoverImportSelection; acknowledgedManifestSha256?: string; sections?: string[]; cursor?: HandoverImportCursor | null; limit?: number }) {
+        const { selection, selectionHash, allows } = select(request.selection, request.acknowledgedManifestSha256, request.sections);
         const limit = parse(z.number().int().min(1).max(100), request.limit ?? 50, 'invalid_package_limit');
         const cursor = request.cursor ? parse(cursorSchema, request.cursor, 'invalid_package_cursor') : null;
         if (cursor && (cursor.manifestSha256 !== manifestSha256 || cursor.selectionHash !== selectionHash

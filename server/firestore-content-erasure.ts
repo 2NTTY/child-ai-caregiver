@@ -6,9 +6,10 @@ import { firebaseErasureIntentSchema, firebaseErasureDescriptorSchema, firebaseE
 import { contentPointerSchema, contentResult, type ContentKind } from './firestore-disclosure.ts';
 import { firestoreOnlineRecordSchema, isFirestoreOnlinePending } from './firestore-online-receipts.ts';
 import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
+import { sourceHistoryRecordSchema, sourceHistoryId } from './handover-history-records.ts';
 
 export const contentErasureSchema = z.object({ intent: firebaseErasureIntentSchema.refine(v => v.type === 'content-delete'),
-  journal: firebaseErasureDescriptorSchema.nullable(), stage: z.enum(['revisions', 'receipts', 'done']), after: z.string().nullable() }).strict();
+  journal: firebaseErasureDescriptorSchema.nullable(), stage: z.enum(['revisions', 'source_history', 'receipts', 'done']), after: z.string().nullable() }).strict();
 export const contentHistory = { care: ['care_revisions', 'care-revision'], profile: ['profile_revisions', 'profile-revision'],
   fact: ['memory_fact_revisions', 'memory-fact-revision'], topic: ['memory_topic_revisions', 'memory-topic-revision'] } as const;
 export function prepareContentErasure(data: FirestoreDomainData, binding: FirestoreAuthorityTransaction,
@@ -40,9 +41,11 @@ export function createFirestoreContentErasure(options: FirestoreDomainOptions & 
       const { scope, id, value } = open(current); if (value.stage === 'done') return;
       if (firebaseErasureIntentHash(value.intent) !== firebaseErasureIntentHash(intent)) domainReject('erasure_binding', 500);
       const [suffix] = contentHistory[intent.content!.kind], tags = data.tags(scope);
-      let q = data.collection(value.stage === 'revisions' ? suffix : 'online_operations')
+      let q = data.collection(value.stage === 'revisions' ? suffix : value.stage === 'source_history' ? 'handover_source_history' : 'online_operations')
         .where('workspaceTag', '==', tags.workspaceTag).where('epochTag', '==', tags.epochTag).where('userTag', '==', tags.userTag);
       if (value.stage === 'revisions') q = q.where('childTag', '==', tags.childTag).where('entityId', '==', intent.assetId);
+      if (value.stage === 'source_history') q = q.where('childTag', '==', tags.childTag)
+        .where('module', '==', intent.content!.kind).where('entityId', '==', intent.assetId);
       let page = value.stage === 'revisions' ? q.where('entityVersion', '<=', intent.content!.throughVersion).orderBy('entityVersion', 'desc').limit(25)
         : q.orderBy(FieldPath.documentId()).limit(25);
       if (value.after) page = page.startAfter(value.stage === 'revisions' ? Number(value.after) : value.after);
@@ -56,6 +59,13 @@ export function createFirestoreContentErasure(options: FirestoreDomainOptions & 
           if (decoded.context.scope.childId !== scope.childId || decoded.context.kind !== contentHistory[intent.content!.kind][1]) domainReject('erasure_binding', 500);
           const revision = z.object({ version: z.number().int().positive() }).passthrough().parse(decoded.value);
           if (revision.version <= intent.content!.throughVersion) writes.push(() => tx.delete(entry.ref));
+        } else if (value.stage === 'source_history') {
+          const retained = sourceHistoryRecordSchema.parse(decoded.value);
+          if (decoded.context.scope.childId !== scope.childId || decoded.context.kind !== 'handover-source-history'
+            || retained.childId !== scope.childId || retained.evidence.module !== intent.content!.kind || retained.resource.id !== intent.assetId
+            || decoded.context.id !== sourceHistoryId(scope, retained) || data.ref('handover_source_history', decoded.context.kind, decoded.context.id).path !== entry.ref.path)
+            domainReject('erasure_binding', 500);
+          if (retained.resource.version <= intent.content!.throughVersion) writes.push(() => tx.delete(entry.ref));
         } else {
           const receipt = firestoreOnlineRecordSchema.safeParse(decoded.value);
           if (!receipt.success || isFirestoreOnlinePending(receipt.data) || receipt.data.childId !== scope.childId) continue;
@@ -68,7 +78,9 @@ export function createFirestoreContentErasure(options: FirestoreDomainOptions & 
         }
       }
       const next = { ...value, journal: descriptor, after: rows.size === 25 ? value.stage === 'revisions' ? String(rows.docs.at(-1)!.get('entityVersion')) : rows.docs.at(-1)!.id : null,
-        stage: rows.size === 25 ? value.stage : value.stage === 'revisions' ? 'receipts' as const : 'done' as const };
+        stage: rows.size === 25 ? value.stage : value.stage === 'revisions'
+          ? ['care', 'profile'].includes(intent.content!.kind) ? 'source_history' as const : 'receipts' as const
+          : value.stage === 'source_history' ? 'receipts' as const : 'done' as const };
       for (const write of writes) write();
       tx.set(row.ref, { ...data.tags(scope), stage: next.stage, ...data.seal('content-erasure', id, scope, contentErasureSchema, next) });
     });

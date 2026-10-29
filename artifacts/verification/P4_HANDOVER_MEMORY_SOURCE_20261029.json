@@ -1,0 +1,31 @@
+{
+  "package": "P4-HANDOVER01 memory source prerequisites",
+  "date": "2026-10-29",
+  "base": "a719915f0271abe9fcc29485b76c91ee38913a28",
+  "implemented": [
+    "Existing memory domain accepts verified fact/topic import preparation with original source, confirmer and provenance, while normal create cannot fabricate imported evidence.",
+    "Local confirmation/revision removes imported confirmation basis without erasing provenance; unknown foreign source IDs never resolve as local resources.",
+    "Candidates and terminal topics retain state; conflicting candidate fields and terminal revival are rejected.",
+    "Normal memory export recomputes current source validity; shared Web/Android display and editor preserve imported sources without local identity mapping."
+  ],
+  "verification": {
+    "domain": { "command": "node --experimental-test-module-mocks --test tests/handover-memory-domain.test.ts", "passed": 1, "failed": 0, "covers": ["import/read/local revise", "version conflict", "delete/tombstone", "candidate invariants", "terminal topic", "source-invalidated export", "restore codec"] },
+    "clientAndUi": { "files": ["tests/memory-client.test.ts", "frontend/scripts/memory-source-display.test.mjs"], "passed": 18, "failed": 0, "executor": "bounded implementation subagent; log and diff reviewed by primary" },
+    "types": { "serverRoots": 3, "frontendRoots": 5, "diagnostics": 0 },
+    "review": "Independent read-only review identified terminal revival and inconsistent candidate visibility; both fixed. No other definite P1/P2 in reviewed domain scope. Primary reviewed UI and export changes.",
+    "diffCheck": "passed"
+  },
+  "retainedFailures": [
+    "New domain regression run against the pre-change memory store failed because prepareImportedFact was absent; this was a baseline comparison after drafting implementation, not claimed test-first implementation.",
+    "First current-domain run exposed canonical serialization of an undefined confirmationBasis; fixed by omitting the absent field before sealing.",
+    "Review regression rejected no terminal revival until the domain guard was added.",
+    "Scoped typecheck initially found a chat-store options mismatch, nullable test results, recursive return inference and existing read-window inference; fixed explicitly.",
+    "Client/UI red run had 15 passing and 2 failing checks before source compatibility; later completed 18 passing."
+  ],
+  "notVerifiedOrDelivered": [
+    "Full memory module import: private instructions, summaries, source histories, coordinator and public selection remain pending.",
+    "No product-wide suite, bundle, browser, device, live Firestore, model, notification or deployment was run.",
+    "Existing nonempty unsupported-section rejection remains; no partial memory success is advertised.",
+    "P3/P5 and collaborator Agent PRs remain untouched."
+  ]
+}
