@@ -4,7 +4,7 @@ import { projectConfirmedTask } from "./task-projection.ts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { createTaskApi, TaskApiError } from "../../../src/client/task-api";
-import { taskChangeSchema, taskValuesSchema, type TaskChange, type TaskCreate, type TaskPage } from "../../../src/shared/tasks";
+import { taskChangeSchema, taskValuesSchema, type CareTask, type TaskChange, type TaskCreate, type TaskPage } from "../../../src/shared/tasks";
 import { emptyTaskForm, taskChangeFromForm, taskFormFromBasis, taskFormSchema, taskValuesFromForm } from "../components/tasks/task-form";
 import { taskChangeAllowed, taskWithCompletionRevision, type TaskDraft, type TaskSelectionIntent, type TaskRevisionView, type TaskView, type TasksViewModel } from "../task-view-model";
 import type { TasksWorkspaceValue } from "../workspaces/TasksWorkspace";
@@ -27,6 +27,8 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
   const [histories, setHistories] = useState<Record<string, { taskVersion: number; items: TaskRevisionView[]; cursor: number | null }>>({});
   const [historyOpen, setHistoryOpen] = useState(false), [loadingMore, setLoadingMore] = useState(false);
   const busy = useRef(false), attempt = useRef<Attempt | null>(null), committed = useRef(false), checked = useRef(false);
+  const confirmedTask = useRef<Pick<CareTask, "id" | "version"> | null>(null);
+  const confirmedReference = useRef<string | null>(null);
   const readThrough = useRef<string | null>(null);
   const clock = useRef(new Date().toISOString());
   const queuedSelection = useRef<{ id: string; intent: TaskSelectionIntent } | null>(null), selectLatest = useRef<(id: string, intent: TaskSelectionIntent) => void>(() => {});
@@ -60,12 +62,14 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
     const value: TaskPage = pages.length === 1 ? pages[0]! : { ...pages.at(-1)!, items: pages.flatMap(page => page.items),
       reminders: pages.flatMap(page => page.reminders ?? []), work: pages.flatMap(page => page.work ?? []) };
     if (!current()) return;
+    let loadedSelection: CareTask | null = null;
     if (after === null) {
       const outsidePage = selectedId && !value.items.some(item => item.id === selectedId);
       const selectedValue = outsidePage
         ? await runtime.read(["task", selectedId], next => verified(inner => api.task(env.childId!, selectedId!, inner), next), signal)
         : null;
       if (!current()) return;
+      loadedSelection = selectedValue;
       setLinkedTask(selectedValue);
       const versions = new Map([...value.items, ...(selectedValue ? [selectedValue] : [])].map(item => [item.id, item.version]));
       setHistories(previous => Object.fromEntries(Object.entries(previous).filter(([id, history]) => versions.get(id) === history.taskVersion)));
@@ -76,6 +80,21 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
     setPage(before => after && before ? { ...value, items: mergeById(before.items, value.items),
       reminders: [...(before.reminders ?? []).filter(item => !value.items.some(task => task.id === item.taskId)), ...(value.reminders ?? [])],
       work: [...(before.work ?? []).filter(item => !value.items.some(task => task.id === item.taskId)), ...(value.work ?? [])] } : value);
+    return { page: value, selected: loadedSelection };
+  };
+  const resultUnavailable = () => {
+    const affectedId = confirmedTask.current?.id ?? (attempt.current?.kind === "change" ? attempt.current.basis.id : null);
+    attempt.current = null; checked.current = false; confirmedTask.current = null;
+    setDraft(null); setLatest(null); setSelectedId(null); setLinkedTask(null); setDetailRead(null); setHistoryOpen(false);
+    if (affectedId) {
+      setPage(before => before ? { ...before, items: before.items.filter(item => item.id !== affectedId),
+        work: before.work?.filter(item => item.taskId !== affectedId), reminders: before.reminders?.filter(item => item.taskId !== affectedId) } : before);
+      setHistories(previous => Object.fromEntries(Object.entries(previous).filter(([id]) => id !== affectedId)));
+    }
+    setReadState(page ? "stale" : "error");
+    setOperation({ state: "saved", resultUnavailable: true, reference: confirmedReference.current,
+      message: "原操作已確認，但結果暫時無法顯示；不會再次提交。" });
+    env.invalidate();
   };
   const refresh = (preserveReading = false) => {
     if (busy.current || !env.online || !runtime.live()) return;
@@ -85,12 +104,36 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
         if (attempt.current && operation.state === "unknown") {
           if (await api.getSession(signal) !== env.userId) throw new TaskApiError(401);
           const receipt = committed.current ? null : await api.reconcilePending(signal, env.userId!);
-          if (receipt?.state === "confirmed") committed.current = true;
+          if (receipt?.state === "confirmed") {
+            committed.current = true; confirmedReference.current = receipt.operation.opId;
+            // Keep the validated identity before the fallible post-receipt session read.
+            // TaskApi validates a non-null result against the original child/task/version.
+            if (receipt.result !== null) {
+              const value = (receipt.result as { task: CareTask }).task;
+              confirmedTask.current = { id: value.id, version: value.version };
+            }
+          }
           if (await api.getSession(signal) !== env.userId) throw new TaskApiError(401);
           if (!current()) return;
           if (committed.current) {
-            attempt.current = null; checked.current = false; setDraft(null); setLatest(null);
-            setOperation({ state: "saved", message: "原操作已獲 Server 確認；重新讀取清單，毋須再次提交。", reference: receipt?.state === "confirmed" ? receipt.operation.opId : operation.reference, recovery: "reload" });
+            const target = confirmedTask.current;
+            if (!target) { resultUnavailable(); return; }
+            const detail = await runtime.read(["task", target.id], next => verified(inner => api.task(env.childId!, target.id, inner), next), signal);
+            if (!current()) return;
+            if (detail.version < target.version) throw new TaskApiError();
+            const loaded = await load(signal, current, null, preserveReading);
+            if (!current() || !loaded) return;
+            const listed = loaded.selected?.id === target.id ? loaded.selected : loaded.page.items.find(item => item.id === target.id);
+            const value = listed && listed.version > detail.version ? listed : detail;
+            attempt.current = null; checked.current = false; confirmedTask.current = null;
+            setDraft(null); setLatest(null); setHistories({}); setLinkedTask(null); setSelectedId(value.id);
+            setDetailRead({ id: value.id, state: "ready" });
+            setPage(before => before ? { ...before, items: [value, ...before.items.filter(item => item.id !== value.id)],
+              work: before.work?.filter(item => item.taskId !== value.id), reminders: before.reminders?.filter(item => item.taskId !== value.id) } : before);
+            setOperation({ state: "saved", message: value.occurrence.state === "needs_review" ? "相反終態出現衝突；待覆核並已停催。" : "原操作及事項已核對，毋須再次提交。",
+              reference: confirmedReference.current });
+            env.invalidate();
+            return;
           } else {
             checked.current = true;
             setOperation({ state: "unknown", message: api.hasPendingOnline() ? "原操作尚未確認。可明確沿同一請求重試。" : "沒有待核對操作識別；可明確解除提交並保留草稿。", reference: operation.reference, recovery: "retry" });
@@ -106,9 +149,12 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
         if (runtime.accessError(error)) { api.resetOnline(); attempt.current = null; setDraft(null); setPage(null); setHistories({}); return; }
         setReadState(page ? "stale" : "error");
         checked.current = false;
-        if (domainFailure(error).confirmed) committed.current = true;
+        if (domainFailure(error).confirmed) {
+          committed.current = true;
+          if (!confirmedTask.current) { resultUnavailable(); return; }
+        }
         if (attempt.current || committed.current || operation.state === "unknown") {
-          setOperation(previous => ({ ...previous, message: committed.current ? "已提交，清單暫時無法更新；請重新讀取。" : "暫時無法查核，原操作及草稿已保留。", recovery: previous.state === "unknown" ? "check" : "reload" }));
+          setOperation(previous => ({ ...previous, reference: confirmedReference.current ?? previous.reference, message: committed.current ? "已提交，清單暫時無法更新；請重新讀取。" : "暫時無法查核，原操作及草稿已保留。", recovery: previous.state === "unknown" ? "check" : "reload" }));
         }
       } finally { if (current()) { busy.current = false; setReading(false); if (queuedSelection.current) { const { id, intent } = queuedSelection.current; queuedSelection.current = null; selectLatest.current(id, intent); } } }
     });
@@ -116,12 +162,16 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
   useTaskKnowledgeRefresh(() => refresh(true), env.online && !!env.childId && !runtime.lost, reading || operation.state === "saving");
   const write = (original: Attempt, retry = false) => {
     if (busy.current || !env.online || !runtime.live() || !canManage || !retry && !env.canStartWrite()) return;
-    busy.current = true; committed.current = false; checked.current = false; attempt.current = original;
+    busy.current = true; committed.current = false; checked.current = false; confirmedTask.current = null; confirmedReference.current = null; attempt.current = original;
     setOperation({ state: "saving", message: "正在提交已核對的家庭共享事項。", reference: null });
     void runtime.request(async (signal, current) => {
       try {
-        const value = await verified(next => original.kind === "create" ? api.createTask(env.childId!, original.input, next, env.userId!)
-          : api.changeTask(env.childId!, original.basis.id, original.input, next, env.userId!), signal, true);
+        const value = await verified(async next => {
+          const result = original.kind === "create" ? await api.createTask(env.childId!, original.input, next, env.userId!)
+            : await api.changeTask(env.childId!, original.basis.id, original.input, next, env.userId!);
+          confirmedTask.current = { id: result.id, version: result.version };
+          return result;
+        }, signal, true);
         if (!current()) return;
         attempt.current = null; setDraft(null); setLatest(null); setHistories({}); setSelectedId(value.id);
         setPage(before => before ? { ...before, items: [value, ...before.items.filter(item => item.id !== value.id)],
@@ -132,6 +182,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
         if (!current()) return;
         if (runtime.accessError(error)) { api.resetOnline(); attempt.current = null; setDraft(null); setPage(null); setHistories({}); return; }
         const failure = domainFailure(error); committed.current ||= failure.confirmed;
+        if (committed.current && !confirmedTask.current) { resultUnavailable(); return; }
         if (!committed.current && failure.status === 409 && failure.code === "version_conflict" && original.kind === "change") {
           attempt.current = null; setLatest(null); setOperation({ state: "conflict", message: "版本已改變；保留草稿。請重新讀取並明確使用最新版本。", reference: null, recovery: "reload" });
         } else if (committed.current || api.hasPendingOnline() || failure.status === 0 || failure.status >= 500 || failure.status === 409) {

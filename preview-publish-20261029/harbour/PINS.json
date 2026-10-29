@@ -6,17 +6,35 @@
     {
       "destination": "frontend/src/production/task-knowledge-tasks.ts",
       "beforeSha256": "a59bd8c78863301951da66935911db220ee89679953af84186703c5b19907801",
-      "sha256": "e45640a531f96db76213c4968a476b075298c8f390ebb36f22b92eef7619021f",
-      "bytes": 21179,
-      "gitBlob": "71507711185474abcba26957092b680fde0c2ff6",
+      "sha256": "2f7717a718a6e57a0c3d622142eab308b504fe37f6772ffff7b5814458d3d604",
+      "bytes": 24685,
+      "gitBlob": "e4be90dc6d7fc703dc82fce811e67a48c0a5598b",
       "mode": "100644",
-      "committedIn": "8292f7e3996726642ac9321b635ee1f3302f5769"
+      "committedIn": "d139a0f09ceb034c2ce7159790c5a03603c0b42a"
+    },
+    {
+      "destination": "frontend/src/components/history/PersonalHistoryViews.tsx",
+      "beforeSha256": "72a5d01099cea983f4d1e034fa595ec9af348dd69873154a23f75a6be3562704",
+      "sha256": "25f53ff1f5675f6b5c4c5da9218134fb7105a424592fc659246dcff055bc8c09",
+      "bytes": 20263,
+      "gitBlob": "da97876f92e5fb58a143bbff199dd5cf934678d3",
+      "mode": "100644",
+      "committedIn": "d139a0f09ceb034c2ce7159790c5a03603c0b42a"
+    },
+    {
+      "destination": "frontend/src/screens/historyScreen.tsx",
+      "beforeSha256": "15022b89184b6a9e32f2cecbe2f0059ae843a11fe1b773b78edbd619efe7cee6",
+      "sha256": "f101524c578579e413c4a18a5bd06d2f328c6bd64c46d8b2d729c57bb13bf097",
+      "bytes": 18099,
+      "gitBlob": "80d973b68dc1d788f817c661aa173072dbf22e00",
+      "mode": "100644",
+      "committedIn": "d139a0f09ceb034c2ce7159790c5a03603c0b42a"
     }
   ],
   "entrypoint": "frontend/index.js",
   "packageManagerMetadata": "npm@11.8.0",
   "lockSha256": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",
-  "sourcePinsSha256": "67149c3b8edc811e3cd8f8c49b2cdf780346c4442a81729ba2cad33edb4d0569",
+  "sourcePinsSha256": "a20b483c51e8390e12413d52eb950857b2265c1e77dab74849785145bf7ea94c",
   "shared": {
     "experiments/dispatch.js": {
       "bytes": 4651,

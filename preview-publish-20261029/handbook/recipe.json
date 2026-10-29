@@ -21,7 +21,7 @@
     "frontend/app.json": "36f1891973b56c233853d46db0aeaf014df6ae18801281dba4efeb3b6bb19b04",
     "frontend/app.config.js": "4a065de9ffe8b904cce48703b8e7a22f47790f96752b4ccdd9a9a0a974dc57ec",
     "frontend/tsconfig.json": "1571bfb7783a106586c8431560a1e1377d409c6e763fce900d979abdb297a85d",
-    "frontend/src/production/task-knowledge-tasks.ts": "637b168481c5f7982db97b23e5dee7cdf3d6ee72eba082698c797dcf6a4e7229"
+    "frontend/src/production/task-knowledge-tasks.ts": "f50d5b3404a83cf8b429b4e5373474ff4770cedb02b083e8679c61b4ed6d1dfd"
   },
   "overlayPins": {
     "experiments/dispatch.js": "0b27cef6a7d8a93798996942171cd5a74ebc77c3e05947ff61ec238d64cb863f",
@@ -32,11 +32,11 @@
     {
       "destination": "frontend/src/production/task-knowledge-tasks.ts",
       "beforeSha256": "6bc960b971fc731bbba0f457a8207338eb7c1447a8bf31b703a419e41421bb60",
-      "sha256": "637b168481c5f7982db97b23e5dee7cdf3d6ee72eba082698c797dcf6a4e7229",
-      "bytes": 20038,
-      "gitBlob": "d475e426f1e3aac25071930b0f938786461eb003",
+      "sha256": "f50d5b3404a83cf8b429b4e5373474ff4770cedb02b083e8679c61b4ed6d1dfd",
+      "bytes": 23544,
+      "gitBlob": "f68cedd02dbb4fc3bf8db7ea929a1058d7c02c7e",
       "mode": "100644",
-      "committedIn": "c25b4073ca68b72b4decf5f1dce0f9d662590140"
+      "committedIn": "9f2156644245a3a50e6cb6282b12c63a45767fa6"
     }
   ],
   "entrypoint": "frontend/index.js -> frontend/src/entry/Application.tsx -> ExpoRoot wrapper ProductionOwnerHost",

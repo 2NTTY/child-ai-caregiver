@@ -27,22 +27,22 @@
       "recipeReady": true,
       "recipeFiles": {
         "orchestrator/care/assemble_preview.py": "64992c168a32da56afba8b45fc134b8d4c28d55b81a4bc27ed6626b5bae43547",
-        "orchestrator/care/recipe.json": "3f32afc0fa81da21edb9b6c9a66a65a4a81e24e32357e03397234699377d81cd",
+        "orchestrator/care/recipe.json": "33d48ec617f81cbf4585e9a1ebb99b58c6d20945d876ea734f4b3ede1cb09d96",
         "orchestrator/care/fixtures/care.js": "aaa6920f9cf5b11b3ae67b5dc9ba34fd9d7907075b5e638719329480c370f554",
         "orchestrator/care/overlay/frontend/scripts/task-pristine-close.test.cjs": "c8e474a4942eb18bcd60131eddfedff3c986da9783148a306abea769a595d522",
-        "orchestrator/care/overlay/frontend/src/production/task-knowledge-tasks.ts": "922c0babd7d88c0a21e4c65638db174b8f3d3f2762f32909b2a5b864faa817f3"
+        "orchestrator/care/overlay/frontend/src/production/task-knowledge-tasks.ts": "86eff8d17b6d5023d4cd662d347a619ca288c97f24d5dc65e6c12e2d95c85bcd"
       },
-      "buildCommit": "566964fd25c257f52612b97df8cfc5016a03a5a0",
-      "buildTree": "439144c5d9b2da4ad4088939b6ca942157f597c7",
+      "buildCommit": "8c5d3eb6bd82e9e8f5566bcd3b01399657f7025a",
+      "buildTree": "99425f8861d1382b8d88ce04c48cfed7de621d13",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "9c670614a355dc92c953efef2b724b3875880ca0f9d5defc79425fa01497221f",
+      "buildInputsManifestSha256": "7397d65bbac5d6b02bad1a4a1e3f0ed51431b51036d1ac679f996e0ac40cc0d1",
       "candidateChanges": [
         {
           "source": "orchestrator/care/overlay/frontend/src/production/task-knowledge-tasks.ts",
           "destination": "frontend/src/production/task-knowledge-tasks.ts",
           "beforeSha256": "1a5cc5abea7351715bfede240668b42caa38df464a55b2efafea5311200424a7",
-          "sha256": "922c0babd7d88c0a21e4c65638db174b8f3d3f2762f32909b2a5b864faa817f3",
-          "bytes": 20486
+          "sha256": "86eff8d17b6d5023d4cd662d347a619ca288c97f24d5dc65e6c12e2d95c85bcd",
+          "bytes": 23992
         }
       ],
       "recipeOnlyTests": [
@@ -71,25 +71,43 @@
         "harbour/adapt.py": "fdb74839721d05be13fe64cff584cb8001345536cc26dbaf306012caf604569e",
         "harbour/prepare.py": "94b3242841f9e72c7d678919aae360a18694d160665fb95eb08d1dcb9cc426fd",
         "harbour/verify_graph.mjs": "45badd99474d4fea922a2fead2c5fe339013dc34a3f84d5487d1bbfdfff663d4",
-        "harbour/PINS.json": "bef9c6af0fdb3a9484ccfca87f7ef2771eaa92c27ca085e99500eafdb9dd0e22",
-        "harbour/source-pins.json": "67149c3b8edc811e3cd8f8c49b2cdf780346c4442a81729ba2cad33edb4d0569",
+        "harbour/PINS.json": "476da04d7d88791544d12975ec0c06c9f147edab7ee1612963ba953708cc99d9",
+        "harbour/source-pins.json": "a20b483c51e8390e12413d52eb950857b2265c1e77dab74849785145bf7ea94c",
         "harbour/shared/experiments/dispatch.js": "0b27cef6a7d8a93798996942171cd5a74ebc77c3e05947ff61ec238d64cb863f",
         "harbour/shared/experiments/fixtures/harbour.js": "a4e0f2d87d4fe9225530c5318faf729dc1bea24b4fa9694c19fa8f1952d5d1dd",
         "harbour/shared/experiments/preview-navigation-identity-v1-r2.js": "bb0eca035d78b763c72924285f04ec124093ea4ced53e3f37d90f2b8dfb1bcd9"
       },
-      "buildCommit": "8292f7e3996726642ac9321b635ee1f3302f5769",
-      "buildTree": "a7556f2fd525bd995829d57a1cb8fe976a0cb56e",
+      "buildCommit": "d139a0f09ceb034c2ce7159790c5a03603c0b42a",
+      "buildTree": "994b823f63836a73998c862dcddef8a75b3d7b7d",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "9c670614a355dc92c953efef2b724b3875880ca0f9d5defc79425fa01497221f",
+      "buildInputsManifestSha256": "7397d65bbac5d6b02bad1a4a1e3f0ed51431b51036d1ac679f996e0ac40cc0d1",
       "candidateChanges": [
         {
           "destination": "frontend/src/production/task-knowledge-tasks.ts",
           "beforeSha256": "a59bd8c78863301951da66935911db220ee89679953af84186703c5b19907801",
-          "sha256": "e45640a531f96db76213c4968a476b075298c8f390ebb36f22b92eef7619021f",
-          "bytes": 21179,
-          "gitBlob": "71507711185474abcba26957092b680fde0c2ff6",
+          "sha256": "2f7717a718a6e57a0c3d622142eab308b504fe37f6772ffff7b5814458d3d604",
+          "bytes": 24685,
+          "gitBlob": "e4be90dc6d7fc703dc82fce811e67a48c0a5598b",
           "mode": "100644",
-          "committedIn": "8292f7e3996726642ac9321b635ee1f3302f5769"
+          "committedIn": "d139a0f09ceb034c2ce7159790c5a03603c0b42a"
+        },
+        {
+          "destination": "frontend/src/components/history/PersonalHistoryViews.tsx",
+          "beforeSha256": "72a5d01099cea983f4d1e034fa595ec9af348dd69873154a23f75a6be3562704",
+          "sha256": "25f53ff1f5675f6b5c4c5da9218134fb7105a424592fc659246dcff055bc8c09",
+          "bytes": 20263,
+          "gitBlob": "da97876f92e5fb58a143bbff199dd5cf934678d3",
+          "mode": "100644",
+          "committedIn": "d139a0f09ceb034c2ce7159790c5a03603c0b42a"
+        },
+        {
+          "destination": "frontend/src/screens/historyScreen.tsx",
+          "beforeSha256": "15022b89184b6a9e32f2cecbe2f0059ae843a11fe1b773b78edbd619efe7cee6",
+          "sha256": "f101524c578579e413c4a18a5bd06d2f328c6bd64c46d8b2d729c57bb13bf097",
+          "bytes": 18099,
+          "gitBlob": "80d973b68dc1d788f817c661aa173072dbf22e00",
+          "mode": "100644",
+          "committedIn": "d139a0f09ceb034c2ce7159790c5a03603c0b42a"
         }
       ]
     },
@@ -101,24 +119,24 @@
       "recipeReady": true,
       "recipeFiles": {
         "handbook/assemble_preview.py": "1930650f7304da1fceee5b412cf3eca9548c944a287b930a1139396408ae983c",
-        "handbook/recipe.json": "6bd20452e27569debb772b845fb946582f7c0921249fc7164fc9eb45c6c66bff",
+        "handbook/recipe.json": "4bb906c65efda59b1d0212382155bbcc3c1380397b831a9b9c757b8f02610643",
         "handbook/overlay/experiments/dispatch.js": "0b27cef6a7d8a93798996942171cd5a74ebc77c3e05947ff61ec238d64cb863f",
         "handbook/overlay/experiments/fixtures/journal.js": "a4e0f2d87d4fe9225530c5318faf729dc1bea24b4fa9694c19fa8f1952d5d1dd",
         "handbook/overlay/experiments/preview-navigation-identity-v1-r2.js": "bb0eca035d78b763c72924285f04ec124093ea4ced53e3f37d90f2b8dfb1bcd9"
       },
-      "buildCommit": "c25b4073ca68b72b4decf5f1dce0f9d662590140",
-      "buildTree": "bdd58321241a1ae79925b3a7874100d532a2cd17",
+      "buildCommit": "9f2156644245a3a50e6cb6282b12c63a45767fa6",
+      "buildTree": "c80f8685bea38a97af80d4c27d25287cfe578d18",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "9c670614a355dc92c953efef2b724b3875880ca0f9d5defc79425fa01497221f",
+      "buildInputsManifestSha256": "7397d65bbac5d6b02bad1a4a1e3f0ed51431b51036d1ac679f996e0ac40cc0d1",
       "candidateChanges": [
         {
           "destination": "frontend/src/production/task-knowledge-tasks.ts",
           "beforeSha256": "6bc960b971fc731bbba0f457a8207338eb7c1447a8bf31b703a419e41421bb60",
-          "sha256": "637b168481c5f7982db97b23e5dee7cdf3d6ee72eba082698c797dcf6a4e7229",
-          "bytes": 20038,
-          "gitBlob": "d475e426f1e3aac25071930b0f938786461eb003",
+          "sha256": "f50d5b3404a83cf8b429b4e5373474ff4770cedb02b083e8679c61b4ed6d1dfd",
+          "bytes": 23544,
+          "gitBlob": "f68cedd02dbb4fc3bf8db7ea929a1058d7c02c7e",
           "mode": "100644",
-          "committedIn": "c25b4073ca68b72b4decf5f1dce0f9d662590140"
+          "committedIn": "9f2156644245a3a50e6cb6282b12c63a45767fa6"
         }
       ]
     },
@@ -137,9 +155,9 @@
         "fourth/assemble.py": "338d94ff617a505db2fde4fbe498fd1e78753ea5191cb9f8889a935175944353",
         "fourth/verify_source.py": "5fc896364e3cde4526f996d087133132faeed4b0de88cdd777613a4ef088542f",
         "fourth/verify_graph.mjs": "a363a9473d39eae99a7bef592fac9e5ae12b8a8c19d50f825dc69a2e17df9247",
-        "fourth/PRODUCT_INPUTS.json": "e43662d8f860c22b227e96207ae00a50f511838ba1f5f89a2739cfad9ec4b5b8",
+        "fourth/PRODUCT_INPUTS.json": "28daf6a939ac5a18b8d1767321e964857672772d13bfd098a163741035ba3aa0",
         "fourth/protocol.json": "d6f110463664e68e32f81015f089d92e1a719732713e0dadb350ac10c9026423",
-        "fourth/recipe.json": "8fa83dc23adb66592b2091cb8b4e86f24fd46b8f1dcb6d56373ff703a2adfe8a",
+        "fourth/recipe.json": "c6064b284647091390b9a61f9eaf2ba16503d12aa79d725c27cd3cf5b8910a7a",
         "fourth/adapter/admission.js": "8ef2f9ba7246722bde347330f002dd378ee27b265b906c4af833351015c4ff2b",
         "fourth/adapter/fixture-patches.json": "5c0e14a3182453b2f35ae557c731fd3bf392cada9306410aa75f5c1ada1f965e",
         "fourth/adapter/startup-guard.js": "1835436d1630bdcada4a63aed87cbc581ac40e39cc77fe9606648eceff185912",
@@ -149,19 +167,19 @@
         "fourth/overlay/experiments/preview-navigation-identity-fourth-v1.js": "ef238ce5675840b1a5313d98b4458bd5eb08829f7af189862551e7e9194c915f",
         "fourth/tests/admission.mjs": "a84d8be911727985500615e47d55ed8bb1a7664ba19cf0a63863e27618744aa5"
       },
-      "buildCommit": "d28580f19dbfd40184e8f72b3afb9ea3914b0799",
-      "buildTree": "1008be46babe79921a7dc47de27cfc1f2f803198",
+      "buildCommit": "2fd0f9593bf5e37fa48a7ee6017f531e08059c8b",
+      "buildTree": "47d7cc39487e33773113300a32ca4706680c9552",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "9c670614a355dc92c953efef2b724b3875880ca0f9d5defc79425fa01497221f",
+      "buildInputsManifestSha256": "7397d65bbac5d6b02bad1a4a1e3f0ed51431b51036d1ac679f996e0ac40cc0d1",
       "candidateChanges": [
         {
           "destination": "frontend/src/production/task-knowledge-tasks.ts",
           "beforeSha256": "6bc960b971fc731bbba0f457a8207338eb7c1447a8bf31b703a419e41421bb60",
-          "sha256": "1c85730d6423904ed4e6fc42016eed663ce2871165477875e5a71cc80ed1299f",
-          "bytes": 20134,
-          "gitBlob": "283e4f8f191bd8b9d032f77123d3014edaab5460",
+          "sha256": "402f8f70b8849df532056a8436c45b482ba7bfc53fe3d2d5aa3a65650129df5b",
+          "bytes": 23640,
+          "gitBlob": "1068e38d509af02f88a7bfcc73e680735601d363",
           "mode": "100644",
-          "committedIn": "d28580f19dbfd40184e8f72b3afb9ea3914b0799"
+          "committedIn": "2fd0f9593bf5e37fa48a7ee6017f531e08059c8b"
         }
       ]
     }

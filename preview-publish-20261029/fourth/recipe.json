@@ -10,11 +10,11 @@
     {
       "destination": "frontend/src/production/task-knowledge-tasks.ts",
       "beforeSha256": "6bc960b971fc731bbba0f457a8207338eb7c1447a8bf31b703a419e41421bb60",
-      "sha256": "1c85730d6423904ed4e6fc42016eed663ce2871165477875e5a71cc80ed1299f",
-      "bytes": 20134,
-      "gitBlob": "283e4f8f191bd8b9d032f77123d3014edaab5460",
+      "sha256": "402f8f70b8849df532056a8436c45b482ba7bfc53fe3d2d5aa3a65650129df5b",
+      "bytes": 23640,
+      "gitBlob": "1068e38d509af02f88a7bfcc73e680735601d363",
       "mode": "100644",
-      "committedIn": "d28580f19dbfd40184e8f72b3afb9ea3914b0799"
+      "committedIn": "2fd0f9593bf5e37fa48a7ee6017f531e08059c8b"
     }
   ],
   "sourcePins": {
@@ -31,10 +31,10 @@
     "src/shared/family-documents.ts": "ea1dd64fbaade9f9581073058803baa174bdfaa865a436a279f2f5e9f5d151b2",
     "src/client/family-documents-api.ts": "3db16e774b3bfc4dc94f11073302923e6a3be5be996f74da81a023f0d5b76454",
     "frontend/src/production/useFamilyDocuments.ts": "44a936f40e0fe24d54f3d8a3404dfa82dd23da250318760a9a55584ef2bfff62",
-    "frontend/src/production/task-knowledge-tasks.ts": "1c85730d6423904ed4e6fc42016eed663ce2871165477875e5a71cc80ed1299f"
+    "frontend/src/production/task-knowledge-tasks.ts": "402f8f70b8849df532056a8436c45b482ba7bfc53fe3d2d5aa3a65650129df5b"
   },
   "inputManifest": "PRODUCT_INPUTS.json",
-  "inputManifestSha256": "e43662d8f860c22b227e96207ae00a50f511838ba1f5f89a2739cfad9ec4b5b8",
+  "inputManifestSha256": "28daf6a939ac5a18b8d1767321e964857672772d13bfd098a163741035ba3aa0",
   "entrypoint": "frontend/index.js -> runtime web stub -> own web-foundation -> browser-history-events -> installed expo-router/entry; root layout retains own ProductionProvider/FirstScreenGate; no Application/OwnerHost substitution",
   "lockFile": "package-lock.json",
   "lockSha256": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",

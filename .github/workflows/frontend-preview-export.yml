@@ -20,7 +20,7 @@ jobs:
       fail-fast: true
       max-parallel: 1
       matrix:
-        product: [harbour, handbook, fourth]
+        product: [care, harbour, handbook, fourth]
     defaults:
       run:
         shell: bash
