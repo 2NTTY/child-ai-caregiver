@@ -1,0 +1,559 @@
+(!/^[A-Za-z0-9_-]{1,2048}$/.test(raw))
+            throw Error();
+        const bytes = Uint8Array.from(atob(raw.replace(/-/g, '+').replace(/_/g, '/')), character => character.charCodeAt(0));
+        if (encodeBytes(bytes) !== raw)
+            throw Error();
+        const value = document_version_cursor_generated_ts_1.versionCursorSchema.parse(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)));
+        if (value.userId !== userId || value.childId !== childId || value.documentId !== documentId || value.after > value.high)
+            throw Error();
+        return value;
+    }
+    catch {
+        throw Object.assign(new Error('invalid_input'), { status: 400, code: 'invalid_input' });
+    }
+}
+/** Same 10-item, bound high/after cursor contract as the real snapshot store, with browser-safe bytes. */
+function pageDocumentVersions(versions, raw, userId, childId, documentId) {
+    const cursor = raw === null ? null : decode(raw, userId, childId, documentId);
+    const eligible = versions.slice().sort((a, b) => b.version - a.version).filter(value => !cursor || value.version <= cursor.high && value.version < cursor.after);
+    const values = eligible.slice(0, 10);
+    return { items: values.map(value => ({ snapshotId: value.id, snapshotVersion: value.version, generatedAt: value.generatedAt, invalidated: false })),
+        nextCursor: eligible.length > 10 ? encode({ v: 1, kind: 'versions', userId, childId, documentId, high: cursor?.high ?? values[0].version, after: values.at(-1).version }) : null };
+}
+
+},
+115:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.versionCursorSchema = void 0;
+const contracts_ts_1 = __require(3);
+exports.versionCursorSchema = contracts_ts_1.z.object({ v: contracts_ts_1.z.literal(1), kind: contracts_ts_1.z.literal("versions"), userId: contracts_ts_1.z.string().min(1).max(128), childId: contracts_ts_1.z.uuid(), documentId: contracts_ts_1.z.uuid(),
+    high: contracts_ts_1.z.number().int().min(1), after: contracts_ts_1.z.number().int().min(1) }).strict();
+
+},
+116:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createPreparationWrites = createPreparationWrites;
+const contracts_ts_1 = __require(3);
+const readers_ts_1 = __require(113);
+const clone = (value) => JSON.parse(JSON.stringify(value));
+const requestSchema = contracts_ts_1.z.object({ opId: contracts_ts_1.z.uuid(), change: contracts_ts_1.documentChangeSchema }).strict();
+const effects = ['lost-response', 'hold', 'unconfirmed', 'known-conflict'];
+/** One source-empty synthetic preparation, through the unchanged document HTTP contract. */
+function createPreparationWrites(options) {
+    const path = `/api/children/${options.childId}/documents/${options.documentId}/actions`;
+    const operations = new Map(), holds = new Map(), events = [];
+    let armed = null, touched = false;
+    const reject = (status, code) => { throw Object.assign(new Error(code), { status, code }); };
+    const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-preview-fixture': 'harbour-private-boundary-fixtures-v5-20261026' } });
+    function current() {
+        if (!options.isSignedIn())
+            reject(401, 'unauthorized');
+        const scope = options.scopes.get(options.childId);
+        if (!scope)
+            reject(403, 'forbidden');
+        if (!['owner', 'caregiver'].includes(scope.child.accessRole))
+            reject(403, 'forbidden');
+        const index = scope.documents.findIndex((item) => item.id === options.documentId && item.childId === options.childId);
+        if (index < 0)
+            reject(404, 'not_found');
+        return { scope, index, document: scope.documents[index] };
+    }
+    function currentSnapshot(document) {
+        // This does not emulate arbitrary source dependency graphs. The allowed R6 document has no sources.
+        if (document.kind !== 'preparation' || document.status !== 'active' || document.readState !== 'ready' || !document.current
+            || document.current.version !== document.version || document.current.sourceBasis !== readers_ts_1.authority
+            || !Array.isArray(document.current.sources) || document.current.sources.length !== 0)
+            reject(409, 'source_changed');
+    }
+    function eligible() { try {
+        const { document } = current();
+        return document.kind === 'preparation';
+    }
+    catch {
+        return false;
+    } }
+    return {
+        matches: (target) => target === path,
+        get armed() { return armed !== null; },
+        arm(target, effect) { if (target !== path || !effects.includes(effect) || armed || !eligible())
+            throw Error('Unsupported or already armed document submit'); armed = { path, effect }; },
+        release() { const count = holds.size; for (const release of holds.values())
+            release(); return count; },
+        status() { return !touched && !armed ? {} : { documentWrites: clone({ armed, operations: [...operations.values()].map(({ canonical, ...entry }) => entry), pendingHolds: [...holds.keys()], events }) }; },
+        observeRead(target, data) {
+            if (!operations.size || !target.startsWith(`/api/children/${options.childId}/documents`))
+                return;
+            const item = data?.item?.id === options.documentId ? data.item : data?.page?.items?.find((item) => item.id === options.documentId);
+            const page = data?.page?.documentId === options.documentId ? data.page : null;
+            if (!item && !page)
+                return;
+            const read = { path: target, documentId: options.documentId, documentVersion: item?.version ?? page?.documentVersion ?? null };
+            for (const operation of operations.values()) {
+                operation.readbacks.push(clone(read));
+                if (operation.readbacks.length > 40)
+                    operation.readbacks.shift();
+            }
+        },
+        async submit(target, headers, body, signal) {
+            if (target !== path)
+                reject(405, 'preview_action_unavailable');
+            if (!headers.get('x-expected-user-id'))
+                reject(428, 'account_precondition_required');
+            if (headers.get('x-expected-user-id') !== options.userId)
+                reject(409, 'session_changed');
+            if (headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/json')
+                reject(415, 'unsupported_media_type');
+            if (body?.change?.action !== undefined && body.change.action !== 'check_items')
+                reject(405, 'preview_action_unavailable');
+            const parsed = requestSchema.safeParse(body);
+            if (!parsed.success)
+                reject(400, 'invalid_input');
+            const { opId, change } = parsed.data;
+            if (change.action !== 'check_items')
+                reject(405, 'preview_action_unavailable');
+            const key = options.userId + ':' + opId, canonical = (0, contracts_ts_1.canonicalJson)({ childId: options.childId, id: options.documentId, change: body.change });
+            const { scope, index, document } = current(), prior = operations.get(key);
+            if (prior && prior.canonical !== canonical)
+                reject(409, 'operation_mismatch');
+            currentSnapshot(document);
+            if (prior?.receipt) {
+                prior.replayCount++;
+                return json(clone(prior.receipt));
+            }
+            if (change.authorityVersion !== readers_ts_1.authority || change.expectedVersion !== document.version || document.version >= 2147483647)
+                reject(409, 'document_changed');
+            const snapshot = clone(document.current);
+            // Validate every target before updating even the cloned snapshot; no partial batch can commit.
+            const updates = change.checks.map(check => {
+                const section = snapshot.sections.find((section) => section.id === check.sectionId && section.kind === 'checklist');
+                const item = section?.items.find((item) => item.id === check.itemId);
+                if (!item)
+                    reject(400, 'invalid_input');
+                return { item, checked: check.checked };
+            });
+            const effect = armed?.effect ?? null;
+            if (armed)
+                armed = null;
+            touched = true;
+            if (effect === 'known-conflict') {
+                events.push({ opId, effect, status: 409, code: 'document_changed', applied: false });
+                return json({ error: { code: 'document_changed' } }, 409);
+            }
+            const operation = prior ?? { opId, userId: options.userId, childId: options.childId, documentId: options.documentId, canonical, request: clone(body), state: 'request-received-not-applied', applyCount: 0, replayCount: 0, receipt: null, readbacks: [] };
+            if (prior)
+                operation.replayCount++;
+            if (effect === 'unconfirmed') {
+                operations.set(key, operation);
+                events.push({ opId, effect, applied: false });
+                throw new TypeError('Fixture received document request; not applied before response loss');
+            }
+            for (const { item, checked } of updates)
+                item.checked = checked;
+            Object.assign(snapshot, options.newSnapshot(), { version: document.version + 1, changes: ['家長更新準備清單的完成標記。'] });
+            const retained = [clone(document.current), ...clone(document.history)];
+            const next = { ...document, version: document.version + 1, current: snapshot, history: retained.slice(0, 10) };
+            // Inline history is bounded, but older snapshots remain addressable like the real snapshot store.
+            if (retained.length > 10) {
+                scope.documentVersions ??= new Map();
+                scope.documentVersions.set(options.documentId, [...retained.slice(10), ...(scope.documentVersions.get(options.documentId) || [])]);
+            }
+            scope.documents[index] = next;
+            const sequence = options.commit(options.childId);
+            Object.assign(operation, { state: 'confirmed', applyCount: 1, receipt: { item: clone(next) } });
+            operations.set(key, operation);
+            events.push({ opId, effect: effect ?? 'normal', applied: true, sequence });
+            if (effect === 'lost-response')
+                throw new TypeError('Fixture applied document once; response lost');
+            if (effect === 'hold')
+                await new Promise((resolve, reject) => {
+                    const release = () => { holds.delete(opId); signal?.removeEventListener('abort', abort); resolve(); };
+                    const abort = () => { holds.delete(opId); signal?.removeEventListener('abort', abort); reject(new DOMException('Aborted', 'AbortError')); };
+                    holds.set(opId, release);
+                    signal?.addEventListener('abort', abort, { once: true });
+                    if (signal?.aborted)
+                        abort();
+                });
+            const latest = current();
+            currentSnapshot(latest.document);
+            return json(clone(operation.receipt));
+        },
+    };
+}
+
+},
+117:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const memory_work_reading_ts_1 = __require(118);
+// Private fixture entry only. Final browser assembly must place this before fixture startup.
+const root = globalThis;
+root.__YU_PREVIEW_FACTORY__ = (0, memory_work_reading_ts_1.wrapMemoryWorkReadingFactory)(root.__YU_PREVIEW_FACTORY__);
+
+},
+118:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MEMORY_WORK_SCENARIO = void 0;
+exports.wrapMemoryWorkReadingFactory = wrapMemoryWorkReadingFactory;
+const care_validation_ts_1 = __require(119);
+const work_data_ts_1 = __require(121);
+exports.MEMORY_WORK_SCENARIO = 'memory-work-reading';
+const clone = (value) => JSON.parse(JSON.stringify(value));
+const routes = new Set(['(dashboard)/care', '(dashboard)/chat', '(dashboard)/contact', '(dashboard)/family', '(dashboard)/growth', '(dashboard)/guide', '(dashboard)/history', '(dashboard)/index', '(dashboard)/memory', '(dashboard)/more', '(dashboard)/photos', '(dashboard)/profile', '(dashboard)/settings', '(dashboard)/sources', '(dashboard)/summary', '(dashboard)/tasks', '+not-found', '_sitemap', 'admin', 'care', 'chat', 'contact', 'family', 'growth', 'guide', 'history', 'index', 'login', 'memory', 'more', 'photos', 'profile', 'settings', 'sources', 'summary', 'tasks']);
+const globalReads = new Set(['/api/auth/get-session', '/api/account', '/api/children', '/api/account/messages', '/api/families', '/api/notification-preferences', '/api/me/avatar', '/api/admin/session', '/api/online/spaces', '/api/online/changes', '/api/ai/status', '/api/ai/usage', '/api/ai/settings', '/api/ai/settings/models', '/api/telegram', '/api/web-push']);
+const childLists = new Set(['/records', '/profile', '/profile/history', '/tasks', '/summary', '/growth', '/concerns', '/documents', '/library', '/messages', '/memory/facts', '/memory/topics', '/memory/summary', '/inputs', '/photos', '/files', '/voices', '/avatar', '/agent/pending', '/agent/policy', '/agent/notes', '/agent/work', '/agent/history', '/contact']);
+/** The existing R6 factory remains the sole implementation for every older mode. */
+function wrapMemoryWorkReadingFactory(parentFactory) {
+    if (typeof parentFactory !== 'function')
+        throw Error('Missing fixed R6 preview factory');
+    return (options = {}) => options?.mode === exports.MEMORY_WORK_SCENARIO ? createMemoryWorkReadingPreview(parentFactory, options) : parentFactory(options);
+}
+function validItemRead(seed, route) {
+    if (childLists.has(route))
+        return true;
+    const item = /^\/(tasks|inputs|documents|photos|files|voices)\/([^/]+)(?:\/(history|content|versions|transcript))?$/.exec(route);
+    if (item) {
+        const suffixes = { tasks: [undefined, 'history'], inputs: [undefined, 'history'], documents: [undefined, 'content', 'versions'], photos: [undefined, 'content'], files: [undefined, 'content'], voices: [undefined, 'content', 'transcript'] };
+        return suffixes[item[1]].includes(item[3]) && seed[item[1]].some((row) => row.id === item[2]);
+    }
+    const care = /^\/care\/([^/]+)\/history$/.exec(route);
+    if (care)
+        return seed.records.some((row) => row.id === care[1]);
+    const memory = /^\/memory\/(facts|topics)\/([^/]+)\/history$/.exec(route);
+    if (memory)
+        return seed[memory[1]].some((row) => row.id === memory[2]);
+    const message = /^\/(?:agent\/history\/messages\/([^/]+)|messages\/([^/]+)\/reply)$/.exec(route);
+    if (message)
+        return seed.messages.some((row) => row.id === (message[1] ?? message[2]));
+    const run = /^\/agent\/runs\/([^/]+)$/.exec(route);
+    return !!run && seed.messages.some((row) => row.agentRunId === run[1]);
+}
+function createMemoryWorkReadingPreview(parentFactory, options) {
+    const variant = options.variant === undefined ? options.comparison?.version : options.variant;
+    if (variant !== 'care')
+        throw Error('Unsupported memory work preview variant');
+    if (typeof options.pathname !== 'string')
+        throw Error('Unsupported memory work preview route');
+    let route;
+    try {
+        route = decodeURIComponent(options.pathname).replace(/^\/+|\/+$/g, '').replace(/\.html$/, '') || 'index';
+    }
+    catch {
+        throw Error('Unsupported memory work preview route');
+    }
+    if (!routes.has(route))
+        throw Error('Unsupported memory work preview route');
+    const initial = options.initialWorkRead === undefined ? 'ready' : options.initialWorkRead;
+    if (!['ready', 'empty', 'error', 'hold'].includes(initial))
+        throw Error('Unsupported initial memory work read');
+    // Let the unchanged R6 entry verify the frozen comparison, exact route and variant agreement.
+    const base = parentFactory({ ...options, variant, mode: 'core-journeys' });
+    const origin = options.origin || 'https://preview.example.invalid';
+    const seed = base.snapshot(), scopes = new Map(seed.scopes.map((scope) => [scope.child.id, scope]));
+    const first = scopes.get(base.ids.childId), actor = first.user.id, works = (0, work_data_ts_1.createReadingWorks)(first);
+    const revoked = new Set(), pending = new Map();
+    const events = [], requests = [], blocked = [];
+    let armed = initial === 'ready' ? null : { childId: first.child.id, route: '/agent/work', effect: initial };
+    let disposed = false, nextHold = 0, delegatedWrites = 0;
+    const active = (childId) => scopes.has(childId) && !revoked.has(childId);
+    const live = () => { if (disposed)
+        throw Error('Memory work preview disposed'); };
+    const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-preview-fixture': 'memory-work-reading-v1' } });
+    const fail = (status, code) => json({ error: { code } }, status);
+    const record = (rows, value) => { rows.push(value); if (rows.length > 500)
+        rows.shift(); };
+    function revokeChild(childId) {
+        live();
+        if (!active(childId))
+            throw Error('Unsupported memory work scope');
+        revoked.add(childId);
+        if (armed?.childId === childId)
+            armed = null;
+        for (const hold of [...pending.values()])
+            if (hold.childId === childId)
+                hold.release();
+        record(events, { childId, at: 'revoked' });
+    }
+    const boundary = Object.freeze({
+        armRead(childId, readRoute, effect) {
+            live();
+            if (!active(childId) || readRoute !== '/agent/work' || !['empty', 'error', 'hold', 'revoke'].includes(effect))
+                throw Error('Unsupported memory work read control');
+            if (armed)
+                throw Error('A memory work read is already armed');
+            armed = { childId, route: '/agent/work', effect: effect };
+        },
+        releaseReads() { const count = pending.size; for (const hold of [...pending.values()])
+            hold.release(); return count; },
+        revokeChild,
+        dispose() {
+            if (disposed)
+                return;
+            disposed = true;
+            armed = null;
+            for (const hold of [...pending.values()])
+                hold.abort();
+        },
+        status() { return clone({ mode: exports.MEMORY_WORK_SCENARIO, armedRead: armed, pendingReads: [...pending.keys()], revokedChildren: [...revoked], disposed, readEvents: events, requests, blocked, nativeFallbackCount: 0, delegatedWrites, sequence: base.boundary.status().sequence, operations: base.boundary.status().operations }); },
+    });
+    async function workRead(childId, signal) {
+        const effect = armed?.childId === childId ? armed : null;
+        if (effect) {
+            armed = null;
+            record(events, { ...effect, at: 'accepted-read' });
+        }
+        if (effect?.effect === 'error')
+            return fail(503, 'preview_read_unavailable');
+        if (effect?.effect === 'revoke') {
+            revokeChild(childId);
+            return fail(403, 'forbidden');
+        }
+        if (effect?.effect === 'hold') {
+            await new Promise((resolve, reject) => {
+                const id = ++nextHold;
+                const finish = (aborted) => {
+                    if (!pending.has(id))
+                        return;
+                    pending.delete(id);
+                    signal?.removeEventListener('abort', abort);
+                    record(events, { ...effect, at: aborted ? 'aborted' : 'released' });
+                    if (aborted)
+                        reject(new DOMException('Aborted', 'AbortError'));
+                    else
+                        resolve();
+                };
+                const abort = () => finish(true);
+                pending.set(id, { childId, release: () => finish(false), abort });
+                signal?.addEventListener('abort', abort, { once: true });
+                if (signal?.aborted)
+                    abort();
+            });
+        }
+        live();
+        if (signal?.aborted)
+            throw new DOMException('Aborted', 'AbortError');
+        if (!active(childId))
+            return fail(403, 'forbidden');
+        return json({ items: effect?.effect === 'empty' || childId !== first.child.id ? [] : works, nextCursor: null, complete: true });
+    }
+    const transport = async (input, init = {}) => {
+        live();
+        const request = typeof input === 'string' || input instanceof URL ? null : input;
+        const url = new URL(request ? request.url : String(input), origin), method = (init.method ?? request?.method ?? 'GET').toUpperCase();
+        const signal = init.signal ?? request?.signal ?? undefined, headers = new Headers(init.headers ?? request?.headers);
+        if (signal?.aborted)
+            throw new DOMException('Aborted', 'AbortError');
+        if (url.origin !== origin || !url.pathname.startsWith('/api/')) {
+            record(blocked, { method, path: url.pathname, reason: 'preview_network_blocked' });
+            throw new TypeError('Preview network blocked');
+        }
+        const path = url.pathname;
+        record(requests, { method, path: path + url.search });
+        if (headers.has('x-expected-user-id') && headers.get('x-expected-user-id') !== actor)
+            return fail(409, 'session_changed');
+        const child = /^\/api\/children\/([^/]+)(.*)$/.exec(path), childId = child?.[1], childRoute = child?.[2];
+        const search = method === 'POST' && childRoute === '/care/search';
+        if (method !== 'GET' && !search)
+            return fail(405, 'preview_action_unavailable');
+        if (childId && !active(childId))
+            return fail(403, 'forbidden');
+        for (const key of url.searchParams.keys())
+            if (url.searchParams.getAll(key).length > 1)
+                return fail(400, 'invalid_input');
+        if (childId) {
+            const scope = scopes.get(childId);
+            if (!search && !validItemRead(scope, childRoute))
+                return fail(404, 'not_found');
+            if (childRoute === '/agent/work' || childRoute.startsWith('/agent/history')) {
+                if (!headers.has('x-expected-user-id'))
+                    return fail(428, 'account_precondition_required');
+                const keys = childRoute === '/agent/work' ? [] : childRoute === '/agent/history' ? ['kind', 'query', 'cursor'] : ['offset', 'limit'];
+                for (const key of url.searchParams.keys())
+                    if (!keys.includes(key))
+                        return fail(400, 'invalid_input');
+            }
+            if (childRoute === '/agent/work')
+                return workRead(childId, signal);
+            if (search) {
+                if (!headers.has('x-expected-user-id'))
+                    return fail(428, 'account_precondition_required');
+                if (url.search)
+                    return fail(400, 'invalid_input');
+                let body;
+                try {
+                    body = JSON.parse(init.body === undefined && request ? await request.clone().text() : String(init.body ?? ''));
+                }
+                catch {
+                    return fail(400, 'invalid_input');
+                }
+                if (!care_validation_ts_1.careSearchSchema.safeParse(body).success)
+                    return fail(400, 'invalid_input');
+            }
+        }
+        else if (!globalReads.has(path))
+            return fail(404, 'not_found');
+        const response = await base.transport(input, init);
+        live();
+        if (signal?.aborted)
+            throw new DOMException('Aborted', 'AbortError');
+        if (childId && !active(childId))
+            return fail(403, 'forbidden');
+        if (response.ok && path === '/api/children') {
+            const value = await response.json();
+            return json({ ...value, children: value.children.filter((row) => active(row.id)) });
+        }
+        if (response.ok && path === '/api/account/messages') {
+            const value = await response.json();
+            return json({ ...value, items: value.items.filter((row) => row.scope.kind !== 'child' || active(row.scope.childId)) });
+        }
+        return response;
+    };
+    return Object.freeze({ version: 'memory-work-reading-v1', variant: 'care', ids: Object.freeze({ ...base.ids }), state: Object.freeze({ mode: exports.MEMORY_WORK_SCENARIO }), transport, boundary,
+        snapshot: () => clone({ ...seed, scopes: seed.scopes.filter((scope) => active(scope.child.id)), works: active(first.child.id) ? works : [] }),
+        setMode() { throw Error('Unsupported memory work mode change'); }, });
+}
+
+},
+119:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.careSearchSchema = exports.deleteCareSchema = exports.profileSaveSchema = exports.careReviseSchema = exports.careCreateSchema = exports.profileDataSchema = exports.careValuesSchema = exports.versionSchema = void 0;
+const zod_1 = __require(5);
+const care_ts_1 = __require(120);
+// Do not trim source values or silently coerce approximate values into numbers.
+const text = (max) => zod_1.z.string().max(max).refine(value => !/[\u0000\uD800-\uDFFF]/u.test(value));
+const required = (max) => text(max).refine(value => value.trim().length > 0);
+const date = zod_1.z.string().regex(/^\d{4}-\d{2}-\d{2}$/u).refine(value => {
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+});
+const timestamp = zod_1.z.iso.datetime({ offset: true });
+const zone = zod_1.z.string().max(100).refine(value => { try {
+    new Intl.DateTimeFormat("en", { timeZone: value });
+    return true;
+}
+catch {
+    return false;
+} });
+exports.versionSchema = zod_1.z.number().int().min(0).max(2147483646);
+exports.careValuesSchema = zod_1.z.object({
+    text: required(10000), source: required(500),
+    details: zod_1.z.object({ kind: zod_1.z.enum(care_ts_1.CARE_KINDS),
+        quantity: zod_1.z.object({ rawValue: required(100), unit: required(50), precision: zod_1.z.enum(["exact", "approximate"]) }).strict().nullable(),
+        eventTime: zod_1.z.object({ rawText: text(300), at: timestamp.nullable(), timeZone: zone, precision: zod_1.z.enum(["exact", "approximate", "unknown"]) }).strict()
+            .refine(value => value.precision === "exact" ? value.at !== null && value.rawText.trim().length > 0 : value.at === null),
+    }).strict(),
+}).strict();
+exports.profileDataSchema = zod_1.z.object({
+    age: zod_1.z.discriminatedUnion("kind", [zod_1.z.object({ kind: zod_1.z.literal("unknown") }).strict(),
+        zod_1.z.object({ kind: zod_1.z.literal("birth_date"), date }).strict(),
+        zod_1.z.object({ kind: zod_1.z.literal("approximate"), rawValue: required(100), unit: zod_1.z.enum(["days", "weeks", "months", "years"]), asOf: date }).strict()]),
+    dueDate: date.nullable(), gestationalWeeksRaw: required(100).nullable(), region: required(200).nullable(),
+    language: required(200).nullable(), allergies: required(2000).nullable(), specialNeeds: required(2000).nullable(),
+    preferences: required(2000).nullable(), source: required(500), validUntil: date.nullable(),
+}).strict();
+exports.careCreateSchema = exports.careValuesSchema.extend({ confirmShared: zod_1.z.literal(true) });
+exports.careReviseSchema = exports.careValuesSchema.extend({ confirmShared: zod_1.z.literal(true), expectedVersion: exports.versionSchema, reason: required(500) });
+exports.profileSaveSchema = zod_1.z.object({ data: exports.profileDataSchema, confirmShared: zod_1.z.literal(true), expectedVersion: exports.versionSchema, reason: required(500) }).strict();
+exports.deleteCareSchema = zod_1.z.object({ expectedVersion: exports.versionSchema, confirmDelete: zod_1.z.literal(true) }).strict();
+exports.careSearchSchema = zod_1.z.object({ query: text(200).optional(), kind: zod_1.z.enum(care_ts_1.CARE_KINDS).optional(),
+    cursor: zod_1.z.object({ createdAt: timestamp, id: zod_1.z.uuid(), changeSeq: zod_1.z.string().regex(/^(0|[1-9][0-9]{0,18})$/u).optional() }).strict().optional() }).strict();
+
+},
+120:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.emptyCareDetails = exports.CARE_KINDS = void 0;
+exports.CARE_KINDS = ["note", "feeding", "sleep", "diaper", "temperature", "measurement", "appointment"];
+const emptyCareDetails = (kind = "note") => ({ kind, quantity: null,
+    eventTime: { rawText: "", at: null, timeZone: "Asia/Hong_Kong", precision: "unknown" } });
+exports.emptyCareDetails = emptyCareDetails;
+
+},
+121:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createReadingWorks = createReadingWorks;
+const agent_work_ts_1 = __require(122);
+const uuid = (n) => '70000000-0000-4000-8000-' + String(n).padStart(12, '0');
+// Fictional saved reading material. No run, proposal, worker or persistence is created.
+const focus = `小晴最近會在晚飯後把圖畫書拿到梳化，先替公仔安排位置，再挑一頁想說的故事。有時她讀到月亮就想畫夜空，有時只看了幾頁便走去玩積木。媽媽想保留這段一起坐下來的時間，又不想把讀完一本書變成每天要交代的事情。這次先整理家人已記下的片段，分清楚哪些是她當時說的話、哪些是大人的理解，讓下一次接續時可以從她仍然有興趣的地方開始。
+
+書袋是另一件看似很小、卻容易在出門前變得匆忙的事。小晴願意負責把借閱書放進袋裏，但放好後又會拿出來翻看。家人已試過把書袋放在門邊木櫃旁，讓她看得到也拿得到；現在想核對的是，這個位置是否真的方便，而不是要求她提早幾天就不能再看那本書。星期日晚只保留檢查借閱書和把袋放回原位兩個步驟，最後確認由大人負責，她可以繼續選書、放書，並告訴家人哪一頁還想留到明天看。
+
+週末散步也希望用相同的節奏。她曾把三片落葉排成大、中、小，說它們是一家人，又想把葉子放在積木橋下面。這些話值得留下，但不必立即變成作品或學習任務。家人可以先預留一段慢慢看的時間，帶水樽、帽子和一個小袋，累了便找長椅坐下。若她想帶圖畫書，先一起看看小背包是否仍然輕便；若當天只想看葉子，也可以把書留在家裏，讓安排跟着當時的精神和天氣調整。
+
+相關資料裏保留了共讀的照顧記錄、家長會筆記、書袋待辦和「把共讀變成輕鬆的習慣」這項關注。它們是核對線索，不是對小晴表現的評分，也不表示這些安排已經完成。照顧記錄曾補回黃昏散步的時間，工作引用的是更正後第二版；開啟連結時會看到目前仍可讀的內容，若家人之後再更正，應先看清楚版本與原話，不把舊整理當成最新結論。
+
+下一次談話先請媽媽選一件最想接續的小事，再看看爸爸或外婆是否有不同觀察。如果大家暫時沒有空，這份整理可以原樣留着，不催促補完所有問題。這星期最重要的是讓孩子知道，她選的書、搭的小橋和對落葉的說法有人記得；大人也能用清楚而簡單的分工，減少出門前互相催趕。待家人核對後才決定要不要改動安排，沒有因這份工作原文而自動建立提醒、傳訊息或更改任何記錄。`;
+const questions = [
+    '回想最近幾次晚飯後的共讀，小晴通常在甚麼時候主動拿書過來？她選的是同一本書、同一頁，還是想先替公仔安排座位？如果她中途走去玩積木，家人當時怎樣回應，她稍後又有沒有自己回來？想請媽媽挑一個印象最深的小片段，盡量保留她當時的說法，再分開記下自己看到的事情和自己的猜想。我們不需要統計讀了多少頁，也不要求每天都有相同的安排，只想知道哪個開始方式讓彼此最自在，是否值得下次再試。',
+    '書袋放在門邊木櫃旁之後，最近哪一次出門比較順利，哪一次仍然要四處找書？小晴是否容易拿到袋子，拿出書再看之後又知道放回哪裏？爸爸、媽媽和外婆會不會各自放在不同位置？想請家人先描述一個早上的實際經過，看看問題是在找不到書、分工不清楚，還是當時大家都趕時間。可以先選一個不增加負擔的小調整，並說清楚由誰作最後確認，不急着把孩子願意幫忙的事變成她必須獨自承擔的責任。',
+    '如果星期六仍然去公園，小晴最想先看落葉、帶圖畫書，還是繼續說積木橋的故事？大人當天實際能留多少時間，附近有沒有容易坐下休息的位置？小背包除了水樽和手帕，哪些東西是她自己想帶的，哪些可以由大人分擔？請先一起選出最重要的一兩樣，而不是把所有想到的用品都加進清單。若下雨、太熱或大家累了，也想預先商量一個輕鬆的替代安排，讓改變計劃不會被理解成失敗，回家後仍有機會接着她的發現聊下去。',
+    '老師在家長會提到小晴會和同學輪流選書，家人聽到後最想接着了解的是甚麼？是她喜歡哪類故事、怎樣邀請別人一起看，還是遇到不同選擇時會怎樣商量？可以先從原筆記選一段最有共鳴的話，和最近家裏的觀察放在一起看，但不要把兩個場合直接當成相同情況。若爸爸或外婆有另一個例子，也請保留不同說法。下一次要帶到談話裏的，只需是一個真正在意、又能用日常片段說明的問題，不必一次整理成完整的成長評估。',
+];
+function createReadingWorks(seed) {
+    if (seed.child.id !== uuid(1) || seed.user.id !== 'harbour-mum')
+        throw Error('Unexpected memory work seed scope');
+    const resources = [
+        { kind: 'task', id: uuid(20), version: 1 }, { kind: 'care_record', id: uuid(10), version: 2 },
+        { kind: 'memory_fact', id: uuid(60), version: 1 }, { kind: 'private_source', id: uuid(80), version: 1 },
+        { kind: 'concern', id: uuid(70), version: 1 },
+    ];
+    const collections = { task: seed.tasks, care_record: seed.records, memory_fact: seed.facts, private_source: seed.inputs, concern: seed.concerns };
+    for (const ref of resources)
+        if (!collections[ref.kind]?.some(item => item.id === ref.id && item.childId === seed.child.id && item.version === ref.version))
+            throw Error('Memory work resource basis changed');
+    const originalIds = [uuid(112), uuid(42)];
+    for (const id of originalIds)
+        if (!seed.messages.some((message) => message.id === id && message.role === 'user' && message.childId === seed.child.id && message.authorUserId === seed.user.id))
+            throw Error('Memory work original message changed');
+    const common = { childId: seed.child.id, version: 1, pending: [], resources: [], sourceMessageIds: [], followUp: null };
+    const works = [
+        { ...common, id: uuid(8100), version: 2, status: 'active', goal: '把共讀、書袋和週末散步接起來', focus, questions,
+            resources, sourceMessageIds: originalIds, createdAt: '2026-10-26T08:00:00.000Z', updatedAt: '2026-10-26T12:00:00.000Z',
+            followUp: { reason: '等家人核對最近一次共讀和出門經過，再決定只調整哪一件小事。', dueAt: '2026-10-31T01:00:00.000Z', watchResources: true, knowledgeSourceIds: [] } },
+        { ...common, id: uuid(8101), status: 'waiting', goal: '和家人核對書袋的固定位置', focus: '先等爸爸和外婆說說最近一次出門的經過。木櫃旁的位置暫時保留，不因等待回覆就替家人改動安排。', questions: ['大家會把借閱書和書袋放在同一個位置嗎？哪一步由大人作最後確認會最清楚？'], createdAt: '2026-10-25T15:00:00.000Z', updatedAt: '2026-10-25T16:00:00.000Z' },
+        { ...common, id: uuid(8102), status: 'completed', goal: '回看小橋旁邊的積木安排', focus: '這次整理已把孩子對小橋和落葉的說法放在一起，家人可按需要回看。工作整理已結束，不代表孩子的遊戲或相關照顧事項已完成。', questions: [], createdAt: '2026-10-25T14:00:00.000Z', updatedAt: '2026-10-25T14:30:00.000Z' },
+        { ...common, id: uuid(8103), status: 'cancelled', goal: '原訂把所有故事一次整理完的安排', focus: '家人決定先保留幾個最想接着說的小片段，不再按原來一次整理完的安排繼續。已記下的原話仍可在各自來源回看。', questions: [], createdAt: '2026-10-25T12:00:00.000Z', updatedAt: '2026-10-25T12:30:00.000Z' },
+    ];
+    const seedText = JSON.stringify(seed);
+    if (works.some(work => seedText.includes(work.id)))
+        throw Error('Memory work ID collides with its source seed');
+    const page = agent_work_ts_1.agentWorkPageSchema.parse({ items: works, complete: true, nextCursor: null });
+    if (page.items.reduce((sum, work) => sum + JSON.stringify(work).length, 0) > 7000)
+        throw Error('Memory work page exceeds the fixed server character budget');
+    return page.items;
+}
+
+},
+122:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.agentHistoryMessageSchema = exports.agentHistoryPageSchema = exports.agentWorkPageSchema = exports.agentWorkSchema = exports.requestAgentConfirmationSchema = exports.memoryFactReadSchema = exports.historyReadSchema = exports.historySearchSchema = exports.readAgentWorkSchema = exports.saveAgentWorkSchema = exports.agentWorkValuesSchema = exports.workContinuationSchema = exports.workFollowUpSchema = exports.workPendingSchema = exports.workResourceSchema = void 0;
+const zod_1 = __require(5);
+const voice_ts_1 = __require(123);
+const text = (limit) => zod_1.z.string().min(1).max(limit).refine(value => Boolean(value.trim()));
+const version = zod_1.z.number().int().min(1).max(2147483646);
+exports.workResourceSchema = zod_1.z.object({
+    kind: zod_1.z.enum(["task", "memory_fact", "private_note", "private_source", "concern", "family_document", "care_record", "receipt"]),
+    id: zod_1.z.uuid(), version,
+}).strict();
+exports.workPendingSchema = zod_1.z.object({ runId: zod_1.z.uuid(), proposalId: zod_1.z.uuid(), version }).strict();
+exports.workFollowUpSchema = zod_1.z.object({
+    reason: text(500), dueAt: zod_1.z.iso.datetime({ offset: true }).nullable(), watchResources: zod_1.z.boolean(),
+    knowledgeSourceIds: zod_1.z.array(zod_1.z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/)).max(4).refine(ids => new Set(ids).size === ids.length),
+}).strict().refine(value => value.dueAt !== null || value.watchResources || value.knowledgeSourceIds.length > 0);
+exports.workContinuationSchema = zod_1.z.object({
+    eventId: zod_1.z.uuid(), runId: zod_1.z.uuid().nullable(), state: zod_1.z.enum(["queued", "completed", "stopped", "unknown", "cancelled"]),
+    createdAt: zod_1.z.iso.datetime({ offset: true }),
+}).strict();
+exports.agentWorkValuesSchema = zod_1.z.object({
+    goal: text(1000), focus: zod_1.z.string().max(1000), questions: zod_1.z.array(text(500)).max(6),
+    sourceMessageIds: zod_1.z.array(zod_1.z.uuid()).max(6).refine(ids => new Set(ids).size === ids.length),
+    resources: zod_1.z.array(exports.workResourceSchema).max(8),
+    pending: zod_1.z.array(exports.workPendingSchema).max(8),
+    status: zod_1.z.enum(["active", "waiting", "completed", "cancelled"]),
+    followUp: exports.work

@@ -1,0 +1,909 @@
+${issue.origin ?? "wartość"} będzie wynosić ${adj}${issue.minimum.toString()}`;
+            }
+            case "invalid_format": {
+                const _issue = issue;
+                if (_issue.format === "starts_with")
+                    return `Nieprawidłowy ciąg znaków: musi zaczynać się od "${_issue.prefix}"`;
+                if (_issue.format === "ends_with")
+                    return `Nieprawidłowy ciąg znaków: musi kończyć się na "${_issue.suffix}"`;
+                if (_issue.format === "includes")
+                    return `Nieprawidłowy ciąg znaków: musi zawierać "${_issue.includes}"`;
+                if (_issue.format === "regex")
+                    return `Nieprawidłowy ciąg znaków: musi odpowiadać wzorcowi ${_issue.pattern}`;
+                return `Nieprawidłow(y/a/e) ${FormatDictionary[_issue.format] ?? issue.format}`;
+            }
+            case "not_multiple_of":
+                return `Nieprawidłowa liczba: musi być wielokrotnością ${issue.divisor}`;
+            case "unrecognized_keys":
+                return `Nierozpoznane klucze${issue.keys.length > 1 ? "s" : ""}: ${util.joinValues(issue.keys, ", ")}`;
+            case "invalid_key":
+                return `Nieprawidłowy klucz w ${issue.origin}`;
+            case "invalid_union":
+                return "Nieprawidłowe dane wejściowe";
+            case "invalid_element":
+                return `Nieprawidłowa wartość w ${issue.origin}`;
+            default:
+                return `Nieprawidłowe dane wejściowe`;
+        }
+    };
+};
+function default_1() {
+    return {
+        localeError: error(),
+    };
+}
+module.exports = exports.default;
+
+},
+62:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = default_1;
+const util = __importStar(__require(9));
+const error = () => {
+    const Sizable = {
+        string: { unit: "caracteres" },
+        file: { unit: "bytes" },
+        array: { unit: "elementos" },
+        set: { unit: "elementos" },
+        map: { unit: "entradas" },
+    };
+    function getSizing(origin) {
+        return Sizable[origin] ?? null;
+    }
+    const FormatDictionary = {
+        regex: "a entrada",
+        email: "o endereço de e-mail",
+        url: "o URL",
+        emoji: "o emoji",
+        uuid: "o UUID",
+        uuidv4: "o UUIDv4",
+        uuidv6: "o UUIDv6",
+        nanoid: "o nanoid",
+        guid: "o GUID",
+        cuid: "o cuid",
+        cuid2: "o cuid2",
+        ulid: "o ULID",
+        xid: "o XID",
+        ksuid: "o KSUID",
+        datetime: "a data e hora ISO",
+        date: "a data ISO",
+        time: "a hora ISO",
+        duration: "a duração ISO",
+        ipv4: "o endereço IPv4",
+        ipv6: "o endereço IPv6",
+        mac: "o endereço MAC",
+        cidrv4: "o intervalo de endereços IPv4",
+        cidrv6: "o intervalo de endereços IPv6",
+        base64: "o texto codificado em base64",
+        base64url: "o texto codificado em base64url",
+        json_string: "o texto JSON",
+        e164: "o número E.164",
+        credit_card: "o número de cartão de crédito",
+        jwt: "o JWT",
+        template_literal: "a entrada",
+    };
+    const Gender = {
+        masculine: { definite: "o", indefinite: "um" },
+        feminine: { definite: "a", indefinite: "uma" },
+    };
+    const TypeDictionary = {
+        string: { name: "texto", articles: Gender.masculine },
+        number: { name: "número", articles: Gender.masculine },
+        int: { name: "número inteiro", articles: Gender.masculine },
+        boolean: { name: "valor booleano", articles: Gender.masculine },
+        bigint: { name: "número bigint", articles: Gender.masculine },
+        symbol: { name: "símbolo", articles: Gender.masculine },
+        undefined: { name: 'valor "undefined"', articles: Gender.masculine },
+        null: { name: 'valor "nulo"', articles: Gender.masculine },
+        never: { name: 'valor "never"', articles: Gender.masculine },
+        void: { name: 'valor "void"', articles: Gender.masculine },
+        date: { name: "data", articles: Gender.feminine },
+        array: { name: "vetor", articles: Gender.masculine },
+        object: { name: "objeto", articles: Gender.masculine },
+        tuple: { name: "tuplo", articles: Gender.masculine },
+        record: { name: "registo", articles: Gender.masculine },
+        map: { name: "mapa", articles: Gender.masculine },
+        set: { name: "conjunto", articles: Gender.masculine },
+        file: { name: "ficheiro", articles: Gender.masculine },
+        nonoptional: { name: "valor não opcional", articles: Gender.masculine },
+        nan: { name: 'valor "NaN"', articles: Gender.masculine }, // Compatibility: "nan" -> "NaN" for display
+        function: { name: "função", articles: Gender.feminine },
+    };
+    function translateOriginWithArticle(type, articleType) {
+        const translatedValue = TypeDictionary[type] ?? { name: `valor "${type}"`, articles: Gender.masculine };
+        return `${translatedValue.articles[articleType]} ${translatedValue.name}`;
+    }
+    return (issue) => {
+        switch (issue.code) {
+            case "invalid_type": {
+                const expected = translateOriginWithArticle(issue.expected, "indefinite");
+                const receivedType = util.parsedType(issue.input);
+                const received = translateOriginWithArticle(receivedType, "indefinite");
+                return `Entrada inválida: esperava ${expected}, recebeu ${received}`;
+            }
+            case "invalid_value":
+                if (issue.values.length === 1)
+                    return `Entrada inválida: esperava ${util.stringifyPrimitive(issue.values[0])}`;
+                return `Opção inválida: esperava uma das seguintes opções: ${util.joinValues(issue.values, "|")}`;
+            case "too_big": {
+                const adj = issue.inclusive ? "<=" : "<";
+                const sizing = getSizing(issue.origin);
+                if (sizing)
+                    return `Demasiado grande: esperava que ${translateOriginWithArticle(issue.origin, "definite")} tivesse ${adj} ${issue.maximum.toString()} ${sizing.unit ?? "elementos"}`;
+                return `Demasiado grande: esperava que ${translateOriginWithArticle(issue.origin, "definite")} fosse ${adj} ${issue.maximum.toString()}`;
+            }
+            case "too_small": {
+                const adj = issue.inclusive ? ">=" : ">";
+                const sizing = getSizing(issue.origin);
+                if (sizing) {
+                    return `Demasiado pequeno: esperava que ${translateOriginWithArticle(issue.origin, "definite")} tivesse ${adj} ${issue.minimum.toString()} ${sizing.unit ?? "elementos"}`;
+                }
+                return `Demasiado pequeno: esperava que ${translateOriginWithArticle(issue.origin, "definite")} fosse ${adj} ${issue.minimum.toString()}`;
+            }
+            case "invalid_format": {
+                const _issue = issue;
+                if (_issue.format === "starts_with")
+                    return `Texto inválido: deve começar por "${_issue.prefix}"`;
+                if (_issue.format === "ends_with")
+                    return `Texto inválido: deve terminar em "${_issue.suffix}"`;
+                if (_issue.format === "includes")
+                    return `Texto inválido: deve incluir "${_issue.includes}"`;
+                if (_issue.format === "regex")
+                    return `Texto inválido: deve corresponder ao padrão ${_issue.pattern}`;
+                return `Formato d${FormatDictionary[_issue.format] ?? issue.format} inválido`;
+            }
+            case "not_multiple_of":
+                return `Número inválido: deve ser múltiplo de ${issue.divisor}`;
+            case "unrecognized_keys": {
+                const plural = issue.keys.length > 1 ? "s" : "";
+                return `Chave${plural} inválida${plural}: ${util.joinValues(issue.keys, ", ")}`;
+            }
+            case "invalid_key":
+                return `Entrada inválida n${translateOriginWithArticle(issue.origin, "definite")}`;
+            case "invalid_union":
+                if (issue.options && Array.isArray(issue.options) && issue.options.length > 0) {
+                    const opts = issue.options.map((o) => `'${o}'`).join(" | ");
+                    return `Valor de discriminação inválido. Esperava ${opts}`;
+                }
+                return "Entrada inválida";
+            case "invalid_element":
+                return `Entrada inválida n${translateOriginWithArticle(issue.origin, "definite")}`;
+            default:
+                return `Entrada inválida`;
+        }
+    };
+};
+function default_1() {
+    return {
+        localeError: error(),
+    };
+}
+module.exports = exports.default;
+
+},
+63:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = default_1;
+const util = __importStar(__require(9));
+const error = () => {
+    const Sizable = {
+        string: { unit: "caracteres" },
+        file: { unit: "bytes" },
+        array: { unit: "elementos" },
+        set: { unit: "elementos" },
+        map: { unit: "entradas" },
+    };
+    function getSizing(origin) {
+        return Sizable[origin] ?? null;
+    }
+    const FormatDictionary = {
+        regex: "a entrada",
+        email: "o endereço de e-mail",
+        url: "o URL",
+        emoji: "o emoji",
+        uuid: "o UUID",
+        uuidv4: "o UUIDv4",
+        uuidv6: "o UUIDv6",
+        nanoid: "o nanoid",
+        guid: "o GUID",
+        cuid: "o cuid",
+        cuid2: "o cuid2",
+        ulid: "o ULID",
+        xid: "o XID",
+        ksuid: "o KSUID",
+        datetime: "a data e hora ISO",
+        date: "a data ISO",
+        time: "a hora ISO",
+        duration: "a duração ISO",
+        ipv4: "o endereço IPv4",
+        ipv6: "o endereço IPv6",
+        mac: "o endereço MAC",
+        cidrv4: "a faixa de endereços IPv4",
+        cidrv6: "a faixa de endereços IPv6",
+        base64: "o texto codificado em base64",
+        base64url: "o texto codificado em base64url",
+        json_string: "o texto JSON",
+        e164: "o número E.164",
+        credit_card: "o número de cartão de crédito",
+        jwt: "o JWT",
+        template_literal: "a entrada",
+    };
+    const Gender = {
+        masculine: { definite: "o", indefinite: "um" },
+        feminine: { definite: "a", indefinite: "uma" },
+    };
+    const TypeDictionary = {
+        string: { name: "texto", articles: Gender.masculine },
+        number: { name: "número", articles: Gender.masculine },
+        int: { name: "número inteiro", articles: Gender.masculine },
+        boolean: { name: "valor booleano", articles: Gender.masculine },
+        bigint: { name: "número bigint", articles: Gender.masculine },
+        symbol: { name: "símbolo", articles: Gender.masculine },
+        undefined: { name: 'valor "undefined"', articles: Gender.masculine },
+        null: { name: 'valor "nulo"', articles: Gender.masculine },
+        never: { name: 'valor "never"', articles: Gender.masculine },
+        void: { name: 'valor "void"', articles: Gender.masculine },
+        date: { name: "data", articles: Gender.feminine },
+        array: { name: "vetor", articles: Gender.masculine },
+        object: { name: "objeto", articles: Gender.masculine },
+        tuple: { name: "tupla", articles: Gender.feminine },
+        record: { name: "registro", articles: Gender.masculine },
+        map: { name: "mapa", articles: Gender.masculine },
+        set: { name: "conjunto", articles: Gender.masculine },
+        file: { name: "arquivo", articles: Gender.masculine },
+        nonoptional: { name: "valor não opcional", articles: Gender.masculine },
+        nan: { name: 'valor "NaN"', articles: Gender.masculine }, // Compatibility: "nan" -> "NaN" for display
+        function: { name: "função", articles: Gender.feminine },
+    };
+    function translateOriginWithArticle(type, articleType) {
+        const translatedValue = TypeDictionary[type] ?? { name: `valor "${type}"`, articles: Gender.masculine };
+        return `${translatedValue.articles[articleType]} ${translatedValue.name}`;
+    }
+    return (issue) => {
+        switch (issue.code) {
+            case "invalid_type": {
+                const expected = translateOriginWithArticle(issue.expected, "indefinite");
+                const receivedType = util.parsedType(issue.input);
+                const received = translateOriginWithArticle(receivedType, "indefinite");
+                return `Entrada inválida: esperava ${expected}, recebeu ${received}`;
+            }
+            case "invalid_value":
+                if (issue.values.length === 1)
+                    return `Entrada inválida: esperava ${util.stringifyPrimitive(issue.values[0])}`;
+                return `Opção inválida: esperava uma das seguintes opções: ${util.joinValues(issue.values, "|")}`;
+            case "too_big": {
+                const adj = issue.inclusive ? "<=" : "<";
+                const sizing = getSizing(issue.origin);
+                if (sizing)
+                    return `Grande demais: esperava que ${translateOriginWithArticle(issue.origin, "definite")} tivesse ${adj} ${issue.maximum.toString()} ${sizing.unit ?? "elementos"}`;
+                return `Grande demais: esperava que ${translateOriginWithArticle(issue.origin, "definite")} fosse ${adj} ${issue.maximum.toString()}`;
+            }
+            case "too_small": {
+                const adj = issue.inclusive ? ">=" : ">";
+                const sizing = getSizing(issue.origin);
+                if (sizing) {
+                    return `Pequeno demais: esperava que ${translateOriginWithArticle(issue.origin, "definite")} tivesse ${adj} ${issue.minimum.toString()} ${sizing.unit ?? "elementos"}`;
+                }
+                return `Pequeno demais: esperava que ${translateOriginWithArticle(issue.origin, "definite")} fosse ${adj} ${issue.minimum.toString()}`;
+            }
+            case "invalid_format": {
+                const _issue = issue;
+                if (_issue.format === "starts_with") {
+                    return `Texto inválido: deve começar com "${_issue.prefix}"`;
+                }
+                if (_issue.format === "ends_with")
+                    return `Texto inválido: deve terminar com "${_issue.suffix}"`;
+                if (_issue.format === "includes")
+                    return `Texto inválido: deve incluir "${_issue.includes}"`;
+                if (_issue.format === "regex")
+                    return `Texto inválido: deve corresponder ao padrão ${_issue.pattern}`;
+                return `Formato d${FormatDictionary[_issue.format] ?? issue.format} inválido`;
+            }
+            case "not_multiple_of":
+                return `Número inválido: deve ser múltiplo de ${issue.divisor}`;
+            case "unrecognized_keys": {
+                const plural = issue.keys.length > 1 ? "s" : "";
+                return `Chave${plural} inválida${plural}: ${util.joinValues(issue.keys, ", ")}`;
+            }
+            case "invalid_key":
+                return `Entrada inválida n${translateOriginWithArticle(issue.origin, "definite")}`;
+            case "invalid_union":
+                if (issue.options && Array.isArray(issue.options) && issue.options.length > 0) {
+                    const opts = issue.options.map((o) => `'${o}'`).join(" | ");
+                    return `Valor de discriminação inválido. Esperava ${opts}`;
+                }
+                return "Entrada inválida";
+            case "invalid_element":
+                return `Entrada inválida n${translateOriginWithArticle(issue.origin, "definite")}`;
+            default:
+                return `Entrada inválida`;
+        }
+    };
+};
+function default_1() {
+    return {
+        localeError: error(),
+    };
+}
+module.exports = exports.default;
+
+},
+64:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = default_1;
+const util = __importStar(__require(9));
+const error = () => {
+    const Sizable = {
+        string: { unit: "caractere", verb: "să aibă" },
+        file: { unit: "octeți", verb: "să aibă" },
+        array: { unit: "elemente", verb: "să aibă" },
+        set: { unit: "elemente", verb: "să aibă" },
+        map: { unit: "intrări", verb: "să aibă" },
+    };
+    function getSizing(origin) {
+        return Sizable[origin] ?? null;
+    }
+    const FormatDictionary = {
+        regex: "intrare",
+        email: "adresă de email",
+        url: "URL",
+        emoji: "emoji",
+        uuid: "UUID",
+        uuidv4: "UUIDv4",
+        uuidv6: "UUIDv6",
+        nanoid: "nanoid",
+        guid: "GUID",
+        cuid: "cuid",
+        cuid2: "cuid2",
+        ulid: "ULID",
+        xid: "XID",
+        ksuid: "KSUID",
+        datetime: "dată și oră ISO",
+        date: "dată ISO",
+        time: "oră ISO",
+        duration: "durată ISO",
+        ipv4: "adresă IPv4",
+        ipv6: "adresă IPv6",
+        mac: "adresă MAC",
+        cidrv4: "interval IPv4",
+        cidrv6: "interval IPv6",
+        base64: "șir codat base64",
+        base64url: "șir codat base64url",
+        json_string: "șir JSON",
+        e164: "număr E.164",
+        credit_card: "număr de card de credit",
+        jwt: "JWT",
+        template_literal: "intrare",
+    };
+    const TypeDictionary = {
+        nan: "NaN",
+        string: "șir",
+        number: "număr",
+        boolean: "boolean",
+        function: "funcție",
+        array: "matrice",
+        object: "obiect",
+        undefined: "nedefinit",
+        symbol: "simbol",
+        bigint: "număr mare",
+        void: "void",
+        never: "never",
+        map: "hartă",
+        set: "set",
+    };
+    return (issue) => {
+        switch (issue.code) {
+            case "invalid_type": {
+                const expected = TypeDictionary[issue.expected] ?? issue.expected;
+                const receivedType = util.parsedType(issue.input);
+                const received = TypeDictionary[receivedType] ?? receivedType;
+                return `Intrare invalidă: așteptat ${expected}, primit ${received}`;
+            }
+            case "invalid_value":
+                if (issue.values.length === 1)
+                    return `Intrare invalidă: așteptat ${util.stringifyPrimitive(issue.values[0])}`;
+                return `Opțiune invalidă: așteptat una dintre ${util.joinValues(issue.values, "|")}`;
+            case "too_big": {
+                const adj = issue.inclusive ? "<=" : "<";
+                const sizing = getSizing(issue.origin);
+                if (sizing)
+                    return `Prea mare: așteptat ca ${issue.origin ?? "valoarea"} ${sizing.verb} ${adj}${issue.maximum.toString()} ${sizing.unit ?? "elemente"}`;
+                return `Prea mare: așteptat ca ${issue.origin ?? "valoarea"} să fie ${adj}${issue.maximum.toString()}`;
+            }
+            case "too_small": {
+                const adj = issue.inclusive ? ">=" : ">";
+                const sizing = getSizing(issue.origin);
+                if (sizing) {
+                    return `Prea mic: așteptat ca ${issue.origin} ${sizing.verb} ${adj}${issue.minimum.toString()} ${sizing.unit}`;
+                }
+                return `Prea mic: așteptat ca ${issue.origin} să fie ${adj}${issue.minimum.toString()}`;
+            }
+            case "invalid_format": {
+                const _issue = issue;
+                if (_issue.format === "starts_with") {
+                    return `Șir invalid: trebuie să înceapă cu "${_issue.prefix}"`;
+                }
+                if (_issue.format === "ends_with")
+                    return `Șir invalid: trebuie să se termine cu "${_issue.suffix}"`;
+                if (_issue.format === "includes")
+                    return `Șir invalid: trebuie să includă "${_issue.includes}"`;
+                if (_issue.format === "regex")
+                    return `Șir invalid: trebuie să se potrivească cu modelul ${_issue.pattern}`;
+                return `Format invalid: ${FormatDictionary[_issue.format] ?? issue.format}`;
+            }
+            case "not_multiple_of":
+                return `Număr invalid: trebuie să fie multiplu de ${issue.divisor}`;
+            case "unrecognized_keys":
+                return `Chei nerecunoscute: ${util.joinValues(issue.keys, ", ")}`;
+            case "invalid_key":
+                return `Cheie invalidă în ${issue.origin}`;
+            case "invalid_union":
+                return "Intrare invalidă";
+            case "invalid_element":
+                return `Valoare invalidă în ${issue.origin}`;
+            default:
+                return `Intrare invalidă`;
+        }
+    };
+};
+function default_1() {
+    return {
+        localeError: error(),
+    };
+}
+module.exports = exports.default;
+
+},
+65:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = default_1;
+const util = __importStar(__require(9));
+function getRussianPlural(count, one, few, many) {
+    const absCount = Math.abs(count);
+    const lastDigit = absCount % 10;
+    const lastTwoDigits = absCount % 100;
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+        return many;
+    }
+    if (lastDigit === 1) {
+        return one;
+    }
+    if (lastDigit >= 2 && lastDigit <= 4) {
+        return few;
+    }
+    return many;
+}
+const error = () => {
+    const Sizable = {
+        string: {
+            unit: {
+                one: "символ",
+                few: "символа",
+                many: "символов",
+            },
+            verb: "иметь",
+        },
+        file: {
+            unit: {
+                one: "байт",
+                few: "байта",
+                many: "байт",
+            },
+            verb: "иметь",
+        },
+        array: {
+            unit: {
+                one: "элемент",
+                few: "элемента",
+                many: "элементов",
+            },
+            verb: "иметь",
+        },
+        set: {
+            unit: {
+                one: "элемент",
+                few: "элемента",
+                many: "элементов",
+            },
+            verb: "иметь",
+        },
+        map: {
+            unit: {
+                one: "элемент",
+                few: "элемента",
+                many: "элементов",
+            },
+            verb: "иметь",
+        },
+    };
+    function getSizing(origin) {
+        return Sizable[origin] ?? null;
+    }
+    const FormatDictionary = {
+        regex: "ввод",
+        email: "email адрес",
+        url: "URL",
+        emoji: "эмодзи",
+        uuid: "UUID",
+        uuidv4: "UUIDv4",
+        uuidv6: "UUIDv6",
+        nanoid: "nanoid",
+        guid: "GUID",
+        cuid: "cuid",
+        cuid2: "cuid2",
+        ulid: "ULID",
+        xid: "XID",
+        ksuid: "KSUID",
+        datetime: "ISO дата и время",
+        date: "ISO дата",
+        time: "ISO время",
+        duration: "ISO длительность",
+        ipv4: "IPv4 адрес",
+        ipv6: "IPv6 адрес",
+        mac: "MAC адрес",
+        cidrv4: "IPv4 диапазон",
+        cidrv6: "IPv6 диапазон",
+        base64: "строка в формате base64",
+        base64url: "строка в формате base64url",
+        json_string: "JSON строка",
+        e164: "номер E.164",
+        credit_card: "номер кредитной карты",
+        jwt: "JWT",
+        template_literal: "ввод",
+    };
+    const TypeDictionary = {
+        nan: "NaN",
+        number: "число",
+        array: "массив",
+    };
+    return (issue) => {
+        switch (issue.code) {
+            case "invalid_type": {
+                const expected = TypeDictionary[issue.expected] ?? issue.expected;
+                const receivedType = util.parsedType(issue.input);
+                const received = TypeDictionary[receivedType] ?? receivedType;
+                if (/^[A-Z]/.test(issue.expected)) {
+                    return `Неверный ввод: ожидалось instanceof ${issue.expected}, получено ${received}`;
+                }
+                return `Неверный ввод: ожидалось ${expected}, получено ${received}`;
+            }
+            case "invalid_value":
+                if (issue.values.length === 1)
+                    return `Неверный ввод: ожидалось ${util.stringifyPrimitive(issue.values[0])}`;
+                return `Неверный вариант: ожидалось одно из ${util.joinValues(issue.values, "|")}`;
+            case "too_big": {
+                const adj = issue.inclusive ? "<=" : "<";
+                const sizing = getSizing(issue.origin);
+                if (sizing) {
+                    const maxValue = Number(issue.maximum);
+                    const unit = getRussianPlural(maxValue, sizing.unit.one, sizing.unit.few, sizing.unit.many);
+                    return `Слишком большое значение: ожидалось, что ${issue.origin ?? "значение"} будет иметь ${adj}${issue.maximum.toString()} ${unit}`;
+                }
+                return `Слишком большое значение: ожидалось, что ${issue.origin ?? "значение"} будет ${adj}${issue.maximum.toString()}`;
+            }
+            case "too_small": {
+                const adj = issue.inclusive ? ">=" : ">";
+                const sizing = getSizing(issue.origin);
+                if (sizing) {
+                    const minValue = Number(issue.minimum);
+                    const unit = getRussianPlural(minValue, sizing.unit.one, sizing.unit.few, sizing.unit.many);
+                    return `Слишком маленькое значение: ожидалось, что ${issue.origin} будет иметь ${adj}${issue.minimum.toString()} ${unit}`;
+                }
+                return `Слишком маленькое значение: ожидалось, что ${issue.origin} будет ${adj}${issue.minimum.toString()}`;
+            }
+            case "invalid_format": {
+                const _issue = issue;
+                if (_issue.format === "starts_with")
+                    return `Неверная строка: должна начинаться с "${_issue.prefix}"`;
+                if (_issue.format === "ends_with")
+                    return `Неверная строка: должна заканчиваться на "${_issue.suffix}"`;
+                if (_issue.format === "includes")
+                    return `Неверная строка: должна содержать "${_issue.includes}"`;
+                if (_issue.format === "regex")
+                    return `Неверная строка: должна соответствовать шаблону ${_issue.pattern}`;
+                return `Неверный ${FormatDictionary[_issue.format] ?? issue.format}`;
+            }
+            case "not_multiple_of":
+                return `Неверное число: должно быть кратным ${issue.divisor}`;
+            case "unrecognized_keys":
+                return `Нераспознанн${issue.keys.length > 1 ? "ые" : "ый"} ключ${issue.keys.length > 1 ? "и" : ""}: ${util.joinValues(issue.keys, ", ")}`;
+            case "invalid_key":
+                return `Неверный ключ в ${issue.origin}`;
+            case "invalid_union":
+                return "Неверные входные данные";
+            case "invalid_element":
+                return `Неверное значение в ${issue.origin}`;
+            default:
+                return `Неверные входные данные`;
+        }
+    };
+};
+function default_1() {
+    return {
+        localeError: error(),
+    };
+}
+module.exports = exports.default;
+
+},
+66:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = default_1;
+const util = __importStar(__require(9));
+const error = () => {
+    const Sizable = {
+        string: { unit: "znakov", verb: "mať" },
+        file: { unit: "bajtov", verb: "mať" },
+        array: { unit: "prvkov", verb: "mať" },
+        set: { unit: "prvkov", verb: "mať" },
+        map: { unit: "položiek", verb: "mať" },
+    };
+    function getSizing(origin) {
+        return Sizable[origin] ?? null;
+    }
+    const FormatDictionary = {
+        regex: "regulárny výraz",
+        email: "e-mailová adresa",
+        url: "URL",
+        emoji: "emoji",
+        uuid: "UUID",
+        uuidv4: "UUIDv4",
+        uuidv6: "UUIDv6",
+        nanoid: "nanoid",
+        guid: "GUID",
+        cuid: "cuid",
+        cuid2: "cuid2",
+        ulid: "ULID",
+        xid: "XID",
+        ksuid: "KSUID",
+        datetime: "dátum a čas vo formáte ISO",
+        date: "dátum vo formáte ISO",
+        time: "čas vo formáte ISO",
+        duration: "doba trvania ISO",
+        ipv4: "IPv4 adresa",
+        ipv6: "IPv6 adresa",
+        mac: "MAC adresa",
+        cidrv4: "rozsah IPv4",
+        cidrv6: "rozsah IPv6",
+        base64: "reťazec zakódovaný vo formáte base64",
+        base64url: "reťazec zakódovaný vo formáte base64url",
+        json_string: "reťazec vo formáte JSON",
+        e164: "číslo E.164",
+        credit_card: "číslo kreditnej karty",
+        jwt: "JWT",
+        template_literal: "vstup",
+    };
+    const TypeDictionary = {
+        nan: "NaN",
+        number: "číslo",
+        string: "reťazec",
+        function: "funkcia",
+        array: "pole",
+    };
+    return (issue) => {
+        switch (issue.code) {
+            case "invalid_type": {
+                const expected = TypeDictionary[issue.expected] ?? issue.expected;
+                const receivedType = util.parsedType(issue.input);
+                const received = TypeDictionary[receivedType] ?? receivedType;
+                if (/^[A-Z]/.test(issue.expected)) {
+                    return `Neplatný vstup: očakávané instanceof ${issue.expected}, obdržané ${received}`;
+                }
+                return `Neplatný vstup: očakávané ${expected}, obdržané ${received}`;
+            }
+            case "invalid_value":
+                if (issue.values.length === 1)
+                    return `Neplatný vstup: očakávané ${util.stringifyPrimitive(issue.values[0])}`;
+                return `Neplatný vstup: očakávaná jedna z hodnôt ${util.joinValues(issue.values, "|")}`;
+            case "too_big": {
+                const adj = issue.inclusive ? "<=" : "<";
+                const sizing = getSizing(issue.origin);
+                if (sizing) {
+                    return `Hodnota je príliš veľká: ${issue.origin ?? "hodnota"} musí mať ${adj}${issue.maximum.toString()} ${sizing.unit ?? "prvkov"}`;
+                }
+                return `Hodnota je príliš veľká: ${issue.origin ?? "hodnota"} musí byť ${adj}${issue.maximum.toString()}`;
+            }
+            case "too_small": {
+                const adj = issue.inclusive ? ">=" : ">";
+                const sizing = getSizing(issue.origin);
+                if (sizing) {
+                    return `Hodnota je príliš malá: ${issue.origin ?? "hodnota"} musí mať ${adj}${issue.minimum.toString()} ${sizing.unit ?? "prvkov"}`;
+                }
+                return `Hodnota je príliš malá: ${issue.origin ?? "hodnota"} musí byť ${adj}${issue.minimum.toString()}`;
+            }
+            case "invalid_format": {
+                const _issue = issue;
+                if (_issue.format === "starts_with")
+                    return `Neplatný reťazec: musí začínať na "${_issue.prefix}"`;
+                if (_issue.format === "ends_with")
+                    return `Neplatný reťazec: musí končiť na "${_issue.suffix}"`;
+                if (_issue.format === "includes")
+                    return `Neplatný reťazec: musí obsahovať "${_issue.includes}"`;
+                if (_issue.format === "regex")
+                    return `Neplatný reťazec: musí zodpovedať vzoru ${_issue.pattern}`;
+                return `Neplatný formát ${FormatDictionary[_issue.format] ?? issue.format}`;
+            }
+            case "not_multiple_of":
+                return `Neplatné číslo: musí byť násobkom ${issue.divisor}`;
+            case "unrecognized_keys":
+                return `Neznáme klúče: ${util.joinValues(issue.keys, ", ")}`;
+            case "invalid_key":
+                return `Neplatný klúč v ${issue.origin}`;
+            case "invalid_union":
+                return "Neplatný vstup";
+            case "invalid_element":
+                return `Neplatná hodnota v ${issue.origin}`;
+            default:
+                return `Neplatný vstup`;
+        }
+    };
+};
+function default_1() {
+    return {
+        localeError: error(),
+    };
+}
+module.exports = exports.default;
+
+},
+67:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = default_1;
+const util = __importStar(__require(9));
+const error = () => {
+    const Sizable = {
+        string: { unit: "znakov", verb: "imeti" },
+        file: { unit: "bajtov", verb: "imeti" },
+        array: { unit: "elementov", verb: "imeti" },
+        set: { unit: "elementov", verb: "imeti" },
+        map: { unit: "elementov", verb: "imeti" },
+    };
+    function getSizing(origin) {
+        return Sizable[origin] ?? null;
+    }
+    const FormatDictionary = {
+        regex: "vn

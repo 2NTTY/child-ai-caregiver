@@ -1,0 +1,202 @@
+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" }, "storyCornerTone": { "mimeType": "audio/wav", "bytes": 6444, "sha256": "9534bdd01805873b1ef4f139613282bc9780d5f41e2b7d69b20c076ac93af598", "base64": "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" }
+};
+
+},
+109:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createReadControls = createReadControls;
+const contracts_ts_1 = __require(2);
+function createReadControls(scopes) {
+    let next = null, counter = 0;
+    const pending = new Map(), events = [];
+    const eligible = (route) => /^\/(records|profile|care\/search|tasks(?:\/[0-9a-f-]{36})?|inputs(?:\/[0-9a-f-]{36})?|documents(?:\/[0-9a-f-]{36}(?:\/content|\/versions)?)?)$/.test(route);
+    const taskHistoryEligible = (childId, route, effect) => { const match = /^\/tasks\/([^/]+)\/history$/.exec(route); return !!match && ['error', 'hold'].includes(effect) && contracts_ts_1.z.uuid().safeParse(match[1]).success && scopes.get(childId)?.tasks.some((task) => task.id === match[1]); };
+    return {
+        armRead(childId, route, effect) { if (!scopes.has(childId) || !(eligible(route) && ['error', 'lost', 'hold', 'late'].includes(effect) || taskHistoryEligible(childId, route, effect)) || next)
+            throw Error('Unsupported or already armed read control'); next = { childId, route, effect }; },
+        releaseReads() { const count = pending.size; for (const release of [...pending.values()])
+            release(); return count; },
+        status() { return { armedRead: next, pendingReads: [...pending.keys()], readEvents: events }; },
+        async response(path, method, response, signal) {
+            const m = /^\/api\/children\/([^/]+)(.*)$/.exec(path);
+            if (!m || !response.ok || !next || m[1] !== next.childId || m[2] !== next.route || !(method === 'GET' || method === 'POST' && m[2] === '/care/search'))
+                return response;
+            const effect = next;
+            next = null;
+            events.push({ ...effect, at: 'accepted-read' });
+            if (effect.effect === 'error')
+                return new Response(JSON.stringify({ error: { code: 'preview_read_unavailable' } }), { status: 503, headers: { 'content-type': 'application/json' } });
+            if (effect.effect === 'lost') {
+                scopes.delete(effect.childId);
+                return new Response(JSON.stringify({ error: { code: 'forbidden' } }), { status: 403, headers: { 'content-type': 'application/json' } });
+            }
+            // `late` deliberately delivers a completed transport response after client abort. The real owner must discard it.
+            await new Promise((resolve, reject) => { const id = ++counter; const release = () => { pending.delete(id); signal?.removeEventListener('abort', abort); events.push({ ...effect, at: 'released', aborted: !!signal?.aborted }); resolve(); }; const abort = () => { pending.delete(id); signal?.removeEventListener('abort', abort); reject(new DOMException('Aborted', 'AbortError')); }; pending.set(id, release); if (effect.effect === 'hold') {
+                signal?.addEventListener('abort', abort, { once: true });
+                if (signal?.aborted)
+                    abort();
+            } });
+            return response;
+        },
+    };
+}
+
+},
+110:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.readCore = readCore;
+const clone = (x) => JSON.parse(JSON.stringify(x));
+const authority = 'harbour-family-v1';
+function readCore(s, route, url, json, fail, user) {
+    const childId = s.child.id;
+    if (route === '/memory/summary')
+        return json({ summary: null });
+    if (route === '/growth')
+        return json({ page: { authorityVersion: authority, items: [], historyHasMore: false, topics: [{ id: 'preschool_development', title: '學前生活與探索', version: 1, disabled: false, inputs: [] }], notices: [], eligibleAssignees: [{ userId: user.id, name: user.name }], canManage: true } });
+    if (route === '/agent/pending')
+        return json({ proposals: [], nextCursor: null });
+    if (route === '/agent/policy')
+        return json({ policy: { version: 0, effective: false, recordKinds: [], allowPrivateNotes: false, allowSelfTasks: false, reminderConsentVersion: null, reminderBindings: [], allowRecordCorrections: false } });
+    if (route === '/agent/notes')
+        return json({ notes: { items: [], nextAfterId: null } });
+    if (route === '/agent/work')
+        return json({ items: [], nextCursor: null, complete: true });
+    if (route === '/avatar')
+        return json({ avatar: { target: { kind: 'child', childId }, version: 0, asset: null, updatedAt: null, canManage: false }, policy: { policyId: 'preview-no-uploads-v1', acceptedMimeTypes: ['image/jpeg', 'image/png'], maxInputBytes: 5242880, maxInputPixels: 16000000, maxInputDimension: 8192, outputSize: 256, maxOutputBytes: 262144, maxCropZoom: 4 } });
+    if (route === '/messages') {
+        const rows = s.messages, before = url.searchParams.get('before'), end = before === null ? rows.length : rows.findIndex((x) => x.id === before);
+        if (end < 0)
+            return fail(400, 'invalid_cursor');
+        const start = Math.max(0, end - 6), page = rows.slice(start, end);
+        return json({ messages: page, limit: 6, nextCursor: start > 0 ? page[0].id : null });
+    }
+    if (/^\/messages\/[^/]+\/reply$/.test(route)) {
+        const id = route.split('/')[2];
+        if (!s.messages.some((x) => x.id === id))
+            return fail(404, 'not_found');
+        return json({ reply: s.messages.find((x) => x.inReplyTo === id) || null });
+    }
+    if (route === '/concerns')
+        return json({ page: { authorityVersion: authority, items: s.concerns || [], canManage: true } });
+    if (route === '/documents')
+        return json({ page: { authorityVersion: authority, canManage: true, items: s.documents.filter((x) => !url.searchParams.has('status') || url.searchParams.get('status') === 'all' || x.status === url.searchParams.get('status')), hasMore: false, nextCursor: null } });
+    const dm = /^\/documents\/([^/]+)(?:\/(content|versions))?$/.exec(route);
+    if (dm) {
+        const d = s.documents.find((x) => x.id === dm[1]);
+        if (!d)
+            return fail(404, 'not_found');
+        if (!dm[2])
+            return json({ item: d });
+        const versions = [d.current, ...d.history, ...(s.documentVersions?.get(d.id) || [])].filter(Boolean);
+        if (dm[2] === 'versions')
+            return json({ page: { documentId: d.id, authorityVersion: authority, items: versions.map((x) => ({ snapshotId: x.id, snapshotVersion: x.version, generatedAt: x.generatedAt, invalidated: false })), nextCursor: null } });
+        const snap = versions.find((x) => x.id === url.searchParams.get('snapshotId') && x.version === Number(url.searchParams.get('snapshotVersion')));
+        if (!snap)
+            return fail(404, 'not_found');
+        const all = JSON.stringify(snap), offset = Number(url.searchParams.get('offset') || 0);
+        if (!Number.isSafeInteger(offset) || offset < 0 || offset > all.length)
+            return fail(400, 'invalid_input');
+        const text = all.slice(offset, offset + 4000), nextOffset = offset + text.length < all.length ? offset + text.length : null;
+        return json({ page: { documentId: d.id, documentVersion: d.version, authorityVersion: authority, snapshotId: snap.id, snapshotVersion: snap.version, offset, text, totalCharacters: all.length, nextOffset, complete: nextOffset === null, invalidated: false, contentKind: 'snapshot_json' } });
+    }
+    if (route === '/library')
+        return json({ items: s.library || [], nextCursor: null, complete: true });
+    const run = /^\/agent\/runs\/([^/]+)$/.exec(route);
+    if (run)
+        return s.runs?.has(run[1]) ? json({ result: s.runs.get(run[1]) }) : fail(404, 'not_found');
+    if (route === '/agent/history') {
+        const kind = url.searchParams.get('kind') || 'message', query = url.searchParams.get('query') || '', cursor = url.searchParams.get('cursor');
+        if (!['message', 'private_instruction', 'memory_fact'].includes(kind) || query.length > 200)
+            return fail(400, 'invalid_input');
+        const rows = kind === 'message' ? s.messages.filter((m) => m.text.includes(query)).slice().reverse() : [], anchor = cursor === null ? -1 : rows.findIndex((m) => m.id === cursor);
+        if (cursor !== null && anchor < 0)
+            return fail(400, 'invalid_cursor');
+        const page = rows.slice(anchor + 1, anchor + 7), more = anchor + 1 + page.length < rows.length;
+        return json({ matches: page.map((m) => ({ id: m.id, kind, version: 1, createdAt: m.createdAt, role: m.role, excerpt: m.text.slice(0, 400) })), scanned: page.length, scanLimit: 100, complete: !more, nextCursor: more ? page.at(-1).id : null });
+    }
+    const history = /^\/agent\/history\/messages\/([^/]+)$/.exec(route);
+    if (history) {
+        const m = s.messages.find((x) => x.id === history[1]);
+        if (!m)
+            return fail(404, 'not_found');
+        const offset = Number(url.searchParams.get('offset') || 0);
+        if (!Number.isSafeInteger(offset) || offset < 0 || offset > m.text.length)
+            return fail(400, 'invalid_input');
+        const text = m.text.slice(offset, offset + 4000);
+        return json({ id: m.id, childId, role: m.role, version: 1, createdAt: m.createdAt, text, offset, nextOffset: offset + text.length < m.text.length ? offset + text.length : null, totalCharacters: m.text.length });
+    }
+    const attachment = /^\/(files|voices)(?:\/([^/]+)(?:\/(content|transcript))?)?$/.exec(route);
+    if (attachment) {
+        const rows = s[attachment[1]] || [];
+        if (!attachment[2]) {
+            const limit = Number(url.searchParams.get('limit') || 20), cursor = url.searchParams.get('cursor');
+            if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100)
+                return fail(400, 'invalid_input');
+            const index = cursor === null ? -1 : rows.findIndex((x) => x.id === cursor);
+            if (cursor !== null && index < 0)
+                return fail(400, 'invalid_cursor');
+            const items = rows.slice(index + 1, index + 1 + limit), more = index + 1 + items.length < rows.length;
+            return json({ items, nextCursor: more ? items.at(-1).id : null, complete: !more, scanned: items.length });
+        }
+        const item = rows.find((x) => x.id === attachment[2]);
+        if (!item)
+            return fail(404, 'not_found');
+        if (!attachment[3])
+            return json({ [attachment[1] === 'files' ? 'file' : 'voice']: item });
+        if (attachment[3] === 'transcript')
+            return s.transcripts?.has(item.id) ? json({ transcript: s.transcripts.get(item.id) }) : fail(404, 'not_found');
+        const content = s.media.get(item.id), bytes = Uint8Array.from(atob(content.base64), (c) => c.charCodeAt(0));
+        return new Response(bytes, { headers: { 'content-type': attachment[1] === 'files' ? 'application/octet-stream' : content.mimeType, 'content-length': String(bytes.byteLength), 'x-content-sha256': content.sha256, 'cache-control': 'no-store' } });
+    }
+    if (route === '/inputs')
+        return json({ inputs: s.inputs, sources: [], canCreate: true });
+    const input = /^\/inputs\/([^/]+)(\/history)?$/.exec(route);
+    if (input) {
+        const item = s.inputs.find((x) => x.id === input[1]);
+        if (!item)
+            return fail(404, 'not_found');
+        return json(input[2] ? { inputId: item.id, childId, ownerUserId: user.id, version: item.version, revisions: [{ version: item.version, changedAt: item.createdAt, reason: '保留家人整理的生活筆記', management: item.management }], hasMore: false } : { input: item });
+    }
+    if (route === '/photos')
+        return json({ photos: s.photos, canCreate: true });
+    const photo = /^\/photos\/([^/]+)$/.exec(route);
+    if (photo) {
+        const item = s.photos.find((x) => x.id === photo[1]);
+        return item ? json({ photo: item }) : fail(404, 'not_found');
+    }
+    if (route === '/memory/facts')
+        return json({ items: s.facts, nextAfterId: null });
+    if (route === '/memory/topics')
+        return json({ items: s.topics, nextAfterId: null });
+    const mh = /^\/memory\/(facts|topics)\/([^/]+)\/history$/.exec(route);
+    if (mh) {
+        const item = s[mh[1]].find((x) => x.id === mh[2]);
+        return item ? json({ revisions: [item], nextBeforeVersion: null }) : fail(404, 'not_found');
+    }
+    if (route === '/contact')
+        return json(s.contact ? { ...s.contact, tasks: s.tasks } : { canManage: true, workerEnabled: false, consent: { userId: user.id, version: 0, enabled: false, allowBackup: false, bindings: [] }, availableBindings: [], recipients: [{ userId: user.id, name: user.name, enabled: false, allowBackup: false, channels: [] }], tasks: s.tasks, tasksHaveMore: false, grants: [], requests: [], historyLimited: false });
+    return null;
+}
+
+}};const cache={};function __require(id){if(cache[id])return cache[id].exports;const module=cache[id]={exports:{}};modules[id](module,module.exports,__require);return module.exports;}__require(0);})();
+(function(root){const VERSION='harbour-private-boundary-fixtures-v5-20261026';const createPreview=root.__YU_PREVIEW_FACTORY__;
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  const query = new URL(location.href).searchParams;
+  const deny = () => { throw new Error('Unavailable in isolated preview'); };
+  for (const key of ['XMLHttpRequest', 'WebSocket', 'EventSource', 'Worker', 'SharedWorker', 'RTCPeerConnection']) window[key] = class { constructor() { deny(); } };
+  if (navigator.sendBeacon) navigator.sendBeacon = () => false;
+  if (navigator.serviceWorker) navigator.serviceWorker.register = async () => deny();
+  if (navigator.mediaDevices) navigator.mediaDevices.getUserMedia = async () => deny();
+  if (navigator.share) navigator.share = async () => deny();
+  if (window.Notification) window.Notification.requestPermission = async () => 'denied';
+  window.open = () => { deny(); };
+  document.addEventListener('submit', event => event.preventDefault(), true);
+  document.addEventListener('click', event => { const link = event.target?.closest?.('a[href]'); if (link && new URL(link.href, location.href).origin !== location.origin) { event.preventDefault(); event.stopPropagation(); } }, true);
+  window.fetch = async () => { throw new TypeError('Preview selection blocked'); };
+  const fixture = createPreview({ variant: query.get('experiment') ?? undefined, comparison: window.__YU_COMPARISON__, pathname: new URL(location.href).pathname, origin: location.origin, mode: query.get('previewScenario') || 'ready', loadingTarget: query.get('previewLoading') || 'children', onDiagnostic: ({ method, path, reason, status }) => console.warn('[Harbour preview] ' + status + ' ' + method + ' ' + path + ' (' + reason + ')') });
+  console.info('[Harbour preview] ' + VERSION + '; scenario=' + fixture.state.mode + '; network=blocked');
+  window.__YU_PREVIEW__ = fixture;
+  window.fetch = fixture.transport;
+})(globalThis);

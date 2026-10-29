@@ -1,0 +1,1365 @@
+pileChild(d, ctx, def.valueType, valueVar);
+            d.write(`${outputVar}[${outKeyVar}] = ${valOutput};`);
+        });
+        doc.write(`}`);
+        return outputVar;
+    }
+    // Plain z.string() keys: iterate enumerable own keys and validate each value. Runtime uses Reflect.ownKeys so symbol keys participate in validation; matching that here prevents silently accepting objects with enumerable Symbol keys under z.record(z.string(), ...).
+    const propIsEnumerable = addConstant(ctx, Object.prototype.propertyIsEnumerable);
+    doc.write(`for (const ${kVar} of Reflect.ownKeys(${accessor})) {`);
+    doc.indented((d) => {
+        d.write(`if (${kVar} === "__proto__") continue;`);
+        d.write(`if (!${propIsEnumerable}.call(${accessor}, ${kVar})) continue;`);
+        d.write(`if (typeof ${kVar} !== "string") return INVALID;`);
+        d.write(`const ${valVar} = ${accessor}[${kVar}];`);
+        const valOutput = compileChild(d, ctx, def.valueType, valVar);
+        d.write(`${outputVar}[${kVar}] = ${valOutput};`);
+    });
+    doc.write(`}`);
+    return outputVar;
+}
+function literalPropertyKey(ctx, key) {
+    if (typeof key === "string")
+        return util.esc(key);
+    return addConstant(ctx, key);
+}
+function generateMapCheck(doc, ctx, schema, accessor) {
+    const def = schema._zod.def;
+    doc.write(`if (!(${accessor} instanceof Map)) return INVALID;`);
+    const outputVar = newVar(ctx);
+    const kVar = newVar(ctx);
+    const valVar = newVar(ctx);
+    doc.write(`const ${outputVar} = new Map();`);
+    doc.write(`for (const [${kVar}, ${valVar}] of ${accessor}) {`);
+    doc.indented((d) => {
+        const keyOutput = generateCheck(d, ctx, def.keyType, kVar);
+        const valOutput = generateCheck(d, ctx, def.valueType, valVar);
+        d.write(`${outputVar}.set(${keyOutput}, ${valOutput});`);
+    });
+    doc.write(`}`);
+    return outputVar;
+}
+function generateSetCheck(doc, ctx, schema, accessor) {
+    const def = schema._zod.def;
+    doc.write(`if (!(${accessor} instanceof Set)) return INVALID;`);
+    const outputVar = newVar(ctx);
+    const valVar = newVar(ctx);
+    doc.write(`const ${outputVar} = new Set();`);
+    doc.write(`for (const ${valVar} of ${accessor}) {`);
+    doc.indented((d) => {
+        const valOutput = generateCheck(d, ctx, def.valueType, valVar);
+        d.write(`${outputVar}.add(${valOutput});`);
+    });
+    doc.write(`}`);
+    return outputVar;
+}
+function generateFileCheck(doc, accessor) {
+    // Runtime $ZodFile is a bare `instanceof File`, including the implicit global lookup. The previous duck-typed fallback accepted arbitrary {name, size} objects in File-less environments — behavior the runtime never had.
+    doc.write(`if (!(${accessor} instanceof File)) return INVALID;`);
+    return accessor;
+}
+function generateTemplateLiteralCheck(doc, ctx, schema, accessor) {
+    doc.write(`if (typeof ${accessor} !== "string") return INVALID;`);
+    // Template literal schemas have a pre-computed pattern in _zod.pattern
+    const pattern = schema._zod.pattern;
+    if (pattern) {
+        const patternConst = addConstant(ctx, pattern);
+        doc.write(`${patternConst}.lastIndex = 0;`);
+        doc.write(`if (!${patternConst}.test(${accessor})) return INVALID;`);
+    }
+    return accessor;
+}
+function generateLazyCheck(doc, ctx, schema, accessor) {
+    // For lazy schemas, we use a cached parser that falls back to runtime Zod parsing This handles recursive schemas correctly by avoiding infinite compilation loops
+    const def = schema._zod.def;
+    const getterConst = addConstant(ctx, def.getter);
+    const cacheConst = addConstant(ctx, { parser: null });
+    doc.write(`if (!${cacheConst}.parser) {`);
+    doc.indented((d) => {
+        d.write(`const inner = ${getterConst}();`);
+        d.write(`${cacheConst}.parser = function(input) {`);
+        d.indented((d2) => {
+            // Use runtime Zod parsing - this correctly handles recursive schemas Pass an empty ctx like runtimeRun does — runtime parsers read ctx.skipChecks/ctx.direction unconditionally and crash on undefined.
+            d2.write(`const result = inner._zod.run({ value: input, issues: [] }, {});`);
+            d2.write(`return result.issues.length === 0 ? result.value : INVALID;`);
+        });
+        d.write(`};`);
+    });
+    doc.write(`}`);
+    const outputVar = newVar(ctx);
+    doc.write(`const ${outputVar} = ${cacheConst}.parser(${accessor});`);
+    doc.write(`if (${outputVar} === INVALID) return INVALID;`);
+    return outputVar;
+}
+function generatePipeCheck(doc, ctx, schema, accessor) {
+    const def = schema._zod.def;
+    // Validate input type first
+    const inputOutput = generateCheck(doc, ctx, def.in, accessor);
+    if (def.transform) {
+        // Apply transform and validate output. The transform may read its second `payload` argument (codec transforms like z.stringbool() push issues there) so wrap the call in a helper that spoofs a payload. Pushed issues signal INVALID and the wrapper falls back to the runtime.
+        if (isAsyncFunction(def.transform)) {
+            throw new ZodCompileAsyncError("z.compile: async transforms in pipes are not supported");
+        }
+        const transformFn = def.transform;
+        const helperFn = (value) => {
+            // `addIssue` has to be here: a transform reporting through it is reporting, not failing. Without it the call threw a TypeError that the old catch swallowed into a fallback, so every ctx.addIssue transform quietly lost its fast path and the real error was never visible.
+            const fakePayload = { value, issues: [], addIssue: pushIssue };
+            // A throw is deliberately not caught. The interpreter lets one propagate out of the whole parse; swallowing it into INVALID turned a thrown error into a merely-rejected union branch, so a later branch answered instead.
+            const result = transformFn(value, fakePayload);
+            if (result instanceof Promise)
+                return exports.INVALID;
+            return fakePayload.issues.length === 0 ? result : exports.INVALID;
+        };
+        const helperConst = addConstant(ctx, helperFn);
+        const transformedVar = newVar(ctx);
+        doc.write(`const ${transformedVar} = ${helperConst}(${inputOutput});`);
+        doc.write(`if (${transformedVar} === INVALID) return INVALID;`);
+        return generateCheck(doc, ctx, def.out, transformedVar);
+    }
+    else {
+        // No transform - validate output type on same value
+        return generateCheck(doc, ctx, def.out, inputOutput);
+    }
+}
+function isAsyncFunction(fn) {
+    return (typeof fn === "function" &&
+        (fn.constructor.name === "AsyncFunction" ||
+            fn[Symbol.toStringTag] === "AsyncFunction"));
+}
+function generateCustomCheck(doc, ctx, schema, accessor) {
+    const def = schema._zod.def;
+    if (def.fn) {
+        // Check for async function
+        if (isAsyncFunction(def.fn)) {
+            throw new ZodCompileAsyncError("z.compile: async custom predicates are not supported");
+        }
+        // Custom schema with a predicate function (e.g. z.instanceof). `isAsyncFunction` above is syntactic, so a plain function returning a promise reaches here, and a promise is truthy — it would read as a pass where the interpreter throws.
+        const fnConst = addConstant(ctx, def.fn);
+        const throwAsyncConst = addConstant(ctx, throwAsync);
+        const resVar = newVar(ctx);
+        doc.write(`const ${resVar} = ${fnConst}(${accessor});`);
+        doc.write(`if (${resVar} instanceof Promise) ${throwAsyncConst}();`);
+        doc.write(`if (!${resVar}) return INVALID;`);
+    }
+    else {
+        throw new ZodCompileUnsupportedError("custom schema without a predicate function");
+    }
+    return accessor;
+}
+// Runtime helper for a compiled `catch`: runs the inner schema once and returns its value when it succeeded. Anything else — a failure the catch would handle, or an async inner — returns INVALID so the interpreter takes over.
+function runtimeCatch(innerSchema, catchValue, value) {
+    const result = innerSchema._zod.run({ value, issues: [] }, {});
+    if (result && typeof result.then === "function")
+        return exports.INVALID;
+    const r = result;
+    if (r.issues.length === 0)
+        return r.value;
+    // Only reached for a catch value that ignores the parse context — codegen refuses the rest — so there are no issues to finalize and nothing here needs the caller's error map.
+    return catchValue();
+}
+function generateCatchCheck(doc, ctx, schema, accessor) {
+    const def = schema._zod.def;
+    // An untagged catchValue is a user callback, and one reading `ctx.error` needs the caller's per-parse error map. Catch *succeeds*, so a wrong message there is unobservable — refuse at codegen, and not islandable either, since `runtimeRun` has no context to hand it.
+    if (!def.catchValue[util.CONSTANT_CATCH]) {
+        throw new ZodCompileUnsupportedError("catch with a callback (only a constant catch value compiles)", false);
+    }
+    const outputVar = newVar(ctx);
+    doc.write(`let ${outputVar} = (() => {`);
+    doc.indented((d) => {
+        const innerOut = compileChild(d, ctx, def.innerType, accessor);
+        d.write(`return ${innerOut};`);
+    });
+    doc.write(`})();`);
+    const innerConst = addConstant(ctx, def.innerType);
+    const catchConst = addConstant(ctx, def.catchValue);
+    const catchHelperConst = addConstant(ctx, runtimeCatch);
+    doc.write(`if (${outputVar} === INVALID) {`);
+    doc.indented((d) => {
+        d.write(`${outputVar} = ${catchHelperConst}(${innerConst}, ${catchConst}, ${accessor});`);
+        d.write(`if (${outputVar} === INVALID) return INVALID;`);
+    });
+    doc.write(`}`);
+    return outputVar;
+}
+function generateTransformCheck(doc, ctx, schema, accessor) {
+    const def = schema._zod.def;
+    if (def.transform) {
+        // Check for async transform
+        if (isAsyncFunction(def.transform)) {
+            throw new ZodCompileAsyncError("z.compile: async transforms are not supported");
+        }
+        // Create a helper that runs the transform and returns the result or INVALID on error
+        const transformFn = def.transform;
+        const helperFn = (value) => {
+            const fakePayload = { value, issues: [], addIssue: pushIssue };
+            // As in the pipe helper: a throw propagates, because the interpreter lets it out of the whole parse rather than treating it as a failed branch.
+            const result = transformFn(value, fakePayload);
+            if (result instanceof Promise)
+                return exports.INVALID;
+            return fakePayload.issues.length === 0 ? result : exports.INVALID;
+        };
+        const helperConst = addConstant(ctx, helperFn);
+        const outputVar = newVar(ctx);
+        doc.write(`const ${outputVar} = ${helperConst}(${accessor});`);
+        doc.write(`if (${outputVar} === INVALID) return INVALID;`);
+        return outputVar;
+    }
+    return accessor;
+}
+
+},
+83:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TimePrecision = void 0;
+exports._string = _string;
+exports._coercedString = _coercedString;
+exports._email = _email;
+exports._guid = _guid;
+exports._uuid = _uuid;
+exports._uuidv4 = _uuidv4;
+exports._uuidv6 = _uuidv6;
+exports._uuidv7 = _uuidv7;
+exports._url = _url;
+exports._emoji = _emoji;
+exports._nanoid = _nanoid;
+exports._cuid = _cuid;
+exports._cuid2 = _cuid2;
+exports._ulid = _ulid;
+exports._xid = _xid;
+exports._ksuid = _ksuid;
+exports._ipv4 = _ipv4;
+exports._ipv6 = _ipv6;
+exports._mac = _mac;
+exports._cidrv4 = _cidrv4;
+exports._cidrv6 = _cidrv6;
+exports._base64 = _base64;
+exports._base64url = _base64url;
+exports._e164 = _e164;
+exports._creditCard = _creditCard;
+exports._jwt = _jwt;
+exports._isoDateTime = _isoDateTime;
+exports._isoDate = _isoDate;
+exports._isoTime = _isoTime;
+exports._isoDuration = _isoDuration;
+exports._number = _number;
+exports._coercedNumber = _coercedNumber;
+exports._int = _int;
+exports._float32 = _float32;
+exports._float64 = _float64;
+exports._int32 = _int32;
+exports._uint32 = _uint32;
+exports._boolean = _boolean;
+exports._coercedBoolean = _coercedBoolean;
+exports._bigint = _bigint;
+exports._coercedBigint = _coercedBigint;
+exports._int64 = _int64;
+exports._uint64 = _uint64;
+exports._symbol = _symbol;
+exports._undefined = _undefined;
+exports._null = _null;
+exports._any = _any;
+exports._unknown = _unknown;
+exports._never = _never;
+exports._void = _void;
+exports._date = _date;
+exports._coercedDate = _coercedDate;
+exports._nan = _nan;
+exports._lt = _lt;
+exports._lte = _lte;
+exports._max = _lte;
+exports._lte = _lte;
+exports._max = _lte;
+exports._gt = _gt;
+exports._gte = _gte;
+exports._min = _gte;
+exports._gte = _gte;
+exports._min = _gte;
+exports._positive = _positive;
+exports._negative = _negative;
+exports._nonpositive = _nonpositive;
+exports._nonnegative = _nonnegative;
+exports._multipleOf = _multipleOf;
+exports._maxSize = _maxSize;
+exports._minSize = _minSize;
+exports._size = _size;
+exports._maxLength = _maxLength;
+exports._minLength = _minLength;
+exports._length = _length;
+exports._regex = _regex;
+exports._lowercase = _lowercase;
+exports._uppercase = _uppercase;
+exports._includes = _includes;
+exports._startsWith = _startsWith;
+exports._endsWith = _endsWith;
+exports._property = _property;
+exports._properties = _properties;
+exports._mime = _mime;
+exports._overwrite = _overwrite;
+exports._normalize = _normalize;
+exports._trim = _trim;
+exports._toLowerCase = _toLowerCase;
+exports._toUpperCase = _toUpperCase;
+exports._slugify = _slugify;
+exports._array = _array;
+exports._union = _union;
+exports._xor = _xor;
+exports._discriminatedUnion = _discriminatedUnion;
+exports._intersection = _intersection;
+exports._tuple = _tuple;
+exports._record = _record;
+exports._map = _map;
+exports._set = _set;
+exports._enum = _enum;
+exports._nativeEnum = _nativeEnum;
+exports._literal = _literal;
+exports._file = _file;
+exports._transform = _transform;
+exports._optional = _optional;
+exports._nullable = _nullable;
+exports._default = _default;
+exports._nonoptional = _nonoptional;
+exports._success = _success;
+exports._catch = _catch;
+exports._pipe = _pipe;
+exports._readonly = _readonly;
+exports._templateLiteral = _templateLiteral;
+exports._lazy = _lazy;
+exports._promise = _promise;
+exports._custom = _custom;
+exports._refine = _refine;
+exports._superRefine = _superRefine;
+exports._check = _check;
+exports.describe = describe;
+exports.meta = meta;
+exports._stringbool = _stringbool;
+exports._stringFormat = _stringFormat;
+const checks = __importStar(__require(13));
+const registries = __importStar(__require(81));
+const schemas = __importStar(__require(12));
+const util = __importStar(__require(9));
+// @__NO_SIDE_EFFECTS__
+function _string(Class, params) {
+    return new Class({
+        type: "string",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _coercedString(Class, params) {
+    return new Class({
+        type: "string",
+        coerce: true,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _email(Class, params) {
+    return new Class({
+        type: "string",
+        format: "email",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _guid(Class, params) {
+    return new Class({
+        type: "string",
+        format: "guid",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _uuid(Class, params) {
+    return new Class({
+        type: "string",
+        format: "uuid",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _uuidv4(Class, params) {
+    return new Class({
+        type: "string",
+        format: "uuid",
+        check: "string_format",
+        abort: false,
+        version: "v4",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _uuidv6(Class, params) {
+    return new Class({
+        type: "string",
+        format: "uuid",
+        check: "string_format",
+        abort: false,
+        version: "v6",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _uuidv7(Class, params) {
+    return new Class({
+        type: "string",
+        format: "uuid",
+        check: "string_format",
+        abort: false,
+        version: "v7",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _url(Class, params) {
+    return new Class({
+        type: "string",
+        format: "url",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _emoji(Class, params) {
+    return new Class({
+        type: "string",
+        format: "emoji",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _nanoid(Class, params) {
+    return new Class({
+        type: "string",
+        format: "nanoid",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+/**
+ * @deprecated CUID v1 is deprecated by its authors due to information leakage
+ * (timestamps embedded in the id). Use {@link _cuid2} instead.
+ * See https://github.com/paralleldrive/cuid.
+ */
+// @__NO_SIDE_EFFECTS__
+function _cuid(Class, params) {
+    return new Class({
+        type: "string",
+        format: "cuid",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _cuid2(Class, params) {
+    return new Class({
+        type: "string",
+        format: "cuid2",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _ulid(Class, params) {
+    return new Class({
+        type: "string",
+        format: "ulid",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _xid(Class, params) {
+    return new Class({
+        type: "string",
+        format: "xid",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _ksuid(Class, params) {
+    return new Class({
+        type: "string",
+        format: "ksuid",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _ipv4(Class, params) {
+    return new Class({
+        type: "string",
+        format: "ipv4",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _ipv6(Class, params) {
+    return new Class({
+        type: "string",
+        format: "ipv6",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _mac(Class, params) {
+    return new Class({
+        type: "string",
+        format: "mac",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _cidrv4(Class, params) {
+    return new Class({
+        type: "string",
+        format: "cidrv4",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _cidrv6(Class, params) {
+    return new Class({
+        type: "string",
+        format: "cidrv6",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _base64(Class, params) {
+    return new Class({
+        type: "string",
+        format: "base64",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _base64url(Class, params) {
+    return new Class({
+        type: "string",
+        format: "base64url",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _e164(Class, params) {
+    return new Class({
+        type: "string",
+        format: "e164",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _creditCard(Class, params) {
+    return new Class({
+        type: "string",
+        format: "credit_card",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _jwt(Class, params) {
+    return new Class({
+        type: "string",
+        format: "jwt",
+        check: "string_format",
+        abort: false,
+        ...util.normalizeParams(params),
+    });
+}
+exports.TimePrecision = {
+    Any: null,
+    Minute: -1,
+    Second: 0,
+    Millisecond: 3,
+    Microsecond: 6,
+};
+// @__NO_SIDE_EFFECTS__
+function _isoDateTime(Class, params) {
+    return new Class({
+        type: "string",
+        format: "datetime",
+        check: "string_format",
+        offset: false,
+        local: false,
+        precision: null,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _isoDate(Class, params) {
+    return new Class({
+        type: "string",
+        format: "date",
+        check: "string_format",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _isoTime(Class, params) {
+    return new Class({
+        type: "string",
+        format: "time",
+        check: "string_format",
+        precision: null,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _isoDuration(Class, params) {
+    return new Class({
+        type: "string",
+        format: "duration",
+        check: "string_format",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _number(Class, params) {
+    return new Class({
+        type: "number",
+        checks: [],
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _coercedNumber(Class, params) {
+    return new Class({
+        type: "number",
+        coerce: true,
+        checks: [],
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _int(Class, params) {
+    return new Class({
+        type: "number",
+        check: "number_format",
+        abort: false,
+        format: "safeint",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _float32(Class, params) {
+    return new Class({
+        type: "number",
+        check: "number_format",
+        abort: false,
+        format: "float32",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _float64(Class, params) {
+    return new Class({
+        type: "number",
+        check: "number_format",
+        abort: false,
+        format: "float64",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _int32(Class, params) {
+    return new Class({
+        type: "number",
+        check: "number_format",
+        abort: false,
+        format: "int32",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _uint32(Class, params) {
+    return new Class({
+        type: "number",
+        check: "number_format",
+        abort: false,
+        format: "uint32",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _boolean(Class, params) {
+    return new Class({
+        type: "boolean",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _coercedBoolean(Class, params) {
+    return new Class({
+        type: "boolean",
+        coerce: true,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _bigint(Class, params) {
+    return new Class({
+        type: "bigint",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _coercedBigint(Class, params) {
+    return new Class({
+        type: "bigint",
+        coerce: true,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _int64(Class, params) {
+    return new Class({
+        type: "bigint",
+        check: "bigint_format",
+        abort: false,
+        format: "int64",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _uint64(Class, params) {
+    return new Class({
+        type: "bigint",
+        check: "bigint_format",
+        abort: false,
+        format: "uint64",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _symbol(Class, params) {
+    return new Class({
+        type: "symbol",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _undefined(Class, params) {
+    return new Class({
+        type: "undefined",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _null(Class, params) {
+    return new Class({
+        type: "null",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _any(Class) {
+    return new Class({
+        type: "any",
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _unknown(Class) {
+    return new Class({
+        type: "unknown",
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _never(Class, params) {
+    return new Class({
+        type: "never",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _void(Class, params) {
+    return new Class({
+        type: "void",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _date(Class, params) {
+    return new Class({
+        type: "date",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _coercedDate(Class, params) {
+    return new Class({
+        type: "date",
+        coerce: true,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _nan(Class, params) {
+    return new Class({
+        type: "nan",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _lt(value, params) {
+    return new checks.$ZodCheckLessThan({
+        check: "less_than",
+        ...util.normalizeParams(params),
+        value,
+        inclusive: false,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _lte(value, params) {
+    return new checks.$ZodCheckLessThan({
+        check: "less_than",
+        ...util.normalizeParams(params),
+        value,
+        inclusive: true,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _gt(value, params) {
+    return new checks.$ZodCheckGreaterThan({
+        check: "greater_than",
+        ...util.normalizeParams(params),
+        value,
+        inclusive: false,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _gte(value, params) {
+    return new checks.$ZodCheckGreaterThan({
+        check: "greater_than",
+        ...util.normalizeParams(params),
+        value,
+        inclusive: true,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _positive(params) {
+    return _gt(0, params);
+}
+// negative
+// @__NO_SIDE_EFFECTS__
+function _negative(params) {
+    return _lt(0, params);
+}
+// nonpositive
+// @__NO_SIDE_EFFECTS__
+function _nonpositive(params) {
+    return _lte(0, params);
+}
+// nonnegative
+// @__NO_SIDE_EFFECTS__
+function _nonnegative(params) {
+    return _gte(0, params);
+}
+// @__NO_SIDE_EFFECTS__
+function _multipleOf(value, params) {
+    return new checks.$ZodCheckMultipleOf({
+        check: "multiple_of",
+        ...util.normalizeParams(params),
+        value,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _maxSize(maximum, params) {
+    return new checks.$ZodCheckMaxSize({
+        check: "max_size",
+        ...util.normalizeParams(params),
+        maximum,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _minSize(minimum, params) {
+    return new checks.$ZodCheckMinSize({
+        check: "min_size",
+        ...util.normalizeParams(params),
+        minimum,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _size(size, params) {
+    return new checks.$ZodCheckSizeEquals({
+        check: "size_equals",
+        ...util.normalizeParams(params),
+        size,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _maxLength(maximum, params) {
+    const ch = new checks.$ZodCheckMaxLength({
+        check: "max_length",
+        ...util.normalizeParams(params),
+        maximum,
+    });
+    return ch;
+}
+// @__NO_SIDE_EFFECTS__
+function _minLength(minimum, params) {
+    return new checks.$ZodCheckMinLength({
+        check: "min_length",
+        ...util.normalizeParams(params),
+        minimum,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _length(length, params) {
+    return new checks.$ZodCheckLengthEquals({
+        check: "length_equals",
+        ...util.normalizeParams(params),
+        length,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _regex(pattern, params) {
+    return new checks.$ZodCheckRegex({
+        check: "string_format",
+        format: "regex",
+        ...util.normalizeParams(params),
+        pattern,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _lowercase(params) {
+    return new checks.$ZodCheckLowerCase({
+        check: "string_format",
+        format: "lowercase",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _uppercase(params) {
+    return new checks.$ZodCheckUpperCase({
+        check: "string_format",
+        format: "uppercase",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _includes(includes, params) {
+    return new checks.$ZodCheckIncludes({
+        check: "string_format",
+        format: "includes",
+        ...util.normalizeParams(params),
+        includes,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _startsWith(prefix, params) {
+    return new checks.$ZodCheckStartsWith({
+        check: "string_format",
+        format: "starts_with",
+        ...util.normalizeParams(params),
+        prefix,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _endsWith(suffix, params) {
+    return new checks.$ZodCheckEndsWith({
+        check: "string_format",
+        format: "ends_with",
+        ...util.normalizeParams(params),
+        suffix,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _property(property, schema, params) {
+    return new checks.$ZodCheckProperty({
+        check: "property",
+        property,
+        schema,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _properties(shape) {
+    return Object.entries(shape).map(([property, schema]) => new checks.$ZodCheckProperty({ check: "property", property, schema }));
+}
+// @__NO_SIDE_EFFECTS__
+function _mime(types, params) {
+    return new checks.$ZodCheckMimeType({
+        check: "mime_type",
+        mime: types,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _overwrite(tx) {
+    return new checks.$ZodCheckOverwrite({
+        check: "overwrite",
+        tx,
+    });
+}
+// normalize
+// @__NO_SIDE_EFFECTS__
+function _normalize(form) {
+    return _overwrite((input) => input.normalize(form));
+}
+// trim
+// @__NO_SIDE_EFFECTS__
+function _trim() {
+    return _overwrite((input) => input.trim());
+}
+// toLowerCase
+// @__NO_SIDE_EFFECTS__
+function _toLowerCase() {
+    return _overwrite((input) => input.toLowerCase());
+}
+// toUpperCase
+// @__NO_SIDE_EFFECTS__
+function _toUpperCase() {
+    return _overwrite((input) => input.toUpperCase());
+}
+// slugify
+// @__NO_SIDE_EFFECTS__
+function _slugify() {
+    return _overwrite((input) => util.slugify(input));
+}
+// @__NO_SIDE_EFFECTS__
+function _array(Class, element, params) {
+    return new Class({
+        type: "array",
+        element,
+        // get element() {
+        //   return element;
+        // },
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _union(Class, options, params) {
+    return new Class({
+        type: "union",
+        options,
+        ...util.normalizeParams(params),
+    });
+}
+function _xor(Class, options, params) {
+    return new Class({
+        type: "union",
+        options,
+        inclusive: false,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _discriminatedUnion(Class, discriminator, options, params) {
+    return new Class({
+        type: "union",
+        options: options,
+        discriminator,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _intersection(Class, left, right) {
+    return new Class({
+        type: "intersection",
+        left,
+        right,
+    });
+}
+// export function _tuple(
+//   Class: util.SchemaClass<schemas.$ZodTuple>,
+//   items: [],
+//   params?: string | $ZodTupleParams
+// ): schemas.$ZodTuple<[], null>;
+// @__NO_SIDE_EFFECTS__
+function _tuple(Class, items, _paramsOrRest, _params) {
+    const hasRest = _paramsOrRest instanceof schemas.$ZodType;
+    const params = hasRest ? _params : _paramsOrRest;
+    const rest = hasRest ? _paramsOrRest : null;
+    return new Class({
+        type: "tuple",
+        items,
+        rest,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _record(Class, keyType, valueType, params) {
+    return new Class({
+        type: "record",
+        keyType,
+        valueType,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _map(Class, keyType, valueType, params) {
+    return new Class({
+        type: "map",
+        keyType,
+        valueType,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _set(Class, valueType, params) {
+    return new Class({
+        type: "set",
+        valueType,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _enum(Class, values, params) {
+    const entries = Array.isArray(values) ? Object.fromEntries(values.map((v) => [v, v])) : values;
+    // if (Array.isArray(values)) {
+    //   for (const value of values) {
+    //     entries[value] = value;
+    //   }
+    // } else {
+    //   Object.assign(entries, values);
+    // }
+    // const entries: util.EnumLike = {};
+    // for (const val of values) {
+    //   entries[val] = val;
+    // }
+    return new Class({
+        type: "enum",
+        entries,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+/** @deprecated This API has been merged into `z.enum()`. Use `z.enum()` instead.
+ *
+ * ```ts
+ * enum Colors { red, green, blue }
+ * z.enum(Colors);
+ * ```
+ */
+function _nativeEnum(Class, entries, params) {
+    return new Class({
+        type: "enum",
+        entries,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _literal(Class, value, params) {
+    return new Class({
+        type: "literal",
+        values: Array.isArray(value) ? value : [value],
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _file(Class, params) {
+    return new Class({
+        type: "file",
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _transform(Class, fn) {
+    return new Class({
+        type: "transform",
+        transform: fn,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _optional(Class, innerType) {
+    return new Class({
+        type: "optional",
+        innerType,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _nullable(Class, innerType) {
+    return new Class({
+        type: "nullable",
+        innerType,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _default(Class, innerType, defaultValue) {
+    return new Class({
+        type: "default",
+        innerType,
+        get defaultValue() {
+            return typeof defaultValue === "function" ? defaultValue() : util.shallowClone(defaultValue);
+        },
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _nonoptional(Class, innerType, params) {
+    return new Class({
+        type: "nonoptional",
+        innerType,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _success(Class, innerType) {
+    return new Class({
+        type: "success",
+        innerType,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _catch(Class, innerType, catchValue) {
+    return new Class({
+        type: "catch",
+        innerType,
+        catchValue: (typeof catchValue === "function" ? catchValue : util.constantCatch(catchValue)),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _pipe(Class, in_, out) {
+    return new Class({
+        type: "pipe",
+        in: in_,
+        out,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _readonly(Class, innerType) {
+    return new Class({
+        type: "readonly",
+        innerType,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _templateLiteral(Class, parts, params) {
+    return new Class({
+        type: "template_literal",
+        parts,
+        ...util.normalizeParams(params),
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _lazy(Class, getter) {
+    return new Class({
+        type: "lazy",
+        getter,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _promise(Class, innerType) {
+    return new Class({
+        type: "promise",
+        innerType,
+    });
+}
+// @__NO_SIDE_EFFECTS__
+function _custom(Class, fn, _params) {
+    const norm = util.normalizeParams(_params);
+    norm.abort ?? (norm.abort = true); // default to abort:false
+    const schema = new Class({
+        type: "custom",
+        check: "custom",
+        fn: fn,
+        ...norm,
+    });
+    return schema;
+}
+// same as _custom but defaults to abort:false
+// @__NO_SIDE_EFFECTS__
+function _refine(Class, fn, _params) {
+    const schema = new Class({
+        type: "custom",
+        check: "custom",
+        fn: fn,
+        ...util.normalizeParams(_params),
+    });
+    return schema;
+}
+// @__NO_SIDE_EFFECTS__
+function _superRefine(fn, params) {
+    const ch = _check((payload) => {
+        payload.addIssue = (issue) => {
+            if (typeof issue === "string") {
+                payload.issues.push(util.issue(issue, payload.value, ch._zod.def));
+            }
+            else {
+                // for Zod 3 backwards compatibility
+                const _issue = issue;
+                if (_issue.fatal)
+                    _issue.continue = false;
+                _issue.code ?? (_issue.code = "custom");
+                if (!("input" in _issue))
+                    _issue.input = payload.value;
+                _issue.inst ?? (_issue.inst = ch);
+                _issue.continue ?? (_issue.continue = !ch._zod.def.abort); // abort is always undefined, so this is always true...
+                payload.issues.push(util.issue(_issue));
+            }
+        };
+        return fn(payload.value, payload);
+    }, params);
+    return ch;
+}
+// @__NO_SIDE_EFFECTS__
+function _check(fn, params) {
+    const ch = new checks.$ZodCheck({
+        check: "custom",
+        ...util.normalizeParams(params),
+    });
+    ch._zod.check = fn;
+    return ch;
+}
+// @__NO_SIDE_EFFECTS__
+function describe(description) {
+    const ch = new checks.$ZodCheck({ check: "describe" });
+    ch._zod.onattach = [
+       

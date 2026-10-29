@@ -1,0 +1,275 @@
+/* Preview artifact only. Synthetic HTTP responses; production owners are never replaced. */
+(function (root) {
+  'use strict';
+  const VERSION = 'harbour-private-boundary-fixtures-v4-20261026';
+  const uuid = n => '70000000-0000-4000-8000-' + String(n).padStart(12, '0');
+  const clone = value => JSON.parse(JSON.stringify(value));
+  function createPreview(options = {}) {
+    const origin = options.origin || 'https://preview.example.invalid';
+    const mode = options.mode || 'ready';
+    if (!['ready', 'complete-profile', 'populated', 'long-content', 'empty', 'error', 'signedout', 'loading', 'no-child', 'mutation-unknown', 'unknown-age-zero-records'].includes(mode)) throw new Error('Unsupported preview scenario');
+    const boundaryMode = ['loading', 'no-child', 'mutation-unknown', 'unknown-age-zero-records'].includes(mode);
+    const loadingTarget = options.loadingTarget || 'children';
+    if (!['children', 'child-reads', 'documents'].includes(loadingTarget)) throw new Error('Unsupported loading target');
+    let loadingReleased = mode !== 'loading', unknownReceipt = null;
+    const waitingReads = new Set();
+    function waitForRelease(signal) {
+      if (signal?.aborted) return Promise.reject(new DOMException('Aborted', 'AbortError'));
+      return new Promise((resolve, reject) => {
+        const finish = aborted => { waitingReads.delete(release); signal?.removeEventListener('abort', abort); aborted ? reject(new DOMException('Aborted', 'AbortError')) : resolve(); };
+        const release = () => finish(false), abort = () => finish(true);
+        waitingReads.add(release); signal?.addEventListener('abort', abort, { once: true });
+      });
+    }
+    // Test controls affect only this synthetic transport, never an owner or React state.
+    const boundary = Object.freeze({
+      releaseLoading() { loadingReleased = true; const count = waitingReads.size; for (const release of [...waitingReads]) release(); return count; },
+      status() { return clone({ mode, loadingTarget: mode === 'loading' ? loadingTarget : null, loadingReleased, pendingReads: waitingReads.size, receipt: unknownReceipt }); },
+    });
+    const at = '2026-10-25T10:00:00.000Z', childId = uuid(1), workspaceId = uuid(2), epoch = uuid(3);
+    const user = { id: 'harbour-mum', name: '陳雅晴', email: 'ya.chun@example.invalid' };
+    const child = { id: childId, workspaceId, displayName: '小晴', createdAt: '2026-09-01T08:00:00.000Z', accessRole: 'owner' };
+    const state = { version: VERSION, mode, signedIn: mode !== 'signedout', requests: [], blocked: [], sequence: 1 };
+    const data = rows => state.mode === 'empty' ? [] : rows;
+    const authority = 'harbour-family-v1';
+    const profile = { childId, version: 1, data: { age: { kind: 'birth_date', date: '2022-04-18' }, dueDate: null, gestationalWeeksRaw: null, region: '香港', language: '廣東話', allergies: null, specialNeeds: null, preferences: '喜歡圖畫書、積木和在公園找落葉。', source: '媽媽記下', validUntil: null }, confirmedBy: user.id, confirmedAt: at, reason: '補充小晴的基本資料' };
+    const records = [
+      { id: uuid(10), text: '晚飯後一起看圖畫書，小晴指着月亮說想畫一幅夜空。', time: '2026-10-24T11:30:00.000Z' },
+      { id: uuid(11), text: '在公園收集了三片不同形狀的落葉，回家後按大小排好。', time: '2026-10-25T02:00:00.000Z' },
+    ].map(row => ({ id: row.id, childId, authorUserId: user.id, createdAt: row.time, version: 1, text: row.text, source: '媽媽記下', confirmedBy: user.id, confirmedAt: row.time, reason: '記下今天的小發現', confirmationBasis: 'explicit', details: { kind: 'note', quantity: null, eventTime: { rawText: '活動後', at: row.time, timeZone: 'Asia/Hong_Kong', precision: 'approximate' } } }));
+    const tasks = [
+      { id: uuid(20), title: '星期一帶圖書袋回校', details: '把借閱圖畫書放進書袋，讓小晴一起檢查。', due: '2026-10-26T00:00:00.000Z', state: 'scheduled' },
+      { id: uuid(21), title: '整理週末公園小背包', details: '補滿水樽，放好帽子和替換衣物。', due: '2026-10-31T01:00:00.000Z', state: 'scheduled' },
+    ].map((row, index) => ({ id: row.id, childId, version: 1, title: row.title, details: row.details, kind: 'ordinary', assigneeUserId: user.id, createdBy: user.id, createdAt: at, updatedAt: at, occurrence: { id: uuid(30 + index), dueAt: row.due, timeZone: 'Asia/Hong_Kong', state: row.state, terminalBasisVersion: null } }));
+    const taskHistory = new Map(tasks.map(task => [task.id, [{ task: clone(task), action: 'create', actorUserId: user.id, basisVersion: 0, note: '為下星期準備', at }]]));
+    const messages = [
+      { id: uuid(100), role: 'user', text: "小晴最近晚飯後會自己拿圖畫書過來，但有時只翻幾頁就去玩積木。我想把共讀留在每天的生活裏，又不想變成另一件要催她完成的事。", inReplyTo: null, createdAt: '2026-10-22T11:00:00.000Z' },
+      { id: uuid(101), role: 'model', text: "可以先留一小段大家都舒服的時間，讓她選書，也可以只看最喜歡的一頁。她去玩積木時，故事可以暫時停在那裏；下次回來再接着說，不必每次都從頭讀到尾。", inReplyTo: uuid(100), createdAt: '2026-10-22T11:00:05.000Z' },
+      { id: uuid(102), role: 'user', text: "她通常會挑兩本，一本要我讀，一本說是給公仔看的。我覺得很好笑，有時連公仔坐在哪裏也要安排好。", inReplyTo: null, createdAt: '2026-10-22T11:02:00.000Z' },
+      { id: uuid(103), role: 'model', text: "那個安排本身已經是故事的一部分。你可以問她公仔今天想聽哪個角色，再讓她替公仔翻一頁。把這些小細節記下來，日後回看，比記住讀了多少頁更有意思。", inReplyTo: uuid(102), createdAt: '2026-10-22T11:02:05.000Z' },
+      { id: uuid(104), role: 'user', text: "今天她用積木砌了一個很長的車站，把不同顏色的積木放成一排，說每個顏色都是一個站。我想接着她的玩法，但又怕自己問太多。", inReplyTo: null, createdAt: '2026-10-23T10:00:00.000Z' },
+      { id: uuid(105), role: 'model', text: "可以先跟着她描述眼前的東西，例如「這個紅色站在中間呢」，然後等她接話。她邀請你加入時，再問你可以負責哪一部分；你不必急着替車站加規則，讓她帶着你走一趟就很好。", inReplyTo: uuid(104), createdAt: '2026-10-23T10:00:05.000Z' },
+      { id: uuid(106), role: 'user', text: "後來她把車站改成一條橋，還說橋下面可以放葉子。我們家沒有很多材料，只有紙、積木和幾支顏色筆，這樣已經夠玩嗎？", inReplyTo: null, createdAt: '2026-10-23T10:02:00.000Z' },
+      { id: uuid(107), role: 'model', text: "這幾樣已經可以有很多組合：紙可以變成河流，積木可以換位置，顏色筆可以畫路線。你也可以先記住她今天那座橋的樣子，晚上請她說說橋通往哪裏；重點是接着她的想法，不是把材料準備得很多。", inReplyTo: uuid(106), createdAt: '2026-10-23T10:02:05.000Z' },
+      { id: uuid(108), role: 'user', text: "放學經過公園，她在一棵樹下面停了很久，說有一片葉子像小船。我趕着回家煮飯，只能陪她看一下，回家後還一直提起那片葉子。", inReplyTo: null, createdAt: '2026-10-23T11:00:00.000Z' },
+      { id: uuid(109), role: 'model', text: "可以先把她的話留下來：「你覺得那片葉子像小船。」今晚如果有空，讓她用紙畫一隻葉子船；如果沒有空，也可以約好週末再找一片不同形狀的葉子。短短一段被你記住的發現，也值得珍惜。", inReplyTo: uuid(108), createdAt: '2026-10-23T11:00:05.000Z' },
+      { id: uuid(110), role: 'user', text: "家長會時老師也提到，小晴很喜歡故事角，會和同學輪流選書。我已把這點寫在筆記裏，想在家裏接着聊，而不是一回家就問她學了甚麼。", inReplyTo: null, createdAt: '2026-10-24T10:00:00.000Z' },
+      { id: uuid(111), role: 'model', text: "可以從一個很小的選擇開始：「今天你會挑哪本書給我看？」她願意說時，你再順着書中的一頁聊下去。你記下的老師觀察也可以留作下次談話的起點，不用把它變成每天都要回答的問題。", inReplyTo: uuid(110), createdAt: '2026-10-24T10:00:05.000Z' },
+      { id: uuid(112), role: 'user', text: "還有一件小事想一起整理：星期一要把借閱圖畫書和書袋帶回學校，週末又想去公園。我不想星期日晚上才一下子找很多東西。\n\n小晴說她可以負責放圖畫書，但常常放完又拿出來看。我想讓她參與，又希望早上不用一直趕。", inReplyTo: null, createdAt: '2026-10-24T11:00:00.000Z' },
+      { id: uuid(113), role: 'model', text: "可以把兩件事分開放：上學用的書袋放在固定位置，公園用的小背包另外準備。週末先讓小晴挑一本想帶的圖畫書，回來後再一起放回書袋；不用要求她提早幾天就不能再看。\n\n星期日晚只留兩個小步驟：看看借閱書是否齊，再把書袋放到出門會看見的位置。你可以負責最後確認，她負責選書和放書，這樣各自都有一件清楚的小事。", inReplyTo: uuid(112), createdAt: '2026-10-24T11:00:05.000Z' },
+      { id: uuid(40), role: 'user', text: "這星期六想和小晴去公園看落葉，可以幫我整理要帶的東西嗎？我們大概早上出門，玩一會兒就在附近找長椅休息，不想把行程排得太滿。\n\n她想自己背小背包，也想帶圖畫書。我希望東西簡單一點，讓她能自己找到水樽和手帕。", inReplyTo: null, createdAt: '2026-10-24T12:00:00.000Z' },
+      { id: uuid(41), role: 'model', text: "可以先準備水樽、帽子、替換衣物和一個小袋。讓小晴自己挑一本圖畫書，玩累時一起坐下看看。\n\n把常用的水樽和手帕放在容易拿到的位置，其餘由你分擔就好。出門前可以一起看一次清單，讓她指出自己想負責的那一項；到公園後，先看看她想停在哪裏，再決定往哪邊走。", inReplyTo: uuid(40), createdAt: '2026-10-24T12:00:06.000Z' },
+      { id: uuid(42), role: 'user', text: "好，她最近很喜歡比較葉子的形狀，想留一點時間慢慢看。有一次她把三片葉子排成大、中、小，排好後又說它們是一家人。\n\n我想記住這些小片段，也想在回家後和她一起想想今天最喜歡的是甚麼，不一定要做成很正式的作品。", inReplyTo: null, createdAt: '2026-10-24T12:01:00.000Z' },
+      { id: uuid(43), role: 'model', text: "那就把行程留鬆一點：先找落葉，再找一張長椅休息。回家後可以請小晴挑最喜歡的一片，說說它像甚麼。\n\n如果她想畫，可以畫在一張普通紙上；如果只想講，你把她的一句話記下來也很好。今天不必完成一本小冊子或一幅畫，留下一個願意下次再說的片段，就能慢慢連成你們自己的故事。", inReplyTo: uuid(42), createdAt: '2026-10-24T12:01:04.000Z' }
+    ].map(row => ({ ...row, childId, authorUserId: row.role === 'user' ? user.id : null }));
+    function document(n, title, kind, purpose, sections, summary, archived = false) {
+      return { id: uuid(n), childId, kind, purpose, version: 1, status: archived ? 'archived' : 'active', archivedAt: archived ? at : null,
+        current: { id: uuid(n + 100), version: 1, generatedAt: at, sourceBasis: authority, title, summary, ageLabel: '4 歲 6 個月', period: { from: '2026-10-01', to: '2026-10-31' }, eventDate: kind === 'preparation' ? '2026-10-31' : null, coverageNote: '整理這個月記下的小片段。', sections, sources: [], changes: ['建立第一版'] }, history: [], readState: 'ready', autoRefresh: false };
+    }
+    const section = (id, title, kind, rows, domain = null) => ({ id, title, kind, domain, items: rows.map((text, index) => ({ id: id + '-' + (index + 1), text, sourceIds: [], ...(kind === 'checklist' ? { checked: index === 0 } : {}) })) });
+    const documents = [
+      document(50, '週末公園小旅行', 'preparation', 'outing', [section('bag', '小背包', 'checklist', ['水樽', '帽子和替換衣物', '圖畫書與收集落葉的小袋']), section('plan', '想一起做', 'notes', ['找三片不同形狀的落葉', '留一段坐下休息、看書的時間'])], '慢慢走、看看樹，讓小晴自己挑今天想發現的東西。'),
+      document(51, '下星期上學準備', 'preparation', 'school', [section('school', '出門前', 'checklist', ['借閱圖畫書和書袋', '水樽和手帕'])], '星期一早上，和小晴一起看一次書包。'),
+      document(52, '十月的小發現', 'growth_report', 'family', [section('interests', '興趣與表達', 'notes', ['喜歡用圖畫說故事，會主動指着細節發問。', '開始把落葉按形狀和大小分類。'], 'abilities_interests'), section('together', '我們一起做', 'notes', ['晚飯後留一段共讀時間。'], 'body_life')], '從共讀和公園散步，看看這個月的好奇心。'),
+      document(53, '上次圖書館外出', 'preparation', 'outing', [section('library', '已準備', 'checklist', ['圖書證和借閱書袋'])], '上次出門留下的清單。', true),
+    ];
+    // Each report entry refers to an existing source snapshot. The production reader enforces this.
+    const report = documents.find(item => item.kind === 'growth_report');
+    report.current.sources = records.map((record, index) => ({ id: 'daily-record-' + index, resourceId: record.id, kind: 'record', version: record.version, label: index === 0 ? '共讀圖畫書' : '公園的落葉', text: record.text, at: record.details.eventTime.at }));
+    report.current.sections[0].items[0] = { ...report.current.sections[0].items[0], text: '看圖畫書時，指着月亮說想畫一幅夜空。', sourceIds: ['daily-record-0'] };
+    report.current.sections[0].items[1] = { ...report.current.sections[0].items[1], text: '把落葉按大小排好，也留意不同的形狀。', sourceIds: ['daily-record-1'] };
+    report.current.sections[1].items[0] = { ...report.current.sections[1].items[0], text: '晚飯後一起看圖畫書。', sourceIds: ['daily-record-0'] };
+    const facts = [{ id: uuid(60), childId, visibility: 'private', intendedVisibility: 'private', status: 'confirmed', version: 1, createdBy: user.id, confirmedBy: user.id, confirmedAt: at, key: '喜歡的活動', content: '小晴喜歡圖畫書、積木和觀察落葉。', source: { kind: 'manual', description: '媽媽的日常觀察' }, validUntil: null, reason: '方便下次接着聊', applicable: true, sourceState: 'current' }];
+    const topics = [{ id: uuid(61), childId, visibility: 'private', title: '下次想找甚麼圖畫書？', note: '小晴最近常提到月亮和夜空。', status: 'pending', version: 1, updatedBy: user.id, updatedAt: at, resumeAfter: null, reopenReason: null, reopenedFrom: null, mayAsk: true }];
+    const concerns = [{ id: uuid(70), childId, title: '把共讀變成輕鬆的習慣', reason: '想留意小晴喜歡甚麼故事，不急着讀完整本。', status: 'following', version: 1, createdAt: at, updatedAt: at, archivedAt: null, attentionIds: [], events: [{ id: uuid(71), at, kind: 'observation', title: '自己選了一本書', text: '今晚選了有月亮的圖畫書，翻到喜歡的一頁說了很久。', sourceLabel: '媽媽記下', actorUserId: user.id, recordId: records[0].id }], historyComplete: true, followUp: null }];
+    const inputs = [{ id: uuid(80), childId, ownerUserId: user.id, version: 1, createdAt: at, canManage: true, kind: 'personal_source', sourceNotes: '家長會後記下的重點', sourceId: null, sourceLabel: '十月家長會筆記', sourceUrl: null, sourceDateText: '2026 年 10 月', text: '老師提到小晴喜歡故事角，能和同學輪流選書。家中可以讓她用自己的話說說最喜歡的一頁。', sha256: null, retrievedAt: null, fetchState: 'ready', extraction: { state: 'not_requested', runId: null, excerpt: null, draft: null, stopReason: null, processedAt: null, model: null }, recordId: null, confirmationKind: null, management: { intention: '接着聊小晴的閱讀興趣', purpose: 'answer_reference', nature: 'personal_observation', timeScope: 'unspecified', validityText: '', enabled: true, modelExcerpt: null } }];
+
+    // PRIVATE visual-audit fixtures only. No owner, capability, model status or permissions are replaced.
+    const rich = mode === 'populated' || mode === 'long-content';
+    const long = mode === 'long-content';
+    if (mode === 'complete-profile' || rich) {
+      profile.data.allergies = '目前沒有已知過敏，由媽媽確認。';
+      profile.data.specialNeeds = '目前沒有需要另行安排的照顧事項。';
+      profile.reason = '再次確認出生日期、語言、日常喜好及照顧資料';
+    }
+    const photoPixels = {"base64": "iVBORw0KGgoAAAANSUhEUgAAAGAAAABACAIAAABqVuVZAAAAlElEQVR4nO3QMQ2AMBBA0TpkYEABGxqQ0hk3NYEBJlYckIb0wg0v+QJ+XrmvUy+V3w+SBwgQIECAEgcIECBAgBIHKCVQq/OoAAECBAgQIECAAAECBAgQIECA+oGmfRsVIECAAAECBAgQoGCgY12+BQgQIECAAAECBAgQIECAAAECBAgQIECxQAIECBAgQLkDBAhQaA/6brXQ7CdDtAAAAABJRU5ErkJggg==", "bytes": 205, "sha256": "789012f5adc01be4c2f7501eacc2de048ba1e7ce8f45fe68c6a459c89c1afe10"};
+    const photos = [];
+    const observations = [
+      ['畫了一條通往月亮的路，先用藍色畫夜空，再添上黃色小窗。', '畫畫後'],
+      ['收拾積木時先按顏色分開，再把長條放進同一個盒子。', '下午遊戲後'],
+      ['在圖書館自己選了一本沒有文字的圖畫書，回家說每頁都有不同的故事。', '圖書館回家後'],
+      ['和外婆一起折紙船，試了幾次後找到摺出尖角的方法。', '晚飯前'],
+      ['下雨沒有去公園，改在客廳把椅子排成小火車。', '週末上午'],
+      ['幫忙把餐墊放好，記得替每個人留一個位置。', '晚飯前'],
+      ['和朋友輪流選積木的顏色，最後搭出兩座相連的橋。', '放學後'],
+      ['散步時發現樹影很長，停下來比較自己和媽媽的影子。', '黃昏散步時'],
+    ];
+    const taskTitles = ['星期三一起到圖書館還書', '替畫畫角補好紙張和顏色筆', '準備親子閱讀日的書袋與水樽', '整理積木盒，留出正在做的橋', '和外婆確認週末散步時間', '把公園小發現貼進月曆'];
+    const sourceTitles = ['圖書館借閱小記', '週末散步路線與休息安排', '親子閱讀日帶回家的便條', '和外婆聊過的日常照顧習慣'];
+    const longNote = '我們想把這段時間留得鬆一點，先看看小晴當天想做甚麼，再決定是否繼續。她有時會把圖畫書翻回同一頁，也會突然想起前一天在公園看到的東西。媽媽把她說的話逐句記下，沒有要求她把整個故事說完。\n\n回家後，可以把水樽、書袋和手帕放回固定位置，讓她參與其中一個步驟。若當天累了，就先休息，改天再接着整理。這些是家人留下的生活筆記，並不是需要達成的表現目標。';
+    if (rich) {
+      const recordCount = long ? 28 : 10;
+      for (let i = records.length; i < recordCount; i++) {
+        const row = clone(records[0]), observation = observations[(i - 2) % observations.length];
+        const day = String(18 + (i % 8)).padStart(2, '0');
+        row.id = uuid(200 + i); row.text = observation[0] + (long && i % 4 === 0 ? '\n\n' + longNote : '');
+        row.createdAt = `2026-10-${day}T10:${String(i).padStart(2,'0')}:00.000Z`; row.confirmedAt = row.createdAt;
+        row.details.eventTime.at = row.createdAt; row.details.eventTime.rawText = observation[1]; records.push(row);
+      }
+      const taskCount = long ? 20 : 8;
+      for (let i = tasks.length; i < taskCount; i++) {
+        const row=clone(tasks[0]);row.id=uuid(300+i);row.title=taskTitles[(i-2)%taskTitles.length] + (long && i===2 ? '，讓小晴挑一本想介紹給朋友看的圖畫書，再一起檢查書袋是否放齊' : '');
+        row.details=long && i%3===0?longNote:'先把需要的東西放在固定位置，出門前和小晴一起看一次。';row.occurrence.id=uuid(400+i);row.occurrence.dueAt=`2026-${i<10?'10':'11'}-${String(i<10?26+(i%5):1+(i%9)).padStart(2,'0')}T01:30:00.000Z`;row.occurrence.state=i===7?'needs_review':'scheduled';tasks.push(row);
+        taskHistory.set(row.id,[{task:clone(row),action:'create',actorUserId:user.id,basisVersion:0,note:'把日常安排記下，方便一起準備。',at}]);
+      }
+      const factTexts = ['喜歡自己挑共讀的圖畫書，常會回到有月亮的一頁。','做積木時喜歡先排好顏色，再慢慢搭成橋。','散步時喜歡停下看葉子的形狀，不急着走完整條路。','出門習慣把水樽放在背包旁邊的小袋。','喜歡讓公仔坐在身旁一起聽故事。'];
+      for(let i=facts.length;i<(long?60:6);i++){const row=clone(facts[0]);row.id=uuid(500+i);row.key=['共讀習慣','積木遊戲','公園散步','出門準備','說故事的方式'][(i-1)%5];row.content=factTexts[(i-1)%5]+(long&&i%3===0?'\n\n'+longNote:'');facts.push(row)}
+      for(let i=topics.length;i<(long?12:4);i++){const row=clone(topics[0]);row.id=uuid(600+i);row.title=['下次想再走哪條公園小路？','怎樣把最喜歡的落葉留在畫裏？','週末想和外婆一起讀哪本書？'][(i-1)%3];row.note=long?longNote:'等小晴想聊時，再從上次的小發現接着說。';topics.push(row)}
+      for(let i=inputs.length;i<(long?15:5);i++){const row=clone(inputs[0]);row.id=uuid(700+i);row.sourceLabel=sourceTitles[(i-1)%4];row.sourceNotes='家人整理後留下的私人生活筆記';row.text=observations[(i-1)%8][0]+'\n\n'+longNote+(long?'\n\n'+observations.map(x=>x[0]).join('\n'):'');row.management.intention='保留生活背景，日後需要時再參考';row.management.enabled=i!==3;inputs.push(row)}
+      for(let i=0;i<(long?60:3);i++){photos.push({id:uuid(800+i),childId,ownerUserId:user.id,createdAt:at,version:1,fileName:['積木小橋.png','彩色小車站.png','桌上的三座小屋.png'][i%3],mimeType:'image/png',bytes:photoPixels.bytes,sha256:photoPixels.sha256,source:'媽媽留存的積木排列',state:'ready',visibility:'private',canManage:true,recordId:null,extraction:{state:i===1?'failed':i===2?'unknown':'not_requested',runId:i===1||i===2?uuid(850+i):null,draft:null,stopReason:i===1?'暫未能整理這張圖片':null,processedAt:i===1?at:null,model:null}})}
+      if (long) {
+        const older = [], activities = ['一起畫夜空', '到圖書館選書', '在公園找落葉', '用積木搭小橋', '替公仔安排故事角', '整理出門的小背包'];
+        const details = ['她停了一會兒才告訴我想怎樣開始', '她做了一半又有新的想法', '她邀請我負責其中一個小步驟', '她想把這次的小發現留到下次再繼續'];
+        for (let i=0;i<24;i++) {
+          const id=uuid(1100+i*2),date=`2026-10-${String(16+Math.floor(i/4)).padStart(2,'0')}T${String(8+i%4).padStart(2,'0')}:00:`;
+          older.push({id,childId,authorUserId:user.id,role:'user',text:`今天${activities[i%6]}，${details[Math.floor(i/6)]}。我把她說的幾句話記下來，想在下次有空時接着聊，而不是急着問她做得好不好。`,inReplyTo:null,createdAt:date+'00.000Z'});
+          older.push({id:uuid(1101+i*2),childId,authorUserId:null,role:'model',text:`這次${activities[i%6]}的片段可以先保留下來。下次她提起時，從她自己的話接下去，讓她決定還想做哪一小部分。\n\n如果當天沒有時間，也可以只一起回想最喜歡的一刻，不必把所有安排一次做完。`,inReplyTo:id,createdAt:date+'05.000Z'});
+        }
+        messages.unshift(...older);
+      }
+      if(long)for(let i=4;i<10;i++)documents.push(document(900+i,['圖書館閱讀角的小安排','下次散步的背包清單','週末一起整理畫畫角'][i%3],'preparation','outing',[section('prepare-'+i,'出門前一起看看','checklist',['把水樽放在容易拿的位置','選一本今天想看的圖畫書','帶手帕和替換衣物','預留停下休息的時間']),section('notes-'+i,'家人記下的想法','notes',[longNote])],longNote));
+    }
+    // One existing child; only care records are empty, not every domain. No owner or capability injection.
+    if (mode === 'unknown-age-zero-records') {
+      profile.data.age = { kind: 'unknown' };
+      profile.reason = '先記下小晴的日常喜好，年齡資料稍後補充。';
+      records.length = 0;
+      // Remove the record-derived report rather than fabricate evidence for an empty record collection.
+      for (let i = documents.length - 1; i >= 0; i--) if (documents[i].kind === 'growth_report') documents.splice(i, 1);
+      for (const item of documents) if (item.current) item.current.ageLabel = '年齡未知';
+      // Keep the standalone observation; this optional link must not point to a removed care record.
+      for (const concern of concerns) for (const event of concern.events) delete event.recordId;
+    }
+    const preference = { timeZone: 'Asia/Hong_Kong', quietStart: '21:00', quietEnd: '07:00', allowAppointmentDuringQuiet: false, version: 1 };
+    const usage = { day: '2026-10-25', attempts: 0, inputTokens: 0, outputTokens: 0, cachedTokens: 0, unknownUsageAttempts: 0 };
+    const operations = new Map();
+    const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-preview-fixture': VERSION } });
+    const fail = (status, code) => json({ error: { code } }, status);
+    function blocked(method, path, reason, status = 405) { const diagnostic = { method, path, reason, status }; state.blocked.push({ method, path, reason }); if (typeof options.onDiagnostic === 'function') options.onDiagnostic(Object.freeze(diagnostic)); return fail(status, reason); }
+    const avatar = target => ({ avatar: { target, version: 0, asset: null, updatedAt: null, canManage: false }, policy: { policyId: 'preview-no-uploads-v1', acceptedMimeTypes: ['image/jpeg', 'image/png'], maxInputBytes: 5242880, maxInputPixels: 16000000, maxInputDimension: 8192, outputSize: 256, maxOutputBytes: 262144, maxCropZoom: 4 } });
+    const account = () => ({ enabled: true, registration: 'invite', mailConfigured: false, policyVersion: '2026-10-08', notice: '', user: state.signedIn ? { id: user.id, emailVerified: true, acknowledged: true, acknowledgementVersion: '2026-10-08' } : null });
+    function summary(url) {
+      const period = { startDay: url.searchParams.get('startDay') || '2026-10-19', period: url.searchParams.get('period') || 'week', timeZone: url.searchParams.get('timeZone') || 'Asia/Hong_Kong' };
+      const end = new Date(period.startDay + 'T00:00:00Z'); end.setUTCDate(end.getUTCDate() + (period.period === 'day' ? 1 : 7));
+      const rows = data(records).filter(row => row.details.eventTime.at.slice(0, 10) >= period.startDay && row.details.eventTime.at.slice(0, 10) < end.toISOString().slice(0, 10));
+      return { childId, childName: child.displayName, profile, canManage: true, period, endDayExclusive: end.toISOString().slice(0, 10), generatedAt: at, basisVersion: authority, counts: { note: rows.length, feeding: 0, sleep: 0, diaper: 0, temperature: 0, measurement: 0, appointment: 0 }, metrics: [], records: rows, missing: { unknownEventTime: 0, invalidQuantities: 0, emptyKinds: ['feeding', 'sleep', 'diaper', 'temperature', 'measurement', 'appointment'] }, appointments: [], conflicts: [], preparation: { version: 0, appointmentTaskId: null, questions: [], checklist: [], reviewed: false, reviewedBasis: null, period: null, updatedBy: null, updatedAt: null }, reviewCurrent: false };
+    }
+    function docRead(url, route) {
+      if (route === '/documents') {
+        const status = url.searchParams.get('status') || 'all';
+        const rows = data(documents).filter(item => status === 'all' || item.status === status);
+        return json({ page: { authorityVersion: authority, canManage: true, items: rows, hasMore: false, nextCursor: null } });
+      }
+      const match = route.match(/^\/documents\/([^/]+)(?:\/(content|versions))?$/);
+      if (!match) return null;
+      const item = data(documents).find(row => row.id === match[1]); if (!item) return fail(404, 'not_found');
+      if (!match[2]) return json({ item });
+      if (match[2] === 'versions') return json({ page: { documentId: item.id, authorityVersion: authority, items: [item.current, ...item.history].filter(Boolean).map(s => ({ snapshotId: s.id, snapshotVersion: s.version, generatedAt: s.generatedAt, invalidated: false })), nextCursor: null } });
+      const snapshot = [item.current, ...item.history].find(s => s && s.id === url.searchParams.get('snapshotId') && s.version === Number(url.searchParams.get('snapshotVersion')));
+      if (!snapshot) return fail(404, 'not_found');
+      const all = JSON.stringify(snapshot), offset = Number(url.searchParams.get('offset') || 0);
+      if (!Number.isSafeInteger(offset) || offset < 0 || offset > all.length) return fail(400, 'invalid_input');
+      const text = all.slice(offset, offset + 4000), nextOffset = offset + text.length < all.length ? offset + text.length : null;
+      return json({ page: { documentId: item.id, documentVersion: item.version, authorityVersion: authority, snapshotId: snapshot.id, snapshotVersion: snapshot.version, offset, text, totalCharacters: all.length, nextOffset, complete: nextOffset === null, invalidated: false, contentKind: 'snapshot_json' } });
+    }
+    // Portable subset of the fixed documentChangeSchema: only the two permitted check actions.
+    // Keep the original raw body for the fixture's exact-opId replay; normalize IDs only for validation/application.
+    function parsePreviewCheck(body) {
+      const exact = (value, keys) => value !== null && typeof value === 'object' && !Array.isArray(value)
+        && Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
+      if (!exact(body, ['opId', 'change'])) return null;
+      const value = body.change, common = ['action', 'expectedVersion', 'authorityVersion'];
+      const batch = value?.action === 'check_items';
+      if (!exact(value, batch ? [...common, 'checks'] : [...common, 'sectionId', 'itemId', 'checked'])
+        || !['check_item', 'check_items'].includes(value.action) || !Number.isSafeInteger(value.expectedVersion) || value.expectedVersion < 1
+        || typeof value.authorityVersion !== 'string' || value.authorityVersion.length > 128) return null;
+      const normalize = check => {
+        if (!check || typeof check.sectionId !== 'string' || typeof check.itemId !== 'string' || typeof check.checked !== 'boolean') return null;
+        const sectionId = check.sectionId.trim(), itemId = check.itemId.trim();
+        return sectionId.length >= 1 && sectionId.length <= 80 && itemId.length >= 1 && itemId.length <= 100 ? { sectionId, itemId, checked: check.checked } : null;
+      };
+      if (!batch) { const check = normalize(value); return check ? { action: value.action, expectedVersion: value.expectedVersion, authorityVersion: value.authorityVersion, ...check } : null; }
+      if (!Array.isArray(value.checks) || value.checks.length < 1 || value.checks.length > 128) return null;
+      const checks = value.checks.map(check => exact(check, ['sectionId', 'itemId', 'checked']) ? normalize(check) : null);
+      if (checks.some(check => !check) || new Set(checks.map(check => JSON.stringify([check.sectionId, check.itemId]))).size !== checks.length) return null;
+      return { action: value.action, expectedVersion: value.expectedVersion, authorityVersion: value.authorityVersion, checks };
+    }
+    function docWrite(route, body) {
+      const match = route.match(/^\/documents\/([^/]+)\/actions$/); if (!match) return null;
+      if (boundaryMode && (mode !== 'mutation-unknown' || !['check_item', 'check_items'].includes(body?.change?.action))) return blocked('POST', '/api/children/' + childId + route, 'preview_action_unavailable');
+      const item = data(documents).find(row => row.id === match[1]); if (!item) return fail(404, 'not_found');
+      if (!body || typeof body.opId !== 'string' || !body.change) return fail(400, 'invalid_input');
+      const previewChange = mode === 'mutation-unknown' ? parsePreviewCheck(body) : null;
+      if (mode === 'mutation-unknown' && (!previewChange || item.kind !== 'preparation' || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.opId))) return fail(400, 'invalid_input');
+      const canonical = JSON.stringify({ route, body }), previous = operations.get(body.opId);
+      if (previous) {
+        if (previous.canonical !== canonical) return fail(409, 'operation_conflict');
+        if (unknownReceipt?.opId === body.opId) unknownReceipt.replayCount++;
+        return json(previous.result);
+      }
+      if (mode === 'mutation-unknown' && (item.status !== 'active' || item.readState !== 'ready' || !item.current || item.current.sourceBasis !== authority)) return fail(409, 'source_changed');
+      const change = previewChange || body.change;
+      if (change.expectedVersion !== item.version || change.authorityVersion !== authority) return fail(409, 'version_conflict');
+      if (change.action === 'check_item' || change.action === 'check_items') {
+        const checks = change.action === 'check_items' ? change.checks : [change];
+        if (!Array.isArray(checks) || !checks.length || checks.length > 128 || checks.some(check => typeof check.checked !== 'boolean' || !item.current.sections.some(s => s.kind === 'checklist' && s.id === check.sectionId && s.items.some(i => i.id === check.itemId)))) return fail(400, 'invalid_input');
+        for (const check of checks) item.current.sections.find(s => s.id === check.sectionId).items.find(i => i.id === check.itemId).checked = check.checked;
+      } else if (change.action === 'archive' || change.action === 'restore') { item.status = change.action === 'archive' ? 'archived' : 'active'; item.archivedAt = item.status === 'archived' ? at : null; }
+      else return blocked('POST', '/api/children/' + childId + route, 'preview_action_unavailable');
+      item.version++; state.sequence++; const result = { item: clone(item) }; operations.set(body.opId, { canonical, result });
+      if (mode === 'mutation-unknown' && !unknownReceipt) {
+        unknownReceipt = { opId: body.opId, path: '/api/children/' + childId + route, request: clone(body), result: clone(result), applyCount: 1, replayCount: 0, responseLost: true, readbacks: [] };
+        throw new TypeError('Synthetic preparation response lost after local application');
+      }
+      return json(result);
+    }
+    async function dispatch(input, options = {}) {
+      const url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url, origin);
+      const method = (options.method || input?.method || 'GET').toUpperCase(), signal = options.signal || input?.signal;
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+      if (url.origin !== origin || !url.pathname.startsWith('/api/')) { blocked(method, url.pathname, 'preview_network_blocked'); throw new TypeError('Preview network blocked'); }
+      const path = url.pathname.slice(4), headers = new Headers(options.headers || input?.headers);
+      const log = { method, path, scenario: state.mode }; state.requests.push(log); if (state.requests.length > 500) state.requests.shift();
+      if (headers.has('x-expected-user-id') && headers.get('x-expected-user-id') !== user.id) return fail(409, 'session_changed');
+      let body; try { const raw = options.body === undefined && typeof input?.clone === 'function' && method !== 'GET' ? await input.clone().text() : options.body; body = raw ? JSON.parse(raw) : null; } catch { return fail(400, 'invalid_input'); }
+      if (method === 'GET' && path === '/auth/get-session') return json(state.signedIn ? { user } : null);
+      if (method === 'GET' && path === '/account') return json(account());
+      if (method === 'POST' && path === '/auth/sign-out') { state.signedIn = false; return json({ success: true }); }
+      if (method === 'POST' && path === '/auth/sign-in/email') {
+        if (body?.email !== user.email || body?.password !== 'harbour-demo') return fail(401, 'invalid_credentials');
+        state.signedIn = true; return json({ user });
+      }
+      if (!state.signedIn) return fail(401, 'unauthorized');
+      if (path === '/ai/settings/models' && method !== 'GET') return blocked(method, path, 'preview_action_unavailable');
+      if (method === 'GET') {
+        if (path === '/children') return json({ children: mode === 'no-child' ? [] : [child], nextCursor: null });
+        if (path === '/account/messages') return state.mode === 'error' ? fail(503, 'preview_read_unavailable') : json({ schemaVersion: 1, userId: user.id, scopeVersion: 'a'.repeat(64), asOf: at, items: mode === 'no-child' ? [] : data([{ messageId: 'web_push:' + uuid(90), contentVersion: 1, scope: { kind: 'child', childId, childName: child.displayName }, sentAt: '2026-10-24T01:00:00.000Z', contents: [{ channel: 'web_push', contentVersion: 'web-push-generic-v1', title: '育伴港照護提示', body: '你有獲授權的照護事項提示，請開啟育伴港查看。', sentAt: '2026-10-24T01:00:00.000Z' }] }]), nextCursor: null, complete: true, coverage: { kind: 'recorded_provider_acceptances', historical: 'unknown', excluded: ['authentication_email', 'unconfirmed_or_unsaved_sends'], pagination: 'live' } });
+        if (path === '/families') return json({ families: [{ id: workspaceId, ownerName: user.name, role: 'owner', version: 1, members: [{ userId: user.id, name: user.name, role: 'owner' }], invitations: [] }] });
+        if (path === '/notification-preferences') return json({ preferences: preference });
+        if (path === '/me/avatar') return json(avatar({ kind: 'self' }));
+        if (path === '/admin/session') return json({ administrator: false });
+        if (path === '/online/spaces') return json({ workspaces: [{ id: workspaceId, storageEpoch: epoch }] });
+        if (path === '/online/changes') {
+          if (url.searchParams.get('workspaceId') !== workspaceId || url.searchParams.get('storageEpoch') !== epoch) return fail(403, 'access_denied');
+          return json({ workspaceId, storageEpoch: epoch, cursor: String(state.sequence), accessVersion: 1, changes: [], hasMore: false });
+        }
+        if (path === '/ai/status') return json({ available: false });
+        if (path === '/ai/usage') return json(usage);
+        if (path === '/ai/settings/models') {
+          const provider = url.searchParams.get('provider') || 'gemini';
+          if (!['gemini', 'vertex', 'openai-compatible'].includes(provider)) return fail(400, 'invalid_input');
+          return json({ version: 0, provider, scope: 'model_metadata_only', status: 'not_checked', truncated: false, embedding: { model: 'gemini-embedding-001', dimensions: 1024, status: 'not_checked' }, models: [] });
+        }
+        if (path === '/ai/settings') return json({ settings: { version: 0, mode: 'disabled', provider: 'gemini', model: 'gemini-3-flash-preview', keyConfigured: false, backgroundEnabled: false, dailyLimit: 100, maxModelCalls: 8, maxQueryEmbeddings: 4, updatedAt: null }, enabled: false, platformAvailable: false, personalAvailable: false, personalGlobalLimit: 100, usage: { platform: usage, personal: usage } });
+        if (path === '/telegram') return json({ configured: false, workerEnabled: false, botUsername: null, binding: null, challenge: null, deliveries: [] });
+        if (path === '/web-push') return json({ userId: user.id, available: false, workerEnabled: false, publicKey: null, supportedProviders: [], bin

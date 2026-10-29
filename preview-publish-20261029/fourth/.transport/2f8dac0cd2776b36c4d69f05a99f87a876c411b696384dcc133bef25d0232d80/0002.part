@@ -1,0 +1,872 @@
+T').toUpperCase();
+        const released = await reads.response(url.pathname, method, response, init.signal || input?.signal, pagedHistory ? url.search : undefined);
+        if (released.ok && (method === 'GET' || method === 'POST' && url.pathname.endsWith('/care/search')) && !url.pathname.startsWith('/api/online/')) {
+            let data = null;
+            try {
+                data = await released.clone().json();
+            }
+            catch { /* Binary content has its own integrity receipt in the test harness. */ }
+            if (method === 'GET')
+                documentWrites.observeRead(url.pathname + url.search, data);
+            for (const entry of operations.values()) {
+                if (!entry.receipt || entry.scopeChildId && !url.pathname.startsWith('/api/children/' + entry.scopeChildId + '/'))
+                    continue;
+                const result = entry.receipt.result, target = result.record || result.task || result.preparation || result.preferences || result.child;
+                const candidates = [data?.task, data?.profile, data?.preparation, data?.preferences, ...(data?.records || []), ...(data?.items || []), ...(data?.children || []), ...(data?.revisions || []).map((r) => r.task || r)];
+                const read = candidates.find((row) => row && target && (target.id ? row.id === target.id : result.preparation ? url.pathname.endsWith('/summary') && row === data?.preparation : result.preferences ? url.pathname === '/api/notification-preferences' && row === data?.preferences : false));
+                if (read) {
+                    entry.readbacks.push({ path: url.pathname + url.search, id: read.id || entry.scopeChildId || 'self-preferences', version: read.version ?? null });
+                    if (entry.readbacks.length > 40)
+                        entry.readbacks.shift();
+                }
+            }
+        }
+        return released;
+    }
+    return Object.freeze({ version: VERSION, ids: { ...base.ids, epoch, secondChildId: uuid(10001) }, state: { mode: options.mode, requests, blocked }, transport, boundary, snapshot: () => clone({ scopes: [...scopes.values()].map(({ recordHistory, taskHistory, ...s }) => s), preferences }), setMode: base.setMode });
+}
+
+},
+3:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.documentChangeSchema = exports.z = exports.preferencesInput = exports.validateCreateChild = exports.summarizeCare = exports.changeTask = exports.summaryQuery = exports.preparationInput = exports.taskChangeSchema = exports.taskCreateSchema = exports.profileDataSchema = exports.careSearchSchema = exports.careCreateSchema = exports.canonicalJson = exports.onlineSubmissionSchema = exports.onlineCommandSchema = void 0;
+var online_generated_ts_1 = __require(4);
+Object.defineProperty(exports, "onlineCommandSchema", { enumerable: true, get: function () { return online_generated_ts_1.onlineCommandSchema; } });
+Object.defineProperty(exports, "onlineSubmissionSchema", { enumerable: true, get: function () { return online_generated_ts_1.onlineSubmissionSchema; } });
+Object.defineProperty(exports, "canonicalJson", { enumerable: true, get: function () { return online_generated_ts_1.canonicalJson; } });
+var care_validation_ts_1 = __require(99);
+Object.defineProperty(exports, "careCreateSchema", { enumerable: true, get: function () { return care_validation_ts_1.careCreateSchema; } });
+Object.defineProperty(exports, "careSearchSchema", { enumerable: true, get: function () { return care_validation_ts_1.careSearchSchema; } });
+Object.defineProperty(exports, "profileDataSchema", { enumerable: true, get: function () { return care_validation_ts_1.profileDataSchema; } });
+var tasks_ts_1 = __require(101);
+Object.defineProperty(exports, "taskCreateSchema", { enumerable: true, get: function () { return tasks_ts_1.taskCreateSchema; } });
+Object.defineProperty(exports, "taskChangeSchema", { enumerable: true, get: function () { return tasks_ts_1.taskChangeSchema; } });
+var care_summary_ts_1 = __require(102);
+Object.defineProperty(exports, "preparationInput", { enumerable: true, get: function () { return care_summary_ts_1.preparationInput; } });
+Object.defineProperty(exports, "summaryQuery", { enumerable: true, get: function () { return care_summary_ts_1.summaryQuery; } });
+var policy_generated_ts_1 = __require(103);
+Object.defineProperty(exports, "changeTask", { enumerable: true, get: function () { return policy_generated_ts_1.changeTask; } });
+var care_summary_policy_ts_1 = __require(104);
+Object.defineProperty(exports, "summarizeCare", { enumerable: true, get: function () { return care_summary_policy_ts_1.summarizeCare; } });
+var inputs_ts_1 = __require(105);
+Object.defineProperty(exports, "validateCreateChild", { enumerable: true, get: function () { return inputs_ts_1.validateCreateChild; } });
+var preferences_generated_ts_1 = __require(106);
+Object.defineProperty(exports, "preferencesInput", { enumerable: true, get: function () { return preferences_generated_ts_1.preferencesInput; } });
+var zod_1 = __require(5);
+Object.defineProperty(exports, "z", { enumerable: true, get: function () { return zod_1.z; } });
+var family_documents_ts_1 = __require(107);
+Object.defineProperty(exports, "documentChangeSchema", { enumerable: true, get: function () { return family_documents_ts_1.documentChangeSchema; } });
+
+},
+4:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.onlineSubmissionSchema = exports.onlineCommandSchema = exports.onlineIdentitySchema = void 0;
+exports.canonicalJson = canonicalJson;
+const zod_1 = __require(5);
+exports.onlineIdentitySchema = zod_1.z.object({ opId: zod_1.z.uuid(), deviceId: zod_1.z.uuid(), workspaceId: zod_1.z.uuid(), storageEpoch: zod_1.z.uuid() }).strict();
+exports.onlineCommandSchema = zod_1.z.object({ path: zod_1.z.string().max(256), payload: zod_1.z.record(zod_1.z.string(), zod_1.z.unknown()) }).strict();
+exports.onlineSubmissionSchema = exports.onlineCommandSchema.extend({ operation: exports.onlineIdentitySchema }).strict();
+function canonicalJson(value) {
+    if (Array.isArray(value))
+        return `[${value.map(canonicalJson).join(",")}]`;
+    if (value !== null && typeof value === "object")
+        return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(",")}}`;
+    return JSON.stringify(value);
+}
+
+},
+5:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = exports.z = void 0;
+const z = __importStar(__require(6));
+exports.z = z;
+exports.default = z;
+__exportStar(__require(6), exports);
+
+},
+6:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.coerce = exports.iso = exports.ZodISODuration = exports.ZodISOTime = exports.ZodISODate = exports.ZodISODateTime = exports.locales = exports.output = exports.input = exports.deepPartial = exports.fromJSONSchema = exports.toJSONSchema = exports.getDiscriminatedOption = exports.ZodCompileUnsupportedError = exports.ZodCompileAsyncError = exports.compile = exports.toZod = exports.NEVER = exports.util = exports.TimePrecision = exports.flattenError = exports.formatError = exports.prettifyError = exports.treeifyError = exports.regexes = exports.clone = exports.$brand = exports.$input = exports.$output = exports.memoizer = exports.config = exports.registry = exports.globalRegistry = exports.core = void 0;
+exports.core = __importStar(__require(7));
+__exportStar(__require(88), exports);
+__exportStar(__require(89), exports);
+__exportStar(__require(91), exports);
+__exportStar(__require(90), exports);
+__exportStar(__require(92), exports);
+var index_js_1 = __require(7);
+Object.defineProperty(exports, "globalRegistry", { enumerable: true, get: function () { return index_js_1.globalRegistry; } });
+Object.defineProperty(exports, "registry", { enumerable: true, get: function () { return index_js_1.registry; } });
+Object.defineProperty(exports, "config", { enumerable: true, get: function () { return index_js_1.config; } });
+Object.defineProperty(exports, "memoizer", { enumerable: true, get: function () { return index_js_1.memoizer; } });
+Object.defineProperty(exports, "$output", { enumerable: true, get: function () { return index_js_1.$output; } });
+Object.defineProperty(exports, "$input", { enumerable: true, get: function () { return index_js_1.$input; } });
+Object.defineProperty(exports, "$brand", { enumerable: true, get: function () { return index_js_1.$brand; } });
+Object.defineProperty(exports, "clone", { enumerable: true, get: function () { return index_js_1.clone; } });
+Object.defineProperty(exports, "regexes", { enumerable: true, get: function () { return index_js_1.regexes; } });
+Object.defineProperty(exports, "treeifyError", { enumerable: true, get: function () { return index_js_1.treeifyError; } });
+Object.defineProperty(exports, "prettifyError", { enumerable: true, get: function () { return index_js_1.prettifyError; } });
+Object.defineProperty(exports, "formatError", { enumerable: true, get: function () { return index_js_1.formatError; } });
+Object.defineProperty(exports, "flattenError", { enumerable: true, get: function () { return index_js_1.flattenError; } });
+Object.defineProperty(exports, "TimePrecision", { enumerable: true, get: function () { return index_js_1.TimePrecision; } });
+Object.defineProperty(exports, "util", { enumerable: true, get: function () { return index_js_1.util; } });
+Object.defineProperty(exports, "NEVER", { enumerable: true, get: function () { return index_js_1.NEVER; } });
+Object.defineProperty(exports, "toZod", { enumerable: true, get: function () { return index_js_1.toZod; } });
+Object.defineProperty(exports, "compile", { enumerable: true, get: function () { return index_js_1.compile; } });
+Object.defineProperty(exports, "ZodCompileAsyncError", { enumerable: true, get: function () { return index_js_1.ZodCompileAsyncError; } });
+Object.defineProperty(exports, "ZodCompileUnsupportedError", { enumerable: true, get: function () { return index_js_1.ZodCompileUnsupportedError; } });
+Object.defineProperty(exports, "getDiscriminatedOption", { enumerable: true, get: function () { return index_js_1.getDiscriminatedOption; } });
+var json_schema_processors_js_1 = __require(85);
+Object.defineProperty(exports, "toJSONSchema", { enumerable: true, get: function () { return json_schema_processors_js_1.toJSONSchema; } });
+var from_json_schema_js_1 = __require(93);
+Object.defineProperty(exports, "fromJSONSchema", { enumerable: true, get: function () { return from_json_schema_js_1.fromJSONSchema; } });
+var deep_partial_js_1 = __require(95);
+Object.defineProperty(exports, "deepPartial", { enumerable: true, get: function () { return deep_partial_js_1.deepPartial; } });
+// Types and values both, from one module — re-exporting the types from core would collide.
+var in_out_js_1 = __require(97);
+Object.defineProperty(exports, "input", { enumerable: true, get: function () { return in_out_js_1.input; } });
+Object.defineProperty(exports, "output", { enumerable: true, get: function () { return in_out_js_1.output; } });
+exports.locales = __importStar(__require(18));
+// iso must be exported from top-level https://github.com/colinhacks/zod/issues/4491
+var iso_js_1 = __require(94);
+Object.defineProperty(exports, "ZodISODateTime", { enumerable: true, get: function () { return iso_js_1.ZodISODateTime; } });
+Object.defineProperty(exports, "ZodISODate", { enumerable: true, get: function () { return iso_js_1.ZodISODate; } });
+Object.defineProperty(exports, "ZodISOTime", { enumerable: true, get: function () { return iso_js_1.ZodISOTime; } });
+Object.defineProperty(exports, "ZodISODuration", { enumerable: true, get: function () { return iso_js_1.ZodISODuration; } });
+exports.iso = __importStar(__require(94));
+exports.coerce = __importStar(__require(98));
+
+},
+7:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.JSONSchema = exports.JSONSchemaGenerator = exports.toJSONSchema = exports.locales = exports.regexes = exports.toZod = exports.util = void 0;
+__exportStar(__require(8), exports);
+__exportStar(__require(10), exports);
+__exportStar(__require(11), exports);
+__exportStar(__require(12), exports);
+__exportStar(__require(17), exports);
+__exportStar(__require(13), exports);
+__exportStar(__require(16), exports);
+exports.util = __importStar(__require(9));
+var util_js_1 = __require(9);
+Object.defineProperty(exports, "toZod", { enumerable: true, get: function () { return util_js_1.toZod; } });
+exports.regexes = __importStar(__require(14));
+exports.locales = __importStar(__require(18));
+__exportStar(__require(81), exports);
+__exportStar(__require(15), exports);
+__exportStar(__require(82), exports);
+__exportStar(__require(83), exports);
+__exportStar(__require(84), exports);
+var json_schema_processors_js_1 = __require(85);
+Object.defineProperty(exports, "toJSONSchema", { enumerable: true, get: function () { return json_schema_processors_js_1.toJSONSchema; } });
+var json_schema_generator_js_1 = __require(86);
+Object.defineProperty(exports, "JSONSchemaGenerator", { enumerable: true, get: function () { return json_schema_generator_js_1.JSONSchemaGenerator; } });
+exports.JSONSchema = __importStar(__require(87));
+
+},
+8:function(module,exports,__require){
+"use strict";
+var _a;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.globalConfig = exports.$ZodEncodeError = exports.$ZodAsyncError = exports.$brand = exports.NEVER = void 0;
+exports.$constructor = $constructor;
+exports.config = config;
+const util_js_1 = __require(9);
+/** A special constant with type `never` */
+exports.NEVER = Object.freeze({
+    status: "aborted",
+});
+/* Shared descriptor for installing `_zod`; defineProperty reads it
+ * synchronously, so reusing one object avoids a per-instance allocation. */
+const _zodDesc = { value: undefined, enumerable: false };
+// null where suppressing the capture would be unrecoverable: `parse()` puts the frames back with `captureStackTrace`, so without it the throw would lose its stack. also latched to null once `stackTraceLimit` proves unassignable, which a realm can do at any point by hardening Error
+let _E = "captureStackTrace" in Error ? Error : null;
+// v8 captures a stack trace inside the Error constructor, which dominates a failed parse; costs only the frames, and parse() restores those. the constructor must RUN: Object.create is cheaper and passes instanceof, but Error.isError and util.types.isNativeError check an internal slot
+function newError(Definition) {
+    const E = _E;
+    if (E) {
+        const saved = E.stackTraceLimit;
+        if (typeof saved === "number") {
+            try {
+                E.stackTraceLimit = 0;
+            }
+            catch {
+                _E = null;
+                return new Definition();
+            }
+            try {
+                return new Definition();
+            }
+            finally {
+                E.stackTraceLimit = saved;
+            }
+        }
+    }
+    return new Definition();
+}
+function $constructor(name, initializer, 
+/** This trait's members, installed once on every prototype that composes it. They cannot be declared in the initializer above: that runs per instance, and the prototype is shared. */
+proto, params) {
+    // Prototype for this constructor's `_zod` internals. Lazily-derived fields (`values`, `pattern`, `optin`, …) install here once rather than as an accessor on every instance.
+    const zodProto = {};
+    // Assigning the fields in the constructor body is what gives instances in-object slots; building the object literally and reparenting it costs a second allocation and a generic property copy.
+    function Internals(def) {
+        this.def = def;
+        this.constr = _;
+        this.traits = new Set();
+    }
+    Internals.prototype = zodProto;
+    const protoMembers = proto;
+    // One trait's members land on every prototype whose chain composes it, so the answer is per prototype rather than per trait.
+    const initialized = protoMembers && new WeakSet();
+    function init(inst, def) {
+        if (!inst._zod) {
+            _zodDesc.value = new Internals(def);
+            try {
+                Object.defineProperty(inst, "_zod", _zodDesc);
+            }
+            finally {
+                // Cleared even on throw, so the shared descriptor never leaks one instance's internals into the next.
+                _zodDesc.value = undefined;
+            }
+        }
+        if (inst._zod.traits.has(name)) {
+            return;
+        }
+        inst._zod.traits.add(name);
+        initializer(inst, def);
+        if (initialized) {
+            // `super(def)` from a user subclass gives `this` a prototype the subclass owns, and installing there would overwrite whatever the subclass declared. `constr` built the instance, so its prototype is the one below the subclass's that should carry the members. A receiver whose chain never reaches that prototype installs on its own, which for a plain object handed straight to `init` means `Object.prototype` — unchanged from before.
+            const own = Object.getPrototypeOf(inst);
+            const ctorProto = inst._zod.constr.prototype;
+            let up = own;
+            while (up && up !== ctorProto)
+                up = Object.getPrototypeOf(up);
+            const target = up ?? own;
+            if (!initialized.has(target)) {
+                initialized.add(target);
+                (0, util_js_1.members)(target, protoMembers);
+            }
+        }
+        // support prototype modifications; for-in avoids the array allocation of Object.keys on the (usually empty) prototype
+        const proto = _.prototype;
+        for (const k in proto) {
+            if (!Object.prototype.hasOwnProperty.call(proto, k))
+                continue;
+            if (!(k in inst)) {
+                inst[k] = proto[k].bind(inst);
+            }
+        }
+    }
+    // doesn't work if Parent has a constructor with arguments
+    const Parent = params?.Parent ?? Object;
+    class Definition extends Parent {
+    }
+    Object.defineProperty(Definition, "name", { value: name });
+    function _(def) {
+        const inst = params?.Parent ? newError(Definition) : this;
+        init(inst, def);
+        const deferred = inst._zod.deferred;
+        if (deferred) {
+            for (const fn of deferred) {
+                fn();
+            }
+            // Released: initializers run once, and the list would otherwise be retained for the schema's lifetime.
+            inst._zod.deferred = undefined;
+        }
+        // Global post-processor hook. Internal: installed by `import "zod/compile"` to enable AOT compilation for every constructed schema. Runs last, once the instance is fully built, because it hands the instance to compile(). The post-processor is expected to be reentrancy-guarded by its own implementation.
+        const pp = globalThis.__zod_globalConfig?.postProcessor;
+        if (pp)
+            pp(inst);
+        return inst;
+    }
+    Object.defineProperty(_, "init", { value: init });
+    Object.defineProperty(_, Symbol.hasInstance, {
+        value: (inst) => {
+            if (params?.Parent && inst instanceof params.Parent)
+                return true;
+            return inst?._zod?.traits?.has(name);
+        },
+    });
+    Object.defineProperty(_, "name", { value: name });
+    return _;
+}
+//////////////////////////////   UTILITIES   ///////////////////////////////////////
+exports.$brand = Symbol("zod_brand");
+class $ZodAsyncError extends Error {
+    constructor() {
+        super(`Encountered Promise during synchronous parse. Use .parseAsync() instead.`);
+    }
+}
+exports.$ZodAsyncError = $ZodAsyncError;
+class $ZodEncodeError extends Error {
+    constructor(name) {
+        super(`Encountered unidirectional transform during encode: ${name}`);
+        this.name = "ZodEncodeError";
+    }
+}
+exports.$ZodEncodeError = $ZodEncodeError;
+(_a = globalThis).__zod_globalConfig ?? (_a.__zod_globalConfig = {});
+exports.globalConfig = globalThis.__zod_globalConfig;
+function config(newConfig) {
+    if (newConfig)
+        Object.assign(exports.globalConfig, newConfig);
+    return exports.globalConfig;
+}
+
+},
+9:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CONSTANT_CATCH = exports.Class = exports.BIGINT_FORMAT_RANGES = exports.NUMBER_FORMAT_RANGES = exports.primitiveTypes = exports.propertyKeyTypes = exports.getParsedType = exports.allowsEval = exports.captureStackTrace = void 0;
+exports.assertEqual = assertEqual;
+exports.assertNotEqual = assertNotEqual;
+exports.toZod = toZod;
+exports.assertIs = assertIs;
+exports.assertNever = assertNever;
+exports.assert = assert;
+exports.getEnumValues = getEnumValues;
+exports.joinValues = joinValues;
+exports.jsonStringifyReplacer = jsonStringifyReplacer;
+exports.cached = cached;
+exports.nullish = nullish;
+exports.cleanRegex = cleanRegex;
+exports.floatSafeRemainder = floatSafeRemainder;
+exports.defineLazy = defineLazy;
+exports.objectClone = objectClone;
+exports.assignProp = assignProp;
+exports.mergeDefs = mergeDefs;
+exports.cloneDef = cloneDef;
+exports.getElementAtPath = getElementAtPath;
+exports.promiseAllObject = promiseAllObject;
+exports.randomString = randomString;
+exports.esc = esc;
+exports.slugify = slugify;
+exports.isObject = isObject;
+exports.isPlainObject = isPlainObject;
+exports.shallowClone = shallowClone;
+exports.numKeys = numKeys;
+exports.escapeRegex = escapeRegex;
+exports.clone = clone;
+exports.normalizeParams = normalizeParams;
+exports.createTransparentProxy = createTransparentProxy;
+exports.stringifyPrimitive = stringifyPrimitive;
+exports.optionalKeys = optionalKeys;
+exports.pick = pick;
+exports.omit = omit;
+exports.extend = extend;
+exports.safeExtend = safeExtend;
+exports.merge = merge;
+exports.partial = partial;
+exports.required = required;
+exports.aborted = aborted;
+exports.explicitlyAborted = explicitlyAborted;
+exports.prefixIssues = prefixIssues;
+exports.unwrapMessage = unwrapMessage;
+exports.attachSchema = attachSchema;
+exports.finalizeIssue = finalizeIssue;
+exports.getSizableOrigin = getSizableOrigin;
+exports.codePointLength = codePointLength;
+exports.getLengthableOrigin = getLengthableOrigin;
+exports.parsedType = parsedType;
+exports.issue = issue;
+exports.cleanEnum = cleanEnum;
+exports.base64ToUint8Array = base64ToUint8Array;
+exports.uint8ArrayToBase64 = uint8ArrayToBase64;
+exports.base64urlToUint8Array = base64urlToUint8Array;
+exports.uint8ArrayToBase64url = uint8ArrayToBase64url;
+exports.hexToUint8Array = hexToUint8Array;
+exports.uint8ArrayToHex = uint8ArrayToHex;
+exports.members = members;
+exports.own = own;
+exports.hide = hide;
+exports.defineLazyInternal = defineLazyInternal;
+exports.installLazyProp = installLazyProp;
+exports.constantCatch = constantCatch;
+const core_js_1 = __require(8);
+// functions
+function assertEqual(val) {
+    return val;
+}
+function assertNotEqual(val) {
+    return val;
+}
+function toZod() {
+    return (schema) => schema;
+}
+function assertIs(_arg) { }
+function assertNever(_x) {
+    throw new Error("Unexpected value in exhaustive check");
+}
+function assert(_) { }
+function getEnumValues(entries) {
+    const numericValues = Object.values(entries).filter((v) => typeof v === "number");
+    const values = Object.entries(entries)
+        .filter(([k, _]) => numericValues.indexOf(+k) === -1)
+        .map(([_, v]) => v);
+    return values;
+}
+function joinValues(array, separator = "|") {
+    return array.map((val) => stringifyPrimitive(val)).join(separator);
+}
+function jsonStringifyReplacer(_, value) {
+    if (typeof value === "bigint")
+        return value.toString();
+    return value;
+}
+function cached(getter) {
+    const set = false;
+    return {
+        get value() {
+            if (!set) {
+                const value = getter();
+                Object.defineProperty(this, "value", { value });
+                return value;
+            }
+            throw new Error("cached value already set");
+        },
+    };
+}
+function nullish(input) {
+    return input === null || input === undefined;
+}
+function cleanRegex(source) {
+    const start = source.startsWith("^") ? 1 : 0;
+    const end = source.endsWith("$") ? source.length - 1 : source.length;
+    return source.slice(start, end);
+}
+function floatSafeRemainder(val, step) {
+    const ratio = val / step;
+    const roundedRatio = Math.round(ratio);
+    // `val` and `step` each round to a double before the division rounds again, so a true decimal multiple's quotient can sit up to 1.5 of these scaled epsilons from the integer. A 1x tolerance therefore rejected 2.03 as a multiple of 0.07; 4x covers the worst case with margin.
+    const tolerance = 4 * Number.EPSILON * Math.max(Math.abs(ratio), 1);
+    if (Math.abs(ratio - roundedRatio) < tolerance)
+        return 0;
+    return ratio - roundedRatio;
+}
+const EVALUATING = /* @__PURE__*/ Symbol("evaluating");
+function defineLazy(object, key, getter) {
+    let value = undefined;
+    Object.defineProperty(object, key, {
+        get() {
+            if (value === EVALUATING) {
+                // Circular reference detected, return undefined to break the cycle
+                return undefined;
+            }
+            if (value === undefined) {
+                value = EVALUATING;
+                value = getter();
+            }
+            return value;
+        },
+        set(v) {
+            Object.defineProperty(object, key, {
+                value: v,
+                // configurable: true,
+            });
+            // object[key] = v;
+        },
+        configurable: true,
+    });
+}
+function objectClone(obj) {
+    return Object.create(Object.getPrototypeOf(obj), Object.getOwnPropertyDescriptors(obj));
+}
+function assignProp(target, prop, value) {
+    Object.defineProperty(target, prop, {
+        value,
+        writable: true,
+        enumerable: true,
+        configurable: true,
+    });
+}
+function mergeDefs(...defs) {
+    const mergedDescriptors = {};
+    for (const def of defs) {
+        const descriptors = Object.getOwnPropertyDescriptors(def);
+        Object.assign(mergedDescriptors, descriptors);
+    }
+    return Object.defineProperties({}, mergedDescriptors);
+}
+function cloneDef(schema) {
+    return mergeDefs(schema._zod.def);
+}
+function getElementAtPath(obj, path) {
+    if (!path)
+        return obj;
+    return path.reduce((acc, key) => acc?.[key], obj);
+}
+function promiseAllObject(promisesObj) {
+    const keys = Object.keys(promisesObj);
+    const promises = keys.map((key) => promisesObj[key]);
+    return Promise.all(promises).then((results) => {
+        const resolvedObj = {};
+        for (let i = 0; i < keys.length; i++) {
+            resolvedObj[keys[i]] = results[i];
+        }
+        return resolvedObj;
+    });
+}
+function randomString(length = 10) {
+    const chars = "abcdefghijklmnopqrstuvwxyz";
+    let str = "";
+    for (let i = 0; i < length; i++) {
+        str += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return str;
+}
+function esc(str) {
+    return JSON.stringify(str);
+}
+function slugify(input) {
+    return input
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/[\s_-]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+}
+exports.captureStackTrace = ("captureStackTrace" in Error ? Error.captureStackTrace : (..._args) => { });
+function isObject(data) {
+    return typeof data === "object" && data !== null && !Array.isArray(data);
+}
+exports.allowsEval = cached(() => {
+    // Skip the probe under `jitless`: strict CSPs report the caught `new Function` as a `securitypolicyviolation` even though the throw is swallowed.
+    if (core_js_1.globalConfig.jitless) {
+        return false;
+    }
+    // @ts-ignore
+    if (typeof navigator !== "undefined" && navigator?.userAgent?.includes("Cloudflare")) {
+        return false;
+    }
+    try {
+        const F = Function;
+        new F("");
+        return true;
+    }
+    catch (_) {
+        return false;
+    }
+});
+function isPlainObject(o) {
+    if (isObject(o) === false)
+        return false;
+    // modified constructor
+    const ctor = o.constructor;
+    if (ctor === undefined)
+        return true;
+    if (typeof ctor !== "function")
+        return true;
+    // modified prototype
+    const prot = ctor.prototype;
+    if (isObject(prot) === false)
+        return false;
+    // ctor doesn't have static `isPrototypeOf`
+    if (Object.prototype.hasOwnProperty.call(prot, "isPrototypeOf") === false) {
+        return false;
+    }
+    return true;
+}
+function shallowClone(o) {
+    if (isPlainObject(o))
+        return { ...o };
+    if (Array.isArray(o))
+        return [...o];
+    if (o instanceof Map)
+        return new Map(o);
+    if (o instanceof Set)
+        return new Set(o);
+    return o;
+}
+function numKeys(data) {
+    let keyCount = 0;
+    for (const key in data) {
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+            keyCount++;
+        }
+    }
+    return keyCount;
+}
+const getParsedType = (data) => {
+    const t = typeof data;
+    switch (t) {
+        case "undefined":
+            return "undefined";
+        case "string":
+            return "string";
+        case "number":
+            return Number.isNaN(data) ? "nan" : "number";
+        case "boolean":
+            return "boolean";
+        case "function":
+            return "function";
+        case "bigint":
+            return "bigint";
+        case "symbol":
+            return "symbol";
+        case "object":
+            if (Array.isArray(data)) {
+                return "array";
+            }
+            if (data === null) {
+                return "null";
+            }
+            if (data.then && typeof data.then === "function" && data.catch && typeof data.catch === "function") {
+                return "promise";
+            }
+            if (typeof Map !== "undefined" && data instanceof Map) {
+                return "map";
+            }
+            if (typeof Set !== "undefined" && data instanceof Set) {
+                return "set";
+            }
+            if (typeof Date !== "undefined" && data instanceof Date) {
+                return "date";
+            }
+            // @ts-ignore
+            if (typeof File !== "undefined" && data instanceof File) {
+                return "file";
+            }
+            return "object";
+        default:
+            throw new Error(`Unknown data type: ${t}`);
+    }
+};
+exports.getParsedType = getParsedType;
+exports.propertyKeyTypes = new Set(["string", "number", "symbol"]);
+exports.primitiveTypes = new Set([
+    "string",
+    "number",
+    "bigint",
+    "boolean",
+    "symbol",
+    "undefined",
+]);
+function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+// zod-specific utils
+function clone(inst, def, params) {
+    const cl = new inst._zod.constr(def ?? inst._zod.def);
+    if (!def || params?.parent)
+        cl._zod.parent = inst;
+    return cl;
+}
+function normalizeParams(_params) {
+    const params = _params;
+    if (!params)
+        return {};
+    if (typeof params === "string")
+        return { error: () => params };
+    if (params?.message !== undefined) {
+        if (params?.error !== undefined)
+            throw new Error("Cannot specify both `message` and `error` params");
+        params.error = params.message;
+    }
+    delete params.message;
+    if (typeof params.error === "string")
+        return { ...params, error: () => params.error };
+    return params;
+}
+function createTransparentProxy(getter) {
+    let target;
+    return new Proxy({}, {
+        get(_, prop, receiver) {
+            target ?? (target = getter());
+            return Reflect.get(target, prop, receiver);
+        },
+        set(_, prop, value, receiver) {
+            target ?? (target = getter());
+            return Reflect.set(target, prop, value, receiver);
+        },
+        has(_, prop) {
+            target ?? (target = getter());
+            return Reflect.has(target, prop);
+        },
+        deleteProperty(_, prop) {
+            target ?? (target = getter());
+            return Reflect.deleteProperty(target, prop);
+        },
+        ownKeys(_) {
+            target ?? (target = getter());
+            return Reflect.ownKeys(target);
+        },
+        getOwnPropertyDescriptor(_, prop) {
+            target ?? (target = getter());
+            return Reflect.getOwnPropertyDescriptor(target, prop);
+        },
+        defineProperty(_, prop, descriptor) {
+            target ?? (target = getter());
+            return Reflect.defineProperty(target, prop, descriptor);
+        },
+    });
+}
+function stringifyPrimitive(value) {
+    if (typeof value === "bigint")
+        return value.toString() + "n";
+    if (typeof value === "string")
+        return `"${value}"`;
+    return `${value}`;
+}
+function optionalKeys(shape) {
+    return Object.keys(shape).filter((k) => {
+        return shape[k]._zod.optin !== undefined && shape[k]._zod.optout === "optional";
+    });
+}
+// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle.
+exports.NUMBER_FORMAT_RANGES = (() => ({
+    safeint: [Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
+    int32: [-2147483648, 2147483647],
+    uint32: [0, 4294967295],
+    float32: [-3.4028234663852886e38, 3.4028234663852886e38],
+    float64: [-Number.MAX_VALUE, Number.MAX_VALUE],
+}))();
+exports.BIGINT_FORMAT_RANGES = {
+    int64: [/* @__PURE__*/ BigInt("-9223372036854775808"), /* @__PURE__*/ BigInt("9223372036854775807")],
+    uint64: [/* @__PURE__*/ BigInt(0), /* @__PURE__*/ BigInt("18446744073709551615")],
+};
+function pick(schema, mask) {
+    const currDef = schema._zod.def;
+    const checks = currDef.checks;
+    const hasChecks = checks && checks.length > 0;
+    if (hasChecks) {
+        throw new Error(".pick() cannot be used on object schemas containing refinements");
+    }
+    const def = mergeDefs(schema._zod.def, {
+        get shape() {
+            const newShape = {};
+            // `for...in` skips symbols, so a symbol in the mask would select nothing
+            for (const key of Reflect.ownKeys(mask)) {
+                if (!Object.prototype.hasOwnProperty.call(currDef.shape, key)) {
+                    throw new Error(`Unrecognized key: "${String(key)}"`);
+                }
+                if (!mask[key])
+                    continue;
+                assignProp(newShape, key, currDef.shape[key]);
+            }
+            assignProp(this, "shape", newShape); // self-caching
+            return newShape;
+        },
+        checks: [],
+    });
+    return clone(schema, def);
+}
+function omit(schema, mask) {
+    const currDef = schema._zod.def;
+    const checks = currDef.checks;
+    const hasChecks = checks && checks.length > 0;
+    if (hasChecks) {
+        throw new Error(".omit() cannot be used on object schemas containing refinements");
+    }
+    const def = mergeDefs(schema._zod.def, {
+        get shape() {
+            const newShape = { ...schema._zod.def.shape };
+            for (const key of Reflect.ownKeys(mask)) {
+                if (!Object.prototype.hasOwnProperty.call(currDef.shape, key)) {
+                    throw new Error(`Unrecognized key: "${String(key)}"`);
+                }
+                if (!mask[key])
+                    continue;
+                delete newShape[key];
+            }
+            assignProp(this, "shape", newShape); // self-caching
+            return newShape;
+        },
+        checks: [],
+    });
+    return clone(schema, def);
+}
+function extend(schema, shape) {
+    if (!isPlainObject(shape)) {
+        throw new Error("Invalid input to extend: expected a plain object");
+    }
+    const checks = schema._zod.def.checks;
+    const hasChecks = checks && checks.length > 0;
+    if (hasChecks) {
+        // Only throw if new shape overlaps with existing shape. Use getOwnPropertyDescriptor to check key existence without accessing values
+        const existingShape = schema._zod.def.shape;
+        for (const key of Reflect.ownKeys(shape)) {
+            if (Object.getOwnPropertyDescriptor(existingShape, key) !== undefined) {
+                

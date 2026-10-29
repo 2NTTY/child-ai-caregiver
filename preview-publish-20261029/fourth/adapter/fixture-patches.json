@@ -1,0 +1,21 @@
+{
+  "baseSha256": "7f7baa579563687cf664a2f5d0f671a4e2a209df5e596b82b3e5f4951017ea57",
+  "patches": [
+    {
+      "old": "const variants = Object.freeze(['harbour', 'care', 'journal']);",
+      "new": "const variants = Object.freeze(['harbour', 'care', 'journal', 'uiux-upgrade']);"
+    },
+    {
+      "old": "(function(root){const VERSION='harbour-private-boundary-fixtures-v5-20261026';const createPreview=root.__YU_PREVIEW_FACTORY__;",
+      "new": "/* Fourth-only packaging admission. The combined R2 synthetic business core is unchanged. */\n(function (root) {\n  'use strict';\n  const parent = root.__YU_PREVIEW_FACTORY__;\n  const modes = new Set(['ready', 'complete-profile', 'populated', 'long-content', 'empty', 'error', 'signedout', 'loading', 'no-child', 'mutation-unknown', 'unknown-age-zero-records', 'core-journeys', 'core-no-child']);\n  const loading = new Set(['children', 'child-reads', 'documents']);\n  root.__YU_PREVIEW_FACTORY__ = (options = {}) => {\n    if (!options || typeof options !== 'object' || Array.isArray(options)) throw new Error('Unsupported fourth preview options');\n    const comparison = options.comparison;\n    const variant = options.variant === undefined ? comparison?.version : options.variant;\n    const mode = options.mode === undefined ? 'ready' : options.mode;\n    if (variant !== 'uiux-upgrade' || !modes.has(mode)) throw new Error('Unsupported fourth preview admission');\n    if (!comparison || !Object.isFrozen(comparison) || comparison.version !== variant) throw new Error('Missing fourth preview identity');\n    if (mode === 'loading' ? !loading.has(options.loadingTarget) : options.loadingTarget !== undefined) throw new Error('Unsupported fourth preview loading');\n    for (const key of Object.keys(options)) if (key.startsWith('previewWork') || key.startsWith('initialWork')) {\n      if (options[key] !== undefined) throw new Error('Unsupported fourth preview work option');\n    }\n    return parent(options);\n  };\n})(globalThis);\n(function(root){const VERSION='harbour-private-boundary-fixtures-v5-20261026';const createPreview=root.__YU_PREVIEW_FACTORY__;"
+    },
+    {
+      "old": "  const fixture = createPreview({ variant:",
+      "new": "  // Reject bad fourth selections after networking is denied, before creating any fixture.\n  for (const key of ['experiment', 'previewScenario', 'previewLoading']) if (query.has(key) && query.get(key) === '') throw new Error('Empty fourth preview selection');\n  for (const key of query.keys()) if (key.startsWith('previewWork') || key.startsWith('initialWork')) throw new Error('Unsupported fourth preview work selection');\n  const fourthMode = query.has('previewScenario') ? query.get('previewScenario') : 'ready';\n  if (query.has('previewLoading') && fourthMode !== 'loading') throw new Error('Unexpected fourth preview loading');\n  const fixture = createPreview({ variant:"
+    },
+    {
+      "old": "loadingTarget: query.get('previewLoading') || 'children', onDiagnostic:",
+      "new": "loadingTarget: fourthMode === 'loading' ? query.get('previewLoading') || 'children' : undefined, onDiagnostic:"
+    }
+  ]
+}

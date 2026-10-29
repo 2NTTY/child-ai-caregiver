@@ -1,0 +1,831 @@
+sToIntersect.length === 0) {
+                    zodSchema = z.object({}).passthrough();
+                }
+                else if (schemasToIntersect.length === 1) {
+                    zodSchema = schemasToIntersect[0];
+                }
+                else {
+                    // Chain intersections: (A & B) & C & D ...
+                    let result = z.intersection(schemasToIntersect[0], schemasToIntersect[1]);
+                    for (let i = 2; i < schemasToIntersect.length; i++) {
+                        result = z.intersection(result, schemasToIntersect[i]);
+                    }
+                    zodSchema = result;
+                }
+                // When additionalProperties is false, reject keys that are neither defined in properties nor matched by any patternProperty.
+                if (schema.additionalProperties === false) {
+                    const propertyKeys = Object.keys(shape);
+                    const patterns = patternKeys.map((p) => new RegExp(p));
+                    const basePatternSchema = zodSchema;
+                    zodSchema = zodSchema.check((payload) => {
+                        if (!(0, util_js_1.isPlainObject)(payload.value))
+                            return;
+                        const unrecognized = [];
+                        for (const key of Object.keys(payload.value)) {
+                            if (propertyKeys.includes(key))
+                                continue;
+                            if (patterns.some((regex) => regex.test(key)))
+                                continue;
+                            unrecognized.push(key);
+                        }
+                        if (unrecognized.length) {
+                            payload.issues.push({
+                                code: "unrecognized_keys",
+                                keys: unrecognized,
+                                input: payload.value,
+                                inst: basePatternSchema,
+                            });
+                        }
+                    });
+                }
+            }
+            else {
+                // Handle additionalProperties. In JSON Schema, additionalProperties defaults to true (allow any extra properties). In Zod, objects strip unknown keys by default, so we need to handle this explicitly
+                const objectSchema = z.object(shape);
+                if (schema.additionalProperties === false) {
+                    // Strict mode - no extra properties allowed
+                    zodSchema = objectSchema.strict();
+                }
+                else if (additionalSchema) {
+                    // Extra properties must match the specified schema
+                    zodSchema = objectSchema.catchall(additionalSchema);
+                }
+                else {
+                    // additionalProperties is true or undefined - allow any extra properties (passthrough)
+                    zodSchema = objectSchema.passthrough();
+                }
+            }
+            // propertyNames constrains key *names* only, and says nothing about which keys are required or how their values validate. Layering it on top of the result keeps properties/patternProperties/additionalProperties composing underneath. `true` allows every name, so it needs no guard.
+            if (schema.propertyNames !== undefined && schema.propertyNames !== true) {
+                // Keys are always strings, so a propertyNames subschema that omits `type` still constrains them — without this it would convert to z.any().
+                const keyJSONSchema = typeof schema.propertyNames === "object" && schema.propertyNames.type === undefined
+                    ? { type: "string", ...schema.propertyNames }
+                    : schema.propertyNames;
+                zodSchema = checkPropertyNames(zodSchema, convertSchema(keyJSONSchema, ctx));
+            }
+            break;
+        }
+        case "array": {
+            // TODO: uniqueItems and contains/minContains/maxContains are not supported
+            // Check if this is a tuple (prefixItems or items as array)
+            const prefixItems = schema.prefixItems;
+            const items = schema.items;
+            if (prefixItems && Array.isArray(prefixItems)) {
+                // Tuple with prefixItems (draft-2020-12)
+                const minItems = typeof schema.minItems === "number" ? schema.minItems : 0;
+                const tupleItems = prefixItems.map((item) => convertSchema(item, ctx));
+                const positionalItems = applyMinItems(tupleItems, minItems);
+                const rest = !Array.isArray(items) ? getTupleRest(items, ctx) : undefined;
+                const tupleSchema = z.tuple(positionalItems);
+                zodSchema = rest ? tupleSchema.rest(rest) : tupleSchema;
+                // Apply minItems/maxItems constraints to tuples
+                if (typeof schema.minItems === "number") {
+                    zodSchema = zodSchema.check(z.minLength(schema.minItems));
+                }
+                if (typeof schema.maxItems === "number") {
+                    zodSchema = zodSchema.check(z.maxLength(schema.maxItems));
+                }
+            }
+            else if (Array.isArray(items)) {
+                // Tuple with items array (draft-7)
+                const minItems = typeof schema.minItems === "number" ? schema.minItems : 0;
+                const tupleItems = items.map((item) => convertSchema(item, ctx));
+                const positionalItems = applyMinItems(tupleItems, minItems);
+                const rest = getTupleRest(schema.additionalItems, ctx);
+                const tupleSchema = z.tuple(positionalItems);
+                zodSchema = rest ? tupleSchema.rest(rest) : tupleSchema;
+                // Apply minItems/maxItems constraints to tuples
+                if (typeof schema.minItems === "number") {
+                    zodSchema = zodSchema.check(z.minLength(schema.minItems));
+                }
+                if (typeof schema.maxItems === "number") {
+                    zodSchema = zodSchema.check(z.maxLength(schema.maxItems));
+                }
+            }
+            else if (items !== undefined) {
+                // Regular array
+                const element = convertSchema(items, ctx);
+                let arraySchema = z.array(element);
+                // Apply constraints
+                if (typeof schema.minItems === "number") {
+                    arraySchema = arraySchema.min(schema.minItems);
+                }
+                if (typeof schema.maxItems === "number") {
+                    arraySchema = arraySchema.max(schema.maxItems);
+                }
+                zodSchema = arraySchema;
+            }
+            else {
+                // No items specified - array of any
+                zodSchema = z.array(z.any());
+            }
+            break;
+        }
+        default:
+            throw new Error(`Unsupported type: ${type}`);
+    }
+    return zodSchema;
+}
+function convertSchema(schema, ctx) {
+    if (typeof schema === "boolean") {
+        return schema ? z.any() : z.never();
+    }
+    // Convert base schema first (ignoring composition keywords)
+    let baseSchema = convertBaseSchema(schema, ctx);
+    const hasExplicitType = schema.type || schema.enum !== undefined || schema.const !== undefined;
+    // Process composition keywords LAST (they can appear together)
+    // Handle anyOf - wrap base schema with union
+    if (schema.anyOf && Array.isArray(schema.anyOf)) {
+        const options = schema.anyOf.map((s) => convertSchema(s, ctx));
+        const anyOfUnion = z.union(options);
+        baseSchema = hasExplicitType ? z.intersection(baseSchema, anyOfUnion) : anyOfUnion;
+    }
+    // Handle oneOf - exclusive union (exactly one must match)
+    if (schema.oneOf && Array.isArray(schema.oneOf)) {
+        const options = schema.oneOf.map((s) => convertSchema(s, ctx));
+        const oneOfUnion = z.xor(options);
+        baseSchema = hasExplicitType ? z.intersection(baseSchema, oneOfUnion) : oneOfUnion;
+    }
+    // Handle allOf - wrap base schema with intersection
+    if (schema.allOf && Array.isArray(schema.allOf)) {
+        if (schema.allOf.length === 0) {
+            baseSchema = hasExplicitType ? baseSchema : z.any();
+        }
+        else {
+            let result = hasExplicitType ? baseSchema : convertSchema(schema.allOf[0], ctx);
+            const startIdx = hasExplicitType ? 0 : 1;
+            for (let i = startIdx; i < schema.allOf.length; i++) {
+                result = z.intersection(result, convertSchema(schema.allOf[i], ctx));
+            }
+            baseSchema = result;
+        }
+    }
+    // Handle nullable (OpenAPI 3.0)
+    if (schema.nullable === true && ctx.version === "openapi-3.0") {
+        baseSchema = z.nullable(baseSchema);
+    }
+    // Handle readOnly
+    if (schema.readOnly === true) {
+        baseSchema = z.readonly(baseSchema);
+    }
+    // Apply `default` so it wraps the fully-composed schema. This ensures `parse(undefined) -> default` works regardless of which branch of `convertBaseSchema` produced the inner schema (enum/const/not/typed/etc.).
+    if (schema.default !== undefined) {
+        baseSchema = baseSchema.default(schema.default);
+    }
+    // Collect non-description annotation metadata into the user-supplied registry. Description is handled separately below via `.describe()` to preserve the contract that `schema.description` reads from globalRegistry.
+    const extraMeta = {};
+    const coreMetadataKeys = ["$id", "id", "$comment", "$anchor", "$vocabulary", "$dynamicRef", "$dynamicAnchor"];
+    for (const key of coreMetadataKeys) {
+        if (key in schema) {
+            extraMeta[key] = schema[key];
+        }
+    }
+    const contentMetadataKeys = ["contentEncoding", "contentMediaType", "contentSchema"];
+    for (const key of contentMetadataKeys) {
+        if (key in schema) {
+            extraMeta[key] = schema[key];
+        }
+    }
+    // `propertyNames` is enforced by a key guard, which `toJSONSchema` cannot infer, so the original keyword is carried as metadata to keep the round-trip lossless. Only where it was actually applied: on any other type it is inert, and on a `$ref` the metadata would land on the target every reference shares.
+    if (schema.propertyNames !== undefined && schema.type === "object" && schema.$ref === undefined) {
+        extraMeta.propertyNames = schema.propertyNames;
+    }
+    for (const key of Object.keys(schema)) {
+        if (!RECOGNIZED_KEYS.has(key)) {
+            (0, util_js_1.assignProp)(extraMeta, key, schema[key]);
+        }
+    }
+    if (Object.keys(extraMeta).length > 0) {
+        ctx.registry.add(baseSchema, extraMeta);
+    }
+    // Apply description last. `.describe()` clones the schema and sets `_zod.parent` on the clone, so registry lookups on the returned reference still resolve `extraMeta` via parent inheritance.
+    if (schema.description) {
+        baseSchema = baseSchema.describe(schema.description);
+    }
+    return baseSchema;
+}
+/**
+ * Converts a JSON Schema to a Zod schema. This function should be considered semi-experimental. It's behavior is liable to change. */
+function fromJSONSchema(schema, params) {
+    // Handle boolean schemas
+    if (typeof schema === "boolean") {
+        return schema ? z.any() : z.never();
+    }
+    // Normalize input via a JSON round-trip. This guarantees the converter walks a plain, finite, JSON-valid object graph: cyclic inputs fail here, getter/Proxy-based properties are materialized into static values, and class instances collapse to plain objects.
+    let normalized;
+    try {
+        normalized = JSON.parse(JSON.stringify(schema));
+    }
+    catch {
+        throw new Error("fromJSONSchema input is not valid JSON (possibly cyclic); use $defs/$ref for recursive schemas");
+    }
+    const version = detectVersion(normalized, params?.defaultTarget);
+    const defs = (normalized.$defs || normalized.definitions || {});
+    const ctx = {
+        version,
+        defs,
+        refs: new Map(),
+        processing: new Set(),
+        rootSchema: normalized,
+        registry: params?.registry ?? registries_js_1.globalRegistry,
+    };
+    return convertSchema(normalized, ctx);
+}
+
+},
+94:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ZodISOTime = exports.ZodISODuration = exports.ZodISODateTime = exports.ZodISODate = void 0;
+exports.datetime = datetime;
+exports.date = date;
+exports.time = time;
+exports.duration = duration;
+const core = __importStar(__require(7));
+const schemas_js_1 = __require(88);
+var schemas_js_2 = __require(88);
+Object.defineProperty(exports, "ZodISODate", { enumerable: true, get: function () { return schemas_js_2.ZodISODate; } });
+Object.defineProperty(exports, "ZodISODateTime", { enumerable: true, get: function () { return schemas_js_2.ZodISODateTime; } });
+Object.defineProperty(exports, "ZodISODuration", { enumerable: true, get: function () { return schemas_js_2.ZodISODuration; } });
+Object.defineProperty(exports, "ZodISOTime", { enumerable: true, get: function () { return schemas_js_2.ZodISOTime; } });
+function datetime(params) {
+    return core._isoDateTime(schemas_js_1.ZodISODateTime, params);
+}
+function date(params) {
+    return core._isoDate(schemas_js_1.ZodISODate, params);
+}
+function time(params) {
+    return core._isoTime(schemas_js_1.ZodISOTime, params);
+}
+function duration(params) {
+    return core._isoDuration(schemas_js_1.ZodISODuration, params);
+}
+
+},
+95:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.deepPartial = deepPartial;
+const visit_js_1 = __require(96);
+const schemas = __importStar(__require(88));
+/** Returns a copy of the schema with every nested object's properties made optional. */
+function deepPartial(schema) {
+    return (0, visit_js_1.visit)(schema, {
+        object: (s) => s.partial(),
+        // Every partialed option now admits `undefined`, which the constructor rejects as a duplicate.
+        union: (s) => {
+            const def = s._zod.def;
+            return def.discriminator === undefined ? s : schemas.union(def.options);
+        },
+    });
+}
+
+},
+96:function(module,exports,__require){
+"use strict";
+// Traversal pattern adapted from Jaen's v3 `mapOnSchema` (Apache-2.0): https://gist.github.com/jaens/7e15ae1984bb338c86eb5e452dee3010
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.visit = visit;
+const schemas = __importStar(__require(12));
+const util_js_1 = __require(9);
+const RESOLVING = Symbol("z.visit/resolving");
+function visit(schema, fnOrHandlers) {
+    const fn = typeof fnOrHandlers === "function"
+        ? fnOrHandlers
+        : (node, rewritten) => {
+            // A union of handlers isn't callable with one argument; handler `K` only ever sees kind `K`.
+            const h = fnOrHandlers[node._zod.def.type];
+            return h ? h(node, rewritten) : node;
+        };
+    const cache = new Map();
+    function run(s) {
+        const cached = cache.get(s);
+        if (cached === RESOLVING) {
+            // Non-lazy cycle. Defer to parse time, when the cache holds the finished node.
+            return new schemas.$ZodLazy({
+                type: "lazy",
+                getter: () => cache.get(s),
+            });
+        }
+        if (cached !== undefined)
+            return cached;
+        cache.set(s, RESOLVING);
+        const inner = mapInner(s);
+        const mapped = fn(inner, inner !== s);
+        cache.set(s, mapped);
+        return mapped;
+    }
+    function mapInner(s) {
+        const def = s._zod.def;
+        const kind = def.type;
+        switch (kind) {
+            case "object": {
+                const oldShape = def.shape;
+                const keys = Object.keys(oldShape);
+                let changed = false;
+                const newShape = {};
+                for (const k of keys) {
+                    const mapped = run(oldShape[k]);
+                    if (mapped !== oldShape[k])
+                        changed = true;
+                    newShape[k] = mapped;
+                }
+                let newCatchall = def.catchall;
+                if (def.catchall) {
+                    newCatchall = run(def.catchall);
+                    if (newCatchall !== def.catchall)
+                        changed = true;
+                }
+                return changed ? (0, util_js_1.clone)(s, { ...def, shape: newShape, catchall: newCatchall }) : s;
+            }
+            case "array": {
+                const mapped = run(def.element);
+                return mapped === def.element ? s : (0, util_js_1.clone)(s, { ...def, element: mapped });
+            }
+            case "tuple": {
+                const oldItems = def.items;
+                let changed = false;
+                const newItems = [];
+                for (const item of oldItems) {
+                    const mapped = run(item);
+                    if (mapped !== item)
+                        changed = true;
+                    newItems.push(mapped);
+                }
+                let newRest = def.rest;
+                if (def.rest) {
+                    newRest = run(def.rest);
+                    if (newRest !== def.rest)
+                        changed = true;
+                }
+                return changed ? (0, util_js_1.clone)(s, { ...def, items: newItems, rest: newRest }) : s;
+            }
+            case "record":
+            case "map": {
+                const newKey = run(def.keyType);
+                const newVal = run(def.valueType);
+                return newKey === def.keyType && newVal === def.valueType
+                    ? s
+                    : (0, util_js_1.clone)(s, { ...def, keyType: newKey, valueType: newVal });
+            }
+            case "set": {
+                const newVal = run(def.valueType);
+                return newVal === def.valueType ? s : (0, util_js_1.clone)(s, { ...def, valueType: newVal });
+            }
+            case "union": {
+                const oldOptions = def.options;
+                let changed = false;
+                const newOptions = [];
+                for (const opt of oldOptions) {
+                    const mapped = run(opt);
+                    if (mapped !== opt)
+                        changed = true;
+                    newOptions.push(mapped);
+                }
+                return changed ? (0, util_js_1.clone)(s, { ...def, options: newOptions }) : s;
+            }
+            case "intersection": {
+                const newLeft = run(def.left);
+                const newRight = run(def.right);
+                return newLeft === def.left && newRight === def.right
+                    ? s
+                    : (0, util_js_1.clone)(s, { ...def, left: newLeft, right: newRight });
+            }
+            case "optional":
+            case "nullable":
+            case "default":
+            case "prefault":
+            case "catch":
+            case "readonly":
+            case "nonoptional":
+            case "promise":
+            case "success": {
+                const newInner = run(def.innerType);
+                return newInner === def.innerType ? s : (0, util_js_1.clone)(s, { ...def, innerType: newInner });
+            }
+            case "pipe": {
+                const newIn = run(def.in);
+                const newOut = run(def.out);
+                return newIn === def.in && newOut === def.out ? s : (0, util_js_1.clone)(s, { ...def, in: newIn, out: newOut });
+            }
+            case "function": {
+                const newInput = run(def.input);
+                const newOutput = run(def.output);
+                return newInput === def.input && newOutput === def.output
+                    ? s
+                    : (0, util_js_1.clone)(s, { ...def, input: newInput, output: newOutput });
+            }
+            case "lazy": {
+                // Invoking the getter here would trip the cycle check, so lazy nodes always re-clone.
+                const original = def.getter;
+                // Drop the memo, or it shadows the new getter forever.
+                const { _cachedInner, ...rest } = def;
+                return (0, util_js_1.clone)(s, { ...rest, getter: () => run(original()) });
+            }
+            // A leaf by choice: `parts` are regex fragments, not data positions.
+            case "template_literal":
+            // Leaves.
+            case "string":
+            case "number":
+            case "int":
+            case "boolean":
+            case "bigint":
+            case "symbol":
+            case "undefined":
+            case "null":
+            case "void":
+            case "never":
+            case "any":
+            case "unknown":
+            case "date":
+            case "nan":
+            case "enum":
+            case "literal":
+            case "file":
+            case "transform":
+            case "custom":
+                return s;
+            default: {
+                // A new built-in kind becomes a compile error here; unknown user kinds fall through.
+                kind;
+                return s;
+            }
+        }
+    }
+    return run(schema);
+}
+
+},
+97:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.input = input;
+exports.output = output;
+const util_js_1 = __require(9);
+const visit_js_1 = __require(96);
+const schemas = __importStar(__require(88));
+/** Appends a pipe's own checks to the side that replaces it, mirroring how `.check()` clones. */
+function withChecks(side, checks) {
+    if (!checks?.length)
+        return side;
+    const def = side._zod.def;
+    return (0, util_js_1.clone)(side, (0, util_js_1.mergeDefs)(def, { checks: [...(def.checks ?? []), ...checks] }), { parent: true });
+}
+/** The out side, carrying the pipe's own checks: those run against the decoded value, which is what `out` produces. */
+function outSide(def) {
+    return withChecks(def.out, def.checks);
+}
+/** The in side. `z.preprocess` pipes a transform into a schema, and a bare transform validates nothing, so the schema it feeds is the real input side — the resolution `toJSONSchema` already makes for this case. */
+function inSide(def) {
+    return def.in._zod.traits.has("$ZodTransform") ? outSide(def) : def.in;
+}
+/** Returns a copy of the schema with every pipe replaced by its input side. A codec's checks are dropped: they constrain the decoded value the input side never produces. */
+function input(schema) {
+    return (0, visit_js_1.visit)(schema, {
+        pipe: (s) => inSide(s._zod.def),
+        // A default value belongs to the output side, so a rewritten inner type leaves it stranded. `.default()` widens the declared input type with `undefined`, and `optional` is what carries that across.
+        default: (s, rewritten) => (rewritten ? schemas.optional(s._zod.def.innerType) : s),
+        // A catch value is output-side too, but `.catch()` leaves the declared input type alone, so the inner schema stands on its own.
+        catch: (s, rewritten) => (rewritten ? s._zod.def.innerType : s),
+    });
+}
+/** Returns a copy of the schema with every pipe replaced by its output side, carrying over the pipe's own checks. */
+function output(schema) {
+    return (0, visit_js_1.visit)(schema, {
+        pipe: (s) => outSide(s._zod.def),
+        // A prefault value is fed through the schema, which makes it input-side, so a rewritten inner type leaves it stranded.
+        prefault: (s, rewritten) => (rewritten ? s._zod.def.innerType : s),
+    });
+}
+
+},
+98:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.string = string;
+exports.number = number;
+exports.boolean = boolean;
+exports.bigint = bigint;
+exports.date = date;
+const core = __importStar(__require(7));
+const schemas = __importStar(__require(88));
+function string(params) {
+    return core._coercedString(schemas.ZodString, params);
+}
+function number(params) {
+    return core._coercedNumber(schemas.ZodNumber, params);
+}
+function boolean(params) {
+    return core._coercedBoolean(schemas.ZodBoolean, params);
+}
+function bigint(params) {
+    return core._coercedBigint(schemas.ZodBigInt, params);
+}
+function date(params) {
+    return core._coercedDate(schemas.ZodDate, params);
+}
+
+},
+99:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.careSearchSchema = exports.deleteCareSchema = exports.profileSaveSchema = exports.careReviseSchema = exports.careCreateSchema = exports.profileDataSchema = exports.careValuesSchema = exports.versionSchema = void 0;
+const zod_1 = __require(5);
+const care_ts_1 = __require(100);
+// Do not trim source values or silently coerce approximate values into numbers.
+const text = (max) => zod_1.z.string().max(max).refine(value => !/[\u0000\uD800-\uDFFF]/u.test(value));
+const required = (max) => text(max).refine(value => value.trim().length > 0);
+const date = zod_1.z.string().regex(/^\d{4}-\d{2}-\d{2}$/u).refine(value => {
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+});
+const timestamp = zod_1.z.iso.datetime({ offset: true });
+const zone = zod_1.z.string().max(100).refine(value => { try {
+    new Intl.DateTimeFormat("en", { timeZone: value });
+    return true;
+}
+catch {
+    return false;
+} });
+exports.versionSchema = zod_1.z.number().int().min(0).max(2147483646);
+exports.careValuesSchema = zod_1.z.object({
+    text: required(10000), source: required(500),
+    details: zod_1.z.object({ kind: zod_1.z.enum(care_ts_1.CARE_KINDS),
+        quantity: zod_1.z.object({ rawValue: required(100), unit: required(50), precision: zod_1.z.enum(["exact", "approximate"]) }).strict().nullable(),
+        eventTime: zod_1.z.object({ rawText: text(300), at: timestamp.nullable(), timeZone: zone, precision: zod_1.z.enum(["exact", "approximate", "unknown"]) }).strict()
+            .refine(value => value.precision === "exact" ? value.at !== null && value.rawText.trim().length > 0 : value.at === null),
+    }).strict(),
+}).strict();
+exports.profileDataSchema = zod_1.z.object({
+    age: zod_1.z.discriminatedUnion("kind", [zod_1.z.object({ kind: zod_1.z.literal("unknown") }).strict(),
+        zod_1.z.object({ kind: zod_1.z.literal("birth_date"), date }).strict(),
+        zod_1.z.object({ kind: zod_1.z.literal("approximate"), rawValue: required(100), unit: zod_1.z.enum(["days", "weeks", "months", "years"]), asOf: date }).strict()]),
+    dueDate: date.nullable(), gestationalWeeksRaw: required(100).nullable(), region: required(200).nullable(),
+    language: required(200).nullable(), allergies: required(2000).nullable(), specialNeeds: required(2000).nullable(),
+    preferences: required(2000).nullable(), source: required(500), validUntil: date.nullable(),
+}).strict();
+exports.careCreateSchema = exports.careValuesSchema.extend({ confirmShared: zod_1.z.literal(true) });
+exports.careReviseSchema = exports.careValuesSchema.extend({ confirmShared: zod_1.z.literal(true), expectedVersion: exports.versionSchema, reason: required(500) });
+exports.profileSaveSchema = zod_1.z.object({ data: exports.profileDataSchema, confirmShared: zod_1.z.literal(true), expectedVersion: exports.versionSchema, reason: required(500) }).strict();
+exports.deleteCareSchema = zod_1.z.object({ expectedVersion: exports.versionSchema, confirmDelete: zod_1.z.literal(true) }).strict();
+exports.careSearchSchema = zod_1.z.object({ query: text(200).optional(), kind: zod_1.z.enum(care_ts_1.CARE_KINDS).optional(),
+    cursor: zod_1.z.object({ createdAt: timestamp, id: zod_1.z.uuid(), changeSeq: zod_1.z.string().regex(/^(0|[1-9][0-9]{0,18})$/u).optional() }).strict().optional() }).strict();
+
+},
+100:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.emptyCareDetails = exports.CARE_KINDS = void 0;
+exports.CARE_KINDS = ["note", "feeding", "sleep", "diaper", "temperature", "measurement", "appointment"];
+const emptyCareDetails = (kind = "note") => ({ kind, quantity: null,
+    eventTime: { rawText: "", at: null, timeZone: "Asia/Hong_Kong", precision: "unknown" } });
+exports.emptyCareDetails = emptyCareDetails;
+
+},
+101:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.taskChangeSchema = exports.taskCreateSchema = exports.taskValuesSchema = exports.taskDueAtSchema = exports.taskTimeZoneSchema = void 0;
+const zod_1 = __require(5);
+const text = (maximum) => zod_1.z.string().max(maximum).refine(value => value.trim().length > 0);
+exports.taskTimeZoneSchema = zod_1.z.string().max(100).refine(value => {
+    try {
+        new Intl.DateTimeFormat("en", { timeZone: value }).format();
+        return true;
+    }
+    catch {
+        return false;
+    }
+});
+exports.taskDueAtSchema = zod_1.z.iso.datetime({ offset: true }).refine(value => {
+    const time = Date.parse(value);
+    return time >= Date.UTC(2000, 0, 1) && time < Date.UTC(2101, 0, 1);
+});
+exports.taskValuesSchema = zod_1.z.object({
+    title: text(160), details: zod_1.z.string().max(2000), kind: zod_1.z.enum(["ordinary", "appointment"]),
+    assigneeUserId: zod_1.z.string().min(1).max(128), dueAt: exports.taskDueAtSchema, timeZone: exports.taskTimeZoneSchema,
+}).strict();
+exports.taskCreateSchema = zod_1.z.object({ values: exports.taskValuesSchema, confirm: zod_1.z.literal(true) }).strict();
+const changeBasis = { expectedVersion: zod_1.z.number().int().positive().max(2147483646), confirm: zod_1.z.literal(true) };
+exports.taskChangeSchema = zod_1.z.discriminatedUnion("action", [
+    zod_1.z.object({ ...changeBasis, action: zod_1.z.literal("reschedule"), dueAt: exports.taskDueAtSchema, timeZone: exports.taskTimeZoneSchema,
+        assigneeUserId: zod_1.z.string().min(1).max(128), note: text(1000) }).strict(),
+    zod_1.z.object({ ...changeBasis, action: zod_1.z.literal("complete"), note: zod_1.z.string().max(1000) }).strict(),
+    zod_1.z.object({ ...changeBasis, action: zod_1.z.literal("cancel"), note: text(1000) }).strict(),
+    zod_1.z.object({ ...changeBasis, action: zod_1.z.literal("resolve"), outcome: zod_1.z.enum(["completed", "cancelled"]), note: text(1000) }).strict(),
+]);
+
+},
+102:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.preparationInput = exports.summaryQuery = void 0;
+const zod_1 = __require(5);
+const day = zod_1.z.string().regex(/^\d{4}-\d{2}-\d{2}$/u).refine(v => { const d = new Date(v + "T00:00:00Z"); return Number.isFinite(d.getTime()) && d.toISOString().slice(0, 10) === v; }, "Invalid calendar date");
+exports.summaryQuery = zod_1.z.object({ startDay: day, period: zod_1.z.enum(["day", "week"]), timeZone: zod_1.z.string().min(1).max(80).refine(v => { try {
+        new Intl.DateTimeFormat("en", { timeZone: v });
+        return true;
+    }
+    catch {
+        return false;
+    } }) }).strict();
+exports.preparationInput = zod_1.z.object({
+    expectedVersion: zod_1.z.number().int().nonnegative(), basisVersion: zod_1.z.string().min(3).max(128), confirmShared: zod_1.z.literal(true),
+    appointmentTaskId: zod_1.z.uuid().nullable(), questions: zod_1.z.array(zod_1.z.string().trim().min(1).max(500)).max(12),
+    checklist: zod_1.z.array(zod_1.z.object({ text: zod_1.z.string().trim().min(1).max(300), done: zod_1.z.boolean() }).strict()).max(16),
+    reviewed: zod_1.z.boolean(), period: exports.summaryQuery,
+}).strict();
+
+},
+103:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.FamilyError = void 0;
+exports.changeTask = changeTask;
+class FamilyError extends Error {
+    status;
+    code;
+    constructor(status, code) { super(code); this.status = status; this.code = code; }
+}
+exports.FamilyError = FamilyError;
+function changeTask(task, input, at) {
+    if (task.version >= 2147483647)
+        throw new FamilyError(409, "version_conflict");
+    let state = task.occurrence.state;
+    let terminalBasisVersion = task.occurrence.terminalBasisVersion;
+    if (task.version !== input.expectedVersion) {
+        const opposite = state === "completed" && input.action === "cancel" || state === "cancelled" && input.action === "complete";
+        if (!opposite || task.version !== input.expectedVersion + 1 || terminalBasisVersion !== input.expectedVersion) {
+            throw new FamilyError(409, "version_conflict");
+        }
+        state = "needs_review";
+        terminalBasisVersion = null;
+    }
+    else if (input.action === "resolve") {
+        if (state !== "needs_review")
+            throw new FamilyError(409, "version_conflict");
+        state = input.outcome;
+        terminalBasisVersion = null;
+    }
+    else {
+        if (state !== "scheduled")
+            throw new FamilyError(409, "version_conflict");
+        if (input.action === "complete" || input.action === "cancel") {
+            state = input.action === "complete" ? "completed" : "cancelled";
+            terminalBasisVersion = input.expectedVersion;
+        }
+    }
+    return { ...task, version: task.version + 1, updatedAt: at,
+        ...(input.action === "reschedule" ? { assigneeUserId: input.assigneeUserId } : {}),
+        occurrence: { ...task.occurrence, state, terminalBasisVersion,
+            ...(input.action === "reschedule" ? { dueAt: input.dueAt, timeZone: input.timeZone } : {}) } };
+}
+
+},
+104:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.summarizeCare = summarizeCare;
+const care_ts_1 = __require(100);
+const unitAliases = new Map([
+    ["mL", "mL"], ["ml", "mL"], ["毫升", "mL"],
+    ["g", "g"], ["克", "g"],
+    ["kg", "kg"], ["公斤", "kg"], ["千克", "kg"],
+    ["min", "min"], ["分鐘", "min"], ["分钟", "min"],
+    ["h", "h"], ["小時", "h"], ["小时", "h"],
+    ["°C", "°C"], ["℃", "°C"], ["攝氏", "°C"],
+    ["cm", "cm"], ["厘米", "cm"],
+]);
+function thousandths(rawValue) {
+    const match = /^[+-]?\d{1,7}(?:\.\d{1,3})?$/u.exec(rawValue);
+    if (!match || match[0] !== rawValue)
+        return null;
+    const sign = rawValue.startsWith("-") ? -1 : 1;
+    const unsigned = rawValue.replace(/^[+-]/u, "");
+    const [whole, fraction = ""] = unsigned.split(".");
+    return sign * (Number(whole) * 1000 + Number(fraction.padEnd(3, "0")));
+}
+function decimal(value) {
+    const absolute = Math.abs(value);
+    const whole = Math.floor(absolute / 1000);
+    const fraction = String(absolute % 1000).padStart(3, "0").replace(/0+$/u, "");
+    return (value < 0 ? "-" : "") + String(whole) + (fraction ? "." + fraction : "");
+}
+function eventDay(at, formatter) {
+    const parts = formatter.formatToParts(new Date(at));
+    const year = parts.find(part => part.type === "year").value.pa

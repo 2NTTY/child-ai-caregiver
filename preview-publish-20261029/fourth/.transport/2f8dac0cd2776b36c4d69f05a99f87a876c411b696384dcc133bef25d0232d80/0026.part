@@ -1,0 +1,362 @@
+dStart(4, "0");
+    const month = parts.find(part => part.type === "month").value;
+    const day = parts.find(part => part.type === "day").value;
+    return year + "-" + month + "-" + day;
+}
+function summarizeCare(records, query) {
+    const endDay = new Date(query.startDay + "T00:00:00Z");
+    endDay.setUTCDate(endDay.getUTCDate() + (query.period === "day" ? 1 : 7));
+    const endDayExclusive = endDay.toISOString().slice(0, 10);
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+        calendar: "gregory", numberingSystem: "latn", timeZone: query.timeZone,
+        year: "numeric", month: "2-digit", day: "2-digit",
+    });
+    const selected = [];
+    let unknownEventTime = 0;
+    for (const record of records) {
+        const at = record.details.eventTime.at;
+        if (at === null) {
+            unknownEventTime++;
+            continue;
+        }
+        const day = eventDay(at, formatter);
+        if (day >= query.startDay && day < endDayExclusive)
+            selected.push(record);
+    }
+    if (selected.length > 200)
+        throw new Error("summary_range_too_large");
+    const counts = Object.fromEntries(care_ts_1.CARE_KINDS.map(kind => [kind, 0]));
+    const grouped = new Map();
+    let invalidQuantities = 0;
+    for (const record of selected) {
+        const { kind, quantity, eventTime } = record.details;
+        counts[kind]++;
+        if (quantity === null)
+            continue;
+        const unit = unitAliases.get(quantity.unit);
+        const value = thousandths(quantity.rawValue);
+        if (unit === undefined || value === null) {
+            invalidQuantities++;
+            continue;
+        }
+        const key = kind + ":" + unit;
+        let metric = grouped.get(key);
+        if (!metric) {
+            metric = { kind, unit, samples: 0, approximate: 0, sum: 0,
+                min: value, max: value, recordIds: [] };
+            grouped.set(key, metric);
+        }
+        metric.samples++;
+        if (quantity.precision !== "exact" || eventTime.precision !== "exact")
+            metric.approximate++;
+        metric.sum += value;
+        metric.min = Math.min(metric.min, value);
+        metric.max = Math.max(metric.max, value);
+        metric.recordIds.push(record.id);
+    }
+    const metrics = [...grouped.values()].map(metric => ({
+        kind: metric.kind, unit: metric.unit, samples: metric.samples, approximate: metric.approximate,
+        total: (metric.kind === "feeding" && metric.unit === "mL")
+            || (metric.kind === "sleep" && (metric.unit === "min" || metric.unit === "h"))
+            ? decimal(metric.sum) : null,
+        min: decimal(metric.min), max: decimal(metric.max), recordIds: metric.recordIds,
+    }));
+    return {
+        counts, metrics, records: selected, endDayExclusive,
+        missing: { unknownEventTime, invalidQuantities, emptyKinds: care_ts_1.CARE_KINDS.filter(kind => counts[kind] === 0) },
+    };
+}
+
+},
+105:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.validateCreateChild = validateCreateChild;
+exports.validateCreateTextRecord = validateCreateTextRecord;
+function isObject(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+function invalidObject() {
+    return {
+        ok: false,
+        issues: [{ field: "input", code: "invalid_type", message: "請檢查輸入資料。" }],
+    };
+}
+function validateCreateChild(input) {
+    if (!isObject(input))
+        return invalidObject();
+    if (typeof input.displayName !== "string") {
+        return { ok: false, issues: [{ field: "displayName", code: "invalid_type", message: "請輸入孩子的稱呼。" }] };
+    }
+    const displayName = input.displayName.trim();
+    if (displayName.length === 0) {
+        return { ok: false, issues: [{ field: "displayName", code: "required", message: "請輸入孩子的稱呼。" }] };
+    }
+    if ([...displayName].length > 80) {
+        return { ok: false, issues: [{ field: "displayName", code: "too_long", message: "孩子的稱呼不可超過 80 個字。" }] };
+    }
+    // Identity and workspace ownership are established by the server, never input fields.
+    return { ok: true, value: { displayName } };
+}
+function validateCreateTextRecord(input) {
+    if (!isObject(input))
+        return invalidObject();
+    const issues = [];
+    const { childId, text } = input;
+    if (typeof childId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(childId)) {
+        issues.push({ field: "childId", code: "invalid_identifier", message: "請先選擇孩子。" });
+    }
+    if (typeof text !== "string") {
+        issues.push({ field: "text", code: "invalid_type", message: "請輸入文字記錄。" });
+    }
+    else if (text.trim().length === 0) {
+        issues.push({ field: "text", code: "required", message: "請輸入文字記錄。" });
+    }
+    else if ([...text].length > 10000) {
+        issues.push({ field: "text", code: "too_long", message: "每則文字記錄不可超過 10,000 個字。" });
+    }
+    if (issues.length > 0)
+        return { ok: false, issues };
+    // Keep the user's original wording, whitespace, approximate quantities and times.
+    return { ok: true, value: { childId: childId, text: text } };
+}
+
+},
+106:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.preferencesInput = exports.firestoreNotificationPreferencesSchema = exports.version = void 0;
+const zod_1 = __require(5);
+const tasks_ts_1 = __require(101);
+exports.version = zod_1.z.number().int().positive().max(2147483647);
+exports.firestoreNotificationPreferencesSchema = zod_1.z.object({ timeZone: tasks_ts_1.taskTimeZoneSchema,
+    quietStart: zod_1.z.string().regex(/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/u), quietEnd: zod_1.z.string().regex(/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/u),
+    allowAppointmentDuringQuiet: zod_1.z.boolean(), version: exports.version }).strict();
+exports.preferencesInput = exports.firestoreNotificationPreferencesSchema.omit({ version: true }).extend({
+    expectedVersion: zod_1.z.number().int().min(0).max(2147483646),
+}).strict().refine(value => value.quietStart !== value.quietEnd);
+
+},
+107:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.documentExportSchema = exports.documentContentQuerySchema = exports.documentListQuerySchema = exports.reportProgressSchema = exports.reportCoverageSchema = exports.documentChangeSchema = exports.documentCheckSchema = exports.documentPatchSchema = exports.documentEditSchema = exports.documentRequestSchema = exports.documentPeriodSchema = void 0;
+const zod_1 = __require(5);
+const day = zod_1.z.string().regex(/^\d{4}-\d{2}-\d{2}$/u).refine(value => {
+    const date = new Date(value + "T00:00:00Z");
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+});
+const sectionId = zod_1.z.string().trim().min(1).max(80), itemId = zod_1.z.string().trim().min(1).max(100);
+const domain = zod_1.z.enum(["profile", "body_life", "abilities_interests", "concerns", "changes_support"]).nullable();
+exports.documentPeriodSchema = zod_1.z.object({ from: day, to: day }).strict().refine(value => value.from <= value.to);
+exports.documentRequestSchema = zod_1.z.object({
+    kind: zod_1.z.enum(["preparation", "growth_report"]), purpose: zod_1.z.enum(["appointment", "school", "outing", "handoff", "family"]),
+    title: zod_1.z.string().trim().min(1).max(160), eventDate: day.nullable(), period: exports.documentPeriodSchema,
+    reportMode: zod_1.z.enum(["fixed", "living"]).optional(),
+}).strict().refine(value => value.kind !== "preparation" || (value.purpose !== "family" && value.reportMode === undefined));
+const metadataEdit = zod_1.z.object({ op: zod_1.z.literal("set_metadata"), title: zod_1.z.string().trim().min(1).max(160).optional(),
+    summary: zod_1.z.string().max(2000).optional(), eventDate: day.nullable().optional() }).strict()
+    .refine(value => value.title !== undefined || value.summary !== undefined || value.eventDate !== undefined);
+exports.documentEditSchema = zod_1.z.discriminatedUnion("op", [
+    metadataEdit,
+    zod_1.z.object({ op: zod_1.z.literal("upsert_section"), sectionId, title: zod_1.z.string().trim().min(1).max(160).optional(),
+        kind: zod_1.z.enum(["notes", "questions", "checklist"]).optional(), domain: domain.optional() }).strict(),
+    zod_1.z.object({ op: zod_1.z.literal("remove_section"), sectionId }).strict(),
+    zod_1.z.object({ op: zod_1.z.literal("move_section"), sectionId, beforeId: sectionId.nullable() }).strict(),
+    zod_1.z.object({ op: zod_1.z.literal("upsert_item"), sectionId, itemId, text: zod_1.z.string().min(1).max(4000).optional(),
+        sourceIds: zod_1.z.array(zod_1.z.string().min(1).max(160)).max(140).optional() }).strict(),
+    zod_1.z.object({ op: zod_1.z.literal("remove_item"), sectionId, itemId }).strict(),
+    zod_1.z.object({ op: zod_1.z.literal("move_item"), sectionId, itemId, beforeId: itemId.nullable() }).strict(),
+]);
+exports.documentPatchSchema = zod_1.z.object({ action: zod_1.z.literal("patch"), expectedVersion: zod_1.z.number().int().min(1),
+    authorityVersion: zod_1.z.string().min(1).max(128), edits: zod_1.z.array(exports.documentEditSchema).min(1).max(12) }).strict();
+exports.documentCheckSchema = zod_1.z.object({ sectionId, itemId, checked: zod_1.z.boolean() }).strict();
+exports.documentChangeSchema = zod_1.z.discriminatedUnion("action", [
+    zod_1.z.object({ action: zod_1.z.literal("refresh"), expectedVersion: zod_1.z.number().int().min(1), authorityVersion: zod_1.z.string().max(128) }).strict(),
+    zod_1.z.object({ action: zod_1.z.enum(["archive", "restore"]), expectedVersion: zod_1.z.number().int().min(1), authorityVersion: zod_1.z.string().max(128) }).strict(),
+    zod_1.z.object({ action: zod_1.z.literal("check_item"), expectedVersion: zod_1.z.number().int().min(1), authorityVersion: zod_1.z.string().max(128), sectionId, itemId, checked: zod_1.z.boolean() }).strict(),
+    zod_1.z.object({ action: zod_1.z.literal("check_items"), expectedVersion: zod_1.z.number().int().min(1), authorityVersion: zod_1.z.string().max(128),
+        checks: zod_1.z.array(exports.documentCheckSchema).min(1).max(128).refine(checks => new Set(checks.map(item => JSON.stringify([item.sectionId, item.itemId]))).size === checks.length) }).strict(),
+    exports.documentPatchSchema.extend({ confirmShared: zod_1.z.literal(true) }),
+]);
+exports.reportCoverageSchema = zod_1.z.object({
+    status: zod_1.z.literal("complete"), mode: zod_1.z.enum(["fixed", "living"]), periodKind: zod_1.z.enum(["range", "quarter", "annual"]),
+    sourceRevision: zod_1.z.string().min(1).max(160), completedAt: zod_1.z.iso.datetime({ offset: true }), validUntil: zod_1.z.iso.datetime({ offset: true }).nullable(),
+    scanned: zod_1.z.number().int().nonnegative(), counts: zod_1.z.object({ recordsInPeriod: zod_1.z.number().int().nonnegative(), recordsUnknownTime: zod_1.z.number().int().nonnegative(),
+        tasksInPeriod: zod_1.z.number().int().nonnegative(), observationsInPeriod: zod_1.z.number().int().nonnegative(), confirmedFacts: zod_1.z.number().int().nonnegative(),
+        recordKinds: zod_1.z.record(zod_1.z.string(), zod_1.z.number().int().nonnegative()) }).strict(),
+}).strict();
+exports.reportProgressSchema = zod_1.z.object({
+    mode: zod_1.z.enum(["fixed", "living"]), phase: zod_1.z.enum(["building", "complete", "needs_update"]), processedSources: zod_1.z.number().int().nonnegative(),
+    sourceRevision: zod_1.z.string().min(1).max(160), periodKind: zod_1.z.enum(["range", "quarter", "annual"]), period: exports.documentPeriodSchema, title: zod_1.z.string().max(160),
+}).strict();
+exports.documentListQuerySchema = zod_1.z.object({ cursor: zod_1.z.string().max(2048).nullable().default(null),
+    status: zod_1.z.enum(["all", "active", "archived"]).default("all"), limit: zod_1.z.number().int().min(1).max(50).default(50) }).strict();
+exports.documentContentQuerySchema = zod_1.z.object({ snapshotId: zod_1.z.uuid(), snapshotVersion: zod_1.z.number().int().positive(),
+    offset: zod_1.z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).default(0) }).strict();
+exports.documentExportSchema = zod_1.z.object({
+    snapshotId: zod_1.z.uuid(), snapshotVersion: zod_1.z.number().int().positive(), authorityVersion: zod_1.z.string().max(128),
+    purpose: zod_1.z.enum(["family", "appointment", "handoff", "school"]), includeSources: zod_1.z.boolean(), includeRevision: zod_1.z.boolean(),
+}).strict();
+
+},
+108:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.enrichSeed = enrichSeed;
+exports.secondSeed = secondSeed;
+const narrative_ts_1 = __require(109);
+const media_generated_ts_1 = __require(110);
+const clone = (x) => JSON.parse(JSON.stringify(x)), uuid = (n) => '70000000-0000-4000-8000-' + String(n).padStart(12, '0');
+const at = '2026-10-25T10:00:00.000Z', authority = 'harbour-family-v1';
+function enrichSeed(s) {
+    const childId = s.child.id, userId = s.user.id;
+    // Existing read seeds used approximate+nonnull; new core fixtures use the actual write-legal exact event time.
+    for (const r of s.records)
+        r.details.eventTime.precision = 'exact';
+    const record = s.records[0], original = clone(record);
+    original.text = narrative_ts_1.longCare.replaceAll('黃昏', '放學後');
+    record.version = 2;
+    record.text = narrative_ts_1.longCare;
+    record.reason = '補回當時原話，並核對散步是在黃昏';
+    record.confirmedAt = at;
+    s.longRecordRevisions = [clone(record), original];
+    s.concerns = [
+        { id: uuid(70), childId, title: '把共讀變成輕鬆的習慣', reason: '想留意小晴喜歡甚麼故事，不急着讀完整本。', status: 'following', version: 1, createdAt: at, updatedAt: at, archivedAt: null, attentionIds: [], events: [{ id: uuid(71), at, kind: 'observation', title: '自己選了一本書', text: '今晚選了有月亮的圖畫書，翻到喜歡的一頁說了很久。', sourceLabel: '媽媽記下', actorUserId: userId, recordId: record.id }], historyComplete: true, followUp: null },
+        { id: uuid(72), childId, title: '一起整理積木角', reason: '保留正在搭的小橋，讓收拾也能接着她的想法。', status: 'following', version: 1, createdAt: at, updatedAt: at, archivedAt: null, attentionIds: [], events: [{ id: uuid(73), at, kind: 'observation', title: '留下還未完成的小橋', text: s.records[3].text, sourceLabel: '下午遊戲後的筆記', actorUserId: userId, recordId: s.records[3].id }], historyComplete: true, followUp: null },
+        { id: uuid(74), childId, title: '替圖書袋找固定位置', reason: '先試一個容易看見、孩子也拿得到的位置。', status: 'closed', version: 2, createdAt: at, updatedAt: at, archivedAt: at, attentionIds: [], events: [{ id: uuid(75), at, kind: 'observation', title: '門邊木櫃已放好書袋', text: '連續幾次出門時，小晴都能在木櫃旁找到書袋；這項安排先告一段落。', sourceLabel: '家人核對', actorUserId: userId }], historyComplete: true, followUp: null },
+    ];
+    for (const [index, state] of [[18, 'completed'], [19, 'cancelled']]) {
+        const t = s.tasks[index];
+        t.version = 2;
+        t.updatedAt = at;
+        t.occurrence.state = state;
+        t.occurrence.terminalBasisVersion = 1;
+    }
+    const report = s.documents.find((x) => x.kind === 'growth_report');
+    report.version = 2;
+    report.current.id = uuid(2052);
+    report.current.version = 2;
+    report.current.title = '十月生活裏的小發現';
+    report.current.summary = '從書袋、積木角和散步原話，回看家人怎樣一起接續日常。';
+    report.current.sections = narrative_ts_1.chapters.map(([title, text], i) => ({ id: 'chapter-' + i, title, kind: 'notes', domain: i % 3 === 0 ? 'body_life' : i % 3 === 1 ? 'abilities_interests' : 'changes_support', items: [{ id: 'note-' + i, text, sourceIds: ['daily-record-0'] }] }));
+    report.current.sources = [{ id: 'daily-record-0', resourceId: record.id, kind: 'record', version: record.version, label: '兩星期的家庭生活原話', text: record.text, at: record.details.eventTime.at }];
+    report.current.changes = ['補回家人原話及時間更正，保留較早整理版本。'];
+    report.history = [];
+    const old = clone(report.current);
+    old.id = uuid(152);
+    old.version = 1;
+    old.title = '十月生活裏的小發現・較早整理';
+    old.generatedAt = '2026-10-24T12:30:00.000Z';
+    old.sources = [{ ...old.sources[0], version: 1, text: original.text }];
+    old.summary = '家人第一次把這些片段放在一起時的整理。';
+    old.changes = ['第一次整理，尚未加入最後的核對註記。'];
+    old.sections = old.sections.map((section) => ({ ...section, items: section.items.map((item) => ({ ...item, text: item.text.replace('黃昏', '放學後') })) }));
+    s.documentVersions = new Map([[report.id, [old]]]);
+    const longUser = s.messages.find((m) => m.id === uuid(42));
+    longUser.text = narrative_ts_1.longMessage;
+    const reply = s.messages.find((m) => m.id === uuid(43));
+    reply.agentRunId = uuid(5000);
+    const citation = (i) => ({ key: 'reading-' + i, section: i ? '留白與接續' : '一起選書', sourceExcerpt: i ? '讓孩子決定還想說哪一小部分，不必把所有安排一次做完。' : '共讀可以從孩子自己選的一頁開始，留意他想說的細節。', text: i ? '把沒有完成的故事留到下次。' : '先聽孩子怎樣描述圖畫。', keywords: ['共讀', '日常'], originalText: i ? '當天沒有時間，可以一起回想最喜歡的一刻，再約好下次接着說。' : '陪伴閱讀時，可以讓孩子選一本想看的書，也可以只翻喜歡的一頁。', applicability: { region: '香港', ageBasis: 'any', minAgeMonths: null, maxAgeMonths: null, topics: ['family_reading'], conditions: [] }, chunkId: uuid(5010 + i), sourceId: 'preview-reading-' + i, versionId: uuid(5020 + i), versionHash: 'a'.repeat(64), contentHash: 'b'.repeat(64), url: 'https://www.fhs.gov.hk/preview-reading-' + i, title: i ? '日常共讀的時間' : '和孩子一起看圖畫', publisher: '家庭健康服務', classification: 'official_guidance', sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null, fetchedAt: at, checkedAt: at, reviewState: 'reviewed', originalCoverage: 'chunk_original', readCoverage: { kind: 'original_segment', complete: true } });
+    const citations = [citation(0), citation(1)];
+    s.runs = new Map([[reply.agentRunId, { provenance: null, runId: reply.agentRunId, status: 'completed', stopReason: null, text: reply.text, citations, retrievalMode: 'keyword_degraded', tools: [], countsKnown: true, counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 }, proposals: [] }]]);
+    s.library = citations.map((c) => ({ sourceId: c.sourceId, versionId: c.versionId, title: c.title, publisher: c.publisher, url: c.url, classification: c.classification, checkedAt: at, sourceUpdatedAt: null, validUntil: null }));
+    const userMessages = s.messages.filter((m) => m.role === 'user');
+    s.files = [];
+    s.voices = [];
+    s.media = new Map();
+    s.transcripts = new Map();
+    for (let i = 0; i < 7; i++) {
+        const content = i === 0 ? media_generated_ts_1.media.video : media_generated_ts_1.media.text, message = userMessages[i], file = { id: uuid(6000 + i), childId, version: 1, createdAt: at, state: 'ready', fileName: i === 0 ? '藍色方塊短片.mp4' : i === 1 ? '週末圖書角與外出書袋整理備忘——給爸爸和外婆接續閱讀的完整版本.txt' : ['公園背包小清單.txt', '書袋放回木櫃旁.txt', '家長會想問的問題.txt', '積木角安排筆記.txt', '下星期留白的地方.txt'][i - 2], mimeType: content.mimeType, bytes: content.bytes, sha256: content.sha256, messageId: message.id };
+        s.files.push(file);
+        s.media.set(file.id, content);
+        message.file = { id: file.id, version: 1, mimeType: file.mimeType, bytes: file.bytes, sha256: file.sha256 };
+        const vm = userMessages[i + 7], v = { id: uuid(6100 + i), childId, version: 1, createdAt: at, state: 'ready', fileName: ['提示音.wav', '短音記號.wav', '重新開始的聲音.wav', '單音測試.wav', '閱讀角提示.wav', '小背包提示.wav', '最後一個聲音樣本.wav'][i], mimeType: media_generated_ts_1.media.voice.mimeType, bytes: media_generated_ts_1.media.voice.bytes, durationMs: 200, sha256: media_generated_ts_1.media.voice.sha256, messageId: vm.id };
+        s.voices.push(v);
+        s.media.set(v.id, media_generated_ts_1.media.voice);
+        vm.voice = { id: v.id, version: 1, mimeType: v.mimeType, bytes: v.bytes, durationMs: v.durationMs, sha256: v.sha256 };
+        s.transcripts.set(v.id, { voice: vm.voice, messageId: vm.id, version: 1, state: i === 0 ? 'available' : 'stopped', automatic: true, updatedAt: at, reason: i === 0 ? null : '沒有可整理的語音內容', retryAt: null, content: i === 0 ? { complete: true, segments: [{ text: '（一聲短提示音，沒有說話內容）', startMs: 0, endMs: 200, unclear: false }] } : null });
+    }
+    s.files.reverse();
+    s.voices.reverse();
+    // Extra originals fill a second attachment index window without changing earlier samples.
+    for (const [index, messageIndex, fileName, content] of [[7, 15, '小橋旁邊的積木安排.txt', media_generated_ts_1.media.bridgeNote], [8, 14, '公園落葉帶回家之後.txt', media_generated_ts_1.media.leafNote]]) {
+        const message = userMessages[messageIndex], file = { id: uuid(6000 + index), childId, version: 1, createdAt: message.createdAt, state: 'ready', fileName, mimeType: content.mimeType, bytes: content.bytes, sha256: content.sha256, messageId: message.id };
+        s.files.push(file);
+        s.media.set(file.id, content);
+        message.file = { id: file.id, version: 1, mimeType: file.mimeType, bytes: file.bytes, sha256: file.sha256 };
+    }
+    for (const [index, messageIndex, fileName, content, durationMs, text] of [[7, 17, '小背包出門提示音.wav', media_generated_ts_1.media.backpackTone, 300, '（一聲短提示音，沒有說話內容）'], [8, 16, '故事角收拾提示音.wav', media_generated_ts_1.media.storyCornerTone, 400, '（兩聲短提示音，沒有說話內容）']]) {
+        const message = userMessages[messageIndex], voice = { id: uuid(6100 + index), childId, version: 1, createdAt: message.createdAt, state: 'ready', fileName, mimeType: content.mimeType, bytes: content.bytes, durationMs, sha256: content.sha256, messageId: message.id };
+        s.voices.push(voice);
+        s.media.set(voice.id, content);
+        message.voice = { id: voice.id, version: 1, mimeType: voice.mimeType, bytes: voice.bytes, durationMs, sha256: voice.sha256 };
+        s.transcripts.set(voice.id, { voice: message.voice, messageId: message.id, version: 1, state: 'available', automatic: true, updatedAt: message.createdAt, reason: null, retryAt: null, content: { complete: true, segments: [{ text, startMs: 0, endMs: durationMs, unclear: false }] } });
+    }
+    const binding = { channel: 'web_push', bindingId: uuid(6200), bindingVersion: 1 };
+    const grants = s.tasks.slice(0, 2).map((t, i) => ({ taskId: t.id, version: 1, taskVersion: t.version, enabled: i === 0, primaryUserId: userId, backupUserId: null, allowFollowUp: false, allowFallback: false, validUntil: '2026-11-30T12:00:00.000Z', authorizedBy: userId, content: 'generic_notice', trigger: 'task_due', updatedAt: at }));
+    const t = s.tasks[0];
+    s.contact = { canManage: true, workerEnabled: false, consent: { userId, version: 1, enabled: true, allowBackup: false, bindings: [binding] }, availableBindings: [{ ...binding, label: '日常瀏覽器' }], recipients: [{ userId, name: s.user.name, enabled: true, allowBackup: false, channels: ['web_push'] }], tasks: s.tasks, tasksHaveMore: false, grants, requests: [{ id: uuid(6210), taskId: t.id, taskVersion: t.version, occurrenceId: t.occurrence.id, phase: 'initial', state: 'unknown', reason: '上次傳送結果未能確認', nextAt: at, groupedTo: null, createdAt: at, attempts: [{ id: uuid(6211), recipientUserId: userId, channel: 'web_push', grantVersion: 1, taskVersion: t.version, status: 'unknown', reason: '連線在回應前中斷', providerStatus: null, messageId: null, attemptedAt: at, finishedAt: null, acknowledgedAt: null }] }], historyLimited: false };
+    return s;
+}
+function secondSeed(base) {
+    const original = base.child.id, workspace = base.child.workspaceId;
+    const remap = (value) => typeof value === 'string' ? (/^70000000-0000-4000-8000-\d{12}$/.test(value) && value !== workspace ? uuid(Number(value.slice(-12)) + 10000) : value.replaceAll('小晴', '樂樂')) : Array.isArray(value) ? value.map(remap) : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k, remap(v)])) : value;
+    const s = remap(base);
+    s.child.displayName = '樂樂';
+    s.profile.data.preferences = '喜歡拼圖、小火車和跟外婆一起澆花。';
+    s.profile.data.age = { kind: 'birth_date', date: '2023-01-09' };
+    s.profile.reason = '記下樂樂目前的生活喜好';
+    for (const r of s.records)
+        r.details.eventTime.precision = 'exact';
+    s.records[0].text = '樂樂把四塊拼圖放在窗邊，請外婆幫忙找有花朵的一角。';
+    s.records[1].text = '晚飯前替陽台的小盆栽澆水，想知道明天會不會長出新葉。';
+    s.concerns = [];
+    s.documentVersions = new Map();
+    s.files = [];
+    s.voices = [];
+    s.media = new Map();
+    s.transcripts = new Map();
+    s.runs = new Map();
+    s.library = [];
+    for (const d of s.documents) {
+        d.current.ageLabel = '3 歲 9 個月';
+        for (const source of d.current.sources) {
+            const record = s.records.find((r) => r.id === source.resourceId);
+            if (record)
+                source.text = record.text;
+        }
+        if (d.kind === 'growth_report') {
+            d.current.title = '樂樂的拼圖與小盆栽';
+            d.current.sections[0].items[0].text = s.records[0].text;
+            d.current.sections[0].items[1].text = s.records[1].text;
+            d.current.sections[1].items[0].text = '和外婆一起找拼圖的花朵。';
+        }
+    }
+    return s;
+}
+
+},
+109:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.longMessage = exports.longCare = exports.chapters = void 0;
+// Authored fictional family notes. No generated model output or real family data.
+exports.chapters = [
+    ['星期一的書袋', '早上出門前，小晴把兩本圖畫書放在地氈上，一本是有月亮的故事，另一本只有圖畫沒有文字。她說想把月亮那本留給公仔，自己帶另一本回學校。我原本已經拿好書袋，差點替她選好，後來把袋口打開，讓她慢慢把書放進去。她放了一本又抽出來，指着封面的紅色小屋說，放學後還想繼續講這間屋裏住了誰。我們約好回家先把書袋放回木櫃旁，不必立即完成整個故事。出門時她記得自己提書袋，走到門口才發現水樽還在桌上，於是回去拿，沒有再把兩件事混在一起。這次我想留下的不是有沒有準時做好，而是她開始知道自己可以負責哪一小步，也能說出想暫時保留甚麼。'],
+    ['月亮那一頁', '晚飯後，小晴把公仔排在梳化前，說牠們要先坐好才可以聽故事。她沒有照書頁次序翻，而是直接翻到月亮露出一半的畫面，用手指沿着屋頂畫了一條看不見的路。我問路通去哪裏，她說通往一個不用關燈的小房間，又把公仔移到我的膝上，請我替牠回答。我沒有急着讀下一頁，只把她剛說的話再說一次。她接着補充，房間裏要有水、薄被和放書的架。讀到一半她去拿積木，我以為她不想看了，原來她是想搭那個小房間。書就攤在旁邊，成了積木故事的一部分。睡前她只說明天再加一扇窗，我把這句寫在便條上，放在書內，讓未完成的想法有一個可以回來的位置。'],
+    ['積木角的新位置', '星期二下午，我們把客廳靠窗的一角空出來，並沒有把所有玩具一次清掉。小晴先把正在搭的橋移到一塊硬紙板上，告訴我這個不能拆，因為下面還沒有放河流。其餘積木有些按顏色排，有些按長短分，我起初想給每一盒貼同一種標籤，她卻說短的藍色可以和短的黃色住一起。我們試着照她的分法，把最常用的長條放在低一格，細小的圓片另用淺盒。整理中她走開喝水，回來時還記得未放好的紅色輪子。最後只留兩盒在地上，其他放回架上。這個安排不是要求她每次照同一順序收拾，而是看看盒子是否容易拿、是否看得見原來的作品，以及大人能否用一句清楚的話邀請她參與。'],
+    ['下雨天的小火車', '本來想去公園的那個早上一直下雨，小晴站在窗邊看水沿玻璃流下來，說樹葉都在洗澡。我們先把出門的小背包放回椅子上，沒有說成行程取消就甚麼都不能做。她把四張椅子排成火車，拿紙畫了三張車票，第一張給外婆，第二張給公仔，第三張說是留給還沒上車的人。我坐在最後一張椅子，讓她決定在哪裏停站。她有時只想沿窗邊走一圈，有時又要回去檢查車票，玩法並不固定。午飯前我們只收好擋着走路的椅子，車票留在小碟裏。下午雨停了，她沒有再要求出門，反而拿出車票告訴爸爸上午經過甚麼地方。我記下的是她怎樣把原先的期待轉成另一個故事，而不是把室內活動算作補足原來的計劃。'],
+    ['圖書館裏的選擇', '星期三到圖書館還書，我們先在入口旁把要還的書數清楚。小晴一開始想把所有封面有動物的書都拿下來，後來坐在矮凳上，一本一本翻給我看。她在其中一本停得特別久，因為每一頁的小兔都躲在不同位置。我問她想借哪本，她說想借可以找兔子的，也想借一本讓外婆講。我們沒有用讀了幾頁決定哪本比較好，而是讓她說出想回家再看的原因。借書後她自己把收據夾進書袋，走到出口又回頭看故事角的地氈。下次可以預留一點坐下來的時間，不一定每次都要參加活動；如果當天人多或她累了，先還書便走也可以。這份筆記留給家人，是想讓下一個陪她去的人知道，她喜歡的是慢慢找畫裏的小細節。'],
+    ['外婆帶來的紙船', '外婆來的下午，帶了一疊乾淨的舊月曆紙。小晴看見背面空白，就說可以做河流，外婆提議先摺一隻小船。第一隻船的尖角沒有對齊，她把紙攤開，看了很久，說想再試一次。我沒有替她壓平每一道摺痕，只在她問的時候幫忙按住紙邊。第二隻仍然有一邊高一邊低，她卻喜歡那個形狀，說可以讓公仔靠着坐。我們把船放在藍色紙上，旁邊接着她前一天搭的小橋。離開前，外婆問下次要帶甚麼，她回答只要再帶幾張大紙，不需要新的玩具。這段互動提醒我，同一份材料在不同家人手中可以有不同玩法，毋須安排成教學步驟；她需要幫忙的地方也會隨着當天的想法改變。'],
+    ['散步時停下來', '星期四黃昏走過公園，小晴在大樹旁停下，看見自己的影子比早上長。她先踩着我的影子走，又跑到另一邊比較。我提醒她留在看得見我的地方，然後站着等她把話說完。她說影子像一條拉長的圍巾，還想找一片葉子放在影子的頭上。那天我們沒有走原定的大圈，只走到長椅附近便回家。途中她撿了三片已掉在地上的葉子，放在紙袋，沒有摘樹上的。回家後我們先洗手，葉子放在報紙上晾乾。晚飯時她只講了影子的一件事，葉子的故事留到第二天才說。我想記住的是停下來的時間也屬於散步，不必因為路程短了就補做另一項活動。家人若想接着聊，可以先問她哪片葉子像圍巾，而不是要她重述整段經過。'],
+    ['餐桌上的小工作', '晚飯前，小晴想幫忙擺餐墊，我把容易拿的幾張放在矮櫃上，請她先選自己的位置。她把每張餐墊放得很近，說大家要一起坐，我便指着碗的位置，和她試着留出放手的空間。她替公仔也留了一張，後來發現桌子不夠大，就把公仔放在旁邊的小凳。擺好後她又去畫畫，沒有一直留在餐桌旁等開飯。我們沒有要求她負責整套餐具，只把這一件小工作當成參與晚飯準備的機會。有一天她不想做，我自己完成，也沒有把前幾天做過當成她往後必須做到的承諾。這份記錄會放在日常安排旁，讓爸爸和外婆知道同一件事可以邀請、可以暫停，也可以隨當天的時間改成更小的一步。'],
+    ['家長會後留下的話', '家長會時，老師提到小晴喜歡故事角，常會等同學先選，再把另一本文字少的圖畫書拿過來。老師沒有把這說成固定性格，只描述了最近幾次看到的情況。我回家沒有立即追問她在學校讀了甚麼，而是在整理書袋時說，老師提起你們有一個可以坐下看書的地方。她接着說那裏有一個綠色坐墊，還有一本很厚的書。我把老師的觀察和她自己的話分開記下，沒有把兩者合成一個確定結論。下一次和老師見面，想問的只是她怎樣選書、何時會邀請朋友一起看，以及家裏可否接着保留她喜歡的題材。如果老師當天有其他重要事項，我們也可以先聽，不必把準備好的問題逐條問完。'],
+    ['和朋友輪流搭橋', '週五放學後，朋友來家裏玩積木。兩個孩子一開始都想拿同一塊長積木，小晴把它抱在懷裏，朋友則拿了另外兩塊。我先把要走路的位置清出來，等她們說各自想搭甚麼。小晴說要搭橋，朋友說要搭車站，後來她們把橋接在車站旁，並沒有真的輪流使用那塊積木。我沒有把這一刻寫成已學會分享，只記下她們怎樣找到可以同時玩的安排。中間仍有幾次需要大人幫忙說清楚，例如哪一部分暫時不能拆、哪些散件可以拿。朋友離開時，小晴想保留橋，我們找了一塊托盤放好，約定過兩天再看看是否仍想繼續。這樣的記錄比較接近實際發生的過程，也方便下次回看時，不把一次順利的遊戲當成每次都會一樣。'],
+    ['晚上沒有讀完的故事', '有一晚大家都比平時疲倦，小晴拿着書走過來，翻了兩頁便把頭靠在我身上。我本來想把那一小章讀完，後來問她想聽我讀，還是先一起看圖。她說想看窗外的月亮，我們便把書放下，站在窗邊看了一會兒。天上有雲，月亮並不清楚，她說可能去了書裏。睡前我只把這句記下，沒有再請她畫出來或想一個結局。第二天她忘了這件事，也沒有關係；這些筆記是讓家人記得曾經一起看過甚麼，不是要她每次都接上昨天的話。有時我自己回看，會發現當時最重要的是可以安靜靠着，而不是書的內容。之後安排晚間時間時，可以把共讀放在一個有彈性的位置，保留直接休息的選擇。'],
+    ['週末背包的分工', '星期六出門前，我們把要帶的東西放在門邊的小桌。小晴想自己背圖畫書和水樽，我讓她試着拿起背包，再問是否需要分一點給我。她走了幾步，說書有點重，於是把書放進我的袋，自己的背包留下水樽、手帕和一個裝葉子的空紙袋。我負責替換衣物和最後檢查，她負責看看水樽有沒有放好。這份清單不按多少件物品判斷她是否完成，而是幫助我們出門前有一個共同看過的地方。回家後，紙袋裏只有一片葉子，她仍很高興地把它放在桌上。收拾時先把水樽拿出來清洗，其他東西等休息後才整理。下次若改去圖書館，便把紙袋換成書袋，不需要重新建立一整套很長的規則。'],
+    ['保留原話和修正', '整理這星期的筆記時，我發現星期四的散步時間原先寫成早上，其實是在放學後。我把時間改回黃昏，保留更正原因，沒有改掉小晴說影子像圍巾的原話。另有一段寫她把落葉按大小排好，後來爸爸提醒我，她排到一半又把小葉子放在中間，說這樣才像一家人。因此記錄中加入這個後續，而不是只留下最整齊的一刻。日常記憶有時會不完整，能指出誰記下、何時核對、哪裏更正，比把每段寫得像完整故事更有用。這份較長的原文是為了回看細節，平日清單只需顯示簡短題目；要了解當時怎樣發生，才打開原記錄慢慢讀。家人有不同記憶時，也可以先並列，不急着選一個聽起來最好的版本。'],
+    ['下一星期留白的地方', '看完這些片段，我們只留下三件想接着做的小安排：圖書袋仍放在木櫃旁、積木角保留正在搭的小橋、下次散步預留在長椅休息的時間。其他事情沒有排成每天必須完成的表。我想請爸爸在有空時看看那張月亮便條，外婆下次來可以再問紙船要去哪裏，老師的問題則等見面前再核對一次。小晴未必會對同一題材維持相同興趣，她也可能突然想畫別的東西。這份整理只反映目前留下的生活片段，不把沒有記下的部分當成沒有發生，也不由某一次表現推論能力。若下星期很忙，我們可以只留一句話，等有時間再補背景；重點是下一個照顧她的人能接上她想說的事，而不是讓筆記本身成為另一項需要追趕的工作。'],
+];
+exports.longCare = exports.chapters.map(([title, text]) => title + '\n' + text).join('\n\n');
+exports.longMessage = '我想把這兩星期家裏發生的片段完整留下，方便日後和爸爸、外婆或老師接着聊。下面都是我先在紙上記下，再按當時情況整理的話；有些地方仍然只是自己的觀察，我沒有想用它們評分。\n\n' + exports.longCare + '\n\n讀完後，我最想問的不是應該再安排多少活動，而是怎樣在生活很趕的時候，仍然留一點空間聽她把話說完。像星期一出門前，我們其實只有幾分鐘；如果我把每個步驟都當成要練習，她和我都會更累。可是完全替她做完，她又會覺得自己的書袋和背包沒有由自己決定的地方。我想試的是每次只留一個可以自己選的小位置，其他由大人先處理，然後看看這樣是否讓早上舒服一點。\n\n還有原文和整理版本的差別。我希望下次回看時，仍然能找到她說月亮去了書裏、影子像圍巾的那些句子，不要只剩下幾個分類名稱。整理可以幫忙找資料，但不需要把一段生活變成總結式的判斷。有些筆記後來會更正時間，有些只記得大概，我寧願把不確定的地方留下，也不想為了讓頁面整齊而補一個其實不知道的日期。\n\n最後是家人接手的方式。爸爸較常陪她搭積木，外婆會帶紙來，老師看到的是另一個環境。如果每個人只問同一組問題，小晴可能會覺得被反覆追問。比較想保留的是幾個自然的起點，讓不同家人用自己的方式參與。有時只是一起坐着看圖，有時是幫忙拿穩紙邊，也可以甚麼都不問，等她自己說。請先按這些已經發生的事情整理，不要替我們安排新的課程，也不需要把每一個片段都變成待

@@ -1,0 +1,141 @@
+{
+  "format": "frontend-preview-export-orchestrator-v1",
+  "repository": "2NTTY/child-ai-caregiver",
+  "branch": "codex/frontend-preview-export-20261029",
+  "baseCommit": "191bcef6064da99d98806245982ef0cc52fcebc0",
+  "node": "24.22.1",
+  "npm": "11.8.0",
+  "lockSha256": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",
+  "postinstall": null,
+  "caps": {
+    "runnerMemAvailableBytes": 6442450944,
+    "runnerDiskAvailableBytes": 8589934592,
+    "rawBytes": 268435456,
+    "siteBytes": 33554432,
+    "artifactZipBytes": 50331648,
+    "localZipPlusExpandedBytes": 134217728,
+    "retentionDays": 30,
+    "rawFileBytes": 134217728,
+    "siteFileBytes": 33554432
+  },
+  "products": {
+    "care": {
+      "commit": "d2bb2c69ef7b794b0b4af8fc03fac74b08b5d758",
+      "tree": "093cd9a4d55f1c42c98dc2c75f2967d0c72c10c5",
+      "adapter": "orchestrator/care/assemble_preview.py",
+      "overlays": [],
+      "recipeReady": true,
+      "recipeFiles": {
+        "orchestrator/care/assemble_preview.py": "64992c168a32da56afba8b45fc134b8d4c28d55b81a4bc27ed6626b5bae43547",
+        "orchestrator/care/recipe.json": "3f32afc0fa81da21edb9b6c9a66a65a4a81e24e32357e03397234699377d81cd",
+        "orchestrator/care/fixtures/care.js": "aaa6920f9cf5b11b3ae67b5dc9ba34fd9d7907075b5e638719329480c370f554",
+        "orchestrator/care/overlay/frontend/scripts/task-pristine-close.test.cjs": "c8e474a4942eb18bcd60131eddfedff3c986da9783148a306abea769a595d522",
+        "orchestrator/care/overlay/frontend/src/production/task-knowledge-tasks.ts": "922c0babd7d88c0a21e4c65638db174b8f3d3f2762f32909b2a5b864faa817f3"
+      },
+      "buildCommit": "566964fd25c257f52612b97df8cfc5016a03a5a0",
+      "buildTree": "439144c5d9b2da4ad4088939b6ca942157f597c7",
+      "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
+      "buildInputsManifestSha256": "2fb5413c12642f39f5c3d7f5e7e5ec1d848e2610bd7feedc13ca23d046d29320",
+      "candidateChanges": [
+        {
+          "source": "orchestrator/care/overlay/frontend/src/production/task-knowledge-tasks.ts",
+          "destination": "frontend/src/production/task-knowledge-tasks.ts",
+          "beforeSha256": "1a5cc5abea7351715bfede240668b42caa38df464a55b2efafea5311200424a7",
+          "sha256": "922c0babd7d88c0a21e4c65638db174b8f3d3f2762f32909b2a5b864faa817f3",
+          "bytes": 20486
+        }
+      ],
+      "recipeOnlyTests": [
+        {
+          "source": "orchestrator/care/overlay/frontend/scripts/task-pristine-close.test.cjs",
+          "destination": "frontend/scripts/task-pristine-close.test.cjs",
+          "beforeSha256": null,
+          "sha256": "c8e474a4942eb18bcd60131eddfedff3c986da9783148a306abea769a595d522",
+          "bytes": 16653
+        }
+      ]
+    },
+    "harbour": {
+      "commit": "eca341ad0ee38432d06292129923dc087dad3d92",
+      "tree": "f303b70b7677fa92d32f1d0e4e3eb92e8754f599",
+      "adapter": "harbour/adapt.py",
+      "overlays": [],
+      "recipeReady": true,
+      "preflight": [
+        [
+          "harbour/prepare.py",
+          "preflight"
+        ]
+      ],
+      "recipeFiles": {
+        "harbour/adapt.py": "fdb74839721d05be13fe64cff584cb8001345536cc26dbaf306012caf604569e",
+        "harbour/prepare.py": "270e5b9b8ae60303b02645b0000ea97b3e62f461e0f1a9dc3708a01808c54277",
+        "harbour/verify_graph.mjs": "45badd99474d4fea922a2fead2c5fe339013dc34a3f84d5487d1bbfdfff663d4",
+        "harbour/PINS.json": "60b729536c18d615661f12a9288709e63e1a3fb91908bf884ba3216f192bbafb",
+        "harbour/source-pins.json": "6ea8320b8c93d6bd5d75cc7ef333874409b821d07af8607e9e2f49eaf1ed2192",
+        "harbour/shared/experiments/dispatch.js": "0b27cef6a7d8a93798996942171cd5a74ebc77c3e05947ff61ec238d64cb863f",
+        "harbour/shared/experiments/fixtures/harbour.js": "a4e0f2d87d4fe9225530c5318faf729dc1bea24b4fa9694c19fa8f1952d5d1dd",
+        "harbour/shared/experiments/preview-navigation-identity-v1-r2.js": "bb0eca035d78b763c72924285f04ec124093ea4ced53e3f37d90f2b8dfb1bcd9"
+      },
+      "buildCommit": "3155558d79a9a0179c72e8dd851999e12b73c2c5",
+      "buildTree": "fbce52803f2a93edb969b544b8155cb278990e75",
+      "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
+      "buildInputsManifestSha256": "2fb5413c12642f39f5c3d7f5e7e5ec1d848e2610bd7feedc13ca23d046d29320",
+      "candidateChanges": []
+    },
+    "handbook": {
+      "commit": "bc308157a48c3f2448898533dcf722385ee57f03",
+      "tree": "c73aece2a1539ef6dbe9fc680167f159282aea25",
+      "adapter": "handbook/assemble_preview.py",
+      "overlays": [],
+      "recipeReady": true,
+      "recipeFiles": {
+        "handbook/assemble_preview.py": "ce3601a3f8df347ba946ee5cec36ea07eb3cd98c602e928703a6922b45b39de6",
+        "handbook/recipe.json": "f22a88e39bb8b81cb9a12ad4642e4257f1bdfe4bf4c9fc4b3800e935c26de0ee",
+        "handbook/overlay/experiments/dispatch.js": "0b27cef6a7d8a93798996942171cd5a74ebc77c3e05947ff61ec238d64cb863f",
+        "handbook/overlay/experiments/fixtures/journal.js": "a4e0f2d87d4fe9225530c5318faf729dc1bea24b4fa9694c19fa8f1952d5d1dd",
+        "handbook/overlay/experiments/preview-navigation-identity-v1-r2.js": "bb0eca035d78b763c72924285f04ec124093ea4ced53e3f37d90f2b8dfb1bcd9"
+      },
+      "buildCommit": "a60f944647bdbfcbdf452b01fc508eb3b2209d4c",
+      "buildTree": "c9fc89444cdc7f5be221014ed1703e278b1d1c13",
+      "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
+      "buildInputsManifestSha256": "2fb5413c12642f39f5c3d7f5e7e5ec1d848e2610bd7feedc13ca23d046d29320",
+      "candidateChanges": []
+    },
+    "fourth": {
+      "commit": "f1c60c6ae2928e5407dabccbd04a504f691e39cf",
+      "tree": "f7619a5e1c59256d914c2b3693a768921f0c489d",
+      "adapter": "fourth/assemble.py",
+      "overlays": [],
+      "recipeReady": true,
+      "preflight": [
+        [
+          "fourth/verify_source.py"
+        ]
+      ],
+      "recipeFiles": {
+        "fourth/assemble.py": "def9b93385945be223446feadf16b025378442941c6aff71fb050e88e359958c",
+        "fourth/verify_source.py": "99b0b7936bbfeef3be7c4ad732882d30f14bf5304b4b26f45bdeb6eeb63023dc",
+        "fourth/verify_graph.mjs": "b00cd14140ac691a5ff56af220b2a11f0d1e8da0a2e2a23969f122bde221af16",
+        "fourth/PRODUCT_INPUTS.json": "7d45951ca36373e319bd8b9c3b138f1a50987c538bfd35912dc545605bbc6ca1",
+        "fourth/protocol.json": "d6f110463664e68e32f81015f089d92e1a719732713e0dadb350ac10c9026423",
+        "fourth/recipe.json": "be05fd89fb6b04a0bd22cf71ee7df13b4798148036423994d1bac5e89ff7ed3a",
+        "fourth/adapter/admission.js": "8ef2f9ba7246722bde347330f002dd378ee27b265b906c4af833351015c4ff2b",
+        "fourth/adapter/fixture-patches.json": "5c0e14a3182453b2f35ae557c731fd3bf392cada9306410aa75f5c1ada1f965e",
+        "fourth/adapter/startup-guard.js": "1835436d1630bdcada4a63aed87cbc581ac40e39cc77fe9606648eceff185912",
+        "fourth/overlay/experiments/fourth-file-safety.js": "f72969b8f0f5ded5943cd61f4f31a09a8db054ad4527e2e06e706d7f1fc59ea9",
+        "fourth/overlay/experiments/fourth-preview-fixture.js": "2f8dac0cd2776b36c4d69f05a99f87a876c411b696384dcc133bef25d0232d80",
+        "fourth/overlay/experiments/fourth-standalone-dispatch.js": "de9445ab180bfed10bac8e05ff6e165b0b30dd481db2e60d64b62e2eb307b6c5",
+        "fourth/overlay/experiments/preview-navigation-identity-fourth-v1.js": "ef238ce5675840b1a5313d98b4458bd5eb08829f7af189862551e7e9194c915f",
+        "fourth/tests/admission.mjs": "a84d8be911727985500615e47d55ed8bb1a7664ba19cf0a63863e27618744aa5"
+      },
+      "buildCommit": "5690b84c365e01942ab0a417e19faf3306e68fd7",
+      "buildTree": "813dd37a389ddea3b9dc4c71c020163fa93728d7",
+      "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
+      "buildInputsManifestSha256": "2fb5413c12642f39f5c3d7f5e7e5ec1d848e2610bd7feedc13ca23d046d29320",
+      "candidateChanges": []
+    }
+  },
+  "rawPolicy": "Full normal external maps checked runner-locally before packaging; never uploaded to public artifacts. Ephemeral after job teardown; no local raw archive claimed.",
+  "remoteContract": "Dedicated Ubuntu hosted run; does not inherit historical shared-local observer grants."
+}

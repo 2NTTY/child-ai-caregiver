@@ -1,0 +1,58 @@
+{
+  "variant": "uiux-upgrade",
+  "label": "UI UX Pro Max 原版升級 · f1c60c6a",
+  "productCommit": "f1c60c6ae2928e5407dabccbd04a504f691e39cf",
+  "productTree": "f7619a5e1c59256d914c2b3693a768921f0c489d",
+  "productOverlay": [],
+  "fixture": "/experiments/fourth-preview-fixture.js",
+  "fileSafety": "/experiments/fourth-file-safety.js",
+  "helper": "/experiments/preview-navigation-identity-fourth-v1.js",
+  "identityVersion": "preview-navigation-identity-fourth-v1",
+  "identityRequiredFields": [
+    "version",
+    "variant",
+    "scenario",
+    "loading",
+    "routes"
+  ],
+  "comparisonRequiredFields": [
+    "version",
+    "route"
+  ],
+  "identityAndRoutesMustBeFrozen": true,
+  "payloadPrefix": "/experiments/payload/uiux-upgrade/",
+  "modes": [
+    "ready",
+    "complete-profile",
+    "populated",
+    "long-content",
+    "empty",
+    "error",
+    "signedout",
+    "loading",
+    "no-child",
+    "mutation-unknown",
+    "unknown-age-zero-records",
+    "core-journeys",
+    "core-no-child"
+  ],
+  "loadingTargets": [
+    "children",
+    "child-reads",
+    "documents"
+  ],
+  "originalReturn": "/?experiment=original",
+  "prohibitedModes": [
+    "core-task-history-paged",
+    "memory-work-reading",
+    "core-profile-concern",
+    "chat-text-normal",
+    "chat-text-controlled"
+  ],
+  "notGranted": [
+    "product pass",
+    "fixture runtime pass",
+    "native browser pass",
+    "publication"
+  ]
+}

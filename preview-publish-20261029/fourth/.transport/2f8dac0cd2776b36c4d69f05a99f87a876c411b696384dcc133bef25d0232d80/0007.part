@@ -1,0 +1,795 @@
+ttern = new RegExp(typeof def.position === "number" ? `^.{${def.position},}${escapedRegex}` : escapedRegex);
+    def.pattern = pattern;
+    inst._zod.onattach.push((inst) => {
+        const bag = inst._zod.bag;
+        bag.patterns ?? (bag.patterns = new Set());
+        bag.patterns.add(pattern);
+    });
+    inst._zod.check = (payload) => {
+        if (payload.value.includes(def.includes, def.position))
+            return;
+        payload.issues.push({
+            origin: "string",
+            code: "invalid_format",
+            format: "includes",
+            includes: def.includes,
+            input: payload.value,
+            inst,
+            continue: !def.abort,
+        });
+    };
+});
+exports.$ZodCheckStartsWith = core.$constructor("$ZodCheckStartsWith", (inst, def) => {
+    exports.$ZodCheck.init(inst, def);
+    const pattern = new RegExp(`^${util.escapeRegex(def.prefix)}.*`);
+    def.pattern ?? (def.pattern = pattern);
+    inst._zod.onattach.push((inst) => {
+        const bag = inst._zod.bag;
+        bag.patterns ?? (bag.patterns = new Set());
+        bag.patterns.add(pattern);
+    });
+    inst._zod.check = (payload) => {
+        if (payload.value.startsWith(def.prefix))
+            return;
+        payload.issues.push({
+            origin: "string",
+            code: "invalid_format",
+            format: "starts_with",
+            prefix: def.prefix,
+            input: payload.value,
+            inst,
+            continue: !def.abort,
+        });
+    };
+});
+exports.$ZodCheckEndsWith = core.$constructor("$ZodCheckEndsWith", (inst, def) => {
+    exports.$ZodCheck.init(inst, def);
+    const pattern = new RegExp(`.*${util.escapeRegex(def.suffix)}$`);
+    def.pattern ?? (def.pattern = pattern);
+    inst._zod.onattach.push((inst) => {
+        const bag = inst._zod.bag;
+        bag.patterns ?? (bag.patterns = new Set());
+        bag.patterns.add(pattern);
+    });
+    inst._zod.check = (payload) => {
+        if (payload.value.endsWith(def.suffix))
+            return;
+        payload.issues.push({
+            origin: "string",
+            code: "invalid_format",
+            format: "ends_with",
+            suffix: def.suffix,
+            input: payload.value,
+            inst,
+            continue: !def.abort,
+        });
+    };
+});
+///////////////////////////////////
+/////    $ZodCheckProperty    /////
+///////////////////////////////////
+function handleCheckPropertyResult(result, payload, property) {
+    if (result.issues.length) {
+        payload.issues.push(...util.prefixIssues(property, result.issues));
+    }
+}
+exports.$ZodCheckProperty = core.$constructor("$ZodCheckProperty", (inst, def) => {
+    exports.$ZodCheck.init(inst, def);
+    inst._zod.check = (payload) => {
+        const result = def.schema._zod.run({
+            value: payload.value[def.property],
+            issues: [],
+        }, {});
+        if (result instanceof Promise) {
+            return result.then((result) => handleCheckPropertyResult(result, payload, def.property));
+        }
+        handleCheckPropertyResult(result, payload, def.property);
+        return;
+    };
+});
+exports.$ZodCheckMimeType = core.$constructor("$ZodCheckMimeType", (inst, def) => {
+    exports.$ZodCheck.init(inst, def);
+    const mimeSet = new Set(def.mime);
+    inst._zod.onattach.push((inst) => {
+        inst._zod.bag.mime = def.mime;
+    });
+    inst._zod.check = (payload) => {
+        if (mimeSet.has(payload.value.type))
+            return;
+        payload.issues.push({
+            code: "invalid_value",
+            values: def.mime,
+            input: payload.value.type,
+            inst,
+            continue: !def.abort,
+        });
+    };
+});
+exports.$ZodCheckOverwrite = core.$constructor("$ZodCheckOverwrite", (inst, def) => {
+    exports.$ZodCheck.init(inst, def);
+    inst._zod.check = (payload) => {
+        payload.value = def.tx(payload.value);
+    };
+});
+
+},
+14:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.sha256_base64 = exports.sha256_hex = exports.sha1_base64url = exports.sha1_base64 = exports.sha1_hex = exports.md5_base64url = exports.md5_base64 = exports.md5_hex = exports.hex = exports.uppercase = exports.lowercase = exports.undefined = exports.null = exports.boolean = exports.number = exports.integer = exports.bigint = exports.string = exports.date = exports.creditCard = exports.e164 = exports.httpProtocol = exports.domain = exports.hostname = exports.base64url = exports.base64 = exports.cidrv6 = exports.cidrv4 = exports.mac = exports.ipv6 = exports.ipv4 = exports.browserEmail = exports.idnEmail = exports.unicodeEmail = exports.rfc5322Email = exports.html5Email = exports.email = exports.uuid7 = exports.uuid6 = exports.uuid4 = exports.uuid = exports.guid = exports.extendedDuration = exports.duration = exports.nanoid = exports.ksuid = exports.xid = exports.ulid = exports.cuid2 = exports.cuid = void 0;
+exports.sha512_base64url = exports.sha512_base64 = exports.sha512_hex = exports.sha384_base64url = exports.sha384_base64 = exports.sha384_hex = exports.sha256_base64url = void 0;
+exports.nanoidOfLength = nanoidOfLength;
+exports.emoji = emoji;
+exports.time = time;
+exports.datetime = datetime;
+const util = __importStar(__require(9));
+/**
+ * @deprecated CUID v1 is deprecated by its authors due to information leakage
+ * (timestamps embedded in the id). Use {@link cuid2} instead.
+ * See https://github.com/paralleldrive/cuid.
+ */
+exports.cuid = /^[cC][0-9a-z]{6,}$/;
+exports.cuid2 = /^[0-9a-z]+$/;
+exports.ulid = /^[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}$/;
+exports.xid = /^[0-9a-vA-V]{20}$/;
+exports.ksuid = /^[A-Za-z0-9]{27}$/;
+exports.nanoid = /^[a-zA-Z0-9_-]{21}$/;
+function nanoidOfLength(length) {
+    return new RegExp(`^[a-zA-Z0-9_-]{${length}}$`);
+}
+/** ISO 8601-1 duration regex. Does not support the 8601-2 extensions like negative durations or fractional/negative components. */
+exports.duration = /^P(?:(\d+W)|(?!.*W)(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+([.,]\d+)?S)?)?)$/;
+/** Implements ISO 8601-2 extensions like explicit +- prefixes, mixing weeks with other units, and fractional/negative components. */
+exports.extendedDuration = /^[-+]?P(?!$)(?:(?:[-+]?\d+Y)|(?:[-+]?\d+[.,]\d+Y$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:(?:[-+]?\d+W)|(?:[-+]?\d+[.,]\d+W$))?(?:(?:[-+]?\d+D)|(?:[-+]?\d+[.,]\d+D$))?(?:T(?=[\d+-])(?:(?:[-+]?\d+H)|(?:[-+]?\d+[.,]\d+H$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:[-+]?\d+(?:[.,]\d+)?S)?)??$/;
+/** A regex for any UUID-like identifier: 8-4-4-4-12 hex pattern */
+exports.guid = /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/;
+/** Returns a regex for validating an RFC 9562/4122 UUID.
+ *
+ * @param version Optionally specify a version 1-8. If no version is specified, all versions are supported. */
+const uuid = (version) => {
+    if (!version)
+        return /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/;
+    return new RegExp(`^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-${version}[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$`);
+};
+exports.uuid = uuid;
+exports.uuid4 = (0, exports.uuid)(4);
+exports.uuid6 = (0, exports.uuid)(6);
+exports.uuid7 = (0, exports.uuid)(7);
+/** Practical email validation */
+exports.email = /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/;
+/** Equivalent to the HTML5 input[type=email] validation implemented by browsers. Source: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/email */
+exports.html5Email = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+/** The classic emailregex.com regex for RFC 5322-compliant emails */
+exports.rfc5322Email = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+/** A loose regex that allows Unicode characters, enforces length limits, and that's about it. */
+exports.unicodeEmail = /^[^\s@"]{1,64}@[^\s@]{1,255}$/u;
+exports.idnEmail = exports.unicodeEmail;
+exports.browserEmail = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+// from https://thekevinscott.com/emojis-in-javascript/#writing-a-regular-expression
+// Single character class, not an alternation: the two properties overlap (U+1F9B0-U+1F9B3), so `(A|B)+` backtracks exponentially on a failed match.
+const _emoji = `^[\\p{Extended_Pictographic}\\p{Emoji_Component}]+$`;
+function emoji() {
+    return new RegExp(_emoji, "u");
+}
+exports.ipv4 = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/;
+exports.ipv6 = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:))$/;
+const mac = (delimiter) => {
+    const escapedDelim = util.escapeRegex(delimiter ?? ":");
+    return new RegExp(`^(?:[0-9A-F]{2}${escapedDelim}){5}[0-9A-F]{2}$|^(?:[0-9a-f]{2}${escapedDelim}){5}[0-9a-f]{2}$`);
+};
+exports.mac = mac;
+exports.cidrv4 = /^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/([0-9]|[1-2][0-9]|3[0-2])$/;
+exports.cidrv6 = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:))\/(12[0-8]|1[01][0-9]|[1-9]?[0-9])$/;
+// https://stackoverflow.com/questions/7860392/determine-if-string-is-in-base64-using-javascript
+exports.base64 = /^$|^(?:[0-9a-zA-Z+/]{4})*(?:(?:[0-9a-zA-Z+/]{2}==)|(?:[0-9a-zA-Z+/]{3}=))?$/;
+exports.base64url = /^[A-Za-z0-9_-]*$/;
+// based on https://stackoverflow.com/questions/106179/regular-expression-to-match-dns-hostname-or-ip-address
+// export const hostname: RegExp = /^([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+$/;
+exports.hostname = /^(?=.{1,253}\.?$)[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[-0-9a-zA-Z]{0,61}[0-9a-zA-Z])?)*\.?$/;
+exports.domain = /^(?=.{1,253}$)([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}$/;
+exports.httpProtocol = /^https?$/;
+// https://blog.stevenlevithan.com/archives/validate-phone-number#r4-3 (regex sans spaces) E.164: leading digit must be 1-9; total digits (excluding '+') between 7-15
+exports.e164 = /^\+[1-9]\d{6,14}$/;
+// Credit card shape: 12–19 digits, optionally separated by single spaces or single hyphens. ISO/IEC 7812 caps the PAN at 19 digits; 12 is the shortest issued length (Maestro).
+exports.creditCard = /^\d(?:[ -]?\d){11,18}$/;
+const dateSource = `(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))`;
+/** Anchors a pattern source. The interpolation lives here rather than at the call site because
+ * esbuild will not drop a `@__PURE__` call whose own argument interpolates a variable, but it
+ * will drop `anchor(dateSource)`. Keeping it inline pinned `date` into every bundle. */
+function anchor(source) {
+    return new RegExp(`^${source}$`);
+}
+exports.date = anchor(dateSource);
+function timeSource(args) {
+    const hhmm = `(?:[01]\\d|2[0-3]):[0-5]\\d`;
+    const regex = typeof args.precision === "number"
+        ? args.precision === -1
+            ? `${hhmm}`
+            : args.precision === 0
+                ? `${hhmm}:[0-5]\\d`
+                : `${hhmm}:[0-5]\\d\\.\\d{${args.precision}}`
+        : args.seconds
+            ? `${hhmm}:[0-5]\\d(?:\\.\\d+)?`
+            : `${hhmm}(?::[0-5]\\d(?:\\.\\d+)?)?`;
+    return regex;
+}
+function time(args) {
+    return new RegExp(`^${timeSource(args)}$`);
+}
+// Adapted from https://stackoverflow.com/a/3143231
+function datetime(args) {
+    const opts = ["Z"];
+    // if (args.offset) opts.push(`([+-]\\d{2}:\\d{2})`);
+    if (args.offset)
+        opts.push(`([+-](?:[01]\\d|2[0-3]):[0-5]\\d)`);
+    // RFC 3339 mandates seconds wherever the time carries a `Z` or an offset, so only the unqualified form `local` adds may omit them
+    const qualified = `${timeSource({ precision: args.precision, seconds: true })}(?:${opts.join("|")})`;
+    const timeRegex = args.local ? `${qualified}|${timeSource({ precision: args.precision })}` : qualified;
+    return new RegExp(`^${dateSource}T(?:${timeRegex})$`);
+}
+const string = (params) => {
+    const regex = params ? `[\\s\\S]{${params?.minimum ?? 0},${params?.maximum ?? ""}}` : `[\\s\\S]*`;
+    return new RegExp(`^${regex}$`);
+};
+exports.string = string;
+exports.bigint = /^-?\d+n?$/;
+exports.integer = /^-?\d+$/;
+exports.number = /^-?\d+(?:\.\d+)?$/;
+exports.boolean = /^(?:true|false)$/i;
+const _null = /^null$/i;
+exports.null = _null;
+const _undefined = /^undefined$/i;
+exports.undefined = _undefined;
+// regex for string with no uppercase letters
+exports.lowercase = /^[^A-Z]*$/;
+// regex for string with no lowercase letters
+exports.uppercase = /^[^a-z]*$/;
+// regex for hexadecimal strings (any length)
+exports.hex = /^[0-9a-fA-F]*$/;
+// Hash regexes for different algorithms and encodings
+// Helper function to create base64 regex with exact length and padding
+function fixedBase64(bodyLength, padding) {
+    return new RegExp(`^[A-Za-z0-9+/]{${bodyLength}}${padding}$`);
+}
+// Helper function to create base64url regex with exact length (no padding)
+function fixedBase64url(length) {
+    return new RegExp(`^[A-Za-z0-9_-]{${length}}$`);
+}
+// MD5 (16 bytes): base64 = 24 chars total (22 + "==")
+exports.md5_hex = /^[0-9a-fA-F]{32}$/;
+exports.md5_base64 = fixedBase64(22, "==");
+exports.md5_base64url = fixedBase64url(22);
+// SHA1 (20 bytes): base64 = 28 chars total (27 + "=")
+exports.sha1_hex = /^[0-9a-fA-F]{40}$/;
+exports.sha1_base64 = fixedBase64(27, "=");
+exports.sha1_base64url = fixedBase64url(27);
+// SHA256 (32 bytes): base64 = 44 chars total (43 + "=")
+exports.sha256_hex = /^[0-9a-fA-F]{64}$/;
+exports.sha256_base64 = fixedBase64(43, "=");
+exports.sha256_base64url = fixedBase64url(43);
+// SHA384 (48 bytes): base64 = 64 chars total (no padding)
+exports.sha384_hex = /^[0-9a-fA-F]{96}$/;
+exports.sha384_base64 = fixedBase64(64, "");
+exports.sha384_base64url = fixedBase64url(64);
+// SHA512 (64 bytes): base64 = 88 chars total (86 + "==")
+exports.sha512_hex = /^[0-9a-fA-F]{128}$/;
+exports.sha512_base64 = fixedBase64(86, "==");
+exports.sha512_base64url = fixedBase64url(86);
+
+},
+15:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Doc = void 0;
+class Doc {
+    constructor(args = [], closed = {}) {
+        this.content = [];
+        this.indent = 0;
+        this.args = args;
+        this.closed = closed;
+    }
+    indented(fn) {
+        this.indent += 1;
+        fn(this);
+        this.indent -= 1;
+    }
+    write(arg) {
+        if (typeof arg === "function") {
+            arg(this, { execution: "sync" });
+            arg(this, { execution: "async" });
+            return;
+        }
+        const content = arg;
+        const lines = content.split("\n").filter((x) => x);
+        const minIndent = Math.min(...lines.map((x) => x.length - x.trimStart().length));
+        const dedented = lines.map((x) => x.slice(minIndent)).map((x) => " ".repeat(this.indent * 2) + x);
+        for (const line of dedented) {
+            this.content.push(line);
+        }
+    }
+    compile() {
+        const F = Function;
+        const content = this?.content ?? [``];
+        const factory = new F(...Object.keys(this.closed), `return function (${this.args.join(", ")}) {\n${content.join("\n")}\n};`);
+        return factory(...Object.values(this.closed));
+    }
+}
+exports.Doc = Doc;
+
+},
+16:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.version = void 0;
+exports.version = {
+    major: 4,
+    minor: 5,
+    patch: 4,
+};
+
+},
+17:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.$ZodCyclicError = void 0;
+exports.isRecursiveSchema = isRecursiveSchema;
+exports.memoizer = memoizer;
+exports.isBackEdge = isBackEdge;
+class $ZodCyclicError extends Error {
+    constructor() {
+        super(`Cannot parse a reference cycle that closes through a transform`);
+        this.name = "ZodCyclicError";
+    }
+}
+exports.$ZodCyclicError = $ZodCyclicError;
+/** Keyed off the context object every schema in one parse call already shares. */
+const STATE = "~memo";
+const NO_ISSUES = [];
+// Receivers prefix paths in place, so the cache and every hand-out need their own copies.
+function cloneIssues(issues) {
+    return issues.map((iss) => (iss.path ? { ...iss, path: iss.path.slice() } : { ...iss }));
+}
+const recursive = /*@__PURE__*/ new WeakMap();
+/** Whether this schema's subtree contains a cycle, so one parse can re-enter it. */
+function isRecursive(inst, stack) {
+    const cached = recursive.get(inst);
+    if (cached !== undefined)
+        return cached;
+    // Relative to the walk in progress, so not cached.
+    if (stack.has(inst))
+        return true;
+    stack.add(inst);
+    let result = false;
+    const check = (child) => {
+        if (!result && child?._zod && isRecursive(child, stack))
+            result = true;
+    };
+    const def = inst._zod.def;
+    const kind = def.type;
+    switch (kind) {
+        case "object": {
+            // `Reflect.ownKeys` rather than `Object.keys`, so a cycle through a declared symbol key is still seen
+            for (const key of Reflect.ownKeys(def.shape))
+                check(def.shape[key]);
+            check(def.catchall);
+            break;
+        }
+        case "array":
+            check(def.element);
+            break;
+        case "tuple":
+            for (const el of def.items)
+                check(el);
+            check(def.rest);
+            break;
+        case "record":
+        case "map":
+            check(def.keyType);
+            check(def.valueType);
+            break;
+        case "set":
+            check(def.valueType);
+            break;
+        case "union":
+            for (const el of def.options)
+                check(el);
+            break;
+        case "intersection":
+            check(def.left);
+            check(def.right);
+            break;
+        case "optional":
+        case "nullable":
+        case "default":
+        case "prefault":
+        case "catch":
+        case "readonly":
+        case "nonoptional":
+        case "promise":
+        case "success":
+            check(def.innerType);
+            break;
+        case "pipe":
+            check(def.in);
+            check(def.out);
+            break;
+        case "function":
+            check(def.input);
+            check(def.output);
+            break;
+        // reading `_zod.innerType` resolves the getter once and caches it
+        case "lazy":
+            check(inst._zod.innerType);
+            break;
+        // a leaf by choice: `parts` are regex fragments, not data positions
+        case "template_literal":
+        // leaves
+        case "string":
+        case "number":
+        case "int":
+        case "boolean":
+        case "bigint":
+        case "symbol":
+        case "undefined":
+        case "null":
+        case "void":
+        case "never":
+        case "any":
+        case "unknown":
+        case "date":
+        case "nan":
+        case "enum":
+        case "literal":
+        case "file":
+        case "transform":
+        case "custom":
+            break;
+        default: {
+            // a new built-in kind becomes a compile error here
+            kind;
+            // a user-defined kind can still hold children, and only its author knows where, so fall back to scanning the def — skipping accessors, since reading one can run user code
+            for (const key in def) {
+                const desc = Object.getOwnPropertyDescriptor(def, key);
+                if (!desc || desc.get)
+                    continue;
+                const value = desc.value;
+                if (!value || typeof value !== "object")
+                    continue;
+                if (value._zod)
+                    check(value);
+                else if (Array.isArray(value))
+                    for (const el of value)
+                        check(el);
+            }
+        }
+    }
+    stack.delete(inst);
+    recursive.set(inst, result);
+    return result;
+}
+/**
+ * Whether one parse can re-enter this schema, i.e. its subtree contains a cycle.
+ * Exported for `z.compile`, which refuses to compile such a schema: cycle
+ * breaking is driven from here off state keyed on the parse context, and a
+ * generated fast path has no context to key on.
+ */
+function isRecursiveSchema(inst) {
+    return isRecursive(inst, new Set());
+}
+function bucketFor(state, inst) {
+    let bucket = state.buckets.get(inst);
+    if (!bucket) {
+        bucket = new Map();
+        state.buckets.set(inst, bucket);
+    }
+    return bucket;
+}
+// Set immediately before delegating to core and cleared immediately after, so `alloc` registers only for a visit this module is driving.
+let handoff;
+// Allocated but unfinished entries. `alloc` and the matching pop both happen in the synchronous part of a parse, so they nest even when children are async, and one stack serves every schema.
+const open = [];
+const memo = {
+    alloc(_inst, payload, empty) {
+        const bucket = handoff;
+        if (!bucket)
+            return empty;
+        handoff = undefined;
+        const entry = { value: empty, issues: null };
+        bucket.set(payload.value, entry);
+        open.push(entry);
+        return empty;
+    },
+    guard(inst) {
+        var _a;
+        (_a = inst._zod).deferred ?? (_a.deferred = []);
+        inst._zod.deferred.push(() => {
+            const base = inst._zod.parse;
+            const wrapped = (payload, ctx) => {
+                // The value is a placeholder a back-edge is still waiting on, so the cycle closes through this transform. Its output can't exist in time to bind.
+                if (ctx.direction !== "backward" && isBackEdge(ctx, payload.value))
+                    throw new $ZodCyclicError();
+                return base(payload, ctx);
+            };
+            inst._zod.parse = wrapped;
+            if (inst._zod.run === base)
+                inst._zod.run = wrapped;
+        });
+    },
+    attach(inst) {
+        var _a;
+        let isRecursiveInst;
+        // `bucket` memoized for one parse; a recursive schema is re-entered many times and its bucket never changes
+        let lastCtx;
+        let lastBucket;
+        // Wraps `parse` in a deferred so it sees the container's final parse. Core's own deferred copies `parse` into `run` when there are no checks, and it ran first, so `run` is patched to match; with checks, `run` reads `parse` dynamically.
+        (_a = inst._zod).deferred ?? (_a.deferred = []);
+        inst._zod.deferred.push(() => {
+            const base = inst._zod.parse;
+            const wrapped = (payload, ctx) => {
+                if (isRecursiveInst === undefined) {
+                    isRecursiveInst = isRecursive(inst, new Set());
+                    if (!isRecursiveInst) {
+                        // Nothing here can ever fire, so take it back out.
+                        inst._zod.parse = base;
+                        if (inst._zod.run === wrapped)
+                            inst._zod.run = base;
+                        return base(payload, ctx);
+                    }
+                }
+                const input = payload.value;
+                if (input === null || typeof input !== "object")
+                    return base(payload, ctx);
+                let state = ctx[STATE];
+                if (!state) {
+                    state = { buckets: new Map(), backEdges: undefined };
+                    ctx[STATE] = state;
+                }
+                let bucket;
+                if (lastCtx === ctx) {
+                    bucket = lastBucket;
+                }
+                else {
+                    bucket = bucketFor(state, inst);
+                    lastCtx = ctx;
+                    lastBucket = bucket;
+                }
+                const hit = bucket.get(input);
+                if (hit) {
+                    payload.value = hit.value;
+                    if (hit.issues) {
+                        if (hit.issues.length)
+                            payload.issues.push(...cloneIssues(hit.issues));
+                    }
+                    else {
+                        // Still being parsed: its own checks cover it, so skip them here.
+                        payload.memo = true;
+                        state.backEdges ?? (state.backEdges = new Set());
+                        state.backEdges.add(hit.value);
+                    }
+                    return payload;
+                }
+                handoff = bucket;
+                const depth = open.length;
+                const result = base(payload, ctx);
+                handoff = undefined;
+                // A container that rejected its input outright allocated nothing.
+                const entry = open.length > depth ? open.pop() : undefined;
+                // Both paths written out so the sync one allocates no closure. It runs once per node, and capturing here cost more than everything else combined.
+                if (result instanceof Promise) {
+                    return result.then((r) => {
+                        if (entry)
+                            entry.issues = r.issues.length ? cloneIssues(r.issues) : NO_ISSUES;
+                        return r;
+                    });
+                }
+                if (entry)
+                    entry.issues = result.issues.length ? cloneIssues(result.issues) : NO_ISSUES;
+                return result;
+            };
+            inst._zod.parse = wrapped;
+            if (inst._zod.run === base)
+                inst._zod.run = wrapped;
+        });
+    },
+};
+/** The memoizer that gives containers cycle support. `zod` installs it by default; `zod/mini` opts in with `config({ memoizer: memoizer() })`. */
+function memoizer() {
+    return memo;
+}
+/** Whether this value is a node a back-edge resolved to before it finished. */
+function isBackEdge(ctx, value) {
+    const backEdges = ctx[STATE]?.backEdges;
+    return backEdges !== undefined && value !== null && typeof value === "object" && backEdges.has(value);
+}
+
+},
+18:function(module,exports,__require){
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.sv = exports.sl = exports.sk = exports.ru = exports.ro = exports.ptBR = exports.pt = exports.pl = exports.ps = exports.ota = exports.no = exports.nn = exports.nl = exports.ne = exports.ms = exports.mk = exports.lt = exports.ko = exports.kn = exports.km = exports.kh = exports.ka = exports.ja = exports.it = exports.is = exports.id = exports.hy = exports.hu = exports.hr = exports.hi = exports.he = exports.gu = exports.frCA = exports.fr = exports.fi = exports.fa = exports.es = exports.eo = exports.en = exports.el = exports.de = exports.da = exports.cs = exports.ckb = exports.ca = exports.bn = exports.bg = exports.be = exports.az = exports.ar = void 0;
+exports.yo = exports.zhTW = exports.zhCN = exports.vi = exports.uz = exports.ur = exports.uk = exports.ua = exports.tr = exports.tk = exports.th = exports.ta = void 0;
+var ar_js_1 = __require(19);
+Object.defineProperty(exports, "ar", { enumerable: true, get: function () { return __importDefault(ar_js_1).default; } });
+var az_js_1 = __require(20);
+Object.defineProperty(exports, "az", { enumerable: true, get: function () { return __importDefault(az_js_1).default; } });
+var be_js_1 = __require(21);
+Object.defineProperty(exports, "be", { enumerable: true, get: function () { return __importDefault(be_js_1).default; } });
+var bg_js_1 = __require(22);
+Object.defineProperty(exports, "bg", { enumerable: true, get: function () { return __importDefault(bg_js_1).default; } });
+var bn_js_1 = __require(23);
+Object.defineProperty(exports, "bn", { enumerable: true, get: function () { return __importDefault(bn_js_1).default; } });
+var ca_js_1 = __require(24);
+Object.defineProperty(exports, "ca", { enumerable: true, get: function () { return __importDefault(ca_js_1).default; } });
+var ckb_js_1 = __require(25);
+Object.defineProperty(exports, "ckb", { enumerable: true, get: function () { return __importDefault(ckb_js_1).default; } });
+var cs_js_1 = __require(26);
+Object.defineProperty(exports, "cs", { enumerable: true, get: function () { return __importDefault(cs_js_1).default; } });
+var da_js_1 = __require(27);
+Object.defineProperty(exports, "da", { enumerable: true, get: function () { return __importDefault(da_js_1).default; } });
+var de_js_1 = __require(28);
+Object.defineProperty(exports, "de", { enumerable: true, get: function () { return __importDefault(de_js_1).default; } });
+var el_js_1 = __require(29);
+Object.defineProperty(exports, "el", { enumerable: true, get: function () { return __importDefault(el_js_1).default; } });
+var en_js_1 = __require(30);
+Object.defineProperty(exports, "en", { enumerable: true, get: function () { return __importDefault(en_js_1).default; } });
+var eo_js_1 = __require(31);
+Object.defineProperty(exports, "eo", { enumerable: true, get: function () { return __importDefault(eo_js_1).default; } });
+var es_js_1 = __require(32);
+Object.defineProperty(exports, "es", { enumerable: true, get: function () { return __importDefault(es_js_1).default; } });
+var fa_js_1 = __require(33);
+Object.defineProperty(exports, "fa", { enumerable: true, get: function () { return __importDefault(fa_js_1).default; } });
+var fi_js_1 = __require(34);
+Object.defineProperty(exports, "fi", { enumerable: true, get: function () { return __importDefault(fi_js_1).default; } });
+var fr_js_1 = __require(35);
+Object.defineProperty(exports, "fr", { enumerable: true, get: function () { return __importDefault(fr_js_1).default; } });
+var fr_CA_js_1 = __require(36);
+Object.defineProperty(exports, "frCA", { enumerable: true, get: function () { return __importDefault(fr_CA_js_1).default; } });
+var gu_js_1 = __require(37);
+Object.defineProperty(exports, "gu", { enumerable: true, get: function () { return __importDefault(gu_js_1).default; } });
+var he_js_1 = __require(38);
+Object.defineProperty(exports, "he", { enumerable: true, get: function () { return __importDefault(he_js_1).default; } });
+var hi_js_1 = __require(39);
+Object.defineProperty(exports, "hi", { enumerable: true, get: function () { return __importDefault(hi_js_1).default; } });
+var hr_js_1 = __require(40);
+Object.defineProperty(exports, "hr", { enumerable: true, get: function () { return __importDefault(hr_js_1).default; } });
+var hu_js_1 = __require(41);
+Object.defineProperty(exports, "hu", { enumerable: true, get: function () { return __importDefault(hu_js_1).default; } });
+var hy_js_1 = __require(42);
+Object.defineProperty(exports, "hy", { enumerable: true, get: function () { return __importDefault(hy_js_1).default; } });
+var id_js_1 = __require(43);
+Object.defineProperty(exports, "id", { enumerable: true, get: function () { return __importDefault(id_js_1).default; } });
+var is_js_1 = __require(44);
+Object.defineProperty(exports, "is", { enumerable: true, get: function () { return __importDefault(is_js_1).default; } });
+var it_js_1 = __require(45);
+Object.defineProperty(exports, "it", { enumerable: true, get: function () { return __importDefault(it_js_1).default; } });
+var ja_js_1 = __require(46);
+Object.defineProperty(exports, "ja", { enumerable: true, get: function () { return __importDefault(ja_js_1).default; } });
+var ka_js_1 = __require(47);
+Object.defineProperty(exports, "ka", { enumerable: true, get: function () { return __importDefault(ka_js_1).default; } });
+var kh_js_1 = __require(48);
+Object.defineProperty(exports, "kh", { enumerable: true, get: function () { return __importDefault(kh_js_1).default; } });
+var km_js_1 = __require(49);
+Object.defineProperty(exports, "km", { enumerable: true, get: function () { return __importDefault(km_js_1).default; } });
+var kn_js_1 = __require(50);
+Object.defineProperty(exports, "kn", { enumerable: true, get: function () { return __importDefault(kn_js_1).default; } });
+var ko_js_1 = __require(51);
+Object.defineProperty(exports, "ko", { enumerable: true, get: function () { return __importDefault(ko_js_1).default; } });
+var lt_js_1 = __require(52);
+Object.defineProperty(exports, "lt", { enumerable: true, get: function () { return __importDefault(lt_js_1).default; } });
+var mk_js_1 = __require(53);
+Object.defineProperty(exports, "mk", { enumerable: true, get: function () { return __importDefault(mk_js_1).default; } });
+var ms_js_1 = __require(54);
+Object.defineProperty(exports, "ms", { enumerable: true, get: function () { return __importDefault(ms_js_1).default; } });
+var ne_js_1 = __require(55);
+Object.defineProperty(exports, "ne", { enumerable: true, get: function () { return __importDefault(ne_js_1).default; } });
+var nl_js_1 = __require(56);
+Object.defineProperty(exports, "nl", { enumerable: true, get: function () { return __importDefault(nl_js_1).default; } });
+var nn_js_1 = __require(57);
+Object.defineProperty(exports, "nn", { enumerable: true, get: function () { return __importDefault(nn_js_1).default; } });
+var no_js_1 = __require(58);
+Object.defineProperty(exports, "no", { enumerable: true, get: function () { return __importDefault(no_js_1).default; } });
+var ota_js_1 = __require(59);
+Object.defineProperty(exports, "ota", { enumerable: true, get: function () { return __importDefault(ota_js_1).default; } });
+var ps_js_1 = __require(60);
+Object.defineProperty(exports, "ps", { enumerable: true, get: function () { return __importDefault(ps_js_1).default; } });
+var pl_js_1 = __require(61);
+Object.defineProperty(exports, "pl", { enumerable: true, get: function () { return __importDefault(pl_js_1).default; } });
+var pt_js_1 = __require(62);
+Object.defineProperty(exports, "pt", { enumerable: true, get: function () { return __importDefault(pt_js_1).default; } });
+var pt_BR_js_1 = __require(63);
+Object.defineProperty(exports, "ptBR", { enumerable: true, get: function () { return __importDefault(pt_BR_js_1).default; } });
+var ro_js_1 = __require(64);
+Object.defineProperty(exports, "ro", { enumerable: true, get: function () { return __importDefault(ro_js_1).default; } });
+var ru_js_1 = __require(65);
+Object.defineProperty(exports, "ru", { enumerable: true, get: function () { return __importDefault(ru_js_1).default; } });
+var sk_js_1 = __require(66);
+Object.defineProperty(exports, "sk", { enumerable: true, get: function () { return __importDefault(sk_js_1).default; } });
+var sl_js_1 = __require(67);
+Object.defineProperty(exports, "sl", { enumerable: true, get: function () { return __importDefault(sl_js_1).default; } });
+var sv_js_1 = __require(68);
+Object.defineProperty(exports, "sv", { enumerable: true, get: function () { return __importDefault(sv_js_1).default; } });
+var ta_js_1 = __require(69);
+Object.defineProperty(exports, "ta", { enumerable: true, get: function () { return __importDefault(ta_js_1).default; } });
+var th_js_1 = __require(70);
+Object.defineProperty(exports, "th", { enumerable: true, get: function () { return __importDefault(th_js_1).default; } });
+var tk_js_1 = __require(71);
+Object.defineProperty(exports, "tk", { enumerable: true, get: function () { return __importDefault(tk_js_1).default; } });
+var tr_js_1 = __require(72);
+Object.defineProperty(exports, "tr", { enumerable: true, get: function () { return __importDefault(tr_js_1).default; } });
+var ua_js_1 = __require(73);
+Object.defineProperty(exports, "ua", { enumerable: true, get: function () { return __importDefault(ua_js_1).default; } });
+var uk_js_1 = __require(74);
+Object.defineProperty(exports, "uk", { enumerable: true, get: function () { return __importDefault(uk_js_1).default; } });
+var ur_js_1 = __require(75);
+Object.defineProperty(exports, "ur", { enumerable: true, get: function () { return __importDefault(ur_js_1).default; } });
+var uz_js_1 = __require(76);
+Object.defineProperty(exports, "uz", { enumerable: true, get: function () { return __importDefault(uz_js_1).default; } });
+var vi_js_1 = __require(77);
+Object.defineProperty(exports, "vi", { enumerable: true, get: function () { return __importDefault(vi_js_1).default; } });
+var zh_CN_js_1 = __require(78);
+Object.defineProperty(exports, "zhCN", { enumerable: true, get: function () { return __importDefault(zh_CN_js_1).default; } });
+var zh_TW_js_1 = __require(79);
+Object.defineProperty(exports, "zhTW", { enumerable: true, get: function () { return __importDefault(zh_TW_js_1).default; } });
+var yo_js_1 = __require(80);
+Object.defineProperty(exports, "yo", { enumerable: true, get: function () { return __importDefault(yo_js_1).default; } });
+
+},
+19:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = default_1;
+const util = __importStar(__require(9));
+const error = () => {
+    const Sizable = {
+        string: { unit: "حرف", verb: "أن يحوي" },
+        file: { unit: "بايت", verb: "أن يحوي" },
+        array: { unit: "عنصر", verb: "أن 

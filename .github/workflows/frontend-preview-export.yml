@@ -1,0 +1,85 @@
+name: Four frontend preview exports (no deployment)
+
+"on":
+  push:
+    branches: [codex/frontend-preview-export-20261029]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-preview-export-20261029
+  cancel-in-progress: false
+
+jobs:
+  export:
+    if: github.repository == '2NTTY/child-ai-caregiver'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: true
+      max-parallel: 1
+      matrix:
+        product: [care, harbour, handbook, fourth]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout exact orchestration source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: recipes
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+      - name: Reconstruct exact reviewed UTF-8 recipe sources
+        env:
+          ORCHESTRATION_SHA: ${{ github.sha }}
+        run: |
+          python3 -I -B recipes/preview-publish-20261029/orchestrator/materialize_transport.py \
+            --root recipes --orchestration-sha "$ORCHESTRATION_SHA"
+      - name: Read reviewed published build identity
+        id: pin
+        env:
+          PRODUCT: ${{ matrix.product }}
+        run: |
+          python3 - <<'PYCODE'
+          import json, os, re
+          value = json.load(open('recipes/preview-publish-20261029/orchestrator/manifest.json'))['products'][os.environ['PRODUCT']]['buildCommit']
+          assert isinstance(value, str) and re.fullmatch('[0-9a-f]{40}', value), 'Published build commit has not been admitted'
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
+              stream.write('sha=' + value + '\n')
+          PYCODE
+      - name: Checkout immutable published build input
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.pin.outputs.sha }}
+          path: product
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+      - name: Select exact Node runtime without cache
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.1
+          check-latest: false
+          package-manager-cache: false
+      - name: Verify sources, install locked dependencies, export offline
+        env:
+          PRODUCT: ${{ matrix.product }}
+          ORCHESTRATION_SHA: ${{ github.sha }}
+          PREVIEW_BUILD_COMMIT: ${{ steps.pin.outputs.sha }}
+        run: bash recipes/preview-publish-20261029/orchestrator/run.sh
+      - name: Retain sanitized site and public-safe proof only (never raw/maps or deploy)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: frontend-preview-${{ matrix.product }}-${{ steps.pin.outputs.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/preview-artifact/
+          compression-level: 9
+          retention-days: 30
+          if-no-files-found: error
+          include-hidden-files: true # Only curated site/.routes.json may be hidden; proof.py rejects all others.
+          overwrite: false

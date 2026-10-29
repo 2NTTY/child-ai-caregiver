@@ -1,0 +1,556 @@
+dings: [], deliveries: [], testsRemaining: 0, nextTestAt: null });
+      }
+      const match = path.match(/^\/children\/([^/]+)(.*)$/), route = match?.[2];
+      if (match && (match[1] !== childId || mode === 'no-child')) return fail(403, 'access_denied');
+      if (!match) return blocked(method, path, 'preview_route_unsupported', 501);
+      if (state.mode === 'error' && !['/profile', '/avatar'].includes(route)) return fail(503, 'preview_read_unavailable');
+      if (method === 'POST' && route === '/care/search') {
+        const list = data(records).filter(row => (!body?.kind || row.details.kind === body.kind) && (!body?.query || row.text.includes(body.query)));
+        return json({ records: list, scanned: list.length, limit: 50, nextCursor: null });
+      }
+      if (method === 'POST') { const result = docWrite(route, body); if (result) return result; return blocked(method, path, 'preview_action_unavailable'); }
+      if (method !== 'GET') return blocked(method, path, 'preview_method_unsupported');
+      if (route === '/profile') return json({ profile });
+      if (route === '/profile/history') return json({ revisions: [profile], nextBeforeVersion: null });
+      if (route === '/avatar') return json(avatar({ kind: 'child', childId }));
+      if (route === '/records') return json(mode === 'unknown-age-zero-records' ? { records: [], limit: 100 } : { records: data(records) });
+      const recordHistory = route.match(/^\/care\/([^/]+)\/history$/);
+      if (recordHistory) return json({ revisions: data(records).filter(row => row.id === recordHistory[1]), nextBeforeVersion: null });
+      if (route === '/tasks') return json({ items: data(tasks), eligibleAssignees: [{ userId: user.id, name: user.name }], nextAfterId: null, reminders: [], work: [], workerEnabled: false });
+      const taskMatch = route.match(/^\/tasks\/([^/]+)(\/history)?$/);
+      if (taskMatch) { const task = data(tasks).find(row => row.id === taskMatch[1]); return !task ? fail(404, 'not_found') : json(taskMatch[2] ? { revisions: taskHistory.get(task.id), nextBeforeVersion: null } : { task }); }
+      if (route === '/messages') {
+        const visible = data(messages), before = url.searchParams.get('before'), end = before === null ? visible.length : visible.findIndex(item => item.id === before);
+        if (end < 0) return fail(400, 'invalid_cursor');
+        const start = Math.max(0, end - 6), page = visible.slice(start, end);
+        return json({ messages: page, limit: 6, nextCursor: start > 0 ? page[0].id : null });
+      }
+      if (/^\/messages\/[^/]+\/reply$/.test(route)) return data(messages).some(row => route.includes(row.id)) ? json({ reply: null }) : fail(404, 'not_found');
+      if (route === '/summary') return json(summary(url));
+      const documentResult = docRead(url, route);
+      if (documentResult) {
+        if (unknownReceipt && documentResult.ok && (route === '/documents' || route === '/documents/' + unknownReceipt.result.item.id)) {
+          const value = await documentResult.clone().json(), originalId = unknownReceipt.result.item.id;
+          const readItem = value.item?.id === originalId ? value.item : value.page?.items?.find(item => item.id === originalId);
+          if (readItem) {
+            unknownReceipt.readbacks.push({ path: '/api' + path + url.search, opId: unknownReceipt.opId, documentVersion: readItem.version });
+            if (unknownReceipt.readbacks.length > 20) unknownReceipt.readbacks.shift();
+          }
+        }
+        return documentResult;
+      }
+      if (route === '/growth') return json({ page: { authorityVersion: authority, items: [], historyHasMore: false, topics: [{ id: 'preschool_development', title: '學前生活與探索', version: 1, disabled: false, inputs: [] }], notices: [], eligibleAssignees: [{ userId: user.id, name: user.name }], canManage: true } });
+      if (route === '/concerns') return json({ page: { authorityVersion: authority, items: data(concerns), canManage: true } });
+      if (route === '/memory/facts') return json({ items: data(facts), nextAfterId: null });
+      if (route === '/memory/topics') return json({ items: data(topics), nextAfterId: null });
+      if (route === '/memory/summary') return json({ summary: null });
+      const memoryHistory = route.match(/^\/memory\/(facts|topics)\/([^/]+)\/history$/);
+      if (memoryHistory) { const item = data(memoryHistory[1] === 'facts' ? facts : topics).find(row => row.id === memoryHistory[2]); return item ? json({ revisions: [item], nextBeforeVersion: null }) : fail(404, 'not_found'); }
+      if (route === '/files' || route === '/voices') return json({ items: [], nextCursor: null, complete: true, scanned: 0 });
+      if (route === '/photos') return json({ photos: data(photos), canCreate: false });
+      const photoMatch = route.match(/^\/photos\/([^/]+)(\/content)?$/);
+      if (photoMatch) { const item = data(photos).find(row => row.id === photoMatch[1]); if (!item) return fail(404, 'not_found');
+        if (!photoMatch[2]) return json({ photo: item });
+        const bytes = Uint8Array.from(atob(photoPixels.base64), c => c.charCodeAt(0));
+        return new Response(bytes, { headers: { 'content-type': 'image/png', 'cache-control': 'no-store', 'x-preview-fixture': VERSION } });
+      }
+      if (route === '/inputs') return json({ inputs: data(inputs), sources: [], canCreate: false });
+      const inputMatch = route.match(/^\/inputs\/([^/]+)(\/history)?$/);
+      if (inputMatch) { const item = data(inputs).find(row => row.id === inputMatch[1]); return !item ? fail(404, 'not_found') : json(inputMatch[2] ? { inputId: item.id, childId, ownerUserId: user.id, version: item.version, revisions: [{ version: 1, changedAt: at, reason: '記下家長會重點', management: item.management }], hasMore: false } : { input: item }); }
+      if (route === '/library') return json({ items: [], nextCursor: null, complete: true });
+      if (route === '/agent/pending') return json({ proposals: [], nextCursor: null });
+      if (route === '/agent/policy') return json({ policy: { version: 0, effective: false, recordKinds: [], allowPrivateNotes: false, allowSelfTasks: false, reminderConsentVersion: null, reminderBindings: [], allowRecordCorrections: false } });
+      if (route === '/agent/notes') return json({ notes: { items: [], nextAfterId: null } });
+      if (route === '/agent/work') return json({ items: [], nextCursor: null, complete: true });
+      if (route === '/agent/history') {
+        const kind = url.searchParams.get('kind') || 'message', query = url.searchParams.get('query') || '', cursor = url.searchParams.get('cursor');
+        if (!['message', 'private_instruction', 'memory_fact'].includes(kind) || query.length > 200) return fail(400, 'invalid_input');
+        const rows = kind === 'message' ? data(messages).filter(row => row.text.includes(query)).slice().reverse() : [];
+        const anchor = cursor === null ? -1 : rows.findIndex(row => row.id === cursor);
+        if (cursor !== null && anchor < 0) return fail(400, 'invalid_cursor');
+        const page = rows.slice(anchor + 1, anchor + 7), more = anchor + 1 + page.length < rows.length;
+        const matches = page.map(row => ({ id: row.id, kind, version: 1, createdAt: row.createdAt, role: row.role, excerpt: row.text.slice(0, 400) }));
+        return json({ matches, scanned: page.length, scanLimit: 100, complete: !more, nextCursor: more ? page.at(-1).id : null });
+      }
+      const historyMessage = route.match(/^\/agent\/history\/messages\/([^/]+)$/);
+      if (historyMessage) { const row = data(messages).find(m => m.id === historyMessage[1]); if (!row) return fail(404, 'not_found'); const offset = Number(url.searchParams.get('offset') || 0), text = row.text.slice(offset, offset + 4000); return json({ id: row.id, childId, role: row.role, version: 1, createdAt: row.createdAt, text, offset, nextOffset: offset + text.length < row.text.length ? offset + text.length : null, totalCharacters: row.text.length }); }
+      if (route === '/contact') return json({ canManage: true, workerEnabled: false, consent: { userId: user.id, version: 0, enabled: false, allowBackup: false, bindings: [] }, availableBindings: [], recipients: [{ userId: user.id, name: user.name, enabled: false, allowBackup: false, channels: [] }], tasks: data(tasks), tasksHaveMore: false, grants: [], requests: [], historyLimited: false });
+      return blocked(method, path, 'preview_route_unsupported', 501);
+    }
+    async function transport(input, options = {}) {
+      // Dispatch first: no unknown route, denied authority or unsupported write can be held as a successful read.
+      const response = await dispatch(input, options);
+      if (mode !== 'loading' || loadingReleased || !response.ok) return response;
+      const url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url, origin);
+      const method = (options.method || input?.method || 'GET').toUpperCase(), signal = options.signal || input?.signal;
+      const eligible = loadingTarget === 'children' ? method === 'GET' && url.pathname === '/api/children'
+        : loadingTarget === 'documents' ? method === 'GET' && (url.pathname === '/api/children/' + childId + '/documents' || url.pathname.startsWith('/api/children/' + childId + '/documents/'))
+        : url.pathname.startsWith('/api/children/' + childId + '/') && (method === 'GET' || method === 'POST' && url.pathname === '/api/children/' + childId + '/care/search');
+      if (!eligible) return response;
+      await waitForRelease(signal);
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+      if (!state.signedIn) return fail(401, 'unauthorized');
+      return response;
+    }
+    return Object.freeze({ version: VERSION, state, boundary, ids: Object.freeze({ userId: user.id, childId, workspaceId, documents: documents.map(row => row.id), tasks: tasks.map(row => row.id), messages: messages.map(row => row.id), inputId: uuid(80), factId: uuid(60) }), transport, snapshot: () => clone({ user, child, profile, documents, tasks, records, messages, photos, inputs, facts, topics }), setMode(next) { if (!['ready', 'empty', 'error'].includes(next)) throw new Error('Unsupported scenario'); state.mode = next; } });
+  }
+  root.__YU_PREVIEW_FACTORY__ = createPreview;
+})(globalThis);
+/* Closed local fixture module graph; no dynamic module loading, network or service connection. */
+(function(){const modules={0:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+__require(1);
+__require(117);
+
+},
+1:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const core_ts_1 = __require(2);
+const root = globalThis, baseFactory = root.__YU_PREVIEW_FACTORY__;
+const variants = Object.freeze(['harbour', 'care', 'journal', 'uiux-upgrade']);
+// Exact route vocabulary of the unchanged v94 comparison dispatcher.
+const comparisonRoutes = new Set(["(dashboard)/care", "(dashboard)/chat", "(dashboard)/contact", "(dashboard)/family", "(dashboard)/growth", "(dashboard)/guide", "(dashboard)/history", "(dashboard)/index", "(dashboard)/memory", "(dashboard)/more", "(dashboard)/photos", "(dashboard)/profile", "(dashboard)/settings", "(dashboard)/sources", "(dashboard)/summary", "(dashboard)/tasks", "+not-found", "_sitemap", "admin", "care", "chat", "contact", "family", "growth", "guide", "history", "index", "login", "memory", "more", "photos", "profile", "settings", "sources", "summary", "tasks"]);
+root.__YU_PREVIEW_FACTORY__ = (options = {}) => {
+    let variant = options.variant;
+    if (options.comparison !== undefined) {
+        const comparison = options.comparison;
+        if (comparison === null || typeof comparison !== 'object' || Array.isArray(comparison) || !Object.isFrozen(comparison) || !Object.prototype.hasOwnProperty.call(comparison, 'version') || !Object.prototype.hasOwnProperty.call(comparison, 'route') || typeof comparison.version !== 'string' || typeof comparison.route !== 'string' || typeof options.pathname !== 'string')
+            throw new Error('Unsupported preview comparison');
+        let route;
+        try {
+            route = decodeURIComponent(options.pathname).replace(/^\/+|\/+$/g, '').replace(/\.html$/, '') || 'index';
+        }
+        catch {
+            route = '+not-found';
+        }
+        if (!comparisonRoutes.has(route))
+            route = '+not-found';
+        if (comparison.route !== route || variant !== undefined && variant !== comparison.version)
+            throw new Error('Inconsistent preview comparison');
+        variant = comparison.version;
+    }
+    if (variant === undefined)
+        variant = 'harbour';
+    if (typeof variant !== 'string' || !variants.includes(variant))
+        throw new Error('Unsupported preview variant');
+    if (options.mode === 'core-task-history-paged' && variant !== 'harbour')
+        throw new Error('Unsupported task history preview variant');
+    const fixture = ['core-journeys', 'core-no-child', 'core-task-history-paged'].includes(options.mode) ? (0, core_ts_1.createCorePreview)(baseFactory, options) : baseFactory(options);
+    return Object.freeze({ ...fixture, variant });
+};
+
+},
+2:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createCorePreview = createCorePreview;
+const C = __importStar(__require(3));
+const data_ts_1 = __require(108);
+const controls_ts_1 = __require(111);
+const readers_ts_1 = __require(113);
+const preparation_writes_ts_1 = __require(116);
+const task_history_ts_1 = __require(112);
+const VERSION = 'harbour-private-boundary-fixtures-v5-20261026';
+const clone = (x) => JSON.parse(JSON.stringify(x));
+const uuid = (n) => '70000000-0000-4000-8000-' + String(n).padStart(12, '0');
+const at = '2026-10-26T12:00:00.000Z', epoch = uuid(3);
+function createCorePreview(baseFactory, options) {
+    const origin = options.origin || 'https://preview.example.invalid', base = baseFactory({ ...options, mode: 'long-content' }), seed = (0, data_ts_1.enrichSeed)(base.snapshot()), user = seed.user, workspaceId = seed.child.workspaceId;
+    const scopes = new Map();
+    if (options.mode !== 'core-no-child') {
+        scopes.set(seed.child.id, seed);
+        const second = (0, data_ts_1.secondSeed)(baseFactory({ ...options, mode: 'ready' }).snapshot());
+        scopes.set(second.child.id, second);
+    }
+    const pagedHistory = options.mode === 'core-task-history-paged';
+    const reads = (0, controls_ts_1.createReadControls)(scopes, pagedHistory);
+    const operations = new Map(), changes = [], requests = [], blocked = [];
+    let sequence = 1, nextId = 20000, preferences = { timeZone: 'Asia/Hong_Kong', quietStart: '21:00', quietEnd: '07:00', allowAppointmentDuringQuiet: false, version: 1 };
+    const emptyPreparation = () => ({ version: 0, appointmentTaskId: null, questions: [], checklist: [], reviewed: false, reviewedBasis: null, period: null, updatedBy: null, updatedAt: null });
+    for (const s of scopes.values()) {
+        s.preparation = emptyPreparation();
+        s.recordHistory = new Map(s.records.map((r) => [r.id, [clone(r)]]));
+        s.taskHistory = new Map(s.tasks.map((t) => { const original = clone(t); original.version = 1; original.updatedAt = original.createdAt; original.occurrence.state = 'scheduled'; original.occurrence.terminalBasisVersion = null; return [t.id, [...(t.version === 2 ? [{ task: clone(t), action: t.occurrence.state === 'completed' ? 'complete' : 'cancel', actorUserId: user.id, basisVersion: 1, note: '家人已核對這項安排', at: t.updatedAt }] : []), { task: original, action: 'create', actorUserId: user.id, basisVersion: 0, note: '記下日常安排', at: original.createdAt }]]; }));
+        if (s.longRecordRevisions)
+            s.recordHistory.set(s.longRecordRevisions[0].id, s.longRecordRevisions);
+    }
+    if (pagedHistory)
+        (0, task_history_ts_1.seedPagedTaskHistory)(seed, user.id);
+    const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-preview-fixture': VERSION } });
+    const fail = (status, code) => json({ error: { code } }, status);
+    function reject(status, code) { throw Object.assign(new Error(code), { status, code }); }
+    const basis = () => epoch + ':' + sequence;
+    const disclose = (entry) => entry.receipt ? { ...clone(entry.receipt), result: entry.scopeChildId && !scopes.has(entry.scopeChildId) ? null : clone(entry.receipt.result) } : { state: 'unconfirmed' };
+    function command(raw) {
+        const parsed = C.onlineCommandSchema.safeParse(raw);
+        if (!parsed.success)
+            reject(400, 'invalid_input');
+        const { path, payload } = parsed.data;
+        let type, s, id, value;
+        if (path === '/api/children') {
+            if (options.mode !== 'core-no-child' || scopes.size)
+                reject(405, 'preview_action_unavailable');
+            const strict = C.z.object({ displayName: C.z.string() }).strict().safeParse(payload), validated = C.validateCreateChild(payload);
+            if (!strict.success || !validated.ok)
+                reject(400, 'invalid_input');
+            type = 'children';
+            value = validated.value;
+        }
+        else if (path === '/api/notification-preferences') {
+            type = 'preferences';
+            value = C.preferencesInput.safeParse(payload);
+        }
+        else {
+            const m = /^\/api\/children\/([0-9a-f-]{36})\/(care|tasks(?:\/([0-9a-f-]{36})\/change)?|visit-preparation)$/.exec(path);
+            if (!m)
+                reject(405, 'preview_action_unavailable');
+            s = scopes.get(m[1]);
+            if (!s)
+                reject(403, 'forbidden');
+            id = m[3];
+            if (m[2] === 'care') {
+                type = 'care';
+                value = C.careCreateSchema.safeParse(payload);
+            }
+            else if (m[2] === 'visit-preparation') {
+                type = 'preparation';
+                value = C.preparationInput.safeParse(payload);
+            }
+            else {
+                type = id ? 'task-change' : 'task-create';
+                value = (id ? C.taskChangeSchema : C.taskCreateSchema).safeParse(payload);
+            }
+        }
+        if (type !== 'children') {
+            if (!value.success)
+                reject(400, 'invalid_input');
+            value = value.data;
+        }
+        if (type === 'task-change' && !['complete', 'reschedule'].includes(value.action))
+            reject(405, 'preview_action_unavailable');
+        if ((type === 'task-create' ? value.values.assigneeUserId : type === 'task-change' && value.action === 'reschedule' ? value.assigneeUserId : user.id) !== user.id)
+            reject(403, 'forbidden');
+        return { path, payload, type, s, id, value };
+    }
+    function apply(cmd) {
+        const { type, s, id, value } = cmd;
+        let result, statusCode = 200, kind = type, childId = s?.child.id || null;
+        if (type === 'care') {
+            const { confirmShared, ...values } = value;
+            const r = { id: uuid(nextId++), childId, authorUserId: user.id, createdAt: at, version: 1, ...values, confirmedBy: user.id, confirmedAt: at, reason: '本人核對後記下', confirmationBasis: 'explicit' };
+            s.records.unshift(r);
+            s.recordHistory.set(r.id, [clone(r)]);
+            result = { record: r };
+            statusCode = 201;
+        }
+        else if (type === 'task-create') {
+            const { dueAt, timeZone, ...values } = value.values;
+            const t = { id: uuid(nextId++), childId, version: 1, ...values, createdBy: user.id, createdAt: at, updatedAt: at, occurrence: { id: uuid(nextId++), dueAt, timeZone, state: 'scheduled', terminalBasisVersion: null } };
+            s.tasks.push(t);
+            s.taskHistory.set(t.id, [{ task: clone(t), action: 'create', actorUserId: user.id, basisVersion: 0, note: '本人核對日常安排', at }]);
+            result = { task: t };
+            statusCode = 201;
+            kind = 'tasks';
+        }
+        else if (type === 'task-change') {
+            const i = s.tasks.findIndex((t) => t.id === id);
+            if (i < 0)
+                reject(404, 'not_found');
+            const old = s.tasks[i];
+            if (old.version !== value.expectedVersion)
+                reject(409, 'version_conflict');
+            const t = C.changeTask(old, value, at);
+            s.tasks[i] = t;
+            s.taskHistory.get(id).unshift({ task: clone(t), action: value.action, actorUserId: user.id, basisVersion: old.version, note: value.note, at });
+            result = { task: t };
+            kind = 'tasks';
+        }
+        else if (type === 'preparation') {
+            if (value.expectedVersion !== s.preparation.version || value.basisVersion !== basis())
+                reject(409, 'summary_basis_changed');
+            if (value.appointmentTaskId && !s.tasks.some((t) => t.id === value.appointmentTaskId && t.kind === 'appointment' && t.occurrence.state === 'scheduled'))
+                reject(409, 'appointment_changed');
+            s.preparation = { version: s.preparation.version + 1, appointmentTaskId: value.appointmentTaskId, questions: value.questions, checklist: value.checklist, reviewed: value.reviewed, reviewedBasis: value.reviewed ? epoch + ':' + (sequence + 1) : null, period: value.period, updatedBy: user.id, updatedAt: at };
+            result = { preparation: s.preparation };
+            kind = 'care';
+        }
+        else if (type === 'preferences') {
+            if (value.expectedVersion !== preferences.version)
+                reject(409, 'version_conflict');
+            const { expectedVersion, ...v } = value;
+            preferences = { ...v, version: preferences.version + 1 };
+            result = { preferences };
+        }
+        else if (type === 'children') {
+            const child = { id: uuid(nextId++), workspaceId, displayName: value.displayName, createdAt: at, accessRole: 'owner' };
+            const profile = { childId: child.id, version: 0, data: null, confirmedBy: null, confirmedAt: null, reason: null };
+            const scope = { ...clone(seed), child, profile, records: [], tasks: [], documents: [], messages: [], photos: [], inputs: [], facts: [], topics: [], concerns: [], files: [], voices: [], library: [], runs: new Map(), media: new Map(), transcripts: new Map(), documentVersions: new Map(), longRecordRevisions: [], contact: null, recordHistory: new Map(), taskHistory: new Map(), preparation: emptyPreparation() };
+            scopes.set(child.id, scope);
+            childId = child.id;
+            result = { child };
+            statusCode = 201;
+        }
+        sequence++;
+        changes.push({ changeSeq: String(sequence), kind, childId, deleted: false });
+        return { result: clone(result), statusCode };
+    }
+    let nextSubmit = null;
+    const pendingHolds = new Map();
+    const documentWrites = (0, preparation_writes_ts_1.createPreparationWrites)({ scopes, userId: user.id, childId: seed.child.id, documentId: uuid(50), isSignedIn: () => base.state.signedIn,
+        newSnapshot: () => ({ id: uuid(nextId++), generatedAt: new Date(Date.parse(at) + sequence * 1000).toISOString() }),
+        commit(childId) { sequence++; changes.push({ changeSeq: String(sequence), kind: 'documents', childId, deleted: false }); return sequence; } });
+    const boundary = Object.freeze({
+        armRead: reads.armRead, releaseReads: reads.releaseReads,
+        armSubmit(path, effect) {
+            if (nextSubmit || documentWrites.armed)
+                throw Error('Unsupported or already armed effect');
+            if (documentWrites.matches(path)) {
+                documentWrites.arm(path, effect);
+                return;
+            }
+            if (!['lost-response', 'hold', 'unconfirmed'].includes(effect) || nextSubmit)
+                throw Error('Unsupported or already armed effect');
+            const m = /^\/api\/children\/([0-9a-f-]{36})\/(care|tasks(?:\/[0-9a-f-]{36}\/change)?|visit-preparation)$/.exec(path);
+            if (!['/api/children', '/api/notification-preferences'].includes(path) && (!m || !scopes.has(m[1])))
+                throw Error('Unsupported submit target');
+            nextSubmit = { path, effect };
+        },
+        releaseSubmit() { const count = pendingHolds.size; for (const release of [...pendingHolds.values()])
+            release(); return count + documentWrites.release(); },
+        status() { return clone({ mode: options.mode, sequence, nativeFallbackCount: 0, ...reads.status(), requests, blocked, operations: [...operations.values()].map(({ canonical, ...op }) => op), pendingHolds: [...pendingHolds.keys()], ...documentWrites.status() }); },
+    });
+    async function dispatch(input, init = {}) {
+        const url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url, origin), method = (init.method || input?.method || 'GET').toUpperCase(), signal = init.signal || input?.signal, headers = new Headers(init.headers || input?.headers);
+        if (signal?.aborted)
+            throw new DOMException('Aborted', 'AbortError');
+        if (url.origin !== origin || !url.pathname.startsWith('/api/')) {
+            blocked.push({ method, path: url.pathname, reason: 'preview_network_blocked' });
+            throw new TypeError('Preview network blocked');
+        }
+        const path = url.pathname;
+        requests.push({ method, path: path + url.search });
+        if (method === 'POST' && documentWrites.matches(path)) {
+            if (!base.state.signedIn)
+                return fail(401, 'unauthorized');
+            if (!headers.get('x-expected-user-id'))
+                return fail(428, 'account_precondition_required');
+        }
+        if (headers.has('x-expected-user-id') && headers.get('x-expected-user-id') !== user.id)
+            return fail(409, 'session_changed');
+        if (!base.state.signedIn && !path.startsWith('/api/auth/') && path !== '/api/account')
+            return fail(401, 'unauthorized');
+        let body = null;
+        try {
+            const raw = init.body === undefined && input?.clone && method !== 'GET' ? await input.clone().text() : init.body;
+            body = raw ? JSON.parse(raw) : null;
+        }
+        catch {
+            return fail(400, 'invalid_input');
+        }
+        try {
+            if (path === '/api/online/context' || path === '/api/online/submit') {
+                if (method !== 'POST')
+                    return fail(405, 'preview_method_unsupported');
+                if (headers.get('x-expected-user-id') !== user.id)
+                    return fail(409, 'session_changed');
+                const parsed = (path.endsWith('/context') ? C.onlineCommandSchema : C.onlineSubmissionSchema).safeParse(body);
+                if (!parsed.success)
+                    return fail(400, 'invalid_input');
+                if (path.endsWith('/context')) {
+                    command(body);
+                    return json({ workspaceId, storageEpoch: epoch });
+                }
+                const op = C.onlineSubmissionSchema.parse(body).operation;
+                const canonical = C.canonicalJson({ path: body.path, payload: body.payload }), key = user.id + ':' + op.opId, prior = operations.get(key);
+                if (prior) {
+                    if (prior.canonical !== canonical || C.canonicalJson(prior.operation) !== C.canonicalJson(op))
+                        return fail(409, 'operation_conflict');
+                    prior.replayCount++;
+                    if (prior.receipt)
+                        return json(disclose(prior));
+                }
+                if (op.workspaceId !== workspaceId || op.storageEpoch !== epoch)
+                    return fail(409, 'storage_epoch_changed');
+                const cmd = command({ path: body.path, payload: body.payload });
+                // Validate current state before accepting a controlled request. No operation exists for an invalid submit.
+                if (cmd.type === 'task-change') {
+                    const task = cmd.s.tasks.find((t) => t.id === cmd.id);
+                    if (!task)
+                        reject(404, 'not_found');
+                    if (task.version !== cmd.value.expectedVersion || task.occurrence.state !== 'scheduled')
+                        reject(409, 'version_conflict');
+                }
+                if (cmd.type === 'preparation' && (cmd.value.expectedVersion !== cmd.s.preparation.version || cmd.value.basisVersion !== basis()))
+                    reject(409, 'summary_basis_changed');
+                if (cmd.type === 'preparation' && cmd.value.appointmentTaskId && !cmd.s.tasks.some((t) => t.id === cmd.value.appointmentTaskId && t.kind === 'appointment' && t.occurrence.state === 'scheduled'))
+                    reject(409, 'appointment_changed');
+                if (cmd.type === 'preferences' && cmd.value.expectedVersion !== preferences.version)
+                    reject(409, 'version_conflict');
+                const effect = nextSubmit?.path === body.path ? nextSubmit.effect : null;
+                if (effect)
+                    nextSubmit = null;
+                const entry = prior || { userId: user.id, canonical, operation: clone(op), path: body.path, request: clone(body), scopeChildId: cmd.s?.child.id || null, applyCount: 0, replayCount: 0, readbacks: [], receipt: null };
+                if (effect === 'unconfirmed') {
+                    entry.state = 'request-received-not-applied';
+                    entry.serverReceiptStored = false;
+                    operations.set(key, entry);
+                    throw new TypeError('Fixture accepted request; no application before response loss');
+                }
+                const applied = apply(cmd), receipt = { state: 'confirmed', path: body.path, operation: clone(op), changeSeq: String(sequence), ...applied };
+                Object.assign(entry, { state: 'confirmed', scopeChildId: cmd.s?.child.id || applied.result.child?.id || null, serverReceiptStored: true, applyCount: 1, receipt: clone(receipt) });
+                operations.set(key, entry);
+                if (effect === 'lost-response')
+                    throw new TypeError('Fixture applied once; response lost');
+                if (effect === 'hold')
+                    await new Promise((resolve, reject) => {
+                        const release = () => { pendingHolds.delete(op.opId); signal?.removeEventListener('abort', abort); resolve(); };
+                        const abort = () => { pendingHolds.delete(op.opId); signal?.removeEventListener('abort', abort); reject(new DOMException('Aborted', 'AbortError')); };
+                        pendingHolds.set(op.opId, release);
+                        signal?.addEventListener('abort', abort, { once: true });
+                        if (signal?.aborted)
+                            abort();
+                    });
+                return json(receipt);
+            }
+            const lookup = /^\/api\/online\/operations\/([0-9a-f-]{36})$/.exec(path);
+            if (lookup) {
+                if (method !== 'GET')
+                    return fail(405, 'preview_method_unsupported');
+                if (headers.get('x-expected-user-id') !== user.id)
+                    return fail(409, 'session_changed');
+                const op = operations.get(user.id + ':' + lookup[1]);
+                if (!op)
+                    return json({ state: 'unconfirmed' });
+                if (!op.receipt)
+                    return json({ state: 'unconfirmed' });
+                op.readbacks.push({ path, version: op.receipt.result.record?.version || op.receipt.result.task?.version || op.receipt.result.preparation?.version || op.receipt.result.preferences?.version || null });
+                return json(disclose(op));
+            }
+            if (method === 'GET' && path === '/api/account/messages') {
+                const response = await base.transport(input, init);
+                if (!response.ok)
+                    return response;
+                const data = await response.json();
+                data.items = data.items.filter((m) => m.scope.kind !== 'child' || scopes.has(m.scope.childId));
+                return json(data);
+            }
+            if (method === 'GET' && path === '/api/children')
+                return json({ children: [...scopes.values()].map(s => s.child), nextCursor: null });
+            if (method === 'GET' && path === '/api/notification-preferences')
+                return json({ preferences });
+            if (method === 'GET' && path === '/api/online/changes') {
+                if (url.searchParams.get('workspaceId') !== workspaceId || url.searchParams.get('storageEpoch') !== epoch)
+                    return fail(403, 'forbidden');
+                const cursor = url.searchParams.get('cursor') || '0';
+                if (!/^\d+$/.test(cursor))
+                    return fail(400, 'invalid_input');
+                return json({ workspaceId, storageEpoch: epoch, cursor: String(sequence), accessVersion: 1, changes: changes.filter(c => BigInt(c.changeSeq) > BigInt(cursor)), hasMore: false });
+            }
+            const m = /^\/api\/children\/([^/]+)(.*)$/.exec(path);
+            if (m) {
+                const s = scopes.get(m[1]), r = m[2];
+                if (!s)
+                    return fail(403, 'forbidden');
+                if (method === 'POST' && r === '/care/search') {
+                    const v = C.careSearchSchema.safeParse(body);
+                    if (!v.success)
+                        return fail(400, 'invalid_input');
+                    let records = s.records.filter((x) => (!v.data.query || x.text.includes(v.data.query)) && (!v.data.kind || x.details.kind === v.data.kind));
+                    return json({ records, scanned: records.length, limit: 50, nextCursor: null });
+                }
+                if (method === 'POST' && documentWrites.matches(path)) {
+                    if (!s.documents.some((document) => document.id === uuid(50)))
+                        return fail(404, 'not_found');
+                    if (url.search || url.hash)
+                        return fail(400, 'invalid_input');
+                    return await documentWrites.submit(path, headers, body, signal);
+                }
+                if (method !== 'GET')
+                    return fail(405, 'preview_action_unavailable');
+                if (r === '/records')
+                    return json({ records: s.records, limit: 100 });
+                if (r === '/profile')
+                    return json({ profile: s.profile });
+                if (r === '/profile/history')
+                    return json({ revisions: [s.profile], nextBeforeVersion: null });
+                const rh = /^\/care\/([^/]+)\/history$/.exec(r);
+                if (rh)
+                    return json({ revisions: (s.recordHistory.get(rh[1]) || []).filter((x) => !url.searchParams.has('beforeVersion') || x.version < Number(url.searchParams.get('beforeVersion'))), nextBeforeVersion: null });
+                if (r === '/tasks') {
+                    const sorted = s.tasks.slice().sort((a, b) => a.id.localeCompare(b.id)), after = url.searchParams.get('afterId');
+                    if (after !== null && !C.z.uuid().safeParse(after).success)
+                        return fail(400, 'invalid_cursor');
+                    const remaining = sorted.filter((t) => after === null || t.id > after), items = remaining.slice(0, 10), more = items.length < remaining.length;
+                    return json({ items, eligibleAssignees: [{ userId: user.id, name: user.name }], nextAfterId: more ? items.at(-1).id : null, reminders: [], work: [], workerEnabled: false });
+                }
+                const tm = /^\/tasks\/([^/]+)(\/history)?$/.exec(r);
+                if (tm) {
+                    const t = s.tasks.find((x) => x.id === tm[1]);
+                    if (!t)
+                        return fail(404, 'not_found');
+                    if (tm[2] && pagedHistory) {
+                        const before = (0, task_history_ts_1.historyCursor)(url.search);
+                        if (before === undefined)
+                            return fail(400, 'invalid_cursor');
+                        return json((0, task_history_ts_1.pagedTaskHistory)(s.taskHistory.get(t.id) || [], before));
+                    }
+                    return json(tm[2] ? { revisions: (s.taskHistory.get(t.id) || []).filter((x) => !url.searchParams.has('beforeVersion') || x.task.version < Number(url.searchParams.get('beforeVersion'))), nextBeforeVersion: null } : { task: t });
+                }
+                if (r === '/summary') {
+                    const period = C.summaryQuery.parse(Object.fromEntries(['startDay', 'period', 'timeZone'].map(k => [k, url.searchParams.get(k) || { startDay: '2026-10-19', period: 'week', timeZone: 'Asia/Hong_Kong' }[k]])));
+                    return json({ childId: s.child.id, childName: s.child.displayName, profile: s.profile, canManage: true, period, ...C.summarizeCare(s.records, period), generatedAt: at, basisVersion: basis(), appointments: s.tasks.filter((t) => t.kind === 'appointment' && t.occurrence.state === 'scheduled'), conflicts: s.tasks.filter((t) => t.occurrence.state === 'needs_review'), preparation: s.preparation, reviewCurrent: s.preparation.reviewed && s.preparation.reviewedBasis === basis() && C.canonicalJson(period) === C.canonicalJson(s.preparation.period) });
+                }
+                const versionRead = /^\/documents\/([^/]+)\/versions$/.exec(r);
+                if (versionRead && s.documents.some((document) => document.id === versionRead[1]) && (url.hash || url.search !== '' && !/^\?cursor=[A-Za-z0-9_-]{1,2048}$/.test(url.search)))
+                    return fail(400, 'invalid_input');
+                const read = (0, readers_ts_1.readCore)(s, r, url, json, fail, user);
+                if (read)
+                    return read;
+            }
+            return await base.transport(input, init);
+        }
+        catch (e) {
+            if (e.status)
+                return fail(e.status, e.code);
+            if (e instanceof C.z.ZodError)
+                return fail(400, 'invalid_input');
+            throw e;
+        }
+    }
+    async function transport(input, init = {}) {
+        const response = await dispatch(input, init), url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url, origin), method = (init.method || input?.method || 'GE

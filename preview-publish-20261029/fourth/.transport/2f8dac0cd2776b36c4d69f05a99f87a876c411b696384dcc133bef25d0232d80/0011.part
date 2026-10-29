@@ -1,0 +1,858 @@
+ ${issue.origin} ${adj}${issue.minimum.toString()} ${sizing.unit} હોવા જોઈએ`;
+                }
+                return `ખૂબ નાનું: ${issue.origin} ${adj}${issue.minimum.toString()} હોવું જોઈએ`;
+            }
+            case "invalid_format": {
+                const _issue = issue;
+                if (_issue.format === "starts_with") {
+                    return `અમાન્ય સ્ટ્રિંગ: "${_issue.prefix}" થી શરૂ થવું જોઈએ`;
+                }
+                if (_issue.format === "ends_with")
+                    return `અમાન્ય સ્ટ્રિંગ: "${_issue.suffix}" પર સમાપ્ત થવું જોઈએ`;
+                if (_issue.format === "includes")
+                    return `અમાન્ય સ્ટ્રિંગ: "${_issue.includes}" શામેલ હોવું જોઈએ`;
+                if (_issue.format === "regex")
+                    return `અમાન્ય સ્ટ્રિંગ: પેટર્ન ${_issue.pattern} સાથે મેળ ખાવું જોઈએ`;
+                return `અમાન્ય ${FormatDictionary[_issue.format] ?? issue.format}`;
+            }
+            case "not_multiple_of":
+                return `અમાન્ય નંબર: ${issue.divisor} નો ગુણાંક હોવો જોઈએ`;
+            case "unrecognized_keys":
+                return `ઓળખી શકાતા નહીં તે કી${issue.keys.length > 1 ? "ઓ" : ""}: ${util.joinValues(issue.keys, ", ")}`;
+            case "invalid_key":
+                return `${issue.origin} માં અમાન્ય કી`;
+            case "invalid_union":
+                if (issue.options && Array.isArray(issue.options) && issue.options.length > 0) {
+                    const opts = issue.options.map((o) => `'${o}'`).join(" | ");
+                    return `અમાન્ય ડિસ્ક્રિમિનેટર મૂલ્ય. અપેક્ષિત ${opts}`;
+                }
+                return "અમાન્ય ઇનપુટ";
+            case "invalid_element":
+                return `${issue.origin} માં અમાન્ય મૂલ્ય`;
+            default:
+                return "અમાન્ય ઇનપુટ";
+        }
+    };
+};
+function default_1() {
+    return {
+        localeError: error(),
+    };
+}
+module.exports = exports.default;
+
+},
+38:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = default_1;
+const util = __importStar(__require(9));
+const error = () => {
+    // Hebrew labels + grammatical gender
+    const TypeNames = {
+        string: { label: "מחרוזת", gender: "f" },
+        number: { label: "מספר", gender: "m" },
+        boolean: { label: "ערך בוליאני", gender: "m" },
+        bigint: { label: "BigInt", gender: "m" },
+        date: { label: "תאריך", gender: "m" },
+        array: { label: "מערך", gender: "m" },
+        object: { label: "אובייקט", gender: "m" },
+        null: { label: "ערך ריק (null)", gender: "m" },
+        undefined: { label: "ערך לא מוגדר (undefined)", gender: "m" },
+        symbol: { label: "סימבול (Symbol)", gender: "m" },
+        function: { label: "פונקציה", gender: "f" },
+        map: { label: "מפה (Map)", gender: "f" },
+        set: { label: "קבוצה (Set)", gender: "f" },
+        file: { label: "קובץ", gender: "m" },
+        promise: { label: "Promise", gender: "m" },
+        NaN: { label: "NaN", gender: "m" },
+        unknown: { label: "ערך לא ידוע", gender: "m" },
+        value: { label: "ערך", gender: "m" },
+    };
+    // Sizing units for size-related messages + localized origin labels
+    const Sizable = {
+        string: { unit: "תווים", shortLabel: "קצר", longLabel: "ארוך" },
+        file: { unit: "בייטים", shortLabel: "קטן", longLabel: "גדול" },
+        array: { unit: "פריטים", shortLabel: "קטן", longLabel: "גדול" },
+        set: { unit: "פריטים", shortLabel: "קטן", longLabel: "גדול" },
+        number: { unit: "", shortLabel: "קטן", longLabel: "גדול" }, // no unit
+    };
+    // Helpers — labels, articles, and verbs
+    const typeEntry = (t) => (t ? TypeNames[t] : undefined);
+    const typeLabel = (t) => {
+        const e = typeEntry(t);
+        if (e)
+            return e.label;
+        // fallback: show raw string if unknown
+        return t ?? TypeNames.unknown.label;
+    };
+    const withDefinite = (t) => `ה${typeLabel(t)}`;
+    const verbFor = (t) => {
+        const e = typeEntry(t);
+        const gender = e?.gender ?? "m";
+        return gender === "f" ? "צריכה להיות" : "צריך להיות";
+    };
+    const getSizing = (origin) => {
+        if (!origin)
+            return null;
+        return Sizable[origin] ?? null;
+    };
+    const FormatDictionary = {
+        regex: { label: "קלט", gender: "m" },
+        email: { label: "כתובת אימייל", gender: "f" },
+        url: { label: "כתובת רשת", gender: "f" },
+        emoji: { label: "אימוג'י", gender: "m" },
+        uuid: { label: "UUID", gender: "m" },
+        uuidv4: { label: "UUIDv4", gender: "m" },
+        uuidv6: { label: "UUIDv6", gender: "m" },
+        nanoid: { label: "nanoid", gender: "m" },
+        guid: { label: "GUID", gender: "m" },
+        cuid: { label: "cuid", gender: "m" },
+        cuid2: { label: "cuid2", gender: "m" },
+        ulid: { label: "ULID", gender: "m" },
+        xid: { label: "XID", gender: "m" },
+        ksuid: { label: "KSUID", gender: "m" },
+        datetime: { label: "תאריך וזמן ISO", gender: "m" },
+        date: { label: "תאריך ISO", gender: "m" },
+        time: { label: "זמן ISO", gender: "m" },
+        duration: { label: "משך זמן ISO", gender: "m" },
+        ipv4: { label: "כתובת IPv4", gender: "f" },
+        ipv6: { label: "כתובת IPv6", gender: "f" },
+        mac: { label: "כתובת MAC", gender: "f" },
+        cidrv4: { label: "טווח IPv4", gender: "m" },
+        cidrv6: { label: "טווח IPv6", gender: "m" },
+        base64: { label: "מחרוזת בבסיס 64", gender: "f" },
+        base64url: { label: "מחרוזת בבסיס 64 לכתובות רשת", gender: "f" },
+        json_string: { label: "מחרוזת JSON", gender: "f" },
+        e164: { label: "מספר E.164", gender: "m" },
+        credit_card: { label: "מספר כרטיס אשראי", gender: "m" },
+        jwt: { label: "JWT", gender: "m" },
+        template_literal: { label: "קלט", gender: "m" },
+        ends_with: { label: "קלט", gender: "m" },
+        includes: { label: "קלט", gender: "m" },
+        lowercase: { label: "קלט", gender: "m" },
+        starts_with: { label: "קלט", gender: "m" },
+        uppercase: { label: "קלט", gender: "m" },
+    };
+    const TypeDictionary = {
+        nan: "NaN",
+    };
+    return (issue) => {
+        switch (issue.code) {
+            case "invalid_type": {
+                // Expected type: show without definite article for clearer Hebrew
+                const expectedKey = issue.expected;
+                const expected = TypeDictionary[expectedKey ?? ""] ?? typeLabel(expectedKey);
+                // Received: show localized label if known, otherwise constructor/raw
+                const receivedType = util.parsedType(issue.input);
+                const received = TypeDictionary[receivedType] ?? TypeNames[receivedType]?.label ?? receivedType;
+                if (/^[A-Z]/.test(issue.expected)) {
+                    return `קלט לא תקין: צריך להיות instanceof ${issue.expected}, התקבל ${received}`;
+                }
+                return `קלט לא תקין: צריך להיות ${expected}, התקבל ${received}`;
+            }
+            case "invalid_value": {
+                if (issue.values.length === 1) {
+                    return `ערך לא תקין: הערך חייב להיות ${util.stringifyPrimitive(issue.values[0])}`;
+                }
+                // Join values with proper Hebrew formatting
+                const stringified = issue.values.map((v) => util.stringifyPrimitive(v));
+                if (issue.values.length === 2) {
+                    return `ערך לא תקין: האפשרויות המתאימות הן ${stringified[0]} או ${stringified[1]}`;
+                }
+                // For 3+ values: "a", "b" או "c"
+                const lastValue = stringified[stringified.length - 1];
+                const restValues = stringified.slice(0, -1).join(", ");
+                return `ערך לא תקין: האפשרויות המתאימות הן ${restValues} או ${lastValue}`;
+            }
+            case "too_big": {
+                const sizing = getSizing(issue.origin);
+                const subject = withDefinite(issue.origin ?? "value");
+                if (issue.origin === "string") {
+                    // Special handling for strings - more natural Hebrew
+                    return `${sizing?.longLabel ?? "ארוך"} מדי: ${subject} צריכה להכיל ${issue.maximum.toString()} ${sizing?.unit ?? ""} ${issue.inclusive ? "או פחות" : "לכל היותר"}`.trim();
+                }
+                if (issue.origin === "number") {
+                    // Natural Hebrew for numbers
+                    const comparison = issue.inclusive ? `קטן או שווה ל-${issue.maximum}` : `קטן מ-${issue.maximum}`;
+                    return `גדול מדי: ${subject} צריך להיות ${comparison}`;
+                }
+                if (issue.origin === "array" || issue.origin === "set") {
+                    // Natural Hebrew for arrays and sets
+                    const verb = issue.origin === "set" ? "צריכה" : "צריך";
+                    const comparison = issue.inclusive
+                        ? `${issue.maximum} ${sizing?.unit ?? ""} או פחות`
+                        : `פחות מ-${issue.maximum} ${sizing?.unit ?? ""}`;
+                    return `גדול מדי: ${subject} ${verb} להכיל ${comparison}`.trim();
+                }
+                const adj = issue.inclusive ? "<=" : "<";
+                const be = verbFor(issue.origin ?? "value");
+                if (sizing?.unit) {
+                    return `${sizing.longLabel} מדי: ${subject} ${be} ${adj}${issue.maximum.toString()} ${sizing.unit}`;
+                }
+                return `${sizing?.longLabel ?? "גדול"} מדי: ${subject} ${be} ${adj}${issue.maximum.toString()}`;
+            }
+            case "too_small": {
+                const sizing = getSizing(issue.origin);
+                const subject = withDefinite(issue.origin ?? "value");
+                if (issue.origin === "string") {
+                    // Special handling for strings - more natural Hebrew
+                    return `${sizing?.shortLabel ?? "קצר"} מדי: ${subject} צריכה להכיל ${issue.minimum.toString()} ${sizing?.unit ?? ""} ${issue.inclusive ? "או יותר" : "לפחות"}`.trim();
+                }
+                if (issue.origin === "number") {
+                    // Natural Hebrew for numbers
+                    const comparison = issue.inclusive ? `גדול או שווה ל-${issue.minimum}` : `גדול מ-${issue.minimum}`;
+                    return `קטן מדי: ${subject} צריך להיות ${comparison}`;
+                }
+                if (issue.origin === "array" || issue.origin === "set") {
+                    // Natural Hebrew for arrays and sets
+                    const verb = issue.origin === "set" ? "צריכה" : "צריך";
+                    // Special case for singular (minimum === 1)
+                    if (issue.minimum === 1 && issue.inclusive) {
+                        const singularPhrase = issue.origin === "set" ? "לפחות פריט אחד" : "לפחות פריט אחד";
+                        return `קטן מדי: ${subject} ${verb} להכיל ${singularPhrase}`;
+                    }
+                    const comparison = issue.inclusive
+                        ? `${issue.minimum} ${sizing?.unit ?? ""} או יותר`
+                        : `יותר מ-${issue.minimum} ${sizing?.unit ?? ""}`;
+                    return `קטן מדי: ${subject} ${verb} להכיל ${comparison}`.trim();
+                }
+                const adj = issue.inclusive ? ">=" : ">";
+                const be = verbFor(issue.origin ?? "value");
+                if (sizing?.unit) {
+                    return `${sizing.shortLabel} מדי: ${subject} ${be} ${adj}${issue.minimum.toString()} ${sizing.unit}`;
+                }
+                return `${sizing?.shortLabel ?? "קטן"} מדי: ${subject} ${be} ${adj}${issue.minimum.toString()}`;
+            }
+            case "invalid_format": {
+                const _issue = issue;
+                // These apply to strings — use feminine grammar + ה׳ הידיעה
+                if (_issue.format === "starts_with")
+                    return `המחרוזת חייבת להתחיל ב "${_issue.prefix}"`;
+                if (_issue.format === "ends_with")
+                    return `המחרוזת חייבת להסתיים ב "${_issue.suffix}"`;
+                if (_issue.format === "includes")
+                    return `המחרוזת חייבת לכלול "${_issue.includes}"`;
+                if (_issue.format === "regex")
+                    return `המחרוזת חייבת להתאים לתבנית ${_issue.pattern}`;
+                // Handle gender agreement for formats
+                const nounEntry = FormatDictionary[_issue.format];
+                const noun = nounEntry?.label ?? _issue.format;
+                const gender = nounEntry?.gender ?? "m";
+                const adjective = gender === "f" ? "תקינה" : "תקין";
+                return `${noun} לא ${adjective}`;
+            }
+            case "not_multiple_of":
+                return `מספר לא תקין: חייב להיות מכפלה של ${issue.divisor}`;
+            case "unrecognized_keys":
+                return `מפתח${issue.keys.length > 1 ? "ות" : ""} לא מזוה${issue.keys.length > 1 ? "ים" : "ה"}: ${util.joinValues(issue.keys, ", ")}`;
+            case "invalid_key": {
+                return `שדה לא תקין באובייקט`;
+            }
+            case "invalid_union":
+                return "קלט לא תקין";
+            case "invalid_element": {
+                const place = withDefinite(issue.origin ?? "array");
+                return `ערך לא תקין ב${place}`;
+            }
+            default:
+                return `קלט לא תקין`;
+        }
+    };
+};
+function default_1() {
+    return {
+        localeError: error(),
+    };
+}
+module.exports = exports.default;
+
+},
+39:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = default_1;
+const util = __importStar(__require(9));
+const error = () => {
+    const Sizable = {
+        string: { unit: "अक्षर", verb: "रखने के लिए" },
+        file: { unit: "बाइट्स", verb: "रखने के लिए" },
+        array: { unit: "तत्व", verb: "रखने के लिए" },
+        set: { unit: "तत्व", verb: "रखने के लिए" },
+        map: { unit: "प्रविष्टियाँ", verb: "रखने के लिए" },
+    };
+    function getSizing(origin) {
+        return Sizable[origin] ?? null;
+    }
+    const FormatDictionary = {
+        regex: "इनपुट",
+        email: "ईमेल पता",
+        url: "URL",
+        emoji: "इमोजी",
+        uuid: "UUID",
+        uuidv4: "UUIDv4",
+        uuidv6: "UUIDv6",
+        nanoid: "nanoid",
+        guid: "GUID",
+        cuid: "cuid",
+        cuid2: "cuid2",
+        ulid: "ULID",
+        xid: "XID",
+        ksuid: "KSUID",
+        datetime: "ISO तिथि और समय",
+        date: "ISO तिथि",
+        time: "ISO समय",
+        duration: "ISO अवधि",
+        ipv4: "IPv4 पता",
+        ipv6: "IPv6 पता",
+        mac: "MAC पता",
+        cidrv4: "IPv4 श्रेणी",
+        cidrv6: "IPv6 श्रेणी",
+        base64: "Base64-एन्कोडेड स्ट्रिंग",
+        base64url: "Base64URL-एन्कोडेड स्ट्रिंग",
+        json_string: "JSON स्ट्रिंग",
+        e164: "E.164 संख्या",
+        credit_card: "क्रेडिट कार्ड संख्या",
+        jwt: "JWT",
+        template_literal: "इनपुट",
+    };
+    const TypeDictionary = {
+        nan: "NaN",
+    };
+    return (issue) => {
+        switch (issue.code) {
+            case "invalid_type": {
+                const expected = TypeDictionary[issue.expected] ?? issue.expected;
+                const receivedType = util.parsedType(issue.input);
+                const received = TypeDictionary[receivedType] ?? receivedType;
+                return `अमान्य इनपुट: अपेक्षित ${expected}, प्राप्त ${received}`;
+            }
+            case "invalid_value":
+                if (issue.values.length === 1)
+                    return `अमान्य इनपुट: अपेक्षित ${util.stringifyPrimitive(issue.values[0])}`;
+                return `अमान्य विकल्प: अपेक्षित मानों में से एक ${util.joinValues(issue.values, "|")}`;
+            case "too_big": {
+                const adj = issue.inclusive ? "<=" : "<";
+                const sizing = getSizing(issue.origin);
+                if (sizing)
+                    return `बहुत बड़ा: अपेक्षित था कि ${issue.origin ?? "मान"} में ${adj}${issue.maximum} ${sizing.unit} हों`;
+                return `बहुत बड़ा: अपेक्षित था कि ${issue.origin ?? "मान"} ${adj}${issue.maximum} हो`;
+            }
+            case "too_small": {
+                const adj = issue.inclusive ? ">=" : ">";
+                const sizing = getSizing(issue.origin);
+                if (sizing)
+                    return `बहुत छोटा: अपेक्षित था कि ${issue.origin} में ${adj}${issue.minimum} ${sizing.unit} हों`;
+                return `बहुत छोटा: अपेक्षित था कि ${issue.origin} ${adj}${issue.minimum} हो`;
+            }
+            case "invalid_format": {
+                const _issue = issue;
+                if (_issue.format === "starts_with")
+                    return `अमान्य स्ट्रिंग: "${_issue.prefix}" से शुरू होना चाहिए`;
+                if (_issue.format === "ends_with")
+                    return `अमान्य स्ट्रिंग: "${_issue.suffix}" पर समाप्त होना चाहिए`;
+                if (_issue.format === "includes")
+                    return `अमान्य स्ट्रिंग: इसमें "${_issue.includes}" शामिल होना चाहिए`;
+                if (_issue.format === "regex")
+                    return `अमान्य स्ट्रिंग: पैटर्न ${_issue.pattern} से मेल खाना चाहिए`;
+                return `अमान्य ${FormatDictionary[_issue.format] ?? issue.format}`;
+            }
+            case "not_multiple_of":
+                return `अमान्य संख्या: यह ${issue.divisor} का गुणज होना चाहिए`;
+            case "unrecognized_keys":
+                return `अपरिचित कुंजी${issue.keys.length > 1 ? "याँ" : ""}: ${util.joinValues(issue.keys, ", ")}`;
+            case "invalid_key":
+                return `अमान्य कुंजी: ${issue.origin} में`;
+            case "invalid_union":
+                if (issue.options && Array.isArray(issue.options) && issue.options.length > 0) {
+                    const opts = issue.options.map((o) => `'${o}'`).join(" | ");
+                    return `अमान्य डिस्क्रिमिनेटर मान: अपेक्षित ${opts}`;
+                }
+                return "अमान्य इनपुट";
+            case "invalid_element":
+                return `अमान्य मान: ${issue.origin} में`;
+            default:
+                return `अमान्य इनपुट`;
+        }
+    };
+};
+function default_1() {
+    return {
+        localeError: error(),
+    };
+}
+module.exports = exports.default;
+
+},
+40:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = default_1;
+const util = __importStar(__require(9));
+const error = () => {
+    const Sizable = {
+        string: { unit: "znakova", verb: "imati" },
+        file: { unit: "bajtova", verb: "imati" },
+        array: { unit: "stavki", verb: "imati" },
+        set: { unit: "stavki", verb: "imati" },
+    };
+    function getSizing(origin) {
+        return Sizable[origin] ?? null;
+    }
+    const FormatDictionary = {
+        regex: "unos",
+        email: "email adresa",
+        url: "URL",
+        emoji: "emoji",
+        uuid: "UUID",
+        uuidv4: "UUIDv4",
+        uuidv6: "UUIDv6",
+        nanoid: "nanoid",
+        guid: "GUID",
+        cuid: "cuid",
+        cuid2: "cuid2",
+        ulid: "ULID",
+        xid: "XID",
+        ksuid: "KSUID",
+        datetime: "ISO datum i vrijeme",
+        date: "ISO datum",
+        time: "ISO vrijeme",
+        duration: "ISO trajanje",
+        ipv4: "IPv4 adresa",
+        ipv6: "IPv6 adresa",
+        mac: "MAC adresa",
+        cidrv4: "IPv4 raspon",
+        cidrv6: "IPv6 raspon",
+        base64: "base64 kodirani tekst",
+        base64url: "base64url kodirani tekst",
+        json_string: "JSON tekst",
+        e164: "E.164 broj",
+        credit_card: "broj kreditne kartice",
+        jwt: "JWT",
+        template_literal: "unos",
+    };
+    const TypeDictionary = {
+        nan: "NaN",
+        string: "tekst",
+        number: "broj",
+        boolean: "boolean",
+        array: "niz",
+        object: "objekt",
+        set: "skup",
+        file: "datoteka",
+        date: "datum",
+        bigint: "bigint",
+        symbol: "simbol",
+        undefined: "undefined",
+        null: "null",
+        function: "funkcija",
+        map: "mapa",
+    };
+    return (issue) => {
+        switch (issue.code) {
+            case "invalid_type": {
+                const expected = TypeDictionary[issue.expected] ?? issue.expected;
+                const receivedType = util.parsedType(issue.input);
+                const received = TypeDictionary[receivedType] ?? receivedType;
+                if (/^[A-Z]/.test(issue.expected)) {
+                    return `Neispravan unos: očekuje se instanceof ${issue.expected}, a primljeno je ${received}`;
+                }
+                return `Neispravan unos: očekuje se ${expected}, a primljeno je ${received}`;
+            }
+            case "invalid_value":
+                if (issue.values.length === 1)
+                    return `Neispravna vrijednost: očekivano ${util.stringifyPrimitive(issue.values[0])}`;
+                return `Neispravna opcija: očekivano jedno od ${util.joinValues(issue.values, "|")}`;
+            case "too_big": {
+                const adj = issue.inclusive ? "<=" : "<";
+                const sizing = getSizing(issue.origin);
+                const origin = TypeDictionary[issue.origin] ?? issue.origin;
+                if (sizing)
+                    return `Preveliko: očekivano da ${origin ?? "vrijednost"} ima ${adj}${issue.maximum.toString()} ${sizing.unit ?? "elemenata"}`;
+                return `Preveliko: očekivano da ${origin ?? "vrijednost"} bude ${adj}${issue.maximum.toString()}`;
+            }
+            case "too_small": {
+                const adj = issue.inclusive ? ">=" : ">";
+                const sizing = getSizing(issue.origin);
+                const origin = TypeDictionary[issue.origin] ?? issue.origin;
+                if (sizing) {
+                    return `Premalo: očekivano da ${origin} ima ${adj}${issue.minimum.toString()} ${sizing.unit}`;
+                }
+                return `Premalo: očekivano da ${origin} bude ${adj}${issue.minimum.toString()}`;
+            }
+            case "invalid_format": {
+                const _issue = issue;
+                if (_issue.format === "starts_with")
+                    return `Neispravan tekst: mora započinjati s "${_issue.prefix}"`;
+                if (_issue.format === "ends_with")
+                    return `Neispravan tekst: mora završavati s "${_issue.suffix}"`;
+                if (_issue.format === "includes")
+                    return `Neispravan tekst: mora sadržavati "${_issue.includes}"`;
+                if (_issue.format === "regex")
+                    return `Neispravan tekst: mora odgovarati uzorku ${_issue.pattern}`;
+                return `Neispravna ${FormatDictionary[_issue.format] ?? issue.format}`;
+            }
+            case "not_multiple_of":
+                return `Neispravan broj: mora biti višekratnik od ${issue.divisor}`;
+            case "unrecognized_keys":
+                return `Neprepoznat${issue.keys.length > 1 ? "i ključevi" : " ključ"}: ${util.joinValues(issue.keys, ", ")}`;
+            case "invalid_key":
+                return `Neispravan ključ u ${TypeDictionary[issue.origin] ?? issue.origin}`;
+            case "invalid_union":
+                return "Neispravan unos";
+            case "invalid_element":
+                return `Neispravna vrijednost u ${TypeDictionary[issue.origin] ?? issue.origin}`;
+            default:
+                return `Neispravan unos`;
+        }
+    };
+};
+function default_1() {
+    return {
+        localeError: error(),
+    };
+}
+module.exports = exports.default;
+
+},
+41:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = default_1;
+const util = __importStar(__require(9));
+const error = () => {
+    const Sizable = {
+        string: { unit: "karakter", verb: "legyen" },
+        file: { unit: "byte", verb: "legyen" },
+        array: { unit: "elem", verb: "legyen" },
+        set: { unit: "elem", verb: "legyen" },
+        map: { unit: "elem", verb: "legyen" },
+    };
+    function getSizing(origin) {
+        return Sizable[origin] ?? null;
+    }
+    const FormatDictionary = {
+        regex: "bemenet",
+        email: "email cím",
+        url: "URL",
+        emoji: "emoji",
+        uuid: "UUID",
+        uuidv4: "UUIDv4",
+        uuidv6: "UUIDv6",
+        nanoid: "nanoid",
+        guid: "GUID",
+        cuid: "cuid",
+        cuid2: "cuid2",
+        ulid: "ULID",
+        xid: "XID",
+        ksuid: "KSUID",
+        datetime: "ISO időbélyeg",
+        date: "ISO dátum",
+        time: "ISO idő",
+        duration: "ISO időintervallum",
+        ipv4: "IPv4 cím",
+        ipv6: "IPv6 cím",
+        mac: "MAC cím",
+        cidrv4: "IPv4 tartomány",
+        cidrv6: "IPv6 tartomány",
+        base64: "base64-kódolt string",
+        base64url: "base64url-kódolt string",
+        json_string: "JSON string",
+        e164: "E.164 szám",
+        credit_card: "hitelkártyaszám",
+        jwt: "JWT",
+        template_literal: "bemenet",
+    };
+    const TypeDictionary = {
+        nan: "NaN",
+        number: "szám",
+        array: "tömb",
+    };
+    return (issue) => {
+        switch (issue.code) {
+            case "invalid_type": {
+                const expected = TypeDictionary[issue.expected] ?? issue.expected;
+                const receivedType = util.parsedType(issue.input);
+                const received = TypeDictionary[receivedType] ?? receivedType;
+                if (/^[A-Z]/.test(issue.expected)) {
+                    return `Érvénytelen bemenet: a várt érték instanceof ${issue.expected}, a kapott érték ${received}`;
+                }
+                return `Érvénytelen bemenet: a várt érték ${expected}, a kapott érték ${received}`;
+            }
+            case "invalid_value":
+                if (issue.values.length === 1)
+                    return `Érvénytelen bemenet: a várt érték ${util.stringifyPrimitive(issue.values[0])}`;
+                return `Érvénytelen opció: valamelyik érték várt ${util.joinValues(issue.values, "|")}`;
+            case "too_big": {
+                const adj = issue.inclusive ? "<=" : "<";
+                const sizing = getSizing(issue.origin);
+                if (sizing)
+                    return `Túl nagy: ${issue.origin ?? "érték"} mérete túl nagy ${adj}${issue.maximum.toString()} ${sizing.unit ?? "elem"}`;
+                return `Túl nagy: a bemeneti érték ${issue.origin ?? "érték"} túl nagy: ${adj}${issue.maximum.toString()}`;
+            }
+            case "too_small": {
+                const adj = issue.inclusive ? ">=" : ">";
+                const sizing = getSizing(issue.origin);
+                if (sizing) {
+                    return `Túl kicsi: a bemeneti érték ${issue.origin} mérete túl kicsi ${adj}${issue.minimum.toString()} ${sizing.unit}`;
+                }
+                return `Túl kicsi: a bemeneti érték ${issue.origin} túl kicsi ${adj}${issue.minimum.toString()}`;
+            }
+            case "invalid_format": {
+                const _issue = issue;
+                if (_issue.format === "starts_with")
+                    return `Érvénytelen string: "${_issue.prefix}" értékkel kell kezdődnie`;
+                if (_issue.format === "ends_with")
+                    return `Érvénytelen string: "${_issue.suffix}" értékkel kell végződnie`;
+                if (_issue.format === "includes")
+                    return `Érvénytelen string: "${_issue.includes}" értéket kell tartalmaznia`;
+                if (_issue.format === "regex")
+                    return `Érvénytelen string: ${_issue.pattern} mintának kell megfelelnie`;
+                return `Érvénytelen ${FormatDictionary[_issue.format] ?? issue.format}`;
+            }
+            case "not_multiple_of":
+                return `Érvénytelen szám: ${issue.divisor} többszörösének kell lennie`;
+            case "unrecognized_keys":
+                return `Ismeretlen kulcs${issue.keys.length > 1 ? "s" : ""}: ${util.joinValues(issue.keys, ", ")}`;
+            case "invalid_key":
+                return `Érvénytelen kulcs ${issue.origin}`;
+            case "invalid_union":
+                return "Érvénytelen bemenet";
+            case "invalid_element":
+                return `Érvénytelen érték: ${issue.origin}`;
+            default:
+                return `Érvénytelen bemenet`;
+        }
+    };
+};
+function default_1() {
+    return {
+        localeError: error(),
+    };
+}
+module.exports = exports.default;
+
+},
+42:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = default_1;
+const util = __importStar(__require(9));
+function getArmenianPlural(count, one, many) {
+    return Math.abs(count) === 1 ? one : many;
+}
+function withDefiniteArticle(word) {
+    if (!word)
+        return "";
+    const vowels = ["ա", "ե", "ը", "ի", "ո", "ու", "օ"];
+    const lastChar = word[word.length - 1];
+    return word + (vowels.includes(lastChar) ? "ն" : "ը");
+}
+const error = () => {
+    const Sizable = {
+        string: {
+            unit: {
+                one: "նշան",
+                many: "նշաններ",
+            },
+            verb: "ունենալ",
+        },
+        file: {
+            unit: {
+                one: "բայթ",
+                many: "բայթեր",
+            },
+            verb: "ունենալ",
+        },
+        array: {
+            unit: {
+                one: "տարր",
+                many: "տարրեր",
+            },
+            verb: "ունենալ",
+        },
+        set: {
+            unit: {
+                one: "տարր",
+                many: "տարրեր",
+            },
+            verb: "ունենալ",
+        },
+        map: {
+            unit: {
+                one: "տարր",
+                many: "տարրեր",
+            },
+            verb: "ունենալ",
+        },
+    };
+    function getSizing(origin) {
+        return Sizable[origin] ?? null;
+    }
+    const FormatDictionary = {
+        regex: "մուտք",
+        email: "էլ. հասցե",
+        url: "URL",
+        emoji: "էմոջի",
+        uuid: "UUID",
+        uuidv4: "UUIDv4",
+        uuidv6: "UUIDv6",
+        nanoid: "nanoid",
+        guid: "GUID",
+        cuid: "cuid",
+        cuid2: "cuid2",
+        ulid: "ULID",
+        xid: "XID",
+        ksuid: "KSUID",
+        datetime: "ISO ամսաթիվ և ժամ",
+        date: "ISO ամսաթիվ",
+        time: "ISO ժամ",
+        duration: "ISO տևողություն",
+        ipv4: "IPv4 հասցե",
+        ipv6: "IPv6 հասցե",
+        mac: "MAC հասցե",
+        cidrv4: "IPv4 միջակայք",
+        cidrv6: "IPv6 միջակայք",
+        base64: "base64 ձևաչափով տող",
+        base64url: "base64url ձևաչափով տող",
+        json_string: "JSON տող",
+        e164: "E.164 համար",
+        credit_card: "կրեդիտ քարտի համար",
+        jwt: "JWT",
+        template_literal: "մուտք",
+    };
+    const TypeDictionary = {
+        nan: "NaN",
+        number: "թիվ",
+        array: "զանգված",
+    };
+    return (issue) => {
+        switch (issue.code) {
+            case "invalid_type": {
+                const expected = TypeDictionary[issue.expected] ?? issue.expected;
+                const receivedType = util.parsedType(issue.input);
+                const received = TypeDictionary[receivedType] ?? receivedType;
+                if (/^[A-Z]/.test(issue.expected)) {
+                    return `Սխալ մուտքագրում․ սպասվում էր instanceof ${issue.expected}, ստացվել է ${received}`;
+                }
+                return `Սխալ մուտքագրում․ սպասվում էր ${expected}, ստացվել է ${received}`;
+            }
+            case "invalid_value":
+                if (issue.values.length === 1)
+                    return `Սխալ մուտքագրում․ սպասվում էր ${util.stringifyPrimitive(issue.values[1])}`;
+                return `Սխալ տարբ

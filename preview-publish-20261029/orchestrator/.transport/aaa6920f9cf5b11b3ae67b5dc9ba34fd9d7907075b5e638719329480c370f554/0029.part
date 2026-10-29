@@ -1,0 +1,161 @@
+FollowUpSchema.nullable().optional(),
+}).strict();
+exports.saveAgentWorkSchema = zod_1.z.object({
+    operationId: zod_1.z.uuid(), workId: zod_1.z.uuid().nullable(), expectedVersion: zod_1.z.number().int().min(0).max(2147483646),
+    values: exports.agentWorkValuesSchema,
+}).strict().refine(value => value.workId ? value.expectedVersion > 0 : value.expectedVersion === 0);
+exports.readAgentWorkSchema = zod_1.z.object({ workId: zod_1.z.uuid().nullable(), cursor: zod_1.z.string().max(2048).nullable() }).strict()
+    .refine(value => !value.workId || value.cursor === null);
+exports.historySearchSchema = zod_1.z.object({
+    kind: zod_1.z.enum(["message", "private_instruction", "memory_fact"]), query: zod_1.z.string().max(200),
+    cursor: zod_1.z.string().max(2048).nullable(),
+    createdFrom: zod_1.z.iso.datetime({ offset: true }).optional(),
+    createdBefore: zod_1.z.iso.datetime({ offset: true }).optional(),
+}).strict().refine(value => !value.createdFrom || !value.createdBefore || Date.parse(value.createdFrom) < Date.parse(value.createdBefore));
+exports.historyReadSchema = zod_1.z.object({
+    messageId: zod_1.z.uuid(), offset: zod_1.z.number().int().min(0).max(1000000), limit: zod_1.z.number().int().min(1).max(4000),
+    contentVersion: zod_1.z.string().regex(/^[a-f0-9]{64}$/u).optional().describe("Echo the returned contentVersion when continuing a voice message; changed or deleted transcripts invalidate continuation."),
+}).strict();
+exports.memoryFactReadSchema = zod_1.z.object({ factId: zod_1.z.uuid().nullable(), afterId: zod_1.z.uuid().nullable(), keys: zod_1.z.array(text(100)).min(1).max(4).optional() }).strict()
+    .refine(value => (!value.factId || value.afterId === null) && (!value.keys || (value.factId === null && value.afterId === null)));
+exports.requestAgentConfirmationSchema = zod_1.z.object({
+    runId: zod_1.z.uuid(), proposalId: zod_1.z.uuid(), expectedVersion: version, workId: zod_1.z.uuid().nullable(),
+}).strict();
+exports.agentWorkSchema = exports.agentWorkValuesSchema.extend({ id: zod_1.z.uuid(), childId: zod_1.z.uuid(), version, createdAt: zod_1.z.iso.datetime({ offset: true }), updatedAt: zod_1.z.iso.datetime({ offset: true }), latestFollowUp: exports.workContinuationSchema.optional() }).strict();
+exports.agentWorkPageSchema = zod_1.z.object({ items: zod_1.z.array(exports.agentWorkSchema).max(10), nextCursor: zod_1.z.string().max(2048).nullable(), complete: zod_1.z.boolean() }).strict();
+exports.agentHistoryPageSchema = zod_1.z.object({ matches: zod_1.z.array(zod_1.z.object({ id: zod_1.z.uuid(), kind: exports.historySearchSchema.shape.kind, version, createdAt: zod_1.z.iso.datetime({ offset: true }), role: zod_1.z.enum(["user", "model"]).nullable(), excerpt: zod_1.z.string().max(400) }).strict()).max(10), scanned: zod_1.z.number().int().min(0).max(100), scanLimit: zod_1.z.literal(100), complete: zod_1.z.boolean(), nextCursor: zod_1.z.string().max(2048).nullable() }).strict();
+exports.agentHistoryMessageSchema = zod_1.z.object({ id: zod_1.z.uuid(), childId: zod_1.z.uuid(), role: zod_1.z.enum(["user", "model"]), version: zod_1.z.literal(1), createdAt: zod_1.z.iso.datetime({ offset: true }), text: zod_1.z.string().max(4000), offset: zod_1.z.number().int().min(0), nextOffset: zod_1.z.number().int().min(0).nullable(), totalCharacters: zod_1.z.number().int().min(0), contentVersion: zod_1.z.string().regex(/^[a-f0-9]{64}$/u).optional(), voice: voice_ts_1.voiceMessageReferenceSchema.optional() }).strict();
+
+},
+123:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.voiceAttachmentPageSchema = exports.voiceLinkInputSchema = exports.voiceMessageReferenceSchema = exports.voiceAttachmentSchema = exports.voiceReservationSchema = exports.voiceFileMetadataSchema = exports.voiceMimeTypeSchema = exports.VOICE_LIMITS = void 0;
+exports.normalizeVoiceMimeType = normalizeVoiceMimeType;
+const attachment_list_ts_1 = __require(124);
+const zod_1 = __require(5);
+exports.VOICE_LIMITS = Object.freeze({ bytes: 5 * 1024 * 1024, durationMs: 120_000, filesPerMessage: 1 });
+exports.voiceMimeTypeSchema = zod_1.z.enum(["audio/mp4", "audio/webm", "audio/ogg", "audio/wav", "audio/mpeg"]);
+function normalizeVoiceMimeType(value) {
+    const mime = value.toLowerCase().split(";", 1)[0].trim();
+    const aliases = { "audio/m4a": "audio/mp4", "audio/x-m4a": "audio/mp4",
+        "audio/x-wav": "audio/wav", "audio/wave": "audio/wav", "audio/mp3": "audio/mpeg" };
+    const parsed = exports.voiceMimeTypeSchema.safeParse(aliases[mime] ?? mime);
+    return parsed.success ? parsed.data : null;
+}
+exports.voiceFileMetadataSchema = zod_1.z.object({
+    mimeType: exports.voiceMimeTypeSchema, bytes: zod_1.z.number().int().min(1).max(exports.VOICE_LIMITS.bytes),
+    sha256: zod_1.z.string().regex(/^[a-f0-9]{64}$/u),
+    durationMs: zod_1.z.number().int().min(1).max(exports.VOICE_LIMITS.durationMs),
+}).strict();
+exports.voiceReservationSchema = zod_1.z.object({
+    opId: zod_1.z.uuid(), fileName: zod_1.z.string().min(1).max(200).refine(v => v.isWellFormed() && !/[\u0000-\u001f]/u.test(v)),
+    mimeType: exports.voiceMimeTypeSchema, bytes: zod_1.z.number().int().min(1).max(exports.VOICE_LIMITS.bytes), sha256: zod_1.z.string().regex(/^[a-f0-9]{64}$/u),
+}).strict();
+exports.voiceAttachmentSchema = zod_1.z.object({
+    id: zod_1.z.uuid(), childId: zod_1.z.uuid(), version: zod_1.z.number().int().positive(), createdAt: zod_1.z.iso.datetime({ offset: true }),
+    state: zod_1.z.enum(['reserved', 'uploading', 'unknown', 'ready', 'deleting', 'deleted']),
+    fileName: zod_1.z.string().min(1).max(200).nullable(), mimeType: exports.voiceMimeTypeSchema.nullable(),
+    bytes: zod_1.z.number().int().min(1).max(exports.VOICE_LIMITS.bytes).nullable(), durationMs: zod_1.z.number().int().min(1).max(exports.VOICE_LIMITS.durationMs).nullable(),
+    sha256: zod_1.z.string().regex(/^[a-f0-9]{64}$/u).nullable(), messageId: zod_1.z.uuid().nullable(),
+}).strict();
+/** Immutable audio identity stored on the original message; no audio bytes or transcript copy. */
+exports.voiceMessageReferenceSchema = exports.voiceFileMetadataSchema.extend({ id: zod_1.z.uuid(), version: zod_1.z.number().int().positive() }).strict();
+exports.voiceLinkInputSchema = zod_1.z.object({ id: zod_1.z.uuid(), expectedVersion: zod_1.z.number().int().positive() }).strict();
+/** Metadata only; no unlinked or removed recordings enter the library. */
+exports.voiceAttachmentPageSchema = zod_1.z.object({
+    items: zod_1.z.array(exports.voiceAttachmentSchema.refine(value => value.state === 'ready' && value.messageId !== null
+        && value.fileName !== null && value.mimeType !== null && value.bytes !== null && value.sha256 !== null && value.durationMs !== null))
+        .max(attachment_list_ts_1.ATTACHMENT_LIST_BOUNDS.maxLimit), ...attachment_list_ts_1.attachmentListPageFields,
+}).strict().refine(attachment_list_ts_1.consistentAttachmentPage);
+
+},
+124:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.attachmentListPageFields = exports.attachmentListQuerySchema = exports.attachmentListCursorSchema = exports.attachmentListPolicySchema = exports.DEFAULT_ATTACHMENT_LIST_POLICY = exports.ATTACHMENT_LIST_BOUNDS = void 0;
+exports.consistentAttachmentPage = consistentAttachmentPage;
+const zod_1 = __require(5);
+/** Per-request work bounds, never a limit on the number of stored attachments. */
+exports.ATTACHMENT_LIST_BOUNDS = Object.freeze({ maxLimit: 100, maxScan: 500, cursorCharacters: 4096 });
+exports.DEFAULT_ATTACHMENT_LIST_POLICY = Object.freeze({ defaultLimit: 20, maxLimit: 50, scanLimit: 100 });
+exports.attachmentListPolicySchema = zod_1.z.object({
+    defaultLimit: zod_1.z.number().int().positive().max(exports.ATTACHMENT_LIST_BOUNDS.maxLimit),
+    maxLimit: zod_1.z.number().int().positive().max(exports.ATTACHMENT_LIST_BOUNDS.maxLimit),
+    scanLimit: zod_1.z.number().int().positive().max(exports.ATTACHMENT_LIST_BOUNDS.maxScan),
+}).strict().refine(value => value.defaultLimit <= value.maxLimit && value.maxLimit <= value.scanLimit);
+exports.attachmentListCursorSchema = zod_1.z.string().min(1).max(exports.ATTACHMENT_LIST_BOUNDS.cursorCharacters).regex(/^[A-Za-z0-9_-]+$/u);
+exports.attachmentListQuerySchema = zod_1.z.object({
+    limit: zod_1.z.number().int().positive().max(exports.ATTACHMENT_LIST_BOUNDS.maxLimit).optional(),
+    cursor: exports.attachmentListCursorSchema.nullable().optional(),
+}).strict();
+exports.attachmentListPageFields = {
+    nextCursor: exports.attachmentListCursorSchema.nullable(), complete: zod_1.z.boolean(),
+    scanned: zod_1.z.number().int().nonnegative().max(exports.ATTACHMENT_LIST_BOUNDS.maxScan),
+    pagePolicy: exports.attachmentListPolicySchema.optional(),
+};
+/** An empty bounded scan can still have another page. Creation time is not recording time. */
+function consistentAttachmentPage(value) {
+    return value.complete === (value.nextCursor === null) && value.items.length <= value.scanned
+        && (value.complete || value.scanned > 0)
+        && (!value.pagePolicy || value.items.length <= value.pagePolicy.maxLimit && value.scanned <= value.pagePolicy.scanLimit)
+        && new Set(value.items.map(item => item.id)).size === value.items.length
+        && value.items.every((item, index) => !index || value.items[index - 1].createdAt > item.createdAt
+            || value.items[index - 1].createdAt === item.createdAt && value.items[index - 1].id > item.id);
+}
+
+},
+125:function(module,exports,__require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+// R3 outer admission only; no fixture, route owner or transport implementation is duplicated.
+const root = globalThis, parentFactory = root.__YU_PREVIEW_FACTORY__;
+const variants = new Set(['harbour', 'care', 'journal', 'uiux-upgrade']);
+const modes = new Set(['ready', 'complete-profile', 'populated', 'long-content', 'empty', 'error', 'signedout', 'loading', 'no-child', 'mutation-unknown', 'unknown-age-zero-records', 'core-journeys', 'core-no-child', 'core-task-history-paged', 'memory-work-reading']);
+const loading = new Set(['children', 'child-reads', 'documents']), workReads = new Set(['ready', 'empty', 'error', 'hold']);
+root.__YU_PREVIEW_FACTORY__ = (options = {}) => {
+    if (options === null || typeof options !== 'object' || Array.isArray(options))
+        throw new Error('Unsupported preview options');
+    const variant = options.variant === undefined ? (options.comparison === undefined ? 'harbour' : options.comparison?.version) : options.variant;
+    const mode = options.mode === undefined ? 'ready' : options.mode;
+    if (!variants.has(variant) || !modes.has(mode) || mode === 'core-task-history-paged' && variant !== 'harbour' || mode === 'memory-work-reading' && variant !== 'care')
+        throw new Error('Unsupported preview admission');
+    if (options.loadingTarget !== undefined && !loading.has(options.loadingTarget))
+        throw new Error('Unsupported preview loading');
+    for (const key of Object.keys(options))
+        if (key.startsWith('previewWork') || key.startsWith('initialWork') && key !== 'initialWorkRead')
+            throw new Error('Unsupported preview work option');
+    if (options.initialWorkRead !== undefined && (mode !== 'memory-work-reading' || !workReads.has(options.initialWorkRead)))
+        throw new Error('Unsupported initial memory work read');
+    return parentFactory(options);
+};
+
+}};const cache={};function __require(id){if(cache[id])return cache[id].exports;const module=cache[id]={exports:{}};modules[id](module,module.exports,__require);return module.exports;}__require(0);})();
+(function(root){const VERSION='harbour-private-boundary-fixtures-v5-20261026';const createPreview=root.__YU_PREVIEW_FACTORY__;
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  const query = new URL(location.href).searchParams;
+  const deny = () => { throw new Error('Unavailable in isolated preview'); };
+  for (const key of ['XMLHttpRequest', 'WebSocket', 'EventSource', 'Worker', 'SharedWorker', 'RTCPeerConnection']) window[key] = class { constructor() { deny(); } };
+  if (navigator.sendBeacon) navigator.sendBeacon = () => false;
+  if (navigator.serviceWorker) navigator.serviceWorker.register = async () => deny();
+  if (navigator.mediaDevices) navigator.mediaDevices.getUserMedia = async () => deny();
+  if (navigator.share) navigator.share = async () => deny();
+  if (window.Notification) window.Notification.requestPermission = async () => 'denied';
+  window.open = () => { deny(); };
+  document.addEventListener('submit', event => event.preventDefault(), true);
+  document.addEventListener('click', event => { const link = event.target?.closest?.('a[href]'); if (link && new URL(link.href, location.href).origin !== location.origin) { event.preventDefault(); event.stopPropagation(); } }, true);
+  window.fetch = async () => { throw new TypeError('Preview selection blocked'); };
+  for(const key of ['experiment','previewScenario','previewLoading','previewWorkRead'])if(query.getAll(key).length>1)throw new Error('Duplicate private preview selection');
+  for(const key of query.keys())if(key.startsWith('initialWork')||key.startsWith('previewWork')&&key!=='previewWorkRead')throw new Error('Unsupported memory work selection');
+  for(const key of ['experiment','previewScenario','previewLoading'])if(query.has(key)&&query.get(key)==='')throw new Error('Empty private preview selection');
+  if(query.has('previewLoading')&&query.get('previewScenario')!=='loading')throw new Error('Unexpected preview loading');
+  const selectedVariant=query.has('experiment')?query.get('experiment'):(window.__YU_COMPARISON__?.version??'harbour'),selectedMode=query.has('previewScenario')?query.get('previewScenario'):'ready';
+  if(!['harbour','care','journal','uiux-upgrade'].includes(selectedVariant)||!['ready','complete-profile','populated','long-content','empty','error','signedout','loading','no-child','mutation-unknown','unknown-age-zero-records','core-journeys','core-no-child','core-task-history-paged','memory-work-reading'].includes(selectedMode)||selectedMode==='core-task-history-paged'&&selectedVariant!=='harbour'||selectedMode==='memory-work-reading'&&selectedVariant!=='care')throw new Error('Unsupported private preview admission');
+  if(query.has('previewLoading')&&!['children','child-reads','documents'].includes(query.get('previewLoading')))throw new Error('Unsupported preview loading');
+  const workInitial=query.has('previewWorkRead')?query.get('previewWorkRead'):undefined;
+  if(workInitial!==undefined&&(query.get('previewScenario')!=='memory-work-reading'||!['ready','empty','error','hold'].includes(workInitial)))throw new Error('Unsupported initial memory work read');
+  const fixture = createPreview({ variant: query.get('experiment') ?? undefined, comparison: window.__YU_COMPARISON__, pathname: new URL(location.href).pathname, initialWorkRead: workInitial, origin: location.origin, mode: query.get('previewScenario') || 'ready', loadingTarget: query.get('previewLoading') || 'children', onDiagnostic: ({ method, path, reason, status }) => console.warn('[Harbour preview] ' + status + ' ' + method + ' ' + path + ' (' + reason + ')') });
+  console.info('[Harbour preview] ' + VERSION + '; scenario=' + fixture.state.mode + '; network=blocked');
+  window.__YU_PREVIEW__ = fixture;
+  window.fetch = fixture.transport;
+})(globalThis);

@@ -1,0 +1,1024 @@
+ }
+    // Convert Map to formatted string
+    return lines.join("\n");
+}
+
+},
+12:function(module,exports,__require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.$ZodXor = exports.$ZodUnion = exports.$ZodObjectJIT = exports.$ZodObject = exports.$ZodArray = exports.$ZodDate = exports.$ZodVoid = exports.$ZodNever = exports.$ZodUnknown = exports.$ZodAny = exports.$ZodNull = exports.$ZodUndefined = exports.$ZodSymbol = exports.$ZodBigIntFormat = exports.$ZodBigInt = exports.$ZodBoolean = exports.$ZodNumberFormat = exports.$ZodNumber = exports.$ZodCustomStringFormat = exports.$ZodJWT = exports.$ZodCreditCard = exports.$ZodE164 = exports.$ZodBase64URL = exports.$ZodBase64 = exports.$ZodCIDRv6 = exports.$ZodCIDRv4 = exports.$ZodMAC = exports.$ZodIPv6 = exports.$ZodIPv4 = exports.$ZodISODuration = exports.$ZodISOTime = exports.$ZodISODate = exports.$ZodISODateTime = exports.$ZodKSUID = exports.$ZodXID = exports.$ZodULID = exports.$ZodCUID2 = exports.$ZodCUID = exports.$ZodNanoID = exports.$ZodEmoji = exports.$ZodURL = exports.URL_UNPARSEABLE = exports.URL_BAD_FORMAT = exports.$ZodEmail = exports.$ZodUUID = exports.$ZodGUID = exports.$ZodStringFormat = exports.$ZodString = exports.clone = exports.$ZodType = void 0;
+exports.$ZodCustom = exports.$ZodLazy = exports.$ZodPromise = exports.$ZodFunction = exports.$ZodTemplateLiteral = exports.$ZodReadonly = exports.$ZodPreprocess = exports.$ZodCodec = exports.$ZodPipe = exports.$ZodNaN = exports.$ZodCatch = exports.$ZodSuccess = exports.$ZodNonOptional = exports.$ZodPrefault = exports.$ZodDefault = exports.$ZodNullable = exports.$ZodExactOptional = exports.$ZodOptional = exports.$ZodTransform = exports.$ZodFile = exports.$ZodLiteral = exports.$ZodEnum = exports.$ZodSet = exports.$ZodMap = exports.$ZodRecord = exports.$ZodTuple = exports.$ZodIntersection = exports.$ZodDiscriminatedUnion = void 0;
+exports.standardProps = standardProps;
+exports.parseURLObject = parseURLObject;
+exports.stripTabAndNewline = stripTabAndNewline;
+exports.urlHostnameOk = urlHostnameOk;
+exports.urlProtocolOk = urlProtocolOk;
+exports.isValidIPv6 = isValidIPv6;
+exports.isValidCIDRv6 = isValidCIDRv6;
+exports.isValidBase64 = isValidBase64;
+exports.isValidBase64URL = isValidBase64URL;
+exports.isValidCreditCard = isValidCreditCard;
+exports.isValidJWT = isValidJWT;
+exports.getDiscriminatedOption = getDiscriminatedOption;
+exports.mergeValues = mergeValues;
+const checks = __importStar(__require(13));
+const core = __importStar(__require(8));
+const doc_js_1 = __require(15);
+const parse_js_1 = __require(10);
+const regexes = __importStar(__require(14));
+const util = __importStar(__require(9));
+const versions_js_1 = __require(16);
+exports.$ZodType = core.$constructor("$ZodType", (inst, def) => {
+    var _a;
+    inst ?? (inst = {});
+    inst._zod.def = def; // set _def property
+    inst._zod.bag = inst._zod.bag || {}; // initialize _bag object
+    inst._zod.version = versions_js_1.version;
+    const defChecks = inst._zod.def.checks;
+    // if inst is itself a checks.$ZodCheck, run it as a check
+    const checks = inst._zod.traits.has("$ZodCheck")
+        ? [inst, ...(defChecks ?? [])]
+        : defChecks?.length
+            ? [...defChecks]
+            : [];
+    for (const ch of checks) {
+        for (const fn of ch._zod.onattach) {
+            fn(inst);
+        }
+    }
+    if (checks.length === 0) {
+        // deferred initializer inst._zod.parse is not yet defined
+        (_a = inst._zod).deferred ?? (_a.deferred = []);
+        inst._zod.deferred?.push(() => {
+            inst._zod.run = inst._zod.parse;
+        });
+    }
+    else {
+        const runChecks = (payload, checks, ctx) => {
+            if (payload.memo)
+                return payload;
+            let isAborted = util.aborted(payload);
+            let asyncResult;
+            for (const ch of checks) {
+                if (ch._zod.def.when) {
+                    if (util.explicitlyAborted(payload))
+                        continue;
+                    const shouldRun = ch._zod.def.when(payload);
+                    if (!shouldRun)
+                        continue;
+                }
+                else if (isAborted) {
+                    continue;
+                }
+                const currLen = payload.issues.length;
+                const _ = ch._zod.check(payload);
+                if (_ instanceof Promise && ctx?.async === false) {
+                    throw new core.$ZodAsyncError();
+                }
+                if (asyncResult || _ instanceof Promise) {
+                    asyncResult = (asyncResult ?? Promise.resolve()).then(async () => {
+                        await _;
+                        const nextLen = payload.issues.length;
+                        if (nextLen === currLen)
+                            return;
+                        util.attachSchema(payload.issues, currLen, inst);
+                        if (!isAborted)
+                            isAborted = util.aborted(payload, currLen);
+                    });
+                }
+                else {
+                    const nextLen = payload.issues.length;
+                    if (nextLen === currLen)
+                        continue;
+                    util.attachSchema(payload.issues, currLen, inst);
+                    if (!isAborted)
+                        isAborted = util.aborted(payload, currLen);
+                }
+            }
+            if (asyncResult) {
+                return asyncResult.then(() => {
+                    return payload;
+                });
+            }
+            return payload;
+        };
+        const handleCanaryResult = (canary, payload, ctx) => {
+            // abort if the canary is aborted
+            if (util.aborted(canary)) {
+                canary.aborted = true;
+                return canary;
+            }
+            // run checks first, then
+            const checkResult = runChecks(payload, checks, ctx);
+            if (checkResult instanceof Promise) {
+                if (ctx.async === false)
+                    throw new core.$ZodAsyncError();
+                return checkResult.then((checkResult) => inst._zod.parse(checkResult, ctx));
+            }
+            return inst._zod.parse(checkResult, ctx);
+        };
+        inst._zod.run = (payload, ctx) => {
+            if (ctx.skipChecks) {
+                return inst._zod.parse(payload, ctx);
+            }
+            if (ctx.direction === "backward") {
+                // run canary initial pass (no checks)
+                const canary = inst._zod.parse({ value: payload.value, issues: [] }, { ...ctx, skipChecks: true });
+                if (canary instanceof Promise) {
+                    return canary.then((canary) => {
+                        return handleCanaryResult(canary, payload, ctx);
+                    });
+                }
+                return handleCanaryResult(canary, payload, ctx);
+            }
+            // forward
+            const result = inst._zod.parse(payload, ctx);
+            if (result instanceof Promise) {
+                if (ctx.async === false)
+                    throw new core.$ZodAsyncError();
+                return result.then((result) => runChecks(result, checks, ctx));
+            }
+            return runChecks(result, checks, ctx);
+        };
+    }
+}, {
+    // Wrappers extend this by installing a richer factory over it; reading it eagerly would defeat the laziness.
+    get "~standard"() {
+        return util.hide(this, "~standard", standardProps(this));
+    },
+    set "~standard"(value) {
+        util.own(this, "~standard", value);
+    },
+});
+/** The Standard Schema surface for `inst`. Shared so wrappers can extend it without forcing it. */
+const toStandardResult = (r) => r.success ? { value: r.data } : { issues: r.error?.issues };
+function standardProps(inst) {
+    return {
+        validate: (value) => {
+            try {
+                return toStandardResult((0, parse_js_1.safeParse)(inst, value));
+            }
+            catch (_) {
+                return (0, parse_js_1.safeParseAsync)(inst, value).then(toStandardResult);
+            }
+        },
+        vendor: "zod",
+        version: 1,
+    };
+}
+var util_js_1 = __require(9);
+Object.defineProperty(exports, "clone", { enumerable: true, get: function () { return util_js_1.clone; } });
+exports.$ZodString = core.$constructor("$ZodString", (inst, def) => {
+    exports.$ZodType.init(inst, def);
+    inst._zod.pattern = [...(inst?._zod.bag?.patterns ?? [])].pop() ?? regexes.string(inst._zod.bag);
+    inst._zod.parse = (payload, _) => {
+        if (def.coerce)
+            try {
+                payload.value = String(payload.value);
+            }
+            catch (_) { }
+        if (typeof payload.value === "string")
+            return payload;
+        payload.issues.push({
+            expected: "string",
+            code: "invalid_type",
+            input: payload.value,
+            inst,
+        });
+        return payload;
+    };
+});
+exports.$ZodStringFormat = core.$constructor("$ZodStringFormat", (inst, def) => {
+    // check initialization must come first
+    checks.$ZodCheckStringFormat.init(inst, def);
+    exports.$ZodString.init(inst, def);
+});
+exports.$ZodGUID = core.$constructor("$ZodGUID", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.guid);
+    exports.$ZodStringFormat.init(inst, def);
+});
+exports.$ZodUUID = core.$constructor("$ZodUUID", (inst, def) => {
+    if (def.version) {
+        const versionMap = {
+            v1: 1,
+            v2: 2,
+            v3: 3,
+            v4: 4,
+            v5: 5,
+            v6: 6,
+            v7: 7,
+            v8: 8,
+        };
+        const v = versionMap[def.version];
+        if (v === undefined)
+            throw new Error(`Invalid UUID version: "${def.version}"`);
+        def.pattern ?? (def.pattern = regexes.uuid(v));
+    }
+    else
+        def.pattern ?? (def.pattern = regexes.uuid());
+    exports.$ZodStringFormat.init(inst, def);
+});
+exports.$ZodEmail = core.$constructor("$ZodEmail", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.email);
+    exports.$ZodStringFormat.init(inst, def);
+});
+/** The `://` guard rejected the input before the URL constructor saw it. */
+exports.URL_BAD_FORMAT = 1;
+/** The URL constructor rejected the input. */
+exports.URL_UNPARSEABLE = 2;
+/** Parses a URL for `$ZodURL`, applying the one guard the URL constructor cannot express. Returns the parsed URL, or a code naming the stage that rejected it — the runtime needs that distinction to pick an issue note, and compiled code only needs to know it is not a URL. */
+function parseURLObject(trimmed, def) {
+    // When normalize is off, require :// for http/https URLs. This prevents strings like "http:example.com" or "https:/path" from being silently accepted
+    if (!def.normalize && def.protocol?.source === regexes.httpProtocol.source && !/^https?:\/\//i.test(trimmed)) {
+        return exports.URL_BAD_FORMAT;
+    }
+    try {
+        // @ts-ignore
+        return new URL(trimmed);
+    }
+    catch {
+        return exports.URL_UNPARSEABLE;
+    }
+}
+const asciiTabOrNewline = /[\t\n\r]/g;
+/** The URL parser deletes every ASCII tab, LF and CR from its input before it parses, so `new URL("https://exa\nmple.com")` reports on `example.com`. Applying the same deletion to the returned value closes the half of that divergence which can move the host; the parser's other rewrite, stripping C0 controls at the edges, cannot. */
+function stripTabAndNewline(value) {
+    return value.replace(asciiTabOrNewline, "");
+}
+function urlHostnameOk(url, hostname) {
+    hostname.lastIndex = 0;
+    return hostname.test(url.hostname);
+}
+function urlProtocolOk(url, protocol) {
+    protocol.lastIndex = 0;
+    return protocol.test(url.protocol.endsWith(":") ? url.protocol.slice(0, -1) : url.protocol);
+}
+exports.$ZodURL = core.$constructor("$ZodURL", (inst, def) => {
+    exports.$ZodStringFormat.init(inst, def);
+    inst._zod.check = (payload) => {
+        try {
+            // Trim whitespace from input
+            const trimmed = payload.value.trim();
+            const url = parseURLObject(trimmed, def);
+            if (url === exports.URL_BAD_FORMAT) {
+                payload.issues.push({
+                    code: "invalid_format",
+                    format: "url",
+                    note: "Invalid URL format",
+                    input: payload.value,
+                    inst,
+                    continue: !def.abort,
+                });
+                return;
+            }
+            if (url === exports.URL_UNPARSEABLE) {
+                payload.issues.push({
+                    code: "invalid_format",
+                    format: "url",
+                    input: payload.value,
+                    inst,
+                    continue: !def.abort,
+                });
+                return;
+            }
+            if (def.hostname && !urlHostnameOk(url, def.hostname)) {
+                payload.issues.push({
+                    code: "invalid_format",
+                    format: "url",
+                    note: "Invalid hostname",
+                    pattern: def.hostname.source,
+                    input: payload.value,
+                    inst,
+                    continue: !def.abort,
+                });
+            }
+            if (def.protocol && !urlProtocolOk(url, def.protocol)) {
+                payload.issues.push({
+                    code: "invalid_format",
+                    format: "url",
+                    note: "Invalid protocol",
+                    pattern: def.protocol.source,
+                    input: payload.value,
+                    inst,
+                    continue: !def.abort,
+                });
+            }
+            // Set the output value based on normalize flag
+            payload.value = def.normalize ? url.href : stripTabAndNewline(trimmed);
+            return;
+        }
+        catch (_) {
+            payload.issues.push({
+                code: "invalid_format",
+                format: "url",
+                input: payload.value,
+                inst,
+                continue: !def.abort,
+            });
+        }
+    };
+});
+exports.$ZodEmoji = core.$constructor("$ZodEmoji", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.emoji());
+    exports.$ZodStringFormat.init(inst, def);
+});
+exports.$ZodNanoID = core.$constructor("$ZodNanoID", (inst, def) => {
+    if (def.length !== undefined && (!Number.isInteger(def.length) || def.length < 1))
+        throw new Error(`Invalid nanoid length: ${def.length}`);
+    def.pattern ?? (def.pattern = def.length === undefined ? regexes.nanoid : regexes.nanoidOfLength(def.length));
+    exports.$ZodStringFormat.init(inst, def);
+});
+/**
+ * @deprecated CUID v1 is deprecated by its authors due to information leakage
+ * (timestamps embedded in the id). Use {@link $ZodCUID2} instead.
+ * See https://github.com/paralleldrive/cuid.
+ */
+exports.$ZodCUID = core.$constructor("$ZodCUID", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.cuid);
+    exports.$ZodStringFormat.init(inst, def);
+});
+exports.$ZodCUID2 = core.$constructor("$ZodCUID2", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.cuid2);
+    exports.$ZodStringFormat.init(inst, def);
+});
+exports.$ZodULID = core.$constructor("$ZodULID", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.ulid);
+    exports.$ZodStringFormat.init(inst, def);
+});
+exports.$ZodXID = core.$constructor("$ZodXID", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.xid);
+    exports.$ZodStringFormat.init(inst, def);
+});
+exports.$ZodKSUID = core.$constructor("$ZodKSUID", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.ksuid);
+    exports.$ZodStringFormat.init(inst, def);
+});
+exports.$ZodISODateTime = core.$constructor("$ZodISODateTime", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.datetime(def));
+    exports.$ZodStringFormat.init(inst, def);
+    // these two drop the offset or seconds `date-time` requires — on the bag not the def, since `z.string().check(...)` lands the format on a different schema
+    if (def.local || def.precision === -1) {
+        inst._zod.bag.laxFormat = true;
+        inst._zod.onattach.push((s) => {
+            s._zod.bag.laxFormat = true;
+        });
+    }
+});
+exports.$ZodISODate = core.$constructor("$ZodISODate", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.date);
+    exports.$ZodStringFormat.init(inst, def);
+});
+exports.$ZodISOTime = core.$constructor("$ZodISOTime", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.time(def));
+    exports.$ZodStringFormat.init(inst, def);
+});
+exports.$ZodISODuration = core.$constructor("$ZodISODuration", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.duration);
+    exports.$ZodStringFormat.init(inst, def);
+});
+exports.$ZodIPv4 = core.$constructor("$ZodIPv4", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.ipv4);
+    exports.$ZodStringFormat.init(inst, def);
+    inst._zod.bag.format = `ipv4`;
+});
+/** An IPv6 address is written with hex digits, colons and dots, and nothing else. The guard is what makes the check below an IPv6 check: `new URL("http://[...]")` parses an authority, not an address, so `@` and `\` re-delimit it and `"::@1\\"` validates against the host `0.0.0.1`. The URL parser also deletes ASCII tab, LF and CR rather than failing, which is how `"::1\n"` validated as `::1`. */
+const ipv6Alphabet = /^[0-9a-fA-F:.]+$/;
+function isValidIPv6(value) {
+    if (!ipv6Alphabet.test(value))
+        return false;
+    try {
+        // @ts-ignore
+        new URL(`http://[${value}]`);
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
+exports.$ZodIPv6 = core.$constructor("$ZodIPv6", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.ipv6);
+    exports.$ZodStringFormat.init(inst, def);
+    inst._zod.bag.format = `ipv6`;
+    inst._zod.check = (payload) => {
+        if (!isValidIPv6(payload.value)) {
+            payload.issues.push({
+                code: "invalid_format",
+                format: "ipv6",
+                input: payload.value,
+                inst,
+                continue: !def.abort,
+            });
+        }
+    };
+});
+exports.$ZodMAC = core.$constructor("$ZodMAC", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.mac(def.delimiter));
+    exports.$ZodStringFormat.init(inst, def);
+    inst._zod.bag.format = `mac`;
+});
+exports.$ZodCIDRv4 = core.$constructor("$ZodCIDRv4", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.cidrv4);
+    exports.$ZodStringFormat.init(inst, def);
+});
+function isValidCIDRv6(value) {
+    const parts = value.split("/");
+    if (parts.length !== 2)
+        return false;
+    const [address, prefix] = parts;
+    if (!prefix)
+        return false;
+    const prefixNum = Number(prefix);
+    if (`${prefixNum}` !== prefix)
+        return false;
+    if (prefixNum < 0 || prefixNum > 128)
+        return false;
+    return isValidIPv6(address);
+}
+exports.$ZodCIDRv6 = core.$constructor("$ZodCIDRv6", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.cidrv6); // not used for validation
+    exports.$ZodStringFormat.init(inst, def);
+    inst._zod.check = (payload) => {
+        if (!isValidCIDRv6(payload.value)) {
+            payload.issues.push({
+                code: "invalid_format",
+                format: "cidrv6",
+                input: payload.value,
+                inst,
+                continue: !def.abort,
+            });
+        }
+    };
+});
+//////////////////////////////   ZodBase64   //////////////////////////////
+function isValidBase64(data) {
+    if (data === "")
+        return true;
+    // atob ignores whitespace, so reject it up front.
+    if (/\s/.test(data))
+        return false;
+    if (data.length % 4 !== 0)
+        return false;
+    try {
+        // @ts-ignore
+        atob(data);
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
+exports.$ZodBase64 = core.$constructor("$ZodBase64", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.base64);
+    exports.$ZodStringFormat.init(inst, def);
+    inst._zod.bag.contentEncoding = "base64";
+    inst._zod.check = (payload) => {
+        if (isValidBase64(payload.value))
+            return;
+        payload.issues.push({
+            code: "invalid_format",
+            format: "base64",
+            input: payload.value,
+            inst,
+            continue: !def.abort,
+        });
+    };
+});
+//////////////////////////////   ZodBase64   //////////////////////////////
+function isValidBase64URL(data) {
+    if (!regexes.base64url.test(data))
+        return false;
+    const base64 = data.replace(/[-_]/g, (c) => (c === "-" ? "+" : "/"));
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    return isValidBase64(padded);
+}
+exports.$ZodBase64URL = core.$constructor("$ZodBase64URL", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.base64url);
+    exports.$ZodStringFormat.init(inst, def);
+    inst._zod.bag.contentEncoding = "base64url";
+    inst._zod.check = (payload) => {
+        if (isValidBase64URL(payload.value))
+            return;
+        payload.issues.push({
+            code: "invalid_format",
+            format: "base64url",
+            input: payload.value,
+            inst,
+            continue: !def.abort,
+        });
+    };
+});
+exports.$ZodE164 = core.$constructor("$ZodE164", (inst, def) => {
+    def.pattern ?? (def.pattern = regexes.e164);
+    exports.$ZodStringFormat.init(inst, def);
+});
+//////////////////////////////   ZodCreditCard   //////////////////////////////
+const CC_SANITIZE = /[- ]/g;
+/** Luhn checksum on a digit-only string. Adapted from valibot (MIT). */
+function isLuhnAlgo(digits) {
+    let length = digits.length;
+    let bit = 1;
+    let sum = 0;
+    while (length) {
+        const value = +digits[--length];
+        bit ^= 1;
+        sum += bit ? [0, 2, 4, 6, 8, 1, 3, 5, 7, 9][value] : value;
+    }
+    return sum % 10 === 0;
+}
+function isValidCreditCard(input) {
+    if (!regexes.creditCard.test(input))
+        return false;
+    return isLuhnAlgo(input.replace(CC_SANITIZE, ""));
+}
+exports.$ZodCreditCard = core.$constructor("$ZodCreditCard", (inst, def) => {
+    // Shape only — the Luhn check below is not expressible as a pattern, so consumers of `pattern` (JSON Schema, template literals) get the length and separator rules alone.
+    def.pattern ?? (def.pattern = regexes.creditCard);
+    exports.$ZodStringFormat.init(inst, def);
+    inst._zod.check = (payload) => {
+        if (isValidCreditCard(payload.value))
+            return;
+        payload.issues.push({
+            code: "invalid_format",
+            format: "credit_card",
+            input: payload.value,
+            inst,
+            continue: !def.abort,
+        });
+    };
+});
+//////////////////////////////   ZodJWT   //////////////////////////////
+function isValidJWT(token, algorithm = null) {
+    try {
+        const tokensParts = token.split(".");
+        if (tokensParts.length !== 3)
+            return false;
+        const [header] = tokensParts;
+        if (!header)
+            return false;
+        // @ts-ignore
+        const parsedHeader = JSON.parse(atob(header));
+        if ("typ" in parsedHeader && parsedHeader?.typ !== "JWT")
+            return false;
+        if (!parsedHeader.alg)
+            return false;
+        if (algorithm && (!("alg" in parsedHeader) || parsedHeader.alg !== algorithm))
+            return false;
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
+exports.$ZodJWT = core.$constructor("$ZodJWT", (inst, def) => {
+    exports.$ZodStringFormat.init(inst, def);
+    inst._zod.check = (payload) => {
+        if (isValidJWT(payload.value, def.alg))
+            return;
+        payload.issues.push({
+            code: "invalid_format",
+            format: "jwt",
+            input: payload.value,
+            inst,
+            continue: !def.abort,
+        });
+    };
+});
+exports.$ZodCustomStringFormat = core.$constructor("$ZodCustomStringFormat", (inst, def) => {
+    exports.$ZodStringFormat.init(inst, def);
+    inst._zod.check = (payload) => {
+        if (def.fn(payload.value))
+            return;
+        payload.issues.push({
+            code: "invalid_format",
+            format: def.format,
+            input: payload.value,
+            inst,
+            continue: !def.abort,
+        });
+    };
+});
+exports.$ZodNumber = core.$constructor("$ZodNumber", (inst, def) => {
+    exports.$ZodType.init(inst, def);
+    inst._zod.pattern = inst._zod.bag.pattern ?? regexes.number;
+    inst._zod.parse = (payload, _ctx) => {
+        if (def.coerce)
+            try {
+                payload.value = Number(payload.value);
+            }
+            catch (_) { }
+        const input = payload.value;
+        if (typeof input === "number" && !Number.isNaN(input) && Number.isFinite(input)) {
+            return payload;
+        }
+        const received = typeof input === "number"
+            ? Number.isNaN(input)
+                ? "NaN"
+                : !Number.isFinite(input)
+                    ? String(input)
+                    : undefined
+            : undefined;
+        payload.issues.push({
+            expected: "number",
+            code: "invalid_type",
+            input,
+            inst,
+            ...(received ? { received } : {}),
+        });
+        return payload;
+    };
+});
+exports.$ZodNumberFormat = core.$constructor("$ZodNumberFormat", (inst, def) => {
+    checks.$ZodCheckNumberFormat.init(inst, def);
+    exports.$ZodNumber.init(inst, def); // no format checks
+});
+exports.$ZodBoolean = core.$constructor("$ZodBoolean", (inst, def) => {
+    exports.$ZodType.init(inst, def);
+    inst._zod.pattern = regexes.boolean;
+    inst._zod.parse = (payload, _ctx) => {
+        if (def.coerce)
+            try {
+                payload.value = Boolean(payload.value);
+            }
+            catch (_) { }
+        const input = payload.value;
+        if (typeof input === "boolean")
+            return payload;
+        payload.issues.push({
+            expected: "boolean",
+            code: "invalid_type",
+            input,
+            inst,
+        });
+        return payload;
+    };
+});
+exports.$ZodBigInt = core.$constructor("$ZodBigInt", (inst, def) => {
+    exports.$ZodType.init(inst, def);
+    inst._zod.pattern = regexes.bigint;
+    inst._zod.parse = (payload, _ctx) => {
+        if (def.coerce)
+            try {
+                payload.value = BigInt(payload.value);
+            }
+            catch (_) { }
+        if (typeof payload.value === "bigint")
+            return payload;
+        payload.issues.push({
+            expected: "bigint",
+            code: "invalid_type",
+            input: payload.value,
+            inst,
+        });
+        return payload;
+    };
+});
+exports.$ZodBigIntFormat = core.$constructor("$ZodBigIntFormat", (inst, def) => {
+    checks.$ZodCheckBigIntFormat.init(inst, def);
+    exports.$ZodBigInt.init(inst, def); // no format checks
+});
+exports.$ZodSymbol = core.$constructor("$ZodSymbol", (inst, def) => {
+    exports.$ZodType.init(inst, def);
+    inst._zod.parse = (payload, _ctx) => {
+        const input = payload.value;
+        if (typeof input === "symbol")
+            return payload;
+        payload.issues.push({
+            expected: "symbol",
+            code: "invalid_type",
+            input,
+            inst,
+        });
+        return payload;
+    };
+});
+exports.$ZodUndefined = core.$constructor("$ZodUndefined", (inst, def) => {
+    exports.$ZodType.init(inst, def);
+    inst._zod.pattern = regexes.undefined;
+    inst._zod.values = new Set([undefined]);
+    inst._zod.parse = (payload, _ctx) => {
+        const input = payload.value;
+        if (typeof input === "undefined")
+            return payload;
+        payload.issues.push({
+            expected: "undefined",
+            code: "invalid_type",
+            input,
+            inst,
+        });
+        return payload;
+    };
+});
+exports.$ZodNull = core.$constructor("$ZodNull", (inst, def) => {
+    exports.$ZodType.init(inst, def);
+    inst._zod.pattern = regexes.null;
+    inst._zod.values = new Set([null]);
+    inst._zod.parse = (payload, _ctx) => {
+        const input = payload.value;
+        if (input === null)
+            return payload;
+        payload.issues.push({
+            expected: "null",
+            code: "invalid_type",
+            input,
+            inst,
+        });
+        return payload;
+    };
+});
+exports.$ZodAny = core.$constructor("$ZodAny", (inst, def) => {
+    exports.$ZodType.init(inst, def);
+    inst._zod.parse = (payload) => payload;
+});
+exports.$ZodUnknown = core.$constructor("$ZodUnknown", (inst, def) => {
+    exports.$ZodType.init(inst, def);
+    inst._zod.parse = (payload) => payload;
+});
+exports.$ZodNever = core.$constructor("$ZodNever", (inst, def) => {
+    exports.$ZodType.init(inst, def);
+    inst._zod.parse = (payload, _ctx) => {
+        payload.issues.push({
+            expected: "never",
+            code: "invalid_type",
+            input: payload.value,
+            inst,
+        });
+        return payload;
+    };
+});
+exports.$ZodVoid = core.$constructor("$ZodVoid", (inst, def) => {
+    exports.$ZodType.init(inst, def);
+    inst._zod.parse = (payload, _ctx) => {
+        const input = payload.value;
+        if (typeof input === "undefined")
+            return payload;
+        payload.issues.push({
+            expected: "void",
+            code: "invalid_type",
+            input,
+            inst,
+        });
+        return payload;
+    };
+});
+exports.$ZodDate = core.$constructor("$ZodDate", (inst, def) => {
+    exports.$ZodType.init(inst, def);
+    inst._zod.parse = (payload, _ctx) => {
+        if (def.coerce) {
+            try {
+                payload.value = new Date(payload.value);
+            }
+            catch (_err) { }
+        }
+        const input = payload.value;
+        const isDate = input instanceof Date;
+        const isValidDate = isDate && !Number.isNaN(input.getTime());
+        if (isValidDate)
+            return payload;
+        payload.issues.push({
+            expected: "date",
+            code: "invalid_type",
+            input,
+            ...(isDate ? { received: "Invalid Date" } : {}),
+            inst,
+        });
+        return payload;
+    };
+});
+function handleArrayResult(result, final, index) {
+    if (result.issues.length) {
+        final.issues.push(...util.prefixIssues(index, result.issues));
+    }
+    final.value[index] = result.value;
+}
+exports.$ZodArray = core.$constructor("$ZodArray", (inst, def) => {
+    exports.$ZodType.init(inst, def);
+    const memo = core.globalConfig.memoizer;
+    memo?.attach(inst);
+    inst._zod.parse = (payload, ctx) => {
+        const input = payload.value;
+        if (!Array.isArray(input)) {
+            payload.issues.push({
+                expected: "array",
+                code: "invalid_type",
+                input,
+                inst,
+            });
+            return payload;
+        }
+        payload.value = memo ? memo.alloc(inst, payload, Array(input.length), ctx) : Array(input.length);
+        const proms = [];
+        for (let i = 0; i < input.length; i++) {
+            const item = input[i];
+            const result = def.element._zod.run({
+                value: item,
+                issues: [],
+            }, ctx);
+            if (result instanceof Promise) {
+                proms.push(result.then((result) => handleArrayResult(result, payload, i)));
+            }
+            else {
+                handleArrayResult(result, payload, i);
+            }
+        }
+        if (proms.length) {
+            return Promise.all(proms).then(() => payload);
+        }
+        return payload; //handleArrayResultsAsync(parseResults, final);
+    };
+});
+function handlePropertyResult(result, final, key, input, optin, optout) {
+    const isPresent = key in input;
+    const isOptionalOut = optout === "optional";
+    // The middle rung means "absence permitted, nothing supplied in its place", so an absent key contributes nothing — whatever the schema made of `undefined` is invented, not substituted. Only `optional` reaches this with a value: `defaulted` substitutes, and a schema that isn't optional-out has to keep the key.
+    if (!isPresent && isOptionalOut && optin === "optional") {
+        return;
+    }
+    if (result.issues.length) {
+        // For optional-in/out schemas, ignore errors on absent keys.
+        if (optin !== undefined && isOptionalOut && !isPresent) {
+            return;
+        }
+        final.issues.push(...util.prefixIssues(key, result.issues));
+    }
+    if (!isPresent && optin === undefined) {
+        if (!result.issues.length) {
+            final.issues.push({
+                code: "invalid_type",
+                expected: "nonoptional",
+                input: undefined,
+                path: [key],
+            });
+        }
+        return;
+    }
+    if (result.value === undefined) {
+        if (isPresent) {
+            final.value[key] = undefined;
+        }
+    }
+    else {
+        final.value[key] = result.value;
+    }
+}
+// one shared instance; a fresh [] per schema cost 56 bytes retained
+const NO_SYMBOL_KEYS = [];
+function normalizeDef(def) {
+    const keys = Object.keys(def.shape);
+    const ownSymbols = Object.getOwnPropertySymbols(def.shape);
+    const symbolKeys = ownSymbols.length ? ownSymbols : NO_SYMBOL_KEYS;
+    // aliases `keys` when there are no symbols, so a string-only shape keeps one array
+    const allKeys = symbolKeys.length ? [...keys, ...symbolKeys] : keys;
+    for (const k of allKeys) {
+        if (!def.shape?.[k]?._zod?.traits?.has("$ZodType")) {
+            throw new Error(`Invalid element at key "${String(k)}": expected a Zod schema`);
+        }
+    }
+    const okeys = util.optionalKeys(def.shape);
+    return {
+        ...def,
+        allKeys,
+        symbolKeys,
+        // string-only: handleCatchall matches it against `for...in`, which never yields a symbol
+        keySet: new Set(keys),
+        numKeys: keys.length,
+        optionalKeys: new Set(okeys),
+    };
+}
+function handleCatchall(proms, input, payload, ctx, def, inst) {
+    const unrecognized = [];
+    const keySet = def.keySet;
+    const _catchall = def.catchall._zod;
+    const t = _catchall.def.type;
+    const optin = _catchall.optin;
+    const optout = _catchall.optout;
+    for (const key in input) {
+        // Must precede the __proto__ branch: a declared key is not unrecognized, even though the shape loop deliberately strips __proto__ from the parsed output.
+        if (keySet.has(key))
+            continue;
+        // Don't copy an undeclared __proto__ into the result; assignment to a plain {} would replace the result prototype. But in strict mode it is still an unknown key, so report it before skipping.
+        if (key === "__proto__") {
+            if (t === "never")
+                unrecognized.push(key);
+            continue;
+        }
+        if (t === "never") {
+            unrecognized.push(key);
+            continue;
+        }
+        const r = _catchall.run({ value: input[key], issues: [] }, ctx);
+        if (r instanceof Promise) {
+            proms.push(r.then((r) => handlePropertyResult(r, payload, key, input, optin, optout)));
+        }
+        else {
+            handlePropertyResult(r, payload, key, input, optin, optout);
+        }
+    }
+    if (unrecognized.length) {
+        payload.issues.push({
+            code: "unrecognized_keys",
+            keys: unrecognized,
+            input,
+            inst,
+            // Describes the shape of the input, not the validity of the parsed value, so it never aborts. The parse still fails; the schema's own checks just get to run first, and an enclosing intersection can reconcile the key against a sibling operand.
+            continue: true,
+        });
+    }
+    if (!proms.length)
+        return payload;
+    return Promise.all(proms).then(() => {
+        return payload;
+    });
+}
+// Whichever object a def's `shape` currently answers from: the one the caller passed until the first read, the frozen copy after it. Keyed by def, so a def rebuilt by a builder is simply absent rather than inheriting the source's. Read its keys with `Object.keys`, which does not invoke them — that is what lets a discriminated union check its discriminator without resolving an option whose getters reference the union being constructed.
+const propShapes = new WeakMap();
+exports.$ZodObject = core.$constructor("$ZodObject", (inst, def) => {
+    // requires cast because technically $ZodObject doesn't extend
+    exports.$ZodType.init(inst, def);
+    // const sh = def.shape;
+    const desc = Object.getOwnPropertyDescriptor(def, "shape");
+    if (!desc?.get) {
+        const sh = def.shape;
+        propShapes.set(def, sh);
+        Object.defineProperty(def, "shape", {
+            get: () => {
+                const newSh = { ...sh };
+                Object.defineProperty(def, "shape", {
+                    value: newSh,
+                });
+                propShapes.set(def, newSh);
+                return newSh;
+            },
+        });
+    }
+    const _normalized = util.cached(() => normalizeDef(def));
+    util.defineLazyInternal(inst, "propValues", (zod) => {
+        const shape = zod.def.shape;
+        const propValues = {};
+        for (const key in shape) {
+            const field = shape[key]._zod;
+            if (field.values) {
+                if (!Object.prototype.hasOwnProperty.call(propValues, key)) {
+                    util.assignProp(propValues, key, new Set());
+                }
+                for (const v of field.values)
+                    propValues[key].add(v);
+                // An omittable slot reads back as undefined at a discriminator lookup, so it has to claim undefined: two options that can both omit the key are not discriminable on it.
+                if (field.optin !== undefined)
+                    propValues[key].add(undefined);
+            }
+        }
+        return propValues;
+    });
+    const isObject = util.isObject;
+    const catchall = def.catchall;
+    let value;
+    const memo = core.globalConfig.memoizer;
+    memo?.attach(inst);
+    inst._zod.parse = (payload, ctx) => {
+        value ?? (value = _normalized.value);
+        const input = payload.value;
+        if (!isObject(input)) {
+            payload.issues.push({
+                expected: "object",
+                code: "invalid_type",
+                input,
+                inst,
+            });
+            return payload;
+        }
+        payload.value = memo ? memo.alloc(inst, payload, {}, ctx) : {};
+        const proms = [];
+        const shape = value.shape;
+        for (const key of value.allKeys) {
+            if (key === "__proto__")
+                continue;
+            const el = shape[key];
+            const optin = el._zod.optin;
+            const optout = el._zod.optout;
+            const r = el._zod.run({ value: input[key], issues: [] }, ctx);
+            if (r instanceof Promise) {
+                proms.push(r.then((r) => handlePropertyResult(r, payload, key, input, optin

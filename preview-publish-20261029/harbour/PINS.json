@@ -1,0 +1,237 @@
+{
+  "format": "harbour-remote-export-recipe-v1",
+  "sourceCommit": "eca341ad0ee38432d06292129923dc087dad3d92",
+  "tree": "f303b70b7677fa92d32f1d0e4e3eb92e8754f599",
+  "sourceDelta": [],
+  "entrypoint": "frontend/index.js",
+  "packageManagerMetadata": "npm@11.8.0",
+  "lockSha256": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",
+  "sourcePinsSha256": "6ea8320b8c93d6bd5d75cc7ef333874409b821d07af8607e9e2f49eaf1ed2192",
+  "shared": {
+    "experiments/dispatch.js": {
+      "bytes": 4651,
+      "sha256": "0b27cef6a7d8a93798996942171cd5a74ebc77c3e05947ff61ec238d64cb863f"
+    },
+    "experiments/preview-navigation-identity-v1-r2.js": {
+      "bytes": 4275,
+      "sha256": "bb0eca035d78b763c72924285f04ec124093ea4ced53e3f37d90f2b8dfb1bcd9"
+    },
+    "experiments/fixtures/harbour.js": {
+      "bytes": 1109049,
+      "sha256": "a4e0f2d87d4fe9225530c5318faf729dc1bea24b4fa9694c19fa8f1952d5d1dd"
+    }
+  },
+  "routes": [
+    "(dashboard)/care.html",
+    "(dashboard)/chat.html",
+    "(dashboard)/contact.html",
+    "(dashboard)/family.html",
+    "(dashboard)/growth.html",
+    "(dashboard)/guide.html",
+    "(dashboard)/history.html",
+    "(dashboard)/index.html",
+    "(dashboard)/memory.html",
+    "(dashboard)/more.html",
+    "(dashboard)/photos.html",
+    "(dashboard)/profile.html",
+    "(dashboard)/settings.html",
+    "(dashboard)/sources.html",
+    "(dashboard)/summary.html",
+    "(dashboard)/tasks.html",
+    "+not-found.html",
+    "_sitemap.html",
+    "admin.html",
+    "care.html",
+    "chat.html",
+    "contact.html",
+    "family.html",
+    "growth.html",
+    "guide.html",
+    "history.html",
+    "index.html",
+    "login.html",
+    "memory.html",
+    "more.html",
+    "photos.html",
+    "profile.html",
+    "settings.html",
+    "sources.html",
+    "summary.html",
+    "tasks.html"
+  ],
+  "binaryAssets": [
+    {
+      "basename": "MaterialCommunityIcons.6e435534bd35da5fef04168860a9b8fa.ttf",
+      "bytes": 1307660,
+      "sha256": "61e8aba5a4e981fe22cf7c8e8bcdbea00476e75c62c37f01bf7ee33361d68428"
+    },
+    {
+      "basename": "arrow_down.017bc6ba3fc25503e5eb5e53826d48a8.png",
+      "bytes": 9456,
+      "sha256": "6deca32b56b97fa1fa87facd6996b46cc45190a553400e7febdf1d2093099b57"
+    },
+    {
+      "basename": "error.d1ea1496f9057eb392d5bbf3732a61b7.png",
+      "bytes": 469,
+      "sha256": "c15ec72a74d13957211808313d5c35deb7f7606c6d22dbddceb0000d4e0547ad"
+    },
+    {
+      "basename": "file.19eeb73b9593a38f8e9f418337fc7d10.png",
+      "bytes": 138,
+      "sha256": "a69a2edb5b6c60b8433d5b6d23c69f520ccd8a602f3f60e7996e489718bc175c"
+    },
+    {
+      "basename": "forward.d8b800c443b8972542883e0b9de2bdc6.png",
+      "bytes": 188,
+      "sha256": "708a79cf561b8a2a4850ce0254584d3a5231046be08fb7fadf4b6edfdb31178b"
+    },
+    {
+      "basename": "pkg.ab19f4cbc543357183a20571f68380a3.png",
+      "bytes": 364,
+      "sha256": "27f4d229d440925bf7212d5dfffa45d596b2c7b3bb2905c96b839b2081a1dbeb"
+    },
+    {
+      "basename": "back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png",
+      "bytes": 653,
+      "sha256": "9adb8c5efca932e2b732b293da813bd2e31952263056bce9e2517fec0f0b6a76"
+    },
+    {
+      "basename": "back-icon.35ba0eaec5a4f5ed12ca16fabeae451d.png",
+      "bytes": 207,
+      "sha256": "84cf5eb3b20250f69e0e4733beb4da5f417f0682892a5ad1b5e62570753c21b1"
+    },
+    {
+      "basename": "clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55.png",
+      "bytes": 220,
+      "sha256": "d03a5cd7a66ef10c5147916f9d5878b2d0a0a5ad46f405a31cd9967efaa55afd"
+    },
+    {
+      "basename": "clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@2x.png",
+      "bytes": 334,
+      "sha256": "ab5613d2ce70fa67c5926e831353664945199fc195fa6fe76c5fe3cec452e31a"
+    },
+    {
+      "basename": "clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@3x.png",
+      "bytes": 502,
+      "sha256": "c4e54e6a0a7de636aa153378fbc62ea4a41695bfedf807f90df7b18ffd733f67"
+    },
+    {
+      "basename": "clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@4x.png",
+      "bytes": 645,
+      "sha256": "c86bb485eee687e06c500fc4234f51a6784b4530c2ae11d0c76481110bce3105"
+    },
+    {
+      "basename": "close-icon.808e1b1b9b53114ec2838071a7e6daa7.png",
+      "bytes": 141,
+      "sha256": "b1bc1810ca23e2c38cd76971c43591d726161061240d8b792b05757196ddb528"
+    },
+    {
+      "basename": "close-icon.808e1b1b9b53114ec2838071a7e6daa7@2x.png",
+      "bytes": 201,
+      "sha256": "cbdf9213e55f65c48d076acd8423b7c9aee4f1b81101ff6c95a38c4cd8a86461"
+    },
+    {
+      "basename": "close-icon.808e1b1b9b53114ec2838071a7e6daa7@3x.png",
+      "bytes": 266,
+      "sha256": "d05c9d30d79f45a78e5585a2e7ec67c6a06a883dd9137e1d5059e8c87b33ce76"
+    },
+    {
+      "basename": "close-icon.808e1b1b9b53114ec2838071a7e6daa7@4x.png",
+      "bytes": 332,
+      "sha256": "2325c53a73e54c438cbbc60dffdd8b513d471ba42e2f56713ef404b95e0ca1fc"
+    },
+    {
+      "basename": "search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png",
+      "bytes": 928,
+      "sha256": "5d075e0c287c4f4441b5b5c8fc7ea5cd27c11bb617ecea09755955bcb1889083"
+    },
+    {
+      "basename": "sitemap.412dd9275b6b48ad28f5e3d81bb1f626.png",
+      "bytes": 465,
+      "sha256": "acf691957a3bcce7d195856dce98a5cf14dce10bea28aa5c10b3550c078e23b5"
+    },
+    {
+      "basename": "unmatched.20e71bdf79e3a97bf55fd9e164041578.png",
+      "bytes": 4752,
+      "sha256": "efc79da3c4c97dfb1571bff6202958ab0529c5aa31e8392600578b3e359d1447"
+    },
+    {
+      "basename": "harbour-family-hero.acf73643e80f2452876d97c45756232e.png",
+      "bytes": 2377969,
+      "sha256": "2d6831182f397c2388f0f6239be093b7480eef2c70fe4ff4894cdcb1dee13c29"
+    },
+    {
+      "basename": "favicon.ico",
+      "bytes": 14510,
+      "sha256": "0f30b4db3949836cf593141baaf312febbcf8b63ed937b1dbef830dbc708e7f8"
+    }
+  ],
+  "publicExtensions": [
+    ".js",
+    ".css",
+    ".png",
+    ".ttf",
+    ".ico",
+    ".json"
+  ],
+  "sourceAllowR4Sha256": "32b0bb4786b7da3e8f10df32c808e0fd2b0e24bcb6b922802260d2cb9533decd",
+  "sourceTypeOutcomeSha256": "757005199287a471f527dff836a23a2b553aff96d44b938d3b3d57628ebb3708",
+  "notApproved": [
+    "fresh-ci-runtime",
+    "current-export",
+    "artifact",
+    "native-browser",
+    "publication"
+  ],
+  "observedPriorRuntime": {
+    "node": "24.22.1",
+    "npm": "11.9.0"
+  },
+  "ciRuntimeProposal": {
+    "node": "24.22.1",
+    "npm": "11.8.0",
+    "status": "NEW_CI_CLOSURE_NOT_PRIOR_RUNTIME_PROOF"
+  },
+  "exporterPackageManifestSha256": "04d60a165121a2bf7d3f7cb2ddcbf6a041e77459bc6ad688de24b4172e3b0734",
+  "fixturePathTransform": {
+    "from": "experiments/preview-fixture.js",
+    "to": "experiments/fixtures/harbour.js",
+    "contentBytesUnchanged": true
+  },
+  "remoteContract": {
+    "minimumAvailableMemoryBytes": 6442450944,
+    "minimumAvailableDiskBytes": 8589934592,
+    "nodeMaxOldSpaceSizeMiB": 4096,
+    "jobTimeoutMinutes": 35,
+    "maxConcurrentBuilds": 1,
+    "exportTimeoutSeconds": 900,
+    "terminationGraceSeconds": 10,
+    "generatedExpoMaximumBytes": 2097152,
+    "rawMaximumBytes": 268435456,
+    "siteMaximumBytes": 33554432,
+    "sourceAndRuntimePins": "before-and-after",
+    "rawMapPublication": false,
+    "inheritsLocalExecutionGrant": false,
+    "rawPerFileMaximumBytes": 134217728,
+    "sitePerFileMaximumBytes": 33554432,
+    "publicArchiveMaximumBytes": 50331648,
+    "localAcquisitionMaximumBytes": 134217728
+  },
+  "graphVerifier": {
+    "path": "verify_graph.mjs",
+    "sha256": "45badd99474d4fea922a2fead2c5fe339013dc34a3f84d5487d1bbfdfff663d4",
+    "provenance": "Retained Harbour v3 complete multiline factory AST/dependencyProof/parseSpan core; current-only portable wrapper",
+    "dependencies": {
+      "@babel/parser": "7.29.9",
+      "@jridgewell/trace-mapping": "0.3.31"
+    },
+    "execution": "REMOTE_ONLY_NOT_YET_EXECUTED",
+    "sourceMapPresenceIsNotEdgeProof": true
+  },
+  "publishedBuildAdmission": {
+    "helper": "../orchestrator/build_inputs.py",
+    "helperSha256": "8b296c409cdb47f7523d2f6cd5bd1fa50d592ecd3933cb514c1b5e635b6321dc",
+    "originalCommitIsProvenanceOnly": true,
+    "requires": "PREVIEW_BUILD_COMMIT + pinned PREVIEW_BUILD_INPUT_MANIFEST and SHA256; exact complete projected namespaces/configs; clean published HEAD"
+  }
+}

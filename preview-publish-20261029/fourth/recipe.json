@@ -1,0 +1,176 @@
+{
+  "schema": "portable-preview-recipe-v1",
+  "status": "SOURCE_ONLY_NOT_EXECUTED",
+  "name": "UI UX Pro Max original upgrade",
+  "variant": "uiux-upgrade",
+  "productCommit": "f1c60c6ae2928e5407dabccbd04a504f691e39cf",
+  "productTree": "f7619a5e1c59256d914c2b3693a768921f0c489d",
+  "sourceAcquisition": "Original f1 Git object is local-only. Fresh detached checkout of separately reviewed published source-projection commit. Fixed shared build_inputs.verify(source,\"fourth\") validates exact env-pinned build commit and manifest SHA, full tracked+physical namespace, mode, Git blob and bytes. Fourth then binds all648 PRODUCT_INPUTS back to f1 provenance. Original commit/tree are never mislabelled as remote HEAD.",
+  "productSourceDelta": [],
+  "sourcePins": {
+    "package.json": "358da37ef3fb424225d755ea1123caf3ca04bbc803a9a427a27d46470b324ca0",
+    "package-lock.json": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",
+    "frontend/package.json": "9f4d9b0897b74caad34777489d03d947b70fc5ca4485f66294acd953e5317242",
+    "frontend/index.js": "73f3070106b9990d197b2d24a3f537372d7016015c625a64e1a2825e8dda5191",
+    "frontend/app.json": "36f1891973b56c233853d46db0aeaf014df6ae18801281dba4efeb3b6bb19b04",
+    "frontend/app.config.js": "4a065de9ffe8b904cce48703b8e7a22f47790f96752b4ccdd9a9a0a974dc57ec",
+    "frontend/tsconfig.json": "1571bfb7783a106586c8431560a1e1377d409c6e763fce900d979abdb297a85d",
+    "frontend/app/_layout.tsx": "9c530f6224283f5823c8ea62480fb75f1b37a7d86a635f7d8cfc620a95ce7f8b",
+    "frontend/src/preview/PreviewNavigationGuard.tsx": "cc5f4ae3d4242805c2445905384289de4e230e808773ee66b3ccab4722c295bb",
+    "frontend/src/production/ProductionProvider.tsx": "a6d294b0d63d9ab90733a9d3aa2ad03e68f869aeea66b89468832c05f6abfc43",
+    "src/shared/family-documents.ts": "ea1dd64fbaade9f9581073058803baa174bdfaa865a436a279f2f5e9f5d151b2",
+    "src/client/family-documents-api.ts": "3db16e774b3bfc4dc94f11073302923e6a3be5be996f74da81a023f0d5b76454",
+    "frontend/src/production/useFamilyDocuments.ts": "44a936f40e0fe24d54f3d8a3404dfa82dd23da250318760a9a55584ef2bfff62"
+  },
+  "inputManifest": "PRODUCT_INPUTS.json",
+  "inputManifestSha256": "7d45951ca36373e319bd8b9c3b138f1a50987c538bfd35912dc545605bbc6ca1",
+  "entrypoint": "frontend/index.js -> runtime web stub -> own web-foundation -> browser-history-events -> installed expo-router/entry; root layout retains own ProductionProvider/FirstScreenGate; no Application/OwnerHost substitution",
+  "lockFile": "package-lock.json",
+  "lockSha256": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",
+  "lockVersion": 3,
+  "normalization": {
+    "required": false,
+    "executed": false,
+    "evidence": "Root/frontend dependencies and devDependencies exactly equal lock package entries; no lock regeneration/substitution."
+  },
+  "runtime": {
+    "node": "24.22.1",
+    "npm": "11.8.0",
+    "expo": "57.0.24",
+    "expoRouter": "57.0.22",
+    "typescript": "6.0.3",
+    "installCommand": [
+      "npm",
+      "ci",
+      "--ignore-scripts",
+      "--no-audit",
+      "--no-fund"
+    ],
+    "installStatus": "NOT_RUN",
+    "runtimePatches": []
+  },
+  "typecheckCommand": [
+    "npm",
+    "run",
+    "typecheck",
+    "--workspace",
+    "frontend"
+  ],
+  "typecheckPolicy": "Full unchanged frontend configuration on separately authorized GitHub-hosted runner; no inherited old pass.",
+  "exportCommand": [
+    "npm",
+    "run",
+    "build:web",
+    "--workspace",
+    "frontend",
+    "--",
+    "--clear",
+    "--max-workers",
+    "1",
+    "--source-maps",
+    "external",
+    "--output-dir",
+    "${RAW}"
+  ],
+  "exportCwd": "${SOURCE}",
+  "exportEnvironment": {
+    "CI": "1",
+    "EXPO_PUBLIC_API_BASE_URL": "/api",
+    "EXPO_NO_DOTENV": "1",
+    "EXPO_NO_TELEMETRY": "1",
+    "EXPO_NO_TELEMETRY_DETACH": "1",
+    "EXPO_OFFLINE": "1",
+    "NODE_DISABLE_COMPILE_CACHE": "1",
+    "NODE_OPTIONS": "--max-old-space-size=4096"
+  },
+  "environmentPolicy": "Dedicated hosted runner only; explicit PATH/HOME/TMPDIR/LANG/LC_ALL/TZ plus listed export environment. No inherited auth/Firebase/model/EAS/ANDROID credentials, tokens, arbitrary EXPO_PUBLIC_* or Node loaders. No production root build:web. Exact 4096MiB heap applies to this new remote environment, not earlier local memory policy.",
+  "assembleCommand": [
+    "python3",
+    "-I",
+    "-B",
+    "assemble.py",
+    "--source",
+    "${SOURCE}",
+    "--raw",
+    "${RAW}",
+    "--out",
+    "${OUT}",
+    "--proof",
+    "${PROOF}"
+  ],
+  "fixtureCheckCommand": [
+    "node",
+    "tests/admission.mjs",
+    "${SOURCE}"
+  ],
+  "fixtureChecksStatus": "NOT_RUN",
+  "overlayPins": {
+    "experiments/fourth-file-safety.js": "f72969b8f0f5ded5943cd61f4f31a09a8db054ad4527e2e06e706d7f1fc59ea9",
+    "experiments/fourth-preview-fixture.js": "2f8dac0cd2776b36c4d69f05a99f87a876c411b696384dcc133bef25d0232d80",
+    "experiments/fourth-standalone-dispatch.js": "de9445ab180bfed10bac8e05ff6e165b0b30dd481db2e60d64b62e2eb307b6c5",
+    "experiments/preview-navigation-identity-fourth-v1.js": "ef238ce5675840b1a5313d98b4458bd5eb08829f7af189862551e7e9194c915f"
+  },
+  "fixtureBaseSha256": "7f7baa579563687cf664a2f5d0f671a4e2a209df5e596b82b3e5f4951017ea57",
+  "outputContract": "Fourth-only contribution: 36 route shells and fourth payloads, fresh source-map-bound assets, exact-reviewed favicon, fourth fixture/helper/safety. Parent keeps historical original and canonical four dispatcher. Public GitHub artifact contains only sanitized site plus public-safe proof. Full raw/maps validated remotely and retained only on runner until teardown; NEVER uploaded or described as private GitHub artifacts.",
+  "expectedOutputBytes": null,
+  "expectedOutputBytesReason": "No fourth export has run; do not invent its size.",
+  "publication": "BLOCKED_UNTIL_NATIVE_BROWSER_ACCEPTANCE",
+  "remainingGates": [
+    "independent recipe/source review",
+    "fresh hosted install and full frontend tsc",
+    "fresh original Expo export",
+    "source-map entry/owner/route/asset closure and privacy checks",
+    "fourth adapter VM + actual f1 client check",
+    "canonical four dispatcher composition and exact collisions",
+    "supported local native browser acceptance before publication"
+  ],
+  "rawMaxBytes": 268435456,
+  "siteMaxBytes": 33554432,
+  "fileMaxBytes": 33554432,
+  "resourceContract": {
+    "runner": "GitHub-hosted standard dedicated",
+    "minFreeMemoryBytes": 6442450944,
+    "minFreeDiskBytes": 8589934592,
+    "heapMiB": 4096,
+    "jobMinutes": 35,
+    "maxConcurrentExports": 1,
+    "phaseSeconds": 900,
+    "killGraceSeconds": 10,
+    "expoCacheMaxBytes": 2097152,
+    "beforeAfterInputPins": true,
+    "runtimeLockClosure": "Orchestrator must verify complete installed runtime namespace/bytes/lock before and after; local historical symlink runtime not reused."
+  },
+  "favicon": {
+    "bytes": 14510,
+    "sha256": "0f30b4db3949836cf593141baaf312febbcf8b63ed937b1dbef830dbc708e7f8",
+    "source": "Exact approved v94 carrier bytes; f1 source icon remains pinned; reject any regenerated mismatch."
+  },
+  "packagingCheckCommand": [
+    "python3",
+    "-I",
+    "-B",
+    "tests/packaging.py"
+  ],
+  "packagingChecksStatus": "PASS_SOURCE_ONLY_NO_NODE",
+  "sourceMapProof": "Full remote sourcesContent/physical-file/asset closure plus original f1 compiled Metro module edges, entry invocation and unique Router context; no sibling Application/OwnerHost accepted. Public-safe proof stores only SHA/counts, not source/map/code content.",
+  "rawMetadataDisposition": "Validate raw namespaces; _expo/.routes.json is runner-local Expo hosting metadata omitted from candidate because canonical static dispatcher uses actual bundled route context. Reject omission if any emitted JS/CSS/HTML contains a direct _expo/.routes.json reference. Root preserves existing canonical metadata rather than replacing it.",
+  "rawFileMaxBytes": 134217728,
+  "siteFileMaxBytes": 33554432,
+  "artifactZipMaxBytes": 50331648,
+  "localArtifactExpandedMaxBytes": 134217728,
+  "graphVerifierSha256": "b00cd14140ac691a5ff56af220b2a11f0d1e8da0a2e2a23969f122bde221af16",
+  "graphVerifierRuntime": "Remote only; Node24.22.1, existing lock-installed @babel/parser and @jridgewell/trace-mapping. Full multiline factory AST/byte coverage, all numeric/async edges, original f1 entry/Router/layout owner. 4096MiB heap; 180s subprocess cap inside orchestrator no-network environment.",
+  "assetPolicy": "Each public binary must match mapped physical asset or its exact @Nx filename scale-family siblings. Product inputs pinned to f1; runtime inputs bound by orchestrator lock/namespace/byte pre-post checks. No unrelated sibling assets. Exact reviewed favicon only.",
+  "mapFreeTransform": "Remove exactly one valid official sourceMappingURL comment line; allow only whitespace or UUID debugId comment after it and preserve all trailer bytes. Verify in-memory byte reversal; public proof retains safe constrained mapTarget, lineEnding and offset plus SHA/bytes so inverse remains independently reconstructible after raw/maps teardown.",
+  "sourceBuildCommitEnvironment": "PREVIEW_BUILD_COMMIT",
+  "requiredAssemblyEnvironment": [
+    "PREVIEW_BUILD_COMMIT",
+    "PREVIEW_BUILD_INPUT_MANIFEST",
+    "PREVIEW_BUILD_INPUT_MANIFEST_SHA256"
+  ],
+  "sharedBuildInputVerifier": {
+    "path": "../orchestrator/build_inputs.py",
+    "sha256": "8b296c409cdb47f7523d2f6cd5bd1fa50d592ecd3933cb514c1b5e635b6321dc",
+    "key": "fourth"
+  }
+}
