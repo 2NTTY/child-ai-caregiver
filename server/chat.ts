@@ -2,10 +2,13 @@ import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import type { StorageCipher } from "./storage-crypto.ts";
 import type { ChatMessage, ChatPage } from "../src/shared/chat.ts";
+import type { ImportedChatMessage, ImportedChatPage } from "../src/shared/chat-imports.ts";
 import { READ_ROLES, withChildAccess } from "./family-access.ts";
 import { appendOnlineChange } from "./online-change.ts";
 
 export interface ChatStore {
+  listImportedForUser?(userId: string, childId: string, cursor?: string | null): Promise<ImportedChatPage>;
+  getImportedForUser?(userId: string, childId: string, id: string): Promise<ImportedChatMessage | null>;
   acquireReplyLock(messageId: string): Promise<(() => Promise<void>) | null>;
   listForUser(userId: string, childId: string, before?: string | null): Promise<ChatPage | null>;
   createUserMessageForUser(userId: string, childId: string, text: string): Promise<ChatMessage | null>;

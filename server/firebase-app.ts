@@ -402,7 +402,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
         return uncached(response);
       }
-      if (options.chat && /^\/api\/children\/[^/]+\/messages$/u.test(path)) {
+      if (options.chat && /^\/api\/children\/[^/]+\/messages(?:\/imported(?:\/[^/]+)?)?$/u.test(path)) {
         if (request.method !== "GET") throw new RequestError("account_precondition_required", 428);
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);

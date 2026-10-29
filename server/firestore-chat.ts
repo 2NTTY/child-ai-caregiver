@@ -16,6 +16,11 @@ import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './
 import { FirestoreDomainData, domainParse, domainReject, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { FirestoreOnlineMutation } from './firestore-online.ts';
 import { firestoreAgentClaimSchema, firestoreAgentRunSchema } from './firestore-agent-runs.ts';
+import { FieldPath } from '@google-cloud/firestore';
+import { chatImportSourceSchema, importedChatMessageSchema, type ImportedChatMessage, type ImportedChatPage, type ImportedChatAttachment } from '../src/shared/chat-imports.ts';
+import type { HandoverImportRow } from './handover-import.ts';
+import type { HandoverIntegrity } from '../src/shared/handover.ts';
+import { makeImportProvenance } from './handover-provenance.ts';
 
 const uuid = z.uuid(), datetime = z.iso.datetime({ offset: true });
 const messageText = z.string().refine(value => value.isWellFormed()
@@ -40,6 +45,13 @@ const lockSchema = z.object({ leases: z.array(z.object({ messageId: uuid, token:
 export interface FirestoreChatStore extends ChatStore {
   mutation: FirestoreOnlineMutation;
   readMessage(binding: FirestoreAuthorityTransaction, childId: string, messageId: string): Promise<ChatMessage | null>;
+  readImportedMessage(binding: FirestoreAuthorityTransaction, childId: string, id: string): Promise<ImportedChatMessage | null>;
+  listImportedForUser(userId: string, childId: string, cursor?: string | null): Promise<ImportedChatPage>;
+  getImportedForUser(userId: string, childId: string, id: string): Promise<ImportedChatMessage | null>;
+  prepareImported(binding: FirestoreAuthorityTransaction, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
+    expected?: { id: string; expectedVersion: number }, attachment?: ImportedChatAttachment | null): Promise<{
+      value: ImportedChatMessage; changeSeq: string; commit(): void;
+    }>;
 }
 
 /** The original chat contract, with private encrypted rows and caller-wide online receipts. */
@@ -47,6 +59,21 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { voi
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
   const scopeFor = (binding: FirestoreAuthorityTransaction, childId: string) => ({ ...binding.scope, childId });
   const messageRef = (id: string) => data.ref('chat_messages', 'chat-message', id);
+  const importedRef = (id: string) => data.ref('chat_imported_messages', 'chat-imported-message', id);
+  function openImported(row: DocumentSnapshot, scope: WorkRecoveryScope, id: string) {
+    if (Object.entries(data.tags(scope)).some(([key, expected]) => row.get(key) !== expected)) domainReject('not_found', 404);
+    const value = data.open('chat-imported-message', id, scope, importedChatMessageSchema, row);
+    if (value.id !== id || value.childId !== scope.childId || value.version !== row.get('recordVersion')
+      || row.get('messageId') !== id || row.get('createdAt') !== value.message.createdAt) domainReject('chat_import_binding', 500);
+    return value;
+  }
+  async function readImportedMessage(binding: FirestoreAuthorityTransaction, childId: string, id: string) {
+    domainParse(uuid, id);
+    if (binding.sharedAccess) domainReject('private_scope_unavailable', 403);
+    if (!await binding.readChild(childId)) domainReject('not_found', 404);
+    const row = await binding.transaction.get(importedRef(id));
+    return row.exists ? openImported(row, scopeFor(binding, childId), id) : null;
+  }
   function open(snapshot: DocumentSnapshot, scope: WorkRecoveryScope, id: string): ChatMessage {
     const tags = data.tags(scope), raw = snapshot.data();
     if (Object.entries(tags).some(([key, value]) => raw?.[key] !== value)) domainReject('not_found', 404);
@@ -94,7 +121,41 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { voi
     },
   };
   return {
-    mutation, readMessage,
+    mutation, readMessage, readImportedMessage,
+    getImportedForUser: (userId, childId, id) => authority.runTransaction(userId, childId, b => readImportedMessage(b, childId, id)),
+    async listImportedForUser(userId, childId, cursor = null) {
+      return authority.runTransaction(userId, childId, async b => {
+        let query = data.collection('chat_imported_messages');
+        for (const [key, value] of Object.entries(data.tags(b.scope))) query = query.where(key, '==', value) as typeof query;
+        let page = query.orderBy(FieldPath.documentId()).limit(21);
+        if (cursor) {
+          if (!await readImportedMessage(b, childId, cursor)) domainReject('invalid_cursor', 400);
+          page = page.startAfter(importedRef(cursor));
+        }
+        const rows = await b.transaction.get(page);
+        const items = rows.docs.slice(0, 20).map(row => openImported(row, b.scope, domainParse(uuid, row.get('messageId'))));
+        return { items, nextCursor: rows.size > 20 ? items.at(-1)!.id : null };
+      });
+    },
+    async prepareImported(b, opId, row, integrity, expected, attachment = null) {
+      if (b.sharedAccess) domainReject('private_scope_unavailable', 403);
+      if (!await b.readChild(b.scope.childId)) domainReject('not_found', 404);
+      const previous = expected ? await readImportedMessage(b, b.scope.childId, expected.id) : null;
+      if (expected && (!previous || previous.version !== expected.expectedVersion)) domainReject('version_conflict');
+      const source = row.section === 'chat' ? domainParse(chatImportSourceSchema, row.value, 'invalid_package_data')
+        : row.section === 'chat_imports' ? domainParse(importedChatMessageSchema, row.value, 'invalid_package_data') : null;
+      if (!source || source.childId !== row.childId) domainReject('invalid_package_scope', 400);
+      const normalized = { ...row, value: { ...row.value, version: source.version } };
+      const provenance = makeImportProvenance(normalized, integrity, b.actorUserId, new Date().toISOString());
+      const message = 'message' in source ? source.message : source;
+      const value = domainParse(importedChatMessageSchema, { id: previous?.id ?? randomUUID(), childId: b.scope.childId,
+        version: (previous?.version ?? 0) + 1, message, attachment, importedFrom: provenance });
+      const ref = importedRef(value.id);
+      const change = await b.prepareChange(opId, 'chat', false, b.scope.childId);
+      const envelope = { ...data.tags(b.scope), messageId: value.id, createdAt: value.message.createdAt,
+        ...data.seal('chat-imported-message', value.id, b.scope, importedChatMessageSchema, value, value.version) };
+      return { value, changeSeq: change.changeSeq, commit() { change.commit(); b.transaction.set(ref, envelope); } };
+    },
     async listForUser(userId, childId, before = null) {
       if (before !== null) domainParse(uuid, before);
       return authority.runTransaction(userId, childId, async binding => {

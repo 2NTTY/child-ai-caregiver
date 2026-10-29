@@ -3991,7 +3991,9 @@
           "order": "ASCENDING"
         }
       ]
-    }
+    },
+    {"collectionGroup": "yuban_authority_chat_imported_messages", "queryScope": "COLLECTION", "fields": [{"fieldPath": "workspaceTag", "order": "ASCENDING"}, {"fieldPath": "epochTag", "order": "ASCENDING"}, {"fieldPath": "userTag", "order": "ASCENDING"}, {"fieldPath": "childTag", "order": "ASCENDING"}, {"fieldPath": "createdAt", "order": "DESCENDING"}, {"fieldPath": "messageId", "order": "DESCENDING"}]},
+    {"collectionGroup": "yuban_authority_chat_imported_messages", "queryScope": "COLLECTION", "fields": [{"fieldPath": "workspaceTag", "order": "ASCENDING"}, {"fieldPath": "epochTag", "order": "ASCENDING"}, {"fieldPath": "userTag", "order": "ASCENDING"}, {"fieldPath": "childTag", "order": "ASCENDING"}]}
   ],
   "fieldOverrides": [
     {
@@ -4810,6 +4812,7 @@
       "collectionGroup": "yuban_authority_handover_import_controls",
       "fieldPath": "*",
       "indexes": []
-    }
+    },
+    {"collectionGroup": "yuban_authority_chat_imported_messages", "fieldPath": "*", "indexes": []}
   ]
 }

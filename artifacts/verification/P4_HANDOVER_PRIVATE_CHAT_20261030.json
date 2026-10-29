@@ -1,0 +1,59 @@
+{
+  "package": "P4-HANDOVER01 private chat import backend",
+  "date": "2026-10-30",
+  "base": "70c4762117ea23c427e644a0ece4dce21f254f74",
+  "branch": "codex/p4-handover-private-chat",
+  "scope": "Original ChatStore stores source history separately from live commands; existing batch receipts, mappings, attachment domains, export, backup and erasure registry are reused. No historical run, confirmation, official card or transcription is replayed.",
+  "checks": [
+    {
+      "path": "tests/handover-chat-import.test.ts",
+      "result": "1 passed",
+      "evidence": "tmp/private-chat-import-green-fixed.log",
+      "covers": "source author/reply identities, stripping execution fields, original-operation replay, same-version conflicts, private target, HTTP list/detail, restore metadata with a fresh epoch, re-export provenance"
+    },
+    {
+      "path": "tests/handover-attachment-pipeline.test.ts",
+      "result": "1 passed",
+      "evidence": "tmp/private-chat-attachment-pipeline.log",
+      "covers": "verified ZIP/worker processes attachments before chat, eight rows, local file mapping, original receipts and no transcription work; retained existing shared-deletion assertions"
+    },
+    {
+      "path": "tests/handover-import.test.ts",
+      "selection": "version one chat-only packages",
+      "result": "1 passed",
+      "evidence": "tmp/private-chat-legacy-green.log",
+      "covers": "legacy version-one chat-only coverage accepted; undeclared imported-history page rejected"
+    },
+    {
+      "method": "Scoped TypeScript, five backend/test roots with dependency graph",
+      "result": "0 diagnostics",
+      "evidence": "tmp/private-chat-types-fixed.log"
+    }
+  ],
+  "failures": [
+    {
+      "evidence": "tmp/private-chat-import-red.log",
+      "reason": "chat section initially unsupported"
+    },
+    {
+      "evidence": "tmp/private-chat-import-green.log",
+      "reason": "test fixture attempted restore without a new epoch; fixed fixture, retained production restore rules"
+    },
+    {
+      "evidence": "tmp/private-chat-legacy-red.log",
+      "reason": "new mandatory coverage rejected legacy chat-only archives; constrained optional section fixes compatibility"
+    },
+    {
+      "evidence": "tmp/private-chat-types.log",
+      "reason": "new enum omitted from source-revision exclusion and nullable test values; fixed without weakening contracts"
+    }
+  ],
+  "review": "Independent read-only review found the legacy coverage defect and required forward-compatible frontend labels. Coverage fix reviewed; labels must merge before backend.",
+  "limits": [
+    "Synthetic Firestore/Storage adapters; not true cloud concurrency or full disaster restore",
+    "No deployment/model/notification/device/full-suite checks",
+    "Shared historical display and Agent on-demand reading remain follow-up work",
+    "Existing source-message reply ID is provenance, not a local executable reply target",
+    "D PR untouched"
+  ]
+}

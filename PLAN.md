@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-30）：[P4-HANDOVER01](#p4-handover01) 附件批次及共用接線。**#382～#393 已合併未部署。`codex/p4-handover-chat-attachments` 已接附件原服務暫存／發布、統一 worker、逐項收據與映射，以及原語音轉錄；真物件邊界的合成包完成保存／讀回／共享刪除，沒有重播轉錄。重啟查原物件，還原換世代保留原 ID，連聊天後不誤判 immutable 附件變更；證據見[本批](artifacts/verification/P4_HANDOVER_ATTACHMENT_PIPELINE_20261030.json)及[原暫存](artifacts/verification/P4_HANDOVER_ATTACHMENT_STAGING_20261030.json)。共用附件選項、library／轉錄 client 及私人聊天匯入仍待接，不宣稱整個模組已可用。下一步完成共用接點及原聊天來源／關聯；關注／成長、差異、班級／期間、完整私人備份、簽章配置與原生大型包保留。單私人來源刪除的獨立還原重放留 S15；未部署、未作真雲端／設備驗收，不動 D PR，P3／P5 及既有待驗不計完成。
+**當前入口（2026-10-30）：[P4-HANDOVER01](#p4-handover01) 私人聊天匯入。**#382～#396 已合併未部署。附件原服務、統一批次、收據／映射、原轉錄及共用選項／library 接線已有必要證據：[後端](artifacts/verification/P4_HANDOVER_ATTACHMENT_PIPELINE_20261030.json)、[共用畫面](frontend/verification/P4_HANDOVER_ATTACHMENT_UI_20261030.json)。當前 `codex/p4-handover-private-chat` 從 `70c47621` 接續：原聊天服務保存唯讀匯入歷史，保留作者、回覆與附件來源；不改成本地新訊息、不建立 Agent run／確認／轉錄工作。歷史查閱、Agent 按需取材、匯出及共用畫面分清已接線與待驗，不以舊回答代替本地審核。關注／成長、差異、班級／期間、完整私人備份、簽章配置與原生大型包仍未完成。單私人來源刪除的獨立還原重放留 S15；未部署、未作真雲端／設備驗收，不動 D PR，P3／P5 及既有待驗不計完成。
 
 **已合併未部署：**#358 班級解散與 #359 待辦身份接線，[清理](artifacts/verification/P4_CLASS_ERASURE_20261028.json)及[提醒證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)不重跑。選其他成員、班級 Agent 與外部通知仍待接續，不借管理員 key、不改 D PR。整個 CLASS01／P4、P3／P5 的未完成項不變。
 

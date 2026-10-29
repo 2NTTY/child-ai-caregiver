@@ -16,6 +16,36 @@ import { writeHandoverArchive } from '../server/handover-archive.ts';
 import { openHandoverImport } from '../server/handover-import.ts';
 import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
 
+test('version one chat-only packages remain readable while undeclared chat import pages are rejected', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'handover-legacy-chat-')), childId = randomUUID();
+  const scopeVersion = 'a'.repeat(64), createdAt = '2026-10-30T00:00:00Z';
+  const selection = { childIds: [childId], modules: ['chat'] as 'chat'[] };
+  const message = { id: randomUUID(), childId, authorUserId: 'source', role: 'user', text: 'Original version-one private chat', inReplyTo: null, createdAt };
+  const pages = [
+    { section: 'children', childId: null as string | null, scopeVersion, items: [{ id: childId, displayName: 'Source child' }] as Record<string, unknown>[] },
+    { section: 'chat', childId, scopeVersion, items: [message] },
+  ];
+  async function archive(undeclaredPage: boolean) {
+    const contents = undeclaredPage ? [...pages, { section: 'chat_imports', childId, scopeVersion, items: [] }] : pages;
+    async function* entries() {
+      for (let index = 0; index < contents.length; index++) yield { path: `data/${index}.json`, mediaType: 'application/json', content: Buffer.from(JSON.stringify(contents[index])) };
+      yield { path: 'summary.md', mediaType: 'text/markdown', content: Buffer.from('Synthetic version-one chat package') };
+    }
+    return writeHandoverArchive({ directory, header: { format: 'yuyoufang-data', version: 1, packageId: randomUUID(), packageVersion: 1, createdAt,
+      purpose: 'handover', source: { serverId: 'https://source.test', accountId: 'source' }, selection: { ...selection, period: null } }, entries: entries(),
+      coverage: () => pages.map(page => ({ section: page.section, childId: page.childId, scopeVersion, items: page.items.length, complete: true as const })) });
+  }
+  try {
+    const undeclared = await archive(true);
+    await assert.rejects(openHandoverImport({ path: undeclared.path }), (error: any) => ['invalid_package_scope', 'invalid_package_coverage'].includes(error.code));
+    const legacy = await archive(false), reader = await openHandoverImport({ path: legacy.path });
+    try {
+      const page = await reader.readPage({ selection, sections: ['chat'], acknowledgedManifestSha256: reader.manifestSha256 });
+      assert.deepEqual(page.rows.map(row => row.value), [message]); assert.equal(page.nextCursor, null);
+    } finally { await reader.close(); }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
 test('verified attachment content locators bind photo voice file and avatar bytes without accepting forged or incomplete pairs', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'handover-attachment-reader-')), childId = randomUUID(), emptyChild = randomUUID(), unexpectedChild = randomUUID();
   const childIds = [childId, emptyChild, unexpectedChild], scopeVersion = 'a'.repeat(64), at = '2026-10-30T00:00:00Z';

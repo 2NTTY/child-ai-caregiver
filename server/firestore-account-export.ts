@@ -34,7 +34,7 @@ const sections = {
   children: ['children', ['child-projection']],
   profile: ['child_profiles', ['child-profile']], profile_history: ['profile_revisions', ['profile-revision']],
   care: ['care_records', ['care-record', 'care-tombstone']], care_history: ['care_revisions', ['care-revision']],
-  chat: ['chat_messages', ['chat-message']], instructions: ['private_instructions', ['private-instruction']],
+  chat: ['chat_messages', ['chat-message']], chat_imports: ['chat_imported_messages', ['chat-imported-message']], instructions: ['private_instructions', ['private-instruction']],
   agent_policy: ['agent_policies', ['agent-policy']], agent_policy_history: ['agent_policy_revisions', ['agent-policy-revision']],
   agent_work: ['agent_work_index', ['agent-work-index']], agent_runs: ['agent_runs', ['agent-run']],
   agent_receipts: ['agent_action_receipts', ['agent-action-receipt']],

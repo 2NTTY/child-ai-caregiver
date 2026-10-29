@@ -2,6 +2,7 @@ import type { ChatStore } from "./chat.ts";
 import { apiError, jsonResponse } from "./workspace-api.ts";
 
 const messagePath = /^\/api\/children\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/messages$/i;
+const importedPath = /^\/api\/children\/([0-9a-f-]{36})\/messages\/imported(?:\/([0-9a-f-]{36}))?$/iu;
 
 function validText(value: unknown): value is string {
   if (typeof value !== "string" || !value.trim()) return false;
@@ -15,8 +16,20 @@ function validText(value: unknown): value is string {
 }
 
 /** userId must come from a freshly checked server session, never request input. */
-export async function handleChatRequest(request: Request, userId: string | null, store: Pick<ChatStore, "listForUser" | "createUserMessageForUser">): Promise<Response> {
+export async function handleChatRequest(request: Request, userId: string | null, store: Pick<ChatStore, "listForUser" | "createUserMessageForUser" | "listImportedForUser" | "getImportedForUser">): Promise<Response> {
   if (!userId) return apiError("unauthorized", "請先登入。", 401);
+  const url = new URL(request.url), imported = importedPath.exec(url.pathname);
+  if (imported) {
+    if (request.method !== 'GET') return apiError('method_not_allowed', '匯入對話只供查閱。', 405);
+    if (!store.listImportedForUser || !store.getImportedForUser) return apiError('chat_import_unavailable', '暫時未能讀取匯入對話。', 503);
+    const cursor = url.searchParams.get('cursor');
+    if ([...url.searchParams.keys()].some(key => key !== 'cursor') || url.searchParams.getAll('cursor').length > 1
+      || cursor !== null && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu.test(cursor)
+      || imported[2] && cursor !== null) return apiError('invalid_input', '請重新讀取匯入對話。', 400);
+    const value = imported[2] ? await store.getImportedForUser(userId, imported[1].toLowerCase(), imported[2].toLowerCase())
+      : await store.listImportedForUser(userId, imported[1].toLowerCase(), cursor);
+    return value ? jsonResponse(value) : apiError('not_found', '找不到資料。', 404);
+  }
   if (request.method === "POST") {
     const expectedUserId = request.headers.get("x-expected-user-id");
     if (!expectedUserId) return apiError("account_precondition_required", "請重新確認登入帳號後再提交。", 428);
