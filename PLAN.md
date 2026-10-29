@@ -87,7 +87,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 #### 基線、來源與邊界
 
-- 候選使用隔離工作目錄，基線 `191bcef6064da99d98806245982ef0cc52fcebc0`（#379）。原修復基線 `9058011751974c6cf0da84f27327a4e15d04dd91` 是其 ancestor。39 個非 PLAN／API 路徑已接續；本節及 API 只局部整合 D 相關契約，保留 #378／#379 的 P4 匯入來源、私人交代共用路徑及 schema，不用舊整檔覆蓋新基線。
+- 候選使用隔離工作目錄，基線 `191bcef6064da99d98806245982ef0cc52fcebc0`（#379）。原修復基線 `9058011751974c6cf0da84f27327a4e15d04dd91` 是其 ancestor。已接續六項來源 PR 的非重複成果；本節及 API 只局部整合 D 相關契約，保留 #378／#379 的 P4 匯入來源、私人交代共用路徑及 schema，不用舊整檔覆蓋新基線。
 - 原來源於 2026-10-28 18:03 UTC 讀回，當時均未合併；這是來源身份，不代表目前遠端狀態：
 
 | 原 PR | 固定來源 head |
@@ -115,18 +115,12 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 #### 驗證狀態與收尾 gate
 
-- **已核範圍：**2026-10-29 02:26 UTC 的 `delivery-final.json` 記錄 54／54 通過（11 項 obligation／binding＋43 項原交付回歸），該輪來源前後未變；收據 SHA-256 `c86c677fa5689db53ce12490e54fa69e38ab8c5757f4a1b938d95f3d003d69a2`。先前新 state／evidence／request／repair-context 紅測試，以及 32／43 與 52／53 回歸失敗均保留；後者的舊 fixture 未使用 Server 指定的新 repair-context hash，修正 fixture 後才取得本輪結果。`--test-force-exit` 不證明應用所有非同步 handle 均已清理，程序組結束另核。
-- **接續證據：**02:29 UTC 的 `runtime-final.json` 記錄 67／67 通過，限當輪 obligation／budget／gateway／runtime 契約及 runtime 測試；收據 SHA-256 `9ed4c8f619dbc02ff2bb0e7b877328c7eb08426c80c6111330f9780f38558643`。獨立 review 發現的證據／引用降級及 repair 例外問題修正後，02:37 UTC 的 `reviewer-findings-green.json` 記錄 59／59 通過（16 項 obligation／binding＋43 項原交付回歸），收據 SHA-256 `cbf0490ff33b4c4ebf81736fda85121edf42d862c92ef4a58cc3248c5220e818`；兩輪來源前後未變，原 finding／紅證據保留。後輪交付修正不追溯改稱較早 runtime 批次已涵蓋最新全部差異。
-- **其後交集：**`product-intersection.json` 的 62 項為 60 通過／2 失敗，兩項 fixture 仍假定全工具／blanket 審核；修正 fixture 後，02:46 UTC 的 `policy-product-green.json` 以 obligation＋product 兩檔核對 22／22 通過，未重跑整批 62。02:47 UTC 的 `media-compose-budget.json` 核對 photo／voice review、data-compose、role-budget 四檔 17／17 通過。三批分列，不相加為最新候選完整驗收。
-- 獨立 code-only review 已覆核三項程式 finding 的修正；本節的結構／語義分界另按 review 收窄。原紅、修正及每輪 source hashes 留在本地合成檢查收據，不納公開提交、不刊私人路徑；檔名只供識別，不是公開下載連結。各輪結果只適用所記錄版本。
-- **CI 選定範圍：**[離線 gate](scripts/ci/verify-agent-alignment-offline.sh) 限 34 個完整測試檔（原 19＋3 個 frontend-facing＋12 個受影響 fixture）及 `agent-feedback.test.ts` 內一項篩選的 pure greeting 測試；後者不是完整 HTTP feedback 套件。型別另核 frontend、shared、server／tests 及 frontend-facing tests 的 Bundler 分組；type-root 覆蓋不當 runtime 測試數量。
-- **CI 原失敗：**[`40831966620`](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40831966620) 在 `c04a7027` 因新增 fixture 缺三個 `ChildProfile` 欄位失敗，`f58166bd` 只補該 fixture。[`40832391010`](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40832391010) 在 `f58166bd` 已結束但整體失敗：type-root coverage 通過（669 roots、251 個測試根＝server 248＋frontend 3），四組型別全通過，原 19 檔 runtime 236／236 通過；其後 3 個 frontend-facing runtime 檔為 13 通過／1 失敗，`ProductionOwner.dispose` 拒絕 fixture 的非 UUID childId `B`。後續 12 個受影響完整檔與篩選 greeting 在該 run 均未執行。
-- **接續失敗保留：**`a6a9851a` 只修正 owner fixture 的合法 UUID 及 finally 清理；[`40833061102`](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40833061102) 的四組型別、原 236 項及 frontend 14 項全通過，但受影響 12 檔為 155 通過／6 失敗（5 leaf＋1 parent）／6 skip。`81bee2be` 的 [`40834175570`](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40834175570) 型別／19 檔／frontend 結果相同、`firebase-app` 已通過，12 檔改善至 159 通過／2 失敗／6 skip；餘下是 durable cancellation 預期 `completed`、實際 `stopped` 的 leaf 及其 parent。兩個 run 整體失敗、篩選 greeting 均未執行，不能以後輪通過回寫歷史。
-- **實際修正：**共享文件 catch 曾把未知 `FirestoreAuthorityError` 的 403／任意 code 對外傳出，屬真實映射缺陷；已只放行已知 code／status 配對，保留合法 shared-scope 錯誤，未知／損壞狀態回 503。`firebase-app` 收據／照片 fixture 按正式契約修正。durable cancellation 先修「只讀 context 卻宣稱已保存 proposal」的 mock 文案，但此假設不足以解決失敗；一次有界診斷確認實際停於 `unavailable`，原因是合成 Pool 缺少真 confirmation store 的 policy／pending-confirmation 查詢。`66b8b7d5` 只補兩項精確 SQL 及身份／孩子／run 範圍處理，不偽造確認或整個 store；保留原 `completed` 預期並補無額外副作用／重放斷言，局部 3／3 及獨立 review 通過。
-- **選定離線 gate 已通過：**2026-10-29 07:28 UTC，候選 `66b8b7d50cd0bd6e6a37322bf6b38fbbb1d7656a` 的 [`40835372604`](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40835372604) 整體成功：type-root coverage 669 roots／251 個測試根（server 248＋frontend 3）、四組型別全通過；19 檔 236 通過、frontend 3 檔 14 通過、受影響 12 檔 161 通過／0 失敗／6 skip，篩選 greeting 1／1 通過。末段 source-integrity 核對同一 candidate 通過；這是所選 34 完整檔＋1 篩選測試的結果，不是所有產品／聯合驗收通過。
-- **未驗限制：**6 個 skip 是基線已有、未接 publisher 的情景，未當通過；完整 HTTP feedback／transport／disconnect 未重驗，傳輸層未改。前端實際操作、完整聯合驗收、真模型／正式服務及設備品質均未核定，亦不代表另行進行的四套前端方案已驗收完成；只用合成資料的離線 gate 不代驗，`--test-force-exit` 亦不證明 handle 清理完成。需求文件仍與程式修復分開，未批准提案不因本節進度成為已實作政策。
-- 下一步：本節經獨立 review 後分開提交驗證文件，再核對含文件的最終 head、來源歸屬、遠端狀態及必要 CI；`66b8b7d5` 的成功不預先代填後續 head。文件／prompt 須由已指定 Astra xhigh 親寫及核對。
-- 合併前報告保留／修正／捨棄及未驗限制，按既有授權正常合併；不強推、不繞保護、不以空 CI 或合併代替驗收。本節不宣稱已合併或部署，亦不解除原聯合／設備 gate。
+- **範圍：**[離線 gate](scripts/ci/verify-agent-alignment-offline.sh) 只跑 34 個完整測試檔（原 19＋frontend-facing 3＋受影響 fixture 12）及 `agent-feedback.test.ts` 的一項 pure greeting；不是完整 HTTP feedback 套件。frontend、shared、server／tests、frontend-facing tests 分四組型別檢查，type-root 數量不當 runtime 測試數量。
+- **已核版本：**程式候選 `66b8b7d5` 的 [CI 40835372604](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40835372604)，以及只更新驗證文件的 `40552da0` 的 [CI 40836180352](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40836180352) 均成功：四組型別、669 roots／251 個測試根（248＋3）及同一 candidate 的 source-integrity 通過；runtime 分組為 236＋14＋161＋greeting 1＝412 通過、0 失敗、6 個既有 skip，只代表上述選定 gate。
+- **修正摘要：**共享文件把未知 authority error 的任意 code／403 對外傳出的真缺陷已改為已知 code／status 配對，保留合法 shared-scope 錯誤，未知／損壞狀態回 503；其餘 fixture 按正式 `ChildProfile`、UUID、收據及照片契約修正。cancellation 原先只改 mock 假保存文案仍失敗；有界診斷確認 `unavailable` 來自合成 Pool 缺 policy／pending-confirmation 查詢，後補兩項精確 SQL／scope 處理，不偽造確認或整個 store，保留 `completed` 預期及無額外副作用／重放斷言。上述程式修正及 `40552da0` 文件已經獨立 review。
+- **失敗保留：**早期本地紅測試及原收據仍保留；[欄位缺漏](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40831966620)、[UUID fixture](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40832391010)、[受影響契約](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40833061102)、[cancellation 未修妥](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40834175570) 四次 CI 失敗及當輪未執行階段不回寫為通過；本地收據不納公開提交、不刊私人路徑。
+- **未驗限制：**6 個 skip 是基線已有、未接 publisher 的情景，未當通過。完整 HTTP feedback／transport／disconnect 未重驗，傳輸層未改；前端實際操作、完整聯合驗收、真模型／正式服務、設備及另行四套前端方案均未因此驗收。`--test-force-exit` 不證明 handle 清理。需求文件與程式修復分開，未批准提案不當已實作政策。
+- **收尾：**本次範圍清理仍須獨立 review 及最終 head 必要 CI；既有成功不代填新 head。合併前報告保留／修正／捨棄及未驗限制，核來源歸屬與遠端保護後才正常合併，不強推、不繞檢查；本節不宣稱已合併、部署或完成全部驗收。
 
 <a id="four-fix01"></a>
 ### FIX-FOUR01：照片恢復、通知登記競態與原生 PDF（待驗收）
