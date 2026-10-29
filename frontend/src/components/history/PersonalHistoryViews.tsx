@@ -176,8 +176,12 @@ export function PersonalNotificationContent({ owner, searchText = "", dateRange 
         {!recent && read.data?.nextCursor ? <AppButton label={owner.busy.notifications ? "正在讀取…" : "載入更多消息"} variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.moreNotifications} /> : null}
         {read.state === "stale" ? retry : null}
       </>}
-    {!recent ? <FormDialog visible={!!selected} scopeKey={scope ?? ""} formKey={selection ? `${selection.id}:${selection.version}` : undefined} title="消息內容"
-      dismissMode="local" returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={() => onNotificationChange ? onNotificationChange(null) : setSelection(null)}>
+    {!recent ? <FormDialog visible={!!selected} scopeKey={scope ?? ""} formKey={JSON.stringify([filterKey, owner.access, selected?.id, selected ? notificationVersion(selected) : null])} title="消息內容"
+      dismissMode={onNotificationChange ? "guarded" : "local"} returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={() => {
+        // Opening the route can remount this reader; use its current matching card.
+        returnFocus.current = selected ? cards.current.get(selected.id) ?? null : null;
+        if (onNotificationChange) onNotificationChange(null); else setSelection(null);
+      }}>
       {selected ? <View style={styles.list} testID="notification-history-detail">
         <Text style={styles.meta}>{notificationTime(selected.sentAt)} · {selected.scope.kind === "child" ? selected.scope.childName : "本人帳戶"}</Text>
         {selected.contents.map(content => <View key={content.channel} style={styles.channelDetail}>

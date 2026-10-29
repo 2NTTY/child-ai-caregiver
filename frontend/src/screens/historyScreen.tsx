@@ -1,3 +1,4 @@
+import { useNavigation } from "expo-router/react-navigation";
 import { useRouteNavigation } from "../navigation/useRouteNavigation";
 import { parseHistoryRoute, serializeHistoryRoute } from "../navigation/route-state";
 import { usePrivateRoutePresentation } from "../navigation/RoutePresentation";
@@ -32,7 +33,7 @@ import { useGrowthWorkspace } from "../workspaces/GrowthWorkspace";
 import { chineseFont, colors, readingType, spacing } from "../theme";
 
 function HistoryWorkspace({ scope, route }: { scope: string; route: ReturnType<typeof useRouteNavigation> }) {
-  const router = useRouter(), navigate = usePreviewNavigation();
+  const router = useRouter(), navigate = usePreviewNavigation(), navigation = useNavigation();
   const routeState=parseHistoryRoute(route.params);
   const [privateView,setPrivateQuery,rememberScroll]=usePrivateRoutePresentation("history");
   const { actions: homeActions } = useProduction();
@@ -108,7 +109,12 @@ function HistoryWorkspace({ scope, route }: { scope: string; route: ReturnType<t
       onRecord={id => navigate(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))} onTask={id => navigate(() => router.push({pathname:"/tasks",params:{taskId:id}}))} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
     : personalCategory ? dateRange ? conversationCategory ? <PersonalConversationHistoryView requestedMessageId={routeState.recordId} onMessageChange={recordId => route.navigate(serializeHistoryRoute({ ...routeState, recordId }), recordId ? "push" : "replace")} searchText={filters.searchText} dateRange={dateRange} onPrepareQuestion={homeActions.prepareQuestion} />
-      : <PersonalNotificationHistoryView requestedNotificationId={routeState.recordId} onNotificationChange={recordId => route.navigate(serializeHistoryRoute({ ...routeState, recordId }), recordId ? "push" : "replace")} searchText={filters.searchText} dateRange={dateRange} />
+      : <PersonalNotificationHistoryView requestedNotificationId={routeState.recordId} onNotificationChange={recordId => {
+        if (recordId) route.navigate(serializeHistoryRoute({ ...routeState, recordId }), "push");
+        // FormDialog already accepted the full navigation guard. Replace only
+        // params so the existing reader can finish its modal close and focus.
+        else route.run(() => navigation.replaceParams(serializeHistoryRoute({ ...routeState, recordId })), false);
+      }} searchText={filters.searchText} dateRange={dateRange} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
     : <View testID={`history-unavailable-${filters.category}`}  style={styles.unavailable}>
       <Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{current.label}暫未可在這裏查閱</Text>
