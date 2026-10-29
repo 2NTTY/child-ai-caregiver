@@ -30,7 +30,8 @@ test('Firestore documents reuse authoritative data, confirm one patch, resume a 
   const base = '/api/children/' + child.id;
   const { record } = await submit(base + '/records', { text: '昨晚的原始交代\n尚未確認事件時間。' });
   const documents = createFirestoreFamilyDocumentStore(options), agents = createFirestoreProductAgentStore({ ...options, care, chat, memory, online,
-    async validateKnowledge() { throw Error('Not used by this data-only check'); } });
+    async validateKnowledge() { throw Error('Not used by this data-only check'); },
+    async continuationKnowledge() { throw Error('Not used by this data-only check'); } });
   const { message } = await submit(base + '/messages', { text: '請整理到診準備單，再把標題改成下週到診。' });
   const claim = await agents.store.claim('parent', child.id, { kind: 'interactive', reference: message.id }, 'product-interactive'); assert.ok(claim);
   const opId = randomUUID(), request = { kind: 'preparation' as const, purpose: 'appointment' as const, title: '到診準備', eventDate: null,

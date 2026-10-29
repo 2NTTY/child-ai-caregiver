@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import type { Query } from '@google-cloud/firestore';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
@@ -91,7 +92,7 @@ async function fixture(platform: 'ios' | 'android', kind: 'test' | 'care') {
     });
   }
   const job = await authority.runTransaction(userId, childId, async b => {
-    let query = data.collection('background_work');
+    let query: Query = data.collection('background_work');
     for (const [key, value] of Object.entries(data.tags(b.scope))) query = query.where(key, '==', value);
     const rows = await b.transaction.get(query.limit(20));
     for (const row of rows.docs) {

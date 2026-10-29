@@ -21,7 +21,7 @@ import {createChatApi} from '../src/client/chat-api.ts';
 import {readAiConfig} from '../server/ai-config.ts';
 import {SERVICE_POLICY_VERSION} from '../src/shared/account-service.ts';
 import { AGENT_PROGRESS_LABELS, agentProgressSchema } from '../src/shared/agent-feedback.ts';
-import { requiresChatDeliveryReview } from "../server/chat-delivery-review.ts";
+import { requiresChatDeliveryReview, type ChatDeliveryDraft } from "../server/chat-delivery-review.ts";
 
 function deferred<T>() { let resolve!: (value:T)=>void; const promise=new Promise<T>(r=>{resolve=r;});return {promise,resolve}; }
 
@@ -152,12 +152,12 @@ test('reviewing phase is a real progress event with a parent-facing label', () =
   assert.equal(AGENT_PROGRESS_LABELS.reviewing, '正在獨立核對回覆');
 });
 test("pure greeting drafts must not imply reviewing progress", () => {
-  const scope = { userId: "u", workspaceId: "w", childId: "c", authorizationVersion: 1, dataVersion: 1 };
-  const greeting = {
+  const scope: ChatDeliveryDraft["scope"] = { userId: "u", workspaceId: "w", childId: "c", authorizationVersion: "1", dataVersion: "1" };
+  const greeting: ChatDeliveryDraft = {
     kind: "clarification", visibility: "private", serverSubstitutedSourceText: false,
     paragraphs: [{ text: "你好", citationIds: [] }], sources: [], scope,
   };
-  const mixed = {
+  const mixed: ChatDeliveryDraft = {
     kind: "caregiving", visibility: "private", serverSubstitutedSourceText: false,
     paragraphs: [{ text: "你好，睡前食兩粒阿士匹靈。", citationIds: [] }], sources: [], scope,
   };

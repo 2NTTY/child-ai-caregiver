@@ -7,7 +7,7 @@ import { readAiConfig } from "../server/ai-config.ts";
 import type { AiConfig } from "../server/ai-config.ts";
 import { AGENT_LIMITS, AgentBudget, agentBudgetFingerprint } from "../server/agent-budget.ts";
 import { RootBudgetError, type DurableRootBudget, type RootBudgetContext, type RootBudgetSnapshot } from "../server/durable-root-budget.ts";
-import type { DurableAiUsageRequest } from "../server/durable-ai-usage.ts";
+import type { DurableAiUsageReceipt, DurableAiUsageRequest } from "../server/durable-ai-usage.ts";
 
 const clients: ConstructorParameters<typeof genai.GoogleGenAI>[0][] = [];
 const requests: genai.GenerateContentParameters[] = [];
@@ -264,12 +264,34 @@ test("each durable provider retry is charged but generation retries cannot steal
   assert.equal(config.agentMaxRetries, 3, "Use the resolved routing policy, not the legacy zero-retry fallback");
   await budget.initializeDurable(durable);
   const starts: number[] = [], daily: DurableAiUsageRequest[] = [], recorded: string[] = [];
+  const dailyReceipts = new Map<string, DurableAiUsageReceipt>();
+  const reservationDay = "2026-10-29", reservedAtMs = Date.parse(`${reservationDay}T00:00:00Z`);
   let providers = 0;
   const model = new AgentGatewayModel({ config, budget, userId: "synthetic-user", childId: "synthetic-child",
     reserveDeliveryReview: true, authorize: async () => true,
     usage: { reserve: async () => { throw new Error("Legacy daily quota must not be used"); }, record: async () => { throw new Error("Legacy record must not be used"); } },
-    durableDailyUsage: { context: durable.context, adapter: { reserve: async request => { daily.push(request); return { decision: "execute" }; },
-      record: async (request, record) => { recorded.push(`${request.attemptKey}:${record.outcome}`); } } },
+    durableDailyUsage: { context: durable.context, adapter: {
+      billingSource: "platform",
+      reserve: async request => {
+        daily.push(request);
+        const existing = dailyReceipts.get(request.attemptKey);
+        if (existing) return { decision: "lookup", receipt: existing };
+        const receipt: DurableAiUsageReceipt = { kind: request.kind ?? "model", day: reservationDay, reservedAtMs, record: null };
+        dailyReceipts.set(request.attemptKey, receipt);
+        return { decision: "execute", receipt };
+      },
+      read: async request => dailyReceipts.get(request.attemptKey) ?? null,
+      record: async (request, record) => {
+        recorded.push(`${request.attemptKey}:${record.outcome}`);
+        const reservation = dailyReceipts.get(request.attemptKey);
+        assert.ok(reservation, "Accounting requires the original daily reservation");
+        const receipt = { ...reservation, record };
+        dailyReceipts.set(request.attemptKey, receipt);
+        return receipt;
+      },
+      getForUser: async () => ({ day: reservationDay, attempts: dailyReceipts.size,
+        inputTokens: 0, outputTokens: 0, cachedTokens: 0, unknownUsageAttempts: dailyReceipts.size, billingSource: "platform" }),
+    } },
     provider: { generate: async request => {
       providers++;
       assert.equal(starts.length, providers, "A start observation must precede every admitted provider attempt");

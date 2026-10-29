@@ -116,6 +116,7 @@ function harness(seed = true) {
       assert.deepEqual(values, [current.runs[0]?.id, userId, childId, RECEIPT_QUERY_LIMIT]);
       assert.match(sql, /ON o.user_id=a.owner_user_id AND o.op_id=a.op_id/u);
       assert.doesNotMatch(sql, /ON[^\n]+o.child_id=/u);
+      assert.ok(typeof values[3] === "number");
       return rows(current.documentLinks.slice(0, values[3]));
     }
     if (sql.startsWith("SELECT * FROM family_document_operations")) {

@@ -5,10 +5,12 @@ import { ClientApiError, type RecordsApi, type SessionUser } from "../src/client
 import type { Child } from "../src/shared/records.ts";
 import type { ChildSelectionPreferences } from "../src/client/child-selection.ts";
 import { createWebChildSelectionPreferences } from "../frontend/src/production/child-selection.ts";
-import { ProductionOwner } from "../frontend/src/production/ProductionOwner.ts";
+import "./helpers/frontend-source-loader.mjs";
 import { createAccountApi } from "../src/client/account-api.ts";
 import { SERVICE_POLICY_VERSION } from "../src/shared/account-service.ts";
 import type { ChatApi } from "../src/client/chat-api.ts";
+
+const { ProductionOwner } = await import("../frontend/src/production/ProductionOwner.ts");
 
 const alice = { id: "alice", name: "A", email: "a@example.invalid" };
 const bob = { ...alice, id: "bob" };
@@ -52,11 +54,17 @@ test("ProductionOwner's first non-null child scope is B, never A", async () => {
       policyVersion: SERVICE_POLICY_VERSION, notice: "Synthetic account status",
       user: expectedUserId === null ? null : { id: alice.id, emailVerified: true, acknowledged: true, acknowledgementVersion: SERVICE_POLICY_VERSION } });
   });
-  const owner = new ProductionOwner("/api", true, f.api, chat, pref, { api: account });
+  const unexpectedFetches: string[] = [];
+  const owner = new ProductionOwner("/api", true, f.api, chat, pref, { api: account }, {
+    platform: "web", publicOrigin: "https://example.invalid", fetcher: async input => {
+      unexpectedFetches.push(String(input)); throw Error("Unexpected network request");
+    },
+  });
   owner.subscribe(() => { const s = owner.getSnapshot(); if (s.scopeKey && s.records.selectedChildId) selected.push(s.records.selectedChildId); });
   await owner.controller.restoreSession(); await new Promise<void>(done => setImmediate(done));
   assert.equal(owner.getSnapshot().records.selectedChildId, "B"); assert.ok(selected.length);
   assert.ok(selected.every(id => id === "B")); assert.ok(messageReads.every(id => id === "B")); owner.dispose();
+  assert.deepEqual(unexpectedFetches, []);
 });
 test("account and endpoint preferences stay isolated without generation keys", async () => {
   const store = storage(), a = createWebChildSelectionPreferences("/api", () => store), other = createWebChildSelectionPreferences("https://other.example/api", () => store);

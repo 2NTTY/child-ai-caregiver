@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.server.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "erasableSyntaxOnly": false
+  },
+  "include": [
+    "tests/child-selection.test.ts",
+    "tests/firestore-results-history.test.ts",
+    "tests/handover-task-updates.test.ts"
+  ],
+  "exclude": []
+}

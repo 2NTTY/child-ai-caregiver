@@ -11,6 +11,8 @@ import { createAgentRuntime } from "../server/agent-runtime.ts";
 import { createProductAgent } from "../server/product-agent.ts";
 import { readAiConfig } from "../server/ai-config.ts";
 import { dataComposeDraftHash } from "../server/data-compose.ts";
+import type { DataComposeDraft } from "../src/shared/data-compose.ts";
+import type { MemoryFact } from "../src/shared/memory.ts";
 import { AGENT_CONFIRMATION_PENDING_TEXT } from "../server/agent-work-tool-descriptions.ts";
 import { loadAgentPrompt } from "../server/agent-prompt.ts";
 import {
@@ -170,8 +172,8 @@ test("pure greetings skip delivery review without cites", () => {
   // Mixed content after a greeting marker is not a whole-utterance greeting (Owner synthetic).
   // Keyword blacklists alone must not be the gate: these skip care-domain/advisory patterns.
   for (const sample of [
-    { text: "你好，睡前食兩粒阿士匹靈。", kind: "caregiving" },
-    { text: "你好，已完成刪除記錄。", kind: "operation" },
+    { text: "你好，睡前食兩粒阿士匹靈。", kind: "caregiving" as const },
+    { text: "你好，已完成刪除記錄。", kind: "operation" as const },
   ]) {
     assert.equal(isPureGreetingOrSmallTalk(sample.text), false, sample.text);
     assert.equal(requiresChatDeliveryReview({
@@ -257,8 +259,8 @@ test("pure greetings skip delivery review without cites or memory grounding", ()
   // Mixed content after a greeting marker is not a whole-utterance greeting (Owner synthetic).
   // Keyword blacklists alone must not be the gate: these skip care-domain/advisory patterns.
   for (const sample of [
-    { text: "你好，睡前食兩粒阿士匹靈。", kind: "caregiving" },
-    { text: "你好，已完成刪除記錄。", kind: "operation" },
+    { text: "你好，睡前食兩粒阿士匹靈。", kind: "caregiving" as const },
+    { text: "你好，已完成刪除記錄。", kind: "operation" as const },
   ]) {
     assert.equal(isPureGreetingOrSmallTalk(sample.text), false, sample.text);
     assert.equal(requiresChatDeliveryReview({
@@ -903,6 +905,45 @@ test("citation-free memory restatement hydrates grounding without prior read_mem
   } finally { budget.close(); }
 });
 
+test("reading an invalidated memory fact removes its previously selected delivery evidence", async () => {
+  const budget = new AgentBudget();
+  let fact: MemoryFact = {
+    id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", childId, key: "過敏", content: "BB 對雞蛋過敏",
+    source: { kind: "manual", description: "家長確認" }, validUntil: null,
+    visibility: "private", intendedVisibility: "private", status: "confirmed",
+    version: 2, createdBy: userId, confirmedBy: userId, confirmedAt: "2026-10-18T00:00:00.000Z",
+    reason: "已確認", applicable: true, sourceState: "current",
+  };
+  const memory: Pick<Parameters<typeof createProductAgentTools>[0]["memory"], "getFact" | "context"> = {
+    getFact: async () => fact,
+    context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false,
+      facts: [fact], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [],
+      truncated: { facts: false, topics: false, messages: false } }),
+  };
+  const surface = createProductAgentTools({
+    run: { scope, runId, budget }, authorize: async () => true, memory,
+    tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
+    store: {}, knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [] }) }) },
+  } as unknown as Parameters<typeof createProductAgentTools>[0]);
+  const readFacts = surface.tools.find(tool => tool.name === "read_memory_facts")!;
+  const present = surface.tools.find(tool => tool.name === "present_answer")!;
+  const answer = { kind: "record_restatement", paragraphs: [{ text: "已確認記憶：BB 對雞蛋過敏。", citationIds: [] }] };
+  try {
+    const initial = await present.execute(answer, { scope, runId, callId: "present-valid-memory", signal: budget.signal });
+    assert.equal(initial.status, "succeeded");
+    assert.deepEqual(surface.deliveryDraft()!.sources.map(source => source.citationId),
+      ["memory-fact:aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"]);
+
+    fact = { ...fact, version: 3, status: "inactive", applicable: false, reason: "家長已停用" };
+    const refreshed = await readFacts.execute({ factId: fact.id, afterId: null },
+      { scope, runId, callId: "read-invalidated-memory", signal: budget.signal });
+    assert.equal(refreshed.status, "succeeded");
+    const repeated = await present.execute(answer, { scope, runId, callId: "present-invalidated-memory", signal: budget.signal });
+    assert.equal(repeated.status, "succeeded");
+    assert.deepEqual(surface.deliveryDraft()!.sources, [], "Invalid facts must evict earlier confirmed evidence");
+  } finally { budget.close(); }
+});
+
 test("unused search_knowledge still requires review for confirmed memory restatement", async () => {
   const budget = new AgentBudget();
   const fact = {
@@ -1211,7 +1252,7 @@ test("review preflight never emits start for zero budget or missing provenance",
 
 for (const questionCount of [0, 1, 2]) test(`real compose review spends four calls and pending receipt requires one live confirmation: ${questionCount}`, async () => {
   const documentId = '33333333-3333-4333-8333-333333333333';
-  const composed = { documentId, expectedVersion: 3, authorityVersion: 'epoch:7',
+  const composed: DataComposeDraft = { documentId, expectedVersion: 3, authorityVersion: 'epoch:7',
     edits: [{ op: 'upsert_item' as const, sectionId: 'checklist', itemId: 'bottle', text: '帶溫水壺' }],
     gaps: [], requiredConfirmations: ['parent_shared_document'] };
   const snapshot = { id: '44444444-4444-4444-8444-444444444444', version: 3,

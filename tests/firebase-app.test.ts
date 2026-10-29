@@ -201,8 +201,9 @@ test("Firebase domain dispatch preserves session fencing, original routes and ex
   const childId = "00000000-0000-4000-8000-000000000001";
   let changeIdentity = false;
   const unavailable = async () => { throw new Error("Unexpected store call"); };
-  const online = {
+  const online: FirestoreOnlineStore = {
     spaces: unavailable, context: unavailable, submit: unavailable, lookup: unavailable, changes: unavailable,
+    readImportTask: unavailable, prepareImportedTask: unavailable, sharedChanges: unavailable, prepareTask: unavailable,
     children: { async list(userId: string, cursor: string | null = null) {
       reads.push({ userId, cursor }); if (changeIdentity) f.setUser("other-user");
       return { children: [{ id: childId, workspaceId: childId, displayName: "Synthetic child", createdAt: "2026-10-11T00:00:00Z", accessRole: "owner" as const }], nextCursor: null };
@@ -388,6 +389,7 @@ function photoFixture() {
   };
   const unavailable = async () => { throw new Error('Unexpected store call'); };
   const online: FirestoreOnlineStore = { spaces: unavailable, context: unavailable, lookup: unavailable, changes: unavailable,
+    readImportTask: unavailable, prepareImportedTask: unavailable, sharedChanges: unavailable, prepareTask: unavailable,
     children: { list: unavailable }, tasks: { list: unavailable, get: unavailable, history: unavailable },
     async submit(userId, submission) { assert.equal(userId, USER_ID); submissions.push(submission);
       return { state: 'confirmed', operation: submission.operation, path: submission.path, changeSeq: '1', statusCode: 201, result: { photo } }; } };

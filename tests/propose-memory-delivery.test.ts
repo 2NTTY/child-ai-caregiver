@@ -3,7 +3,7 @@ import test from "node:test";
 import { createProductAgentTools } from "../server/product-agent-tools.ts";
 import { AGENT_CONFIRMATION_PENDING_TEXT, buildAgentConfirmationQuestion } from "../server/agent-work-tool-descriptions.ts";
 import { looksLikeDurableMemoryFactQuestion, looksLikeDurableMemoryFactStatement } from "../server/memory-policy.ts";
-import type { AgentRunContext } from "../server/agent-runtime.ts";
+import type { AgentRunContext, AgentTool } from "../server/agent-runtime.ts";
 import type { MemoryFact } from "../src/shared/memory.ts";
 import { chatDeliveryDraftHash, chatDeliveryReviewAllows, enforceChatDeliveryReview } from "../server/chat-delivery-review.ts";
 import { AgentStopped } from "../server/agent-budget.ts";
@@ -16,6 +16,10 @@ const scope = {
   dataVersion: "epoch:1",
 };
 const runId = "d4a1b662-d13d-476b-bf52-40a28aa1a1a7";
+
+function toolContext(callId: string): Parameters<AgentTool["execute"]>[1] {
+  return { scope, runId, callId, signal: new AbortController().signal };
+}
 
 function tools(options: {
   trustedUserMessage?: string;
@@ -67,7 +71,7 @@ test("allergy statements require propose_fact before citation-free present_answe
   const rejected = await present.execute({
     kind: "clarification",
     paragraphs: [{ text: "收到，BB 對雞蛋過敏。", citationIds: [] }],
-  }, { callId: "c1" });
+  }, toolContext("c1"));
   assert.equal(rejected.status, "rejected");
   assert.equal((rejected.data as { code?: string }).code, "propose_fact_required");
 });
@@ -78,12 +82,12 @@ test("after propose_fact, citation-free present becomes server pending receipt a
   const present = surface.tools.find(tool => tool.name === "present_answer")!;
   const proposed = await propose.execute({
     key: "allergy-egg", content: "寶寶對雞蛋過敏", intendedVisibility: "private", validUntil: null,
-  }, { callId: "c-propose" });
+  }, toolContext("c-propose"));
   assert.equal(proposed.status, "succeeded");
   const accepted = await present.execute({
     kind: "clarification",
     paragraphs: [{ text: "已記下 BB 對雞蛋過敏，待你確認。", citationIds: [] }],
-  }, { callId: "c-present" });
+  }, toolContext("c-present"));
   assert.equal(accepted.status, "succeeded");
   const presentation = await surface.presentation();
   assert.equal(presentation?.text, AGENT_CONFIRMATION_PENDING_TEXT);
@@ -99,7 +103,7 @@ test("allergy questions do not require propose_fact", async () => {
   const accepted = await present.execute({
     kind: "clarification",
     paragraphs: [{ text: "請稍等，我查一下記憶。", citationIds: [] }],
-  }, { callId: "c1" });
+  }, toolContext("c1"));
   assert.equal(accepted.status, "succeeded");
 });
 
@@ -110,7 +114,7 @@ test("preference statements require propose_fact before citation-free present_an
   const rejected = await present.execute({
     kind: "clarification",
     paragraphs: [{ text: "收到，BB 鍾意香蕉。", citationIds: [] }],
-  }, { callId: "c-pref" });
+  }, toolContext("c-pref"));
   assert.equal(rejected.status, "rejected");
   assert.equal((rejected.data as { code?: string }).code, "propose_fact_required");
 });
@@ -129,12 +133,12 @@ test("after propose_fact for preference, citation-free present becomes server pe
   const present = surface.tools.find(tool => tool.name === "present_answer")!;
   const proposed = await propose.execute({
     key: "likes-banana", content: "BB 鍾意香蕉", intendedVisibility: "private", validUntil: null,
-  }, { callId: "c-propose-pref" });
+  }, toolContext("c-propose-pref"));
   assert.equal(proposed.status, "succeeded");
   const accepted = await present.execute({
     kind: "clarification",
     paragraphs: [{ text: "已記下 BB 鍾意香蕉，待你確認。", citationIds: [] }],
-  }, { callId: "c-present-pref" });
+  }, toolContext("c-present-pref"));
   assert.equal(accepted.status, "succeeded");
   const presentation = await surface.presentation();
   assert.equal(presentation?.text, AGENT_CONFIRMATION_PENDING_TEXT);
@@ -153,7 +157,7 @@ test("allergy questions reject propose_fact and do not require propose on presen
   const propose = surface.tools.find(tool => tool.name === "propose_fact")!;
   const rejected = await propose.execute({
     key: "allergy-sesame-esther", content: "Esther\u829d\u9ebb\u904e\u654f", intendedVisibility: "private", validUntil: null,
-  }, { callId: "c-q-propose" });
+  }, toolContext("c-q-propose"));
   assert.equal(rejected.status, "rejected");
   assert.equal((rejected.data as { code?: string }).code, "memory_read_not_propose");
   assert.equal(proposed, false);
@@ -161,7 +165,7 @@ test("allergy questions reject propose_fact and do not require propose on presen
   const accepted = await present.execute({
     kind: "clarification",
     paragraphs: [{ text: "memory says Esther sesame allergy", citationIds: [] }],
-  }, { callId: "c-q-present" });
+  }, toolContext("c-q-present"));
   assert.equal(accepted.status, "succeeded");
 });
 
@@ -184,14 +188,14 @@ test("allergy statement propose clears near-term validUntil", async () => {
   const short = await propose.execute({
     key: "allergy-sesame", content: "Esther\u5c0d\u829d\u9ebb\u904e\u654f", intendedVisibility: "private",
     validUntil: new Date(Date.now() + 6 * 60 * 1000).toISOString(),
-  }, { callId: "c-short" });
+  }, toolContext("c-short"));
   assert.equal(short.status, "succeeded");
   assert.equal(captured[0], null);
   const longUntil = new Date(Date.now() + 40 * 24 * 60 * 60 * 1000).toISOString();
   const long = await propose.execute({
     key: "allergy-sesame", content: "Esther\u5c0d\u829d\u9ebb\u904e\u654f", intendedVisibility: "private",
     validUntil: longUntil,
-  }, { callId: "c-long" });
+  }, toolContext("c-long"));
   assert.equal(long.status, "succeeded");
   assert.equal(captured[1], longUntil);
 });
@@ -214,7 +218,7 @@ test("preference propose_fact auto-prepares confirmation for full receipt append
   const propose = surface.tools.find(tool => tool.name === "propose_fact")!;
   const proposed = await propose.execute({
     key: "likes-avocado", content: preferenceContent, intendedVisibility: "private", validUntil: null,
-  }, { callId: "c-avocado" });
+  }, toolContext("c-avocado"));
   assert.equal(proposed.status, "succeeded");
   assert.equal((proposed.data as { result?: { confirmationPrepared?: boolean } }).result?.confirmationPrepared, true);
   assert.equal(confirmations.length, 1);
@@ -252,7 +256,7 @@ test("dislike preference propose_fact also auto-prepares confirmation", async ()
   const propose = surface.tools.find(tool => tool.name === "propose_fact")!;
   const proposed = await propose.execute({
     key: "dislikes-broccoli", content, intendedVisibility: "private", validUntil: null,
-  }, { callId: "c-broccoli" });
+  }, toolContext("c-broccoli"));
   assert.equal(proposed.status, "succeeded");
   assert.equal((proposed.data as { result?: { confirmationPrepared?: boolean } }).result?.confirmationPrepared, true);
   assert.equal(confirmations.length, 1);
@@ -280,7 +284,7 @@ test("hydration questions reject propose_fact (read, never propose)", async () =
   const propose = surface.tools.find(tool => tool.name === "propose_fact")!;
   const rejected = await propose.execute({
     key: "Esther_water_intake", content: "Esther需要每天飲8杯水", intendedVisibility: "private", validUntil: null,
-  }, { callId: "c-hydrate-q" });
+  }, toolContext("c-hydrate-q"));
   assert.equal(rejected.status, "rejected");
   assert.equal((rejected.data as { code?: string }).code, "memory_read_not_propose");
   assert.equal(proposed, false);
@@ -312,7 +316,7 @@ test("mixed remember + question still allows propose_fact", async () => {
   const propose = surface.tools.find(tool => tool.name === "propose_fact")!;
   const accepted = await propose.execute({
     key: "allergy-egg", content: "BB 對雞蛋過敏", intendedVisibility: "private", validUntil: null,
-  }, { callId: "c-mixed" });
+  }, toolContext("c-mixed"));
   assert.equal(accepted.status, "succeeded");
   assert.equal(proposed, 1);
 });
@@ -337,7 +341,7 @@ test("explicit short-lived preference propose keeps short validUntil", async () 
   const propose = surface.tools.find(tool => tool.name === "propose_fact")!;
   const short = await propose.execute({
     key: "warm-water-today", content, intendedVisibility: "private", validUntil: sixHours,
-  }, { callId: "c-short-pref" });
+  }, toolContext("c-short-pref"));
   assert.equal(short.status, "succeeded");
   assert.equal(captured[0], sixHours);
 });
@@ -349,7 +353,7 @@ test("remembered-fact read-back rejects a new proposal without preparing confirm
     propose: async () => { writes++; return {}; } });
   const result = await surface.tools.find(tool => tool.name === "propose_fact")!.execute({
     key: "egg-allergy", content: "BB 對雞蛋過敏", intendedVisibility: "private", validUntil: null,
-  }, { callId: "read-not-write" });
+  }, toolContext("read-not-write"));
   assert.equal(result.status, "rejected");
   assert.equal(result.data?.code, "memory_read_not_propose");
   assert.equal(writes, 0);
@@ -362,7 +366,7 @@ test("mixed request only proposes the explicit fact, not an inferred answer to t
     propose: async () => { writes++; return {}; } });
   const result = await surface.tools.find(tool => tool.name === "propose_fact")!.execute({
     key: "tomorrow-food", content: "BB 明天不吃雞蛋", intendedVisibility: "private", validUntil: null,
-  }, { callId: "inferred-fact" });
+  }, toolContext("inferred-fact"));
   assert.equal(result.status, "rejected");
   assert.equal(result.data?.code, "memory_fact_source_mismatch");
   assert.equal(writes, 0);
@@ -380,7 +384,7 @@ test("short expiry follows trusted original wording rather than a model paraphra
     } });
   const result = await surface.tools.find(tool => tool.name === "propose_fact")!.execute({
     key: "egg-tonight", content: "BB 不吃雞蛋", intendedVisibility: "private", validUntil: until,
-  }, { callId: "temporary-fact" });
+  }, toolContext("temporary-fact"));
   assert.equal(result.status, "succeeded");
   assert.deepEqual(seen, [until]);
   assert.equal(confirmations.length, 1);
@@ -408,7 +412,7 @@ function memoryForFacts(facts: MemoryFact[], getFact?: (id: string) => MemoryFac
 async function presentMemory(surface: ReturnType<typeof tools>, text: string) {
   const result = await surface.tools.find(tool => tool.name === "present_answer")!.execute({
     kind: "record_restatement", paragraphs: [{ text, citationIds: [] }],
-  }, { callId: "present-memory" });
+  }, toolContext("present-memory"));
   assert.equal(result.status, "succeeded");
   return (await surface.presentation())!;
 }
@@ -479,10 +483,10 @@ for (const questions of [[], ["first", "second"]]) {
     const surface = tools({ trustedUserMessage: "BB 對雞蛋過敏", confirmationQuestions: async () => questions });
     await surface.tools.find(tool => tool.name === "propose_fact")!.execute({
       key: "egg-allergy", content: "BB 對雞蛋過敏", intendedVisibility: "private", validUntil: null,
-    }, { callId: "candidate" });
+    }, toolContext("candidate"));
     await surface.tools.find(tool => tool.name === "present_answer")!.execute({
       kind: "record_restatement", paragraphs: [{ text: "BB 對雞蛋過敏。", citationIds: [] }],
-    }, { callId: "present-candidate" });
+    }, toolContext("present-candidate"));
     const presentation = await surface.presentation();
     assert.notEqual(presentation!.text, AGENT_CONFIRMATION_PENDING_TEXT);
     assert.equal(surface.deliveryDraft()!.serverSubstitutedReceiptText, false);
@@ -493,7 +497,7 @@ test("a missing confirmation result is not reported as prepared", async () => {
   const surface = tools({ trustedUserMessage: "BB 對雞蛋過敏", requestConfirmation: async () => null });
   await assert.rejects(surface.tools.find(tool => tool.name === "propose_fact")!.execute({
     key: "egg-allergy", content: "BB 對雞蛋過敏", intendedVisibility: "private", validUntil: null,
-  }, { callId: "candidate-no-confirmation" }), (error: unknown) => error instanceof AgentStopped && error.reason === "unauthorized");
+  }, toolContext("candidate-no-confirmation")), (error: unknown) => error instanceof AgentStopped && error.reason === "unauthorized");
 });
 
 test("explicit fact and a comma-separated later question cannot be stored together", async () => {
@@ -502,7 +506,7 @@ test("explicit fact and a comma-separated later question cannot be stored togeth
     propose: async () => { writes++; return {}; } });
   const result = await surface.tools.find(tool => tool.name === "propose_fact")!.execute({
     key: "food", content: "BB 對雞蛋過敏，明天應該帶香蕉", intendedVisibility: "private", validUntil: null,
-  }, { callId: "mixed-source" });
+  }, toolContext("mixed-source"));
   assert.equal(result.status, "rejected");
   assert.equal(result.data?.code, "memory_fact_source_mismatch");
   assert.equal(writes, 0);
@@ -515,7 +519,7 @@ test("mixed source matching preserves numeric punctuation", async () => {
     propose: async () => { writes++; return {}; } });
   const result = await surface.tools.find(tool => tool.name === "propose_fact")!.execute({
     key: "banana", content: "BB 喜歡 12 份香蕉", intendedVisibility: "private", validUntil: null,
-  }, { callId: "distinct-quantity" });
+  }, toolContext("distinct-quantity"));
   assert.equal(result.status, "rejected");
   assert.equal(result.data?.code, "memory_fact_source_mismatch");
   assert.equal(writes, 0);
@@ -528,7 +532,7 @@ test("an old source ID cannot widen the fact explicitly requested in a mixed tur
   const result = await surface.tools.find(tool => tool.name === "propose_fact")!.execute({
     key: "banana", content: "BB 喜歡香蕉", intendedVisibility: "private", validUntil: null,
     sourceMessageId: "00000000-0000-4000-8000-000000000001",
-  }, { callId: "old-unrequested-fact" });
+  }, toolContext("old-unrequested-fact"));
   assert.equal(result.status, "rejected");
   assert.equal(result.data?.code, "memory_fact_source_mismatch");
   assert.equal(writes, 0);
@@ -540,7 +544,7 @@ for (const text of ['幫我記：BB 對雞蛋過敏。明天帶甚麼？', '請�
     const surface = tools({ trustedUserMessage: text });
     const result = await surface.tools.find(tool => tool.name === "propose_fact")!.execute({
       key: "egg-allergy", content: "BB 對雞蛋過敏", intendedVisibility: "private", validUntil: null,
-    }, { callId: "record-clause" });
+    }, toolContext("record-clause"));
     assert.equal(result.status, "succeeded");
     assert.equal(result.data?.result && (result.data.result as { confirmationPrepared: boolean }).confirmationPrepared, true);
   });
@@ -555,7 +559,7 @@ test("a temporary clause does not authorize short expiry for a different fact", 
   const result = await surface.tools.find(tool => tool.name === "propose_fact")!.execute({
     key: "milk-allergy", content: "BB 對牛奶過敏", intendedVisibility: "private",
     validUntil: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
-  }, { callId: "separate-fact-window" });
+  }, toolContext("separate-fact-window"));
   assert.equal(result.status, "succeeded");
   assert.deepEqual(seen, [null]);
 });
@@ -567,12 +571,12 @@ async function mixedMemoryAndOfficialSurface() {
   const chunk = { chunkId: "00000000-0000-4000-8000-000000000099", versionId: "00000000-0000-4000-8000-000000000098",
     sourceId: "synthetic-official", classification: "official_guidance", text: "如對食物過敏，應向醫護人員查詢。" };
   const surface = tools({ trustedUserMessage: "雞蛋過敏記憶是甚麼？有甚麼一般資料？", memory: memoryForFacts([fact], () => current), knowledgeChunks: [chunk] });
-  const searched = await surface.tools.find(tool => tool.name === "search_knowledge")!.execute({ query: "食物過敏", classification: "official_guidance" }, { callId: "search" });
+  const searched = await surface.tools.find(tool => tool.name === "search_knowledge")!.execute({ query: "食物過敏", classification: "official_guidance" }, toolContext("search"));
   assert.equal(searched.status, "succeeded");
   const presented = await surface.tools.find(tool => tool.name === "present_answer")!.execute({
     kind: "mixed", paragraphs: [{ kind: "record_restatement", text: "BB 對雞蛋過敏。", citationIds: [] },
       { kind: "caregiving", text: chunk.text, citationIds: [chunk.chunkId] }],
-  }, { callId: "mixed-presentation" });
+  }, toolContext("mixed-presentation"));
   assert.equal(presented.status, "succeeded");
   return { surface, fact, chunk, revoke: () => { current = null; } };
 }
@@ -601,7 +605,7 @@ for (const content of ['BB 不吃雞蛋，只限今晚', 'BB 不吃雞蛋']) {
       }; } });
     const result = await surface.tools.find(tool => tool.name === 'propose_fact')!.execute({
       key: 'egg-tonight', content, intendedVisibility: 'private', validUntil: until,
-    }, { callId: 'trailing-fact-window' });
+    }, toolContext('trailing-fact-window'));
     assert.equal(result.status, 'succeeded');
     assert.deepEqual(seen, [until]);
   });

@@ -136,7 +136,7 @@ export function createProductAgentTools(options: {
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;
   let serverReceiptText: string | null = null;
   let pendingMemoryProposalCount = 0;
-  function usableMemoryFact(fact: MemoryFact | null | undefined): fact is MemoryFact {
+  function usableMemoryFact(fact: MemoryFact | null | undefined): boolean {
     return Boolean(fact && fact.childId === scope.childId && fact.applicable && factIsApplicable(fact)
       && (options.visibility !== "family" || fact.visibility === "family"));
   }
@@ -177,7 +177,7 @@ export function createProductAgentTools(options: {
     for (const previous of selectedMemoryFacts) {
       if (typeof memory.getFact !== "function") throw new AgentStopped("delivery_review_incomplete");
       const currentFact = await memory.getFact(scope.userId, scope.childId, previous.id);
-      if (!usableMemoryFact(currentFact) || currentFact.version !== previous.version
+      if (!currentFact || !usableMemoryFact(currentFact) || currentFact.version !== previous.version
         || chatDeliveryContentHash(currentFact.content) !== chatDeliveryContentHash(previous.content)) {
         throw new AgentStopped("delivery_review_incomplete");
       }
