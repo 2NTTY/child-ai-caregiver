@@ -5,7 +5,7 @@
   "variant": "uiux-upgrade",
   "productCommit": "f1c60c6ae2928e5407dabccbd04a504f691e39cf",
   "productTree": "f7619a5e1c59256d914c2b3693a768921f0c489d",
-  "sourceAcquisition": "Original f1 productCommit/productTree remain provenance. Fresh detached checkout of the separately pinned clean published build commit contains the reviewed Task owner correction. The unchanged shared build-input verifier admits its exact full namespace, and PRODUCT_INPUTS binds the candidate bytes with productSourceDelta explicitly identifying the one correction. No export-time overlay or product edit.",
+  "sourceAcquisition": "Original f1 productCommit/productTree remain provenance. Fresh detached checkout of the separately pinned clean published build commit contains the cumulative reviewed source corrections, including the Fourth TaskDetail history-read focus fix. Unchanged shared build-input verifier admits its exact full namespace; PRODUCT_INPUTS and productSourceDelta bind the exact candidate bytes and cumulative provenance. No export-time overlay or product edit.",
   "productSourceDelta": [
     {
       "destination": "frontend/src/production/task-knowledge-tasks.ts",
@@ -69,6 +69,15 @@
       "gitBlob": "e6118eb54d8a5cbbabd9bcdebdb03d30f211989e",
       "mode": "100644",
       "committedIn": "d5e72ba1c764601a60d70673a3756186da6469d2"
+    },
+    {
+      "destination": "frontend/src/components/tasks/TaskDetail.tsx",
+      "beforeSha256": "5ab3289f11ca09a7c37a635871dd0a11974fe97a92a72c055a144b3017fb1154",
+      "sha256": "bbe798606b24b9567a4d0316a1beebfa0bff1bcf84d10af410d339138ea28ea7",
+      "bytes": 7468,
+      "gitBlob": "231474e1e8dd96487e09c971efdc3cccea11701a",
+      "mode": "100644",
+      "committedIn": "1abaf5b07eedf908c384ea4ba0319eed0cc2bda3"
     }
   ],
   "sourcePins": {
@@ -91,10 +100,11 @@
     "frontend/src/motion/MotionDisclosure.tsx": "f7af15d27b7826f108941430dc92dcaa951abbf8fbf60d6854b1f033cd7423a9",
     "frontend/src/motion/MotionDrawerRight.tsx": "8c57de828d7dc821c5abbb67dd45842ed59892e27aeef15bc6505a9784652017",
     "frontend/src/motion/MotionFeedback.tsx": "89ce054eb9f5a579e376dff5111cc5763b50fb8d564133dd4e3f48a81e146061",
-    "frontend/src/components/ui.tsx": "4dd4699227ccb9ad73369aad33a4b564c12f75004c7f2959857d81cde3fde223"
+    "frontend/src/components/ui.tsx": "4dd4699227ccb9ad73369aad33a4b564c12f75004c7f2959857d81cde3fde223",
+    "frontend/src/components/tasks/TaskDetail.tsx": "bbe798606b24b9567a4d0316a1beebfa0bff1bcf84d10af410d339138ea28ea7"
   },
   "inputManifest": "PRODUCT_INPUTS.json",
-  "inputManifestSha256": "00b1d2bbbc20ebe17df3a3e97e1d024bc7f7cd7887be4c74546463f3a2b05232",
+  "inputManifestSha256": "f6b2a8318dcb86ba9655aff20f9de3edcfee95fa36c162d70318840ebc615996",
   "entrypoint": "frontend/index.js -> runtime web stub -> own web-foundation -> browser-history-events -> installed expo-router/entry; root layout retains own ProductionProvider/FirstScreenGate; no Application/OwnerHost substitution",
   "lockFile": "package-lock.json",
   "lockSha256": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",
@@ -184,7 +194,7 @@
   "fixtureBaseSha256": "7f7baa579563687cf664a2f5d0f671a4e2a209df5e596b82b3e5f4951017ea57",
   "outputContract": "Fourth-only contribution: 36 route shells and fourth payloads, fresh source-map-bound assets, exact-reviewed favicon, fourth fixture/helper/safety. Parent keeps historical original and canonical four dispatcher. Public GitHub artifact contains only sanitized site plus public-safe proof. Full raw/maps validated remotely and retained only on runner until teardown; NEVER uploaded or described as private GitHub artifacts.",
   "expectedOutputBytes": null,
-  "expectedOutputBytesReason": "No fourth export has run; do not invent its size.",
+  "expectedOutputBytesReason": "No export of this Fourth focus build has run; do not invent its size.",
   "publication": "BLOCKED_UNTIL_NATIVE_BROWSER_ACCEPTANCE",
   "remainingGates": [
     "independent recipe/source review",

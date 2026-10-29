@@ -35,7 +35,7 @@
       "buildCommit": "71c030f0d7cf1feefe2573a41c7e8e9856d4d7d8",
       "buildTree": "994ed8ca84a2a575f0b95279597d50afbf26ad58",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "4f79d1b2824c65f8bc43553d78121abd5dd09140708a88377c98213cb46572d8",
+      "buildInputsManifestSha256": "1cf189b37f3308d1f71fbeb6fd1c8cfcb4f92a5b742ca44831702b11ead0ca1e",
       "candidateChanges": [
         {
           "source": "orchestrator/care/overlay/frontend/src/production/task-knowledge-tasks.ts",
@@ -125,7 +125,7 @@
       "buildCommit": "56be26ec51afbb1df4c7f24dbc28b9dea1e0ae99",
       "buildTree": "6d8f6e71a9f870bcb3d13a342dc64e65b4609235",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "4f79d1b2824c65f8bc43553d78121abd5dd09140708a88377c98213cb46572d8",
+      "buildInputsManifestSha256": "1cf189b37f3308d1f71fbeb6fd1c8cfcb4f92a5b742ca44831702b11ead0ca1e",
       "candidateChanges": [
         {
           "destination": "frontend/src/production/task-knowledge-tasks.ts",
@@ -199,7 +199,7 @@
       "buildCommit": "a8181ff0c3b58acedfea85c4a977b7435d657dea",
       "buildTree": "702ad7e707dd755786e060915748b65f80ef56a5",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "4f79d1b2824c65f8bc43553d78121abd5dd09140708a88377c98213cb46572d8",
+      "buildInputsManifestSha256": "1cf189b37f3308d1f71fbeb6fd1c8cfcb4f92a5b742ca44831702b11ead0ca1e",
       "candidateChanges": [
         {
           "destination": "frontend/src/production/task-knowledge-tasks.ts",
@@ -263,9 +263,9 @@
         "fourth/assemble.py": "338d94ff617a505db2fde4fbe498fd1e78753ea5191cb9f8889a935175944353",
         "fourth/verify_source.py": "5fc896364e3cde4526f996d087133132faeed4b0de88cdd777613a4ef088542f",
         "fourth/verify_graph.mjs": "a363a9473d39eae99a7bef592fac9e5ae12b8a8c19d50f825dc69a2e17df9247",
-        "fourth/PRODUCT_INPUTS.json": "00b1d2bbbc20ebe17df3a3e97e1d024bc7f7cd7887be4c74546463f3a2b05232",
+        "fourth/PRODUCT_INPUTS.json": "f6b2a8318dcb86ba9655aff20f9de3edcfee95fa36c162d70318840ebc615996",
         "fourth/protocol.json": "d6f110463664e68e32f81015f089d92e1a719732713e0dadb350ac10c9026423",
-        "fourth/recipe.json": "32f01fa280e7ee22aac67cc1c6f25a8e9047d14790f1a11d19953cbb7c5b8877",
+        "fourth/recipe.json": "79f5c904d6ac4672547e6c4519b330778b3784d90eec96be716f0ff07940807a",
         "fourth/adapter/admission.js": "8ef2f9ba7246722bde347330f002dd378ee27b265b906c4af833351015c4ff2b",
         "fourth/adapter/fixture-patches.json": "5c0e14a3182453b2f35ae557c731fd3bf392cada9306410aa75f5c1ada1f965e",
         "fourth/adapter/startup-guard.js": "1835436d1630bdcada4a63aed87cbc581ac40e39cc77fe9606648eceff185912",
@@ -275,10 +275,10 @@
         "fourth/overlay/experiments/preview-navigation-identity-fourth-v1.js": "ef238ce5675840b1a5313d98b4458bd5eb08829f7af189862551e7e9194c915f",
         "fourth/tests/admission.mjs": "a84d8be911727985500615e47d55ed8bb1a7664ba19cf0a63863e27618744aa5"
       },
-      "buildCommit": "3a421f6f116853f79e417fa0099a6a13c77197bc",
-      "buildTree": "3bbf92804bb28635d40ffebc64f2c2834e9121b7",
+      "buildCommit": "1abaf5b07eedf908c384ea4ba0319eed0cc2bda3",
+      "buildTree": "9b77fe0f20b951272243510650122f9d8fa22e7b",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "4f79d1b2824c65f8bc43553d78121abd5dd09140708a88377c98213cb46572d8",
+      "buildInputsManifestSha256": "1cf189b37f3308d1f71fbeb6fd1c8cfcb4f92a5b742ca44831702b11ead0ca1e",
       "candidateChanges": [
         {
           "destination": "frontend/src/production/task-knowledge-tasks.ts",
@@ -342,6 +342,15 @@
           "gitBlob": "e6118eb54d8a5cbbabd9bcdebdb03d30f211989e",
           "mode": "100644",
           "committedIn": "d5e72ba1c764601a60d70673a3756186da6469d2"
+        },
+        {
+          "destination": "frontend/src/components/tasks/TaskDetail.tsx",
+          "beforeSha256": "5ab3289f11ca09a7c37a635871dd0a11974fe97a92a72c055a144b3017fb1154",
+          "sha256": "bbe798606b24b9567a4d0316a1beebfa0bff1bcf84d10af410d339138ea28ea7",
+          "bytes": 7468,
+          "gitBlob": "231474e1e8dd96487e09c971efdc3cccea11701a",
+          "mode": "100644",
+          "committedIn": "1abaf5b07eedf908c384ea4ba0319eed0cc2bda3"
         }
       ]
     }

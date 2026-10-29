@@ -461,8 +461,8 @@
     },
     {
       "path": "frontend/src/components/tasks/TaskDetail.tsx",
-      "bytes": 7342,
-      "sha256": "5ab3289f11ca09a7c37a635871dd0a11974fe97a92a72c055a144b3017fb1154"
+      "bytes": 7468,
+      "sha256": "bbe798606b24b9567a4d0316a1beebfa0bff1bcf84d10af410d339138ea28ea7"
     },
     {
       "path": "frontend/src/components/tasks/TaskForm.tsx",
