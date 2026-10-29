@@ -1,5 +1,6 @@
 import { createAvatarApi } from '../../../src/client/avatars-api.ts';
 import { createHandoverApi } from '../../../src/client/handover-api.ts';
+import { createFamilyDocumentsApi } from '../../../src/client/family-documents-api.ts';
 import { HandoverOwner } from './HandoverOwner.ts';
 import { HandoverImportOwner } from './HandoverImportOwner.ts';
 import { AvatarOwner } from './AvatarOwner';
@@ -126,7 +127,8 @@ export class ProductionOwner {
     });
     this.handoverImportOwner = new HandoverImportOwner(createHandoverApi(this.apiBaseUrl, this.fetcher), error => {
       if (error.status === 401 || error.code === 'identity_changed' || error.code === 'session_changed') void this.controller.restoreSession();
-    });
+    }, (userId, target, id, query, signal) => createFamilyDocumentsApi(this.apiBaseUrl, this.fetcher,
+      target.spaceId ? { spaceId: target.spaceId } : undefined).readContent(target.childId, id, query, signal, userId));
     this.reauthenticateAdmin = async (proof, signal) => {
       const userId = this.controller.getSnapshot().user?.id;
       if (!userId || !firebaseIdentity) throw new Error('Reauthentication unavailable');
@@ -295,6 +297,7 @@ export class ProductionOwner {
       if (nextScope !== this.snapshot.scopeKey && this.snapshot.scopeKey) {
         void this.queryClient.cancelQueries({ queryKey: ["production", this.snapshot.scopeKey] });
         this.queryClient.removeQueries({ queryKey: ["production", this.snapshot.scopeKey] });
+        this.handoverImportOwner.closeSourceHistory();
       }
       this.avatarOwner?.syncContext(this.accountOwner.isReady() && this.identity && userId ? { key: this.identity, userId } : null,
         privateScope && raw.selectedChildId ? { key: privateScope, childId: raw.selectedChildId } : null, raw.online);
@@ -347,11 +350,13 @@ export class ProductionOwner {
   async selectSharedChild(spaceId:string,childId:string){
     const raw=this.controller.getSnapshot();
     if(!this.canStartDomainWrite()||raw.busy||raw.deletion||raw.childOutcome==='unknown'||raw.childOutcome==='checked')return;
+    this.handoverImportOwner.closeSourceHistory();
     await this.sharedChild.select(spaceId,childId);
   }
   async selectPersonalChild(childId:string){
     const raw=this.controller.getSnapshot();
     if(!this.canStartDomainWrite()||raw.busy||raw.deletion||raw.childOutcome==='unknown'||raw.childOutcome==='checked')return;
+    this.handoverImportOwner.closeSourceHistory();
     await this.controller.selectChild(childId);
     if(this.controller.getSnapshot().selectedChildId===childId)this.sharedChild.clear();
   }

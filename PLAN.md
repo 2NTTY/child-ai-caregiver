@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-30）：[P4-HANDOVER01](#p4-handover01) 文件成果匯入。**#382～#389 的記憶、私人來源、文件匯出／目前值及到診準備預備匯入已合併未部署，沿原證據不重測。#390／`0999402d` 已合併文件來源修訂的有界加密保存、分頁／固定版讀取及完整匯出；原版本與本地版本分開，失效正文不復活，還原換世代仍防重。必要合成流程、局部型別及獨立 review 已核，見[證據](artifacts/verification/P4_HANDOVER_DOCUMENT_HISTORY_20261030.json)。本輪 `codex/p4-handover-document-pipeline` 已把文件／準備單五個 section 接入原 worker、逐項收據、來源映射與歷史匯出。兩條必要合成流程及四根後端型別圖通過；review 的 stale 遮蔽／跨模組預約權限及共享 change 接點已修，見[證據](artifacts/verification/P4_HANDOVER_DOCUMENT_PIPELINE_20261030.json)。同輪先交相容結果標籤，後端合併後接共用文件選擇及歷史閱讀；未部署，不把後端通過當作整包可用。私人來源管理歷史不等於正文修訂，單項來源刪除的獨立還原重放留 S15。其餘模組、差異、班級／期間、完整備份、簽章配置與原生大型包繼續待辦；依賴包等前包合併，不動 D PR。
+**當前入口（2026-10-30）：[P4-HANDOVER01](#p4-handover01) 文件匯入共用畫面收束。**#382～#392 已合併未部署；記憶、私人來源及文件／準備單目前值、來源修訂、原 worker／逐項收據／映射均已接。當前 `codex/p4-handover-document-ui` 從 `edb2a999` 接通共用文件選擇、結果、原準備歷史與固定版正文 API；必要元件／owner、真 API 接點及自動撤權檢查通過，獨立 review 已收束，待提交合併。詳見[共用畫面證據](frontend/verification/P4_HANDOVER_DOCUMENT_UI_20261030.json)及[批次證據](artifacts/verification/P4_HANDOVER_DOCUMENT_PIPELINE_20261030.json)。其餘模組、差異、班級／期間、完整私人備份、簽章配置與原生大型包繼續待辦；單私人來源刪除的獨立還原重放留 S15。未部署、未作真雲端／設備驗收；不動 D PR，P3／P5 及既有待驗不計完成。
 
 **已合併未部署：**#358 班級解散與 #359 待辦身份接線，[清理](artifacts/verification/P4_CLASS_ERASURE_20261028.json)及[提醒證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)不重跑。選其他成員、班級 Agent 與外部通知仍待接續，不借管理員 key、不改 D PR。整個 CLASS01／P4、P3／P5 的未完成項不變。
 

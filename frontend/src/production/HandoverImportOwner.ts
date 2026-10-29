@@ -3,6 +3,8 @@ import { handoverImportCommandSchema, handoverImportModuleOf, type HandoverImpor
   type HandoverImportResult, type HandoverImportResultQuery } from '../../../src/shared/handover-imports.ts';
 import { handoverUploadCommandSchema, type HandoverUploadCommand, type HandoverUploadView } from '../../../src/shared/handover-uploads.ts';
 import { handoverErrorText } from './HandoverOwner.ts';
+import { FamilyDocumentApiError, parseFamilyDocumentSnapshot } from '../../../src/client/family-documents-api.ts';
+import type { DocumentContentPage, DocumentContentQuery, DocumentSnapshot } from '../../../src/shared/family-documents.ts';
 
 export interface SelectedPackage { filename: string; bytes: number; sha256: string; body: BodyInit; release(): void }
 type Control = { opId: string; expectedVersion: number };
@@ -20,16 +22,26 @@ export function handoverResultResourceSection(row: HandoverImportResult): Handov
 }
 export function canReadHandoverSourceHistory(row: HandoverImportResult) {
   const section = handoverResultResourceSection(row);
-  return !!row.recordedResource && (section === 'memory_facts' || section === 'memory_topics' || section === 'summary_history' || section === 'private_sources');
+  return !!row.recordedResource && (section === 'memory_facts' || section === 'memory_topics' || section === 'summary_history' || section === 'private_sources'
+    || section === 'documents' || section === 'visit_preparation');
 }
 export function handoverSourceHistoryKey(item: HandoverSourceHistoryPage['items'][number]) {
   const source = item.evidence.source.current.source;
-  return JSON.stringify([item.resource.id, item.evidence.module, source.serverId, source.accountId, source.childId, source.resourceId, source.resourceVersion]);
+  return JSON.stringify([item.resource.id, item.evidence.module, source.serverId, source.accountId, source.childId, source.resourceId, source.resourceVersion,
+    item.evidence.module === 'documents' ? item.evidence.value.snapshotId : null]);
+}
+export type HandoverDocumentContentPort = (userId: string, target: { childId: string; spaceId: string | null }, documentId: string,
+  query: DocumentContentQuery, signal: AbortSignal) => Promise<DocumentContentPage>;
+export interface HandoverDocumentContentState {
+  key: string; documentId: string; snapshotId: string; snapshotVersion: number;
+  authorityVersion: string | null; documentVersion: number | null; totalCharacters: number | null;
+  text: string; nextOffset: number | null; complete: boolean; invalidated: boolean; loading: boolean; error: string | null; snapshot: DocumentSnapshot | null;
 }
 export interface HandoverSourceHistoryState {
   batchId: string; resultId: string; query: Omit<HandoverSourceHistoryQuery, 'cursor'>; revision: number;
   items: HandoverSourceHistoryPage['items']; page: number; nextCursor: string | null; complete: boolean;
   loaded: boolean; loading: boolean; error: string | null;
+  documentContent: HandoverDocumentContentState | null;
 }
 export interface HandoverImportState {
   userId: string | null; identityKey: string | null; online: boolean; loaded: boolean;
@@ -49,8 +61,10 @@ export class HandoverImportOwner {
   private file: SelectedPackage | null = null; private listeners = new Set<() => void>();
   private resultsTicket: Ticket | null = null; private resultsRevision = 0;
   private historyTicket: Ticket | null = null; private historyRevision = 0;
+  private documentTicket: Ticket | null = null;
+  private documentPort?: HandoverDocumentContentPort;
   private api: HandoverApi; private accessError: (error: HandoverApiError) => void;
-  constructor(api: HandoverApi, accessError: (error: HandoverApiError) => void = () => {}) { this.api = api; this.accessError = accessError; }
+  constructor(api: HandoverApi, accessError: (error: HandoverApiError) => void = () => {}, documentPort?: HandoverDocumentContentPort) { this.api = api; this.accessError = accessError; this.documentPort = documentPort; }
   getSnapshot = () => this.state;
   subscribe = (fn: () => void) => { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; };
   private update(patch: Partial<HandoverImportState>) { this.state = { ...this.state, ...patch }; this.listeners.forEach(fn => fn()); }
@@ -60,6 +74,7 @@ export class HandoverImportOwner {
       this.epoch++; this.active?.abort(); this.active = null; this.release(); this.api.setIdentity(null); this.api.setIdentity(userId);
       this.resultsTicket = null; this.resultsRevision++;
       this.historyTicket = null; this.historyRevision++;
+      this.documentTicket = null;
       this.state = empty(userId, identityKey, online); this.update({});
     } else this.update({ online });
   }
@@ -125,7 +140,7 @@ export class HandoverImportOwner {
     }
   }
   selectResults = (batchId: string, sourceChildId: string, module: HandoverImportResultQuery['module']) => {
-    if (this.state.pending || this.state.busy && !this.resultsTicket && !this.historyTicket) return;
+    if (this.state.pending || this.state.busy && !this.resultsTicket && !this.historyTicket && !this.documentTicket) return;
     const batch = this.state.items.find(row => row.id === batchId);
     if (!batch?.targets.some(target => target.sourceChildId === sourceChildId && target.sections.includes(module))) return;
     this.stopResultsRead(); this.stopHistoryRead();
@@ -133,12 +148,12 @@ export class HandoverImportOwner {
       items: [], nextCursor: null, loaded: false, error: null } });
   };
   closeResults = () => {
-    if (this.state.busy && !this.resultsTicket && !this.historyTicket) return;
+    if (this.state.busy && !this.resultsTicket && !this.historyTicket && !this.documentTicket) return;
     this.stopResultsRead(); this.stopHistoryRead(); this.update({ results: null, sourceHistory: null });
   };
   readResults = async (more = false) => {
     const previous = this.state.results; if (!previous || more && !previous.nextCursor) return;
-    if (this.historyTicket) this.stopHistoryRead();
+    if (this.historyTicket || this.documentTicket) this.stopHistoryRead();
     const t = this.begin('read'); if (!t) return;
     const results = more ? { ...previous, error: null } : { ...previous, revision: ++this.resultsRevision,
       items: [], nextCursor: null, loaded: false, error: null };
@@ -160,6 +175,7 @@ export class HandoverImportOwner {
     } finally { if (this.resultsTicket === t) this.resultsTicket = null; this.finish(t); }
   };
   private stopHistoryRead() {
+    this.closeDocumentContent();
     const ticket = this.historyTicket; this.historyTicket = null;
     if (ticket) {
       ticket.controller.abort();
@@ -168,7 +184,7 @@ export class HandoverImportOwner {
     }
   }
   openSourceHistory = async (resultId: string) => {
-    if (this.state.pending || this.state.busy && !this.historyTicket) return;
+    if (this.state.pending || this.state.busy && !this.historyTicket && !this.documentTicket) return;
     const results = this.state.results, row = results?.items.find(item => item.id === resultId);
     const section = row ? handoverResultResourceSection(row) : null;
     const batch = this.state.items.find(item => item.id === results?.batchId);
@@ -179,14 +195,15 @@ export class HandoverImportOwner {
     this.stopHistoryRead();
     this.update({ sourceHistory: { batchId: results.batchId, resultId, revision: ++this.historyRevision,
       query: { ...target, module: section!, resourceId: row.recordedResource!.id },
-      items: [], page: 0, nextCursor: null, complete: false, loaded: false, loading: false, error: null } });
+      items: [], page: 0, nextCursor: null, complete: false, loaded: false, loading: false, error: null, documentContent: null } });
     await this.readSourceHistory();
   };
   closeSourceHistory = () => { this.stopHistoryRead(); this.update({ sourceHistory: null }); };
   readSourceHistory = async (more = false) => {
     const previous = this.state.sourceHistory; if (!previous || more && !previous.nextCursor) return;
+    this.closeDocumentContent();
     const t = this.begin('read'); if (!t) return;
-    const history = more ? { ...previous, loading: true, error: null } : { ...previous, revision: ++this.historyRevision,
+    const history = more ? { ...previous, documentContent: null, loading: true, error: null } : { ...previous, documentContent: null, revision: ++this.historyRevision,
       items: [], page: 0, nextCursor: null, complete: false, loaded: false, loading: true, error: null };
     this.historyTicket = t; this.update({ sourceHistory: history });
     try {
@@ -201,6 +218,53 @@ export class HandoverImportOwner {
         this.error(t, error);
       }
     } finally { if (this.historyTicket === t) this.historyTicket = null; this.finish(t); }
+  };
+  closeDocumentContent = () => {
+    const ticket = this.documentTicket; this.documentTicket = null;
+    ticket?.controller.abort();
+    if (ticket && this.active === ticket.controller) { this.active = null; this.update({ busy: null }); }
+    if (this.state.sourceHistory?.documentContent) this.update({ sourceHistory: { ...this.state.sourceHistory, documentContent: null } });
+  };
+  openDocumentContent = async (key: string) => {
+    if (this.state.pending || this.state.busy && !this.documentTicket || !this.documentPort) return;
+    const history = this.state.sourceHistory, item = history?.items.find(value => handoverSourceHistoryKey(value) === key), value = item?.evidence.value;
+    if (!history?.loaded || history.error || item?.evidence.module !== 'documents' || !value || value.invalidated !== false
+      || value.documentId !== history.query.resourceId || typeof value.snapshotId !== 'string' || typeof value.snapshotVersion !== 'number'
+      || !Number.isSafeInteger(value.snapshotVersion) || value.snapshotVersion <= 0) return;
+    this.closeDocumentContent();
+    this.update({ sourceHistory: { ...history, documentContent: { key, documentId: history.query.resourceId, snapshotId: value.snapshotId,
+      snapshotVersion: value.snapshotVersion, authorityVersion: null, documentVersion: null, totalCharacters: null, text: '', nextOffset: 0,
+      complete: false, invalidated: false, loading: false, error: null, snapshot: null } } });
+    await this.readDocumentContent();
+  };
+  readDocumentContent = async () => {
+    const history = this.state.sourceHistory, previous = history?.documentContent;
+    if (!history || !previous || previous.nextOffset === null || previous.invalidated || !this.documentPort) return;
+    const t = this.begin('read'); if (!t) return;
+    this.documentTicket = t;
+    const valid = () => this.current(t) && this.state.sourceHistory?.revision === history.revision
+      && this.state.sourceHistory.documentContent?.key === previous.key;
+    const update = (documentContent: HandoverDocumentContentState) => this.update({ sourceHistory: { ...this.state.sourceHistory!, documentContent } });
+    update({ ...previous, loading: true, error: null });
+    try {
+      const page = await this.documentPort(t.userId, { childId: history.query.childId, spaceId: history.query.spaceId }, previous.documentId,
+        { snapshotId: previous.snapshotId, snapshotVersion: previous.snapshotVersion, offset: previous.nextOffset }, t.controller.signal);
+      if (!valid()) return;
+      if (page.invalidated) { update({ ...previous, text: '', snapshot: null, loading: false, invalidated: true, complete: false, nextOffset: null }); return; }
+      if (!page.authorityVersion || previous.authorityVersion !== null && (page.authorityVersion !== previous.authorityVersion || page.documentVersion !== previous.documentVersion)
+        || previous.totalCharacters !== null && page.totalCharacters !== previous.totalCharacters) throw new FamilyDocumentApiError(409, 'document_changed');
+      const text = previous.text + page.text;
+      const snapshot = page.complete ? parseFamilyDocumentSnapshot(JSON.parse(text), previous.snapshotId, previous.snapshotVersion) : null;
+      update({ ...previous, loading: false, authorityVersion: page.authorityVersion, documentVersion: page.documentVersion, totalCharacters: page.totalCharacters,
+        text: snapshot ? '' : text, nextOffset: page.nextOffset, complete: page.complete, snapshot });
+    } catch (error) {
+      if (valid()) {
+        const failure = new HandoverApiError(error instanceof FamilyDocumentApiError ? error.status : 0,
+          error instanceof FamilyDocumentApiError ? error.code ?? 'document_content_invalid' : 'document_content_invalid');
+        update({ ...previous, text: '', snapshot: null, loading: false, complete: false, authorityVersion: null, documentVersion: null,
+          totalCharacters: null, nextOffset: 0, error: importErrorText(failure) }); this.error(t, failure);
+      }
+    } finally { if (this.documentTicket === t) this.documentTicket = null; this.finish(t); }
   };
   resolveResults = async (mode: 'replace_current' | 'restore_deleted', ids: string[]) => {
     const results = this.state.results, original = this.state.items.find(row => row.id === results?.batchId);
@@ -335,6 +399,7 @@ export function importErrorText(error: unknown) {
     import_resolution_not_available: '原批次仍在執行或不能處理衝突，請先查看其最新狀態。',
     import_source_changed: '原資料包與批次不一致，不能用來處理這些衝突。',
     source_history_scope_changed: '來源歷史或目前權限已變更，請重新讀取。', invalid_history_cursor: '來源歷史續讀位置無效，請重新讀取第一頁。',
+    document_changed: '文件或來源權限基準已變更，請重新讀取。', document_content_invalid: '未能完整讀取原文件，請重新讀取。',
   };
   return messages[code] ?? handoverErrorText(error);
 }
