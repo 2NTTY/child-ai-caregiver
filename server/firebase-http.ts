@@ -1,5 +1,7 @@
 import { CHAT_FILE_UPLOAD_BODY_BYTES } from './firebase-chat-files-api.ts';
 import { VOICE_UPLOAD_BODY_BYTES } from './firebase-voice-api.ts';
+import { HANDOVER_UPLOAD_MAX_BYTES } from '../src/shared/handover-uploads.ts';
+import { domainReject } from './firestore-domain-data.ts';
 import { nativeRequestContext, requestOriginAllowed } from "./request-auth-transport.ts";
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -13,6 +15,7 @@ const UUID_PATH = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
 const photoContent = new RegExp('^/api/children/' + UUID_PATH + '/photos/' + UUID_PATH + '/content$', 'i');
 const voiceContent = new RegExp('^/api/children/' + UUID_PATH + '/voices/' + UUID_PATH + '/content$', 'i');
 const fileContent = new RegExp('^/api/children/' + UUID_PATH + '/files/' + UUID_PATH + '/content$', 'i');
+const packageContent = new RegExp('^/api/account/package-uploads/' + UUID_PATH + '/content$', 'i');
 const documentWrite = new RegExp('^/api/children/' + UUID_PATH + '/documents(?:/' + UUID_PATH + '/actions)?$', 'i');
 class BodyTooLarge extends Error {}
 function readBody(request: IncomingMessage, maximum: number, signal: AbortSignal): Promise<Uint8Array> {
@@ -55,6 +58,8 @@ async function write(response: Response, target: ServerResponse) {
     target.setHeader('cache-control', 'private, no-store, no-transform');
     target.flushHeaders();
     await pipeline(Readable.fromWeb(response.body as import('node:stream/web').ReadableStream), target);
+  } else if (response.headers.get('content-type') === 'application/zip' && response.body) {
+    await pipeline(Readable.fromWeb(response.body as import('node:stream/web').ReadableStream), target);
   } else target.end(Buffer.from(await response.arrayBuffer()));
 }
 const failure = (code: string, status: number) => Response.json({ code }, { status });
@@ -79,7 +84,8 @@ export function createFirebaseNodeHandler(options: {
       if (webhook && (method !== 'POST' || !telegramWebhookAuthorized(headers.get('x-telegram-bot-api-secret-token'), options.telegramConfig ?? null))) {
         await write(failure('forbidden', 403), response); return;
       }
-      const maximum = method === 'POST' && photoContent.test(pathname) ? MAX_PHOTO_BODY_BYTES
+      const streamingPackage = method === 'POST' && packageContent.test(pathname);
+      const maximum = streamingPackage ? HANDOVER_UPLOAD_MAX_BYTES : method === 'POST' && photoContent.test(pathname) ? MAX_PHOTO_BODY_BYTES
         : method === 'POST' && voiceContent.test(pathname) ? VOICE_UPLOAD_BODY_BYTES
         : method === 'POST' && fileContent.test(pathname) ? CHAT_FILE_UPLOAD_BODY_BYTES
         : method === 'POST' && documentWrite.test(pathname) ? MAX_DOCUMENT_BODY_BYTES : MAX_BODY_BYTES;
@@ -100,9 +106,20 @@ export function createFirebaseNodeHandler(options: {
           await write(failure(expected ? 'identity_changed' : 'account_precondition_required', expected ? 409 : 428), response); return;
         }
       }
-      const body = method === 'POST' ? await readBody(request, maximum, controller.signal) : undefined;
+      async function* packageBody() {
+        let bytes = 0;
+        // An idempotent response may stop consuming early; leave the socket alive for its receipt.
+        for await (const chunk of request.iterator({ destroyOnReturn: false })) {
+          controller.signal.throwIfAborted(); bytes += chunk.length;
+          if (bytes > maximum) domainReject('body_too_large', 413);
+          yield chunk;
+        }
+      }
+      const body = streamingPackage ? Readable.toWeb(Readable.from(packageBody()))
+        : method === 'POST' ? await readBody(request, maximum, controller.signal) : undefined;
       const incoming = new Request(new URL(path, options.publicOrigin), { method, headers, signal: controller.signal,
-        ...(body?.length ? { body: body as Uint8Array<ArrayBuffer> } : {}) });
+        ...(streamingPackage ? { body: body as ReadableStream<Uint8Array>, duplex: 'half' }
+          : body instanceof Uint8Array && body.length ? { body: body as Uint8Array<ArrayBuffer> } : {}) } as RequestInit);
       await write(await options.handler(incoming), response);
     } catch (error) {
       if (!response.headersSent && !response.destroyed) await write(failure(error instanceof BodyTooLarge ? 'body_too_large' : 'service_unavailable', error instanceof BodyTooLarge ? 413 : 503), response);

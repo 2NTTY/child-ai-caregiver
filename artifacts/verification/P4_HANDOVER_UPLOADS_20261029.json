@@ -1,0 +1,31 @@
+{
+  "workPackage": "P4-HANDOVER01 durable package upload",
+  "date": "2026-10-29",
+  "base": "d08555857a222ed818a738289f2f8714bad29a44",
+  "branch": "codex/p4-handover-import-upload",
+  "reuse": "Existing ZIP verifier/import reader, Storage SDK/YBG1 immutable object adapter, authority/session, background queue and restore machinery; no new dependency",
+  "checks": [
+    { "test": "handover-upload-reader", "result": "one connected flow passed", "log": "tmp/handover-upload-reader-invalid-archive-green.log",
+      "coverage": ["bounded stream and exact content", "trust acknowledgement preserved", "mismatch/invalid ZIP/abort cleanup", "native invalid-ZIP error maps to a stable code"] },
+    { "test": "handover-upload-service HTTP flow", "result": "one connected flow passed", "log": "tmp/handover-upload-service-final.log",
+      "coverage": ["real loopback Node ingress and account handler", "handler starts after first 17 bytes before remaining input", "original request conflict and other-account rejection", "encrypted object readback", "HTTP replay writes no second object", "cancelled late upload remains a cleanup obligation", "settlement wait and exact generation removal"] },
+    { "test": "handover-upload-service restore preparation", "result": "one regression flow red then green", "log": "tmp/handover-upload-restore-green.log",
+      "coverage": ["real prepareFirebaseRestore live lifecycle union", "reserved snapshot with later ready object", "upload owner created after snapshot", "retained original scope and descriptor, expired inaccessible result"] },
+    { "test": "focused TypeScript dependency graph", "roots": 6, "diagnostics": 0, "log": "tmp/handover-uploads-types-final2.log" }
+  ],
+  "retainedFailures": [
+    "Reader fixture initially supplied period to the narrower read selection; corrected without changing the contract",
+    "Invalid ZIP initially surfaced a native parser error; scoped error mapping added without replacing the parser",
+    "First HTTP attempt was blocked by sandbox EACCES on 127.0.0.1; same local-only flow passed with approved escalation",
+    "Review found snapshot/live upload cleanup union missing; regression demonstrated uploadStarted loss before repair",
+    "Restore schema widening required an explicit OperationRestoreValue output type; no runtime relaxation"
+  ],
+  "review": { "reviewer": "independent Sol read-only review", "result": "restore cleanup finding repaired and narrowly re-reviewed; no other definite blocker" },
+  "limits": [
+    "Serial synthetic Firestore and synthetic Storage transport; no real cloud concurrency/IAM evidence",
+    "No actual 256 MiB boundary upload or Windows ACL evidence",
+    "Backend upload only: domain import worker, client/UI, remaining domains/history and full backup remain pending",
+    "Trust registry/signing configuration remains pending; missing proof is honestly reported",
+    "Indexes only defined; no cloud, model, notifications, devices, deployment or full suite"
+  ]
+}

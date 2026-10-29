@@ -6,6 +6,7 @@ import { contentErasureSchema, contentHistory } from './firestore-content-erasur
 import { contentPointerSchema, contentResult } from './firestore-disclosure.ts';
 import { firestoreCareRecoverySchemas, firestoreProfileStorageSchema as firestoreProfileSchema } from './firestore-care.ts';
 import { firestoreOnlineRecordSchema, isFirestoreOnlinePending } from './firestore-online-receipts.ts';
+import { sourceHistoryRecordSchema } from './handover-history-records.ts';
 import type { createFirestoreRestoreCodec, FirestoreRestoreDecoded } from './firestore-restore-codec.ts';
 
 /** Reapply independent content barriers before rebuilding any readable data graph. */
@@ -41,6 +42,12 @@ export function replayContentErasures(data: FirestoreDomainData, codec: ReturnTy
         continue;
       }
       if (ctx.scope.childId !== intent.scope.childId) continue;
+      if (ctx.kind === 'handover-source-history') {
+        const retained = sourceHistoryRecordSchema.parse(row.value);
+        if (retained.evidence.module === content.kind && retained.resource.id === intent.assetId && retained.resource.version <= content.throughVersion)
+          removed.add(row.path);
+        continue;
+      }
       if (ctx.kind === contentHistory[content.kind][1]) {
         const revision = z.object({ id: z.uuid().optional(), childId: z.uuid(), version: z.number().int().positive() }).passthrough().parse(row.value);
         if ((content.kind === 'profile' ? revision.childId : revision.id) === intent.assetId && revision.version <= content.throughVersion) removed.add(row.path);

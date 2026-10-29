@@ -29,6 +29,7 @@ export function serialFirestoreFixture() {
     const docs = [...records.keys()].filter(path => path.startsWith(target.path + '/')
       && path.slice(target.path.length + 1).indexOf('/') === -1).map(snapshot).filter(row => target.filters.every(([key, op, value]) => {
         if (op === '==') return row.get(key) === value;
+        if (op === 'in') return Array.isArray(value) && value.includes(row.get(key));
         if (op === '>=') return row.get(key) >= (value as number);
         if (op === '>') return row.get(key) > (value as number);
         if (op === '<') return row.get(key) < (value as number);

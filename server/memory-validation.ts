@@ -4,11 +4,13 @@ const rawText = (max: number) => z.string().max(max).refine(value => !/[\u0000\u
 const text = (max: number) => rawText(max).refine(value => value.trim().length > 0);
 const version = z.number().int().min(1).max(2147483646);
 const visibility = z.enum(["private", "family"]);
-const source = z.discriminatedUnion("kind", [
+const localSource = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("manual"), description: text(500) }).strict(),
   z.object({ kind: z.literal("care_record"), description: text(500), recordId: z.uuid(), version }).strict(),
   z.object({ kind: z.literal("private_chat"), description: text(500), messageId: z.uuid().optional() }).strict(),
 ]);
+const source = z.union([localSource, z.object({ kind: z.literal('imported'), description: text(500),
+  original: localSource, sourceState: z.enum(['current', 'changed']) }).strict()]);
 export const factValuesSchema = z.object({ key: text(100), content: text(4000), source,
   validUntil: z.iso.datetime({ offset: true }).nullable() }).strict();
 export const factCreateSchema = z.object({ values: factValuesSchema, intendedVisibility: visibility }).strict();

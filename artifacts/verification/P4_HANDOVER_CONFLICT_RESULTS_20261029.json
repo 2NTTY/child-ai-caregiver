@@ -1,0 +1,36 @@
+{
+  "package": "P4-HANDOVER01 scoped results and explicit conflict decisions",
+  "date": "2026-10-29",
+  "base": "42017ec5575c4b3d008eac7b64983de1eec0479f",
+  "branch": "codex/p4-handover-conflict-results",
+  "environment": "Windows; Node 24.19; formal account API/client/worker and shared owner with synthetic Firestore/Storage",
+  "scope": [
+    "Original batch and current module access determine the result scope; 20+1 candidates, encrypted cursor, no bodies",
+    "Immutable recorded outcome is separate from current resource version and available replacement/restoration",
+    "Shared Web/Android owner only resolves read results; identity/scope changes discard stale results",
+    "New explicit decision uses resolutionOnly=true with the existing importer, original upload and expected target versions; no unselected items or history",
+    "Unknown create result uses the same operation ID; original batch and receipts remain unchanged"
+  ],
+  "verification": [
+    { "check": "tests/handover-import-service.test.ts", "result": "pass, one connected formal API/client/worker flow", "log": "tmp/handover-import-resolution-only-green.log", "covers": ["scoped result metadata", "account isolation", "conflict/current version", "stale decision rejected", "selected-only update", "original receipt/count preservation", "20+1 paging", "invalid/changed cursor"] },
+    { "check": "tests/handover-import-items.test.ts", "result": "pass, one existing domain flow after shared readState extraction", "log": "tmp/handover-import-results-green.log", "covers": ["source mapping", "same operation replay", "local correction", "explicit deletion restore", "source version conflicts"] },
+    { "check": "tests/handover-import-owner.test.ts", "result": "pass, two existing extended flows", "log": "tmp/handover-results-selection-only-green.log", "covers": ["scope/identity late responses", "bounded page merge", "read result IDs and versions", "ready original upload", "resolutionOnly", "new decision operation", "unknown original operation lookup"] },
+    { "check": "scoped TypeScript graphs", "result": "zero diagnostics for three Server/test roots and one shared frontend root", "log": "tmp/handover-import-results-types-final.log" },
+    { "check": "independent review", "result": "bounded backend/results review and resolutionOnly follow-up found no remaining definite P1/P2; primary reviewed shared owner and UI" }
+  ],
+  "failures_retained": [
+    "Initial result API test failed invalid_input before the route was wired: tmp/handover-import-results-red.log",
+    "Service fixture used sourceChildId instead of sourceChild; corrected only the fixture: tmp/handover-import-results-green.log",
+    "Pagination fixture read decoded.scope instead of decoded.context.scope: tmp/handover-import-results-pagination.log; corrected before the final service pass",
+    "Primary review found whole-target replay could import unselected unfinished rows. resolutionOnly API and owner assertions failed before the fix: tmp/handover-import-resolution-only-red.log, tmp/handover-results-selection-only-red.log",
+    "First scoped type check found test definite-assignment/nullability diagnostics; explicit fixture assignment and assertions fixed them: tmp/handover-import-results-types.log"
+  ],
+  "not_verified": [
+    "New Firestore composite index is defined only, not deployed or exercised on GCP",
+    "No new browser/device/cloud/model/notification/full-suite or repeated bundle run",
+    "Result panel is metadata, not a body diff preview",
+    "Other import domains, full private backup, class/period export, native packages over 20 MiB and production signing remain pending",
+    "No deployment and no changes to D's Agent PRs"
+  ],
+  "completion": "This slice only; P4-HANDOVER01 and the overall P4 goal remain incomplete"
+}

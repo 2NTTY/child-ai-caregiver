@@ -4,6 +4,8 @@ import { materialRestoreSchemas, isMaterialRestoreKind, materialRestoreMetadata 
 import { firestorePreparationSchema } from './firestore-care-summary.ts';
 import { z } from 'zod';
 import { importConfirmationActor } from './handover-provenance.ts';
+import { sourceHistoryRecordSchema, sourceHistoryId, sourceHistoryMetadata } from './handover-history-records.ts';
+import { validateSourceHistory } from './handover-source-history.ts';
 import { handoverImportItemSchema, handoverImportMappingSchema, handoverImportItemId, handoverImportMappingId,
   handoverImportItemMetadata, handoverImportMappingMetadata } from './handover-import-records.ts';
 import { firestoreCareStorageSchema as firestoreCareSchema, firestoreProfileStorageSchema as firestoreProfileSchema, firestoreCareRecoverySchemas } from './firestore-care.ts';
@@ -20,6 +22,7 @@ export const coreRestoreSchemas = {
   ...materialRestoreSchemas,
   'handover-import-item': { suffix: 'handover_import_items', schema: handoverImportItemSchema },
   'handover-import-mapping': { suffix: 'handover_import_mappings', schema: handoverImportMappingSchema },
+  'handover-source-history': { suffix: 'handover_source_history', schema: sourceHistoryRecordSchema },
   'content-erasure': { suffix: 'content_erasures', schema: contentErasureSchema },
   'visit-preparation': { suffix: 'visit_preparations', schema: firestorePreparationSchema },
   'visit-preparation-revision': { suffix: 'visit_preparation_revisions', schema: firestorePreparationSchema },
@@ -79,6 +82,11 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   if (kind === 'context-version') { equalId(id, [scope.ownerUserId, scope.childId]); requireValue(recordVersion === 1);
     return { summaryPending: firestoreContextRecoverySchema.parse(raw).summaryPending === true }; }
   requireValue(scope.childId !== NIL);
+  if (kind === 'handover-source-history') {
+    const value = validateSourceHistory(sourceHistoryRecordSchema.parse(raw));
+    requireValue(id === sourceHistoryId(scope, value) && value.childId === scope.childId && recordVersion === 1);
+    return { ...sourceHistoryMetadata(value), historyId: id };
+  }
   if (kind === 'handover-import-item') {
     const value = handoverImportItemSchema.parse(raw);
     requireValue(id === handoverImportItemId(scope, value.opId) && recordVersion === 1);

@@ -25,6 +25,7 @@
     "@expo/vector-icons": "^15.0.2",
     "@hookform/resolvers": "5.9.1",
     "@invertase/react-native-apple-authentication": "2.5.1",
+    "@noble/hashes": "2.4.0",
     "@react-native-google-signin/google-signin": "16.1.5",
     "@tanstack/react-query": "5.103.2",
     "base64-js": "1.5.1",
