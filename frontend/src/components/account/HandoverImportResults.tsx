@@ -8,13 +8,17 @@ import { AppButton, AppSelect } from '../ui';
 import { chineseFont, colors, readingType, spacing } from '../../theme';
 import { HandoverImportHistory } from './HandoverImportHistory';
 
-const modules = { care: '照護記錄', profile: '孩子資料', tasks: '待辦', memory: '記憶與摘要', sources: '私人來源', documents: '文件與準備單' };
-const resources: Record<HandoverImportResourceSection, string> = { care: '照護記錄', profile: '孩子資料', tasks: '待辦',
+const modules: Record<HandoverImportView['targets'][number]['sections'][number], string> & Record<string, string> = {
+  care: '照護記錄', profile: '孩子資料', tasks: '待辦', memory: '記憶與摘要', sources: '私人來源', documents: '文件與準備單', attachments: '附件' };
+const resources: Record<HandoverImportResourceSection, string> & Record<string, string> = { care: '照護記錄', profile: '孩子資料', tasks: '待辦',
   memory_facts: '記憶事實', memory_topics: '記憶話題', instructions: '私人交代', summary_history: '摘要歷史', private_sources: '私人來源',
-  documents: '文件', visit_preparation: '到診準備' };
-const historyLabels = { care_history: '照護記錄來源歷史', profile_history: '孩子資料來源歷史', task_history: '待辦來源歷史',
+  documents: '文件', visit_preparation: '到診準備', files: '檔案', voices: '語音原檔', photos: '照片', child_avatar: '孩子頭像' };
+const sourceSectionLabels: Record<NonNullable<HandoverImportResult['sourceSection']>, string> & Record<string, string> = {
+  care_history: '照護記錄來源歷史', profile_history: '孩子資料來源歷史', task_history: '待辦來源歷史',
   memory_fact_history: '記憶事實來源歷史', memory_topic_history: '記憶話題來源歷史', private_source_history: '私人來源管理歷史',
-  document_versions: '文件來源版本索引', document_content: '文件來源修訂', visit_preparation_history: '到診準備來源歷史' };
+  document_versions: '文件來源版本索引', document_content: '文件來源修訂', visit_preparation_history: '到診準備來源歷史',
+  file_content: '檔案原始內容', voice_content: '語音原始內容', photo_content: '照片原始內容', child_avatar_content: '孩子頭像內容',
+  voice_transcripts: '語音轉錄文字' };
 const outcomes = { created: '已新增', updated: '已更新', skipped: '已略過', conflict: '有衝突' };
 const reasons: Record<string, string> = {
   target_changed: '接收資料曾被修改，已保留目前內容。', target_deleted: '接收項目已刪除，未自動恢復。',
@@ -27,6 +31,12 @@ const reasons: Record<string, string> = {
   input_processing: '原抓取或提取尚未結清，未更新此私人來源。', input_linked: '此私人來源已連結照護記錄，未更新。',
   inputs_capacity: '接收對象的私人來源容量已滿，未新增。',
   document_revision_index: '版本索引已核對，內容由對應來源修訂保存。',
+  attachment_not_available: '來源附件尚未可讀，未新增附件。',
+  attachment_parent_not_imported: '尚未保存對應附件，補充資料未保存。',
+  attachment_parent_version_unavailable: '對應附件的來源版本不符，補充資料未保存。',
+  attachment_content_index: '內容索引已核對，原始內容由對應附件保存。',
+  attachment_supplement_already_imported: '這份附件補充資料已保存。',
+  attachment_supplement_conflict: '同一附件補充資料的內容不一致，未覆蓋。',
 };
 const selectable = (row: HandoverImportResult) => row.outcome === 'conflict' && row.sourceSection === null
   && row.availableResolution !== null && row.currentResource !== null && handoverResultResourceSection(row) !== null;
@@ -69,7 +79,7 @@ export function HandoverImportResults({ controller, batch, results, history, ide
     {results.error ? <Text accessibilityLiveRegion="polite" style={styles.body}>{results.error}</Text> : null}
     {results.loaded && !results.items.length ? <Text style={styles.body}>{results.nextCursor ? '暫未讀到符合項目，可繼續載入。' : '此範圍未有逐項結果。'}</Text> : null}
     {results.items.map(row => <View key={row.id} style={styles.item}>
-      <Text style={styles.title}>{row.sourceSection ? historyLabels[row.sourceSection] : resources[handoverResultResourceSection(row)!] ?? modules[row.module]} · {outcomes[row.outcome]}</Text>
+      <Text style={styles.title}>{row.sourceSection ? sourceSectionLabels[row.sourceSection] : resources[handoverResultResourceSection(row)!] ?? modules[row.module]} · {outcomes[row.outcome]}</Text>
       <Text style={styles.body}>來源項目 {row.sourceResourceId} · 版本 {row.sourceVersion}</Text>
       <Text style={styles.body}>處理時間 {new Date(row.at).toLocaleString('zh-HK')}</Text>
       {row.reason ? <Text style={styles.body}>{reasons[row.reason] ?? `處理原因：${row.reason}`}</Text> : null}
@@ -78,7 +88,7 @@ export function HandoverImportResults({ controller, batch, results, history, ide
       {canReadHandoverSourceHistory(row) ? <AppButton label={history?.resultId === row.id ? '收起來源歷史' : '查看來源歷史'}
         variant="quiet" expanded={history?.resultId === row.id} disabled={locked && history?.resultId !== row.id}
         onPress={() => { if (history?.resultId === row.id) controller.closeSourceHistory(); else void controller.openSourceHistory(row.id); }} /> : null}
-      {history?.resultId === row.id ? <HandoverImportHistory controller={controller} history={history} locked={locked} /> : null}
+      {canReadHandoverSourceHistory(row) && history?.resultId === row.id ? <HandoverImportHistory controller={controller} history={history} locked={locked} /> : null}
       {selectable(row) && terminal ? <AppCheckbox label={row.availableResolution === 'replace_current' ? '選取此衝突作明確覆蓋' : '選取此已刪項目作明確恢復'}
         accessibilityLabel={`${row.sourceResourceId}：${row.availableResolution === 'replace_current' ? '覆蓋衝突' : '恢復已刪項目'}`}
         checked={selected.includes(row.id)} disabled={disabled} onChange={checked => select(row, checked)} /> : null}
