@@ -80,7 +80,7 @@ export function AppTextField({ style, outlineStyle, contentStyle, multiline, lab
   // Paper's inactive label waits for its animated text measurement. Use the native placeholder until focus or text.
   const showNativePlaceholder = nativeLabel && !focused && !(props.value ?? uncontrolledValue);
   return <TextInput {...props} multiline={multiline} label={showNativePlaceholder ? undefined : label}
-    placeholder={showNativePlaceholder ? label : placeholder} accessibilityLabel={accessibilityLabel ?? (nativeLabel ? label : undefined)}
+    placeholder={showNativePlaceholder ? label : placeholder} accessibilityLabel={accessibilityLabel ?? (typeof label === "string" ? label : undefined)}
     onFocus={nativeLabel ? event => { setFocused(true); onFocus?.(event); } : onFocus}
     onBlur={nativeLabel ? event => { setFocused(false); onBlur?.(event); } : onBlur}
     onChangeText={nativeLabel ? (value: string) => { if (props.value === undefined) setUncontrolledValue(value); onChangeText?.(value); } : onChangeText}
