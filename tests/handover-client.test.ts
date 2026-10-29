@@ -3,6 +3,95 @@ import test from 'node:test';
 import { randomUUID } from 'node:crypto';
 import { createHandoverApi, HandoverApiError } from '../src/client/handover-api.ts';
 import type { HandoverExportCommand, HandoverExportView } from '../src/shared/handover-jobs.ts';
+import type { HandoverUploadCommand, HandoverUploadView } from '../src/shared/handover-uploads.ts';
+import type { HandoverImportCommand, HandoverImportView } from '../src/shared/handover-imports.ts';
+
+test('handover upload and import commands retain original operations and cancel stale transport', async context => {
+  const sourceChildId = randomUUID(), targetChildId = randomUUID(), packageId = randomUUID(), manifestSha256 = 'a'.repeat(64);
+  const uploadCommand: HandoverUploadCommand = { opId: randomUUID(), filename: 'synthetic.zip', bytes: 4, sha256: 'b'.repeat(64) };
+  let upload: HandoverUploadView = { id: uploadCommand.opId, version: 1, filename: uploadCommand.filename, bytes: 4,
+    createdAt: '2026-10-29T00:00:00Z', expiresAt: '2026-10-30T00:00:00Z', state: 'reserved', error: null, preview: null };
+  const importCommand: HandoverImportCommand = { opId: randomUUID(), uploadId: upload.id, expectedUploadVersion: 2,
+    acceptedManifestSha256: manifestSha256, targets: [{ sourceChildId, target: { childId: targetChildId, spaceId: null }, sections: ['care'] }], resolutions: [] };
+  let imported: HandoverImportView = { id: importCommand.opId, version: 1, uploadId: upload.id, packageId, packageVersion: 1,
+    manifestSha256, integrity: 'missing_proof', targets: importCommand.targets, createdAt: '2026-10-29T00:00:00Z', updatedAt: '2026-10-29T00:00:00Z',
+    state: 'queued', totalItems: 1, processedItems: 0, counts: { created: 0, updated: 0, skipped: 0, conflict: 0 }, error: null };
+  const zip = new Blob([new Uint8Array([80, 75, 3, 4])], { type: 'application/zip' }), signal = new AbortController().signal;
+  const requests: { path: string; method: string; body: unknown; signal: AbortSignal }[] = [], held: { release(response: Response): void; signal: AbortSignal; upload: boolean }[] = [];
+  let loseReply = true, hold = false, wrongId = false;
+  const api = createHandoverApi('https://example.test', async (input, init) => {
+    assert.ok(init); assert.ok(init.signal);
+    const url = new URL(String(input)), headers = new Headers(init.headers), binary = url.pathname.endsWith('/content');
+    assert.equal(init.credentials, 'include'); assert.equal(init.cache, 'no-store'); assert.equal(headers.get('x-expected-user-id'), 'owner');
+    assert.equal(headers.get('Accept'), 'application/json');
+    if (init.method === 'POST') assert.equal(headers.get('Content-Type'), binary ? 'application/zip' : 'application/json');
+    const body = binary ? init.body : init.body === undefined ? undefined : JSON.parse(String(init.body));
+    if (binary) assert.equal(body, zip, 'The caller body must reach fetch without JSON conversion');
+    requests.push({ path: url.pathname, method: init.method!, body, signal: init.signal });
+    if (hold) return new Promise<Response>(resolve => { held.push({ release: resolve, signal: init.signal!, upload: binary }); });
+    const uploads = '/api/account/package-uploads', imports = '/api/account/package-imports';
+    let result: HandoverUploadView | HandoverImportView;
+    if (url.pathname === uploads) {
+      assert.deepEqual(body, uploadCommand);
+      if (loseReply) { loseReply = false; throw new Error('Lost accepted upload reservation reply'); }
+      result = upload;
+    } else if (url.pathname === uploads + '/' + upload.id) result = upload;
+    else if (binary) {
+      assert.equal(url.pathname, uploads + '/' + upload.id + '/content');
+      upload = { ...upload, version: 2, state: 'ready', preview: { header: { format: 'yuyoufang-data', version: 1, packageId, packageVersion: 1,
+        createdAt: '2026-10-29T00:00:00Z', purpose: 'handover', source: { serverId: 'https://source.example.test', accountId: 'source' },
+        selection: { childIds: [sourceChildId], modules: ['care'], period: null } }, manifestSha256, integrity: 'missing_proof',
+        children: [{ id: sourceChildId, displayName: 'Synthetic source' }], coverage: [{ section: 'care', childId: sourceChildId, items: 1 }] } }; result = upload;
+    } else if (url.pathname === uploads + '/' + upload.id + '/cancel') result = { ...upload, version: 3, state: 'cancelled', preview: null };
+    else if (url.pathname === imports) { assert.deepEqual(body, importCommand); result = imported; }
+    else if (url.pathname === imports + '/' + imported.id) result = imported;
+    else if (url.pathname === imports + '/' + imported.id + '/resume') { imported = { ...imported, version: 3, state: 'queued' }; result = imported; }
+    else if (url.pathname === imports + '/' + imported.id + '/cancel') { imported = { ...imported, version: 4, state: 'cancelled' }; result = imported; }
+    else throw new Error('Unexpected package route');
+    return Response.json(wrongId ? { ...result, id: randomUUID() } : result);
+  });
+  api.setIdentity('owner');
+  await assert.rejects(api.reserveUpload('owner', uploadCommand, signal), { code: 'handover_unavailable' });
+  assert.equal(requests.length, 1, 'An unknown reservation must not be retried automatically');
+  assert.equal((await api.getUpload('owner', uploadCommand.opId, signal)).id, uploadCommand.opId);
+  assert.equal((await api.reserveUpload('owner', uploadCommand, signal)).id, uploadCommand.opId);
+  assert.deepEqual(requests.filter(request => request.path === '/api/account/package-uploads').map(request => request.body), [uploadCommand, uploadCommand]);
+  assert.equal((await api.uploadContent('owner', upload.id, zip, signal)).state, 'ready');
+  assert.equal((await api.createImport('owner', importCommand, signal)).id, importCommand.opId);
+  assert.equal((await api.getImport('owner', imported.id, signal)).uploadId, upload.id);
+  imported = { ...imported, version: 2, state: 'interrupted' };
+  const resume = { opId: randomUUID(), expectedVersion: 2 };
+  assert.equal((await api.resumeImport('owner', imported.id, resume, signal)).state, 'queued'); assert.deepEqual(requests.at(-1)?.body, resume);
+  const cancel = { opId: randomUUID(), expectedVersion: 3 };
+  assert.equal((await api.cancelImport('owner', imported.id, cancel, signal)).state, 'cancelled'); assert.deepEqual(requests.at(-1)?.body, cancel);
+  const cancelUpload = { opId: randomUUID(), expectedVersion: 2 };
+  assert.equal((await api.cancelUpload('owner', upload.id, cancelUpload, signal)).state, 'cancelled'); assert.deepEqual(requests.at(-1)?.body, cancelUpload);
+  wrongId = true; await assert.rejects(api.createImport('owner', importCommand, signal), { code: 'handover_response_invalid' }); wrongId = false;
+  const beforeInvalid = requests.length;
+  await assert.rejects(api.getUpload('owner', 'invalid', signal), { code: 'invalid_input' });
+  await assert.rejects(api.resumeImport('owner', imported.id, { opId: randomUUID(), expectedVersion: 0 }, signal), { code: 'invalid_input' }); assert.equal(requests.length, beforeInvalid);
+  hold = true;
+  const rawPending = api.uploadContent('owner', upload.id, zip, signal), importPending = api.createImport('owner', importCommand, signal);
+  const rawRejected = assert.rejects(rawPending, { code: 'session_changed' }), importRejected = assert.rejects(importPending, { code: 'session_changed' });
+  api.setIdentity('other'); assert.equal(held.length, 2); assert.ok(held.every(request => request.signal.aborted));
+  held.forEach(request => request.release(Response.json(request.upload ? upload : imported))); await rawRejected; await importRejected;
+  api.setIdentity('owner'); context.mock.timers.enable({ apis: ['setTimeout'] });
+  const timedUpload = api.uploadContent('owner', upload.id, zip, signal), timeoutRejected = assert.rejects(timedUpload, { code: 'handover_unavailable' });
+  context.mock.timers.tick(299999); assert.equal(held.at(-1)?.signal.aborted, false);
+  context.mock.timers.tick(1); await timeoutRejected; assert.equal(held.at(-1)?.signal.aborted, true);
+  held.at(-1)!.release(Response.json(upload));
+  for (const request of [
+    { name: 'createImport', start: () => api.createImport('owner', importCommand, signal), timeout: 300000 },
+    { name: 'resumeImport', start: () => api.resumeImport('owner', imported.id, resume, signal), timeout: 300000 },
+    { name: 'getImport', start: () => api.getImport('owner', imported.id, signal), timeout: 20000 },
+    { name: 'cancelImport', start: () => api.cancelImport('owner', imported.id, cancel, signal), timeout: 20000 },
+  ]) {
+    const pending = request.start(), rejected = assert.rejects(pending, { code: 'handover_unavailable' });
+    context.mock.timers.tick(request.timeout - 1); assert.equal(held.at(-1)?.signal.aborted, false, request.name + ' must retain its full deadline');
+    context.mock.timers.tick(1); await rejected; assert.equal(held.at(-1)?.signal.aborted, true, request.name + ' must stop at its deadline');
+    held.at(-1)!.release(Response.json(imported));
+  }
+});
 
 test('handover client preserves original IDs, validates downloads and rejects late work after identity changes', async context => {
   const command: HandoverExportCommand = { opId: randomUUID(), purpose: 'handover',

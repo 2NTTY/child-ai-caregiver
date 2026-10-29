@@ -8,6 +8,7 @@ import type { ChatFileObjectDescriptor } from './firebase-chat-file-objects.ts';
 import { replayVoiceErasures, assertRestoredVoiceRelations } from './firestore-restore-voice.ts';
 import { firestoreVoiceRowSchema } from './firestore-voice.ts';
 import { firestoreHandoverJobSchema, handoverJobIncludesScope } from './firestore-handover-jobs.ts';
+import { handoverUploadRecordSchema } from './handover-upload-records.ts';
 import type { VoiceObjectDescriptor } from './firebase-voice-objects.ts';
 import { replayContentErasures } from './firestore-restore-content-erasure.ts';
 import { createHash } from 'node:crypto';
@@ -103,6 +104,7 @@ export function assertFirebaseRestoreAuthority(records: readonly FirestoreRestor
   for (const record of records) {
     if(record.context.family==='knowledge'||record.context.kind==='photo-cleanup'||record.context.kind==='avatar-cleanup'
       || record.context.kind==='handover-export' && ['expired', 'cancelled'].includes(firestoreHandoverJobSchema.parse(record.value).state)
+      || record.context.kind==='handover-upload' && handoverUploadRecordSchema.parse(record.value).state==='expired'
       || record.context.kind==='voice-asset' && firestoreVoiceRowSchema.parse(record.value).deletion !== null
       || record.context.kind==='chat-file-asset' && firestoreChatFileRowSchema.parse(record.value).deletion !== null
       || record.context.kind==='photo' && photos.photo.parse(record.value).state==='deleted')continue;
@@ -191,14 +193,16 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     requireValue(job?.value.state==='completed','restore_pending_scope_cleanup');
   }
   const erasedByScope=(ownerUserId:string,workspaceId:string,childId:string)=>scopeJournal.some(intent=>erasureCoversScope(intent,{ownerUserId,workspaceId,childId}));
-  // Temporary exports are not restored product content. Union the live lifecycle before erasure filtering:
-  // a snapshot may precede an upload, cancellation, completed cleanup, or the entire export request.
-  for (const liveJob of live.filter(record => record.context.kind === 'handover-export')) {
-    const index = decoded.findIndex(record => record.context.kind === 'handover-export' && record.context.id === liveJob.context.id);
+  // Temporary packages are not restored product content. Union their live cleanup obligations:
+  // a snapshot may precede an object write, cancellation, cleanup, or even the owning account.
+  for (const liveJob of live.filter(record => record.context.kind === 'handover-export' || record.context.kind === 'handover-upload')) {
+    const index = decoded.findIndex(record => record.context.kind === liveJob.context.kind && record.context.id === liveJob.context.id);
     if (index >= 0) {
-      const old = firestoreHandoverJobSchema.parse(decoded[index].value), current = firestoreHandoverJobSchema.parse(liveJob.value);
+      const schema = liveJob.context.kind === 'handover-export' ? firestoreHandoverJobSchema : handoverUploadRecordSchema;
+      const old = schema.parse(decoded[index].value), current = schema.parse(liveJob.value);
       requireValue(current.version >= old.version && current.fingerprint === old.fingerprint
-        && canonical(current.objectScope) === canonical(old.objectScope), 'restore_package_lifecycle_changed');
+        && canonical('objectScope' in current ? current.objectScope : current.scope)
+          === canonical('objectScope' in old ? old.objectScope : old.scope), 'restore_package_lifecycle_changed');
       decoded[index] = liveJob;
     } else decoded.push(liveJob);
   }

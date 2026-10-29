@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
-import { agentPolicyUpdateSchema, ordinaryRecordKinds } from "../shared/agent-actions.ts";
+import { agentPolicyUpdateSchema, agentPrivateNoteSchema, ordinaryRecordKinds } from "../shared/agent-actions.ts";
 import type { AgentActionReceipt, AgentOperationPolicy, AgentPolicyUpdate, AgentPrivateNote } from "../shared/agent-actions.ts";
 import { contactBindingSchema, contactChannelSchema } from "../shared/contact.ts";
 
@@ -37,7 +37,6 @@ export interface AgentActionsApi {
 const uuid = z.uuid(), identifier = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/);
 const version = z.number().int().nonnegative().max(2147483647), positiveVersion = version.refine(value => value > 0);
 const timestamp = z.iso.datetime({ offset: true });
-const text = (max: number) => z.string().min(1).max(max).refine(value => value.trim().length > 0);
 const binding = contactBindingSchema.refine(value => value.bindingVersion <= 2147483647);
 const bindings = z.array(binding).max(2).refine(values => new Set(values.map(value => value.channel)).size === values.length);
 const policySchema = z.object({
@@ -47,11 +46,7 @@ const policySchema = z.object({
   allowRecordCorrections: z.boolean().default(false),
 }).strict();
 const policyResponse = z.object({ policy: policySchema }).strict();
-const noteSchema = z.object({
-  id: uuid, childId: uuid, version: positiveVersion, title: text(100), text: text(2000), sourceMessageId: uuid,
-  createdAt: timestamp, updatedAt: timestamp, provenance: z.literal("user_statement"), memoryKey: text(100).optional(),
-}).strict();
-const notesResponse = z.object({ notes: z.object({ items: z.array(noteSchema).max(20), nextAfterId: uuid.nullable() }).strict() }).strict();
+const notesResponse = z.object({ notes: z.object({ items: z.array(agentPrivateNoteSchema).max(20), nextAfterId: uuid.nullable() }).strict() }).strict();
 const deleteInput = z.object({ expectedVersion: z.number().int().positive().max(2147483646), operationId: uuid, confirmDelete: z.literal(true) }).strict();
 const deleteResponse = z.object({ deleted: z.boolean() }).strict();
 const receiptSchema = z.object({

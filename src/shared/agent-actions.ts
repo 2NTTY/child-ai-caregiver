@@ -2,6 +2,7 @@ import { z } from "zod";
 import { taskDueAtSchema, taskTimeZoneSchema } from "./tasks.ts";
 import { contactBindingSchema } from "./contact.ts";
 import type { ContactBinding } from "./contact.ts";
+import { importProvenanceSchema } from './import-provenance.ts';
 
 export const ordinaryRecordKinds = ["note", "feeding", "sleep", "diaper"] as const;
 const text = (max: number) => z.string().min(1).max(max).refine(value => value.trim().length > 0);
@@ -57,12 +58,14 @@ export const agentActionToolNames: Record<AgentDirectAction["kind"], string> = {
   revise_private_note: "revise_private_instruction", create_self_task: "create_ordinary_reminder",
   change_self_task: "change_ordinary_reminder",
 };
-export interface AgentPrivateNote {
-  id: string; childId: string; version: number; title: string; text: string;
-  sourceMessageId: string; createdAt: string; updatedAt: string;
-  provenance: "user_statement";
-  memoryKey?: string;
-}
+export const agentPrivateNoteSchema = z.object({
+  id: z.uuid(), childId: z.uuid(), version: version.min(1), title: text(100), text: text(2000),
+  sourceMessageId: z.uuid().nullable(), createdAt: z.iso.datetime({ offset: true }), updatedAt: z.iso.datetime({ offset: true }),
+  provenance: z.enum(['user_statement', 'imported_source']), memoryKey: text(100).optional(),
+  importedFrom: importProvenanceSchema.optional(),
+}).strict().refine(value => value.provenance === 'user_statement' ? value.sourceMessageId !== null
+  : value.sourceMessageId === null && value.importedFrom?.current.source.section === 'instructions');
+export type AgentPrivateNote = z.infer<typeof agentPrivateNoteSchema>;
 export interface AgentActionReceipt {
   sourceBasis?: "voice_interpretation";
   id: string; runId: string; kind: AgentDirectAction["kind"];
