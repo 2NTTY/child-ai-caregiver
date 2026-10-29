@@ -11,7 +11,8 @@ import { TaskSnapshot, TaskSnapshotMetadata, TaskWorkerMetadata, taskAssigneeLab
 export function TaskDetail({ model, actions, hideCloseAction = false }: { model: TasksViewModel; actions: TasksActions; hideCloseAction?: boolean }) {
   const task = model.selected!;
   const compactHeader = useWindowDimensions().width < 650;
-  const locked = model.reading || ["saving", "unknown", "conflict"].includes(model.operation.state);
+  const operationLocked = ["saving", "unknown", "conflict"].includes(model.operation.state);
+  const locked = model.reading || operationLocked;
   const writable = model.access === "editable" && !locked;
   const metadata = currentTaskMetadata(task, model.eligibleAssignees, model.work, model.reminders);
   const work = metadata.work;
@@ -38,7 +39,7 @@ export function TaskDetail({ model, actions, hideCloseAction = false }: { model:
     {!ended ? <Text style={styles.label}>提醒安排</Text> : null}<Text style={styles.body}>{reminderSummary}</Text>
     {task.occurrence.state === "completed" ? <Text style={styles.meta}>{taskCompletionLabel(task, model.scheduleContext.timeZone)}</Text> : null}
     {work?.status === "unknown" ? <Text style={styles.warning}>提醒處理結果未確定，請先核對；不能當作已通知或已完成。</Text> : work?.status === "failed" ? <Text style={styles.warning}>提醒處理未成功，請展開記錄核對。</Text> : null}
-    <AppButton label={model.historyOpen ? "收起安排記錄" : "查看安排記錄"} expanded={model.historyOpen} density="compact" variant="secondary" style={styles.historyButton} disabled={locked} onPress={actions.showHistory} />
+    <AppButton label={model.historyOpen ? "收起安排記錄" : "查看安排記錄"} expanded={model.historyOpen} density="compact" variant="secondary" style={styles.historyButton} disabled={locked} preserveFocusWhenDisabled={model.reading && model.historyOpen && !operationLocked} onPress={actions.showHistory} />
     <MotionDisclosure expanded={model.historyOpen} scopeKey={`${model.child.id}:${task.id}`}><View style={styles.history}>
       {ended ? <Text style={styles.body}>這項事項已結束，不能直接重開。如需另做，請明確新增另一項事項。</Text> : null}
       <Text style={styles.label}>目前安排記錄 · 版本 {task.version}</Text>
