@@ -5,8 +5,18 @@
   "variant": "uiux-upgrade",
   "productCommit": "f1c60c6ae2928e5407dabccbd04a504f691e39cf",
   "productTree": "f7619a5e1c59256d914c2b3693a768921f0c489d",
-  "sourceAcquisition": "Original f1 Git object is local-only. Fresh detached checkout of separately reviewed published source-projection commit. Fixed shared build_inputs.verify(source,\"fourth\") validates exact env-pinned build commit and manifest SHA, full tracked+physical namespace, mode, Git blob and bytes. Fourth then binds all648 PRODUCT_INPUTS back to f1 provenance. Original commit/tree are never mislabelled as remote HEAD.",
-  "productSourceDelta": [],
+  "sourceAcquisition": "Original f1 productCommit/productTree remain provenance. Fresh detached checkout of the separately pinned clean published build commit contains the reviewed Task owner correction. The unchanged shared build-input verifier admits its exact full namespace, and PRODUCT_INPUTS binds the candidate bytes with productSourceDelta explicitly identifying the one correction. No export-time overlay or product edit.",
+  "productSourceDelta": [
+    {
+      "destination": "frontend/src/production/task-knowledge-tasks.ts",
+      "beforeSha256": "6bc960b971fc731bbba0f457a8207338eb7c1447a8bf31b703a419e41421bb60",
+      "sha256": "1c85730d6423904ed4e6fc42016eed663ce2871165477875e5a71cc80ed1299f",
+      "bytes": 20134,
+      "gitBlob": "283e4f8f191bd8b9d032f77123d3014edaab5460",
+      "mode": "100644",
+      "committedIn": "d28580f19dbfd40184e8f72b3afb9ea3914b0799"
+    }
+  ],
   "sourcePins": {
     "package.json": "358da37ef3fb424225d755ea1123caf3ca04bbc803a9a427a27d46470b324ca0",
     "package-lock.json": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",
@@ -20,10 +30,11 @@
     "frontend/src/production/ProductionProvider.tsx": "a6d294b0d63d9ab90733a9d3aa2ad03e68f869aeea66b89468832c05f6abfc43",
     "src/shared/family-documents.ts": "ea1dd64fbaade9f9581073058803baa174bdfaa865a436a279f2f5e9f5d151b2",
     "src/client/family-documents-api.ts": "3db16e774b3bfc4dc94f11073302923e6a3be5be996f74da81a023f0d5b76454",
-    "frontend/src/production/useFamilyDocuments.ts": "44a936f40e0fe24d54f3d8a3404dfa82dd23da250318760a9a55584ef2bfff62"
+    "frontend/src/production/useFamilyDocuments.ts": "44a936f40e0fe24d54f3d8a3404dfa82dd23da250318760a9a55584ef2bfff62",
+    "frontend/src/production/task-knowledge-tasks.ts": "1c85730d6423904ed4e6fc42016eed663ce2871165477875e5a71cc80ed1299f"
   },
   "inputManifest": "PRODUCT_INPUTS.json",
-  "inputManifestSha256": "7d45951ca36373e319bd8b9c3b138f1a50987c538bfd35912dc545605bbc6ca1",
+  "inputManifestSha256": "e43662d8f860c22b227e96207ae00a50f511838ba1f5f89a2739cfad9ec4b5b8",
   "entrypoint": "frontend/index.js -> runtime web stub -> own web-foundation -> browser-history-events -> installed expo-router/entry; root layout retains own ProductionProvider/FirstScreenGate; no Application/OwnerHost substitution",
   "lockFile": "package-lock.json",
   "lockSha256": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",

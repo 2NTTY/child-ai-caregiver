@@ -2,11 +2,21 @@
   "format": "harbour-remote-export-recipe-v1",
   "sourceCommit": "eca341ad0ee38432d06292129923dc087dad3d92",
   "tree": "f303b70b7677fa92d32f1d0e4e3eb92e8754f599",
-  "sourceDelta": [],
+  "sourceDelta": [
+    {
+      "destination": "frontend/src/production/task-knowledge-tasks.ts",
+      "beforeSha256": "a59bd8c78863301951da66935911db220ee89679953af84186703c5b19907801",
+      "sha256": "e45640a531f96db76213c4968a476b075298c8f390ebb36f22b92eef7619021f",
+      "bytes": 21179,
+      "gitBlob": "71507711185474abcba26957092b680fde0c2ff6",
+      "mode": "100644",
+      "committedIn": "8292f7e3996726642ac9321b635ee1f3302f5769"
+    }
+  ],
   "entrypoint": "frontend/index.js",
   "packageManagerMetadata": "npm@11.8.0",
   "lockSha256": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",
-  "sourcePinsSha256": "6ea8320b8c93d6bd5d75cc7ef333874409b821d07af8607e9e2f49eaf1ed2192",
+  "sourcePinsSha256": "67149c3b8edc811e3cd8f8c49b2cdf780346c4442a81729ba2cad33edb4d0569",
   "shared": {
     "experiments/dispatch.js": {
       "bytes": 4651,

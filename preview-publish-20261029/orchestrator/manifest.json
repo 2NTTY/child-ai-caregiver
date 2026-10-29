@@ -35,7 +35,7 @@
       "buildCommit": "566964fd25c257f52612b97df8cfc5016a03a5a0",
       "buildTree": "439144c5d9b2da4ad4088939b6ca942157f597c7",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "2fb5413c12642f39f5c3d7f5e7e5ec1d848e2610bd7feedc13ca23d046d29320",
+      "buildInputsManifestSha256": "9c670614a355dc92c953efef2b724b3875880ca0f9d5defc79425fa01497221f",
       "candidateChanges": [
         {
           "source": "orchestrator/care/overlay/frontend/src/production/task-knowledge-tasks.ts",
@@ -69,19 +69,29 @@
       ],
       "recipeFiles": {
         "harbour/adapt.py": "fdb74839721d05be13fe64cff584cb8001345536cc26dbaf306012caf604569e",
-        "harbour/prepare.py": "270e5b9b8ae60303b02645b0000ea97b3e62f461e0f1a9dc3708a01808c54277",
+        "harbour/prepare.py": "94b3242841f9e72c7d678919aae360a18694d160665fb95eb08d1dcb9cc426fd",
         "harbour/verify_graph.mjs": "45badd99474d4fea922a2fead2c5fe339013dc34a3f84d5487d1bbfdfff663d4",
-        "harbour/PINS.json": "60b729536c18d615661f12a9288709e63e1a3fb91908bf884ba3216f192bbafb",
-        "harbour/source-pins.json": "6ea8320b8c93d6bd5d75cc7ef333874409b821d07af8607e9e2f49eaf1ed2192",
+        "harbour/PINS.json": "bef9c6af0fdb3a9484ccfca87f7ef2771eaa92c27ca085e99500eafdb9dd0e22",
+        "harbour/source-pins.json": "67149c3b8edc811e3cd8f8c49b2cdf780346c4442a81729ba2cad33edb4d0569",
         "harbour/shared/experiments/dispatch.js": "0b27cef6a7d8a93798996942171cd5a74ebc77c3e05947ff61ec238d64cb863f",
         "harbour/shared/experiments/fixtures/harbour.js": "a4e0f2d87d4fe9225530c5318faf729dc1bea24b4fa9694c19fa8f1952d5d1dd",
         "harbour/shared/experiments/preview-navigation-identity-v1-r2.js": "bb0eca035d78b763c72924285f04ec124093ea4ced53e3f37d90f2b8dfb1bcd9"
       },
-      "buildCommit": "3155558d79a9a0179c72e8dd851999e12b73c2c5",
-      "buildTree": "fbce52803f2a93edb969b544b8155cb278990e75",
+      "buildCommit": "8292f7e3996726642ac9321b635ee1f3302f5769",
+      "buildTree": "a7556f2fd525bd995829d57a1cb8fe976a0cb56e",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "2fb5413c12642f39f5c3d7f5e7e5ec1d848e2610bd7feedc13ca23d046d29320",
-      "candidateChanges": []
+      "buildInputsManifestSha256": "9c670614a355dc92c953efef2b724b3875880ca0f9d5defc79425fa01497221f",
+      "candidateChanges": [
+        {
+          "destination": "frontend/src/production/task-knowledge-tasks.ts",
+          "beforeSha256": "a59bd8c78863301951da66935911db220ee89679953af84186703c5b19907801",
+          "sha256": "e45640a531f96db76213c4968a476b075298c8f390ebb36f22b92eef7619021f",
+          "bytes": 21179,
+          "gitBlob": "71507711185474abcba26957092b680fde0c2ff6",
+          "mode": "100644",
+          "committedIn": "8292f7e3996726642ac9321b635ee1f3302f5769"
+        }
+      ]
     },
     "handbook": {
       "commit": "bc308157a48c3f2448898533dcf722385ee57f03",
@@ -90,17 +100,27 @@
       "overlays": [],
       "recipeReady": true,
       "recipeFiles": {
-        "handbook/assemble_preview.py": "ce3601a3f8df347ba946ee5cec36ea07eb3cd98c602e928703a6922b45b39de6",
-        "handbook/recipe.json": "f22a88e39bb8b81cb9a12ad4642e4257f1bdfe4bf4c9fc4b3800e935c26de0ee",
+        "handbook/assemble_preview.py": "1930650f7304da1fceee5b412cf3eca9548c944a287b930a1139396408ae983c",
+        "handbook/recipe.json": "6bd20452e27569debb772b845fb946582f7c0921249fc7164fc9eb45c6c66bff",
         "handbook/overlay/experiments/dispatch.js": "0b27cef6a7d8a93798996942171cd5a74ebc77c3e05947ff61ec238d64cb863f",
         "handbook/overlay/experiments/fixtures/journal.js": "a4e0f2d87d4fe9225530c5318faf729dc1bea24b4fa9694c19fa8f1952d5d1dd",
         "handbook/overlay/experiments/preview-navigation-identity-v1-r2.js": "bb0eca035d78b763c72924285f04ec124093ea4ced53e3f37d90f2b8dfb1bcd9"
       },
-      "buildCommit": "a60f944647bdbfcbdf452b01fc508eb3b2209d4c",
-      "buildTree": "c9fc89444cdc7f5be221014ed1703e278b1d1c13",
+      "buildCommit": "c25b4073ca68b72b4decf5f1dce0f9d662590140",
+      "buildTree": "bdd58321241a1ae79925b3a7874100d532a2cd17",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "2fb5413c12642f39f5c3d7f5e7e5ec1d848e2610bd7feedc13ca23d046d29320",
-      "candidateChanges": []
+      "buildInputsManifestSha256": "9c670614a355dc92c953efef2b724b3875880ca0f9d5defc79425fa01497221f",
+      "candidateChanges": [
+        {
+          "destination": "frontend/src/production/task-knowledge-tasks.ts",
+          "beforeSha256": "6bc960b971fc731bbba0f457a8207338eb7c1447a8bf31b703a419e41421bb60",
+          "sha256": "637b168481c5f7982db97b23e5dee7cdf3d6ee72eba082698c797dcf6a4e7229",
+          "bytes": 20038,
+          "gitBlob": "d475e426f1e3aac25071930b0f938786461eb003",
+          "mode": "100644",
+          "committedIn": "c25b4073ca68b72b4decf5f1dce0f9d662590140"
+        }
+      ]
     },
     "fourth": {
       "commit": "f1c60c6ae2928e5407dabccbd04a504f691e39cf",
@@ -115,11 +135,11 @@
       ],
       "recipeFiles": {
         "fourth/assemble.py": "338d94ff617a505db2fde4fbe498fd1e78753ea5191cb9f8889a935175944353",
-        "fourth/verify_source.py": "99b0b7936bbfeef3be7c4ad732882d30f14bf5304b4b26f45bdeb6eeb63023dc",
+        "fourth/verify_source.py": "5fc896364e3cde4526f996d087133132faeed4b0de88cdd777613a4ef088542f",
         "fourth/verify_graph.mjs": "a363a9473d39eae99a7bef592fac9e5ae12b8a8c19d50f825dc69a2e17df9247",
-        "fourth/PRODUCT_INPUTS.json": "7d45951ca36373e319bd8b9c3b138f1a50987c538bfd35912dc545605bbc6ca1",
+        "fourth/PRODUCT_INPUTS.json": "e43662d8f860c22b227e96207ae00a50f511838ba1f5f89a2739cfad9ec4b5b8",
         "fourth/protocol.json": "d6f110463664e68e32f81015f089d92e1a719732713e0dadb350ac10c9026423",
-        "fourth/recipe.json": "1599fbab39943492bfb0ed0b8da89bd388a282a7cf2584e9871d0a9b71138a11",
+        "fourth/recipe.json": "8fa83dc23adb66592b2091cb8b4e86f24fd46b8f1dcb6d56373ff703a2adfe8a",
         "fourth/adapter/admission.js": "8ef2f9ba7246722bde347330f002dd378ee27b265b906c4af833351015c4ff2b",
         "fourth/adapter/fixture-patches.json": "5c0e14a3182453b2f35ae557c731fd3bf392cada9306410aa75f5c1ada1f965e",
         "fourth/adapter/startup-guard.js": "1835436d1630bdcada4a63aed87cbc581ac40e39cc77fe9606648eceff185912",
@@ -129,11 +149,21 @@
         "fourth/overlay/experiments/preview-navigation-identity-fourth-v1.js": "ef238ce5675840b1a5313d98b4458bd5eb08829f7af189862551e7e9194c915f",
         "fourth/tests/admission.mjs": "a84d8be911727985500615e47d55ed8bb1a7664ba19cf0a63863e27618744aa5"
       },
-      "buildCommit": "5690b84c365e01942ab0a417e19faf3306e68fd7",
-      "buildTree": "813dd37a389ddea3b9dc4c71c020163fa93728d7",
+      "buildCommit": "d28580f19dbfd40184e8f72b3afb9ea3914b0799",
+      "buildTree": "1008be46babe79921a7dc47de27cfc1f2f803198",
       "buildInputsManifest": "orchestrator/source-snapshots/BUILD_INPUTS.json",
-      "buildInputsManifestSha256": "2fb5413c12642f39f5c3d7f5e7e5ec1d848e2610bd7feedc13ca23d046d29320",
-      "candidateChanges": []
+      "buildInputsManifestSha256": "9c670614a355dc92c953efef2b724b3875880ca0f9d5defc79425fa01497221f",
+      "candidateChanges": [
+        {
+          "destination": "frontend/src/production/task-knowledge-tasks.ts",
+          "beforeSha256": "6bc960b971fc731bbba0f457a8207338eb7c1447a8bf31b703a419e41421bb60",
+          "sha256": "1c85730d6423904ed4e6fc42016eed663ce2871165477875e5a71cc80ed1299f",
+          "bytes": 20134,
+          "gitBlob": "283e4f8f191bd8b9d032f77123d3014edaab5460",
+          "mode": "100644",
+          "committedIn": "d28580f19dbfd40184e8f72b3afb9ea3914b0799"
+        }
+      ]
     }
   },
   "rawPolicy": "Full normal external maps checked runner-locally before packaging; never uploaded to public artifacts. Ephemeral after job teardown; no local raw archive claimed.",

@@ -5,7 +5,7 @@
   "variant": "journal",
   "productCommit": "bc308157a48c3f2448898533dcf722385ee57f03",
   "productTree": "c73aece2a1539ef6dbe9fc680167f159282aea25",
-  "sourceAcquisition": "Fresh detached Git checkout of productCommit, no worktree untracked files; overlay and outputs remain outside the product checkout. No product code/config/owner/guard changes.",
+  "sourceAcquisition": "Original productCommit/productTree are provenance. Fresh detached checkout of the separately pinned clean published build commit contains the reviewed Task owner correction. Full shared build-input namespace and exact candidate pins are verified; no export-time source overlay or product edit.",
   "sourcePins": {
     "package.json": "358da37ef3fb424225d755ea1123caf3ca04bbc803a9a427a27d46470b324ca0",
     "package-lock.json": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",
@@ -20,14 +20,25 @@
     "frontend/app/_layout.tsx": "ceb467ac36b1571700e5d6eb3f78fc620c88cd1e35d6a2374d977bd5ebb0427b",
     "frontend/app.json": "36f1891973b56c233853d46db0aeaf014df6ae18801281dba4efeb3b6bb19b04",
     "frontend/app.config.js": "4a065de9ffe8b904cce48703b8e7a22f47790f96752b4ccdd9a9a0a974dc57ec",
-    "frontend/tsconfig.json": "1571bfb7783a106586c8431560a1e1377d409c6e763fce900d979abdb297a85d"
+    "frontend/tsconfig.json": "1571bfb7783a106586c8431560a1e1377d409c6e763fce900d979abdb297a85d",
+    "frontend/src/production/task-knowledge-tasks.ts": "637b168481c5f7982db97b23e5dee7cdf3d6ee72eba082698c797dcf6a4e7229"
   },
   "overlayPins": {
     "experiments/dispatch.js": "0b27cef6a7d8a93798996942171cd5a74ebc77c3e05947ff61ec238d64cb863f",
     "experiments/fixtures/journal.js": "a4e0f2d87d4fe9225530c5318faf729dc1bea24b4fa9694c19fa8f1952d5d1dd",
     "experiments/preview-navigation-identity-v1-r2.js": "bb0eca035d78b763c72924285f04ec124093ea4ced53e3f37d90f2b8dfb1bcd9"
   },
-  "productSourceDelta": [],
+  "productSourceDelta": [
+    {
+      "destination": "frontend/src/production/task-knowledge-tasks.ts",
+      "beforeSha256": "6bc960b971fc731bbba0f457a8207338eb7c1447a8bf31b703a419e41421bb60",
+      "sha256": "637b168481c5f7982db97b23e5dee7cdf3d6ee72eba082698c797dcf6a4e7229",
+      "bytes": 20038,
+      "gitBlob": "d475e426f1e3aac25071930b0f938786461eb003",
+      "mode": "100644",
+      "committedIn": "c25b4073ca68b72b4decf5f1dce0f9d662590140"
+    }
+  ],
   "entrypoint": "frontend/index.js -> frontend/src/entry/Application.tsx -> ExpoRoot wrapper ProductionOwnerHost",
   "lockFile": "package-lock.json",
   "lockSha256": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",

@@ -15,8 +15,8 @@ def verify(source):
     for row in pins['files']:
         actual=build['files'].get(row['path'])
         if not actual or actual['bytes']!=row['bytes'] or actual['sha256']!=row['sha256']:
-            raise ValueError('Fourth original product input drift: '+row['path'])
-    return {'productCommit':pins['commit'],'productTree':pins['tree'],'originalIdentityRole':'FIXED_INPUT_PROVENANCE_NOT_REMOTE_GIT_HEAD','buildCommit':build['buildCommit'],'buildTree':build['buildTree'],'buildInputManifestSha256':build['manifestSha256'],'projectedNamespaceGate':'VERIFIED_BY_SHARED_BUILD_INPUTS_HELPER','verifiedInputs':len(pins['files']),'productOverlay':[]}
+            raise ValueError('Fourth reviewed candidate input drift: '+row['path'])
+    return {'productCommit':pins['commit'],'productTree':pins['tree'],'originalIdentityRole':'FIXED_INPUT_PROVENANCE_NOT_REMOTE_GIT_HEAD','buildCommit':build['buildCommit'],'buildTree':build['buildTree'],'buildInputManifestSha256':build['manifestSha256'],'projectedNamespaceGate':'VERIFIED_BY_SHARED_BUILD_INPUTS_HELPER','verifiedInputs':len(pins['files']),'productOverlay':[],'candidateChanges':recipe['productSourceDelta']}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(); parser.add_argument('--source', type=pathlib.Path, required=True)

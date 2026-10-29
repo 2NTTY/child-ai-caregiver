@@ -264,8 +264,8 @@ uction/AdminEntry.tsx",
     },
     {
       "path": "frontend/src/production/task-knowledge-tasks.ts",
-      "bytes": 19664,
-      "sha256": "6bc960b971fc731bbba0f457a8207338eb7c1447a8bf31b703a419e41421bb60"
+      "bytes": 20134,
+      "sha256": "1c85730d6423904ed4e6fc42016eed663ce2871165477875e5a71cc80ed1299f"
     },
     {
       "path": "frontend/src/production/task-projection.test.mts",
