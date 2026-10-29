@@ -77,6 +77,28 @@ export function AppShell({ children }: { children: ReactNode }) {
   const shell = useRef<View>(null);
   const railAnchor = useRef<View>(null);
   const routeSurface = useRef<View>(null);
+  const noticeDismissRef = useRef<View>(null);
+  function dismissShellNotice() {
+    const trigger = noticeDismissRef.current as unknown as HTMLElement | null;
+    const surface = routeSurface.current as unknown as HTMLElement | null;
+    // Only restore focus when explicitly removing the focused close control.
+    if (Platform.OS === "web" && trigger?.isConnected && trigger.contains(trigger.ownerDocument.activeElement)
+      && surface?.isConnected && surface.ownerDocument === trigger.ownerDocument) {
+      const target = [surface.querySelector<HTMLElement>('[data-page-surface="true"]'),
+        surface.querySelector<HTMLElement>('[role="heading"],h1,h2'), surface].find(node => {
+        if (!node?.isConnected || node.ownerDocument !== trigger.ownerDocument
+          || node.closest('[hidden], [inert], [aria-hidden="true"], [disabled], [aria-disabled="true"]')
+          || node.getClientRects().length === 0) return false;
+        const visibility = node.ownerDocument.defaultView?.getComputedStyle(node).visibility;
+        return visibility !== "hidden" && visibility !== "collapse";
+      });
+      if (target) {
+        try { target.tabIndex = -1; target.focus({ preventScroll: true }); }
+        catch { /* Focus recovery must not prevent dismissal. */ }
+      }
+    }
+    dismissNotice();
+  }
   const previousPath = useRef(pathname);
   useEffect(() => {
     const changed = previousPath.current !== pathname; previousPath.current = pathname;
@@ -139,7 +161,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </View>
       </View>
 
-      <View style={[styles.notice, !notice && styles.noticeEmpty]}><Text accessibilityLiveRegion="polite" style={styles.noticeText}>{notice ?? ""}</Text>{notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.noticeDismiss}><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}</View>
+      <View style={[styles.notice, !notice && styles.noticeEmpty]}><Text accessibilityLiveRegion="polite" style={styles.noticeText}>{notice ?? ""}</Text>{notice ? <Pressable ref={noticeDismissRef} accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissShellNotice} style={styles.noticeDismiss}><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}</View>
       <View style={styles.body}>
         <MotionEntrance ref={routeSurface} nativeID="main-content" role="main" tabIndex={-1} preset="route" triggerKey={pathname} scopeKey={motionScope} style={styles.content} testID="motion-route">{children}</MotionEntrance>
         {compact && pathname === "/" ? <MobileQuickInputDock key={motionScope} supportedKinds={["voice", "text"]} /> : null}
