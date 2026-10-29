@@ -1,54 +1,49 @@
 import { motionData, type MotionViewProps } from "./viewProps";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { Platform, StyleSheet, View, type ViewProps } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import Animated, { cancelAnimation, ReduceMotion, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { motionTokens } from "./tokens";
 import { useMotionPreferences } from "./preferences";
-import { disclosureStartHeight } from "./lifecycle";
 
 export interface MotionDisclosureProps extends MotionViewProps { expanded: boolean; scopeKey: string; measureWhileCollapsed?: boolean }
 export function MotionDisclosure({ expanded, scopeKey, measureWhileCollapsed = false, style, children, ...props }: MotionDisclosureProps) {
   const preferences = useMotionPreferences();
-  const nativeMeasurement = Platform.OS !== "web";
-  const height = useSharedValue(0);
-  const measured = useRef(0);
-  const awaitingMeasure = useRef(false);
+  const opacity = useSharedValue(expanded ? 1 : 0);
   const inner = useRef<View>(null);
   const previous = useRef({ expanded, scopeKey, epoch: preferences.epoch });
-  const token = useRef(0);
-  const mounted = useRef(true);
+  const token = useRef(0), mounted = useRef(true);
   const [running, setRunning] = useState(false);
-  const runningRef = useRef(false);
-  const done = useCallback((generation: number) => { if (mounted.current && generation === token.current) { runningRef.current = false; setRunning(false); } }, []);
+  const done = useCallback((generation: number) => {
+    if (mounted.current && generation === token.current) setRunning(false);
+  }, []);
   useLayoutEffect(() => {
-    if (Platform.OS === "web" && inner.current) {
-      const node = inner.current as unknown as HTMLElement;
-      node.inert = !expanded;
-      // A clipped shell row retains its natural size even before first expansion.
-      if (measureWhileCollapsed) measured.current = node.getBoundingClientRect().height;
-    }
+    if (Platform.OS === "web" && inner.current) (inner.current as unknown as HTMLElement).inert = !expanded;
     const old = previous.current; previous.current = { expanded, scopeKey, epoch: preferences.epoch };
-    const inFlight = runningRef.current, currentHeight = height.value;
-    const generation = ++token.current; cancelAnimation(height);
-    if (old.expanded === expanded || old.scopeKey !== scopeKey || old.epoch !== preferences.epoch || !preferences.enabled) {
-      height.value = expanded ? measured.current : 0; awaitingMeasure.current = false; runningRef.current = false; setRunning(false); return;
+    const generation = ++token.current;
+    cancelAnimation(opacity);
+    if (!expanded || old.expanded || old.scopeKey !== scopeKey || old.epoch !== preferences.epoch || !preferences.enabled) {
+      opacity.value = expanded ? 1 : 0; setRunning(false); return;
     }
-    height.value = disclosureStartHeight(expanded, inFlight, measured.current, currentHeight);
-    awaitingMeasure.current = false; runningRef.current = true; setRunning(true);
-    if (expanded && measured.current <= 0) { awaitingMeasure.current = true; return; }
-    height.value = withTiming(expanded ? measured.current : 0, { duration: motionTokens.disclosure.duration, easing: motionTokens.ease, reduceMotion: ReduceMotion.System }, finished => { if (finished) runOnJS(done)(generation); });
-  }, [expanded, scopeKey, measureWhileCollapsed, preferences.enabled, preferences.epoch, height, done]);
-  useLayoutEffect(() => { mounted.current = true; return () => { mounted.current = false; token.current += 1; cancelAnimation(height); }; }, [height]);
-  // Native content must measure outside the collapsed height before animating.
-  // Web's animated style adapter skips undefined; explicitly release fixed height.
-  const animatedStyle = useAnimatedStyle(() => ({ height: running ? height.value : expanded ? "auto" : 0, display: !nativeMeasurement && !measureWhileCollapsed && !expanded && !running ? "none" : "flex" }));
-  return <Animated.View {...props} {...motionData({ ...props.dataSet, motionKind: "disclosure", motionPhase: running ? "resizing" : "settled" })} style={[styles.outer, style, animatedStyle]} pointerEvents={expanded ? "auto" : "none"}>
-    <View ref={inner} style={nativeMeasurement ? [styles.measurableInner, (!expanded || running) && styles.nativeMeasurement] : measureWhileCollapsed ? styles.measurableInner : undefined} aria-hidden={!expanded} accessibilityElementsHidden={!expanded} importantForAccessibility={expanded ? "auto" : "no-hide-descendants"}
-      onLayout={event => { measured.current = event.nativeEvent.layout.height;
-        if (expanded && awaitingMeasure.current && measured.current > 0) {
-          awaitingMeasure.current = false; const generation = token.current;
-          height.value = withTiming(measured.current, { duration: motionTokens.disclosure.duration, easing: motionTokens.ease, reduceMotion: ReduceMotion.System }, finished => { if (finished) runOnJS(done)(generation); });
-        } else if (expanded && !running) height.value = measured.current; }}>{children}</View>
+    // The disclosure takes its natural layout now; only new content fades in.
+    opacity.value = 0; setRunning(true);
+    opacity.value = withTiming(1, { duration: motionTokens.disclosure.duration, easing: motionTokens.ease, reduceMotion: ReduceMotion.System }, finished => {
+      if (finished) runOnJS(done)(generation);
+    });
+  }, [expanded, scopeKey, preferences.enabled, preferences.epoch, opacity, done]);
+  useLayoutEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; token.current += 1; cancelAnimation(opacity); };
+  }, [opacity]);
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  return <Animated.View {...props} {...motionData({ ...props.dataSet, motionKind: "disclosure", motionPhase: running ? "entering" : "settled" })}
+    style={[styles.outer, style, expanded ? styles.expanded : measureWhileCollapsed ? styles.measurableCollapsed : styles.collapsed, animatedStyle]} pointerEvents={expanded ? "auto" : "none"}>
+    <View ref={inner} aria-hidden={!expanded} accessibilityElementsHidden={!expanded} importantForAccessibility={expanded ? "auto" : "no-hide-descendants"}>{children}</View>
   </Animated.View>;
 }
-const styles = StyleSheet.create({ outer: { overflow: "hidden", minWidth: 0 }, measurableInner: { flexShrink: 0 }, nativeMeasurement: { position: "absolute", top: 0, left: 0, right: 0 } });
+const styles = StyleSheet.create({
+  outer: { overflow: "hidden", minWidth: 0 },
+  expanded: { height: "auto", display: "flex" },
+  collapsed: { height: 0, display: "none" },
+  // Preserve the optional measurable collapsed subtree without animating its size.
+  measurableCollapsed: { height: 0, display: "flex" },
+});
