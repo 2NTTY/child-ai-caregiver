@@ -23,6 +23,7 @@ import { prepareFirestoreBackgroundWork, firestoreBackgroundReference, type Fire
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { sharedAccessBasisSchema, sharedSelectionSchema, type SharedSelection } from '../src/shared/sharing.ts';
 import { sharedWriteAttribution, sharedWriteAttributionSchema, validSharedAttribution } from './shared-write-attribution.ts';
+import { familyDocumentTransferSchema, type FamilyDocumentTransfer } from './family-document-transfer.ts';
 
 const uuid = z.uuid(), version = z.number().int().positive().max(2147483647), datetime = z.iso.datetime({ offset: true });
 const metadataSchema = z.object({ id: uuid, childId: uuid, ownerUserId: z.string().min(1).max(256), version, request: documentRequestSchema,
@@ -50,6 +51,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
   maintenanceActorId?: string;
 }): FamilyDocumentStore & { processRefresh(job: FirestoreBackgroundWork): Promise<{ state: 'completed' | 'stopped' }>;
   forSharedSpace(selection: SharedSelection): ReturnType<typeof createFirestoreFamilyDocumentStore>;
+  readExportMetadata(userId: string, childId: string, id: string): Promise<FamilyDocumentTransfer | null>;
   readExportSnapshot(userId: string, childId: string, id: string, snapshotId: string, version: number): Promise<DocumentSnapshot | null> } {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), snapshots = new FirestoreFamilyDocumentSnapshots(options);
   const care = createFirestoreCareStore(options), chat = createFirestoreChatStore(options);
@@ -215,6 +217,21 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
     forSharedSpace(selection) {
       if (options.transaction) domainReject('shared_transaction_scope', 403);
       return createFirestoreFamilyDocumentStore({ ...options, sharing: sharedSelectionSchema.parse(selection) });
+    },
+    async readExportMetadata(userId, childId, id) {
+      uuid.parse(id);
+      return read(userId, childId, async (binding, scope) => {
+        const row = await find(binding, scope, id); if (!row) return null;
+        const loaded = await sources(binding, scope), values = await bodies(binding, scope, row);
+        await supplement(binding, scope, loaded, [...(values.current ? [values.current] : []), ...values.history]);
+        const item = safe(row, loaded, values);
+        return familyDocumentTransferSchema.parse({ format: 'yuyoufang-document:1', id: row.id, childId: row.childId,
+          version: row.version, kind: row.request.kind, purpose: row.request.purpose, request: row.request,
+          createdAt: row.createdAt, status: row.status, archivedAt: row.archivedAt, autoRefresh: row.autoRefresh,
+          readState: item.readState, invalidated: item.readState === 'invalidated',
+          currentSnapshot: values.current ? { id: values.current.id, version: values.current.version,
+            readable: item.current !== null } : null, recentSnapshotIds: [...row.historyIds] });
+      });
     },
     async readExportSnapshot(userId, childId, id, snapshotId, version) {
       return read(userId, childId, async (binding, scope) => {
