@@ -24,17 +24,44 @@
     {
       "destination": "frontend/src/screens/historyScreen.tsx",
       "beforeSha256": "15022b89184b6a9e32f2cecbe2f0059ae843a11fe1b773b78edbd619efe7cee6",
-      "sha256": "f101524c578579e413c4a18a5bd06d2f328c6bd64c46d8b2d729c57bb13bf097",
-      "bytes": 18099,
-      "gitBlob": "80d973b68dc1d788f817c661aa173072dbf22e00",
+      "sha256": "b0e18097a6ea3a026a7eb6f2f7ce29dce02419654caaf08fb3610e087bfebbd2",
+      "bytes": 18202,
+      "gitBlob": "aa1bd56f420fc29895155fd52a267b7bc6ca6425",
       "mode": "100644",
-      "committedIn": "d139a0f09ceb034c2ce7159790c5a03603c0b42a"
+      "committedIn": "bb23767345358a66e28a6013a77a4d9744d8f6de"
+    },
+    {
+      "destination": "frontend/src/components/AppShell.tsx",
+      "beforeSha256": "b8c6954a08b505ed34513c2fe1f143f4587150a8434bbf47313fbd53abd97224",
+      "sha256": "b8ce0171178941071d338c64894064e643fff1f57d2e6a6545ae89d5e2bef4ca",
+      "bytes": 16973,
+      "gitBlob": "d9b291cf0e1477b4e3f887d33b6c8d66e695cb5d",
+      "mode": "100644",
+      "committedIn": "ad3b7978bc5853a29eaa429126271ec4815c4055"
+    },
+    {
+      "destination": "frontend/src/components/NativeAppShell.tsx",
+      "beforeSha256": "894f179ce4e6a325d8b92415ec0ec41b42a19547362d1e140aee0d790956d78c",
+      "sha256": "bc01679ae8293c4244c39da2636fc848db90f943c84fd422a8c2dbbba63c090f",
+      "bytes": 5672,
+      "gitBlob": "70003a21fecb9efb6c0b284a64e3a7942c29ffd5",
+      "mode": "100644",
+      "committedIn": "ad3b7978bc5853a29eaa429126271ec4815c4055"
+    },
+    {
+      "destination": "frontend/src/motion/MotionFeedback.tsx",
+      "beforeSha256": "ce16b44e5ac57643ef49b7c2c6391deb7dfa53a7c87021ff59ef66654b8d047c",
+      "sha256": "87ca508c32da3d25670c2b7806525605ab2c7b5971784611f4be54aa1d22acca",
+      "bytes": 2628,
+      "gitBlob": "0997e6d9c31eed1f645795fa20feb630d0df727c",
+      "mode": "100644",
+      "committedIn": "3d8a0d1a903148e6c665e8ad845e204578389a42"
     }
   ],
   "entrypoint": "frontend/index.js",
   "packageManagerMetadata": "npm@11.8.0",
   "lockSha256": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",
-  "sourcePinsSha256": "a20b483c51e8390e12413d52eb950857b2265c1e77dab74849785145bf7ea94c",
+  "sourcePinsSha256": "b76b787a7a662f798d8e12ad8416ab06a081620f38480f1b53599a58a64cdbfb",
   "shared": {
     "experiments/dispatch.js": {
       "bytes": 4651,

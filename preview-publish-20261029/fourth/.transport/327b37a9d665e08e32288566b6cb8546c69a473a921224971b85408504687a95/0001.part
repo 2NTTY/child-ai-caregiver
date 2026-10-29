@@ -586,8 +586,8 @@
     },
     {
       "path": "frontend/src/motion/MotionDisclosure.tsx",
-      "bytes": 4699,
-      "sha256": "7a166f4887b0527e03b74c9f13d6f78002a2a39138518d032bd1e98917ecb082"
+      "bytes": 3172,
+      "sha256": "f7af15d27b7826f108941430dc92dcaa951abbf8fbf60d6854b1f033cd7423a9"
     },
     {
       "path": "frontend/src/motion/MotionDrawerOverlay.tsx",
@@ -601,8 +601,8 @@
     },
     {
       "path": "frontend/src/motion/MotionDrawerRight.tsx",
-      "bytes": 4388,
-      "sha256": "3109d1cc837400efa27fe787bf1934587a025c84168339c921b40082b45a2c36"
+      "bytes": 4523,
+      "sha256": "8c57de828d7dc821c5abbb67dd45842ed59892e27aeef15bc6505a9784652017"
     },
     {
       "path": "frontend/src/motion/MotionEntrance.tsx",
@@ -611,8 +611,8 @@
     },
     {
       "path": "frontend/src/motion/MotionFeedback.tsx",
-      "bytes": 2192,
-      "sha256": "ce16b44e5ac57643ef49b7c2c6391deb7dfa53a7c87021ff59ef66654b8d047c"
+      "bytes": 2628,
+      "sha256": "87ca508c32da3d25670c2b7806525605ab2c7b5971784611f4be54aa1d22acca"
     },
     {
       "path": "frontend/src/motion/MotionInlineSwap.tsx",

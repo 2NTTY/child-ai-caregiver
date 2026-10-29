@@ -15,6 +15,51 @@
       "gitBlob": "1068e38d509af02f88a7bfcc73e680735601d363",
       "mode": "100644",
       "committedIn": "2fd0f9593bf5e37fa48a7ee6017f531e08059c8b"
+    },
+    {
+      "destination": "frontend/src/components/AppShell.tsx",
+      "beforeSha256": "afacdd8286e5f078192c62993596ba94301ca2435c714d779109fe8a7de228fc",
+      "sha256": "03e2a7eb6dafea7e4d93b4ea30d258aa196e570b28d6a6b1a80347925c7731c0",
+      "bytes": 16509,
+      "gitBlob": "9a8592d3cdb4a512f8fd6f1f7774594c6ece4963",
+      "mode": "100644",
+      "committedIn": "e678b0faf29db948bf3d69597c37e625c65e4a44"
+    },
+    {
+      "destination": "frontend/src/components/NativeAppShell.tsx",
+      "beforeSha256": "d92aa0acf656d8e18ee64662d519dff4c580744e831b543fbf4e7f9c010e16f5",
+      "sha256": "09c8df093fdecad461f7d818ebe1bbb1d01a8644a0fdde7804ea770dab0f1e04",
+      "bytes": 5616,
+      "gitBlob": "c46d35ed496a683cc083adfc2c86cda5873a2cd0",
+      "mode": "100644",
+      "committedIn": "e678b0faf29db948bf3d69597c37e625c65e4a44"
+    },
+    {
+      "destination": "frontend/src/motion/MotionDisclosure.tsx",
+      "beforeSha256": "7a166f4887b0527e03b74c9f13d6f78002a2a39138518d032bd1e98917ecb082",
+      "sha256": "f7af15d27b7826f108941430dc92dcaa951abbf8fbf60d6854b1f033cd7423a9",
+      "bytes": 3172,
+      "gitBlob": "bbfb04156f7b2f8a5a1d3859b1df6ad4c1e33583",
+      "mode": "100644",
+      "committedIn": "4ece1682c5ff46692103f32c93465b56408392ba"
+    },
+    {
+      "destination": "frontend/src/motion/MotionDrawerRight.tsx",
+      "beforeSha256": "3109d1cc837400efa27fe787bf1934587a025c84168339c921b40082b45a2c36",
+      "sha256": "8c57de828d7dc821c5abbb67dd45842ed59892e27aeef15bc6505a9784652017",
+      "bytes": 4523,
+      "gitBlob": "d758709b9ed92b761af4c0f4ec5aa09d1aaf9370",
+      "mode": "100644",
+      "committedIn": "4ece1682c5ff46692103f32c93465b56408392ba"
+    },
+    {
+      "destination": "frontend/src/motion/MotionFeedback.tsx",
+      "beforeSha256": "ce16b44e5ac57643ef49b7c2c6391deb7dfa53a7c87021ff59ef66654b8d047c",
+      "sha256": "87ca508c32da3d25670c2b7806525605ab2c7b5971784611f4be54aa1d22acca",
+      "bytes": 2628,
+      "gitBlob": "0997e6d9c31eed1f645795fa20feb630d0df727c",
+      "mode": "100644",
+      "committedIn": "4ece1682c5ff46692103f32c93465b56408392ba"
     }
   ],
   "sourcePins": {
@@ -31,10 +76,15 @@
     "src/shared/family-documents.ts": "ea1dd64fbaade9f9581073058803baa174bdfaa865a436a279f2f5e9f5d151b2",
     "src/client/family-documents-api.ts": "3db16e774b3bfc4dc94f11073302923e6a3be5be996f74da81a023f0d5b76454",
     "frontend/src/production/useFamilyDocuments.ts": "44a936f40e0fe24d54f3d8a3404dfa82dd23da250318760a9a55584ef2bfff62",
-    "frontend/src/production/task-knowledge-tasks.ts": "402f8f70b8849df532056a8436c45b482ba7bfc53fe3d2d5aa3a65650129df5b"
+    "frontend/src/production/task-knowledge-tasks.ts": "402f8f70b8849df532056a8436c45b482ba7bfc53fe3d2d5aa3a65650129df5b",
+    "frontend/src/components/AppShell.tsx": "03e2a7eb6dafea7e4d93b4ea30d258aa196e570b28d6a6b1a80347925c7731c0",
+    "frontend/src/components/NativeAppShell.tsx": "09c8df093fdecad461f7d818ebe1bbb1d01a8644a0fdde7804ea770dab0f1e04",
+    "frontend/src/motion/MotionDisclosure.tsx": "f7af15d27b7826f108941430dc92dcaa951abbf8fbf60d6854b1f033cd7423a9",
+    "frontend/src/motion/MotionDrawerRight.tsx": "8c57de828d7dc821c5abbb67dd45842ed59892e27aeef15bc6505a9784652017",
+    "frontend/src/motion/MotionFeedback.tsx": "87ca508c32da3d25670c2b7806525605ab2c7b5971784611f4be54aa1d22acca"
   },
   "inputManifest": "PRODUCT_INPUTS.json",
-  "inputManifestSha256": "28daf6a939ac5a18b8d1767321e964857672772d13bfd098a163741035ba3aa0",
+  "inputManifestSha256": "327b37a9d665e08e32288566b6cb8546c69a473a921224971b85408504687a95",
   "entrypoint": "frontend/index.js -> runtime web stub -> own web-foundation -> browser-history-events -> installed expo-router/entry; root layout retains own ProductionProvider/FirstScreenGate; no Application/OwnerHost substitution",
   "lockFile": "package-lock.json",
   "lockSha256": "42c936ee3bef938c7def0ef376a724ac0bf21470981ef9dbd2b9a3eeb181e119",

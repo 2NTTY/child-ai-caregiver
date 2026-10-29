@@ -292,11 +292,11 @@
       "sha256": "41a4bdae8120dcddb9e8e9a276ef4345ed510704d4f7b4d8cc724b27c390f187"
     },
     {
-      "bytes": 18099,
-      "gitBlob": "80d973b68dc1d788f817c661aa173072dbf22e00",
+      "bytes": 18202,
+      "gitBlob": "aa1bd56f420fc29895155fd52a267b7bc6ca6425",
       "mode": "100644",
       "path": "frontend/src/screens/historyScreen.tsx",
-      "sha256": "f101524c578579e413c4a18a5bd06d2f328c6bd64c46d8b2d729c57bb13bf097"
+      "sha256": "b0e18097a6ea3a026a7eb6f2f7ce29dce02419654caaf08fb3610e087bfebbd2"
     },
     {
       "bytes": 16315,

@@ -15,11 +15,11 @@ f02732eff605d91c488de592085ce45e877ba08e17776254fd9529d72"
       "sha256": "18cec389c5af27f74c52b343a880ff36130c09d1e43ee61c3cacf93d6a69066e"
     },
     {
-      "bytes": 2192,
-      "gitBlob": "c4e9718527f4ce0d5ca22b7aae4db73f7005146f",
+      "bytes": 2628,
+      "gitBlob": "0997e6d9c31eed1f645795fa20feb630d0df727c",
       "mode": "100644",
       "path": "frontend/src/motion/MotionFeedback.tsx",
-      "sha256": "ce16b44e5ac57643ef49b7c2c6391deb7dfa53a7c87021ff59ef66654b8d047c"
+      "sha256": "87ca508c32da3d25670c2b7806525605ab2c7b5971784611f4be54aa1d22acca"
     },
     {
       "bytes": 4532,

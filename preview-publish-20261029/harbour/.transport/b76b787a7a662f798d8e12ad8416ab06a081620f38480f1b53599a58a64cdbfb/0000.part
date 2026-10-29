@@ -330,11 +330,11 @@
       "sha256": "6b96e19c2fd59d02ee50c53f6774cbb73a8cc96b0b707d0367aeaba85091280c"
     },
     {
-      "bytes": 16595,
-      "gitBlob": "068f3a7e1a44dfc429af75bc1abd14188e8d52a3",
+      "bytes": 16973,
+      "gitBlob": "d9b291cf0e1477b4e3f887d33b6c8d66e695cb5d",
       "mode": "100644",
       "path": "frontend/src/components/AppShell.tsx",
-      "sha256": "b8c6954a08b505ed34513c2fe1f143f4587150a8434bbf47313fbd53abd97224"
+      "sha256": "b8ce0171178941071d338c64894064e643fff1f57d2e6a6545ae89d5e2bef4ca"
     },
     {
       "bytes": 1742,
@@ -533,11 +533,11 @@
       "sha256": "485e54c050af603096fa8be22c4a69e3571f030b0979b47078d488c88b7ce738"
     },
     {
-      "bytes": 4882,
-      "gitBlob": "6cfe6ef5a8c300f80063fc6b665c3eb2f14b07df",
+      "bytes": 5672,
+      "gitBlob": "70003a21fecb9efb6c0b284a64e3a7942c29ffd5",
       "mode": "100644",
       "path": "frontend/src/components/NativeAppShell.tsx",
-      "sha256": "894f179ce4e6a325d8b92415ec0ec41b42a19547362d1e140aee0d790956d78c"
+      "sha256": "bc01679ae8293c4244c39da2636fc848db90f943c84fd422a8c2dbbba63c090f"
     },
     {
       "bytes": 2796,

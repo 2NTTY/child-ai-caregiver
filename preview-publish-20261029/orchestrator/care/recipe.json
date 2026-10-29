@@ -30,7 +30,12 @@
     "frontend/src/entry/Application.tsx": "ee9e3f03e60113540d5c150b375dac7b1f95d65b833312d74d057ecafda8aeb2",
     "frontend/src/production/ProductionProvider.tsx": "71762f6ca264f786e85590f19fa2f315f9fae3978957b370ce203e8f079bce10",
     "frontend/src/preview/browser-history-events.ts": "1b1f1dc23f5780f9e54659262907d1d50e56ac56b478dc691ab4cc524ce66fa8",
-    "frontend/src/production/task-knowledge-tasks.ts": "86eff8d17b6d5023d4cd662d347a619ca288c97f24d5dc65e6c12e2d95c85bcd"
+    "frontend/src/production/task-knowledge-tasks.ts": "86eff8d17b6d5023d4cd662d347a619ca288c97f24d5dc65e6c12e2d95c85bcd",
+    "frontend/src/components/AppShell.tsx": "af99569e3c746a031023af7c300e812061d4418427367b134508d2d7f5097166",
+    "frontend/src/components/NativeAppShell.tsx": "87c03d0a9c06377fdd588ca18b05f3bfc2dc7135db299a996476de470a79aaf7",
+    "frontend/src/motion/MotionDisclosure.tsx": "f7af15d27b7826f108941430dc92dcaa951abbf8fbf60d6854b1f033cd7423a9",
+    "frontend/src/motion/MotionFeedback.tsx": "87ca508c32da3d25670c2b7806525605ab2c7b5971784611f4be54aa1d22acca",
+    "frontend/src/components/ui.tsx": "855331bdcecaa88c059b0f1cea3a5e668d3e7002b4d11faf795bc5575afc3399"
   },
   "fixtureSha256": "aaa6920f9cf5b11b3ae67b5dc9ba34fd9d7907075b5e638719329480c370f554",
   "fixturePublicPath": "experiments/fixtures/care.js",

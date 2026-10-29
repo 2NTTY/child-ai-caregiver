@@ -21,7 +21,10 @@
     "frontend/app.json": "36f1891973b56c233853d46db0aeaf014df6ae18801281dba4efeb3b6bb19b04",
     "frontend/app.config.js": "4a065de9ffe8b904cce48703b8e7a22f47790f96752b4ccdd9a9a0a974dc57ec",
     "frontend/tsconfig.json": "1571bfb7783a106586c8431560a1e1377d409c6e763fce900d979abdb297a85d",
-    "frontend/src/production/task-knowledge-tasks.ts": "f50d5b3404a83cf8b429b4e5373474ff4770cedb02b083e8679c61b4ed6d1dfd"
+    "frontend/src/production/task-knowledge-tasks.ts": "f50d5b3404a83cf8b429b4e5373474ff4770cedb02b083e8679c61b4ed6d1dfd",
+    "frontend/src/components/AppShell.tsx": "043b1ae372b11c2e1c5382a9f81c18bf31a9defe5a7ead4353cd3a1bd2818e23",
+    "frontend/src/components/NativeAppShell.tsx": "57f93273070df9644a0f934e9c908df5deb4e2d0cf4a382c0adb2cbdcc41bd38",
+    "frontend/src/motion/MotionFeedback.tsx": "87ca508c32da3d25670c2b7806525605ab2c7b5971784611f4be54aa1d22acca"
   },
   "overlayPins": {
     "experiments/dispatch.js": "0b27cef6a7d8a93798996942171cd5a74ebc77c3e05947ff61ec238d64cb863f",
@@ -37,6 +40,33 @@
       "gitBlob": "f68cedd02dbb4fc3bf8db7ea929a1058d7c02c7e",
       "mode": "100644",
       "committedIn": "9f2156644245a3a50e6cb6282b12c63a45767fa6"
+    },
+    {
+      "destination": "frontend/src/components/AppShell.tsx",
+      "beforeSha256": "154e94c24210ec6d83779a69c5c86226a5bd26f8b2693c8b17baa76716096c73",
+      "sha256": "043b1ae372b11c2e1c5382a9f81c18bf31a9defe5a7ead4353cd3a1bd2818e23",
+      "bytes": 11415,
+      "gitBlob": "5699e5ae50007d506713f1e1ee818220bcdb6a36",
+      "mode": "100644",
+      "committedIn": "18c2e0c8875a16d8d38b940f033fa0134bb2221f"
+    },
+    {
+      "destination": "frontend/src/components/NativeAppShell.tsx",
+      "beforeSha256": "1934e5e1b0af8994714a6e25d83cb726e67efef901b318b87e8e7903b69c120f",
+      "sha256": "57f93273070df9644a0f934e9c908df5deb4e2d0cf4a382c0adb2cbdcc41bd38",
+      "bytes": 4440,
+      "gitBlob": "023860f22d1f4b02d8ae8082be884f9cee3dfdbc",
+      "mode": "100644",
+      "committedIn": "18c2e0c8875a16d8d38b940f033fa0134bb2221f"
+    },
+    {
+      "destination": "frontend/src/motion/MotionFeedback.tsx",
+      "beforeSha256": "ce16b44e5ac57643ef49b7c2c6391deb7dfa53a7c87021ff59ef66654b8d047c",
+      "sha256": "87ca508c32da3d25670c2b7806525605ab2c7b5971784611f4be54aa1d22acca",
+      "bytes": 2628,
+      "gitBlob": "0997e6d9c31eed1f645795fa20feb630d0df727c",
+      "mode": "100644",
+      "committedIn": "af6156298f344c784998f5fff5863d5ebeaa22fd"
     }
   ],
   "entrypoint": "frontend/index.js -> frontend/src/entry/Application.tsx -> ExpoRoot wrapper ProductionOwnerHost",
