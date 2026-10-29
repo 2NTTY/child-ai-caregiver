@@ -2,7 +2,7 @@ import { GROWTH_KNOWLEDGE_NOTICES } from "../../../../src/shared/growth";
 import { useContainerWidth } from "../useContainerWidth";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { ReadStateNotice } from "../ReadStateNotice";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import type { GrowthActions,GrowthViewModel } from "../../growth-view-model";
@@ -11,7 +11,7 @@ import { Workspace } from "../workspace/Workspace";
 import { PageFrame } from "../PageFrame";
 import { EmptyListCard } from "../EmptyListCard";
 import { BackgroundSurface } from "../appearance/BackgroundSurface";
-import { AppButton,AppSelect,AppTabPanel,SectionCard,TabToolbar,UnderlineTabs } from "../ui";
+import { AppButton,AppTabPanel,SectionCard,TabToolbar } from "../ui";
 import { mobileLayout } from "../../theme";
 import { GrowthConcernIndex, GrowthConcernTimeline } from "./GrowthConcernTimeline";
 import { PreparationWorkspace } from "../preparations/PreparationWorkspace";
@@ -20,25 +20,28 @@ import { GrowthConcernActions } from "./GrowthConcernActions";
 import { GrowthArchiveConcernButton } from "./GrowthArchiveConcernButton";
 import { GrowthConcernManualFallback } from "./GrowthConcernManualFallback";
 import { GrowthOperationRecovery } from "./GrowthOperationRecovery";
+import { useReaderReturn } from "../../navigation/useReaderReturn";
 import { growthRefreshNotice } from "../../growth-view-model";
 import { growthStyles as s } from "./growth-styles";
 
-export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPrepareQuestion,onPreparationHistory,previewTools,managementTools,tab="concerns",onTabChange}:{
-  model:GrowthViewModel;actions:GrowthActions;onTask:(id:string)=>void;onRecord?:(id?:string)=>void;onHistory?:()=>void;onChat?:()=>void;
+export function GrowthView({model,actions,onTask,onRecord,onReview,onHistory,onChat,onPrepareQuestion,onPreparationHistory,previewTools,managementTools,tab="concerns",onTabChange,selectedConcernId,onConcernChange,selectedDocumentId,onDocumentChange}:{
+  model:GrowthViewModel;actions:GrowthActions;onTask:(id:string)=>void;onRecord?:(id?:string)=>void;onReview?:()=>void;onHistory?:()=>void;onChat?:()=>void;
   onPrepareQuestion?:(question:string)=>void;onPreparationHistory?:()=>void;previewTools?:React.ReactNode;managementTools?:React.ReactNode;
+  selectedDocumentId: string | null; onDocumentChange(id: string | null): void;
+  selectedConcernId: string | null; onConcernChange(id: string | null): void;
   tab?:"concerns"|"preparation";onTabChange:(tab:"concerns"|"preparation")=>void;
 }){
   const containerLayout = useContainerWidth();
-  const wide = containerLayout.width >= 880;
   const compact = containerLayout.width < mobileLayout.breakpoint;
   const scrollRef = useRef<ScrollView>(null), scrollPosition = useRef(0);
   useLayoutEffect(() => { scrollPosition.current = 0; scrollRef.current?.scrollTo({ y: 0, animated: false }); }, [model.scopeKey, tab]);
   const page=model.access === "lost" ? null : model.page;
-  const [selectedConcern, setSelectedConcern] = useState<string | null>(null);
   const concerns = page?.concerns?.state === "ready" ? page.concerns.items.filter(item => item.childId === model.childId) : [];
   const listedConcerns = concerns.filter(item => item.status !== "closed");
-  const concern = listedConcerns.find(item => item.id === selectedConcern) ?? listedConcerns[0] ?? null;
-  useEffect(() => { setSelectedConcern(null); }, [model.scopeKey, model.access === "lost"]);
+  const concern = listedConcerns.find(item => item.id === selectedConcernId) ?? null;
+  const listHeading = useRef<View>(null), readerHeading = useRef<View>(null);
+  const readerReturn = useReaderReturn({ enabled: tab === "concerns", scopeKey: JSON.stringify([model.scopeKey, model.access, tab]), selectedId: tab === "concerns" ? selectedConcernId : null, listRef: listHeading, readerRef: readerHeading, scrollRef });
+  function returnToIndex() { readerReturn.returning(); onConcernChange(null); }
   const refreshed = model.notice === growthRefreshNotice;
   const showLoading = model.load === "loading" && !page;
   const showStatus = !model.online || model.access !== "editable" || model.load === "error" || !!model.notice && !refreshed || model.refreshPending;
@@ -50,18 +53,18 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPre
     : unavailableAdvice && page?.notices.includes("首批關注只適用香港；沒有把香港時程套用至其他地區。") ? "這項建議只適用於香港地區。"
     : unavailableAdvice && page?.notices.includes("需要有效的出生日期才可套用本批年齡規則；約數年齡會保留，沒有推算精準提醒窗口。") ? "年齡建議未能核對，請核對孩子出生日期。" : null;
   const evaluationFailed = page?.notices.includes("背景評估已達有限重試上限，需核查故障；沒有假稱已完成。");
-  return <PageFrame scrollRef={scrollRef} scrollTestID="growth-scroll" density="compact" title="關注" onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
+  return <PageFrame scrollRef={scrollRef} scrollTestID="growth-scroll" density="compact" title="關注" onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; if (tab === "concerns") readerReturn.onScroll(event); }}>
     {tab === "concerns" ? <>
     <StatusAnnouncement eventKey={`${model.operation}:${model.notice}`} message={refreshed ? "" : model.notice} urgent={model.operation === "failed"} />
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權存取；舊資料及未提交內容已清除。" : ""} urgent={model.access === "lost"} />
     {showLoading ? <ReadStateNotice state="loading" scopeKey={model.scopeKey} message="正在讀取關注…" /> : null}
     {showStatus ? <BackgroundSurface padded style={s.smallStack} testID="growth-status-surface">
       {!model.online?<Text style={s.warning}>目前離線；資料未代表最新狀態，不能提交，沒有離線操作佇列。</Text>:null}
-      {model.access==="read_only"?<Text style={s.meta}>目前只有閱讀權限；不能更改關注、接受候選或確認近況。</Text>:null}
+      {model.access==="read_only"?<Text style={s.body}>目前只有閱讀權限；不能更改關注、接受候選或確認近況。</Text>:null}
       {model.access==="lost"?<Text style={s.warning}>已無權存取；舊關注、草稿及操作已清除。</Text>:null}
       {model.load==="error"&&!model.notice?<Text style={s.warning}>尚未成功讀取目前狀態；保留的草稿不能提交。</Text>:null}
       {model.notice && !refreshed?<Text style={model.operation==="unknown"||model.operation==="conflict"||model.operation==="failed"?s.warning:s.body}>{model.notice}</Text>:null}
-      {model.refreshPending?<Text style={s.meta}>有更新等候核對，未提交草稿沒有被自動覆寫。</Text>:null}
+      {model.refreshPending?<Text style={s.body}>有更新等候核對，未提交草稿沒有被自動覆寫。</Text>:null}
     </BackgroundSurface> : null}
     {model.dirty?<SectionCard testID="growth-drafts"><Text style={s.body}>未送出的草稿及確認保留原版本；重新讀取不會自動覆寫。</Text>
       {model.missingTargets.length ? <Text style={s.warning}>部分草稿的來源未能核對，相關操作已暫停。</Text> : null}
@@ -81,37 +84,39 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPre
         {tab === "concerns" ? <>
         <GrowthConcernChangeNotice model={model} actions={actions} />
         {evaluationFailed ? <BackgroundSurface padded><Text style={s.warning}>成長建議暫停更新。</Text></BackgroundSurface> : null}
-        {page ? <>
-          <View style={s.stack}>
-            {listedConcerns.length ? <BackgroundSurface padded style={s.watchlist} testID="growth-index-surface">
-              <Text accessibilityRole="header" aria-level={2} style={s.title}>追蹤中的主題</Text>
-              {wide ? <GrowthConcernIndex items={listedConcerns} selectedId={concern?.id ?? null} onSelect={setSelectedConcern} />
-                : listedConcerns.length ? <AppSelect label="選擇關注" showLabel={false} value={concern?.id ?? ""} options={listedConcerns.map(item => ({value: item.id, label: item.title}))} onChange={setSelectedConcern} /> : null}
-            </BackgroundSurface> : null}
-            <BackgroundSurface padded style={s.readingWorkspace} testID="growth-detail-surface">
-              {sourceNotice ? <Text style={s.warning}>{sourceNotice}</Text> : null}
-              <GrowthConcernActions scopeKey={model.scopeKey} hasManagement={!!managementTools || !!(concern && page.canManage)}
-                primary={<>
-                  {onChat && (concern || page.concerns?.state === "ready" && model.load !== "error" && model.online) ? <AppButton label={concern ? "與助手跟進" : "與助手討論"} variant="primary" density="compact" disabled={!model.online} onPress={onChat} /> : null}
-                  <GrowthConcernManualFallback model={model} actions={actions} concern={concern} />
-                </>}>
-                {managementTools}
-                {concern && page.canManage ? <GrowthArchiveConcernButton concern={concern} scopeKey={model.scopeKey} authorityVersion={page.authorityVersion}
-                  disabled={model.locked || model.dirty || page.concerns?.state !== "ready"}
-                  onConfirm={() => actions.archiveConcern(concern.id, concern.version, page.authorityVersion)} /> : null}
-              </GrowthConcernActions>
-              {concern ? <GrowthConcernTimeline concern={concern} page={page} onRecord={onRecord} onTask={onTask} />
-                : page.concerns?.state === "ready" && model.load !== "error" ? model.online ? <EmptyListCard title="暫無持續關注" detail="可以先與助手討論想留意的成長近況。" testID="growth-concerns-empty" /> : null : <View style={s.archiveEmpty} testID="growth-concerns-unavailable">
-                  <Text accessibilityRole="header" aria-level={2} style={s.concernTitle}>{model.load === "error" || page.concerns?.state === "error" ? "關注歷程未能讀取" : page.concerns?.state === "loading" ? "正在讀取關注歷程" : "關注歷程尚未接通"}</Text>
-                </View>}
-            </BackgroundSurface>
+        {page ? <View style={[s.readingWorkspace, selectedConcernId ? s.readerWidth : s.indexWidth]}>
+          {selectedConcernId ? <View style={s.stack}>
+            <AppButton label="返回關注列表" variant="quiet" onPress={returnToIndex} />
+            <View ref={readerHeading} tabIndex={-1} accessibilityRole="header" aria-level={2} testID="growth-reader-heading"><Text style={s.concernTitle}>{concern?.title ?? "關注詳情"}</Text></View>
+          </View> : <View ref={listHeading} tabIndex={-1} accessibilityRole="header" aria-level={2} testID="growth-list-heading"><Text style={s.sectionTitle}>追蹤中的主題</Text></View>}
+          <GrowthConcernActions scopeKey={model.scopeKey} hasManagement={(!selectedConcernId || !!concern) && (!!managementTools || !!(concern && page.canManage))}
+            primary={<>
+              {!selectedConcernId || concern ? <GrowthConcernManualFallback model={model} actions={actions} concern={concern} /> : null}
+              {onChat && (concern || !selectedConcernId && page.concerns?.state === "ready" && model.load !== "error" && model.online) ? <AppButton label={concern ? "與助手跟進" : "與助手討論"} variant="quiet" disabled={!model.online} onPress={onChat} /> : null}
+            </>}>
+            {managementTools}
+            {concern && page.canManage ? <GrowthArchiveConcernButton concern={concern} scopeKey={model.scopeKey} authorityVersion={page.authorityVersion}
+              disabled={model.locked || model.dirty || page.concerns?.state !== "ready"}
+              onConfirm={() => actions.archiveConcern(concern.id, concern.version, page.authorityVersion)} /> : null}
+          </GrowthConcernActions>
+          <View style={selectedConcernId ? s.hidden : undefined} aria-hidden={!!selectedConcernId} testID="growth-index-surface">
+            {listedConcerns.length ? <GrowthConcernIndex items={listedConcerns} rowRef={readerReturn.rowRef} onSelect={id => { readerReturn.remember(id); onConcernChange(id); }} />
+              : page.concerns?.state === "ready" && model.load !== "error" && model.online ? <EmptyListCard title="暫無持續關注" detail="記低想持續留意的變化，之後可補充觀察與跟進時間。" testID="growth-concerns-empty" /> : null}
           </View>
-        </> : !showLoading && model.access !== "lost" && model.load !== "error" ? <BackgroundSurface padded style={s.archiveEmpty}><Text style={s.body}>目前未能取得關注資料。</Text></BackgroundSurface> : null}
+          {selectedConcernId ? <View style={s.stack} testID="growth-detail-surface">
+            {!concern && page.concerns?.state === "ready" ? <View testID="growth-requested-unavailable"><Text style={s.body}>目前不能查看這項內容。它可能未載入、已結束，或存取權已改變。</Text></View> : null}
+            {sourceNotice ? <Text style={s.warning}>{sourceNotice}</Text> : null}
+            {concern ? <GrowthConcernTimeline concern={concern} page={page} onRecord={onRecord} onTask={onTask} onReview={onReview} /> : null}
+          </View> : null}
+          {page.concerns?.state !== "ready" || model.load === "error" ? <View style={s.archiveEmpty} testID="growth-concerns-unavailable">
+            <Text accessibilityRole="header" aria-level={2} style={s.title}>{model.load === "error" || page.concerns?.state === "error" ? "關注歷程未能讀取" : page.concerns?.state === "loading" ? "正在讀取關注歷程" : "關注歷程尚未接通"}</Text>
+          </View> : null}
+        </View> : !showLoading && model.access !== "lost" && model.load !== "error" ? <Text style={s.body}>目前未能取得關注資料。</Text> : null}
         {previewTools ? <Workspace.Section title="可接續的成長建議" detail="先核對來源與適用情況，再選擇要跟進的內容。">{previewTools}</Workspace.Section> : null}
         </> : null}
       </AppTabPanel>
       <AppTabPanel tabsId="growth-workspace" tabKey="preparation" active={tab === "preparation"} style={s.stack}>
-        {tab === "preparation" ? <PreparationWorkspace onPrepareQuestion={onPrepareQuestion} onHistory={onPreparationHistory}
+        {tab === "preparation" ? <PreparationWorkspace selectedDocumentId={selectedDocumentId} onDocumentChange={onDocumentChange} onPrepareQuestion={onPrepareQuestion} onHistory={onPreparationHistory}
           scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} /> : null}
       </AppTabPanel>
     </View>

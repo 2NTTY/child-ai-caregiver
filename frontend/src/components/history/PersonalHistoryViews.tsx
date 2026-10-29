@@ -1,6 +1,7 @@
-import { BackgroundSurface } from "../appearance/BackgroundSurface";
-import { useEffect, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { historyPage, historyVersionId } from "./history-page";
+import { HistoryPager } from "./HistoryPager";
+import { useEffect, useRef, type RefObject } from "react";
+import { StyleSheet, View, type ScrollView } from "react-native";
 import { ActivityIndicator, Text } from "react-native-paper";
 import { historyMessageQuestion, messageChannelLabel, visiblePersonalHistory, visiblePersonalMessages, type HistoryDateRange } from "../../history-view-model";
 import { memoryDateLabel } from "../../memory-reference-view-model";
@@ -10,28 +11,20 @@ import { EmptyListCard } from "../EmptyListCard";
 import { ReadStateNotice } from "../ReadStateNotice";
 import { AppButton } from "../ui";
 import { VoiceMessage } from "../../production/VoiceMessage";
-import { FormDialog } from "../FormDialog";
-import { HistoryCardGrid, HistoryEntryCard } from "./HistoryCards";
 import { HistoryMessageDetail } from "./HistoryMessageDetail";
+import { ReadTargetLink } from "../ReadTargetLink";
+import { serializeHistoryRoute, type HistoryRouteState } from "../../navigation/route-state";
+import { useReaderReturn } from "../../navigation/useReaderReturn";
 import { useMotionPreferences } from "../../motion/preferences";
 
-export function PersonalConversationHistoryView({ searchText, dateRange, onPrepareQuestion }: {
+export function PersonalConversationHistoryView({ searchText, dateRange, onPrepareQuestion, route, onSelect, onPageChange, scrollRef, getScrollPosition }: {
   searchText: string; dateRange: HistoryDateRange; onPrepareQuestion(question: string): void;
+  route: HistoryRouteState; onSelect(id: string | null): void; onPageChange(page: number): void;
+  scrollRef?: RefObject<ScrollView | null>; getScrollPosition?(): number;
 }) {
   const owner = usePersonalHistoryWorkspace(), current = useRef(owner); current.current = owner;
-  const scope = owner?.scopeKey;
-  const filterKey = JSON.stringify([searchText, dateRange.from, dateRange.to]);
-  const [selection, setSelection] = useState<{ scope: string; id: string; filterKey: string } | null>(null);
-  const opened = useRef<{ scope: string; id: string } | null>(null);
-  const returnFocus = useRef<View>(null), listRef = useRef<View>(null), cards = useRef(new Map<string, View>());
-  useEffect(() => {
-    setSelection(null);
-    return () => {
-      const latest = current.current;
-      if (latest && opened.current?.scope === scope && latest.scopeKey === scope) latest.actions.closeMessage();
-      opened.current = null;
-    };
-  }, [scope, filterKey, owner?.access]);
+  const scope = owner?.scopeKey, filterKey = JSON.stringify([searchText, dateRange.from, dateRange.to]);
+  // Preserve the original bounded server-search capability and its debounce.
   useEffect(() => {
     if (!scope || !owner) return;
     const timer = setTimeout(() => {
@@ -40,128 +33,149 @@ export function PersonalConversationHistoryView({ searchText, dateRange, onPrepa
     }, 300);
     return () => clearTimeout(timer);
   }, [scope, searchText, owner?.online]);
+  const requestedMessage = useRef<{ scope: string; id: string | null; query: string | undefined } | null>(null);
+  useEffect(() => {
+    if (!scope || !owner || owner.access === "revoked") { requestedMessage.current = null; return; }
+    if (!owner.online) return;
+    // A new server query closes its prior original in the existing owner.
+    // Resolve the still-accepted exact URL again after that query publishes;
+    // a same-query background refresh does not create a new read intent.
+    const before = requestedMessage.current, query = owner.history.data?.query;
+    if (before?.scope === scope && before.id === route.selectedId && (query === undefined || before.query === query)) return;
+    requestedMessage.current = { scope, id: route.selectedId, query };
+    if (route.selectedId) owner.actions.readMessage(route.selectedId);
+    else if (owner.message.data || owner.busy.message) owner.actions.closeMessage();
+  }, [scope, route.selectedId, owner?.online, owner?.access, owner?.history.data?.query]);
+  const matches = owner ? visiblePersonalHistory(owner.history, dateRange) : [], page = historyPage(matches, route.page);
+  const listRef = useRef<View>(null), readerRef = useRef<View>(null), localScroll = useRef<ScrollView>(null);
+  const position = useReaderReturn({ scopeKey: JSON.stringify([scope, owner?.access, "conversation-history", filterKey, page.page]), selectedId: route.selectedId,
+    enabled: !!owner && owner.access !== "revoked", listRef, readerRef, scrollRef: scrollRef ?? localScroll });
+  const close = () => { position.returning(); onSelect(null); };
   if (!owner) return <ReadStateNotice headingLevel={3} state="unavailable" title="對話歷史暫未提供" />;
-  const read = owner.history, matches = visiblePersonalHistory(read, dateRange);
-  const visible = owner.access !== "revoked" && selection && selection.scope === scope && selection.filterKey === filterKey;
-  const selectedRead = owner.message.scopeKey === scope && (!owner.message.data || owner.message.data.id === selection?.id);
-  const close = () => { opened.current = null; setSelection(null); owner.actions.closeMessage(); };
-  return <View ref={listRef} tabIndex={-1} accessibilityLabel="助手對話歷史" style={styles.list}>
-    <BackgroundSurface padded><Text style={styles.meta}>只查閱你與這位孩子的對話。每次最多掃 100 則，返回最多 10 個命中；日期篩選只包括已掃過的結果。</Text></BackgroundSurface>
+  if (owner.access === "revoked") return <ReadStateNotice headingLevel={3} state="unavailable" title="對話權限已失效" message="對話摘要及原文已隱藏。" />;
+  const read = owner.history, selectedRead = owner.message.scopeKey === scope && (!owner.message.data || owner.message.data.id === route.selectedId);
+  const retry = <AppButton label="重新搜尋" variant="secondary" disabled={!owner.online || owner.busy.history} onPress={() => owner.actions.searchHistory(searchText)} />;
+  return <View style={styles.list} testID="conversation-history">
+    <Text style={styles.body}>只查閱你與這位孩子的對話。每次最多掃 100 則，返回最多 10 個命中；日期只篩已掃過的結果。</Text>
     {read.state === "loading" ? <ReadStateNotice headingLevel={3} state="loading" title="正在搜尋對話…" />
-      : read.state === "error" ? <ReadStateNotice headingLevel={3} state="error" title="暫時讀不到對話歷史"><AppButton label="重新搜尋" variant="secondary" disabled={!owner.online || owner.busy.history} onPress={() => owner.actions.searchHistory(searchText)} /></ReadStateNotice>
-      : read.state === "unavailable" ? <ReadStateNotice headingLevel={3} state="unavailable" title={owner.online ? "正在準備對話搜尋…" : "連線後才可讀取對話歷史"} />
-      : <>
-        {read.state === "stale" || !owner.online ? <ReadStateNotice headingLevel={3} state="stale" title="最新歷史尚未核對" message="目前保留已載入結果。" /> : null}
-        {read.data?.query !== searchText ? <BackgroundSurface padded><Text style={styles.meta}>正在套用新搜尋條件；以下是先前的結果。</Text></BackgroundSurface> : null}
-        <HistoryCardGrid testID="conversation-history-cards">{matches.map(match => <HistoryEntryCard key={match.id} testID={`history-message-${match.id}`}
-          cardRef={node => { if (node) cards.current.set(match.id, node); else cards.current.delete(match.id); }}
-          accessibilityLabel={`閱讀${match.role === "user" ? "你的訊息" : "助手回覆"}原文：${match.excerpt}`}
-          disabled={!owner.online || owner.busy.message} onPress={() => {
-            if (!scope || current.current?.scopeKey !== scope || current.current.access === "revoked") return;
-            returnFocus.current = cards.current.get(match.id) ?? null;
-            opened.current = { scope, id: match.id }; setSelection({ scope, id: match.id, filterKey }); owner.actions.readMessage(match.id);
-          }}>
-          <Text numberOfLines={4} style={styles.body}>{match.excerpt}</Text>
+      : read.state === "error" ? <ReadStateNotice headingLevel={3} state="error" title="暫時讀不到對話歷史">{retry}</ReadStateNotice>
+      : read.state === "unavailable" ? <ReadStateNotice headingLevel={3} state="unavailable" title={owner.online ? "正在準備對話搜尋…" : "連線後才可讀取對話歷史"} /> : null}
+    {read.state === "stale" || !owner.online ? <ReadStateNotice headingLevel={3} state="stale" title="最新歷史尚未核對" message="目前保留已載入結果。">{retry}</ReadStateNotice> : null}
+    {read.data && read.data.query !== searchText ? <Text style={styles.body}>正在套用新搜尋條件；目前保留先前的結果。</Text> : null}
+    <View testID="conversation-history-index" aria-hidden={!!route.selectedId} style={[styles.list, !!route.selectedId && styles.hidden]}>
+      <View ref={listRef} tabIndex={-1} accessibilityLabel="助手對話歷史清單" testID="conversation-history-list">
+        {page.items.map(match => <ReadTargetLink key={match.id} ref={node => position.rowRef(match.id, node)} testID={`history-message-${match.id}`}
+          href={{ pathname: "/history", params: serializeHistoryRoute({ ...route, category: "conversations", selectedId: match.id }) }}
+          label={`閱讀${match.role === "user" ? "你的訊息" : "助手回覆"}原文：${match.excerpt}，${memoryDateLabel(match.createdAt)}`}
+          availability={!owner.online ? "unavailable" : owner.busy.message ? "refreshing" : "ready"} style={styles.historyRow}
+          onOpen={() => { const latest = current.current; if (!latest || latest.scopeKey !== scope || latest.access === "revoked") return; position.remember(match.id, getScrollPosition?.()); onSelect(match.id); }}>
+          <Text numberOfLines={3} style={styles.body}>{match.excerpt}</Text>
           <Text style={styles.meta}>{match.role === "user" ? "你的訊息" : "助手回覆"} · {memoryDateLabel(match.createdAt)}</Text>
           <Text style={styles.meta}>搜尋摘要 · 原文按需讀取</Text>
-        </HistoryEntryCard>)}</HistoryCardGrid>
-        {!matches.length && read.state === "ready" && owner.online && owner.access !== "revoked" && read.data.query === searchText ? <EmptyListCard testID="conversation-history-empty" title={read.data.complete ? "沒有符合篩選的對話" : "已搜尋的範圍未有符合結果"}
-          detail={read.data.complete ? "本次搜尋已完整掃過可讀歷史。" : "仍有歷史未搜尋，可繼續搜尋。"} /> : null}
-        {read.data ? <BackgroundSurface padded><Text style={styles.meta}>已掃 {read.data.scanned} 則 · {read.data.complete ? "本次搜尋已完整掃過可讀歷史" : "搜尋尚未完整，仍有歷史未掃過"}</Text></BackgroundSurface> : null}
-        {read.data?.nextCursor ? <AppButton label={owner.busy.history ? "正在繼續搜尋…" : "繼續搜尋歷史"} variant="secondary" disabled={!owner.online || owner.busy.history || read.data.query !== searchText} onPress={owner.actions.moreHistory} /> : null}
-        {read.state === "stale" ? <AppButton label="重新搜尋" variant="quiet" disabled={!owner.online || owner.busy.history} onPress={() => owner.actions.searchHistory(searchText)} /> : null}
-      </>}
-    <FormDialog visible={!!visible} scopeKey={scope ?? ""} formKey={selection?.id} title="訊息原文"
-      dismissMode="local" returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={close}>
-      {visible && selectedRead ? <>
+        </ReadTargetLink>)}
+      </View>
+      {!matches.length && read.state === "ready" && owner.online && read.data.query === searchText ? <EmptyListCard testID="conversation-history-empty" title={read.data.complete ? "沒有符合篩選的對話" : "已搜尋的範圍未有符合結果"}
+        detail={read.data.complete ? "本次搜尋已完整掃過可讀歷史。" : "仍有歷史未搜尋，可繼續搜尋。"} /> : null}
+      <HistoryPager page={page.page} total={page.total} onChange={onPageChange} />
+      {read.data?.nextCursor ? <AppButton label={owner.busy.history ? "正在繼續搜尋…" : "繼續搜尋歷史"} variant="secondary" disabled={!owner.online || owner.busy.history || read.data.query !== searchText} onPress={owner.actions.moreHistory} /> : null}
+    </View>
+    {read.data ? <Text style={styles.body}>已掃 {read.data.scanned} 則 · {read.data.complete ? "本次搜尋已完整掃過可讀歷史" : "搜尋尚未完整，仍有歷史未掃過"}</Text> : null}
+    {route.selectedId ? <View style={styles.reader} testID="conversation-history-reader">
+      <AppButton label="返回助手對話歷史" variant="quiet" onPress={close} />
+      <View ref={readerRef} tabIndex={-1} accessibilityLabel="訊息原文" testID="conversation-history-reader-heading"><Text accessibilityRole="header" aria-level={3} style={styles.readerTitle}>訊息原文</Text></View>
+      {selectedRead ? <>
         {owner.message.data?.voice ? <VoiceMessage key={scope + owner.message.data.id} messageId={owner.message.data.id} voice={owner.message.data.voice} /> : null}
-        <HistoryMessageDetail embedded read={owner.message} busy={owner.busy.message} online={owner.online} onMore={owner.actions.moreMessage}
-          onPrepareQuestion={message => { if (current.current?.scopeKey === scope && current.current.message.data === message && message.id === selection?.id) onPrepareQuestion(historyMessageQuestion(owner.childName, message)); }} />
-      </> : visible ? <ReadStateNotice headingLevel={2} state="loading" title="正在讀取原文…" /> : null}
-    </FormDialog>
+        <HistoryMessageDetail headingLevel={3} read={owner.message} busy={owner.busy.message} online={owner.online} onMore={owner.actions.moreMessage}
+          onPrepareQuestion={message => { if (current.current?.scopeKey === scope && current.current.message.data === message && message.id === route.selectedId) onPrepareQuestion(historyMessageQuestion(owner.childName, message)); }} />
+      </> : <ReadStateNotice headingLevel={3} state={owner.busy.message ? "loading" : "unavailable"} message={owner.busy.message ? "正在讀取指定訊息的原文…" : "指定原文尚未讀取，沒有代選其他訊息。"} />}
+      {owner.message.state === "error" || owner.message.state === "unavailable" || !selectedRead ? <AppButton label="重新讀取這則原文" variant="secondary" disabled={!owner.online || owner.busy.message} onPress={() => owner.actions.readMessage(route.selectedId!)} /> : null}
+    </View> : null}
   </View>;
 }
 
-export function PersonalNotificationHistoryView({ searchText, dateRange }: { searchText: string; dateRange: HistoryDateRange }) {
+type NotificationReaderProps = { searchText: string; dateRange: HistoryDateRange; route: HistoryRouteState;
+  onSelect(id: string | null): void; onPageChange(page: number): void; scrollRef?: RefObject<ScrollView | null>; getScrollPosition?(): number };
+export function PersonalNotificationHistoryView(props: NotificationReaderProps) {
   const owner = usePersonalHistoryWorkspace();
-  return <PersonalNotificationContent owner={owner} searchText={searchText} dateRange={dateRange} />;
+  return <PersonalNotificationContent owner={owner} {...props} />;
 }
-
-/** Both entry points render the same personal owner; Portal receives this owner explicitly. */
-export function PersonalNotificationContent({ owner, searchText = "", dateRange = { from: null, to: null }, recent = false }: {
-  owner: PersonalHistoryOwner | null; searchText?: string; dateRange?: HistoryDateRange; recent?: boolean;
-}) {
-  const motion = useMotionPreferences();
+function useNotificationLoad(owner: PersonalHistoryOwner | null) {
   const current = useRef(owner); current.current = owner;
   const scope = owner?.scopeKey;
-  const filterKey = JSON.stringify([searchText, dateRange.from, dateRange.to]);
-  const [selection, setSelection] = useState<{ scope: string; id: string; version: string; filterKey: string } | null>(null);
-  const returnFocus = useRef<View>(null), listRef = useRef<View>(null), cards = useRef(new Map<string, View>());
-  const selected = !recent && owner && owner.access !== "revoked" && selection && selection.scope === scope && selection.filterKey === filterKey
-    ? owner.notifications.data?.items.find(item => item.id === selection.id && notificationVersion(item) === selection.version) : null;
-  useEffect(() => { if (selection && !selected) setSelection(null); }, [selection, selected]);
-  useEffect(() => { setSelection(null); }, [scope, filterKey, owner?.access]);
   useEffect(() => {
     const latest = current.current;
-    if (scope && latest?.online && latest.notifications.state === "unavailable" && !latest.notificationUnavailable) latest.actions.loadNotifications();
+    if (scope && latest?.online && latest.access !== "revoked" && latest.notifications.state === "unavailable" && !latest.notificationUnavailable) latest.actions.loadNotifications();
   }, [scope, owner?.online]);
-  if (!owner) return <ReadStateNotice headingLevel={recent ? 2 : 3} state="unavailable" title="本人消息暫未提供" />;
+}
+/** The full History surface resolves only exact versions from the original loaded owner. */
+export function PersonalNotificationContent({ owner, searchText, dateRange, route, onSelect, onPageChange, scrollRef, getScrollPosition }: NotificationReaderProps & { owner: PersonalHistoryOwner | null }) {
+  useNotificationLoad(owner);
+  const current = useRef(owner); current.current = owner;
+  const scope = owner?.scopeKey, filterKey = JSON.stringify([searchText, dateRange.from, dateRange.to]);
+  const selected = owner?.access !== "revoked" ? owner?.notifications.data?.items.find(item => historyVersionId(item.id, notificationVersion(item)) === route.selectedId) : null;
+  const matches = visiblePersonalMessages(owner?.notifications.data?.items ?? [], searchText, dateRange), page = historyPage(matches, route.page);
+  const listRef = useRef<View>(null), readerRef = useRef<View>(null), localScroll = useRef<ScrollView>(null);
+  const position = useReaderReturn({ scopeKey: JSON.stringify([scope, owner?.access, "notification-history", filterKey, page.page]), selectedId: route.selectedId,
+    enabled: !!owner && owner.access !== "revoked", listRef, readerRef, scrollRef: scrollRef ?? localScroll });
+  const close = () => { position.returning(); onSelect(null); };
+  if (!owner) return <ReadStateNotice headingLevel={3} state="unavailable" title="本人消息暫未提供" />;
+  if (owner.access === "revoked") return <ReadStateNotice headingLevel={3} state="unavailable" title="消息權限已失效" message="已載入的消息內容已隱藏。" />;
   const read = owner.notifications;
-  const matches = visiblePersonalMessages(read.data?.items ?? [], searchText, dateRange), items = recent ? matches.slice(0, 5) : matches;
   const retry = <AppButton label="重新讀取消息" variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.loadNotifications} />;
-  return <View ref={listRef} tabIndex={recent ? undefined : -1} accessibilityLabel={recent ? undefined : "消息歷史"} style={styles.list}>
-    {read.state === "loading" ? recent ? <View testID="recent-notification-loading" style={styles.row}>
-      {motion.enabled ? <ActivityIndicator color={colors.teal} /> : <View testID="read-loading-static" accessible={false} aria-hidden style={styles.staticIndicator} />}
-      <Text style={styles.meta}>正在讀取消息…</Text>
-    </View> : <ReadStateNotice headingLevel={recent ? 2 : 3} state="loading" title="正在讀取消息…" scopeKey={scope} />
-      : read.state === "error" ? <ReadStateNotice headingLevel={recent ? 2 : 3} state="error" title="暫時讀不到消息">{retry}</ReadStateNotice>
-      : read.state === "unavailable" ? <ReadStateNotice headingLevel={recent ? 2 : 3} state="unavailable" title={owner.notificationUnavailable ? "消息內容暫未提供" : owner.online ? "正在準備消息…" : "連線後才可讀取消息"}>{owner.notificationUnavailable ? retry : null}</ReadStateNotice>
-      : <>
-        {read.state === "stale" || !owner.online ? <ReadStateNotice headingLevel={recent ? 2 : 3} state="stale" title="目前顯示較早的消息" /> : null}
-        {!recent ? <Text style={styles.meta}>搜尋與日期只篩已載入消息。</Text> : null}
-        {recent ? items.map(item => <BackgroundSurface padded key={item.id} style={styles.entry} testID="personal-notification-entry">
-          <Text style={styles.meta}>{notificationTime(item.sentAt)} · {item.scope.kind === "child" ? item.scope.childName : "本人帳戶"}</Text>
-          {item.contents.map((content, index) => <View key={`${content.channel}:${index}`} style={styles.messageContent}>
-            {content.title ? <Text style={styles.title}>{content.title}</Text> : null}
-            <Text selectable style={styles.body}>{content.body}</Text>
-            <Text style={styles.meta}>{messageChannelLabel(content.channel)}{item.contents.length > 1 ? ` · ${notificationTime(content.sentAt)}` : ""}</Text>
-          </View>)}
-        </BackgroundSurface>) : <HistoryCardGrid testID="notification-history-cards">{items.map(item => {
-          const content = item.contents[0];
-          return <HistoryEntryCard key={item.id} testID="personal-notification-entry"
-            cardRef={node => { if (node) cards.current.set(item.id, node); else cards.current.delete(item.id); }}
-            accessibilityLabel={`閱讀消息：${(content.title ?? content.body).slice(0, 100)}；預覽來自${messageChannelLabel(content.channel)}`}
-            onPress={() => {
-              if (!scope || current.current?.scopeKey !== scope || current.current.access === "revoked") return;
-              returnFocus.current = cards.current.get(item.id) ?? null; setSelection({ scope, id: item.id, version: notificationVersion(item), filterKey });
-            }}>
-            {content.title ? <Text numberOfLines={2} style={styles.title}>{content.title}</Text> : null}
-            <Text numberOfLines={3} style={styles.body}>{content.body}</Text>
+  return <View style={styles.list} testID="notification-history">
+    {read.state === "loading" ? <ReadStateNotice headingLevel={3} state="loading" title="正在讀取消息…" scopeKey={scope} />
+      : read.state === "error" ? <ReadStateNotice headingLevel={3} state="error" title="暫時讀不到消息">{retry}</ReadStateNotice>
+      : read.state === "unavailable" ? <ReadStateNotice headingLevel={3} state="unavailable" title={owner.notificationUnavailable ? "消息內容暫未提供" : owner.online ? "正在準備消息…" : "連線後才可讀取消息"}>{owner.notificationUnavailable ? retry : null}</ReadStateNotice> : null}
+    {read.state === "stale" || !owner.online ? <ReadStateNotice headingLevel={3} state="stale" title="目前顯示較早的消息">{retry}</ReadStateNotice> : null}
+    <View testID="notification-history-index" aria-hidden={!!route.selectedId} style={[styles.list, !!route.selectedId && styles.hidden]}>
+      <Text style={styles.body}>搜尋與日期只篩已載入消息。</Text>
+      <View ref={listRef} tabIndex={-1} accessibilityLabel="消息歷史清單" testID="notification-history-list">
+        {page.items.map(item => { const content = item.contents[0], id = historyVersionId(item.id, notificationVersion(item));
+          return <ReadTargetLink key={id} ref={node => position.rowRef(id, node)} testID="personal-notification-entry"
+            href={{ pathname: "/history", params: serializeHistoryRoute({ ...route, category: "notifications", selectedId: id }) }} style={styles.historyRow}
+            label={`閱讀消息：${(content.title ?? content.body).slice(0, 100)}；預覽來自${messageChannelLabel(content.channel)}，${notificationTime(item.sentAt)}，${item.scope.kind === "child" ? item.scope.childName : "本人帳戶"}`}
+            onOpen={() => { const latest = current.current; if (!scope || !latest || latest.scopeKey !== scope || latest.access === "revoked") return; position.remember(id, getScrollPosition?.()); onSelect(id); }}>
+            {content.title ? <Text numberOfLines={2} style={styles.title}>{content.title}</Text> : null}<Text numberOfLines={3} style={styles.body}>{content.body}</Text>
             <Text style={styles.meta}>預覽：{messageChannelLabel(content.channel)}{item.contents.length > 1 ? ` · 另有 ${item.contents.length - 1} 個渠道` : ""}</Text>
             <Text style={styles.meta}>{notificationTime(item.sentAt)} · {item.scope.kind === "child" ? item.scope.childName : "本人帳戶"}</Text>
-          </HistoryEntryCard>;
-        })}</HistoryCardGrid>}
-        {!items.length && read.state === "ready" && owner.online && owner.access !== "revoked" ? read.data?.complete
-          ? <EmptyListCard testID="notification-history-empty" title={searchText || dateRange.from || dateRange.to ? "已載入消息沒有符合篩選的內容" : "暫未有可展示的消息內容"} />
-          : recent ? <ReadStateNotice headingLevel={recent ? 2 : 3} state="unavailable" title="已載入部分未有符合的消息" message="仍有記錄未讀取。" />
-            : <EmptyListCard testID="notification-history-empty" title="已載入部分未有符合的消息" detail="仍有記錄未讀取，可繼續載入。" /> : null}
-        {items.length ? <Text style={styles.meta}>只顯示已保存的通知內容；較早記錄可能不齊，不包括帳戶驗證電郵。</Text> : null}
-        {!recent && read.data ? <Text style={styles.meta}>已載入 {read.data.items.length} 則{read.data.complete ? "" : " · 尚有記錄未載入"}</Text> : null}
-        {!recent && read.data?.nextCursor ? <AppButton label={owner.busy.notifications ? "正在讀取…" : "載入更多消息"} variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.moreNotifications} /> : null}
-        {read.state === "stale" ? retry : null}
-      </>}
-    {!recent ? <FormDialog visible={!!selected} scopeKey={scope ?? ""} formKey={selection ? `${selection.id}:${selection.version}` : undefined} title="消息內容"
-      dismissMode="local" returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={() => setSelection(null)}>
-      {selected ? <View style={styles.list} testID="notification-history-detail">
-        <Text style={styles.meta}>{notificationTime(selected.sentAt)} · {selected.scope.kind === "child" ? selected.scope.childName : "本人帳戶"}</Text>
-        {selected.contents.map(content => <View key={content.channel} style={styles.channelDetail}>
-          <Text accessibilityRole="header" aria-level={3} style={styles.channel}>{messageChannelLabel(content.channel)}</Text>
-          {content.title ? <Text selectable style={styles.title}>{content.title}</Text> : null}
-          <Text selectable style={styles.body}>{content.body}</Text>
-          <Text style={styles.meta}>{notificationTime(content.sentAt)}</Text>
-        </View>)}
-      </View> : null}
-    </FormDialog> : null}
+          </ReadTargetLink>;
+        })}
+      </View>
+      {!matches.length && read.state === "ready" && owner.online ? <EmptyListCard testID="notification-history-empty" title={read.data?.complete ? searchText || dateRange.from || dateRange.to ? "已載入消息沒有符合篩選的內容" : "暫未有可展示的消息內容" : "已載入部分未有符合的消息"} detail={read.data?.complete ? undefined : "仍有記錄未讀取，可繼續載入。"} /> : null}
+      <HistoryPager page={page.page} total={page.total} onChange={onPageChange} />
+      {read.data?.nextCursor ? <AppButton label={owner.busy.notifications ? "正在讀取…" : "載入更多消息"} variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.moreNotifications} /> : null}
+    </View>
+    {route.selectedId ? <View testID="notification-history-reader" style={styles.reader}>
+      <AppButton label="返回消息歷史" variant="quiet" onPress={close} />
+      <View ref={readerRef} tabIndex={-1} accessibilityLabel="消息內容" testID="notification-history-reader-heading"><Text accessibilityRole="header" aria-level={3} style={styles.readerTitle}>消息內容</Text></View>
+      {selected ? <><Text style={styles.meta}>{notificationTime(selected.sentAt)} · {selected.scope.kind === "child" ? selected.scope.childName : "本人帳戶"}</Text>
+      <View testID="notification-history-detail" style={styles.list}>{selected.contents.map(content => <View key={content.channel} style={styles.channelDetail}>
+        <Text accessibilityRole="header" aria-level={4} style={styles.channel}>{messageChannelLabel(content.channel)}</Text>
+        {content.title ? <Text selectable style={styles.title}>{content.title}</Text> : null}<Text selectable style={styles.body}>{content.body}</Text><Text style={styles.meta}>{notificationTime(content.sentAt)}</Text>
+      </View>)}</View></> : <ReadStateNotice headingLevel={3} state={read.state === "loading" ? "loading" : "unavailable"} message={read.state === "loading" ? "正在讀取消息…" : "這則消息或版本不在已載入且可讀的清單，沒有代選其他消息。"} />}
+    </View> : null}
+    {read.data?.items.length ? <Text style={styles.body}>只顯示已保存的通知內容；較早記錄可能不齊，不包括帳戶驗證電郵。</Text> : null}
+    {read.data ? <Text style={styles.body}>已載入 {read.data.items.length} 則{read.data.complete ? "" : " · 尚有記錄未載入"}</Text> : null}
+  </View>;
+}
+
+/** A separate compact Bell composition; never owns a History selection or modal. */
+export function RecentNotificationMessages({ owner }: { owner: PersonalHistoryOwner | null }) {
+  useNotificationLoad(owner);
+  const motion = useMotionPreferences();
+  if (!owner || owner.access === "revoked") return <ReadStateNotice headingLevel={2} state="unavailable" title={owner ? "消息權限已失效" : "本人消息暫未提供"} />;
+  const read = owner.notifications, items = read.data?.items.slice(0, 5) ?? [];
+  const retry = <AppButton label="重新讀取消息" variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.loadNotifications} />;
+  return <View style={styles.list} testID="recent-notification-messages">
+    {read.state === "loading" ? <View testID="recent-notification-loading" style={styles.row}>{motion.enabled ? <ActivityIndicator color={colors.teal} /> : <View testID="read-loading-static" accessible={false} aria-hidden style={styles.staticIndicator} />}<Text style={styles.body}>正在讀取消息…</Text></View>
+      : read.state === "error" ? <ReadStateNotice headingLevel={2} state="error" title="暫時讀不到消息">{retry}</ReadStateNotice>
+      : read.state === "unavailable" ? <ReadStateNotice headingLevel={2} state="unavailable" title={owner.notificationUnavailable ? "消息內容暫未提供" : owner.online ? "正在準備消息…" : "連線後才可讀取消息"}>{owner.notificationUnavailable ? retry : null}</ReadStateNotice> : null}
+    {read.state === "stale" || !owner.online ? <ReadStateNotice headingLevel={2} state="stale" title="目前顯示較早的消息">{retry}</ReadStateNotice> : null}
+    {items.map(item => <View key={item.id} style={styles.entry} testID="personal-notification-entry"><Text style={styles.meta}>{notificationTime(item.sentAt)} · {item.scope.kind === "child" ? item.scope.childName : "本人帳戶"}</Text>
+      {item.contents.map(content => <View key={content.channel} style={styles.messageContent}>{content.title ? <Text style={styles.title}>{content.title}</Text> : null}<Text selectable style={styles.body}>{content.body}</Text><Text style={styles.meta}>{messageChannelLabel(content.channel)}{item.contents.length > 1 ? ` · ${notificationTime(content.sentAt)}` : ""}</Text></View>)}
+    </View>)}
+    {!items.length && read.state === "ready" && owner.online ? read.data?.complete ? <EmptyListCard testID="notification-history-empty" title="暫未有可展示的消息內容" /> : <ReadStateNotice headingLevel={2} state="unavailable" title="已載入部分未有符合的消息" message="仍有記錄未讀取。" /> : null}
+    {items.length ? <Text style={styles.body}>只顯示已保存的通知內容；較早記錄可能不齊，不包括帳戶驗證電郵。</Text> : null}
   </View>;
 }
 function notificationVersion(item: { contents: readonly { channel: string; contentVersion: string }[] }) {
@@ -173,9 +187,11 @@ function notificationTime(value: string | null) {
     hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value));
 }
 const styles = StyleSheet.create({
+  hidden: { display: "none" }, historyRow: { minWidth: 0, minHeight: 48, gap: spacing.xs, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line, borderRadius: 0 },
+  reader: { width: "100%", maxWidth: 760, alignSelf: "center", minWidth: 0, gap: spacing.lg }, readerTitle: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, fontWeight: "700" },
   staticIndicator: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: colors.teal },
   channelDetail: { gap: spacing.sm, minWidth: 0, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine },
-  channel: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, fontWeight: "700" },
+  channel: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, fontWeight: "700" },
   messageContent: { gap: spacing.xs, minWidth: 0 },
   list: { gap: spacing.md, minWidth: 0 },
   entry: { gap: spacing.sm, minWidth: 0, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.softLine },

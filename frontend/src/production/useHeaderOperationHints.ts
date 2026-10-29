@@ -1,3 +1,4 @@
+import { navigationItems } from "../components/navigation/app-navigation";
 import { useLayoutEffect, useRef } from 'react';
 import { useRouter, usePathname, type Href } from 'expo-router';
 import { usePreviewNavigation } from '../preview/PreviewNavigationGuard';
@@ -33,7 +34,7 @@ export function useHeaderOperationHints() {
   const entries: HeaderOperationInput[] = [];
   if (identity) entries.push({ id: 'create-child', page: '建立孩子', state: production.model.operation.state,
     onReview: open('/guide', identity, true, 'create-child') });
-  if (scope && care?.scopeKey === scope && care.model.access !== 'lost') entries.push({ id: 'care', page: '核對', state: care.model.operation.state, onReview: open('/care', scope) });
+  if (scope && care?.scopeKey === scope && care.model.access !== 'lost') entries.push({ id: 'care', page: navigationItems.care.short, state: care.model.operation.state, onReview: open('/care', scope) });
   if (scope && profile?.scopeKey === scope && profile.model.access !== 'lost') entries.push({ id: 'profile', page: '檔案', state: profile.model.operation.state, onReview: open('/profile', scope, false, 'profile') });
   if (scope && tasks?.scopeKey === scope && tasks.model.access !== 'lost') entries.push({ id: 'tasks', page: '待辦', state: tasks.model.operation.state, onReview: open('/tasks', scope) });
   if (scope && growth?.scopeKey === scope && growth.model.access !== 'lost') entries.push({ id: 'growth', page: '關注', state: growth.model.operation, onReview: open('/growth?tab=concerns', scope) });

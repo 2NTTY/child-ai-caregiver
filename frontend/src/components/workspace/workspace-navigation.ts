@@ -1,32 +1,38 @@
-import { navigationItems, type AppPath } from "../navigation/app-navigation";
+import { navigationItems } from "../navigation/app-navigation";
 export const workspaceGroups = [
-  { key: "overview", title: "今天", home: "home", items: ["home", "summary"] },
-  { key: "assistant", title: "助手", home: "chat", items: ["chat", "memory", "sources"] },
-  { key: "actions", title: "安排", home: "tasks", items: ["tasks", "growth"] },
-  { key: "records", title: "照顧資料", home: "care", items: ["care", "photos", "history", "profile"] },
-  { key: "tools", title: "管理", home: "settings", items: ["settings", "contact", "family", "guide", "more"] },
+  { key: "today", title: "今天", home: "home", items: ["home", "tasks", "growth"] },
+  { key: "assistant", title: "問助手", home: "chat", items: ["chat"] },
+  { key: "capture", title: "記低", home: "care", items: ["care"] },
+  { key: "reading", title: "查閱", home: "summary", items: ["summary", "history", "memory", "sources", "photos"] },
+  { key: "personal", title: "我的", home: "settings", items: ["settings", "profile", "contact", "family", "guide", "more"] },
 ] as const;
 export function workspaceForPath(path: string) {
   return workspaceGroups.find(group => group.items.some(key => navigationItems[key].href === path)) ?? workspaceGroups[0];
 }
-export const workspaceDescriptions: Partial<Record<AppPath, string>> = {
-  "/tasks": "把下一步排清楚。待辦、預約與提醒，放在同一個工作台。",
-  "/growth": "由關注到行動：整理發展脈絡，準備下一次諮詢。",
-  "/summary": "已確認的孩子資料、照顧摘要與成長檔案，一處回顧。",
-  "/care": "先核對，再保存。保留照顧記錄的原文、時間及依據。",
-  "/photos": "按孩子回看照片、錄音與文件；原檔及處理狀態清楚分開。",
-  "/history": "按類別回看過往資料，接續原有安排。",
-  "/memory": "讓助手使用的背景資料保持清楚、可查閱、可管理。",
-  "/sources": "管理你提供的參考來源，不加入公共知識庫。",
-  "/profile": "只記已知的資料。未知、約數與待核對內容如實保留。",
-  "/family": "查看家庭協作的開放狀態；目前可使用本人聯絡與設定。",
-  "/contact": "聯絡渠道與使用授權分開管理，由你決定範圍。",
-  "/settings": "管理你的帳戶、助手、外觀與資料偏好。",
-  "/guide": "按需要設定育伴港，了解資料、助手與確認流程。",
-  "/more": "所有功能按工作整理，隨時回到你需要的地方。",
-};
-
 // Mobile exposes five explicit destinations while retaining location for deeper routes.
 export function mobileNavigationKeyForPath(path: string) {
-  return { overview: "home", assistant: "chat", actions: "tasks", records: "care", tools: "more" }[workspaceForPath(path).key] as "home" | "chat" | "tasks" | "care" | "more";
+  return workspaceForPath(path).home;
 }
+
+// Purpose titles name primary navigation; these labels name its actual pages.
+export function workspaceDestination(key: keyof typeof navigationItems) {
+  return { ...navigationItems[key], label: key === "summary" ? "概況與報告" : navigationItems[key].label };
+}
+const purposeDetails = {
+  today: "查看當下事項，接續待辦與關注",
+  assistant: "提問、閱讀回覆與核對來源",
+  capture: "記低照顧情況，再核對及更正",
+  reading: "找回概況、記錄、記憶及原始資料",
+  personal: "管理本人設定、子女檔案與授權",
+};
+const destinationDetails: Record<keyof typeof navigationItems, string> = {
+  home: "今日重點與待辦摘要", chat: "與助手對話、交代需要", care: "直接記錄、核對候選及查看已保存內容",
+  tasks: "待辦、預約與完成記錄", growth: "接續關注鏈與到診準備單", summary: "孩子概況、照顧摘要與成長報告",
+  history: "按分類搜尋過往安排與資料", memory: "查閱事實、工作脈絡與參考資料", sources: "管理提供給助手的私人來源",
+  photos: "回看照片、語音、影片與文件原檔", settings: "通知偏好、模型與資料管理", profile: "查看及更正孩子的基本資料",
+  contact: "管理聯絡渠道及授權範圍", family: "查看家庭功能狀態及可用設定", guide: "按需要閱讀使用引導", more: "按目的尋找全部功能",
+};
+export const workspaceCatalogue = workspaceGroups.map(group => ({
+  title: group.title, detail: purposeDetails[group.key],
+  items: group.items.filter(key => key !== "more").map(key => ({ key, detail: destinationDetails[key] })),
+}));

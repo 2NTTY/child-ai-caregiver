@@ -1,3 +1,4 @@
+import { useGuardedRoute } from "../navigation/useGuardedRoute";
 import { useLocalSearchParams, usePathname } from "expo-router";
 import { Text } from "react-native-paper";
 import { PageFrame } from "../components/PageFrame";
@@ -11,9 +12,10 @@ export function PhotoWorkspace({ onCare, capturePreferred }: { onCare: () => voi
 export default function PhotosPage() {
   const pathname = usePathname();
   const { input } = useLocalSearchParams<{ input?: string }>();
-  const { model, actions, scopeKey } = useProduction();
+  const { model, actions, scopeKey, owner } = useProduction();
+  const navigate = useGuardedRoute(scopeKey, owner);
   const child = model.children.find(item => item.id === model.selectedChildId);
   if (pathname !== "/photos") return null;
-  return child && scopeKey ? <PhotoWorkspace capturePreferred={input === "camera"} onCare={() => actions.open("care")} /> :
+  return child && scopeKey ? <PhotoWorkspace capturePreferred={input === "camera"} onCare={() => navigate({ pathname: "/care", params: { tab: "records" } }, "push", "workspace")} /> :
     <PageFrame density="compact" title="附件回看"><SectionCard><Text>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }

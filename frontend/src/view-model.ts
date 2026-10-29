@@ -1,3 +1,4 @@
+import type { HomeTarget } from "./home-target.ts";
 import type { HomeOverviewView } from "./home-overview.ts";
 import type { PhotoOriginal } from "./photo-view-model.ts";
 
@@ -5,7 +6,7 @@ import type { PhotoOriginal } from "./photo-view-model.ts";
 export type ConnectionState = "online" | "offline" | "checking";
 export type RecordsLoadState = "ready" | "loading" | "error";
 export type OperationState = "none" | "needs_confirmation" | "saving" | "saved" | "failed" | "unknown";
-export type GuideStatus = "first_login" | "incomplete" | "complete" | "unknown";
+export type GuideStatus = "first_login" | "incomplete" | "complete" | "not_required" | "unknown";
 
 export interface HomeChild {
   accessRole?: "owner" | "caregiver" | "viewer";
@@ -18,6 +19,7 @@ export interface HomeChild {
   regionLabel: string;
   allergiesLabel: string | null;
   profileConfirmed: boolean;
+  profileReadLabel?: string;
 }
 
 export interface HomeRecord {
@@ -41,7 +43,7 @@ export type HomeFocusView =
   | { kind: "none"; detail?: string }
   | { kind: "unavailable"; detail: string }
   | { kind: "task" | "growth"; title: string; detail: string; whyNow?: string; sourceLabel?: string;
-      action: { label: string; destination: HomeDestination } };
+      action: { label: string; target: HomeTarget } };
 
 export interface HomeViewModel {
   // A production owner supplies a stable server/user/session/child/role scope.
@@ -64,9 +66,10 @@ export type HomeDestination = "chat" | "care" | "profile" | "family" | "memory" 
 
 export interface HomeActions {
   selectChild(id: string): void;
+  openChildProfile(id: string): void;
   refresh(): void;
   reviewOperation(): void;
-  open(destination: HomeDestination): void;
+  open(target: HomeDestination | HomeTarget): void;
   openAgentPhoto(original: PhotoOriginal): void;
   composeCare(kind: HomeRecord["kind"]): void;
   prepareQuestion(question: string): void;

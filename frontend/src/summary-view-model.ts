@@ -42,7 +42,7 @@ export interface SummaryViewModel {
 }
 export interface SummaryActions {
   updateQuery(query: SummaryPeriod): void; refresh(): void; markDirty(): void;
-  save(input: PreparationDecision, appointmentLabel: string): void; discard(): void;
+  save(input: PreparationDecision, appointmentLabel: string): void; discard(): boolean;
   setOriginalConsent(value: boolean): void; retryOriginal(): void;
 }
 export const sameSummaryPeriod = (a: SummaryPeriod, b: SummaryPeriod) => a.startDay === b.startDay && a.period === b.period && a.timeZone === b.timeZone;

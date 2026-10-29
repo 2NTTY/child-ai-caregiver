@@ -34,7 +34,7 @@ export interface PreparationWorkspaceValue {
     restoreDocument?(id: string, expectedVersion: number): void;
     refreshDocument?(id: string, expectedVersion: number): void;
     createDocument?(request: DocumentRequest, draftId?: string): void;
-    refresh?(): void; markDraft?(): void; discardDraft?(): void;
+    refresh?(): void; markDraft?(): void; discardDraft?(): boolean;
     reapplyChecks?(): void; discardChecks?(): void;
   };
   recovery?: WriteRecoveryActions;

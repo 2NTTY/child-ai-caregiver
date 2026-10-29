@@ -2,7 +2,6 @@ import { EmptyListCard } from "../EmptyListCard";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { useState, type ReactNode } from "react";
 import { View } from "react-native";
-import { AppScrollView as ScrollView } from "../AppScrollView";
 import { Text } from "react-native-paper";
 import { DateTime } from "luxon";
 import type { SourcesActions, SourcesViewModel } from "../../shared-input-view-model";
@@ -34,24 +33,24 @@ export function SourceDetails({ model, actions, onRecord, resultTrigger = null, 
   const candidateTrigger = !model.busy && !candidateEligible ? null : resultTrigger;
   const textTrigger = !model.busy && !textEligible ? null : resultTrigger;
   return <>
-    <SectionCard surface="plain" style={s.workflowSection} testID="source-details"><SectionHeader headingLevel={3} density="compact" title="原文與出處" subtitle="先看資料本身，再決定如何使用。完整內容只對本人可見。" icon="link-variant" />
+    <SectionCard surface="plain" style={s.workflowSection} testID="source-details"><SectionHeader headingLevel={3} density="compact" title="保存原文" />
       <Text style={s.meta}>來源日期原文：{selected.sourceDateText || "未提供"}</Text>
-      {selected.sourceUrl ? <Text selectable style={s.body}>網址：{selected.sourceUrl}</Text> : <Text style={s.meta}>沒有來源網址。</Text>}
+      {selected.sourceUrl ? <Text selectable style={s.body}>網址：{selected.sourceUrl}</Text> : null}
       {selected.sourceNotes ? <Text selectable style={s.body}>私人備註：{selected.sourceNotes}</Text> : null}
       <View style={s.row}><AppStatusBadge label={fetchStateLabels[selected.fetchState]} tone={selected.fetchState === "ready" ? "success" : selected.fetchState === "failed" ? "error" : selected.fetchState === "unknown" ? "warning" : selected.fetchState === "running" ? "info" : "neutral"} /><AppStatusBadge label={photoExtractionLabels[selected.extraction.state]} tone={selected.extraction.state === "failed" ? "error" : selected.extraction.state === "unknown" || selected.extraction.state === "available" ? "warning" : selected.extraction.state === "running" ? "info" : "neutral"} /></View>
       <View style={s.row}><AppStatusBadge label={readiness.label} tone={readiness.tone} /></View>
-      <Text style={s.meta}>私人來源由 Agent 讀取本人授權內容，未加入公共知識索引；保存網址不等於正文可用。</Text>
+
       <MotionFeedback scopeKey={scopeKey} active={model.operation.state === 'saved' && model.operation.phase === 'confirm' && !!selected.recordId} triggerKey={model.operation.state === 'saved' && model.operation.phase === 'confirm' ? model.operation.reference : null} testID="source-confirmation-feedback">{selected.recordId ? <Text style={s.body}>已連結{selected.confirmationKind === "reference" ? "家庭參考備註" : "孩子實際記錄"}。來源原文、網址、日期及候選仍屬私人。</Text> : null}</MotionFeedback>
       {selected.recordId ? <AppButton label="查看照顧記錄" variant="secondary" onPress={() => onRecord(selected.recordId!)} /> : null}
       {!hasText ? <><Text style={s.warning}>連結已保存，尚未取得正文；目前沒有可提取或確認的正文。</Text>
-        {selected.kind === "personal_source" ? <><Text style={s.meta}>公開可直接訪問的 HTML 才可取得。需要登入的內容請自行貼上；不會登入你的帳戶。</Text>
+        {selected.kind === "personal_source" ? <><Text style={s.body}>公開可直接訪問的 HTML 才可取得。需要登入的內容請自行貼上；不會登入你的帳戶。</Text>
           {model.intake?.mode === "production" && actions.management ? <AppButton label="原地貼上正文" accessibilityLabel="原地編輯私人來源正文" variant="secondary" disabled={!enabled || !model.fresh || !canManage || !!selected.recordId || !!direct} onPress={actions.management.beginContentEdit} />
             : <AppButton label="自行貼上正文" accessibilityLabel="返回新增私人來源並自行貼上正文" variant="secondary" disabled={!model.fresh || !model.canCreate || !model.canChoose || !!direct} onPress={actions.recreateWithText} />}</> : null}
       </> : <><AppButton expanded={enabled && showText} label={enabled && showText ? "收起保存原文" : `查看完整原文（${selected.text.length.toLocaleString("en-HK")} 字）`} variant="secondary" disabled={!enabled} onPress={() => setShowText(value => !value)} />
       </>}
       {!enabled ? <Text style={s.warning}>這份來源已停用。重新啟用並保存後才可查看原文或提取。</Text> : null}
       <MotionDisclosure expanded={enabled && showText && hasText} scopeKey={scopeKey}>
-        <MotionReveal value={selected.text} contentKey={selected.text} scopeKey={scopeKey} regionKey="source-original-text" triggerKey={textTrigger} eligible={textEligible} testID="source-original-motion">{shown => <ScrollView nestedScrollEnabled style={s.original} contentContainerStyle={s.originalContent}><Text selectable testID="source-full-text" style={s.reading}>{shown}</Text></ScrollView>}</MotionReveal>
+        <MotionReveal value={selected.text} contentKey={selected.text} scopeKey={scopeKey} regionKey="source-original-text" triggerKey={textTrigger} eligible={textEligible} testID="source-original-motion">{shown => <View testID="source-original-continuous" style={s.original}><Text selectable testID="source-full-text" style={s.reading}>{shown}</Text></View>}</MotionReveal>
       </MotionDisclosure>
     </SectionCard>
     {children}

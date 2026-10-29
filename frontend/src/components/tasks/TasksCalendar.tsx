@@ -44,7 +44,7 @@ export function TasksCalendar({ items, context, selectedDay, month, disabled, on
   month: string | null; disabled: boolean; onSelectDay(day: string | null): void; onChangeMonth(month: string | null): void;
 }) {
   const layout = useContainerWidth();
-  const compact = layout.width < 340;
+  const compact = layout.width < 388;
   const calendar = projectTaskCalendar(items, context, month);
   const currentLabel = calendar.currentDay ? DateTime.fromISO(calendar.currentDay, { zone: context.timeZone }).toFormat("M月d日") : null;
   function moveMonth(amount: number) {
@@ -85,8 +85,8 @@ const styles = StyleSheet.create({
   compactPicker: { gap: spacing.md, minWidth: 0 },
   header: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: spacing.xs },
   month: { fontFamily: chineseFont, color: colors.ink, fontSize: 20, lineHeight: 28, fontWeight: "700", flexShrink: 1 },
-  monthActions: { flexDirection: "row" }, monthButton: { width: 44, minHeight: 44, borderWidth: 2, borderColor: "transparent", alignItems: "center", justifyContent: "center", borderRadius: radius.small },
-  grid: { gap: 2 }, week: { flexDirection: "row", minWidth: 0 },
+  monthActions: { flexDirection: "row", gap: spacing.sm }, monthButton: { width: 44, minHeight: 44, borderWidth: 2, borderColor: "transparent", alignItems: "center", justifyContent: "center", borderRadius: radius.small },
+  grid: { gap: spacing.sm }, week: { flexDirection: "row", minWidth: 0, gap: spacing.sm },
   weekday: { flex: 1, minWidth: 0, textAlign: "center", fontFamily: chineseFont, color: colors.muted, ...readingType.tool, paddingVertical: spacing.xs },
   day: { flex: 1, minWidth: 44, minHeight: 48, alignItems: "center", justifyContent: "center", paddingVertical: 3, borderWidth: 1, borderColor: "transparent", borderRadius: radius.small },
   emptyDay: { flex: 1, minWidth: 0 }, dayNumber: { minWidth: 28, minHeight: 28, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "transparent", borderRadius: radius.pill },
@@ -96,6 +96,6 @@ const styles = StyleSheet.create({
   dots: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3, height: 8 }, dot: { width: 6, height: 6, borderRadius: radius.pill },
   scheduledDot: { backgroundColor: colors.ink }, reviewDot: { backgroundColor: colors.statusWarmLine },
   legend: { flexDirection: "row", flexWrap: "wrap", columnGap: spacing.md, rowGap: spacing.xs }, legendItem: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
-  note: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool }, warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  note: { fontFamily: chineseFont, color: colors.muted, ...readingType.body }, warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.body },
 });

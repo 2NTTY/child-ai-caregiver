@@ -1,45 +1,54 @@
-import { BackgroundSurface } from "../components/appearance/BackgroundSurface";
-import { useEffect, useReducer, useRef, useState } from "react";
+import { parseHistoryRoute, serializeHistoryRoute, type HistoryRouteState } from "../navigation/route-state";
+import { useScopedRouteState } from "../navigation/useScopedRouteState";
+import { useGuardedRoute } from "../navigation/useGuardedRoute";
+import { usePrivateQuery } from "../navigation/usePrivateQuery";
+import { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { StyleSheet, View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import { AppDateField } from "../components/DateTimeFields";
 import { FormDialog } from "../components/FormDialog";
-import { WorkspaceSwitch } from "../components/workspace/WorkspaceSwitch";
 import { PageFrame } from "../components/PageFrame";
-import { AppButton, AppSelect, AppTabPanel, AppTextField, UnderlineTabs } from "../components/ui";
-import { useContainerWidth } from "../components/useContainerWidth";
+import { AppButton, AppSelect, AppTextField } from "../components/ui";
+import { RouteTextLink } from "../components/RouteTextLink";
 import { TaskHistoryView } from "../components/tasks/TaskHistoryView";
-import { CareReviewHistoryView, type CareReviewStatusFilter } from "../components/care/CareReviewHistoryView";
+import { CareReviewHistoryView } from "../components/care/CareReviewHistoryView";
 import { CareSavedRecordsView } from "../components/care/CareSavedRecordsView";
 import { PreparationHistoryView } from "../components/preparations/PreparationWorkspace";
 import { ProfileHistoryView } from "../components/profile/ProfileHistoryView";
 import { useProfileWorkspace } from "../workspaces/ProfileWorkspace";
 import { GrowthHistoryView } from "../components/growth/GrowthHistoryView";
-import { createHistoryFilters, historyCategories, historyDateErrors, historyDateRange, historyFilterReducer, normalizeHistoryCategory, normalizeReviewHistoryStatus, normalizeHistoryOlderOnly, type HistoryCategory, type HistoryFilterAction } from "../components/history/history-filters";
+import { historyCategories, historyDateErrors, historyDateRange, type HistoryCategory, type HistoryFilterAction } from "../components/history/history-filters";
 import { useProduction } from "../production/ProductionProvider";
 import { usePersonalHistoryWorkspace } from "../production/usePersonalHistory";
 import { PersonalConversationHistoryView, PersonalNotificationHistoryView } from "../components/history/PersonalHistoryViews";
-import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useTasksWorkspace } from "../workspaces/TasksWorkspace";
 import { useCareWorkspace } from "../workspaces/CareWorkspace";
 import { usePreparationWorkspace } from "../workspaces/PreparationWorkspace";
 import { useGrowthWorkspace } from "../workspaces/GrowthWorkspace";
 import { chineseFont, colors, readingType, spacing } from "../theme";
 
-function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOnly }: { scope: string; initialCategory: HistoryCategory; initialReviewStatus: CareReviewStatusFilter; olderOnly: boolean }) {
-  const router = useRouter(), navigate = usePreviewNavigation();
-  const { actions: homeActions } = useProduction();
+type HistoryReaderReceipt = { scopeKey: string; revision: object; selected: object | null; draft: object | null; deletion: object | null; operation: { state: string }; close(): boolean | void };
+const mutableHistoryReader = (reader: HistoryReaderReceipt | null) => !!reader && (!!reader.draft || !!reader.deletion || ["saving", "unknown", "conflict"].includes(reader.operation.state));
+
+export default function HistoryScreen() {
+  const router = useRouter(), pathname = usePathname(), params = useLocalSearchParams();
+  const { actions: homeActions, model: homeModel, scopeKey, identityKey, owner } = useProduction();
+  const go = useGuardedRoute(scopeKey, owner);
   const tasks = useTasksWorkspace();
   const preparations = usePreparationWorkspace();
   const care = useCareWorkspace();
   const growth = useGrowthWorkspace();
   const personal = usePersonalHistoryWorkspace();
   const profile = useProfileWorkspace();
-  const [filters, dispatch] = useReducer(historyFilterReducer, undefined, () => createHistoryFilters(scope, initialCategory));
+  const child = homeModel.children.find(item => item.id === homeModel.selectedChildId);
+  const parsed = parseHistoryRoute(params);
+  const scope = scopeKey ?? (parsed.category === "notifications" ? personal?.scopeKey : null) ?? "";
+  const route = useScopedRouteState(scope, "/history", parsed, { ...parsed, selectedId: null, page: 0 }, value => ({ pathname: "/history", params: serializeHistoryRoute(value) }));
+  const [query, setQuery] = usePrivateQuery(scopeKey, "/history");
+  const filters = { scope, category: route.category, searchText: query, from: route.from ?? "", to: route.to ?? "" };
   const [dateDraft, setDateDraft] = useState<{ scope: string; category: HistoryCategory; from: string; to: string } | null>(null);
   const dateTrigger = useRef<View>(null);
-  const layout = useContainerWidth(), compact = layout.width < 680;
   const scrollRef = useRef<ScrollView>(null), scrollPosition = useRef(0);
   const current = historyCategories.find(item => item.key === filters.category)!;
   const dateRange = historyDateRange(filters.from, filters.to);
@@ -64,56 +73,132 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
   const hasDates = supportsDates && !!(filters.from || filters.to);
   const hasFilters = !!filters.searchText || hasDates;
   const dateDialogVisible = !!dateDraft && dateDraft.scope === scope && dateDraft.category === filters.category && showSearch && supportsDates;
-  useEffect(() => { dispatch({ type: "category", value: initialCategory }); }, [initialCategory]);
   useEffect(() => { setDateDraft(null); }, [scope, filters.category]);
 
+  const reader: HistoryReaderReceipt | null = taskCategory && tasks ? { scopeKey: tasks.scopeKey, revision: tasks.model, selected: tasks.model.selected, draft: tasks.model.draft, deletion: null, operation: tasks.model.operation, close: tasks.actions.closePanel }
+    : (careCategory || reviewCategory) && care ? { scopeKey: care.scopeKey, revision: care.model, selected: care.model.detail, draft: care.model.draft, deletion: care.model.deletion, operation: care.model.operation, close: care.actions.closePanel } : null;
+  const latestReader = useRef(reader); latestReader.current = reader;
+  const signature = `${pathname}:${JSON.stringify(params)}`;
+  const [closeIntent, setCloseIntent] = useState<{ scopeKey: string | null; identityKey: string | null; signature: string; original: HistoryReaderReceipt; next: HistoryRouteState; mode: "push" | "replace"; accepted?: () => void } | null>(null);
+  const emitted = useRef<typeof closeIntent>(null);
+  useEffect(() => {
+    if (!closeIntent) return;
+    const current = latestReader.current, snapshot = owner.getSnapshot();
+    if (pathname !== "/history" || closeIntent.scopeKey !== scopeKey || closeIntent.identityKey !== identityKey || snapshot.scopeKey !== scopeKey || snapshot.identityKey !== identityKey || closeIntent.signature !== signature) {
+      // A newer URL wins; keep the old resolver suspended until its retired
+      // owner snapshot can no longer reassert a discarded draft's target.
+      if (pathname === "/history" && closeIntent.scopeKey === scopeKey && closeIntent.identityKey === identityKey && snapshot.scopeKey === scopeKey && snapshot.identityKey === identityKey
+        && current?.revision === closeIntent.original.revision && (current.selected || mutableHistoryReader(current))) return;
+      emitted.current = null; setCloseIntent(null); return;
+    }
+    if (!current || current.scopeKey !== scopeKey) { emitted.current = null; setCloseIntent(null); return; }
+    if (current.selected || current.draft || current.deletion || current.operation.state !== "none") {
+      const old = closeIntent.original;
+      if (current.revision !== old.revision && (current.selected !== old.selected || current.draft !== old.draft || current.deletion !== old.deletion || current.operation !== old.operation)) { emitted.current = null; setCloseIntent(null); }
+      return;
+    }
+    if (emitted.current === closeIntent) return;
+    emitted.current = closeIntent; closeIntent.accepted?.();
+    if (JSON.stringify(serializeHistoryRoute(closeIntent.next)) === JSON.stringify(serializeHistoryRoute(route))) { setCloseIntent(null); return; }
+    // Original owner publication and form guard cleanup precede Expo's queue.
+    router[closeIntent.mode]({ pathname: "/history", params: serializeHistoryRoute(closeIntent.next) });
+  }, [closeIntent, reader?.revision, signature, pathname, scopeKey, identityKey]);
+  function closeReadOnlyReader() {
+    if (preparationCategory) preparations?.actions.closeDocument();
+    if (conversationCategory) personal?.actions.closeMessage();
+  }
+  function changeRoute(next: HistoryRouteState, mode: "push" | "replace" = "replace", accepted?: () => void) {
+    const intent = mutableHistoryReader(latestReader.current) ? "navigation" : "workspace";
+    go({ pathname: "/history", params: serializeHistoryRoute(next) }, mode, intent, () => {
+      const current = latestReader.current;
+      if (!current) { emitted.current = null; setCloseIntent(null); closeReadOnlyReader(); accepted?.(); return; }
+      if (current.scopeKey !== scopeKey || intent === "workspace" && mutableHistoryReader(current) || ["saving", "unknown"].includes(current.operation.state) || current.close() === false) return false;
+      emitted.current = null; setCloseIntent({ scopeKey, identityKey, signature, original: current, next, mode, accepted });
+      return false;
+    });
+  }
   function filter(action: HistoryFilterAction) {
     if (currentLocked) return;
-    tasks?.actions.closePanel();
-    preparations?.actions.closeDocument();
-    care?.actions.closePanel();
-    dispatch(action);
+    if (action.type === "search") {
+      if (!route.selectedId && route.page === 0) { setQuery(action.value); return; }
+      changeRoute({ ...route, selectedId: null, page: 0 }, "replace", () => setQuery(action.value));
+    } else if (action.type === "dates") changeRoute({ ...route, from: action.from || null, to: action.to || null, selectedId: null, page: 0 });
+    else if (action.type === "reset") changeRoute({ ...route, from: null, to: null, selectedId: null, page: 0 }, "replace", () => setQuery(""));
   }
   function category(next: HistoryCategory) {
-    if (next === filters.category) return;
-    navigate(() => {
-      tasks?.actions.closePanel();
-      preparations?.actions.closeDocument();
-      care?.actions.closePanel();
-      dispatch({ type: "category", value: next });
-      router.setParams({ category: next, status: undefined, older: undefined });
-    }, "workspace");
+    if (next !== filters.category) changeRoute({ ...parseHistoryRoute({ category: next }), from: null, to: null }, "push");
   }
-  const results = taskCategory ? dateRange ? <TaskHistoryView searchText={filters.searchText} dateRange={dateRange} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} />
+  const recoveryOwnsSelection = taskCategory ? !!tasks?.model.draft || !!tasks && ["saving", "unknown", "conflict"].includes(tasks.model.operation.state)
+    : careCategory || reviewCategory ? !!care?.model.draft || !!care?.model.deletion || !!care && ["saving", "unknown", "conflict"].includes(care.model.operation.state) : false;
+  const recoveryId = taskCategory ? tasks?.model.selected?.id ?? tasks?.model.draft?.basis?.id ?? null
+    : reviewCategory ? care?.model.draft?.captureId ?? care?.model.draft?.captureSnapshot?.id ?? (care?.model.operation.kind === "review" ? route.selectedId : null)
+    : careCategory ? care?.model.detail?.record.id ?? care?.model.draft?.basis?.id ?? care?.model.deletion?.basis.id ?? null : null;
+  const selectionRoute = recoveryOwnsSelection ? { ...route, selectedId: recoveryId } : route;
+  useEffect(() => {
+    if (closeIntent || pathname !== "/history" || owner.getSnapshot().scopeKey !== scopeKey || owner.getSnapshot().identityKey !== identityKey) return;
+    if (recoveryOwnsSelection) {
+      if (route.selectedId !== recoveryId) router.replace({ pathname: "/history", params: serializeHistoryRoute(selectionRoute) });
+      return;
+    }
+    const id = route.selectedId;
+    if (taskCategory && tasks) {
+      if (!id) { if (tasks.model.selected) tasks.actions.closePanel(); return; }
+      if (tasks.model.selected?.id === id || tasks.model.detailRead?.id === id && ["loading", "error"].includes(tasks.model.detailRead.state)) return;
+      tasks.actions.selectTask(id);
+    } else if (preparationCategory && preparations) {
+      if (!id) { if (preparations.model.selected) preparations.actions.closeDocument(); return; }
+      if (preparations.model.selected?.id !== id && preparations.model.documents.some(document => document.id === id && document.status === "archived")) preparations.actions.selectDocument(id);
+    } else if (careCategory && care) {
+      if (!id) { if (care.model.detail) care.actions.closePanel(); return; }
+      if (care.model.detail?.record.id === id || care.model.detailRead?.id === id && ["loading", "error"].includes(care.model.detailRead.state)) return;
+      care.actions.openRecord(id);
+    }
+  }, [closeIntent, pathname, scopeKey, identityKey, route.category, route.selectedId, recoveryOwnsSelection, recoveryId, tasks?.model.selected, tasks?.model.detailRead, preparations?.model.documents, preparations?.model.selected, care?.model.detail, care?.model.detailRead]);
+  const attemptedPage = useRef("");
+  useEffect(() => {
+    if (pathname !== "/history" || !careCategory || !care || recoveryOwnsSelection || owner.getSnapshot().scopeKey !== scopeKey) return;
+    const actual = Math.max(0, (care.model.list.page ?? 1) - 1), key = `${scopeKey}:${route.category}:${route.page}`;
+    if (actual === route.page) { attemptedPage.current = ""; return; }
+    if (!care.model.online || ["loading", "loading_more"].includes(care.model.list.state) || attemptedPage.current === key) return;
+    attemptedPage.current = key;
+    void care.actions.readPageForRoute?.(route.page);
+  }, [pathname, scopeKey, route.category, route.page, care?.model.list.page, care?.model.list.state, care?.model.online, recoveryOwnsSelection]);
+  const select = (selectedId: string | null) => changeRoute({ ...route, selectedId }, selectedId ? "push" : "replace");
+  const taskReader = tasks ? { ...tasks, model: { ...tasks.model, selected: recoveryOwnsSelection || tasks.model.selected?.id === route.selectedId ? tasks.model.selected : null },
+    actions: { ...tasks.actions, selectTask: (id: string) => select(id), closePanel: () => select(null) } } : undefined;
+  const careReader = care ? { ...care.model, detail: recoveryOwnsSelection || care.model.detail?.record.id === route.selectedId ? care.model.detail : null } : undefined;
+  const results = taskCategory ? dateRange ? <TaskHistoryView workspace={taskReader} route={selectionRoute} onPageChange={page => changeRoute({ ...route, page, selectedId: null })} searchText={filters.searchText} dateRange={dateRange} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} />
     : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
-    : preparationCategory ? dateRange ? <PreparationHistoryView onPrepareQuestion={homeActions.prepareQuestion} searchText={filters.searchText} dateRange={dateRange} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} />
+    : preparationCategory ? dateRange ? <PreparationHistoryView route={route} onSelect={select} onPageChange={page => changeRoute({ ...route, page, selectedId: null })} onPrepareQuestion={homeActions.prepareQuestion} searchText={filters.searchText} dateRange={dateRange} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
-    : reviewCategory ? care ? <CareReviewHistoryView key={care.scopeKey} model={care.model} actions={care.actions} searchText={filters.searchText} initialStatus={initialReviewStatus} olderOnly={olderOnly} />
+    : reviewCategory ? care ? <CareReviewHistoryView key={care.scopeKey} historyRoute={selectionRoute} onHistoryRouteChange={(next, mode) => changeRoute({ ...route, ...next }, mode)} model={care.model} actions={{ ...care.actions, openRecord: id => go({ pathname: "/care", params: { tab: "records", recordId: id } }) }} searchText={filters.searchText} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} />
       : <Text style={styles.meta}>正在讀取核對記錄…</Text>
-    : careCategory ? care ? <CareSavedRecordsView key={care.scopeKey} model={care.model} actions={care.actions} />
+    : careCategory ? care ? <CareSavedRecordsView key={care.scopeKey} model={careReader!} route={selectionRoute} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} onPageChange={page => changeRoute({ ...route, page, selectedId: null })} actions={{ ...care.actions, search: (query, kind) => changeRoute({ ...route, page: 0, selectedId: null }, "replace", () => care.actions.search(query, kind)), openRecord: select, closePanel: () => select(null) }} />
       : <Text style={styles.meta}>正在讀取已保存記錄…</Text>
-    : profileCategory ? profile ? <ProfileHistoryView key={profile.scopeKey} scopeKey={profile.scopeKey} model={profile.model} actions={profile.actions} />
+    : profileCategory ? profile ? <ProfileHistoryView key={profile.scopeKey} scopeKey={profile.scopeKey} model={profile.model} actions={profile.actions} route={route} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} onSelect={select} onPageChange={page => changeRoute({ ...route, page, selectedId: null })} />
       : <Text style={styles.meta}>正在讀取孩子檔案…</Text>
-    : growthCategory ? dateRange ? <GrowthHistoryView key={growth?.scopeKey ?? scope} searchText={filters.searchText} dateRange={dateRange}
-      onRecord={id => navigate(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))} onTask={id => navigate(() => { tasks?.actions.selectTask(id); router.push("/tasks"); })} />
+    : growthCategory ? dateRange ? <GrowthHistoryView scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} route={route} onSelect={select} onPageChange={page => changeRoute({ ...route, page, selectedId: null })} key={growth?.scopeKey ?? scope} searchText={filters.searchText} dateRange={dateRange}
+      onRecord={id => go({ pathname: "/care", params: { tab: "records", ...(id ? { recordId: id } : {}) } })} onReview={() => go({ pathname: "/history", params: { category: "review" } })} onTask={id => go({ pathname: "/tasks", params: { taskId: id } })} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
-    : personalCategory ? dateRange ? conversationCategory ? <PersonalConversationHistoryView searchText={filters.searchText} dateRange={dateRange} onPrepareQuestion={homeActions.prepareQuestion} />
-      : <PersonalNotificationHistoryView searchText={filters.searchText} dateRange={dateRange} />
+    : personalCategory ? dateRange ? conversationCategory ? <PersonalConversationHistoryView scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} route={route} onSelect={select} onPageChange={page => changeRoute({ ...route, page, selectedId: null })} searchText={filters.searchText} dateRange={dateRange} onPrepareQuestion={homeActions.prepareQuestion} />
+      : <PersonalNotificationHistoryView scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} route={route} onSelect={select} onPageChange={page => changeRoute({ ...route, page, selectedId: null })} searchText={filters.searchText} dateRange={dateRange} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
     : <View testID={`history-unavailable-${filters.category}`}  style={styles.unavailable}>
       <Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{current.label}暫未可在這裏查閱</Text>
       <Text style={styles.body}>{current.unavailable}</Text>
     </View>;
 
-  const resultSurface = <View style={styles.results}>{results}</View>;
+  if (pathname !== "/history") return null;
+  if (!child && route.category !== "notifications") return <PageFrame title="歷史" density="compact"><Text style={styles.body}>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => homeActions.open("profile")} /></PageFrame>;
   return <PageFrame density="compact" title="歷史" scrollRef={scrollRef} scrollTestID="history-scroll"
     onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
-    <View ref={layout.ref} onLayout={layout.onLayout} style={styles.workspace}>
-      {compact ? <AppSelect<HistoryCategory> label="歷史分類" value={filters.category} options={historyCategories.map(item => ({ value: item.key, label: item.label }))} onChange={category} />
-        : <WorkspaceSwitch<HistoryCategory> id="history-categories" label="歷史分類" items={historyCategories} value={filters.category} onChange={category} />}
-      <View style={styles.resultHeading}><View style={styles.resultCopy}><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{current.label}</Text><Text style={styles.body}>{current.description}</Text></View>
-        {!notificationCategory ? <AppButton label={current.sourceAction} variant="secondary" onPress={() => navigate(() => router.push(current.sourcePath), "workspace")} /> : null}</View>
-      {showSearch ? <BackgroundSurface padded testID="history-filter-toolbar" style={styles.toolbar}>
+    <View style={styles.workspace}>
+      <View style={styles.categoryRow}>
+        <View style={styles.categoryPicker}><AppSelect<HistoryCategory> label="歷史分類" routeFocusKey="history-category" value={filters.category} options={historyCategories.map(item => ({ value: item.key, label: item.label }))}
+          onChange={() => {}} onSelectionClosed={category} /></View>
+        {!notificationCategory ? <RouteTextLink href={current.sourcePath} label={current.sourceAction} scopeKey={scopeKey} /> : null}
+      </View>
+      {showSearch ? <View testID="history-filter-toolbar" style={styles.toolbar}>
         <View style={styles.controlRow}>
           {showSearch ? <View style={styles.searchField}><AppTextField label={`搜尋${current.label}`} accessibilityLabel={`搜尋${current.label}`} value={filters.searchText} maxLength={200} disabled={filterDisabled} onChangeText={value => filter({ type: "search", value })} /></View> : null}
           {supportsDates || hasFilters ? <View style={styles.toolbarActions}>
@@ -124,11 +209,12 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
           </View> : null}
         </View>
         {showSearch && hasDates ? <Text testID="history-applied-dates" style={styles.meta}>日期：{filters.from && filters.to ? `${filters.from} 至 ${filters.to}` : filters.from ? `${filters.from} 起` : `截至 ${filters.to}`}</Text> : null}
-        {notificationCategory ? <Text style={styles.meta}>本人消息，涵蓋帳戶及其他孩子</Text> : null}
-        {reviewCategory ? <Text style={styles.meta}>按內容及處理狀態搜尋；暫不支援日期篩選。</Text> : null}
-      </BackgroundSurface> : null}
-      {/* Keep reader identity across responsive control changes; compact uses a select, not tabs. */}
-      <AppTabPanel tabsId="history-categories" tabKey={filters.category} active hasTabList={!compact} style={styles.results}>{resultSurface}</AppTabPanel>
+      </View> : null}
+      <View testID="history-results" role="region" accessibilityLabel={current.label} style={styles.results}>
+        <View style={styles.resultCopy}><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{current.label}</Text>
+          <Text style={styles.body}>{notificationCategory ? "本人消息，涵蓋帳戶及其他孩子。" : current.description}</Text></View>
+        {results}
+      </View>
       <FormDialog visible={dateDialogVisible} dismissMode="local" scopeKey={scope} formKey={filters.category} title="日期篩選" returnFocusRef={dateTrigger} onClose={() => setDateDraft(null)}>
         {dateDialogVisible && dateDraft ? <>
           <AppDateField label="開始日期（可不填）" value={dateDraft.from} error={dateErrors.from} disabled={filterDisabled} onChange={from => setDateDraft({ ...dateDraft, from })} />
@@ -147,30 +233,19 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
   </PageFrame>;
 }
 
-export default function HistoryScreen() {
-  const pathname = usePathname();
-  const { category, status, older } = useLocalSearchParams<{ category?: string | string[]; status?: string | string[]; older?: string | string[] }>();
-  const { model, actions, scopeKey } = useProduction();
-  const personal = usePersonalHistoryWorkspace();
-  const child = model.children.find(item => item.id === model.selectedChildId);
-  const scope = scopeKey ?? personal?.scopeKey ?? "";
-  if (pathname !== "/history") return null;
-  if (!child && normalizeHistoryCategory(category) !== "notifications") return <PageFrame title="歷史" density="compact" description="按分類查閱過往資料。"><Text style={styles.body}>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></PageFrame>;
-  return <HistoryWorkspace key={scope} scope={scope} initialCategory={normalizeHistoryCategory(category)} initialReviewStatus={normalizeReviewHistoryStatus(status)} olderOnly={normalizeHistoryOlderOnly(older)} />;
-}
-
 const styles = StyleSheet.create({
-  resultHeading: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md, paddingTop: spacing.lg, borderTopWidth: 1, borderTopColor: colors.line },
-  resultCopy: { flex: 1, flexBasis: 220, minWidth: 0, gap: spacing.xs },
+  categoryRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  categoryPicker: { flexGrow: 1, flexShrink: 1, flexBasis: 260, minWidth: 0, maxWidth: 480 },
+  resultCopy: { minWidth: 0, gap: spacing.xs },
   workspace: { gap: spacing.lg, minWidth: 0 },
-  toolbar: { gap: spacing.sm, padding: spacing.lg, backgroundColor: colors.white, borderRadius: 12, borderWidth: 1, borderColor: colors.line },
+  toolbar: { gap: spacing.sm },
   controlRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm },
   searchField: { flexGrow: 1, flexShrink: 1, flexBasis: 240, minWidth: 0, maxWidth: "100%" },
   toolbarActions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm, maxWidth: "100%" },
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 27, fontWeight: "700" },
   results: { gap: spacing.md },
   unavailable: { gap: spacing.md, paddingVertical: spacing.lg, maxWidth: 720 },
-  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool },
+  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
-  error: { fontFamily: chineseFont, color: colors.errorInk, ...readingType.tool },
+  error: { fontFamily: chineseFont, color: colors.errorInk, ...readingType.body },
 });

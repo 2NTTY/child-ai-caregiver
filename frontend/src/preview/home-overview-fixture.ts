@@ -27,7 +27,7 @@ function createAgentImportantFixture(childId: string, scenario: PreviewScenario)
     sourceLabel: "合成 Agent 結果，沒有真實推送或來源證據",
     source: { kind: "agent_run", runId, createdAt: "2026-10-04T09:00:00+08:00", status: unknown ? "unknown" : "completed" },
     ...(unknown ? {} : { proposal: { id: `${runId}:proposal`, version: 1, status: "pending" as const, expiresAt: "2026-10-05T09:00:00+08:00" } }),
-    action: { label: "前往 Agent 對話", destination: "chat" },
+    action: { label: "前往 Agent 對話", target: { destination: "chat" } },
   }] };
 }
 
@@ -43,20 +43,20 @@ export function createHomeOverviewFixture(childId: string, scenario: PreviewScen
   const ongoing = topics.map(topic => ({ id: topic.id, title: topic.title,
     detail: sleepContext?.content ?? "回看原有話題，再補充最近的情況。",
     statusLabel: "待續話題", sourceLabel: "本人話題及已確認睡前觀察 · 合成示例",
-    action: { label: "查看話題與依據", destination: "memory" as const } }));
+    action: { label: "查看話題與依據", target: { destination: "memory" as const } } }));
   const taskFixture = createTaskFixture(childId, "normal");
   // Explicit sample order, not a client-side due-date/risk ranking engine.
   const taskItems = [taskFixture.items.find(item => item.occurrence.state === "needs_review"),
     taskFixture.items.find(item => item.id.endsWith("-ordinary")), taskFixture.items.find(item => item.kind === "appointment")]
     .filter(item => item !== undefined).map(item => ({ id: item.id, title: item.title, detail: item.details,
       statusLabel: item.occurrence.state === "needs_review" ? "需要覆核" : `安排時間：${item.occurrence.dueAt}（${item.occurrence.timeZone}）`,
-      sourceLabel: "任務與預約的合成快照", action: { label: item.occurrence.state === "needs_review" ? "查看並覆核" : "查看安排", destination: "tasks" as const } }));
+      sourceLabel: "任務與預約的合成快照", action: { label: item.occurrence.state === "needs_review" ? "查看並覆核" : "查看安排", target: { destination: "tasks" as const, taskId: item.id } } }));
   return { childId, agentImportant,
     attention: { state: "ready", items: scenario === "focus_task" ? taskItems
       : scenario === "focus_growth" && !childId.startsWith("preview-new-child-") ? [{ id: `${childId}:growth-focus`, title: "核對一項成長關注",
         detail: "先查看關注理由及來源，再決定如何處理；合成示例沒有評估孩子的發展。",
         statusLabel: "等待你的決定", sourceLabel: "前端合成樣本，沒有真來源證據",
-        action: { label: "查看成長關注", destination: "growth" } }] : [],
+        action: { label: "查看成長關注", target: { destination: "growth" } } }] : [],
       detail: "目前合成快照沒有指定待處理事項。" },
     ongoing: { state: "ready", items: ongoing, detail: "目前沒有已載入的待續話題。" } };
 }

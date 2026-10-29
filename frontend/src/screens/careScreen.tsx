@@ -1,9 +1,10 @@
+import { useGuardedRoute } from "../navigation/useGuardedRoute";
+import { useCareRoute, type CareRoutePort } from "../navigation/useCareRoute";
 import { EmptyListCard } from "../components/EmptyListCard";
-import { useEffect, useRef, useState, type Ref } from "react";
-import { Platform, Pressable, StyleSheet, View } from "react-native";
-import { Text } from "react-native-paper";
-import { useLocalSearchParams, useRouter, usePathname } from "expo-router";
-import { careKindOptions, type CareKind } from "../care-view-model";
+import { useEffect, useRef, useState } from "react";
+import { Platform, StyleSheet, View } from "react-native";
+import { List, Text } from "react-native-paper";
+import { usePathname } from "expo-router";
 import { useQuietReadFocus } from "../components/useQuietReadFocus";
 import { ReadStateNotice } from "../components/ReadStateNotice";
 import { PageFrame } from "../components/PageFrame";
@@ -12,8 +13,6 @@ import { AppDialog } from "../components/AppDialog";
 import { AppScrollView } from "../components/AppScrollView";
 import { proposalExpired, type AgentProposalView } from "../agent-view-model";
 import type { AgentPendingDiscovery } from "../production/ProductAgentOwner";
-import { AppIcon } from "../components/AppIcon";
-import { AppStatusBadge } from "../components/AppStatusBadge";
 import { proposalContextLabel, proposalPrimaryText } from "../components/agent/proposal-presentation";
 import { AgentRunView, type ActivityProposalTarget } from "../components/agent/AgentRunView";
 import { AppButton, SectionCard } from "../components/ui";
@@ -23,35 +22,24 @@ import { useProductionCareProfile } from "../production/CareProfileDomains";
 import { useDomainEnvironment } from "../production/useDomainEnvironment";
 import { useCareWorkspace } from "../workspaces/CareWorkspace";
 import { PhotoWorkspace } from "./photosScreen";
-import { chineseFont, colors, radius, readingType, spacing } from "../theme";
+import { chineseFont, colors, readingType, spacing } from "../theme";
 
 function confirmablePending(entry: AgentPendingDiscovery["entries"][number]) {
   return entry.proposal.status === "pending" && entry.proposal.contentState !== "invalidated" && !proposalExpired(entry.proposal);
 }
 
-function CareCreateButton({ buttonRef, disabled, onPress }: { buttonRef: Ref<View>; disabled: boolean; onPress(): void }) {
-  const [focused, setFocused] = useState(false), [hovered, setHovered] = useState(false);
-  return <Pressable ref={buttonRef} testID="care-manual-create" accessibilityRole="button" accessibilityLabel="手動新增共享記錄"
-    accessibilityState={{ disabled }} aria-disabled={disabled} disabled={disabled} onPress={onPress}
-    onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)}
-    style={({ pressed }) => [styles.manualCreate, focused && styles.manualCreateFocused, (hovered || pressed) && !disabled && styles.cardHighlighted, disabled && styles.cardDisabled]}>
-    <Text style={styles.manualCreateLabel}>手動新增</Text>
-  </Pressable>;
-}
 
 function PendingCard({ runId, proposal, disabled, quietRefresh, onPress, cardRef }: { runId: string; proposal: AgentProposalView; disabled: boolean; quietRefresh: boolean; onPress(): void; cardRef(node: View | null): void }) {
-  const [focused, setFocused] = useState(false), [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
   const readFocus = useQuietReadFocus(disabled, quietRefresh);
   const status = proposal.status === "expired" || proposalExpired(proposal) ? "已過期" : proposal.contentState === "invalidated" ? "內容需重新核對" : "待你確認";
-  return <Pressable ref={node => { readFocus.host.current = node; cardRef(node); }} testID={`care-pending-card-${runId}-${proposal.id}`} accessibilityRole="button"
-    accessibilityLabel={`核對：${proposalPrimaryText(proposal)}；${proposalContextLabel(proposal)}；${status}`}
+  return <List.Item ref={node => { readFocus.host.current = node; cardRef(node); }} testID={`care-pending-card-${runId}-${proposal.id}`} accessibilityRole="button"
+    accessibilityLabel={`核對：${proposalPrimaryText(proposal)}；${proposalContextLabel(proposal)}；${proposal.scope === "family" ? "家庭共享" : "本人"}；${status}`}
     accessibilityState={{ disabled }} aria-disabled={disabled} disabled={readFocus.nativeDisabled} onPress={() => { if (!disabled) onPress(); }}
-    onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)}
-    style={({ pressed }) => [styles.proposalCard, hovered && !disabled && styles.cardHighlighted, focused && styles.cardFocused, pressed && !disabled && styles.cardHighlighted, disabled && !readFocus.preserveWebFocus && styles.cardDisabled]}>
-    <View style={styles.cardLabels}><Text style={[styles.meta, styles.cardKind]}>{proposalContextLabel(proposal)}</Text><AppStatusBadge label={status} tone="warning" /></View>
-    <Text numberOfLines={3} style={styles.cardContent}>{proposalPrimaryText(proposal)}</Text>
-    <View style={styles.cardMeta}><AppIcon name={proposal.scope === "family" ? "account-group-outline" : "lock-outline"} size={14} /><Text style={[styles.meta, styles.cardTime]}>{proposal.scope === "family" ? "家庭共享" : "本人"} · 開啟原提案核對</Text><AppIcon name="arrow-right" size={16} /></View>
-  </Pressable>;
+    title={proposalPrimaryText(proposal)} titleNumberOfLines={3} titleStyle={styles.pendingTitle}
+    description={`${proposalContextLabel(proposal)} · ${proposal.scope === "family" ? "家庭共享" : "本人"} · ${status}`} descriptionNumberOfLines={3} descriptionStyle={styles.meta}
+    onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+    style={focused ? [styles.pendingRow, styles.pendingFocused] : styles.pendingRow} containerStyle={styles.pendingRowContent} />;
 }
 
 export function AgentPendingReview() {
@@ -128,52 +116,37 @@ export function AgentPendingReview() {
   </View>;
 }
 
-function CareWorkspace({ initialKind, initialRecordId }: { initialKind?: CareKind; initialRecordId?: string }) {
+function CareWorkspace({ navigation }: { navigation: CareRoutePort }) {
   const workspace = useCareWorkspace(), recovery = useProductionCareProfile();
   const { agentPending, online } = useProduction();
   const env = useDomainEnvironment(), externalLocked = !env.canStartWrite();
-  const router = useRouter(), navigate = usePreviewNavigation(), initialized = useRef(""), manualCreateTrigger = useRef<View>(null);
-  useEffect(() => {
-    if (!workspace) { initialized.current = ""; return; }
-    if (recovery?.pending || initialKind && (!workspace.model.online || workspace.model.access !== "editable" || externalLocked)) return;
-    if (initialRecordId && ["loading", "loading_more"].includes(workspace.model.list.state)) return;
-    const key = workspace.scopeKey + ":" + (initialKind ?? "") + ":" + (initialRecordId ?? "");
-    if (initialized.current === key) return;
-    initialized.current = key;
-    if (initialRecordId) workspace.actions.openRecord(initialRecordId);
-    else if (initialKind) workspace.actions.startCreate(initialKind);
-  }, [workspace?.scopeKey, workspace?.model.list.state, workspace?.model.online, workspace?.model.access, recovery?.pending, externalLocked, initialKind, initialRecordId]);
-  if (!workspace) return <PageFrame title="核對" density="compact"><ReadStateNotice state="loading" message="正在讀取記錄…" /></PageFrame>;
-  const { model, actions } = workspace, panelOpen = !!model.detail || !!model.draft || !!model.deletion;
-  return <CareRecordsView manualCreateFocusRef={manualCreateTrigger} model={model} actions={actions} initialRecordId={model.detail?.record.id ?? initialRecordId}
-    manualCreateAction={!panelOpen && model.access === "editable" ? <CareCreateButton buttonRef={manualCreateTrigger} disabled={!model.online || !!recovery?.pending || externalLocked} onPress={() => actions.startCreate()} /> : undefined}
-    onReviewHistory={() => navigate(() => router.push("/history?category=review"))}
-    onOlderPending={() => navigate(() => router.push("/history?category=review&status=pending&older=1"))}
+  const manualCreateTrigger = useRef<View>(null);
+  if (!workspace) return <PageFrame title="記低" density="compact"><ReadStateNotice state="loading" message="正在讀取記錄…" /></PageFrame>;
+  const model = navigation.model!, actions = navigation.actions!;
+  return <CareRecordsView manualCreateFocusRef={manualCreateTrigger} model={model} actions={actions} navigation={navigation}
+    manualCreateAction={model.access === "editable" ? <AppButton ref={manualCreateTrigger} label="手動新增" accessibilityLabel="手動新增共享記錄"
+      variant={model.detail ? "quiet" : "primary"} disabled={!model.online || !!recovery?.pending || externalLocked || !!model.draft || !!model.deletion} onPress={() => actions.startCreate()} /> : undefined}
     pendingReview={{ content: <AgentPendingReview />, loadedCount: online && (agentPending.state === "ready" || agentPending.state === "loading" && agentPending.hasSnapshot) ? `${agentPending.entries.filter(confirmablePending).length}${agentPending.nextCursor ? "+" : ""}` : undefined }} />;
 }
 
 export default function CarePage() {
-  const pathname = usePathname(), { model, actions, scopeKey } = useProduction();
-  const { compose, view, record, recordId } = useLocalSearchParams<{ compose?: string; view?: string | string[]; record?: string; recordId?: string }>();
-  const requestedView = Array.isArray(view) ? view[0] : view;
-  const initialKind = careKindOptions.find(item => item.value === compose)?.value;
+  const pathname = usePathname(), { model, actions, scopeKey, owner } = useProduction();
+  const workspace = useCareWorkspace(), recovery = useProductionCareProfile(), env = useDomainEnvironment();
+  const navigation = useCareRoute(workspace, !!recovery?.pending, env.canStartWrite()), route = navigation.state;
   const child = model.children.find(item => item.id === model.selectedChildId);
-  const router = useRouter(), navigate = usePreviewNavigation();
+  const navigate = useGuardedRoute(scopeKey, owner);
   if (pathname !== "/care") return null;
-  if (child && requestedView === "photos") return <PhotoWorkspace key={scopeKey ?? "no-child"} capturePreferred={false} onCare={() => navigate(() => router.push("/care"))} />;
-  const initialRecordId = typeof recordId === "string" ? recordId : typeof record === "string" ? record : undefined;
-  return child && scopeKey ? <CareWorkspace key={scopeKey} initialKind={initialKind} initialRecordId={initialRecordId} />
-    : <PageFrame density="compact" title="核對" description="選擇有權查看的孩子，再核對 Agent 整理的內容。"><SectionCard><Text>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
+  if (child && route.tab === "photos") return <PhotoWorkspace key={scopeKey ?? "no-child"} capturePreferred={false} onCare={() => navigate({ pathname: "/care", params: { tab: "records" } }, "push", "navigation")} />;
+  return child && scopeKey ? <CareWorkspace key={scopeKey} navigation={navigation} />
+    : <PageFrame density="compact" title="記低" description="選擇有權查看的孩子，再核對 Agent 整理的內容。"><SectionCard><Text>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }
 
 const styles = StyleSheet.create({
-  manualCreate: { minHeight: 48, minWidth: 64, paddingHorizontal: spacing.xs, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.controlOutline, borderRadius: radius.small },
-  manualCreateLabel: { fontFamily: chineseFont, fontSize: 14, lineHeight: 20, fontWeight: "700", color: colors.ink }, manualCreateFocused: { borderColor: colors.ink },
   resultDialog: { maxWidth: 860 }, resultScroll: { paddingHorizontal: 0, flexShrink: 1 }, resultContent: { padding: spacing.lg, gap: spacing.md },
-  pendingList: { gap: spacing.md, minWidth: 0 }, cardGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, minWidth: 0 },
-  proposalCard: { flexGrow: 1, flexBasis: 300, minWidth: 0, gap: spacing.sm, padding: spacing.lg, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, backgroundColor: colors.white },
-  cardLabels: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: spacing.sm }, cardKind: { flex: 1, minWidth: 0 },
-  cardContent: { fontFamily: chineseFont, ...readingType.body, color: colors.ink, minWidth: 0 },
-  cardMeta: { flexDirection: "row", gap: spacing.sm, alignItems: "center" }, cardTime: { flex: 1 }, meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted, minWidth: 0, flexShrink: 1 },
-  cardHighlighted: { backgroundColor: colors.paleTeal }, cardFocused: { borderColor: colors.ink, borderWidth: 2 }, cardDisabled: { opacity: 0.6 },
+  pendingList: { gap: spacing.md, minWidth: 0 }, cardGrid: { gap: 0, minWidth: 0 },
+  pendingRow: { minHeight: 64, minWidth: 0, borderBottomWidth: 1, borderBottomColor: colors.line, borderRadius: 0 },
+  pendingFocused: { outlineWidth: 3, outlineStyle: "solid", outlineColor: colors.ink },
+  pendingRowContent: { paddingVertical: spacing.md, paddingHorizontal: 0 },
+  pendingTitle: { fontFamily: chineseFont, ...readingType.body, color: colors.ink },
+  meta: { fontFamily: chineseFont, ...readingType.body, color: colors.muted, minWidth: 0, flexShrink: 1 },
 });

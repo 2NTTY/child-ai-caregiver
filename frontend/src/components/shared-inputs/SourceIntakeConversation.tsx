@@ -14,9 +14,9 @@ export function SourceIntakeConversation({ model, actions }: { model: SourcesVie
     const locked = !model.fresh || !source.canManage || model.access !== "editable" || !!model.direct;
     const enabled = source.management?.enabled !== false;
     return <SectionCard surface="plain" style={s.workflowSection} testID="source-intake-conversation">
-      <SectionHeader density="compact" title="整理這份私人來源" subtitle="先查看保存原文，再核對用途及摘錄授權。" icon="star-four-points" />
+      <SectionHeader density="compact" headingLevel={3} title="用途與使用授權" />
       <Text selectable style={s.body}>你的說明：{source.management?.intention || intake.intention || "用途尚未設定。"}</Text>
-      <Text style={s.meta}>{source.text.trim() ? `已保存 ${source.text.length.toLocaleString("en-HK")} 字原文，可在下方查看。` : "連結已保存，尚未取得正文。"}</Text>
+      <Text style={s.meta}>{source.text.trim() ? `已保存 ${source.text.length.toLocaleString("en-HK")} 字原文。` : "連結已保存，尚未取得正文。"}</Text>
       {!enabled ? <Text style={s.warning}>來源已停用；重新啟用並保存後才可讀取或提取。</Text> : null}
       {intake.stage === "awaiting_read" || intake.stage === "unavailable" ? <AppButton label="查看保存狀態並整理用途" variant="secondary" disabled={locked || !enabled} onPress={adapter.read} /> : null}
       {intake.stage === "clarifying" ? <><Text style={s.body}>請填寫用途、來源性質及時效。</Text><AppButton label="填寫來源設定" disabled={locked} onPress={adapter.propose} /></> : null}

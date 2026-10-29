@@ -1,3 +1,4 @@
+import type { OwnerReadRouteRequest } from "../navigation/owner-read-route";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "expo-router";
 import { createSharedInputApi, SharedInputApiError, type SharedInputWriteResult } from "../../../src/client/shared-input-api";
@@ -237,6 +238,38 @@ export function usePhotoInputSources() {
       if (current()) { finishDirect(attempt, next); envRef.current.invalidate(); }
     }, kind);
   }
+  function openInput(item: SourceInput, route?: OwnerReadRouteRequest) {
+    // Reselecting the current row must not replace either of its local drafts.
+    if (!current() || route && !route.isCurrent()) return;
+    if (ref.current.selected?.id === item.id) { route?.onAccepted(); return; }
+    if (!canRead()) { route?.onRejected?.(ref.current.selected?.id ?? null); return; }
+    navigate(() => {
+      // Approval can arrive after a write, access change, or newer selection.
+      if (!current() || route && !route.isCurrent()) return;
+      if (ref.current.selected?.id === item.id) { route?.onAccepted(); return; }
+      if (!canRead()) { route?.onRejected?.(ref.current.selected?.id ?? null); return; }
+      void run(async signal => {
+        const next = await readResource(item.id, signal, () => api.input(envRef.current.childId!, item.id, signal, envRef.current.userId!));
+        if (!current() || !next || route && !route.isCurrent()) return;
+        clearEditor(); put(next); update({ excerpt: initialExcerpt(next), operation: noOperation(), load: "ready" });
+        syncManagement(next);
+        if (!next.recordId && (next.fetchState === "unknown" || next.fetchState === "running" || next.extraction.state === "unknown" || next.extraction.state === "running")) {
+          const kind = next.fetchState === "unknown" || next.fetchState === "running" ? "fetch" : "extract";
+          update({ direct: { kind, basis: next, excerpt: next.extraction.excerpt ?? "", checked: false } }); op(kind, "unknown", "這項輸入有未查明處理。先查核同一輸入，不會開始新的取得或提取。");
+        }
+        route?.onAccepted();
+      });
+    }, "navigation", [], () => { if (current() && route?.isCurrent()) route.onRejected?.(ref.current.selected?.id ?? null); });
+  }
+  function beginInput(mode: "new" | "recreate", route?: OwnerReadRouteRequest) {
+    if (!canRead() || !editable() || route && !route.isCurrent()) return;
+    const seed = ref.current.selected;
+    if (mode === "recreate" && (!ref.current.canCreate || seed?.kind !== "personal_source")) return;
+    clearEditor();
+    update(mode === "recreate" ? { composerSeed: seed, operation: noOperation(), notice: "原來源仍保留。請自行貼上正文，保存後會建立另一項私人來源。" }
+      : { operation: noOperation(), notice: "" });
+    route?.onAccepted(null);
+  }
   const actions: SourcesActions = {
     discardDraft(kind) {
       const value = ref.current;
@@ -301,26 +334,9 @@ export function usePhotoInputSources() {
     create: input => { if (!model.fresh || !model.canChoose || !model.canCreate || state.selected || !sharedInputCreateSchema.safeParse(input).success || input.kind === "public_source" && !state.sources.some(source => source.id === input.sourceId) || !envRef.current.canStartWrite()) return;
       const entry: PendingSource = { kind: "create", input: { ...input }, checked: false, confirmed: false };
       void run(signal => sendWrite(entry, signal), "create"); },
-    openInput: item => {
-      // Reselecting the current row must not replace either of its local drafts.
-      if (ref.current.selected?.id === item.id || !canRead()) return;
-      navigate(() => {
-        // Approval can arrive after a write, access change, or newer selection.
-        if (ref.current.selected?.id === item.id || !canRead()) return;
-        void run(async signal => {
-          const next = await readResource(item.id, signal, () => api.input(envRef.current.childId!, item.id, signal, envRef.current.userId!)); if (!current() || !next) return;
-          clearEditor(); put(next); update({ excerpt: initialExcerpt(next), operation: noOperation(), load: "ready" });
-          syncManagement(next);
-          if (!next.recordId && (next.fetchState === "unknown" || next.fetchState === "running" || next.extraction.state === "unknown" || next.extraction.state === "running")) {
-            const kind = next.fetchState === "unknown" || next.fetchState === "running" ? "fetch" : "extract";
-            update({ direct: { kind, basis: next, excerpt: next.extraction.excerpt ?? "", checked: false } }); op(kind, "unknown", "這項輸入有未查明處理。先查核同一輸入，不會開始新的取得或提取。");
-          }
-        });
-      });
-    },
-    newInput: () => { if (model.canChoose) { clearEditor(); update({ operation: noOperation(), notice: "" }); } },
-    recreateWithText: () => { if (!model.canChoose || !state.canCreate || selected?.kind !== "personal_source") return; const seed = selected;
-      clearEditor(); update({ composerSeed: seed, operation: noOperation(), notice: "原來源仍保留。請自行貼上正文，保存後會建立另一項私人來源。" }); },
+    openInput: item => openInput(item),
+    newInput: () => beginInput("new"),
+    recreateWithText: () => beginInput("recreate"),
     setFetchConsent: fetchConsent => { if (isFresh && managed && (!state.direct || state.direct.checked && state.direct.kind === "fetch")) update({ fetchConsent }); },
     fetchContent: () => startDirect("fetch"),
     setExcerpt: excerpt => { if (!formLocked && !state.direct) update({ excerpt, ...consentReset }); },
@@ -361,5 +377,7 @@ export function usePhotoInputSources() {
     setDeleteScope: deleteScope => update({ deleteScope, deleteFinal: false }), setDeleteFinal: deleteFinal => update({ deleteFinal }),
     remove: () => { if (model.canDelete && state.deleteScope && state.deleteFinal && selected && envRef.current.canStartWrite()) void run(signal => sendWrite({ kind: "delete", basis: selected, checked: false, confirmed: false }, signal), "delete"); },
   };
-  return { model, actions, pending };
+  return { model, actions, pending, openForRoute: openInput, beginForRoute: beginInput, returnForRoute(request: OwnerReadRouteRequest) {
+    if (current() && request.isCurrent() && !ref.current.busy && !ref.current.pending && !ref.current.direct) request.onAccepted();
+  } };
 }

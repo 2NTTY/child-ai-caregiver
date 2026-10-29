@@ -1,13 +1,13 @@
 import type { ComponentProps } from "react";
 import { StyleSheet } from "react-native";
 import { SectionCard } from "../ui";
-import { colors, spacing } from "../../theme";
+import { spacing } from "../../theme";
 
 /** Settings form groups share one reading surface and a clear section boundary. */
 export function SettingsSection({ style, ...props }: ComponentProps<typeof SectionCard>) {
-  return <SectionCard {...props} surface="regular" style={[styles.section, style]} />;
+  return <SectionCard {...props} surface="plain" style={[styles.section, style]} />;
 }
 
 const styles = StyleSheet.create({
-  section: { width: "100%", minWidth: 0, borderWidth: 1, borderColor: colors.line, padding: spacing.xl, gap: spacing.lg },
+  section: { width: "100%", minWidth: 0, borderWidth: 0, padding: 0, gap: spacing.lg },
 });

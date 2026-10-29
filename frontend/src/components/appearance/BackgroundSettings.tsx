@@ -40,8 +40,8 @@ const styles = StyleSheet.create({
   readingSurface: { backgroundColor: colors.canvas, padding: spacing.md, borderRadius: radius.small, gap: spacing.sm },
   previewLine: { height: 4, width: "65%", backgroundColor: colors.softLine, borderRadius: 2 },
   heading: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "800" },
-  body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
+  body: { fontFamily: chineseFont, color: colors.muted, ...readingType.body },
   actions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
-  note: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
-  error: { fontFamily: chineseFont, color: colors.errorInk, ...readingType.tool },
+  note: { fontFamily: chineseFont, color: colors.muted, ...readingType.body },
+  error: { fontFamily: chineseFont, color: colors.errorInk, ...readingType.body },
 });

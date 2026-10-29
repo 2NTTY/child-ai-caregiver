@@ -460,13 +460,14 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     createDocument, refresh() { refresh(); }, markDraft() { if (!editingLocked && runtime.live()) setDirty(true); },
     discardDraft() {
       const entry = original.current;
-      if (!runtime.live() || entry?.attempt.kind === "create" && !entry.reconfirm) return;
+      if (!runtime.live() || entry?.attempt.kind === "create" && !entry.reconfirm) return false;
       // Only a definitely rejected request may be forgotten. Unknown writes keep their exact original.
       if (entry?.reconfirm) {
         api.reset(); original.current = null; setPending(null);
         setOperation({ state: "none", message: "", reference: null }); setNotice("");
       }
       setDirty(false); setCreateDraft(null); setEpoch(value => value + 1); if (refreshQueued) refresh();
+      return true;
     },
   }, recovery };
   const { standard, reportDocumentIds, archive: projectedArchive } = projectFamilyDocumentArchive({ page, load, lost: runtime.lost, scopeKey: env.scopeKey, childId: env.childId! });

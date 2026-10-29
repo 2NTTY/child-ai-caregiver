@@ -1,6 +1,5 @@
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
-import { SectionCard, SectionHeader } from "../ui";
 import { profileAgeUnitOptions, type ProfileDataView, type ProfileRevisionView } from "../../profile-view-model";
 import { chineseFont, colors, spacing, typeScale , readingType } from "../../theme";
 
@@ -41,12 +40,12 @@ export function ProfileRevisionSummary({ revision }: { revision: ProfileRevision
     <Text style={styles.version}>版本 {revision.version}</Text>
     <ProfileDataSummary data={revision.data} />
     <Text style={styles.meta}>確認人：{revision.confirmedByLabel ?? "未知"}；確認時間：{revision.confirmedAtLabel ?? "未知"}</Text>
-    <Text style={styles.meta}>確認／更正原因：{revision.reason ?? "尚未確認"}</Text>
+    <Text style={styles.body}>確認／更正原因：{revision.reason ?? "尚未確認"}</Text>
   </View>;
 }
 
 /** Read-only projection; the complete confirmation and conflict summaries stay unchanged. */
-export function ProfileReadingSummary({ data, compact }: { data: ProfileDataView; compact: boolean }) {
+export function ProfileReadingSummary({ data }: { data: ProfileDataView }) {
   const age = data.age;
   const ageLabel = age.kind === "unknown" ? null : age.kind === "birth_date" ? `出生日期 ${age.date}`
     : `約 ${age.rawValue} ${profileAgeUnitOptions.find(item => item.value === age.unit)?.label ?? age.unit}（截至 ${age.asOf}）`;
@@ -58,21 +57,22 @@ export function ProfileReadingSummary({ data, compact }: { data: ProfileDataView
     { title: "健康與照顧", rows: [
       { label: "過敏資料", value: data.allergies }, { label: "特別需要", value: data.specialNeeds }, { label: "照顧偏好", value: data.preferences },
     ] },
+    { title: "資料依據", rows: [
+      { label: "資料來源", value: data.source }, { label: "資料有效至", value: data.validUntil },
+    ] },
   ];
-  return <View testID="profile-reading-groups" style={[styles.groups, compact && styles.groupsStacked]}>{[groups[1], groups[0]].map(group => {
+  return <View testID="profile-reading-groups" style={styles.groups}>{[groups[1], groups[0], groups[2]].map(group => {
     const known = group.rows.filter(row => row.value !== null), unknown = group.rows.filter(row => row.value === null);
-    return <SectionCard key={group.title} style={[styles.group, compact && styles.groupFull]}>
-      <SectionHeader density="compact" title={group.title} />
-      {known.map(row => <View key={row.label} style={styles.readingFact}><Text style={styles.readingLabel}>{row.label}</Text><Text style={styles.body}>{row.value}</Text></View>)}
-      {unknown.length ? <View style={styles.unknownDivider}><Text style={styles.readingLabel}>仍待補充</Text>{unknown.map(row => <Text key={row.label} style={styles.meta}>{row.label} · 未知</Text>)}</View> : null}
-    </SectionCard>;
+    return <View key={group.title} testID="profile-reading-group" style={styles.group}>
+      <Text accessibilityRole="header" aria-level={3} style={styles.groupTitle}>{group.title}</Text>
+      {known.map(row => <View key={row.label} style={styles.readingFact}><Text style={styles.readingLabel}>{row.label}</Text><Text selectable style={styles.body}>{row.value}</Text></View>)}
+      {unknown.length ? <View style={[styles.unknowns, known.length > 0 && styles.unknownDivider]}>{unknown.map(row => <Text key={row.label} style={styles.unknown}>{row.label} · 未知</Text>)}</View> : null}
+    </View>;
   })}</View>;
 }
 
 export function ProfileRevisionDetails({ revision }: { revision: ProfileRevisionView }) {
   const rows = [
-    { label: "版本", value: String(revision.version) }, { label: "資料來源", value: revision.data?.source ?? "未知" },
-    { label: "資料有效至", value: revision.data?.validUntil ?? "未知" },
     { label: "確認人", value: revision.confirmedByLabel ?? "未知" }, { label: "確認時間", value: revision.confirmedAtLabel ?? "未知" },
     { label: "確認／更正原因", value: revision.reason ?? "尚未確認" },
   ];
@@ -81,12 +81,13 @@ export function ProfileRevisionDetails({ revision }: { revision: ProfileRevision
   </View>)}</View>;
 }
 const styles = StyleSheet.create({
-  groups: { flexDirection: "row", alignItems: "stretch", gap: spacing.lg, minWidth: 0 },
-  groupsStacked: { flexDirection: "column" },
-  group: { flex: 1, minWidth: 0, gap: spacing.md },
-  groupFull: { flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: "auto", width: "100%" },
+  groups: { flexDirection: "column", gap: spacing.xl, minWidth: 0 },
+  group: { minWidth: 0, gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.lg },
+  groupTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 20, lineHeight: 30, fontWeight: "700" },
+  unknown: { fontFamily: chineseFont, color: colors.muted, ...readingType.body },
   readingFact: { gap: spacing.xs, minWidth: 0 },
   readingLabel: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
+  unknowns: { gap: spacing.xs },
   unknownDivider: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
   keyFacts: { flexDirection: "row", flexWrap: "wrap", gap: spacing.lg },
   keyFact: { flex: 1, flexBasis: 160, minWidth: 0, gap: spacing.xs, borderLeftWidth: 2, borderLeftColor: colors.line, paddingLeft: spacing.md },
@@ -94,7 +95,7 @@ const styles = StyleSheet.create({
   rows: { gap: spacing.sm, minWidth: 0 }, row: { flexDirection: "row", flexWrap: "wrap", columnGap: spacing.md, rowGap: spacing.xs, minWidth: 0, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingBottom: spacing.sm },
   value: { flex: 1, minWidth: 120 },
   label: { width: 100, fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 18, fontWeight: "700" },
-  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, flexShrink: 1 },
+  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, flexShrink: 1 },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   version: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.tool, fontWeight: "700" },
 });

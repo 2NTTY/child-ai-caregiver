@@ -1,3 +1,4 @@
+import { parseCareRoute, type RouteParams } from "../navigation/route-state";
 import type { RecordsState } from "../../../src/client/records-controller";
 
 export type StartupReadiness = "loading" | "ready" | "error";
@@ -21,11 +22,12 @@ export function productionStartupReadiness(state: Pick<RecordsState, "auth" | "o
   return route;
 }
 
-type StartupRouteParams = { tab?: string; category?: string; section?: string; view?: string; taskId?: string; recordId?: string };
+type StartupRouteParams = RouteParams;
 
 export function routeStartupRequirements(pathname: string, params: StartupRouteParams, hasChild = true, includeShell = false): readonly string[] {
+  const care = parseCareRoute(params);
   const requirements: Record<string, readonly string[]> = {
-    "/": ["profile", "care", "tasks", "growth"], "/chat": ["chat", "agentPending"], "/care": params.view === "photos" ? ["photos"] : ["care", "agentPending", ...(params.recordId ? ["careDetail"] : [])], "/profile": ["profile"],
+    "/": ["profile", "care", "tasks", "growth"], "/chat": ["chat", "agentPending"], "/care": care.tab === "photos" ? ["photos"] : ["care", "agentPending", ...(care.recordId ? ["careDetail"] : [])], "/profile": ["profile"],
     "/tasks": ["tasks", ...(params.taskId ? ["taskDetail"] : [])], "/growth": params.tab === "preparation" ? ["documents"] : params.tab === "archive" ? ["growth", "documents"] : ["growth"], "/memory": ["memory"], "/history": params.category === "profile" ? ["profile"] : params.category === "preparations" ? ["documents"] : params.category === "growth" ? ["growth"] : params.category === "care" || params.category === "review" ? ["care"] : params.category === "conversations" ? ["conversations"] : params.category === "notifications" ? ["notifications"] : ["tasks"],
     "/photos": ["photos"], "/sources": ["sources"], "/family": ["family"], "/contact": ["contact"],
     "/summary": params.tab === "preparation" ? ["documents"] : params.tab === "archive" ? ["growth", "documents"] : ["profile", "summary"],

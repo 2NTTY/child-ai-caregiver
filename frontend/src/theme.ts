@@ -2,15 +2,15 @@ import { Platform } from "react-native";
 import { MD3LightTheme, configureFonts } from "react-native-paper";
 
 export const colors = {
-  // Care Workspace: accessible Swiss typography, calm blue actions, warm neutral canvas.
-  ink: "#182C45", teal: "#2557CA", deepTeal: "#183E91", paper: "#FFFFFF", canvas: "#F4F6FA",
-  sage: "#DCE7FC", paleTeal: "#EDF2FE", accent: "#F2BD67", onAccent: "#182C45",
+  // Care Workspace: a quiet task workbench with deep teal actions and readable local CJK typography.
+  ink: "#173534", teal: "#166B63", deepTeal: "#104E49", paper: "#FFFFFF", canvas: "#F5F7F5",
+  sage: "#DCEEE7", paleTeal: "#EAF4EF", accent: "#F2BD67", onAccent: "#173534",
   amber: "#916000", paleAmber: "#FFF5DF", coral: "#C1293D", paleCoral: "#FFF0F2", errorInk: "#B42337",
-  white: "#FFFFFF", muted: "#526176", line: "#CAD3E1", softLine: "#E0E6EF", controlOutline: "#73839A",
-  controlSurface: "#FFFFFF", neutralSurface: "#F4F6FA", sidebar: "#F9FAFC", selectedNav: "#DCE7FC",
-  quietSurface: "#F1F5FC", mintSurface: "#EDF2FE", previewSurface: "#F4F6FA",
-  pressedOverlay: "rgba(24, 44, 69, 0.08)", accentPressed: "#E5A847", inkPressed: "#102239",
-  selectedPressed: "#C7D8F7", warningPressed: "#F4E6C8", darkActionRipple: "rgba(0, 0, 0, 0.12)",
+  white: "#FFFFFF", muted: "#526761", line: "#C8D7CF", softLine: "#DFE7E2", controlOutline: "#708A7C",
+  controlSurface: "#FFFFFF", neutralSurface: "#F5F7F5", sidebar: "#FFFFFF", selectedNav: "#DCEEE7",
+  quietSurface: "#F0F5F2", mintSurface: "#EAF4EF", previewSurface: "#F5F7F5",
+  pressedOverlay: "rgba(24, 44, 69, 0.08)", accentPressed: "#E5A847", inkPressed: "#102D2B",
+  selectedPressed: "#D2E7DC", warningPressed: "#F4E6C8", darkActionRipple: "rgba(0, 0, 0, 0.12)",
   statusWarm: "#FFF5DF", statusUnknown: "#FFF5DF", statusWarmLine: "#916000", statusUnknownLine: "#916000",
   statusFailedLine: "#B42337", warningInk: "#79520B", overlay: "rgba(16, 34, 57, 0.36)",
 } as const;
@@ -22,13 +22,13 @@ export const readingLayout = { maxWidth: 880, compactInset: 16, wideInset: 24 } 
 export const readingType = {
   body: { fontSize: 16, lineHeight: 26 },
   tool: { fontSize: 14, lineHeight: 22 },
-  meta: { fontSize: 12, lineHeight: 18 },
+  meta: { fontSize: 13, lineHeight: 20 },
 } as const;
 export const workspaceType = {
   title: { fontSize: 24, lineHeight: 32, fontWeight: "700" as const },
-  section: { fontSize: 16, lineHeight: 24, fontWeight: "700" as const },
-  row: { fontSize: 14, lineHeight: 20 },
-  meta: { fontSize: 12, lineHeight: 18 },
+  section: { fontSize: 18, lineHeight: 28, fontWeight: "700" as const },
+  row: { fontSize: 16, lineHeight: 26 },
+  meta: { fontSize: 13, lineHeight: 20 },
 } as const;
 export const iconTokens = { strokeWidth: 1.8, small: 18, navigation: 22, feature: 28 } as const;
 // Mobile sizes are logical units. Text retains the platform's font scaling and intrinsic height.
@@ -40,12 +40,12 @@ export const mobileLayout = {
 export const mobileIcons = { inline: 16, content: 20, navigation: 22, primary: 24 } as const;
 export const mobileType = {
   heading: { fontSize: 22, lineHeight: 28 },
-  sectionTitle: { fontSize: 16, lineHeight: 24 },
+  sectionTitle: { fontSize: 18, lineHeight: 28 },
   itemTitle: { fontSize: 14, lineHeight: 20 },
   body: { fontSize: 16, lineHeight: 24 },
   bodyLarge: { fontSize: 16, lineHeight: 24 },
   label: { fontSize: 12, lineHeight: 16 },
-  caption: { fontSize: 12, lineHeight: 16 },
+  caption: { fontSize: 13, lineHeight: 20 },
 } as const;
 export const chineseFont = Platform.select({ web: "Inter, -apple-system, BlinkMacSystemFont, 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif", default: undefined });
 

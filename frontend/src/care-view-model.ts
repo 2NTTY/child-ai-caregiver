@@ -267,9 +267,11 @@ export interface CareRecordsActions {
   search(query: string, kind: CareFilter): void;
   loadMore(): void;
   previousPage?(): void;
+  /** Presentation recovery can reuse only cursors already held by this owner. */
+  readPageForRoute?(index: number): Promise<boolean>;
   openRecord(id: string): void;
-  closePanel(): void;
-  startCreate(kind?: CareKind): void;
+  closePanel(): boolean | void;
+  startCreate(kind?: CareKind): boolean | void;
   reviewCapture?(id: string, expectedVersion: number, expectedSourceVersion: string): void;
   confirmCapture?(id: string, expectedVersion: number, expectedSourceVersion: string): void;
   confirmImportantRecord?(id: string, expectedVersion: number, expectedSourceVersion: string, recordId: string, recordVersion: number, expectedScopeKey: string): void;

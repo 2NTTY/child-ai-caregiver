@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import type { CareRecordsActions, CareRecordsViewModel } from "../../care-view-model";
-import { chineseFont, colors, radius, spacing, typeScale } from "../../theme";
+import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppButton, SectionCard, SectionHeader } from "../ui";
 import { CareRevisionContent } from "./CareRecordDetail";
@@ -23,5 +23,5 @@ export function CareRecordDelete({ model, actions }: { model: CareRecordsViewMod
   </SectionCard>;
 }
 const styles = StyleSheet.create({ review: { gap: spacing.md, padding: spacing.md, borderRadius: radius.small, backgroundColor: colors.paleCoral },
-  body: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23 }, meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
-  label: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "700" } });
+  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.body }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.body },
+  label: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, fontWeight: "700" } });

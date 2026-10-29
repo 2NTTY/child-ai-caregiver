@@ -60,10 +60,10 @@ export function TaskWorkerMetadata({ task, model, announce = true }: { task: Tas
       <Text style={styles.body}>{taskWorkLabels[metadata.work.status]}（{metadata.work.status}）· 版本 {metadata.work.taskVersion}</Text>
       <Text style={styles.meta}>排定檢查：{taskDisplayTime(metadata.work.nextAt, task.occurrence.timeZone)}；失敗次數：{metadata.work.failures}</Text>
       {metadata.work.status === "unknown" ? <Text style={styles.warning}>處理結果未知，不能自動重做。任務仍須另行回報完成。</Text> : null}
-      {metadata.work.status === "processed" ? <Text style={styles.meta}>已處理不代表外部通知送達、已讀或照護完成。</Text> : null}
-    </> : <Text style={styles.meta}>未提供這個版本的背景處理紀錄。</Text>}
+      {metadata.work.status === "processed" ? <Text style={styles.body}>已處理不代表外部通知送達、已讀或照護完成。</Text> : null}
+    </> : <Text style={styles.body}>未提供這個版本的背景處理紀錄。</Text>}
     {metadata.reminders.map(item => <Text key={item.id} style={styles.meta}>本人站內提醒 · {item.phase === "initial" ? "初次（initial）" : "一次跟進（follow_up）"}：{taskDisplayTime(item.createdAt, task.occurrence.timeZone)}</Text>)}
-    {metadata.reminders.length === 0 ? <Text style={styles.meta}>這個版本沒有可見的本人站內提醒。</Text> : null}
+    {metadata.reminders.length === 0 ? <Text style={styles.body}>這個版本沒有可見的本人站內提醒。</Text> : null}
   </View>;
 }
 export function TaskDraftSummary({ mode, values, assignees }: { mode: TaskDraftMode; values: TaskFormValues; assignees: TaskAssigneeView[] }) {
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   reading: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool, flexShrink: 1 },
-  warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool },
+  warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.body },
   label: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, fontWeight: "700" },
   related: { gap: spacing.lg, minWidth: 0 },
   metadata: { paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.line, gap: spacing.sm, minWidth: 0 },

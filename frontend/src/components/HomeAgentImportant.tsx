@@ -1,3 +1,5 @@
+import { RouteTextLink } from "./RouteTextLink";
+import { homeTargetHref } from "../home-target";
 import { AppStatusBadge } from "./AppStatusBadge";
 import { useId, useState } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
@@ -6,7 +8,7 @@ import type { HomeActions, HomeViewModel } from "../view-model";
 import { homeAgentScope } from "../home-agent-entry";
 import { selectHomeAgentImportant, type HomeAgentImportantItem } from "../home-overview";
 import { chineseFont, colors, radius, readingType, spacing } from "../theme";
-import { AppButton, TextLink } from "./ui";
+import { AppButton } from "./ui";
 import { AppIcon } from "./AppIcon";
 import { OperationNotice } from "./OperationNotice";
 import { ReadStateNotice } from "./ReadStateNotice";
@@ -20,7 +22,7 @@ function ImportantStatus({ item }: { item: HomeAgentImportantItem }) {
   return <AppStatusBadge label={importantStatusLabel(item)}
     tone={item.source.status === "unknown" || item.proposal?.status === "pending" ? "warning" : item.proposal?.status === "accepted" ? "success" : "info"} />;
 }
-function ImportantLead({ item, actions, synthetic, loadedAt }: { item: HomeAgentImportantItem; actions: HomeActions; synthetic?: boolean; loadedAt: string | null }) {
+function ImportantLead({ item, scopeKey, synthetic, loadedAt }: { item: HomeAgentImportantItem; scopeKey: string | null; synthetic?: boolean; loadedAt: string | null }) {
   const [expanded, setExpanded] = useState(false);
   const [focused, setFocused] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -33,7 +35,7 @@ function ImportantLead({ item, actions, synthetic, loadedAt }: { item: HomeAgent
       <Text style={styles.body}>{item.whyNow ?? item.detail}</Text>
     </View>
     <View style={styles.leadActions}>
-      <View style={styles.action}><AppButton label={item.action.label} onPress={() => actions.open(item.action.destination)} /></View>
+      <View style={styles.action}><RouteTextLink href={homeTargetHref(item.action.target)} scopeKey={scopeKey} label={item.action.label} /></View>
       <Pressable accessibilityRole="button" accessibilityLabel="為甚麼提醒我？" accessibilityState={{ expanded }} aria-expanded={expanded} aria-controls={sourceId}
         onPress={() => setExpanded(value => !value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
         onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)}
@@ -52,10 +54,9 @@ function ImportantLead({ item, actions, synthetic, loadedAt }: { item: HomeAgent
     </View>
   </View>;
 }
-function AdditionalReminder({ item, actions }: { item: HomeAgentImportantItem; actions: HomeActions }) {
-  return <Pressable testID={`home-agent-important-item-${item.id}`} accessibilityRole="button"
-    accessibilityLabel={`${importantStatusLabel(item)}，${item.title}，${item.action.label}`} accessibilityHint={[item.detail, item.sourceLabel].filter(Boolean).join("；")}
-    onPress={() => actions.open(item.action.destination)} style={({ pressed }) => [styles.additional, pressed && styles.pressed]}>
+function AdditionalReminder({ item, scopeKey }: { item: HomeAgentImportantItem; scopeKey: string | null }) {
+  return <RouteTextLink testID={`home-agent-important-item-${item.id}`} href={homeTargetHref(item.action.target)} scopeKey={scopeKey}
+    label={`${importantStatusLabel(item)}，${item.title}，${item.action.label}`} style={styles.additional}>
     <View style={styles.additionalCopy}>
       <ImportantStatus item={item} />
       <Text style={styles.rowTitle}>{item.title}</Text>
@@ -63,17 +64,17 @@ function AdditionalReminder({ item, actions }: { item: HomeAgentImportantItem; a
       {item.sourceLabel ? <Text style={styles.meta}>依據：{item.sourceLabel}</Text> : null}
       <Text style={styles.destination}>{item.action.label}</Text>
     </View><AppIcon name="chevron-right" size={20} importantForAccessibility="no" />
-  </Pressable>;
+  </RouteTextLink>;
 }
 
 // The owning adapter supplies authorized Agent items and their order. This view only navigates.
 export function HomeAgentImportant({ model, actions }: { model: HomeViewModel; actions: HomeActions }) {
   const section = selectHomeAgentImportant(model);
-  if (!section) return null;
   const operation = model.operation;
-  const loadedAt = timeLabel(section.loadedAt);
+  if (!section && operation.state === "none") return null;
+  const loadedAt = timeLabel(section?.loadedAt ?? null);
   // A loading snapshot can retain explicitly supplied, same-scope items and disclosure state.
-  const items = section.state === "ready" || section.state === "loading" ? section.items : [];
+  const items = section?.state === "ready" || section?.state === "loading" ? section.items : [];
   const lead = items[0];
   const remaining = items.slice(1, 3);
   return <View style={styles.stack}>
@@ -83,7 +84,7 @@ export function HomeAgentImportant({ model, actions }: { model: HomeViewModel; a
         {operation.state !== "saving" ? <AppButton label={operation.state === "unknown" ? "查核這次結果" : "查看原操作"} variant="secondary" onPress={actions.reviewOperation} /> : null}
       </OperationNotice>
     </View> : null}
-    <View testID="home-agent-important" style={styles.important}>
+    {section && section.state !== "unsupported" ? <View testID="home-agent-important" style={styles.important}>
       <View style={styles.heading}>
         <View style={styles.headingCopy}><AppIcon name="star-four-points" color={colors.teal} size={20} importantForAccessibility="no" /><Text accessibilityRole="header" {...(Platform.OS === "web" ? { "aria-level": 2 } : {})} style={styles.sectionTitle}>先看重要事項</Text></View>
         {lead && section.synthetic ? <Text style={styles.meta}>合成示例</Text> : null}
@@ -92,22 +93,22 @@ export function HomeAgentImportant({ model, actions }: { model: HomeViewModel; a
         message={section.detail ?? (section.state === "unavailable" ? "暫時無法顯示助手提醒" : section.state === "loading" ? "正在讀取助手提醒…"
           : section.state === "error" ? "暫時無法讀取助手提醒" : section.items.length ? undefined : "目前沒有助手提醒")}>
         {section.state === "error" ? <AppButton label="重新讀取提醒" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}
-        {section.state === "unavailable" ? <TextLink label="前往助手" onPress={() => actions.open("chat")} /> : null}
+        {section.state === "unavailable" ? <RouteTextLink href="/chat" scopeKey={model.scopeKey ?? null} label="前往助手" /> : null}
       </ReadStateNotice>
-      {lead ? <ImportantLead key={JSON.stringify([homeAgentScope(model), lead.id])} item={lead} actions={actions} synthetic={section.synthetic} loadedAt={loadedAt} /> : null}
-      {remaining.map(item => <AdditionalReminder key={item.id} item={item} actions={actions} />)}
-      {section.state === "ready" && section.items.length > 3 ? <View style={styles.more}><TextLink label={`另有 ${section.items.length - 3} 項，開啟助手查看`} onPress={() => actions.open("chat")} /></View> : null}
+      {lead ? <ImportantLead key={JSON.stringify([homeAgentScope(model), lead.id])} item={lead} scopeKey={model.scopeKey ?? null} synthetic={section.synthetic} loadedAt={loadedAt} /> : null}
+      {remaining.map(item => <AdditionalReminder key={item.id} item={item} scopeKey={model.scopeKey ?? null} />)}
+      {section.state === "ready" && section.items.length > 3 ? <View style={styles.more}><RouteTextLink href="/chat" scopeKey={model.scopeKey ?? null} label={`另有 ${section.items.length - 3} 項，開啟助手查看`} /></View> : null}
       {model.connection !== "online" && lead ? <Text style={styles.meta}>目前未連線，顯示較早的提醒</Text> : null}
-    </View>
+    </View> : null}
   </View>;
 }
 const styles = StyleSheet.create({
-  stack: { gap: spacing.lg }, important: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderTopWidth: 3, borderTopColor: colors.teal, padding: spacing.lg, gap: spacing.lg },
+  stack: { gap: spacing.lg }, important: { backgroundColor: colors.white, borderLeftWidth: 3, borderLeftColor: colors.teal, padding: spacing.lg, gap: spacing.lg },
   heading: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   headingCopy: { minWidth: 0, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 28, fontWeight: "700", flexShrink: 1 },
   lead: { minWidth: 0, gap: spacing.lg }, leadCopy: { gap: spacing.sm },
-  title: { fontFamily: chineseFont, color: colors.ink, fontSize: 22, lineHeight: 32, fontWeight: "700" },
+  title: { fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 28, fontWeight: "700" },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: 14, lineHeight: 22 },
   leadActions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },

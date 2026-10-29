@@ -289,10 +289,16 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     search(query, kind) { if (query.length <= 200 && !attempt.current && !careRef.current.draft && !careRef.current.deletion) void loadCare(query, kind); },
     loadMore() { if (nextCursor.current && !attempt.current) { const index = pageIndex.current + 1; pageCursors.current[index] = nextCursor.current; void loadCare(undefined, undefined, index); } },
     previousPage() { if (pageIndex.current > 0 && !attempt.current) void loadCare(undefined, undefined, pageIndex.current - 1); },
+    async readPageForRoute(index) {
+      if (!current() || !Number.isSafeInteger(index) || index < 0 || attempt.current || writing.current || careRef.current.draft || careRef.current.deletion) return false;
+      if (index === pageIndex.current + 1 && nextCursor.current) pageCursors.current[index] = nextCursor.current;
+      if (index > 0 && !pageCursors.current[index]) return false;
+      return loadCare(undefined, undefined, index);
+    },
     openRecord: careReads.openRecord,
-    closePanel() { if (attempt.current) return; draftBasis.current = null; historyGeneration.current++; openGeneration.current++; setCare(previous => ({ ...previous, detail: null, draft: null, deletion: null, operation: careOperation() })); },
-    startCreate(kind = "note") { if (!canWrite()) return; draftBasis.current = null; setCare(previous => ({ ...previous, detail: null, deletion: null,
-      draft: { key: crypto.randomUUID(), mode: "create", basis: null, initialValues: { ...emptyCareForm(), kind }, reviewedValues: null }, operation: careOperation() })); },
+    closePanel() { if (!current() || attempt.current) return false; draftBasis.current = null; historyGeneration.current++; openGeneration.current++; setCare(previous => ({ ...previous, detail: null, draft: null, deletion: null, operation: careOperation() })); return true; },
+    startCreate(kind = "note") { if (!canWrite()) return false; draftBasis.current = null; setCare(previous => ({ ...previous, detail: null, deletion: null,
+      draft: { key: crypto.randomUUID(), mode: "create", basis: null, initialValues: { ...emptyCareForm(), kind }, reviewedValues: null }, operation: careOperation() })); return true; },
     startCorrection(id) {
       const record = rawRecord(id); if (!canWrite() || !record) return; draftBasis.current = record;
       const basis = careRecordView(record, userId); setCare(previous => ({ ...previous, deletion: null,

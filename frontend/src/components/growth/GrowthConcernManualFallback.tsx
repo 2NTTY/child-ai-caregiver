@@ -22,13 +22,13 @@ const labels: Record<keyof Fields, string> = { title: "關注名稱", reason: "�
 
 export function GrowthConcernManualFallback({ model, actions, concern }: { model: GrowthViewModel; actions: GrowthActions; concern: GrowthConcern | null }) {
   if (!actions.createConcern || !actions.updateConcern || model.access !== "editable" || !model.page) return null;
-  return <ManualFormDialog label="手動" title={concern ? "新增／跟進關注" : "新增關注"} scopeKey={model.scopeKey} recovery={<GrowthOperationRecovery model={model} actions={actions} includeRefresh />}>
+  return <ManualFormDialog label={concern ? "更新關注" : "新增關注"} triggerVariant={concern ? "secondary" : "primary"} scopeKey={model.scopeKey} recovery={<GrowthOperationRecovery model={model} actions={actions} includeRefresh />}>
     <ManualForm model={model} actions={actions} concern={concern} />
   </ManualFormDialog>;
 }
 
 function ManualForm({ model, actions, concern }: { model: GrowthViewModel; actions: GrowthActions; concern: GrowthConcern | null }) {
-  const [mode, setMode] = useState<Mode>("create"), [basis, setBasis] = useState<Basis | null>(null), [shared, setShared] = useState(false);
+  const [mode, setMode] = useState<Mode>(concern ? "append" : "create"), [basis, setBasis] = useState<Basis | null>(null), [shared, setShared] = useState(false);
   const draftGuard = useGrowthFormDraftGuard(model, actions, basis?.key ?? (mode === "create" ? "concern_create:new" : `concern_update:${concern?.id ?? ""}`), !!basis && model.dirty);
   const id = useId(), previousEpoch = useRef(model.epoch);
   const { control, handleSubmit, watch, reset, setError, setFocus, formState: { errors } } = useForm<Fields>({ defaultValues: defaults });
@@ -94,7 +94,7 @@ function ManualForm({ model, actions, concern }: { model: GrowthViewModel; actio
   const options: { value: Mode; label: string }[] = [{ value: "create", label: "建立關注" },
     ...(concern ? [{ value: "append" as const, label: "追加目前關注的觀察" }, { value: "followup" as const, label: "更改／撤回站內跟進" }] : [])];
   return <View style={s.stack} testID="growth-concern-manual-fallback">
-    <Text style={s.meta}>可在這裏手動建立關注或補充觀察；提交前請核對內容及家庭共享安排。</Text>
+    <Text style={s.body}>可在這裏手動建立關注或補充觀察；提交前請核對內容及家庭共享安排。</Text>
     <AppSelect label="這次手動操作" value={mode} options={options} disabled={disabled || !!basis} onChange={value => { setMode(value); reset(defaults); setShared(false); }} />
     {mode !== "create" ? <Text style={s.body}>對象：{target?.title ?? "尚未選擇關注"}</Text> : null}
     {stale ? <Text style={s.warning}>原草稿及版本保留；關注或授權基準已變。請回到原關注，或明確放棄草稿後重新核對。</Text> : null}
@@ -102,7 +102,7 @@ function ManualForm({ model, actions, concern }: { model: GrowthViewModel; actio
     {mode === "create" ? <>{textField("title", 160)}{textField("reason", 2000)}</> : null}
     {mode !== "followup" ? <>{textField("observation", 2000)}{timeField("observedAt")}</> : null}
     {mode !== "append" ? timeField("followUpAt") : null}
-    {mode === "followup" ? <Text style={s.meta}>選擇時間會保存一次站內跟進；留空會撤回這次安排。只更改站內跟進，不更改觀察或連結任務。</Text> : null}
+    {mode === "followup" ? <Text style={s.body}>選擇時間會保存一次站內跟進；留空會撤回這次安排。只更改站內跟進，不更改觀察或連結任務。</Text> : null}
     <AppCheckbox label={mode === "followup" ? "我已核對對象及這次站內跟進／撤回，明確同意保存為家庭共享安排" : "我已核對對象、內容及觀察時間，明確同意保存為家庭共享關注"}
       checked={shared} disabled={disabled} onChange={value => { markDraft(); setShared(value); }} />
     <AppButton label={mode === "create" ? "確認建立共享關注" : mode === "append" ? "確認追加共享觀察" : followUpAt ? "確認保存站內跟進" : "確認撤回站內跟進"}

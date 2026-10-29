@@ -103,7 +103,7 @@ export function useTaskKnowledgeSummary(env: TaskKnowledgeEnvironment): TaskKnow
       const frozen = structuredClone(parsed.data);
       write({ reference: "", input: frozen, body: JSON.stringify(frozen), appointmentLabel, confirmed: false, checked: false });
     },
-    discard() { if (!inFlight.current && !original.current && runtime.live()) { setDirty(false); setFormEpoch(value => value + 1); setOperation("none"); } },
+    discard() { if (inFlight.current || original.current || !runtime.live()) return false; setDirty(false); setFormEpoch(value => value + 1); setOperation("none"); return true; },
     setOriginalConsent(value) { if (!inFlight.current && original.current?.checked && !original.current.confirmed) setOriginalConsent(value); },
     retryOriginal() { if (originalConsent && original.current?.checked && !original.current.confirmed && api.hasPendingOnline()) write(original.current, true); },
   };

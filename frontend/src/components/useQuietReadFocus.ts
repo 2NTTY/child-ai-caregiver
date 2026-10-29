@@ -10,7 +10,7 @@ export function useQuietReadFocus(disabled: boolean, preserveFocusWhenDisabled: 
   useLayoutEffect(() => {
     if (!preserveWebFocus && !preserved.current) return;
     const element = host.current as unknown as HTMLElement | null;
-    const node = element?.matches?.('button,[role="button"]') ? element : element?.querySelector?.<HTMLElement>('button,[role="button"]');
+    const node = element?.matches?.('button,[role="button"],a,[role="link"]') ? element : element?.querySelector?.<HTMLElement>('button,[role="button"],a,[role="link"]');
     if (preserveWebFocus && disabled && node) {
       if (preserved.current?.node !== node) preserved.current = { node, tabIndex: node.getAttribute("tabindex") };
       // RN Web/Paper rebuild aria-disabled from their native disabled prop.

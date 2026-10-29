@@ -5,10 +5,11 @@ import { useContainerWidth } from "../useContainerWidth";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
-import { AppButton, SectionCard, SectionHeader, TextLink } from "../ui";
+import { AppButton, SectionCard, SectionHeader } from "../ui";
 import { profileDataFromForm, type ProfileActions, type ProfileViewModel } from "../../profile-view-model";
 import { chineseFont, colors, radius, spacing, typeScale , readingType } from "../../theme";
 import { ManualFormDialog } from "../FormDialog";
+import { ReadTargetLink } from "../ReadTargetLink";
 import { ProfileForm } from "./ProfileForm";
 import { ProfileDataSummary, ProfileReadingSummary, ProfileRevisionDetails, ProfileRevisionSummary } from "./ProfileSummary";
 import { StatusAnnouncement } from "../StatusAnnouncement";
@@ -59,10 +60,9 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
     {model.online && model.needsRefresh && model.child ? <View style={styles.warning}><Text style={styles.body}>連線已恢復，請先重新讀取及核對檔案，再確認共享。</Text><AppButton label="重新讀取及核對" onPress={actions.refresh} disabled={model.reading || pending} /></View> : null}
     {model.notice ? <BackgroundSurface padded><Text style={styles.body}>{model.notice}</Text></BackgroundSurface> : null}
     {writeNotice}
-    <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={styles.reading}>
+    <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} testID="profile-reading" style={styles.reading}>
       <View style={styles.identityRow}>
         {model.child ? <View style={styles.identity}>
-          <View style={styles.avatar} importantForAccessibility="no-hide-descendants"><Text style={styles.avatarText}>{model.child.name.slice(0, 1)}</Text></View>
           <View style={styles.identityCopy}><Text accessibilityRole="header" aria-level={2} style={styles.childName}>{model.child.name}</Text>
             <AppStatusBadge label={model.current?.data ? "已確認檔案" : model.reading ? "正在讀取檔案" : "尚未確認檔案"} tone={model.current?.data ? "success" : model.reading ? "info" : "warning"} />
           </View>
@@ -75,7 +75,7 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
             <Text style={styles.confirmationTitle}>{model.child ? `待確認家庭共享 · 版本 ${(model.basis?.version ?? 0) + 1}` : "本地檔案草稿 · 未保存"}</Text>
             <ProfileDataSummary data={profileDataFromForm(model.reviewedValues)} />
             <Text style={styles.body}>原因：{model.reviewedValues.reason}</Text>
-            <Text style={styles.meta}>{model.child ? "只與這位孩子的獲授權家庭成員共享；私人聊天不會自動轉為檔案，這不構成對外發送授權。" : "沒有真孩子識別碼，不能確認家庭共享或保存。"}</Text>
+            <Text style={styles.body}>{model.child ? "只與這位孩子的獲授權家庭成員共享；私人聊天不會自動轉為檔案，這不構成對外發送授權。" : "沒有真孩子識別碼，不能確認家庭共享或保存。"}</Text>
             {model.child ? <AppButton label="我已核對，確認家庭共享" onPress={actions.submitReviewed} disabled={!canReview} /> : null}
             <AppButton label="返回修改" variant="quiet" onPress={actions.cancelReview} />
           </View> : null}
@@ -84,7 +84,7 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
             <Text style={styles.label}>原修改基準</Text>{model.basis ? <ProfileRevisionSummary revision={model.basis} /> : <Text style={styles.body}>版本 0；沒有已確認檔案。</Text>}
             <Text style={styles.label}>最新版本</Text>{model.latest ? <ProfileRevisionSummary revision={model.latest} /> : <Text style={styles.body}>尚未取得最新版本。</Text>}
             <Text style={styles.label}>本地草稿</Text>{model.intent === "delete" ? <Text style={styles.body}>永久刪除整個檔案及所有歷史。</Text> : model.reviewedValues ? <><ProfileDataSummary data={profileDataFromForm(model.reviewedValues)} /><Text style={styles.body}>原因：{model.reviewedValues.reason}</Text></> : null}
-            <Text style={styles.meta}>更新基準會保留表單；仍須重新預覽及確認。</Text>
+            <Text style={styles.body}>更新基準會保留表單；仍須重新預覽及確認。</Text>
             <AppButton label="已比較，使用最新基準" onPress={actions.useLatestVersion} disabled={!model.latest || !model.online || model.reading} />
           </View> : null}
           {model.child && model.current?.data ? <AppButton label="永久刪除檔案及歷史" variant="danger-secondary" onPress={actions.reviewDeletion} disabled={!canReview || model.intent === "delete"} /> : null}
@@ -96,43 +96,46 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
           {model.operation.state === "failed" && model.intent === "delete" ? <AppButton label="返回檔案草稿" variant="secondary" onPress={actions.cancelReview} /> : null}
         </View></ManualFormDialog> : null}
       </View>
-      <View style={[styles.profileColumns, width < 900 && styles.profileStack]}><View style={styles.profileMain}>
+      <View style={styles.profileMain}>
       {model.child ? <>
         {model.reading ? <Text style={styles.meta}>正在讀取檔案…</Text> : null}
-        <MotionReveal value={model.current} contentKey={JSON.stringify(model.current)} scopeKey={scopeKey} regionKey="profile-current" triggerKey={revealTrigger} eligible={revealEligible} testID="profile-current-motion">{shown => shown?.data ? <ProfileReadingSummary data={shown.data} compact={width < 1200} /> : !model.reading ? <SectionCard><Text style={styles.body}>{shown ? "沒有已確認檔案。" : "尚未取得可顯示的檔案。"}</Text></SectionCard> : null}</MotionReveal>
+        <MotionReveal value={model.current} contentKey={JSON.stringify(model.current)} scopeKey={scopeKey} regionKey="profile-current" triggerKey={revealTrigger} eligible={revealEligible} testID="profile-current-motion">{shown => shown ? <View style={styles.profileMain}>
+          {shown.version > 0 ? <Text style={styles.meta}>目前版本 {shown.version}</Text> : null}
+          {shown.data ? <ProfileReadingSummary data={shown.data} /> : !model.reading ? <Text style={styles.body}>沒有已確認檔案。</Text> : null}
+        </View> : !model.reading ? <Text style={styles.body}>尚未取得可顯示的檔案。</Text> : null}</MotionReveal>
         {model.access === "read_only" ? <Text style={styles.notice}>目前為唯讀，可查看檔案及歷史。</Text> : null}
         <View style={styles.readingActions}>
           <AppButton label="檔案詳情" accessibilityLabel="檔案詳情" variant="quiet" density="compact" expanded={detailsOpen} onPress={() => setDetailsOpen(value => !value)} />
-          <TextLink label="開啟核對" onPress={onOpenCare} />
+          <ReadTargetLink href="/care" label="開啟核對" onOpen={onOpenCare} style={styles.reviewLink}><Text style={styles.linkLabel}>開啟核對</Text></ReadTargetLink>
         </View>
         <MotionDisclosure expanded={detailsOpen} scopeKey={scopeKey} testID="profile-details-disclosure">
-          <SectionCard style={styles.details}>
+          <View style={styles.details}>
             {model.current ? <ProfileRevisionDetails revision={model.current} /> : <Text style={styles.meta}>尚未取得可顯示的檔案詳情。</Text>}
-          </SectionCard>
+          </View>
         </MotionDisclosure>
       </> : <SectionCard><Text style={styles.body}>新增孩子後，可以在這裏核對檔案。</Text></SectionCard>}
-      </View><View style={[styles.management, width < 900 && styles.managementFull]}><Text accessibilityRole="header" aria-level={2} style={styles.managementTitle}>孩子與頭像</Text><Text style={styles.meta}>管理孩子身份及個人化外觀。檔案更正則在上方編輯。</Text>{childPicker}</View></View>
+      </View><View style={styles.management}><Text accessibilityRole="header" aria-level={2} style={styles.managementTitle}>孩子與頭像</Text>{childPicker}</View>
       {previewControls}
     </View>
   </>);
 }
 const styles = StyleSheet.create({
-  identityRow: { padding: spacing.xl, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.md, minWidth: 0 },
+  identityRow: { paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line, flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.md, minWidth: 0 },
   identity: { flexDirection: "row", alignItems: "center", gap: spacing.md, flexGrow: 1, flexShrink: 1, minWidth: 0 },
-  avatar: { width: 48, height: 48, flexShrink: 0, borderRadius: radius.medium, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },
-  avatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.title, fontWeight: "700" },
   identityCopy: { flex: 1, minWidth: 0, gap: spacing.xs, alignItems: "flex-start" },
   childName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, lineHeight: 30, fontWeight: "700", flexShrink: 1 },
   editor: { gap: spacing.md },
-  reading: { width: "100%", maxWidth: 1120, gap: spacing.lg, minWidth: 0 },
+  reading: { width: "100%", maxWidth: 760, gap: spacing.lg, minWidth: 0 },
   readingActions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: spacing.md, rowGap: spacing.sm, minWidth: 0 },
   details: { gap: spacing.lg },
-  profileColumns: { flexDirection: "row", gap: spacing.xl, minWidth: 0 }, profileStack: { flexDirection: "column" }, profileMain: { flex: 1, minWidth: 0, gap: spacing.lg },
-  management: { width: 270, minWidth: 0, padding: spacing.lg, gap: spacing.md, backgroundColor: colors.canvas, borderRadius: radius.medium, borderWidth: 1, borderColor: colors.line }, managementFull: { width: "100%" },
+  profileMain: { minWidth: 0, gap: spacing.lg },
+  management: { minWidth: 0, paddingTop: spacing.lg, gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.line },
+  reviewLink: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.sm },
+  linkLabel: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.body, textDecorationLine: "underline" },
   managementTitle: { fontFamily: chineseFont, fontSize: 18, lineHeight: 27, fontWeight: "700", color: colors.ink },
-  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, flexShrink: 1 },
+  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, flexShrink: 1 },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
-  notice: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool },
+  notice: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.body },
   label: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.tool, fontWeight: "700" },
   warning: { backgroundColor: colors.paleAmber, padding: spacing.md, gap: spacing.sm, borderRadius: radius.small },
   confirmation: { backgroundColor: colors.paleAmber, padding: spacing.md, borderRadius: radius.small, gap: spacing.md, minWidth: 0 },

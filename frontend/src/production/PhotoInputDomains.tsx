@@ -1,9 +1,13 @@
+import { usePrivateQuery } from "../navigation/usePrivateQuery";
+import { useOwnerReadRoute } from "../navigation/useOwnerReadRoute";
+import { parsePhotoRoute, parseSourceRoute, serializePhotoRoute, serializeSourceRoute } from "../navigation/route-state";
+import type { OwnerReadRouteRequest } from "../navigation/owner-read-route";
 import { readBlobBytes } from "../../../src/client/blob-bytes";
 import { photoPreview, photoSha256 } from "../platform/photo-bytes";
 import { copyPhotoOriginal } from "./photo-original";
 import { createContext, memo, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View } from "react-native";
-import { useGlobalSearchParams, usePathname, useRouter } from "expo-router";
+import { useGlobalSearchParams, useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { Text } from "react-native-paper";
 import { createPhotoApi, PhotoApiError, type PhotoWriteResult } from "../../../src/client/photo-api";
 import { subscribeOnlineRefresh } from "../../../src/client/online-refresh-events";
@@ -40,7 +44,7 @@ function useProductionPhotos() {
     original: null as PhotoOriginal | null, preview: null as { uri: string; dispose: () => void } | null, source: "使用者上傳照片", sourceError: "",
     draft: emptyPhotoDraft(), reviewed: null as PhotoDraftFields | null, formKey: 0, modelConsent: false, sharedConsent: false,
     operation: noOperation(), pending: null as PendingPhoto | null, direct: null as DirectPhoto | null,
-    replacement: null as PhotoReplacement | null, deletion: false, deleteScope: false, deleteFinal: false,
+    replacement: null as (PhotoReplacement & { route?: OwnerReadRouteRequest }) | null, deletion: false, deleteScope: false, deleteFinal: false,
     busy: false, notice: "", reservationUnidentified: false,
   }));
   const ref = useRef(state);
@@ -308,35 +312,41 @@ function useProductionPhotos() {
       }
     }, basis ? "upload" : "reserve");
   }
-  function acceptOriginal(original: PhotoOriginal) {
+  function acceptOriginal(original: PhotoOriginal, route?: OwnerReadRouteRequest) {
+    if (!current() || route && !route.isCurrent()) { original.dispose?.(); return; }
     releaseEditor(); update({ original, operation: noOperation(), notice: "原檔只在本次記憶中，尚未上傳。" });
+    route?.onAccepted(null);
   }
-  function chooseOriginal(original: PhotoOriginal) {
+  function chooseOriginal(original: PhotoOriginal, route?: OwnerReadRouteRequest) {
+    if (!current() || route && !route.isCurrent()) { original.dispose?.(); return; }
     if (!editable() || ref.current.busy || ref.current.pending || ref.current.direct || ref.current.reservationUnidentified) { original.dispose?.(); return; }
     const basis = ref.current.selected;
     if (basis?.state === "reserved" && samePhotoOriginal(basis, original)) {
-      ref.current.original?.dispose?.(); update({ original, ...consentReset }); return;
+      ref.current.original?.dispose?.(); update({ original, ...consentReset }); route?.onAccepted(basis.id); return;
     }
-    if (basis || ref.current.original || ref.current.draft.text) update({ replacement: { kind: "original", original } });
-    else acceptOriginal(original);
+    if (basis || ref.current.original || ref.current.draft.text) update({ replacement: { kind: "original", original, route } });
+    else acceptOriginal(original, route);
   }
-  function openPhoto(item: PhotoItem) {
+  function openPhoto(item: PhotoItem, route?: OwnerReadRouteRequest) {
+    if (!current() || route && !route.isCurrent()) return;
+    if (route && ref.current.selected?.id === item.id) { route.onAccepted(); return; }
     if (ref.current.busy || ref.current.pending || ref.current.direct) return;
-    if (ref.current.original || ref.current.draft.text) { update({ replacement: { kind: "item", item } }); return; }
+    if (ref.current.original || ref.current.draft.text) { update({ replacement: { kind: "item", item, route } }); return; }
     void run(async signal => {
-      const next = await readResource(item.id, signal, () => api.photo(envRef.current.childId!, item.id, signal, envRef.current.userId!)); if (!current() || !next) return;
+      const next = await readResource(item.id, signal, () => api.photo(envRef.current.childId!, item.id, signal, envRef.current.userId!)); if (!current() || !next || route && !route.isCurrent()) return;
       // Bind the unresolved run to its own editor before a fallible content read.
       if (!next.recordId && ["running", "unknown"].includes(next.extraction.state)) {
         releaseEditor();
         update({ source: next.source, direct: { kind: "extract", photo: next, checked: false } });
       }
-      const blob = next.state === "ready" ? await readResource(item.id, signal, () => api.content(next, signal, envRef.current.userId!)) : null; if (!current() || next.state === "ready" && !blob) return;
+      const blob = next.state === "ready" ? await readResource(item.id, signal, () => api.content(next, signal, envRef.current.userId!)) : null; if (!current() || route && !route.isCurrent() || next.state === "ready" && !blob) return;
       const preview = blob ? photoPreview(await readBlobBytes(blob), next.mimeType) : null;
-      if (!current() || signal.aborted) { preview?.dispose(); return; }
+      if (!current() || signal.aborted || route && !route.isCurrent()) { preview?.dispose(); return; }
       releaseEditor(); put(next); update({ preview, source: next.source, load: "ready", operation: noOperation() });
       if (!next.recordId && ["running", "unknown"].includes(next.extraction.state)) {
         update({ direct: { kind: "extract", photo: next, checked: false } }); op("extract", "unknown", "原次提取尚未查明。先查核同一附件及原 run，不重送模型。");
       }
+      route?.onAccepted();
     });
   }
   const item = (photo: PhotoAttachment): PhotoItem => ({ ...photo, isUploader: photo.ownerUserId === env.userId, ownerLabel: photo.ownerUserId === env.userId ? "本人" : "家庭成員",
@@ -381,8 +391,10 @@ function useProductionPhotos() {
     discardRecordDraft: () => { const value = ref.current; if (current() && !value.pending && !value.direct && value.operation.state !== "saving") update({ draft: emptyPhotoDraft(), reviewed: null, sharedConsent: false, formKey: value.formKey + 1 }); },
     clearEditor: () => { if (!ref.current.busy && !ref.current.pending && !ref.current.direct) { releaseEditor(); update({ operation: noOperation() }); } },
     confirmReplacement: () => { const replacement = ref.current.replacement; if (!replacement || pending) return;
-      update({ replacement: null }); releaseEditor(); if (replacement.kind === "original") acceptOriginal(replacement.original); else if (replacement.kind === "item") openPhoto(replacement.item); },
-    cancelReplacement: () => { if (ref.current.replacement?.kind === "original") ref.current.replacement.original.dispose?.(); update({ replacement: null }); },
+      if (replacement.route && !replacement.route.isCurrent()) { if (replacement.kind === "original") replacement.original.dispose?.(); update({ replacement: null }); return; }
+      update({ replacement: null }); releaseEditor(); if (replacement.kind === "original") acceptOriginal(replacement.original, replacement.route); else if (replacement.kind === "item") openPhoto(replacement.item, replacement.route); },
+    cancelReplacement: () => { const replacement = ref.current.replacement; if (replacement?.kind === "original") replacement.original.dispose?.(); update({ replacement: null });
+      if (current() && replacement?.route?.isCurrent()) replacement.route.onRejected?.(ref.current.selected?.id ?? null); },
     editSource: source => { if (!formLocked && !state.selected) update({ source, sourceError: "", ...consentReset }); }, upload, refresh,
     setModelConsent: modelConsent => { if (model.canExtract) update({ modelConsent }); },
     extract: () => { if (!model.canExtract || !ref.current.modelConsent || !ref.current.selected || !envRef.current.canStartWrite()) return;
@@ -441,7 +453,11 @@ function useProductionPhotos() {
     });
     return retained && current() && ref.current.original === owned;
   }
-  return { model, actions, scopeKey: env.scopeKey, receiveComposerOriginal, canContinueComposerOriginal, leaveGuardId, pending };
+  return { model, actions, openForRoute: openPhoto, pickForRoute: chooseOriginal, returnForRoute(request: OwnerReadRouteRequest, discard: boolean) {
+    if (!current() || !request.isCurrent() || ref.current.busy || ref.current.pending || ref.current.direct) return;
+    if (discard) { releaseEditor(); update({ operation: noOperation() }); }
+    request.onAccepted();
+  }, scopeKey: env.scopeKey, receiveComposerOriginal, canContinueComposerOriginal, leaveGuardId, pending };
 }
 
 type Domains = { scopeKey: string; photos: ReturnType<typeof useProductionPhotos>; sources: ReturnType<typeof usePhotoInputSources> };
@@ -463,14 +479,50 @@ export function ProductionPhotoInputDomains({ children }: { children: ReactNode 
 }
 export function ProductionPhotosWorkspace({ onCare, capturePreferred = false }: { onCare: () => void; capturePreferred?: boolean }) {
   const domain = useContext(PhotoInputContext)?.photos;
-  const attachments = useAttachmentReview(), { actions, attachSavedPhoto } = useProduction();
-  return domain ? <PhotosView production model={domain.model} actions={domain.actions} onCare={onCare} onChat={() => actions.open("chat")}
+  const params = useLocalSearchParams(), parsed = parsePhotoRoute(params), router = useRouter(), leave = usePreviewNavigation();
+  const recoveryOwnsSelection = !!domain && ["saving", "unknown", "unconfirmed", "confirmed_unavailable", "conflict"].includes(domain.model.operation.state);
+  const route = recoveryOwnsSelection ? { ...parsed, tab: "photos" as const } : parsed;
+  const attachments = useAttachmentReview(), { actions, attachSavedPhoto, owner, scopeKey } = useProduction();
+  const selection = useOwnerReadRoute({ scopeKey: scopeKey ?? null, requestedId: parsed.photoId, recoveryOwnsSelection,
+    items: domain?.model.items ?? [], selectedId: domain?.model.selected?.id ?? null,
+    createdSelection: domain?.model.operation.state === "saved" && ["reserve", "upload"].includes(domain.model.operation.phase ?? ""),
+    ready: domain?.model.load === "ready", blocked: !domain || !domain.model.online || domain.model.access === "lost" || domain.pending || domain.model.busy || ["unknown", "unconfirmed", "confirmed_unavailable", "conflict"].includes(domain.model.operation.state),
+    open: (item, request) => domain?.openForRoute(item, request), href: id => ({ pathname: "/photos", params: serializePhotoRoute({ ...route, photoId: id }) }) });
+  useEffect(() => {
+    if (recoveryOwnsSelection && parsed.tab !== "photos" && owner.getSnapshot().scopeKey === scopeKey)
+      router.replace({ pathname: "/photos", params: serializePhotoRoute({ tab: "photos", photoId: domain?.model.selected?.id ?? null }) });
+  }, [recoveryOwnsSelection, parsed.tab, scopeKey]);
+  if (!domain) return null;
+  const change = (next: typeof route) => {
+    const request = selection.request(() => router.push({ pathname: "/photos", params: serializePhotoRoute(next) }));
+    leave(() => { if (!request.isCurrent() || owner.getSnapshot().scopeKey !== scopeKey || domain.pending) return;
+      domain.returnForRoute(request, true); }, "navigation");
+  };
+  const selected = domain.model.selected?.id === selection.id ? domain.model.selected : null;
+  return <PhotosView production model={{ ...domain.model, selected }} actions={{ ...domain.actions, openPhoto: selection.openRow, upload: () => selection.create(domain.actions.upload),
+    pickOriginal: original => domain.pickForRoute(original, selection.request(id => router.push({ pathname: "/photos", params: serializePhotoRoute({ ...route, photoId: id ?? null }) }))),
+    clearEditor: () => change({ ...route, photoId: null }) }} onCare={onCare} onChat={() => actions.open("chat")}
     onChatPhoto={photo => attachSavedPhoto({id:photo.id,version:photo.version,fileName:photo.fileName,mimeType:photo.mimeType,bytes:photo.bytes,sha256:photo.sha256,source:photo.source})}
-    attachments={attachments} capturePreferred={capturePreferred} scopeKey={domain.scopeKey} /> : null;
+    route={route} onRouteChange={change} onReturnToList={accepted => domain.returnForRoute(selection.request(() => { if (route.photoId) router.push({ pathname: "/photos", params: serializePhotoRoute({ ...route, photoId: null }) }); accepted(); }), false)} requestedUnavailable={selection.unavailable}
+    attachments={attachments} capturePreferred={capturePreferred} scopeKey={domain.scopeKey} />;
 }
 export function ProductionSourcesWorkspace({ onPhotos, onRecord }: { onPhotos: () => void; onRecord: (id: string) => void }) {
   const domain = useContext(PhotoInputContext)?.sources;
-  return domain ? <SourcesView production model={domain.model} actions={domain.actions} onPhotos={onPhotos} onRecord={onRecord} previewControls={null} /> : null;
+  const route = parseSourceRoute(useLocalSearchParams()), router = useRouter(), leave = usePreviewNavigation();
+  const { scopeKey, owner } = useProduction();
+  const [query, setQuery] = usePrivateQuery(domain?.model.access === "lost" ? null : scopeKey, "/sources");
+  const selection = useOwnerReadRoute({ scopeKey: scopeKey ?? null, requestedId: route.sourceId, recoveryOwnsSelection: !!domain && ["saving", "unknown", "unconfirmed", "confirmed_unavailable", "conflict"].includes(domain.model.operation.state),
+    items: domain?.model.items ?? [], selectedId: domain?.model.selected?.id ?? null,
+    createdSelection: domain?.model.operation.state === "saved" && domain.model.operation.phase === "create",
+    ready: domain?.model.load === "ready", blocked: !domain || !domain.model.online || domain.model.access === "lost" || domain.pending || domain.model.busy || ["unknown", "unconfirmed", "confirmed_unavailable", "conflict"].includes(domain.model.operation.state),
+    open: (item, request) => domain?.openForRoute(item, request), href: id => ({ pathname: "/sources", params: serializeSourceRoute({ sourceId: id }) }) });
+  if (!domain) return null;
+  const selected = domain.model.selected?.id === selection.id ? domain.model.selected : null;
+  return <SourcesView production query={query} onQueryChange={setQuery} model={{ ...domain.model, selected }} actions={{ ...domain.actions, openInput: selection.openRow, create: input => selection.create(() => domain.actions.create(input)) }}
+    requestedUnavailable={selection.unavailable} onBeginInput={(mode, accepted) => domain.beginForRoute(mode, selection.request(() => { router.push({ pathname: "/sources", params: {} }); accepted(); }))} onReturnToList={() => {
+      const request = selection.request(() => router.push({ pathname: "/sources", params: {} }));
+      domain.returnForRoute(request);
+    }} onPhotos={onPhotos} onRecord={onRecord} previewControls={null} />;
 }
 export function AgentPhotoInput({ original, composerGuardId }: { original: PhotoOriginal; composerGuardId: string }) {
   const domain = useContext(PhotoInputContext)?.photos;

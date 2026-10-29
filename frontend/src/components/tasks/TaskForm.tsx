@@ -131,5 +131,5 @@ const styles = StyleSheet.create({
   previewActions: { gap: spacing.md, paddingTop: spacing.xl, borderTopWidth: 1, borderTopColor: colors.line },
   review: { padding: spacing.md, backgroundColor: colors.paleAmber, borderRadius: radius.small, gap: spacing.md, minWidth: 0 },
   label: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, fontWeight: "700" },
-  meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
+  meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.body },
 });

@@ -1,30 +1,33 @@
 import { AppStatusBadge } from "../AppStatusBadge";
 import { AppIcon } from "../AppIcon";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { growthConcernFollowUpLabel, growthConcernTimelineEntries, growthStateLabels, growthTime, type GrowthConcern, type GrowthPage } from "../../growth-view-model";
 import { taskStateLabels } from "../../task-view-model";
-import { AppButton, SectionHeader } from "../ui";
+import { SectionHeader } from "../ui";
 import { growthStyles as s } from "./growth-styles";
-import { spacing } from "../../theme";
+import { colors, spacing } from "../../theme";
+import { ReadTargetLink } from "../ReadTargetLink";
 
 const eventLabels = {agent_proposal: "助手提議", observation: "原始觀察", pending_record: "待核對記錄", confirmed_action: "已確認操作"};
 const concernLabels = {proposed: "待家長核對", following: "持續關注", closed: "已結束"};
-export function GrowthConcernIndex({items, selectedId, onSelect}: {items: GrowthConcern[]; selectedId: string | null; onSelect: (id: string) => void}) {
-  return <View style={s.concernIndex}><Text style={s.eyebrow}>關注索引</Text>{items.map(item => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`查看關注：${item.title}`} aria-current={selectedId === item.id ? "true" : undefined} onPress={() => onSelect(item.id)} style={({pressed}) => [s.concernRow, selectedId === item.id && s.concernSelected, pressed && (selectedId === item.id ? s.selectedPressed : s.pressed)]}>
-    <View style={s.row}><Text style={[s.title, {flex: 1}]}>{item.title}</Text><AppIcon name="chevron-right" size={16} /></View><AppStatusBadge label={concernLabels[item.status]} tone={item.status === "proposed" ? "warning" : item.status === "following" ? "info" : "neutral"} />{selectedId === item.id ? <Text style={s.meta}>正在查看</Text> : null}
-  </Pressable>)}</View>;
+export function GrowthConcernIndex({items, onSelect, rowRef}: {items: GrowthConcern[]; onSelect: (id: string) => void; rowRef(id: string, node: View | null): void}) {
+  return <View style={s.concernIndex}>{items.map(item => <ReadTargetLink key={item.id} href={{pathname: "/growth", params: {tab: "concerns", concernId: item.id}}}
+    label={`查看關注：${item.title}，${concernLabels[item.status]}`} onOpen={() => onSelect(item.id)} ref={node => rowRef(item.id, node)} style={s.concernRow}>
+    <View style={s.row}><Text style={[s.title, {flex: 1}]}>{item.title}</Text><AppStatusBadge label={concernLabels[item.status]} tone={item.status === "proposed" ? "warning" : item.status === "following" ? "info" : "neutral"} /></View>
+    {growthConcernFollowUpLabel(item) ? <Text style={s.body}>{growthConcernFollowUpLabel(item)}</Text> : null}
+  </ReadTargetLink>)}</View>;
 }
-export function GrowthConcernTimeline({concern, page, onRecord, onTask}: {concern: GrowthConcern; page: GrowthPage; onRecord?: (id?: string) => void; onTask: (id: string) => void}) {
+export function GrowthConcernTimeline({concern, page, onRecord, onTask, onReview, headingLevel = 3}: {headingLevel?: 3 | 4; concern: GrowthConcern; page: GrowthPage; onRecord?: (id?: string) => void; onTask: (id: string) => void; onReview?: () => void}) {
   const entries = growthConcernTimelineEntries(concern, page);
   const followUpLabel = growthConcernFollowUpLabel(concern);
   return <View style={s.timelinePanel} testID="growth-concern-timeline" accessibilityLabel={`關注：${concern.title}`}>
     <View style={s.concernHeading} testID="growth-concern-summary">
-      <View style={s.row}><Text accessibilityRole="header" aria-level={3} style={s.eyebrow}>關注說明</Text><AppStatusBadge label={concernLabels[concern.status]} tone={concern.status === "proposed" ? "warning" : concern.status === "following" ? "info" : "neutral"} /></View>
+      <View style={s.row}><Text accessibilityRole="header" aria-level={headingLevel} style={s.sectionTitle}>關注原因</Text><AppStatusBadge label={concernLabels[concern.status]} tone={concern.status === "proposed" ? "warning" : concern.status === "following" ? "info" : "neutral"} /></View>
       <Text style={s.concernSummary}>{concern.reason}</Text>
     </View>
-    {followUpLabel ? <Text style={s.meta}>{followUpLabel}</Text> : null}
-    <SectionHeader density="compact" title="跟進記錄" />
+    {followUpLabel ? <Text style={s.body}>{followUpLabel}</Text> : null}
+    <SectionHeader headingLevel={headingLevel} density="compact" title="跟進記錄" />
     <View style={s.timeline}>{entries.map((entry, index) => {
       const marker = <>
         {index > 0 ? <View pointerEvents="none" style={[s.timelineLine, s.timelineLineBefore]} testID={`growth-timeline-line-before-${index}`} /> : null}
@@ -38,9 +41,9 @@ export function GrowthConcernTimeline({concern, page, onRecord, onTask}: {concer
           <View style={s.row}><AppStatusBadge label={`建議${growthStateLabels[item.state]}`} tone="neutral" /><View accessible accessibilityLabel={`狀態更新：${Number.isNaN(Date.parse(item.updatedAt)) ? "時間未提供" : growthTime(item.updatedAt)}`} style={styles.metadataItem}><AppIcon name="history" size={14} /><Text style={s.meta}>更新 {Number.isNaN(Date.parse(item.updatedAt)) ? "時間未提供" : growthTime(item.updatedAt)}</Text></View></View>
           <Text style={s.title}>{item.title}</Text>
           {item.note ? <Text style={s.reading}>{item.note}</Text> : null}
-          {!item.sourceAvailable ? <Text style={s.meta}>原建議的來源或依據已失效；這裏只保留處理狀態，不作目前建議。</Text> : null}
-          <Text style={s.meta}>{item.taskId ? `已連結任務${item.taskState ? ` · 讀取時：${taskStateLabels[item.taskState]}` : " · 狀態未提供"}；目前狀態以任務為準。` : "沒有連結任務；不代表已完成行動。"}</Text>
-          {item.taskId ? <AppButton label="查看已連結跟進" variant="quiet" onPress={() => onTask(item.taskId!)} /> : null}
+          {!item.sourceAvailable ? <Text style={s.body}>原建議的來源或依據已失效；這裏只保留處理狀態，不作目前建議。</Text> : null}
+          <Text style={s.body}>{item.taskId ? `已連結任務${item.taskState ? ` · 讀取時：${taskStateLabels[item.taskState]}` : " · 狀態未提供"}；目前狀態以任務為準。` : "沒有連結任務；不代表已完成行動。"}</Text>
+          {item.taskId ? <TimelineDestination label="查看已連結跟進" href={{pathname: "/tasks", params: {taskId: item.taskId}}} onOpen={() => onTask(item.taskId!)} /> : null}
         </View>;
       }
       const { event } = entry;
@@ -53,15 +56,21 @@ export function GrowthConcernTimeline({concern, page, onRecord, onTask}: {concer
           : <View accessible accessibilityLabel={`事件種類：${eventLabels[event.kind]}`} style={styles.metadataItem}><AppIcon name={event.kind === "agent_proposal" ? "star-four-points" : "notebook-outline"} size={14} /><Text style={s.meta}>{eventLabels[event.kind]}</Text></View>}
         <View accessible accessibilityLabel={`事件時間：${eventTime}`} style={styles.metadataItem}><AppIcon name="clock-outline" size={14} /><Text style={s.meta}>{eventTime}</Text></View>
       </View>
-      {event.recordId && onRecord ? <AppButton label="查看原始記錄" variant="quiet" onPress={() => onRecord(event.recordId)} /> : null}
-      {event.kind === "pending_record" && onRecord ? <AppButton label="前往待核對記錄" variant="quiet" onPress={() => onRecord()} /> : null}
-      {event.taskId ? <AppButton label="查看已連結跟進" variant="quiet" onPress={() => onTask(event.taskId!)} /> : null}
+      {event.recordId && onRecord ? <TimelineDestination label="查看原始記錄" href={{pathname: "/care", params: {tab: "records", recordId: event.recordId}}} onOpen={() => onRecord(event.recordId)} /> : null}
+      {event.kind === "pending_record" && onReview ? <TimelineDestination label="前往待核對記錄" href={{pathname: "/history", params: {category: "review"}}} onOpen={onReview} /> : null}
+      {event.taskId ? <TimelineDestination label="查看已連結跟進" href={{pathname: "/tasks", params: {taskId: event.taskId}}} onOpen={() => onTask(event.taskId!)} /> : null}
     </View>;})}</View>
-    {!concern.historyComplete ? <Text style={s.meta}>只列已取得的事件；較早經過仍未完整載入。</Text> : null}
-    {concern.measurement?.points.length ? <View style={s.divider}><SectionHeader density="compact" title={concern.measurement.label} subtitle="只列來源提供的量測原值，不推算百分位或異常。" />{concern.measurement.points.map(point => <View key={point.id} style={s.confirmedRow}><Text style={s.body}>{point.value} {point.unit}</Text><Text style={s.meta}>{growthTime(point.at)}</Text>{onRecord ? <AppButton label="核對量測來源" variant="quiet" onPress={() => onRecord(point.sourceRecordId)} /> : null}</View>)}</View> : null}
+    {!concern.historyComplete ? <Text style={s.body}>只列已取得的事件；較早經過仍未完整載入。</Text> : null}
+    {concern.measurement?.points.length ? <View style={s.divider}><SectionHeader headingLevel={headingLevel} density="compact" title={concern.measurement.label} subtitle="只列來源提供的量測原值，不推算百分位或異常。" />{concern.measurement.points.map(point => <View key={point.id} style={s.confirmedRow}><Text style={s.body}>{point.value} {point.unit}</Text><Text style={s.meta}>{growthTime(point.at)}</Text>{onRecord ? <TimelineDestination label="核對量測來源" href={{pathname: "/care", params: {tab: "records", recordId: point.sourceRecordId}}} onOpen={() => onRecord(point.sourceRecordId)} /> : null}</View>)}</View> : null}
   </View>;
 }
 
+function TimelineDestination({ label, href, onOpen }: { label: string; href: import("expo-router").Href; onOpen(): void }) {
+  return <ReadTargetLink label={label} href={href} onOpen={onOpen} style={styles.destination}><Text style={[s.body, styles.destinationText]}>{label}</Text></ReadTargetLink>;
+}
+
 const styles = StyleSheet.create({
+  destination: { alignSelf: "flex-start", minHeight: 44, minWidth: 44, maxWidth: "100%", paddingVertical: spacing.sm, paddingHorizontal: spacing.xs, justifyContent: "center" },
+  destinationText: { color: colors.teal, textDecorationLine: "underline" },
   metadataItem: { flexDirection: "row", alignItems: "center", gap: spacing.xs, minWidth: 0, maxWidth: "100%", flexShrink: 1 },
 });

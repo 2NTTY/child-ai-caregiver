@@ -1,9 +1,10 @@
+import { bindPrivateQueries } from "../navigation/private-query-cache";
 import { useNativePushNavigation } from "./useNativePushNavigation";
 import { useProductionActivity } from "./useProductionActivity";
 import { createProductionTransport } from "./production-transport";
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, use, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { usePathname, useRouter, type Href } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import { Linking, Platform } from "react-native";
 import { Text } from "react-native-paper";
 import type { AuthMode, Credentials } from "../../../src/client/records-api";
@@ -18,7 +19,7 @@ import type { HomeActions } from "../view-model";
 import { ProductionOwner } from "./ProductionOwner";
 import { AccountCallbackGate } from "../components/account/AccountCallbackGate";
 import { projectProductionHome } from "./home-projection";
-import { productionDestinations } from "./routes";
+import { homeTargetHref } from "../home-target";
 import { useOnlineUpdates } from "../../../src/client/use-online-updates";
 
 function initialOnline() { return Platform.OS !== "web" || typeof navigator === "undefined" || navigator.onLine; }
@@ -67,6 +68,7 @@ function useProductionValue(owner: ProductionOwner) {
   }, setLocalNotice);
   const visibleDraft = draft.scope === snapshot.scopeKey ? draft : emptyAssistantDraft;
   const model = useMemo(() => projectProductionHome(snapshot), [snapshot]);
+  useLayoutEffect(() => bindPrivateQueries(owner), [owner]);
   const chatDraft = snapshot.chat.selectedChildId ? snapshot.chat.drafts[snapshot.chat.selectedChildId] : undefined;
 
   useLayoutEffect(() => {
@@ -118,7 +120,24 @@ function useProductionValue(owner: ProductionOwner) {
     },
     refresh: () => { void refresh(); },
     reviewOperation: () => { leave(() => router.push("/guide"), "workspace"); },
-    open(destination) { leave(() => router.push(productionDestinations[destination] as Href), "workspace"); },
+    open(target) { leave(() => {
+      const live = owner.getSnapshot();
+      if (live.scopeKey === snapshot.scopeKey && live.identityKey === snapshot.identityKey
+        && current.current.scopeKey === snapshot.scopeKey && current.current.identityKey === snapshot.identityKey && current.current.pathname === pathname) router.push(homeTargetHref(target));
+    }, "workspace"); },
+    openChildProfile(id) {
+      leave(async () => {
+        const before = owner.getSnapshot();
+        if (!snapshot.identityKey || before.identityKey !== snapshot.identityKey || before.scopeKey !== snapshot.scopeKey
+          || current.current.pathname !== pathname || !before.records.children.some(child => child.id === id)) return;
+        try {
+          if (before.records.selectedChildId !== id) await owner.controller.selectChild(id);
+          const after = owner.getSnapshot();
+          if (after.identityKey === snapshot.identityKey && after.scopeKey && after.records.selectedChildId === id
+            && after.records.children.some(child => child.id === id) && current.current.pathname === pathname) router.push("/profile");
+        } catch { if (owner.getSnapshot().identityKey === snapshot.identityKey) setLocalNotice("未能選擇這位孩子，請重新核對孩子列表。"); }
+      }, "navigation");
+    },
     openAgentPhoto(original) {
       if (!currentScope() || current.current.pathname !== "/") { original.dispose?.(); return; }
       if (addAgentAttachment(photoAttachment(original))) openAgentDraft();
@@ -263,11 +282,11 @@ const ProductionContext = createContext<ProductionContextValue | null>(null);
 // Identity and child consumers must continue using the reactive production value.
 const ProductionOwnerContext = createContext<ProductionOwner | null>(null);
 
-export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || (Platform.OS === "web" ? "/api" : "https://ex-machina.eu.org/api") }: { children: ReactNode; apiBaseUrl?: string }) {
+export function ProductionOwnerHost({ children, apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || (Platform.OS === "web" ? "/api" : "https://ex-machina.eu.org/api") }: { children?: ReactNode; apiBaseUrl?: string }) {
   const [owner] = useState(() => new ProductionOwner(apiBaseUrl.replace(/\/$/, ""), initialOnline(), undefined, undefined, undefined, { legacyTrial: process.env.EXPO_PUBLIC_ACCOUNT_LEGACY_TRIAL === "true" }, createProductionTransport(apiBaseUrl)));
-  const value = useProductionValue(owner);
+  const snapshot = useSyncExternalStore(owner.subscribe, owner.getSnapshot, owner.getSnapshot);
   const activity = useProductionActivity();
-  useOnlineUpdates(owner.apiBaseUrl, value.auth === "signedIn" && value.account.gate === "ready" ? value.userId : null, activity.online ?? value.online, async reason => {
+  useOnlineUpdates(owner.apiBaseUrl, snapshot.records.auth === "signedIn" && snapshot.account.gate === "ready" ? snapshot.records.user?.id ?? null : null, activity.online ?? snapshot.records.online, async reason => {
     await owner.refresh();
     owner.invalidatePrivateReads(false, reason !== "unavailable");
   }, owner.fetcher, activity.active, () => owner.chatController.refreshOriginalReply());
@@ -298,24 +317,36 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
     // Signed-in ready scopes refresh through the same changes-cursor observer, avoiding duplicate reads.
     if (state.auth !== "signedIn" || !owner.accountOwner.isReady()) void owner.refresh();
   }, [owner, activity.active, activity.online]);
-  return <QueryClientProvider client={owner.queryClient}><ProductionOwnerContext.Provider value={owner}><ProductionContext.Provider value={value}><AccountCallbackGate>{children}</AccountCallbackGate>
+  return <ProductionOwnerContext value={owner}>{children}</ProductionOwnerContext>;
+}
+
+/** Static rendering does not run the custom client entry; its isolated tree owns its own session. */
+export function ProductionProvider({ children, apiBaseUrl }: { children: ReactNode; apiBaseUrl?: string }) {
+  const owner = use(ProductionOwnerContext);
+  return owner ? <ProductionProjection owner={owner}>{children}</ProductionProjection>
+    : <ProductionOwnerHost apiBaseUrl={apiBaseUrl}><ProductionProvider>{children}</ProductionProvider></ProductionOwnerHost>;
+}
+
+function ProductionProjection({ children, owner }: { children: ReactNode; owner: ProductionOwner }) {
+  const value = useProductionValue(owner);
+  return <QueryClientProvider client={owner.queryClient}><ProductionContext value={value}><AccountCallbackGate>{children}</AccountCallbackGate>
     <DeleteChildDialog state={value.recordsState} confirmationKey={owner.childDeletionConfirmationKey()} getConfirmationKey={owner.childDeletionConfirmationKey} controller={owner.controller} />
     <AppDialog visible={value.logoutConfirmation} onDismiss={value.cancelLogout}>
       <AppDialog.Title>登出並清除未提交內容？</AppDialog.Title>
       <AppDialog.Content><Text>這次登出會清除本頁的文字及照片草稿。已提交但結果未知的操作仍須沿原操作查核。</Text></AppDialog.Content>
       <AppDialog.Actions><AppButton label="繼續編輯" variant="quiet" onPress={value.cancelLogout} /><AppButton label="確認登出" variant="danger" onPress={() => { void value.signOut(true); }} /></AppDialog.Actions>
     </AppDialog>
-  </ProductionContext.Provider></ProductionOwnerContext.Provider></QueryClientProvider>;
+  </ProductionContext></QueryClientProvider>;
 }
 
 export function useProductionOwner() {
-  const owner = useContext(ProductionOwnerContext);
+  const owner = use(ProductionOwnerContext);
   if (!owner) throw new Error("ProductionProvider is required for production owners");
   return owner;
 }
 
 export function useProduction() {
-  const value = useContext(ProductionContext);
+  const value = use(ProductionContext);
   if (!value) throw new Error("ProductionProvider is required for production pages");
   return value;
 }

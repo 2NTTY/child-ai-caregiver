@@ -1,3 +1,4 @@
+import { parseCareRoute } from "../navigation/route-state";
 import { useGlobalSearchParams, usePathname } from "expo-router";
 import { Platform } from "react-native";
 import { useCareWorkspace } from "../workspaces/CareWorkspace";
@@ -13,7 +14,7 @@ import { useProductionFamilyDocuments, useProductionTaskKnowledgeSummary, usePro
 import { useProductionPhotoInputDomains } from "./PhotoInputDomains";
 import { useProductionContactDomain, useProductionSettingsDomains } from "./SettingsDomains";
 
-const first = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
+const first = (value: string | string[] | undefined) => Array.isArray(value) ? undefined : value;
 
 /** Uses the same scoped projections as the visible route, without starting extra reads. */
 export function ProductionStartupReadiness() {
@@ -28,8 +29,9 @@ export function ProductionStartupReadiness() {
   const currentProfile = profile?.scopeKey === scopeKey ? profile.model : null;
   const currentSummary = summary?.model.scopeKey === scopeKey ? summary.model : null;
   const currentCare = care?.scopeKey === scopeKey ? care.model : null, currentTasks = tasks?.scopeKey === scopeKey ? tasks.model : null;
-  const routeParams = { tab: first(params.tab), category: first(params.category), section: pathname === "/settings" ? visibleSection : first(params.section), view: first(params.view),
-    taskId: first(params.taskId), recordId: typeof params.recordId === "string" ? params.recordId : typeof params.record === "string" ? params.record : undefined };
+  const careRoute = parseCareRoute(params);
+  const routeParams = { tab: pathname === "/care" ? careRoute.tab : first(params.tab), category: first(params.category), section: pathname === "/settings" ? visibleSection : first(params.section), view: first(params.view),
+    taskId: first(params.taskId), recordId: careRoute.recordId ?? undefined };
   const retries: Record<string, (() => void) | undefined> = {
     profile: profile?.actions.refresh,
     care: care ? () => care.actions.search(care.model.list.activeQuery, care.model.list.activeKind) : undefined,

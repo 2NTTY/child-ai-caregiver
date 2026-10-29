@@ -19,4 +19,4 @@ export function AvatarCropPreview({ image }: AvatarCropPreviewProps) {
 }
 const styles = StyleSheet.create({ preview: { alignItems: 'center', gap: spacing.sm },
   image: { width: 160, height: 160, borderRadius: 80 },
-  note: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta } });
+  note: { fontFamily: chineseFont, color: colors.muted, ...readingType.body } });

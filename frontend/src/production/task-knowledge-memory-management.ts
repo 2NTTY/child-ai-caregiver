@@ -125,7 +125,10 @@ export function useTaskKnowledgeMemoryManagement({ env, api, runtime, loadAll, c
     operation, pending: runtime.lost ? null : pending, conflict: runtime.lost ? null : conflict, notice, busy, dirty, epoch, consent,
     locked: busy || !!pending || !!conflict || runtime.lost || !env.online,
     markDirty() { if (!busy && !original.current && !runtime.lost) { setDirty(true); setOperation("none"); } },
-    discard() { if (!busy && !original.current && runtime.live()) { setDirty(false); setConflict(null); setOperation("none"); setEpoch(value => value + 1); } },
+    discard() {
+      if (busy || original.current || !runtime.live()) return false;
+      setDirty(false); setConflict(null); setOperation("none"); setEpoch(value => value + 1); return true;
+    },
     submit(intent: MemoryManagementIntent) {
       if (original.current || conflict || !allowed(intent)) return;
       write({ intent: structuredClone(intent), checked: false, confirmed: false, reference: null });

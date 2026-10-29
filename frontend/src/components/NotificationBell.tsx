@@ -9,7 +9,7 @@ import { AppButton } from "./ui";
 import { ToolbarIconButton } from "./ToolbarIconButton";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { usePersonalHistoryWorkspace } from "../production/usePersonalHistory";
-import { PersonalNotificationContent } from "./history/PersonalHistoryViews";
+import { RecentNotificationMessages } from "./history/PersonalHistoryViews";
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
@@ -29,7 +29,7 @@ export function NotificationBell() {
       <Dialog.Title style={styles.title}>最近消息</Dialog.Title>
       <Dialog.Content style={styles.content}>
         {open ? <AppScrollView style={styles.messages} contentContainerStyle={styles.scrollContent}>
-          <PersonalNotificationContent owner={owner} recent />
+          <RecentNotificationMessages owner={owner} />
         </AppScrollView> : null}
       </Dialog.Content>
       <Dialog.Actions style={styles.actions}>

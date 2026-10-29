@@ -45,6 +45,6 @@ const styles = StyleSheet.create({
   notice: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, padding: spacing.lg, backgroundColor: colors.quietSurface, borderRadius: 8 },
   error: { backgroundColor: colors.paleCoral, borderLeftWidth: 3, borderLeftColor: colors.errorInk, paddingLeft: spacing.md },
   copy: { flex: 1, minWidth: 0, gap: spacing.sm },
-  title: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
-  body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
+  title: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, fontWeight: "700" },
+  body: { fontFamily: chineseFont, color: colors.muted, ...readingType.body },
 });

@@ -91,16 +91,16 @@ function ChatContents({ compact, viewportLayout, onPaneLayout }: {
     : chat.busy === "reply" ? (chat.feedback ? AGENT_PROGRESS_LABELS[chat.feedback.phase] : "已保存，正在等候回覆…")
       : chat.remoteReply?.status === "running" ? "原回覆仍在處理，毋須重新發送。" : null;
   const feedback = child ? <BackgroundSurface style={styles.feedback}>
-    {photoUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在保存照片…</Text>:null}
+    {photoUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.body}>正在保存照片…</Text>:null}
     {photoUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{photoUpload.notice}</Text>:null}
     {photoUpload.unknown?<AppButton label="查核原照片上傳" disabled={photoUpload.busy||!chat.online} onPress={checkPhotoUpload}/>:null}
-    {fileUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳原檔；確認保存後才開始處理…</Text>:null}
+    {fileUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.body}>正在上傳原檔；確認保存後才開始處理…</Text>:null}
     {fileUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{fileUpload.notice}</Text>:null}
     {fileUpload.unknown?<AppButton label="查核原檔案上傳" disabled={fileUpload.busy||!chat.online} onPress={checkFileUpload}/>:null}
-    {voiceUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳原錄音；確認保存後才開始處理…</Text>:null}
+    {voiceUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.body}>正在上傳原錄音；確認保存後才開始處理…</Text>:null}
     {voiceUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{voiceUpload.notice}</Text>:null}
     {voiceUpload.unknown?<AppButton label="查核原錄音上傳" disabled={voiceUpload.busy||!chat.online} onPress={checkVoiceUpload}/>:null}
-    {chat.available === false ? <Text style={styles.meta}>AI 暫未開放，已保存訊息可稍後再要求回覆。</Text> : null}
+    {chat.available === false ? <Text style={styles.body}>AI 暫未開放，已保存訊息可稍後再要求回覆。</Text> : null}
     {!chat.online ? <Text accessibilityRole="alert" style={styles.warning}>{chat.messages.length ? "目前離線，所示聊天是上次讀取的快照；草稿仍保留。" : "目前離線，草稿仍保留。"}</Text> : null}
     {progressLabel ? <View testID="chat-operation-status" style={styles.progressRow}>
       <View style={styles.progressCopy}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.progressLabel}>{progressLabel}</Text></View>
@@ -128,7 +128,7 @@ function ChatContents({ compact, viewportLayout, onPaneLayout }: {
   const confirmedEmptyChat = !!child && chat.selectedChildId === child.id && !chat.messages.length && !!chat.loadedAt
     && !chat.loadingOlder && !chat.nextCursor && !chat.error;
   const empty = !child ? <SectionCard><Text style={styles.body}>先選擇孩子。</Text><AppButton label="重新讀取子女檔案" onPress={actions.refresh} /></SectionCard>
-    : chat.loading && !chat.loadedAt ? <BackgroundSurface padded frosted style={styles.emptyState}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取聊天…</Text></BackgroundSurface>
+    : chat.loading && !chat.loadedAt ? <BackgroundSurface padded frosted style={styles.emptyState}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.body}>正在讀取聊天…</Text></BackgroundSurface>
       : confirmedEmptyChat && !busy && !agentAttachments.length && phase === "draft" ? <BackgroundSurface padded frosted testID="chat-empty-prompt" style={styles.emptyState}>
         <Text accessibilityRole="header" aria-level={2} style={[styles.emptyTitle, compact && styles.compactEmptyTitle]}>今天想整理甚麼？</Text><Text style={styles.emptyDetail}>問一個照顧問題，或交代要整理的記錄與安排。</Text></BackgroundSurface> : null;
   return <>
@@ -210,16 +210,16 @@ const styles = StyleSheet.create({
     minHeight: 76, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line, backgroundColor: colors.white, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 },
   compactColumn: { paddingHorizontal: chatLayout.compactInset }, toolbarActions: { flexDirection: "row", alignItems: "center", gap: 4, flexShrink: 1 },
   chatHeading: { minWidth: 0, flex: 1, gap: 4 }, chatTitle: { fontFamily: chatFont, color: colors.ink, fontSize: 22, lineHeight: 30, fontWeight: "700" },
-  emptyDetail: { fontFamily: chatFont, color: colors.muted, fontSize: 14, lineHeight: 23, textAlign: "center", maxWidth: 420 },
+  emptyDetail: { fontFamily: chatFont, color: colors.muted, ...chatType.body, textAlign: "center", maxWidth: 420 },
   screenReaderTitle: { position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0 },
   body: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body },
   meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
-  warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
-  error: { fontFamily: chatFont, color: colors.errorInk, ...chatType.tool },
+  warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.body },
+  error: { fontFamily: chatFont, color: colors.errorInk, ...chatType.body },
   feedback: { gap: 10, minWidth: 0 }, statusRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
   progressRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, minWidth: 0 },
   progressCopy: { flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0, flexShrink: 1 },
-  progressLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, flexShrink: 1 },
+  progressLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body, flexShrink: 1 },
   earlier: { alignItems: "center" }, emptyState: { alignItems: "center", gap: 12, paddingVertical: 28 },
   emptyTitle: { fontFamily: chatFont, color: chatColors.ink, fontSize: 28, lineHeight: 38, fontWeight: "500", textAlign: "center" },
   compactEmptyTitle: { fontSize: 24, lineHeight: 34 },

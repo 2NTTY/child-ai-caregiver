@@ -2,7 +2,7 @@ import type { Ref } from "react";
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Text } from "react-native-paper";
 import { AppIcon } from "./AppIcon";
-import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, spacing, typeScale } from "../theme";
+import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, spacing, readingType } from "../theme";
 
 export function AppCheckbox({ label, accessibilityLabel = label, description, checked, disabled = false, onChange, strikeThrough = false, ref, id, invalid, describedBy, onBlur }: {
   label: string; accessibilityLabel?: string; description?: string; checked: boolean; disabled?: boolean; onChange: (checked: boolean) => void; strikeThrough?: boolean;
@@ -21,5 +21,5 @@ export function AppCheckbox({ label, accessibilityLabel = label, description, ch
 }
 const styles = StyleSheet.create({ row: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: spacing.sm }, copy: { flex: 1, minWidth: 0, gap: spacing.xs },
   mobileRow: { minHeight: mobileLayout.touchTarget },
-  label: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23 }, description: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
+  label: { fontFamily: chineseFont, color: colors.ink, ...readingType.body }, description: { fontFamily: chineseFont, color: colors.muted, ...readingType.body },
   completed: { textDecorationLine: "line-through", color: colors.muted }, pressed: { backgroundColor: colors.pressedOverlay }, disabled: { opacity: 0.5 } });

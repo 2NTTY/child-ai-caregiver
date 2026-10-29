@@ -1,8 +1,5 @@
-import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { Text } from "react-native-paper";
-import { AppDialog } from "../components/AppDialog";
-import { AppScrollView } from "../components/AppScrollView";
 import { AppCheckbox } from "../components/AppCheckbox";
 import { ReadStateNotice } from "../components/ReadStateNotice";
 import { AppDateField, AppTimeZoneSelect } from "../components/DateTimeFields";
@@ -11,18 +8,14 @@ import { PreparationCard } from "../components/summary/PreparationCard";
 import { SummaryRecords } from "../components/summary/SummaryRecords";
 import { SummaryDisclosure } from "../components/summary/SummaryDisclosure";
 import { summaryPeriodSchema } from "../components/summary/summary-form";
-import { summaryPeriodLabel, summaryTime } from "../summary-view-model";
+import { sameSummaryPeriod, summaryPeriodLabel, summaryTime } from "../summary-view-model";
 import { summaryStyles as s } from "../components/summary/summary-styles";
-import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useProductionTaskKnowledgeSummary } from "./TaskKnowledgeDomains";
 
 export function TaskKnowledgeSummaryContent({ preparation = false, presentation = "full", scopeKey, childId, onRecord, onTask, onAgent }: {
   presentation?: "full" | "overview"; scopeKey?: string; childId?: string; preparation?: boolean; onRecord(id: string): void; onTask(id: string): void; onAgent?(): void;
 }) {
   const owner = useProductionTaskKnowledgeSummary();
-  const [open, setOpen] = useState(false), navigate = usePreviewNavigation();
-  const latest = useRef(owner); latest.current = owner;
-  useEffect(() => () => { const value = latest.current; if (value?.model.dirty && !value.model.pending && !value.model.busy) value.actions.discard(); }, []);
   if (!owner) return <ReadStateNotice state="loading" message="正在讀取摘要…" />;
   const { model, actions } = owner, page = model.page;
   const compact = presentation === "overview" && !preparation;
@@ -33,16 +26,12 @@ export function TaskKnowledgeSummaryContent({ preparation = false, presentation 
   const canRetry = model.online && !model.busy && !model.readFailed && model.access === "editable" && !!page?.canManage && !!model.pending?.checked && !model.pending.confirmed;
   const locked = model.busy || !!model.pending || model.access === "lost";
   const quietRead = model.busy && emptyReady;
+  const queryChanged = !!page && !sameSummaryPeriod(page.period, model.query);
   const summaryContent = <View style={s.report} testID="production-summary-brief">
-      <View style={s.reportHeader}>
-        <View style={s.reportIdentity}><Text style={s.reportEyebrow}>已確認資料 · {preparation ? "原共享準備" : "照顧簡報"}</Text>
-          <Text accessibilityRole="header" aria-level={2} style={s.reportTitle}>{preparation ? "單一到診準備" : "這段時間的照顧"}</Text>
-          {page ? <Text style={s.body}>{page.period.startDay} 起{page.period.period === "day" ? "一日" : "七日"} · {page.childName}</Text> : null}
-        </View>
-        <View style={s.reportScope}><Text style={s.body}>先讀已記錄的情況，再核對缺項與跟進；每筆資料都能返回原始依據。</Text>
-          <Text style={s.meta}>沒有記錄不等於沒有發生。</Text>
-          {model.readFailed || model.pending ? <AppButton label={model.pending ? "查原收據及更新摘要" : "重新讀取摘要"} variant="secondary" density="compact" disabled={!model.online || model.busy || model.access === "lost" || !summaryPeriodSchema.safeParse(model.query).success} onPress={actions.refresh} /> : null}
-        </View>
+      <View style={s.reportHeading}>
+        <Text accessibilityRole="header" aria-level={2} style={s.sectionTitle}>{preparation ? "原共享到診準備" : "這段時間的照顧"}</Text>
+        {page ? <Text testID="summary-applied-period" style={s.body}>{summaryPeriodLabel(page.period)} · {page.period.timeZone} · {page.childName}</Text> : null}
+        {model.readFailed || model.pending ? <AppButton label={model.pending ? "查原收據及更新摘要" : "重新讀取摘要"} variant="secondary" density="compact" disabled={!model.online || model.busy || model.access === "lost" || !summaryPeriodSchema.safeParse(model.query).success} onPress={actions.refresh} /> : null}
       </View>
       <SummaryDisclosure appearance="list" label="調整閱讀期間" scopeKey={model.scopeKey}>
         <AppDateField label="摘要開始日" value={model.query.startDay} disabled={locked} preserveFocusWhenDisabled={quietRead} onChange={startDay => actions.updateQuery({ ...model.query, startDay })} />
@@ -50,11 +39,12 @@ export function TaskKnowledgeSummaryContent({ preparation = false, presentation 
         <AppTimeZoneSelect value={model.query.timeZone} disabled={locked} preserveFocusWhenDisabled={quietRead} onChange={timeZone => actions.updateQuery({ ...model.query, timeZone })} />
         <AppButton label="套用期間" variant="secondary" density="compact" disabled={locked || !model.online || !summaryPeriodSchema.safeParse(model.query).success} preserveFocusWhenDisabled={quietRead} onPress={actions.refresh} />
       </SummaryDisclosure>
+      {queryChanged ? <Text style={s.warning}>新選項尚未套用；下方仍顯示原期間的摘要。</Text> : null}
       {!model.online ? <Text style={s.warning}>目前離線；已有資料可能過時，沒有離線提交佇列。</Text> : null}
       {model.readFailed && !model.notice ? <Text style={s.warning}>最新摘要未能核對，暫停保存；目前已顯示資料可能過時。</Text> : null}
-      {model.notice ? <Text accessibilityLiveRegion="polite" style={s.meta}>{model.notice}</Text> : null}
+      {model.notice ? <Text accessibilityLiveRegion="polite" style={s.body}>{model.notice}</Text> : null}
       {page ? <>
-        {preparation ? <AppButton label={model.access === "editable" ? "查看／人工修改共享到診準備" : "查看共享到診準備"} variant="secondary" disabled={model.access === "lost"} onPress={() => setOpen(true)} />
+        {preparation ? model.access !== "lost" ? <PreparationCard model={model} actions={actions} onRecord={onRecord} onTask={onTask} onAgent={onAgent} /> : <Text style={s.body}>已無權讀取這位孩子的到診準備。</Text>
           : <SummaryRecords page={page} onRecord={onRecord} onTask={onTask} emptyReady={emptyReady} motion={{ scopeKey: model.scopeKey, triggerKey: null, eligible: false }} />}
         <SummaryDisclosure appearance="list" label="摘要依據與更新資料" scopeKey={model.scopeKey}><Text style={s.meta}>{model.dataLabel}</Text><Text style={s.meta}>{summaryPeriodLabel(page.period)} · 整理於 {summaryTime(page.generatedAt, page.period.timeZone)}</Text><Text selectable style={s.meta}>依據版本：{page.basisVersion}</Text></SummaryDisclosure>
       </> : model.access === "lost" ? <Text style={s.body}>已無權讀取這位孩子的摘要。</Text> : model.busy ? <ReadStateNotice state="loading" scopeKey={model.scopeKey} message="正在讀取摘要…" /> : !model.readFailed ? <Text style={s.body}>摘要尚未取得。</Text> : null}
@@ -74,14 +64,5 @@ export function TaskKnowledgeSummaryContent({ preparation = false, presentation 
   return <View style={s.stack}>
     {pendingContent}
     {summaryContent}
-    <AppDialog visible={open && !!page && model.access !== "lost"} onDismiss={() => navigate(() => { actions.discard(); setOpen(false); })} accessibilityLabel="家庭共享到診準備">
-      <AppDialog.Title>家庭共享到診準備</AppDialog.Title>
-      <AppDialog.ScrollArea><AppScrollView>
-        {model.pending ? <View style={s.stack}><Text style={s.warning}>{model.notice}</Text><AppButton label="查原收據及更新摘要" variant="secondary" disabled={!model.online || model.busy} onPress={actions.refresh} />
-          {!model.pending.confirmed ? <><AppCheckbox label="我同意沿原識別、原內容及版本重試" checked={model.originalConsent} disabled={!canRetry} onChange={actions.setOriginalConsent} /><AppButton label="明確重試原保存" disabled={!canRetry || !model.originalConsent} onPress={actions.retryOriginal} /></> : null}
-        </View> : null}
-        {page ? <PreparationCard model={model} actions={actions} onRecord={onRecord} onTask={onTask} onAgent={onAgent} /> : null}</AppScrollView></AppDialog.ScrollArea>
-      <AppDialog.Actions><AppButton label="返回準備單" variant="quiet" onPress={() => navigate(() => { actions.discard(); setOpen(false); })} /></AppDialog.Actions>
-    </AppDialog>
   </View>;
 }

@@ -32,7 +32,7 @@ export function PhotoFilePicker({ disabled, onPick, onError, selectOriginal = se
       unavailableReason: !pick ? (capturePreferred ? "原生相機尚未接線，沒有開啟裝置權限。" : "原生相簿尚未接線，沒有開啟裝置權限。") : undefined })}</>;
   }
   return <View style={photoStyles.stack}>{capturePreferred ? <><AppButton label="拍照" variant="secondary" disabled={disabled || reading || !captureOriginal} loading={reading} onPress={() => { void choose(captureOriginal); }} />
-    {!captureOriginal ? <Text style={photoStyles.meta}>原生相機尚未接線；沒有開啟相機或裝置權限。</Text> : null}</> : null}
+    {!captureOriginal ? <Text style={photoStyles.body}>原生相機尚未接線；沒有開啟相機或裝置權限。</Text> : null}</> : null}
     <AppButton label="選擇原照片" variant="secondary" disabled={disabled || reading || !selectOriginal} loading={reading} onPress={() => { void choose(selectOriginal); }} />
-    {!selectOriginal ? <Text style={photoStyles.meta}>原生相簿／相機選圖待 P3 接線。可用下方情境工具的品牌示例比較介面，沒有開啟裝置權限。</Text> : null}</View>;
+    {!selectOriginal ? <Text style={photoStyles.body}>原生相簿／相機選圖待 P3 接線。可用下方情境工具的品牌示例比較介面，沒有開啟裝置權限。</Text> : null}</View>;
 }

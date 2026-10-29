@@ -1,4 +1,3 @@
-import { EmptyListCard } from "../EmptyListCard";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { SettingsSection as SectionCard } from "../settings/SettingsSection";
 import { useId, useRef, useState, type ReactNode } from "react";
@@ -12,11 +11,10 @@ import {
   type ChannelDeliveryView, type ChannelPermission, type ChannelReadState, type ChannelReview,
   type PushSettingsActions, type PushSettingsModel, type TelegramSettingsActions, type TelegramSettingsModel,
 } from "../../channel-view-model";
-import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
+import { chineseFont, colors, readingType, spacing } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppIcon } from "../AppIcon";
 import { AppButton, AppTextField, SectionHeader } from "../ui";
-import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
 import { ReadStateNotice } from "../ReadStateNotice";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 
@@ -100,12 +98,12 @@ function ChannelReviewPanel({ model, actions, production }: { model: SharedModel
   const native = "platform" in model && (model.platform === "android" || model.platform === "ios");
   return <>
     {model.conflict ? <View style={styles.review}>
-      <Text accessibilityRole="header" aria-level={3} style={styles.title}>渠道狀態已有更新</Text>
+      <Text accessibilityRole="header" aria-level={5} style={styles.title}>渠道狀態已有更新</Text>
       <Text style={styles.body}>以下渠道資料是最新讀取的狀態；本次操作仍沿用原來核對的版本。請比較目標及版本，再明確選擇使用最新狀態，並重新核對操作。</Text>
       <AppButton label="核對並使用最新渠道狀態" variant="secondary" disabled={!model.online} onPress={actions.useLatest} />
     </View> : null}
     {model.review ? <View style={styles.review}>
-      <Text accessibilityRole="header" aria-level={3} style={styles.title}>待確認渠道操作</Text>
+      <Text accessibilityRole="header" aria-level={5} style={styles.title}>待確認渠道操作</Text>
       <Text style={styles.body}>目標：{model.review.targetLabel}</Text>
       <Text style={styles.meta}>核對版本：{model.review.expectedVersion === null ? "新登記／綁定，未有既有版本" : model.review.expectedVersion}</Text>
       <Text style={styles.body}>{replacingChallenge
@@ -114,7 +112,7 @@ function ChannelReviewPanel({ model, actions, production }: { model: SharedModel
       <AppCheckbox label={replacingChallenge ? "我明白舊連結及候選帳號會失效，並同意重新開始" : native && model.review.kind === "enable" ? "我同意登記本人的這個裝置" : reviewLabels[model.review.kind]} checked={model.review.confirmed}
         disabled={model.locked || model.conflict} onChange={actions.confirmReview} />
       <View style={styles.actions}>
-        <AppButton label={production ? "確認這項渠道操作" : "模擬確認這項渠道操作"} disabled={!model.online || model.locked || model.conflict || !model.review.confirmed} onPress={actions.submit} />
+        <AppButton label={production ? "確認這項渠道操作" : "模擬確認這項渠道操作"} variant={model.review.kind === "revoke" ? "danger" : "primary"} disabled={!model.online || model.locked || model.conflict || !model.review.confirmed} onPress={actions.submit} />
         <AppButton label="取消渠道操作" variant="quiet" disabled={model.locked} onPress={actions.cancel} />
       </View>
     </View> : null}
@@ -122,42 +120,54 @@ function ChannelReviewPanel({ model, actions, production }: { model: SharedModel
 }
 
 function RecentDeliveries({ deliveries, emptyReady }: { deliveries: ChannelDeliveryView[]; emptyReady: boolean }) {
+  const id = useId(), [expanded, setExpanded] = useState(false);
   const latest = [...deliveries].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)).slice(0, 20);
+  const unresolved = deliveries.filter(item => item.status === "queued" || item.status === "sending" || item.status === "unknown").length;
   return <View style={[styles.stack, styles.group]}>
-    <Text accessibilityRole="header" aria-level={3} style={styles.title}>最近投遞</Text>
-    <Text style={styles.meta}>最多顯示最近 20 項。渠道已接受不等於已送達或已讀；投遞及本人回覆均不代表照護任務已完成。</Text>
-    {latest.length === 0 ? emptyReady ? <EmptyListCard title="已載入資料中暫無投遞紀錄" detail="只代表本次取得的最近紀錄。" /> : null : latest.map(delivery => <View key={delivery.id} style={styles.entry}>
-      <View style={styles.top}><Text style={styles.title}>{delivery.label}</Text>
-        <AppStatusBadge label={channelDeliveryLabels[delivery.status]} tone={delivery.status === "unknown" ? "warning" : delivery.status === "rejected" ? "error" : delivery.status === "stopped" ? "neutral" : "info"} /></View>
-      <Text style={styles.meta}>建立：{channelTime(delivery.createdAt)}</Text>
-      {delivery.reasonLabel ? <Text style={styles.meta}>狀態說明：{delivery.reasonLabel}</Text> : null}
-      {delivery.status === "unknown" ? <Text style={styles.warning}>結果未知，請查核原投遞狀態；不要盲目重發。</Text> : null}
-      {"acknowledgedAt" in delivery && delivery.acknowledgedAt ? <Text style={styles.body}>收到本人回覆：{channelTime(delivery.acknowledgedAt)}</Text> : null}
-    </View>)}
+    <Text accessibilityRole="header" aria-level={5} style={styles.title}>最近投遞</Text>
+    {unresolved > 0 ? <Text style={styles.warning}>已載資料有 {unresolved} 項投遞仍待查核；請查核原投遞狀態，不要盲目重發。</Text> : null}
+    {latest.length === 0 ? emptyReady ? <Text style={styles.body}>已載入資料中暫無投遞紀錄；只代表本次取得的最近紀錄。</Text> : null : <>
+      <AppButton label={`查看最近 ${latest.length} 項投遞`} expanded={expanded} controls={id} onPress={() => setExpanded(value => !value)} />
+      {expanded ? <View nativeID={id} style={styles.stack}>
+        <Text style={styles.body}>最多顯示最近 20 項。渠道已接受不等於已送達或已讀；投遞及本人回覆均不代表照護任務已完成。</Text>
+        {latest.map(delivery => <View key={delivery.id} testID="channel-delivery-row" style={styles.entry}>
+          <View style={styles.top}><Text style={styles.title}>{delivery.label}</Text>
+            <AppStatusBadge label={channelDeliveryLabels[delivery.status]} tone={delivery.status === "unknown" ? "warning" : delivery.status === "rejected" ? "error" : delivery.status === "stopped" ? "neutral" : "info"} /></View>
+          <Text style={styles.meta}>建立：{channelTime(delivery.createdAt)}</Text>
+          {delivery.reasonLabel ? <Text style={styles.body}>狀態說明：{delivery.reasonLabel}</Text> : null}
+          {delivery.status === "unknown" ? <Text style={styles.warning}>結果未知，請查核原投遞狀態；不要盲目重發。</Text> : null}
+          {"acknowledgedAt" in delivery && delivery.acknowledgedAt ? <Text style={styles.body}>收到本人回覆：{channelTime(delivery.acknowledgedAt)}</Text> : null}
+        </View>)}
+      </View> : null}
+    </>}
   </View>;
 }
 
 function BrowserEnableForm({ form, disabled, stageEnable, production, platform }: { form: UseFormReturn<BrowserLabelValues>; disabled: boolean; stageEnable(label: string): void; production: boolean; platform?: PushSettingsModel["platform"] }) {
   const formId = useId();
-  const error = form.formState.errors.label?.message;
   const native = platform === "android" || platform === "ios", deviceName = platform === "ios" ? "iOS" : "Android";
   return <View style={[styles.stack, styles.group]}>
-    <FormErrorSummary entries={error ? [{ field: "label", label: native ? "裝置名稱" : "瀏覽器名稱", message: error }] : []} onFocus={() => form.setFocus("label")} />
     <Controller name="label" control={form.control} render={({ field, fieldState }) => <View>
       <AppTextField ref={field.ref} nativeID={`${formId}-label`} aria-invalid={!!fieldState.error} aria-describedby={`${formId}-label-message`} label={native ? "裝置名稱" : "瀏覽器名稱"} accessibilityLabel={native ? `${deviceName}通知裝置名稱` : "瀏覽器通知名稱"} value={field.value}
         disabled={disabled} onChangeText={field.onChange} onBlur={field.onBlur} error={!!fieldState.error} />
-      <FormFieldMessage id={`${formId}-label-message`} error={fieldState.error?.message} help="去除前後空格後須有內容，最多 80 字元；只供你辨認本人訂閱。" />
+      <Text nativeID={`${formId}-label-message`} accessibilityLiveRegion="polite" style={[styles.body, !!fieldState.error && styles.error]}>{fieldState.error?.message ?? "去除前後空格後須有內容，最多 80 字元；只供你辨認本人訂閱。"}</Text>
     </View>} />
-    <AppButton label={native ? `啟用此 ${deviceName} 裝置通知` : production ? "啟用此瀏覽器通知" : "預覽啟用此瀏覽器通知"} disabled={disabled} onPress={form.handleSubmit(values => stageEnable(values.label.trim()), () => form.setFocus("label"))} />
+    <AppButton label={native ? `啟用此 ${deviceName} 裝置通知` : production ? "啟用此瀏覽器通知" : "預覽啟用此瀏覽器通知"} variant="secondary" disabled={disabled} onPress={form.handleSubmit(values => stageEnable(values.label.trim()), () => form.setFocus("label"))} />
   </View>;
 }
 
-export function WebPushSettingsCard({ model, actions: sourceActions, operationNotice, scopeKey, confirmedOperation, production = false }: { model: PushSettingsModel; actions: PushSettingsActions; operationNotice?: ReactNode; scopeKey: string; confirmedOperation: ConfirmedChannelOperation; production?: boolean }) {
+type WebPushSettingsProps = { model: PushSettingsModel; actions: PushSettingsActions; operationNotice?: ReactNode; scopeKey: string; confirmedOperation: ConfirmedChannelOperation; production?: boolean };
+export function WebPushSettingsCard(props: WebPushSettingsProps) {
+  return <WebPushSettingsContent key={props.scopeKey} {...props} />;
+}
+function WebPushSettingsContent({ model, actions: sourceActions, operationNotice, scopeKey, confirmedOperation, production = false }: WebPushSettingsProps) {
   const stagedBinding = useRef<string | null>(null);
+  const registrationId = useId(), [registrationExpanded, setRegistrationExpanded] = useState<boolean | null>(null);
+  const currentBinding = model.bindings.find(binding => binding.id === model.currentBindingId && binding.status === "active");
   const [bindingIntent, setBindingIntent] = useState<{ kind: "enable" | "revoke"; id: string | null; baseVersion: number } | null>(null);
   const actions: PushSettingsActions = {
     ...sourceActions,
-    stageEnable(label) { stagedBinding.current = model.currentBindingId; setBindingIntent(null); sourceActions.stageEnable(label); },
+    stageEnable(label) { setRegistrationExpanded(true); stagedBinding.current = model.currentBindingId; setBindingIntent(null); sourceActions.stageEnable(label); },
     stageRevoke(id) { stagedBinding.current = id; setBindingIntent(null); sourceActions.stageRevoke(id); },
     stageTest(id) { setBindingIntent(null); sourceActions.stageTest(id); },
     refresh() { setBindingIntent(null); sourceActions.refresh(); },
@@ -173,11 +183,13 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
   const form = useForm<BrowserLabelValues>({ defaultValues: { label: model.platform === "ios" ? "我的iOS裝置" : model.platform === "android" ? "我的Android裝置" : "我的瀏覽器" }, resolver: zodResolver(browserLabelSchema), mode: "onSubmit", shouldFocusError: false });
   const ready = model.readState === "ready";
   const actionBlocked = !model.online || model.locked || !!model.review || model.conflict;
+  const registrationDirty = form.formState.isDirty;
+  const registrationVisible = !currentBinding || (registrationExpanded ?? registrationDirty);
   const canEnable = ready && !actionBlocked && model.available && model.browserSupported && model.permission !== "denied" && model.permission !== "unsupported";
   const native = model.platform === "android" || model.platform === "ios";
   const deviceName = native ? model.platform === "ios" ? "iOS裝置" : "Android裝置" : "瀏覽器";
   const cooldownReady = model.nextTestAt === null || Date.parse(model.nextTestAt) <= Date.now();
-  const guidance = native ? ({ default: `須由你在${deviceName}權限提示中選擇允許，才可登記本人的訂閱。`,
+  const guidance = currentBinding && model.permission === "granted" ? `這個${deviceName}已有本人訂閱；通知渠道不代表已授權所有任務提醒或主動聯絡。` : native ? ({ default: `須由你在${deviceName}權限提示中選擇允許，才可登記本人的訂閱。`,
     granted: "系統通知權限已允許；仍須登記本人裝置，才可使用這個渠道。",
     denied: "請到系統設定更改育有方的通知權限，再回來重新讀取；本頁不能代你更改權限。",
     unsupported: "這個裝置目前不支援通知。你仍可查看及撤銷既有本人訂閱。" }[model.permission])
@@ -188,7 +200,7 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
     <ChannelAnnouncements model={model} />
     <StatusAnnouncement eventKey={model.permission} message={`通知權限：${permissionLabels[model.permission]}。${guidance}`} urgent={model.permission === "denied"} />
     <StatusAnnouncement eventKey={`${model.available}:${model.browserSupported}`} message={!model.available ? unavailable : !model.browserSupported ? "此設備未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。" : ""} />
-    <SectionHeader density="compact" title={`我的${deviceName}通知`} icon="bell-outline" subtitle={`只管理本人的${deviceName}訂閱。`}
+    <SectionHeader headingLevel={4} density="compact" title={`我的${deviceName}通知`} icon="bell-outline" subtitle={`只管理本人的${deviceName}訂閱。`}
       action={ready && (model.conflict || model.permission === "denied") ? <AppButton label={`重新讀取${deviceName}狀態`} variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
     {production ? operationNotice : null}
     {!ready ? <ReadState state={model.readState} online={model.online} locked={production ? model.readState === "loading" : model.locked} refresh={actions.refresh} /> : <>
@@ -200,11 +212,9 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
         <Text style={styles.body}>{guidance}</Text>
         {!model.browserSupported && model.permission !== "unsupported" ? <Text style={styles.warning}>此設備未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。</Text> : null}
       </View>
-      <BrowserEnableForm platform={model.platform} form={form} disabled={!canEnable} stageEnable={actions.stageEnable} production={production} />
-      <ChannelReviewPanel model={model} actions={actions} production={production} />
-      <View style={[styles.stack, styles.group]}>
-        <Text accessibilityRole="header" aria-level={3} style={styles.title}>本人{native ? "裝置" : deviceName}訂閱</Text>
-        {model.bindings.length === 0 ? model.online ? <EmptyListCard title={`目前沒有本人${deviceName}訂閱`} /> : null : model.bindings.map(binding => {
+      {model.bindings.length > 0 ? <View style={[styles.stack, styles.group]}>
+        <Text accessibilityRole="header" aria-level={5} style={styles.title}>本人{native ? "裝置" : deviceName}訂閱</Text>
+        {model.bindings.map(binding => {
           const deliveryNeedsReview = pushDeliveryNeedsReview(model.deliveries, binding.id);
           const confirmed = !!confirmedOperation && !!bindingIntent && model.online && ready && !model.locked && !model.review && !model.conflict
             && binding.version > bindingIntent.baseVersion && (bindingIntent.kind === "enable" ? binding.id === model.currentBindingId && binding.status === "active" : binding.id === bindingIntent.id && binding.status === "revoked");
@@ -226,15 +236,26 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
           </View>;
         })}
         <Text style={styles.meta}>最近24小時一般測試餘額：{model.testsRemaining} 次。</Text>
-        <Text style={styles.meta}>一般測試按最近 24 小時計算，最多 3 次；兩次測試須相隔至少 60 秒。</Text>
+        <Text style={styles.body}>一般測試按最近 24 小時計算，最多 3 次；兩次測試須相隔至少 60 秒。</Text>
         <Text style={cooldownReady ? styles.meta : styles.warning}>{model.nextTestAt ? `下一次可測試時間：${channelTime(model.nextTestAt)}${cooldownReady ? "，冷卻時間已過。" : "，冷卻期間不可再發測試。"}` : "目前沒有測試冷卻時間。"}</Text>
+      </View> : null}
+      <View style={styles.stack}>
+        {currentBinding ? <AppButton label={`重新登記此${native ? deviceName : "瀏覽器"}`} expanded={registrationVisible} controls={registrationId} onPress={() => setRegistrationExpanded(!registrationVisible)} /> : null}
+        {registrationVisible ? <View nativeID={registrationId} onFocus={() => setRegistrationExpanded(true)}>
+          <BrowserEnableForm platform={model.platform} form={form} disabled={!canEnable} stageEnable={actions.stageEnable} production={production} />
+        </View> : null}
       </View>
+      <ChannelReviewPanel model={model} actions={actions} production={production} />
       <RecentDeliveries deliveries={model.deliveries} emptyReady={ready && model.online} />
     </>}
   </SectionCard>;
 }
 
-export function TelegramSettingsCard({ model, actions: sourceActions, operationNotice, scopeKey, confirmedOperation, production = false }: { model: TelegramSettingsModel; actions: TelegramSettingsActions; operationNotice?: ReactNode; scopeKey: string; confirmedOperation: ConfirmedChannelOperation; production?: boolean }) {
+type TelegramSettingsProps = { model: TelegramSettingsModel; actions: TelegramSettingsActions; operationNotice?: ReactNode; scopeKey: string; confirmedOperation: ConfirmedChannelOperation; production?: boolean };
+export function TelegramSettingsCard(props: TelegramSettingsProps) {
+  return <TelegramSettingsContent key={props.scopeKey} {...props} />;
+}
+function TelegramSettingsContent({ model, actions: sourceActions, operationNotice, scopeKey, confirmedOperation, production = false }: TelegramSettingsProps) {
   const [bindingIntent, setBindingIntent] = useState<{ kind: "confirm" | "revoke"; id: string | null; baseVersion: number } | null>(null);
   const actions: TelegramSettingsActions = {
     ...sourceActions,
@@ -266,7 +287,7 @@ export function TelegramSettingsCard({ model, actions: sourceActions, operationN
     <ChannelAnnouncements model={model} />
     <StatusAnnouncement eventKey={String(model.configured)} message={!model.configured ? "Telegram 渠道目前未設定或未可用，不能開始、確認新綁定或發送測試；既有本人綁定仍可撤銷。" : ""} />
     <StatusAnnouncement eventKey={`${model.binding?.id ?? ""}:${model.binding?.status ?? "none"}`} message={model.binding?.status === "blocked" ? "本人 Telegram 渠道已封鎖，不能發送測試；須先撤銷，才可重新開始私人綁定。" : ""} urgent={model.binding?.status === "blocked"} />
-    <SectionHeader density="compact" title="我的 Telegram" icon="message-text-outline" subtitle="只綁定本人的私人帳號。"
+    <SectionHeader headingLevel={4} density="compact" title="我的 Telegram" icon="message-text-outline" subtitle="只綁定本人的私人帳號。"
       action={ready && model.conflict ? <AppButton label="重新讀取 Telegram 狀態" variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
     {production ? operationNotice : null}
     {!ready ? <ReadState state={model.readState} online={model.online} locked={production ? model.readState === "loading" : model.locked} refresh={actions.refresh} /> : <>
@@ -286,10 +307,10 @@ export function TelegramSettingsCard({ model, actions: sourceActions, operationN
           <AppButton label={production ? "發送一次一般測試" : "預覽一般測試"} variant="quiet" disabled={!canTest} onPress={actions.stageTest} />
         </View> : null}
         {model.binding.status !== "revoked" && testBlocked ? <Text style={styles.warning}>仍有排隊中、發送中或未有本人回覆的未知投遞；先查核原投遞，暫不可另發測試。</Text> : null}
-      </View> : model.online ? <EmptyListCard title="目前沒有本人 Telegram 綁定" /> : null}
-      {!existingBinding ? <AppButton label={production ? model.challenge ? "重新開始私人綁定" : "開始私人綁定" : model.challenge ? "預覽重新開始私人綁定" : "預覽開始私人綁定"} disabled={!canBegin} onPress={actions.stageBegin} /> : null}
+      </View> : model.online ? <Text style={styles.body}>目前沒有本人 Telegram 綁定。</Text> : null}
+      {!existingBinding ? <AppButton label={production ? model.challenge ? "重新開始私人綁定" : "開始私人綁定" : model.challenge ? "預覽重新開始私人綁定" : "預覽開始私人綁定"} variant="secondary" disabled={!canBegin} onPress={actions.stageBegin} /> : null}
       {model.challenge ? <View style={styles.entry}>
-        <Text accessibilityRole="header" aria-level={3} style={styles.title}>{challengeExpired ? "私人綁定步驟已過期" : "私人綁定步驟"}</Text>
+        <Text accessibilityRole="header" aria-level={5} style={styles.title}>{challengeExpired ? "私人綁定步驟已過期" : "私人綁定步驟"}</Text>
         <Text style={styles.meta}>版本 {model.challenge.version} · 到期：{channelTime(model.challenge.expiresAt)}</Text>
         {challengeExpired ? <Text style={styles.warning}>這個步驟已過期，不能再確認候選帳號。請重新開始私人綁定。</Text> : <>
           <Text style={styles.body}>先在 Telegram 完成本人的綁定步驟，再回到此頁手動重新讀取；開始步驟尚未代表綁定完成。</Text>
@@ -297,14 +318,14 @@ export function TelegramSettingsCard({ model, actions: sourceActions, operationN
             <AppButton label="開啟 Telegram 綁定步驟" variant="secondary" disabled={actionBlocked || !model.configured || existingBinding} onPress={actions.openStartLink} />
             <AppButton label="重新讀取 Telegram 狀態" variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} />
           </View>
-          <Text style={styles.meta}>{production ? "按下入口會開啟目前服務提供的 Telegram 綁定連結；須由本人完成，再回來核對候選帳號。" : "合成預覽只展示綁定步驟，不會開啟真實 Telegram 或 bot。"}</Text>
+          <Text style={styles.body}>{production ? "按下入口會開啟目前服務提供的 Telegram 綁定連結；須由本人完成，再回來核對候選帳號。" : "合成預覽只展示綁定步驟，不會開啟真實 Telegram 或 bot。"}</Text>
           {model.challenge.state === "seen" && model.challenge.candidate ? <View style={styles.candidate}>
             <Text style={styles.title}>待核對的 Telegram 帳號</Text>
             <Text style={styles.body}>候選接收者：{model.challenge.candidate.label}</Text>
             <Text style={styles.meta}>帳號提示：{model.challenge.candidate.chatIdHint}</Text>
             <Text style={styles.body}>請核對名稱及帳號提示確實屬於本人，再確認綁定。</Text>
-            <AppButton label="核對這個 Telegram 帳號" disabled={!canConfirm} onPress={actions.stageConfirm} />
-          </View> : <Text style={styles.meta}>尚未讀取到可核對的候選帳號；請完成步驟後重新讀取。</Text>}
+            <AppButton label="核對這個 Telegram 帳號" variant="secondary" disabled={!canConfirm} onPress={actions.stageConfirm} />
+          </View> : <Text style={styles.body}>尚未讀取到可核對的候選帳號；請完成步驟後重新讀取。</Text>}
         </>}
       </View> : null}
       <ChannelReviewPanel model={model} actions={actions} production={production} />
@@ -321,13 +342,13 @@ const styles = StyleSheet.create({
   group: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
   top: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, minWidth: 0 },
   actions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, minWidth: 0 },
-  title: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700", flexShrink: 1 },
-  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, flexShrink: 1 },
+  title: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, fontWeight: "700", flexShrink: 1 },
+  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, flexShrink: 1 },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flexShrink: 1 },
-  warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool },
+  warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.body },
   error: { color: colors.errorInk },
   note: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, paddingVertical: spacing.sm, minWidth: 0 },
-  noteCopy: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool, flex: 1, minWidth: 0 },
+  noteCopy: { fontFamily: chineseFont, color: colors.muted, ...readingType.body, flex: 1, minWidth: 0 },
   warningNote: { borderLeftWidth: 2, borderLeftColor: colors.warningInk, paddingLeft: spacing.md },
   errorNote: { borderLeftWidth: 2, borderLeftColor: colors.errorInk, paddingLeft: spacing.md },
   review: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.md, minWidth: 0 },

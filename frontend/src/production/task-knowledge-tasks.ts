@@ -1,3 +1,4 @@
+import { usePathname } from "expo-router";
 import { readLoadedIdWindow } from "./task-knowledge-read-window";
 import { projectConfirmedTask } from "./task-projection.ts";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -21,6 +22,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
   const [linkedTask, setLinkedTask] = useState<TaskView | null>(null);
   const [detailRead, setDetailRead] = useState<TasksViewModel["detailRead"]>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null), [draft, setDraft] = useState<TaskDraft | null>(null);
+  const [pristineCreateKey, setPristineCreateKey] = useState<string | null>(null);
   const [latest, setLatest] = useState<TaskView | null>(null), [operation, setOperation] = useState(none);
   const [histories, setHistories] = useState<Record<string, { taskVersion: number; items: TaskRevisionView[]; cursor: number | null }>>({});
   const [historyOpen, setHistoryOpen] = useState(false), [loadingMore, setLoadingMore] = useState(false);
@@ -30,7 +32,20 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
   const queuedSelection = useRef<{ id: string; intent: TaskSelectionIntent } | null>(null), selectLatest = useRef<(id: string, intent: TaskSelectionIntent) => void>(() => {});
   const canManage = env.role === "owner" || env.role === "caregiver";
   const pending = operation.state === "saving" || operation.state === "unknown";
-  useDomainWriteGuard(!runtime.lost && !!draft, !runtime.lost && pending);
+  const pathname = usePathname(), previousPath = useRef(pathname);
+  function closePanel() {
+    if (!runtime.live() || pending || attempt.current) return false;
+    setSelectedId(null); setLinkedTask(null); setDraft(null); setLatest(null); setHistoryOpen(false); setOperation(none);
+    return true;
+  }
+  useEffect(() => {
+    const leftTasks = previousPath.current === "/tasks" && pathname !== "/tasks";
+    previousPath.current = pathname;
+    if (leftTasks && !["saving", "unknown"].includes(operation.state)) closePanel();
+  }, [pathname]);
+  const pristineCreate = draft?.mode === "create" && draft.key === pristineCreateKey && !draft.reviewedValues
+    && operation.state === "none" && !attempt.current;
+  useDomainWriteGuard(!runtime.lost && !!draft && !pristineCreate, !runtime.lost && pending);
   useEffect(() => () => { busy.current = false; api.resetOnline(); }, [api]);
   const verified = async <T,>(action: (signal: AbortSignal) => Promise<T>, signal: AbortSignal, write = false) => {
     if (await api.getSession(signal) !== env.userId) throw new TaskApiError(401);
@@ -184,10 +199,11 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
     latest: runtime.lost ? null : latest, operation: runtime.lost ? none : operation,
   }, actions: {
     selectTask,
-    closePanel() { if (!pending) { setSelectedId(null); setLinkedTask(null); setDraft(null); setLatest(null); setHistoryOpen(false); setOperation(none); } },
+    closePanel,
     startCreate() {
       if (locked || !canManage || !env.online || !page) return;
-      setDraft({ key: crypto.randomUUID(), mode: "create", basis: null, initialValues: emptyTaskForm(), reviewedValues: null }); setLatest(null); setOperation(none);
+      const key = crypto.randomUUID(); setPristineCreateKey(key);
+      setDraft({ key, mode: "create", basis: null, initialValues: emptyTaskForm(), reviewedValues: null }); setLatest(null); setOperation(none);
     },
     startChange(id, mode) {
       const basis = items.find(item => item.id === id);
@@ -196,9 +212,10 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
     },
     reviewDraft(values) {
       if (locked || !draft || !taskFormSchema(draft.mode, page?.eligibleAssignees ?? []).safeParse(values).success) return;
+      setPristineCreateKey(null);
       setDraft({ ...draft, reviewedValues: structuredClone(values) }); setOperation({ state: "needs_confirmation", message: "已核對草稿；請明確確認家庭共享安排。", reference: null });
     },
-    editDraft() { if (!locked && draft) { setDraft({ ...draft, reviewedValues: null }); setOperation(none); } },
+    editDraft() { if (!locked && draft) { setPristineCreateKey(null); setDraft({ ...draft, reviewedValues: null }); setOperation(none); } },
     submitReviewed() {
       if (locked || !canManage || !draft?.reviewedValues || !taskFormSchema(draft.mode, page?.eligibleAssignees ?? []).safeParse(draft.reviewedValues).success) return;
       if (draft.mode === "create") {

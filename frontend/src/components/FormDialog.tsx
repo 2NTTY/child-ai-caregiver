@@ -1,5 +1,5 @@
 import type { OperationOpenRequest } from "../operation-reveal";
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject, type ComponentProps } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { spacing } from "../theme";
@@ -8,9 +8,9 @@ import { AppScrollView } from "./AppScrollView";
 import { AppButton } from "./ui";
 
 /** Presentation only: the existing form and owner still own drafts, writes and recovery. */
-export function FormDialog({ visible, scopeKey, title, children, recovery, onClose, returnFocusRef, fallbackFocusRef, formKey, closeOutcome, dismissMode = "guarded" }: {
+export function FormDialog({ visible, scopeKey, title, children, recovery, onClose, returnFocusRef, fallbackFocusRef, formKey, closeOutcome, dismissMode = "guarded", onClosed }: {
   visible: boolean; scopeKey: string; title: string; children: ReactNode; recovery?: ReactNode;
-  onClose(): void; returnFocusRef?: RefObject<View | null>; fallbackFocusRef?: RefObject<View | null>; formKey?: string | number;
+  onClose(): void; onClosed?(): void; returnFocusRef?: RefObject<View | null>; fallbackFocusRef?: RefObject<View | null>; formKey?: string | number;
   /** Optional owner projection acknowledgement; ordinary local-state dialogs need no port. */
   closeOutcome?: { revision: unknown; ready: boolean };
   /** Local dismissal is only for disposable presentation state, never an owner-backed draft or write. */
@@ -23,7 +23,7 @@ export function FormDialog({ visible, scopeKey, title, children, recovery, onClo
   if (generation.current.scopeKey !== scopeKey || generation.current.formKey !== formKey || !generation.current.visible && visible) generation.current.value++;
   generation.current = { visible, scopeKey, formKey, value: generation.current.value };
   const openedGeneration = generation.current.value;
-  const current = useRef({ visible, scopeKey, onClose, closeOutcome }); current.current = { visible, scopeKey, onClose, closeOutcome };
+  const current = useRef({ visible, scopeKey, onClose, closeOutcome, onClosed }); current.current = { visible, scopeKey, onClose, closeOutcome, onClosed };
   const closeRequest = useRef<{ scopeKey: string; generation: number; closedGeneration: number | null; revision: unknown; outcomeObserved: boolean } | null>(null);
   const request = closeRequest.current;
   if (request) {
@@ -60,6 +60,8 @@ export function FormDialog({ visible, scopeKey, title, children, recovery, onClo
       }
     }
     closeRequest.current = null;
+    // Consumers may hand off a confirmed mutation only after the native modal releases focus.
+    if (mounted.current && generation.current.value === openedGeneration && current.current.scopeKey === scopeKey && !current.current.visible) current.current.onClosed?.();
   };
   // RN Modal already portals natively; a Paper Portal here would lose page/owner contexts.
   return <AppDialog visible={visible} onDismiss={close} onClosed={closed} accessibilityLabel={title} style={styles.dialog} testID="manual-form-dialog">
@@ -71,9 +73,9 @@ export function FormDialog({ visible, scopeKey, title, children, recovery, onClo
   </AppDialog>;
 }
 
-/** A stable secondary trigger; closing only unmounts the form after guard approval. */
-export function ManualFormDialog({ label, title = label, scopeKey, disabled = false, recovery, children, onClose, formKey, openRequest }: {
-  label: string; title?: string; scopeKey: string; disabled?: boolean; recovery?: ReactNode; children: ReactNode; onClose?(): void; formKey?: string | number; openRequest?: OperationOpenRequest;
+/** A stable explicit-variant trigger; closing only unmounts the form after guard approval. */
+export function ManualFormDialog({ label, title = label, scopeKey, disabled = false, recovery, children, onClose, formKey, openRequest, triggerVariant = "quiet" }: {
+  label: string; title?: string; scopeKey: string; triggerVariant?: ComponentProps<typeof AppButton>["variant"]; disabled?: boolean; recovery?: ReactNode; children: ReactNode; onClose?(): void; formKey?: string | number; openRequest?: OperationOpenRequest;
 }) {
   const [state, setState] = useState<{ scopeKey: string; open: boolean } | null>(null);
   const trigger = useRef<View>(null);
@@ -85,7 +87,7 @@ export function ManualFormDialog({ label, title = label, scopeKey, disabled = fa
     if (!disabled) setState({ scopeKey, open: true });
   }, [openRequest?.key, openRequest?.scopeKey, scopeKey, disabled]);
   return <>
-    <AppButton ref={trigger} label={label} accessibilityLabel={label === title ? label : `${label}：${title}`} variant="quiet" disabled={disabled} onPress={() => setState({ scopeKey, open: true })} />
+    <AppButton ref={trigger} label={label} accessibilityLabel={label === title ? label : `${label}：${title}`} variant={triggerVariant} disabled={disabled} onPress={() => setState({ scopeKey, open: true })} />
     {state ? <FormDialog visible={!!visible} scopeKey={scopeKey} formKey={formKey} title={title} recovery={recovery} returnFocusRef={trigger}
       onClose={() => { onClose?.(); setState({ scopeKey, open: false }); }}>{children}</FormDialog> : null}
   </>;

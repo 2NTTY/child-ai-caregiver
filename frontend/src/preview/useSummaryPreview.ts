@@ -96,7 +96,7 @@ export function useSummaryPreview(child: HomeChild, online: boolean, identity: s
     updateQuery(value: SummaryViewModel['query']) {if (!flight.current && !pendingRef.current) setQuery(value);}, refresh,
     markDirty() {dirtyRef.current = true; setDirty(true);},
     save(input: PreparationDecision, appointmentLabel: string) {const current = pageRef.current; if (!current || pendingRef.current || summaryBasisChanged(input, current) || input.appointmentTaskId && !current.appointments.some(task => task.id === input.appointmentTaskId)) return; const frozen = clone(input); send({reference: `preview-summary-operation-${++serial.current}`, input: frozen, body: JSON.stringify(frozen), appointmentLabel, confirmed: false, checked: false, applied: false});},
-    discard() {if (model.busy || !online || pendingRef.current || readFailed || !pageRef.current) return; setDirty(false); dirtyRef.current = false; setFormEpoch(value => value + 1); setConfirmationEpoch(value => value + 1);},
+    discard() {if (model.busy || !online || pendingRef.current || readFailed || !pageRef.current) return false; setDirty(false); dirtyRef.current = false; setFormEpoch(value => value + 1); setConfirmationEpoch(value => value + 1);return true;},
     setOriginalConsent, retryOriginal() {const original = pendingRef.current; if (!original || original.confirmed || !original.checked || !originalConsent) return; send(original);},
   }};
 }

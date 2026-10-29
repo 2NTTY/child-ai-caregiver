@@ -53,7 +53,7 @@ export interface TasksViewModel {
 }
 export type TaskSelectionIntent = "open" | "toggle";
 export interface TasksActions {
-  selectTask(id: string, intent?: TaskSelectionIntent): void; closePanel(): void;
+  selectTask(id: string, intent?: TaskSelectionIntent): void; closePanel(): boolean | void;
   startCreate(): void; startChange(id: string, action: TaskAction): void;
   reviewDraft(values: TaskFormValues): void; editDraft(): void; submitReviewed(): void;
   useLatestVersion(): void; showHistory(): void; loadOlderHistory(): void;

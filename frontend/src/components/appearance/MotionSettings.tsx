@@ -35,6 +35,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: spacing.md, minHeight: 58 },
   copy: { flex: 1, minWidth: 0, gap: spacing.xs },
   title: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
-  body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
-  note: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
+  body: { fontFamily: chineseFont, color: colors.muted, ...readingType.body },
+  note: { fontFamily: chineseFont, color: colors.muted, ...readingType.body },
 });

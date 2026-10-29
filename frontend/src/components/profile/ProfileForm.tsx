@@ -30,11 +30,11 @@ function ProfileField({editor, name, label, multiline = false, placeholder}: {
   </View>} />;
 }
 
-function ProfileSection({number, title, description, children}: {number: string; title: string; description: string; children: ReactNode}) {
-  return <View style={styles.section} testID={`profile-editor-section-${number}`}>
-    <View style={styles.sectionHeading}><Text style={styles.sectionNumber}>{number}</Text><View style={styles.sectionCopy}>
+function ProfileSection({id, title, description, children}: {id: string; title: string; description: string; children: ReactNode}) {
+  return <View style={styles.section} testID={`profile-editor-section-${id}`}>
+    <View style={styles.sectionHeading}>
       <Text accessibilityRole="header" aria-level={3} style={styles.sectionTitle}>{title}</Text><Text style={styles.body}>{description}</Text>
-    </View></View>
+    </View>
     <View style={styles.sectionFields}>{children}</View>
   </View>;
 }
@@ -59,17 +59,9 @@ export function ProfileForm({initialValues, editable, canReview, draftOnly, onEd
   const containerLayout = useContainerWidth();
   const paired = containerLayout.width >= 640;
   return <View style={styles.form} ref={containerLayout.ref} onLayout={containerLayout.onLayout} testID="profile-editor">
-    <View style={styles.introduction}>
-      <Text style={styles.eyebrow}>孩子檔案 · 資料核對</Text>
-      <Text accessibilityRole="header" aria-level={2} style={styles.editorTitle}>讓照顧的人了解孩子</Text>
-      <Text style={styles.body}>填寫你已知的資料，未確定的可以留空。預覽並確認後，才會更新共享檔案。</Text>
-      <View style={styles.meaningRow}>
-        <View style={styles.meaning}><Text style={styles.meaningTitle}>已知</Text><Text style={styles.body}>按來源填寫，保留原意與約數。</Text></View>
-        <View style={styles.meaning}><Text style={styles.meaningTitle}>未知</Text><Text style={styles.body}>留空不代表「沒有」，亦不會代你推算。</Text></View>
-      </View>
-    </View>
+    <Text style={styles.introduction}>按來源填寫已知資料；留空不代表「沒有」，亦不會代你推算。</Text>
     <FormErrorSummary entries={errorEntries} onFocus={name => setFocus(name as keyof ProfileFormValues)} />
-    <ProfileSection number="01" title="年齡與出生資料" description="先選擇你掌握的資料種類，不需要為了填滿欄位而猜測。">
+    <ProfileSection id="basic" title="基本資料" description="選擇已知的年齡基準，不需要猜測生日。">
       <Controller control={control} name="ageKind" render={({field: input}) => <AppSelect ref={input.ref} onBlur={input.onBlur} id={`${formId}-ageKind`} label="年齡資料" value={input.value} options={profileAgeOptions}
         disabled={!editable} onChange={value => {onEdit(); input.onChange(value);}} />} />
       <View style={styles.ageBasis} testID="profile-age-interpretation">
@@ -86,15 +78,15 @@ export function ProfileForm({initialValues, editable, canReview, draftOnly, onEd
       <FieldPair wide={paired}><View style={[styles.pairItem, paired && styles.pairItemWide]}><ProfileField editor={editor} name="dueDate" label="預產期（可空，YYYY-MM-DD）" /></View>
         <View style={[styles.pairItem, paired && styles.pairItemWide]}><ProfileField editor={editor} name="gestationalWeeksRaw" label="出生孕週原文（可空）" placeholder="例如約 35 週…" /></View></FieldPair>
       <Text style={styles.body}>早產資料只保留原文；不會自動計算矯正年齡。未知欄位請留空。</Text>
-    </ProfileSection>
-    <ProfileSection number="02" title="日常照顧" description="讓家人知道平日如何照顧；留空並不代表沒有過敏或特別需要。">
       <FieldPair wide={paired}><View style={[styles.pairItem, paired && styles.pairItemWide]}><ProfileField editor={editor} name="region" label="地區（可空）" /></View>
         <View style={[styles.pairItem, paired && styles.pairItemWide]}><ProfileField editor={editor} name="language" label="語言（可空）" /></View></FieldPair>
+    </ProfileSection>
+    <ProfileSection id="care" title="健康與照顧" description="記下需要留意的事及照顧方式。">
       <ProfileField editor={editor} name="allergies" label="過敏資料（可空）" multiline />
       <ProfileField editor={editor} name="specialNeeds" label="特別需要（可空）" multiline />
       <ProfileField editor={editor} name="preferences" label="照顧偏好（可空）" multiline />
     </ProfileSection>
-    <ProfileSection number="03" title="資料從哪裏來" description="記下來源與這次核對的原因，方便日後了解每個版本的依據。">
+    <ProfileSection id="source" title="資料從哪裏來" description="來源與核對原因會隨這個版本保存。">
       <ProfileField editor={editor} name="source" label="資料來源（由你描述）" multiline placeholder="例如家長提供…" />
       <Text style={styles.body}>私人聊天不會自動引用為檔案來源。</Text>
       <ProfileField editor={editor} name="validUntil" label="資料有效至（可空，YYYY-MM-DD）" />
@@ -110,20 +102,14 @@ export function ProfileForm({initialValues, editable, canReview, draftOnly, onEd
 }
 const styles = StyleSheet.create({
   form: {gap: spacing.xl, width: "100%", minWidth: 0},
-  introduction: {gap: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line, paddingBottom: spacing.xl},
-  eyebrow: {fontFamily: chineseFont, color: colors.teal, ...readingType.tool, fontWeight: "700"},
-  editorTitle: {fontFamily: chineseFont, color: colors.ink, fontSize: 22, lineHeight: 32, fontWeight: "700"},
-  meaningRow: {flexDirection: "row", flexWrap: "wrap", gap: spacing.lg},
-  meaning: {flexBasis: 220, flexGrow: 1, flexShrink: 1, maxWidth: "100%", minWidth: 0, gap: spacing.xs},
+  introduction: {fontFamily: chineseFont, color: colors.muted, ...readingType.body},
   meaningTitle: {fontFamily: chineseFont, color: colors.ink, ...readingType.body, fontWeight: "700"},
   body: {fontFamily: chineseFont, color: colors.muted, ...readingType.body, flexShrink: 1},
   section: {gap: spacing.lg, minWidth: 0},
-  sectionHeading: {flexDirection: "row", alignItems: "flex-start", gap: spacing.md, minWidth: 0},
-  sectionNumber: {fontFamily: chineseFont, color: colors.teal, ...readingType.tool, fontWeight: "700", paddingTop: 3, minWidth: 24},
-  sectionCopy: {gap: spacing.xs, flex: 1, minWidth: 0},
+  sectionHeading: {gap: spacing.xs, minWidth: 0},
   sectionTitle: {fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 28, fontWeight: "700"},
   sectionFields: {gap: spacing.lg, paddingBottom: spacing.xl, borderBottomWidth: 1, borderBottomColor: colors.line},
-  ageBasis: {gap: spacing.xs, borderLeftWidth: 3, borderLeftColor: colors.teal, paddingLeft: spacing.md, paddingVertical: spacing.sm},
+  ageBasis: {gap: spacing.xs},
   field: {minWidth: 0, width: "100%"},
   pair: {gap: spacing.lg, minWidth: 0}, pairWide: {flexDirection: "row", alignItems: "flex-start"}, pairItem: {minWidth: 0}, pairItemWide: {flex: 1, minWidth: 0},
   saveBoundary: {gap: spacing.lg, alignItems: "flex-start", paddingBottom: spacing.sm},

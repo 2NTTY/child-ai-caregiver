@@ -39,7 +39,7 @@ export function GrowthArchiveConcernButton({ concern, scopeKey, authorityVersion
       <AppDialog.Title danger>結束這條關注？</AppDialog.Title>
       <AppDialog.Content><Text style={s.title}>「{review?.title ?? concern.title}」</Text>
         <Text style={s.body}>{growthConcernArchiveReachesCapacity(concern) ? "此關注結束後將無法恢復繼續記錄，完整歷史仍會保留。" : "內容會保留在歷史，可撤銷或恢復；不影響已連結的任務。"}</Text>
-        {growthConcernArchiveReachesCapacity(concern) ? <Text style={s.meta}>不會刪除記錄，也不會完成或取消已連結的任務。</Text> : null}
+        {growthConcernArchiveReachesCapacity(concern) ? <Text style={s.body}>不會刪除記錄，也不會完成或取消已連結的任務。</Text> : null}
       </AppDialog.Content>
       <AppDialog.Actions>
         <AppButton label="取消" variant="quiet" onPress={cancel} />

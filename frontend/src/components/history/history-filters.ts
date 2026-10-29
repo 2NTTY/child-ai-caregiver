@@ -1,13 +1,14 @@
+import { navigationItems } from "../navigation/app-navigation.ts";
 import { calendarDate } from "../date-time.ts";
 
 export const historyCategories = [
-  { key: "tasks", label: "待辦與預約", description: "已完成及已取消的安排", sourceLabel: "待辦與預約", sourcePath: "/tasks", sourceAction: "開啟待辦", unavailable: "" },
+  { key: "tasks", label: "待辦與預約", description: "已完成及已取消的安排", sourceLabel: navigationItems.tasks.label, sourcePath: navigationItems.tasks.href, sourceAction: `開啟${navigationItems.tasks.short}`, unavailable: "" },
   { key: "preparations", label: "準備單", description: "使用後歸檔的文件與當時版本", sourceLabel: "準備單", sourcePath: "/growth?tab=preparation", sourceAction: "開啟準備單", unavailable: "" },
-  { key: "review", label: "核對記錄", description: "寫入結果與家長確認分開查看", sourceLabel: "核對", sourcePath: "/care", sourceAction: "開啟核對", unavailable: "" },
-  { key: "care", label: "照顧記錄", description: "已保存記錄、更正與原始來源", sourceLabel: "核對", sourcePath: "/care", sourceAction: "開啟核對", unavailable: "" },
+  { key: "review", label: "核對記錄", description: "寫入結果與家長確認分開查看", sourceLabel: navigationItems.care.label, sourcePath: navigationItems.care.href, sourceAction: `開啟${navigationItems.care.short}`, unavailable: "" },
+  { key: "care", label: "照顧記錄", description: "已保存記錄、更正與原始來源", sourceLabel: navigationItems.care.label, sourcePath: "/care?tab=records", sourceAction: `開啟${navigationItems.care.short}`, unavailable: "" },
   { key: "profile", label: "檔案修改", description: "孩子檔案的確認及更正版本", sourceLabel: "孩子檔案", sourcePath: "/profile", sourceAction: "查看檔案", unavailable: "" },
-  { key: "conversations", label: "助手對話", description: "本人與這位孩子相關的對話", sourceLabel: "助手", sourcePath: "/chat", sourceAction: "開啟助手", unavailable: "請到助手查看已載入的對話。" },
-  { key: "growth", label: "關注與成長", description: "查看已結束的關注與跟進記錄", sourceLabel: "關注鏈", sourcePath: "/growth", sourceAction: "開啟關注鏈", unavailable: "" },
+  { key: "conversations", label: "助手對話", description: "本人與這位孩子相關的對話", sourceLabel: navigationItems.chat.label, sourcePath: navigationItems.chat.href, sourceAction: navigationItems.chat.label, unavailable: "請到助手查看已載入的對話。" },
+  { key: "growth", label: "關注與成長", description: "查看已結束的關注與跟進記錄", sourceLabel: navigationItems.growth.short, sourcePath: navigationItems.growth.href, sourceAction: `開啟${navigationItems.growth.short}`, unavailable: "" },
   { key: "notifications", label: "消息歷史", description: "已保存的本人消息內容", sourceLabel: "本人消息", sourcePath: "/history?category=notifications", sourceAction: "查看消息歷史", unavailable: "消息內容暫未提供。" },
 ] as const;
 
@@ -21,17 +22,17 @@ export type HistoryFilterAction =
   | { type: "scope"; scope: string; category: HistoryCategory };
 
 export function normalizeHistoryCategory(value: string | string[] | undefined): HistoryCategory {
-  const candidate = Array.isArray(value) ? value[0] : value;
+  const candidate = Array.isArray(value) ? undefined : value;
   return historyCategories.find(item => item.key === candidate)?.key ?? "tasks";
 }
 
 export function normalizeReviewHistoryStatus(value: string | string[] | undefined): "all" | "pending" | "written" | "confirmed" | "skipped" {
-  const candidate = Array.isArray(value) ? value[0] : value;
+  const candidate = Array.isArray(value) ? undefined : value;
   return candidate === "pending" || candidate === "written" || candidate === "confirmed" || candidate === "skipped" ? candidate : "all";
 }
 
 export function normalizeHistoryOlderOnly(value: string | string[] | undefined): boolean {
-  return (Array.isArray(value) ? value[0] : value) === "1";
+  return (Array.isArray(value) ? undefined : value) === "1";
 }
 
 export function createHistoryFilters(scope: string, category: HistoryCategory): HistoryFilters {

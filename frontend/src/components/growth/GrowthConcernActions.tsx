@@ -1,8 +1,7 @@
 import { useId, useState, type ReactNode } from "react";
-import { Pressable, View } from "react-native";
-import { Text } from "react-native-paper";
+import { View } from "react-native";
 import { MotionDisclosure } from "../../motion";
-import { AppIcon } from "../AppIcon";
+import { AppButton } from "../ui";
 import { growthStyles as s } from "./growth-styles";
 
 // Keep the original form and confirmation mounted in the page's owner context.
@@ -15,12 +14,8 @@ export function GrowthConcernActions({ scopeKey, primary, children, hasManagemen
   return <View style={s.concernActions} testID="growth-concern-actions">
     <View style={s.concernActionRow}>
       {primary}
-      {hasManagement ? <Pressable nativeID={`${id}-trigger`} accessibilityRole="button" accessibilityLabel="管理關注"
-        accessibilityState={{ expanded: open }} aria-expanded={open} aria-controls={`${id}-content`}
-        onPress={() => setState({ scopeKey, open: !open })}
-        style={({ pressed }) => [s.concernManagementTrigger, pressed && s.pressed]}>
-        <Text style={s.concernManagementLabel}>管理</Text><AppIcon name={open ? "chevron-up" : "chevron-down"} size={18} />
-      </Pressable> : null}
+      {hasManagement ? <AppButton nativeID={`${id}-trigger`} label="管理關注" variant="quiet"
+        expanded={open} controls={`${id}-content`} onPress={() => setState({ scopeKey, open: !open })} /> : null}
     </View>
     <MotionDisclosure expanded={open} scopeKey={scopeKey} nativeID={`${id}-content`}>
       <View style={s.concernManagementMenu} testID="growth-concern-management-menu">{children}</View>

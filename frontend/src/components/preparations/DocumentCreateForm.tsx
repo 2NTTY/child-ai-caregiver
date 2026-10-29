@@ -16,7 +16,7 @@ import { chineseFont, colors, readingType, spacing } from "../../theme";
 type Fields = { title: string; purpose: DocumentRequest["purpose"]; from: string; to: string; eventDate: string; reportMode: "fixed" | "living" };
 export type DocumentFormOwner = {
   authorityVersion: string; locked: boolean; dirty: boolean; epoch: number; operation?: WriteOperationView; retainedDraftId?: string | null; createDraft?: DocumentCreateDraft | null; editingLocked?: boolean;
-  createDocument(request: DocumentRequest, draftId?: string): void; markDraft(): void; discardDraft(): void;
+  createDocument(request: DocumentRequest, draftId?: string): void; markDraft(): void; discardDraft(): boolean;
 };
 export function DocumentCreateForm({ owner, kind, purpose = "appointment", allowFamily = true }: { owner: DocumentFormOwner; kind: DocumentRequest["kind"]; purpose?: DocumentRequest["purpose"]; allowFamily?: boolean }) {
   const draft = owner.createDraft?.request.kind === kind ? owner.createDraft : null;
@@ -24,18 +24,36 @@ export function DocumentCreateForm({ owner, kind, purpose = "appointment", allow
     from: draft?.request.period.from ?? "", to: draft?.request.period.to ?? "", eventDate: draft?.request.eventDate ?? "", reportMode: draft?.request.reportMode ?? "fixed" });
   const id = useId(), [basis, setBasis] = useState<string | null>(() => draft?.authorityVersion ?? null), [shared, setShared] = useState(false);
   const latestOwner = useRef(owner); latestOwner.current = owner;
+  const departure = useRef<{ epoch: number; authority: string; resolve(accepted: boolean): void } | null>(null);
   const { control, handleSubmit, reset, setError, setFocus, watch, formState: { errors } } = useForm<Fields>({
     defaultValues: defaults(),
   });
   // Form fields live here, not in the retained document owner. Only a submitted
   // operation's frozen payload may survive workspace navigation without discarding.
   const retained = !!owner.retainedDraftId && (owner.retainedDraftId === id || owner.retainedDraftId === draft?.id);
-  usePreviewLeaveGuard(basis !== null && owner.dirty && !retained);
+  const discardEpoch = owner.epoch, discardId = draft?.id;
+  usePreviewLeaveGuard(basis !== null && owner.dirty && !retained, false, "child", undefined, false, undefined, () => {
+    const current = latestOwner.current;
+    if (current.epoch !== discardEpoch || current.createDraft?.id !== discardId || current.authorityVersion !== owner.authorityVersion) return false;
+    if (!owner.discardDraft()) return false;
+    // Admission is not publication: the router may dispatch after this event.
+    // Wait for the original owner snapshot and its leave guards to commit.
+    return new Promise<boolean>(resolve => { departure.current = { epoch: discardEpoch, authority: owner.authorityVersion, resolve }; });
+  });
   const stale = basis !== null && basis !== owner.authorityVersion, disabled = (owner.editingLocked ?? owner.locked) || stale;
   const labels: Record<keyof Fields, string> = { title: "文件名稱", purpose: "用途", from: "來源期間開始日", to: "來源期間結束日", eventDate: "使用日期（可不填）", reportMode: "更新方式" };
   const living = kind === "growth_report" && watch("reportMode") === "living";
   useEffect(() => { reset(defaults()); setBasis(draft?.authorityVersion ?? null); setShared(false); }, [owner.epoch, reset]);
-  useEffect(() => () => { const latest = latestOwner.current; if (latest.dirty) latest.discardDraft(); }, []);
+  useEffect(() => {
+    const pending = departure.current;
+    if (!pending) return;
+    if (owner.authorityVersion !== pending.authority || owner.epoch !== pending.epoch || !owner.dirty) {
+      departure.current = null; pending.resolve(owner.authorityVersion === pending.authority && !owner.dirty);
+    }
+  }, [owner.authorityVersion, owner.epoch, owner.dirty]);
+  // Presentation teardown is not consent to discard. It only invalidates an
+  // outstanding navigation receipt; StrictMode and replacement never write.
+  useEffect(() => () => { departure.current?.resolve(false); departure.current = null; }, []);
   useEffect(() => { if (stale || owner.operation?.state === "conflict" || owner.operation?.state === "failed") setShared(false); }, [stale, owner.operation?.state]);
   const edited = () => { if (!basis) setBasis(owner.authorityVersion); owner.markDraft(); setShared(false); };
   const options = kind === "preparation" ? preparationPurposes.map(item => ({ value: item.key, label: item.label }))
@@ -79,4 +97,4 @@ export function DocumentCreateForm({ owner, kind, purpose = "appointment", allow
   </View>;
 }
 const s = StyleSheet.create({ stack: { gap: spacing.md }, actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted }, warning: { fontFamily: chineseFont, ...readingType.tool, color: colors.warningInk } });
+  meta: { fontFamily: chineseFont, ...readingType.body, color: colors.muted }, warning: { fontFamily: chineseFont, ...readingType.body, color: colors.warningInk } });
