@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-30",
+  "workPackage": "P4-HANDOVER01",
+  "base": "9a527c2034b3157248d157f940f5c0e76d954353",
+  "branch": "codex/p4-handover-documents",
+  "status": "document_transfer_export_implemented_not_deployed",
+  "scope": [
+    "Versioned document transfer metadata retains the original request separately from rendered edits, creation/archive state and current snapshot identity",
+    "Historical body pages retain snapshot IDs and versions even when current source checks redact the body",
+    "Existing authority, source validity, encrypted storage and scoped pagination remain in use; no execution state or grant is exported"
+  ],
+  "verification": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-document-export.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "covers": ["Original request versus edited title", "Archived metadata", "Current and historical snapshot correspondence", "Paged body reads", "Other account denied", "Source change redaction with stable snapshot identities"]
+    },
+    { "check": "Scoped TypeScript graph: account export, restore codec and document export test", "roots": 3, "diagnostics": 0 },
+    { "check": "git diff --check", "result": "passed" }
+  ],
+  "retainedFailures": [
+    "The initial test failed because document exports omitted the original request.",
+    "The first verification exposed a missing scopeVersion in the new test's pagination helper; the established export guard correctly rejected that request.",
+    "The existing domain fixture lacks FieldPath.documentId cursor support. The test now reuses the existing serial Firestore fixture used by the handover pipelines; no production pagination rule or assertion was relaxed."
+  ],
+  "review": "Independent read-only Sol review found no actionable issues; main reviewed the exact export/authority diff and observed targeted verification.",
+  "pending": ["Document prepared import and copied source evidence", "Full original revision and preparation-data import", "Unified batch worker and shared import UI", "Deployment and complete document round trip"],
+  "notRun": ["Real models", "Cloud database", "Browser/device", "Full suite", "Deployment"],
+  "limitations": "This is a reconstruction prerequisite, not a completed document importer. Synthetic pagination does not prove cloud indexes or concurrency. Recent snapshot IDs are bounded metadata; complete revision history remains independently paginated."
+}

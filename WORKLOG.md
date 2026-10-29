@@ -4333,3 +4333,12 @@
 一條連貫合成 worker 流程及三根 TypeScript 圖通過；涵蓋讀回、歷史／來源鏈匯出、codec、隔離、重複、衝突及刪除遮蔽。保留首次不支援 sources 與誤用 change kind 的失敗，修正後沒有重跑已驗記憶或模型；[證據](artifacts/verification/P4_HANDOVER_PRIVATE_SOURCE_PIPELINE_20261030.json)。獨立唯讀 review 無確定 P1／P2 或必要 minor。
 
 共用來源選項／歷史呈現待依賴合併後接續；沒有部署、雲端、模型或設備操作。管理修訂不等於全文修訂，codec 不等於災難還原；私人來源單項刪除的獨立還原重放留 S15 未完，不能把本切片當完整備份／P4 完成。
+
+<a id="log-20261030-p4-handover-document-export"></a>
+### 2026-10-30 — P4-HANDOVER01 文件傳送匯出修正
+
+以 #386／`9a527c20` 接續文件模組，先補原匯出遺漏的 request、建立／歸檔時間、目前快照關聯及最近索引。完整正文／修訂仍沿原授權分頁，不把最近十項當全部歷史。正文因來源失效遮蔽時保留原快照身份，沒有放寬披露或轉移內部來源授權、整理工作及 lease。
+
+一條必要合成流程通過，涵蓋原請求與編輯標題區分、歸檔、正文續頁、其他帳號拒絕及來源失效後身份保留／正文遮蔽；三根受影響型別圖零診斷。保留最初缺欄位、測試漏 scopeVersion 及 fixture 不支援文件 ID 游標的失敗；修正測試沿用已有 serial fixture，未改產品分頁規則或放寬斷言。獨立唯讀 review 無 actionable 問題，詳見[證據](artifacts/verification/P4_HANDOVER_DOCUMENT_EXPORT_20261030.json)。
+
+這是可還原文件的必要匯出前置，匯入保存、來源副本證據、完整原修訂／準備資料與共用選項仍待接續，沒有部署或宣稱 HANDOVER01／P4 完成；未跑模型、雲端、設備或全量測試。

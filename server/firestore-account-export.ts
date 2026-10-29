@@ -168,12 +168,12 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             const manifest = firestoreSnapshotManifestSchema.parse(value);
             const snapshot = await createFirestoreFamilyDocumentStore({ ...options, transaction: binding })
               .readExportSnapshot(owner, binding.scope.childId, manifest.documentId, manifest.snapshotId, manifest.snapshotVersion);
-            items.push(section === 'document_content' ? { documentId: manifest.documentId, snapshot, invalidated: snapshot === null }
-              : { documentId: manifest.documentId, snapshotId: manifest.snapshotId, snapshotVersion: manifest.snapshotVersion, invalidated: snapshot === null });
+            const identity = { documentId: manifest.documentId, snapshotId: manifest.snapshotId, snapshotVersion: manifest.snapshotVersion };
+            items.push(section === 'document_content' ? { ...identity, snapshot, invalidated: snapshot === null }
+              : { ...identity, generatedAt: manifest.generatedAt, invalidated: snapshot === null });
           } else if (section === 'documents') {
-            const item = await createFirestoreFamilyDocumentStore({ ...options, transaction: binding }).get(owner, binding.scope.childId, context.id);
-            if (item) items.push({ id: item.id, childId: item.childId, kind: item.kind, purpose: item.purpose, version: item.version,
-              status: item.status, readState: item.readState, invalidated: item.readState === 'invalidated' });
+            const item = await createFirestoreFamilyDocumentStore({ ...options, transaction: binding }).readExportMetadata(owner, binding.scope.childId, context.id);
+            if (item) items.push(item);
           } else if (['care_history', 'profile_history', 'memory_fact_history', 'memory_topic_history'].includes(section)) {
             const item = z.object({ id: z.uuid().optional(), childId: z.uuid(), version: z.number().int().positive() }).passthrough().parse(value);
             const kind = section === 'care_history' ? 'care' : section === 'profile_history' ? 'profile' : section === 'memory_fact_history' ? 'fact' : 'topic';

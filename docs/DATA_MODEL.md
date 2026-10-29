@@ -900,6 +900,8 @@ v1 匯入讀取器復用同一 ZIP verifier 及匯出 section 表，先核全部
 
 來源歷史另存加密 `handover_source_history`，每筆連結本地資源 ID／匯入時版本與不可變來源 evidence（領域、原修訂、來源鏈）；原作者／確認者不改成匯入者，本地實際匯入者／時間／操作分開保存。以目標及來源身份／版本確定 ID，同版異內容列衝突；不追加本地修訂或觸發舊提醒。逐項收據可帶 `sourceSection` 區分來源歷史與目前值，與批次進度同交易提交。再次交接沿同一 wrapper 保留原 evidence，依目前包的父資源映射連到新目標，不改寫原來源。
 
+文件傳送資料以原 `documents`／`document_snapshots`／`document_chunks` 為權威，不另存可修改副本。`yuyoufang-document:1` 匯出記錄包含文件 ID／版本、原 request、建立／歸檔狀態、autoRefresh 偏好、目前快照的 ID／版本／可讀性及最近快照 ID 索引；所有修訂及正文仍以獨立分頁匯出。遮蔽的正文行保留快照身份及 invalidated 狀態，不能把來源失效當成沒有該修訂。傳送格式不包含目前來源授權選擇或整理工作內部狀態；原偏好不構成匯入帳戶的執行授權。文件匯入的來源證據綁定及批次接線尚待實作，不以此匯出契約代替完成證據。
+
 私人來源沿相同映射、收據及批次處理；`private_source_history` 的 evidence.module 為 `private_sources`，原 inputId／version 連接來源身份。保留完整原管理修訂，不將目前正文快照另存為同版管理歷史；避免同一來源／版本異類內容相撞。權威正文仍在 shared_inputs／shared_input_parts，匯入歷史不能恢復抓取、模型或外發授權；讀取及匯出重核本人範圍和現行父來源。單來源刪除已有即時 tombstone，獨立災難還原刪除重放仍屬 S15 待補，不由本輪歷史保存宣稱完成。
 
 `care_history/profile_history/task_history/memory_fact_history/memory_topic_history` 匯出先分頁讀本地修訂，再以同一加密 scope cursor 的來源階段讀來源歷史；空頁而仍有游標不是完成。來源歷史讀回沿目前模組授權及父資源版本／刪除狀態，profile 的 historyFloor 亦適用。新增歷史不改當前事實，但推進 change cursor；實體刪除在原持久清理工作加入來源歷史階段，仍有界及可接續。備份／帳戶／孩子／班級清理 registry 納入新 collection，恢復重建可信 metadata 並按獨立刪除紀錄移除舊 evidence，不能從原快照恢復已刪正文。
