@@ -37,7 +37,7 @@ export function TasksCalendar({ items, context, selectedDay, month, disabled, on
   }
   return <View testID="tasks-calendar" style={styles.calendar}>
     <View style={styles.header}>
-      <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={styles.month}>{calendar.label}</Text>
+      <Text accessibilityRole="header" aria-level={3} accessibilityLiveRegion="polite" style={styles.month}>{calendar.label}</Text>
       <View style={styles.monthActions}>
         <Pressable accessibilityRole="button" accessibilityLabel="上一個月" disabled={disabled || !calendar.month} aria-disabled={disabled || !calendar.month}
           accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(-1)} style={({ pressed }) => [styles.monthButton, pressed && !disabled && !!calendar.month && styles.pressed]}><AppIcon name="chevron-left" size={20} color={colors.ink} /></Pressable>

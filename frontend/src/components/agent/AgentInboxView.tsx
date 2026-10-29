@@ -47,7 +47,7 @@ export function AgentInboxView({ model, actions }: { model: AgentInboxModel; act
         const selected = entry.runId === model.selectedRunId;
         return <View key={entry.runId} accessibilityState={{ selected }} aria-selected={selected}
           style={[styles.entry, selected && styles.selectedEntry]}>
-          <Text accessibilityRole="header" style={styles.title}>{entry.label}</Text>
+          <Text accessibilityRole="header" aria-level={2} style={styles.title}>{entry.label}</Text>
           <Text style={styles.meta}>運行建立：{timeLabel(entry.createdAt)}</Text>
           {selected ? <View style={styles.selectedLabel}><AppIcon name="eye" size={18} color={colors.teal} /><Text style={styles.meta}>目前展示此結果</Text></View> : null}
           <AppButton label={`查看私人背景結果：${entry.label}`} variant="quiet"

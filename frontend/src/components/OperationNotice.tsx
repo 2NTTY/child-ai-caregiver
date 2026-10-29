@@ -16,7 +16,7 @@ export function OperationNotice({ state, title, message, referenceLabel, childre
     {visible && (state !== "none" || message) ? <View style={[styles.notice, state === "saved" && styles.saved, state === "failed" && styles.failed,
     (state === "unknown" || state === "conflict" || state === "needs_confirmation") && styles.attention]}>
     <AppStatusBadge label={label} tone={state === "saved" ? "success" : state === "failed" ? "error" : state === "unknown" || state === "conflict" || state === "needs_confirmation" ? "warning" : "info"} />
-    {title && title !== label ? <Text accessibilityRole="header" style={styles.title}>{title}</Text> : null}
+    {title && title !== label ? <Text accessibilityRole="header" aria-level={2} style={styles.title}>{title}</Text> : null}
     {message && message !== title && message !== label ? <Text style={styles.body}>{message}</Text> : null}
     {referenceLabel && state !== "saved" ? <Text selectable style={styles.meta}>{referenceLabel}</Text> : null}
     {children}

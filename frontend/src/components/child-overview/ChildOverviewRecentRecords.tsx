@@ -10,7 +10,7 @@ export function ChildOverviewRecentRecords({ model, scopeKey, childId, onRecord,
   const reading = overviewRecords(model, scopeKey, childId, Date.now());
   const readable = reading.state === "ready" || reading.state === "stale";
   return <View style={styles.card} testID="overview-recent-records">
-    <View style={styles.heading}><View style={styles.headingCopy}><Text style={styles.eyebrow}>從已確認的日常記錄看見</Text><Text accessibilityRole="header" style={styles.title}>最近生活片段</Text></View>
+    <View style={styles.heading}><View style={styles.headingCopy}><Text style={styles.eyebrow}>從已確認的日常記錄看見</Text><Text accessibilityRole="header" aria-level={2} style={styles.title}>最近生活片段</Text></View>
       {reading.periodLabel ? <Text style={styles.period}>{reading.periodLabel} · {model.page?.period.timeZone}</Text> : null}
     </View>
     {reading.state === "stale" ? <Text style={styles.warning}>以下為已載入的記錄，最新內容尚未核對。</Text> : null}

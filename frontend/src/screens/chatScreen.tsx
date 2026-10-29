@@ -24,24 +24,21 @@ import { colors, mobileLayout } from "../theme";
 import type { ChatReplyPhase } from "../chat-view-model";
 
 const attachmentLeaveCopy = { message: "離開將移除未送出的附件；文字仍在本次暫存保留。", actionLabel: "移除附件並離開" };
-// All widths use layout units (Web onLayout uses offsetWidth), never zoomed DOM rectangles.
-const activityRail = { width: 152, inset: 8, gap: 16 };
-const activityRailMinimum = chatLayout.maxWidth + 2 * (activityRail.width + activityRail.inset + activityRail.gap);
 const runPhases = { running: "thinking", completed: "complete", stopped: "stopped", unknown: "unknown" } satisfies Record<string, ChatReplyPhase>;
 export default function ChatPage() {
   const { scopeKey } = useProduction();
   const customBackground = useCustomBackground();
   const viewportWidth = useWindowDimensions().width;
-  const [paneWidth, setPaneWidth] = useState(0), [pageWidth, setPageWidth] = useState(0);
+  const [paneWidth, setPaneWidth] = useState(0);
   return <View style={[styles.root, customBackground && styles.customRoot]} role="region" accessibilityLabel="助手" tabIndex={-1} {...(Platform.OS === "web" ? { dataSet: { pageSurface: "true" } } : {})}>
-    <View testID="chat-page-layout" style={styles.pageLayout} onLayout={event => setPageWidth(event.nativeEvent.layout.width)}>
+    <View testID="chat-page-layout" style={styles.pageLayout}>
       <ChatContents key={scopeKey ?? "no-authorized-child"} compact={(paneWidth || viewportWidth) < mobileLayout.breakpoint}
-        externalActivity={pageWidth >= activityRailMinimum} onPaneLayout={event => setPaneWidth(event.nativeEvent.layout.width)} />
+        onPaneLayout={event => setPaneWidth(event.nativeEvent.layout.width)} />
     </View>
   </View>;
 }
-function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
-  compact: boolean; externalActivity?: boolean; onPaneLayout?(event: LayoutChangeEvent): void;
+function ChatContents({ compact, onPaneLayout }: {
+  compact: boolean; onPaneLayout?(event: LayoutChangeEvent): void;
 }) {
   const pathname = usePathname(), router = useRouter(), navigate = usePreviewNavigation();
   const { model, actions, scopeKey, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
@@ -130,11 +127,11 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   const empty = !child ? <SectionCard><Text style={styles.body}>先選擇孩子。</Text><AppButton label="重新讀取子女檔案" onPress={actions.refresh} /></SectionCard>
     : chat.loading && !chat.loadedAt ? <BackgroundSurface padded frosted style={styles.emptyState}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取聊天…</Text></BackgroundSurface>
       : confirmedEmptyChat && !busy && !agentAttachments.length && phase === "draft" ? <BackgroundSurface padded frosted testID="chat-empty-prompt" style={styles.emptyState}>
-        <Text accessibilityRole="header" style={[styles.emptyTitle, compact && styles.compactEmptyTitle]}>想先聊聊什麼？</Text></BackgroundSurface> : null;
+        <Text accessibilityRole="header" aria-level={2} style={[styles.emptyTitle, compact && styles.compactEmptyTitle]}>把育兒大小事交給助手</Text><Text style={[styles.body, styles.emptyDescription]}>問問題、記下新情況，或一起安排下一步。需要保存或更改資料時，再核對具體內容。</Text></BackgroundSurface> : null;
   return <>
     <StatusAnnouncement eventKey={chat.loading && !!chat.loadedAt ? "refreshing" : "settled"} message={chat.loading && !!chat.loadedAt ? "正在重新核對聊天。" : ""} />
-    <BackgroundSurface frosted testID="chat-top-toolbar" style={[styles.toolbar, compact && styles.compactColumn, externalActivity && styles.externalToolbar]}>
-      <Text testID="chat-screen-reader-heading" accessibilityRole="header" style={styles.screenReaderTitle}>助手</Text>
+    <BackgroundSurface frosted testID="chat-top-toolbar" style={[styles.toolbar, compact && styles.compactColumn]}>
+      <Text testID="chat-page-heading" accessibilityRole="header" aria-level={1} style={styles.pageTitle}>助手</Text>
       <View style={styles.toolbarActions}>
         <ChatAction label={agentModel.pendingDecision ? "活動 · 待查核" : needsDecision ? "活動 · 待確認" : pendingReadLabel ? `活動 · ${pendingReadLabel}` : "活動"}
           accessibilityLabel={agentModel.pendingDecision ? "對話詳情與活動，原決定待查核" : needsDecision ? "對話詳情與活動，有事項待確認" : pendingReadLabel ? `對話詳情與活動，待確認事項${pendingReadLabel}` : "對話詳情與活動"} onPress={() => setDetailsOpen(true)} compact={compact} disabled={!child} />
@@ -204,10 +201,10 @@ const styles = StyleSheet.create({
   boundedReadingPanel: { maxWidth: chatLayout.maxWidth, alignSelf: "center" },
   root: { flex: 1, minHeight: 0, backgroundColor: chatColors.canvas },
   toolbar: { width: "100%", flexShrink: 0, paddingHorizontal: chatLayout.wideInset,
-    minHeight: 52, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 8 },
-  externalToolbar: { position: "absolute", top: 0, right: activityRail.inset, width: activityRail.width, paddingHorizontal: 8, zIndex: 1 },
+    maxWidth: chatLayout.maxWidth, alignSelf: "center", minHeight: 72, paddingVertical: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   compactColumn: { paddingHorizontal: chatLayout.compactInset }, toolbarActions: { flexDirection: "row", alignItems: "center", gap: 4, flexShrink: 1 },
-  screenReaderTitle: { position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0 },
+  pageTitle: { fontFamily: chatFont, color: chatColors.ink, fontSize: 26, lineHeight: 36, fontWeight: "700", flexShrink: 1 },
+  emptyDescription: { textAlign: "center", maxWidth: 480 },
   body: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body },
   meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
@@ -217,10 +214,10 @@ const styles = StyleSheet.create({
   progressCopy: { flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0, flexShrink: 1 },
   progressLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, flexShrink: 1 },
   earlier: { alignItems: "center" }, emptyState: { alignItems: "center", gap: 12, paddingVertical: 28 },
-  emptyTitle: { fontFamily: chatFont, color: chatColors.ink, fontSize: 28, lineHeight: 38, fontWeight: "500", textAlign: "center" },
+  emptyTitle: { fontFamily: chatFont, color: chatColors.ink, fontSize: 28, lineHeight: 38, fontWeight: "600", textAlign: "center" },
   compactEmptyTitle: { fontSize: 24, lineHeight: 34 },
-  action: { alignSelf: "flex-start", minHeight: 40, paddingHorizontal: 8, justifyContent: "center", borderRadius: 10 },
-  compactAction: { minHeight: 48 }, subtleAction: { minHeight: 32, alignSelf: "center" },
+  action: { alignSelf: "flex-start", minHeight: 44, paddingHorizontal: 12, justifyContent: "center", borderRadius: 10 },
+  compactAction: { minHeight: 48 }, subtleAction: { minHeight: 44, alignSelf: "center" },
   actionLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool },
   actionActive: { backgroundColor: chatColors.hover }, actionFocused: { outlineColor: chatColors.focus, outlineWidth: 2, outlineStyle: "solid" },
   disabled: { opacity: .45 }, privacyFooter: { flexShrink: 0, paddingHorizontal: 8, paddingBottom: 4, marginTop: -8 },

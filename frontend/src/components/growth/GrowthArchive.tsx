@@ -228,7 +228,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
     {footerDetails}
   </View>;
   if (!archive) return <View style={s.stack}>{periods}<View style={s.archiveEmpty} testID="growth-archive-unavailable">
-    <Text accessibilityRole="header" style={s.concernTitle}>{state === "ready" ? "暫時沒有可閱讀的成長報告" : stateCopy[state].title}</Text>
+    <Text accessibilityRole="header" aria-level={2} style={s.concernTitle}>{state === "ready" ? "暫時沒有可閱讀的成長報告" : stateCopy[state].title}</Text>
     <Text style={s.body}>{state === "ready" ? rangePeriods ? "可翻閱其他已取得的期間與版本。" : "可翻閱其他已取得的年度與季度。" : stateCopy[state].detail}</Text>
   </View>{footerActions || footerDetails ? footer : null}</View>;
   const sections = standardGrowthReportSections(model, archive);
@@ -240,7 +240,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
       <View style={a.headerRow}>
         <View style={a.headerCopy}>
           <Text style={a.kicker}>{selected?.period?.kind === "range" ? "成長報告" : selected?.key === current?.key ? "標準成長報告" : selected?.period?.label ?? "成長報告"}</Text>
-          <Text accessibilityRole="header" style={a.reportTitle}>{archive.title ?? `${model.childName}的成長報告`}</Text>
+          <Text accessibilityRole="header" aria-level={2} style={a.reportTitle}>{archive.title ?? `${model.childName}的成長報告`}</Text>
         </View>
         <AppButton label="導出報告" variant="accent" onPress={() => {clearExportFeedback(); setExportKey(selected?.key ?? null); setExportOpen(true);}} />
       </View>
@@ -255,7 +255,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
         onChange={Platform.OS === "web" ? setChapter : goTo} onSelectionClosed={Platform.OS === "web" ? goTo : undefined} /> : null}
       {sections.map((section, index) => <View key={section.id} ref={node => {if (node) sectionRefs.current.set(section.id, node); else sectionRefs.current.delete(section.id);}} tabIndex={-1}
         style={[a.reportSection, index > 0 && a.reportSectionDivider]} testID={`growth-report-${section.id}`}>
-        <Text accessibilityRole="header" style={a.reportSectionTitle}>{section.title}</Text>
+        <Text accessibilityRole="header" aria-level={3} style={a.reportSectionTitle}>{section.title}</Text>
         {section.id === "profile" ? <View style={a.profileFacts} testID="growth-report-profile-facts">
           <View style={a.profileFact}><Text style={s.meta}>孩子</Text><Text style={s.title}>{model.childName}</Text></View>
           <View style={a.profileFact}><Text style={s.meta}>年齡</Text><Text style={s.body}>{archive.ageLabel || "未提供"}</Text></View>

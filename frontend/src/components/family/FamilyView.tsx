@@ -181,7 +181,7 @@ export function FamilyView({ model, actions, writeNotice, previewControls, onTas
         {writeNotice}
         <DraftReview model={model} actions={actions} production={production} onCancel={cancelDraft} />
         <View style={styles.familyHeading}>
-          <View style={styles.flexCopy}><Text accessibilityRole="header" style={styles.familyTitle}>{model.family ? `${model.family.ownerName}的家庭` : "我的家庭"}</Text>
+          <View style={styles.flexCopy}><Text accessibilityRole="header" aria-level={2} style={styles.familyTitle}>{model.family ? `${model.family.ownerName}的家庭` : "我的家庭"}</Text>
             {model.family ? <Text style={styles.meta}>本人是{familyRoleLabels[model.family.role]} · {model.family.members.length} 位已載入成員 · 權限版本 {model.family.version}</Text> : null}</View>
           {model.families.length > 1 && model.family ? <AppSelect label="家庭" value={model.family.id}
             options={familyOptions}

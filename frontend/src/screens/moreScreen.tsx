@@ -22,7 +22,7 @@ export default function MoreScreen() {
   return <PageFrame density="compact" title="全部功能">
     <View ref={catalogueLayout.ref} onLayout={catalogueLayout.onLayout} testID={desktop ? "more-desktop-catalogue" : "more-mobile-list"}
       style={[styles.groups, desktop && styles.catalogue]}>{groups.map(group => <View key={group.title} style={[styles.group, desktop && styles.catalogueGroup, desktop && { width: groupWidth }]}>
-      <View style={styles.heading}><Text accessibilityRole="header" style={styles.title}>{group.title}</Text><Text style={styles.detail}>{group.detail}</Text></View>
+      <View style={styles.heading}><Text accessibilityRole="header" aria-level={2} style={styles.title}>{group.title}</Text><Text style={styles.detail}>{group.detail}</Text></View>
       {desktop ? <View style={styles.catalogueLinks}>{group.items.map(item => <PreviewLink key={item.key}
         href={item.key === "photos" ? { pathname: "/care", params: { view: "photos" } } : navigationItems[item.key].href}>
         <Pressable accessibilityRole="link" accessibilityLabel={navigationItems[item.key].short}
@@ -43,9 +43,9 @@ const styles = StyleSheet.create({
   catalogueLinks: { gap: spacing.xs },
   catalogueLink: { minHeight: 72, paddingVertical: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.softLine, borderRadius: spacing.xs },
   linkCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
-  linkTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 14, lineHeight: 22, fontWeight: "600" },
-  linkDetail: { fontFamily: chineseFont, color: colors.muted, fontSize: 12, lineHeight: 18 },
+  linkTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 16, lineHeight: 24, fontWeight: "600" },
+  linkDetail: { fontFamily: chineseFont, color: colors.muted, fontSize: 13, lineHeight: 20 },
   pressed: { backgroundColor: colors.quietSurface },
   heading: { gap: spacing.xs }, title: { fontFamily: chineseFont, color: colors.ink, fontSize: 16, lineHeight: 24, fontWeight: "700" },
-  detail: { fontFamily: chineseFont, color: colors.muted, fontSize: 14, lineHeight: 22 },
+  detail: { fontFamily: chineseFont, color: colors.muted, fontSize: 16, lineHeight: 24 },
 });

@@ -56,7 +56,7 @@ export function GrowthHistoryView({ searchText, dateRange, onRecord, onTask }: {
         onPress={() => { returnFocus.current = cards.current.get(concern.id) ?? null; setSelection({ scopeKey, id: concern.id, version: concern.version }); }}
         onFocus={() => setFocusedId(concern.id)} onBlur={() => setFocusedId(null)} onHoverIn={() => setHoveredId(concern.id)} onHoverOut={() => setHoveredId(null)}
         style={({ pressed }) => [styles.concernListCard, hoveredId === concern.id && styles.readHovered, focusedId === concern.id && styles.readFocused, pressed && styles.readPressed]}>
-        <Text numberOfLines={2} accessibilityRole="header" style={s.title}>{concern.title}</Text>
+        <Text numberOfLines={2} accessibilityRole="header" aria-level={2} style={s.title}>{concern.title}</Text>
         <Text numberOfLines={3} style={s.body}>{concern.reason}</Text>
         <View style={styles.concernRow}><Text style={[s.meta, styles.concernSummary]}>{concern.archivedAt && !Number.isNaN(Date.parse(concern.archivedAt)) ? `結束於 ${new Date(concern.archivedAt).toLocaleDateString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "numeric", day: "numeric" })}` : "結束日期未提供"}</Text>
           <AppIcon name="chevron-right" size={18} color={colors.muted} importantForAccessibility="no" /></View>

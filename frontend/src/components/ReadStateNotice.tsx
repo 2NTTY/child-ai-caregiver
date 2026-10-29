@@ -33,7 +33,7 @@ export function ReadStateNotice({ state, title, message = "", children, refreshi
     {visible ? state === "empty" ? <EmptyListCard testID="read-state-empty" title={heading} detail={detail}>{children}</EmptyListCard> : <BackgroundSurface padded testID={`read-state-${state}`} style={[styles.notice, state === "error" && styles.error]}>
       {state === "loading" ? motion.enabled ? <ActivityIndicator color={colors.teal} /> : <View testID="read-loading-static" accessible={false} aria-hidden style={styles.staticIndicator} /> : null}
       <View style={styles.copy}>
-        <Text accessibilityRole={title ? "header" : "text"} style={title ? styles.title : styles.body}>{heading}</Text>
+        <Text accessibilityRole={title ? "header" : "text"} aria-level={title ? 2 : undefined} style={title ? styles.title : styles.body}>{heading}</Text>
         {detail ? <Text style={styles.body}>{detail}</Text> : null}{children}
       </View>
     </BackgroundSurface> : null}</>;

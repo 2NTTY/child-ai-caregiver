@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ComponentRef } from "react";
 import { BlurView } from "expo-blur";
 import { BrandLogo } from "../components/BrandLogo";
 import { useIsFocused, useRouter } from "expo-router";
@@ -20,6 +20,7 @@ const harbourSourceSize = { width: 1672, height: 941 };
 // Keep the fingertip inside the frame and the sun beyond its fixed right crop.
 const harbourRightEdge = 1552;
 type Mode = "signIn" | "signUp";
+type LoginField = "name" | "email" | "password";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -44,11 +45,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Partial<Record<LoginField, string>>>({});
+  const nameRef = useRef<ComponentRef<typeof TextInput>>(null);
+  const emailRef = useRef<ComponentRef<typeof TextInput>>(null);
+  const passwordRef = useRef<ComponentRef<typeof TextInput>>(null);
+  const fieldRefs = { name: nameRef, email: emailRef, password: passwordRef };
+  const errorId = (field: LoginField) => `${modeScope}-${field}-error`;
+  function clearError(field: LoginField) { setErrors(current => current[field] ? { ...current, [field]: undefined } : current); }
+  function reject(field: LoginField, message: string) { setResult(null); setErrors({ [field]: message }); fieldRefs[field].current?.focus(); }
+  function fieldMessage(field: LoginField) { return errors[field] ? <Text nativeID={errorId(field)} accessibilityRole="alert" style={styles.fieldError}>{errors[field]}</Text> : null; }
   const busy = recordsState.busy === "auth" || auth === "checking" || !!account.busy;
   const canSubmit = online && auth !== "unavailable" && !identityKey && !!account.status && !busy;
-  useEffect(() => { setPassword(""); setPasswordVisible(false); }, [identityKey, online]);
+  useEffect(() => { setPassword(""); setPasswordVisible(false); setErrors({}); }, [identityKey, online]);
 
-  function selectMode(next: Mode) { setMode(next); setPassword(""); setPasswordVisible(false); setResult(null); }
+  function selectMode(next: Mode) { setMode(next); setPassword(""); setPasswordVisible(false); setResult(null); setErrors({}); }
   function moveMode(event: { key?: string; nativeEvent?: { key?: string }; preventDefault(): void }) {
     const key = event.nativeEvent?.key ?? event.key;
     const next = key === "ArrowLeft" || key === "ArrowRight" ? mode === "signIn" ? "signUp" : "signIn" : key === "Home" ? "signIn" : key === "End" ? "signUp" : null;
@@ -57,12 +67,13 @@ export default function LoginPage() {
     (modeControls.current.get(next) as unknown as HTMLElement | undefined)?.focus();
   }
   async function submit() {
-    if (mode === "signUp" && !name.trim()) { setResult("請填寫稱呼。"); return; }
-    if (!/^\S+@\S+\.\S+$/.test(email.trim())) { setResult("請輸入有效電郵地址。"); return; }
-    if (password.length > 128) { setResult("密碼最多 128 個字元。"); return; }
-    if (!password) { setResult("請輸入密碼。"); return; }
-    if (mode === "signUp" && password.length < 12) { setResult("建立帳戶需要至少 12 個字元的密碼。"); return; }
-    setResult(null);
+    if (!canSubmit) return;
+    if (mode === "signUp" && !name.trim()) { reject("name", "請填寫稱呼。"); return; }
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) { reject("email", "請輸入有效電郵地址。"); return; }
+    if (password.length > 128) { reject("password", "密碼最多 128 個字元。"); return; }
+    if (!password) { reject("password", "請輸入密碼。"); return; }
+    if (mode === "signUp" && password.length < 12) { reject("password", "建立帳戶需要至少 12 個字元的密碼。"); return; }
+    setResult(null); setErrors({});
     const credentials = { name, email, password }; setPassword(""); setPasswordVisible(false);
     try { await authenticate(mode, credentials); }
     finally { setPassword(""); }
@@ -75,7 +86,7 @@ export default function LoginPage() {
         <BlurView testID="login-story-panel" intensity={32} tint="light" style={styles.storyPanel}>
         <BrandLogo style={styles.storyLogo} />
         <Text style={styles.storyEyebrow}>用資料 · 陪伴成長</Text>
-        <Text accessibilityRole="header" style={[styles.storyTitle, narrow && styles.storyTitleCompact]}>用 AI，{narrow ? "" : "\n"}更輕鬆做好育兒大小事。</Text>
+        <Text style={[styles.storyTitle, narrow && styles.storyTitleCompact]}>用 AI，{narrow ? "" : "\n"}更輕鬆做好育兒大小事。</Text>
         <Text style={styles.storyLead}>結合孩子的已確認資料與可靠來源，幫你記錄、討論及看清下一步。</Text>
         <View style={styles.features}>
           <View style={styles.featureRow}><AppIcon name="message-text-outline" /><Text style={styles.feature}>隨時整理照顧問題與記錄</Text></View>
@@ -90,7 +101,7 @@ export default function LoginPage() {
       <View style={styles.formHeader}><BrandLogo style={styles.formLogo} /><Text style={styles.formTagline}>實用 · 可靠 · 與你同行</Text></View>
       <View style={styles.formCard}>
 
-        <Text accessibilityRole="header" style={styles.formTitle}>{mode === "signIn" ? "歡迎回來" : "建立帳戶"}</Text>
+        <Text accessibilityRole="header" aria-level={1} style={styles.formTitle}>{mode === "signIn" ? "歡迎回來" : "建立帳戶"}</Text>
         <Text style={styles.formIntro}>{mode === "signIn" ? "登入後，繼續整理孩子的照顧資料。" : "先建立自己的帳戶，再新增孩子的資料。"}</Text>
         {mode === "signUp" && account.status?.registration === "invite" ? <Text style={styles.formNote}>目前只接受獲邀電郵註冊；完成電郵驗證及資料使用確認後，即可新增孩子。</Text> : account.status?.registration === "trial" ? <Text style={styles.formNote}>目前為試用模式，請依服務說明使用合成資料。</Text> : null}
         <View accessibilityRole="tablist" accessibilityLabel="登入方式" style={styles.modeTabs}>
@@ -103,13 +114,13 @@ export default function LoginPage() {
             <Text style={[styles.modeText, mode === item.key && styles.modeTextActive]}>{item.label}</Text></Pressable>)}
           <MotionSelectionMarker x={modeSelection?.x ?? 0} width={modeSelection?.width ?? 0} selectionKey={`${modeScope}:${mode}`} />
         </View>
-        <MotionDisclosure expanded={mode === "signUp"} scopeKey={modeScope} testID="login-name-disclosure"><AppTextField label="稱呼" accessibilityLabel="稱呼" value={name} onChangeText={setName} autoComplete="name" /></MotionDisclosure>
-        <AppTextField label="電郵地址" accessibilityLabel="電郵地址" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" />
-        <AppTextField label={mode === "signUp" ? "密碼（至少 12 個字元）" : "密碼"} accessibilityLabel="密碼" value={password} onChangeText={setPassword}
+        <MotionDisclosure expanded={mode === "signUp"} scopeKey={modeScope} testID="login-name-disclosure"><AppTextField ref={nameRef} label="稱呼" accessibilityLabel="稱呼" value={name} onChangeText={value => { setName(value); clearError("name"); }} autoComplete="name" error={!!errors.name} aria-invalid={!!errors.name} aria-describedby={errors.name ? errorId("name") : undefined} />{fieldMessage("name")}</MotionDisclosure>
+        <View><AppTextField ref={emailRef} label="電郵地址" accessibilityLabel="電郵地址" value={email} onChangeText={value => { setEmail(value); clearError("email"); }} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" error={!!errors.email} aria-invalid={!!errors.email} aria-describedby={errors.email ? errorId("email") : undefined} />{fieldMessage("email")}</View>
+        <View><AppTextField ref={passwordRef} label={mode === "signUp" ? "密碼（至少 12 個字元）" : "密碼"} accessibilityLabel="密碼" value={password} onChangeText={value => { setPassword(value); clearError("password"); }} error={!!errors.password} aria-invalid={!!errors.password} aria-describedby={errors.password ? errorId("password") : undefined}
           secureTextEntry={!passwordVisible} autoCapitalize="none" autoCorrect={false} autoComplete={mode === "signUp" ? "new-password" : "current-password"}
           returnKeyType="go" onSubmitEditing={() => { if (canSubmit) void submit(); }}
           right={<TextInput.Icon icon={passwordVisible ? "eye-off" : "eye"} accessibilityLabel={passwordVisible ? "隱藏密碼" : "顯示密碼"}
-            forceTextInputFocus={false} onPress={() => setPasswordVisible(value => !value)} />} />
+            forceTextInputFocus={false} onPress={() => setPasswordVisible(value => !value)} />} />{fieldMessage("password")}</View>
         <View style={styles.recoveryRow}>
         <Pressable accessibilityRole="button" accessibilityLabel="重新要求驗證指引"
           disabled={!online || busy || !account.status?.mailConfigured} accessibilityState={{ disabled: !online || busy || !account.status?.mailConfigured }}
@@ -132,6 +143,7 @@ export default function LoginPage() {
 }
 
 const styles = StyleSheet.create({
+  fieldError: { fontFamily: chineseFont, color: colors.errorInk, fontSize: 14, lineHeight: 22, paddingTop: spacing.xs },
   storyPanel: { padding: spacing.xl, gap: spacing.md, borderRadius: radius.medium, overflow: "hidden" },
   formCompact: { minHeight: 0, paddingVertical: spacing.xl, paddingHorizontal: spacing.lg },
   storyDesktop: { width: "56%", minWidth: 0, flexShrink: 1 },

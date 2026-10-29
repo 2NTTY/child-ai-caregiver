@@ -11,6 +11,7 @@ import { BrandLogo } from "./BrandLogo";
 import { Text } from "react-native-paper";
 import { AppIcon } from "./AppIcon";
 import { AgentEntryButton } from "./AgentEntryButton";
+import { SkipToContent } from "./SkipToContent";
 import { MobileQuickInputDock } from "./agent/MobileQuickInputDock";
 import { RecordsNavButton } from "./navigation/RecordsNavButton";
 import { MobileNavSelection } from "./navigation/MobileNavSelection";
@@ -39,7 +40,7 @@ function NavItem({ item, active, compact = false }: { item: NavigationItem; acti
   >
     {compact && active ? <MobileNavSelection /> : null}
     <AppIcon name={item.icon} size={compact ? mobileIcons.navigation : 21} color={active ? colors.deepTeal : colors.muted} />
-    <Text numberOfLines={1} style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.navActiveText]}>{item.short}</Text>
+    <Text style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.navActiveText]}>{item.short}</Text>
   </Pressable></PreviewLink>;
 }
 
@@ -52,7 +53,7 @@ export function RightRail({ model, actions, contextPath = "/", overlay = false, 
 }) {
   return <View testID="context-rail" style={[styles.rail, overlay && styles.railFill]}>
     <View style={styles.railHeader}>
-      <View><Text style={styles.railEyebrow}>你的照顧空間</Text><Text accessibilityRole="header" style={styles.railTitle}>照顧資訊</Text></View>
+      <View><Text style={styles.railEyebrow}>你的照顧空間</Text><Text accessibilityRole="header" aria-level={2} style={styles.railTitle}>照顧資訊</Text></View>
       {onClose ? <ToolbarIconButton icon="close" label="關閉資訊側欄" onPress={onClose} /> : null}
     </View>
     <RightRailContent model={model} actions={actions} contextPath={contextPath} />
@@ -106,20 +107,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => { setRailModal(false); }, [motionScope]);
 
   return <View ref={shell} style={styles.root}>
-    {!compact ? <View testID="web-sidebar" style={styles.sidebar}>
+    <SkipToContent />
+    {!compact ? <View testID="web-sidebar" role="navigation" accessibilityLabel="主要導覽" style={styles.sidebar}>
       <PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={styles.brandLink}>
         <BrandLogo style={styles.logo} decorative />
         <Text style={styles.brandLine}>用資料 · 陪伴成長</Text>
       </Pressable></PreviewLink>
+      <View style={styles.sidebarAgent}><AgentEntryButton active={active("/chat")} /></View>
       <ScrollView testID="sidebar-navigation" style={styles.navScroll} contentContainerStyle={styles.navList}>
         {desktopNavigationGroups.map(group => <View key={group.label} style={styles.navGroup}>
           <Text style={styles.navGroupLabel}>{group.label}</Text>
           {group.keys.map(key => navigationItems[key]).map(item => <NavItem key={item.href} item={item} active={active(item.href)} />)}
         </View>)}
       </ScrollView>
-      <View style={styles.sidebarBottom}>
-        <AgentEntryButton active={active("/chat")} />
-      </View>
       <NavItem item={navigationItems.settings} active={active("/settings")} />
     </View> : null}
     <View style={styles.stage}>
@@ -141,12 +141,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.noticeText}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
       <View style={styles.body}>
-        <MotionEntrance ref={routeSurface} preset="route" triggerKey={pathname} scopeKey={motionScope} style={styles.content} testID="motion-route">{children}</MotionEntrance>
+        <MotionEntrance ref={routeSurface} nativeID="main-content" role="main" tabIndex={-1} preset="route" triggerKey={pathname} scopeKey={motionScope} style={styles.content} testID="motion-route">{children}</MotionEntrance>
         {compact && pathname === "/" ? <MobileQuickInputDock key={motionScope} supportedKinds={["voice", "text"]} /> : null}
         {wide ? <MotionDrawerRight open={railOpen} width={310} mode="dock" scopeKey={motionScope} testID="motion-context-rail"><RightRail {...railProps} /></MotionDrawerRight> : null}
       </View>
       </MotionScopeBoundary>
-      {compact ? <View testID="mobile-bottom-navigation" style={[styles.bottomNav, { paddingBottom: insets.bottom }]}>
+      {compact ? <View testID="mobile-bottom-navigation" role="navigation" accessibilityLabel="主要導覽" style={[styles.bottomNav, { paddingBottom: insets.bottom }]}>
         {(["home", "chat", "tasks", "growth"] as const).map(key => navigationItems[key]).map(item => <NavItem key={item.href} item={item} active={active(item.href)} compact />)}
         <RecordsNavButton active={active("/care") || active("/photos") || active("/more") || active("/history")} scopeKey={motionScope} />
       </View> : null}
@@ -162,22 +162,22 @@ export function AppShell({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   root: { flex: 1, flexDirection: "row", minHeight: 0 },
   pressed: { backgroundColor: colors.paleTeal }, scenarioPressed: { backgroundColor: colors.inkPressed },
-  sidebar: { width: 216, minHeight: 0, backgroundColor: colors.sidebar, borderRightColor: colors.line, borderRightWidth: 1, paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.md, gap: spacing.xs },
+  sidebar: { width: 232, minHeight: 0, backgroundColor: colors.sidebar, borderRightColor: colors.line, borderRightWidth: 1, paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.md, gap: spacing.xs },
   brandLink: { width: "100%", minHeight: 93, alignItems: "center", justifyContent: "center", marginBottom: spacing.sm },
   logo: { width: 164, height: 53 },
   brandLine: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.caption, textAlign: "center" },
   navScroll: { flex: 1, minHeight: 0, marginRight: -spacing.sm }, navList: { gap: spacing.md, paddingBottom: spacing.md, paddingRight: spacing.sm },
-  navGroup: { gap: spacing.xs }, navGroupLabel: { fontFamily: chineseFont, color: colors.muted, fontSize: 12, lineHeight: 18, paddingHorizontal: spacing.md },
-  navItem: { minHeight: 46, borderRadius: radius.small, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md },
+  navGroup: { gap: spacing.xs }, navGroupLabel: { fontFamily: chineseFont, color: colors.muted, fontSize: 13, lineHeight: 20, paddingHorizontal: spacing.md },
+  navItem: { minHeight: 48, borderRadius: radius.small, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md },
   navActive: { backgroundColor: colors.selectedNav, borderLeftColor: colors.teal, borderLeftWidth: 3 },
   navPressed: { backgroundColor: colors.selectedNav },
-  navLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "600", color: colors.ink },
+  navLabel: { fontFamily: chineseFont, fontSize: 16, lineHeight: 24, flexShrink: 1, fontWeight: "600", color: colors.ink },
   navActiveText: { color: colors.deepTeal, fontWeight: "800" },
-  sidebarBottom: { paddingBottom: spacing.sm },
+  sidebarAgent: { paddingBottom: spacing.lg },
   stage: { flex: 1, minWidth: 0, minHeight: 0 },
   scopePane: { flex: 1, minWidth: 0, minHeight: 0 }, drawerContent: { flex: 1 },
-  topbar: { height: 70, flexShrink: 0, backgroundColor: colors.sidebar, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingHorizontal: spacing.xl, flexDirection: "row", alignItems: "center", gap: spacing.lg },
-  topbarCompact: { height: 64, paddingHorizontal: spacing.md, gap: spacing.sm },
+  topbar: { minHeight: 72, flexShrink: 0, backgroundColor: colors.sidebar, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingHorizontal: spacing.xl, flexDirection: "row", alignItems: "center", gap: spacing.lg },
+  topbarCompact: { minHeight: 64, paddingHorizontal: spacing.md, gap: spacing.sm },
   topbarTiny: { paddingHorizontal: spacing.sm, gap: spacing.xs },
   topBrandLink: { width: 124, height: 44, alignItems: "center", justifyContent: "center", marginRight: "auto" },
   topBrandLinkTiny: { width: 114 },

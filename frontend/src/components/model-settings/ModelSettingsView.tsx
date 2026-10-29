@@ -209,7 +209,7 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
             <FormFieldMessage id={`${fieldId("keyText")}-message`} error={errors.keyText?.message}
               help={`${settings.keyConfigured && provider === settings.provider && (provider !== "openai-compatible" || baseUrl.replace(/\/+$/u, "") === settings.baseUrl) ? "留空會保留已保存聊天密鑰。" : "請輸入所選服務及地址對應的聊天密鑰。"}密鑰只在保存時送出；送出、失敗或離開頁面後清空，不會讀回。`} />
             <View style={styles.group}>
-              <Text accessibilityRole="header" style={styles.groupTitle}>知識搜尋用向量服務（可選）</Text>
+              <Text accessibilityRole="header" aria-level={3} style={styles.groupTitle}>知識搜尋用向量服務（可選）</Text>
               <Text style={styles.meta}>知識搜尋使用 Google 的 gemini-embedding-001（1024 維）。未配置時仍可試用聊天，需向量的搜尋會顯示缺少配置，不會借用平台額度。</Text>
               <Controller control={control} name="embeddingProvider" render={({ field, fieldState }) => <AppSelect ref={field.ref} id={fieldId("embeddingProvider")}
                 label="向量服務" value={field.value} disabled={locked || !available} onBlur={field.onBlur}
@@ -255,7 +255,7 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
             <FormFieldMessage id={`${fieldId("consent")}-message`} error={errors.consent?.message} />
             <Controller control={control} name="backgroundEnabled" render={({ field }) => <AppCheckbox checked={field.value} onChange={field.onChange} disabled={locked || !available}
               label="另行允許背景任務使用此密鑰" description="背景處理亦會使用供應商服務及計入用量；不會因加入密鑰而自動啟用。" />} />
-            <View style={styles.limitFields}><Text accessibilityRole="header" style={styles.groupTitle}>個人呼叫上限</Text>{modelLimitFields.map(([name, label, range, unit]) => <View key={name} style={styles.limitField}>
+            <View style={styles.limitFields}><Text accessibilityRole="header" aria-level={3} style={styles.groupTitle}>個人呼叫上限</Text>{modelLimitFields.map(([name, label, range, unit]) => <View key={name} style={styles.limitField}>
               <Controller control={control} name={name} render={({ field }) => <AppTextField accessibilityLabel={label} label={label} keyboardType="number-pad" inputMode="numeric"
                 nativeID={fieldId(name)} aria-invalid={!!errors[name]} aria-describedby={`${fieldId(name)}-message`} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} ref={field.ref} disabled={locked || !available} error={!!errors[name]} />} />
               <FormFieldMessage id={`${fieldId(name)}-message`} error={errors[name]?.message} help={`${range.min}–${range.max} ${unit} · 整數`} />

@@ -14,7 +14,7 @@ export function HistoryMessageDetail({ read, busy, online, onMore, onClose, onPr
   if (read.state === "unavailable") return null;
   const message = read.data;
   return <View style={embedded ? styles.content : styles.detail} testID="history-message-detail">
-    {!embedded ? <View style={styles.row}><Text accessibilityRole="header" style={styles.title}>訊息原文</Text>
+    {!embedded ? <View style={styles.row}><Text accessibilityRole="header" aria-level={2} style={styles.title}>訊息原文</Text>
       {onClose ? <AppButton label="關閉原文" variant="quiet" density="compact" onPress={onClose} /> : null}</View> : null}
     {read.state === "loading" ? <ReadStateNotice state="loading" title="正在讀取原文…" />
       : read.state === "error" ? <ReadStateNotice state="error" title="暫時讀不到原文" message="請從原訊息重新讀取。" />

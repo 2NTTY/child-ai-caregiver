@@ -14,7 +14,7 @@ export function RouteError({ error, retry, returnHome = false }: ErrorBoundaryPr
     try { await retry(); } finally { setRetrying(false); }
   }
   return <View testID="route-error" style={styles.panel}>
-    <Text accessibilityRole="header" style={styles.title}>暫時未能顯示這個頁面</Text>
+    <Text accessibilityRole="header" aria-level={1} style={styles.title}>暫時未能顯示這個頁面</Text>
     <Text style={styles.body}>已提交的事項不會重新送出。你可以重新載入畫面；未送出的內容仍以目前裝置的草稿為準。</Text>
     <Text selectable style={styles.reference}>參考：{routeErrorReference(error)}</Text>
     <Pressable accessibilityRole="button" disabled={retrying} onPress={() => { void reloadView(); }} style={styles.button}>

@@ -15,7 +15,7 @@ export function HomeOverviewItems({ items, actions, compact = false }: { items: 
     <AppIcon name="chevron-right" size={18} />
   </Pressable>)}</View>;
   return <View style={styles.list}>{items.map((item, index) => <View key={item.id} testID={`home-overview-item-${item.id}`} style={[styles.item, index > 0 && styles.divider]}>
-    <View style={styles.heading}><AppStatusBadge label={item.statusLabel} tone="info" /><Text accessibilityRole="header" style={styles.title}>{item.title}</Text></View>
+    <View style={styles.heading}><AppStatusBadge label={item.statusLabel} tone="info" /><Text accessibilityRole="header" aria-level={3} style={styles.title}>{item.title}</Text></View>
     <Text style={styles.body}>{item.detail}</Text>
     {item.sourceLabel ? <Text style={styles.meta}>依據：{item.sourceLabel}</Text> : null}
     <View style={styles.action}><AppButton label={item.action.label} density="compact" variant="secondary" onPress={() => actions.open(item.action.destination)} /></View>

@@ -1,5 +1,5 @@
 export { RouteError as ErrorBoundary, RouteLoading as SuspenseFallback } from "../src/components/RouteFeedback";
-import { Stack, usePathname } from "expo-router";
+import { Stack } from "expo-router";
 import Head from "expo-router/head";
 import { brand } from "../src/branding";
 import { BrandLogo } from "../src/components/BrandLogo";
@@ -15,15 +15,11 @@ import { ProductionProvider } from "../src/production/ProductionProvider";
 
 export default function RootLayout() {
   const { width } = useWindowDimensions();
-  const pathname = usePathname();
   return (
     <SafeAreaProvider><MotionProvider><MotionPaperProvider>
       <Head>
         <title>{brand.name}</title>
-        <style id="app-default-scale">{pathname === "/login" ? "html { zoom: 1; }" : `html { zoom: 1.4; }
-@media (width < 900px) {
-  html { zoom: 1.2; }
-}`}</style>
+
       </Head>
       <PreviewNavigationGuard><ProductionProvider><ProductionFirstScreenGate width={width} launch={<View style={styles.launch}>
           <BrandLogo style={styles.logo} decorative />

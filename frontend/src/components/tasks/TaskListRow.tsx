@@ -18,7 +18,7 @@ export function TaskListRow({ task, time, assignee, warning, selected, disabled,
     accessibilityLabel={`${hint}：${task.title}；${time}；${assignee}；${status}${warning ? `；${warning}` : ""}`}
     accessibilityState={{ selected, disabled }} aria-current={selected ? "true" : undefined} aria-disabled={disabled}
     disabled={disabled} onPress={onPress} onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-    style={({ pressed }) => [styles.row, history && styles.historyRow, review && styles.review, (selected || hovered || focused) && styles.highlight, focused && styles.focused, pressed && !disabled && (selected || hovered || focused ? styles.selectedPressed : styles.pressed)]}>
+    style={({ pressed }) => [styles.row, history && styles.historyRow, review && styles.review, selected && styles.selected, (selected || hovered || focused) && styles.highlight, focused && styles.focused, pressed && !disabled && (selected || hovered || focused ? styles.selectedPressed : styles.pressed)]}>
     <View accessible={false} aria-hidden style={styles.leading}><AppIcon name={task.kind === "appointment" ? "calendar-clock-outline" : task.occurrence.state === "completed" ? "checkbox-marked" : "checkbox-blank-outline"} size={21} color={review ? colors.warningInk : colors.muted} /></View>
     <View style={styles.copy}><Text numberOfLines={history ? 2 : undefined} style={styles.title}>{task.title}</Text>{history && task.details ? <Text numberOfLines={3} style={styles.summary}>{task.details}</Text> : null}<View style={styles.metadata}>
       <Text style={styles.time}>{time}</Text><Text style={styles.assignee}>{assignee}</Text>
@@ -34,8 +34,9 @@ const styles = StyleSheet.create({
   leading: { alignSelf: "flex-start", paddingTop: 2 }, copy: { flex: 1, minWidth: 0, gap: spacing.xs },
   metadata: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: spacing.sm, rowGap: spacing.xs, minWidth: 0 },
   title: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
-  time: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, flexShrink: 1 },
+  time: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, fontVariant: ["tabular-nums"], flexShrink: 1 },
   assignee: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flexShrink: 1 },
   warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.meta }, review: { borderLeftColor: colors.statusWarmLine },
+  selected: { borderLeftColor: colors.teal },
   highlight: { backgroundColor: colors.paleTeal, borderRadius: radius.small }, focused: { borderLeftColor: colors.teal }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
 });

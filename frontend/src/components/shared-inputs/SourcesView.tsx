@@ -100,7 +100,7 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
         </View>; }} />
       </SectionCard></View>
       <View style={[s.main, s.editorSurface, !columns && s.full]}>
-        {model.selected ? <View style={s.detailHeading}><Text style={s.meta}>目前來源 · 版本 {model.selected.version}</Text><Text accessibilityRole="header" style={s.detailTitle}>{model.selected.sourceLabel}</Text><Text style={s.meta}>私人保存、整理用途和家庭共享分開核對</Text></View> : null}
+        {model.selected ? <View style={s.detailHeading}><Text style={s.meta}>目前來源 · 版本 {model.selected.version}</Text><Text accessibilityRole="header" aria-level={2} style={s.detailTitle}>{model.selected.sourceLabel}</Text><Text style={s.meta}>私人保存、整理用途和家庭共享分開核對</Text></View> : null}
 
         {model.selected ? <>
           <SourceIntakeConversation key={`intake-${model.selected.id}`} model={model} actions={actions} />

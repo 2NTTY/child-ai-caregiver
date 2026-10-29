@@ -1,4 +1,5 @@
 import "./src/platform/runtime";
+import "./src/platform/web-foundation";
 // Register native window history observation before Expo installs its router listener.
 import "./src/preview/browser-history-events";
 // Expo Router must remain the final entry import (web, native and static rendering).

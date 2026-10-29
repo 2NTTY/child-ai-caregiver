@@ -2,66 +2,62 @@ import { Platform } from "react-native";
 import { MD3LightTheme, configureFonts } from "react-native-paper";
 
 export const colors = {
-  // Happy Hues 14 anchors; legacy role names are aliases, not additional green seeds.
-  ink: "#272343",
-  teal: "#272343",
-  deepTeal: "#272343",
+  // Distinct semantic roles: dark reading ink, teal actions, restrained warm emphasis.
+  ink: "#183E45",
+  teal: "#0C6E72",
+  deepTeal: "#07585D",
   paper: "#FFFFFE",
-  canvas: "#F7FCFC",
-  sage: "#BAE8E8",
-  paleTeal: "#E3F6F5",
-  accent: "#FFD803",
-  onAccent: "#272343",
-  amber: "#A38B19",
-  paleAmber: "#FFF7D8",
-  // Destructive actions and errors share a vivid red, separate from the brand palette.
-  coral: "#D61F26",
-  paleCoral: "#FEF2F2",
-  errorInk: "#D61F26",
   white: "#FFFFFE",
-  muted: "#2D334A",
-  line: "#CAC9D4",
-  softLine: "#E6E6EA",
-  controlOutline: "#737284",
-  // Aqua navigation frames white cards and controls. Inset content uses a quieter tint.
+  canvas: "#F3F8F7",
+  sage: "#D9ECE7",
+  paleTeal: "#E8F4F0",
+  accent: "#EBC356",
+  onAccent: "#183E45",
+  amber: "#92721F",
+  paleAmber: "#FFF7E0",
+  warningInk: "#715416",
+  coral: "#B52D3A",
+  paleCoral: "#FFF2F1",
+  errorInk: "#B52D3A",
+  muted: "#52656B",
+  line: "#C8D9D7",
+  softLine: "#DFE9E6",
+  controlOutline: "#718B8C",
   controlSurface: "#FFFFFE",
-  neutralSurface: "#F7FCFC",
-  sidebar: "#E3F6F5",
-  selectedNav: "#BAE8E8",
-  quietSurface: "#EDFAF9",
-  mintSurface: "#E3F6F5",
-  previewSurface: "#F7FCFC",
-  // Temporary interaction shades; content and borders keep their full opacity.
-  pressedOverlay: "rgba(39, 35, 67, 0.08)",
-  accentPressed: "#E5C20B",
-  inkPressed: "#221F3B",
-  selectedPressed: "#A8D0D4",
-  warningPressed: "#F2EAC8",
-  // Dark filled actions deepen on hover/press without a white wash.
+  neutralSurface: "#F3F8F7",
+  sidebar: "#EAF3F0",
+  selectedNav: "#D9ECE7",
+  quietSurface: "#F1F7F4",
+  mintSurface: "#E8F4F0",
+  previewSurface: "#F3F8F7",
+  pressedOverlay: "rgba(24, 62, 69, 0.08)",
+  accentPressed: "#DBB247",
+  inkPressed: "#07585D",
+  selectedPressed: "#C6DFD7",
+  warningPressed: "#F5EBCB",
   darkActionRipple: "rgba(0, 0, 0, 0.12)",
-  statusWarm: "#FFF7D8",
-  statusUnknown: "#FFF7D8",
-  statusWarmLine: "#A38B19",
-  statusUnknownLine: "#A38B19",
-  statusFailedLine: "#D61F26",
-  warningInk: "#5E4F0C",
-  overlay: "rgba(39, 35, 67, 0.24)",
+  statusWarm: "#FFF7E0",
+  statusUnknown: "#FFF7E0",
+  statusWarmLine: "#92721F",
+  statusUnknownLine: "#92721F",
+  statusFailedLine: "#B52D3A",
+  overlay: "rgba(24, 62, 69, 0.28)",
 } as const;
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, hero: 40 } as const;
-export const radius = { small: 10, medium: 16, large: 22, pill: 999 } as const;
-export const typeScale = { caption: 12, small: 14, body: 16, title: 20, heading: 28, hero: 34 } as const;
+export const radius = { small: 10, medium: 16, large: 18, pill: 999 } as const;
+export const typeScale = { caption: 13, small: 14, body: 16, title: 20, heading: 28, hero: 34 } as const;
 export const readingLayout = { maxWidth: 880, compactInset: 16, wideInset: 24 } as const;
 export const readingType = {
   body: { fontSize: 16, lineHeight: 26 },
-  tool: { fontSize: 14, lineHeight: 22 },
-  meta: { fontSize: 12, lineHeight: 18 },
+  tool: { fontSize: 16, lineHeight: 24 },
+  meta: { fontSize: 13, lineHeight: 20 },
 } as const;
 export const workspaceType = {
   title: { fontSize: 24, lineHeight: 32, fontWeight: "700" as const },
   section: { fontSize: 16, lineHeight: 24, fontWeight: "700" as const },
-  row: { fontSize: 14, lineHeight: 20 },
-  meta: { fontSize: 12, lineHeight: 18 },
+  row: { fontSize: 16, lineHeight: 24 },
+  meta: { fontSize: 13, lineHeight: 20 },
 } as const;
 export const iconTokens = { strokeWidth: 1.8, small: 18, navigation: 22, feature: 28 } as const;
 // Mobile sizes are logical units. Text retains the platform's font scaling and intrinsic height.
@@ -72,13 +68,13 @@ export const mobileLayout = {
 } as const;
 export const mobileIcons = { inline: 16, content: 20, navigation: 22, primary: 24 } as const;
 export const mobileType = {
-  heading: { fontSize: 22, lineHeight: 28 },
+  heading: { fontSize: 26, lineHeight: 36 },
   sectionTitle: { fontSize: 16, lineHeight: 24 },
-  itemTitle: { fontSize: 14, lineHeight: 20 },
-  body: { fontSize: 14, lineHeight: 20 },
+  itemTitle: { fontSize: 16, lineHeight: 24 },
+  body: { fontSize: 16, lineHeight: 24 },
   bodyLarge: { fontSize: 16, lineHeight: 24 },
-  label: { fontSize: 12, lineHeight: 16 },
-  caption: { fontSize: 12, lineHeight: 16 },
+  label: { fontSize: 14, lineHeight: 20 },
+  caption: { fontSize: 13, lineHeight: 20 },
 } as const;
 export const chineseFont = Platform.select({ web: "'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif", default: undefined });
 
@@ -115,8 +111,8 @@ export const paperTheme = {
     onError: colors.white,
     errorContainer: colors.paleCoral,
     onErrorContainer: colors.errorInk,
-    surfaceDisabled: "rgba(39, 35, 67, 0.12)",
-    onSurfaceDisabled: "rgba(39, 35, 67, 0.38)",
+    surfaceDisabled: "rgba(24, 62, 69, 0.12)",
+    onSurfaceDisabled: "rgba(24, 62, 69, 0.38)",
     inverseSurface: colors.ink,
     inverseOnSurface: colors.white,
     inversePrimary: colors.sage,

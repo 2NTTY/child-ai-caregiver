@@ -40,7 +40,7 @@ export function ChildOverviewContent({ avatar, companion, measurements, profileS
       {!inaccessible && avatar ? avatar : <View style={styles.avatar} accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants"><Text style={styles.avatarText}>{Array.from(model?.child?.name?.trim() ?? "")[0] ?? "子"}</Text></View>}
       <View style={styles.identityText}>
         <View style={styles.row}><AppStatusBadge label={reading.statusLabel} tone={tone} />{model?.access === "read_only" ? <AppStatusBadge label="唯讀" /> : null}</View>
-        <Text accessibilityRole="header" style={styles.childName}>{model?.child?.name ?? "孩子概況"}</Text>
+        <Text accessibilityRole="header" aria-level={2} style={styles.childName}>{model?.child?.name ?? "孩子概況"}</Text>
         <Text style={styles.age}>{reading.state === "loading" ? "正在讀取年齡資料" : reading.state === "source_invalidated" || reading.state === "source_unavailable" || inaccessible ? "年齡資料暫不可讀" : childProfileAgeLabel(data, DateTime.now().setZone("Asia/Hong_Kong").toISODate()!)}{data?.language ? ` · ${data.language}` : ""}</Text>
       </View>
       {!inaccessible ? <AppButton label={model?.child ? "查看孩子檔案" : "新增孩子及檔案"} variant="secondary" density="compact" onPress={onOpenProfile} disabled={!model} /> : null}
@@ -50,7 +50,7 @@ export function ChildOverviewContent({ avatar, companion, measurements, profileS
     {pending ? <View style={styles.notice}><AppStatusBadge label={model?.operation.state === "unknown" ? "檔案操作結果未知" : "檔案正在保存"} tone="warning" /><Text style={styles.noticeText}>畫面只顯示最後確認內容，請在原檔案查核同一操作。</Text><AppButton label="返回原檔案查核" variant="secondary" density="compact" onPress={onOpenProfile} /></View> : null}
     <View style={[styles.sections, wide && styles.sectionsWide]}>
       <View style={[styles.personal, wide && styles.interests]} testID="overview-personal">
-        <View style={styles.heading}><Text style={styles.meta}>日常相處的小線索</Text><Text accessibilityRole="header" style={styles.cardTitle}>和{model?.child?.name ?? "孩子"}相處</Text></View>
+        <View style={styles.heading}><Text style={styles.meta}>日常相處的小線索</Text><Text accessibilityRole="header" aria-level={2} style={styles.cardTitle}>和{model?.child?.name ?? "孩子"}相處</Text></View>
         {lastKnown && data ? <Text style={styles.meta}>最後確認的資料</Text> : null}
         {data?.preferences ? <Text selectable numberOfLines={4} style={styles.preference}>{data.preferences}</Text>
           : <Text style={styles.body}>{reading.state === "loading" ? "正在讀取生活偏好…" : inaccessible || reading.state === "source_invalidated" || reading.state === "source_unavailable" ? "生活偏好來源暫不可讀。" : "還未記下生活偏好。可在孩子檔案留下喜歡的事物與相處方式。"}</Text>}
@@ -64,9 +64,9 @@ export function ChildOverviewContent({ avatar, companion, measurements, profileS
       <AppDialog.ScrollArea><AppScrollView contentContainerStyle={styles.detailsContent}>
         {reading.message ? <Text style={styles.noticeText}>{reading.message}</Text> : null}
         {lastKnown ? <Text style={styles.noticeText}>以下為最後確認內容，尚待核對是否仍然適用。</Text> : null}
-        <Text accessibilityRole="header" style={styles.sectionTitle}>興趣與生活偏好</Text>
+        <Text accessibilityRole="header" aria-level={3} style={styles.sectionTitle}>興趣與生活偏好</Text>
         <Text selectable style={styles.body}>{data?.preferences ?? profileValue(null)}</Text>
-        <Text accessibilityRole="header" style={styles.sectionTitle}>日常照顧要點</Text>
+        <Text accessibilityRole="header" aria-level={3} style={styles.sectionTitle}>日常照顧要點</Text>
         <Fact label="過敏資料" value={profileValue(data?.allergies)} /><Fact label="特別需要" value={profileValue(data?.specialNeeds)} />
         {data?.age.kind === "birth_date" ? <Fact label="出生日期" value={data.age.date} /> : null}
         <Fact label="語言" value={profileValue(data?.language)} /><Fact label="地區" value={profileValue(data?.region)} />

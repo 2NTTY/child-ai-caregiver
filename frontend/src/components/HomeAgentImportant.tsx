@@ -22,7 +22,7 @@ function ImportantLead({ item, actions, synthetic, loadedAt }: { item: HomeAgent
   const sourceId = `home-agent-reason-${useId()}`;
   const createdAt = timeLabel(item.source.createdAt);
   return <View testID={`home-agent-important-item-${item.id}`} style={styles.item}>
-    <Text accessibilityRole="header" style={styles.title}>{item.title}</Text>
+    <Text accessibilityRole="header" aria-level={2} style={styles.title}>{item.title}</Text>
     <Text style={styles.body}>{item.whyNow ?? item.detail}</Text>
     <Pressable accessibilityRole="button" accessibilityLabel="為甚麼提醒我？" accessibilityState={{ expanded }} aria-expanded={expanded} aria-controls={sourceId}
       onPress={() => setExpanded(value => !value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}

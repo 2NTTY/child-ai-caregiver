@@ -15,7 +15,7 @@ export function HomeGuideCallout({ status, onOpenGuide, onOpenSettings }: {
   </View>;
   return <View testID="home-guide-callout" style={styles.callout}>
     <View style={styles.copy}>
-      <Text accessibilityRole="header" style={styles.title}>{status === "first_login" ? "開始設定你的照顧空間" : "繼續完成基本資料設定"}</Text>
+      <Text accessibilityRole="header" aria-level={2} style={styles.title}>{status === "first_login" ? "開始設定你的照顧空間" : "繼續完成基本資料設定"}</Text>
       <Text style={styles.body}>加入孩子的基本資料，未知內容可留待之後補充。</Text>
     </View>
     <AppButton label={status === "first_login" ? "開始使用引導" : "繼續使用引導"} onPress={onOpenGuide} />

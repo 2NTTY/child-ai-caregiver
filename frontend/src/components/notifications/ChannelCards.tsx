@@ -100,12 +100,12 @@ function ChannelReviewPanel({ model, actions, production }: { model: SharedModel
   const native = "platform" in model && (model.platform === "android" || model.platform === "ios");
   return <>
     {model.conflict ? <View style={styles.review}>
-      <Text accessibilityRole="header" style={styles.title}>渠道狀態已有更新</Text>
+      <Text accessibilityRole="header" aria-level={3} style={styles.title}>渠道狀態已有更新</Text>
       <Text style={styles.body}>以下渠道資料是最新讀取的狀態；本次操作仍沿用原來核對的版本。請比較目標及版本，再明確選擇使用最新狀態，並重新核對操作。</Text>
       <AppButton label="核對並使用最新渠道狀態" variant="secondary" disabled={!model.online} onPress={actions.useLatest} />
     </View> : null}
     {model.review ? <View style={styles.review}>
-      <Text accessibilityRole="header" style={styles.title}>待確認渠道操作</Text>
+      <Text accessibilityRole="header" aria-level={3} style={styles.title}>待確認渠道操作</Text>
       <Text style={styles.body}>目標：{model.review.targetLabel}</Text>
       <Text style={styles.meta}>核對版本：{model.review.expectedVersion === null ? "新登記／綁定，未有既有版本" : model.review.expectedVersion}</Text>
       <Text style={styles.body}>{replacingChallenge
@@ -124,7 +124,7 @@ function ChannelReviewPanel({ model, actions, production }: { model: SharedModel
 function RecentDeliveries({ deliveries, emptyReady }: { deliveries: ChannelDeliveryView[]; emptyReady: boolean }) {
   const latest = [...deliveries].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)).slice(0, 20);
   return <View style={[styles.stack, styles.group]}>
-    <Text accessibilityRole="header" style={styles.title}>最近投遞</Text>
+    <Text accessibilityRole="header" aria-level={3} style={styles.title}>最近投遞</Text>
     <Text style={styles.meta}>最多顯示最近 20 項。渠道已接受不等於已送達或已讀；投遞及本人回覆均不代表照護任務已完成。</Text>
     {latest.length === 0 ? emptyReady ? <EmptyListCard title="已載入資料中暫無投遞紀錄" detail="只代表本次取得的最近紀錄。" /> : null : latest.map(delivery => <View key={delivery.id} style={styles.entry}>
       <View style={styles.top}><Text style={styles.title}>{delivery.label}</Text>
@@ -203,7 +203,7 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
       <BrowserEnableForm platform={model.platform} form={form} disabled={!canEnable} stageEnable={actions.stageEnable} production={production} />
       <ChannelReviewPanel model={model} actions={actions} production={production} />
       <View style={[styles.stack, styles.group]}>
-        <Text accessibilityRole="header" style={styles.title}>本人{native ? "裝置" : deviceName}訂閱</Text>
+        <Text accessibilityRole="header" aria-level={3} style={styles.title}>本人{native ? "裝置" : deviceName}訂閱</Text>
         {model.bindings.length === 0 ? model.online ? <EmptyListCard title={`目前沒有本人${deviceName}訂閱`} /> : null : model.bindings.map(binding => {
           const deliveryNeedsReview = pushDeliveryNeedsReview(model.deliveries, binding.id);
           const confirmed = !!confirmedOperation && !!bindingIntent && model.online && ready && !model.locked && !model.review && !model.conflict
@@ -289,7 +289,7 @@ export function TelegramSettingsCard({ model, actions: sourceActions, operationN
       </View> : model.online ? <EmptyListCard title="目前沒有本人 Telegram 綁定" /> : null}
       {!existingBinding ? <AppButton label={production ? model.challenge ? "重新開始私人綁定" : "開始私人綁定" : model.challenge ? "預覽重新開始私人綁定" : "預覽開始私人綁定"} disabled={!canBegin} onPress={actions.stageBegin} /> : null}
       {model.challenge ? <View style={styles.entry}>
-        <Text accessibilityRole="header" style={styles.title}>{challengeExpired ? "私人綁定步驟已過期" : "私人綁定步驟"}</Text>
+        <Text accessibilityRole="header" aria-level={3} style={styles.title}>{challengeExpired ? "私人綁定步驟已過期" : "私人綁定步驟"}</Text>
         <Text style={styles.meta}>版本 {model.challenge.version} · 到期：{channelTime(model.challenge.expiresAt)}</Text>
         {challengeExpired ? <Text style={styles.warning}>這個步驟已過期，不能再確認候選帳號。請重新開始私人綁定。</Text> : <>
           <Text style={styles.body}>先在 Telegram 完成本人的綁定步驟，再回到此頁手動重新讀取；開始步驟尚未代表綁定完成。</Text>

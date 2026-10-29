@@ -37,7 +37,7 @@ export function HomeActionSummary({ model, actions }: { model: HomeViewModel; ac
   if (!overview) return null;
   const section = overview.attention;
   return <BackgroundSurface padded frosted testID="home-action-summary" style={styles.summary}>
-    <View style={styles.heading}><Text accessibilityRole="header" style={styles.title}>待辦摘要</Text><TextLink label="查看全部" onPress={() => actions.open("tasks")} /></View>
+    <View style={styles.heading}><Text accessibilityRole="header" aria-level={2} style={styles.title}>待辦摘要</Text><TextLink label="查看全部" onPress={() => actions.open("tasks")} /></View>
     <ReadStateNotice state={section.state === "ready" ? section.items.length ? "ready" : "empty" : section.state}
       message={section.detail ?? (section.state === "ready" && !section.items.length ? "目前沒有待辦事項" : undefined)}>
       {["error", "stale", "unavailable"].includes(section.state) ? <AppButton label="重新讀取待辦" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}

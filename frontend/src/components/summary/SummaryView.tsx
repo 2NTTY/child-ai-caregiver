@@ -86,7 +86,7 @@ export function SummaryView({model, actions, onRecord, onTask, onAgent, previewT
           <View ref={reportHeadingRef} tabIndex={-1} accessibilityLabel="摘要閱讀內容" style={s.reportHeader}>
             <MotionReveal value={page} contentKey={basisKey} scopeKey={model.scopeKey} regionKey="summary-basis" triggerKey={revealTrigger} eligible={revealEligible && mode === 'report'} preset="summary" style={s.smallStack} testID="summary-basis-motion">{shown => <>
               <Text style={s.reportEyebrow}>已確認記錄 · {shown.period.period === 'day' ? '一日回顧' : '七日回顧'}</Text>
-              <Text accessibilityRole="header" style={s.reportTitle}>{shown.period.startDay} 起{shown.period.period === 'day' ? '一日' : '七日'}</Text>
+              <Text accessibilityRole="header" aria-level={2} style={s.reportTitle}>{shown.period.startDay} 起{shown.period.period === 'day' ? '一日' : '七日'}</Text>
               <Text style={s.meta}>至 {shown.endDayExclusive}（不包括此日） · {shown.period.timeZone}</Text>
               <Text style={s.meta}>{shown.profile.ageLabel}</Text>
             </>}</MotionReveal>

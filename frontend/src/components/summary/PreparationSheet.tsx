@@ -27,7 +27,7 @@ export function PreparationSheet({ model, values, onEdit, onAgent, onRecord, onT
     <View style={s.preparationHeading}>
       <View style={s.smallStack}>
         <Text style={s.reportEyebrow}>這次到診</Text>
-        <Text accessibilityRole="header" style={s.reportTitle}>{appointment?.title ?? (missingAppointment ? "原預約暫未能核對" : "尚未指定預約")}</Text>
+        <Text accessibilityRole="header" aria-level={2} style={s.reportTitle}>{appointment?.title ?? (missingAppointment ? "原預約暫未能核對" : "尚未指定預約")}</Text>
         <Text style={s.body}>日期：{appointment ? summaryTime(appointment.occurrence.dueAt, appointment.occurrence.timeZone) : "尚未提供"}</Text>
         <Text style={s.body}>負責人：{appointment ? "名稱未提供，請查看原安排" : "尚未指定"}</Text>
         {appointment ? <SummaryDisclosure label="預約來源與負責人識別" scopeKey={`${model.scopeKey}:${appointment.id}`}><Text style={s.meta}>原安排：{appointment.id} · 負責人識別：{appointment.assigneeUserId} · 版本 {appointment.version}</Text></SummaryDisclosure> : null}
@@ -42,12 +42,12 @@ export function PreparationSheet({ model, values, onEdit, onAgent, onRecord, onT
       {model.dirty ? <Text style={s.warning}>以下是本頁未保存草稿；先保存或明確放棄修改，再交給助手。</Text> : null}
     </View>
     <View style={s.preparationSection} testID="preparation-reading-questions">
-      <Text accessibilityRole="header" style={s.title}>想問的問題</Text>
+      <Text accessibilityRole="header" aria-level={2} style={s.title}>想問的問題</Text>
       {questions.length ? questions.map((question, index) => <View key={index} style={s.preparationListRow}><Text style={s.preparationNumber}>{index + 1}</Text><Text selectable style={[s.reading, s.preparationItemCopy]}>{question.text || "空白問題，待補充"}</Text></View>) : preparationEmptyReady ? <EmptyListCard title={draftEmptyReady ? "目前草稿沒有到診問題" : "已載入的準備單沒有到診問題"} detail="可在修改準備單時補充想問的問題。" icon="help-circle" testID="preparation-reading-questions-empty" /> : null}
       {questions.length ? <AppStatusBadge label={model.dirty ? "問題草稿 · 未保存" : page.reviewCurrent ? "問題已核對" : "問題待核對"} tone={!model.dirty && page.reviewCurrent ? "success" : "warning"} /> : null}
     </View>
     <View style={s.preparationSection} testID="preparation-reading-observations">
-      <Text accessibilityRole="header" style={s.title}>可供核對的近期觀察</Text>
+      <Text accessibilityRole="header" aria-level={2} style={s.title}>可供核對的近期觀察</Text>
       <Text style={s.meta}>{summaryPeriodLabel(page.period)} · 只列本期間已載入的原記錄，尚未取得與這次預約的關聯整理。</Text>
       {page.records.length ? page.records.map(record => <View key={record.id} style={s.preparationObservation}>
         <AppStatusBadge label="家長已確認的原記錄" tone="success" />
@@ -60,7 +60,7 @@ export function PreparationSheet({ model, values, onEdit, onAgent, onRecord, onT
       {page.missing.unknownEventTime > 0 ? <AppStatusBadge label={`${page.missing.unknownEventTime} 筆原記錄事件時間未知，未納入本期間`} tone="warning" /> : null}
     </View>
     <View style={s.preparationSection} testID="preparation-reading-checklist">
-      <Text accessibilityRole="header" style={s.title}>要帶的物品與準備</Text>
+      <Text accessibilityRole="header" aria-level={2} style={s.title}>要帶的物品與準備</Text>
       {checklist.length ? checklist.map((item, index) => <View key={index} style={s.preparationListRow}>
         <AppIcon name={item.done ? "check-circle" : "checkbox-blank-outline"} size={19} />
         <View style={s.preparationItemCopy}><Text selectable style={s.reading}>{item.text || "空白準備項目，待補充"}</Text><AppStatusBadge label={item.done ? model.dirty ? "草稿已勾選 · 未保存" : "已回報準備好" : "尚待準備"} tone={item.done && !model.dirty ? "success" : "warning"} /></View>

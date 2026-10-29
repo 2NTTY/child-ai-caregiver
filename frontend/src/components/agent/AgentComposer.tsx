@@ -210,5 +210,5 @@ const styles = StyleSheet.create({
   mobileSuggestions: { flexWrap: "nowrap", gap: spacing.sm }, suggestionLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   suggestion: { backgroundColor: "transparent", minHeight: 40, paddingHorizontal: spacing.md, borderRadius: radius.pill, justifyContent: "center" },
   mobileSuggestion: { minHeight: mobileLayout.touchTarget, flexShrink: 0 },
-  suggestionText: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool }, disabled: { opacity: .5 }, pressed: { backgroundColor: colors.paleTeal }, sendPressed: { backgroundColor: colors.accentPressed },
+  suggestionText: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool }, disabled: { opacity: .5 }, pressed: { backgroundColor: colors.paleTeal }, sendPressed: { backgroundColor: colors.deepTeal },
 });

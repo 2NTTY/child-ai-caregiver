@@ -100,7 +100,7 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
       : <PersonalNotificationHistoryView searchText={filters.searchText} dateRange={dateRange} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
     : <View testID={`history-unavailable-${filters.category}`}  style={styles.unavailable}>
-      <Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}暫未可在這裏查閱</Text>
+      <Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{current.label}暫未可在這裏查閱</Text>
       <Text style={styles.body}>{current.unavailable}</Text>
     </View>;
 

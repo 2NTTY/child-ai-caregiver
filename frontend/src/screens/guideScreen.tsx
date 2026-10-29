@@ -68,7 +68,7 @@ export default function GuideScreen() {
         <AppButton label="登出" variant="quiet" density="compact" disabled={!recordsState.online || !!recordsState.busy} onPress={() => { void signOut(); }} />
       </View>
       <View style={styles.childSetup} testID="production-child-setup">
-        <Text accessibilityRole="header" style={styles.pointTitle}>你的孩子</Text>
+        <Text accessibilityRole="header" aria-level={2} style={styles.pointTitle}>你的孩子</Text>
         {recordsState.childrenLoading ? <Text style={styles.body}>正在讀取孩子列表…</Text> : null}
         {recordsState.childrenError ? <Text accessibilityLiveRegion="polite" style={styles.body}>{recordsState.childrenError}</Text> : null}
         {online && recordsState.childrenLoadedAt && !recordsState.childrenLoading && !recordsState.childrenError && model.children.length === 0 ? <EmptyListCard title="目前沒有可存取的孩子" detail="可以先建立第一位孩子。" /> : null}
@@ -119,7 +119,7 @@ export default function GuideScreen() {
       </View>
       <View style={styles.reading} testID="guide-current-step">
         <Text style={styles.eyebrow}>第 {currentStep + 1} 步，共 {steps.length} 步</Text>
-        <Text accessibilityRole="header" style={styles.readingTitle}>{step.title}</Text>
+        <Text accessibilityRole="header" aria-level={2} style={styles.readingTitle}>{step.title}</Text>
         <Text style={styles.lead}>{step.description}</Text>
         <View style={styles.checklist}>{step.points.map((point, index) => <View key={point.title} style={styles.point}>
           <Text style={styles.pointNumber}>{String(index + 1).padStart(2, "0")}</Text><View style={styles.pointCopy}><Text style={styles.pointTitle}>{point.title}</Text><Text style={styles.body}>{point.body}</Text></View>

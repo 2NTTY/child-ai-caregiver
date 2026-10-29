@@ -15,6 +15,7 @@ import { ReadStateNotice } from "../ReadStateNotice";
 import { EmptyListCard } from "../EmptyListCard";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { AppButton, AppSelect, AppSelectionTrigger, AppTextField, SectionCard, UnderlineTabs, AppTabPanel, TabToolbar } from "../ui";
+import { PageHeading } from "../PageHeading";
 import { TaskListRow } from "./TaskListRow";
 import { TaskDetail } from "./TaskDetail";
 import { FormDialog } from "../FormDialog";
@@ -132,6 +133,7 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
   </>;
   return <View ref={pageLayout.ref} onLayout={pageLayout.onLayout} style={styles.pageContainer}><ScrollView ref={scrollRef} testID="tasks-page-scroll" style={[styles.pageScroll, customBackground && styles.transparent]} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16} onScroll={event => { if (listVisible) scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
     <BackgroundSurface padded frosted testID="tasks-reading-panel" ref={node => { containerLayout.ref.current = node; pageHeading.current = node; }} role="region" accessibilityLabel="待辦" tabIndex={-1} {...(Platform.OS === "web" ? { dataSet: { pageSurface: "true" } } : {})} onLayout={containerLayout.onLayout} style={styles.stack}>
+      <PageHeading title="待辦" compact={compact} />
       <StatusAnnouncement key={model.child.id} eventKey={model.access} urgent={model.access === "lost"} message={model.access === "lost" ? "孩子權限已失效。任務、提醒、歷史、草稿及待查核原操作已清除。" : model.access === "read_only" ? "目前為唯讀：可以查看共享事項及歷史，不能新增或更改。" : model.access === "editable" ? "已恢復共享事項的編輯權限。" : ""} />
       {model.access === "read_only" ? <BackgroundSurface padded><Text style={styles.notice}>目前為唯讀：可以查看共享事項及歷史，不能新增或更改。</Text></BackgroundSurface> : null}
       {model.access === "lost" ? <SectionCard><Text style={styles.notice}>孩子權限已失效。任務、提醒、歷史、草稿及待查核原操作已清除；重新取得權限後才可讀取。</Text></SectionCard> : <>
@@ -166,7 +168,7 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
                 {(readState === "error" || readState === "stale") && recovery?.reloadCurrent ? <AppButton label="重新讀取事項" variant="secondary" density="compact" disabled={!model.online || model.reading || locked || !!model.draft} onPress={recovery.reloadCurrent} /> : null}
               </ReadStateNotice>}
               {!readUnavailable && sections.filter(section => section.items.length > 0).map(section => <View key={section.id} testID={`task-time-group-${section.id}`} style={styles.timeGroup}>
-                <View style={styles.groupHeading}><Text accessibilityRole="header" style={styles.groupTitle}>{section.label}</Text><Text style={styles.meta}>{section.items.length} 項</Text></View>
+                <View style={styles.groupHeading}><Text accessibilityRole="header" aria-level={2} style={styles.groupTitle}>{section.label}</Text><Text style={styles.meta}>{section.items.length} 項</Text></View>
                 <MotionList items={section.items} keyExtractor={task => task.id} scopeKey={`${scopeKey}:${tab}`} regionKey={`tasks:${section.id}`} eligible={model.operation.state === "saved" && !loading && !previousLoading.current && listVisible} renderItem={(task, { exiting }) => {
                   const work = currentTaskMetadata(task, model.eligibleAssignees, model.work, model.reminders).work;
                   const assigneeMissing = task.occurrence.state === "scheduled" && !model.eligibleAssignees.some(person => person.userId === task.assigneeUserId);

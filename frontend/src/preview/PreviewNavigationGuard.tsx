@@ -91,6 +91,14 @@ export function PreviewLink({ href, children }: { href: Href; children: ReactNod
   const pathname = usePathname();
   const leave = usePreviewNavigation();
   return <Link href={href} asChild onPress={event => {
+    if (event.defaultPrevented) return;
+    // Let the browser own modifier/target behavior; keep the guard for ordinary
+    // same-context SPA navigation instead of replacing native link semantics.
+    if (Platform.OS === "web" && "button" in event) {
+      const target = event.currentTarget.target;
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
+        || (target && target.toLowerCase() !== "_self")) return;
+    }
     event.preventDefault();
     if (href === pathname) return;
     leave(() => router.push(href), staysInDashboard(pathname, href) ? "workspace" : "navigation");

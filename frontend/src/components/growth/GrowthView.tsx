@@ -99,7 +99,7 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPre
               </GrowthConcernActions>
               {concern ? <GrowthConcernTimeline concern={concern} page={page} onRecord={onRecord} onTask={onTask} />
                 : page.concerns?.state === "ready" && model.load !== "error" ? model.online ? <EmptyListCard title="暫無持續關注" detail="可以先與助手討論想留意的成長近況。" testID="growth-concerns-empty" /> : null : <View style={s.archiveEmpty} testID="growth-concerns-unavailable">
-                  <Text accessibilityRole="header" style={s.concernTitle}>{model.load === "error" || page.concerns?.state === "error" ? "關注歷程未能讀取" : page.concerns?.state === "loading" ? "正在讀取關注歷程" : "關注歷程尚未接通"}</Text>
+                  <Text accessibilityRole="header" aria-level={2} style={s.concernTitle}>{model.load === "error" || page.concerns?.state === "error" ? "關注歷程未能讀取" : page.concerns?.state === "loading" ? "正在讀取關注歷程" : "關注歷程尚未接通"}</Text>
                 </View>}
             </BackgroundSurface>
           </View>

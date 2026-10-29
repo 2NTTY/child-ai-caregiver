@@ -24,5 +24,5 @@ export function AppStatusBadge({ label, tone = "neutral", testID }: { label: str
 
 const styles = StyleSheet.create({
   badge: { alignSelf: "flex-start", maxWidth: "100%", minWidth: 0, flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderRadius: radius.small },
-  label: { fontFamily: chineseFont, fontSize: 12, lineHeight: 18, fontWeight: "700", flexShrink: 1 },
+  label: { fontFamily: chineseFont, fontSize: 13, lineHeight: 20, fontWeight: "700", flexShrink: 1 },
 });

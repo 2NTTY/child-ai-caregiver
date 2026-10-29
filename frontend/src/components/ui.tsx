@@ -171,7 +171,7 @@ export function SectionHeader({ title, subtitle, action, icon, count, density = 
   if (compact) return <View style={styles.mobileHeader}>
     <View style={styles.mobileHeaderRow}><View style={styles.mobileHeaderTitle}>
       {icon ? <AppIcon name={icon} size={mobileIcons.content} color={colors.teal} importantForAccessibility="no" /> : null}
-      <Text accessibilityRole="header" style={[styles.sectionTitle, mobileType.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>
+      <Text accessibilityRole="header" aria-level={2} style={[styles.sectionTitle, mobileType.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>
       {count !== undefined ? <View style={styles.count}><Text accessibilityLabel={`${count} 項`} style={styles.countText}>{count}</Text></View> : null}
     </View>{action ? <View style={styles.mobileHeaderAction}>{action}</View> : null}</View>
     {subtitle ? <Text style={[styles.sectionSubtitle, mobileType.caption]}>{subtitle}</Text> : null}
@@ -179,7 +179,7 @@ export function SectionHeader({ title, subtitle, action, icon, count, density = 
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.headerText}>
-        <View style={styles.sectionTitleRow}>{icon ? <AppIcon name={icon} size={24} color={colors.teal} importantForAccessibility="no" /> : null}<Text accessibilityRole="header" style={[styles.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>{count !== undefined ? <View style={styles.count}><Text accessibilityLabel={`${count} 項`} style={styles.countText}>{count}</Text></View> : null}</View>
+        <View style={styles.sectionTitleRow}>{icon ? <AppIcon name={icon} size={24} color={colors.teal} importantForAccessibility="no" /> : null}<Text accessibilityRole="header" aria-level={2} style={[styles.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>{count !== undefined ? <View style={styles.count}><Text accessibilityLabel={`${count} 項`} style={styles.countText}>{count}</Text></View> : null}</View>
         {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
       </View>
       {action}
