@@ -1,6 +1,7 @@
 import { createAvatarApi } from '../../../src/client/avatars-api.ts';
 import { createHandoverApi } from '../../../src/client/handover-api.ts';
 import { HandoverOwner } from './HandoverOwner.ts';
+import { HandoverImportOwner } from './HandoverImportOwner.ts';
 import { AvatarOwner } from './AvatarOwner';
 import { createChatFileApi, type ChatFileApi } from '../../../src/client/chat-file-api.ts';
 import { ChatFileUploadController } from './ChatFileUploadController';
@@ -46,6 +47,7 @@ export class ProductionOwner {
   readonly apiBaseUrl: string;
   readonly avatarOwner: AvatarOwner;
   readonly handoverOwner: HandoverOwner;
+  readonly handoverImportOwner: HandoverImportOwner;
   readonly fetcher: typeof fetch;
   private readonly native: boolean;
   readonly adminOwner: AdminOwner;
@@ -120,6 +122,9 @@ export class ProductionOwner {
     this.socialProviders = firebaseIdentity?.socialProviders ?? accountDependencies?.reauthentication?.socialProviders ?? [];
     this.adminOwner = new AdminOwner(this.apiBaseUrl, this.fetcher);
     this.handoverOwner = new HandoverOwner(createHandoverApi(this.apiBaseUrl, this.fetcher), error => {
+      if (error.status === 401 || error.code === 'identity_changed' || error.code === 'session_changed') void this.controller.restoreSession();
+    });
+    this.handoverImportOwner = new HandoverImportOwner(createHandoverApi(this.apiBaseUrl, this.fetcher), error => {
       if (error.status === 401 || error.code === 'identity_changed' || error.code === 'session_changed') void this.controller.restoreSession();
     });
     this.reauthenticateAdmin = async (proof, signal) => {
@@ -270,6 +275,7 @@ export class ProductionOwner {
       }
       this.accountOwner.syncContext(userId, raw.online, this.identity);
       this.handoverOwner.syncContext(this.accountOwner.isReady() ? userId : null, this.accountOwner.isReady() ? this.identity : null, raw.online);
+      this.handoverImportOwner.syncContext(this.accountOwner.isReady() ? userId : null, this.accountOwner.isReady() ? this.identity : null, raw.online);
       this.sharedChild.syncContext(this.identity,userId,raw.online && this.accountOwner.isReady());
       const shared = this.sharedChild.getSnapshot();
       if (!this.accountOwner.isReady() && shared.target && (shared.view || shared.phase === 'loading')) this.sharedChild.invalidate();
@@ -387,6 +393,7 @@ export class ProductionOwner {
     this.unsubscribeVoice?.(); this.unsubscribeVoice=null; this.voiceOwner.dispose();
     this.avatarOwner.dispose();
     this.handoverOwner.dispose();
+    this.handoverImportOwner.dispose();
     this.adminOwner.dispose(); this.accountOwner.dispose(); this.controller.dispose(); this.chatController.dispose(); this.agentOwner.dispose(); this.authorizationOwner.dispose(); this.draftOwner.dispose();
     void this.queryClient.cancelQueries(); this.queryClient.clear(); this.listeners.clear();
   }

@@ -1,0 +1,15 @@
+{
+  "workPackage": "P4-HANDOVER01 shared upload/import client",
+  "date": "2026-10-29",
+  "base": "894c2810270887b46b4ef836115b4d43c3c8511b",
+  "owner": "B",
+  "reuse": "Existing HandoverApi request, identity generation, cancellation, response validation and original-operation lookup",
+  "checks": [
+    { "command": "node --experimental-test-module-mocks --test --test-name-pattern='handover upload and import commands' tests/handover-client.test.ts",
+      "result": "1 passed", "log": "tmp/handover-import-client-deadline-green.log",
+      "coverage": ["all eight upload/import routes", "raw ZIP body without JSON conversion", "original operation lookup and no implicit retry", "late response rejected after identity change", "upload/create/resume 300s; get/cancel 20s"] },
+    { "check": "shared dependency graph with backend", "roots": 5, "diagnostics": 0, "log": "tmp/handover-import-runner-types-reviewed.log" }
+  ],
+  "review": "Independent review found create/resume retained the short JSON deadline; deadline assertions failed before the targeted fix and passed afterwards",
+  "limits": ["No UI/owner/selection adapter yet", "No browser, native device, cloud, model, deployment or full-suite checks", "Full module/history import is not delivered by these transport methods"]
+}

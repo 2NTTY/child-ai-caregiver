@@ -4236,3 +4236,76 @@
 - 接續 #367／`3ed6c29`，沿原任務交易更新原 ID／發生實例、來源、修訂、outbox 及逐項收據；預設保留本地完成／取消等版本變動，明確覆蓋仍核目前版本，未知投遞繼續停發。`import` 修訂接回共用 client／標示，不增加一般 change 命令。
 - 一條 connected flow red→green／1 pass，三入口型別圖零診斷；最初混用 Server／前端解析模式的診斷已分開配置核對。原失敗及限制見[證據](artifacts/verification/P4_HANDOVER_TASK_UPDATES_20261029.json)。獨立 Sol review 無確定 blocker／Important 問題；不重測前包，無模型、雲端、通知、設備或部署。
 - C 負責後端／契約，B 負責 client／共用修訂顯示，各自單作者提交。正式匯入仍待上載、持久批次及入口，不把內部更新能力或合併當成 HANDOVER01 完成。
+
+<a id="log-20261029-p4-handover-batches"></a>
+### 2026-10-29：P4 持久匯入批次與逐項原子進度
+
+- 接續 #368／`8e86e28`，固定已驗來源、目標及模組，沿現有 background queue／lease，批次進度、領域修改與逐項收據同交易提交。取消／接續保留原批次及位置，舊工作世代與重複來源行不再推進；個人與班級使用同一範圍核對。備份 codec 保留進度但停止原批次，兩項 scope 清理索引只寫入定義。
+- 一條連貫合成流程通過；四入口型別圖零診斷。獨立 review 找到初檢後 lease 可在領域讀取期間過期，已在寫入前再核並補有實際失敗的回歸斷言。最初 fixture／型別錯誤及不精準的期限探針仍記錄於[證據](artifacts/verification/P4_HANDOVER_BATCHES_20261029.json)，沒有重跑前包或全量測試。
+- 尚未接公開上載、正式匯入 worker、HTTP／共用 UI、其他資料域與完整備份；批次只含無正文的追查 metadata，不以此聲稱正式匯入可用。零模型、通知、雲端、設備或部署；D 的工作未改動。
+
+<a id="log-20261029-p4-handover-uploads"></a>
+### 2026-10-29：P4 資料包上載與暫存清理
+
+- 接續 #369／`d085558`，沿原 authority、ZIP verifier、加密 immutable Storage 及工作台帳接預留／串流上載／查回／取消。Node 保留身份／同源／容量控制，資料包不整份緩衝；上載技術摘要與真正領域匯入分開，沒有新增套件或另一種資料格式。
+- reader 與真本機 HTTP 各一條流程通過，後者用首 17 bytes 入場後才供應剩餘內容證明串流，兼核身份、原操作、加密讀回及取消後遲到物件清理。獨立 review 找到 live 上載責任未合併至還原準備，新增一條實際 prepareFirebaseRestore red→green 流程關閉；保留快照後物件與帳戶的清理 scope，還原結果不可讀。原 EACCES／fixture／錯誤映射與型別修正見[證據](artifacts/verification/P4_HANDOVER_UPLOADS_20261029.json)。
+- 正式 runtime、maintenance、帳戶 erasure 及 backup registry 已接同一服務，索引只有定義。本批未部署、無模型／通知／設備或全量測試；公開領域匯入、共用畫面、其他領域／歷史、完整私人備份及簽章配置仍待接，不把上載後端當成 HANDOVER01 完成。
+
+<a id="log-20261029-p4-handover-runner"></a>
+### 2026-10-29：P4 已驗包至正式匯入 worker
+
+- #370／`9058011` 之上接原 account API、已驗上載、持久批次及正式 worker。Server 推導來源／完整性／數量，逐項交易核對來源、目前目標與 lease；有限批次沿原游標喚醒。原操作查回不要求再次存在來源檔案，取消後接續同一批次，不重做成功項。
+- 一條正式組裝入口的合成流程通過：原操作與隔離、部分完成／取消／接續、重投遞及下載後來源取消。非空未接歷史留下失敗批次，不截斷冒稱成功。五入口型別圖零診斷；實際 fixture／身份 helper／上載 root scope 修正與限制見[證據](artifacts/verification/P4_HANDOVER_RUNNER_20261029.json)。
+- 只有記錄／概況／待辦目前值的領域 adapter；完整歷史、其他模組、畫面與完整備份待續，未部署或做真服務驗收，D PR 不動。
+- Review 另找到讀包耗時可造成零進度循環，以模擬 75 秒讀取重現後修正項目預算起點，仍保留原 lease，零進度則明確失敗。已成功的接續 op 在來源清理後重送也有實際 red→green，先查原控制收據；client 長操作期限由 B 同步修正、分開提交。
+
+<a id="log-20261029-p4-handover-client-import"></a>
+### 2026-10-29：P4 共用上載／匯入 client
+
+- B 接續 #371／`894c281`，沿原 HandoverApi 增八個上載／匯入方法，Web／Android 共用身份 generation、abort、原操作及錯誤查回。ZIP body 不經 JSON，沒有第二套 transport 或自動重送。
+- 只補一條連貫 client 檢查，缺方法原紅→綠；獨立 review 的建立／接續 20 秒期限缺口亦經斷言原紅→綠，兩項讀包操作及上載改為 300 秒，查回／取消維持 20 秒。合併前沿用已核五入口型別圖，不重跑其他功能。[證據](artifacts/verification/P4_HANDOVER_CLIENT_IMPORT_20261029.json)。
+- 只交共用 transport，檔案選取、owner／畫面、完整領域／歷史及正式部署仍待續；未跑真服務、模型或手機，不動 D PR。
+
+<a id="log-20261029-p4-handover-source-history"></a>
+### 2026-10-29：P4 來源歷史、再次交接與刪除一致性
+
+- 接續 #372／`ef1e0d2`，verified reader 以綁定游標分目前值與來源歷史兩階段；記錄、概況及待辦舊版本保存在獨立來源紀錄，同交易提交逐項收據及批次進度。不偽造本地操作、不更改目前值或重啟舊提醒；再次交接保留原始證據及本地對應關係。
+- 共用當前權限、刪除及 history floor，來源紀錄可有界讀取／匯出；永久刪除遮蔽後分批清理，還原重放刪除紀錄。reader 一條、正式 account API／worker 與來源生命週期兩條局部流程通過，六入口型別圖零診斷；主模型及獨立 review 未發現剩餘確定 P1／P2。原紅測試、logical ID／restore metadata 修正及 fixture 失敗見[證據](artifacts/verification/P4_HANDOVER_SOURCE_HISTORY_20261029.json)。
+- 新索引只有定義，未部署、未做真雲端還原，無模型／通知／設備或全量測試。下一步接共用匯入 owner／畫面；其餘領域、班級／期間匯出、完整私人備份及簽章配置未完成，D 工作未改動。
+
+<a id="log-20261029-p4-handover-import-ui"></a>
+### 2026-10-29：P4 共用匯入入口與重開批次查回
+
+- 接續 #373／`cac3e40`，原共用設定區使用正式 HandoverApi 選檔、上載驗包、選來源孩子／既有目標／模組、提交及查回原批次，支援取消／接續。Server 本人列表每頁 20 項，綁定帳戶及儲存世代；重開由權威列表查回，沒有本機業務副本。
+- 復用 Paper、瀏覽器及 Expo 選檔，固定既有 noble-hashes 2.4.0 作增量 SHA-256。Web 256 MiB；目前 Expo fetch 緩衝 body，原生先沿 20 MiB，較大包明示用 Web，完整原生大型包仍待接，不以擴大記憶體上限掩蓋。
+- 正式 API／client 一條、owner／檔案生命週期一條連貫流程與局部型別圖通過。獨立 review 找到驗包失敗清掉原操作入口，實際 red→green 修正並複核。Web／Android 本機匯出通過；Android 首次 Hermes 沙箱暫存寫入失敗保留，僅原命令移出沙箱完成。詳見[證據](artifacts/verification/P4_HANDOVER_IMPORT_UI_20261029.json)。
+- 未部署、未驗真選檔／設備，無模型／通知。未提交上載的重開發現、其餘領域、衝突覆蓋／恢復介面、班級／期間及完整私人備份仍待續；不把共用畫面交付當整包完成，D PR 未改動。
+
+<a id="log-20261029-p4-handover-upload-recovery"></a>
+### 2026-10-29：P4 未提交資料包重開恢復
+
+- 接續 #374／`8c07b10`，本人／目前儲存世代的未清理上載沿既有索引每頁二十項讀回，列表省略完整預覽；選取後才查原包狀態。共用 owner／畫面提供續選、查狀態與取消；原檔遺失不自動重傳，取消／失敗的清理義務仍由原 worker 處理。
+- 現有本機 HTTP 流程原 404→通過，兼核隔離／撤權、metadata、二十加一續頁及清理退出；owner 原流程及恢復流程通過。獨立 review 發現選 B 失敗仍保留 A，可造成錯包提交；同流程重現後於切換 ID 先清舊選取，補驗及覆核通過。[證據](artifacts/verification/P4_HANDOVER_UPLOAD_RECOVERY_20261029.json)保留沙箱 loopback 拒絕及實際 red→green。
+- 未新增索引、未部署或做真機／模型／通知；上一包 bundle 不重跑。其餘領域、衝突介面、完整備份及原生大型包仍待續，不改 D PR。
+
+<a id="log-20261029-p4-handover-conflict-results"></a>
+### 2026-10-29：P4 逐項匯入結果與所選衝突處理
+
+- 接續 #376／`42017ec`，本人批次按固定來源孩子及模組查逐項結果；當前權限、原儲存 scope、來源及 metadata 仍核對。二十加一分頁游標綁授權及變更版本，原收據結果與目前可處理版本分開，不披露正文。
+- 共用 owner／畫面可選擇已讀衝突作覆蓋或明確恢復，沿同一匯入服務及 expectedVersion 保存。主 review 發現重跑原 targets 會一併匯入取消批次未選的項目，故新增向後相容 `resolutionOnly`，只提交選定目前值、不處理其他項目或歷史；原批次／收據保持不變，unknown 只查同操作。
+- 正式 API／client／worker 一條流程、既有領域一條及 owner 兩條通過；局部型別圖零診斷。獨立後端 review 與增量覆核未見剩餘確定 P1／P2，主模型覆核共用畫面。保留初始缺路由、測試 fixture、selected-only red 與型別修正記錄，詳見[證據](artifacts/verification/P4_HANDOVER_CONFLICT_RESULTS_20261029.json)。
+- 一個索引只加入定義，尚未部署；不重跑 bundle／設備、無模型／通知。正文差異、其他領域、完整備份、班級／期間及原生大型包仍待接，不把本切片或合併當整個 HANDOVER01／P4 完成；D PR 未改動。
+
+<a id="log-20261029-p4-handover-memory-source"></a>
+### 2026-10-29 — P4-HANDOVER01 記憶來源與領域接點
+
+接回暫停前成果，保留外來來源、原確認者及本地匯入身份；一般新增不能偽造 imported 來源。事實／話題沿原交易、版本、修訂、唯一鍵與刪除服務，候選與終態不升格／復活。本人更正後改用本地確認，來源鏈保留。匯出改沿目前記憶讀取，避免來源失效後仍輸出 current。共用表單可保留或明確改選來源，外來 ID 不建本地連結。
+
+一條領域流程、原 client／UI 18 項及受影響型別圖通過；獨立 review 的終態／候選缺口已修正。初次保存的 undefined 序列化、review red 與型別失敗均保留於[證據](artifacts/verification/P4_HANDOVER_MEMORY_SOURCE_20261029.json)。這是完整記憶匯入的預備接點，私人交代／摘要／歷史、worker 與公開模組選擇仍待接；未部署，不聲稱 HANDOVER01 或 P4 完成，不重跑模型／雲端／設備及已驗功能。
+
+<a id="log-20261029-p4-handover-instructions"></a>
+### 2026-10-29 — P4-HANDOVER01 私人交代資料接點
+
+#378 已由 B 合併（6df6c4dc），接續私人交代。把原 notes／主題鍵讀寫抽成共用資料層，由原 Agent 與匯入預備方法復用；匯入不偽造訊息、run 或授權。原訊息身份留來源鏈，本地後續更正使用實際訊息並保留來源鏈。client／Server 復用同一 schema，共用列表區分本人及匯入交代。
+
+新領域流程與原 Agent 記憶生命週期通過，client／真列表兩項定向檢查通過，受影響型別圖通過。保留原 loader 與 nullable 測試失敗，沒有擴修聊天；獨立 review 無確定 P1／P2。[證據](artifacts/verification/P4_HANDOVER_INSTRUCTIONS_20261029.json)區分內部預備接點與尚未完成的公開 memory 匯入／共享目標／摘要／歷史。未部署，未重跑模型、雲端、設備或整套產品測試。

@@ -24,8 +24,10 @@ import { createKnowledgeSourceFetcher } from './knowledge-source-fetch.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { firestoreHandoverJobSchema, assertHandoverJobIdentity } from './firestore-handover-jobs.ts';
 import type { createHandoverService } from './handover-service.ts';
+import type { createHandoverUploadService } from './handover-upload-service.ts';
+import { handoverUploadRecordSchema, handoverUploadId, validHandoverUpload } from './handover-upload-records.ts';
 
-const stages = ['documents', 'work_watches', 'photo_cleanup', 'erasures', 'content_erasures', 'context_versions', 'voice_assets', 'chat_file_assets', 'avatar_cleanup', 'handover_exports'] as const;
+const stages = ['documents', 'work_watches', 'photo_cleanup', 'erasures', 'content_erasures', 'context_versions', 'voice_assets', 'chat_file_assets', 'avatar_cleanup', 'handover_exports', 'handover_uploads'] as const;
 const cursorSchema = z.object({ after: z.record(z.string(), z.string().nullable()), complete: z.array(z.string()),
   minute: z.number().int(), token: z.uuid().nullable(), until: z.number().int().nonnegative() }).strict();
 const empty = () => ({ after: {} as Record<string, string | null>, complete: [] as string[], minute: -1, token: null as string | null, until: 0 });
@@ -44,6 +46,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
   voices?: Pick<FirestoreVoiceStore, 'cleanupDeleted' | 'expireUnlinked'>;
   files?: Pick<FirestoreChatFilesStore, 'cleanupDeleted' | 'expireUnlinked'>;
   handover?: Pick<ReturnType<typeof createHandoverService>, 'cleanup'>;
+  handoverUploads?: Pick<ReturnType<typeof createHandoverUploadService>, 'cleanup'>;
   enabled: boolean; knowledge: FirestoreKnowledgeRefresh;
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'cleanupDeleted'>;
   erasures: FirestoreErasureStore; cleanup: ReturnType<typeof createFirestoreErasureCleanup>;
@@ -60,6 +63,21 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
   const stateEnvelope = (id: string, scope: WorkRecoveryScope, value: z.infer<typeof cursorSchema>) =>
     ({ ...data.tags(scope), ...data.seal('maintenance-state', id, scope, cursorSchema, value) });
   async function queueRow(stage: typeof stages[number], row: DocumentSnapshot, basis: string, known?: Binding) {
+    if (stage === 'handover_uploads') {
+      const info = open(row, 'handover-upload', handoverUploadRecordSchema), job = info.value;
+      if (!validHandoverUpload(job) || job.version !== row.get('recordVersion') || handoverUploadId(info.scope.ownerUserId, job.id) !== info.id
+        || firestoreDomainHash(job.scope) !== firestoreDomainHash(info.scope)) domainReject('package_upload_binding', 500);
+      if (job.cleaned || !['cancelled', 'expired'].includes(job.state) && Date.parse(job.expiresAt) > Date.now()) return;
+      await options.database.runTransaction(async tx => {
+        const control = await authority.readControl(tx); if (!options.enabled || !control.enabled) return;
+        const fresh = await tx.get(row.ref); if (!fresh.exists || firestoreDomainHash(fresh.data()) !== firestoreDomainHash(row.data())) return;
+        const identity = { kind: 'handover-upload-cleanup' as const, scope: SYSTEM, resourceId: row.id, basis: firestoreDomainHash(info.id),
+          generation: control.generation, authorizationVersion: '0' };
+        const wake = job.artifact ? await prepareObjectCleanupWake(data, tx, identity, firestoreDomainHash(job.artifact)) : () => {};
+        const work = await prepareFirestoreBackgroundWork(data, tx, identity, new Date().toISOString()); work.commit(); wake();
+      });
+      return;
+    }
     if (stage === 'handover_exports') {
       const info = open(row, 'handover-export', firestoreHandoverJobSchema), job = info.value;
       assertHandoverJobIdentity(job, info.scope, info.id, row.data()!.recordVersion);
@@ -189,7 +207,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       let q: Query = data.collection(stage).orderBy(FieldPath.documentId()).limit(5);
       if (stage === 'voice_assets' || stage === 'chat_file_assets') q = q.where('cleanupState','in',['pending','unlinked']);
       if (stage === 'avatar_cleanup') q = q.where('complete', '==', false);
-      if (stage === 'handover_exports') q = q.where('cleaned', '==', false);
+      if (stage === 'handover_exports' || stage === 'handover_uploads') q = q.where('cleaned', '==', false);
       if (stage === 'content_erasures') q = q.where('stage', 'in', ['revisions', 'receipts']);
       if (stage === 'context_versions') q = q.where('summaryPending', '==', true);
       if (stage === 'work_watches') q = q.where('enabled', '==', true);
@@ -248,6 +266,17 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
     if (firestoreDomainHash(job.scope) !== firestoreDomainHash(SYSTEM)) domainReject('maintenance_scope_changed');
     const control = await authority.readControl();
     if (!options.enabled || !control.enabled || job.generation !== control.generation || signal.aborted) return { state: 'stopped' as const };
+    if (job.kind === 'handover-upload-cleanup') {
+      if (!options.handoverUploads) domainReject('package_service_unavailable', 503);
+      const row = await data.collection('handover_uploads').doc(job.resourceId).get(); if (!row.exists) return { state: 'completed' as const };
+      const info = open(row, 'handover-upload', handoverUploadRecordSchema);
+      if (!validHandoverUpload(info.value) || info.value.version !== row.get('recordVersion')
+        || handoverUploadId(info.scope.ownerUserId, info.value.id) !== info.id || firestoreDomainHash(info.value.scope) !== firestoreDomainHash(info.scope)
+        || job.basis !== firestoreDomainHash(info.id)) domainReject('maintenance_binding', 500);
+      const result = await options.handoverUploads.cleanup(info.scope, info.value.id, signal).catch(() => ({ state: 'unknown' as const }));
+      return result.state === 'unknown' && job.attempts < 3
+        ? { state: 'deferred' as const, nextAt: new Date(Date.now() + 60000).toISOString() } : result;
+    }
     if (job.kind === 'handover-cleanup') {
       if (!options.handover) domainReject('package_service_unavailable', 503);
       const row = await data.collection('handover_exports').doc(job.resourceId).get();

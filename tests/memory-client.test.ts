@@ -102,6 +102,37 @@ test("memory client rejects malformed or out-of-scope responses and stale writes
     error => error instanceof MemoryApiError && error.confirmed);
 });
 
+test("memory client retains imported source evidence and metadata without inventing a hidden message reference", async () => {
+  const importedFrom = { current: { source: { serverId: 'https://source.test', accountId: 'source-account', childId,
+    section: 'memory_facts' as const, resourceId: factId, resourceVersion: 4, authorUserId: 'source-author', createdAt: null,
+    confirmedBy: 'alice', confirmedAt: '2026-10-29T00:00:00Z', confirmationBasis: 'explicit' as const, assigneeUserId: null },
+    sourceHash: 'a'.repeat(64), packageId: topicId, packageVersion: 1, manifestSha256: 'b'.repeat(64), integrity: 'trusted' as const,
+    importedBy: 'alice', importedAt: '2026-10-29T01:00:00Z' }, previous: [] };
+  const source = { kind: 'imported' as const, description: 'Imported package source',
+    original: { kind: 'private_chat' as const, description: 'Original private statement' }, sourceState: 'current' as const };
+  const imported: MemoryFact = { ...fact, source, importedFrom, confirmationBasis: 'imported_source', confirmedBy: 'alice',
+    confirmedAt: '2026-10-29T00:00:00Z', status: 'confirmed' };
+  const importedTopic = { ...topic, importedFrom };
+  const api = createMemoryApi('/api', async input => Response.json(String(input).includes('/topics')
+    ? { items: [importedTopic], nextAfterId: null } : String(input).endsWith('/history')
+      ? { revisions: [imported], nextBeforeVersion: null } : { items: [imported], nextAfterId: null }));
+  assert.deepEqual((await api.facts(childId, null, signal())).items, [imported]);
+  assert.deepEqual((await api.factHistory(childId, factId, null, signal())).revisions, [imported]);
+  assert.deepEqual((await api.topics(childId, null, signal())).items, [importedTopic]);
+  let submitted: any;
+  const responder = onlineResult({ fact: { ...imported, version: 2, confirmationBasis: undefined } });
+  const editing = createMemoryApi('/api', async (input, init) => {
+    if (String(input).endsWith('/online/submit')) submitted = JSON.parse(String(init?.body)).payload;
+    return responder(input, init);
+  });
+  await editing.reviseFact(childId, factId, { values: { ...values, source }, expectedVersion: 1, reason: 'Local correction', confirm: true, confirmShared: false }, signal(), 'alice');
+  assert.deepEqual(submitted.values.source, source); assert.equal('messageId' in submitted.values.source.original, false);
+  for (const bad of [{ ...source, sourceState: 'unknown' }, { ...source, original: source }]) {
+    await assert.rejects(createMemoryApi('/api', async () => Response.json({ items: [{ ...imported, source: bad }], nextAfterId: null }))
+      .facts(childId, null, signal()), MemoryApiError);
+  }
+});
+
 test("memory client preserves failure status without leaking response details or retrying", async () => {
   for (const status of [400, 401, 403, 404, 409, 500]) {
     let calls = 0;

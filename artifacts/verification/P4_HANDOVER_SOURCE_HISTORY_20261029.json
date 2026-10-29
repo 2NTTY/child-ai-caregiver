@@ -1,0 +1,32 @@
+{
+  "workPackage": "P4-HANDOVER01 source revision import and lifecycle",
+  "date": "2026-10-29",
+  "base": "ef1e0d2c97a831fb3794cb6e8b5f46b733d3f882",
+  "branch": "codex/p4-handover-import-history",
+  "reuse": "Existing verified ZIP reader, domain schemas, durable import worker, transactional receipts, account export and erasure/restore services",
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='verified import section filters' tests/handover-import.test.ts",
+      "result": "1 passed",
+      "log": "tmp/handover-import-section-filter-green.log",
+      "coverage": ["bounded section selection", "cursor selection binding", "unchanged legacy cursor selection"]
+    },
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-source-history.test.ts tests/handover-import-service.test.ts",
+      "result": "2 passed",
+      "log": "tmp/handover-source-history-reviewed.log",
+      "coverage": ["formal account API and worker", "current values imported before revisions regardless of archive order", "deduplication, conflict and original-operation recovery", "same evidence survives repeated handover", "personal and class access", "export and deletion/history-floor masking", "cleanup and journal replay", "restore codec epoch transformation", "completed tasks do not restart reminders"]
+    },
+    { "check": "TypeScript affected dependency graph", "roots": 6, "diagnostics": 0, "log": "tmp/handover-source-history-types-reviewed.log" }
+  ],
+  "review": "Main implementation review and independent read-only Sol review found no remaining definite P1/P2 issue in the changed scope; the independent reviewer did not rerun tests",
+  "preservedFailures": [
+    { "log": "tmp/handover-source-history-red.log", "cause": "History sections were unsupported before implementation" },
+    { "log": "tmp/handover-source-history-green-attempt.log", "cause": "Export opened the envelope using its physical document ID instead of its logical history ID; corrected" },
+    { "log": "tmp/handover-source-history-green.log", "cause": "Restore metadata allowlist omitted the new fields; corrected" },
+    { "log": "tmp/handover-source-history-lifecycle.log", "cause": "Fixture used an unavailable database.doc method; corrected fixture path" },
+    { "log": "tmp/handover-source-history-connected.log", "cause": "Synthetic next delivery was not due; advanced the test clock between deliveries" },
+    { "log": "tmp/handover-source-history-types.log", "cause": "Task revision union narrowing and nullable history type errors; corrected" }
+  ],
+  "limits": ["Synthetic database/storage and local formal API checks, not real cloud transaction or native restore acceptance", "Index definitions are not deployed", "No UI import owner yet", "Other domains, complete private backup, class/period export and production signing remain incomplete", "No model, notification, device, deployment or full-suite checks"]
+}

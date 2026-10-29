@@ -7,7 +7,7 @@ import { canonicalJson } from './online-routing.ts';
 
 /** Runtime and restore authenticate the importer; the displayed source confirmer is not a local actor. */
 export function importConfirmationActor(value: { confirmationBasis?: string; confirmedBy: string | null;
-  confirmedAt: string | null; importedFrom?: ImportProvenance }, section: 'care' | 'profile'): string | null | undefined {
+  confirmedAt: string | null; importedFrom?: ImportProvenance }, section: 'care' | 'profile' | 'memory_facts'): string | null | undefined {
   if (value.confirmationBasis !== 'imported_source') return value.confirmedBy;
   const link = value.importedFrom?.current;
   return link?.source.section === section && link.source.confirmedBy === value.confirmedBy && link.source.confirmedAt === value.confirmedAt
@@ -25,9 +25,11 @@ export function makeImportProvenance(row: HandoverImportRow, integrity: Handover
   const result = importProvenanceSchema.safeParse({ current: {
     source: { serverId: row.source.serverId, accountId: row.source.accountId, childId: row.childId,
       section: row.section, resourceId: row.section === 'profile' ? row.childId : value.id, resourceVersion: value.version,
-      authorUserId: value.authorUserId ?? value.createdBy ?? null, createdAt: value.createdAt ?? null,
+      authorUserId: value.authorUserId ?? value.createdBy ?? value.updatedBy ?? null, createdAt: value.createdAt ?? value.updatedAt ?? null,
       confirmedBy: value.confirmedBy ?? null, confirmedAt: value.confirmedAt ?? null,
-      confirmationBasis: value.confirmationBasis ?? null, assigneeUserId: value.assigneeUserId ?? null },
+      confirmationBasis: value.confirmationBasis ?? null, assigneeUserId: value.assigneeUserId ?? null,
+      ...(row.section === 'memory_topics' ? { reopenedFrom: value.reopenedFrom ?? null } : {}),
+      ...(row.section === 'instructions' ? { sourceMessageId: value.sourceMessageId ?? null, statementProvenance: value.provenance } : {}) },
     sourceHash: createHash('sha256').update(canonicalJson(value)).digest('hex'),
     packageId: row.source.packageId, packageVersion: row.source.packageVersion, manifestSha256: row.source.manifestSha256,
     integrity, importedBy, importedAt,

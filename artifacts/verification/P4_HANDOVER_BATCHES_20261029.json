@@ -1,0 +1,33 @@
+{
+  "workPackage": "P4-HANDOVER01 internal durable import batches",
+  "date": "2026-10-29",
+  "base": "8e86e28e6b59a86399dc4ce35570ae1976e8858e",
+  "branch": "codex/p4-handover-import-batches",
+  "implementation": [
+    "Fixed verified source, manifest, selected domains and canonical target scopes",
+    "Existing background queue and persistent lease; batch, item receipt and domain commit in one transaction",
+    "Original-operation cancellation and resume records; only remaining positions resume",
+    "Deadline recheck after asynchronous domain reads; repeated source row cannot advance another position",
+    "Backup registration and restore codec stop all restored batches with progress retained",
+    "Two scoped cleanup composite indexes and private wildcard exclusions defined, not deployed"
+  ],
+  "checks": [
+    { "command": "node --experimental-test-module-mocks --test tests/handover-import-batches.test.ts", "result": "1 connected flow passed", "log": "tmp/handover-batches-final.log",
+      "coverage": ["personal and class canonical scopes", "request replay and fingerprint mismatch", "same-row cursor replay", "lease expiry after initial check leaves no item or progress", "cancel and resume remaining row", "old execution rejected", "private account isolation", "reopened store", "actual restore codec stops batches"] },
+    { "command": "focused TypeScript graph: firebase-runtime, firestore-restore, firestore-handover-import-batches and its test", "result": "4 roots, zero diagnostics", "log": "tmp/handover-batches-types-final.log" }
+  ],
+  "retainedFailures": [
+    "Initial missing-module red; fixture then corrected existing care source requirement, queue query in operator and unrelated child-change deliveries",
+    "First deadline probe accidentally tested initial expiry; replaced with expiry triggered after held, at item receipt read",
+    "Correct deadline regression failed before repair: queue returned unknown after unexpected domain commit; tmp/handover-batches-deadline-red2.log",
+    "Initial type graph reported nullable claim and structural fixture typing; explicit claim guard and fixture cast corrected"
+  ],
+  "review": { "reviewer": "independent Sol read-only review", "finding": "lease could expire during domain reads", "resolution": "submit-time deadline guard added and narrow follow-up review closed finding" },
+  "limits": [
+    "Serial synthetic Firestore, not evidence of real cloud transaction contention",
+    "Internal coordinator only: no upload, public import HTTP/UI or production import worker handler",
+    "Only care/profile/tasks current rows are accepted; remaining domains/history/full backup still pending",
+    "Bounded request and existing encrypted document-size limits remain; no claim of full large-package support",
+    "No cloud changes, deployment, models, notifications, device checks or full test suite"
+  ]
+}
