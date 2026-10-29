@@ -12,6 +12,7 @@ import { nativeModelThinkingLevel } from "./model-thinking.ts";
 import type { AiUsageStore, AttemptOutcome, TokenUsage } from "./ai-usage.ts";
 import { decodePhoto } from "./photo-files.ts";
 import { AGENT_LIMITS, AGENT_TOOL_RESPONSE_RESERVE, AgentBudget, AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
+import type { AgentModelPurpose, AgentReviewReserve } from "./agent-budget.ts";
 import { logVertexFailure } from "./vertex-diagnostics.ts";
 import { modelProviderStopReason } from "../src/shared/agent-stop-message.ts";
 import { PersonalProviderError } from './personal-provider-error.ts';
@@ -97,6 +98,9 @@ export class AgentGatewayModel extends BaseLlm {
   private readonly options: {
     config: AiConfig; provider: AgentModelProvider; usage: Pick<AiUsageStore, "reserve" | "record">;
     budget: AgentBudget; userId: string; childId: string; authorize: () => Promise<boolean>;
+    reserveDeliveryReview?: AgentReviewReserve;
+    purpose?: AgentModelPurpose;
+    onProviderStart?: () => void;
     audio?: AgentAudioInput;
     voice?: Readonly<VoiceMessageReference>;
     reloadAudio?: () => Promise<AgentAudioInput>;
@@ -111,7 +115,8 @@ export class AgentGatewayModel extends BaseLlm {
   constructor(options: AgentGatewayModel["options"]) { super({ model: options.config.model }); this.options = options; }
   async connect(): Promise<never> { throw new AgentStopped("unavailable"); }
   /** Shared gateway path for a tool-free Server call. Counts one root model call and grants no tools. */
-  async completeText(input: { system: string; user: string; attemptKey: string; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference> }): Promise<string> {
+  async completeText(input: { system: string; user: string; attemptKey: string; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference>;
+    purpose?: AgentModelPurpose; onProviderStart?: () => void }): Promise<string> {
     let audio: AgentAudioInput | undefined;
     if (input.voice) {
       if (!this.options.voice || !this.options.reloadAudio
@@ -120,7 +125,7 @@ export class AgentGatewayModel extends BaseLlm {
       if (Object.entries(audio.metadata).some(([key, value]) => input.voice![key as keyof VoiceMessageReference] !== value))
         throw new AgentStopped('unauthorized');
     }
-    const planning = this.options.budget.planningSnapshot(false);
+    const planning = this.options.budget.planningSnapshot(false, { reserveDeliveryReview: this.options.reserveDeliveryReview });
     const request: LlmRequest = {
       contents: [{ role: "user", parts: [{ text: input.user }, ...(audio ? [{ text: agentAudioMarker(audio) }] : [])] }],
       config: { systemInstruction: input.system
@@ -134,6 +139,7 @@ export class AgentGatewayModel extends BaseLlm {
     const { config, provider, usage, budget, userId, childId, authorize, durableDailyUsage } = this.options;
     const reviewer = new AgentGatewayModel({ config, provider, usage, budget, userId, childId, authorize,
       durableDailyUsage, audio, modelAttemptKey: () => input.attemptKey,
+      reserveDeliveryReview: this.options.reserveDeliveryReview, purpose: input.purpose, onProviderStart: input.onProviderStart,
       ...(input.imageIds?.length ? { images: () => {
         if (!this.options.images) throw new AgentStopped('unauthorized');
         return this.options.images(input.imageIds);
@@ -239,11 +245,11 @@ export class AgentGatewayModel extends BaseLlm {
         requestCharacters = requestSize({ contents: base.contents, config: outgoing.config });
         if (includesSummary && Date.now() >= validUntil) throw new AgentStopped("unavailable");
         const requestFingerprint = agentBudgetFingerprint({ model: config.model, contents: outgoing.contents, config: outgoing.config });
-        await budget.admit({ key: modelKey, fingerprint: requestFingerprint, kind: "model", units: 1 });
+        await budget.admitModel(this.options, { key: modelKey, fingerprint: requestFingerprint, kind: "model", units: 1 });
         if (daily) dailyRequest = { kind: 'model', rootRunId: daily.context.binding.rootRunId, attemptKey: modelKey,
           bindingFingerprint: agentBudgetFingerprint(daily.context), requestFingerprint, userId, childId, model: config.model,
           deadlineAtMs: daily.context.binding.deadlineAtMs, userLimit: config.dailyUserAttempts, globalLimit: config.dailyGlobalAttempts };
-      } else budget.take("modelCalls");
+      } else await budget.admitModel(this.options);
       if (daily && dailyRequest) {
         const admission = await budget.wait(() => daily.adapter.reserve(dailyRequest!));
         if (admission.decision === "quota_exceeded") throw new AgentStopped("quota_exceeded");
@@ -271,6 +277,8 @@ export class AgentGatewayModel extends BaseLlm {
         response = await budget.wait(() => {
           // Preparation, rejected quota and input checks do not consume the first-call opportunity.
           this.providerCalled = true;
+          // Observations cannot reject, delay or retry an admitted provider call.
+          try { void Promise.resolve(this.options.onProviderStart?.()).catch(() => {}); } catch { /* Observation only. */ }
           return provider.generate(outgoing, budget.signal).catch(error => { providerFailure = error; throw error; });
         });
         tokens = readUsage(response);

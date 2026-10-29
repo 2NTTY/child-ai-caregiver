@@ -22,6 +22,13 @@ export const AGENT_INTERACTIVE_INPUT = Object.freeze({ default: 64000, min: 3200
 export const AGENT_TOOL_RESPONSE_RESERVE = 4096;
 
 export type AgentRunLimits = Readonly<{ modelCalls: number; queryEmbeddings: number; toolCalls?: number; deadlineMs?: number }>;
+/** Trusted Server call roles; never inferred from a prompt, tool argument or attempt key. */
+export type AgentModelPurpose = "delivery_review" | "delivery_repair" | "compose_review";
+/** Server-owned live obligation; a run may acquire review work after an ordinary tool step. */
+export type AgentReviewReserve = boolean | (() => boolean);
+function hasReviewReserve(value?: AgentReviewReserve): boolean {
+  return typeof value === "function" ? value() : value === true;
+}
 /** Copy only the existing bounded counts from trusted Server configuration. */
 export function freezeAgentRunLimits(limits: AgentRunLimits): AgentRunLimits {
   const selected = { modelCalls: limits?.modelCalls, queryEmbeddings: limits?.queryEmbeddings };
@@ -43,7 +50,7 @@ export function freezeAgentRunLimits(limits: AgentRunLimits): AgentRunLimits {
 
 export type AgentStopReason = ModelProviderStopReason | "cancelled" | "deadline" | "model_limit" | "tool_limit" | "embedding_limit"
   | "input_limit" | "unauthorized" | "quota_exceeded" | "busy" | "unavailable" | "invalid_response" | "invalid_tool" | "tool_unknown"
-  | "delivery_review_incomplete" | "compose_review_incomplete";
+  | "delivery_review_incomplete" | "delivery_review_rejected" | "delivery_review_no_sources" | "delivery_review_budget" | "compose_review_incomplete";
 export class AgentStopped extends Error {
   readonly reason: AgentStopReason;
   constructor(reason: AgentStopReason) { super(reason); this.reason = reason; }
@@ -73,6 +80,7 @@ export class AgentBudget {
   private readonly startedAt = Date.now();
   get deadlineAtMs(): number { return this.expiresAt; }
   private durableBudget?: AgentDurableBudget;
+  private modelAdmission: Promise<void> = Promise.resolve();
   private readonly controller = new AbortController();
   private timer: ReturnType<typeof setTimeout>;
   private readonly parent?: AbortSignal;
@@ -148,9 +156,17 @@ export class AgentBudget {
       throw this.durableFailure(error, attempt.kind);
     }
   }
-  /** Request-local guidance; includes the upcoming generation, before its reservation. */
-  planningSnapshot(hasTerminalTool: boolean) {
+  /**
+   * Request-local guidance; includes the upcoming generation, before its reservation.
+   * When reserveDeliveryReview is set, the finish phase hard-locks one call earlier so
+   * present/finish cannot spend the reserved delivery-review model call. Soft metadata
+   * alone is not enough (see Slice B4 vs B2).
+   */
+  planningSnapshot(hasTerminalTool: boolean, options?: { reserveDeliveryReview?: AgentReviewReserve }) {
     this.check();
+    const reviewReserve = hasReviewReserve(options?.reserveDeliveryReview) ? 1 : 0;
+    // Hard finish reserve includes the review call when active (not soft guidance only).
+    const hardFinishReserve = 1 + reviewReserve;
     const remaining = {
       modelCallsIncludingThisCall: this.remainingModelCalls,
       toolCalls: this.selectedLimits.toolCalls - this.used.toolCalls,
@@ -158,11 +174,30 @@ export class AgentBudget {
       timeMs: Math.max(0, this.expiresAt - Date.now()),
     };
     return { usedBeforeThisCall: this.counts, remaining,
-      phase: remaining.modelCallsIncludingThisCall <= 1 || remaining.timeMs <= 15000
+      phase: remaining.modelCallsIncludingThisCall <= hardFinishReserve || remaining.timeMs <= 15000
         || hasTerminalTool && remaining.toolCalls <= 1 ? "finish" as const : "work" as const,
-      reserveForFinish: { modelCalls: 1, toolCalls: hasTerminalTool ? 1 : 0 },
+      reserveForFinish: { modelCalls: hardFinishReserve, toolCalls: hasTerminalTool ? 1 : 0 },
+      reserveForDeliveryReview: { modelCalls: reviewReserve },
       nonTerminalToolCallsAvailable: Math.max(0, remaining.toolCalls - (hasTerminalTool ? 1 : 0)),
     };
+  }
+  /** Every provider attempt, including retries and tool-free roles, shares this admission. */
+  async admitModel(options: { reserveDeliveryReview?: AgentReviewReserve; purpose?: AgentModelPurpose } = {},
+    attempt?: Extract<BudgetAttempt, { kind: "model" }>) {
+    // Tool callbacks can share this root. Serialize the fresh read and reservation,
+    // without changing the durable attempt identity or the original run limits.
+    const admission = this.modelAdmission.then(async () => {
+      await this.checkDurable();
+      const reviewing = options.purpose === "delivery_review" || options.purpose === "compose_review";
+      const reserve = hasReviewReserve(options.reserveDeliveryReview) && !reviewing ? 1 : 0;
+      if (this.remainingModelCalls <= reserve) throw new AgentStopped("model_limit");
+      if (this.durableBudget) {
+        if (!attempt) throw new AgentStopped("unavailable");
+        await this.admit(attempt);
+      } else this.take("modelCalls");
+    });
+    this.modelAdmission = admission.then(() => {}, () => {});
+    return admission;
   }
   get counts() { return { ...this.used }; }
   get limits() { return { ...this.selectedLimits }; }

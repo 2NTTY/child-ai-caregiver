@@ -1,0 +1,94 @@
+name: D agent alignment offline verification
+
+"on":
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: d-agent-alignment-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    if: >-
+      github.repository == '2NTTY/child-ai-caregiver' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'codex/d-agent-review-alignment-20261029'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
+    env:
+      EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+
+      - name: Check candidate identity and helper syntax
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          bash -n scripts/ci/verify-agent-alignment-offline.sh
+
+      - name: Select exact Node runtime without cache
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.1
+          check-latest: false
+          package-manager-cache: false
+
+      - name: Install pinned npm and locked dependencies only
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = "v24.22.1"
+          test ! -e .npmrc
+          test ! -e frontend/.npmrc
+          EMPTY_GLOBAL_CONFIG="$RUNNER_TEMP/ci-empty-global.npmrc"
+          : > "$EMPTY_GLOBAL_CONFIG"
+          npm install --global --prefix "$RUNNER_TEMP/ci-npm" \
+            --userconfig /dev/null --globalconfig "$EMPTY_GLOBAL_CONFIG" \
+            --ignore-scripts --no-audit --no-fund npm@11.8.0
+          NPM_CLI="$RUNNER_TEMP/ci-npm/lib/node_modules/npm/bin/npm-cli.js"
+          test "$(node "$NPM_CLI" --version)" = "11.8.0"
+          node "$NPM_CLI" ci --userconfig /dev/null --globalconfig "$EMPTY_GLOBAL_CONFIG" \
+            --ignore-scripts --no-audit --no-fund
+          git diff --exit-code
+          printf 'candidate=%s\nnode=%s\nnpm=%s\n' \
+            "$EXPECTED_SHA" "$(node --version)" "$(node "$NPM_CLI" --version)"
+          sha256sum package-lock.json
+
+      - name: Validate without network or credentials
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE"
+          test "$(id -u)" -ne 0
+          NODE_BIN="$(readlink -f "$(command -v node)")"
+          NODE_DIR="$(dirname "$NODE_BIN")"
+          PARENT_NETNS="$(readlink /proc/self/ns/net)"
+          OFFLINE_HOME="$(mktemp -d "$RUNNER_TEMP/d-agent-offline.XXXXXX")"
+          trap 'rm -rf -- "$OFFLINE_HOME"' EXIT
+          sudo -n /usr/bin/unshare --net -- \
+            /usr/bin/setpriv \
+              --reuid="$(id -u)" --regid="$(id -g)" --clear-groups \
+              --bounding-set=-all --inh-caps=-all --ambient-caps=-all \
+              --no-new-privs \
+            /usr/bin/env -i \
+              PATH="$NODE_DIR:/usr/bin:/bin:/usr/sbin:/sbin" \
+              HOME="$OFFLINE_HOME" TMPDIR="$OFFLINE_HOME" \
+              CI=true TZ=UTC LC_ALL=C.UTF-8 \
+              EXPECTED_SHA="$EXPECTED_SHA" PARENT_NETNS="$PARENT_NETNS" \
+              NODE_BIN="$NODE_BIN" \
+            /usr/bin/bash --noprofile --norc \
+              "$GITHUB_WORKSPACE/scripts/ci/verify-agent-alignment-offline.sh"

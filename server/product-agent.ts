@@ -21,9 +21,38 @@ import { PRODUCT_AGENT_TOOL_CATALOG, WORK_CONTINUATION_TOOL_CATALOG } from "./pr
 import type { FirestoreWorkContinuationStore, ClaimedWorkContinuation } from "./firestore-work-continuation-store.ts";
 
 function unfinishedDeliveryText(stopReason: string | null | undefined): string {
-  if (stopReason === "delivery_review_incomplete") return CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT;
+  if (stopReason === "delivery_review_incomplete" || stopReason === "delivery_review_rejected"
+    || stopReason === "delivery_review_no_sources" || stopReason === "delivery_review_budget") {
+    return CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT;
+  }
   if (stopReason === "compose_review_incomplete") return DATA_COMPOSE_REVIEW_INCOMPLETE_TEXT;
   return "";
+}
+
+/** Delivery-review stops may keep retrieved sources; never treat unreviewed draft text as formal. */
+function isDeliveryReviewStopReason(stopReason: string | null | undefined): boolean {
+  return typeof stopReason === "string" && stopReason.startsWith("delivery_review_");
+}
+
+function hasRetainedSources(presentation: AgentPresentation | null | undefined): boolean {
+  return Boolean(presentation && presentation.outcome !== "no_action"
+    && (presentation.citations.length > 0 || (presentation.privateSourceCitations?.length ?? 0) > 0));
+}
+
+/** Sources retained after a review stop: empty text marker, still-valid citations only. */
+function retainedSourcesForStoppedReview(
+  status: ProductAgentResult["status"],
+  stopReason: string | null | undefined,
+  rendered: AgentPresentation | null,
+): Pick<AgentPresentation, "citations" | "privateSourceCitations" | "retrievalMode"> | null {
+  if (status !== "stopped" || !isDeliveryReviewStopReason(stopReason) || !hasRetainedSources(rendered)) return null;
+  // acceptReviewedDelivery clears draft text before retaining sources.
+  if (rendered!.text !== "") return null;
+  return {
+    citations: rendered!.citations,
+    privateSourceCitations: rendered!.privateSourceCitations ?? [],
+    retrievalMode: rendered!.retrievalMode,
+  };
 }
 
 /** Programmatic presentation is already done. Review shares this root run and cannot be skipped by the generator. */
@@ -33,21 +62,40 @@ async function acceptReviewedDelivery(
   held: { value: ChatDeliveryReviewBinding | null; text: string | null },
   result: Pick<AgentRunResult, "provenance">,
   context: AgentRunContext,
+  onReviewStart?: () => void,
 ): Promise<string | { outcome: "no_action" }> {
   if (!rendered.value) throw new AgentStopped("invalid_response");
   if (rendered.value.outcome === "no_action") return { outcome: "no_action" };
   try {
     const reviewed = await enforceChatDeliveryReview({
-      presentation: rendered.value, tools, context, provenance: result.provenance ?? null,
+      presentation: rendered.value, tools, context, provenance: result.provenance ?? null, onReviewStart,
     });
     rendered.value = reviewed.presentation;
     held.value = reviewed.review;
     held.text = reviewed.review ? reviewed.presentation.text : null;
     return rendered.value.text;
   } catch (error) {
-    rendered.value = null;
     held.value = null;
     held.text = null;
+    const prior = rendered.value;
+    rendered.value = null;
+    const reason = error instanceof AgentStopped ? error.reason : "";
+    // Keep still-valid retrieved sources for partial display (REQ-002 source layer). Never keep draft text.
+    if (isDeliveryReviewStopReason(reason) && hasRetainedSources(prior)) {
+      try {
+        const live = await tools.presentation();
+        if (hasRetainedSources(live)) {
+          rendered.value = {
+            text: "",
+            citations: live!.citations,
+            privateSourceCitations: live!.privateSourceCitations ?? [],
+            retrievalMode: live!.retrievalMode,
+          };
+        }
+      } catch {
+        // Source retract / auth failure: drop sources with the failed draft.
+      }
+    }
     throw error;
   }
 }
@@ -153,9 +201,13 @@ export function createProductAgent(options: {
         for(const reference of recorded??[])if(!result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.reference===reference))result.tools.push({name:"contact_caregiver",callId:"persisted-ledger",status:"succeeded",reference});
       }
       const presentation = result.status === "completed" ? rendered.value : null;
+      const retained = retainedSourcesForStoppedReview(result.status, result.stopReason ?? null, rendered.value);
       const value = withDeliveryReview({ runId: result.runId, provenance: result.provenance ?? null, status: result.status, stopReason: result.stopReason ?? null,
         ...(presentation?.outcome ? { outcome: presentation.outcome } : {}),
-        text: presentation?.text ?? (result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : unfinishedDeliveryText(result.stopReason)), citations: presentation?.citations ?? [], privateSourceCitations:presentation?.privateSourceCitations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
+        text: presentation?.text ?? (result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : unfinishedDeliveryText(result.stopReason)),
+        citations: presentation?.citations ?? retained?.citations ?? [],
+        privateSourceCitations: presentation?.privateSourceCitations ?? retained?.privateSourceCitations ?? [],
+        retrievalMode: presentation?.retrievalMode ?? retained?.retrievalMode ?? "not_used",
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })), countsKnown: true, counts: result.counts, proposals: [] }, review);
       if (!await input.authorize() || !await options.store.finish(claim.scope, value)) return null;
       return options.store.get(input.userId, input.childId, claim.runId);
@@ -241,18 +293,43 @@ export function createProductAgent(options: {
           rendered.value = await tools!.presentation();
           // Shared 4-call budget: after load_capabilities → compose_family_data → compose → review,
           // Server finishes confirmation text on model_limit without a fifth present_answer call.
-          if (!rendered.value && reason === "model_limit" && result.tools.length > 0
+          const pendingFallbackTools = ["request_confirmation", "propose_family_document_change", "compose_family_data",
+            "propose_fact", "propose_fact_revision", "propose_fact_deactivation"];
+          const lastTool = result.tools.at(-1)?.name ?? "";
+          const canUsePendingReceipt = result.tools.length > 0
             && result.tools.every(tool => tool.status === "succeeded")
-            && ["request_confirmation", "propose_family_document_change", "compose_family_data"].includes(result.tools.at(-1)?.name ?? "")) {
+            && pendingFallbackTools.includes(result.tools.filter(tool => tool.name !== "present_answer").at(-1)?.name ?? "");
+          const hasCurrentConfirmation = async () => {
+            _context.budget.check();
             if (!await authorize()) throw new AgentStopped("unauthorized");
             const questions = await options.store.confirmationQuestions?.(userId, childId, claim.runId) ?? [];
+            _context.budget.check();
             if (!await authorize()) throw new AgentStopped("unauthorized");
-            if (questions.length === 1 && typeof questions[0] === "string" && questions[0].trim()) {
+            return questions.length === 1 && typeof questions[0] === "string" && Boolean(questions[0].trim());
+          };
+          if (!rendered.value && reason === "model_limit" && result.tools.length > 0
+            && result.tools.every(tool => tool.status === "succeeded")
+            && pendingFallbackTools.includes(lastTool)) {
+            if (await hasCurrentConfirmation()) {
               rendered.value = { text: AGENT_CONFIRMATION_PENDING_TEXT, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
               confirmationPendingFallbackUsed = true;
+              // This Server-only receipt has no model draft to review and needs no fifth call.
+              return AGENT_CONFIRMATION_PENDING_TEXT;
             }
           }
-          return acceptReviewedDelivery(tools!, rendered, review, result, _context);
+          try {
+            return await acceptReviewedDelivery(tools!, rendered, review, result, _context, () => publish("reviewing"));
+          } catch (error) {
+            // A candidate alone is not confirmation. Recover only a verified pending receipt,
+            // never the model's failed wording, and never after an uncertain/failed tool.
+            if (!(error instanceof AgentStopped) || error.reason !== "delivery_review_incomplete") throw error;
+            if (!canUsePendingReceipt || !await hasCurrentConfirmation()) throw error;
+            rendered.value = { text: AGENT_CONFIRMATION_PENDING_TEXT, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+            review.value = null;
+            review.text = null;
+            confirmationPendingFallbackUsed = true;
+            return AGENT_CONFIRMATION_PENDING_TEXT;
+          }
         },
       });
       if(result.status==="stopped" && options.contact && await isCurrentUser()){
@@ -285,13 +362,17 @@ export function createProductAgent(options: {
       if (confirmationResult?.result && !result.tools.some(tool => tool.name === "confirmed_proposal" && tool.reference === confirmationResult.id))
         result.tools.push({ name: "confirmed_proposal", callId: "persisted-confirmation", status: "succeeded", reference: confirmationResult.id });
       const presentation = result.status === "completed" && !documentReceiptUnavailable && !documentSourceUnavailable ? rendered.value : null;
+      const retained = retainedSourcesForStoppedReview(result.status, result.stopReason ?? null, rendered.value);
       const value = withDeliveryReview({ runId: result.runId, provenance: result.provenance ?? null,
         status: documentReceiptUnavailable ? "unknown" : documentSourceUnavailable && result.status === "completed" ? "stopped" : result.status,
         stopReason: documentReceiptUnavailable ? "document_receipt_unavailable" : documentSourceUnavailable && result.status === "completed" ? "document_source_changed" : result.stopReason ?? null,
         text: documentReceiptUnavailable ? "未能核對文件操作收據；請查核原運行結果，勿重新提交同一操作。"
           : documentSourceUnavailable ? "文件操作的目前資料或來源已變，未能顯示原收據；請重新讀取目前資料，勿重複提交操作。"
           : documentBuilding ? "報告整理工作已提交，正文仍在整理中。請在成長檔案查看同一文件的進度，毋須再次建立。"
-          : presentation?.text ?? (confirmationResult?.result ? AGENT_CONFIRMATION_SAVED_TEXT : receipts.length ? "已有 " + receipts.length + " 項操作保存了 Server 收據，但未完成文字收尾。請查看操作結果，勿重新提交同一操作；已安排不代表已發通知或照護已完成。" : result.tools.some(tool=>["generate_family_document","change_family_document"].includes(tool.name)&&tool.status==="succeeded") ? "文件操作已保存，但未完成文字收尾。請在準備單／成長檔案查看原文件及版本，勿重複建立；文件清單不代表照護任務完成。" : result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : unfinishedDeliveryText(result.stopReason)), citations: presentation?.citations ?? [], privateSourceCitations:presentation?.privateSourceCitations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
+          : presentation?.text ?? (confirmationResult?.result ? AGENT_CONFIRMATION_SAVED_TEXT : receipts.length ? "已有 " + receipts.length + " 項操作保存了 Server 收據，但未完成文字收尾。請查看操作結果，勿重新提交同一操作；已安排不代表已發通知或照護已完成。" : result.tools.some(tool=>["generate_family_document","change_family_document"].includes(tool.name)&&tool.status==="succeeded") ? "文件操作已保存，但未完成文字收尾。請在準備單／成長檔案查看原文件及版本，勿重複建立；文件清單不代表照護任務完成。" : result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : unfinishedDeliveryText(result.stopReason)),
+        citations: presentation?.citations ?? retained?.citations ?? [],
+        privateSourceCitations: presentation?.privateSourceCitations ?? retained?.privateSourceCitations ?? [],
+        retrievalMode: presentation?.retrievalMode ?? retained?.retrievalMode ?? "not_used",
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
         countsKnown: true, counts: result.counts, proposals: [] }, review);
       if (!await isCurrentUser()) return null;

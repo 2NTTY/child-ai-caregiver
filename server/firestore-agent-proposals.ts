@@ -11,6 +11,7 @@ import type { FirestoreAuthorityTransaction as Binding } from './firestore-autho
 import type { FirestoreAgentRuns, FirestoreAgentRun } from './firestore-agent-runs.ts';
 import type { FirestoreChatStore } from './firestore-chat.ts';
 import type { FirestoreMemoryStore } from './firestore-memory.ts';
+import { preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from './memory-policy.ts';
 import type { FirestoreOnlineStore } from './firestore-online.ts';
 
 const uuid = z.uuid(), time = z.iso.datetime({ offset: true });
@@ -173,16 +174,28 @@ export function createFirestoreAgentProposals(options: {
       return authority.runTransaction(scope.userId, scope.childId, async b => {
         const run = await runs.requireLive(b, scope, runId);
         if (run.trigger.kind !== 'interactive') domainReject('confirmation_requires_interactive_scope', 400);
-        const previous = await inRun(b, runId), fingerprint = firestoreDomainHash(value);
+        let proposalValue = value;
+        if (value.kind === 'memory_fact') {
+          const message = await source(b, run, value.sourceMessageId ?? run.sourceMessageId!);
+          const intent = message.id === run.sourceMessageId ? message : await source(b, run, run.sourceMessageId!);
+          requireMemoryFactSource(intent.text, value.content);
+          requireMemoryFactSource(message.text, value.content);
+          proposalValue = { ...value, content: preserveMemoryFactUserWording(message.text, value.content),
+            validUntil: sanitizeDurableMemoryFactValidUntil(value.content, value.validUntil, now(), message.text) };
+        } else if (value.kind === 'memory_fact_revise') {
+          const message = await source(b, run, value.sourceMessageId);
+          proposalValue = { ...value, content: preserveMemoryFactUserWording(message.text, value.content) };
+        }
+        const previous = await inRun(b, runId), fingerprint = firestoreDomainHash(proposalValue);
         for (const item of previous) {
           const same = firestoreDomainHash(item.proposal.value) === fingerprint;
           if (item.callId === callId && !same) domainReject('operation_conflict');
           if (same) return visible(item);
         }
         if (previous.length >= 8) domainReject('agent_proposal_limit');
-        const checked = await target(b, run, value), createdAt = new Date(now()).toISOString();
+        const checked = await target(b, run, proposalValue), createdAt = new Date(now()).toISOString();
         const proposal: AgentProposal = { id: randomUUID(), runId, childId: scope.childId, version: 1, status: 'pending',
-          createdAt, expiresAt: new Date(now() + 86_400_000).toISOString(), value, targetLabel: checked.label,
+          createdAt, expiresAt: new Date(now() + 86_400_000).toISOString(), value: proposalValue, targetLabel: checked.label,
           ...(checked.visibility ? { targetVisibility: checked.visibility } : {}), result: null };
         write(b, {
           proposal, callId, authorizationVersion: b.authorizationVersion, sourceBasis: checked.sourceBasis,

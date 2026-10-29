@@ -6,10 +6,11 @@ import { FunctionCallingConfigMode } from "@google/genai";
 import type { AiConfig } from "./ai-config.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
 import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, AgentBudget, AgentStopped, agentBudgetFingerprint, freezeAgentRunLimits } from "./agent-budget.ts";
-import type { AgentStopReason, AgentDurableBudget, AgentRunLimits } from "./agent-budget.ts";
+import type { AgentStopReason, AgentDurableBudget, AgentRunLimits, AgentModelPurpose } from "./agent-budget.ts";
 import { checkedAgentAudio, agentAudioMarker, type AgentAudioInput } from './agent-audio.ts';
 import { voiceMessageReferenceSchema, type VoiceMessageReference } from '../src/shared/voice.ts';
 import { createAgentImages, type AgentImages, type AuthorizedAgentImage } from './agent-images.ts';
+import { createChatDeliveryReviewObligation, type ChatDeliveryReviewObligation } from './chat-delivery-review.ts';
 import { AgentGatewayModel } from "./agent-model-gateway.ts";
 import type { AgentRunClaim } from "./product-agent-store.ts";
 import type { RootBudgetLimits } from "./durable-root-budget.ts";
@@ -103,15 +104,20 @@ export interface AgentTool {
   execute: (args: Record<string, unknown>, context: { scope: Readonly<AgentScope>; runId: string; callId: string; signal: AbortSignal; queryEmbeddingAttemptKey?: string }) => Promise<AgentToolResult>;
 }
 export interface AgentRunContext { scope: Readonly<AgentScope>; runId: string; budget: AgentBudget;
+  /** Shared Server obligation for planning, per-attempt admission and final delivery. */
+  deliveryReview?: ChatDeliveryReviewObligation;
   images?: AgentImages;
   voice?: Readonly<VoiceMessageReference>;
   /** Server-selected model for this run, including personal routing. */
   model?: string;
   authorize?: () => Promise<boolean>; embeddings?: import("./embedding-gateway.ts").EmbeddingGateway;
   /** Tool-free call on this root budget. Chat delivery review uses it; the generator cannot invoke it. */
-  completeText?: (input: { system: string; user: string; attemptKey: string; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference> }) => Promise<string>; }
+  completeText?: (input: { system: string; user: string; attemptKey: string; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference>;
+    purpose?: AgentModelPurpose; onProviderStart?: () => void }) => Promise<string>; }
 export interface AgentRuntimePort { run(input: AgentRunInput): Promise<AgentRunResult> }
 export interface AgentRunInput {
+  /** Trusted Server task selection only; never copied from an HTTP body or model answer. */
+  requireDeliveryReview?: true;
   /** Server-bound identity of the current recording; never supplied by a model tool. */
   voice?: VoiceMessageReference;
   /** Fetch only a Server-bound original; no binary is persisted in ADK events. */
@@ -289,7 +295,9 @@ export function createAgentRuntime(options: {
           const scopeAuthorize = authorize;
           authorize = async () => await scopeAuthorize() && await images.authorize();
           if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
-          const runContext: AgentRunContext = { scope, runId, budget, authorize, images, voice, model: selected.config.model,
+          const deliveryReview = createChatDeliveryReviewObligation(input.requireDeliveryReview === true);
+          const reserveDeliveryReview = () => deliveryReview.required;
+          const runContext: AgentRunContext = { scope, runId, budget, authorize, images, voice, deliveryReview, model: selected.config.model,
             embeddings: "embeddings" in selected ? selected.embeddings : undefined };
           const configuredTools = [...(typeof input.tools === "function" ? input.tools(runContext) : input.tools)];
           const capabilitySelection = input.toolCatalog ? new AgentCapabilitySelection(configuredTools, input.toolCatalog) : undefined;
@@ -362,7 +370,7 @@ export function createAgentRuntime(options: {
           const renderInstruction = async (ids: readonly string[] = capabilitySelection?.loadedIds() ?? []) => {
             const currentPrompt = await budget.wait(() => getPrompt(ids));
             budget.check();
-            const planning = budget.planningSnapshot(terminalToolNames.size > 0);
+            const planning = budget.planningSnapshot(terminalToolNames.size > 0, { reserveDeliveryReview });
             const finishing = terminalToolNames.size > 0 && planning.phase === "finish";
             const visible = capabilitySelection ? [...capabilitySelection.visibleToolNames(ids)] : tools.map(tool => tool.name);
             return `${currentPrompt.text}\n\nServer runtime metadata:\n${JSON.stringify({ runId, scope, trigger: input.trigger,
@@ -374,6 +382,7 @@ export function createAgentRuntime(options: {
           let currentInstruction = "";
           const modelAnchors = new WeakMap<LlmRequest, string>();
           const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames, audio, images: ids => images.inputs(ids),
+            reserveDeliveryReview,
             voice, ...(voice ? { reloadAudio: async () => checkedAgentAudio(await budget.wait(() => input.loadAudio!(budget.signal))) } : {}),
             ...(durable ? { modelAttemptKey: (request: LlmRequest) => modelAnchors.get(request) } : {}),
             ...(durable?.dailyUsage ? { durableDailyUsage: { adapter: durable.dailyUsage, context: durable.context } } : {}),
@@ -416,9 +425,10 @@ export function createAgentRuntime(options: {
             tools: runtimeTools,
             beforeModelCallback: ({ context, request }) => {
               if (durable) modelAnchors.set(request, modelAttemptKey(context, scope, runId, durable.context.binding.trigger));
+              // Per-attempt admission belongs to the gateway, including internal retries.
               // Leave the model free to plan ordinary steps. The final available
               // generation must deliver a validated result, not start another effect.
-              if (terminalToolNames.size && budget.planningSnapshot(true).phase === "finish") {
+              if (terminalToolNames.size && budget.planningSnapshot(true, { reserveDeliveryReview }).phase === "finish") {
                 const declarations = (request.config?.tools ?? []).flatMap(tool =>
                   "functionDeclarations" in tool ? tool.functionDeclarations ?? [] : [])
                   .filter(declaration => declaration.name && terminalToolNames.has(declaration.name));

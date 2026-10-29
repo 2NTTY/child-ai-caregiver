@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 /** Server policy id for chat-delivery semantic review. Not the knowledge publish assessment. */
-export const CHAT_DELIVERY_REVIEW_POLICY_VERSION = "p3-m01-chat-delivery-review/1";
+// Version 2 binds current-request/excerpt/repair evidence and run-local review obligations.
+export const CHAT_DELIVERY_REVIEW_POLICY_VERSION = "p3-m01-chat-delivery-review/2";
 
 /**
  * Shown when a substantive draft cannot become a formal reply.

@@ -5,7 +5,7 @@ import type { LlmRequest, LlmResponse } from "@google/adk";
 import { z } from "zod";
 import { createAgentRuntime } from "../server/agent-runtime.ts";
 import type { AgentRunInput, AgentTool, AgentToolResult } from "../server/agent-runtime.ts";
-import { AgentStopped } from "../server/agent-budget.ts";
+import { AGENT_LIMITS, AgentStopped } from "../server/agent-budget.ts";
 import { readAiConfig } from "../server/ai-config.ts";
 
 const call = (name: string, args: Record<string, unknown> = { text: "Synthetic answer" }): LlmResponse => ({
@@ -175,7 +175,7 @@ function planningMetadata(value: unknown): any {
   return undefined;
 }
 
-test("live run budget guides the native loop into one validated final turn", async () => {
+for (const recipeId of ["p1-chat", "product-interactive"]) test(`ordinary ${recipeId} runs keep the last generation without an unused reviewer reserve`, async () => {
   const s = setup((request, index) => {
     const { budget, capabilities } = planningMetadata(request.config?.systemInstruction);
     assert.equal(budget.usedBeforeThisCall.modelCalls, index);
@@ -183,7 +183,7 @@ test("live run budget guides the native loop into one validated final turn", asy
     assert.equal(budget.remaining.modelCallsIncludingThisCall, 4 - index);
     assert.equal(budget.remaining.toolCalls, 16 - index);
     assert.equal(budget.remaining.queryEmbeddings, 2);
-    assert.ok(budget.remaining.timeMs > 0 && budget.remaining.timeMs <= 90000);
+    assert.ok(budget.remaining.timeMs > 0 && budget.remaining.timeMs <= AGENT_LIMITS.deadlineMs);
     assert.deepEqual(budget.reserveForFinish, { modelCalls: 1, toolCalls: 1 });
     if (budget.phase === "finish") {
       assert.equal(index, 3);
@@ -201,6 +201,8 @@ test("live run budget guides the native loop into one validated final turn", asy
   s.input.tools = [s.write, { name: "read_context", description: "Read synthetic current state.",
     parameters: z.object({}), authorize: async () => true,
     execute: async () => ({ status: "succeeded", data: { current: true } }) }, s.terminal];
+  s.input.recipeId = recipeId;
+  s.input.availableInputs = ["run", "scope", "conversation", "context", "evidence", "capabilities"];
   const result = await s.runtime.run(s.input);
   assert.equal(result.status, "completed", JSON.stringify(result));
   assert.equal(result.text, "Server validated presentation");
@@ -215,4 +217,41 @@ test("final budget phase refuses another effect even if the provider ignores all
   assert.equal(result.stopReason, "invalid_tool");
   assert.equal(s.written(), 3);
   assert.equal(s.requests.length, 4); assert.equal(s.finalized(), 0);
+});
+
+
+test("trusted compose review at call four still reaches zero-budget safe finalization", async () => {
+  const s = setup((request, index) => {
+    if (index === 0) return call("save_item", {});
+    if (index === 1) return call("compose_item", {});
+    assert.deepEqual(request.toolsDict, {});
+    return answer();
+  });
+  s.input.recipeId = "product-interactive";
+  s.input.availableInputs = ["run", "scope", "conversation", "context", "evidence", "capabilities"];
+  let reviewed = false, finalizations = 0, starts = 0;
+  s.input.tools = context => [s.write, { name: "compose_item", description: "Compose and independently review synthetic work.",
+    parameters: z.object({}), authorize: async () => true, execute: async () => {
+      await context.completeText!({ system: "Synthetic composer", user: "Synthetic source", attemptKey: "tool-work:compose" });
+      await context.completeText!({ system: "Synthetic reviewer", user: "Synthetic draft", attemptKey: "tool-work:review",
+        purpose: "compose_review", onProviderStart: () => { starts++; } });
+      reviewed = true;
+      return { status: "succeeded", reference: "synthetic-reviewed-proposal" };
+    } }, s.terminal];
+  s.input.finalizeOnModelLimit = true;
+  s.input.finalize = async (result, context, reason) => {
+    finalizations++;
+    assert.equal(reason, "model_limit");
+    assert.equal(context.budget.remainingModelCalls, 0);
+    assert.deepEqual(result.tools.map(tool => tool.status), ["succeeded", "succeeded"]);
+    assert.equal(reviewed, true);
+    return "Server validated pending confirmation receipt";
+  };
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.status, "completed", JSON.stringify(result));
+  assert.equal(result.text, "Server validated pending confirmation receipt");
+  assert.equal(s.requests.length, 4);
+  assert.equal(result.counts.modelCalls, 4);
+  assert.equal(starts, 1);
+  assert.equal(finalizations, 1);
 });

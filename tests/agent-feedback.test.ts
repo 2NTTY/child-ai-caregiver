@@ -20,6 +20,8 @@ import {handleChatRequest} from '../server/chat-api.ts';
 import {createChatApi} from '../src/client/chat-api.ts';
 import {readAiConfig} from '../server/ai-config.ts';
 import {SERVICE_POLICY_VERSION} from '../src/shared/account-service.ts';
+import { AGENT_PROGRESS_LABELS, agentProgressSchema } from '../src/shared/agent-feedback.ts';
+import { requiresChatDeliveryReview } from "../server/chat-delivery-review.ts";
 
 function deferred<T>() { let resolve!: (value:T)=>void; const promise=new Promise<T>(r=>{resolve=r;});return {promise,resolve}; }
 
@@ -46,7 +48,7 @@ test('formal HTTP streams real Runner progress before saving and disconnect read
       const card=medical&&step===1;
       if(!card) await gate.promise;
       return {content:{role:'model',parts:[{functionCall:{id:'step-'+step,name:card?'show_official_help':'present_answer',
-        args:card?{card:'medical-consult-hk-v1'}:{kind:'clarification',paragraphs:[{text:'已儲存任務候選，仍待你確認。',citationIds:[]}]}}}]},
+        args:card?{card:'medical-consult-hk-v1'}:{kind:'clarification',paragraphs:[{text:'寶寶幾個月大？',citationIds:[]}]}}}]},
         finishReason:FinishReason.STOP,usageMetadata:{promptTokenCount:10,candidatesTokenCount:5}};
     }}});
   let origin='',posts=0;
@@ -141,4 +143,25 @@ test('expired execution saves its real result without reviving work or overwriti
   clock=Date.parse(cancelled.expiresAt)+1;
   assert.equal(await runs.finish(cancelled.scope,{...result,runId:cancelled.runId}),false);
   assert.equal((await runs.result('owner',child.id,cancelled.runId,projection))!.stopReason,'cancelled');
+});
+
+test('reviewing phase is a real progress event with a parent-facing label', () => {
+  const runId = randomUUID(), messageId = randomUUID();
+  const parsed = agentProgressSchema.parse({ runId, messageId, phase: 'reviewing' });
+  assert.equal(parsed.phase, 'reviewing');
+  assert.equal(AGENT_PROGRESS_LABELS.reviewing, '正在獨立核對回覆');
+});
+test("pure greeting drafts must not imply reviewing progress", () => {
+  const scope = { userId: "u", workspaceId: "w", childId: "c", authorizationVersion: 1, dataVersion: 1 };
+  const greeting = {
+    kind: "clarification", visibility: "private", serverSubstitutedSourceText: false,
+    paragraphs: [{ text: "你好", citationIds: [] }], sources: [], scope,
+  };
+  const mixed = {
+    kind: "caregiving", visibility: "private", serverSubstitutedSourceText: false,
+    paragraphs: [{ text: "你好，睡前食兩粒阿士匹靈。", citationIds: [] }], sources: [], scope,
+  };
+  // A greeting is eligible for no-review delivery; real provider-start ordering is covered by runtime tests.
+  assert.equal(requiresChatDeliveryReview(greeting), false);
+  assert.equal(requiresChatDeliveryReview(mixed), true);
 });

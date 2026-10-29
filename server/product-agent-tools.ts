@@ -3,7 +3,7 @@ import { photoLinkInputSchema, photoMessageReferenceSchema } from '../src/shared
 import { officialHelpIdSchema, type OfficialHelpId } from '../src/shared/agent-feedback.ts';
 import { z } from "zod";
 import { summaryQuery } from "../src/shared/care-summary.ts";
-import type { MemoryContext, SummaryInput } from "../src/shared/memory.ts";
+import type { MemoryContext, MemoryFact, SummaryInput } from "../src/shared/memory.ts";
 import { readAgentWorkSchema } from "../src/shared/agent-work.ts";
 import { agentAnswerSchema, agentBackgroundAnswerSchema } from "../src/shared/product-agent.ts";
 import type { AgentAnswer, AgentPresentation } from "../src/shared/product-agent.ts";
@@ -15,7 +15,8 @@ import { AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS } from "./agent-knowledge-tool-descri
 import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped } from "./agent-budget.ts";
-import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryReviewSourceExcerpt, type ChatDeliveryDraft, type ChatDeliverySource } from "./chat-delivery-review.ts";
+import { factIsApplicable, looksLikeDurableMemoryFactStatement, normalizedMemoryFactText, preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from "./memory-policy.ts";
+import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { MemoryStore } from "./memory.ts";
@@ -121,14 +122,91 @@ export function createProductAgentTools(options: {
   trustedUserMessage?: string;
 }) {
   const { run, memory, tasks, store } = options, { scope, budget, runId } = run;
+  const deliveryReview = run.deliveryReview ??= createChatDeliveryReviewObligation();
   const authorize = run.authorize ?? options.authorize;
   const privateSources=options.sources&&options.includePrivateSources!==false&&options.visibility!=="family"?createAgentSourceTools(options.sources,store,run,authorize):null;
   const retrieval = options.knowledge.createRun({ actor: { kind: "query_embedding", actorId: scope.userId, operationId: runId },
     budget, authorize, embeddings: run.embeddings });
   const evidence = new Map<string, { chunk: KnowledgeEvidence; filter: KnowledgeFilter }>();
+  const memoryGrounding = new Map<string, { fact: MemoryFact; source: ChatDeliverySource }>();
+  let groundingLoaded = false;
+  let selectedSources: ChatDeliverySource[] = [];
+  let selectedMemoryFacts: MemoryFact[] = [];
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;
   let serverReceiptText: string | null = null;
+  let pendingMemoryProposalCount = 0;
+  function usableMemoryFact(fact: MemoryFact | null | undefined): fact is MemoryFact {
+    return Boolean(fact && fact.childId === scope.childId && fact.applicable && factIsApplicable(fact)
+      && (options.visibility !== "family" || fact.visibility === "family"));
+  }
+  function noteConfirmedMemoryFacts(facts: Array<MemoryFact | null | undefined>) {
+    for (const fact of facts) {
+      if (!fact) continue;
+      if (!usableMemoryFact(fact)) { memoryGrounding.delete(fact.id); continue; }
+      const excerpt = chatDeliveryExcerpt(fact.content);
+      memoryGrounding.set(fact.id, { fact: { ...fact }, source: {
+        citationId: `memory-fact:${fact.id}`, version: String(fact.version),
+        contentHash: chatDeliveryContentHash(fact.content), classification: "private",
+        excerpt: excerpt.excerpt, excerptComplete: excerpt.excerptComplete,
+      } });
+    }
+  }
+  function selectDeliverySources(value: AgentAnswer) {
+    const sources: ChatDeliverySource[] = [], facts: MemoryFact[] = [];
+    for (const id of new Set(value.paragraphs.flatMap(paragraph => paragraph.citationIds))) {
+      const source = deliverySource(id);
+      if (source) sources.push(source);
+    }
+    if (isMemoryRestatementAnswer(value) || memoryGrounding.size > 0) {
+      const paragraphs = value.paragraphs.map(paragraph => normalizedMemoryFactText(paragraph.text));
+      for (const { fact, source } of memoryGrounding.values()) {
+        const content = normalizedMemoryFactText(fact.content);
+        // Literal coverage is conservative: unrelated facts must not make an unsupported answer pass.
+        if (usableMemoryFact(fact) && content && paragraphs.some(paragraph => paragraph.includes(content))) {
+          sources.push(source); facts.push(fact);
+        }
+      }
+    }
+    // Refuse an over-wide draft before hashing/review; never silently omit required evidence.
+    if (sources.length > 12) throw new AgentStopped("delivery_review_incomplete");
+    selectedSources = sources.sort((left, right) => left.citationId < right.citationId ? -1 : left.citationId > right.citationId ? 1 : 0);
+    selectedMemoryFacts = facts;
+  }
+  async function revalidateSelectedMemory() {
+    for (const previous of selectedMemoryFacts) {
+      if (typeof memory.getFact !== "function") throw new AgentStopped("delivery_review_incomplete");
+      const currentFact = await memory.getFact(scope.userId, scope.childId, previous.id);
+      if (!usableMemoryFact(currentFact) || currentFact.version !== previous.version
+        || chatDeliveryContentHash(currentFact.content) !== chatDeliveryContentHash(previous.content)) {
+        throw new AgentStopped("delivery_review_incomplete");
+      }
+    }
+  }
+  function isMemoryRestatementAnswer(value: AgentAnswer): boolean {
+    const kinds = value.kind === "mixed"
+      ? value.paragraphs.map(paragraph => paragraph.kind).filter((kind): kind is NonNullable<typeof kind> => Boolean(kind))
+      : [value.kind];
+    if (!kinds.length) return false;
+    return kinds.some(kind => kind === "record_restatement" || kind === "operation" || kind === "clarification");
+  }
+  /** Generator may skip read_memory_facts; hydrate every memory-restatement paragraph, including mixed answers. */
+  async function ensureConfirmedMemoryGrounding() {
+    if (groundingLoaded) return;
+    // Production memory always exposes context; partial test doubles may omit it.
+    if (typeof memory.context !== "function") return;
+    const context = await current();
+    groundingLoaded = true;
+    noteConfirmedMemoryFacts(context.facts);
+    if (typeof memory.facts !== "function") return;
+    let afterId = context.nextFactsAfterId ?? undefined;
+    for (let page = 0; afterId && page < 5; page += 1) {
+      const more = await memory.facts(scope.userId, scope.childId, afterId, 10);
+      if (!more) break;
+      noteConfirmedMemoryFacts(more.items);
+      afterId = more.nextAfterId ?? undefined;
+    }
+  }
   async function current(pages: { factsAfterId?: string; topicsAfterId?: string } = {}) {
     const value = await memory.context(scope.userId, scope.childId, options.visibility ?? "private", pages);
     if (!value) throw new AgentStopped("unauthorized"); return value;
@@ -140,12 +218,19 @@ export function createProductAgentTools(options: {
       if (error instanceof FamilyError && error.code === "invalid_citation") return { status: "rejected", data: { code: error.code, nextAction: "search_knowledge", citationField: "chunks[].chunkId", message: "引用只能取本次 search_knowledge 結果的原始 chunkId；背景來源 metadata 不是已登記引用。不要猜測、拼接或重送同一無效 ID。" } };
       if (error instanceof FamilyError && error.code === "use_citation_ids") return { status: "rejected", data: { code: error.code, nextAction: "Remove URLs from paragraph text. Put exact retrieved chunkId values in citationIds; the UI renders source links." } };
       if (error instanceof FamilyError && error.code === "citation_required") return { status: "rejected", data: { code: error.code, nextAction: "Use the already available search_knowledge tool if relevant evidence is missing and the remaining budget allows retrieval, presentation and review. Each caregiving or safety paragraph needs supporting official citationIds; private_reference needs a retrieved private-source citation or a Server-loaded photo or current voice original. Otherwise state the evidence limitation without unsupported advice. Report operation receipts separately; do not invent citations or relabel advice to bypass checks." } };
+      if (error instanceof FamilyError && error.code === "propose_fact_required") return { status: "rejected", data: { code: error.code, nextAction: "load_capabilities memory if needed, then propose_fact with content that keeps the user's child nickname (e.g. BB), then request_confirmation. Do not only present_answer a restatement of a durable personal fact such as an allergy or lasting preference (likes/dislikes)." } };
+      if (error instanceof FamilyError && error.code === "memory_read_not_propose") return { status: "rejected", data: { code: error.code, nextAction: "This turn is a question/read-back (嗎？／？／有冇／係咪 etc.). load_capabilities memory if needed, read_memory_facts, then present_answer from confirmed memory. Do not propose_fact a new candidate." } };
       if (error instanceof FamilyError || error instanceof FirestoreDomainError) return { status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected", data: { code: error.code } };
       throw error;
     }
   }
   const permitted = async () => authorize();
   function acceptPresentedAnswer(parsed: AgentAnswer) {
+    // Observe the proposed claim before validation: a later relabelled retry cannot
+    // erase an established citation/care obligation after an earlier rejection.
+    requiresChatDeliveryReview({ kind: parsed.kind, visibility: options.visibility === "family" ? "family" : "private",
+      serverSubstitutedSourceText: false, paragraphs: parsed.paragraphs, sources: [], scope,
+      ...(run.images?.references().length ? { images: run.images.references() } : {}), ...(run.voice ? { voice: run.voice } : {}) }, deliveryReview);
     validateAnswerText(parsed);
     for (const paragraph of parsed.paragraphs) {
       const kind = paragraph.kind ?? parsed.kind;
@@ -190,6 +275,7 @@ export function createProductAgentTools(options: {
       execute: args => guard(async () => {
         const context = await current({ factsAfterId: args.factsAfterId as string | undefined ?? undefined, topicsAfterId: args.topicsAfterId as string | undefined ?? undefined }), page = await tasks.list(scope.userId, scope.childId, args.tasksAfterId as string | undefined ?? undefined);
         if (!page) throw new AgentStopped("unauthorized");
+        noteConfirmedMemoryFacts(context.facts);
         const prepared = options.visibility !== "family" && context.recentMessages.length >= 12
           ? await memory.prepareSummary(scope.userId, scope.childId) : null;
         const sourceContext = prepared ? { ...context, recentMessages: prepared.messages,
@@ -294,13 +380,30 @@ export function createProductAgentTools(options: {
         const proposal = await store.propose(scope, runId, context.callId, { kind: "task_change", taskId: args.taskId as string, change });
         if (!proposal) throw new AgentStopped("unauthorized"); return proposal;
       }) },
-    { name: "propose_fact", description: "從已讀的本人原訊息提出長期記憶候選；舊原話帶 sourceMessageId，省略時指本次訊息；預設 private。intendedVisibility=family 仍只是私人候選，需本人另行明示分享確認，不可把推斷當已確認事實。",
+    { name: "propose_fact", description: "從已讀的本人原訊息提出長期記憶候選；舊原話帶 sourceMessageId，省略時指本次訊息；預設 private。content 須保留來源原訊息的孩子稱呼用詞（例如 BB），不可擅自改寫成寶寶等近義說法。intendedVisibility=family 仍只是私人候選，需本人另行明示分享確認，不可把推斷當已確認事實。",
       parameters: z.object({ key: shortText(100), content: shortText(2000), intendedVisibility: z.enum(["private", "family"]),
         validUntil: z.iso.datetime({ offset: true }).nullable(), sourceMessageId: z.uuid().optional() }), authorize: permitted,
       execute: (args, context) => guard(async () => {
+        if (options.trustedUserMessage) requireMemoryFactSource(options.trustedUserMessage, args.content as string);
+        const sourceText = !args.sourceMessageId ? options.trustedUserMessage : undefined;
+        const content = sourceText ? preserveMemoryFactUserWording(sourceText, args.content as string) : args.content as string;
+        // Historical source text is resolved and checked by the durable store, never guessed from this turn.
+        const validUntil = sourceText
+          ? sanitizeDurableMemoryFactValidUntil(content, args.validUntil as string | null, Date.now(), sourceText)
+          : args.validUntil as string | null;
         const proposal = await store.propose(scope, runId, context.callId, { kind: "memory_fact", key: args.key as string,
-          content: args.content as string, intendedVisibility: args.intendedVisibility as "private" | "family", validUntil: args.validUntil as string | null, ...(args.sourceMessageId ? { sourceMessageId: args.sourceMessageId as string } : {}) });
-        if (!proposal) throw new AgentStopped("unauthorized"); return proposal;
+          content, intendedVisibility: args.intendedVisibility as "private" | "family", validUntil, ...(args.sourceMessageId ? { sourceMessageId: args.sourceMessageId as string } : {}) });
+        if (!proposal) throw new AgentStopped("unauthorized");
+        pendingMemoryProposalCount += 1;
+        // Bind the confirmation question immediately (same as propose_family_document_change) so
+        // chat delivery can append the full receipt even when the model skips request_confirmation.
+        if (proposal.status === "pending" && store.requestConfirmation) {
+          const confirmation = await store.requestConfirmation(scope, runId, { runId: proposal.runId, proposalId: proposal.id,
+            expectedVersion: proposal.version, workId: null });
+          if (!confirmation) throw new AgentStopped("unauthorized");
+          return { ...proposal, confirmationPrepared: true };
+        }
+        return proposal;
       }) },
     { name: "stage_private_summary", description: "只整理 read_context.privateSummaryInput 指定 IDs 對應的全部原訊息；summaryMode=isolated_batch 時只摘要該批，不複製舊摘要或其他工具的資料，保留原話的陳述／推測身份；舊 cumulative 模式才合併舊摘要。原文從同次 uncoveredConversation 讀取，不可補入未提供訊息。保留不確定性、來源及更正；moreUncovered=true 不表示已讀後續內容。這是私人衍生摘要，不是已確認事實；Server 在運行結束核對完整批次、來源與版本。未取得該批次全部原文時不可調用。",
       parameters: z.object({ text: shortText(6000) }), authorize: permitted,
@@ -318,8 +421,24 @@ export function createProductAgentTools(options: {
         // and generator fields such as approved or skipReview are not in this schema.
         const parsed = options.background ? agentBackgroundAnswerSchema.parse(args) : agentAnswerSchema.parse(args);
         if (parsed.kind === "no_action" && contactReference) throw new FamilyError(400, "operation_result_required");
-        if (parsed.kind !== "no_action") acceptPresentedAnswer({ ...parsed, kind: parsed.kind });
+        // Durable personal-fact statements must persist a pending candidate first; chat delivery
+        // must not stand in for propose_fact. Questions / read-backs are unaffected.
+        if (!options.background && parsed.kind !== "no_action" && pendingMemoryProposalCount === 0
+          && options.trustedUserMessage && looksLikeDurableMemoryFactStatement(options.trustedUserMessage)
+          && !parsed.paragraphs.some(item => item.citationIds.length)) {
+          throw new FamilyError(400, "propose_fact_required");
+        }
+        // Memory paragraphs need their own evidence even beside official knowledge citations.
+        if (!options.background && parsed.kind !== "no_action"
+          && isMemoryRestatementAnswer(parsed as AgentAnswer)) {
+          await ensureConfirmedMemoryGrounding();
+        }
+        if (parsed.kind !== "no_action") {
+          acceptPresentedAnswer({ ...parsed, kind: parsed.kind });
+          selectDeliverySources({ ...parsed, kind: parsed.kind });
+        }
         answer = parsed;
+        serverReceiptText = null;
         return { acceptedForValidation: true, ...(options.reviewedGrowthPresentation
           ? { presentationPolicy: "reviewed_evidence", modelTextUsed: false } : {}) };
       }) },
@@ -360,7 +479,7 @@ export function createProductAgentTools(options: {
       return result;
     }),
   });
-  if (options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentWorkTools(store, memory, run, permitted));
+  if (options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentWorkTools(store, memory, run, permitted, noteConfirmedMemoryFacts));
   if (options.actions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(options.actions, run, permitted)
     .filter(tool=>!options.ordinaryToolNames || options.ordinaryToolNames.includes(tool.name)));
   if(privateSources)tools.splice(tools.length-1,0,...privateSources.tools);
@@ -429,15 +548,22 @@ export function createProductAgentTools(options: {
           return { text: serverReceiptText, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
         }
       }
-      if (answer.kind === "operation" && ids.length === 0 && !options.background && store.confirmationQuestions) {
-        const questions = await store.confirmationQuestions(scope.userId, scope.childId, runId);
-        if (!await authorize() || !questions) throw new AgentStopped("unauthorized");
-        if (questions.length === 1 && questions[0]?.trim()) {
-          // The API appends the authoritative question. Never exempt model-written claims.
-          serverReceiptText = AGENT_CONFIRMATION_PENDING_TEXT;
-          return { text: serverReceiptText, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+      // Citation-free confirmation / memory-propose receipts are Server-owned so delivery
+      // review cannot wipe a durable pending candidate when the model restated BB/allergy.
+      if (ids.length === 0 && !options.background
+        && (answer.kind === "operation" || answer.kind === "clarification" || answer.kind === "record_restatement")) {
+        if (store.confirmationQuestions) {
+          const questions = await store.confirmationQuestions(scope.userId, scope.childId, runId);
+          if (!await authorize() || !questions) throw new AgentStopped("unauthorized");
+          if (questions.length === 1 && questions[0]?.trim()) {
+            // The API appends the authoritative question. Never exempt model-written claims.
+            serverReceiptText = AGENT_CONFIRMATION_PENDING_TEXT;
+            return { text: serverReceiptText, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+          }
         }
       }
+      await revalidateSelectedMemory();
+      if (!await authorize()) throw new AgentStopped("unauthorized");
       // Growth advice uses the reviewed source wording; model labels cannot bypass this policy.
       const paragraphs = options.reviewedGrowthPresentation
         ? (citations.length ? citations.map(({ chunk }) => ({ text: reviewedText.get(chunk.chunkId)!, citationIds: [chunk.chunkId] }))
@@ -449,23 +575,27 @@ export function createProductAgentTools(options: {
     },
     deliveryDraft(): ChatDeliveryDraft | null {
       if (!answer || answer.kind === "no_action") return null;
-      const sources: ChatDeliverySource[] = [];
-      for (const id of new Set(answer.paragraphs.flatMap(paragraph => paragraph.citationIds))) {
-        const source = deliverySource(id);
-        if (source) sources.push(source);
-      }
-      return { kind: answer.kind, visibility: options.visibility === "family" ? "family" : "private",
+      const sources = serverReceiptText ? [] : selectedSources.map(source => ({ ...source }));
+      const paragraphs = serverReceiptText ? [{ text: serverReceiptText, citationIds: [] }]
+        : answer.paragraphs.map(paragraph => ({ ...paragraph, citationIds: [...paragraph.citationIds] }));
+      const draft: ChatDeliveryDraft = {
+        ...(options.trustedUserMessage !== undefined ? { userRequest: options.trustedUserMessage } : {}),
+        kind: answer.kind, visibility: options.visibility === "family" ? "family" : "private",
         serverSubstitutedSourceText: Boolean(options.reviewedGrowthPresentation),
         serverSubstitutedReceiptText: serverReceiptText !== null,
-        paragraphs: serverReceiptText ? [{ text: serverReceiptText, citationIds: [] }]
-          : answer.paragraphs.map(paragraph => ({ ...paragraph, citationIds: [...paragraph.citationIds] })),
-        sources, scope, ...(run.images?.references().length ? { images: run.images.references() } : {}),
-        ...(run.voice ? { voice: run.voice } : {}) };
+        paragraphs, sources, scope,
+        ...(run.images?.references().length ? { images: run.images.references() } : {}),
+        ...(run.voice ? { voice: run.voice } : {}),
+      };
+      // Confirmed memory may appear in sources as review evidence; it never sets a review skip.
+      return draft;
     },
     replaceDeliveryAnswer(next: unknown) {
       const parsed = agentAnswerSchema.parse(next);
       acceptPresentedAnswer(parsed);
+      selectDeliverySources(parsed);
       answer = parsed;
+      serverReceiptText = null;
     },
   };
 }

@@ -13,6 +13,7 @@ import { createFirestoreAgentRuns } from '../server/firestore-agent-runs.ts';
 import { createFirestoreAgentProposals } from '../server/firestore-agent-proposals.ts';
 import { createFirestoreAgentActions } from '../server/firestore-agent-actions.ts';
 import { createFirestoreAgentWork } from '../server/firestore-agent-work.ts';
+import { createFirestoreWorkFollowUp } from '../server/firestore-work-followup.ts';
 import { createFirestoreAgentConfirmations } from '../server/firestore-agent-confirmations.ts';
 import type { ProductAgentResult } from '../src/shared/product-agent.ts';
 import { createFirestoreProductAgent } from '../server/firestore-product-agent.ts';
@@ -36,7 +37,11 @@ test('one Firestore conversation preserves action receipts, bound confirmation, 
   const runs = createFirestoreAgentRuns({ ...options, chat, memory });
   const proposals = createFirestoreAgentProposals({ runs, chat, memory, online });
   const actions = createFirestoreAgentActions({ runs, proposals, care, online });
+  const continuation = createFirestoreWorkFollowUp({ ...options, runs: () => runs,
+    resource: async () => { throw Error('This scenario has no resource reference'); },
+    knowledge: async (_binding, ids) => { assert.deepEqual(ids, []); return []; } });
   const work = createFirestoreAgentWork({ runs, proposals,
+    continuation,
     validateResource: async () => { throw Error('This scenario has no resource reference'); },
     validateKnowledge: async () => { throw Error('This scenario has no knowledge reference'); } });
   const confirmations = createFirestoreAgentConfirmations({ runs, proposals, chat, policyVersion: async b => (await actions.readPolicy(b)).version });

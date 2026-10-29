@@ -7,6 +7,7 @@ import { z } from "zod";
 import { createAgentRuntime } from "../server/agent-runtime.ts";
 import type { AgentRunInput, AgentTool } from "../server/agent-runtime.ts";
 import { AGENT_LIMITS } from "../server/agent-budget.ts";
+import { AGENT_RUN_LIMITS } from "../src/shared/agent-run-limits.ts";
 import { readAiConfig } from "../server/ai-config.ts";
 import type { AttemptRecord } from "../server/ai-usage.ts";
 
@@ -15,7 +16,7 @@ const call = (name = "read_context", args: Record<string, unknown> = { key: "age
   content: { role: "model", parts: [{ functionCall: { id: "synthetic-call", name, args }, thoughtSignature: "opaque-signature" }] },
   finishReason: FinishReason.STOP,
 });
-function setup(generate: (request: LlmRequest, index: number, signal: AbortSignal) => Promise<LlmResponse>) {
+function setup(generate: (request: LlmRequest, index: number, signal: AbortSignal) => Promise<LlmResponse>, agentMaxRetries?: number) {
   const requests: LlmRequest[] = [];
   const records: AttemptRecord[] = [];
   let executed = 0;
@@ -24,7 +25,7 @@ function setup(generate: (request: LlmRequest, index: number, signal: AbortSigna
   const tool: AgentTool = { name: "read_context", description: "Read a synthetic approved context field.",
     parameters: z.object({ key: z.enum(["age", "region"]) }), authorize: async () => true,
     execute: async () => { executed++; return { status: "succeeded", reference: "synthetic-record", data: { value: "synthetic context" } }; } };
-  const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project", AI_AGENT_MAX_INPUT_CHARACTERS: "32000" }),
+  const runtime = createAgentRuntime({ config: { ...readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project", AI_AGENT_MAX_INPUT_CHARACTERS: "32000" }), agentMaxRetries },
     usage: { reserve: async () => { reserved++; return quotaAvailable; }, record: async record => { records.push(record); } },
     provider: { generate: async (request, signal) => { const index = requests.length; requests.push(structuredClone({ ...request, toolsDict: {} })); return generate(request, index, signal); } } });
   const input: AgentRunInput = { scope: { userId: "user", childId: "child", workspaceId: "workspace", authorizationVersion: "1", dataVersion: "1" },
@@ -263,4 +264,35 @@ test("photo transport keeps bounded image bytes outside text budget through the 
   const result=await s.runtime.run(s.input);
   assert.equal(result.status,"completed",JSON.stringify(result));
   assert.equal(s.executions(),1);assert.equal(s.reservations(),2);
+});
+
+
+test("an explicit Server review obligation protects the final attempt even outside interactive recipes", async () => {
+  const s = setup(async (request, index) => {
+    if (index < 2) return call();
+    if (index === 2) throw new ApiError({ status: 503, message: "Synthetic retryable failure" });
+    assert.equal(index, 3, "No fifth provider attempt is permitted");
+    assert.deepEqual(request.toolsDict, {}, "The fourth call belongs to the tool-free reviewer, not a generation retry");
+    return answer("Synthetic reviewed text");
+  }, AGENT_RUN_LIMITS.modelRetries.default);
+  s.input.requireDeliveryReview = true;
+  s.input.availableInputs = ["run", "scope", "conversation", "context", "evidence", "capabilities"];
+  s.input.finalizeOnModelLimit = true;
+  let finalizations = 0, starts = 0;
+  s.input.finalize = async (_result, context, reason) => {
+    finalizations++;
+    assert.equal(reason, "model_limit");
+    assert.equal(context.budget.remainingModelCalls, 1);
+    return context.completeText!({ system: "Synthetic reviewer", user: "Synthetic draft", attemptKey: "model:final-review",
+      purpose: "delivery_review", onProviderStart: () => { starts++; } });
+  };
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.status, "completed", JSON.stringify(result));
+  assert.equal(result.text, "Synthetic reviewed text");
+  assert.equal(result.counts.modelCalls, 4);
+  assert.equal(s.executions(), 2);
+  assert.equal(s.requests.length, 4);
+  assert.equal(s.records.length, 4);
+  assert.equal(starts, 1);
+  assert.equal(finalizations, 1);
 });
