@@ -1,4 +1,4 @@
-import { useNavigation } from "expo-router/react-navigation";
+import { useNavigation, type NavigationProp } from "expo-router/react-navigation";
 import { useRouteNavigation } from "../navigation/useRouteNavigation";
 import { parseHistoryRoute, serializeHistoryRoute } from "../navigation/route-state";
 import { usePrivateRoutePresentation } from "../navigation/RoutePresentation";
@@ -33,7 +33,7 @@ import { useGrowthWorkspace } from "../workspaces/GrowthWorkspace";
 import { chineseFont, colors, readingType, spacing } from "../theme";
 
 function HistoryWorkspace({ scope, route }: { scope: string; route: ReturnType<typeof useRouteNavigation> }) {
-  const router = useRouter(), navigate = usePreviewNavigation(), navigation = useNavigation();
+  const router = useRouter(), navigate = usePreviewNavigation(), navigation = useNavigation<NavigationProp<{ history: ReturnType<typeof serializeHistoryRoute> }, "history">>();
   const routeState=parseHistoryRoute(route.params);
   const [privateView,setPrivateQuery,rememberScroll]=usePrivateRoutePresentation("history");
   const { actions: homeActions } = useProduction();
