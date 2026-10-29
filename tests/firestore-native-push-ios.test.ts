@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import type { Query } from '@google-cloud/firestore';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
@@ -104,7 +105,7 @@ test('iOS v2 shares original receipts and device authority while old Android rem
     telegramBotId: null, growth: { taskAllowedIn: async () => true }, runs: () => { throw Error('No Agent run in this check'); }, currentAuth });
   assert.deepEqual((await contact.page('parent', child.id)).availableBindings.map(v => v.bindingId), [ios.id]);
   const jobFor = async (id: string) => authority.runTransaction('parent', null, async b => {
-    let query = data.collection('background_work');
+    let query: Query = data.collection('background_work');
     for (const [key, value] of Object.entries(data.tags(b.scope))) query = query.where(key, '==', value);
     const rows = await b.transaction.get(query.limit(10));
     for (const row of rows.docs) {

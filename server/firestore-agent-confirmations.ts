@@ -104,11 +104,35 @@ export function createFirestoreAgentConfirmations(options: {
     },
     async confirmationQuestions(userId: string, childId: string, runId: string) {
       return authority.runTransaction(userId, childId, async b => {
-        await runs.read(b, runId);
+        const asking = await runs.read(b, runId), current = runs.current(b);
+        if (!runs.matches(b, current, asking, false)) return [];
         const rows = await b.transaction.get(query(b).where('askingRunId', '==', runId).limit(9));
         if (rows.size > 8) domainReject('confirmation_limit');
-        return rows.docs.map(row => decode(b, row)).filter(item => ['waiting', 'asked'].includes(item.state)
-          && Date.parse(item.expiresAt) > now()).map(item => item.question);
+        const policyVersion = await options.policyVersion(b), questions: string[] = [];
+        for (const row of rows.docs) {
+          const saved = decode(b, row);
+          if (!['waiting', 'asked'].includes(saved.state) || Date.parse(saved.expiresAt) <= now()
+            || saved.authorizationVersion !== b.authorizationVersion || saved.policyVersion !== policyVersion) continue;
+          if (saved.workId) {
+            const work = await b.readWork(saved.workId);
+            if (!work || work.version !== saved.workVersion || !['active', 'waiting'].includes(work.status)) continue;
+          }
+          try {
+            const target = await proposals.read(b, saved.proposalRunId, saved.proposalId);
+            const p = proposals.visible(target), run = await runs.read(b, saved.proposalRunId);
+            if (p.status !== 'pending' || p.version !== saved.proposalVersion || firestoreDomainHash(p.value) !== saved.hash
+              || target.authorizationVersion !== b.authorizationVersion || !runs.matches(b, current, run, false)) continue;
+            // Read-only validation mirrors requestConfirmation; never prepare or execute a decision here.
+            const checked = await proposals.target(b, run, p.value);
+            if (checked.sourceBasis !== target.sourceBasis || checked.visibility !== p.targetVisibility
+              || saved.shared !== (checked.visibility === 'family')) continue;
+            questions.push(saved.question);
+          } catch (error) {
+            if (error instanceof FirestoreDomainError && (error.status === 404 || error.status === 409)) continue;
+            throw error;
+          }
+        }
+        return questions;
       });
     },
     async bindConfirmationQuestion(userId: string, childId: string, messageId: string) {

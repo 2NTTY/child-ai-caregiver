@@ -80,6 +80,48 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **保留的前批交付：**[MODEL-SELF03](#model-self03)可由用戶在 Web／Android 自行填寫憑證與模型試用；#270 共用導航及 #271 延後聯合補驗已合併，導航接線已隨 `382d217` Web／Android OTA 發布，真機效果待核。依使用者指示，[DEV02](#dev-agent02)最後引用／審核及聯合補驗等待四個 Agent 真正完成且協作者先自行檢查，不提前重跑或接管。iOS 不以新模型驗收取代這些缺口。
 
+<a id="agent-review-repair01"></a>
+### AGENT-REVIEW-REPAIR01：D 的六項 Agent PR 修復與最新需求對齊（候選，未驗收完成）
+
+**範圍與授權：**使用者要求繼續修 PR、可捨棄不合最新想法的原 D 設計，合併前自行 review 並報告；毋須另發 PR comment。本包取代上文及歷史包「不改 D PR／等待協作者」對這六項來源修復的限制，不解除 DEV02 真模型聯合補驗、語音或設備驗收的原 gate。主聊天仍是同一 ADK 模型→工具→結果循環，不改成每輪固定跑四角色。
+
+#### 基線、來源與邊界
+
+- 候選使用隔離工作目錄，基線 `191bcef6064da99d98806245982ef0cc52fcebc0`（#379）。原修復基線 `9058011751974c6cf0da84f27327a4e15d04dd91` 是其 ancestor。已接續六項來源 PR 的非重複成果；本節及 API 只局部整合 D 相關契約，保留 #378／#379 的 P4 匯入來源、私人交代共用路徑及 schema，不用舊整檔覆蓋新基線。
+- 原來源於 2026-10-28 18:03 UTC 讀回，當時均未合併；這是來源身份，不代表目前遠端狀態：
+
+| 原 PR | 固定來源 head |
+|---|---|
+| #254 | `a196ec5f6c520d113706d700b86f10762db48497` |
+| #262 | `7bd24b3fa1c075ad1bb4c7856c0dd2ea8b131d57` |
+| #263 | `9614898f64ba2d049734caa7a9c107961f726b0c` |
+| #265 | `bd7d3e16a0baafc1fdd6210b1f3c2e63d91697dc` |
+| #273 | `905662996406235430b06285ca15611dd57257a0` |
+| #353 | `cdb71a9a393767cec105e87349a05cc5e40f1e22` |
+
+- #265 已含 #262／#263 的非重複成果；保留原作者 `CheungHiuTung-2526` 歸屬，整合／修正不冒充原作者。
+- 只用合成資料、正式專案模組及 mocked provider／store；零真模型、家庭資料、GCP 或部署。不新增來源卡、班級／匯入功能、配額或權限；不重做前端。
+- 最新需求整理在獨立 draft PR #375 的需求文件 v0.10／REQ-008；本包不覆寫該文件。新增「所有高風險照護／記憶變更都必須審核」仍是未批准提案，不當作本輪已實作政策；既有照護、原件及編製成果審核則不移除。
+
+#### 保留、修正與捨棄
+
+- **保留：**按需工具／編製、真正 claim→citation 的獨立引用核對（單來源亦須核對）、既有成果審核、來源當前有效性、確認及原操作收據。審核失敗只可留下即時重驗仍有效的來源與固定未完成提示，不洩露未核正文或偽稱成功。
+- **捨棄：**普通互動一律 reviewer／固定留一次 review 的 blanket 設計；僅取得未使用來源不觸發審核，普通無引用文字不因無法分類而一律追加模型。既有正向安全偵測不是完整語義分類器，不能宣稱覆蓋所有風險。
+- **替代：**Server 在每個 run 維持單調義務：`review → evidence → citation → official_citation`，由受信任任務選擇或實際待交付主張建立；planning、逐 attempt admission 及最終交付共用即時狀態。刪引用、改 `kind`、repair 或模型自報已核對不能降級。live citation binding 是最低結構要求：須有實際 `citationIds` 連到合格來源，未引用的已載入記憶不算；已有官方引用義務不能整輪改成只有私人來源。每個實際引用仍核 live／scope／version 等硬條件，但不因此證明每句均被支持。逐段每個需支持的主張，包括 repair 刪引用卻保留的主張，由獨立 reviewer 讀原稿＋新稿＋issues＋evidence 核對；mocked `pass` 只能驗流程，不能證明語義品質。不增加 per-claim IDs 或新分類器。
+- **預算：**無義務時保留完整普通生成餘額；建立義務後才預留最後一次核對。gateway 逐次串行准入（含 retry／tool-free role）讀 live state，不採排隊前的舊 snapshot；只有 Server 指定的 `delivery_review／compose_review` 可用預留，修訂不豁免。義務太遲建立而已無餘額仍明示未完成，不加額、重開 run 或重做未知副作用。
+- **安全例外：**嚴格有界純補問、Server 替換的已核原文／固定文字及真收據可直接交付，首輪或 repair 後均返回 `review:null`，但不清除已有義務；問號、禮貌字眼、模型寫成「已保存」或記憶 grounding 都不是豁免。只有全部相關工具成功、唯一當前有效確認問題及再核權通過，才可用固定待確認收據收尾；候選不等於正式保存。
+- **原修復續留：**「有冇記住」等查回問句不新建記憶；本人明示陳述與後續問句分開，候選保留本人孩子稱呼、來源及明確短期限。選相關、未撤回／未過期記憶作證據；同一有界來源集合用於 hash／payload／live revalidation／binding，超過 12 項拒絕而非最後截斷。私人／家庭邊界與原確認不變。
+- **證據與進度：**只把本輪 Server 已核實的 `userRequest` 送審，不補抓歷史；重核帶同原 draft／修正 issues。hash 綁請求、正文、實際 excerpt／完整度／來源類別、版本及修正上下文，通過另綁對象／可見範圍／授權與資料版本／prompt／policy；policy `/2` 不沿用舊語義批准。`reviewing` 只在審核 provider 真正開始時發出，準備、拒絕、零呼叫及 repair 不假報正在核對。穩定契約見 [API](docs/API.md#agent-delivery-review-contract)。
+
+#### 驗證狀態與收尾 gate
+
+- **範圍：**[離線 gate](scripts/ci/verify-agent-alignment-offline.sh) 只跑 34 個完整測試檔（原 19＋frontend-facing 3＋受影響 fixture 12）及 `agent-feedback.test.ts` 的一項 pure greeting；不是完整 HTTP feedback 套件。frontend、shared、server／tests、frontend-facing tests 分四組型別檢查，type-root 數量不當 runtime 測試數量。
+- **已核版本：**程式候選 `66b8b7d5` 的 [CI 40835372604](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40835372604)，以及只更新驗證文件的 `40552da0` 的 [CI 40836180352](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40836180352) 均成功：四組型別、669 roots／251 個測試根（248＋3）及同一 candidate 的 source-integrity 通過；runtime 分組為 236＋14＋161＋greeting 1＝412 通過、0 失敗、6 個既有 skip，只代表上述選定 gate。
+- **修正摘要：**共享文件把未知 authority error 的任意 code／403 對外傳出的真缺陷已改為已知 code／status 配對，保留合法 shared-scope 錯誤，未知／損壞狀態回 503；其餘 fixture 按正式 `ChildProfile`、UUID、收據及照片契約修正。cancellation 原先只改 mock 假保存文案仍失敗；有界診斷確認 `unavailable` 來自合成 Pool 缺 policy／pending-confirmation 查詢，後補兩項精確 SQL／scope 處理，不偽造確認或整個 store，保留 `completed` 預期及無額外副作用／重放斷言。上述程式修正及 `40552da0` 文件已經獨立 review。
+- **失敗保留：**早期本地紅測試及原收據仍保留；[欄位缺漏](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40831966620)、[UUID fixture](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40832391010)、[受影響契約](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40833061102)、[cancellation 未修妥](https://github.com/2NTTY/child-ai-caregiver/actions/runs/40834175570) 四次 CI 失敗及當輪未執行階段不回寫為通過；本地收據不納公開提交、不刊私人路徑。
+- **未驗限制：**6 個 skip 是基線已有、未接 publisher 的情景，未當通過。完整 HTTP feedback／transport／disconnect 未重驗，傳輸層未改；前端實際操作、完整聯合驗收、真模型／正式服務、設備及另行四套前端方案均未因此驗收。`--test-force-exit` 不證明 handle 清理。需求文件與程式修復分開，未批准提案不當已實作政策。
+- **收尾：**本次範圍清理仍須獨立 review 及最終 head 必要 CI；既有成功不代填新 head。合併前報告保留／修正／捨棄及未驗限制，核來源歸屬與遠端保護後才正常合併，不強推、不繞檢查；本節不宣稱已合併、部署或完成全部驗收。
+
 <a id="four-fix01"></a>
 ### FIX-FOUR01：照片恢復、通知登記競態與原生 PDF（待驗收）
 

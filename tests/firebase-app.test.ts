@@ -201,8 +201,9 @@ test("Firebase domain dispatch preserves session fencing, original routes and ex
   const childId = "00000000-0000-4000-8000-000000000001";
   let changeIdentity = false;
   const unavailable = async () => { throw new Error("Unexpected store call"); };
-  const online = {
+  const online: FirestoreOnlineStore = {
     spaces: unavailable, context: unavailable, submit: unavailable, lookup: unavailable, changes: unavailable,
+    readImportTask: unavailable, prepareImportedTask: unavailable, sharedChanges: unavailable, prepareTask: unavailable,
     children: { async list(userId: string, cursor: string | null = null) {
       reads.push({ userId, cursor }); if (changeIdentity) f.setUser("other-user");
       return { children: [{ id: childId, workspaceId: childId, displayName: "Synthetic child", createdAt: "2026-10-11T00:00:00Z", accessRole: "owner" as const }], nextCursor: null };
@@ -257,7 +258,8 @@ test("Firebase document dispatch uses the real Firestore port and preserves the 
   const read = await f.get("/" + item.id); assert.equal(read.status, 200); privateResponse(read);
   assert.deepEqual((await read.json()).item, item);
   const page = await f.get(); assert.equal(page.status, 200); assert.equal((await page.json()).page.items[0].id, item.id);
-  assert.deepEqual(await f.documents.operationReceipt(USER_ID, f.child.id, OPERATION_ID), { operationId: OPERATION_ID, documentId: item.id, savedVersion: 1 });
+  assert.deepEqual(await f.documents.operationReceipt(USER_ID, f.child.id, OPERATION_ID),
+    { operationId: OPERATION_ID, documentId: item.id, savedVersion: 1, contentState: "ready", currentVersion: 1 });
 });
 
 test("Firebase document dispatch rejects foreign origins, missing expected users and unauthenticated identities before writing", async () => {
@@ -320,9 +322,17 @@ test("Firebase document authority mapping hides only known canonical denials and
   f.fail(new FirestoreAuthorityError("binding", 403));
   await assert.rejects(f.documents.operationReceipt(USER_ID, f.childId, OPERATION_ID),
     (error: unknown) => error instanceof FamilyError && error.status === 404 && error.code === "not_found");
+  for (const [code, status] of [["invalid_input", 400], ["read_only", 403], ["shared_module_scope", 403],
+    ["shared_private_scope", 403], ["scope_changed", 409]] as const) {
+    f.fail(new FirestoreAuthorityError(code, status));
+    await errorCode(await f.get("/" + f.documentId), status, code);
+  }
   for (const failure of [new FirestoreAuthorityError("invalid_document", 500), new FirestoreAuthorityError("binding", 500),
-    new FirestoreAuthorityError("unknown_denial", 403), Object.assign(new Error("private credential details"), { code: "binding", status: 403 }),
-    new Error("private SDK outage")]) {
+    new FirestoreAuthorityError("unknown_denial", 403), new FirestoreAuthorityError("unknown_denial", 400),
+    new FirestoreAuthorityError("unknown_denial", 404), new FirestoreAuthorityError("unknown_denial", 409),
+    new FirestoreAuthorityError("read_only", 409), new FirestoreAuthorityError("scope_changed", 403),
+    new FirestoreAuthorityError("invalid_input", 500), new FirestoreAuthorityError("private-email@example.test", 403),
+    Object.assign(new Error("private credential details"), { code: "binding", status: 403 }), new Error("private SDK outage")]) {
     f.fail(failure);
     const rejected = await errorCode(await f.get("/" + f.documentId), 503, "document_unavailable");
     assert.equal(JSON.stringify(rejected).includes("private"), false);
@@ -353,9 +363,9 @@ test("Firebase document canonical owner isolation hides read/list/content/write 
   const independent = (await f.documents.create(otherUser, otherChild.id, preparationRequest, OPERATION_ID))!;
   assert.notEqual(independent.id, first.id);
   assert.deepEqual(await f.documents.operationReceipt(USER_ID, f.child.id, OPERATION_ID),
-    { operationId: OPERATION_ID, documentId: first.id, savedVersion: 1 });
+    { operationId: OPERATION_ID, documentId: first.id, savedVersion: 1, contentState: "ready", currentVersion: 1 });
   assert.deepEqual(await f.documents.operationReceipt(otherUser, otherChild.id, OPERATION_ID),
-    { operationId: OPERATION_ID, documentId: independent.id, savedVersion: 1 });
+    { operationId: OPERATION_ID, documentId: independent.id, savedVersion: 1, contentState: "ready", currentVersion: 1 });
   assert.equal(await f.documents.operationReceipt(otherUser, f.child.id, OPERATION_ID), null);
 });
 
@@ -388,6 +398,7 @@ function photoFixture() {
   };
   const unavailable = async () => { throw new Error('Unexpected store call'); };
   const online: FirestoreOnlineStore = { spaces: unavailable, context: unavailable, lookup: unavailable, changes: unavailable,
+    readImportTask: unavailable, prepareImportedTask: unavailable, sharedChanges: unavailable, prepareTask: unavailable,
     children: { list: unavailable }, tasks: { list: unavailable, get: unavailable, history: unavailable },
     async submit(userId, submission) { assert.equal(userId, USER_ID); submissions.push(submission);
       return { state: 'confirmed', operation: submission.operation, path: submission.path, changeSeq: '1', statusCode: 201, result: { photo } }; } };
@@ -425,7 +436,8 @@ test('Firebase photo writes enforce same-origin and expected identity, original 
   await errorCode(await f.get('', {}), 428, 'account_precondition_required');
   await errorCode(await f.get('', { 'x-expected-user-id': 'other-user' }), 409, 'session_changed');
   await errorCode(await f.post(''), 428, 'operation_required'); await errorCode(await f.post('/' + f.id + '/delete'), 428, 'operation_required');
-  for (const action of ['extract', 'confirm']) await errorCode(await f.post('/' + f.id + '/' + action), 503, 'firebase_domain_not_ready');
+  await errorCode(await f.post('/' + f.id + '/extract'), 503, 'firebase_domain_not_ready');
+  await errorCode(await f.post('/' + f.id + '/confirm'), 428, 'operation_required');
   await errorCode(await f.post(upload, { base64: 'not base64' }), 400, 'invalid_input');
   await errorCode(await f.post(upload, { base64: 'Zg' }), 400, 'invalid_photo');
   await errorCode(await f.post(upload, { base64: f.bytes.toString('base64') }, { 'Content-Type': 'text/plain' }), 415, 'unsupported_media_type');

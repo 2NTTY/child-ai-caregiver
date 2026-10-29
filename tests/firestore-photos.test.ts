@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import type { Firestore } from "@google-cloud/firestore";
 import { createFirestoreAuthority, FirestoreAuthorityError } from "../server/firestore-authority.ts";
 import { createFirestorePhotoStore, FirestorePhotoError, firestorePhotoCleanupSchema } from "../server/firestore-photos.ts";
+import { handleFirebasePhotoRequest } from "../server/firebase-photo-api.ts";
 import { FirestoreDomainData, FirestoreDomainError } from "../server/firestore-domain-data.ts";
 import { createStorageCipher } from "../server/storage-crypto.ts";
 import { photoHash } from "../server/photo-files.ts";
@@ -245,7 +246,13 @@ test("unwritten reservations retain cleanup quota and a missing established glob
   assert.equal(f.quotas(child.scope).cleanupCount,1);assert.equal(f.calls.write,0);
   f.fake.records.delete(f.data.ref("photo_quota","photo-global-quota","global").path);
   await assert.rejects(f.store.reserve(OWNER,child.child.id,randomUUID(),META),rejects("photo_quota_unavailable",503));
-  await assert.rejects(f.store.extract(),rejects("firebase_domain_not_ready",503));await assert.rejects(f.store.confirm(),rejects("firebase_domain_not_ready",503));
+  // Extraction now belongs to the API agent; confirmation requires an original online operation.
+  const request = (action: 'extract' | 'confirm') => new Request(
+    `https://photos.example.test/api/children/${child.child.id}/photos/${reserved.id}/${action}`,
+    { method: 'POST', headers: { 'x-expected-user-id': OWNER, 'content-type': 'application/json' },
+      body: JSON.stringify({ expectedVersion: reserved.version, confirmModel: true }) });
+  await assert.rejects(handleFirebasePhotoRequest(request('extract'), OWNER, f.store, async () => true), rejects("firebase_domain_not_ready",503));
+  await assert.rejects(handleFirebasePhotoRequest(request('confirm'), OWNER, f.store, async () => true), rejects("operation_required",428));
 });
 
 test("online reserve commits the original legacy receipt atomically and replays it after the photo becomes ready", async () => {

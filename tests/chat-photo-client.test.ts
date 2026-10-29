@@ -17,8 +17,9 @@ test('chat photo owners recover original operations, reuse saved originals and i
   const context={workspaceId:randomUUID(),storageEpoch:randomUUID()};
   const hash=async(bytes:Uint8Array<ArrayBuffer>)=>createHash('sha256').update(bytes).digest('hex');
   const sha256=await hash(new Uint8Array([1]));
+  const savedPhoto=():PhotoAttachment=>{assert.ok(photo);return photo;};
   const reference=():PhotoMessageReference=>{
-    assert.ok(photo);const {id,version,fileName,mimeType,bytes,sha256,source}=photo;
+    const {id,version,fileName,mimeType,bytes,sha256,source}=savedPhoto();
     return {id,version,fileName,mimeType,bytes,sha256,source};
   };
   const fetcher:typeof fetch=async(input,init)=>{
@@ -94,7 +95,7 @@ test('chat photo owners recover original operations, reuse saved originals and i
   const reopened=new ChatController(chatApi);reopened.syncContext(user.id,true,childId);
   await new Promise<void>(resolve=>setTimeout(resolve,0));assert.deepEqual(reopened.getSnapshot().messages[0].photo,reference());
 
-  const oldReference=reference();photo={...photo!,version:3};
+  const oldReference=reference();photo={...savedPhoto(),version:3};
   assert.equal((await owner.prepareReference(oldReference,'library-photo'))?.version,3);
   assert.equal(photoWrites,1);assert.equal(uploads,1);
   const reused=await chatApi.saveMessage(childId,'',new AbortController().signal,user.id,undefined,undefined,owner.getSnapshot().photo!);

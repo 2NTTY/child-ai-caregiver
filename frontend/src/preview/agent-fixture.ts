@@ -37,6 +37,7 @@ export function createAgentRun(childId: string, runId: string, scenario: AgentRu
     id: runId, childId, createdAt, status: ["running", "stopped", "unknown"].includes(scenario) ? scenario as "running" | "stopped" | "unknown" : "completed",
     text: empty ? "" : "示例回覆：先核對已有記錄，再逐項決定是否接受下方候選。【1】此段只示範結果版式，沒有呼叫模型，亦沒有提供健康建議。" + (scenario === "many_sources" ? "多來源定位版式示例。【12】" : ""),
     stopReasonLabel: scenario === "stopped" ? "處理中斷，沒有自動重新執行" : null,
+    stopReasonDetail: null,
     counts: scenario === "unknown" ? null : { modelCalls: 1, toolCalls: empty ? 1 : 3, queryEmbeddings: empty ? 0 : 1 },
     retrievalMode: empty ? "not_used" : scenario === "degraded" ? "keyword_degraded" : "vector_keyword",
     tools: empty ? [{ id: "preview-tool", nameLabel: "整理回覆及引用", status: scenario === "stopped" ? "failed" : scenario === "unknown" ? "unknown" : "succeeded", savesCandidate: false }]

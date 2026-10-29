@@ -183,7 +183,7 @@ test('voice upload and original chat operation keep one authorized attachment ac
   assert.equal(transcript.state, 'available'); assert.equal(transcript.messageId, message.id);
   assert.equal(transcript.content?.segments[0].text, '記得我習慣先準備手冊');
   const history = await product.store.searchHistory('parent', childId, { kind:'message',query:'習慣先準備手冊',cursor:null });
-  assert.equal(history.matches.some(item => item.id === message.id), true);
+  assert.ok(history); assert.equal(history.matches.some(item => item.id === message.id), true);
   const firstPage = await product.store.readHistory('parent',childId,{messageId:message.id,offset:0,limit:12});
   assert.ok(firstPage?.contentVersion); assert.equal(firstPage.voice?.id,id);
   const secondPage = await product.store.readHistory('parent',childId,{messageId:message.id,offset:12,limit:4000,contentVersion:firstPage.contentVersion});
@@ -221,7 +221,8 @@ test('voice upload and original chat operation keep one authorized attachment ac
   const current = await voice.get('parent', childId, id), deleteOp = randomUUID();
   assert.equal((await client.delete(current, deleteOp, signal, 'parent')).deleted, true);
   await assert.rejects(voice.content('parent', childId, id), (e: any) => e.code === 'voice_deleted');
-  assert.equal((await product.store.searchHistory('parent',childId,{kind:'message',query:'習慣先準備手冊',cursor:null})).matches.some(item=>item.id===message.id),false);
+  const remainingHistory = await product.store.searchHistory('parent',childId,{kind:'message',query:'習慣先準備手冊',cursor:null});
+  assert.ok(remainingHistory); assert.equal(remainingHistory.matches.some(item=>item.id===message.id),false);
   await assert.rejects(product.store.readHistory('parent',childId,{messageId:message.id,offset:12,limit:4000,contentVersion:firstPage.contentVersion}), (e:any)=>e.code==='version_conflict');
   assert.equal((await voice.reserve('parent', childId, input)).fileName, null);
   assert.equal((await exporter.page('parent',{section:'voice_transcripts',childId})).items.length,0);

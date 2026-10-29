@@ -103,7 +103,7 @@ test("native permission, token rotation and fixed notification callbacks follow 
   for (const os of ["ios", "android"] as const) {
     const device = nativeAdapter(os), { api } = device;
     assert.equal(api.nativePushPlatform(), os); assert.equal(api.nativePushSupported(), true);
-    assert.deepEqual(device.calls, []);
+    assert.deepEqual([...device.calls], []);
     assert.equal(await api.nativePushPermission(), "undetermined"); assert.equal(device.counts().prompts, 0);
     if (os === "ios") {
       device.setPermission({ granted: false, canAskAgain: false, ios: { status: 3 } });

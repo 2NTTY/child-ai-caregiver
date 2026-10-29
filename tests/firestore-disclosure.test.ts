@@ -34,7 +34,7 @@ test('deleted content stays hidden in history, export, original receipts and iso
   const options = { database, cipher: createStorageCipher(Buffer.alloc(32, 32)),
     projectId: 'synthetic-disclosure', namespace: 'disclosure' };
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
-  let generation = randomUUID(); await authority.initializeControl({ enabled: true, generation });
+  let generation: string = randomUUID(); await authority.initializeControl({ enabled: true, generation });
   async function pause(enabled: boolean) { const next = randomUUID(); await setFirebaseBackupControl(options, { expectedGeneration: generation, generation: next, enabled }); generation = next; }
   for (const userId of ['parent', 'peer']) {
     const email = userId + '@example.test'; await authority.issueInvitation({ email, expiresAt: new Date(Date.now() + 60000).toISOString(), operationId: randomUUID() });

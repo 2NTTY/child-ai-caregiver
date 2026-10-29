@@ -29,10 +29,59 @@ test("cancellation prevents starting work and stops waiting for an uncooperative
 });
 
 test("one deadline bounds model and tool waits and cannot exceed the production maximum", async () => {
-  assert.throws(() => new AgentBudget(undefined, 90001));
+  assert.throws(() => new AgentBudget(undefined, AGENT_LIMITS.deadlineMs + 1));
   const budget = new AgentBudget(undefined, 10);
   try {
     await assert.rejects(budget.wait(() => new Promise(() => {})), { reason: "deadline" });
     assert.throws(() => budget.take("toolCalls"), { reason: "deadline" });
+  } finally { budget.close(); }
+});
+
+test("planningSnapshot hard-reserves delivery review and finishes early enough to leave a review call", async () => {
+  assert.equal(AGENT_LIMITS.modelCalls, 4);
+  const budget = new AgentBudget();
+  try {
+    budget.take("modelCalls", 2);
+    const plain = budget.planningSnapshot(true);
+    assert.equal(plain.phase, "work");
+    assert.equal(plain.reserveForFinish.modelCalls, 1);
+    assert.equal(plain.reserveForDeliveryReview.modelCalls, 0);
+
+    const reserved = budget.planningSnapshot(true, { reserveDeliveryReview: true });
+    assert.equal(reserved.phase, "finish");
+    assert.equal(reserved.reserveForFinish.modelCalls, 2);
+    assert.equal(reserved.reserveForDeliveryReview.modelCalls, 1);
+    assert.equal(reserved.remaining.modelCallsIncludingThisCall, 2);
+
+    budget.take("modelCalls", 1);
+    const lastWork = budget.planningSnapshot(true, { reserveDeliveryReview: true });
+    assert.equal(lastWork.phase, "finish");
+    assert.equal(lastWork.remaining.modelCallsIncludingThisCall, 1);
+    await assert.rejects(budget.admitModel({ reserveDeliveryReview: true }), { reason: "model_limit" });
+
+    const withoutReserve = budget.planningSnapshot(true);
+    assert.equal(withoutReserve.phase, "finish");
+    await budget.admitModel();
+    assert.equal(budget.counts.modelCalls, 4);
+  } finally { budget.close(); }
+});
+
+test("hard delivery-review reserve does not raise default modelCalls and skips for non-review paths", async () => {
+  assert.equal(AGENT_LIMITS.modelCalls, 4);
+  const budget = new AgentBudget();
+  try {
+    assert.equal(budget.limits.modelCalls, 4);
+    budget.take("modelCalls", 1);
+    const mid = budget.planningSnapshot(true, { reserveDeliveryReview: true });
+    assert.equal(mid.phase, "work");
+    assert.equal(mid.reserveForFinish.modelCalls, 2);
+    assert.equal(mid.remaining.modelCallsIncludingThisCall, 3);
+    await budget.admitModel({ reserveDeliveryReview: true });
+    assert.equal(budget.counts.modelCalls, 2);
+
+    const greetingLike = budget.planningSnapshot(false);
+    assert.equal(greetingLike.reserveForDeliveryReview.modelCalls, 0);
+    assert.equal(greetingLike.reserveForFinish.modelCalls, 1);
+    assert.equal(greetingLike.phase, "work");
   } finally { budget.close(); }
 });

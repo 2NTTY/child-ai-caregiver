@@ -11,6 +11,10 @@ const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const route = new RegExp("^/api/children/(" + uuid + ")/documents(?:/(" + uuid + ")(?:/(actions|pdf|content|versions))?)?$", "i");
 const createSchema = z.object({ opId: z.uuid(), request: documentRequestSchema, expectedBasis:sharedAccessBasisSchema.optional() }).strict();
 const changeSchema = z.object({ opId: z.uuid(), change: documentChangeSchema }).strict();
+// Canonical access denials become private 404s in the store; unknown authority failures stay unavailable.
+const documentAuthorityErrors = new Map<string, number>([
+  ["invalid_input", 400], ["read_only", 403], ["shared_module_scope", 403], ["shared_private_scope", 403], ["scope_changed", 409],
+]);
 export type SharedFamilyDocumentPort = FamilyDocumentStore & { forSharedSpace?(selection: SharedSelection): FamilyDocumentStore };
 export async function handleFamilyDocumentRequest(request: Request, userId: string | null, store: SharedFamilyDocumentPort,
   isCurrentUser: (userId: string) => Promise<boolean>): Promise<Response> {
@@ -72,7 +76,8 @@ export async function handleFamilyDocumentRequest(request: Request, userId: stri
       : await store.create(userId, childId, parsed.request, parsed.opId);
     return item && await isCurrentUser(userId) ? jsonResponse({ item }) : apiError("not_found", "文件或權限已改變。", 404);
   } catch (error) {
-    if ((error instanceof FirestoreDomainError || error instanceof FirestoreAuthorityError) && [400, 403, 404, 409].includes(error.status))
+    if (error instanceof FirestoreDomainError && [400, 403, 404, 409].includes(error.status)
+      || error instanceof FirestoreAuthorityError && documentAuthorityErrors.get(error.code) === error.status)
       return apiError(error.code, '文件版本或共享權限已改變，請重新讀取。', error.status);
     if (error instanceof FamilyError) return apiError(error.code, error.status === 409 ? "文件版本、來源或原操作已改變，請重新核對。" : "請核對文件與權限。", error.status);
     if (error instanceof z.ZodError) return apiError("invalid_input", "請核對文件輸入。", 400);

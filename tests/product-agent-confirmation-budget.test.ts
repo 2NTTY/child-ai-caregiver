@@ -18,7 +18,7 @@ const ids = { run: "d4a1b662-d13d-476b-bf52-40a28aa1a1a7", child: "1ebcb39d-a2db
 const userId = "synthetic-caregiver", question = "是否將合成任務標記為完成？尚未執行，請明確確認。";
 const answerText = "已儲存任務候選，仍待你確認。";
 // The pending task has no saved business-effect receipt; use its real confirmation state.
-type Fault = "invalid_response" | "unavailable" | "unknown" | "failed" | "rejected" | "conflict" | "last_read" | "citation_revalidation";
+type Fault = "model_output_limit" | "unavailable" | "unknown" | "failed" | "rejected" | "conflict" | "last_read" | "citation_revalidation";
 interface FixtureOptions { normal?: boolean; fault?: Fault; questions?: "empty" | "expired" | "multiple" | "blank" | "missing_getter";
   revokeAfterRead?: boolean; cancelAfterRead?: boolean; deadlineDuringRead?: boolean; stageSummary?: boolean; initialSummary?: boolean }
 
@@ -49,16 +49,15 @@ function fixture(options: FixtureOptions = {}) {
   const present = step("present_answer", { kind: options.fault === "citation_revalidation" ? "caregiving" : "operation",
     paragraphs: [{ text: answerText, citationIds: options.fault === "citation_revalidation" ? ["reviewed-chunk"] : [] }] });
   const readWork = step("read_work", { workId: null, cursor: null });
-  // Finish-phase exposes only present_answer. Keep confirm/work before the last call; pending-fallback
-  // sequences omit present so the finish-phase generate throws model_limit (see provider).
-  const sequence = options.stageSummary ? options.normal
-      ? [[read, load], [propose, step("stage_private_summary", { text: "Synthetic staged summary" })], [confirm], [present]]
-      : [[read, load], [propose, step("stage_private_summary", { text: "Synthetic staged summary" })], [confirm]]
-    : options.fault === "citation_revalidation" ? [[read, load], [propose, confirm], [step("search_knowledge", { query: "合成照護主題", classification: "official_guidance" })], [present]]
-    : options.normal || options.fault === "invalid_response" || options.fault === "unavailable" ? [[read, load], [propose], [confirm], [present]]
-    : options.fault === "last_read" ? [[read, load], [propose], [readWork]]
-    : ["unknown", "failed", "rejected", "conflict"].includes(options.fault ?? "") ? [[read, load], [propose], [confirm]]
-    : [[read, load], [propose], [confirm]];
+  // Two work turns leave the third generation for presentation and the fourth
+  // call protected for independent review. The non-normal fixtures inject a
+  // provider model_limit at that presentation turn; real zero-budget compose is
+  // covered by chat-delivery-review.test.ts.
+  const summary = step("stage_private_summary", { text: "Synthetic staged summary" });
+  const first = [read, load, ...(options.fault === "citation_revalidation"
+    ? [step("search_knowledge", { query: "合成照護主題", classification: "official_guidance" })] : [])];
+  const second = [propose, ...(options.stageSummary ? [summary] : []), options.fault === "last_read" ? readWork : confirm];
+  const sequence = [first, second, ...(options.normal || ["model_output_limit", "unavailable", "citation_revalidation"].includes(options.fault ?? "") ? [[present]] : [])];
   const realRuntime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
     usage: { reserve: async () => true, record: async record => { attempts.push(record.outcome); } },
     provider: { generate: async (request: LlmRequest): Promise<LlmResponse> => {
@@ -72,8 +71,8 @@ function fixture(options: FixtureOptions = {}) {
       calls.push(batch.map(call => call.name));
       requests.push(structuredClone({ ...request, toolsDict: {} }));
       for (const call of batch) assert.ok(Object.hasOwn(request.toolsDict, call.name));
-      if (index === 3 && options.fault === "unavailable") throw new Error("Synthetic provider unavailable");
-      if (index === 3 && options.fault === "invalid_response") return { content: { role: "model", parts: [{ text: "Unvalidated closing text" }] }, finishReason: FinishReason.MAX_TOKENS };
+      if (index === 2 && options.fault === "unavailable") throw new Error("Synthetic provider unavailable");
+      if (index === 2 && options.fault === "model_output_limit") return { content: { role: "model", parts: [{ text: "Unvalidated closing text" }] }, finishReason: FinishReason.MAX_TOKENS };
       return { content: { role: "model", parts: batch.map((call, part) => ({ functionCall: { ...call, id: `scripted-${index}-${part}` } })) }, finishReason: FinishReason.STOP };
     } } });
   const runtime = { run: async (input: AgentRunInput) => {
@@ -152,17 +151,17 @@ function assertPending(s: ReturnType<typeof fixture>, result: ProductAgentResult
   assert.equal(s.ledger().taskState, "scheduled"); assert.equal(s.ledger().taskVersion, 1); return result;
 }
 
-test("four successful tool turns complete only a server-owned pending confirmation reply within the original limit", async () => {
+test("successful tools complete only a server-owned pending confirmation reply at model-limit finalization", async () => {
   const s = fixture(), result = assertPending(s, await s.reply());
   assert.equal(AGENT_LIMITS.modelCalls, 4); assert.equal(result.status, "completed"); assert.equal(result.stopReason, null);
   assert.equal(result.text, AGENT_CONFIRMATION_PENDING_TEXT); assert.ok(!result.text.includes(question));
   assert.deepEqual(result.citations, []); assert.deepEqual(result.privateSourceCitations, []); assert.equal(result.retrievalMode, "not_used");
-  assert.deepEqual(result.counts, { modelCalls: 4, toolCalls: 4, queryEmbeddings: 0 });
+  assert.deepEqual(result.counts, { modelCalls: 3, toolCalls: 4, queryEmbeddings: 0 });
   assert.deepEqual(result.tools.map(tool => [tool.name, tool.status]), [["read_context", "succeeded"], ["load_capabilities", "succeeded"],
     ["propose_task_change", "succeeded"], ["request_confirmation", "succeeded"]]);
-  assert.deepEqual(s.attempts, ["succeeded", "succeeded", "succeeded", "unavailable"]);
+  assert.deepEqual(s.attempts, ["succeeded", "succeeded", "unavailable"]);
   assert.deepEqual(s.finalizations, [{ reason: "model_limit" }]); assert.deepEqual(s.summaryInputs, [undefined]);
-  assert.equal(s.ledger().questionReads, 1); assert.deepEqual(await s.reply(), result); assert.equal(s.calls.length, 4);
+  assert.equal(s.ledger().questionReads, 1); assert.deepEqual(await s.reply(), result); assert.equal(s.calls.length, 3);
 });
 
 test("HTTP reply appends the saved confirmation question once and reuses its saved message", async () => {
@@ -170,7 +169,7 @@ test("HTTP reply appends the saved confirmation question once and reuses its sav
   const value = await response.json(); assert.equal(value.message.text, AGENT_CONFIRMATION_PENDING_TEXT + "\n\n" + question);
   assert.equal(value.message.text.split(question).length - 1, 1); assert.equal(s.modelMessages.length, 1);
   const repeated = await s.apiReply(); assert.equal(repeated.status, 200); assert.equal((await repeated.json()).message.text, value.message.text);
-  assert.equal(s.calls.length, 4); assert.equal(s.modelMessages.length, 1); assert.equal(s.ledger().bindings, 2);
+  assert.equal(s.calls.length, 3); assert.equal(s.modelMessages.length, 1); assert.equal(s.ledger().bindings, 2);
 });
 
 test("normal presentation still continues after nonterminal confirmation and never uses fallback", async () => {
@@ -178,14 +177,14 @@ test("normal presentation still continues after nonterminal confirmation and nev
   assert.equal(result.status, "completed"); assert.equal(result.text, AGENT_CONFIRMATION_PENDING_TEXT);
   assert.ok(result.tools.some(tool => tool.name === "present_answer"));
   assert.equal(result.text.includes(answerText), false);
-  assert.equal(s.calls.length, 4); assert.deepEqual(s.finalizations, [{ reason: "normal" }]); assert.equal(s.ledger().questionReads, 1);
+  assert.equal(s.calls.length, 3); assert.deepEqual(s.finalizations, [{ reason: "normal" }]); assert.equal(s.ledger().questionReads, 1);
 });
 
 test("pending confirmation fallback discards a real staged summary", async () => {
   const s = fixture({ stageSummary: true }), result = assertPending(s, await s.reply());
   assert.equal(result.status, "completed"); assert.equal(result.text, AGENT_CONFIRMATION_PENDING_TEXT);
   assert.ok(result.tools.some(tool => tool.name === "stage_private_summary" && tool.status === "succeeded"));
-  assert.deepEqual(s.summaryInputs, [undefined]); assert.equal(s.calls.length, 4);
+  assert.deepEqual(s.summaryInputs, [undefined]); assert.equal(s.calls.length, 3);
 });
 
 test("normal presentation preserves the existing staged summary finalization", async () => {
@@ -195,31 +194,31 @@ test("normal presentation preserves the existing staged summary finalization", a
   assert.equal(s.summaryInputs.length, 1); assert.ok(s.summaryInputs[0]);
   const summary = s.summaryInputs[0] as { text: string; coveredMessageIds: string[] };
   assert.equal(summary.text, "Synthetic staged summary"); assert.equal(summary.coveredMessageIds.length, 12);
-  assert.equal(s.ledger().questionReads, 1); assert.equal(s.calls.length, 4);
+  assert.equal(s.ledger().questionReads, 1); assert.equal(s.calls.length, 3);
 });
 
 for (const questions of ["empty", "expired", "multiple", "blank", "missing_getter"] as const) test(`pending confirmation fallback rejects ${questions} questions`, async () => {
   const s = fixture({ questions }), result = assertPending(s, await s.reply());
   assert.equal(result.status, "stopped"); assert.equal(result.stopReason, "invalid_response"); assert.equal(result.text, "");
-  assert.equal(s.calls.length, 4); assert.deepEqual(s.summaryInputs, [undefined]);
+  assert.equal(s.calls.length, 3); assert.deepEqual(s.summaryInputs, [undefined]);
 });
 
-for (const fault of ["invalid_response", "unavailable", "unknown", "failed", "rejected", "conflict", "last_read", "citation_revalidation"] as const) test(`pending confirmation fallback does not rescue ${fault}`, async () => {
+for (const fault of ["model_output_limit", "unavailable", "unknown", "failed", "rejected", "conflict", "last_read", "citation_revalidation"] as const) test(`pending confirmation fallback does not rescue ${fault}`, async () => {
   const s = fixture({ fault }), result = assertPending(s, await s.reply());
   assert.equal(result.status, "stopped"); assert.equal(result.text, ""); assert.equal(s.ledger().questionReads, 0);
-  assert.equal(result.stopReason, fault === "invalid_response" || fault === "citation_revalidation" || fault === "last_read" ? "invalid_response"
+  assert.equal(result.stopReason, fault === "model_output_limit" ? "model_output_limit" : fault === "citation_revalidation" || fault === "last_read" ? "invalid_response"
     : fault === "unknown" ? "tool_unknown" : ["failed", "rejected", "conflict"].includes(fault) ? "model_limit" : "unavailable");
-  if (["invalid_response", "unavailable"].includes(fault)) assert.equal(s.ledger().confirmationWrites, 1);
+  if (["model_output_limit", "unavailable"].includes(fault)) assert.equal(s.ledger().confirmationWrites, 1);
   if (fault === "citation_revalidation") assert.deepEqual(s.finalizations, [{ reason: "normal", error: "invalid_response" }]);
-  // unknown throws during confirm on the 3rd call; finish-phase generate never runs.
-  assert.equal(s.calls.length, fault === "unknown" ? 3 : 4);
+  // unknown throws during confirm on the second call; presentation never runs.
+  assert.equal(s.calls.length, fault === "unknown" ? 2 : 3);
 });
 
 for (const condition of ["revokeAfterRead", "cancelAfterRead", "deadlineDuringRead"] as const) test(`pending confirmation fallback stops on ${condition}`, async () => {
   const s = fixture({ [condition]: true }), result = assertPending(s, await s.reply());
   assert.equal(result.status, "stopped"); assert.equal(result.text, ""); assert.deepEqual(result.tools, []);
   assert.equal(result.stopReason, condition === "revokeAfterRead" ? "unauthorized" : condition === "cancelAfterRead" ? "cancelled" : "deadline");
-  assert.equal(s.ledger().questionReads, 1); assert.equal(s.calls.length, 4); assert.deepEqual(s.summaryInputs, [undefined]);
+  assert.equal(s.ledger().questionReads, 1); assert.equal(s.calls.length, 3); assert.deepEqual(s.summaryInputs, [undefined]);
 });
 
 
@@ -231,7 +230,7 @@ test("revalidated private summary survives capability loading while pending fall
   assert.ok(result.tools.some(tool => tool.name === "read_context" && tool.status === "succeeded"));
   assert.ok(result.tools.some(tool => tool.name === "load_capabilities" && tool.status === "succeeded"));
   assert.ok(result.tools.some(tool => tool.name === "stage_private_summary" && tool.status === "succeeded"));
-  assert.deepEqual(s.summaryInputs, [undefined]); assert.equal(s.calls.length, 4); assert.equal(s.initialSummaryReads(), 4);
-  assert.deepEqual(await s.reply(), result); assert.equal(s.calls.length, 4); assert.equal(s.initialSummaryReads(), 4);
+  assert.deepEqual(s.summaryInputs, [undefined]); assert.equal(s.calls.length, 3); assert.equal(s.initialSummaryReads(), 3);
+  assert.deepEqual(await s.reply(), result); assert.equal(s.calls.length, 3); assert.equal(s.initialSummaryReads(), 3);
   assert.deepEqual(s.finalizations, [{ reason: "model_limit" }]);
 });

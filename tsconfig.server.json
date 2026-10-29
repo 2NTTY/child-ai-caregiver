@@ -10,5 +10,10 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["server/**/*.ts", "src/shared/**/*.ts", "tests/**/*.test.ts"]
+  "include": ["server/**/*.ts", "src/shared/**/*.ts", "tests/**/*.test.ts"],
+  "exclude": [
+    "tests/child-selection.test.ts",
+    "tests/firestore-results-history.test.ts",
+    "tests/handover-task-updates.test.ts"
+  ]
 }

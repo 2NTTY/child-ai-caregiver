@@ -13,6 +13,7 @@ import {
 import { SOURCE_WATCHES } from "../server/knowledge-source-catalog.ts";
 import { observationHash } from "../server/knowledge-observation.ts";
 import type { ObservedContent, SourceFetcher } from "../server/knowledge-refresh-types.ts";
+import type { BackgroundKnowledgeRunRequest, BackgroundKnowledgeRunResult, BackgroundKnowledgeWorkBudget } from "../src/shared/background-knowledge-maintenance.ts";
 
 const page = resolveM03Watch("fhs-solid-food")!;
 const pdf = resolveM03Watch("fhs-feeding-booklet-en")!;
@@ -106,10 +107,12 @@ test("review fixes: live gates and worker replacement do not reopen side effects
 test("review fixes: PDF coverage is checked before an injected review or unchanged result", async () => {
   let reviews = 0;
   const valid = pdfItem();
-  for (const [item, code] of [
+  // Valid transport shapes intentionally violate the reviewed PDF coverage.
+  const cases: Array<[ObservedContent, string]> = [
     [{ ...valid, pages: undefined }, "pdf_coverage_missing"],
-    [{ ...valid, pages: [{ page: 4, text: "outside", status: "text" as const }] }, "pdf_scope_invalid"],
-  ] as const) {
+    [{ ...valid, pages: [{ page: 4, text: "outside", status: "text" }] }, "pdf_scope_invalid"],
+  ];
+  for (const [item, code] of cases) {
     const runner = createRunner({ enabled: true, liveFetch: false, livePublish: false }, {
       fetch: async () => { throw new Error("network disabled"); },
       fixtureFetch: mockFetcher({ "fhs-feeding-booklet-en": item }),
@@ -119,6 +122,7 @@ test("review fixes: PDF coverage is checked before an injected review or unchang
     const result = await runner.start({
       watchId: "fhs-feeding-booklet-en", operationFingerprint: fingerprint("fhs-feeding-booklet-en", code),
       workerGeneration: "00000000-0000-4000-8000-000000000002",
+      publishMode: "dry_run",
     });
     assert.equal(result.code, code);
     assert.equal(result.published, false);
@@ -156,6 +160,7 @@ test("out-of-scope watch and private family fields are rejected", async () => {
     watchId: "chp-recent",
     operationFingerprint: fingerprint("chp-recent"),
     workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "dry_run",
   });
   assert.equal(result.status, "rejected");
   assert.equal(result.code, "watch_out_of_scope");
@@ -201,6 +206,7 @@ test("unchanged hash skips organize and stays unpublished", async () => {
     watchId: "fhs-solid-food",
     operationFingerprint: fingerprint("fhs-solid-food", "same"),
     workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "dry_run",
   });
   assert.equal(result.status, "unchanged");
   assert.equal(result.published, false);
@@ -223,6 +229,7 @@ test("PDF fixture follows reviewed page window; unreadable page stays candidate"
     watchId: "fhs-feeding-booklet-en",
     operationFingerprint: fingerprint("fhs-feeding-booklet-en", "pdf-bad"),
     workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "dry_run",
   });
   assert.equal(result.status, "candidate_held");
   assert.equal(result.published, false);
@@ -245,6 +252,7 @@ test("AC-P2M-04: redelivery is idempotent and budget does not reset on restart",
   const once = await first.start({
     watchId: "fhs-solid-food", operationFingerprint: key,
     workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "dry_run",
   });
   assert.equal(once.status, "dry_run_ready");
   const used = once.budget!.usedUnits;
@@ -253,6 +261,7 @@ test("AC-P2M-04: redelivery is idempotent and budget does not reset on restart",
   const again = await second.start({
     watchId: "fhs-solid-food", operationFingerprint: key,
     workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "dry_run",
   });
   assert.equal(again.status, "already_recorded");
   assert.equal(again.published, false);
@@ -271,6 +280,7 @@ test("budget exhaustion refuses further work without opening a new fingerprint r
   const result = await runner.start({
     watchId: "fhs-solid-food", operationFingerprint: key,
     workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "dry_run",
   });
   assert.equal(result.status, "budget_exhausted");
   assert.equal(result.published, false);
@@ -490,21 +500,22 @@ test("216D: tampered review binding is rejected before publish", { skip: "Requir
 });
 test("F1: expired lease after stall cannot overwrite budget/result of later runner", async () => {
   const key = fingerprint("fhs-solid-food", "f1-lease");
-  const budgets = new Map();
-  const results = new Map();
-  const claims = new Map();
-  let releaseFetchA;
-  const fetchAGate = new Promise((resolve) => { releaseFetchA = resolve; });
-  let aFetchStarted;
-  const aFetchStartedGate = new Promise((resolve) => { aFetchStarted = resolve; });
+  const budgets = new Map<string, BackgroundKnowledgeWorkBudget>();
+  const results = new Map<string, BackgroundKnowledgeRunResult>();
+  const claims = new Map<string, { leaseToken: string; untilMs: number }>();
+  let releaseFetchA!: () => void;
+  const fetchAGate = new Promise<void>((resolve) => { releaseFetchA = resolve; });
+  let aFetchStarted!: () => void;
+  const aFetchStartedGate = new Promise<void>((resolve) => { aFetchStarted = resolve; });
   const itemA = pageItem("??? A ???");
   const itemB = pageItem("??? B ????");
 
-  const ports = {
+  let aEntered = false;
+  const ports: BackgroundKnowledgeMaintenancePorts = {
     fetch: async (definition, signal) => {
       // First caller (A) stalls; later callers (B) return immediately.
-      if (!ports._aEntered) {
-        ports._aEntered = true;
+      if (!aEntered) {
+        aEntered = true;
         aFetchStarted();
         await fetchAGate;
         if (signal?.aborted) throw new Error("aborted");
@@ -531,14 +542,13 @@ test("F1: expired lease after stall cannot overwrite budget/result of later runn
       const current = claims.get(fp);
       if (current?.leaseToken === leaseToken) claims.delete(fp);
     },
-    _aEntered: false,
   };
 
   const runnerA = createBackgroundKnowledgeMaintenanceRunner(
     { enabled: true, liveFetch: false, livePublish: false },
     ports,
   );
-  const request = {
+  const request: BackgroundKnowledgeRunRequest = {
     watchId: "fhs-solid-food",
     operationFingerprint: key,
     workerGeneration: "00000000-0000-4000-8000-000000000002",
@@ -644,8 +654,8 @@ test("F2: publish+receipt then saveResult failure restores receipt hash instead 
 
 test("F3: abort during deferred loadPublishReceipt does not call publisher", { skip: "Requires transactional fenced publisher; live entry is disabled." }, async () => {
   let published = 0;
-  let releaseReceipt;
-  const receiptGate = new Promise((resolve) => { releaseReceipt = resolve; });
+  let releaseReceipt!: () => void;
+  const receiptGate = new Promise<void>((resolve) => { releaseReceipt = resolve; });
   const controller = new AbortController();
   const runner = createBackgroundKnowledgeMaintenanceRunner(
     { enabled: true, liveFetch: true, livePublish: true },

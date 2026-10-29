@@ -27,7 +27,7 @@ export function createAgentConfirmationStore(pool: Pool, cipher: StorageCipher, 
     withChildAccess(pool, userId, childId, READ_ROLES, (client, _role, workspaceId) => fn(client, workspaceId), true);
   const decode = (row: Row): Payload => JSON.parse(cipher.decrypt(row.payload_encrypted, aad(row.owner_user_id, row.child_id, row.id)));
   async function proposal(client: PoolClient, userId: string, childId: string, runId: string, id: string) {
-    const row = (await client.query<{ id: string; version: number; state: AgentProposal["status"]; created_at: Date; expires_at: Date; payload_encrypted: string; authorization_version: string; data_version: string }>(`SELECT p.*,r.authorization_version::text,r.data_version
+    const row = (await client.query<{ id: string; version: number; state: AgentProposal["status"]; created_at: Date; expires_at: Date; payload_encrypted: string; authorization_version: string; data_version: string; source_message_id: string | null }>(`SELECT p.*,r.authorization_version::text,r.data_version,r.source_message_id
       FROM agent_proposals p JOIN agent_runs r ON r.id=p.run_id WHERE p.id=$1 AND p.run_id=$2 AND r.owner_user_id=$3 AND r.child_id=$4 FOR UPDATE OF p`, [id, runId, userId, childId])).rows[0];
     if (!row) throw new FamilyError(404, "not_found");
     const saved = JSON.parse(cipher.decrypt(row.payload_encrypted, `agent-run:${childId}:${userId}:${runId}:proposal:${id}:${row.version}`));
@@ -125,7 +125,59 @@ export function createAgentConfirmationStore(pool: Pool, cipher: StorageCipher, 
       });
     },
     async confirmationQuestions(userId: string, childId: string, runId: string) {
-      return access(userId, childId, async client => (await client.query<Row>("SELECT * FROM agent_confirmations WHERE owner_user_id=$1 AND child_id=$2 AND asking_run_id=$3 AND state IN ('waiting','asked') AND expires_at>clock_timestamp() ORDER BY created_at,id", [userId, childId, runId])).rows.map(row => decode(row).question));
+      return access(userId, childId, async (client, workspaceId) => {
+        const current = await scope(client, workspaceId, userId, childId);
+        const rows = (await client.query<Row>("SELECT * FROM agent_confirmations WHERE owner_user_id=$1 AND child_id=$2 AND asking_run_id=$3 AND state IN ('waiting','asked') AND expires_at>clock_timestamp() ORDER BY created_at,id LIMIT 9", [userId, childId, runId])).rows;
+        if (rows.length > 8) throw conflict("confirmation_limit");
+        const questions: string[] = [];
+        for (const row of rows) {
+          if (!['waiting', 'asked'].includes(row.state) || row.expires_at.getTime() <= Date.now()
+            || String(row.authorization_version) !== current.access_version || row.storage_epoch !== current.storage_epoch
+            || row.policy_version !== current.policyVersion) continue;
+          const saved = decode(row);
+          if (row.work_id) {
+            const work = (await client.query<{ version: number; status: string }>(
+              "SELECT version,status FROM agent_work WHERE id=$1 AND owner_user_id=$2 AND child_id=$3 FOR SHARE",
+              [row.work_id, userId, childId])).rows[0];
+            if (!work || work.version !== row.work_version || !['active', 'waiting'].includes(work.status)) continue;
+          }
+          try {
+            const target = await proposal(client, userId, childId, row.proposal_run_id, row.proposal_id);
+            if (target.row.state !== 'pending' || target.row.version !== row.proposal_version || target.row.expires_at.getTime() <= Date.now()
+              || target.row.authorization_version !== current.access_version || target.row.data_version.split(':')[0] !== current.storage_epoch
+              || hash(target.value.value) !== saved.hash) continue;
+            const value = target.value.value;
+            let shared = ['family_document_change', 'task_create', 'task_change', 'concern_create', 'concern_change'].includes(value.kind)
+              || value.kind === 'memory_fact' && value.intendedVisibility === 'family';
+            // Reuse the request-time read checks; never call the effectful decision callback.
+            if (value.kind === 'family_document_change') {
+              const borrowed = transactionPool(client);
+              try {
+                const document = await createFamilyDocumentStore(borrowed.pool, cipher).validatePatch(userId, childId, value.documentId, value.change);
+                if (!target.documentSourceBasis || document?.sourceBasis !== target.documentSourceBasis) continue;
+              } finally { borrowed.assertReleased(); }
+            }
+            if (value.kind === 'memory_fact_revise' || value.kind === 'memory_fact_deactivate') {
+              const fact = (await client.query<{ visibility: string; version: number; status: string }>(
+                "SELECT visibility,version,status FROM memory_facts WHERE id=$1 AND child_id=$2 AND (visibility='family' OR created_by=$3) FOR SHARE",
+                [value.factId, childId, userId])).rows[0];
+              if (!fact || fact.version !== value.expectedVersion || fact.status === 'inactive') continue;
+              shared = fact.visibility === 'family';
+            }
+            if (value.kind === 'memory_fact' || value.kind === 'memory_fact_revise') {
+              const sourceId = value.sourceMessageId ?? target.row.source_message_id;
+              if (!sourceId || !(await client.query("SELECT 1 FROM chat_messages WHERE id=$1 AND owner_user_id=$2 AND author_user_id=$2 AND child_id=$3 AND role='user' FOR SHARE",
+                [sourceId, userId, childId])).rowCount) continue;
+            }
+            if (saved.shared !== shared) continue;
+            questions.push(saved.question);
+          } catch (error) {
+            if (error instanceof FamilyError && (error.status === 404 || error.status === 409)) continue;
+            throw error;
+          }
+        }
+        return questions;
+      });
     },
     async bindConfirmationQuestion(userId: string, childId: string, messageId: string) {
       return access(userId, childId, async client => {

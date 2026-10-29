@@ -4,12 +4,14 @@ import { FinishReason } from "@google/genai";
 import { createAgentRuntime } from "../server/agent-runtime.ts";
 import { createProductAgent } from "../server/product-agent.ts";
 import { readAiConfig } from "../server/ai-config.ts";
+import { AGENT_CONFIRMATION_PENDING_TEXT } from "../server/agent-work-tool-descriptions.ts";
 import type { ProductAgentResult, AgentProposal } from "../src/shared/product-agent.ts";
 
 test("product reply uses native tools, keeps proposals unconfirmed, validates display and reuses the persisted run", async () => {
   const runId = "d4a1b662-d13d-476b-bf52-40a28aa1a1a7", childId = "1ebcb39d-a2db-4b8c-a432-7ffcb3de5808";
   const messageId = "7de5a0e8-e106-4485-b7d2-3b572741da39", userId = "synthetic-user";
   const scope = { userId, childId, workspaceId: "synthetic-workspace", authorizationVersion: "1", dataVersion: "epoch:1" };
+  let confirmationPrepared = false;
   let claimed = false, calls = 0, writes = 0, saved: ProductAgentResult | null = null;
   const proposals: AgentProposal[] = [];
   const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
@@ -36,6 +38,8 @@ test("product reply uses native tools, keeps proposals unconfirmed, validates di
           status: "pending", createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 86400000).toISOString(), value, result: null, targetLabel: null };
         proposals.push(proposal); return proposal;
       },
+      requestConfirmation: async () => { confirmationPrepared = true; return { question: "確認記住站內查看偏好？" }; },
+      confirmationQuestions: async () => confirmationPrepared ? ["確認記住站內查看偏好？"] : [],
       finish: async (_scope: unknown, result: ProductAgentResult) => { saved = { ...result, proposals }; return true; },
       get: async () => saved,
     },
@@ -49,7 +53,8 @@ test("product reply uses native tools, keeps proposals unconfirmed, validates di
   const service = createProductAgent(options);
   const first = await service.reply(userId, childId, messageId, async () => true);
   assert.equal(first?.status, "completed", JSON.stringify(first));
-  assert.equal(first.text, "已保存私人候選，尚待你確認。");
+  assert.equal(first.text, AGENT_CONFIRMATION_PENDING_TEXT);
+  assert.equal(confirmationPrepared, true);
   assert.equal(first.proposals[0].status, "pending");
   assert.equal(first.proposals[0].result, null);
   assert.equal(first.provenance?.recipeId, "product-interactive");
@@ -146,21 +151,31 @@ for (const growth of [false, true]) test(growth
   const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
     usage: { reserve: async () => true, record: async () => {} },
     provider: { generate: async request => {
+      const user = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? "").join("\n");
+      assert.ok(!user.startsWith("Server evidence payload for chat-delivery-review."),
+        "An ordinary background reply and Server-substituted growth wording need no blanket reviewer");
       const toolNames = Object.keys(request.toolsDict).sort();
-      assert.deepEqual(toolNames, ["present_answer", "read_context", "read_knowledge_context", "search_knowledge"]);
+      // A rejected care draft establishes the same run's review reserve. Its last
+      // generator turn is restricted to presentation, even for background recipes.
+      assert.deepEqual(toolNames, growth && calls === 2 ? ["present_answer"]
+        : ["present_answer", "read_context", "read_knowledge_context", "search_knowledge"]);
       assert.ok(!toolNames.some(name => /^(?:propose_|save_|revise_|change_|create_|execute_|stage_|contact_)/u.test(name)));
       for (const name of ["search_history", "read_history", "read_private_instructions", "read_private_source", "list_private_sources"])
         assert.ok(!toolNames.includes(name));
       const index = calls++;
-      if (index === 1) {
+      if (growth && index === 1) {
         const response = request.contents.flatMap(content => content.parts ?? []).find(part => part.functionResponse)?.functionResponse?.response;
         assert.equal(response?.status, "rejected");
         const data = response?.data as Record<string, unknown> | undefined;
-        assert.deepEqual(data && { code: data.code, nextAction: data.nextAction, citationField: data.citationField },
-          { code: "citation_required", citationField: undefined,
-            nextAction: "Each caregiving or safety paragraph needs supporting official citationIds. Omit unsupported advice; report operation receipts separately from advice. Do not attach irrelevant citations." });
+        assert.equal(data?.code, "citation_required");
+        assert.equal(data?.citationField, undefined);
+        assert.match(String(data?.nextAction), /supporting official citationIds/u);
+        assert.match(String(data?.nextAction), /do not invent citations or relabel advice/u);
       }
-      const functionCall = index === 0 ? { id: "invalid-source", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: "未有有效引用的合成建議", citationIds: ["source-metadata-id"] }] } }
+      const functionCall = !growth ? (index === 0 ? { id: "context-call", name: "read_context", args: {} }
+        : { id: "answer-call", name: "present_answer", args: { kind: "record_restatement",
+          paragraphs: [{ text: "任務已到期，完成狀態仍待你確認。", citationIds: [] }] } })
+        : index === 0 ? { id: "invalid-source", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: "未有有效引用的合成建議", citationIds: ["source-metadata-id"] }] } }
         : index === 1 ? (growth ? { id: "search-call", name: "search_knowledge", args: {
           query: "約六個月加固", classification: "official_guidance" } } : { id: "context-call", name: "read_context", args: {} })
         : index === 2 ? { id: "answer-call", name: "present_answer", args: { kind: "record_restatement",
@@ -191,5 +206,5 @@ for (const growth of [false, true]) test(growth
   assert.equal(result?.status, "completed", JSON.stringify(result));
   assert.equal(result.provenance?.recipeId, "product-background");
   assert.equal(result.text, growth ? chunk.text + " [1]" : "任務已到期，完成狀態仍待你確認。");
-  assert.equal(reads, 1); assert.equal(calls, 3); assert.deepEqual(result.proposals, []);
+  assert.equal(reads, 1); assert.equal(calls, growth ? 3 : 2); assert.deepEqual(result.proposals, []);
 });
