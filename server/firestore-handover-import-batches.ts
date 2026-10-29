@@ -12,6 +12,7 @@ import { importBatchRequestSchema, importBatchSchema, importBatchControlSchema, 
   importBatchMetadata, importBatchControlMetadata, validImportBatch, type HandoverImportBatch as Batch,
   type HandoverImportBatchControl, type HandoverImportBatchRequest } from './handover-import-batch-records.ts';
 import type { HandoverImportRow } from './handover-import.ts';
+import { attachmentSupplementModule, type HandoverAttachmentPorts } from './firestore-handover-attachments.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
 
@@ -24,6 +25,7 @@ const listCursorSchema = z.object({ scope: z.string().regex(/^[a-f0-9]{64}$/u), 
 
 /** Internal verified-package coordinator. Public clients never supply verified rows, counts or worker leases. */
 export function createFirestoreHandoverImportBatches(options: FirestoreDomainOptions & { serverClock?: () => number;
+  attachments?: HandoverAttachmentPorts;
   sourceGuard?: (b: Binding, request: HandoverImportBatchRequest) => Promise<() => void> }) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), sharing = createFirestoreSharingStore(options);
   const items = createFirestoreHandoverImportItems(options), clock = options.serverClock ?? Date.now;
@@ -178,21 +180,23 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
       });
     },
     async apply(work: FirestoreBackgroundWork, input: { position: number; cursor: string | null; nextCursor: string | null; row: HandoverImportRow;
-      documentContent?: import('./family-document-transfer.ts').DocumentTransferContent | null }) {
+      documentContent?: import('./family-document-transfer.ts').DocumentTransferContent | null;
+      attachmentContent?: import('./handover-import.ts').HandoverAttachmentContent | null }, signal?: AbortSignal) {
       const step = domainParse(stepSchema, { position: input.position, cursor: input.cursor, nextCursor: input.nextCursor });
       const owner = work.scope.ownerUserId, job = await authority.runTransaction(owner, null, b => read(b, work.resourceId));
       const index = job.request.targets.findIndex(target => target.sourceChildId === input.row.childId), selected = job.request.targets[index];
-      const resourceSection = domainParse(handoverImportResourceSectionSchema, historyModule(input.row.section) ?? input.row.section, 'invalid_package_scope', 400);
+      const resourceSection = domainParse(handoverImportResourceSectionSchema, historyModule(input.row.section) ?? attachmentSupplementModule(input.row.section) ?? input.row.section, 'invalid_package_scope', 400);
       if (!selected || !selected.sections.includes(handoverImportModuleOf(resourceSection))) domainReject('invalid_package_scope', 400);
       const { path, rowIndex, ...source } = input.row.source;
       if (firestoreDomainHash(source) !== firestoreDomainHash(job.request.source)) domainReject('invalid_package_scope', 400);
       const opId = firestoreBackgroundReference({ id: firestoreDomainHash(['handover-import-row', owner, job.id, path, rowIndex]) });
       const resolution = job.request.resolutions.find(row => row.sourceChildId === input.row.childId && row.section === input.row.section
-        && row.resourceId === (input.row.value.id ?? input.row.value.childId))?.resolution ?? { mode: 'preserve' as const };
+        && row.resourceId === (input.row.section === 'child_avatar' ? input.row.childId : input.row.value.id ?? input.row.value.childId))?.resolution ?? { mode: 'preserve' as const };
       let committed: Batch | undefined;
       const item = await items.apply(owner, { opId, batchId: job.id, target: selected.target, row: input.row,
         integrity: job.request.integrity, resolution,
-        ...(input.documentContent === undefined ? {} : { documentContent: input.documentContent }) }, async (actor, target) => {
+        ...(input.documentContent === undefined ? {} : { documentContent: input.documentContent }),
+        ...(input.attachmentContent === undefined ? {} : { attachmentContent: input.attachmentContent }) }, async (actor, target) => {
         const latest = await read(actor, job.id), assertCurrentLease = await held(actor, work, latest);
         const assertSource = await options.sourceGuard?.(actor, latest.request);
         if (latest.state !== 'running' || !latest.claim || latest.claim.token !== work.lease?.token || latest.claim.workId !== work.id) domainReject('import_batch_stopped');
@@ -200,18 +204,19 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
         if (latest.position !== step.position || latest.cursor !== step.cursor) domainReject('import_cursor_changed');
         const position = latest.position + 1, completed = position === latest.request.totalItems;
         if (position > latest.request.totalItems || completed !== (step.nextCursor === null)) domainReject('import_coverage_changed');
-        return (result, repeated) => {
+        const assertCurrent = () => { assertCurrentLease(); assertSource?.(); signal?.throwIfAborted(); };
+        return { assertCurrent, sealProgress: (result, repeated) => {
           // A prior row receipt implies its progress committed too; never count a replay at another position.
           if (repeated) domainReject('import_cursor_changed');
           // Domain preparation awaited reads after held(); reject expiration before any domain write.
-          assertCurrentLease(); assertSource?.();
+          assertCurrent();
           const next: Batch = { ...latest, version: latest.version + 1, position, cursor: step.nextCursor, updatedAt: at(),
             state: completed ? 'completed' : 'running', claim: completed ? null : latest.claim,
             counts: { ...latest.counts, [result.outcome]: latest.counts[result.outcome] + 1 } };
           const save = prepareSave(actor, next);
           return () => { save(); committed = next; };
-        };
-      });
+        } };
+      }, signal);
       return { item, batch: committed! };
     },
     async fail(work: FirestoreBackgroundWork, code: string) {

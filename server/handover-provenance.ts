@@ -17,14 +17,16 @@ export function importConfirmationActor(value: { confirmationBasis?: string; con
 /** Called with a server-verified row, after destination authorization, never with a client-supplied approval. */
 export function makeImportProvenance(row: HandoverImportRow, integrity: HandoverIntegrity, importedBy: string, importedAt: string): ImportProvenance {
   const value = row.value;
-  if (value.childId !== row.childId) throw new HandoverArchiveError('invalid_package_scope');
+  if (row.section === 'child_avatar' ? !value.target || typeof value.target !== 'object'
+    || (value.target as { kind?: unknown; childId?: unknown }).kind !== 'child'
+    || (value.target as { childId?: unknown }).childId !== row.childId : value.childId !== row.childId) throw new HandoverArchiveError('invalid_package_scope');
   const previous = value.importedFrom === undefined ? null : importProvenanceSchema.safeParse(value.importedFrom);
   if (previous && !previous.success) throw new HandoverArchiveError('invalid_package_data');
   const chain = previous?.success ? [previous.data.current, ...previous.data.previous] : [];
   const identities = new Set<string>();
   const result = importProvenanceSchema.safeParse({ current: {
     source: { serverId: row.source.serverId, accountId: row.source.accountId, childId: row.childId,
-      section: row.section, resourceId: row.section === 'profile' || row.section === 'visit_preparation' ? row.childId : value.id, resourceVersion: value.version,
+      section: row.section, resourceId: row.section === 'profile' || row.section === 'visit_preparation' || row.section === 'child_avatar' ? row.childId : value.id, resourceVersion: value.version,
       authorUserId: value.authorUserId ?? value.createdBy ?? value.updatedBy ?? null, createdAt: value.createdAt ?? value.updatedAt ?? null,
       confirmedBy: value.confirmedBy ?? null, confirmedAt: value.confirmedAt ?? null,
       confirmationBasis: value.confirmationBasis ?? null, assigneeUserId: value.assigneeUserId ?? null,

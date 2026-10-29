@@ -31,7 +31,7 @@ export const chatFileLinkInputSchema = z.object({ id: z.uuid(), expectedVersion:
 
 /** Metadata only; opaque videos remain files, not a new media capability. */
 export const chatFileAttachmentPageSchema = z.object({
-  items: z.array(chatFileAttachmentSchema.refine(value => value.state === 'ready' && (value.sharedSpaceId ? value.messageId === null : value.messageId !== null)
+  items: z.array(chatFileAttachmentSchema.refine(value => value.state === 'ready' && (!value.sharedSpaceId || value.messageId === null)
     && value.fileName !== null && value.mimeType !== null && value.bytes !== null && value.sha256 !== null))
     .max(ATTACHMENT_LIST_BOUNDS.maxLimit), ...attachmentListPageFields,
 }).strict().refine(consistentAttachmentPage);

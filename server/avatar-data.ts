@@ -4,6 +4,8 @@ import { AVATAR_VERSION_MAX, avatarAssetSchema, avatarCropSchema, avatarTargetSc
 import { avatarAdmissionSchema, avatarRecipeSchema, avatarPolicyId } from './avatar-config.ts';
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { firestoreDomainHash } from './firestore-domain-data.ts';
+import { attachmentImportStageSchema } from './handover-attachment-stage.ts';
+import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
 
 export const AVATAR_NIL = '00000000-0000-0000-0000-000000000000';
 const uuid = z.uuid(), hash = z.string().regex(/^[a-f0-9]{64}$/u), at = z.iso.datetime({ offset: true });
@@ -44,7 +46,9 @@ export const avatarUploadRecordSchema = z.object({
   state: z.enum(['reserved', 'processing', 'ready', 'committed', 'rejected', 'expired']), lease: avatarLeaseSchema.nullable(),
   preparedAsset: avatarAssetSchema.nullable(), descriptor: avatarObjectDescriptorSchema.nullable(), committedVersion: version.min(1).nullable(),
   errorCode: z.string().regex(/^[a-z_]{1,80}$/u).nullable(),
+  importStage: attachmentImportStageSchema.optional(),
 }).strict().refine(value => value.policyId === avatarPolicyId(value.recipe)
+  && (!value.importStage || value.binding.target.kind === 'child' && value.importStage.actorUserId === value.actorUserId)
   && value.crop.zoom <= value.recipe.maxCropZoom && value.bytes <= value.admission.maxInputBytes
   && (value.preparedAsset === null || value.preparedAsset.id === value.assetId)
   && (value.descriptor === null || value.descriptor.asset.id === value.assetId
@@ -79,9 +83,11 @@ export type AvatarCleanupRecord = z.infer<typeof avatarCleanupRecordSchema>;
 export const avatarHeadRecordSchema = z.object({
   binding: avatarBindingSchema, version, descriptor: avatarObjectDescriptorSchema.nullable(), updatedAt: at.nullable(),
   reservationNonce: uuid, erasedThroughVersion: version.nullable(),
+  importedFrom: importProvenanceSchema.optional(),
   removal: z.object({ intent: firebaseAvatarErasureIntentSchema, journal: firebaseErasureDescriptorSchema.nullable(),
     expectedVersion: version.max(AVATAR_VERSION_MAX - 1), state: z.enum(['pending', 'confirmed']) }).strict().nullable(),
 }).strict().refine(value => (value.version !== 0 || value.descriptor === null && value.updatedAt === null)
+  && (!value.importedFrom || value.binding.target.kind === 'child' && value.importedFrom.current.source.section === 'child_avatar')
   && (value.version === 0 || value.updatedAt !== null)
   && (value.erasedThroughVersion === null || value.erasedThroughVersion < value.version)
   && (value.removal === null || value.removal.intent.avatar.targetKind === value.binding.target.kind

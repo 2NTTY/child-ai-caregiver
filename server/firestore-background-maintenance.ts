@@ -27,7 +27,7 @@ import type { createHandoverService } from './handover-service.ts';
 import type { createHandoverUploadService } from './handover-upload-service.ts';
 import { handoverUploadRecordSchema, handoverUploadId, validHandoverUpload } from './handover-upload-records.ts';
 
-const stages = ['documents', 'work_watches', 'photo_cleanup', 'erasures', 'content_erasures', 'context_versions', 'voice_assets', 'chat_file_assets', 'avatar_cleanup', 'handover_exports', 'handover_uploads'] as const;
+const stages = ['documents', 'work_watches', 'photo_imports', 'photo_cleanup', 'erasures', 'content_erasures', 'context_versions', 'voice_assets', 'chat_file_assets', 'avatar_cleanup', 'handover_exports', 'handover_uploads'] as const;
 const cursorSchema = z.object({ after: z.record(z.string(), z.string().nullable()), complete: z.array(z.string()),
   minute: z.number().int(), token: z.uuid().nullable(), until: z.number().int().nonnegative() }).strict();
 const empty = () => ({ after: {} as Record<string, string | null>, complete: [] as string[], minute: -1, token: null as string | null, until: 0 });
@@ -48,7 +48,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
   handover?: Pick<ReturnType<typeof createHandoverService>, 'cleanup'>;
   handoverUploads?: Pick<ReturnType<typeof createHandoverUploadService>, 'cleanup'>;
   enabled: boolean; knowledge: FirestoreKnowledgeRefresh;
-  photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'cleanupDeleted'>;
+  photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'cleanupDeleted'> & Partial<Pick<ReturnType<typeof createFirestorePhotoStore>, 'expireImport'>>;
   erasures: FirestoreErasureStore; cleanup: ReturnType<typeof createFirestoreErasureCleanup>;
 }) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), fetcher = createKnowledgeSourceFetcher();
@@ -204,7 +204,8 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       state.after[key] = rows.docs.at(-1)?.id ?? null; if (rows.size < 5) state.complete.push(key); scanned += rows.size;
     }
     for (const stage of stages) {
-      let q: Query = data.collection(stage).orderBy(FieldPath.documentId()).limit(5);
+      let q: Query = data.collection(stage === 'photo_imports' ? 'photos' : stage).orderBy(FieldPath.documentId()).limit(5);
+      if (stage === 'photo_imports') q = q.where('importPending', '==', true);
       if (stage === 'voice_assets' || stage === 'chat_file_assets') q = q.where('cleanupState','in',['pending','unlinked']);
       if (stage === 'avatar_cleanup') q = q.where('complete', '==', false);
       if (stage === 'handover_exports' || stage === 'handover_uploads') q = q.where('cleaned', '==', false);
@@ -215,6 +216,11 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       if (state.after[stage]) q = q.startAfter(state.after[stage]);
       const rows = await q.get();
       for (const row of rows.docs) {
+        if (stage === 'photo_imports') {
+          if (!options.photos.expireImport) domainReject('photo_cleanup_unavailable', 503);
+          const photo = open(row, 'photo', firestorePhotoSchemas.photo).value;
+          await options.photos.expireImport(photo.scope, photo.id); scanned++; continue;
+        }
         if (stage === 'content_erasures') {
           if (!options.journal) domainReject('content_journal_unavailable', 503);
           await createFirestoreContentErasure({ ...options, journal: options.journal }).advance(row); scanned++; continue;

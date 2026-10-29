@@ -4,6 +4,11 @@ import { HANDOVER_SECTIONS, handoverSelectionSchema } from '../src/shared/handov
 import { HandoverArchiveError, handoverLimits, openHandoverArchive } from './handover-archive.ts';
 import { familyDocumentTransferSchema, documentTransferVersionSchema, documentTransferContentSchema, type DocumentTransferContent } from './family-document-transfer.ts';
 import { canonicalJson } from './online-routing.ts';
+import { photoMetadataSchema } from '../src/shared/photos.ts';
+import { voiceAttachmentSchema, voiceFileMetadataSchema } from '../src/shared/voice.ts';
+import { chatFileAttachmentSchema, chatFileMetadataSchema } from '../src/shared/chat-files.ts';
+import { avatarStateSchema, avatarTargetSchema, avatarAssetSchema } from '../src/shared/avatars.ts';
+import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/u), uuid = z.uuid();
 const selectionSchema = z.object({ childIds: handoverSelectionSchema.shape.childIds, modules: handoverSelectionSchema.shape.modules }).strict()
@@ -17,6 +22,30 @@ const pageSchema = z.object({ section: z.string().min(1).max(80), childId: uuid.
 type DataPage = z.infer<typeof pageSchema>;
 type PageIndex = { path: string; section: string; childId: string | null; items: number };
 const contentSections = new Set(['photo_content', 'voice_content', 'file_content', 'child_avatar_content']);
+const attachmentSections = { photos: ['photo_content', 'photoId'], voices: ['voice_content', 'voiceId'], files: ['file_content', 'fileId'],
+  child_avatar: ['child_avatar_content', 'childId'] } as const;
+export type AttachmentSection = keyof typeof attachmentSections;
+export interface HandoverAttachmentContent {
+  section: string; sourceId: string; sourceVersion: number; attachmentPath: string; mimeType: string; bytes: number; sha256: string; content: Buffer;
+}
+const attachmentReferenceSchema = z.object({ attachmentPath: z.string(), bytes: z.number().int().nonnegative(), sha256: hash,
+  mimeType: z.string().min(1).max(200) });
+type AttachmentReference = z.infer<typeof attachmentReferenceSchema>;
+const positiveVersion = z.number().int().positive();
+const retainedProvenance = { importedFrom: importProvenanceSchema.optional() };
+export const voiceTransferSchema = voiceAttachmentSchema.extend(retainedProvenance);
+export const fileTransferSchema = chatFileAttachmentSchema.extend(retainedProvenance);
+const { canManage: ignoredAvatarCapability, ...avatarTransferFields } = avatarStateSchema.shape;
+export const avatarTransferSchema = z.object({ ...avatarTransferFields, ...retainedProvenance }).strict()
+  .refine(({ importedFrom, ...state }) => avatarStateSchema.safeParse({ ...state, canManage: false }).success);
+export const photoTransferSchema = z.object({ id: uuid, childId: uuid, version: positiveVersion, state: z.enum(['reserved', 'ready']), metadata: photoMetadataSchema,
+  ...retainedProvenance }).passthrough();
+const attachmentContentSchemas = {
+  photos: attachmentReferenceSchema.extend({ photoId: uuid, version: positiveVersion }).strict(),
+  voices: attachmentReferenceSchema.extend({ voiceId: uuid, version: positiveVersion }).strict(),
+  files: attachmentReferenceSchema.extend({ fileId: uuid, version: positiveVersion }).strict(),
+  child_avatar: attachmentReferenceSchema.extend({ target: avatarTargetSchema, version: z.number().int().nonnegative(), asset: avatarAssetSchema }).strict(),
+};
 const moduleBySection = new Map<string, keyof typeof HANDOVER_SECTIONS>(Object.entries(HANDOVER_SECTIONS)
   .flatMap(([module, sections]) => sections.map(section => [section, module as keyof typeof HANDOVER_SECTIONS] as const)));
 const sectionFilterSchema = z.array(z.string().min(1).max(80)).min(1).max(moduleBySection.size)
@@ -50,6 +79,9 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
   const pages: PageIndex[] = [], children: { id: string; displayName: string }[] = [];
   const attachments = new Map<string, { childId: string; mimeType: string; bytes: number }>();
   const documentRows = new Set<string>(), documentContent = new Map<string, { path: string; rowIndex: number } | null>();
+  const attachmentRows = new Set<string>(), attachmentContent = new Map<string, Map<string, { path: string; rowIndex: number } | null>>();
+  const attachmentIdentity = (childId: string, section: AttachmentSection, id: string) => JSON.stringify([childId, section, id]);
+  const attachmentVersion = (version: unknown, assetId: unknown = null) => JSON.stringify([typeof version === 'number' ? version : null, typeof assetId === 'string' ? assetId : null]);
   const documentIdentity = (childId: string, documentId: string, snapshotId: string, version: number) => JSON.stringify([childId, documentId, snapshotId, version]);
   const documentRowBinding = (section: string, childId: string | null, path: string, rowIndex: number, value: Record<string, unknown>) =>
     createHash('sha256').update(canonicalJson({ section, childId, path, rowIndex, value })).digest('hex');
@@ -86,19 +118,26 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
         // Index only identities and locators. Document business validation remains on demand.
         if (page.section === 'documents' || page.section === 'document_versions')
           documentRows.add(documentRowBinding(page.section, page.childId, entry.path, rowIndex, row));
+        if (Object.hasOwn(attachmentSections, page.section)) attachmentRows.add(documentRowBinding(page.section, page.childId, entry.path, rowIndex, row));
         if (page.section === 'document_content' && typeof row.documentId === 'string' && typeof row.snapshotId === 'string'
           && typeof row.snapshotVersion === 'number') {
           const identity = documentIdentity(page.childId!, row.documentId, row.snapshotId, row.snapshotVersion);
           documentContent.set(identity, documentContent.has(identity) ? null : { path: entry.path, rowIndex });
         }
         if (contentSections.has(page.section)) {
-          const ref = parse(z.object({ attachmentPath: z.string(), bytes: z.number().int().nonnegative(), sha256: hash,
-            mimeType: z.string().min(1).max(200) }), row, 'invalid_package_attachment');
+          const ref = parse(attachmentReferenceSchema, row, 'invalid_package_attachment');
           const actual = entries.get(ref.attachmentPath);
           if (!ref.attachmentPath.startsWith('attachments/') || !ref.attachmentPath.endsWith('.bin') || !actual
             || actual.bytes !== ref.bytes || actual.sha256 !== ref.sha256 || actual.mediaType !== ref.mimeType
             || attachments.has(ref.attachmentPath)) fail('invalid_package_attachment');
           attachments.set(ref.attachmentPath, { childId: page.childId!, mimeType: ref.mimeType, bytes: ref.bytes });
+          const section = (Object.keys(attachmentSections) as AttachmentSection[]).find(section => attachmentSections[section][0] === page.section)!;
+          const id = section === 'child_avatar' ? page.childId : row[attachmentSections[section][1]];
+          if (typeof id === 'string') {
+            const identity = attachmentIdentity(page.childId!, section, id), versions = attachmentContent.get(identity) ?? new Map<string, { path: string; rowIndex: number } | null>();
+            const version = attachmentVersion(row.version, section === 'child_avatar' && object(row.asset) ? row.asset.id : null);
+            versions.set(version, versions.has(version) ? null : { path: entry.path, rowIndex }); attachmentContent.set(identity, versions);
+          }
         } else if (Object.hasOwn(row, 'attachmentPath')) fail('invalid_package_attachment');
       }
       pages.push({ path: entry.path, section: page.section, childId: page.childId, items: page.items.length });
@@ -121,8 +160,64 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
         && selection.modules.includes(moduleBySection.get(page.section)!) && (sections === undefined || sections.includes(page.section));
       return { selection, selectionHash, allows };
     }
+    async function readAttachment(path: string, selection: HandoverImportSelection, acknowledgedManifestSha256?: string) {
+      const allowed = select(selection, acknowledgedManifestSha256).selection, ref = attachments.get(path);
+      if (!ref || !allowed.modules.includes('attachments') || !allowed.childIds.includes(ref.childId)) fail('package_scope_unavailable');
+      return { ...ref, content: await archive.readEntry(path, ref.bytes) };
+    }
     return {
       manifest: structuredClone(manifest), manifestSha256, integrity, children: structuredClone(children), close: archive.close,
+      async readAttachmentContent(row: HandoverImportRow, acknowledgedManifestSha256?: string): Promise<HandoverAttachmentContent | null> {
+        if (!Object.hasOwn(attachmentSections, row.section) || !row.childId) fail('invalid_package_scope');
+        const section = row.section as AttachmentSection;
+        select({ childIds: [row.childId], modules: ['attachments'] }, acknowledgedManifestSha256, [section]);
+        const source = row.source;
+        if (source.serverId !== manifest.source.serverId || source.accountId !== manifest.source.accountId || source.packageId !== manifest.packageId
+          || source.packageVersion !== manifest.packageVersion || source.manifestSha256 !== manifestSha256
+          || !attachmentRows.has(documentRowBinding(section, row.childId, source.path, source.rowIndex, row.value))) fail('invalid_package_scope');
+        let sourceId: string, sourceVersion: number, ready: boolean, metadata: { mimeType: string; bytes: number; sha256: string } | null = null;
+        let asset: z.infer<typeof avatarAssetSchema> | null = null;
+        if (section === 'child_avatar') {
+          const head = parse(avatarTransferSchema, row.value, 'invalid_package_attachment_metadata');
+          if (head.target.kind !== 'child' || head.target.childId !== row.childId) fail('invalid_package_scope');
+          sourceId = head.target.childId; sourceVersion = head.version; asset = head.asset; ready = asset !== null; metadata = asset;
+        } else if (section === 'photos') {
+          const photo = parse(photoTransferSchema, row.value, 'invalid_package_attachment_metadata');
+          if (photo.childId !== row.childId) fail('invalid_package_scope');
+          sourceId = photo.id; sourceVersion = photo.version; ready = photo.state === 'ready'; metadata = photo.metadata;
+        } else if (section === 'voices') {
+          const voice = parse(voiceTransferSchema, row.value, 'invalid_package_attachment_metadata');
+          if (voice.childId !== row.childId) fail('invalid_package_scope');
+          if (!['ready', 'reserved', 'uploading', 'unknown'].includes(voice.state)) fail('invalid_package_attachment_metadata');
+          sourceId = voice.id; sourceVersion = voice.version; ready = voice.state === 'ready';
+          if (ready) metadata = parse(voiceFileMetadataSchema, { mimeType: voice.mimeType, bytes: voice.bytes, sha256: voice.sha256, durationMs: voice.durationMs }, 'invalid_package_attachment_metadata');
+        } else {
+          const file = parse(fileTransferSchema, row.value, 'invalid_package_attachment_metadata');
+          if (file.childId !== row.childId) fail('invalid_package_scope');
+          if (!['ready', 'reserved', 'uploading', 'unknown'].includes(file.state)) fail('invalid_package_attachment_metadata');
+          sourceId = file.id; sourceVersion = file.version; ready = file.state === 'ready';
+          if (ready) metadata = parse(chatFileMetadataSchema, { mimeType: file.mimeType, bytes: file.bytes, sha256: file.sha256 }, 'invalid_package_attachment_metadata');
+        }
+        const versions = attachmentContent.get(attachmentIdentity(row.childId, section, sourceId));
+        if (!ready) { if (versions?.size) fail('package_attachment_content_unexpected'); return null; }
+        if (!versions) fail('package_attachment_content_missing');
+        if (versions.size !== 1) fail('package_attachment_content_mismatch');
+        const location = versions.get(attachmentVersion(sourceVersion, asset?.id));
+        if (location === undefined) fail('package_attachment_content_mismatch');
+        if (location === null) fail('package_attachment_content_duplicate');
+        const page = await read(location.path), value = page.items[location.rowIndex];
+        if (page.section !== attachmentSections[section][0] || page.childId !== row.childId) fail('invalid_package_scope');
+        const ref = parse(attachmentContentSchemas[section] as z.ZodType<AttachmentReference>, value, 'invalid_package_attachment_content');
+        if (ref.bytes !== metadata!.bytes || ref.mimeType !== metadata!.mimeType || ref.sha256 !== metadata!.sha256 || value.version !== sourceVersion
+          || (section === 'child_avatar' ? !object(value.target) || value.target.kind !== 'child' || value.target.childId !== row.childId
+            || canonicalJson(value.asset) !== canonicalJson(asset) : value[attachmentSections[section][1]] !== sourceId)) fail('package_attachment_content_mismatch');
+        const result = await readAttachment(ref.attachmentPath, { childIds: [row.childId], modules: ['attachments'] }, acknowledgedManifestSha256);
+        if (result.content.length !== metadata!.bytes || createHash('sha256').update(result.content).digest('hex') !== metadata!.sha256) {
+          result.content.fill(0); fail('package_attachment_content_mismatch');
+        }
+        const { attachmentPath, mimeType, bytes, sha256 } = ref;
+        return { section, sourceId, sourceVersion, attachmentPath, mimeType, bytes, sha256, content: result.content };
+      },
       async readDocumentContent(row: HandoverImportRow, acknowledgedManifestSha256?: string): Promise<DocumentTransferContent | null> {
         if ((row.section !== 'documents' && row.section !== 'document_versions') || !row.childId) fail('invalid_package_scope');
         select({ childIds: [row.childId], modules: ['documents'] }, acknowledgedManifestSha256, [row.section]);
@@ -166,11 +261,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
         }
         return { rows, nextCursor: null };
       },
-      async readAttachment(path: string, selection: HandoverImportSelection, acknowledgedManifestSha256?: string) {
-        const allowed = select(selection, acknowledgedManifestSha256).selection, ref = attachments.get(path);
-        if (!ref || !allowed.modules.includes('attachments') || !allowed.childIds.includes(ref.childId)) fail('package_scope_unavailable');
-        return { ...ref, content: await archive.readEntry(path, ref.bytes) };
-      },
+      readAttachment,
     };
   } catch (error) { await archive.close(); throw error; }
 }

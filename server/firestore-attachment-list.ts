@@ -23,7 +23,7 @@ const same = (a: unknown, b: unknown) => firestoreDomainHash(a) === firestoreDom
 const changed = (): never => domainReject('attachment_scope_changed', 409);
 
 /** Only the two existing private media stores use this bounded metadata reader. No object or model calls. */
-export function createPrivateAttachmentList<Row extends { id: string; createdAt: string; state: string; messageId: string | null }, Item>(options: {
+export function createPrivateAttachmentList<Row extends { id: string; createdAt: string; state: string; messageId: string | null; importedFrom?: unknown }, Item>(options: {
   data: FirestoreDomainData; authority: Pick<FirestoreAuthority, 'runTransaction'>; source: Source;
   policy?: AttachmentListPolicy; scopeTag(scope: WorkRecoveryScope): string;
   open(snapshot: DocumentSnapshot, scope: WorkRecoveryScope, id: string): Row; view(row: Row, binding: FirestoreAuthorityTransaction): Item;
@@ -47,12 +47,13 @@ export function createPrivateAttachmentList<Row extends { id: string; createdAt:
   }
   return async (userId: string, childId: string, raw: AttachmentListQuery = {}) => {
     const queryInput = domainParse(attachmentListQuerySchema, raw), cursor = decode(queryInput.cursor);
+    const filter = queryInput.includeImported ? 'ready_linked_or_imported' : FILTER;
     const limit = queryInput.limit ?? policy.defaultLimit;
     if (limit > policy.maxLimit) domainReject('invalid_input', 400);
     const result = await authority.runTransaction(userId, childId, async b => {
       const initial = fence(b);
       if (cursor && (cursor.sourceVersion !== SOURCE_VERSION || cursor.source !== source || cursor.sort !== SORT
-        || cursor.filter !== FILTER || !same(cursor.fence, initial))) changed();
+        || cursor.filter !== filter || !same(cursor.fence, initial))) changed();
       let query = data.collection(collection).where('scopeTag', '==', options.scopeTag(b.scope)).where('state', '==', 'ready')
         .orderBy('createdAt', 'desc').orderBy('assetId', 'desc');
       if (cursor) query = query.startAfter(cursor.after.createdAt, cursor.after.id);
@@ -67,11 +68,11 @@ export function createPrivateAttachmentList<Row extends { id: string; createdAt:
         if (row.state !== 'ready' || doc.get('state') !== row.state || doc.get('createdAt') !== row.createdAt || doc.get('assetId') !== row.id)
           domainReject('attachment_list_integrity', 503);
         scanned++; after = { createdAt: row.createdAt, id: row.id };
-        if (row.messageId !== null) items.push(options.view(row, b));
+        if (row.messageId !== null || queryInput.includeImported && row.importedFrom) items.push(options.view(row, b));
       }
       const complete = snapshot.docs.length <= scanned;
       const nextCursor = complete ? null : encode({ version: 1, sourceVersion: SOURCE_VERSION, source, sort: SORT,
-        filter: FILTER, fence: initial, after: after! });
+        filter, fence: initial, after: after! });
       return { initial, page: { items, nextCursor, complete, scanned, pagePolicy: { ...policy } } };
     });
     // A query transaction is not permission to publish after a revoke, restore, or identity change.
@@ -82,10 +83,12 @@ export function createPrivateAttachmentList<Row extends { id: string; createdAt:
 }
 
 export function attachmentListQuery(url: URL): AttachmentListQuery {
-  if ([...url.searchParams.keys()].some(key => !['cursor', 'limit'].includes(key))
-    || ['cursor', 'limit'].some(key => url.searchParams.getAll(key).length > 1)) domainReject('invalid_input', 400);
-  const rawLimit = url.searchParams.get('limit'), rawCursor = url.searchParams.get('cursor');
+  if ([...url.searchParams.keys()].some(key => !['cursor', 'limit', 'includeImported'].includes(key))
+    || ['cursor', 'limit', 'includeImported'].some(key => url.searchParams.getAll(key).length > 1)) domainReject('invalid_input', 400);
+  const rawLimit = url.searchParams.get('limit'), rawCursor = url.searchParams.get('cursor'), rawImported = url.searchParams.get('includeImported');
   if (rawLimit !== null && !/^[1-9][0-9]*$/u.test(rawLimit)) domainReject('invalid_input', 400);
+  if (rawImported !== null && !['true','false'].includes(rawImported)) domainReject('invalid_input',400);
   return domainParse(attachmentListQuerySchema, { ...(rawLimit !== null ? { limit: Number(rawLimit) } : {}),
+    ...(rawImported !== null ? { includeImported: rawImported === 'true' } : {}),
     ...(rawCursor !== null ? { cursor: rawCursor } : {}) });
 }

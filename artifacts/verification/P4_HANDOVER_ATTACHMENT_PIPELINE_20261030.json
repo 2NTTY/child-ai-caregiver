@@ -1,0 +1,45 @@
+{
+  "package": "P4-HANDOVER01 attachment batch and retained transcript integration",
+  "date": "2026-10-30",
+  "base": "6ce86a934b5dd4d9e00a4cf9f868ab2c76ff4059",
+  "foundation": "dd956e0e82a9b9bf62e43a2dae9085d63b2bac38",
+  "branch": "codex/p4-handover-chat-attachments",
+  "scope": [
+    "Existing archive upload/service/worker routes import metadata then content/transcript supplements",
+    "Original object I/O occurs outside Firestore transactions; final publication, mapping, receipt and progress are atomic",
+    "Lease, generation, permission, original operation, cancellation and version are rechecked before publication",
+    "Published unattached files and voice are opt-in library entries and use original shared read/deletion authority",
+    "Retained transcripts preserve source state and timestamps, do not replay transcription, and follow later local message linking"
+  ],
+  "checks": [
+    { "command": "node --experimental-test-module-mocks --test tests/handover-attachment-pipeline.test.ts", "result": "1 passed, six rows through the original service and worker; real encrypted object adapters over synthetic buckets; shared file/voice deletion and receipt retry", "evidence": "tmp/handover-attachment-shared-delete-green.log" },
+    { "command": "node --experimental-test-module-mocks --test tests/handover-attachment-batches.test.ts", "result": "Earlier 3/3 flows passed; subsequent changes checked only in affected selections below", "evidence": "tmp/handover-attachment-batches-green.log" },
+    { "command": "node --experimental-test-module-mocks --test --test-name-pattern=\"voice transcript|avatar import\" tests/handover-attachment-batches.test.ts", "result": "2 passed after shared transcript and avatar content provenance fixes", "evidence": "tmp/handover-attachment-review-green.log" },
+    { "command": "node --experimental-test-module-mocks --test --test-name-pattern=\"restored import|voice transcript\" tests/handover-attachment-batches.test.ts", "result": "2 passed; reservation ID remains stable across epochs and linking immutable bytes does not cause re-import conflicts", "evidence": "tmp/handover-attachment-recovery-green.log" },
+    { "command": "node --experimental-test-module-mocks --test tests/handover-import-batches.test.ts", "result": "1 passed for existing cancellation/progress fence compatibility", "evidence": "tmp/handover-batch-fence-regression.log" },
+    { "command": "node --experimental-test-module-mocks --test --test-name-pattern=\"verified attachment content locators\" tests/handover-import.test.ts", "result": "1 passed", "evidence": "tmp/handover-attachment-reader-final.log" },
+    { "command": "node --experimental-test-module-mocks --test tests/firestore-voice.test.ts", "result": "1 passed for original upload/chat/voice lifecycle compatibility", "evidence": "tmp/handover-voice-compatibility.log" },
+    { "command": "node tmp/check-attachment-final.cjs", "method": "tsconfig.server.json with seven changed implementation/test roots and their dependency graph", "result": "0 diagnostics", "evidence": "tmp/handover-attachment-final-types-fixed.log" }
+  ],
+  "failuresRetained": [
+    "New attachment module and transcript sections initially rejected by the old import schema; targeted red cases retained",
+    "Refined Zod avatar schema cannot use omit; preserve the original refinement through a transfer schema instead",
+    "Avatar content supplement lacked child target provenance; shared detached voice view rejected the retained transcript before import",
+    "Storage epoch was included in asset reservation identity; reproduced different IDs for the same restored operation",
+    "Local message linking increments metadata version and initially caused target_changed on identical imported bytes",
+    "Shared published detached attachments were readable but the original delete guard still returned not_found",
+    "Scoped typecheck found incomplete test row and literal MIME annotations; corrected fixture only"
+  ],
+  "review": [
+    "Main reviewed transaction fencing, actual worker pipeline and source identity; existing stores and object lifecycles reused",
+    "Independent Sol read-only reviews found avatar supplement, shared transcript and shared deletion defects; each reproduced and fixed with affected checks",
+    "Independent final incremental review accepted epoch-stable identity and immutable provenance handling"
+  ],
+  "limitations": [
+    "No deployment, cloud IAM/index contention, real model, notification, browser or device test",
+    "Synthetic coordinator epoch check is not a real disaster recovery; foundation restore-codec evidence is reused",
+    "Avatar image normalization uses the existing synthetic codec boundary, not a new image-quality claim",
+    "Frontend selectors, opt-in library/transcript client handling and imported private chat remain separate follow-up work",
+    "This is not full HANDOVER01, complete private backup or P4 completion; D/P3/P5 work is untouched"
+  ]
+}

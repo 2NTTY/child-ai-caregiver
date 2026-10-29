@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const text = z.string().min(1).max(256), time = z.iso.datetime({ offset: true });
-const sourceSchema = z.object({ serverId: text, accountId: text, childId: z.uuid(), section: z.enum(['care', 'profile', 'tasks', 'memory_facts', 'memory_topics', 'instructions', 'summary_history', 'private_sources', 'documents', 'visit_preparation']),
+const sourceSchema = z.object({ serverId: text, accountId: text, childId: z.uuid(), section: z.enum(['care', 'profile', 'tasks', 'memory_facts', 'memory_topics', 'instructions', 'summary_history', 'private_sources', 'documents', 'visit_preparation', 'files', 'voices', 'photos', 'child_avatar', 'chat']),
   resourceId: z.uuid(), resourceVersion: z.number().int().nonnegative().max(2147483647),
   authorUserId: text.nullable(), createdAt: time.nullable(), confirmedBy: text.nullable(), confirmedAt: time.nullable(),
   confirmationBasis: z.enum(['explicit', 'preauthorized_user_statement', 'imported_source']).nullable(),

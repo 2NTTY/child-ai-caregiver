@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-30）：[P4-HANDOVER01](#p4-handover01) 文件匯入共用畫面收束。**#382～#392 已合併未部署；記憶、私人來源及文件／準備單目前值、來源修訂、原 worker／逐項收據／映射均已接。當前 `codex/p4-handover-document-ui` 從 `edb2a999` 接通共用文件選擇、結果、原準備歷史與固定版正文 API；必要元件／owner、真 API 接點及自動撤權檢查通過，獨立 review 已收束，待提交合併。詳見[共用畫面證據](frontend/verification/P4_HANDOVER_DOCUMENT_UI_20261030.json)及[批次證據](artifacts/verification/P4_HANDOVER_DOCUMENT_PIPELINE_20261030.json)。其餘模組、差異、班級／期間、完整私人備份、簽章配置與原生大型包繼續待辦；單私人來源刪除的獨立還原重放留 S15。未部署、未作真雲端／設備驗收；不動 D PR，P3／P5 及既有待驗不計完成。
+**當前入口（2026-10-30）：[P4-HANDOVER01](#p4-handover01) 附件批次及共用接線。**#382～#393 已合併未部署。`codex/p4-handover-chat-attachments` 已接附件原服務暫存／發布、統一 worker、逐項收據與映射，以及原語音轉錄；真物件邊界的合成包完成保存／讀回／共享刪除，沒有重播轉錄。重啟查原物件，還原換世代保留原 ID，連聊天後不誤判 immutable 附件變更；證據見[本批](artifacts/verification/P4_HANDOVER_ATTACHMENT_PIPELINE_20261030.json)及[原暫存](artifacts/verification/P4_HANDOVER_ATTACHMENT_STAGING_20261030.json)。共用附件選項、library／轉錄 client 及私人聊天匯入仍待接，不宣稱整個模組已可用。下一步完成共用接點及原聊天來源／關聯；關注／成長、差異、班級／期間、完整私人備份、簽章配置與原生大型包保留。單私人來源刪除的獨立還原重放留 S15；未部署、未作真雲端／設備驗收，不動 D PR，P3／P5 及既有待驗不計完成。
 
 **已合併未部署：**#358 班級解散與 #359 待辦身份接線，[清理](artifacts/verification/P4_CLASS_ERASURE_20261028.json)及[提醒證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)不重跑。選其他成員、班級 Agent 與外部通知仍待接續，不借管理員 key、不改 D PR。整個 CLASS01／P4、P3／P5 的未完成項不變。
 

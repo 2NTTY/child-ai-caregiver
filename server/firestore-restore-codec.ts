@@ -156,7 +156,7 @@ const domainEnvelopeSchema = z.object({ format: z.literal('yuban-firestore-domai
 // messageSentAt is untrusted query metadata; operation restores rebuild it from authenticated content.
 const privateMetadata = new Set(['opId', 'batchId', 'section', 'outcome', 'targetId', 'targetVersion', 'entryId', 'managerTag', 'memberTag', 'sourceUserTag', 'active', 'spaceId', 'messageSentAt', 'targetTag', 'actorTag', 'uploadId', 'pending', 'complete', 'nextAttemptAt', 'summaryPending', 'cleanupState', 'cleanupAt', 'retryAt', 'updatedAt', 'workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey', 'stage',
   'historyId', 'module', 'currentBatch', 'lastMessageSortKey', 'teacherSpaceId', 'taskId', 'taskVersion', 'occurrenceId', 'documentId', 'status', 'autoRefresh', 'snapshotId', 'snapshotVersion', 'assetId', 'scopeTag',
-  'live', 'state', 'cleaned', 'dueAt', 'leaseUntil', 'dispatchId', 'dispatchRouting', 'entityId', 'entityVersion', 'historyFloor', 'messageId', 'visibility', 'validUntil', 'runId', 'triggerKind', 'workId', 'confirmationId', 'askingRunId', 'askMessageId', 'expiresAt', 'proposalId', 'authorizationVersion', 'receiptId', 'noteId', 'concernId', 'eventId', 'sequence', 'attentionId', 'id', 'dispatch', 'route', 'enabled', 'nextCheckAt', 'operationId', 'bindingId', 'deliveryId', 'challengeId', 'unresolved', 'requestId', 'attemptIds']);
+  'live', 'state', 'importPending', 'cleaned', 'dueAt', 'leaseUntil', 'dispatchId', 'dispatchRouting', 'entityId', 'entityVersion', 'historyFloor', 'messageId', 'visibility', 'validUntil', 'runId', 'triggerKind', 'workId', 'confirmationId', 'askingRunId', 'askMessageId', 'expiresAt', 'proposalId', 'authorizationVersion', 'receiptId', 'noteId', 'concernId', 'eventId', 'sequence', 'attentionId', 'id', 'dispatch', 'route', 'enabled', 'nextCheckAt', 'operationId', 'bindingId', 'deliveryId', 'challengeId', 'unresolved', 'requestId', 'attemptIds']);
 
 /** Pure authenticated record conversion. No reads, writes, permissions, journal replay or object transfer occur here. */
 export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): FirestoreRestoreCodec {
@@ -562,7 +562,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
         value = { ...row, scope, descriptor, objectScope: descriptor || !row.upload ? scope : row.objectScope,
           upload: row.upload ? {...row.upload,unknown:true} : null };
         Object.assign(metadata,{scopeTag:firestoreDomainHash(['voice-scope',scope]),assetId:row.id,state:row.state,
-          createdAt:row.createdAt,updatedAt:row.updatedAt,messageId:row.messageId,cleanupState:row.messageId===null?'unlinked':null,cleanupAt:null}); break;
+          createdAt:row.createdAt,updatedAt:row.updatedAt,messageId:row.messageId,cleanupState:row.messageId===null&&!(row.importedFrom&&row.state==='ready')?'unlinked':null,cleanupAt:null}); break;
       }
       case 'chat-file-asset': {
         const row = parse(firestoreChatFileRowSchema, value); let descriptor = row.descriptor;
@@ -577,7 +577,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
         value = { ...row, scope, descriptor, objectScope: descriptor || !row.upload ? scope : row.objectScope,
           upload: row.upload ? {...row.upload,unknown:true} : null };
         Object.assign(metadata,{scopeTag:firestoreDomainHash(['chat-file-scope',scope]),assetId:row.id,state:row.state,
-          createdAt:row.createdAt,updatedAt:row.updatedAt,messageId:row.messageId,cleanupState:row.messageId===null?'unlinked':null,cleanupAt:null}); break;
+          createdAt:row.createdAt,updatedAt:row.updatedAt,messageId:row.messageId,cleanupState:row.messageId===null&&!(row.importedFrom&&row.state==='ready')?'unlinked':null,cleanupAt:null}); break;
       }
       case 'voice-transcript': {
         const row = parse(firestoreVoiceTranscriptSchema,value), interrupted = row.value.state === 'running';
@@ -607,7 +607,8 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
         value = { ...row, scope, descriptor, upload, ...(row.state === 'reserved' && upload ? {objectScope: row.objectScope ?? row.scope} : {}) };
         if (descriptor) delete (value as {objectScope?:unknown}).objectScope;
         for (const name of Object.keys(metadata)) delete metadata[name];
-        Object.assign(metadata, { assetId: row.id, scopeTag: photoTag(scope), sortKey: row.createdAt + '/' + row.id, live: row.state === 'reserved' || row.state === 'ready' }); break;
+        Object.assign(metadata, { assetId: row.id, scopeTag: photoTag(scope), sortKey: row.createdAt + '/' + row.id,
+          live: row.state === 'reserved' || row.state === 'ready', importPending: !!row.importStage && row.state === 'reserved' }); break;
       }
       case 'photo-operation': value = { ...parse(photos.operation, value), scope }; for (const name of Object.keys(metadata)) delete metadata[name]; metadata.scopeTag = photoTag(scope); break;
       case 'photo-child-quota': id = photoTag(scope); for (const name of Object.keys(metadata)) delete metadata[name]; metadata.scopeTag = id; break;

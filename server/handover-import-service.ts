@@ -9,18 +9,19 @@ import type { FirestoreBackgroundWork } from './firestore-background-work.ts';
 import type { HandoverImportCursor } from './handover-import.ts';
 import { historyModules } from './handover-history-records.ts';
 import { createFirestoreHandoverImportItems } from './firestore-handover-import-items.ts';
+import { attachmentSupplementModules, isHandoverAttachment, type HandoverAttachmentPorts } from './firestore-handover-attachments.ts';
 
 type Uploads = ReturnType<typeof createHandoverUploadService>;
 type Opened = Awaited<ReturnType<Uploads['open']>>;
-const supported = new Set<string>([...handoverImportResourceSectionSchema.options, ...Object.keys(historyModules)]);
-const cursorSchema = z.object({ target: z.number().int().nonnegative(), phase: z.enum(['current', 'documents', 'history']).optional(), page: z.object({ manifestSha256: z.string(), selectionHash: z.string(),
+const supported = new Set<string>([...handoverImportResourceSectionSchema.options, ...Object.keys(historyModules), ...Object.keys(attachmentSupplementModules)]);
+const cursorSchema = z.object({ target: z.number().int().nonnegative(), phase: z.enum(['current', 'documents', 'attachments', 'history']).optional(), page: z.object({ manifestSha256: z.string(), selectionHash: z.string(),
   pageIndex: z.number().int().nonnegative(), rowIndex: z.number().int().nonnegative() }).strict().nullable() }).strict();
 type Cursor = z.infer<typeof cursorSchema>;
 const codeOf = (error: unknown) => error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
   && /^[a-z][a-z0-9_]{0,79}$/u.test(error.code) ? error.code : 'package_import_failed';
 
 /** Verified source, durable cursor and existing domain services; no public caller can submit rows or counts. */
-export function createHandoverImportService(options: FirestoreDomainOptions & { uploads: Uploads; maxItemsPerExecution?: number }) {
+export function createHandoverImportService(options: FirestoreDomainOptions & { uploads: Uploads; maxItemsPerExecution?: number; attachments?: HandoverAttachmentPorts }) {
   const maxItems = domainParse(z.number().int().min(1).max(100), options.maxItemsPerExecution ?? 100);
   const batches = createFirestoreHandoverImportBatches({ ...options, sourceGuard: (b, request) => {
     if (!request.uploadVersion || !request.inputFingerprint) domainReject('import_source_not_bound');
@@ -45,6 +46,10 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
         totalItems += coverage.items;
         // Selecting a module includes its history. A partial importer must never quietly discard it.
         if (coverage.items && !supported.has(coverage.section)) preflightError = 'package_section_not_connected';
+        if (coverage.items && (coverage.section === 'voice_transcripts' ? !options.attachments?.transcripts
+          : coverage.section === 'voices' ? !options.attachments?.voices : coverage.section === 'files' ? !options.attachments?.files
+          : coverage.section === 'photos' ? !options.attachments?.photos : coverage.section === 'child_avatar' ? !options.attachments?.avatars : false))
+          preflightError = 'package_section_not_connected';
       }
     }
     if (command.resolutionOnly) totalItems = command.resolutions.length;
@@ -82,11 +87,13 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       // Existing in-flight cursors keep their old reader selection. New batches always establish parents first.
       const currentSections = target.sections.flatMap(module => [...HANDOVER_SECTIONS[module]]).filter(section => !Object.hasOwn(historyModules, section));
       const sections = selected ? [...new Set(selected.map(row => row.section))] : cursor.phase === undefined ? undefined : cursor.phase === 'current'
-        ? currentSections.filter(section => section !== 'documents' && section !== 'visit_preparation')
+        ? currentSections.filter(section => section !== 'documents' && section !== 'visit_preparation' && !Object.hasOwn(attachmentSupplementModules, section))
         : cursor.phase === 'documents' ? currentSections.filter(section => section === 'documents' || section === 'visit_preparation')
+        : cursor.phase === 'attachments' ? currentSections.filter(section => Object.hasOwn(attachmentSupplementModules, section))
         : Object.entries(historyModules).filter(([, section]) => target.sections.includes(handoverImportModuleOf(section))).map(([section]) => section);
       const afterPhase = (): Cursor => !selected && cursor.phase === 'current' ? { target: cursor.target, phase: 'documents', page: null }
-        : !selected && cursor.phase === 'documents' ? { target: cursor.target, phase: 'history', page: null }
+        : !selected && cursor.phase === 'documents' ? { target: cursor.target, phase: 'attachments', page: null }
+        : !selected && cursor.phase === 'attachments' ? { target: cursor.target, phase: 'history', page: null }
         : { target: cursor.target + 1, ...(cursor.phase ? { phase: 'current' as const } : {}), page: null };
       if (sections?.length === 0) { cursor = afterPhase(); continue; }
       const page = await opened.reader.readPage({ selection: { childIds: [target.sourceChildId], modules: target.sections }, sections,
@@ -96,7 +103,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       if (!row || row.section === 'children') continue;
       if (selected) {
         const value = row.value as { id?: unknown } | null;
-        const id = row.section === 'profile' || row.section === 'visit_preparation' ? row.childId : value && typeof value === 'object' ? value.id : undefined;
+        const id = row.section === 'profile' || row.section === 'visit_preparation' || row.section === 'child_avatar' ? row.childId : value && typeof value === 'object' ? value.id : undefined;
         if (!selected.some(item => item.section === row.section && item.resourceId === id)) continue;
       }
       if (!supported.has(row.section)) domainReject('package_section_not_connected', 400);
@@ -116,12 +123,19 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       if (firestoreDomainHash(checked.request) !== job.fingerprint) domainReject('import_coverage_changed');
       signal.throwIfAborted();
       const until = Math.min(Date.now() + 70_000, Date.parse(work.lease!.until) - 10_000);
+      const operationSignal = AbortSignal.any([signal, AbortSignal.timeout(Math.max(1, until - Date.now()))]);
       let current = await locate(opened, job, job.cursor), processed = 0;
       while (current && processed < maxItems && Date.now() < until) {
         signal.throwIfAborted();
         const following = await locate(opened, job, current.after);
-        const result = await batches.apply(work, { position: job.position, cursor: job.cursor, row: current.row, nextCursor: following?.start ?? null,
-          ...(current.documentContent === undefined ? {} : { documentContent: current.documentContent }) });
+        // Load only this original, never the following file's bytes or a whole package in memory.
+        const attachmentContent = isHandoverAttachment(current.row.section)
+          ? await opened.reader.readAttachmentContent(current.row,job.request.acceptedManifestSha256 ?? undefined) : undefined;
+        let result;
+        try { result = await batches.apply(work, { position: job.position, cursor: job.cursor, row: current.row, nextCursor: following?.start ?? null,
+          ...(current.documentContent === undefined ? {} : { documentContent: current.documentContent }),
+          ...(attachmentContent === undefined ? {} : { attachmentContent }) },operationSignal); }
+        finally { attachmentContent?.content.fill(0); }
         job = result.batch; processed++;
         if (job.state === 'completed') return { state: 'completed' as const };
         current = following;
