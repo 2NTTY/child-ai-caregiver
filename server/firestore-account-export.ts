@@ -209,7 +209,8 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
               state: photo.state, visibility: photo.visibility ?? 'private', recordId: photo.recordId ?? null,
               extraction: photo.extraction ? { state: photo.extraction.state, draft: photo.extraction.draft, processedAt: photo.extraction.processedAt } : null });
           } else if (section === 'private_sources' && context.kind === 'shared-input') {
-            items.push(await createFirestoreSharedInputStore(options).read(binding, context.id));
+            const source = await createFirestoreSharedInputStore(options).readImportState(binding, context.id);
+            if (source.value) items.push(source.value);
           } else if (section === 'private_source_history') {
             const id = z.object({ inputId: z.uuid() }).parse(value).inputId;
             const parent = await binding.transaction.get(data.ref('shared_inputs', 'shared-input', id));

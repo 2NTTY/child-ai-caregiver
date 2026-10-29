@@ -4318,3 +4318,9 @@
 兩條連貫合成流程通過：新增記憶全路徑及原 care 歷史往返；涵蓋正常讀回、其他帳號拒絕、重複略過、選定衝突、更正／刪除、清理、還原重放和摘要追加。四根受影響 TypeScript 圖零診斷，獨立唯讀 review 無確定 P1／P2。初始未接 section、還原 metadata、衝突 schema、清理漏階段及測試型別失敗保留於[證據](artifacts/verification/P4_HANDOVER_MEMORY_PIPELINE_20261030.json)。沒有模型／雲端／通知／設備或全量測試。
 
 本包只交後端及契約，未部署；共用記憶選項、逐項實際類型與歷史閱讀待後端合併後接續。其他模組、完整私人備份、正文差異、班級／期間與原生大型包仍待完成，不將本切片當 HANDOVER01／P4 完成。
+<a id="log-20261030-p4-handover-private-source-domain"></a>
+### 2026-10-30 — P4-HANDOVER01 私人來源權威接點
+
+以已合併 #383／`b3ce87f1` 接續私人來源，沿原 shared-input 的加密分段、容量、權限、版本與 changes 交易加入匯入預備方法。正文及用途保存至同一來源權威；來源帳戶的模型片段授權、抓取／提取工作和照護記錄關聯不移成本地執行狀態。來源鏈只加入加密紀錄與授權匯出，舊 strict input DTO 保持相容。
+
+一條新領域流程與原來源 client／Agent 流程通過，三根受影響 TypeScript 圖零診斷；首次未接方法、漏來源 enum、測試 fixture 與型別失敗保留於[證據](artifacts/verification/P4_HANDOVER_PRIVATE_SOURCE_DOMAIN_20261030.json)。沒有模型、外網抓取、雲端、設備、部署或全量測試。此為原權威預備接點，統一 worker／收據、來源管理歷史與共用選項仍待接續，不能當成私人來源文檔包已完整可用。
