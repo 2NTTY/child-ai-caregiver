@@ -1,0 +1,8 @@
+{
+  "base": "0999402d8f6aca9987c884d3ef430b495f369c80",
+  "branch": "codex/p4-handover-document-labels",
+  "scope": "Forward-compatible labels only; no document module selection, layout or transport change",
+  "validation": {"command": "node tmp/check-source-ui.cjs", "roots": 7, "diagnostics": 0, "log": "tmp/document-labels-types.log"},
+  "notRun": ["Product tests", "Device tests", "Model calls", "Build", "Deployment"],
+  "pending": ["Backend enum integration check", "Complete document selection and history reading"]
+}

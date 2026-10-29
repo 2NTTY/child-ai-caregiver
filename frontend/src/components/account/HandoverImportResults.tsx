@@ -8,11 +8,13 @@ import { AppButton, AppSelect } from '../ui';
 import { chineseFont, colors, readingType, spacing } from '../../theme';
 import { HandoverImportHistory } from './HandoverImportHistory';
 
-const modules = { care: '照護記錄', profile: '孩子資料', tasks: '待辦', memory: '記憶與摘要', sources: '私人來源' };
-const resources: Record<HandoverImportResourceSection, string> = { care: '照護記錄', profile: '孩子資料', tasks: '待辦',
-  memory_facts: '記憶事實', memory_topics: '記憶話題', instructions: '私人交代', summary_history: '摘要歷史', private_sources: '私人來源' };
+const modules = { care: '照護記錄', profile: '孩子資料', tasks: '待辦', memory: '記憶與摘要', sources: '私人來源', documents: '文件與準備單' };
+const resources: Record<HandoverImportResourceSection | 'documents' | 'visit_preparation', string> = { care: '照護記錄', profile: '孩子資料', tasks: '待辦',
+  memory_facts: '記憶事實', memory_topics: '記憶話題', instructions: '私人交代', summary_history: '摘要歷史', private_sources: '私人來源',
+  documents: '文件', visit_preparation: '到診準備' };
 const historyLabels = { care_history: '照護記錄來源歷史', profile_history: '孩子資料來源歷史', task_history: '待辦來源歷史',
-  memory_fact_history: '記憶事實來源歷史', memory_topic_history: '記憶話題來源歷史', private_source_history: '私人來源管理歷史' };
+  memory_fact_history: '記憶事實來源歷史', memory_topic_history: '記憶話題來源歷史', private_source_history: '私人來源管理歷史',
+  document_versions: '文件來源版本索引', document_content: '文件來源修訂', visit_preparation_history: '到診準備來源歷史' };
 const outcomes = { created: '已新增', updated: '已更新', skipped: '已略過', conflict: '有衝突' };
 const reasons: Record<string, string> = {
   target_changed: '接收資料曾被修改，已保留目前內容。', target_deleted: '接收項目已刪除，未自動恢復。',
@@ -24,6 +26,7 @@ const reasons: Record<string, string> = {
   older_source: '來源版本較舊，已保留接收資料。', empty_profile: '來源沒有目前孩子資料，未清除接收資料。',
   input_processing: '原抓取或提取尚未結清，未更新此私人來源。', input_linked: '此私人來源已連結照護記錄，未更新。',
   inputs_capacity: '接收對象的私人來源容量已滿，未新增。',
+  document_revision_index: '版本索引已核對，內容由對應來源修訂保存。',
 };
 const selectable = (row: HandoverImportResult) => row.outcome === 'conflict' && row.sourceSection === null
   && row.availableResolution !== null && row.currentResource !== null && handoverResultResourceSection(row) !== null;
