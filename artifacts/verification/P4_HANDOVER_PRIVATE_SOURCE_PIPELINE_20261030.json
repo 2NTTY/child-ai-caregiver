@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-30",
+  "workPackage": "P4-HANDOVER01",
+  "base": "87826f19acc3621c3aa555d3810d871a52362c0a",
+  "branch": "codex/p4-handover-source-pipeline",
+  "status": "backend_implemented_not_deployed",
+  "scope": [
+    "sources module uses the original upload/archive, durable import worker, item receipts and source mappings",
+    "Current private sources precede original management history regardless of archive entry order",
+    "Management evidence retains its original identity, fields and hash without granting local model or fetch permission",
+    "Personal targets only; original source DTO and care change channel are retained"
+  ],
+  "verification": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-private-source-pipeline.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "covers": [
+        "ZIP upload and real background handler",
+        "Saved batch replay",
+        "Reopen original source store",
+        "Original management evidence",
+        "Provenance and history export",
+        "History restore codec",
+        "Other account and shared target denial",
+        "Duplicate skip",
+        "Local edit conflict",
+        "Selected versioned replacement",
+        "Deleted parent history masking",
+        "Explicit restore creates a new resource while retaining tombstone"
+      ]
+    },
+    {
+      "check": "Scoped TypeScript dependency graph: import service, restore codec and new pipeline test",
+      "roots": 3,
+      "diagnostics": 0
+    }
+  ],
+  "retainedFailures": [
+    "Initial test failed with invalid_input because sources was absent from the import contract.",
+    "The first implementation used sources as a change-stream kind; worker failure and scoped TypeScript identified the unsupported channel. Source audit changes now reuse the original care channel."
+  ],
+  "pending": [
+    "Shared Web/Android import controls and management history view",
+    "Other package domains and full package round-trip",
+    "Independent single-source erasure replay in S15",
+    "Deployment"
+  ],
+  "notRun": [
+    "Real models",
+    "External fetch",
+    "Native Firestore",
+    "Browser/device",
+    "Full suite",
+    "Deployment"
+  ],
+  "limitations": "In-memory transaction fixture does not establish native index or concurrency behavior. Codec decoding is not a disaster restore. Management history is not original body revision history.",
+  "review": "Independent read-only review found no definite P1/P2 or required minor. Main review retained UI, complete round-trip and S15 erasure replay boundaries."
+}

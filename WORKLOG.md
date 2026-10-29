@@ -4324,3 +4324,12 @@
 以已合併 #383／`b3ce87f1` 接續私人來源，沿原 shared-input 的加密分段、容量、權限、版本與 changes 交易加入匯入預備方法。正文及用途保存至同一來源權威；來源帳戶的模型片段授權、抓取／提取工作和照護記錄關聯不移成本地執行狀態。來源鏈只加入加密紀錄與授權匯出，舊 strict input DTO 保持相容。
 
 一條新領域流程與原來源 client／Agent 流程通過，三根受影響 TypeScript 圖零診斷；首次未接方法、漏來源 enum、測試 fixture 與型別失敗保留於[證據](artifacts/verification/P4_HANDOVER_PRIVATE_SOURCE_DOMAIN_20261030.json)。沒有模型、外網抓取、雲端、設備、部署或全量測試。此為原權威預備接點，統一 worker／收據、來源管理歷史與共用選項仍待接續，不能當成私人來源文檔包已完整可用。
+
+<a id="log-20261030-p4-handover-private-source-pipeline"></a>
+### 2026-10-30 — P4-HANDOVER01 私人來源統一匯入
+
+以 #384／`87826f19` 接原上載、ZIP、worker、逐項收據及來源映射。sources 目前值先保存，原管理修訂再以來源 evidence 接回，不占本地修訂版本或轉移模型授權。本人目標、版本衝突、原操作查回、重複略過、明確覆蓋／恢復均沿既有交易；恢復建立新資源並保留舊 tombstone。原 input DTO 不變，資料變更沿既有 care channel。
+
+一條連貫合成 worker 流程及三根 TypeScript 圖通過；涵蓋讀回、歷史／來源鏈匯出、codec、隔離、重複、衝突及刪除遮蔽。保留首次不支援 sources 與誤用 change kind 的失敗，修正後沒有重跑已驗記憶或模型；[證據](artifacts/verification/P4_HANDOVER_PRIVATE_SOURCE_PIPELINE_20261030.json)。獨立唯讀 review 無確定 P1／P2 或必要 minor。
+
+共用來源選項／歷史呈現待依賴合併後接續；沒有部署、雲端、模型或設備操作。管理修訂不等於全文修訂，codec 不等於災難還原；私人來源單項刪除的獨立還原重放留 S15 未完，不能把本切片當完整備份／P4 完成。

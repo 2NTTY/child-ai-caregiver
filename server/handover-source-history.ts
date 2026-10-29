@@ -7,11 +7,17 @@ import { makeImportProvenance } from './handover-provenance.ts';
 import { contentVisible } from './firestore-disclosure.ts';
 import { firestoreFactSchema, firestoreTopicSchema, firestoreSummarySchema } from './firestore-memory.ts';
 import { createFirestorePrivateInstructions, firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
+import { createFirestoreSharedInputStore, firestoreSourceManagementRevisionSchema } from './firestore-shared-inputs.ts';
 import { z } from 'zod';
 import { sourceHistoryExportSchema, sourceHistoryRecordSchema, sourceHistoryId, sourceHistoryMetadata,
   type SourceHistoryRecord, type HistoryModule } from './handover-history-records.ts';
 
 function parseRevision(module: HistoryModule, raw: unknown) {
+  if (module === 'private_sources') {
+    const value = domainParse(firestoreSourceManagementRevisionSchema, raw, 'invalid_package_data');
+    return { value: value as unknown as Record<string, unknown>,
+      resource: { id: value.inputId, childId: value.childId, version: value.version, authorUserId: value.ownerUserId, updatedAt: value.changedAt } };
+  }
   if (module === 'tasks') {
     const value = domainParse(firestoreTaskRevisionSchema, raw, 'invalid_package_data');
     return { value: value as unknown as Record<string, unknown>, resource: value.task };
@@ -49,6 +55,11 @@ export function parseHistoryRow(row: HandoverImportRow, module: HistoryModule, i
 export async function sourceHistoryVisible(data: FirestoreDomainData, b: Binding, value: SourceHistoryRecord) {
   if (value.childId !== b.scope.childId) domainReject('source_history_binding', 500);
   const section = value.evidence.module;
+  if (section === 'private_sources') {
+    if (b.sharedAccess || b.actorUserId !== b.scope.ownerUserId) return false;
+    const current = await createFirestoreSharedInputStore(data.options).readImportState(b, value.resource.id);
+    return current.value !== null && current.version >= value.resource.version;
+  }
   if (section === 'care' || section === 'profile') return contentVisible(data, b, section, value.resource.id, value.resource.version);
   if (section === 'memory_facts' || section === 'memory_topics') {
     const kind = section === 'memory_facts' ? 'fact' : 'topic';

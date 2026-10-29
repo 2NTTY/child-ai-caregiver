@@ -900,6 +900,8 @@ v1 匯入讀取器復用同一 ZIP verifier 及匯出 section 表，先核全部
 
 來源歷史另存加密 `handover_source_history`，每筆連結本地資源 ID／匯入時版本與不可變來源 evidence（領域、原修訂、來源鏈）；原作者／確認者不改成匯入者，本地實際匯入者／時間／操作分開保存。以目標及來源身份／版本確定 ID，同版異內容列衝突；不追加本地修訂或觸發舊提醒。逐項收據可帶 `sourceSection` 區分來源歷史與目前值，與批次進度同交易提交。再次交接沿同一 wrapper 保留原 evidence，依目前包的父資源映射連到新目標，不改寫原來源。
 
+私人來源沿相同映射、收據及批次處理；`private_source_history` 的 evidence.module 為 `private_sources`，原 inputId／version 連接來源身份。保留完整原管理修訂，不將目前正文快照另存為同版管理歷史；避免同一來源／版本異類內容相撞。權威正文仍在 shared_inputs／shared_input_parts，匯入歷史不能恢復抓取、模型或外發授權；讀取及匯出重核本人範圍和現行父來源。單來源刪除已有即時 tombstone，獨立災難還原刪除重放仍屬 S15 待補，不由本輪歷史保存宣稱完成。
+
 `care_history/profile_history/task_history/memory_fact_history/memory_topic_history` 匯出先分頁讀本地修訂，再以同一加密 scope cursor 的來源階段讀來源歷史；空頁而仍有游標不是完成。來源歷史讀回沿目前模組授權及父資源版本／刪除狀態，profile 的 historyFloor 亦適用。新增歷史不改當前事實，但推進 change cursor；實體刪除在原持久清理工作加入來源歷史階段，仍有界及可接續。備份／帳戶／孩子／班級清理 registry 納入新 collection，恢復重建可信 metadata 並按獨立刪除紀錄移除舊 evidence，不能從原快照恢復已刪正文。
 
 匯入 care／profile 以 `confirmationBasis=imported_source` 保留原確認標記；交易及還原核對真正匯入者的當前授權，不要求外部確認者是本地成員。本人之後更正改回 `explicit`，來源鏈仍保留。空 profile 不作清除目前概況的指令。首次匯入待辦以新資源／發生實例保存原狀態，負責人改為目前目標的有效身份；completed／cancelled／needs_review 不先建立一次 scheduled outbox。同來源後續版本原位更新本地 task／occurrence，保留建立者、建立時間及原投遞證據；記錄 `import` 修訂、真正匯入者及本地 basisVersion，不挪用來源 terminalBasisVersion。來源變更不能繞過本地版本衝突或 unknown 停發；新 scheduled 版本只沿原任務 outbox／目前通知設定處理，舊 pending／leased 作廢。來源映射、收據、業務及 outbox 同交易；公開批次與共用匯入頁仍未完成。
