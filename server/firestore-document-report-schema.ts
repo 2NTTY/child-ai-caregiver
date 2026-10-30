@@ -15,6 +15,6 @@ export const firestoreDocumentReportSchema: z.ZodType<FirestoreDocumentReport> =
     recordKind: z.string().max(40).optional(), validUntil: z.iso.datetime({ offset: true }).nullable().optional(),
     activeConcern: z.boolean().optional() }).strict()).max(140),
   blocked: z.boolean().optional(), concernScanVersion: z.literal(1).optional(), pageAfter: z.uuid().optional(),
-  concernAfter: z.object({ id: z.uuid(), sequence: z.number().int().nonnegative() }).strict().optional(),
+  concernAfter: z.object({ id: z.uuid(), sequence: z.number().int().nonnegative(), timelineId: z.uuid().nullable().optional() }).strict().optional(),
   pendingConcern: z.object({ id: z.uuid(), header: firestoreDocumentSourceSchema.nullable(), sawObservation: z.boolean() }).strict().optional(),
 }).strict();

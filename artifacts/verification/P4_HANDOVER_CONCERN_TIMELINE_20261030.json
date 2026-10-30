@@ -1,0 +1,35 @@
+{
+  "package": "P4-HANDOVER01 concern timeline and verified source reader",
+  "date": "2026-10-30",
+  "base": "45bebf4bb892575ab0b995f0c706472058ad5d25",
+  "status": "implemented_targeted_checks_passed_not_deployed",
+  "checks": [
+    {
+      "command": "node --test tests/handover-concern-timeline.test.ts",
+      "result": "passed",
+      "tests": 1,
+      "scope": "Original concern service create and receipt replay, current timeline read and ordinary append, old revision preservation, current document reference/load/continuation, foreign scope rejection and seven recovery rows transformed to a new epoch.",
+      "limitations": "Serial synthetic Firestore fixture with a sealed replacement-head fixture. Does not prove the not-yet-implemented package import writer, live indexes, concurrent transactions or cloud restore."
+    },
+    {
+      "command": "node --test tests/handover-concern-reader.test.ts",
+      "result": "passed", "tests": 1,
+      "scope": "Verified ZIP reader binds current timeline and historical prefixes across reversed pages; rejects missing/duplicate sequences, duplicate event IDs, forged source row or account, and wrong child.",
+      "limitations": "Method landed before the test, so this reader check has no baseline RED; it does not prove target writes."
+    },
+    {
+      "command": "node --input-type=module (stdin TypeScript API graph using tsconfig.server.json)",
+      "result": "passed", "diagnostics": 0,
+      "rootFiles": ["server/firestore-concerns.ts", "server/firestore-document-sources.ts", "server/family-document-report-core.ts", "server/firestore-document-report-schema.ts", "server/firestore-restore-material-records.ts", "server/firestore-restore-codec.ts", "tests/handover-concern-timeline.test.ts", "server/handover-import.ts", "tests/handover-concern-reader.test.ts"]
+    },
+    { "command": "git diff --check", "result": "passed" }
+  ],
+  "failuresPreserved": [
+    "Initial RED: persisted timelineId rejected as invalid_document.",
+    "First GREEN attempt compared the original create result with replay including an existing internal eventCount difference. Assertion narrowed to public ID/version and full strict events equality; product behavior was not relaxed. Same test then passed.",
+    "Reader type graph narrowed the loop-local nullable cache to never. A fixed cache object preserves one-page caching and type-checks; only the affected reader check and type graph were repeated."
+  ],
+  "review": "Independent static review of timeline storage, public DTO compatibility, document source binding, recovery and archive locator changes; no blocking findings.",
+  "notRun": ["full suite", "real model", "cloud", "notifications", "browser/device", "deployment"],
+  "remaining": ["concern import writer and provenance", "growth import", "shared import UI", "broader package scope and delivery"]
+}

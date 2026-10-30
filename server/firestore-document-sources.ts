@@ -15,8 +15,9 @@ import { accumulateReportInputs, type ReportAccumulator, type ReportInput } from
 const uuid = z.uuid(), time = z.iso.datetime({ offset: true }), version = z.number().int().positive();
 // Shared storage read contract. F06 writes these heads/events and increments the same context basis.
 export const firestoreDocumentConcernSchema = z.object({ id: uuid, childId: uuid, version,
-  title: z.string().max(160), reason: z.string().max(2000), status: z.enum(['following', 'closed']) }).passthrough();
+  title: z.string().max(160), reason: z.string().max(2000), status: z.enum(['following', 'closed']), timelineId: uuid.optional() }).passthrough();
 export const firestoreDocumentConcernEventSchema = z.object({ concernId: uuid, childId: uuid, sequence: z.number().int().positive(),
+  timelineId: uuid.optional(),
   id: uuid, at: time, kind: z.enum(['observation', 'confirmed_action']), title: z.string().max(160), text: z.string().max(2000),
   sourceLabel: z.string().max(256), actorUserId: z.string().max(256), recordId: uuid.optional(), taskId: uuid.optional(),
   attentionId: uuid.optional(), attentionVersion: version.optional(), runId: uuid.optional() }).strict();
@@ -64,12 +65,14 @@ export function createFirestoreDocumentSources(options: FirestoreDomainOptions &
     if (value.id !== id || value.childId !== b.scope.childId || value.version !== row.get('recordVersion')) domainReject('concern_binding', 500);
     return value;
   }
-  async function event(b: Binding, concernId: string, id: string) {
+  async function event(b: Binding, concernId: string, id: string, timelineId?: string) {
     const row = await b.transaction.get(data.ref('concern_events', 'concern-event', id)); if (!row.exists) return null;
     if (Object.entries(data.tags(b.scope)).some(([key, value]) => row.get(key) !== value)) domainReject('not_found', 404);
     const value = data.open('concern-event', id, b.scope, firestoreDocumentConcernEventSchema, row);
     if (value.id !== id || value.concernId !== concernId || value.childId !== b.scope.childId
-      || value.sequence !== row.get('sequence')) domainReject('concern_binding', 500);
+      || value.sequence !== row.get('sequence')
+      || row.get(value.timelineId ? 'timelineId' : 'concernId') !== (value.timelineId ?? concernId)) domainReject('concern_binding', 500);
+    if (value.timelineId !== timelineId) return null;
     return value;
   }
   async function profile(b: Binding) {
@@ -99,7 +102,7 @@ export function createFirestoreDocumentSources(options: FirestoreDomainOptions &
     if (source.id === 'concern:' + source.resourceId) return concernDocumentSource(value);
     const prefix = 'concern:' + source.resourceId + ':observation:';
     if (!source.id.startsWith(prefix) || !uuid.safeParse(source.id.slice(prefix.length)).success) return null;
-    const observation = await event(b, source.resourceId, source.id.slice(prefix.length));
+    const observation = await event(b, source.resourceId, source.id.slice(prefix.length), value.timelineId);
     return observation?.kind === 'observation' ? concernDocumentSource(value, observation) : null;
   }
   async function supplement(b: Binding, loaded: FamilyDocumentSources, snapshots: DocumentSnapshot[]) {
@@ -137,10 +140,10 @@ export function createFirestoreDocumentSources(options: FirestoreDomainOptions &
         }
         if (kind === 'concern') {
           const current = await concern(b, id); if (current?.status === 'following') loaded.activeConcernIds.add(source.id);
-          const rows = await b.transaction.get(query(b, 'concern_events').where('concernId', '==', id).orderBy('sequence', 'asc').limit(6));
+          const rows = await b.transaction.get(query(b, 'concern_events').where(current?.timelineId ? 'timelineId' : 'concernId', '==', current?.timelineId ?? id).orderBy('sequence', 'asc').limit(6));
           loaded.limited ||= rows.size > 5;
           for (const row of rows.docs.slice(0, 5)) {
-            const item = await event(b, id, domainParse(uuid, row.get('eventId'), 'concern_binding', 500));
+            const item = await event(b, id, domainParse(uuid, row.get('eventId'), 'concern_binding', 500), current?.timelineId);
             if (current && item?.kind === 'observation') add(concernDocumentSource(current, item), 'concerns');
           }
         }
@@ -166,6 +169,7 @@ export function createFirestoreDocumentSources(options: FirestoreDomainOptions &
     if (state.stage === 'concerns') {
       // Consume each concern's events before advancing to the next head. A page split cannot drop observations.
       let current = state.concernAfter ? await concern(b, state.concernAfter.id) : null;
+      if (current && state.concernAfter && (state.concernAfter.timelineId ?? null) !== (current.timelineId ?? null)) domainReject('document_source_changed');
       if (!current) {
         let q = query(b, 'concerns').orderBy('concernId', 'asc').limit(1);
         if (state.pageAfter) q = q.startAfter(state.pageAfter);
@@ -173,15 +177,15 @@ export function createFirestoreDocumentSources(options: FirestoreDomainOptions &
         if (!heads.size) { state.stage = 'done'; delete state.pageAfter; return; }
         current = await concern(b, domainParse(uuid, heads.docs[0].get('concernId'), 'concern_binding', 500));
         if (!current) domainReject('concern_binding', 500);
-        state.concernAfter = { id: current.id, sequence: 0 };
+        state.concernAfter = { id: current.id, sequence: 0, ...(current.timelineId ? { timelineId: current.timelineId } : {}) };
         state.pendingConcern = { id: current.id, header: current.status === 'following' ? concernDocumentSource(current) : null, sawObservation: false };
         accumulateReportInputs(state, [], 1);
       }
-      const rows = await b.transaction.get(query(b, 'concern_events').where('concernId', '==', current.id)
+      const rows = await b.transaction.get(query(b, 'concern_events').where(current.timelineId ? 'timelineId' : 'concernId', '==', current.timelineId ?? current.id)
         .where('sequence', '>', state.concernAfter!.sequence).orderBy('sequence', 'asc').limit(pageSize + 1));
       const inputs: ReportInput[] = [];
       for (const row of rows.docs.slice(0, pageSize)) {
-        const value = await event(b, current.id, domainParse(uuid, row.get('eventId'), 'concern_binding', 500));
+        const value = await event(b, current.id, domainParse(uuid, row.get('eventId'), 'concern_binding', 500), current.timelineId);
         if (!value) domainReject('concern_binding', 500);
         if (value.kind === 'observation') {
           state.pendingConcern!.sawObservation = true;

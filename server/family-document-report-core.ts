@@ -7,7 +7,7 @@ import { buildFamilyDocumentSnapshot, hkDay, labels, type FamilyDocumentSources 
 export interface ReportAccumulator {
   request: DocumentRequest; sourceRevision: string; stage: "profile" | "records" | "facts" | "tasks" | "concerns" | "done";
   processedSources: number; counts: ReportCoverage["counts"]; validUntil: string | null;
-  careCursor?: CareCursor; factAfterId?: string; taskAfterId?: string; concernAfter?: { id: string; sequence: number };
+  careCursor?: CareCursor; factAfterId?: string; taskAfterId?: string; concernAfter?: { id: string; sequence: number; timelineId?: string | null };
   profile: FamilyDocumentSources["profile"] | null; selected: ReportInput[]; blocked?: boolean;
   concernScanVersion?: 1;
   pendingConcern?: { id: string; header: DocumentSource | null; sawObservation: boolean };
