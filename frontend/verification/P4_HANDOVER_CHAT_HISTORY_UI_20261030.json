@@ -1,0 +1,37 @@
+{
+  "package": "P4-HANDOVER01 imported chat history UI",
+  "date": "2026-10-30",
+  "base": "c7975c2ba525281696128fca04d59c656422a95c",
+  "status": "implemented_and_targeted_checks_passed_not_deployed",
+  "checks": [
+    {
+      "command": "node --test tests/imported-chat-attachment-view.test.ts",
+      "result": "passed",
+      "tests": 1,
+      "scope": "Mapped local attachment identity, immutable bytes, current local version, deleted/shared/mismatched asset rejection and voice duration."
+    },
+    {
+      "command": "node --test frontend/scripts/imported-chat-history.test.mjs",
+      "result": "passed",
+      "tests": 1,
+      "scope": "Real client and private read hook: two pages, detail, scope change with late response, shared scope exclusion, revocation and mismatched response rejection.",
+      "notes": "Initial missing-method RED retained locally; GREEN passed. Reran only this flow after final stale-callback scope guards, passed."
+    },
+    {
+      "command": "node --input-type=module (stdin TypeScript API graph using frontend/tsconfig.json)",
+      "result": "passed",
+      "roots": 8,
+      "rootFiles": ["src/client/chat-api.ts", "frontend/src/production/ProductionOwner.ts", "frontend/src/production/useImportedChatHistory.ts", "frontend/src/components/history/ImportedConversationHistoryView.tsx", "frontend/src/components/history/PersonalHistoryViews.tsx", "frontend/src/components/history/ImportedChatAttachment.tsx", "frontend/src/components/account/HandoverImportControls.tsx", "frontend/src/screens/historyScreen.tsx"],
+      "diagnostics": 0,
+      "notes": "Initial graph found Error type mismatch in attachment access-error callback; narrowed to existing API error types, final graph zero diagnostics."
+    },
+    { "command": "git diff --check", "result": "passed" }
+  ],
+  "reusedEvidence": [
+    "artifacts/verification/P4_HANDOVER_PRIVATE_CHAT_20261030.json",
+    "frontend/verification/P4_HANDOVER_ATTACHMENT_UI_20261030.json"
+  ],
+  "notRun": ["product-wide test suite", "browser or device acceptance", "real model", "cloud verification", "deployment"],
+  "review": "Independent static review of attachment bridge and integrated client/history wiring found no blocking finding; main reviewed diff and actual evidence.",
+  "remaining": ["Agent retrieval integration in its own package", "original-site and compatible client delivery with the wider handover package"]
+}
