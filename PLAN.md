@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-30）：[P4-HANDOVER01](#p4-handover01) 匯入歷史的 Agent 按需查閱。**#382～#400 已合併未部署。私人聊天來源歷史已由原聊天服務保存，統一批次、附件映射、匯出與共用 Web／Android 歷史閱讀已接通；[後端證據](artifacts/verification/P4_HANDOVER_PRIVATE_CHAT_20261030.json)、[共用畫面](frontend/verification/P4_HANDOVER_CHAT_HISTORY_UI_20261030.json)。當前 `codex/p4-handover-agent-history` 從 `7805c969` 已擴充原 search_history／read_history（[必要證據](artifacts/verification/P4_HANDOVER_AGENT_HISTORY_20261030.json)已通過，待合併）：明確選取匯入來源、固定版本續讀及當前授權，保留原作者和來源，不把舊訊息當本地新指令、確認或審核結果。普通聊天與摘要不自動載入整份來源歷史。關注／成長、差異、班級／期間、完整私人備份、簽章配置與原生大型包仍未完成。單私人來源刪除的獨立還原重放留 S15；未部署、未作真雲端／設備驗收，不動 D PR，P3／P5 及既有待驗不計完成。
+**當前入口（2026-10-30）：[P4-HANDOVER01](#p4-handover01) 關注／成長匯入。**#382～#401 已合併未部署。私人聊天已接原服務、統一批次、附件映射、匯出、共用歷史閱讀及原 Agent 搜尋／續讀工具；[工具證據](artifacts/verification/P4_HANDOVER_AGENT_HISTORY_20261030.json)、[共用畫面](frontend/verification/P4_HANDOVER_CHAT_HISTORY_UI_20261030.json)已通過，不把合成結果當真模型品質。`codex/p4-handover-concern-growth` 從 `45bebf4b` 完成關注可選時間線、舊修訂讀取、文件來源及還原接點，包 reader 依來源版本取完整事件；[證據](artifacts/verification/P4_HANDOVER_CONCERN_TIMELINE_20261030.json)僅覆蓋這些底層接點。接着完成關注／成長的實際匯入、來源映射及共用閱讀；不另建可修改副本，不重播舊 run／投遞／授權。差異、班級／期間、完整私人備份、簽章配置與原生大型包仍未完成；單私人來源刪除的獨立還原重放留 S15。未部署／未作真雲端或設備驗收，不動 D PR，P3／P5 及既有待驗不計完成。
 
 **已合併未部署：**#358 班級解散與 #359 待辦身份接線，[清理](artifacts/verification/P4_CLASS_ERASURE_20261028.json)及[提醒證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)不重跑。選其他成員、班級 Agent 與外部通知仍待接續，不借管理員 key、不改 D PR。整個 CLASS01／P4、P3／P5 的未完成項不變。
 

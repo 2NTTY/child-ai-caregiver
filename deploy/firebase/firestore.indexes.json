@@ -3992,6 +3992,7 @@
         }
       ]
     },
+    {"collectionGroup": "yuban_authority_concern_events", "queryScope": "COLLECTION", "fields": [{"fieldPath": "workspaceTag", "order": "ASCENDING"}, {"fieldPath": "epochTag", "order": "ASCENDING"}, {"fieldPath": "userTag", "order": "ASCENDING"}, {"fieldPath": "childTag", "order": "ASCENDING"}, {"fieldPath": "timelineId", "order": "ASCENDING"}, {"fieldPath": "sequence", "order": "ASCENDING"}]},
     {"collectionGroup": "yuban_authority_chat_imported_messages", "queryScope": "COLLECTION", "fields": [{"fieldPath": "workspaceTag", "order": "ASCENDING"}, {"fieldPath": "epochTag", "order": "ASCENDING"}, {"fieldPath": "userTag", "order": "ASCENDING"}, {"fieldPath": "childTag", "order": "ASCENDING"}, {"fieldPath": "createdAt", "order": "DESCENDING"}, {"fieldPath": "messageId", "order": "DESCENDING"}]},
     {"collectionGroup": "yuban_authority_chat_imported_messages", "queryScope": "COLLECTION", "fields": [{"fieldPath": "workspaceTag", "order": "ASCENDING"}, {"fieldPath": "epochTag", "order": "ASCENDING"}, {"fieldPath": "userTag", "order": "ASCENDING"}, {"fieldPath": "childTag", "order": "ASCENDING"}]}
   ],

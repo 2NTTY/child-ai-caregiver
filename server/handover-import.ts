@@ -9,6 +9,8 @@ import { voiceAttachmentSchema, voiceFileMetadataSchema } from '../src/shared/vo
 import { chatFileAttachmentSchema, chatFileMetadataSchema } from '../src/shared/chat-files.ts';
 import { avatarStateSchema, avatarTargetSchema, avatarAssetSchema } from '../src/shared/avatars.ts';
 import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
+import { firestoreConcernSchema } from './firestore-concerns.ts';
+import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/u), uuid = z.uuid();
 const selectionSchema = z.object({ childIds: handoverSelectionSchema.shape.childIds, modules: handoverSelectionSchema.shape.modules }).strict()
@@ -80,6 +82,9 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
   const attachments = new Map<string, { childId: string; mimeType: string; bytes: number }>();
   const documentRows = new Set<string>(), documentContent = new Map<string, { path: string; rowIndex: number } | null>();
   const attachmentRows = new Set<string>(), attachmentContent = new Map<string, Map<string, { path: string; rowIndex: number } | null>>();
+  const concernRows = new Set<string>(), concernEvents = new Map<string, { path: string; rowIndex: number } | null>();
+  const concernEventIdentity = (childId: string, concernId: string, timelineId: unknown, sequence: number) =>
+    JSON.stringify([childId, concernId, timelineId ?? null, sequence]);
   const attachmentIdentity = (childId: string, section: AttachmentSection, id: string) => JSON.stringify([childId, section, id]);
   const attachmentVersion = (version: unknown, assetId: unknown = null) => JSON.stringify([typeof version === 'number' ? version : null, typeof assetId === 'string' ? assetId : null]);
   const documentIdentity = (childId: string, documentId: string, snapshotId: string, version: number) => JSON.stringify([childId, documentId, snapshotId, version]);
@@ -123,6 +128,13 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
         // Index only identities and locators. Document business validation remains on demand.
         if (page.section === 'documents' || page.section === 'document_versions')
           documentRows.add(documentRowBinding(page.section, page.childId, entry.path, rowIndex, row));
+        if (page.section === 'concerns' || page.section === 'concern_history')
+          concernRows.add(documentRowBinding(page.section, page.childId, entry.path, rowIndex, row));
+        if (page.section === 'concern_events' && typeof row.concernId === 'string' && typeof row.sequence === 'number'
+          && (row.timelineId === undefined || typeof row.timelineId === 'string')) {
+          const identity = concernEventIdentity(page.childId!, row.concernId, row.timelineId, row.sequence);
+          concernEvents.set(identity, concernEvents.has(identity) ? null : { path: entry.path, rowIndex });
+        }
         if (Object.hasOwn(attachmentSections, page.section)) attachmentRows.add(documentRowBinding(page.section, page.childId, entry.path, rowIndex, row));
         if (page.section === 'document_content' && typeof row.documentId === 'string' && typeof row.snapshotId === 'string'
           && typeof row.snapshotVersion === 'number') {
@@ -222,6 +234,30 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
         }
         const { attachmentPath, mimeType, bytes, sha256 } = ref;
         return { section, sourceId, sourceVersion, attachmentPath, mimeType, bytes, sha256, content: result.content };
+      },
+      async readConcernEvents(row: HandoverImportRow, acknowledgedManifestSha256?: string) {
+        if ((row.section !== 'concerns' && row.section !== 'concern_history') || !row.childId) fail('invalid_package_scope');
+        select({ childIds: [row.childId], modules: ['concerns'] }, acknowledgedManifestSha256, [row.section]);
+        const source = row.source;
+        if (source.serverId !== manifest.source.serverId || source.accountId !== manifest.source.accountId
+          || source.packageId !== manifest.packageId || source.packageVersion !== manifest.packageVersion || source.manifestSha256 !== manifestSha256
+          || !concernRows.has(documentRowBinding(row.section, row.childId, source.path, source.rowIndex, row.value))) fail('invalid_package_scope');
+        const head = parse(firestoreConcernSchema, row.value, 'invalid_package_concern');
+        if (head.childId !== row.childId) fail('invalid_package_scope');
+        const events: z.infer<typeof firestoreDocumentConcernEventSchema>[] = [];
+        const cache: { path: string | null; page: DataPage | null } = { path: null, page: null };
+        for (let sequence = 1; sequence <= head.eventCount; sequence++) {
+          const location = concernEvents.get(concernEventIdentity(row.childId, head.id, head.timelineId, sequence));
+          if (location === undefined) fail('package_concern_event_missing');
+          if (location === null) fail('package_concern_event_duplicate');
+          if (cache.path !== location.path || !cache.page) { cache.path = location.path; cache.page = await read(location.path); }
+          if (cache.page.section !== 'concern_events' || cache.page.childId !== row.childId) fail('invalid_package_scope');
+          const event = parse(firestoreDocumentConcernEventSchema, cache.page.items[location.rowIndex], 'invalid_package_concern_event');
+          if (event.concernId !== head.id || event.childId !== row.childId || event.timelineId !== head.timelineId
+            || event.sequence !== sequence || events.some(previous => previous.id === event.id)) fail('package_concern_event_mismatch');
+          events.push(event);
+        }
+        return events;
       },
       async readDocumentContent(row: HandoverImportRow, acknowledgedManifestSha256?: string): Promise<DocumentTransferContent | null> {
         if ((row.section !== 'documents' && row.section !== 'document_versions') || !row.childId) fail('invalid_package_scope');

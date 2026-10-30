@@ -56,7 +56,7 @@ export function materialRestoreMetadata(context: FirestoreRecoveryContext & { ki
   }
   if (kind === 'concern-event') {
     const row = firestoreDocumentConcernEventSchema.parse(raw); check(id === row.id && row.childId === scope.childId && recordVersion === 1 && row.actorUserId === scope.ownerUserId);
-    return { concernId: row.concernId, eventId: row.id, sequence: row.sequence };
+    return { ...(row.timelineId ? { timelineId: row.timelineId } : { concernId: row.concernId }), eventId: row.id, sequence: row.sequence };
   }
   if (kind === 'concern-operation') {
     let key: unknown; try { key = JSON.parse(id); } catch { check(false); }

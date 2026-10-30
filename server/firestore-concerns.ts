@@ -18,6 +18,7 @@ const uuid = z.uuid(), time = z.iso.datetime({ offset: true }), version = z.numb
 export const firestoreConcernSchema = z.object({ id: uuid, childId: uuid, title: z.string().min(1).max(160),
   reason: z.string().min(1).max(2000), status: z.enum(['following', 'closed']), version,
   createdAt: time, updatedAt: time, archivedAt: time.nullable(), statusBeforeArchive: z.literal('following').optional(),
+  timelineId: uuid.optional(),
   attentionIds: z.array(uuid).max(CONCERN_STORED_EVENT_LIMIT), eventCount: z.number().int().min(1).max(CONCERN_STORED_EVENT_LIMIT),
   followUp: z.object({ id: uuid, at: time, state: z.enum(['pending', 'queued', 'completed', 'stopped', 'unknown', 'cancelled']),
     runId: uuid.nullable() }).strict().nullable(),
@@ -63,16 +64,16 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
     return value;
   }
   async function hydrate(b: Binding, item: Head): Promise<Concern> {
-    const rows = await b.transaction.get(query(b, 'concern_events').where('concernId', '==', item.id)
+    const rows = await b.transaction.get(query(b, 'concern_events').where(item.timelineId ? 'timelineId' : 'concernId', '==', item.timelineId ?? item.id)
       .where('sequence', '<=', item.eventCount).orderBy('sequence', 'asc').limit(CONCERN_STORED_EVENT_LIMIT));
     const events = rows.docs.map((row, i) => {
       const event = data.open('concern-event', row.get('eventId'), b.scope, firestoreDocumentConcernEventSchema, row);
       if (event.id !== row.get('eventId') || event.concernId !== item.id || event.childId !== item.childId
-        || event.sequence !== i + 1 || row.get('sequence') !== event.sequence) domainReject('concern_binding', 500);
-      const { concernId: _concern, childId: _child, sequence: _sequence, ...value } = event; return value;
+        || event.timelineId !== item.timelineId || event.sequence !== i + 1 || row.get('sequence') !== event.sequence) domainReject('concern_binding', 500);
+      const { concernId: _concern, childId: _child, sequence: _sequence, timelineId: _timeline, ...value } = event; return value;
     });
     if (events.length !== item.eventCount) domainReject('concern_history_incomplete', 503);
-    const { eventCount: _count, ...value } = item; return { ...value, events, historyComplete: true };
+    const { eventCount: _count, timelineId: _timeline, ...value } = item; return { ...value, events, historyComplete: true };
   }
   async function read(b: Binding, id: string) { const item = await head(b, id); return item ? hydrate(b, item) : null; }
   function event(b: Binding, at: string, kind: ConcernEvent['kind'], title: string, text: string,
@@ -113,12 +114,14 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
     const context = await prepareContextChange(data, b), change = await b.prepareChange(opId, 'growth', false);
     const tags = { ...data.tags(b.scope), concernId: value.id, entityVersion: value.version, createdAt: value.createdAt };
     const storedEvents = events.map((entry, i) => {
-      const row = { ...entry, concernId: value.id, childId: value.childId, sequence: prior.length + i + 1 };
+      const row = { ...entry, concernId: value.id, childId: value.childId, sequence: prior.length + i + 1,
+        ...(value.timelineId ? { timelineId: value.timelineId } : {}) };
       return { ref: data.ref('concern_events', 'concern-event', entry.id), value: { ...data.tags(b.scope),
-        concernId: value.id, eventId: entry.id, sequence: row.sequence,
+        ...(value.timelineId ? { timelineId: value.timelineId } : { concernId: value.id }), eventId: entry.id, sequence: row.sequence,
         ...data.seal('concern-event', entry.id, b.scope, firestoreDocumentConcernEventSchema, row) } };
     });
-    return { value: { ...value, events: [...prior, ...events], historyComplete: true }, changeSeq: change.changeSeq,
+    const { timelineId: _timeline, ...publicHead } = value;
+    return { value: { ...publicHead, events: [...prior, ...events], historyComplete: true }, changeSeq: change.changeSeq,
       commit() { change.commit(); context(); wake?.commit();
         b.transaction.set(data.ref('concerns', 'concern', value.id), { ...tags, ...data.seal('concern', value.id, b.scope, firestoreConcernSchema, value, value.version) });
         b.transaction.create(revisionRef, { ...tags, ...data.seal('concern-revision', revisionId, b.scope, firestoreConcernSchema, value, value.version) });

@@ -4413,3 +4413,10 @@
 #400 已接回同一 Web／Android 歷史來源切換、分頁、唯讀原文及原媒體元件；兩項窄檢查及八根型別圖通過，未部署。從 `7805c969` 繼續擴充原 search_history／read_history 的匯入來源，保留本地版本、原角色／作者及 provenance，原訊息／確認／工具副作用不重播。固定版續讀與原 scope／cursor 相同；不另建模型或歷史權威。
 
 一條原匯入／聊天服務及工具流程 RED→GREEN，覆蓋分頁、原文、跨帳號、來源更新與既有對話相容。Review 找到缺轉錄令匯入錄音整頁讀取失敗，已以真 transcript store 的缺 row 重現；只在匯入路徑處理確定 404/not_found，其他錯誤繼續拒絕。最終同一流程一項通過、五根型別圖零診斷；[證據](artifacts/verification/P4_HANDOVER_AGENT_HISTORY_20261030.json)保留失敗及驗證限制。不跑模型、雲端、設備或全量測試；未部署／未作 D 的 Agent 品質驗收，P4 未結案。
+
+<a id="log-20261030-p4-handover-concern-timeline"></a>
+### 2026-10-30 — P4-HANDOVER01 關注時間線與包來源讀取
+
+從 `45bebf4b` 在原關注 head／事件／修訂加入可選內部時間線，保留原事件與原操作查回；普通追加沿目前時間線，公開 DTO 不增加內部欄位。文件引用與報告續讀核對同一時間線；恢復重建相符 metadata，新增一個索引定義但未安裝。原包 reader 按已驗證 head／修訂取有界完整事件，不混入較晚事件或另一時間線。
+
+時間線一條 RED→GREEN、包 reader 一條通過，九根局部型別圖零診斷，獨立靜態 review 無阻擋問題。保留原 DTO 斷言差異及 cache 型別失敗；reader 方法先落地，沒有 baseline RED，不宣稱已做。完整[證據](artifacts/verification/P4_HANDOVER_CONCERN_TIMELINE_20261030.json)。未跑產品全量、模型、通知、雲端、設備或部署；fixture 注入時間線及 codec 並非真正匯入／災難恢復。下一步繼續關注／成長實際匯入與共用畫面，不因本底層包通過而結束 P4。
