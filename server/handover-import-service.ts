@@ -14,7 +14,7 @@ import { attachmentSupplementModules, isHandoverAttachment, type HandoverAttachm
 type Uploads = ReturnType<typeof createHandoverUploadService>;
 type Opened = Awaited<ReturnType<Uploads['open']>>;
 const supported = new Set<string>([...handoverImportResourceSectionSchema.options, ...Object.keys(historyModules), ...Object.keys(attachmentSupplementModules)]);
-const cursorSchema = z.object({ target: z.number().int().nonnegative(), phase: z.enum(['current', 'documents', 'attachments', 'history']).optional(), page: z.object({ manifestSha256: z.string(), selectionHash: z.string(),
+const cursorSchema = z.object({ target: z.number().int().nonnegative(), phase: z.enum(['current', 'documents', 'attachments', 'chat', 'history']).optional(), page: z.object({ manifestSha256: z.string(), selectionHash: z.string(),
   pageIndex: z.number().int().nonnegative(), rowIndex: z.number().int().nonnegative() }).strict().nullable() }).strict();
 type Cursor = z.infer<typeof cursorSchema>;
 const codeOf = (error: unknown) => error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
@@ -87,13 +87,15 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       // Existing in-flight cursors keep their old reader selection. New batches always establish parents first.
       const currentSections = target.sections.flatMap(module => [...HANDOVER_SECTIONS[module]]).filter(section => !Object.hasOwn(historyModules, section));
       const sections = selected ? [...new Set(selected.map(row => row.section))] : cursor.phase === undefined ? undefined : cursor.phase === 'current'
-        ? currentSections.filter(section => section !== 'documents' && section !== 'visit_preparation' && !Object.hasOwn(attachmentSupplementModules, section))
+        ? currentSections.filter(section => section !== 'documents' && section !== 'visit_preparation' && section !== 'chat' && section !== 'chat_imports' && !Object.hasOwn(attachmentSupplementModules, section))
         : cursor.phase === 'documents' ? currentSections.filter(section => section === 'documents' || section === 'visit_preparation')
         : cursor.phase === 'attachments' ? currentSections.filter(section => Object.hasOwn(attachmentSupplementModules, section))
+        : cursor.phase === 'chat' ? currentSections.filter(section => section === 'chat' || section === 'chat_imports')
         : Object.entries(historyModules).filter(([, section]) => target.sections.includes(handoverImportModuleOf(section))).map(([section]) => section);
       const afterPhase = (): Cursor => !selected && cursor.phase === 'current' ? { target: cursor.target, phase: 'documents', page: null }
         : !selected && cursor.phase === 'documents' ? { target: cursor.target, phase: 'attachments', page: null }
-        : !selected && cursor.phase === 'attachments' ? { target: cursor.target, phase: 'history', page: null }
+        : !selected && cursor.phase === 'attachments' ? { target: cursor.target, phase: 'chat', page: null }
+        : !selected && cursor.phase === 'chat' ? { target: cursor.target, phase: 'history', page: null }
         : { target: cursor.target + 1, ...(cursor.phase ? { phase: 'current' as const } : {}), page: null };
       if (sections?.length === 0) { cursor = afterPhase(); continue; }
       const page = await opened.reader.readPage({ selection: { childIds: [target.sourceChildId], modules: target.sections }, sections,

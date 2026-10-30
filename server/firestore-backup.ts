@@ -15,7 +15,7 @@ export const FIREBASE_BACKUP_COLLECTION_SUFFIXES = Object.freeze(['', '_sessions
   '_notification_outbox', '_task_dispatches', '_knowledge_sources', '_knowledge_versions', '_knowledge_chunks', '_knowledge_lexical', '_knowledge_vectors',
   '_knowledge_watches', '_knowledge_observations', '_knowledge_observation_parts', '_knowledge_checks',
   '_shared_inputs', '_shared_input_parts', '_shared_input_management_revisions',
-  '_chat_messages', '_chat_replies', '_chat_reply_leases', '_care_records', '_care_revisions', '_child_profiles', '_profile_revisions',
+  '_chat_messages', '_chat_imported_messages', '_chat_replies', '_chat_reply_leases', '_care_records', '_care_revisions', '_child_profiles', '_profile_revisions',
   '_context_versions', '_memory_facts', '_memory_topics', '_memory_keys', '_memory_reopened', '_memory_fact_revisions', '_memory_topic_revisions',
   '_conversation_summary_heads', '_conversation_summaries', '_agent_runs', '_agent_claims', '_agent_proposals',
   '_agent_confirmations', '_agent_confirmation_slots', '_agent_confirmation_responses', '_agent_work_index', '_agent_work_operations',

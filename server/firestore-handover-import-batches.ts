@@ -55,7 +55,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
       let scope: WorkRecoveryScope | undefined;
       for (const module of selected.sections) {
         if (selected.target.spaceId) {
-          if (module === 'sources') domainReject('private_scope_unavailable', 403);
+          if (module === 'sources' || module === 'chat') domainReject('private_scope_unavailable', 403);
           await sharing.inResourceTransaction(b, { ...selected.target, spaceId: selected.target.spaceId, module, mode: 'write' },
             async access => { scope = access.scope; });
         }

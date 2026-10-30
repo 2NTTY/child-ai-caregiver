@@ -12,6 +12,7 @@ import { firestoreCareStorageSchema as firestoreCareSchema, firestoreProfileStor
 import { validSharedAttribution } from './shared-write-attribution.ts';
 import { firestoreFactStorageSchema as firestoreFactSchema, firestoreTopicStorageSchema as firestoreTopicSchema, firestoreMemoryRecoverySchemas, validMemoryFactAttribution } from './firestore-memory.ts';
 import { firestoreChatMessageSchema, firestoreChatRecoverySchemas } from './firestore-chat.ts';
+import { importedChatMessageSchema } from '../src/shared/chat-imports.ts';
 import { firestoreContextRecoverySchema } from './firestore-context-basis.ts';
 import type { FirestoreRecoveryContext } from './firestore-recovery-envelope.ts';
 
@@ -33,6 +34,7 @@ export const coreRestoreSchemas = {
   'profile-revision': { suffix: 'profile_revisions', schema: firestoreProfileSchema },
   'context-version': { suffix: 'context_versions', schema: firestoreContextRecoverySchema },
   'chat-message': { suffix: 'chat_messages', schema: firestoreChatMessageSchema },
+  'chat-imported-message': { suffix: 'chat_imported_messages', schema: importedChatMessageSchema },
   'chat-reply': { suffix: 'chat_replies', schema: firestoreChatRecoverySchemas.reply },
   'chat-reply-leases': { suffix: 'chat_reply_leases', schema: firestoreChatRecoverySchemas.leases },
   'memory-fact': { suffix: 'memory_facts', schema: firestoreFactSchema },
@@ -136,6 +138,11 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
     if (kind === 'profile-revision') { equalId(id, [value.childId, value.version]); return { entityId: value.childId, entityVersion: value.version }; }
     requireValue(id === value.childId);
     return { historyFloor: z.number().int().min(1).max(value.version).parse(original.historyFloor) };
+  }
+  if (kind === 'chat-imported-message') {
+    const value = importedChatMessageSchema.parse(raw);
+    requireValue(value.id === id && value.childId === scope.childId && recordVersion === value.version);
+    return { messageId: id, createdAt: value.message.createdAt };
   }
   if (kind === 'chat-message') {
     const value = firestoreChatMessageSchema.parse(raw);

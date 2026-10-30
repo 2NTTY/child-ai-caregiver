@@ -98,7 +98,12 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
     if (manifest.selection.period) fail('package_period_not_connected');
     const required = new Set([key('children', null)]);
     for (const childId of childIds) for (const module of manifest.selection.modules)
-      for (const section of HANDOVER_SECTIONS[module]) required.add(key(section, childId));
+      for (const section of HANDOVER_SECTIONS[module]) {
+        // Version-one exports predating imported history legitimately contain only the live chat section.
+        // An undeclared data page still fails the required-scope check below.
+        if (section === 'chat_imports' && !expected.has(key(section, childId))) continue;
+        required.add(key(section, childId));
+      }
     if (required.size !== expected.size || [...required].some(id => !expected.has(id))) fail('invalid_package_coverage');
     const scopeVersion = expected.get(key('children', null))!.scopeVersion;
     if ([...expected.values()].some(row => row.scopeVersion !== scopeVersion)) fail('invalid_package_coverage');

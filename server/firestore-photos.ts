@@ -572,11 +572,11 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
       }
     },
     prepareImportReservation, prepareImportPublication,
-    async readImportState(binding: FirestoreAuthorityTransaction, id: string): Promise<{ value: { id: string; version: number } | null; version: number }> {
+    async readImportState(binding: FirestoreAuthorityTransaction, id: string) {
       parse(uuid, id, true);
       try {
         const row = await readRow(binding, id);
-        return { value: row.state === 'ready' ? { id: row.id, version: row.version } : null, version: row.version };
+        return { value: row.state === 'ready' ? { id: row.id, version: row.version, metadata: row.metadata } : null, version: row.version };
       } catch (error) {
         if (error instanceof FirestoreDomainError && error.status === 404 && error.code === 'not_found'
           && !(await binding.transaction.get(rowRef(id))).exists) return { value: null, version: 0 };

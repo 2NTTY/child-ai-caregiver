@@ -15,7 +15,7 @@ import { sourceHistoryExportSchema, sourceHistoryRecordSchema, sourceHistoryId, 
   type SourceHistoryRecord, type HistoryModule } from './handover-history-records.ts';
 
 function parseRevision(module: HistoryModule, raw: unknown) {
-  if (module === 'files' || module === 'voices' || module === 'photos' || module === 'child_avatar')
+  if (module === 'files' || module === 'voices' || module === 'photos' || module === 'child_avatar' || module === 'chat' || module === 'chat_imports')
     domainReject('invalid_package_data', 400); // Attachment identities are immutable assets, not editable source revisions.
   if (module === 'documents') domainReject('invalid_package_data', 400); // Document bodies use the existing chunked snapshot store.
   if (module === 'visit_preparation') {

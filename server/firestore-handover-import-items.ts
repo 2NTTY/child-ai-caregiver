@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { chatImportSourceSchema, importedChatMessageSchema, type ImportedChatAttachment } from '../src/shared/chat-imports.ts';
 import { FieldPath, type DocumentSnapshot } from '@google-cloud/firestore';
 import { handoverSourceHistoryQuerySchema, handoverSourceHistoryPageSchema, handoverImportResultPageSchema } from '../src/shared/handover-imports.ts';
 import type { CareRecord, ChildProfile } from '../src/shared/care.ts';
@@ -47,18 +48,20 @@ export type HandoverImportFence = (actor: Binding, target: Binding) => Promise<{
 export function createFirestoreHandoverImportItems(options: FirestoreDomainOptions & { attachments?: HandoverAttachmentPorts }) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), sharing = createFirestoreSharingStore(options);
   const care = createFirestoreCareStore(options), online = createFirestoreOnlineStore(options);
-  const memory = createFirestoreMemoryStore({ ...options, care, chat: createFirestoreChatStore(options) }), notes = createFirestorePrivateInstructions(data);
+  const chat = createFirestoreChatStore(options);
+  const memory = createFirestoreMemoryStore({ ...options, care, chat }), notes = createFirestorePrivateInstructions(data);
   const sources = createFirestoreSharedInputStore(options);
   const documents = createFirestoreFamilyDocumentStore(options), preparations = createFirestoreCareSummary(options, care);
   const attachments = createHandoverAttachments(options.attachments);
   const sectionSchema = handoverImportResourceSectionSchema;
   const schemas = { care: firestoreCareSchema, profile: firestoreProfileSchema, tasks: firestoreTaskSchema,
     memory_facts: firestoreFactSchema, memory_topics: firestoreTopicSchema, instructions: firestorePrivateInstructionSchema, summary_history: firestoreSummarySchema,
-    private_sources: sharedInputImportSchema, documents: familyDocumentTransferSchema, visit_preparation: firestorePreparationSchema, ...handoverAttachmentSchemas };
+    private_sources: sharedInputImportSchema, documents: familyDocumentTransferSchema, visit_preparation: firestorePreparationSchema,
+    chat: chatImportSourceSchema, chat_imports: importedChatMessageSchema, ...handoverAttachmentSchemas };
   const access = <T>(userId: string, target: Target, section: Section | HandoverImportModule, mode: 'read' | 'write', use: (b: Binding, actor: Binding) => Promise<T>) => {
     const module = section === 'memory' || section === 'sources' || section === 'attachments' ? section : handoverImportModuleOf(section);
     if (target.spaceId) {
-      if (module === 'sources') domainReject('private_scope_unavailable', 403);
+      if (module === 'sources' || module === 'chat') domainReject('private_scope_unavailable', 403);
       return authority.runTransaction(userId, null, actor => sharing.inResourceTransaction(actor,
         { spaceId: target.spaceId!, childId: target.childId, module, mode }, value => use(value.binding, actor)));
     }
@@ -89,7 +92,8 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
     const preparationState = section === 'visit_preparation' ? await preparations.readImportState(b) : null;
     const attachmentState = isHandoverAttachment(section) && (mapping || section === 'child_avatar')
       ? await attachments.readState(b, section, mapping?.target.id ?? b.scope.childId) : null;
-    const current = section === 'profile' ? await care.readProfile(b)
+    const current = mapping && (section === 'chat' || section === 'chat_imports') ? await chat.readImportedMessage(b, b.scope.childId, mapping.target.id)
+      : section === 'profile' ? await care.readProfile(b)
       : attachmentState ? attachmentState.value
       : preparationState ? preparationState.value
       : !mapping ? null : section === 'care' ? careState!.value : section === 'tasks' ? await online.readImportTask(b, b.scope.childId, mapping.target.id)
@@ -128,7 +132,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
         return prior;
       }
       const history = historySection ? parseHistoryRow(raw.row, historySection, raw.integrity, b.actorUserId) : null;
-      const provenance = history?.provenance ?? makeImportProvenance(supplement ? { ...raw.row, section,
+      const provenance = history?.provenance ?? makeImportProvenance(section === 'chat' ? { ...raw.row, value: { ...raw.row.value, version: sourceValue!.version } } : supplement ? { ...raw.row, section,
         value: { childId: raw.row.childId, id: supplement.id, version: supplement.version,
           ...(section === 'child_avatar' ? { target: { kind: 'child',childId: raw.row.childId } } : {}),
           ...(raw.row.value.importedFrom ? { importedFrom: raw.row.value.importedFrom } : {}) } } : raw.row, raw.integrity, b.actorUserId, new Date().toISOString());
@@ -219,6 +223,29 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       if (section === 'care') {
         const prepared = await care.prepareImportedRecord(b, opId, raw.row, raw.integrity,
           current ? { id: (current as CareRecord).id, expectedVersion: current.version } : undefined);
+        return finish(current ? 'updated' : 'created', null, { id: prepared.value.id, version: prepared.value.version }, prepared);
+      }
+      if (section === 'chat' || section === 'chat_imports') {
+        const value = section === 'chat' ? chatImportSourceSchema.parse(raw.row.value) : importedChatMessageSchema.parse(raw.row.value);
+        const message = 'message' in value ? value.message : value;
+        const reference = message.file ?? message.voice ?? message.photo;
+        const kind = message.file ? 'files' : message.voice ? 'voices' : 'photos';
+        // A re-export uses its already mapped attachment, never an unrelated same-ID source object.
+        const sourceId = 'message' in value ? value.attachment?.resource.id : reference?.id;
+        let attachment: ImportedChatAttachment | null = null;
+        if (sourceId && reference && (kind === 'files' ? options.attachments?.files : kind === 'voices' ? options.attachments?.voices : options.attachments?.photos)) {
+          const linked = await readState(b, kind, { ...source, section: kind, resourceId: sourceId });
+          if (linked.current && !linked.deleted) {
+            const metadata = kind === 'files' ? await options.attachments!.files!.readMetadata(b, linked.currentId!)
+              : kind === 'voices' ? await options.attachments!.voices!.readMetadata(b, linked.currentId!)
+              : (await options.attachments!.photos!.readImportState(b, linked.currentId!)).value?.metadata;
+            if (metadata && metadata.sha256 === reference.sha256 && metadata.bytes === reference.bytes && metadata.mimeType === reference.mimeType
+              && (!message.voice || 'durationMs' in metadata && metadata.durationMs === message.voice.durationMs))
+              attachment = { kind, resource: { id: linked.currentId!, version: linked.currentVersion } };
+          }
+        }
+        const prepared = await chat.prepareImported(b, opId, raw.row, raw.integrity,
+          current ? { id: currentId!, expectedVersion: currentVersion } : undefined, attachment);
         return finish(current ? 'updated' : 'created', null, { id: prepared.value.id, version: prepared.value.version }, prepared);
       }
       if (section === 'profile') {
@@ -318,7 +345,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
             if (currentResource && !stale) availableResolution = live.deleted ? 'restore_deleted' : live.locallyChanged ? 'replace_current' : null;
           }
           result.push({ id: value.opId, batchId: value.batchId, sourceChildId: selection.sourceChildId, module: selection.module,
-            ...(selection.module === 'memory' || selection.module === 'sources' || selection.module === 'documents' || selection.module === 'attachments' ? { resourceSection } : {}),
+            ...(selection.module === 'memory' || selection.module === 'sources' || selection.module === 'documents' || selection.module === 'attachments' || selection.module === 'chat' ? { resourceSection } : {}),
             sourceResourceId: value.source.source.resourceId, sourceVersion: value.source.source.resourceVersion, sourceSection: value.sourceSection ?? null,
             at: value.at, outcome: value.outcome, reason: value.reason, recordedResource: value.resource, currentResource, availableResolution });
         }
@@ -330,7 +357,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
     async history(userId: string, raw: unknown) {
     const input = domainParse(handoverSourceHistoryQuerySchema, raw);
     return access(userId, input, input.module, 'read', async b => {
-      if (isHandoverAttachment(input.module)) domainReject('source_history_unavailable', 400);
+      if (isHandoverAttachment(input.module) || input.module === 'chat' || input.module === 'chat_imports') domainReject('source_history_unavailable', 400);
       if (input.module === 'documents') {
         const store = createFirestoreFamilyDocumentStore({ ...options, transaction: b });
         const page = await store.listSourceVersions(userId, input.childId, input.resourceId, input.cursor);

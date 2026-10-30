@@ -21,6 +21,7 @@ import { createFirebaseErasureJournal } from '../server/firebase-erasure-journal
 import { createFirestoreChatFilesStore } from '../server/firestore-chat-files.ts';
 import { createFirestoreVoiceStore } from '../server/firestore-voice.ts';
 import { createFirestoreVoiceTranscripts } from '../server/firestore-voice-transcripts.ts';
+import { createFirestoreChatStore } from '../server/firestore-chat.ts';
 import { createFirestoreAvatarStore } from '../server/firestore-avatars.ts';
 import { readAvatarConfig } from '../server/avatar-config.ts';
 import { createFirestoreSharingStore } from '../server/firestore-sharing.ts';
@@ -28,7 +29,7 @@ import { writeHandoverArchive } from '../server/handover-archive.ts';
 import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 
-test('attachment rows traverse the original package worker with detached originals and retained transcription', async () => {
+test('attachment rows traverse the original package worker before imported chat links with retained transcription', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'handover-attachments-')), controller = new AbortController();
   try {
     const fixture = serialFirestoreFixture(), cipher = createStorageCipher(Buffer.alloc(32, 99));
@@ -80,14 +81,20 @@ test('attachment rows traverse the original package worker with detached origina
     const transcript = { voice: { id: voiceId, version: voice.version, mimeType: voice.mimeType, bytes: voice.bytes, sha256: voice.sha256, durationMs: voice.durationMs },
       messageId: sourceMessageId, version: 2, state: 'available', automatic: true, updatedAt: at, reason: null, retryAt: null,
       content: { complete: true, segments: [{ text: 'Original heard words', startMs: 0, endMs: 1000, unclear: false }] } };
+    const textMessage = { id: randomUUID(), childId: sourceChild, authorUserId: 'source', role: 'user', text: 'Original private statement', inReplyTo: null, createdAt: at };
+    const fileMessage = { id: sourceMessageId, childId: sourceChild, authorUserId: 'source', role: 'user', text: 'Original private file', inReplyTo: null, createdAt: at,
+      file: { id: fileId, version: file.version, mimeType: file.mimeType, bytes: file.bytes, sha256: file.sha256 } };
     const values: Record<string, object[]> = {
       files: [file], file_content: [{ fileId, version: file.version, attachmentPath: 'attachments/file.bin', mimeType: file.mimeType, bytes: file.bytes, sha256: file.sha256 }],
       voices: [voice], voice_content: [{ voiceId, version: voice.version, attachmentPath: 'attachments/voice.bin', mimeType: voice.mimeType, bytes: voice.bytes, sha256: voice.sha256 }],
       voice_transcripts: [transcript], child_avatar: [{ target: { kind: 'child', childId: sourceChild }, version: 0, asset: null, updatedAt: null }],
       photos: [], photo_content: [], child_avatar_content: [],
+      chat: [textMessage, fileMessage], chat_imports: [],
     };
     const scopeVersion = 'a'.repeat(64), sections = [...HANDOVER_SECTIONS.attachments].sort((a, b) => Number(!a.endsWith('_content')) - Number(!b.endsWith('_content')));
     const pages = [{ section: 'children', childId: null as string | null, items: [{ id: sourceChild, displayName: 'Source child' }] },
+      // Source chat precedes asset metadata in the archive; worker phases must still publish the assets first.
+      ...HANDOVER_SECTIONS.chat.map(section => ({ section, childId: sourceChild, items: values[section] })),
       ...sections.map(section => ({ section, childId: sourceChild, items: values[section] }))];
     async function* entries() {
       yield { path: 'attachments/file.bin', mediaType: file.mimeType, content: fileBytes };
@@ -96,15 +103,15 @@ test('attachment rows traverse the original package worker with detached origina
       yield { path: 'summary.md', mediaType: 'text/markdown', content: Buffer.from('Synthetic attachment package') };
     }
     const archive = await writeHandoverArchive({ directory, header: { format: 'yuyoufang-data', version: 1, packageId: randomUUID(), packageVersion: 1,
-      createdAt: at, purpose: 'handover', source: { serverId: 'https://source.test', accountId: 'source' }, selection: { childIds: [sourceChild], modules: ['attachments'], period: null } },
+      createdAt: at, purpose: 'handover', source: { serverId: 'https://source.test', accountId: 'source' }, selection: { childIds: [sourceChild], modules: ['attachments', 'chat'], period: null } },
       entries: entries(), coverage: () => pages.map(page => ({ section: page.section, childId: page.childId, items: page.items.length, scopeVersion, complete: true as const })) });
     const bytes = await readFile(archive.path), uploadId = randomUUID();
     await uploads.create('recipient', { opId: uploadId, filename: 'attachments.zip', bytes: bytes.length, sha256: hash(bytes) });
     const uploaded = await uploads.receive('recipient', uploadId, Readable.from([bytes]), controller.signal);
     assert.equal(uploaded.preview!.integrity, 'missing_proof');
     const command = { opId: randomUUID(), uploadId, expectedUploadVersion: uploaded.version, acceptedManifestSha256: uploaded.preview!.manifestSha256,
-      targets: [{ sourceChildId: sourceChild, target: { childId, spaceId: null }, sections: ['attachments'] }], resolutions: [] };
-    const queued = await service.create('recipient', command, controller.signal); assert.equal(queued.state, 'queued', queued.error ?? undefined); assert.equal(queued.totalItems, 6);
+      targets: [{ sourceChildId: sourceChild, target: { childId, spaceId: null }, sections: ['attachments', 'chat'] }], resolutions: [] };
+    const queued = await service.create('recipient', command, controller.signal); assert.equal(queued.state, 'queued', queued.error ?? undefined); assert.equal(queued.totalItems, 8);
     await worker.background.dispatch();
     const delivery = deliveries.find(value => {
       const row = [...fixture.records].find(([path, data]) => path.includes('_background_work/') && data.id === value.id);
@@ -112,7 +119,7 @@ test('attachment rows traverse the original package worker with detached origina
     });
     assert.ok(delivery, 'the original import queue delivery exists'); await worker.background.process(delivery);
     const done = await service.get('recipient', command.opId); assert.equal(done.state, 'completed', done.error ?? JSON.stringify(done));
-    assert.equal(done.processedItems, 6); assert.deepEqual(done.counts, { created: 3, updated: 0, skipped: 3, conflict: 0 });
+    assert.equal(done.processedItems, 8); assert.deepEqual(done.counts, { created: 5, updated: 0, skipped: 3, conflict: 0 });
     const results = await service.results('recipient', command.opId, { sourceChildId: sourceChild, module: 'attachments' });
     assert.equal(results.complete, true); assert.equal(results.items.length, 6);
     const localFile = results.items.find(item => item.resourceSection === 'files' && item.sourceSection === null)!.recordedResource!.id;
@@ -124,10 +131,23 @@ test('attachment rows traverse the original package worker with detached origina
     assert.equal((await voices.content('recipient', childId, localVoice)).base64, voiceBytes.toString('base64'));
     const retained = await transcripts.get('recipient', childId, localVoice);
     assert.equal(retained.messageId, null); assert.equal(retained.state, 'available'); assert.deepEqual(retained.content, transcript.content);
+    const chat = createFirestoreChatStore(options), importedChat = await chat.listImportedForUser('recipient', childId);
+    assert.equal(importedChat.items.length, 2); assert.equal(importedChat.nextCursor, null);
+    const importedText = importedChat.items.find(item => item.message.id === textMessage.id);
+    const importedFile = importedChat.items.find(item => item.message.id === fileMessage.id);
+    assert.ok(importedText); assert.deepEqual(importedText.message, textMessage); assert.equal(importedText.attachment, null);
+    assert.ok(importedFile); assert.deepEqual(importedFile.message, fileMessage);
+    assert.deepEqual(importedFile.attachment, { kind: 'files', resource: results.items.find(item => item.resourceSection === 'files' && item.sourceSection === null)!.recordedResource });
+    assert.equal(importedFile.attachment!.resource.id, localFile); assert.notEqual(importedFile.attachment!.resource.id, fileId);
+    assert.deepEqual((await chat.listForUser('recipient', childId)).messages, []);
+    const chatResults = await service.results('recipient', command.opId, { sourceChildId: sourceChild, module: 'chat' });
+    assert.equal(chatResults.complete, true); assert.equal(chatResults.items.length, 2);
+    assert.equal(chatResults.items.find(item => item.sourceResourceId === sourceMessageId)!.recordedResource!.id, importedFile.id);
     const workKinds = [...fixture.records].filter(([path]) => path.includes('_background_work/')).map(([path, data]) => (codec.decode({ path, data }).value as any).kind);
     assert.equal(workKinds.includes('voice-transcription'), false);
     const writes = [fileBucket.writes(), voiceBucket.writes()]; assert.deepEqual(writes, [1, 1]);
     assert.deepEqual(await service.create('recipient', command, controller.signal), done); assert.deepEqual([fileBucket.writes(), voiceBucket.writes()], writes);
+    assert.deepEqual(await chat.listImportedForUser('recipient', childId), importedChat, 'original batch receipt does not duplicate imported history or attachment links');
     assert.equal(avatarBucket.writes(), 0); assert.equal(journalBucket.writes(), 0);
     const sharing = createFirestoreSharingStore(options);
     const family = await sharing.create('recipient', { operationId: randomUUID(), name: 'Shared imported attachments', kind: 'family' });
