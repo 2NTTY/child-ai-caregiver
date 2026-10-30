@@ -9,16 +9,16 @@ import { chineseFont, colors, readingType, spacing } from '../../theme';
 import { HandoverImportHistory } from './HandoverImportHistory';
 
 const modules: Record<HandoverImportView['targets'][number]['sections'][number], string> & Record<string, string> = {
-  care: '照護記錄', profile: '孩子資料', tasks: '待辦', memory: '記憶與摘要', sources: '私人來源', documents: '文件與準備單', attachments: '附件', chat: '私人聊天歷史', concerns: '持續關注' };
+  care: '照護記錄', profile: '孩子資料', tasks: '待辦', memory: '記憶與摘要', sources: '私人來源', documents: '文件與準備單', attachments: '附件', chat: '私人聊天歷史', concerns: '持續關注', growth: '成長整理' };
 const resources: Record<HandoverImportResourceSection, string> & Record<string, string> = { care: '照護記錄', profile: '孩子資料', tasks: '待辦',
   memory_facts: '記憶事實', memory_topics: '記憶話題', instructions: '私人交代', summary_history: '摘要歷史', private_sources: '私人來源',
-  documents: '文件', visit_preparation: '到診準備', files: '檔案', voices: '語音原檔', photos: '照片', child_avatar: '孩子頭像', chat: '聊天訊息', chat_imports: '匯入對話', concerns: '持續關注' };
+  documents: '文件', visit_preparation: '到診準備', files: '檔案', voices: '語音原檔', photos: '照片', child_avatar: '孩子頭像', chat: '聊天訊息', chat_imports: '匯入對話', concerns: '持續關注', growth_attention: '成長事項', growth_topics: '成長主題設定' };
 const sourceSectionLabels: Record<NonNullable<HandoverImportResult['sourceSection']>, string> & Record<string, string> = {
   care_history: '照護記錄來源歷史', profile_history: '孩子資料來源歷史', task_history: '待辦來源歷史',
   memory_fact_history: '記憶事實來源歷史', memory_topic_history: '記憶話題來源歷史', private_source_history: '私人來源管理歷史',
   document_versions: '文件來源版本索引', document_content: '文件來源修訂', visit_preparation_history: '到診準備來源歷史',
   file_content: '檔案原始內容', voice_content: '語音原始內容', photo_content: '照片原始內容', child_avatar_content: '孩子頭像內容',
-  voice_transcripts: '語音轉錄文字', concern_history: '關注來源歷史', concern_events: '關注來源事件' };
+  voice_transcripts: '語音轉錄文字', concern_history: '關注來源歷史', concern_events: '關注來源事件', growth_history: '成長事項來源歷史', growth_topic_history: '成長主題設定來源歷史' };
 const outcomes = { created: '已新增', updated: '已更新', skipped: '已略過', conflict: '有衝突' };
 const reasons: Record<string, string> = {
   target_changed: '接收資料曾被修改，已保留目前內容。', target_deleted: '接收項目已刪除，未自動恢復。',
