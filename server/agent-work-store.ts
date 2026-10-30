@@ -121,6 +121,7 @@ export function createAgentWorkStore(pool: Pool, cipher: StorageCipher) {
     },
     async searchHistory(userId: string, childId: string, raw: z.infer<typeof historySearchSchema>): Promise<AgentHistoryPage | null> {
       const input = historySearchSchema.parse(raw), cursor = parseCursor(input.cursor, userId, childId, input.kind, input.query);
+      if (input.kind === 'imported_message') throw new FamilyError(400, 'imported_history_unavailable');
       const table = { message: "chat_messages", private_instruction: "agent_private_notes", memory_fact: "memory_facts" }[input.kind];
       const filter = input.kind === "memory_fact" ? "(visibility='family' OR created_by=$1)" : "owner_user_id=$1";
       return access(userId, childId, false, async client => {
@@ -155,6 +156,7 @@ export function createAgentWorkStore(pool: Pool, cipher: StorageCipher) {
     },
     async readHistory(userId: string, childId: string, raw: z.infer<typeof historyReadSchema>): Promise<AgentHistoryMessage | null> {
       const input = historyReadSchema.parse(raw);
+      if (input.kind === 'imported_message') throw new FamilyError(400, 'imported_history_unavailable');
       return access(userId, childId, false, async client => {
         const row = (await client.query<ScanRow>("SELECT id,role,created_at,text_encrypted AS payload_encrypted,in_reply_to FROM chat_messages WHERE id=$1 AND owner_user_id=$2 AND child_id=$3", [input.messageId, userId, childId])).rows[0];
         if (!row) throw missing();
