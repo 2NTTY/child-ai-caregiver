@@ -58,6 +58,7 @@ export class ProductionOwner {
   readonly draftOwner = createAssistantDraftOwner();
   readonly controller: RecordsController;
   readonly chatController: ChatController;
+  readonly chatApi: ChatApi;
   readonly fileApi: ChatFileApi;
   readonly fileOwner: ChatFileUploadController;
   readonly chatPhotoApi: PhotoApi;
@@ -141,10 +142,11 @@ export class ProductionOwner {
       api: accountDependencies?.api ?? createAccountApi(this.apiBaseUrl, this.fetcher, firebaseIdentity),
       authApi: createAccountAuthApi(this.apiBaseUrl, this.fetcher, firebaseIdentity) } : accountDependencies;
     this.accountOwner = new AccountServiceOwner(this.apiBaseUrl, online, () => { void this.controller.restoreSession(); }, () => { void this.controller.restoreSession(); }, account);
-    this.chatController = new ChatController(chatApi ?? createChatApi(this.apiBaseUrl, async signal => {
+    this.chatApi = chatApi ?? createChatApi(this.apiBaseUrl, async signal => {
       try { return await recordsApi.getSession(signal); }
       catch (error) { if (!signal.aborted) void this.controller.restoreSession(); throw error; }
-    }, this.fetcher), online);
+    }, this.fetcher);
+    this.chatController = new ChatController(this.chatApi, online);
     this.fileApi = createChatFileApi(this.fetcher,this.apiBaseUrl,photoSha256);
     this.fileOwner = new ChatFileUploadController(this.fileApi,photoSha256,this.handleDomainAccessError);
     this.chatPhotoApi = createPhotoApi(this.apiBaseUrl,this.fetcher,photoSha256);

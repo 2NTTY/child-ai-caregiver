@@ -8,6 +8,8 @@ import type { ChatMessage, ChatPage, ChatReplyState } from "../shared/chat.ts";
 import type { OnlineReceipt } from "../shared/online.ts";
 import type { SessionUser } from "./records-api.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
+import { z } from 'zod';
+import { importedChatMessageSchema, importedChatPageSchema, type ImportedChatMessage, type ImportedChatPage } from '../shared/chat-imports.ts';
 
 export type ChatErrorCode = "ai_disabled" | "ai_busy" | "ai_capacity_busy" | "ai_quota_exceeded" | "ai_timeout" | "ai_unavailable"
   | "invalid_input" | "unauthorized" | "session_changed" | "not_found";
@@ -45,6 +47,8 @@ export interface ChatUsage {
 export interface ChatApi {
   getSession(signal: AbortSignal): Promise<SessionUser | null>;
   listMessages(childId: string, signal: AbortSignal, before?: string | null): Promise<ChatPage>;
+  listImportedMessages?(childId: string, signal: AbortSignal, expectedUserId: string, cursor?: string | null): Promise<ImportedChatPage>;
+  getImportedMessage?(childId: string, id: string, signal: AbortSignal, expectedUserId: string): Promise<ImportedChatMessage>;
   cancelReply?(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<boolean>;
   saveMessage(childId: string, text: string, signal: AbortSignal, expectedUserId: string, voice?: Pick<VoiceMessageReference,"id"|"version">, file?: Pick<ChatFileMessageReference,"id"|"version">, photo?: Pick<PhotoMessageReference,"id"|"version">): Promise<ChatMessage>;
   requestReply(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string, onProgress?: (event: AgentProgress) => void): Promise<ChatMessage>;
@@ -158,6 +162,22 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
     reconcilePending: (signal, userId) => onlineCall(signal, outerSignal => online.checkPending(outerSignal, userId)),
     resetOnline: () => online.reset(),
     hasPendingOnline: () => online.hasPending(),
+    async listImportedMessages(childId, signal, expectedUserId, cursor) {
+      if (!expectedUserId || signal.aborted) throw new ChatApiError(409, 'session_changed');
+      if (!z.uuid().safeParse(childId).success || cursor != null && !z.uuid().safeParse(cursor).success) throw new ChatApiError(400, 'invalid_input');
+      const parsed = importedChatPageSchema.safeParse(await request(`/children/${encodeURIComponent(childId)}/messages/imported${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`, signal, undefined, expectedUserId));
+      if (signal.aborted) throw new ChatApiError(409, 'session_changed');
+      if (!parsed.success || parsed.data.items.some(item => item.childId !== childId) || cursor != null && parsed.data.nextCursor === cursor) throw new ChatApiError();
+      return parsed.data;
+    },
+    async getImportedMessage(childId, id, signal, expectedUserId) {
+      if (!expectedUserId || signal.aborted) throw new ChatApiError(409, 'session_changed');
+      if (![childId, id].every(value => z.uuid().safeParse(value).success)) throw new ChatApiError(400, 'invalid_input');
+      const parsed = importedChatMessageSchema.safeParse(await request(`/children/${encodeURIComponent(childId)}/messages/imported/${encodeURIComponent(id)}`, signal, undefined, expectedUserId));
+      if (signal.aborted) throw new ChatApiError(409, 'session_changed');
+      if (!parsed.success || parsed.data.childId !== childId || parsed.data.id !== id) throw new ChatApiError();
+      return parsed.data;
+    },
     async listMessages(childId, signal, before) {
       const value = await request(`/children/${encodeURIComponent(childId)}/messages${before ? `?before=${encodeURIComponent(before)}` : ""}`, signal);
       if (!object(value) || !Array.isArray(value.messages) || !value.messages.every(message)

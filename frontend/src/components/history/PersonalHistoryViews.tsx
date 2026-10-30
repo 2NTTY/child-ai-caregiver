@@ -8,14 +8,30 @@ import { usePersonalHistoryWorkspace, type PersonalHistoryOwner } from "../../pr
 import { chineseFont, colors, readingType, spacing } from "../../theme";
 import { EmptyListCard } from "../EmptyListCard";
 import { ReadStateNotice } from "../ReadStateNotice";
-import { AppButton } from "../ui";
+import { AppButton, AppSelect } from "../ui";
 import { VoiceMessage } from "../../production/VoiceMessage";
 import { FormDialog } from "../FormDialog";
 import { HistoryCardGrid, HistoryEntryCard } from "./HistoryCards";
 import { HistoryMessageDetail } from "./HistoryMessageDetail";
 import { useMotionPreferences } from "../../motion/preferences";
+import { useDomainEnvironment } from '../../production/useDomainEnvironment';
+import { ImportedConversationHistoryView } from './ImportedConversationHistoryView';
 
 export function PersonalConversationHistoryView({ searchText, dateRange, onPrepareQuestion }: {
+  searchText: string; dateRange: HistoryDateRange; onPrepareQuestion(question: string): void;
+}) {
+  const env = useDomainEnvironment();
+  const [source, setSource] = useState<{ scope: string; value: 'local' | 'imported' }>({ scope: env.scopeKey, value: 'local' });
+  const selected = source.scope === env.scopeKey && !env.sharedMode ? source.value : 'local';
+  return <View style={styles.list}>
+    {!env.sharedMode ? <AppSelect label="對話來源" value={selected} options={[{ value: 'local', label: '本地對話' }, { value: 'imported', label: '匯入對話' }]}
+      onChange={value => setSource({ scope: env.scopeKey, value })} /> : null}
+    {selected === 'imported' ? <ImportedConversationHistoryView searchText={searchText} dateRange={dateRange} />
+      : <LocalConversationHistoryView searchText={searchText} dateRange={dateRange} onPrepareQuestion={onPrepareQuestion} />}
+  </View>;
+}
+
+function LocalConversationHistoryView({ searchText, dateRange, onPrepareQuestion }: {
   searchText: string; dateRange: HistoryDateRange; onPrepareQuestion(question: string): void;
 }) {
   const owner = usePersonalHistoryWorkspace(), current = useRef(owner); current.current = owner;
