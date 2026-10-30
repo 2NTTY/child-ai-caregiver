@@ -14,7 +14,7 @@ import { attachmentSupplementModules, isHandoverAttachment, type HandoverAttachm
 type Uploads = ReturnType<typeof createHandoverUploadService>;
 type Opened = Awaited<ReturnType<Uploads['open']>>;
 const supported = new Set<string>([...handoverImportResourceSectionSchema.options, ...Object.keys(historyModules), ...Object.keys(attachmentSupplementModules)]);
-const cursorSchema = z.object({ target: z.number().int().nonnegative(), phase: z.enum(['current', 'documents', 'attachments', 'chat', 'history']).optional(), page: z.object({ manifestSha256: z.string(), selectionHash: z.string(),
+const cursorSchema = z.object({ target: z.number().int().nonnegative(), phase: z.enum(['current', 'documents', 'attachments', 'chat', 'concerns', 'history']).optional(), page: z.object({ manifestSha256: z.string(), selectionHash: z.string(),
   pageIndex: z.number().int().nonnegative(), rowIndex: z.number().int().nonnegative() }).strict().nullable() }).strict();
 type Cursor = z.infer<typeof cursorSchema>;
 const codeOf = (error: unknown) => error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
@@ -87,15 +87,17 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       // Existing in-flight cursors keep their old reader selection. New batches always establish parents first.
       const currentSections = target.sections.flatMap(module => [...HANDOVER_SECTIONS[module]]).filter(section => !Object.hasOwn(historyModules, section));
       const sections = selected ? [...new Set(selected.map(row => row.section))] : cursor.phase === undefined ? undefined : cursor.phase === 'current'
-        ? currentSections.filter(section => section !== 'documents' && section !== 'visit_preparation' && section !== 'chat' && section !== 'chat_imports' && !Object.hasOwn(attachmentSupplementModules, section))
+        ? currentSections.filter(section => section !== 'documents' && section !== 'visit_preparation' && section !== 'chat' && section !== 'chat_imports' && section !== 'concerns' && !Object.hasOwn(attachmentSupplementModules, section))
         : cursor.phase === 'documents' ? currentSections.filter(section => section === 'documents' || section === 'visit_preparation')
         : cursor.phase === 'attachments' ? currentSections.filter(section => Object.hasOwn(attachmentSupplementModules, section))
         : cursor.phase === 'chat' ? currentSections.filter(section => section === 'chat' || section === 'chat_imports')
+        : cursor.phase === 'concerns' ? currentSections.filter(section => section === 'concerns')
         : Object.entries(historyModules).filter(([, section]) => target.sections.includes(handoverImportModuleOf(section))).map(([section]) => section);
       const afterPhase = (): Cursor => !selected && cursor.phase === 'current' ? { target: cursor.target, phase: 'documents', page: null }
         : !selected && cursor.phase === 'documents' ? { target: cursor.target, phase: 'attachments', page: null }
         : !selected && cursor.phase === 'attachments' ? { target: cursor.target, phase: 'chat', page: null }
-        : !selected && cursor.phase === 'chat' ? { target: cursor.target, phase: 'history', page: null }
+        : !selected && cursor.phase === 'chat' ? { target: cursor.target, phase: 'concerns', page: null }
+        : !selected && cursor.phase === 'concerns' ? { target: cursor.target, phase: 'history', page: null }
         : { target: cursor.target + 1, ...(cursor.phase ? { phase: 'current' as const } : {}), page: null };
       if (sections?.length === 0) { cursor = afterPhase(); continue; }
       const page = await opened.reader.readPage({ selection: { childIds: [target.sourceChildId], modules: target.sections }, sections,
@@ -111,7 +113,10 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       if (!supported.has(row.section)) domainReject('package_section_not_connected', 400);
       const documentContent = row.section === 'documents' || row.section === 'document_versions'
         ? await opened.reader.readDocumentContent(row, job.request.acceptedManifestSha256 ?? undefined) : undefined;
-      return { row, start, after: JSON.stringify(next), ...(documentContent === undefined ? {} : { documentContent }) };
+      const concernEvents = row.section === 'concerns' || row.section === 'concern_history' && row.value.format !== 'yuyoufang-source-revision:1'
+        ? await opened.reader.readConcernEvents(row, job.request.acceptedManifestSha256 ?? undefined) : undefined;
+      return { row, start, after: JSON.stringify(next), ...(documentContent === undefined ? {} : { documentContent }),
+        ...(concernEvents === undefined ? {} : { concernEvents }) };
     }
     return null;
   }
@@ -136,6 +141,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
         let result;
         try { result = await batches.apply(work, { position: job.position, cursor: job.cursor, row: current.row, nextCursor: following?.start ?? null,
           ...(current.documentContent === undefined ? {} : { documentContent: current.documentContent }),
+          ...(current.concernEvents === undefined ? {} : { concernEvents: current.concernEvents }),
           ...(attachmentContent === undefined ? {} : { attachmentContent }) },operationSignal); }
         finally { attachmentContent?.content.fill(0); }
         job = result.batch; processed++;

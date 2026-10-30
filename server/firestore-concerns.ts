@@ -13,17 +13,23 @@ import { firestoreCareSchema } from './firestore-care.ts';
 import type { FirestoreAgentProposalExtension } from './firestore-agent-proposals.ts';
 import { firestoreAgentClaimSchema, firestoreAgentRunSchema } from './firestore-agent-runs.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
+import { importProvenanceSchema, type ImportProvenance } from '../src/shared/import-provenance.ts';
+import type { HandoverIntegrity } from '../src/shared/handover.ts';
+import type { HandoverImportRow } from './handover-import.ts';
+import { makeImportProvenance } from './handover-provenance.ts';
 
 const uuid = z.uuid(), time = z.iso.datetime({ offset: true }), version = z.number().int().positive().max(2147483647);
 export const firestoreConcernSchema = z.object({ id: uuid, childId: uuid, title: z.string().min(1).max(160),
   reason: z.string().min(1).max(2000), status: z.enum(['following', 'closed']), version,
   createdAt: time, updatedAt: time, archivedAt: time.nullable(), statusBeforeArchive: z.literal('following').optional(),
   timelineId: uuid.optional(),
+  importedFrom: importProvenanceSchema.optional(),
   attentionIds: z.array(uuid).max(CONCERN_STORED_EVENT_LIMIT), eventCount: z.number().int().min(1).max(CONCERN_STORED_EVENT_LIMIT),
   followUp: z.object({ id: uuid, at: time, state: z.enum(['pending', 'queued', 'completed', 'stopped', 'unknown', 'cancelled']),
     runId: uuid.nullable() }).strict().nullable(),
 }).strict();
 type Head = z.infer<typeof firestoreConcernSchema>;
+type StoredEvent = ConcernEvent & { importedFrom?: ImportProvenance };
 const receiptSchema = z.object({ fingerprint: z.string().length(64), id: uuid, version }).strict();
 const followupClaimSchema = z.object({ id: uuid, concernId: uuid, concernVersion: version, jobId: z.string().length(64),
   reference: uuid, generation: uuid, authorizationVersion: z.string() }).strict();
@@ -70,10 +76,10 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
       const event = data.open('concern-event', row.get('eventId'), b.scope, firestoreDocumentConcernEventSchema, row);
       if (event.id !== row.get('eventId') || event.concernId !== item.id || event.childId !== item.childId
         || event.timelineId !== item.timelineId || event.sequence !== i + 1 || row.get('sequence') !== event.sequence) domainReject('concern_binding', 500);
-      const { concernId: _concern, childId: _child, sequence: _sequence, timelineId: _timeline, ...value } = event; return value;
+      const { concernId: _concern, childId: _child, sequence: _sequence, timelineId: _timeline, importedFrom: _origin, ...value } = event; return value;
     });
     if (events.length !== item.eventCount) domainReject('concern_history_incomplete', 503);
-    const { eventCount: _count, timelineId: _timeline, ...value } = item; return { ...value, events, historyComplete: true };
+    const { eventCount: _count, timelineId: _timeline, importedFrom: _origin, ...value } = item; return { ...value, events, historyComplete: true };
   }
   async function read(b: Binding, id: string) { const item = await head(b, id); return item ? hydrate(b, item) : null; }
   function event(b: Binding, at: string, kind: ConcernEvent['kind'], title: string, text: string,
@@ -103,7 +109,7 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
     return refs;
   }
   function cancel(value: Head) { if (openFollowup(value)) value.followUp = { ...value.followUp!, state: 'cancelled' }; }
-  async function save(b: Binding, value: Head, events: ConcernEvent[], prior: ConcernEvent[], opId: string): Promise<Prepared> {
+  async function save(b: Binding, value: Head, events: StoredEvent[], prior: ConcernEvent[], opId: string): Promise<Prepared> {
     domainParse(firestoreConcernSchema, value);
     if (prior.length + events.length !== value.eventCount) domainReject('concern_binding', 500);
     const revisionId = JSON.stringify([value.id, value.version]), revisionRef = data.ref('concern_revisions', 'concern-revision', revisionId);
@@ -120,13 +126,62 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
         ...(value.timelineId ? { timelineId: value.timelineId } : { concernId: value.id }), eventId: entry.id, sequence: row.sequence,
         ...data.seal('concern-event', entry.id, b.scope, firestoreDocumentConcernEventSchema, row) } };
     });
-    const { timelineId: _timeline, ...publicHead } = value;
-    return { value: { ...publicHead, events: [...prior, ...events], historyComplete: true }, changeSeq: change.changeSeq,
+    const { timelineId: _timeline, importedFrom: _origin, eventCount: _count, ...publicHead } = value;
+    const publicEvents = events.map(({ importedFrom: _source, ...event }) => event);
+    return { value: { ...publicHead, events: [...prior, ...publicEvents], historyComplete: true }, changeSeq: change.changeSeq,
       commit() { change.commit(); context(); wake?.commit();
         b.transaction.set(data.ref('concerns', 'concern', value.id), { ...tags, ...data.seal('concern', value.id, b.scope, firestoreConcernSchema, value, value.version) });
         b.transaction.create(revisionRef, { ...tags, ...data.seal('concern-revision', revisionId, b.scope, firestoreConcernSchema, value, value.version) });
         for (const entry of storedEvents) b.transaction.create(entry.ref, entry.value);
       } };
+  }
+  /** Internal package preparation; source identities remain evidence, never local execution claims. */
+  async function prepareImportedSnapshot(b: Binding, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
+    rawEvents: unknown[], expected?: { id: string; expectedVersion: number },
+    mappedLinks: Map<string, { recordId: string | null; taskId: string | null; attentionId: string | null }> = new Map()): Promise<Prepared> {
+    if (b.sharedAccess) domainReject('shared_domain_read_only', 409);
+    domainParse(uuid, opId);
+    if (row.section !== 'concerns' || !row.childId) domainReject('invalid_package_scope', 400);
+    const source = domainParse(firestoreConcernSchema, row.value, 'invalid_package_concern');
+    const sourceEvents = domainParse(z.array(firestoreDocumentConcernEventSchema).min(1).max(CONCERN_STORED_EVENT_LIMIT), rawEvents, 'invalid_package_concern_event');
+    if (source.childId !== row.childId || sourceEvents.length !== source.eventCount
+      || new Set(sourceEvents.map(event => event.id)).size !== sourceEvents.length
+      || sourceEvents.some((event, index) => event.childId !== source.childId || event.concernId !== source.id
+        || event.sequence !== index + 1 || event.timelineId !== source.timelineId)) domainReject('package_concern_event_mismatch', 400);
+    const current = expected ? await head(b, expected.id) : null;
+    if (expected && (!current || current.version !== expected.expectedVersion || current.version >= 2147483647)) domainReject('concern_changed');
+    if (!current && (await b.transaction.get(query(b, 'concerns').limit(200))).size >= 200) domainReject('concern_history_requires_review', 400);
+    const now = new Date().toISOString(), importedFrom = makeImportProvenance(row, integrity, b.actorUserId, now);
+    importedFrom.current.sourceHash = firestoreDomainHash({ value: row.value, events: sourceEvents });
+    const attentionIds = new Set<string>(), events: StoredEvent[] = [];
+    for (const original of sourceEvents) {
+      const selected = mappedLinks.get(original.id);
+      if (selected && (selected.recordId && !original.recordId || selected.taskId && !original.taskId
+        || selected.attentionId && !original.attentionId)) domainReject('package_concern_event_mismatch', 400);
+      const refs = selected ? await links(b, selected) : {};
+      if (refs.attentionId) attentionIds.add(refs.attentionId);
+      const origin = makeImportProvenance({ ...row, section: 'concern_events', value: { ...original, version: 1,
+        authorUserId: original.actorUserId, createdAt: original.at } }, integrity, b.actorUserId, now);
+      origin.current.sourceHash = firestoreDomainHash(original);
+      events.push({ id: randomUUID(), at: original.at, kind: original.kind, title: original.title, text: original.text,
+        sourceLabel: `匯入來源 · ${original.sourceLabel}`.slice(0, 256), actorUserId: original.actorUserId,
+        ...refs, importedFrom: origin });
+    }
+    let followUp: Head['followUp'] = null;
+    if (source.followUp) {
+      let state = source.followUp.state;
+      if (state === 'pending' || state === 'queued') {
+        if (source.status === 'closed') state = 'cancelled';
+        else if (Date.parse(source.followUp.at) <= Date.now() || source.eventCount >= CONCERN_EVENT_LIMIT) state = 'stopped';
+        else { future(source.followUp.at); state = 'pending'; }
+      }
+      followUp = { id: randomUUID(), at: source.followUp.at, state, runId: null };
+    }
+    return save(b, { id: current?.id ?? randomUUID(), childId: b.scope.childId, title: source.title, reason: source.reason,
+      status: source.status, version: (current?.version ?? 0) + 1, createdAt: current?.createdAt ?? now, updatedAt: now,
+      archivedAt: source.status === 'closed' ? source.archivedAt ?? now : null,
+      ...(source.statusBeforeArchive ? { statusBeforeArchive: source.statusBeforeArchive } : {}),
+      timelineId: randomUUID(), importedFrom, attentionIds: [...attentionIds], eventCount: events.length, followUp }, events, [], opId);
   }
   async function prepareCreate(b: Binding, raw: ConcernValues, opId: string): Promise<Prepared> {
     const input = domainParse(concernValuesSchema, raw); future(input.followUpAt);
@@ -271,7 +326,7 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
     for (const row of rows.docs) { const current = await head(b, row.get('concernId')); if (current) items.push(sharedView(b, await hydrate(b, current))); }
     return { authorityVersion: authorityVersion(b), items, canManage: !b.sharedAccess };
   }
-  return { read, head, extension, prepareCreate, prepareChange, beginBackground, finishBackground,
+  return { read, head, extension, prepareCreate, prepareChange, prepareImportedSnapshot, beginBackground, finishBackground,
     forSharedSpace(spaceId: string) {
       domainParse(uuid, spaceId);
       const unavailable = async (): Promise<never> => domainReject('shared_domain_read_only', 409);

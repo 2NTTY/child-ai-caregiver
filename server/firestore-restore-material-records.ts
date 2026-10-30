@@ -55,7 +55,10 @@ export function materialRestoreMetadata(context: FirestoreRecoveryContext & { ki
     return { concernId: row.id, entityVersion: row.version, createdAt: row.createdAt };
   }
   if (kind === 'concern-event') {
-    const row = firestoreDocumentConcernEventSchema.parse(raw); check(id === row.id && row.childId === scope.childId && recordVersion === 1 && row.actorUserId === scope.ownerUserId);
+    const row = firestoreDocumentConcernEventSchema.parse(raw), source = row.importedFrom?.current;
+    const actor = source ? source.source.section === 'concern_events' && source.source.authorUserId === row.actorUserId
+      ? source.importedBy : null : row.actorUserId;
+    check(id === row.id && row.childId === scope.childId && recordVersion === 1 && actor === scope.ownerUserId);
     return { ...(row.timelineId ? { timelineId: row.timelineId } : { concernId: row.concernId }), eventId: row.id, sequence: row.sequence };
   }
   if (kind === 'concern-operation') {

@@ -9,12 +9,22 @@ import { firestoreFactSchema, firestoreTopicSchema, firestoreSummarySchema } fro
 import { createFirestorePrivateInstructions, firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
 import { createFirestoreSharedInputStore, firestoreSourceManagementRevisionSchema } from './firestore-shared-inputs.ts';
 import { z } from 'zod';
+import { createFirestoreConcernStore, firestoreConcernSchema } from './firestore-concerns.ts';
+import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
 import { firestorePreparationSchema } from './firestore-care-summary.ts';
 import { documentTransferContentSchema, documentTransferVersionSchema } from './family-document-transfer.ts';
 import { sourceHistoryExportSchema, sourceHistoryRecordSchema, sourceHistoryId, sourceHistoryMetadata,
   type SourceHistoryRecord, type HistoryModule } from './handover-history-records.ts';
 
-function parseRevision(module: HistoryModule, raw: unknown) {
+function parseRevision(module: HistoryModule, raw: unknown, sourceSection?: string) {
+  if (module === 'concerns') {
+    if (sourceSection === 'concern_events') {
+      const value = domainParse(firestoreDocumentConcernEventSchema, raw, 'invalid_package_data');
+      return { value: value as unknown as Record<string, unknown>, resource: { ...value, version: 1 } };
+    }
+    const value = domainParse(firestoreConcernSchema, raw, 'invalid_package_data');
+    return { value: value as unknown as Record<string, unknown>, resource: value };
+  }
   if (module === 'files' || module === 'voices' || module === 'photos' || module === 'child_avatar' || module === 'chat' || module === 'chat_imports')
     domainReject('invalid_package_data', 400); // Attachment identities are immutable assets, not editable source revisions.
   if (module === 'documents') domainReject('invalid_package_data', 400); // Document bodies use the existing chunked snapshot store.
@@ -37,8 +47,9 @@ function parseRevision(module: HistoryModule, raw: unknown) {
   return { value: value as unknown as Record<string, unknown>, resource: value };
 }
 export function validateSourceHistory<T extends Pick<SourceHistoryRecord, 'evidence'>>(value: T): T {
-  const { evidence } = value, original = parseRevision(evidence.module, evidence.value), source = evidence.source.current.source;
-  if (firestoreDomainHash(original.value) !== evidence.source.current.sourceHash || evidence.module !== source.section
+  const { evidence } = value, source = evidence.source.current.source, original = parseRevision(evidence.module, evidence.value, source.section);
+  if (firestoreDomainHash(original.value) !== evidence.source.current.sourceHash
+    || (evidence.module !== source.section && !(evidence.module === 'concerns' && source.section === 'concern_events'))
     || original.resource.childId !== source.childId || original.resource.version !== source.resourceVersion
     || (evidence.module === 'profile' ? original.resource.childId : domainParse(z.uuid(), original.resource.id)) !== source.resourceId)
     domainReject('source_history_binding', 500);
@@ -58,10 +69,20 @@ export function parseHistoryRow(row: HandoverImportRow, module: HistoryModule, i
     const wrapper = domainParse(sourceHistoryExportSchema, row.value, 'invalid_package_data');
     if (wrapper.childId !== row.childId || wrapper.evidence.module !== module) domainReject('invalid_package_scope', 400);
     validateSourceHistory(wrapper);
+    if (module === 'concerns' && (row.section === 'concern_events') !== (wrapper.evidence.source.current.source.section === 'concern_events'))
+      domainReject('invalid_package_scope', 400);
     const provenance = makeImportProvenance({ ...row, section: module, value: { childId: row.childId, id: wrapper.resource.id,
       version: wrapper.resource.version, importedFrom: wrapper.evidence.source } }, integrity, actor, now);
     provenance.current.sourceHash = firestoreDomainHash(wrapper);
     return { evidence: wrapper.evidence, provenance, parentId: wrapper.resource.id, parentVersion: wrapper.resource.version };
+  }
+  if (module === 'concerns' && row.section === 'concern_events') {
+    const event = domainParse(firestoreDocumentConcernEventSchema, row.value, 'invalid_package_data');
+    if (event.childId !== row.childId) domainReject('invalid_package_scope', 400);
+    const provenance = makeImportProvenance({ ...row, value: { ...event, version: 1, authorUserId: event.actorUserId, createdAt: event.at } }, integrity, actor, now);
+    provenance.current.sourceHash = firestoreDomainHash(event);
+    return { evidence: { module, source: provenance, value: event as unknown as Record<string, unknown> }, provenance,
+      parentId: event.concernId, parentVersion: 1 };
   }
   const parsed = parseRevision(module, row.value), source = parsed.resource;
   const provenance = makeImportProvenance({ ...row, section: module, value: source as unknown as Record<string, unknown> }, integrity, actor, now);
@@ -72,6 +93,10 @@ export function parseHistoryRow(row: HandoverImportRow, module: HistoryModule, i
 export async function sourceHistoryVisible(data: FirestoreDomainData, b: Binding, value: SourceHistoryRecord) {
   if (value.childId !== b.scope.childId) domainReject('source_history_binding', 500);
   const section = value.evidence.module;
+  if (section === 'concerns') {
+    const current = await createFirestoreConcernStore(data.options).head(b, value.resource.id);
+    return !!current && current.version >= value.resource.version;
+  }
   if (section === 'visit_preparation') {
     if (value.resource.id !== b.scope.childId) return false;
     const row = await b.transaction.get(data.ref('visit_preparations', 'visit-preparation', b.scope.childId));

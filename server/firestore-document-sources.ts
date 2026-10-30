@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
 import type { Query } from '@google-cloud/firestore';
 import type { DocumentSnapshot, DocumentSource } from '../src/shared/family-documents.ts';
 import type { ConcernEvent } from '../src/shared/concerns.ts';
@@ -18,6 +19,7 @@ export const firestoreDocumentConcernSchema = z.object({ id: uuid, childId: uuid
   title: z.string().max(160), reason: z.string().max(2000), status: z.enum(['following', 'closed']), timelineId: uuid.optional() }).passthrough();
 export const firestoreDocumentConcernEventSchema = z.object({ concernId: uuid, childId: uuid, sequence: z.number().int().positive(),
   timelineId: uuid.optional(),
+  importedFrom: importProvenanceSchema.optional(),
   id: uuid, at: time, kind: z.enum(['observation', 'confirmed_action']), title: z.string().max(160), text: z.string().max(2000),
   sourceLabel: z.string().max(256), actorUserId: z.string().max(256), recordId: uuid.optional(), taskId: uuid.optional(),
   attentionId: uuid.optional(), attentionVersion: version.optional(), runId: uuid.optional() }).strict();

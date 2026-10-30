@@ -4420,3 +4420,10 @@
 從 `45bebf4b` 在原關注 head／事件／修訂加入可選內部時間線，保留原事件與原操作查回；普通追加沿目前時間線，公開 DTO 不增加內部欄位。文件引用與報告續讀核對同一時間線；恢復重建相符 metadata，新增一個索引定義但未安裝。原包 reader 按已驗證 head／修訂取有界完整事件，不混入較晚事件或另一時間線。
 
 時間線一條 RED→GREEN、包 reader 一條通過，九根局部型別圖零診斷，獨立靜態 review 無阻擋問題。保留原 DTO 斷言差異及 cache 型別失敗；reader 方法先落地，沒有 baseline RED，不宣稱已做。完整[證據](artifacts/verification/P4_HANDOVER_CONCERN_TIMELINE_20261030.json)。未跑產品全量、模型、通知、雲端、設備或部署；fixture 注入時間線及 codec 並非真正匯入／災難恢復。下一步繼續關注／成長實際匯入與共用畫面，不因本底層包通過而結束 P4。
+
+<a id="log-20261030-p4-handover-concern-import"></a>
+### 2026-10-30 — P4-HANDOVER01 個人關注匯入及來源歷史
+
+從 `3ca04ff6` 接原 concern service、統一 package worker、版本／映射／收據及來源歷史。每個採用來源快照用新時間線，保留原本地修訂；care／task 關聯只用已授權本地映射，原 run／成長關聯留證據。事件保留原作者及匯入標籤，本地匯入者另記，不冒充原確認人。未來有效跟進建立新工作；完成、取消及未知不重播。原來源 head／事件逐筆保留於既有 source history，匯出再匯入仍可追溯，不建立另一份可修改權威。
+
+兩條原 snapshot／真 ZIP-reader-upload-service-worker 往返流程通過，十二根型別圖零診斷。Review 修正 fallback growth 頻道；首次整合確實抓到結果漏兩項事件收據，已統一父模組查詢／重播 metadata，原 provenance 未改。來源 actor 的測試按原需求修正，非放寬權限。失敗與限制見[證據](artifacts/verification/P4_HANDOVER_CONCERN_IMPORT_20261030.json)。尚欠共用畫面、共享寫入及成長；未部署、未跑真雲端／模型／通知／設備或全量測試。既有 timeline 核對不重跑，下一包繼續共用接線，P4 未完成。
