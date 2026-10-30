@@ -17,17 +17,17 @@ export interface HandoverImportResultsState {
   items: HandoverImportResult[]; nextCursor: string | null; loaded: boolean; error: string | null;
 }
 export function handoverResultResourceSection(row: HandoverImportResult): HandoverImportResourceSection | null {
-  const section = row.resourceSection ?? (row.module === 'care' || row.module === 'profile' || row.module === 'tasks' ? row.module : null);
+  const section = row.resourceSection ?? (row.module === 'care' || row.module === 'profile' || row.module === 'tasks' || row.module === 'concerns' ? row.module : null);
   return section && handoverImportModuleOf(section) === row.module ? section : null;
 }
 export function canReadHandoverSourceHistory(row: HandoverImportResult) {
   const section = handoverResultResourceSection(row);
   return !!row.recordedResource && (section === 'memory_facts' || section === 'memory_topics' || section === 'summary_history' || section === 'private_sources'
-    || section === 'documents' || section === 'visit_preparation');
+    || section === 'documents' || section === 'visit_preparation' || section === 'concerns');
 }
 export function handoverSourceHistoryKey(item: HandoverSourceHistoryPage['items'][number]) {
   const source = item.evidence.source.current.source;
-  return JSON.stringify([item.resource.id, item.evidence.module, source.serverId, source.accountId, source.childId, source.resourceId, source.resourceVersion,
+  return JSON.stringify([item.resource.id, item.evidence.module, source.serverId, source.accountId, source.childId, source.section, source.resourceId, source.resourceVersion,
     item.evidence.module === 'documents' ? item.evidence.value.snapshotId : null]);
 }
 export type HandoverDocumentContentPort = (userId: string, target: { childId: string; spaceId: string | null }, documentId: string,

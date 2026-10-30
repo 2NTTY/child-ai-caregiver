@@ -30,6 +30,67 @@ const nodes = tree => !tree || typeof tree !== 'object' ? [] : Array.isArray(tre
 const text = tree => tree == null || tree === false ? '' : Array.isArray(tree) ? tree.map(text).join(' ') : typeof tree === 'object' ? text(tree.props?.children) : String(tree);
 const control = (tree, label) => nodes(tree).find(node => node.props?.label === label);
 
+test('concern import selector keeps concerns on private targets and removes them from shared submissions', async () => {
+  const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+  const state = { identityKey: 'owner:1', userId: 'owner', busy: null, pending: null, items: [], loaded: true, uploads: [], uploadsLoaded: true,
+    upload: { id: id(10), state: 'ready', filename: 'concerns.zip', bytes: 3, expiresAt: '2026-11-01T00:00:00Z', preview: {
+      integrity: 'trusted', manifestSha256: 'a'.repeat(64), header: { selection: { modules: ['care', 'concerns'] }, source: { serverId: 'source' } },
+      children: [{ id: id(2), displayName: 'Source child' }], coverage: [{ childId: id(2), section: 'concerns', items: 1 }] } } };
+  const sent = [], controller = { subscribe: noop, getSnapshot: () => state, create: async (...value) => sent.push(value) };
+  const shared = { identityKey: 'owner:1', userId: 'owner', phase: 'ready', target: { spaceId: id(4), childId: id(5) },
+    view: { spaceId: id(4), childId: id(5), childName: 'Shared child', spaceName: 'Family', role: 'caregiver', modules: ['care', 'concerns'] } };
+  production = { owner: { handoverImportOwner: controller, sharedChild: { subscribe: noop, getSnapshot: () => shared } },
+    identityKey: 'owner:1', userId: 'owner', online: true, account: { gate: 'ready', busy: null, deletion: { phase: 'idle' } },
+    recordsState: { children: [{ id: id(3), displayName: 'Own child', accessRole: 'owner' }] } };
+  const view = render(load('HandoverImportControls').HandoverImportControls);
+  control(view.tree, '查看上載與匯入選擇').props.onPress(); again(view);
+  control(view.tree, 'Source child').props.onChange(true); again(view);
+  const destination = () => nodes(view.tree).find(node => node.type === 'AppSelect' && node.props.label.startsWith('接收「'));
+  destination().props.onChange(`private:${id(3)}`); again(view);
+  const concern = control(view.tree, '持續關注'); assert.ok(concern, 'concerns must be offered by the existing private selector');
+  assert.equal(concern.props.checked, true); assert.equal(concern.props.disabled, false);
+  control(view.tree, '開始匯入').props.onPress(); await Promise.resolve();
+  assert.deepEqual(sent[0][0][0].target, { childId: id(3), spaceId: null });
+  assert.deepEqual([...sent[0][0][0].sections].sort(), ['care', 'concerns']);
+  destination().props.onChange(`shared:${id(4)}:${id(5)}`); again(view);
+  const unavailable = control(view.tree, '持續關注');
+  assert.ok(!unavailable || unavailable.props.disabled && !unavailable.props.checked, 'shared destinations cannot retain an actionable concern selection');
+  control(view.tree, '開始匯入').props.onPress(); await Promise.resolve();
+  assert.deepEqual(sent[1][0], [{ sourceChildId: id(2), target: { childId: id(5), spaceId: id(4) }, sections: ['care'] }]);
+});
+
+test('concern source history distinguishes head and event evidence and keeps original actions literal and read only', () => {
+  const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+  const calls = [], controller = { openSourceHistory: value => calls.push(['open', value]), closeSourceHistory: () => calls.push(['close']),
+    readSourceHistory: more => calls.push(['more', more]), selectResults: noop, readResults: noop, closeResults: noop };
+  const result = { id: id(10), batchId: id(1), sourceChildId: id(2), module: 'concerns', sourceResourceId: id(20), sourceVersion: 2,
+    sourceSection: null, outcome: 'created', reason: null, recordedResource: { id: id(30), version: 1 }, currentResource: null, availableResolution: null,
+    at: '2026-10-30T00:00:00Z' };
+  assert.equal(ownerHelpers.handoverResultResourceSection(result), 'concerns', 'legacy module fallback remains bound to the concern resource');
+  assert.equal(ownerHelpers.canReadHandoverSourceHistory(result), true);
+  const batch = { id: id(1), state: 'completed', targets: [{ sourceChildId: id(2), target: { childId: id(3), spaceId: null }, sections: ['concerns'] }] };
+  const results = { batchId: batch.id, sourceChildId: id(2), module: 'concerns', revision: 1, items: [result], loaded: true, nextCursor: null, error: null };
+  const resultView = render(load('HandoverImportResults').HandoverImportResults, { controller, batch, results, identityKey: 'owner:1', locked: false });
+  control(resultView.tree, '查看來源歷史').props.onPress(); assert.deepEqual(calls.pop(), ['open', result.id]);
+  const evidence = (section, value) => ({ format: 'yuyoufang-source-revision:1', childId: id(3), resource: result.recordedResource,
+    evidence: { module: 'concerns', value, source: { current: { source: { section, serverId: 'https://source.test', accountId: 'foreign-account',
+      childId: id(2), resourceId: id(20), resourceVersion: 2 } }, previous: [] } } });
+  const head = evidence('concerns', { id: id(20), title: '<b>Original concern title</b>', reason: 'Original concern reason', status: 'closed' });
+  const event = evidence('concern_events', { id: id(20), kind: 'confirmed_action', title: 'Original source action', text: '<script>literal source action</script>',
+    actorUserId: 'foreign-author', at: '2026-10-30T01:02:03Z' });
+  assert.notEqual(ownerHelpers.handoverSourceHistoryKey(head), ownerHelpers.handoverSourceHistoryKey(event), 'source section separates identical source IDs and versions');
+  const history = { resultId: result.id, query: { module: 'concerns' }, page: 1, complete: false, loaded: true, loading: false, nextCursor: 'next', items: [head, event] };
+  const view = render(load('HandoverImportHistory').HandoverImportHistory, { controller, history, locked: false });
+  for (const value of ['<b>Original concern title</b>', 'Original concern reason', 'Original source action', '<script>literal source action</script>', 'foreign-author', '2026-10-30T01:02:03Z'])
+    assert.ok(text(view.tree).includes(value), value);
+  assert.match(text(view.tree), /已結束|已關閉/); assert.match(text(view.tree), /已確認行動|確認動作/); assert.match(text(view.tree), /不代表本地.*確認/);
+  const entries = nodes(view.tree).filter(node => node.type === 'View' && node.key !== undefined);
+  assert.equal(entries.length, 2); assert.equal(new Set(entries.map(node => node.key)).size, 2);
+  assert.equal(nodes(view.tree).some(node => node.props?.href || node.props?.dangerouslySetInnerHTML || node.type === 'Markdown' || node.type === 'AppCheckbox'), false);
+  control(view.tree, '載入更多來源歷史').props.onPress(); assert.deepEqual(calls.pop(), ['more', true]);
+  control(view.tree, '關閉來源歷史').props.onPress(); assert.deepEqual(calls.pop(), ['close']);
+});
+
 test('shared attachment import selector submits authorized targets and renders supplements without history actions', async () => {
   const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
   const state = { identityKey: 'owner:1', userId: 'owner', busy: null, pending: null, items: [], loaded: true, uploads: [], uploadsLoaded: true,

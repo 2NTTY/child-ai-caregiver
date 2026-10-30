@@ -9,6 +9,8 @@ const content = (value: Record<string, unknown>, key: string) => typeof value[ke
 const factStates: Record<string, string> = { candidate: '待確認候選', confirmed: '已確認', inactive: '已停用' };
 const topicStates: Record<string, string> = { pending: '待處理', answered: '已回答', snoozed: '已暫緩', resolved: '已解決' };
 const sourcePurposes: Record<string, string> = { answer_reference: '回答參考', record_candidate: '記錄候選', track_topic: '追蹤話題' };
+const concernStates: Record<string, string> = { following: '持續關注', closed: '已結束' };
+const concernKinds: Record<string, string> = { observation: '原觀察', confirmed_action: '來源已確認行動' };
 const revisionNumber = (value: unknown) => typeof value === 'number' && Number.isSafeInteger(value) ? value : '未提供';
 
 /** Known source histories rendered as text without interpreting foreign references or markup. */
@@ -33,7 +35,8 @@ export function HandoverImportHistory({ controller, history, locked }: {
       const messageIds = Array.isArray(value.coveredMessageIds) ? value.coveredMessageIds.filter((id): id is string => typeof id === 'string') : [];
       return <View key={key} style={styles.item}>
         <Text style={styles.title}>{module === 'memory_facts' ? '記憶事實來源歷史' : module === 'memory_topics' ? '記憶話題來源歷史' : module === 'private_sources' ? '私人來源管理歷史'
-          : module === 'documents' ? '文件來源修訂' : module === 'visit_preparation' ? '到診準備來源歷史' : '外來摘要歷史'}</Text>
+          : module === 'documents' ? '文件來源修訂' : module === 'visit_preparation' ? '到診準備來源歷史'
+          : module === 'concerns' ? source.section === 'concern_events' ? '關注來源事件' : '關注來源歷史' : '外來摘要歷史'}</Text>
         <Text style={styles.body}>來源版本 {source.resourceVersion} · {module === 'documents' ? '匯入綁定版本' : '本地接收版本'} {item.resource.version}</Text>
         {module === 'memory_facts' ? <>
           <Text style={styles.body}>記憶欄目：{content(value, 'key')}</Text>
@@ -64,6 +67,19 @@ export function HandoverImportHistory({ controller, history, locked }: {
           {period ? <Text style={styles.body}>原期間：{content(period, 'startDay')} · {period.period === 'day' ? '一日' : period.period === 'week' ? '一週' : '未提供'} · {content(period, 'timeZone')}</Text> : null}
           <Text selectable style={styles.body}>原預約待辦（外來識別）：{content(value, 'appointmentTaskId')}</Text>
           <Text style={styles.body}>來源更新者：{content(value, 'updatedBy')} · 時間：{content(value, 'updatedAt')}</Text>
+        </> : module === 'concerns' ? <>
+          <Text selectable style={styles.content}>{content(value, 'title')}</Text>
+          {source.section === 'concern_events' ? <>
+            <Text style={styles.body}>事件種類：{concernKinds[String(value.kind)] ?? '未提供'}</Text>
+            <Text selectable style={styles.content}>{content(value, 'text')}</Text>
+            <Text selectable style={styles.body}>原來源：{content(value, 'sourceLabel')}</Text>
+            <Text style={styles.body}>來源作者：{content(value, 'actorUserId')} · 時間：{content(value, 'at')}</Text>
+            <Text style={styles.body}>原行動只作來源記錄，不代表本地用戶已確認或再次執行。</Text>
+          </> : <>
+            <Text selectable style={styles.content}>{content(value, 'reason')}</Text>
+            <Text style={styles.body}>來源狀態：{concernStates[String(value.status)] ?? '未提供'}{typeof value.archivedAt === 'string' ? ' · 原已歸檔' : ''}</Text>
+            <Text style={styles.body}>來源建立時間：{content(value, 'createdAt')} · 更新時間：{content(value, 'updatedAt')}</Text>
+          </>}
         </> : module === 'documents' ? <>
           <Text style={styles.body}>原文件內容與引用只作來源記錄，不代表目前孩子已核對或完整資料。</Text>
           <Text selectable style={styles.body}>來源修訂識別：{content(value, 'snapshotId')} · 版本 {revisionNumber(value.snapshotVersion)}</Text>
