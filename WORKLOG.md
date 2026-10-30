@@ -4427,3 +4427,5 @@
 從 `3ca04ff6` 接原 concern service、統一 package worker、版本／映射／收據及來源歷史。每個採用來源快照用新時間線，保留原本地修訂；care／task 關聯只用已授權本地映射，原 run／成長關聯留證據。事件保留原作者及匯入標籤，本地匯入者另記，不冒充原確認人。未來有效跟進建立新工作；完成、取消及未知不重播。原來源 head／事件逐筆保留於既有 source history，匯出再匯入仍可追溯，不建立另一份可修改權威。
 
 兩條原 snapshot／真 ZIP-reader-upload-service-worker 往返流程通過，十二根型別圖零診斷。Review 修正 fallback growth 頻道；首次整合確實抓到結果漏兩項事件收據，已統一父模組查詢／重播 metadata，原 provenance 未改。來源 actor 的測試按原需求修正，非放寬權限。失敗與限制見[證據](artifacts/verification/P4_HANDOVER_CONCERN_IMPORT_20261030.json)。尚欠共用畫面、共享寫入及成長；未部署、未跑真雲端／模型／通知／設備或全量測試。既有 timeline 核對不重跑，下一包繼續共用接線，P4 未完成。
+
+同包整合補記：#403 共用文案相容先行合併；與本包新契約整合後，表單及結果兩根前端型別圖零診斷，沒有提前開啟選項，也沒有重跑後端流程。
