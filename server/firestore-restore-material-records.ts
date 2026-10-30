@@ -73,7 +73,9 @@ export function materialRestoreMetadata(context: FirestoreRecoveryContext & { ki
     return { attentionId: item.id, createdAt: item.createdAt, entityVersion: item.version };
   }
   if (kind === 'growth-topic' || kind === 'growth-topic-revision') {
-    const row = firestoreGrowthTopicSchema.parse(raw), key = JSON.stringify([scope.childId, row.topicId]); check(row.version === recordVersion && row.actor === scope.ownerUserId);
+    const row = firestoreGrowthTopicSchema.parse(raw), key = JSON.stringify([scope.childId, row.topicId]), origin = row.importedFrom?.current;
+    check(row.version === recordVersion && (row.actor === scope.ownerUserId || origin?.source.section === 'growth_topics'
+      && origin.source.authorUserId === row.actor && origin.source.growthTopic === row.topicId && origin.importedBy === scope.ownerUserId));
     if (kind === 'growth-topic') check(id === key); else equal(id, [scope.childId, row.topicId, row.version]);
     return {};
   }

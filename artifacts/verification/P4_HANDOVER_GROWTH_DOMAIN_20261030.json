@@ -1,0 +1,16 @@
+{
+  "base": "f226fe09e9e454b9370e1d6e6d0174b8c7ff9204",
+  "branch": "codex/p4-handover-growth-domain",
+  "scope": "Existing growth service snapshot/topic import preparation, original provenance, revisions, local applicability and recovery codec",
+  "checks": [
+    { "command": "node --test tests/handover-growth-domain.test.ts", "passed": 1, "failed": 0, "log": "tmp/handover-growth-domain-source-version.log" },
+    { "command": "node tmp/check-growth-domain.cjs", "roots": 5, "diagnostics": 0, "log": "tmp/handover-growth-domain-types-final.log" }
+  ],
+  "retainedFailures": [
+    { "log": "tmp/handover-growth-domain-red.log", "reason": "Import method absent before implementation" },
+    { "log": "tmp/handover-growth-domain-green1.log", "reason": "Test path selector matched the namespace and included non-growth records; corrected to exact growth collection suffixes" }
+  ],
+  "coverage": ["source actor, evidence and foreign references retained separately", "same local ID with newer version and original revision", "no old accept request or task replay", "local reviewed rule/evidence permits a new bounded work item", "changed advice with the same source hash cannot authorize work", "topic suppression and explicit local re-enable", "current source/history read ports", "restore epoch rotation retains source evidence", "currently valid equivalent knowledge version is used on read"],
+  "review": "Independent read-only review found no blocking issue in the domain/provenance/restore changes",
+  "limits": ["Synthetic serial Firestore and pinned rule evidence do not prove cloud concurrency or current knowledge approval", "No cloud, model, notification, device or full-suite test", "Unified batch, original source-history export and shared UI are next", "Shared growth writes remain unavailable", "Not deployed"]
+}
