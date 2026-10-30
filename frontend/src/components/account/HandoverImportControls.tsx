@@ -70,7 +70,7 @@ export function HandoverImportControls() {
   const view = shared.view;
   if (shared.identityKey === identityKey && shared.userId === userId && shared.phase === 'ready' && view && view.role !== 'viewer'
     && shared.target?.spaceId === view.spaceId && shared.target.childId === view.childId) {
-    const modules = sections.filter(section => section !== 'sources' && view.modules.includes(section));
+    const modules = sections.filter(section => section !== 'sources' && view.modules.some(module => module === section));
     if (modules.length) destinations.push({ value: `shared:${view.spaceId}:${view.childId}`, label: `${view.childName}（${view.spaceName}）`,
       childId: view.childId, spaceId: view.spaceId, modules });
   }
