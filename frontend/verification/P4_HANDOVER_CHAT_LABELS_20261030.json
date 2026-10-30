@@ -19,5 +19,12 @@
     "No product/model/device/full-suite tests",
     "No deployment",
     "History UI follows backend merge"
-  ]
+  ],
+  "integration_followup": {
+    "scope": "Use a typed intersection with actual shared modules; private chat cannot become a shared destination.",
+    "against": "acbaaf2a backend plus merged 397 labels",
+    "failure": "tmp/handover-chat-integrated-labels-types.log: includes rejected the new private-only enum",
+    "result": "two affected frontend roots, zero diagnostics",
+    "evidence": "tmp/handover-chat-shared-target-types.log"
+  }
 }
