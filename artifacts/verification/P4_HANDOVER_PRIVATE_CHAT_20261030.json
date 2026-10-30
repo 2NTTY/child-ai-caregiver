@@ -48,12 +48,20 @@
       "reason": "new enum omitted from source-revision exclusion and nullable test values; fixed without weakening contracts"
     }
   ],
-  "review": "Independent read-only review found the legacy coverage defect and required forward-compatible frontend labels. Coverage fix reviewed; labels must merge before backend.",
+  "review": "Independent review found legacy coverage rejection and frontend enum compatibility; both are fixed. Main verified the domain, private scope, attachment mapping, export and recovery changes. No unresolved blocker in this backend scope.",
   "limits": [
     "Synthetic Firestore/Storage adapters; not true cloud concurrency or full disaster restore",
     "No deployment/model/notification/device/full-suite checks",
     "Shared historical display and Agent on-demand reading remain follow-up work",
     "Existing source-message reply ID is provenance, not a local executable reply target",
     "D PR untouched"
-  ]
+  ],
+  "integration": {
+    "frontend_prs": [
+      397,
+      398
+    ],
+    "result": "Forward-compatible labels and shared-target intersection merged; two-root graph against new chat contract has zero diagnostics.",
+    "evidence": "tmp/handover-chat-shared-target-types.log"
+  }
 }
