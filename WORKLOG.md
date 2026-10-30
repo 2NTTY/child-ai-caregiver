@@ -4429,3 +4429,8 @@
 兩條原 snapshot／真 ZIP-reader-upload-service-worker 往返流程通過，十二根型別圖零診斷。Review 修正 fallback growth 頻道；首次整合確實抓到結果漏兩項事件收據，已統一父模組查詢／重播 metadata，原 provenance 未改。來源 actor 的測試按原需求修正，非放寬權限。失敗與限制見[證據](artifacts/verification/P4_HANDOVER_CONCERN_IMPORT_20261030.json)。尚欠共用畫面、共享寫入及成長；未部署、未跑真雲端／模型／通知／設備或全量測試。既有 timeline 核對不重跑，下一包繼續共用接線，P4 未完成。
 
 同包整合補記：#403 共用文案相容先行合併；與本包新契約整合後，表單及結果兩根前端型別圖零診斷，沒有提前開啟選項，也沒有重跑後端流程。
+
+<a id="log-20261030-p4-handover-concern-ui"></a>
+### 2026-10-30 — P4-HANDOVER01 關注共用匯入及來源閱讀
+
+沿 #404／`942030b6` 的原 owner／API 接本人關注選項、相容結果與原作者／時間／內容閱讀；共享目標剔除未開放的關注寫入。來源 head／event 用 section 分開暫存身份，原確認行動僅作來源記錄。兩條新檢查 red→green、三根局部型別圖零診斷；獨立 review 補正尚稱關注未接通的文案。已通過的後端及身份／分頁流程不重跑。見[證據](frontend/verification/P4_HANDOVER_CONCERN_UI_20261030.json)。未部署／未作設備、模型或雲端驗收，成長及共享寫入仍未完成，合併後繼續 P4。

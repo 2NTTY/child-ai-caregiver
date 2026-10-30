@@ -1,0 +1,17 @@
+{
+  "base": "942030b6aa82beebaad1dd5500bec28dead64bff",
+  "branch": "codex/p4-handover-concern-ui",
+  "scope": "Shared Web/Android private concern import selection, compatible results and read-only source head/event history through the existing owner and API",
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='^concern import selector|^concern source history' frontend/scripts/handover-import-ui.test.mjs",
+      "red": { "passed": 0, "failed": 2, "log": "tmp/handover-concern-ui-red.log", "reason": "Private concern option and legacy result resource fallback absent" },
+      "green": { "passed": 2, "failed": 0, "log": "tmp/handover-concern-ui-green.log" }
+    },
+    { "command": "node tmp/check-concern-ui.cjs", "roots": 3, "diagnostics": 0, "log": "tmp/handover-concern-ui-types.log" }
+  ],
+  "coverage": ["private selection and shared exclusion", "compatible result opens original history", "source section disambiguates head/event keys", "original actor/time/text rendered literally", "source action does not imply local confirmation", "existing pagination and close callbacks"],
+  "reusedEvidence": ["P4_HANDOVER_CONCERN_IMPORT_20261030", "P4_HANDOVER_DOCUMENT_UI_20261030"],
+  "limits": ["No product redesign, cloud, model or device test", "No deployment", "Shared concern writes and growth import remain incomplete"],
+  "review": "Independent read-only review found no blocking logic issue; corrected stale concern-unavailable copy. Existing services, bounded history and identity guards retained."
+}
