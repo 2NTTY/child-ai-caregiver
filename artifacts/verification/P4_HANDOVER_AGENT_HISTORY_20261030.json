@@ -1,0 +1,31 @@
+{
+  "package": "P4-HANDOVER01 imported history Agent tools",
+  "date": "2026-10-30",
+  "base": "7805c96985f0f8e0618636909892e72049eaa86d",
+  "status": "implemented_targeted_checks_passed_not_deployed",
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-agent-history.test.ts",
+      "result": "passed",
+      "tests": 1,
+      "scope": "Original import/chat services and Agent history tool wrappers: eleven source records, bounded search/cursor, exact schema, source role and provenance, fixed-version continuation, cross-account rejection, source update invalidation and unchanged native history. Imported audio with no transcript retains text; foreign metadata and non-404 binding failures do not disclose transcript; no execution work is created.",
+      "limitations": "Serial synthetic Firestore fixture; media metadata is a scoped test double, missing transcript uses the real transcript store. Does not establish real model quality, cloud indexes or concurrent transactions."
+    },
+    {
+      "command": "node --input-type=module (stdin TypeScript API graph using tsconfig.server.json)",
+      "result": "passed",
+      "diagnostics": 0,
+      "rootFiles": ["server/firestore-agent-history.ts", "server/agent-work-store.ts", "server/agent-work-tools.ts", "server/product-agent-api.ts", "tests/handover-agent-history.test.ts"]
+    },
+    { "command": "git diff --check", "result": "passed" }
+  ],
+  "failuresPreserved": [
+    "Initial RED: unsupported imported_message rejected as invalid_input; first implementation GREEN.",
+    "Initial type graph: legacy FamilyError excludes 503; changed this unavailable-input guard to its existing 400 contract without extending global error types.",
+    "Review P2 reproduced RED: missing imported transcript returned 404 and stopped whole history read/search. Imported-only catch now handles exact FirestoreDomainError 404/not_found; final same flow GREEN and narrow review resolved."
+  ],
+  "review": "Independent static review, main evidence and diff review; the sole blocking finding was reproduced and fixed.",
+  "reused": ["P4_HANDOVER_PRIVATE_CHAT_20261030.json", "../../frontend/verification/P4_HANDOVER_CHAT_HISTORY_UI_20261030.json"],
+  "notRun": ["full suite", "real model", "cloud", "notifications", "browser/device", "deployment"],
+  "remaining": ["broader handover modules and delivery", "D-owned Agent validation remains separately tracked"]
+}
