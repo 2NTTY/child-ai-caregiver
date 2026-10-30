@@ -132,6 +132,8 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
           if (id !== row.get('historyId') || data.ref('handover_source_history', 'handover-source-history', id).path !== row.ref.path
             || row.get('recordVersion') !== 1 || value.evidence.module !== sourceModule
             || Object.entries(metadata).some(([key, expected]) => row.get(key) !== expected)) domainReject('export_scope_changed');
+          const concernEvent = value.evidence.source.current.source.section === 'concern_events';
+          if (sourceModule === 'concerns' && (section === 'concern_events') !== concernEvent) continue;
           if (await sourceHistoryVisible(data, binding, value)) items.push(sourceHistoryExport(value));
         }
         if (found.size > limit) nextCursor = encode({ userId: owner, section, childId: input.childId ?? null, scopeVersion,

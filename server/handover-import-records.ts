@@ -32,7 +32,10 @@ export function handoverImportMappingId(scope: WorkRecoveryScope, source: Handov
     source.serverId, source.accountId, source.childId, source.section, source.resourceId]);
 }
 export function handoverImportItemMetadata(value: HandoverImportItem) {
-  return { opId: value.opId, batchId: value.batchId, section: value.source.source.section, createdAt: value.at, outcome: value.outcome };
+  return { opId: value.opId, batchId: value.batchId, section: handoverImportItemSection(value), createdAt: value.at, outcome: value.outcome };
+}
+export function handoverImportItemSection(value: HandoverImportItem) {
+  return value.source.source.section === 'concern_events' ? 'concerns' : value.source.source.section;
 }
 export function handoverImportMappingMetadata(value: HandoverImportMapping) {
   return { section: value.source.section, targetId: value.target.id, targetVersion: value.target.version };

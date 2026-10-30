@@ -181,6 +181,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
     },
     async apply(work: FirestoreBackgroundWork, input: { position: number; cursor: string | null; nextCursor: string | null; row: HandoverImportRow;
       documentContent?: import('./family-document-transfer.ts').DocumentTransferContent | null;
+      concernEvents?: unknown[];
       attachmentContent?: import('./handover-import.ts').HandoverAttachmentContent | null }, signal?: AbortSignal) {
       const step = domainParse(stepSchema, { position: input.position, cursor: input.cursor, nextCursor: input.nextCursor });
       const owner = work.scope.ownerUserId, job = await authority.runTransaction(owner, null, b => read(b, work.resourceId));
@@ -196,6 +197,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
       const item = await items.apply(owner, { opId, batchId: job.id, target: selected.target, row: input.row,
         integrity: job.request.integrity, resolution,
         ...(input.documentContent === undefined ? {} : { documentContent: input.documentContent }),
+        ...(input.concernEvents === undefined ? {} : { concernEvents: input.concernEvents }),
         ...(input.attachmentContent === undefined ? {} : { attachmentContent: input.attachmentContent }) }, async (actor, target) => {
         const latest = await read(actor, job.id), assertCurrentLease = await held(actor, work, latest);
         const assertSource = await options.sourceGuard?.(actor, latest.request);

@@ -1,0 +1,71 @@
+{
+  "package": "P4-HANDOVER01 personal concern snapshots and source history",
+  "date": "2026-10-30",
+  "base": "3ca04ff6ed6f92ad00ddf20a45c81c320ae2bd9c",
+  "status": "implemented_targeted_checks_passed_not_deployed",
+  "checks": [
+    {
+      "command": "node --test tests/handover-concern-snapshot.test.ts tests/handover-concern-import.test.ts",
+      "result": "passed",
+      "tests": 2,
+      "scope": "Original snapshot service and real ZIP reader/upload/import service/durable worker against serial synthetic Firestore: local care/task mapping, source authors and evidence, immutable timelines, native revisions, expected version, normal append, future follow-up with a new work identity, terminal/unknown source work not replayed, original-operation and source retries, source updates, local conflict, source history export and onward ZIP import, cross-account rejection. Snapshot recovery codec preserves provenance in a new epoch.",
+      "limitations": "Synthetic Firestore, storage and task transport. Does not establish cloud concurrency, index installation, production restore, shared concern writes, user interface or model quality. Initial snapshot method landed before its first test; no baseline RED is claimed."
+    },
+    {
+      "command": "node --input-type=module (stdin TypeScript API graph using tsconfig.server.json)",
+      "result": "passed",
+      "diagnostics": 0,
+      "rootFiles": [
+        "server/firestore-concerns.ts",
+        "server/firestore-restore-material-records.ts",
+        "server/firestore-handover-import-items.ts",
+        "server/handover-import-service.ts",
+        "server/handover-import-records.ts",
+        "server/handover-history-records.ts",
+        "server/handover-source-history.ts",
+        "server/firestore-account-export.ts",
+        "server/handover-provenance.ts",
+        "src/shared/handover-imports.ts",
+        "tests/handover-concern-snapshot.test.ts",
+        "tests/handover-concern-import.test.ts"
+      ]
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    },
+    {
+      "command": "node --input-type=module (stdin TypeScript API graph using frontend/tsconfig.json)",
+      "result": "passed",
+      "diagnostics": 0,
+      "rootFiles": [
+        "frontend/src/components/account/HandoverImportControls.tsx",
+        "frontend/src/components/account/HandoverImportResults.tsx"
+      ],
+      "scope": "Backend enum integrated with merged label compatibility #403; import selection is not enabled by the label-only change."
+    }
+  ],
+  "failuresPreserved": [
+    "Static review caught concern receipt fallback using an unsupported change kind; it now reuses growth.",
+    "Main requirement review corrected source event attribution: preserve the source author, with local importer held separately in provenance/receipts. Restore authenticates that importer; native actor checks remain unchanged.",
+    "First integration failed: results returned two rather than four concern items because event history metadata used concern_events instead of the parent business section. A common receipt section projection fixes both result lookup and replay while preserving original provenance. Same flow then passed."
+  ],
+  "review": "Independent static review and focused follow-ups for change channel, attribution, restore and receipt section projection; no outstanding blocker.",
+  "reused": [
+    "P4_HANDOVER_CONCERN_TIMELINE_20261030.json"
+  ],
+  "notRun": [
+    "full suite",
+    "real model",
+    "cloud",
+    "notifications",
+    "browser/device",
+    "deployment"
+  ],
+  "remaining": [
+    "shared import UI and source history presentation",
+    "shared concern writes",
+    "growth import",
+    "broader handover scope and delivery"
+  ]
+}
