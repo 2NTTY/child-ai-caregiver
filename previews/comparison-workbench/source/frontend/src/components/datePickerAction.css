@@ -1,0 +1,36 @@
+/* Paper Dates 0.24.0 exposes saveLabel but fixes its header Button to text mode.
+   Keep the shipped handler/focus/disabled behavior; only this owned modal's
+   enabled save action is filled. Verify these testIDs when upgrading Dates. */
+[data-testid="app-date-picker"] [data-testid="react-native-paper-dates-save"]:not([aria-disabled="true"]):not(:disabled) {
+  background-color: #272343 !important;
+  min-height: 44px;
+  min-width: 108px;
+  /* Paper's content is shorter than this hit target; center the whole row. */
+  justify-content: center;
+  margin-inline: 4px;
+}
+[data-testid="app-date-picker"] [data-testid="react-native-paper-dates-save"]:not([aria-disabled="true"]):not(:disabled) [data-testid="react-native-paper-dates-save-text"] {
+  color: #fffffe !important;
+  font-weight: 700 !important;
+}
+@media (hover: hover) {
+  [data-testid="app-date-picker"] [data-testid="react-native-paper-dates-save"]:not([aria-disabled="true"]):not(:disabled):hover {
+    background-color: #221f3b !important;
+  }
+}
+[data-testid="app-date-picker"] [data-testid="react-native-paper-dates-save"]:not([aria-disabled="true"]):not(:disabled):active {
+  background-color: #221f3b !important;
+}
+[data-testid="app-date-picker"] [data-testid="react-native-paper-dates-save"]:not([aria-disabled="true"]):not(:disabled):focus-visible {
+  outline: 2px solid #272343;
+  outline-offset: 3px;
+}
+@media (forced-colors: active) {
+  [data-testid="app-date-picker"] [data-testid="react-native-paper-dates-save"]:not([aria-disabled="true"]):not(:disabled) {
+    background-color: Highlight !important;
+    outline-color: CanvasText;
+  }
+  [data-testid="app-date-picker"] [data-testid="react-native-paper-dates-save"]:not([aria-disabled="true"]):not(:disabled) [data-testid="react-native-paper-dates-save-text"] {
+    color: HighlightText !important;
+  }
+}

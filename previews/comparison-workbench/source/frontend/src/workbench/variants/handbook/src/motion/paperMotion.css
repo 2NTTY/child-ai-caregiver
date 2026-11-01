@@ -1,0 +1,6 @@
+[data-motion-paper-scope][data-motion-reduced="true"] [data-paper-ripple] {
+  display: none !important;
+}
+[data-motion-paper-scope][data-motion-reduced="true"] [data-motion-switch="true"] > div {
+  transition-duration: 0s !important;
+}

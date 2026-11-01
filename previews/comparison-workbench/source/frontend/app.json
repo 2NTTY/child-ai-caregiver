@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "育有方 · 比較工作台 Original",
+    "slug": "comparison-workbench-original",
+    "version": "0.1.0",
+    "platforms": ["web"],
+    "plugins": ["expo-router"],
+    "web": {"bundler": "metro", "output": "static", "favicon": "./assets/brand/favicon.png"},
+    "experiments": {"baseUrl": "/variants/original"},
+    "updates": {"enabled": false}
+  }
+}

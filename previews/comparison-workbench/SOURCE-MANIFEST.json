@@ -1,0 +1,3217 @@
+{
+  "schemaVersion": 1,
+  "scope": "Exact editable Tasks comparison-source checkpoint; no runtime/export acceptance claim",
+  "payloadRoot": "source",
+  "payloadFiles": 458,
+  "payloadBytes": 4931662,
+  "payloadGitTreeOid": "1856fb742425a3ebe9fea2462faee90625a38807",
+  "sourcePlanSha256": "efb32c8911e12dd4854294fa00a5676859a3950bd2cbb534dd17e20fa59fede9",
+  "files": [
+    {
+      "path": "frontend/app/(dashboard)/[...unavailable].tsx",
+      "bytes": 61,
+      "mode": "100644",
+      "sha256": "e4968c1bf62b8a397b9d8534067111c6b23100ea9bf596948b242171bf0e133e",
+      "gitBlobOid": "2bd6d74e4f63c24d48ba7c8a394dccb97686a6f7"
+    },
+    {
+      "path": "frontend/app/(dashboard)/_layout.tsx",
+      "bytes": 59,
+      "mode": "100644",
+      "sha256": "5111c895bdb9e390042889e3965ec3a30e5bdcc4542bae43714cc542bcc02b7d",
+      "gitBlobOid": "ed963e6b964c68bf3beaf2fd5ab1ba10a6681bc4"
+    },
+    {
+      "path": "frontend/app/(dashboard)/index.tsx",
+      "bytes": 61,
+      "mode": "100644",
+      "sha256": "e4968c1bf62b8a397b9d8534067111c6b23100ea9bf596948b242171bf0e133e",
+      "gitBlobOid": "2bd6d74e4f63c24d48ba7c8a394dccb97686a6f7"
+    },
+    {
+      "path": "frontend/app/(dashboard)/tasks.tsx",
+      "bytes": 57,
+      "mode": "100644",
+      "sha256": "cc74e560d831c098b384af096c9c45651c0f2206bbc7934c2f1abf3adb9135b1",
+      "gitBlobOid": "54b8f0ab2634e4e69c783fa7d154dae69f5f98ef"
+    },
+    {
+      "path": "frontend/app/_layout.tsx",
+      "bytes": 57,
+      "mode": "100644",
+      "sha256": "bf288d0bf6a5fd264d8c242fcb2d052bd12cb52a8db1d00bbfcd8d7ecadcc056",
+      "gitBlobOid": "7bbc573a09a0057125509546d2495a1f72ea2c00"
+    },
+    {
+      "path": "frontend/app.json",
+      "bytes": 382,
+      "mode": "100644",
+      "sha256": "f5109edb5789919aa07492f421a3f0d95a3bb48a27e32d376ce6c1d16112712b",
+      "gitBlobOid": "c43c03f0d289d6357f1372d3fdf66c26f05fec20"
+    },
+    {
+      "path": "frontend/assets/brand/favicon.png",
+      "bytes": 31782,
+      "mode": "100644",
+      "sha256": "f99ab81275f01114dfc481ed88250165e490eda0b1ba7f4362d0872c0ab16f06",
+      "gitBlobOid": "6667f0d886e7ce0b345203ef3e946a94e977b13a"
+    },
+    {
+      "path": "frontend/assets/images/harbour-family-hero.png",
+      "bytes": 2377969,
+      "mode": "100644",
+      "sha256": "2d6831182f397c2388f0f6239be093b7480eef2c70fe4ff4894cdcb1dee13c29",
+      "gitBlobOid": "559b829b607065dacd351c4bc80e4f10432d0002"
+    },
+    {
+      "path": "frontend/index.js",
+      "bytes": 232,
+      "mode": "100644",
+      "sha256": "e7017e915369f67fcffb4b3e1c3fdacf2527523f2ae2a02b30ade2a1b9eec54c",
+      "gitBlobOid": "acab472ce4b4f62afc7ddc0437f1096347f227c6"
+    },
+    {
+      "path": "frontend/package.json",
+      "bytes": 2198,
+      "mode": "100644",
+      "sha256": "b51dca38ce1581d814695429f45b2c6ba21d95841b685e3c780b16e9d84ce73f",
+      "gitBlobOid": "06830e3593435452b9d0c45c34ba2c1bca64f612"
+    },
+    {
+      "path": "frontend/src/background-view-model.ts",
+      "bytes": 594,
+      "mode": "100644",
+      "sha256": "3fafc8c60165f4598aa6644f060894eeb49b10746f1f49b186df8711d219a11b",
+      "gitBlobOid": "241084e151eca49c8494405472ddef8419f5b7b6"
+    },
+    {
+      "path": "frontend/src/branding.ts",
+      "bytes": 466,
+      "mode": "100644",
+      "sha256": "90278dc5820b678170c60ab51022834990f8518f9d2e896934326cc5a7bdcc18",
+      "gitBlobOid": "b17afccc4107f85815510fc976fe7f998545b4c3"
+    },
+    {
+      "path": "frontend/src/care-view-model.ts",
+      "bytes": 18903,
+      "mode": "100644",
+      "sha256": "ebd45d85b9d6a48531d5e6ee6c9111b2d43c13039371d21473c1fd385a50a26b",
+      "gitBlobOid": "1caea07301f06efa9a309343d2e434d2be4cf6d3"
+    },
+    {
+      "path": "frontend/src/components/AgentEntryButton.tsx",
+      "bytes": 2309,
+      "mode": "100644",
+      "sha256": "af83d3fbd0ab9ee8c8d237284b90fa280417e7ac66a1db80b98ce037d68e311e",
+      "gitBlobOid": "5acab78aa10c82e99dbfd1549bfa9333a3c16b81"
+    },
+    {
+      "path": "frontend/src/components/AppCheckbox.tsx",
+      "bytes": 2670,
+      "mode": "100644",
+      "sha256": "cb77b89d73ead78dd6537cad9ab4d74f0f37f8d6e083e752db7d5acd5efea508",
+      "gitBlobOid": "8420d154ea2ef4625581bd74d3a2f83667c81b10"
+    },
+    {
+      "path": "frontend/src/components/AppDialog.tsx",
+      "bytes": 3413,
+      "mode": "100644",
+      "sha256": "f52db6e0392358f890e2f21f77c90a4227b29cf9c120a046b38e507f286bc55c",
+      "gitBlobOid": "7311c5d35d86736b0159fb8d42cf9469025665c9"
+    },
+    {
+      "path": "frontend/src/components/AppIcon.tsx",
+      "bytes": 7187,
+      "mode": "100644",
+      "sha256": "febf65398dea8e302ff25dc7103a7c1bf74f5e4eec744298daa3734ebdec77c9",
+      "gitBlobOid": "5678fad98a07a1e0c3c5ed5817e9daa2eaaa2f96"
+    },
+    {
+      "path": "frontend/src/components/AppRadioItem.tsx",
+      "bytes": 2725,
+      "mode": "100644",
+      "sha256": "a305ab04c4b792061bf1678e70bb8ae53a76a6fdbeb7181c2c1c903ffe9ae8cc",
+      "gitBlobOid": "72d88c44fe25dc825834b04ba4eef4d3226e7f8b"
+    },
+    {
+      "path": "frontend/src/components/AppScrollView.web.tsx",
+      "bytes": 2366,
+      "mode": "100644",
+      "sha256": "6b96e19c2fd59d02ee50c53f6774cbb73a8cc96b0b707d0367aeaba85091280c",
+      "gitBlobOid": "3678d95c73e33f82984fde00369eada8a04b083e"
+    },
+    {
+      "path": "frontend/src/components/AppShell.tsx",
+      "bytes": 15866,
+      "mode": "100644",
+      "sha256": "00ea9494cfa034543df3fc6846ca386204d33d31186e3a964dd374599c499fa3",
+      "gitBlobOid": "77c7daac7a726f450f115472e7fac6749c7eb6e8"
+    },
+    {
+      "path": "frontend/src/components/AppStatusBadge.tsx",
+      "bytes": 1742,
+      "mode": "100644",
+      "sha256": "23f5819f4ae7ef7f263c6700ca362ec98a4be33d6d26e484d59f859d2713fb82",
+      "gitBlobOid": "d40dc750eb515cf0948b0f36876a7d98a519fcf4"
+    },
+    {
+      "path": "frontend/src/components/BrandLogo.tsx",
+      "bytes": 1241,
+      "mode": "100644",
+      "sha256": "f1d84a49ebb4ba3f9d9f5f8d16e54aeda86f3a64efe7c488149bc5495a3b50f2",
+      "gitBlobOid": "f818940386d3350959f74b551ea6f556dda350e3"
+    },
+    {
+      "path": "frontend/src/components/ChildKeyFacts.tsx",
+      "bytes": 2581,
+      "mode": "100644",
+      "sha256": "f3122e4f090c95d2f83854d4749850258bb1658d80e239a4c729d48be63138ec",
+      "gitBlobOid": "19eeb8bf14f65e818a95708cbc58f86061e253a6"
+    },
+    {
+      "path": "frontend/src/components/ChildPicker.tsx",
+      "bytes": 5621,
+      "mode": "100644",
+      "sha256": "325271ee04609f15843e3f9f56d42dfd88bb3b665e2483534b75cc19a6fe2edb",
+      "gitBlobOid": "de08295c5dfd14e6e4dd2afd3298888c449a29cf"
+    },
+    {
+      "path": "frontend/src/components/CompactHeaderIdentity.tsx",
+      "bytes": 1306,
+      "mode": "100644",
+      "sha256": "4ef8c971ac606e5e853d8a29a2caef3e942b95eb1dd2e0e3b0baceb3a0667d89",
+      "gitBlobOid": "b48347c3c4d1f98e85f377730094a9c3cb89e481"
+    },
+    {
+      "path": "frontend/src/components/DateTimeFields.tsx",
+      "bytes": 13457,
+      "mode": "100644",
+      "sha256": "13a22848c92b6dbee8a5c77f476316309e506b671d4b20a2e7db7006b2d5b71d",
+      "gitBlobOid": "6784a0b9059881ffd54eb29b28f5140937fd11fc"
+    },
+    {
+      "path": "frontend/src/components/EmptyListCard.tsx",
+      "bytes": 1486,
+      "mode": "100644",
+      "sha256": "c6b1a8711665eaa5d3e8ac41f17da6ac5ce06f059e7ffaab2f40e0813af5afbc",
+      "gitBlobOid": "71514c6ce10b8ac571de564abc95cd0e85a6c7e8"
+    },
+    {
+      "path": "frontend/src/components/FormDialog.tsx",
+      "bytes": 6806,
+      "mode": "100644",
+      "sha256": "19150ef54beb3983c5bbb6cfab7ba144d1aa95565799c122fa84989c58a03fb4",
+      "gitBlobOid": "b567673b99aa961922f201fd0a77953f38bfb54c"
+    },
+    {
+      "path": "frontend/src/components/FormErrorSummary.tsx",
+      "bytes": 1572,
+      "mode": "100644",
+      "sha256": "09ed83a732d745fc2bbfb818817a32e60813ccc636d58ecad41f5d106bb90fa4",
+      "gitBlobOid": "9691c55d3bab098994e9d9ee1278e9097372f373"
+    },
+    {
+      "path": "frontend/src/components/HeaderOperationHint.tsx",
+      "bytes": 1489,
+      "mode": "100644",
+      "sha256": "9a642ae85aa6a36f628a48f72bb17e120ed84a4b26a5f046b0eb1c2e84e8431a",
+      "gitBlobOid": "1c44689ab4e9baf0c713d8355d409f52e5d7c65b"
+    },
+    {
+      "path": "frontend/src/components/HomeFocus.tsx",
+      "bytes": 4311,
+      "mode": "100644",
+      "sha256": "75e4e39afb0452dedb12df9132ce2ab3572caba3e865a9aceffdb25087aca092",
+      "gitBlobOid": "b04f2c17f9460cc35e34a6357a7cb54230e1cbc6"
+    },
+    {
+      "path": "frontend/src/components/HomeOverviewItems.tsx",
+      "bytes": 2937,
+      "mode": "100644",
+      "sha256": "57c36004df766f9d1ea887273cb6e8e6ededbce18234a4b88ee8376b32628788",
+      "gitBlobOid": "0b8987ef6f54f76e70acf3b384bef03f0a1522c0"
+    },
+    {
+      "path": "frontend/src/components/HorizontalOverflowRail.tsx",
+      "bytes": 10649,
+      "mode": "100644",
+      "sha256": "2b8e506a81bc088433b3e0d0205be87a06eb0bfef9e02810bc395dac58f32ddd",
+      "gitBlobOid": "d0fd58eebd1760da055c55410c0260e9489754d5"
+    },
+    {
+      "path": "frontend/src/components/NotificationBell.tsx",
+      "bytes": 2594,
+      "mode": "100644",
+      "sha256": "80a6b09fc195379434f3a2dad0934f5e41e5e4b742e761e6b879f0de0bc780cf",
+      "gitBlobOid": "b99dd23652dedb8a26bc6a8fd5c3a6eaecf842df"
+    },
+    {
+      "path": "frontend/src/components/OperationNotice.tsx",
+      "bytes": 2638,
+      "mode": "100644",
+      "sha256": "0c8239f9f27d8e6148368fce57a33eced2fac63795152f424dbeff9ad62c6279",
+      "gitBlobOid": "34ee168bae9fa804e9ba14aacf878af1c1f3f5cf"
+    },
+    {
+      "path": "frontend/src/components/PageFrame.tsx",
+      "bytes": 3570,
+      "mode": "100644",
+      "sha256": "e6fff2a3dd1911ef945154c7e289938380b6f16fab2a9353d2fbb450d2b73393",
+      "gitBlobOid": "82d04736572dc55c22d28fd0731325355225921a"
+    },
+    {
+      "path": "frontend/src/components/ReadStateNotice.tsx",
+      "bytes": 3357,
+      "mode": "100644",
+      "sha256": "f4d6482beff6f40766e0f01c5a041cb4d2084261378f7e4e77c56d04a6b3e2ca",
+      "gitBlobOid": "5bbeb4148a766accc60a9875b75db393eb9bc74f"
+    },
+    {
+      "path": "frontend/src/components/RightRailContent.tsx",
+      "bytes": 2315,
+      "mode": "100644",
+      "sha256": "b84d9cf61a19fda070e07be873f36371f5125fd108fa7cb02aea5dc4dcfe6b3b",
+      "gitBlobOid": "d2c576fe0879c39895356166306898a6283395ba"
+    },
+    {
+      "path": "frontend/src/components/StatusAnnouncement.tsx",
+      "bytes": 1034,
+      "mode": "100644",
+      "sha256": "fc63fd6fa5f78718403aa88ef1c9df5a21a61c384896026c10048ae0763a5b5e",
+      "gitBlobOid": "d5905949da31fbe7eeba8080710b3ad816346914"
+    },
+    {
+      "path": "frontend/src/components/ToolbarIconButton.tsx",
+      "bytes": 1879,
+      "mode": "100644",
+      "sha256": "1e0053bb2cd7e042d1c6a0c654f3d722a8ebdf7b77ade4db373626ce330b39b4",
+      "gitBlobOid": "95a6105085cb9b26438bfb12245d6d5ed207f754"
+    },
+    {
+      "path": "frontend/src/components/WriteRecoveryNotice.tsx",
+      "bytes": 2296,
+      "mode": "100644",
+      "sha256": "886f74c4a699b04674b751b73d7d58b0be0f5211d4db5564ab96e19e58c8f78c",
+      "gitBlobOid": "a8068389fb6e7bb9b0727c6b40cad8d862f80c82"
+    },
+    {
+      "path": "frontend/src/components/appScrollView.css",
+      "bytes": 842,
+      "mode": "100644",
+      "sha256": "3c9b4ab4433153a7fef317b622cbed555934996fae93709471184c0abc5fcb59",
+      "gitBlobOid": "544936fdd5111b18e086cb5c1ffceb80d02d07de"
+    },
+    {
+      "path": "frontend/src/components/appearance/AppBackdrop.tsx",
+      "bytes": 1454,
+      "mode": "100644",
+      "sha256": "4662b337b65e3c63ddf254c974daecebb190b94b52309eee513b17b20a8f2f6d",
+      "gitBlobOid": "f781d297a2f5235f9cfad64b0dde21a476da331c"
+    },
+    {
+      "path": "frontend/src/components/appearance/BackgroundSurface.tsx",
+      "bytes": 1922,
+      "mode": "100644",
+      "sha256": "555d463a8c944f5dff7199335a05ab4a566d1df7dd4d96e01d78f7e82b635803",
+      "gitBlobOid": "fe2a42cc4315e09619efb96937930f6aec6f3668"
+    },
+    {
+      "path": "frontend/src/components/appearance/background-surface-style.web.ts",
+      "bytes": 171,
+      "mode": "100644",
+      "sha256": "f4a981a422d5bbdfea2684431a56457a6a657560fdd42b9fa884ce479d21a7e7",
+      "gitBlobOid": "f18f7ddad2693f4973b93022db39472e890e111c"
+    },
+    {
+      "path": "frontend/src/components/appearance/backgroundSurface.css",
+      "bytes": 1219,
+      "mode": "100644",
+      "sha256": "586f1cb816800e9310ee2078e0036c3c16af35c2207e39729a6f87eead705b07",
+      "gitBlobOid": "187d9f56e3ded6fd3debd38e24049a814f9858d0"
+    },
+    {
+      "path": "frontend/src/components/date-picker-action.web.ts",
+      "bytes": 33,
+      "mode": "100644",
+      "sha256": "cc1947fa94dcc675ef9f02f840e2779cef4b0fde6bee92261004788b917f6425",
+      "gitBlobOid": "43461fb0f1ba9ff7ed335b907195b5a9c36e0308"
+    },
+    {
+      "path": "frontend/src/components/date-time.ts",
+      "bytes": 2612,
+      "mode": "100644",
+      "sha256": "be2822d8a4d00afd91d50fcfa9735e9d7f90bfd1cc6d684e9b75d900fb793d6a",
+      "gitBlobOid": "a17491a7bfc5495eccc7f728c7394604979e7414"
+    },
+    {
+      "path": "frontend/src/components/datePickerAction.css",
+      "bytes": 1831,
+      "mode": "100644",
+      "sha256": "6a43a1e8d8f72a5f97bf593e8e58a78814e5b947bfff5f55ee68bcf29afcde26",
+      "gitBlobOid": "ca20c0d0c29fb6d1d626ea19d98b852ebcc7b79d"
+    },
+    {
+      "path": "frontend/src/components/horizontalOverflow.ts",
+      "bytes": 1364,
+      "mode": "100644",
+      "sha256": "8252e20d70cba42291f0c9e6de801430ea76cd6ff0bb21f0f0a563d2d73bc2ab",
+      "gitBlobOid": "c7a6549544e1c230a36887c3bae4a4518d13b363"
+    },
+    {
+      "path": "frontend/src/components/icons/ConcernIcon.tsx",
+      "bytes": 616,
+      "mode": "100644",
+      "sha256": "7aa9f4f166a399935def3ee1d864b5cdab6a93872dcc60b99ff922b5f53cc56f",
+      "gitBlobOid": "7153079832382ab2636104e8947bbf3e0ddf62e5"
+    },
+    {
+      "path": "frontend/src/components/icons/OverviewIcon.tsx",
+      "bytes": 612,
+      "mode": "100644",
+      "sha256": "3c40d33a31a376ff0098eac60cdb82d6b4f4bb3f25200df4c77b8337a62dab9f",
+      "gitBlobOid": "af31c95d9b6bec99a21f6645e40b5d6954dabc98"
+    },
+    {
+      "path": "frontend/src/components/icons/PreparationIcon.tsx",
+      "bytes": 569,
+      "mode": "100644",
+      "sha256": "f1d4ca537aba6d842c445a5d3f52b49e84f2baf238196ede2544b2689f7ff548",
+      "gitBlobOid": "8f696c4bd86c6a08ac33cccff7f30b81d3b885ad"
+    },
+    {
+      "path": "frontend/src/components/navigation/DirectionalPressable.web.tsx",
+      "bytes": 5464,
+      "mode": "100644",
+      "sha256": "5f7e74b3d3fdaaf68744a3be41f43dab1f9b1cb034261cdb638ba4cf63c44047",
+      "gitBlobOid": "bae6cece311efb058c862a8682fddb330bcd681a"
+    },
+    {
+      "path": "frontend/src/components/navigation/MobileNavSelection.tsx",
+      "bytes": 721,
+      "mode": "100644",
+      "sha256": "083d317b9f294697565339fb60fac0513d9db2cef8922f11fc6ba283d09ac1e7",
+      "gitBlobOid": "d56d8e49da63b65639ce6c4249b8d4dca734ea8c"
+    },
+    {
+      "path": "frontend/src/components/navigation/RecordsNavButton.tsx",
+      "bytes": 2667,
+      "mode": "100644",
+      "sha256": "a826af175c48a0d4a453ce08021f993bc6ee1e5c09173bcd77cafd3bdef144ea",
+      "gitBlobOid": "bff53861d07abb78fb58f498cbab02dc083a8e9e"
+    },
+    {
+      "path": "frontend/src/components/navigation/app-navigation.ts",
+      "bytes": 3980,
+      "mode": "100644",
+      "sha256": "dbe302de6ff0c9cad5eaf0ea68fc450ea45f44164262898d534cdf0c3e6ac556",
+      "gitBlobOid": "4759facd9ceb2d6f2946fcd1305a334bcb25edcd"
+    },
+    {
+      "path": "frontend/src/components/navigation/pointer-click-gate.ts",
+      "bytes": 358,
+      "mode": "100644",
+      "sha256": "20d04176876614fc430e0c8befa06411a336ce52a257dcdf74ca454322318156",
+      "gitBlobOid": "ccb787c7baba63c92b999a7665936dbf4cf7bbdf"
+    },
+    {
+      "path": "frontend/src/components/navigation/quick-input-gesture.ts",
+      "bytes": 695,
+      "mode": "100644",
+      "sha256": "63bd11ec28c2f7978c29aeddd20b7a6f7540f0f581f9a8d9763839d2a501b1bb",
+      "gitBlobOid": "1061cbbada2ef69c4f3d82ae565e31e3c74a7d32"
+    },
+    {
+      "path": "frontend/src/components/tasks/TaskContent.tsx",
+      "bytes": 8816,
+      "mode": "100644",
+      "sha256": "a231e74cd889e609558ae6586ac2d0785853153674aad2ac9584a5be3e899df1",
+      "gitBlobOid": "ccc1f556854a37026291b3a9459e1a3c01ba15a7"
+    },
+    {
+      "path": "frontend/src/components/tasks/TaskDetail.tsx",
+      "bytes": 7342,
+      "mode": "100644",
+      "sha256": "5ab3289f11ca09a7c37a635871dd0a11974fe97a92a72c055a144b3017fb1154",
+      "gitBlobOid": "566c6487ef2a58bede129b72a44375de7f2cda64"
+    },
+    {
+      "path": "frontend/src/components/tasks/TaskForm.tsx",
+      "bytes": 11333,
+      "mode": "100644",
+      "sha256": "9108275750c71187dc0868df78381be4a50d99a1f69fe1d5ab9ecea1f1b01f70",
+      "gitBlobOid": "277cd7d6f38b09a5b0c93fd20f63ac0c6fc6a8ed"
+    },
+    {
+      "path": "frontend/src/components/tasks/TaskListRow.tsx",
+      "bytes": 4237,
+      "mode": "100644",
+      "sha256": "f17f83115786cbf11bfb238da0279ba96c95b6359c3bb2c9f56e3eaca9f0bc69",
+      "gitBlobOid": "108f6ca2cad3b2be7cfd27b485e70bb58b485306"
+    },
+    {
+      "path": "frontend/src/components/tasks/TasksCalendar.tsx",
+      "bytes": 7852,
+      "mode": "100644",
+      "sha256": "5e23c4e32d4582261ba37172595483ba61f272afdba1f183e0e2cd0c89fcdcd7",
+      "gitBlobOid": "a9cf5e2331fadad538d58e92f9ea8a10e8ac7580"
+    },
+    {
+      "path": "frontend/src/components/tasks/TasksView.tsx",
+      "bytes": 17546,
+      "mode": "100644",
+      "sha256": "c14289a4caf591e006a401029026bb7a2dc2b3db8b99ebc466b57a2c9a08e3bf",
+      "gitBlobOid": "321d428ea8eef96cfe373da7f2b0c19ddcaa70c3"
+    },
+    {
+      "path": "frontend/src/components/tasks/task-calendar.ts",
+      "bytes": 6256,
+      "mode": "100644",
+      "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4",
+      "gitBlobOid": "208a2cb61c9eb2012ecd5fd0e9e688e8939b80b0"
+    },
+    {
+      "path": "frontend/src/components/tasks/task-form.ts",
+      "bytes": 3535,
+      "mode": "100644",
+      "sha256": "5a40a277b2a95f588410999c51185a789d02c8a5f8f5b09378829ceb968dbb0f",
+      "gitBlobOid": "1c708f769433c2096c46ac7e78d8d6a715d3f500"
+    },
+    {
+      "path": "frontend/src/components/ui.tsx",
+      "bytes": 28747,
+      "mode": "100644",
+      "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563",
+      "gitBlobOid": "96e77558004ba8f778759527a7ad0b48fcc78a55"
+    },
+    {
+      "path": "frontend/src/components/useContainerWidth.ts",
+      "bytes": 1371,
+      "mode": "100644",
+      "sha256": "4ebaf3b5222d5907f40083347a9079208daccc0321cfa24afd1726e107d28c42",
+      "gitBlobOid": "62e80f2679564b82ec2ffd0f5c3d0b35ea73558e"
+    },
+    {
+      "path": "frontend/src/components/useInteractionDensity.ts",
+      "bytes": 758,
+      "mode": "100644",
+      "sha256": "c5e18195d786aa80b3411b813259d92a4cec9692624ed37d7ac246b5a4a4f921",
+      "gitBlobOid": "9bca3bf5acf023145671ee7bc20ef3d5e13f50de"
+    },
+    {
+      "path": "frontend/src/components/useQuietReadFocus.ts",
+      "bytes": 1637,
+      "mode": "100644",
+      "sha256": "101c96d2f916c2bb2acf63c23a4bed2d6e3d53671d82794db0f4804eb57700aa",
+      "gitBlobOid": "9b31096c385c56d663f42e31058e97044684f841"
+    },
+    {
+      "path": "frontend/src/header-operation-hints.ts",
+      "bytes": 1052,
+      "mode": "100644",
+      "sha256": "392f61ddcfd2661639737e8d237774372674c2d3ed4b81fbbab1b9fecf37b966",
+      "gitBlobOid": "9a7da5e6d69a0e893bb4ff4e2640f3ed8efc103f"
+    },
+    {
+      "path": "frontend/src/home-overview.ts",
+      "bytes": 3030,
+      "mode": "100644",
+      "sha256": "68d38fbdade9eb7fdd374c34fc6f5b1190ade63274189a710975da0b26e30998",
+      "gitBlobOid": "025af8b9c865c06faf3dea14d0104129a07cbd75"
+    },
+    {
+      "path": "frontend/src/motion/DrawerOverlay.types.ts",
+      "bytes": 349,
+      "mode": "100644",
+      "sha256": "71050eec66338da988a161906930753ce03bbbcee98182950aec9ec41acb15ce",
+      "gitBlobOid": "da032e52533892cb69d75e7600114cf303fd187c"
+    },
+    {
+      "path": "frontend/src/motion/MotionBackdrop.tsx",
+      "bytes": 2849,
+      "mode": "100644",
+      "sha256": "bcb8828521c2252b76d3a92ad4ab674e349064baa9e499d6216c33151ca12414",
+      "gitBlobOid": "d21e5796f6b93c17a1ce55a283050c75820d84bc"
+    },
+    {
+      "path": "frontend/src/motion/MotionDisclosure.tsx",
+      "bytes": 4699,
+      "mode": "100644",
+      "sha256": "7a166f4887b0527e03b74c9f13d6f78002a2a39138518d032bd1e98917ecb082",
+      "gitBlobOid": "50f98f5d2e76c8976a7b0ff8a95eaac11b4d6ad8"
+    },
+    {
+      "path": "frontend/src/motion/MotionDrawerOverlay.web.tsx",
+      "bytes": 2475,
+      "mode": "100644",
+      "sha256": "51994fff02732eff605d91c488de592085ce45e877ba08e17776254fd9529d72",
+      "gitBlobOid": "940047564106d76e3eae3799b27326e4737d1f04"
+    },
+    {
+      "path": "frontend/src/motion/MotionDrawerRight.tsx",
+      "bytes": 4388,
+      "mode": "100644",
+      "sha256": "3109d1cc837400efa27fe787bf1934587a025c84168339c921b40082b45a2c36",
+      "gitBlobOid": "02cb5c026b8a94fb0651ad516bec901a9ac06ad5"
+    },
+    {
+      "path": "frontend/src/motion/MotionEntrance.tsx",
+      "bytes": 4504,
+      "mode": "100644",
+      "sha256": "18cec389c5af27f74c52b343a880ff36130c09d1e43ee61c3cacf93d6a69066e",
+      "gitBlobOid": "2864e385ad1aabba13255d6524471dff65dbb130"
+    },
+    {
+      "path": "frontend/src/motion/MotionFeedback.tsx",
+      "bytes": 2192,
+      "mode": "100644",
+      "sha256": "ce16b44e5ac57643ef49b7c2c6391deb7dfa53a7c87021ff59ef66654b8d047c",
+      "gitBlobOid": "c4e9718527f4ce0d5ca22b7aae4db73f7005146f"
+    },
+    {
+      "path": "frontend/src/motion/MotionInlineSwap.tsx",
+      "bytes": 4532,
+      "mode": "100644",
+      "sha256": "d1aa96d830dcf8a20f5935cdb6c6466eceaf9ef14ba766aae0bd830e898826ff",
+      "gitBlobOid": "a53ad75594768353c6aba3b47065211282b6bf07"
+    },
+    {
+      "path": "frontend/src/motion/MotionList.tsx",
+      "bytes": 11586,
+      "mode": "100644",
+      "sha256": "1a9fe5bd09f79c081ba6ee80b66beb8b5197bb60a6aba8b75a07b076b11431c9",
+      "gitBlobOid": "d36020037640f9239a18fd5174c1ace12d519eb1"
+    },
+    {
+      "path": "frontend/src/motion/MotionPaperProvider.tsx",
+      "bytes": 1102,
+      "mode": "100644",
+      "sha256": "dacf6543e6e81ff87ebb799ca3c8c017e3dcfdc88efe371016b69c6805928331",
+      "gitBlobOid": "a6453004f391b8be1926d69883f0f790e85a8cba"
+    },
+    {
+      "path": "frontend/src/motion/MotionPaperScope.web.tsx",
+      "bytes": 1150,
+      "mode": "100644",
+      "sha256": "9a550cb91c2d8f9e227e2c8d417723e414bc3dd0300f8675920ff52baff3eaf0",
+      "gitBlobOid": "274a1be4d1d48d79dde9fdbe966a15cdba504d9e"
+    },
+    {
+      "path": "frontend/src/motion/MotionReveal.tsx",
+      "bytes": 8861,
+      "mode": "100644",
+      "sha256": "b2590756cf0d0ea6685f740e5b5d8664937ffe5b27dbe5de7e191ef63b594643",
+      "gitBlobOid": "908c7fce3f67ba09ea720ecbd0b80d3218b8dbef"
+    },
+    {
+      "path": "frontend/src/motion/MotionScopeBoundary.tsx",
+      "bytes": 11059,
+      "mode": "100644",
+      "sha256": "be926381ccb9eb486b4c5e11a35a35d7654a97a90df6ea86ac1fe63a52b7b130",
+      "gitBlobOid": "d80ac7defcff856d5a805ea06b131770beb8c530"
+    },
+    {
+      "path": "frontend/src/motion/MotionSelectionMarker.tsx",
+      "bytes": 2055,
+      "mode": "100644",
+      "sha256": "15c72cb88acddce8d5d299086aa873a00173d68e7ba1f579d248d21983544798",
+      "gitBlobOid": "ff8540f4b1d4ed48af07a2bae0f29ec1cabe3f91"
+    },
+    {
+      "path": "frontend/src/motion/drawerGeometry.ts",
+      "bytes": 267,
+      "mode": "100644",
+      "sha256": "ab05671c4b34fe933613250434ed1891965467277d01fb0254e5fe3eafd7546d",
+      "gitBlobOid": "8649d09421af62c40b0927381bf07576d079e303"
+    },
+    {
+      "path": "frontend/src/motion/index.ts",
+      "bytes": 1040,
+      "mode": "100644",
+      "sha256": "39069af7befaf5eefeb5952b37679a987b035ecbf42403bec17eade0de8d42a9",
+      "gitBlobOid": "fd963dd53514336f8d55f6168fbcf98daf8bcd52"
+    },
+    {
+      "path": "frontend/src/motion/lifecycle.ts",
+      "bytes": 1277,
+      "mode": "100644",
+      "sha256": "c32a9597cdbd807531ead7274ed2cdedf740021d28d304bd25dbc9790416cbfe",
+      "gitBlobOid": "f9a735ff2b1d61aef4408f8b34efbb041c261be6"
+    },
+    {
+      "path": "frontend/src/motion/paperMotion.css",
+      "bytes": 236,
+      "mode": "100644",
+      "sha256": "0f158acc2e042d90a646087041434534b17ac0600558d7f04407e19a57885596",
+      "gitBlobOid": "c5ece0f7c3ad337b4df277c88189b09443b1e9a6"
+    },
+    {
+      "path": "frontend/src/motion/preferencePolicy.ts",
+      "bytes": 369,
+      "mode": "100644",
+      "sha256": "d2317709024e337b7274e31a58a268eed85c0cf84371452ebfb2575f5e79d4c7",
+      "gitBlobOid": "d5db999be0af0fa5ea93644c71584aa83390956e"
+    },
+    {
+      "path": "frontend/src/motion/preferences.tsx",
+      "bytes": 4033,
+      "mode": "100644",
+      "sha256": "00b0c4394ef1942b29d412a1969a06692cd742864a07098f0e9a8c87f47bbb51",
+      "gitBlobOid": "0dba6bc6a1f7719447e30855188b971ea4cc0414"
+    },
+    {
+      "path": "frontend/src/motion/react-dom-portal.d.ts",
+      "bytes": 189,
+      "mode": "100644",
+      "sha256": "410e55e18cebc158801a2e3dc5ec495cd1c647742b0b71246720f4fe580de3b4",
+      "gitBlobOid": "2233c20c0762761c1ce4d416ec2dd2dff5656a46"
+    },
+    {
+      "path": "frontend/src/motion/tokens.ts",
+      "bytes": 1115,
+      "mode": "100644",
+      "sha256": "43e134e314ccf80ebb0e2c900c29f3c026f43308a955b1809b23fd8d594a833d",
+      "gitBlobOid": "141f2d7d47dd1340d443f7daa21b29e0b3a7b524"
+    },
+    {
+      "path": "frontend/src/motion/useDrawerFocus.web.ts",
+      "bytes": 4563,
+      "mode": "100644",
+      "sha256": "1f1e24f88bbcf5230d3d33fa6c3426ffde75733ab449dc2ad8bd45ff3f29cd6a",
+      "gitBlobOid": "1503a62d44ac745d8826cb22fad7872f17576bc2"
+    },
+    {
+      "path": "frontend/src/motion/useModalBackdrop.web.ts",
+      "bytes": 4519,
+      "mode": "100644",
+      "sha256": "4bd86e567d7c0dc7726b05abadf2cc29710caf4c61fd94d93191286ce5b43b11",
+      "gitBlobOid": "fee0494490619616ad5c9bb544004e4dc049bce6"
+    },
+    {
+      "path": "frontend/src/motion/viewProps.ts",
+      "bytes": 327,
+      "mode": "100644",
+      "sha256": "43c516cf145ddce2a74c35ad7490f88ad647d19cbffd846a534ef27c0c29037a",
+      "gitBlobOid": "68f6cc5c2c52687751dd9c2b2eebf6519e30bccb"
+    },
+    {
+      "path": "frontend/src/operation-reveal.ts",
+      "bytes": 1505,
+      "mode": "100644",
+      "sha256": "35c39bed7c768f89a1850b4b4be81ec264ba173fea56481ae8d8a59cc1b8a805",
+      "gitBlobOid": "f8876294e92c08d664dcecc4a981c1b20db615db"
+    },
+    {
+      "path": "frontend/src/photo-view-model.ts",
+      "bytes": 4666,
+      "mode": "100644",
+      "sha256": "c11133829e3bee7de120749659dc4861d33d013aa1bc02068dada55e7249fbf3",
+      "gitBlobOid": "1034e889a07e7638acfe55e91956d8b3aa0d408b"
+    },
+    {
+      "path": "frontend/src/preview/BackgroundContext.tsx",
+      "bytes": 100,
+      "mode": "100644",
+      "sha256": "17b5a8b19815891c2ffe1f35bbadd6710afd0e171c1a3a3606ee6f0a4d368727",
+      "gitBlobOid": "945fd54b7d2be86ebe02162e1e88e0fef77bc0fd"
+    },
+    {
+      "path": "frontend/src/preview/PreviewNavigationGuard.tsx",
+      "bytes": 8640,
+      "mode": "100644",
+      "sha256": "49af114f47064382625d0ed96b2c90b162fc774b8e780f6412f21a10f90cd9b6",
+      "gitBlobOid": "1b228e7e5da51b17c82be47b3c349d70414507c8"
+    },
+    {
+      "path": "frontend/src/preview/browser-history-events.ts",
+      "bytes": 1607,
+      "mode": "100644",
+      "sha256": "172b73401e51127531ecfadefa546c702736905fef7452991ba8b0a4ef5dfb28",
+      "gitBlobOid": "3711b09ebca490f034bd890f0775f959cbab27d9"
+    },
+    {
+      "path": "frontend/src/preview/browser-history-guard.ts",
+      "bytes": 5521,
+      "mode": "100644",
+      "sha256": "14f0953f914650f99920a72f4016277b03a6434edbade63fec3b2c06fd626e4f",
+      "gitBlobOid": "0fba94515beb56aa1e0bbe3c4ae5f8af4d0a3351"
+    },
+    {
+      "path": "frontend/src/preview/task-fixture.ts",
+      "bytes": 9064,
+      "mode": "100644",
+      "sha256": "080e5124b1af28d1b06aad9de2debb60ab7bb11569c8b09755b6f474685b1ed6",
+      "gitBlobOid": "45d1305c18e14f008de659b5b6591f979326f573"
+    },
+    {
+      "path": "frontend/src/preview/task-pagination.ts",
+      "bytes": 1685,
+      "mode": "100644",
+      "sha256": "ba8da44cd0dda27b8fb6aeb6318233592b4edbe1100c8a6abc06f931e60499cb",
+      "gitBlobOid": "16267e3a7dd03a5fa647d86bf68c4d576d5e7cca"
+    },
+    {
+      "path": "frontend/src/preview/usePreviewOperation.ts",
+      "bytes": 6058,
+      "mode": "100644",
+      "sha256": "ecc752cb126045fd5be2b8e513cfd914e6e9eb9b5f3fa6d591954a4e5623d555",
+      "gitBlobOid": "d2b45e77f5b8f10b8ca11010e7330e35a523c67b"
+    },
+    {
+      "path": "frontend/src/preview/useTasksPreview.ts",
+      "bytes": 12464,
+      "mode": "100644",
+      "sha256": "878b439740b94cdd436cb44f05891b81e5bf0a74a8ec6fe8683475993b34aac4",
+      "gitBlobOid": "55ccdf9e58ec44a22dc01c327b0f6476620267d9"
+    },
+    {
+      "path": "frontend/src/screens/tasksScreen.tsx",
+      "bytes": 2064,
+      "mode": "100644",
+      "sha256": "78c2ff4dc0ac4b1e406728437f144b64eb6ec73bba1eeb751b62bba6723569a9",
+      "gitBlobOid": "922c812fe2f2ff98506c96b318e2804db1c878dd"
+    },
+    {
+      "path": "frontend/src/startup/dataReadiness.ts",
+      "bytes": 4643,
+      "mode": "100644",
+      "sha256": "becff0e592e88562568e6c7ff13c63380e840ca8603a48324d5ae7271e828637",
+      "gitBlobOid": "0b62cec0adc77605274681dbe917ca360c0e24d7"
+    },
+    {
+      "path": "frontend/src/task-view-model.ts",
+      "bytes": 10691,
+      "mode": "100644",
+      "sha256": "7ba37779456c46f1f852f53a6e30e208eea4b7a957f04c31b63d2f4ff078cdd2",
+      "gitBlobOid": "a532cc69b77d2ff2522d5fcbfc36ee15a2de8e28"
+    },
+    {
+      "path": "frontend/src/theme.ts",
+      "bytes": 4982,
+      "mode": "100644",
+      "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2",
+      "gitBlobOid": "4ccb33cb8f83a0e7c84829c74495a3ca63dfbe7c"
+    },
+    {
+      "path": "frontend/src/view-model.ts",
+      "bytes": 3140,
+      "mode": "100644",
+      "sha256": "d5a43490b3c002613239f3566ac91ffc894fb480939409afae3e61b34b32c699",
+      "gitBlobOid": "33446458c8aac4d61d4af2190eecb482cbb4546c"
+    },
+    {
+      "path": "frontend/src/web-styles.d.ts",
+      "bytes": 24,
+      "mode": "100644",
+      "sha256": "35d26ea66c86da9701e4f4b467913481ffeae910761cea34c775c5dacb7f8eaa",
+      "gitBlobOid": "cbe652dbe00b29be433328013a005bbf5d5c44c1"
+    },
+    {
+      "path": "frontend/src/workbench/AgentStatusShape.ts",
+      "bytes": 240,
+      "mode": "100644",
+      "sha256": "bafe3dbf70ec9f7ffac4b64de067303ed5ee88db8ef24b94dac4bba137afbf26",
+      "gitBlobOid": "fec67a2a6952b6bff56e085aad8aa37f1e5f2712"
+    },
+    {
+      "path": "frontend/src/workbench/Background.mjs",
+      "bytes": 1082,
+      "mode": "100644",
+      "sha256": "fa6385ca1de75e6cc4ef275e38ece6079477df0ffdb0684ea3306920613409e5",
+      "gitBlobOid": "cebacea5ec978cdc054d5d29df19ca1be6f50755"
+    },
+    {
+      "path": "frontend/src/workbench/Background.types.ts",
+      "bytes": 404,
+      "mode": "100644",
+      "sha256": "14159af40f92dbfc2602ff548ad9a40a885410a5c17c9f943639fdb9aa914f08",
+      "gitBlobOid": "e814a7c81cc8f55b6fba0035cd54341285e016f0"
+    },
+    {
+      "path": "frontend/src/workbench/Dashboard.mjs",
+      "bytes": 379,
+      "mode": "100644",
+      "sha256": "31d735f2e9a28debdbd0eb80f2ec821bd36a44c2f609df29a100a7f940fc617c",
+      "gitBlobOid": "4c7c20a4e3b82ff65fe9182bdcca31fde2baccb8"
+    },
+    {
+      "path": "frontend/src/workbench/DirectionalPressableShape.ts",
+      "bytes": 554,
+      "mode": "100644",
+      "sha256": "71c8d0fd2a2c72fa1286eb13c4d722c2a3b3602b85157132f3951ba8a29fbf23",
+      "gitBlobOid": "1e732e6df91b3217de103ea911f241234e4605da"
+    },
+    {
+      "path": "frontend/src/workbench/HandbookPreviewLink.tsx",
+      "bytes": 2171,
+      "mode": "100644",
+      "sha256": "04f225782847ef677a133cf293aa41c07ffbab514a13a3fab3e0d79a05861b9b",
+      "gitBlobOid": "acd177b1e81e255c890dd2fbb82dbd5dba044476"
+    },
+    {
+      "path": "frontend/src/workbench/HostPorts.mjs",
+      "bytes": 3543,
+      "mode": "100644",
+      "sha256": "6eeb27c27c03fe953a3ecbe954e71e3c36663bc56372225b57d42b6d77b9aaa8",
+      "gitBlobOid": "0e3c42ae3cb63d703664a630eab900c8091a3260"
+    },
+    {
+      "path": "frontend/src/workbench/HostPorts.types.ts",
+      "bytes": 1051,
+      "mode": "100644",
+      "sha256": "0d7be38b7a0220152ee91c7ba9883a6e20b6ffdb78d872fbcd626a13e2f99915",
+      "gitBlobOid": "c0da9a291e55df3fba6e2f42b3212444545706db"
+    },
+    {
+      "path": "frontend/src/workbench/NormalTasksData.ts",
+      "bytes": 18488,
+      "mode": "100644",
+      "sha256": "89a97cf96919fce300a0c548b2a1fd585207f3cc317cb305b381b9e774d84d50",
+      "gitBlobOid": "b4149187dae35c05f8ab8f7d62f9d26e85e2ec7e"
+    },
+    {
+      "path": "frontend/src/workbench/RootLayout.mjs",
+      "bytes": 1502,
+      "mode": "100644",
+      "sha256": "141b2158223e593d7bf027ee9444d7eec091811e808628594e751998750ad9f5",
+      "gitBlobOid": "4b178318fcb8dbbd8b5449b605ab877a5018e869"
+    },
+    {
+      "path": "frontend/src/workbench/StartupRecordsShape.ts",
+      "bytes": 393,
+      "mode": "100644",
+      "sha256": "69c0da9353722719a9900d0bf18f35dda9bc1aee3bd2595ef53e21612e332788",
+      "gitBlobOid": "b99f43b9f8c5a372418328e221efbbd1c23fdccc"
+    },
+    {
+      "path": "frontend/src/workbench/TasksComposition.mjs",
+      "bytes": 4861,
+      "mode": "100644",
+      "sha256": "dc16d1a60d7d39e69917788ee2e797eec16e553361b7be2cf27433d62c64db6a",
+      "gitBlobOid": "bb4295570505ee5f5ee5a49ec2d19794a9d3b3f2"
+    },
+    {
+      "path": "frontend/src/workbench/TasksComposition.types.ts",
+      "bytes": 3771,
+      "mode": "100644",
+      "sha256": "4664180bc2ab98e383fd745dea4506a119714f453aadc7e22762df700b3dca89",
+      "gitBlobOid": "2dfaa3c8dd7fc77136acb4c6a9e39b452f5f7635"
+    },
+    {
+      "path": "frontend/src/workbench/TasksOwner.mjs",
+      "bytes": 2732,
+      "mode": "100644",
+      "sha256": "f32427efa95e279107c750f1dce697853d2ea6985eaba67d4514152e59aa826b",
+      "gitBlobOid": "873e8745845ba1d49330d5d3dbb6536bce53c93f"
+    },
+    {
+      "path": "frontend/src/workbench/TasksRenderers.mjs",
+      "bytes": 2543,
+      "mode": "100644",
+      "sha256": "304076587de29e31fc6dc779016e94b6c0f09d90d1dd7bfe5342bfba09798098",
+      "gitBlobOid": "1d65d8598d9b415528d3dda92ed99644b4091ddc"
+    },
+    {
+      "path": "frontend/src/workbench/TasksSlotPorts.ts",
+      "bytes": 2277,
+      "mode": "100644",
+      "sha256": "110b165ba76a28542d3515fdc7fe8ecc8b7ca0bf4fde459cb562560bb75d8dfc",
+      "gitBlobOid": "a301ffb25792d5c43a7f61207fb69918f738eeac"
+    },
+    {
+      "path": "frontend/src/workbench/Unavailable.mjs",
+      "bytes": 258,
+      "mode": "100644",
+      "sha256": "6b394556e18a2d4f51396d341459a0102a5e03c896e089b63fe22f3fd0b1bec3",
+      "gitBlobOid": "4e9388095dcd7b658d000b322db05a545f18e109"
+    },
+    {
+      "path": "frontend/src/workbench/candidate-catalog.json",
+      "bytes": 7003,
+      "mode": "100644",
+      "sha256": "6692f1fe4d0227eecee4a552a1fac8dfae29fc9390f9fdac60b046aabba5994b",
+      "gitBlobOid": "a3d806535941e9f539e12f80fcb6ae9804f3c6e4"
+    },
+    {
+      "path": "frontend/src/workbench/draft.mjs",
+      "bytes": 4574,
+      "mode": "100644",
+      "sha256": "56ce67aca1de20ef6de859fb032e266dbfd2074fe2773d487b64c36b71a4081e",
+      "gitBlobOid": "38ad26ddfd26eebdc3b104371822f44532923ef3"
+    },
+    {
+      "path": "frontend/src/workbench/registry.mjs",
+      "bytes": 4345,
+      "mode": "100644",
+      "sha256": "72ab4c6f804489c0f43d7c7a02ba7cc34145554d8e487bce143e9686b56af52f",
+      "gitBlobOid": "b3e573a0375a0101271fb374510dc60aeec89b9c"
+    },
+    {
+      "path": "frontend/src/workbench/route-support.mjs",
+      "bytes": 305,
+      "mode": "100644",
+      "sha256": "0a46b03b8910be78581ca389fdb88243c890e6f9f10a11f9a6bf22d4672dfb71",
+      "gitBlobOid": "5e0f5b334d1f735835c8e052506b1030944bfe8a"
+    },
+    {
+      "path": "frontend/src/workbench/tasks-presentation.mjs",
+      "bytes": 8609,
+      "mode": "100644",
+      "sha256": "2a40201be7e11d16cd8b96e342593e911078cc584292bbbe7880790ed1fc1a44",
+      "gitBlobOid": "4991ff8d949d3c3cd3ddb9a3b1ca10e697f38397"
+    },
+    {
+      "path": "frontend/src/workbench/tasks-seed.mjs",
+      "bytes": 550,
+      "mode": "100644",
+      "sha256": "3e2028fa9d70fc815530e21d835516f52844764364393298bf33ec5c6f6fea5f",
+      "gitBlobOid": "7da871be064dc40b3e064d68f03d5e6c440c9d18"
+    },
+    {
+      "path": "frontend/src/workbench/tasks-slot-ports.mjs",
+      "bytes": 1103,
+      "mode": "100644",
+      "sha256": "66f8b8543d2039ff394818b171cc89c755e44cc492d98c078ee35b88338985b8",
+      "gitBlobOid": "34e79600ca18fa20e9a92cc708096a69df90522e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/care-view-model.ts",
+      "bytes": 19059,
+      "mode": "100644",
+      "sha256": "8145a736ebc969fde17aa15f8f94363f0089956b518271885a480c822bc1a0cb",
+      "gitBlobOid": "4e7ee8a3efde62bac6b3c0f124d6b6eebc2d376f"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/AppDialog.tsx",
+      "bytes": 3413,
+      "mode": "100644",
+      "sha256": "f52db6e0392358f890e2f21f77c90a4227b29cf9c120a046b38e507f286bc55c",
+      "gitBlobOid": "7311c5d35d86736b0159fb8d42cf9469025665c9"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/AppIcon.tsx",
+      "bytes": 7187,
+      "mode": "100644",
+      "sha256": "febf65398dea8e302ff25dc7103a7c1bf74f5e4eec744298daa3734ebdec77c9",
+      "gitBlobOid": "5678fad98a07a1e0c3c5ed5817e9daa2eaaa2f96"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/AppRadioItem.tsx",
+      "bytes": 2725,
+      "mode": "100644",
+      "sha256": "a305ab04c4b792061bf1678e70bb8ae53a76a6fdbeb7181c2c1c903ffe9ae8cc",
+      "gitBlobOid": "72d88c44fe25dc825834b04ba4eef4d3226e7f8b"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/AppScrollView.web.tsx",
+      "bytes": 2366,
+      "mode": "100644",
+      "sha256": "6b96e19c2fd59d02ee50c53f6774cbb73a8cc96b0b707d0367aeaba85091280c",
+      "gitBlobOid": "3678d95c73e33f82984fde00369eada8a04b083e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/AppStatusBadge.tsx",
+      "bytes": 1742,
+      "mode": "100644",
+      "sha256": "23f5819f4ae7ef7f263c6700ca362ec98a4be33d6d26e484d59f859d2713fb82",
+      "gitBlobOid": "d40dc750eb515cf0948b0f36876a7d98a519fcf4"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/EmptyListCard.tsx",
+      "bytes": 1275,
+      "mode": "100644",
+      "sha256": "1242202b8dc7c66779bbd5b32e6723d60a887553f0296a33128a1484764de8af",
+      "gitBlobOid": "23556c440b6ef3670c8bc77c2b1f1322ec6cd4d1"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/HorizontalOverflowRail.tsx",
+      "bytes": 10649,
+      "mode": "100644",
+      "sha256": "2b8e506a81bc088433b3e0d0205be87a06eb0bfef9e02810bc395dac58f32ddd",
+      "gitBlobOid": "d0fd58eebd1760da055c55410c0260e9489754d5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/ReadStateNotice.tsx",
+      "bytes": 3673,
+      "mode": "100644",
+      "sha256": "7af529abb806d92db8f67dde797527b59db523106c884d26b0fc74b25b432481",
+      "gitBlobOid": "fa1b176ec69fa3db882b1a24e1adae5564c4af5e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/StatusAnnouncement.tsx",
+      "bytes": 1034,
+      "mode": "100644",
+      "sha256": "fc63fd6fa5f78718403aa88ef1c9df5a21a61c384896026c10048ae0763a5b5e",
+      "gitBlobOid": "d5905949da31fbe7eeba8080710b3ad816346914"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/appScrollView.css",
+      "bytes": 842,
+      "mode": "100644",
+      "sha256": "3c9b4ab4433153a7fef317b622cbed555934996fae93709471184c0abc5fcb59",
+      "gitBlobOid": "544936fdd5111b18e086cb5c1ffceb80d02d07de"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/appearance/BackgroundSurface.tsx",
+      "bytes": 1922,
+      "mode": "100644",
+      "sha256": "555d463a8c944f5dff7199335a05ab4a566d1df7dd4d96e01d78f7e82b635803",
+      "gitBlobOid": "fe2a42cc4315e09619efb96937930f6aec6f3668"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/appearance/background-surface-style.web.ts",
+      "bytes": 171,
+      "mode": "100644",
+      "sha256": "f4a981a422d5bbdfea2684431a56457a6a657560fdd42b9fa884ce479d21a7e7",
+      "gitBlobOid": "f18f7ddad2693f4973b93022db39472e890e111c"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/appearance/backgroundSurface.css",
+      "bytes": 1219,
+      "mode": "100644",
+      "sha256": "586f1cb816800e9310ee2078e0036c3c16af35c2207e39729a6f87eead705b07",
+      "gitBlobOid": "187d9f56e3ded6fd3debd38e24049a814f9858d0"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/horizontalOverflow.ts",
+      "bytes": 1364,
+      "mode": "100644",
+      "sha256": "8252e20d70cba42291f0c9e6de801430ea76cd6ff0bb21f0f0a563d2d73bc2ab",
+      "gitBlobOid": "c7a6549544e1c230a36887c3bae4a4518d13b363"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/icons/ConcernIcon.tsx",
+      "bytes": 616,
+      "mode": "100644",
+      "sha256": "7aa9f4f166a399935def3ee1d864b5cdab6a93872dcc60b99ff922b5f53cc56f",
+      "gitBlobOid": "7153079832382ab2636104e8947bbf3e0ddf62e5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/icons/OverviewIcon.tsx",
+      "bytes": 612,
+      "mode": "100644",
+      "sha256": "3c40d33a31a376ff0098eac60cdb82d6b4f4bb3f25200df4c77b8337a62dab9f",
+      "gitBlobOid": "af31c95d9b6bec99a21f6645e40b5d6954dabc98"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/icons/PreparationIcon.tsx",
+      "bytes": 569,
+      "mode": "100644",
+      "sha256": "f1d4ca537aba6d842c445a5d3f52b49e84f2baf238196ede2544b2689f7ff548",
+      "gitBlobOid": "8f696c4bd86c6a08ac33cccff7f30b81d3b885ad"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/tasks/TaskContent.tsx",
+      "bytes": 9219,
+      "mode": "100644",
+      "sha256": "874e141107aa4e5a5ffaa019a42dfe79775249769ac86cb15d7c293d544669e7",
+      "gitBlobOid": "19df4a22e4c29e2e31ee009ba169d178d05586f5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/tasks/TaskListRow.tsx",
+      "bytes": 4088,
+      "mode": "100644",
+      "sha256": "0a7f40c135eb8597ae2f4baf48fb7aae623fb5aef4ce27b365c2d7f79efa8479",
+      "gitBlobOid": "5ab9791207065f49b8d56158713c9a27aefd047d"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/tasks/TasksCalendar.tsx",
+      "bytes": 9642,
+      "mode": "100644",
+      "sha256": "73e04fc8420aa93dfbf8dccba6918479d9a577066c48aceb7d129fa4158eb635",
+      "gitBlobOid": "621e12e4ce42b8188e381654e6b9c42008bfecc2"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/tasks/task-calendar.ts",
+      "bytes": 6256,
+      "mode": "100644",
+      "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4",
+      "gitBlobOid": "208a2cb61c9eb2012ecd5fd0e9e688e8939b80b0"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/ui.tsx",
+      "bytes": 29353,
+      "mode": "100644",
+      "sha256": "855331bdcecaa88c059b0f1cea3a5e668d3e7002b4d11faf795bc5575afc3399",
+      "gitBlobOid": "e5cf4817a31438cbbb6cec351a2df2d7131e3c5a"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/useContainerWidth.ts",
+      "bytes": 1371,
+      "mode": "100644",
+      "sha256": "4ebaf3b5222d5907f40083347a9079208daccc0321cfa24afd1726e107d28c42",
+      "gitBlobOid": "62e80f2679564b82ec2ffd0f5c3d0b35ea73558e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/useInteractionDensity.ts",
+      "bytes": 758,
+      "mode": "100644",
+      "sha256": "c5e18195d786aa80b3411b813259d92a4cec9692624ed37d7ac246b5a4a4f921",
+      "gitBlobOid": "9bca3bf5acf023145671ee7bc20ef3d5e13f50de"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/useManualTabControls.ts",
+      "bytes": 2052,
+      "mode": "100644",
+      "sha256": "1304eb3ec06d6667cab8ccc7906c76da0e98d8956db2309ebb201f72ddea279b",
+      "gitBlobOid": "615a6e747e8288b8d2200d3f051aa55319dba132"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/useQuietReadFocus.ts",
+      "bytes": 1669,
+      "mode": "100644",
+      "sha256": "697c7ac1cec99c2e96337afc55ab00bd934eaa4e9dcb646e8ce9bba81079c441",
+      "gitBlobOid": "2b2b712ce9262548863e887fecf745432f984d20"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/components/workspace/WorkspaceSwitch.tsx",
+      "bytes": 2525,
+      "mode": "100644",
+      "sha256": "66cb7e0c226dd08a9df82d95ab925e73d3b7e27f0fcb090c204fbb71c9ebb21c",
+      "gitBlobOid": "47ef2b2d57459de8821fb1d4154d10d795782f32"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/home-overview.ts",
+      "bytes": 3196,
+      "mode": "100644",
+      "sha256": "f90e9fd609cca0e7a8b1efd9af79855b5eac313df1525e46edc994ae76cdf52f",
+      "gitBlobOid": "f26598dcd7ec26caca4923067a8a6d5e308cb8f2"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/DrawerOverlay.types.ts",
+      "bytes": 349,
+      "mode": "100644",
+      "sha256": "71050eec66338da988a161906930753ce03bbbcee98182950aec9ec41acb15ce",
+      "gitBlobOid": "da032e52533892cb69d75e7600114cf303fd187c"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/MotionBackdrop.tsx",
+      "bytes": 2849,
+      "mode": "100644",
+      "sha256": "bcb8828521c2252b76d3a92ad4ab674e349064baa9e499d6216c33151ca12414",
+      "gitBlobOid": "d21e5796f6b93c17a1ce55a283050c75820d84bc"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/MotionDisclosure.tsx",
+      "bytes": 3172,
+      "mode": "100644",
+      "sha256": "f7af15d27b7826f108941430dc92dcaa951abbf8fbf60d6854b1f033cd7423a9",
+      "gitBlobOid": "bbfb04156f7b2f8a5a1d3859b1df6ad4c1e33583"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/MotionDrawerOverlay.web.tsx",
+      "bytes": 2475,
+      "mode": "100644",
+      "sha256": "51994fff02732eff605d91c488de592085ce45e877ba08e17776254fd9529d72",
+      "gitBlobOid": "940047564106d76e3eae3799b27326e4737d1f04"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/MotionDrawerRight.tsx",
+      "bytes": 4388,
+      "mode": "100644",
+      "sha256": "3109d1cc837400efa27fe787bf1934587a025c84168339c921b40082b45a2c36",
+      "gitBlobOid": "02cb5c026b8a94fb0651ad516bec901a9ac06ad5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/MotionEntrance.tsx",
+      "bytes": 4504,
+      "mode": "100644",
+      "sha256": "18cec389c5af27f74c52b343a880ff36130c09d1e43ee61c3cacf93d6a69066e",
+      "gitBlobOid": "2864e385ad1aabba13255d6524471dff65dbb130"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/MotionFeedback.tsx",
+      "bytes": 2622,
+      "mode": "100644",
+      "sha256": "89ce054eb9f5a579e376dff5111cc5763b50fb8d564133dd4e3f48a81e146061",
+      "gitBlobOid": "6f9e087deb33e4494841c5b722939efee26197fd"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/MotionInlineSwap.tsx",
+      "bytes": 4532,
+      "mode": "100644",
+      "sha256": "d1aa96d830dcf8a20f5935cdb6c6466eceaf9ef14ba766aae0bd830e898826ff",
+      "gitBlobOid": "a53ad75594768353c6aba3b47065211282b6bf07"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/MotionList.tsx",
+      "bytes": 11586,
+      "mode": "100644",
+      "sha256": "1a9fe5bd09f79c081ba6ee80b66beb8b5197bb60a6aba8b75a07b076b11431c9",
+      "gitBlobOid": "d36020037640f9239a18fd5174c1ace12d519eb1"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/MotionPaperScope.web.tsx",
+      "bytes": 1150,
+      "mode": "100644",
+      "sha256": "9a550cb91c2d8f9e227e2c8d417723e414bc3dd0300f8675920ff52baff3eaf0",
+      "gitBlobOid": "274a1be4d1d48d79dde9fdbe966a15cdba504d9e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/MotionReveal.tsx",
+      "bytes": 8861,
+      "mode": "100644",
+      "sha256": "b2590756cf0d0ea6685f740e5b5d8664937ffe5b27dbe5de7e191ef63b594643",
+      "gitBlobOid": "908c7fce3f67ba09ea720ecbd0b80d3218b8dbef"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/MotionScopeBoundary.tsx",
+      "bytes": 11059,
+      "mode": "100644",
+      "sha256": "be926381ccb9eb486b4c5e11a35a35d7654a97a90df6ea86ac1fe63a52b7b130",
+      "gitBlobOid": "d80ac7defcff856d5a805ea06b131770beb8c530"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/MotionSelectionMarker.tsx",
+      "bytes": 2055,
+      "mode": "100644",
+      "sha256": "15c72cb88acddce8d5d299086aa873a00173d68e7ba1f579d248d21983544798",
+      "gitBlobOid": "ff8540f4b1d4ed48af07a2bae0f29ec1cabe3f91"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/drawerGeometry.ts",
+      "bytes": 267,
+      "mode": "100644",
+      "sha256": "ab05671c4b34fe933613250434ed1891965467277d01fb0254e5fe3eafd7546d",
+      "gitBlobOid": "8649d09421af62c40b0927381bf07576d079e303"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/index.ts",
+      "bytes": 1040,
+      "mode": "100644",
+      "sha256": "39069af7befaf5eefeb5952b37679a987b035ecbf42403bec17eade0de8d42a9",
+      "gitBlobOid": "fd963dd53514336f8d55f6168fbcf98daf8bcd52"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/lifecycle.ts",
+      "bytes": 1277,
+      "mode": "100644",
+      "sha256": "c32a9597cdbd807531ead7274ed2cdedf740021d28d304bd25dbc9790416cbfe",
+      "gitBlobOid": "f9a735ff2b1d61aef4408f8b34efbb041c261be6"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/paperMotion.css",
+      "bytes": 236,
+      "mode": "100644",
+      "sha256": "0f158acc2e042d90a646087041434534b17ac0600558d7f04407e19a57885596",
+      "gitBlobOid": "c5ece0f7c3ad337b4df277c88189b09443b1e9a6"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/preferences.tsx",
+      "bytes": 144,
+      "mode": "100644",
+      "sha256": "b62826cc7c855cb9e4c200664e666710c52e3e40ce2ef4ac82791e790d2990bf",
+      "gitBlobOid": "970eb0c2c761ec36c2b9b956a4d8c1fafbc0996e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/tokens.ts",
+      "bytes": 1115,
+      "mode": "100644",
+      "sha256": "43e134e314ccf80ebb0e2c900c29f3c026f43308a955b1809b23fd8d594a833d",
+      "gitBlobOid": "141f2d7d47dd1340d443f7daa21b29e0b3a7b524"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/useDrawerFocus.web.ts",
+      "bytes": 4563,
+      "mode": "100644",
+      "sha256": "1f1e24f88bbcf5230d3d33fa6c3426ffde75733ab449dc2ad8bd45ff3f29cd6a",
+      "gitBlobOid": "1503a62d44ac745d8826cb22fad7872f17576bc2"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/useModalBackdrop.web.ts",
+      "bytes": 4519,
+      "mode": "100644",
+      "sha256": "4bd86e567d7c0dc7726b05abadf2cc29710caf4c61fd94d93191286ce5b43b11",
+      "gitBlobOid": "fee0494490619616ad5c9bb544004e4dc049bce6"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/motion/viewProps.ts",
+      "bytes": 327,
+      "mode": "100644",
+      "sha256": "43c516cf145ddce2a74c35ad7490f88ad647d19cbffd846a534ef27c0c29037a",
+      "gitBlobOid": "68f6cc5c2c52687751dd9c2b2eebf6519e30bccb"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/navigation/route-state.ts",
+      "bytes": 6111,
+      "mode": "100644",
+      "sha256": "82f5b2bf16ac4d737386a39af28ff8e6e3ea603497047cdfc68286467f592b8d",
+      "gitBlobOid": "c75100a99c26215455e0020dbe31c4c5c6ff24c7"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/photo-view-model.ts",
+      "bytes": 4666,
+      "mode": "100644",
+      "sha256": "c11133829e3bee7de120749659dc4861d33d013aa1bc02068dada55e7249fbf3",
+      "gitBlobOid": "1034e889a07e7638acfe55e91956d8b3aa0d408b"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/startup/dataReadiness.ts",
+      "bytes": 4662,
+      "mode": "100644",
+      "sha256": "2cc0d23fcd7d1f6eaaf4d999c7b4fcdc45e36ea329b8d507bfdddba194159c72",
+      "gitBlobOid": "e172f4578e6a3922e8e0d9b232cd62b8cb8f4566"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/task-view-model.ts",
+      "bytes": 10701,
+      "mode": "100644",
+      "sha256": "ea857535441e3b0d4cfdfb4f48ceacc7e58bd3fa1db4eb79be9d11a80d75a9f8",
+      "gitBlobOid": "034c8c0ac21d19dd20aabfe0aa435bf32f74b85b"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/theme.ts",
+      "bytes": 4654,
+      "mode": "100644",
+      "sha256": "b65c1463c7396e23cf6da65320b609cbe916d2d79e8e12ee70cd689b84e75a3a",
+      "gitBlobOid": "a8dfa9fe188b2fadb702c7302c4f498188d2285d"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/view-model.ts",
+      "bytes": 3285,
+      "mode": "100644",
+      "sha256": "618e45b90bfecb7d3950318a36a17c055aec4bef5de3719e88acf8d7a24fe05f",
+      "gitBlobOid": "a3882178de6910b72e0dd120cbf1de5fe5047049"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/workbench/AgentStatusShape.ts",
+      "bytes": 162,
+      "mode": "100644",
+      "sha256": "4ae0f7b63e5bb02a5962d0c523f605411dbcacc549399b834379246108063140",
+      "gitBlobOid": "b989f5d801e919d3d26cee353f065c2f27dfda54"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/workbench/CareCalendarLayout.tsx",
+      "bytes": 2625,
+      "mode": "100644",
+      "sha256": "00c9f41ee03250e6fbf40d69985ef35d9cc36c3c588f9dd288bcb71f80894cfc",
+      "gitBlobOid": "862b4c59e1c06645e131a78857e239be5a113853"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/workbench/CareDateList.tsx",
+      "bytes": 7708,
+      "mode": "100644",
+      "sha256": "c3c58a09039d7828117c1e2c11ae5041a28179ff2dd9bb86da1f7d659f5f3580",
+      "gitBlobOid": "e991fedef1dc1d105d0a9d777545f523d5c6723a"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/workbench/CareFilters.tsx",
+      "bytes": 5936,
+      "mode": "100644",
+      "sha256": "51888e8ac059166749ea2b88f68c21bbcb581ce7f2752eac77b674283ed190c8",
+      "gitBlobOid": "4c04c1f7ca5457ef44a33f071335cf115855d9f1"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/workbench/CareHeaderActions.tsx",
+      "bytes": 1039,
+      "mode": "100644",
+      "sha256": "788c41996a85ed6e7f45073b20663da5d2cb85c765edfb4c14fe476480dc73ff",
+      "gitBlobOid": "416a6a926982dce491f78863f03cfe5f2d03a4cb"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/workbench/CareSlotPorts.ts",
+      "bytes": 502,
+      "mode": "100644",
+      "sha256": "d7b69db73c1ff9c5377b6364f0e967bc52337965150537abd3c2257cd1cc69c2",
+      "gitBlobOid": "705c173c6dfdaaae45cc5110005bb0c352040e9e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/workbench/HomeTargetShape.ts",
+      "bytes": 360,
+      "mode": "100644",
+      "sha256": "6e664c540295bf7162852fead209b53b6303ea0031c334ae7ae3baa98637a80b",
+      "gitBlobOid": "2e8cb263bc860b568e7aa441037ac95e67d36eda"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/workbench/StartupRecordsShape.ts",
+      "bytes": 347,
+      "mode": "100644",
+      "sha256": "2ac0c4f46aad3d86b45ae20ef0213d62dd0351a74117c8d49f80d5586e00060d",
+      "gitBlobOid": "a42713a79f88432f692978c03f37291a97de455d"
+    },
+    {
+      "path": "frontend/src/workbench/variants/care/src/workbench/TasksSlotPorts.ts",
+      "bytes": 64,
+      "mode": "100644",
+      "sha256": "cbcda3881eb7ffe793110bc2a8d9863dbe6a1d7dbe9c2f1017eb07323f0fe998",
+      "gitBlobOid": "07f0a5ca7b7d2cec7538f6c7a680d5fedd44e8c4"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/care-view-model.ts",
+      "bytes": 18903,
+      "mode": "100644",
+      "sha256": "ebd45d85b9d6a48531d5e6ee6c9111b2d43c13039371d21473c1fd385a50a26b",
+      "gitBlobOid": "1caea07301f06efa9a309343d2e434d2be4cf6d3"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/AppDialog.tsx",
+      "bytes": 3428,
+      "mode": "100644",
+      "sha256": "e1a4c31583adcbf2fbc05f879c8a0c83d15dd602a22a141977ae6cdcdac45381",
+      "gitBlobOid": "8cb37eaf6d8a16e057b43a11c532bbf631e052ac"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/AppIcon.tsx",
+      "bytes": 7187,
+      "mode": "100644",
+      "sha256": "febf65398dea8e302ff25dc7103a7c1bf74f5e4eec744298daa3734ebdec77c9",
+      "gitBlobOid": "5678fad98a07a1e0c3c5ed5817e9daa2eaaa2f96"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/AppRadioItem.tsx",
+      "bytes": 2725,
+      "mode": "100644",
+      "sha256": "a305ab04c4b792061bf1678e70bb8ae53a76a6fdbeb7181c2c1c903ffe9ae8cc",
+      "gitBlobOid": "72d88c44fe25dc825834b04ba4eef4d3226e7f8b"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/AppScrollView.web.tsx",
+      "bytes": 2366,
+      "mode": "100644",
+      "sha256": "6b96e19c2fd59d02ee50c53f6774cbb73a8cc96b0b707d0367aeaba85091280c",
+      "gitBlobOid": "3678d95c73e33f82984fde00369eada8a04b083e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/AppStatusBadge.tsx",
+      "bytes": 1742,
+      "mode": "100644",
+      "sha256": "72f4213a0d37319f95c0440e61a1e0974482979ecf073c8a67b360925e9516ab",
+      "gitBlobOid": "e2f7e78d922109e315f16cf290f4205f5ee16da0"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/EmptyListCard.tsx",
+      "bytes": 1486,
+      "mode": "100644",
+      "sha256": "c6b1a8711665eaa5d3e8ac41f17da6ac5ce06f059e7ffaab2f40e0813af5afbc",
+      "gitBlobOid": "71514c6ce10b8ac571de564abc95cd0e85a6c7e8"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/HorizontalOverflowRail.tsx",
+      "bytes": 10649,
+      "mode": "100644",
+      "sha256": "2b8e506a81bc088433b3e0d0205be87a06eb0bfef9e02810bc395dac58f32ddd",
+      "gitBlobOid": "d0fd58eebd1760da055c55410c0260e9489754d5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/ReadStateNotice.tsx",
+      "bytes": 3392,
+      "mode": "100644",
+      "sha256": "cdd3d5b4f16b1e2e96ea4f178607f622f4146d68a50d721af05e47fa414362f3",
+      "gitBlobOid": "73f16de36975f3979feffc59d3dc6c22fcae6e0d"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/StatusAnnouncement.tsx",
+      "bytes": 1034,
+      "mode": "100644",
+      "sha256": "fc63fd6fa5f78718403aa88ef1c9df5a21a61c384896026c10048ae0763a5b5e",
+      "gitBlobOid": "d5905949da31fbe7eeba8080710b3ad816346914"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/appScrollView.css",
+      "bytes": 842,
+      "mode": "100644",
+      "sha256": "3c9b4ab4433153a7fef317b622cbed555934996fae93709471184c0abc5fcb59",
+      "gitBlobOid": "544936fdd5111b18e086cb5c1ffceb80d02d07de"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/appearance/BackgroundSurface.tsx",
+      "bytes": 1922,
+      "mode": "100644",
+      "sha256": "555d463a8c944f5dff7199335a05ab4a566d1df7dd4d96e01d78f7e82b635803",
+      "gitBlobOid": "fe2a42cc4315e09619efb96937930f6aec6f3668"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/appearance/background-surface-style.web.ts",
+      "bytes": 171,
+      "mode": "100644",
+      "sha256": "f4a981a422d5bbdfea2684431a56457a6a657560fdd42b9fa884ce479d21a7e7",
+      "gitBlobOid": "f18f7ddad2693f4973b93022db39472e890e111c"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/appearance/backgroundSurface.css",
+      "bytes": 1219,
+      "mode": "100644",
+      "sha256": "586f1cb816800e9310ee2078e0036c3c16af35c2207e39729a6f87eead705b07",
+      "gitBlobOid": "187d9f56e3ded6fd3debd38e24049a814f9858d0"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/horizontalOverflow.ts",
+      "bytes": 1364,
+      "mode": "100644",
+      "sha256": "8252e20d70cba42291f0c9e6de801430ea76cd6ff0bb21f0f0a563d2d73bc2ab",
+      "gitBlobOid": "c7a6549544e1c230a36887c3bae4a4518d13b363"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/icons/ConcernIcon.tsx",
+      "bytes": 616,
+      "mode": "100644",
+      "sha256": "7aa9f4f166a399935def3ee1d864b5cdab6a93872dcc60b99ff922b5f53cc56f",
+      "gitBlobOid": "7153079832382ab2636104e8947bbf3e0ddf62e5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/icons/OverviewIcon.tsx",
+      "bytes": 612,
+      "mode": "100644",
+      "sha256": "3c40d33a31a376ff0098eac60cdb82d6b4f4bb3f25200df4c77b8337a62dab9f",
+      "gitBlobOid": "af31c95d9b6bec99a21f6645e40b5d6954dabc98"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/icons/PreparationIcon.tsx",
+      "bytes": 569,
+      "mode": "100644",
+      "sha256": "f1d4ca537aba6d842c445a5d3f52b49e84f2baf238196ede2544b2689f7ff548",
+      "gitBlobOid": "8f696c4bd86c6a08ac33cccff7f30b81d3b885ad"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/tasks/TaskContent.tsx",
+      "bytes": 8816,
+      "mode": "100644",
+      "sha256": "a231e74cd889e609558ae6586ac2d0785853153674aad2ac9584a5be3e899df1",
+      "gitBlobOid": "ccc1f556854a37026291b3a9459e1a3c01ba15a7"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/tasks/TaskListRow.tsx",
+      "bytes": 4343,
+      "mode": "100644",
+      "sha256": "8057af9ef2be9ba80000dc6519ad83792c012c1d926a2bb1d9838dae1dce8822",
+      "gitBlobOid": "ee4230f7964445bed2f54e0da0fd0498db93be68"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/tasks/TasksCalendar.tsx",
+      "bytes": 7867,
+      "mode": "100644",
+      "sha256": "1cd31a02f3520ac656201f3dc450e801b3d69b835fd6bab422457774eedca3da",
+      "gitBlobOid": "91519cc4aae63cbfdeb3699b861a77faaf447e0d"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/tasks/task-calendar.ts",
+      "bytes": 6256,
+      "mode": "100644",
+      "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4",
+      "gitBlobOid": "208a2cb61c9eb2012ecd5fd0e9e688e8939b80b0"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/ui.tsx",
+      "bytes": 29915,
+      "mode": "100644",
+      "sha256": "4dd4699227ccb9ad73369aad33a4b564c12f75004c7f2959857d81cde3fde223",
+      "gitBlobOid": "e6118eb54d8a5cbbabd9bcdebdb03d30f211989e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/useInteractionDensity.ts",
+      "bytes": 758,
+      "mode": "100644",
+      "sha256": "c5e18195d786aa80b3411b813259d92a4cec9692624ed37d7ac246b5a4a4f921",
+      "gitBlobOid": "9bca3bf5acf023145671ee7bc20ef3d5e13f50de"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/components/useQuietReadFocus.ts",
+      "bytes": 1637,
+      "mode": "100644",
+      "sha256": "101c96d2f916c2bb2acf63c23a4bed2d6e3d53671d82794db0f4804eb57700aa",
+      "gitBlobOid": "9b31096c385c56d663f42e31058e97044684f841"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/home-overview.ts",
+      "bytes": 3030,
+      "mode": "100644",
+      "sha256": "68d38fbdade9eb7fdd374c34fc6f5b1190ade63274189a710975da0b26e30998",
+      "gitBlobOid": "025af8b9c865c06faf3dea14d0104129a07cbd75"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/DrawerOverlay.types.ts",
+      "bytes": 349,
+      "mode": "100644",
+      "sha256": "71050eec66338da988a161906930753ce03bbbcee98182950aec9ec41acb15ce",
+      "gitBlobOid": "da032e52533892cb69d75e7600114cf303fd187c"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/MotionBackdrop.tsx",
+      "bytes": 2849,
+      "mode": "100644",
+      "sha256": "bcb8828521c2252b76d3a92ad4ab674e349064baa9e499d6216c33151ca12414",
+      "gitBlobOid": "d21e5796f6b93c17a1ce55a283050c75820d84bc"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/MotionDisclosure.tsx",
+      "bytes": 3172,
+      "mode": "100644",
+      "sha256": "f7af15d27b7826f108941430dc92dcaa951abbf8fbf60d6854b1f033cd7423a9",
+      "gitBlobOid": "bbfb04156f7b2f8a5a1d3859b1df6ad4c1e33583"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/MotionDrawerOverlay.web.tsx",
+      "bytes": 2475,
+      "mode": "100644",
+      "sha256": "51994fff02732eff605d91c488de592085ce45e877ba08e17776254fd9529d72",
+      "gitBlobOid": "940047564106d76e3eae3799b27326e4737d1f04"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/MotionDrawerRight.tsx",
+      "bytes": 4523,
+      "mode": "100644",
+      "sha256": "8c57de828d7dc821c5abbb67dd45842ed59892e27aeef15bc6505a9784652017",
+      "gitBlobOid": "d758709b9ed92b761af4c0f4ec5aa09d1aaf9370"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/MotionEntrance.tsx",
+      "bytes": 4504,
+      "mode": "100644",
+      "sha256": "18cec389c5af27f74c52b343a880ff36130c09d1e43ee61c3cacf93d6a69066e",
+      "gitBlobOid": "2864e385ad1aabba13255d6524471dff65dbb130"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/MotionFeedback.tsx",
+      "bytes": 2622,
+      "mode": "100644",
+      "sha256": "89ce054eb9f5a579e376dff5111cc5763b50fb8d564133dd4e3f48a81e146061",
+      "gitBlobOid": "6f9e087deb33e4494841c5b722939efee26197fd"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/MotionInlineSwap.tsx",
+      "bytes": 4532,
+      "mode": "100644",
+      "sha256": "d1aa96d830dcf8a20f5935cdb6c6466eceaf9ef14ba766aae0bd830e898826ff",
+      "gitBlobOid": "a53ad75594768353c6aba3b47065211282b6bf07"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/MotionList.tsx",
+      "bytes": 11586,
+      "mode": "100644",
+      "sha256": "1a9fe5bd09f79c081ba6ee80b66beb8b5197bb60a6aba8b75a07b076b11431c9",
+      "gitBlobOid": "d36020037640f9239a18fd5174c1ace12d519eb1"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/MotionPaperScope.web.tsx",
+      "bytes": 1150,
+      "mode": "100644",
+      "sha256": "9a550cb91c2d8f9e227e2c8d417723e414bc3dd0300f8675920ff52baff3eaf0",
+      "gitBlobOid": "274a1be4d1d48d79dde9fdbe966a15cdba504d9e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/MotionReveal.tsx",
+      "bytes": 8861,
+      "mode": "100644",
+      "sha256": "b2590756cf0d0ea6685f740e5b5d8664937ffe5b27dbe5de7e191ef63b594643",
+      "gitBlobOid": "908c7fce3f67ba09ea720ecbd0b80d3218b8dbef"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/MotionScopeBoundary.tsx",
+      "bytes": 11059,
+      "mode": "100644",
+      "sha256": "be926381ccb9eb486b4c5e11a35a35d7654a97a90df6ea86ac1fe63a52b7b130",
+      "gitBlobOid": "d80ac7defcff856d5a805ea06b131770beb8c530"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/MotionSelectionMarker.tsx",
+      "bytes": 2055,
+      "mode": "100644",
+      "sha256": "15c72cb88acddce8d5d299086aa873a00173d68e7ba1f579d248d21983544798",
+      "gitBlobOid": "ff8540f4b1d4ed48af07a2bae0f29ec1cabe3f91"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/drawerGeometry.ts",
+      "bytes": 267,
+      "mode": "100644",
+      "sha256": "ab05671c4b34fe933613250434ed1891965467277d01fb0254e5fe3eafd7546d",
+      "gitBlobOid": "8649d09421af62c40b0927381bf07576d079e303"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/index.ts",
+      "bytes": 1040,
+      "mode": "100644",
+      "sha256": "39069af7befaf5eefeb5952b37679a987b035ecbf42403bec17eade0de8d42a9",
+      "gitBlobOid": "fd963dd53514336f8d55f6168fbcf98daf8bcd52"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/lifecycle.ts",
+      "bytes": 1277,
+      "mode": "100644",
+      "sha256": "c32a9597cdbd807531ead7274ed2cdedf740021d28d304bd25dbc9790416cbfe",
+      "gitBlobOid": "f9a735ff2b1d61aef4408f8b34efbb041c261be6"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/paperMotion.css",
+      "bytes": 236,
+      "mode": "100644",
+      "sha256": "0f158acc2e042d90a646087041434534b17ac0600558d7f04407e19a57885596",
+      "gitBlobOid": "c5ece0f7c3ad337b4df277c88189b09443b1e9a6"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/preferences.tsx",
+      "bytes": 144,
+      "mode": "100644",
+      "sha256": "b62826cc7c855cb9e4c200664e666710c52e3e40ce2ef4ac82791e790d2990bf",
+      "gitBlobOid": "970eb0c2c761ec36c2b9b956a4d8c1fafbc0996e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/tokens.ts",
+      "bytes": 1115,
+      "mode": "100644",
+      "sha256": "43e134e314ccf80ebb0e2c900c29f3c026f43308a955b1809b23fd8d594a833d",
+      "gitBlobOid": "141f2d7d47dd1340d443f7daa21b29e0b3a7b524"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/useDrawerFocus.web.ts",
+      "bytes": 4563,
+      "mode": "100644",
+      "sha256": "1f1e24f88bbcf5230d3d33fa6c3426ffde75733ab449dc2ad8bd45ff3f29cd6a",
+      "gitBlobOid": "1503a62d44ac745d8826cb22fad7872f17576bc2"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/useModalBackdrop.web.ts",
+      "bytes": 4519,
+      "mode": "100644",
+      "sha256": "4bd86e567d7c0dc7726b05abadf2cc29710caf4c61fd94d93191286ce5b43b11",
+      "gitBlobOid": "fee0494490619616ad5c9bb544004e4dc049bce6"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/motion/viewProps.ts",
+      "bytes": 327,
+      "mode": "100644",
+      "sha256": "43c516cf145ddce2a74c35ad7490f88ad647d19cbffd846a534ef27c0c29037a",
+      "gitBlobOid": "68f6cc5c2c52687751dd9c2b2eebf6519e30bccb"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/photo-view-model.ts",
+      "bytes": 4666,
+      "mode": "100644",
+      "sha256": "c11133829e3bee7de120749659dc4861d33d013aa1bc02068dada55e7249fbf3",
+      "gitBlobOid": "1034e889a07e7638acfe55e91956d8b3aa0d408b"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/startup/dataReadiness.ts",
+      "bytes": 4643,
+      "mode": "100644",
+      "sha256": "becff0e592e88562568e6c7ff13c63380e840ca8603a48324d5ae7271e828637",
+      "gitBlobOid": "0b62cec0adc77605274681dbe917ca360c0e24d7"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/task-view-model.ts",
+      "bytes": 10691,
+      "mode": "100644",
+      "sha256": "7ba37779456c46f1f852f53a6e30e208eea4b7a957f04c31b63d2f4ff078cdd2",
+      "gitBlobOid": "a532cc69b77d2ff2522d5fcbfc36ee15a2de8e28"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/theme.ts",
+      "bytes": 4657,
+      "mode": "100644",
+      "sha256": "3f8b4a0424e8b4807bb7be71d00e93d0c2c41a8f22c983de9e0bb1ce68f59404",
+      "gitBlobOid": "87126ebe5d1512cdd3adbfc9c8ee006dc58d4b6b"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/view-model.ts",
+      "bytes": 3140,
+      "mode": "100644",
+      "sha256": "d5a43490b3c002613239f3566ac91ffc894fb480939409afae3e61b34b32c699",
+      "gitBlobOid": "33446458c8aac4d61d4af2190eecb482cbb4546c"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/workbench/AgentStatusShape.ts",
+      "bytes": 162,
+      "mode": "100644",
+      "sha256": "4ae0f7b63e5bb02a5962d0c523f605411dbcacc549399b834379246108063140",
+      "gitBlobOid": "b989f5d801e919d3d26cee353f065c2f27dfda54"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/workbench/StartupRecordsShape.ts",
+      "bytes": 347,
+      "mode": "100644",
+      "sha256": "2ac0c4f46aad3d86b45ae20ef0213d62dd0351a74117c8d49f80d5586e00060d",
+      "gitBlobOid": "a42713a79f88432f692978c03f37291a97de455d"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/workbench/TasksSlotPorts.ts",
+      "bytes": 64,
+      "mode": "100644",
+      "sha256": "cbcda3881eb7ffe793110bc2a8d9863dbe6a1d7dbe9c2f1017eb07323f0fe998",
+      "gitBlobOid": "07f0a5ca7b7d2cec7538f6c7a680d5fedd44e8c4"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/workbench/fourth/FourthCalendarLayout.tsx",
+      "bytes": 3119,
+      "mode": "100644",
+      "sha256": "6577bd3fe99f3d7b3c180106ee9b065d180fdd2912bf55ca24bb9bc6e1078ebe",
+      "gitBlobOid": "ba538b4e29020004a4762e90812d934c2ceeb022"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/workbench/fourth/FourthDateList.tsx",
+      "bytes": 8242,
+      "mode": "100644",
+      "sha256": "03b5336c8bdb351ba46128bf333489d5461c51ef726f9e08ea370d141adb2bd8",
+      "gitBlobOid": "8acd27908226baa653591ac7dbeb7220ed15271c"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/workbench/fourth/FourthFilters.tsx",
+      "bytes": 7231,
+      "mode": "100644",
+      "sha256": "528972086e2622a3118e2aecc4bc36f9f7ffb32ee63619e755577b7c2c302d6d",
+      "gitBlobOid": "9e99f63b78e2b2778882d545ac94ccca1a8590c3"
+    },
+    {
+      "path": "frontend/src/workbench/variants/fourth/src/workbench/fourth/FourthHeaderActions.tsx",
+      "bytes": 1106,
+      "mode": "100644",
+      "sha256": "ec9488d6811fcad3dbcd6679598f019021965515eee89386d7031a6d66288f2b",
+      "gitBlobOid": "a0af57fb58713d9660c64c0583253ec131d72fa9"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/care-view-model.ts",
+      "bytes": 18903,
+      "mode": "100644",
+      "sha256": "ebd45d85b9d6a48531d5e6ee6c9111b2d43c13039371d21473c1fd385a50a26b",
+      "gitBlobOid": "1caea07301f06efa9a309343d2e434d2be4cf6d3"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/AppDialog.tsx",
+      "bytes": 3428,
+      "mode": "100644",
+      "sha256": "e1a4c31583adcbf2fbc05f879c8a0c83d15dd602a22a141977ae6cdcdac45381",
+      "gitBlobOid": "8cb37eaf6d8a16e057b43a11c532bbf631e052ac"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/AppIcon.tsx",
+      "bytes": 7187,
+      "mode": "100644",
+      "sha256": "febf65398dea8e302ff25dc7103a7c1bf74f5e4eec744298daa3734ebdec77c9",
+      "gitBlobOid": "5678fad98a07a1e0c3c5ed5817e9daa2eaaa2f96"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/AppRadioItem.tsx",
+      "bytes": 2725,
+      "mode": "100644",
+      "sha256": "a305ab04c4b792061bf1678e70bb8ae53a76a6fdbeb7181c2c1c903ffe9ae8cc",
+      "gitBlobOid": "72d88c44fe25dc825834b04ba4eef4d3226e7f8b"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/AppScrollView.web.tsx",
+      "bytes": 2366,
+      "mode": "100644",
+      "sha256": "6b96e19c2fd59d02ee50c53f6774cbb73a8cc96b0b707d0367aeaba85091280c",
+      "gitBlobOid": "3678d95c73e33f82984fde00369eada8a04b083e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/AppStatusBadge.tsx",
+      "bytes": 1742,
+      "mode": "100644",
+      "sha256": "23f5819f4ae7ef7f263c6700ca362ec98a4be33d6d26e484d59f859d2713fb82",
+      "gitBlobOid": "d40dc750eb515cf0948b0f36876a7d98a519fcf4"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/EmptyListCard.tsx",
+      "bytes": 1486,
+      "mode": "100644",
+      "sha256": "c6b1a8711665eaa5d3e8ac41f17da6ac5ce06f059e7ffaab2f40e0813af5afbc",
+      "gitBlobOid": "71514c6ce10b8ac571de564abc95cd0e85a6c7e8"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/HorizontalOverflowRail.tsx",
+      "bytes": 10649,
+      "mode": "100644",
+      "sha256": "2b8e506a81bc088433b3e0d0205be87a06eb0bfef9e02810bc395dac58f32ddd",
+      "gitBlobOid": "d0fd58eebd1760da055c55410c0260e9489754d5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/ReadStateNotice.tsx",
+      "bytes": 3591,
+      "mode": "100644",
+      "sha256": "5bf25a1a019a66b5e222c727e0ed274dfedc6de14ab722b7af2d6bdbdd1dcdf0",
+      "gitBlobOid": "2b5f4557e468b30a314d6ce4c42ea94f0f2fa183"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/RouteTextLink.tsx",
+      "bytes": 2547,
+      "mode": "100644",
+      "sha256": "e9c12ab6907311057a0194e38b526f5133b6c6dca6a1cc829b98aa4034e50575",
+      "gitBlobOid": "755074507028e146964d9317fe192534f813afb5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/StatusAnnouncement.tsx",
+      "bytes": 1034,
+      "mode": "100644",
+      "sha256": "fc63fd6fa5f78718403aa88ef1c9df5a21a61c384896026c10048ae0763a5b5e",
+      "gitBlobOid": "d5905949da31fbe7eeba8080710b3ad816346914"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/appScrollView.css",
+      "bytes": 842,
+      "mode": "100644",
+      "sha256": "3c9b4ab4433153a7fef317b622cbed555934996fae93709471184c0abc5fcb59",
+      "gitBlobOid": "544936fdd5111b18e086cb5c1ffceb80d02d07de"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/appearance/BackgroundSurface.tsx",
+      "bytes": 1922,
+      "mode": "100644",
+      "sha256": "555d463a8c944f5dff7199335a05ab4a566d1df7dd4d96e01d78f7e82b635803",
+      "gitBlobOid": "fe2a42cc4315e09619efb96937930f6aec6f3668"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/appearance/background-surface-style.web.ts",
+      "bytes": 171,
+      "mode": "100644",
+      "sha256": "f4a981a422d5bbdfea2684431a56457a6a657560fdd42b9fa884ce479d21a7e7",
+      "gitBlobOid": "f18f7ddad2693f4973b93022db39472e890e111c"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/appearance/backgroundSurface.css",
+      "bytes": 1219,
+      "mode": "100644",
+      "sha256": "586f1cb816800e9310ee2078e0036c3c16af35c2207e39729a6f87eead705b07",
+      "gitBlobOid": "187d9f56e3ded6fd3debd38e24049a814f9858d0"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/horizontalOverflow.ts",
+      "bytes": 1364,
+      "mode": "100644",
+      "sha256": "8252e20d70cba42291f0c9e6de801430ea76cd6ff0bb21f0f0a563d2d73bc2ab",
+      "gitBlobOid": "c7a6549544e1c230a36887c3bae4a4518d13b363"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/icons/ConcernIcon.tsx",
+      "bytes": 616,
+      "mode": "100644",
+      "sha256": "7aa9f4f166a399935def3ee1d864b5cdab6a93872dcc60b99ff922b5f53cc56f",
+      "gitBlobOid": "7153079832382ab2636104e8947bbf3e0ddf62e5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/icons/OverviewIcon.tsx",
+      "bytes": 612,
+      "mode": "100644",
+      "sha256": "3c40d33a31a376ff0098eac60cdb82d6b4f4bb3f25200df4c77b8337a62dab9f",
+      "gitBlobOid": "af31c95d9b6bec99a21f6645e40b5d6954dabc98"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/icons/PreparationIcon.tsx",
+      "bytes": 569,
+      "mode": "100644",
+      "sha256": "f1d4ca537aba6d842c445a5d3f52b49e84f2baf238196ede2544b2689f7ff548",
+      "gitBlobOid": "8f696c4bd86c6a08ac33cccff7f30b81d3b885ad"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/tab-keyboard.ts",
+      "bytes": 1210,
+      "mode": "100644",
+      "sha256": "9f68b2de0ea2b570bee33309b43f893e41e5a181e9371555c4f84f5325cdb8d9",
+      "gitBlobOid": "844e243bdc470a27e5dfe865f6d1763032cf5c2f"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/tasks/TaskContent.tsx",
+      "bytes": 8670,
+      "mode": "100644",
+      "sha256": "50b57f43346202479f647d4542993a724aaa4ebb55e8648ce32c6be5eaecdec4",
+      "gitBlobOid": "48b82e1bf593ea8391a8b17ff65d530673770475"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/tasks/TaskListRow.tsx",
+      "bytes": 4522,
+      "mode": "100644",
+      "sha256": "0431b9cc97f6563e2607e740339731cf20c88bb2169d4be2d8517f771526beb8",
+      "gitBlobOid": "5e01c6f55bac6e923f0b975ab5ac590c561a900c"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/tasks/TasksCalendar.tsx",
+      "bytes": 7849,
+      "mode": "100644",
+      "sha256": "5ccdbc8a7d4bb1d86566c17445510b63621a7742c23ab43a463af279bf8b2eb4",
+      "gitBlobOid": "abbcb11a5c424a68b8f48a540837f60ad3310ca9"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/tasks/task-calendar.ts",
+      "bytes": 6256,
+      "mode": "100644",
+      "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4",
+      "gitBlobOid": "208a2cb61c9eb2012ecd5fd0e9e688e8939b80b0"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/ui.tsx",
+      "bytes": 32222,
+      "mode": "100644",
+      "sha256": "c0992a2e0f2c7a6e6a689f1f029da38c05f5cf6c8c83b357dffd2bf65f1dc050",
+      "gitBlobOid": "a86d6afaa76de6e2609b2f772c7a2c72c8221442"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/useInteractionDensity.ts",
+      "bytes": 758,
+      "mode": "100644",
+      "sha256": "c5e18195d786aa80b3411b813259d92a4cec9692624ed37d7ac246b5a4a4f921",
+      "gitBlobOid": "9bca3bf5acf023145671ee7bc20ef3d5e13f50de"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/components/useQuietReadFocus.ts",
+      "bytes": 1637,
+      "mode": "100644",
+      "sha256": "101c96d2f916c2bb2acf63c23a4bed2d6e3d53671d82794db0f4804eb57700aa",
+      "gitBlobOid": "9b31096c385c56d663f42e31058e97044684f841"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/home-overview.ts",
+      "bytes": 3232,
+      "mode": "100644",
+      "sha256": "9a57ca25f6aede7a6e5d7d869429311750b642eed95450d81d7d52c8685b2fc2",
+      "gitBlobOid": "d31fc67900177d8406353ebcecbc18a270248c70"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/home-target.ts",
+      "bytes": 787,
+      "mode": "100644",
+      "sha256": "568e720e781a4cf37332bc0eed78d8973a43937f01beab3fbf74fc71e065c912",
+      "gitBlobOid": "2cf83e2208512826c734714a54300bf53f70fd86"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/DrawerOverlay.types.ts",
+      "bytes": 349,
+      "mode": "100644",
+      "sha256": "71050eec66338da988a161906930753ce03bbbcee98182950aec9ec41acb15ce",
+      "gitBlobOid": "da032e52533892cb69d75e7600114cf303fd187c"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/MotionBackdrop.tsx",
+      "bytes": 2849,
+      "mode": "100644",
+      "sha256": "bcb8828521c2252b76d3a92ad4ab674e349064baa9e499d6216c33151ca12414",
+      "gitBlobOid": "d21e5796f6b93c17a1ce55a283050c75820d84bc"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/MotionDisclosure.tsx",
+      "bytes": 3028,
+      "mode": "100644",
+      "sha256": "af6130df0e22f7704dd96441afc897a81d27978db2759040e7a47fe9fd27192b",
+      "gitBlobOid": "d6925997121eaf92e0479fbe8c4e017612119415"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/MotionDrawerOverlay.web.tsx",
+      "bytes": 2475,
+      "mode": "100644",
+      "sha256": "51994fff02732eff605d91c488de592085ce45e877ba08e17776254fd9529d72",
+      "gitBlobOid": "940047564106d76e3eae3799b27326e4737d1f04"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/MotionDrawerRight.tsx",
+      "bytes": 4388,
+      "mode": "100644",
+      "sha256": "3109d1cc837400efa27fe787bf1934587a025c84168339c921b40082b45a2c36",
+      "gitBlobOid": "02cb5c026b8a94fb0651ad516bec901a9ac06ad5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/MotionEntrance.tsx",
+      "bytes": 4504,
+      "mode": "100644",
+      "sha256": "18cec389c5af27f74c52b343a880ff36130c09d1e43ee61c3cacf93d6a69066e",
+      "gitBlobOid": "2864e385ad1aabba13255d6524471dff65dbb130"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/MotionFeedback.tsx",
+      "bytes": 2622,
+      "mode": "100644",
+      "sha256": "89ce054eb9f5a579e376dff5111cc5763b50fb8d564133dd4e3f48a81e146061",
+      "gitBlobOid": "6f9e087deb33e4494841c5b722939efee26197fd"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/MotionInlineSwap.tsx",
+      "bytes": 4532,
+      "mode": "100644",
+      "sha256": "d1aa96d830dcf8a20f5935cdb6c6466eceaf9ef14ba766aae0bd830e898826ff",
+      "gitBlobOid": "a53ad75594768353c6aba3b47065211282b6bf07"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/MotionList.tsx",
+      "bytes": 11586,
+      "mode": "100644",
+      "sha256": "1a9fe5bd09f79c081ba6ee80b66beb8b5197bb60a6aba8b75a07b076b11431c9",
+      "gitBlobOid": "d36020037640f9239a18fd5174c1ace12d519eb1"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/MotionPaperScope.web.tsx",
+      "bytes": 1150,
+      "mode": "100644",
+      "sha256": "9a550cb91c2d8f9e227e2c8d417723e414bc3dd0300f8675920ff52baff3eaf0",
+      "gitBlobOid": "274a1be4d1d48d79dde9fdbe966a15cdba504d9e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/MotionReveal.tsx",
+      "bytes": 8861,
+      "mode": "100644",
+      "sha256": "b2590756cf0d0ea6685f740e5b5d8664937ffe5b27dbe5de7e191ef63b594643",
+      "gitBlobOid": "908c7fce3f67ba09ea720ecbd0b80d3218b8dbef"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/MotionScopeBoundary.tsx",
+      "bytes": 11059,
+      "mode": "100644",
+      "sha256": "be926381ccb9eb486b4c5e11a35a35d7654a97a90df6ea86ac1fe63a52b7b130",
+      "gitBlobOid": "d80ac7defcff856d5a805ea06b131770beb8c530"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/MotionSelectionMarker.tsx",
+      "bytes": 2055,
+      "mode": "100644",
+      "sha256": "15c72cb88acddce8d5d299086aa873a00173d68e7ba1f579d248d21983544798",
+      "gitBlobOid": "ff8540f4b1d4ed48af07a2bae0f29ec1cabe3f91"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/drawerGeometry.ts",
+      "bytes": 267,
+      "mode": "100644",
+      "sha256": "ab05671c4b34fe933613250434ed1891965467277d01fb0254e5fe3eafd7546d",
+      "gitBlobOid": "8649d09421af62c40b0927381bf07576d079e303"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/index.ts",
+      "bytes": 1040,
+      "mode": "100644",
+      "sha256": "39069af7befaf5eefeb5952b37679a987b035ecbf42403bec17eade0de8d42a9",
+      "gitBlobOid": "fd963dd53514336f8d55f6168fbcf98daf8bcd52"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/lifecycle.ts",
+      "bytes": 1080,
+      "mode": "100644",
+      "sha256": "95ddd94db6349c450451e202332ce2c385fa4d098c0902cd2143f37369a8afe3",
+      "gitBlobOid": "58609fe434658084c79a106f096deae149037790"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/paperMotion.css",
+      "bytes": 236,
+      "mode": "100644",
+      "sha256": "0f158acc2e042d90a646087041434534b17ac0600558d7f04407e19a57885596",
+      "gitBlobOid": "c5ece0f7c3ad337b4df277c88189b09443b1e9a6"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/preferences.tsx",
+      "bytes": 144,
+      "mode": "100644",
+      "sha256": "b62826cc7c855cb9e4c200664e666710c52e3e40ce2ef4ac82791e790d2990bf",
+      "gitBlobOid": "970eb0c2c761ec36c2b9b956a4d8c1fafbc0996e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/tokens.ts",
+      "bytes": 1115,
+      "mode": "100644",
+      "sha256": "43e134e314ccf80ebb0e2c900c29f3c026f43308a955b1809b23fd8d594a833d",
+      "gitBlobOid": "141f2d7d47dd1340d443f7daa21b29e0b3a7b524"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/useDrawerFocus.web.ts",
+      "bytes": 4563,
+      "mode": "100644",
+      "sha256": "1f1e24f88bbcf5230d3d33fa6c3426ffde75733ab449dc2ad8bd45ff3f29cd6a",
+      "gitBlobOid": "1503a62d44ac745d8826cb22fad7872f17576bc2"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/useModalBackdrop.web.ts",
+      "bytes": 4519,
+      "mode": "100644",
+      "sha256": "4bd86e567d7c0dc7726b05abadf2cc29710caf4c61fd94d93191286ce5b43b11",
+      "gitBlobOid": "fee0494490619616ad5c9bb544004e4dc049bce6"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/motion/viewProps.ts",
+      "bytes": 327,
+      "mode": "100644",
+      "sha256": "43c516cf145ddce2a74c35ad7490f88ad647d19cbffd846a534ef27c0c29037a",
+      "gitBlobOid": "68f6cc5c2c52687751dd9c2b2eebf6519e30bccb"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/photo-view-model.ts",
+      "bytes": 4811,
+      "mode": "100644",
+      "sha256": "524264f625df66d93dc20140129bcdb467d1e6dbf90f8e517acabc49ec85ad18",
+      "gitBlobOid": "3203b548d99a83615097905a3bc2c15699797304"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/preview/PreviewNavigationGuard.tsx",
+      "bytes": 63,
+      "mode": "100644",
+      "sha256": "27a0b5d4cb01a95ec3b9333079292f3890932e3007f90f677f2ad25e2f540057",
+      "gitBlobOid": "85d3177950df73cb780a5bfc99c9b2293d2ff1fb"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/startup/dataReadiness.ts",
+      "bytes": 4643,
+      "mode": "100644",
+      "sha256": "becff0e592e88562568e6c7ff13c63380e840ca8603a48324d5ae7271e828637",
+      "gitBlobOid": "0b62cec0adc77605274681dbe917ca360c0e24d7"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/task-view-model.ts",
+      "bytes": 10691,
+      "mode": "100644",
+      "sha256": "7ba37779456c46f1f852f53a6e30e208eea4b7a957f04c31b63d2f4ff078cdd2",
+      "gitBlobOid": "a532cc69b77d2ff2522d5fcbfc36ee15a2de8e28"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/theme.ts",
+      "bytes": 4984,
+      "mode": "100644",
+      "sha256": "545826ca8018608a29cee78d4e845a0ffc0023baf326e1ca619f0321f06ddb80",
+      "gitBlobOid": "d9ca46fbef853ae3db3fcda8701247181415dff7"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/view-model.ts",
+      "bytes": 3247,
+      "mode": "100644",
+      "sha256": "4c3ba063511e51330b0b69c65e4e32bab23b1dfc090452426d2f1628eaaad398",
+      "gitBlobOid": "d77aa23fbb4e7e096c47b8e5a956bc4ddaad6262"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/workbench/AgentStatusShape.ts",
+      "bytes": 162,
+      "mode": "100644",
+      "sha256": "4ae0f7b63e5bb02a5962d0c523f605411dbcacc549399b834379246108063140",
+      "gitBlobOid": "b989f5d801e919d3d26cee353f065c2f27dfda54"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/workbench/HandbookCalendarLayout.tsx",
+      "bytes": 3933,
+      "mode": "100644",
+      "sha256": "f0adcbc56c4237e63439eb471b23c27dc8c7323c3bad7a3026e6ce9248347401",
+      "gitBlobOid": "797df6216095607b9fc843d06c786f7ef86dad16"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/workbench/HandbookDateList.tsx",
+      "bytes": 8719,
+      "mode": "100644",
+      "sha256": "4dd8ed24f6b6dae0bfee9dda35d43f383c6145a8f329b244f0aa1698e47265a6",
+      "gitBlobOid": "6ad9d2bd1e0ed2333ac05c815ca2a99d83455a78"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/workbench/HandbookFilters.tsx",
+      "bytes": 6736,
+      "mode": "100644",
+      "sha256": "17317bf03544a094e027ec8ec89cd86efe4ed65344b2500e0798862d5ce3121b",
+      "gitBlobOid": "f17fad94c5584e69d43fe464fe03efc859ff3c63"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/workbench/HandbookHeaderActions.tsx",
+      "bytes": 970,
+      "mode": "100644",
+      "sha256": "dece0b8128c0f11bf47f1cea33afbed9edf61f04db0e61c7312fe3466f0cf863",
+      "gitBlobOid": "11c701b2376960e348fea8138e09f34c9ccc5106"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/workbench/HandbookTasksSlotPorts.ts",
+      "bytes": 777,
+      "mode": "100644",
+      "sha256": "2844380aa9e892838060ef3d1271e7d92aaf4d49a8be1993a2a26755300fa4f9",
+      "gitBlobOid": "9ae7666dd156001cded047b868ac1c1bd4eee4f9"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/workbench/StartupRecordsShape.ts",
+      "bytes": 347,
+      "mode": "100644",
+      "sha256": "2ac0c4f46aad3d86b45ae20ef0213d62dd0351a74117c8d49f80d5586e00060d",
+      "gitBlobOid": "a42713a79f88432f692978c03f37291a97de455d"
+    },
+    {
+      "path": "frontend/src/workbench/variants/handbook/src/workbench/TasksSlotPorts.ts",
+      "bytes": 64,
+      "mode": "100644",
+      "sha256": "cbcda3881eb7ffe793110bc2a8d9863dbe6a1d7dbe9c2f1017eb07323f0fe998",
+      "gitBlobOid": "07f0a5ca7b7d2cec7538f6c7a680d5fedd44e8c4"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/care-view-model.ts",
+      "bytes": 18903,
+      "mode": "100644",
+      "sha256": "ebd45d85b9d6a48531d5e6ee6c9111b2d43c13039371d21473c1fd385a50a26b",
+      "gitBlobOid": "1caea07301f06efa9a309343d2e434d2be4cf6d3"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/AppDialog.tsx",
+      "bytes": 3428,
+      "mode": "100644",
+      "sha256": "e1a4c31583adcbf2fbc05f879c8a0c83d15dd602a22a141977ae6cdcdac45381",
+      "gitBlobOid": "8cb37eaf6d8a16e057b43a11c532bbf631e052ac"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/AppIcon.tsx",
+      "bytes": 7187,
+      "mode": "100644",
+      "sha256": "febf65398dea8e302ff25dc7103a7c1bf74f5e4eec744298daa3734ebdec77c9",
+      "gitBlobOid": "5678fad98a07a1e0c3c5ed5817e9daa2eaaa2f96"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/AppRadioItem.tsx",
+      "bytes": 2725,
+      "mode": "100644",
+      "sha256": "a305ab04c4b792061bf1678e70bb8ae53a76a6fdbeb7181c2c1c903ffe9ae8cc",
+      "gitBlobOid": "72d88c44fe25dc825834b04ba4eef4d3226e7f8b"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/AppScrollView.web.tsx",
+      "bytes": 2366,
+      "mode": "100644",
+      "sha256": "6b96e19c2fd59d02ee50c53f6774cbb73a8cc96b0b707d0367aeaba85091280c",
+      "gitBlobOid": "3678d95c73e33f82984fde00369eada8a04b083e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/AppStatusBadge.tsx",
+      "bytes": 1742,
+      "mode": "100644",
+      "sha256": "23f5819f4ae7ef7f263c6700ca362ec98a4be33d6d26e484d59f859d2713fb82",
+      "gitBlobOid": "d40dc750eb515cf0948b0f36876a7d98a519fcf4"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/EmptyListCard.tsx",
+      "bytes": 1903,
+      "mode": "100644",
+      "sha256": "06b397f38a569322e65c5c951c04d4854c21d1aa51552452708444ad70cae215",
+      "gitBlobOid": "f15139fef5b7d653acf6fae54c32a83d221f6ddc"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/HorizontalOverflowRail.tsx",
+      "bytes": 10649,
+      "mode": "100644",
+      "sha256": "2b8e506a81bc088433b3e0d0205be87a06eb0bfef9e02810bc395dac58f32ddd",
+      "gitBlobOid": "d0fd58eebd1760da055c55410c0260e9489754d5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/ReadStateNotice.tsx",
+      "bytes": 3895,
+      "mode": "100644",
+      "sha256": "d0da4679a21466884eabd37f393c5540ac01cfce4a2c05161ca0709932a40e9d",
+      "gitBlobOid": "98081a342d604f92b0972746466d15582f6f8c86"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/StatusAnnouncement.tsx",
+      "bytes": 1034,
+      "mode": "100644",
+      "sha256": "fc63fd6fa5f78718403aa88ef1c9df5a21a61c384896026c10048ae0763a5b5e",
+      "gitBlobOid": "d5905949da31fbe7eeba8080710b3ad816346914"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/appScrollView.css",
+      "bytes": 842,
+      "mode": "100644",
+      "sha256": "3c9b4ab4433153a7fef317b622cbed555934996fae93709471184c0abc5fcb59",
+      "gitBlobOid": "544936fdd5111b18e086cb5c1ffceb80d02d07de"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/appearance/BackgroundSurface.tsx",
+      "bytes": 1922,
+      "mode": "100644",
+      "sha256": "555d463a8c944f5dff7199335a05ab4a566d1df7dd4d96e01d78f7e82b635803",
+      "gitBlobOid": "fe2a42cc4315e09619efb96937930f6aec6f3668"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/appearance/background-surface-style.web.ts",
+      "bytes": 171,
+      "mode": "100644",
+      "sha256": "f4a981a422d5bbdfea2684431a56457a6a657560fdd42b9fa884ce479d21a7e7",
+      "gitBlobOid": "f18f7ddad2693f4973b93022db39472e890e111c"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/appearance/backgroundSurface.css",
+      "bytes": 1219,
+      "mode": "100644",
+      "sha256": "586f1cb816800e9310ee2078e0036c3c16af35c2207e39729a6f87eead705b07",
+      "gitBlobOid": "187d9f56e3ded6fd3debd38e24049a814f9858d0"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/horizontalOverflow.ts",
+      "bytes": 1364,
+      "mode": "100644",
+      "sha256": "8252e20d70cba42291f0c9e6de801430ea76cd6ff0bb21f0f0a563d2d73bc2ab",
+      "gitBlobOid": "c7a6549544e1c230a36887c3bae4a4518d13b363"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/icons/ConcernIcon.tsx",
+      "bytes": 616,
+      "mode": "100644",
+      "sha256": "7aa9f4f166a399935def3ee1d864b5cdab6a93872dcc60b99ff922b5f53cc56f",
+      "gitBlobOid": "7153079832382ab2636104e8947bbf3e0ddf62e5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/icons/OverviewIcon.tsx",
+      "bytes": 612,
+      "mode": "100644",
+      "sha256": "3c40d33a31a376ff0098eac60cdb82d6b4f4bb3f25200df4c77b8337a62dab9f",
+      "gitBlobOid": "af31c95d9b6bec99a21f6645e40b5d6954dabc98"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/icons/PreparationIcon.tsx",
+      "bytes": 569,
+      "mode": "100644",
+      "sha256": "f1d4ca537aba6d842c445a5d3f52b49e84f2baf238196ede2544b2689f7ff548",
+      "gitBlobOid": "8f696c4bd86c6a08ac33cccff7f30b81d3b885ad"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/summary/SummaryDisclosure.tsx",
+      "bytes": 1555,
+      "mode": "100644",
+      "sha256": "f8c452faa2c5de4c649e316f3339db460c7cacde713cef596bd6715f0d93cde7",
+      "gitBlobOid": "1b0fced173887e597be475cf4e279795f13634d1"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/summary/summary-styles.ts",
+      "bytes": 4202,
+      "mode": "100644",
+      "sha256": "b176885c657fe61b9bfdae869740af4cc1ea2296049a8b9424ffda560cbe363d",
+      "gitBlobOid": "859ff38a0eb5bf993586cdfdcc1849e281e97daa"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/tasks/TaskContent.tsx",
+      "bytes": 8973,
+      "mode": "100644",
+      "sha256": "fe7ca8a3e64038900b83ae69d0b0dfbf8c05c6687884aeb52163d4431cf75704",
+      "gitBlobOid": "b4862bd054a056054d67ba5f728976475c6c2648"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/tasks/TaskListRow.tsx",
+      "bytes": 4334,
+      "mode": "100644",
+      "sha256": "e1bc8e856f315176ba8b39fc9813c115c783c7d8f4d7e34fa62df472630a8b80",
+      "gitBlobOid": "1e6ea4135bf6dcf02dc7b2144bcf5c13e5926d86"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/tasks/TasksCalendar.tsx",
+      "bytes": 7867,
+      "mode": "100644",
+      "sha256": "3d282ea49db3bec1d0009d580ae6f9cc2cdf1a82e006bba6b101b3cacd43e5c0",
+      "gitBlobOid": "1101b6ebedef4e7cbda7805b5d0b12cf536aee30"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/tasks/task-calendar.ts",
+      "bytes": 6256,
+      "mode": "100644",
+      "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4",
+      "gitBlobOid": "208a2cb61c9eb2012ecd5fd0e9e688e8939b80b0"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/ui.tsx",
+      "bytes": 32083,
+      "mode": "100644",
+      "sha256": "4c04a725dabf887db7430ed02c608788b21f68f79e203bb70e7aa6e61fe65daa",
+      "gitBlobOid": "17ac5d49f193fa44ef6f5893bd0ac82a93252eb4"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/useInteractionDensity.ts",
+      "bytes": 758,
+      "mode": "100644",
+      "sha256": "c5e18195d786aa80b3411b813259d92a4cec9692624ed37d7ac246b5a4a4f921",
+      "gitBlobOid": "9bca3bf5acf023145671ee7bc20ef3d5e13f50de"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/components/useQuietReadFocus.ts",
+      "bytes": 1637,
+      "mode": "100644",
+      "sha256": "101c96d2f916c2bb2acf63c23a4bed2d6e3d53671d82794db0f4804eb57700aa",
+      "gitBlobOid": "9b31096c385c56d663f42e31058e97044684f841"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/home-overview.ts",
+      "bytes": 3248,
+      "mode": "100644",
+      "sha256": "92045d146fed1bba5944cce50ba247dee9ae6eb8fb0858ddb3ca93d1aaeb25e3",
+      "gitBlobOid": "6f00728cd4264392fc368aaad7c4ebafc4719fc5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/home-target.ts",
+      "bytes": 861,
+      "mode": "100644",
+      "sha256": "e1b72e36c1a5edc39032193ad73738634be0a82c3a30a2908557e5d4a4915656",
+      "gitBlobOid": "8e6b05e4e8dd5451ca583025ee6dc5acb5139e3e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/DrawerOverlay.types.ts",
+      "bytes": 349,
+      "mode": "100644",
+      "sha256": "71050eec66338da988a161906930753ce03bbbcee98182950aec9ec41acb15ce",
+      "gitBlobOid": "da032e52533892cb69d75e7600114cf303fd187c"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/MotionBackdrop.tsx",
+      "bytes": 2849,
+      "mode": "100644",
+      "sha256": "bcb8828521c2252b76d3a92ad4ab674e349064baa9e499d6216c33151ca12414",
+      "gitBlobOid": "d21e5796f6b93c17a1ce55a283050c75820d84bc"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/MotionDisclosure.tsx",
+      "bytes": 1956,
+      "mode": "100644",
+      "sha256": "7cb469d3f37b2ffcb8989294c7784e43358173d5b388981fb90bed97bb563a9f",
+      "gitBlobOid": "6c122a009e1022418747e29b6cf879600867a109"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/MotionDrawerOverlay.web.tsx",
+      "bytes": 2475,
+      "mode": "100644",
+      "sha256": "51994fff02732eff605d91c488de592085ce45e877ba08e17776254fd9529d72",
+      "gitBlobOid": "940047564106d76e3eae3799b27326e4737d1f04"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/MotionDrawerRight.tsx",
+      "bytes": 4976,
+      "mode": "100644",
+      "sha256": "6de4a47a33a4ea870d8a9ed2d048915d157aed259f59bd9d4ec7d377b8952b73",
+      "gitBlobOid": "26cd81a284f875a51f3fe3d88e939df741d6215f"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/MotionEntrance.tsx",
+      "bytes": 4504,
+      "mode": "100644",
+      "sha256": "18cec389c5af27f74c52b343a880ff36130c09d1e43ee61c3cacf93d6a69066e",
+      "gitBlobOid": "2864e385ad1aabba13255d6524471dff65dbb130"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/MotionFeedback.tsx",
+      "bytes": 2622,
+      "mode": "100644",
+      "sha256": "89ce054eb9f5a579e376dff5111cc5763b50fb8d564133dd4e3f48a81e146061",
+      "gitBlobOid": "6f9e087deb33e4494841c5b722939efee26197fd"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/MotionInlineSwap.tsx",
+      "bytes": 4532,
+      "mode": "100644",
+      "sha256": "d1aa96d830dcf8a20f5935cdb6c6466eceaf9ef14ba766aae0bd830e898826ff",
+      "gitBlobOid": "a53ad75594768353c6aba3b47065211282b6bf07"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/MotionList.tsx",
+      "bytes": 11586,
+      "mode": "100644",
+      "sha256": "1a9fe5bd09f79c081ba6ee80b66beb8b5197bb60a6aba8b75a07b076b11431c9",
+      "gitBlobOid": "d36020037640f9239a18fd5174c1ace12d519eb1"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/MotionPaperScope.web.tsx",
+      "bytes": 1150,
+      "mode": "100644",
+      "sha256": "9a550cb91c2d8f9e227e2c8d417723e414bc3dd0300f8675920ff52baff3eaf0",
+      "gitBlobOid": "274a1be4d1d48d79dde9fdbe966a15cdba504d9e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/MotionReveal.tsx",
+      "bytes": 8861,
+      "mode": "100644",
+      "sha256": "b2590756cf0d0ea6685f740e5b5d8664937ffe5b27dbe5de7e191ef63b594643",
+      "gitBlobOid": "908c7fce3f67ba09ea720ecbd0b80d3218b8dbef"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/MotionScopeBoundary.tsx",
+      "bytes": 11059,
+      "mode": "100644",
+      "sha256": "be926381ccb9eb486b4c5e11a35a35d7654a97a90df6ea86ac1fe63a52b7b130",
+      "gitBlobOid": "d80ac7defcff856d5a805ea06b131770beb8c530"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/MotionSelectionMarker.tsx",
+      "bytes": 2055,
+      "mode": "100644",
+      "sha256": "15c72cb88acddce8d5d299086aa873a00173d68e7ba1f579d248d21983544798",
+      "gitBlobOid": "ff8540f4b1d4ed48af07a2bae0f29ec1cabe3f91"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/drawerGeometry.ts",
+      "bytes": 276,
+      "mode": "100644",
+      "sha256": "28af241e90153352226e54b00896a6a2ce12b24ffd52f1ef6b057537fa4390d1",
+      "gitBlobOid": "22ca98ad4031bf63c0d1721aa3ac840ffe242d28"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/index.ts",
+      "bytes": 1040,
+      "mode": "100644",
+      "sha256": "39069af7befaf5eefeb5952b37679a987b035ecbf42403bec17eade0de8d42a9",
+      "gitBlobOid": "fd963dd53514336f8d55f6168fbcf98daf8bcd52"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/lifecycle.ts",
+      "bytes": 1080,
+      "mode": "100644",
+      "sha256": "95ddd94db6349c450451e202332ce2c385fa4d098c0902cd2143f37369a8afe3",
+      "gitBlobOid": "58609fe434658084c79a106f096deae149037790"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/paperMotion.css",
+      "bytes": 236,
+      "mode": "100644",
+      "sha256": "0f158acc2e042d90a646087041434534b17ac0600558d7f04407e19a57885596",
+      "gitBlobOid": "c5ece0f7c3ad337b4df277c88189b09443b1e9a6"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/preferences.tsx",
+      "bytes": 144,
+      "mode": "100644",
+      "sha256": "b62826cc7c855cb9e4c200664e666710c52e3e40ce2ef4ac82791e790d2990bf",
+      "gitBlobOid": "970eb0c2c761ec36c2b9b956a4d8c1fafbc0996e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/tokens.ts",
+      "bytes": 1115,
+      "mode": "100644",
+      "sha256": "43e134e314ccf80ebb0e2c900c29f3c026f43308a955b1809b23fd8d594a833d",
+      "gitBlobOid": "141f2d7d47dd1340d443f7daa21b29e0b3a7b524"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/useDrawerFocus.web.ts",
+      "bytes": 4563,
+      "mode": "100644",
+      "sha256": "1f1e24f88bbcf5230d3d33fa6c3426ffde75733ab449dc2ad8bd45ff3f29cd6a",
+      "gitBlobOid": "1503a62d44ac745d8826cb22fad7872f17576bc2"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/useModalBackdrop.web.ts",
+      "bytes": 4519,
+      "mode": "100644",
+      "sha256": "4bd86e567d7c0dc7726b05abadf2cc29710caf4c61fd94d93191286ce5b43b11",
+      "gitBlobOid": "fee0494490619616ad5c9bb544004e4dc049bce6"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/motion/viewProps.ts",
+      "bytes": 327,
+      "mode": "100644",
+      "sha256": "43c516cf145ddce2a74c35ad7490f88ad647d19cbffd846a534ef27c0c29037a",
+      "gitBlobOid": "68f6cc5c2c52687751dd9c2b2eebf6519e30bccb"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/navigation/route-state.ts",
+      "bytes": 4033,
+      "mode": "100644",
+      "sha256": "76d74d8cf908f645db2e70d3b46613042e5d22c81f50ed42110f829804473e55",
+      "gitBlobOid": "57d941710fdc199d59ac0a1e8444f21fa5722485"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/photo-view-model.ts",
+      "bytes": 4666,
+      "mode": "100644",
+      "sha256": "c11133829e3bee7de120749659dc4861d33d013aa1bc02068dada55e7249fbf3",
+      "gitBlobOid": "1034e889a07e7638acfe55e91956d8b3aa0d408b"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/startup/dataReadiness.ts",
+      "bytes": 4643,
+      "mode": "100644",
+      "sha256": "becff0e592e88562568e6c7ff13c63380e840ca8603a48324d5ae7271e828637",
+      "gitBlobOid": "0b62cec0adc77605274681dbe917ca360c0e24d7"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/task-view-model.ts",
+      "bytes": 10908,
+      "mode": "100644",
+      "sha256": "7c99fff1bc34afa2db07961574ab6ac7c8bd7f7bcfc1f98b309faeb49b87191e",
+      "gitBlobOid": "293135a74d012992f81acb5bd15dea64987dcd26"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/theme.ts",
+      "bytes": 4732,
+      "mode": "100644",
+      "sha256": "5fa570023e71dcbab4c5cbcbd69865dba2d38ec3defb4e21db5ac15d57f50c23",
+      "gitBlobOid": "8abf00bb41d506b2afba1b4e339ac96c29642c86"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/view-model.ts",
+      "bytes": 3305,
+      "mode": "100644",
+      "sha256": "497d6a1bd1e3b02fd4e7bd9028a2f15d2774d74fcb9fae598ac39fc4895bf345",
+      "gitBlobOid": "b325aaaa0ce01af2e4ae6b260479f2969f881d0a"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/workbench/AgentStatusShape.ts",
+      "bytes": 162,
+      "mode": "100644",
+      "sha256": "4ae0f7b63e5bb02a5962d0c523f605411dbcacc549399b834379246108063140",
+      "gitBlobOid": "b989f5d801e919d3d26cee353f065c2f27dfda54"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/workbench/HarbourCalendarLayout.tsx",
+      "bytes": 3285,
+      "mode": "100644",
+      "sha256": "532451c1cf554c104f43a46713e35744afa022a96451a46813c47400ddf73494",
+      "gitBlobOid": "c54ab7a28c3f496056d2703dccdd2197075bb834"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/workbench/HarbourDateList.tsx",
+      "bytes": 8192,
+      "mode": "100644",
+      "sha256": "f1cbec03542e515ec0540972cb61c9c9e4a0d87f5360c77683bc474ca516bc58",
+      "gitBlobOid": "537fb3b2772a0351cd62182e31b0d75b0bd62a33"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/workbench/HarbourFilters.tsx",
+      "bytes": 7463,
+      "mode": "100644",
+      "sha256": "58286f854c6a1f4517ad4ead7ea9bd884362829087fd825d9bda680285acf21c",
+      "gitBlobOid": "1c7dfbd9d6340955b3fa587bd42fe748e29d1dea"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/workbench/HarbourHeaderActions.tsx",
+      "bytes": 1486,
+      "mode": "100644",
+      "sha256": "2c6a9da2c311ed0d9b6e24c7013a041d63d6e39382b6d4f97bd4e5c5583ca377",
+      "gitBlobOid": "251e8202c70061f7c45e3b9cbbda8b41b0d34594"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/workbench/HarbourTasksSlotPorts.ts",
+      "bytes": 2211,
+      "mode": "100644",
+      "sha256": "87200c45de9d63b2233060c2dca1dd13a5f1a599197e956640a8b1fa32795846",
+      "gitBlobOid": "ab57cf5bf30a37a9902e27549aefa38ef72a5eea"
+    },
+    {
+      "path": "frontend/src/workbench/variants/harbour/src/workbench/StartupRecordsShape.ts",
+      "bytes": 347,
+      "mode": "100644",
+      "sha256": "2ac0c4f46aad3d86b45ae20ef0213d62dd0351a74117c8d49f80d5586e00060d",
+      "gitBlobOid": "a42713a79f88432f692978c03f37291a97de455d"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/care-view-model.ts",
+      "bytes": 18903,
+      "mode": "100644",
+      "sha256": "ebd45d85b9d6a48531d5e6ee6c9111b2d43c13039371d21473c1fd385a50a26b",
+      "gitBlobOid": "1caea07301f06efa9a309343d2e434d2be4cf6d3"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/AppDialog.tsx",
+      "bytes": 3413,
+      "mode": "100644",
+      "sha256": "f52db6e0392358f890e2f21f77c90a4227b29cf9c120a046b38e507f286bc55c",
+      "gitBlobOid": "7311c5d35d86736b0159fb8d42cf9469025665c9"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/AppIcon.tsx",
+      "bytes": 7187,
+      "mode": "100644",
+      "sha256": "febf65398dea8e302ff25dc7103a7c1bf74f5e4eec744298daa3734ebdec77c9",
+      "gitBlobOid": "5678fad98a07a1e0c3c5ed5817e9daa2eaaa2f96"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/AppRadioItem.tsx",
+      "bytes": 2725,
+      "mode": "100644",
+      "sha256": "a305ab04c4b792061bf1678e70bb8ae53a76a6fdbeb7181c2c1c903ffe9ae8cc",
+      "gitBlobOid": "72d88c44fe25dc825834b04ba4eef4d3226e7f8b"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/AppScrollView.web.tsx",
+      "bytes": 2366,
+      "mode": "100644",
+      "sha256": "6b96e19c2fd59d02ee50c53f6774cbb73a8cc96b0b707d0367aeaba85091280c",
+      "gitBlobOid": "3678d95c73e33f82984fde00369eada8a04b083e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/AppStatusBadge.tsx",
+      "bytes": 1742,
+      "mode": "100644",
+      "sha256": "23f5819f4ae7ef7f263c6700ca362ec98a4be33d6d26e484d59f859d2713fb82",
+      "gitBlobOid": "d40dc750eb515cf0948b0f36876a7d98a519fcf4"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/EmptyListCard.tsx",
+      "bytes": 1486,
+      "mode": "100644",
+      "sha256": "c6b1a8711665eaa5d3e8ac41f17da6ac5ce06f059e7ffaab2f40e0813af5afbc",
+      "gitBlobOid": "71514c6ce10b8ac571de564abc95cd0e85a6c7e8"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/HorizontalOverflowRail.tsx",
+      "bytes": 10649,
+      "mode": "100644",
+      "sha256": "2b8e506a81bc088433b3e0d0205be87a06eb0bfef9e02810bc395dac58f32ddd",
+      "gitBlobOid": "d0fd58eebd1760da055c55410c0260e9489754d5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/ReadStateNotice.tsx",
+      "bytes": 3357,
+      "mode": "100644",
+      "sha256": "f4d6482beff6f40766e0f01c5a041cb4d2084261378f7e4e77c56d04a6b3e2ca",
+      "gitBlobOid": "5bbeb4148a766accc60a9875b75db393eb9bc74f"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/StatusAnnouncement.tsx",
+      "bytes": 1034,
+      "mode": "100644",
+      "sha256": "fc63fd6fa5f78718403aa88ef1c9df5a21a61c384896026c10048ae0763a5b5e",
+      "gitBlobOid": "d5905949da31fbe7eeba8080710b3ad816346914"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/appScrollView.css",
+      "bytes": 842,
+      "mode": "100644",
+      "sha256": "3c9b4ab4433153a7fef317b622cbed555934996fae93709471184c0abc5fcb59",
+      "gitBlobOid": "544936fdd5111b18e086cb5c1ffceb80d02d07de"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/appearance/BackgroundSurface.tsx",
+      "bytes": 1922,
+      "mode": "100644",
+      "sha256": "555d463a8c944f5dff7199335a05ab4a566d1df7dd4d96e01d78f7e82b635803",
+      "gitBlobOid": "fe2a42cc4315e09619efb96937930f6aec6f3668"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/appearance/background-surface-style.web.ts",
+      "bytes": 171,
+      "mode": "100644",
+      "sha256": "f4a981a422d5bbdfea2684431a56457a6a657560fdd42b9fa884ce479d21a7e7",
+      "gitBlobOid": "f18f7ddad2693f4973b93022db39472e890e111c"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/appearance/backgroundSurface.css",
+      "bytes": 1219,
+      "mode": "100644",
+      "sha256": "586f1cb816800e9310ee2078e0036c3c16af35c2207e39729a6f87eead705b07",
+      "gitBlobOid": "187d9f56e3ded6fd3debd38e24049a814f9858d0"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/horizontalOverflow.ts",
+      "bytes": 1364,
+      "mode": "100644",
+      "sha256": "8252e20d70cba42291f0c9e6de801430ea76cd6ff0bb21f0f0a563d2d73bc2ab",
+      "gitBlobOid": "c7a6549544e1c230a36887c3bae4a4518d13b363"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/icons/ConcernIcon.tsx",
+      "bytes": 616,
+      "mode": "100644",
+      "sha256": "7aa9f4f166a399935def3ee1d864b5cdab6a93872dcc60b99ff922b5f53cc56f",
+      "gitBlobOid": "7153079832382ab2636104e8947bbf3e0ddf62e5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/icons/OverviewIcon.tsx",
+      "bytes": 612,
+      "mode": "100644",
+      "sha256": "3c40d33a31a376ff0098eac60cdb82d6b4f4bb3f25200df4c77b8337a62dab9f",
+      "gitBlobOid": "af31c95d9b6bec99a21f6645e40b5d6954dabc98"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/icons/PreparationIcon.tsx",
+      "bytes": 569,
+      "mode": "100644",
+      "sha256": "f1d4ca537aba6d842c445a5d3f52b49e84f2baf238196ede2544b2689f7ff548",
+      "gitBlobOid": "8f696c4bd86c6a08ac33cccff7f30b81d3b885ad"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/tasks/TaskContent.tsx",
+      "bytes": 8816,
+      "mode": "100644",
+      "sha256": "a231e74cd889e609558ae6586ac2d0785853153674aad2ac9584a5be3e899df1",
+      "gitBlobOid": "ccc1f556854a37026291b3a9459e1a3c01ba15a7"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/tasks/TaskListRow.tsx",
+      "bytes": 4237,
+      "mode": "100644",
+      "sha256": "f17f83115786cbf11bfb238da0279ba96c95b6359c3bb2c9f56e3eaca9f0bc69",
+      "gitBlobOid": "108f6ca2cad3b2be7cfd27b485e70bb58b485306"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/tasks/TasksCalendar.tsx",
+      "bytes": 7852,
+      "mode": "100644",
+      "sha256": "5e23c4e32d4582261ba37172595483ba61f272afdba1f183e0e2cd0c89fcdcd7",
+      "gitBlobOid": "a9cf5e2331fadad538d58e92f9ea8a10e8ac7580"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/tasks/task-calendar.ts",
+      "bytes": 6256,
+      "mode": "100644",
+      "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4",
+      "gitBlobOid": "208a2cb61c9eb2012ecd5fd0e9e688e8939b80b0"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/ui.tsx",
+      "bytes": 28747,
+      "mode": "100644",
+      "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563",
+      "gitBlobOid": "96e77558004ba8f778759527a7ad0b48fcc78a55"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/useInteractionDensity.ts",
+      "bytes": 758,
+      "mode": "100644",
+      "sha256": "c5e18195d786aa80b3411b813259d92a4cec9692624ed37d7ac246b5a4a4f921",
+      "gitBlobOid": "9bca3bf5acf023145671ee7bc20ef3d5e13f50de"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/components/useQuietReadFocus.ts",
+      "bytes": 1637,
+      "mode": "100644",
+      "sha256": "101c96d2f916c2bb2acf63c23a4bed2d6e3d53671d82794db0f4804eb57700aa",
+      "gitBlobOid": "9b31096c385c56d663f42e31058e97044684f841"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/home-overview.ts",
+      "bytes": 3030,
+      "mode": "100644",
+      "sha256": "68d38fbdade9eb7fdd374c34fc6f5b1190ade63274189a710975da0b26e30998",
+      "gitBlobOid": "025af8b9c865c06faf3dea14d0104129a07cbd75"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/DrawerOverlay.types.ts",
+      "bytes": 349,
+      "mode": "100644",
+      "sha256": "71050eec66338da988a161906930753ce03bbbcee98182950aec9ec41acb15ce",
+      "gitBlobOid": "da032e52533892cb69d75e7600114cf303fd187c"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/MotionBackdrop.tsx",
+      "bytes": 2849,
+      "mode": "100644",
+      "sha256": "bcb8828521c2252b76d3a92ad4ab674e349064baa9e499d6216c33151ca12414",
+      "gitBlobOid": "d21e5796f6b93c17a1ce55a283050c75820d84bc"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/MotionDisclosure.tsx",
+      "bytes": 4699,
+      "mode": "100644",
+      "sha256": "7a166f4887b0527e03b74c9f13d6f78002a2a39138518d032bd1e98917ecb082",
+      "gitBlobOid": "50f98f5d2e76c8976a7b0ff8a95eaac11b4d6ad8"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/MotionDrawerOverlay.web.tsx",
+      "bytes": 2475,
+      "mode": "100644",
+      "sha256": "51994fff02732eff605d91c488de592085ce45e877ba08e17776254fd9529d72",
+      "gitBlobOid": "940047564106d76e3eae3799b27326e4737d1f04"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/MotionDrawerRight.tsx",
+      "bytes": 4388,
+      "mode": "100644",
+      "sha256": "3109d1cc837400efa27fe787bf1934587a025c84168339c921b40082b45a2c36",
+      "gitBlobOid": "02cb5c026b8a94fb0651ad516bec901a9ac06ad5"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/MotionEntrance.tsx",
+      "bytes": 4504,
+      "mode": "100644",
+      "sha256": "18cec389c5af27f74c52b343a880ff36130c09d1e43ee61c3cacf93d6a69066e",
+      "gitBlobOid": "2864e385ad1aabba13255d6524471dff65dbb130"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/MotionFeedback.tsx",
+      "bytes": 2192,
+      "mode": "100644",
+      "sha256": "ce16b44e5ac57643ef49b7c2c6391deb7dfa53a7c87021ff59ef66654b8d047c",
+      "gitBlobOid": "c4e9718527f4ce0d5ca22b7aae4db73f7005146f"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/MotionInlineSwap.tsx",
+      "bytes": 4532,
+      "mode": "100644",
+      "sha256": "d1aa96d830dcf8a20f5935cdb6c6466eceaf9ef14ba766aae0bd830e898826ff",
+      "gitBlobOid": "a53ad75594768353c6aba3b47065211282b6bf07"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/MotionList.tsx",
+      "bytes": 11586,
+      "mode": "100644",
+      "sha256": "1a9fe5bd09f79c081ba6ee80b66beb8b5197bb60a6aba8b75a07b076b11431c9",
+      "gitBlobOid": "d36020037640f9239a18fd5174c1ace12d519eb1"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/MotionPaperScope.web.tsx",
+      "bytes": 1150,
+      "mode": "100644",
+      "sha256": "9a550cb91c2d8f9e227e2c8d417723e414bc3dd0300f8675920ff52baff3eaf0",
+      "gitBlobOid": "274a1be4d1d48d79dde9fdbe966a15cdba504d9e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/MotionReveal.tsx",
+      "bytes": 8861,
+      "mode": "100644",
+      "sha256": "b2590756cf0d0ea6685f740e5b5d8664937ffe5b27dbe5de7e191ef63b594643",
+      "gitBlobOid": "908c7fce3f67ba09ea720ecbd0b80d3218b8dbef"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/MotionScopeBoundary.tsx",
+      "bytes": 11059,
+      "mode": "100644",
+      "sha256": "be926381ccb9eb486b4c5e11a35a35d7654a97a90df6ea86ac1fe63a52b7b130",
+      "gitBlobOid": "d80ac7defcff856d5a805ea06b131770beb8c530"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/MotionSelectionMarker.tsx",
+      "bytes": 2055,
+      "mode": "100644",
+      "sha256": "15c72cb88acddce8d5d299086aa873a00173d68e7ba1f579d248d21983544798",
+      "gitBlobOid": "ff8540f4b1d4ed48af07a2bae0f29ec1cabe3f91"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/drawerGeometry.ts",
+      "bytes": 267,
+      "mode": "100644",
+      "sha256": "ab05671c4b34fe933613250434ed1891965467277d01fb0254e5fe3eafd7546d",
+      "gitBlobOid": "8649d09421af62c40b0927381bf07576d079e303"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/index.ts",
+      "bytes": 1040,
+      "mode": "100644",
+      "sha256": "39069af7befaf5eefeb5952b37679a987b035ecbf42403bec17eade0de8d42a9",
+      "gitBlobOid": "fd963dd53514336f8d55f6168fbcf98daf8bcd52"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/lifecycle.ts",
+      "bytes": 1277,
+      "mode": "100644",
+      "sha256": "c32a9597cdbd807531ead7274ed2cdedf740021d28d304bd25dbc9790416cbfe",
+      "gitBlobOid": "f9a735ff2b1d61aef4408f8b34efbb041c261be6"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/paperMotion.css",
+      "bytes": 236,
+      "mode": "100644",
+      "sha256": "0f158acc2e042d90a646087041434534b17ac0600558d7f04407e19a57885596",
+      "gitBlobOid": "c5ece0f7c3ad337b4df277c88189b09443b1e9a6"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/preferences.tsx",
+      "bytes": 144,
+      "mode": "100644",
+      "sha256": "b62826cc7c855cb9e4c200664e666710c52e3e40ce2ef4ac82791e790d2990bf",
+      "gitBlobOid": "970eb0c2c761ec36c2b9b956a4d8c1fafbc0996e"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/tokens.ts",
+      "bytes": 1115,
+      "mode": "100644",
+      "sha256": "43e134e314ccf80ebb0e2c900c29f3c026f43308a955b1809b23fd8d594a833d",
+      "gitBlobOid": "141f2d7d47dd1340d443f7daa21b29e0b3a7b524"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/useDrawerFocus.web.ts",
+      "bytes": 4563,
+      "mode": "100644",
+      "sha256": "1f1e24f88bbcf5230d3d33fa6c3426ffde75733ab449dc2ad8bd45ff3f29cd6a",
+      "gitBlobOid": "1503a62d44ac745d8826cb22fad7872f17576bc2"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/useModalBackdrop.web.ts",
+      "bytes": 4519,
+      "mode": "100644",
+      "sha256": "4bd86e567d7c0dc7726b05abadf2cc29710caf4c61fd94d93191286ce5b43b11",
+      "gitBlobOid": "fee0494490619616ad5c9bb544004e4dc049bce6"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/motion/viewProps.ts",
+      "bytes": 327,
+      "mode": "100644",
+      "sha256": "43c516cf145ddce2a74c35ad7490f88ad647d19cbffd846a534ef27c0c29037a",
+      "gitBlobOid": "68f6cc5c2c52687751dd9c2b2eebf6519e30bccb"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/photo-view-model.ts",
+      "bytes": 4666,
+      "mode": "100644",
+      "sha256": "c11133829e3bee7de120749659dc4861d33d013aa1bc02068dada55e7249fbf3",
+      "gitBlobOid": "1034e889a07e7638acfe55e91956d8b3aa0d408b"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/startup/dataReadiness.ts",
+      "bytes": 4643,
+      "mode": "100644",
+      "sha256": "becff0e592e88562568e6c7ff13c63380e840ca8603a48324d5ae7271e828637",
+      "gitBlobOid": "0b62cec0adc77605274681dbe917ca360c0e24d7"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/task-view-model.ts",
+      "bytes": 10691,
+      "mode": "100644",
+      "sha256": "7ba37779456c46f1f852f53a6e30e208eea4b7a957f04c31b63d2f4ff078cdd2",
+      "gitBlobOid": "a532cc69b77d2ff2522d5fcbfc36ee15a2de8e28"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/theme.ts",
+      "bytes": 4982,
+      "mode": "100644",
+      "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2",
+      "gitBlobOid": "4ccb33cb8f83a0e7c84829c74495a3ca63dfbe7c"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/view-model.ts",
+      "bytes": 3140,
+      "mode": "100644",
+      "sha256": "d5a43490b3c002613239f3566ac91ffc894fb480939409afae3e61b34b32c699",
+      "gitBlobOid": "33446458c8aac4d61d4af2190eecb482cbb4546c"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/workbench/AgentStatusShape.ts",
+      "bytes": 240,
+      "mode": "100644",
+      "sha256": "bafe3dbf70ec9f7ffac4b64de067303ed5ee88db8ef24b94dac4bba137afbf26",
+      "gitBlobOid": "fec67a2a6952b6bff56e085aad8aa37f1e5f2712"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/workbench/OriginalCalendarLayout.tsx",
+      "bytes": 3169,
+      "mode": "100644",
+      "sha256": "e8416515152096aa465aec0d41f0a5fcded884b8645a54b630e93bc2442ceca7",
+      "gitBlobOid": "782be5d76bf02b48fd8d40d90fbcf0a7dbf5d58a"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/workbench/OriginalDateList.tsx",
+      "bytes": 8225,
+      "mode": "100644",
+      "sha256": "48e41d11861483a2cb6eb8cda22720864a51b0f274d089d2c9eff6fc578c36ef",
+      "gitBlobOid": "da41d1359a034b6e03a37fbbdf40d6a9d0bf5890"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/workbench/OriginalDetailAperture.tsx",
+      "bytes": 2431,
+      "mode": "100644",
+      "sha256": "63246ac6f36e6edb8f4c56d13fd4a7508d6f83b45df8c3238d4024794d88ecc8",
+      "gitBlobOid": "a8a6c79642f36d3c4a1013207ae63a67aad115d0"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/workbench/OriginalFilters.tsx",
+      "bytes": 7244,
+      "mode": "100644",
+      "sha256": "a9bbbdf9775c90c42aaf478cf533ec44287fb9d093d3721382544c7bd1940db4",
+      "gitBlobOid": "1d813a9abf9131537a05e1ab00f3440fafb39e59"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/workbench/OriginalHeaderActions.tsx",
+      "bytes": 1201,
+      "mode": "100644",
+      "sha256": "de071a49971051f55c0245a340df1687abd40675deb9721ac0c12be661d211df",
+      "gitBlobOid": "23f40a4562ba19e8c1f45043d275fcb49383f055"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/workbench/StartupRecordsShape.ts",
+      "bytes": 393,
+      "mode": "100644",
+      "sha256": "69c0da9353722719a9900d0bf18f35dda9bc1aee3bd2595ef53e21612e332788",
+      "gitBlobOid": "b99f43b9f8c5a372418328e221efbbd1c23fdccc"
+    },
+    {
+      "path": "frontend/src/workbench/variants/original/src/workbench/TasksSlotPorts.ts",
+      "bytes": 2277,
+      "mode": "100644",
+      "sha256": "110b165ba76a28542d3515fdc7fe8ecc8b7ca0bf4fde459cb562560bb75d8dfc",
+      "gitBlobOid": "a301ffb25792d5c43a7f61207fb69918f738eeac"
+    },
+    {
+      "path": "frontend/src/workspaces/TasksWorkspace.tsx",
+      "bytes": 1086,
+      "mode": "100644",
+      "sha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68",
+      "gitBlobOid": "d1855c40ffa334b514ba1db3bc77233b8eece07e"
+    },
+    {
+      "path": "frontend/tsconfig.json",
+      "bytes": 340,
+      "mode": "100644",
+      "sha256": "3fbcf5576d29d97cd577d47ed770c322660228ab0d3b0367d1cf5e950c88ca18",
+      "gitBlobOid": "532cba8b098be08f7c92d600cbf546cc6c062fc0"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 759188,
+      "mode": "100644",
+      "sha256": "807f01e537b7147ff486c78ae47351ac4603e8468386c1cd1b984d32b538c816",
+      "gitBlobOid": "505bf30deb025ea2e5a5eb7dce6bf3b8bb938ade"
+    },
+    {
+      "path": "package.json",
+      "bytes": 3580,
+      "mode": "100644",
+      "sha256": "42448f34fea1dd088ca44d5e373a0f817784951f9715d8b93b8d1bc844851137",
+      "gitBlobOid": "044328dca6026eb1ffc24632f58197c8e3cdaa2b"
+    }
+  ]
+}
