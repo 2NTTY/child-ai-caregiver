@@ -1,0 +1,513 @@
+{
+  "schemaVersion": 1,
+  "condition": "normal",
+  "child": {
+    "id": "preview-child-01",
+    "displayName": "小晴",
+    "ageLabel": "3 歲",
+    "regionLabel": "香港",
+    "allergiesLabel": null,
+    "profileConfirmed": true,
+    "accessRole": "owner"
+  },
+  "scheduleContext": {
+    "asOf": "2026-10-04T16:00:00+08:00",
+    "timeZone": "Asia/Hong_Kong"
+  },
+  "fixture": {
+    "items": [
+      {
+        "id": "preview-child-01-task-ordinary",
+        "childId": "preview-child-01",
+        "version": 2,
+        "title": "帶備上次到診資料",
+        "details": "由家人明確建立的合成安排。",
+        "kind": "ordinary",
+        "assigneeUserId": "preview-owner",
+        "createdBy": "preview-owner",
+        "createdAt": "2026-10-02T08:30:00+08:00",
+        "updatedAt": "2026-10-03T09:00:00+08:00",
+        "occurrence": {
+          "id": "preview-child-01-task-ordinary-occurrence",
+          "dueAt": "2026-10-04T14:30:00+08:00",
+          "timeZone": "Asia/Hong_Kong",
+          "state": "scheduled",
+          "terminalBasisVersion": null
+        }
+      },
+      {
+        "id": "preview-child-01-task-appointment",
+        "childId": "preview-child-01",
+        "version": 1,
+        "title": "健康院到診安排",
+        "details": "家庭到診安排示例；機構預約確認須另外核對。",
+        "kind": "appointment",
+        "assigneeUserId": "preview-owner",
+        "createdBy": "preview-owner",
+        "createdAt": "2026-10-02T08:30:00+08:00",
+        "updatedAt": "2026-10-02T08:30:00+08:00",
+        "occurrence": {
+          "id": "preview-child-01-task-appointment-occurrence",
+          "dueAt": "2026-10-04T15:00:00+08:00",
+          "timeZone": "Asia/Hong_Kong",
+          "state": "scheduled",
+          "terminalBasisVersion": null
+        }
+      },
+      {
+        "id": "preview-child-01-task-review",
+        "childId": "preview-child-01",
+        "version": 3,
+        "title": "核對到診準備是否完成",
+        "details": "由家人明確建立的合成安排。",
+        "kind": "ordinary",
+        "assigneeUserId": "preview-owner",
+        "createdBy": "preview-owner",
+        "createdAt": "2026-10-02T08:30:00+08:00",
+        "updatedAt": "2026-10-04T16:00:00+08:00",
+        "occurrence": {
+          "id": "preview-child-01-task-review-occurrence",
+          "dueAt": "2026-10-03T18:00:00+08:00",
+          "timeZone": "Asia/Hong_Kong",
+          "state": "needs_review",
+          "terminalBasisVersion": 1
+        }
+      },
+      {
+        "id": "preview-child-01-task-future",
+        "childId": "preview-child-01",
+        "version": 1,
+        "title": "下次家庭回顧",
+        "details": "由家人明確建立的合成安排。",
+        "kind": "ordinary",
+        "assigneeUserId": "preview-caregiver",
+        "createdBy": "preview-owner",
+        "createdAt": "2026-10-02T08:30:00+08:00",
+        "updatedAt": "2026-10-02T08:30:00+08:00",
+        "occurrence": {
+          "id": "preview-child-01-task-future-occurrence",
+          "dueAt": "2026-10-11T10:00:00+08:00",
+          "timeZone": "Asia/Hong_Kong",
+          "state": "scheduled",
+          "terminalBasisVersion": null
+        }
+      },
+      {
+        "id": "preview-child-01-task-completed",
+        "childId": "preview-child-01",
+        "version": 2,
+        "title": "整理上星期的照顧觀察",
+        "details": "由家人明確建立的合成安排。",
+        "kind": "ordinary",
+        "assigneeUserId": "preview-owner",
+        "createdBy": "preview-owner",
+        "createdAt": "2026-10-02T08:30:00+08:00",
+        "updatedAt": "2026-10-04T16:00:00+08:00",
+        "occurrence": {
+          "id": "preview-child-01-task-completed-occurrence",
+          "dueAt": "2026-10-04T15:00:00+08:00",
+          "timeZone": "Asia/Hong_Kong",
+          "state": "completed",
+          "terminalBasisVersion": 1
+        },
+        "terminalAt": "2026-10-04T16:00:00+08:00",
+        "completedAt": "2026-10-04T16:00:00+08:00"
+      },
+      {
+        "id": "preview-child-01-task-cancelled",
+        "childId": "preview-child-01",
+        "version": 2,
+        "title": "星期日公園活動",
+        "details": "由家人明確建立的合成安排。",
+        "kind": "ordinary",
+        "assigneeUserId": "preview-owner",
+        "createdBy": "preview-owner",
+        "createdAt": "2026-10-02T08:30:00+08:00",
+        "updatedAt": "2026-10-04T16:00:00+08:00",
+        "occurrence": {
+          "id": "preview-child-01-task-cancelled-occurrence",
+          "dueAt": "2026-10-04T15:00:00+08:00",
+          "timeZone": "Asia/Hong_Kong",
+          "state": "cancelled",
+          "terminalBasisVersion": 1
+        },
+        "terminalAt": "2026-10-04T16:00:00+08:00"
+      }
+    ],
+    "eligibleAssignees": [
+      {
+        "userId": "preview-owner",
+        "name": "媽媽"
+      },
+      {
+        "userId": "preview-caregiver",
+        "name": "爸爸"
+      }
+    ],
+    "histories": {
+      "preview-child-01-task-ordinary": [
+        {
+          "task": {
+            "id": "preview-child-01-task-ordinary",
+            "childId": "preview-child-01",
+            "version": 2,
+            "title": "帶備上次到診資料",
+            "details": "由家人明確建立的合成安排。",
+            "kind": "ordinary",
+            "assigneeUserId": "preview-owner",
+            "createdBy": "preview-owner",
+            "createdAt": "2026-10-02T08:30:00+08:00",
+            "updatedAt": "2026-10-03T09:00:00+08:00",
+            "occurrence": {
+              "id": "preview-child-01-task-ordinary-occurrence",
+              "dueAt": "2026-10-04T14:30:00+08:00",
+              "timeZone": "Asia/Hong_Kong",
+              "state": "scheduled",
+              "terminalBasisVersion": null
+            }
+          },
+          "action": "reschedule",
+          "actorUserId": "preview-caregiver",
+          "basisVersion": 1,
+          "note": "提早整理到診資料（合成）",
+          "at": "2026-10-03T09:00:00+08:00"
+        },
+        {
+          "task": {
+            "id": "preview-child-01-task-ordinary",
+            "childId": "preview-child-01",
+            "version": 1,
+            "title": "帶備上次到診資料",
+            "details": "由家人明確建立的合成安排。",
+            "kind": "ordinary",
+            "assigneeUserId": "preview-owner",
+            "createdBy": "preview-owner",
+            "createdAt": "2026-10-02T08:30:00+08:00",
+            "updatedAt": "2026-10-02T08:30:00+08:00",
+            "occurrence": {
+              "id": "preview-child-01-task-ordinary-occurrence",
+              "dueAt": "2026-10-04T16:30:00+08:00",
+              "timeZone": "Asia/Hong_Kong",
+              "state": "scheduled",
+              "terminalBasisVersion": null
+            }
+          },
+          "action": "create",
+          "actorUserId": "preview-owner",
+          "basisVersion": 0,
+          "note": "",
+          "at": "2026-10-02T08:30:00+08:00"
+        }
+      ],
+      "preview-child-01-task-appointment": [
+        {
+          "task": {
+            "id": "preview-child-01-task-appointment",
+            "childId": "preview-child-01",
+            "version": 1,
+            "title": "健康院到診安排",
+            "details": "家庭到診安排示例；機構預約確認須另外核對。",
+            "kind": "appointment",
+            "assigneeUserId": "preview-owner",
+            "createdBy": "preview-owner",
+            "createdAt": "2026-10-02T08:30:00+08:00",
+            "updatedAt": "2026-10-02T08:30:00+08:00",
+            "occurrence": {
+              "id": "preview-child-01-task-appointment-occurrence",
+              "dueAt": "2026-10-04T15:00:00+08:00",
+              "timeZone": "Asia/Hong_Kong",
+              "state": "scheduled",
+              "terminalBasisVersion": null
+            }
+          },
+          "action": "create",
+          "actorUserId": "preview-owner",
+          "basisVersion": 0,
+          "note": "",
+          "at": "2026-10-02T08:30:00+08:00"
+        }
+      ],
+      "preview-child-01-task-review": [
+        {
+          "task": {
+            "id": "preview-child-01-task-review",
+            "childId": "preview-child-01",
+            "version": 3,
+            "title": "核對到診準備是否完成",
+            "details": "由家人明確建立的合成安排。",
+            "kind": "ordinary",
+            "assigneeUserId": "preview-owner",
+            "createdBy": "preview-owner",
+            "createdAt": "2026-10-02T08:30:00+08:00",
+            "updatedAt": "2026-10-04T16:00:00+08:00",
+            "occurrence": {
+              "id": "preview-child-01-task-review-occurrence",
+              "dueAt": "2026-10-03T18:00:00+08:00",
+              "timeZone": "Asia/Hong_Kong",
+              "state": "needs_review",
+              "terminalBasisVersion": 1
+            }
+          },
+          "action": "cancel",
+          "actorUserId": "preview-caregiver",
+          "basisVersion": 1,
+          "note": "爸爸認為安排已取消（合成）",
+          "at": "2026-10-04T16:00:00+08:00"
+        },
+        {
+          "task": {
+            "id": "preview-child-01-task-review",
+            "childId": "preview-child-01",
+            "version": 2,
+            "title": "核對到診準備是否完成",
+            "details": "由家人明確建立的合成安排。",
+            "kind": "ordinary",
+            "assigneeUserId": "preview-owner",
+            "createdBy": "preview-owner",
+            "createdAt": "2026-10-02T08:30:00+08:00",
+            "updatedAt": "2026-10-03T18:00:00+08:00",
+            "occurrence": {
+              "id": "preview-child-01-task-review-occurrence",
+              "dueAt": "2026-10-03T18:00:00+08:00",
+              "timeZone": "Asia/Hong_Kong",
+              "state": "completed",
+              "terminalBasisVersion": 1
+            }
+          },
+          "action": "complete",
+          "actorUserId": "preview-owner",
+          "basisVersion": 1,
+          "note": "媽媽認為已準備好（合成）",
+          "at": "2026-10-03T18:00:00+08:00"
+        },
+        {
+          "task": {
+            "id": "preview-child-01-task-review",
+            "childId": "preview-child-01",
+            "version": 1,
+            "title": "核對到診準備是否完成",
+            "details": "由家人明確建立的合成安排。",
+            "kind": "ordinary",
+            "assigneeUserId": "preview-owner",
+            "createdBy": "preview-owner",
+            "createdAt": "2026-10-02T08:30:00+08:00",
+            "updatedAt": "2026-10-02T08:30:00+08:00",
+            "occurrence": {
+              "id": "preview-child-01-task-review-occurrence",
+              "dueAt": "2026-10-03T18:00:00+08:00",
+              "timeZone": "Asia/Hong_Kong",
+              "state": "scheduled",
+              "terminalBasisVersion": null
+            }
+          },
+          "action": "create",
+          "actorUserId": "preview-owner",
+          "basisVersion": 0,
+          "note": "",
+          "at": "2026-10-02T08:30:00+08:00"
+        }
+      ],
+      "preview-child-01-task-future": [
+        {
+          "task": {
+            "id": "preview-child-01-task-future",
+            "childId": "preview-child-01",
+            "version": 1,
+            "title": "下次家庭回顧",
+            "details": "由家人明確建立的合成安排。",
+            "kind": "ordinary",
+            "assigneeUserId": "preview-caregiver",
+            "createdBy": "preview-owner",
+            "createdAt": "2026-10-02T08:30:00+08:00",
+            "updatedAt": "2026-10-02T08:30:00+08:00",
+            "occurrence": {
+              "id": "preview-child-01-task-future-occurrence",
+              "dueAt": "2026-10-11T10:00:00+08:00",
+              "timeZone": "Asia/Hong_Kong",
+              "state": "scheduled",
+              "terminalBasisVersion": null
+            }
+          },
+          "action": "create",
+          "actorUserId": "preview-owner",
+          "basisVersion": 0,
+          "note": "",
+          "at": "2026-10-02T08:30:00+08:00"
+        }
+      ],
+      "preview-child-01-task-completed": [
+        {
+          "task": {
+            "id": "preview-child-01-task-completed",
+            "childId": "preview-child-01",
+            "version": 2,
+            "title": "整理上星期的照顧觀察",
+            "details": "由家人明確建立的合成安排。",
+            "kind": "ordinary",
+            "assigneeUserId": "preview-owner",
+            "createdBy": "preview-owner",
+            "createdAt": "2026-10-02T08:30:00+08:00",
+            "updatedAt": "2026-10-04T16:00:00+08:00",
+            "occurrence": {
+              "id": "preview-child-01-task-completed-occurrence",
+              "dueAt": "2026-10-04T15:00:00+08:00",
+              "timeZone": "Asia/Hong_Kong",
+              "state": "completed",
+              "terminalBasisVersion": 1
+            }
+          },
+          "action": "complete",
+          "actorUserId": "preview-caregiver",
+          "basisVersion": 1,
+          "note": "已整理觀察（合成）",
+          "at": "2026-10-04T16:00:00+08:00"
+        },
+        {
+          "task": {
+            "id": "preview-child-01-task-completed",
+            "childId": "preview-child-01",
+            "version": 1,
+            "title": "整理上星期的照顧觀察",
+            "details": "由家人明確建立的合成安排。",
+            "kind": "ordinary",
+            "assigneeUserId": "preview-owner",
+            "createdBy": "preview-owner",
+            "createdAt": "2026-10-02T08:30:00+08:00",
+            "updatedAt": "2026-10-02T08:30:00+08:00",
+            "occurrence": {
+              "id": "preview-child-01-task-completed-occurrence",
+              "dueAt": "2026-10-04T15:00:00+08:00",
+              "timeZone": "Asia/Hong_Kong",
+              "state": "scheduled",
+              "terminalBasisVersion": null
+            }
+          },
+          "action": "create",
+          "actorUserId": "preview-owner",
+          "basisVersion": 0,
+          "note": "",
+          "at": "2026-10-02T08:30:00+08:00"
+        }
+      ],
+      "preview-child-01-task-cancelled": [
+        {
+          "task": {
+            "id": "preview-child-01-task-cancelled",
+            "childId": "preview-child-01",
+            "version": 2,
+            "title": "星期日公園活動",
+            "details": "由家人明確建立的合成安排。",
+            "kind": "ordinary",
+            "assigneeUserId": "preview-owner",
+            "createdBy": "preview-owner",
+            "createdAt": "2026-10-02T08:30:00+08:00",
+            "updatedAt": "2026-10-04T16:00:00+08:00",
+            "occurrence": {
+              "id": "preview-child-01-task-cancelled-occurrence",
+              "dueAt": "2026-10-04T15:00:00+08:00",
+              "timeZone": "Asia/Hong_Kong",
+              "state": "cancelled",
+              "terminalBasisVersion": 1
+            }
+          },
+          "action": "cancel",
+          "actorUserId": "preview-caregiver",
+          "basisVersion": 1,
+          "note": "家人改了當日安排（合成）",
+          "at": "2026-10-04T16:00:00+08:00"
+        },
+        {
+          "task": {
+            "id": "preview-child-01-task-cancelled",
+            "childId": "preview-child-01",
+            "version": 1,
+            "title": "星期日公園活動",
+            "details": "由家人明確建立的合成安排。",
+            "kind": "ordinary",
+            "assigneeUserId": "preview-owner",
+            "createdBy": "preview-owner",
+            "createdAt": "2026-10-02T08:30:00+08:00",
+            "updatedAt": "2026-10-02T08:30:00+08:00",
+            "occurrence": {
+              "id": "preview-child-01-task-cancelled-occurrence",
+              "dueAt": "2026-10-04T15:00:00+08:00",
+              "timeZone": "Asia/Hong_Kong",
+              "state": "scheduled",
+              "terminalBasisVersion": null
+            }
+          },
+          "action": "create",
+          "actorUserId": "preview-owner",
+          "basisVersion": 0,
+          "note": "",
+          "at": "2026-10-02T08:30:00+08:00"
+        }
+      ]
+    },
+    "reminders": [
+      {
+        "id": "preview-child-01-task-ordinary-initial",
+        "batchId": "preview-batch-initial",
+        "taskId": "preview-child-01-task-ordinary",
+        "occurrenceId": "preview-child-01-task-ordinary-occurrence",
+        "taskVersion": 2,
+        "phase": "initial",
+        "createdAt": "2026-10-04T14:30:00+08:00"
+      },
+      {
+        "id": "preview-child-01-task-ordinary-follow-up",
+        "batchId": "preview-batch-follow-up",
+        "taskId": "preview-child-01-task-ordinary",
+        "occurrenceId": "preview-child-01-task-ordinary-occurrence",
+        "taskVersion": 2,
+        "phase": "follow_up",
+        "createdAt": "2026-10-04T16:00:00+08:00"
+      }
+    ],
+    "work": [
+      {
+        "taskId": "preview-child-01-task-ordinary",
+        "taskVersion": 2,
+        "status": "processed",
+        "nextAt": "2026-10-04T16:00:00+08:00",
+        "failures": 0
+      },
+      {
+        "taskId": "preview-child-01-task-appointment",
+        "taskVersion": 1,
+        "status": "pending",
+        "nextAt": "2026-10-04T15:00:00+08:00",
+        "failures": 0
+      },
+      {
+        "taskId": "preview-child-01-task-review",
+        "taskVersion": 3,
+        "status": "stopped",
+        "nextAt": "2026-10-03T18:00:00+08:00",
+        "failures": 0
+      },
+      {
+        "taskId": "preview-child-01-task-future",
+        "taskVersion": 1,
+        "status": "pending",
+        "nextAt": "2026-10-11T10:00:00+08:00",
+        "failures": 0
+      },
+      {
+        "taskId": "preview-child-01-task-completed",
+        "taskVersion": 2,
+        "status": "stopped",
+        "nextAt": "2026-10-04T15:00:00+08:00",
+        "failures": 0
+      },
+      {
+        "taskId": "preview-child-01-task-cancelled",
+        "taskVersion": 2,
+        "status": "stopped",
+        "nextAt": "2026-10-04T15:00:00+08:00",
+        "failures": 0
+      }
+    ],
+    "workerEnabled": true
+  }
+}

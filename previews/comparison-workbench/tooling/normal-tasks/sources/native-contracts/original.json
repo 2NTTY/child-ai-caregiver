@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "scope": "Public subset inventory for inert contract-byte tests; not a complete runnable application",
+  "source": {
+    "kind": "composite",
+    "appCommit": null,
+    "sourceTree": "de0cbacb583c923fba8f88f27fd5f6b8d5409c1c",
+    "recipeSha256": "e49b453d98d3bcb34ea51bb67d068078d90e9c50c8862ae70b81f3bbe237074b"
+  },
+  "historicalFullSourceManifestSha256": "523f727d4033011a9eeb7d86235350376a0c63b5b8c4616ec78cf23660ad8fca",
+  "files": [
+    {
+      "path": "frontend/app/(dashboard)/tasks.tsx",
+      "sha256": "cc74e560d831c098b384af096c9c45651c0f2206bbc7934c2f1abf3adb9135b1",
+      "mode": 420,
+      "bytes": 57,
+      "gitBlob": "54b8f0ab2634e4e69c783fa7d154dae69f5f98ef"
+    },
+    {
+      "path": "frontend/app/(dashboard)/_layout.tsx",
+      "sha256": "fa3fe198416483c29a5ed654fa65bc13507cb96ef99ccbd0de16d31f3a6bf3ce",
+      "mode": 420,
+      "bytes": 5012,
+      "gitBlob": "4883208296703ea051aceae021618dc95dba9ed2"
+    },
+    {
+      "path": "frontend/src/screens/tasksScreen.tsx",
+      "sha256": "c5e9edb39172c1d5283ffaf4243afbab57dc57ac9ad65f9efa7e5fe33f5ddc0f",
+      "mode": 420,
+      "bytes": 2070,
+      "gitBlob": "42111574df4bbba4f3fcdadcfa5cee4e02752b93"
+    },
+    {
+      "path": "frontend/src/production/ProductionDomains.tsx",
+      "sha256": "7fd1250c3860fc262ee9480a1e0f8f6e9f59319aa582186255051367300d8ae9",
+      "mode": 420,
+      "bytes": 857,
+      "gitBlob": "7d78dcbdae20a1ff63d97a4d0d5662f561864382"
+    },
+    {
+      "path": "frontend/src/production/TaskKnowledgeDomains.tsx",
+      "sha256": "a66dc8a3e1a0902ff7b58f664c73aaad950c0635783420dfb975362d84b9a54a",
+      "mode": 420,
+      "bytes": 6143,
+      "gitBlob": "626533d6ad2b06248dbb2f47b045e3b488941094"
+    },
+    {
+      "path": "frontend/src/production/task-knowledge-tasks.ts",
+      "sha256": "6bc960b971fc731bbba0f457a8207338eb7c1447a8bf31b703a419e41421bb60",
+      "mode": 420,
+      "bytes": 19664,
+      "gitBlob": "117da8543127165617ef5ccf6613be2cd4f1cac4"
+    },
+    {
+      "path": "frontend/src/production/task-projection.ts",
+      "sha256": "51e3f8cc47962f1e964feb22f2d76557109f1b1947d6b07d379e2bba89ddd51f",
+      "mode": 420,
+      "bytes": 671,
+      "gitBlob": "8e3287710bb998275d1c2016ac99090a2c24ca2c"
+    },
+    {
+      "path": "frontend/src/production/ProductionProvider.tsx",
+      "sha256": "db79f9a1628456eb2a1f46a0e8bd69ef7acf851bc303ee524b6cc253bab3c5a0",
+      "mode": 420,
+      "bytes": 24187,
+      "gitBlob": "093f8f3ecbdc25306d0a557ade9e6f3c826890b8"
+    },
+    {
+      "path": "frontend/src/production/ProductionOwner.ts",
+      "sha256": "0c93ac13662dabf4287bb1f1d8a43858c3e29b3faa85fe3094e67c6a94338568",
+      "mode": 420,
+      "bytes": 23774,
+      "gitBlob": "66297e699c12870dc67c3effc3b307f27ccd26c8"
+    },
+    {
+      "path": "frontend/src/production/useDomainEnvironment.ts",
+      "sha256": "f58d21d02ee380d4e9863b3937a3534dab64b063afffb0cd5c76d1bcbec18a20",
+      "mode": 420,
+      "bytes": 1879,
+      "gitBlob": "c9ff8423d169bda7e868f2501dbd3a8c8e3b2cfe"
+    },
+    {
+      "path": "src/client/task-api.ts",
+      "sha256": "c9a810e18af972fa8bc6134ca21467cfbddbcec4e76fa90a1cf69354d1ceb9be",
+      "mode": 420,
+      "bytes": 9776,
+      "gitBlob": "50bb72f619c0892fd329e00407ad8c5bd1708529"
+    },
+    {
+      "path": "src/shared/tasks.ts",
+      "sha256": "26b1a456370621c6451f721cee8322a76cdabb4b74bce97a6d71dc3e1fe90c2b",
+      "mode": 420,
+      "bytes": 3156,
+      "gitBlob": "20b9260b58bbf5a72df9a094ae5fb652ad79cf3a"
+    },
+    {
+      "path": "src/client/records-api.ts",
+      "sha256": "31e1f97c975b9c080d22502b9e11592b7f6aa0dcfa0692a17e70e60ce2cb0fd8",
+      "mode": 420,
+      "bytes": 10750,
+      "gitBlob": "6aef8554eaaa2191fe61fb668e7599fa070665c0"
+    },
+    {
+      "path": "src/shared/records.ts",
+      "sha256": "376755cc1e5ede8fc060afe95ad955d2126abb484c4eaaa6e7d0c324920a9e56",
+      "mode": 420,
+      "bytes": 359,
+      "gitBlob": "40eaf6ca9eb7e44cd8ea25e7d173c39204b1b3cf"
+    },
+    {
+      "path": "frontend/src/workspaces/TasksWorkspace.tsx",
+      "sha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68",
+      "mode": 420,
+      "bytes": 1086,
+      "gitBlob": "d1855c40ffa334b514ba1db3bc77233b8eece07e"
+    },
+    {
+      "path": "frontend/src/preview/PreviewContext.tsx",
+      "sha256": "8b4ec15e63e2fc981e7d4516642493609fb1ab6368e6d77bcb41ec8ef5b1d34d",
+      "mode": 420,
+      "bytes": 214,
+      "gitBlob": "3354c02f1da1637c0953ca994f7625851ca9b2fa"
+    }
+  ]
+}

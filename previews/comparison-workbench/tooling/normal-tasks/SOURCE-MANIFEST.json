@@ -1,0 +1,349 @@
+{
+  "schemaVersion": 1,
+  "scope": "All package files except this self-referential manifest; pure tests only, no runtime admission",
+  "files": [
+    {
+      "path": "PROVENANCE.json",
+      "mode": "100644",
+      "bytes": 16001,
+      "sha256": "057133c3be8be0f84cfce036eeb04b60a2be1fc0043de6224952b984c2bde928",
+      "gitBlobOid": "edd5a11247fff4a538b8a373d3745a3022e9b9c1"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "bytes": 4936,
+      "sha256": "efc9cdb4b692f29bacc973c842c08a130eb12cbe6ca9a338f03efec6961de2d7",
+      "gitBlobOid": "79943e27facfa8de3dcdd71547bc49a8ce3a1679"
+    },
+    {
+      "path": "fixtures/expected-clock-projection.json",
+      "mode": "100644",
+      "bytes": 50725,
+      "sha256": "ce1ef3085759d866c8942c8b3115332fae4b9fe55aa076f7c3ffa6367f1ae43d",
+      "gitBlobOid": "1af580922d4126424c943a8b13af1ecb559ee093"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/app/(dashboard)/_layout.tsx",
+      "mode": "100644",
+      "bytes": 5237,
+      "sha256": "3056f77b0064b31d542a9e32ec3b73ae687f165492b54046017fbde60ef7dd13",
+      "gitBlobOid": "4293d7620743840daf1ce5cf31373b63c883c798"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/app/(dashboard)/tasks.tsx",
+      "mode": "100644",
+      "bytes": 57,
+      "sha256": "cc74e560d831c098b384af096c9c45651c0f2206bbc7934c2f1abf3adb9135b1",
+      "gitBlobOid": "54b8f0ab2634e4e69c783fa7d154dae69f5f98ef"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/preview/PreviewContext.tsx",
+      "mode": "100644",
+      "bytes": 214,
+      "sha256": "8b4ec15e63e2fc981e7d4516642493609fb1ab6368e6d77bcb41ec8ef5b1d34d",
+      "gitBlobOid": "3354c02f1da1637c0953ca994f7625851ca9b2fa"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/production/ProductionDomains.tsx",
+      "mode": "100644",
+      "bytes": 857,
+      "sha256": "7fd1250c3860fc262ee9480a1e0f8f6e9f59319aa582186255051367300d8ae9",
+      "gitBlobOid": "7d78dcbdae20a1ff63d97a4d0d5662f561864382"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/production/ProductionOwner.ts",
+      "mode": "100644",
+      "bytes": 24848,
+      "sha256": "72b75272f42c3dca8fe2bd870798f703dffa9f68e70272fbb736b15e91cbc501",
+      "gitBlobOid": "4658f0d84d612acd332eac96644a96c93c6c8422"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/production/ProductionProvider.tsx",
+      "mode": "100644",
+      "bytes": 33362,
+      "sha256": "45446b469802cabac1efcdcb76ebe0504b8150c07fe978e9260836812fc4e4b8",
+      "gitBlobOid": "68c699f765da2e09d0548cde3ca3576ab6851243"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/production/TaskKnowledgeDomains.tsx",
+      "mode": "100644",
+      "bytes": 6559,
+      "sha256": "f656aef122299f344aec619e07aa8c6ad605ecdf5d20499db0792d7acdb3c251",
+      "gitBlobOid": "a590ea636cf0bd79d3a2e4685119eacba5beb7ec"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/production/task-knowledge-tasks.ts",
+      "mode": "100644",
+      "bytes": 24685,
+      "sha256": "2f7717a718a6e57a0c3d622142eab308b504fe37f6772ffff7b5814458d3d604",
+      "gitBlobOid": "e4be90dc6d7fc703dc82fce811e67a48c0a5598b"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/production/task-projection.ts",
+      "mode": "100644",
+      "bytes": 671,
+      "sha256": "51e3f8cc47962f1e964feb22f2d76557109f1b1947d6b07d379e2bba89ddd51f",
+      "gitBlobOid": "8e3287710bb998275d1c2016ac99090a2c24ca2c"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/production/useDomainEnvironment.ts",
+      "mode": "100644",
+      "bytes": 1992,
+      "sha256": "ce1a34f55ad36f75800f82ef48ec0117c32125a28c60dcb8e5163cb57744b43d",
+      "gitBlobOid": "7dd1e0940a47be6737fda98f539b2dc4fd7caef3"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/screens/tasksScreen.tsx",
+      "mode": "100644",
+      "bytes": 4417,
+      "sha256": "b1f501004b6b5d1a72367e2016bc58b9e909d92ecd2708eb00e0029df56acbec",
+      "gitBlobOid": "697448b9f5416c28f3b1a1614b1c7441b0d6d916"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/workspaces/TasksWorkspace.tsx",
+      "mode": "100644",
+      "bytes": 1086,
+      "sha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68",
+      "gitBlobOid": "d1855c40ffa334b514ba1db3bc77233b8eece07e"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/src/client/records-api.ts",
+      "mode": "100644",
+      "bytes": 10750,
+      "sha256": "31e1f97c975b9c080d22502b9e11592b7f6aa0dcfa0692a17e70e60ce2cb0fd8",
+      "gitBlobOid": "6aef8554eaaa2191fe61fb668e7599fa070665c0"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/src/client/task-api.ts",
+      "mode": "100644",
+      "bytes": 9776,
+      "sha256": "c9a810e18af972fa8bc6134ca21467cfbddbcec4e76fa90a1cf69354d1ceb9be",
+      "gitBlobOid": "50bb72f619c0892fd329e00407ad8c5bd1708529"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/src/shared/records.ts",
+      "mode": "100644",
+      "bytes": 359,
+      "sha256": "376755cc1e5ede8fc060afe95ad955d2126abb484c4eaaa6e7d0c324920a9e56",
+      "gitBlobOid": "40eaf6ca9eb7e44cd8ea25e7d173c39204b1b3cf"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/src/shared/tasks.ts",
+      "mode": "100644",
+      "bytes": 3156,
+      "sha256": "26b1a456370621c6451f721cee8322a76cdabb4b74bce97a6d71dc3e1fe90c2b",
+      "gitBlobOid": "20b9260b58bbf5a72df9a094ae5fb652ad79cf3a"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/app/(dashboard)/_layout.tsx",
+      "mode": "100644",
+      "bytes": 5012,
+      "sha256": "fa3fe198416483c29a5ed654fa65bc13507cb96ef99ccbd0de16d31f3a6bf3ce",
+      "gitBlobOid": "4883208296703ea051aceae021618dc95dba9ed2"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/app/(dashboard)/tasks.tsx",
+      "mode": "100644",
+      "bytes": 57,
+      "sha256": "cc74e560d831c098b384af096c9c45651c0f2206bbc7934c2f1abf3adb9135b1",
+      "gitBlobOid": "54b8f0ab2634e4e69c783fa7d154dae69f5f98ef"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/preview/PreviewContext.tsx",
+      "mode": "100644",
+      "bytes": 214,
+      "sha256": "8b4ec15e63e2fc981e7d4516642493609fb1ab6368e6d77bcb41ec8ef5b1d34d",
+      "gitBlobOid": "3354c02f1da1637c0953ca994f7625851ca9b2fa"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/production/ProductionDomains.tsx",
+      "mode": "100644",
+      "bytes": 857,
+      "sha256": "7fd1250c3860fc262ee9480a1e0f8f6e9f59319aa582186255051367300d8ae9",
+      "gitBlobOid": "7d78dcbdae20a1ff63d97a4d0d5662f561864382"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/production/ProductionOwner.ts",
+      "mode": "100644",
+      "bytes": 23774,
+      "sha256": "0c93ac13662dabf4287bb1f1d8a43858c3e29b3faa85fe3094e67c6a94338568",
+      "gitBlobOid": "66297e699c12870dc67c3effc3b307f27ccd26c8"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/production/ProductionProvider.tsx",
+      "mode": "100644",
+      "bytes": 24187,
+      "sha256": "db79f9a1628456eb2a1f46a0e8bd69ef7acf851bc303ee524b6cc253bab3c5a0",
+      "gitBlobOid": "093f8f3ecbdc25306d0a557ade9e6f3c826890b8"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/production/TaskKnowledgeDomains.tsx",
+      "mode": "100644",
+      "bytes": 6143,
+      "sha256": "a66dc8a3e1a0902ff7b58f664c73aaad950c0635783420dfb975362d84b9a54a",
+      "gitBlobOid": "626533d6ad2b06248dbb2f47b045e3b488941094"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/production/task-knowledge-tasks.ts",
+      "mode": "100644",
+      "bytes": 19664,
+      "sha256": "6bc960b971fc731bbba0f457a8207338eb7c1447a8bf31b703a419e41421bb60",
+      "gitBlobOid": "117da8543127165617ef5ccf6613be2cd4f1cac4"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/production/task-projection.ts",
+      "mode": "100644",
+      "bytes": 671,
+      "sha256": "51e3f8cc47962f1e964feb22f2d76557109f1b1947d6b07d379e2bba89ddd51f",
+      "gitBlobOid": "8e3287710bb998275d1c2016ac99090a2c24ca2c"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/production/useDomainEnvironment.ts",
+      "mode": "100644",
+      "bytes": 1879,
+      "sha256": "f58d21d02ee380d4e9863b3937a3534dab64b063afffb0cd5c76d1bcbec18a20",
+      "gitBlobOid": "c9ff8423d169bda7e868f2501dbd3a8c8e3b2cfe"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/screens/tasksScreen.tsx",
+      "mode": "100644",
+      "bytes": 2070,
+      "sha256": "c5e9edb39172c1d5283ffaf4243afbab57dc57ac9ad65f9efa7e5fe33f5ddc0f",
+      "gitBlobOid": "42111574df4bbba4f3fcdadcfa5cee4e02752b93"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/workspaces/TasksWorkspace.tsx",
+      "mode": "100644",
+      "bytes": 1086,
+      "sha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68",
+      "gitBlobOid": "d1855c40ffa334b514ba1db3bc77233b8eece07e"
+    },
+    {
+      "path": "fixtures/native-contracts/original/src/client/records-api.ts",
+      "mode": "100644",
+      "bytes": 10750,
+      "sha256": "31e1f97c975b9c080d22502b9e11592b7f6aa0dcfa0692a17e70e60ce2cb0fd8",
+      "gitBlobOid": "6aef8554eaaa2191fe61fb668e7599fa070665c0"
+    },
+    {
+      "path": "fixtures/native-contracts/original/src/client/task-api.ts",
+      "mode": "100644",
+      "bytes": 9776,
+      "sha256": "c9a810e18af972fa8bc6134ca21467cfbddbcec4e76fa90a1cf69354d1ceb9be",
+      "gitBlobOid": "50bb72f619c0892fd329e00407ad8c5bd1708529"
+    },
+    {
+      "path": "fixtures/native-contracts/original/src/shared/records.ts",
+      "mode": "100644",
+      "bytes": 359,
+      "sha256": "376755cc1e5ede8fc060afe95ad955d2126abb484c4eaaa6e7d0c324920a9e56",
+      "gitBlobOid": "40eaf6ca9eb7e44cd8ea25e7d173c39204b1b3cf"
+    },
+    {
+      "path": "fixtures/native-contracts/original/src/shared/tasks.ts",
+      "mode": "100644",
+      "bytes": 3156,
+      "sha256": "26b1a456370621c6451f721cee8322a76cdabb4b74bce97a6d71dc3e1fe90c2b",
+      "gitBlobOid": "20b9260b58bbf5a72df9a094ae5fb652ad79cf3a"
+    },
+    {
+      "path": "fixtures/normal-tasks.json",
+      "mode": "100644",
+      "bytes": 18083,
+      "sha256": "d108aca1f8248e76e28ce4ab5c3497005cff5f1e6f15f2d23081b8d32bd2d5e4",
+      "gitBlobOid": "9221ea985193374c7ba2c078b3ab820ceff829cc"
+    },
+    {
+      "path": "package.json",
+      "mode": "100644",
+      "bytes": 353,
+      "sha256": "4c1bab05e9d1c0241a498157c9884ba2eb1bd33b2f4f00cfc329011df1f0c4c6",
+      "gitBlobOid": "78823bde9f9c82ab82ccaaae84399eef79a6ae7c"
+    },
+    {
+      "path": "scripts/project-normal-tasks-clock.mjs",
+      "mode": "100644",
+      "bytes": 4989,
+      "sha256": "e8b0974882a2d8366866fab6920f6b95bc8706fab9202a4b803a0450ef3c2dbf",
+      "gitBlobOid": "207785b0225f805484b00edb3c4a05552dbdc99d"
+    },
+    {
+      "path": "sources/native-contracts/harbour.json",
+      "mode": "100644",
+      "bytes": 4451,
+      "sha256": "55a4d19f8a664d84cf8671b7b77a2e2820844d1b7c6115a77753ee597f584f0c",
+      "gitBlobOid": "53b979d5191f630ffdf2b82613593f1f0c773a27"
+    },
+    {
+      "path": "sources/native-contracts/original.json",
+      "mode": "100644",
+      "bytes": 4500,
+      "sha256": "19c90ff5d0bc24d7394d2d960b117a77d0ee07a7b23bce7ec138efd1cabe10a6",
+      "gitBlobOid": "fcc57d091ea29884fc298a79510f0fdcffc34d3c"
+    },
+    {
+      "path": "sources/normal-tasks-read-bindings.json",
+      "mode": "100644",
+      "bytes": 10718,
+      "sha256": "38f646e81ae0d434bc680b40c997451005ce41f0395f54aa009b4c69b665b0b1",
+      "gitBlobOid": "e4700e69bcefddaee4421c1d598c3005244ef1b9"
+    },
+    {
+      "path": "sources/registry.json",
+      "mode": "100644",
+      "bytes": 2856,
+      "sha256": "27446ea8bbf339d8200f828ad93cd0a54ccf97124839f52db721b03fd30d8466",
+      "gitBlobOid": "31fb47150bfacfe082e6ca82d97a4c20257b8959"
+    },
+    {
+      "path": "sources/task-bindings.json",
+      "mode": "100644",
+      "bytes": 47610,
+      "sha256": "97236c2817284d761c599bbfee6d6bc6e25ef1a80af7655502094de750a7ed07",
+      "gitBlobOid": "b333ef27836b0e6f5f6f34853b95721939c574a4"
+    },
+    {
+      "path": "src/normal-tasks-read-binding.mjs",
+      "mode": "100644",
+      "bytes": 4366,
+      "sha256": "fc50e272b7b30fe350d81afab2459b79a5da889048cda94c12c3c5a40f2081b4",
+      "gitBlobOid": "279176ab016b8eb8c77d0a9ed7bcd8670a429edc"
+    },
+    {
+      "path": "src/normal-tasks.mjs",
+      "mode": "100644",
+      "bytes": 2071,
+      "sha256": "14939b140eee4af0d5be42802d13a47d0d30528d60551dbce0e21a2b0ef45087",
+      "gitBlobOid": "b00127f0d546dbba9061bbbd9cc08b8a91f2df48"
+    },
+    {
+      "path": "src/registry.mjs",
+      "mode": "100644",
+      "bytes": 4345,
+      "sha256": "72ab4c6f804489c0f43d7c7a02ba7cc34145554d8e487bce143e9686b56af52f",
+      "gitBlobOid": "b3e573a0375a0101271fb374510dc60aeec89b9c"
+    },
+    {
+      "path": "tests/source-clock/clock.test.mjs",
+      "mode": "100644",
+      "bytes": 7814,
+      "sha256": "9d1fd72d07048686debdc849aff83b86e4e07f9edc37a057c9a1bd5680ad13fd",
+      "gitBlobOid": "0f7219401c0ca056f897515ae2590f0238dfbb9d"
+    },
+    {
+      "path": "tests/source-clock/review-r1.test.mjs",
+      "mode": "100644",
+      "bytes": 4593,
+      "sha256": "15916eaeff8c4fa8c6099ef24b09c697909f710a3a1f425d4c9a610dfab0fc79",
+      "gitBlobOid": "f8f41d9f54c2f7e04bd08a411e22a5468502aa0b"
+    },
+    {
+      "path": "tests/source-pair/normal-binding.test.mjs",
+      "mode": "100644",
+      "bytes": 6714,
+      "sha256": "7d4575209b9b048d0f0a19a48c5de2c473c9cf1850f1644e4a5b96675a14e127",
+      "gitBlobOid": "3127f69bb02f0d0d9ba8960f02383c05cd868aa1"
+    }
+  ]
+}

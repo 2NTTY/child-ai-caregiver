@@ -1,0 +1,296 @@
+{
+  "schemaVersion": 1,
+  "scope": "Additive public source tooling only; not wired into the 458-file application",
+  "reviewedOrigins": {
+    "normalReadPair": {
+      "sourceTree": "f84827e16b5872322e81194687773b0143eee58a",
+      "sourceReviewSha256": "258c2273bba94c67b6dab1bb500d548b072e56d278dc4d5c3ffdf20067b8d8ec"
+    },
+    "readClockFix01": {
+      "sourceTree": "9730cbbccef0438894fa46b6cea5aa56e6d0d769",
+      "sourceReviewSha256": "514c55270496ad2caae54ee6854f39e3319e5f035957ad46b52d4a4f672057f2"
+    }
+  },
+  "historicalReviewScope": "Prior SOURCE ALLOW judgments do not automatically approve this metadata/test relocation or claim new test results. Source tree IDs are local reviewed content identities, not claims of earlier published commits.",
+  "files": [
+    {
+      "path": "src/registry.mjs",
+      "kind": "unchanged-reviewed-source",
+      "originalSha256": "72ab4c6f804489c0f43d7c7a02ba7cc34145554d8e487bce143e9686b56af52f",
+      "publishedSha256": "72ab4c6f804489c0f43d7c7a02ba7cc34145554d8e487bce143e9686b56af52f"
+    },
+    {
+      "path": "src/normal-tasks.mjs",
+      "kind": "unchanged-reviewed-source",
+      "originalSha256": "14939b140eee4af0d5be42802d13a47d0d30528d60551dbce0e21a2b0ef45087",
+      "publishedSha256": "14939b140eee4af0d5be42802d13a47d0d30528d60551dbce0e21a2b0ef45087"
+    },
+    {
+      "path": "src/normal-tasks-read-binding.mjs",
+      "kind": "unchanged-reviewed-source",
+      "originalSha256": "fc50e272b7b30fe350d81afab2459b79a5da889048cda94c12c3c5a40f2081b4",
+      "publishedSha256": "fc50e272b7b30fe350d81afab2459b79a5da889048cda94c12c3c5a40f2081b4"
+    },
+    {
+      "path": "sources/registry.json",
+      "kind": "unchanged-reviewed-source",
+      "originalSha256": "27446ea8bbf339d8200f828ad93cd0a54ccf97124839f52db721b03fd30d8466",
+      "publishedSha256": "27446ea8bbf339d8200f828ad93cd0a54ccf97124839f52db721b03fd30d8466"
+    },
+    {
+      "path": "fixtures/normal-tasks.json",
+      "kind": "unchanged-reviewed-source",
+      "originalSha256": "d108aca1f8248e76e28ce4ab5c3497005cff5f1e6f15f2d23081b8d32bd2d5e4",
+      "publishedSha256": "d108aca1f8248e76e28ce4ab5c3497005cff5f1e6f15f2d23081b8d32bd2d5e4"
+    },
+    {
+      "path": "scripts/project-normal-tasks-clock.mjs",
+      "kind": "unchanged-reviewed-source",
+      "originalSha256": "e8b0974882a2d8366866fab6920f6b95bc8706fab9202a4b803a0450ef3c2dbf",
+      "publishedSha256": "e8b0974882a2d8366866fab6920f6b95bc8706fab9202a4b803a0450ef3c2dbf"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/app/(dashboard)/tasks.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "cc74e560d831c098b384af096c9c45651c0f2206bbc7934c2f1abf3adb9135b1",
+      "publishedSha256": "cc74e560d831c098b384af096c9c45651c0f2206bbc7934c2f1abf3adb9135b1"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/app/(dashboard)/_layout.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "fa3fe198416483c29a5ed654fa65bc13507cb96ef99ccbd0de16d31f3a6bf3ce",
+      "publishedSha256": "fa3fe198416483c29a5ed654fa65bc13507cb96ef99ccbd0de16d31f3a6bf3ce"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/screens/tasksScreen.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "c5e9edb39172c1d5283ffaf4243afbab57dc57ac9ad65f9efa7e5fe33f5ddc0f",
+      "publishedSha256": "c5e9edb39172c1d5283ffaf4243afbab57dc57ac9ad65f9efa7e5fe33f5ddc0f"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/production/ProductionDomains.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "7fd1250c3860fc262ee9480a1e0f8f6e9f59319aa582186255051367300d8ae9",
+      "publishedSha256": "7fd1250c3860fc262ee9480a1e0f8f6e9f59319aa582186255051367300d8ae9"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/production/TaskKnowledgeDomains.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "a66dc8a3e1a0902ff7b58f664c73aaad950c0635783420dfb975362d84b9a54a",
+      "publishedSha256": "a66dc8a3e1a0902ff7b58f664c73aaad950c0635783420dfb975362d84b9a54a"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/production/task-knowledge-tasks.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "6bc960b971fc731bbba0f457a8207338eb7c1447a8bf31b703a419e41421bb60",
+      "publishedSha256": "6bc960b971fc731bbba0f457a8207338eb7c1447a8bf31b703a419e41421bb60"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/production/task-projection.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "51e3f8cc47962f1e964feb22f2d76557109f1b1947d6b07d379e2bba89ddd51f",
+      "publishedSha256": "51e3f8cc47962f1e964feb22f2d76557109f1b1947d6b07d379e2bba89ddd51f"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/production/ProductionProvider.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "db79f9a1628456eb2a1f46a0e8bd69ef7acf851bc303ee524b6cc253bab3c5a0",
+      "publishedSha256": "db79f9a1628456eb2a1f46a0e8bd69ef7acf851bc303ee524b6cc253bab3c5a0"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/production/ProductionOwner.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "0c93ac13662dabf4287bb1f1d8a43858c3e29b3faa85fe3094e67c6a94338568",
+      "publishedSha256": "0c93ac13662dabf4287bb1f1d8a43858c3e29b3faa85fe3094e67c6a94338568"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/production/useDomainEnvironment.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "f58d21d02ee380d4e9863b3937a3534dab64b063afffb0cd5c76d1bcbec18a20",
+      "publishedSha256": "f58d21d02ee380d4e9863b3937a3534dab64b063afffb0cd5c76d1bcbec18a20"
+    },
+    {
+      "path": "fixtures/native-contracts/original/src/client/task-api.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "c9a810e18af972fa8bc6134ca21467cfbddbcec4e76fa90a1cf69354d1ceb9be",
+      "publishedSha256": "c9a810e18af972fa8bc6134ca21467cfbddbcec4e76fa90a1cf69354d1ceb9be"
+    },
+    {
+      "path": "fixtures/native-contracts/original/src/shared/tasks.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "26b1a456370621c6451f721cee8322a76cdabb4b74bce97a6d71dc3e1fe90c2b",
+      "publishedSha256": "26b1a456370621c6451f721cee8322a76cdabb4b74bce97a6d71dc3e1fe90c2b"
+    },
+    {
+      "path": "fixtures/native-contracts/original/src/client/records-api.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "31e1f97c975b9c080d22502b9e11592b7f6aa0dcfa0692a17e70e60ce2cb0fd8",
+      "publishedSha256": "31e1f97c975b9c080d22502b9e11592b7f6aa0dcfa0692a17e70e60ce2cb0fd8"
+    },
+    {
+      "path": "fixtures/native-contracts/original/src/shared/records.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "376755cc1e5ede8fc060afe95ad955d2126abb484c4eaaa6e7d0c324920a9e56",
+      "publishedSha256": "376755cc1e5ede8fc060afe95ad955d2126abb484c4eaaa6e7d0c324920a9e56"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/workspaces/TasksWorkspace.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68",
+      "publishedSha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68"
+    },
+    {
+      "path": "fixtures/native-contracts/original/frontend/src/preview/PreviewContext.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "8b4ec15e63e2fc981e7d4516642493609fb1ab6368e6d77bcb41ec8ef5b1d34d",
+      "publishedSha256": "8b4ec15e63e2fc981e7d4516642493609fb1ab6368e6d77bcb41ec8ef5b1d34d"
+    },
+    {
+      "path": "sources/native-contracts/original.json",
+      "kind": "new-public-subset-inventory",
+      "publishedSha256": "19c90ff5d0bc24d7394d2d960b117a77d0ee07a7b23bce7ec138efd1cabe10a6"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/app/(dashboard)/tasks.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "cc74e560d831c098b384af096c9c45651c0f2206bbc7934c2f1abf3adb9135b1",
+      "publishedSha256": "cc74e560d831c098b384af096c9c45651c0f2206bbc7934c2f1abf3adb9135b1"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/app/(dashboard)/_layout.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "3056f77b0064b31d542a9e32ec3b73ae687f165492b54046017fbde60ef7dd13",
+      "publishedSha256": "3056f77b0064b31d542a9e32ec3b73ae687f165492b54046017fbde60ef7dd13"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/screens/tasksScreen.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "b1f501004b6b5d1a72367e2016bc58b9e909d92ecd2708eb00e0029df56acbec",
+      "publishedSha256": "b1f501004b6b5d1a72367e2016bc58b9e909d92ecd2708eb00e0029df56acbec"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/production/ProductionDomains.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "7fd1250c3860fc262ee9480a1e0f8f6e9f59319aa582186255051367300d8ae9",
+      "publishedSha256": "7fd1250c3860fc262ee9480a1e0f8f6e9f59319aa582186255051367300d8ae9"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/production/TaskKnowledgeDomains.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "f656aef122299f344aec619e07aa8c6ad605ecdf5d20499db0792d7acdb3c251",
+      "publishedSha256": "f656aef122299f344aec619e07aa8c6ad605ecdf5d20499db0792d7acdb3c251"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/production/task-knowledge-tasks.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "2f7717a718a6e57a0c3d622142eab308b504fe37f6772ffff7b5814458d3d604",
+      "publishedSha256": "2f7717a718a6e57a0c3d622142eab308b504fe37f6772ffff7b5814458d3d604"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/production/task-projection.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "51e3f8cc47962f1e964feb22f2d76557109f1b1947d6b07d379e2bba89ddd51f",
+      "publishedSha256": "51e3f8cc47962f1e964feb22f2d76557109f1b1947d6b07d379e2bba89ddd51f"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/production/ProductionProvider.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "45446b469802cabac1efcdcb76ebe0504b8150c07fe978e9260836812fc4e4b8",
+      "publishedSha256": "45446b469802cabac1efcdcb76ebe0504b8150c07fe978e9260836812fc4e4b8"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/production/ProductionOwner.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "72b75272f42c3dca8fe2bd870798f703dffa9f68e70272fbb736b15e91cbc501",
+      "publishedSha256": "72b75272f42c3dca8fe2bd870798f703dffa9f68e70272fbb736b15e91cbc501"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/production/useDomainEnvironment.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "ce1a34f55ad36f75800f82ef48ec0117c32125a28c60dcb8e5163cb57744b43d",
+      "publishedSha256": "ce1a34f55ad36f75800f82ef48ec0117c32125a28c60dcb8e5163cb57744b43d"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/src/client/task-api.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "c9a810e18af972fa8bc6134ca21467cfbddbcec4e76fa90a1cf69354d1ceb9be",
+      "publishedSha256": "c9a810e18af972fa8bc6134ca21467cfbddbcec4e76fa90a1cf69354d1ceb9be"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/src/shared/tasks.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "26b1a456370621c6451f721cee8322a76cdabb4b74bce97a6d71dc3e1fe90c2b",
+      "publishedSha256": "26b1a456370621c6451f721cee8322a76cdabb4b74bce97a6d71dc3e1fe90c2b"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/src/client/records-api.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "31e1f97c975b9c080d22502b9e11592b7f6aa0dcfa0692a17e70e60ce2cb0fd8",
+      "publishedSha256": "31e1f97c975b9c080d22502b9e11592b7f6aa0dcfa0692a17e70e60ce2cb0fd8"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/src/shared/records.ts",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "376755cc1e5ede8fc060afe95ad955d2126abb484c4eaaa6e7d0c324920a9e56",
+      "publishedSha256": "376755cc1e5ede8fc060afe95ad955d2126abb484c4eaaa6e7d0c324920a9e56"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/workspaces/TasksWorkspace.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68",
+      "publishedSha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68"
+    },
+    {
+      "path": "fixtures/native-contracts/harbour/frontend/src/preview/PreviewContext.tsx",
+      "kind": "unchanged-frozen-source-as-inert-test-input",
+      "originalSha256": "8b4ec15e63e2fc981e7d4516642493609fb1ab6368e6d77bcb41ec8ef5b1d34d",
+      "publishedSha256": "8b4ec15e63e2fc981e7d4516642493609fb1ab6368e6d77bcb41ec8ef5b1d34d"
+    },
+    {
+      "path": "sources/native-contracts/harbour.json",
+      "kind": "new-public-subset-inventory",
+      "publishedSha256": "55a4d19f8a664d84cf8671b7b77a2e2820844d1b7c6115a77753ee597f584f0c"
+    },
+    {
+      "path": "sources/normal-tasks-read-bindings.json",
+      "kind": "relocated-metadata",
+      "originalSha256": "0de460c005b29e9264ba1c73aaf2302e048428bb4368081e0c5016b13946195c",
+      "publishedSha256": "38f646e81ae0d434bc680b40c997451005ce41f0395f54aa009b4c69b665b0b1"
+    },
+    {
+      "path": "sources/task-bindings.json",
+      "kind": "omitted-private-locators-only",
+      "originalSha256": "47e73aeacbd01ecbc698a09adf18cdceeeba9082af047e7833a530d4c2f15d3a",
+      "publishedSha256": "97236c2817284d761c599bbfee6d6bc6e25ef1a80af7655502094de750a7ed07"
+    },
+    {
+      "path": "tests/source-pair/normal-binding.test.mjs",
+      "kind": "test-file-locator-relocation-only",
+      "originalSha256": "3e35d4dafb400e2864e70c63ab6e0c9c7e692cecf3b7f7959110110eb93de7e2",
+      "publishedSha256": "7d4575209b9b048d0f0a19a48c5de2c473c9cf1850f1644e4a5b96675a14e127"
+    },
+    {
+      "path": "tests/source-clock/clock.test.mjs",
+      "kind": "test-file-locator-relocation-only",
+      "originalSha256": "fc60fbdbe84ae9a26a7653a125b9d6e62486af46b0c0063a0d588eb187809338",
+      "publishedSha256": "9d1fd72d07048686debdc849aff83b86e4e07f9edc37a057c9a1bd5680ad13fd"
+    },
+    {
+      "path": "tests/source-clock/review-r1.test.mjs",
+      "kind": "test-file-locator-relocation-only",
+      "originalSha256": "3732d11a78c562e68448dcc98895edf3f35e1e3d6d91d37dce8e5bcad6f9853a",
+      "publishedSha256": "15916eaeff8c4fa8c6099ef24b09c697909f710a3a1f425d4c9a610dfab0fc79"
+    },
+    {
+      "path": "fixtures/expected-clock-projection.json",
+      "kind": "unchanged-reviewed-inert-projection-test-vector",
+      "originalSha256": "ce1ef3085759d866c8942c8b3115332fae4b9fe55aa076f7c3ffa6367f1ae43d",
+      "publishedSha256": "ce1ef3085759d866c8942c8b3115332fae4b9fe55aa076f7c3ffa6367f1ae43d"
+    },
+    {
+      "path": "package.json",
+      "kind": "new-dependency-free-test-entry",
+      "publishedSha256": "4c1bab05e9d1c0241a498157c9884ba2eb1bd33b2f4f00cfc329011df1f0c4c6"
+    }
+  ]
+}

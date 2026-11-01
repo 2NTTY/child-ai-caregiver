@@ -1,0 +1,12 @@
+{
+  "name": "comparison-workbench-normal-tasks-source-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.12.0 <25"
+  },
+  "scripts": {
+    "test": "node --test --test-concurrency=1 tests/source-pair/normal-binding.test.mjs tests/source-clock/clock.test.mjs tests/source-clock/review-r1.test.mjs"
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "scope": "Public subset inventory for inert contract-byte tests; not a complete runnable application",
+  "source": {
+    "kind": "git-commit",
+    "appCommit": "4050c0a16d0a9735923434abc9749ecd416d7926",
+    "sourceTree": "fcc2393ea5f6bf6963fbf9b281f24bd02de76ea2"
+  },
+  "historicalFullSourceManifestSha256": "e6de2f9e0d3bb04bd2205f1c64460806c395fd5550adf9127e3453582a6f9cb4",
+  "files": [
+    {
+      "path": "frontend/app/(dashboard)/tasks.tsx",
+      "sha256": "cc74e560d831c098b384af096c9c45651c0f2206bbc7934c2f1abf3adb9135b1",
+      "mode": 420,
+      "bytes": 57,
+      "gitBlob": "54b8f0ab2634e4e69c783fa7d154dae69f5f98ef"
+    },
+    {
+      "path": "frontend/app/(dashboard)/_layout.tsx",
+      "sha256": "3056f77b0064b31d542a9e32ec3b73ae687f165492b54046017fbde60ef7dd13",
+      "mode": 420,
+      "bytes": 5237,
+      "gitBlob": "4293d7620743840daf1ce5cf31373b63c883c798"
+    },
+    {
+      "path": "frontend/src/screens/tasksScreen.tsx",
+      "sha256": "b1f501004b6b5d1a72367e2016bc58b9e909d92ecd2708eb00e0029df56acbec",
+      "mode": 420,
+      "bytes": 4417,
+      "gitBlob": "697448b9f5416c28f3b1a1614b1c7441b0d6d916"
+    },
+    {
+      "path": "frontend/src/production/ProductionDomains.tsx",
+      "sha256": "7fd1250c3860fc262ee9480a1e0f8f6e9f59319aa582186255051367300d8ae9",
+      "mode": 420,
+      "bytes": 857,
+      "gitBlob": "7d78dcbdae20a1ff63d97a4d0d5662f561864382"
+    },
+    {
+      "path": "frontend/src/production/TaskKnowledgeDomains.tsx",
+      "sha256": "f656aef122299f344aec619e07aa8c6ad605ecdf5d20499db0792d7acdb3c251",
+      "mode": 420,
+      "bytes": 6559,
+      "gitBlob": "a590ea636cf0bd79d3a2e4685119eacba5beb7ec"
+    },
+    {
+      "path": "frontend/src/production/task-knowledge-tasks.ts",
+      "sha256": "2f7717a718a6e57a0c3d622142eab308b504fe37f6772ffff7b5814458d3d604",
+      "mode": 420,
+      "bytes": 24685,
+      "gitBlob": "e4be90dc6d7fc703dc82fce811e67a48c0a5598b"
+    },
+    {
+      "path": "frontend/src/production/task-projection.ts",
+      "sha256": "51e3f8cc47962f1e964feb22f2d76557109f1b1947d6b07d379e2bba89ddd51f",
+      "mode": 420,
+      "bytes": 671,
+      "gitBlob": "8e3287710bb998275d1c2016ac99090a2c24ca2c"
+    },
+    {
+      "path": "frontend/src/production/ProductionProvider.tsx",
+      "sha256": "45446b469802cabac1efcdcb76ebe0504b8150c07fe978e9260836812fc4e4b8",
+      "mode": 420,
+      "bytes": 33362,
+      "gitBlob": "68c699f765da2e09d0548cde3ca3576ab6851243"
+    },
+    {
+      "path": "frontend/src/production/ProductionOwner.ts",
+      "sha256": "72b75272f42c3dca8fe2bd870798f703dffa9f68e70272fbb736b15e91cbc501",
+      "mode": 420,
+      "bytes": 24848,
+      "gitBlob": "4658f0d84d612acd332eac96644a96c93c6c8422"
+    },
+    {
+      "path": "frontend/src/production/useDomainEnvironment.ts",
+      "sha256": "ce1a34f55ad36f75800f82ef48ec0117c32125a28c60dcb8e5163cb57744b43d",
+      "mode": 420,
+      "bytes": 1992,
+      "gitBlob": "7dd1e0940a47be6737fda98f539b2dc4fd7caef3"
+    },
+    {
+      "path": "src/client/task-api.ts",
+      "sha256": "c9a810e18af972fa8bc6134ca21467cfbddbcec4e76fa90a1cf69354d1ceb9be",
+      "mode": 420,
+      "bytes": 9776,
+      "gitBlob": "50bb72f619c0892fd329e00407ad8c5bd1708529"
+    },
+    {
+      "path": "src/shared/tasks.ts",
+      "sha256": "26b1a456370621c6451f721cee8322a76cdabb4b74bce97a6d71dc3e1fe90c2b",
+      "mode": 420,
+      "bytes": 3156,
+      "gitBlob": "20b9260b58bbf5a72df9a094ae5fb652ad79cf3a"
+    },
+    {
+      "path": "src/client/records-api.ts",
+      "sha256": "31e1f97c975b9c080d22502b9e11592b7f6aa0dcfa0692a17e70e60ce2cb0fd8",
+      "mode": 420,
+      "bytes": 10750,
+      "gitBlob": "6aef8554eaaa2191fe61fb668e7599fa070665c0"
+    },
+    {
+      "path": "src/shared/records.ts",
+      "sha256": "376755cc1e5ede8fc060afe95ad955d2126abb484c4eaaa6e7d0c324920a9e56",
+      "mode": 420,
+      "bytes": 359,
+      "gitBlob": "40eaf6ca9eb7e44cd8ea25e7d173c39204b1b3cf"
+    },
+    {
+      "path": "frontend/src/workspaces/TasksWorkspace.tsx",
+      "sha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68",
+      "mode": 420,
+      "bytes": 1086,
+      "gitBlob": "d1855c40ffa334b514ba1db3bc77233b8eece07e"
+    },
+    {
+      "path": "frontend/src/preview/PreviewContext.tsx",
+      "sha256": "8b4ec15e63e2fc981e7d4516642493609fb1ab6368e6d77bcb41ec8ef5b1d34d",
+      "mode": 420,
+      "bytes": 214,
+      "gitBlob": "3354c02f1da1637c0953ca994f7625851ca9b2fa"
+    }
+  ]
+}
