@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "scope": "Self-contained pure lifecycle subset of S1 Fix01; not a full S1 delivery",
+  "status": "SOURCE_ALLOW_PURE_UNIT_CHECKPOINT",
+  "repository": "2NTTY/child-ai-caregiver",
+  "targetBranch": "codex/five-version-workbench-20261101",
+  "recordedPublicBaseCommit": "b8b29a16065837b584ff3389a8abc11f3de79745",
+  "donorIdentity": {
+    "revision": "S1 Fix01",
+    "packetSha256": "dc4a8a8ceab141265835ce3cb6eba30bf8988c801f70c3ccb67bb0beb985a66a",
+    "sourceReviewSha256": "8039c813ab7e7155ee8fc46392b29559b7ba365df2ec427fa8ea3da0d5958abb",
+    "sourceReviewScope": "Scoped inert S1 R1/R2 correction only"
+  },
+  "files": [
+    {
+      "path": "src/ssr-lifecycle.mjs",
+      "bytes": 10934,
+      "sha256": "406383cbf990f4db98ce476dff52b61e4e966e617f13f327ad9b3227280ddb0e",
+      "gitBlobOid": "763e6ee2d599b462b926f6f273c6c800b61b656b",
+      "mode": "100644",
+      "role": "pure-lifecycle-observer-source",
+      "originalRelativePath": "src/ssr-lifecycle.mjs",
+      "byteChanges": false
+    },
+    {
+      "path": "tests/lifecycle.test.mjs",
+      "bytes": 9931,
+      "sha256": "c391b30638f89888082dd3c2e42073423a8bb44c406a93a5bdc451c4f14af234",
+      "gitBlobOid": "98a72940c359d21f3f9192ac881eb5546764c8b0",
+      "mode": "100644",
+      "role": "synthetic-unit-test",
+      "originalRelativePath": "tests/lifecycle.test.mjs",
+      "byteChanges": false
+    },
+    {
+      "path": "tests/fix01.test.mjs",
+      "bytes": 4324,
+      "sha256": "9af0f521307f14088bce38a783d5d9dec4e620d47d48210061e25ce59c6b96a6",
+      "gitBlobOid": "d7928277d61424806c055d0d396e23e3f57ddf72",
+      "mode": "100644",
+      "role": "synthetic-correction-test",
+      "originalRelativePath": "tests/fix01.test.mjs",
+      "byteChanges": false
+    },
+    {
+      "path": "tests/synthetic-helpers.mjs",
+      "bytes": 2506,
+      "sha256": "ab3ace4534f9a595c3d1e887cde622d329e5b718bba8a5fa36ef65decffb360f",
+      "gitBlobOid": "b22fa1d0160b96caab1ec4c129c1a2e17628353e",
+      "mode": "100644",
+      "role": "synthetic-test-helper",
+      "originalRelativePath": "tests/synthetic-helpers.mjs",
+      "byteChanges": false
+    },
+    {
+      "path": "README.md",
+      "bytes": 4251,
+      "sha256": "eeb05dd21ee518ce25d7557568d8b9c03117f409c50ecdc3f735638b969f8bc4",
+      "gitBlobOid": "bcea6ce8cef5ffc778aee2c601a16a895156df6c",
+      "mode": "100644",
+      "role": "public-scope-documentation"
+    }
+  ],
+  "manifestSelfHash": "Intentionally omitted; the external delivery inventory pins this file",
+  "newPackageReview": {
+    "status": "SOURCE_ALLOW",
+    "scope": "Unchanged selected code/test/helper files, public safety and dependency closure; not runtime acceptance",
+    "reviewSha256": "cae4482fd57b1f4f827064276cf0f3145d15ccd9dd8dce457c9dab471e65faf1",
+    "metadataTreatment": "Only README and PROVENANCE changed after the pure-unit run; final metadata has a separate exact-byte review",
+    "publicationClaim": false
+  },
+  "relocatedSyntheticTests": {
+    "status": "PASS",
+    "dateUTC": "2026-11-01",
+    "tests": 27,
+    "passed": 27,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exitCode": 0,
+    "supervisedWallSeconds": 0.2646901479965891,
+    "timeout": false,
+    "termSent": false,
+    "killSent": false,
+    "nodeVersion": "24.22.1",
+    "nodeBinarySha256": "61ab14cd750fc24d5db53490ec5fc40f756e4b6e136b78cf7004265471d9bd1d",
+    "testFiles": [
+      "tests/lifecycle.test.mjs",
+      "tests/fix01.test.mjs"
+    ],
+    "supervisorEvidenceSha256": "8a84656328378136aa172e4ef888a4313976ec955d49ca97676936845356426b",
+    "stdoutEvidenceSha256": "559dd764cf8250d921a4c903aba1a8f6c09fd30b25f1245e75f6a96f34298745",
+    "runCount": 1,
+    "metadataOnlyFinalCopyRetested": false,
+    "codeAndRelativeLayoutUnchangedInFinalCopy": true,
+    "scope": "Pure synthetic unit checks only; no SDK, React, real SSR, compiler, full suite, build/export or browser execution"
+  },
+  "sourceAndTestBytesChanged": false,
+  "nativePreparation": false,
+  "runtimeReady": false,
+  "frameReady": false,
+  "selectable": false,
+  "mutationReady": false,
+  "actualSSRExecuted": false,
+  "formalBuildOrBrowserAcceptance": false,
+  "sourceDependencies": [],
+  "testDependencies": {
+    "builtins": [
+      "node:test",
+      "node:assert/strict",
+      "node:fs",
+      "node:vm"
+    ],
+    "globals": [
+      "Promise",
+      "Response",
+      "structuredClone",
+      "URL"
+    ],
+    "externalPackages": [],
+    "localFiles": [
+      "src/ssr-lifecycle.mjs",
+      "tests/fix01.test.mjs",
+      "tests/lifecycle.test.mjs",
+      "tests/synthetic-helpers.mjs"
+    ]
+  }
+}
