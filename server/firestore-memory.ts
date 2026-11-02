@@ -20,6 +20,7 @@ import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
 import { importConfirmationActor, makeImportProvenance } from './handover-provenance.ts';
 import type { HandoverImportRow } from './handover-import.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
+import { selectSummaryBatchMessages, estimateSummaryPayloadCharacters, SUMMARY_SAFE_REQUEST_CEILING } from './summary-window-helper.ts';
 
 const uuid = z.uuid(), version = z.number().int().positive().max(2147483646), time = z.iso.datetime({ offset: true });
 const user = z.string().min(1).max(256), visibility = z.enum(['private', 'family']), FAR_FUTURE = '9999-12-31T23:59:59.999Z';
@@ -420,7 +421,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
       if (!message) return null;
       messages.push(message);
     }
-    if (JSON.stringify({ messages, sources }).length > 12000) return null;
+    if (estimateSummaryPayloadCharacters(messages, sources) > SUMMARY_SAFE_REQUEST_CEILING) return null;
     const head = await summaryInput(binding);
     const input: SummaryInput = { previous: null, previousVersion: head.input.previousVersion, basis: head.input.basis,
       messages, moreUncovered: head.input.moreUncovered || head.input.messages.length > 0, summaryMode: 'isolated_batch', repairOf: id, currentSources: sources };
@@ -574,15 +575,13 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
           const repair = await repairInput(binding, item.saved.summary.id); if (repair) return repair.input;
         }
       }
-      // No empty work and no re-summarizing the prior text. A complete message is the smallest unit.
-      const messages: SummaryInput['messages'] = [];
-      for (const message of state.input.messages) {
-        if (JSON.stringify([...messages, message]).length > 12000) break;
-        messages.push(message);
+      // Normal accumulation stops at 12k to prevent ballooning; bounded first-item accommodation allows legal long messages within the safe gateway ceiling.
+      const selected = selectSummaryBatchMessages(state.input.messages);
+      if (selected.requiresContinuation) {
+        return { ...state.input, messages: [], unavailableReason: 'message_requires_continuation' };
       }
-      return messages.length ? { ...state.input, previous: null, messages,
-        moreUncovered: state.input.moreUncovered || messages.length < state.input.messages.length }
-        : state.input.messages.length ? { ...state.input, messages: [], unavailableReason: 'message_requires_continuation' } : null;
+      return selected.messages.length ? { ...state.input, previous: null, messages: selected.messages,
+        moreUncovered: state.input.moreUncovered || selected.moreUncovered } : null;
     }),
     recall: (u, c, keys) => authority.runTransaction(u, c, binding => recall(binding, keys)),
     async readFamilyFacts(binding, keys) {
