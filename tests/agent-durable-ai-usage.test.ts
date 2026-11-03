@@ -18,6 +18,14 @@ function deferred() {
   let resolve!: () => void;
   const promise = new Promise<void>(done => { resolve = done; }); return { promise, resolve };
 }
+async function waitForSignal(promise: Promise<void>, label: string, timeoutMs = 5000) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([promise, new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`Timed out waiting for ${label}`)), timeoutMs);
+    })]);
+  } finally { clearTimeout(timer); }
+}
 async function fixture(userLimit = 20) {
   const f = firestoreUsageFixture(Date.now()), requests: DurableAiUsageRequest[] = [];
   const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project', AI_DAILY_USER_ATTEMPTS: String(userLimit) });
@@ -41,7 +49,8 @@ async function fixture(userLimit = 20) {
   const success = { content: { role: 'model', parts: [{ text: 'Synthetic response' }] }, finishReason: FinishReason.STOP,
     usageMetadata: { promptTokenCount: 10, totalTokenCount: 15, cachedContentTokenCount: 2 } };
   const options = { config, nativeSessionService: new InMemorySessionService(),
-    durableBudget: { adapter: root, context, dailyUsage: daily },
+    // Match the persisted root exactly; this fixture deliberately retains its eight-tool allowance.
+    durableBudget: { adapter: root, context, dailyUsage: daily, runLimits: { ...context.binding.limits } },
     usage: { reserve: async () => { throw new Error('Legacy SQL quota must not be called'); },
       record: async () => { throw new Error('Legacy SQL accounting must not be called'); } },
     provider: { generate: async () => { providers++; return success; } } };
@@ -144,8 +153,12 @@ test('cancellation during a provider request preserves unknown accounting and ig
   const running = createAgentRuntime({ ...s.options, provider: { generate: async () => {
     providers++; entered.resolve(); await released.promise; return s.success;
   } } }).run({ ...s.input, signal: cancellation.signal });
-  await entered.promise; cancellation.abort();
-  const result = await running; await recorded.promise;
+  try { await waitForSignal(entered.promise, 'provider dispatch'); }
+  catch (error) { cancellation.abort(); released.resolve(); await running; throw error; }
+  cancellation.abort();
+  const result = await running;
+  try { await waitForSignal(recorded.promise, 'daily usage recording'); }
+  finally { released.resolve(); }
   assert.equal(result.stopReason, 'cancelled'); assert.equal(result.text, null);
   const receipt = await s.daily.read(s.requests[0]); assert.equal(receipt?.record?.outcome, 'timeout');
   assert.equal(receipt?.record?.inputTokens, null); assert.equal((await s.daily.getForUser(s.input.scope.userId)).unknownUsageAttempts, 1);
@@ -189,4 +202,10 @@ test('transient provider retries stay in one Runner, charge each attempt and nev
     await createAgentRuntime({ ...configured, nativeSessionService: new InMemorySessionService() }).run(input);
     assert.equal(calls, 5); assert.equal(effects, 1);
   }
+});
+
+test('provider synchronization fails with a bounded diagnostic when dispatch never starts', { timeout: 1000 }, async () => {
+  await assert.rejects(waitForSignal(deferred().promise, 'provider dispatch', 10), {
+    message: 'Timed out waiting for provider dispatch',
+  });
 });

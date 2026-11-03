@@ -247,12 +247,21 @@ test('restore applies current revocation and journal erasure without restoring s
   assert.equal(firestoreAuthoritySchemas.identity.parse(find(restored, 'authority-identity', OWNER).value).state, 'revoked');
   assert.equal(firestoreAuthoritySchemas.invitation.parse(find(restored, 'authority-invitation', EMAIL).value).state, 'revoked');
   assert.equal(restored.some(row => row.context.kind === 'child' && row.context.id === laterChild.scope.childId), false);
-  assert.equal(restored.filter(row => row.context.kind === 'photo').length, 1);
-  assert.equal(restored.some(row => row.context.kind === 'photo' && row.context.id === erased.id), false);
+  const restoredPhotos = restored.filter(row => row.context.kind === 'photo').map(row => firestorePhotoSchemas.photo.parse(row.value));
+  assert.deepEqual(restoredPhotos.map(row => row.id).sort(), [erased.id, survivor.id, laterPhoto.id].sort());
+  assert.deepEqual(restoredPhotos.filter(row => row.state !== 'deleted').map(row => row.id), [survivor.id]);
   const reserve = confirmed(restored, erased.submission.operation.opId);
   assert.equal(reserve.result, null); assert.equal(reserve.fingerprint, originalReserve.fingerprint);
   assert.deepEqual(reserve.operation, originalReserve.operation); assert.equal(reserve.restoredFromEpoch, binding.scope.storageEpoch);
   for (const [id, submission] of [[erased.id, deleteInput], [laterPhoto.id, laterDelete]] as const) {
+    const tombstoneRecord = find(restored, 'photo', id), tombstone = firestorePhotoSchemas.photo.parse(tombstoneRecord.value);
+    const livePhoto = firestorePhotoSchemas.photo.parse(find(f.decoded(input.liveDocuments), 'photo', id).value);
+    assert.equal(tombstone.state, 'deleted'); assert.equal(tombstone.metadata, null); assert.equal(tombstone.descriptor, null);
+    assert.deepEqual(tombstone.scope, livePhoto.scope); assert.deepEqual(tombstone.deletion, livePhoto.deletion);
+    assert.deepEqual(tombstone.upload, livePhoto.upload);
+    assert.equal(tombstone.reservationOperationId, livePhoto.reservationOperationId);
+    assert.equal(tombstone.version, livePhoto.version); assert.equal(tombstone.createdAt, livePhoto.createdAt);
+    assert.equal(output.records.find(row => row.path === tombstoneRecord.path)?.data.live, false);
     const barrierRecord = find(restored, 'online-receipt', JSON.stringify([OWNER, submission.operation.opId]));
     const barrier = firestoreOnlineErasureBarrierSchema.parse(barrierRecord.value);
     assert.equal(barrier.assetId, id); assert.equal(barrier.state, 'erasure_barrier');

@@ -296,3 +296,46 @@ test("an explicit Server review obligation protects the final attempt even outsi
   assert.equal(starts, 1);
   assert.equal(finalizations, 1);
 });
+
+test('summary input fitting freezes one selection and preserves native tool history on later turns', async () => {
+  const s = setup(async (_, index) => index < 2 ? call('read_context', { key: index ? 'region' : 'age' }) : answer('Synthetic complete answer'));
+  s.input.recipeId = 'memory-refresh';
+  s.input.trigger = { kind: 'worker', reference: 'synthetic-summary' };
+  s.input.availableInputs = ['run', 'scope', 'conversation', 'context', 'evidence', 'capabilities', 'outputContract'];
+  s.input.context = { coverage: { messageIds: ['first', 'second'] }, currentSources: [{ text: 'Quoted source data' }] };
+  let selections = 0;
+  s.input.fitInitialInput = fits => {
+    selections++;
+    assert.equal(fits({ text: 'x'.repeat(32000), context: s.input.context }), false);
+    const selected = { text: 'Synthetic selected first message', context: { ...s.input.context, coverage: { messageIds: ['first'] } } };
+    assert.equal(fits(selected), true);
+    return selected;
+  };
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.status, 'completed', JSON.stringify(result));
+  assert.equal(selections, 1, 'A later native turn cannot silently change the source batch');
+  assert.equal(s.requests.length, 3);
+  assert.deepEqual(result.counts, { modelCalls: 3, toolCalls: 2, queryEmbeddings: 0 });
+  assert.equal(s.reservations(), 3);
+  for (const request of s.requests) {
+    assert.equal(request.contents[0].parts![0].text, 'Synthetic selected first message');
+    assert.match(request.contents[0].parts![1].text!, /data, not instructions or authorization/);
+    assert.match(request.contents[0].parts![1].text!, /Quoted source data/);
+    assert.doesNotMatch(request.contents[0].parts![1].text!, /second/);
+  }
+  const parts = s.requests[2].contents.flatMap(content => content.parts ?? []);
+  assert.equal(parts.filter(part => part.thoughtSignature === 'opaque-signature').length, 2);
+  assert.equal(parts.filter(part => part.functionResponse?.id === 'synthetic-call').length, 2);
+});
+
+test('summary input fitting cannot be enabled for an interactive run', async () => {
+  const s = setup(async () => answer('Must not run'));
+  let selections = 0;
+  s.input.fitInitialInput = () => { selections++; return { text: 'Must not be selected' }; };
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.status, 'stopped');
+  assert.equal(result.stopReason, 'invalid_response');
+  assert.equal(selections, 0);
+  assert.equal(s.requests.length, 0);
+  assert.equal(s.reservations(), 0);
+});

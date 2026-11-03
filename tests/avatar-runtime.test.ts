@@ -76,6 +76,8 @@ test('production avatar wiring shares HTTP and online services and retains clean
         return { state: 'confirmed', operation: submission.operation, path: submission.path, statusCode: 201, changeSeq: '1', result: { upload: { id: submission.operation.opId } } };
       },
       uploadStatus: unavailable, uploadAdmission: unavailable, content: unavailable,
+      readImportState: unavailable, prepareImportReservation: unavailable,
+      uploadImported: unavailable, prepareImportPublication: unavailable,
     };
     stores.push(record);return record.service;
   } } });
