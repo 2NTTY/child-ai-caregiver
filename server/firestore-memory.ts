@@ -22,6 +22,8 @@ import type { HandoverImportRow } from './handover-import.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
 import { selectSummaryBatchMessages } from './summary-window-helper.ts';
 
+export const SUMMARY_PROJECTION_MAX_CHARS = 3000;
+
 const uuid = z.uuid(), version = z.number().int().positive().max(2147483646), time = z.iso.datetime({ offset: true });
 const user = z.string().min(1).max(256), visibility = z.enum(['private', 'family']), FAR_FUTURE = '9999-12-31T23:59:59.999Z';
 export const firestoreFactStorageSchema = factValuesSchema.extend({ id: uuid, childId: uuid, visibility, intendedVisibility: visibility,
@@ -88,7 +90,8 @@ export interface FirestoreMemoryStore extends MemoryStore {
   prepareImportedTopic(binding: Binding, operationId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     current?: { id: string; expectedVersion: number }): Promise<Prepared<MemoryTopic>>;
 }
-export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { chat: FirestoreChatStore; care: FirestoreCareStore }): FirestoreMemoryStore {
+export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { chat: FirestoreChatStore; care: FirestoreCareStore; maxSummaryProjectionCharacters?: number }): FirestoreMemoryStore {
+  const maxSummaryProjectionCharacters = options.maxSummaryProjectionCharacters ?? SUMMARY_PROJECTION_MAX_CHARS;
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), sharing = createFirestoreSharingStore(options);
   const requireMemory = (binding: Binding) => { if (binding.sharedAccess && binding.sharedAccess.module !== 'memory') domainReject('shared_module_scope', 403); };
   const singular = (kind: Kind) => kind === 'facts' ? 'fact' : 'topic';
@@ -680,17 +683,26 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
         return { summary: { id, version, text, createdAt, lastCoveredMessageId }, basis: result.current.basis, validUntil: result.current.validUntil };
       }
       const recent = await recentBatches(binding), valid = recent.batches.filter(batch => batch.valid).reverse();
+      if (!valid.length) return null;
+      const head = valid.at(-1)!.saved;
       const selected: SavedSummary[] = [];
-      // Whole batches only; older history remains available through authorized search, not a growing prompt.
+      // Whole batches only; contiguous suffix from the head backwards.
+      // Older history remains available through authorized search, not a growing prompt.
       for (const item of [...valid].reverse()) {
-        if (JSON.stringify([...selected, item.saved].map(value => ({ id: value.summary.id, sourceMessageIds: value.summary.coveredMessageIds, text: value.summary.text }))).length > 3000) continue;
+        const candidate = [item.saved, ...selected];
+        const candidateLength = JSON.stringify(candidate.map(value => ({ id: value.summary.id, sourceMessageIds: value.summary.coveredMessageIds, text: value.summary.text }))).length;
+        if (candidateLength > maxSummaryProjectionCharacters) {
+          // Contiguous window reached; cannot include this or older batches without creating a gap.
+          break;
+        }
         selected.unshift(item.saved);
       }
-      const latest = selected.at(-1); if (!latest) return null;
+      const latest = selected.at(-1) ?? head;
       const { id, version, createdAt, lastCoveredMessageId } = latest.summary;
       const text = JSON.stringify({ mode: 'historical_batches_not_current_facts', batches: selected.map(value => ({ id: value.summary.id,
         sourceMessageIds: value.summary.coveredMessageIds, text: value.summary.text })), complete: false,
-        omittedOrInvalidatedBatches: recent.batches.length - selected.length, olderHistoryAvailable: true });
+        omittedOrInvalidatedBatches: recent.batches.length - selected.length, olderHistoryAvailable: true,
+        ...(selected.length === 0 ? { headBatchOmittedForCapacity: true } : {}) });
       return { summary: { id, version, text, createdAt, lastCoveredMessageId }, basis: result.current.basis,
         validUntil: selected.flatMap(value => value.validUntil ? [value.validUntil] : []).sort()[0] ?? null };
     }),
