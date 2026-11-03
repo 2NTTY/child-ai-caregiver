@@ -46,7 +46,8 @@ export function assertRestoredVoiceRelations(records:readonly FirestoreRestoreDe
   const voices=new Map(records.filter(r=>r.context.kind==='voice-asset').map(r=>[r.context.id,{record:r,value:firestoreVoiceRowSchema.parse(r.value)}]));
   const messages=new Map(records.filter(r=>r.context.kind==='chat-message').map(r=>{const v=firestoreChatMessageSchema.parse(r.value);return [v.id,{record:r,value:v}] as const;}));
   for(const record of records.filter(r=>r.context.kind==='voice-transcript')) {
-    const row=firestoreVoiceTranscriptSchema.parse(record.value),voice=voices.get(row.value.voice.id),message=messages.get(row.value.messageId);
+    const row=firestoreVoiceTranscriptSchema.parse(record.value),voice=voices.get(row.value.voice.id);
+    const message=row.value.messageId===null?undefined:messages.get(row.value.messageId);
     if(voice?.value.deletion)continue; // Pending physical cleanup remains hidden and journal replay removes the transcript.
     requireValue(voice&&message&&voice.value.state==='ready'&&voice.value.descriptor&&voice.value.messageId===row.value.messageId);
     requireValue(message.record.context.family==='domain'&&canonical(message.record.context.scope)===canonical(row.scope)

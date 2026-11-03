@@ -4450,3 +4450,14 @@
 最終 12 檔 140／140 通過、17 根 strict 型別閉包零診斷。擴大回歸重現原 head 已有的 summaryMode／prompt 舊斷言及 durable fixture 限額不符，按現行契約修正並補 isolated 行為和可驗證等待 timeout；未改產品 prompt／額度或 workflow。失敗歷程、命令、來源 hash 及限制見[證據](artifacts/verification/REQ005_SUMMARY_REQUEST_FIT_20261103.json)。獨立 review 對固定 patch `858b3c17` 另隔離重跑 33／33，核對所有修改 TS 及原6份收據一致，無新增阻塞問題；只代表本次局部修復，不是 GitHub approval、CI／部署驗收。
 
 REQ-005 未結案：超過實際請求上限的單訊息 continuation、互動路徑及全史持久修復仍未完成；四批窗口外的失效歷史仍隱藏但不保證再獲排程。未調用真模型、雲端、通知或網站，沒有部署／合併。
+
+<a id="log-20261103-req005-offline-ci"></a>
+### 2026-11-03 — REQ-005 exact-head offline verification
+
+Added a separate same-repository, branch-scoped PR workflow with pinned actions, Node/npm and unchanged locked dependencies. It checks the exact candidate SHA, runs the unchanged server/shared/test TypeScript config and 18 complete related synthetic suites in a non-root, capability-free network namespace with an empty environment, and requires all 162 TAP cases to pass without skips or cancellations. The original D workflow and its branch guard remain unchanged; no protection, credential, model or website access is added.
+
+Local verification passed 162/162 cases and the full existing server TypeScript config with zero diagnostics. Four compiler errors and four stale restore assertions were independently reproduced on immutable master before narrow corrections: preserve nullable transcript rejection, fixture ports and explicit result checks; retain reserved-upload fencing and unreadability, and exact cleanup tombstones rather than falsely requiring their absence. Production restore codec/service and product quotas are unchanged. Added real seal/decode null-transcript rejection and matching-message acceptance, plus maximum legal emoji, atomic repair and concurrent correction worker regressions. Commands, baseline failures, local receipts and boundaries are recorded in the [verification artifact](artifacts/verification/REQ005_OFFLINE_CI_20261103.json).
+
+The local sandbox cannot create the positive network-isolated CI environment; the new workflow must run on its published exact head before remote CI can be called green. Imported-unlinked voice restoration remains a known pre-existing gap, and oversized-message continuation, interactive limits and repairs outside the four-batch window remain incomplete. No deployment, real-model/cloud run, PR approval or merge occurred.
+
+Independent final review of fixed patch `ffd8767b` found no blocking issue, verified all nine source hashes and ten local receipts, and independently reran five affected baseline suites (17/17), the full existing server typecheck and lock/TAP negative controls. Only review evidence text was added afterward; executable and test files are unchanged. This review is not a GitHub approval or a substitute for positive exact-head remote CI.

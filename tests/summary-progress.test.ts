@@ -396,7 +396,7 @@ test('Test 7 (near-ceiling real request): 5,300 quotes stays within 32k Gateway 
   assert.ok(realChars <= AGENT_LIMITS.inputCharacters, `Near-ceiling request (${realChars}) must not exceed Gateway limit (${AGENT_LIMITS.inputCharacters})`);
 });
 
-async function runMaintenance(h: ReturnType<typeof createHarness>, childId: string) {
+async function runMaintenance(h: ReturnType<typeof createHarness>, childId: string, onGenerate?: () => Promise<void>) {
   const requests: import('@google/adk').LlmRequest[] = [];
   const authorizeWorker = async (binding: any, reference: string, recipe: string) => {
     const job = await readFirestoreBackgroundClaim(h.data, binding, reference);
@@ -408,6 +408,7 @@ async function runMaintenance(h: ReturnType<typeof createHarness>, childId: stri
     online: h.online, authorizeWorker, config: readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: h.options.projectId }),
     platformProvider: { async generate(request) {
       requests.push(structuredClone({ ...request, toolsDict: {} }));
+      await onGenerate?.();
       return { content: { role: 'model', parts: [{ functionCall: { id: 'summary', name: 'stage_private_summary',
         args: { text: 'Synthetic complete batch summary' } } }] }, finishReason: FinishReason.STOP,
         usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 } };
@@ -568,4 +569,63 @@ test('an oversized repair cannot starve another repair or fresh coverage across 
   assert.equal((await h.memory.prepareMaintenance('owner', child.id))!.repairOf, oversized.summary.id);
   const state = await h.authority.runTransaction('owner', child.id, binding => readContextBasis(h.data, binding));
   assert.equal(state.value.summaryPending, true, 'Exhausting fit candidates must not clear the persistent pending marker');
+});
+
+for (const count of [7000, 10000]) test(`actual claimed worker advances a ${count}-emoji legal source intact`, async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const text = '😀'.repeat(count);
+  const message = await h.chat.createUserMessageForUser(h.owner, child.id, text);
+  const run = await runMaintenance(h, child.id);
+  assert.equal(run.result.state, 'completed', JSON.stringify(run.result));
+  assert.equal(run.requests.length, 1);
+  assert.ok(agentRequestCharacters(run.requests[0]) <= 32000);
+  const supplied = JSON.parse(run.requests[0].contents[0].parts![0].text!);
+  assert.equal(supplied.sourceMessages[0].text, text);
+  assert.deepEqual((await h.memory.summary(h.owner, child.id))!.summary!.coveredMessageIds, [message!.id]);
+  assert.equal(await h.memory.prepareMaintenance(h.owner, child.id), null);
+});
+
+test('actual worker repairs a long original with all current correction data atomically', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const values = { key: 'Synthetic preference', content: 'Old value', source: { kind: 'manual' as const, description: 'owner' }, validUntil: null };
+  const candidate = await h.memory.createFact(h.owner, child.id, { values, intendedVisibility: 'private' });
+  const fact = await h.memory.confirmFact(h.owner, child.id, candidate!.id, { expectedVersion: 1, confirm: true, confirmShared: false });
+  const text = '😀'.repeat(7000);
+  const message = await h.chat.createUserMessageForUser(h.owner, child.id, text);
+  const batch = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const saved = (await h.memory.saveSummary(h.owner, child.id, { previousVersion: batch.previousVersion, basis: batch.basis,
+    text: 'Synthetic obsolete summary', coveredMessageIds: [message!.id] }))!;
+  await h.memory.reviseFact(h.owner, child.id, fact!.id, { expectedVersion: 2, confirm: true, confirmShared: false,
+    values: { ...values, content: 'New value' }, reason: 'Synthetic correction' });
+  const pending = (await h.memory.prepareMaintenance(h.owner, child.id))!;
+  const run = await runMaintenance(h, child.id);
+  assert.equal(run.result.state, 'completed', JSON.stringify(run.result));
+  assert.equal(run.requests.length, 1);
+  const supplied = JSON.parse(run.requests[0].contents[0].parts![0].text!);
+  const context = JSON.parse(run.requests[0].contents[0].parts![1].text!.split('\n').slice(1).join('\n'));
+  assert.deepEqual(supplied.sourceMessages, pending.messages);
+  assert.deepEqual(context.currentSources, pending.currentSources);
+  assert.equal(context.coverage.repairOf, saved.id);
+  assert.equal(await h.memory.prepareMaintenance(h.owner, child.id), null);
+});
+
+test('source correction during fitted provider request does not persist a stale summary or clear pending', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const values = { key: 'Synthetic dependency', content: 'Old value', source: { kind: 'manual' as const, description: 'owner' }, validUntil: null };
+  const candidate = await h.memory.createFact(h.owner, child.id, { values, intendedVisibility: 'private' });
+  const fact = await h.memory.confirmFact(h.owner, child.id, candidate!.id, { expectedVersion: 1, confirm: true, confirmShared: false });
+  const original = await h.chat.createUserMessageForUser(h.owner, child.id, '"'.repeat(5500));
+  const run = await runMaintenance(h, child.id, async () => {
+    await h.memory.reviseFact(h.owner, child.id, fact!.id, { expectedVersion: 2, confirm: true, confirmShared: false,
+      values: { ...values, content: 'New value after generation started' }, reason: 'Synthetic late correction' });
+  });
+  assert.equal(run.requests.length, 1);
+  assert.equal(run.result.state, 'stopped', JSON.stringify(run.result));
+  assert.equal((await h.memory.summary(h.owner, child.id))!.summary, null);
+  assert.equal((await h.memory.prepareMaintenance(h.owner, child.id))!.messages[0].id, original!.id);
+  const current = await h.authority.runTransaction(h.owner, child.id, binding => readContextBasis(h.data, binding));
+  assert.equal(current.value.summaryPending, true);
 });
