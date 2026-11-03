@@ -1,6 +1,6 @@
 # REQ-005 對話歷史摘要前進性與長訊息分段方案草案
 
-**文件版本**：v1.2.0
+**文件版本**：v1.2.1
 
 **核對日期**：2026-11-03（UTC）
 
@@ -130,7 +130,7 @@
 | 背景 7,000 emoji 與保存後水位 | 原 tests 1–2 有局部容納／推進斷言；不涵蓋所有合法訊息 |
 | 逃逸正文及多訊息累積 | 原 tests 3–4 有放行／停止邊界；停止超額首筆不是前進性成功 |
 | 完整 worker 組裝 | 原 tests 5、7 經 `maintainSummary` 組裝請求，以 scripted provider 捕獲並量度；沒有呼叫真模型或驗收正式環境 |
-| 失效批次修復 | 原 test 6 定義 14k 修復及超額時隱藏；未證明超額 repair 可接續 |
+| 失效批次修復 | 原 test 6 檢查 14k 修復輸入的 repairOf／message ID 並呼叫保存；超額案例只斷言 `prepareMaintenance(...) === null`，未直接驗證投影隱藏、provider 請求或超額接續 |
 | 合法長訊息／最大 metadata／修復 currentSources | 須核對完整 request 的實際序列化及有效預算；不以固定 reserve 或極簡 fixture 取代 |
 | 訊息內分段、重啟、防重及最後水位 | 原 #408 未實作；須有連續完整 coverage、版本／撤權／取消及 unknown 證據 |
 | 互動與背景一致 | 須測工具餘額充裕但 9,000 ASCII 先被 raw 8k prefix 擋下的案例，以及動態餘額不足、首筆容納／分段、保存 coverage、metadata-only 及 metadata 本身超額；明示未涵蓋／省略，不固定期待 7,488 或三個 parts |

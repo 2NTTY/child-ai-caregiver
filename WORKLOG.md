@@ -4450,3 +4450,12 @@ Recorded At：2026-11-03 11:10 UTC。Work Date：同日。依使用者要求 rev
 `docs/REQ005_CONVERSATION_PROGRESSION_ROADMAP.md` 改列待定方案及固定版本快照，撤回未合併候選「已完成／已落地」與固定預留保證安全的說法。校正 worker 32k、互動可配置輸入及 read_context 動態餘額的區別；分清 scripted-provider 組裝量度、測試定義與產品驗收。未批准的窗口／熔斷／逾時／rollup 數值不列既定政策，保留來源／coverage／原子修復待設計項、投影及其他 REQ-005 未完成範圍，不自行新增持久契約或資料清理。
 
 文件檢查通過：18 個 Markdown 連結的 Git 目標與行範圍、狀態／範圍斷言、所引固定版本容量數值、UTF-8／控制字元、修改範圍及 WORKLOG append-only；`git diff --check` 通過。首次 whitespace 檢查發現三處 Markdown 行尾空格，修正後補驗通過；獨立覆核另補正前置 raw 8k prefix 與動態工具餘額兩道限制及其驗收。純文件修改未重跑產品測試，未作真模型、Firestore、瀏覽器、設備或部署驗收；#408 新修訂的測試結果由其精確版本另記，本項不代驗或宣稱 REQ-005 完成。
+
+<a id="log-20261103-req005-roadmap-ci"></a>
+### 2026-11-03 — REQ-005 文件檢查可重現化
+
+Recorded At：2026-11-03 14:25 UTC。依使用者要求再次檢查並修至可合併，從 #409 `1476ac5a0061b7bfffb7fc1c4c3ab89a632337e6` 繼續。Roadmap v1.2.1 收窄原 Test 6 的證據說法：14k 情景有修復輸入斷言及保存呼叫，超額情景只斷言 `prepareMaintenance(...) === null`，沒有直接驗證投影隱藏、provider 請求或接續。這項原文誤報已更正，其他歷史來源仍固定原版本。
+
+新增 `scripts/ci/verify-req005-roadmap.py`、對應 Python standard-library 測試及獨立 `req005-roadmap-docs.yml`。工作流只在 roadmap／檢查器／測試／本工作流相關變更時觸發，不對 WORKLOG-only PR 作通用 gate；只有 #409 套五檔交付 allowlist。採唯讀權限、固定 checkout action、精確 head、event base/head 的 40-hex 驗證、唯一 merge-base、五分鐘期限及無 npm／模型／部署。WORKLOG 與 diff 相對共同祖先核查，來源 Git 物件缺少時明確失敗，不由檢查器抓網絡；未改原 D alignment workflow 或遠端保護。
+
+本地合成 Git fixture 測試 12/12 通過，涵蓋斷鏈／越界行號、非法及不存在 base/head、錯 checkout、額外 Server 檔、WORKLOG 重寫、路徑越界、控制字元、CLI 失敗退出及 Test 6 原誤報。先有缺少檢查器的 10 項紅，實作後轉綠；另捕捉未提交工作樹的檢查順序不足，補成明確拒絕後 12 項全綠。原 head 文件的 Test 6 說法被新斷言拒絕，修正正文的預覽檢查通過（16 個文件連結及 2 個 PR URL 格式）；PR 狀態不由此腳本驗證。已安裝 PyYAML 的語法／關鍵配置檢查及 `git diff --check` 通過。提交前的工作樹預覽不是 exact-head CI，真正來源提交與 Actions 結果須讀回後另記；未重跑產品測試，不把文件靜態檢查或 skipped 舊 job 當作產品／合併驗收。
