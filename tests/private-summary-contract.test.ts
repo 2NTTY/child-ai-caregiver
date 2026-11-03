@@ -8,7 +8,7 @@ import { createProductAgentTools } from "../server/product-agent-tools.ts";
 import { createStorageCipher } from "../server/storage-crypto.ts";
 import { saveSummary, summaryInput } from "../server/memory-summary.ts";
 
-function toolsFixture(options: { moreUncovered?: boolean; characters?: number; visibility?: "private" | "family" } = {}) {
+function toolsFixture(options: { moreUncovered?: boolean; characters?: number; visibility?: "private" | "family"; summaryMode?: "isolated_batch" } = {}) {
   const budget = new AgentBudget(), userId = "synthetic-owner", childId = randomUUID();
   const scope = { userId, childId, workspaceId: randomUUID(), authorizationVersion: "1", dataVersion: "1" };
   const messages: ChatMessage[] = Array.from({ length: 12 }, (_, index) => ({ id: randomUUID(), childId, authorUserId: userId,
@@ -16,7 +16,8 @@ function toolsFixture(options: { moreUncovered?: boolean; characters?: number; v
     createdAt: "2026-10-07T00:00:00.000Z" }));
   const previous = { id: randomUUID(), childId, version: 7, text: "Previous synthetic summary", createdAt: "2026-10-06T00:00:00.000Z",
     previousId: null, coveredMessageIds: [randomUUID()], lastCoveredMessageId: randomUUID() };
-  const prepared = { previous, previousVersion: 7, basis: "a".repeat(64), messages, moreUncovered: options.moreUncovered ?? false };
+  const prepared = { previous: options.summaryMode ? null : previous, previousVersion: 7, basis: "a".repeat(64), messages,
+    moreUncovered: options.moreUncovered ?? false, ...(options.summaryMode ? { summaryMode: options.summaryMode } : {}) };
   const context = { profile: { childId, version: 0, data: null }, profileApplicable: false, facts: [], topics: [], summary: previous,
     recentMessages: messages, conflictingKeys: [], unavailableFactKeys: [], truncated: { facts: false, topics: false, messages: prepared.moreUncovered } };
   let prepares = 0;
@@ -57,7 +58,8 @@ for (const moreUncovered of [false, true]) test(`complete displayed batch can st
     assert.deepEqual(data.privateSummaryInput.messageIds, fixture.messages.map(message => message.id));
     assert.equal(data.privateSummaryInput.moreUncovered, moreUncovered);
     assert.equal(data.uncoveredConversation.complete, !moreUncovered);
-    assert.deepEqual(Object.keys(data.privateSummaryInput).sort(), ["messageIds", "moreUncovered", "previousSummaryId"]);
+    assert.deepEqual(data.privateSummaryInput, { previousSummaryId: fixture.previous.id, summaryMode: "cumulative",
+      messageIds: fixture.messages.map(message => message.id), moreUncovered });
     assert.equal(data.summary.id, fixture.previous.id);
     assert.deepEqual(await fixture.execute("stage_private_summary", { text: "Synthetic summary body only" }),
       { status: "succeeded", data: { result: { staged: true, saved: false } } });
@@ -65,6 +67,26 @@ for (const moreUncovered of [false, true]) test(`complete displayed batch can st
       coveredMessageIds: fixture.messages.map(message => message.id), text: "Synthetic summary body only" });
     await fixture.execute("read_context", {});
     assert.equal(fixture.product.summaryDraft(), undefined);
+  } finally { fixture.budget.close(); }
+});
+
+test("isolated summary coverage excludes previous text while retaining source roles and the current version", async () => {
+  const fixture = toolsFixture({ summaryMode: "isolated_batch", moreUncovered: true });
+  try {
+    const response = await fixture.execute("read_context", {}), data = response.data!.result as any;
+    assert.equal(response.status, "succeeded");
+    assert.equal(data.summary, null);
+    assert.deepEqual(data.privateSummaryInput, { previousSummaryId: null, summaryMode: "isolated_batch",
+      messageIds: fixture.messages.map(message => message.id), moreUncovered: true });
+    assert.deepEqual(data.uncoveredConversation.messages, fixture.messages);
+    assert.equal(data.uncoveredConversation.messages.filter((message: ChatMessage) => message.role === "user").length, 6);
+    assert.equal(data.uncoveredConversation.messages.filter((message: ChatMessage) => message.role === "model").length, 6);
+    assert.equal(data.uncoveredConversation.complete, false);
+    assert.doesNotMatch(JSON.stringify(data), /Previous synthetic summary/);
+    assert.deepEqual(await fixture.execute("stage_private_summary", { text: "Only this complete isolated batch" }),
+      { status: "succeeded", data: { result: { staged: true, saved: false } } });
+    assert.deepEqual(fixture.product.summaryDraft(), { previousVersion: 7, basis: fixture.prepared.basis,
+      coveredMessageIds: fixture.messages.map(message => message.id), text: "Only this complete isolated batch" });
   } finally { fixture.budget.close(); }
 });
 

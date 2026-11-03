@@ -239,8 +239,10 @@ test('restore fails closed on unknown collections/kinds, mismatched paths, missi
   assert.throws(() => f.codec.decode({ ...child, path: namespace + '/' + 'f'.repeat(64) }), errors('restore_binding'));
   assert.throws(() => f.codec.decode({ ...child, data: { ...child.data, recovery: undefined } }), errors('recovery_locator_missing'));
   assert.throws(() => f.codec.decode({ ...child, data: { ...child.data, ciphertext: child.data.ciphertext.slice(0, -1) + 'X' } }), errors('recovery_locator_ciphertext'));
-  const work = authorityRecord(f, 'work', randomUUID(), scope, {});
-  assert.throws(() => f.codec.decode(work), errors('unsupported_restore_domain'));
+  const malformedWork = authorityRecord(f, 'work', randomUUID(), scope, {});
+  assert.throws(() => f.codec.decode(malformedWork), errors('restore_record_invalid'));
+  assert.throws(() => f.codec.decode(record(f.data, 'photos', 'synthetic-unsupported', randomUUID(), scope,
+    z.object({}).strict(), {})), errors('unsupported_restore_domain'));
   const fakeChild = { id: scope.childId, workspaceId: randomUUID(), status: 'active' };
   assert.throws(() => f.codec.decode(authorityRecord(f, 'child', scope.childId, scope, fakeChild)), errors('restore_binding'));
   assert.throws(() => f.codec.decode({ ...child, data: { ...child.data, extra: 'untrusted' } }), errors('restore_record_invalid'));
@@ -325,8 +327,14 @@ test('restore accepts completed ready uploads from the production photo writer a
       firestorePhotoSchemas.photo, malformed, malformed.version)), original.restoreInput), errors('restore_binding'));
   }
   const pending = firestorePhotoSchemas.photo.parse({ ...original.row, state: 'reserved', descriptor: null });
-  assert.throws(() => f.codec.transform(f.codec.decode(record(f.data, 'photos', 'photo', pending.id, pending.scope,
-    firestorePhotoSchemas.photo, pending, pending.version)), original.restoreInput), errors('restore_unsettled_upload'));
+  assert.ok(pending.upload);
+  const pendingResult = f.codec.transform(f.codec.decode(record(f.data, 'photos', 'photo', pending.id, pending.scope,
+    firestorePhotoSchemas.photo, pending, pending.version)), input(original.binding.scope));
+  const pendingRestored = firestorePhotoSchemas.photo.parse(f.codec.decode({ path: pendingResult.path, data: pendingResult.data }).value);
+  assert.deepEqual(pendingRestored, { ...pending, scope: { ...pending.scope, storageEpoch: newEpoch },
+    objectScope: pending.objectScope ?? pending.scope, upload: { ...pending.upload,
+      authorizationVersion: (BigInt(pending.upload.authorizationVersion) + 1n).toString(), generation } });
+  assert.equal(pendingRestored.state, 'reserved'); assert.equal(pendingRestored.descriptor, null);
 });
 
 test('restore decodes production deleted photo fingerprints separately from journal intent hashes and rejects tampering', async () => {
@@ -339,7 +347,13 @@ test('restore decodes production deleted photo fingerprints separately from jour
   assert.equal(row.deletion.journal.intentSha256, firebaseErasureIntentHash(row.deletion.intent));
   assert.notEqual(row.deletion.fingerprint, row.deletion.journal.intentSha256);
   const decoded = f.codec.decode({ path: original.path, data: raw });
-  assert.throws(() => f.codec.transform(decoded, original.restoreInput), errors('restore_unsettled_upload'));
+  const deletedResult = f.codec.transform(decoded, input(original.binding.scope));
+  assert.equal(deletedResult.oldPath, original.path); assert.equal(deletedResult.path, original.path);
+  assert.equal(deletedResult.data.ciphertext, raw.ciphertext);
+  assert.deepEqual(deletedResult.data.recovery, raw.recovery);
+  assert.equal(deletedResult.data.recordVersion, raw.recordVersion); assert.equal(deletedResult.data.live, false);
+  assert.deepEqual(f.codec.decode({ path: deletedResult.path, data: deletedResult.data }).value, row);
+  assert.equal(row.metadata, null);
   const wrongVersion = firestorePhotoSchemas.photo.parse({ ...row, deletion: { ...row.deletion, expectedVersion: row.deletion.expectedVersion + 1 } });
   assert.throws(() => f.codec.decode(record(f.data, 'photos', 'photo', row.id, row.scope, firestorePhotoSchemas.photo, wrongVersion, row.version)), errors('restore_binding'));
   const wrongIntent = firestorePhotoSchemas.photo.parse({ ...row, deletion: { ...row.deletion, journal: { ...row.deletion.journal, intentSha256: 'c'.repeat(64) } } });

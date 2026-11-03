@@ -1,0 +1,109 @@
+{
+  "date": "2026-11-03",
+  "repository": "2NTTY/child-ai-caregiver",
+  "pullRequest": 408,
+  "sourceHead": "27c5a3df807255d5e85e1911277198868f59dd3e",
+  "baseHead": "9ca338882ed21a3b01d534581d7a6e532c72da2a",
+  "scope": "Branch-specific exact-head offline verification for the bounded REQ-005 fix; not complete REQ-005 delivery or deployment.",
+  "environment": {
+    "node": "v24.22.1",
+    "typescript": "6.0.3",
+    "npm": "CI pins packageManager npm@11.8.0",
+    "dependencies": "Unchanged npm v3 lockfile; local existing locked dependencies with official yazl/yauzl additions installed with ignore-scripts in an isolated dependency directory."
+  },
+  "ciContract": [
+    "New pull_request workflow is limited to this repository and codex/req005-summary-progress targeting master. Existing D workflow and branch guard are unchanged.",
+    "Checkout the exact event head SHA with pinned actions and persist-credentials:false; contents:read is the only requested permission.",
+    "Pinned npm install and npm ci use the official registry, empty configs and ignore-scripts. Reject unexpected workspace links, missing resolved/integrity and foreign resolved URLs before installing the unchanged lockfile.",
+    "Validation runs non-root inside a distinct network namespace, with only down loopback, no routes, no capabilities, no-new-privileges and a fresh empty environment/home. No provider or cloud credentials are passed.",
+    "Run the unchanged full tsconfig.server.json, then 18 complete related test files with a 30-second per-test timeout and explicit TAP. Pipefail and exact 162-pass/zero-failure/cancelled/skipped/todo totals prevent a partial or empty run from passing.",
+    "Check tracked non-symlink test paths, exact head and source integrity before and after validation. No test filters, forced exit, continue-on-error or removed compiler roots are used."
+  ],
+  "commands": {
+    "tests": "node --experimental-test-module-mocks --test --test-timeout=30000 --test-concurrency=1 --test-reporter=tap tests/summary-progress.test.ts tests/agent-runtime.test.ts tests/agent-model-gateway.test.ts tests/firestore-summary-batches.test.ts tests/firestore-memory-lifecycle.test.ts tests/memory.test.ts tests/private-summary-contract.test.ts tests/summary-prompt-contract.test.ts tests/agent-durable-ai-usage.test.ts tests/agent-durable-budget.test.ts tests/agent-native-session.test.ts tests/agent-owned-session-cleanup.test.ts tests/avatar-runtime.test.ts tests/handover-attachment-pipeline.test.ts tests/firestore-voice.test.ts tests/firestore-restore-codec.test.ts tests/firestore-restore.test.ts tests/firestore-restore-voice-relations.test.ts",
+    "typecheck": "node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit --pretty false",
+    "syntax": "bash -n scripts/ci/verify-summary-progress-offline.sh; parse workflow YAML and bash -n every run block",
+    "sourceIntegrity": "git diff --check; compare unchanged D workflow/helper and package-lock.json against sourceHead"
+  },
+  "results": {
+    "testFiles": 18,
+    "tests": 162,
+    "passed": 162,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "durationMs": 45611.832603,
+    "typecheckExit": 0,
+    "typecheckDiagnostics": 0,
+    "typecheckScope": "Unchanged tsconfig.server.json, including its three pre-existing exclusions; not a frontend/full-product typecheck.",
+    "staticValidation": "Pass: exact-head/branch/permissions/isolation contract, five invalid lock-source cases, nine incomplete/failing TAP cases. Correct head in the same network namespace and wrong head both fail preflight."
+  },
+  "baselineCorrections": [
+    "All four initial server compiler diagnostics reproduce on immutable master 9ca3388. Null transcript messageId now maps to undefined explicitly, preserving the existing fail-closed rejection and deletion-first checks. Avatar fixture supplies the four existing import ports with its throwing unavailable stub. Handover test asserts the local chat result exists and preserves useful failure diagnostics.",
+    "New voice relation regression seals and decodes real typed synthetic records: imported unlinked transcript still rejects with restore_voice_binding/409; the matching local chat-message case succeeds. This does not implement imported-unlinked restoration.",
+    "All three initial restore-codec failures reproduce on master: work is now a supported kind so malformed data is invalid, while a separate unknown kind still rejects; reserved photo uploads retain their original upload evidence/objectScope and remain unreadable with a new fence; deleted records retain the authenticated original envelope and tombstone. Assertions now enforce the current documented contract rather than expecting rejection.",
+    "The existing restore-service test also fails on master because it expected physical absence of cleanup tombstones. It now asserts exact survivor/two-tombstone identities, body-free deleted state, original scope/deletion/upload evidence, live:false, and retains all revocation, session, barrier, quota and old-epoch checks. Production restore codec/service are unchanged.",
+    "Four independent real-worker probes were incorporated: 7,000 and maximum 10,000 emoji sources, atomic long-source repair, and a source correction during provider generation refusing stale persistence."
+  ],
+  "verificationHistory": [
+    "The initial new null-transcript fixture used an invalid provenance section, then lacked chat sortKey metadata. Both fixture construction errors were corrected against the real schemas/codec before the final run; neither is claimed as a product bug.",
+    "The local workflow-validator harness initially compared arrays across VM realms and failed its own strict equality check. Running the same extracted validation function in the local realm fixed that harness error; the workflow validator itself did not change.",
+    "Initial test failures and exact-master comparisons are retained as local receipts. No product quota, restore admission, existing D workflow, package lock or typecheck exclusion was weakened to obtain a pass."
+  ],
+  "independentReview": {
+    "baselineSafety": "Six-file static safety/contract review found no blocking issue; source manifest SHA256 4e22e8df42345463829a11fa0c30b08d38be043e5f397a63c7d4a1b49c548006. A final hash and receipt review confirmed these files remained unchanged.",
+    "scope": "Code review is not a GitHub approval, remote CI result or deployment acceptance.",
+    "finalCiReview": {
+      "patchSha256": "ffd8767b0ebbedc2b226b66fcdb66b74194c2ccf9a3827a43ac5632df27e59dd",
+      "result": "No blocking findings. All nine executable/test source hashes, ten local receipts, six unchanged source blobs and append-only work log verified. Five affected baseline regression suites independently rerun: 17/17 passed, zero failures/cancellations/skips/TODOs. Full unchanged server typecheck and static lock/TAP negative controls also passed. Positive isolated remote CI remains to be executed.",
+      "tests": 17,
+      "passed": 17,
+      "typecheckDiagnostics": 0,
+      "afterReview": "Only this artifact and WORKLOG review text changed; all nine reviewed source files remain identical."
+    },
+    "receiptSha256": {
+      "pr408-independent-review-tests.tap": "72900e897ebf005bc3684b0d65438a17347a3f4eb3cec419b82065833df8f8a0",
+      "pr408-independent-review-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pr408-independent-review-static.log": "9de44ae844cfbf083ff90324944f95d56bd89c58b871f2eec4a20d3ba8a6e43d",
+      "pr408-independent-review-status.txt": "cafc4ca17cf0549af52d2b34d1c2e5b8486bb3904471241c7b9449fb878d413b"
+    }
+  },
+  "limitations": [
+    "The local sandbox has no sudo/capabilities to create the requested network namespace. Local synthetic tests and preflight rejection/static checks passed, but the positive network-isolated CI execution must still be observed on the new exact remote head.",
+    "Full legal oversized single-message continuation, interactive-path limits and repair outside the existing four-batch window remain outside this partial REQ-005 change.",
+    "Imported voice/transcript records without a local message still fail restoration. This pre-existing feature gap is preserved, not fixed by the nullable type correction.",
+    "No real model, Firestore/Cloud Tasks/GCP, website, deployment, permissions, branch protection, PR approval, comment or merge action is part of this verification."
+  ],
+  "changedSourceSha256": {
+    ".github/workflows/summary-progress-offline.yml": "e758920cccf63973371354e2fef9e16f7d9e9892c5aa5a6dc467494ce16400f7",
+    "scripts/ci/verify-summary-progress-offline.sh": "3accd2834c979037c11f3050cf7f062a1c9289b92d34dacf50a7cfcd8163a13e",
+    "server/firestore-restore-voice.ts": "2531b30388df10f379781f73ab988d0d99fe7243b97136fcc71d44a0887e0b7d",
+    "tests/avatar-runtime.test.ts": "b6a6f7d061535646438bf00c0ae454aa2f73afccca34407f41a713eda85b7ed8",
+    "tests/handover-attachment-pipeline.test.ts": "98a62f854610cfab21ccdbefe573c1fec20385c9503124712eef74c88fba9c29",
+    "tests/firestore-restore-codec.test.ts": "3767382a88c83fb7d3fd09c0b89ff5d0e76f2376a6c38e4c8ea512272cb6434a",
+    "tests/firestore-restore.test.ts": "e279121471838316238fe6a972c6795992f29fe274d45777c25fb9d3eea62c54",
+    "tests/firestore-restore-voice-relations.test.ts": "26dac33674b0170f325b24e505d79b3335ff3894277f4241e8fec3bd8641f575",
+    "tests/summary-progress.test.ts": "98433394afe0e5affbab0696b2ae7874583bb7d629d782c1623bad5332f4ac20"
+  },
+  "localReceiptSha256": {
+    "pr408-ci-all-tests.tap": "fa70d24ddaaae48b7138d141a41b2df29e96038753112cdd22e0572d8396ad14",
+    "pr408-ci-verified-server-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "pr408-ci-verified-server-types.status": "19eaf43821a7660ec323a87c8457bf74823beb296c39f5e01aa8a683aa50f061",
+    "pr408-ci-static-check.log": "9de44ae844cfbf083ff90324944f95d56bd89c58b871f2eec4a20d3ba8a6e43d",
+    "pr408-ci-baseline-server-types.log": "6a8d4b08bfe2411521ed2758d58bbf4e2f15787bf4e08df0c50b9e56e75462c3",
+    "pr408-ci-master-server-types.log": "6a8d4b08bfe2411521ed2758d58bbf4e2f15787bf4e08df0c50b9e56e75462c3",
+    "pr408-ci-master-codec.tap": "4b20fcbcd2d80531cc567469ab5a2ff2ce1436b23dcc4f7a89b441bdb59bf460",
+    "pr408-ci-master-restore.tap": "efe548970ecdc1200021a38794f54d2360c03924f7e73c08831e4b4b58422a5f",
+    "pr408-ci-same-netns.log": "2183bcef5ed7c991e6eab4414f45eb02b5b0bc9c7071ebe612e6f54b4d08bc6c",
+    "pr408-ci-wrong-head.log": "2183bcef5ed7c991e6eab4414f45eb02b5b0bc9c7071ebe612e6f54b4d08bc6c"
+  },
+  "unchangedSources": {
+    ".github/workflows/agent-alignment-offline.yml": "b2f519e6e779b132120be297aac660d1ba673818",
+    "scripts/ci/verify-agent-alignment-offline.sh": "9f431cd28a3a62360e2737d86fbeb9fb6fd1d4b8",
+    "package-lock.json": "6f78675f669e1e1164d4e1e2b9e3440ea3284da6",
+    "tsconfig.server.json": "56c965b5540d6adf72f8e33ee06ab586f6f2f27a",
+    "server/firestore-restore-codec.ts": "04f88acf47a0dce9f6d093ffb5399535853f0763",
+    "server/firestore-restore.ts": "78102d6cc055a2e14cb218418215c6751cf1d53b"
+  }
+}

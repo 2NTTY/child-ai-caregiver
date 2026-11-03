@@ -111,7 +111,7 @@ test('attachment rows traverse the original package worker before imported chat 
     assert.equal(uploaded.preview!.integrity, 'missing_proof');
     const command = { opId: randomUUID(), uploadId, expectedUploadVersion: uploaded.version, acceptedManifestSha256: uploaded.preview!.manifestSha256,
       targets: [{ sourceChildId: sourceChild, target: { childId, spaceId: null }, sections: ['attachments', 'chat'] }], resolutions: [] };
-    const queued = await service.create('recipient', command, controller.signal); assert.equal(queued.state, 'queued', queued.error ?? undefined); assert.equal(queued.totalItems, 8);
+    const queued = await service.create('recipient', command, controller.signal); assert.equal(queued.state, 'queued', queued.error ?? JSON.stringify(queued)); assert.equal(queued.totalItems, 8);
     await worker.background.dispatch();
     const delivery = deliveries.find(value => {
       const row = [...fixture.records].find(([path, data]) => path.includes('_background_work/') && data.id === value.id);
@@ -139,7 +139,8 @@ test('attachment rows traverse the original package worker before imported chat 
     assert.ok(importedFile); assert.deepEqual(importedFile.message, fileMessage);
     assert.deepEqual(importedFile.attachment, { kind: 'files', resource: results.items.find(item => item.resourceSection === 'files' && item.sourceSection === null)!.recordedResource });
     assert.equal(importedFile.attachment!.resource.id, localFile); assert.notEqual(importedFile.attachment!.resource.id, fileId);
-    assert.deepEqual((await chat.listForUser('recipient', childId)).messages, []);
+    const localChat = await chat.listForUser('recipient', childId);
+    assert.ok(localChat); assert.deepEqual(localChat.messages, []);
     const chatResults = await service.results('recipient', command.opId, { sourceChildId: sourceChild, module: 'chat' });
     assert.equal(chatResults.complete, true); assert.equal(chatResults.items.length, 2);
     assert.equal(chatResults.items.find(item => item.sourceResourceId === sourceMessageId)!.recordedResource!.id, importedFile.id);
