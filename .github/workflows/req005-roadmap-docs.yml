@@ -1,0 +1,73 @@
+name: REQ-005 roadmap documentation
+
+"on":
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened, ready_for_review]
+    # This is not a repository-wide WORKLOG gate. WORKLOG-only PRs do not trigger it.
+    paths:
+      - docs/REQ005_CONVERSATION_PROGRESSION_ROADMAP.md
+      - scripts/ci/verify-req005-roadmap.py
+      - tests/ci/test_req005_roadmap_check.py
+      - .github/workflows/req005-roadmap-docs.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: req005-roadmap-docs-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  roadmap-documentation:
+    name: REQ-005 roadmap document checks
+    if: >-
+      github.repository == '2NTTY/child-ai-caregiver' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    defaults:
+      run:
+        shell: bash
+    env:
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      EXPECTED_BASE: ${{ github.event.pull_request.base.sha }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PYTHONDONTWRITEBYTECODE: "1"
+      GIT_NO_LAZY_FETCH: "1"
+      GIT_TERMINAL_PROMPT: "0"
+    steps:
+      - name: Checkout exact candidate and historical source objects
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+          submodules: false
+          lfs: false
+
+      - name: Verify checkout identity and Python
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_HEAD" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$EXPECTED_BASE" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          git cat-file -e "$EXPECTED_BASE^{commit}"
+          git cat-file -e d1fca9f3da4e4b7bfea9cabca20ba0dd31f70869^{commit}
+          git diff --exit-code
+          git diff --cached --exit-code
+          python3 --version
+
+      - name: Run verifier positive and negative controls
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests/ci -p test_req005_roadmap_check.py -v
+
+      - name: Verify roadmap evidence and append-only work log
+        run: |
+          set -euo pipefail
+          python3 scripts/ci/verify-req005-roadmap.py \
+            --base "$EXPECTED_BASE" --head "$EXPECTED_HEAD" --pull-request "$PR_NUMBER"
+          git diff --exit-code
+          git diff --cached --exit-code
