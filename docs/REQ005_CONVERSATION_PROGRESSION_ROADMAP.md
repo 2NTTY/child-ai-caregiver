@@ -1,271 +1,145 @@
-# REQ-005 對話歷史摘要前進性與長訊息分段架構藍圖 (Conversation Summary Progression & Segmentation Roadmap)
+# REQ-005 對話歷史摘要前進性與長訊息分段方案草案
 
-**文件版本**：v1.1.0  
-**制定日期**：2026-11-03  
-**關聯需求**：REQ-005（對話歷史摘要前進性、長訊息容納與多段覆蓋 / Backlog v0.11 §4.1）  
-**目標模組**：`server/summary-window-helper.ts`, `server/firestore-memory.ts`, `server/private-summary-maintenance.ts`, `server/product-agent-tools.ts`  
-**關聯 PR**：[PR #408](https://github.com/2NTTY/child-ai-caregiver/pull/408) (Phase 1), [PR #409](https://github.com/2NTTY/child-ai-caregiver/pull/409) (Docs Roadmap)
+**文件版本**：v1.2.0
 
----
+**核對日期**：2026-11-03（UTC）
 
-## 1. 摘要與問題本質 (Executive Summary & Root Cause)
+**範圍**：REQ-005 §4.1 的摘要前進性子工作；不代表整個 REQ-005 完成
 
-在兒童照護 AI 系統（Child AI Caregiver）中，對話歷史摘要（Conversation Summary）是維持模型長期上下文與記憶一致性的基礎支柱。背景維護程序（`maintainSummary`，Recipe: `memory-refresh`）定期從資料庫撈取未摘要訊息（Uncovered Messages），透過 LLM 整理為精煉的歷史摘要，並推進指標水位（Watermark `lastSortKey`）。
+**關聯 PR**：[PR #408](https://github.com/2NTTY/child-ai-caregiver/pull/408)、[PR #409](https://github.com/2NTTY/child-ai-caregiver/pull/409)
 
-### 1.1 核心痛點：為什麼舊版會卡死？
-在舊版架構中，批次選取邏輯存在以下缺陷：
-1. **硬編碼門檻（Hardcoded 12k Threshold）**：舊版限制整個批次的純 JSON 字元數不得超過 12,000 字元。
-2. **長訊息不可分割性**：若使用者發送了一條單一長訊息（例如 7,000 個 Emoji，在 UTF-16 編碼下佔 14,000 字元；或包含數千字長文），該訊息體積大於 12,000 字元。
-3. **水位停滯惡性循環（Permanent Stalling Loop）**：
-   - 由於第一條訊息已超過 12,000，`prepareMaintenance` 無法容納，回傳空批次（或需要接續狀態）；
-   - 水位指標 `lastSortKey` 無法推進，永遠停留在該條訊息之前；
-   - 每次背景定時任務觸發時，重新撈取的第一條訊息仍然是該條長訊息，導致後續所有正常的日常對話完全無法被摘要，形成系統級永久卡死。
+## 1. 文件地位、版本及問題
 
-### 1.2 物理約束：LLM Gateway 32k 輸入上限
-系統中所有對模型（Gemini / LLM）的呼叫均受 `server/agent-model-gateway.ts:172-175` 守護：
-$$\text{Total Request Characters} \le \text{AGENT\_LIMITS.inputCharacters} = 32,000$$
-若單次請求的字元數超過 32,000，Gateway 會立即丟出 `AgentStopped("input_limit")` 異常中斷執行。
+本文件整理現有候選修復、尚欠產品結果及待討論方案，不新增已批准政策、持久資料契約或交付承諾。權威需求與完成門檻仍見 [REQUIREMENTS_BACKLOG v0.11](https://github.com/2NTTY/child-ai-caregiver/blob/9ca338882ed21a3b01d534581d7a6e532c72da2a/docs/REQUIREMENTS_BACKLOG.md#L848-L1034)，工作包、現況及契約分別沿 [PLAN](../PLAN.md)、[STATUS](../STATUS.md) 及既有資料／API 文件。
 
----
+### 1.1 本次審閱固定版本
 
-## 2. 請求開銷精確分解與數學推導 (Request Sizing & Budget Derivation)
+| 對象 | 固定版本及觀察 |
+|---|---|
+| master／需求基線 | `9ca338882ed21a3b01d534581d7a6e532c72da2a` |
+| #408 原候選實作 | `d1fca9f3da4e4b7bfea9cabca20ba0dd31f70869`；2026-11-03 本輪核對時仍 open、未合併 |
+| #409 原文件 | `b99c46cc444d4838ee0ba372696829a0887cf3e5`；同時仍 open、未合併，本版修正其狀態及範圍敘述 |
 
-為徹底防止「為了解除卡死而放寬批次，卻導致請求超標擊穿 32k Gateway」，本系統進行了真實環境 Worker Request 的精確測量與預留量推導。
+以下對 #408 的程式及測試描述均指表內原候選版本，不把其後修改、合併或部署推定為已發生。更新實作後，須以新的精確 head 與驗證結果另行核對。
 
-### 2.1 請求字元數結構 (Request Structure Breakdown)
-Gateway 計算的 `agentRequestCharacters(request)` 格式為：
-$$\text{Request} = \text{JSON.stringify}(\{\text{contents: request.contents}, \text{config: request.config}\})$$
+舊版將摘要視為完整訊息的有序 prefix；背景選取的 raw JSON 目標為 12,000 UTF-16 code units。7,000 個 emoji 的正文已佔 14,000 code units，符合輸入的 code-point 限制，卻可令首筆無法納入，後續重試仍停在同一水位。原 9,000 個 ASCII 字案例在背景可容納，但互動路徑先受 8k raw JSON prefix 限制，即使後續工具餘額充裕也不能納入該首筆，不能混為同一案例。原問題及範圍見 [REQ-005 §4.1](https://github.com/2NTTY/child-ai-caregiver/blob/9ca338882ed21a3b01d534581d7a6e532c72da2a/docs/REQUIREMENTS_BACKLOG.md#L921-L939)。
 
-在真實的 `memory-refresh` 背景 Worker 中，其結構包含：
+### 1.2 原需求要求的產品結果
 
-```
-+-------------------------------------------------------------------------------+
-| Total Request (~23.8k - 30.9k Chars, Strictly <= 32,000 Chars)                |
-+-------------------------------------------------------------------------------+
-| 1. config (~8,992 Chars):                                                     |
-|    - System Instruction (記憶維護提示詞、更正政策、不捏造承諾)                   |
-|    - Tools Schema (stage_private_summary 參數驗證規格)                         |
-|    - GenerationConfig (temperature, maxOutputTokens 等)                       |
-+-------------------------------------------------------------------------------+
-| 2. contents[0] Context Data (~412 - 634 Chars):                               |
-|    - Purpose: 'private_incremental_summary'                                  |
-|    - Coverage Metadata: { messageIds: string[], moreUncovered, repairOf }     |
-|    - CurrentSources: 更正事實參照來源                                          |
-|    - Data wrapper prompt overhead                                             |
-+-------------------------------------------------------------------------------+
-| 3. contents[1] User Payload (Source Messages):                                |
-|    - Double-escaped JSON string containing { sourceMessages, instruction }    |
-+-------------------------------------------------------------------------------+
-```
+- 每個合法單訊息可經有界首筆容納或訊息內分段持續處理，不能永遠 defer 同一長首筆，也不能跳過它或虛報 coverage。
+- 完整覆蓋後才推進訊息水位；背景、互動、修復、保存／投影／包裝的容量與覆蓋語義須一致。
+- 保留身份／孩子／模式隔離、來源版本、原操作收據、撤權及當次適用的審核／收尾資源；接續不重置原 root／工作總帳。
+- 合成測試證明程式契約的範圍，不能代替真模型品質、正式服務或設備驗收。
 
-### 2.2 雙重 Escape 膨脹效應 (Double-Escaping Expansion)
-文字在進入 LLM 呼叫時經歷兩次序列化：
-1. **第一次序列化**：訊息物件轉為 JSON 字串 `JSON.stringify({ sourceMessages: [...] })`。
-   - 一般字元（ASCII、中文）：長度維持 1:1。
-   - Emoji（如 😀）：UTF-16 雙字元（Surrogate Pair），長度為 2。
-   - 雙引號 `"`：轉為 `\"`（長度變為 2 倍）。
-2. **第二次序列化**：放入 `contents[0].parts[0].text` 後整體再被 `JSON.stringify(request)`。
-   - 原本的 `\"` 轉為 `\\\"`（長度變為 4 倍）。
+本文件原稱「Phase 1／2／3」的是摘要子工作的提案分組，並非原 REQ-005 §9 的正式階段。原階段 1 是政策及持久相容，摘要修復屬階段 4；下文改用「候選修復／後續方案／額外研究」，避免混算完成度。
 
-以純雙引號為例的膨脹倍率：
-$$n \text{ 個引號} \xrightarrow{\text{第一次 JSON}} 2n \text{ 字元} \xrightarrow{\text{第二次 JSON}} 4n + \text{Envelopes} \text{ 字元}$$
-- 5,300 個 `"`：Payload $\approx 4 \times 5,300 + 298 = 21,498$ 字元。
-- 10,000 個 `"`：Payload $\approx 4 \times 10,000 + 298 = 40,298$ 字元（直接超過 32k）。
+## 2. 當前容量語義與證據限制
 
-### 2.3 安全天花板數學推導 (Mathematical Derivation of Ceilings)
-實測背景 Worker 之固定開銷：
-- 基礎固定開銷：$C_{\text{fixed}} \approx 9,464 \sim 9,531 \text{ 字元}$。
-- 每多一條訊息，在 `context.coverage.messageIds` 增加之 UUID 開銷：$C_{\text{per\_msg}} \approx 40 \text{ 字元}$。
+### 2.1 Gateway 使用當次產品預算
 
-為保證即使在最嚴苛的高跳脫字元情境下依然保有充足安全緩衝（Safety Margin $\approx 1,000 \text{ 字元}$），系統定義：
-- **預留空間**：`SUMMARY_GATEWAY_RESERVE_CHARS = 10,500`
-- **安全 Payload 天花板**：
-  $$\text{SUMMARY\_SAFE\_REQUEST\_CEILING} = \text{AGENT\_LIMITS.inputCharacters} - \text{SUMMARY\_GATEWAY\_RESERVE\_CHARS} = 32,000 - 10,500 = 21,500$$
+[Gateway](https://github.com/2NTTY/child-ai-caregiver/blob/9ca338882ed21a3b01d534581d7a6e532c72da2a/server/agent-model-gateway.ts#L159-L178) 比較完整請求的 `agentRequestCharacters(request)` 與 `budget.limits.inputCharacters`，超額才停止於 `input_limit`。這是產品的 logical JSON UTF-16 字元保護，不是 Gemini 或所有模型的官方 token／物理能力上限。
 
-最大放行請求驗算：
-$$\text{Max Total Request} = 21,500 + 9,531 = 31,031 \le 32,000 \quad (\text{裕度 } 969 \text{ 字元})$$
+[本版預算](https://github.com/2NTTY/child-ai-caregiver/blob/9ca338882ed21a3b01d534581d7a6e532c72da2a/server/agent-budget.ts#L8-L22) 的 worker 基線為 32,000；互動預設為 64,000，可由可信 Server 設定於 32,000–64,000 範圍內選取。這些是所核對程式的現況，不是本文件批准提高或永久固定的政策。
 
----
+純文字摘要請求的計數包括 `contents` 與 `config`，涵蓋 system instructions、tool schema、來源訊息、instruction、coverage IDs 及 `currentSources`。`agentRequestCharacters` 對已驗證媒體另有 bounded marker 處理，不能把純文字公式無條件套到所有媒體請求。
 
-## 3. 三階段架構演進藍圖 (Three-Phase Architecture Roadmap)
+### 2.2 Raw JSON、payload 估算與完整 request 不同
 
-```mermaid
-timeline
-    title REQ-005 演進里程碑
-    section Phase 1 (已完成 PR #408)
-        建立安全邊界 : 預留 10.5k / 天花板 21.5k
-        解除長訊息卡死 : 有界首筆容納 (7k Emoji / 5.3k 引號)
-        全候選估算防護 : 阻截 5.9k / 10k 引號與多筆逃逸
-    section Phase 2 (即將開展)
-        多段切分演算法 : 換行/標點/Surrogate-safe 字符切分
-        分段水位追蹤 : partIndex 與 coveredOffset 狀態持久化
-        前端 8k 工具適配 : read_context 7.5k 硬限制分段呈現
-        失效批次分段修復 : repairInput 支援多段重構
-    section Phase 3 (長期規劃)
-        自適應窗口 : 基於模型 Token 密度動態調節
-        資源配額治理 : 階梯逾時與重試熔斷
-        摘要生命週期 : 歷史微摘要合併 (Rollup) 與存檔
-```
+訊息先被序列化為提示文字，再進入完整 request 的 JSON 計數，故原文字數不等於最終請求字元數。例如單個雙引號在兩層 JSON 中可貢獻四個 code units；emoji 通常佔兩個 UTF-16 code units。總量還取決於實際欄位、metadata 及包裝，不能只用正文長度推定通過。
 
----
+原 #408 的 [helper](https://github.com/2NTTY/child-ai-caregiver/blob/d1fca9f3da4e4b7bfea9cabca20ba0dd31f70869/server/summary-window-helper.ts#L1-L78) 採用：
 
-## 4. 各階段深入技術規格 (In-Depth Technical Specifications)
+- 普通多訊息累積目標 `SUMMARY_BATCH_TARGET_CHARS = 12,000`。
+- 固定預留 `SUMMARY_GATEWAY_RESERVE_CHARS = 10,500`。
+- 估算 payload 門檻 `SUMMARY_SAFE_REQUEST_CEILING = 32,000 - 10,500 = 21,500`。
 
-### 4.1 Phase 1：有界首筆容納與安全門檻校準（PR #408 已落地）
+這是原候選的工程估算，**不是已證明適用所有合法 metadata、修復來源及 runtime 的安全上界**。helper 的序列化形狀並非完整 worker request，修復來源在實際請求中的包裝位置亦須逐項核對。不能用少量 fixture 測得的開銷，推出任意請求「絕不超過 32k」或「保證生產安全」。
 
-#### 演算法狀態機 (`server/summary-window-helper.ts`)
-```mermaid
-stateDiagram-v2
-    [*] --> EvaluatingMessage: 讀取候選訊息 msg
-    EvaluatingMessage --> EstimatePayload: 計算 estimateSummaryPayloadCharacters([msg])
-    
-    state "首筆訊息處理" as FirstMsg {
-        EstimatePayload --> CheckFirstCeiling: 是否為第一條訊息？
-        CheckFirstCeiling --> RejectOversized: payload > 21,500 (如 5.9k / 10k 引號)
-        RejectOversized --> ReturnContinuation: 回傳 requiresContinuation: true\n(乾淨停滯，不進入 Gateway)
-        
-        CheckFirstCeiling --> AccommodateSingle: payload <= 21,500
-        AccommodateSingle --> CheckRawJson: 檢查 rawJsonSize > 12,000 ?
-        CheckRawJson --> BoundedFirstBreak: 是 (如 7k Emoji)\n單筆獨佔批次，立即 break
-        CheckRawJson --> PushAndContinue: 否 (小於 12k)\n加入批次，繼續累積
-    }
-    
-    state "後續多訊息累積" as SubsequentMsg {
-        PushAndContinue --> CheckMultiBounds: 檢查後續訊息
-        CheckMultiBounds --> AcceptNext: accumulated + size <= 12,000\n且 totalPayload <= 21,500
-        CheckMultiBounds --> SafeBreak: 超過 12k 或超過 21.5k\n立即 break 封閉批次
-    }
-```
+原文的固定 payload 常數、5,301–5,559 引號回歸區間及精確 request 長度並無在本文件中保留為通用門檻。此類邊界須固定訊息完整形狀、metadata、prompt/schema、currentSources、runtime 與程式 head，透過實際組裝及同一 gateway 計數核實。
 
-#### Phase 1 已知邊界與工程取捨 (Known Scope Limitations)
-1. **剩餘卡死窗口（5,301–5,559 個 `"`）**：
-   - 估算 Payload 介乎 21,501 至 22,536 之間。
-   - 在 master 上此長度可完成（Real Request 31.2k–31.9k），但 PR #408 為保留 1k 安全餘量避免生產環境不同 runtime 波動，在此版本先行判定超額停滯。
-   - 5,560 個以上引號在 master 與 PR 均會超標卡死。此剩餘窗口交由 Phase 2 多段切分徹底根治。
-2. **互動式 8k 路徑未改動**：`server/product-agent-tools.ts` 維持原狀，於 Phase 2 處理。
+### 2.3 互動 read_context 的兩道容量限制
 
----
+互動路徑先呼叫 [uncoveredConversation](https://github.com/2NTTY/child-ai-caregiver/blob/9ca338882ed21a3b01d534581d7a6e532c72da2a/server/product-agent-tools.ts#L84-L98)，以固定 8,000 raw JSON code units 選完整訊息 prefix；首筆不 fit 便停止，不受後續動態工具餘額變大影響。`read_context` 在第 283 行先取得此 `loaded`，後續只會再縮減其訊息，不能把已排除的 9,000 ASCII 或 7,000 emoji 首筆補回。
 
-### 4.2 Phase 2：多段分段覆蓋與水位追蹤（詳細設計）
+其後才進行整份工具結果的第二道檢查：[AgentBudget](https://github.com/2NTTY/child-ai-caregiver/blob/9ca338882ed21a3b01d534581d7a6e532c72da2a/server/agent-budget.ts#L204-L220) 由完整請求、模型回覆及保留量計算 `toolResponseCharacters`；未準備動態預算時才 fallback 至 8,000。[read_context](https://github.com/2NTTY/child-ai-caregiver/blob/9ca338882ed21a3b01d534581d7a6e532c72da2a/server/product-agent-tools.ts#L279-L327) 再使用 `max(0, budget.toolResponseCharacters - 512)` 量度整份工具結果。
 
-#### 1. 資料庫結構演進 (Firestore Schema Extension)
-在 `conversation_summaries` 與記憶集合中擴充多段進度記錄：
+因此 7,488 只是第二道檢查在 fallback 情況的 allowance，並非所有讀取的固定硬上限；前置 8k raw prefix 則是此版本仍存在的獨立限制。這是 Server Agent 工具路徑，不是前端畫面改動；選取、分段及 metadata 都要服從當次有效餘額，不能承諾任何餘額下單次便返回全部語義。
 
-```typescript
-export interface ConversationSummaryPartMetadata {
-  /** 關聯的原長訊息 ID */
-  sourceMessageId: string;
-  /** 當前分段序號 (從 0 開始) */
-  partIndex: number;
-  /** 預估總分段數 */
-  totalParts: number;
-  /** 當前分段涵蓋之文字起點字元 offset (以 Unicode code unit 計) */
-  startOffset: number;
-  /** 當前分段涵蓋之文字終點字元 offset */
-  endOffset: number;
-  /** 是否為該長訊息的最後一個分段 */
-  isLastPart: boolean;
-}
+## 3. #408 原候選修復與未完成項
 
-export interface ExtendedConversationSummary extends ConversationSummary {
-  /** 當摘要涵蓋未完成之長訊息時攜帶分段中繼資訊 */
-  partMetadata?: ConversationSummaryPartMetadata | null;
-}
-```
+| 原候選行為 | 可合理聲稱的範圍 | 仍未完成／未證明 |
+|---|---|---|
+| 首筆 raw JSON 超過 12k，但估算 payload 在 21.5k 內時整筆納入 | 背景有界首筆容納；例如原測試的 7,000 emoji | 全部合法訊息、全部 metadata 及完整 request 的安全前進性 |
+| 後續訊息同時檢查 raw 目標與估算 payload | 有序前綴的大小防護，不跳過中間長訊息 | 不等於完整 request 的所有開銷已受相同估算約束 |
+| 首筆超過估算門檻時回 `message_requires_continuation` | 明確停止，沒有假 coverage | 未實作 continuation cursor／分段進度；同一首筆仍可永久停滯 |
+| `repairInput` 改用估算門檻，超額回 `null` | 繼續隱藏失效批次 | 隱藏不是修復成功；超額修復沒有分段接續 |
+| 保存既有完整 prefix 後推進水位 | 保留原完整訊息保存檢查 | 未有部分訊息的持久 coverage／防重協定 |
+| `product-agent-tools.ts` 未修改 | 無互動路徑新增交付 | 互動長首筆的選取及摘要 coverage 仍須補齊 |
 
-#### 2. Surrogate-Safe 智慧切分演算法
-長訊息切分嚴格禁止按任意字元數截斷，必須遵循：
-1. **Unicode 安全**：檢測 UTF-16 高低代理對（`0xD800` 至 `0xDFFF`），絕不從 Surrogate Pair 中間切斷，防止產生畸變字元。
-2. **語義優先分段**：
-   - 第一優先：段落換行 `\n\n`
-   - 第二優先：單換行 `\n`
-   - 第三優先：語句標點（`。`、`！`、`？`、`.`、`!`、`?`）
-   - 最低兜底：在 10,000～12,000 字元區間內的最近空格或安全字元邊界。
+來源：[原候選 prepareMaintenance 選取](https://github.com/2NTTY/child-ai-caregiver/blob/d1fca9f3da4e4b7bfea9cabca20ba0dd31f70869/server/firestore-memory.ts#L570-L584)、[原候選修復／保存](https://github.com/2NTTY/child-ai-caregiver/blob/d1fca9f3da4e4b7bfea9cabca20ba0dd31f70869/server/firestore-memory.ts#L393-L453)、[背景停止路徑](https://github.com/2NTTY/child-ai-caregiver/blob/d1fca9f3da4e4b7bfea9cabca20ba0dd31f70869/server/private-summary-maintenance.ts#L8-L29)。
 
-#### 3. 水位推進與崩潰恢復時序圖 (Resumption & Progression Sequence)
+**結論：原 #408 是局部候選修復，尚未達成 REQ-005 §9「合法長單訊息摘要前進性」整列驗收；#409 只修改文件，沒有實作後續功能。**其他 REQ-005 的集中政策、turn-aware recent、歷史定位、投影相容、完整 token budget 及同 run compaction 不在這兩個原 PR 的新增實作內，不能計作已交付。
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Worker as Background Worker
-    participant Memory as firestore-memory.ts
-    participant LLM as Gemini Gateway (32k)
-    participant DB as Firestore (conversation_summaries)
+## 4. 後續分段方案：待定案，未實作
 
-    Note over Worker, DB: 偵測到 10,000 個引號之超長訊息 (Msg #100)
-    Worker->>Memory: prepareMaintenance(userId, childId)
-    Memory-->>Worker: 回傳 Part 1/3 (Offset 0..3500)
-    Worker->>LLM: 產生 Part 1 摘要 (Request ~24k <= 32k)
-    LLM-->>Worker: 回傳摘要結果
-    Worker->>Memory: saveSummary(Part 1, isLastPart: false)
-    Memory->>DB: 儲存摘要 (Watermark lastSortKey 保持不變！)
-    
-    Note over Worker, DB: 假設伺服器重啟或 Worker 崩潰...
-    
-    Worker->>Memory: prepareMaintenance(userId, childId)
-    Note over Memory: 讀取最新 Head，發現未完成之 Part 1
-    Memory-->>Worker: 恢復進度，回傳 Part 2/3 (Offset 3500..7000)
-    Worker->>LLM: 產生 Part 2 摘要
-    LLM-->>Worker: 回傳摘要結果
-    Worker->>Memory: saveSummary(Part 2, isLastPart: false)
-    Memory->>DB: 儲存摘要 (Watermark 依然維持)
+本節保留原方案的可用方向，作需求範圍內的討論材料。以下欄位、儲存位置及演算法均未成為權威 schema；實施前須回到既有 PLAN／資料／API 契約定案，不能照此草案直接遷移 Firestore。
 
-    Worker->>Memory: prepareMaintenance(userId, childId)
-    Memory-->>Worker: 回傳 Part 3/3 (Offset 7000..10000, isLast: true)
-    Worker->>LLM: 產生 Part 3 摘要
-    LLM-->>Worker: 回傳摘要結果
-    Worker->>Memory: saveSummary(Part 3, isLastPart: true)
-    Memory->>DB: 儲存摘要，【Watermark 推進至 Msg #100 之後】！
-```
+### 4.1 進度與資料契約的候選方向
 
-#### 4. 前端互動 8k 工具適配 (`server/product-agent-tools.ts`)
-- 前端 `read_context` 工具回應上限為：
-  $$\text{Interactive Limit} = \text{toolResponseCharacters} - 512 \approx 8,000 - 512 = 7,488 \text{ 字元}$$
-- 當對話歷史包含未完成之長訊息時，`read_context` 透過與 Helper 共用之分段邏輯，僅提取最新分段與已完成摘要，保證在 7.5k 限制內呈現完整連貫語義，不拋出溢出例外。
+原稿提出 `sourceMessageId`、`partIndex`、`totalParts`、`startOffset`、`endOffset` 及 `isLastPart`。這些只是候選欄位；光有 index／offset 不能證明來源版本、完整覆蓋或安全恢復。仍須明定：
 
----
+- 分段綁定的來源訊息／版本及內容 hash、身份／孩子／模式、授權狀態及摘要 basis；hash 的生成、核對及來源變更規則須先定案。
+- Offset 的單位、區間邊界、相鄰片段無缺口／無重複的連續性及完整性驗證；動態餘額下是否能預先確定 `totalParts`。
+- 部分成果的持久格式、舊 reader 相容、完成標記、併發／防重與原工作計量。
+- 普通摘要與修復摘要的來源依賴、更正／撤權／刪除／到期，以及部分成果失效時如何安全重建；並行修復的原子替換／提交邊界尚待定案。
 
-### 4.3 Phase 3：自適應滑動窗口與資源治理（長期交付）
+這些是待解的實作問題，不在本文件新增一份可直接寫入的 TypeScript／Firestore 契約。
 
-#### 1. 動態 Token 密度調節 (Adaptive Window Sizing)
-- 不同語言與字符的 Token 消耗比率迥異：
-  - ASCII 英文：約 4 字元 = 1 Token
-  - 中文漢字：約 1.5～2 字元 = 1 Token
-  - 代碼與特殊符號：約 2～3 字元 = 1 Token
-- Phase 3 將在 Helper 中引入輕量字元頻率分析，根據語言構成動態將純 JSON 目標門檻微調於 9,000～14,000 之間，使 LLM 上下文始終維持在最佳 Token 密度。
+### 4.2 容量與切分順序
 
-#### 2. 背景任務階梯逾時與熔斷機制 (Governance & Circuit Breaking)
-- 連續遭遇 3 次超額分段失敗時，暫時標記該對話批次為 `quarantined`，發送告警並退避重試，避免無效輪詢消耗專案 API 配額。
-- 設定 Worker 硬逾時階梯：單一分段上限 45 秒，整批維護上限 120 秒。
+先以當次有效容量及完整包裝，找出可容納且有進展的候選片段，再在可容納範圍內選段落、換行、標點或安全文字邊界。不得切斷 UTF-16 surrogate pair，也不能為追求語義邊界而越過容量。切分與完整訊息的合法輸入判斷仍須分開。
 
-#### 3. 歷史微摘要合併與歸檔 (Summary Rollup & Retention)
-- 當對話積累超過 50 個微批次摘要時，背景離線任務自動觸發 Macro-Rollup，將舊微摘要合併為月份/里程碑摘要，節省 Firestore 讀取開銷與前端載入延遲。
+原稿的「10,000–12,000 raw 字元兜底」不能用作安全規則：escape-heavy 內容經兩層序列化後可能超額。10,000 個引號亦不預先規定必須切成三段；片段數及 offset 應由已核對的包裝、metadata、當次餘額與切分策略決定。
 
----
+### 4.3 前進、恢復與修復
 
-## 5. 測試驗收與驗證矩陣 (Verification Matrix)
+1. 保存已驗證的片段 coverage 及原工作進度；未完整覆蓋訊息前，不把整條訊息標成完成或跨過其水位。
+2. 重啟／重試先讀原進度與原結果，核版本及授權後才接續；unknown 結果不盲重送，不另開帳重置消耗。
+3. 最後片段完整且來源仍有效時，才按已定案的一致性協定完成摘要及推進水位。
+4. 修復須依當前有效來源重建完整 coverage；不能復活已刪、到期或失權內容，也不能丟失來源依賴以硬塞容量。部分修復不可對外宣稱完整。
+5. 互動讀取須讓返回內容、`privateSummaryInput` 及保存時核對的 coverage 一致，並如實標示尚未涵蓋部分；獨立 history 補讀不自動代表摘要已覆蓋。
 
-| 測試案例 | 覆蓋階段 | 測試輸入 | 驗證標準 |
-| :--- | :--- | :--- | :--- |
-| **Test 1** | Phase 1 | 7,000 個 Emoji (14k UTF-16) | 不卡死，單筆獨立佔用批次，順利放行。 |
-| **Test 2** | Phase 1 | 儲存摘要後之 Watermark 推進 | 儲存後 `lastSortKey` 正確推進，舊訊息不再被重覆撈取。 |
-| **Test 3** | Phase 1 | 5,300、5,900 及 10,000 引號 | 5,300 放行；5,900 及 10,000 乾淨停滯於 `message_requires_continuation`。 |
-| **Test 4** | Phase 1 | 30 × 1,000 ASCII 與 3 × 1,900 引號 | 普通訊息在 ~12k 截斷；多筆引號在第 2 筆截斷，杜絕膨脹。 |
-| **Test 5** | Phase 1 | 端對端 7,000 Emoji 真實 Request 量度 | 透過真實 `maintainSummary` 測得完整 Request $\approx 23.8\text{k} \le 32,000$。 |
-| **Test 6** | Phase 1 | 14k 修復與超額失效批次跳過 | 14k 修復成功；5,900 引號失效批次安全回傳 `null` 並維持隱藏。 |
-| **Test 7** | Phase 1 | 端對端 5,300 引號真實 Request 量度 | 實測 Request $\approx 30,962 \le 32,000$，證實接近天花板時不崩潰。 |
-| **Test 8** | Phase 2 | 10,000 引號分段覆蓋 (Chunking) | 成功切分為 3 個 Parts，依序摘要並在最後一段推進 Watermark。 |
-| **Test 9** | Phase 2 | 分段中途中斷與冪等恢復 (Resumption) | 在 Part 2 模擬 Worker 重啟，能自 Part 2 接續完成，無重複資料。 |
-| **Test 10** | Phase 2 | 前端 `read_context` 8k 互動式讀取 | 長訊息情境下 `read_context` 輸出嚴格 $\le 7,488$ 字元且語義完整。 |
-| **Test 11** | Phase 3 | 50+ 摘要自動 Rollup 與存檔 | 歷史多批次成功壓縮為單一月度摘要，清理冷資料。 |
+這些對應原需求的不變條件，具體交易／恢復方法及所需驗收仍待實作方案確認。
 
----
+## 5. 額外研究提案與驗證安排
 
-## 6. 結論與協作建議
+### 5.1 未採納的額外政策
 
-本藍圖清晰指明了 REQ-005 的整體演進路徑：
-- **Phase 1 (PR #408)** 是關鍵的**防禦性基石**：它修復了最普遍的卡死案例，並確立了 21,500 安全天花板與雙重 Escape 預估防護網，保證生產環境安全。
-- **Phase 2** 將在 Phase 1 建立的安全邊界之上，透過資料庫欄位擴充與分段演算法，徹底消滅所有超大訊息卡死問題，完成前後端體驗閉環。
-- **Phase 3** 則著眼於系統長期維護成本與效能最佳化。
+原稿的 token 密度調窗、重試熔斷／告警及摘要 rollup 可供後續研究，但不是本輪已批准或已實作政策。本版移除 9k–14k 窗口、三次失敗隔離、45 秒／120 秒逾時及 50 批自動 rollup 的指定值，亦不以固定字元／token 比例代替指定模型的實際用量或明示估算。
 
-所有團隊成員在進行 Phase 2 或後續模組開發時，應嚴格遵循本文件規範之架構邊界與資料契約。
+若日後採納，須依 [REQ-005 中央政策](https://github.com/2NTTY/child-ai-caregiver/blob/9ca338882ed21a3b01d534581d7a6e532c72da2a/docs/REQUIREMENTS_BACKLOG.md#L867-L917) 明定 owner、單位、soft／hard、來源、版本、有效值與原工作計量；不能藉分段自行增批加額、改付款身份或引入未批准開支。重試、告警、逾時及 rollup 不在此文取得執行授權。
+
+摘要壓縮不等於清理原始歷史。原訊息、來源、收據及 unknown 狀態仍按既有保留／刪除／授權契約處理；不因本草案自動清理冷資料，不延長保留期，也不從失效摘要復活內容，見 [REQ-005 §4.2](https://github.com/2NTTY/child-ai-caregiver/blob/9ca338882ed21a3b01d534581d7a6e532c72da2a/docs/REQUIREMENTS_BACKLOG.md#L943-L952)。
+
+### 5.2 現有測試定義與尚欠驗收
+
+下表描述 [原 #408 測試原碼](https://github.com/2NTTY/child-ai-caregiver/blob/d1fca9f3da4e4b7bfea9cabca20ba0dd31f70869/tests/summary-progress.test.ts)，**不是本文件修訂重新執行產品測試的成績單**。
+
+| 範圍 | 原測試定義／尚欠結果 |
+|---|---|
+| 背景 7,000 emoji 與保存後水位 | 原 tests 1–2 有局部容納／推進斷言；不涵蓋所有合法訊息 |
+| 逃逸正文及多訊息累積 | 原 tests 3–4 有放行／停止邊界；停止超額首筆不是前進性成功 |
+| 完整 worker 組裝 | 原 tests 5、7 經 `maintainSummary` 組裝請求，以 scripted provider 捕獲並量度；沒有呼叫真模型或驗收正式環境 |
+| 失效批次修復 | 原 test 6 定義 14k 修復及超額時隱藏；未證明超額 repair 可接續 |
+| 合法長訊息／最大 metadata／修復 currentSources | 須核對完整 request 的實際序列化及有效預算；不以固定 reserve 或極簡 fixture 取代 |
+| 訊息內分段、重啟、防重及最後水位 | 原 #408 未實作；須有連續完整 coverage、版本／撤權／取消及 unknown 證據 |
+| 互動與背景一致 | 須測工具餘額充裕但 9,000 ASCII 先被 raw 8k prefix 擋下的案例，以及動態餘額不足、首筆容納／分段、保存 coverage、metadata-only 及 metadata 本身超額；明示未涵蓋／省略，不固定期待 7,488 或三個 parts |
+| 保存／投影／包裝 | 原需求指出可保存 6k 摘要卻有 3k 整批投影及另一層包裝限制；須核對省略／補讀與容量相容，不能以保存成功推論已進模型 context |
+| recent 與歷史定位 | turn-aware 選取、partial turn、已知 ID／相鄰 turn 及原資源續讀仍按原需求驗收，未由本輪候選交付 |
+| 額外政策及 rollup | 未採納、未實作；不列為本輪通過測試或既定交付門檻 |
+
+## 6. 交付及協作界線
+
+本次文件修正只校準候選狀態、容量單位、證據層級及方案地位。後續程式修改、測試通過、合併與部署須分開記錄精確版本；不得將「已寫測試」「安全停止」「保持失效內容隱藏」改寫成整個需求已完成。
+
+下一步先修及核實 #408 的確定問題，保留剩餘產品缺口；分段及政策工作按已確認需求另行定案。文件、PR 描述或局部合成測試不授權真模型、真家庭資料、正式部署或網站更新，也不取代必要 review、分支保護及驗收。

@@ -4441,3 +4441,12 @@
 沿 `f226fe09` 復用原成長服務、四項規則、官方依據、主題設定、修訂與背景台帳；加入本人範圍的快照／主題匯入準備及有界讀取接口。原作者、近況、外來關聯與處理狀態留來源；lastRequest 不重播。來源 hash 不代替正文／本地適用性核對；目前有效資料才可建立新工作，原終態、停用主題及重複 basis 不重開提醒。Topic 用現有孩子／主題槽的穩定 UUIDv8 對應匯入身份，未新增另一份業務資料。原資料仍可讀，正常修改保留來源鏈，restore 核對來源 actor 與本地 importer。
 
 原服務一條連貫情景 red→green、五根局部型別零診斷；獨立 review 無阻塞。首次恢復檢查曾錯選 namespace 下非成長紀錄，已修測試篩選，保留失敗。詳見[證據](artifacts/verification/P4_HANDOVER_GROWTH_DOMAIN_20261030.json)。未跑雲端、模型、通知、設備或全量測試，仍欠統一批次、可再匯出的來源歷史及共用畫面，尚未部署。合併後繼續完整 P4，不把底層通過當成整體完成。
+
+<a id="log-20261103-req005-roadmap-review"></a>
+### 2026-11-03 — REQ-005 摘要方案文件審閱修正
+
+Recorded At：2026-11-03 11:10 UTC。Work Date：同日。依使用者要求 review 及修正 #408／#409，本項只修 #409 文件；從 `b99c46cc444d4838ee0ba372696829a0887cf3e5` 隔離修訂，核對需求基線 `9ca338882ed21a3b01d534581d7a6e532c72da2a` 及原 #408 `d1fca9f3da4e4b7bfea9cabca20ba0dd31f70869`。由 Astra 協助核對與執筆，未作人工驗收。
+
+`docs/REQ005_CONVERSATION_PROGRESSION_ROADMAP.md` 改列待定方案及固定版本快照，撤回未合併候選「已完成／已落地」與固定預留保證安全的說法。校正 worker 32k、互動可配置輸入及 read_context 動態餘額的區別；分清 scripted-provider 組裝量度、測試定義與產品驗收。未批准的窗口／熔斷／逾時／rollup 數值不列既定政策，保留來源／coverage／原子修復待設計項、投影及其他 REQ-005 未完成範圍，不自行新增持久契約或資料清理。
+
+文件檢查通過：18 個 Markdown 連結的 Git 目標與行範圍、狀態／範圍斷言、所引固定版本容量數值、UTF-8／控制字元、修改範圍及 WORKLOG append-only；`git diff --check` 通過。首次 whitespace 檢查發現三處 Markdown 行尾空格，修正後補驗通過；獨立覆核另補正前置 raw 8k prefix 與動態工具餘額兩道限制及其驗收。純文件修改未重跑產品測試，未作真模型、Firestore、瀏覽器、設備或部署驗收；#408 新修訂的測試結果由其精確版本另記，本項不代驗或宣稱 REQ-005 完成。
