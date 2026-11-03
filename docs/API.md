@@ -1015,7 +1015,9 @@ memory 匯入契約（後端已接、共用畫面待接、未部署）：產品�
 
 Firestore 的 `prepareSummary`／`read_context.privateSummaryInput.summaryMode=isolated_batch` 指定一段完整、有序原訊息；摘要只涵蓋該批，不串接上一份摘要正文。舊 cumulative 資料仍按原 basis 保守核對。保存綁定 previousVersion、basis、原覆蓋 IDs；來源變動不重設新版的追加游標。這是私人衍生資料，不改事實、工作或提醒終態。
 
-私人 `memory-refresh` 是現有 worker 的維護用途，非 P3 專職 Agent：以已保存工作 reference／generation／授權 claim 進同一 Runner、付款路由及原 finish 交易。只有一個 terminal `stage_private_summary`，最多一次生成、無檢索 embedding 或外發工具；一次最多整理 12,000 字元的完整原訊息批次，修復時連同現行更正資料亦須符合此上限。超大單訊息保留未處理及 input_limit，不截斷或跳過覆蓋；原文仍可由歷史續讀。沒有新增或可修復批次便零模型結束。
+私人 `memory-refresh` 是現有 worker 的維護用途，非 P3 專職 Agent：以已保存工作 reference／generation／授權 claim 進同一 Runner、付款路由及原 finish 交易。只有一個 terminal `stage_private_summary`，最多一次生成、無檢索 embedding 或外發工具。普通累積以原訊息 JSON 的 12,000 字元為目標，首則完整訊息可超過此目標；最終以 Runner 實際序列化後的完整請求核對既有 32,000 字元容量，包括 JSON escaping、scope、指令、工具及實際 provider 設定，不用固定預留量代替。新批次只可縮短為連續完整訊息前綴，保存的 coverage 只涵蓋實際提供部分。
+
+修復須保留整批原訊息及全部現行更正，不能截斷。沿既有最近四批修復窗口及一個新增前綴有界選取可完整容納的候選；窗口內的過大修復維持失效及待辦，但不阻塞其他可容納修復或新增前綴。完成其他候選後，窗口內仍有待辦便返回 more；沒有任何候選可容納便零模型停止並返回 input_limit，不假報窗口內工作全部完成。既有四批窗口不是全史持久修復佇列；較舊失效批次仍隱藏，但移出窗口後不保證仍獲排程。這不是超大單訊息 continuation：超出完整請求上限的原訊息仍保留未處理、追加游標不跳過，原文可由歷史續讀；互動路徑的原有上限不變。真正沒有新增或可修復批次才零模型完成。
 
 有效摘要每次 provider 呼叫前重核，最多選目前四個批次中能完整容納的內容；保留原訊息 IDs、部分覆蓋／未載入說明。近期對話以最多六則完整訊息及 14,000 字元的可選前文預算選取；當前訊息不截斷，超出可選預算仍交最後總容量閘判定，原始歷史按原工具續讀。未載入不等於不存在；摘要不是目前事實或操作授權。
 

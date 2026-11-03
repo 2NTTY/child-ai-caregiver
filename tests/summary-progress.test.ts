@@ -13,7 +13,7 @@ import { createFirestoreMemoryStore } from '../server/firestore-memory.ts';
 import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
 import { createFirestoreProductAgent } from '../server/firestore-product-agent.ts';
 import { FirestoreDomainData } from '../server/firestore-domain-data.ts';
-import { readContextBasis } from '../server/firestore-context-basis.ts';
+import { readContextBasis, settleSummaryRequest } from '../server/firestore-context-basis.ts';
 import {
   createFirestoreBackgroundQueue,
   prepareFirestoreBackgroundWork,
@@ -26,13 +26,10 @@ import { agentRequestCharacters } from '../server/agent-model-gateway.ts';
 import { AGENT_LIMITS } from '../server/agent-budget.ts';
 import {
   selectSummaryBatchMessages,
-  estimateSummaryPayloadCharacters,
   SUMMARY_BATCH_TARGET_CHARS,
-  SUMMARY_GATEWAY_RESERVE_CHARS,
-  SUMMARY_SAFE_REQUEST_CEILING,
 } from '../server/summary-window-helper.ts';
 
-function createHarness() {
+function createHarness(owner = 'owner') {
   const fake = firestoreDomainFixture();
   function query(raw: any): any {
     return new Proxy(raw, {
@@ -60,13 +57,13 @@ function createHarness() {
     capturedGeneration = randomUUID();
     await authority.initializeControl({ generation: capturedGeneration, enabled: true });
     await authority.issueInvitation({ email: 'owner@example.test', operationId: randomUUID(), expiresAt: new Date(Date.now() + 60000).toISOString() });
-    await authority.admitIdentity({ userId: 'owner', email: 'owner@example.test', emailVerified: true });
-    await authority.acknowledge({ userId: 'owner', operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
-    const { child } = await authority.createChild({ userId: 'owner', displayName: '測試孩子', operationId: randomUUID() });
+    await authority.admitIdentity({ userId: owner, email: 'owner@example.test', emailVerified: true });
+    await authority.acknowledge({ userId: owner, operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+    const { child } = await authority.createChild({ userId: owner, displayName: '測試孩子', operationId: randomUUID() });
     return { child };
   }
 
-  return { authority, data, chat, care, memory, online, options, getGeneration: () => capturedGeneration, bootstrapUserAndChild };
+  return { owner, authority, data, chat, care, memory, online, options, getGeneration: () => capturedGeneration, bootstrapUserAndChild };
 }
 
 // ----------------------------------------------------------------------------
@@ -124,74 +121,23 @@ test('Test 2 (watermark advancement): saving summary of long message advances wa
   assert.equal(followUpBatch.messages[0].id, nextMsg!.id);
 });
 
-// ----------------------------------------------------------------------------
-// Test 3: Escape-heavy single messages (5,300 quotes admitted, 5,900 and 10,000 quotes continuation)
-// ----------------------------------------------------------------------------
-test('Test 3 (escape-heavy single messages): 5,300 quotes admitted within 21.5k ceiling, 5,900+ return continuation', async () => {
-  const h = createHarness();
-  const { child } = await h.bootstrapUserAndChild();
-
-  // 1. 5,300 quotes: payload is ~21,306 <= 21,500 ceiling, admitted without regression
-  const quotes5300 = '"'.repeat(5300);
-  const estimated5300 = estimateSummaryPayloadCharacters([{ id: 'msg-5300', text: quotes5300 }]);
-  assert.ok(estimated5300 <= SUMMARY_SAFE_REQUEST_CEILING, `5,300 quotes payload (${estimated5300}) must be within ceiling (${SUMMARY_SAFE_REQUEST_CEILING})`);
-
-  const msg5300 = await h.chat.createUserMessageForUser('owner', child.id, quotes5300);
-  assert.ok(msg5300);
-
-  const batch5300 = await h.memory.prepareMaintenance('owner', child.id);
-  assert.ok(batch5300);
-  assert.equal(batch5300.messages.length, 1, '5,300 quotes must be admitted within safe ceiling');
-  assert.equal(batch5300.unavailableReason, undefined);
-
-  // 2. 5,900 quotes: raw JSON is ~11.8k <= 12,000, but double-escaped payload is ~23.9k > 21,500
-  const quotes5900 = '"'.repeat(5900);
-  const estimated5900 = estimateSummaryPayloadCharacters([{ id: 'msg-5900', text: quotes5900 }]);
-  assert.ok(estimated5900 > SUMMARY_SAFE_REQUEST_CEILING, `5,900 quotes payload (${estimated5900}) must exceed safe ceiling (${SUMMARY_SAFE_REQUEST_CEILING})`);
-
-  const selected5900 = selectSummaryBatchMessages([{ id: 'msg-5900', text: quotes5900 }]);
-  assert.equal(selected5900.messages.length, 0);
-  assert.equal(selected5900.requiresContinuation, true);
-
-  // 3. 10,000 quotes: double-escaped payload is ~40k > 32k Gateway limit
-  const quotes10000 = '"'.repeat(10000);
-  const estimated10000 = estimateSummaryPayloadCharacters([{ id: 'msg-10000', text: quotes10000 }]);
-  assert.ok(estimated10000 > AGENT_LIMITS.inputCharacters, `10,000 quotes payload (${estimated10000}) exceeds gateway limit`);
-
-  const selected10000 = selectSummaryBatchMessages([{ id: 'mock-10000', text: quotes10000 }]);
-  assert.equal(selected10000.messages.length, 0);
-  assert.equal(selected10000.requiresContinuation, true);
+test('single-message selection leaves actual request admission to the Runner without dropping the source', () => {
+  for (const length of [5300, 5400, 5500, 5900, 10000]) {
+    const message = { id: `quotes-${length}`, text: '"'.repeat(length) };
+    const selected = selectSummaryBatchMessages([message]);
+    assert.deepEqual(selected.messages, [message]);
+    assert.equal(selected.moreUncovered, false);
+  }
 });
 
-// ----------------------------------------------------------------------------
-// Test 4: Multi-message accumulation caps and escape prevention (3 x 1,900 quotes)
-// ----------------------------------------------------------------------------
-test('Test 4 (multi-message cap & escape safety): accumulation stops at ~12k raw JSON and protects against escape expansion', () => {
-  // Case A: 30 messages of 1,000 characters each stops at 12k raw JSON
-  const rawMessages = Array.from({ length: 30 }, (_, index) => ({
-    id: `msg-${index}`,
-    role: 'user',
-    text: 'X'.repeat(1000),
-  }));
-
-  const selected = selectSummaryBatchMessages(rawMessages, SUMMARY_BATCH_TARGET_CHARS, SUMMARY_SAFE_REQUEST_CEILING);
-  const totalJsonChars = JSON.stringify(selected.messages).length;
-  assert.ok(totalJsonChars <= SUMMARY_BATCH_TARGET_CHARS + 1100, `Batch size (${totalJsonChars}) must not balloon beyond target (~12k)`);
-  assert.ok(selected.messages.length >= 10 && selected.messages.length <= 12, `Expected ~10-12 messages of 1k text to fit in 12k target, got ${selected.messages.length}`);
+test('normal accumulation obeys the exact raw JSON target without ballooning multi-message batches', () => {
+  const rawMessages = Array.from({ length: 30 }, (_, index) => ({ id: `msg-${index}`, role: 'user', text: 'X'.repeat(1000) }));
+  const selected = selectSummaryBatchMessages(rawMessages);
+  assert.ok(JSON.stringify(selected.messages).length <= SUMMARY_BATCH_TARGET_CHARS);
+  assert.ok(JSON.stringify([...selected.messages, rawMessages[selected.messages.length]]).length > SUMMARY_BATCH_TARGET_CHARS);
   assert.equal(selected.moreUncovered, true);
-  assert.equal(selected.requiresContinuation, false);
-
-  // Case B: 3 messages of 1,900 double quotes each
-  // Raw JSON would be ~11.4k <= 12,000, but double-escaped payload for 3 messages would be ~22.8k > 21.5k ceiling.
-  // Must stop at 2 messages to prevent payload exceeding 21.5k ceiling.
-  const raw3x1900 = Array.from({ length: 3 }, (_, index) => ({
-    id: `quote-${index}`,
-    text: '"'.repeat(1900),
-  }));
-  const selected3x1900 = selectSummaryBatchMessages(raw3x1900);
-  assert.equal(selected3x1900.messages.length, 2, 'Batch must stop at 2 messages to prevent exceeding 21.5k ceiling');
-  const payload2 = estimateSummaryPayloadCharacters(selected3x1900.messages);
-  assert.ok(payload2 <= SUMMARY_SAFE_REQUEST_CEILING, `Payload for 2 messages (${payload2}) must be <= ${SUMMARY_SAFE_REQUEST_CEILING}`);
+  const first = { id: 'long-first', text: '😀'.repeat(7000) };
+  assert.deepEqual(selectSummaryBatchMessages([first, ...rawMessages]).messages, [first]);
 });
 
 // ----------------------------------------------------------------------------
@@ -282,9 +228,9 @@ test('Test 5 (real request measurement): end-to-end maintainSummary request with
 });
 
 // ----------------------------------------------------------------------------
-// Test 6: Repair path with 14k UTF-16 content & escape-heavy repair skipping
+// Test 6: Repair input preserves complete original messages, including oversized work
 // ----------------------------------------------------------------------------
-test('Test 6 (repairInput): 14k UTF-16 repair succeeds; escape-heavy invalidated batch is skipped by prepareMaintenance', async () => {
+test('repairInput retains long original messages and exposes oversized pending repairs', async () => {
   const h = createHarness();
   const { child } = await h.bootstrapUserAndChild();
 
@@ -319,7 +265,7 @@ test('Test 6 (repairInput): 14k UTF-16 repair succeeds; escape-heavy invalidated
   assert.equal(repair.messages.length, 1);
   assert.equal(repair.messages[0].id, msg!.id);
 
-  // --- Part B: escape-heavy invalidated batch is skipped ---
+  // --- Part B: escape-heavy invalidated batch stays pending ---
   // Save the repair summary to advance watermark, then create a new escape-heavy scenario.
   await h.memory.saveSummary('owner', child.id, {
     previousVersion: repair.previousVersion,
@@ -357,10 +303,11 @@ test('Test 6 (repairInput): 14k UTF-16 repair succeeds; escape-heavy invalidated
     reason: '更正',
   });
 
-  // prepareMaintenance should skip the oversized repair batch (returns null)
-  // because repairInput returns null when estimateSummaryPayloadCharacters > ceiling
-  const skipped = await h.memory.prepareMaintenance('owner', child.id);
-  assert.equal(skipped, null, 'Escape-heavy invalidated batch must be skipped (repairInput returns null when payload exceeds ceiling)');
+  // Size is decided using the complete Runner request; pending work is never reported as empty.
+  const pending = await h.memory.prepareMaintenance('owner', child.id);
+  assert.ok(pending);
+  assert.equal(pending.repairOf, saved2.id);
+  assert.equal(pending.messages[0].text, quotesText);
 });
 
 // ----------------------------------------------------------------------------
@@ -447,4 +394,178 @@ test('Test 7 (near-ceiling real request): 5,300 quotes stays within 32k Gateway 
 
   // Assert it stays strictly within the Gateway 32k limit
   assert.ok(realChars <= AGENT_LIMITS.inputCharacters, `Near-ceiling request (${realChars}) must not exceed Gateway limit (${AGENT_LIMITS.inputCharacters})`);
+});
+
+async function runMaintenance(h: ReturnType<typeof createHarness>, childId: string) {
+  const requests: import('@google/adk').LlmRequest[] = [];
+  const authorizeWorker = async (binding: any, reference: string, recipe: string) => {
+    const job = await readFirestoreBackgroundClaim(h.data, binding, reference);
+    const current = await readContextBasis(h.data, binding);
+    return !!job && job.kind === 'memory-refresh' && recipe === 'memory-refresh'
+      && String(current.value.summaryRequest) === job.basis;
+  };
+  const product = await createFirestoreProductAgent({ ...h.options, chat: h.chat, care: h.care, memory: h.memory,
+    online: h.online, authorizeWorker, config: readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: h.options.projectId }),
+    platformProvider: { async generate(request) {
+      requests.push(structuredClone({ ...request, toolsDict: {} }));
+      return { content: { role: 'model', parts: [{ functionCall: { id: 'summary', name: 'stage_private_summary',
+        args: { text: 'Synthetic complete batch summary' } } }] }, finishReason: FinishReason.STOP,
+        usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 } };
+    } },
+  });
+  const priorRuns = new Set((await product.store.backgroundRuns(h.owner, childId) ?? []).map(run => run.runId));
+  const deliveries: FirestoreBackgroundDelivery[] = [];
+  let maintenance: Awaited<ReturnType<typeof product.maintainSummary>> | undefined;
+  const queue = createFirestoreBackgroundQueue({ ...h.options, enabled: true,
+    readControl: async () => ({ enabled: true, generation: h.getGeneration() }),
+    transport: { enqueue: async item => { deliveries.push(item); return { state: 'confirmed' }; }, probe: async () => ({ state: 'confirmed' }) },
+    execute: async (job, signal) => {
+      maintenance = await product.maintainSummary({ userId: h.owner, childId, reference: firestoreBackgroundReference(job),
+        authorize: async () => true, signal });
+      await h.authority.runTransaction(h.owner, childId, async binding => {
+        await settleSummaryRequest(h.data, binding, Number(job.basis), maintenance!.state === 'unknown' ? 'unknown'
+          : maintenance!.state === 'completed' ? ('more' in maintenance! && maintenance!.more ? 'more' : 'complete') : 'deferred',
+          firestoreBackgroundReference(job));
+      });
+      return { state: maintenance.state };
+    },
+  });
+  const workId = await h.authority.runTransaction(h.owner, childId, async binding => {
+    const current = await readContextBasis(h.data, binding);
+    const work = await prepareFirestoreBackgroundWork(h.data, binding.transaction, { kind: 'memory-refresh', scope: binding.scope,
+      resourceId: childId, basis: String(current.value.summaryRequest), generation: binding.generation,
+      authorizationVersion: binding.authorizationVersion }, new Date(Date.now() - 1000).toISOString());
+    work.commit(); return work.id;
+  });
+  await queue.dispatch();
+  const delivery = deliveries.find(item => item.id === workId);
+  assert.ok(delivery);
+  await queue.process(delivery);
+  assert.ok(maintenance);
+  const runs = await product.store.backgroundRuns(h.owner, childId);
+  assert.ok(runs);
+  const added = runs.filter(run => !priorRuns.has(run.runId));
+  assert.equal(added.length, 1);
+  const stored = await product.store.get(h.owner, childId, added[0].runId);
+  assert.ok(stored);
+  return { result: maintenance, requests, stored };
+}
+
+for (const quotes of [5400, 5500]) test(`real worker preserves baseline progress for ${quotes} quotes without a calibrated reserve`, async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const original = await h.chat.createUserMessageForUser('owner', child.id, '"'.repeat(quotes));
+  const { result, requests } = await runMaintenance(h, child.id);
+  assert.equal(result.state, 'completed', JSON.stringify(result));
+  assert.equal(requests.length, 1);
+  assert.ok(agentRequestCharacters(requests[0]) <= 32000);
+  const supplied = JSON.parse(requests[0].contents[0].parts![0].text!);
+  assert.deepEqual(supplied.sourceMessages.map((message: any) => message.id), [original!.id]);
+  assert.equal(supplied.sourceMessages[0].text, '"'.repeat(quotes));
+  assert.equal(await h.memory.prepareMaintenance('owner', child.id), null);
+  const next = await h.chat.createUserMessageForUser('owner', child.id, 'Next uncovered source');
+  assert.deepEqual((await h.memory.prepareMaintenance('owner', child.id))!.messages.map(message => message.id), [next!.id]);
+});
+
+test('an oversized repair stays hidden and reports input_limit instead of successful empty maintenance', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const values = { key: 'Synthetic source', content: 'old', source: { kind: 'manual' as const, description: 'owner' }, validUntil: null };
+  const candidate = await h.memory.createFact('owner', child.id, { values, intendedVisibility: 'private' });
+  const fact = await h.memory.confirmFact('owner', child.id, candidate!.id, { expectedVersion: 1, confirm: true, confirmShared: false });
+  const message = await h.chat.createUserMessageForUser('owner', child.id, '"'.repeat(5900));
+  const prepared = (await h.memory.prepareSummary('owner', child.id))!;
+  const saved = (await h.memory.saveSummary('owner', child.id, { previousVersion: prepared.previousVersion, basis: prepared.basis,
+    text: 'Obsolete synthetic summary', coveredMessageIds: [message!.id] }))!;
+  await h.memory.reviseFact('owner', child.id, fact!.id, { expectedVersion: 2, confirm: true, confirmShared: false,
+    values: { ...values, content: 'new' }, reason: 'Correction' });
+  const { result, requests } = await runMaintenance(h, child.id);
+  assert.equal(result.state, 'stopped');
+  assert.equal('stopReason' in result ? result.stopReason : undefined, 'input_limit');
+  assert.equal(requests.length, 0);
+  assert.equal((await h.memory.prepareMaintenance('owner', child.id))!.repairOf, saved.id);
+  assert.equal((await h.memory.summary('owner', child.id))!.summary, null);
+});
+
+
+test('actual request fitting keeps an ordered prefix and advances only the supplied coverage', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  for (let index = 0; index < 3; index++) await h.chat.createUserMessageForUser('owner', child.id, '"'.repeat(1850));
+  const pending = (await h.memory.prepareSummary('owner', child.id))!.messages;
+  assert.equal((await h.memory.prepareMaintenance('owner', child.id))!.messages.length, 3);
+  const { result, requests, stored } = await runMaintenance(h, child.id);
+  assert.equal(result.state, 'completed', JSON.stringify(result));
+  assert.equal(requests.length, 1);
+  assert.ok(agentRequestCharacters(requests[0]) <= 32000);
+  const supplied = JSON.parse(requests[0].contents[0].parts![0].text!);
+  const context = JSON.parse(requests[0].contents[0].parts![1].text!.split('\n').slice(1).join('\n'));
+  assert.deepEqual(supplied.sourceMessages, pending.slice(0, 2));
+  assert.deepEqual(context.coverage.messageIds, pending.slice(0, 2).map(message => message.id));
+  assert.equal(context.coverage.moreUncovered, true);
+  assert.deepEqual(stored.counts, { modelCalls: 1, toolCalls: 1, queryEmbeddings: 0 });
+  assert.deepEqual((await h.memory.summary('owner', child.id))!.summary!.coveredMessageIds, context.coverage.messageIds);
+  assert.deepEqual((await h.memory.prepareMaintenance('owner', child.id))!.messages, pending.slice(2));
+});
+
+for (const scenario of [
+  { name: '10k quotes', owner: 'owner', text: '"'.repeat(10000) },
+  { name: 'schema-maximum escaped owner metadata', owner: '\u0001'.repeat(256), text: '"'.repeat(4853) },
+]) test(`oversized ${scenario.name} stops before model reservation without advancing or skipping coverage`, async () => {
+  const h = createHarness(scenario.owner);
+  const { child } = await h.bootstrapUserAndChild();
+  const message = await h.chat.createUserMessageForUser(h.owner, child.id, scenario.text);
+  await h.chat.createUserMessageForUser(h.owner, child.id, 'Later source must not be skipped to');
+  const { result, requests, stored } = await runMaintenance(h, child.id);
+  assert.equal(result.state, 'stopped');
+  assert.equal('stopReason' in result ? result.stopReason : undefined, 'input_limit');
+  assert.equal(requests.length, 0);
+  assert.deepEqual(stored.counts, { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 });
+  assert.equal((await h.memory.summary(h.owner, child.id))!.summary, null);
+  assert.equal((await h.memory.prepareMaintenance(h.owner, child.id))!.messages[0].id, message!.id);
+});
+
+
+test('an oversized repair cannot starve another repair or fresh coverage across worker restarts', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const values = { key: 'Shared dependency', content: 'old', source: { kind: 'manual' as const, description: 'owner' }, validUntil: null };
+  const candidate = await h.memory.createFact('owner', child.id, { values, intendedVisibility: 'private' });
+  const fact = await h.memory.confirmFact('owner', child.id, candidate!.id, { expectedVersion: 1, confirm: true, confirmShared: false });
+  async function saveMessage(text: string) {
+    const message = await h.chat.createUserMessageForUser('owner', child.id, text);
+    const input = (await h.memory.prepareSummary('owner', child.id))!;
+    const summary = (await h.memory.saveSummary('owner', child.id, { previousVersion: input.previousVersion, basis: input.basis,
+      text: 'Synthetic old batch', coveredMessageIds: [message!.id] }))!;
+    return { message: message!, summary };
+  }
+  const small = await saveMessage('Earlier repairable source');
+  const oversized = await saveMessage('"'.repeat(5900));
+  await h.memory.reviseFact('owner', child.id, fact!.id, { expectedVersion: 2, confirm: true, confirmShared: false,
+    values: { ...values, content: 'new' }, reason: 'Correction' });
+  const fresh = await h.chat.createUserMessageForUser('owner', child.id, 'Fresh source must advance');
+  const repaired = await runMaintenance(h, child.id);
+  assert.equal(repaired.result.state, 'completed', JSON.stringify(repaired.result));
+  assert.equal(repaired.requests.length, 1);
+  assert.deepEqual(JSON.parse(repaired.requests[0].contents[0].parts![0].text!).sourceMessages.map((message: any) => message.id), [small.message.id]);
+  assert.equal((await h.memory.prepareSummary('owner', child.id))!.messages[0].id, fresh!.id, 'Repair does not rewind the append watermark');
+
+  // A new store and a new claimed worker reconstruct choices from persistent state.
+  h.memory = createFirestoreMemoryStore({ ...h.options, chat: h.chat, care: h.care });
+  const advanced = await runMaintenance(h, child.id);
+  assert.equal(advanced.result.state, 'completed', JSON.stringify(advanced.result));
+  assert.equal('more' in advanced.result && advanced.result.more, true, 'The unprocessed repair remains pending');
+  assert.equal(advanced.requests.length, 1);
+  assert.deepEqual(JSON.parse(advanced.requests[0].contents[0].parts![0].text!).sourceMessages.map((message: any) => message.id), [fresh!.id]);
+  assert.equal((await h.memory.prepareSummary('owner', child.id))!.messages.length, 0);
+  assert.deepEqual((await h.memory.summary('owner', child.id))!.summary!.coveredMessageIds, [fresh!.id]);
+
+  h.memory = createFirestoreMemoryStore({ ...h.options, chat: h.chat, care: h.care });
+  const pending = await runMaintenance(h, child.id);
+  assert.equal(pending.result.state, 'stopped');
+  assert.equal('stopReason' in pending.result ? pending.result.stopReason : undefined, 'input_limit');
+  assert.equal(pending.requests.length, 0);
+  assert.equal((await h.memory.prepareMaintenance('owner', child.id))!.repairOf, oversized.summary.id);
+  const state = await h.authority.runTransaction('owner', child.id, binding => readContextBasis(h.data, binding));
+  assert.equal(state.value.summaryPending, true, 'Exhausting fit candidates must not clear the persistent pending marker');
 });

@@ -20,7 +20,7 @@ import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
 import { importConfirmationActor, makeImportProvenance } from './handover-provenance.ts';
 import type { HandoverImportRow } from './handover-import.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
-import { selectSummaryBatchMessages, estimateSummaryPayloadCharacters, SUMMARY_SAFE_REQUEST_CEILING } from './summary-window-helper.ts';
+import { selectSummaryBatchMessages } from './summary-window-helper.ts';
 
 const uuid = z.uuid(), version = z.number().int().positive().max(2147483646), time = z.iso.datetime({ offset: true });
 const user = z.string().min(1).max(256), visibility = z.enum(['private', 'family']), FAR_FUTURE = '9999-12-31T23:59:59.999Z';
@@ -64,6 +64,8 @@ type Binding = FirestoreAuthorityTransaction;
 type Kind = 'facts' | 'topics';
 type SavedSummary = z.infer<typeof savedSummarySchema>;
 type Prepared<T> = { value: T; changeSeq: string; commit(): void };
+/** Bounded Server-only alternatives; none are covered until the selected batch is saved. */
+export interface SummaryMaintenanceInput extends SummaryInput { alternatives?: SummaryInput[] }
 export interface FirestoreMemoryStore extends MemoryStore {
   forSharedSpace(spaceId: string): MemoryStore;
   mutation: FirestoreOnlineMutation;
@@ -71,7 +73,7 @@ export interface FirestoreMemoryStore extends MemoryStore {
   readImportedSummary(binding: Binding, id: string): Promise<ConversationSummary | null>;
   prepareImportedSummary(binding: Binding, operationId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     current?: { id: string; expectedVersion: number }): Promise<Prepared<ConversationSummary>>;
-  prepareMaintenance(userId: string, childId: string): Promise<SummaryInput | null>;
+  prepareMaintenance(userId: string, childId: string): Promise<SummaryMaintenanceInput | null>;
   prepareSummaryWrite(binding: Binding, raw: unknown, operationId: string): Promise<Prepared<ConversationSummary>>;
   readFact(binding: Binding, id: string): Promise<MemoryFact | null>;
   readTopic(binding: Binding, id: string): Promise<MemoryTopic | null>;
@@ -421,7 +423,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
       if (!message) return null;
       messages.push(message);
     }
-    if (estimateSummaryPayloadCharacters(messages, sources) > SUMMARY_SAFE_REQUEST_CEILING) return null;
+    // Capacity is checked against the actual worker request. A repair is still pending when it does not fit.
     const head = await summaryInput(binding);
     const input: SummaryInput = { previous: null, previousVersion: head.input.previousVersion, basis: head.input.basis,
       messages, moreUncovered: head.input.moreUncovered || head.input.messages.length > 0, summaryMode: 'isolated_batch', repairOf: id, currentSources: sources };
@@ -569,19 +571,20 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     },
     prepareMaintenance: (u, c) => authority.runTransaction(u, c, async binding => {
       const state = await summaryInput(binding);
+      const candidates: SummaryInput[] = [];
       if (state.saved?.batch) {
         const recent = await recentBatches(binding);
         for (const item of recent.batches) if (!item.valid) {
-          const repair = await repairInput(binding, item.saved.summary.id); if (repair) return repair.input;
+          const repair = await repairInput(binding, item.saved.summary.id); if (repair) candidates.push(repair.input);
         }
       }
-      // Normal accumulation stops at 12k to prevent ballooning; bounded first-item accommodation allows legal long messages within the safe gateway ceiling.
+      // Bound normal accumulation, then fit the complete request before any model admission.
       const selected = selectSummaryBatchMessages(state.input.messages);
-      if (selected.requiresContinuation) {
-        return { ...state.input, messages: [], unavailableReason: 'message_requires_continuation' };
-      }
-      return selected.messages.length ? { ...state.input, previous: null, messages: selected.messages,
-        moreUncovered: state.input.moreUncovered || selected.moreUncovered } : null;
+      if (selected.messages.length) candidates.push({ ...state.input, previous: null, messages: selected.messages,
+        moreUncovered: state.input.moreUncovered || selected.moreUncovered });
+      // The existing four-batch repair window plus one append prefix is a bounded choice,
+      // not permission to clear or skip an invalidated batch that cannot fit this request.
+      return candidates.length ? { ...candidates[0], alternatives: candidates.slice(1) } : null;
     }),
     recall: (u, c, keys) => authority.runTransaction(u, c, binding => recall(binding, keys)),
     async readFamilyFacts(binding, keys) {

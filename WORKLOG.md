@@ -4441,3 +4441,12 @@
 沿 `f226fe09` 復用原成長服務、四項規則、官方依據、主題設定、修訂與背景台帳；加入本人範圍的快照／主題匯入準備及有界讀取接口。原作者、近況、外來關聯與處理狀態留來源；lastRequest 不重播。來源 hash 不代替正文／本地適用性核對；目前有效資料才可建立新工作，原終態、停用主題及重複 basis 不重開提醒。Topic 用現有孩子／主題槽的穩定 UUIDv8 對應匯入身份，未新增另一份業務資料。原資料仍可讀，正常修改保留來源鏈，restore 核對來源 actor 與本地 importer。
 
 原服務一條連貫情景 red→green、五根局部型別零診斷；獨立 review 無阻塞。首次恢復檢查曾錯選 namespace 下非成長紀錄，已修測試篩選，保留失敗。詳見[證據](artifacts/verification/P4_HANDOVER_GROWTH_DOMAIN_20261030.json)。未跑雲端、模型、通知、設備或全量測試，仍欠統一批次、可再匯出的來源歷史及共用畫面，尚未部署。合併後繼續完整 P4，不把底層通過當成整體完成。
+
+<a id="log-20261103-req005-summary-request-fit"></a>
+### 2026-11-03 — REQ-005 摘要完整請求容量及窗口內修復
+
+以 #408 固定 head `d1fca9f3` 修正固定預留量造成 5,400／5,500 quotes 原本可處理訊息倒退。沿同一 Runner 以實際指令、scope、原生 parts、工具及 provider 設定量度完整請求；保留 JSON 信任邊界與全部原文，只將新增批次退成連續完整前綴。過大修復不能假報完成；獨立 review 指出第一輪會令 fresh 飢餓，已用真 worker 紅→綠修正為既有四批修復窗口加一個新增前綴有界選取，修復原子、保存 coverage、用量及重啟後窗口內 pending 均有斷言。
+
+最終 12 檔 140／140 通過、17 根 strict 型別閉包零診斷。擴大回歸重現原 head 已有的 summaryMode／prompt 舊斷言及 durable fixture 限額不符，按現行契約修正並補 isolated 行為和可驗證等待 timeout；未改產品 prompt／額度或 workflow。失敗歷程、命令、來源 hash 及限制見[證據](artifacts/verification/REQ005_SUMMARY_REQUEST_FIT_20261103.json)。獨立 review 對固定 patch `858b3c17` 另隔離重跑 33／33，核對所有修改 TS 及原6份收據一致，無新增阻塞問題；只代表本次局部修復，不是 GitHub approval、CI／部署驗收。
+
+REQ-005 未結案：超過實際請求上限的單訊息 continuation、互動路徑及全史持久修復仍未完成；四批窗口外的失效歷史仍隱藏但不保證再獲排程。未調用真模型、雲端、通知或網站，沒有部署／合併。

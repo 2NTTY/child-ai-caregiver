@@ -46,6 +46,13 @@ export function agentRequestCharacters(request: Pick<LlmRequest, "contents" | "c
   return JSON.stringify({ contents, config: request.config }).length;
 }
 
+/** Shared projection for complete-request sizing and the durable provider attempt. */
+export function agentGenerationConfig(config: AiConfig, requestConfig: LlmRequest["config"]): LlmRequest["config"] {
+  return { ...requestConfig, candidateCount: 1,
+    maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
+    thinkingConfig: { thinkingLevel: nativeModelThinkingLevel(config.model, config.agentThinkingLevel) } };
+}
+
 function tokenCount(value: unknown): number | null {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
 }
@@ -236,11 +243,8 @@ export class AgentGatewayModel extends BaseLlm {
       let dailyRequest: DurableAiUsageRequest | undefined;
       if (budget.durable) {
         if (!modelKey) throw new AgentStopped("unavailable");
-        outgoing = { ...outgoing, contents: structuredClone(outgoing.contents), config: {
-          ...structuredClone(outgoing.config), candidateCount: 1,
-          maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
-          thinkingConfig: { thinkingLevel: nativeModelThinkingLevel(config.model, config.agentThinkingLevel) },
-        } };
+        outgoing = { ...outgoing, contents: structuredClone(outgoing.contents),
+          config: agentGenerationConfig(config, structuredClone(outgoing.config)) };
         if (requestSize(outgoing) > budget.limits.inputCharacters) throw new AgentStopped("input_limit");
         requestCharacters = requestSize({ contents: base.contents, config: outgoing.config });
         if (includesSummary && Date.now() >= validUntil) throw new AgentStopped("unavailable");

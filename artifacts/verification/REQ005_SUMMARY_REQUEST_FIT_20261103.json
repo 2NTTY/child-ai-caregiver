@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-03",
+  "repository": "2NTTY/child-ai-caregiver",
+  "pullRequest": 408,
+  "sourceHead": "d1fca9f3da4e4b7bfea9cabca20ba0dd31f70869",
+  "scope": "REQ-005 局部修正；完整請求計量、可容納前綴、窗口內修復公平性與未完成狀態。不是完整 continuation 或部署驗收。",
+  "environment": {
+    "node": "v24.22.1",
+    "dependencies": "lockfile 對應依賴；缺少的 yazl/yauzl 及型別從官方 npm 以 ignore-scripts 安裝到隔離目錄。"
+  },
+  "commands": {
+    "tests": "node --experimental-test-module-mocks --test --test-timeout=30000 tests/summary-progress.test.ts tests/agent-runtime.test.ts tests/agent-model-gateway.test.ts tests/firestore-summary-batches.test.ts tests/firestore-memory-lifecycle.test.ts tests/memory.test.ts tests/private-summary-contract.test.ts tests/summary-prompt-contract.test.ts tests/agent-durable-ai-usage.test.ts tests/agent-durable-budget.test.ts tests/agent-native-session.test.ts tests/agent-owned-session-cleanup.test.ts",
+    "typecheck": "node node_modules/typescript/bin/tsc --ignoreConfig --noEmit --target ES2023 --module NodeNext --moduleResolution NodeNext --strict --erasableSyntaxOnly --allowImportingTsExtensions --skipLibCheck --types node server/agent-model-gateway.ts server/agent-runtime.ts server/firestore-memory.ts server/private-summary-maintenance.ts server/summary-window-helper.ts tests/summary-progress.test.ts tests/agent-runtime.test.ts tests/agent-model-gateway.test.ts tests/firestore-summary-batches.test.ts tests/firestore-memory-lifecycle.test.ts tests/memory.test.ts tests/private-summary-contract.test.ts tests/summary-prompt-contract.test.ts tests/agent-durable-ai-usage.test.ts tests/agent-durable-budget.test.ts tests/agent-native-session.test.ts tests/agent-owned-session-cleanup.test.ts"
+  },
+  "results": {
+    "tests": 140,
+    "passed": 140,
+    "failed": 0,
+    "skipped": 0,
+    "typecheckRoots": 17,
+    "typecheckDiagnostics": 0
+  },
+  "redGreen": [
+    "原 PR 38/38 測試通過，新增 5400/5500 quotes 真 worker 測試重現 prepare 拒絕；修正後完整請求准入、原文不變、游標正常。獨立 reviewer 已對照 PR base 的可成功行為。",
+    "過大 repair 原先零模型但假報 completed；第一輪修正改 stopped，獨立 review 再發現會阻塞 fresh。新增真 worker 反例紅→綠，現在可修另一較小批，再處理 fresh，重建 store/worker 後過大 repair 仍停止且窗口內 pending 不清除。",
+    "擴大驗證重現基線 summaryMode keys 與舊 prompt 文句斷言失敗。更新至現行 cumulative/isolated 契約，新增 isolated 全文、角色、版本及 staged:not-saved 斷言，不改產品 prompt。",
+    "durable usage fixture 沒有傳原根預算 toolCalls=8，與現行預設16不符；原 PR 快照亦失敗。明確傳原根限額，不改產品額度，另驗證缺 provider dispatch 時等待有界失敗。"
+  ],
+  "coverage": [
+    "JSON escaping 的 5300/5400/5500 quotes；完整 payload 與 scope/system/tool/provider 設定；首則完整原文不截斷。",
+    "三則來源因完整 request 容量只提供連續兩則；coverage 與保存只推進該前綴；每次實際嘗試計數。",
+    "10000 quotes 與 schema 最大 escaped owner 合成 metadata：input_limit、零 provider/額度、游標不跳過；不推斷登入服務能建立該 UID。",
+    "修復原子更正、較小修復與 fresh 公平性、重啟後 pending；原 tool parts 與 opaque metadata 保留，fitter 只選一次。",
+    "durable 重試/每日用量、取消/未知、原生 session ownership/cleanup、來源刪除/更正與摘要契約回歸。"
+  ],
+  "limitations": [
+    "超出實際 32000 字元完整請求的合法單訊息仍不會自動 continuation；互動路徑限制不變。",
+    "只沿現有最近四批修復窗口，不是全史持久修復佇列。足夠新批次可把舊失效批次移出窗口；仍隱藏，但不保證再獲排程。",
+    "未調用真模型、真 Firestore/Cloud Tasks、GCP、部署、網站或全量測試；使用真產品接線與合成儲存/provider。",
+    "工作流未修改；現有 offline job 只針對另一固定分支，不能把 skipped 當 CI 驗收通過。",
+    "獨立 review 僅核本次局部修復；尚未部署或合併，不把本地結果冒充遠端 CI。"
+  ],
+  "changedSourceSha256": {
+    "server/agent-model-gateway.ts": "707bbffc3fcd5ab635ecc913bd407999fb1328f6b68a1ddf946eb408f38e57da",
+    "server/agent-runtime.ts": "7494fd8d550581e66a2fa95b8ef852572d30e5cc8b7ddf85197662c58bdb9620",
+    "server/firestore-memory.ts": "2090cf9b58789373c7746cd6fcb5d477e0640538352efc7aa9cce2eb5c2d3483",
+    "server/private-summary-maintenance.ts": "3ec0a25e805b07338de6a212d4718c88e2e1f14031aa340f5ee971bb08272e7c",
+    "server/summary-window-helper.ts": "c1386762d98862406cb4c013cd559bbaf20f2dd8ade55efcadd3b655db996108",
+    "tests/agent-durable-ai-usage.test.ts": "a66878d0dbfa0d035731025904ac6b4417d9bbfac7fe66b959a293131edd0674",
+    "tests/agent-runtime.test.ts": "196e09089ac2c56e8b3513d3092847d3218e170e901d08dad4b95d84e0fc0f91",
+    "tests/private-summary-contract.test.ts": "b16efdebfbc2681588d1d51c7738f78ebb363730fa0f7bb2d01c5dd0c5398d5e",
+    "tests/summary-progress.test.ts": "6385e698ade1967d924a3b9ef933d2bf336bf20c4021e06bae68613762c05a18",
+    "tests/summary-prompt-contract.test.ts": "d26d97ca38bf02b54d851dec5ecf16d2d300d00f6f7e793931780f03d73ec38b"
+  },
+  "localReceiptSha256": {
+    "pr408-final-tests.log": "d01232442d345ee04884b1769ba402ea16b395d259845ec0bf77ee9405a56e1c",
+    "pr408-final-typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "pr408-starvation-red.log": "5d5730bbabc678f5b563b4d38d3bb9485ab2fd42b598dbb19e1f9a65e82e5b3c",
+    "pr408-starvation-green.log": "e68fa2dd10a4ffe5464640d401df3a19b56414889bda954dd4a3ba750eec825a",
+    "pr408-adjacent-baseline.log": "f0d009c0f57b74e4759bd28ab765b013fcc1381cc49dda42ed0d3539dcb1b512",
+    "pr408-durable-one-base.log": "9cac89c918e175a548661d62ab523c8e72947b1e2fca6583ad6e23d37ad7151e"
+  },
+  "independentReview": {
+    "patchSha256": "858b3c17316bba36ae0783fa9e3a087a295ffa580fb0c5f434945b333e75b075",
+    "result": "局部修復審查通過，無新增阻塞問題；不是 GitHub PR approval 或完整 REQ-005 驗收。",
+    "tests": 33,
+    "passed": 33,
+    "failed": 0,
+    "skipped": 0,
+    "receiptSha256": "c7238a844e4edcbaf0a80f8f472842df1d69c4a276ff72265e677674693fed84",
+    "verified": "10 個 TS hash 及原6份收據一致。另驗原 starvation 反例已變成 fresh completed／1 call／more=true；不把四批窗口外推為永久 pending。",
+    "afterReview": "只更新本證據與 WORKLOG 的 review 記錄，TS 內容不變。"
+  }
+}
