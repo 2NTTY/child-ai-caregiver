@@ -40,7 +40,7 @@
 
 **回退、備份與容量：**本次保留前版 Web `e813692` 及 0600 的 Compose 配置。API／worker 沒有更換，回退仍須保留 v4 個人設定 reader，不能用舊資料覆蓋新設定／收據。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。原生備份最近觀察仍為 2026-10-23 READY、未還原；本批部署前約 10.28 GiB 可用，未擴容／清正式資料。
 
-**原站，2026-11-04 再核：**自動停止時間仍為 **2026-11-06 13:33:50 香港時間**。API／worker 沿用 knowledge-guidance-14e0f60、Web 沿用 shared-closeout-330a905，根磁碟可用約 10 GiB。P4 交付前唯讀比對仍欠 26 個複合索引及 15 項欄位設定；未套用，未切換原站。
+**原站，2026-11-04 再核：**自動停止時間為 **2026-11-06 13:33:50 香港時間**。API／worker 沿用 knowledge-guidance-14e0f60、Web 沿用 shared-closeout-330a905，根磁碟可用約 10 GiB。Firestore 已接受首兩個複合索引，並要求上載清理的 `cleaned` 改用單欄位設定。按修訂清單仍欠 23 個複合索引及 16 項欄位設定；原站程式尚未切換。
 
 <a id="preview-history"></a>
 ## 按需追溯
