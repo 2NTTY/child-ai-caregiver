@@ -4,6 +4,8 @@ import { Text } from 'react-native-paper';
 import { DateTime } from 'luxon';
 import { useProduction } from '../../production/ProductionProvider';
 import { handoverErrorText } from '../../production/HandoverOwner';
+import { useProductionSharing } from '../../production/useProductionSharing';
+import { classExportScope, classExportPupils, classExportModules, type ClassExportPupil, type ClassExportModule } from '../../production/handover-class-export';
 import { HandoverApiError } from '../../../../src/client/handover-api';
 import { HANDOVER_MODULES, supportsHandoverPeriodModules } from '../../../../src/shared/handover';
 import type { HandoverExportCommand, HandoverExportView, HandoverPreviewItem } from '../../../../src/shared/handover-jobs';
@@ -12,7 +14,7 @@ import { AppCheckbox } from '../AppCheckbox';
 import { AppDateField } from '../DateTimeFields';
 import { hongKongTimeZone } from '../date-time';
 import { FormDialog } from '../FormDialog';
-import { AppButton } from '../ui';
+import { AppButton, AppSelect, AppTextField } from '../ui';
 import { HandoverImportControls } from './HandoverImportControls';
 import { chineseFont, colors, readingType, spacing } from '../../theme';
 
@@ -35,10 +37,33 @@ export function HandoverControls() {
   const [open, setOpen] = useState(false), [purpose, setPurpose] = useState<HandoverExportCommand['purpose']>('handover');
   const [children, setChildren] = useState<string[]>([]), [modules, setModules] = useState<(typeof HANDOVER_MODULES)[number][]>([]);
   const [periodEnabled, setPeriodEnabled] = useState(false), [fromDay, setFromDay] = useState(''), [toDay, setToDay] = useState('');
+  const [sourceMode, setSourceMode] = useState<'personal' | 'class'>('personal');
+  const [pupils, setPupils] = useState<ClassExportPupil[]>([]), [rosterQuery, setRosterQuery] = useState('');
   const canDownload = useFileExportAvailable();
   const current = !!identityKey && state.identityKey === identityKey && state.userId === userId && account.gate === 'ready';
   const locked = !current || !online || !!state.busy || account.deletion.phase !== 'idle';
   const selectable = recordsState.children.filter(child => child.accessRole === 'owner' || child.accessRole === undefined);
+  const classes = useProductionSharing('class', open && current && sourceMode === 'class');
+  const teachers = useProductionSharing('teachers', open && current && sourceMode === 'class');
+  const classScope = classExportScope(classes.state, teachers.state);
+  const availablePupils = classExportPupils(classes.state, teachers.state, pupils);
+  const chosenPupils = pupils.filter(pupil => availablePupils.some(row => row.childId === pupil.childId && row.basis === pupil.basis));
+  const classModules = classExportModules(chosenPupils, state.classModules ?? []);
+  const classLocked = locked || !!classes.state.busy || !!classes.state.pending || !classes.state.identityKey;
+  const teacherLocked = locked || !!teachers.state.busy || !!teachers.state.pending || !teachers.state.identityKey;
+  const classOptions = [...new Map([...classes.state.spaces.items, ...teachers.state.teacherClasses.items,
+    ...(classes.state.selected ? [classes.state.selected] : [])].filter(room => room.kind === 'class').map(room => [room.id, room])).values()];
+  useLayoutEffect(() => { setSourceMode('personal'); setPupils([]); setRosterQuery(''); }, [identityKey]);
+  useLayoutEffect(() => {
+    setPupils(before => before.filter(pupil => pupil.scope === classScope)); setRosterQuery(classes.state.rosterQuery);
+  }, [classScope]);
+  useLayoutEffect(() => {
+    if (sourceMode === 'class' && !classes.state.busy && classes.state.rosterLoaded) {
+      setPupils(before => before.filter(pupil => availablePupils.some(row => row.childId === pupil.childId && row.basis === pupil.basis)));
+      setModules(before => before.filter(module => classModules.includes(module as ClassExportModule)));
+    }
+  }, [sourceMode, classScope, classes.state.shares.items, classes.state.busy, classModules.join(',')]);
+  useEffect(() => { if (open && current && online) void controller.readExportCapabilities(); }, [controller, open, current, identityKey, online]);
   useLayoutEffect(() => { setOpen(false); setChildren([]); setModules([]); setPeriodEnabled(false); setFromDay(''); setToDay(''); }, [identityKey]);
   useEffect(() => { if (current && online) void controller.load(); }, [controller, identityKey, current, online]);
   const waitingId = current ? state.items.find(item => item.state === 'queued' || item.state === 'building')?.id : undefined;
@@ -58,10 +83,13 @@ export function HandoverControls() {
   const ordered = validFrom && validTo && from.toMillis() <= to.toMillis();
   const periodSupported = supportsHandoverPeriodModules(modules);
   const period = periodEnabled && ordered ? { from: from.startOf('day').toUTC().toISO()!, to: to.endOf('day').toUTC().toISO()! } : null;
-  const selection = { childIds: children, modules, period };
-  const validSelection = !!children.length && children.every(id => selectable.some(child => child.id === id)) && !!modules.length
+  const selection = { childIds: sourceMode === 'class' ? chosenPupils.map(pupil => pupil.childId) : children, modules, period };
+  const validChildren = sourceMode === 'class' ? !!classScope && !classLocked && classes.state.userId === userId
+    && !!pupils.length && chosenPupils.length === pupils.length && modules.every(module => classModules.includes(module as ClassExportModule))
+    : !!children.length && children.every(id => selectable.some(child => child.id === id));
+  const validSelection = validChildren && !!modules.length
     && (!periodEnabled || periodSupported && ordered);
-  const needsReview = modules.includes('documents') || modules.includes('attachments');
+  const needsReview = sourceMode === 'personal' && (modules.includes('documents') || modules.includes('attachments'));
   const reviewBasis = JSON.stringify([identityKey, scopeKey, selectable.map(child => [child.id, child.workspaceId, child.accessRole])]);
   const reviewKey = open && current && validSelection && needsReview ? JSON.stringify(selection) : null;
   useEffect(() => {
@@ -75,9 +103,9 @@ export function HandoverControls() {
   return <View style={styles.group}>
     <Text style={styles.title}>交接與備份資料包</Text>
     <Text style={styles.body}>選擇孩子及資料，以 ZIP 保存結構化內容、附件與閱讀摘要。檔案保留 24 小時，可稍後回來下載。</Text>
-    <Text style={styles.body}>預設匯出全部期間；可指定開始及結束日期，並在建立前逐份選擇文件及附件。班級匯出及整個帳戶備份仍待接通。</Text>
-    <AppButton label="選擇要匯出的資料" variant="secondary" disabled={locked || !!pending || !selectable.length}
-      onPress={() => { setChildren([]); setModules([]); setPurpose('handover'); setPeriodEnabled(false); setFromDay(''); setToDay(''); setOpen(true); }} />
+    <Text style={styles.body}>預設匯出全部期間；可指定開始及結束日期，並在建立前逐份選擇文件及附件。班級只可交接目前可讀的指定資料；整個帳戶備份仍待接通。</Text>
+    <AppButton label="選擇要匯出的資料" variant="secondary" disabled={locked || !!pending}
+      onPress={() => { setChildren([]); setPupils([]); setModules([]); setSourceMode('personal'); setPurpose('handover'); setPeriodEnabled(false); setFromDay(''); setToDay(''); setOpen(true); }} />
     {!selectable.length ? <Text style={styles.body}>未有可匯出的本人孩子資料。</Text> : null}
     {pending ? <View style={styles.group}>
       <Text style={styles.body}>{pending.checked ? '原狀態已查回，可繼續同一次請求。' : '提交結果尚未確認，請先查回原請求。'}</Text>
@@ -105,14 +133,41 @@ export function HandoverControls() {
     <FormDialog visible={open} scopeKey={identityKey!} title="選擇匯出資料" dismissMode="local" onClose={() => setOpen(false)}>
       <View style={styles.group}>
         <Text style={styles.body}>只包含勾選範圍。私人聊天、記憶及來源如需交給別人，請按需要選取；交出後對方保留獨立副本。</Text>
+        {state.classModules?.length || sourceMode === 'class' ? <View style={styles.actions}>
+          <AppButton label="本人孩子" variant={sourceMode === 'personal' ? 'primary' : 'quiet'} disabled={locked} onPress={() => { setSourceMode('personal'); setPupils([]); setModules([]); }} />
+          <AppButton label="班級學生" variant={sourceMode === 'class' ? 'primary' : 'quiet'} disabled={locked || !state.classModules?.length}
+            onPress={() => { setSourceMode('class'); setChildren([]); setModules([]); setPurpose('handover'); }} />
+        </View> : null}
         <View style={styles.actions}>
           <AppButton label="用作交接" variant={purpose === 'handover' ? 'primary' : 'quiet'} disabled={locked} onPress={() => setPurpose('handover')} />
-          <AppButton label="本人備份" variant={purpose === 'backup' ? 'primary' : 'quiet'} disabled={locked} onPress={() => setPurpose('backup')} />
+          {sourceMode === 'personal' ? <AppButton label="本人備份" variant={purpose === 'backup' ? 'primary' : 'quiet'} disabled={locked} onPress={() => setPurpose('backup')} /> : null}
         </View>
         <Text style={styles.title}>孩子</Text>
-        {selectable.map(child => <AppCheckbox key={child.id} label={child.displayName} checked={children.includes(child.id)} disabled={locked} onChange={value => chooseChild(child.id, value)} />)}
+        {sourceMode === 'personal' ? selectable.map(child => <AppCheckbox key={child.id} label={child.displayName} checked={children.includes(child.id)} disabled={locked} onChange={value => chooseChild(child.id, value)} />)
+          : <View style={styles.group}>
+            <Text style={styles.body}>只包含所選班級目前分享予你的資料，不包含學生的私人記憶、聊天或附件。選取多位學生時，只可選共同可讀的模組。</Text>
+            <AppSelect label="匯出教師空間" value={teachers.state.selected?.id ?? ''} disabled={teacherLocked || !!classes.state.busy}
+              options={[{ value: '', label: '獨立班級或選擇教師空間' }, ...teachers.state.spaces.items.map(room => ({ value: room.id, label: room.name }))]}
+              onChange={id => { setPupils([]); setModules([]); classes.controller.clearSelection(); if (id) void teachers.controller.selectSpace(id); else teachers.controller.clearSelection(); }} />
+            {teachers.state.spaces.nextCursor ? <AppButton label="載入更多教師空間" variant="quiet" disabled={teacherLocked} onPress={() => { void teachers.controller.loadSpaces(true); }} /> : null}
+            {teachers.state.teacherClasses.nextCursor ? <AppButton label="載入更多教師空間班級" variant="quiet" disabled={teacherLocked} onPress={() => { void teachers.controller.loadTeacherClasses(true); }} /> : null}
+            <AppSelect label="匯出班級" value={classes.state.selected?.id ?? ''} disabled={classLocked || !!teachers.state.busy}
+              options={[{ value: '', label: '請選擇班級' }, ...classOptions.map(room => ({ value: room.id, label: room.name }))]}
+              onChange={id => { setPupils([]); setModules([]); if (id) void classes.controller.selectSpace(id); else classes.controller.clearSelection(); }} />
+            {classes.state.spaces.nextCursor ? <AppButton label="載入更多班級" variant="quiet" disabled={classLocked} onPress={() => { void classes.controller.loadSpaces(true); }} /> : null}
+            {classes.state.selected ? <>
+              <AppTextField label="搜尋匯出學生" value={rosterQuery} maxLength={160} disabled={classLocked} onChangeText={setRosterQuery} />
+              <AppButton label="搜尋班級名冊" variant="secondary" disabled={classLocked} onPress={() => { void classes.controller.searchRoster(rosterQuery); }} />
+              <AppButton label="重新核對班級及名冊" variant="quiet" disabled={classLocked} onPress={() => { void classes.controller.refreshSelected(); }} />
+              {availablePupils.map(pupil => <AppCheckbox key={pupil.childId} label={pupil.label} checked={chosenPupils.some(row => row.childId === pupil.childId)} disabled={classLocked}
+                onChange={checked => setPupils(before => checked ? [...before.filter(row => row.childId !== pupil.childId), pupil] : before.filter(row => row.childId !== pupil.childId))} />)}
+              {classes.state.shares.nextCursor ? <AppButton label="載入更多學生" variant="quiet" disabled={classLocked} onPress={() => { void classes.controller.more('shares'); }} /> : null}
+              <Text style={styles.body}>{classes.state.shares.nextCursor ? '尚有學生未載入。' : classes.state.rosterLoaded ? '目前搜尋範圍已讀完。' : '名冊尚未核對。'}只保留同一班級及權限下已明確選取的學生。</Text>
+            </> : null}
+            {classes.state.notice || teachers.state.notice ? <Text style={styles.body}>{classes.state.notice ?? teachers.state.notice}</Text> : null}
+          </View>}
         <Text style={styles.title}>資料內容</Text>
-        {HANDOVER_MODULES.map(module => <AppCheckbox key={module} label={moduleLabels[module]} checked={modules.includes(module)} disabled={locked} onChange={value => chooseModule(module, value)} />)}
+        {(sourceMode === 'class' ? classModules : HANDOVER_MODULES).map(module => <AppCheckbox key={module} label={moduleLabels[module]} checked={modules.includes(module)} disabled={locked} onChange={value => chooseModule(module, value)} />)}
         <AppCheckbox label="指定開始及結束日期" checked={periodEnabled} disabled={locked} onChange={setPeriodEnabled} />
         {periodEnabled ? <>
           <Text style={styles.body}>按香港時間（Asia/Hong_Kong），包含開始日零時至結束日最後一刻。</Text>
@@ -150,7 +205,11 @@ export function HandoverControls() {
         </View> : null}
         <AppButton label="建立資料包" loading={state.busy === 'write'} disabled={!canCreate}
           onPress={() => { if (!canCreate) return;
-            if (needsReview) void controller.create(selection, purpose, controller.documentReview(selection));
+            if (sourceMode === 'class') {
+              const live = classExportPupils(classes.controller.getSnapshot(), teachers.controller.getSnapshot(), pupils);
+              if (pupils.some(pupil => !live.some(row => row.childId === pupil.childId && row.basis === pupil.basis))) return;
+              void controller.createClass({ ...selection, modules: modules.filter((module): module is ClassExportModule => classModules.includes(module as ClassExportModule)) }, classes.state.selected!.id);
+            } else if (needsReview) void controller.create(selection, purpose, controller.documentReview(selection));
             else void controller.create(selection, purpose);
             setOpen(false); }} />
       </View>

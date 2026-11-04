@@ -5,6 +5,7 @@ import { HandoverOwner } from '../src/production/HandoverOwner.ts';
 import { HandoverApiError, createHandoverApi } from '../../src/client/handover-api.ts';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import * as classExport from '../src/production/handover-class-export.ts';
 
 test('export review pages bind child, scope and avatar absence while preserving explicit whole-file choices', async () => {
   const first = randomUUID(), second = randomUUID(), file = randomUUID(), snapshotId = randomUUID(), writes = [], queries = [];
@@ -98,6 +99,9 @@ test('shared export checklist shows literal complete dates and requires loaded f
   const resolve = name => name === 'react' ? hooks : name === 'react/jsx-runtime' ? { jsx, jsxs: jsx }
     : name === 'react-native' ? { View: 'View', StyleSheet: { create: value => value }, Platform: { OS: 'web' }, AppState: { currentState: 'active' } }
     : name === 'react-native-paper' ? { Text: 'Text' } : name.endsWith('/ProductionProvider') ? { useProduction: () => production }
+    : name.endsWith('/useProductionSharing') ? { useProductionSharing: () => ({ controller: {}, state: { identityKey: null, selected: null,
+      shares: { items: [] }, spaces: { items: [] }, teacherClasses: { items: [] } } }) }
+    : name.endsWith('/handover-class-export') ? classExport
     : name.endsWith('/handover') ? { HANDOVER_MODULES: ['documents', 'attachments'], supportsHandoverPeriodModules: () => true }
     : name.endsWith('/file-export') ? { useFileExportAvailable: () => true } : name.endsWith('/date-time') ? { hongKongTimeZone: 'Asia/Hong_Kong' }
     : name.endsWith('/theme') ? { colors: {}, readingType: {}, spacing: {} } : name === 'luxon' ? require(name)

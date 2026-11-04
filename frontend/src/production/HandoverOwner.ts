@@ -1,5 +1,6 @@
 import { HandoverApiError, type HandoverApi } from '../../../src/client/handover-api.ts';
 import { handoverExportCommandSchema, type HandoverExportCommand, type HandoverExportView,
+  handoverClassExportCommandSchema, type HandoverClassExportCommand,
   type HandoverPreviewItem, type HandoverPreviewQuery } from '../../../src/shared/handover-jobs.ts';
 
 type ExportSelection = HandoverExportCommand['selection'];
@@ -17,16 +18,17 @@ export const handoverReviewSelectionKey = (selection: ExportSelection) => JSON.s
   modules: [...selection.modules].sort(), period: selection.period });
 export const handoverReviewItemKey = (item: Pick<HandoverPreviewItem, 'section' | 'childId' | 'id'>) => JSON.stringify([item.section, item.childId, item.id]);
 
-type Pending = { kind: 'create'; command: HandoverExportCommand; checked: boolean }
+type Pending = { kind: 'create'; command: HandoverExportCommand | HandoverClassExportCommand; checked: boolean }
   | { kind: 'cancel'; id: string; command: { opId: string; expectedVersion: number }; checked: boolean };
 export interface HandoverState {
   userId: string | null; identityKey: string | null; online: boolean; loaded: boolean;
   items: HandoverExportView[]; nextCursor: string | null; pending: Pending | null;
   busy: 'read' | 'write' | 'check' | 'download' | null; notice: string | null;
   review: ExportReview | null; reviewBusy: boolean;
+  classModules: HandoverClassExportCommand['selection']['modules'] | null;
 }
 const empty = (userId: string | null, identityKey: string | null, online: boolean): HandoverState => ({
-  userId, identityKey, online, loaded: false, items: [], nextCursor: null, pending: null, busy: null, notice: null, review: null, reviewBusy: false,
+  userId, identityKey, online, loaded: false, items: [], nextCursor: null, pending: null, busy: null, notice: null, review: null, reviewBusy: false, classModules: null,
 });
 export function handoverErrorText(error: unknown) {
   const code = error instanceof HandoverApiError ? error.code : error instanceof Error ? error.message : '';
@@ -39,6 +41,9 @@ export function handoverErrorText(error: unknown) {
     version_conflict: '狀態已改變，請重新讀取後再操作。', session_changed: '登入狀態已改變，請重新登入。',
     identity_changed: '登入狀態已改變，請重新登入。', unauthorized: '請重新登入。', access_denied: '目前沒有權限讀取這份資料。',
     forbidden: '所選資料目前不可匯出，請重新選擇。',
+    module_not_shared: '所選學生目前未分享這些資料，請重新核對班級名冊及模組。',
+    space_access_denied: '你已不能讀取這個班級，請重新選擇班級。', space_inactive: '這個班級已停止使用，請重新選擇班級。',
+    scope_changed: '班級權限或資料範圍已改變，請重新核對後建立資料包。',
     package_review_changed: '資料清單已改變，請重新讀取並選擇。',
   };
   return messages[code ?? ''] ?? '暫時未能完成，請核對連線後查回原結果。';
@@ -49,6 +54,7 @@ export class HandoverOwner {
   private state = empty(null, null, false); private epoch = 0; private active: AbortController | null = null;
   private listeners = new Set<() => void>();
   private reviewEpoch = 0; private reviewRead: AbortController | null = null;
+  private capabilityRead: AbortController | null = null;
   private readonly api: HandoverApi; private readonly accessError: (error: HandoverApiError) => void;
   constructor(api: HandoverApi, accessError: (error: HandoverApiError) => void = () => {}) { this.api = api; this.accessError = accessError; }
   getSnapshot = () => this.state;
@@ -58,6 +64,7 @@ export class HandoverOwner {
     if (userId !== this.state.userId || identityKey !== this.state.identityKey) {
       this.epoch++; this.active?.abort(); this.active = null; this.api.setIdentity(null); this.api.setIdentity(userId);
       this.reviewEpoch++; this.reviewRead?.abort(); this.reviewRead = null;
+      this.capabilityRead?.abort(); this.capabilityRead = null;
       this.state = empty(userId, identityKey, online); this.update({});
     } else if (online !== this.state.online) this.update({ online });
   }
@@ -158,6 +165,27 @@ export class HandoverOwner {
         this.error({ epoch: identity, userId, controller }, error);
     } finally { if (this.reviewRead === controller) { this.reviewRead = null; this.update({ reviewBusy: false }); } }
   };
+  readExportCapabilities = async () => {
+    if (!this.state.userId || !this.state.identityKey || !this.state.online || this.capabilityRead) return;
+    const controller = new AbortController(), t = { epoch: this.epoch, userId: this.state.userId, controller };
+    this.capabilityRead = controller;
+    try {
+      const capability = await this.api.exportCapabilities(t.userId, controller.signal);
+      if (this.current(t)) this.update({ classModules: capability.classModules });
+    } catch (error) {
+      if (this.current(t)) {
+        this.update({ classModules: [] });
+        if (error instanceof HandoverApiError && (error.status === 401 || ['identity_changed', 'session_changed'].includes(error.code))) this.error(t, error);
+      }
+    } finally { if (this.capabilityRead === controller) this.capabilityRead = null; }
+  };
+  createClass = async (selection: HandoverClassExportCommand['selection'], spaceId: string) => {
+    if (this.state.pending || this.state.busy || !this.state.online || !this.state.userId
+      || !selection.modules.every(module => this.state.classModules?.includes(module))) return;
+    const parsed = handoverClassExportCommandSchema.safeParse({ opId: crypto.randomUUID(), purpose: 'handover', source: { kind: 'class', spaceId }, selection });
+    if (!parsed.success) { this.update({ notice: '請核對班級、學生及可讀取的資料。' }); return; }
+    this.update({ pending: { kind: 'create', command: parsed.data, checked: true } }); await this.retryOriginal();
+  };
   create = async (selection: ExportSelection, purpose: HandoverExportCommand['purpose'], documentReview?: DocumentReview) => {
     if (this.state.pending || this.state.busy || !this.state.online || !this.state.userId || !this.reviewReady(selection)) return;
     const expectedReview = this.documentReview(selection);
@@ -176,10 +204,16 @@ export class HandoverOwner {
     const t = this.begin('write'); if (!t) return;
     this.update({ pending: { ...pending, checked: false } });
     try {
-      const row = pending.kind === 'create' ? await this.api.create(t.userId, pending.command, t.controller.signal)
+      const row = pending.kind === 'create' ? await ('source' in pending.command ? this.api.createClass(t.userId, pending.command, t.controller.signal)
+        : this.api.create(t.userId, pending.command, t.controller.signal))
         : await this.api.cancel(t.userId, pending.id, pending.command, t.controller.signal);
       if (this.current(t)) { this.put(row); this.update({ pending: null }); }
     } catch (e) {
+      if (this.current(t) && pending.kind === 'create' && 'source' in pending.command && e instanceof HandoverApiError
+        && e.status >= 400 && e.status < 500
+        && ['forbidden', 'module_not_shared', 'space_access_denied', 'space_inactive', 'scope_changed', 'export_scope_changed'].includes(e.code)) {
+        this.update({ pending: null, notice: handoverErrorText(e) }); return;
+      }
       if (this.current(t) && e instanceof HandoverApiError && (e.status === 413 || ['invalid_input', 'version_conflict', 'package_period_not_connected', 'package_scope_unavailable', 'export_scope_changed'].includes(e.code)
         || pending.kind === 'create' && e.status === 403 && e.code === 'forbidden')) {
         this.update({ pending: null });

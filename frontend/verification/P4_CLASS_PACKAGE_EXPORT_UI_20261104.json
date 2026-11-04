@@ -1,0 +1,29 @@
+{
+  "package": "P4 class package export UI",
+  "date": "2026-11-04",
+  "base": "adcd95d8",
+  "branch": "codex/p4-class-package-export-ui",
+  "environment": "本機 Node 24／合成 transport；無雲端或裝置",
+  "checks": [
+    {
+      "command": "node --test frontend/scripts/handover-class-export.test.mjs",
+      "result": "1/1 通過",
+      "coverage": "viewer 閱讀准入、逐頁保留已選學生、模組交集、名冊或角色失效、舊 Server capability 404、忽略未知新模組、actor 所有的同 opId 查回及重試、確定班級拒絕釋放 pending 且不撤銷帳戶、遲到 capability 回應隔離"
+    },
+    {
+      "command": "node --test --test-name-pattern='^handover period selection|^shared export checklist' frontend/scripts/handover-period-ui.test.mjs frontend/scripts/handover-export-review.test.mjs",
+      "result": "2/2 通過",
+      "coverage": "保留個人匯出日期、文件清單及匯入日期閱讀"
+    },
+    {
+      "method": "TypeScript compiler API，沿 frontend/tsconfig.json；僅 Controls、class export helper、HandoverOwner、handover-api 四個入口",
+      "result": "4 roots／1425 files／0 diagnostics"
+    },
+    {
+      "method": "拒絕碼及 capability 相容修正後，局部檢查 HandoverOwner、handover-api 兩個入口",
+      "result": "2 roots／194 files／0 diagnostics"
+    }
+  ],
+  "correctedFailure": "首次局部型別檢查發現 loadShares 不存在，已改用原 SharingController.more('shares')。相容回歸先重現未知新模組使 capability 全部失效，修正為有界字串清單與本版模組交集；同一情景最終通過。",
+  "limits": "未做真 API、瀏覽器視覺或真機驗收；未 build、commit、push、部署或修改 backend/shared/root docs。"
+}
