@@ -1245,6 +1245,8 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 
 班級接收關注時，客戶端向 `GET /api/account/package-imports/capabilities` 傳 `x-handover-class-features: concerns`，只在取得 `classConcernImports: true` 後開放。已有班員按當前班級、角色及已分享的模組寫入；新班員由同一匯入工作建立在選定班級。關注及已選觀察在班級保存一份。原包的待跟進時間作來源紀錄，不會建立班級的 Agent 或投遞工作。逐項結果區分版本衝突、執行中的既有跟進及來源歷史超出共享範圍。此處的班級授權與家庭成員對私人原件的分享分開核對。
 
+班級接收成長資料時，同一標頭的 `growth` 與 `concerns` 可分別協商。只向要求 `growth` 的客戶端返回 `classGrowthImports: true`。老師保有匯入批次，學生的成長事項、主題及可披露的修訂保存至班級。讀取目前連結時仍核對相應模組及來源。舊修訂含不能交接的私人證據時，逐項記錄 `history_scope_unavailable`。匯入的來源工作或通知不會在班級重新執行。
+
 <a id="p4-personal-restore"></a>
 **本人備份與交接匯入。** 沿同一匯入入口，交接到其他帳戶、班級或孩子仍建立獨立副本。使用者選擇還原到原件時，Server 以可信簽章或等效的本站紀錄核實包的內容識別、備份用途、本站來源、目前帳戶及同一個本人孩子，再按目前權限讀原件和刪除紀錄。單憑自報的名稱或 ID、其他來源的簽章或用戶接受缺證明提示，不能改寫原件。不符合原件資格時可另選匯入副本；舊版請求沿原副本行為。
 

@@ -4638,3 +4638,7 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 #480、#481 合批發布。映像清單在切換前補齊兩個 CLI 模組。候選以原站身份作唯讀查詢；發布後因本機 IAP 異常結束，另讀容器實際映像、健康與站外指紋確認成功，沒有重跑部署。正式語料沒有變更。[發布及驗證範圍](artifacts/verification/P4_KNOWLEDGE_EDITION_TRANSFER_20261105.json)
 
 同批收尾的 Android 系統分享修正 #482 已核對匯入未結時的離頁、帳號切換及保留收到的 ZIP。APK 延後批量交付。iOS 的 extension 只完成設定生成核對，原生收件仍待實作。
+
+## 2026-11-05 班級成長匯入
+
+#485（Server）與 #484（共用前端）合批更新原站。修正匯入期間按老師身份讀取批次，以及關注事件讀取已授權的照護連結。切換時無執行中工作，原有的一筆未知背景結果保留。[班級成長發布紀錄](artifacts/verification/P4_CLASS_GROWTH_DELIVERY_20261105.json)

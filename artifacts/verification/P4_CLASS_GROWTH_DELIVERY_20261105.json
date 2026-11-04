@@ -1,0 +1,40 @@
+{
+  "revision": "adaaa410fd846ad5df93383a02b504ce1818c22a",
+  "pullRequests": [
+    485,
+    484
+  ],
+  "observedAt": "2026-11-05T05:32:00+08:00",
+  "site": "https://ex-machina.eu.org",
+  "candidate": {
+    "serverDeltaBytes": 40217,
+    "serverDeltaSha256": "d953743d01f51cef7daa84479d662ff1c57490152836a285cf1440202154d4ab",
+    "webArchiveBytes": 4909154,
+    "webArchiveSha256": "efc09c08eebe19011790233c6c906ea2ee46d1f28494a2569ece6bddb447b838",
+    "manifestSha256": "2d07507e9042a04128c597ebe7c3817109a44e7f4e084dd80d6ce38ce4d2175f"
+  },
+  "production": {
+    "apiWorkerImage": "sha256:56bd65f4a1774a3f63208deeab6a7e0f893432caeb5377ec6ad727c43170453c",
+    "webImage": "sha256:9bd45146f3949fed2692a6d412397e79292c5a57adb01f675d0267a3d87be374",
+    "composeSha256": "9afb7c3caa83713aafb0f63fb92ab7e2e97487d1766da992c5e7db478e6ba190",
+    "priorServer": "432ae9a7",
+    "priorWeb": "9974bcaf",
+    "health": 200,
+    "anonymousCapability": 401,
+    "adminHtmlSha256": "3b7a9cf4615ab87e96bd668329727adcff9c597b45b0740c6aea036aeb4f2db4",
+    "bundlePath": "/_expo/static/js/web/index-a3b56558ec6c36d25cb48ed1411a46f5.js",
+    "bundleSha256": "14c7118cd74345233b8d78c40278550aa6e8669ddbb1f623b81645558c8b7ad4",
+    "activeAgentLeases": 0,
+    "activeWork": 0,
+    "existingUnknownBackground": 1,
+    "signer": "existing worker-only signing key; API reads verification key",
+    "duringSwitch": "One transient TLS failure before health recovered; independent public HTTPS read matched HTML and JS."
+  },
+  "local": [
+    "Synthetic growth ZIP through upload, worker, class readback, original operation retry, current scope checks and history conflict; existing class concern and personal growth paths.",
+    "Shared frontend owner exercised old and new capability combinations; TypeScript checks passed."
+  ],
+  "notExercised": [
+    "No production class import, model generation, notification or mobile release. Android deferred to the batched release."
+  ]
+}
