@@ -4,6 +4,10 @@
 
 ## 目前與接手
 
+- **11 月 5 日 04:41（香港）** 原站 `9974bcaf` 已可從交接包把持續關注匯入班員。來源的跟進時間保留供查閱，不會替原家庭執行跟進。合成包驗過匯入及重送；原站驗了服務、登入保護與前端指紋。Android 待批量建置。[發布紀錄](artifacts/verification/P4_CLASS_CONCERN_DELIVERY_20261105.json)
+
+- **11 月 5 日 04:29（香港）** 原站已更新至 `74b7c92f`。持續關注可還原至同一原件，按期補回保留其他時段及現有跟進。交易、表單與版本相容以合成資料核對；站外已核實新版 Web 及登入保護。Android 留待批量構建。[發布及驗證範圍](artifacts/verification/P4_ORIGINAL_CONCERN_DELIVERY_20261105.json)
+
 - **11 月 5 日 04:04（香港）** 原站 `235ddd3c` 已提供管理員關鍵詞索引重建、暫停、續跑及逐項結果。正式環境核實兩個管理端點、版本查詢及排序索引；權限、批次寫入與還原用合成資料核對。知識大量匯入及資料遷移仍待完成。[索引批次發布紀錄](artifacts/verification/P4_KNOWLEDGE_INDEX_BATCHES_20261105.json)
 
 - **11 月 5 日 03:38（香港）** 原站 API、worker、Web 已更新至 `88ce04f7`。管理員可在網站查看指定來源及分頁檢查紀錄。Google／Apple 快捷登入仍缺原站 provider 配置。[知識管理發布紀錄](artifacts/verification/P4_KNOWLEDGE_ADMIN_DELIVERY_20261105.json)
