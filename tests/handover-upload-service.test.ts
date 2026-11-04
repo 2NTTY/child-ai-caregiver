@@ -132,11 +132,39 @@ test('package upload HTTP, immutable storage and cleanup preserve operation iden
     now += 600_001;
     assert.equal((await uploads.cleanup(scope, second.id, new AbortController().signal)).state, 'completed'); assert.equal(stored.size, 0);
     assert.deepEqual(await readdir(spoolRoot), []);
+    const invalid = Buffer.from('not a zip'), failedCommand = { opId: randomUUID(), filename: 'damaged.zip', bytes: invalid.length,
+      sha256: createHash('sha256').update(invalid).digest('hex') };
+    assert.equal((await call('', failedCommand)).status, 201);
+    const failedResponse = await fetch(base + '/api/account/package-uploads/' + failedCommand.opId + '/content', {
+      method: 'POST', headers: { ...headers(), 'content-type': 'application/zip' }, body: invalid });
+    assert.equal(failedResponse.status, 400); assert.equal((await failedResponse.json()).code, 'invalid_package_archive');
+    now += 600_001;
+    assert.equal((await uploads.cleanup(scope, failedCommand.opId, new AbortController().signal)).state, 'completed');
+    assert.deepEqual((await (await call('')).json()).items, [], 'Cleaned failures cannot reappear as usable temporary uploads');
+    // A fresh HTTP caller discovers the old failure without carrying its operation ID or local file.
+    const historyResponse = await fetch(base + '/api/account/package-uploads?history=cleaned', { headers: headers() });
+    assert.equal(historyResponse.status, 200);
+    const history = await historyResponse.json(), failed = history.items.find((row: any) => row.id === failedCommand.opId);
+    assert.ok(failed); assert.equal(failed.expectedArchiveSha256, failedCommand.sha256);
+    assert.equal(Object.hasOwn(readyList.items[0], 'expectedArchiveSha256'), false);
+    assert.equal(failed.state, 'failed'); assert.equal(failed.error, 'invalid_package_archive');
+    assert.equal(failed.filename, 'damaged.zip'); assert.equal(Object.hasOwn(failed, 'preview'), false);
+    assert.equal(Object.hasOwn(failed, 'packageId'), false, 'An unverified ZIP must not fabricate package identity');
+    assert.deepEqual((await (await call('?history=cleaned', undefined, 'other')).json()).items, []);
+    const beforeHistoryReads = structuredClone([...fixture.records]), writesBeforeHistoryReads = writes;
+    assert.equal((await (await call('', failedCommand)).json()).state, 'failed', 'The same reservation cannot reopen a cleaned failure');
+    await assert.rejects(uploads.open('recipient', failedCommand.opId, new AbortController().signal), { code: 'package_upload_not_ready' });
+    const retryCleaned = await fetch(base + '/api/account/package-uploads/' + failedCommand.opId + '/content', {
+      method: 'POST', headers: { ...headers(), 'content-type': 'application/zip' }, body: invalid });
+    assert.equal(retryCleaned.status, 409); assert.equal((await retryCleaned.json()).code, 'package_upload_stopped');
+    assert.deepEqual([...fixture.records], beforeHistoryReads); assert.equal(writes, writesBeforeHistoryReads);
+    for (const query of ['?history=active', '?history=cleaned&history=cleaned', '?history=cleaned&unknown=value',
+      '?history=cleaned&cursor=one&cursor=two']) assert.equal((await call(query)).status, 400);
     const domain = new FirestoreDomainData(options), template = decoded.value as any, expected = new Set<string>();
-    const seed = (storageEpoch = scope.storageEpoch) => {
+    const seed = (storageEpoch = scope.storageEpoch, cleaned = false) => {
       const id = randomUUID(), request = { ...template.request, opId: id }, row = { ...template, id, request,
         scope: { ...scope, storageEpoch }, fingerprint: firestoreDomainHash(request), version: 1, state: 'failed',
-        preview: null, artifact: null, uploadStarted: false, cleaned: false, lease: null, cancellation: null, error: 'package_upload_failed' };
+        preview: null, artifact: null, uploadStarted: false, cleaned, lease: null, cancellation: null, error: 'package_upload_failed' };
       const identity = handoverUploadId('recipient', id), target = domain.ref('handover_uploads', 'handover-upload', identity);
       assert.notEqual(target.id, id);
       fixture.records.set(target.path, { ...domain.tags(row.scope), ...handoverUploadMetadata(row),
@@ -156,6 +184,19 @@ test('package upload HTTP, immutable storage and cleanup preserve operation iden
     const lastPage = await reopened.listUploads('recipient', new AbortController().signal, firstPage.nextCursor);
     assert.equal(lastPage.items.length, 1); assert.equal(lastPage.nextCursor, null);
     assert.deepEqual(new Set([...firstPage.items, ...lastPage.items].map(item => item.id)), expected);
+    const historicalIds = new Set([command.opId, second.id, failedCommand.opId]);
+    for (let index = 0; index < 21; index++) historicalIds.add(seed(scope.storageEpoch, true));
+    seed(randomUUID(), true);
+    const historyFirst = await (await call('?history=cleaned')).json();
+    assert.equal(historyFirst.items.length, 20); assert.ok(historyFirst.nextCursor);
+    const historyNext = await (await call('?history=cleaned&' + new URLSearchParams({ cursor: historyFirst.nextCursor }))).json();
+    assert.equal(historyNext.items.length, 4); assert.equal(historyNext.nextCursor, null);
+    assert.deepEqual(new Set([...historyFirst.items, ...historyNext.items].map((row: any) => row.id)), historicalIds);
+    const activeAsHistory = await call('?history=cleaned&' + new URLSearchParams({ cursor: firstPage.nextCursor }));
+    assert.equal(activeAsHistory.status, 400); assert.equal((await activeAsHistory.json()).code, 'invalid_cursor');
+    const historyAsActive = await call('?' + new URLSearchParams({ cursor: historyFirst.nextCursor }));
+    assert.equal(historyAsActive.status, 400); assert.equal((await historyAsActive.json()).code, 'invalid_cursor');
+    assert.equal((await call('?history=cleaned&' + new URLSearchParams({ cursor: historyFirst.nextCursor }), undefined, 'other')).status, 400);
     reopened.setIdentity('other'); assert.deepEqual((await reopened.listUploads('other', new AbortController().signal)).items, []);
     await assert.rejects(reopened.listUploads('other', new AbortController().signal, firstPage.nextCursor), { status: 400, code: 'invalid_cursor' });
     await authority.setAccountState({ userId: 'recipient', operationId: randomUUID(), state: 'revoked' });

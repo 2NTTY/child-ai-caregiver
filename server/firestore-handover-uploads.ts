@@ -12,7 +12,8 @@ import { handoverUploadRecordSchema, handoverUploadId, handoverUploadMetadata, v
   HANDOVER_UPLOAD_RETENTION_MS, type HandoverUploadRecord as Upload } from './handover-upload-records.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 
-const listCursorSchema = z.object({ scope: z.string().regex(/^[a-f0-9]{64}$/u), after: z.string().regex(/^[a-f0-9]{64}$/u) }).strict();
+const listCursorSchema = z.object({ scope: z.string().regex(/^[a-f0-9]{64}$/u), after: z.string().regex(/^[a-f0-9]{64}$/u),
+  history: z.literal('cleaned').optional() }).strict();
 
 /** Upload ownership and cleanup obligation are durable before any body or Storage write. */
 export function createFirestoreHandoverUploads(options: FirestoreDomainOptions & { serverClock?: () => number }) {
@@ -68,7 +69,7 @@ export function createFirestoreHandoverUploads(options: FirestoreDomainOptions &
     });
   }
   return {
-    async list(owner: string, cursor?: string) {
+    async list(owner: string, cursor?: string, history?: 'cleaned') {
       let previous: z.infer<typeof listCursorSchema> | undefined;
       if (cursor !== undefined) {
         if (cursor.length > 2048) domainReject('invalid_cursor', 400);
@@ -77,8 +78,8 @@ export function createFirestoreHandoverUploads(options: FirestoreDomainOptions &
       }
       return authority.runTransaction(owner, null, async b => {
         const scope = { ...b.scope, childId: '00000000-0000-0000-0000-000000000000' }, scopeHash = firestoreDomainHash(scope);
-        if (previous && previous.scope !== scopeHash) domainReject('invalid_cursor', 400);
-        let query: Query = data.collection('handover_uploads').where('cleaned', '==', false);
+        if (previous && (previous.scope !== scopeHash || previous.history !== history)) domainReject('invalid_cursor', 400);
+        let query: Query = data.collection('handover_uploads').where('cleaned', '==', history === 'cleaned');
         for (const [key, value] of Object.entries(data.tags(scope))) query = query.where(key, '==', value);
         query = query.orderBy(FieldPath.documentId()).limit(21);
         if (previous) query = query.startAfter(previous.after);
@@ -93,10 +94,12 @@ export function createFirestoreHandoverUploads(options: FirestoreDomainOptions &
           catch { domainReject('package_upload_binding', 500); }
           const expected = ref(owner, identity[1]);
           if (row.id !== expected.id || row.ref.path !== expected.path) domainReject('package_upload_binding', 500);
-          const { preview: _preview, ...item } = view(await owned(b, identity[1], row)); return item;
+          const job = await owned(b, identity[1], row);
+          const { preview: _preview, ...item } = view(job);
+          return history ? { ...item, expectedArchiveSha256: job.request.sha256 } : item;
         }));
         return handoverUploadPageSchema.parse({ items: listed, nextCursor: rows.length > 20
-          ? Buffer.from(JSON.stringify({ scope: scopeHash, after: page.at(-1)!.id })).toString('base64url') : null });
+          ? Buffer.from(JSON.stringify({ scope: scopeHash, after: page.at(-1)!.id, ...(history ? { history } : {}) })).toString('base64url') : null });
       });
     },
     async assertImportableIn(b: Binding, id: string, version: number) {

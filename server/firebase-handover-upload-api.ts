@@ -22,8 +22,11 @@ export async function handleHandoverUpload(request: Request, owner: string, serv
   try {
     if (request.method === 'GET' && url.pathname === root) {
       const entries = [...url.searchParams];
-      if (entries.some(([key]) => key !== 'cursor') || entries.length > 1) domainReject('invalid_input', 400);
-      const result = await service.list(owner, url.searchParams.get('cursor') ?? undefined); await sameIdentity(); return json(result);
+      const history = url.searchParams.get('history');
+      if (entries.some(([key]) => !['cursor', 'history'].includes(key) || url.searchParams.getAll(key).length !== 1)
+        || history !== null && history !== 'cleaned') domainReject('invalid_input', 400);
+      const result = await service.list(owner, url.searchParams.get('cursor') ?? undefined, history ?? undefined);
+      await sameIdentity(); return json(result);
     }
     if (request.method === 'POST' && url.pathname === root) {
       return respond(await service.create(owner, await readJson(request)), 201);
