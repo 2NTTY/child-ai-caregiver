@@ -38,9 +38,9 @@
 
 **已有 Android 證據保留：**使用者已確認個人模型表單有 Vertex AI 選項；v4 回退／恢復、附件、跨端待辦及撤權已核，不重測。本人 key 輸入／跨端表單及其餘未驗項仍見 [S16](PLAN.md#s16-w03)，不因本次 OTA 改寫為通過。
 
-**回退、備份與容量：**本次保留前版 Web `e813692` 及 0600 的 Compose 配置。API／worker 沒有更換，回退仍須保留 v4 個人設定 reader，不能用舊資料覆蓋新設定／收據。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。原生備份最近觀察仍為 2026-10-23 READY、未還原；本批部署前約 10.28 GiB 可用，未擴容／清正式資料。
+**2026-10-26 Web 交付時的回退、備份與容量：**該批保留前版 Web `e813692` 及 0600 的 Compose 配置。API／worker 沒有更換，回退仍須保留 v4 個人設定 reader，不能用舊資料覆蓋新設定／收據。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。當時最近核對的原生備份為 2026-10-23 READY、未還原；本批部署前約 10.28 GiB 可用，未擴容／清正式資料。
 
-**原站，2026-11-04 再核：**自動停止時間為 **2026-11-06 13:33:50 香港時間**。香港 Firestore 已套用 25 個複合索引及 16 項欄位設定。讀回修訂後清單的 165 個複合索引全部 READY；13 項欄位排除吻合，3 項明列的交接欄位索引均 READY。原站 API／worker／Web 已切換至 p4-export-292be609。新寫入後保留相容 API／worker，介面可獨立回退；現場操作及未驗範圍見[發布證據](artifacts/verification/P4_HANDOVER_WEB_DELIVERY_20261104.json)。
+**原站，2026-11-04 再核：**自動停止時間為 **2026-11-06 13:33:50 香港時間**。香港 Firestore 已套用 25 個複合索引及 16 項欄位設定。讀回修訂後清單的 165 個複合索引全部 READY；13 項欄位排除吻合，3 項明列的交接欄位索引均 READY。本次部署前確認 11 月 4 日的原生備份為 READY；真還原仍待驗。原站 API／worker／Web 已切換至 p4-export-292be609。新寫入後保留相容 API／worker，介面可獨立回退；現場操作及未驗範圍見[發布證據](artifacts/verification/P4_HANDOVER_WEB_DELIVERY_20261104.json)。
 
 <a id="preview-history"></a>
 ## 按需追溯
