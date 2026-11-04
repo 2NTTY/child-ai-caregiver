@@ -4525,6 +4525,10 @@ Recorded At：2026-11-04 04:46 UTC。依使用者「review pr 然後修掉問題
 
 班員與資料各自可查結果。正式 API／worker 在本機合成班級核對建立、同源再用、不同來源同名及排隊後撤權，見[驗證範圍](artifacts/verification/P4_HANDOVER_CLASS_ENROLMENT_20261104.json)。共用新入口及正式部署另行交付。
 
+## 2026-11-04｜記憶按來源期間交接
+
+文檔包按內容版本選取記憶，摘要依原訊息及修正資料的日期。先匯入舊包再補同版日期可沿同一筆摘要接續。以 ZIP、摘要儲存及匯入 worker 核對範圍與衝突，見[本機驗證](artifacts/verification/P4_HANDOVER_MEMORY_PERIOD_20261104.json)。未部署；文件與備診快照接續處理。
+
 <a id="log-20261104-req005-projection-root-fix"></a>
 ### 2026-11-04 — REQ-005 摘要投影與到期根因補修
 

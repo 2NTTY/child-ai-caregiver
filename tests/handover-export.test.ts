@@ -12,8 +12,8 @@ import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
 import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { writePersonalHandoverPackage } from '../server/handover-export.ts';
-import { openHandoverArchive } from '../server/handover-archive.ts';
-import { openHandoverImport } from '../server/handover-import.ts';
+import { openHandoverArchive, writeHandoverArchive } from '../server/handover-archive.ts';
+import { openHandoverImport, type HandoverImportRow } from '../server/handover-import.ts';
 import { avatarDomainFixture, avatarMemoryBucket } from './helpers/avatar-memory.ts';
 import { avatarReserveResultSchema } from '../src/shared/avatars.ts';
 import { createChatFileObjects } from '../server/firebase-chat-file-objects.ts';
@@ -22,6 +22,107 @@ import { createFirebasePhotoObjects } from '../server/firebase-photo-objects.ts'
 import { createFirestorePhotoStore } from '../server/firestore-photos.ts';
 import { makeImportProvenance } from '../server/handover-provenance.ts';
 import type { HandoverHeader } from '../src/shared/handover.ts';
+
+test('dated memory ZIP uses content dates, bounded summary evidence and selected revision parents without fetching chat', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'handover-dated-memory-'));
+  const childId = randomUUID(), scopeVersion = 'e'.repeat(64);
+  const period = { from: '2026-11-01T00:00:00+08:00', to: '2026-11-07T23:59:59.999+08:00' };
+  const before = '2026-10-31T23:59:59.999+08:00', after = '2026-11-08T00:00:00+08:00';
+  const instruction = (updatedAt: string, text: string) => ({ id: randomUUID(), childId, version: 1, title: 'Instruction', text,
+    sourceMessageId: randomUUID(), provenance: 'user_statement', createdAt: before, updatedAt });
+  const fact = (createdAt: string, content: string, contentUpdatedAt?: string) => ({ id: randomUUID(), childId, version: 2,
+    key: content, content, source: { kind: 'manual', description: 'Original statement' }, validUntil: null,
+    visibility: 'private', intendedVisibility: 'private', status: 'confirmed', createdBy: 'source-parent', confirmedBy: 'source-parent',
+    confirmedAt: after, reason: '', applicable: true, sourceState: 'current', createdAt,
+    ...(contentUpdatedAt ? { contentUpdatedAt } : {}) });
+  const topic = (updatedAt: string, note: string) => ({ id: randomUUID(), childId, version: 2, visibility: 'private',
+    title: 'Topic', note, status: 'pending', updatedBy: 'source-parent', updatedAt, resumeAfter: null,
+    reopenReason: null, reopenedFrom: null, mayAsk: true });
+  const summary = (createdAt: string, text: string, sourcePeriod?: { from: string; to: string }) => {
+    const messageId = randomUUID();
+    return { id: randomUUID(), childId, version: 1, text, createdAt, previousId: null,
+      coveredMessageIds: [messageId], lastCoveredMessageId: messageId, ...(sourcePeriod ? { sourcePeriod } : {}) };
+  };
+  const selectedInstruction = instruction(period.from, 'Selected instruction');
+  const selectedFact = fact(before, 'Edited within period', period.from), legacyFact = { ...fact(period.to, 'Legacy native v1'), version: 1 };
+  const excludedFact = fact(period.from, 'SECRET_OLD_CONTENT_RECENT_CREATION', before);
+  const selectedFactRevision = { ...selectedFact, version: 1, contentUpdatedAt: period.to };
+  const selectedTopic = topic(period.to, 'Selected topic'), excludedTopic = topic(before, 'SECRET_OLD_TOPIC');
+  const selectedTopicRevision = { ...selectedTopic, version: 1, updatedAt: period.from };
+  const selectedSummary = summary(after, 'Summary of the selected conversation period', period);
+  const rows: Record<string, unknown[]> = {
+    instructions: [selectedInstruction, instruction(before, 'SECRET_OLD_INSTRUCTION')],
+    memory_facts: [selectedFact, legacyFact, excludedFact, fact(after, 'SECRET_LATER_FACT', after)],
+    memory_fact_history: [selectedFactRevision, { ...selectedFact, version: 1, contentUpdatedAt: before },
+      { ...excludedFact, version: 1, contentUpdatedAt: period.to, content: 'SECRET_ORPHAN_FACT_REVISION' }],
+    memory_topics: [selectedTopic, excludedTopic],
+    memory_topic_history: [selectedTopicRevision, { ...selectedTopic, version: 1, updatedAt: after },
+      { ...excludedTopic, version: 1, updatedAt: period.from, note: 'SECRET_ORPHAN_TOPIC_REVISION' }],
+    summary_history: [selectedSummary, summary(period.from, 'SECRET_CROSSING_BEFORE', { from: before, to: period.to }),
+      summary(period.to, 'SECRET_CROSSING_AFTER', { from: period.from, to: after }),
+      summary(period.from, 'SECRET_LEGACY_WITHOUT_PERIOD')],
+    chat: [{ id: randomUUID(), childId, createdAt: period.from, text: 'SECRET_UNREQUESTED_CHAT_BODY' }],
+  };
+  const expected: Record<string, unknown[]> = { instructions: [selectedInstruction], memory_facts: [selectedFact, legacyFact],
+    memory_fact_history: [selectedFactRevision], memory_topics: [selectedTopic], memory_topic_history: [selectedTopicRevision],
+    summary_history: [selectedSummary] };
+  const queried: string[] = [];
+  const exporter = { async page(_owner: string, query: { section: string }) {
+    queried.push(query.section);
+    return { section: query.section, scopeVersion, complete: true, nextCursor: null, notices: [],
+      items: query.section === 'children' ? [{ id: childId, displayName: 'Child' }] : rows[query.section] ?? [] };
+  } };
+  const selection = { childIds: [childId], modules: ['memory'] as HandoverHeader['selection']['modules'] };
+  const input = { directory, exporter, ownerUserId: 'owner', serverId: 'https://example.test', createdAt: after, purpose: 'handover' as const };
+  try {
+    const dated = await writePersonalHandoverPackage({ ...input, packageId: randomUUID(), selection: { ...selection, period } });
+    const opened = await openHandoverImport({ path: dated.path });
+    try {
+      assert.deepEqual(opened.manifest.selection.period, period);
+      assert.deepEqual(opened.children, [{ id: childId, displayName: 'Child' }]);
+      assert.deepEqual(Object.fromEntries(opened.manifest.coverage.map(row => [row.section, row.items])),
+        { children: 1, ...Object.fromEntries(Object.entries(expected).map(([section, items]) => [section, items.length])) });
+      const page = await opened.readPage({ selection, acknowledgedManifestSha256: opened.manifestSha256, limit: 100 });
+      assert.equal(page.nextCursor, null);
+      for (const [section, values] of Object.entries(expected)) {
+        const actual: HandoverImportRow[] = page.rows.filter(row => row.section === section);
+        assert.deepEqual(actual.map(row => row.value), values, section);
+        assert.ok(actual.every(row => row.childId === childId && row.source.manifestSha256 === opened.manifestSha256
+          && row.source.accountId === 'owner'), `${section} preserves its package receipt`);
+      }
+      assert.ok(!JSON.stringify(page.rows).includes('SECRET_'));
+    } finally { await opened.close(); }
+
+    const full = await writePersonalHandoverPackage({ ...input, packageId: randomUUID(), selection: { ...selection, period: null } });
+    const fullReader = await openHandoverImport({ path: full.path });
+    try {
+      assert.equal(fullReader.manifest.selection.period, null);
+      const page = await fullReader.readPage({ selection, acknowledgedManifestSha256: fullReader.manifestSha256, limit: 100 });
+      for (const section of Object.keys(expected)) assert.deepEqual(page.rows.filter(row => row.section === section).map(row => row.value), rows[section], section);
+    } finally { await fullReader.close(); }
+    assert.deepEqual([...new Set(queried)].sort(), ['manifest', 'children', ...Object.keys(expected)].sort());
+
+    const source = await openHandoverArchive({ path: dated.path });
+    try {
+      const { entries: declaredEntries, coverage, ...header } = source.manifest;
+      async function* entries() {
+        for (const entry of declaredEntries) {
+          let content = await source.readEntry(entry.path, entry.bytes);
+          if (entry.path.startsWith('data/')) {
+            const page = JSON.parse(content.toString('utf8'));
+            if (page.section === 'summary_history') {
+              page.items[0].sourcePeriod = { from: period.from, to: after };
+              content = Buffer.from(JSON.stringify(page));
+            }
+          }
+          yield { path: entry.path, mediaType: entry.mediaType, content };
+        }
+      }
+      const forged = await writeHandoverArchive({ directory, header, entries: entries(), coverage: () => coverage });
+      await assert.rejects(openHandoverImport({ path: forged.path }), (error: any) => error.code === 'invalid_package_period');
+    } finally { await source.close(); }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
 
 test('dated profile, source and growth exports retain domain dates and only selected parents through ZIP preview', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'handover-dated-domains-'));

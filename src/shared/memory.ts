@@ -14,7 +14,7 @@ export interface MemoryFact extends FactValues {
   id: string; childId: string; visibility: MemoryVisibility; intendedVisibility: MemoryVisibility;
   status: FactStatus; version: number; createdBy: string; confirmedBy: string | null; confirmedAt: string | null;
   reason: string; applicable: boolean; sourceState: "current" | "changed";
-  importedFrom?: ImportProvenance; confirmationBasis?: "imported_source";
+  importedFrom?: ImportProvenance; confirmationBasis?: "imported_source"; contentUpdatedAt?: string | null;
 }
 export type TopicStatus = "pending" | "answered" | "snoozed" | "resolved";
 export interface MemoryTopic {
@@ -38,6 +38,7 @@ export interface ConversationSummary {
   previousId: string | null; coveredMessageIds: string[]; lastCoveredMessageId: string;
   /** Imported history keeps source message IDs; it never advances local summary coverage. */
   coverageScope?: 'imported_source'; importedFrom?: ImportProvenance;
+  sourcePeriod?: { from: string; to: string };
 }
 export interface SummaryInput { previous: ConversationSummary | null; previousVersion: number; basis: string; messages: ChatMessage[]; moreUncovered: boolean; summaryMode?: "isolated_batch"; repairOf?: string; currentSources?: unknown[]; unavailableReason?: "fact_metadata_pending" | "message_requires_continuation" }
 export interface MemoryView {

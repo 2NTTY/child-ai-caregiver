@@ -231,15 +231,33 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       }
       if (section === 'profile' && (sourceValue as ChildProfile).data === null) return finish('skipped', 'empty_profile');
       if (isHandoverAttachment(section) && !content) return finish('skipped', 'attachment_not_available');
-      if (mapping && sourceValue!.version === mapping.sourceVersion && provenance.current.sourceHash !== mapping.sourceHash)
+      const sameVersion = mapping && sourceValue!.version === mapping.sourceVersion;
+      const period = section === 'summary_history' ? firestoreSummarySchema.parse(raw.row.value).sourcePeriod : undefined;
+      const savedPeriod = current && 'sourcePeriod' in current ? current.sourcePeriod : undefined;
+      if (sameVersion && period && savedPeriod && firestoreDomainHash(period) !== firestoreDomainHash(savedPeriod))
         return finish('conflict', 'source_version_conflict');
+      if (sameVersion && provenance.current.sourceHash !== mapping.sourceHash) {
+        // A dated export can recover a legacy batch's message dates. The same revision in a full
+        // or older package can lack that annotation. Keep the signed digest and the saved body.
+        if (section !== 'summary_history') return finish('conflict', 'source_version_conflict');
+        const { sourcePeriod, ...body } = raw.row.value;
+        if (!sourcePeriod && !savedPeriod ||
+          firestoreDomainHash(sourcePeriod ? body : { ...body, sourcePeriod: savedPeriod }) !== mapping.sourceHash)
+          return finish('conflict', 'source_version_conflict');
+      }
       if (resolution.mode !== 'preserve' && (resolution.targetId !== currentId || resolution.expectedVersion !== currentVersion))
         return finish('conflict', 'target_version_conflict');
       if (deleted && resolution.mode !== 'restore_deleted') return finish('conflict', 'target_deleted');
       if (!deleted && resolution.mode === 'restore_deleted') return finish('conflict', 'target_not_deleted');
       if (mapping && sourceValue!.version < mapping.sourceVersion) return finish('skipped', 'older_source');
       if (!deleted && locallyChanged && resolution.mode !== 'replace_current') return finish('conflict', 'target_changed');
-      if (!deleted && !locallyChanged && mapping && sourceValue!.version === mapping.sourceVersion) return finish('skipped', 'already_imported');
+      if (!deleted && !locallyChanged && sameVersion) {
+        if (period && !savedPeriod && currentId) {
+          const stamp = await memory.prepareImportedSummaryPeriod(b, currentId, currentVersion, period);
+          return finish('updated', 'summary_source_period_added', resultResource, { changeSeq: null, commit: stamp });
+        }
+        return finish('skipped', 'already_imported');
+      }
       if (isHandoverAttachment(section)) {
         const prepared = await attachments.prepare(b, raw.row, content!, { batchId, operationId: opId,
           actorUserId: b.actorUserId, sourceHash: provenance.current.sourceHash }, provenance, currentVersion, uploaded,

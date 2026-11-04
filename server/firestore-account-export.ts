@@ -5,7 +5,7 @@ import type { FirebaseAvatarApiPort } from './firebase-avatar-api.ts';
 import { firestoreChatFileRowSchema, type FirestoreChatFilesStore } from './firestore-chat-files.ts';
 import { firestoreVoiceRowSchema, type FirestoreVoiceStore } from './firestore-voice.ts';
 import { firestoreVoiceTranscriptSchema, type FirestoreVoiceTranscripts } from './firestore-voice-transcripts.ts';
-import { createFirestoreMemoryStore } from './firestore-memory.ts';
+import { createFirestoreMemoryStore, firestoreFactSchema, firestoreTopicSchema } from './firestore-memory.ts';
 import { createFirestoreCareStore } from './firestore-care.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
 import { createFirestoreNotificationMessages } from './firestore-notification-messages.ts';
@@ -91,7 +91,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
     try { return cursorSchema.parse(JSON.parse(options.cipher.decrypt(Buffer.from(raw, 'base64url').toString(), aad(owner)))); }
     catch { return domainReject('invalid_export_cursor', 400); }
   }
-  async function page(owner: string, raw: unknown, packageMedia?: PackageMediaFilter): Promise<AccountExportPage> {
+  async function page(owner: string, raw: unknown, packageMedia?: PackageMediaFilter, includeSummaryPeriod = false): Promise<AccountExportPage> {
     const input = domainParse(querySchema, raw), section = input.section;
     if (!global.has(section) && !Object.hasOwn(sections, section) || global.has(section) === Boolean(input.childId)
       || input.cursor && !input.scopeVersion) domainReject('invalid_export_scope', 400);
@@ -151,7 +151,8 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
           query = query.where('workspaceTag', '==', tags.workspaceTag).where('epochTag', '==', tags.epochTag).where('userTag', '==', tags.userTag);
           if (section !== 'children') query = query.where('childTag', '==', tags.childTag);
         }
-        const limit = section === 'document_content' || section === 'photo_content' || section === 'voice_content' || section === 'file_content' ? 1 : 10;
+        const limit = section === 'document_content' || section === 'photo_content' || section === 'voice_content' || section === 'file_content'
+          || section === 'summary_history' && includeSummaryPeriod ? 1 : 10;
         query = query.orderBy(suffix === 'photos' ? 'sortKey' : FieldPath.documentId()).limit(limit + 1);
         if (previous) query = query.startAfter(previous.after);
         const found = await binding.transaction.get(query);
@@ -191,7 +192,11 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
           } else if (['care_history', 'profile_history', 'memory_fact_history', 'memory_topic_history'].includes(section)) {
             const item = z.object({ id: z.uuid().optional(), childId: z.uuid(), version: z.number().int().positive() }).passthrough().parse(value);
             const kind = section === 'care_history' ? 'care' : section === 'profile_history' ? 'profile' : section === 'memory_fact_history' ? 'fact' : 'topic';
-            if (await contentVisible(data, binding, kind, kind === 'profile' ? item.childId : z.uuid().parse(item.id), item.version)) items.push(value);
+            if (await contentVisible(data, binding, kind, kind === 'profile' ? item.childId : z.uuid().parse(item.id), item.version)) {
+              if (kind === 'fact') items.push(firestoreFactSchema.parse(value));
+              else if (kind === 'topic') items.push(firestoreTopicSchema.parse(value));
+              else items.push(value);
+            }
           } else if (section === 'growth_attention' || section === 'growth_history') {
             const saved = firestoreGrowthSchema.parse(value), item = saved.item;
             const expectedId = section === 'growth_history' ? JSON.stringify([item.id, item.version]) : item.id;
@@ -253,7 +258,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
               await createFirestoreSharedInputStore(options).read(binding, id); items.push(value);
             }
           } else if (section === 'summary_history') {
-            const summary = await memory.readSummaryRevision(binding, value);
+            const summary = await memory.readSummaryRevision(binding, value, includeSummaryPeriod);
             if (summary) items.push(summary);
           } else if (section === 'native_push_bindings') {
             const saved = firestoreNativeBindingSchema.parse(value);

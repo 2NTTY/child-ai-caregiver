@@ -1,4 +1,5 @@
 import { prepareContentErasure } from './firestore-content-erasure.ts';
+import { factContentDate, summarySourcePeriod, summarySourcePeriodSchema, memoryUpdateDate } from './handover-memory-dates.ts';
 import { randomUUID } from 'node:crypto';
 import type { DocumentSnapshot, Query } from '@google-cloud/firestore';
 import { z } from 'zod';
@@ -29,7 +30,7 @@ const uuid = z.uuid(), version = z.number().int().positive().max(2147483646), ti
 const user = z.string().min(1).max(256), visibility = z.enum(['private', 'family']), FAR_FUTURE = '9999-12-31T23:59:59.999Z';
 export const firestoreFactStorageSchema = factValuesSchema.extend({ id: uuid, childId: uuid, visibility, intendedVisibility: visibility,
   status: z.enum(['candidate', 'confirmed', 'inactive']), version, createdBy: user, confirmedBy: user.nullable(), confirmedAt: time.nullable(),
-  reason: z.string().max(500), applicable: z.boolean(), sourceState: z.enum(['current', 'changed']), createdAt: time,
+  reason: z.string().max(500), applicable: z.boolean(), sourceState: z.enum(['current', 'changed']), createdAt: time, contentUpdatedAt: time.nullable().optional(),
   importedFrom: importProvenanceSchema.optional(), confirmationBasis: z.literal('imported_source').optional(),
   createdViaShare: sharedWriteAttributionSchema.optional(), confirmedViaShare: sharedWriteAttributionSchema.optional(),
   changedViaShare: sharedWriteAttributionSchema.optional() }).strict();
@@ -51,7 +52,7 @@ export function validMemoryFactAttribution(value: z.infer<typeof firestoreFactSt
 }
 const summarySchema = z.object({ id: uuid, childId: uuid, version, text: z.string().min(1).max(6000), createdAt: time,
   previousId: uuid.nullable(), coveredMessageIds: z.array(uuid).min(1).max(50), lastCoveredMessageId: uuid,
-  coverageScope: z.literal('imported_source').optional(), importedFrom: importProvenanceSchema.optional(),
+  coverageScope: z.literal('imported_source').optional(), importedFrom: importProvenanceSchema.optional(), sourcePeriod: summarySourcePeriodSchema.optional(),
 }).strict().refine(value => value.coverageScope === 'imported_source' ? value.importedFrom?.current.source.section === 'summary_history'
   : value.importedFrom === undefined);
 export { summarySchema as firestoreSummarySchema };
@@ -72,8 +73,9 @@ export interface SummaryMaintenanceInput extends SummaryInput { alternatives?: S
 export interface FirestoreMemoryStore extends MemoryStore {
   forSharedSpace(spaceId: string): MemoryStore;
   mutation: FirestoreOnlineMutation;
-  readSummaryRevision(binding: Binding, raw: unknown): Promise<ConversationSummary | null>;
+  readSummaryRevision(binding: Binding, raw: unknown, includePeriod?: boolean): Promise<ConversationSummary | null>;
   readImportedSummary(binding: Binding, id: string): Promise<ConversationSummary | null>;
+  prepareImportedSummaryPeriod(binding: Binding, id: string, expectedVersion: number, period: NonNullable<ConversationSummary['sourcePeriod']>): Promise<() => void>;
   prepareImportedSummary(binding: Binding, operationId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     current?: { id: string; expectedVersion: number }): Promise<Prepared<ConversationSummary>>;
   prepareMaintenance(userId: string, childId: string): Promise<SummaryMaintenanceInput | null>;
@@ -178,7 +180,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     return () => commits.forEach(commit => commit());
   }
   async function write(binding: Binding, kind: Kind, current: MemoryFact | MemoryTopic | null,
-    next: MemoryFact | MemoryTopic | null, operationId: string): Promise<Prepared<MemoryFact | MemoryTopic | boolean>> {
+    next: MemoryFact | MemoryTopic | null, operationId: string, factSnapshotAt: string | null = new Date().toISOString()): Promise<Prepared<MemoryFact | MemoryTopic | boolean>> {
     requireMemory(binding);
     if (binding.sharedAccess && next && next.visibility !== 'family') domainReject('shared_private_scope', 403);
     const id = next?.id ?? current!.id, nextVersion = next?.version ?? current!.version + 1, deleted = next === null;
@@ -199,7 +201,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
           && importConfirmationActor(value, 'memory_facts') === (old ? importConfirmationActor(old, 'memory_facts') : undefined) ? old?.confirmedViaShare : changed;
         const fact = domainParse(firestoreFactStorageSchema, { ...firestoreFactSchema.parse({ ...next, createdAt: old?.createdAt ?? new Date().toISOString() }),
           ...(created ? { createdViaShare: created } : {}), ...(confirmed ? { confirmedViaShare: confirmed } : {}), ...(changed ? { changedViaShare: changed } : {}),
-          createdAt: current ? (current as z.infer<typeof firestoreFactSchema>).createdAt : new Date().toISOString() }, 'memory_binding', 500);
+          createdAt: old?.createdAt ?? new Date().toISOString(), contentUpdatedAt: factSnapshotAt }, 'memory_binding', 500);
         // Canonical storage omits absent optional fields instead of serializing undefined.
         if (fact.confirmationBasis === undefined) delete fact.confirmationBasis;
         envelope = { ...metadata, createdAt: fact.createdAt, ...data.seal('memory-fact', id, binding.scope, firestoreFactStorageSchema, fact, nextVersion) };
@@ -345,15 +347,27 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     // No per-message existence scan is needed on every model request.
     return true;
   }
-  async function readSummaryRevision(binding: Binding, raw: unknown) {
+  async function readSummaryRevision(binding: Binding, raw: unknown, includePeriod = false) {
     const saved = domainParse(savedSummarySchema, raw);
     if (saved.summary.coverageScope === 'imported_source') {
       if (saved.summary.childId !== binding.scope.childId || binding.sharedAccess || saved.batch) domainReject('summary_binding', 500);
       return saved.summary;
     }
-    if (saved.batch) return await batchValid(binding, saved) ? saved.summary : null;
-    const current = await summaryBasis(binding);
-    return saved.basis === current.basis && (!saved.validUntil || Date.parse(saved.validUntil) > Date.now()) ? saved.summary : null;
+    if (saved.batch) {
+      if (!await batchValid(binding, saved)) return null;
+    } else {
+      const current = await summaryBasis(binding);
+      if (saved.basis !== current.basis || saved.validUntil && Date.parse(saved.validUntil) <= Date.now()) return null;
+    }
+    if (!includePeriod || saved.summary.sourcePeriod || saved.summary.previousId || saved.batch?.replaces) return saved.summary;
+    const messages = [];
+    for (const id of saved.summary.coveredMessageIds) {
+      const message = await options.chat.readMessage(binding, binding.scope.childId, id);
+      if (!message) return saved.summary;
+      messages.push(message);
+    }
+    const period = summarySourcePeriod(messages);
+    return period ? { ...saved.summary, sourcePeriod: period } : saved.summary;
   }
   async function recentBatches(binding: Binding) {
     const rows = await binding.transaction.get(scoped(binding, 'conversation_summaries').where('currentBatch', '==', true)
@@ -446,6 +460,8 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
       text: input.text, createdAt: new Date().toISOString(), previousId: null,
       coveredMessageIds: input.coveredMessageIds, lastCoveredMessageId: input.coveredMessageIds.at(-1)! };
     if (repair && input.coveredMessageIds.length !== repair.input.messages.length) domainReject('summary_coverage_changed');
+    const period = summarySourcePeriod(expected.input.messages.slice(0, input.coveredMessageIds.length), expected.input.currentSources);
+    if (period) value.sourcePeriod = period;
     const lastMessageSortKey = repair?.saved.batch!.lastMessageSortKey ?? expected.rows.docs[input.coveredMessageIds.length - 1].get('sortKey');
     const lastSortKey = repair ? head.saved!.lastSortKey : lastMessageSortKey;
     const sourceState = repair ?? await summaryDependencies(binding), dependencies = sourceState.dependencies;
@@ -520,6 +536,17 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     }
     return { revisions, nextBeforeVersion: rows.size > 50 ? rows.docs[49].get('entityVersion') as number : null };
   }
+  async function importedSummaryRecord(binding: Binding, id: string) {
+    domainParse(uuid, id);
+    if (binding.sharedAccess || binding.actorUserId !== binding.scope.ownerUserId) domainReject('private_scope_unavailable', 403);
+    const ref = data.ref('conversation_summaries', 'conversation-summary', id);
+    const row = await binding.transaction.get(ref);
+    if (!row.exists) return null;
+    const saved = open(binding, 'conversation-summary', id, savedSummarySchema, row);
+    if (saved.summary.id !== id || saved.summary.childId !== binding.scope.childId || saved.summary.version !== row.get('recordVersion')
+      || saved.summary.coverageScope !== 'imported_source' || saved.batch || row.get('currentBatch') === true) domainReject('summary_binding', 500);
+    return { ref, saved, row };
+  }
   const store: FirestoreMemoryStore = {
     forSharedSpace(spaceId) {
       domainParse(uuid, spaceId);
@@ -547,15 +574,13 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
       };
     },
     mutation, prepareSummaryWrite, readSummaryRevision,
-    readImportedSummary: async (binding, id) => {
-      domainParse(uuid, id);
-      if (binding.sharedAccess || binding.actorUserId !== binding.scope.ownerUserId) domainReject('private_scope_unavailable', 403);
-      const row = await binding.transaction.get(data.ref('conversation_summaries', 'conversation-summary', id));
-      if (!row.exists) return null;
-      const saved = open(binding, 'conversation-summary', id, savedSummarySchema, row);
-      if (saved.summary.id !== id || saved.summary.childId !== binding.scope.childId || saved.summary.version !== row.get('recordVersion')
-        || saved.summary.coverageScope !== 'imported_source' || saved.batch || row.get('currentBatch') === true) domainReject('summary_binding', 500);
-      return saved.summary;
+    readImportedSummary: async (binding, id) => (await importedSummaryRecord(binding, id))?.saved.summary ?? null,
+    prepareImportedSummaryPeriod: async (binding, id, expectedVersion, period) => {
+      const entry = await importedSummaryRecord(binding, id);
+      if (!entry || entry.saved.summary.version !== expectedVersion || entry.saved.summary.sourcePeriod) domainReject('version_conflict');
+      const summary = { ...entry.saved.summary, sourcePeriod: domainParse(summarySourcePeriodSchema, period) };
+      const envelope = data.seal('conversation-summary', id, binding.scope, savedSummarySchema, { ...entry.saved, summary }, expectedVersion);
+      return () => { binding.transaction.set(entry.ref, { ...entry.row.data(), ...envelope }); };
     },
     prepareImportedSummary: async (binding, operationId, row, integrity, current) => {
       if (binding.sharedAccess || binding.actorUserId !== binding.scope.ownerUserId) domainReject('private_scope_unavailable', 403);
@@ -635,7 +660,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
           original: source.source.kind === 'imported' ? source.source.original : source.source, sourceState: source.sourceState },
         importedFrom, confirmationBasis: source.confirmedBy === null ? undefined : 'imported_source',
         applicable: false };
-      return await write(binding, 'facts', prior, value, operationId) as Prepared<MemoryFact>;
+      return await write(binding, 'facts', prior, value, operationId, factContentDate(source)) as Prepared<MemoryFact>;
     },
     prepareImportedTopic: async (binding, operationId, row, integrity, current) => {
       if (row.section !== 'memory_topics') domainReject('invalid_package_data', 400);
@@ -645,7 +670,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
       if (prior && ['answered', 'resolved'].includes(prior.status) && ['pending', 'snoozed'].includes(source.status)) domainReject('terminal_topic');
       const at = new Date().toISOString(), importedFrom = makeImportProvenance(row, integrity, binding.actorUserId, at);
       const value: MemoryTopic = { ...source, id: prior?.id ?? randomUUID(), childId: binding.scope.childId, version: (prior?.version ?? 0) + 1,
-        updatedBy: binding.actorUserId, updatedAt: at, importedFrom, reopenedFrom: null, mayAsk: false };
+        updatedBy: binding.actorUserId, updatedAt: memoryUpdateDate('memory_topics', source) ?? at, importedFrom, reopenedFrom: null, mayAsk: false };
       return await write(binding, 'topics', prior, value, operationId) as Prepared<MemoryTopic>;
     },
     prepareConfirmedFact: async (binding, raw, sharing, operationId) => {

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { memoryUpdateDate } from './handover-memory-dates.ts';
 import { z } from 'zod';
 import { agentPrivateNoteSchema, type AgentPrivateNote } from '../src/shared/agent-actions.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
@@ -69,7 +70,7 @@ export function createFirestorePrivateInstructions(data: FirestoreDomainData) {
       const at = new Date().toISOString(), importedFrom = makeImportProvenance(row, integrity, b.actorUserId, at);
       return prepareWrite(b, operationId, { ...source, id: previous?.id ?? randomUUID(), childId: b.scope.childId,
         version: (previous?.version ?? 0) + 1, sourceMessageId: null, provenance: 'imported_source', importedFrom,
-        createdAt: previous?.createdAt ?? at, updatedAt: at }, previous);
+        createdAt: previous?.createdAt ?? source.createdAt, updatedAt: memoryUpdateDate('instructions', source) ?? at }, previous);
     },
   };
 }
