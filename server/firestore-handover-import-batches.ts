@@ -4,6 +4,7 @@ import { FieldPath, type DocumentSnapshot, type Query } from '@google-cloud/fire
 import { z } from 'zod';
 import { historyModule } from './handover-history-records.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
+import { assertConcernImportAccess } from './firestore-concerns.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreDomainUuid, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreHandoverImportItems } from './firestore-handover-import-items.ts';
@@ -68,7 +69,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
           if (module === 'growth') domainReject('shared_domain_read_only', 403);
           if (enrol) continue;
           await sharing.inResourceTransaction(b, { ...selected.target, spaceId: selected.target.spaceId, module, mode: 'write' },
-            async access => { scope = access.scope; });
+            async access => { if (module === 'concerns') assertConcernImportAccess(access.binding); scope = access.scope; });
         }
         else { if (!await b.readChild(selected.target.childId)) domainReject('forbidden', 403); scope = { ...actorScope(b), childId: selected.target.childId }; }
       }

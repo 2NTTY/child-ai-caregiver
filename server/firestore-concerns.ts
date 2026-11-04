@@ -68,6 +68,13 @@ function future(at: string | null) {
   if (at !== null && (Date.parse(at) <= Date.now() || Date.parse(at) >= Date.UTC(2101, 0, 1))) domainReject('invalid_input', 400);
 }
 
+/** Only a verified class grant can import into shared storage. Family sharing keeps its original resource. */
+export function assertConcernImportAccess(b: Binding) {
+  const grant = b.sharedAccess;
+  if (grant && (!grant.classMember || grant.classMember.spaceId !== grant.spaceId || grant.classMember.userId !== b.actorUserId
+    || grant.module !== 'concerns' || grant.mode !== 'write' || grant.role === 'viewer')) domainReject('shared_domain_read_only', 403);
+}
+
 /** Same concern IDs and HTTP contract; immutable event rows keep long histories out of a single document. */
 export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
@@ -250,7 +257,7 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
   async function prepareImportedSnapshot(b: Binding, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     rawEvents: unknown[], expected?: { id: string; expectedVersion: number },
     mappedLinks: Map<string, { recordId: string | null; taskId: string | null; attentionId: string | null }> = new Map()): Promise<Prepared> {
-    if (b.sharedAccess) domainReject('shared_domain_read_only', 409);
+    assertConcernImportAccess(b);
     domainParse(uuid, opId);
     const { source, sourceEvents } = transferTimeline(row, rawEvents);
     const current = expected ? await head(b, expected.id) : null;
@@ -271,17 +278,20 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
     if (source.followUp) {
       let state = source.followUp.state;
       if (state === 'pending' || state === 'queued') {
-        if (source.status === 'closed') state = 'cancelled';
+        if (b.sharedAccess?.classMember) state = 'stopped';
+        else if (source.status === 'closed') state = 'cancelled';
         else if (Date.parse(source.followUp.at) <= Date.now() || source.eventCount >= CONCERN_EVENT_LIMIT) state = 'stopped';
         else { future(source.followUp.at); state = 'pending'; }
       }
       followUp = { id: randomUUID(), at: source.followUp.at, state, runId: null };
     }
+    // Importing a snapshot cannot substitute its authority for an existing local execution.
+    if (b.sharedAccess?.classMember && current && openFollowup(current)) domainReject('concern_followup_active');
     return save(b, { id: current?.id ?? randomUUID(), childId: b.scope.childId, title: source.title, reason: source.reason,
       status: source.status, version: (current?.version ?? 0) + 1, createdAt: current?.createdAt ?? now, updatedAt: now,
       archivedAt: source.status === 'closed' ? source.archivedAt ?? now : null,
       ...(source.statusBeforeArchive ? { statusBeforeArchive: source.statusBeforeArchive } : {}),
-      timelineId: randomUUID(), importedFrom, attentionIds: [...attentionIds], eventCount: events.length, followUp }, events, [], opId);
+      timelineId: randomUUID(), importedFrom, attentionIds: [...attentionIds], eventCount: events.length, followUp }, events, [], opId, !b.sharedAccess);
   }
   async function prepareCreate(b: Binding, raw: ConcernValues, opId: string): Promise<Prepared> {
     const input = domainParse(concernValuesSchema, raw); future(input.followUpAt);

@@ -15,7 +15,7 @@ import { createFirestoreCareStore, firestoreCareSchema, firestoreProfileSchema }
 import { createFirestoreOnlineStore } from './firestore-online.ts';
 import { createFirestoreMemoryStore, firestoreFactSchema, firestoreTopicSchema, firestoreSummarySchema } from './firestore-memory.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
-import { createFirestoreConcernStore, concernTransferSchema } from './firestore-concerns.ts';
+import { createFirestoreConcernStore, concernTransferSchema, assertConcernImportAccess } from './firestore-concerns.ts';
 import { createFirestoreGrowthStore, firestoreGrowthSchema, firestoreGrowthTopicSchema, growthImportSourceRow, growthTopicResourceId } from './firestore-growth.ts';
 import { growthTopicSchema } from '../src/shared/growth.ts';
 import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
@@ -73,7 +73,10 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       if (module === 'sources' || module === 'chat') domainReject('private_scope_unavailable', 403);
       if (module === 'growth' && mode === 'write') domainReject('shared_domain_read_only', 403);
       return authority.runTransaction(userId, null, actor => sharing.inResourceTransaction(actor,
-        { spaceId: target.spaceId!, childId: target.childId, module, mode }, value => use(value.binding, actor)));
+        { spaceId: target.spaceId!, childId: target.childId, module, mode }, value => {
+          if (module === 'concerns' && mode === 'write') assertConcernImportAccess(value.binding);
+          return use(value.binding, actor);
+        }));
     }
     return authority.runTransaction(userId, target.childId, b => use(b, b));
   };
@@ -255,7 +258,8 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
         }
         const retained = { format: 'yuyoufang-source-revision:1' as const, childId: target.childId, resource: mapping.target,
           evidence: history.evidence, opId, importedBy: b.actorUserId, importedAt: provenance.current.importedAt };
-        if (deleted || !await sourceHistoryVisible(data, b, retained)) return finish('conflict', 'target_deleted');
+        if (deleted) return finish('conflict', 'target_deleted');
+        if (!await sourceHistoryVisible(data, b, retained)) return finish('conflict', section === 'concerns' && b.sharedAccess ? 'history_scope_unavailable' : 'target_deleted');
         if (history.parentVersion > mapping.sourceVersion) return finish('conflict', 'history_parent_version_unavailable');
         const prepared = await prepareSourceHistory(data, b, retained);
         return finish(prepared.outcome, prepared.reason, mapping.target, undefined, prepared.commit);
@@ -318,17 +322,23 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
           }
         }
         const mapped = new Map<string, { recordId: string | null; taskId: string | null; attentionId: string | null }>();
+        const allowed = (module: string) => !b.sharedAccess || b.sharedAccess.modules?.includes(module);
         for (const event of eventRows) {
-          const record = event.recordId ? await readState(b, 'care', { ...source, section: 'care', resourceId: event.recordId }) : null;
-          const task = event.taskId ? await readState(b, 'tasks', { ...source, section: 'tasks', resourceId: event.taskId }) : null;
-          const attention = event.attentionId ? await readState(b, 'growth_attention', { ...source, section: 'growth_attention', resourceId: event.attentionId }) : null;
+          const record = event.recordId && allowed('care') ? await readState(b, 'care', { ...source, section: 'care', resourceId: event.recordId }) : null;
+          const task = event.taskId && allowed('tasks') ? await readState(b, 'tasks', { ...source, section: 'tasks', resourceId: event.taskId }) : null;
+          const attention = event.attentionId && allowed('growth') ? await readState(b, 'growth_attention', { ...source, section: 'growth_attention', resourceId: event.attentionId }) : null;
           mapped.set(event.id, { recordId: record?.current && !record.deleted ? record.currentId : null,
             taskId: task?.current && !task.deleted ? task.currentId : null,
             attentionId: attention?.current && !attention.deleted ? attention.currentId : null });
         }
-        const prepared = await concerns.prepareImportedSnapshot(b, opId, raw.row, raw.integrity, eventRows,
-          current ? { id: currentId!, expectedVersion: currentVersion } : undefined, mapped);
-        return finish(current ? 'updated' : 'created', null, { id: prepared.value.id, version: prepared.value.version }, prepared);
+        try {
+          const prepared = await concerns.prepareImportedSnapshot(b, opId, raw.row, raw.integrity, eventRows,
+            current ? { id: currentId!, expectedVersion: currentVersion } : undefined, mapped);
+          return finish(current ? 'updated' : 'created', null, { id: prepared.value.id, version: prepared.value.version }, prepared);
+        } catch (error) {
+          if ((error as { code?: string }).code === 'concern_followup_active') return finish('conflict', 'concern_followup_active');
+          throw error;
+        }
       }
       if (section === 'growth_attention') {
         const original = firestoreGrowthSchema.parse(raw.row.value).item;
