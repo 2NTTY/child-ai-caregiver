@@ -1,3 +1,4 @@
+import { privateSummaryRestoreSchemas, isPrivateSummaryRestoreKind, privateSummaryRestoreMetadata, transformPrivateSummaryRestore } from './firestore-restore-private-summary.ts';
 import { avatarRestoreSchemas, isAvatarRestoreKind, assertAvatarRestoreBinding, transformAvatarRestore } from './firestore-restore-avatar-codec.ts';
 import { isSharingKind, transformSharingRecord, sharingMetadata } from './firestore-sharing-records.ts';
 import type { AvatarObjectDescriptor } from './avatar-data.ts';
@@ -52,6 +53,7 @@ const authoritySchemas = { control: authority.control, account: authority.accoun
   'authority-owner': authority.owner, 'authority-operation': authority.operation, 'authority-child-detail': authority.childDetail,
   work: workRecoverySchemas.work, followup: workRecoverySchemas.followup, 'authority-work-detail': authority.workDetail } as const;
 const domainSchemas = {
+  ...privateSummaryRestoreSchemas,
   ...avatarRestoreSchemas,
   'platform-policy': { suffix: 'admin_policy', schema: platformPolicySchema },
   'admin-invitation': { suffix: 'admin_invitations', schema: adminDirectorySchema },
@@ -100,6 +102,7 @@ export type FirestoreRestoreValue = z.infer<(typeof authoritySchemas)[FirestoreR
 export interface FirestoreRestoreDecoded { path: string; context: FirestoreRestoreContext; value: FirestoreRestoreValue }
 export interface FirestoreRestoreTransform {
   newEpochByWorkspace: ReadonlyMap<string, string>; generation: string;
+  validatedPrivateSummaryRunPaths?: ReadonlySet<string>;
   newAuthorizationVersionByWorkspace?: ReadonlyMap<string, string>;
   photoDescriptors: ReadonlyMap<string, FirebasePhotoObjectDescriptor>;
   avatarDescriptors?: ReadonlyMap<string, AvatarObjectDescriptor>; avatarObjectBucketName?: string;
@@ -154,7 +157,7 @@ const authorityEnvelopeSchema = z.object({ format: z.literal('yuban-work-recover
 const domainEnvelopeSchema = z.object({ format: z.literal('yuban-firestore-domain'), version: z.literal(1), recordVersion: positive,
   ciphertext: z.string().min(1), recovery: z.unknown() }).strict();
 // messageSentAt is untrusted query metadata; operation restores rebuild it from authenticated content.
-const privateMetadata = new Set(['opId', 'batchId', 'growthImportScopes', 'section', 'outcome', 'targetId', 'targetVersion', 'entryId', 'managerTag', 'memberTag', 'sourceUserTag', 'active', 'spaceId', 'messageSentAt', 'targetTag', 'actorTag', 'uploadId', 'pending', 'complete', 'nextAttemptAt', 'summaryPending', 'cleanupState', 'cleanupAt', 'retryAt', 'updatedAt', 'workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey', 'stage',
+const privateMetadata = new Set(['workState', 'completionWakeState', 'opId', 'batchId', 'growthImportScopes', 'section', 'outcome', 'targetId', 'targetVersion', 'entryId', 'managerTag', 'memberTag', 'sourceUserTag', 'active', 'spaceId', 'messageSentAt', 'targetTag', 'actorTag', 'uploadId', 'pending', 'complete', 'nextAttemptAt', 'summaryPending', 'cleanupState', 'cleanupAt', 'retryAt', 'updatedAt', 'workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey', 'stage',
   'historyId', 'module', 'currentBatch', 'lastMessageSortKey', 'teacherSpaceId', 'taskId', 'taskVersion', 'occurrenceId', 'documentId', 'status', 'autoRefresh', 'snapshotId', 'snapshotVersion', 'assetId', 'scopeTag',
   'live', 'state', 'importPending', 'cleaned', 'dueAt', 'leaseUntil', 'dispatchId', 'dispatchRouting', 'entityId', 'entityVersion', 'historyFloor', 'messageId', 'visibility', 'validUntil', 'runId', 'triggerKind', 'workId', 'confirmationId', 'askingRunId', 'askMessageId', 'expiresAt', 'proposalId', 'authorizationVersion', 'receiptId', 'noteId', 'concernId', 'timelineId', 'eventId', 'sequence', 'attentionId', 'id', 'dispatch', 'route', 'enabled', 'nextCheckAt', 'operationId', 'bindingId', 'deliveryId', 'challengeId', 'unresolved', 'requestId', 'attemptIds']);
 
@@ -240,6 +243,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     }
   }
   function domainBinding(context: FirestoreRecoveryContext & { kind: FirestoreRestoreDomainKind }, raw: FirestoreRestoreValue): void {
+    if (isPrivateSummaryRestoreKind(context.kind)) return; // Checked against authenticated query projections during decode.
     if (isAvatarRestoreKind(context.kind)) { assertAvatarRestoreBinding(data, context, raw); return; }
     if (isCoreRestoreKind(context.kind) || isAgentRestoreKind(context.kind) || isOperationRestoreKind(context.kind)) return; // Checked with the authenticated ordering projection below.
     const { kind, id, scope, recordVersion } = context;
@@ -386,7 +390,8 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     const core: Record<string, unknown> = {};
     for (const [name, value] of Object.entries(raw)) {
       if (['format', 'version', 'recordVersion', 'ciphertext', 'recovery'].includes(name)) core[name] = value;
-      else if (collection === namespace || !privateMetadata.has(name)) reject('restore_record_invalid');
+      else if (collection === namespace || !privateMetadata.has(name)
+        && !(name === 'sort' && collection === namespace + '_knowledge_index_batches')) reject('restore_record_invalid');
     }
     const family = collection === namespace ? 'authority' : 'domain';
     const envelope = family === 'authority' ? parse(authorityEnvelopeSchema, core) : parse(domainEnvelopeSchema, core);
@@ -405,6 +410,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       const context = { ...opened.context, kind }, value = parse<FirestoreRestoreValue>(domainSchemas[kind].schema, opened.value);
       domainBinding(context, value); result = { path: record.path, context, value };
       if (isAvatarRestoreKind(kind)) assertAvatarRestoreBinding(data, context, value, raw);
+      if (isPrivateSummaryRestoreKind(kind)) privateSummaryRestoreMetadata(data, context, value, raw);
       // Earlier snapshots lack this query projection; the authenticated document remains authoritative.
       if (kind === 'family-document' && raw.autoRefresh !== undefined)
         requireBinding(raw.autoRefresh === parse(documents.metadata, value).autoRefresh);
@@ -481,6 +487,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       return { oldPath: decoded.path, path: decoded.path, data: { ...result.metadata,
         ...data.seal(context.kind, result.id, result.scope, schema, result.value, result.version) } };
     }
+    if (context.family === 'domain' && isPrivateSummaryRestoreKind(context.kind)) return transformPrivateSummaryRestore(data, decoded);
     const scope = scopeAfter(context.scope, input);
     if (context.family === 'authority') {
       if (!key(authoritySchemas, context.kind)) reject('unsupported_restore_domain');
@@ -517,9 +524,13 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
           operationRestoreSchemas[context.kind].schema, result.value, result.version) } };
     }
     if (isAgentRestoreKind(context.kind)) {
-      const result = restoreAgentRecord({ ...context, kind: context.kind }, agentRestoreSchemas[context.kind].schema.parse(decoded.value), scope);
-      const envelope = data.seal<FirestoreRestoreValue>(context.kind, context.id, scope, agentRestoreSchemas[context.kind].schema, result.value, context.recordVersion);
-      return { oldPath: decoded.path, path: pathFor({ ...context, scope }), data: { ...data.tags(scope), ...result.metadata, ...envelope } };
+      const summaryRun = context.kind === 'agent-run' && agentRestoreSchemas['agent-run'].schema.parse(decoded.value).summaryWork;
+      if (summaryRun) requireBinding(input.validatedPrivateSummaryRunPaths?.has(decoded.path) === true);
+      const originalSummaryRun = context.kind === 'agent-run' && input.validatedPrivateSummaryRunPaths?.has(decoded.path) === true;
+      const targetScope = originalSummaryRun ? context.scope : scope;
+      const result = restoreAgentRecord({ ...context, kind: context.kind }, agentRestoreSchemas[context.kind].schema.parse(decoded.value), targetScope);
+      const envelope = data.seal<FirestoreRestoreValue>(context.kind, context.id, targetScope, agentRestoreSchemas[context.kind].schema, result.value, context.recordVersion);
+      return { oldPath: decoded.path, path: pathFor({ ...context, scope: targetScope }), data: { ...data.tags(targetScope), ...result.metadata, ...envelope } };
     }
     if (isCoreRestoreKind(context.kind)) {
       const schema = coreRestoreSchemas[context.kind].schema;

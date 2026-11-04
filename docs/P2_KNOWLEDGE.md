@@ -27,9 +27,26 @@ S10-W01 實作公共知識的匯入、核對、向量化、發布、停用與檢
 4. `embed VERSION --max-calls N --approved-cost`：只生成缺失向量，每次一段；N 為 1–16，超過即停止，不自行拆多輪繞過批准。完成後只對已有有效語義審核的版本嘗試發布，來源或觀察已變時保持未發布。
 5. `publish VERSION --hash HASH`：只容許已核對、未過期、向量完整的版本；原子替換活躍指向，歷史版本保留。
 6. `disable SOURCE --reason REASON`：立即停用；原活躍版本標 withdrawn，重新發布須再次核對。
+
 7. `search INPUT.json --approved-cost`：輸入 `{query, filter}`；CLI 只印公共引用識別及實際模式，不回印查詢或向量。
 
 正式語料失效時先停用；不得因新版未完成而保留已知錯誤內容。CLI 的確認旗標是操作防呆，不能代替 AGENTS 所要求的真服務／成本批准。資料未變不重算；title、正文或向量處理版本改變才生成相應新向量。模型、維度及 pipeline 不相容時不得混用。
+
+### 公共知識版本的批量移轉
+
+這組操作者指令只處理選定的公開版本。選擇檔是 `[{"sourceId":"…","versionHash":"…"}]`。先從 `list` 取得目標，並按實際散布用途核對來源條款。包內每個版本包含原文位置、片段及當時使用的向量。它只涵蓋所選版本，沒有轉移帳戶、私人來源或發布權限。
+
+沿用上述 `node scripts/knowledge.mjs` 前綴及 `--operator team-alias --operator-confirmed`。從受信任的交付渠道取得整個包的 SHA-256。
+
+| 操作 | 指令與結果 |
+|---|---|
+| 匯出 | `archive-export library.zip --selection selected.json --redistribution-checked`。固定版本已被停用、過期、改版或限組內使用時會拒絕產出。成功後顯示檔案指紋。 |
+| 匯入及接續 | `archive-import library.zip --archive-sha256 DIGEST --limit 8`。先核對整包，再按 manifest 順序逐版保存草稿及收據。再執行同一指令會從已保存的位置接續。相同內容保持原狀態。 |
+| 查進度與逐項結果 | `archive-status --archive-sha256 DIGEST --from 0 --limit 25`。讀取目前版本號、已處理位置、上次失敗原因及單頁收據。結果未知時先查這個入口。 |
+| 停止與恢復 | `archive-stop` 或 `archive-resume` 加上 `--archive-sha256 DIGEST --revision N`。使用查到的目前批次版本；停止後未提交的舊執行者不能繼續寫。恢復後再執行匯入指令。 |
+| 核准後復用向量 | 先用本地版本 ID 完成既有 `review`、`prepare-search`。核實包與向量來自可信操作者後，執行 `archive-publish library.zip --archive-sha256 DIGEST --source ID --version LOCAL_VERSION --hash VERSION_HASH --trusted-vector-origin`。模型、維度、處理版本與輸入相符的向量可在同一次發布復用。缺少相容向量時仍需按既有額度補齊。 |
+
+匯入和發布均不自動呼叫模型。檔案指紋證明交付內容一致；來源內容是否仍適用，由接收端的既有審核、原文觀察及發布條件判定。停止、失敗或隔離還原後，終端機不需要維持開啟；重新取得同一檔案和指紋即可查回批次。
 
 ## 檢索契約與限制
 

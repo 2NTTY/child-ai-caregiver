@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { documentRequestSchema, reportCoverageSchema } from '../src/shared/family-documents.ts';
+import { documentRequestSchema, documentPeriodSchema, reportCoverageSchema } from '../src/shared/family-documents.ts';
 import { firestoreProfileSchema } from './firestore-care.ts';
 import { firestoreDocumentSourceSchema } from './firestore-family-document-snapshots.ts';
 import type { FirestoreDocumentReport } from './firestore-document-sources.ts';
@@ -15,6 +15,8 @@ export const firestoreDocumentReportSchema: z.ZodType<FirestoreDocumentReport> =
     recordKind: z.string().max(40).optional(), validUntil: z.iso.datetime({ offset: true }).nullable().optional(),
     activeConcern: z.boolean().optional() }).strict()).max(140),
   blocked: z.boolean().optional(), concernScanVersion: z.literal(1).optional(), pageAfter: z.uuid().optional(),
+  buckets: z.array(documentPeriodSchema.safeExtend({ records: z.number().int().nonnegative(), tasks: z.number().int().nonnegative(),
+    observations: z.number().int().nonnegative() })).min(1).max(4).optional(),
   concernAfter: z.object({ id: z.uuid(), sequence: z.number().int().nonnegative(), timelineId: z.uuid().nullable().optional() }).strict().optional(),
   pendingConcern: z.object({ id: z.uuid(), header: firestoreDocumentSourceSchema.nullable(), sawObservation: z.boolean() }).strict().optional(),
 }).strict();

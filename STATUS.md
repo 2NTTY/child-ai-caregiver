@@ -4,6 +4,28 @@
 
 ## 目前與接手
 
+- **#410 後續修復／#447 整合（2026-11-04 UTC）：**候選已整合 master `f0149b`，同源完整型別及 21 整檔／87 項定向補驗全過（含 CI 6 項），保留歷史 554 項及前次 44 項證據，不相加。最新精確 PR head 的 87 檔／555 項＋CI 6 項，561 項必要 CI 仍待驗。單一 durable 慢路徑、完整 fast／SQL與上游原件還原能力保留；正式 work-grant 政策與持續 fencing reader 仍缺，durable 未啟用、未部署，R0／R2 blocked，不稱用戶問題已上線修復。見[本輪範圍與 gate](PLAN.md#req005-summary01)。
+
+- **11 月 5 日 07:09（香港）** 原站 API／worker／Web `2be85951` 已接本人記憶事實／主題還原及共用比較表單。合成簽署包核實原來源、版本、防重、墓碑恢復及主題終態；必要型別、Web 建置和站外健康／指紋通過。其餘附件原件還原、完整帳戶還原、雲端災難還原及正式帳戶／手機操作仍待接續。[發布紀錄](artifacts/verification/P4_ORIGINAL_MEMORY_20261105.json)
+
+- **11 月 5 日 05:51（香港）** 原站 `792b7bee` 已可將簽署備份內的私人交代還原到現存同 ID 原件，並在新報告比較分段筆數。原有 Android 安裝繼續使用既有功能，新表單及原生分享文案待批量發布。[本批發布證據](artifacts/verification/P4_INSTRUCTIONS_REPORTS_DELIVERY_20261105.json)
+
+- **11 月 5 日 05:32（香港）** 原站 `adaaa410` 已可把交接包的成長事項及主題匯入班員。合成 ZIP 核實班級讀回及重送，原站核實版本協商、服務健康與 Web 指紋。Android 待批量建置。[班級成長發布紀錄](artifacts/verification/P4_CLASS_GROWTH_DELIVERY_20261105.json)
+
+- **11 月 5 日 05:02（香港）** 原站後端 `432ae9a7` 已提供公共知識 ZIP 移轉。兩版分批匯入、停止／恢復及收據以合成資料驗證；正式候選以同一 CLI 查回一個不存在的批次。Web 仍為 `9974bcaf`。[發布紀錄](artifacts/verification/P4_KNOWLEDGE_EDITION_TRANSFER_20261105.json)
+
+- **11 月 5 日 04:41（香港）** 原站 `9974bcaf` 已可從交接包把持續關注匯入班員。來源的跟進時間保留供查閱，不會替原家庭執行跟進。合成包驗過匯入及重送；原站驗了服務、登入保護與前端指紋。Android 待批量建置。[發布紀錄](artifacts/verification/P4_CLASS_CONCERN_DELIVERY_20261105.json)
+
+- **11 月 5 日 04:29（香港）** 原站已更新至 `74b7c92f`。持續關注可還原至同一原件，按期補回保留其他時段及現有跟進。交易、表單與版本相容以合成資料核對；站外已核實新版 Web 及登入保護。Android 留待批量構建。[發布及驗證範圍](artifacts/verification/P4_ORIGINAL_CONCERN_DELIVERY_20261105.json)
+
+- **11 月 5 日 04:04（香港）** 原站 `235ddd3c` 已提供管理員關鍵詞索引重建、暫停、續跑及逐項結果。正式環境核實兩個管理端點、版本查詢及排序索引；權限、批次寫入與還原用合成資料核對。知識大量匯入及資料遷移仍待完成。[索引批次發布紀錄](artifacts/verification/P4_KNOWLEDGE_INDEX_BATCHES_20261105.json)
+
+- **11 月 5 日 03:38（香港）** 原站 API、worker、Web 已更新至 `88ce04f7`。管理員可在網站查看指定來源及分頁檢查紀錄。Google／Apple 快捷登入仍缺原站 provider 配置。[知識管理發布紀錄](artifacts/verification/P4_KNOWLEDGE_ADMIN_DELIVERY_20261105.json)
+
+- **11 月 5 日 03:19（香港）** 原站 API／worker 已更新至 `3fb14dc1`，Web 維持 `cbd8101e`。單筆私人來源刪除會寫獨立日誌；新成長報告可比較期間內各段已保存筆數。合成還原與站外健康讀回已核，真備份還原和手機分享仍待驗。[刪除重放與報告發布](artifacts/verification/P4_SOURCE_ERASURE_REPORT_TRENDS_20261105.json)
+
+- **原站更新（11 月 5 日）。** `cbd8101e` 已交付孩子頭像原件還原與上載收據清單。合成流程已核對原 JPEG、來源、範圍及跨帳戶隔離。原生大型包尚待新 binary 的設備驗收。[本批交付證據](artifacts/verification/P4_UPLOAD_HISTORY_CHILD_AVATAR_20261105.json)
+
 - **本人備份（2026-11-05）。** 原站 `59f6700a` 已接文件及到診準備的原件還原。逐項比較會區分兩種資源；已完成的預約及任何帶共享來源選擇的原文件均回報逐項衝突。已驗合成簽署備份及原站版本，正式帳戶操作與新 APK 待驗。[本次證據](artifacts/verification/P4_ORIGINAL_DOCUMENTS_20261105.json)／[帳戶頭像交付](artifacts/verification/P4_PERSONAL_AVATAR_BACKUP_20261105.json)
 
 - **P4 匯出清單（2026-11-04）：**已接 [Web／App 共用表單及 owner](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)。匯出前可分頁查看所有文件及附件，明確選整份跨期或日期不明的版本，亦可剔除原已入選項。資料變更須重讀。原站 API、worker 與 Web 已於 22:17 香港時間更新。公開 Web 檔案與本機已核對版本一致；Android 新版及正式帳戶操作仍待驗。見[發布證據](artifacts/verification/P4_HANDOVER_WEB_DELIVERY_20261104.json)。

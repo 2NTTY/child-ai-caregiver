@@ -8,7 +8,13 @@ const base = 'https://firestore.googleapis.com/v1/projects/ai-caregivers-for-chi
 const canonical = value => JSON.stringify(sort(value));
 function sort(value) { return Array.isArray(value) ? value.map(sort) : value && typeof value === 'object'
   ? Object.fromEntries(Object.keys(value).sort().map(key => [key, sort(value[key])])) : value; }
-function shape(index) { return canonical({ queryScope: index.queryScope, fields: index.fields.filter(field => field.fieldPath !== '__name__') }); }
+function shape(index) {
+  // REST appends an omitted document-id field with the final field's direction (ASC for arrays).
+  // Preserve explicit direction: ascending page indexes cannot satisfy descending head queries.
+  const fields = index.fields.at(-1)?.fieldPath === '__name__' ? index.fields
+    : [...index.fields, { fieldPath: '__name__', order: index.fields.at(-1)?.order ?? 'ASCENDING' }];
+  return canonical({ queryScope: index.queryScope, fields });
+}
 const sessionIndexes = ['ASCENDING', 'DESCENDING'].map(order => canonical({
   collectionGroup: 'events', queryScope: 'COLLECTION', fields: [{ fieldPath: 'timestamp', order }, { fieldPath: 'id', order }],
 }));
@@ -16,7 +22,7 @@ const metadataFields = new Set([
   'photos:scopeTag', 'knowledge_versions:versionId', 'knowledge_observations:lastSuccessfulCheckAt', 'knowledge_checks:checkedAt',
   'work_watches:enabled', 'erasures:state', 'content_erasures:stage', 'context_versions:summaryPending', 'voice_assets:cleanupState',
   'chat_file_assets:cleanupState', 'avatar_cleanup:complete', 'handover_exports:cleaned', 'handover_uploads:cleaned',
-  'handover_import_batches:growthImportScopes',
+  'handover_import_batches:growthImportScopes', 'knowledge_index_batches:sort',
 ].map(field => 'yuban_authority_' + field));
 try {
   if (!['--inspect', '--inspect-fields', '--approved-apply', '--approved-fields'].includes(mode) || !process.env.GOOGLE_APPLICATION_CREDENTIALS) throw Error('explicit_mode_and_credentials_required');

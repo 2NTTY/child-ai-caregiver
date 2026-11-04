@@ -3,7 +3,7 @@ import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
 import { agentAudioMarker, type AgentAudioInput } from './agent-audio.ts';
 import type { VoiceMessageReference } from '../src/shared/voice.ts';
 import { AGENT_IMAGE_LIMIT, type AgentImageInput } from './agent-images.ts';
-import { BaseLlm } from "@google/adk";
+import { BaseLlm, createEvent, populateClientFunctionCallId } from "@google/adk";
 import type { LlmRequest, LlmResponse } from "@google/adk";
 import { ApiError, GoogleGenAI } from "@google/genai";
 import type { FunctionCall, GenerateContentParameters, GoogleGenAIOptions } from "@google/genai";
@@ -114,6 +114,7 @@ export class AgentGatewayModel extends BaseLlm {
     terminalToolNames?: ReadonlySet<string>;
     modelAttemptKey?: (request: LlmRequest) => string | undefined;
     durableDailyUsage?: { adapter: DurableAiUsage; context: RootBudgetContext };
+    privateSummaryAdmission?: import('./agent-runtime.ts').PrivateSummaryAdmission;
     initialConversationSummary?: InitialConversationSummary;
     readConversationSummary?: () => Promise<InitialConversationSummary | null>;
     projectCapabilityConfig?: (request: LlmRequest, calls: readonly FunctionCall[]) => Promise<LlmRequest["config"] | undefined>;
@@ -246,10 +247,15 @@ export class AgentGatewayModel extends BaseLlm {
         requestCharacters = requestSize({ contents: base.contents, config: outgoing.config });
         if (includesSummary && Date.now() >= validUntil) throw new AgentStopped("unavailable");
         const requestFingerprint = agentBudgetFingerprint({ model: config.model, contents: outgoing.contents, config: outgoing.config });
-        await budget.admitModel(this.options, { key: modelKey, fingerprint: requestFingerprint, kind: "model", units: 1 });
         if (daily) dailyRequest = { kind: 'model', rootRunId: daily.context.binding.rootRunId, attemptKey: modelKey,
           bindingFingerprint: agentBudgetFingerprint(daily.context), requestFingerprint, userId, childId, model: config.model,
           deadlineAtMs: daily.context.binding.deadlineAtMs, userLimit: config.dailyUserAttempts, globalLimit: config.dailyGlobalAttempts };
+        if (this.options.privateSummaryAdmission) {
+          if (!dailyRequest || await budget.wait(() => this.options.privateSummaryAdmission!.reserveModel({
+            modelAttemptKey: modelKey, requestFingerprint, originalDailyRequest: dailyRequest! })) !== 'execute')
+            throw new AgentStopped('unavailable');
+        }
+        await budget.admitModel(this.options, { key: modelKey, fingerprint: requestFingerprint, kind: "model", units: 1 });
       } else await budget.admitModel(this.options);
       if (daily && dailyRequest) {
         const admission = await budget.wait(() => daily.adapter.reserve(dailyRequest!));
@@ -275,6 +281,8 @@ export class AgentGatewayModel extends BaseLlm {
           if (includesSummary && Date.now() >= validUntil) throw new AgentStopped("unavailable");
         }
         if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+        if (this.options.privateSummaryAdmission && !await budget.wait(() => this.options.privateSummaryAdmission!.revalidate()))
+          throw new AgentStopped('unauthorized');
         response = await budget.wait(() => {
           // The final authorization await can cross an expiry boundary too.
           if (includesSummary && Date.now() >= validUntil) {
@@ -293,8 +301,15 @@ export class AgentGatewayModel extends BaseLlm {
         if (response.errorCode || response.interrupted || response.partial || response.finishReason !== "STOP"
           || response.content?.role !== "model" || !response.content.parts?.length) throw new AgentStopped("invalid_response");
         if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+        // ADK normally assigns missing call IDs after the gateway returns. Fix those
+        // same native IDs before charging this private batch so persisted evidence
+        // and its original complete fingerprint cannot disagree after a crash.
+        if (this.options.privateSummaryAdmission) populateClientFunctionCallId(createEvent({ content: response.content }));
         const calls = response.content.parts.filter(part => part.functionCall);
         if (calls.length) {
+          if (this.options.privateSummaryAdmission && (!modelKey || await budget.wait(() => this.options.privateSummaryAdmission!.reserveToolBatch({
+            toolBatchKey: modelKey + ':tool-batch', requestFingerprint: agentBudgetFingerprint({ calls: calls.map(part => part.functionCall), units: calls.length }),
+            units: calls.length })) !== 'execute')) throw new AgentStopped('unavailable');
           if (budget.durable) await budget.admit({ key: modelKey! + ":tool-batch", kind: "tool_batch", units: calls.length,
             fingerprint: agentBudgetFingerprint({ calls: calls.map(part => part.functionCall), units: calls.length }) });
           else budget.take("toolCalls", calls.length);

@@ -1,0 +1,39 @@
+{
+  "revision": "74b7c92f80ad622b9079a982620ce8e71e87857e",
+  "pullRequests": [
+    475,
+    476
+  ],
+  "observedAt": "2026-11-05T04:29:00+08:00",
+  "site": "https://ex-machina.eu.org",
+  "candidate": {
+    "apiDeltaBytes": 25581,
+    "webArchiveBytes": 4907874,
+    "apiDeltaSha256": "8da278c4513b0284374cb38803db203b01a5036ef0966480c5672f42eb5b1b2e",
+    "webArchiveSha256": "98bc415a30827f831b18a92c82647fa1e3ba6a93b690eec34ece715cd8d35903"
+  },
+  "production": {
+    "apiWorkerImage": "sha256:d3bdcf65eb1b2c71f78b5d1f1b60f025329d6cee5d2d932d4188147ddd347749",
+    "webImage": "sha256:1fe477b47885bb234741268900ee905dc46d3cd81f8750ae75748e910c6a0357",
+    "composeSha256": "8ddfade6dadacd772bc4fcae7ab53916cecf5efdd86a05b73711ee8dc00fc6ac",
+    "health": 200,
+    "anonymousCapability": 401,
+    "htmlAndJsMatched": true,
+    "previousRelease": "235ddd3c",
+    "activeAgentLeases": 0,
+    "activeOutbox": 0,
+    "unresolvedDispatch": 0,
+    "existingUnknownBackground": 1,
+    "signer": "worker only",
+    "observedDuringWebRestart": "one transient TLS connection failure before health 200"
+  },
+  "local": [
+    "Original account and child, same resource and new revision; selected period restores only absent observations. Existing revisions and out-of-range entries preserved.",
+    "Queued follow-up initially stopped authorizing the original work after a restore. Fixed with an atomic update of its existing claim; the same work remained authorized and no replacement was enqueued.",
+    "Backend project and frontend project typechecked. Two original concern route/domain checks, two existing cross-account import cases, one focused shared form/owner case.",
+    "Initial failing form fixture had a v2 header without accountAvatar; corrected ordinary backup fixture to v1."
+  ],
+  "notExercised": [
+    "No production account performed a restore. No APK or OTA issued."
+  ]
+}

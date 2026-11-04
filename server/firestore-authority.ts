@@ -446,8 +446,9 @@ export class FirestoreAuthority {
       prepareChange: async (operationId: string, kind: OnlineChange['kind'], deleted: boolean, childId?: string) => {
         check(); parse(uuid, operationId); parse(z.boolean(), deleted);
         if (access.mode !== 'write' || access.role === 'viewer') fail('read_only', 403);
-        // Attachment consumers already invalidate chat/care; retain the old change-feed wire kinds.
-        const allowedKind = access.module === 'attachments' ? kind === 'chat' || kind === 'care' : kind === access.module;
+        // Attachments and concerns use existing feed kinds; the grant still fences the operation's module.
+        const allowedKind = access.module === 'attachments' ? kind === 'chat' || kind === 'care'
+          : access.module === 'concerns' ? !!access.classMember && kind === 'growth' : kind === access.module;
         if (!allowedKind || childId !== undefined && childId !== source.childId) fail('shared_module_scope', 403);
         if (prepared) fail('transaction_change_conflict'); prepared = true;
         if (actor.actorUserId === source.ownerUserId) return actor.prepareChange(operationId, kind, deleted, source.childId);

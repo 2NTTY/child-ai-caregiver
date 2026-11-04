@@ -21,7 +21,7 @@ export const importBatchRequestSchema = z.object({ opId: uuid, uploadId: uuid,
   integrity: z.enum(['trusted', 'untrusted_signer', 'missing_proof']), acceptedManifestSha256: hash.nullable(),
   targets: z.array(importBatchTargetSchema).max(10000), totalItems: count,
   resolutions: z.array(z.object({ sourceChildId: uuid, section: handoverImportResourceSectionSchema, resourceId: uuid,
-    resolution: handoverImportResolutionSchema }).strict()).max(10000),
+    useRestoredTarget: z.literal(true).optional(), resolution: handoverImportResolutionSchema }).strict()).max(10000),
 }).strict().refine(value => (value.targets.length > 0 || !!value.accountAvatar)
   && (!value.accountAvatar || value.restoreOriginal === true && value.resolutionOnly === true)
   && new Set(value.targets.map(row => row.sourceChildId)).size === value.targets.length

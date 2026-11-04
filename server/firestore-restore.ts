@@ -1,3 +1,6 @@
+import { assertPrivateSummaryRestoreRelations, reconcilePrivateSummaryRestore, isPrivateSummaryRestoreKind, isPrivateSummaryUsageKind, privateSummaryRestoreGuards } from './firestore-restore-private-summary.ts';
+import { privateSummaryReservationSchema } from './private-summary-work.ts';
+import { privateSummaryCutoverSchema } from './private-summary-scan.ts';
 import { replayAvatarLifecycle, assertRestoredAvatarRelations, restoredAvatarCleanupRecords, mergeAvatarCopyResponsibilities } from './firestore-restore-avatars.ts';
 import { isSharingAuthorityPath, sharingErasedBy, sharedSpaceSchema } from './firestore-sharing-records.ts';
 import { replaySharingAuthority } from './firestore-restore-sharing.ts';
@@ -24,7 +27,7 @@ import type { FirebasePhotoObjectDescriptor } from './firebase-photo-objects.ts'
 import { firebaseBackupDocumentDigest, type FirebaseBackupDocument } from './firestore-backup.ts';
 import { assertFirestoreRestoreContent } from './firestore-restore-content.ts';
 import { originalRestoreScopeKinds, discardedRestoreKinds } from './firestore-restore-operation-records.ts';
-import { isRestoreProtocolOrUsage, restoreFirestoreUsage } from './firestore-restore-usage.ts';
+import { isRestoreProtocolOrUsage, restoreFirestoreUsage, assertPrivateSummaryProtocolEvidence } from './firestore-restore-usage.ts';
 import { firestoreScopeErasureSchema } from './firestore-erasure.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
@@ -72,6 +75,7 @@ function restricted<T extends string>(old: T, current: T, rank: Record<T,number>
 
 /** Complete F02 source graph. Device sessions are intentionally excluded and never restored. */
 export function assertFirebaseRestoreAuthority(records: readonly FirestoreRestoreDecoded[]): void {
+  const summaryRunPaths = assertPrivateSummaryRestoreRelations(records);
   const accounts=unique(rows(records,'account',authority.account),row=>row.value.userId);
   const identities=unique(rows(records,'authority-identity',authority.identity),row=>row.value.userId);
   const owners=unique(rows(records,'authority-owner',authority.owner),row=>row.value.userId);
@@ -102,7 +106,7 @@ export function assertFirebaseRestoreAuthority(records: readonly FirestoreRestor
     requireValue(account.value.userId===id);
   }
   for (const record of records) {
-    if(record.context.family==='knowledge'||record.context.kind==='photo-cleanup'||record.context.kind==='avatar-cleanup'
+    if(record.context.family==='knowledge'||isPrivateSummaryUsageKind(record.context.kind)||record.context.kind==='photo-cleanup'||record.context.kind==='avatar-cleanup'
       || record.context.kind==='handover-export' && ['expired', 'cancelled'].includes(firestoreHandoverJobSchema.parse(record.value).state)
       || record.context.kind==='handover-upload' && handoverUploadRecordSchema.parse(record.value).state==='expired'
       || record.context.kind==='voice-asset' && firestoreVoiceRowSchema.parse(record.value).deletion !== null
@@ -112,7 +116,15 @@ export function assertFirebaseRestoreAuthority(records: readonly FirestoreRestor
     if(scope.workspaceId===NIL)continue;
     const workspace=workspaces.get(scope.workspaceId)?.value;
     requireValue(Boolean(workspace && workspace.ownerUserId===scope.ownerUserId));
-    requireValue(scope.storageEpoch===workspace!.storageEpoch || originalRestoreScopeKinds.has(record.context.kind));
+    requireValue(scope.storageEpoch===workspace!.storageEpoch || originalRestoreScopeKinds.has(record.context.kind)
+      || isPrivateSummaryRestoreKind(record.context.kind) || summaryRunPaths.has(record.path));
+    if (record.context.kind === 'private-summary-cutover' && scope.storageEpoch === workspace!.storageEpoch) {
+      const gate = privateSummaryCutoverSchema.parse(record.value);
+      if (gate.phase === 'restore_suspended') {
+        requireValue(gate.authorizationVersion === workspace!.accessVersion && gate.workerGeneration === rows(records, 'control', authority.control)[0]!.value.generation);
+        continue; // A denial record creates no missing child or permission.
+      }
+    }
     if(scope.childId!==NIL) {
       const child=children.get(scope.childId)?.value;
       requireValue(Boolean(child && child.workspaceId===scope.workspaceId));
@@ -134,6 +146,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   const live=input.liveDocuments.filter(row=>!isSession(row)).map(row=>codec.decode(row));
   unique(decoded,row=>row.path); unique(live,row=>row.path);
   assertFirebaseRestoreAuthority(decoded); assertFirebaseRestoreAuthority(live);
+  reconcilePrivateSummaryRestore(decoded, live);
   replaySharingAuthority(codec, decoded, live, input.liveDocuments);
   const oldControl=rows(decoded,'control',authority.control)[0]!.value,liveControl=rows(live,'control',authority.control)[0]!.value;
   requireValue(!oldControl.enabled&&!liveControl.enabled&&liveControl.generation===input.sourceGeneration,'restore_source_not_paused');
@@ -223,7 +236,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     if(kind==='account')record.value={...authority.account.parse(record.value),status:'deleted',admitted:false,invitationLive:false,emailVerified:false,acknowledgementVersion:null};
     else if(kind==='workspace')record.value={...authority.workspace.parse(record.value),status:'deleted'};
     else if(kind==='child')record.value={...authority.child.parse(record.value),status:'deleted'};
-    else if(kind!=='authority-owner'&&kind!=='scope-erasure')scopeRemoved.add(record.path);
+    else if(kind!=='authority-owner'&&kind!=='scope-erasure'&&!isPrivateSummaryUsageKind(kind))scopeRemoved.add(record.path);
   }
   replayAvatarLifecycle(data,codec,decoded,live,journal,input.erasureDescriptors,scopeRemoved);
   replayVoiceErasures(data,codec,decoded,live,journal,input.erasureDescriptors,scopeRemoved);
@@ -309,7 +322,9 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     removed.add(record.path); decoded.push(record); cleanupTombstones.set(record.path,record);
   }
   const outputExtras:FirebaseBackupDocument[]=restoreFirestoreUsage(options,input.documents,input.liveDocuments,
-    [...decoded,...live].filter(v=>v.context.kind==='agent-run').map(v=>v.context.id));
+    [...[...decoded,...live].filter(v=>v.context.kind==='agent-run').map(v=>v.context.id),
+      ...rows(decoded,'private-summary-reservation',privateSummaryReservationSchema).map(row=>row.value.runId)]);
+  assertPrivateSummaryProtocolEvidence(options, input.documents, input.liveDocuments, outputExtras, [...decoded, ...live]);
   for(const {record,value}of rows(decoded,'online-receipt',z.union([firestoreOnlineRecordSchema,firestoreOnlineErasureBarrierSchema]))) {
     if (!('state' in value)) {
       const pointer = firestoreSharedResultSchema.safeParse(value.result);
@@ -339,7 +354,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     outputExtras.push({path:data.ref('online_operations','online-receipt',id).path,
       data:{...data.tags(scope),...data.seal('online-receipt',id,scope,firestoreOnlineErasureBarrierSchema,barrier)}});
   }
-  for (const path of replayContentErasures(data,codec,decoded,live,journal,new Map(input.liveDocuments.map(row=>[row.path,row.data])))) removed.add(path);
+  for (const path of replayContentErasures(data,codec,decoded,live,journal,new Map(input.liveDocuments.map(row=>[row.path,row.data])),input.erasureDescriptors,scopeRemoved)) removed.add(path);
   const keep=decoded.filter(record=>(!removed.has(record.path)||cleanup.get(record.context.id)?.record===record||cleanupTombstones.get(record.path)===record) && !discardedRestoreKinds.has(record.context.kind));
   // A completed erasure may leave historical owner-wide receipt metadata in an old
   // backup. Remove its authenticated child scope first, then require the entire
@@ -365,9 +380,17 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   if(global.length)global[0]!.record.value=photos.globalQuota.parse({activeBytes,activeCount,
     cleanupBytes:allCleanup.reduce((sum,row)=>sum+row.value.bytes,0),cleanupCount:allCleanup.length});
   const generation=firebaseRestoreGeneration(options.projectId,input.targetDatabaseId,input.restoreId);
-  const transform = {generation,newEpochByWorkspace,newAuthorizationVersionByWorkspace,photoDescriptors:input.photoDescriptors,voiceDescriptors:input.voiceDescriptors,voiceObjectBucketName:input.voiceObjectBucketName,chatFileDescriptors:input.chatFileDescriptors,chatFileObjectBucketName:input.chatFileObjectBucketName,avatarDescriptors:input.avatarDescriptors,avatarObjectBucketName:input.avatarObjectBucketName};
+  const validatedPrivateSummaryRunPaths = assertPrivateSummaryRestoreRelations(keep);
+  const transform = {validatedPrivateSummaryRunPaths,generation,newEpochByWorkspace,newAuthorizationVersionByWorkspace,photoDescriptors:input.photoDescriptors,voiceDescriptors:input.voiceDescriptors,voiceObjectBucketName:input.voiceObjectBucketName,chatFileDescriptors:input.chatFileDescriptors,chatFileObjectBucketName:input.chatFileObjectBucketName,avatarDescriptors:input.avatarDescriptors,avatarObjectBucketName:input.avatarObjectBucketName};
+  const restoredChildScopes = new Set(rows(keep, 'child', authority.child).map(({record, value}) => {
+    requireValue(record.context.family !== 'knowledge');
+    return canonical([record.context.scope.ownerUserId, value.workspaceId, value.id]);
+  }));
   const records=keep.map(record=>{const transformed=codec.transform(record,transform);
-    return {path:transformed.path,data:transformed.data};}).concat(outputExtras, restoredAvatarCleanupRecords(data, keep, transform));
+    return {path:transformed.path,data:transformed.data};}).concat(outputExtras, restoredAvatarCleanupRecords(data, keep, transform),
+    privateSummaryRestoreGuards(data, [...keep, ...live], {...transform, restoreId:input.restoreId}, scope =>
+      !restoredChildScopes.has(canonical([scope.ownerUserId, scope.workspaceId, scope.childId]))
+      || scopeJournal.some(intent => erasureCoversScope(intent, scope))));
   if (input.avatarCopyResponsibilities?.length) {
     requireValue(Boolean(input.avatarObjectBucketName), 'restore_avatar_descriptor_missing');
     mergeAvatarCopyResponsibilities(data, codec, records, input.avatarCopyResponsibilities, { bucketName: input.avatarObjectBucketName!,

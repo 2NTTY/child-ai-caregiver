@@ -139,7 +139,7 @@ test('growth packages preserve source outcomes and history while existing topic 
     finally { await legacy.close(); }
     const firstCommand = await stage((await sourcePackage(2)).path, sourceChild);
     await assert.rejects(service.create('recipient', { ...firstCommand, opId: randomUUID(), targets: [{ ...firstCommand.targets[0],
-      target: { childId, spaceId: randomUUID() } }] }, controller.signal), { code: 'shared_domain_read_only' });
+      target: { childId, spaceId: randomUUID() } }] }, controller.signal), { code: 'space_access_denied' });
     const first = await run(firstCommand);
     assert.equal(first.processedItems, 7); assert.equal(first.counts.created, 7);
     const results = await service.results('recipient', firstCommand.opId, { sourceChildId: sourceChild, module: 'growth' });

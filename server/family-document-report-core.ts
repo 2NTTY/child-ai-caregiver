@@ -10,8 +10,10 @@ export interface ReportAccumulator {
   careCursor?: CareCursor; factAfterId?: string; taskAfterId?: string; concernAfter?: { id: string; sequence: number; timelineId?: string | null };
   profile: FamilyDocumentSources["profile"] | null; selected: ReportInput[]; blocked?: boolean;
   concernScanVersion?: 1;
+  buckets?: ReportPeriodBucket[];
   pendingConcern?: { id: string; header: DocumentSource | null; sawObservation: boolean };
 }
+export interface ReportPeriodBucket { from: string; to: string; records: number; tasks: number; observations: number }
 export function currentConcernScan(state: ReportAccumulator | null): boolean {
   if (state?.concernScanVersion !== 1) return false;
   if (state.stage !== "concerns" || !state.concernAfter) return state.pendingConcern === undefined;
@@ -19,14 +21,33 @@ export function currentConcernScan(state: ReportAccumulator | null): boolean {
 }
 export interface ReportInput { source: DocumentSource; domain: DocumentSection["domain"]; recordKind?: string; validUntil?: string | null; activeConcern?: boolean }
 export const reportToday = () => hkDay(new Date().toISOString());
+function calendarDay(day: string, months = 0, days = 0): string {
+  const value = new Date(day + "T00:00:00.000Z");
+  value.setUTCMonth(value.getUTCMonth() + months);
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
 export function reportPeriodKind(period: DocumentRequest["period"]): ReportCoverage["periodKind"] {
-  const [year, month, date] = period.from.split("-").map(Number);
-  if (month === 1 && date === 1 && period.to === `${year}-12-31`) return "annual";
+  const [, month, date] = period.from.split("-").map(Number);
+  if (month === 1 && date === 1 && period.to === `${period.from.slice(0, 4)}-12-31`) return "annual";
   if (date === 1 && [1, 4, 7, 10].includes(month)) {
-    const end = new Date(Date.UTC(year, month + 2, 0)).toISOString().slice(0, 10);
+    const end = calendarDay(period.from, 3, -1);
     if (end === period.to) return "quarter";
   }
   return "range";
+}
+function reportBuckets(period: DocumentRequest["period"]): ReportPeriodBucket[] {
+  const kind = reportPeriodKind(period);
+  const bucket = (from: string, to: string): ReportPeriodBucket => ({ from, to, records: 0, tasks: 0, observations: 0 });
+  if (kind !== "range") {
+    const months = kind === "annual" ? 3 : 1;
+    return Array.from({ length: kind === "annual" ? 4 : 3 }, (_, index) =>
+      bucket(calendarDay(period.from, months * index), calendarDay(period.from, months * (index + 1), -1)));
+  }
+  if (period.from === period.to) return [bucket(period.from, period.to)];
+  const days = (Date.parse(period.to + "T00:00:00Z") - Date.parse(period.from + "T00:00:00Z")) / 86400000 + 1;
+  const midpoint = calendarDay(period.from, 0, Math.ceil(days / 2) - 1);
+  return [bucket(period.from, midpoint), bucket(calendarDay(midpoint, 0, 1), period.to)];
 }
 export function effectiveReportRequest(request: DocumentRequest): DocumentRequest {
   const effective = structuredClone(request);
@@ -37,21 +58,26 @@ export function effectiveReportRequest(request: DocumentRequest): DocumentReques
   return effective;
 }
 export function newReportAccumulator(request: DocumentRequest, sourceRevision: string): ReportAccumulator {
-  return { request: effectiveReportRequest(request), sourceRevision, stage: "profile", processedSources: 0, profile: null, selected: [], validUntil: null, concernScanVersion: 1,
+  const effective = effectiveReportRequest(request);
+  return { request: effective, sourceRevision, stage: "profile", processedSources: 0, profile: null, selected: [], validUntil: null, concernScanVersion: 1,
+    buckets: reportBuckets(effective.period),
     counts: { recordsInPeriod: 0, recordsUnknownTime: 0, tasksInPeriod: 0, observationsInPeriod: 0, confirmedFacts: 0, recordKinds: {} } };
 }
 /** Counts cover every scanned page; only the selected wording remains in the encrypted accumulator. */
 export function accumulateReportInputs(state: ReportAccumulator, inputs: ReportInput[], scanned = inputs.length): void {
   state.processedSources += scanned;
   for (const input of inputs) {
-    const { source } = input, inPeriod = source.at !== null && hkDay(source.at) >= state.request.period.from && hkDay(source.at) <= state.request.period.to;
+    const { source } = input, day = source.at === null ? null : hkDay(source.at);
+    const inPeriod = day !== null && day >= state.request.period.from && day <= state.request.period.to;
+    const bucket = inPeriod ? state.buckets?.find(value => day! >= value.from && day! <= value.to) : undefined;
     if (input.validUntil && (state.validUntil === null || Date.parse(input.validUntil) < Date.parse(state.validUntil)))
       state.validUntil = new Date(input.validUntil).toISOString();
     if (source.kind === "record") {
       if (source.at === null) state.counts.recordsUnknownTime++;
-      else if (inPeriod) { state.counts.recordsInPeriod++; const kind = input.recordKind ?? "note"; state.counts.recordKinds[kind] = (state.counts.recordKinds[kind] ?? 0) + 1; }
-    } else if (source.kind === "task" && inPeriod) state.counts.tasksInPeriod++;
-    else if (source.kind === "concern" && source.at !== null && inPeriod) state.counts.observationsInPeriod++;
+      else if (inPeriod) { state.counts.recordsInPeriod++; if (bucket) bucket.records++;
+        const kind = input.recordKind ?? "note"; state.counts.recordKinds[kind] = (state.counts.recordKinds[kind] ?? 0) + 1; }
+    } else if (source.kind === "task" && inPeriod) { state.counts.tasksInPeriod++; if (bucket) bucket.tasks++; }
+    else if (source.kind === "concern" && source.at !== null && inPeriod) { state.counts.observationsInPeriod++; if (bucket) bucket.observations++; }
     else if (source.kind === "fact") state.counts.confirmedFacts++;
     if (inPeriod || source.at === null && (source.kind !== "concern" || input.activeConcern)) state.selected.push(input);
   }
@@ -75,9 +101,23 @@ export function completeReportSnapshot(state: ReportAccumulator, version: number
   const snapshot = buildFamilyDocumentSnapshot(loaded, state.request, version, previous), counts = state.counts;
   snapshot.reportCoverage = { status: "complete", mode: state.request.reportMode ?? "fixed", periodKind: reportPeriodKind(state.request.period),
     sourceRevision: state.sourceRevision, completedAt: snapshot.generatedAt, validUntil: state.validUntil, scanned: state.processedSources, counts: structuredClone(counts) };
-  snapshot.sourceBasis = createHash("sha256").update(JSON.stringify({ request: state.request, coverage: snapshot.reportCoverage })).digest("hex");
+  snapshot.sourceBasis = createHash("sha256").update(JSON.stringify({ request: state.request, coverage: snapshot.reportCoverage,
+    ...(state.buckets ? { buckets: state.buckets } : {}) })).digest("hex");
   if (!previous?.editProtection?.metadataFields.includes("summary")) snapshot.summary = "已逐頁整理目前已保存的家庭共享資料；統計只計保存筆數，不推斷診斷、能力、發展評分或實際事件總量。";
   const kinds = Object.entries(counts.recordKinds).map(([kind, count]) => `${labels[kind as keyof typeof labels] ?? kind}${count}筆`).join("、") || "沒有已保存的期間記錄";
   snapshot.coverageNote = `完整掃描目前已保存的共享來源${state.processedSources}項。期間內記錄${counts.recordsInPeriod}筆（${kinds}）；未知發生時間${counts.recordsUnknownTime}筆另列、不計入期間；照護任務${counts.tasksInPeriod}項；共享關注觀察${counts.observationsInPeriod}項；目前有效確認事實${counts.confirmedFacts}項。這是已保存資料的筆數，並不代表生活中全部發生過的事；無記錄不等於未發生。日期採香港事件日期，約數保留原精度。正文最多選錄80項期間來源、40項無事件日期資料及20項未知日期記錄，長正文亦受容量限制；選錄數並非統計總數。`;
+  if (state.buckets) {
+    snapshot.coverageNote += " 分段保存筆數（香港日期）：" + state.buckets.map(value =>
+      `${value.from} 至 ${value.to}：照護記錄${value.records}筆、待辦${value.tasks}項、關注觀察${value.observations}項`).join("；") + "。";
+    const previous = state.buckets.at(-2), latest = state.buckets.at(-1);
+    if (previous && latest) {
+      const difference = (field: "records" | "tasks" | "observations", unit: string) => {
+        const delta = latest[field] - previous[field];
+        if (delta === 0) return "持平";
+        return `${delta > 0 ? "多" : "少"}${Math.abs(delta)}${unit}`;
+      };
+      snapshot.coverageNote += ` ${latest.from} 至 ${latest.to} 與 ${previous.from} 至 ${previous.to} 相比，已保存的照護記錄${difference("records", "筆")}、待辦${difference("tasks", "項")}、關注觀察${difference("observations", "項")}。`;
+    }
+  }
   return snapshot;
 }

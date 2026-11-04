@@ -18,7 +18,8 @@ type CancelCommand = z.infer<typeof handoverCancelCommandSchema>;
 type ExportPage = z.infer<typeof handoverExportPageSchema>;
 type ImportControl = z.infer<typeof handoverImportControlSchema>;
 type ImportPage = z.infer<typeof handoverImportPageSchema>;
-const importCapabilitiesSchema = z.object({ classEnrolment: z.boolean(), accountAvatarRestore: z.literal(true).optional(),
+const importCapabilitiesSchema = z.object({ classEnrolment: z.boolean(), classConcernImports: z.literal(true).optional(), classGrowthImports: z.literal(true).optional(), accountAvatarRestore: z.literal(true).optional(),
+  originalMemoryResources: z.literal(true).optional(),
   originalModules: z.array(z.string().min(1).max(80)).max(100)
     .transform(modules => originalBackupModuleSchema.options.filter(module => modules.includes(module))).optional() });
 const importEnrolmentsSchema = z.object({ batchId: z.uuid(), items: z.array(z.object({
@@ -48,12 +49,12 @@ export interface HandoverApi {
     consume: (response: Response, isCurrent: () => boolean) => Promise<T>): Promise<T>;
   reserveUpload(userId: string, command: HandoverUploadCommand, signal: AbortSignal): Promise<HandoverUploadView>;
   getUpload(userId: string, id: string, signal: AbortSignal): Promise<HandoverUploadView>;
-  listUploads(userId: string, signal: AbortSignal, cursor?: string): Promise<HandoverUploadPage>;
+  listUploads(userId: string, signal: AbortSignal, cursor?: string, history?: 'cleaned'): Promise<HandoverUploadPage>;
   cancelUpload(userId: string, id: string, command: CancelCommand, signal: AbortSignal): Promise<HandoverUploadView>;
   uploadContent(userId: string, id: string, body: BodyInit, signal: AbortSignal): Promise<HandoverUploadView>;
   createImport(userId: string, command: HandoverImportCommand, signal: AbortSignal): Promise<HandoverImportView>;
   getImport(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportView>;
-  importCapabilities(userId: string, signal: AbortSignal): Promise<{ classEnrolment: boolean; accountAvatarRestore?: true; originalModules?: OriginalBackupComparisonQuery['module'][] }>;
+  importCapabilities(userId: string, signal: AbortSignal): Promise<{ classEnrolment: boolean; classConcernImports?: true; classGrowthImports?: true; accountAvatarRestore?: true; originalMemoryResources?: true; originalModules?: OriginalBackupComparisonQuery['module'][] }>;
   importEnrolments(userId: string, id: string, signal: AbortSignal): Promise<ClassImportEnrolments>;
   importSummary(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportSummary>;
   compareOriginal(userId: string, query: OriginalBackupComparisonQuery, signal: AbortSignal): Promise<OriginalBackupComparison>;
@@ -108,7 +109,7 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
         if (!isCurrent()) throw failure();
         response = await fetcher(api + '/' + (options.collection ?? 'packages') + path, { method: body === undefined ? 'GET' : 'POST', credentials: 'include', cache: 'no-store',
           headers: { Accept: accept, 'x-expected-user-id': userId, 'x-handover-account-backup': '1', ...(options.classDocumentReview ? { 'x-handover-class-document-review': '1' } : {}),
-            ...(options.originalModules ? { 'x-handover-original-modules': '1' } : {}),
+            ...(options.originalModules ? { 'x-handover-original-modules': '1', 'x-handover-original-features': 'concerns,private-instructions,memory-resources', 'x-handover-class-features': 'concerns,growth' } : {}),
             ...(body === undefined ? {} : { 'Content-Type': options.rawBody ? 'application/zip' : 'application/json' }) },
           ...(body === undefined ? {} : { body: options.rawBody ? body as BodyInit : JSON.stringify(body) }), signal: controller.signal });
         if (!isCurrent()) { release(); throw failure(); }
@@ -190,9 +191,11 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
       return json(userId, '', signal, handoverUploadViewSchema, parsed.data, result => result.id === parsed.data.opId, { collection: 'package-uploads' });
     },
     getUpload: (userId, id, signal) => resourceView('package-uploads', handoverUploadViewSchema, userId, id, signal),
-    async listUploads(userId, signal, cursor) {
+    async listUploads(userId, signal, cursor, history) {
       if (cursor !== undefined && (typeof cursor !== 'string' || !cursor || cursor.length > 2048)) throw new HandoverApiError(400, 'invalid_input');
-      return json(userId, cursor === undefined ? '' : '?' + new URLSearchParams({ cursor }), signal, handoverUploadPageSchema,
+      if (history !== undefined && history !== 'cleaned') throw new HandoverApiError(400, 'invalid_input');
+      const query = new URLSearchParams(); if (history) query.set('history', history); if (cursor) query.set('cursor', cursor);
+      return json(userId, query.size ? '?' + query : '', signal, handoverUploadPageSchema,
         undefined, result => result.nextCursor !== '' && (cursor === undefined || result.nextCursor !== cursor), { collection: 'package-uploads' });
     },
     async cancelUpload(userId, id, input, signal) {

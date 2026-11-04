@@ -189,3 +189,24 @@ test('ciphertext copying, wrong project pairing and missing accounting state fai
   await assert.rejects(f.service.record(input, known), code('counter_not_found'));
   assert.equal((await f.service.read(input))?.record, null);
 });
+
+test('transaction-bound daily reads preserve original request, billing, null and settled receipts without opening another ledger', async () => {
+  const f = firestoreUsageFixture(), input = request({ kind: 'model' });
+  const read = (value = input) => f.database.runTransaction(tx => f.service.readInTransaction(value, tx));
+  assert.equal(await read(), null); assert.equal(f.records.size, 0);
+  await f.service.reserve(input);
+  let before = structuredClone([...f.records]), count = f.transactions.length;
+  assert.deepEqual(await read(), await f.service.read(input));
+  assert.deepEqual([...f.records], before);
+  assert.ok(f.transactions.slice(count).every(tx => tx.reads === 1 && tx.writes === 0));
+  await assert.rejects(read({ ...input, userLimit: input.userLimit + 1 }), code('attempt_conflict'));
+  const personal = new FirestoreAiUsage({ ...f.options, billingSource: 'personal' });
+  await assert.rejects(f.database.runTransaction(tx => personal.readInTransaction(input, tx)), code('attempt_conflict'));
+  await f.service.record(input, { kind: 'model', ...known });
+  f.setNow(now + 24 * 60 * 60 * 1000);
+  before = structuredClone([...f.records]); count = f.transactions.length;
+  assert.deepEqual(await read(), await f.service.read(input));
+  assert.deepEqual((await read())?.record, { kind: 'model', ...known });
+  assert.deepEqual([...f.records], before);
+  assert.ok(f.transactions.slice(count).every(tx => tx.reads === 1 && tx.writes === 0));
+});

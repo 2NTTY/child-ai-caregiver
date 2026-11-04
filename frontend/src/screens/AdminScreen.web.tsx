@@ -9,6 +9,7 @@ import { AGENT_RUN_LIMITS } from '../../../src/shared/agent-run-limits';
 import { platformPolicyValuesSchema, type AdminCommand, type AdminInvitation, type AdminReceipt } from '../../../src/shared/admin';
 import { PageFrame } from '../components/PageFrame';
 import { AppButton, AppTextField, SectionHeader } from '../components/ui';
+import { AppCheckbox } from '../components/AppCheckbox';
 import { useProduction } from '../production/ProductionProvider';
 import { colors, spacing } from '../theme';
 import { AuthenticationProofControl } from '../components/account/AuthenticationProofControl';
@@ -26,6 +27,13 @@ const inviteForm = z.object({ email: z.email().max(320), days: z.number().int().
 const when = (value: string) => new Date(value).toLocaleString('zh-HK', { timeZone: 'Asia/Hong_Kong', hour12: false });
 const stateLabel = (item: AdminInvitation) => item.state === 'consumed' ? '已註冊' : item.state === 'revoked' ? '已撤銷'
   : Date.parse(item.expiresAt) <= Date.now() ? '已過期' : '待使用';
+const knowledgeRegistration: Record<string, string> = { not_registered: '未註冊監測', enabled: '監測已啟用', disabled: '監測已停用', definition_changed: '來源定義已變更，註冊待核對' };
+const knowledgeResult = (status: string | null) => status === null ? '未查到結果'
+  : ({ changed: '發現變更', unchanged: '未發現變更', failed: '檢查失敗', unavailable: '來源不可用', superseded: '已由其他檢查取代' } as Record<string, string>)[status] ?? status;
+const knowledgeCheckState: Record<string, string> = { running: '檢查中', recorded: '結果已記錄', unknown: '結果未明' };
+const knowledgeTime = (value: string | null) => value === null ? '未查到' : when(value);
+const indexBatchState = { running: '處理中', paused: '已暫停', interrupted: '處理中斷', completed: '全部完成', failed: '已結束，部分項目失敗' };
+const indexTargetState = { pending: '待處理', completed: '已完成', failed: '失敗' };
 function AuditItem({ item }: { item: AdminReceipt }) {
   return <View style={styles.row}>
     <Text>{when(item.at)} · {item.command.kind === 'policy' ? '修改平台設定' : item.command.kind === 'invite' ? '發出／續期邀請' : '撤銷未使用邀請'}</Text>
@@ -42,13 +50,14 @@ export default function AdminScreen() {
   const visible = auth === 'signedIn' && state.userId === userId && state.access === 'allowed';
   const [day, setDay] = useState(new Date().toISOString().slice(0, 10));
   const [search, setSearch] = useState(''), [localNotice, setLocalNotice] = useState<string | null>(null);
+  const [indexDetails, setIndexDetails] = useState<string | null>(null);
   const [reauthBusy, setReauthBusy] = useState(false), [revoke, setRevoke] = useState<AdminInvitation | null>(null);
   const currentUser = useRef(userId); currentUser.current = userId;
   const credentialRequest = useRef<AbortController | null>(null);
   const policyForm = useForm<Values>({ resolver: zodResolver(platformPolicyValuesSchema), mode: 'onSubmit', reValidateMode: 'onChange' });
   const invitationForm = useForm<z.infer<typeof inviteForm>>({ resolver: zodResolver(inviteForm), defaultValues: { email: '', days: 7 } });
   useEffect(() => {
-    setReauthBusy(false); setSearch(''); setLocalNotice(null); setRevoke(null); policyForm.reset(); invitationForm.reset({ email: '', days: 7 });
+    setReauthBusy(false); setSearch(''); setLocalNotice(null); setRevoke(null); setIndexDetails(null); policyForm.reset(); invitationForm.reset({ email: '', days: 7 });
     if (userId && auth === 'signedIn') { admin.setUser(userId); void admin.checkAccess(); } else admin.setUser(null);
     return () => { credentialRequest.current?.abort(); };
   }, [admin, userId, auth]);
@@ -59,7 +68,8 @@ export default function AdminScreen() {
     if (!state.busy && loadedReceipt.current !== key) { loadedReceipt.current = key; void admin.load(day); }
   }, [visible, userId, state.busy, state.receipt?.opId]);
   useEffect(() => { if (visible && state.overview) { const { version, updatedAt, ...values } = state.overview.policy; policyForm.reset(values); } }, [visible, state.overview?.policy.version]);
-  const locked = !online || state.busy || !!state.pending || reauthBusy;
+  const locked = !online || state.busy || !!state.pending || reauthBusy || state.index.busy || !!state.index.pending;
+  const indexWriteLocked = locked || state.index.versions.status === 'loading' || state.index.batches.status === 'loading';
   const submit = (command: AdminCommand) => { setLocalNotice(null); void admin.submit(command); };
   const reauthenticate = async (proof: ReauthenticationInput) => {
     if (!userId || reauthBusy) return;
@@ -70,7 +80,7 @@ export default function AdminScreen() {
     finally { if (identity === currentUser.current) setReauthBusy(false); }
   };
   if (!userId && auth === 'signedOut') return <Redirect href="/login" />;
-  return <PageFrame title="網站管理" description="邀請資格、平台 AI 設定及實際用量。此頁不讀取家長私人資料。"
+  return <PageFrame title="網站管理" description="邀請資格、平台 AI 設定、實際用量及知識來源監測。此頁不讀取家長私人資料。"
     headerActions={<AppButton label="返回育有方" variant="quiet" onPress={() => router.replace('/')} />}>
     {!visible ? <View style={styles.card}><Text>{state.access === 'denied' ? '此帳號沒有網站管理權限。' : '正在核對網站管理身份。'}</Text>
       {state.notice ? <Text>{state.notice}</Text> : null}
@@ -130,6 +140,97 @@ export default function AdminScreen() {
           <Text style={styles.note}>一般設定於新 run 生效。暫停平台 AI 會在下次模型呼叫前生效；不撤回已保存結果，不取消一般通知。工具次數及期限同樣套用本人 key；本人生成／向量限額及背景同意保持獨立。Agent 每步會讀取剩餘額度，自行按需要減少步驟及預留收尾；上限不是必須用盡的目標。</Text>
           <AppButton label="確認並保存全站設定" disabled={locked || !policyForm.formState.isDirty} onPress={policyForm.handleSubmit(values => submit({ kind: 'policy', opId: crypto.randomUUID(), expectedVersion: state.overview!.policy.version, values }))} />
         </> : <Text>尚未取得設定；不能保存。</Text>}
+      </View>
+      <View style={styles.card}><SectionHeader title="知識來源" subtitle="唯讀查看公開來源監測及已記錄的檢查結果。" />
+        <Text style={styles.note}>來源註冊、檢查與知識發布是不同步驟。啟用監測或發現變更不代表已審核或發布；本區不提供發布狀態。</Text>
+        <AppButton label={state.knowledge.open ? '收起知識來源' : '查看知識來源'} variant="quiet" expanded={state.knowledge.open}
+          disabled={!online && !state.knowledge.open}
+          onPress={() => { void admin.setKnowledgeOpen(!state.knowledge.open); }} />
+        {state.knowledge.open ? <>
+          <AppButton label={state.knowledge.status === 'error' && !state.knowledge.page ? '重試讀取知識來源' : '重新讀取來源及首批檢查'} variant="secondary"
+            disabled={!online || state.knowledge.status === 'loading'} onPress={() => { void admin.loadKnowledge(); }} />
+          {state.knowledge.status === 'loading' ? <Text accessibilityLiveRegion="polite">正在讀取知識來源及檢查紀錄…</Text> : null}
+          {state.knowledge.notice ? <Text accessibilityRole="alert" style={styles.notice}>{state.knowledge.notice}{state.knowledge.page ? ' 已取得的內容保留，可重新讀取或重試載入更多。' : ''}</Text> : null}
+          {state.knowledge.page ? <>
+            <Text accessibilityRole="header">來源監測</Text>
+            {!state.knowledge.page.watches.length ? <Text>未查到可列出的來源定義，暫時未能確認監測狀態。</Text> : null}
+            {state.knowledge.page.watches.map(watch => <View key={watch.id} style={styles.row}>
+              <Text>{watch.publisher} · {knowledgeRegistration[watch.registration]}</Text>
+              <Text selectable style={styles.note}>來源：{watch.id} · {({ page: '網頁', rss: 'RSS 訂閱', pdf: 'PDF 文件' } as Record<string, string>)[watch.kind] ?? watch.kind}</Text>
+              <Text selectable style={styles.note}>{watch.url}</Text>
+              <Text style={styles.note}>最近嘗試：{knowledgeTime(watch.lastAttemptAt)}；最近成功檢查：{knowledgeTime(watch.lastSuccessfulCheckAt)}</Text>
+              <Text style={styles.note}>最近結果：{knowledgeResult(watch.lastStatus)}</Text>
+            </View>)}
+            <Text accessibilityRole="header">檢查紀錄</Text>
+            <Text style={styles.note}>目前已取得 {state.knowledge.page.checks.length} 項；沒有紀錄不代表已完成檢查。</Text>
+            {!state.knowledge.page.checks.length ? <Text>未查到檢查紀錄。</Text> : null}
+            {state.knowledge.page.checks.map(check => <View key={check.jobId} style={styles.row}>
+              <Text>{when(check.checkedAt)} · {knowledgeCheckState[check.state] ?? check.state} · {knowledgeResult(check.status)}</Text>
+              <Text selectable style={styles.note}>來源：{check.watchId} · 檢查：{check.jobId}</Text>
+              <Text style={styles.note}>嘗試 {check.attempts} 次；項目 {check.itemCount} 項，變更 {check.changedCount} 項。</Text>
+              {check.failureCode !== null || check.httpStatus !== null ? <Text style={styles.note}>失敗代碼：{check.failureCode ?? '未提供'}；HTTP：{check.httpStatus ?? '未提供'}</Text> : null}
+            </View>)}
+            {state.knowledge.page.nextCursor ? <AppButton label={state.knowledge.status === 'error' ? '重試載入更多檢查紀錄' : '載入更多檢查紀錄'} variant="secondary"
+              disabled={!online || state.knowledge.status === 'loading'} onPress={() => { void admin.loadKnowledge(true); }} /> : null}
+          </> : null}
+        </> : null}
+      </View>
+      <View style={styles.card}><SectionHeader title="知識關鍵詞索引" subtitle="手動選擇已審核版本，分批建立索引及查看逐項結果。" />
+        <Text style={styles.note}>索引處理與知識發布分開；完成索引不代表已發布。本區只在開啟或按下讀取時查詢，不會自動輪詢。</Text>
+        <AppButton label={state.index.open ? '收起知識索引' : state.index.pending ? '查看知識索引（有操作待核對）' : '查看知識索引'}
+          variant="quiet" expanded={state.index.open} disabled={!online && !state.index.open} onPress={() => { void admin.setIndexOpen(!state.index.open); }} />
+        {state.index.open ? <>
+          {state.index.notice ? <Text accessibilityLiveRegion="polite" style={styles.notice}>{state.index.notice}</Text> : null}
+          {state.index.pending ? <View style={styles.row}>
+            <Text>有一項索引操作仍待確認；已保留原操作內容，暫不能建立或控制其他批次。</Text>
+            <Text selectable style={styles.note}>操作 ID：{state.index.pending.payload.opId} · 批次：{state.index.pending.batchId}</Text>
+            <AppButton label="查回原批次狀態" variant="secondary" disabled={!online || state.index.busy || state.index.batches.status === 'loading'} onPress={() => { void admin.recoverIndexOperation(); }} />
+            <AppButton label="以原 ID 及原內容重送索引操作" variant="secondary" disabled={!online || reauthBusy || state.busy || !!state.pending || state.index.busy || state.index.versions.status === 'loading' || state.index.batches.status === 'loading'} onPress={() => { void admin.retryIndexOperation(); }} />
+          </View> : null}
+          <Text accessibilityRole="header">可選版本</Text>
+          <AppButton label="重新讀取版本" variant="secondary" disabled={!online || state.index.busy || state.index.versions.status === 'loading'} onPress={() => { void admin.loadIndexVersions(); }} />
+          {state.index.versions.status === 'loading' ? <Text accessibilityLiveRegion="polite">正在讀取知識版本…</Text> : null}
+          {state.index.versions.notice ? <Text accessibilityRole="alert">{state.index.versions.notice} 已取得版本保留，可重新讀取或重試續頁。</Text> : null}
+          {state.index.versions.status === 'ready' && !state.index.versions.items.length ? <Text>未查到知識版本。</Text> : null}
+          {state.index.versions.items.map(version => {
+            const selected = state.index.selected.some(target => target.versionId === version.id && target.versionHash === version.hash);
+            return <View key={version.id} style={styles.row}>
+              <AppCheckbox label={`${version.sourceId} · ${version.state === 'reviewed' ? '已審核' : version.state === 'draft' ? '草稿' : version.state === 'withdrawn' ? '已撤回' : version.state}`}
+                checked={selected} disabled={indexWriteLocked || version.state !== 'reviewed' || !selected && state.index.selected.length >= 50}
+                onChange={value => admin.selectIndexVersion(version.id, value)} />
+              <Text selectable style={styles.note}>版本：{version.id}</Text><Text selectable style={styles.note}>內容 hash：{version.hash}</Text>
+              <Text style={styles.note}>{version.searchReady ? '此版本已有完整關鍵詞索引' : '此版本尚未完成關鍵詞索引'} · 發布時間：{knowledgeTime(version.publishedAt)}</Text>
+            </View>;
+          })}
+          {state.index.versions.nextVersionId ? <AppButton label={state.index.versions.status === 'error' ? '重試載入更多版本' : '載入更多版本'} variant="secondary"
+            disabled={!online || state.index.busy || state.index.versions.status === 'loading'} onPress={() => { void admin.loadIndexVersions(true); }} /> : null}
+          <Text>已選 {state.index.selected.length}／50 個已審核版本。建立後由背景工作處理；可暫停及查回。</Text>
+          <AppButton label="確認建立所選版本的索引批次" disabled={indexWriteLocked || !state.index.selected.length} onPress={() => { void admin.createIndexBatch(); }} />
+          <Text accessibilityRole="header">索引批次</Text>
+          <AppButton label="重新讀取批次列表" variant="secondary" disabled={!online || state.index.busy || state.index.batches.status === 'loading'} onPress={() => { void admin.loadIndexBatches(); }} />
+          {state.index.batches.status === 'loading' ? <Text accessibilityLiveRegion="polite">正在讀取索引批次…</Text> : null}
+          {state.index.batches.notice ? <Text accessibilityRole="alert">{state.index.batches.notice} 已取得批次保留，可重新讀取或重試續頁。</Text> : null}
+          {state.index.batches.status === 'ready' && !state.index.batches.items.length ? <Text>未查到索引批次。</Text> : null}
+          {state.index.batches.items.map(batch => <View key={batch.id} style={styles.row}>
+            <Text>{indexBatchState[batch.state]} · 控制版本 {batch.controlVersion}</Text>
+            <Text selectable style={styles.note}>批次：{batch.id}</Text><Text style={styles.note}>建立於 {when(batch.createdAt)} · 更新於 {when(batch.updatedAt)}</Text>
+            <Text>版本 {batch.targets.length} 項：完成 {batch.targets.filter(target => target.state === 'completed').length}、失敗 {batch.targets.filter(target => target.state === 'failed').length}、待處理 {batch.targets.filter(target => target.state === 'pending').length}。</Text>
+            <View style={styles.actions}>
+              <AppButton label="讀回此批次狀態" variant="quiet" disabled={!online || state.index.busy || state.index.batches.status === 'loading'} onPress={() => { void admin.refreshIndexBatch(batch.id); }} />
+              {batch.state === 'running' ? <AppButton label="暫停此批次" variant="secondary" disabled={indexWriteLocked} onPress={() => { void admin.controlIndexBatch(batch.id, 'stop'); }} /> : null}
+              {batch.state === 'paused' || batch.state === 'interrupted' ? <AppButton label="繼續此批次" variant="secondary" disabled={indexWriteLocked} onPress={() => { void admin.controlIndexBatch(batch.id, 'resume'); }} /> : null}
+              <AppButton label={indexDetails === batch.id ? '收起逐項結果' : '查看逐項結果'} variant="quiet" expanded={indexDetails === batch.id} onPress={() => setIndexDetails(indexDetails === batch.id ? null : batch.id)} />
+            </View>
+            {batch.state === 'failed' ? <Text style={styles.note}>所有目標均已有結果；失敗版本可重新選定並建立新批次。</Text> : null}
+            {indexDetails === batch.id ? batch.targets.map(target => <View key={target.versionId} style={styles.row}>
+              <Text>{indexTargetState[target.state]} · 已完成 {target.bucketsCompleted} 個索引分段</Text>
+              <Text selectable style={styles.note}>版本：{target.versionId}</Text><Text selectable style={styles.note}>內容 hash：{target.versionHash}</Text>
+              {target.error !== null ? <Text style={styles.note}>失敗原因：{target.error}</Text> : null}
+            </View>) : null}
+          </View>)}
+          {state.index.batches.nextCursor ? <AppButton label={state.index.batches.status === 'error' ? '重試載入更多批次' : '載入更多批次'} variant="secondary"
+            disabled={!online || state.index.busy || state.index.batches.status === 'loading'} onPress={() => { void admin.loadIndexBatches(true); }} /> : null}
+        </> : null}
       </View>
       <View style={styles.card}><SectionHeader title="實際用量與管理紀錄" />
         <AppTextField label="用量日期（UTC，YYYY-MM-DD）" value={day} onChangeText={setDay} disabled={state.busy} />

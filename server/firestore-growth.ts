@@ -18,6 +18,7 @@ import { profileIsApplicable } from './memory-policy.ts';
 import { prepareContextChange } from './firestore-context-basis.ts';
 import { prepareFirestoreBackgroundWork, type FirestoreBackgroundWork } from './firestore-background-work.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
+import { assertClassImportAccess } from './firestore-class-handover.ts';
 import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
 import type { HandoverImportRow } from './handover-import.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
@@ -139,8 +140,18 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     const mayReadTask = !b.sharedAccess || !!b.sharedAccess.modules?.includes('tasks');
     const linked = mayReadTask ? await task(b, item.taskId) : null;
     const sourceAvailable = imported ? importedSupported(item, next) : !!next && same(next.basis, item.basis);
-    return { ...item, sourceAvailable, ...(imported && sourceAvailable && next ? { source: next.source, evidence: next.evidence } : {}),
+    const view = { ...item, sourceAvailable, ...(imported && sourceAvailable && next ? { source: next.source, evidence: next.evidence } : {}),
       taskId:mayReadTask ? item.taskId : null, taskState: linked?.occurrence.state ?? null };
+    if (!b.sharedAccess) return view;
+    const modules = b.sharedAccess.modules ?? [];
+    const facts = modules.includes('memory') ? loaded.context.facts.filter(fact => fact.applicable
+      && view.evidence.facts.some(ref => ref.id === fact.id && ref.version === fact.version)) : [];
+    const values = Object.fromEntries(Object.entries(view.basis.values).filter(([key, value]) => modules.includes('memory')
+      && (value === 'unknown' || facts.some(fact => fact.key.trim().toLowerCase() === key && fact.content === value))));
+    return { ...view, basis: { ...view.basis, values }, evidence: {
+      profileVersion: modules.includes('profile') && loaded.context.profile.data
+        && loaded.context.profile.version === view.evidence.profileVersion ? view.evidence.profileVersion : 0,
+      facts: facts.map(({ id, version }) => ({ id, version })) } };
   }
   function write(b: Binding, saved: Saved) {
     domainParse(firestoreGrowthSchema, saved); const item = saved.item, id = JSON.stringify([item.id, item.version]);
@@ -179,7 +190,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
   }
   async function prepareImportedAttention(b: Binding, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     expected?: { id: string; expectedVersion: number }, mapped?: { taskId?: string; taskVersion?: number; previousId?: string }) {
-    if (b.sharedAccess) domainReject('shared_domain_read_only', 409);
+    assertClassImportAccess(b, 'growth', 'write');
     domainParse(uuid, opId);
     if (row.section !== 'growth_attention') domainReject('invalid_package_scope', 400);
     const sourceRow = growthImportSourceRow(row), source = domainParse(firestoreGrowthSchema, row.value, 'invalid_package_growth');
@@ -205,17 +216,18 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     } else if (item.state === 'snoozed' && (!item.snoozeUntil || Date.parse(item.snoozeUntil) <= Date.now())) {
       item.state = 'proposed'; item.snoozeUntil = null;
     }
-    const job = item.state === 'proposed' ? await prepareFirestoreBackgroundWork(data, b.transaction,
+    // A classroom owns the record. It has no personal model or delivery authorisation.
+    const job = b.sharedAccess ? null : item.state === 'proposed' ? await prepareFirestoreBackgroundWork(data, b.transaction,
       { kind: 'growth', scope: b.scope, resourceId: item.id, basis: firestoreDomainHash(item.basis), generation: b.generation,
         authorizationVersion: b.authorizationVersion }, now)
       : item.state === 'snoozed' && item.snoozeUntil ? await childWake(b, 'import:' + item.id + ':' + item.version, item.snoozeUntil) : null;
-    const change = await b.prepareChange(opId, 'growth', false), context = await prepareContextChange(data, b);
+    const change = await b.prepareChange(opId, 'growth', false), context = b.sharedAccess ? null : await prepareContextChange(data, b);
     const value: Saved = { item, lastRequest: null, importedFrom: origin };
-    return { value, changeSeq: change.changeSeq, commit() { change.commit(); context(); write(b, value); job?.commit(); } };
+    return { value, changeSeq: change.changeSeq, commit() { change.commit(); context?.(); write(b, value); job?.commit(); } };
   }
   async function prepareImportedTopic(b: Binding, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     expected?: { expectedVersion: number }) {
-    if (b.sharedAccess) domainReject('shared_domain_read_only', 409);
+    assertClassImportAccess(b, 'growth', 'write');
     domainParse(uuid, opId);
     if (row.section !== 'growth_topics') domainReject('invalid_package_scope', 400);
     const sourceRow = growthImportSourceRow(row), source = domainParse(firestoreGrowthTopicSchema, row.value, 'invalid_package_growth');
@@ -227,10 +239,10 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     origin.current.sourceHash = firestoreDomainHash(row.value);
     const value: Topic = { ...source, version: currentVersion + 1, at: now, request: null, importedFrom: origin };
     const id = JSON.stringify([b.scope.childId, source.topicId]), revisionId = JSON.stringify([b.scope.childId, source.topicId, value.version]);
-    const change = await b.prepareChange(opId, 'growth', false), context = await prepareContextChange(data, b);
-    const wake = await childWake(b, 'import-topic:' + source.topicId + ':' + value.version);
+    const change = await b.prepareChange(opId, 'growth', false), context = b.sharedAccess ? null : await prepareContextChange(data, b);
+    const wake = b.sharedAccess ? null : await childWake(b, 'import-topic:' + source.topicId + ':' + value.version);
     return { value, resourceId: growthTopicResourceId(b.scope.childId, source.topicId), changeSeq: change.changeSeq,
-      commit() { change.commit(); context(); wake.commit();
+      commit() { change.commit(); context?.(); wake?.commit();
         b.transaction.set(data.ref('growth_topics', 'growth-topic', id), { ...data.tags(b.scope), ...data.seal('growth-topic', id, b.scope, firestoreGrowthTopicSchema, value, value.version) });
         b.transaction.create(data.ref('growth_topic_revisions', 'growth-topic-revision', revisionId),
           { ...data.tags(b.scope), ...data.seal('growth-topic-revision', revisionId, b.scope, firestoreGrowthTopicSchema, value, value.version) });
@@ -247,22 +259,15 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
       const loaded = await load(scoped);
       return async (saved: Saved) => {
         const item = await visible(scoped, saved.item, loaded, !!saved.importedFrom);
-        const facts = readable.includes('memory') ? loaded.context.facts.filter(fact => fact.applicable
-          && item.evidence.facts.some(ref => ref.id === fact.id && ref.version === fact.version)) : [];
-        const values = Object.fromEntries(Object.entries(item.basis.values).filter(([key, value]) => readable.includes('memory')
-          && (value === 'unknown' || facts.some(fact => fact.key.trim().toLowerCase() === key && fact.content === value))));
-        return { ...item, taskId: item.taskState === null ? null : item.taskId, basis: { ...item.basis, values },
-          evidence: { profileVersion: readable.includes('profile') && loaded.context.profile.data
-            && loaded.context.profile.version === item.evidence.profileVersion ? item.evidence.profileVersion : 0,
-            facts: facts.map(({ id, version }) => ({ id, version })) } };
+        return { ...item, taskId: item.taskState === null ? null : item.taskId };
       };
     },
     async readImportAttention(b: Binding, id: string) {
-      if (b.sharedAccess) domainReject('shared_domain_read_only', 409);
+      assertClassImportAccess(b, 'growth', 'read');
       domainParse(uuid, id); return (await all(b)).find(saved => saved.item.id === id) ?? null;
     },
     async readImportTopic(b: Binding, topicId: GrowthTopicId) {
-      if (b.sharedAccess) domainReject('shared_domain_read_only', 409);
+      assertClassImportAccess(b, 'growth', 'read');
       domainParse(growthTopicSchema, topicId); return (await topics(b)).find(saved => saved.topicId === topicId) ?? null;
     },
     forSharedSpace(spaceId: string) {

@@ -3,7 +3,7 @@ import type { Readable } from "node:stream";
 import { Storage, type SaveOptions } from "@google-cloud/storage";
 import { z } from "zod";
 import type { StorageCipher } from "./storage-crypto.ts";
-import { workRecoveryScopeSchema } from "./firestore-work-continuation-recovery.ts";
+import { workRecoveryScopeSchema, type WorkRecoveryScope } from "./firestore-work-continuation-recovery.ts";
 import { canonical } from "./firestore-session-codec.ts";
 import { readFirebaseStorageResponse, FIREBASE_PHOTO_TIMEOUT_MS, type FirebasePhotoBucketPort, type FirebasePhotoSdkBucket } from "./firebase-photo-objects.ts";
 
@@ -11,11 +11,30 @@ const FORMAT = "yuban-erasure-journal", MAX_BYTES = 8192;
 const hash = z.string().regex(/^[a-f0-9]{64}$/u);
 const generation = z.string().regex(/^[1-9][0-9]{0,19}$/u).refine(value => BigInt(value) <= 18446744073709551615n);
 const intentBase = { scope: workRecoveryScopeSchema, assetId: z.uuid(), operationId: z.uuid(), at: z.iso.datetime({ offset: true }) };
-const contentIntent = z.object({ kind: z.enum(['care', 'profile', 'fact', 'topic']), throughVersion: z.number().int().positive() }).strict();
+type ContentOwner = Pick<WorkRecoveryScope, 'ownerUserId' | 'workspaceId' | 'childId'>;
+function contentErasureId(parts: (string | number)[]): string {
+  const hex = createHash('sha256').update(canonical(parts)).digest('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+export function privateSourceErasureOperationId(scope: ContentOwner, id: string, throughVersion: number, sourceOperationId: string): string {
+  return contentErasureId(['private-source-content-erasure:1', scope.ownerUserId, scope.workspaceId, scope.childId, id, throughVersion, sourceOperationId]);
+}
+/** A deleted private instruction keeps its identity across storage epochs. A new instruction gets a new ID. */
+export function privateInstructionErasureOperationId(scope: ContentOwner, id: string): string {
+  return contentErasureId(['private-instruction-content-erasure:1', scope.ownerUserId, scope.workspaceId, scope.childId, id]);
+}
+const contentIntent = z.discriminatedUnion('kind', [
+  z.object({ kind: z.enum(['care', 'profile', 'fact', 'topic']), throughVersion: z.number().int().positive() }).strict(),
+  z.object({ kind: z.literal('private_source'), throughVersion: z.number().int().positive(), sourceOperationId: z.uuid() }).strict(),
+  z.object({ kind: z.literal('private_instruction'), throughVersion: z.number().int().positive(), sourceOperationId: z.uuid() }).strict(),
+]);
 const legacyErasureIntentSchema = z.object({ ...intentBase,
   type: z.enum(['photo-delete', 'voice-delete', 'file-delete', 'child-delete', 'class-delete', 'account-delete', 'content-delete']),
   content: contentIntent.optional(), avatar: z.never().optional(),
 }).strict().refine(value => (value.type === 'content-delete') === (value.content !== undefined))
+  .refine(value => value.content?.kind !== 'private_source' || value.operationId === privateSourceErasureOperationId(
+    value.scope, value.assetId, value.content.throughVersion, value.content.sourceOperationId))
+  .refine(value => value.content?.kind !== 'private_instruction' || value.operationId === privateInstructionErasureOperationId(value.scope, value.assetId))
   .refine(value=>value.type!=='class-delete' || value.scope.ownerUserId==='space:'+value.scope.workspaceId
     && value.assetId===value.scope.workspaceId && value.scope.childId==='00000000-0000-0000-0000-000000000000'
     && value.assetId!=='00000000-0000-0000-0000-000000000000');

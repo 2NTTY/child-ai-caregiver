@@ -30,6 +30,16 @@ export const firestoreOnlineErasureBarrierSchema = z.object({ state: z.literal("
 const storedRecordSchema = z.union([firestoreOnlineRecordSchema, firestoreOnlineErasureBarrierSchema]);
 const privateInputPointerSchema = z.object({ format: z.literal('private-input-receipt:1'), id: z.uuid(), version: z.number().int().positive(),
   recordId: z.uuid().optional() }).strict();
+/** Private input receipts only: never infer a resource or version from a route or arbitrary result. */
+export function privateInputReceiptTarget(path: string, result: unknown): { id: string; version: number } | null {
+  const route = /^\/api\/children\/([0-9a-f-]{36})\/inputs(?:\/([0-9a-f-]{36})\/(?:manage|confirm|delete))?$/iu.exec(path);
+  if (!route || !z.uuid().safeParse(route[1]).success || route[2] && !z.uuid().safeParse(route[2]).success) return null;
+  const pointer = privateInputPointerSchema.safeParse(result);
+  const legacy = pointer.success ? null : z.object({ input: z.object({ id: z.uuid(), version: z.number().int().positive() }).passthrough() }).passthrough().safeParse(result);
+  const value = pointer.success ? pointer.data : legacy?.success ? legacy.data.input : null;
+  if (!value || route[2] && route[2].toLowerCase() !== value.id.toLowerCase()) return null;
+  return { id: value.id, version: value.version };
+}
 export const firestoreSharedResultSchema = z.object({ format: z.literal('shared-domain-receipt:1'), spaceId: z.uuid(), childId: z.uuid(),
   module: z.enum(['care', 'profile', 'tasks', 'memory', 'attachments']), result: z.union([contentPointerSchema, sharedTaskPointerSchema,
     z.object({format:z.literal('shared-photo-deletion:1'),id:z.uuid(),version:z.number().int().positive()}).strict(),

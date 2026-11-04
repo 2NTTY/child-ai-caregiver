@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto';
+import { contentErasureSchema, privateInstructionDeletionProof } from './firestore-content-erasure.ts';
+import { privateInstructionErasureOperationId } from './firebase-erasure-journal.ts';
 import { VectorValue } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { KNOWLEDGE_EMBEDDING } from '../src/shared/knowledge.ts';
@@ -13,6 +15,7 @@ import { firestoreKnowledgeSchemas } from './firestore-knowledge.ts';
 import { knowledgeLexicalIndex, emptyLexicalHash } from './knowledge-lexical-index.ts';
 import { embeddingDocument, internalKnowledgeSource, knowledgeHash, parseKnowledgeSource, sourceVersionHash } from './knowledge-inputs.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
+import { handoverImportItemId, handoverImportItemSchema, handoverImportMappingSchema, handoverSourceIdentitySchema } from './handover-import-records.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
 function fail(code = 'restore_content_binding'): never { throw new FirestoreRestoreCodecError(code); }
@@ -41,6 +44,27 @@ export function assertFirestoreRestoreContent(records: readonly FirestoreRestore
   }
   function domain(kind: FirestoreRestoreDomainKind, id: string, expected: WorkRecoveryScope): FirestoreRestoreDecoded {
     const record = required('domain', kind, id); if (!sameScope(scope(record), expected)) fail(); return record;
+  }
+  for (const record of rows('handover-import-mapping')) {
+    const mapping = parsed(handoverImportMappingSchema, record);
+    if (!mapping.restoreOriginal) continue;
+    const owner = scope(record), receipt = parsed(handoverImportItemSchema, domain('handover-import-item',
+      handoverImportItemId(owner, mapping.operationId), owner));
+    const source = receipt.source.source;
+    if (receipt.actorUserId !== owner.ownerUserId || receipt.opId !== mapping.operationId
+      || !['created', 'updated'].includes(receipt.outcome) || receipt.resource?.id !== mapping.target.id || receipt.resource.version !== mapping.target.version
+      || source.resourceVersion !== mapping.sourceVersion || receipt.source.sourceHash !== mapping.sourceHash
+      || firestoreDomainHash(handoverSourceIdentitySchema.strip().parse(source)) !== firestoreDomainHash(mapping.source)) fail();
+    if (mapping.retiredInstructionOpId) {
+      const deletion = parsed(contentErasureSchema, domain('content-erasure', privateInstructionErasureOperationId(owner, source.resourceId), owner));
+      const proof = privateInstructionDeletionProof(owner, source.resourceId, deletion);
+      if (!proof || proof.operationId !== mapping.retiredInstructionOpId) fail();
+    }
+    if ((source.section === 'memory_facts' || source.section === 'memory_topics') && mapping.target.id !== source.resourceId) {
+      const deletion = domain('memory-tombstone', source.resourceId, owner);
+      if (!deletion.path.split('/')[0]!.endsWith('_' + source.section)) fail();
+    }
+    if (source.section === 'concerns' && (source.concern?.periodSource?.concernId ?? source.resourceId) !== mapping.target.id) fail();
   }
   function revision(taskId: string, version: number, expected: WorkRecoveryScope) {
     const parent = parsed(firestoreTaskSchema, domain('task', taskId, expected));

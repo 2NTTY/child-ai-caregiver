@@ -9,8 +9,10 @@ import { createFirestoreChatFilesStore } from './firestore-chat-files.ts';
 import { createCloudStorageVoiceObjects, createVoiceObjects } from './firebase-voice-objects.ts';
 import { createFirestoreVoiceStore } from './firestore-voice.ts';
 import { readContextBasis } from './firestore-context-basis.ts';
+import { parseSummaryBackgroundBasis } from './private-summary-work.ts';
 import { createFirestoreAdmin } from './firestore-admin.ts';
 import { readAdminUid } from './admin-api.ts';
+import { createKnowledgeIndexBatches } from './firestore-knowledge-index-batches.ts';
 import { applicationDefault, deleteApp, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { createHash, randomUUID } from 'node:crypto';
@@ -162,9 +164,14 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
         if (!config.taskWorkerEnabled || !(await authority.readControl(b.transaction)).enabled) return false;
         const job = await readFirestoreBackgroundClaim(new FirestoreDomainData(domain), b, reference); if (!job) return false;
         if (job.kind === 'memory-refresh') {
+          const basis = parseSummaryBackgroundBasis(job.basis);
+          if (recipeId !== 'memory-refresh' || !basis || basis.kind === 'completion') return false;
+          const gate = await product.summaryWork.readEntryGate(b);
+          if (gate.kind === 'blocked') return false;
+          if (basis.kind === 'part') return gate.kind === 'durable' && product.summaryWork.authorizeBackgroundPart(b, reference);
           const current = await readContextBasis(new FirestoreDomainData(domain), b);
-          return recipeId === 'memory-refresh' && job.resourceId === b.scope.childId && current.value.summaryPending === true
-            && !current.value.summaryBlocked && String(current.value.summaryRequest) === job.basis;
+          return job.resourceId === b.scope.childId && current.value.summaryPending === true
+            && !current.value.summaryBlocked && current.value.summaryRequest === basis.request;
         }
         if (job.kind === 'work-continuation') return recipeId === 'product-work-followup' && !!await product.continuation.input(b, job);
         if (recipeId !== 'product-background') return false;
@@ -195,12 +202,14 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const sourceService = createSharedInputService(sources, product.runtime);
     // Enable only after provider/origin configuration readback; this is not proof of mail delivery.
     const photoAgent = createPhotoAgent(photos, product.runtime);
-    const admin = createFirestoreAdmin(domain, aiConfig);
-    const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: localAdminUid ?? (composition.worker ? null : readAdminUid(env)), authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },
+    const configuredAdminUid = localAdminUid ?? readAdminUid(env);
+    const knowledgeIndexes = knowledge ? createKnowledgeIndexBatches(domain, knowledge, tx => authority.readControl(tx), configuredAdminUid) : undefined;
+    const admin = createFirestoreAdmin(domain, aiConfig, knowledgeRefresh, knowledgeIndexes);
+    const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: composition.worker ? null : configuredAdminUid, authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;
     let closing: Promise<void> | undefined;
-    return { ...persistence, admin, sessions, auth, nativeAuth, currentAuth, reminders, online, documents, photos, avatars, avatarObjects, avatarCleanup, voices, voiceObjects, files, fileObjects, objects, journal, erasures, erasureCleanup, exporter, handover, handoverUploads, handoverImports, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, nativePush, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
+    return { ...persistence, admin, knowledgeIndexes, configuredAdminUid, sessions, auth, nativeAuth, currentAuth, reminders, online, documents, photos, avatars, avatarObjects, avatarCleanup, voices, voiceObjects, files, fileObjects, objects, journal, erasures, erasureCleanup, exporter, handover, handoverUploads, handoverImports, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, nativePush, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
       close() { return closing ??= (async () => { try { await avatarCodec?.close(); await deleteApp(ownedApp); } finally { await persistence.close(); } })(); } };
   } catch (error) {
     try { await avatarCodec?.close(); if (app) await deleteApp(app); } finally { await persistence.close(); }

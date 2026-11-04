@@ -2,13 +2,14 @@ import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } fr
 import { AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useProduction } from '../../production/ProductionProvider';
-import { importErrorText, originalComparisonResolution, originalComparisonItemKey, legacyOriginalModules, accountAvatarComparisonResolution } from '../../production/HandoverImportOwner';
+import { importErrorText, originalComparisonResolution, originalComparisonItemKey, legacyOriginalModules, accountAvatarComparisonResolution, hasOriginalChildAvatar } from '../../production/HandoverImportOwner';
 import { useProductionSharing } from '../../production/useProductionSharing';
 import { handoverClassScope, handoverClassDestination, handoverClassDestinations, handoverClassEnrolmentDestination,
+  handoverClassFeatures, handoverClassFeatureModules,
   type HandoverClassDestination, type HandoverClassEnrolmentDestination } from '../../production/handover-class-targets';
 import { PACKAGE_IMPORT_MAX_BYTES, pickImportPackage } from '../../platform/package-import';
 import { HandoverApiError } from '../../../../src/client/handover-api';
-import { originalBackupModuleSchema, type OriginalBackupComparisonQuery, type HandoverImportModule, type HandoverImportCommand, type HandoverImportView } from '../../../../src/shared/handover-imports';
+import { originalBackupModuleSchema, originalMemorySectionSchema, type OriginalBackupComparison, type OriginalBackupComparisonQuery, type HandoverImportModule, type HandoverImportCommand, type HandoverImportView } from '../../../../src/shared/handover-imports';
 import { AppCheckbox } from '../AppCheckbox';
 import { dateTimeParts, hongKongTimeZone } from '../date-time';
 import { FormDialog } from '../FormDialog';
@@ -23,12 +24,21 @@ type Destination = { value: string; label: string; spaceId: string | null; modul
   | { createInClassId: string; classEnrolment: HandoverClassEnrolmentDestination; classDestination?: undefined });
 const sections: Section[] = ['care', 'profile', 'tasks', 'memory', 'sources', 'documents', 'attachments', 'chat', 'concerns', 'growth'];
 const labels: Record<Section, string> & Record<string, string> = { care: '照護記錄', profile: '孩子資料', tasks: '待辦', memory: '記憶與摘要', sources: '私人來源', documents: '文件與準備單', attachments: '附件', chat: '私人聊天歷史', concerns: '持續關注', growth: '成長整理' };
+const memoryResourceLabels: Record<(typeof originalMemorySectionSchema.options)[number], string> = {
+  instructions: '私人交代', memory_facts: '記憶事實', memory_topics: '待答主題',
+};
+const comparisonResourceLabel = (section: OriginalBackupComparison['items'][number]['resourceSection']) => {
+  const memory = originalMemorySectionSchema.safeParse(section);
+  return memory.success ? memoryResourceLabels[memory.data] : section === 'documents' ? '文件'
+    : section === 'visit_preparation' ? '到診準備' : section === 'child_avatar' ? '孩子頭像' : '';
+};
 const states: Record<HandoverImportView['state'], string> = {
   queued: '已排隊', running: '正在匯入', completed: '已完成', cancelled: '已取消', failed: '未能完成', interrupted: '還原後已中斷',
 };
 const integrityLabels = { trusted: '可信簽章已驗證', untrusted_signer: '簽章有效，但來源簽署者未受信任', missing_proof: '未有可信簽章證明' };
 const uploadStates = { reserved: '尚未上載完成', receiving: '接收或驗證中', ready: '可繼續匯入',
   failed: '上載失敗，待清理', cancelled: '已取消，待清理', expired: '已到期，待清理' };
+const cleanedUploadStates = { reserved: '已預留', receiving: '接收或驗證中', ready: '已驗證', failed: '上載失敗', cancelled: '已取消', expired: '已到期' };
 const enrolmentStates = { pending: '待處理，尚未建立學生', created: '已建立班級學生', skipped: '沿用已核對的班級學生', failed: '未能入班' };
 const comparisonStates = {unchanged:'與備份相同',local_newer:'目前版本較新',backup_newer:'備份版本較新',different:'內容不同',deleted:'目前已刪除',unavailable:'未能核實目前狀態'};
 const avatarComparisonStates = { empty_backup: '備份沒有圖片，不能還原。', unchanged: '備份與目前圖片相同，毋須還原。',
@@ -37,9 +47,11 @@ const avatarOutcomes = { created: '已恢復', updated: '已更新', skipped: '�
 const avatarReasons = { empty_backup: '備份沒有圖片', unchanged: '與備份相同', version_conflict: '目前版本已改變', decision_changed: '目前狀態已改變，請重新比較' };
 const noAvatarSnapshot = () => null;
 const noAvatarSubscription = () => () => {};
-export function comparisonFields(module: HandoverImportModule, fields: string[], resourceSection?: 'documents' | 'visit_preparation') {
+export function comparisonFields(module: HandoverImportModule, fields: string[], resourceSection?: OriginalBackupComparison['items'][number]['resourceSection']) {
   const moduleNames: Partial<Record<HandoverImportModule,Record<string,string>>> = {
-    care:{text:'記錄內容',details:'時間／數量',source:'資料來源'},profile:{data:'孩子概況'},
+    care:{text:'記錄內容',details:'時間／數量',source:'資料來源'},profile:{data:'孩子概況'},attachments:{asset:'頭像圖片'},
+    concerns:{title:'關注標題',status:'關注狀態',events:'觀察時間線',selectedEvents:'所選期間觀察'},
+    memory:{title:'交代標題',text:'交代內容',memoryKey:'交代分類',provenance:'來源類別',sourceMessageId:'來源訊息'},
     tasks:{title:'待辦名稱',details:'待辦內容',occurrence:'時間／狀態',kind:'類別',assigneeUserId:'負責人'},
     sources:{sourceLabel:'來源名稱',sourceUrl:'來源連結',sourceDateText:'來源日期',sourceNotes:'來源備註',text:'來源原文',
       management:'用途與摘錄設定',kind:'來源類別',fetchState:'抓取狀態',extraction:'提取狀態',recordId:'已連結照護記錄',
@@ -47,8 +59,12 @@ export function comparisonFields(module: HandoverImportModule, fields: string[],
   };
   const documentFields: Record<string, string> = resourceSection === 'visit_preparation' ? { questions: '到診問題', checklist: '攜帶清單', appointmentTaskId: '預約連結', period: '資料期間' }
     : { request: '文件設定', status: '封存狀態', archivedAt: '封存時間', currentSnapshot: '文件內容' };
-  const names: Record<string,string> = {...moduleNames[module], ...(module === 'documents' ? documentFields : {}), reason:'修改原因',updatedAt:'更新時間',
-    confirmedAt:'確認時間',confirmedBy:'確認者',confirmationBasis:'確認記錄',importedFrom:'來源記錄',
+  const memoryFields: Record<string, string> = resourceSection === 'memory_facts'
+    ? { key: '事實分類', content: '事實內容', source: '原資料來源', status: '事實狀態', visibility: '可見範圍', intendedVisibility: '確認後可見範圍', validUntil: '有效期限' }
+    : resourceSection === 'memory_topics' ? { title: '主題名稱', note: '主題內容', status: '主題狀態', visibility: '可見範圍',
+      resumeAfter: '暫緩至', reopenReason: '重開原因', reopenedFrom: '原已結束主題' } : {};
+  const names: Record<string,string> = {...moduleNames[module], ...(module === 'documents' ? documentFields : {}), ...(module === 'memory' ? memoryFields : {}), reason:module === 'concerns' ? '關注原因' : '修改原因',updatedAt:'更新時間',updatedBy:'更新者',
+    confirmedAt:'確認時間',confirmedBy:'確認者',confirmationBasis:'確認記錄',importedFrom:module === 'memory' ? '備份來源' : '來源記錄',
     authorUserId:'記錄者',createdBy:'建立者',createdAt:'建立時間'};
   return [...new Set(fields.map(field => Object.hasOwn(names,field) ? names[field] : '其他欄位'))].join('、');
 }
@@ -61,6 +77,8 @@ export function HandoverImportControls() {
   const { owner, userId, identityKey, recordsState, account, online } = useProduction();
   const controller = owner.handoverImportOwner;
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
+  const originalLabels = { ...labels, attachments: '孩子頭像', memory: state.originalMemoryResourcesEnabled ? '記憶與交代' : '私人交代' };
+  const classFeatures = handoverClassFeatures(state);
   const shared = useSyncExternalStore(owner.sharedChild.subscribe, owner.sharedChild.getSnapshot, owner.sharedChild.getSnapshot);
   const avatarLane = owner.avatarOwner?.self;
   const avatarSnapshot = useSyncExternalStore(avatarLane?.subscribe ?? noAvatarSubscription,
@@ -88,21 +106,23 @@ export function HandoverImportControls() {
       let changed = false;
       const after = Object.fromEntries(Object.entries(before).map(([id, choice]) => {
         if (choice.classEnrolment) {
-          if (!preview || state.classEnrolmentEnabled !== true || choice.classEnrolment.scopeBasis !== classScope) {
+          if (!preview || state.classEnrolmentEnabled !== true || choice.classEnrolment.scopeBasis !== classScope
+            || handoverClassFeatureModules.some(module => choice.classEnrolment!.modules.includes(module) !== classFeatures[module])) {
             changed = true; return [id, { target: '', sections: choice.sections }];
           }
           return [id, choice];
         }
         if (!choice.classDestination) return [id, choice];
         const grant = classes.state.shares.items.find(row => row.childId === choice.classDestination!.childId);
-        if (choice.classDestination.scopeBasis !== classScope || grant && handoverClassDestination(classes.state, grant, teachers.state)?.basis !== choice.classDestination.basis) {
+        if (choice.classDestination.scopeBasis !== classScope || handoverClassFeatureModules.some(module => !classFeatures[module] && choice.classDestination!.modules.includes(module))
+          || grant && handoverClassDestination(classes.state, grant, teachers.state, classFeatures)?.basis !== choice.classDestination.basis) {
           changed = true; return [id, { target: '', sections: choice.sections }];
         }
         return [id, choice];
       }));
       return changed ? after : before;
     });
-  }, [classScope, classes.state.shares.items, state.classEnrolmentEnabled, preview?.manifestSha256]);
+  }, [classScope, classes.state.shares.items, state.classEnrolmentEnabled, state.classConcernImportsEnabled, state.classGrowthImportsEnabled, preview?.manifestSha256]);
   useEffect(() => {
     if (!needsCapabilities || !online) { capabilityRead.current = null; return; }
     const key = JSON.stringify([identityKey, userId]);
@@ -147,9 +167,9 @@ export function HandoverImportControls() {
       childId: view.childId, spaceId: view.spaceId, modules });
   }
   const retainedStudents = Object.values(choices).flatMap(choice => choice.classDestination ? [choice.classDestination] : []);
-  destinations.push(...handoverClassDestinations(classes.state, retainedStudents, teachers.state).map(row => ({ ...row, classDestination: row })));
+  destinations.push(...handoverClassDestinations(classes.state, retainedStudents, teachers.state, classFeatures).map(row => ({ ...row, classDestination: row })));
   const plannedStudents = Object.values(choices).flatMap(choice => choice.classEnrolment ? [choice.classEnrolment] : []);
-  const enrolmentDestination = preview ? handoverClassEnrolmentDestination(classes.state, teachers.state, state.classEnrolmentEnabled) : null;
+  const enrolmentDestination = preview ? handoverClassEnrolmentDestination(classes.state, teachers.state, state.classEnrolmentEnabled, classFeatures) : null;
   if (enrolmentDestination) destinations.push({ ...enrolmentDestination, classEnrolment: enrolmentDestination });
   const classOptions = [...new Map([...classes.state.spaces.items, ...teachers.state.teacherClasses.items,
     ...(classes.state.selected ? [classes.state.selected] : [])].filter(room => room.kind === 'class' && room.role !== 'viewer').map(room => [room.id, room])).values()];
@@ -159,7 +179,8 @@ export function HandoverImportControls() {
   const personalMemory = new Set(preview?.coverage.filter(row => row.items > 0 && (row.section === 'instructions' || row.section === 'summary_history')).map(row => row.childId));
   function availableFor(sourceChildId: string, section: Section, destination: typeof destinations[number]) {
     return destination.modules.includes(section) && !(destination.spaceId !== null
-      && (section === 'sources' || section === 'chat' || section === 'concerns' || section === 'growth' || section === 'memory' && personalMemory.has(sourceChildId)));
+      && (section === 'sources' || section === 'chat' || handoverClassFeatureModules.some(module => section === module
+        && (!classFeatures[module] || !destination.classDestination && !destination.classEnrolment)) || section === 'memory' && personalMemory.has(sourceChildId)));
   }
   const selected = Object.entries(choices), pageSize = 10, sourceCount = preview?.children.length ?? 0;
   const pageCount = Math.max(1, Math.ceil(sourceCount / pageSize)), currentPage = Math.min(page, pageCount - 1);
@@ -177,10 +198,12 @@ export function HandoverImportControls() {
   const comparisonChildren = preview?.header.purpose === 'backup' && preview.header.source.accountId === userId
     ? preview.children.filter(child => recordsState.children.some(local => local.id === child.id && (local.accessRole === 'owner' || local.accessRole === undefined))) : [];
   const originalModules = state.originalModules ?? legacyOriginalModules;
-  const comparisonModules = originalModules.filter(module => available.includes(module));
+  const supportedComparisonModules = originalModules.filter(module => available.includes(module));
+  const comparisonModules = supportedComparisonModules.filter(module => module !== 'attachments' || hasOriginalChildAvatar(preview, comparisonChild));
   const comparison = state.comparison?.query.uploadId === upload?.id && state.comparison?.query.childId === comparisonChild
     && state.comparison?.query.module === comparisonModule ? state.comparison : null;
   const comparisonSelected = comparison?.selected ?? [];
+  const periodConcerns = comparisonModule === 'concerns' && !!preview?.header.selection.period;
   const canCompareAvatar = state.accountAvatarRestoreEnabled && controller.canCompareAccountAvatar();
   const avatarComparison = canCompareAvatar && state.accountAvatarComparison?.query.uploadId === upload?.id
     && state.accountAvatarComparison?.query.expectedUploadVersion === upload?.version
@@ -231,13 +254,16 @@ export function HandoverImportControls() {
     const latestState = controller.getSnapshot();
     if (latestState.identityKey !== identityKey || latestState.userId !== userId || latestState.upload?.id !== upload?.id
       || latestState.upload?.preview?.manifestSha256 !== preview?.manifestSha256) return;
+    const latestFeatures = handoverClassFeatures(latestState);
+    if (targets.some(row => ('createInClassId' in row.target || row.target.spaceId !== null)
+      && handoverClassFeatureModules.some(module => row.sections.includes(module) && !latestFeatures[module]))) return;
     if (retainedStudents.length) {
-      const liveStudents = handoverClassDestinations(classes.controller.getSnapshot(), retainedStudents, teachers.controller.getSnapshot());
+      const liveStudents = handoverClassDestinations(classes.controller.getSnapshot(), retainedStudents, teachers.controller.getSnapshot(), latestFeatures);
       if (retainedStudents.some(student => !liveStudents.some(live => live.value === student.value && live.basis === student.basis))) return;
     }
     if (plannedStudents.length) {
       if (latestState.upload?.state !== 'ready') return;
-      const live = handoverClassEnrolmentDestination(classes.controller.getSnapshot(), teachers.controller.getSnapshot(), latestState.classEnrolmentEnabled);
+      const live = handoverClassEnrolmentDestination(classes.controller.getSnapshot(), teachers.controller.getSnapshot(), latestState.classEnrolmentEnabled, latestFeatures);
       if (!live || plannedStudents.some(plan => live.basis !== plan.basis)) return;
     }
     await controller.create(targets, accepted);
@@ -265,6 +291,29 @@ export function HandoverImportControls() {
         onPress={() => { setOpen(true); void controller.openUpload(row.id); }} />
     </View>)}
     {state.uploadsCursor ? <AppButton label="載入更多暫存資料包" variant="quiet" disabled={locked} onPress={() => { void controller.loadUploads(true); }} /> : null}
+    <Text style={styles.title}>已清理的上載歷史</Text>
+    <Text style={styles.body}>只保留上載參考及終態，原檔已清理，不能再用來匯入。按需要讀取，不影響上方暫存清單。</Text>
+    <AppButton label="讀取已清理上載歷史" variant="quiet" loading={state.cleanedUploads?.loading} disabled={writeLocked}
+      onPress={() => { void controller.loadCleanedUploads(); }} />
+    {state.cleanedUploads?.error ? <Text accessibilityLiveRegion="polite" style={styles.body}>
+      未能讀取已清理上載歷史（{state.cleanedUploads.error.status ? `HTTP ${state.cleanedUploads.error.status}` : '連線或回應未能確認'} · {state.cleanedUploads.error.code}）。可重新讀取；這不代表沒有紀錄。
+    </Text> : null}
+    {state.cleanedUploads?.loaded && !state.cleanedUploads.loading && !state.cleanedUploads.error && !state.cleanedUploads.items.length
+      ? <Text style={styles.body}>沒有已清理的上載紀錄。</Text> : null}
+    {state.cleanedUploads?.items.map(row => <View key={row.id} style={styles.item}>
+      <Text style={styles.title}>{row.filename}</Text>
+      <Text style={styles.body}>上載日期：{dateText(row.createdAt)} · 原暫存期限：{dateText(row.expiresAt)}</Text>
+      <Text selectable style={styles.body}>原上載參考：{row.id}</Text>
+      {'expectedArchiveSha256' in row && typeof row.expectedArchiveSha256 === 'string' ? <>
+        <Text selectable style={styles.body}>選取檔案 SHA-256：{row.expectedArchiveSha256}</Text>
+        <Text style={styles.body}>此為選取檔案的預期雜湊，不代表已核實的內容或簽章。</Text>
+      </> : null}
+      <Text style={styles.body}>終態：已清理 · {cleanedUploadStates[row.state]}</Text>
+      {row.state === 'failed' ? <Text style={styles.body}>尚無可核對包身份；不能視為已驗證的內容或簽章。</Text> : null}
+      {row.error ? <Text style={styles.body}>已記錄的失敗原因：{importErrorText(new HandoverApiError(409, row.error))}（{row.error}）</Text> : null}
+    </View>)}
+    {state.cleanedUploads?.nextCursor ? <AppButton label="載入更多已清理上載歷史" variant="quiet" disabled={writeLocked}
+      onPress={() => { void controller.loadCleanedUploads(true); }} /> : null}
     <AppButton label="重新讀取匯入批次" variant="quiet" loading={state.busy === 'read'} disabled={locked} onPress={() => { void controller.load(); }} />
     {state.loaded && !state.items.length ? <Text style={styles.body}>尚未有匯入批次。</Text> : null}
     {state.items.map(row => <View key={row.id} style={styles.item}>
@@ -354,39 +403,51 @@ export function HandoverImportControls() {
             </View> : null}
             {preview.header.purpose === 'backup' ? <View style={styles.group}>
               <Text style={styles.title}>比較原有資料</Text>
-              <Text style={styles.body}>{originalModules.length ? `比較此帳戶原孩子已開放的${originalModules.map(module => labels[module]).join('、')}。`
+              <Text style={styles.body}>{originalModules.length ? `比較此帳戶原孩子已開放的${originalModules.map(module => originalLabels[module]).join('、')}。`
                 : '此服務目前未開放原有資料比較。'}每次只讀一頁狀態，比較本身沒有還原或改寫任何資料；勾選後可另行提交原項還原，Server 會核實本人備份證明及目前版本。</Text>
-              {comparisonChildren.length && comparisonModules.length ? <>
+              {comparisonModule === 'concerns' && comparisonModules.includes('concerns') ? <Text style={styles.body}>{periodConcerns
+                ? '此包只包含選定日期：只補回所選期間缺少的觀察，不改其他時段、標題、狀態或跟進。'
+                : '完整備份會把所選內容覆蓋回同一關注的新修訂，舊修訂仍可追溯。'}不會導入 Agent 執行或提醒授權。</Text> : null}
+              {comparisonModule === 'memory' && comparisonModules.includes('memory') ? <Text style={styles.body}>{state.originalMemoryResourcesEnabled
+                ? '可比較及還原私人交代、記憶事實和待答主題；原資料來源、確認者及確認時間會保留，候選事實仍須確認，已結束主題不會重新開啟。只有核實原刪除紀錄的已刪項目才可恢復，恢復時建立新項並保留備份來源；再次比較會連回已恢復的項目。摘要尚未開放原件還原。'
+                : '只比較及還原私人交代；其他記憶、議題及摘要尚未開放原件還原。可選目前交代，或有刪除紀錄的已刪項目。恢復已刪交代會建立新項並保留來源；再次比較會連回已恢復的項目。'}</Text> : null}
+              {comparisonChildren.length && supportedComparisonModules.length ? <>
                 <AppSelect label="比較原有資料的孩子" value={comparisonChild} disabled={writeLocked}
                   options={[{value:'',label:'請選擇原孩子'},...comparisonChildren.map(child => ({value:child.id,label:child.displayName}))]}
                   onChange={value => {controller.clearComparison();setComparisonChild(value);}} />
-                <AppSelect label="比較資料類別" value={comparisonModules.includes(comparisonModule) ? comparisonModule : ''} disabled={writeLocked}
-                  options={comparisonModules.map(module => ({value:module,label:labels[module]}))}
+                {comparisonModules.length ? <AppSelect label="比較資料類別" value={comparisonModules.includes(comparisonModule) ? comparisonModule : ''} disabled={writeLocked}
+                  options={comparisonModules.map(module => ({value:module,label:originalLabels[module]}))}
                   onChange={value => {const parsed=originalBackupModuleSchema.safeParse(value);if (parsed.success) {controller.clearComparison();setComparisonModule(parsed.data);}}} />
+                  : <Text style={styles.body}>{comparisonChild ? '此孩子的備份沒有可比較的孩子頭像或已開放資料。' : '請先選擇要比較的原孩子。'}</Text>}
                 <AppButton label="比較原有資料" variant="secondary" disabled={writeLocked || !comparisonChildren.some(child => child.id === comparisonChild) || !comparisonModules.includes(comparisonModule)}
                   onPress={() => {void controller.compareOriginal(comparisonChild,comparisonModule);}} />
                 {comparison ? <View style={styles.group} accessibilityLiveRegion="polite">
                   {comparison.error ? <Text style={styles.body}>{comparison.error}</Text> : !comparison.loaded ? <Text style={styles.body}>正在比較原有資料。</Text> : <>
-                    <Text style={styles.body}>{labels[comparison.query.module]} · 已讀 {comparison.items.length} 項{comparison.nextCursor ? '，尚有下一頁。' : '，此類別比較已讀完。'}</Text>
+                    <Text style={styles.body}>{originalLabels[comparison.query.module]} · 已讀 {comparison.items.length} 項{comparison.nextCursor ? '，尚有下一頁。' : '，此類別比較已讀完。'}</Text>
                     {!comparison.items.length ? <Text style={styles.body}>此類別沒有可比較的項目。</Text> : null}
+                    {comparison.query.module === 'attachments' && !comparisonOverwrite.length && !comparisonRestore.length
+                      ? <Text style={styles.body}>沒有可還原的孩子頭像；備份沒有圖片、與目前相同或未能核實的項目會保留目前資料。</Text> : null}
+                    {comparison.query.module === 'memory' && !comparisonOverwrite.length && !comparisonRestore.length
+                      ? <Text style={styles.body}>沒有可還原的{originalLabels.memory}；與備份相同或未能核實的項目會保留目前資料。</Text> : null}
                     {comparison.items.map(item => <View key={originalComparisonItemKey(item)} style={styles.item}>
-                      <Text selectable style={styles.body}>{item.resourceSection === 'documents' ? '文件 · ' : item.resourceSection === 'visit_preparation' ? '到診準備 · ' : ''}{item.id} · {comparisonStates[item.state]}</Text>
+                      <Text selectable style={styles.body}>{comparisonResourceLabel(item.resourceSection) ? `${comparisonResourceLabel(item.resourceSection)} · ` : ''}{item.id} · {comparisonStates[item.state]}</Text>
+                      {comparison.query.module === 'concerns' && item.targetId && item.id !== item.targetId ? <Text selectable style={styles.body}>原關注：{item.targetId}</Text> : null}
                       <Text style={styles.body}>備份版本 {item.backupVersion} · 目前版本 {item.localVersion ?? '未能確定'}</Text>
                       {item.changedFields.length ? <Text style={styles.body}>有變更的欄位：{comparisonFields(comparison.query.module,item.changedFields,item.resourceSection)}</Text> : null}
                       {originalComparisonResolution(item) ? <AppCheckbox
-                        label={originalComparisonResolution(item) === 'restore_deleted' ? '恢復此已刪項目' : '以備份覆蓋此項'}
-                        accessibilityLabel={`${item.resourceSection === 'documents' ? '文件 ' : item.resourceSection === 'visit_preparation' ? '到診準備 ' : ''}${item.id}：${originalComparisonResolution(item) === 'restore_deleted' ? '恢復已刪項目' : '覆蓋目前內容'}`}
+                        label={periodConcerns ? '補回所選期間缺少的觀察' : originalComparisonResolution(item) === 'restore_deleted' ? '恢復此已刪項目' : '以備份覆蓋此項'}
+                        accessibilityLabel={`${comparisonResourceLabel(item.resourceSection)} ${item.id}：${periodConcerns ? '補回所選期間缺少的觀察' : originalComparisonResolution(item) === 'restore_deleted' ? '恢復已刪項目' : '覆蓋目前內容'}`}
                         checked={comparisonSelected.includes(originalComparisonItemKey(item))} disabled={writeLocked} onChange={checked => controller.selectComparison(item,checked,comparison)} /> : null}
                     </View>)}
                     <Text style={styles.body}>只選本次已讀差異{comparison.nextCursor ? '；尚未讀取的下一頁不包括在選擇內' : ''}，不代表整包；翻頁不會自動勾選。</Text>
-                    {comparisonOverwrite.length ? <AppCheckbox label={`選取已讀覆蓋項目（${comparisonOverwrite.length} 項）`}
+                    {comparisonOverwrite.length ? <AppCheckbox label={periodConcerns ? `選取已讀期間觀察補回項目（${comparisonOverwrite.length} 項）` : `選取已讀覆蓋項目（${comparisonOverwrite.length} 項）`}
                       checked={selectedOverwrite.length === comparisonOverwrite.length} disabled={writeLocked}
                       onChange={checked => controller.selectReadComparison('replace_current',checked,comparison)} /> : null}
-                    {comparisonRestore.length ? <AppCheckbox label={`選取已讀已刪項目作恢復（${comparisonRestore.length} 項）`}
+                    {comparisonRestore.length ? <AppCheckbox label={periodConcerns ? `選取已讀已刪來源的期間觀察（${comparisonRestore.length} 項）` : `選取已讀已刪項目作恢復（${comparisonRestore.length} 項）`}
                       checked={selectedRestore.length === comparisonRestore.length} disabled={writeLocked}
                       onChange={checked => controller.selectReadComparison('restore_deleted',checked,comparison)} /> : null}
-                    <Text style={styles.body}>準備提交：覆蓋 {selectedOverwrite.length} 項 · 恢復已刪 {selectedRestore.length} 項。原刪除紀錄保留；送出後仍須查看批次及逐項結果，未處理或衝突不算完成。</Text>
-                    <AppButton label={`提交所選原項還原（${selectedOverwrite.length + selectedRestore.length} 項）`} variant="secondary"
+                    <Text style={styles.body}>{periodConcerns ? `準備提交：期間觀察補回 ${selectedOverwrite.length + selectedRestore.length} 項。` : `準備提交：覆蓋 ${selectedOverwrite.length} 項 · 恢復已刪 ${selectedRestore.length} 項。原刪除紀錄保留；`}送出後仍須查看批次及逐項結果，未處理或衝突不算完成。</Text>
+                    <AppButton label={`${periodConcerns ? '提交所選期間觀察補回' : '提交所選原項還原'}（${selectedOverwrite.length + selectedRestore.length} 項）`} variant="secondary"
                       disabled={writeLocked || selectedOverwrite.length + selectedRestore.length === 0}
                       onPress={() => {void controller.restoreComparison(comparison);}} />
                   </>}
@@ -395,7 +456,7 @@ export function HandoverImportControls() {
               </> : <Text style={styles.body}>此包未有目前帳戶可比較的原孩子或資料類別；仍可在下方選擇匯入副本。</Text>}
             </View> : null}
             <Text style={styles.title}>匯入獨立副本</Text>
-            <Text style={styles.body}>可匯入孩子資料、照護記錄、待辦、記憶、私人來源、文件與準備單、附件、私人聊天歷史、持續關注及成長整理。附件包含可讀的照片、錄音、檔案、孩子頭像及原有語音轉錄；其他已開放模組包含各自歷史。持續關注及成長整理目前只可匯入本人孩子。</Text>
+            <Text style={styles.body}>可匯入孩子資料、照護記錄、待辦、記憶、私人來源、文件與準備單、附件、私人聊天歷史、持續關注及成長整理。附件包含可讀的照片、錄音、檔案、孩子頭像及原有語音轉錄；其他已開放模組包含各自歷史。持續關注及成長整理可匯入本人孩子，或目前服務已開放且具有相應模組寫入權的班員。</Text>
             <Text style={styles.body}>請逐位指定接收對象，不會按名字自動配對。預設保留接收對象目前的修改及刪除。</Text>
             <Text style={styles.body}>可選目前開啟的家庭共享孩子，或在下方選班級和學生。</Text>
             <View style={styles.group}>
@@ -438,10 +499,14 @@ export function HandoverImportControls() {
                     onChange={value => chooseTarget(child.id, value)} />
                   {choice.target && !destination ? <Text style={styles.body}>原接收對象現不可用，請重新選擇。</Text> : null}
                   {destination?.classEnrolment ? <Text style={styles.body}>匯入時會建立班員。若這位來源學生之前已匯入此班，會沿用原班員。</Text> : null}
+                  {destination && (destination.classDestination || destination.classEnrolment) && available.includes('concerns') && availableFor(child.id, 'concerns', destination)
+                    ? <Text style={styles.body}>關注會保留來源來歷；舊執行工作不會跟進班級，亦不沿用原提醒授權。</Text> : null}
                   {destination?.spaceId && personalMemory.has(child.id) && available.includes('memory') ? <Text style={styles.body}>這位來源孩子的記憶含私人交代或摘要歷史，只可匯入本人孩子；共享對象仍可選其他已開放模組。</Text> : null}
                   {destination?.spaceId && available.includes('sources') ? <Text style={styles.body}>私人來源只可匯入本人孩子；共享對象仍可選其他已開放模組。</Text> : null}
                   {destination?.spaceId && available.includes('chat') ? <Text style={styles.body}>私人聊天歷史只可匯入本人孩子；共享對象仍可選其他已開放模組。</Text> : null}
-                  {destination?.spaceId && available.includes('growth') ? <Text style={styles.body}>成長整理只可匯入本人孩子；共享或班級對象仍可選其他已開放模組。</Text> : null}
+                  {destination?.spaceId && available.includes('growth') ? <Text style={styles.body}>{availableFor(child.id, 'growth', destination)
+                    ? '成長整理會保留來源來歷；後續成長評估及提醒仍按目前班級權限及原有設定處理。'
+                    : '此共享對象目前不能匯入成長整理，仍可選其他已開放模組。'}</Text> : null}
                   {available.map(section => <AppCheckbox key={section} label={labels[section]} accessibilityLabel={`${child.displayName}：${labels[section]}${section === 'attachments' ? '及原轉錄' : '及歷史'}`}
                     description={destination && !availableFor(child.id, section, destination) ? '此來源與接收對象目前不能使用此模組。' : undefined}
                     checked={choice.sections.includes(section)} disabled={writeLocked || !!destination && !availableFor(child.id, section, destination) && !choice.sections.includes(section)}

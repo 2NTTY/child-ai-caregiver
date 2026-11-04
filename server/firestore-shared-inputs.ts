@@ -1,4 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { prepareContentErasure } from './firestore-content-erasure.ts';
+import { privateSourceErasureOperationId } from './firebase-erasure-journal.ts';
 import type { Query, DocumentSnapshot } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { sharedInputCreateSchema, sourceManagementChangeSchema, sourceManagementSchema,
@@ -243,10 +245,12 @@ export function createFirestoreSharedInputStore(options: FirestoreDomainOptions)
     const record = item.row.recordId ? await care.readRecord(b, item.row.recordId) : null;
     const change = record ? await care.prepareDeletion(b, record.id, record.version, opId) : await b.prepareChange(opId, 'care', true);
     const deleted = { id, childId: b.scope.childId, version: expected + 1, operationId: opId, deletedAt: new Date().toISOString() };
+    const erase = prepareContentErasure(data, b, 'private_source', id, expected,
+      privateSourceErasureOperationId(b.scope, id, expected, opId), { at: deleted.deletedAt, sourceOperationId: opId });
     const envelope = { ...data.tags(b.scope), entityId: id, createdAt: item.row.createdAt, live: false,
       ...data.seal('shared-input-tombstone', id, b.scope, firestoreSharedInputTombstoneSchema, deleted, deleted.version) };
     return { value: { deleted: true as const }, changeSeq: change.changeSeq, commit() {
-      change.commit(); b.transaction.set(rowRef(id), envelope);
+      erase(); change.commit(); b.transaction.set(rowRef(id), envelope);
       for (let i = 0; i < item.row.parts; i++) b.transaction.delete(partRef(id, i));
     } };
   }

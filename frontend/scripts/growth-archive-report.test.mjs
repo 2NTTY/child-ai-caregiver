@@ -51,7 +51,7 @@ function harness(initialProps) {
     function resolve(name) {
       if (name === 'react') return react;
       if (name === 'react/jsx-runtime') return {jsx, jsxs: jsx, Fragment: 'Fragment'};
-      if (name === 'react-native') return {Platform: {OS: 'web'}, Pressable: 'Pressable', View: 'View', StyleSheet: {create: value => value}, useWindowDimensions: () => ({width: props.viewportWidth ?? (props.wide ? 1440 : 390)})};
+      if (name === 'react-native') return {Platform: {get OS() {return props.platform ?? 'web';}}, Pressable: 'Pressable', View: 'View', StyleSheet: {create: value => value}, useWindowDimensions: () => ({width: props.viewportWidth ?? (props.wide ? 1440 : 390)})};
       if (name === 'react-native-paper') return {Text: 'Text'};
       if (name.endsWith('/theme')) return {chineseFont: 'sans-serif', colors: {}, radius: {}, readingType: {meta: {}, tool: {}}, mobileLayout: {breakpoint: 650}, spacing: {xs: 4, sm: 8, md: 12, lg: 16}};
       if (name.endsWith('/useInteractionDensity')) return {useInteractionDensity: () => props.touchInput ?? false};
@@ -213,18 +213,32 @@ test('loaded period choice survives ordinary refresh; switching child clears it 
   assert.equal(control(tree, '家庭成長版').props['aria-checked'], true);
 });
 
-test('export selections are local and PDF stays disabled without an adapter', () => {
-  const p = props(), before = JSON.stringify(p.model), h = harness(p); let tree = h.render();
-  button(tree, '導出報告').props.onPress(); tree = h.render();
-  assert.ok(byId(tree, 'growth-report-export'));
-  for (const label of ['家庭成長版', '就診溝通版', '照護交接版', '入園認識版']) assert.ok(control(tree, label));
-  control(tree, '照護交接版').props.onPress(); tree = h.render();
-  assert.equal(button(tree, 'PDF 下載暫不可用').props.disabled, true);
-  assert.ok(byId(tree, 'growth-export-unavailable'));
-  assert.equal(JSON.stringify(p.model), before);
-  button(tree, '關閉').props.onPress(); tree = h.render();
-  assert.equal(byId(tree, 'growth-report-export'), undefined);
-  assert.ok(byId(tree, 'growth-report-profile'));
+test('export selections keep the same version across device availability and reject late platform export feedback', async () => {
+  for (const platform of ['web', 'android', 'ios']) {
+    const p = props({...model(), online: true}, {platform}), before = JSON.stringify(p.model), h = harness(p); let tree = h.render();
+    button(tree, '導出報告').props.onPress(); tree = h.render();
+    assert.ok(byId(tree, 'growth-report-export'));
+    for (const label of ['家庭成長版', '就診溝通版', '照護交接版', '入園認識版']) assert.ok(control(tree, label));
+    control(tree, '照護交接版').props.onPress(); tree = h.render();
+    assert.equal(button(tree, 'PDF 匯出暫不可用').props.disabled, true);
+    assert.match(text(byId(tree, 'growth-export-unavailable')), /這台裝置目前無法匯出 PDF/);
+    assert.doesNotMatch(text(tree), /報告生成.*未接通|報告版型預覽/);
+    const calls = [];
+    const available = {...p, onExportReport: (request, isCurrent) => new Promise(resolve => calls.push({request, isCurrent, resolve}))};
+    tree = h.render(available);
+    const action = platform === 'web' ? '下載這個版本的 PDF' : '儲存或分享這個版本的 PDF';
+    assert.equal(button(tree, action).props.disabled, false); assert.equal(byId(tree, 'growth-export-unavailable'), undefined);
+    const pending = button(tree, action).props.onPress();
+    assert.deepEqual(calls[0].request, {scopeKey: 'parent:child-a', childId: 'child-a', authorityVersion: 'auth:1', snapshotId: 'report-a', snapshotVersion: 2,
+      periodId: 'year-2026', purpose: 'care_handoff', includeSources: true, includeRevision: false});
+    assert.equal(calls[0].isCurrent(), true);
+    button(tree, '關閉').props.onPress(); tree = h.render(); assert.equal(calls[0].isCurrent(), false);
+    calls[0].resolve({state: 'ready', message: 'SYNTHETIC_LATE_HANDOFF'}); await pending; tree = h.render();
+    assert.doesNotMatch(text(tree), /SYNTHETIC_LATE_HANDOFF/); assert.equal(JSON.stringify(p.model), before);
+    assert.equal(byId(tree, 'growth-report-export'), undefined); assert.ok(byId(tree, 'growth-report-profile'));
+    button(tree, '導出報告').props.onPress(); tree = h.render(); const stale = button(tree, action).props.onPress;
+    h.render({...available, model: {...p.model, access: 'lost'}}); await stale(); assert.equal(calls.length, 1);
+  }
 });
 
 test('typed export intent carries exact scope and version and rejects stale callbacks after close or revocation', () => {

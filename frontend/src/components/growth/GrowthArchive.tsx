@@ -234,6 +234,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
   const sections = standardGrowthReportSections(model, archive);
   const feedback = exportOpen && exportFeedback?.key === exportIntentKey ? exportFeedback : null;
   const preparingExport = exportBusy || feedback?.state === "pending";
+  const exportActionLabel = Platform.OS === "web" ? "下載這個版本的 PDF" : "儲存或分享這個版本的 PDF";
   const canExport = !preparingExport && model.online && !!onExportReport && !!exportItem && !!growthReportExportRequest(model, exportItem, purpose, includeSources, includeRevision);
   return <View style={s.stack} testID="growth-living-archive">
     <View ref={reportRef} tabIndex={-1} style={a.reportHeader} testID="growth-current-report">
@@ -321,8 +322,8 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
           <AppCheckbox label="原始記錄與依據" checked={includeSources} onChange={value => {clearExportFeedback(); setIncludeSources(value);}} />
           <AppCheckbox label="本版更新說明" checked={includeRevision} onChange={value => {clearExportFeedback(); setIncludeRevision(value);}} />
         </View>
-        {!onExportReport ? <View testID="growth-export-unavailable" style={a.exportNotice}><Text style={s.title}>報告版型預覽</Text>
-          <Text style={s.body}>可先選擇用途與內容；報告生成及 PDF 下載暫未接通。</Text>
+        {!onExportReport ? <View testID="growth-export-unavailable" style={a.exportNotice}>
+          <Text style={s.body}>這台裝置目前無法匯出 PDF。</Text>
         </View> : null}
       </AppScrollView></AppDialog.ScrollArea>
       <View ref={exportFeedbackRef} tabIndex={-1} testID="growth-export-feedback" accessibilityRole={feedback?.state === "error" ? "alert" : undefined}
@@ -330,7 +331,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
         <Text style={feedback?.state === "error" ? s.warning : s.body}>{feedback?.message ?? ""}</Text>
       </View>
       <AppDialog.Actions><AppButton label="關閉" variant="secondary" onPress={closeExport} />
-        <AppButton ref={exportButton} label={preparingExport ? "正在準備 PDF…" : onExportReport ? "下載這個版本的 PDF" : "PDF 下載暫不可用"} disabled={!canExport} onPress={requestExport} />
+        <AppButton ref={exportButton} label={preparingExport ? "正在準備 PDF…" : onExportReport ? exportActionLabel : "PDF 匯出暫不可用"} disabled={!canExport} onPress={requestExport} />
       </AppDialog.Actions>
     </AppDialog>
   </View>;

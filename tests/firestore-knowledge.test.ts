@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import { FieldValue, VectorValue, type Firestore, type VectorQueryOptions } from "@google-cloud/firestore";
 import { createFirestoreKnowledgeStore, type FirestoreKnowledgeEmbedding } from "../server/firestore-knowledge.ts";
@@ -10,6 +11,7 @@ import { firestoreDomainFixture } from "./helpers/firestore-domain-memory.ts";
 import { createFirestoreKnowledgeRefresh } from "../server/firestore-knowledge-refresh.ts";
 import { observationHash } from "../server/knowledge-observation.ts";
 import type { SourceFetchResult } from "../server/knowledge-refresh-types.ts";
+import { KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS, KNOWLEDGE_LEXICAL_PIPELINE } from "../server/knowledge-lexical-index.ts";
 
 // Synthetic vectors only verify mechanical ranking and fencing, never semantic relevance or native index behavior.
 const vector = [1, ...Array(1023).fill(0)];
@@ -39,7 +41,7 @@ function embeddings(document: KnowledgeSourceInput): FirestoreKnowledgeEmbedding
   return document.chunks.map(chunk => ({ chunkKey: chunk.key, inputHash: embeddingDocument(document.title, chunk.section, chunk.text).hash,
     ...KNOWLEDGE_EMBEDDING, values: vector }));
 }
-function fixture(sourceIds = ["synthetic-guidance"]) {
+function fixture(sourceIds = ["synthetic-guidance"], audience?: "public" | "internal") {
   const fake = firestoreDomainFixture(), nearestCalls: { filters: [string, string, unknown][]; options: VectorQueryOptions }[] = [];
   let nearestHook: (() => Promise<void>) | undefined;
   const encode = (value: any): any => value instanceof VectorValue ? { syntheticVector: value.toArray() }
@@ -68,8 +70,9 @@ function fixture(sourceIds = ["synthetic-guidance"]) {
     runTransaction: (operation: (tx: any) => Promise<any>) => fake.database.runTransaction(tx => operation({
       get: async (target: any) => snapshot(await tx.get(target)), getAll: async (...targets: any[]) => (await tx.getAll(...targets)).map(snapshot),
       create: (ref: any, value: unknown) => tx.create(ref, encode(value)), set: (ref: any, value: unknown) => tx.set(ref, encode(value)),
+      delete: (ref: any) => tx.delete(ref),
     })) } as unknown as Firestore;
-  const options = { database, projectId: "synthetic-knowledge-project", namespace: "synthetic_knowledge", sourceIds }, nativeStore = createFirestoreKnowledgeStore(options);
+  const options = { database, projectId: "synthetic-knowledge-project", namespace: "synthetic_knowledge", sourceIds, ...(audience ? { audience } : {}) }, nativeStore = createFirestoreKnowledgeStore(options);
   const store = { ...nativeStore, async importSource(input: unknown) {
     const result = await nativeStore.importSource(input);
     for (let page = 0; page < 16; page++) if ((await nativeStore.prepareSearch(result.versionId, result.hash)).complete) break;
@@ -82,6 +85,105 @@ function fixture(sourceIds = ["synthetic-guidance"]) {
   return { ...fake, database, options, store, publish, nearestCalls, onNearest: (hook: () => Promise<void>) => { nearestHook = hook; } };
 }
 const rejects = (code: string) => (error: any) => error?.code === code || error?.message === code;
+
+test("operator edition export returns portable source and compatible vectors in one read-only transaction and fences stale or unavailable editions", async t => {
+  const f = fixture(), validUntil = new Date(Date.now() + 3600000).toISOString();
+  const published = await f.publish({ ...source("synthetic-guidance", [chunk("first"), chunk("second", { text: "Second portable body" })]), validUntil });
+  assert.equal(typeof f.store.exportPublishedEdition, "function");
+  const before = structuredClone([...f.records]), transactions = t.mock.method(f.database, "runTransaction");
+  const exported = await f.store.exportPublishedEdition(published.document.sourceId, published.hash);
+  assert.equal(transactions.mock.callCount(), 1);
+  assert.deepEqual(transactions.mock.calls[0]!.arguments[1], { readOnly: true });
+  t.mock.restoreAll();
+  assert.deepEqual([...f.records], before);
+  assert.deepEqual(exported, { source: parseKnowledgeSource(published.document), versionHash: published.hash, embeddings: embeddings(published.document) });
+  assert.doesNotMatch(JSON.stringify(exported), /synthetic-operator|reviewer|projectId|namespace|chunkId|vectorHash/u);
+  // The destination still performs its own review and publication; only the compatible vector payload travels.
+  const destination = fixture(), imported = await destination.store.importSource(exported.source);
+  assert.equal(imported.hash, exported.versionHash);
+  await destination.store.review(imported.versionId, imported.hash, "destination-operator", assessment(exported.source));
+  await destination.store.publish(imported.versionId, imported.hash, exported.embeddings);
+  assert.equal((await destination.store.candidates(filter, null, { query: "needle" }))[0]!.originalText, published.document.chunks[0]!.originalText);
+  await assert.rejects(f.store.exportPublishedEdition(published.document.sourceId, "0".repeat(64)), rejects("knowledge_review_version_mismatch"));
+  const denied = createFirestoreKnowledgeStore({ ...f.options, sourceIds: ["another-guidance"] });
+  await assert.rejects(denied.exportPublishedEdition(published.document.sourceId, published.hash), rejects("knowledge_source_not_allowed"));
+  t.mock.method(Date, "now", () => Date.parse(validUntil) + 1);
+  await assert.rejects(f.store.exportPublishedEdition(published.document.sourceId, published.hash), rejects("knowledge_source_unavailable"));
+  assert.equal((await f.store.publishedEdition(published.document.sourceId))?.versionHash, published.hash, "Existing metadata callers keep their prior semantics");
+  t.mock.restoreAll();
+  await f.store.disable(published.document.sourceId, "Synthetic withdrawal");
+  await assert.rejects(f.store.exportPublishedEdition(published.document.sourceId, published.hash), rejects("knowledge_source_unavailable"));
+});
+
+test("operator edition export refuses internal URLs and registered internal watch usage even from an internal store", async () => {
+  for (const internal of ["url", "watch"] as const) {
+    const f = fixture(["synthetic-guidance"], "internal"), document = { ...source(),
+      ...(internal === "url" ? { url: "https://www.chp.gov.hk/synthetic-guidance" } : {}) };
+    const definition = { id: document.sourceId, url: document.url, kind: "page" as const, selector: "main", classification: document.classification,
+      publisher: document.publisher, termsUrl: document.termsUrl, audience: internal === "watch" ? "internal_noncommercial" as const : "public_noncommercial" as const };
+    const refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions: [definition], async readControl() { return { enabled: true, generation: "f3457654-6524-4c99-bf56-d26dfb9f4dbd" }; } });
+    await refresh.register(definition.id, "synthetic-operator");
+    const observed = { url: document.url, title: document.title, text: document.chunks[0]!.originalText!, sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null };
+    await refresh.process((await refresh.jobs())[0]!.data, crypto.randomUUID(), async () => ({ status: "ok", items: [observed] }), new AbortController().signal);
+    const store = createFirestoreKnowledgeStore({ ...f.options, observations: refresh.gate });
+    const imported = await store.importSource(document);
+    for (let page = 0; page < 4; page++) await store.prepareSearch(imported.versionId, imported.hash);
+    await store.review(imported.versionId, imported.hash, "synthetic-operator", { ...assessment(document), observationHash: observationHash(observed) });
+    await store.publish(imported.versionId, imported.hash, embeddings(document));
+    const before = structuredClone([...f.records]);
+    await assert.rejects(store.exportPublishedEdition(document.sourceId, imported.hash), rejects("knowledge_source_internal_export_forbidden"));
+    assert.deepEqual([...f.records], before);
+  }
+});
+
+test("Firestore knowledge rebuild pages repair missing, corrupt and stale postings without changing publication or lowering completeness", async () => {
+  const f = fixture(), published = await f.publish();
+  assert.equal(typeof f.store.rebuildSearchPageIn, "function");
+  const citation = (await f.store.candidates(filter, null, { query: "needle" }))[0]!;
+  const versionPath = `synthetic_knowledge_knowledge_versions/${published.versionId}`;
+  const versionBefore = structuredClone(f.records.get(versionPath));
+  const businessBefore = [...f.records].filter(([path]) => !path.includes("_knowledge_lexical/"));
+  const postings = [...f.records].filter(([path]) => path.includes("_knowledge_lexical/"));
+  assert.ok(postings.length >= 2);
+  f.records.delete(postings[0]![0]);
+  f.records.set(postings[1]![0], { ...postings[1]![1], terms: { corrupt: [] } });
+  const occupied = new Set(postings.map(([, row]) => row.bucket));
+  const emptyBucket = Array.from({ length: KNOWLEDGE_LEXICAL_BUCKETS }, (_, index) => index).find(index => !occupied.has(index))!;
+  // Seed a stale derived bucket at its actual deterministic document key.
+  const bytes = createHash("sha256").update(JSON.stringify([f.options.projectId, f.options.namespace, "lexical", KNOWLEDGE_LEXICAL_PIPELINE,
+    published.versionId, emptyBucket])).digest().subarray(0, 16);
+  bytes[6] = (bytes[6]! & 15) | 80; bytes[8] = (bytes[8]! & 63) | 128;
+  const hex = bytes.toString("hex"), id = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  const stalePath = `${f.options.namespace}_knowledge_lexical/${id}`;
+  f.records.set(stalePath, { ...postings[0]![1], bucket: emptyBucket });
+  const damaged = structuredClone([...f.records]);
+  const rebuild = (start: number, hash = published.hash) => f.database.runTransaction(tx => f.store.rebuildSearchPageIn(tx, published.versionId, hash, start));
+  await assert.rejects(rebuild(0, "0".repeat(64)), rejects("knowledge_review_version_mismatch"));
+  for (const start of [-64, 1, 256, Number.NaN]) await assert.rejects(rebuild(start), rejects("knowledge_search_page_invalid"));
+  const denied = createFirestoreKnowledgeStore({ ...f.options, sourceIds: ["another-guidance"] });
+  await assert.rejects(f.database.runTransaction(tx => denied.rebuildSearchPageIn(tx, published.versionId, published.hash, 0)), rejects("knowledge_binding_invalid"));
+  assert.deepEqual([...f.records], damaged, "Rejected pages must not stage any writes");
+  for (let start = 0; start < KNOWLEDGE_LEXICAL_BUCKETS; start += KNOWLEDGE_LEXICAL_BATCH) {
+    const progress = await rebuild(start);
+    assert.deepEqual(progress, { complete: start + KNOWLEDGE_LEXICAL_BATCH === KNOWLEDGE_LEXICAL_BUCKETS,
+      bucketsCompleted: start + KNOWLEDGE_LEXICAL_BATCH, bucketsTotal: KNOWLEDGE_LEXICAL_BUCKETS, termCount: versionBefore.search.termCount });
+    assert.equal(f.records.get(versionPath)!.search.completed, KNOWLEDGE_LEXICAL_BUCKETS);
+  }
+  assert.equal(f.records.has(stalePath), false);
+  assert.deepEqual([...f.records].filter(([path]) => !path.includes("_knowledge_lexical/")), businessBefore);
+  assert.deepEqual((await f.store.candidates(filter, null, { query: "needle" }))[0], citation, "The same reviewed citation is searchable again");
+  assert.deepEqual([...f.records].filter(([path]) => path.includes("_knowledge_lexical/")).sort(), postings.sort());
+
+  const fresh = fixture(), native = createFirestoreKnowledgeStore(fresh.options), imported = await native.importSource(source());
+  const page = (start: number) => fresh.database.runTransaction(tx => native.rebuildSearchPageIn(tx, imported.versionId, imported.hash, start));
+  await assert.rejects(page(0), rejects("knowledge_version_unreviewed"));
+  await native.review(imported.versionId, imported.hash, "synthetic-operator", assessment(source()));
+  const beforeSkip = structuredClone([...fresh.records]);
+  await assert.rejects(page(64), rejects("knowledge_search_prefix_incomplete"));
+  assert.deepEqual([...fresh.records], beforeSkip);
+  assert.equal((await page(0)).bucketsCompleted, 64);
+  assert.equal((await page(64)).bucketsCompleted, 128);
+});
 
 test("Firestore knowledge publication requires real assessment and complete vectors; disable withdraws catalog and old citations", async () => {
   const f = fixture(), document = source(), imported = await f.store.importSource(document);
@@ -194,12 +296,14 @@ test("F05 source observation fences changed or unavailable evidence and reuses u
   const first = await store.importSource(document); await prepare(first.versionId, first.hash);
   await store.review(first.versionId, first.hash, "synthetic-operator", { ...assessment(document), observationHash: observationHash(observed) });
   await store.publish(first.versionId, first.hash, embeddings(document));
+  assert.equal((await store.exportPublishedEdition(document.sourceId, first.hash)).versionHash, first.hash);
   assert.equal((await store.candidates(filter, null, { query: "needle" })).length, 1);
   await check({ status: "failed", reason: "network" });
   assert.equal((await store.catalog()).items.length, 1, "A temporary fetch failure is not withdrawal");
   const changed = { ...observed, text: observed.text + " A new unrelated section." };
   await check({ status: "ok", items: [changed] });
   assert.equal((await store.catalog()).items.length, 0, "Old approval cannot bless changed source content");
+  await assert.rejects(store.exportPublishedEdition(document.sourceId, first.hash), rejects("knowledge_source_unavailable"));
   const nextDocument = { ...document, chunks: [...document.chunks, chunk("additional", { sourceExcerpt: "A new unrelated section.", text: "New public content", originalText: "A new unrelated section." })] };
   const next = await store.importSource(nextDocument); await prepare(next.versionId, next.hash);
   await store.review(next.versionId, next.hash, "synthetic-operator", { ...assessment(nextDocument, { document, versionId: first.versionId, hash: first.hash }), observationHash: observationHash(changed) });

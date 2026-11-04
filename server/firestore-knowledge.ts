@@ -16,6 +16,14 @@ export interface FirestoreKnowledgeOptions { database: Firestore; projectId: str
 export interface FirestoreKnowledgeEmbedding {
   chunkKey: string; inputHash: string; model: string; dimensions: number; pipeline: string; values: readonly number[];
 }
+/** Read-only operator material. Redistribution approval belongs to the operator workflow. */
+export interface FirestoreKnowledgeEditionExporter {
+  exportPublishedEdition(sourceId: string, expectedHash: string): Promise<{
+    source: KnowledgeSourceInput; versionHash: string; embeddings: FirestoreKnowledgeEmbedding[] }>;
+}
+export type FirestoreKnowledgeImportResult = { versionId: string; hash: string; unchanged: boolean; state: "draft" | "reviewed" | "withdrawn" };
+/** Operator checkpoint commits with the domain write, after the final transaction read. */
+export type FirestoreKnowledgeImportCommit = (tx: Transaction, edition: FirestoreKnowledgeImportResult & { sourceId: string }) => Promise<void>;
 /** Trusted operator work participates in the publication transaction, never a model argument. */
 export interface FirestoreKnowledgePublicationFence {
   prepare(transaction: Transaction, publication: {
@@ -29,8 +37,10 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   continuationSources(transaction: Transaction, ids: readonly string[]): Promise<import('./agent-work-continuation-core.ts').KnowledgeCurrent[]>;
   validatePublishedSource(transaction: Transaction, id: string): Promise<void>;
   ruleCandidates(transaction: Transaction, rules: readonly { sourceId: string; key: string }[], filter: KnowledgeFilter): Promise<KnowledgeCandidate[]>;
-  importSource(input: unknown): Promise<{ versionId: string; hash: string; unchanged: boolean; state: "draft" | "reviewed" | "withdrawn" }>;
+  importSource(input: unknown, commit?: FirestoreKnowledgeImportCommit): Promise<FirestoreKnowledgeImportResult>;
   prepareSearch(versionId: string, expectedHash: string): Promise<{ complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
+  rebuildSearchPageIn(transaction: Transaction, versionId: string, expectedHash: string, start: number): Promise<{
+    complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
   listVersions(afterVersionId?: string): Promise<{ items: { id: string; sourceId: string; hash: string; state: string; publishedAt: string | null; searchReady: boolean }[]; nextVersionId: string | null }>;
   missingDocuments(versionId: string): Promise<{ hash: string; title: string; text: string }[]>;
   embedDocument(document: { hash: string; title: string; text: string }, generate: () => Promise<readonly number[]>): Promise<{ reused: boolean }>;
@@ -118,7 +128,7 @@ function keywordScore(tokens: ReadonlySet<string>, candidate: KnowledgeCandidate
 }
 
 /** Selected public official editions only. Maintenance ports are for a trusted operator, never HTTP or Agent tools. */
-export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions): FirestoreKnowledgeStore {
+export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions): FirestoreKnowledgeStore & FirestoreKnowledgeEditionExporter {
   const { database, projectId, namespace } = options;
   if (!database || typeof database.runTransaction !== "function" || !/^[a-z][a-z0-9-]{3,62}$/u.test(projectId)
     || !/^[A-Za-z][A-Za-z0-9_]{0,63}$/u.test(namespace) || !Array.isArray(options.sourceIds) || options.sourceIds.length < 1
@@ -252,27 +262,54 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         : filter.ageMatch === "unknown" ? "requires_clarification" : filter.ageMatch === "overlap" ? "conditional" : "applicable", distance: null };
   }
   function bump(source: Source): Source { return { ...source, revision: (BigInt(source.revision) + 1n).toString() }; }
+  function writeSearchPageIn(tx: Transaction, edition: Loaded, start: number, repair: boolean) {
+    const version = edition.version, versionId = version.versionId;
+    const index = knowledgeLexicalIndex(edition.document.title, edition.chunks), prior = version.search;
+    if (prior && (knowledgeHash(prior.hashes) !== knowledgeHash(index.hashes) || prior.termCount !== index.termCount)) reject("knowledge_search_binding_invalid", 503);
+    const end = Math.min(start + KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS);
+    const next: Version = { ...version, chunks: edition.chunks.map(row => ({ chunkId: row.chunkId, key: row.document.key, order: row.order,
+      contentHash: row.contentHash, embeddingHash: row.embeddingHash, applicability: row.document.applicability })),
+      search: { pipeline: KNOWLEDGE_LEXICAL_PIPELINE, hashes: index.hashes, completed: Math.max(prior?.completed ?? 0, end), termCount: index.termCount } };
+    const records = index.buckets.slice(start, end).flatMap((terms, offset) => Object.keys(terms).length ? [{ ...scope, sourceId: version.sourceId,
+      versionId, versionHash: version.versionHash, pipeline: KNOWLEDGE_LEXICAL_PIPELINE, bucket: start + offset, termsHash: index.hashes[start + offset]!, terms }] : []);
+    writeBudget([next, ...records]);
+    // All source reads precede staged writes. Ordinary preparation still skips empty buckets.
+    for (const row of records) tx.set(lexicalRef(versionId, row.bucket), row);
+    if (repair) for (let bucket = start; bucket < end; bucket++) {
+      if (!Object.keys(index.buckets[bucket]!).length) tx.delete(lexicalRef(versionId, bucket));
+    }
+    if (start !== end || !prior) tx.set(versionRef(versionId), next);
+    return { complete: end === KNOWLEDGE_LEXICAL_BUCKETS, bucketsCompleted: end, bucketsTotal: KNOWLEDGE_LEXICAL_BUCKETS, termCount: index.termCount };
+  }
   async function prepareSearch(versionId: string, expectedHash: string) {
     if (!hash.safeParse(expectedHash).success) reject("knowledge_version_invalid", 400);
     return database.runTransaction(async tx => {
       const edition = await load(tx, versionId), version = edition.version;
       if (version.versionHash !== expectedHash) reject("knowledge_review_version_mismatch");
-      const index = knowledgeLexicalIndex(edition.document.title, edition.chunks), prior = version.search;
-      if (prior && (knowledgeHash(prior.hashes) !== knowledgeHash(index.hashes) || prior.termCount !== index.termCount)) reject("knowledge_search_binding_invalid", 503);
-      const start = prior?.completed ?? 0, end = Math.min(start + KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS);
-      const next: Version = { ...version, chunks: edition.chunks.map(row => ({ chunkId: row.chunkId, key: row.document.key, order: row.order,
-        contentHash: row.contentHash, embeddingHash: row.embeddingHash, applicability: row.document.applicability })),
-        search: { pipeline: KNOWLEDGE_LEXICAL_PIPELINE, hashes: index.hashes, completed: end, termCount: index.termCount } };
-      const records = index.buckets.slice(start, end).flatMap((terms, offset) => Object.keys(terms).length ? [{ ...scope, sourceId: version.sourceId,
-        versionId, versionHash: version.versionHash, pipeline: KNOWLEDGE_LEXICAL_PIPELINE, bucket: start + offset, termsHash: index.hashes[start + offset]!, terms }] : []);
-      writeBudget([next, ...records]);
-      // Only this trusted method writes derived postings. All source reads precede staged writes.
-      for (const row of records) tx.set(lexicalRef(versionId, row.bucket), row);
-      if (start !== end || !prior) tx.set(versionRef(versionId), next);
-      return { complete: end === KNOWLEDGE_LEXICAL_BUCKETS, bucketsCompleted: end, bucketsTotal: KNOWLEDGE_LEXICAL_BUCKETS, termCount: index.termCount };
+      return writeSearchPageIn(tx, edition, version.search?.completed ?? 0, false);
     });
   }
   return {
+    async exportPublishedEdition(id, expectedHash) {
+      if (!allowedId(id)) reject("knowledge_source_not_allowed", 403);
+      if (!hash.safeParse(expectedHash).success) reject("knowledge_version_invalid", 400);
+      return database.runTransaction(async tx => {
+        const source = await readSource(tx, id);
+        if (!source?.enabled || !source.activeVersionId) reject("knowledge_source_unavailable");
+        const edition = await load(tx, source.activeVersionId, source);
+        if (edition.version.versionHash !== expectedHash) reject("knowledge_review_version_mismatch");
+        // An internal store can inspect restricted editions, but can never transfer them.
+        if (internalKnowledgeSource(edition.document.url) || edition.observed?.watch.definition.audience === "internal_noncommercial")
+          reject("knowledge_source_internal_export_forbidden", 403);
+        if (!publication(edition)) reject("knowledge_source_unavailable");
+        const embeddings = edition.chunks.map(chunk => {
+          if (chunk.embedding === null) reject("knowledge_vectors_incomplete");
+          return { chunkKey: chunk.document.key, inputHash: chunk.embeddingHash, ...KNOWLEDGE_EMBEDDING,
+            values: vectorValues(chunk.embedding.toArray()) };
+        });
+        return { source: edition.document, versionHash: edition.version.versionHash, embeddings };
+      }, { readOnly: true });
+    },
     async publishedEdition(id) {
       if (!allowedId(id)) reject("knowledge_source_not_allowed", 403);
       return database.runTransaction(async tx => {
@@ -285,6 +322,19 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       }, { readOnly: true });
     },
     prepareSearch,
+    async rebuildSearchPageIn(tx, versionId, expectedHash, start) {
+      if (!Number.isInteger(start) || start < 0 || start >= KNOWLEDGE_LEXICAL_BUCKETS || start % KNOWLEDGE_LEXICAL_BATCH !== 0)
+        reject("knowledge_search_page_invalid", 400);
+      if (!hash.safeParse(expectedHash).success) reject("knowledge_version_invalid", 400);
+      const edition = await load(tx, versionId), version = edition.version;
+      if (version.versionHash !== expectedHash) reject("knowledge_review_version_mismatch");
+      if (version.reviewState !== "reviewed" || !version.review || version.review.assessment.decision !== "approve"
+        || version.review.assessment.growthRuleImpact === "requires_review") reject("knowledge_version_unreviewed");
+      if (options.audience !== "internal" && (internalKnowledgeSource(edition.document.url) || edition.observed?.watch.definition.audience === "internal_noncommercial"))
+        reject("knowledge_source_internal_review_required", 403);
+      if (start > (version.search?.completed ?? 0)) reject("knowledge_search_prefix_incomplete");
+      return writeSearchPageIn(tx, edition, start, true);
+    },
     async listVersions(afterVersionId) {
       if (afterVersionId !== undefined && !uuid.safeParse(afterVersionId).success) reject("knowledge_version_invalid", 400);
       return database.runTransaction(async tx => {
@@ -376,7 +426,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       }
       return result;
     },
-    async importSource(input) {
+    async importSource(input, commit) {
       if (input && typeof input === "object" && ["watch", "watchId", "observation", "audience"].some(key => key in input)) reject("domain_not_ready", 503);
       const document = JSON.parse(JSON.stringify(parseKnowledgeSource(input))) as KnowledgeSourceInput;
       if (!allowedId(document.sourceId)) reject("knowledge_source_not_configured", 403);
@@ -394,14 +444,21 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       writeBudget([version, fresh, ...records]);
       return database.runTransaction(async tx => {
         const source = await readSource(tx, document.sourceId);
+        const observed = (!allowed.has(document.sourceId) || commit) ? await options.observations?.read(tx, document.sourceId) : undefined;
+        if (commit && (internalKnowledgeSource(document.url) || observed?.watch.definition.audience === "internal_noncommercial"))
+          reject("knowledge_transfer_internal_source", 403);
         if (!allowed.has(document.sourceId)) {
-          const observed = await options.observations!.read(tx, document.sourceId);
           if (!observed?.catalogMatches || !allowed.has(observed.watch.id) || observed.watch.definition.kind !== "rss"
             || observed.observation?.url !== document.url) reject("knowledge_source_not_configured", 403);
         }
         if (source && source.url !== document.url) reject("knowledge_source_url_changed");
         const prior = await tx.get(versionRef(versionId));
-        if (prior.exists) { const old = await load(tx, versionId, source ?? undefined); return { versionId, hash: versionHash, unchanged: true, state: old.version.reviewState }; }
+        if (prior.exists) {
+          const old = await load(tx, versionId, source ?? undefined);
+          const result = { versionId, hash: versionHash, unchanged: true, state: old.version.reviewState };
+          await commit?.(tx, { sourceId: document.sourceId, ...result });
+          return result;
+        }
         const previous = source?.activeVersionId ? await load(tx, source.activeVersionId, source) : null;
         const compatible = new Map(previous?.chunks.filter(row => row.embedding !== null).map(row => [row.embeddingHash, row]) ?? []);
         const reused = records.map(row => {
@@ -411,9 +468,11 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const existing = await tx.getAll(...records.map(row => chunkRef(row.chunkId)));
         if (existing.some(snapshot => snapshot.exists)) reject("knowledge_binding_invalid", 503);
         writeBudget([version, fresh, ...reused]);
+        const result = { versionId, hash: versionHash, unchanged: false, state: "draft" as const };
+        await commit?.(tx, { sourceId: document.sourceId, ...result });
         if (!source) tx.create(sourceRef(document.sourceId), fresh);
         tx.create(versionRef(versionId), version); for (const row of reused) tx.create(chunkRef(row.chunkId), row);
-        return { versionId, hash: versionHash, unchanged: false, state: "draft" as const };
+        return result;
       });
     },
     async review(versionId, expectedHash, reviewer, raw, expectedObservation) {

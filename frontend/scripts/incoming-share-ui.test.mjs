@@ -12,6 +12,29 @@ function mocksFor(h,mocks){
   mocks['../components/ui']={AppButton:'Button',SectionCard:'Card'};
 }
 
+test('shared ZIP copy follows package capability while ordinary chat attachments keep their own bound',()=>{
+  const mocks={},h=harness(mocks);mocksFor(h,mocks);let maxBytes=20*1024*1024;
+  mocks['react-native']={View:'View',StyleSheet:{create:x=>x},Platform:{OS:'android'}};
+  mocks['../platform/package-import']={get PACKAGE_IMPORT_MAX_BYTES(){return maxBytes;}};
+  mocks['../production/incoming-share-target']={createProductionShareTarget:()=>null};
+  mocks['../production/incoming-share-package-target']={createProductionPackageShareTarget:()=>null,createProductionPackageResumeTarget:()=>null};
+  mocks['../production/IncomingShareProvider']={useIncomingShare:()=>({inbox:{},snapshot:{items:[{id:1,payload:{shareType:'file',value:'content://synthetic/file'}}],busyId:null,error:null}})};
+  mocks['../preview/PreviewNavigationGuard']={usePreviewLeaveGuard(){},usePreviewNavigation:()=>action=>action()};
+  mocks['../components/PageFrame']={PageFrame:'PageFrame'};mocks['../components/ChildPicker']={ChildPicker:'Picker'};
+  mocks['expo-router']={useRouter:()=>({push(){}})};
+  h.production({owner:{},identityKey:null,recordsState:{children:[]},model:{children:[]},sharedChild:{target:null},actions:{},agentAttachments:[]});
+  const Screen=h.load('src/screens/shareScreen.tsx').default;
+  const text=node=>node==null?'':Array.isArray(node)?node.map(text).join(''):typeof node==='object'?text(node.props?.children):String(node);
+  for(const mib of [20,256]){maxBytes=mib*1024*1024;h.render(h.jsx(Screen,{}));assert.ok(text(h.hosts()).includes(`最多 ${mib} MiB`),`The copy follows ${mib} MiB capability`);}
+  assert.equal(h.load('src/platform/package-import.ts').PACKAGE_IMPORT_MAX_BYTES,256*1024*1024,'Web fallback resolves without native imports');
+  assert.equal(h.load('../src/shared/chat-files.ts').CHAT_FILE_LIMITS.bytes,20*1024*1024);
+  const native=readFileSync(new URL('../src/platform/incoming-share.native.ts',import.meta.url),'utf8');
+  assert.match(native,/withNativePickedFile\(original, CHAT_FILE_LIMITS\.bytes/);
+  assert.doesNotMatch(readFileSync(new URL('../src/screens/shareScreen.tsx',import.meta.url),'utf8'),/from ['"].*\.native['"]/);
+  assert.doesNotMatch(readFileSync(new URL('../src/incoming-share.ts',import.meta.url),'utf8'),/20 MiB/,'Package failure copy must not claim the old binary limit');
+  h.unmount();
+});
+
 test('incoming provider preserves anonymous input for sign-in and synchronously clears an earlier account',()=>{
   const mocks={},h=harness(mocks);mocksFor(h,mocks);
   let identity=null,notifyPlatform,context;

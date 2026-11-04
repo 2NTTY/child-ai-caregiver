@@ -9,6 +9,7 @@ import { serialFirestoreFixture } from './helpers/firestore-session-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestoreCareStore } from '../server/firestore-care.ts';
+import { createFirestoreConcernStore } from '../server/firestore-concerns.ts';
 import { createFirestoreSharingStore } from '../server/firestore-sharing.ts';
 import { createFirebaseHandoverObjects } from '../server/firebase-handover-objects.ts';
 import { createHandoverUploadService } from '../server/handover-upload-service.ts';
@@ -32,6 +33,7 @@ test('class import creates roster children only in the worker and reuses the sou
     const fixture = serialFirestoreFixture(), cipher = createStorageCipher(Buffer.alloc(32, 94));
     const options = { database: fixture.database, cipher, projectId: 'demo-import-class-intake', namespace: 'unit_import_class_intake' };
     const authority = createFirestoreAuthority(options), care = createFirestoreCareStore(options), sharing = createFirestoreSharingStore(options);
+    const concerns = createFirestoreConcernStore(options);
     const codec = createFirestoreRestoreCodec(options);
     await authority.initializeControl({ enabled: true, generation: randomUUID() });
     for (const userId of ['source', 'recipient', 'operator']) {
@@ -45,6 +47,11 @@ test('class import creates roster children only in the worker and reuses the sou
     const firstRecord = await care.create('source', firstSource, { text: 'First source child record', details: emptyCareDetails(), source: 'Source account' });
     const secondRecord = await care.create('source', secondSource, { text: 'Different source child record', details: emptyCareDetails(), source: 'Source account' });
     assert.ok(firstRecord); assert.ok(secondRecord);
+    const originalConcern = await concerns.create('source', firstSource, { title: 'Source concern for the new learner', reason: 'Original source context',
+      observation: 'Source observation through the formal class intake worker', observedAt: new Date().toISOString(),
+      links: { recordId: null, taskId: null, attentionId: null }, followUpAt: null }, randomUUID());
+    const concernHead = await authority.runTransaction('source', firstSource, b => concerns.head(b, originalConcern.id)); assert.ok(concernHead);
+    const concernEvents = originalConcern.events.map((event, index) => ({ ...event, concernId: originalConcern.id, childId: firstSource, sequence: index + 1 }));
     const classroom = await sharing.create('recipient', { operationId: randomUUID(), name: 'Imported class', kind: 'class' });
     const roster = async () => (await sharing.classRosterPage('recipient', classroom.id)).items;
     assert.deepEqual(await roster(), []);
@@ -64,21 +71,24 @@ test('class import creates roster children only in the worker and reuses the sou
     async function stage(childId: string, record: NonNullable<typeof firstRecord>, owner = 'recipient', classId = classroom.id) {
       const scopeVersion = 'a'.repeat(64), pages = [
         { section: 'children', childId: null, items: [{ id: childId, displayName: 'Same source name' }] },
-        { section: 'care', childId, items: [record] }, { section: 'care_history', childId, items: [] }];
+        { section: 'care', childId, items: [record] }, { section: 'care_history', childId, items: [] },
+        { section: 'concerns', childId, items: childId === firstSource ? [concernHead] : [] },
+        { section: 'concern_events', childId, items: childId === firstSource ? concernEvents : [] },
+        { section: 'concern_history', childId, items: [] }];
       async function* entries() {
         for (const [i, page] of pages.entries()) yield { path: `data/${i}.json`, mediaType: 'application/json', content: Buffer.from(JSON.stringify({ ...page, scopeVersion })) };
         yield { path: 'summary.md', mediaType: 'text/markdown', content: Buffer.from('Synthetic class intake') };
       }
       const archive = await writeHandoverArchive({ directory, header: { format: 'yuyoufang-data', version: 1, packageId: randomUUID(), packageVersion: 1,
         createdAt: new Date().toISOString(), purpose: 'handover', source: { serverId: 'https://source.test', accountId: 'source' },
-        selection: { childIds: [childId], modules: ['care'], period: null } }, entries: entries(),
+        selection: { childIds: [childId], modules: ['care', 'concerns'], period: null } }, entries: entries(),
         coverage: () => pages.map(page => ({ section: page.section, childId: page.childId, scopeVersion, items: page.items.length, complete: true as const })) });
       const bytes = await readFile(archive.path), uploadId = randomUUID();
       await uploads.create(owner, { opId: uploadId, filename: 'class-intake.zip', bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') });
       const uploaded = await uploads.receive(owner, uploadId, Readable.from([bytes]), controller.signal);
       assert.equal(uploaded.state, 'ready', uploaded.error ?? JSON.stringify(uploaded));
       return { opId: randomUUID(), uploadId, expectedUploadVersion: uploaded.version, acceptedManifestSha256: uploaded.preview!.manifestSha256,
-        targets: [{ sourceChildId: childId, target: { createInClassId: classId }, sections: ['care'] }], resolutions: [] };
+        targets: [{ sourceChildId: childId, target: { createInClassId: classId }, sections: ['care', 'concerns'] }], resolutions: [] };
     }
     async function call(path = '', body?: unknown, owner = 'recipient') {
       const response = await handleFirebaseAccountData(new Request('https://local.test/api/account/package-imports' + path, {
@@ -131,6 +141,12 @@ test('class import creates roster children only in the worker and reuses the sou
       target: queued.targets[0].target, outcome: 'created', error: null }] });
     const sharedCare = care.forSharedSpace(classroom.id);
     assert.equal((await sharedCare.get('recipient', firstLocal, first.record.id))?.text, firstRecord.text);
+    const sharedConcerns = concerns.forSharedSpace(classroom.id), importedConcerns = await sharedConcerns.list('recipient', firstLocal);
+    assert.equal(importedConcerns.items.length, 1);
+    const importedConcern = importedConcerns.items[0];
+    assert.equal(importedConcern.childId, firstLocal);
+    assert.equal(importedConcern.title, originalConcern.title);
+    assert.equal((await sharedConcerns.get('recipient', firstLocal, importedConcern.id))?.events[0].text, originalConcern.events[0].text);
     await assert.rejects(care.get('recipient', firstLocal, first.record.id), 'the class-owned record is not a private child');
     const sameSource = { ...command, opId: randomUUID() };
     await queue(sameSource); assert.equal((await roster()).length, 1);
@@ -138,6 +154,7 @@ test('class import creates roster children only in the worker and reuses the sou
     assert.equal(repeated.batch.targets[0].target.childId, firstLocal);
     assert.deepEqual((await roster()).map(child => child.childId), [firstLocal], 'another operation with the same source identity cannot create another student');
     assert.equal(repeated.record.id, first.record.id);
+    assert.deepEqual((await sharedConcerns.list('recipient', firstLocal)).items.map(value => value.id), [importedConcern.id]);
     assert.deepEqual(await enrolments(sameSource.opId), { batchId: sameSource.opId, items: [{ sourceChildId: firstSource,
       target: repeated.batch.targets[0].target, outcome: 'skipped', error: null }] });
     const otherCommand = await stage(secondSource, secondRecord);

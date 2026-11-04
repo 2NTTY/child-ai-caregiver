@@ -1,0 +1,53 @@
+{
+  "revision": "792b7beedfa7da68396ccd59d49ebc07828b97ae",
+  "pullRequests": [
+    487,
+    488,
+    489,
+    490
+  ],
+  "observedAt": "2026-11-05T05:51:00+08:00",
+  "site": "https://ex-machina.eu.org",
+  "candidate": {
+    "api-delta.tar.gz": {
+      "bytes": 22663,
+      "sha256": "f16b1320caea73d6fb3a718c23e744cb3bbad4546072f333f5d478a10a3dc84b"
+    },
+    "web.tar.gz": {
+      "bytes": 4909361,
+      "sha256": "63774b279fdbdb9f5e118933ab185d6e708dfc07fb13cd1517c7aace91b6a067"
+    },
+    "files.sha256": {
+      "bytes": 390,
+      "sha256": "fbfa781dc8820d96aeddce9f53f00581d5119518f583335e2d362f7393f02953"
+    }
+  },
+  "production": {
+    "apiWorkerImage": "sha256:75d682a092037996a5dba51f1a68b5ca3291e5d1d437af35ea60082e7aa20104",
+    "webImage": "sha256:f9825c937dbbe4a4af5617db4a00d2d2a653bab9bd3a3d33c5fdf747cd48b478",
+    "composeSha256": "7dc01734d800ef7859304fb8c0e66443b4f0292dcb178408638072d46f0c3aec",
+    "rollback": "adaaa410",
+    "health": 200,
+    "anonymousCapabilities": 401,
+    "adminHtmlSha256": "bee82b55014e0a73a8e7f7b210527a5069faf96dc9f360cfe4dbbae51d2f8fd5",
+    "bundlePath": "/_expo/static/js/web/index-82fd807fb031c9befb9e28b11eeb535e.js",
+    "bundleSha256": "4a25f48bc1f6405677fcfeca21e2c4e2aee1b7464fdb4520dd93ad412b1befb2",
+    "existingUnknownBackground": 1,
+    "activeAgentLeases": 0,
+    "activeOutbox": 0,
+    "activeBackground": 0,
+    "signer": "existing worker-only signing key; API reads trust key",
+    "duringSwitch": "Transient TLS failure during the Web restart; independent HTTPS read back the new assets and expected API status."
+  },
+  "verified": [
+    "Signed synthetic backup through export, upload, comparison, guarded replacement, worker, result and original operation retry. Same identity, data version and provenance chain retained. Missing original or foreign target cannot be substituted by name.",
+    "Old and new API feature combinations and shared frontend scope/operation recovery. Frontend and Server types checked for the backup change.",
+    "Existing quarter fixture with three saved periods, a zero delta, increase and decrease. Older checkpoint with no buckets remains unlabelled.",
+    "One shared UI test with simulated Web, iOS and Android export paths, current snapshot/version and stale result suppression."
+  ],
+  "outstanding": [
+    "No production user data changed by the release checks; no actual signed-in restore or native system share.",
+    "Android changes await a batched release. No APK, OTA, notification or model call.",
+    "The release covers existing private instructions. Original memory facts, topics and other backup modules remain separate."
+  ]
+}

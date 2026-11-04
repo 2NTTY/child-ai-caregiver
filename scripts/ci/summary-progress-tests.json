@@ -1,7 +1,7 @@
 [
   {
     "path": "tests/summary-progress.test.ts",
-    "cases": 40
+    "cases": 18
   },
   {
     "path": "tests/agent-runtime.test.ts",
@@ -61,7 +61,7 @@
   },
   {
     "path": "tests/firestore-restore-codec.test.ts",
-    "cases": 8
+    "cases": 10
   },
   {
     "path": "tests/firestore-restore.test.ts",
@@ -102,5 +102,249 @@
   {
     "path": "tests/summary-projection-delivery.test.ts",
     "cases": 11
+  },
+  {
+    "path": "tests/firestore-private-summary-work.test.ts",
+    "cases": 8
+  },
+  {
+    "path": "tests/firestore-summary-background-auth.test.ts",
+    "cases": 2
+  },
+  {
+    "path": "tests/firestore-summary-entry-gate.test.ts",
+    "cases": 4
+  },
+  {
+    "path": "tests/firestore-summary-erasure-cleanup.test.ts",
+    "cases": 3
+  },
+  {
+    "path": "tests/firestore-summary-erasure-maintenance.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/firestore-summary-erasure-restore.test.ts",
+    "cases": 5
+  },
+  {
+    "path": "tests/firestore-summary-erasure-session.test.ts",
+    "cases": 2
+  },
+  {
+    "path": "tests/firestore-summary-fast-entry.test.ts",
+    "cases": 5
+  },
+  {
+    "path": "tests/firestore-summary-fast-probe.test.ts",
+    "cases": 8
+  },
+  {
+    "path": "tests/firestore-summary-fast-root.test.ts",
+    "cases": 3
+  },
+  {
+    "path": "tests/firestore-summary-fast-selected.test.ts",
+    "cases": 4
+  },
+  {
+    "path": "tests/firestore-summary-fast-transition.test.ts",
+    "cases": 6
+  },
+  {
+    "path": "tests/firestore-summary-fast-zero-proof.test.ts",
+    "cases": 10
+  },
+  {
+    "path": "tests/firestore-summary-inventory.test.ts",
+    "cases": 14
+  },
+  {
+    "path": "tests/firestore-summary-restore-fast.test.ts",
+    "cases": 6
+  },
+  {
+    "path": "tests/firestore-summary-restore-integration.test.ts",
+    "cases": 15
+  },
+  {
+    "path": "tests/firestore-summary-restore-protocol.test.ts",
+    "cases": 2
+  },
+  {
+    "path": "tests/firestore-summary-restore-scan.test.ts",
+    "cases": 3
+  },
+  {
+    "path": "tests/firestore-summary-restore.test.ts",
+    "cases": 10
+  },
+  {
+    "path": "tests/firestore-summary-scan-runtime.test.ts",
+    "cases": 11
+  },
+  {
+    "path": "tests/firestore-summary-source-rebuild.test.ts",
+    "cases": 8
+  },
+  {
+    "path": "tests/firestore-summary-work-admission.test.ts",
+    "cases": 13
+  },
+  {
+    "path": "tests/firestore-summary-work-no-dispatch.test.ts",
+    "cases": 4
+  },
+  {
+    "path": "tests/firestore-summary-work-projection.test.ts",
+    "cases": 2
+  },
+  {
+    "path": "tests/firestore-summary-work-publish.test.ts",
+    "cases": 8
+  },
+  {
+    "path": "tests/firestore-summary-work-reconcile.test.ts",
+    "cases": 5
+  },
+  {
+    "path": "tests/firestore-summary-work-recovery.test.ts",
+    "cases": 4
+  },
+  {
+    "path": "tests/firestore-summary-work-reservations.test.ts",
+    "cases": 6
+  },
+  {
+    "path": "tests/firestore-summary-work-root.test.ts",
+    "cases": 3
+  },
+  {
+    "path": "tests/firestore-summary-work-source-refresh.test.ts",
+    "cases": 7
+  },
+  {
+    "path": "tests/firestore-summary-work-terminal-guards.test.ts",
+    "cases": 8
+  },
+  {
+    "path": "tests/firestore-summary-work-terminal.test.ts",
+    "cases": 8
+  },
+  {
+    "path": "tests/firestore-summary-work-wake.test.ts",
+    "cases": 3
+  },
+  {
+    "path": "tests/firestore-summary-worker-routing.test.ts",
+    "cases": 2
+  },
+  {
+    "path": "tests/private-summary-background-basis.test.ts",
+    "cases": 3
+  },
+  {
+    "path": "tests/private-summary-fast-binding.test.ts",
+    "cases": 4
+  },
+  {
+    "path": "tests/private-summary-fragments.test.ts",
+    "cases": 18
+  },
+  {
+    "path": "tests/private-summary-persistence.test.ts",
+    "cases": 15
+  },
+  {
+    "path": "tests/private-summary-pr447-contract.test.ts",
+    "cases": 4
+  },
+  {
+    "path": "tests/private-summary-production-completion.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/private-summary-production-composition.test.ts",
+    "cases": 3
+  },
+  {
+    "path": "tests/private-summary-production-entry.test.ts",
+    "cases": 8
+  },
+  {
+    "path": "tests/private-summary-runtime-progress.test.ts",
+    "cases": 3
+  },
+  {
+    "path": "tests/private-summary-runtime-safety.test.ts",
+    "cases": 29
+  },
+  {
+    "path": "tests/firestore-summary-work-pending.test.ts",
+    "cases": 2
+  },
+  {
+    "path": "tests/firestore-domain-memory-query.test.ts",
+    "cases": 2
+  },
+  {
+    "path": "tests/private-summary-production-scan.test.ts",
+    "cases": 7
+  },
+  {
+    "path": "tests/firestore-indexes-comparator.test.ts",
+    "cases": 4
+  },
+  {
+    "path": "tests/firestore-summary-progress-hooks.test.ts",
+    "cases": 8
+  },
+  {
+    "path": "tests/firestore-summary-suppressed.test.ts",
+    "cases": 10
+  },
+  {
+    "path": "tests/firestore-summary-missing-evidence.test.ts",
+    "cases": 4
+  },
+  {
+    "path": "tests/handover-original-backup.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/handover-memory-domain.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/handover-memory-pipeline.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/firestore-disclosure.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/p2-a05-reports.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/admin-knowledge-status.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/firestore-summary-source-erasure-integration.test.ts",
+    "cases": 8
+  },
+  {
+    "path": "tests/handover-original-memory.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/handover-original-instructions.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/private-instruction-erasure.test.ts",
+    "cases": 1
   }
 ]

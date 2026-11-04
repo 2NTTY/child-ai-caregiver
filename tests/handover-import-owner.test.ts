@@ -395,3 +395,98 @@ test('revoked import access clears previously read summary and comparison across
   await owner.readSummary(batchId);listed=[{...batch,version:3}];await owner.load();assert.equal(owner.getSnapshot().summary,null,'Replaced newer batch versions invalidate cached summary');
   await owner.readSummary(batchId);listed=[];await owner.load();assert.equal(owner.getSnapshot().summary,null,'A batch absent from a replacement first page has no cached summary');
 });
+
+
+test('private instruction restore selects verified deleted targets and pins replacement identities', async () => {
+  const id = (n: number) => '00000000-0000-4000-8000-' + String(n).padStart(12, '0');
+  const upload = inspectionUpload(id(1), id(2), ['memory']);
+  const sent: HandoverImportCommand[] = [];
+  const rows: OriginalBackupComparison['items'] = [
+    { id: id(3), targetId: id(3), resourceSection: 'instructions', backupVersion: 1, localVersion: 2, state: 'deleted', changedFields: [] },
+    { id: id(4), targetId: id(14), resourceSection: 'instructions', backupVersion: 1, localVersion: 3, state: 'local_newer', changedFields: ['text'] },
+    { id: id(5), resourceSection: 'instructions', backupVersion: 1, localVersion: null, state: 'unavailable', changedFields: [] },
+  ];
+  const api: Partial<HandoverApi> = {
+    setIdentity() {}, getUpload: async () => upload,
+    importCapabilities: async () => ({ classEnrolment: false, originalModules: ['memory'] }),
+    compareOriginal: async () => ({ uploadId: id(1), childId: id(2), module: 'memory',
+      manifestSha256: 'a'.repeat(64), items: rows, nextCursor: null }),
+    createImport: async (_user, command) => {
+      sent.push(command);
+      return { ...inspectionBatch(command.opId, id(1)), state: 'queued',
+        targets: command.targets.map(target => handoverImportTargetSchema.parse(target)) };
+    },
+  };
+  const owner = new HandoverImportOwner(api as HandoverApi);
+  owner.syncContext('owner', 'owner:1', true);
+  await owner.readImportCapabilities();
+  await owner.openUpload(id(1));
+  await owner.compareOriginal(id(2), 'memory');
+  owner.selectReadComparison('restore_deleted', true);
+  owner.selectReadComparison('replace_current', true);
+  owner.selectComparison(rows[2], true);
+  assert.equal(owner.getSnapshot().comparison?.selected.length, 2);
+  await owner.restoreComparison();
+  assert.equal(sent.length, 1);
+  assert.deepEqual(sent[0].resolutions, [
+    { sourceChildId: id(2), section: 'instructions', resourceId: id(3),
+      resolution: { mode: 'restore_deleted', targetId: id(3), expectedVersion: 2 } },
+    { sourceChildId: id(2), section: 'instructions', resourceId: id(4), useRestoredTarget: true,
+      resolution: { mode: 'replace_current', targetId: id(14), expectedVersion: 3 } },
+  ]);
+});
+
+test('negotiated original memory compares and submits distinct resource sections while legacy servers keep instruction-only queries', async () => {
+  const id = (n: number) => '00000000-0000-4000-8000-' + String(n).padStart(12, '0');
+  const upload = inspectionUpload(id(1), id(2), ['memory']);
+  const rows: OriginalBackupComparison['items'] = [
+    { id: id(3), targetId: id(13), resourceSection: 'memory_facts', backupVersion: 1, localVersion: 3, state: 'local_newer', changedFields: ['content', 'source'] },
+    { id: id(3), targetId: id(3), resourceSection: 'memory_topics', backupVersion: 1, localVersion: 2, state: 'deleted', changedFields: [] },
+    { id: id(4), targetId: id(14), resourceSection: 'instructions', backupVersion: 1, localVersion: 4, state: 'different', changedFields: ['text'] },
+  ];
+  const queries: OriginalBackupComparisonQuery[] = [], commands: HandoverImportCommand[] = [], capabilityHeaders: Headers[] = [];
+  let modern = true;
+  const api = createHandoverApi('https://app.example.test', async (input, init) => {
+    const url = String(input);
+    let response: unknown;
+    if (url.endsWith('/package-imports/capabilities')) {
+      capabilityHeaders.push(new Headers(init?.headers));
+      response = { classEnrolment: false, originalModules: ['memory'], ...(modern ? { originalMemoryResources: true } : {}) };
+    } else if (url.endsWith('/package-uploads/' + id(1))) response = upload;
+    else if (url.endsWith('/compare-original')) {
+      const query = JSON.parse(String(init?.body)) as OriginalBackupComparisonQuery; queries.push(query);
+      response = { uploadId: id(1), childId: id(2), module: 'memory', manifestSha256: 'a'.repeat(64),
+        items: query.includeMemoryResources ? rows : [rows[2]], nextCursor: null };
+    } else if (url.endsWith('/package-imports')) {
+      const command = JSON.parse(String(init?.body)) as HandoverImportCommand; commands.push(command);
+      response = { ...inspectionBatch(command.opId, id(1)), state: 'queued',
+        targets: command.targets.map(target => handoverImportTargetSchema.parse(target)) };
+    } else throw Error('Unexpected request: ' + url);
+    return new Response(JSON.stringify(response), { status: 200, headers: { 'content-type': 'application/json' } });
+  });
+  const owner = new HandoverImportOwner(api); owner.syncContext('owner', 'owner:1', true);
+  await owner.readImportCapabilities();
+  assert.ok(capabilityHeaders[0].get('x-handover-original-features')?.split(',').includes('memory-resources'));
+  assert.equal(owner.getSnapshot().originalMemoryResourcesEnabled, true);
+  await owner.openUpload(id(1)); await owner.compareOriginal(id(2), 'memory');
+  assert.equal(queries[0].includeMemoryResources, true);
+  assert.equal(owner.getSnapshot().comparison?.items.length, 3);
+  for (const row of rows) owner.selectComparison(row, true);
+  assert.equal(owner.getSnapshot().comparison?.selected.length, 3, 'A fact and topic sharing an ID remain independently selected');
+  await owner.restoreComparison();
+  assert.equal(commands.length, 1);
+  assert.deepEqual(commands[0].resolutions, [
+    { sourceChildId: id(2), section: 'memory_facts', resourceId: id(3), useRestoredTarget: true,
+      resolution: { mode: 'replace_current', targetId: id(13), expectedVersion: 3 } },
+    { sourceChildId: id(2), section: 'memory_topics', resourceId: id(3),
+      resolution: { mode: 'restore_deleted', targetId: id(3), expectedVersion: 2 } },
+    { sourceChildId: id(2), section: 'instructions', resourceId: id(4), useRestoredTarget: true,
+      resolution: { mode: 'replace_current', targetId: id(14), expectedVersion: 4 } },
+  ]);
+  modern = false; owner.syncContext('owner', 'owner:2', true);
+  assert.equal(owner.getSnapshot().originalMemoryResourcesEnabled, false);
+  await owner.readImportCapabilities(); await owner.openUpload(id(1)); await owner.compareOriginal(id(2), 'memory');
+  assert.equal(owner.getSnapshot().originalMemoryResourcesEnabled, false);
+  assert.equal(Object.hasOwn(queries[1], 'includeMemoryResources'), false, 'An absent capability never sends the new comparison flag');
+  assert.deepEqual(owner.getSnapshot().comparison?.items.map(row => row.resourceSection), ['instructions']);
+});

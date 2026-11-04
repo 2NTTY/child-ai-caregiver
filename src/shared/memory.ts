@@ -40,17 +40,7 @@ export interface ConversationSummary {
   coverageScope?: 'imported_source'; importedFrom?: ImportProvenance;
   sourcePeriod?: { from: string; to: string };
 }
-export interface SummaryPartProgress {
-  messageId: string;
-  index: number;
-  total: number;
-  isLast: boolean;
-  sourceHash?: string;
-  startOffset?: number;
-  endOffset?: number;
-  cumulativeSummary?: string;
-}
-export interface SummaryInput { previous: ConversationSummary | null; previousVersion: number; basis: string; messages: ChatMessage[]; moreUncovered: boolean; summaryMode?: "isolated_batch"; repairOf?: string; currentSources?: unknown[]; unavailableReason?: "fact_metadata_pending" | "message_requires_continuation"; part?: SummaryPartProgress }
+export interface SummaryInput { previous: ConversationSummary | null; previousVersion: number; basis: string; messages: ChatMessage[]; moreUncovered: boolean; summaryMode?: "isolated_batch"; repairOf?: string; currentSources?: unknown[]; unavailableReason?: "fact_metadata_pending" | "message_requires_continuation" }
 export interface MemoryView {
   profile: ChildProfile; facts: MemoryFact[]; topics: MemoryTopic[]; summary: ConversationSummary | null;
 }

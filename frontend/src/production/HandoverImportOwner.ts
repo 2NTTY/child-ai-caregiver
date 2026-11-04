@@ -1,12 +1,13 @@
 import { HandoverApiError, originalComparisonItemKey, type HandoverApi, type ClassImportEnrolments, type HandoverSourceHistoryQuery, type HandoverSourceHistoryPage,
   type SelfAvatarComparison, type SelfAvatarComparisonQuery } from '../../../src/client/handover-api.ts';
-import { handoverImportCommandSchema, handoverImportModuleOf, originalBackupModuleSchema, type HandoverImportModule, type HandoverImportResourceSection, type HandoverImportCommand, type HandoverImportView,
+import { handoverImportCommandSchema, handoverImportModuleOf, originalBackupModuleSchema, originalMemorySectionSchema, type HandoverImportModule, type HandoverImportResourceSection, type HandoverImportCommand, type HandoverImportView,
   type HandoverImportResult, type HandoverImportResultQuery } from '../../../src/shared/handover-imports.ts';
 import type { HandoverImportSummary, OriginalBackupComparison, OriginalBackupComparisonQuery } from '../../../src/shared/handover-imports.ts';
-import { handoverUploadCommandSchema, type HandoverUploadCommand, type HandoverUploadView } from '../../../src/shared/handover-uploads.ts';
+import { handoverUploadCommandSchema, HANDOVER_UPLOAD_MAX_BYTES, type HandoverUploadCommand, type HandoverUploadView, type HandoverUploadListItem } from '../../../src/shared/handover-uploads.ts';
 import { handoverErrorText } from './HandoverOwner.ts';
 import { FamilyDocumentApiError, parseFamilyDocumentSnapshot } from '../../../src/client/family-documents-api.ts';
 import type { DocumentContentPage, DocumentContentQuery, DocumentSnapshot } from '../../../src/shared/family-documents.ts';
+import { handoverClassFeatures, handoverClassFeatureModules } from './handover-class-targets.ts';
 
 export interface SelectedPackage { filename: string; bytes: number; sha256: string; body: BodyInit; release(): void }
 export { originalComparisonItemKey };
@@ -14,11 +15,16 @@ export const legacyOriginalModules: OriginalBackupComparisonQuery['module'][] = 
 export function originalRestoreResourceSection(module: HandoverImportModule,
   item?: Pick<OriginalBackupComparison['items'][number], 'resourceSection'>): HandoverImportResourceSection | null {
   if (module === 'documents') return item?.resourceSection === 'documents' || item?.resourceSection === 'visit_preparation' ? item.resourceSection : null;
+  if (module === 'attachments') return item?.resourceSection === 'child_avatar' ? 'child_avatar' : null;
+  if (module === 'memory') { const parsed = originalMemorySectionSchema.safeParse(item?.resourceSection); return parsed.success ? parsed.data : null; }
   if (module === 'sources') return 'private_sources';
-  return module === 'care' || module === 'profile' || module === 'tasks' ? module : null;
+  return module === 'care' || module === 'profile' || module === 'tasks' || module === 'concerns' ? module : null;
 }
+export const hasOriginalChildAvatar = (preview: HandoverUploadView['preview'], childId: string) =>
+  !!preview?.coverage.some(row => row.childId === childId && row.section === 'child_avatar' && row.items > 0);
 export function originalComparisonResolution(item: OriginalBackupComparison['items'][number]) {
   if (!item.targetId || item.localVersion === null) return null;
+  if (originalMemorySectionSchema.safeParse(item.resourceSection).success && item.localVersion < 1) return null;
   return item.state === 'deleted' ? 'restore_deleted' as const
     : ['local_newer','different','backup_newer'].includes(item.state) ? 'replace_current' as const : null;
 }
@@ -27,7 +33,7 @@ export function accountAvatarComparisonResolution(value: SelfAvatarComparison) {
     : value.state === 'missing' || value.state === 'different' ? 'replace_current' as const : null;
 }
 type Control = { opId: string; expectedVersion: number };
-type UploadSummary = Omit<HandoverUploadView, 'preview'>;
+type UploadSummary = HandoverUploadListItem;
 type Pending = ({ kind: 'reserve'; command: HandoverUploadCommand } | { kind: 'upload'; id: string }
   | { kind: 'create'; command: HandoverImportCommand }
   | { kind: 'cancel' | 'resume' | 'discard'; id: string; command: Control }) & { checked: boolean; rejected?: boolean };
@@ -64,6 +70,7 @@ export interface HandoverSourceHistoryState {
 }
 export interface HandoverImportState {
   originalModules: OriginalBackupComparisonQuery['module'][];
+  originalMemoryResourcesEnabled: boolean;
   accountAvatarRestoreEnabled: boolean;
   accountAvatarComparison: { query: SelfAvatarComparisonQuery; manifestSha256: string; value: SelfAvatarComparison | null; error: string | null } | null;
   summary: { batchId: string; status: 'loading' | 'ready' | 'unauthorized' | 'unavailable'; value: HandoverImportSummary | null } | null;
@@ -71,19 +78,23 @@ export interface HandoverImportState {
     items: OriginalBackupComparison['items']; selected: string[]; nextCursor: string | null; loaded: boolean; error: string | null } | null;
   panelRequested?: boolean;
   classEnrolmentEnabled: boolean;
+  classConcernImportsEnabled: boolean;
+  classGrowthImportsEnabled: boolean;
   enrolmentResults: ClassImportEnrolments | null;
   userId: string | null; identityKey: string | null; online: boolean; loaded: boolean;
   upload: HandoverUploadView | null; items: HandoverImportView[]; nextCursor: string | null;
   uploads: UploadSummary[]; uploadsLoaded: boolean; uploadsCursor: string | null;
+  cleanedUploads: { items: UploadSummary[]; loaded: boolean; loading: boolean; nextCursor: string | null;
+    error: { status: number; code: string } | null } | null;
   results: HandoverImportResultsState | null;
   sourceHistory: HandoverSourceHistoryState | null;
   busy: 'pick' | 'read' | 'write' | 'check' | null; pending: Pending | null; notice: string | null;
 }
 const empty = (userId: string | null, identityKey: string | null, online: boolean): HandoverImportState => ({
-  userId, identityKey, online, loaded: false, upload: null, items: [], nextCursor: null, classEnrolmentEnabled: false, enrolmentResults: null,
+  userId, identityKey, online, loaded: false, upload: null, items: [], nextCursor: null, classEnrolmentEnabled: false, classConcernImportsEnabled: false, classGrowthImportsEnabled: false, enrolmentResults: null,
   accountAvatarRestoreEnabled: false, accountAvatarComparison: null,
-  originalModules: [...legacyOriginalModules],
-  uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, sourceHistory: null, summary: null, comparison: null, busy: null, pending: null, notice: null });
+  originalModules: [...legacyOriginalModules], originalMemoryResourcesEnabled: false,
+  uploads: [], uploadsLoaded: false, uploadsCursor: null, cleanedUploads: null, results: null, sourceHistory: null, summary: null, comparison: null, busy: null, pending: null, notice: null });
 type Ticket = { epoch: number; userId: string; controller: AbortController };
 /** Device drafts only; uploaded packages, import authority and progress remain on the Server. */
 export class HandoverImportOwner {
@@ -133,7 +144,7 @@ export class HandoverImportOwner {
       this.syncContext(null, null, this.state.online); this.accessError(error); return;
     }
     this.update({ notice: importErrorText(error) });
-    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.clearComparison(); this.update({ upload: null, items: [], loaded: false, uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, sourceHistory: null, enrolmentResults: null, summary: null, pending: null }); this.accessError(error); }
+    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.clearComparison(); this.update({ upload: null, items: [], loaded: false, uploads: [], uploadsLoaded: false, uploadsCursor: null, cleanedUploads: null, results: null, sourceHistory: null, enrolmentResults: null, summary: null, pending: null, classConcernImportsEnabled: false, classGrowthImportsEnabled: false }); this.accessError(error); }
   }
   private put(row: HandoverImportView) {
     const previous = this.state.items.find(item => item.id === row.id);
@@ -157,6 +168,9 @@ export class HandoverImportOwner {
   };
   openUpload = async (id: string) => {
     if (this.state.pending || this.file) return;
+    if (this.state.cleanedUploads?.items.some(row => row.id === id)) {
+      this.update({ notice: '這份上載已清理，只保留歷史紀錄，不能再次匯入。' }); return;
+    }
     this.clearComparison();
     const t = this.begin('read'); if (!t) return;
     if (this.state.upload?.id !== id) this.update({ upload: null });
@@ -167,6 +181,29 @@ export class HandoverImportOwner {
   leaveUpload = () => {
     this.clearComparison();
     if (!this.state.pending && !this.state.busy && !this.file) this.update({ upload: null });
+  };
+  loadCleanedUploads = async (more = false) => {
+    if (this.state.pending) return;
+    const previous = this.state.cleanedUploads, cursor = more ? previous?.nextCursor : null;
+    if (more && !cursor) return;
+    const t = this.begin('read'); if (!t) return;
+    const history = previous ?? { items: [], loaded: false, loading: false, nextCursor: null, error: null };
+    this.update({ cleanedUploads: { ...history, loading: true, error: null } });
+    try {
+      const page = await this.api.listUploads(t.userId, t.controller.signal, cursor ?? undefined, 'cleaned');
+      if (!this.current(t)) return;
+      const items = more ? [...history.items, ...page.items.filter(row => !history.items.some(item => item.id === row.id))] : page.items;
+      const cleanedIds = new Set(items.map(row => row.id));
+      this.update({ cleanedUploads: { items, loaded: true, loading: false, nextCursor: page.nextCursor, error: null },
+        uploads: this.state.uploads.filter(row => !cleanedIds.has(row.id)),
+        ...(this.state.upload && cleanedIds.has(this.state.upload.id) ? { upload: null } : {}) });
+    } catch (error) {
+      this.error(t, error);
+      if (this.current(t)) this.update({ cleanedUploads: {
+        ...(error instanceof HandoverApiError && error.status === 403 ? { items: [], loaded: false, nextCursor: null } : history), loading: false,
+        error: { status: error instanceof HandoverApiError ? error.status : 0, code: error instanceof HandoverApiError ? error.code : 'handover_unavailable' } } });
+    } finally { if (this.current(t) && this.state.cleanedUploads?.loading)
+      this.update({ cleanedUploads: { ...this.state.cleanedUploads, loading: false } }); this.finish(t); }
   };
   load = async (more = false) => {
     const cursor = more ? this.state.nextCursor : null; if (more && !cursor) return;
@@ -197,15 +234,17 @@ export class HandoverImportOwner {
       if (this.current(t)) {
         if (value.accountAvatarRestore !== true) this.clearAccountAvatarComparison();
         const originalModules = value.originalModules ?? [...legacyOriginalModules];
-        if (this.state.comparison && !originalModules.includes(this.state.comparison.query.module)) this.clearComparison();
-        this.update({ classEnrolmentEnabled: value.classEnrolment, accountAvatarRestoreEnabled: value.accountAvatarRestore === true, originalModules });
+        const originalMemoryResourcesEnabled = value.originalMemoryResources === true;
+        if (this.state.comparison && (!originalModules.includes(this.state.comparison.query.module)
+          || this.state.comparison.query.module === 'memory' && !!this.state.comparison.query.includeMemoryResources !== originalMemoryResourcesEnabled)) this.clearComparison();
+        this.update({ classEnrolmentEnabled: value.classEnrolment, classConcernImportsEnabled: value.classConcernImports === true, classGrowthImportsEnabled: value.classGrowthImports === true, accountAvatarRestoreEnabled: value.accountAvatarRestore === true, originalModules, originalMemoryResourcesEnabled });
       }
     } catch (error) {
       if (this.current(t)) {
         this.clearAccountAvatarComparison();
         const originalModules = this.state.originalModules.filter(module => legacyOriginalModules.includes(module));
         if (this.state.comparison && !originalModules.includes(this.state.comparison.query.module)) this.clearComparison();
-        this.update({ classEnrolmentEnabled: false, accountAvatarRestoreEnabled: false, originalModules });
+        this.update({ classEnrolmentEnabled: false, classConcernImportsEnabled: false, classGrowthImportsEnabled: false, accountAvatarRestoreEnabled: false, originalModules, originalMemoryResourcesEnabled: false });
         if (error instanceof HandoverApiError && ([401, 403].includes(error.status) || ['session_changed', 'identity_changed'].includes(error.code)))
           this.error(t, error);
       }
@@ -282,15 +321,20 @@ export class HandoverImportOwner {
     if (this.state.pending || upload?.state !== 'ready' || !preview || preview.header.purpose !== 'backup'
       || preview.header.source.accountId !== this.state.userId || !preview.header.selection.childIds.includes(childId)
       || !preview.header.selection.modules.includes(module) || !originalBackupModuleSchema.safeParse(module).success || !this.state.originalModules.includes(module)
+      || module === 'attachments' && !hasOriginalChildAvatar(preview, childId)
       || more && (!previous?.nextCursor || previous.query.childId !== childId || previous.query.module !== module)) return;
     const t = this.begin('read'); if (!t) return;
-    const query = {uploadId:upload.id,expectedUploadVersion:upload.version,childId,module,includeRestoreTarget:true as const};
+    const query = {uploadId:upload.id,expectedUploadVersion:upload.version,childId,module,includeRestoreTarget:true as const,
+      ...(module === 'memory' && this.state.originalMemoryResourcesEnabled ? {includeMemoryResources:true as const} : {})};
     const comparison = {query,manifestSha256:preview.manifestSha256,items:more ? previous!.items : [],selected:more ? previous!.selected : [],nextCursor:null,loaded:false,error:null};
     this.comparisonTicket = t; this.update({comparison});
     try {
       const page = await this.api.compareOriginal(t.userId,{...query,...(more ? {cursor:previous!.nextCursor!} : {})},t.controller.signal);
       if (!this.current(t) || this.comparisonTicket !== t || this.state.upload?.id !== upload.id || this.state.upload.version !== upload.version) return;
-      if (page.childId !== childId || page.module !== module || page.uploadId !== upload.id || page.manifestSha256 !== preview.manifestSha256)
+      if (page.childId !== childId || page.module !== module || page.uploadId !== upload.id || page.manifestSha256 !== preview.manifestSha256
+        || module === 'attachments' && page.items.some(item => item.resourceSection !== 'child_avatar' || item.id !== childId || item.targetId !== childId)
+        || module === 'memory' && page.items.some(item => !originalMemorySectionSchema.safeParse(item.resourceSection).success
+          || !query.includeMemoryResources && item.resourceSection !== 'instructions'))
         throw new HandoverApiError(0,'handover_response_invalid');
       this.update({comparison:{...comparison,loaded:true,nextCursor:page.nextCursor,items:more
         ? [...comparison.items,...page.items.filter(row => !comparison.items.some(item => originalComparisonItemKey(item) === originalComparisonItemKey(row)))] : page.items}});
@@ -321,7 +365,8 @@ export class HandoverImportOwner {
       || upload.state !== 'ready' || upload.id !== comparison.query.uploadId || upload.version !== comparison.query.expectedUploadVersion
       || upload.preview.manifestSha256 !== comparison.manifestSha256 || upload.preview.header.purpose !== 'backup'
       || upload.preview.header.source.accountId !== this.state.userId || comparison.query.includeRestoreTarget !== true
-      || !this.state.originalModules.includes(comparison.query.module)) return;
+      || !this.state.originalModules.includes(comparison.query.module)
+      || comparison.query.includeMemoryResources && !this.state.originalMemoryResourcesEnabled) return;
     const rows = comparison.selected.map(id => comparison.items.find(item => originalComparisonItemKey(item) === id));
     const {childId,module} = comparison.query;
     if (rows.some(item => !item || !originalComparisonResolution(item) || !originalRestoreResourceSection(module, item))) return;
@@ -329,6 +374,7 @@ export class HandoverImportOwner {
       acceptedManifestSha256:comparison.manifestSha256,restoreOriginal:true,resolutionOnly:true,
       targets:[{sourceChildId:childId,target:{childId,spaceId:null},sections:[module]}],
       resolutions:rows.map(item => ({sourceChildId:childId,section:originalRestoreResourceSection(module,item)!,resourceId:item!.id,
+        ...(originalMemorySectionSchema.safeParse(item!.resourceSection).success && item!.targetId !== item!.id ? { useRestoredTarget: true } : {}),
         resolution:{mode:originalComparisonResolution(item!)!,targetId:item!.targetId!,expectedVersion:item!.localVersion!}}))});
     if (!input.success) {this.update({notice:'所選還原項目或版本已不可用，請重新比較。'});return;}
     this.clearComparison();
@@ -536,6 +582,11 @@ export class HandoverImportOwner {
   };
   create = async (targets: HandoverImportCommand['targets'], acceptUntrusted: boolean) => {
     const upload = this.state.upload; if (this.state.pending || this.state.busy || !upload?.preview || upload.state !== 'ready') return;
+    const features = handoverClassFeatures(this.state);
+    if (targets.some(row => ('createInClassId' in row.target || row.target.spaceId !== null)
+      && handoverClassFeatureModules.some(module => row.sections.includes(module) && !features[module]))) {
+      this.update({ notice: '此服務目前未開放向班級匯入部分所選模組，請重新讀取能力及接收對象。' }); return;
+    }
     if (targets.some(row => 'createInClassId' in row.target) && !this.state.classEnrolmentEnabled) {
       this.update({ notice: '此服務目前未開放匯入時新增班員。' }); return;
     }
@@ -617,10 +668,15 @@ export class HandoverImportOwner {
 }
 export function importErrorText(error: unknown) {
   const code = error instanceof HandoverApiError ? error.code : error instanceof Error ? error.message : '';
+  const nativeMaxBytes = error instanceof Error && 'maxBytes' in error && typeof error.maxBytes === 'number'
+    && Number.isSafeInteger(error.maxBytes) && error.maxBytes > 0 && error.maxBytes <= HANDOVER_UPLOAD_MAX_BYTES
+    ? error.maxBytes : 20 * 1024 * 1024;
   const messages: Record<string, string> = {
     package_original_unverified: '未能核實這是此帳戶及原孩子的本人備份，不能比較原有資料；仍可另選匯入副本。',
     invalid_package_file: '請選擇不超過 256 MiB 的 ZIP 資料包。', package_local_file_missing: '本機檔案已不在，請取消此上載後重新選取。',
-    package_native_size_exceeded: '手機目前可上載最多 20 MiB；較大的資料包請用 Web 匯入。', package_local_cache_full: '本機暫存檔案已滿，請稍後再試。',
+    package_native_size_exceeded: nativeMaxBytes <= 20 * 1024 * 1024 ? '手機目前可上載最多 20 MiB；較大的資料包請用 Web 匯入。'
+      : `手機目前可上載最多 ${nativeMaxBytes / 1024 / 1024} MiB，請選擇較小的資料包。`,
+    package_local_cache_full: '本機暫存檔案已滿，請稍後再試。',
     package_section_not_connected: '所選資料含尚未接通的類型，沒有繼續匯入；請查看批次結果。',
     import_class_student_conflict: '原有班員已變更，請重新核對接收班員。',
     read_only: '你目前只有檢視權限，無法寫入所選對象。', space_access_denied: '你目前沒有此空間的存取權限。',
