@@ -40,6 +40,10 @@ test('private source copies reuse the original store without importing grants, r
   const imported = await authority.runTransaction('recipient', childId, async b => {
     const prepared = await store.prepareImported(b, randomUUID(), row, 'missing_proof'); prepared.commit(); return prepared.value;
   });
+  await assert.rejects(authority.runTransaction('source', sourceChild, b => store.prepareImported(b, randomUUID(),
+    row, 'trusted', undefined, true)), { code: 'input_source_unavailable' });
+  await assert.rejects(authority.runTransaction('recipient', childId, b => store.prepareImported(b, randomUUID(),
+    row, 'trusted', undefined, true)), { code: 'invalid_import_target' });
   assert.notEqual(imported.id, source.id); assert.equal(imported.childId, childId); assert.equal(imported.ownerUserId, 'recipient');
   assert.equal(imported.kind, 'personal_source'); assert.equal(imported.sourceId, null);
   assert.equal(imported.text, body); assert.equal(imported.management?.enabled, true); assert.equal(imported.management?.modelExcerpt, null);

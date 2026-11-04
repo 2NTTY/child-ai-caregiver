@@ -12,6 +12,7 @@ import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
 import type { CareTask } from '../src/shared/tasks.ts';
 import { createFirestoreCareStore } from '../server/firestore-care.ts';
+import { createFirestoreSharedInputStore } from '../server/firestore-shared-inputs.ts';
 import { createFirebaseHandoverObjects } from '../server/firebase-handover-objects.ts';
 import { createHandoverUploadService } from '../server/handover-upload-service.ts';
 import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.ts';
@@ -61,6 +62,27 @@ test('verified personal backups preview without disclosure and restore scoped or
     assert.ok(profile?.data);
     const originalTask = await taskAction(`/api/children/${childId}/tasks`, {confirm:true, values:{
       title:'Reminder from backup',details:'Private task',kind:'ordinary',assigneeUserId:'parent',dueAt:'2030-12-05T08:00:00Z',timeZone:'Asia/Hong_Kong' }});
+    const sources = createFirestoreSharedInputStore(options);
+    const sourceContent = {kind:'personal_source' as const,sourceLabel:'Private reference',sourceNotes:'',sourceDateText:null,
+      sourceUrl:null,text:'Original private passage'};
+    const management = {intention:'Use as reference',purpose:'answer_reference' as const,nature:'external_material' as const,
+      timeScope:'long_reference' as const,validityText:'',enabled:true,modelExcerpt:null};
+    async function createSource() {
+      return authority.runTransaction('parent',childId,async b=>{
+        const prepared=await sources.prepareCreate(b,randomUUID(),sourceContent,management);
+        prepared.commit();return prepared.value;
+      });
+    }
+    const editedSource=await createSource(), removedSource=await createSource();
+    const catalogue=await sources.list('parent',childId);
+    assert.ok(catalogue?.sources.length);
+    const reference=await sources.create('parent',childId,{kind:'public_source',sourceId:catalogue.sources[0].id});
+    assert.ok(reference);
+    await sources.delete('parent',childId,reference.id,reference.version);
+    const changedSource=await sources.manage('parent',childId,editedSource.id,{expectedVersion:editedSource.version,
+      management,content:{...sourceContent,text:'New private passage'},reason:'Edited after backup'});
+    assert.ok(changedSource);
+    await sources.delete('parent',childId,removedSource.id,removedSource.version);
     const serverId = 'https://original.example.test', keys = generateKeyPairSync('ed25519');
     const keyId = hash(keys.publicKey.export({type:'spki',format:'der'}));
     const stored = new Map<string,{body:Buffer;metadata:any}>();
@@ -80,12 +102,13 @@ test('verified personal backups preview without disclosure and restore scoped or
       const pages: {section:string;childId:string|null;items:unknown[]}[]=[{section:'children',childId:null,items:[{id:childId,displayName:'Private original child'}]},
         {section:'care',childId,items:rows},{section:'care_history',childId,items:[]}];
       if (settings.allCore) pages.push({section:'profile',childId,items:[profile]}, {section:'profile_history',childId,items:[]},
-        {section:'tasks',childId,items:[originalTask]}, {section:'task_history',childId,items:[]});
+        {section:'tasks',childId,items:[originalTask]}, {section:'task_history',childId,items:[]},
+        {section:'private_sources',childId,items:[editedSource,removedSource,reference]}, {section:'private_source_history',childId,items:[]});
       async function* entries(){for(const [index,page] of pages.entries())yield {path:`data/${index}.json`,mediaType:'application/json',content:Buffer.from(JSON.stringify({...page,scopeVersion}))};
         yield {path:'summary.md',mediaType:'text/markdown',content:Buffer.from('Own backup')};}
       const archive=await writeHandoverArchive({directory,header:{format:'yuyoufang-data',version:1,packageId,packageVersion:1,
         createdAt:new Date().toISOString(),purpose:settings.purpose??'backup',source:{serverId:settings.sourceServerId??serverId,accountId:settings.accountId??'parent'},
-        selection:{childIds:[childId],modules:settings.allCore?['care','profile','tasks']:['care'],period:null}},entries:entries(),signingKey:settings.signed?keys.privateKey:undefined,
+        selection:{childIds:[childId],modules:settings.allCore?['care','profile','tasks','sources']:['care'],period:null}},entries:entries(),signingKey:settings.signed?keys.privateKey:undefined,
         coverage:()=>pages.map(page=>({section:page.section,childId:page.childId,scopeVersion,items:page.items.length,complete:true}))});
       const bytes=await readFile(archive.path),archiveSha256=hash(bytes),uploadId=randomUUID();
       if(settings.issued)issued.add(JSON.stringify([owner,packageId,archive.manifestSha256,archiveSha256]));
@@ -136,17 +159,26 @@ test('verified personal backups preview without disclosure and restore scoped or
     }
     // Restoring the original uses the observed versions and never edits a separate imported copy.
     const request=await stage({issued:true,allCore:true}), preview=await compare(request);
+    const sourceQuery={...request,module:'sources' as const,includeRestoreTarget:true as const};
+    const sourcePreview=await service.compareOriginal('parent',sourceQuery,new AbortController().signal);
+    assert.equal(sourcePreview.items.find(row=>row.id===editedSource.id)?.state,'local_newer');
+    assert.equal(sourcePreview.items.find(row=>row.id===removedSource.id)?.state,'deleted');
+    assert.deepEqual(sourcePreview.items.find(row=>row.id===editedSource.id)?.changedFields,['text']);
+    assert.equal(JSON.stringify(sourcePreview).includes('private passage'),false);
     const editedProfile=await care.saveProfile('parent',childId,{...profile.data,region:'My current region'},profile.version,'Current profile');
     assert.ok(editedProfile);
     const completedTask=await taskAction(`/api/children/${childId}/tasks/${originalTask.id}/change`,
       {confirm:true,action:'complete',expectedVersion:originalTask.version,note:''});
     const restoreCommand = (opId:string) => ({opId,uploadId:request.uploadId,expectedUploadVersion:request.expectedUploadVersion,
       acceptedManifestSha256:preview.manifestSha256,restoreOriginal:true,resolutionOnly:true,
-      targets:[{sourceChildId:childId,target:{childId,spaceId:null},sections:['care','profile','tasks']}],
+      targets:[{sourceChildId:childId,target:{childId,spaceId:null},sections:['care','profile','tasks','sources']}],
       resolutions:[...rows.map((row,i)=>({sourceChildId:childId,section:'care',resourceId:row.id,
         resolution:{mode:i===2?'restore_deleted':'replace_current',targetId:row.id,expectedVersion:i===2?row.version+1:i===1?newer.version:row.version}})),
         {sourceChildId:childId,section:'profile',resourceId:childId,resolution:{mode:'replace_current',targetId:childId,expectedVersion:editedProfile.version}},
-        {sourceChildId:childId,section:'tasks',resourceId:originalTask.id,resolution:{mode:'replace_current',targetId:originalTask.id,expectedVersion:completedTask.version}}]});
+        {sourceChildId:childId,section:'tasks',resourceId:originalTask.id,resolution:{mode:'replace_current',targetId:originalTask.id,expectedVersion:completedTask.version}},
+        {sourceChildId:childId,section:'private_sources',resourceId:editedSource.id,resolution:{mode:'replace_current',targetId:editedSource.id,expectedVersion:changedSource.version}},
+        ...[removedSource,reference].map(row=>({sourceChildId:childId,section:'private_sources',resourceId:row.id,
+          resolution:{mode:'restore_deleted',targetId:row.id,expectedVersion:row.version+1}}))]});
     const command=restoreCommand(randomUUID()), signal=new AbortController();
     const deliveries: Parameters<ReturnType<typeof createFirebaseWorkerServices>['background']['process']>[0][]=[];
     const runtime={...options,config:{...options,taskWorkerEnabled:true},authority,handoverImports:service,
@@ -173,7 +205,25 @@ test('verified personal backups preview without disclosure and restore scoped or
     assert.equal((await worker.background.process(delivery)).state,'completed');
     const done=await service.get('parent',first.id);
     assert.equal(done.state,'completed',done.error??JSON.stringify(done));
-    assert.deepEqual(done.counts,{created:1,updated:3,conflict:1,skipped:0});
+    assert.deepEqual(done.counts,{created:3,updated:4,conflict:1,skipped:0});
+    const afterSources=await service.compareOriginal('parent',sourceQuery,signal.signal);
+    const revived=afterSources.items.find(row=>row.id===removedSource.id)?.targetId;
+    assert.ok(revived && revived!==removedSource.id);
+    assert.ok(afterSources.items.every(row=>row.state==='unchanged'));
+    await authority.runTransaction('parent',childId,async b=>{
+      const restoredReference=afterSources.items.find(row=>row.id===reference.id)?.targetId;
+      assert.ok(restoredReference);
+      const pinned=(await sources.readImportState(b,restoredReference)).value;
+      assert.equal(pinned?.kind,'public_source');
+      assert.equal(pinned.sourceId,reference.sourceId);
+      assert.equal(pinned.fetchState,'not_requested');
+      assert.equal((await sources.readImportState(b,removedSource.id)).value,null);
+      for(const id of [revived,editedSource.id]) {
+        const saved=(await sources.readImportState(b,id)).value;
+        assert.equal(saved?.text,sourceContent.text);
+        assert.equal(saved?.recordId,null);
+      }
+    });
     assert.equal((await care.get('parent',childId,rows[1].id))?.text,rows[1].text);
     assert.equal((await care.get('parent',childId,rows[0].id))?.text,later.text);
     assert.equal(await care.get('parent',childId,rows[2].id),null);

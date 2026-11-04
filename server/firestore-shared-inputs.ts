@@ -60,7 +60,7 @@ export interface FirestoreSharedInputStore extends SharedInputStore {
   prepareManage(binding: Binding, opId: string, id: string, change: SourceManagementChange): Promise<Prepared<SharedInput>>;
   readImportState(binding: Binding, id: string): Promise<{ value: z.infer<typeof sharedInputImportSchema> | null; version: number }>;
   prepareImported(binding: Binding, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
-    current?: { id: string; expectedVersion: number }): Promise<Prepared<SharedInput>>;
+    current?: { id: string; expectedVersion: number }, restoreOriginal?: true): Promise<Prepared<SharedInput>>;
 }
 
 /** Private source text never enters the public knowledge index. Writes share original online/Agent receipts. */
@@ -187,12 +187,20 @@ export function createFirestoreSharedInputStore(options: FirestoreDomainOptions)
     return { value: sharedInputImportSchema.parse({ ...view(item), ...(item.row.importedFrom ? { importedFrom: item.row.importedFrom } : {}) }), version: item.row.version };
   }
   async function prepareImported(b: Binding, opId: string, raw: HandoverImportRow, integrity: HandoverIntegrity,
-    current?: { id: string; expectedVersion: number }): Promise<Prepared<SharedInput>> {
+    current?: { id: string; expectedVersion: number }, restoreOriginal?: true): Promise<Prepared<SharedInput>> {
     personal(b);
     if (raw.section !== 'private_sources') domainReject('invalid_package_data', 400);
     const source = domainParse(sharedInputImportSchema, raw.value, 'invalid_package_data', 400);
     if (source.sha256 !== (source.text.trim() ? digest(source.text) : null)) domainReject('invalid_package_data', 400);
     const previous = current ? await load(b, current.id) : null;
+    const official = restoreOriginal && source.kind === 'public_source'
+      ? publicSources.find(entry => entry.id === source.sourceId && entry.url === source.sourceUrl) : undefined;
+    if (restoreOriginal) {
+      if (source.ownerUserId !== b.actorUserId || source.childId !== b.scope.childId) domainReject('invalid_import_target', 403);
+      if (source.kind === 'public_source' && !official) domainReject('input_source_unavailable');
+      if (previous && (previous.row.kind !== source.kind || previous.row.sourceId !== (official?.id ?? null)))
+        domainReject('input_source_unavailable');
+    }
     if (previous && current) {
       versionMatches(previous.row, current.expectedVersion);
       if (previous.row.recordId) domainReject('input_linked');
@@ -206,8 +214,9 @@ export function createFirestoreSharedInputStore(options: FirestoreDomainOptions)
     const at = new Date().toISOString(), importedFrom = makeImportProvenance(raw, integrity, b.actorUserId, at);
     const row: Row = { id, childId: b.scope.childId, ownerUserId: b.scope.ownerUserId,
       version: (previous?.row.version ?? 0) + 1, createdAt: previous?.row.createdAt ?? at,
-      kind: source.kind === 'public_source' ? 'personal_source' : source.kind, sourceId: null,
-      sourceLabel: source.sourceLabel, sourceUrl: source.sourceUrl, sourceDateText: source.sourceDateText, sourceNotes: source.sourceNotes,
+      kind: source.kind === 'public_source' && !official ? 'personal_source' : source.kind, sourceId: official?.id ?? null,
+      sourceLabel: official?.publisher ?? source.sourceLabel, sourceUrl: official?.url ?? source.sourceUrl,
+      sourceDateText: source.sourceDateText, sourceNotes: source.sourceNotes,
       sha256: source.sha256, retrievedAt: null, bodyHash: digest(source.text), parts: 1,
       fetchState: source.text.trim() ? 'ready' : 'not_requested', fetchLease: null, extraction: emptyExtraction(), extractionLease: null,
       recordId: null, confirmationKind: null, management: source.management ? { ...source.management, modelExcerpt: null } : null, importedFrom };
