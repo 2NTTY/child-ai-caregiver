@@ -6,27 +6,10 @@ stage=preflight
 trap 'status=$?; printf "FAIL stage=%s exit=%s\n" "$stage" "$status" >&2; exit "$status"' ERR
 fail() { printf '%s\n' "$*" >&2; exit 64; }
 
-# Complete related synthetic suites; no provider, service, or loopback access.
-TEST_FILES=(
-  "tests/summary-progress.test.ts"
-  "tests/agent-runtime.test.ts"
-  "tests/agent-model-gateway.test.ts"
-  "tests/firestore-summary-batches.test.ts"
-  "tests/firestore-memory-lifecycle.test.ts"
-  "tests/memory.test.ts"
-  "tests/private-summary-contract.test.ts"
-  "tests/summary-prompt-contract.test.ts"
-  "tests/agent-durable-ai-usage.test.ts"
-  "tests/agent-durable-budget.test.ts"
-  "tests/agent-native-session.test.ts"
-  "tests/agent-owned-session-cleanup.test.ts"
-  "tests/avatar-runtime.test.ts"
-  "tests/handover-attachment-pipeline.test.ts"
-  "tests/firestore-voice.test.ts"
-  "tests/firestore-restore-codec.test.ts"
-  "tests/firestore-restore.test.ts"
-  "tests/firestore-restore-voice-relations.test.ts"
-)
+# Every branch pins its complete suites and exact per-file case counts.
+MANIFEST=scripts/ci/summary-progress-tests.json
+CONTRACT=scripts/ci/summary-progress-contract.mjs
+CONTRACT_TEST=tests/ci/summary-progress-contract.test.mjs
 test "$(id -u)" -ne 0
 test -n "${EXPECTED_SHA:-}"
 [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
@@ -49,13 +32,19 @@ test "${NODE_BIN:0:1}" = "/"
 test "$("$NODE_BIN" --version)" = "v24.22.1"
 
 
-(("${#TEST_FILES[@]}" == 18)) || fail "Expected exactly 18 complete related test files."
-declare -A seen=()
-for source in "${TEST_FILES[@]}" tsconfig.server.json; do
-  [[ "$source" == tsconfig.server.json || "$source" =~ ^tests/[A-Za-z0-9_-]+\.test\.ts$ ]] || fail "Unexpected source path: $source"
+stage=suite-manifest
+SUITE_LINES="$("$NODE_BIN" "$CONTRACT" list "$MANIFEST")"
+mapfile -t TEST_SUITES <<< "$SUITE_LINES"
+(("${#TEST_SUITES[@]}" >= 21)) || fail "Expected at least the 21 common complete regression suites."
+TEST_FILES=()
+TEST_CASES=()
+for entry in "${TEST_SUITES[@]}"; do
+  IFS=$'\t' read -r source cases <<< "$entry"
+  TEST_FILES+=("$source")
+  TEST_CASES+=("$cases")
+done
+for source in "${TEST_FILES[@]}" "$MANIFEST" "$CONTRACT" "$CONTRACT_TEST" tsconfig.server.json; do
   [[ -f "$source" && ! -L "$source" ]] || fail "Missing or symlinked source: $source"
-  [[ -z "${seen[$source]:-}" ]] || fail "Duplicate source: $source"
-  seen["$source"]=1
   git ls-files --error-unmatch -- "$source" >/dev/null
 done
 git diff --exit-code HEAD
@@ -79,26 +68,22 @@ NODE
 stage=server-shared-and-test-types
 "$NODE_BIN" node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit --pretty false
 
-stage=complete-related-tests
-# Timeout fails a stalled test; never force exit or filter out individual cases.
-TAP_FILE="$TMPDIR/summary-progress-tests.tap"
-"$NODE_BIN" --experimental-test-module-mocks --test --test-timeout=30000 \
-  --test-concurrency=1 --test-reporter=tap "${TEST_FILES[@]}" | tee "$TAP_FILE"
+stage=ci-contract-tests
+TAP_FILE="$TMPDIR/summary-progress-contract.tap"
+"$NODE_BIN" --test --test-timeout=30000 --test-reporter=tap "$CONTRACT_TEST" | tee "$TAP_FILE"
+"$NODE_BIN" "$CONTRACT" check "$TAP_FILE" 6
 
-stage=complete-test-totals
-"$NODE_BIN" --input-type=commonjs - "$TAP_FILE" <<'NODE'
-const assert = require('node:assert/strict');
-const output = require('node:fs').readFileSync(process.argv[2], 'utf8');
-const entries = [...output.matchAll(/^# (tests|pass|fail|cancelled|skipped|todo) ([0-9]+)$/gm)]
-  .map(([, name, count]) => [name, Number(count)]);
-assert.equal(entries.length, 6, 'Require exactly one complete TAP summary');
-const totals = Object.fromEntries(entries);
-assert.equal(Object.keys(totals).length, 6, 'Require every TAP counter');
-assert.equal(totals.tests, 162, 'Run every declared regression case');
-assert.equal(totals.pass, totals.tests);
-for (const name of ['fail', 'cancelled', 'skipped', 'todo']) assert.equal(totals[name], 0, name);
-console.log('PASS complete-test-totals ' + JSON.stringify(totals));
-NODE
+stage=complete-related-tests
+# Complete files run serially; every file must produce its own exact, all-pass totals.
+# Never filter tests or force exit. Pipefail preserves process and timeout failures.
+for index in "${!TEST_FILES[@]}"; do
+  source="${TEST_FILES[$index]}"
+  TAP_FILE="$TMPDIR/summary-progress-$index.tap"
+  printf 'complete-test-file=%s expected-cases=%s\n' "$source" "${TEST_CASES[$index]}"
+  "$NODE_BIN" --experimental-test-module-mocks --test --test-timeout=30000 \
+    --test-concurrency=1 --test-reporter=tap "$source" | tee "$TAP_FILE"
+  "$NODE_BIN" "$CONTRACT" check "$TAP_FILE" "${TEST_CASES[$index]}"
+done
 
 stage=final-source-integrity
 git diff --exit-code HEAD

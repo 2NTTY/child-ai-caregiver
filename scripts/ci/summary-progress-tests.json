@@ -1,0 +1,90 @@
+[
+  {
+    "path": "tests/summary-progress.test.ts",
+    "cases": 18
+  },
+  {
+    "path": "tests/agent-runtime.test.ts",
+    "cases": 19
+  },
+  {
+    "path": "tests/agent-model-gateway.test.ts",
+    "cases": 16
+  },
+  {
+    "path": "tests/firestore-summary-batches.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/firestore-memory-lifecycle.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/memory.test.ts",
+    "cases": 29
+  },
+  {
+    "path": "tests/private-summary-contract.test.ts",
+    "cases": 7
+  },
+  {
+    "path": "tests/summary-prompt-contract.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/agent-durable-ai-usage.test.ts",
+    "cases": 10
+  },
+  {
+    "path": "tests/agent-durable-budget.test.ts",
+    "cases": 4
+  },
+  {
+    "path": "tests/agent-native-session.test.ts",
+    "cases": 27
+  },
+  {
+    "path": "tests/agent-owned-session-cleanup.test.ts",
+    "cases": 11
+  },
+  {
+    "path": "tests/avatar-runtime.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/handover-attachment-pipeline.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/firestore-voice.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/firestore-restore-codec.test.ts",
+    "cases": 8
+  },
+  {
+    "path": "tests/firestore-restore.test.ts",
+    "cases": 6
+  },
+  {
+    "path": "tests/firestore-restore-voice-relations.test.ts",
+    "cases": 1
+  },
+  {
+    "path": "tests/agent-context-integrity.test.ts",
+    "cases": 4
+  },
+  {
+    "path": "tests/initial-conversation-summary.test.ts",
+    "cases": 6
+  },
+  {
+    "path": "tests/memory-summary-projection.test.ts",
+    "cases": 3
+  },
+  {
+    "path": "tests/agent-context-window.test.ts",
+    "cases": 6
+  }
+]

@@ -16,17 +16,11 @@ export function selectRecentConversation<T extends { id: string; role: string; t
     selected.unshift(message); seen.add(message.id); characters += size;
   }
 
-  // Turn-aware analysis: check whether the earliest selected message is an orphaned model reply
-  const earliest = selected[0];
-  let partialTurn = false;
-  let omittedTurnPromptMessageId: string | null = null;
-  if (earliest && earliest.role === 'model') {
-    const parentId = earliest.inReplyTo;
-    if (parentId && !seen.has(parentId)) {
-      partialTurn = true;
-      omittedTurnPromptMessageId = parentId;
-    }
-  }
+  // Replies can arrive after later prompts. Report the earliest selected reply whose parent is absent.
+  const orphanedReply = selected.find(message => message.role === 'model'
+    && message.inReplyTo && !seen.has(message.inReplyTo));
+  const omittedTurnPromptMessageId = orphanedReply?.inReplyTo ?? null;
+  const partialTurn = omittedTurnPromptMessageId !== null;
 
   return {
     messages: selected,

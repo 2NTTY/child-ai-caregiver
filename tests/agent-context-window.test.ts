@@ -43,6 +43,45 @@ test("selectRecentConversation reports complete turns when earliest message in w
   assert.equal(result.coverage.omittedTurnPromptMessageId, null);
 });
 
+test("selectRecentConversation detects an orphaned interleaved reply after a selected user prompt", () => {
+  const messages = [
+    { id: "u0", role: "user", text: "First prompt", inReplyTo: null },
+    { id: "u1", role: "user", text: "Second prompt", inReplyTo: null },
+    { id: "m0", role: "model", text: "Delayed first reply", inReplyTo: "u0" },
+    { id: "m1", role: "model", text: "Second reply", inReplyTo: "u1" },
+    { id: "u2", role: "user", text: "Third prompt", inReplyTo: null },
+    { id: "m2", role: "model", text: "Third reply", inReplyTo: "u2" },
+    { id: "u3", role: "user", text: "Current prompt", inReplyTo: null },
+  ];
+
+  const result = selectRecentConversation(messages, 6);
+  assert.deepEqual(result.messages.map(message => message.id), ["u1", "m0", "m1", "u2", "m2", "u3"]);
+  assert.equal(result.coverage.partialTurn, true);
+  assert.equal(result.coverage.omittedTurnPromptMessageId, "u0");
+
+  const complete = selectRecentConversation(messages, 6, { maxMessages: 7 });
+  assert.equal(complete.coverage.partialTurn, false, "Interleaving alone is not a partial turn when every parent is present");
+  assert.equal(complete.coverage.omittedTurnPromptMessageId, null);
+});
+
+test("selectRecentConversation identifies the earliest orphaned reply when multiple parents are omitted", () => {
+  const messages = [
+    { id: "u0", role: "user", text: "First prompt", inReplyTo: null },
+    { id: "u1", role: "user", text: "Second prompt", inReplyTo: null },
+    { id: "u2", role: "user", text: "Third prompt", inReplyTo: null },
+    { id: "m0", role: "model", text: "Delayed first reply", inReplyTo: "u0" },
+    { id: "m1", role: "model", text: "Delayed second reply", inReplyTo: "u1" },
+    { id: "u3", role: "user", text: "Fourth prompt", inReplyTo: null },
+    { id: "m3", role: "model", text: "Fourth reply", inReplyTo: "u3" },
+    { id: "u4", role: "user", text: "Current prompt", inReplyTo: null },
+  ];
+
+  const result = selectRecentConversation(messages, 7);
+  assert.deepEqual(result.messages.map(message => message.id), ["u2", "m0", "m1", "u3", "m3", "u4"]);
+  assert.equal(result.coverage.partialTurn, true);
+  assert.equal(result.coverage.omittedTurnPromptMessageId, "u0");
+});
+
 test("selectRecentConversation handles standalone model reply without inReplyTo gracefully", () => {
   const messages = [
     { id: "m0", role: "model", text: "系統打招呼", inReplyTo: null },
