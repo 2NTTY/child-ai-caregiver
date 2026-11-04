@@ -80,10 +80,10 @@ export function createIncomingShareInbox(platform: IncomingSharePlatform) {
         const current=valid();
         // Once the existing owner adopts a file, its original request is the only recovery path.
         if(accepted&&actor===identity)update({items:state.items.filter(value=>value.id!==id)});
-        if(!accepted&&current)update({error:'未能接收資料包，請核對 ZIP 格式及 20 MiB 大小限制，或查看設定的原匯入狀態。'});
+        if(!accepted&&current)update({error:'未能接收資料包，請核對 ZIP 格式及目前裝置的資料包大小限制，或查看設定的原匯入狀態。'});
         return accepted&&current;
       } catch {
-        if(epoch===generation)update({error:'未能讀取這份 ZIP 資料包，請核對格式及 20 MiB 大小限制；尚未建立匯入批次。'});
+        if(epoch===generation)update({error:'未能讀取這份 ZIP 資料包，請核對格式及目前裝置的資料包大小限制；尚未建立匯入批次。'});
         return false;
       } finally {
         if(packageRead===controller)packageRead=null;
