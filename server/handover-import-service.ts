@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createOriginalBackupComparison, type OriginalBackupIssuer } from './handover-original-backup.ts';
 import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
 import { handoverImportCommandSchema, handoverImportResultQuerySchema, handoverImportViewSchema, handoverImportResourceSectionSchema, handoverImportModuleOf, type HandoverImportCommand } from '../src/shared/handover-imports.ts';
 import { createFirestoreHandoverImportBatches } from './firestore-handover-import-batches.ts';
@@ -25,7 +26,7 @@ const codeOf = (error: unknown) => error && typeof error === 'object' && 'code' 
   && /^[a-z][a-z0-9_]{0,79}$/u.test(error.code) ? error.code : 'package_import_failed';
 
 /** Verified source, durable cursor and existing domain services; no public caller can submit rows or counts. */
-export function createHandoverImportService(options: FirestoreDomainOptions & { uploads: Uploads; maxItemsPerExecution?: number; attachments?: HandoverAttachmentPorts; knowledge?: FirestoreKnowledgeStore }) {
+export function createHandoverImportService(options: FirestoreDomainOptions & { uploads: Uploads; originalBackup?: OriginalBackupIssuer; maxItemsPerExecution?: number; attachments?: HandoverAttachmentPorts; knowledge?: FirestoreKnowledgeStore }) {
   const maxItems = domainParse(z.number().int().min(1).max(100), options.maxItemsPerExecution ?? 100);
   const batches = createFirestoreHandoverImportBatches({ ...options, sourceGuard: (b, request) => {
     if (!request.uploadVersion || !request.inputFingerprint) domainReject('import_source_not_bound');
@@ -204,7 +205,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     } finally { await opened?.dispose(); }
   }
   const items = createFirestoreHandoverImportItems(options);
-  return { create: start, process, history: items.history,
+  return { create: start, process, compareOriginal: createOriginalBackupComparison(options), history: items.history, summary: batches.summary,
     async enrolments(owner: string, id: string) {
       const job = await batches.get(owner, id);
       return { batchId: job.id, items: (job.request.enrolSourceIds ?? []).map((sourceChildId, i) => {

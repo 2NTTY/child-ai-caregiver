@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { handoverImportModuleOf, handoverImportResourceSectionSchema } from '../src/shared/handover-imports.ts';
+import { handoverImportModuleOf, handoverImportResourceSectionSchema, handoverImportSummarySchema } from '../src/shared/handover-imports.ts';
 import { FieldPath, type DocumentSnapshot, type Query } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { historyModule } from './handover-history-records.ts';
@@ -9,7 +9,7 @@ import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, ty
 import { createFirestoreHandoverImportItems } from './firestore-handover-import-items.ts';
 import { prepareFirestoreBackgroundWork, firestoreBackgroundWorkSchema, firestoreBackgroundReference, type FirestoreBackgroundWork } from './firestore-background-work.ts';
 import { importBatchRequestSchema, importBatchSchema, importBatchControlSchema, importBatchId, importBatchControlId, classImportSourceHash,
-  importBatchMetadata, importBatchControlMetadata, validImportBatch, type HandoverImportBatch as Batch,
+  importBatchMetadata, importBatchControlMetadata, validImportBatch, initialImportModuleCounts, importModuleCounts, type HandoverImportBatch as Batch,
   type HandoverImportBatchControl, type HandoverImportBatchRequest } from './handover-import-batch-records.ts';
 import type { HandoverImportRow } from './handover-import.ts';
 import { attachmentSupplementModule, type HandoverAttachmentPorts } from './firestore-handover-attachments.ts';
@@ -164,12 +164,32 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
         const job: Batch = { id: request.opId, version: 1, request, fingerprint, scope: b.scope, targetScopes: scopes,
           createdAt: at(), updatedAt: at(), state: preflightError ? 'failed' : request.totalItems === 0 && !request.enrolSourceIds ? 'completed' : 'queued',
           generation: b.generation, authorizationVersion: b.authorizationVersion, execution: 1,
-          position: 0, cursor: null, counts: { created: 0, updated: 0, skipped: 0, conflict: 0 }, claim: null, error: preflightError ?? null };
+          position: 0, cursor: null, counts: { created: 0, updated: 0, skipped: 0, conflict: 0 },
+          moduleCounts: initialImportModuleCounts(request), claim: null, error: preflightError ?? null };
         const work = job.state === 'queued' ? await enqueue(b, job) : null;
         const save = prepareSave(b, job); assertSource?.(); save(); work?.commit(); return job;
       });
     },
     get(owner: string, id: string) { return authority.runTransaction(owner, null, b => read(b, id)); },
+    summary(owner: string, id: string) {
+      return authority.runTransaction(owner, null, async b => {
+        const job = await read(b, id);
+        for (const [i, selected] of job.request.targets.entries()) {
+          const expected = job.targetScopes[i];
+          if (!selected.target.spaceId) {
+            if (!await b.readChild(selected.target.childId)) domainReject('forbidden', 403);
+            if (firestoreDomainHash({ ...b.scope, childId: selected.target.childId }) !== firestoreDomainHash(expected)) domainReject('import_target_changed');
+          } else for (const module of selected.sections) {
+            if (module === 'sources' || module === 'chat') domainReject('private_scope_unavailable', 403);
+            await sharing.inResourceTransaction(b, { ...selected.target, spaceId: selected.target.spaceId, module, mode: 'read' }, async access => {
+              if (firestoreDomainHash(access.scope) !== firestoreDomainHash(expected)) domainReject('import_target_changed');
+            });
+          }
+        }
+        return handoverImportSummarySchema.parse({ batchId: job.id, state: job.state, processedItems: job.position,
+          totalItems: job.request.totalItems, modules: importModuleCounts(job) });
+      });
+    },
     async replayControl(owner: string, id: string, raw: unknown, action: 'cancel' | 'resume') {
       const input = domainParse(controlSchema, raw), fingerprint = firestoreDomainHash({ id, action, input });
       return authority.runTransaction(owner, null, async b => {
@@ -244,9 +264,14 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
           if (repeated) domainReject('import_cursor_changed');
           // Domain preparation awaited reads after held(); reject expiration before any domain write.
           assertCurrent();
+          const mainSection = handoverImportResourceSectionSchema.safeParse(input.row.section);
+          const module = mainSection.success && input.row.value.format !== 'yuyoufang-source-revision:1'
+            ? handoverImportModuleOf(mainSection.data) : null;
+          const moduleCounts = importModuleCounts(latest)?.map(row => row.module === module
+            ? { ...row, [result.outcome]: row[result.outcome] + 1 } : row) ?? null;
           const next: Batch = { ...latest, version: latest.version + 1, position, cursor: step.nextCursor, updatedAt: at(),
             state: completed ? 'completed' : 'running', claim: completed ? null : latest.claim,
-            counts: { ...latest.counts, [result.outcome]: latest.counts[result.outcome] + 1 } };
+            counts: { ...latest.counts, [result.outcome]: latest.counts[result.outcome] + 1 }, moduleCounts };
           const save = prepareSave(actor, next);
           return () => { save(); committed = next; };
         } };

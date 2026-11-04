@@ -103,7 +103,7 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
     if (!job) domainReject('package_job_not_found', 404);
     return job;
   }
-  function openOwned(b: FirestoreAuthorityTransaction, id: string, snapshot: DocumentSnapshot) {
+  function openOwned(b: FirestoreAuthorityTransaction, id: string, snapshot: DocumentSnapshot, allowPreviousEpoch = false) {
     if (!snapshot.exists) return null;
     const raw = snapshot.data()!, context = openRecoveryEnvelope({ ...options, locator: raw.recovery,
       envelope: { family: 'domain', version: raw.version, recordVersion: raw.recordVersion, ciphertext: raw.ciphertext } }).context;
@@ -111,7 +111,7 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
       || context.scope.ownerUserId !== b.scope.ownerUserId || context.scope.workspaceId !== b.scope.workspaceId
       || context.scope.childId !== b.scope.childId) domainReject('package_job_binding', 500);
     const job = open(context.scope, id, snapshot)!;
-    if (context.scope.storageEpoch !== b.scope.storageEpoch && !['expired', 'cancelled'].includes(job.state)) domainReject('package_restored');
+    if (!allowPreviousEpoch && context.scope.storageEpoch !== b.scope.storageEpoch && !['expired', 'cancelled'].includes(job.state)) domainReject('package_restored');
     return job;
   }
   function view(job: FirestoreHandoverJob, b: FirestoreAuthorityTransaction): HandoverExportView {
@@ -170,6 +170,17 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
     });
   }
   return {
+    matchesIssuedBackup(owner: string, id: string, manifestSha256: string, archiveSha256: string): Promise<boolean> {
+      return authority.runTransaction(owner, null, async b => {
+        if (!z.uuid().safeParse(id).success || !hash.safeParse(manifestSha256).success || !hash.safeParse(archiveSha256).success) return false;
+        const job = openOwned(b, id, await b.transaction.get(ref(b.scope.ownerUserId, id)), true);
+        return !!job && job.scope.storageEpoch === b.scope.storageEpoch && !('source' in job.request)
+          && job.request.purpose === 'backup' && job.state === 'ready' && job.uploadStarted && !job.cleaned
+          && job.cancellation === null && job.error === null && !!job.content && !!job.artifact
+          && job.content.manifestSha256 === manifestSha256 && job.content.sha256 === archiveSha256
+          && job.artifact.sha256 === archiveSha256 && job.artifact.bytes === job.content.bytes;
+      });
+    },
     async list(owner: string, cursor?: string) {
       const cursorSchema = z.object({ scope: hash, after: hash }).strict();
       let previous: z.infer<typeof cursorSchema> | undefined;

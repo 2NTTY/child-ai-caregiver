@@ -179,6 +179,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const handover = createHandoverService({ ...domain, exporter, objects: handoverObjects, serverId: config.publicOrigin, signingKey: packageKeys.signingKey });
     const handoverUploads = createHandoverUploadService({ ...domain, objects: handoverObjects, trustedKeys: packageKeys.trustedKeys });
     const handoverImports = createHandoverImportService({ ...domain, uploads: handoverUploads, knowledge,
+      originalBackup: { serverId: config.publicOrigin, matchesIssuedBackup: handover.matchesIssuedBackup },
       attachments: { files, voices, photos, transcripts: product.voiceTranscripts,
         ...(avatars ? { avatars: { store: avatars, policy: avatarConfig.policy } } : {}) } });
     const erasureCleanup = createFirestoreErasureCleanup({ ...domain, journal, erasures, photos, voices, files, avatars: avatarCleanup, handover, handoverUploads,
