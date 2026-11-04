@@ -81,6 +81,8 @@ test('handover upload and import commands retain original operations and cancel 
         children: [{ id: sourceChildId, displayName: 'Synthetic source' }], coverage: [{ section: 'care', childId: sourceChildId, items: 1 }] } }; result = upload;
     } else if (url.pathname === uploads + '/' + upload.id + '/cancel') result = { ...upload, version: 3, state: 'cancelled', preview: null };
     else if (url.pathname === imports) { assert.deepEqual(body, importCommand); result = imported; }
+    else if (url.pathname === imports + '/capabilities') return Response.json({ classEnrolment: true });
+    else if (url.pathname === imports + '/' + imported.id + '/enrolments') return Response.json({ batchId: imported.id, items: [] });
     else if (url.pathname === imports + '/' + imported.id) result = imported;
     else if (url.pathname === imports + '/' + imported.id + '/resume') { imported = { ...imported, version: 3, state: 'queued' }; result = imported; }
     else if (url.pathname === imports + '/' + imported.id + '/cancel') { imported = { ...imported, version: 4, state: 'cancelled' }; result = imported; }
@@ -96,6 +98,8 @@ test('handover upload and import commands retain original operations and cancel 
   assert.equal((await api.uploadContent('owner', upload.id, zip, signal)).state, 'ready');
   assert.equal((await api.createImport('owner', importCommand, signal)).id, importCommand.opId);
   assert.equal((await api.getImport('owner', imported.id, signal)).uploadId, upload.id);
+  assert.equal((await api.importCapabilities('owner', signal)).classEnrolment, true);
+  assert.deepEqual(await api.importEnrolments('owner', imported.id, signal), { batchId: imported.id, items: [] });
   imported = { ...imported, version: 2, state: 'interrupted' };
   const resume = { opId: randomUUID(), expectedVersion: 2 };
   assert.equal((await api.resumeImport('owner', imported.id, resume, signal)).state, 'queued'); assert.deepEqual(requests.at(-1)?.body, resume);

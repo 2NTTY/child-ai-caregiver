@@ -1,0 +1,12 @@
+{
+  "package": "P4-HANDOVER01 / P4-CLASS01",
+  "serverBase": "1519a5e13e2ceb40f72e4e5a1c8e5722965e0dc7",
+  "environment": "Local shared production form/owner, scripted transport, Node 24.22.1",
+  "checks": [
+    "An empty writable class only offers enrolment when the server advertises it. Existing and new students can be explicitly selected in the same package.",
+    "Changing capability, class or teacher-space authority invalidates stale selections; a previous login cannot enable enrolment.",
+    "Reopening with an existing class batch and no upload preview still offers on-demand enrolment receipts. Reading capability or reopening never creates students.",
+    "Scoped client, owner and class-import checks passed; frontend and server TypeScript passed."
+  ],
+  "notExercised": ["native device", "production deployment"]
+}
