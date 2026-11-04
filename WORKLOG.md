@@ -4642,3 +4642,7 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 ## 2026-11-05 班級成長匯入
 
 #485（Server）與 #484（共用前端）合批更新原站。修正匯入期間按老師身份讀取批次，以及關注事件讀取已授權的照護連結。切換時無執行中工作，原有的一筆未知背景結果保留。[班級成長發布紀錄](artifacts/verification/P4_CLASS_GROWTH_DELIVERY_20261105.json)
+
+## 2026-11-05 私人交代還原及成長報告
+
+#487～#490 合批更新 Web、API 及 worker。私人交代以簽署合成備份驗過明確替換、同名／跨帳戶拒絕和重送。最近兩段的增減沿正式報告快照，Web 下載及原生系統分享仍核對同一版本。機械驗收沒有代替實際設備操作。[本批發布證據](artifacts/verification/P4_INSTRUCTIONS_REPORTS_DELIVERY_20261105.json)
