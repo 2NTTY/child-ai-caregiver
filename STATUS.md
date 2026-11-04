@@ -4,6 +4,8 @@
 
 ## 目前與接手
 
+- **本人私人來源還原（2026-11-05）。** 原站 `e8918ddf` 已可比較及還原本人孩子的私人來源。已核對編輯後覆蓋、已刪來源恢復、官方收藏和外來副本的區別，以及共用表單的實際指令。公開 Web 檔案與交付包一致，後端保留正式簽章。新表單未另建 Android APK。下一項為無孩子也可選取的帳戶備份及本人頭像。[交付證據](artifacts/verification/P4_ORIGINAL_SOURCES_20261105.json)
+
 - **P4 匯出清單（2026-11-04）：**已接 [Web／App 共用表單及 owner](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)。匯出前可分頁查看所有文件及附件，明確選整份跨期或日期不明的版本，亦可剔除原已入選項。資料變更須重讀。原站 API、worker 與 Web 已於 22:17 香港時間更新。公開 Web 檔案與本機已核對版本一致；Android 新版及正式帳戶操作仍待驗。見[發布證據](artifacts/verification/P4_HANDOVER_WEB_DELIVERY_20261104.json)。
 
 - **班級交接與本人備份（2026-11-05）。** 原站 `6e47267c` 已可交接班級的文件、備診、共享記憶、持續關注、成長及附件。本人可比較原孩子的概況、照護記錄及待辦，整批還原已選差異，並查看各模組的匯入結果。公開 Web 與發布包一致，未登入讀取摘要回傳 401。原站已啟用文檔包簽章，以一個合成包確認原版寫入器及公鑰驗證相通。全帳戶備份、其餘原件還原、原生大型包及正式帳戶驗收仍待完成。[本次發布](artifacts/verification/P4_PERSONAL_BACKUP_DELIVERY_20261105.json)／[PLAN](PLAN.md#active)
