@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { resolveApiBaseUrl } from '../config/api-base-url.ts';
 import { handoverCancelCommandSchema, handoverExportCommandSchema, handoverExportPageSchema, handoverExportViewSchema,
   handoverPreviewQuerySchema, handoverPreviewPageSchema,
+  handoverClassExportCommandSchema, classHandoverModuleSchema, type HandoverClassExportCommand,
   type HandoverPreviewQuery, type HandoverPreviewPage, type HandoverExportCommand, type HandoverExportView } from '../shared/handover-jobs.ts';
 import { handoverUploadCommandSchema, handoverUploadViewSchema, handoverUploadPageSchema,
   type HandoverUploadCommand, type HandoverUploadView, type HandoverUploadPage } from '../shared/handover-uploads.ts';
@@ -25,6 +26,8 @@ export type HandoverSourceHistoryPage = z.infer<typeof handoverSourceHistoryPage
 type RequestOptions = { collection?: 'packages' | 'package-uploads' | 'package-imports'; rawBody?: boolean; timeoutMs?: number };
 export interface HandoverApi {
   setIdentity(userId: string | null): void;
+  exportCapabilities(userId: string, signal: AbortSignal): Promise<{ classModules: HandoverClassExportCommand['selection']['modules'] }>;
+  createClass(userId: string, command: HandoverClassExportCommand, signal: AbortSignal): Promise<HandoverExportView>;
   preview(userId: string, query: HandoverPreviewQuery, signal: AbortSignal): Promise<HandoverPreviewPage>;
   create(userId: string, command: HandoverExportCommand, signal: AbortSignal): Promise<HandoverExportView>;
   list(userId: string, signal: AbortSignal, cursor?: string): Promise<ExportPage>;
@@ -134,6 +137,13 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
   }
   return {
     setIdentity,
+    exportCapabilities: (userId, signal) => json(userId, '/capabilities', signal,
+      z.object({ classModules: z.array(z.string().min(1).max(80)).max(100)
+        .transform(modules => classHandoverModuleSchema.options.filter(module => modules.includes(module))) })),
+    async createClass(userId, input, signal) {
+      const parsed = handoverClassExportCommandSchema.safeParse(input); if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
+      return json(userId, '', signal, handoverExportViewSchema, parsed.data, result => result.id === parsed.data.opId);
+    },
     async preview(userId, query, signal) {
       const parsed = handoverPreviewQuerySchema.safeParse(query);
       if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');

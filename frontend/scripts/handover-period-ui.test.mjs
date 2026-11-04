@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import * as handoverOwner from '../src/production/HandoverOwner.ts';
 import * as handoverContract from '../../src/shared/handover.ts';
 import * as classTargets from '../src/production/handover-class-targets.ts';
+import * as classExport from '../src/production/handover-class-export.ts';
 
 const require = createRequire(import.meta.url), ts = require('typescript');
 const jsx = (type, props, key) => ({ type, props, key }), noop = () => {};
@@ -23,6 +24,7 @@ function load(path) {
     : name.endsWith('/ProductionProvider') ? { useProduction: () => production }
     : name.endsWith('/useProductionSharing') ? { useProductionSharing: () => ({ controller: {}, state: { identityKey: null, selected: null, shares: { items: [] }, spaces: { items: [] }, teacherClasses: { items: [] }, rosterQuery: '' } }) }
     : name.endsWith('/handover-class-targets') ? classTargets
+    : name.endsWith('/handover-class-export') ? classExport
     : name.endsWith('/HandoverOwner') ? handoverOwner
     : name.endsWith('/handover') ? handoverContract
     : name.endsWith('/date-time') ? load('../src/components/date-time.ts')
