@@ -1,0 +1,43 @@
+{
+  "commit": "3fb14dc14bc6769a5417e288a5a026ee60cdd836",
+  "previousApiWorkerCommit": "cbd8101eb7efa0f0e47d871f082c4ef86199562f",
+  "pullRequests": [
+    466,
+    467
+  ],
+  "observedAt": "2026-11-05T03:19:47+08:00",
+  "local": {
+    "sourceErasure": "Synthetic authoritative disclosure/restore path. Deleting a private source and linked care record produced separate independent intents. A legacy tombstone without proof blocked restore. Bounded backfill supplied the original deletion proof; after restore to a fresh epoch, deleted source text, management history and exports stayed unavailable while a separate valid source remained readable.",
+    "report": "Focused checkpoint test covered 105 dated records across three batches, Hong Kong midnight, old checkpoints without period counts, annual / quarterly / custom dates and a one-day living report. Counts use all scanned pages and are independent of the selected wording limit. Server typecheck passed.",
+    "projection": "Code review traced snapshot ID and version to the Web and Android Report data disclosure and to the PDF renderer. No production family report was opened."
+  },
+  "release": {
+    "host": "ex-machina.eu.org",
+    "payloadBytes": 39440,
+    "payloadSha256": "48caa22132790d1ab9bb1ed7dff0081e8a6409ed419a5ad040e8854b28f69288",
+    "apiWorkerImage": "sha256:163bd90cba02b5e2c0cbfc77ba6ca10662bbbead04b05f29dd891859063beb75",
+    "webImage": "sha256:01f8ef7a588497a3f9e1e591d2bd0c7123e8b4f482371834286a1184e55a05d9",
+    "webCommit": "cbd8101eb7efa0f0e47d871f082c4ef86199562f",
+    "composeSha256": "46d2ce840d02d46812d4c7e9c4baa5b816269dd98b01bb0272f1f70106b9736d",
+    "candidate": "Isolated candidate imported API, worker and restore modules, parsed a synthetic source intent and annual growth report checkpoint. Existing trust-only API and signing worker mounts verified.",
+    "beforeSwitch": {
+      "agentLeases": 0,
+      "taskOutboxActive": 0,
+      "taskOutboxUnknown": 0,
+      "backgroundActive": 0,
+      "backgroundSending": 0,
+      "backgroundUnknown": 1,
+      "unresolvedDispatch": 0
+    },
+    "postSwitch": {
+      "api": "healthy",
+      "worker": "healthy",
+      "publicHealthHttpStatus": 200
+    }
+  },
+  "pending": [
+    "Managed backup and isolated cloud restore rehearsal with post-backup writes",
+    "Real device preview and sharing of a newly generated period report",
+    "Batch release of the native binary when required"
+  ]
+}

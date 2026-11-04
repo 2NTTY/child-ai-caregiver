@@ -732,6 +732,8 @@ Agent 透過 read_family_documents／generate_family_document／change_family_do
 
 沿用同一 documents create／refresh、原 opId、expectedVersion、authorityVersion 及固定 snapshot 的 content／PDF。growth_report 可選 reportMode=fixed（省略時沿用）或 living；living 的起日保留使用者指定、止日隨香港當日延展，固定季度／年度由實際起訖分類，不由標題猜測。準備單不接受 reportMode。建立或 refresh 只做有界的一批，剩餘工作保存並由既有文件 worker 接續；重試原 opId 不多處理一批。讀頁無副作用、不呼叫模型。
 
+新建的報告工作在同一次授權來源掃描按香港日期累計照護記錄、待辦和關注觀察。年度按季度、季度按月、自訂期間分前後兩段（單日只一段）。`coverageNote` 在工作完成後列出每段的完整起訖與筆數，同一快照供報告詳情與 PDF 讀取。未知日期保留於原統計；舊快照與未曾記錄分段的在途工作保留其可證明的總數。
+
 FamilyDocument.report 回報 building／complete／needs_update、已掃來源數、期間、模式及來源修訂；building 不代表全文已完成。DocumentSnapshot.reportCoverage 只在所有來源頁完成後保存，含完整掃描數、期間內各類記錄筆數、未知日期筆數、任務／共享關注觀察／有效確認事實數及必要有效期。完整是目前已保存資料的覆蓋，不代表孩子生活全部發生過的事，無記錄不等於未發生；正文可以只展示清楚標示的有限重點，不能把選錄數當總數。
 
 資料或授權改變後先遮蔽失效聚合，不能從舊收據、歷史、分段或 PDF 讀出已失效原文。更新／歸檔沿同一文件；自動刷新保留 A03 指定修改，不能覆蓋人手內容。處理途中來源改變會重新建立該來源修訂的進度，不拼接不同版本；來源長期變動時如實保持未完成。
@@ -958,6 +960,7 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 | GET `/api/admin/invitation?email=` | 完整電郵定位既有資格；不以未列入列表推定不存在 |
 | GET `/api/admin/usage?day=YYYY-MM-DD` | UTC 日的平台／本人 key 全站 counters，無聊天掃描 |
 | GET `/api/admin/audit?cursor=` | 最多 20 筆不可變管理收據／前後值 |
+| GET `/api/admin/knowledge-status?cursor=`（S10 接線中） | 管理員按需讀取現行來源目錄的註冊／停用／定義變更狀態，以及實際檢查紀錄。每頁最多 20 筆，依檢查時間與工作 ID 倒序續讀。失敗原因、最近嘗試與最近成功分開顯示。這項查詢不觸發來源抓取或發布。 |
 | POST `/api/admin/operations` | `src/shared/admin.ts` 的 policy／invite／revoke 聯合契約，必帶原 opId；policy 帶 expectedVersion |
 | GET `/api/admin/operations/:opId` | 本管理員原收據或 null；null 不表示原請求必定未生效，重送只能用同一參數／opId |
 
@@ -1238,9 +1241,10 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 <a id="p4-personal-restore"></a>
 **本人備份與交接匯入。** 沿同一匯入入口，交接到其他帳戶、班級或孩子仍建立獨立副本。使用者選擇還原到原件時，Server 以可信簽章或等效的本站紀錄核實包的內容識別、備份用途、本站來源、目前帳戶及同一個本人孩子，再按目前權限讀原件和刪除紀錄。單憑自報的名稱或 ID、其他來源的簽章或用戶接受缺證明提示，不能改寫原件。不符合原件資格時可另選匯入副本；舊版請求沿原副本行為。
 
-- 個人孩子的 `care`、`profile`、`tasks`、`sources` 及 `documents` 可用 `POST /api/account/package-imports/compare-original` 按頁比較。需要還原時傳 `includeRestoreTarget: true` 取得目前目標 ID；同一原件曾經明確恢復時，目標可能已有新 ID。`POST /api/account/package-imports` 沿原操作提交 `restoreOriginal: true`、`resolutionOnly: true`、已讀 manifest hash，以及逐項目標與版本。只有明確選中的差異才寫入；既有匯入副本的映射與此路徑隔離。其他模組及帳戶全量還原仍待接。
+- 個人孩子的 `care`、`profile`、`tasks`、`sources`、`documents` 及 `attachments` 的孩子頭像可用 `POST /api/account/package-imports/compare-original` 按頁比較。需要還原時傳 `includeRestoreTarget: true` 取得目前目標 ID；同一原件曾經明確恢復時，目標可能已有新 ID。`POST /api/account/package-imports` 沿原操作提交 `restoreOriginal: true`、`resolutionOnly: true`、已讀 manifest hash，以及逐項目標與版本。只有明確選中的差異才寫入；既有匯入副本的映射與此路徑隔離。其他模組及帳戶全量還原仍待接。
 - 首次還原也須辨認未有交接映射的原件。相同內容及版本略過；較新的修改或已刪項目預設保留。無法證明項目狀態時，須列明未能處理。完整備份的範圍應涵蓋本人有權備份的孩子與模組、私人資料及個人頭像，清單可分頁；選期、選項或平台容量令覆蓋不完整時只標為部分備份。
 - 收件端可向 `GET /api/account/package-imports/capabilities` 傳 `x-handover-original-modules: 1` 查可比較模組。文件模組的每個結果另帶 `resourceSection`，`documents` 是一份文件，`visit_preparation` 是該孩子的到診準備。選取、分頁及送出逐項決定均以該欄位與原 ID 合併識別。同一份文件按目前來源及報告涵蓋期重核，再保存至原 ID 的新版本。仍在整理的文件或來源已改的文件會產生逐項衝突。原文件帶有共享來源選擇（`sourceSelection`）時，目前一律回報 `document_source_changed`。到診準備原預約已完成或不再可用時，保留現況，其他項目可繼續。實際上線版本見 [PLAN](../PLAN.md#active)。
+- 若所選孩子的附件範圍涵蓋 `child_avatar`，可比較並明確還原其頭像。備份及目標必須是同一帳戶的同一孩子，`resourceSection` 為 `child_avatar`。保存原 JPEG 和該圖片在備份中的來源，帳戶頭像各自獨立。沒有備份圖片時保留現圖；刪除尚未完成時不提供還原。照片、錄音及一般檔案仍可匯入副本。
 - 私人來源已接原件還原。選取模組 `sources`，以 `private_sources`、來源 ID、本地目標 ID 及已見版本提交所選項目。比較列出可還原的不同欄位名稱。只有實際存在刪除紀錄時才可選擇恢復，成功後原紀錄保留。已連結照護記錄、處理尚未結清及官方來源 ID／URL 已不符目錄時，均保留目前資料並記下逐項衝突。還原收藏的官方來源沿用目前目錄身份；外來副本仍是私人參考。模型摘錄授權及擷取工作不隨還原重建。
 - 本人備份可單選「本人頭像」，也可與孩子模組一起匯出。選取綁定本人當時看見的頭像版本。帳戶資料頁的 `childId` 為 `null`，不需先建立孩子。選期時列出圖片更新日期，明確勾選才會帶完整 JPEG。只有包含 `selection.accountAvatar` 的本人備份使用格式 v2。舊有孩子包沿用 v1。客戶端以 `x-handover-account-backup: 1` 商議此能力。
 - `POST /api/account/package-imports/compare-account-avatar` 接受上載 ID 和版本。驗證屬於本站及目前帳戶後，回傳包摘要、備份版本、本地版本及比較結果。使用者明確選取後沿原匯入接口提交 `accountAvatar.expectedVersion` 與 `replace_current` 或 `restore_deleted`，保留原操作收據。相同圖片按內容雜湊略過。空備份保留現有圖片。批次摘要的 `accountAvatar.result` 記錄建立、更新、略過或衝突。還原寫入新的本地物件及版本，保留原規格化 JPEG 位元和既有刪除紀錄。
@@ -1267,6 +1271,7 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 - `GET /api/account/package-imports?cursor=…` 返回本人匯入批次 `{items,nextCursor}`，每頁最多二十項；沿帳戶／儲存世代範圍及穩定游標，不掃全庫。重開頁面由 Server 查回原批次，再讀其目前進度，不重送建立命令；列表僅含同一安全批次 DTO，不披露原始資料。
 - 逐項結果：`GET /api/account/package-imports/:id/items?sourceChildId=…&module=care|profile|tasks|memory|sources|documents[&cursor]` 從原批次固定目標推導接收資料範圍，重核本人及該模組目前權限；每頁最多二十筆候選，分頁可能因同一接收孩子的其他來源項目而少於二十筆，按 `nextCursor/complete` 判斷覆蓋。返回來源／接收資源 ID、版本、時間、建立／更新／略過／衝突及原因，不披露正文。結果保留原收據；可處理的目前值衝突另帶最新接收版本及 `replace_current/restore_deleted` 選擇。游標綁批次、來源孩子、模組、權限及資料版本，資料改變需重讀。來源歷史、較舊來源或同版異內容不能以覆蓋選項略過核對。
 - 衝突處理沿原 `POST /api/account/package-imports` 的 `resolutions`，明確選擇帶 `resolutionOnly:true` 建立新操作，重新核原包 hash、目標及每項 expectedVersion；不改寫原批次／收據。此模式要求非空明確決定，只處理所選來源目前值，不處理未選項目或來源歷史，總數為選定項數；省略欄位維持原全範圍匯入。worker、游標、取消及接續仍走同一台帳，成功項不重做保存或提醒。原操作 unknown 仍只查原 ID。未完成原批次先取消或接續，畫面不另開並發解決批次；過期包需重新取得，不能假裝仍可執行。
+- 上載失敗後可用 `GET /api/account/package-uploads?history=cleaned` 查本人已清理的收據，每頁最多 20 項。可帶此清單自己的 `cursor`。保留檔名、預留時間、操作 ID、終態、原因及 `expectedArchiveSha256`（選檔時的指紋）；驗包前失敗便沒有已核實的包 ID 或內容版本。清單不提供檔案或重新匯入入口。
 - 上載恢復：`GET /api/account/package-uploads?cursor=…` 有界列出本人目前儲存世代、仍有清理義務的上載，每頁最多二十項，返回 `{items,nextCursor}`；項目沿上載 DTO 但省略 `preview`，不一次披露每包完整名冊。游標綁同一帳戶／世代。選取時再 `GET /:id` 核當前狀態：`ready` 可沿原檔案繼續選範圍，其他狀態可查回或取消；重開不得自動重傳內容。清理完成即退出列表，失敗／取消的清理尚未完成則如實保留；列表不能取消已提交匯入或改寫批次終態。本機原檔已失去時，未完成上載應明示取消／重新選取，不假稱能續傳。
 - `GET /api/account/package-imports/source-history?childId=…&module=care|profile|tasks|memory_facts|memory_topics|summary_history|private_sources|documents|visit_preparation&resourceId=…` 有界讀取來源歷史，選填 `spaceId`、`cursor`；每頁最多十項，游標綁操作者、目標、模組、儲存世代與目前授權／變更版本。本人或共享資料皆經同一授權服務；返回 `{items,nextCursor,complete}`，每項含本地目標及原始 evidence，不返回內部 opId 或儲存身份。讀取、JSON／ZIP 匯出均重核目前父資源；刪除／historyFloor 即時遮蔽正文。
 - 共用歷史閱讀接線：從已讀結果及該批次固定目標推導本地 childId／spaceId／resourceId，memory 以 resourceSection 指定實際種類。owner 保存當次展開與游標；切換身份、結果範圍或收起時清理，取消舊請求並拒絕遲到回應。正文只由當前授權 source-history 接口返回，不從 metadata 收據或包內原文直接顯示。外來摘要明示原覆蓋，不把其訊息 ID 接成本地聊天連結；這個閱讀入口不修改或採納資料。
@@ -1291,7 +1296,7 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 - 成長匯入領域契約（個人批次／來源歷史已接）：沿原成長事項／主題／修訂服務保存，固定本地 ID 與版本，來源作者、近況、舊關聯及處理結果留 provenance。舊 lastRequest／執行授權不作本地請求。映射的待辦須在目前孩子內重新核權；沒有映射只留來源關聯。來源已完成／忽略及主題停用保持；活動項只在目前規則、資料與官方來源重新核實後建立新工作。來源正文不可僅憑自報 hash 成為官方建議，不能寫入用戶近況來迎合來源適用性。同主題已停用時，新匯入不能暗中啟用；明確採用主題設定仍走版本／衝突決定。與本地現行資料不符的內容保留為歷史及來源不足狀態，不假造確認，也不丟棄包內原值。共享寫入保持原限制；共用畫面沿相同個人批次讀取結果。統一 worker 先保存主題設定，再保存成長事項及關注；兩種成長資源以固定來源身份分開記錄結果及衝突。growth_history／growth_topic_history 保存原修訂及來源 evidence，分頁閱讀／再匯出不丟來源作者；舊 v1 包可省略這兩個後加的歷史 section，不能省略已聲明的內容。正式 runtime 使用同一 knowledge store 核對適用性。原匯入批次在 queued／running 時以加密台帳及可重建的 scope metadata 暫緩成長評估／背景提醒，完成、取消或失敗即退出等待；不在半套快照上建立新提醒，也不重播相同依據已有接受／忽略結果。仍需目前身份、版本與原工作核對；不新增模型或獨立工作平台。
 - 到診準備沿原摘要服務保存，目前值、原本地修訂、來源映射及收據同交易。問題／清單／期間保留，原預約 ID、核對狀態／依據與作者時間放來源鏈；只有目前有 tasks 讀取權、已有本地映射且符合孩子／appointment／scheduled／expectedVersion 時建立預約關聯，否則只留原來源證據。共享寫入沿 documents 的 change 範圍；來源已核對不當成本地已核對。原準備修訂使用共同來源歷史 wrapper，分頁匯出及再次交接不丟原 evidence；不以新本地匯入修訂冒充原歷史。普通修改仍沿原確認／basis／收據，公開 preparation DTO 不新增內部來源欄位。
 - 私人來源接線：`sources` 模組的目前值為 `private_sources`，原管理歷史為 `private_source_history`，統一 worker 仍先保存目前值再接來源歷史。目標只接受本人孩子（spaceId=null）；結果帶 resourceSection，歷史查詢用 module=private_sources。原管理歷史只描述用途／啟用／摘錄設定，不含原正文修訂，也不成為本地模型授權。父來源刪除後讀取及再次匯出立即遮蔽其來源歷史；恢復已刪項須明確操作及當前刪除版本，建立新本地資源並保留舊 tombstone。
-- 記錄／概況／待辦、記憶及私人來源逐項結果共用 owner／畫面已接。memory／sources 結果另帶 resourceSection，衝突決定以實際資源類型指定來源，不以 memory 作來源身份；舊三模組 DTO 不新增欄位。記憶事實／話題、外來摘要及私人來源管理修訂可展開唯讀來源歷史，尚無目前正文與來源正文的差異預覽。私人交代／摘要不因匯入擴成共享，純 family 事實／話題沿原共享權限。無包身份的驗證失敗紀錄、完整私人備份與本人差異還原仍待補。班級與期間能力依本節上方來源契約。API／worker 現可沿 Server 啟動配置讀取按來源綁定的公鑰，只有 worker 讀簽署私鑰；啟用及輪替見[部署指引](PRODUCTION_FRONTEND.md#文檔包簽章及換匙)，原站已啟用文件包簽章，公鑰及切換紀錄見[發布證據](../artifacts/verification/P4_PERSONAL_BACKUP_DELIVERY_20261105.json)。恢復後的 interrupted 批次不自動續跑。原站與未發布部分分見 [PLAN 當前入口](../PLAN.md#active)。
+- 記錄／概況／待辦、記憶及私人來源逐項結果共用 owner／畫面已接。memory／sources 結果另帶 resourceSection，衝突決定以實際資源類型指定來源，不以 memory 作來源身份；舊三模組 DTO 不新增欄位。記憶事實／話題、外來摘要及私人來源管理修訂可展開唯讀來源歷史，尚無目前正文與來源正文的差異預覽。私人交代／摘要不因匯入擴成共享，純 family 事實／話題沿原共享權限。已預留上載的驗包失敗可在清理後查回。尚未形成有效上載或匯入批次的請求拒絕，與完整私人備份及其餘模組的本人差異還原分開追蹤。班級與期間能力依本節上方來源契約。API／worker 現可沿 Server 啟動配置讀取按來源綁定的公鑰，只有 worker 讀簽署私鑰；啟用及輪替見[部署指引](PRODUCTION_FRONTEND.md#文檔包簽章及換匙)，原站已啟用文件包簽章，公鑰及切換紀錄見[發布證據](../artifacts/verification/P4_PERSONAL_BACKUP_DELIVERY_20261105.json)。恢復後的 interrupted 批次不自動續跑。原站與未發布部分分見 [PLAN 當前入口](../PLAN.md#active)。
 - provider 連結在同流程取得必要同意，配置 Apple private relay 合法郵件來源；Google／Apple-only 重新驗證用其 provider，不要求密碼。註冊准入與家庭／教師空間資格分開。
 - P5 Server 能力／地址核對與憑據隔離另隨 S06-W04 擴充；資料副本匯入不會切換權威 Server、搬移執行授權或恢復舊投遞。普通登入及裝置撤銷不依賴已取消的配對端點。
 

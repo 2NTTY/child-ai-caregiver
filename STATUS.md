@@ -4,6 +4,10 @@
 
 ## 目前與接手
 
+- **11 月 5 日 03:19（香港）** 原站 API／worker 已更新至 `3fb14dc1`，Web 維持 `cbd8101e`。單筆私人來源刪除會寫獨立日誌；新成長報告可比較期間內各段已保存筆數。合成還原與站外健康讀回已核，真備份還原和手機分享仍待驗。[刪除重放與報告發布](artifacts/verification/P4_SOURCE_ERASURE_REPORT_TRENDS_20261105.json)
+
+- **原站更新（11 月 5 日）。** `cbd8101e` 已交付孩子頭像原件還原與上載收據清單。合成流程已核對原 JPEG、來源、範圍及跨帳戶隔離。原生大型包尚待新 binary 的設備驗收。[本批交付證據](artifacts/verification/P4_UPLOAD_HISTORY_CHILD_AVATAR_20261105.json)
+
 - **本人備份（2026-11-05）。** 原站 `59f6700a` 已接文件及到診準備的原件還原。逐項比較會區分兩種資源；已完成的預約及任何帶共享來源選擇的原文件均回報逐項衝突。已驗合成簽署備份及原站版本，正式帳戶操作與新 APK 待驗。[本次證據](artifacts/verification/P4_ORIGINAL_DOCUMENTS_20261105.json)／[帳戶頭像交付](artifacts/verification/P4_PERSONAL_AVATAR_BACKUP_20261105.json)
 
 - **P4 匯出清單（2026-11-04）：**已接 [Web／App 共用表單及 owner](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)。匯出前可分頁查看所有文件及附件，明確選整份跨期或日期不明的版本，亦可剔除原已入選項。資料變更須重讀。原站 API、worker 與 Web 已於 22:17 香港時間更新。公開 Web 檔案與本機已核對版本一致；Android 新版及正式帳戶操作仍待驗。見[發布證據](artifacts/verification/P4_HANDOVER_WEB_DELIVERY_20261104.json)。
