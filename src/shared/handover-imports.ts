@@ -29,19 +29,31 @@ export const handoverImportResolutionSchema = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('restore_deleted'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
 ]);
 export const originalBackupModuleSchema = z.enum(['care', 'profile', 'tasks', 'sources']);
+export const selfAvatarRestoreSchema = z.object({ expectedVersion: resourceVersion,
+  mode: z.enum(['replace_current', 'restore_deleted']) }).strict();
+export const selfAvatarComparisonQuerySchema = z.object({ uploadId: uuid, expectedUploadVersion: count.positive() }).strict();
+export const selfAvatarComparisonSchema = z.object({ uploadId: uuid, manifestSha256: hash,
+  backupVersion: resourceVersion, localVersion: resourceVersion,
+  state: z.enum(['empty_backup', 'unchanged', 'missing', 'different', 'deleted']) }).strict();
+export const selfAvatarRestoreResultSchema = z.object({ outcome: z.enum(['created', 'updated', 'conflict', 'skipped']),
+  reason: z.enum(['empty_backup', 'unchanged', 'version_conflict', 'decision_changed']).nullable(),
+  backupVersion: resourceVersion, localVersion: resourceVersion, assetId: uuid.nullable() }).strict();
 export const handoverImportCommandSchema = z.object({ opId: uuid, uploadId: uuid,
   expectedUploadVersion: count.positive(), acceptedManifestSha256: hash.nullable(),
   resolutionOnly: z.boolean().optional(), restoreOriginal: z.literal(true).optional(),
-  targets: z.array(requestedTargetSchema).min(1).max(100),
+  accountAvatar: selfAvatarRestoreSchema.optional(),
+  targets: z.array(requestedTargetSchema).max(100),
   resolutions: z.array(z.object({ sourceChildId: uuid, section: handoverImportResourceSectionSchema,
     resourceId: uuid, resolution: handoverImportResolutionSchema }).strict()).max(10000),
-}).strict().refine(value => new Set(value.targets.map(row => row.sourceChildId)).size === value.targets.length
+}).strict().refine(value => (value.targets.length > 0 || !!value.accountAvatar)
+  && (!value.accountAvatar || value.restoreOriginal === true && value.resolutionOnly === true)
+  && new Set(value.targets.map(row => row.sourceChildId)).size === value.targets.length
   && new Set(value.resolutions.map(row => JSON.stringify([row.sourceChildId, row.section, row.resourceId]))).size === value.resolutions.length
   && value.resolutions.every(row => value.targets.some(target => target.sourceChildId === row.sourceChildId && target.sections.includes(handoverImportModuleOf(row.section))))
   && (!value.restoreOriginal || value.resolutionOnly && value.acceptedManifestSha256 !== null && value.targets.every(row =>
     'childId' in row.target && row.target.spaceId === null && row.sourceChildId === row.target.childId
     && row.sections.every(module => originalBackupModuleSchema.safeParse(module).success)))
-  && (!value.resolutionOnly || value.resolutions.length > 0 && value.resolutions.every(row => row.resolution.mode !== 'preserve')
+  && (!value.resolutionOnly || (value.resolutions.length > 0 || !!value.accountAvatar) && value.resolutions.every(row => row.resolution.mode !== 'preserve')
     && value.targets.every(row => !('createInClassId' in row.target))));
 export const originalBackupComparisonQuerySchema = z.object({ uploadId: uuid, expectedUploadVersion: count.positive(), childId: uuid,
   module: originalBackupModuleSchema, includeRestoreTarget: z.literal(true).optional(), cursor: z.string().min(1).max(16000).optional() }).strict();
@@ -68,6 +80,7 @@ export const handoverImportModuleOutcomeSchema = z.object({ module: handoverImpo
   created: count, updated: count, skipped: count, conflict: count }).strict();
 export const handoverImportSummarySchema = z.object({ batchId: uuid, state: handoverImportViewSchema.shape.state,
   processedItems: count, totalItems: count,
+  accountAvatar: z.object({ result: selfAvatarRestoreResultSchema.nullable() }).strict().optional(),
   modules: z.array(handoverImportModuleOutcomeSchema).max(10).nullable(),
 }).strict();
 export type HandoverImportSummary = z.infer<typeof handoverImportSummarySchema>;

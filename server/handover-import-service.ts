@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createOriginalBackupComparison, verifyOriginalBackup, type OriginalBackupIssuer } from './handover-original-backup.ts';
+import { createOriginalBackupComparison, createSelfAvatarComparison, verifyOriginalBackup, type OriginalBackupIssuer } from './handover-original-backup.ts';
 import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
 import { handoverImportCommandSchema, handoverImportResultQuerySchema, handoverImportViewSchema, handoverImportResourceSectionSchema, handoverImportModuleOf, type HandoverImportCommand } from '../src/shared/handover-imports.ts';
 import { createFirestoreHandoverImportBatches } from './firestore-handover-import-batches.ts';
@@ -66,6 +66,11 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       }
     }
     if (command.resolutionOnly) totalItems = command.resolutions.length;
+    if (command.accountAvatar) {
+      await reader.readAccountAvatar(reader.manifestSha256);
+      totalItems++;
+      if (!options.attachments?.avatars) preflightError = 'package_section_not_connected';
+    }
     const enrolSourceIds: string[] = [];
     const targets = command.targets.map(row => {
       if (!('createInClassId' in row.target)) return { ...row, target: row.target };
@@ -77,6 +82,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       uploadVersion: job.version, inputFingerprint: firestoreDomainHash(command),
       ...(command.resolutionOnly === undefined ? {} : { resolutionOnly: command.resolutionOnly }),
       ...(command.restoreOriginal ? { restoreOriginal: true } : {}),
+      ...(command.accountAvatar ? { accountAvatar: command.accountAvatar } : {}),
       source: { ...reader.manifest.source, packageId: reader.manifest.packageId, packageVersion: reader.manifest.packageVersion,
         manifestSha256: reader.manifestSha256 }, integrity: reader.integrity, acceptedManifestSha256: command.acceptedManifestSha256,
       targets, ...(enrolSourceIds.length ? { enrolSourceIds } : {}), resolutions: command.resolutions, totalItems };
@@ -86,6 +92,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     expectedUploadVersion: job.request.uploadVersion!, acceptedManifestSha256: job.request.acceptedManifestSha256,
     ...(job.request.resolutionOnly === undefined ? {} : { resolutionOnly: job.request.resolutionOnly }),
     ...(job.request.restoreOriginal ? { restoreOriginal: true } : {}),
+    ...(job.request.accountAvatar ? { accountAvatar: job.request.accountAvatar } : {}),
     targets: job.request.targets.map(row => job.request.enrolSourceIds?.includes(row.sourceChildId)
       ? { ...row, target: { createInClassId: row.target.spaceId! } } : row), resolutions: job.request.resolutions });
   async function start(owner: string, raw: unknown, signal: AbortSignal) {
@@ -163,6 +170,13 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       const until = Math.min(Date.now() + 70_000, Date.parse(work.lease!.until) - 10_000);
       const operationSignal = AbortSignal.any([signal, AbortSignal.timeout(Math.max(1, until - Date.now()))]);
       let processed = 0;
+      if (job.request.accountAvatar && !job.accountAvatarResult) {
+        const avatar = await opened.reader.readAccountAvatar(opened.reader.manifestSha256, true);
+        try { job = await batches.applySelfAvatar(work, avatar, operationSignal); }
+        finally { avatar.content?.fill(0); }
+        if (job.state === 'completed') return { state: 'completed' as const };
+        processed++;
+      }
       const enrolSourceIds = job.request.enrolSourceIds;
       if (enrolSourceIds) {
         const names = new Map(opened.reader.children.map(child => [child.id, child.displayName]));
@@ -211,7 +225,9 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     } finally { await opened?.dispose(); }
   }
   const items = createFirestoreHandoverImportItems(options);
-  return { create: start, process, compareOriginal: createOriginalBackupComparison(options), history: items.history, summary: batches.summary,
+  return { create: start, process, accountAvatarRestore: !!options.attachments?.avatars && !!options.originalBackup,
+    compareOriginal: createOriginalBackupComparison(options),
+    compareSelfAvatar: createSelfAvatarComparison(options), history: items.history, summary: batches.summary,
     async enrolments(owner: string, id: string) {
       const job = await batches.get(owner, id);
       return { batchId: job.id, items: (job.request.enrolSourceIds ?? []).map((sourceChildId, i) => {

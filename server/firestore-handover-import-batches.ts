@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { historyModule } from './handover-history-records.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
-import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreDomainUuid, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreHandoverImportItems } from './firestore-handover-import-items.ts';
 import { prepareFirestoreBackgroundWork, firestoreBackgroundWorkSchema, firestoreBackgroundReference, type FirestoreBackgroundWork } from './firestore-background-work.ts';
 import { importBatchRequestSchema, importBatchSchema, importBatchControlSchema, importBatchId, importBatchControlId, classImportSourceHash,
@@ -17,6 +17,11 @@ import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.t
 import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
 import { growthImportSourceRow } from './firestore-growth.ts';
 import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
+import type { AvatarState } from '../src/shared/avatars.ts';
+import { avatarBinding } from './avatar-data.ts';
+import { avatarPublicState } from './avatar-policy.ts';
+import { createFirestoreAvatarData } from './firestore-avatar-data.ts';
+import { selfAvatarDifference } from './handover-original-backup.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
 const controlSchema = z.object({ opId: z.uuid(), expectedVersion: z.number().int().positive().max(2147483646) }).strict();
@@ -31,6 +36,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
   sourceGuard?: (b: Binding, request: HandoverImportBatchRequest) => Promise<() => void> }) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), sharing = createFirestoreSharingStore(options);
   const items = createFirestoreHandoverImportItems(options), clock = options.serverClock ?? Date.now;
+  const avatarData = createFirestoreAvatarData(options);
   const at = () => new Date(clock()).toISOString();
   const ref = (owner: string, id: string) => data.ref('handover_import_batches', 'handover-import-batch', importBatchId(owner, id));
   async function read(b: Binding, id: string, existing?: DocumentSnapshot) {
@@ -171,7 +177,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
       });
     },
     get(owner: string, id: string) { return authority.runTransaction(owner, null, b => read(b, id)); },
-    summary(owner: string, id: string) {
+    summary(owner: string, id: string, includeAccount = false) {
       return authority.runTransaction(owner, null, async b => {
         const job = await read(b, id);
         for (const [i, selected] of job.request.targets.entries()) {
@@ -187,7 +193,8 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
           }
         }
         return handoverImportSummarySchema.parse({ batchId: job.id, state: job.state, processedItems: job.position,
-          totalItems: job.request.totalItems, modules: importModuleCounts(job) });
+          totalItems: job.request.totalItems, modules: importModuleCounts(job),
+          ...(includeAccount && job.request.accountAvatar ? { accountAvatar: { result: job.accountAvatarResult ?? null } } : {}) });
       });
     },
     async replayControl(owner: string, id: string, raw: unknown, action: 'cancel' | 'resume') {
@@ -206,6 +213,74 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
           claim: { workId: work.id, token: work.lease!.token, until: work.lease!.until } };
         const save = prepareSave(b, next); assertCurrentLease(); save(); return next;
       });
+    },
+    async applySelfAvatar(work: FirestoreBackgroundWork, backup: { head: Pick<AvatarState, 'version' | 'target' | 'asset'>; content: Buffer | null }, signal: AbortSignal) {
+      const port = options.attachments?.avatars;
+      if (!port) domainReject('package_section_not_connected', 503);
+      const owner = work.scope.ownerUserId;
+      const sourceHash = firestoreDomainHash(backup.head);
+      const stage = { batchId: work.resourceId, operationId: firestoreDomainUuid(['restore-self-avatar', owner, work.resourceId]),
+        actorUserId: owner, sourceHash };
+      const ids = { uploadId: stage.operationId, assetId: firestoreDomainUuid(['restored-self-asset', stage.operationId]) };
+      const transact = (phase: 'reserve' | 'publish' | 'check_conflict') => authority.runTransaction(owner, null, async b => {
+        const job = await read(b, work.resourceId), selected = job.request.accountAvatar;
+        if (!selected || !job.request.restoreOriginal || job.request.source.accountId !== b.actorUserId
+          || backup.head.target.kind !== 'self') domainReject('invalid_package_scope', 403);
+        const lease = await held(b, work, job), source = await options.sourceGuard?.(b, job.request);
+        if (job.state !== 'running' || job.claim?.token !== work.lease?.token || job.claim?.workId !== work.id)
+          domainReject('import_batch_stopped');
+        if (job.accountAvatarResult) return job;
+        if (job.position !== 0 || job.cursor !== null) domainReject('import_cursor_changed');
+        const current = avatarPublicState(await avatarData.head(b, avatarBinding(b.scope, { kind: 'self' })), false);
+        const difference = selfAvatarDifference(backup.head, current);
+        const fence = () => { signal.throwIfAborted(); lease(); source?.(); };
+        let result: NonNullable<Batch['accountAvatarResult']>;
+        let publish: (() => void) | undefined;
+        const observed = { backupVersion: backup.head.version, localVersion: current.version, assetId: current.asset?.id ?? null };
+        if (current.version !== selected.expectedVersion) {
+          result = { ...observed, outcome: 'conflict', reason: 'version_conflict' };
+        } else if (difference === 'empty_backup' || difference === 'unchanged') {
+          result = { ...observed, outcome: 'skipped', reason: difference };
+        } else if ((difference === 'deleted') !== (selected.mode === 'restore_deleted')) {
+          result = { ...observed, outcome: 'conflict', reason: 'decision_changed' };
+        } else {
+          const asset = backup.head.asset;
+          if (!asset || !backup.content) domainReject('invalid_package_attachment_metadata', 400);
+          if (phase === 'check_conflict') domainReject('avatar_version_conflict');
+          if (phase === 'reserve') {
+            const plan = await port.store.prepareSelfRestoreReservation(b, { expectedVersion: current.version,
+              policyId: port.policy.policyId, mimeType: asset.mimeType, bytes: asset.bytes, sha256: asset.sha256,
+              crop: { centerX: 0.5, centerY: 0.5, zoom: 1 } }, ids, stage);
+            fence(); plan.commit(); return null;
+          }
+          const plan = await port.store.prepareSelfRestorePublication(b, ids.uploadId, stage);
+          if (plan.value.asset?.sha256 !== asset.sha256) domainReject('avatar_integrity_failed', 503);
+          result = { ...observed, outcome: current.asset ? 'updated' : 'created', reason: null,
+            localVersion: plan.value.version, assetId: plan.value.asset.id };
+          publish = plan.commit;
+        }
+        const complete = job.request.totalItems === 1;
+        const next: Batch = { ...job, version: job.version + 1, updatedAt: at(), accountAvatarResult: result, position: 1,
+          counts: { ...job.counts, [result.outcome]: job.counts[result.outcome] + 1 },
+          state: complete ? 'completed' : 'running', claim: complete ? null : job.claim,
+          cursor: complete ? null : JSON.stringify({ target: 0, phase: 'current', page: null }) };
+        const save = prepareSave(b, next);
+        fence(); publish?.(); save(); return next;
+      });
+      const first = await transact('reserve');
+      if (first) return first;
+      let phase: 'publish' | 'check_conflict' = 'publish';
+      try {
+        const uploaded = await port.store.uploadSelfRestore(owner, ids.uploadId, backup.content!, backup.head.asset!, stage, signal);
+        if (uploaded.state === 'rejected' && uploaded.errorCode === 'avatar_version_conflict') phase = 'check_conflict';
+        else if (uploaded.state !== 'ready' && uploaded.state !== 'committed') domainReject(uploaded.errorCode ?? 'avatar_upload_not_ready');
+      } catch (error) {
+        if (!(error instanceof Error && 'code' in error && error.code === 'avatar_version_conflict')) throw error;
+        phase = 'check_conflict';
+      }
+      const settled = await transact(phase);
+      if (!settled) domainReject('import_cursor_changed');
+      return settled;
     },
     async enrol(work: FirestoreBackgroundWork, sourceChildId: string, displayName: string, signal: AbortSignal) {
       return authority.runTransaction(work.scope.ownerUserId, null, async b => {

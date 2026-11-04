@@ -78,6 +78,7 @@ test('production avatar wiring shares HTTP and online services and retains clean
       },
       uploadStatus: unavailable, uploadAdmission: unavailable, content: unavailable,
       readImportState: unavailable, prepareImportReservation: unavailable,
+      prepareSelfRestoreReservation: unavailable, uploadSelfRestore: unavailable, prepareSelfRestorePublication: unavailable,
       uploadImported: unavailable, prepareImportPublication: unavailable,
     };
     stores.push(record);return record.service;

@@ -3,7 +3,11 @@ import type { CareRecord, ChildProfile } from '../src/shared/care.ts';
 import type { CareTask } from '../src/shared/tasks.ts';
 import { readImportMapping } from './handover-import-records.ts';
 import { canonicalJson } from './online-routing.ts';
-import { originalBackupComparisonQuerySchema, originalBackupComparisonSchema, type OriginalBackupComparison } from '../src/shared/handover-imports.ts';
+import { originalBackupComparisonQuerySchema, originalBackupComparisonSchema, selfAvatarComparisonQuerySchema, selfAvatarComparisonSchema, type OriginalBackupComparison } from '../src/shared/handover-imports.ts';
+import type { AvatarState } from '../src/shared/avatars.ts';
+import { avatarBinding } from './avatar-data.ts';
+import { avatarPublicState } from './avatar-policy.ts';
+import { createFirestoreAvatarData } from './firestore-avatar-data.ts';
 import { createFirestoreAuthority } from './firestore-authority.ts';
 import { createFirestoreCareStore, firestoreCareSchema, firestoreProfileSchema } from './firestore-care.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
@@ -28,6 +32,33 @@ export async function verifyOriginalBackup(owner: string, opened: Awaited<Return
 }
 const cursorSchema = z.object({ scope: z.string(), page: z.object({ manifestSha256: z.string(), selectionHash: z.string(),
   pageIndex: z.number().int().nonnegative(), rowIndex: z.number().int().nonnegative() }).strict() }).strict();
+
+export function selfAvatarDifference(backup: Pick<AvatarState, 'asset'>, live: AvatarState) {
+  if (!backup.asset) return 'empty_backup' as const;
+  if (!live.asset) return live.version === 0 ? 'missing' as const : 'deleted' as const;
+  return live.asset.sha256 === backup.asset.sha256 ? 'unchanged' as const : 'different' as const;
+}
+
+export function createSelfAvatarComparison(options: FirestoreDomainOptions & { uploads: Uploads; originalBackup?: OriginalBackupIssuer }) {
+  const authority = createFirestoreAuthority(options), data = createFirestoreAvatarData(options);
+  return async (owner: string, raw: unknown, signal: AbortSignal) => {
+    const { uploadId, expectedUploadVersion } = domainParse(selfAvatarComparisonQuerySchema, raw);
+    const opened = await options.uploads.open(owner, uploadId, signal);
+    try {
+      await verifyOriginalBackup(owner, opened, options.originalBackup);
+      if (opened.job.version !== expectedUploadVersion) domainReject('version_conflict');
+      const manifestSha256 = opened.reader.manifestSha256;
+      const { head } = await opened.reader.readAccountAvatar(manifestSha256);
+      return await authority.runTransaction(owner, null, async b => {
+        const checked = await options.uploads.assertImportableIn(b, uploadId, expectedUploadVersion);
+        const live = avatarPublicState(await data.head(b, avatarBinding(b.scope, { kind: 'self' })), false);
+        checked();
+        return selfAvatarComparisonSchema.parse({ uploadId, manifestSha256, backupVersion: head.version,
+          localVersion: live.version, state: selfAvatarDifference(head, live) });
+      });
+    } finally { await opened.dispose(); }
+  };
+}
 
 function comparisonValues(row: CareRecord | ChildProfile | CareTask | z.infer<typeof sharedInputImportSchema>) {
   if (!('sourceNotes' in row)) return row;
