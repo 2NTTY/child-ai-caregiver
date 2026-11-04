@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { test } from 'node:test';
 import * as handoverOwner from '../src/production/HandoverOwner.ts';
 import * as handoverContract from '../../src/shared/handover.ts';
+import * as handoverImportContract from '../../src/shared/handover-imports.ts';
 import * as classTargets from '../src/production/handover-class-targets.ts';
 import * as classExport from '../src/production/handover-class-export.ts';
 
@@ -27,6 +28,7 @@ function load(path) {
     : name.endsWith('/handover-class-export') ? classExport
     : name.endsWith('/HandoverOwner') ? handoverOwner
     : name.endsWith('/handover') ? handoverContract
+    : name.endsWith('/handover-imports') ? handoverImportContract
     : name.endsWith('/date-time') ? load('../src/components/date-time.ts')
     : name.endsWith('/file-export') ? { useFileExportAvailable: () => true }
     : name.endsWith('/theme') ? { colors: {}, readingType: {}, spacing: {} }

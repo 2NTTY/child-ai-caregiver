@@ -18,7 +18,7 @@ export const handoverReviewSections = (selection: ExportSelection): ReviewSectio
   ...(selection.modules.includes('attachments') ? ['files', 'photos', 'voices', 'child_avatar'] as const : []),
 ];
 export const handoverReviewSelectionKey = (selection: ExportSelection) => JSON.stringify({ childIds: [...selection.childIds].sort(),
-  modules: [...selection.modules].sort(), period: selection.period });
+  modules: [...selection.modules].sort(), period: selection.period, ...(selection.accountAvatar ? { accountAvatar: selection.accountAvatar } : {}) });
 export const handoverReviewItemKey = (item: Pick<HandoverPreviewItem, 'section' | 'childId' | 'id'>) => JSON.stringify([item.section, item.childId, item.id]);
 
 type Pending = { kind: 'create'; command: HandoverExportCommand | HandoverClassExportCommand; checked: boolean }
@@ -29,9 +29,10 @@ export interface HandoverState {
   busy: 'read' | 'write' | 'check' | 'download' | null; notice: string | null;
   review: ExportReview | null; reviewBusy: boolean;
   classModules: HandoverClassExportCommand['selection']['modules'] | null;
+  accountAvatarBackup: boolean;
 }
 const empty = (userId: string | null, identityKey: string | null, online: boolean): HandoverState => ({
-  userId, identityKey, online, loaded: false, items: [], nextCursor: null, pending: null, busy: null, notice: null, review: null, reviewBusy: false, classModules: null,
+  userId, identityKey, online, loaded: false, items: [], nextCursor: null, pending: null, busy: null, notice: null, review: null, reviewBusy: false, classModules: null, accountAvatarBackup: false,
 });
 export function handoverErrorText(error: unknown) {
   const code = error instanceof HandoverApiError ? error.code : error instanceof Error ? error.message : '';
@@ -110,7 +111,7 @@ export class HandoverOwner {
     if (key === (this.state.review?.key ?? null) && (!relevant || this.state.review?.basis === basis && sameSource(this.state.review?.source, source))) return;
     this.reviewEpoch++; this.reviewRead?.abort(); this.reviewRead = null;
     this.update({ reviewBusy: false, review: relevant ? { selection: { childIds: [...relevant.childIds], modules: [...relevant.modules],
-      period: relevant.period && { ...relevant.period } }, key: key!, basis, scopeVersion: null,
+      period: relevant.period && { ...relevant.period }, ...(relevant.accountAvatar ? { accountAvatar: { ...relevant.accountAvatar } } : {}) }, key: key!, basis, scopeVersion: null,
       ...(source ? { source: { ...source }, opId: crypto.randomUUID() } : {}),
       groups: relevant.childIds.flatMap(childId => handoverReviewSections(relevant).map(section => ({ childId, section, items: [], loaded: false, nextCursor: null }))),
       choices: [], error: null } : null });
@@ -180,16 +181,16 @@ export class HandoverOwner {
     this.capabilityRead = controller;
     try {
       const capability = await this.api.exportCapabilities(t.userId, controller.signal);
-      if (this.current(t)) this.update({ classModules: capability.classModules });
+      if (this.current(t)) this.update({ classModules: capability.classModules, accountAvatarBackup: capability.accountAvatarBackup === true });
     } catch (error) {
       if (this.current(t)) {
-        this.update({ classModules: [] });
+        this.update({ classModules: [], accountAvatarBackup: false });
         if (error instanceof HandoverApiError && (error.status === 401 || ['identity_changed', 'session_changed'].includes(error.code))) this.error(t, error);
       }
     } finally { if (this.capabilityRead === controller) this.capabilityRead = null; }
   };
   createClass = async (selection: HandoverClassExportCommand['selection'], spaceId: string, basis?: string) => {
-    if (this.state.pending || this.state.busy || !this.state.online || !this.state.userId
+    if ('accountAvatar' in selection || this.state.pending || this.state.busy || !this.state.online || !this.state.userId
       || !selection.modules.every(module => this.state.classModules?.includes(module))) return;
     const source: ClassSource = { kind: 'class', spaceId }, review = this.state.review;
     const needsReview = handoverReviewSections(selection).length > 0;
@@ -201,8 +202,11 @@ export class HandoverOwner {
     if (!parsed.success) { this.update({ notice: '請核對班級、學生及可讀取的資料。' }); return; }
     this.update({ pending: { kind: 'create', command: parsed.data, checked: true } }); await this.retryOriginal();
   };
-  create = async (selection: ExportSelection, purpose: HandoverExportCommand['purpose'], documentReview?: DocumentReview) => {
+  create = async (selection: ExportSelection, purpose: HandoverExportCommand['purpose'], documentReview?: DocumentReview,
+    accountAvatarBasis?: { identityKey: string; version: number }) => {
     if (this.state.pending || this.state.busy || !this.state.online || !this.state.userId || !this.reviewReady(selection)) return;
+    if (selection.accountAvatar && (purpose !== 'backup' || !this.state.accountAvatarBackup
+      || accountAvatarBasis?.identityKey !== this.state.identityKey || accountAvatarBasis.version !== selection.accountAvatar.version)) return;
     if (handoverReviewSections(selection).length && this.state.review?.source) return;
     const expectedReview = this.documentReview(selection);
     if (expectedReview && JSON.stringify(documentReview) !== JSON.stringify(expectedReview)) return;

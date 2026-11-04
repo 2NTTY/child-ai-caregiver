@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { HandoverOwner } from '../src/production/HandoverOwner.ts';
+import { HandoverOwner, handoverReviewSections } from '../src/production/HandoverOwner.ts';
 import { HandoverApiError, createHandoverApi } from '../../src/client/handover-api.ts';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -99,6 +99,7 @@ test('shared export checklist shows literal complete dates and requires loaded f
   const resolve = name => name === 'react' ? hooks : name === 'react/jsx-runtime' ? { jsx, jsxs: jsx }
     : name === 'react-native' ? { View: 'View', StyleSheet: { create: value => value }, Platform: { OS: 'web' }, AppState: { currentState: 'active' } }
     : name === 'react-native-paper' ? { Text: 'Text' } : name.endsWith('/ProductionProvider') ? { useProduction: () => production }
+    : name.endsWith('/HandoverOwner') ? { handoverReviewSections }
     : name.endsWith('/useProductionSharing') ? { useProductionSharing: () => ({ controller: {}, state: { identityKey: null, selected: null,
       shares: { items: [] }, spaces: { items: [] }, teacherClasses: { items: [] } } }) }
     : name.endsWith('/handover-class-export') ? classExport
