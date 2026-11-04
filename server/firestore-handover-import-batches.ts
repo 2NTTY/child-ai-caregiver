@@ -8,7 +8,7 @@ import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreHandoverImportItems } from './firestore-handover-import-items.ts';
 import { prepareFirestoreBackgroundWork, firestoreBackgroundWorkSchema, firestoreBackgroundReference, type FirestoreBackgroundWork } from './firestore-background-work.ts';
-import { importBatchRequestSchema, importBatchSchema, importBatchControlSchema, importBatchId, importBatchControlId,
+import { importBatchRequestSchema, importBatchSchema, importBatchControlSchema, importBatchId, importBatchControlId, classImportSourceHash,
   importBatchMetadata, importBatchControlMetadata, validImportBatch, type HandoverImportBatch as Batch,
   type HandoverImportBatchControl, type HandoverImportBatchRequest } from './handover-import-batch-records.ts';
 import type { HandoverImportRow } from './handover-import.ts';
@@ -55,15 +55,18 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
     const result: WorkRecoveryScope[] = [];
     for (const selected of request.targets) {
       let scope: WorkRecoveryScope | undefined;
+      const enrol = request.enrolSourceIds?.includes(selected.sourceChildId);
       for (const module of selected.sections) {
         if (selected.target.spaceId) {
           if (module === 'sources' || module === 'chat') domainReject('private_scope_unavailable', 403);
           if (module === 'growth') domainReject('shared_domain_read_only', 403);
+          if (enrol) continue;
           await sharing.inResourceTransaction(b, { ...selected.target, spaceId: selected.target.spaceId, module, mode: 'write' },
             async access => { scope = access.scope; });
         }
         else { if (!await b.readChild(selected.target.childId)) domainReject('forbidden', 403); scope = { ...actorScope(b), childId: selected.target.childId }; }
       }
+      if (enrol) scope = await sharing.plannedClassImportScope(b, selected.target.spaceId!, selected.target.childId);
       result.push(scope!);
     }
     return result;
@@ -86,7 +89,8 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
   }
   function event(b: Binding, job: Batch, opId: string, action: HandoverImportBatchControl['action'], fingerprint: string) {
     const value = importBatchControlSchema.parse({ opId, batchId: job.id, actorUserId: b.actorUserId, action, fingerprint,
-      at: at(), version: job.version, position: job.position, state: job.state, counts: job.counts, error: job.error });
+      at: at(), version: job.version, position: job.position, state: job.state, counts: job.counts, error: job.error,
+      ...(job.failedEnrolment ? { failedEnrolment: job.failedEnrolment.sourceChildId } : {}) });
     const identity = importBatchControlId(b.actorUserId, opId), envelope = { ...data.tags(job.scope), ...importBatchControlMetadata(value),
       ...data.seal('handover-import-control', identity, job.scope, importBatchControlSchema, value) };
     return () => b.transaction.create(data.ref('handover_import_controls', 'handover-import-control', identity), envelope);
@@ -111,6 +115,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
       const next: Batch = { ...job, version: job.version + 1, updatedAt: at(), claim: null, error: null,
         state: action === 'cancel' ? 'cancelled' : 'queued', execution: job.execution + (action === 'resume' ? 1 : 0),
         authorizationVersion: b.authorizationVersion, generation: b.generation };
+      delete next.failedEnrolment;
       const work = action === 'resume' ? await enqueue(b, next) : null;
       const save = prepareSave(b, next), audit = event(b, next, input.opId, action, fingerprint);
       save(); audit(); work?.commit(); return next;
@@ -157,7 +162,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
         }
         const scopes = await targetScopes(b, request), assertSource = await options.sourceGuard?.(b, request);
         const job: Batch = { id: request.opId, version: 1, request, fingerprint, scope: b.scope, targetScopes: scopes,
-          createdAt: at(), updatedAt: at(), state: preflightError ? 'failed' : request.totalItems === 0 ? 'completed' : 'queued',
+          createdAt: at(), updatedAt: at(), state: preflightError ? 'failed' : request.totalItems === 0 && !request.enrolSourceIds ? 'completed' : 'queued',
           generation: b.generation, authorizationVersion: b.authorizationVersion, execution: 1,
           position: 0, cursor: null, counts: { created: 0, updated: 0, skipped: 0, conflict: 0 }, claim: null, error: preflightError ?? null };
         const work = job.state === 'queued' ? await enqueue(b, job) : null;
@@ -180,6 +185,29 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
         const next: Batch = { ...job, state: 'running', version: job.version + 1, updatedAt: at(),
           claim: { workId: work.id, token: work.lease!.token, until: work.lease!.until } };
         const save = prepareSave(b, next); assertCurrentLease(); save(); return next;
+      });
+    },
+    async enrol(work: FirestoreBackgroundWork, sourceChildId: string, displayName: string, signal: AbortSignal) {
+      return authority.runTransaction(work.scope.ownerUserId, null, async b => {
+        const job = await read(b, work.resourceId), assertLease = await held(b, work, job);
+        if (job.state !== 'running' || job.claim?.token !== work.lease?.token || job.claim?.workId !== work.id)
+          domainReject('import_batch_stopped');
+        const done = job.enrolments ?? [], ids = job.request.enrolSourceIds;
+        if (!ids || ids[done.length] !== sourceChildId || job.position !== 0) domainReject('import_cursor_changed');
+        const assertSource = await options.sourceGuard?.(b, job.request);
+        const index = job.request.targets.findIndex(target => target.sourceChildId === sourceChildId);
+        const scope = job.targetScopes[index];
+        if (!scope) domainReject('invalid_package_scope', 400);
+        const operationId = firestoreBackgroundReference({ id: firestoreDomainHash(['enrol', job.id, sourceChildId]) });
+        const prepared = await sharing.prepareClassImportEnrolment(b, scope, { operationId, displayName,
+          sourceHash: classImportSourceHash(job.request.source, sourceChildId) });
+        const completed = done.length + 1 === ids.length && job.request.totalItems === 0, timestamp = at();
+        const next: Batch = { ...job, version: job.version + 1, updatedAt: timestamp, state: completed ? 'completed' : 'running',
+          claim: completed ? null : job.claim, enrolments: [...done, { sourceChildId, at: timestamp, outcome: prepared.outcome }] };
+        const save = prepareSave(b, next);
+        assertLease(); assertSource?.(); signal.throwIfAborted();
+        for (const write of prepared.writes) write();
+        save(); return next;
       });
     },
     async apply(work: FirestoreBackgroundWork, input: { position: number; cursor: string | null; nextCursor: string | null; row: HandoverImportRow;
@@ -225,12 +253,14 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
       }, signal);
       return { item, batch: committed! };
     },
-    async fail(work: FirestoreBackgroundWork, code: string) {
+    async fail(work: FirestoreBackgroundWork, code: string, sourceChildId?: string) {
       domainParse(z.string().regex(/^[a-z][a-z0-9_]{0,79}$/u), code);
       return authority.runTransaction(work.scope.ownerUserId, null, async b => {
         const job = await read(b, work.resourceId), assertCurrentLease = await held(b, work, job);
         if (job.state !== 'running' || job.claim?.token !== work.lease?.token) domainReject('import_batch_stopped');
         const next: Batch = { ...job, version: job.version + 1, state: 'failed', claim: null, error: code, updatedAt: at() };
+        if (sourceChildId && job.request.enrolSourceIds?.[job.enrolments?.length ?? 0] === sourceChildId)
+          next.failedEnrolment = { sourceChildId, error: code };
         const save = prepareSave(b, next), audit = event(b, next, randomUUID(), 'fail', firestoreDomainHash([work.id, work.lease?.token, code]));
         assertCurrentLease(); save(); audit(); return next;
       });

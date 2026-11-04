@@ -9,6 +9,7 @@ import { serialFirestoreFixture } from './helpers/firestore-session-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestoreCareStore } from '../server/firestore-care.ts';
+import { createFirestoreSharingStore } from '../server/firestore-sharing.ts';
 import { createFirebaseHandoverObjects } from '../server/firebase-handover-objects.ts';
 import { createHandoverUploadService } from '../server/handover-upload-service.ts';
 import { createHandoverImportService } from '../server/handover-import-service.ts';
@@ -22,6 +23,147 @@ import { FirestoreDomainData, FirestoreDomainError, firestoreDomainHash } from '
 import { importBatchId, importBatchMetadata, importBatchSchema } from '../server/handover-import-batch-records.ts';
 import { handoverImportItemId, handoverImportItemMetadata, handoverImportItemSchema } from '../server/handover-import-records.ts';
 import { createHandoverApi } from '../src/client/handover-api.ts';
+
+test('class import creates roster children only in the worker and reuses the source identity across operations', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'handover-class-intake-')), controller = new AbortController();
+  try {
+    const fixture = serialFirestoreFixture(), cipher = createStorageCipher(Buffer.alloc(32, 94));
+    const options = { database: fixture.database, cipher, projectId: 'demo-import-class-intake', namespace: 'unit_import_class_intake' };
+    const authority = createFirestoreAuthority(options), care = createFirestoreCareStore(options), sharing = createFirestoreSharingStore(options);
+    const codec = createFirestoreRestoreCodec(options);
+    await authority.initializeControl({ enabled: true, generation: randomUUID() });
+    for (const userId of ['source', 'recipient', 'operator']) {
+      const email = userId + '@example.test';
+      await authority.issueInvitation({ email, operationId: randomUUID(), expiresAt: new Date(Date.now() + 3600000).toISOString() });
+      await authority.admitIdentity({ userId, email, emailVerified: true });
+      await authority.acknowledge({ userId, operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+    }
+    const sourceChildren = await Promise.all([1, 2].map(() => authority.createChild({ userId: 'source', operationId: randomUUID(), displayName: 'Same source name' })));
+    const [firstSource, secondSource] = sourceChildren.map(result => result.child.id);
+    const firstRecord = await care.create('source', firstSource, { text: 'First source child record', details: emptyCareDetails(), source: 'Source account' });
+    const secondRecord = await care.create('source', secondSource, { text: 'Different source child record', details: emptyCareDetails(), source: 'Source account' });
+    assert.ok(firstRecord); assert.ok(secondRecord);
+    const classroom = await sharing.create('recipient', { operationId: randomUUID(), name: 'Imported class', kind: 'class' });
+    const roster = async () => (await sharing.classRosterPage('recipient', classroom.id)).items;
+    assert.deepEqual(await roster(), []);
+    const stored = new Map<string, { body: Buffer; metadata: any }>();
+    const objects = createFirebaseHandoverObjects({ config: { projectId: options.projectId, namespace: options.namespace, bucketName: 'synthetic-class-import' }, files: cipher.files,
+      bucket: { async metadata(name) { return stored.get(name)?.metadata ?? null; },
+        createWrite(name, settings) { const parts: Buffer[] = []; return new Writable({ write(chunk, _encoding, done) { parts.push(Buffer.from(chunk)); done(); },
+          final(done) { const body = Buffer.concat(parts); stored.set(name, { body, metadata: { name, bucket: 'synthetic-class-import', generation: '11111111111111111',
+            size: String(body.length), metadata: settings.metadata?.metadata } }); done(); } }); },
+        readPinned(name) { return Readable.from([stored.get(name)!.body]); }, async removePinned(name) { stored.delete(name); } } });
+    const uploads = createHandoverUploadService({ ...options, objects }), service = createHandoverImportService({ ...options, uploads });
+    const deliveries: any[] = [];
+    const worker = createFirebaseWorkerServices({ ...options, config: { ...options, taskWorkerEnabled: true }, authority, handoverImports: service,
+      currentAuth: async (userId: string) => ({ disabled: false, emailVerified: true, email: userId + '@example.test' }) } as any,
+      { taskName: () => 'unused', enqueue: async () => { throw Error('Unexpected reminder'); }, probe: async () => { throw Error('Unexpected reminder'); } },
+      { async enqueue(value) { deliveries.push(value); return { state: 'confirmed' }; }, async probe() { return { state: 'confirmed' }; } }, controller);
+    async function stage(childId: string, record: NonNullable<typeof firstRecord>, owner = 'recipient', classId = classroom.id) {
+      const scopeVersion = 'a'.repeat(64), pages = [
+        { section: 'children', childId: null, items: [{ id: childId, displayName: 'Same source name' }] },
+        { section: 'care', childId, items: [record] }, { section: 'care_history', childId, items: [] }];
+      async function* entries() {
+        for (const [i, page] of pages.entries()) yield { path: `data/${i}.json`, mediaType: 'application/json', content: Buffer.from(JSON.stringify({ ...page, scopeVersion })) };
+        yield { path: 'summary.md', mediaType: 'text/markdown', content: Buffer.from('Synthetic class intake') };
+      }
+      const archive = await writeHandoverArchive({ directory, header: { format: 'yuyoufang-data', version: 1, packageId: randomUUID(), packageVersion: 1,
+        createdAt: new Date().toISOString(), purpose: 'handover', source: { serverId: 'https://source.test', accountId: 'source' },
+        selection: { childIds: [childId], modules: ['care'], period: null } }, entries: entries(),
+        coverage: () => pages.map(page => ({ section: page.section, childId: page.childId, scopeVersion, items: page.items.length, complete: true as const })) });
+      const bytes = await readFile(archive.path), uploadId = randomUUID();
+      await uploads.create(owner, { opId: uploadId, filename: 'class-intake.zip', bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') });
+      const uploaded = await uploads.receive(owner, uploadId, Readable.from([bytes]), controller.signal);
+      assert.equal(uploaded.state, 'ready', uploaded.error ?? JSON.stringify(uploaded));
+      return { opId: randomUUID(), uploadId, expectedUploadVersion: uploaded.version, acceptedManifestSha256: uploaded.preview!.manifestSha256,
+        targets: [{ sourceChildId: childId, target: { createInClassId: classId }, sections: ['care'] }], resolutions: [] };
+    }
+    async function call(path = '', body?: unknown, owner = 'recipient') {
+      const response = await handleFirebaseAccountData(new Request('https://local.test/api/account/package-imports' + path, {
+        method: body === undefined ? 'GET' : 'POST', headers: { 'content-type': 'application/json', 'x-expected-user-id': owner },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }) }),
+        { getSession: async () => ({ user: { id: owner } }) } as any, { packageImports: service } as any, request => request.json());
+      assert.ok(response); return response.json();
+    }
+    const queue = (command: unknown, owner = 'recipient') => call('', command, owner);
+    const enrolments = (batchId: string, owner = 'recipient') => call('/' + batchId + '/enrolments', undefined, owner);
+    async function deliverBatch(batchId: string) {
+      const pending = [...fixture.records].filter(([path, row]) => path.includes('_background_work/') && row.state === 'pending'
+        && ['pending', 'sending'].includes(row.dispatch)).length;
+      let delivery: any;
+      for (let page = 0; page < Math.max(1, Math.ceil(pending / 12)) && !delivery; page++) {
+        await worker.background.dispatch();
+        delivery = deliveries.splice(0).find(value => {
+          const row = [...fixture.records].find(([path, metadata]) => path.includes('_background_work/') && metadata.id === value.id);
+          if (!row) return false;
+          const work = codec.decode({ path: row[0], data: row[1] }).value as any;
+          return work.kind === 'handover-import' && work.resourceId === batchId;
+        });
+      }
+      assert.ok(delivery, 'the formal class import queue delivery exists'); await worker.background.process(delivery);
+    }
+    async function execute(batchId: string, sourceChildId: string) {
+      await deliverBatch(batchId);
+      const completed = await service.get('recipient', batchId); assert.equal(completed.state, 'completed', completed.error ?? JSON.stringify(completed));
+      const results = await service.results('recipient', batchId, { sourceChildId, module: 'care' });
+      assert.equal(results.items.length, 1); assert.ok(results.items[0].recordedResource);
+      return { batch: completed, record: results.items[0].recordedResource! };
+    }
+    const command = await stage(firstSource, firstRecord);
+    assert.deepEqual(await call('/capabilities'), { classEnrolment: true });
+    assert.deepEqual(await roster(), [], 'upload and verification cannot create class students');
+    const queued = await queue(command); assert.equal(queued.state, 'queued');
+    assert.deepEqual(await roster(), [], 'queuing cannot create a class student');
+    assert.equal(queued.targets[0].target.spaceId, classroom.id);
+    assert.equal(typeof queued.targets[0].target.childId, 'string');
+    assert.equal(Object.hasOwn(queued.targets[0].target, 'createInClassId'), false, 'the public view retains resolved target coordinates');
+    assert.deepEqual(await enrolments(command.opId), { batchId: command.opId, items: [{ sourceChildId: firstSource,
+      target: queued.targets[0].target, outcome: 'pending', error: null }] });
+    assert.equal((await queue(command)).id, queued.id);
+    assert.deepEqual(await roster(), [], 'original request replay remains side-effect free before the worker');
+    const first = await execute(command.opId, firstSource), initialRoster = await roster();
+    assert.equal(initialRoster.length, 1); assert.equal(initialRoster[0].childName, 'Same source name');
+    const firstLocal = initialRoster[0].childId;
+    assert.equal(first.batch.targets[0].target.childId, firstLocal); assert.equal(queued.targets[0].target.childId, firstLocal);
+    assert.deepEqual(await enrolments(command.opId), { batchId: command.opId, items: [{ sourceChildId: firstSource,
+      target: queued.targets[0].target, outcome: 'created', error: null }] });
+    const sharedCare = care.forSharedSpace(classroom.id);
+    assert.equal((await sharedCare.get('recipient', firstLocal, first.record.id))?.text, firstRecord.text);
+    await assert.rejects(care.get('recipient', firstLocal, first.record.id), 'the class-owned record is not a private child');
+    const sameSource = { ...command, opId: randomUUID() };
+    await queue(sameSource); assert.equal((await roster()).length, 1);
+    const repeated = await execute(sameSource.opId, firstSource);
+    assert.equal(repeated.batch.targets[0].target.childId, firstLocal);
+    assert.deepEqual((await roster()).map(child => child.childId), [firstLocal], 'another operation with the same source identity cannot create another student');
+    assert.equal(repeated.record.id, first.record.id);
+    assert.deepEqual(await enrolments(sameSource.opId), { batchId: sameSource.opId, items: [{ sourceChildId: firstSource,
+      target: repeated.batch.targets[0].target, outcome: 'skipped', error: null }] });
+    const otherCommand = await stage(secondSource, secondRecord);
+    await queue(otherCommand); assert.equal((await roster()).length, 1);
+    const other = await execute(otherCommand.opId, secondSource), finalRoster = await roster();
+    assert.equal(finalRoster.length, 2); assert.equal(new Set(finalRoster.map(child => child.childId)).size, 2);
+    const otherLocal = other.batch.targets[0].target.childId; assert.notEqual(otherLocal, firstLocal, 'a matching name cannot bind a different source child');
+    assert.equal((await sharedCare.get('recipient', otherLocal, other.record.id))?.text, secondRecord.text);
+    assert.equal((await sharedCare.get('recipient', firstLocal, first.record.id))?.text, firstRecord.text);
+    let restrictedClass = await sharing.create('recipient', { operationId: randomUUID(), name: 'Admission revoked before worker', kind: 'class' });
+    const invitation = await sharing.invite('recipient', { operationId: randomUUID(), spaceId: restrictedClass.id, expectedVersion: restrictedClass.version,
+      email: 'operator@example.test', role: 'caregiver', expiresAt: new Date(Date.now() + 3600000).toISOString() });
+    restrictedClass = await sharing.acceptInvitation('operator', { token: invitation.token, operationId: randomUUID() });
+    const originalRoster = (await sharing.classRosterPage('recipient', restrictedClass.id)).items; assert.deepEqual(originalRoster, []);
+    const restrictedCommand = await stage(firstSource, firstRecord, 'operator', restrictedClass.id), restrictedQueued = await queue(restrictedCommand, 'operator');
+    assert.equal(restrictedQueued.state, 'queued');
+    assert.deepEqual((await sharing.classRosterPage('recipient', restrictedClass.id)).items, originalRoster, 'queuing as a class writer cannot enrol a student');
+    await sharing.updateMember('recipient', { operationId: randomUUID(), spaceId: restrictedClass.id, expectedVersion: restrictedClass.version,
+      targetUserId: 'operator', role: 'viewer' });
+    assert.equal((await sharing.spaceView('operator', restrictedClass.id)).role, 'viewer');
+    await deliverBatch(restrictedCommand.opId);
+    const denied = await service.get('operator', restrictedCommand.opId);
+    assert.equal(denied.state, 'failed'); assert.equal(denied.processedItems, 0); assert.equal(denied.error, 'read_only');
+    assert.deepEqual((await sharing.classRosterPage('recipient', restrictedClass.id)).items, originalRoster, 'the administrator sees no new student after worker-time revocation');
+    assert.deepEqual(await enrolments(restrictedCommand.opId, 'operator'), { batchId: restrictedCommand.opId,
+      items: [{ sourceChildId: firstSource, target: restrictedQueued.targets[0].target, outcome: 'failed', error: 'read_only' }] });
+  } finally { controller.abort(); await rm(directory, { recursive: true, force: true }); }
+});
 
 test('verified packages reach formal import worker, retain partial progress and import history before rejecting cancelled sources', async t => {
   const realNow = Date.now.bind(Date); let elapsed = 0, slowRead = false;

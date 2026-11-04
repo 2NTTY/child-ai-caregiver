@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { HandoverImportOwner } from '../frontend/src/production/HandoverImportOwner.ts';
 import { HandoverApiError, type HandoverApi } from '../src/client/handover-api.ts';
 import type { HandoverUploadView } from '../src/shared/handover-uploads.ts';
-import type { HandoverImportView } from '../src/shared/handover-imports.ts';
+import { handoverImportTargetSchema, type HandoverImportView } from '../src/shared/handover-imports.ts';
 import { packageHash } from '../frontend/src/platform/package-import-hash.ts';
 import { FamilyDocumentApiError } from '../src/client/family-documents-api.ts';
 import { handoverSourceHistoryKey } from '../frontend/src/production/HandoverImportOwner.ts';
@@ -77,7 +77,8 @@ test('import owner preserves unknown operations, resumes server batches and clea
     header: { packageId: originalBatch.packageId, packageVersion: originalBatch.packageVersion } } as any };
   let decided: any, originalLookups: string[] = [];
   api.createImport = async (_u, command) => {
-    writes++; decided = command; batch = { ...originalBatch, id: command.opId, state: 'queued', targets: command.targets };
+    writes++; decided = command; batch = { ...originalBatch, id: command.opId, state: 'queued',
+      targets: command.targets.map(row => handoverImportTargetSchema.parse(row)) };
     throw new HandoverApiError();
   };
   api.getImport = async (_u, batchId) => { originalLookups.push(batchId); return batchId === originalBatch.id ? originalBatch : batch; };

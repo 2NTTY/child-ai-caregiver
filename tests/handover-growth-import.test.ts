@@ -110,7 +110,7 @@ test('growth packages preserve source outcomes and history while existing topic 
     }
     async function run(command: Awaited<ReturnType<typeof stage>>, expectedState: 'completed' | 'failed' = 'completed') {
       const started = await service.create('recipient', command, controller.signal); assert.equal(started.state, 'queued', started.error ?? JSON.stringify(started));
-      const targetChild = command.targets[0].target.childId;
+      const targetChild = started.targets[0].target.childId;
       assert.equal(await pendingGrowth(targetChild), true, 'queued imports fence growth evaluation for this exact target scope');
       const childChange = backgroundJobs().find(job => job.kind === 'child-change' && job.scope.childId === targetChild && job.state === 'pending');
       assert.ok(childChange);

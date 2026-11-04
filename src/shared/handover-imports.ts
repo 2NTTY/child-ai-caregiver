@@ -20,6 +20,9 @@ export const handoverImportTargetSchema = z.object({ sourceChildId: uuid,
   sections: z.array(handoverImportSectionSchema).min(1).max(10)
     .refine(value => new Set(value).size === value.length),
 }).strict();
+const requestedTargetSchema = handoverImportTargetSchema.extend({
+  target: z.union([handoverImportTargetSchema.shape.target, z.object({ createInClassId: uuid }).strict()]),
+});
 export const handoverImportResolutionSchema = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('preserve') }).strict(),
   z.object({ mode: z.literal('replace_current'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
@@ -28,13 +31,14 @@ export const handoverImportResolutionSchema = z.discriminatedUnion('mode', [
 export const handoverImportCommandSchema = z.object({ opId: uuid, uploadId: uuid,
   expectedUploadVersion: count.positive(), acceptedManifestSha256: hash.nullable(),
   resolutionOnly: z.boolean().optional(),
-  targets: z.array(handoverImportTargetSchema).min(1).max(100),
+  targets: z.array(requestedTargetSchema).min(1).max(100),
   resolutions: z.array(z.object({ sourceChildId: uuid, section: handoverImportResourceSectionSchema,
     resourceId: uuid, resolution: handoverImportResolutionSchema }).strict()).max(10000),
 }).strict().refine(value => new Set(value.targets.map(row => row.sourceChildId)).size === value.targets.length
   && new Set(value.resolutions.map(row => JSON.stringify([row.sourceChildId, row.section, row.resourceId]))).size === value.resolutions.length
   && value.resolutions.every(row => value.targets.some(target => target.sourceChildId === row.sourceChildId && target.sections.includes(handoverImportModuleOf(row.section))))
-  && (!value.resolutionOnly || value.resolutions.length > 0 && value.resolutions.every(row => row.resolution.mode !== 'preserve')));
+  && (!value.resolutionOnly || value.resolutions.length > 0 && value.resolutions.every(row => row.resolution.mode !== 'preserve')
+    && value.targets.every(row => !('createInClassId' in row.target))));
 export const handoverImportControlSchema = z.object({ opId: uuid, expectedVersion: count.positive() }).strict();
 export const handoverImportViewSchema = z.object({ id: uuid, version: count.positive(), uploadId: uuid,
   packageId: uuid, packageVersion: count.positive(), manifestSha256: hash,

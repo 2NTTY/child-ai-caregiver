@@ -1,0 +1,14 @@
+{
+  "package": "P4-HANDOVER01 / P4-CLASS01",
+  "base": "bcf8fe03204c4df4bd949460f4b66a1113b6ac4f",
+  "environment": "Node 24.22.1, package HTTP handler, ZIP reader, worker and shared care store with local Firestore and private-object fixtures",
+  "test": "class import creates roster children only in the worker and reuses the source identity across operations",
+  "red": "invalid_input for createInClassId",
+  "verified": [
+    "Queue and replay leave the class empty. The worker enrols the verified package child and saves the selected record in the class.",
+    "A new operation for the same source reuses the child and record. Two children with the same display name retain separate identities.",
+    "Changing the importer's role to viewer before delivery leaves the roster unchanged. The enrolment result records read_only.",
+    "The ordinary batch response still uses resolved class and child IDs."
+  ],
+  "notExercised": ["cloud Firestore contention", "production deployment", "native device", "new enrolment UI", "disaster recovery rehearsal"]
+}

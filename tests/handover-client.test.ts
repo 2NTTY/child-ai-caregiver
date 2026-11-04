@@ -48,8 +48,8 @@ test('handover upload and import commands retain original operations and cancel 
   const uploadCommand: HandoverUploadCommand = { opId: randomUUID(), filename: 'synthetic.zip', bytes: 4, sha256: 'b'.repeat(64) };
   let upload: HandoverUploadView = { id: uploadCommand.opId, version: 1, filename: uploadCommand.filename, bytes: 4,
     createdAt: '2026-10-29T00:00:00Z', expiresAt: '2026-10-30T00:00:00Z', state: 'reserved', error: null, preview: null };
-  const importCommand: HandoverImportCommand = { opId: randomUUID(), uploadId: upload.id, expectedUploadVersion: 2,
-    acceptedManifestSha256: manifestSha256, targets: [{ sourceChildId, target: { childId: targetChildId, spaceId: null }, sections: ['care'] }], resolutions: [] };
+  const importCommand = { opId: randomUUID(), uploadId: upload.id, expectedUploadVersion: 2,
+    acceptedManifestSha256: manifestSha256, targets: [{ sourceChildId, target: { childId: targetChildId, spaceId: null }, sections: ['care'] }], resolutions: [] } satisfies HandoverImportCommand;
   let imported: HandoverImportView = { id: importCommand.opId, version: 1, uploadId: upload.id, packageId, packageVersion: 1,
     manifestSha256, integrity: 'missing_proof', targets: importCommand.targets, createdAt: '2026-10-29T00:00:00Z', updatedAt: '2026-10-29T00:00:00Z',
     state: 'queued', totalItems: 1, processedItems: 0, counts: { created: 0, updated: 0, skipped: 0, conflict: 0 }, error: null };
