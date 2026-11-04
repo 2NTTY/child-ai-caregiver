@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } fr
 import { AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useProduction } from '../../production/ProductionProvider';
-import { importErrorText, originalComparisonResolution } from '../../production/HandoverImportOwner';
+import { importErrorText, originalComparisonResolution, accountAvatarComparisonResolution } from '../../production/HandoverImportOwner';
 import { useProductionSharing } from '../../production/useProductionSharing';
 import { handoverClassScope, handoverClassDestination, handoverClassDestinations, handoverClassEnrolmentDestination,
   type HandoverClassDestination, type HandoverClassEnrolmentDestination } from '../../production/handover-class-targets';
@@ -31,6 +31,12 @@ const uploadStates = { reserved: '尚未上載完成', receiving: '接收或驗�
   failed: '上載失敗，待清理', cancelled: '已取消，待清理', expired: '已到期，待清理' };
 const enrolmentStates = { pending: '待處理，尚未建立學生', created: '已建立班級學生', skipped: '沿用已核對的班級學生', failed: '未能入班' };
 const comparisonStates = {unchanged:'與備份相同',local_newer:'目前版本較新',backup_newer:'備份版本較新',different:'內容不同',deleted:'目前已刪除',unavailable:'未能核實目前狀態'};
+const avatarComparisonStates = { empty_backup: '備份沒有圖片，不能還原。', unchanged: '備份與目前圖片相同，毋須還原。',
+  missing: '目前沒有本人頭像。', different: '備份與目前圖片不同。', deleted: '目前本人頭像已刪除。' };
+const avatarOutcomes = { created: '已恢復', updated: '已更新', skipped: '已略過', conflict: '有衝突，沒有還原' };
+const avatarReasons = { empty_backup: '備份沒有圖片', unchanged: '與備份相同', version_conflict: '目前版本已改變', decision_changed: '目前狀態已改變，請重新比較' };
+const noAvatarSnapshot = () => null;
+const noAvatarSubscription = () => () => {};
 export function comparisonFields(module: HandoverImportModule, fields: string[]) {
   const moduleNames: Partial<Record<HandoverImportModule,Record<string,string>>> = {
     care:{text:'記錄內容',details:'時間／數量',source:'資料來源'},profile:{data:'孩子概況'},
@@ -54,6 +60,9 @@ export function HandoverImportControls() {
   const controller = owner.handoverImportOwner;
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   const shared = useSyncExternalStore(owner.sharedChild.subscribe, owner.sharedChild.getSnapshot, owner.sharedChild.getSnapshot);
+  const avatarLane = owner.avatarOwner?.self;
+  const avatarSnapshot = useSyncExternalStore(avatarLane?.subscribe ?? noAvatarSubscription,
+    avatarLane?.getSnapshot ?? noAvatarSnapshot, avatarLane?.getSnapshot ?? noAvatarSnapshot);
   const [open, setOpen] = useState(false), [page, setPage] = useState(0);
   const [choices, setChoices] = useState<Record<string, Choice>>({}), [accepted, setAccepted] = useState(false);
   const [rosterQuery, setRosterQuery] = useState('');
@@ -70,6 +79,7 @@ export function HandoverImportControls() {
   useLayoutEffect(() => { setOpen(false); setChoices({}); setPage(0); setAccepted(false); }, [identityKey]);
   useLayoutEffect(() => { setChoices({}); setPage(0); setAccepted(false); }, [upload?.id, preview?.manifestSha256]);
   useLayoutEffect(() => { setComparisonChild(''); setComparisonModule(originalBackupModuleSchema.options[0]); controller.clearComparison(); }, [controller, identityKey, upload?.id, preview?.manifestSha256]);
+  useLayoutEffect(() => { controller.clearAccountAvatarComparison?.(); }, [controller, avatarSnapshot?.key, avatarSnapshot?.avatar?.version]);
   useLayoutEffect(() => { setRosterQuery(classes.state.rosterQuery); }, [classes.state.selected?.id]);
   useLayoutEffect(() => {
     setChoices(before => {
@@ -168,6 +178,11 @@ export function HandoverImportControls() {
   const comparison = state.comparison?.query.uploadId === upload?.id && state.comparison?.query.childId === comparisonChild
     && state.comparison?.query.module === comparisonModule ? state.comparison : null;
   const comparisonSelected = comparison?.selected ?? [];
+  const canCompareAvatar = state.accountAvatarRestoreEnabled && controller.canCompareAccountAvatar();
+  const avatarComparison = canCompareAvatar && state.accountAvatarComparison?.query.uploadId === upload?.id
+    && state.accountAvatarComparison?.query.expectedUploadVersion === upload?.version
+    && state.accountAvatarComparison?.manifestSha256 === preview?.manifestSha256 ? state.accountAvatarComparison : null;
+  const avatarResolution = avatarComparison?.value ? accountAvatarComparisonResolution(avatarComparison.value) : null;
   const comparisonOverwrite = comparison?.items.filter(item => originalComparisonResolution(item) === 'replace_current') ?? [];
   const comparisonRestore = comparison?.items.filter(item => originalComparisonResolution(item) === 'restore_deleted') ?? [];
   const selectedOverwrite = comparisonOverwrite.filter(item => comparisonSelected.includes(item.id));
@@ -275,7 +290,15 @@ export function HandoverImportControls() {
           : state.summary.value?.modules === null ? <Text style={styles.body}>此舊批次未有分模組統計，請參閱原總進度及逐項結果。</Text>
           : <><Text style={styles.body}>只計已提交的業務項目；修訂、附件內容及轉錄不重複計數。中止或未完成批次只顯示已提交部分。</Text>
             {state.summary.value?.modules.map(item => <Text key={item.module} style={styles.body}>{labels[item.module]}：建立 {item.created} · 更新 {item.updated} · 略過 {item.skipped} · 衝突 {item.conflict}</Text>)}
-            {state.summary.value?.modules.length === 0 ? <Text style={styles.body}>尚未有已提交的業務項目。</Text> : null}</>}
+            {state.summary.value?.modules.length === 0 ? <Text style={styles.body}>{state.summary.value.accountAvatar
+              ? '此批次沒有孩子模組項目。' : '尚未有已提交的業務項目。'}</Text> : null}</>}
+        {state.summary.status === 'ready' && state.summary.value?.accountAvatar ? <View style={styles.group}>
+          {state.summary.value.accountAvatar.result ? <>
+            <Text style={styles.body}>本人頭像：{avatarOutcomes[state.summary.value.accountAvatar.result.outcome]}{state.summary.value.accountAvatar.result.reason
+              ? ` · ${avatarReasons[state.summary.value.accountAvatar.result.reason]}` : ''}</Text>
+            <Text style={styles.body}>備份版本 {state.summary.value.accountAvatar.result.backupVersion} · 核對版本 {state.summary.value.accountAvatar.result.localVersion}</Text>
+          </> : <Text style={styles.body}>本人頭像：尚未有已提交的還原結果，不代表已還原。</Text>}
+        </View> : null}
       </View> : null}
       {state.enrolmentResults?.batchId === row.id ? <View style={styles.group}>
         <Text style={styles.title}>逐名入班結果</Text>
@@ -308,6 +331,24 @@ export function HandoverImportControls() {
             {preview.header.selection.period ? <Text style={styles.body}>來源指定日期（香港時間）：{dateTimeParts(preview.header.selection.period.from, hongKongTimeZone)?.date ?? preview.header.selection.period.from} 至 {dateTimeParts(preview.header.selection.period.to, hongKongTimeZone)?.date ?? preview.header.selection.period.to}</Text> : null}
             {preview.header.periodExceptions?.length ? <Text style={styles.body}>匯出人另外選入了 {preview.header.periodExceptions.length} 份完整文件或附件。這些項目可涵蓋上述日期以外的內容，名稱及日期見包內的「實際匯出的文件及附件」。</Text> : null}
             {preview.integrity !== 'trusted' ? <AppCheckbox label="我知悉此資料包沒有可信來源證明，仍選擇繼續" checked={accepted} disabled={writeLocked} onChange={setAccepted} /> : null}
+            {canCompareAvatar ? <View style={styles.group}>
+              <Text style={styles.title}>本人頭像還原</Text>
+              <Text style={styles.body}>先由服務端核實本人備份及目前頭像。比較不會改動圖片；核對差異後須明確提交一次，沿原匯入批次處理。</Text>
+              <AppButton label="比較本人頭像" variant="secondary" disabled={writeLocked} onPress={() => { void controller.compareAccountAvatar(); }} />
+              {avatarComparison ? <View style={styles.group} accessibilityLiveRegion="polite">
+                {avatarComparison.error ? <Text style={styles.body}>{avatarComparison.error}</Text>
+                  : !avatarComparison.value ? <Text style={styles.body}>正在核實及比較本人頭像。</Text> : <>
+                    <Text style={styles.body}>備份版本 {avatarComparison.value.backupVersion} · 目前版本 {avatarComparison.value.localVersion}</Text>
+                    <Text style={styles.body}>{avatarComparisonStates[avatarComparison.value.state]}</Text>
+                    {avatarResolution ? <>
+                      <Text style={styles.body}>{avatarResolution === 'restore_deleted' ? '會恢復已刪除的本人頭像，原刪除紀錄保留。'
+                        : '會以備份的整張圖片加入或覆蓋目前本人頭像。'}提交後仍須查看批次結果；衝突或未處理不算完成。</Text>
+                      <AppButton label={avatarResolution === 'restore_deleted' ? '恢復已刪除的本人頭像' : '以備份還原本人頭像'} variant="secondary" disabled={writeLocked}
+                        onPress={() => { void controller.restoreAccountAvatar(avatarComparison); }} />
+                    </> : null}
+                  </>}
+              </View> : null}
+            </View> : null}
             {preview.header.purpose === 'backup' ? <View style={styles.group}>
               <Text style={styles.title}>比較原有資料</Text>
               <Text style={styles.body}>比較此帳戶原孩子的{originalBackupModuleSchema.options.map(module => labels[module]).join('、')}。每次只讀一頁狀態，比較本身沒有還原或改寫任何資料；勾選後可另行提交原項還原，Server 會核實本人備份證明及目前版本。</Text>

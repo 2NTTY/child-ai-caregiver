@@ -10,6 +10,7 @@ import { handoverImportCommandSchema, handoverImportControlSchema, handoverImpor
   handoverImportResultQuerySchema, handoverImportResultPageSchema,
   handoverSourceHistoryQuerySchema, handoverSourceHistoryPageSchema,
   handoverImportSummarySchema, originalBackupComparisonSchema, originalBackupComparisonQuerySchema,
+  selfAvatarComparisonSchema, selfAvatarComparisonQuerySchema,
   type HandoverImportSummary, type OriginalBackupComparison, type OriginalBackupComparisonQuery,
   type HandoverImportResultQuery, type HandoverImportResultPage, type HandoverImportCommand, type HandoverImportView } from '../shared/handover-imports.ts';
 
@@ -17,7 +18,7 @@ type CancelCommand = z.infer<typeof handoverCancelCommandSchema>;
 type ExportPage = z.infer<typeof handoverExportPageSchema>;
 type ImportControl = z.infer<typeof handoverImportControlSchema>;
 type ImportPage = z.infer<typeof handoverImportPageSchema>;
-const importCapabilitiesSchema = z.object({ classEnrolment: z.boolean() });
+const importCapabilitiesSchema = z.object({ classEnrolment: z.boolean(), accountAvatarRestore: z.literal(true).optional() });
 const importEnrolmentsSchema = z.object({ batchId: z.uuid(), items: z.array(z.object({
   sourceChildId: z.uuid(), target: z.object({ spaceId: z.uuid(), childId: z.uuid() }).strict(),
   outcome: z.enum(['pending', 'created', 'skipped', 'failed']), error: z.string().min(1).max(100).nullable(),
@@ -25,6 +26,8 @@ const importEnrolmentsSchema = z.object({ batchId: z.uuid(), items: z.array(z.ob
 export type ClassImportEnrolments = z.infer<typeof importEnrolmentsSchema>;
 export type HandoverSourceHistoryQuery = z.infer<typeof handoverSourceHistoryQuerySchema>;
 export type HandoverSourceHistoryPage = z.infer<typeof handoverSourceHistoryPageSchema>;
+export type SelfAvatarComparison = z.infer<typeof selfAvatarComparisonSchema>;
+export type SelfAvatarComparisonQuery = z.infer<typeof selfAvatarComparisonQuerySchema>;
 type RequestOptions = { collection?: 'packages' | 'package-uploads' | 'package-imports'; rawBody?: boolean; timeoutMs?: number; classDocumentReview?: boolean };
 
 export interface HandoverApi {
@@ -46,10 +49,11 @@ export interface HandoverApi {
   uploadContent(userId: string, id: string, body: BodyInit, signal: AbortSignal): Promise<HandoverUploadView>;
   createImport(userId: string, command: HandoverImportCommand, signal: AbortSignal): Promise<HandoverImportView>;
   getImport(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportView>;
-  importCapabilities(userId: string, signal: AbortSignal): Promise<{ classEnrolment: boolean }>;
+  importCapabilities(userId: string, signal: AbortSignal): Promise<{ classEnrolment: boolean; accountAvatarRestore?: true }>;
   importEnrolments(userId: string, id: string, signal: AbortSignal): Promise<ClassImportEnrolments>;
   importSummary(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportSummary>;
   compareOriginal(userId: string, query: OriginalBackupComparisonQuery, signal: AbortSignal): Promise<OriginalBackupComparison>;
+  compareAccountAvatar(userId: string, query: SelfAvatarComparisonQuery, signal: AbortSignal): Promise<SelfAvatarComparison>;
   listImports(userId: string, signal: AbortSignal, cursor?: string): Promise<ImportPage>;
   importResults(userId: string, id: string, query: HandoverImportResultQuery, signal: AbortSignal): Promise<HandoverImportResultPage>;
   sourceHistory(userId: string, query: HandoverSourceHistoryQuery, signal: AbortSignal): Promise<HandoverSourceHistoryPage>;
@@ -203,6 +207,12 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
     importSummary: (userId, id, signal) => json(userId, '/' + identifier(id) + '/summary', signal, handoverImportSummarySchema,
       undefined, result => result.batchId === id && (result.modules === null || new Set(result.modules.map(row => row.module)).size === result.modules.length),
       { collection: 'package-imports' }),
+    async compareAccountAvatar(userId, query, signal) {
+      const parsed = selfAvatarComparisonQuerySchema.safeParse(query);
+      if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
+      return json(userId, '/compare-account-avatar', signal, selfAvatarComparisonSchema, parsed.data,
+        result => result.uploadId === parsed.data.uploadId, { collection: 'package-imports' });
+    },
     async compareOriginal(userId, query, signal) {
       const parsed = originalBackupComparisonQuerySchema.safeParse(query);
       if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
