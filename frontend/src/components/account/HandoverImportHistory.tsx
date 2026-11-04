@@ -11,6 +11,12 @@ const topicStates: Record<string, string> = { pending: '待處理', answered: '�
 const sourcePurposes: Record<string, string> = { answer_reference: '回答參考', record_candidate: '記錄候選', track_topic: '追蹤話題' };
 const concernStates: Record<string, string> = { following: '持續關注', closed: '已結束' };
 const concernKinds: Record<string, string> = { observation: '原觀察', confirmed_action: '來源已確認行動' };
+const growthStates: Record<string, string> = { proposed: '待處理', snoozed: '已暫緩', accepted: '已接受', dismissed: '已忽略', inapplicable: '不適用' };
+const growthTopics: Record<string, string> = { solid_food: '引入固體食物', toddler_play: '幼兒遊戲與溝通', preschool_development: '學前發展觀察', school_vision: '學童視力關注' };
+const growthKinds: Record<string, string> = { observe: '留意觀察', arrange: '安排事項', consult: '諮詢專業意見' };
+const growthActions: Record<string, string> = { accept: '接受', snooze: '暫緩', dismiss: '忽略', proposed: '提出建議', snooze_due: '暫緩到期',
+  topic_disabled: '停用主題', basis_unavailable: '適用依據已變更', imported_context_unavailable: '匯入資料未符合目前適用條件' };
+const taskStates: Record<string, string> = { scheduled: '已安排', completed: '已完成', cancelled: '已取消', needs_review: '待核對' };
 const revisionNumber = (value: unknown) => typeof value === 'number' && Number.isSafeInteger(value) ? value : '未提供';
 
 /** Known source histories rendered as text without interpreting foreign references or markup. */
@@ -28,6 +34,8 @@ export function HandoverImportHistory({ controller, history, locked }: {
       const { module, value, source: provenance } = item.evidence, source = provenance.current.source;
       const factSource = object(value.source), original = factSource?.kind === 'imported' ? object(factSource.original) : factSource;
       const management = object(value.management);
+      const attention = object(value.item), growthSource = object(attention?.source), growthEvidence = object(attention?.evidence);
+      const growthFacts = Array.isArray(growthEvidence?.facts) ? growthEvidence.facts.map(object).filter((fact): fact is Record<string, unknown> => fact !== null) : [];
       const period = object(value.period);
       const questions = Array.isArray(value.questions) ? value.questions.filter((question): question is string => typeof question === 'string') : [];
       const checklist = Array.isArray(value.checklist) ? value.checklist.map(object).filter((entry): entry is Record<string, unknown> => entry !== null) : [];
@@ -36,6 +44,7 @@ export function HandoverImportHistory({ controller, history, locked }: {
       return <View key={key} style={styles.item}>
         <Text style={styles.title}>{module === 'memory_facts' ? '記憶事實來源歷史' : module === 'memory_topics' ? '記憶話題來源歷史' : module === 'private_sources' ? '私人來源管理歷史'
           : module === 'documents' ? '文件來源修訂' : module === 'visit_preparation' ? '到診準備來源歷史'
+          : module === 'growth_attention' ? '成長事項來源歷史' : module === 'growth_topics' ? '成長主題設定來源歷史'
           : module === 'concerns' ? source.section === 'concern_events' ? '關注來源事件' : '關注來源歷史' : '外來摘要歷史'}</Text>
         <Text style={styles.body}>來源版本 {source.resourceVersion} · {module === 'documents' ? '匯入綁定版本' : '本地接收版本'} {item.resource.version}</Text>
         {module === 'memory_facts' ? <>
@@ -67,6 +76,31 @@ export function HandoverImportHistory({ controller, history, locked }: {
           {period ? <Text style={styles.body}>原期間：{content(period, 'startDay')} · {period.period === 'day' ? '一日' : period.period === 'week' ? '一週' : '未提供'} · {content(period, 'timeZone')}</Text> : null}
           <Text selectable style={styles.body}>原預約待辦（外來識別）：{content(value, 'appointmentTaskId')}</Text>
           <Text style={styles.body}>來源更新者：{content(value, 'updatedBy')} · 時間：{content(value, 'updatedAt')}</Text>
+        </> : module === 'growth_attention' || module === 'growth_topics' ? <>
+          <Text style={styles.body}>原狀態、資料與行動只作來源記錄，不代表本地用戶已確認或再次執行；來源建議須按目前資料重新核對適用性。</Text>
+          <Text style={styles.body}>原主題：{growthTopics[String(module === 'growth_topics' ? value.topicId : attention?.topicId)] ?? '未提供'}</Text>
+          {module === 'growth_attention' && attention ? <>
+            <Text selectable style={styles.content}>{content(attention, 'title')}</Text>
+            <Text style={styles.body}>原狀態：{growthStates[String(attention.state)] ?? '未提供'} · 原建議種類：{growthKinds[String(attention.kind)] ?? '未提供'}</Text>
+            <Text selectable style={styles.content}>原原因：{content(attention, 'whyNow')}</Text>
+            <Text selectable style={styles.content}>原建議：{content(attention, 'advice')}</Text>
+            <Text selectable style={styles.content}>原限制：{content(attention, 'limits')}</Text>
+            <Text selectable style={styles.content}>原處理記錄：{content(attention, 'note')}</Text>
+            <Text style={styles.body}>原最後行動：{growthActions[String(attention.lastAction)] ?? content(attention, 'lastAction')}</Text>
+            <Text style={styles.body}>來源行動者：{content(attention, 'actorUserId')} · 原建立時間：{content(attention, 'createdAt')} · 更新時間：{content(attention, 'updatedAt')}</Text>
+            {typeof attention.snoozeUntil === 'string' ? <Text style={styles.body}>原暫緩至：{attention.snoozeUntil}</Text> : null}
+            <Text selectable style={styles.body}>原關聯待辦（外來識別）：{content(attention, 'taskId')} · 原狀態：{taskStates[String(attention.taskState)] ?? '未提供'}</Text>
+            <Text style={styles.body}>原資料依據：孩子資料版本 {revisionNumber(growthEvidence?.profileVersion)}</Text>
+            {growthFacts.map((fact, index) => <Text key={`growth-fact-${index}`} selectable style={styles.body}>原記憶依據（外來識別）：{content(fact, 'id')} · 版本 {revisionNumber(fact.version)}</Text>)}
+            {growthSource ? <>
+              <Text selectable style={styles.body}>原建議來源：{content(growthSource, 'title')} · {content(growthSource, 'url')}</Text>
+              <Text selectable style={styles.content}>原來源摘錄：{content(growthSource, 'excerpt')}</Text>
+              <Text style={styles.body}>原來源核對時間：{content(growthSource, 'checkedAt')} · 原可用狀態：{attention.sourceAvailable === true ? '原可用' : attention.sourceAvailable === false ? '原不可用' : '未提供'}</Text>
+            </> : null}
+          </> : module === 'growth_topics' ? <>
+            <Text style={styles.body}>原主題設定：{value.disabled === true ? '已停用' : value.disabled === false ? '已啟用' : '未提供'}</Text>
+            <Text style={styles.body}>來源設定者：{content(value, 'actor')} · 時間：{content(value, 'at')}</Text>
+          </> : <Text style={styles.body}>未有可顯示的來源事項內容。</Text>}
         </> : module === 'concerns' ? <>
           <Text selectable style={styles.content}>{content(value, 'title')}</Text>
           {source.section === 'concern_events' ? <>

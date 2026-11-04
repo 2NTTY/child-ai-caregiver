@@ -1,0 +1,9 @@
+{
+  "base": "cffa25a6d118b4df5f1631f90add4993ac58ae39",
+  "scope": "Personal growth selection and read-only imported source history in the shared Web and Android UI",
+  "command": "node --experimental-test-module-mocks --test --test-name-pattern='^growth import selector|^growth source history' frontend/scripts/handover-import-ui.test.mjs",
+  "red": "Personal selection and the source history entry were missing before wiring",
+  "green": { "passed": 2, "failed": 0, "skipped": 0 },
+  "typecheck": { "config": "frontend/tsconfig.json", "roots": ["HandoverImportOwner.ts", "HandoverImportControls.tsx", "HandoverImportHistory.tsx"], "diagnostics": 0 },
+  "limits": ["Synthetic rendering and real owner with controlled API", "No browser, device, model or deployment", "Shared growth writes remain outstanding"]
+}
