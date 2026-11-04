@@ -1,6 +1,7 @@
 import type { KeyObject } from 'node:crypto';
 import { createHash } from 'node:crypto';
 import type { AccountExportPage } from '../src/shared/account-service.ts';
+import type { HandoverClassExportCommand } from '../src/shared/handover-jobs.ts';
 import { HANDOVER_SECTIONS, handoverHeaderSchema, validHandoverDocumentPins, type HandoverHeader, type HandoverDocumentChoice, type HandoverCoverage } from '../src/shared/handover.ts';
 import { HandoverArchiveError, writeHandoverArchive, waitForHandoverStep, handoverLimits, type HandoverEntryInput, type HandoverLimits } from './handover-archive.ts';
 import { avatarTransferSchema } from './handover-import.ts';
@@ -15,13 +16,16 @@ import { DatedPackageMedia, isAttachmentHead, isAttachmentSupplement, type Packa
 const contentSections = new Set(['photo_content', 'voice_content', 'file_content', 'child_avatar_content']);
 type PageQuery = { section: string; childId?: string; scopeVersion?: string; cursor?: string };
 export interface PackagePageOptions { includeSummaryPeriod?: boolean; documentFilter?: PackageDocumentFilter; documentPreviewPeriod?: HandoverHeader['selection']['period'] }
-export interface HandoverExportSource { page(userId: string, query: PageQuery, packageMedia?: PackageMediaFilter, options?: PackagePageOptions): Promise<AccountExportPage> }
+export interface HandoverExportSource {
+  page(userId: string, query: PageQuery, packageMedia?: PackageMediaFilter, options?: PackagePageOptions): Promise<AccountExportPage>;
+  forClass?(request: HandoverClassExportCommand): HandoverExportSource;
+}
 function fail(code: string): never { throw new HandoverArchiveError(code); }
 const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 
 /** Only ordinary authorized product reads feed this format; restoration envelopes are not accepted. */
 export async function writePersonalHandoverPackage(input: {
-  exporter: HandoverExportSource; directory: string; ownerUserId: string; serverId: string; packageId: string;
+  exporter: HandoverExportSource; directory: string; ownerUserId: string; sourceAccountId?: string; serverId: string; packageId: string;
   createdAt: string; purpose: HandoverHeader['purpose']; selection: HandoverHeader['selection'];
   signingKey?: KeyObject; signal?: AbortSignal; limits?: Partial<HandoverLimits>; expectedScopeVersion?: string; documentChoices?: readonly HandoverDocumentChoice[];
 }) {
@@ -33,7 +37,7 @@ export async function writePersonalHandoverPackage(input: {
   const overrides = new HandoverDocumentChoices(choices.filter(pin => !input.selection.period || pin.section !== 'documents'), 'export_scope_changed');
   const header = handoverHeaderSchema.parse({ format: 'yuyoufang-data', version: 1, packageId: input.packageId, packageVersion: 1,
     ...(exceptions.length ? { periodExceptions: exceptions } : {}),
-    createdAt: input.createdAt, purpose: input.purpose, source: { serverId: input.serverId, accountId: input.ownerUserId }, selection: input.selection });
+    createdAt: input.createdAt, purpose: input.purpose, source: { serverId: input.serverId, accountId: input.sourceAccountId ?? input.ownerUserId }, selection: input.selection });
   if (!supportsHandoverPeriod(header.selection)) fail('package_period_not_connected');
   signal.throwIfAborted();
   const initial = await waitForHandoverStep(input.exporter.page(input.ownerUserId, { section: 'manifest' }), signal);

@@ -213,7 +213,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     const accountErased=scopeJournal.some(v=>v.type==='account-delete'&&v.scope.ownerUserId===scope.ownerUserId);
     const body=record.value as Record<string,any>;
     const matches=accountErased||erasedByScope(scope.ownerUserId,scope.workspaceId,scope.childId)
-      || kind==='handover-export'&&scopeJournal.some(intent=>handoverJobIncludesScope(firestoreHandoverJobSchema.parse(body),intent.scope))
+      || kind==='handover-export'&&scopeJournal.some(intent=>handoverJobIncludesScope(firestoreHandoverJobSchema.parse(body),intent.scope,intent.type==='class-delete'))
       || scopeJournal.some(intent => sharingErasedBy(kind, body, intent.scope, intent.type === 'account-delete',intent.type==='class-delete'))
       || ['online-receipt','authority-operation','document-operation','change-projection','change'].includes(kind)
         && erasedByScope(scope.ownerUserId,body.result?.scope?.workspaceId??body.result?.child?.workspaceId??scope.workspaceId,

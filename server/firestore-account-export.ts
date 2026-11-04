@@ -9,7 +9,11 @@ import { createFirestoreMemoryStore, firestoreFactSchema, firestoreTopicSchema }
 import type { PackagePageOptions } from './handover-export.ts';
 import { previewFamilyDocument } from './handover-document-preview.ts';
 import type { DocumentSnapshot as FamilySnapshot } from '../src/shared/family-documents.ts';
-import { createFirestoreCareStore } from './firestore-care.ts';
+import { createFirestoreCareStore, firestoreCareSchema, firestoreProfileSchema } from './firestore-care.ts';
+import { createFirestoreSharingStore } from './firestore-sharing.ts';
+import { withClassExportChild } from './firestore-class-handover.ts';
+import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
+import { handoverClassExportCommandSchema, type HandoverClassExportCommand } from '../src/shared/handover-jobs.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
 import { createFirestoreNotificationMessages } from './firestore-notification-messages.ts';
 import { readNotificationHistory } from './firestore-notification-history.ts';
@@ -19,7 +23,7 @@ import { FieldPath, type Query } from '@google-cloud/firestore';
 import { z } from 'zod';
 import type { AccountExportPage } from '../src/shared/account-service.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityOptions, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
-import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
+import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema, firestoreTaskRevisionSchema } from './firestore-domain-data.ts';
 import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
 import { firestoreSnapshotManifestSchema } from './firestore-family-document-snapshots.ts';
 import { firestorePhotoSchemas, type createFirestorePhotoStore } from './firestore-photos.ts';
@@ -82,6 +86,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
   avatars?: Pick<FirebaseAvatarApiPort, 'content'>;
 }) {
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), avatarData = createFirestoreAvatarData(options);
+  const sharing = createFirestoreSharingStore(options);
   const memory = createFirestoreMemoryStore({ ...options, care: createFirestoreCareStore(options), chat: createFirestoreChatStore({
     database: options.database, cipher: options.cipher, projectId: options.projectId, namespace: options.namespace,
   }) });
@@ -93,7 +98,8 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
     try { return cursorSchema.parse(JSON.parse(options.cipher.decrypt(Buffer.from(raw, 'base64url').toString(), aad(owner)))); }
     catch { return domainReject('invalid_export_cursor', 400); }
   }
-  async function page(owner: string, raw: unknown, packageMedia?: PackageMediaFilter, packageOptions?: PackagePageOptions): Promise<AccountExportPage> {
+  async function page(classRequest: HandoverClassExportCommand | null, owner: string, raw: unknown,
+    packageMedia?: PackageMediaFilter, packageOptions?: PackagePageOptions): Promise<AccountExportPage> {
     const input = domainParse(querySchema, raw), section = input.section;
     const previewBasis = packageOptions?.documentPreviewPeriod === undefined ? undefined
       : firestoreDomainHash(['handover-preview:1', packageOptions.documentPreviewPeriod]);
@@ -101,8 +107,15 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
       JSON.stringify({ ...value, previewBasis }), aad(owner))).toString('base64url');
     if (!global.has(section) && !Object.hasOwn(sections, section) || global.has(section) === Boolean(input.childId)
       || input.cursor && !input.scopeVersion) domainReject('invalid_export_scope', 400);
-    const result = await authority.runTransaction(owner, input.childId ?? null, async binding => {
-      const scopeVersion = version(binding);
+    const read = <T>(use: (binding: FirestoreAuthorityTransaction, scopeVersion: string, actor: FirestoreAuthorityTransaction) => Promise<T>) => {
+      if (!classRequest) return authority.runTransaction(owner, input.childId ?? null, b => use(b, version(b), b));
+      const module = section === 'manifest' || section === 'children' ? classRequest.selection.modules[0]
+        : classRequest.selection.modules.find(m => (HANDOVER_SECTIONS[m] as readonly string[]).includes(section));
+      if (!module) domainReject('invalid_export_scope', 400);
+      return authority.runTransaction(owner, null, actor => withClassExportChild(sharing, actor, classRequest,
+        input.childId ?? classRequest.selection.childIds[0], module, (a, basis) => use(a.binding, basis, actor)));
+    };
+    const result = await read(async (binding, scopeVersion, actor) => {
       if (input.scopeVersion && input.scopeVersion !== scopeVersion) domainReject('export_scope_changed');
       const previous = input.cursor ? decode(input.cursor, owner) : null;
       if (previous && (previous.userId !== owner || previous.section !== section || previous.childId !== (input.childId ?? null)
@@ -112,7 +125,23 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
       let items: unknown[] = [], nextCursor: string | null = null;
       const photos: { id: string; version: number }[] = [], voices: {id:string;version:number}[]=[], files: {id:string;version:number}[]=[];
       let avatar: AvatarHeadRecord | null = null;
-      if (['self_avatar', 'self_avatar_content', 'child_avatar', 'child_avatar_content'].includes(section)) {
+      if (classRequest && section === 'children') {
+        // The pinned selection is the index. Never enumerate the whole class or reveal an unselected pupil.
+        const offset = previous ? classRequest.selection.childIds.indexOf(previous.after) + 1 : 0;
+        if (previous && !offset) domainReject('invalid_export_cursor', 400);
+        const ids = classRequest.selection.childIds.slice(offset, offset + 10);
+        items = await Promise.all(ids.map(id => withClassExportChild(sharing, actor, classRequest, id, classRequest.selection.modules[0],
+          async (access, basis) => {
+            if (basis !== scopeVersion) domainReject('export_scope_changed');
+            const child = await access.binding.readChild(id);
+            if (!child) domainReject('export_scope_changed');
+            return { id, displayName: child.displayName };
+          })));
+        if (offset + ids.length < classRequest.selection.childIds.length)
+          nextCursor = encode({ userId: owner, section, childId: null, scopeVersion, after: ids.at(-1)! });
+      } else if (classRequest && section === 'manifest') {
+        items = [{ sections: classRequest.selection.modules.flatMap(m => [...HANDOVER_SECTIONS[m]]) }];
+      } else if (['self_avatar', 'self_avatar_content', 'child_avatar', 'child_avatar_content'].includes(section)) {
         if (previous) domainReject('invalid_export_cursor', 400);
         const target = input.childId ? { kind: 'child' as const, childId: input.childId } : { kind: 'self' as const };
         avatar = await avatarData.head(binding, avatarBinding(binding.scope, target));
@@ -169,7 +198,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
           const storageKind = context.kind === 'shared-input-tombstone' ? 'shared-input' : context.kind === 'care-tombstone' ? 'care-record' : context.kind === 'memory-tombstone'
             ? suffix === 'memory_facts' ? 'memory-fact' : 'memory-topic' : context.kind;
           if (!(kinds as readonly string[]).includes(context.kind) || data.ref(suffix, storageKind, context.id).path !== row.ref.path
-            || context.scope.ownerUserId !== owner || context.scope.workspaceId !== binding.scope.workspaceId
+            || context.scope.ownerUserId !== binding.scope.ownerUserId || context.scope.workspaceId !== binding.scope.workspaceId
             || context.scope.storageEpoch !== binding.scope.storageEpoch || input.childId && context.scope.childId !== input.childId)
             domainReject('export_scope_changed');
           if (section === 'children') {
@@ -205,6 +234,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             if (await contentVisible(data, binding, kind, kind === 'profile' ? item.childId : z.uuid().parse(item.id), item.version)) {
               if (kind === 'fact') items.push(firestoreFactSchema.parse(value));
               else if (kind === 'topic') items.push(firestoreTopicSchema.parse(value));
+              else if (classRequest) items.push(kind === 'care' ? firestoreCareSchema.parse(value) : firestoreProfileSchema.parse(value));
               else items.push(value);
             }
           } else if (section === 'growth_attention' || section === 'growth_history') {
@@ -282,7 +312,14 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
           else if (section === 'contact_requests') { const saved = firestoreContactRequestSchema.parse(value); items.push({ ...saved.request, ...(saved.messages ? { messages: saved.messages.filter(message => message.recipientUserId === owner) } : {}) }); }
           else if (section === 'contact_consents') items.push(firestoreContactConsentSchema.parse(value).value);
           else if (section === 'contact_grants') items.push(firestoreContactGrantSchema.parse(value).value);
-          else if (!context.kind.endsWith('tombstone')) items.push(value);
+          else if (!context.kind.endsWith('tombstone')) {
+            if (!classRequest) items.push(value);
+            else if (section === 'care') items.push(firestoreCareSchema.parse(value));
+            else if (section === 'profile') items.push(firestoreProfileSchema.parse(value));
+            else if (section === 'tasks') items.push(firestoreTaskSchema.parse(value));
+            else if (section === 'task_history') items.push(firestoreTaskRevisionSchema.parse(value));
+            else domainReject('invalid_export_scope', 400);
+          }
         }
         if (found.size > limit) nextCursor = encode({ userId: owner, section, childId: input.childId ?? null, scopeVersion,
           after: suffix === 'photos' ? found.docs[limit - 1].get('sortKey') : found.docs[limit - 1].id });
@@ -317,8 +354,8 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
         base64: content.buffer.toString('base64'), mimeType: 'image/jpeg' }); } finally { content.buffer.fill(0); }
     }
     // Storage IO or a long snapshot page cannot disclose under an identity/version that changed mid-request.
-    await authority.runTransaction(owner, input.childId ?? null, async binding => {
-      if (version(binding) !== result.scopeVersion) domainReject('export_scope_changed');
+    await read(async (binding, scopeVersion) => {
+      if (scopeVersion !== result.scopeVersion) domainReject('export_scope_changed');
       // Avatar commits intentionally do not enqueue child/Agent changes, so changeSeq alone is not a head fence.
       if (result.avatar) {
         const current = await avatarData.head(binding, result.avatar.binding);
@@ -328,5 +365,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
     });
     const { photos: _photos, voices: _voices, files: _files, avatar: _avatar, ...response } = result; return response;
   }
-  return { page, messages: createFirestoreNotificationMessages(options).page };
+  return { page: page.bind(null, null), forClass: (request: HandoverClassExportCommand) => ({
+    page: page.bind(null, handoverClassExportCommandSchema.parse(request)),
+  }), messages: createFirestoreNotificationMessages(options).page };
 }

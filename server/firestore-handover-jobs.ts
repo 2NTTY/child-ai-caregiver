@@ -1,8 +1,10 @@
 import { FieldPath, type DocumentSnapshot, type Query, type Transaction } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { supportsHandoverPeriodModules } from '../src/shared/handover.ts';
-import { handoverCancelCommandSchema, handoverExportCommandSchema, handoverExportStateSchema,
-  handoverExportViewSchema, type HandoverExportView } from '../src/shared/handover-jobs.ts';
+import { handoverCancelCommandSchema, handoverExportCommandSchema, handoverClassExportCommandSchema, handoverExportStateSchema,
+  handoverExportViewSchema, type HandoverExportView, type HandoverClassExportCommand } from '../src/shared/handover-jobs.ts';
+import { createFirestoreSharingStore } from './firestore-sharing.ts';
+import { withClassExportChild } from './firestore-class-handover.ts';
 import { handoverObjectDescriptorSchema } from './firebase-handover-objects.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
@@ -14,11 +16,12 @@ import { avatarBinding } from './avatar-data.ts';
 import { avatarPublicState } from './avatar-policy.ts';
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/u), time = z.iso.datetime({ offset: true });
+const exportRequest = z.union([handoverExportCommandSchema, handoverClassExportCommandSchema]);
 export const HANDOVER_EXPORT_RETENTION_MS = 24 * 60 * 60_000;
 export const handoverArtifactContentSchema = z.object({ bytes: z.number().int().positive().max(256 * 1024 * 1024),
   sha256: hash, manifestSha256: hash }).strict();
 export const firestoreHandoverJobSchema = z.object({ id: z.uuid(), version: z.number().int().positive(),
-  scope: workRecoveryScopeSchema, objectScope: workRecoveryScopeSchema, request: handoverExportCommandSchema, fingerprint: hash,
+  scope: workRecoveryScopeSchema, objectScope: workRecoveryScopeSchema, request: exportRequest, fingerprint: hash,
   sourceVersion: hash, avatarBasis: hash.nullable(), authorizationVersion: z.string().min(1).max(256), generation: z.uuid(),
   state: handoverExportStateSchema, createdAt: time, expiresAt: time, error: z.string().max(100).nullable(),
   content: handoverArtifactContentSchema.nullable(), artifact: handoverObjectDescriptorSchema.nullable(),
@@ -27,7 +30,9 @@ export const firestoreHandoverJobSchema = z.object({ id: z.uuid(), version: z.nu
   cancellation: handoverCancelCommandSchema.nullable(),
 }).strict();
 export type FirestoreHandoverJob = z.infer<typeof firestoreHandoverJobSchema>;
-export function handoverJobIncludesScope(job: FirestoreHandoverJob, scope: WorkRecoveryScope) {
+export function handoverJobIncludesScope(job: FirestoreHandoverJob, scope: WorkRecoveryScope, wholeClass = false) {
+  if ('source' in job.request) return job.request.source.spaceId === scope.workspaceId && scope.ownerUserId === 'space:' + scope.workspaceId
+    && (wholeClass || job.request.selection.childIds.includes(scope.childId));
   return job.scope.ownerUserId === scope.ownerUserId && job.scope.workspaceId === scope.workspaceId
     && job.request.selection.childIds.includes(scope.childId);
 }
@@ -51,6 +56,17 @@ export function assertHandoverJobIdentity(job: FirestoreHandoverJob, scope: Work
 export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { serverClock?: () => number }) {
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), clock = options.serverClock ?? Date.now;
   const avatarData = createFirestoreAvatarData(options);
+  const sharing = createFirestoreSharingStore(options);
+  async function classBasis(b: FirestoreAuthorityTransaction, command: HandoverClassExportCommand, checkSelection = false) {
+    const read = (childId: string) => withClassExportChild(sharing, b, command, childId, command.selection.modules[0], async (_, v) => v);
+    const ids = command.selection.childIds, version = await read(ids[0]);
+    // Membership, class roster, authority and the class data sequence are fenced by the same version.
+    if (checkSelection) for (let i = 1; i < ids.length; i += 10) {
+      const versions = await Promise.all(ids.slice(i, i + 10).map(read));
+      if (versions.some(result => result !== version)) domainReject('export_scope_changed');
+    }
+    return version;
+  }
   const ref = (owner: string, id: string) => data.ref('handover_exports', 'handover-export', handoverJobId(owner, id));
   function open(scope: WorkRecoveryScope, id: string, snapshot: DocumentSnapshot): FirestoreHandoverJob | null {
     if (!snapshot.exists) return null;
@@ -86,7 +102,7 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
     return job;
   }
   function view(job: FirestoreHandoverJob, b: FirestoreAuthorityTransaction): HandoverExportView {
-    const expired = clock() >= Date.parse(job.expiresAt), sourceChanged = handoverSourceVersion(b) !== job.sourceVersion;
+    const expired = clock() >= Date.parse(job.expiresAt), sourceChanged = !('source' in job.request) && handoverSourceVersion(b) !== job.sourceVersion;
     const terminal = ['cancelled', 'failed', 'expired'].includes(job.state);
     const state = terminal ? job.state : expired ? 'expired' : sourceChanged ? 'failed' : job.state;
     return handoverExportViewSchema.parse({ id: job.id, version: job.version, purpose: job.request.purpose,
@@ -94,7 +110,7 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
       bytes: state === 'ready' ? job.artifact?.bytes ?? null : null,
       error: terminal ? job.error : expired ? 'package_expired' : sourceChanged ? 'export_scope_changed' : job.error });
   }
-  async function avatarBasis(b: FirestoreAuthorityTransaction, selection: FirestoreHandoverJob['request']['selection'], reviewed?: Map<string, number>) {
+  async function avatarBasis(b: FirestoreAuthorityTransaction, selection: HandoverExportView['selection'], reviewed?: Map<string, number>) {
     if (!selection.modules.includes('attachments')) return null;
     const heads = [];
     for (const childId of selection.childIds) {
@@ -105,9 +121,17 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
     }
     return firestoreDomainHash(heads);
   }
-  async function currentView(job: FirestoreHandoverJob, b: FirestoreAuthorityTransaction) {
+  async function currentView(job: FirestoreHandoverJob, b: FirestoreAuthorityTransaction, checkSelection = false) {
     const result = view(job, b);
     if (!['queued', 'building', 'ready'].includes(result.state)) return result;
+    if ('source' in job.request) {
+      try { if (await classBasis(b, job.request, checkSelection) === job.sourceVersion) return result; }
+      catch (e) {
+        const failure = e as { status?: number; code?: string };
+        if (![403, 404].includes(failure.status ?? 0) && failure.code !== 'scope_changed') throw e;
+      }
+      return { ...result, state: 'failed' as const, bytes: null, error: 'export_scope_changed' };
+    }
     if (await avatarBasis(b, job.request.selection) !== job.avatarBasis)
       return { ...result, state: 'failed' as const, bytes: null, error: 'export_scope_changed' };
     return result;
@@ -125,10 +149,10 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
       || live.generation !== b.generation || live.authorizationVersion !== b.authorizationVersion || live.state !== 'leased'
       || live.lease?.until !== work.lease.until || Date.parse(live.lease.until) <= clock()) domainReject('package_claim_invalid');
   }
-  async function active(work: FirestoreBackgroundWork, update: (job: FirestoreHandoverJob) => FirestoreHandoverJob) {
+  async function active(work: FirestoreBackgroundWork, update: (job: FirestoreHandoverJob) => FirestoreHandoverJob, publishing = false) {
     return authority.runTransaction(work.scope.ownerUserId, null, async b => {
       const prior = await readIn(b, work.resourceId); await held(b, work, prior);
-      if ((await currentView(prior, b)).state !== 'building' || prior.claim?.token !== work.lease?.token) domainReject('package_job_stopped');
+      if ((await currentView(prior, b, publishing)).state !== 'building' || prior.claim?.token !== work.lease?.token) domainReject('package_job_stopped');
       const next = update(prior); save(b.transaction, next); return next;
     });
   }
@@ -161,17 +185,19 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
       });
     },
     async create(owner: string, raw: unknown) {
-      const command = domainParse(handoverExportCommandSchema, raw), fingerprint = firestoreDomainHash(command);
+      const command = domainParse(exportRequest, raw), fingerprint = firestoreDomainHash(command);
       if (command.selection.period && !supportsHandoverPeriodModules(command.selection.modules)) domainReject('package_period_not_connected', 400);
       return authority.runTransaction(owner, null, async b => {
         const prior = openOwned(b, command.opId, await b.transaction.get(ref(owner, command.opId)));
         if (prior) { if (prior.fingerprint !== fingerprint) domainReject('operation_conflict'); return currentView(prior, b); }
-        const review = command.documentReview;
+        const review = 'source' in command ? undefined : command.documentReview;
         if (review && review.scopeVersion !== handoverSourceVersion(b)) domainReject('export_scope_changed');
-        for (const childId of command.selection.childIds) if (!await b.readChild(childId)) domainReject('forbidden', 403);
+        const sourceVersion = 'source' in command ? await classBasis(b, command, true) : handoverSourceVersion(b);
+        if (!('source' in command))
+          for (const childId of command.selection.childIds) if (!await b.readChild(childId)) domainReject('forbidden', 403);
         const createdAt = new Date(clock()).toISOString(), expiresAt = new Date(clock() + HANDOVER_EXPORT_RETENTION_MS).toISOString();
         const job: FirestoreHandoverJob = { id: command.opId, version: 1, scope: b.scope, objectScope: b.scope, request: command, fingerprint,
-          sourceVersion: handoverSourceVersion(b), avatarBasis: await avatarBasis(b, command.selection,
+          sourceVersion, avatarBasis: await avatarBasis(b, command.selection,
             review && new Map(review.avatarVersions?.map(row => [row.childId, row.version]))), authorizationVersion: b.authorizationVersion, generation: b.generation,
           state: 'queued', createdAt, expiresAt, error: null, content: null, artifact: null, uploadStarted: false, cleaned: false, claim: null, cancellation: null };
         const work = await prepareFirestoreBackgroundWork(data, b.transaction, { kind: 'handover-export', scope: b.scope,
@@ -191,7 +217,7 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
     async reconciled(owner: string, previous: FirestoreHandoverJob, artifact: unknown) {
       const descriptor = domainParse(handoverObjectDescriptorSchema, artifact);
       return authority.runTransaction(owner, null, async b => {
-        const job = await readIn(b, previous.id), result = await currentView({ ...job, state: job.state === 'failed' ? 'building' : job.state }, b);
+        const job = await readIn(b, previous.id), result = await currentView({ ...job, state: job.state === 'failed' ? 'building' : job.state }, b, true);
         if (job.version !== previous.version || !['building', 'failed'].includes(job.state)
           || result.error === 'export_scope_changed' || result.state === 'expired' || !job.uploadStarted || job.cleaned
           || !job.content || descriptor.sha256 !== job.content.sha256 || descriptor.bytes !== job.content.bytes)
@@ -240,7 +266,7 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
         if (!prior.content || !prior.uploadStarted || artifact.sha256 !== prior.content.sha256 || artifact.bytes !== prior.content.bytes)
           domainReject('package_content_conflict');
         return { ...prior, version: prior.version + 1, state: 'ready', artifact, error: null };
-      });
+      }, true);
     },
     /** Keep an already-created object as a cleanup obligation even if permission/cancellation changed during upload. */
     async retainFailure(work: FirestoreBackgroundWork, code: string, rawArtifact?: unknown) {
@@ -260,7 +286,7 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
     },
     async downloadable(owner: string, id: string) {
       return authority.runTransaction(owner, null, async b => {
-        const job = await readIn(b, id), result = await currentView(job, b);
+        const job = await readIn(b, id), result = await currentView(job, b, true);
         if (result.state !== 'ready' || !job.artifact || job.cleaned) domainReject(result.error ?? 'package_not_ready');
         return job;
       });
