@@ -1,0 +1,149 @@
+{
+  "date": "2026-11-04",
+  "repository": "2NTTY/child-ai-caregiver",
+  "pullRequest": 410,
+  "sourceHead": "5c1c581fc5b0dac824dbb815b1bff738d408b8de",
+  "scope": "Make the bounded interactive-context regression verification run on its actual PR branch; no new product behavior, deployment or complete REQ-005 claim.",
+  "changes": [
+    "Keep the same-repository and exact-head checks; explicitly include the reviewed REQ-005 summary, interactive-budget, projection-consistency and turn-topology branches.",
+    "Replace the stale aggregate 162-case gate with a committed candidate-specific manifest and exact, all-pass TAP checks for each complete test file.",
+    "Preserve all original 18 suites and include the existing native context-integrity, initial-summary and summary-projection suites. Branch-specific additions and counts must be explicit, never skipped.",
+    "Retain non-root isolated validation, empty environment, dropped capabilities, pinned tools/actions, unchanged lockfile and unchanged complete tsconfig.server.json."
+  ],
+  "environment": {
+    "node": "v24.22.1",
+    "typescript": "6.0.3",
+    "dependencies": "Existing installed dependencies matching the unchanged lockfile; no dependency installation or upgrade.",
+    "sourceIdentity": "Exact inherited files were checked against the sourceHead Git blobs; only the five listed CI files change executable/test behavior."
+  },
+  "results": {
+    "completeProductTestFiles": 21,
+    "productCases": 178,
+    "productPassed": 178,
+    "productFailed": 0,
+    "productSkipped": 0,
+    "productCancelled": 0,
+    "productTodo": 0,
+    "ciContractTests": 6,
+    "ciContractPassed": 6,
+    "serverTypecheckExit": 0,
+    "serverTypecheckDiagnostics": 0,
+    "syntax": "Workflow YAML parsed and all three run blocks plus the shell helper pass bash -n.",
+    "negativeControls": "Invalid/duplicate/unsafe manifests, stale or incomplete/duplicate TAP totals, failures/cancellations/skips/TODOs and fork/unrelated-branch guards reject. Replacing an original suite while keeping 21 files fails the committed-manifest membership test."
+  },
+  "testManifest": [
+    {
+      "path": "tests/summary-progress.test.ts",
+      "cases": 18
+    },
+    {
+      "path": "tests/agent-runtime.test.ts",
+      "cases": 19
+    },
+    {
+      "path": "tests/agent-model-gateway.test.ts",
+      "cases": 16
+    },
+    {
+      "path": "tests/firestore-summary-batches.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/firestore-memory-lifecycle.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/memory.test.ts",
+      "cases": 29
+    },
+    {
+      "path": "tests/private-summary-contract.test.ts",
+      "cases": 10
+    },
+    {
+      "path": "tests/summary-prompt-contract.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/agent-durable-ai-usage.test.ts",
+      "cases": 10
+    },
+    {
+      "path": "tests/agent-durable-budget.test.ts",
+      "cases": 4
+    },
+    {
+      "path": "tests/agent-native-session.test.ts",
+      "cases": 27
+    },
+    {
+      "path": "tests/agent-owned-session-cleanup.test.ts",
+      "cases": 11
+    },
+    {
+      "path": "tests/avatar-runtime.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/handover-attachment-pipeline.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/firestore-voice.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/firestore-restore-codec.test.ts",
+      "cases": 8
+    },
+    {
+      "path": "tests/firestore-restore.test.ts",
+      "cases": 6
+    },
+    {
+      "path": "tests/firestore-restore-voice-relations.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/agent-context-integrity.test.ts",
+      "cases": 4
+    },
+    {
+      "path": "tests/initial-conversation-summary.test.ts",
+      "cases": 6
+    },
+    {
+      "path": "tests/memory-summary-projection.test.ts",
+      "cases": 3
+    }
+  ],
+  "independentReview": {
+    "reviewedPatchSha256": "4e9170a3466b009d0a8358be3569580900d9f002eb7a0428f4cd954372db3190",
+    "result": "No remaining blocking finding after adding the required suite membership check. This is code review, not a GitHub approval or a remote CI result."
+  },
+  "verificationHistory": [
+    "The first large review run was interrupted by executor transport recovery after 106 successful cases; it is not counted as a completed suite. This correction run executed all 21 files separately with complete, exact TAP summaries.",
+    "The initial sparse review snapshot lacked referenced frontend/scripts files and then three .d.mts declarations. Those exact-version source dependencies were materialized; the unchanged full server typecheck then passed. No compiler root, exclusion or assertion was weakened.",
+    "The first manifest design checked only a minimum file count. Independent review required explicit preservation of the original and common suites; a same-size substitution mutation now fails, and all six contract tests pass."
+  ],
+  "limitations": [
+    "Local validation did not execute the positive network-namespace wrapper because this sandbox has no sudo and zero capabilities. Exact-head remote Actions must still be observed before claiming isolated CI success.",
+    "The unrelated D agent alignment verify job remains scoped to its original D branch; a skipped D job is not a pass or a missing REQ-005 suite result.",
+    "Combined cross-PR counts are not claimed as verified by this branch's 178 cases.",
+    "No real model, family data, GCP, notification, website, PR approval or merge was used."
+  ],
+  "changedSourceSha256": {
+    ".github/workflows/summary-progress-offline.yml": "b21f7a86d1f218454566fbe3c3da154a52f6d3d60523192e306d00c4b8bc730d",
+    "scripts/ci/verify-summary-progress-offline.sh": "1e4053250ffa8e72034504b058e5ae5ede4328e1a253f9cf715793c559a57611",
+    "scripts/ci/summary-progress-contract.mjs": "2928eb59284e868b99cae8924eec8c11f6481220df331baa0fdfde49c8a0f6d2",
+    "scripts/ci/summary-progress-tests.json": "7918158492d54b9d08970bc0bfb9329ea7606bc2520a69e6484f072228972b0a",
+    "tests/ci/summary-progress-contract.test.mjs": "042e5228af9ab91752bf76fb44be4a3a284c993ab4c4ade12fe54cbfad9a8995"
+  },
+  "localReceiptSha256": {
+    "ci-contract-final.tap": "2e3e46e85666b8f7a860da1779b431020ea28e942614fffd047199c216131664",
+    "ci-membership-mutation.log": "88f1f4a9b2bd0e1d34fce00148e820c092fd3a4f1c579ab362592d7f5dde6125",
+    "fix-types-complete.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "fix-types-complete.status": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "per-file-gates.log": "6dffe64f04aa58e2d654852c14e0538a56f9063d0dd64fd82cf87fb67a9bf946"
+  }
+}

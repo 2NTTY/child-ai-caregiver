@@ -4479,3 +4479,14 @@ Recorded At：2026-11-03 14:25 UTC。依使用者要求再次檢查並修至可�
 新增 `scripts/ci/verify-req005-roadmap.py`、對應 Python standard-library 測試及獨立 `req005-roadmap-docs.yml`。工作流只在 roadmap／檢查器／測試／本工作流相關變更時觸發，不對 WORKLOG-only PR 作通用 gate；只有 #409 套五檔交付 allowlist。採唯讀權限、固定 checkout action、精確 head、event base/head 的 40-hex 驗證、唯一 merge-base、五分鐘期限及無 npm／模型／部署。WORKLOG 與 diff 相對共同祖先核查，來源 Git 物件缺少時明確失敗，不由檢查器抓網絡；未改原 D alignment workflow 或遠端保護。
 
 本地合成 Git fixture 測試 12/12 通過，涵蓋斷鏈／越界行號、非法及不存在 base/head、錯 checkout、額外 Server 檔、WORKLOG 重寫、路徑越界、控制字元、CLI 失敗退出及 Test 6 原誤報。先有缺少檢查器的 10 項紅，實作後轉綠；另捕捉未提交工作樹的檢查順序不足，補成明確拒絕後 12 項全綠。原 head 文件的 Test 6 說法被新斷言拒絕，修正正文的預覽檢查通過（16 個文件連結及 2 個 PR URL 格式）；PR 狀態不由此腳本驗證。已安裝 PyYAML 的語法／關鍵配置檢查及 `git diff --check` 通過。提交前的工作樹預覽不是 exact-head CI，真正來源提交與 Actions 結果須讀回後另記；未重跑產品測試，不把文件靜態檢查或 skipped 舊 job 當作產品／合併驗收。
+
+<a id="log-20261104-req005-interactive-ci"></a>
+### 2026-11-04 — REQ-005 互動摘要 CI 覆蓋修正
+
+Recorded At：2026-11-04 04:46 UTC。依使用者「review pr 然後修掉問題再review」要求，從 #410 `5c1c581fc5b0dac824dbb815b1bff738d408b8de` 繼續，以本人授權的 2NTTY 帳號提交，不改原提交作者。修正 Summary progress job 沒有覆蓋本 PR 分支，以及新增測試後仍要求 162 個案例的 gate 不一致。
+
+沿原 same-repository、精確 head、鎖定工具鏈及無網絡／無憑證隔離條件，只增列已審 REQ-005 分支。每個分支以明確 manifest 記錄完整測試檔及精確案例數，逐檔執行並拒絕缺項、失敗、取消、跳過及 TODO。保留原 18 檔，補入既有 native context-integrity、initial-summary 與 summary-projection 三檔；其他 PR 的新增檔須明確加入各自 manifest，不靜默略過。原 D alignment workflow 與產品程式保持不變。
+
+本分支 21 檔合共 178／178 通過、CI 契約 6／6 通過，原 `tsconfig.server.json` 完整 noEmit 零診斷。初次 snapshot 缺少引用檔／宣告造成的型別失敗已保留；補齊精確原檔後通過，未改編譯根或排除。獨立覆核要求加強 suite membership，已用同檔數換走原 suite 的 mutation 證明拒絕，修正後無剩餘阻塞發現。已審 patch SHA256 `4e9170a3466b009d0a8358be3569580900d9f002eb7a0428f4cd954372db3190` 的五個執行／測試檔維持不變，詳見[驗證證據](artifacts/verification/REQ005_INTERACTIVE_CI_20261104.json)。
+
+本機缺少建立要求 network namespace 的權限，未把分離的合成測試稱為完整隔離 helper 通過；新精確遠端 head 的 Actions 結果仍須另行核對。D job 的 skipped 不是成功。本分支結果不代驗跨 PR 組合、真模型、正式資料、設備、網站或部署；未 approval／合併，REQ-005 仍未整體完成。
