@@ -1,0 +1,30 @@
+{
+  "commit": "e8918ddfde9ef5e978bb4d6d1b43d67193fa9a92",
+  "previousApplicationCommit": "6e47267c33b1d0900edf983a2da44ecc0f8cf47b",
+  "includedPullRequests": [451, 452],
+  "localChecks": {
+    "workerAndDomain": ["tests/handover-original-backup.test.ts", "tests/handover-private-source-domain.test.ts"],
+    "owner": "original restore submits only selected observed targets with one retained operation and never retries as a copy",
+    "sharedControls": "Source difference labels and the unavailable catalogue conflict",
+    "serverTypeScript": "passed on integrated changes",
+    "scope": "Synthetic data; actual archive, shared owner, domain services and durable worker. The source comparison does not disclose text, and recovery retains the prior deletion marker. Handover copies do not acquire official catalogue identity."
+  },
+  "production": {
+    "verifiedAt": "2026-11-05T01:17:24+08:00",
+    "origin": "https://ex-machina.eu.org",
+    "apiWorkerImage": "sha256:ffc924c0a59785027c5acd3db487c62625917c9b63da07772c640c627f22fb5d",
+    "webImage": "sha256:485afb55d3016bcac67d9e158a66ddc593397f536245bbd9161bf7ca4e995159",
+    "settingsHtmlSha256": "6c5bb701bd7440f343b910ade580d8e0148694b6dc813a59731a535af9a18fe9",
+    "settingsJsSha256": "e706a5d6f4e0e924a211ca41540ae1a03b1f8eb8766aba1d2d279fd2dc240399",
+    "composeSha256": "72d9bdca4344614aae631927c1742f380e75db9600950fd6a31d33a3e0030acc",
+    "healthHttp": 200,
+    "anonymousPackageCapabilitiesHttp": 401,
+    "activeAgentLeases": 0,
+    "activeReminderOrBackgroundWork": 0,
+    "terminalUnknownPreserved": 1,
+    "existingSigningMounts": "The API has public trust only; the worker retained readable private signing material.",
+    "modelCalls": 0,
+    "notifications": 0
+  },
+  "pending": ["Signed-in production restore and device acceptance", "Other original domains and account-scoped backups"]
+}
