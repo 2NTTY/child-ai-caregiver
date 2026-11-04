@@ -11,5 +11,13 @@
   ],
   "evidence": ["scripts/handover-export-review.test.mjs", "scripts/handover-period-ui.test.mjs"],
   "environment": "Local Node 24, shared component/owner, synthetic transport",
-  "notVerified": ["Live Web", "Android device", "Production release"]
+  "notVerified": ["Live Web", "Android device", "Production release"],
+  "classChecklist": {
+    "backend": "afc72bcb",
+    "entry": "HandoverControls, HandoverOwner, authenticated client and capability negotiation",
+    "test": "scripts/handover-class-export.test.mjs",
+    "verified": ["Class document and visit preparation previews use one source and opId", "A displayed whole-file choice pins its snapshot in the create request", "Changing class drops choices and ignores an outstanding page", "An older API still supports the original three class modules"],
+    "environment": "Shared TypeScript owner and real HTTP client with synthetic responses, Node 24",
+    "pending": ["Authenticated live Web export", "Android release and device check"]
+  }
 }

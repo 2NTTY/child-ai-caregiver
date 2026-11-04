@@ -89,16 +89,18 @@ export function HandoverControls() {
     : !!children.length && children.every(id => selectable.some(child => child.id === id));
   const validSelection = validChildren && !!modules.length
     && (!periodEnabled || periodSupported && ordered);
-  const needsReview = sourceMode === 'personal' && (modules.includes('documents') || modules.includes('attachments'));
-  const reviewBasis = JSON.stringify([identityKey, scopeKey, selectable.map(child => [child.id, child.workspaceId, child.accessRole])]);
-  const reviewKey = open && current && validSelection && needsReview ? JSON.stringify(selection) : null;
+  const needsReview = modules.includes('documents') || sourceMode === 'personal' && modules.includes('attachments');
+  const reviewSource = sourceMode === 'class' && classes.state.selected ? { kind: 'class' as const, spaceId: classes.state.selected.id } : undefined;
+  const reviewBasis = sourceMode === 'class' ? JSON.stringify([identityKey, classScope, chosenPupils.map(pupil => [pupil.childId, pupil.basis])])
+    : JSON.stringify([identityKey, scopeKey, selectable.map(child => [child.id, child.workspaceId, child.accessRole])]);
+  const reviewKey = open && current && validSelection && needsReview ? JSON.stringify({ selection, source: reviewSource }) : null;
   useEffect(() => {
-    controller.setReviewSelection(reviewKey ? selection : null, reviewBasis);
+    controller.setReviewSelection(reviewKey ? selection : null, reviewBasis, reviewSource);
     if (reviewKey && online) void controller.loadReview();
     return () => controller.setReviewSelection(null);
   }, [controller, reviewKey, reviewBasis, online]);
   if (!current) return null;
-  const review = needsReview && controller.reviewMatches(selection, reviewBasis) ? state.review : null;
+  const review = needsReview && controller.reviewMatches(selection, reviewBasis, reviewSource) ? state.review : null;
   const canCreate = !locked && !pending && validSelection && (!needsReview || !!review && controller.reviewReady(selection));
   return <View style={styles.group}>
     <Text style={styles.title}>交接與備份資料包</Text>
@@ -183,7 +185,8 @@ export function HandoverControls() {
             ? '正在準備每位孩子的清單；首次讀取完成後才可建立資料包。'
             : '清單尚未讀取完成，請重新讀取後建立資料包。'}</Text> : null}
           {review?.groups.map(group => <View key={`${group.childId}:${group.section}`} style={styles.item}>
-            <Text style={styles.title}>{selectable.find(child => child.id === group.childId)?.displayName ?? '孩子'} · {reviewLabels[group.section]}</Text>
+            <Text style={styles.title}>{(sourceMode === 'class' ? chosenPupils.find(pupil => pupil.childId === group.childId)?.label
+              : selectable.find(child => child.id === group.childId)?.displayName) ?? '孩子'} · {reviewLabels[group.section]}</Text>
             {group.loaded && !group.items.length ? <Text style={styles.body}>沒有可列出的項目。</Text> : null}
             {group.items.map(item => {
               const choice = review.choices.find(value => value.childId === item.childId && value.section === item.section && value.id === item.id);
@@ -201,14 +204,14 @@ export function HandoverControls() {
           </View>)}
           {review?.error ? <Text accessibilityLiveRegion="polite" style={styles.body}>{review.error}</Text> : null}
           <AppButton label={state.reviewBusy ? '正在讀取清單' : '重新讀取清單'} variant="quiet" loading={state.reviewBusy} disabled={locked || state.reviewBusy}
-            onPress={() => { controller.setReviewSelection(null); controller.setReviewSelection(selection, reviewBasis); void controller.loadReview(); }} />
+            onPress={() => { controller.setReviewSelection(null); controller.setReviewSelection(selection, reviewBasis, reviewSource); void controller.loadReview(); }} />
         </View> : null}
         <AppButton label="建立資料包" loading={state.busy === 'write'} disabled={!canCreate}
           onPress={() => { if (!canCreate) return;
             if (sourceMode === 'class') {
               const live = classExportPupils(classes.controller.getSnapshot(), teachers.controller.getSnapshot(), pupils);
               if (pupils.some(pupil => !live.some(row => row.childId === pupil.childId && row.basis === pupil.basis))) return;
-              void controller.createClass({ ...selection, modules: modules.filter((module): module is ClassExportModule => classModules.includes(module as ClassExportModule)) }, classes.state.selected!.id);
+              void controller.createClass({ ...selection, modules: modules.filter((module): module is ClassExportModule => classModules.includes(module as ClassExportModule)) }, classes.state.selected!.id, reviewBasis);
             } else if (needsReview) void controller.create(selection, purpose, controller.documentReview(selection));
             else void controller.create(selection, purpose);
             setOpen(false); }} />

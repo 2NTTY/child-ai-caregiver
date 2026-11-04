@@ -65,3 +65,53 @@ test('class export retains only chosen current readable pupils and uses capabili
   owner.syncContext('other', 'other:1', true); heldCapabilities(Response.json({ classModules: ['care'] })); await oldCapability;
   assert.equal(owner.getSnapshot().classModules, null, 'late capability reads cannot cross account scope');
 });
+
+test('class document choices and preview pages use one original operation until the teacher changes scope', async () => {
+  const childId = randomUUID(), source = { kind: 'class', spaceId: randomUUID() };
+  const selection = { childIds: [childId], modules: ['documents'],
+    period: { from: '2026-11-01T00:00:00+08:00', to: '2026-11-07T23:59:59.999+08:00' } };
+  const item = { childId, id: randomUUID(), section: 'documents', version: 2, snapshotId: randomUUID(), snapshotVersion: 2,
+    title: 'Report with unknown dates', from: null, to: null, reason: 'uncertain', canInclude: true, defaultIncluded: false };
+  const queries = [], writes = [], scopeVersion = 'a'.repeat(64);
+  let capabilityHeader, hold = false, late;
+  const api = createHandoverApi('https://example.test', async (url, init) => {
+    if (url.endsWith('/capabilities')) {
+      capabilityHeader = new Headers(init.headers).get('x-handover-class-document-review');
+      return Response.json({ classModules: capabilityHeader === '1' ? ['documents'] : [] });
+    }
+    const body = JSON.parse(init.body);
+    if (url.endsWith('/preview')) {
+      queries.push(body);
+      const page = Response.json({ items: body.section === 'documents' ? [item] : [], scopeVersion, nextCursor: null });
+      if (hold) return new Promise(resolve => { late = () => resolve(page); });
+      return page;
+    }
+    writes.push(body);
+    return Response.json({ id: body.opId, purpose: body.purpose, selection: body.selection, state: 'queued', version: 1,
+      createdAt: '2026-11-04T00:00:00Z', expiresAt: '2026-11-05T00:00:00Z', bytes: null, error: null });
+  });
+  const owner = new HandoverOwner(api); owner.syncContext('teacher', 'session:1', true);
+  await owner.readExportCapabilities();
+  assert.equal(capabilityHeader, '1', 'only a checklist-aware client asks for class documents');
+  owner.setReviewSelection(selection, 'class:1', source);
+  await owner.createClass(selection, source.spaceId); assert.equal(writes.length, 0);
+  await owner.loadReview();
+  assert.deepEqual(queries.map(page => page.section), ['documents', 'visit_preparation']);
+  assert.ok(queries[0].opId); assert.ok(queries.every(page => page.opId === queries[0].opId));
+  assert.deepEqual(queries.map(page => page.source), [source, source]);
+  const displayed = owner.getSnapshot().review.groups.find(group => group.section === 'documents').items[0];
+  assert.equal(displayed.id, item.id);
+  owner.chooseReviewItem(displayed, true);
+  await owner.createClass(selection, randomUUID()); assert.equal(writes.length, 0, 'choices do not authorize a different class');
+  await owner.createClass(selection, source.spaceId);
+  assert.equal(writes.length, 1); assert.equal(writes[0].opId, queries[0].opId);
+  assert.deepEqual(writes[0].source, source); assert.equal(writes[0].documentReview.scopeVersion, scopeVersion);
+  assert.equal(writes[0].documentReview.choices[0].snapshotId, item.snapshotId);
+  assert.equal(writes[0].documentReview.choices[0].include, true);
+  owner.setReviewSelection(selection, 'class:2', source);
+  hold = true; const inFlight = owner.loadReview();
+  const other = { kind: 'class', spaceId: randomUUID() }; owner.setReviewSelection(selection, 'class:3', other);
+  late(); await inFlight;
+  assert.deepEqual(owner.getSnapshot().review.choices, []); assert.equal(owner.getSnapshot().review.scopeVersion, null);
+  assert.ok(owner.getSnapshot().review.groups.every(group => !group.loaded && !group.items.length));
+});
