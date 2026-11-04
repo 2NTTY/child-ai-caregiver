@@ -122,6 +122,8 @@ F07 的資料及 SQL 退出證據已交付；F08 原站使用 Firestore，額外
 3. 在 Compose 的受保護環境設定 `P1_HANDOVER_TRUST_FILE` 及 `P1_HANDOVER_SIGNING_KEY_FILE` 為兩個檔案的絕對路徑。先用上述 overlay 做 `docker compose … config --quiet`，再沿原部署流程重建服務。API 和 worker 啟動時讀取公鑰。worker 會核對簽署私鑰與本站清單一致。
 4. 正常輪替先將新舊公鑰一同配置並重建兩個服務，再更換 worker 的簽署私鑰並重建 worker。保留舊公鑰可繼續認證過往資料包。若撤銷公鑰，移除後重建兩個服務；簽章完好但不再獲信任的包須明示確認，簽章或內容不符仍拒絕。構建、啟動及復原流程均不會自行產生金鑰。
 
+原站於 2026-11-05 啟用簽章。正在使用的 `compose.firestore.yaml` 已包含上述 overlay 的掛載，一般重建沿同一檔案。從倉庫重建新主機或替換整份 Compose 時，須重新納入該 overlay，核對 API 只取得公鑰、worker 同時取得簽署私鑰。按已核對的公鑰指紋還原信任清單，並套用其後的輪替及撤銷紀錄；如私鑰遺失，沿換匙流程簽署新包。首次公鑰與正式讀回見[原站簽章紀錄](../artifacts/verification/P4_PERSONAL_BACKUP_DELIVERY_20261105.json)。
+
 2026-10-15，原站 API／worker／Web 已更新為 `opt-b1d1565`，程式源為 b1d1565（#226，master 99f53df），Prompt Pack 0.1.43；包含 #213 登入及 OPT／LAY 修改。沿固定版本 Node／npm 建置 Web，依賴未變，Server 及 Web 以已核 hash 的小型層疊加既有映像，沒有傳送密鑰或 ADC。三服務健康、原生新索引及公開產物／SSE 已核；一次合成摘要／聊天共兩次生成，沒有通知、embedding 或調高配額。[交付 EV](../artifacts/verification/P2_OPT_DELIVERY_20261015.json)；舊 ADM01／review 證據保留，不能當全面回歸。
 
 當次回退配置保存在 `/etc/yuban-p1/firestore/compose.env.before-opt-b1d1565`；歷史配置存在不代表對應映像永久保留，現行候選按上述保留規則及 STATUS 核對。**OPT04 摘要批次與 OPT05 卡片寫入後，舊 API 的 strict schema 不能保證讀取新格式。** UI 故障可單獨恢復相容舊 Web 並保留新 API／worker；後端故障先暫停受影響入口／worker，使用保留新格式 reader 的相容修正。不能直接還原舊 compose.env 便宣稱資料相容，也不能用舊資料快照覆蓋新收據／刪除。
