@@ -5,6 +5,7 @@ import { Readable, Writable } from 'node:stream';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { previewHandoverDocuments } from '../server/handover-document-preview.ts';
 import { serialFirestoreFixture } from './helpers/firestore-session-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
@@ -170,6 +171,30 @@ test('documents and visit preparation traverse the original package worker with 
       edits: [{ op: 'set_metadata', summary: 'SECRET_CROSS_PERIOD_DOCUMENT_BODY' }] }, randomUUID()))!;
     const datedPeriod = { from: '2026-10-01T00:00:00+08:00', to: new Date(Date.now() + 86400000).toISOString() };
     const selection = { childIds: [sourceChild], modules: ['documents', 'tasks'] as ('documents' | 'tasks')[] };
+    const preview = await previewHandoverDocuments(exporter, 'source', { childId: sourceChild, section: 'documents', period: datedPeriod });
+    const crossingItem = preview.items.find(item => item.id === crossing.id)!;
+    assert.equal(crossingItem.reason, 'crosses');
+    assert.equal(crossingItem.defaultIncluded, false);
+    assert.ok(crossingItem.canInclude);
+    assert.ok(!JSON.stringify(preview).includes('SECRET_CROSS_PERIOD_DOCUMENT_BODY'));
+    const choices = preview.items.map(({ section, childId, id, version, snapshotId, snapshotVersion }) =>
+      ({ section, childId, id, version, snapshotId, snapshotVersion, include: id === crossing.id }));
+    const custom = await writePersonalHandoverPackage({ exporter, directory, ownerUserId: 'source', serverId: 'https://source.test',
+      packageId: randomUUID(), createdAt: new Date().toISOString(), purpose: 'handover', selection: { ...selection, period: datedPeriod },
+      expectedScopeVersion: preview.scopeVersion, documentChoices: choices });
+    const customReader = await openHandoverImport({ path: custom.path });
+    try {
+      const result = await customReader.readPage({ selection, acknowledgedManifestSha256: customReader.manifestSha256, limit: 100 });
+      assert.deepEqual(result.rows.filter(row => row.section === 'documents').map(row => (row.value as any).id), [crossing.id]);
+      assert.equal(result.rows.filter(row => row.section === 'tasks').length, 1);
+      assert.ok(!JSON.stringify(customReader.manifest.periodExceptions).includes(original.id));
+    } finally { await customReader.close(); }
+    const selectedZip = await openHandoverArchive({ path: custom.path });
+    try {
+      const summary = (await selectedZip.readEntry('summary.md', 64 * 1024)).toString('utf8');
+      assert.match(summary, /Cross-period document.*手動選入整份/u);
+      assert.ok(!summary.includes(original.current!.title));
+    } finally { await selectedZip.close(); }
     const dated = await writePersonalHandoverPackage({ exporter, directory, ownerUserId: 'source', serverId: 'https://source.test',
       packageId: randomUUID(), createdAt: new Date().toISOString(), purpose: 'handover', selection: { ...selection, period: datedPeriod } });
     const reader = await openHandoverImport({ path: dated.path });

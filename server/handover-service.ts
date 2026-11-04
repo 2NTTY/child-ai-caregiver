@@ -1,4 +1,5 @@
 import { createHash, type KeyObject } from 'node:crypto';
+import { previewHandoverDocuments } from './handover-document-preview.ts';
 import { createReadStream } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -40,7 +41,7 @@ export function createHandoverService(options: FirestoreDomainOptions & { export
         directory = await spool();
         const archive = await writePersonalHandoverPackage({ exporter: options.exporter, directory, ownerUserId: job.scope.ownerUserId,
           serverId: options.serverId, packageId: job.id, createdAt: job.createdAt, purpose: job.request.purpose,
-          selection: job.request.selection, expectedScopeVersion: job.sourceVersion, signingKey: options.signingKey, signal });
+          selection: job.request.selection, documentChoices: job.request.documentReview?.choices, expectedScopeVersion: job.sourceVersion, signingKey: options.signingKey, signal });
         const content = { ...await fileHash(archive.path, signal), manifestSha256: archive.manifestSha256 };
         await jobs.prepareUpload(work, content);
         artifact = await options.objects.put({ scope: job.objectScope, packageId: job.id, source: archive.path, directory, content: objectContent(content), signal });
@@ -77,6 +78,7 @@ export function createHandoverService(options: FirestoreDomainOptions & { export
     } catch (error) { await removeSpool(directory); throw error; }
   }
   return { create: jobs.create, get: jobs.get, list: jobs.list, cancel: jobs.cancel, processExport, cleanup, download,
+    preview: (owner: string, query: unknown) => previewHandoverDocuments(options.exporter, owner, query),
     async reconcile(owner: string, id: string, signal?: AbortSignal) {
       const job = await jobs.reconcilable(owner, id);
       if (job.state === 'ready' || !job.uploadStarted || !job.content) return jobs.get(owner, id);

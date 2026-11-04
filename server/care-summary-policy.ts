@@ -47,7 +47,7 @@ function eventDay(at: string | number, formatter: Intl.DateTimeFormat): string {
   return year + "-" + month + "-" + day;
 }
 
-function summaryEndDay(query: SummaryQuery): string {
+export function summaryEndDay(query: SummaryQuery): string {
   const endDay = new Date(query.startDay + "T00:00:00Z");
   endDay.setUTCDate(endDay.getUTCDate() + (query.period === "day" ? 1 : 7));
   return endDay.toISOString().slice(0, 10);

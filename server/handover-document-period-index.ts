@@ -2,8 +2,9 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { familyDocumentTransferSchema, documentTransferVersionSchema, documentTransferContentSchema } from './family-document-transfer.ts';
 import { HandoverArchiveError } from './handover-archive.ts';
-import { datedDocumentRequest, datedDocumentContent } from './handover-document-period.ts';
+import { datedDocumentRequest, datedDocumentContent, documentHeadMatchesPin } from './handover-document-period.ts';
 import type { HandoverPeriod } from './handover-period.ts';
+import type { HandoverDocumentPin } from '../src/shared/handover.ts';
 import { canonicalJson } from './online-routing.ts';
 
 const documentSections = ['documents', 'document_versions', 'document_content'] as const;
@@ -28,14 +29,25 @@ export class DatedDocumentPeriodIndex {
   private readonly versions = new Map<string, Revision>();
   private readonly contents = new Map<string, Revision>();
   private readonly period: HandoverPeriod;
+  private readonly exceptions = new Map<string, HandoverDocumentPin>();
 
-  constructor(period: HandoverPeriod) { this.period = period; }
+  constructor(period: HandoverPeriod, exceptions: readonly HandoverDocumentPin[] = []) {
+    this.period = period;
+    for (const pin of exceptions) if (pin.section === 'documents') {
+      const parent = documentKey(pin.childId, pin.id);
+      if (this.exceptions.has(parent)) fail();
+      this.exceptions.set(parent, pin);
+    }
+  }
 
   add(section: DocumentSection, childId: string, raw: unknown) {
     if (section === 'documents') {
       const head = parse(familyDocumentTransferSchema, raw), parent = documentKey(childId, head.id);
+      const exception = this.exceptions.get(parent);
       if (head.childId !== childId || head.invalidated || !head.currentSnapshot?.readable
-        || !datedDocumentRequest(head.request, this.period) || this.heads.has(parent)) fail();
+        || this.heads.has(parent)) fail();
+      if (exception ? !documentHeadMatchesPin(head, exception) || head.recentSnapshotIds.length !== 0
+        : !datedDocumentRequest(head.request, this.period)) fail();
       this.heads.set(parent, { currentId: head.currentSnapshot.id, currentVersion: head.currentSnapshot.version,
         recentIds: head.recentSnapshotIds });
       return;
@@ -43,14 +55,18 @@ export class DatedDocumentPeriodIndex {
     const content = section === 'document_content' ? parse(documentTransferContentSchema, raw) : null;
     const metadata = content ? (({ snapshot: _snapshot, ...revision }) => revision)(content)
       : parse(documentTransferVersionSchema, raw);
-    if (metadata.invalidated || content && !datedDocumentContent(content, this.period)) fail();
     const parent = documentKey(childId, metadata.documentId), identity = snapshotKey(parent, metadata.snapshotId);
+    const exception = this.exceptions.get(parent);
+    if (metadata.invalidated || (exception
+      ? metadata.snapshotId !== exception.snapshotId || metadata.snapshotVersion !== exception.snapshotVersion
+      : content && !datedDocumentContent(content, this.period))) fail();
     const records = content ? this.contents : this.versions;
     if (records.has(identity)) fail();
     records.set(identity, { parent, version: metadata.snapshotVersion, metadataHash: digest(metadata) });
   }
 
   verify() {
+    for (const parent of this.exceptions.keys()) if (!this.heads.has(parent)) fail();
     for (const [identity, version] of this.versions) {
       const content = this.contents.get(identity);
       if (!this.heads.has(version.parent) || !content || content.metadataHash !== version.metadataHash) fail();

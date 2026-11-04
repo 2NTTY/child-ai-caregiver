@@ -76,6 +76,20 @@ test('export requests persist one original job and outbox, reject changed retrie
       method: body === undefined ? 'GET' : 'POST', headers: { origin, 'content-type': 'application/json', 'x-expected-user-id': userId },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     }));
+    const previewResponse = await request('/preview', {section:'child_avatar', childId, period:null});
+    assert.equal(previewResponse.status, 200);
+    const preview = await previewResponse.json();
+    assert.deepEqual(preview.items, []); assert.equal(preview.avatarVersion, 0);
+    const reviewed = { choices: [], scopeVersion: preview.scopeVersion, avatarVersions:[{childId, version:0}] };
+    const manyChoices = Array.from({length: 500}, () => ({section:'files', childId, id:randomUUID(),
+      version:1, snapshotId:null, snapshotVersion:null, include:false}));
+    // A multi-page review reaches the version check instead of failing at the ordinary JSON size limit.
+    const largeReview = await request('', {...command, opId:randomUUID(), documentReview:{...reviewed, choices:manyChoices, scopeVersion:'0'.repeat(64)}});
+    assert.equal(largeReview.status, 409);
+    for (const stale of [{...reviewed, scopeVersion:'0'.repeat(64)}, {...reviewed, avatarVersions:[{childId,version:1}]}]) {
+      const response = await request('', {...command, opId:randomUUID(), documentReview:stale});
+      assert.equal(response.status, 409);
+    }
     assert.equal((await request('', command)).status, 202);
     const workerRuntime = { ...options, authority, config: { projectId: options.projectId,
       namespace: options.namespace, taskWorkerEnabled: true }, handover: service,

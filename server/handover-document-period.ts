@@ -1,5 +1,6 @@
 import type { AccountExportPage } from '../src/shared/account-service.ts';
 import type { DocumentRequest } from '../src/shared/family-documents.ts';
+import type { HandoverDocumentChoice, HandoverDocumentPin } from '../src/shared/handover.ts';
 import { familyDocumentTransferSchema, documentTransferContentSchema, type DocumentTransferContent, type FamilyDocumentTransfer } from './family-document-transfer.ts';
 import { withinHandoverPeriod, type HandoverPeriod } from './handover-period.ts';
 import { HandoverArchiveError } from './handover-archive.ts';
@@ -26,28 +27,63 @@ export function datedDocumentContent(content: DocumentTransferContent, period: H
 export type PackageDocumentFilter = (documentId: string, snapshotId: string) => boolean;
 type Pages = (section: string, childId: string, filter?: PackageDocumentFilter) => AsyncIterable<AccountExportPage>;
 type SelectedPage = { section: 'documents' | 'document_versions' | 'document_content'; items: unknown[] };
-type SelectedHead = { head: FamilyDocumentTransfer; eligible: Map<string, number> };
+type SelectedHead = { head: FamilyDocumentTransfer; eligible: Map<string, number>; explicit: boolean };
+
+export function documentHeadMatchesPin(head: FamilyDocumentTransfer, pin: HandoverDocumentPin) {
+  return head.childId === pin.childId && head.id === pin.id && head.version === pin.version
+    && (head.currentSnapshot?.id ?? null) === pin.snapshotId && (head.currentSnapshot?.version ?? null) === pin.snapshotVersion;
+}
+function scopeChanged(): never { throw new HandoverArchiveError('export_scope_changed'); }
+
+function selectedContent(content: DocumentTransferContent, selected: SelectedHead, period: HandoverPeriod) {
+  if (!selected.explicit) return datedDocumentContent(content, period);
+  const current = selected.head.currentSnapshot!;
+  if (content.snapshotId !== current.id) return false;
+  if (content.snapshotVersion !== current.version || content.invalidated || !content.snapshot) scopeChanged();
+  return true;
+}
 
 /** Index only snapshot identities, then stream selected bodies again through normal disclosure. */
-export async function* datedDocumentPages(childId: string, period: HandoverPeriod, pages: Pages, limit: number): AsyncGenerator<SelectedPage> {
+export async function* datedDocumentPages(childId: string, period: HandoverPeriod, pages: Pages, limit: number,
+  choices: readonly HandoverDocumentChoice[] = []): AsyncGenerator<SelectedPage> {
+  const pending = new Map<string, HandoverDocumentChoice>();
+  for (const choice of choices) if (choice.section === 'documents' && choice.childId === childId) {
+    if (pending.has(choice.id)) scopeChanged();
+    pending.set(choice.id, choice);
+  }
   const heads = new Map<string, SelectedHead>();
+  const seen = new Set<string>();
   for await (const page of pages('documents', childId)) for (const raw of page.items) {
     const head = familyDocumentTransferSchema.parse(raw);
-    if (head.childId !== childId || heads.has(head.id)) throw new HandoverArchiveError('invalid_package_scope');
-    if (head.invalidated || !head.currentSnapshot?.readable || !datedDocumentRequest(head.request, period)) continue;
+    if (head.childId !== childId || seen.has(head.id)) throw new HandoverArchiveError('invalid_package_scope');
+    seen.add(head.id);
+    const choice = pending.get(head.id);
+    if (choice) {
+      if (!documentHeadMatchesPin(head, choice)) scopeChanged();
+      pending.delete(head.id);
+      if (!choice.include) continue;
+      if (head.invalidated || !head.currentSnapshot?.readable) scopeChanged();
+    } else if (head.invalidated || !head.currentSnapshot?.readable || !datedDocumentRequest(head.request, period)) continue;
     if (heads.size >= limit) throw new HandoverArchiveError('package_size_exceeded');
-    heads.set(head.id, { head, eligible: new Map() });
+    heads.set(head.id, { head, eligible: new Map(), explicit: choice?.include === true });
   }
+  if (pending.size) scopeChanged();
   let count = 0;
-  if (heads.size) for await (const page of pages('document_content', childId, id => heads.has(id))) for (const raw of page.items) {
+  if (heads.size) for await (const page of pages('document_content', childId, (id, snapshotId) => {
+    const selected = heads.get(id);
+    return !!selected && (!selected.explicit || selected.head.currentSnapshot!.id === snapshotId);
+  })) for (const raw of page.items) {
     const content = documentTransferContentSchema.parse(raw), selected = heads.get(content.documentId);
-    if (!selected || !datedDocumentContent(content, period)) continue;
+    if (!selected || !selectedContent(content, selected, period)) continue;
     if (selected.eligible.has(content.snapshotId)) throw new HandoverArchiveError('invalid_package_data');
     if (++count > limit) throw new HandoverArchiveError('package_size_exceeded');
     selected.eligible.set(content.snapshotId, content.snapshotVersion);
   }
-  for (const [id, { head, eligible }] of heads) {
-    if (eligible.get(head.currentSnapshot!.id) !== head.currentSnapshot!.version) { heads.delete(id); continue; }
+  for (const [id, { head, eligible, explicit }] of heads) {
+    if (eligible.get(head.currentSnapshot!.id) !== head.currentSnapshot!.version) {
+      if (explicit) scopeChanged();
+      heads.delete(id); continue;
+    }
     yield { section: 'documents', items: [{ ...head, recentSnapshotIds: head.recentSnapshotIds.filter(snapshotId => eligible.has(snapshotId)) }] };
   }
   if (!heads.size) yield { section: 'documents', items: [] };
@@ -56,7 +92,7 @@ export async function* datedDocumentPages(childId: string, period: HandoverPerio
     for (const raw of page.items) {
       const content = documentTransferContentSchema.parse(raw), selected = heads.get(content.documentId);
       if (!selected?.eligible.has(content.snapshotId)) continue;
-      if (selected.eligible.get(content.snapshotId) !== content.snapshotVersion || !datedDocumentContent(content, period))
+      if (selected.eligible.get(content.snapshotId) !== content.snapshotVersion || !selectedContent(content, selected, period))
         throw new HandoverArchiveError('export_scope_changed');
       selected.eligible.delete(content.snapshotId);
       const { snapshot: _body, ...version } = content;

@@ -40,6 +40,9 @@ export async function handleFirebaseAccountData(request: Request, auth: Firebase
   }
   if (path === '/api/account/packages' || path.startsWith('/api/account/packages/')) {
     const packages = services.packages; if (!packages) domainReject('package_service_unavailable', 503);
+    if (request.method === 'POST' && path === '/api/account/packages/preview' && !url.search) {
+      const result = await packages.preview(user.id, await readJson(request)); await sameIdentity(); return json(result);
+    }
     const route = /^\/api\/account\/packages\/([0-9a-f-]{36})(?:\/(download|cancel|reconcile))?$/iu.exec(path);
     if (request.method === 'POST' && path === '/api/account/packages') {
       const result = await packages.create(user.id, await readJson(request)); await sameIdentity();

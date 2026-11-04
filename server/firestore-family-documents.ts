@@ -60,7 +60,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
   maintenanceActorId?: string;
 }): FamilyDocumentStore & { processRefresh(job: FirestoreBackgroundWork): Promise<{ state: 'completed' | 'stopped' }>;
   forSharedSpace(selection: SharedSelection): ReturnType<typeof createFirestoreFamilyDocumentStore>;
-  readExportMetadata(userId: string, childId: string, id: string): Promise<FamilyDocumentTransfer | null>;
+  readExportMetadata(userId: string, childId: string, id: string, onCurrent?: (snapshot: DocumentSnapshot | null) => void): Promise<FamilyDocumentTransfer | null>;
   readImportState(binding: FirestoreAuthorityTransaction, id: string): Promise<{ value: FamilyDocumentTransfer | null; version: number }>;
   prepareImported(binding: FirestoreAuthorityTransaction, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     currentSnapshot: DocumentSnapshot | null, current?: { id: string; expectedVersion: number }): Promise<{
@@ -243,10 +243,11 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
   async function read<T>(userId: string, childId: string, operation: (binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope) => Promise<T>) {
     uuid.parse(childId); return runDocumentTransaction(userId, childId, binding => operation(binding, { ...binding.scope }));
   }
-  async function transfer(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, row: Metadata) {
+  async function transfer(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, row: Metadata, onCurrent?: (snapshot: DocumentSnapshot | null) => void) {
     const loaded = await sources(binding, scope), values = await bodies(binding, scope, row);
     await supplement(binding, scope, loaded, [...(values.current ? [values.current] : []), ...values.history]);
     const item = safe(row, loaded, values);
+    onCurrent?.(item.current);
     return familyDocumentTransferSchema.parse({ format: 'yuyoufang-document:1', id: row.id, childId: row.childId,
       version: row.version, kind: row.request.kind, purpose: row.request.purpose, request: row.request,
       createdAt: row.createdAt, status: row.status, archivedAt: row.archivedAt, autoRefresh: row.autoRefresh,
@@ -259,11 +260,11 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
       if (options.transaction) domainReject('shared_transaction_scope', 403);
       return createFirestoreFamilyDocumentStore({ ...options, sharing: sharedSelectionSchema.parse(selection) });
     },
-    async readExportMetadata(userId, childId, id) {
+    async readExportMetadata(userId, childId, id, onCurrent) {
       uuid.parse(id);
       return read(userId, childId, async (binding, scope) => {
         const row = await find(binding, scope, id); if (!row) return null;
-        return transfer(binding, scope, row);
+        return transfer(binding, scope, row, onCurrent);
       });
     },
     async readImportState(binding, id) {

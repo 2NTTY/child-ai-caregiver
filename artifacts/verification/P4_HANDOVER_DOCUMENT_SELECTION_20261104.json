@@ -1,0 +1,23 @@
+{
+  "package": "P4-HANDOVER01",
+  "contract": "d24e9b65",
+  "environment": "Local Node 24, real ZIP writer/reader and production service code with synthetic Firestore and object storage",
+  "tests": [
+    "tests/handover-document-pipeline.test.ts",
+    "tests/handover-document-period-overrides.test.ts",
+    "tests/handover-preview-attachments.test.ts",
+    "tests/firestore-handover-jobs.test.ts"
+  ],
+  "observed": [
+    "The preview returned the cross-period title and coverage without private body text. Its manual inclusion produced the exact current body and a named inventory in summary.md. The deselected document was absent from the manifest exceptions and inventory; the dated task remained.",
+    "The importer rejected misbound snapshots, extra exception history and missing pinned content, including content that became unreadable after its head was read.",
+    "The selected out-of-period general file kept its name and bytes. The excluded recording, bytes and transcript were absent in dated and all-time exports.",
+    "The authenticated preview endpoint returned an empty avatar page with version zero. Creating from a stale workspace or avatar version was rejected. Existing operation recovery remained usable."
+  ],
+  "failuresRetained": [
+    "Before implementation the pipeline had no preview entry and the dated worker ignored explicit pins.",
+    "Review identified a full-period explicit inclusion that could outlive a readable report body. The worker now verifies both the version and the readable body before publishing."
+  ],
+  "checks": ["Server TypeScript", "git diff --check"],
+  "notVerified": ["Production deployment", "Real browser or phone", "GCP IAM or real storage"]
+}

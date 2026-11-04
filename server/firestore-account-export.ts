@@ -7,6 +7,8 @@ import { firestoreVoiceRowSchema, type FirestoreVoiceStore } from './firestore-v
 import { firestoreVoiceTranscriptSchema, type FirestoreVoiceTranscripts } from './firestore-voice-transcripts.ts';
 import { createFirestoreMemoryStore, firestoreFactSchema, firestoreTopicSchema } from './firestore-memory.ts';
 import type { PackagePageOptions } from './handover-export.ts';
+import { previewFamilyDocument } from './handover-document-preview.ts';
+import type { DocumentSnapshot as FamilySnapshot } from '../src/shared/family-documents.ts';
 import { createFirestoreCareStore } from './firestore-care.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
 import { createFirestoreNotificationMessages } from './firestore-notification-messages.ts';
@@ -71,7 +73,7 @@ const global = new Set(['self_avatar', 'self_avatar_content', 'native_push_bindi
 const querySchema = z.object({ section: z.string().max(80), childId: z.uuid().optional(),
   scopeVersion: z.string().regex(/^[a-f0-9]{64}$/u).optional(), cursor: z.string().max(16000).optional() }).strict();
 const cursorSchema = z.object({ userId: z.string(), section: z.string(), childId: z.uuid().nullable(), scopeVersion: z.string(), after: z.string().max(2000),
-  phase: z.literal('source').optional() }).strict();
+  phase: z.literal('source').optional(), previewBasis: z.string().length(64).optional() }).strict();
 export function createFirestoreAccountExport(options: FirestoreAuthorityOptions & {
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'content'>;
   voices?: Pick<FirestoreVoiceStore,'content'|'readMetadata'>;
@@ -87,13 +89,16 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
     return firestoreDomainHash([binding.scope.ownerUserId, binding.scope.workspaceId, binding.scope.storageEpoch, binding.authorizationVersion, binding.changeSeq]);
   }
   const aad = (owner: string) => 'firestore-account-export:1:' + owner;
-  const encode = (value: z.infer<typeof cursorSchema>) => Buffer.from(options.cipher.encrypt(JSON.stringify(value), aad(value.userId))).toString('base64url');
   function decode(raw: string, owner: string) {
     try { return cursorSchema.parse(JSON.parse(options.cipher.decrypt(Buffer.from(raw, 'base64url').toString(), aad(owner)))); }
     catch { return domainReject('invalid_export_cursor', 400); }
   }
   async function page(owner: string, raw: unknown, packageMedia?: PackageMediaFilter, packageOptions?: PackagePageOptions): Promise<AccountExportPage> {
     const input = domainParse(querySchema, raw), section = input.section;
+    const previewBasis = packageOptions?.documentPreviewPeriod === undefined ? undefined
+      : firestoreDomainHash(['handover-preview:1', packageOptions.documentPreviewPeriod]);
+    const encode = (value: z.infer<typeof cursorSchema>) => Buffer.from(options.cipher.encrypt(
+      JSON.stringify({ ...value, previewBasis }), aad(owner))).toString('base64url');
     if (!global.has(section) && !Object.hasOwn(sections, section) || global.has(section) === Boolean(input.childId)
       || input.cursor && !input.scopeVersion) domainReject('invalid_export_scope', 400);
     const result = await authority.runTransaction(owner, input.childId ?? null, async binding => {
@@ -101,7 +106,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
       if (input.scopeVersion && input.scopeVersion !== scopeVersion) domainReject('export_scope_changed');
       const previous = input.cursor ? decode(input.cursor, owner) : null;
       if (previous && (previous.userId !== owner || previous.section !== section || previous.childId !== (input.childId ?? null)
-        || previous.scopeVersion !== scopeVersion)) domainReject('invalid_export_cursor', 400);
+        || previous.scopeVersion !== scopeVersion || previous.previewBasis !== previewBasis)) domainReject('invalid_export_cursor', 400);
       const sourceModule = section === 'document_versions' || section === 'document_content' ? undefined : historyModule(section);
       if (previous?.phase === 'source' && !sourceModule) domainReject('invalid_export_cursor', 400);
       let items: unknown[] = [], nextCursor: string | null = null;
@@ -189,8 +194,11 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             items.push(section === 'document_content' ? { ...identity, generatedAt: manifest.generatedAt, snapshot, invalidated: snapshot === null }
               : { ...identity, generatedAt: manifest.generatedAt, invalidated: snapshot === null });
           } else if (section === 'documents') {
-            const item = await createFirestoreFamilyDocumentStore({ ...options, transaction: binding }).readExportMetadata(owner, binding.scope.childId, context.id);
-            if (item) items.push(item);
+            let snapshot: FamilySnapshot | null = null;
+            const period = packageOptions?.documentPreviewPeriod;
+            const item = await createFirestoreFamilyDocumentStore({ ...options, transaction: binding }).readExportMetadata(owner, binding.scope.childId,
+              context.id, period === undefined ? undefined : current => { snapshot = current; });
+            if (item) items.push(period === undefined ? item : previewFamilyDocument(item, snapshot, period));
           } else if (['care_history', 'profile_history', 'memory_fact_history', 'memory_topic_history'].includes(section)) {
             const item = z.object({ id: z.uuid().optional(), childId: z.uuid(), version: z.number().int().positive() }).passthrough().parse(value);
             const kind = section === 'care_history' ? 'care' : section === 'profile_history' ? 'profile' : section === 'memory_fact_history' ? 'fact' : 'topic';

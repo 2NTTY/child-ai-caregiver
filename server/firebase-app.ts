@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { handleAdminRequest } from './admin-api.ts';
 import type { FirestoreAdmin } from './firestore-admin.ts';
 import { accountAcknowledgementSchema } from "../src/shared/account-service.ts";
+import { HANDOVER_EXPORT_COMMAND_BYTES } from '../src/shared/handover-jobs.ts';
 import { FirestoreAuthorityError, type FirestoreAuthority } from "./firestore-authority.ts";
 import { FirebaseAuthError, type FirebaseAuthPort } from "./firebase-auth.ts";
 import { DeviceSessionError } from "./firestore-device-sessions.ts";
@@ -118,10 +119,10 @@ class RequestError extends Error {
   readonly status: number;
   constructor(code: string, status: number) { super("Firebase foundation request rejected"); this.code = code; this.status = status; }
 }
-async function readJson(request: Request): Promise<unknown> {
+async function readJson(request: Request, limit = MAX_BODY_BYTES): Promise<unknown> {
   if (!/^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(request.headers.get("content-type") ?? "")) throw new RequestError("json_required", 415);
   const length = request.headers.get("content-length");
-  if (length !== null && (!/^\d+$/.test(length) || Number(length) > MAX_BODY_BYTES)) throw new RequestError("request_body_too_large", 413);
+  if (length !== null && (!/^\d+$/.test(length) || Number(length) > limit)) throw new RequestError("request_body_too_large", 413);
   const reader = request.body?.getReader();
   if (!reader) throw new RequestError("invalid_request", 400);
   const chunks: Uint8Array[] = []; let bytes = 0;
@@ -129,7 +130,7 @@ async function readJson(request: Request): Promise<unknown> {
     while (true) {
       const { done, value } = await reader.read(); if (done) break;
       bytes += value.byteLength;
-      if (bytes > MAX_BODY_BYTES) { await reader.cancel(); throw new RequestError("request_body_too_large", 413); }
+      if (bytes > limit) { await reader.cancel(); throw new RequestError("request_body_too_large", 413); }
       chunks.push(value);
     }
     return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(Buffer.concat(chunks)));
@@ -190,7 +191,8 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
       if (path === '/api/account/messages' && !options.accountData) return errorResponse('message_history_unavailable', 503);
       if (options.accountData && (path === '/api/account/messages' || path === '/api/account/export' || path === '/api/account/packages' || path.startsWith('/api/account/packages/') || path === '/api/account/package-imports' || path.startsWith('/api/account/package-imports/') || path === '/api/account/package-uploads' || path.startsWith('/api/account/package-uploads/') || path === '/api/account/delete' || path.startsWith('/api/account/deletion/'))) {
         if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
-        return uncached(await handleFirebaseAccountData(request, auth, options.accountData, readJson));
+        return uncached(await handleFirebaseAccountData(request, auth, options.accountData,
+          path === '/api/account/packages' && request.method === 'POST' ? req => readJson(req, HANDOVER_EXPORT_COMMAND_BYTES) : readJson));
       }
       if (path === "/api/account" && request.method === "GET") {
         const session = await auth.getSession({ headers: request.headers });
