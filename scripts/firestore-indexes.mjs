@@ -15,7 +15,8 @@ const sessionIndexes = ['ASCENDING', 'DESCENDING'].map(order => canonical({
 const metadataFields = new Set([
   'photos:scopeTag', 'knowledge_versions:versionId', 'knowledge_observations:lastSuccessfulCheckAt', 'knowledge_checks:checkedAt',
   'work_watches:enabled', 'erasures:state', 'content_erasures:stage', 'context_versions:summaryPending', 'voice_assets:cleanupState',
-  'chat_file_assets:cleanupState', 'avatar_cleanup:complete', 'handover_exports:cleaned', 'handover_import_batches:growthImportScopes',
+  'chat_file_assets:cleanupState', 'avatar_cleanup:complete', 'handover_exports:cleaned', 'handover_uploads:cleaned',
+  'handover_import_batches:growthImportScopes',
 ].map(field => 'yuban_authority_' + field));
 try {
   if (!['--inspect', '--inspect-fields', '--approved-apply', '--approved-fields'].includes(mode) || !process.env.GOOGLE_APPLICATION_CREDENTIALS) throw Error('explicit_mode_and_credentials_required');

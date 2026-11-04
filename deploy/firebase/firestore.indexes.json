@@ -24,14 +24,6 @@
       ]
     },
     {
-      "collectionGroup": "yuban_authority_handover_uploads",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "cleaned", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "yuban_authority_voice_assets",
       "queryScope": "COLLECTION",
       "fields": [
@@ -4058,6 +4050,16 @@
       "collectionGroup": "yuban_authority_handover_uploads",
       "fieldPath": "*",
       "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_handover_uploads",
+      "fieldPath": "cleaned",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
     },
     {
       "collectionGroup": "yuban_authority",
