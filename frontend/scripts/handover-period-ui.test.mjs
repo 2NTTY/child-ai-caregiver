@@ -46,6 +46,75 @@ const nodes = tree => !tree || typeof tree !== 'object' ? [] : Array.isArray(tre
 const text = tree => tree == null || tree === false ? '' : Array.isArray(tree) ? tree.map(text).join(' ') : typeof tree === 'object' ? text(tree.props?.children) : String(tree);
 const control = (view, label) => nodes(view.tree).find(node => node.props?.label === label);
 
+test('original concern form negotiates support and preserves slice and original concern identities through period supplementation', async () => {
+  const childId = '00000000-0000-4000-8000-000000000081', uploadId = '00000000-0000-4000-8000-000000000082';
+  const concernId = '00000000-0000-4000-8000-000000000083', sliceId = '00000000-0000-4000-8000-000000000084';
+  const time = '2026-11-05T00:00:00Z', manifestSha256 = 'f'.repeat(64), writes = [], queries = [], headers = [];
+  let modules, period = null, batch;
+  const upload = () => ({ id: uploadId, version: 4, filename: 'concerns.zip', bytes: 3, state: 'ready', error: null, createdAt: time,
+    expiresAt: '2026-11-06T00:00:00Z', preview: { integrity: 'trusted', manifestSha256, children: [{ id: childId, displayName: 'Original child' }],
+      coverage: [{ section: 'concerns', childId, items: 1 }], header: { format: 'yuyoufang-data', version: 1, packageId: uploadId,
+        packageVersion: 1, createdAt: time, purpose: 'backup', source: { serverId: 'source.test', accountId: 'owner' },
+        selection: { childIds: [childId], modules: ['care', 'concerns'], period } } } });
+  const api = createHandoverApi('https://example.test', async (url, init) => {
+    if (url.endsWith('/capabilities')) { headers.push(new Headers(init.headers)); return Response.json({ classEnrolment: false, originalModules: modules }); }
+    if (url.includes('/package-uploads/')) return Response.json(upload());
+    if (url.endsWith('/compare-original')) {
+      queries.push(JSON.parse(init.body));
+      return Response.json({ uploadId, manifestSha256, childId, module: 'concerns', nextCursor: null,
+        items: [{ id: period ? sliceId : concernId, targetId: concernId, backupVersion: 3, localVersion: period ? 9 : 7,
+          state: 'different', changedFields: period ? ['selectedEvents'] : ['title', 'reason', 'status', 'events'] }] });
+    }
+    if (init.method === 'GET') return Response.json(batch);
+    const command = JSON.parse(init.body); writes.push(command);
+    batch = { id: command.opId, version: 1, uploadId, packageId: uploadId, packageVersion: 1, manifestSha256, integrity: 'trusted',
+      targets: command.targets, state: 'queued', processedItems: 0, totalItems: 1, counts: { created: 0, updated: 0, skipped: 0, conflict: 0 },
+      error: null, createdAt: time, updatedAt: time };
+    return Response.json(batch);
+  });
+  const controller = new handoverImportOwner.HandoverImportOwner(api); controller.syncContext('owner', 'owner:1', true);
+  await controller.readImportCapabilities();
+  assert.equal(headers[0].get('x-handover-original-modules'), '1');
+  assert.equal(headers[0].get('x-handover-original-features'), 'concerns');
+  await controller.openUpload(uploadId);
+  production = { owner: { handoverImportOwner: controller, sharedChild: { subscribe: noop, getSnapshot: () => ({ phase: 'idle' }) } },
+    userId: 'owner', identityKey: 'owner:1', online: true, recordsState: { children: [{ id: childId, displayName: 'Original child', accessRole: 'owner' }] },
+    account: { gate: 'ready', deletion: { phase: 'idle' } } };
+  const component = load('../src/components/account/HandoverImportControls.tsx').HandoverImportControls, view = render(component);
+  const again = () => render(component, view), settle = () => new Promise(resolve => setImmediate(resolve));
+  control(view, '查看上載與匯入選擇').props.onPress(); again();
+  assert.equal(control(view, '比較資料類別').props.options.some(option => option.value === 'concerns'), false);
+  await controller.compareOriginal(childId, 'concerns'); assert.equal(queries.length, 0, 'An old server cannot receive an original concern request');
+  modules = ['care', 'concerns']; await controller.readImportCapabilities(); again();
+  assert.equal(control(view, '比較資料類別').props.options.some(option => option.value === 'concerns'), true);
+  control(view, '比較原有資料的孩子').props.onChange(childId); control(view, '比較資料類別').props.onChange('concerns'); again();
+  control(view, '比較原有資料').props.onPress(); await settle(); again();
+  assert.equal(queries[0].module, 'concerns'); assert.equal(controller.getSnapshot().comparison.items[0].resourceSection, undefined);
+  assert.match(text(view.tree), /同一關注.*新修訂/); assert.match(text(view.tree), /舊修訂.*追溯/);
+  assert.match(text(view.tree), /關注標題/); assert.match(text(view.tree), /關注原因/); assert.match(text(view.tree), /觀察時間線/);
+  control(view, '以備份覆蓋此項').props.onChange(true); again();
+  control(view, '提交所選原項還原（1 項）').props.onPress(); await settle();
+  assert.deepEqual(writes[0].resolutions, [{ sourceChildId: childId, section: 'concerns', resourceId: concernId,
+    resolution: { mode: 'replace_current', targetId: concernId, expectedVersion: 7 } }]);
+  period = { from: '2026-11-02T16:00:00.000Z', to: '2026-11-04T15:59:59.999Z' };
+  await controller.openUpload(uploadId); await controller.compareOriginal(childId, 'concerns'); again();
+  assert.match(text(view.tree), /只補回所選期間缺少的觀察/); assert.match(text(view.tree), /不改其他時段、標題、狀態或跟進/);
+  assert.match(text(view.tree), /不會導入.*執行.*提醒授權/); assert.match(text(view.tree), /所選期間觀察/);
+  assert.match(text(view.tree), new RegExp('原關注：\\s*' + concernId));
+  control(view, '補回所選期間缺少的觀察').props.onChange(true); again();
+  control(view, '提交所選期間觀察補回（1 項）').props.onPress(); await settle();
+  assert.equal(writes[1].restoreOriginal, true); assert.equal(writes[1].resolutionOnly, true);
+  assert.deepEqual(writes[1].targets, [{ sourceChildId: childId, target: { childId, spaceId: null }, sections: ['concerns'] }]);
+  assert.deepEqual(writes[1].resolutions, [{ sourceChildId: childId, section: 'concerns', resourceId: sliceId,
+    resolution: { mode: 'replace_current', targetId: concernId, expectedVersion: 9 } }]);
+  await controller.openUpload(uploadId); await controller.compareOriginal(childId, 'concerns');
+  const stale = controller.getSnapshot().comparison;
+  modules = undefined; await controller.readImportCapabilities(); again();
+  assert.equal(controller.getSnapshot().originalModules.includes('concerns'), false);
+  assert.equal(controller.getSnapshot().comparison, null);
+  await controller.restoreComparison(stale); assert.equal(writes.length, 2, 'Capability fallback cannot submit a previous concern selection');
+});
+
 test('original child avatar form limits attachment restoration to covered child heads and submits the observed child version', async () => {
   const childId = '00000000-0000-4000-8000-000000000071', otherChild = '00000000-0000-4000-8000-000000000072';
   const uploadId = '00000000-0000-4000-8000-000000000073', manifestSha256 = 'e'.repeat(64), time = '2026-11-05T00:00:00Z';

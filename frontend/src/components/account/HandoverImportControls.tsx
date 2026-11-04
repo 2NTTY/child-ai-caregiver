@@ -42,6 +42,7 @@ const noAvatarSubscription = () => () => {};
 export function comparisonFields(module: HandoverImportModule, fields: string[], resourceSection?: 'documents' | 'visit_preparation' | 'child_avatar') {
   const moduleNames: Partial<Record<HandoverImportModule,Record<string,string>>> = {
     care:{text:'記錄內容',details:'時間／數量',source:'資料來源'},profile:{data:'孩子概況'},attachments:{asset:'頭像圖片'},
+    concerns:{title:'關注標題',status:'關注狀態',events:'觀察時間線',selectedEvents:'所選期間觀察'},
     tasks:{title:'待辦名稱',details:'待辦內容',occurrence:'時間／狀態',kind:'類別',assigneeUserId:'負責人'},
     sources:{sourceLabel:'來源名稱',sourceUrl:'來源連結',sourceDateText:'來源日期',sourceNotes:'來源備註',text:'來源原文',
       management:'用途與摘錄設定',kind:'來源類別',fetchState:'抓取狀態',extraction:'提取狀態',recordId:'已連結照護記錄',
@@ -49,7 +50,7 @@ export function comparisonFields(module: HandoverImportModule, fields: string[],
   };
   const documentFields: Record<string, string> = resourceSection === 'visit_preparation' ? { questions: '到診問題', checklist: '攜帶清單', appointmentTaskId: '預約連結', period: '資料期間' }
     : { request: '文件設定', status: '封存狀態', archivedAt: '封存時間', currentSnapshot: '文件內容' };
-  const names: Record<string,string> = {...moduleNames[module], ...(module === 'documents' ? documentFields : {}), reason:'修改原因',updatedAt:'更新時間',
+  const names: Record<string,string> = {...moduleNames[module], ...(module === 'documents' ? documentFields : {}), reason:module === 'concerns' ? '關注原因' : '修改原因',updatedAt:'更新時間',
     confirmedAt:'確認時間',confirmedBy:'確認者',confirmationBasis:'確認記錄',importedFrom:'來源記錄',
     authorUserId:'記錄者',createdBy:'建立者',createdAt:'建立時間'};
   return [...new Set(fields.map(field => Object.hasOwn(names,field) ? names[field] : '其他欄位'))].join('、');
@@ -184,6 +185,7 @@ export function HandoverImportControls() {
   const comparison = state.comparison?.query.uploadId === upload?.id && state.comparison?.query.childId === comparisonChild
     && state.comparison?.query.module === comparisonModule ? state.comparison : null;
   const comparisonSelected = comparison?.selected ?? [];
+  const periodConcerns = comparisonModule === 'concerns' && !!preview?.header.selection.period;
   const canCompareAvatar = state.accountAvatarRestoreEnabled && controller.canCompareAccountAvatar();
   const avatarComparison = canCompareAvatar && state.accountAvatarComparison?.query.uploadId === upload?.id
     && state.accountAvatarComparison?.query.expectedUploadVersion === upload?.version
@@ -382,6 +384,9 @@ export function HandoverImportControls() {
               <Text style={styles.title}>比較原有資料</Text>
               <Text style={styles.body}>{originalModules.length ? `比較此帳戶原孩子已開放的${originalModules.map(module => originalLabels[module]).join('、')}。`
                 : '此服務目前未開放原有資料比較。'}每次只讀一頁狀態，比較本身沒有還原或改寫任何資料；勾選後可另行提交原項還原，Server 會核實本人備份證明及目前版本。</Text>
+              {comparisonModule === 'concerns' && comparisonModules.includes('concerns') ? <Text style={styles.body}>{periodConcerns
+                ? '此包只包含選定日期：只補回所選期間缺少的觀察，不改其他時段、標題、狀態或跟進。'
+                : '完整備份會把所選內容覆蓋回同一關注的新修訂，舊修訂仍可追溯。'}不會導入 Agent 執行或提醒授權。</Text> : null}
               {comparisonChildren.length && supportedComparisonModules.length ? <>
                 <AppSelect label="比較原有資料的孩子" value={comparisonChild} disabled={writeLocked}
                   options={[{value:'',label:'請選擇原孩子'},...comparisonChildren.map(child => ({value:child.id,label:child.displayName}))]}
@@ -400,22 +405,23 @@ export function HandoverImportControls() {
                       ? <Text style={styles.body}>沒有可還原的孩子頭像；備份沒有圖片、與目前相同或未能核實的項目會保留目前資料。</Text> : null}
                     {comparison.items.map(item => <View key={originalComparisonItemKey(item)} style={styles.item}>
                       <Text selectable style={styles.body}>{item.resourceSection === 'documents' ? '文件 · ' : item.resourceSection === 'visit_preparation' ? '到診準備 · ' : item.resourceSection === 'child_avatar' ? '孩子頭像 · ' : ''}{item.id} · {comparisonStates[item.state]}</Text>
+                      {comparison.query.module === 'concerns' && item.targetId && item.id !== item.targetId ? <Text selectable style={styles.body}>原關注：{item.targetId}</Text> : null}
                       <Text style={styles.body}>備份版本 {item.backupVersion} · 目前版本 {item.localVersion ?? '未能確定'}</Text>
                       {item.changedFields.length ? <Text style={styles.body}>有變更的欄位：{comparisonFields(comparison.query.module,item.changedFields,item.resourceSection)}</Text> : null}
                       {originalComparisonResolution(item) ? <AppCheckbox
-                        label={originalComparisonResolution(item) === 'restore_deleted' ? '恢復此已刪項目' : '以備份覆蓋此項'}
-                        accessibilityLabel={`${item.resourceSection === 'documents' ? '文件 ' : item.resourceSection === 'visit_preparation' ? '到診準備 ' : item.resourceSection === 'child_avatar' ? '孩子頭像 ' : ''}${item.id}：${originalComparisonResolution(item) === 'restore_deleted' ? '恢復已刪項目' : '覆蓋目前內容'}`}
+                        label={periodConcerns ? '補回所選期間缺少的觀察' : originalComparisonResolution(item) === 'restore_deleted' ? '恢復此已刪項目' : '以備份覆蓋此項'}
+                        accessibilityLabel={`${item.resourceSection === 'documents' ? '文件 ' : item.resourceSection === 'visit_preparation' ? '到診準備 ' : item.resourceSection === 'child_avatar' ? '孩子頭像 ' : ''}${item.id}：${periodConcerns ? '補回所選期間缺少的觀察' : originalComparisonResolution(item) === 'restore_deleted' ? '恢復已刪項目' : '覆蓋目前內容'}`}
                         checked={comparisonSelected.includes(originalComparisonItemKey(item))} disabled={writeLocked} onChange={checked => controller.selectComparison(item,checked,comparison)} /> : null}
                     </View>)}
                     <Text style={styles.body}>只選本次已讀差異{comparison.nextCursor ? '；尚未讀取的下一頁不包括在選擇內' : ''}，不代表整包；翻頁不會自動勾選。</Text>
-                    {comparisonOverwrite.length ? <AppCheckbox label={`選取已讀覆蓋項目（${comparisonOverwrite.length} 項）`}
+                    {comparisonOverwrite.length ? <AppCheckbox label={periodConcerns ? `選取已讀期間觀察補回項目（${comparisonOverwrite.length} 項）` : `選取已讀覆蓋項目（${comparisonOverwrite.length} 項）`}
                       checked={selectedOverwrite.length === comparisonOverwrite.length} disabled={writeLocked}
                       onChange={checked => controller.selectReadComparison('replace_current',checked,comparison)} /> : null}
-                    {comparisonRestore.length ? <AppCheckbox label={`選取已讀已刪項目作恢復（${comparisonRestore.length} 項）`}
+                    {comparisonRestore.length ? <AppCheckbox label={periodConcerns ? `選取已讀已刪來源的期間觀察（${comparisonRestore.length} 項）` : `選取已讀已刪項目作恢復（${comparisonRestore.length} 項）`}
                       checked={selectedRestore.length === comparisonRestore.length} disabled={writeLocked}
                       onChange={checked => controller.selectReadComparison('restore_deleted',checked,comparison)} /> : null}
-                    <Text style={styles.body}>準備提交：覆蓋 {selectedOverwrite.length} 項 · 恢復已刪 {selectedRestore.length} 項。原刪除紀錄保留；送出後仍須查看批次及逐項結果，未處理或衝突不算完成。</Text>
-                    <AppButton label={`提交所選原項還原（${selectedOverwrite.length + selectedRestore.length} 項）`} variant="secondary"
+                    <Text style={styles.body}>{periodConcerns ? `準備提交：期間觀察補回 ${selectedOverwrite.length + selectedRestore.length} 項。` : `準備提交：覆蓋 ${selectedOverwrite.length} 項 · 恢復已刪 ${selectedRestore.length} 項。原刪除紀錄保留；`}送出後仍須查看批次及逐項結果，未處理或衝突不算完成。</Text>
+                    <AppButton label={`${periodConcerns ? '提交所選期間觀察補回' : '提交所選原項還原'}（${selectedOverwrite.length + selectedRestore.length} 項）`} variant="secondary"
                       disabled={writeLocked || selectedOverwrite.length + selectedRestore.length === 0}
                       onPress={() => {void controller.restoreComparison(comparison);}} />
                   </>}
