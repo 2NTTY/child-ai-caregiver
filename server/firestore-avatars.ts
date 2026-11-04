@@ -19,7 +19,7 @@ import type { AvatarConfig } from './avatar-config.ts';
 import { createAvatarIngress } from './avatar-ingress.ts';
 import { importProvenanceSchema, type ImportProvenance } from '../src/shared/import-provenance.ts';
 import { checkedAttachmentImportStage, type AttachmentImportStage } from './handover-attachment-stage.ts';
-import { withSharedAttachmentWrite } from './firestore-attachment-access.ts';
+import { sharedAttachmentReads, attachmentReadFence, withSharedAttachmentWrite } from './firestore-attachment-access.ts';
 import type { SharedSelection } from '../src/shared/sharing.ts';
 
 export interface FirestoreAvatarsOptions extends FirestoreAuthorityOptions {
@@ -28,6 +28,7 @@ export interface FirestoreAvatarsOptions extends FirestoreAuthorityOptions {
 }
 /** Complete domain assembly is gated separately on lifecycle adapters; this factory never enables itself. */
 export function createFirestoreAvatarStore(options: FirestoreAvatarsOptions): FirebaseAvatarApiPort & {
+  forSharedSpace(selection: SharedSelection): Pick<FirebaseAvatarApiPort, 'content'>;
   submitOnline(userId: string, submission: OnlineSubmission): Promise<OnlineReceipt>;
   readImportState(authority: FirestoreAuthorityTransaction): Promise<{ value: { id: string; version: number } | null; version: number }>;
   prepareImportReservation(authority: FirestoreAuthorityTransaction, input: unknown, ids: { uploadId: string; assetId: string }, stage: AttachmentImportStage): Promise<{ value: AvatarUpload; commit(): void }>;
@@ -188,7 +189,36 @@ export function createFirestoreAvatarStore(options: FirestoreAvatarsOptions): Fi
       for (const write of writes) write(); oldWrite?.(); headWrite(); receipt.commit(); return receipt.receipt;
     });
   }
+  function content(read: AvatarRun, userId: string, target: AvatarTarget, assetId: string, version: number) {
+    return guard(async () => {
+      const before = await read(userId, target, async (authority, binding) => {
+        const head = await store.head(authority, binding); avatarPublicState(head, true);
+        if (!head.descriptor) domainReject('not_found', 404);
+        if (head.version !== version || head.descriptor.asset.id !== assetId) domainReject('avatar_version_conflict');
+        return { binding, descriptor: head.descriptor, fence: attachmentReadFence(authority) };
+      });
+      const buffer = await objects.read(before.binding, before.descriptor);
+      try {
+        await read(userId, target, async (authority, binding) => {
+          const head = await store.head(authority, binding); avatarPublicState(head, true);
+          if (head.version !== version || firestoreDomainHash(head.descriptor) !== firestoreDomainHash(before.descriptor)
+            || firestoreDomainHash(binding) !== firestoreDomainHash(before.binding) || attachmentReadFence(authority) !== before.fence)
+            domainReject('avatar_version_conflict');
+        });
+        return { buffer };
+      } catch (error) { buffer.fill(0); throw error; }
+    });
+  }
   return {
+    forSharedSpace(selection) {
+      const shared = sharedAttachmentReads(options, selection);
+      const sharedRun: AvatarRun = (userId, rawTarget, task) => {
+        const target = domainParse(avatarTargetSchema, rawTarget);
+        if (target.kind !== 'child') domainReject('invalid_input', 400);
+        return shared.runTransaction(userId, target.childId, binding => task(binding, avatarBinding(binding.scope, target)));
+      };
+      return { content: (userId, target, assetId, version) => content(sharedRun, userId, target, assetId, version) };
+    },
     prepareImportReservation, prepareImportPublication,
     async readImportState(authority) {
       const childId = authority.scope.childId;
@@ -221,26 +251,7 @@ export function createFirestoreAvatarStore(options: FirestoreAvatarsOptions): Fi
       const admission = await uploads.admission(userId, target, uploadId);
       return { ...admission, upload: (bytes, signal) => guard(() => admission.upload(bytes, signal)) };
     }); },
-    content(userId, target, assetId, version) { return guard(async () => {
-      const before = await run(userId, target, async (authority, binding) => {
-        const head = await store.head(authority, binding); avatarPublicState(head, true);
-        if (!head.descriptor) domainReject('not_found', 404);
-        if (head.version !== version || head.descriptor.asset.id !== assetId) domainReject('avatar_version_conflict');
-        return { binding, descriptor: head.descriptor, authorizationVersion: authority.authorizationVersion,
-          childAccessVersion: authority.childAccessVersion, generation: authority.generation };
-      });
-      const buffer = await objects.read(before.binding, before.descriptor);
-      try {
-        await run(userId, target, async (authority, binding) => {
-          const head = await store.head(authority, binding); avatarPublicState(head, true);
-          if (head.version !== version || firestoreDomainHash(head.descriptor) !== firestoreDomainHash(before.descriptor)
-            || firestoreDomainHash(binding) !== firestoreDomainHash(before.binding) || authority.authorizationVersion !== before.authorizationVersion
-            || authority.childAccessVersion !== before.childAccessVersion || authority.generation !== before.generation)
-            domainReject('avatar_version_conflict');
-        });
-        return { buffer };
-      } catch (error) { buffer.fill(0); throw error; }
-    }); },
+    content: (userId, target, assetId, version) => content(run, userId, target, assetId, version),
     submitOnline(userId, raw) { return guard(async () => {
       const submission = domainParse(onlineSubmissionSchema, raw), route = avatarPath(submission.path);
       if (!route || !['uploads', 'commit', 'remove'].includes(route.action)) domainReject('not_found', 404);

@@ -2,7 +2,8 @@ import { sharedAttachmentReads } from './firestore-attachment-access.ts';
 import type { SharedSelection } from '../src/shared/sharing.ts';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { voiceTranscriptSchema, voiceTranscriptDraftSchema, storedVoiceTranscriptSchema, importedVoiceTranscriptSchema, type VoiceTranscriptDraft } from '../src/shared/voice-transcript.ts';
+import { voiceTranscriptSchema, voiceTranscriptDraftSchema, storedVoiceTranscriptSchema, importedVoiceTranscriptSchema, voiceTranscriptTransferSchema, sharedAttachmentVoiceTranscriptTransferSchema, type VoiceTranscriptDraft } from '../src/shared/voice-transcript.ts';
+import { handoverIdentityLinks } from './handover-provenance.ts';
 import type { ImportProvenance } from '../src/shared/import-provenance.ts';
 import type { VoiceMessageReference } from '../src/shared/voice.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
@@ -115,7 +116,7 @@ export function createFirestoreVoiceTranscripts(options: FirestoreDomainOptions 
       ? {...row.value,state:'unknown' as const,reason:'interrupted',content:null}:row.value;
   }
   async function prepareImported(b: Binding, sourceRaw: unknown, voice: VoiceMessageReference, provenance: ImportProvenance) {
-    const source = domainParse(storedVoiceTranscriptSchema, sourceRaw, 'invalid_package_data');
+    const source = domainParse(voiceTranscriptTransferSchema, sourceRaw, 'invalid_package_data');
     if (['bytes','sha256','mimeType','durationMs'].some(key => source.voice[key as keyof VoiceMessageReference] !== voice[key as keyof VoiceMessageReference]))
       domainReject('voice_changed');
     let end = 0;
@@ -131,15 +132,25 @@ export function createFirestoreVoiceTranscripts(options: FirestoreDomainOptions 
       return { outcome: same ? 'skipped' as const : 'conflict' as const, commit() {} };
     }
     await options.voices.readImportedEvidence(b, null, voice);
-    const value = importedVoiceTranscriptSchema.parse({ ...source, voice, messageId: null, version: 1,
+    const { transferKind: _transferKind, sharedSpaceId: _sharedSpaceId, ...retained } = 'transferKind' in source ? source : { ...source, transferKind: undefined, sharedSpaceId: undefined };
+    const value = importedVoiceTranscriptSchema.parse({ ...retained, voice, messageId: null, version: 1,
       state: source.state === 'available' ? 'available' : 'stopped', retryAt: null, reason: source.state === 'available' ? null : 'imported_without_execution',
       importedFrom: provenance, origin: 'origin' in source ? source.origin : { messageId: source.messageId, version: source.version, state: source.state, reason: source.reason } });
     const row = { scope: b.scope, value, attempt: null, modelAttempted: true, quotaDeferrals: 0 };
     return { outcome: 'created' as const, commit() { b.transaction.create(target,seal(data,row)); } };
   }
-  return {prepareImported,forSharedSpace: (selection: SharedSelection) => ({ get: (userId: string, childId: string, id: string) => sharedAttachmentReads(options,selection).runTransaction(userId,childId,async b => {
+  async function readForSharedExport(b: Binding, id: string) {
+    if (b.sharedAccess?.module !== 'attachments') domainReject('invalid_package_scope', 400);
+    const value = currentView(await read(b,id));
+    return sharedAttachmentVoiceTranscriptTransferSchema.parse({ ...value, transferKind: 'shared-attachment-transcript',
+      messageId: null, sharedSpaceId: b.sharedAccess.spaceId,
+      origin: { ...('origin' in value ? value.origin : { version: value.version, state: value.state, reason: value.reason }), messageId: null },
+      ...('importedFrom' in value ? { importedFrom: handoverIdentityLinks(value.importedFrom) } : {}) });
+  }
+  return {prepareImported,readForSharedExport,forSharedSpace: (selection: SharedSelection) => ({ get: (userId: string, childId: string, id: string) => sharedAttachmentReads(options,selection).runTransaction(userId,childId,async b => {
     const row=await read(b,id), value=currentView(row);
-    return {...value,messageId:null,sharedSpaceId:b.sharedAccess!.spaceId};
+    return {...value,messageId:null,sharedSpaceId:b.sharedAccess!.spaceId,
+      ...('origin' in value ? { origin: {...value.origin,messageId:null}, importedFrom:handoverIdentityLinks(value.importedFrom)! } : {})};
   }) }),claim,authorize,finish,readIn:async(b:Binding,id:string)=>(await read(b,id)).value,get:(userId:string,childId:string,id:string)=>authority.runTransaction(userId,childId,async b=>{
     const row=await read(b,id);
     return currentView(row);

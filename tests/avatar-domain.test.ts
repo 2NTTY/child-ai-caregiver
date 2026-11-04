@@ -1,11 +1,66 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { avatarDomainFixture } from './helpers/avatar-memory.ts';
 import { avatarReserveResultSchema, avatarMutationResultSchema } from '../src/shared/avatars.ts';
 import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
 import { FirestoreDomainError } from '../server/firestore-domain-data.ts';
+import { createFirestoreAvatarStore } from '../server/firestore-avatars.ts';
+import { createFirestoreSharingStore } from '../server/firestore-sharing.ts';
+import { avatarBinding } from '../server/avatar-data.ts';
+import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 const code = (expected: string) => (error: unknown) => error instanceof FirestoreDomainError && error.code === expected;
+
+test('shared child avatar content fences class membership changes during object reads and erases rejected bytes', async () => {
+  const f = await avatarDomainFixture(), sharing = createFirestoreSharingStore(f.options), teacher = 'avatar-class-teacher';
+  const expiresAt = new Date(f.now() + 86400000).toISOString(), email = 'avatar-class-teacher@example.test';
+  await f.authority.issueInvitation({ email, expiresAt, operationId: randomUUID() });
+  await f.authority.admitIdentity({ userId: teacher, email, emailVerified: true });
+  await f.authority.acknowledge({ userId: teacher, operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  let classroom = await sharing.create(f.owner, { operationId: randomUUID(), name: 'Avatar class', kind: 'class' });
+  const selected = await sharing.addClassChild(f.owner, { operationId: randomUUID(), spaceId: classroom.id,
+    expectedVersion: classroom.version, displayName: 'Avatar pupil' }); classroom = selected.space;
+  async function join() {
+    const current = await sharing.get(f.owner, classroom.id);
+    const invitation = await sharing.invite(f.owner, { operationId: randomUUID(), spaceId: classroom.id,
+      expectedVersion: current.version, email, role: 'caregiver', expiresAt });
+    classroom = await sharing.acceptInvitation(teacher, { token: invitation.token, operationId: randomUUID() });
+  }
+  await join();
+  const target = { kind: 'child' as const, childId: selected.child.id }, selection = { spaceId: classroom.id };
+  const binding = await sharing.withResource(f.owner, { ...selection, childId: target.childId, module: 'attachments', mode: 'read' },
+    access => Promise.resolve(avatarBinding(access.binding.scope, target)));
+  const bytes = Buffer.from([255, 216, 255, 224, 0, 2, 255, 217]), assetId = randomUUID();
+  const descriptor = await f.objects.write(binding, { id: assetId, mimeType: 'image/jpeg', bytes: bytes.length,
+    sha256: createHash('sha256').update(bytes).digest('hex'), width: 256, height: 256 }, bytes);
+  await sharing.withResource(f.owner, { ...selection, childId: target.childId, module: 'attachments', mode: 'write' }, async access => {
+    const head = await f.data.head(access.binding, binding);
+    f.data.prepareHead(access.binding, { ...head, version: 1, descriptor, updatedAt: new Date(f.now()).toISOString() })();
+  });
+  let afterRead: (() => Promise<void>) | undefined, readBytes: Buffer | undefined, reads = 0;
+  const avatars = createFirestoreAvatarStore({ ...f.options, config: f.config, journal: f.journal,
+    codec: { async normalize() { throw new Error('Not an upload'); } }, objects: { ...f.objects,
+      async read(...args) { reads++; readBytes = await f.objects.read(...args); await afterRead?.(); return readBytes; } } });
+  const shared = avatars.forSharedSpace(selection);
+  const content = await shared.content(teacher, target, assetId, 1);
+  assert.deepEqual(content.buffer, bytes); content.buffer.fill(0);
+  await assert.rejects(shared.content(teacher, { kind: 'self' }, assetId, 1), code('invalid_input'));
+  await assert.rejects(shared.content(f.owner, { kind: 'child', childId: (await f.authority.createChild({
+    userId: f.owner, operationId: randomUUID(), displayName: 'Personal pupil' })).child.id }, assetId, 1));
+  assert.equal(reads, 1, 'invalid targets never reach object storage');
+  afterRead = async () => {
+    const current = await sharing.get(f.owner, classroom.id);
+    await sharing.updateMember(f.owner, { operationId: randomUUID(), spaceId: classroom.id,
+      expectedVersion: current.version, targetUserId: teacher, role: null });
+    await join();
+  };
+  await assert.rejects(shared.content(teacher, target, assetId, 1), code('avatar_version_conflict'));
+  assert.equal(reads, 2);
+  assert.ok(readBytes && readBytes.every(value => value === 0), 'rejected plaintext is cleared');
+  afterRead = undefined;
+  const reopened = await shared.content(teacher, target, assetId, 1);
+  assert.deepEqual(reopened.buffer, bytes); reopened.buffer.fill(0);
+});
 
 test('self avatar needs no child; ready swap is atomic, private and emits no Agent/change event', async () => {
   const f = await avatarDomainFixture(), before = [...f.fake.records.keys()].filter(key => /changes|background|work_events/u.test(key));

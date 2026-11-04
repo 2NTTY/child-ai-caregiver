@@ -13,7 +13,7 @@ import type { createFirestoreVoiceStore } from './firestore-voice.ts';
 import type { createFirestorePhotoStore } from './firestore-photos.ts';
 import type { createFirestoreAvatarStore } from './firestore-avatars.ts';
 import type { createFirestoreVoiceTranscripts } from './firestore-voice-transcripts.ts';
-import { storedVoiceTranscriptSchema } from '../src/shared/voice-transcript.ts';
+import { voiceTranscriptTransferSchema } from '../src/shared/voice-transcript.ts';
 import { voiceMessageReferenceSchema } from '../src/shared/voice.ts';
 import { z } from 'zod';
 import { attachmentSupplementModules } from './handover-attachment-period.ts';
@@ -32,7 +32,7 @@ export function attachmentSupplementModule(section: string): AttachmentSection |
 export function attachmentSupplementParent(row: HandoverImportRow) {
   const section = attachmentSupplementModule(row.section); if (!section) domainReject('invalid_package_scope', 400);
   if (row.section === 'voice_transcripts') {
-    const source = domainParse(storedVoiceTranscriptSchema, row.value, 'invalid_package_data');
+    const source = domainParse(voiceTranscriptTransferSchema, row.value, 'invalid_package_data');
     return { section, id: source.voice.id, version: source.voice.version };
   }
   const id = row.section === 'file_content' ? row.value.fileId : row.section === 'voice_content' ? row.value.voiceId

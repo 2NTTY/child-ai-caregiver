@@ -85,7 +85,7 @@ export function createHandoverService(options: FirestoreDomainOptions & { export
     } catch (error) { await removeSpool(directory); throw error; }
   }
   return { capabilities: (classDocumentReview = false) => ({ classModules: options.exporter.forClass
-    ? (options.exporter.classModules ?? []).filter(module => module !== 'documents' || classDocumentReview) : [] }),
+    ? (options.exporter.classModules ?? []).filter(module => classDocumentReview || (module !== 'documents' && module !== 'attachments')) : [] }),
     create: async (owner: string, raw: unknown) => {
       if (raw && typeof raw === 'object' && 'source' in raw) {
         const command = domainParse(handoverClassExportCommandSchema, raw);

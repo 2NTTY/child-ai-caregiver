@@ -4,6 +4,10 @@ import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { domainParse, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
 import { sharedSelectionSchema, type SharedSelection } from '../src/shared/sharing.ts';
 
+export function sharedMessageAttachmentVisible(row: { state: string; messageId: string | null; importedFrom?: unknown }) {
+  return row.state === 'ready' && !!(row.messageId || row.importedFrom);
+}
+
 /** Reuse the same authority and source storage; this port exposes no mutation methods. */
 export function sharedAttachmentReads(options: FirestoreAuthorityOptions, raw: SharedSelection): Pick<FirestoreAuthority, 'runTransaction'> {
   const selection = domainParse(sharedSelectionSchema, raw), sharing = createFirestoreSharingStore(options);

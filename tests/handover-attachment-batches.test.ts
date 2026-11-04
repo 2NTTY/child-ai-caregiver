@@ -19,10 +19,14 @@ import { voiceObjectAddress, type VoiceObjects, type VoiceObjectDescriptor } fro
 import { voiceAttachmentPageSchema } from '../src/shared/voice.ts';
 import { chatFileAttachmentPageSchema } from '../src/shared/chat-files.ts';
 import { createFirestoreSharingStore } from '../server/firestore-sharing.ts';
-import { voiceTranscriptViewSchema } from '../src/shared/voice-transcript.ts';
+import { voiceTranscriptViewSchema, sharedAttachmentVoiceTranscriptTransferSchema } from '../src/shared/voice-transcript.ts';
 import { createHandoverAttachments } from '../server/firestore-handover-attachments.ts';
 import type { FirestoreAuthorityTransaction } from '../server/firestore-authority.ts';
 import type { ImportProvenance } from '../src/shared/import-provenance.ts';
+import { z } from 'zod';
+import { voiceTranscriptSchema, importedVoiceTranscriptSchema } from '../src/shared/voice-transcript.ts';
+import { handleFirebaseVoiceRequest } from '../server/firebase-voice-api.ts';
+import { createVoiceApi } from '../src/client/voice-api.ts';
 
 test('a restored import resumes the original attachment reservation across storage epochs', async () => {
   const ids: string[] = [], scope = { ownerUserId: 'recipient', workspaceId: randomUUID(), childId: randomUUID(), storageEpoch: randomUUID() };
@@ -80,9 +84,49 @@ test('imported voice transcripts remain readable without replaying transcription
   const library = voiceAttachmentPageSchema.parse(await voices.list(f.owner,childId,{ includeImported: true }));
   assert.equal(library.items.length,1); assert.equal(library.items[0].messageId,null);
   assert.equal((await voices.forSharedSpace({spaceId:family.id}).list(f.owner,childId,{ includeImported:true })).items.length,1);
-  assert.equal(voiceTranscriptViewSchema.parse(await transcripts.forSharedSpace({spaceId:family.id}).get(f.owner,childId,imported.resource!.id)).messageId,null);
+  const sharedTranscript = voiceTranscriptViewSchema.parse(await transcripts.forSharedSpace({spaceId:family.id}).get(f.owner,childId,imported.resource!.id));
+  assert.equal(sharedTranscript.messageId,null);
+  assert.ok('origin' in sharedTranscript); assert.equal(sharedTranscript.origin.messageId,null);
+  const transfer = await sharing.withResource(f.owner,{spaceId:family.id,childId,module:'attachments',mode:'read'},
+    access => transcripts.readForSharedExport(access.binding,imported.resource!.id));
+  assert.deepEqual(sharedAttachmentVoiceTranscriptTransferSchema.parse(transfer).content,transcript.content);
+  assert.equal(transfer.origin.messageId,null); assert.equal(JSON.stringify(transfer).includes(messageId),false);
+  assert.equal(sharedAttachmentVoiceTranscriptTransferSchema.safeParse({...transfer,origin:{...transfer.origin,messageId}}).success,false);
+  assert.ok(transfer.importedFrom);
+  assert.equal(sharedAttachmentVoiceTranscriptTransferSchema.safeParse({...transfer,importedFrom:{...transfer.importedFrom,
+    current:{...transfer.importedFrom.current,source:{...transfer.importedFrom.current.source,sourceMessageId:messageId}}}}).success,false);
+  await assert.rejects(f.authority.runTransaction(f.owner,childId,b => transcripts.readForSharedExport(b,imported.resource!.id)),{code:'invalid_package_scope'});
+  await assert.rejects(sharing.withResource(f.owner,{spaceId:family.id,childId,module:'attachments',mode:'read'},
+    access => transcripts.readForSharedExport({...access.binding,sharedAccess:{...access.binding.sharedAccess!,module:'memory'}},imported.resource!.id)),{code:'invalid_package_scope'});
   const read = await transcripts.get(f.owner, childId, imported.resource!.id);
   assert.equal(read.messageId, null); assert.deepEqual(read.content, transcript.content); assert.equal(read.state, 'available');
+  assert.ok('origin' in read); assert.equal(read.origin.messageId,messageId,'Private stored origin remains unchanged');
+  const nextChildId = (await f.authority.createChild({userId:f.owner,operationId:randomUUID(),displayName:'Shared transcript recipient'})).child.id;
+  const next = {...common,batchId:randomUUID(),target:{childId:nextChildId,spaceId:null}};
+  const transferredVoice = {...value,id:transfer.voice.id,version:transfer.voice.version,messageId:null};
+  const nextVoice = await items.apply(f.owner,{...next,opId:randomUUID(),row:{section:'voices',childId:sourceChildId,source,value:transferredVoice},
+    attachmentContent:{section:'voices',sourceId:transfer.voice.id,sourceVersion:transfer.voice.version,attachmentPath:'attachments/shared-voice.bin',
+      mimeType:value.mimeType,bytes:content.length,sha256,content}});
+  const nextTranscript = await items.apply(f.owner,{...next,opId:randomUUID(),row:{...command.row,value:transfer}});
+  assert.equal(nextTranscript.outcome,'created');
+  const transferredRead = await transcripts.get(f.owner,nextChildId,nextVoice.resource!.id);
+  assert.deepEqual(transferredRead.content,transcript.content);
+  assert.ok('origin' in transferredRead); assert.equal(transferredRead.origin.messageId,null);
+  const oldImportedSchema = importedVoiceTranscriptSchema.extend({origin:voiceTranscriptSchema.pick({messageId:true,version:true,state:true,reason:true})}).strict();
+  const oldSharedSchema = z.union([voiceTranscriptSchema.extend({messageId:z.null(),sharedSpaceId:z.uuid()}).strict(),
+    oldImportedSchema.extend({messageId:z.null(),sharedSpaceId:z.uuid()}).strict()]);
+  const voiceApi = {...voices,transcripts};
+  const transcriptRequest = (targetChildId:string,targetId:string,query='') => new Request(
+    `https://voice.example.test/api/children/${targetChildId}/voices/${targetId}/transcript${query}`,{headers:{'x-expected-user-id':f.owner}});
+  const oldSharedResponse = await handleFirebaseVoiceRequest(transcriptRequest(childId,imported.resource!.id,`?spaceId=${family.id}`),f.owner,voiceApi,async()=>true);
+  const oldSharedBody = await oldSharedResponse.json();
+  assert.deepEqual(oldSharedSchema.parse(oldSharedBody.transcript).content,transcript.content);
+  assert.equal('origin' in oldSharedBody.transcript,false); assert.equal('importedFrom' in oldSharedBody.transcript,false);
+  const oldPrivateResponse = await handleFirebaseVoiceRequest(transcriptRequest(childId,imported.resource!.id),f.owner,voiceApi,async()=>true);
+  assert.equal(oldImportedSchema.parse((await oldPrivateResponse.json()).transcript).origin.messageId,messageId);
+  await assert.rejects(handleFirebaseVoiceRequest(transcriptRequest(nextChildId,nextVoice.resource!.id),f.owner,voiceApi,async()=>true),{code:'voice_transcript_upgrade_required',status:426});
+  const newClient = createVoiceApi(async(input,init)=>handleFirebaseVoiceRequest(new Request(input,init),f.owner,voiceApi,async()=>true),'https://voice.example.test');
+  assert.deepEqual((await newClient.transcript(nextChildId,nextVoice.resource!.id,new AbortController().signal,f.owner)).content,transcript.content);
   assert.equal((await items.apply(f.owner, { ...command, opId: randomUUID() })).reason, 'attachment_supplement_already_imported');
   await assert.rejects(items.apply(f.owner, { ...command, opId: randomUUID(), row: { ...command.row,
     value: { ...transcript, content: { complete: true, segments: [{ text: 'Too late', startMs: 0, endMs: 1100, unclear: false }] } } } }), { code: 'invalid_voice_timestamps' });
@@ -96,7 +140,7 @@ test('imported voice transcripts remain readable without replaying transcription
     attachmentContent: { section: 'voices', sourceId, sourceVersion: 3, attachmentPath: 'attachments/voice.bin', mimeType: value.mimeType, bytes: content.length, sha256, content } });
   assert.equal(duplicate.reason, 'already_imported'); assert.equal(duplicate.resource!.version, imported.resource!.version + 1);
   assert.equal((await items.apply(f.owner, { ...command, opId: randomUUID() })).reason, 'attachment_supplement_already_imported');
-  assert.equal(objects.size, 1);
+  assert.equal(objects.size, 2);
   const decoded = createFirestoreRestoreCodec(f.options);
   const jobs = [...f.fake.records].filter(([path]) => path.includes('_background_work/')).map(([path, data]) => decoded.decode({ path, data }).value as any);
   assert.equal(jobs.some(job => job.kind === 'voice-transcription'), false);

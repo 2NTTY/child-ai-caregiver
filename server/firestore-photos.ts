@@ -524,6 +524,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
   }; }
   const service = {
     ...readers(authority), forSharedSpace: (selection: SharedSelection) => readers(sharedAttachmentReads(options, selection)),
+    readMetadata: async (binding: FirestoreAuthorityTransaction, id: string) => view(await readRow(binding, id), binding),
     async submitOnline(userId: string, value: OnlineSubmission): Promise<OnlineReceipt> {
       const submission = parse(onlineSubmissionSchema, value, true);
       const match = /^\/api\/children\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/photos(?:\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(delete|confirm))?$/iu.exec(submission.path);

@@ -52,7 +52,14 @@ export async function handleFirebaseVoiceRequest(request: Request, userId: strin
   else if (request.method === 'GET' && id && action === 'transcript') {
     const transcripts = selection ? voice.transcripts?.forSharedSpace?.(selection) : voice.transcripts;
     if (!transcripts) domainReject('voice_transcript_unavailable', 503);
-    response = Response.json({ transcript: await transcripts.get(userId, childId, id) });
+    const transcript = await transcripts.get(userId, childId, id);
+    if (!selection && 'origin' in transcript && transcript.origin?.messageId === null
+      && request.headers.get('x-voice-transcript-version') !== '2') domainReject('voice_transcript_upgrade_required', 426);
+    // Released shared readers already accept this strict common shape, without imported private chat lineage.
+    if (selection && 'origin' in transcript) {
+      const { origin: _origin, importedFrom: _importedFrom, ...common } = transcript;
+      response = Response.json({ transcript: common });
+    } else response = Response.json({ transcript });
   } else if (request.method === 'POST' && id && action === 'content') {
     const input = domainParse(uploadSchema, await json(request, VOICE_UPLOAD_BODY_BYTES)); await active();
     response = Response.json({ voice: await voice.upload(userId, childId, id, input.expectedVersion, input.base64, request.signal) });

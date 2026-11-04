@@ -8,7 +8,7 @@ export const handoverPreviewQuerySchema = z.object({ section: handoverDocumentSe
   childId: z.uuid(), period: handoverSelectionSchema.shape.period, scopeVersion: scopeVersion.optional(), cursor: z.string().min(1).max(2048).optional(),
   source: handoverClassSourceSchema.optional(), opId: z.uuid().optional(),
 }).strict().refine(value => (!value.cursor || !!value.scopeVersion) && (!value.period || Date.parse(value.period.from) <= Date.parse(value.period.to))
-  && Boolean(value.source) === Boolean(value.opId) && (!value.source || value.section === 'documents' || value.section === 'visit_preparation'));
+  && Boolean(value.source) === Boolean(value.opId));
 export const handoverPreviewItemSchema = handoverDocumentPinSchema.extend({ title: z.string().min(1).max(512),
   from: z.iso.date().nullable(), to: z.iso.date().nullable(),
   reason: z.enum(['all', 'inside', 'crosses', 'outside', 'uncertain', 'metadata_only']), defaultIncluded: z.boolean(), canInclude: z.boolean(),
@@ -30,7 +30,7 @@ function matchingReview({ documentReview, selection }: { documentReview?: z.infe
 }
 
 // A class supplies its own records. The authenticated account still owns the export job.
-export const classHandoverModuleSchema = z.enum(['profile', 'care', 'tasks', 'documents', 'memory', 'concerns', 'growth']);
+export const classHandoverModuleSchema = z.enum(['profile', 'care', 'tasks', 'documents', 'memory', 'concerns', 'growth', 'attachments']);
 export const handoverClassExportCommandSchema = z.object({
   opId: z.uuid(), purpose: z.literal('handover'), source: handoverClassSourceSchema,
   selection: handoverSelectionSchema.safeExtend({

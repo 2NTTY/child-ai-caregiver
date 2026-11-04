@@ -39,7 +39,9 @@ import type { PackageMediaFilter } from './handover-attachment-period.ts';
 import { firestoreGrowthSchema, firestoreGrowthTopicSchema, type createFirestoreGrowthStore } from './firestore-growth.ts';
 import { createFirestoreConcernStore, firestoreConcernSchema, sharedConcernHead, sharedConcernEvent } from './firestore-concerns.ts';
 import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
-import { handoverIdentityLinks } from './handover-concern-period.ts';
+import { handoverIdentityLinks } from './handover-provenance.ts';
+import type { SharedSelection } from '../src/shared/sharing.ts';
+import { sharedMessageAttachmentVisible } from './firestore-attachment-access.ts';
 
 /** Product sections only. Auth credentials, model keys, protocol state and cost/admission ledgers are never exported. */
 const sections = {
@@ -82,12 +84,19 @@ const querySchema = z.object({ section: z.string().max(80), childId: z.uuid().op
   scopeVersion: z.string().regex(/^[a-f0-9]{64}$/u).optional(), cursor: z.string().max(16000).optional() }).strict();
 const cursorSchema = z.object({ userId: z.string(), section: z.string(), childId: z.uuid().nullable(), scopeVersion: z.string(), after: z.string().max(2000),
   phase: z.literal('source').optional(), previewBasis: z.string().length(64).optional() }).strict();
+type ContentReader<Method> = { content: Method; forSharedSpace?(selection: SharedSelection): { content: Method } };
+function contentReader<Method>(port: ContentReader<Method> | undefined, selection: SharedSelection | undefined, unavailable: string) {
+  const reader = selection ? port?.forSharedSpace?.(selection) : port;
+  if (!reader) domainReject(unavailable, 503);
+  return reader;
+}
+type Photos = ReturnType<typeof createFirestorePhotoStore>;
 export function createFirestoreAccountExport(options: FirestoreAuthorityOptions & {
-  photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'content'>;
-  voices?: Pick<FirestoreVoiceStore,'content'|'readMetadata'>;
-  files?: Pick<FirestoreChatFilesStore,'content'|'readMetadata'>;
-  transcripts?: Pick<FirestoreVoiceTranscripts,'readIn'>;
-  avatars?: Pick<FirebaseAvatarApiPort, 'content'>;
+  photos: ContentReader<Photos['content']> & Partial<Pick<Photos, 'readMetadata'>>;
+  voices?: ContentReader<FirestoreVoiceStore['content']> & Pick<FirestoreVoiceStore, 'readMetadata'>;
+  files?: ContentReader<FirestoreChatFilesStore['content']> & Pick<FirestoreChatFilesStore, 'readMetadata'>;
+  transcripts?: Pick<FirestoreVoiceTranscripts,'readIn'> & Partial<Pick<FirestoreVoiceTranscripts,'readForSharedExport'>>;
+  avatars?: ContentReader<FirebaseAvatarApiPort['content']>;
   growth?: Pick<ReturnType<typeof createFirestoreGrowthStore>, 'prepareExportView'>;
 }) {
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), avatarData = createFirestoreAvatarData(options);
@@ -154,7 +163,8 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
         avatar = await avatarData.head(binding, avatarBinding(binding.scope, target));
         const { canManage: _canManage, ...current } = avatarPublicState(avatar, false);
         // Only the current normalized image/version is exportable; no uploads, raw inputs or storage descriptors.
-        if (!section.endsWith('_content')) items.push({ ...current, ...(avatar.importedFrom ? { importedFrom: avatar.importedFrom } : {}) });
+        if (!section.endsWith('_content')) items.push({ ...current, ...(avatar.importedFrom
+          ? { importedFrom: classRequest ? handoverIdentityLinks(avatar.importedFrom) : avatar.importedFrom } : {}) });
       } else if (section === 'manifest') {
         items = [{ format: 'yuban-personal-data:1', sections: ['account', ...Object.keys(sections)].map(key => ({ section: key,
           childScoped: !global.has(key), required: true })), scope: '本人可讀的業務資料；不包含憑據、模型 key 或內部協定狀態。' }];
@@ -303,28 +313,48 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
           } else if (suffix === 'voice_assets') {
             const voice=firestoreVoiceRowSchema.parse(value);
             if (['deleting','deleted'].includes(voice.state) || voice.importStage && !voice.importedFrom) continue;
+            if (classRequest && !sharedMessageAttachmentVisible(voice)) continue;
             if (!options.voices) domainReject('voice_export_unavailable',503);
             const current=await options.voices.readMetadata(binding,voice.id);
             if (section==='voice_content') { if(current.state==='ready')voices.push({id:voice.id,version:current.version}); }
-            else items.push({ ...current, ...(voice.importedFrom ? { importedFrom: voice.importedFrom } : {}) });
+            else {
+              const { sharedSpaceId: _space, ...metadata } = current;
+              items.push({ ...metadata, ...(voice.importedFrom ? { importedFrom: classRequest ? handoverIdentityLinks(voice.importedFrom) : voice.importedFrom } : {}) });
+            }
           } else if (suffix === 'chat_file_assets') {
             const file=firestoreChatFileRowSchema.parse(value);
             if (['deleting','deleted'].includes(file.state) || file.importStage && !file.importedFrom) continue;
+            if (classRequest && !sharedMessageAttachmentVisible(file)) continue;
             if (!options.files) domainReject('chat_file_export_unavailable',503);
             const current=await options.files.readMetadata(binding,file.id);
             if (section==='file_content') { if(current.state==='ready')files.push({id:file.id,version:current.version}); }
-            else items.push({ ...current, ...(file.importedFrom ? { importedFrom: file.importedFrom } : {}) });
+            else {
+              const { sharedSpaceId: _space, ...metadata } = current;
+              items.push({ ...metadata, ...(file.importedFrom ? { importedFrom: classRequest ? handoverIdentityLinks(file.importedFrom) : file.importedFrom } : {}) });
+            }
           } else if (suffix === 'voice_transcripts') {
             const stored=firestoreVoiceTranscriptSchema.parse(value), source=await binding.transaction.get(data.ref('voice_assets','voice-asset',stored.value.voice.id));
             if (!source.exists||['deleting','deleted'].includes(source.get('state'))) continue;
             if (packageMedia && !packageMedia('voices', stored.value.voice.id)) continue;
             if (!options.transcripts) domainReject('voice_export_unavailable',503);
-            items.push(await options.transcripts.readIn(binding,stored.value.voice.id));
+            if (classRequest) {
+              const parent = data.open('voice-asset', stored.value.voice.id, binding.scope, firestoreVoiceRowSchema, source);
+              if (!sharedMessageAttachmentVisible(parent)) continue;
+              if (!options.transcripts.readForSharedExport) domainReject('voice_export_unavailable',503);
+              items.push(await options.transcripts.readForSharedExport(binding, stored.value.voice.id));
+            } else items.push(await options.transcripts.readIn(binding,stored.value.voice.id));
           } else if (suffix === 'photos') {
             const photo = firestorePhotoSchemas.photo.parse(value);
             if (!['ready', 'reserved'].includes(photo.state) || photo.importStage && !photo.importedFrom) continue;
+            if (classRequest && photo.state !== 'ready') continue;
             if (section === 'photo_content') {
               if (photo.state === 'ready') photos.push({ id: photo.id, version: photo.version });
+            } else if (classRequest) {
+              if (!options.photos.readMetadata) domainReject('photo_export_unavailable', 503);
+              const visible = await options.photos.readMetadata(binding, photo.id);
+              items.push({ id: visible.id, childId: visible.childId, version: visible.version, state: visible.state, visibility: visible.visibility,
+                metadata: photo.metadata, createdAt: visible.createdAt, recordId: visible.recordId, extraction: null,
+                ...(photo.importedFrom ? { importedFrom: handoverIdentityLinks(photo.importedFrom) } : {}) });
             } else items.push({ id: photo.id, childId: photo.scope.childId, metadata: photo.metadata, version: photo.version,
               ...(packageMedia ? { createdAt: photo.createdAt } : {}),
               state: photo.state, visibility: photo.visibility ?? 'private', recordId: photo.recordId ?? null,
@@ -369,29 +399,28 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
       }
       return { section, items, nextCursor, complete: nextCursor === null, scopeVersion, notices: ['歷史版本供追溯；不代表仍適用的最新建議。'], photos, voices, files, avatar };
     });
+    const shared = classRequest ? { spaceId: classRequest.source.spaceId } : undefined;
     for (const photo of result.photos) {
       if (packageMedia && !packageMedia('photos', photo.id)) continue;
-      const content = await options.photos.content(owner, input.childId!, photo.id);
+      const content = await contentReader(options.photos, shared, 'photo_export_unavailable').content(owner, input.childId!, photo.id);
       result.items.push({ photoId: photo.id, version: photo.version, base64: content.base64, mimeType: content.mimeType });
     }
     for (const voice of result.voices) {
       if (packageMedia && !packageMedia('voices', voice.id)) continue;
-      if (!options.voices) domainReject('voice_export_unavailable',503);
-      const content=await options.voices.content(owner,input.childId!,voice.id);
+      const content=await contentReader(options.voices, shared, 'voice_export_unavailable').content(owner,input.childId!,voice.id);
       if(content.attachment.version!==voice.version)domainReject('export_scope_changed');
       result.items.push({voiceId:voice.id,version:voice.version,base64:content.base64,mimeType:content.descriptor.mimeType});
     }
     for (const file of result.files) {
       if (packageMedia && !packageMedia('files', file.id)) continue;
-      if (!options.files) domainReject('chat_file_export_unavailable',503);
-      const content=await options.files.content(owner,input.childId!,file.id);
+      const content=await contentReader(options.files, shared, 'chat_file_export_unavailable').content(owner,input.childId!,file.id);
       if(content.attachment.version!==file.version)domainReject('export_scope_changed');
       result.items.push({fileId:file.id,version:file.version,base64:content.base64,mimeType:content.descriptor.mimeType});
     }
     const avatar = result.avatar;
     if (avatar?.descriptor && section.endsWith('_content') && (!packageMedia || !!input.childId && packageMedia('child_avatar', input.childId))) {
-      if (!options.avatars) domainReject('avatar_export_unavailable', 503);
-      const descriptor = avatar.descriptor, content = await options.avatars.content(owner, avatar.binding.target, descriptor.asset.id, avatar.version);
+      const descriptor = avatar.descriptor, content = await contentReader(options.avatars, shared, 'avatar_export_unavailable')
+        .content(owner, avatar.binding.target, descriptor.asset.id, avatar.version);
       try { result.items.push({ target: avatar.binding.target, version: avatar.version, asset: descriptor.asset,
         base64: content.buffer.toString('base64'), mimeType: 'image/jpeg' }); } finally { content.buffer.fill(0); }
     }
@@ -407,7 +436,10 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
     });
     const { photos: _photos, voices: _voices, files: _files, avatar: _avatar, ...response } = result; return response;
   }
-  const classModules = classHandoverModuleSchema.options.filter(module => module !== 'growth' || !!options.growth);
+  const sharedMedia = !!(options.photos.forSharedSpace && options.photos.readMetadata && options.voices?.forSharedSpace
+    && options.files?.forSharedSpace && options.transcripts?.readForSharedExport && options.avatars?.forSharedSpace);
+  const classModules = classHandoverModuleSchema.options.filter(module =>
+    (module !== 'growth' || !!options.growth) && (module !== 'attachments' || sharedMedia));
   return { page: page.bind(null, null), classModules, forClass(request: HandoverClassExportCommand) {
     const command = domainParse(handoverClassExportCommandSchema, request);
     if (!command.selection.modules.every(module => classModules.includes(module))) domainReject('package_class_source_unavailable', 503);
