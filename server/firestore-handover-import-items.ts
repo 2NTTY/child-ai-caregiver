@@ -15,7 +15,8 @@ import { createFirestoreCareStore, firestoreCareSchema, firestoreProfileSchema }
 import { createFirestoreOnlineStore } from './firestore-online.ts';
 import { createFirestoreMemoryStore, firestoreFactSchema, firestoreTopicSchema, firestoreSummarySchema } from './firestore-memory.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
-import { createFirestoreConcernStore, concernTransferSchema, assertConcernImportAccess } from './firestore-concerns.ts';
+import { createFirestoreConcernStore, concernTransferSchema } from './firestore-concerns.ts';
+import { assertClassImportAccess } from './firestore-class-handover.ts';
 import { createFirestoreGrowthStore, firestoreGrowthSchema, firestoreGrowthTopicSchema, growthImportSourceRow, growthTopicResourceId } from './firestore-growth.ts';
 import { growthTopicSchema } from '../src/shared/growth.ts';
 import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
@@ -42,6 +43,7 @@ export interface HandoverImportItemCommand {
   opId: string; batchId: string; target: Target; row: HandoverImportRow; restoreOriginal?: true; integrity: HandoverIntegrity; resolution: HandoverImportResolution;
   documentContent?: DocumentTransferContent | null;
   concernEvents?: unknown[];
+  selectedModules?: readonly HandoverImportModule[];
   attachmentContent?: HandoverAttachmentContent | null;
 }
 /** Internal batch guard: read its claim before domain writes, then seal progress before committing either. */
@@ -71,10 +73,9 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
     const module = section === 'memory' || section === 'sources' || section === 'attachments' || section === 'growth' ? section : handoverImportModuleOf(section);
     if (target.spaceId) {
       if (module === 'sources' || module === 'chat') domainReject('private_scope_unavailable', 403);
-      if (module === 'growth' && mode === 'write') domainReject('shared_domain_read_only', 403);
       return authority.runTransaction(userId, null, actor => sharing.inResourceTransaction(actor,
         { spaceId: target.spaceId!, childId: target.childId, module, mode }, value => {
-          if (module === 'concerns' && mode === 'write') assertConcernImportAccess(value.binding);
+          if (mode === 'write' && (module === 'concerns' || module === 'growth')) assertClassImportAccess(value.binding, module, mode);
           return use(value.binding, actor);
         }));
     }
@@ -259,7 +260,8 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
         const retained = { format: 'yuyoufang-source-revision:1' as const, childId: target.childId, resource: mapping.target,
           evidence: history.evidence, opId, importedBy: b.actorUserId, importedAt: provenance.current.importedAt };
         if (deleted) return finish('conflict', 'target_deleted');
-        if (!await sourceHistoryVisible(data, b, retained)) return finish('conflict', section === 'concerns' && b.sharedAccess ? 'history_scope_unavailable' : 'target_deleted');
+        if (!await sourceHistoryVisible(data, b, retained, raw.selectedModules)) return finish('conflict',
+          b.sharedAccess && (section === 'concerns' || section === 'growth_attention' || section === 'growth_topics') ? 'history_scope_unavailable' : 'target_deleted');
         if (history.parentVersion > mapping.sourceVersion) return finish('conflict', 'history_parent_version_unavailable');
         const prepared = await prepareSourceHistory(data, b, retained);
         return finish(prepared.outcome, prepared.reason, mapping.target, undefined, prepared.commit);
@@ -322,11 +324,16 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
           }
         }
         const mapped = new Map<string, { recordId: string | null; taskId: string | null; attentionId: string | null }>();
-        const allowed = (module: string) => !b.sharedAccess || b.sharedAccess.modules?.includes(module);
+        // The same transaction has already checked the class grant and its complete module set.
+        function linkedModule(module: 'care' | 'tasks' | 'growth'): Binding | null {
+          if (!b.sharedAccess) return b;
+          return b.sharedAccess.modules?.includes(module) ? { ...b, sharedAccess: { ...b.sharedAccess, module, mode: 'read' } } : null;
+        }
+        const careBinding = linkedModule('care'), taskBinding = linkedModule('tasks'), growthBinding = linkedModule('growth');
         for (const event of eventRows) {
-          const record = event.recordId && allowed('care') ? await readState(b, 'care', { ...source, section: 'care', resourceId: event.recordId }) : null;
-          const task = event.taskId && allowed('tasks') ? await readState(b, 'tasks', { ...source, section: 'tasks', resourceId: event.taskId }) : null;
-          const attention = event.attentionId && allowed('growth') ? await readState(b, 'growth_attention', { ...source, section: 'growth_attention', resourceId: event.attentionId }) : null;
+          const record = event.recordId && careBinding ? await readState(careBinding, 'care', { ...source, section: 'care', resourceId: event.recordId }) : null;
+          const task = event.taskId && taskBinding ? await readState(taskBinding, 'tasks', { ...source, section: 'tasks', resourceId: event.taskId }) : null;
+          const attention = event.attentionId && growthBinding ? await readState(growthBinding, 'growth_attention', { ...source, section: 'growth_attention', resourceId: event.attentionId }) : null;
           mapped.set(event.id, { recordId: record?.current && !record.deleted ? record.currentId : null,
             taskId: task?.current && !task.deleted ? task.currentId : null,
             attentionId: attention?.current && !attention.deleted ? attention.currentId : null });
@@ -342,7 +349,8 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       }
       if (section === 'growth_attention') {
         const original = firestoreGrowthSchema.parse(raw.row.value).item;
-        const task = original.taskId ? await readState(b, 'tasks', { ...source, section: 'tasks', resourceId: original.taskId }) : null;
+        const mayReadTasks = !b.sharedAccess || b.sharedAccess.modules?.includes('tasks') && raw.selectedModules?.includes('tasks');
+        const task = original.taskId && mayReadTasks ? await readState(b, 'tasks', { ...source, section: 'tasks', resourceId: original.taskId }) : null;
         const previous = original.previousId ? await readState(b, section, { ...source, resourceId: original.previousId }) : null;
         const prepared = await growth.prepareImportedAttention(b, opId, raw.row, raw.integrity,
           current ? { id: currentId!, expectedVersion: currentVersion } : undefined,

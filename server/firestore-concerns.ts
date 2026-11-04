@@ -8,6 +8,7 @@ import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, fi
   type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
 import { prepareContextChange } from './firestore-context-basis.ts';
+import { assertClassImportAccess } from './firestore-class-handover.ts';
 import { prepareFirestoreBackgroundWork, firestoreBackgroundReference, type FirestoreBackgroundWork } from './firestore-background-work.ts';
 import { firestoreCareSchema } from './firestore-care.ts';
 import type { FirestoreAgentProposalExtension } from './firestore-agent-proposals.ts';
@@ -69,11 +70,6 @@ function future(at: string | null) {
 }
 
 /** Only a verified class grant can import into shared storage. Family sharing keeps its original resource. */
-export function assertConcernImportAccess(b: Binding) {
-  const grant = b.sharedAccess;
-  if (grant && (!grant.classMember || grant.classMember.spaceId !== grant.spaceId || grant.classMember.userId !== b.actorUserId
-    || grant.module !== 'concerns' || grant.mode !== 'write' || grant.role === 'viewer')) domainReject('shared_domain_read_only', 403);
-}
 
 /** Same concern IDs and HTTP contract; immutable event rows keep long histories out of a single document. */
 export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
@@ -257,7 +253,7 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
   async function prepareImportedSnapshot(b: Binding, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     rawEvents: unknown[], expected?: { id: string; expectedVersion: number },
     mappedLinks: Map<string, { recordId: string | null; taskId: string | null; attentionId: string | null }> = new Map()): Promise<Prepared> {
-    assertConcernImportAccess(b);
+    assertClassImportAccess(b, 'concerns', 'write');
     domainParse(uuid, opId);
     const { source, sourceEvents } = transferTimeline(row, rawEvents);
     const current = expected ? await head(b, expected.id) : null;

@@ -120,7 +120,25 @@ export async function sourceHistoryVisible(data: FirestoreDomainData, b: Binding
   if (value.childId !== b.scope.childId) domainReject('source_history_binding', 500);
   const section = value.evidence.module;
   if (section === 'growth_attention' || section === 'growth_topics') {
-    if (b.sharedAccess || b.actorUserId !== b.scope.ownerUserId) return false;
+    if (b.sharedAccess) {
+      if (!b.sharedAccess.classMember || b.sharedAccess.module !== 'growth') return false;
+      const modules = (b.sharedAccess.modules ?? []).filter(module => !selectedModules || selectedModules.includes(module));
+      const fits = (evidence: { profileVersion: number; facts: readonly unknown[] }, taskId: string | null) =>
+        (!evidence.profileVersion || modules.includes('profile')) && (!evidence.facts.length || modules.includes('memory'))
+        && (!taskId || modules.includes('tasks'));
+      const saved = section === 'growth_attention' ? firestoreGrowthSchema.parse(value.evidence.value) : firestoreGrowthTopicSchema.parse(value.evidence.value);
+      if ('item' in saved ? saved.lastRequest || !fits(saved.item.evidence, saved.item.taskId)
+        || !modules.includes('memory') && Object.keys(saved.item.basis.values).length : saved.request) return false;
+      // The original command and foreign private source references are not shared growth history.
+      for (const origin of [value.evidence.source, saved.importedFrom]) {
+        if (!origin) continue;
+        for (const { source } of [origin.current, ...origin.previous]) {
+          if (source.section !== 'growth_attention' && source.section !== 'growth_topics' || source.sourceMessageId || source.snapshotId
+            || source.preparation || source.previousSummaryId || source.reopenedFrom || source.concern || source.concernEvent || source.concernReference
+            || source.growth && !fits(source.growth.evidence, source.growth.taskId)) return false;
+        }
+      }
+    } else if (b.actorUserId !== b.scope.ownerUserId) return false;
     if (section === 'growth_attention') {
       const row = await b.transaction.get(data.ref('growth_attention', 'growth-attention', value.resource.id));
       if (!row.exists) return false;
