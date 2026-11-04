@@ -960,9 +960,14 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 | GET `/api/admin/invitation?email=` | 完整電郵定位既有資格；不以未列入列表推定不存在 |
 | GET `/api/admin/usage?day=YYYY-MM-DD` | UTC 日的平台／本人 key 全站 counters，無聊天掃描 |
 | GET `/api/admin/audit?cursor=` | 最多 20 筆不可變管理收據／前後值 |
-| GET `/api/admin/knowledge-status?cursor=`（S10 接線中） | 管理員按需讀取現行來源目錄的註冊／停用／定義變更狀態，以及實際檢查紀錄。每頁最多 20 筆，依檢查時間與工作 ID 倒序續讀。失敗原因、最近嘗試與最近成功分開顯示。這項查詢不觸發來源抓取或發布。 |
+| GET `/api/admin/knowledge-status?cursor=`（S10 已發布） | 管理員按需讀取現行來源目錄的註冊／停用／定義變更狀態，以及實際檢查紀錄。每頁最多 20 筆，依檢查時間與工作 ID 倒序續讀。失敗原因、最近嘗試與最近成功分開顯示。這項查詢不觸發來源抓取或發布。 |
+| GET `/api/admin/knowledge-versions?cursor=` | 管理員按頁查看允許來源的版本 ID、hash、核准狀態及索引就緒情況，每頁最多 20 筆。 |
+| GET／POST `/api/admin/knowledge-index-batches` | GET 分頁讀取批次；POST 帶原 `opId` 及最多 50 個選定版本的 ID／hash，建立同 ID 的關鍵詞索引重建批次。 |
+| GET `/api/admin/knowledge-index-batches/{id}`；POST 同路徑的 `/stop`、`/resume` | 每個目標顯示已完成範圍及實際失敗原因。控制操作帶原 `opId` 及 `expectedControlVersion`，逾時依原資料查回或重送。控制版本只隨人工操作遞增。 |
 | POST `/api/admin/operations` | `src/shared/admin.ts` 的 policy／invite／revoke 聯合契約，必帶原 opId；policy 帶 expectedVersion |
 | GET `/api/admin/operations/:opId` | 本管理員原收據或 null；null 不表示原請求必定未生效，重送只能用同一參數／opId |
+
+以上索引批次為 S10 待發布接點。寫入沿既有管理員同源、近期重新驗證及 UID 檢查。每頁與進度交易提交，停止／恢復保留既成結果。還原後進行中的批次須明確恢復。
 
 管理設定的合法範圍統一於 `src/shared/agent-run-limits.ts`：生成 1–12、工具 1–16、查詢 embedding 1–6、互動期限 15–300 秒、單次模型等待 5–180 秒（預設90）、額外重試 0–3 次（預設3）。實際值以已保存 policy 為準；舊 policy／收據缺欄位時保留原有效值：16工具／90秒、單次30秒、零ADK重試；新建政策明確寫入300／90／3，現網須另以管理操作更新，不靜默覆寫。舊 policy 寫入請求可省略新欄位，保持原請求指紋並保留目前值；不以預設覆蓋新設定。API／worker 新 run 固定同一 policy 版本，執行中不動態換額度；本人 key 仍用其個人生成／向量限額，工具／期限共用管理政策。期限只可縮短原受信任 claim 的絕對期限，不能刷新或延長原 run。模型可見餘額供自主規劃，不代表必須用盡。
 
