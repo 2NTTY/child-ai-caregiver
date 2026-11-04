@@ -109,6 +109,10 @@ F07 的資料及 SQL 退出證據已交付；F08 原站使用 Firestore，額外
 
 ### 原 VM Firestore 組裝
 
+#### 文檔包索引與相容回退
+
+以營運憑證執行 `node scripts/firestore-indexes.mjs --inspect-fields`，會對照原命名資料庫的複合索引及欄位設定，只列出未齊項目。另獲准套用後，`--approved-apply` 增量建立缺少的複合索引及設定欄位，`--approved-fields` 只設定欄位。等索引就緒再開放對應查詢。新資料包含班級來源工作時，回退版本也須能讀取及清理這些工作。
+
 #### 文檔包簽章及換匙
 
 要讓本站匯出的資料包可直接驗證來源，API 和 worker 都需要同一份受信任公鑰清單，只有負責建立包的 worker 需要 Ed25519 私鑰。沿已有的部署命令加上 `-f deploy/p1/compose.firestore.handover.yaml`；不加此檔時，以往未簽署的包仍可按原流程匯入。
