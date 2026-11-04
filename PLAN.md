@@ -58,7 +58,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 的原生 runtime 指紋在本機與 EAS 不一致，本次未產出 APK。下次需要批量安裝時，先核對同一建置封包與依賴位置，再建置、驗簽及覆蓋安裝。[原建置紀錄](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)
 
-**當前入口（2026-11-05）為 [P4-HANDOVER01](#p4-handover01)。** 原站 `cbd8101e` 可查已清理的上載紀錄，並把本人備份的孩子／帳戶頭像、文件、到診準備、孩子概況、照護記錄、待辦及私人來源還原至原件。其餘模組的差異還原、正式帳戶操作仍待接續。原生大型包接線已合併，舊 APK 維持 20 MiB；新 binary 的實際上載待批量建置驗收。後端 `3fb14dc1` 已補 S15 單筆私人來源刪除重放及 S14 報告分期保存筆數。S10 來源監察與關鍵詞索引批次已上線。`74b7c92f` 已接本人持續關注還原。完整備份可選取原件，期間備份只補缺少的觀察。原站 `9974bcaf` 已接班員關注匯入。原站後端 `432ae9a7` 已支援操作者分批移轉指定公共知識版本。原站 `adaaa410` 已接班級成長匯入。[班級成長發布紀錄](artifacts/verification/P4_CLASS_GROWTH_DELIVERY_20261105.json)。下一項接本人備份的私人交代；其他模組及系統分享續做。S10 規模與維運驗收仍待補。[知識移轉紀錄](artifacts/verification/P4_KNOWLEDGE_EDITION_TRANSFER_20261105.json)。[班級匯入發布紀錄](artifacts/verification/P4_CLASS_CONCERN_DELIVERY_20261105.json)。[關注還原發布紀錄](artifacts/verification/P4_ORIGINAL_CONCERN_DELIVERY_20261105.json)[索引批次發布紀錄](artifacts/verification/P4_KNOWLEDGE_INDEX_BATCHES_20261105.json)[知識管理發布紀錄](artifacts/verification/P4_KNOWLEDGE_ADMIN_DELIVERY_20261105.json)[刪除重放與報告發布](artifacts/verification/P4_SOURCE_ERASURE_REPORT_TRENDS_20261105.json)[本批交付證據](artifacts/verification/P4_UPLOAD_HISTORY_CHILD_AVATAR_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)
+**當前入口（2026-11-05）為 [P4-HANDOVER01](#p4-handover01)。** 原站 `792b7bee` 已接班級成長匯入、本人私人交代原件還原及成長報告的分期比較。接續私人資料的刪除重放及其餘本人備份模組；依賴 D 的接點等對應接口穩定。原生大型包及系統分享留待集中建置和設備驗收。知識維運、跨端及完整交付仍依各包門檻。[本批發布證據](artifacts/verification/P4_INSTRUCTIONS_REPORTS_DELIVERY_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)／[先前發布和未驗項](STATUS.md)
 
 測試階段持續交付後端與 Web。Android 共用改動累積後，在實際需要安裝或驗證原生功能時集中建置 APK；個別功能包可先完成共用接線，交付紀錄另列尚未在手機驗收的部分。
 
@@ -773,7 +773,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 
 - 前置 P2-A05／現行報告與來源有效性接口；分享只等 S12-W02 對應 adapter，多孩分析只等 CLASS01 範圍，不以全部知識管理作前置。
 - 保留原生分享、雙端預覽、趨勢及非核心分析，使用可追溯資料、期間統計、變化與缺漏；不新增診斷、發展評分或排名。日常成長、季度／年度及同版 PDF 已前移。
-- 已發布的新報告在「報告資料」及同版 PDF 顯示每段已保存的記錄、待辦和關注觀察筆數，沿原掃描完成。仍須核對裝置預覽與分享，以及餘下分析和交付。[刪除重放與報告發布](artifacts/verification/P4_SOURCE_ERASURE_REPORT_TRENDS_20261105.json)
+- 已發布的新報告在「報告資料」及同版 PDF 顯示每段已保存的記錄、待辦和關注觀察筆數，沿原掃描完成。新報告另比較最近兩段的實際保存筆數；既有報告按原版讀回。裝置預覽、系統分享及完整交付仍待核對。[刪除重放與報告發布](artifacts/verification/P4_SOURCE_ERASURE_REPORT_TRENDS_20261105.json)
 
 <a id="s15-w02"></a>
 #### S15-W02：備份／恢復（P4／P5 父包，分項未完成）
