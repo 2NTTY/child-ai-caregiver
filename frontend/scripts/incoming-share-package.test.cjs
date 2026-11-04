@@ -34,7 +34,7 @@ test('Android package sharing requires a choice and preserves existing import re
     async bytes() { return new Uint8Array(this.entry.bytes); }
     delete() { assert.ok(this.uri.startsWith('file:///cache/'), 'never delete the external source'); files.delete(this.uri); }
   }
-  let production, share, routes = [];
+  let production, share, routes = [], navigate = action => action();
   const jsx = (type, props, key) => ({ type, props, key }), noop = () => {};
   const mocks = {
     react: { useEffect: noop, useLayoutEffect: noop, useRef: () => ({ current: null }), useState: initial => [initial, noop], useSyncExternalStore: (_s, get) => get() },
@@ -49,7 +49,7 @@ test('Android package sharing requires a choice and preserves existing import re
     '../production/photo-original': { photoOriginalFromBytes: async () => { throw Error('No photo'); } },
     '../production/ProductionProvider': { useProduction: () => production },
     '../production/IncomingShareProvider': { useIncomingShare: () => share },
-    '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard: noop, usePreviewNavigation: () => action => action() },
+    '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard: noop, usePreviewNavigation: () => (...args) => navigate(...args) },
     '../components/PageFrame': { PageFrame: 'PageFrame' }, '../components/ChildPicker': { ChildPicker: 'ChildPicker' },
     '../components/ui': { AppButton: 'Button', SectionCard: 'Card' },
     '../theme': { spacing: {}, chineseFont: 'sans' },
@@ -158,5 +158,40 @@ test('Android package sharing requires a choice and preserves existing import re
   assert.equal(lost.importer.getSnapshot().upload.state, 'reserved', 'a lost result is never shown as completed');
   assert.equal(await lost.inbox.takePackage(lostId, createProductionPackageShareTarget(lost.owner)), false);
   assert.deepEqual(lost.counts(), [1, 1]);
+  for (const mode of ['upload', 'pending', 'busy']) {
+    const active = flow(); let inFlight;
+    if (mode === 'pending') active.loseResponse();
+    if (mode === 'busy') active.holdUpload();
+    const adoptedId = active.inbox.getSnapshot().items[0].id;
+    if (mode === 'busy') {
+      inFlight = active.inbox.takePackage(adoptedId, createProductionPackageShareTarget(active.owner)); await active.uploadBegan;
+    } else await active.inbox.takePackage(adoptedId, createProductionPackageShareTarget(active.owner));
+    active.importer.panelOpened();
+    const original = active.importer.getSnapshot(), oldUploadId = original.upload?.id, oldOperationId = original.pending?.id;
+    raw = [{ shareType: 'file', value: source }]; active.inbox.receive();
+    if (mode === 'pending') { active.importer.syncContext('owner', 'owner:1', false); production.online = false; }
+    share = { inbox: active.inbox, snapshot: active.inbox.getSnapshot() };
+    const waitingIds = share.snapshot.items.map(item => item.id), readsBefore = opened.length;
+    const blockedTree = Screen(), resume = nodes(blockedTree).find(node => node.props?.label === '查看目前匯入');
+    assert.ok(resume, mode + ' offers the existing importer instead of only disabled intake, including offline recovery');
+    assert.equal(nodes(blockedTree).find(node => node.props?.label === '作為資料包匯入').props.disabled, true);
+    let guarded;
+    navigate = (action, intent) => { assert.equal(intent, 'workspace'); guarded = action; };
+    await resume.props.onPress();
+    assert.equal(active.importer.getSnapshot().panelRequested, false, 'A canceled leave guard does not open the panel');
+    assert.deepEqual(routes, []);
+    navigate = action => action(); await resume.props.onPress();
+    assert.deepEqual(routes, ['/settings?section=account']); assert.equal(active.importer.getSnapshot().panelRequested, true);
+    assert.equal(active.importer.getSnapshot().upload?.id, oldUploadId); assert.equal(active.importer.getSnapshot().pending?.id, oldOperationId);
+    assert.deepEqual(active.counts(), [1, 1]); assert.equal(opened.length, readsBefore, 'Viewing recovery never reads the newly shared file');
+    assert.deepEqual(active.inbox.getSnapshot().items.map(item => item.id), waitingIds, 'The new share remains unconsumed');
+    active.importer.panelOpened(); navigate = action => { guarded = action; }; await resume.props.onPress();
+    active.state.identityKey = 'other'; active.state.records.user.id = 'other'; active.importer.syncContext('other', 'other', true);
+    active.inbox.observeIdentity('other'); guarded();
+    assert.deepEqual(routes, ['/settings?section=account'], 'A deferred activation cannot navigate for another account');
+    assert.notEqual(active.importer.getSnapshot().panelRequested, true); assert.deepEqual(active.counts(), [1, 1]);
+    if (inFlight) await inFlight;
+    navigate = action => action();
+  }
   assert.ok(files.has(source), 'external input is retained');
 });
