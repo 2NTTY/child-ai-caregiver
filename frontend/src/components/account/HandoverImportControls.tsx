@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } fr
 import { AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useProduction } from '../../production/ProductionProvider';
-import { importErrorText } from '../../production/HandoverImportOwner';
+import { importErrorText, originalComparisonResolution } from '../../production/HandoverImportOwner';
 import { useProductionSharing } from '../../production/useProductionSharing';
 import { handoverClassScope, handoverClassDestination, handoverClassDestinations, handoverClassEnrolmentDestination,
   type HandoverClassDestination, type HandoverClassEnrolmentDestination } from '../../production/handover-class-targets';
@@ -30,6 +30,17 @@ const integrityLabels = { trusted: '可信簽章已驗證', untrusted_signer: '�
 const uploadStates = { reserved: '尚未上載完成', receiving: '接收或驗證中', ready: '可繼續匯入',
   failed: '上載失敗，待清理', cancelled: '已取消，待清理', expired: '已到期，待清理' };
 const enrolmentStates = { pending: '待處理，尚未建立學生', created: '已建立班級學生', skipped: '沿用已核對的班級學生', failed: '未能入班' };
+const comparisonStates = {unchanged:'與備份相同',local_newer:'目前版本較新',backup_newer:'備份版本較新',different:'內容不同',deleted:'目前已刪除',unavailable:'未能核實目前狀態'};
+function comparisonFields(module: 'care'|'profile'|'tasks', fields: string[]) {
+  const moduleNames: Record<'care'|'profile'|'tasks',Record<string,string>> = {
+    care:{text:'記錄內容',details:'時間／數量',source:'資料來源'},profile:{data:'孩子概況'},
+    tasks:{title:'待辦名稱',details:'待辦內容',occurrence:'時間／狀態',kind:'類別',assigneeUserId:'負責人'},
+  };
+  const names: Record<string,string> = {...moduleNames[module],reason:'修改原因',updatedAt:'更新時間',
+    confirmedAt:'確認時間',confirmedBy:'確認者',confirmationBasis:'確認記錄',importedFrom:'來源記錄',
+    authorUserId:'記錄者',createdBy:'建立者',createdAt:'建立時間'};
+  return [...new Set(fields.map(field => Object.hasOwn(names,field) ? names[field] : '其他欄位'))].join('、');
+}
 const dateText = (value: string) => new Date(value).toLocaleString('zh-HK', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 const foreground = () => Platform.OS === 'web'
   ? typeof document !== 'undefined' && document.visibilityState === 'visible' : AppState.currentState === 'active';
@@ -43,6 +54,7 @@ export function HandoverImportControls() {
   const [open, setOpen] = useState(false), [page, setPage] = useState(0);
   const [choices, setChoices] = useState<Record<string, Choice>>({}), [accepted, setAccepted] = useState(false);
   const [rosterQuery, setRosterQuery] = useState('');
+  const [comparisonChild, setComparisonChild] = useState(''), [comparisonModule, setComparisonModule] = useState<'care'|'profile'|'tasks'>('care');
   const trigger = useRef<View>(null);
   const capabilityRead = useRef<string | null>(null);
   const current = !!identityKey && state.identityKey === identityKey && state.userId === userId && account.gate === 'ready';
@@ -54,6 +66,7 @@ export function HandoverImportControls() {
   const needsCapabilities = current && (!!(open && preview) || state.items.some(batch => batch.targets.some(target => target.target.spaceId !== null)));
   useLayoutEffect(() => { setOpen(false); setChoices({}); setPage(0); setAccepted(false); }, [identityKey]);
   useLayoutEffect(() => { setChoices({}); setPage(0); setAccepted(false); }, [upload?.id, preview?.manifestSha256]);
+  useLayoutEffect(() => { setComparisonChild(''); setComparisonModule('care'); controller.clearComparison(); }, [controller, identityKey, upload?.id, preview?.manifestSha256]);
   useLayoutEffect(() => { setRosterQuery(classes.state.rosterQuery); }, [classes.state.selected?.id]);
   useLayoutEffect(() => {
     setChoices(before => {
@@ -146,19 +159,32 @@ export function HandoverImportControls() {
   }
   const canCreate = !!preview && selected.length > 0 && selected.length <= 100 && targets.length === selected.length
     && (preview.integrity === 'trusted' || accepted);
+  const comparisonChildren = preview?.header.purpose === 'backup' && preview.header.source.accountId === userId
+    ? preview.children.filter(child => recordsState.children.some(local => local.id === child.id && (local.accessRole === 'owner' || local.accessRole === undefined))) : [];
+  const comparisonModules = (['care','profile','tasks'] as const).filter(module => available.includes(module));
+  const comparison = state.comparison?.query.uploadId === upload?.id && state.comparison?.query.childId === comparisonChild
+    && state.comparison?.query.module === comparisonModule ? state.comparison : null;
+  const comparisonSelected = comparison?.selected ?? [];
+  const comparisonOverwrite = comparison?.items.filter(item => originalComparisonResolution(item) === 'replace_current') ?? [];
+  const comparisonRestore = comparison?.items.filter(item => originalComparisonResolution(item) === 'restore_deleted') ?? [];
+  const selectedOverwrite = comparisonOverwrite.filter(item => comparisonSelected.includes(item.id));
+  const selectedRestore = comparisonRestore.filter(item => comparisonSelected.includes(item.id));
   function chooseSource(id: string, checked: boolean) {
+    controller.clearComparison();
     setChoices(before => {
       if (checked) return Object.keys(before).length >= 100 ? before : { ...before, [id]: { target: '', sections: [...available] } };
       const next = { ...before }; delete next[id]; return next;
     });
   }
   function chooseTarget(id: string, target: string) {
+    controller.clearComparison();
     const destination = destinations.find(item => item.value === target);
     setChoices(before => before[id] ? { ...before, [id]: { target, sections: before[id].sections.filter(section => destination && availableFor(id, section, destination)),
       ...(destination?.classDestination ? { classDestination: destination.classDestination } : {}),
       ...(destination?.classEnrolment ? { classEnrolment: destination.classEnrolment } : {}) } } : before);
   }
   function clearClassTargets() {
+    controller.clearComparison();
     setChoices(before => Object.fromEntries(Object.entries(before).map(([id, choice]) => [id, choice.classDestination || choice.classEnrolment ? { target: '', sections: choice.sections } : choice])));
   }
   function chooseClass(id: string) {
@@ -169,6 +195,7 @@ export function HandoverImportControls() {
     if (id) void teachers.controller.selectSpace(id); else teachers.controller.clearSelection();
   }
   function chooseSection(id: string, section: Section, checked: boolean) {
+    controller.clearComparison();
     setChoices(before => before[id] ? { ...before, [id]: { ...before[id], sections: checked
       ? [...before[id].sections.filter(value => value !== section), section] : before[id].sections.filter(value => value !== section) } } : before);
   }
@@ -228,6 +255,7 @@ export function HandoverImportControls() {
       {row.state === 'interrupted' ? <Text style={styles.body}>此批次經還原後已中斷，不會自行繼續寫入。</Text> : null}
       <View style={styles.actions}>
         <AppButton label="讀取此批次狀態" variant="quiet" disabled={locked} onPress={() => { void controller.refresh(row.id); }} />
+        <AppButton label="查看分模組結果" variant="quiet" disabled={writeLocked} onPress={() => { void controller.readSummary(row.id); }} />
         <AppButton label="查看逐項結果" variant="quiet" disabled={writeLocked || !row.targets[0]?.sections[0]} onPress={() => {
           const first = row.targets[0]; if (first?.sections[0]) { controller.selectResults(row.id, first.sourceChildId, first.sections[0]); void controller.readResults(); }
         }} />
@@ -236,6 +264,16 @@ export function HandoverImportControls() {
         {row.state === 'queued' || row.state === 'running' ? <AppButton label="取消匯入" variant="quiet" disabled={writeLocked} onPress={() => { void controller.control(row.id, 'cancel'); }} /> : null}
         {row.state === 'cancelled' || row.state === 'failed' ? <AppButton label="接續此批次" variant="secondary" disabled={writeLocked} onPress={() => { void controller.control(row.id, 'resume'); }} /> : null}
       </View>
+      {state.summary?.batchId === row.id ? <View style={styles.group} accessibilityLiveRegion="polite">
+        <Text style={styles.title}>已提交的分模組結果</Text>
+        {state.summary.status === 'loading' ? <Text style={styles.body}>正在查閱分模組結果。</Text>
+          : state.summary.status === 'unauthorized' ? <Text style={styles.body}>你目前沒有權限查閱此批次的分模組結果。</Text>
+          : state.summary.status === 'unavailable' ? <Text style={styles.body}>暫時未能查閱分模組結果，請重新讀取。</Text>
+          : state.summary.value?.modules === null ? <Text style={styles.body}>此舊批次未有分模組統計，請參閱原總進度及逐項結果。</Text>
+          : <><Text style={styles.body}>只計已提交的業務項目；修訂、附件內容及轉錄不重複計數。中止或未完成批次只顯示已提交部分。</Text>
+            {state.summary.value?.modules.map(item => <Text key={item.module} style={styles.body}>{labels[item.module]}：建立 {item.created} · 更新 {item.updated} · 略過 {item.skipped} · 衝突 {item.conflict}</Text>)}
+            {state.summary.value?.modules.length === 0 ? <Text style={styles.body}>尚未有已提交的業務項目。</Text> : null}</>}
+      </View> : null}
       {state.enrolmentResults?.batchId === row.id ? <View style={styles.group}>
         <Text style={styles.title}>逐名入班結果</Text>
         {!state.enrolmentResults.items.length ? <Text style={styles.body}>此批次沒有新增入班要求。</Text> : null}
@@ -251,7 +289,7 @@ export function HandoverImportControls() {
     </View>)}
     {state.nextCursor ? <AppButton label="載入更多匯入批次" variant="quiet" disabled={locked} onPress={() => { void controller.load(true); }} /> : null}
     {!open && state.notice ? <Text accessibilityLiveRegion="polite" style={styles.body}>{state.notice}</Text> : null}
-    <FormDialog visible={open} scopeKey={identityKey!} formKey={upload?.id} title="匯入資料包" dismissMode="local" returnFocusRef={trigger} onClose={() => setOpen(false)}>
+    <FormDialog visible={open} scopeKey={identityKey!} formKey={upload?.id} title="匯入資料包" dismissMode="local" returnFocusRef={trigger} onClose={() => {controller.clearComparison();setOpen(false);}}>
       <View style={styles.group}>
         {recovery}
         {state.busy === 'pick' || state.busy === 'write' && pending?.kind === 'upload' ? <Text style={styles.body}>正在選取、上載或驗證資料包，尚未匯入資料。</Text> : null}
@@ -267,6 +305,48 @@ export function HandoverImportControls() {
             {preview.header.selection.period ? <Text style={styles.body}>來源指定日期（香港時間）：{dateTimeParts(preview.header.selection.period.from, hongKongTimeZone)?.date ?? preview.header.selection.period.from} 至 {dateTimeParts(preview.header.selection.period.to, hongKongTimeZone)?.date ?? preview.header.selection.period.to}</Text> : null}
             {preview.header.periodExceptions?.length ? <Text style={styles.body}>匯出人另外選入了 {preview.header.periodExceptions.length} 份完整文件或附件。這些項目可涵蓋上述日期以外的內容，名稱及日期見包內的「實際匯出的文件及附件」。</Text> : null}
             {preview.integrity !== 'trusted' ? <AppCheckbox label="我知悉此資料包沒有可信來源證明，仍選擇繼續" checked={accepted} disabled={writeLocked} onChange={setAccepted} /> : null}
+            {preview.header.purpose === 'backup' ? <View style={styles.group}>
+              <Text style={styles.title}>比較原有資料</Text>
+              <Text style={styles.body}>只比較此帳戶原孩子的照護記錄、孩子資料或待辦。每次只讀一頁狀態，比較本身沒有還原或改寫任何資料；勾選後可另行提交原項還原，Server 會核實本人備份證明及目前版本。</Text>
+              {comparisonChildren.length && comparisonModules.length ? <>
+                <AppSelect label="比較原有資料的孩子" value={comparisonChild} disabled={writeLocked}
+                  options={[{value:'',label:'請選擇原孩子'},...comparisonChildren.map(child => ({value:child.id,label:child.displayName}))]}
+                  onChange={value => {controller.clearComparison();setComparisonChild(value);}} />
+                <AppSelect label="比較資料類別" value={comparisonModules.includes(comparisonModule) ? comparisonModule : ''} disabled={writeLocked}
+                  options={comparisonModules.map(module => ({value:module,label:labels[module]}))}
+                  onChange={value => {if (value === 'care' || value === 'profile' || value === 'tasks') {controller.clearComparison();setComparisonModule(value);}}} />
+                <AppButton label="比較原有資料" variant="secondary" disabled={writeLocked || !comparisonChildren.some(child => child.id === comparisonChild) || !comparisonModules.includes(comparisonModule)}
+                  onPress={() => {void controller.compareOriginal(comparisonChild,comparisonModule);}} />
+                {comparison ? <View style={styles.group} accessibilityLiveRegion="polite">
+                  {comparison.error ? <Text style={styles.body}>{comparison.error}</Text> : !comparison.loaded ? <Text style={styles.body}>正在比較原有資料。</Text> : <>
+                    <Text style={styles.body}>{labels[comparison.query.module]} · 已讀 {comparison.items.length} 項{comparison.nextCursor ? '，尚有下一頁。' : '，此類別比較已讀完。'}</Text>
+                    {!comparison.items.length ? <Text style={styles.body}>此類別沒有可比較的項目。</Text> : null}
+                    {comparison.items.map(item => <View key={item.id} style={styles.item}>
+                      <Text selectable style={styles.body}>{item.id} · {comparisonStates[item.state]}</Text>
+                      <Text style={styles.body}>備份版本 {item.backupVersion} · 目前版本 {item.localVersion ?? '未能確定'}</Text>
+                      {item.changedFields.length ? <Text style={styles.body}>有變更的欄位：{comparisonFields(comparison.query.module,item.changedFields)}</Text> : null}
+                      {originalComparisonResolution(item) ? <AppCheckbox
+                        label={originalComparisonResolution(item) === 'restore_deleted' ? '恢復此已刪項目' : '以備份覆蓋此項'}
+                        accessibilityLabel={`${item.id}：${originalComparisonResolution(item) === 'restore_deleted' ? '恢復已刪項目' : '覆蓋目前內容'}`}
+                        checked={comparisonSelected.includes(item.id)} disabled={writeLocked} onChange={checked => controller.selectComparison(item.id,checked,comparison)} /> : null}
+                    </View>)}
+                    <Text style={styles.body}>只選本次已讀差異{comparison.nextCursor ? '；尚未讀取的下一頁不包括在選擇內' : ''}，不代表整包；翻頁不會自動勾選。</Text>
+                    {comparisonOverwrite.length ? <AppCheckbox label={`選取已讀覆蓋項目（${comparisonOverwrite.length} 項）`}
+                      checked={selectedOverwrite.length === comparisonOverwrite.length} disabled={writeLocked}
+                      onChange={checked => controller.selectReadComparison('replace_current',checked,comparison)} /> : null}
+                    {comparisonRestore.length ? <AppCheckbox label={`選取已讀已刪項目作恢復（${comparisonRestore.length} 項）`}
+                      checked={selectedRestore.length === comparisonRestore.length} disabled={writeLocked}
+                      onChange={checked => controller.selectReadComparison('restore_deleted',checked,comparison)} /> : null}
+                    <Text style={styles.body}>準備提交：覆蓋 {selectedOverwrite.length} 項 · 恢復已刪 {selectedRestore.length} 項。原刪除紀錄保留；送出後仍須查看批次及逐項結果，未處理或衝突不算完成。</Text>
+                    <AppButton label={`提交所選原項還原（${selectedOverwrite.length + selectedRestore.length} 項）`} variant="secondary"
+                      disabled={writeLocked || selectedOverwrite.length + selectedRestore.length === 0}
+                      onPress={() => {void controller.restoreComparison(comparison);}} />
+                  </>}
+                  {comparison.nextCursor ? <AppButton label="下一頁比較結果" variant="quiet" disabled={writeLocked} onPress={() => {void controller.compareOriginal(comparisonChild,comparisonModule,true);}} /> : null}
+                </View> : null}
+              </> : <Text style={styles.body}>此包未有目前帳戶可比較的原孩子或資料類別；仍可在下方選擇匯入副本。</Text>}
+            </View> : null}
+            <Text style={styles.title}>匯入獨立副本</Text>
             <Text style={styles.body}>可匯入孩子資料、照護記錄、待辦、記憶、私人來源、文件與準備單、附件、私人聊天歷史、持續關注及成長整理。附件包含可讀的照片、錄音、檔案、孩子頭像及原有語音轉錄；其他已開放模組包含各自歷史。持續關注及成長整理目前只可匯入本人孩子。</Text>
             <Text style={styles.body}>請逐位指定接收對象，不會按名字自動配對。預設保留接收對象目前的修改及刪除。</Text>
             <Text style={styles.body}>可選目前開啟的家庭共享孩子，或在下方選班級和學生。</Text>

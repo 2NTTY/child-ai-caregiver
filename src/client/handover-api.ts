@@ -9,6 +9,8 @@ import { handoverUploadCommandSchema, handoverUploadViewSchema, handoverUploadPa
 import { handoverImportCommandSchema, handoverImportControlSchema, handoverImportViewSchema, handoverImportPageSchema,
   handoverImportResultQuerySchema, handoverImportResultPageSchema,
   handoverSourceHistoryQuerySchema, handoverSourceHistoryPageSchema,
+  handoverImportSummarySchema, originalBackupComparisonSchema, originalBackupComparisonQuerySchema,
+  type HandoverImportSummary, type OriginalBackupComparison, type OriginalBackupComparisonQuery,
   type HandoverImportResultQuery, type HandoverImportResultPage, type HandoverImportCommand, type HandoverImportView } from '../shared/handover-imports.ts';
 
 type CancelCommand = z.infer<typeof handoverCancelCommandSchema>;
@@ -45,6 +47,8 @@ export interface HandoverApi {
   getImport(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportView>;
   importCapabilities(userId: string, signal: AbortSignal): Promise<{ classEnrolment: boolean }>;
   importEnrolments(userId: string, id: string, signal: AbortSignal): Promise<ClassImportEnrolments>;
+  importSummary(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportSummary>;
+  compareOriginal(userId: string, query: OriginalBackupComparisonQuery, signal: AbortSignal): Promise<OriginalBackupComparison>;
   listImports(userId: string, signal: AbortSignal, cursor?: string): Promise<ImportPage>;
   importResults(userId: string, id: string, query: HandoverImportResultQuery, signal: AbortSignal): Promise<HandoverImportResultPage>;
   sourceHistory(userId: string, query: HandoverSourceHistoryQuery, signal: AbortSignal): Promise<HandoverSourceHistoryPage>;
@@ -195,6 +199,18 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
         result => result.id === parsed.data.opId && result.uploadId === parsed.data.uploadId, { collection: 'package-imports', timeoutMs: 300_000 });
     },
     getImport: (userId, id, signal) => resourceView('package-imports', handoverImportViewSchema, userId, id, signal),
+    importSummary: (userId, id, signal) => json(userId, '/' + identifier(id) + '/summary', signal, handoverImportSummarySchema,
+      undefined, result => result.batchId === id && (result.modules === null || new Set(result.modules.map(row => row.module)).size === result.modules.length),
+      { collection: 'package-imports' }),
+    async compareOriginal(userId, query, signal) {
+      const parsed = originalBackupComparisonQuerySchema.safeParse(query);
+      if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
+      const input = parsed.data;
+      return json(userId, '/compare-original', signal, originalBackupComparisonSchema, input,
+        page => page.uploadId === input.uploadId && page.childId === input.childId && page.module === input.module
+          && page.nextCursor !== '' && (!input.cursor || page.nextCursor !== input.cursor)
+          && new Set(page.items.map(row => row.id)).size === page.items.length, { collection: 'package-imports' });
+    },
     importCapabilities: (userId, signal) => json(userId, '/capabilities', signal, importCapabilitiesSchema,
       undefined, undefined, { collection: 'package-imports' }),
     importEnrolments: (userId, id, signal) => json(userId, '/' + identifier(id) + '/enrolments', signal, importEnrolmentsSchema,

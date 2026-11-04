@@ -63,7 +63,7 @@ test('class import maps several sources through the paged roster and invalidates
       header: { source: { serverId: 'source' }, selection: { modules: ['care', 'profile', 'tasks', 'memory', 'documents', 'attachments', 'sources', 'chat', 'concerns', 'growth'], period: null } },
       children: [{ id: id(2), displayName: 'Same name' }, { id: id(3), displayName: 'Other source' }],
       coverage: [{ childId: id(2), section: 'instructions', items: 1 }] } } };
-  production = { owner: { handoverImportOwner: { subscribe: noop, getSnapshot: () => state, create: async (...args) => sent.push(args), load: async () => {}, loadUploads: async () => {},
+  production = { owner: { handoverImportOwner: { clearComparison: noop, subscribe: noop, getSnapshot: () => state, create: async (...args) => sent.push(args), load: async () => {}, loadUploads: async () => {},
     readImportCapabilities: async () => { capabilityReads++; state.classEnrolmentEnabled = enableClassEnrolment; },
     readEnrolments: async batchId => { enrolmentReads.push(batchId); state.enrolmentResults = { batchId,
       items: [{ sourceChildId: id(2), target: { childId: id(50), spaceId: id(10) }, outcome: enrolmentOutcome, error: null }] }; } },

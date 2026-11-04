@@ -18,7 +18,7 @@ function load(name) {
     : name === 'react-native-paper' ? { Text: 'Text' }
     : name.endsWith('/HandoverImportOwner') ? ownerHelpers : name.endsWith('/ProductionProvider') ? { useProduction: () => production }
     : name.endsWith('/useProductionSharing') ? { useProductionSharing: () => ({ controller: {}, state: { identityKey: null, selected: null, shares: { items: [] }, spaces: { items: [] }, teacherClasses: { items: [] }, rosterQuery: '' } }) }
-    : name.endsWith('/handover-class-targets') ? { handoverClassScope: () => null, handoverClassDestinations: () => [] }
+    : name.endsWith('/handover-class-targets') ? { handoverClassScope: () => null, handoverClassDestinations: () => [], handoverClassEnrolmentDestination: () => null }
     : name.endsWith('/package-import') ? { PACKAGE_IMPORT_MAX_BYTES: 268435456, pickImportPackage: async () => null }
     : name === './HandoverImportHistory' ? load('HandoverImportHistory') : name === './HandoverImportResults' ? load('HandoverImportResults')
     : name.endsWith('/theme') ? { colors: {}, readingType: {}, spacing: {} }
@@ -38,7 +38,7 @@ test('growth import selector submits personal growth and removes it from family 
     upload: { id: id(10), state: 'ready', filename: 'growth.zip', bytes: 3, preview: { integrity: 'trusted', manifestSha256: 'a'.repeat(64),
       header: { selection: { modules: ['care', 'growth'] }, source: { serverId: 'source' } },
       children: [{ id: id(2), displayName: 'Source child' }], coverage: [{ childId: id(2), section: 'growth_attention', items: 1 }] } } };
-  const sent = [], controller = { subscribe: noop, getSnapshot: () => state, create: async (...value) => sent.push(value) };
+  const sent = [], controller = { clearComparison: noop, subscribe: noop, getSnapshot: () => state, create: async (...value) => sent.push(value) };
   const shared = { identityKey: 'owner:1', userId: 'owner', phase: 'ready', target: { spaceId: id(4), childId: id(5) },
     view: { spaceId: id(4), childId: id(5), childName: 'Shared child', spaceName: 'Family', role: 'caregiver', modules: ['care', 'growth'] } };
   production = { owner: { handoverImportOwner: controller, sharedChild: { subscribe: noop, getSnapshot: () => shared } },
@@ -110,7 +110,7 @@ test('concern import selector keeps concerns on private targets and removes them
     upload: { id: id(10), state: 'ready', filename: 'concerns.zip', bytes: 3, expiresAt: '2026-11-01T00:00:00Z', preview: {
       integrity: 'trusted', manifestSha256: 'a'.repeat(64), header: { selection: { modules: ['care', 'concerns'] }, source: { serverId: 'source' } },
       children: [{ id: id(2), displayName: 'Source child' }], coverage: [{ childId: id(2), section: 'concerns', items: 1 }] } } };
-  const sent = [], controller = { subscribe: noop, getSnapshot: () => state, create: async (...value) => sent.push(value) };
+  const sent = [], controller = { clearComparison: noop, subscribe: noop, getSnapshot: () => state, create: async (...value) => sent.push(value) };
   const shared = { identityKey: 'owner:1', userId: 'owner', phase: 'ready', target: { spaceId: id(4), childId: id(5) },
     view: { spaceId: id(4), childId: id(5), childName: 'Shared child', spaceName: 'Family', role: 'caregiver', modules: ['care', 'concerns'] } };
   production = { owner: { handoverImportOwner: controller, sharedChild: { subscribe: noop, getSnapshot: () => shared } },
@@ -171,7 +171,7 @@ test('shared attachment import selector submits authorized targets and renders s
     upload: { id: id(10), state: 'ready', filename: 'attachments.zip', bytes: 3, expiresAt: '2026-11-01T00:00:00Z', preview: {
       integrity: 'trusted', manifestSha256: 'a'.repeat(64), header: { selection: { modules: ['attachments'] }, source: { serverId: 'source' } },
       children: [{ id: id(2), displayName: 'Source child' }], coverage: [{ childId: id(2), section: 'voices', items: 1 }] } } };
-  const sent = [], controller = { subscribe: noop, getSnapshot: () => state, create: async (...value) => sent.push(value) };
+  const sent = [], controller = { clearComparison: noop, subscribe: noop, getSnapshot: () => state, create: async (...value) => sent.push(value) };
   const shared = { identityKey: 'owner:1', userId: 'owner', phase: 'ready', target: { spaceId: id(4), childId: id(5) },
     view: { spaceId: id(4), childId: id(5), childName: 'Shared child', spaceName: 'Family', role: 'caregiver', modules: ['attachments'] } };
   production = { owner: { handoverImportOwner: controller, sharedChild: { subscribe: noop, getSnapshot: () => shared } },
@@ -275,7 +275,7 @@ test('shared import components label resources, read literal source histories an
     upload: { id: id(50), state: 'ready', filename: 'memory.zip', bytes: 3, expiresAt: '2026-11-01T00:00:00Z', preview: { manifestSha256: 'a'.repeat(64),
       header: { selection: { modules: ['memory'] }, source: { serverId: 'https://source.test' } }, children: [{ id: id(2), displayName: 'Source child' }],
       coverage: [{ childId: id(2), section: 'instructions', items: 1 }] } } };
-  Object.assign(controller, { subscribe: noop, getSnapshot: () => state });
+  Object.assign(controller, { clearComparison: noop, subscribe: noop, getSnapshot: () => state });
   production = { owner: { handoverImportOwner: controller, sharedChild: { subscribe: noop, getSnapshot: () => ({ identityKey: 'owner:1', userId: 'owner', phase: 'ready',
     target: { spaceId: id(4), childId: id(5) }, view: { spaceId: id(4), childId: id(5), childName: 'Shared child', spaceName: 'Family', role: 'caregiver', modules: ['memory', 'documents'] } }) } },
     identityKey: 'owner:1', userId: 'owner', online: true, account: { gate: 'ready', busy: null, deletion: { phase: 'idle' } },
@@ -302,4 +302,68 @@ test('shared import components label resources, read literal source histories an
   state.upload.preview.header.selection.modules = ['documents']; state.upload.preview.coverage = [{ childId: id(2), section: 'documents', items: 1 }];
   again(view); control(view.tree, 'Source child').props.onChange(true); again(view); destination().props.onChange(`shared:${id(4)}:${id(5)}`); again(view);
   assert.equal(control(view.tree, '文件與準備單').props.checked, true); assert.equal(control(view.tree, '開始匯入').props.disabled, false);
+});
+
+test('backup comparison and committed module summary are explicit read-only controls in the shared import panel',async()=>{
+  const id=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
+  const batch={id:id(1),state:'completed',targets:[],counts:{created:99,updated:0,skipped:0,conflict:0},processedItems:4,totalItems:4,updatedAt:'2026-11-05T00:00:00Z'};
+  const state={identityKey:'owner:1',userId:'owner',busy:null,pending:null,items:[batch],uploads:[],
+    upload:{id:id(2),version:3,state:'ready',filename:'backup.zip',bytes:3,expiresAt:'2026-11-06T00:00:00Z',preview:{integrity:'missing_proof',manifestSha256:'a'.repeat(64),
+      header:{purpose:'backup',source:{accountId:'owner',serverId:'source'},selection:{modules:['care','tasks'],childIds:[id(3)]}},children:[{id:id(3),displayName:'Original child'}],coverage:[]}},
+    summary:{batchId:batch.id,status:'ready',value:{modules:[{module:'care',created:2,updated:0,skipped:1,conflict:0}]}},comparison:null};
+  const calls=[],controller={subscribe:noop,getSnapshot:()=>state,readSummary:async batchId=>calls.push(['summary',batchId]),
+    compareOriginal:async(...args)=>calls.push(['compare',...args]),clearComparison:()=>{state.comparison=null;calls.push(['clear']);}};
+  production={owner:{handoverImportOwner:controller,sharedChild:{subscribe:noop,getSnapshot:()=>({})}},identityKey:'owner:1',userId:'owner',online:true,
+    account:{gate:'ready',busy:null,deletion:{phase:'idle'}},recordsState:{children:[{id:id(3),displayName:'Original child',accessRole:'owner'},{id:id(4),displayName:'Other child',accessRole:'owner'}]}};
+  const view=render(load('HandoverImportControls').HandoverImportControls);
+  control(view.tree,'查看分模組結果').props.onPress();assert.deepEqual(calls.at(-1),['summary',batch.id]);
+  assert.match(text(view.tree),/照護記錄.*建立\s+2.*略過\s+1/);
+  control(view.tree,'查看上載與匯入選擇').props.onPress();again(view);
+  assert.equal(calls.some(call=>call[0]==='compare'),false);
+  control(view.tree,'Original child').props.onChange(true);again(view);
+  nodes(view.tree).find(node=>node.type==='AppSelect'&&node.props.label.startsWith('接收「')).props.onChange(`private:${id(3)}`);again(view);
+  control(view.tree,'待辦').props.onChange(false);again(view);
+  const child=control(view.tree,'比較原有資料的孩子'),module=control(view.tree,'比較資料類別');
+  assert.deepEqual(child.props.options.filter(option=>option.value).map(option=>option.value),[id(3)]);
+  child.props.onChange(id(3));again(view);control(view.tree,'比較資料類別').props.onChange('care');again(view);
+  control(view.tree,'比較原有資料').props.onPress();assert.deepEqual(calls.at(-1),['compare',id(3),'care']);
+  assert.equal(control(view.tree,'待辦').props.checked,false,'Comparison preserves manual copy-import choices');
+  state.comparison={query:{uploadId:id(2),childId:id(3),module:'care'},items:[{id:id(8),state:'deleted',backupVersion:1,localVersion:2,changedFields:['text']}],loaded:true,nextCursor:'next',error:null};again(view);
+  assert.match(text(view.tree),/目前已刪除/);assert.match(text(view.tree),/沒有還原或改寫/);
+  control(view.tree,'下一頁比較結果').props.onPress();assert.deepEqual(calls.at(-1),['compare',id(3),'care',true]);
+  assert.equal(nodes(view.tree).some(node=>node.props?.label==='恢復原有資料'),false);
+  control(view.tree,'比較資料類別').props.onChange('tasks');again(view);assert.equal(state.comparison,null);
+  for(const [status,modules,expected] of [['ready',null,/舊批次未有分模組統計/],['unauthorized',null,/沒有權限查閱/],['unavailable',null,/未能查閱/]]){
+    state.summary={batchId:batch.id,status,value:status==='ready'?{modules}:null};again(view);assert.match(text(view.tree),expected);
+  }
+});
+
+test('original restore panel defaults to no selections and previews overwrite and deleted categories separately',()=>{
+  const id=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
+  const rows=[{id:id(3),targetId:id(13),state:'different',backupVersion:1,localVersion:2,changedFields:['text','details','future_private_key','__proto__']},
+    {id:id(4),targetId:id(14),state:'deleted',backupVersion:1,localVersion:3,changedFields:[]},
+    {id:id(5),state:'local_newer',backupVersion:1,localVersion:4,changedFields:[]}];
+  const state={identityKey:'owner:1',userId:'owner',busy:null,pending:null,items:[],uploads:[],
+    upload:{id:id(1),version:3,state:'ready',filename:'backup.zip',bytes:3,expiresAt:'2026-11-06T00:00:00Z',preview:{integrity:'trusted',manifestSha256:'a'.repeat(64),
+      header:{purpose:'backup',source:{accountId:'owner',serverId:'source'},selection:{modules:['care'],childIds:[id(2)]}},children:[{id:id(2),displayName:'Original child'}],coverage:[]}},comparison:null};
+  const calls=[],controller={subscribe:noop,getSnapshot:()=>state,clearComparison:()=>{state.comparison=null;},compareOriginal:async()=>{},
+    selectComparison:(key,checked)=>{calls.push(['select',key,checked]);state.comparison.selected=checked?[...state.comparison.selected,key]:state.comparison.selected.filter(id=>id!==key);},
+    selectReadComparison:(mode,checked)=>{calls.push(['all',mode,checked]);state.comparison.selected=rows.filter(row=>ownerHelpers.originalComparisonResolution(row)===mode).map(row=>row.id);},restoreComparison:()=>calls.push(['submit'])};
+  production={owner:{handoverImportOwner:controller,sharedChild:{subscribe:noop,getSnapshot:()=>({})}},identityKey:'owner:1',userId:'owner',online:true,
+    account:{gate:'ready',busy:null,deletion:{phase:'idle'}},recordsState:{children:[{id:id(2),displayName:'Original child',accessRole:'owner'}]}};
+  const view=render(load('HandoverImportControls').HandoverImportControls);
+  control(view.tree,'比較原有資料的孩子').props.onChange(id(2));again(view);
+  state.comparison={query:{uploadId:id(1),childId:id(2),module:'care',includeRestoreTarget:true},items:rows,selected:[],loaded:true,nextCursor:'next',error:null};again(view);
+  assert.equal(control(view.tree,'提交所選原項還原（0 項）').props.disabled,true);
+  assert.equal(control(view.tree,'以備份覆蓋此項').props.checked,false);assert.equal(control(view.tree,'恢復此已刪項目').props.checked,false);
+  assert.equal(nodes(view.tree).filter(node=>node.type==='AppCheckbox'&&node.props.label==='以備份覆蓋此項').length,1,'Missing target cannot be offered for restore');
+  assert.match(text(view.tree),/尚未讀取的下一頁不包括/);
+  assert.match(text(view.tree),/有變更的欄位：.*記錄內容、時間／數量、其他欄位/);assert.equal(text(view.tree).includes('future_private_key'),false);assert.equal(text(view.tree).includes('__proto__'),false);
+  control(view.tree,'以備份覆蓋此項').props.onChange(true);again(view);
+  control(view.tree,'恢復此已刪項目').props.onChange(true);again(view);
+  assert.match(text(view.tree),/準備提交：覆蓋\s+1\s+項.*恢復已刪\s+1/);
+  assert.match(text(view.tree),/原刪除紀錄保留/);
+  assert.equal(control(view.tree,'提交所選原項還原（2 項）').props.disabled,false);
+  control(view.tree,'提交所選原項還原（2 項）').props.onPress();assert.deepEqual(calls.at(-1),['submit']);
+  control(view.tree,'選取已讀覆蓋項目（1 項）').props.onChange(true);assert.deepEqual(calls.at(-1),['all','replace_current',true]);
 });

@@ -1,12 +1,18 @@
 import { HandoverApiError, type HandoverApi, type ClassImportEnrolments, type HandoverSourceHistoryQuery, type HandoverSourceHistoryPage } from '../../../src/client/handover-api.ts';
 import { handoverImportCommandSchema, handoverImportModuleOf, type HandoverImportResourceSection, type HandoverImportCommand, type HandoverImportView,
   type HandoverImportResult, type HandoverImportResultQuery } from '../../../src/shared/handover-imports.ts';
+import type { HandoverImportSummary, OriginalBackupComparison, OriginalBackupComparisonQuery } from '../../../src/shared/handover-imports.ts';
 import { handoverUploadCommandSchema, type HandoverUploadCommand, type HandoverUploadView } from '../../../src/shared/handover-uploads.ts';
 import { handoverErrorText } from './HandoverOwner.ts';
 import { FamilyDocumentApiError, parseFamilyDocumentSnapshot } from '../../../src/client/family-documents-api.ts';
 import type { DocumentContentPage, DocumentContentQuery, DocumentSnapshot } from '../../../src/shared/family-documents.ts';
 
 export interface SelectedPackage { filename: string; bytes: number; sha256: string; body: BodyInit; release(): void }
+export function originalComparisonResolution(item: OriginalBackupComparison['items'][number]) {
+  if (!item.targetId || item.localVersion === null) return null;
+  return item.state === 'deleted' ? 'restore_deleted' as const
+    : ['local_newer','different','backup_newer'].includes(item.state) ? 'replace_current' as const : null;
+}
 type Control = { opId: string; expectedVersion: number };
 type UploadSummary = Omit<HandoverUploadView, 'preview'>;
 type Pending = ({ kind: 'reserve'; command: HandoverUploadCommand } | { kind: 'upload'; id: string }
@@ -44,6 +50,9 @@ export interface HandoverSourceHistoryState {
   documentContent: HandoverDocumentContentState | null;
 }
 export interface HandoverImportState {
+  summary: { batchId: string; status: 'loading' | 'ready' | 'unauthorized' | 'unavailable'; value: HandoverImportSummary | null } | null;
+  comparison: { query: Omit<OriginalBackupComparisonQuery, 'cursor'>; manifestSha256: string;
+    items: OriginalBackupComparison['items']; selected: string[]; nextCursor: string | null; loaded: boolean; error: string | null } | null;
   panelRequested?: boolean;
   classEnrolmentEnabled: boolean;
   enrolmentResults: ClassImportEnrolments | null;
@@ -56,7 +65,7 @@ export interface HandoverImportState {
 }
 const empty = (userId: string | null, identityKey: string | null, online: boolean): HandoverImportState => ({
   userId, identityKey, online, loaded: false, upload: null, items: [], nextCursor: null, classEnrolmentEnabled: false, enrolmentResults: null,
-  uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, sourceHistory: null, busy: null, pending: null, notice: null });
+  uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, sourceHistory: null, summary: null, comparison: null, busy: null, pending: null, notice: null });
 type Ticket = { epoch: number; userId: string; controller: AbortController };
 /** Device drafts only; uploaded packages, import authority and progress remain on the Server. */
 export class HandoverImportOwner {
@@ -66,6 +75,7 @@ export class HandoverImportOwner {
   private historyTicket: Ticket | null = null; private historyRevision = 0;
   private documentTicket: Ticket | null = null;
   private capabilityTicket: Ticket | null = null;
+  private comparisonTicket: Ticket | null = null;
   private documentPort?: HandoverDocumentContentPort;
   private api: HandoverApi; private accessError: (error: HandoverApiError) => void;
   constructor(api: HandoverApi, accessError: (error: HandoverApiError) => void = () => {}, documentPort?: HandoverDocumentContentPort) { this.api = api; this.accessError = accessError; this.documentPort = documentPort; }
@@ -73,7 +83,11 @@ export class HandoverImportOwner {
   subscribe = (fn: () => void) => { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; };
   requestPanel = () => { this.update({ panelRequested: true }); };
   panelOpened = () => { this.update({ panelRequested: false }); };
-  private update(patch: Partial<HandoverImportState>) { this.state = { ...this.state, ...patch }; this.listeners.forEach(fn => fn()); }
+  private update(patch: Partial<HandoverImportState>) {
+    if ('upload' in patch && (patch.upload?.id !== this.state.upload?.id || patch.upload?.version !== this.state.upload?.version
+      || patch.upload?.preview?.manifestSha256 !== this.state.upload?.preview?.manifestSha256)) this.clearComparison();
+    this.state = { ...this.state, ...patch }; this.listeners.forEach(fn => fn());
+  }
   private release() { const file = this.file; this.file = null; try { file?.release(); } catch { /* Local cache expiry also cleans crash leftovers. */ } }
   syncContext(userId: string | null, identityKey: string | null, online: boolean) {
     if (userId !== this.state.userId || identityKey !== this.state.identityKey) {
@@ -82,6 +96,7 @@ export class HandoverImportOwner {
       this.resultsTicket = null; this.resultsRevision++;
       this.historyTicket = null; this.historyRevision++;
       this.documentTicket = null;
+      this.comparisonTicket = null;
       this.state = empty(userId, identityKey, online); this.update({});
     } else this.update({ online });
   }
@@ -98,12 +113,13 @@ export class HandoverImportOwner {
       this.syncContext(null, null, this.state.online); this.accessError(error); return;
     }
     this.update({ notice: importErrorText(error) });
-    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.update({ upload: null, items: [], loaded: false, uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, sourceHistory: null, enrolmentResults: null, pending: null }); this.accessError(error); }
+    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.clearComparison(); this.update({ upload: null, items: [], loaded: false, uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, sourceHistory: null, enrolmentResults: null, summary: null, pending: null }); this.accessError(error); }
   }
   private put(row: HandoverImportView) {
     const previous = this.state.items.find(item => item.id === row.id);
     const changed = this.state.enrolmentResults?.batchId === row.id && previous?.version !== row.version;
     this.update({ items: previous ? this.state.items.map(x => x.id === row.id ? row : x) : [row, ...this.state.items],
+      ...(this.state.summary?.batchId === row.id && previous?.version !== row.version ? { summary: null } : {}),
       ...(changed ? { enrolmentResults: null } : {}) });
   }
   private putUpload(row: HandoverUploadView) {
@@ -121,6 +137,7 @@ export class HandoverImportOwner {
   };
   openUpload = async (id: string) => {
     if (this.state.pending || this.file) return;
+    this.clearComparison();
     const t = this.begin('read'); if (!t) return;
     if (this.state.upload?.id !== id) this.update({ upload: null });
     try { const row = await this.api.getUpload(t.userId, id, t.controller.signal);
@@ -128,15 +145,22 @@ export class HandoverImportOwner {
     } catch (e) { this.error(t, e); } finally { this.finish(t); }
   };
   leaveUpload = () => {
+    this.clearComparison();
     if (!this.state.pending && !this.state.busy && !this.file) this.update({ upload: null });
   };
   load = async (more = false) => {
     const cursor = more ? this.state.nextCursor : null; if (more && !cursor) return;
     const t = this.begin('read'); if (!t) return;
     try { const page = await this.api.listImports(t.userId, t.controller.signal, cursor ?? undefined);
-      if (this.current(t)) this.update({ loaded: true, nextCursor: page.nextCursor,
-        ...(!more ? { enrolmentResults: null } : {}),
-        items: more ? [...this.state.items, ...page.items.filter(x => !this.state.items.some(y => x.id === y.id))] : page.items });
+      if (this.current(t)) {
+        const before = this.state.items, summary = this.state.summary;
+        const items = more ? [...before.map(row => page.items.find(item => item.id === row.id) ?? row),
+          ...page.items.filter(row => !before.some(item => item.id === row.id))] : page.items;
+        const summaryChanged = summary && (!items.some(row => row.id === summary.batchId)
+          || items.find(row => row.id === summary.batchId)?.version !== before.find(row => row.id === summary.batchId)?.version);
+        this.update({ loaded: true, nextCursor: page.nextCursor, items,
+          ...(!more ? { enrolmentResults: null } : {}), ...(summaryChanged ? { summary: null } : {}) });
+      }
     } catch (e) { this.error(t, e); } finally { this.finish(t); }
   };
   refresh = async (id: string) => {
@@ -158,6 +182,81 @@ export class HandoverImportOwner {
           this.error(t, error);
       }
     } finally { if (this.capabilityTicket === t) this.capabilityTicket = null; }
+  };
+  readSummary = async (id: string) => {
+    const batch = this.state.items.find(row => row.id === id);
+    if (!batch || this.state.pending) return;
+    const t = this.begin('read'); if (!t) return;
+    this.update({ summary: { batchId: id, status: 'loading', value: null } });
+    try {
+      const value = await this.api.importSummary(t.userId, id, t.controller.signal);
+      if (this.current(t) && this.state.items.find(row => row.id === id)?.version === batch.version)
+        this.update({ summary: { batchId: id, status: 'ready', value } });
+    } catch (error) {
+      if (!this.current(t)) return;
+      if (error instanceof HandoverApiError && (error.status === 401 || ['session_changed','identity_changed'].includes(error.code))) this.error(t,error);
+      else this.update({ summary: { batchId: id, status: error instanceof HandoverApiError && error.status === 403 ? 'unauthorized' : 'unavailable', value: null } });
+    } finally { this.finish(t); }
+  };
+  clearComparison = () => {
+    const ticket = this.comparisonTicket; this.comparisonTicket = null;
+    if (ticket) { ticket.controller.abort(); if (this.active === ticket.controller) { this.active = null; this.update({busy:null}); } }
+    if (this.state.comparison) this.update({comparison:null});
+  };
+  compareOriginal = async (childId: string, module: OriginalBackupComparisonQuery['module'], more = false) => {
+    const upload = this.state.upload, preview = upload?.preview, previous = this.state.comparison;
+    if (this.state.pending || upload?.state !== 'ready' || !preview || preview.header.purpose !== 'backup'
+      || preview.header.source.accountId !== this.state.userId || !preview.header.selection.childIds.includes(childId)
+      || !preview.header.selection.modules.includes(module) || !['care','profile','tasks'].includes(module)
+      || more && (!previous?.nextCursor || previous.query.childId !== childId || previous.query.module !== module)) return;
+    const t = this.begin('read'); if (!t) return;
+    const query = {uploadId:upload.id,expectedUploadVersion:upload.version,childId,module,includeRestoreTarget:true as const};
+    const comparison = {query,manifestSha256:preview.manifestSha256,items:more ? previous!.items : [],selected:more ? previous!.selected : [],nextCursor:null,loaded:false,error:null};
+    this.comparisonTicket = t; this.update({comparison});
+    try {
+      const page = await this.api.compareOriginal(t.userId,{...query,...(more ? {cursor:previous!.nextCursor!} : {})},t.controller.signal);
+      if (!this.current(t) || this.comparisonTicket !== t || this.state.upload?.id !== upload.id || this.state.upload.version !== upload.version) return;
+      if (page.childId !== childId || page.module !== module || page.uploadId !== upload.id || page.manifestSha256 !== preview.manifestSha256)
+        throw new HandoverApiError(0,'handover_response_invalid');
+      this.update({comparison:{...comparison,loaded:true,nextCursor:page.nextCursor,items:more
+        ? [...comparison.items,...page.items.filter(row => !comparison.items.some(item => item.id === row.id))] : page.items}});
+    } catch (error) {
+      if (!this.current(t) || this.comparisonTicket !== t) return;
+      if (error instanceof HandoverApiError && (error.status === 401 || ['session_changed','identity_changed'].includes(error.code))) this.error(t,error);
+      else this.update({comparison:{...comparison,items:[],selected:[],error:importErrorText(error)}});
+    } finally { if (this.comparisonTicket === t) this.comparisonTicket = null; this.finish(t); }
+  };
+  selectComparison = (id: string, checked: boolean, observed = this.state.comparison) => {
+    const comparison = this.state.comparison;
+    if (comparison !== observed || this.state.busy || this.state.pending || !comparison?.loaded || comparison.error) return;
+    const item = comparison.items.find(row => row.id === id);
+    if (!item || !originalComparisonResolution(item)) return;
+    this.update({comparison:{...comparison,selected:checked ? [...comparison.selected.filter(value => value !== id),id] : comparison.selected.filter(value => value !== id)}});
+  };
+  selectReadComparison = (mode: 'replace_current' | 'restore_deleted', checked: boolean, observed = this.state.comparison) => {
+    const comparison = this.state.comparison;
+    if (comparison !== observed || this.state.busy || this.state.pending || !comparison?.loaded || comparison.error) return;
+    const ids = comparison.items.filter(row => originalComparisonResolution(row) === mode).map(row => row.id);
+    this.update({comparison:{...comparison,selected:checked ? [...new Set([...comparison.selected,...ids])] : comparison.selected.filter(id => !ids.includes(id))}});
+  };
+  restoreComparison = async (observed = this.state.comparison) => {
+    const comparison = this.state.comparison, upload = this.state.upload;
+    if (comparison !== observed || this.state.busy || this.state.pending || !comparison?.loaded || comparison.error || !comparison.selected.length || !upload?.preview
+      || upload.state !== 'ready' || upload.id !== comparison.query.uploadId || upload.version !== comparison.query.expectedUploadVersion
+      || upload.preview.manifestSha256 !== comparison.manifestSha256 || upload.preview.header.purpose !== 'backup'
+      || upload.preview.header.source.accountId !== this.state.userId || comparison.query.includeRestoreTarget !== true) return;
+    const rows = comparison.selected.map(id => comparison.items.find(item => item.id === id));
+    if (rows.some(item => !item || !originalComparisonResolution(item))) return;
+    const {childId,module} = comparison.query;
+    const input = handoverImportCommandSchema.safeParse({opId:crypto.randomUUID(),uploadId:upload.id,expectedUploadVersion:upload.version,
+      acceptedManifestSha256:comparison.manifestSha256,restoreOriginal:true,resolutionOnly:true,
+      targets:[{sourceChildId:childId,target:{childId,spaceId:null},sections:[module]}],
+      resolutions:rows.map(item => ({sourceChildId:childId,section:module,resourceId:item!.id,
+        resolution:{mode:originalComparisonResolution(item!)!,targetId:item!.targetId!,expectedVersion:item!.localVersion!}}))});
+    if (!input.success) {this.update({notice:'所選還原項目或版本已不可用，請重新比較。'});return;}
+    this.clearComparison();
+    this.update({pending:{kind:'create',command:input.data,checked:true},notice:null});
+    await this.retryOriginal();
   };
   readEnrolments = async (id: string) => {
     const batch = this.state.items.find(item => item.id === id);
@@ -440,6 +539,7 @@ export class HandoverImportOwner {
 export function importErrorText(error: unknown) {
   const code = error instanceof HandoverApiError ? error.code : error instanceof Error ? error.message : '';
   const messages: Record<string, string> = {
+    package_original_unverified: '未能核實這是此帳戶及原孩子的本人備份，不能比較原有資料；仍可另選匯入副本。',
     invalid_package_file: '請選擇不超過 256 MiB 的 ZIP 資料包。', package_local_file_missing: '本機檔案已不在，請取消此上載後重新選取。',
     package_native_size_exceeded: '手機目前可上載最多 20 MiB；較大的資料包請用 Web 匯入。', package_local_cache_full: '本機暫存檔案已滿，請稍後再試。',
     package_section_not_connected: '所選資料含尚未接通的類型，沒有繼續匯入；請查看批次結果。',
