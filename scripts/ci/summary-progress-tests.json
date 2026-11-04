@@ -82,5 +82,21 @@
   {
     "path": "tests/memory-summary-projection.test.ts",
     "cases": 3
+  },
+  {
+    "path": "tests/agent-context-window.test.ts",
+    "cases": 6
+  },
+  {
+    "path": "tests/agent-context-topology.test.ts",
+    "cases": 3
+  },
+  {
+    "path": "tests/agent-prompt.test.ts",
+    "cases": 3
+  },
+  {
+    "path": "tests/agent-prompt-wiring.test.ts",
+    "cases": 4
   }
 ]

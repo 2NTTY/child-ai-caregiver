@@ -232,7 +232,7 @@ export function createProductAgent(options: {
         try { onProgress?.({ runId: claim.runId, messageId, phase, ...(card ? { card } : {}) }); } catch { /* Observation cannot change execution. */ }
       };
       publish('started');
-      const recent = selectRecentConversation(page.messages, index);
+      const recent = selectRecentConversation(page.messages, index, { upstreamHasEarlierMessages: page.nextCursor != null });
       const cancellation = new AbortController(), key = replyKey(userId, childId, messageId);
       activeReplies.set(key, cancellation);
       try {
