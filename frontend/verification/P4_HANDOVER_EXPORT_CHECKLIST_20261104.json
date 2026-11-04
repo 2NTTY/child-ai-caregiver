@@ -1,0 +1,15 @@
+{
+  "package": "P4-HANDOVER01",
+  "contract": "d24e9b65",
+  "entry": "HandoverControls, HandoverOwner and the shared authenticated handover client",
+  "checks": [
+    "The real owner binds paged rows and choices to the selected child, scope, document/snapshot and avatar versions.",
+    "The shared component shows reason, inclusion and dates; the user can include an entire crossing document and deselect an in-range one.",
+    "Date changes and identity changes clear the old choices and discard late responses.",
+    "An item with only permitted metadata can be omitted and then restored to its default without requesting an unreadable original.",
+    "The existing Hong Kong inclusive-day form and the recipient date display use the shared contracts."
+  ],
+  "evidence": ["scripts/handover-export-review.test.mjs", "scripts/handover-period-ui.test.mjs"],
+  "environment": "Local Node 24, shared component/owner, synthetic transport",
+  "notVerified": ["Live Web", "Android device", "Production release"]
+}

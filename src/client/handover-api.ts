@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { resolveApiBaseUrl } from '../config/api-base-url.ts';
 import { handoverCancelCommandSchema, handoverExportCommandSchema, handoverExportPageSchema, handoverExportViewSchema,
-  type HandoverExportCommand, type HandoverExportView } from '../shared/handover-jobs.ts';
+  handoverPreviewQuerySchema, handoverPreviewPageSchema,
+  type HandoverPreviewQuery, type HandoverPreviewPage, type HandoverExportCommand, type HandoverExportView } from '../shared/handover-jobs.ts';
 import { handoverUploadCommandSchema, handoverUploadViewSchema, handoverUploadPageSchema,
   type HandoverUploadCommand, type HandoverUploadView, type HandoverUploadPage } from '../shared/handover-uploads.ts';
 import { handoverImportCommandSchema, handoverImportControlSchema, handoverImportViewSchema, handoverImportPageSchema,
@@ -24,6 +25,7 @@ export type HandoverSourceHistoryPage = z.infer<typeof handoverSourceHistoryPage
 type RequestOptions = { collection?: 'packages' | 'package-uploads' | 'package-imports'; rawBody?: boolean; timeoutMs?: number };
 export interface HandoverApi {
   setIdentity(userId: string | null): void;
+  preview(userId: string, query: HandoverPreviewQuery, signal: AbortSignal): Promise<HandoverPreviewPage>;
   create(userId: string, command: HandoverExportCommand, signal: AbortSignal): Promise<HandoverExportView>;
   list(userId: string, signal: AbortSignal, cursor?: string): Promise<ExportPage>;
   get(userId: string, id: string, signal: AbortSignal): Promise<HandoverExportView>;
@@ -132,6 +134,16 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
   }
   return {
     setIdentity,
+    async preview(userId, query, signal) {
+      const parsed = handoverPreviewQuerySchema.safeParse(query);
+      if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
+      const input = parsed.data;
+      return json(userId, '/preview', signal, handoverPreviewPageSchema, input,
+        page => (!input.scopeVersion || page.scopeVersion === input.scopeVersion)
+          && page.nextCursor !== '' && (!input.cursor || page.nextCursor !== input.cursor)
+          && page.items.every(item => item.childId === input.childId && item.section === input.section)
+          && (input.section !== 'child_avatar' || page.avatarVersion !== undefined));
+    },
     async create(userId, input, signal) {
       const parsed = handoverExportCommandSchema.safeParse(input); if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
       return json(userId, '', signal, handoverExportViewSchema, parsed.data, result => result.id === parsed.data.opId);
