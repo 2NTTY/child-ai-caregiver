@@ -30,7 +30,7 @@ function matchingReview({ documentReview, selection }: { documentReview?: z.infe
 }
 
 // A class supplies its own records. The authenticated account still owns the export job.
-export const classHandoverModuleSchema = z.enum(['profile', 'care', 'tasks', 'documents']);
+export const classHandoverModuleSchema = z.enum(['profile', 'care', 'tasks', 'documents', 'memory']);
 export const handoverClassExportCommandSchema = z.object({
   opId: z.uuid(), purpose: z.literal('handover'), source: handoverClassSourceSchema,
   selection: handoverSelectionSchema.safeExtend({

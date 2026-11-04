@@ -10,7 +10,7 @@ import { createFirestoreAccountExport } from '../server/firestore-account-export
 import { createFirestoreContentErasure } from '../server/firestore-content-erasure.ts';
 import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.ts';
 import { replayContentErasures } from '../server/firestore-restore-content-erasure.ts';
-import { FirestoreDomainData } from '../server/firestore-domain-data.ts';
+import { FirestoreDomainData, firestoreDomainHash } from '../server/firestore-domain-data.ts';
 import { firebaseErasureIntentHash } from '../server/firebase-erasure-journal.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { emptyCareDetails } from '../src/shared/care.ts';
@@ -122,6 +122,33 @@ test('source histories remain separate, round-trip, and follow current deletion 
   const classQuery = { ...classCommand.target, module: 'care', resourceId: classRecord.resource!.id };
   assert.equal((await items.history('recipient', classQuery)).items.length, 1, 'the same source reader supports class authority');
   await assert.rejects(items.history('next', classQuery));
+
+  const family = await sharing.create('recipient', { operationId: randomUUID(), name: 'Shared memory source history', kind: 'family' });
+  await sharing.share('recipient', { operationId: randomUUID(), spaceId: family.id, expectedVersion: family.version, childId, modules: ['memory'] });
+  for (const nested of [false, true]) {
+    const messageId = randomUUID(), at = new Date().toISOString();
+    const privateSource = { kind: 'private_chat' as const, description: 'Original private statement', messageId };
+    const fact = { id: randomUUID(), childId: sourceChild, version: 2, key: nested ? 'Nested private reference' : 'Private reference',
+      content: 'Confirmed family fact', source: nested ? { kind: 'imported', description: 'Imported statement', original: privateSource, sourceState: 'current' } : privateSource,
+      validUntil: null, visibility: 'family', intendedVisibility: 'family', status: 'confirmed', createdBy: 'source', confirmedBy: 'source',
+      confirmedAt: at, reason: 'Original confirmation', applicable: true, sourceState: 'current', createdAt: at, contentUpdatedAt: at };
+    const factCommand = { ...command, opId: randomUUID(), row: { section: 'memory_facts', childId: sourceChild, value: fact,
+      source: { ...origin, path: 'data/facts.json' } } };
+    const importedFact = await items.apply('recipient', factCommand); assert.ok(importedFact.resource);
+    const originalRevision = { ...fact, version: 1 };
+    const retained = await items.apply('recipient', { ...factCommand, opId: randomUUID(), row: { ...factCommand.row,
+      section: 'memory_fact_history', value: originalRevision, source: { ...origin, path: 'data/fact-history.json' } } });
+    assert.equal(retained.outcome, 'created');
+    const query = { childId, module: 'memory_facts', resourceId: importedFact.resource.id };
+    const personal = await items.history('recipient', query);
+    assert.equal(personal.items.length, 1);
+    assert.deepEqual(personal.items[0].evidence.value, originalRevision);
+    assert.equal(personal.items[0].evidence.source.current.sourceHash, firestoreDomainHash(originalRevision));
+    assert.ok(JSON.stringify(personal.items[0].evidence).includes(messageId));
+    const shared = await items.history('recipient', { ...query, spaceId: family.id });
+    assert.deepEqual(shared.items, [], 'sharing cannot disclose a private message locator or rewrite its signed evidence');
+    assert.deepEqual(await items.history('recipient', query), personal, 'the private source payload and hash remain unchanged after a shared read');
+  }
   for (const [path, body] of fixture.records) if (path.includes('_handover_source_history/')) {
     const decoded = codec.decode({ path, data: body }); if (decoded.context.family !== 'domain') throw Error('Expected domain');
     const restored = codec.decode(codec.transform(decoded, { newEpochByWorkspace: new Map([[decoded.context.scope.workspaceId, randomUUID()]]), generation: randomUUID(), photoDescriptors: new Map() }));

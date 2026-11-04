@@ -14,6 +14,8 @@ import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
 import { createFirestorePrivateInstructions } from '../server/firestore-private-instructions.ts';
 import { createFirestoreFamilyDocumentStore } from '../server/firestore-family-documents.ts';
 import { createFirestoreCareSummary } from '../server/firestore-care-summary.ts';
+import { createFirestoreMemoryStore } from '../server/firestore-memory.ts';
+import { createFirestoreChatStore } from '../server/firestore-chat.ts';
 import { FirestoreDomainData } from '../server/firestore-domain-data.ts';
 import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
 import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.ts';
@@ -48,7 +50,9 @@ test('a class handover uses its stable source, selected dated data and actor job
       expectedVersion: classroom.version, email: 'teacher@example.test', role: 'caregiver', expiresAt });
     classroom = await sharing.acceptInvitation('teacher', { operationId: randomUUID(), token: invitation.token });
     const personalChild = (await authority.createChild({ userId: 'teacher', operationId: randomUUID(), displayName: 'SECRET_PERSONAL_CHILD' })).child.id;
-    const care = createFirestoreCareStore(options), online = createFirestoreOnlineStore({ ...options, mutations: [care.mutation] });
+    const care = createFirestoreCareStore(options), chat = createFirestoreChatStore(options);
+    const memory = createFirestoreMemoryStore({ ...options, care, chat });
+    const online = createFirestoreOnlineStore({ ...options, mutations: [care.mutation, chat.mutation] });
     async function submit(childId: string, suffix: string, payload: unknown, shared = true) {
       const command = { path: `/api/children/${childId}/${suffix}`, payload, ...(shared ? { sharing: { spaceId: classroom.id } } : {}) };
       const context = await online.context('teacher', command);
@@ -70,6 +74,35 @@ test('a class handover uses its stable source, selected dated data and actor job
         allergies: null, specialNeeds: null, preferences: null, source: 'Class profile', validUntil: null } })).result as any).profile;
     const task = ((await submit(selected.child.id, 'tasks', { confirm: true, values: { title: 'Selected class appointment', details: '',
       kind: 'appointment', assigneeUserId: 'teacher', dueAt: new Date(Date.parse(at) + 86400000).toISOString(), timeZone: 'Asia/Hong_Kong' } })).result as any).task;
+    const factValues = (content: string) => ({ key: content, content, validUntil: null,
+      source: { kind: 'manual' as const, description: 'Original family statement' } });
+    async function familyFact(childId: string, content: string, shared = true) {
+      const save = async (binding: Parameters<typeof memory.prepareConfirmedFact>[0]) => {
+        const prepared = await memory.prepareConfirmedFact(binding, { intendedVisibility: 'family', values: factValues(content) }, true, randomUUID());
+        prepared.commit(); return prepared.value;
+      };
+      return shared ? sharing.withResource('teacher', { spaceId: classroom.id, childId, module: 'memory', mode: 'write' }, access => save(access.binding))
+        : authority.runTransaction('teacher', childId, save);
+    }
+    const firstFact = await familyFact(selected.child.id, 'Original class family fact');
+    const classFact = await sharing.withResource('teacher', { spaceId: classroom.id, childId: selected.child.id, module: 'memory', mode: 'write' }, async access => {
+      const prepared = await memory.prepareFactChange(access.binding, 'revise', firstFact.id, { expectedVersion: firstFact.version,
+        confirm: true, confirmShared: true, reason: 'Family correction', values: { ...factValues('Updated class family fact'), key: firstFact.key } }, randomUUID());
+      prepared.commit(); return prepared.value;
+    });
+    await familyFact(other.child.id, 'SECRET_OTHER_FAMILY_FACT');
+    await familyFact(personalChild, 'SECRET_PERSONAL_FAMILY_FACT', false);
+    await memory.createFact('teacher', personalChild, { intendedVisibility: 'private', values: factValues('SECRET_PERSONAL_PRIVATE_FACT') });
+    const privateMessage = ((await submit(personalChild, 'messages', { text: 'SECRET_PRIVATE_CHAT' }, false)).result as any).message;
+    await authority.runTransaction('teacher', personalChild, async binding => {
+      const sourceChild = randomUUID();
+      const prepared = await memory.prepareImportedSummary(binding, randomUUID(), { section: 'summary_history', childId: sourceChild,
+        value: { id: randomUUID(), childId: sourceChild, version: 1, text: 'SECRET_PRIVATE_SUMMARY', createdAt: at, previousId: null,
+          coveredMessageIds: [privateMessage.id], lastCoveredMessageId: privateMessage.id, sourcePeriod: { from: at, to: at } },
+        source: { serverId: 'https://original-summary.test', accountId: 'original-parent', packageId: randomUUID(), packageVersion: 1,
+          manifestSha256: 'b'.repeat(64), path: 'data/summary.json', rowIndex: 0 } }, 'missing_proof');
+      prepared.commit();
+    });
     const notes = createFirestorePrivateInstructions(new FirestoreDomainData(options));
     await authority.runTransaction('teacher', personalChild, async binding => {
       const prepared = await notes.prepareWrite(binding, randomUUID(), { id: randomUUID(), childId: personalChild, version: 1,
@@ -119,10 +152,10 @@ test('a class handover uses its stable source, selected dated data and actor job
         readPinned(name) { return Readable.from([stored.get(name)!.body]); }, async removePinned(name) { stored.delete(name); } } });
     const exporter = createFirestoreAccountExport({ ...options, photos: { async content() { throw Error('Unexpected attachment read'); } } });
     const service = createHandoverService({ ...options, exporter, objects, serverId: 'https://class-source.test', spoolRoot: directory });
-    assert.deepEqual(service.capabilities().classModules, ['profile', 'care', 'tasks'], 'legacy capability reads retain the three supported modules');
-    assert.deepEqual(service.capabilities(true).classModules, ['profile', 'care', 'tasks', 'documents'], 'document-aware callers explicitly request document capabilities');
+    assert.deepEqual(service.capabilities().classModules, ['profile', 'care', 'tasks', 'memory'], 'memory is available without document-review negotiation');
+    assert.deepEqual(service.capabilities(true).classModules, ['profile', 'care', 'tasks', 'documents', 'memory'], 'document-aware callers additionally request document capabilities');
     const baseCommand: HandoverClassExportCommand = { opId: randomUUID(), purpose: 'handover', source: { kind: 'class', spaceId: classroom.id },
-      selection: { childIds: [selected.child.id], modules: ['care', 'profile', 'tasks', 'documents'], period } };
+      selection: { childIds: [selected.child.id], modules: ['care', 'profile', 'tasks', 'documents', 'memory'], period } };
     const previewQuery = { section: 'documents' as const, childId: selected.child.id, period, source: baseCommand.source, opId: baseCommand.opId };
     const preview = await service.preview('teacher', previewQuery), previewItem = preview.items.find(item => item.id === classDocument.id)!;
     assert.ok(previewItem); assert.equal(previewItem.reason, 'crosses'); assert.equal(previewItem.defaultIncluded, false); assert.equal(previewItem.canInclude, true);
@@ -178,7 +211,7 @@ test('a class handover uses its stable source, selected dated data and actor job
         assert.deepEqual(recipient.manifest.selection, command.selection);
         const { include: _include, ...includedPin } = pin(currentItem);
         assert.deepEqual(recipient.manifest.periodExceptions, [includedPin]);
-        const page = await recipient.readPage({ selection: { childIds: [selected.child.id], modules: ['documents'] },
+        const page = await recipient.readPage({ selection: { childIds: [selected.child.id], modules: ['documents', 'memory'] },
           acknowledgedManifestSha256: recipient.manifestSha256, limit: 100 });
         const heads = page.rows.filter(row => row.section === 'documents');
         assert.deepEqual(heads.map(row => row.value.id), [classDocument.id]);
@@ -191,6 +224,13 @@ test('a class handover uses its stable source, selected dated data and actor job
         assert.deepEqual(preparationHistory.map(row => row.questions), [['Original legacy visit question'], ['Updated legacy visit question']]);
         assert.ok(preparationHistory.every(row => row.childId === selected.child.id
           && JSON.stringify(row.period) === JSON.stringify(preparationPeriod)));
+        assert.deepEqual(page.rows.filter(row => row.section === 'memory_facts').map(row => row.value), [classFact]);
+        const factHistory = page.rows.filter(row => row.section === 'memory_fact_history').map(row => row.value)
+          .sort((a, b) => Number(a.version) - Number(b.version));
+        assert.deepEqual(factHistory.map(row => row.content), ['Original class family fact', 'Updated class family fact']);
+        assert.ok(factHistory.every(row => row.childId === selected.child.id && row.visibility === 'family'));
+        assert.ok(page.rows.filter(row => row.section.startsWith('memory_')).every(row => row.source.accountId === 'space:' + classroom.id));
+        assert.equal(page.rows.some(row => row.section === 'instructions' || row.section === 'summary_history'), false);
       } finally { await recipient.close(); }
       const archive = await openHandoverArchive({ path: downloaded.path });
       try {
@@ -207,6 +247,8 @@ test('a class handover uses its stable source, selected dated data and actor job
         assert.deepEqual(rows('tasks').map(row => row.id), [task.id]);
         assert.deepEqual(rows('documents').map(row => row.id), [classDocument.id]);
         assert.deepEqual(rows('visit_preparation'), [savedPreparation]); assert.equal(rows('visit_preparation_history').length, 2);
+        assert.deepEqual(rows('memory_facts'), [classFact]); assert.equal(rows('memory_fact_history').length, 2);
+        assert.deepEqual(rows('instructions'), []); assert.deepEqual(rows('summary_history'), []); assert.deepEqual(rows('chat'), []);
         assert.ok(pages.filter(page => page.section !== 'children').every(page => page.childId === selected.child.id));
         assert.doesNotMatch(JSON.stringify(pages), /SECRET_|createdViaShare|confirmedViaShare|changedViaShare|classAssignment/);
         assert.ok(!JSON.stringify(pages).includes(earlier.id));

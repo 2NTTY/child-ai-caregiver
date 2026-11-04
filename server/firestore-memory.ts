@@ -35,6 +35,10 @@ export const firestoreFactStorageSchema = factValuesSchema.extend({ id: uuid, ch
   createdViaShare: sharedWriteAttributionSchema.optional(), confirmedViaShare: sharedWriteAttributionSchema.optional(),
   changedViaShare: sharedWriteAttributionSchema.optional() }).strict();
 export const firestoreFactSchema = firestoreFactStorageSchema.transform(({ createdViaShare, confirmedViaShare, changedViaShare, ...fact }) => fact);
+export function hasPrivateMessageReference(source: FactSource) {
+  const original = source.kind === 'imported' ? source.original : source;
+  return original.kind === 'private_chat' && original.messageId !== undefined;
+}
 export const firestoreTopicStorageSchema = z.object({ id: uuid, childId: uuid, visibility, title: z.string().min(1).max(200), note: z.string().max(2000),
   status: z.enum(['pending', 'answered', 'snoozed', 'resolved']), version, updatedBy: user, updatedAt: time,
   resumeAfter: time.nullable(), reopenReason: z.string().max(500).nullable(), reopenedFrom: uuid.nullable(), mayAsk: z.boolean(),
@@ -82,6 +86,7 @@ export interface FirestoreMemoryStore extends MemoryStore {
   prepareSummaryWrite(binding: Binding, raw: unknown, operationId: string): Promise<Prepared<ConversationSummary>>;
   readFact(binding: Binding, id: string): Promise<MemoryFact | null>;
   readTopic(binding: Binding, id: string): Promise<MemoryTopic | null>;
+  readExportRevision(binding: Binding, kind: Kind, row: DocumentSnapshot): Promise<MemoryFact | MemoryTopic | null>;
   /** Current confirmed family facts by their existing uniqueness keys; no private corpus scan. */
   readFamilyFacts(binding: Binding, keys: readonly string[]): Promise<MemoryFact[]>;
   prepareFactChange(binding: Binding, action: 'revise' | 'deactivate', id: string, raw: unknown, operationId: string): Promise<Prepared<MemoryFact>>;
@@ -143,6 +148,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     if (!await sourceCurrent(binding, source)) domainReject('source_changed');
   }
   function publicSource(source: FactSource): FactSource {
+    if (!hasPrivateMessageReference(source)) return source;
     if (source.kind === 'private_chat') return { kind: 'private_chat', description: source.description };
     if (source.kind === 'imported' && source.original.kind === 'private_chat')
       return { ...source, original: { kind: 'private_chat', description: source.original.description } };
@@ -518,6 +524,17 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     }
     return { facts, topics, missingKeys };
   }
+  async function revisionResult(binding: Binding, kind: Kind, id: string, row: DocumentSnapshot) {
+    const revisionId = JSON.stringify([id, row.get('entityVersion')]);
+    const value = kind === 'facts' ? open(binding, 'memory-fact-revision', revisionId, firestoreFactStorageSchema, row)
+      : open(binding, 'memory-topic-revision', revisionId, firestoreTopicStorageSchema, row);
+    if (value.id !== id || value.childId !== binding.scope.childId || value.version !== row.get('recordVersion')
+      || value.version !== row.get('entityVersion')) domainReject('memory_binding', 500);
+    if (kind === 'facts' ? !validMemoryFactAttribution(value as z.infer<typeof firestoreFactStorageSchema>, binding.scope)
+      : !validSharedAttribution((value as z.infer<typeof firestoreTopicStorageSchema>).changedViaShare, binding.scope, id, value.version, (value as MemoryTopic).updatedBy)) domainReject('memory_binding', 500);
+    if (binding.sharedAccess && value.visibility !== 'family') return null;
+    return kind === 'facts' ? factResult(binding, value as MemoryFact) : topicResult(value as MemoryTopic);
+  }
   async function history(binding: Binding, kind: Kind, id: string, before: number) {
     if (!await read(binding, kind, id)) return null;
     let query = scoped(binding, 'memory_' + singular(kind) + '_revisions').where('entityId', '==', id).where('entityVersion', '<', before);
@@ -525,14 +542,9 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     const rows = await binding.transaction.get(query.orderBy('entityVersion', 'desc').limit(51));
     const revisions: (MemoryFact | MemoryTopic)[] = [];
     for (const row of rows.docs.slice(0, 50)) {
-      const revisionId = JSON.stringify([id, row.get('entityVersion')]);
-      const value = kind === 'facts' ? open(binding, 'memory-fact-revision', revisionId, firestoreFactStorageSchema, row)
-        : open(binding, 'memory-topic-revision', revisionId, firestoreTopicStorageSchema, row);
-      if (value.id !== id || value.childId !== binding.scope.childId || value.version !== row.get('recordVersion')
-        || binding.sharedAccess && value.visibility !== 'family') domainReject('memory_binding', 500);
-      if (kind === 'facts' ? !validMemoryFactAttribution(value as z.infer<typeof firestoreFactStorageSchema>, binding.scope)
-        : !validSharedAttribution((value as z.infer<typeof firestoreTopicStorageSchema>).changedViaShare, binding.scope, id, value.version, (value as MemoryTopic).updatedBy)) domainReject('memory_binding', 500);
-      revisions.push(kind === 'facts' ? await factResult(binding, value as MemoryFact) : topicResult(value as MemoryTopic));
+      const revision = await revisionResult(binding, kind, id, row);
+      if (!revision) domainReject('memory_binding', 500);
+      revisions.push(revision);
     }
     return { revisions, nextBeforeVersion: rows.size > 50 ? rows.docs[49].get('entityVersion') as number : null };
   }
@@ -634,6 +646,12 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     },
     readTopic: async (binding, id) => {
       const value = await read(binding, 'topics', id); return value ? topicResult(value as MemoryTopic) : null;
+    },
+    readExportRevision: async (binding, kind, row) => {
+      const id = domainParse(uuid, row.get('entityId'));
+      const current = await read(binding, kind, id);
+      if (!current || current.version < row.get('recordVersion')) return null;
+      return revisionResult(binding, kind, id, row);
     },
     prepareFactChange: async (binding, action, id, raw, operationId) =>
       await prepare(binding, 'facts', action, id, raw, operationId) as Prepared<MemoryFact>,
