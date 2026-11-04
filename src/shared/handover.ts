@@ -3,7 +3,7 @@ import { z } from 'zod';
 /** This format carries product data, never live execution or credential state. */
 export const HANDOVER_MODULES = ['profile', 'care', 'chat', 'memory', 'tasks', 'documents', 'attachments', 'sources', 'concerns', 'growth'] as const;
 export type HandoverModuleName = typeof HANDOVER_MODULES[number];
-const periodModules = new Set<HandoverModuleName>(['care', 'tasks', 'chat', 'concerns', 'attachments']);
+const periodModules = new Set<HandoverModuleName>(['profile', 'care', 'tasks', 'chat', 'concerns', 'attachments', 'sources', 'growth']);
 export function supportsHandoverPeriodModules(modules: readonly HandoverModuleName[]) {
   return modules.length > 0 && modules.every(module => periodModules.has(module));
 }

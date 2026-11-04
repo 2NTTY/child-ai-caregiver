@@ -1,8 +1,10 @@
 import { z } from 'zod';
 import { supportsHandoverPeriodModules, type HandoverHeader } from '../src/shared/handover.ts';
 import { HandoverArchiveError } from './handover-archive.ts';
-import { sourceHistoryExportSchema } from './handover-history-records.ts';
+import { historyModule, sourceHistoryExportSchema } from './handover-history-records.ts';
 import { validateSourceHistory } from './handover-source-history.ts';
+import { growthTopicResourceId } from './firestore-growth.ts';
+import { growthTopicSchema } from '../src/shared/growth.ts';
 
 type Selection = HandoverHeader['selection'];
 const timestamp = z.iso.datetime({ offset: true });
@@ -16,14 +18,26 @@ export function withinHandoverPeriod(at: string, period: HandoverPeriod) {
   return time >= Date.parse(period.from) && time <= Date.parse(period.to);
 }
 
-/** A revision can accompany its selected current resource, never create an orphan or restore an obsolete date. */
-export function datedParent(section: string, raw: unknown) {
-  if (!['care', 'tasks', 'care_history', 'task_history'].includes(section)) return null;
-  const row = object(raw), revision = section === 'care_history' || section === 'task_history';
-  const resource = revision && row.format === 'yuyoufang-source-revision:1' ? object(row.resource)
-    : section === 'task_history' ? object(row.task) : row;
-  if (typeof resource.id !== 'string') throw new HandoverArchiveError('invalid_package_data');
-  return { revision, key: JSON.stringify([section === 'care' || section === 'care_history' ? 'care' : 'tasks', resource.id]) };
+const datedParentSections = new Set(['care', 'profile', 'tasks', 'private_sources', 'growth_attention', 'growth_topics']);
+/** Retained revisions address the receiving child's local parent, while their event time belongs to the original evidence. */
+export function datedParent(section: string, raw: unknown, childId: string) {
+  const history = historyModule(section), parent = history ?? section;
+  if (!datedParentSections.has(parent)) return null;
+  const row = object(raw);
+  let id: unknown;
+  if (history && row.format === 'yuyoufang-source-revision:1') id = object(row.resource).id;
+  else if (parent === 'profile') id = row.childId;
+  else if (parent === 'growth_topics') {
+    const topic = growthTopicSchema.safeParse(row.topicId);
+    if (!topic.success) throw new HandoverArchiveError('invalid_package_data');
+    id = growthTopicResourceId(childId, topic.data);
+  }
+  else if (parent === 'growth_attention') id = object(row.item).id;
+  else if (section === 'task_history') id = object(row.task).id;
+  else if (section === 'private_source_history') id = row.inputId;
+  else id = row.id;
+  if (typeof id !== 'string') throw new HandoverArchiveError('invalid_package_data');
+  return { revision: history !== undefined, key: JSON.stringify([parent, id]) };
 }
 
 /** A range describes the domain event, even when a revision or imported copy was saved later. */
@@ -31,7 +45,7 @@ export function handoverPeriodMatch(section: string, raw: unknown, period: NonNu
   const row = object(raw);
   let value = row;
   if (row.format === 'yuyoufang-source-revision:1') {
-    const module = section === 'care_history' ? 'care' : section === 'task_history' ? 'tasks' : null;
+    const module = historyModule(section);
     const wrapper = sourceHistoryExportSchema.safeParse(row);
     if (!module || !wrapper.success || wrapper.data.evidence.module !== module) throw new HandoverArchiveError('invalid_package_period');
     value = validateSourceHistory(wrapper.data).evidence.value;
@@ -41,13 +55,18 @@ export function handoverPeriodMatch(section: string, raw: unknown, period: NonNu
     case 'care': case 'care_history': at = object(object(value.details).eventTime).at; break;
     case 'tasks': at = object(value.occurrence).dueAt; break;
     case 'task_history': at = object(object(value.task).occurrence).dueAt; break;
+    case 'profile': case 'profile_history': at = value.confirmedAt; break;
+    case 'private_sources': at = value.createdAt; break;
+    case 'private_source_history': at = value.changedAt; break;
+    case 'growth_attention': case 'growth_history': at = object(value.item).updatedAt; break;
+    case 'growth_topics': case 'growth_topic_history': at = value.at; break;
     case 'chat': at = value.createdAt; break;
     case 'chat_imports': at = object(value.message).createdAt; break;
     case 'files': case 'photos': case 'voices': at = value.createdAt; break;
     case 'child_avatar': at = value.updatedAt; break;
     default: throw new HandoverArchiveError('package_period_not_connected');
   }
-  if (at === null && (section === 'care' || section === 'care_history' || section === 'child_avatar')) return 'undated';
+  if (at === null && ['care', 'care_history', 'profile', 'profile_history', 'child_avatar'].includes(section)) return 'undated';
   const instant = timestamp.safeParse(at);
   if (!instant.success) throw new HandoverArchiveError('invalid_package_period');
   return withinHandoverPeriod(instant.data, period) ? 'inside' : 'outside';

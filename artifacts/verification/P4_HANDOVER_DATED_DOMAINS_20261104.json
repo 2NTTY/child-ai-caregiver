@@ -1,0 +1,12 @@
+{
+  "package": "P4-HANDOVER01",
+  "base": "9c7e520e0bcbe3a3cd9d13d6cd9b1a9e9f0fba3c",
+  "environment": "Windows, Node 24.22.1, local authorized-page seam, real ZIP writer and import preview",
+  "red": "package_period_not_connected",
+  "checks": [
+    "Two children: inclusive endpoints, profile confirmation dates, source intake and management dates, and growth item and topic update dates.",
+    "Prior revisions only for selected current parents. Original evidence time survives a later import. No out-of-period or other child sentinel appears in preview.",
+    "Existing care/task/message date scenario still passes. Server typecheck passed."
+  ],
+  "limits": "This verifies package selection and preview. No new live DB, worker, client, device, model or deployment acceptance."
+}

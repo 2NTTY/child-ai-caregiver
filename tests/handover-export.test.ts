@@ -21,6 +21,80 @@ import { createFirestoreChatFilesStore } from '../server/firestore-chat-files.ts
 import { createFirebasePhotoObjects } from '../server/firebase-photo-objects.ts';
 import { createFirestorePhotoStore } from '../server/firestore-photos.ts';
 import { makeImportProvenance } from '../server/handover-provenance.ts';
+import type { HandoverHeader } from '../src/shared/handover.ts';
+
+test('dated profile, source and growth exports retain domain dates and only selected parents through ZIP preview', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'handover-dated-domains-'));
+  const childId = randomUUID(), otherChild = randomUUID(), sourceId = randomUUID(), excludedSource = randomUUID();
+  const attentionId = randomUUID(), excludedAttention = randomUUID(), scopeVersion = 'd'.repeat(64);
+  const period = { from: '2026-11-01T00:00:00+08:00', to: '2026-11-07T23:59:59.999+08:00' };
+  const before = '2026-10-31T23:59:59.999+08:00', after = '2026-11-08T00:00:00+08:00';
+  const profile = (child: string, confirmedAt: string, version: number, reason: string) =>
+    ({ childId: child, version, data: { age: { kind: 'unknown' }, dueDate: null, gestationalWeeksRaw: null,
+      region: 'HK', language: null, allergies: null, specialNeeds: null, preferences: null, source: 'Profile fixture', validUntil: null },
+      confirmedBy: 'source-parent', confirmedAt, reason });
+  function retainedProfile(confirmedAt: string, importedAt: string, reason: string) {
+    const value = profile(childId, confirmedAt, 1, reason);
+    return { format: 'yuyoufang-source-revision:1', childId, resource: { id: childId, version: 1 },
+      evidence: { module: 'profile', value, source: makeImportProvenance({ section: 'profile', childId, value,
+        source: { serverId: 'https://original.test', accountId: 'original', packageId: randomUUID(), packageVersion: 1,
+          manifestSha256: 'b'.repeat(64), path: 'data/original-profile.json', rowIndex: 0 } }, 'missing_proof', 'importer', importedAt) } };
+  }
+  const selectedWrapper = retainedProfile(period.from, after, 'Retained original confirmation');
+  const excludedWrapper = retainedProfile(before, period.from, 'SECRET_OLD_EVIDENCE_RECENT_IMPORT');
+  const source = (id: string, createdAt: string, sourceDateText: string) => ({ id, childId, version: 3, createdAt, sourceDateText });
+  const sourceHistory = (inputId: string, changedAt: string, reason: string) => ({ inputId, childId, version: 2, changedAt, reason });
+  const attention = (id: string, updatedAt: string, note: string) => ({ item: { id, childId, version: 3, createdAt: before, updatedAt, note } });
+  const topic = (topicId: string, at: string, version = 3) => ({ topicId, version, at, disabled: false, actor: 'source-parent', request: null });
+  const selectedProfile = profile(childId, period.from, 3, 'Selected profile');
+  const nativeProfileHistory = profile(childId, period.to, 2, 'Selected native confirmation');
+  const selectedSource = source(sourceId, period.from, 'Published 1999-01-01; this text is not the intake date');
+  const selectedSourceHistory = sourceHistory(sourceId, period.to, 'Selected source management');
+  const selectedAttention = attention(attentionId, period.to, 'Selected attention');
+  const selectedGrowthHistory = attention(attentionId, period.from, 'Selected attention history');
+  const selectedTopic = topic('solid_food', period.from), selectedTopicHistory = topic('solid_food', period.to, 2);
+  const rows: Record<string, Record<string, unknown[]>> = {
+    [childId]: {
+      profile: [selectedProfile], profile_history: [nativeProfileHistory, selectedWrapper, excludedWrapper],
+      private_sources: [selectedSource, source(excludedSource, before, '2026-11-01')],
+      private_source_history: [selectedSourceHistory, sourceHistory(sourceId, after, 'SECRET_LATER_SOURCE_HISTORY'),
+        sourceHistory(excludedSource, period.from, 'SECRET_ORPHAN_SOURCE_HISTORY')],
+      growth_attention: [selectedAttention, attention(excludedAttention, before, 'SECRET_OLD_ATTENTION')],
+      growth_history: [selectedGrowthHistory, attention(attentionId, after, 'SECRET_LATER_ATTENTION_HISTORY'),
+        attention(excludedAttention, period.from, 'SECRET_ORPHAN_ATTENTION_HISTORY')],
+      growth_topics: [selectedTopic, topic('toddler_play', before)],
+      growth_topic_history: [selectedTopicHistory, topic('solid_food', after, 1), topic('toddler_play', period.to, 2)],
+    },
+    [otherChild]: { profile: [profile(otherChild, before, 3, 'SECRET_OLD_PROFILE')],
+      profile_history: [profile(otherChild, period.to, 2, 'SECRET_ORPHAN_PROFILE_HISTORY')],
+      growth_topics: [topic('solid_food', before)], growth_topic_history: [topic('solid_food', period.to, 2)] },
+  };
+  const expected: Record<string, unknown[]> = { profile: [selectedProfile], profile_history: [nativeProfileHistory, selectedWrapper],
+    private_sources: [selectedSource], private_source_history: [selectedSourceHistory], growth_attention: [selectedAttention],
+    growth_history: [selectedGrowthHistory], growth_topics: [selectedTopic], growth_topic_history: [selectedTopicHistory] };
+  const modules: HandoverHeader['selection']['modules'] = ['profile', 'sources', 'growth'];
+  const exporter = { async page(_owner: string, query: { section: string; childId?: string }) {
+    return { section: query.section, scopeVersion, complete: true, nextCursor: null, notices: [],
+      items: query.section === 'children' ? [{ id: childId, displayName: 'Selected' }, { id: otherChild, displayName: 'Outside current' }]
+        : query.childId ? rows[query.childId]?.[query.section] ?? [] : [] };
+  } };
+  try {
+    const archive = await writePersonalHandoverPackage({ directory, exporter, ownerUserId: 'owner', serverId: 'https://example.test',
+      packageId: randomUUID(), createdAt: after, purpose: 'handover', selection: { childIds: [childId, otherChild], modules, period } });
+    const opened = await openHandoverImport({ path: archive.path });
+    try {
+      assert.deepEqual(opened.manifest.selection.period, period);
+      const page = await opened.readPage({ selection: { childIds: [childId, otherChild], modules },
+        acknowledgedManifestSha256: opened.manifestSha256, limit: 100 });
+      assert.equal(page.nextCursor, null);
+      for (const [section, values] of Object.entries(expected)) {
+        assert.deepEqual(page.rows.filter(row => row.section === section && row.childId === childId).map(row => row.value), values, section);
+        assert.equal(page.rows.filter(row => row.section === section && row.childId === otherChild).length, 0, `${section} cannot import an unselected parent's history`);
+      }
+      assert.ok(!JSON.stringify(page.rows).includes('SECRET_'));
+    } finally { await opened.close(); }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
 
 test('a dated package filters by event, due and message time through export and import', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'handover-period-'));
