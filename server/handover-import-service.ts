@@ -50,7 +50,6 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       if (!reader.manifest.selection.childIds.includes(target.sourceChildId)
         || target.sections.some(module => !reader.manifest.selection.modules.includes(module))) domainReject('package_scope_unavailable', 400);
       const newStudent = 'createInClassId' in target.target;
-      if (newStudent && target.sections.includes('concerns')) preflightError = 'package_section_not_connected';
       const sections = new Set<string>(command.resolutionOnly ? command.resolutions.filter(row => row.sourceChildId === target.sourceChildId).map(row => row.section)
         : target.sections.flatMap(module => [...HANDOVER_SECTIONS[module]]));
       for (const coverage of reader.manifest.coverage) if (coverage.childId === target.sourceChildId && sections.has(coverage.section)) {
