@@ -30,6 +30,78 @@ const nodes = tree => !tree || typeof tree !== 'object' ? [] : Array.isArray(tre
 const text = tree => tree == null || tree === false ? '' : Array.isArray(tree) ? tree.map(text).join(' ') : typeof tree === 'object' ? text(tree.props?.children) : String(tree);
 const control = (tree, label) => nodes(tree).find(node => node.props?.label === label);
 
+test('growth import selector submits personal growth and removes it from family and class targets', async () => {
+  const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+  const state = { identityKey: 'owner:1', userId: 'owner', busy: null, pending: null, items: [], uploads: [],
+    upload: { id: id(10), state: 'ready', filename: 'growth.zip', bytes: 3, preview: { integrity: 'trusted', manifestSha256: 'a'.repeat(64),
+      header: { selection: { modules: ['care', 'growth'] }, source: { serverId: 'source' } },
+      children: [{ id: id(2), displayName: 'Source child' }], coverage: [{ childId: id(2), section: 'growth_attention', items: 1 }] } } };
+  const sent = [], controller = { subscribe: noop, getSnapshot: () => state, create: async (...value) => sent.push(value) };
+  const shared = { identityKey: 'owner:1', userId: 'owner', phase: 'ready', target: { spaceId: id(4), childId: id(5) },
+    view: { spaceId: id(4), childId: id(5), childName: 'Shared child', spaceName: 'Family', role: 'caregiver', modules: ['care', 'growth'] } };
+  production = { owner: { handoverImportOwner: controller, sharedChild: { subscribe: noop, getSnapshot: () => shared } },
+    identityKey: 'owner:1', userId: 'owner', online: true, account: { gate: 'ready', busy: null, deletion: { phase: 'idle' } },
+    recordsState: { children: [{ id: id(3), displayName: 'Own child', accessRole: 'owner' }, { id: id(6), displayName: 'Class child', accessRole: 'teacher' }] } };
+  const view = render(load('HandoverImportControls').HandoverImportControls);
+  control(view.tree, '查看上載與匯入選擇').props.onPress(); again(view);
+  control(view.tree, 'Source child').props.onChange(true); again(view);
+  const destination = () => nodes(view.tree).find(node => node.type === 'AppSelect' && node.props.label.startsWith('接收「'));
+  assert.equal(destination().props.options.some(option => option.value === `private:${id(6)}`), false);
+  destination().props.onChange(`private:${id(3)}`); again(view);
+  const growth = control(view.tree, '成長整理'); assert.ok(growth, 'personal growth must be selectable');
+  assert.equal(growth.props.checked, true); assert.equal(growth.props.disabled, false);
+  control(view.tree, '開始匯入').props.onPress(); await Promise.resolve();
+  assert.deepEqual(sent[0][0], [{ sourceChildId: id(2), target: { childId: id(3), spaceId: null }, sections: ['care', 'growth'] }]);
+  for (const spaceName of ['Family', 'Class']) {
+    shared.view.spaceName = spaceName;
+    destination().props.onChange(`shared:${id(4)}:${id(5)}`); again(view);
+    assert.equal(control(view.tree, '成長整理').props.checked, false);
+    assert.equal(control(view.tree, '成長整理').props.disabled, true);
+    assert.match(text(view.tree), /成長整理只可匯入本人孩子/);
+    control(view.tree, '開始匯入').props.onPress(); await Promise.resolve();
+    assert.deepEqual(sent.at(-1)[0][0].sections, ['care']);
+  }
+});
+
+test('growth source history opens the existing owner and reads nested attention and topic settings literally', async () => {
+  const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+  const at = '2026-11-04T01:02:03Z', target = { childId: id(3), spaceId: null };
+  const batch = { id: id(1), state: 'completed', targets: [{ sourceChildId: id(2), target, sections: ['growth'] }] };
+  const rows = ['growth_attention', 'growth_topics'].map((resourceSection, n) => ({ id: id(10 + n), batchId: batch.id, sourceChildId: id(2),
+    module: 'growth', resourceSection, sourceResourceId: id(20 + n), sourceVersion: 2, sourceSection: null, outcome: 'created', reason: null,
+    recordedResource: { id: id(30 + n), version: 1 }, currentResource: null, availableResolution: null, at }));
+  const values = [{ item: { topicId: 'solid_food', title: '<b>Original growth</b>', state: 'accepted', kind: 'consult', whyNow: 'Original reason',
+    advice: '<script>Original advice</script>', limits: 'Original limits', note: 'Original result', lastAction: 'accept', actorUserId: 'foreign-author',
+    createdAt: at, updatedAt: at, taskId: id(50), taskState: 'completed', sourceAvailable: true,
+    evidence: { profileVersion: 8, facts: [{ id: id(51), version: 4 }] },
+    source: { title: 'Original official source', url: 'https://source.test/guide', excerpt: 'Original source excerpt', checkedAt: at } } },
+    { topicId: 'solid_food', disabled: true, actor: 'foreign-topic-author', at }];
+  const histories = rows.map((row, n) => ({ format: 'yuyoufang-source-revision:1', childId: target.childId, resource: row.recordedResource,
+    evidence: { module: row.resourceSection, value: values[n], source: { current: { source: { section: row.resourceSection,
+      serverId: 'https://source.test', accountId: 'foreign-account', childId: id(2), resourceId: row.sourceResourceId, resourceVersion: 2 } }, previous: [] } } }));
+  const calls = [], api = { setIdentity: noop, listImports: async () => ({ items: [batch], nextCursor: null }),
+    importResults: async () => ({ batchId: batch.id, sourceChildId: id(2), module: 'growth', items: rows, nextCursor: null }),
+    sourceHistory: async (user, query) => { calls.push([user, query]); return { items: [histories[query.module === 'growth_attention' ? 0 : 1]], nextCursor: null, complete: true }; } };
+  const controller = new ownerHelpers.HandoverImportOwner(api);
+  controller.syncContext('owner', 'owner:1', true); await controller.load(); controller.selectResults(batch.id, id(2), 'growth'); await controller.readResults();
+  const resultView = render(load('HandoverImportResults').HandoverImportResults, { controller, batch, results: controller.getSnapshot().results, identityKey: 'owner:1', locked: false });
+  const buttons = nodes(resultView.tree).filter(node => node.props?.label === '查看來源歷史'); assert.equal(buttons.length, 2);
+  for (const [n, row] of rows.entries()) {
+    assert.equal(ownerHelpers.canReadHandoverSourceHistory(row), true);
+    buttons[n].props.onPress(); await Promise.resolve(); await Promise.resolve();
+    assert.deepEqual(calls.at(-1), ['owner', { ...target, module: row.resourceSection, resourceId: row.recordedResource.id }]);
+    const view = render(load('HandoverImportHistory').HandoverImportHistory, { controller, history: controller.getSnapshot().sourceHistory, locked: false });
+    for (const expected of n === 0 ? ['成長事項來源歷史', '<b>Original growth</b>', '<script>Original advice</script>', 'Original reason', 'Original limits',
+      'Original result', '已接受', 'foreign-author', at, 'Original official source', 'https://source.test/guide', 'Original source excerpt', id(50), id(51), '已完成']
+      : ['成長主題設定來源歷史', '已停用', 'foreign-topic-author', at]) assert.ok(text(view.tree).includes(expected), expected);
+    assert.match(text(view.tree), /不代表本地.*確認/);
+    assert.equal(nodes(view.tree).some(node => node.props?.href || node.props?.dangerouslySetInnerHTML || node.type === 'Markdown' || node.type === 'AppCheckbox'), false);
+    assert.deepEqual(nodes(view.tree).filter(node => node.type === 'AppButton').map(node => node.props.label), ['重新讀取來源歷史', '關閉來源歷史']);
+  }
+  controller.closeSourceHistory(); batch.targets[0].target = { ...target, spaceId: id(4) };
+  await controller.openSourceHistory(rows[0].id); assert.equal(calls.length, 2, 'growth history rejects a shared or class scope');
+});
+
 test('concern import selector keeps concerns on private targets and removes them from shared submissions', async () => {
   const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
   const state = { identityKey: 'owner:1', userId: 'owner', busy: null, pending: null, items: [], loaded: true, uploads: [], uploadsLoaded: true,
