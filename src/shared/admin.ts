@@ -45,3 +45,17 @@ export type AdminReceipt = z.infer<typeof adminReceiptSchema>;
 export interface AdminPage<T> { items: T[]; nextCursor: string | null }
 export interface AdminUsage { day: string; attempts: number; inputTokens: number; outputTokens: number; cachedTokens: number; unknownUsageAttempts: number }
 export interface AdminOverview { policy: PlatformPolicy; platformConfigured: boolean; serverEnabled: boolean; toolCalls: number; deadlineMs: number; outputTokens: number; inputCharacters: number }
+const knowledgeCheckStatus = z.enum(['changed', 'unchanged', 'failed', 'unavailable', 'superseded']);
+const knowledgeWatchId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/u);
+const knowledgeCheckedAt = z.iso.datetime({ offset: true });
+export const adminKnowledgeStatusSchema = z.object({
+  watches: z.array(z.object({ id: knowledgeWatchId, publisher: z.string().min(1).max(160), url: z.url(), kind: z.enum(['page', 'rss', 'pdf']),
+    registration: z.enum(['not_registered', 'enabled', 'disabled', 'definition_changed']), lastAttemptAt: knowledgeCheckedAt.nullable(),
+    lastSuccessfulCheckAt: knowledgeCheckedAt.nullable(), lastStatus: knowledgeCheckStatus.nullable() }).strict()).max(32),
+  checks: z.array(z.object({ jobId: z.uuid(), watchId: knowledgeWatchId, checkedAt: knowledgeCheckedAt,
+    state: z.enum(['running', 'recorded', 'unknown']), status: knowledgeCheckStatus.nullable(), attempts: z.number().int().min(1).max(2),
+    itemCount: z.number().int().min(0).max(50), changedCount: z.number().int().min(0).max(50),
+    failureCode: z.enum(['network', 'timeout', 'response', 'parse']).nullable(), httpStatus: z.union([z.literal(404), z.literal(410)]).nullable() }).strict()).max(20),
+  nextCursor: z.string().min(1).max(2048).nullable(),
+}).strict();
+export type AdminKnowledgeStatus = z.infer<typeof adminKnowledgeStatusSchema>;
