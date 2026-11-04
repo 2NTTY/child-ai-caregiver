@@ -40,25 +40,34 @@ export async function handleFirebaseAccountData(request: Request, auth: Firebase
   }
   if (path === '/api/account/packages' || path.startsWith('/api/account/packages/')) {
     const packages = services.packages; if (!packages) domainReject('package_service_unavailable', 503);
+    const accountBackup = request.headers.get('x-handover-account-backup') === '1';
     if (request.method === 'GET' && path === '/api/account/packages/capabilities' && !url.search) {
       await sameIdentity();
-      return json(packages.capabilities(request.headers.get('x-handover-class-document-review') === '1'));
+      return json(packages.capabilities(request.headers.get('x-handover-class-document-review') === '1', accountBackup));
     }
     if (request.method === 'POST' && path === '/api/account/packages/preview' && !url.search) {
       const result = await packages.preview(user.id, await readJson(request)); await sameIdentity(); return json(result);
     }
     const route = /^\/api\/account\/packages\/([0-9a-f-]{36})(?:\/(download|cancel|reconcile))?$/iu.exec(path);
     if (request.method === 'POST' && path === '/api/account/packages') {
-      const result = await packages.create(user.id, await readJson(request)); await sameIdentity();
+      const input = await readJson(request);
+      if (!accountBackup && input && typeof input === 'object' && 'selection' in input && input.selection
+        && typeof input.selection === 'object' && 'accountAvatar' in input.selection) domainReject('unsupported_package_format', 409);
+      const result = await packages.create(user.id, input); await sameIdentity();
       return Response.json(result, { status: 202, headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie, Authorization' } });
     }
     if (request.method === 'GET' && path === '/api/account/packages') {
       if ([...url.searchParams.keys()].some(key => key !== 'cursor' || url.searchParams.getAll(key).length !== 1)) domainReject('invalid_cursor', 400);
-      const result = await packages.list(user.id, url.searchParams.get('cursor') ?? undefined); await sameIdentity(); return json(result);
+      const result = await packages.list(user.id, url.searchParams.get('cursor') ?? undefined); await sameIdentity();
+      return json(accountBackup ? result : { ...result, items: result.items.filter(row => !row.selection.accountAvatar) });
     }
     if (!route || url.search) domainReject('not_found', 404);
     const id = domainParse(z.uuid(), route[1]);
-    if (request.method === 'GET' && !route[2]) { const result = await packages.get(user.id, id); await sameIdentity(); return json(result); }
+    if (!accountBackup || request.method === 'GET' && !route[2]) {
+      const result = await packages.get(user.id, id);
+      if (!accountBackup && result.selection.accountAvatar) domainReject('unsupported_package_format', 409);
+      if (request.method === 'GET' && !route[2]) { await sameIdentity(); return json(result); }
+    }
     if (request.method === 'POST' && route[2] === 'cancel') return json(await packages.cancel(user.id, id, await readJson(request)));
     if (request.method === 'POST' && route[2] === 'reconcile') {
       domainParse(z.object({}).strict(), await readJson(request));

@@ -440,7 +440,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
     && options.files?.forSharedSpace && options.transcripts?.readForSharedExport && options.avatars?.forSharedSpace);
   const classModules = classHandoverModuleSchema.options.filter(module =>
     (module !== 'growth' || !!options.growth) && (module !== 'attachments' || sharedMedia));
-  return { page: page.bind(null, null), classModules, forClass(request: HandoverClassExportCommand) {
+  return { page: page.bind(null, null), accountAvatarAvailable: !!options.avatars, classModules, forClass(request: HandoverClassExportCommand) {
     const command = domainParse(handoverClassExportCommandSchema, request);
     if (!command.selection.modules.every(module => classModules.includes(module))) domainReject('package_class_source_unavailable', 503);
     return { page: page.bind(null, command) };

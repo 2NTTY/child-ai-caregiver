@@ -5,7 +5,7 @@ import { handoverHeaderSchema } from '../src/shared/handover.ts';
 import { createFirestoreHandoverUploads } from './firestore-handover-uploads.ts';
 import { receiveHandoverUpload } from './handover-upload-reader.ts';
 import { openHandoverImport } from './handover-import.ts';
-import type { FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { domainReject, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { createFirebaseHandoverObjects, HandoverObjectDescriptor } from './firebase-handover-objects.ts';
 import type { HandoverUploadRecord } from './handover-upload-records.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
@@ -17,7 +17,7 @@ export function createHandoverUploadService(options: FirestoreDomainOptions & {
   trustedKeys?: Parameters<typeof openHandoverImport>[0]['trustedKeys'];
 }) {
   const uploads = createFirestoreHandoverUploads(options), clock = options.serverClock ?? Date.now;
-  async function receive(owner: string, id: string, source: AsyncIterable<Uint8Array>, signal: AbortSignal) {
+  async function receive(owner: string, id: string, source: AsyncIterable<Uint8Array>, signal: AbortSignal, accountBackup = true) {
     const upload = await uploads.claim(owner, id); if (!upload) return uploads.get(owner, id);
     const deadline = AbortSignal.any([signal, AbortSignal.timeout(300_000)]);
     let staged: Awaited<ReturnType<typeof receiveHandoverUpload>> | undefined, artifact: HandoverObjectDescriptor | undefined;
@@ -25,6 +25,7 @@ export function createHandoverUploadService(options: FirestoreDomainOptions & {
       staged = await receiveHandoverUpload({ source, content: upload.request, signal: deadline,
         spoolRoot: options.spoolRoot, trustedKeys: options.trustedKeys });
       const reader = staged.reader;
+      if (reader.manifest.selection.accountAvatar && !accountBackup) domainReject('unsupported_package_format', 409);
       const { entries: _entries, coverage: _coverage, ...header } = reader.manifest;
       const preview = { header: handoverHeaderSchema.parse(header), manifestSha256: reader.manifestSha256,
         integrity: reader.integrity, children: reader.children,

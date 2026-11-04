@@ -1,6 +1,6 @@
 import { createHash, type KeyObject } from 'node:crypto';
 import { previewHandoverDocuments } from './handover-document-preview.ts';
-import { handoverClassExportCommandSchema } from '../src/shared/handover-jobs.ts';
+import { handoverClassExportCommandSchema, handoverExportCommandSchema } from '../src/shared/handover-jobs.ts';
 import { domainParse, domainReject } from './firestore-domain-data.ts';
 import { createReadStream } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -84,13 +84,16 @@ export function createHandoverService(options: FirestoreDomainOptions & { export
       return { ...file, filename: '育有方資料包-' + job.id + '.zip', dispose: () => removeSpool(directory) };
     } catch (error) { await removeSpool(directory); throw error; }
   }
-  return { capabilities: (classDocumentReview = false) => ({ classModules: options.exporter.forClass
+  return { capabilities: (classDocumentReview = false, accountBackup = false) => ({
+    ...(accountBackup && options.exporter.accountAvatarAvailable ? { accountAvatarBackup: true as const } : {}), classModules: options.exporter.forClass
     ? (options.exporter.classModules ?? []).filter(module => classDocumentReview || (module !== 'documents' && module !== 'attachments')) : [] }),
     create: async (owner: string, raw: unknown) => {
       if (raw && typeof raw === 'object' && 'source' in raw) {
         const command = domainParse(handoverClassExportCommandSchema, raw);
         if (!options.exporter.forClass || !command.selection.modules.every(module => options.exporter.classModules?.includes(module)))
           domainReject('package_class_source_unavailable', 503);
+      } else if (!options.exporter.accountAvatarAvailable && domainParse(handoverExportCommandSchema, raw).selection.accountAvatar) {
+        domainReject('avatar_export_unavailable', 503);
       }
       return jobs.create(owner, raw);
     }, get: jobs.get, list: jobs.list, cancel: jobs.cancel, processExport, cleanup, download,

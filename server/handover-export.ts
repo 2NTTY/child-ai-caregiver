@@ -17,12 +17,30 @@ const contentSections = new Set(['photo_content', 'voice_content', 'file_content
 type PageQuery = { section: string; childId?: string; scopeVersion?: string; cursor?: string };
 export interface PackagePageOptions { includeSummaryPeriod?: boolean; documentFilter?: PackageDocumentFilter; documentPreviewPeriod?: HandoverHeader['selection']['period'] }
 export interface HandoverExportSource {
+  accountAvatarAvailable?: boolean;
   page(userId: string, query: PageQuery, packageMedia?: PackageMediaFilter, options?: PackagePageOptions): Promise<AccountExportPage>;
   classModules?: HandoverClassExportCommand['selection']['modules'];
   forClass?(request: HandoverClassExportCommand): HandoverExportSource;
 }
 function fail(code: string): never { throw new HandoverArchiveError(code); }
 const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
+type AvatarTransfer = ReturnType<typeof avatarTransferSchema.parse>;
+function accountAvatarSummary(head: AvatarTransfer, period: HandoverHeader['selection']['period']) {
+  const parts = [`本人頭像：版本 ${head.version}`, `更新日期：${head.updatedAt ?? '未知'}`];
+  if (!head.updatedAt) parts.push('日期未知，未判定期間。');
+  else if (period) {
+    const at = Date.parse(head.updatedAt);
+    parts.push(at < Date.parse(period.from) || at > Date.parse(period.to) ? '所選期間外。' : '所選期間內。');
+  }
+  if (head.asset) parts.push('由本人明確選入完整版本。');
+  else parts.push('未有圖片；只保留版本資料，不是移除指令。');
+  return parts.join('；');
+}
+function coverageScope(row: HandoverCoverage) {
+  if (row.childId !== null) return row.childId;
+  if (row.section === 'children') return '名冊';
+  return '本人帳戶';
+}
 
 /** Only ordinary authorized product reads feed this format; restoration envelopes are not accepted. */
 export async function writePersonalHandoverPackage(input: {
@@ -33,10 +51,12 @@ export async function writePersonalHandoverPackage(input: {
   const limits = handoverLimits(input.limits);
   const signal = AbortSignal.any([AbortSignal.timeout(limits.maxDurationMs), ...(input.signal ? [input.signal] : [])]);
   const choices = input.documentChoices ?? [];
+  const accountAvatar = input.selection.accountAvatar;
+  if (accountAvatar && (input.purpose !== 'backup' || input.sourceAccountId !== undefined && input.sourceAccountId !== input.ownerUserId)) fail('invalid_package_scope');
   if (!validHandoverDocumentPins(input.selection, choices)) fail('invalid_package_scope');
   const exceptions = input.selection.period ? choices.filter(pin => pin.include).map(({include: _include, ...pin}) => pin) : [];
   const overrides = new HandoverDocumentChoices(choices.filter(pin => !input.selection.period || pin.section !== 'documents'), 'export_scope_changed');
-  const header = handoverHeaderSchema.parse({ format: 'yuyoufang-data', version: 1, packageId: input.packageId, packageVersion: 1,
+  const header = handoverHeaderSchema.parse({ format: 'yuyoufang-data', version: accountAvatar ? 2 : 1, packageId: input.packageId, packageVersion: 1,
     ...(exceptions.length ? { periodExceptions: exceptions } : {}),
     createdAt: input.createdAt, purpose: input.purpose, source: { serverId: input.serverId, accountId: input.sourceAccountId ?? input.ownerUserId }, selection: input.selection });
   if (!supportsHandoverPeriod(header.selection)) fail('package_period_not_connected');
@@ -45,6 +65,7 @@ export async function writePersonalHandoverPackage(input: {
   const scopeVersion = initial.scopeVersion, coverage: HandoverCoverage[] = [];
   if (input.expectedScopeVersion && input.expectedScopeVersion !== scopeVersion) fail('export_scope_changed');
   const avatars = new Map<string, { version: number; asset: unknown; fingerprint: string }>();
+  let accountHead: AvatarTransfer | null = null;
   const inventory = header.selection.modules.some(module => module === 'documents' || module === 'attachments')
     ? new HandoverDocumentInventory(header, limits.maxEntries) : null;
   const datedMedia = header.selection.modules.includes('attachments') && (header.selection.period || choices.some(pin => isAttachmentHead(pin.section))) ? new DatedPackageMedia() : null;
@@ -66,7 +87,7 @@ export async function writePersonalHandoverPackage(input: {
   }
   async function* entries(): AsyncGenerator<HandoverEntryInput> {
     const children: unknown[] = [], wanted = new Set(header.selection.childIds);
-    for await (const page of pages('children')) {
+    if (wanted.size) for await (const page of pages('children')) {
       for (const child of page.items) {
         if (child && typeof child === 'object' && 'id' in child && typeof child.id === 'string' && wanted.delete(child.id))
           children.push(header.selection.period && 'displayName' in child ? { id: child.id, displayName: child.displayName } : child);
@@ -75,6 +96,45 @@ export async function writePersonalHandoverPackage(input: {
     if (wanted.size) fail('package_scope_unavailable');
     coverage.push({ section: 'children', childId: null, scopeVersion, items: children.length, complete: true });
     yield { path: path('data'), mediaType: 'application/json', content: Buffer.from(JSON.stringify({ section: 'children', childId: null, scopeVersion, items: children })) };
+    if (accountAvatar) {
+      for await (const page of pages('self_avatar')) {
+        if (!page.complete || page.items.length !== 1) fail('export_scope_changed');
+        const parsed = avatarTransferSchema.safeParse(page.items[0]);
+        if (!parsed.success || parsed.data.target.kind !== 'self' || parsed.data.version !== accountAvatar.version) fail('export_scope_changed');
+        accountHead = parsed.data;
+      }
+      if (!accountHead) fail('export_scope_changed');
+      coverage.push({ section: 'self_avatar', childId: null, scopeVersion, items: 1, complete: true });
+      yield { path: path('data'), mediaType: 'application/json', content: Buffer.from(JSON.stringify({
+        section: 'self_avatar', childId: null, scopeVersion, items: [accountHead],
+      })) };
+      const references: unknown[] = [];
+      const asset = accountHead.asset;
+      if (asset) {
+        for await (const page of pages('self_avatar_content')) {
+          if (!page.complete || page.items.length !== 1) fail('export_scope_changed');
+          const item = page.items[0];
+          if (!item || typeof item !== 'object' || !('version' in item) || item.version !== accountHead.version
+            || !('target' in item) || canonicalJson(item.target) !== canonicalJson(accountHead.target)
+            || !('asset' in item) || canonicalJson(item.asset) !== canonicalJson(asset)
+            || !('mimeType' in item) || item.mimeType !== 'image/jpeg' || !('base64' in item) || typeof item.base64 !== 'string') fail('export_scope_changed');
+          const bytes = Buffer.from(item.base64, 'base64');
+          try {
+            const sha256 = hash(bytes);
+            if (bytes.toString('base64') !== item.base64 || bytes.length !== asset.bytes || sha256 !== asset.sha256) fail('export_scope_changed');
+            const attachmentPath = path('attachments');
+            references.push({ target: accountHead.target, version: accountHead.version, asset,
+              mimeType: 'image/jpeg', attachmentPath, bytes: bytes.length, sha256 });
+            yield { path: attachmentPath, mediaType: 'image/jpeg', content: bytes };
+          } finally { bytes.fill(0); }
+        }
+        if (references.length !== 1) fail('export_scope_changed');
+      }
+      coverage.push({ section: 'self_avatar_content', childId: null, scopeVersion, items: references.length, complete: true });
+      yield { path: path('data'), mediaType: 'application/json', content: Buffer.from(JSON.stringify({
+        section: 'self_avatar_content', childId: null, scopeVersion, items: references,
+      })) };
+    }
     for (const childId of header.selection.childIds) {
       for (const module of header.selection.modules) {
         if (module === 'documents' && header.selection.period) {
@@ -162,14 +222,20 @@ export async function writePersonalHandoverPackage(input: {
       if (current.scopeVersion !== scopeVersion || current.items.length !== 1 || !current.complete
         || canonicalJson(current.items[0]) !== head.fingerprint) fail('export_scope_changed');
     }
+    if (accountHead) {
+      const current = await waitForHandoverStep(input.exporter.page(input.ownerUserId,{section:'self_avatar',scopeVersion}),signal);
+      if (current.scopeVersion !== scopeVersion || current.section !== 'self_avatar' || current.items.length !== 1 || !current.complete
+        || current.nextCursor !== null || canonicalJson(current.items[0]) !== canonicalJson(accountHead)) fail('export_scope_changed');
+    }
     // Recheck the same authority/version after the last attachment IO before signing the result.
     const final = await waitForHandoverStep(input.exporter.page(input.ownerUserId, { section: 'manifest', scopeVersion }), signal);
     if (final.scopeVersion !== scopeVersion) fail('export_scope_changed');
     const summary = ['# 育有方資料包', '', `用途：${header.purpose === 'backup' ? '本人備份' : '交接副本'}`, `包 ID：${header.packageId}`,
       `建立時間：${header.createdAt}`, ...(header.selection.period ? [`所選期間：${header.selection.period.from} 至 ${header.selection.period.to}（含首尾）`] : []),
       '', '此包只包含已選模組。來源確認與內容正確性須分開理解；匯入不重播執行授權或舊投遞。', '',
+      ...(accountHead ? [accountAvatarSummary(accountHead, header.selection.period)] : []),
       ...(inventory?.lines(new Map(children.map(raw => { const child = raw as {id:string;displayName:string}; return [child.id, child.displayName]; }))) ?? []), '',
-      '| 資料區段 | 孩子 ID | 項數 |', '|---|---|---:|', ...coverage.map(row => `| ${row.section} | ${row.childId ?? '名冊'} | ${row.items} |`), ''].join('\n');
+      '| 資料區段 | 孩子／帳戶 | 項數 |', '|---|---|---:|', ...coverage.map(row => `| ${row.section} | ${coverageScope(row)} | ${row.items} |`), ''].join('\n');
     yield { path: 'summary.md', mediaType: 'text/markdown', content: Buffer.from(summary) };
   }
   return writeHandoverArchive({ directory: input.directory, header, entries: entries(), coverage: () => coverage,
