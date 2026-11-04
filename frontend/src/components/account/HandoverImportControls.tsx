@@ -9,7 +9,7 @@ import { handoverClassScope, handoverClassDestination, handoverClassDestinations
   type HandoverClassDestination, type HandoverClassEnrolmentDestination } from '../../production/handover-class-targets';
 import { PACKAGE_IMPORT_MAX_BYTES, pickImportPackage } from '../../platform/package-import';
 import { HandoverApiError } from '../../../../src/client/handover-api';
-import { originalBackupModuleSchema, type OriginalBackupComparisonQuery, type HandoverImportModule, type HandoverImportCommand, type HandoverImportView } from '../../../../src/shared/handover-imports';
+import { originalBackupModuleSchema, originalMemorySectionSchema, type OriginalBackupComparison, type OriginalBackupComparisonQuery, type HandoverImportModule, type HandoverImportCommand, type HandoverImportView } from '../../../../src/shared/handover-imports';
 import { AppCheckbox } from '../AppCheckbox';
 import { dateTimeParts, hongKongTimeZone } from '../date-time';
 import { FormDialog } from '../FormDialog';
@@ -24,7 +24,14 @@ type Destination = { value: string; label: string; spaceId: string | null; modul
   | { createInClassId: string; classEnrolment: HandoverClassEnrolmentDestination; classDestination?: undefined });
 const sections: Section[] = ['care', 'profile', 'tasks', 'memory', 'sources', 'documents', 'attachments', 'chat', 'concerns', 'growth'];
 const labels: Record<Section, string> & Record<string, string> = { care: '照護記錄', profile: '孩子資料', tasks: '待辦', memory: '記憶與摘要', sources: '私人來源', documents: '文件與準備單', attachments: '附件', chat: '私人聊天歷史', concerns: '持續關注', growth: '成長整理' };
-const originalLabels = { ...labels, attachments: '孩子頭像', memory: '私人交代' };
+const memoryResourceLabels: Record<(typeof originalMemorySectionSchema.options)[number], string> = {
+  instructions: '私人交代', memory_facts: '記憶事實', memory_topics: '待答主題',
+};
+const comparisonResourceLabel = (section: OriginalBackupComparison['items'][number]['resourceSection']) => {
+  const memory = originalMemorySectionSchema.safeParse(section);
+  return memory.success ? memoryResourceLabels[memory.data] : section === 'documents' ? '文件'
+    : section === 'visit_preparation' ? '到診準備' : section === 'child_avatar' ? '孩子頭像' : '';
+};
 const states: Record<HandoverImportView['state'], string> = {
   queued: '已排隊', running: '正在匯入', completed: '已完成', cancelled: '已取消', failed: '未能完成', interrupted: '還原後已中斷',
 };
@@ -40,7 +47,7 @@ const avatarOutcomes = { created: '已恢復', updated: '已更新', skipped: '�
 const avatarReasons = { empty_backup: '備份沒有圖片', unchanged: '與備份相同', version_conflict: '目前版本已改變', decision_changed: '目前狀態已改變，請重新比較' };
 const noAvatarSnapshot = () => null;
 const noAvatarSubscription = () => () => {};
-export function comparisonFields(module: HandoverImportModule, fields: string[], resourceSection?: 'documents' | 'visit_preparation' | 'child_avatar' | 'instructions') {
+export function comparisonFields(module: HandoverImportModule, fields: string[], resourceSection?: OriginalBackupComparison['items'][number]['resourceSection']) {
   const moduleNames: Partial<Record<HandoverImportModule,Record<string,string>>> = {
     care:{text:'記錄內容',details:'時間／數量',source:'資料來源'},profile:{data:'孩子概況'},attachments:{asset:'頭像圖片'},
     concerns:{title:'關注標題',status:'關注狀態',events:'觀察時間線',selectedEvents:'所選期間觀察'},
@@ -52,8 +59,12 @@ export function comparisonFields(module: HandoverImportModule, fields: string[],
   };
   const documentFields: Record<string, string> = resourceSection === 'visit_preparation' ? { questions: '到診問題', checklist: '攜帶清單', appointmentTaskId: '預約連結', period: '資料期間' }
     : { request: '文件設定', status: '封存狀態', archivedAt: '封存時間', currentSnapshot: '文件內容' };
-  const names: Record<string,string> = {...moduleNames[module], ...(module === 'documents' ? documentFields : {}), reason:module === 'concerns' ? '關注原因' : '修改原因',updatedAt:'更新時間',
-    confirmedAt:'確認時間',confirmedBy:'確認者',confirmationBasis:'確認記錄',importedFrom:module === 'memory' ? '交代來源' : '來源記錄',
+  const memoryFields: Record<string, string> = resourceSection === 'memory_facts'
+    ? { key: '事實分類', content: '事實內容', source: '原資料來源', status: '事實狀態', visibility: '可見範圍', intendedVisibility: '確認後可見範圍', validUntil: '有效期限' }
+    : resourceSection === 'memory_topics' ? { title: '主題名稱', note: '主題內容', status: '主題狀態', visibility: '可見範圍',
+      resumeAfter: '暫緩至', reopenReason: '重開原因', reopenedFrom: '原已結束主題' } : {};
+  const names: Record<string,string> = {...moduleNames[module], ...(module === 'documents' ? documentFields : {}), ...(module === 'memory' ? memoryFields : {}), reason:module === 'concerns' ? '關注原因' : '修改原因',updatedAt:'更新時間',updatedBy:'更新者',
+    confirmedAt:'確認時間',confirmedBy:'確認者',confirmationBasis:'確認記錄',importedFrom:module === 'memory' ? '備份來源' : '來源記錄',
     authorUserId:'記錄者',createdBy:'建立者',createdAt:'建立時間'};
   return [...new Set(fields.map(field => Object.hasOwn(names,field) ? names[field] : '其他欄位'))].join('、');
 }
@@ -66,6 +77,7 @@ export function HandoverImportControls() {
   const { owner, userId, identityKey, recordsState, account, online } = useProduction();
   const controller = owner.handoverImportOwner;
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
+  const originalLabels = { ...labels, attachments: '孩子頭像', memory: state.originalMemoryResourcesEnabled ? '記憶與交代' : '私人交代' };
   const classFeatures = handoverClassFeatures(state);
   const shared = useSyncExternalStore(owner.sharedChild.subscribe, owner.sharedChild.getSnapshot, owner.sharedChild.getSnapshot);
   const avatarLane = owner.avatarOwner?.self;
@@ -396,7 +408,9 @@ export function HandoverImportControls() {
               {comparisonModule === 'concerns' && comparisonModules.includes('concerns') ? <Text style={styles.body}>{periodConcerns
                 ? '此包只包含選定日期：只補回所選期間缺少的觀察，不改其他時段、標題、狀態或跟進。'
                 : '完整備份會把所選內容覆蓋回同一關注的新修訂，舊修訂仍可追溯。'}不會導入 Agent 執行或提醒授權。</Text> : null}
-              {comparisonModule === 'memory' && comparisonModules.includes('memory') ? <Text style={styles.body}>只比較及還原私人交代；其他記憶、議題及摘要尚未開放原件還原。可選目前交代，或有刪除紀錄的已刪項目。恢復已刪交代會建立新項並保留來源；再次比較會連回已恢復的項目。</Text> : null}
+              {comparisonModule === 'memory' && comparisonModules.includes('memory') ? <Text style={styles.body}>{state.originalMemoryResourcesEnabled
+                ? '可比較及還原私人交代、記憶事實和待答主題；原資料來源、確認者及確認時間會保留，候選事實仍須確認，已結束主題不會重新開啟。只有核實原刪除紀錄的已刪項目才可恢復，恢復時建立新項並保留備份來源；再次比較會連回已恢復的項目。摘要尚未開放原件還原。'
+                : '只比較及還原私人交代；其他記憶、議題及摘要尚未開放原件還原。可選目前交代，或有刪除紀錄的已刪項目。恢復已刪交代會建立新項並保留來源；再次比較會連回已恢復的項目。'}</Text> : null}
               {comparisonChildren.length && supportedComparisonModules.length ? <>
                 <AppSelect label="比較原有資料的孩子" value={comparisonChild} disabled={writeLocked}
                   options={[{value:'',label:'請選擇原孩子'},...comparisonChildren.map(child => ({value:child.id,label:child.displayName}))]}
@@ -414,15 +428,15 @@ export function HandoverImportControls() {
                     {comparison.query.module === 'attachments' && !comparisonOverwrite.length && !comparisonRestore.length
                       ? <Text style={styles.body}>沒有可還原的孩子頭像；備份沒有圖片、與目前相同或未能核實的項目會保留目前資料。</Text> : null}
                     {comparison.query.module === 'memory' && !comparisonOverwrite.length && !comparisonRestore.length
-                      ? <Text style={styles.body}>沒有可還原的私人交代；與備份相同或未能核實的項目會保留目前資料。</Text> : null}
+                      ? <Text style={styles.body}>沒有可還原的{originalLabels.memory}；與備份相同或未能核實的項目會保留目前資料。</Text> : null}
                     {comparison.items.map(item => <View key={originalComparisonItemKey(item)} style={styles.item}>
-                      <Text selectable style={styles.body}>{item.resourceSection === 'documents' ? '文件 · ' : item.resourceSection === 'visit_preparation' ? '到診準備 · ' : item.resourceSection === 'child_avatar' ? '孩子頭像 · ' : item.resourceSection === 'instructions' ? '私人交代 · ' : ''}{item.id} · {comparisonStates[item.state]}</Text>
+                      <Text selectable style={styles.body}>{comparisonResourceLabel(item.resourceSection) ? `${comparisonResourceLabel(item.resourceSection)} · ` : ''}{item.id} · {comparisonStates[item.state]}</Text>
                       {comparison.query.module === 'concerns' && item.targetId && item.id !== item.targetId ? <Text selectable style={styles.body}>原關注：{item.targetId}</Text> : null}
                       <Text style={styles.body}>備份版本 {item.backupVersion} · 目前版本 {item.localVersion ?? '未能確定'}</Text>
                       {item.changedFields.length ? <Text style={styles.body}>有變更的欄位：{comparisonFields(comparison.query.module,item.changedFields,item.resourceSection)}</Text> : null}
                       {originalComparisonResolution(item) ? <AppCheckbox
                         label={periodConcerns ? '補回所選期間缺少的觀察' : originalComparisonResolution(item) === 'restore_deleted' ? '恢復此已刪項目' : '以備份覆蓋此項'}
-                        accessibilityLabel={`${item.resourceSection === 'documents' ? '文件 ' : item.resourceSection === 'visit_preparation' ? '到診準備 ' : item.resourceSection === 'child_avatar' ? '孩子頭像 ' : item.resourceSection === 'instructions' ? '私人交代 ' : ''}${item.id}：${periodConcerns ? '補回所選期間缺少的觀察' : originalComparisonResolution(item) === 'restore_deleted' ? '恢復已刪項目' : '覆蓋目前內容'}`}
+                        accessibilityLabel={`${comparisonResourceLabel(item.resourceSection)} ${item.id}：${periodConcerns ? '補回所選期間缺少的觀察' : originalComparisonResolution(item) === 'restore_deleted' ? '恢復已刪項目' : '覆蓋目前內容'}`}
                         checked={comparisonSelected.includes(originalComparisonItemKey(item))} disabled={writeLocked} onChange={checked => controller.selectComparison(item,checked,comparison)} /> : null}
                     </View>)}
                     <Text style={styles.body}>只選本次已讀差異{comparison.nextCursor ? '；尚未讀取的下一頁不包括在選擇內' : ''}，不代表整包；翻頁不會自動勾選。</Text>
