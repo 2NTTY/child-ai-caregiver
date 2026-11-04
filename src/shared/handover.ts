@@ -18,6 +18,28 @@ export const HANDOVER_SECTIONS = {
 } as const;
 const text = (max: number) => z.string().min(1).max(max);
 const hash = z.string().regex(/^[a-f0-9]{64}$/u);
+export const handoverDocumentSectionSchema = z.enum(['documents', 'visit_preparation', 'files', 'photos', 'voices', 'child_avatar']);
+export const handoverDocumentPinSchema = z.object({
+  section: handoverDocumentSectionSchema, childId: z.uuid(), id: z.uuid(), version: z.number().int().nonnegative(),
+  snapshotId: z.uuid().nullable(), snapshotVersion: z.number().int().positive().nullable(),
+}).strict();
+export type HandoverDocumentPin = z.infer<typeof handoverDocumentPinSchema>;
+export const handoverDocumentChoiceSchema = handoverDocumentPinSchema.extend({ include: z.boolean() });
+export type HandoverDocumentChoice = z.infer<typeof handoverDocumentChoiceSchema>;
+export const handoverDocumentKey = (pin: Pick<HandoverDocumentPin, 'childId' | 'section' | 'id'>) =>
+  JSON.stringify([pin.childId, pin.section, pin.id]);
+export function validHandoverDocumentPins(selection: { childIds: string[]; modules: HandoverModuleName[] }, pins: readonly HandoverDocumentPin[]) {
+  const children = new Set(selection.childIds), seen = new Set<string>();
+  for (const pin of pins) {
+    const key = handoverDocumentKey(pin);
+    if (!children.has(pin.childId) || seen.has(key) || !selection.modules.includes(
+      pin.section === 'documents' || pin.section === 'visit_preparation' ? 'documents' : 'attachments')
+      || (pin.snapshotId === null) !== (pin.snapshotVersion === null) || pin.snapshotId !== null && pin.section !== 'documents'
+      || (pin.section === 'child_avatar' || pin.section === 'visit_preparation') && pin.id !== pin.childId) return false;
+    seen.add(key);
+  }
+  return true;
+}
 export const handoverPathSchema = z.string().max(200).regex(/^(?:summary\.md|(?:data|attachments)\/[a-zA-Z0-9_-]+\.(?:json|bin))$/u);
 export const handoverSelectionSchema = z.object({
   childIds: z.array(z.uuid()).min(1).max(10000), modules: z.array(z.enum(HANDOVER_MODULES)).min(1).max(HANDOVER_MODULES.length),
@@ -28,6 +50,8 @@ export const handoverHeaderSchema = z.object({
   format: z.literal('yuyoufang-data'), version: z.literal(1), packageId: z.uuid(), packageVersion: z.number().int().positive(),
   createdAt: z.iso.datetime({ offset: true }), purpose: z.enum(['handover', 'backup']),
   source: z.object({ serverId: text(256), accountId: text(256) }).strict(), selection: handoverSelectionSchema,
+  // The recipient sees only the specific included exceptions, never the sender's excluded entries.
+  periodExceptions: z.array(handoverDocumentPinSchema).min(1).max(1000).optional(),
 }).strict();
 export const handoverCoverageSchema = z.object({ section: text(80), childId: z.uuid().nullable(), scopeVersion: hash,
   items: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER), complete: z.literal(true) }).strict();
@@ -35,7 +59,8 @@ export const handoverEntrySchema = z.object({ path: handoverPathSchema, bytes: z
   sha256: hash, mediaType: text(200) }).strict();
 export const handoverManifestSchema = handoverHeaderSchema.extend({ coverage: z.array(handoverCoverageSchema).max(10000),
   entries: z.array(handoverEntrySchema).min(1).max(10000) }).strict().refine(value =>
-    new Set(value.entries.map(entry => entry.path)).size === value.entries.length
+    (!value.periodExceptions || !!value.selection.period && validHandoverDocumentPins(value.selection, value.periodExceptions))
+    && new Set(value.entries.map(entry => entry.path)).size === value.entries.length
     && value.entries.some(entry => entry.path === 'summary.md')
     && value.coverage.every(entry => entry.childId === null || value.selection.childIds.includes(entry.childId))
     && new Set(value.coverage.map(entry => `${entry.childId}:${entry.section}`)).size === value.coverage.length);
