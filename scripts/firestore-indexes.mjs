@@ -9,16 +9,30 @@ const canonical = value => JSON.stringify(sort(value));
 function sort(value) { return Array.isArray(value) ? value.map(sort) : value && typeof value === 'object'
   ? Object.fromEntries(Object.keys(value).sort().map(key => [key, sort(value[key])])) : value; }
 function shape(index) { return canonical({ queryScope: index.queryScope, fields: index.fields.filter(field => field.fieldPath !== '__name__') }); }
+const sessionIndexes = ['ASCENDING', 'DESCENDING'].map(order => canonical({
+  collectionGroup: 'events', queryScope: 'COLLECTION', fields: [{ fieldPath: 'timestamp', order }, { fieldPath: 'id', order }],
+}));
+const metadataFields = new Set([
+  'photos:scopeTag', 'knowledge_versions:versionId', 'knowledge_observations:lastSuccessfulCheckAt', 'knowledge_checks:checkedAt',
+  'work_watches:enabled', 'erasures:state', 'content_erasures:stage', 'context_versions:summaryPending', 'voice_assets:cleanupState',
+  'chat_file_assets:cleanupState', 'avatar_cleanup:complete', 'handover_exports:cleaned', 'handover_import_batches:growthImportScopes',
+].map(field => 'yuban_authority_' + field));
 try {
-  if (!['--inspect', '--approved-apply', '--approved-fields'].includes(mode) || !process.env.GOOGLE_APPLICATION_CREDENTIALS) throw Error('explicit_mode_and_credentials_required');
+  if (!['--inspect', '--inspect-fields', '--approved-apply', '--approved-fields'].includes(mode) || !process.env.GOOGLE_APPLICATION_CREDENTIALS) throw Error('explicit_mode_and_credentials_required');
   const client = await new GoogleAuth({ keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
     scopes: ['https://www.googleapis.com/auth/cloud-platform'] }).getClient();
   const desired = JSON.parse(await readFile(new URL('../deploy/firebase/firestore.indexes.json', import.meta.url), 'utf8'));
+  for (const entry of desired.fieldOverrides) {
+    if (!/^yuban_authority(?:_[a-z_]+)?$/u.test(entry.collectionGroup)
+      || !(entry.fieldPath === '*' || /^[a-zA-Z][a-zA-Z0-9_]*$/u.test(entry.fieldPath))
+      || !Array.isArray(entry.indexes)
+      || entry.indexes.length && !metadataFields.has(entry.collectionGroup + ':' + entry.fieldPath)) throw Error('field_exemption_scope');
+  }
   const current = (await client.request({ url: base + '/collectionGroups/-/indexes', retry: false })).data;
   if (current.nextPageToken || (current.indexes?.length ?? 0) > 200) throw Error('index_listing_bound');
   const missing = [], building = [];
   for (const entry of desired.indexes) {
-    if (!/^yuban_authority_[a-z_]+$/u.test(entry.collectionGroup)) throw Error('index_collection_scope');
+    if (!/^yuban_authority_[a-z_]+$/u.test(entry.collectionGroup) && !sessionIndexes.includes(canonical(entry))) throw Error('index_collection_scope');
     const found = current.indexes?.find(value => value.name.includes('/collectionGroups/' + entry.collectionGroup + '/') && shape(value) === shape(entry));
     if (!found) missing.push(entry); else if (found.state !== 'READY') building.push({ collection: entry.collectionGroup, state: found.state });
   }
@@ -31,20 +45,17 @@ try {
     }
     // Same checked-in private-field exclusions, not a new index policy. No TTL field is included in updateMask.
     for (const entry of desired.fieldOverrides) {
-      if (!/^yuban_authority(?:_[a-z_]+)?$/u.test(entry.collectionGroup)
-        || !(entry.fieldPath === '*' || /^[a-zA-Z][a-zA-Z0-9_]*$/u.test(entry.fieldPath))
-        || !Array.isArray(entry.indexes)) throw Error('field_exemption_scope');
-      // F05 metadata cursors require explicit indexes under collection-wide exclusions.
-      const f05Field = ['yuban_authority_knowledge_versions:versionId', 'yuban_authority_knowledge_observations:lastSuccessfulCheckAt',
-        'yuban_authority_knowledge_checks:checkedAt', 'yuban_authority_work_watches:enabled', 'yuban_authority_erasures:state', 'yuban_authority_avatar_cleanup:complete'].includes(entry.collectionGroup + ':' + entry.fieldPath);
-      if (entry.indexes.length && !f05Field) continue;
       const url = base + '/collectionGroups/' + entry.collectionGroup + '/fields/' + entry.fieldPath;
       const field = (await client.request({ url, retry: false })).data;
       const actual = (field.indexConfig?.indexes ?? []).map(({ queryScope, fields }) => {
         const indexed = fields?.find(value => value.fieldPath === entry.fieldPath);
         return { queryScope, ...(indexed?.order ? { order: indexed.order } : {}), ...(indexed?.arrayConfig ? { arrayConfig: indexed.arrayConfig } : {}) };
       });
-      if (field.indexConfig && field.indexConfig.usesAncestorConfig !== true && canonical(actual) === canonical(entry.indexes)) continue;
+      if (field.indexConfig && field.indexConfig.usesAncestorConfig !== true
+        && canonical(actual.map(canonical).sort()) === canonical(entry.indexes.map(canonical).sort())) continue;
+      if (mode === '--inspect-fields') {
+        console.info(JSON.stringify({ pendingCollection: entry.collectionGroup, field: entry.fieldPath })); continue;
+      }
       // Firebase CLI field overrides are shorthand; the REST API requires Index.fields.
       const indexes = entry.indexes.map(({ queryScope, ...configuration }) => ({ queryScope, fields: [{ fieldPath: entry.fieldPath, ...configuration }] }));
       const operation = (await client.request({ method: 'PATCH', url, params: { updateMask: 'indexConfig' }, data: { indexConfig: { indexes } }, retry: false })).data;
