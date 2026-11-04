@@ -3,7 +3,7 @@ import { AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { DateTime } from 'luxon';
 import { useProduction } from '../../production/ProductionProvider';
-import { handoverErrorText } from '../../production/HandoverOwner';
+import { handoverErrorText, handoverReviewSections } from '../../production/HandoverOwner';
 import { useProductionSharing } from '../../production/useProductionSharing';
 import { classExportScope, classExportPupils, classExportModules, type ClassExportPupil, type ClassExportModule } from '../../production/handover-class-export';
 import { HandoverApiError } from '../../../../src/client/handover-api';
@@ -89,7 +89,7 @@ export function HandoverControls() {
     : !!children.length && children.every(id => selectable.some(child => child.id === id));
   const validSelection = validChildren && !!modules.length
     && (!periodEnabled || periodSupported && ordered);
-  const needsReview = modules.includes('documents') || sourceMode === 'personal' && modules.includes('attachments');
+  const needsReview = handoverReviewSections(selection).length > 0;
   const reviewSource = sourceMode === 'class' && classes.state.selected ? { kind: 'class' as const, spaceId: classes.state.selected.id } : undefined;
   const reviewBasis = sourceMode === 'class' ? JSON.stringify([identityKey, classScope, chosenPupils.map(pupil => [pupil.childId, pupil.basis])])
     : JSON.stringify([identityKey, scopeKey, selectable.map(child => [child.id, child.workspaceId, child.accessRole])]);

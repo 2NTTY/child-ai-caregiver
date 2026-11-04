@@ -18,6 +18,8 @@
     "test": "scripts/handover-class-export.test.mjs",
     "verified": ["Class document and visit preparation previews use one source and opId", "A displayed whole-file choice pins its snapshot in the create request", "Changing class drops choices and ignores an outstanding page", "An older API still supports the original three class modules"],
     "environment": "Shared TypeScript owner and real HTTP client with synthetic responses, Node 24",
+    "attachmentBackend": "69ef6b13",
+    "attachmentOnly": "The Web/Android form uses the owner's review sections for either source. A class file outside the dates can be explicitly selected after checking files, photos, recordings and the pupil avatar. The submitted operation retains the preview ID and reviewed avatar version.",
     "pending": ["Authenticated live Web export", "Android release and device check"]
   }
 }

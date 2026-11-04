@@ -74,17 +74,20 @@ test('class document choices and preview pages use one original operation until 
     period: { from: '2026-11-01T00:00:00+08:00', to: '2026-11-07T23:59:59.999+08:00' } };
   const item = { childId, id: randomUUID(), section: 'documents', version: 2, snapshotId: randomUUID(), snapshotVersion: 2,
     title: 'Report with unknown dates', from: null, to: null, reason: 'uncertain', canInclude: true, defaultIncluded: false };
+  const file = { ...item, section: 'files', id: randomUUID(), snapshotId: null, snapshotVersion: null,
+    title: 'Trip.docx', reason: 'outside', from: '2026-10-28', to: '2026-10-28' };
   const queries = [], writes = [], scopeVersion = 'a'.repeat(64);
   let capabilityHeader, hold = false, late;
   const api = createHandoverApi('https://example.test', async (url, init) => {
     if (url.endsWith('/capabilities')) {
       capabilityHeader = new Headers(init.headers).get('x-handover-class-document-review');
-      return Response.json({ classModules: capabilityHeader === '1' ? ['documents'] : [] });
+      return Response.json({ classModules: capabilityHeader === '1' ? ['documents', 'attachments'] : [] });
     }
     const body = JSON.parse(init.body);
     if (url.endsWith('/preview')) {
       queries.push(body);
-      const page = Response.json({ items: body.section === 'documents' ? [item] : [], scopeVersion, nextCursor: null });
+      const items = [item, file].filter(value => value.section === body.section);
+      const page = Response.json({ items, scopeVersion, nextCursor: null, ...(body.section === 'child_avatar' ? { avatarVersion: 3 } : {}) });
       if (hold) return new Promise(resolve => { late = () => resolve(page); });
       return page;
     }
@@ -116,4 +119,18 @@ test('class document choices and preview pages use one original operation until 
   late(); await inFlight;
   assert.deepEqual(owner.getSnapshot().review.choices, []); assert.equal(owner.getSnapshot().review.scopeVersion, null);
   assert.ok(owner.getSnapshot().review.groups.every(group => !group.loaded && !group.items.length));
+  hold = false;
+  const attachments = { ...selection, modules: ['attachments'] };
+  const start = queries.length;
+  owner.setReviewSelection(attachments, 'class:3', other);
+  await owner.loadReview();
+  assert.deepEqual(queries.slice(start).map(page => page.section), ['files', 'photos', 'voices', 'child_avatar']);
+  const reviewed = owner.getSnapshot().review.groups.find(group => group.section === 'files').items[0];
+  assert.equal(reviewed.defaultIncluded, false);
+  owner.chooseReviewItem(reviewed, true);
+  await owner.createClass(attachments, other.spaceId);
+  assert.equal(writes.length, 2);
+  assert.equal(writes[1].opId, queries[start].opId);
+  assert.equal(writes[1].documentReview.choices[0].id, file.id);
+  assert.deepEqual(writes[1].documentReview.avatarVersions, [{ childId, version: 3 }]);
 });
