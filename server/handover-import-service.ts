@@ -225,7 +225,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     } finally { await opened?.dispose(); }
   }
   const items = createFirestoreHandoverImportItems(options);
-  return { create: start, process, originalModules: options.originalBackup ? originalBackupModuleSchema.options : [],
+  return { create: start, process, originalModules: options.originalBackup ? originalBackupModuleSchema.options.filter(module => module !== 'attachments' || !!options.attachments?.avatars) : [],
     accountAvatarRestore: !!options.attachments?.avatars && !!options.originalBackup,
     compareOriginal: createOriginalBackupComparison(options),
     compareSelfAvatar: createSelfAvatarComparison(options), history: items.history, summary: batches.summary,
