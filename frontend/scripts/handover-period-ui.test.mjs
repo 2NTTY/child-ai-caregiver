@@ -46,6 +46,69 @@ const nodes = tree => !tree || typeof tree !== 'object' ? [] : Array.isArray(tre
 const text = tree => tree == null || tree === false ? '' : Array.isArray(tree) ? tree.map(text).join(' ') : typeof tree === 'object' ? text(tree.props?.children) : String(tree);
 const control = (view, label) => nodes(view.tree).find(node => node.props?.label === label);
 
+test('original child avatar form limits attachment restoration to covered child heads and submits the observed child version', async () => {
+  const childId = '00000000-0000-4000-8000-000000000071', otherChild = '00000000-0000-4000-8000-000000000072';
+  const uploadId = '00000000-0000-4000-8000-000000000073', manifestSha256 = 'e'.repeat(64), time = '2026-11-05T00:00:00Z';
+  const queries = [], writes = [];
+  let state = 'deleted', batch;
+  const upload = { id: uploadId, version: 4, filename: 'child-head.zip', bytes: 3, state: 'ready', error: null,
+    createdAt: time, expiresAt: '2026-11-06T00:00:00Z', preview: { integrity: 'trusted', manifestSha256,
+      children: [{ id: childId, displayName: 'Covered child' }, { id: otherChild, displayName: 'Files-only child' }],
+      coverage: [{ section: 'child_avatar', childId, items: 1 }, { section: 'files', childId: otherChild, items: 1 }],
+      header: { format: 'yuyoufang-data', version: 2, packageId: uploadId, packageVersion: 1, createdAt: time, purpose: 'backup',
+        source: { serverId: 'source.test', accountId: 'owner' },
+        selection: { childIds: [childId, otherChild], modules: ['attachments'], period: null, accountAvatar: { version: 2 } } } } };
+  const api = createHandoverApi('https://example.test', async (url, init) => {
+    if (url.endsWith('/capabilities')) return Response.json({ classEnrolment: false, accountAvatarRestore: true, originalModules: ['attachments'] });
+    if (url.includes('/package-uploads/')) return Response.json(upload);
+    if (url.endsWith('/compare-original')) {
+      const query = JSON.parse(init.body); queries.push(query);
+      return Response.json({ uploadId, manifestSha256, childId, module: 'attachments', nextCursor: null,
+        items: [{ id: childId, targetId: childId, resourceSection: 'child_avatar', backupVersion: 3, localVersion: 7,
+          state, changedFields: state === 'unchanged' ? [] : ['asset'] }] });
+    }
+    if (init.method === 'GET') return Response.json(batch);
+    const command = JSON.parse(init.body); writes.push(command);
+    batch = { id: command.opId, version: 1, uploadId, packageId: uploadId, packageVersion: 1, manifestSha256, integrity: 'trusted',
+      targets: command.targets, state: 'queued', processedItems: 0, totalItems: 1, counts: { created: 0, updated: 0, skipped: 0, conflict: 0 },
+      error: null, createdAt: time, updatedAt: time };
+    return Response.json(batch);
+  });
+  const controller = new handoverImportOwner.HandoverImportOwner(api); controller.syncContext('owner', 'owner:1', true);
+  await controller.readImportCapabilities(); await controller.openUpload(uploadId);
+  production = { owner: { handoverImportOwner: controller, sharedChild: { subscribe: noop, getSnapshot: () => ({ phase: 'idle' }) } },
+    userId: 'owner', identityKey: 'owner:1', online: true, recordsState: { children: upload.preview.children.map(child => ({ ...child, accessRole: 'owner' })) },
+    account: { gate: 'ready', deletion: { phase: 'idle' } } };
+  const component = load('../src/components/account/HandoverImportControls.tsx').HandoverImportControls, view = render(component);
+  const again = () => render(component, view), settle = () => new Promise(resolve => setImmediate(resolve));
+  control(view, '查看上載與匯入選擇').props.onPress(); again();
+  const children = control(view, '比較原有資料的孩子'); assert.ok(children, 'child selection remains reachable before choosing the avatar category');
+  children.props.onChange(otherChild); again();
+  assert.ok(!control(view, '比較資料類別')?.props.options.some(option => option.value === 'attachments'));
+  await controller.compareOriginal(otherChild, 'attachments'); assert.equal(queries.length, 0, 'files-only coverage cannot request an original avatar comparison');
+  control(view, '比較原有資料的孩子').props.onChange(childId); again();
+  assert.deepEqual(control(view, '比較資料類別').props.options, [{ value: 'attachments', label: '孩子頭像' }]);
+  assert.ok(control(view, '比較本人頭像'), 'the separate account avatar action stays available');
+  control(view, '比較資料類別').props.onChange('attachments'); again();
+  control(view, '比較原有資料').props.onPress(); await settle(); again();
+  assert.equal(queries.length, 1); assert.equal(queries[0].module, 'attachments'); assert.equal(queries[0].childId, childId);
+  assert.match(text(view.tree), /孩子頭像.*目前已刪除/); assert.match(text(view.tree), /頭像圖片/);
+  assert.equal(load('../src/components/account/HandoverImportControls.tsx').comparisonFields('attachments', ['asset'], 'child_avatar'), '頭像圖片');
+  control(view, '恢復此已刪項目').props.onChange(true); again();
+  control(view, '提交所選原項還原（1 項）').props.onPress(); await settle();
+  assert.equal(writes.length, 1); assert.equal(writes[0].restoreOriginal, true); assert.equal(writes[0].resolutionOnly, true);
+  assert.deepEqual(writes[0].targets, [{ sourceChildId: childId, target: { childId, spaceId: null }, sections: ['attachments'] }]);
+  assert.deepEqual(writes[0].resolutions, [{ sourceChildId: childId, section: 'child_avatar', resourceId: childId,
+    resolution: { mode: 'restore_deleted', targetId: childId, expectedVersion: 7 } }]);
+  assert.equal(writes[0].accountAvatar, undefined, 'child restoration does not select the account avatar');
+  await controller.openUpload(uploadId); state = 'unchanged';
+  await controller.compareOriginal(childId, 'attachments'); again();
+  assert.match(text(view.tree), /沒有可還原的孩子頭像/);
+  assert.equal(control(view, '恢復此已刪項目'), undefined); assert.equal(control(view, '以備份覆蓋此項'), undefined);
+  control(view, 'Covered child').props.onChange(true); again();
+  assert.ok(control(view, '附件'), 'the independent-copy attachment selection keeps its original label and scope');
+});
+
 // Real shared export component, contract, owner and date utilities; synthetic transport, no network or picker.
 test('handover period selection preserves inclusive Hong Kong days with supported memory and document reviews', async () => {
   const id = '00000000-0000-4000-8000-000000000001', sent = [];

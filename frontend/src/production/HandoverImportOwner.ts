@@ -3,7 +3,7 @@ import { HandoverApiError, originalComparisonItemKey, type HandoverApi, type Cla
 import { handoverImportCommandSchema, handoverImportModuleOf, originalBackupModuleSchema, type HandoverImportModule, type HandoverImportResourceSection, type HandoverImportCommand, type HandoverImportView,
   type HandoverImportResult, type HandoverImportResultQuery } from '../../../src/shared/handover-imports.ts';
 import type { HandoverImportSummary, OriginalBackupComparison, OriginalBackupComparisonQuery } from '../../../src/shared/handover-imports.ts';
-import { handoverUploadCommandSchema, type HandoverUploadCommand, type HandoverUploadView, type HandoverUploadListItem } from '../../../src/shared/handover-uploads.ts';
+import { handoverUploadCommandSchema, HANDOVER_UPLOAD_MAX_BYTES, type HandoverUploadCommand, type HandoverUploadView, type HandoverUploadListItem } from '../../../src/shared/handover-uploads.ts';
 import { handoverErrorText } from './HandoverOwner.ts';
 import { FamilyDocumentApiError, parseFamilyDocumentSnapshot } from '../../../src/client/family-documents-api.ts';
 import type { DocumentContentPage, DocumentContentQuery, DocumentSnapshot } from '../../../src/shared/family-documents.ts';
@@ -14,9 +14,12 @@ export const legacyOriginalModules: OriginalBackupComparisonQuery['module'][] = 
 export function originalRestoreResourceSection(module: HandoverImportModule,
   item?: Pick<OriginalBackupComparison['items'][number], 'resourceSection'>): HandoverImportResourceSection | null {
   if (module === 'documents') return item?.resourceSection === 'documents' || item?.resourceSection === 'visit_preparation' ? item.resourceSection : null;
+  if (module === 'attachments') return item?.resourceSection === 'child_avatar' ? 'child_avatar' : null;
   if (module === 'sources') return 'private_sources';
   return module === 'care' || module === 'profile' || module === 'tasks' ? module : null;
 }
+export const hasOriginalChildAvatar = (preview: HandoverUploadView['preview'], childId: string) =>
+  !!preview?.coverage.some(row => row.childId === childId && row.section === 'child_avatar' && row.items > 0);
 export function originalComparisonResolution(item: OriginalBackupComparison['items'][number]) {
   if (!item.targetId || item.localVersion === null) return null;
   return item.state === 'deleted' ? 'restore_deleted' as const
@@ -310,6 +313,7 @@ export class HandoverImportOwner {
     if (this.state.pending || upload?.state !== 'ready' || !preview || preview.header.purpose !== 'backup'
       || preview.header.source.accountId !== this.state.userId || !preview.header.selection.childIds.includes(childId)
       || !preview.header.selection.modules.includes(module) || !originalBackupModuleSchema.safeParse(module).success || !this.state.originalModules.includes(module)
+      || module === 'attachments' && !hasOriginalChildAvatar(preview, childId)
       || more && (!previous?.nextCursor || previous.query.childId !== childId || previous.query.module !== module)) return;
     const t = this.begin('read'); if (!t) return;
     const query = {uploadId:upload.id,expectedUploadVersion:upload.version,childId,module,includeRestoreTarget:true as const};
@@ -318,7 +322,8 @@ export class HandoverImportOwner {
     try {
       const page = await this.api.compareOriginal(t.userId,{...query,...(more ? {cursor:previous!.nextCursor!} : {})},t.controller.signal);
       if (!this.current(t) || this.comparisonTicket !== t || this.state.upload?.id !== upload.id || this.state.upload.version !== upload.version) return;
-      if (page.childId !== childId || page.module !== module || page.uploadId !== upload.id || page.manifestSha256 !== preview.manifestSha256)
+      if (page.childId !== childId || page.module !== module || page.uploadId !== upload.id || page.manifestSha256 !== preview.manifestSha256
+        || module === 'attachments' && page.items.some(item => item.resourceSection !== 'child_avatar' || item.id !== childId || item.targetId !== childId))
         throw new HandoverApiError(0,'handover_response_invalid');
       this.update({comparison:{...comparison,loaded:true,nextCursor:page.nextCursor,items:more
         ? [...comparison.items,...page.items.filter(row => !comparison.items.some(item => originalComparisonItemKey(item) === originalComparisonItemKey(row)))] : page.items}});
@@ -645,10 +650,15 @@ export class HandoverImportOwner {
 }
 export function importErrorText(error: unknown) {
   const code = error instanceof HandoverApiError ? error.code : error instanceof Error ? error.message : '';
+  const nativeMaxBytes = error instanceof Error && 'maxBytes' in error && typeof error.maxBytes === 'number'
+    && Number.isSafeInteger(error.maxBytes) && error.maxBytes > 0 && error.maxBytes <= HANDOVER_UPLOAD_MAX_BYTES
+    ? error.maxBytes : 20 * 1024 * 1024;
   const messages: Record<string, string> = {
     package_original_unverified: '未能核實這是此帳戶及原孩子的本人備份，不能比較原有資料；仍可另選匯入副本。',
     invalid_package_file: '請選擇不超過 256 MiB 的 ZIP 資料包。', package_local_file_missing: '本機檔案已不在，請取消此上載後重新選取。',
-    package_native_size_exceeded: '手機目前可上載最多 20 MiB；較大的資料包請用 Web 匯入。', package_local_cache_full: '本機暫存檔案已滿，請稍後再試。',
+    package_native_size_exceeded: nativeMaxBytes <= 20 * 1024 * 1024 ? '手機目前可上載最多 20 MiB；較大的資料包請用 Web 匯入。'
+      : `手機目前可上載最多 ${nativeMaxBytes / 1024 / 1024} MiB，請選擇較小的資料包。`,
+    package_local_cache_full: '本機暫存檔案已滿，請稍後再試。',
     package_section_not_connected: '所選資料含尚未接通的類型，沒有繼續匯入；請查看批次結果。',
     import_class_student_conflict: '原有班員已變更，請重新核對接收班員。',
     read_only: '你目前只有檢視權限，無法寫入所選對象。', space_access_denied: '你目前沒有此空間的存取權限。',

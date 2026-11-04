@@ -77,6 +77,14 @@ test('prepared native package files stream only through the original authenticat
     }
     const picker = load('frontend/src/platform/package-import.native.ts');
     assert.equal(picker.PACKAGE_IMPORT_MAX_BYTES, modern ? 256 * 1024 * 1024 : 20 * 1024 * 1024);
+    const { importErrorText } = load('frontend/src/production/HandoverImportOwner.ts');
+    files.set(sourceUri, { size: picker.PACKAGE_IMPORT_MAX_BYTES + 1, name: 'opaque-id', displayName: 'Care backup.zip' });
+    await assert.rejects(picker.prepareImportPackage(new File(sourceUri), new AbortController().signal), error => {
+      assert.equal(error.message, 'package_native_size_exceeded');
+      assert.match(importErrorText(error), new RegExp(`${modern ? 256 : 20} MiB`));
+      return true;
+    });
+    assert.match(importErrorText(new Error('package_native_size_exceeded')), /20 MiB/, 'Old errors without capacity metadata retain the legacy bound');
     const large = 21 * 1024 * 1024;
     files.set(sourceUri, { size: large, name: 'opaque-id', displayName: 'Care backup.zip' });
     if (!modern) { await assert.rejects(picker.prepareImportPackage(new File(sourceUri), new AbortController().signal), /package_native_size_exceeded/); files.get(sourceUri).size = 7; }
