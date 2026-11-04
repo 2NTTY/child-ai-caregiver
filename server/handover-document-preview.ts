@@ -5,7 +5,7 @@ import type { FamilyDocumentTransfer } from './family-document-transfer.ts';
 import { datedDocumentContent, datedDocumentRequest } from './handover-document-period.ts';
 import { handoverPeriodMatch } from './handover-period.ts';
 import type { HandoverExportSource } from './handover-export.ts';
-import { domainParse } from './firestore-domain-data.ts';
+import { domainParse, domainReject } from './firestore-domain-data.ts';
 import { firestorePreparationSchema } from './firestore-care-summary.ts';
 import { summaryEndDay } from './care-summary-policy.ts';
 
@@ -67,9 +67,12 @@ export function previewOtherDocument(section: Exclude<HandoverPreviewQuery['sect
 }
 
 export async function previewHandoverDocuments(exporter: HandoverExportSource, owner: string, raw: unknown) {
-  const { period, ...query } = domainParse(handoverPreviewQuerySchema, raw);
+  const { period, source, opId, ...query } = domainParse(handoverPreviewQuerySchema, raw);
+  const reader = source && opId ? exporter.forClass?.({ opId, purpose: 'handover', source,
+    selection: { childIds: [query.childId], modules: ['documents'], period } }) : exporter;
+  if (!reader) domainReject('package_class_source_unavailable', 503);
   // Request dated photo metadata without granting the page reader access to attachment bytes.
-  const page = await exporter.page(owner, query, () => false, { documentPreviewPeriod: period });
+  const page = await reader.page(owner, query, () => false, { documentPreviewPeriod: period });
   const items = query.section === 'documents' ? page.items.map(item => handoverPreviewItemSchema.parse(item))
     : page.items.flatMap(row => previewOtherDocument(query.section as Exclude<typeof query.section, 'documents'>, query.childId, row, period) ?? []);
   return handoverPreviewPageSchema.parse({ scopeVersion: page.scopeVersion, nextCursor: page.nextCursor, items,
