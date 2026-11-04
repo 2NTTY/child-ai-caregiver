@@ -4,6 +4,73 @@ const path = require('node:path');
 const { test } = require('node:test');
 const ts = require('typescript');
 
+test('class concern targets require negotiated support and a writable granted class across retained selections and owner submission', async () => {
+  const { handoverClassDestination, handoverClassDestinations, handoverClassEnrolmentDestination } = await import('../src/production/handover-class-targets.ts');
+  const { HandoverImportOwner } = await import('../src/production/HandoverImportOwner.ts');
+  const { createHandoverApi } = await import('../../src/client/handover-api.ts');
+  const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`, at = '2026-11-05T00:00:00Z';
+  const grant = { childId: id(20), childName: 'Class child', version: 1, modules: ['care', 'concerns', 'growth'] };
+  const room = { id: id(10), kind: 'class', name: 'Synthetic class', role: 'caregiver', version: 1 };
+  const state = { identityKey: 'teacher:1:class', userId: 'teacher', online: true, selected: room, pending: null, busy: false,
+    rosterLoaded: true, shares: { items: [grant] } };
+  const teachers = { identityKey: 'teacher:1:teachers', userId: 'teacher', spaces: { items: [] }, selected: null };
+  let enabled, period = null, failCapability = false; const writes = [], headers = [];
+  const upload = () => ({ id: id(1), version: 2, filename: 'class-concerns.zip', state: 'ready', bytes: 3, error: null,
+    createdAt: at, expiresAt: '2026-11-06T00:00:00Z', preview: { integrity: 'trusted', manifestSha256: 'c'.repeat(64),
+      children: [{ id: id(2), displayName: 'Source child' }], coverage: [{ section: 'concerns', childId: id(2), items: 1 }],
+      header: { format: 'yuyoufang-data', version: 1, packageId: id(3), packageVersion: 1, createdAt: at, purpose: 'handover',
+        source: { serverId: 'synthetic.test', accountId: 'source' }, selection: { childIds: [id(2)], modules: ['concerns'], period } } } });
+  const api = createHandoverApi('https://synthetic.test', async (url, init) => {
+    if (url.endsWith('/capabilities')) {
+      headers.push(new Headers(init.headers));
+      return failCapability ? Response.json({ error: { code: 'unavailable' } }, { status: 503 })
+        : Response.json({ classEnrolment: true, ...(enabled ? { classConcernImports: true } : {}) });
+    }
+    if (url.includes('/package-uploads/')) return Response.json(upload());
+    const command = JSON.parse(init.body); writes.push(command);
+    return Response.json({ id: command.opId, version: 1, uploadId: id(1), packageId: id(3), packageVersion: 1,
+      manifestSha256: 'c'.repeat(64), integrity: 'trusted', targets: command.targets.map(row => ({ ...row,
+        target: 'createInClassId' in row.target ? { childId: id(90), spaceId: row.target.createInClassId } : row.target })),
+      state: 'queued', processedItems: 0, totalItems: 1, counts: { created: 0, updated: 0, skipped: 0, conflict: 0 }, error: null, createdAt: at, updatedAt: at });
+  });
+  const owner = new HandoverImportOwner(api); owner.syncContext('teacher', 'teacher:1', true);
+  await owner.readImportCapabilities();
+  assert.equal(headers[0].get('x-handover-class-features'), 'concerns');
+  assert.equal(headers[0].get('x-handover-original-modules'), '1');
+  assert.equal(owner.getSnapshot().classConcernImportsEnabled, false, 'Old servers cannot enable shared concern imports');
+  assert.equal(handoverClassDestination(state, grant, teachers, false).modules.includes('concerns'), false);
+  await owner.openUpload(id(1));
+  const oldTarget = { sourceChildId: id(2), target: { childId: id(20), spaceId: id(10) }, sections: ['concerns'] };
+  await owner.create([oldTarget], false); assert.equal(writes.length, 0);
+  enabled = true; await owner.readImportCapabilities();
+  const existing = handoverClassDestination(state, grant, teachers, owner.getSnapshot().classConcernImportsEnabled);
+  assert.deepEqual(existing.modules, ['care', 'concerns']);
+  assert.equal(handoverClassDestination(state, { ...grant, modules: ['care'] }, teachers, true).modules.includes('concerns'), false);
+  assert.equal(handoverClassDestination({ ...state, selected: { ...room, kind: 'family' } }, grant, teachers, true), null);
+  assert.equal(handoverClassDestination({ ...state, selected: { ...room, role: 'viewer' } }, grant, teachers, true), null);
+  const enrolment = handoverClassEnrolmentDestination(state, teachers, true, true);
+  assert.ok(enrolment.modules.includes('concerns'));
+  assert.equal(enrolment.modules.some(module => ['sources', 'chat', 'growth'].includes(module)), false);
+  assert.equal(handoverClassEnrolmentDestination(state, teachers, true, false).modules.includes('concerns'), false);
+  await owner.create([oldTarget], false); assert.equal(writes.length, 1);
+  assert.deepEqual(writes[0].targets, [oldTarget]);
+  period = { from: '2026-11-02T16:00:00.000Z', to: '2026-11-04T15:59:59.999Z' };
+  await owner.openUpload(id(1));
+  const newTarget = { sourceChildId: id(2), target: { createInClassId: id(10) }, sections: ['concerns'] };
+  await owner.create([newTarget], false); assert.equal(writes.length, 2);
+  assert.deepEqual(writes[1].targets, [newTarget]);
+  await owner.openUpload(id(1)); enabled = false; await owner.readImportCapabilities();
+  const retained = handoverClassDestinations({ ...state, shares: { items: [] } }, [existing], teachers, false);
+  assert.equal(retained.some(target => target.modules.includes('concerns')), false, 'Retained targets cannot retain a revoked feature');
+  assert.notEqual(handoverClassEnrolmentDestination(state, teachers, true, false).basis, enrolment.basis);
+  await owner.create([oldTarget], false); await owner.create([newTarget], false);
+  assert.equal(writes.length, 2, 'A stale owner activation cannot bypass absent capabilities for either target kind');
+  enabled = true; await owner.readImportCapabilities(); failCapability = true; await owner.readImportCapabilities();
+  assert.equal(owner.getSnapshot().classConcernImportsEnabled, false, 'Failed capability refreshes fail closed');
+  owner.syncContext('other-teacher', 'other-teacher:1', true);
+  assert.equal(owner.getSnapshot().classConcernImportsEnabled, false);
+});
+
 test('class import maps several sources through the paged roster and invalidates changed admission', async () => {
   const root = path.resolve(__dirname, '../..'), id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
   const jsx = (type, props, key) => ({ type, props, key }), noop = () => {};

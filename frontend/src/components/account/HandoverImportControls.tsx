@@ -91,21 +91,23 @@ export function HandoverImportControls() {
       let changed = false;
       const after = Object.fromEntries(Object.entries(before).map(([id, choice]) => {
         if (choice.classEnrolment) {
-          if (!preview || state.classEnrolmentEnabled !== true || choice.classEnrolment.scopeBasis !== classScope) {
+          if (!preview || state.classEnrolmentEnabled !== true || choice.classEnrolment.scopeBasis !== classScope
+            || choice.classEnrolment.modules.includes('concerns') !== (state.classConcernImportsEnabled === true)) {
             changed = true; return [id, { target: '', sections: choice.sections }];
           }
           return [id, choice];
         }
         if (!choice.classDestination) return [id, choice];
         const grant = classes.state.shares.items.find(row => row.childId === choice.classDestination!.childId);
-        if (choice.classDestination.scopeBasis !== classScope || grant && handoverClassDestination(classes.state, grant, teachers.state)?.basis !== choice.classDestination.basis) {
+        if (choice.classDestination.scopeBasis !== classScope || state.classConcernImportsEnabled !== true && choice.classDestination.modules.includes('concerns')
+          || grant && handoverClassDestination(classes.state, grant, teachers.state, state.classConcernImportsEnabled)?.basis !== choice.classDestination.basis) {
           changed = true; return [id, { target: '', sections: choice.sections }];
         }
         return [id, choice];
       }));
       return changed ? after : before;
     });
-  }, [classScope, classes.state.shares.items, state.classEnrolmentEnabled, preview?.manifestSha256]);
+  }, [classScope, classes.state.shares.items, state.classEnrolmentEnabled, state.classConcernImportsEnabled, preview?.manifestSha256]);
   useEffect(() => {
     if (!needsCapabilities || !online) { capabilityRead.current = null; return; }
     const key = JSON.stringify([identityKey, userId]);
@@ -150,9 +152,9 @@ export function HandoverImportControls() {
       childId: view.childId, spaceId: view.spaceId, modules });
   }
   const retainedStudents = Object.values(choices).flatMap(choice => choice.classDestination ? [choice.classDestination] : []);
-  destinations.push(...handoverClassDestinations(classes.state, retainedStudents, teachers.state).map(row => ({ ...row, classDestination: row })));
+  destinations.push(...handoverClassDestinations(classes.state, retainedStudents, teachers.state, state.classConcernImportsEnabled).map(row => ({ ...row, classDestination: row })));
   const plannedStudents = Object.values(choices).flatMap(choice => choice.classEnrolment ? [choice.classEnrolment] : []);
-  const enrolmentDestination = preview ? handoverClassEnrolmentDestination(classes.state, teachers.state, state.classEnrolmentEnabled) : null;
+  const enrolmentDestination = preview ? handoverClassEnrolmentDestination(classes.state, teachers.state, state.classEnrolmentEnabled, state.classConcernImportsEnabled) : null;
   if (enrolmentDestination) destinations.push({ ...enrolmentDestination, classEnrolment: enrolmentDestination });
   const classOptions = [...new Map([...classes.state.spaces.items, ...teachers.state.teacherClasses.items,
     ...(classes.state.selected ? [classes.state.selected] : [])].filter(room => room.kind === 'class' && room.role !== 'viewer').map(room => [room.id, room])).values()];
@@ -162,7 +164,8 @@ export function HandoverImportControls() {
   const personalMemory = new Set(preview?.coverage.filter(row => row.items > 0 && (row.section === 'instructions' || row.section === 'summary_history')).map(row => row.childId));
   function availableFor(sourceChildId: string, section: Section, destination: typeof destinations[number]) {
     return destination.modules.includes(section) && !(destination.spaceId !== null
-      && (section === 'sources' || section === 'chat' || section === 'concerns' || section === 'growth' || section === 'memory' && personalMemory.has(sourceChildId)));
+      && (section === 'sources' || section === 'chat' || section === 'concerns' && (state.classConcernImportsEnabled !== true || !destination.classDestination && !destination.classEnrolment)
+        || section === 'growth' || section === 'memory' && personalMemory.has(sourceChildId)));
   }
   const selected = Object.entries(choices), pageSize = 10, sourceCount = preview?.children.length ?? 0;
   const pageCount = Math.max(1, Math.ceil(sourceCount / pageSize)), currentPage = Math.min(page, pageCount - 1);
@@ -236,13 +239,15 @@ export function HandoverImportControls() {
     const latestState = controller.getSnapshot();
     if (latestState.identityKey !== identityKey || latestState.userId !== userId || latestState.upload?.id !== upload?.id
       || latestState.upload?.preview?.manifestSha256 !== preview?.manifestSha256) return;
+    if (latestState.classConcernImportsEnabled !== true && targets.some(row => row.sections.includes('concerns')
+      && ('createInClassId' in row.target || row.target.spaceId !== null))) return;
     if (retainedStudents.length) {
-      const liveStudents = handoverClassDestinations(classes.controller.getSnapshot(), retainedStudents, teachers.controller.getSnapshot());
+      const liveStudents = handoverClassDestinations(classes.controller.getSnapshot(), retainedStudents, teachers.controller.getSnapshot(), latestState.classConcernImportsEnabled);
       if (retainedStudents.some(student => !liveStudents.some(live => live.value === student.value && live.basis === student.basis))) return;
     }
     if (plannedStudents.length) {
       if (latestState.upload?.state !== 'ready') return;
-      const live = handoverClassEnrolmentDestination(classes.controller.getSnapshot(), teachers.controller.getSnapshot(), latestState.classEnrolmentEnabled);
+      const live = handoverClassEnrolmentDestination(classes.controller.getSnapshot(), teachers.controller.getSnapshot(), latestState.classEnrolmentEnabled, latestState.classConcernImportsEnabled);
       if (!live || plannedStudents.some(plan => live.basis !== plan.basis)) return;
     }
     await controller.create(targets, accepted);
@@ -430,7 +435,7 @@ export function HandoverImportControls() {
               </> : <Text style={styles.body}>此包未有目前帳戶可比較的原孩子或資料類別；仍可在下方選擇匯入副本。</Text>}
             </View> : null}
             <Text style={styles.title}>匯入獨立副本</Text>
-            <Text style={styles.body}>可匯入孩子資料、照護記錄、待辦、記憶、私人來源、文件與準備單、附件、私人聊天歷史、持續關注及成長整理。附件包含可讀的照片、錄音、檔案、孩子頭像及原有語音轉錄；其他已開放模組包含各自歷史。持續關注及成長整理目前只可匯入本人孩子。</Text>
+            <Text style={styles.body}>可匯入孩子資料、照護記錄、待辦、記憶、私人來源、文件與準備單、附件、私人聊天歷史、持續關注及成長整理。附件包含可讀的照片、錄音、檔案、孩子頭像及原有語音轉錄；其他已開放模組包含各自歷史。持續關注可匯入本人孩子，或目前服務已開放且具有關注寫入權的班員；成長整理目前只可匯入本人孩子。</Text>
             <Text style={styles.body}>請逐位指定接收對象，不會按名字自動配對。預設保留接收對象目前的修改及刪除。</Text>
             <Text style={styles.body}>可選目前開啟的家庭共享孩子，或在下方選班級和學生。</Text>
             <View style={styles.group}>
@@ -473,6 +478,8 @@ export function HandoverImportControls() {
                     onChange={value => chooseTarget(child.id, value)} />
                   {choice.target && !destination ? <Text style={styles.body}>原接收對象現不可用，請重新選擇。</Text> : null}
                   {destination?.classEnrolment ? <Text style={styles.body}>匯入時會建立班員。若這位來源學生之前已匯入此班，會沿用原班員。</Text> : null}
+                  {destination && (destination.classDestination || destination.classEnrolment) && available.includes('concerns') && availableFor(child.id, 'concerns', destination)
+                    ? <Text style={styles.body}>關注會保留來源來歷；舊執行工作不會跟進班級，亦不沿用原提醒授權。</Text> : null}
                   {destination?.spaceId && personalMemory.has(child.id) && available.includes('memory') ? <Text style={styles.body}>這位來源孩子的記憶含私人交代或摘要歷史，只可匯入本人孩子；共享對象仍可選其他已開放模組。</Text> : null}
                   {destination?.spaceId && available.includes('sources') ? <Text style={styles.body}>私人來源只可匯入本人孩子；共享對象仍可選其他已開放模組。</Text> : null}
                   {destination?.spaceId && available.includes('chat') ? <Text style={styles.body}>私人聊天歷史只可匯入本人孩子；共享對象仍可選其他已開放模組。</Text> : null}
