@@ -17,15 +17,17 @@ import { firestoreDocumentConcernEventSchema } from '../server/firestore-documen
 import { datedConcernPages } from '../server/handover-concern-period.ts';
 import { firestoreBackgroundWorkSchema } from '../server/firestore-background-work.ts';
 
-test('original concern capabilities require both the module negotiation and an exact feature token', async () => {
-  const modules = ['care', 'profile', 'tasks', 'sources', 'documents', 'attachments', 'concerns'];
+test('original backup capabilities require module negotiation and an exact token for each addition', async () => {
+  const legacy = ['care', 'profile', 'tasks', 'sources', 'documents', 'attachments'];
+  const modules = [...legacy, 'concerns', 'memory'];
   const service = { originalModules: modules } as unknown as Parameters<typeof handleHandoverImport>[2];
-  const legacy = modules.filter(module => module !== 'concerns');
   const cases: [Record<string, string>, string[] | undefined][] = [
     [{}, undefined],
     [{ 'x-handover-original-modules': '1' }, legacy],
     [{ 'x-handover-original-features': 'concerns' }, undefined],
-    [{ 'x-handover-original-modules': '1', 'x-handover-original-features': 'other, concerns' }, modules],
+    [{ 'x-handover-original-modules': '1', 'x-handover-original-features': 'other, concerns' }, [...legacy, 'concerns']],
+    [{ 'x-handover-original-modules': '1', 'x-handover-original-features': 'private-instructions' }, [...legacy, 'memory']],
+    [{ 'x-handover-original-modules': '1', 'x-handover-original-features': 'concerns,private-instructions' }, modules],
     [{ 'x-handover-original-modules': '1', 'x-handover-original-features': 'concerns-extra other-concerns' }, legacy],
   ];
   for (const [headers, expected] of cases) {
