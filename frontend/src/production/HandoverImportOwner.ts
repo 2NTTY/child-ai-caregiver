@@ -74,6 +74,7 @@ export interface HandoverImportState {
     items: OriginalBackupComparison['items']; selected: string[]; nextCursor: string | null; loaded: boolean; error: string | null } | null;
   panelRequested?: boolean;
   classEnrolmentEnabled: boolean;
+  classConcernImportsEnabled: boolean;
   enrolmentResults: ClassImportEnrolments | null;
   userId: string | null; identityKey: string | null; online: boolean; loaded: boolean;
   upload: HandoverUploadView | null; items: HandoverImportView[]; nextCursor: string | null;
@@ -85,7 +86,7 @@ export interface HandoverImportState {
   busy: 'pick' | 'read' | 'write' | 'check' | null; pending: Pending | null; notice: string | null;
 }
 const empty = (userId: string | null, identityKey: string | null, online: boolean): HandoverImportState => ({
-  userId, identityKey, online, loaded: false, upload: null, items: [], nextCursor: null, classEnrolmentEnabled: false, enrolmentResults: null,
+  userId, identityKey, online, loaded: false, upload: null, items: [], nextCursor: null, classEnrolmentEnabled: false, classConcernImportsEnabled: false, enrolmentResults: null,
   accountAvatarRestoreEnabled: false, accountAvatarComparison: null,
   originalModules: [...legacyOriginalModules],
   uploads: [], uploadsLoaded: false, uploadsCursor: null, cleanedUploads: null, results: null, sourceHistory: null, summary: null, comparison: null, busy: null, pending: null, notice: null });
@@ -138,7 +139,7 @@ export class HandoverImportOwner {
       this.syncContext(null, null, this.state.online); this.accessError(error); return;
     }
     this.update({ notice: importErrorText(error) });
-    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.clearComparison(); this.update({ upload: null, items: [], loaded: false, uploads: [], uploadsLoaded: false, uploadsCursor: null, cleanedUploads: null, results: null, sourceHistory: null, enrolmentResults: null, summary: null, pending: null }); this.accessError(error); }
+    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.clearComparison(); this.update({ upload: null, items: [], loaded: false, uploads: [], uploadsLoaded: false, uploadsCursor: null, cleanedUploads: null, results: null, sourceHistory: null, enrolmentResults: null, summary: null, pending: null, classConcernImportsEnabled: false }); this.accessError(error); }
   }
   private put(row: HandoverImportView) {
     const previous = this.state.items.find(item => item.id === row.id);
@@ -229,14 +230,14 @@ export class HandoverImportOwner {
         if (value.accountAvatarRestore !== true) this.clearAccountAvatarComparison();
         const originalModules = value.originalModules ?? [...legacyOriginalModules];
         if (this.state.comparison && !originalModules.includes(this.state.comparison.query.module)) this.clearComparison();
-        this.update({ classEnrolmentEnabled: value.classEnrolment, accountAvatarRestoreEnabled: value.accountAvatarRestore === true, originalModules });
+        this.update({ classEnrolmentEnabled: value.classEnrolment, classConcernImportsEnabled: value.classConcernImports === true, accountAvatarRestoreEnabled: value.accountAvatarRestore === true, originalModules });
       }
     } catch (error) {
       if (this.current(t)) {
         this.clearAccountAvatarComparison();
         const originalModules = this.state.originalModules.filter(module => legacyOriginalModules.includes(module));
         if (this.state.comparison && !originalModules.includes(this.state.comparison.query.module)) this.clearComparison();
-        this.update({ classEnrolmentEnabled: false, accountAvatarRestoreEnabled: false, originalModules });
+        this.update({ classEnrolmentEnabled: false, classConcernImportsEnabled: false, accountAvatarRestoreEnabled: false, originalModules });
         if (error instanceof HandoverApiError && ([401, 403].includes(error.status) || ['session_changed', 'identity_changed'].includes(error.code)))
           this.error(t, error);
       }
@@ -569,6 +570,10 @@ export class HandoverImportOwner {
   };
   create = async (targets: HandoverImportCommand['targets'], acceptUntrusted: boolean) => {
     const upload = this.state.upload; if (this.state.pending || this.state.busy || !upload?.preview || upload.state !== 'ready') return;
+    if (!this.state.classConcernImportsEnabled && targets.some(row => row.sections.includes('concerns')
+      && ('createInClassId' in row.target || row.target.spaceId !== null))) {
+      this.update({ notice: '此服務目前未開放向班級匯入持續關注，請重新讀取能力及接收對象。' }); return;
+    }
     if (targets.some(row => 'createInClassId' in row.target) && !this.state.classEnrolmentEnabled) {
       this.update({ notice: '此服務目前未開放匯入時新增班員。' }); return;
     }
