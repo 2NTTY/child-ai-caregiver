@@ -5,11 +5,14 @@ import { handoverExportCommandSchema, type HandoverExportCommand, type HandoverE
 
 type ExportSelection = HandoverExportCommand['selection'];
 type DocumentReview = NonNullable<HandoverExportCommand['documentReview']>;
+type ClassSource = HandoverClassExportCommand['source'];
 type ReviewSection = HandoverPreviewQuery['section'];
 export type ExportReviewGroup = { childId: string; section: ReviewSection; items: HandoverPreviewItem[];
   loaded: boolean; nextCursor: string | null; avatarVersion?: number };
 type ExportReview = { selection: ExportSelection; key: string; basis: string; scopeVersion: string | null;
-  groups: ExportReviewGroup[]; choices: DocumentReview['choices']; error: string | null };
+  groups: ExportReviewGroup[]; choices: DocumentReview['choices']; error: string | null; source?: ClassSource; opId?: string };
+const sameSource = (first?: ClassSource, second?: ClassSource) => first?.kind === second?.kind && first?.spaceId === second?.spaceId;
+const classScopeErrors = new Set(['forbidden', 'module_not_shared', 'space_access_denied', 'space_inactive', 'scope_changed', 'sharing_scope_changed', 'export_scope_changed']);
 export const handoverReviewSections = (selection: ExportSelection): ReviewSection[] => [
   ...(selection.modules.includes('documents') ? ['documents', 'visit_preparation'] as const : []),
   ...(selection.modules.includes('attachments') ? ['files', 'photos', 'voices', 'child_avatar'] as const : []),
@@ -101,20 +104,22 @@ export class HandoverOwner {
     try { const row = await this.api[reconcile ? 'reconcile' : 'get'](t.userId, id, t.controller.signal); if (this.current(t)) this.put(row); }
     catch (e) { this.error(t, e); } finally { this.finish(t); }
   };
-  setReviewSelection = (selection: ExportSelection | null, basis = '') => {
+  setReviewSelection = (selection: ExportSelection | null, basis = '', source?: ClassSource) => {
     const relevant = selection && handoverReviewSections(selection).length ? selection : null;
     const key = relevant ? handoverReviewSelectionKey(relevant) : null;
-    if (key === (this.state.review?.key ?? null) && (!relevant || this.state.review?.basis === basis)) return;
+    if (key === (this.state.review?.key ?? null) && (!relevant || this.state.review?.basis === basis && sameSource(this.state.review?.source, source))) return;
     this.reviewEpoch++; this.reviewRead?.abort(); this.reviewRead = null;
     this.update({ reviewBusy: false, review: relevant ? { selection: { childIds: [...relevant.childIds], modules: [...relevant.modules],
       period: relevant.period && { ...relevant.period } }, key: key!, basis, scopeVersion: null,
+      ...(source ? { source: { ...source }, opId: crypto.randomUUID() } : {}),
       groups: relevant.childIds.flatMap(childId => handoverReviewSections(relevant).map(section => ({ childId, section, items: [], loaded: false, nextCursor: null }))),
       choices: [], error: null } : null });
   };
   reviewReady = (selection: ExportSelection) => !handoverReviewSections(selection).length || !!(this.state.review
     && this.state.review.key === handoverReviewSelectionKey(selection) && this.state.review.scopeVersion && !this.state.reviewBusy
     && !this.state.review.error && this.state.review.groups.every(group => group.loaded && (group.section !== 'child_avatar' || group.avatarVersion !== undefined)));
-  reviewMatches = (selection: ExportSelection, basis: string) => this.state.review?.key === handoverReviewSelectionKey(selection) && this.state.review.basis === basis;
+  reviewMatches = (selection: ExportSelection, basis: string, source?: ClassSource) => this.state.review?.key === handoverReviewSelectionKey(selection)
+    && this.state.review.basis === basis && sameSource(this.state.review.source, source);
   documentReview = (selection: ExportSelection): DocumentReview | undefined => {
     const review = this.state.review;
     if (!handoverReviewSections(selection).length || !review || !this.reviewReady(selection)) return undefined;
@@ -143,8 +148,10 @@ export class HandoverOwner {
       const groups = childId && section ? review.groups.filter(group => group.childId === childId && group.section === section && group.nextCursor)
         : review.groups.filter(group => !group.loaded);
       for (const group of groups) {
+        if (!current()) return;
         const active = this.state.review!;
         const next = await this.api.preview(userId, { childId: group.childId, section: group.section, period: active.selection.period,
+          ...(active.source ? { source: active.source, opId: active.opId! } : {}),
           ...(active.scopeVersion ? { scopeVersion: active.scopeVersion } : {}), ...(group.nextCursor ? { cursor: group.nextCursor } : {}) }, controller.signal);
         if (!current()) return;
         if (active.scopeVersion && active.scopeVersion !== next.scopeVersion || next.nextCursor && next.nextCursor === group.nextCursor
@@ -157,11 +164,13 @@ export class HandoverOwner {
       }
     } catch (error) {
       if (!current()) return;
-      const stale = error instanceof HandoverApiError && ['export_scope_changed', 'package_review_changed', 'handover_response_invalid', 'forbidden', 'package_scope_unavailable'].includes(error.code);
+      const stale = error instanceof HandoverApiError && (['export_scope_changed', 'package_review_changed', 'handover_response_invalid', 'forbidden', 'package_scope_unavailable'].includes(error.code)
+        || !!review.source && classScopeErrors.has(error.code));
       const active = this.state.review!;
       this.update({ review: { ...active, error: handoverErrorText(error), ...(stale ? { scopeVersion: null, choices: [],
         groups: active.groups.map(group => ({ ...group, items: [], loaded: false, nextCursor: null, avatarVersion: undefined })) } : {}) } });
-      if (error instanceof HandoverApiError && (error.status === 401 || error.status === 403 || ['session_changed', 'identity_changed'].includes(error.code)))
+      if (error instanceof HandoverApiError && !(review.source && error.status === 403 && classScopeErrors.has(error.code))
+        && (error.status === 401 || error.status === 403 || ['session_changed', 'identity_changed'].includes(error.code)))
         this.error({ epoch: identity, userId, controller }, error);
     } finally { if (this.reviewRead === controller) { this.reviewRead = null; this.update({ reviewBusy: false }); } }
   };
@@ -179,15 +188,22 @@ export class HandoverOwner {
       }
     } finally { if (this.capabilityRead === controller) this.capabilityRead = null; }
   };
-  createClass = async (selection: HandoverClassExportCommand['selection'], spaceId: string) => {
+  createClass = async (selection: HandoverClassExportCommand['selection'], spaceId: string, basis?: string) => {
     if (this.state.pending || this.state.busy || !this.state.online || !this.state.userId
       || !selection.modules.every(module => this.state.classModules?.includes(module))) return;
-    const parsed = handoverClassExportCommandSchema.safeParse({ opId: crypto.randomUUID(), purpose: 'handover', source: { kind: 'class', spaceId }, selection });
+    const source: ClassSource = { kind: 'class', spaceId }, review = this.state.review;
+    const needsReview = handoverReviewSections(selection).length > 0;
+    if (needsReview && (!review || !sameSource(review.source, source) || !review.opId || !this.reviewReady(selection)
+      || basis !== undefined && review.basis !== basis)) return;
+    const documentReview = needsReview ? this.documentReview(selection) : undefined;
+    const parsed = handoverClassExportCommandSchema.safeParse({ opId: needsReview ? review!.opId : crypto.randomUUID(), purpose: 'handover', source, selection,
+      ...(documentReview ? { documentReview } : {}) });
     if (!parsed.success) { this.update({ notice: '請核對班級、學生及可讀取的資料。' }); return; }
     this.update({ pending: { kind: 'create', command: parsed.data, checked: true } }); await this.retryOriginal();
   };
   create = async (selection: ExportSelection, purpose: HandoverExportCommand['purpose'], documentReview?: DocumentReview) => {
     if (this.state.pending || this.state.busy || !this.state.online || !this.state.userId || !this.reviewReady(selection)) return;
+    if (handoverReviewSections(selection).length && this.state.review?.source) return;
     const expectedReview = this.documentReview(selection);
     if (expectedReview && JSON.stringify(documentReview) !== JSON.stringify(expectedReview)) return;
     const parsed = handoverExportCommandSchema.safeParse({ opId: crypto.randomUUID(), purpose, selection, ...(documentReview ? { documentReview } : {}) });
@@ -211,7 +227,8 @@ export class HandoverOwner {
     } catch (e) {
       if (this.current(t) && pending.kind === 'create' && 'source' in pending.command && e instanceof HandoverApiError
         && e.status >= 400 && e.status < 500
-        && ['forbidden', 'module_not_shared', 'space_access_denied', 'space_inactive', 'scope_changed', 'export_scope_changed'].includes(e.code)) {
+        && classScopeErrors.has(e.code)) {
+        this.setReviewSelection(null);
         this.update({ pending: null, notice: handoverErrorText(e) }); return;
       }
       if (this.current(t) && e instanceof HandoverApiError && (e.status === 413 || ['invalid_input', 'version_conflict', 'package_period_not_connected', 'package_scope_unavailable', 'export_scope_changed'].includes(e.code)
