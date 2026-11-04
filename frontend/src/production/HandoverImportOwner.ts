@@ -1,6 +1,6 @@
 import { HandoverApiError, originalComparisonItemKey, type HandoverApi, type ClassImportEnrolments, type HandoverSourceHistoryQuery, type HandoverSourceHistoryPage,
   type SelfAvatarComparison, type SelfAvatarComparisonQuery } from '../../../src/client/handover-api.ts';
-import { handoverImportCommandSchema, handoverImportModuleOf, originalBackupModuleSchema, type HandoverImportModule, type HandoverImportResourceSection, type HandoverImportCommand, type HandoverImportView,
+import { handoverImportCommandSchema, handoverImportModuleOf, originalBackupModuleSchema, originalMemorySectionSchema, type HandoverImportModule, type HandoverImportResourceSection, type HandoverImportCommand, type HandoverImportView,
   type HandoverImportResult, type HandoverImportResultQuery } from '../../../src/shared/handover-imports.ts';
 import type { HandoverImportSummary, OriginalBackupComparison, OriginalBackupComparisonQuery } from '../../../src/shared/handover-imports.ts';
 import { handoverUploadCommandSchema, HANDOVER_UPLOAD_MAX_BYTES, type HandoverUploadCommand, type HandoverUploadView, type HandoverUploadListItem } from '../../../src/shared/handover-uploads.ts';
@@ -16,7 +16,7 @@ export function originalRestoreResourceSection(module: HandoverImportModule,
   item?: Pick<OriginalBackupComparison['items'][number], 'resourceSection'>): HandoverImportResourceSection | null {
   if (module === 'documents') return item?.resourceSection === 'documents' || item?.resourceSection === 'visit_preparation' ? item.resourceSection : null;
   if (module === 'attachments') return item?.resourceSection === 'child_avatar' ? 'child_avatar' : null;
-  if (module === 'memory') return item?.resourceSection === 'instructions' ? 'instructions' : null;
+  if (module === 'memory') { const parsed = originalMemorySectionSchema.safeParse(item?.resourceSection); return parsed.success ? parsed.data : null; }
   if (module === 'sources') return 'private_sources';
   return module === 'care' || module === 'profile' || module === 'tasks' || module === 'concerns' ? module : null;
 }
@@ -24,7 +24,7 @@ export const hasOriginalChildAvatar = (preview: HandoverUploadView['preview'], c
   !!preview?.coverage.some(row => row.childId === childId && row.section === 'child_avatar' && row.items > 0);
 export function originalComparisonResolution(item: OriginalBackupComparison['items'][number]) {
   if (!item.targetId || item.localVersion === null) return null;
-  if (item.resourceSection === 'instructions' && item.localVersion < 1) return null;
+  if (originalMemorySectionSchema.safeParse(item.resourceSection).success && item.localVersion < 1) return null;
   return item.state === 'deleted' ? 'restore_deleted' as const
     : ['local_newer','different','backup_newer'].includes(item.state) ? 'replace_current' as const : null;
 }
@@ -70,6 +70,7 @@ export interface HandoverSourceHistoryState {
 }
 export interface HandoverImportState {
   originalModules: OriginalBackupComparisonQuery['module'][];
+  originalMemoryResourcesEnabled: boolean;
   accountAvatarRestoreEnabled: boolean;
   accountAvatarComparison: { query: SelfAvatarComparisonQuery; manifestSha256: string; value: SelfAvatarComparison | null; error: string | null } | null;
   summary: { batchId: string; status: 'loading' | 'ready' | 'unauthorized' | 'unavailable'; value: HandoverImportSummary | null } | null;
@@ -92,7 +93,7 @@ export interface HandoverImportState {
 const empty = (userId: string | null, identityKey: string | null, online: boolean): HandoverImportState => ({
   userId, identityKey, online, loaded: false, upload: null, items: [], nextCursor: null, classEnrolmentEnabled: false, classConcernImportsEnabled: false, classGrowthImportsEnabled: false, enrolmentResults: null,
   accountAvatarRestoreEnabled: false, accountAvatarComparison: null,
-  originalModules: [...legacyOriginalModules],
+  originalModules: [...legacyOriginalModules], originalMemoryResourcesEnabled: false,
   uploads: [], uploadsLoaded: false, uploadsCursor: null, cleanedUploads: null, results: null, sourceHistory: null, summary: null, comparison: null, busy: null, pending: null, notice: null });
 type Ticket = { epoch: number; userId: string; controller: AbortController };
 /** Device drafts only; uploaded packages, import authority and progress remain on the Server. */
@@ -233,15 +234,17 @@ export class HandoverImportOwner {
       if (this.current(t)) {
         if (value.accountAvatarRestore !== true) this.clearAccountAvatarComparison();
         const originalModules = value.originalModules ?? [...legacyOriginalModules];
-        if (this.state.comparison && !originalModules.includes(this.state.comparison.query.module)) this.clearComparison();
-        this.update({ classEnrolmentEnabled: value.classEnrolment, classConcernImportsEnabled: value.classConcernImports === true, classGrowthImportsEnabled: value.classGrowthImports === true, accountAvatarRestoreEnabled: value.accountAvatarRestore === true, originalModules });
+        const originalMemoryResourcesEnabled = value.originalMemoryResources === true;
+        if (this.state.comparison && (!originalModules.includes(this.state.comparison.query.module)
+          || this.state.comparison.query.module === 'memory' && !!this.state.comparison.query.includeMemoryResources !== originalMemoryResourcesEnabled)) this.clearComparison();
+        this.update({ classEnrolmentEnabled: value.classEnrolment, classConcernImportsEnabled: value.classConcernImports === true, classGrowthImportsEnabled: value.classGrowthImports === true, accountAvatarRestoreEnabled: value.accountAvatarRestore === true, originalModules, originalMemoryResourcesEnabled });
       }
     } catch (error) {
       if (this.current(t)) {
         this.clearAccountAvatarComparison();
         const originalModules = this.state.originalModules.filter(module => legacyOriginalModules.includes(module));
         if (this.state.comparison && !originalModules.includes(this.state.comparison.query.module)) this.clearComparison();
-        this.update({ classEnrolmentEnabled: false, classConcernImportsEnabled: false, classGrowthImportsEnabled: false, accountAvatarRestoreEnabled: false, originalModules });
+        this.update({ classEnrolmentEnabled: false, classConcernImportsEnabled: false, classGrowthImportsEnabled: false, accountAvatarRestoreEnabled: false, originalModules, originalMemoryResourcesEnabled: false });
         if (error instanceof HandoverApiError && ([401, 403].includes(error.status) || ['session_changed', 'identity_changed'].includes(error.code)))
           this.error(t, error);
       }
@@ -321,7 +324,8 @@ export class HandoverImportOwner {
       || module === 'attachments' && !hasOriginalChildAvatar(preview, childId)
       || more && (!previous?.nextCursor || previous.query.childId !== childId || previous.query.module !== module)) return;
     const t = this.begin('read'); if (!t) return;
-    const query = {uploadId:upload.id,expectedUploadVersion:upload.version,childId,module,includeRestoreTarget:true as const};
+    const query = {uploadId:upload.id,expectedUploadVersion:upload.version,childId,module,includeRestoreTarget:true as const,
+      ...(module === 'memory' && this.state.originalMemoryResourcesEnabled ? {includeMemoryResources:true as const} : {})};
     const comparison = {query,manifestSha256:preview.manifestSha256,items:more ? previous!.items : [],selected:more ? previous!.selected : [],nextCursor:null,loaded:false,error:null};
     this.comparisonTicket = t; this.update({comparison});
     try {
@@ -329,7 +333,8 @@ export class HandoverImportOwner {
       if (!this.current(t) || this.comparisonTicket !== t || this.state.upload?.id !== upload.id || this.state.upload.version !== upload.version) return;
       if (page.childId !== childId || page.module !== module || page.uploadId !== upload.id || page.manifestSha256 !== preview.manifestSha256
         || module === 'attachments' && page.items.some(item => item.resourceSection !== 'child_avatar' || item.id !== childId || item.targetId !== childId)
-        || module === 'memory' && page.items.some(item => item.resourceSection !== 'instructions'))
+        || module === 'memory' && page.items.some(item => !originalMemorySectionSchema.safeParse(item.resourceSection).success
+          || !query.includeMemoryResources && item.resourceSection !== 'instructions'))
         throw new HandoverApiError(0,'handover_response_invalid');
       this.update({comparison:{...comparison,loaded:true,nextCursor:page.nextCursor,items:more
         ? [...comparison.items,...page.items.filter(row => !comparison.items.some(item => originalComparisonItemKey(item) === originalComparisonItemKey(row)))] : page.items}});
@@ -360,7 +365,8 @@ export class HandoverImportOwner {
       || upload.state !== 'ready' || upload.id !== comparison.query.uploadId || upload.version !== comparison.query.expectedUploadVersion
       || upload.preview.manifestSha256 !== comparison.manifestSha256 || upload.preview.header.purpose !== 'backup'
       || upload.preview.header.source.accountId !== this.state.userId || comparison.query.includeRestoreTarget !== true
-      || !this.state.originalModules.includes(comparison.query.module)) return;
+      || !this.state.originalModules.includes(comparison.query.module)
+      || comparison.query.includeMemoryResources && !this.state.originalMemoryResourcesEnabled) return;
     const rows = comparison.selected.map(id => comparison.items.find(item => originalComparisonItemKey(item) === id));
     const {childId,module} = comparison.query;
     if (rows.some(item => !item || !originalComparisonResolution(item) || !originalRestoreResourceSection(module, item))) return;
@@ -368,7 +374,7 @@ export class HandoverImportOwner {
       acceptedManifestSha256:comparison.manifestSha256,restoreOriginal:true,resolutionOnly:true,
       targets:[{sourceChildId:childId,target:{childId,spaceId:null},sections:[module]}],
       resolutions:rows.map(item => ({sourceChildId:childId,section:originalRestoreResourceSection(module,item)!,resourceId:item!.id,
-        ...(item!.resourceSection === 'instructions' && item!.targetId !== item!.id ? { useRestoredTarget: true } : {}),
+        ...(originalMemorySectionSchema.safeParse(item!.resourceSection).success && item!.targetId !== item!.id ? { useRestoredTarget: true } : {}),
         resolution:{mode:originalComparisonResolution(item!)!,targetId:item!.targetId!,expectedVersion:item!.localVersion!}}))});
     if (!input.success) {this.update({notice:'所選還原項目或版本已不可用，請重新比較。'});return;}
     this.clearComparison();
