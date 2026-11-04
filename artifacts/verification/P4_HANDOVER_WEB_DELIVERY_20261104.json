@@ -1,0 +1,14 @@
+{
+  "releasedAt": "2026-11-04T22:17:45+08:00",
+  "applicationCommit": "292be609de60c161eb28ebc6a7222c6d3fe903f5",
+  "indexCommit": "3418ef3e992fa43ce0568bb7391077877268f0cc",
+  "site": "https://ex-machina.eu.org",
+  "tag": "p4-export-292be609",
+  "apiWorkerLinuxManifest": "sha256:e9fda01ac151350ac2708d3657650654081e287f5153f9b15bd3bd7e4452f920",
+  "webManifest": "sha256:725ddf91a1427117f2038e3da8bd952716f4fced0d7ceba35821cbc591ec4a3c",
+  "indexReadback": {"desiredComposites":165,"missing":0,"building":0,"addedComposites":25,"appliedExemptions":13,"explicitFieldIndexesReady":3,"pendingFieldSettings":0},
+  "preflight": {"latestNativeBackupSnapshot":"2026-11-04T00:20:35.937293Z","backupState":"READY","activeAgentLeases":0,"activeReminders":0,"activeBackground":0,"sending":0,"terminalBackgroundUnknownPreserved":1},
+  "publicReadback": {"health":200,"anonymousPackageCapabilities":401,"classesHtmlSha256":"d5e46554d7a3a788dca18dcc7060fe28a8dd18b820432ebb69d6542d1016902d","javascriptSha256":"47c5a1ae364fadfaf84c1cbc5ca4c3a30ba9d84eda7ef6047dee52f8fc38f714"},
+  "recovery": "Protected original Compose configuration and images retained. After starting the compatible API/worker, a UI rollback keeps those readers and workers. A backend failure requires maintenance and a compatible repair.",
+  "pending": ["Authenticated production export with a real user", "Android binary delivery", "Production handover signing", "Native backup restore"]
+}
