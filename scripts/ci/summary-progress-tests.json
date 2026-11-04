@@ -84,6 +84,22 @@
     "cases": 3
   },
   {
+    "path": "tests/agent-context-window.test.ts",
+    "cases": 6
+  },
+  {
+    "path": "tests/agent-context-topology.test.ts",
+    "cases": 3
+  },
+  {
+    "path": "tests/agent-prompt.test.ts",
+    "cases": 3
+  },
+  {
+    "path": "tests/agent-prompt-wiring.test.ts",
+    "cases": 4
+  },
+  {
     "path": "tests/summary-projection-delivery.test.ts",
     "cases": 11
   }

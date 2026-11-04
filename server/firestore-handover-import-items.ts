@@ -15,7 +15,10 @@ import { createFirestoreCareStore, firestoreCareSchema, firestoreProfileSchema }
 import { createFirestoreOnlineStore } from './firestore-online.ts';
 import { createFirestoreMemoryStore, firestoreFactSchema, firestoreTopicSchema, firestoreSummarySchema } from './firestore-memory.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
-import { createFirestoreConcernStore, firestoreConcernSchema } from './firestore-concerns.ts';
+import { createFirestoreConcernStore, concernTransferSchema } from './firestore-concerns.ts';
+import { createFirestoreGrowthStore, firestoreGrowthSchema, firestoreGrowthTopicSchema, growthImportSourceRow, growthTopicResourceId } from './firestore-growth.ts';
+import { growthTopicSchema } from '../src/shared/growth.ts';
+import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
 import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
 import { createFirestorePrivateInstructions, firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
 import { createFirestoreSharedInputStore, sharedInputImportSchema } from './firestore-shared-inputs.ts';
@@ -48,12 +51,13 @@ export type HandoverImportFence = (actor: Binding, target: Binding) => Promise<{
 }>;
 
 /** Internal coordinator: the package worker supplies verified rows and a fixed, authorized batch selection. */
-export function createFirestoreHandoverImportItems(options: FirestoreDomainOptions & { attachments?: HandoverAttachmentPorts }) {
+export function createFirestoreHandoverImportItems(options: FirestoreDomainOptions & { attachments?: HandoverAttachmentPorts; knowledge?: FirestoreKnowledgeStore }) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), sharing = createFirestoreSharingStore(options);
   const care = createFirestoreCareStore(options), online = createFirestoreOnlineStore(options);
   const chat = createFirestoreChatStore(options);
   const concerns = createFirestoreConcernStore(options);
   const memory = createFirestoreMemoryStore({ ...options, care, chat }), notes = createFirestorePrivateInstructions(data);
+  const growth = createFirestoreGrowthStore({ ...options, care, memory, online });
   const sources = createFirestoreSharedInputStore(options);
   const documents = createFirestoreFamilyDocumentStore(options), preparations = createFirestoreCareSummary(options, care);
   const attachments = createHandoverAttachments(options.attachments);
@@ -61,11 +65,13 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
   const schemas = { care: firestoreCareSchema, profile: firestoreProfileSchema, tasks: firestoreTaskSchema,
     memory_facts: firestoreFactSchema, memory_topics: firestoreTopicSchema, instructions: firestorePrivateInstructionSchema, summary_history: firestoreSummarySchema,
     private_sources: sharedInputImportSchema, documents: familyDocumentTransferSchema, visit_preparation: firestorePreparationSchema,
-    chat: chatImportSourceSchema, chat_imports: importedChatMessageSchema, concerns: firestoreConcernSchema, ...handoverAttachmentSchemas };
+    chat: chatImportSourceSchema, chat_imports: importedChatMessageSchema, concerns: concernTransferSchema,
+    growth_attention: firestoreGrowthSchema, growth_topics: firestoreGrowthTopicSchema, ...handoverAttachmentSchemas };
   const access = <T>(userId: string, target: Target, section: Section | HandoverImportModule, mode: 'read' | 'write', use: (b: Binding, actor: Binding) => Promise<T>) => {
-    const module = section === 'memory' || section === 'sources' || section === 'attachments' ? section : handoverImportModuleOf(section);
+    const module = section === 'memory' || section === 'sources' || section === 'attachments' || section === 'growth' ? section : handoverImportModuleOf(section);
     if (target.spaceId) {
       if (module === 'sources' || module === 'chat') domainReject('private_scope_unavailable', 403);
+      if (module === 'growth' && mode === 'write') domainReject('shared_domain_read_only', 403);
       return authority.runTransaction(userId, null, actor => sharing.inResourceTransaction(actor,
         { spaceId: target.spaceId!, childId: target.childId, module, mode }, value => use(value.binding, actor)));
     }
@@ -96,7 +102,15 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
     const preparationState = section === 'visit_preparation' ? await preparations.readImportState(b) : null;
     const attachmentState = isHandoverAttachment(section) && (mapping || section === 'child_avatar')
       ? await attachments.readState(b, section, mapping?.target.id ?? b.scope.childId) : null;
-    const current = mapping && section === 'concerns' ? await concerns.head(b, mapping.target.id)
+    const attention = mapping && section === 'growth_attention' ? await growth.readImportAttention(b, mapping.target.id) : null;
+    const topicId = section === 'growth_topics' ? growthTopicSchema.options.find(id => growthTopicResourceId(source.childId, id) === source.resourceId) : undefined;
+    if (section === 'growth_topics' && !topicId) domainReject('invalid_package_growth', 400);
+    const topic = topicId ? await growth.readImportTopic(b, topicId) : null;
+    const topicResourceId = topicId ? growthTopicResourceId(b.scope.childId, topicId) : null;
+    if (topicResourceId && mapping && mapping.target.id !== topicResourceId) domainReject('import_mapping_binding', 500);
+    const current = section === 'growth_attention' ? attention?.item ?? null
+      : section === 'growth_topics' ? topic ? { ...topic, id: topicResourceId!, childId: b.scope.childId } : null
+      : mapping && section === 'concerns' ? await concerns.head(b, mapping.target.id)
       : mapping && (section === 'chat' || section === 'chat_imports') ? await chat.readImportedMessage(b, b.scope.childId, mapping.target.id)
       : section === 'profile' ? await care.readProfile(b)
       : attachmentState ? attachmentState.value
@@ -112,7 +126,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
     const sameImportedBytes = (section === 'files' || section === 'voices') && attachmentState?.value
       && 'importSourceHash' in attachmentState.value && attachmentState.value.importSourceHash === mapping?.sourceHash;
     const locallyChanged = mapping ? currentVersion !== mapping.target.version && !sameImportedBytes : section === 'profile' && (current as ChildProfile).data !== null
-      || (section === 'visit_preparation' || section === 'child_avatar') && currentVersion > 0;
+      || (section === 'visit_preparation' || section === 'child_avatar' || section === 'growth_topics') && currentVersion > 0;
     return { mappingId, mappingRef, mapping, current, currentVersion, currentId, deleted, locallyChanged };
   }
   async function apply(userId: string, raw: HandoverImportItemCommand, fence?: HandoverImportFence, signal?: AbortSignal) {
@@ -121,7 +135,10 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
     const section = domainParse(sectionSchema, historySection ?? supplement?.section ?? raw.row.section);
     const opId = domainParse(z.uuid(), raw.opId), batchId = domainParse(z.uuid(), raw.batchId);
     const resolution = domainParse(handoverImportResolutionSchema, raw.resolution);
-    const sourceValue = historySection || supplement ? null : domainParse(schemas[section] as z.ZodType<{ version: number }>, raw.row.value, 'invalid_package_data');
+    const growthRow = !historySection && (section === 'growth_attention' || section === 'growth_topics') ? growthImportSourceRow(raw.row) : null;
+    const sourceValue = historySection || supplement ? null : growthRow
+      ? domainParse(z.object({ version: z.number().int().positive() }).passthrough(), growthRow.value, 'invalid_package_data')
+      : domainParse(schemas[section] as z.ZodType<{ version: number }>, raw.row.value, 'invalid_package_data');
     const content = isHandoverAttachment(section) && !supplement ? checkHandoverAttachment(raw.row, raw.attachmentContent) : null;
     const { attachmentContent: ignoredBytes, ...command } = raw;
     const contentIdentity = content ? (({ content: bytes, ...identity }) => identity)(content) : null;
@@ -140,8 +157,8 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       const provenance = history?.provenance ?? makeImportProvenance(section === 'chat' ? { ...raw.row, value: { ...raw.row.value, version: sourceValue!.version } } : supplement ? { ...raw.row, section,
         value: { childId: raw.row.childId, id: supplement.id, version: supplement.version,
           ...(section === 'child_avatar' ? { target: { kind: 'child',childId: raw.row.childId } } : {}),
-          ...(raw.row.value.importedFrom ? { importedFrom: raw.row.value.importedFrom } : {}) } } : raw.row, raw.integrity, b.actorUserId, new Date().toISOString());
-      if (supplement) provenance.current.sourceHash = firestoreDomainHash(raw.row.value);
+          ...(raw.row.value.importedFrom ? { importedFrom: raw.row.value.importedFrom } : {}) } } : growthRow ?? raw.row, raw.integrity, b.actorUserId, new Date().toISOString());
+      if (supplement || growthRow) provenance.current.sourceHash = firestoreDomainHash(raw.row.value);
       if (!history && section === 'documents') {
         if (raw.documentContent === undefined) domainReject('document_content_missing', 400);
         provenance.current.sourceHash = firestoreDomainHash({ value: raw.row.value, content: raw.documentContent });
@@ -181,7 +198,9 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       if (supplement) {
         if (!mapping) return finish('conflict', 'attachment_parent_not_imported');
         if (deleted) return finish('conflict', 'target_deleted');
-        if (supplement.version !== mapping.sourceVersion) return finish('conflict', 'attachment_parent_version_unavailable');
+        const earlierTranscript = raw.row.section === 'voice_transcripts' && supplement.version < mapping.sourceVersion;
+        // prepareTranscript also binds the digest, length, MIME type and duration to the current original.
+        if (supplement.version !== mapping.sourceVersion && !earlierTranscript) return finish('conflict', 'attachment_parent_version_unavailable');
         if (locallyChanged) return finish('conflict', 'target_changed');
         if (raw.row.section !== 'voice_transcripts') return finish('skipped', 'attachment_content_index', mapping.target);
         const prepared = await attachments.prepareTranscript(b,raw.row,mapping.target.id,provenance);
@@ -241,12 +260,29 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
         for (const event of eventRows) {
           const record = event.recordId ? await readState(b, 'care', { ...source, section: 'care', resourceId: event.recordId }) : null;
           const task = event.taskId ? await readState(b, 'tasks', { ...source, section: 'tasks', resourceId: event.taskId }) : null;
+          const attention = event.attentionId ? await readState(b, 'growth_attention', { ...source, section: 'growth_attention', resourceId: event.attentionId }) : null;
           mapped.set(event.id, { recordId: record?.current && !record.deleted ? record.currentId : null,
-            taskId: task?.current && !task.deleted ? task.currentId : null, attentionId: null });
+            taskId: task?.current && !task.deleted ? task.currentId : null,
+            attentionId: attention?.current && !attention.deleted ? attention.currentId : null });
         }
         const prepared = await concerns.prepareImportedSnapshot(b, opId, raw.row, raw.integrity, eventRows,
           current ? { id: currentId!, expectedVersion: currentVersion } : undefined, mapped);
         return finish(current ? 'updated' : 'created', null, { id: prepared.value.id, version: prepared.value.version }, prepared);
+      }
+      if (section === 'growth_attention') {
+        const original = firestoreGrowthSchema.parse(raw.row.value).item;
+        const task = original.taskId ? await readState(b, 'tasks', { ...source, section: 'tasks', resourceId: original.taskId }) : null;
+        const previous = original.previousId ? await readState(b, section, { ...source, resourceId: original.previousId }) : null;
+        const prepared = await growth.prepareImportedAttention(b, opId, raw.row, raw.integrity,
+          current ? { id: currentId!, expectedVersion: currentVersion } : undefined,
+          { ...(task?.current && !task.deleted ? { taskId: task.currentId!, taskVersion: task.currentVersion } : {}),
+            ...(previous?.current && !previous.deleted ? { previousId: previous.currentId! } : {}) });
+        return finish(current ? 'updated' : 'created', null, { id: prepared.value.item.id, version: prepared.value.item.version }, prepared);
+      }
+      if (section === 'growth_topics') {
+        const prepared = await growth.prepareImportedTopic(b, opId, raw.row, raw.integrity,
+          current ? { expectedVersion: currentVersion } : undefined);
+        return finish(current ? 'updated' : 'created', null, { id: prepared.resourceId, version: prepared.value.version }, prepared);
       }
       if (section === 'chat' || section === 'chat_imports') {
         const value = section === 'chat' ? chatImportSourceSchema.parse(raw.row.value) : importedChatMessageSchema.parse(raw.row.value);
@@ -368,7 +404,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
             if (currentResource && !stale) availableResolution = live.deleted ? 'restore_deleted' : live.locallyChanged ? 'replace_current' : null;
           }
           result.push({ id: value.opId, batchId: value.batchId, sourceChildId: selection.sourceChildId, module: selection.module,
-            ...(selection.module === 'memory' || selection.module === 'sources' || selection.module === 'documents' || selection.module === 'attachments' || selection.module === 'chat' ? { resourceSection } : {}),
+            ...(selection.module === 'memory' || selection.module === 'sources' || selection.module === 'documents' || selection.module === 'attachments' || selection.module === 'chat' || selection.module === 'growth' ? { resourceSection } : {}),
             sourceResourceId: value.source.source.resourceId, sourceVersion: value.source.source.resourceVersion, sourceSection: value.sourceSection ?? null,
             at: value.at, outcome: value.outcome, reason: value.reason, recordedResource: value.resource, currentResource, availableResolution });
         }

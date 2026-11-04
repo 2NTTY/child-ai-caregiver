@@ -9,8 +9,11 @@ import { voiceAttachmentSchema, voiceFileMetadataSchema } from '../src/shared/vo
 import { chatFileAttachmentSchema, chatFileMetadataSchema } from '../src/shared/chat-files.ts';
 import { avatarStateSchema, avatarTargetSchema, avatarAssetSchema } from '../src/shared/avatars.ts';
 import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
-import { firestoreConcernSchema } from './firestore-concerns.ts';
+import { concernTransferSchema } from './firestore-concerns.ts';
 import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
+import { datedParent, handoverPeriodMatch, supportsHandoverPeriod } from './handover-period.ts';
+import { readDatedConcernHead, validDatedConcernEvent } from './handover-concern-period.ts';
+import { attachmentSections, type AttachmentSection, DatedPackageMedia, isAttachmentHead, isAttachmentSupplement } from './handover-attachment-period.ts';
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/u), uuid = z.uuid();
 const selectionSchema = z.object({ childIds: handoverSelectionSchema.shape.childIds, modules: handoverSelectionSchema.shape.modules }).strict()
@@ -24,9 +27,7 @@ const pageSchema = z.object({ section: z.string().min(1).max(80), childId: uuid.
 type DataPage = z.infer<typeof pageSchema>;
 type PageIndex = { path: string; section: string; childId: string | null; items: number };
 const contentSections = new Set(['photo_content', 'voice_content', 'file_content', 'child_avatar_content']);
-const attachmentSections = { photos: ['photo_content', 'photoId'], voices: ['voice_content', 'voiceId'], files: ['file_content', 'fileId'],
-  child_avatar: ['child_avatar_content', 'childId'] } as const;
-export type AttachmentSection = keyof typeof attachmentSections;
+export type { AttachmentSection } from './handover-attachment-period.ts';
 export interface HandoverAttachmentContent {
   section: string; sourceId: string; sourceVersion: number; attachmentPath: string; mimeType: string; bytes: number; sha256: string; content: Buffer;
 }
@@ -61,7 +62,7 @@ function object(value: unknown): value is Record<string, unknown> { return value
 function assertScopedRow(section: string, childId: string, value: Record<string, unknown>) {
   // Domain-specific references can name other resources. Only the owning scope is constrained here.
   const scoped = [value, section === 'task_history' ? value.task : null,
-    section === 'growth_attention' ? value.item : null, section === 'document_content' ? value.snapshot : null];
+    section === 'growth_attention' || section === 'growth_history' ? value.item : null, section === 'document_content' ? value.snapshot : null];
   for (const row of scoped) if (object(row) && Object.hasOwn(row, 'childId') && row.childId !== childId) fail('invalid_package_scope');
   if (section === 'child_avatar' || section === 'child_avatar_content') {
     if (!object(value.target) || value.target.kind !== 'child' || value.target.childId !== childId) fail('invalid_package_scope');
@@ -83,6 +84,9 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
   const documentRows = new Set<string>(), documentContent = new Map<string, { path: string; rowIndex: number } | null>();
   const attachmentRows = new Set<string>(), attachmentContent = new Map<string, Map<string, { path: string; rowIndex: number } | null>>();
   const concernRows = new Set<string>(), concernEvents = new Map<string, { path: string; rowIndex: number } | null>();
+  const requiredDatedEvents = new Set<string>();
+  const datedParents = new Set<string>(), datedRevisionParents = new Set<string>();
+  const datedMedia = manifest.selection.period && manifest.selection.modules.includes('attachments') ? new DatedPackageMedia() : null;
   const concernEventIdentity = (childId: string, concernId: string, timelineId: unknown, sequence: number) =>
     JSON.stringify([childId, concernId, timelineId ?? null, sequence]);
   const attachmentIdentity = (childId: string, section: AttachmentSection, id: string) => JSON.stringify([childId, section, id]);
@@ -100,13 +104,13 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
     finally { bytes.fill(0); }
   }
   try {
-    if (manifest.selection.period) fail('package_period_not_connected');
+    if (!supportsHandoverPeriod(manifest.selection)) fail('package_period_not_connected');
     const required = new Set([key('children', null)]);
     for (const childId of childIds) for (const module of manifest.selection.modules)
       for (const section of HANDOVER_SECTIONS[module]) {
-        // Version-one exports predating imported history legitimately contain only the live chat section.
+        // Earlier version-one exports predate these separately exported history sections.
         // An undeclared data page still fails the required-scope check below.
-        if (section === 'chat_imports' && !expected.has(key(section, childId))) continue;
+        if (['chat_imports', 'growth_history', 'growth_topic_history'].includes(section) && !expected.has(key(section, childId))) continue;
         required.add(key(section, childId));
       }
     if (required.size !== expected.size || [...required].some(id => !expected.has(id))) fail('invalid_package_coverage');
@@ -124,7 +128,29 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
         if (page.section === 'children') {
           const child = parse(z.object({ id: uuid, displayName: z.string().min(1).max(160) }), row, 'invalid_package_data');
           if (!childIds.delete(child.id)) fail('invalid_package_scope'); children.push(child);
-        } else assertScopedRow(page.section, page.childId!, row);
+        } else {
+          assertScopedRow(page.section, page.childId!, row);
+          const period = manifest.selection.period;
+          if (period && page.section === 'concerns') {
+            const { head, sequences } = readDatedConcernHead(row, period);
+            for (const sequence of sequences) {
+              const id = concernEventIdentity(head.childId, head.id, head.timelineId, sequence);
+              if (requiredDatedEvents.has(id)) fail('invalid_package_period');
+              requiredDatedEvents.add(id);
+            }
+          } else if (period && page.section === 'concern_events') {
+            const event = parse(firestoreDocumentConcernEventSchema, row, 'invalid_package_concern_event');
+            if (!validDatedConcernEvent(event, period)) fail('invalid_package_period');
+          } else if (datedMedia && isAttachmentSupplement(page.section)) {
+            datedMedia.addSupplement(page.section, page.childId!, row);
+          } else if (period) {
+            if (handoverPeriodMatch(page.section, row, period) !== 'inside') fail('invalid_package_period');
+            if (datedMedia && isAttachmentHead(page.section)) datedMedia.addHead(page.section, page.childId!, row);
+            const parent = datedParent(page.section, row, page.childId!);
+            if (parent) (parent.revision ? datedRevisionParents : datedParents).add(key(parent.key, page.childId));
+          } else if (page.section === 'concerns' && Object.hasOwn(row, 'periodSource')
+            || page.section === 'concern_events' && Object.hasOwn(row, 'periodConcernId')) fail('invalid_package_period');
+        }
         // Index only identities and locators. Document business validation remains on demand.
         if (page.section === 'documents' || page.section === 'document_versions')
           documentRows.add(documentRowBinding(page.section, page.childId, entry.path, rowIndex, row));
@@ -160,6 +186,10 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
       pages.push({ path: entry.path, section: page.section, childId: page.childId, items: page.items.length });
     }
     if (childIds.size || [...expected].some(([id, coverage]) => !seen.has(id) || seen.get(id) !== coverage.items)) fail('invalid_package_coverage');
+    if (manifest.selection.period && (requiredDatedEvents.size !== concernEvents.size
+      || [...requiredDatedEvents].some(identity => !concernEvents.get(identity)))) fail('invalid_package_period');
+    if ([...datedRevisionParents].some(identity => !datedParents.has(identity))) fail('invalid_package_period');
+    datedMedia?.verify();
     if (manifest.entries.some(entry => entry.path.startsWith('attachments/') && !attachments.has(entry.path))) fail('invalid_package_attachment');
 
     function select(raw: HandoverImportSelection, acknowledged?: string, rawSections?: string[]) {
@@ -242,11 +272,12 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
         if (source.serverId !== manifest.source.serverId || source.accountId !== manifest.source.accountId
           || source.packageId !== manifest.packageId || source.packageVersion !== manifest.packageVersion || source.manifestSha256 !== manifestSha256
           || !concernRows.has(documentRowBinding(row.section, row.childId, source.path, source.rowIndex, row.value))) fail('invalid_package_scope');
-        const head = parse(firestoreConcernSchema, row.value, 'invalid_package_concern');
+        const head = parse(concernTransferSchema, row.value, 'invalid_package_concern');
         if (head.childId !== row.childId) fail('invalid_package_scope');
         const events: z.infer<typeof firestoreDocumentConcernEventSchema>[] = [];
         const cache: { path: string | null; page: DataPage | null } = { path: null, page: null };
-        for (let sequence = 1; sequence <= head.eventCount; sequence++) {
+        for (let index = 0; index < head.eventCount; index++) {
+          const sequence = head.periodSource?.sequences[index] ?? index + 1;
           const location = concernEvents.get(concernEventIdentity(row.childId, head.id, head.timelineId, sequence));
           if (location === undefined) fail('package_concern_event_missing');
           if (location === null) fail('package_concern_event_duplicate');

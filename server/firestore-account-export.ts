@@ -27,6 +27,8 @@ import { firestoreTelegramBindingSchema, firestoreTelegramDeliverySchema } from 
 import { firestoreContactRequestSchema, firestoreContactConsentSchema, firestoreContactGrantSchema } from './firestore-contact.ts';
 import { historyModule, sourceHistoryRecordSchema, sourceHistoryExport, sourceHistoryId, sourceHistoryMetadata } from './handover-history-records.ts';
 import { validateSourceHistory, sourceHistoryVisible } from './handover-source-history.ts';
+import type { PackageMediaFilter } from './handover-attachment-period.ts';
+import { firestoreGrowthSchema, firestoreGrowthTopicSchema } from './firestore-growth.ts';
 
 /** Product sections only. Auth credentials, model keys, protocol state and cost/admission ledgers are never exported. */
 const sections = {
@@ -56,6 +58,7 @@ const sections = {
   private_source_history: ['shared_input_management_revisions', ['shared-input-management']],
   concerns: ['concerns', ['concern']], concern_events: ['concern_events', ['concern-event']], concern_history: ['concern_revisions', ['concern-revision']],
   growth_attention: ['growth_attention', ['growth-attention']], growth_topics: ['growth_topics', ['growth-topic']],
+  growth_history: ['growth_revisions', ['growth-revision']], growth_topic_history: ['growth_topic_revisions', ['growth-topic-revision']],
   work_followups: ['work_events', ['work-event']],
   notification_preferences: ['notification_preferences', ['notification-preferences']],
   native_push_bindings: ['native_push_bindings', ['native-push-binding']], native_push_deliveries: ['native_push_deliveries', ['native-push-delivery']],
@@ -88,7 +91,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
     try { return cursorSchema.parse(JSON.parse(options.cipher.decrypt(Buffer.from(raw, 'base64url').toString(), aad(owner)))); }
     catch { return domainReject('invalid_export_cursor', 400); }
   }
-  async function page(owner: string, raw: unknown): Promise<AccountExportPage> {
+  async function page(owner: string, raw: unknown, packageMedia?: PackageMediaFilter): Promise<AccountExportPage> {
     const input = domainParse(querySchema, raw), section = input.section;
     if (!global.has(section) && !Object.hasOwn(sections, section) || global.has(section) === Boolean(input.childId)
       || input.cursor && !input.scopeVersion) domainReject('invalid_export_scope', 400);
@@ -189,6 +192,24 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             const item = z.object({ id: z.uuid().optional(), childId: z.uuid(), version: z.number().int().positive() }).passthrough().parse(value);
             const kind = section === 'care_history' ? 'care' : section === 'profile_history' ? 'profile' : section === 'memory_fact_history' ? 'fact' : 'topic';
             if (await contentVisible(data, binding, kind, kind === 'profile' ? item.childId : z.uuid().parse(item.id), item.version)) items.push(value);
+          } else if (section === 'growth_attention' || section === 'growth_history') {
+            const saved = firestoreGrowthSchema.parse(value), item = saved.item;
+            const expectedId = section === 'growth_history' ? JSON.stringify([item.id, item.version]) : item.id;
+            if (item.childId !== binding.scope.childId || expectedId !== context.id || item.version !== row.get('recordVersion')) domainReject('export_scope_changed');
+            const parent = await binding.transaction.get(data.ref('growth_attention', 'growth-attention', item.id));
+            if (!parent.exists) continue;
+            const current = data.open('growth-attention', item.id, binding.scope, firestoreGrowthSchema, parent).item;
+            if (current.id !== item.id || current.childId !== binding.scope.childId || current.version !== parent.get('recordVersion')) domainReject('export_scope_changed');
+            if (current.version >= item.version) items.push(saved);
+          } else if (section === 'growth_topics' || section === 'growth_topic_history') {
+            const saved = firestoreGrowthTopicSchema.parse(value), id = JSON.stringify([binding.scope.childId, saved.topicId]);
+            const expectedId = section === 'growth_topic_history' ? JSON.stringify([binding.scope.childId, saved.topicId, saved.version]) : id;
+            if (expectedId !== context.id || saved.version !== row.get('recordVersion')) domainReject('export_scope_changed');
+            const parent = await binding.transaction.get(data.ref('growth_topics', 'growth-topic', id));
+            if (!parent.exists) continue;
+            const current = data.open('growth-topic', id, binding.scope, firestoreGrowthTopicSchema, parent);
+            if (current.topicId !== saved.topicId || current.version !== parent.get('recordVersion')) domainReject('export_scope_changed');
+            if (current.version >= saved.version) items.push(saved);
           } else if (section === 'memory_facts' || section === 'memory_topics') {
             const current = section === 'memory_facts' ? await memory.readFact(binding, context.id) : await memory.readTopic(binding, context.id);
             if (current) items.push(current);
@@ -209,6 +230,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
           } else if (suffix === 'voice_transcripts') {
             const stored=firestoreVoiceTranscriptSchema.parse(value), source=await binding.transaction.get(data.ref('voice_assets','voice-asset',stored.value.voice.id));
             if (!source.exists||['deleting','deleted'].includes(source.get('state'))) continue;
+            if (packageMedia && !packageMedia('voices', stored.value.voice.id)) continue;
             if (!options.transcripts) domainReject('voice_export_unavailable',503);
             items.push(await options.transcripts.readIn(binding,stored.value.voice.id));
           } else if (suffix === 'photos') {
@@ -217,6 +239,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             if (section === 'photo_content') {
               if (photo.state === 'ready') photos.push({ id: photo.id, version: photo.version });
             } else items.push({ id: photo.id, childId: photo.scope.childId, metadata: photo.metadata, version: photo.version,
+              ...(packageMedia ? { createdAt: photo.createdAt } : {}),
               state: photo.state, visibility: photo.visibility ?? 'private', recordId: photo.recordId ?? null,
               extraction: photo.extraction ? { state: photo.extraction.state, draft: photo.extraction.draft, processedAt: photo.extraction.processedAt } : null,
               ...(photo.importedFrom ? { importedFrom: photo.importedFrom } : {}) });
@@ -253,23 +276,26 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
       return { section, items, nextCursor, complete: nextCursor === null, scopeVersion, notices: ['歷史版本供追溯；不代表仍適用的最新建議。'], photos, voices, files, avatar };
     });
     for (const photo of result.photos) {
+      if (packageMedia && !packageMedia('photos', photo.id)) continue;
       const content = await options.photos.content(owner, input.childId!, photo.id);
       result.items.push({ photoId: photo.id, version: photo.version, base64: content.base64, mimeType: content.mimeType });
     }
     for (const voice of result.voices) {
+      if (packageMedia && !packageMedia('voices', voice.id)) continue;
       if (!options.voices) domainReject('voice_export_unavailable',503);
       const content=await options.voices.content(owner,input.childId!,voice.id);
       if(content.attachment.version!==voice.version)domainReject('export_scope_changed');
       result.items.push({voiceId:voice.id,version:voice.version,base64:content.base64,mimeType:content.descriptor.mimeType});
     }
     for (const file of result.files) {
+      if (packageMedia && !packageMedia('files', file.id)) continue;
       if (!options.files) domainReject('chat_file_export_unavailable',503);
       const content=await options.files.content(owner,input.childId!,file.id);
       if(content.attachment.version!==file.version)domainReject('export_scope_changed');
       result.items.push({fileId:file.id,version:file.version,base64:content.base64,mimeType:content.descriptor.mimeType});
     }
     const avatar = result.avatar;
-    if (avatar?.descriptor && section.endsWith('_content')) {
+    if (avatar?.descriptor && section.endsWith('_content') && (!packageMedia || !!input.childId && packageMedia('child_avatar', input.childId))) {
       if (!options.avatars) domainReject('avatar_export_unavailable', 503);
       const descriptor = avatar.descriptor, content = await options.avatars.content(owner, avatar.binding.target, descriptor.asset.id, avatar.version);
       try { result.items.push({ target: avatar.binding.target, version: avatar.version, asset: descriptor.asset,

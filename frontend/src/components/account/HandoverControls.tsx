@@ -1,13 +1,16 @@
 import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import { AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
+import { DateTime } from 'luxon';
 import { useProduction } from '../../production/ProductionProvider';
 import { handoverErrorText } from '../../production/HandoverOwner';
 import { HandoverApiError } from '../../../../src/client/handover-api';
-import { HANDOVER_MODULES } from '../../../../src/shared/handover';
+import { HANDOVER_MODULES, supportsHandoverPeriodModules } from '../../../../src/shared/handover';
 import type { HandoverExportCommand, HandoverExportView } from '../../../../src/shared/handover-jobs';
 import { exportPackage, useFileExportAvailable } from '../../platform/file-export';
 import { AppCheckbox } from '../AppCheckbox';
+import { AppDateField } from '../DateTimeFields';
+import { hongKongTimeZone } from '../date-time';
 import { FormDialog } from '../FormDialog';
 import { AppButton } from '../ui';
 import { HandoverImportControls } from './HandoverImportControls';
@@ -27,11 +30,12 @@ export function HandoverControls() {
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   const [open, setOpen] = useState(false), [purpose, setPurpose] = useState<HandoverExportCommand['purpose']>('handover');
   const [children, setChildren] = useState<string[]>([]), [modules, setModules] = useState<(typeof HANDOVER_MODULES)[number][]>([]);
+  const [periodEnabled, setPeriodEnabled] = useState(false), [fromDay, setFromDay] = useState(''), [toDay, setToDay] = useState('');
   const canDownload = useFileExportAvailable();
   const current = !!identityKey && state.identityKey === identityKey && state.userId === userId && account.gate === 'ready';
   const locked = !current || !online || !!state.busy || account.deletion.phase !== 'idle';
   const selectable = recordsState.children.filter(child => child.accessRole === 'owner' || child.accessRole === undefined);
-  useLayoutEffect(() => { setOpen(false); setChildren([]); setModules([]); }, [identityKey]);
+  useLayoutEffect(() => { setOpen(false); setChildren([]); setModules([]); setPeriodEnabled(false); setFromDay(''); setToDay(''); }, [identityKey]);
   useEffect(() => { if (current && online) void controller.load(); }, [controller, identityKey, current, online]);
   const waitingId = current ? state.items.find(item => item.state === 'queued' || item.state === 'building')?.id : undefined;
   useEffect(() => {
@@ -46,12 +50,18 @@ export function HandoverControls() {
   const pending = state.pending;
   const chooseChild = (id: string, checked: boolean) => setChildren(before => checked ? [...before.filter(value => value !== id), id] : before.filter(value => value !== id));
   const chooseModule = (id: typeof HANDOVER_MODULES[number], checked: boolean) => setModules(before => checked ? [...before.filter(value => value !== id), id] : before.filter(value => value !== id));
+  const from = DateTime.fromISO(fromDay, { zone: hongKongTimeZone }), to = DateTime.fromISO(toDay, { zone: hongKongTimeZone });
+  const validFrom = /^\d{4}-\d{2}-\d{2}$/.test(fromDay) && from.isValid, validTo = /^\d{4}-\d{2}-\d{2}$/.test(toDay) && to.isValid;
+  const ordered = validFrom && validTo && from.toMillis() <= to.toMillis();
+  const periodSupported = supportsHandoverPeriodModules(modules);
+  const period = periodEnabled && ordered ? { from: from.startOf('day').toUTC().toISO()!, to: to.endOf('day').toUTC().toISO()! } : null;
+  const canCreate = !locked && !pending && !!children.length && !!modules.length && (!periodEnabled || periodSupported && ordered);
   return <View style={styles.group}>
     <Text style={styles.title}>交接與備份資料包</Text>
     <Text style={styles.body}>選擇孩子及資料，以 ZIP 保存結構化內容、附件與閱讀摘要。檔案保留 24 小時，可稍後回來下載。</Text>
-    <Text style={styles.body}>目前可匯出所選孩子的全部期間；班級匯出及整個帳戶備份仍待接通。</Text>
+    <Text style={styles.body}>預設匯出全部期間；照護記錄、待辦、私人聊天及持續關注可指定開始及結束日期。班級匯出及整個帳戶備份仍待接通。</Text>
     <AppButton label="選擇要匯出的資料" variant="secondary" disabled={locked || !!pending || !selectable.length}
-      onPress={() => { setChildren([]); setModules([]); setPurpose('handover'); setOpen(true); }} />
+      onPress={() => { setChildren([]); setModules([]); setPurpose('handover'); setPeriodEnabled(false); setFromDay(''); setToDay(''); setOpen(true); }} />
     {!selectable.length ? <Text style={styles.body}>未有可匯出的本人孩子資料。</Text> : null}
     {pending ? <View style={styles.group}>
       <Text style={styles.body}>{pending.checked ? '原狀態已查回，可繼續同一次請求。' : '提交結果尚未確認，請先查回原請求。'}</Text>
@@ -64,6 +74,7 @@ export function HandoverControls() {
     {state.items.map(row => <View key={row.id} style={styles.item}>
       <Text style={styles.title}>{row.purpose === 'backup' ? '本人備份' : '交接資料'} · {stateLabels[row.state]}</Text>
       <Text style={styles.body}>{dateText(row.createdAt)} · {row.selection.childIds.length} 位孩子 · {row.selection.modules.map(module => moduleLabels[module]).join('、')}</Text>
+      {row.selection.period ? <Text style={styles.body}>指定日期（香港時間）：{DateTime.fromISO(row.selection.period.from).setZone(hongKongTimeZone).toISODate()} 至 {DateTime.fromISO(row.selection.period.to).setZone(hongKongTimeZone).toISODate()}</Text> : null}
       {row.state === 'ready' ? <Text style={styles.body}>{row.bytes === null ? '' : `${(row.bytes / 1024 / 1024).toFixed(1)} MiB · `}至 {dateText(row.expiresAt)}</Text> : null}
       {row.error ? <Text style={styles.body}>{handoverErrorText(new HandoverApiError(409, row.error))}</Text> : null}
       <View style={styles.actions}>
@@ -86,8 +97,15 @@ export function HandoverControls() {
         {selectable.map(child => <AppCheckbox key={child.id} label={child.displayName} checked={children.includes(child.id)} disabled={locked} onChange={value => chooseChild(child.id, value)} />)}
         <Text style={styles.title}>資料內容</Text>
         {HANDOVER_MODULES.map(module => <AppCheckbox key={module} label={moduleLabels[module]} checked={modules.includes(module)} disabled={locked} onChange={value => chooseModule(module, value)} />)}
-        <AppButton label="建立資料包" loading={state.busy === 'write'} disabled={locked || !!pending || !children.length || !modules.length}
-          onPress={() => { void controller.create({ childIds: children, modules, period: null }, purpose); setOpen(false); }} />
+        <AppCheckbox label="指定開始及結束日期" checked={periodEnabled} disabled={locked} onChange={setPeriodEnabled} />
+        {periodEnabled ? <>
+          <Text style={styles.body}>按香港時間（Asia/Hong_Kong），包含開始日零時至結束日最後一刻。</Text>
+          <AppDateField label="開始日期" value={fromDay} disabled={locked} onChange={setFromDay} error={validFrom ? undefined : '請填寫有效的開始日期。'} />
+          <AppDateField label="結束日期" value={toDay} disabled={locked} onChange={setToDay} error={!validTo ? '請填寫有效的結束日期。' : validFrom && !ordered ? '結束日期不可早於開始日期。' : undefined} />
+          {!periodSupported ? <Text accessibilityLiveRegion="polite" style={styles.body}>所選模組未支援日期範圍；請只保留{HANDOVER_MODULES.filter(module => supportsHandoverPeriodModules([module])).map(module => moduleLabels[module]).join('、')}，或取消指定日期。</Text> : null}
+        </> : null}
+        <AppButton label="建立資料包" loading={state.busy === 'write'} disabled={!canCreate}
+          onPress={() => { if (!canCreate) return; void controller.create({ childIds: children, modules, period }, purpose); setOpen(false); }} />
       </View>
     </FormDialog>
   </View>;

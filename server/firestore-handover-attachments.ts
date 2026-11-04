@@ -16,6 +16,8 @@ import type { createFirestoreVoiceTranscripts } from './firestore-voice-transcri
 import { storedVoiceTranscriptSchema } from '../src/shared/voice-transcript.ts';
 import { voiceMessageReferenceSchema } from '../src/shared/voice.ts';
 import { z } from 'zod';
+import { attachmentSupplementModules } from './handover-attachment-period.ts';
+export { attachmentSupplementModules } from './handover-attachment-period.ts';
 
 export interface HandoverAttachmentPorts {
   files?: ReturnType<typeof createFirestoreChatFilesStore>;
@@ -24,8 +26,6 @@ export interface HandoverAttachmentPorts {
   avatars?: { store: ReturnType<typeof createFirestoreAvatarStore>; policy: AvatarPolicy };
   transcripts?: ReturnType<typeof createFirestoreVoiceTranscripts>;
 }
-export const attachmentSupplementModules = { file_content: 'files', voice_content: 'voices', photo_content: 'photos',
-  child_avatar_content: 'child_avatar', voice_transcripts: 'voices' } as const;
 export function attachmentSupplementModule(section: string): AttachmentSection | undefined {
   return Object.hasOwn(attachmentSupplementModules, section) ? attachmentSupplementModules[section as keyof typeof attachmentSupplementModules] : undefined;
 }

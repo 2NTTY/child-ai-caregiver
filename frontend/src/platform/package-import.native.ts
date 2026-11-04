@@ -11,19 +11,29 @@ export async function pickImportPackage(signal: AbortSignal): Promise<SelectedPa
   signal.throwIfAborted();
   const chosen = await File.pickFileAsync({ mimeTypes: '*/*', multipleFiles: false });
   signal.throwIfAborted(); if (chosen.canceled) return null;
-  if (chosen.result.size > PACKAGE_IMPORT_MAX_BYTES) throw new Error('package_native_size_exceeded');
-  return withNativePickedFile(chosen.result, PACKAGE_IMPORT_MAX_BYTES, async (source, _mime, filename) => {
+  return prepareImportPackage(chosen.result, signal);
+}
+/** Picker and explicit Android share choices use the same bounded, disposable package copy. */
+export async function prepareImportPackage(file: File, signal: AbortSignal): Promise<SelectedPackage> {
+  signal.throwIfAborted();
+  if (file.size > PACKAGE_IMPORT_MAX_BYTES) throw new Error('package_native_size_exceeded');
+  return withNativePickedFile(file, PACKAGE_IMPORT_MAX_BYTES, async (source, _mime, filename) => {
     if (!/\.zip$/iu.test(filename) || source.size < 1 || source.size > PACKAGE_IMPORT_MAX_BYTES) throw new Error('invalid_package_file');
     const folder = new Directory(Paths.cache, 'yuyoufang-package-imports'); folder.create({ intermediates: true, idempotent: true });
     for (const file of folder.list()) if (file instanceof File && (file.creationTime ?? file.lastModified ?? 0) < Date.now() - 86_400_000) file.delete();
     if (folder.list().length >= 4) throw new Error('package_local_cache_full');
     const owned = new File(folder, `${crypto.randomUUID()}.zip`);
+    let body: Awaited<ReturnType<File['bytes']>> | undefined;
     try {
       signal.throwIfAborted(); await source.copy(owned); signal.throwIfAborted();
-      const bytes = owned.size, sha256 = await packageHash(owned.readableStream(), bytes, signal);
+      const bytes = owned.size;
+      if (bytes < 1 || bytes > PACKAGE_IMPORT_MAX_BYTES) throw new Error('package_native_size_exceeded');
+      const sha256 = await packageHash(owned.readableStream(), bytes, signal);
       // A byte body preserves the API's application/zip header (Expo may override a Blob MIME).
-      const body = await owned.bytes(); signal.throwIfAborted();
-      return { filename, bytes, sha256, body, release() { body.fill(0); if (owned.exists) owned.delete(); } };
-    } catch (error) { if (owned.exists) owned.delete(); throw error; }
+      body = await owned.bytes(); signal.throwIfAborted();
+      if (body.length !== bytes) throw new Error('invalid_package_file');
+      const content = body;
+      return { filename, bytes, sha256, body: content, release() { content.fill(0); if (owned.exists) owned.delete(); } };
+    } catch (error) { body?.fill(0); if (owned.exists) owned.delete(); throw error; }
   });
 }

@@ -4,21 +4,25 @@ import { importProvenanceSchema } from './import-provenance.ts';
 const uuid = z.uuid(), hash = z.string().regex(/^[a-f0-9]{64}$/u);
 const count = z.number().int().nonnegative().max(2147483646);
 const resourceVersion = z.number().int().nonnegative().max(2147483647);
-export const handoverImportSectionSchema = z.enum(['care', 'profile', 'tasks', 'memory', 'sources', 'documents', 'attachments', 'chat', 'concerns']);
-export const handoverImportResourceSectionSchema = z.enum(['care', 'profile', 'tasks', 'memory_facts', 'memory_topics', 'instructions', 'summary_history', 'private_sources', 'documents', 'visit_preparation', 'files', 'voices', 'photos', 'child_avatar', 'chat', 'chat_imports', 'concerns']);
-export const handoverHistorySectionSchema = z.enum(['care_history', 'profile_history', 'task_history', 'memory_fact_history', 'memory_topic_history', 'private_source_history', 'document_versions', 'document_content', 'visit_preparation_history', 'file_content', 'voice_content', 'photo_content', 'child_avatar_content', 'voice_transcripts', 'concern_history', 'concern_events']);
+export const handoverImportSectionSchema = z.enum(['care', 'profile', 'tasks', 'memory', 'sources', 'documents', 'attachments', 'chat', 'concerns', 'growth']);
+export const handoverImportResourceSectionSchema = z.enum(['care', 'profile', 'tasks', 'memory_facts', 'memory_topics', 'instructions', 'summary_history', 'private_sources', 'documents', 'visit_preparation', 'files', 'voices', 'photos', 'child_avatar', 'chat', 'chat_imports', 'concerns', 'growth_attention', 'growth_topics']);
+export const handoverHistorySectionSchema = z.enum(['care_history', 'profile_history', 'task_history', 'memory_fact_history', 'memory_topic_history', 'private_source_history', 'document_versions', 'document_content', 'visit_preparation_history', 'file_content', 'voice_content', 'photo_content', 'child_avatar_content', 'voice_transcripts', 'concern_history', 'concern_events', 'growth_history', 'growth_topic_history']);
 export type HandoverImportModule = z.infer<typeof handoverImportSectionSchema>;
 export type HandoverImportResourceSection = z.infer<typeof handoverImportResourceSectionSchema>;
 export function handoverImportModuleOf(section: HandoverImportResourceSection): HandoverImportModule {
   return section === 'care' || section === 'profile' || section === 'tasks' || section === 'chat' || section === 'concerns' ? section : section === 'chat_imports' ? 'chat' : section === 'private_sources' ? 'sources'
+    : section === 'growth_attention' || section === 'growth_topics' ? 'growth'
     : section === 'documents' || section === 'visit_preparation' ? 'documents'
     : section === 'files' || section === 'voices' || section === 'photos' || section === 'child_avatar' ? 'attachments' : 'memory';
 }
 export const handoverImportTargetSchema = z.object({ sourceChildId: uuid,
   target: z.object({ childId: uuid, spaceId: uuid.nullable() }).strict(),
-  sections: z.array(handoverImportSectionSchema).min(1).max(9)
+  sections: z.array(handoverImportSectionSchema).min(1).max(10)
     .refine(value => new Set(value).size === value.length),
 }).strict();
+const requestedTargetSchema = handoverImportTargetSchema.extend({
+  target: z.union([handoverImportTargetSchema.shape.target, z.object({ createInClassId: uuid }).strict()]),
+});
 export const handoverImportResolutionSchema = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('preserve') }).strict(),
   z.object({ mode: z.literal('replace_current'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
@@ -27,13 +31,14 @@ export const handoverImportResolutionSchema = z.discriminatedUnion('mode', [
 export const handoverImportCommandSchema = z.object({ opId: uuid, uploadId: uuid,
   expectedUploadVersion: count.positive(), acceptedManifestSha256: hash.nullable(),
   resolutionOnly: z.boolean().optional(),
-  targets: z.array(handoverImportTargetSchema).min(1).max(100),
+  targets: z.array(requestedTargetSchema).min(1).max(100),
   resolutions: z.array(z.object({ sourceChildId: uuid, section: handoverImportResourceSectionSchema,
     resourceId: uuid, resolution: handoverImportResolutionSchema }).strict()).max(10000),
 }).strict().refine(value => new Set(value.targets.map(row => row.sourceChildId)).size === value.targets.length
   && new Set(value.resolutions.map(row => JSON.stringify([row.sourceChildId, row.section, row.resourceId]))).size === value.resolutions.length
   && value.resolutions.every(row => value.targets.some(target => target.sourceChildId === row.sourceChildId && target.sections.includes(handoverImportModuleOf(row.section))))
-  && (!value.resolutionOnly || value.resolutions.length > 0 && value.resolutions.every(row => row.resolution.mode !== 'preserve')));
+  && (!value.resolutionOnly || value.resolutions.length > 0 && value.resolutions.every(row => row.resolution.mode !== 'preserve')
+    && value.targets.every(row => !('createInClassId' in row.target))));
 export const handoverImportControlSchema = z.object({ opId: uuid, expectedVersion: count.positive() }).strict();
 export const handoverImportViewSchema = z.object({ id: uuid, version: count.positive(), uploadId: uuid,
   packageId: uuid, packageVersion: count.positive(), manifestSha256: hash,

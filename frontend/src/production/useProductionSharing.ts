@@ -21,7 +21,7 @@ function controllerFor(owner: ProductionOwner, mode: SharingMode) {
 }
 
 /** Identity-level management remains separate from the globally selected child. */
-export function useProductionSharing(mode: SharingMode = "family") {
+export function useProductionSharing(mode: SharingMode = "family", enabled = true) {
   const { owner, userId, identityKey, sessionGeneration, auth, account, online } = useProduction();
   const entry = useMemo(() => controllerFor(owner, mode), [owner, mode]), controller = entry.controller;
   useLayoutEffect(() => { entry.bind(); }, [entry]);
@@ -33,6 +33,6 @@ export function useProductionSharing(mode: SharingMode = "family") {
     members: { items: [], nextCursor: null }, shares: { items: [], nextCursor: null }, invitations: { items: [], nextCursor: null },
     pending: null, invitationToken: null, receipt: null, notice: null,
   };
-  useEffect(() => { if (state.userId && state.online && !state.loaded) void controller.loadSpaces(); }, [controller, state.identityKey, state.online]);
+  useEffect(() => { if (enabled && state.userId && state.online && !state.loaded) void controller.loadSpaces(); }, [controller, state.identityKey, state.online, enabled]);
   return { controller, state };
 }

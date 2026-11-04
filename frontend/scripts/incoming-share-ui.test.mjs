@@ -48,7 +48,7 @@ test('share screen shows local text and media types, personal children, and only
   const share={snapshot:{items:[{id:1,payload:{shareType:'text',value:'Local text'}},{id:2,payload:{shareType:'image',value:'content://private/secret'}}],busyId:null,error:null},
     inbox:{async take(id,value){takes.push([id,value]);return accept;},discard:id=>discards.push(id)}};
   mocks['../production/IncomingShareProvider']={useIncomingShare:()=>share};
-  mocks['../preview/PreviewNavigationGuard']={usePreviewLeaveGuard:(...args)=>guards.push(args)};
+  mocks['../preview/PreviewNavigationGuard']={usePreviewLeaveGuard:(...args)=>guards.push(args),usePreviewNavigation:()=>action=>action()};
   mocks['../production/ProductionProvider']={useProduction:()=>production};
   mocks['../production/incoming-share-target']={createProductionShareTarget:owner=>{assert.equal(owner,production.owner);return target;}};
   mocks['../components/PageFrame']={PageFrame:'PageFrame'};

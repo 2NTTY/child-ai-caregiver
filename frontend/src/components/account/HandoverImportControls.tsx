@@ -3,18 +3,25 @@ import { AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useProduction } from '../../production/ProductionProvider';
 import { importErrorText } from '../../production/HandoverImportOwner';
+import { useProductionSharing } from '../../production/useProductionSharing';
+import { handoverClassScope, handoverClassDestination, handoverClassDestinations, handoverClassEnrolmentDestination,
+  type HandoverClassDestination, type HandoverClassEnrolmentDestination } from '../../production/handover-class-targets';
 import { PACKAGE_IMPORT_MAX_BYTES, pickImportPackage } from '../../platform/package-import';
 import { HandoverApiError } from '../../../../src/client/handover-api';
 import type { HandoverImportCommand, HandoverImportView } from '../../../../src/shared/handover-imports';
 import { AppCheckbox } from '../AppCheckbox';
+import { dateTimeParts, hongKongTimeZone } from '../date-time';
 import { FormDialog } from '../FormDialog';
-import { AppButton, AppSelect } from '../ui';
+import { AppButton, AppSelect, AppTextField } from '../ui';
 import { HandoverImportResults } from './HandoverImportResults';
 import { chineseFont, colors, readingType, spacing } from '../../theme';
 
 type Section = HandoverImportCommand['targets'][number]['sections'][number];
-type Choice = { target: string; sections: Section[] };
-const sections: Section[] = ['care', 'profile', 'tasks', 'memory', 'sources', 'documents', 'attachments', 'chat', 'concerns'];
+type Choice = { target: string; sections: Section[]; classDestination?: HandoverClassDestination; classEnrolment?: HandoverClassEnrolmentDestination };
+type Destination = { value: string; label: string; spaceId: string | null; modules: Section[] } & (
+  { childId: string; classDestination?: HandoverClassDestination; classEnrolment?: undefined }
+  | { createInClassId: string; classEnrolment: HandoverClassEnrolmentDestination; classDestination?: undefined });
+const sections: Section[] = ['care', 'profile', 'tasks', 'memory', 'sources', 'documents', 'attachments', 'chat', 'concerns', 'growth'];
 const labels: Record<Section, string> & Record<string, string> = { care: '照護記錄', profile: '孩子資料', tasks: '待辦', memory: '記憶與摘要', sources: '私人來源', documents: '文件與準備單', attachments: '附件', chat: '私人聊天歷史', concerns: '持續關注', growth: '成長整理' };
 const states: Record<HandoverImportView['state'], string> = {
   queued: '已排隊', running: '正在匯入', completed: '已完成', cancelled: '已取消', failed: '未能完成', interrupted: '還原後已中斷',
@@ -22,6 +29,7 @@ const states: Record<HandoverImportView['state'], string> = {
 const integrityLabels = { trusted: '可信簽章已驗證', untrusted_signer: '簽章有效，但來源簽署者未受信任', missing_proof: '未有可信簽章證明' };
 const uploadStates = { reserved: '尚未上載完成', receiving: '接收或驗證中', ready: '可繼續匯入',
   failed: '上載失敗，待清理', cancelled: '已取消，待清理', expired: '已到期，待清理' };
+const enrolmentStates = { pending: '待處理，尚未建立學生', created: '已建立班級學生', skipped: '沿用已核對的班級學生', failed: '未能入班' };
 const dateText = (value: string) => new Date(value).toLocaleString('zh-HK', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 const foreground = () => Platform.OS === 'web'
   ? typeof document !== 'undefined' && document.visibilityState === 'visible' : AppState.currentState === 'active';
@@ -34,13 +42,49 @@ export function HandoverImportControls() {
   const shared = useSyncExternalStore(owner.sharedChild.subscribe, owner.sharedChild.getSnapshot, owner.sharedChild.getSnapshot);
   const [open, setOpen] = useState(false), [page, setPage] = useState(0);
   const [choices, setChoices] = useState<Record<string, Choice>>({}), [accepted, setAccepted] = useState(false);
+  const [rosterQuery, setRosterQuery] = useState('');
   const trigger = useRef<View>(null);
+  const capabilityRead = useRef<string | null>(null);
   const current = !!identityKey && state.identityKey === identityKey && state.userId === userId && account.gate === 'ready';
+  const classes = useProductionSharing('class', open && current), teachers = useProductionSharing('teachers', open && current);
+  const classScope = handoverClassScope(classes.state, teachers.state);
   const locked = !current || !online || !!state.busy || !!account.busy || account.deletion.phase !== 'idle';
   const writeLocked = locked || !!state.pending;
   const upload = current ? state.upload : null, preview = upload?.state === 'ready' ? upload.preview : null;
+  const needsCapabilities = current && (!!(open && preview) || state.items.some(batch => batch.targets.some(target => target.target.spaceId !== null)));
   useLayoutEffect(() => { setOpen(false); setChoices({}); setPage(0); setAccepted(false); }, [identityKey]);
   useLayoutEffect(() => { setChoices({}); setPage(0); setAccepted(false); }, [upload?.id, preview?.manifestSha256]);
+  useLayoutEffect(() => { setRosterQuery(classes.state.rosterQuery); }, [classes.state.selected?.id]);
+  useLayoutEffect(() => {
+    setChoices(before => {
+      let changed = false;
+      const after = Object.fromEntries(Object.entries(before).map(([id, choice]) => {
+        if (choice.classEnrolment) {
+          if (!preview || state.classEnrolmentEnabled !== true || choice.classEnrolment.scopeBasis !== classScope) {
+            changed = true; return [id, { target: '', sections: choice.sections }];
+          }
+          return [id, choice];
+        }
+        if (!choice.classDestination) return [id, choice];
+        const grant = classes.state.shares.items.find(row => row.childId === choice.classDestination!.childId);
+        if (choice.classDestination.scopeBasis !== classScope || grant && handoverClassDestination(classes.state, grant, teachers.state)?.basis !== choice.classDestination.basis) {
+          changed = true; return [id, { target: '', sections: choice.sections }];
+        }
+        return [id, choice];
+      }));
+      return changed ? after : before;
+    });
+  }, [classScope, classes.state.shares.items, state.classEnrolmentEnabled, preview?.manifestSha256]);
+  useEffect(() => {
+    if (!needsCapabilities || !online) { capabilityRead.current = null; return; }
+    const key = JSON.stringify([identityKey, userId]);
+    if (capabilityRead.current === key) return;
+    capabilityRead.current = key;
+    void controller.readImportCapabilities();
+  }, [controller, needsCapabilities, online, identityKey, userId]);
+  useEffect(() => {
+    if (current && state.panelRequested) { setOpen(true); controller.panelOpened(); }
+  }, [controller, current, state.panelRequested]);
   useEffect(() => {
     if (!current || !online) return;
     void (async () => { await controller.load();
@@ -65,20 +109,29 @@ export function HandoverImportControls() {
   }, [controller, waiting, current, identityKey, userId, online, account.deletion.phase]);
   if (!current) return null;
 
-  const destinations = recordsState.children.filter(child => child.accessRole === 'owner' || child.accessRole === undefined)
+  const destinations: Destination[] = recordsState.children.filter(child => child.accessRole === 'owner' || child.accessRole === undefined)
     .map(child => ({ value: `private:${child.id}`, label: `${child.displayName}（本人孩子）`, childId: child.id, spaceId: null as string | null, modules: sections }));
   const view = shared.view;
   if (shared.identityKey === identityKey && shared.userId === userId && shared.phase === 'ready' && view && view.role !== 'viewer'
     && shared.target?.spaceId === view.spaceId && shared.target.childId === view.childId) {
-    const modules = sections.filter(section => section !== 'sources' && section !== 'chat' && section !== 'concerns' && view.modules.some(module => module === section));
+    const modules = sections.filter(section => section !== 'sources' && section !== 'chat' && section !== 'concerns' && section !== 'growth' && view.modules.some(module => module === section));
     if (modules.length) destinations.push({ value: `shared:${view.spaceId}:${view.childId}`, label: `${view.childName}（${view.spaceName}）`,
       childId: view.childId, spaceId: view.spaceId, modules });
   }
+  const retainedStudents = Object.values(choices).flatMap(choice => choice.classDestination ? [choice.classDestination] : []);
+  destinations.push(...handoverClassDestinations(classes.state, retainedStudents, teachers.state).map(row => ({ ...row, classDestination: row })));
+  const plannedStudents = Object.values(choices).flatMap(choice => choice.classEnrolment ? [choice.classEnrolment] : []);
+  const enrolmentDestination = preview ? handoverClassEnrolmentDestination(classes.state, teachers.state, state.classEnrolmentEnabled) : null;
+  if (enrolmentDestination) destinations.push({ ...enrolmentDestination, classEnrolment: enrolmentDestination });
+  const classOptions = [...new Map([...classes.state.spaces.items, ...teachers.state.teacherClasses.items,
+    ...(classes.state.selected ? [classes.state.selected] : [])].filter(room => room.kind === 'class' && room.role !== 'viewer').map(room => [room.id, room])).values()];
+  const classLocked = writeLocked || !!classes.state.busy || !!classes.state.pending || !classes.state.identityKey;
+  const teachersLocked = writeLocked || !!teachers.state.busy || !!teachers.state.pending || !teachers.state.identityKey;
   const available = sections.filter(section => preview?.header.selection.modules.includes(section));
   const personalMemory = new Set(preview?.coverage.filter(row => row.items > 0 && (row.section === 'instructions' || row.section === 'summary_history')).map(row => row.childId));
   function availableFor(sourceChildId: string, section: Section, destination: typeof destinations[number]) {
     return destination.modules.includes(section) && !(destination.spaceId !== null
-      && (section === 'sources' || section === 'chat' || section === 'concerns' || section === 'memory' && personalMemory.has(sourceChildId)));
+      && (section === 'sources' || section === 'chat' || section === 'concerns' || section === 'growth' || section === 'memory' && personalMemory.has(sourceChildId)));
   }
   const selected = Object.entries(choices), pageSize = 10, sourceCount = preview?.children.length ?? 0;
   const pageCount = Math.max(1, Math.ceil(sourceCount / pageSize)), currentPage = Math.min(page, pageCount - 1);
@@ -86,8 +139,10 @@ export function HandoverImportControls() {
   const targets: HandoverImportCommand['targets'] = [];
   for (const [sourceChildId, choice] of selected) {
     const destination = destinations.find(item => item.value === choice.target);
-    if (destination && choice.sections.length && choice.sections.every(section => available.includes(section) && availableFor(sourceChildId, section, destination)))
-      targets.push({ sourceChildId, target: { childId: destination.childId, spaceId: destination.spaceId }, sections: choice.sections });
+    if (destination && choice.classDestination?.basis === destination.classDestination?.basis && choice.classEnrolment?.basis === destination.classEnrolment?.basis
+      && choice.sections.length && choice.sections.every(section => available.includes(section) && availableFor(sourceChildId, section, destination)))
+      targets.push({ sourceChildId, target: 'createInClassId' in destination ? { createInClassId: destination.createInClassId }
+        : { childId: destination.childId, spaceId: destination.spaceId }, sections: choice.sections });
   }
   const canCreate = !!preview && selected.length > 0 && selected.length <= 100 && targets.length === selected.length
     && (preview.integrity === 'trusted' || accepted);
@@ -99,7 +154,19 @@ export function HandoverImportControls() {
   }
   function chooseTarget(id: string, target: string) {
     const destination = destinations.find(item => item.value === target);
-    setChoices(before => before[id] ? { ...before, [id]: { target, sections: before[id].sections.filter(section => destination && availableFor(id, section, destination)) } } : before);
+    setChoices(before => before[id] ? { ...before, [id]: { target, sections: before[id].sections.filter(section => destination && availableFor(id, section, destination)),
+      ...(destination?.classDestination ? { classDestination: destination.classDestination } : {}),
+      ...(destination?.classEnrolment ? { classEnrolment: destination.classEnrolment } : {}) } } : before);
+  }
+  function clearClassTargets() {
+    setChoices(before => Object.fromEntries(Object.entries(before).map(([id, choice]) => [id, choice.classDestination || choice.classEnrolment ? { target: '', sections: choice.sections } : choice])));
+  }
+  function chooseClass(id: string) {
+    clearClassTargets(); if (id) void classes.controller.selectSpace(id); else classes.controller.clearSelection();
+  }
+  function chooseTeacherSpace(id: string) {
+    clearClassTargets(); classes.controller.clearSelection();
+    if (id) void teachers.controller.selectSpace(id); else teachers.controller.clearSelection();
   }
   function chooseSection(id: string, section: Section, checked: boolean) {
     setChoices(before => before[id] ? { ...before, [id]: { ...before[id], sections: checked
@@ -112,6 +179,19 @@ export function HandoverImportControls() {
     {pending.checked ? <AppButton label="繼續原匯入請求" variant="secondary" disabled={locked} onPress={() => { void controller.retryOriginal(); }} /> : null}
   </View> : null;
   async function create() {
+    if (writeLocked || !canCreate) return;
+    const latestState = controller.getSnapshot();
+    if (latestState.identityKey !== identityKey || latestState.userId !== userId || latestState.upload?.id !== upload?.id
+      || latestState.upload?.preview?.manifestSha256 !== preview?.manifestSha256) return;
+    if (retainedStudents.length) {
+      const liveStudents = handoverClassDestinations(classes.controller.getSnapshot(), retainedStudents, teachers.controller.getSnapshot());
+      if (retainedStudents.some(student => !liveStudents.some(live => live.value === student.value && live.basis === student.basis))) return;
+    }
+    if (plannedStudents.length) {
+      if (latestState.upload?.state !== 'ready') return;
+      const live = handoverClassEnrolmentDestination(classes.controller.getSnapshot(), teachers.controller.getSnapshot(), latestState.classEnrolmentEnabled);
+      if (!live || plannedStudents.some(plan => live.basis !== plan.basis)) return;
+    }
     await controller.create(targets, accepted);
     const latest = controller.getSnapshot();
     if (latest.identityKey === identityKey && latest.userId === userId && !latest.upload && !latest.pending) setOpen(false);
@@ -151,9 +231,21 @@ export function HandoverImportControls() {
         <AppButton label="查看逐項結果" variant="quiet" disabled={writeLocked || !row.targets[0]?.sections[0]} onPress={() => {
           const first = row.targets[0]; if (first?.sections[0]) { controller.selectResults(row.id, first.sourceChildId, first.sections[0]); void controller.readResults(); }
         }} />
+        {state.classEnrolmentEnabled === true && row.targets.some(target => target.target.spaceId !== null) ? <AppButton label="讀取逐名入班結果" variant="quiet" disabled={writeLocked}
+          onPress={() => { void controller.readEnrolments(row.id); }} /> : null}
         {row.state === 'queued' || row.state === 'running' ? <AppButton label="取消匯入" variant="quiet" disabled={writeLocked} onPress={() => { void controller.control(row.id, 'cancel'); }} /> : null}
         {row.state === 'cancelled' || row.state === 'failed' ? <AppButton label="接續此批次" variant="secondary" disabled={writeLocked} onPress={() => { void controller.control(row.id, 'resume'); }} /> : null}
       </View>
+      {state.enrolmentResults?.batchId === row.id ? <View style={styles.group}>
+        <Text style={styles.title}>逐名入班結果</Text>
+        {!state.enrolmentResults.items.length ? <Text style={styles.body}>此批次沒有新增入班要求。</Text> : null}
+        {state.enrolmentResults.items.map(item => <View key={item.sourceChildId} style={styles.item}>
+          <Text selectable style={styles.body}>來源孩子：{item.sourceChildId}</Text>
+          <Text style={styles.body}>入班狀態：{enrolmentStates[item.outcome]}</Text>
+          <Text selectable style={styles.body}>目標班級：{item.target.spaceId} · 接收識別：{item.target.childId}</Text>
+          {item.error ? <Text style={styles.body}>{importErrorText(new HandoverApiError(409, item.error))}</Text> : null}
+        </View>)}
+      </View> : null}
       {state.results?.batchId === row.id ? <HandoverImportResults controller={controller} batch={row} results={state.results}
         history={state.sourceHistory} identityKey={identityKey!} locked={writeLocked} /> : null}
     </View>)}
@@ -172,25 +264,55 @@ export function HandoverImportControls() {
             ? pending ? '已預留上載，尚未完成驗證。' : '原上載尚未完成，本機原檔不在。請取消後重新選取資料包。'
             : upload.state === 'cancelled' || upload.state === 'expired' ? '上載已停止，Server 會按原工作清理；毋須再次取消。' : '此上載目前不可匯入，請取消後重新選取。'}</Text> : <>
             <Text style={styles.body}>{integrityLabels[preview.integrity]}。來源：{preview.header.source.serverId}</Text>
+            {preview.header.selection.period ? <Text style={styles.body}>來源指定日期（香港時間）：{dateTimeParts(preview.header.selection.period.from, hongKongTimeZone)?.date ?? preview.header.selection.period.from} 至 {dateTimeParts(preview.header.selection.period.to, hongKongTimeZone)?.date ?? preview.header.selection.period.to}</Text> : null}
             {preview.integrity !== 'trusted' ? <AppCheckbox label="我知悉此資料包沒有可信來源證明，仍選擇繼續" checked={accepted} disabled={writeLocked} onChange={setAccepted} /> : null}
-            <Text style={styles.body}>可匯入孩子資料、照護記錄、待辦、記憶、私人來源、文件與準備單、附件、私人聊天歷史及持續關注。附件包含可讀的照片、錄音、檔案、孩子頭像及原有語音轉錄；其他已開放模組包含各自歷史。持續關注目前只可匯入本人孩子；成長整理尚未接通。</Text>
+            <Text style={styles.body}>可匯入孩子資料、照護記錄、待辦、記憶、私人來源、文件與準備單、附件、私人聊天歷史、持續關注及成長整理。附件包含可讀的照片、錄音、檔案、孩子頭像及原有語音轉錄；其他已開放模組包含各自歷史。持續關注及成長整理目前只可匯入本人孩子。</Text>
             <Text style={styles.body}>請逐位指定接收對象，不會按名字自動配對。預設保留接收對象目前的修改及刪除。</Text>
-            <Text style={styles.body}>共享或班級對象只列出目前選中且可寫的孩子；如需其他對象，先切換至該孩子後再回來。</Text>
+            <Text style={styles.body}>可選目前開啟的家庭共享孩子，或在下方選班級和學生。</Text>
+            <View style={styles.group}>
+              <Text style={styles.title}>班級接收對象</Text>
+              <AppSelect label="接收教師空間" value={teachers.state.selected?.kind === 'teachers' ? teachers.state.selected.id : ''} disabled={teachersLocked || !!classes.state.busy}
+                options={[{ value: '', label: '獨立班級或選擇教師空間' }, ...teachers.state.spaces.items.filter(room => room.role !== 'viewer').map(room => ({ value: room.id, label: room.name }))]}
+                onChange={chooseTeacherSpace} />
+              {teachers.state.spaces.nextCursor ? <AppButton label="載入更多教師空間" variant="quiet" disabled={teachersLocked} onPress={() => { void teachers.controller.loadSpaces(true); }} /> : null}
+              {teachers.state.teacherClasses.nextCursor ? <AppButton label="載入更多教師空間班級" variant="quiet" disabled={teachersLocked} onPress={() => { void teachers.controller.loadTeacherClasses(true); }} /> : null}
+              <AppSelect label="接收班級" value={classes.state.selected?.kind === 'class' && classes.state.selected.role !== 'viewer' ? classes.state.selected.id : ''} disabled={classLocked}
+                options={[{ value: '', label: '請選擇接收班級' }, ...classOptions.map(room => ({ value: room.id, label: room.name }))]} onChange={chooseClass} />
+              <View style={styles.actions}>
+                <AppButton label="重新讀取班級列表" variant="quiet" disabled={classLocked} onPress={() => { void classes.controller.loadSpaces(); }} />
+                {classes.state.spaces.nextCursor ? <AppButton label="載入更多接收班級" variant="quiet" disabled={classLocked} onPress={() => { void classes.controller.loadSpaces(true); }} /> : null}
+              </View>
+              {classes.state.selected?.kind === 'class' ? <>
+                <Text style={styles.body}>{classes.state.selected.name} · {classes.state.selected.role === 'viewer' ? '只有閱讀權限，不能匯入。' : '只可選擇目前已授權的寫入資料。'}</Text>
+                <AppTextField label="搜尋班級學生" value={rosterQuery} maxLength={160} disabled={classLocked} onChangeText={setRosterQuery} />
+                <View style={styles.actions}>
+                  <AppButton label="搜尋接收名冊" variant="secondary" disabled={classLocked} onPress={() => { void classes.controller.searchRoster(rosterQuery); }} />
+                  <AppButton label="重新核對班級及名冊" variant="quiet" disabled={classLocked} onPress={() => { void classes.controller.refreshSelected(); }} />
+                  {classes.state.shares.nextCursor ? <AppButton label="載入更多班級學生" variant="quiet" disabled={classLocked} onPress={() => { void classes.controller.more('shares'); }} /> : null}
+                </View>
+                <Text style={styles.body}>{classes.state.rosterQuery ? `目前搜尋：${classes.state.rosterQuery}。` : '未限定學生姓名。'}{classes.state.shares.nextCursor ? '尚有學生未載入。' : classes.state.rosterLoaded ? '目前搜尋範圍已讀完。' : '名冊尚未核對。'}已明確選取的學生會在同一班級權限及版本內保留。</Text>
+              </> : null}
+              {classes.state.notice ? <Text accessibilityLiveRegion="polite" style={styles.body}>{classes.state.notice}</Text> : null}
+              {teachers.state.notice ? <Text accessibilityLiveRegion="polite" style={styles.body}>{teachers.state.notice}</Text> : null}
+            </View>
             {!available.length ? <Text style={styles.body}>此資料包未包含目前可匯入的模組。</Text> : null}
             <Text style={styles.title}>共 {sourceCount} 位來源孩子 · 已選 {selected.length}／100 位 · 第 {currentPage + 1}／{pageCount} 頁</Text>
             {sourceRows.map(child => {
-              const choice = choices[child.id], destination = destinations.find(item => item.value === choice?.target);
+              const choice = choices[child.id], destination = destinations.find(item => item.value === choice?.target
+                && item.classDestination?.basis === choice?.classDestination?.basis && item.classEnrolment?.basis === choice?.classEnrolment?.basis);
               return <View key={child.id} style={styles.item}>
                 <AppCheckbox label={child.displayName} accessibilityLabel={`匯入來源孩子：${child.displayName}`} checked={!!choice}
                   disabled={writeLocked || !available.length || !choice && selected.length >= 100} onChange={checked => chooseSource(child.id, checked)} />
                 {choice ? <>
                   <AppSelect label={`接收「${child.displayName}」的對象`} value={destination?.value ?? ''} disabled={writeLocked}
-                    options={[{ value: '', label: '請選擇已存在的孩子' }, ...destinations.map(item => ({ value: item.value, label: item.label }))]}
+                    options={[{ value: '', label: '請選擇接收對象' }, ...destinations.map(item => ({ value: item.value, label: item.label }))]}
                     onChange={value => chooseTarget(child.id, value)} />
                   {choice.target && !destination ? <Text style={styles.body}>原接收對象現不可用，請重新選擇。</Text> : null}
+                  {destination?.classEnrolment ? <Text style={styles.body}>匯入時會建立班員。若這位來源學生之前已匯入此班，會沿用原班員。</Text> : null}
                   {destination?.spaceId && personalMemory.has(child.id) && available.includes('memory') ? <Text style={styles.body}>這位來源孩子的記憶含私人交代或摘要歷史，只可匯入本人孩子；共享對象仍可選其他已開放模組。</Text> : null}
                   {destination?.spaceId && available.includes('sources') ? <Text style={styles.body}>私人來源只可匯入本人孩子；共享對象仍可選其他已開放模組。</Text> : null}
                   {destination?.spaceId && available.includes('chat') ? <Text style={styles.body}>私人聊天歷史只可匯入本人孩子；共享對象仍可選其他已開放模組。</Text> : null}
+                  {destination?.spaceId && available.includes('growth') ? <Text style={styles.body}>成長整理只可匯入本人孩子；共享或班級對象仍可選其他已開放模組。</Text> : null}
                   {available.map(section => <AppCheckbox key={section} label={labels[section]} accessibilityLabel={`${child.displayName}：${labels[section]}${section === 'attachments' ? '及原轉錄' : '及歷史'}`}
                     description={destination && !availableFor(child.id, section, destination) ? '此來源與接收對象目前不能使用此模組。' : undefined}
                     checked={choice.sections.includes(section)} disabled={writeLocked || !!destination && !availableFor(child.id, section, destination) && !choice.sections.includes(section)}

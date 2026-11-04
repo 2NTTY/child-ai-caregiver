@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
 const text = z.string().min(1).max(256), time = z.iso.datetime({ offset: true });
+export const concernPeriodOriginSchema = z.object({
+  concernId: z.uuid(), from: time, to: time,
+  sequences: z.array(z.number().int().min(1).max(202)).min(1).max(202),
+}).strict().refine(value => Date.parse(value.from) <= Date.parse(value.to)
+  && value.sequences.every((sequence, index, items) => index === 0 || sequence > items[index - 1]!));
 const sourceSchema = z.object({ serverId: text, accountId: text, childId: z.uuid(), section: z.enum(['care', 'profile', 'tasks', 'memory_facts', 'memory_topics', 'instructions', 'summary_history', 'private_sources', 'documents', 'visit_preparation', 'files', 'voices', 'photos', 'child_avatar', 'chat', 'chat_imports', 'concerns', 'concern_events', 'growth_attention', 'growth_topics']),
   resourceId: z.uuid(), resourceVersion: z.number().int().nonnegative().max(2147483647),
   authorUserId: text.nullable(), createdAt: time.nullable(), confirmedBy: text.nullable(), confirmedAt: time.nullable(),
@@ -11,9 +16,10 @@ const sourceSchema = z.object({ serverId: text, accountId: text, childId: z.uuid
   statementProvenance: z.enum(['user_statement', 'imported_source']).optional(),
   previousSummaryId: z.uuid().nullable().optional(),
   snapshotId: z.uuid().optional(),
+  concernReference: z.object({ id: z.uuid(), sequence: z.number().int().positive().optional() }).strict().optional(),
   preparation: z.object({ appointmentTaskId: z.uuid().nullable(), reviewed: z.boolean(),
     reviewedBasis: z.string().min(3).max(128).nullable() }).strict().optional(),
-  concern: z.object({ timelineId: z.uuid().nullable(), attentionIds: z.array(z.uuid()).max(202), updatedAt: time,
+  concern: z.object({ timelineId: z.uuid().nullable(), attentionIds: z.array(z.uuid()).max(202), updatedAt: time, periodSource: concernPeriodOriginSchema.optional(),
     followUp: z.object({ id: z.uuid(), at: time, state: z.enum(['pending', 'queued', 'completed', 'stopped', 'unknown', 'cancelled']),
       runId: z.uuid().nullable() }).strict().nullable() }).strict().optional(),
   concernEvent: z.object({ concernId: z.uuid(), sequence: z.number().int().positive(), timelineId: z.uuid().nullable(), sourceLabel: z.string().max(256),

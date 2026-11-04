@@ -109,6 +109,15 @@ F07 的資料及 SQL 退出證據已交付；F08 原站使用 Firestore，額外
 
 ### 原 VM Firestore 組裝
 
+#### 文檔包簽章及換匙
+
+要讓本站匯出的資料包可直接驗證來源，API 和 worker 都需要同一份受信任公鑰清單，只有負責建立包的 worker 需要 Ed25519 私鑰。沿已有的部署命令加上 `-f deploy/p1/compose.firestore.handover.yaml`；不加此檔時，以往未簽署的包仍可按原流程匯入。
+
+1. 首次建立時在工程外的新受保護目錄執行 `umask 077`，以 `openssl genpkey -algorithm Ed25519 -out signer.pem` 產生專用私鑰。把檔案設為實際容器內 `node` 使用者可讀，權限 0400 或 0600。勿覆寫已有私鑰。
+2. 執行 `openssl pkey -in signer.pem -pubout -outform DER | openssl base64 -A` 取得公鑰，放入 UTF-8 的 `trust.json`。格式為 `[{"serverId":"https://ex-machina.eu.org","publicKey":"<SPKI DER 的 base64>"}]`。每個公鑰只綁定一個來源；本站使用實際 `SERVER_ORIGIN`。附在使用者資料包內的公鑰不會自動加入清單。
+3. 在 Compose 的受保護環境設定 `P1_HANDOVER_TRUST_FILE` 及 `P1_HANDOVER_SIGNING_KEY_FILE` 為兩個檔案的絕對路徑。先用上述 overlay 做 `docker compose … config --quiet`，再沿原部署流程重建服務。API 和 worker 啟動時讀取公鑰。worker 會核對簽署私鑰與本站清單一致。
+4. 正常輪替先將新舊公鑰一同配置並重建兩個服務，再更換 worker 的簽署私鑰並重建 worker。保留舊公鑰可繼續認證過往資料包。若撤銷公鑰，移除後重建兩個服務；簽章完好但不再獲信任的包須明示確認，簽章或內容不符仍拒絕。構建、啟動及復原流程均不會自行產生金鑰。
+
 2026-10-15，原站 API／worker／Web 已更新為 `opt-b1d1565`，程式源為 b1d1565（#226，master 99f53df），Prompt Pack 0.1.43；包含 #213 登入及 OPT／LAY 修改。沿固定版本 Node／npm 建置 Web，依賴未變，Server 及 Web 以已核 hash 的小型層疊加既有映像，沒有傳送密鑰或 ADC。三服務健康、原生新索引及公開產物／SSE 已核；一次合成摘要／聊天共兩次生成，沒有通知、embedding 或調高配額。[交付 EV](../artifacts/verification/P2_OPT_DELIVERY_20261015.json)；舊 ADM01／review 證據保留，不能當全面回歸。
 
 當次回退配置保存在 `/etc/yuban-p1/firestore/compose.env.before-opt-b1d1565`；歷史配置存在不代表對應映像永久保留，現行候選按上述保留規則及 STATUS 核對。**OPT04 摘要批次與 OPT05 卡片寫入後，舊 API 的 strict schema 不能保證讀取新格式。** UI 故障可單獨恢復相容舊 Web 並保留新 API／worker；後端故障先暫停受影響入口／worker，使用保留新格式 reader 的相容修正。不能直接還原舊 compose.env 便宣稱資料相容，也不能用舊資料快照覆蓋新收據／刪除。

@@ -1,0 +1,24 @@
+{
+  "package": "P4-HANDOVER01",
+  "base": "3adef03a",
+  "environment": "Windows, Node 24.22.1, local ZIP reader/writer, synthetic Firestore and object transport",
+  "targetedTests": [
+    "a dated package filters by event, due and message time through export and import",
+    "a concern week copies only selected events and cannot replace a full chain or another week"
+  ],
+  "checked": [
+    "Offset-equivalent inclusive bounds and missing event time; retained current and revision rows",
+    "Native cross-month concern through account export, upload, batch worker, domain reopen and source-history read",
+    "No before/after event or parent reason in the archive or reopened history; source concern remains traceable through a second dated export",
+    "Repeat export with equivalent UTC dates deduplicates; another week and full copy stay independent; no follow-up queued for slices"
+  ],
+  "failuresRetained": [
+    "Original dated export rejected with package_period_not_connected",
+    "Current write timestamp admitted an out-of-period parent reason; switched to event membership before including head text",
+    "Synthetic dispatcher expected its job in the first 12 items; now consumes the bounded pending batches",
+    "Event history initially lacked the original concern reference; preserved and verified that identity",
+    "Independent review identified loss of the original ID on a second dated handover; reproduced, then retained just the source reference in the provenance chain"
+  ],
+  "result": "2 targeted tests passed",
+  "scope": "Personal care/tasks/chat/concerns. No deployment, production data, model calls or device acceptance."
+}

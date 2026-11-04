@@ -63,6 +63,7 @@ import type { PlatformProviderFactory } from './firestore-model-routing.ts';
 import { createHandoverService } from './handover-service.ts';
 import { createHandoverUploadService } from './handover-upload-service.ts';
 import { createHandoverImportService } from './handover-import-service.ts';
+import { readHandoverKeys } from './handover-keys.ts';
 import { createCloudStorageHandoverObjects, createFirebaseHandoverObjects, type HandoverBucketPort } from './firebase-handover-objects.ts';
 
 export interface LocalRuntimePorts {
@@ -174,9 +175,10 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const handoverObjectOptions = { config: objectOptions.config, files: cipher.files };
     const handoverObjects = composition.local ? createFirebaseHandoverObjects({ ...handoverObjectOptions,
       bucket: composition.local.handoverBucket(config.photoBucket) }) : createCloudStorageHandoverObjects(handoverObjectOptions);
-    const handover = createHandoverService({ ...domain, exporter, objects: handoverObjects, serverId: config.publicOrigin });
-    const handoverUploads = createHandoverUploadService({ ...domain, objects: handoverObjects });
-    const handoverImports = createHandoverImportService({ ...domain, uploads: handoverUploads,
+    const packageKeys = await readHandoverKeys(env, config.publicOrigin, composition.worker === true);
+    const handover = createHandoverService({ ...domain, exporter, objects: handoverObjects, serverId: config.publicOrigin, signingKey: packageKeys.signingKey });
+    const handoverUploads = createHandoverUploadService({ ...domain, objects: handoverObjects, trustedKeys: packageKeys.trustedKeys });
+    const handoverImports = createHandoverImportService({ ...domain, uploads: handoverUploads, knowledge,
       attachments: { files, voices, photos, transcripts: product.voiceTranscripts,
         ...(avatars ? { avatars: { store: avatars, policy: avatarConfig.policy } } : {}) } });
     const erasureCleanup = createFirestoreErasureCleanup({ ...domain, journal, erasures, photos, voices, files, avatars: avatarCleanup, handover, handoverUploads,

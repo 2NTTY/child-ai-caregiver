@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { Transaction } from '@google-cloud/firestore';
-import { FirestoreDomainData, firestoreDomainHash, domainReject } from './firestore-domain-data.ts';
+import { FirestoreDomainData, firestoreDomainHash, firestoreDomainUuid, domainReject } from './firestore-domain-data.ts';
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import type { FirestoreRecoveryContext } from './firestore-recovery-envelope.ts';
 export { sharedAccessBasisSchema } from '../src/shared/sharing.ts';
@@ -27,7 +27,12 @@ export const sharedMembershipSchema = z.object({ spaceId: z.uuid(), userId: user
   role: z.enum(['owner', 'caregiver', 'viewer']), state: z.enum(['active', 'revoked']), joinedAt: at }).strict();
 export const resourceShareSchema = z.object({ spaceId: z.uuid(), childId: z.uuid(), source: workRecoveryScopeSchema,
   modules: z.array(sharedModuleSchema).min(1).max(8), version, state: z.enum(['active', 'revoked']), sharedBy: user,
-  sourceMembershipId: z.uuid() }).strict();
+  sourceMembershipId: z.uuid(), importSourceHash: z.string().regex(/^[a-f0-9]{64}$/u).optional() }).strict()
+  .refine(row => !row.importSourceHash || row.source.ownerUserId === 'space:' + row.spaceId && row.source.workspaceId === row.spaceId
+    && row.childId === classImportChildId(row.spaceId, row.importSourceHash));
+export function classImportChildId(classId: string, sourceHash: string) {
+  return firestoreDomainUuid(['class-import-student/v1', classId, sourceHash]);
+}
 export const sharedInvitationSchema = z.object({ id: z.string().regex(/^[a-f0-9]{64}$/u), spaceId: z.uuid(), email: z.email().max(320),
   role: z.enum(['caregiver', 'viewer']), issuedVersion: version, managerGeneration: z.uuid(), expiresAt: at,
   state: z.enum(['issued', 'consumed', 'revoked']), consumedBy: user.nullable(), issuedBy: user }).strict();

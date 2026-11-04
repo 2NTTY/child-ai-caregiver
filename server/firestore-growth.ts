@@ -4,12 +4,13 @@ import { z } from 'zod';
 import { growthActionSchema, growthTopicActionSchema, growthTopicSchema, GROWTH_KNOWLEDGE_NOTICES,
   type GrowthAction, type GrowthAttention, type GrowthPage, type GrowthTopicAction, type GrowthTopicId } from '../src/shared/growth.ts';
 import type { MemoryContext } from '../src/shared/memory.ts';
-import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreDomainUuid, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreAuthority, resourceAuthorityVersion, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import type { FirestoreMemoryStore } from './firestore-memory.ts';
 import type { FirestoreCareStore } from './firestore-care.ts';
 import type { FirestoreOnlineStore } from './firestore-online.ts';
 import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
+import { growthImportPending } from './firestore-growth-import-guard.ts';
 import { GROWTH_RULES, GROWTH_CATALOG_REVISION, growthProposals, growthInputs, growthBasisChanged, nextGrowthCheck } from './growth-rules.ts';
 import { agentKnowledgeFilter } from './product-agent-tools.ts';
 import { parseKnowledgeFilter } from './knowledge-inputs.ts';
@@ -48,9 +49,7 @@ const active = (item: GrowthAttention) => ['proposed', 'snoozed'].includes(item.
 /** Stable UUIDv8 address for the existing four per-child topic slots, not a new topic authority. */
 export function growthTopicResourceId(childId: string, topicId: GrowthTopicId) {
   domainParse(uuid, childId); domainParse(growthTopicSchema, topicId);
-  const bytes = Buffer.from(firestoreDomainHash(['growth-topic-resource:1', childId, topicId]), 'hex').subarray(0, 16);
-  bytes[6] = (bytes[6]! & 15) | 128; bytes[8] = (bytes[8]! & 63) | 128;
-  const value = bytes.toString('hex'); return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`;
+  return firestoreDomainUuid(['growth-topic-resource:1', childId, topicId]);
 }
 
 /** Normalizes only source identity; the original archive payload remains the source hash. */
@@ -170,8 +169,11 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     { kind: 'child-change', scope: b.scope, resourceId: b.scope.childId, basis, generation: b.generation, authorizationVersion: b.authorizationVersion }, dueAt);
   async function backgroundInputIn(b: Binding, job: FirestoreBackgroundWork) {
     if (job.kind !== 'growth' || !same(job.scope, b.scope) || job.generation !== b.generation || job.authorizationVersion !== b.authorizationVersion) return null;
-    const saved = (await all(b)).find(value => value.item.id === job.resourceId);
+    if (await growthImportPending(data, b)) return null;
+    const records = await all(b), saved = records.find(value => value.item.id === job.resourceId);
     if (!saved || saved.item.state !== 'proposed' || firestoreDomainHash(saved.item.basis) !== job.basis
+      || records.some(other => other.item.id !== saved.item.id && other.item.topicId === saved.item.topicId
+        && ['accepted', 'dismissed'].includes(other.item.state) && same(other.item.basis, saved.item.basis))
       || (await topics(b)).some(value => value.topicId === saved.item.topicId && value.disabled)) return null;
     const item = await visible(b, saved.item, await load(b), !!saved.importedFrom); return item.sourceAvailable ? item : null;
   }
@@ -333,6 +335,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     async evaluate(job: FirestoreBackgroundWork) {
       return authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async b => {
         if (!same(job.scope, b.scope) || job.generation !== b.generation || job.authorizationVersion !== b.authorizationVersion) return { state: 'stopped' as const };
+        if (await growthImportPending(data, b)) return { state: 'deferred' as const, nextAt: new Date(Date.now() + 30_000).toISOString() };
         const loaded = await load(b), history = await all(b), settings = await topics(b), now = new Date(), at = now.toISOString();
         const changes: Saved[] = [], jobs: Awaited<ReturnType<typeof prepareFirestoreBackgroundWork>>[] = [];
         const checks = [nextGrowthCheck(loaded.context, now), ...loaded.sources.map(source => source.validUntil ?? null)];
@@ -340,7 +343,8 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
           const saved = history.filter(value => value.item.topicId === rule.id), latest = saved.at(-1);
           const next = settings.find(value => value.topicId === rule.id)?.disabled ? undefined : loaded.proposals.find(value => value.topicId === rule.id);
           for (const previous of saved.filter(value => active(value.item))) {
-            if (!next || !same(previous.item.basis, next.basis) || previous.importedFrom && !importedSupported(previous.item, next)) changes.push({ ...previous, item: { ...previous.item, version: previous.item.version + 1,
+            if (!next || !same(previous.item.basis, next.basis) || previous.importedFrom && !importedSupported(previous.item, next)
+              || saved.some(other => other.item.id !== previous.item.id && ['accepted', 'dismissed'].includes(other.item.state) && same(other.item.basis, previous.item.basis))) changes.push({ ...previous, item: { ...previous.item, version: previous.item.version + 1,
               state: 'inapplicable', updatedAt: at, lastAction: 'basis_unavailable', actorUserId: null, note: '適用條件或已核對來源已改變。' }, lastRequest: null });
             else if (previous.item.state === 'snoozed' && previous.item.snoozeUntil) {
               if (Date.parse(previous.item.snoozeUntil) <= now.getTime()) changes.push({ ...previous, item: { ...previous.item, version: previous.item.version + 1,
@@ -378,7 +382,10 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
         return { state: 'completed' as const };
       });
     },
-    backgroundInput: (job: FirestoreBackgroundWork) => authority.runTransaction(job.scope.ownerUserId, job.scope.childId, b => backgroundInputIn(b, job)),
+    backgroundInput: (job: FirestoreBackgroundWork) => authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async b => {
+      if (await growthImportPending(data, b)) domainReject('growth_import_pending', 409);
+      return backgroundInputIn(b, job);
+    }),
     authorizeBackground: async (b: Binding, job: FirestoreBackgroundWork) => !!await backgroundInputIn(b, job),
     async taskAllowedIn(b: Binding, taskId: string) {
         const linked = (await all(b)).filter(value => value.item.taskId === taskId); if (!linked.length) return true;

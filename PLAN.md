@@ -56,9 +56,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-30）：[P4-HANDOVER01](#p4-handover01) 成長匯入。**#382～#405 已合併未部署。個人關注快照、來源事件／修訂、原服務保存、再匯出及共用匯入／閱讀已接通，見[後端證據](artifacts/verification/P4_HANDOVER_CONCERN_IMPORT_20261030.json)及[共用畫面](frontend/verification/P4_HANDOVER_CONCERN_UI_20261030.json)。私人聊天的工具／畫面等有效證據保留，不重跑或當真模型品質。
+**當前入口（2026-11-04）：[P4-HANDOVER01](#p4-handover01) 選期交接及班級首次匯入。**#422 已接既有班員選擇；空班首次匯入沿[班員交易核對](artifacts/verification/P4_HANDOVER_CLASS_ENROLMENT_20261104.json)接新版共用表單，期間及其餘資料範圍見下方。#382～#407、#413～#415 已合併未部署。個人關注快照、來源事件／修訂、原服務保存、再匯出及共用匯入／閱讀已接通，見[後端證據](artifacts/verification/P4_HANDOVER_CONCERN_IMPORT_20261030.json)及[共用畫面](frontend/verification/P4_HANDOVER_CONCERN_UI_20261030.json)。私人聊天的工具／畫面等有效證據保留，不重跑或當真模型品質。
 
-`codex/p4-handover-growth-domain` 從 `f226fe09` 已接原成長服務的匯入準備、版本／來源及主題停用；原 store 一條連貫核對及五根型別圖通過，見[證據](artifacts/verification/P4_HANDOVER_GROWTH_DOMAIN_20261030.json)。下一步接統一 worker、來源歷史及共用畫面。來源處理結果／近況留證據，活動操作重新核對本地資料及有效官方依據，舊請求／授權不重播。原主題停用及已結束事項保持，不因匯入而重新提醒。共享寫入、差異、班級／期間、完整私人備份、簽章配置與原生大型包仍未完成；單私人來源刪除的獨立還原重放留 S15。未部署／未作真雲端或設備驗收，不動 D PR，P3／P5 及既有待驗不計完成。
+成長領域準備及相容標籤已合併，原服務證據見[領域核對](artifacts/verification/P4_HANDOVER_GROWTH_DOMAIN_20261030.json)。`codex/p4-handover-growth-import` 接統一 worker、來源歷史、逐項衝突及再次匯出；原生修訂／來源作者保持，舊請求不重播。匯入期間沿原批次台帳暫緩成長評估，避免半套資料產生重複提醒。成長資料往返、衝突及批次中止的[合成核對](artifacts/verification/P4_HANDOVER_GROWTH_IMPORT_20261104.json)已通過。共用 Web／Android 匯入表單已接個人成長選取及唯讀來源閱讀，見[畫面核對](frontend/verification/P4_HANDOVER_GROWTH_UI_20261104.json)。共用畫面 #414 已合併。簽章配置接回原匯出 worker 及匯入 API，見[核對](artifacts/verification/P4_HANDOVER_PACKAGE_KEYS_20261104.json)及[部署／輪替方法](docs/PRODUCTION_FRONTEND.md#文檔包簽章及換匙)，正式簽署尚待啟用。記錄、待辦、聊天及關注已接期間匯出／匯入，見[選定一週的往返證據](artifacts/verification/P4_HANDOVER_PERIOD_20261104.json)。後端 #416 已合併。Web／Android 共用表單已接香港日期與來源期間預覽，見[表單核對](frontend/verification/P4_HANDOVER_PERIOD_UI_20261104.json)。照片、錄音、一般文件與孩子頭像已接期間篩選，有[原檔範圍與匯入核對](artifacts/verification/P4_HANDOVER_ATTACHMENT_PERIOD_20261104.json)。孩子概況、私人來源及成長整理的[選期往返](artifacts/verification/P4_HANDOVER_DATED_DOMAINS_20261104.json)已接。記憶／摘要和文件／準備單仍須依來源覆蓋及固定快照接續；共享寫入、差異、班級、完整私人備份與原生大型包仍未完成；單私人來源刪除的獨立還原重放留 S15。未部署／未作真雲端或設備驗收，不動 D PR，P3／P5 及既有待驗不計完成。
 
 **已合併未部署：**#358 班級解散與 #359 待辦身份接線，[清理](artifacts/verification/P4_CLASS_ERASURE_20261028.json)及[提醒證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)不重跑。選其他成員、班級 Agent 與外部通知仍待接續，不借管理員 key、不改 D PR。整個 CLASS01／P4、P3／P5 的未完成項不變。
 
@@ -681,7 +681,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 | <a id="p4-family-a"></a>**P4-FAMILY-A** | 操作者與穩定儲存身份分開；原資源模組共享、角色／撤權、轉交及刪帳；背景／附件同一授權 | 既有本人權限；第一個功能包 |
 | <a id="p4-family-b"></a>**P4-FAMILY-B** | 個人優先、可選家庭及軟件內模組加入；未選資料不外露 | FAMILY-A 契約，不依賴快捷登入 |
 | <a id="p4-class01"></a>**P4-CLASS01** | 獨立班級、名冊／搜尋／分頁、匯入目標、加入／移出教師空間 | FAMILY-A；不等家庭 UI |
-| <a id="p4-handover01"></a>**P4-HANDOVER01** | 統一匯入、交接／備份格式、完整性、紀錄、去重、衝突及差異還原；匯入待辦與普通建立一致 | FAMILY-A／B、CLASS01 的範圍／目標接口及現有匯出／附件；不必等其所有 UI |
+| <a id="p4-handover01"></a>**P4-HANDOVER01** | 統一匯入、交接／備份格式、完整性、紀錄、去重、衝突及差異還原；匯入待辦與普通建立一致。期間包含所選首尾，跨期關注只交接其間的觀察及行動 | FAMILY-A／B、CLASS01 的範圍／目標接口及現有匯出／附件；不必等其所有 UI |
 | <a id="p4-class02"></a>**P4-CLASS02** | 多孩／班級助手、混合聊天範圍、有界召回、批次結果／恢復 | CLASS01、HANDOVER01 範圍／來源契約及相關 D 工具／審核接口 |
 
 **AUTH01 共用 provider／session 首段（#347 已合併、未開放）：**沿 Firebase 13.0.0／Admin 14.5.0、原 session／裝置台帳，接本人登入方式讀取、Google／Apple Web adapter、同 UID 重新驗證及明確連結。連結分為驗原身份、再親自按連結兩個手勢，避免串接 popup 被瀏覽器阻擋；取消後等不可取消的 SDK 結束並清理，才讀回連結結果。舊密碼、原生會話、共用 owner／刪帳／管理員重新驗證保持相容。定向機械檢查、局部型別及獨立 review 的競態修正已有[證據](artifacts/verification/P4_AUTH_PROVIDER_20261027.json)，不代替真人登入。Web `EXPO_PUBLIC_AUTH_PROVIDERS` 預設空，原生 adapter 尚未啟用；未改雲端 provider／郵件／帳號設定。**下一步：**核定 Firebase 自動連結／duplicate-email 配置與目前電郵准入的相容性，再完成原生 SDK 的新 binary／真人核對、Apple relay 原邀請地址驗證及實際配置；詳見[採用限制](docs/TECH_REUSE.md#p4-auth-providers)。不可只打開按鈕便宣稱完整 AUTH01。Apple 團隊／本人操作只阻擋相關項，FAMILY-A／B 可獨立繼續。

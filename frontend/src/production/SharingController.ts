@@ -103,6 +103,11 @@ export class SharingController {
     await this.selection(spaceId, ticket);
   });
   refreshSelected = () => { const id = this.state.selected?.id; return id ? this.selectSpace(id) : this.loadSpaces(); };
+  clearSelection = () => {
+    if (this.state.busy || this.state.pending) return;
+    this.update({ selected: null, rosterQuery: '', rosterLoaded: false, members: page(), shares: page(), invitations: page(),
+      teacherClasses: page(), teacherClassesLoaded: false, invitationToken: null });
+  };
   searchRoster = (query: string) => {
     if (this.state.selected?.kind !== "class" || this.state.pending) return Promise.resolve();
     return this.read(async ticket => {

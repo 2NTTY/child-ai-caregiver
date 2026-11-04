@@ -11,12 +11,24 @@ import { createFirestoreSharedInputStore, firestoreSourceManagementRevisionSchem
 import { z } from 'zod';
 import { createFirestoreConcernStore, firestoreConcernSchema } from './firestore-concerns.ts';
 import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
+import { firestoreGrowthSchema, firestoreGrowthTopicSchema, growthTopicResourceId } from './firestore-growth.ts';
 import { firestorePreparationSchema } from './firestore-care-summary.ts';
 import { documentTransferContentSchema, documentTransferVersionSchema } from './family-document-transfer.ts';
 import { sourceHistoryExportSchema, sourceHistoryRecordSchema, sourceHistoryId, sourceHistoryMetadata,
   type SourceHistoryRecord, type HistoryModule } from './handover-history-records.ts';
 
-function parseRevision(module: HistoryModule, raw: unknown, sourceSection?: string) {
+function parseRevision(module: HistoryModule, raw: unknown, sourceSection?: string, childId?: string) {
+  if (module === 'growth_attention') {
+    const value = domainParse(firestoreGrowthSchema, raw, 'invalid_package_growth');
+    return { value: value as unknown as Record<string, unknown>, resource: { ...value.item,
+      authorUserId: value.item.actorUserId, ...(value.importedFrom ? { importedFrom: value.importedFrom } : {}) } };
+  }
+  if (module === 'growth_topics') {
+    const value = domainParse(firestoreGrowthTopicSchema, raw, 'invalid_package_growth');
+    const child = domainParse(z.uuid(), childId, 'invalid_package_scope', 400);
+    return { value: value as unknown as Record<string, unknown>, resource: { ...value, id: growthTopicResourceId(child, value.topicId),
+      childId: child, authorUserId: value.actor, createdAt: value.at } };
+  }
   if (module === 'concerns') {
     if (sourceSection === 'concern_events') {
       const value = domainParse(firestoreDocumentConcernEventSchema, raw, 'invalid_package_data');
@@ -47,7 +59,7 @@ function parseRevision(module: HistoryModule, raw: unknown, sourceSection?: stri
   return { value: value as unknown as Record<string, unknown>, resource: value };
 }
 export function validateSourceHistory<T extends Pick<SourceHistoryRecord, 'evidence'>>(value: T): T {
-  const { evidence } = value, source = evidence.source.current.source, original = parseRevision(evidence.module, evidence.value, source.section);
+  const { evidence } = value, source = evidence.source.current.source, original = parseRevision(evidence.module, evidence.value, source.section, source.childId);
   if (firestoreDomainHash(original.value) !== evidence.source.current.sourceHash
     || (evidence.module !== source.section && !(evidence.module === 'concerns' && source.section === 'concern_events'))
     || original.resource.childId !== source.childId || original.resource.version !== source.resourceVersion
@@ -84,7 +96,7 @@ export function parseHistoryRow(row: HandoverImportRow, module: HistoryModule, i
     return { evidence: { module, source: provenance, value: event as unknown as Record<string, unknown> }, provenance,
       parentId: event.concernId, parentVersion: 1 };
   }
-  const parsed = parseRevision(module, row.value), source = parsed.resource;
+  const parsed = parseRevision(module, row.value, row.section, row.childId ?? undefined), source = parsed.resource;
   const provenance = makeImportProvenance({ ...row, section: module, value: source as unknown as Record<string, unknown> }, integrity, actor, now);
   provenance.current.sourceHash = firestoreDomainHash(parsed.value);
   return { evidence: { module, source: provenance, value: parsed.value }, provenance,
@@ -93,6 +105,23 @@ export function parseHistoryRow(row: HandoverImportRow, module: HistoryModule, i
 export async function sourceHistoryVisible(data: FirestoreDomainData, b: Binding, value: SourceHistoryRecord) {
   if (value.childId !== b.scope.childId) domainReject('source_history_binding', 500);
   const section = value.evidence.module;
+  if (section === 'growth_attention' || section === 'growth_topics') {
+    if (b.sharedAccess || b.actorUserId !== b.scope.ownerUserId) return false;
+    if (section === 'growth_attention') {
+      const row = await b.transaction.get(data.ref('growth_attention', 'growth-attention', value.resource.id));
+      if (!row.exists) return false;
+      const current = data.open('growth-attention', value.resource.id, b.scope, firestoreGrowthSchema, row).item;
+      if (current.id !== value.resource.id || current.childId !== b.scope.childId || current.version !== row.get('recordVersion')) domainReject('source_history_binding', 500);
+      return current.version >= value.resource.version;
+    }
+    const topicId = firestoreGrowthTopicSchema.parse(value.evidence.value).topicId;
+    if (value.resource.id !== growthTopicResourceId(b.scope.childId, topicId)) return false;
+    const id = JSON.stringify([b.scope.childId, topicId]), row = await b.transaction.get(data.ref('growth_topics', 'growth-topic', id));
+    if (!row.exists) return false;
+    const current = data.open('growth-topic', id, b.scope, firestoreGrowthTopicSchema, row);
+    if (current.topicId !== topicId || current.version !== row.get('recordVersion')) domainReject('source_history_binding', 500);
+    return current.version >= value.resource.version;
+  }
   if (section === 'concerns') {
     const current = await createFirestoreConcernStore(data.options).head(b, value.resource.id);
     return !!current && current.version >= value.resource.version;
