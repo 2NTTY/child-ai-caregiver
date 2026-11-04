@@ -19,6 +19,12 @@ export function createFirebaseWorkerServices(runtime: Awaited<ReturnType<typeof 
     const background = createFirestoreBackgroundQueue({ ...options, readControl: tx => authority.readControl(tx),
       transport: backgroundDelivery, signal: controller.signal,
       async execute(job, signal) {
+        if (job.kind === 'knowledge-index-batch') {
+          const uid = runtime.configuredAdminUid;
+          if (!uid || !runtime.knowledgeIndexes || job.authorizationVersion !== firestoreDomainHash(uid)) return { state: 'stopped' };
+          const current = await runtime.currentAuth(uid);
+          return runtime.knowledgeIndexes.process(job, signal, current.userId === uid && current.emailVerified && !current.disabled && !!current.email);
+        }
         if (job.kind === 'handover-upload-cleanup') return job.scope.ownerUserId === 'system:task-dispatch'
           ? maintenance.process(job, signal) : runtime.handoverUploads.cleanup(job.scope, job.resourceId, signal);
         if (job.kind === 'handover-cleanup') return job.scope.ownerUserId === 'system:task-dispatch'

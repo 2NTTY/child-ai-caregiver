@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import { FieldValue, VectorValue, type Firestore, type VectorQueryOptions } from "@google-cloud/firestore";
 import { createFirestoreKnowledgeStore, type FirestoreKnowledgeEmbedding } from "../server/firestore-knowledge.ts";
@@ -10,6 +11,7 @@ import { firestoreDomainFixture } from "./helpers/firestore-domain-memory.ts";
 import { createFirestoreKnowledgeRefresh } from "../server/firestore-knowledge-refresh.ts";
 import { observationHash } from "../server/knowledge-observation.ts";
 import type { SourceFetchResult } from "../server/knowledge-refresh-types.ts";
+import { KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS, KNOWLEDGE_LEXICAL_PIPELINE } from "../server/knowledge-lexical-index.ts";
 
 // Synthetic vectors only verify mechanical ranking and fencing, never semantic relevance or native index behavior.
 const vector = [1, ...Array(1023).fill(0)];
@@ -68,6 +70,7 @@ function fixture(sourceIds = ["synthetic-guidance"]) {
     runTransaction: (operation: (tx: any) => Promise<any>) => fake.database.runTransaction(tx => operation({
       get: async (target: any) => snapshot(await tx.get(target)), getAll: async (...targets: any[]) => (await tx.getAll(...targets)).map(snapshot),
       create: (ref: any, value: unknown) => tx.create(ref, encode(value)), set: (ref: any, value: unknown) => tx.set(ref, encode(value)),
+      delete: (ref: any) => tx.delete(ref),
     })) } as unknown as Firestore;
   const options = { database, projectId: "synthetic-knowledge-project", namespace: "synthetic_knowledge", sourceIds }, nativeStore = createFirestoreKnowledgeStore(options);
   const store = { ...nativeStore, async importSource(input: unknown) {
@@ -82,6 +85,55 @@ function fixture(sourceIds = ["synthetic-guidance"]) {
   return { ...fake, database, options, store, publish, nearestCalls, onNearest: (hook: () => Promise<void>) => { nearestHook = hook; } };
 }
 const rejects = (code: string) => (error: any) => error?.code === code || error?.message === code;
+
+test("Firestore knowledge rebuild pages repair missing, corrupt and stale postings without changing publication or lowering completeness", async () => {
+  const f = fixture(), published = await f.publish();
+  assert.equal(typeof f.store.rebuildSearchPageIn, "function");
+  const citation = (await f.store.candidates(filter, null, { query: "needle" }))[0]!;
+  const versionPath = `synthetic_knowledge_knowledge_versions/${published.versionId}`;
+  const versionBefore = structuredClone(f.records.get(versionPath));
+  const businessBefore = [...f.records].filter(([path]) => !path.includes("_knowledge_lexical/"));
+  const postings = [...f.records].filter(([path]) => path.includes("_knowledge_lexical/"));
+  assert.ok(postings.length >= 2);
+  f.records.delete(postings[0]![0]);
+  f.records.set(postings[1]![0], { ...postings[1]![1], terms: { corrupt: [] } });
+  const occupied = new Set(postings.map(([, row]) => row.bucket));
+  const emptyBucket = Array.from({ length: KNOWLEDGE_LEXICAL_BUCKETS }, (_, index) => index).find(index => !occupied.has(index))!;
+  // Seed a stale derived bucket at its actual deterministic document key.
+  const bytes = createHash("sha256").update(JSON.stringify([f.options.projectId, f.options.namespace, "lexical", KNOWLEDGE_LEXICAL_PIPELINE,
+    published.versionId, emptyBucket])).digest().subarray(0, 16);
+  bytes[6] = (bytes[6]! & 15) | 80; bytes[8] = (bytes[8]! & 63) | 128;
+  const hex = bytes.toString("hex"), id = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  const stalePath = `${f.options.namespace}_knowledge_lexical/${id}`;
+  f.records.set(stalePath, { ...postings[0]![1], bucket: emptyBucket });
+  const damaged = structuredClone([...f.records]);
+  const rebuild = (start: number, hash = published.hash) => f.database.runTransaction(tx => f.store.rebuildSearchPageIn(tx, published.versionId, hash, start));
+  await assert.rejects(rebuild(0, "0".repeat(64)), rejects("knowledge_review_version_mismatch"));
+  for (const start of [-64, 1, 256, Number.NaN]) await assert.rejects(rebuild(start), rejects("knowledge_search_page_invalid"));
+  const denied = createFirestoreKnowledgeStore({ ...f.options, sourceIds: ["another-guidance"] });
+  await assert.rejects(f.database.runTransaction(tx => denied.rebuildSearchPageIn(tx, published.versionId, published.hash, 0)), rejects("knowledge_binding_invalid"));
+  assert.deepEqual([...f.records], damaged, "Rejected pages must not stage any writes");
+  for (let start = 0; start < KNOWLEDGE_LEXICAL_BUCKETS; start += KNOWLEDGE_LEXICAL_BATCH) {
+    const progress = await rebuild(start);
+    assert.deepEqual(progress, { complete: start + KNOWLEDGE_LEXICAL_BATCH === KNOWLEDGE_LEXICAL_BUCKETS,
+      bucketsCompleted: start + KNOWLEDGE_LEXICAL_BATCH, bucketsTotal: KNOWLEDGE_LEXICAL_BUCKETS, termCount: versionBefore.search.termCount });
+    assert.equal(f.records.get(versionPath)!.search.completed, KNOWLEDGE_LEXICAL_BUCKETS);
+  }
+  assert.equal(f.records.has(stalePath), false);
+  assert.deepEqual([...f.records].filter(([path]) => !path.includes("_knowledge_lexical/")), businessBefore);
+  assert.deepEqual((await f.store.candidates(filter, null, { query: "needle" }))[0], citation, "The same reviewed citation is searchable again");
+  assert.deepEqual([...f.records].filter(([path]) => path.includes("_knowledge_lexical/")).sort(), postings.sort());
+
+  const fresh = fixture(), native = createFirestoreKnowledgeStore(fresh.options), imported = await native.importSource(source());
+  const page = (start: number) => fresh.database.runTransaction(tx => native.rebuildSearchPageIn(tx, imported.versionId, imported.hash, start));
+  await assert.rejects(page(0), rejects("knowledge_version_unreviewed"));
+  await native.review(imported.versionId, imported.hash, "synthetic-operator", assessment(source()));
+  const beforeSkip = structuredClone([...fresh.records]);
+  await assert.rejects(page(64), rejects("knowledge_search_prefix_incomplete"));
+  assert.deepEqual([...fresh.records], beforeSkip);
+  assert.equal((await page(0)).bucketsCompleted, 64);
+  assert.equal((await page(64)).bucketsCompleted, 128);
+});
 
 test("Firestore knowledge publication requires real assessment and complete vectors; disable withdraws catalog and old citations", async () => {
   const f = fixture(), document = source(), imported = await f.store.importSource(document);

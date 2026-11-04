@@ -12,9 +12,10 @@ const NIL = '00000000-0000-0000-0000-000000000000';
 const scope = { ownerUserId: 'system:admin', workspaceId: NIL, childId: NIL, storageEpoch: NIL };
 export const adminDirectorySchema = z.object({ email: z.email() }).strict();
 const cursorSchema = z.string().regex(/^[a-f0-9]{64}$/);
+import type { KnowledgeIndexBatches } from './firestore-knowledge-index-batches.ts';
 /** Control-plane data only. No family records, keys, or arbitrary Firestore access. */
 export function createFirestoreAdmin(options: FirestoreDomainOptions, config: AiConfig,
-  knowledge?: Pick<ReturnType<typeof createFirestoreKnowledgeRefresh>, 'adminStatus'>) {
+  knowledge?: Pick<ReturnType<typeof createFirestoreKnowledgeRefresh>, 'adminStatus'>, indexBatches?: KnowledgeIndexBatches) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
   const policyRef = data.ref('admin_policy', 'platform-policy', 'current');
   const defaults = domainParse(platformPolicySchema, { enabled: config.enabled, model: config.model,
@@ -37,6 +38,7 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions, config: Ai
     }, { readOnly: true });
   }
   return { readPolicy, readPolicyIn,
+    knowledgeIndexes() { return indexBatches ?? domainReject('knowledge_indexes_unavailable', 503); },
     knowledgeStatus(cursor: string | null = null) {
       if (!knowledge) domainReject('knowledge_status_unavailable', 503);
       return knowledge.adminStatus(cursor);
