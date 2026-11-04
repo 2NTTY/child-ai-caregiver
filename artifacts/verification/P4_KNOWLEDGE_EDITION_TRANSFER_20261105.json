@@ -1,0 +1,31 @@
+{
+  "revision": "432ae9a7ae541174c9fadd4d774447f9daf67dec",
+  "pullRequests": [
+    480,
+    481
+  ],
+  "observedAt": "2026-11-05T05:02:00+08:00",
+  "site": "https://ex-machina.eu.org",
+  "production": {
+    "apiWorkerImage": "sha256:f4cc1205688fd943054005194203439bfb7d15a1aafd9170b85464072d3c3b44",
+    "webRelease": "9974bcaf",
+    "webImage": "sha256:c2ef3cda4c9e9f91b50e2e7cd31ff8ff349175287f823f7ccc399fa98d1b3dd8",
+    "previousApiRelease": "9974bcaf",
+    "deltaBytes": 30378,
+    "deltaSha256": "e605decc9a19d798cf0d2b231c99b61dd1b486ba5df6d772aa3de80de32bb1a3",
+    "firestore": "yuban_authority_knowledge_transfers wildcard indexing disabled; verified after apply",
+    "candidate": "Actual operator archive-status on a nonexistent digest returned knowledge_transfer_unknown. No job or edition was written.",
+    "verification": "Independent readback of running healthy API/worker image IDs and RELEASE_TAG after the Windows IAP process returned a failure on exit. Public health 200, anonymous capability 401, unchanged Web asset hashes.",
+    "signer": "Worker mount retained; no key creation or rotation."
+  },
+  "local": [
+    "Selected public source editions and compatible vectors. Observed-version, expiry, internal audience and current approval gates.",
+    "A real local ZIP across two deterministic editions, one edition per invocation, readback of receipts from a reopened ledger. Corrupt content leaves a failed item at the original cursor.",
+    "Stop prevents a stale transaction committing either draft or receipt; restore keeps results and requires explicit resumption of ready batches.",
+    "Archive structure, file bounds, collision-safe output and hashes. Server tsc passed. Staging exposed missing module copies in the production Dockerfile; corrected in #481."
+  ],
+  "notExercised": [
+    "No corpus imported, published or embedded in production. No native build, OTA, real model or notification.",
+    "No large corpus performance run, routine operator upload UI, transfer of source-reading methods, or end-to-end cloud disaster recovery is claimed."
+  ]
+}
