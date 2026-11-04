@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import { readImportMapping } from './handover-import-records.ts';
 import { canonicalJson } from './online-routing.ts';
 import { originalBackupComparisonQuerySchema, originalBackupComparisonSchema, type OriginalBackupComparison } from '../src/shared/handover-imports.ts';
 import { createFirestoreAuthority } from './firestore-authority.ts';
 import { createFirestoreCareStore, firestoreCareSchema, firestoreProfileSchema } from './firestore-care.ts';
-import { domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreOnlineStore } from './firestore-online.ts';
 import type { createHandoverUploadService } from './handover-upload-service.ts';
 import type { HandoverImportCursor } from './handover-import.ts';
@@ -13,11 +14,20 @@ export interface OriginalBackupIssuer {
   serverId: string;
   matchesIssuedBackup(owner: string, id: string, manifestSha256: string, archiveSha256: string): Promise<boolean>;
 }
+export async function verifyOriginalBackup(owner: string, opened: Awaited<ReturnType<Uploads['open']>>, issuer?: OriginalBackupIssuer) {
+  if (!issuer) domainReject('package_original_unavailable', 503);
+  const { reader, job } = opened, manifest = reader.manifest;
+  if (manifest.purpose !== 'backup' || manifest.source.serverId !== issuer.serverId || manifest.source.accountId !== owner)
+    domainReject('package_original_unverified', 403);
+  if (reader.integrity !== 'trusted' && !(reader.integrity === 'missing_proof' &&
+    await issuer.matchesIssuedBackup(owner, manifest.packageId, reader.manifestSha256, job.request.sha256)))
+    domainReject('package_original_unverified', 403);
+}
 const cursorSchema = z.object({ scope: z.string(), page: z.object({ manifestSha256: z.string(), selectionHash: z.string(),
   pageIndex: z.number().int().nonnegative(), rowIndex: z.number().int().nonnegative() }).strict() }).strict();
 
 export function createOriginalBackupComparison(options: FirestoreDomainOptions & { uploads: Uploads; originalBackup?: OriginalBackupIssuer }) {
-  const authority = createFirestoreAuthority(options), care = createFirestoreCareStore(options), online = createFirestoreOnlineStore(options);
+  const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), care = createFirestoreCareStore(options), online = createFirestoreOnlineStore(options);
   return async function compare(owner: string, raw: unknown, signal: AbortSignal): Promise<OriginalBackupComparison> {
     const input = domainParse(originalBackupComparisonQuerySchema, raw);
     if (!options.originalBackup) domainReject('package_original_unavailable', 503);
@@ -25,11 +35,7 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
     try {
       const { reader, job } = opened, { manifest } = reader;
       if (job.version !== input.expectedUploadVersion) domainReject('version_conflict');
-      if (manifest.purpose !== 'backup' || manifest.source.serverId !== options.originalBackup.serverId || manifest.source.accountId !== owner)
-        domainReject('package_original_unverified', 403);
-      if (reader.integrity !== 'trusted' && !(reader.integrity === 'missing_proof' &&
-        await options.originalBackup.matchesIssuedBackup(owner, manifest.packageId, reader.manifestSha256, job.request.sha256)))
-        domainReject('package_original_unverified', 403);
+      await verifyOriginalBackup(owner, opened, options.originalBackup);
       if (!manifest.selection.childIds.includes(input.childId) || !manifest.selection.modules.includes(input.module))
         domainReject('package_scope_unavailable', 403);
       const aad = JSON.stringify(['original-backup-comparison:1', owner, input.uploadId, job.version, input.childId, input.module]);
@@ -52,17 +58,20 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
             ? firestoreProfileSchema.parse(row.value) : firestoreTaskSchema.parse(row.value);
           if (original.childId !== input.childId) domainReject('invalid_package_scope', 400);
           const id = 'id' in original ? original.id : original.childId;
-          const careState = input.module === 'care' ? await care.readImportRecordState(binding, id) : null;
+          const { mapping } = await readImportMapping(data, binding, { ...manifest.source, childId: input.childId, section: input.module, resourceId: id }, true);
+          const targetId = mapping?.target.id ?? id;
+          const careState = input.module === 'care' ? await care.readImportRecordState(binding, targetId) : null;
           const current = careState ? careState.value : input.module === 'profile' ? await care.readProfile(binding)
-            : await online.readImportTask(binding, input.childId, id);
+            : await online.readImportTask(binding, input.childId, targetId);
           const deleted = careState ? !current && careState.version > 0 :
             current && 'data' in current && current.data === null && current.version > 0 && 'data' in original && original.data !== null;
           const localVersion = current?.version ?? (careState && careState.version > 0 ? careState.version : null);
-          const changedFields = current ? Object.keys({ ...original, ...current }).filter(field => field !== 'version'
+          const alreadyRestored = !!current && mapping?.sourceHash === firestoreDomainHash(row.value) && mapping.target.version === current.version;
+          const changedFields = current && !alreadyRestored ? Object.keys({ ...original, ...current }).filter(field => field !== 'version'
             && canonicalJson(Reflect.get(current, field)) !== canonicalJson(Reflect.get(original, field))).sort() : [];
-          const state = deleted ? 'deleted' : !current ? 'unavailable' : current.version > original.version ? 'local_newer'
+          const state = deleted ? 'deleted' : !current || (input.module === 'profile' && localVersion === 0 && original.version > 0) ? 'unavailable' : alreadyRestored ? 'unchanged' : current.version > original.version ? 'local_newer'
             : current.version < original.version ? 'backup_newer' : changedFields.length ? 'different' : 'unchanged';
-          items.push({ id, backupVersion: original.version, localVersion, state, changedFields });
+          items.push({ id, ...(input.includeRestoreTarget ? { targetId } : {}), backupVersion: original.version, localVersion, state, changedFields });
         }
         checkUpload(); signal.throwIfAborted();
         const nextCursor = page.nextCursor ? Buffer.from(options.cipher.encrypt(JSON.stringify({ scope, page: page.nextCursor }), aad)).toString('base64url') : null;

@@ -1,3 +1,5 @@
+import { FirestoreDomainData, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
+import type { FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { z } from 'zod';
 import { importProvenanceLinkSchema } from '../src/shared/import-provenance.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
@@ -19,7 +21,7 @@ export const handoverImportItemSchema = z.object({ opId: uuid, batchId: uuid, fi
   resource: handoverImportResourceSchema.nullable(), changeSeq: z.string().regex(/^(0|[1-9][0-9]*)$/u).nullable(),
 }).strict();
 export type HandoverImportItem = z.infer<typeof handoverImportItemSchema>;
-export const handoverImportMappingSchema = z.object({ source: handoverSourceIdentitySchema, documentRevisionHash: hash.optional(),
+export const handoverImportMappingSchema = z.object({ source: handoverSourceIdentitySchema, restoreOriginal: z.literal(true).optional(), documentRevisionHash: hash.optional(),
   sourceVersion: version, sourceHash: hash, target: handoverImportResourceSchema,
   revision: version.min(1), operationId: uuid, importedAt: time,
 }).strict();
@@ -27,9 +29,18 @@ export type HandoverImportMapping = z.infer<typeof handoverImportMappingSchema>;
 export function handoverImportItemId(scope: WorkRecoveryScope, opId: string) {
   return JSON.stringify([scope.ownerUserId, scope.workspaceId, scope.childId, opId]);
 }
-export function handoverImportMappingId(scope: WorkRecoveryScope, source: HandoverSourceIdentity) {
+export function handoverImportMappingId(scope: WorkRecoveryScope, source: HandoverSourceIdentity, restoreOriginal?: true) {
   return JSON.stringify([scope.ownerUserId, scope.workspaceId, scope.childId,
-    source.serverId, source.accountId, source.childId, source.section, source.resourceId]);
+    source.serverId, source.accountId, source.childId, source.section, source.resourceId, ...(restoreOriginal ? ['original-backup'] : [])]);
+}
+export async function readImportMapping(data: FirestoreDomainData, binding: FirestoreAuthorityTransaction, source: HandoverSourceIdentity, restoreOriginal?: true) {
+  const mappingId = handoverImportMappingId(binding.scope, source, restoreOriginal);
+  const mappingRef = data.ref('handover_import_mappings', 'handover-import-mapping', mappingId);
+  const snapshot = await binding.transaction.get(mappingRef);
+  const mapping = snapshot.exists ? data.open('handover-import-mapping', mappingId, binding.scope, handoverImportMappingSchema, snapshot) : null;
+  if (mapping && (mapping.restoreOriginal !== restoreOriginal || firestoreDomainHash(mapping.source) !== firestoreDomainHash(source)
+    || mapping.revision !== snapshot.get('recordVersion'))) domainReject('import_mapping_binding', 500);
+  return { mappingId, mappingRef, mapping };
 }
 export function handoverImportItemMetadata(value: HandoverImportItem) {
   return { opId: value.opId, batchId: value.batchId, section: handoverImportItemSection(value), createdAt: value.at, outcome: value.outcome };

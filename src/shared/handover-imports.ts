@@ -28,22 +28,25 @@ export const handoverImportResolutionSchema = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('replace_current'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
   z.object({ mode: z.literal('restore_deleted'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
 ]);
+export const originalBackupModuleSchema = z.enum(['care', 'profile', 'tasks']);
 export const handoverImportCommandSchema = z.object({ opId: uuid, uploadId: uuid,
   expectedUploadVersion: count.positive(), acceptedManifestSha256: hash.nullable(),
-  resolutionOnly: z.boolean().optional(),
+  resolutionOnly: z.boolean().optional(), restoreOriginal: z.literal(true).optional(),
   targets: z.array(requestedTargetSchema).min(1).max(100),
   resolutions: z.array(z.object({ sourceChildId: uuid, section: handoverImportResourceSectionSchema,
     resourceId: uuid, resolution: handoverImportResolutionSchema }).strict()).max(10000),
 }).strict().refine(value => new Set(value.targets.map(row => row.sourceChildId)).size === value.targets.length
   && new Set(value.resolutions.map(row => JSON.stringify([row.sourceChildId, row.section, row.resourceId]))).size === value.resolutions.length
   && value.resolutions.every(row => value.targets.some(target => target.sourceChildId === row.sourceChildId && target.sections.includes(handoverImportModuleOf(row.section))))
+  && (!value.restoreOriginal || value.resolutionOnly && value.acceptedManifestSha256 !== null && value.targets.every(row =>
+    'childId' in row.target && row.target.spaceId === null && row.sourceChildId === row.target.childId
+    && row.sections.every(module => originalBackupModuleSchema.safeParse(module).success)))
   && (!value.resolutionOnly || value.resolutions.length > 0 && value.resolutions.every(row => row.resolution.mode !== 'preserve')
     && value.targets.every(row => !('createInClassId' in row.target))));
-export const originalBackupModuleSchema = z.enum(['care', 'profile', 'tasks']);
 export const originalBackupComparisonQuerySchema = z.object({ uploadId: uuid, expectedUploadVersion: count.positive(), childId: uuid,
-  module: originalBackupModuleSchema, cursor: z.string().min(1).max(16000).optional() }).strict();
+  module: originalBackupModuleSchema, includeRestoreTarget: z.literal(true).optional(), cursor: z.string().min(1).max(16000).optional() }).strict();
 export const originalBackupComparisonSchema = z.object({ uploadId: uuid, manifestSha256: hash, childId: uuid, module: originalBackupModuleSchema,
-  items: z.array(z.object({ id: uuid, backupVersion: resourceVersion, localVersion: resourceVersion.nullable(),
+  items: z.array(z.object({ id: uuid, targetId: uuid.optional(), backupVersion: resourceVersion, localVersion: resourceVersion.nullable(),
     state: z.enum(['unchanged', 'local_newer', 'backup_newer', 'different', 'deleted', 'unavailable']),
     changedFields: z.array(z.string().min(1).max(80)).max(64) }).strict()).max(20), nextCursor: z.string().max(16000).nullable() }).strict();
 export type OriginalBackupComparison = z.infer<typeof originalBackupComparisonSchema>;

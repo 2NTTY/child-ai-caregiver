@@ -3,7 +3,7 @@ import { workRecoveryScopeSchema } from './firestore-work-continuation-recovery.
 import { handoverImportResolutionSchema } from './handover-import-records.ts';
 import { firestoreDomainHash } from './firestore-domain-data.ts';
 import { classImportChildId } from './firestore-sharing-records.ts';
-import { handoverImportSectionSchema, handoverImportTargetSchema, handoverImportResourceSectionSchema, handoverImportModuleOf, handoverImportModuleOutcomeSchema } from '../src/shared/handover-imports.ts';
+import { handoverImportSectionSchema, handoverImportTargetSchema, handoverImportResourceSectionSchema, handoverImportModuleOf, handoverImportModuleOutcomeSchema, originalBackupModuleSchema } from '../src/shared/handover-imports.ts';
 
 const uuid = z.uuid(), hash = z.string().regex(/^[a-f0-9]{64}$/u), time = z.iso.datetime({ offset: true });
 const count = z.number().int().nonnegative().max(2147483646), text = z.string().min(1).max(256);
@@ -13,7 +13,7 @@ export const classImportSourceHash = (source: { serverId: string; accountId: str
   firestoreDomainHash([source.serverId, source.accountId, sourceChildId]);
 export const importBatchRequestSchema = z.object({ opId: uuid, uploadId: uuid,
   uploadVersion: count.min(1).optional(), inputFingerprint: hash.optional(),
-  resolutionOnly: z.boolean().optional(),
+  resolutionOnly: z.boolean().optional(), restoreOriginal: z.literal(true).optional(),
   enrolSourceIds: z.array(uuid).min(1).max(100).optional(),
   source: z.object({ serverId: text, accountId: text, packageId: uuid, packageVersion: count.min(1), manifestSha256: hash }).strict(),
   integrity: z.enum(['trusted', 'untrusted_signer', 'missing_proof']), acceptedManifestSha256: hash.nullable(),
@@ -23,6 +23,9 @@ export const importBatchRequestSchema = z.object({ opId: uuid, uploadId: uuid,
 }).strict().refine(value => new Set(value.targets.map(row => row.sourceChildId)).size === value.targets.length
   && new Set(value.resolutions.map(row => JSON.stringify([row.sourceChildId, row.section, row.resourceId]))).size === value.resolutions.length
   && value.resolutions.every(row => value.targets.some(target => target.sourceChildId === row.sourceChildId && target.sections.includes(handoverImportModuleOf(row.section))))
+  && (!value.restoreOriginal || value.resolutionOnly && value.acceptedManifestSha256 === value.source.manifestSha256
+    && value.targets.every(row => row.target.spaceId === null && row.target.childId === row.sourceChildId
+      && row.sections.every(module => originalBackupModuleSchema.safeParse(module).success)))
   && (!value.resolutionOnly || value.resolutions.length > 0 && value.resolutions.every(row => row.resolution.mode !== 'preserve') && value.totalItems === value.resolutions.length)
   && (!value.enrolSourceIds || !value.resolutionOnly && new Set(value.enrolSourceIds).size === value.enrolSourceIds.length
     && value.enrolSourceIds.every(id => value.targets.some(row => row.sourceChildId === id && row.target.spaceId
@@ -67,6 +70,7 @@ export function validImportBatch(job: HandoverImportBatch) {
     && modules.every((row, i) => row.module === selected[i].module)
     && (['created', 'updated', 'skipped', 'conflict'] as const).every(outcome => modules.reduce((sum, row) => sum + row[outcome], 0) <= job.counts[outcome]);
   return job.id === job.request.opId && job.fingerprint === firestoreDomainHash(job.request) && job.scope.childId === '00000000-0000-0000-0000-000000000000'
+    && (!job.request.restoreOriginal || job.request.source.accountId === job.scope.ownerUserId)
     && validModules
     && done.every((row, i) => row.sourceChildId === ids[i]) && (job.position === 0 && job.state !== 'completed' || done.length === ids.length)
     && (!job.failedEnrolment || job.failedEnrolment.sourceChildId === ids[done.length] && ['failed', 'interrupted'].includes(job.state))

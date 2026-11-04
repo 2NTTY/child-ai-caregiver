@@ -96,7 +96,10 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   }
   if (kind === 'handover-import-mapping') {
     const value = handoverImportMappingSchema.parse(raw);
-    requireValue(id === handoverImportMappingId(scope, value.source) && recordVersion === value.revision);
+    requireValue(id === handoverImportMappingId(scope, value.source, value.restoreOriginal) && recordVersion === value.revision);
+    if (value.restoreOriginal) requireValue(value.source.accountId === scope.ownerUserId && value.source.childId === scope.childId
+      && ['care', 'profile', 'tasks'].includes(value.source.section)
+      && (value.source.section === 'care' || value.target.id === value.source.resourceId));
     return handoverImportMappingMetadata(value);
   }
   if (kind === 'content-erasure') {
