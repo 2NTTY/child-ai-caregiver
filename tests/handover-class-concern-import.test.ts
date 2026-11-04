@@ -6,6 +6,8 @@ import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestoreSharingStore } from '../server/firestore-sharing.ts';
 import { createFirestoreConcernStore } from '../server/firestore-concerns.ts';
+import { createFirestoreCareStore } from '../server/firestore-care.ts';
+import { emptyCareDetails } from '../src/shared/care.ts';
 import { createFirestoreHandoverImportItems, type HandoverImportItemCommand } from '../server/firestore-handover-import-items.ts';
 import { firestoreBackgroundWorkSchema } from '../server/firestore-background-work.ts';
 import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.ts';
@@ -45,8 +47,10 @@ test('class concern imports use one canonical shared resource with teacher autho
     classroom = await sharing.acceptInvitation(userId, { operationId: randomUUID(), token: invite.token });
   }
   const sourceChild = (await authority.createChild({ userId: 'source', operationId: randomUUID(), displayName: 'Source child' })).child.id;
+  const record = await createFirestoreCareStore(options).create('source', sourceChild, { text: 'A linked observation', source: 'Parent', details: emptyCareDetails() });
+  assert.ok(record);
   const native = await concerns.create('source', sourceChild, { title: 'Source concern', reason: 'Source context', observation: 'First observation',
-    observedAt: new Date().toISOString(), links: { recordId: null, taskId: null, attentionId: null },
+    observedAt: new Date().toISOString(), links: { recordId: record.id, taskId: null, attentionId: null },
     followUpAt: new Date(Date.now() + 3600000).toISOString() }, randomUUID());
   const source = { serverId: 'https://class-concern.example.test', accountId: 'source', packageId: randomUUID(),
     packageVersion: 1, manifestSha256: 'a'.repeat(64), path: 'data/concerns.json', rowIndex: 0 };
@@ -69,6 +73,9 @@ test('class concern imports use one canonical shared resource with teacher autho
     .filter(([path, data]) => firestoreBackgroundWorkSchema.parse(codec.decode({ path, data }).value).kind === 'concern').length;
   // Before this import only the original personal source has a real follow-up job.
   const before = await followupCount(); assert.equal(before, 1);
+  const copiedRecord = await items.apply('teacher', { ...first, opId: randomUUID(), concernEvents: undefined,
+    row: { ...first.row, section: 'care', value: { ...record } } });
+  assert.ok(copiedRecord.resource);
   const saved = await items.apply('teacher', first);
   assert.equal(saved.outcome, 'created'); assert.ok(saved.resource);
   assert.deepEqual(await items.apply('teacher', first), saved);
@@ -78,6 +85,7 @@ test('class concern imports use one canonical shared resource with teacher autho
   const shared = concerns.forSharedSpace(classroom.id);
   const visible = await shared.get('viewer', member.child.id, saved.resource.id); assert.ok(visible);
   assert.equal(visible.events[0].text, 'First observation');
+  assert.equal(visible.events[0].recordId, copiedRecord.resource.id);
   assert.equal(visible.followUp?.state, 'stopped');
   assert.equal(visible.followUp?.at, native.followUp?.at);
   assert.equal(visible.followUp?.runId, null);
