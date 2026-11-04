@@ -1,0 +1,44 @@
+{
+  "pullRequests": [
+    492,
+    493
+  ],
+  "release": "f6c6baeb34a73356fc4b2e8c8c9400ea5ff13264",
+  "observedAt": "2026-11-05T06:20:00+08:00",
+  "site": "https://ex-machina.eu.org",
+  "candidate": {
+    "serverFiles": 11,
+    "bytes": 44652,
+    "sha256": "b8663ff7fc15dc18db095f43da0b936d184cbecd136fc7b6e6012e3a2ef29058"
+  },
+  "production": {
+    "apiWorkerImage": "sha256:d37271a147a3e62c2d550b9f772c0074e2be3ae3db86e170602e0e21b655c4e4",
+    "webImage": "sha256:f9825c937dbbe4a4af5617db4a00d2d2a653bab9bd3a3d33c5fdf747cd48b478",
+    "webRevision": "792b7bee",
+    "previousApiWorker": "792b7bee",
+    "apiWorkerHealthy": true,
+    "publicHealth": 200,
+    "anonymousImportCapabilities": 401,
+    "activeLeasesAtCutover": 0,
+    "existingUnknownBackgroundWorkLeftInPlace": 1,
+    "composeSha256": "7dc01734d800ef7859304fb8c0e66443b4f0292dcb178408638072d46f0c3aec",
+    "vmTerminationTime": "2026-11-06T13:33:50.732+08:00",
+    "signerMount": "worker only; trust readable on API and worker",
+    "legacyPostgresContainer": "exited"
+  },
+  "localEvidence": {
+    "private-instruction-erasure.test.ts": "delete and retry, pre-cleanup export, encrypted independent journal, exact receipt, isolated replay across a version rewind, replacement index and other owner survive",
+    "handover-original-instructions.test.ts": "signed package and actual worker mapping/receipt decoded before and after a new epoch; foreign and mismatched mappings rejected",
+    "serverTypecheck": "passed",
+    "redBeforeFix": [
+      "old-epoch v2 survived deletion after restoring v1",
+      "reader rejected a valid instruction mapping written by the current worker"
+    ]
+  },
+  "rollback": "Pre-cutover state was captured. After new workers start, stay in maintenance for recovery unless the fallback supports the new journal and mapping readers.",
+  "unverified": [
+    "Full cloud disaster restore and promotion",
+    "Explicit user restoration of a permanently retired private instruction into a new local resource",
+    "Android new binary and device acceptance"
+  ]
+}

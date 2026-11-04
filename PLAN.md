@@ -58,7 +58,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 的原生 runtime 指紋在本機與 EAS 不一致，本次未產出 APK。下次需要批量安裝時，先核對同一建置封包與依賴位置，再建置、驗簽及覆蓋安裝。[原建置紀錄](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)
 
-**當前入口（2026-11-05）為 [P4-HANDOVER01](#p4-handover01)。** 原站 `792b7bee` 已接班級成長匯入、本人私人交代原件還原及成長報告的分期比較。接續私人資料的刪除重放及其餘本人備份模組；依賴 D 的接點等對應接口穩定。原生大型包及系統分享留待集中建置和設備驗收。知識維運、跨端及完整交付仍依各包門檻。[本批發布證據](artifacts/verification/P4_INSTRUCTIONS_REPORTS_DELIVERY_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)／[先前發布和未驗項](STATUS.md)
+**當前入口（2026-11-05）為 [P4-HANDOVER01](#p4-handover01)。** 原站 API／worker `f6c6baeb` 已接私人交代的永久刪除重放及現行本人還原紀錄，Web 版本為 `792b7bee`。下一步接本人從已驗證備份明確恢復已刪交代，以及其餘本人備份模組。原生大型包與分享留待批量建置和設備驗收；知識維運、跨端與集中服務交付依各包門檻。D 的接點待相應接口穩定。[本批發布證據](artifacts/verification/P4_PRIVATE_ERASURE_RESTORE_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)／[其他進度](STATUS.md)
 
 測試階段持續交付後端與 Web。Android 共用改動累積後，在實際需要安裝或驗證原生功能時集中建置 APK；個別功能包可先完成共用接線，交付紀錄另列尚未在手機驗收的部分。
 

@@ -4646,3 +4646,7 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 ## 2026-11-05 私人交代還原及成長報告
 
 #487～#490 合批更新 Web、API 及 worker。私人交代以簽署合成備份驗過明確替換、同名／跨帳戶拒絕和重送。最近兩段的增減沿正式報告快照，Web 下載及原生系統分享仍核對同一版本。機械驗收沒有代替實際設備操作。[本批發布證據](artifacts/verification/P4_INSTRUCTIONS_REPORTS_DELIVERY_20261105.json)
+
+## 2026-11-05 私人交代刪除與還原接線
+
+#492、#493 合批更新原站 API 及 worker。定向回歸重現兩個問題：舊世代的較高版本會避過刪除，以及還原讀取器會拒絕正式匯入器已寫下的原件紀錄。兩條情境已通過，原站維持原 Web 及簽章配置，Android 待批量交付。[核對範圍與回退界線](artifacts/verification/P4_PRIVATE_ERASURE_RESTORE_20261105.json)
