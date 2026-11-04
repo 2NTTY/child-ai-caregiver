@@ -1,12 +1,13 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import { CHAT_FILE_LIMITS } from '../../../src/shared/chat-files';
+import { HANDOVER_UPLOAD_MAX_BYTES } from '../../../src/shared/handover-uploads';
 import type { SelectedPackage } from '../production/HandoverImportOwner';
 import { withNativePickedFile } from '../components/agent/native-picked-file';
 import { packageHash } from './package-import-hash';
+import { registerPackageCacheBody, supportsPackageCacheBody } from './package-cache-body.native';
 
-// The installed Expo fetch buffers request bodies. Keep the existing native attachment bound
-// until a streaming transport can preserve session identity, cancellation and redirect rejection.
-export const PACKAGE_IMPORT_MAX_BYTES = CHAT_FILE_LIMITS.bytes;
+// Older binaries retain their original buffered attachment bound.
+export const PACKAGE_IMPORT_MAX_BYTES = supportsPackageCacheBody() ? HANDOVER_UPLOAD_MAX_BYTES : CHAT_FILE_LIMITS.bytes;
 export async function pickImportPackage(signal: AbortSignal): Promise<SelectedPackage | null> {
   signal.throwIfAborted();
   const chosen = await File.pickFileAsync({ mimeTypes: '*/*', multipleFiles: false });
@@ -25,10 +26,19 @@ export async function prepareImportPackage(file: File, signal: AbortSignal): Pro
     const owned = new File(folder, `${crypto.randomUUID()}.zip`);
     let body: Awaited<ReturnType<File['bytes']>> | undefined;
     try {
-      signal.throwIfAborted(); await source.copy(owned); signal.throwIfAborted();
+      signal.throwIfAborted();
+      // The provider helper owns this temporary copy and deletes its empty directory afterwards.
+      if (supportsPackageCacheBody() && file.uri.startsWith('content://')) await source.move(owned);
+      else await source.copy(owned);
+      signal.throwIfAborted();
       const bytes = owned.size;
       if (bytes < 1 || bytes > PACKAGE_IMPORT_MAX_BYTES) throw new Error('package_native_size_exceeded');
       const sha256 = await packageHash(owned.readableStream(), bytes, signal);
+      if (!owned.exists || owned.size !== bytes) throw new Error('invalid_package_file');
+      if (supportsPackageCacheBody()) {
+        const unregister = registerPackageCacheBody(owned);
+        return { filename, bytes, sha256, body: owned, release() { unregister(); if (owned.exists) owned.delete(); } };
+      }
       // A byte body preserves the API's application/zip header (Expo may override a Blob MIME).
       body = await owned.bytes(); signal.throwIfAborted();
       if (body.length !== bytes) throw new Error('invalid_package_file');

@@ -29,6 +29,7 @@ const states: Record<HandoverImportView['state'], string> = {
 const integrityLabels = { trusted: '可信簽章已驗證', untrusted_signer: '簽章有效，但來源簽署者未受信任', missing_proof: '未有可信簽章證明' };
 const uploadStates = { reserved: '尚未上載完成', receiving: '接收或驗證中', ready: '可繼續匯入',
   failed: '上載失敗，待清理', cancelled: '已取消，待清理', expired: '已到期，待清理' };
+const cleanedUploadStates = { reserved: '已預留', receiving: '接收或驗證中', ready: '已驗證', failed: '上載失敗', cancelled: '已取消', expired: '已到期' };
 const enrolmentStates = { pending: '待處理，尚未建立學生', created: '已建立班級學生', skipped: '沿用已核對的班級學生', failed: '未能入班' };
 const comparisonStates = {unchanged:'與備份相同',local_newer:'目前版本較新',backup_newer:'備份版本較新',different:'內容不同',deleted:'目前已刪除',unavailable:'未能核實目前狀態'};
 const avatarComparisonStates = { empty_backup: '備份沒有圖片，不能還原。', unchanged: '備份與目前圖片相同，毋須還原。',
@@ -265,6 +266,29 @@ export function HandoverImportControls() {
         onPress={() => { setOpen(true); void controller.openUpload(row.id); }} />
     </View>)}
     {state.uploadsCursor ? <AppButton label="載入更多暫存資料包" variant="quiet" disabled={locked} onPress={() => { void controller.loadUploads(true); }} /> : null}
+    <Text style={styles.title}>已清理的上載歷史</Text>
+    <Text style={styles.body}>只保留上載參考及終態，原檔已清理，不能再用來匯入。按需要讀取，不影響上方暫存清單。</Text>
+    <AppButton label="讀取已清理上載歷史" variant="quiet" loading={state.cleanedUploads?.loading} disabled={writeLocked}
+      onPress={() => { void controller.loadCleanedUploads(); }} />
+    {state.cleanedUploads?.error ? <Text accessibilityLiveRegion="polite" style={styles.body}>
+      未能讀取已清理上載歷史（{state.cleanedUploads.error.status ? `HTTP ${state.cleanedUploads.error.status}` : '連線或回應未能確認'} · {state.cleanedUploads.error.code}）。可重新讀取；這不代表沒有紀錄。
+    </Text> : null}
+    {state.cleanedUploads?.loaded && !state.cleanedUploads.loading && !state.cleanedUploads.error && !state.cleanedUploads.items.length
+      ? <Text style={styles.body}>沒有已清理的上載紀錄。</Text> : null}
+    {state.cleanedUploads?.items.map(row => <View key={row.id} style={styles.item}>
+      <Text style={styles.title}>{row.filename}</Text>
+      <Text style={styles.body}>上載日期：{dateText(row.createdAt)} · 原暫存期限：{dateText(row.expiresAt)}</Text>
+      <Text selectable style={styles.body}>原上載參考：{row.id}</Text>
+      {'expectedArchiveSha256' in row && typeof row.expectedArchiveSha256 === 'string' ? <>
+        <Text selectable style={styles.body}>選取檔案 SHA-256：{row.expectedArchiveSha256}</Text>
+        <Text style={styles.body}>此為選取檔案的預期雜湊，不代表已核實的內容或簽章。</Text>
+      </> : null}
+      <Text style={styles.body}>終態：已清理 · {cleanedUploadStates[row.state]}</Text>
+      {row.state === 'failed' ? <Text style={styles.body}>尚無可核對包身份；不能視為已驗證的內容或簽章。</Text> : null}
+      {row.error ? <Text style={styles.body}>已記錄的失敗原因：{importErrorText(new HandoverApiError(409, row.error))}（{row.error}）</Text> : null}
+    </View>)}
+    {state.cleanedUploads?.nextCursor ? <AppButton label="載入更多已清理上載歷史" variant="quiet" disabled={writeLocked}
+      onPress={() => { void controller.loadCleanedUploads(true); }} /> : null}
     <AppButton label="重新讀取匯入批次" variant="quiet" loading={state.busy === 'read'} disabled={locked} onPress={() => { void controller.load(); }} />
     {state.loaded && !state.items.length ? <Text style={styles.body}>尚未有匯入批次。</Text> : null}
     {state.items.map(row => <View key={row.id} style={styles.item}>

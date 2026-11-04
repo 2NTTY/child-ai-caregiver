@@ -1,0 +1,247 @@
+diff --git a/node_modules/expo/android/src/main/java/expo/modules/fetch/ExpoFetchModule.kt b/node_modules/expo/android/src/main/java/expo/modules/fetch/ExpoFetchModule.kt
+--- a/node_modules/expo/android/src/main/java/expo/modules/fetch/ExpoFetchModule.kt
++++ b/node_modules/expo/android/src/main/java/expo/modules/fetch/ExpoFetchModule.kt
+@@ -45,6 +45,7 @@
+ 
+   override fun definition() = ModuleDefinition {
+     Name("ExpoFetchModule")
++    Constant("supportsCacheFileBody") { true }
+ 
+     OnCreate {
+       cookieJarContainer.setCookieJar(JavaNetCookieJar(cookieHandler))
+diff --git a/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeRequest.kt b/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeRequest.kt
+--- a/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeRequest.kt
++++ b/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeRequest.kt
+@@ -11,7 +11,9 @@
+ import okhttp3.OkHttpClient
+ import okhttp3.Request
+ import okhttp3.RequestBody
++import okhttp3.RequestBody.Companion.asRequestBody
+ import okhttp3.RequestBody.Companion.toRequestBody
++import java.io.File
+ import java.net.URL
+ 
+ private data class RequestHolder(var request: Request?)
+@@ -46,12 +48,21 @@
+       clientBuilder.followSslRedirects(false)
+     }
+ 
++    if (requestInit.cacheFileBody != null) clientBuilder.retryOnConnectionFailure(false)
+     val newClient = clientBuilder.build()
+     response.redirectMode = requestInit.redirect
+ 
+     val headers = requestInit.headers.toHeaders()
+     val mediaType = headers["Content-Type"]?.toMediaTypeOrNull()
+-    val reqBody = buildRequestBody(requestInit.method, requestBody, mediaType)
++    val reqBody = requestInit.cacheFileBody?.let { relative ->
++      require(requestInit.method == "POST" && requestBody == null &&
++        requestInit.credentials == NativeRequestCredentials.OMIT && requestInit.redirect == NativeRequestRedirect.ERROR)
++      require(relative.isNotBlank() && !File(relative).isAbsolute && relative.split('/').none { it.isEmpty() || it == "." || it == ".." })
++      val cache = checkNotNull(appContext).cacheDirectory.canonicalFile
++      val file = File(cache, relative).canonicalFile
++      require(file.path.startsWith(cache.path + File.separator) && file.isFile)
++      file.asRequestBody(mediaType)
++    } ?: buildRequestBody(requestInit.method, requestBody, mediaType)
+     val request = Request.Builder()
+       .headers(headers)
+       .method(requestInit.method, reqBody)
+diff --git a/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeRequestInit.kt b/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeRequestInit.kt
+--- a/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeRequestInit.kt
++++ b/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeRequestInit.kt
+@@ -11,5 +11,6 @@
+   @Field val credentials: NativeRequestCredentials = NativeRequestCredentials.INCLUDE,
+   @Field val headers: List<Pair<String, String>> = emptyList(),
+   @Field val method: String = "GET",
+-  @Field val redirect: NativeRequestRedirect = NativeRequestRedirect.FOLLOW
++  @Field val redirect: NativeRequestRedirect = NativeRequestRedirect.FOLLOW,
++  @Field val cacheFileBody: String? = null
+ ) : Record
+diff --git a/node_modules/expo/build/winter/fetch/NativeRequest.d.ts b/node_modules/expo/build/winter/fetch/NativeRequest.d.ts
+--- a/node_modules/expo/build/winter/fetch/NativeRequest.d.ts
++++ b/node_modules/expo/build/winter/fetch/NativeRequest.d.ts
+@@ -5,6 +5,8 @@
+     cancel(): void;
+ }
+ export interface NativeRequestInit {
++    /** Relative cache file for a native POST with credentials omitted and redirects rejected. */
++    cacheFileBody?: string;
+     credentials?: RequestCredentials;
+     headers?: NativeHeadersType;
+     method?: string;
+diff --git a/node_modules/expo/build/winter/fetch/fetch.types.d.ts b/node_modules/expo/build/winter/fetch/fetch.types.d.ts
+--- a/node_modules/expo/build/winter/fetch/fetch.types.d.ts
++++ b/node_modules/expo/build/winter/fetch/fetch.types.d.ts
+@@ -2,6 +2,8 @@
+  * A fetch RequestInit compatible structure.
+  */
+ export interface FetchRequestInit {
++    /** Relative cache file for a native POST with credentials omitted and redirects rejected. */
++    cacheFileBody?: string;
+     body?: BodyInit | null;
+     credentials?: RequestCredentials;
+     headers?: HeadersInit;
+diff --git a/node_modules/expo/ios/Fetch/ExpoFetchModule.swift b/node_modules/expo/ios/Fetch/ExpoFetchModule.swift
+--- a/node_modules/expo/ios/Fetch/ExpoFetchModule.swift
++++ b/node_modules/expo/ios/Fetch/ExpoFetchModule.swift
+@@ -19,6 +19,8 @@
+ 
+   public func definition() -> ModuleDefinition {
+     Name("ExpoFetchModule")
++
++    Constant("supportsCacheFileBody") { true }
+ 
+     OnDestroy {
+       urlSession.invalidateAndCancel()
+@@ -93,12 +95,29 @@
+       }
+ 
+       AsyncFunction("start") { (request: NativeRequest, url: URL, requestInit: NativeRequestInit, requestBody: Data?, promise: Promise) in
++        var fileBody: URL?
++        if let path = requestInit.cacheFileBody {
++          guard requestInit.method == "POST", requestBody == nil, requestInit.credentials == .omit,
++                requestInit.redirect == .error, !path.isEmpty,
++                path.components(separatedBy: "/").allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." }),
++                let cache = self.appContext?.config.cacheDirectory?.resolvingSymlinksInPath().standardizedFileURL else {
++            promise.reject(FetchInvalidCacheFileException())
++            return
++          }
++          let file = cache.appendingPathComponent(path).resolvingSymlinksInPath().standardizedFileURL
++          guard file.path.hasPrefix(cache.path + "/"), (try? file.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else {
++            promise.reject(FetchInvalidCacheFileException())
++            return
++          }
++          fileBody = file
++        }
+         request.start(
+           urlSession: urlSession,
+           urlSessionDelegate: urlSessionDelegate,
+           url: url,
+           requestInit: requestInit,
+-          requestBody: requestBody
++          requestBody: requestBody,
++          fileBody: fileBody
+         )
+         request.response.waitFor(states: [.responseReceived, .errorReceived]) { state in
+           if state == .responseReceived {
+diff --git a/node_modules/expo/ios/Fetch/ExpoURLSessionTask.swift b/node_modules/expo/ios/Fetch/ExpoURLSessionTask.swift
+--- a/node_modules/expo/ios/Fetch/ExpoURLSessionTask.swift
++++ b/node_modules/expo/ios/Fetch/ExpoURLSessionTask.swift
+@@ -19,7 +19,8 @@
+     urlSessionDelegate: URLSessionSessionDelegateProxy,
+     url: URL,
+     requestInit: NativeRequestInit,
+-    requestBody: Data?
++    requestBody: Data?,
++    fileBody: URL? = nil
+   ) {
+     let request = NSMutableURLRequest(url: url)
+     URLProtocol.setProperty(requestInit.redirect == .follow, forKey: "shouldFollowRedirects", in: request)
+@@ -38,7 +39,12 @@
+     }
+     request.httpBody = requestBody
+ 
+-    let task = urlSession.dataTask(with: request as URLRequest)
++    let task: URLSessionDataTask
++    if let fileBody {
++      task = urlSession.uploadTask(with: request as URLRequest, fromFile: fileBody)
++    } else {
++      task = urlSession.dataTask(with: request as URLRequest)
++    }
+     urlSessionDelegate.addDelegate(task: task, delegate: self)
+     self.task = task
+     task.resume()
+diff --git a/node_modules/expo/ios/Fetch/FetchExceptions.swift b/node_modules/expo/ios/Fetch/FetchExceptions.swift
+--- a/node_modules/expo/ios/Fetch/FetchExceptions.swift
++++ b/node_modules/expo/ios/Fetch/FetchExceptions.swift
+@@ -1,6 +1,10 @@
+ // Copyright 2015-present 650 Industries. All rights reserved.
+ 
+ import ExpoModulesCore
++
++internal final class FetchInvalidCacheFileException: Exception {
++  override var reason: String { "Invalid upload file or request options" }
++}
+ 
+ internal final class FetchUnknownException: Exception {
+   override var reason: String {
+diff --git a/node_modules/expo/ios/Fetch/NativeRequest.swift b/node_modules/expo/ios/Fetch/NativeRequest.swift
+--- a/node_modules/expo/ios/Fetch/NativeRequest.swift
++++ b/node_modules/expo/ios/Fetch/NativeRequest.swift
+@@ -19,7 +19,8 @@
+     urlSessionDelegate: URLSessionSessionDelegateProxy,
+     url: URL,
+     requestInit: NativeRequestInit,
+-    requestBody: Data?
++    requestBody: Data?,
++    fileBody: URL? = nil
+   ) {
+     self.response.redirectMode = requestInit.redirect
+     self.task.start(
+@@ -27,7 +28,8 @@
+       urlSessionDelegate: urlSessionDelegate,
+       url: url,
+       requestInit: requestInit,
+-      requestBody: requestBody
++      requestBody: requestBody,
++      fileBody: fileBody
+     )
+   }
+ 
+diff --git a/node_modules/expo/ios/Fetch/NativeRequestInit.swift b/node_modules/expo/ios/Fetch/NativeRequestInit.swift
+--- a/node_modules/expo/ios/Fetch/NativeRequestInit.swift
++++ b/node_modules/expo/ios/Fetch/NativeRequestInit.swift
+@@ -16,5 +16,8 @@
+   var method: String = "GET"
+ 
+   @Field
++  var cacheFileBody: String?
++
++  @Field
+   var redirect: NativeRequestRedirect = .follow
+ }
+diff --git a/node_modules/expo/src/winter/fetch/NativeRequest.ts b/node_modules/expo/src/winter/fetch/NativeRequest.ts
+--- a/node_modules/expo/src/winter/fetch/NativeRequest.ts
++++ b/node_modules/expo/src/winter/fetch/NativeRequest.ts
+@@ -12,6 +12,8 @@
+ }
+ 
+ export interface NativeRequestInit {
++  /** Relative cache file for a native POST with credentials omitted and redirects rejected. */
++  cacheFileBody?: string;
+   credentials?: RequestCredentials; // same-origin is not supported
+   headers?: NativeHeadersType;
+   method?: string;
+diff --git a/node_modules/expo/src/winter/fetch/fetch.ts b/node_modules/expo/src/winter/fetch/fetch.ts
+--- a/node_modules/expo/src/winter/fetch/fetch.ts
++++ b/node_modules/expo/src/winter/fetch/fetch.ts
+@@ -62,12 +62,18 @@
+ 
+   const request = new ExpoFetchModule.NativeRequest(response) as NativeRequest;
+ 
++  const cacheFileBody = init?.cacheFileBody;
++  if (cacheFileBody != null && (ExpoFetchModule.supportsCacheFileBody !== true || body != null ||
++      method?.toUpperCase() !== 'POST' || credentials !== 'omit' || redirect !== 'error')) {
++    throw new FetchError('Unsupported file upload or request options.');
++  }
+   const { body: requestBody, overriddenHeaders } = await normalizeBodyInitAsync(body);
+   if (overriddenHeaders) {
+     headers = overrideHeaders(headers, overriddenHeaders);
+   }
+ 
+   const nativeRequestInit: NativeRequestInit = {
++    ...(cacheFileBody != null ? { cacheFileBody } : {}),
+     credentials: credentials ?? 'include',
+     headers,
+     method: method != null ? normalizeMethod(method) : 'GET',
+diff --git a/node_modules/expo/src/winter/fetch/fetch.types.ts b/node_modules/expo/src/winter/fetch/fetch.types.ts
+--- a/node_modules/expo/src/winter/fetch/fetch.types.ts
++++ b/node_modules/expo/src/winter/fetch/fetch.types.ts
+@@ -2,6 +2,8 @@
+  * A fetch RequestInit compatible structure.
+  */
+ export interface FetchRequestInit {
++  /** Relative cache file for a native POST with credentials omitted and redirects rejected. */
++  cacheFileBody?: string;
+   body?: BodyInit | null;
+   credentials?: RequestCredentials; // same-origin is not supported
+   headers?: HeadersInit;

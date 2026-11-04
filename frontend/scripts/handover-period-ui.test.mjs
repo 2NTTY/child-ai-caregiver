@@ -6,7 +6,7 @@ import * as handoverOwner from '../src/production/HandoverOwner.ts';
 import * as handoverContract from '../../src/shared/handover.ts';
 import * as handoverImportContract from '../../src/shared/handover-imports.ts';
 import * as handoverImportOwner from '../src/production/HandoverImportOwner.ts';
-import { createHandoverApi } from '../../src/client/handover-api.ts';
+import { createHandoverApi, HandoverApiError } from '../../src/client/handover-api.ts';
 import * as classTargets from '../src/production/handover-class-targets.ts';
 import * as classExport from '../src/production/handover-class-export.ts';
 
@@ -30,6 +30,7 @@ function load(path) {
     : name.endsWith('/handover-class-export') ? classExport
     : name.endsWith('/HandoverOwner') ? handoverOwner
     : name.endsWith('/HandoverImportOwner') ? handoverImportOwner
+    : name.endsWith('/handover-api') ? { HandoverApiError }
     : name.endsWith('/handover') ? handoverContract
     : name.endsWith('/handover-imports') ? handoverImportContract
     : name.endsWith('/date-time') ? load('../src/components/date-time.ts')
@@ -185,4 +186,59 @@ test('original document review negotiates capabilities and keeps colliding docum
   assert.match(text(results.tree), /文件.*有衝突/); assert.match(text(results.tree), /到診準備.*有衝突/);
   assert.match(text(results.tree), /引用.*變更/); assert.match(text(results.tree), /預約.*變更/);
   assert.doesNotMatch(text(results.tree), /document_source_changed|appointment_changed/);
+});
+
+test('cleaned upload history is on demand, separately paged and read-only across server errors and identity changes', async () => {
+  const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`, queries = [];
+  const row = (n, filename, state, error = null) => ({ id: id(n), version: 3, filename, state, error, bytes: 3,
+    createdAt: '2026-11-04T09:00:00Z', expiresAt: '2026-11-05T09:00:00Z' });
+  const active = row(1, 'Active.zip', 'ready'), failed = row(2, 'Failed backup.zip', 'failed', 'package_hash_mismatch');
+  failed.expectedArchiveSha256 = 'b'.repeat(64);
+  const cancelled = row(3, 'Cancelled backup.zip', 'cancelled'), other = row(4, 'Other owner history.zip', 'expired');
+  let available = false, hold = false, late, opens = 0;
+  const api = createHandoverApi('https://example.test', async (input, init) => {
+    const url = new URL(input), actor = new Headers(init.headers).get('x-expected-user-id');
+    if (url.pathname !== '/api/account/package-uploads') { opens++; return Response.json({ ...failed, preview: null }); }
+    queries.push({ actor, history: url.searchParams.get('history'), cursor: url.searchParams.get('cursor') });
+    if (!url.searchParams.has('history')) return Response.json({ items: [active], nextCursor: 'active-next' });
+    assert.equal(url.searchParams.get('history'), 'cleaned');
+    if (!available) return Response.json({ error: { code: 'invalid_input' } }, { status: 400 });
+    const response = Response.json({ items: actor === 'other' ? [other] : url.searchParams.has('cursor') ? [cancelled] : [failed],
+      nextCursor: actor === 'other' || url.searchParams.has('cursor') ? null : 'history-next' });
+    return hold ? new Promise(resolve => { late = () => resolve(response); }) : response;
+  });
+  const controller = new handoverImportOwner.HandoverImportOwner(api); controller.syncContext('owner', 'owner:1', true);
+  assert.equal(typeof controller.loadCleanedUploads, 'function');
+  await controller.loadUploads(); assert.equal(queries.length, 1); assert.equal(queries[0].history, null);
+  assert.equal(controller.getSnapshot().cleanedUploads, null);
+  production = { owner: { handoverImportOwner: controller, sharedChild: { subscribe: noop, getSnapshot: () => ({ phase: 'idle' }) } },
+    userId: 'owner', identityKey: 'owner:1', online: true, recordsState: { children: [] }, account: { gate: 'ready', deletion: { phase: 'idle' } } };
+  const component = load('../src/components/account/HandoverImportControls.tsx').HandoverImportControls, view = render(component);
+  const again = () => render(component, view), settle = () => new Promise(resolve => setImmediate(resolve));
+  assert.ok(control(view, '讀取已清理上載歷史')); assert.equal(queries.length, 1, 'rendering does not fetch history');
+  control(view, '讀取已清理上載歷史').props.onPress(); await settle(); again();
+  assert.match(text(view.tree), /HTTP 400/); assert.match(text(view.tree), /invalid_input/);
+  assert.doesNotMatch(text(view.tree), /沒有已清理的上載紀錄/);
+  assert.equal(controller.getSnapshot().cleanedUploads.loaded, false);
+  available = true; control(view, '讀取已清理上載歷史').props.onPress(); await settle(); again();
+  assert.match(text(view.tree), /Failed backup.zip/); assert.match(text(view.tree), /上載日期/);
+  assert.match(text(view.tree), /原上載參考/); assert.match(text(view.tree), /package_hash_mismatch/);
+  assert.match(text(view.tree), /選取檔案 SHA-256/); assert.match(text(view.tree), new RegExp('b'.repeat(64)));
+  assert.match(text(view.tree), /尚無可核對包身份/); assert.match(text(view.tree), /不代表已核實的內容或簽章/);
+  const historyRow = nodes(view.tree).find(node => node.type === 'View' && node.props?.children?.some?.(child => text(child) === failed.filename));
+  assert.ok(historyRow); assert.equal(nodes(historyRow).filter(node => node.props?.onPress || node.props?.onChange).length, 0);
+  await controller.openUpload(failed.id); assert.equal(opens, 0, 'a known cleaned upload cannot be reopened for import');
+  assert.equal(controller.getSnapshot().upload, null); assert.match(controller.getSnapshot().notice, /已清理/);
+  control(view, '載入更多已清理上載歷史').props.onPress(); await settle(); again();
+  assert.deepEqual(controller.getSnapshot().cleanedUploads.items.map(item => item.id), [failed.id, cancelled.id]);
+  assert.equal(controller.getSnapshot().uploadsCursor, 'active-next');
+  assert.equal(queries.at(-1).cursor, 'history-next'); assert.equal(queries.at(-1).history, 'cleaned');
+  hold = true; const reading = controller.loadCleanedUploads(); await settle();
+  controller.syncContext('other', 'other:1', true); late(); await reading;
+  assert.equal(controller.getSnapshot().cleanedUploads, null); assert.deepEqual(controller.getSnapshot().uploads, []);
+  hold = false; production.userId = 'other'; production.identityKey = 'other:1';
+  await controller.loadCleanedUploads(); again();
+  assert.deepEqual(controller.getSnapshot().cleanedUploads.items.map(item => item.id), [other.id]);
+  assert.equal(queries.at(-1).cursor, null); assert.equal(queries.at(-1).actor, 'other');
+  assert.doesNotMatch(text(view.tree), /Failed backup.zip|Cancelled backup.zip/);
 });
