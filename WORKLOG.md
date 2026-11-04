@@ -4608,3 +4608,11 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 ## 2026-11-05 文件及到診準備原件還原
 
 #459／#460 經原匯入 worker 及共用表單接線。合成簽署包核對了同一原件、已有修訂、原操作及已完成預約的逐項衝突。候選通過後切換原站，Web 啟動時一次 TLS 握手失敗，待服務就緒後公開健康檢查及檔案 hash 均通過。簽章沿用已有金鑰，Android 待批量建置。[發布證據](artifacts/verification/P4_ORIGINAL_DOCUMENTS_20261105.json)
+
+## 2026-11-05 上載紀錄及孩子頭像還原
+
+#462–#465 已合併，原站 API、worker 與 Web 一併發布。修正還原時誤留舊圖來源。公開健康、登入保護、Web 內容指紋通過，既有 worker 簽章配置保持有效。產品帳戶及原生大型包未作真機驗收，APK 延後批量建置。[本批交付證據](artifacts/verification/P4_UPLOAD_HISTORY_CHILD_AVATAR_20261105.json)
+
+## 2026-11-05 私人來源刪除重放與成長報告分期
+
+#466、#467 合批發布 API 與 worker。舊刪除證明缺失時合成還原確實中止，補登後重放成功；季度報告的分期筆數涵蓋所有掃描頁。原 VM 候選核對及站外健康讀回通過。一筆原已屬未知的背景結果保留。原生備份真還原及設備分享尚未驗收。[本批證據](artifacts/verification/P4_SOURCE_ERASURE_REPORT_TRENDS_20261105.json)

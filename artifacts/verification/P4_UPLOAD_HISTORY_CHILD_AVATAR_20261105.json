@@ -1,0 +1,37 @@
+{
+  "commit": "cbd8101eb7efa0f0e47d871f082c4ef86199562f",
+  "previousApplicationCommit": "59f6700a0621162414de05cf35149de6db1731ad",
+  "includedPullRequests": [
+    462,
+    463,
+    464,
+    465
+  ],
+  "checkedAt": "2026-11-05T02:59:31+08:00",
+  "local": {
+    "uploadHistory": "Real HTTP contract with synthetic storage: malformed ZIP after reservation, cleanup, fresh client audit lookup, scoped cursors, 20+4 results. A closed receipt cannot retrieve or resubmit bytes.",
+    "personalChildAvatar": "One signed personal backup through the registered import worker. Returned JPEG bytes match, alternate child and account unaffected. Both absent and present historical provenance checked. In-memory restoration of the prior spread reproduced the stale provenance failure.",
+    "form": "Selected child coverage, original command, separate account avatar, and capacity message. Frontend and server TypeScript passed.",
+    "native": "Existing Expo 57.0.24 transport patch applied to an isolated dependency copy; JS/native contract and a 21 MiB synthetic file hash checked. Not compiled or tested on a device."
+  },
+  "deployment": {
+    "host": "ex-machina.eu.org",
+    "apiWorkerImage": "sha256:40b0cf4ab9f44b59ca045e7929e498f253764e8c66382fefc9a68e1744cfeddc",
+    "webImage": "sha256:01f8ef7a588497a3f9e1e591d2bd0c7123e8b4f482371834286a1184e55a05d9",
+    "composeSha256": "46d2ce840d02d46812d4c7e9c4baa5b816269dd98b01bb0272f1f70106b9736d",
+    "apiDeltaSha256": "5d708923a4d74c251d617a22ead808d276c28409154416326c682e4a5e25b60c",
+    "webArchiveSha256": "6e2b1a25afcaeafc9601c06abc402d694653d1f92e556734a1c6a018ad58c7fb",
+    "settingsHtmlSha256": "dc4b13bab2e7159664395ea27f21d5dcef45b01236b3fd40195dfb4d82199a70",
+    "settingsJsSha256": "808be2abd05a794b1e7223a41e8f4dfa9e4c0da2325172181a836af0c817c500",
+    "healthHttp": 200,
+    "anonymousCleanedUploadHistoryHttp": 401,
+    "candidate": "API exposes original child attachments and documents. Both upload lists require login. Worker with existing signer and upload cleanup assembled.",
+    "signingKey": "Existing worker-only Ed25519 key; no key created or rotated.",
+    "switch": "Zero active agent leases, zero active outbox or background work. One previous unknown with zero unresolved. One transient TLS handshake failure during Web container startup, final external checks passed."
+  },
+  "pending": [
+    "Authenticated parent flow on production",
+    "New native binary, real-device large-file upload and OS cancellation (batched APK later; installed fallback 20 MiB)",
+    "Original photo, voice, general file and remaining module restore; requests rejected before an upload or import batch exists are separately scoped."
+  ]
+}
