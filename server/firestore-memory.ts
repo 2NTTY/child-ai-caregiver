@@ -14,6 +14,7 @@ import { readContextBasis, prepareContextChange } from './firestore-context-basi
 import { firestoreChatMessageSchema, type FirestoreChatStore } from './firestore-chat.ts';
 import type { FirestoreCareStore } from './firestore-care.ts';
 import type { FirestoreOnlineMutation } from './firestore-online.ts';
+import { readImportMapping, type HandoverImportResolution } from './handover-import-records.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { contentVisible } from './firestore-disclosure.ts';
 import { sharedWriteAttributionSchema, sharedWriteAttribution, validSharedAttribution } from './shared-write-attribution.ts';
@@ -93,6 +94,8 @@ export interface FirestoreMemoryStore extends MemoryStore {
   /** Server-confirmed proposal only; never exposed as a model-supplied confirmation flag. */
   prepareConfirmedFact(binding: Binding, raw: unknown, confirmShared: boolean, operationId: string): Promise<Prepared<MemoryFact>>;
   readImportState(binding: Binding, kind: 'facts' | 'topics', id: string): Promise<{ value: MemoryFact | MemoryTopic | null; version: number }>;
+  prepareOriginalMemory(binding: Binding, operationId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
+    resolution: HandoverImportResolution): Promise<Prepared<MemoryFact | MemoryTopic>>;
   prepareImportedFact(binding: Binding, operationId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     current?: { id: string; expectedVersion: number }): Promise<Prepared<MemoryFact>>;
   prepareImportedTopic(binding: Binding, operationId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
@@ -660,6 +663,39 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
       const value = readRow(binding, kind, id, snapshot);
       if (snapshot.exists && snapshot.get('live') !== false && !value) domainReject('not_found', 404);
       return { value, version: value?.version ?? (snapshot.exists ? open(binding, 'memory-tombstone', id, tombstoneSchema, snapshot).version : 0) };
+    },
+    prepareOriginalMemory: async (binding, operationId, row, integrity, resolution) => {
+      if (row.section !== 'memory_facts' && row.section !== 'memory_topics') domainReject('invalid_package_data', 400);
+      const kind = row.section === 'memory_facts' ? 'facts' : 'topics';
+      const source = kind === 'facts' ? domainParse(firestoreFactSchema, row.value, 'invalid_package_data', 400)
+        : domainParse(firestoreTopicSchema, row.value, 'invalid_package_data', 400);
+      if (binding.sharedAccess || binding.actorUserId !== binding.scope.ownerUserId || row.source.accountId !== binding.actorUserId
+        || row.childId !== binding.scope.childId || source.childId !== binding.scope.childId) domainReject('invalid_import_target', 403);
+      const { mapping } = await readImportMapping(data, binding, { serverId: row.source.serverId, accountId: row.source.accountId,
+        childId: row.childId, section: row.section, resourceId: source.id }, true);
+      const targetId = mapping?.target.id ?? source.id;
+      const snapshot = await binding.transaction.get(refFor(kind, targetId)), prior = readRow(binding, kind, targetId, snapshot);
+      if (snapshot.exists && snapshot.get('live') !== false && !prior) domainReject('not_found', 404);
+      const currentVersion = prior?.version ?? (snapshot.exists ? open(binding, 'memory-tombstone', targetId, tombstoneSchema, snapshot).version : 0);
+      if (resolution.mode === 'preserve' || resolution.targetId !== targetId || resolution.expectedVersion !== currentVersion
+        || currentVersion === 0 || (resolution.mode === 'restore_deleted') !== (prior === null)) domainReject('version_conflict');
+      const at = new Date().toISOString(), importedFrom = makeImportProvenance(row, integrity, binding.actorUserId, at);
+      if (kind === 'facts') {
+        const fact = source as z.infer<typeof firestoreFactSchema>, previous = prior as MemoryFact | null;
+        if ((fact.confirmedBy === null) !== (fact.confirmedAt === null)
+          || fact.status === 'confirmed' && !fact.confirmedBy
+          || fact.status === 'candidate' && (fact.visibility !== 'private' || fact.confirmedBy !== null)) domainReject('invalid_package_data', 400);
+        // Retain live local evidence. Restoring a backup is not a new confirmation of its assertions.
+        const value: MemoryFact = { ...fact, id: previous?.id ?? randomUUID(), version: (previous?.version ?? 0) + 1,
+          createdBy: previous?.createdBy ?? binding.actorUserId, importedFrom,
+          confirmationBasis: fact.confirmedBy === null ? undefined : 'imported_source', applicable: false };
+        return await write(binding, kind, previous, value, operationId, factContentDate(fact)) as Prepared<MemoryFact>;
+      }
+      const topic = source as MemoryTopic, previous = prior as MemoryTopic | null;
+      if (previous && ['answered', 'resolved'].includes(previous.status) && ['pending', 'snoozed'].includes(topic.status)) domainReject('terminal_topic');
+      const value: MemoryTopic = { ...topic, id: previous?.id ?? randomUUID(), version: (previous?.version ?? 0) + 1,
+        updatedBy: binding.actorUserId, updatedAt: memoryUpdateDate('memory_topics', topic) ?? at, importedFrom, mayAsk: false };
+      return await write(binding, kind, previous, value, operationId) as Prepared<MemoryTopic>;
     },
     prepareImportedFact: async (binding, operationId, row, integrity, current) => {
       if (row.section !== 'memory_facts') domainReject('invalid_package_data', 400);

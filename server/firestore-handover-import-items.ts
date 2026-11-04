@@ -98,8 +98,8 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
     const knownId = originalConcernId ?? mapping?.target.id ?? (restoreOriginal ? source.resourceId : null);
     const instructionState = section === 'instructions' && knownId ? await notes.readImportState(b, knownId) : null;
     const careState = section === 'care' && knownId ? await care.readImportRecordState(b, knownId) : null;
-    const memoryState = mapping && (section === 'memory_facts' || section === 'memory_topics')
-      ? await memory.readImportState(b, section === 'memory_facts' ? 'facts' : 'topics', mapping.target.id) : null;
+    const memoryState = knownId && (section === 'memory_facts' || section === 'memory_topics')
+      ? await memory.readImportState(b, section === 'memory_facts' ? 'facts' : 'topics', knownId) : null;
     const sourceState = knownId && section === 'private_sources' ? await sources.readImportState(b, knownId) : null;
     const documentState = knownId && section === 'documents' ? await documents.readImportState(b, knownId) : null;
     const preparationState = section === 'visit_preparation' ? await preparations.readImportState(b) : null;
@@ -120,11 +120,11 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       : preparationState ? preparationState.value
       : section === 'care' ? careState?.value ?? null : section === 'tasks' && knownId ? await online.readImportTask(b, b.scope.childId, knownId)
       : section === 'instructions' ? instructionState?.value ?? null
-      : sourceState ? sourceState.value : documentState ? documentState.value : !mapping ? null
-      : memoryState ? memoryState.value : await memory.readImportedSummary(b, mapping.target.id);
+      : sourceState ? sourceState.value : documentState ? documentState.value : memoryState ? memoryState.value : !mapping ? null
+      : await memory.readImportedSummary(b, mapping.target.id);
     const currentVersion = current?.version ?? instructionState?.version ?? careState?.version ?? memoryState?.version ?? sourceState?.version ?? attachmentState?.version ?? 0;
     const currentId = current ? 'id' in current ? current.id : current.childId : knownId ?? (section === 'profile' || section === 'visit_preparation' || section === 'child_avatar' ? b.scope.childId : null);
-    const originalTombstone = restoreOriginal && (careState || sourceState || instructionState) && !current && currentVersion > 0;
+    const originalTombstone = restoreOriginal && (careState || sourceState || instructionState || memoryState) && !current && currentVersion > 0;
     const deleted = originalTombstone || mapping !== null && (current === null || section === 'profile' && (current as ChildProfile).data === null)
       || section === 'profile' && currentVersion > 0 && (current as ChildProfile).data === null
       || section === 'child_avatar' && currentVersion > 0 && current === null;
@@ -231,7 +231,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
         }
         if (originalConcernId && mapping && mapping.target.id !== originalConcernId) return finish('conflict', 'original_unavailable', null);
         // A missing original is not a confirmed removal. Only the domain tombstone permits revival.
-        if (resolution.mode === 'preserve' || !current && !(deleted && currentVersion > 0 && (section === 'care' || section === 'private_sources' || section === 'child_avatar' || section === 'instructions'))
+        if (resolution.mode === 'preserve' || !current && !(deleted && currentVersion > 0 && (section === 'care' || section === 'private_sources' || section === 'child_avatar' || section === 'instructions' || section === 'memory_facts' || section === 'memory_topics'))
           || section === 'profile' && currentVersion === 0) return finish('conflict', 'original_unavailable', null);
         if (resolution.targetId !== currentId || resolution.expectedVersion !== currentVersion)
           return finish('conflict', 'target_version_conflict');
@@ -433,7 +433,9 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       const expected = current ? { id: currentId!, expectedVersion: current.version } : undefined;
       let prepared;
       try {
-        prepared = section === 'private_sources' ? await sources.prepareImported(b, opId, raw.row, raw.integrity, expected, raw.restoreOriginal)
+        prepared = raw.restoreOriginal && (section === 'memory_facts' || section === 'memory_topics')
+          ? await memory.prepareOriginalMemory(b, opId, raw.row, raw.integrity, resolution)
+          : section === 'private_sources' ? await sources.prepareImported(b, opId, raw.row, raw.integrity, expected, raw.restoreOriginal)
           : section === 'memory_facts' ? await memory.prepareImportedFact(b, opId, raw.row, raw.integrity, expected)
           : section === 'memory_topics' ? await memory.prepareImportedTopic(b, opId, raw.row, raw.integrity, expected)
           : section === 'instructions' ? raw.restoreOriginal
