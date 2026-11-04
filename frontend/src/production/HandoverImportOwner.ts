@@ -3,7 +3,7 @@ import { HandoverApiError, originalComparisonItemKey, type HandoverApi, type Cla
 import { handoverImportCommandSchema, handoverImportModuleOf, originalBackupModuleSchema, type HandoverImportModule, type HandoverImportResourceSection, type HandoverImportCommand, type HandoverImportView,
   type HandoverImportResult, type HandoverImportResultQuery } from '../../../src/shared/handover-imports.ts';
 import type { HandoverImportSummary, OriginalBackupComparison, OriginalBackupComparisonQuery } from '../../../src/shared/handover-imports.ts';
-import { handoverUploadCommandSchema, type HandoverUploadCommand, type HandoverUploadView } from '../../../src/shared/handover-uploads.ts';
+import { handoverUploadCommandSchema, type HandoverUploadCommand, type HandoverUploadView, type HandoverUploadListItem } from '../../../src/shared/handover-uploads.ts';
 import { handoverErrorText } from './HandoverOwner.ts';
 import { FamilyDocumentApiError, parseFamilyDocumentSnapshot } from '../../../src/client/family-documents-api.ts';
 import type { DocumentContentPage, DocumentContentQuery, DocumentSnapshot } from '../../../src/shared/family-documents.ts';
@@ -27,7 +27,7 @@ export function accountAvatarComparisonResolution(value: SelfAvatarComparison) {
     : value.state === 'missing' || value.state === 'different' ? 'replace_current' as const : null;
 }
 type Control = { opId: string; expectedVersion: number };
-type UploadSummary = Omit<HandoverUploadView, 'preview'>;
+type UploadSummary = HandoverUploadListItem;
 type Pending = ({ kind: 'reserve'; command: HandoverUploadCommand } | { kind: 'upload'; id: string }
   | { kind: 'create'; command: HandoverImportCommand }
   | { kind: 'cancel' | 'resume' | 'discard'; id: string; command: Control }) & { checked: boolean; rejected?: boolean };
@@ -75,6 +75,8 @@ export interface HandoverImportState {
   userId: string | null; identityKey: string | null; online: boolean; loaded: boolean;
   upload: HandoverUploadView | null; items: HandoverImportView[]; nextCursor: string | null;
   uploads: UploadSummary[]; uploadsLoaded: boolean; uploadsCursor: string | null;
+  cleanedUploads: { items: UploadSummary[]; loaded: boolean; loading: boolean; nextCursor: string | null;
+    error: { status: number; code: string } | null } | null;
   results: HandoverImportResultsState | null;
   sourceHistory: HandoverSourceHistoryState | null;
   busy: 'pick' | 'read' | 'write' | 'check' | null; pending: Pending | null; notice: string | null;
@@ -83,7 +85,7 @@ const empty = (userId: string | null, identityKey: string | null, online: boolea
   userId, identityKey, online, loaded: false, upload: null, items: [], nextCursor: null, classEnrolmentEnabled: false, enrolmentResults: null,
   accountAvatarRestoreEnabled: false, accountAvatarComparison: null,
   originalModules: [...legacyOriginalModules],
-  uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, sourceHistory: null, summary: null, comparison: null, busy: null, pending: null, notice: null });
+  uploads: [], uploadsLoaded: false, uploadsCursor: null, cleanedUploads: null, results: null, sourceHistory: null, summary: null, comparison: null, busy: null, pending: null, notice: null });
 type Ticket = { epoch: number; userId: string; controller: AbortController };
 /** Device drafts only; uploaded packages, import authority and progress remain on the Server. */
 export class HandoverImportOwner {
@@ -133,7 +135,7 @@ export class HandoverImportOwner {
       this.syncContext(null, null, this.state.online); this.accessError(error); return;
     }
     this.update({ notice: importErrorText(error) });
-    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.clearComparison(); this.update({ upload: null, items: [], loaded: false, uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, sourceHistory: null, enrolmentResults: null, summary: null, pending: null }); this.accessError(error); }
+    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.clearComparison(); this.update({ upload: null, items: [], loaded: false, uploads: [], uploadsLoaded: false, uploadsCursor: null, cleanedUploads: null, results: null, sourceHistory: null, enrolmentResults: null, summary: null, pending: null }); this.accessError(error); }
   }
   private put(row: HandoverImportView) {
     const previous = this.state.items.find(item => item.id === row.id);
@@ -157,6 +159,9 @@ export class HandoverImportOwner {
   };
   openUpload = async (id: string) => {
     if (this.state.pending || this.file) return;
+    if (this.state.cleanedUploads?.items.some(row => row.id === id)) {
+      this.update({ notice: '這份上載已清理，只保留歷史紀錄，不能再次匯入。' }); return;
+    }
     this.clearComparison();
     const t = this.begin('read'); if (!t) return;
     if (this.state.upload?.id !== id) this.update({ upload: null });
@@ -167,6 +172,29 @@ export class HandoverImportOwner {
   leaveUpload = () => {
     this.clearComparison();
     if (!this.state.pending && !this.state.busy && !this.file) this.update({ upload: null });
+  };
+  loadCleanedUploads = async (more = false) => {
+    if (this.state.pending) return;
+    const previous = this.state.cleanedUploads, cursor = more ? previous?.nextCursor : null;
+    if (more && !cursor) return;
+    const t = this.begin('read'); if (!t) return;
+    const history = previous ?? { items: [], loaded: false, loading: false, nextCursor: null, error: null };
+    this.update({ cleanedUploads: { ...history, loading: true, error: null } });
+    try {
+      const page = await this.api.listUploads(t.userId, t.controller.signal, cursor ?? undefined, 'cleaned');
+      if (!this.current(t)) return;
+      const items = more ? [...history.items, ...page.items.filter(row => !history.items.some(item => item.id === row.id))] : page.items;
+      const cleanedIds = new Set(items.map(row => row.id));
+      this.update({ cleanedUploads: { items, loaded: true, loading: false, nextCursor: page.nextCursor, error: null },
+        uploads: this.state.uploads.filter(row => !cleanedIds.has(row.id)),
+        ...(this.state.upload && cleanedIds.has(this.state.upload.id) ? { upload: null } : {}) });
+    } catch (error) {
+      this.error(t, error);
+      if (this.current(t)) this.update({ cleanedUploads: {
+        ...(error instanceof HandoverApiError && error.status === 403 ? { items: [], loaded: false, nextCursor: null } : history), loading: false,
+        error: { status: error instanceof HandoverApiError ? error.status : 0, code: error instanceof HandoverApiError ? error.code : 'handover_unavailable' } } });
+    } finally { if (this.current(t) && this.state.cleanedUploads?.loading)
+      this.update({ cleanedUploads: { ...this.state.cleanedUploads, loading: false } }); this.finish(t); }
   };
   load = async (more = false) => {
     const cursor = more ? this.state.nextCursor : null; if (more && !cursor) return;

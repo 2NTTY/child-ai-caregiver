@@ -43,6 +43,7 @@ test('Android package sharing requires a choice and preserves existing import re
     'react-native-paper': { Text: 'Text' },
     'expo-sharing': { getSharedPayloads: () => raw, clearSharedPayloads: () => { raw = []; } },
     'expo-file-system': { File, Directory, Paths: { cache: 'file:///cache' } },
+    'expo-modules-core': { requireNativeModule: () => ({}) },
     '../components/agent/native-chat-file': { copyNativeFile: async () => ({ kind: 'file', dispose: noop }) },
     '../components/agent/native-voice-file': { copyNativeVoice: async () => { throw Error('No voice'); } },
     '../production/photo-original': { photoOriginalFromBytes: async () => { throw Error('No photo'); } },
