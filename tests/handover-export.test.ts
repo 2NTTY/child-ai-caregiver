@@ -398,3 +398,57 @@ test('a dated attachment package reads only selected file bytes and omits out-of
     } finally { await preview.close(); }
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
+
+test('account avatar backup writer pins normalized self images without reading a child roster',async()=>{
+  const directory=await mkdtemp(join(tmpdir(),'handover-account-avatar-writer-'));
+  const bytes=Buffer.from([255,216,255,217]),scopeVersion='f'.repeat(64),childId=randomUUID();
+  const asset={id:randomUUID(),mimeType:'image/jpeg',bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex'),width:384,height:384};
+  const at='2026-11-05T00:00:00Z',period={from:'2026-11-01T00:00:00Z',to:'2026-11-02T23:59:59Z'};
+  let head={target:{kind:'self' as const},version:7,asset:asset as typeof asset|null,updatedAt:at as string|null},finalChanged=false,badContent=false,missingContent=false,headReads=0;
+  const queries:string[]=[];
+  const exporter={async page(_owner:string,query:{section:string;childId?:string}) {
+    queries.push(query.section);assert.equal(query.childId,query.section === 'care' || query.section === 'care_history' ? childId : undefined);
+    let items:unknown[]=[];
+    if(query.section==='self_avatar'){headReads++;items=[finalChanged&&headReads>1?{...head,version:head.version+1}:head];}
+    if(query.section==='self_avatar_content')items=head.asset&&!missingContent?[{target:head.target,version:badContent?head.version+1:head.version,asset:head.asset,base64:bytes.toString('base64'),mimeType:'image/jpeg'}]:[];
+    if(query.section==='children')items=[{id:childId,displayName:'Existing child'}];
+    return {section:query.section,scopeVersion,complete:true,nextCursor:null,notices:[],items};
+  }};
+  const input={directory,exporter,ownerUserId:'owner',serverId:'https://example.test',createdAt:at,purpose:'backup' as const};
+  const selection={childIds:[],modules:[],period,accountAvatar:{version:7}};
+  async function inspect(empty=false){
+    headReads=0;queries.length=0;
+    const written=await writePersonalHandoverPackage({...input,packageId:randomUUID(),selection:{...selection,accountAvatar:{version:head.version}}});
+    const archive=await openHandoverArchive({path:written.path});
+    try{
+      assert.equal(archive.manifest.version,2);assert.equal(queries.includes('children'),false);
+      const pages=[];for(const entry of archive.manifest.entries.filter(entry=>entry.path.startsWith('data/')))
+        pages.push(JSON.parse((await archive.readEntry(entry.path,entry.bytes)).toString('utf8')));
+      const metadata=pages.find(page=>page.section==='self_avatar'),content=pages.find(page=>page.section==='self_avatar_content');
+      assert.equal(metadata.childId,null);assert.equal(content.childId,null);assert.deepEqual(metadata.items,[head]);
+      assert.equal(archive.manifest.coverage.find(row=>row.section==='self_avatar')?.items,1);
+      assert.equal(archive.manifest.coverage.find(row=>row.section==='self_avatar_content')?.items,empty?0:1);
+      if(!empty){const pointer=content.items[0];assert.deepEqual(pointer.target,{kind:'self'});assert.equal(pointer.version,7);assert.deepEqual(pointer.asset,asset);
+        assert.equal(pointer.bytes,bytes.length);assert.equal(pointer.sha256,asset.sha256);assert.deepEqual(await archive.readEntry(pointer.attachmentPath,bytes.length),bytes);}
+      else {assert.deepEqual(content.items,[]);assert.equal(archive.manifest.entries.some(entry=>entry.path.startsWith('attachments/')),false);}
+      const summaryEntry=archive.manifest.entries.find(entry=>entry.path==='summary.md')!;
+      const summary=(await archive.readEntry(summaryEntry.path,summaryEntry.bytes)).toString('utf8');
+      assert.ok(summary.includes('本人頭像'));assert.ok(summary.includes(head.updatedAt??'日期未知'));assert.ok(summary.includes(empty?'不是移除指令':'期間外'));
+      assert.ok(summary.includes('| self_avatar | 本人帳戶 | 1 |'));assert.equal(summary.includes('| self_avatar | 名冊 |'),false);
+      if(!head.updatedAt)assert.equal(summary.includes('所選期間內'),false);
+    }finally{await archive.close();}
+  }
+  try{
+    await inspect();
+    head={...head,version:8,asset:null};await inspect(true);
+    head={...head,version:0,updatedAt:null};await inspect(true);
+    head={...head,version:7,asset,updatedAt:at};
+    await assert.rejects(writePersonalHandoverPackage({...input,packageId:randomUUID(),selection,purpose:'handover'}),{code:'invalid_package_scope'});
+    await assert.rejects(writePersonalHandoverPackage({...input,packageId:randomUUID(),selection,sourceAccountId:'other'}),{code:'invalid_package_scope'});
+    headReads=0;badContent=true;await assert.rejects(writePersonalHandoverPackage({...input,packageId:randomUUID(),selection}),{code:'export_scope_changed'});badContent=false;
+    headReads=0;missingContent=true;await assert.rejects(writePersonalHandoverPackage({...input,packageId:randomUUID(),selection}),{code:'export_scope_changed'});missingContent=false;
+    headReads=0;finalChanged=true;await assert.rejects(writePersonalHandoverPackage({...input,packageId:randomUUID(),selection}),{code:'export_scope_changed'});finalChanged=false;
+    queries.length=0;await writePersonalHandoverPackage({...input,packageId:randomUUID(),selection:{childIds:[childId],modules:['care'],period:null}});
+    assert.equal(queries.includes('self_avatar'),false);assert.equal(queries.includes('self_avatar_content'),false);
+  }finally{await rm(directory,{recursive:true,force:true});}
+});

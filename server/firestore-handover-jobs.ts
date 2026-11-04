@@ -1,6 +1,6 @@
 import { FieldPath, type DocumentSnapshot, type Query, type Transaction } from '@google-cloud/firestore';
 import { z } from 'zod';
-import { supportsHandoverPeriodModules } from '../src/shared/handover.ts';
+import { supportsHandoverPeriod } from './handover-period.ts';
 import { handoverCancelCommandSchema, handoverExportCommandSchema, handoverClassExportCommandSchema, handoverExportStateSchema,
   handoverExportViewSchema, type HandoverExportView, type HandoverClassExportCommand } from '../src/shared/handover-jobs.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
@@ -123,10 +123,16 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
       bytes: state === 'ready' ? job.artifact?.bytes ?? null : null,
       error: terminal ? job.error : expired ? 'package_expired' : sourceChanged ? 'export_scope_changed' : job.error });
   }
-  async function avatarBasis(b: FirestoreAuthorityTransaction, selection: HandoverExportView['selection'], reviewed?: Map<string, number>) {
-    if (!selection.modules.includes('attachments')) return null;
+  async function avatarBasis(b: FirestoreAuthorityTransaction, selection: HandoverExportView['selection'], reviewed?: Map<string, number>, creating = false) {
+    if (!selection.modules.includes('attachments') && !selection.accountAvatar) return null;
     const heads = [];
-    for (const childId of selection.childIds) {
+    if (selection.accountAvatar) {
+      const head = await avatarData.head(b, avatarBinding(b.scope, { kind: 'self' }));
+      const {canManage: _canManage,...state} = avatarPublicState(head, false);
+      if (creating && (state.version !== selection.accountAvatar.version || head.removal?.state === 'pending')) domainReject('export_scope_changed');
+      heads.push(['self',state,head.removal?.state === 'pending']);
+    }
+    if (selection.modules.includes('attachments')) for (const childId of selection.childIds) {
       heads.push(await avatarHeadBasis(b, childId, reviewed));
     }
     return firestoreDomainHash(heads);
@@ -210,7 +216,7 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
     },
     async create(owner: string, raw: unknown) {
       const command = domainParse(exportRequest, raw), fingerprint = firestoreDomainHash(command);
-      if (command.selection.period && !supportsHandoverPeriodModules(command.selection.modules)) domainReject('package_period_not_connected', 400);
+      if (!supportsHandoverPeriod(command.selection)) domainReject('package_period_not_connected', 400);
       return authority.runTransaction(owner, null, async b => {
         const prior = openOwned(b, command.opId, await b.transaction.get(ref(owner, command.opId)));
         if (prior) { if (prior.fingerprint !== fingerprint) domainReject('operation_conflict'); return currentView(prior, b); }
@@ -221,7 +227,7 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
           for (const childId of command.selection.childIds) if (!await b.readChild(childId)) domainReject('forbidden', 403);
         const reviewed = review && new Map(review.avatarVersions?.map(row => [row.childId, row.version]));
         const basis = 'source' in command ? await classBasis(b, command, true, reviewed)
-          : { sourceVersion: handoverSourceVersion(b), avatarBasis: await avatarBasis(b, command.selection, reviewed) };
+          : { sourceVersion: handoverSourceVersion(b), avatarBasis: await avatarBasis(b, command.selection, reviewed, true) };
         const { sourceVersion } = basis;
         if (review && review.scopeVersion !== sourceVersion) domainReject('export_scope_changed');
         const createdAt = new Date(clock()).toISOString(), expiresAt = new Date(clock() + HANDOVER_EXPORT_RETENTION_MS).toISOString();

@@ -34,13 +34,15 @@ export const classHandoverModuleSchema = z.enum(['profile', 'care', 'tasks', 'do
 export const handoverClassExportCommandSchema = z.object({
   opId: z.uuid(), purpose: z.literal('handover'), source: handoverClassSourceSchema,
   selection: handoverSelectionSchema.safeExtend({
+    accountAvatar: z.never().optional(),
     modules: z.array(classHandoverModuleSchema).min(1).max(classHandoverModuleSchema.options.length),
   }), documentReview: documentReviewSchema.optional(),
 }).strict().refine(matchingReview);
 export type HandoverClassExportCommand = z.infer<typeof handoverClassExportCommandSchema>;
 
 export const handoverExportCommandSchema = z.object({ opId: z.uuid(), purpose: z.enum(['handover', 'backup']),
-  selection: handoverSelectionSchema, documentReview: documentReviewSchema.optional() }).strict().refine(matchingReview);
+  selection: handoverSelectionSchema, documentReview: documentReviewSchema.optional() }).strict()
+  .refine(value => !value.selection.accountAvatar || value.purpose === 'backup').refine(matchingReview);
 export const handoverExportStateSchema = z.enum(['queued', 'building', 'ready', 'cancelled', 'failed', 'expired']);
 export const handoverExportViewSchema = z.object({ id: z.uuid(), version: z.number().int().positive(),
   purpose: z.enum(['handover', 'backup']), selection: handoverSelectionSchema, state: handoverExportStateSchema,

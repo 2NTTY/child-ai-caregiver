@@ -64,7 +64,9 @@ test('export requests persist one original job and outbox, reject changed retrie
     readPinned(name) { return Readable.from([stored.get(name)!.body]); },
     async removePinned(name) { stored.delete(name); },
   } });
-  const exporter = createFirestoreAccountExport({ ...options, photos: { async content() { throw Error('No photo in this fixture'); } } });
+  const exporter = createFirestoreAccountExport({ ...options,
+    photos: { async content() { throw Error('No photo in this fixture'); } },
+    avatars: { async content() { throw Error('No avatar image in this fixture'); } } });
   const root = await mkdtemp(join(tmpdir(), 'handover-jobs-'));
   const service = createHandoverService({ ...options, exporter, objects, serverId: 'synthetic-site', spoolRoot: root });
   try {
@@ -73,8 +75,8 @@ test('export requests persist one original job and outbox, reject changed retrie
       async handler() { throw Error('No authentication mutation in this flow'); } } as never;
     const handler = createFirebaseRequestHandler({ authority, auth, publicOrigin: origin, mailConfigured: false,
       accountData: { exporter, erasures: {} as never, packages: service } });
-    const request = (path: string, body?: unknown) => handler(new Request(origin + '/api/account/packages' + path, {
-      method: body === undefined ? 'GET' : 'POST', headers: { origin, 'content-type': 'application/json', 'x-expected-user-id': userId },
+    const request = (path: string, body?: unknown, headers: Record<string, string> = {}) => handler(new Request(origin + '/api/account/packages' + path, {
+      method: body === undefined ? 'GET' : 'POST', headers: { origin, 'content-type': 'application/json', 'x-expected-user-id': userId, ...headers },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     }));
     const previewResponse = await request('/preview', {section:'child_avatar', childId, period:null});
@@ -196,5 +198,23 @@ test('export requests persist one original job and outbox, reject changed retrie
       assert.equal(await createFirestoreHandoverJobs({ ...options, database: target.database })
         .matchesIssuedBackup(userId, created.id, manifestSha256, archiveSha256), false);
     }
+    // This second account has no children. A legacy client must still be able to list its old-format jobs.
+    fixture.records.set(control.path, beforeRequest.find(row => row.path === control.path)!.data);
+    currentUser = foreign;
+    const legacy = { 'x-expected-user-id': foreign }, opted = { ...legacy, 'x-handover-account-backup': '1' };
+    const accountOnly = { opId: randomUUID(), purpose: 'backup', selection: { childIds: [], modules: [], period: null, accountAvatar: { version: 0 } } };
+    assert.equal((await (await request('/capabilities', undefined, legacy)).json()).accountAvatarBackup, undefined);
+    assert.equal((await (await request('/capabilities', undefined, opted)).json()).accountAvatarBackup, true);
+    assert.equal((await request('', accountOnly, legacy)).status, 409);
+    assert.equal((await request('', accountOnly, opted)).status, 202);
+    assert.equal((await (await request('', undefined, opted)).json()).items[0].id, accountOnly.opId);
+    assert.deepEqual((await (await request('', undefined, legacy)).json()).items, []);
+    assert.equal((await request('/' + accountOnly.opId, undefined, legacy)).status, 409);
+    await authority.runTransaction(foreign, null, async b => {
+      const head = await avatars.head(b, avatarBinding(b.scope, { kind: 'self' }));
+      avatars.prepareHead(b, { ...head, version: 1, updatedAt: new Date().toISOString() })();
+    });
+    assert.equal((await (await request('/' + accountOnly.opId, undefined, opted)).json()).error, 'export_scope_changed');
+    assert.equal((await request('', { ...accountOnly, opId: randomUUID() }, opted)).status, 409);
   } finally { await rm(root, { recursive: true, force: true }); }
 });

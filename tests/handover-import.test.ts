@@ -14,7 +14,44 @@ import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { writePersonalHandoverPackage } from '../server/handover-export.ts';
 import { writeHandoverArchive } from '../server/handover-archive.ts';
 import { openHandoverImport } from '../server/handover-import.ts';
-import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
+import { HANDOVER_SECTIONS, handoverHeaderSchema } from '../src/shared/handover.ts';
+
+test('an account-only backup binds its avatar bytes to the selected owner head without a child', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'handover-account-avatar-'));
+  const content = Buffer.from('synthetic normalized avatar'), sha256 = createHash('sha256').update(content).digest('hex');
+  const asset = { id: randomUUID(), mimeType: 'image/jpeg', width: 256, height: 256, bytes: content.length, sha256 };
+  const at = '2026-11-05T00:00:00Z', scopeVersion = 'b'.repeat(64);
+  const header = { format: 'yuyoufang-data' as const, version: 2 as const, packageId: randomUUID(), packageVersion: 1,
+    createdAt: at, purpose: 'backup' as const, source: { serverId: 'https://issuer.example.test', accountId: 'owner' },
+    selection: { childIds: [], modules: [], period: null, accountAvatar: { version: 2 } } };
+  const head = { version: 2, target: {kind:'self'}, asset, updatedAt: at };
+  const binary = { version: 2, target: {kind:'self'}, asset, attachmentPath: 'attachments/self.bin', bytes: content.length, mimeType: 'image/jpeg', sha256 };
+  async function pack(contentVersion: number) {
+    const pages = [{section:'children',items:[]},{section:'self_avatar',items:[head]},
+      {section:'self_avatar_content',items:[{...binary,version:contentVersion}]}];
+    async function* entries() {
+      for (const page of pages) yield {path:'data/'+page.section+'.json',mediaType:'application/json',
+        content:Buffer.from(JSON.stringify({...page,childId:null,scopeVersion}))};
+      yield {path:binary.attachmentPath,mediaType:'image/jpeg',content};
+      yield {path:'summary.md',mediaType:'text/markdown',content:Buffer.from('Personal backup')};
+    }
+    return writeHandoverArchive({directory,header:{...header,packageId:randomUUID()},entries:entries(),
+      coverage:()=>pages.map(page=>({section:page.section,childId:null,scopeVersion,items:page.items.length,complete:true}))});
+  }
+  try {
+    assert.ok(handoverHeaderSchema.safeParse(header).success);
+    assert.ok(!handoverHeaderSchema.safeParse({...header,purpose:'handover'}).success);
+    assert.ok(!handoverHeaderSchema.safeParse({...header,version:1}).success);
+    const archive=await pack(2), reader=await openHandoverImport({path:archive.path});
+    try {
+      assert.deepEqual(reader.children,[]);
+      assert.deepEqual((await reader.readAccountAvatar(reader.manifestSha256, true)).content,content);
+      await assert.rejects(reader.readAttachment(binary.attachmentPath,{childIds:[randomUUID()],modules:['attachments']},reader.manifestSha256));
+    } finally {await reader.close();}
+    const mixed=await pack(3);
+    await assert.rejects(openHandoverImport({path:mixed.path}),{code:'invalid_package_attachment'});
+  } finally {await rm(directory,{recursive:true,force:true});}
+});
 
 test('version one chat-only packages remain readable while undeclared chat import pages are rejected', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'handover-legacy-chat-')), childId = randomUUID();

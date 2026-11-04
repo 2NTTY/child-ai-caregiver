@@ -18,7 +18,7 @@ import { DatedDocumentPeriodIndex, isDatedDocumentSection } from './handover-doc
 import { HandoverDocumentChoices } from './handover-document-choices.ts';
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/u), uuid = z.uuid();
-const selectionSchema = z.object({ childIds: handoverSelectionSchema.shape.childIds, modules: handoverSelectionSchema.shape.modules }).strict()
+const selectionSchema = z.object({ childIds: handoverSelectionSchema.shape.childIds.min(1), modules: handoverSelectionSchema.shape.modules.min(1) }).strict()
   .refine(value => new Set(value.childIds).size === value.childIds.length && new Set(value.modules).size === value.modules.length);
 export type HandoverImportSelection = z.infer<typeof selectionSchema>;
 const cursorSchema = z.object({ manifestSha256: hash, selectionHash: hash,
@@ -82,7 +82,9 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
   const limits = handoverLimits(input.limits), archive = await openHandoverArchive(input);
   const { manifest, manifestSha256, integrity } = archive;
   const pages: PageIndex[] = [], children: { id: string; displayName: string }[] = [];
-  const attachments = new Map<string, { childId: string; mimeType: string; bytes: number }>();
+  const attachments = new Map<string, { childId: string | null; mimeType: string; bytes: number }>();
+  let accountHead: z.infer<typeof avatarTransferSchema> | null = null;
+  let accountImage: z.infer<typeof attachmentContentSchemas.child_avatar> | null = null;
   const documentRows = new Set<string>(), documentContent = new Map<string, { path: string; rowIndex: number } | null>();
   const attachmentRows = new Set<string>(), attachmentContent = new Map<string, Map<string, { path: string; rowIndex: number } | null>>();
   const concernRows = new Set<string>(), concernEvents = new Map<string, { path: string; rowIndex: number } | null>();
@@ -101,6 +103,14 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
   const documentRowBinding = (section: string, childId: string | null, path: string, rowIndex: number, value: Record<string, unknown>) =>
     createHash('sha256').update(canonicalJson({ section, childId, path, rowIndex, value })).digest('hex');
   const entries = new Map(manifest.entries.map(entry => [entry.path, entry]));
+  function bindAttachment(row: Record<string, unknown>, childId: string | null) {
+    const ref = parse(attachmentReferenceSchema, row, 'invalid_package_attachment');
+    const actual = entries.get(ref.attachmentPath);
+    if (!ref.attachmentPath.startsWith('attachments/') || !ref.attachmentPath.endsWith('.bin') || !actual
+      || actual.bytes !== ref.bytes || actual.sha256 !== ref.sha256 || actual.mediaType !== ref.mimeType
+      || attachments.has(ref.attachmentPath)) fail('invalid_package_attachment');
+    attachments.set(ref.attachmentPath, { childId, mimeType: ref.mimeType, bytes: ref.bytes });
+  }
   const expected = new Map(manifest.coverage.map(row => [key(row.section, row.childId), row]));
   const seen = new Map<string, number>(), childIds = new Set(manifest.selection.childIds);
   async function read(path: string): Promise<DataPage> {
@@ -112,6 +122,10 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
   try {
     if (!supportsHandoverPeriod(manifest.selection)) fail('package_period_not_connected');
     const required = new Set([key('children', null)]);
+    if (manifest.selection.accountAvatar) {
+      required.add(key('self_avatar', null));
+      required.add(key('self_avatar_content', null));
+    }
     for (const childId of childIds) for (const module of manifest.selection.modules)
       for (const section of HANDOVER_SECTIONS[module]) {
         // Earlier version-one exports predate these separately exported history sections.
@@ -131,6 +145,21 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
       if (count > expected.get(pageKey)!.items) fail('invalid_package_coverage');
       seen.set(pageKey, count);
       for (const [rowIndex, row] of page.items.entries()) {
+        if (page.section === 'self_avatar') {
+          const head = parse(avatarTransferSchema, row, 'invalid_package_attachment');
+          if (accountHead || head.target.kind !== 'self' || head.version !== manifest.selection.accountAvatar?.version)
+            fail('invalid_package_attachment');
+          accountHead = head;
+          continue;
+        }
+        if (page.section === 'self_avatar_content') {
+          const image = parse(attachmentContentSchemas.child_avatar, row, 'invalid_package_attachment');
+          if (accountImage || image.target.kind !== 'self' || image.mimeType !== image.asset.mimeType
+            || image.bytes !== image.asset.bytes || image.sha256 !== image.asset.sha256) fail('invalid_package_attachment');
+          bindAttachment(row, null);
+          accountImage = image;
+          continue;
+        }
         if (page.section === 'children') {
           const child = parse(z.object({ id: uuid, displayName: z.string().min(1).max(160) }), row, 'invalid_package_data');
           if (!childIds.delete(child.id)) fail('invalid_package_scope'); children.push(child);
@@ -177,12 +206,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
           documentContent.set(identity, documentContent.has(identity) ? null : { path: entry.path, rowIndex });
         }
         if (contentSections.has(page.section)) {
-          const ref = parse(attachmentReferenceSchema, row, 'invalid_package_attachment');
-          const actual = entries.get(ref.attachmentPath);
-          if (!ref.attachmentPath.startsWith('attachments/') || !ref.attachmentPath.endsWith('.bin') || !actual
-            || actual.bytes !== ref.bytes || actual.sha256 !== ref.sha256 || actual.mediaType !== ref.mimeType
-            || attachments.has(ref.attachmentPath)) fail('invalid_package_attachment');
-          attachments.set(ref.attachmentPath, { childId: page.childId!, mimeType: ref.mimeType, bytes: ref.bytes });
+          bindAttachment(row, page.childId);
           const section = (Object.keys(attachmentSections) as AttachmentSection[]).find(section => attachmentSections[section][0] === page.section)!;
           const id = section === 'child_avatar' ? page.childId : row[attachmentSections[section][1]];
           if (typeof id === 'string') {
@@ -195,6 +219,9 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
       pages.push({ path: entry.path, section: page.section, childId: page.childId, items: page.items.length });
     }
     if (childIds.size || [...expected].some(([id, coverage]) => !seen.has(id) || seen.get(id) !== coverage.items)) fail('invalid_package_coverage');
+    if (manifest.selection.accountAvatar && (!accountHead || Boolean(accountHead.asset) !== Boolean(accountImage)
+      || accountImage && (accountImage.version !== accountHead.version || canonicalJson(accountImage.asset) !== canonicalJson(accountHead.asset))))
+      fail('invalid_package_attachment');
     if (manifest.selection.period && (requiredDatedEvents.size !== concernEvents.size
       || [...requiredDatedEvents].some(identity => !concernEvents.get(identity)))) fail('invalid_package_period');
     if ([...datedRevisionParents].some(identity => !datedParents.has(identity))) fail('invalid_package_period');
@@ -220,11 +247,16 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
     }
     async function readAttachment(path: string, selection: HandoverImportSelection, acknowledgedManifestSha256?: string) {
       const allowed = select(selection, acknowledgedManifestSha256).selection, ref = attachments.get(path);
-      if (!ref || !allowed.modules.includes('attachments') || !allowed.childIds.includes(ref.childId)) fail('package_scope_unavailable');
+      if (!ref || ref.childId === null || !allowed.modules.includes('attachments') || !allowed.childIds.includes(ref.childId)) fail('package_scope_unavailable');
       return { ...ref, content: await archive.readEntry(path, ref.bytes) };
     }
     return {
       manifest: structuredClone(manifest), manifestSha256, integrity, children: structuredClone(children), close: archive.close,
+      async readAccountAvatar(acknowledgedManifestSha256: string, includeContent = false) {
+        if (!accountHead || manifest.purpose !== 'backup' || acknowledgedManifestSha256 !== manifestSha256) fail('package_scope_unavailable');
+        return { head: structuredClone(accountHead),
+          content: includeContent && accountImage ? await archive.readEntry(accountImage.attachmentPath, accountImage.bytes) : null };
+      },
       async readAttachmentContent(row: HandoverImportRow, acknowledgedManifestSha256?: string): Promise<HandoverAttachmentContent | null> {
         if (!Object.hasOwn(attachmentSections, row.section) || !row.childId) fail('invalid_package_scope');
         const section = row.section as AttachmentSection;
