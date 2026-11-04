@@ -16,6 +16,7 @@ export function originalRestoreResourceSection(module: HandoverImportModule,
   item?: Pick<OriginalBackupComparison['items'][number], 'resourceSection'>): HandoverImportResourceSection | null {
   if (module === 'documents') return item?.resourceSection === 'documents' || item?.resourceSection === 'visit_preparation' ? item.resourceSection : null;
   if (module === 'attachments') return item?.resourceSection === 'child_avatar' ? 'child_avatar' : null;
+  if (module === 'memory') return item?.resourceSection === 'instructions' ? 'instructions' : null;
   if (module === 'sources') return 'private_sources';
   return module === 'care' || module === 'profile' || module === 'tasks' || module === 'concerns' ? module : null;
 }
@@ -23,6 +24,7 @@ export const hasOriginalChildAvatar = (preview: HandoverUploadView['preview'], c
   !!preview?.coverage.some(row => row.childId === childId && row.section === 'child_avatar' && row.items > 0);
 export function originalComparisonResolution(item: OriginalBackupComparison['items'][number]) {
   if (!item.targetId || item.localVersion === null) return null;
+  if (item.resourceSection === 'instructions' && (item.targetId !== item.id || item.localVersion < 1 || item.state === 'deleted')) return null;
   return item.state === 'deleted' ? 'restore_deleted' as const
     : ['local_newer','different','backup_newer'].includes(item.state) ? 'replace_current' as const : null;
 }
@@ -326,7 +328,8 @@ export class HandoverImportOwner {
       const page = await this.api.compareOriginal(t.userId,{...query,...(more ? {cursor:previous!.nextCursor!} : {})},t.controller.signal);
       if (!this.current(t) || this.comparisonTicket !== t || this.state.upload?.id !== upload.id || this.state.upload.version !== upload.version) return;
       if (page.childId !== childId || page.module !== module || page.uploadId !== upload.id || page.manifestSha256 !== preview.manifestSha256
-        || module === 'attachments' && page.items.some(item => item.resourceSection !== 'child_avatar' || item.id !== childId || item.targetId !== childId))
+        || module === 'attachments' && page.items.some(item => item.resourceSection !== 'child_avatar' || item.id !== childId || item.targetId !== childId)
+        || module === 'memory' && page.items.some(item => item.resourceSection !== 'instructions'))
         throw new HandoverApiError(0,'handover_response_invalid');
       this.update({comparison:{...comparison,loaded:true,nextCursor:page.nextCursor,items:more
         ? [...comparison.items,...page.items.filter(row => !comparison.items.some(item => originalComparisonItemKey(item) === originalComparisonItemKey(row)))] : page.items}});
