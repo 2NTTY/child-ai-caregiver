@@ -163,7 +163,7 @@ test('REQ-005: 6,000 character saved summary is safely handled by 3,000 projecti
   const projectedDefault = await memory.initialConversationSummary('owner6k', child.id);
   assert.ok(projectedDefault !== null, 'Summary projection must not return null when a valid head summary exists');
   assert.equal(projectedDefault!.summary.lastCoveredMessageId, msg.id, 'Watermark must preserve latest covered message');
-  
+
   const parsedDefault = JSON.parse(projectedDefault!.summary.text);
   assert.equal(parsedDefault.headBatchOmittedForCapacity, true, 'Omission flag must explicitly state head batch omitted for capacity');
   assert.deepEqual(parsedDefault.batches, [], 'No partial batch slicing inside projection JSON');
@@ -237,10 +237,9 @@ test('REQ-005: projection preserves strictly contiguous suffix and stops at firs
   assert.ok(projected !== null);
   assert.equal(projected!.summary.lastCoveredMessageId, msg3.id);
   const parsed = JSON.parse(projected!.summary.text);
-  
+
   assert.equal(parsed.batches.length, 1, 'Must strictly include contiguous suffix from head, not skip middle batch');
   assert.equal(parsed.batches[0].id, saved3.id, 'Only the newest contiguous batch fits');
   assert.equal(parsed.omittedOrInvalidatedBatches, 2);
   assert.equal(parsed.olderHistoryAvailable, true);
 });
-

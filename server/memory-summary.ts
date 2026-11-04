@@ -13,6 +13,12 @@ export interface InitialConversationSummary {
   summary: Pick<ConversationSummary, "id" | "version" | "text" | "createdAt" | "lastCoveredMessageId">;
   basis: string;
   validUntil: string | null;
+  /** Structured server-only batches allow final request sizing without parsing derived prose. */
+  batchProjection?: HistoricalSummaryProjection;
+}
+export interface HistoricalSummaryProjection {
+  batches: { id: string; sourceMessageIds: string[]; text: string; validUntil: string | null }[];
+  omittedOrInvalidatedBatches: number;
 }
 const aad = (childId: string, userId: string, id: string) => `memory-summary:${childId}:${userId}:${id}`;
 

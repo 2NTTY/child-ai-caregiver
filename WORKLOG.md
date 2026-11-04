@@ -4479,3 +4479,27 @@ Recorded At：2026-11-03 14:25 UTC。依使用者要求再次檢查並修至可�
 新增 `scripts/ci/verify-req005-roadmap.py`、對應 Python standard-library 測試及獨立 `req005-roadmap-docs.yml`。工作流只在 roadmap／檢查器／測試／本工作流相關變更時觸發，不對 WORKLOG-only PR 作通用 gate；只有 #409 套五檔交付 allowlist。採唯讀權限、固定 checkout action、精確 head、event base/head 的 40-hex 驗證、唯一 merge-base、五分鐘期限及無 npm／模型／部署。WORKLOG 與 diff 相對共同祖先核查，來源 Git 物件缺少時明確失敗，不由檢查器抓網絡；未改原 D alignment workflow 或遠端保護。
 
 本地合成 Git fixture 測試 12/12 通過，涵蓋斷鏈／越界行號、非法及不存在 base/head、錯 checkout、額外 Server 檔、WORKLOG 重寫、路徑越界、控制字元、CLI 失敗退出及 Test 6 原誤報。先有缺少檢查器的 10 項紅，實作後轉綠；另捕捉未提交工作樹的檢查順序不足，補成明確拒絕後 12 項全綠。原 head 文件的 Test 6 說法被新斷言拒絕，修正正文的預覽檢查通過（16 個文件連結及 2 個 PR URL 格式）；PR 狀態不由此腳本驗證。已安裝 PyYAML 的語法／關鍵配置檢查及 `git diff --check` 通過。提交前的工作樹預覽不是 exact-head CI，真正來源提交與 Actions 結果須讀回後另記；未重跑產品測試，不把文件靜態檢查或 skipped 舊 job 當作產品／合併驗收。
+
+<a id="log-20261104-req005-interactive-ci"></a>
+### 2026-11-04 — REQ-005 互動摘要 CI 覆蓋修正
+
+Recorded At：2026-11-04 04:46 UTC。依使用者「review pr 然後修掉問題再review」要求，從 #410 `5c1c581fc5b0dac824dbb815b1bff738d408b8de` 繼續，以本人授權的 2NTTY 帳號提交，不改原提交作者。修正 Summary progress job 沒有覆蓋本 PR 分支，以及新增測試後仍要求 162 個案例的 gate 不一致。
+
+沿原 same-repository、精確 head、鎖定工具鏈及無網絡／無憑證隔離條件，只增列已審 REQ-005 分支。每個分支以明確 manifest 記錄完整測試檔及精確案例數，逐檔執行並拒絕缺項、失敗、取消、跳過及 TODO。保留原 18 檔，補入既有 native context-integrity、initial-summary 與 summary-projection 三檔；其他 PR 的新增檔須明確加入各自 manifest，不靜默略過。原 D alignment workflow 與產品程式保持不變。
+
+本分支 21 檔合共 178／178 通過、CI 契約 6／6 通過，原 `tsconfig.server.json` 完整 noEmit 零診斷。初次 snapshot 缺少引用檔／宣告造成的型別失敗已保留；補齊精確原檔後通過，未改編譯根或排除。獨立覆核要求加強 suite membership，已用同檔數換走原 suite 的 mutation 證明拒絕，修正後無剩餘阻塞發現。已審 patch SHA256 `4e9170a3466b009d0a8358be3569580900d9f002eb7a0428f4cd954372db3190` 的五個執行／測試檔維持不變，詳見[驗證證據](artifacts/verification/REQ005_INTERACTIVE_CI_20261104.json)。
+
+本機缺少建立要求 network namespace 的權限，未把分離的合成測試稱為完整隔離 helper 通過；新精確遠端 head 的 Actions 結果仍須另行核對。D job 的 skipped 不是成功。本分支結果不代驗跨 PR 組合、真模型、正式資料、設備、網站或部署；未 approval／合併，REQ-005 仍未整體完成。
+
+<a id="log-20261104-req005-projection-root-fix"></a>
+### 2026-11-04 — REQ-005 摘要投影與到期根因補修
+
+Recorded At：2026-11-04 08:05 UTC。依使用者要求深入覆核、修正真正問題後再驗，從 #411 `d613ce79c4847f46c35ac9f4a0c1b31ac84c67f8` 整合 master `1dd85057bd270c113356a3bded29b9eb8e4613e1`，保留已合併 #410 的動態工具餘額與逐檔 CI 門檻。合成 Firestore→Gateway 重現兩項原已存在、但本 PR 尚未補齊的缺口：舊批次的引號經多層 JSON 包裝後超限，連可容納的最新批次亦被整體丟棄；含 UTC offset 的來源到期時間按字串排序，令較早到期內容越過 dispatch。
+
+Server-only 投影保留結構化批次，由 Gateway 按完整包裝及實際 native generation config／總 request 餘額選取連續最新後綴；不調高上限、不截斷批次或任意原始訊息、不把舊衍生 JSON 當可信控制欄位。省略數、head watermark 及不完整標記保留，獲授權 read_context 可按現有餘額重讀。來源到期按 parsed instant 取最早值，舊儲存批次亦由 dependencies 重算；非法值 fail closed，最後核權等待跨過到期時不送出歷史內容。
+
+獨立覆核另找出非 durable base request 未計最終 generation config。已統一 admission／選窗量測，超限時在 quota／provider 前停止，不靜默刪原內容。真 Runner 邊界測試再捕捉 ADK 2.1.0 在 beforeModelCallback 後才補 agent label 的 42 字元差額；改由正式 generateContentConfig 提早提供同一既有 label，而非固定減去 42。最終 native request 恰 32,000 字元可執行，32,001 字元明確拒絕；原 native parts、必需 context 及既有多輪簽章保持不變。
+
+原 `tsconfig.server.json` 完整 noEmit 零診斷；22 個完整測試檔逐檔精確 192／192、CI 契約 6／6 通過，失敗／取消／跳過／TODO 全為零。新 delivery 全鏈 11 項、Runtime 20 項及原 durable、撤權、來源刪除、session／restore 邊界均在本批範圍。先紅後綠證據、曾失敗的 fixture transaction 順序及測試型別窄化修正均保留，詳見[驗證證據](artifacts/verification/REQ005_PROJECTION_ROOT_FIX_20261104.json)。對 master 的 diff whitespace 檢查通過；未改測試根、排除、工具鏈或網絡隔離 guard。
+
+本機仍無建立指定 network namespace 的權限，沒有把分開執行的合成檢查稱為完整隔離 helper 通過；精確遠端 head 的 GitHub Actions 仍須另查。未調用真模型、正式家庭資料、設備、網站或部署，亦不把本補修當作 REQ-005 整體完成。其他尚未合併 PR 的新修訂須在後續整合另核。

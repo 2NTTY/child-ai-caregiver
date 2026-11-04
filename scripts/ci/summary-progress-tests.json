@@ -5,7 +5,7 @@
   },
   {
     "path": "tests/agent-runtime.test.ts",
-    "cases": 19
+    "cases": 20
   },
   {
     "path": "tests/agent-model-gateway.test.ts",
@@ -25,7 +25,7 @@
   },
   {
     "path": "tests/private-summary-contract.test.ts",
-    "cases": 7
+    "cases": 10
   },
   {
     "path": "tests/summary-prompt-contract.test.ts",
@@ -82,5 +82,9 @@
   {
     "path": "tests/memory-summary-projection.test.ts",
     "cases": 3
+  },
+  {
+    "path": "tests/summary-projection-delivery.test.ts",
+    "cases": 11
   }
 ]

@@ -82,12 +82,12 @@ export function createDueWorkContinuationTools(run: AgentRunContext, authorize: 
 type Retriever = ReturnType<typeof createKnowledgeRetriever>;
 const shortText = (length: number) => z.string().min(1).max(length).refine(value => value.trim().length > 0);
 /** Preserve whole, coverage-tracked source messages; never claim an omitted message was read. */
-export function uncoveredConversation(context: MemoryContext) {
+export function uncoveredConversation(context: MemoryContext, maxCharacters = 8000) {
   const messages: MemoryContext["recentMessages"] = [];
   let characters = 2;
   for (const message of context.recentMessages) {
     const size = JSON.stringify(message).length + 1;
-    if (characters + size > 8000) break;
+    if (characters + size > maxCharacters) break;
     messages.push(message);
     characters += size;
   }
@@ -280,7 +280,8 @@ export function createProductAgentTools(options: {
           ? await memory.prepareSummary(scope.userId, scope.childId) : null;
         const sourceContext = prepared ? { ...context, recentMessages: prepared.messages,
           truncated: { ...context.truncated, messages: prepared.moreUncovered } } : context;
-        const loaded = options.visibility === "family" ? null : uncoveredConversation(sourceContext);
+        const allowance = Math.max(0, budget.toolResponseCharacters - 512);
+        const loaded = options.visibility === "family" ? null : uncoveredConversation(sourceContext, allowance);
         const growth = options.growth ? await options.growth.list(scope.userId,scope.childId) : null;
         const metadata = { operationPolicy: options.visibility !== "family" && options.actions ? await options.actions.policy(scope.userId, scope.childId) : null,
           growth: growth ? {items:growth.items.map(item=>({id:item.id,topicId:item.topicId,state:item.state,sourceAvailable:item.sourceAvailable,taskId:item.taskId,taskState:item.taskState})),disabledTopics:growth.topics.filter(topic=>topic.disabled).map(topic=>topic.id)} : null,
@@ -299,7 +300,6 @@ export function createProductAgentTools(options: {
             messageIds: messages.map(message => message.id),
             moreUncovered: prepared.moreUncovered || messages.length < prepared.messages.length } : null });
         // Size the whole tool result, leaving a bounded native function-response envelope.
-        const allowance = Math.max(0, budget.toolResponseCharacters - 512);
         const fits = (value: ReturnType<typeof makeResult>) => JSON.stringify({ status: "succeeded", data: { result: value } }).length <= allowance;
         const selected: MemoryContext["recentMessages"] = [];
         while (!fits(makeResult(selected))) {
