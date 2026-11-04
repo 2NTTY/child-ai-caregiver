@@ -28,7 +28,7 @@ export const handoverImportResolutionSchema = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('replace_current'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
   z.object({ mode: z.literal('restore_deleted'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
 ]);
-export const originalBackupModuleSchema = z.enum(['care', 'profile', 'tasks', 'sources']);
+export const originalBackupModuleSchema = z.enum(['care', 'profile', 'tasks', 'sources', 'documents']);
 export const selfAvatarRestoreSchema = z.object({ expectedVersion: resourceVersion,
   mode: z.enum(['replace_current', 'restore_deleted']) }).strict();
 export const selfAvatarComparisonQuerySchema = z.object({ uploadId: uuid, expectedUploadVersion: count.positive() }).strict();
@@ -58,9 +58,9 @@ export const handoverImportCommandSchema = z.object({ opId: uuid, uploadId: uuid
 export const originalBackupComparisonQuerySchema = z.object({ uploadId: uuid, expectedUploadVersion: count.positive(), childId: uuid,
   module: originalBackupModuleSchema, includeRestoreTarget: z.literal(true).optional(), cursor: z.string().min(1).max(16000).optional() }).strict();
 export const originalBackupComparisonSchema = z.object({ uploadId: uuid, manifestSha256: hash, childId: uuid, module: originalBackupModuleSchema,
-  items: z.array(z.object({ id: uuid, targetId: uuid.optional(), backupVersion: resourceVersion, localVersion: resourceVersion.nullable(),
+  items: z.array(z.object({ id: uuid, targetId: uuid.optional(), resourceSection: z.enum(['documents', 'visit_preparation']).optional(), backupVersion: resourceVersion, localVersion: resourceVersion.nullable(),
     state: z.enum(['unchanged', 'local_newer', 'backup_newer', 'different', 'deleted', 'unavailable']),
-    changedFields: z.array(z.string().min(1).max(80)).max(64) }).strict()).max(20), nextCursor: z.string().max(16000).nullable() }).strict();
+    changedFields: z.array(z.string().min(1).max(80)).max(64) }).strict()).max(20), nextCursor: z.string().max(16000).nullable() }).strict().refine(page => page.items.every(item => (item.resourceSection !== undefined) === (page.module === 'documents')));
 export type OriginalBackupComparison = z.infer<typeof originalBackupComparisonSchema>;
 export type OriginalBackupComparisonQuery = z.infer<typeof originalBackupComparisonQuerySchema>;
 

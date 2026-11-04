@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createOriginalBackupComparison, createSelfAvatarComparison, verifyOriginalBackup, type OriginalBackupIssuer } from './handover-original-backup.ts';
 import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
-import { handoverImportCommandSchema, handoverImportResultQuerySchema, handoverImportViewSchema, handoverImportResourceSectionSchema, handoverImportModuleOf, type HandoverImportCommand } from '../src/shared/handover-imports.ts';
+import { handoverImportCommandSchema, handoverImportResultQuerySchema, handoverImportViewSchema, handoverImportResourceSectionSchema, handoverImportModuleOf, originalBackupModuleSchema, type HandoverImportCommand } from '../src/shared/handover-imports.ts';
 import { createFirestoreHandoverImportBatches } from './firestore-handover-import-batches.ts';
 import { domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { createHandoverUploadService } from './handover-upload-service.ts';
@@ -225,7 +225,8 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     } finally { await opened?.dispose(); }
   }
   const items = createFirestoreHandoverImportItems(options);
-  return { create: start, process, accountAvatarRestore: !!options.attachments?.avatars && !!options.originalBackup,
+  return { create: start, process, originalModules: options.originalBackup ? originalBackupModuleSchema.options : [],
+    accountAvatarRestore: !!options.attachments?.avatars && !!options.originalBackup,
     compareOriginal: createOriginalBackupComparison(options),
     compareSelfAvatar: createSelfAvatarComparison(options), history: items.history, summary: batches.summary,
     async enrolments(owner: string, id: string) {

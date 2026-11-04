@@ -11,6 +11,9 @@ import { createFirestoreAvatarData } from './firestore-avatar-data.ts';
 import { createFirestoreAuthority } from './firestore-authority.ts';
 import { createFirestoreCareStore, firestoreCareSchema, firestoreProfileSchema } from './firestore-care.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
+import { familyDocumentTransferSchema } from './family-document-transfer.ts';
+import { createFirestoreCareSummary, firestorePreparationSchema } from './firestore-care-summary.ts';
 import { createFirestoreOnlineStore } from './firestore-online.ts';
 import { createFirestoreSharedInputStore, sharedInputImportSchema } from './firestore-shared-inputs.ts';
 import type { createHandoverUploadService } from './handover-upload-service.ts';
@@ -71,6 +74,7 @@ function comparisonValues(row: CareRecord | ChildProfile | CareTask | z.infer<ty
 export function createOriginalBackupComparison(options: FirestoreDomainOptions & { uploads: Uploads; originalBackup?: OriginalBackupIssuer }) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), care = createFirestoreCareStore(options), online = createFirestoreOnlineStore(options);
   const sources = createFirestoreSharedInputStore(options);
+  const documents = createFirestoreFamilyDocumentStore(options), preparations = createFirestoreCareSummary(options, care);
   return async function compare(owner: string, raw: unknown, signal: AbortSignal): Promise<OriginalBackupComparison> {
     const input = domainParse(originalBackupComparisonQuerySchema, raw);
     if (!options.originalBackup) domainReject('package_original_unavailable', 503);
@@ -89,7 +93,8 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
       }
       const section = input.module === 'sources' ? 'private_sources' : input.module;
       const page = await reader.readPage({ selection: { childIds: [input.childId], modules: [input.module] },
-        sections: [section], acknowledgedManifestSha256: reader.manifestSha256, cursor: cursor?.page, limit: 20 });
+        sections: section === 'documents' ? ['documents', 'visit_preparation'] : [section], acknowledgedManifestSha256: reader.manifestSha256,
+        cursor: cursor?.page, limit: section === 'documents' ? 3 : 20 });
       return await authority.runTransaction(owner, input.childId, async binding => {
         if (!await binding.readChild(input.childId)) domainReject('forbidden', 403);
         const checkUpload = await options.uploads.assertImportableIn(binding, input.uploadId, job.version);
@@ -97,7 +102,27 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
         if (cursor && cursor.scope !== scope) domainReject('import_results_changed');
         const items: OriginalBackupComparison['items'] = [];
         for (const row of page.rows) {
-          if (row.childId !== input.childId || row.section !== section) domainReject('invalid_package_scope', 400);
+          if (row.childId !== input.childId) domainReject('invalid_package_scope', 400);
+          if (section === 'documents') {
+            const kind = row.section;
+            if (kind !== 'documents' && kind !== 'visit_preparation') domainReject('invalid_package_scope', 400);
+            const backup = kind === 'documents' ? familyDocumentTransferSchema.parse(row.value) : firestorePreparationSchema.parse(row.value);
+            if (backup.childId !== input.childId) domainReject('invalid_package_scope', 400);
+            const id = 'id' in backup ? backup.id : backup.childId;
+            const { mapping } = await readImportMapping(data, binding, { ...manifest.source, childId: input.childId, section: kind, resourceId: id }, true);
+            const { value: live } = kind === 'documents' ? await documents.readImportState(binding, id) : await preparations.readImportState(binding);
+            const fields = kind === 'documents' ? ['request','status','archivedAt','currentSnapshot'] : ['questions','checklist','appointmentTaskId','period'];
+            const changedFields = live ? fields.filter(field => canonicalJson(Reflect.get(backup, field)) !== canonicalJson(Reflect.get(live, field))) : [];
+            const unavailable = !live || mapping && mapping.target.id !== id || 'currentSnapshot' in backup && !backup.currentSnapshot?.readable
+              || live && 'currentSnapshot' in live && !live.currentSnapshot?.readable;
+            const restored = live && mapping?.target.version === live.version && mapping.sourceVersion === backup.version;
+            items.push({ id, resourceSection: kind, ...(input.includeRestoreTarget ? { targetId: id } : {}), backupVersion: backup.version,
+              localVersion: live?.version ?? null, changedFields: unavailable || restored ? [] : changedFields,
+              state: unavailable || !live ? 'unavailable' : restored ? 'unchanged' : live.version > backup.version ? 'local_newer'
+                : live.version < backup.version ? 'backup_newer' : changedFields.length ? 'different' : 'unchanged' });
+            continue;
+          }
+          if (row.section !== section) domainReject('invalid_package_scope', 400);
           const original = section === 'private_sources' ? sharedInputImportSchema.parse(row.value)
             : input.module === 'care' ? firestoreCareSchema.parse(row.value) : input.module === 'profile'
             ? firestoreProfileSchema.parse(row.value) : firestoreTaskSchema.parse(row.value);
