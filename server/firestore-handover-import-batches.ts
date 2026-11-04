@@ -247,7 +247,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
         && row.resourceId === (input.row.section === 'child_avatar' ? input.row.childId : identity.id ?? identity.childId))?.resolution ?? { mode: 'preserve' as const };
       let committed: Batch | undefined;
       const item = await items.apply(owner, { opId, batchId: job.id, target: selected.target, row: input.row,
-        integrity: job.request.integrity, resolution,
+        integrity: job.request.integrity, resolution, ...(job.request.restoreOriginal ? { restoreOriginal: true } : {}),
         ...(input.documentContent === undefined ? {} : { documentContent: input.documentContent }),
         ...(input.concernEvents === undefined ? {} : { concernEvents: input.concernEvents }),
         ...(input.attachmentContent === undefined ? {} : { attachmentContent: input.attachmentContent }) }, async (actor, target) => {

@@ -31,7 +31,7 @@ import { makeImportProvenance } from './handover-provenance.ts';
 import { historyModule, sourceHistoryRecordSchema, sourceHistoryExport, sourceHistoryId } from './handover-history-records.ts';
 import { parseHistoryRow, prepareSourceHistory, sourceHistoryVisible, validateSourceHistory } from './handover-source-history.ts';
 import { handoverSourceIdentitySchema, handoverImportItemSchema, handoverImportMappingSchema,
-  handoverImportResolutionSchema, handoverImportItemId, handoverImportMappingId,
+  handoverImportResolutionSchema, handoverImportItemId, readImportMapping,
   handoverImportItemMetadata, handoverImportMappingMetadata, handoverImportItemSection,
   type HandoverImportItem, type HandoverImportMapping, type HandoverImportResolution } from './handover-import-records.ts';
 
@@ -39,7 +39,7 @@ const targetSchema = z.object({ childId: z.uuid(), spaceId: z.uuid().nullable() 
 type Target = z.infer<typeof targetSchema>;
 type Section = HandoverImportResourceSection;
 export interface HandoverImportItemCommand {
-  opId: string; batchId: string; target: Target; row: HandoverImportRow; integrity: HandoverIntegrity; resolution: HandoverImportResolution;
+  opId: string; batchId: string; target: Target; row: HandoverImportRow; restoreOriginal?: true; integrity: HandoverIntegrity; resolution: HandoverImportResolution;
   documentContent?: DocumentTransferContent | null;
   concernEvents?: unknown[];
   attachmentContent?: HandoverAttachmentContent | null;
@@ -88,13 +88,10 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       if (row.get(key) !== expected) domainReject('import_item_binding', 500);
     return value;
   }
-  async function readState(b: Binding, section: Section, source: z.infer<typeof handoverSourceIdentitySchema>) {
-    const mappingId = handoverImportMappingId(b.scope, source), mappingRef = data.ref('handover_import_mappings', 'handover-import-mapping', mappingId);
-    const snapshot = await b.transaction.get(mappingRef);
-    const mapping = snapshot.exists ? data.open('handover-import-mapping', mappingId, b.scope, handoverImportMappingSchema, snapshot) : null;
-    if (mapping && (firestoreDomainHash(mapping.source) !== firestoreDomainHash(source) || mapping.revision !== snapshot.get('recordVersion')))
-      domainReject('import_mapping_binding', 500);
-    const careState = section === 'care' && mapping ? await care.readImportRecordState(b, mapping.target.id) : null;
+  async function readState(b: Binding, section: Section, source: z.infer<typeof handoverSourceIdentitySchema>, restoreOriginal?: true) {
+    const { mappingId, mappingRef, mapping } = await readImportMapping(data, b, source, restoreOriginal);
+    const knownId = mapping?.target.id ?? (restoreOriginal ? source.resourceId : null);
+    const careState = section === 'care' && knownId ? await care.readImportRecordState(b, knownId) : null;
     const memoryState = mapping && (section === 'memory_facts' || section === 'memory_topics')
       ? await memory.readImportState(b, section === 'memory_facts' ? 'facts' : 'topics', mapping.target.id) : null;
     const sourceState = mapping && section === 'private_sources' ? await sources.readImportState(b, mapping.target.id) : null;
@@ -115,11 +112,12 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       : section === 'profile' ? await care.readProfile(b)
       : attachmentState ? attachmentState.value
       : preparationState ? preparationState.value
-      : !mapping ? null : section === 'care' ? careState!.value : section === 'tasks' ? await online.readImportTask(b, b.scope.childId, mapping.target.id)
+      : section === 'care' ? careState?.value ?? null : section === 'tasks' && knownId ? await online.readImportTask(b, b.scope.childId, knownId)
+      : !mapping ? null
       : documentState ? documentState.value : sourceState ? sourceState.value : memoryState ? memoryState.value : section === 'instructions' ? await notes.read(b, mapping.target.id) : await memory.readImportedSummary(b, mapping.target.id);
     const currentVersion = current?.version ?? careState?.version ?? memoryState?.version ?? sourceState?.version ?? attachmentState?.version ?? 0;
-    const currentId = current ? 'id' in current ? current.id : current.childId : mapping?.target.id ?? (section === 'profile' || section === 'visit_preparation' || section === 'child_avatar' ? b.scope.childId : null);
-    const deleted = mapping !== null && (current === null || section === 'profile' && (current as ChildProfile).data === null)
+    const currentId = current ? 'id' in current ? current.id : current.childId : knownId ?? (section === 'profile' || section === 'visit_preparation' || section === 'child_avatar' ? b.scope.childId : null);
+    const deleted = restoreOriginal && section === 'care' && !current && currentVersion > 0 || mapping !== null && (current === null || section === 'profile' && (current as ChildProfile).data === null)
       || section === 'profile' && currentVersion > 0 && (current as ChildProfile).data === null
       || section === 'child_avatar' && currentVersion > 0 && current === null;
     // Linking immutable bytes to a local message changes metadata, not the imported content.
@@ -175,7 +173,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       const { serverId, accountId, childId } = provenance.current.source;
       const resourceId = history?.parentId ?? provenance.current.source.resourceId;
       const source = handoverSourceIdentitySchema.parse({ serverId, accountId, childId, section, resourceId });
-      const { mappingId, mappingRef, mapping, current, currentVersion, currentId, deleted, locallyChanged } = await readState(b, section, source);
+      const { mappingId, mappingRef, mapping, current, currentVersion, currentId, deleted, locallyChanged } = await readState(b, section, source, raw.restoreOriginal);
       const resultResource = currentId ? { id: currentId, version: currentVersion } : null;
       async function finish(outcome: HandoverImportItem['outcome'], reason: string | null, resource = resultResource,
         prepared?: { changeSeq: string | null; commit(): void }, historyCommit?: () => void) {
@@ -188,7 +186,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
         const id = handoverImportItemId(b.scope, opId), envelope = data.seal('handover-import-item', id, b.scope, handoverImportItemSchema, item);
         let next: HandoverImportMapping | null = null;
         if (prepared && resource && !history && !supplement) next = handoverImportMappingSchema.parse({ source, sourceVersion: sourceValue!.version,
-          sourceHash: provenance.current.sourceHash, ...(documentRevisionHash ? { documentRevisionHash } : {}),
+          ...(raw.restoreOriginal ? { restoreOriginal: true } : {}), sourceHash: provenance.current.sourceHash, ...(documentRevisionHash ? { documentRevisionHash } : {}),
           target: resource, revision: (mapping?.revision ?? 0) + 1,
           operationId: opId, importedAt: provenance.current.importedAt });
         // Seal all records before the first write. Model/storage/network calls never occur in the callback.
@@ -200,6 +198,19 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
         b.transaction.create(data.ref('handover_import_items', 'handover-import-item', id), { ...data.tags(b.scope), ...handoverImportItemMetadata(item), ...envelope });
         commitProgress?.();
         return item;
+      }
+      if (raw.restoreOriginal) {
+        if (target.spaceId || b.sharedAccess || source.accountId !== userId || source.childId !== target.childId
+          || !['care', 'profile', 'tasks'].includes(section) || raw.row.section !== section || sourceValue === null)
+          domainReject('invalid_import_target', 403);
+        // A missing original is not a confirmed removal. Only the domain tombstone permits revival.
+        if (resolution.mode === 'preserve' || !current && !(section === 'care' && currentVersion > 0)
+          || section === 'profile' && currentVersion === 0) return finish('conflict', 'original_unavailable', null);
+        if (resolution.targetId !== currentId || resolution.expectedVersion !== currentVersion)
+          return finish('conflict', 'target_version_conflict');
+        if (!deleted && (current && firestoreDomainHash(current) === firestoreDomainHash(raw.row.value)
+          || mapping?.sourceHash === provenance.current.sourceHash && mapping.target.version === currentVersion))
+          return finish('skipped', 'already_imported');
       }
       if (supplement) {
         if (!mapping) return finish('conflict', 'attachment_parent_not_imported');
@@ -255,9 +266,9 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
         return finish('conflict', 'target_version_conflict');
       if (deleted && resolution.mode !== 'restore_deleted') return finish('conflict', 'target_deleted');
       if (!deleted && resolution.mode === 'restore_deleted') return finish('conflict', 'target_not_deleted');
-      if (mapping && sourceValue!.version < mapping.sourceVersion) return finish('skipped', 'older_source');
+      if (!raw.restoreOriginal && mapping && sourceValue!.version < mapping.sourceVersion) return finish('skipped', 'older_source');
       if (!deleted && locallyChanged && resolution.mode !== 'replace_current') return finish('conflict', 'target_changed');
-      if (!deleted && !locallyChanged && sameVersion) {
+      if (!raw.restoreOriginal && !deleted && !locallyChanged && sameVersion) {
         if (period && !savedPeriod && currentId) {
           const stamp = await memory.prepareImportedSummaryPeriod(b, currentId, currentVersion, period);
           return finish('updated', 'summary_source_period_added', resultResource, { changeSeq: null, commit: stamp });
@@ -389,7 +400,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
   }
   return { apply,
     async results(userId: string, selection: { batchId: string; sourceChildId: string; module: HandoverImportModule; target: Target;
-      source: HandoverImportBatchRequest['source']; expectedScope: WorkRecoveryScope; cursor?: string }) {
+      source: HandoverImportBatchRequest['source']; expectedScope: WorkRecoveryScope; restoreOriginal?: true; cursor?: string }) {
       return access(userId, selection.target, selection.module, 'read', async b => {
         if (firestoreDomainHash(b.scope) !== firestoreDomainHash(selection.expectedScope)) domainReject('import_target_changed');
         const { cursor, ...binding } = selection, scope = firestoreDomainHash([userId, binding, b.authorizationVersion, b.changeSeq]);
@@ -421,12 +432,12 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
           let availableResolution: 'replace_current' | 'restore_deleted' | null = null;
           if (!value.sourceSection && value.outcome === 'conflict' && ['target_changed', 'target_deleted', 'target_version_conflict'].includes(value.reason ?? '')) {
             const { serverId, accountId, childId, section, resourceId } = value.source.source;
-            const live = await readState(b, resourceSection, { serverId, accountId, childId, section, resourceId });
+            const live = await readState(b, resourceSection, { serverId, accountId, childId, section, resourceId }, selection.restoreOriginal);
             if (live.currentId) currentResource = { id: live.currentId, version: live.currentVersion, deleted: live.deleted };
             const stale = live.mapping && (value.source.source.resourceVersion < live.mapping.sourceVersion
               || value.source.source.resourceVersion === live.mapping.sourceVersion && value.source.sourceHash !== live.mapping.sourceHash &&
               !(value.documentRevisionHash && value.documentRevisionHash === live.mapping.documentRevisionHash));
-            if (currentResource && !stale) availableResolution = live.deleted ? 'restore_deleted' : live.locallyChanged ? 'replace_current' : null;
+            if (currentResource && !selection.restoreOriginal && !stale) availableResolution = live.deleted ? 'restore_deleted' : live.locallyChanged ? 'replace_current' : null;
           }
           result.push({ id: value.opId, batchId: value.batchId, sourceChildId: selection.sourceChildId, module: selection.module,
             ...(selection.module === 'memory' || selection.module === 'sources' || selection.module === 'documents' || selection.module === 'attachments' || selection.module === 'chat' || selection.module === 'growth' ? { resourceSection } : {}),

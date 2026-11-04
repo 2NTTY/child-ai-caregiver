@@ -9,9 +9,13 @@ import { z } from 'zod';
 import { serialFirestoreFixture } from './helpers/firestore-session-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
+import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
+import type { CareTask } from '../src/shared/tasks.ts';
 import { createFirestoreCareStore } from '../server/firestore-care.ts';
 import { createFirebaseHandoverObjects } from '../server/firebase-handover-objects.ts';
 import { createHandoverUploadService } from '../server/handover-upload-service.ts';
+import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.ts';
+import { createFirebaseWorkerServices } from '../server/firebase-worker-services.ts';
 import { createHandoverImportService } from '../server/handover-import-service.ts';
 import { handleFirebaseAccountData } from '../server/firebase-account-data-api.ts';
 import { writeHandoverArchive } from '../server/handover-archive.ts';
@@ -24,7 +28,7 @@ const comparePage = z.object({uploadId:z.uuid(),manifestSha256:z.string().regex(
     localVersion:z.number().int().nonnegative().nullable(),state:z.enum(['unchanged','local_newer','backup_newer','different','deleted','unavailable']),
     changedFields:z.array(z.string())}).strict()),nextCursor:z.string().nullable()}).strict();
 
-test('original backup preview verifies issued identity and compares real care records without disclosing or writing bodies', async () => {
+test('verified personal backups preview without disclosure and restore scoped originals with pinned versions and receipts', async () => {
   const directory = await mkdtemp(join(tmpdir(),'handover-original-backup-'));
   try {
     const fixture = serialFirestoreFixture(), cipher = createStorageCipher(Buffer.alloc(32,104));
@@ -46,6 +50,17 @@ test('original backup preview verifies issued identity and compares real care re
     const newer = await care.revise('parent',childId,rows[1].id,{text:'Secret current care body',details:emptyCareDetails(),source:rows[1].source},rows[1].version,'Local revision');
     assert.ok(newer);
     await care.delete('parent',childId,rows[2].id,rows[2].version);
+    const online = createFirestoreOnlineStore(options);
+    async function taskAction(path: string, payload: unknown) {
+      const receipt = await online.submit('parent', { path, payload,
+        operation: { ...await online.context('parent', { path, payload }), opId: randomUUID(), deviceId: randomUUID() } });
+      return (receipt.result as { task: CareTask }).task;
+    }
+    const profile = await care.saveProfile('parent', childId, { age:{kind:'unknown'},dueDate:null,gestationalWeeksRaw:null,
+      region:'HK',language:null,allergies:null,specialNeeds:null,preferences:null,source:'Original profile',validUntil:null },0,'Original');
+    assert.ok(profile?.data);
+    const originalTask = await taskAction(`/api/children/${childId}/tasks`, {confirm:true, values:{
+      title:'Reminder from backup',details:'Private task',kind:'ordinary',assigneeUserId:'parent',dueAt:'2030-12-05T08:00:00Z',timeZone:'Asia/Hong_Kong' }});
     const serverId = 'https://original.example.test', keys = generateKeyPairSync('ed25519');
     const keyId = hash(keys.publicKey.export({type:'spki',format:'der'}));
     const stored = new Map<string,{body:Buffer;metadata:any}>();
@@ -60,15 +75,17 @@ test('original backup preview verifies issued identity and compares real care re
     const originalBackup = {serverId,async matchesIssuedBackup(owner:string,id:string,manifestSha256:string,archiveSha256:string){
       return issued.has(JSON.stringify([owner,id,manifestSha256,archiveSha256]));}};
     const service = createHandoverImportService({...options,uploads,originalBackup});
-    async function stage(settings:{signed?:boolean;issued?:boolean;accountId?:string;sourceServerId?:string;purpose?:'backup'|'handover';owner?:string}={}) {
+    async function stage(settings:{signed?:boolean;issued?:boolean;accountId?:string;sourceServerId?:string;purpose?:'backup'|'handover';owner?:string;allCore?:boolean}={}) {
       const scopeVersion='a'.repeat(64),packageId=randomUUID(),owner=settings.owner??'parent';
-      const pages=[{section:'children',childId:null,items:[{id:childId,displayName:'Private original child'}]},
+      const pages: {section:string;childId:string|null;items:unknown[]}[]=[{section:'children',childId:null,items:[{id:childId,displayName:'Private original child'}]},
         {section:'care',childId,items:rows},{section:'care_history',childId,items:[]}];
+      if (settings.allCore) pages.push({section:'profile',childId,items:[profile]}, {section:'profile_history',childId,items:[]},
+        {section:'tasks',childId,items:[originalTask]}, {section:'task_history',childId,items:[]});
       async function* entries(){for(const [index,page] of pages.entries())yield {path:`data/${index}.json`,mediaType:'application/json',content:Buffer.from(JSON.stringify({...page,scopeVersion}))};
         yield {path:'summary.md',mediaType:'text/markdown',content:Buffer.from('Own backup')};}
       const archive=await writeHandoverArchive({directory,header:{format:'yuyoufang-data',version:1,packageId,packageVersion:1,
         createdAt:new Date().toISOString(),purpose:settings.purpose??'backup',source:{serverId:settings.sourceServerId??serverId,accountId:settings.accountId??'parent'},
-        selection:{childIds:[childId],modules:['care'],period:null}},entries:entries(),signingKey:settings.signed?keys.privateKey:undefined,
+        selection:{childIds:[childId],modules:settings.allCore?['care','profile','tasks']:['care'],period:null}},entries:entries(),signingKey:settings.signed?keys.privateKey:undefined,
         coverage:()=>pages.map(page=>({section:page.section,childId:page.childId,scopeVersion,items:page.items.length,complete:true}))});
       const bytes=await readFile(archive.path),archiveSha256=hash(bytes),uploadId=randomUUID();
       if(settings.issued)issued.add(JSON.stringify([owner,packageId,archive.manifestSha256,archiveSha256]));
@@ -117,6 +134,64 @@ test('original backup preview verifies issued identity and compares real care re
       assert.deepEqual([...fixture.records],before);
       await disposeUpload(request);
     }
+    // Restoring the original uses the observed versions and never edits a separate imported copy.
+    const request=await stage({issued:true,allCore:true}), preview=await compare(request);
+    const editedProfile=await care.saveProfile('parent',childId,{...profile.data,region:'My current region'},profile.version,'Current profile');
+    assert.ok(editedProfile);
+    const completedTask=await taskAction(`/api/children/${childId}/tasks/${originalTask.id}/change`,
+      {confirm:true,action:'complete',expectedVersion:originalTask.version,note:''});
+    const restoreCommand = (opId:string) => ({opId,uploadId:request.uploadId,expectedUploadVersion:request.expectedUploadVersion,
+      acceptedManifestSha256:preview.manifestSha256,restoreOriginal:true,resolutionOnly:true,
+      targets:[{sourceChildId:childId,target:{childId,spaceId:null},sections:['care','profile','tasks']}],
+      resolutions:[...rows.map((row,i)=>({sourceChildId:childId,section:'care',resourceId:row.id,
+        resolution:{mode:i===2?'restore_deleted':'replace_current',targetId:row.id,expectedVersion:i===2?row.version+1:i===1?newer.version:row.version}})),
+        {sourceChildId:childId,section:'profile',resourceId:childId,resolution:{mode:'replace_current',targetId:childId,expectedVersion:editedProfile.version}},
+        {sourceChildId:childId,section:'tasks',resourceId:originalTask.id,resolution:{mode:'replace_current',targetId:originalTask.id,expectedVersion:completedTask.version}}]});
+    const command=restoreCommand(randomUUID()), signal=new AbortController();
+    const deliveries: Parameters<ReturnType<typeof createFirebaseWorkerServices>['background']['process']>[0][]=[];
+    const runtime={...options,config:{...options,taskWorkerEnabled:true},authority,handoverImports:service,
+      currentAuth:async()=>({disabled:false,emailVerified:true,email:'parent@example.test'})};
+    const worker=createFirebaseWorkerServices(runtime as any,{taskName:()=>'unused',enqueue:async()=>{throw Error('Unexpected reminder')},
+      probe:async()=>{throw Error('Unexpected reminder')}},{async enqueue(value){deliveries.push(value);return {state:'confirmed'};},async probe(){return {state:'confirmed'};}},signal);
+    const forged=await stage();
+    await assert.rejects(service.create('parent',{...command,opId:randomUUID(),uploadId:forged.uploadId,expectedUploadVersion:forged.expectedUploadVersion},signal.signal),{code:'package_original_unverified'});
+    await disposeUpload(forged);
+    await assert.rejects(service.create('parent',{...command,opId:randomUUID(),targets:[{...command.targets[0],target:{childId:otherChildId,spaceId:null}}]},signal.signal),{code:'invalid_input'});
+    const first=await service.create('parent',command,signal.signal);
+    assert.equal(first.state,'queued');
+    const later=await care.revise('parent',childId,rows[0].id,{text:'Changed after preview',details:rows[0].details,source:rows[0].source},rows[0].version,'After preview');
+    assert.ok(later);
+    const codec=createFirestoreRestoreCodec(options);
+    const importJob=[...fixture.records].filter(([path])=>path.includes('_background_work/'))
+      .map(([path,data])=>codec.decode({path,data}).value as {kind:string;resourceId:string;id:string})
+      .find(work=>work.kind==='handover-import' && work.resourceId===first.id);
+    assert.ok(importJob);
+    // Each dispatcher page is bounded and shares its queue with the upload cleanup work.
+    for(let page=0;page<3 && !deliveries.some(item=>item.id===importJob.id);page++) await worker.background.dispatch();
+    const delivery=deliveries.find(item=>item.id===importJob.id);
+    assert.ok(delivery,'The existing dispatcher must enqueue the original restore work');
+    assert.equal((await worker.background.process(delivery)).state,'completed');
+    const done=await service.get('parent',first.id);
+    assert.equal(done.state,'completed',done.error??JSON.stringify(done));
+    assert.deepEqual(done.counts,{created:1,updated:3,conflict:1,skipped:0});
+    assert.equal((await care.get('parent',childId,rows[1].id))?.text,rows[1].text);
+    assert.equal((await care.get('parent',childId,rows[0].id))?.text,later.text);
+    assert.equal(await care.get('parent',childId,rows[2].id),null);
+    const storedRows=await care.listRecords('parent',childId);
+    const replacement=storedRows.records.find(row=>row.text===rows[2].text);
+    assert.ok(replacement);assert.notEqual(replacement.id,rows[2].id);
+    assert.deepEqual((await care.profile('parent',childId))?.data,profile.data);
+    const savedTask=await online.tasks.get('parent',childId,originalTask.id);
+    assert.equal(savedTask?.occurrence.state,originalTask.occurrence.state);
+    assert.equal(savedTask?.occurrence.id,completedTask.occurrence.id);
+    const after=await compare(request);
+    for (const row of rows.slice(1)) assert.equal(after.items.find(item=>item.id===row.id)?.state,'unchanged');
+    const currentTargets=await service.compareOriginal('parent',{...request,includeRestoreTarget:true},signal.signal);
+    assert.equal(currentTargets.items.find(item=>item.id===rows[2].id)?.targetId,replacement.id);
+    assert.deepEqual((await service.create('parent',command,signal.signal)).counts,done.counts);
+    assert.equal((await care.listRecords('parent',childId)).records.length,3);
+    await disposeUpload(request);
+
     const otherUpload=await stage({signed:true,owner:'other'}),before=structuredClone([...fixture.records]);
     await assert.rejects(compare(otherUpload,'other'),{code:'package_original_unverified',status:403});
     assert.deepEqual([...fixture.records],before,'The same child and resource UUIDs cannot expose another owner originals');

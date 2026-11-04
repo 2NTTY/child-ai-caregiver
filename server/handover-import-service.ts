@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createOriginalBackupComparison, type OriginalBackupIssuer } from './handover-original-backup.ts';
+import { createOriginalBackupComparison, verifyOriginalBackup, type OriginalBackupIssuer } from './handover-original-backup.ts';
 import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
 import { handoverImportCommandSchema, handoverImportResultQuerySchema, handoverImportViewSchema, handoverImportResourceSectionSchema, handoverImportModuleOf, type HandoverImportCommand } from '../src/shared/handover-imports.ts';
 import { createFirestoreHandoverImportBatches } from './firestore-handover-import-batches.ts';
@@ -36,9 +36,13 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     packageId: job.request.source.packageId, packageVersion: job.request.source.packageVersion, manifestSha256: job.request.source.manifestSha256,
     integrity: job.request.integrity, targets: job.request.targets, createdAt: job.createdAt, updatedAt: job.updatedAt,
     state: job.state, totalItems: job.request.totalItems, processedItems: job.position, counts: job.counts, error: job.error });
-  function verified(opened: Opened, command: HandoverImportCommand) {
+  async function verified(owner: string, opened: Opened, command: HandoverImportCommand) {
     const { reader, job } = opened;
     if (job.version !== command.expectedUploadVersion) domainReject('version_conflict');
+    if (command.restoreOriginal) {
+      await verifyOriginalBackup(owner, opened, options.originalBackup);
+      if (command.acceptedManifestSha256 !== reader.manifestSha256) domainReject('version_conflict');
+    }
     if (reader.integrity !== 'trusted' && command.acceptedManifestSha256 !== reader.manifestSha256)
       domainReject('package_trust_acknowledgement_required', 400);
     let totalItems = 0, preflightError: string | undefined;
@@ -72,6 +76,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     const request: HandoverImportBatchRequest = { opId: command.opId, uploadId: command.uploadId,
       uploadVersion: job.version, inputFingerprint: firestoreDomainHash(command),
       ...(command.resolutionOnly === undefined ? {} : { resolutionOnly: command.resolutionOnly }),
+      ...(command.restoreOriginal ? { restoreOriginal: true } : {}),
       source: { ...reader.manifest.source, packageId: reader.manifest.packageId, packageVersion: reader.manifest.packageVersion,
         manifestSha256: reader.manifestSha256 }, integrity: reader.integrity, acceptedManifestSha256: command.acceptedManifestSha256,
       targets, ...(enrolSourceIds.length ? { enrolSourceIds } : {}), resolutions: command.resolutions, totalItems };
@@ -80,6 +85,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
   const commandFor = (job: HandoverImportBatch): HandoverImportCommand => ({ opId: job.id, uploadId: job.request.uploadId,
     expectedUploadVersion: job.request.uploadVersion!, acceptedManifestSha256: job.request.acceptedManifestSha256,
     ...(job.request.resolutionOnly === undefined ? {} : { resolutionOnly: job.request.resolutionOnly }),
+    ...(job.request.restoreOriginal ? { restoreOriginal: true } : {}),
     targets: job.request.targets.map(row => job.request.enrolSourceIds?.includes(row.sourceChildId)
       ? { ...row, target: { createInClassId: row.target.spaceId! } } : row), resolutions: job.request.resolutions });
   async function start(owner: string, raw: unknown, signal: AbortSignal) {
@@ -91,7 +97,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       return view(prior);
     } catch (error) { if (codeOf(error) !== 'import_batch_not_found') throw error; }
     const opened = await options.uploads.open(owner, command.uploadId, signal);
-    try { const checked = verified(opened, command); signal.throwIfAborted(); return view(await batches.create(owner, checked.request, checked.preflightError)); }
+    try { const checked = await verified(owner, opened, command); signal.throwIfAborted(); return view(await batches.create(owner, checked.request, checked.preflightError)); }
     finally { await opened.dispose(); }
   }
   async function locate(opened: Opened, job: HandoverImportBatch, raw: string | null) {
@@ -150,7 +156,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     let opened: Opened | undefined, pendingStudent: string | undefined;
     try {
       opened = await options.uploads.open(work.scope.ownerUserId, job.request.uploadId, signal);
-      const checked = verified(opened, commandFor(job));
+      const checked = await verified(work.scope.ownerUserId, opened, commandFor(job));
       if (checked.preflightError) domainReject(checked.preflightError, 400);
       if (firestoreDomainHash(checked.request) !== job.fingerprint) domainReject('import_coverage_changed');
       signal.throwIfAborted();
@@ -219,7 +225,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       const index = job.request.targets.findIndex(target => target.sourceChildId === input.sourceChildId && target.sections.includes(input.module));
       if (index < 0) domainReject('import_result_scope_unavailable', 403);
       return items.results(owner, { ...input, batchId: job.id, target: job.request.targets[index].target,
-        source: job.request.source, expectedScope: job.targetScopes[index] });
+        ...(job.request.restoreOriginal ? { restoreOriginal: true } : {}), source: job.request.source, expectedScope: job.targetScopes[index] });
     },
     async list(owner: string, cursor?: string) {
       const page = await batches.list(owner, cursor); return { items: page.items.map(view), nextCursor: page.nextCursor };
@@ -230,7 +236,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       const prior = await batches.replayControl(owner, id, command, 'resume'); if (prior) return view(prior);
       signal = AbortSignal.any([signal, AbortSignal.timeout(300_000)]);
       const job = await batches.get(owner, id), opened = await options.uploads.open(owner, job.request.uploadId, signal);
-      try { const checked = verified(opened, commandFor(job)); if (checked.preflightError) domainReject(checked.preflightError, 400);
+      try { const checked = await verified(owner, opened, commandFor(job)); if (checked.preflightError) domainReject(checked.preflightError, 400);
         if (firestoreDomainHash(checked.request) !== job.fingerprint) domainReject('import_coverage_changed');
         signal.throwIfAborted(); return view(await batches.resume(owner, id, command));
       } finally { await opened.dispose(); }
