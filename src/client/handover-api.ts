@@ -108,7 +108,7 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
         if (!isCurrent()) throw failure();
         response = await fetcher(api + '/' + (options.collection ?? 'packages') + path, { method: body === undefined ? 'GET' : 'POST', credentials: 'include', cache: 'no-store',
           headers: { Accept: accept, 'x-expected-user-id': userId, 'x-handover-account-backup': '1', ...(options.classDocumentReview ? { 'x-handover-class-document-review': '1' } : {}),
-            ...(options.originalModules ? { 'x-handover-original-modules': '1' } : {}),
+            ...(options.originalModules ? { 'x-handover-original-modules': '1', 'x-handover-original-features': 'concerns' } : {}),
             ...(body === undefined ? {} : { 'Content-Type': options.rawBody ? 'application/zip' : 'application/json' }) },
           ...(body === undefined ? {} : { body: options.rawBody ? body as BodyInit : JSON.stringify(body) }), signal: controller.signal });
         if (!isCurrent()) { release(); throw failure(); }

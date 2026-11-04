@@ -16,7 +16,7 @@ export function originalRestoreResourceSection(module: HandoverImportModule,
   if (module === 'documents') return item?.resourceSection === 'documents' || item?.resourceSection === 'visit_preparation' ? item.resourceSection : null;
   if (module === 'attachments') return item?.resourceSection === 'child_avatar' ? 'child_avatar' : null;
   if (module === 'sources') return 'private_sources';
-  return module === 'care' || module === 'profile' || module === 'tasks' ? module : null;
+  return module === 'care' || module === 'profile' || module === 'tasks' || module === 'concerns' ? module : null;
 }
 export const hasOriginalChildAvatar = (preview: HandoverUploadView['preview'], childId: string) =>
   !!preview?.coverage.some(row => row.childId === childId && row.section === 'child_avatar' && row.items > 0);
