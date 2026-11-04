@@ -19,8 +19,11 @@ import { handoverUploadRecordSchema, handoverUploadId, handoverUploadMetadata, v
 import { importBatchSchema, importBatchControlSchema, importBatchId, importBatchControlId,
   importBatchMetadata, importBatchControlMetadata, validImportBatch } from './handover-import-batch-records.ts';
 import { indexBatchSchema, indexBatchReceiptSchema, indexBatchSort } from './knowledge-index-batch-records.ts';
+import { transferBatchSchema, transferResultSchema, transferItemId } from './knowledge-transfer-records.ts';
 
 export const operationRestoreSchemas = {
+  'knowledge-transfer-batch': { suffix: 'knowledge_transfers', schema: transferBatchSchema },
+  'knowledge-transfer-result': { suffix: 'knowledge_transfers', schema: transferResultSchema },
   'knowledge-index-batch': { suffix: 'knowledge_index_batches', schema: indexBatchSchema },
   'knowledge-index-receipt': { suffix: 'knowledge_index_receipts', schema: indexBatchReceiptSchema },
   'handover-upload': { suffix: 'handover_uploads', schema: handoverUploadRecordSchema },
@@ -66,7 +69,7 @@ export type OperationRestoreValue = z.infer<(typeof operationRestoreSchemas)[Ope
 export function isOperationRestoreKind(kind: string): kind is OperationRestoreKind { return Object.hasOwn(operationRestoreSchemas, kind); }
 // Historical deliveries and their references retain original identity. They never become new work.
 export const originalRestoreScopeKinds = new Set(['photo-cleanup', 'background-work', 'background-reference', 'handover-export', 'handover-upload',
-  'knowledge-index-batch', 'knowledge-index-receipt']);
+  'knowledge-index-batch', 'knowledge-index-receipt', 'knowledge-transfer-batch', 'knowledge-transfer-result']);
 export const discardedRestoreKinds = new Set(['native-push-token', 'push-endpoint', 'telegram-pointer', 'contact-callback', 'erasure-receipt-pointer']);
 function check(ok: boolean) { if (!ok) throw Object.assign(new Error('Restore operation binding rejected'), { code: 'restore_binding', status: 409 }); }
 function same(a: unknown, b: unknown) { return firestoreDomainHash(a) === firestoreDomainHash(b); }
@@ -80,6 +83,17 @@ export function restoreOperationRecord(data: FirestoreDomainData, context: Fires
   const metadata: Record<string, unknown> = {};
   check(context.family === 'domain' && context.envelopeVersion === 1 && version >= 1);
   switch (kind) {
+    case 'knowledge-transfer-batch': {
+      const batch = transferBatchSchema.parse(raw);
+      check(same(scope, SYSTEM) && id === batch.id && version === batch.revision);
+      value = target && batch.state === 'ready' ? { ...batch, state: 'stopped' as const } : batch;
+      break;
+    }
+    case 'knowledge-transfer-result': {
+      const result = transferResultSchema.parse(raw);
+      check(same(scope, SYSTEM) && id === transferItemId(result.id, result.index) && version === 1);
+      value = result; break;
+    }
     case 'knowledge-index-batch': {
       const batch = indexBatchSchema.parse(raw);
       check(same(scope, SYSTEM) && id === batch.id && version === batch.recordVersion);

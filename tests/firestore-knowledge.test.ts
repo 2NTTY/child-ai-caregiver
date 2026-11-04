@@ -41,7 +41,7 @@ function embeddings(document: KnowledgeSourceInput): FirestoreKnowledgeEmbedding
   return document.chunks.map(chunk => ({ chunkKey: chunk.key, inputHash: embeddingDocument(document.title, chunk.section, chunk.text).hash,
     ...KNOWLEDGE_EMBEDDING, values: vector }));
 }
-function fixture(sourceIds = ["synthetic-guidance"]) {
+function fixture(sourceIds = ["synthetic-guidance"], audience?: "public" | "internal") {
   const fake = firestoreDomainFixture(), nearestCalls: { filters: [string, string, unknown][]; options: VectorQueryOptions }[] = [];
   let nearestHook: (() => Promise<void>) | undefined;
   const encode = (value: any): any => value instanceof VectorValue ? { syntheticVector: value.toArray() }
@@ -72,7 +72,7 @@ function fixture(sourceIds = ["synthetic-guidance"]) {
       create: (ref: any, value: unknown) => tx.create(ref, encode(value)), set: (ref: any, value: unknown) => tx.set(ref, encode(value)),
       delete: (ref: any) => tx.delete(ref),
     })) } as unknown as Firestore;
-  const options = { database, projectId: "synthetic-knowledge-project", namespace: "synthetic_knowledge", sourceIds }, nativeStore = createFirestoreKnowledgeStore(options);
+  const options = { database, projectId: "synthetic-knowledge-project", namespace: "synthetic_knowledge", sourceIds, ...(audience ? { audience } : {}) }, nativeStore = createFirestoreKnowledgeStore(options);
   const store = { ...nativeStore, async importSource(input: unknown) {
     const result = await nativeStore.importSource(input);
     for (let page = 0; page < 16; page++) if ((await nativeStore.prepareSearch(result.versionId, result.hash)).complete) break;
@@ -85,6 +85,56 @@ function fixture(sourceIds = ["synthetic-guidance"]) {
   return { ...fake, database, options, store, publish, nearestCalls, onNearest: (hook: () => Promise<void>) => { nearestHook = hook; } };
 }
 const rejects = (code: string) => (error: any) => error?.code === code || error?.message === code;
+
+test("operator edition export returns portable source and compatible vectors in one read-only transaction and fences stale or unavailable editions", async t => {
+  const f = fixture(), validUntil = new Date(Date.now() + 3600000).toISOString();
+  const published = await f.publish({ ...source("synthetic-guidance", [chunk("first"), chunk("second", { text: "Second portable body" })]), validUntil });
+  assert.equal(typeof f.store.exportPublishedEdition, "function");
+  const before = structuredClone([...f.records]), transactions = t.mock.method(f.database, "runTransaction");
+  const exported = await f.store.exportPublishedEdition(published.document.sourceId, published.hash);
+  assert.equal(transactions.mock.callCount(), 1);
+  assert.deepEqual(transactions.mock.calls[0]!.arguments[1], { readOnly: true });
+  t.mock.restoreAll();
+  assert.deepEqual([...f.records], before);
+  assert.deepEqual(exported, { source: parseKnowledgeSource(published.document), versionHash: published.hash, embeddings: embeddings(published.document) });
+  assert.doesNotMatch(JSON.stringify(exported), /synthetic-operator|reviewer|projectId|namespace|chunkId|vectorHash/u);
+  // The destination still performs its own review and publication; only the compatible vector payload travels.
+  const destination = fixture(), imported = await destination.store.importSource(exported.source);
+  assert.equal(imported.hash, exported.versionHash);
+  await destination.store.review(imported.versionId, imported.hash, "destination-operator", assessment(exported.source));
+  await destination.store.publish(imported.versionId, imported.hash, exported.embeddings);
+  assert.equal((await destination.store.candidates(filter, null, { query: "needle" }))[0]!.originalText, published.document.chunks[0]!.originalText);
+  await assert.rejects(f.store.exportPublishedEdition(published.document.sourceId, "0".repeat(64)), rejects("knowledge_review_version_mismatch"));
+  const denied = createFirestoreKnowledgeStore({ ...f.options, sourceIds: ["another-guidance"] });
+  await assert.rejects(denied.exportPublishedEdition(published.document.sourceId, published.hash), rejects("knowledge_source_not_allowed"));
+  t.mock.method(Date, "now", () => Date.parse(validUntil) + 1);
+  await assert.rejects(f.store.exportPublishedEdition(published.document.sourceId, published.hash), rejects("knowledge_source_unavailable"));
+  assert.equal((await f.store.publishedEdition(published.document.sourceId))?.versionHash, published.hash, "Existing metadata callers keep their prior semantics");
+  t.mock.restoreAll();
+  await f.store.disable(published.document.sourceId, "Synthetic withdrawal");
+  await assert.rejects(f.store.exportPublishedEdition(published.document.sourceId, published.hash), rejects("knowledge_source_unavailable"));
+});
+
+test("operator edition export refuses internal URLs and registered internal watch usage even from an internal store", async () => {
+  for (const internal of ["url", "watch"] as const) {
+    const f = fixture(["synthetic-guidance"], "internal"), document = { ...source(),
+      ...(internal === "url" ? { url: "https://www.chp.gov.hk/synthetic-guidance" } : {}) };
+    const definition = { id: document.sourceId, url: document.url, kind: "page" as const, selector: "main", classification: document.classification,
+      publisher: document.publisher, termsUrl: document.termsUrl, audience: internal === "watch" ? "internal_noncommercial" as const : "public_noncommercial" as const };
+    const refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions: [definition], async readControl() { return { enabled: true, generation: "f3457654-6524-4c99-bf56-d26dfb9f4dbd" }; } });
+    await refresh.register(definition.id, "synthetic-operator");
+    const observed = { url: document.url, title: document.title, text: document.chunks[0]!.originalText!, sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null };
+    await refresh.process((await refresh.jobs())[0]!.data, crypto.randomUUID(), async () => ({ status: "ok", items: [observed] }), new AbortController().signal);
+    const store = createFirestoreKnowledgeStore({ ...f.options, observations: refresh.gate });
+    const imported = await store.importSource(document);
+    for (let page = 0; page < 4; page++) await store.prepareSearch(imported.versionId, imported.hash);
+    await store.review(imported.versionId, imported.hash, "synthetic-operator", { ...assessment(document), observationHash: observationHash(observed) });
+    await store.publish(imported.versionId, imported.hash, embeddings(document));
+    const before = structuredClone([...f.records]);
+    await assert.rejects(store.exportPublishedEdition(document.sourceId, imported.hash), rejects("knowledge_source_internal_export_forbidden"));
+    assert.deepEqual([...f.records], before);
+  }
+});
 
 test("Firestore knowledge rebuild pages repair missing, corrupt and stale postings without changing publication or lowering completeness", async () => {
   const f = fixture(), published = await f.publish();
@@ -246,12 +296,14 @@ test("F05 source observation fences changed or unavailable evidence and reuses u
   const first = await store.importSource(document); await prepare(first.versionId, first.hash);
   await store.review(first.versionId, first.hash, "synthetic-operator", { ...assessment(document), observationHash: observationHash(observed) });
   await store.publish(first.versionId, first.hash, embeddings(document));
+  assert.equal((await store.exportPublishedEdition(document.sourceId, first.hash)).versionHash, first.hash);
   assert.equal((await store.candidates(filter, null, { query: "needle" })).length, 1);
   await check({ status: "failed", reason: "network" });
   assert.equal((await store.catalog()).items.length, 1, "A temporary fetch failure is not withdrawal");
   const changed = { ...observed, text: observed.text + " A new unrelated section." };
   await check({ status: "ok", items: [changed] });
   assert.equal((await store.catalog()).items.length, 0, "Old approval cannot bless changed source content");
+  await assert.rejects(store.exportPublishedEdition(document.sourceId, first.hash), rejects("knowledge_source_unavailable"));
   const nextDocument = { ...document, chunks: [...document.chunks, chunk("additional", { sourceExcerpt: "A new unrelated section.", text: "New public content", originalText: "A new unrelated section." })] };
   const next = await store.importSource(nextDocument); await prepare(next.versionId, next.hash);
   await store.review(next.versionId, next.hash, "synthetic-operator", { ...assessment(nextDocument, { document, versionId: first.versionId, hash: first.hash }), observationHash: observationHash(changed) });

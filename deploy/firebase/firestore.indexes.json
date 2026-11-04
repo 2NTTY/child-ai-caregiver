@@ -4042,6 +4042,11 @@
   ],
   "fieldOverrides": [
     {
+      "collectionGroup": "yuban_authority_knowledge_transfers",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
       "collectionGroup": "yuban_authority_knowledge_index_batches",
       "fieldPath": "*",
       "indexes": []

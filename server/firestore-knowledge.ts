@@ -16,6 +16,14 @@ export interface FirestoreKnowledgeOptions { database: Firestore; projectId: str
 export interface FirestoreKnowledgeEmbedding {
   chunkKey: string; inputHash: string; model: string; dimensions: number; pipeline: string; values: readonly number[];
 }
+/** Read-only operator material. Redistribution approval belongs to the operator workflow. */
+export interface FirestoreKnowledgeEditionExporter {
+  exportPublishedEdition(sourceId: string, expectedHash: string): Promise<{
+    source: KnowledgeSourceInput; versionHash: string; embeddings: FirestoreKnowledgeEmbedding[] }>;
+}
+export type FirestoreKnowledgeImportResult = { versionId: string; hash: string; unchanged: boolean; state: "draft" | "reviewed" | "withdrawn" };
+/** Operator checkpoint commits with the domain write, after the final transaction read. */
+export type FirestoreKnowledgeImportCommit = (tx: Transaction, edition: FirestoreKnowledgeImportResult & { sourceId: string }) => Promise<void>;
 /** Trusted operator work participates in the publication transaction, never a model argument. */
 export interface FirestoreKnowledgePublicationFence {
   prepare(transaction: Transaction, publication: {
@@ -29,7 +37,7 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   continuationSources(transaction: Transaction, ids: readonly string[]): Promise<import('./agent-work-continuation-core.ts').KnowledgeCurrent[]>;
   validatePublishedSource(transaction: Transaction, id: string): Promise<void>;
   ruleCandidates(transaction: Transaction, rules: readonly { sourceId: string; key: string }[], filter: KnowledgeFilter): Promise<KnowledgeCandidate[]>;
-  importSource(input: unknown): Promise<{ versionId: string; hash: string; unchanged: boolean; state: "draft" | "reviewed" | "withdrawn" }>;
+  importSource(input: unknown, commit?: FirestoreKnowledgeImportCommit): Promise<FirestoreKnowledgeImportResult>;
   prepareSearch(versionId: string, expectedHash: string): Promise<{ complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
   rebuildSearchPageIn(transaction: Transaction, versionId: string, expectedHash: string, start: number): Promise<{
     complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
@@ -120,7 +128,7 @@ function keywordScore(tokens: ReadonlySet<string>, candidate: KnowledgeCandidate
 }
 
 /** Selected public official editions only. Maintenance ports are for a trusted operator, never HTTP or Agent tools. */
-export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions): FirestoreKnowledgeStore {
+export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions): FirestoreKnowledgeStore & FirestoreKnowledgeEditionExporter {
   const { database, projectId, namespace } = options;
   if (!database || typeof database.runTransaction !== "function" || !/^[a-z][a-z0-9-]{3,62}$/u.test(projectId)
     || !/^[A-Za-z][A-Za-z0-9_]{0,63}$/u.test(namespace) || !Array.isArray(options.sourceIds) || options.sourceIds.length < 1
@@ -282,6 +290,26 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
     });
   }
   return {
+    async exportPublishedEdition(id, expectedHash) {
+      if (!allowedId(id)) reject("knowledge_source_not_allowed", 403);
+      if (!hash.safeParse(expectedHash).success) reject("knowledge_version_invalid", 400);
+      return database.runTransaction(async tx => {
+        const source = await readSource(tx, id);
+        if (!source?.enabled || !source.activeVersionId) reject("knowledge_source_unavailable");
+        const edition = await load(tx, source.activeVersionId, source);
+        if (edition.version.versionHash !== expectedHash) reject("knowledge_review_version_mismatch");
+        // An internal store can inspect restricted editions, but can never transfer them.
+        if (internalKnowledgeSource(edition.document.url) || edition.observed?.watch.definition.audience === "internal_noncommercial")
+          reject("knowledge_source_internal_export_forbidden", 403);
+        if (!publication(edition)) reject("knowledge_source_unavailable");
+        const embeddings = edition.chunks.map(chunk => {
+          if (chunk.embedding === null) reject("knowledge_vectors_incomplete");
+          return { chunkKey: chunk.document.key, inputHash: chunk.embeddingHash, ...KNOWLEDGE_EMBEDDING,
+            values: vectorValues(chunk.embedding.toArray()) };
+        });
+        return { source: edition.document, versionHash: edition.version.versionHash, embeddings };
+      }, { readOnly: true });
+    },
     async publishedEdition(id) {
       if (!allowedId(id)) reject("knowledge_source_not_allowed", 403);
       return database.runTransaction(async tx => {
@@ -398,7 +426,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       }
       return result;
     },
-    async importSource(input) {
+    async importSource(input, commit) {
       if (input && typeof input === "object" && ["watch", "watchId", "observation", "audience"].some(key => key in input)) reject("domain_not_ready", 503);
       const document = JSON.parse(JSON.stringify(parseKnowledgeSource(input))) as KnowledgeSourceInput;
       if (!allowedId(document.sourceId)) reject("knowledge_source_not_configured", 403);
@@ -416,14 +444,21 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       writeBudget([version, fresh, ...records]);
       return database.runTransaction(async tx => {
         const source = await readSource(tx, document.sourceId);
+        const observed = (!allowed.has(document.sourceId) || commit) ? await options.observations?.read(tx, document.sourceId) : undefined;
+        if (commit && (internalKnowledgeSource(document.url) || observed?.watch.definition.audience === "internal_noncommercial"))
+          reject("knowledge_transfer_internal_source", 403);
         if (!allowed.has(document.sourceId)) {
-          const observed = await options.observations!.read(tx, document.sourceId);
           if (!observed?.catalogMatches || !allowed.has(observed.watch.id) || observed.watch.definition.kind !== "rss"
             || observed.observation?.url !== document.url) reject("knowledge_source_not_configured", 403);
         }
         if (source && source.url !== document.url) reject("knowledge_source_url_changed");
         const prior = await tx.get(versionRef(versionId));
-        if (prior.exists) { const old = await load(tx, versionId, source ?? undefined); return { versionId, hash: versionHash, unchanged: true, state: old.version.reviewState }; }
+        if (prior.exists) {
+          const old = await load(tx, versionId, source ?? undefined);
+          const result = { versionId, hash: versionHash, unchanged: true, state: old.version.reviewState };
+          await commit?.(tx, { sourceId: document.sourceId, ...result });
+          return result;
+        }
         const previous = source?.activeVersionId ? await load(tx, source.activeVersionId, source) : null;
         const compatible = new Map(previous?.chunks.filter(row => row.embedding !== null).map(row => [row.embeddingHash, row]) ?? []);
         const reused = records.map(row => {
@@ -433,9 +468,11 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const existing = await tx.getAll(...records.map(row => chunkRef(row.chunkId)));
         if (existing.some(snapshot => snapshot.exists)) reject("knowledge_binding_invalid", 503);
         writeBudget([version, fresh, ...reused]);
+        const result = { versionId, hash: versionHash, unchanged: false, state: "draft" as const };
+        await commit?.(tx, { sourceId: document.sourceId, ...result });
         if (!source) tx.create(sourceRef(document.sourceId), fresh);
         tx.create(versionRef(versionId), version); for (const row of reused) tx.create(chunkRef(row.chunkId), row);
-        return { versionId, hash: versionHash, unchanged: false, state: "draft" as const };
+        return result;
       });
     },
     async review(versionId, expectedHash, reviewer, raw, expectedObservation) {
