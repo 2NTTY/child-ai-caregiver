@@ -3,6 +3,10 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+## 匯入到既有班員（2026-11-04）
+
+同一匯入面板可選獨立班級，或從教師空間選班。在名冊搜尋及翻頁，逐一指定來源孩子對應的班員。選擇綁定孩子 ID、班級及目前權限，換班後須重新選；重名不自動配對。空班建立新學生由後續班級匯入接點承接。[定向介面核對](verification/P4_CLASS_IMPORT_ROSTER_20261104.json)，尚未部署。
+
 ## Android 收取資料包（2026-11-04）
 
 由其他 App 分享單一 ZIP 時可選「作為資料包匯入」，在原匯入面板預覽及選擇目標；也可選原聊天入口。已上載但結果未知時沿原請求查回。已在合成環境[核對](verification/P4_ANDROID_SHARE_PACKAGE_20261104.json)，真機收件、iOS 分享延伸及大於 20 MiB 的原生包仍待驗或待接。

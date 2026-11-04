@@ -18,6 +18,8 @@ function load(path) {
     : name === 'react-native' ? { View: 'View', StyleSheet: { create: value => value }, Platform: { OS: 'web' }, AppState: { currentState: 'active' } }
     : name === 'react-native-paper' ? { Text: 'Text' }
     : name.endsWith('/ProductionProvider') ? { useProduction: () => production }
+    : name.endsWith('/useProductionSharing') ? { useProductionSharing: () => ({ controller: {}, state: { identityKey: null, selected: null, shares: { items: [] }, spaces: { items: [] }, teacherClasses: { items: [] }, rosterQuery: '' } }) }
+    : name.endsWith('/handover-class-targets') ? { handoverClassScope: () => null, handoverClassDestinations: () => [] }
     : name.endsWith('/HandoverOwner') ? { handoverErrorText: String }
     : name.endsWith('/handover') ? load('../../src/shared/handover.ts')
     : name.endsWith('/date-time') ? load('../src/components/date-time.ts')
