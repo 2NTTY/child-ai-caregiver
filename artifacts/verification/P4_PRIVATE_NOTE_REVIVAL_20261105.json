@@ -1,0 +1,93 @@
+{
+  "package": "P4-HANDOVER01",
+  "observedAt": "2026-11-05T06:42:26+08:00",
+  "revision": "ab39b1694d8376deb26917b776a466d1060004ce",
+  "pullRequests": [
+    495,
+    496
+  ],
+  "sourceChecks": {
+    "originalInstructionFlow": "passed; signed ZIP through existing upload, batch worker and domain services; repeated delivery, same-key conflict, legacy unavailable, replacement update, forged target and restore graph",
+    "domainRegression": "passed 1 targeted existing test",
+    "sharedOwner": "passed 2 targeted checks including original-operation recovery",
+    "serverTypes": "passed",
+    "frontendTypes": "passed",
+    "webBuild": "passed",
+    "independentReview": "no remaining blocker"
+  },
+  "observedFailures": [
+    "Initial regression compared a journaled deletion as unavailable.",
+    "First implementation used a noncanonical source identity when rereading a replacement mapping; fixed and same flow passed.",
+    "Pre-upload script review found a stale public JS verification path; corrected before upload."
+  ],
+  "deployment": {
+    "site": "https://ex-machina.eu.org",
+    "vm": "yuban-p1",
+    "instanceId": "2846984358678394356",
+    "apiWorkerImage": "sha256:de503a4739795aa1dc5a7ab762cdc5f1fdd693b2376c838213ac6cd0bc5735fe",
+    "webImage": "sha256:eae04b21e7a9d4b65998a4941cf253b017eeb9bf76d9631473039b2460d6b94b",
+    "composeSha256": "34d3a06f882cd381ab6d0e61edbc777185c12e4b92764fec4daf0dc4475636aa",
+    "terminationTime": "2026-11-06T05:33:50.732Z",
+    "payload": {
+      "api-delta.tar.gz": {
+        "bytes": 28753,
+        "sha256": "c0bfc821829cb7bec799c0c9e5785493fd7c4866a9d604c1cbbefd401d453d1b"
+      },
+      "web.tar.gz": {
+        "bytes": 4909452,
+        "sha256": "e3524e54da7502b96e6d7fb38820747c413215ec5f86285f2228129096d5bd64"
+      },
+      "stage.sh": {
+        "bytes": 4770,
+        "sha256": "aa402abe2846f80b7d604c346e2b2cc1e4bfe94c7e3976c2ad7022a7d591c905"
+      },
+      "release.sh": {
+        "bytes": 6756,
+        "sha256": "da5cd478a05f5f77c33efa1f5589a7c58b67e6a936d354092d064ab592d6488e"
+      },
+      "activity.sh": {
+        "bytes": 2600,
+        "sha256": "e141fb833ee60e33cffda0dd763bafebe6e5bf38811651880b0ded66d386644f"
+      }
+    },
+    "web": {
+      "adminHtmlSha256": "f71c2dc7ba0fe3e7ffd3be59ffb6a13aa70e3de3aa7d2179cca0c27c41d1f7a2",
+      "bundlePath": "/_expo/static/js/web/index-4dac12bb1073890fa3c75f7c8b6c307e.js",
+      "bundleSha256": "d411ee5534661035bcde6a4e050ed02c400d116047e4f3b7ad3efbba65057e53"
+    },
+    "checks": [
+      "candidate runtime imports and restored-target request parsing",
+      "API public-key-only and worker signer mounts",
+      "API/worker healthy",
+      "public health 200",
+      "anonymous capabilities 401",
+      "public Web digest equals reviewed export"
+    ],
+    "activity": {
+      "activeAgentLeases": 0,
+      "activeTaskLeases": 0,
+      "taskUnknown": 0,
+      "activeBackgroundLeases": 0,
+      "backgroundSending": 0,
+      "retainedBackgroundUnknown": 1,
+      "backgroundUnresolved": 0
+    },
+    "transient": "One TLS read failed during the planned Web restart; bounded readiness check and subsequent independent public reads succeeded.",
+    "rollback": "Before candidate worker startup the prior server remains available. After startup retain compatible readers and maintenance/forward repair; healthy candidate server can keep serving with the previous Web."
+  },
+  "limits": {
+    "modelCalls": 0,
+    "notifications": 0,
+    "newCloudResources": 0,
+    "apkBuilds": 0,
+    "productionPrivateDataTest": false,
+    "fullCloudRestore": false,
+    "androidRelease": "batched; not yet installed or device-verified",
+    "collaboratorPR447": "untouched"
+  },
+  "remaining": [
+    "Other original backup memory and account modules",
+    "Formal account/device acceptance",
+    "Complete isolated cloud disaster recovery"
+  ]
+}
