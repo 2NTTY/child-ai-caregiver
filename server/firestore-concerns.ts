@@ -42,6 +42,21 @@ export function sharedConcernEvent<T extends ConcernEvent>(value: T, modules: re
   return event;
 }
 export const concernTransferSchema = firestoreConcernSchema.extend({ periodSource: concernPeriodOriginSchema.optional() });
+type EventRow = z.infer<typeof firestoreDocumentConcernEventSchema>;
+function publicEvent({ concernId, childId, sequence, timelineId, periodConcernId, importedFrom, ...event }: EventRow): ConcernEvent {
+  return event;
+}
+function transferTimeline(row: HandoverImportRow, rawEvents: unknown[]) {
+  if (row.section !== 'concerns' || !row.childId) domainReject('invalid_package_scope', 400);
+  const source = domainParse(concernTransferSchema, row.value, 'invalid_package_concern');
+  const sourceEvents = domainParse(z.array(firestoreDocumentConcernEventSchema).min(1).max(CONCERN_STORED_EVENT_LIMIT), rawEvents, 'invalid_package_concern_event');
+  if (source.childId !== row.childId || sourceEvents.length !== source.eventCount
+    || new Set(sourceEvents.map(event => event.id)).size !== sourceEvents.length
+    || sourceEvents.some((event, index) => event.childId !== source.childId || event.concernId !== source.id
+      || event.periodConcernId !== source.periodSource?.concernId || event.sequence !== (source.periodSource?.sequences[index] ?? index + 1)
+      || event.timelineId !== source.timelineId)) domainReject('package_concern_event_mismatch', 400);
+  return { source, sourceEvents };
+}
 type StoredEvent = ConcernEvent & { importedFrom?: ImportProvenance };
 const receiptSchema = z.object({ fingerprint: z.string().length(64), id: uuid, version }).strict();
 const followupClaimSchema = z.object({ id: uuid, concernId: uuid, concernVersion: version, jobId: z.string().length(64),
@@ -76,16 +91,20 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
       || value.id !== row.get('concernId') || revision && value.version !== revision) domainReject('concern_binding', 500);
     return value;
   }
-  async function hydrate(b: Binding, item: Head): Promise<Concern> {
+  async function timeline(b: Binding, item: Head): Promise<EventRow[]> {
     const rows = await b.transaction.get(query(b, 'concern_events').where(item.timelineId ? 'timelineId' : 'concernId', '==', item.timelineId ?? item.id)
       .where('sequence', '<=', item.eventCount).orderBy('sequence', 'asc').limit(CONCERN_STORED_EVENT_LIMIT));
     const events = rows.docs.map((row, i) => {
       const event = data.open('concern-event', row.get('eventId'), b.scope, firestoreDocumentConcernEventSchema, row);
       if (event.id !== row.get('eventId') || event.concernId !== item.id || event.childId !== item.childId
         || event.timelineId !== item.timelineId || event.sequence !== i + 1 || row.get('sequence') !== event.sequence) domainReject('concern_binding', 500);
-      const { concernId: _concern, childId: _child, sequence: _sequence, timelineId: _timeline, importedFrom: _origin, ...value } = event; return value;
+      return event;
     });
     if (events.length !== item.eventCount) domainReject('concern_history_incomplete', 503);
+    return events;
+  }
+  async function hydrate(b: Binding, item: Head): Promise<Concern> {
+    const events = (await timeline(b, item)).map(publicEvent);
     const { eventCount: _count, timelineId: _timeline, importedFrom: _origin, ...value } = item; return { ...value, events, historyComplete: true };
   }
   async function read(b: Binding, id: string) { const item = await head(b, id); return item ? hydrate(b, item) : null; }
@@ -116,12 +135,12 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
     return refs;
   }
   function cancel(value: Head) { if (openFollowup(value)) value.followUp = { ...value.followUp!, state: 'cancelled' }; }
-  async function save(b: Binding, value: Head, events: StoredEvent[], prior: ConcernEvent[], opId: string): Promise<Prepared> {
+  async function save(b: Binding, value: Head, events: StoredEvent[], prior: ConcernEvent[], opId: string, schedulePending = true): Promise<Prepared> {
     domainParse(firestoreConcernSchema, value);
     if (prior.length + events.length !== value.eventCount) domainReject('concern_binding', 500);
     const revisionId = JSON.stringify([value.id, value.version]), revisionRef = data.ref('concern_revisions', 'concern-revision', revisionId);
     if ((await b.transaction.get(revisionRef)).exists) domainReject('concern_changed');
-    const wake = value.followUp?.state === 'pending' ? await prepareFirestoreBackgroundWork(data, b.transaction,
+    const wake = schedulePending && value.followUp?.state === 'pending' ? await prepareFirestoreBackgroundWork(data, b.transaction,
       { kind: 'concern', scope: b.scope, resourceId: value.id, basis: value.followUp.id,
         generation: b.generation, authorizationVersion: b.authorizationVersion }, value.followUp.at) : null;
     const context = await prepareContextChange(data, b), change = await b.prepareChange(opId, 'growth', false);
@@ -142,19 +161,98 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
         for (const entry of storedEvents) b.transaction.create(entry.ref, entry.value);
       } };
   }
+  function materializeEvent(b: Binding, row: HandoverImportRow, integrity: HandoverIntegrity, original: EventRow,
+    refs: Partial<ConcernEvent>, now: string, sourceLabel: string): StoredEvent {
+    const origin = makeImportProvenance({ ...row, section: 'concern_events', value: { ...original, version: 1,
+      authorUserId: original.actorUserId, createdAt: original.at } }, integrity, b.actorUserId, now);
+    origin.current.sourceHash = firestoreDomainHash(original);
+    return { id: randomUUID(), at: original.at, kind: original.kind, title: original.title, text: original.text,
+      sourceLabel, actorUserId: original.actorUserId, ...refs, importedFrom: origin };
+  }
+  // Event IDs are immutable. A restored snapshot has fresh row IDs, so also accept its
+  // original IDs within this same account, child and concern. Compare neither labels nor dates as IDs.
+  function eventIds(entry: EventRow, row: HandoverImportRow, targetId: string) {
+    const ids = [entry.id];
+    if (entry.importedFrom) for (const { source } of [entry.importedFrom.current, ...entry.importedFrom.previous]) {
+      if (source.section === 'concern_events' && source.serverId === row.source.serverId && source.accountId === row.source.accountId
+        && source.childId === row.childId && (source.concernEvent?.concernId ?? source.concernReference?.id) === targetId) ids.push(source.resourceId);
+    }
+    return ids;
+  }
+  async function originalTimeline(b: Binding, row: HandoverImportRow, rawEvents: unknown[]) {
+    if (b.sharedAccess || b.actorUserId !== row.source.accountId || row.childId !== b.scope.childId) domainReject('invalid_import_target', 403);
+    const { source, sourceEvents } = transferTimeline(row, rawEvents);
+    const targetId = source.periodSource?.concernId ?? source.id, current = await head(b, targetId);
+    const existing = current ? await timeline(b, current) : [];
+    const positions = new Map<string, number>();
+    for (const [index, entry] of existing.entries()) for (const id of eventIds(entry, row, targetId)) positions.set(id, index);
+    const matched = sourceEvents.map(entry => eventIds(entry, row, targetId).map(id => positions.get(id)).find(index => index !== undefined));
+    const missing = sourceEvents.filter((_, i) => matched[i] === undefined);
+    const changedFields: string[] = [];
+    if (source.periodSource) {
+      if (missing.length) changedFields.push('selectedEvents');
+    } else if (current) {
+      for (const key of ['title', 'reason'] as const) if (current[key] !== source[key]) changedFields.push(key);
+      if (current.status !== source.status || current.archivedAt !== source.archivedAt || current.statusBeforeArchive !== source.statusBeforeArchive) changedFields.push('status');
+      if (sourceEvents.length !== existing.length || matched.some((index, i) => index !== i)) changedFields.push('events');
+    }
+    return { source, sourceEvents, targetId, current, existing, missing, changedFields };
+  }
+  async function compareOriginal(b: Binding, row: HandoverImportRow, rawEvents: unknown[]) {
+    const { current, targetId, source, changedFields } = await originalTimeline(b, row, rawEvents);
+    const state = !current ? 'unavailable' : !changedFields.length ? 'unchanged' : current.version > source.version ? 'local_newer'
+      : current.version < source.version ? 'backup_newer' : 'different';
+    return { state, targetId, localVersion: current?.version ?? null, changedFields } as const;
+  }
+  async function prepareOriginal(b: Binding, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
+    rawEvents: unknown[], expected: { id: string; expectedVersion: number }) {
+    const { current, targetId, source, sourceEvents, existing, missing, changedFields } = await originalTimeline(b, row, rawEvents);
+    if (!current || targetId !== expected.id || current.version !== expected.expectedVersion || current.version >= 2147483647) domainReject('concern_changed');
+    if (!changedFields.length) return null;
+    const partial = !!source.periodSource, replaceTimeline = !partial && changedFields.includes('events');
+    const selected = partial ? missing : replaceTimeline ? sourceEvents : [];
+    const prior = replaceTimeline ? [] : existing.map(publicEvent);
+    if (partial && prior.length + selected.length > CONCERN_EVENT_LIMIT) domainReject('concern_history_requires_review');
+    const now = new Date().toISOString(), added: StoredEvent[] = [];
+    const attentionIds = new Set(replaceTimeline ? [] : current.attentionIds);
+    for (const original of selected) {
+      const refs = await links(b, { recordId: original.recordId ?? null, taskId: original.taskId ?? null, attentionId: original.attentionId ?? null });
+      if (refs.attentionId) attentionIds.add(refs.attentionId);
+      added.push(materializeEvent(b, row, integrity, original, refs, now, original.sourceLabel));
+    }
+    const next = { ...current, version: current.version + 1, updatedAt: now, attentionIds: [...attentionIds], eventCount: prior.length + added.length };
+    if (!partial) {
+      next.title = source.title; next.reason = source.reason; next.status = source.status; next.archivedAt = source.archivedAt;
+      if (source.statusBeforeArchive) next.statusBeforeArchive = source.statusBeforeArchive; else delete next.statusBeforeArchive;
+      if (next.status === 'closed') cancel(next);
+      if (replaceTimeline) next.timelineId = randomUUID();
+    }
+    if (openFollowup(next) && current.eventCount < CONCERN_EVENT_LIMIT && next.eventCount >= CONCERN_EVENT_LIMIT)
+      domainReject('concern_history_requires_review');
+    // A queued follow-up is fenced by the head revision. Move only its existing claim,
+    // never issuing a fresh job for a pending, expired or restored follow-up.
+    let keepClaim: (() => void) | undefined;
+    if (next.followUp?.state === 'queued') {
+      const id = next.followUp.id, ref = data.ref('concern_followups', 'concern-followup', id);
+      const stored = await b.transaction.get(ref);
+      if (!stored.exists) domainReject('concern_changed');
+      const claim = data.open('concern-followup', id, b.scope, followupClaimSchema, stored);
+      if (claim.id !== id || claim.concernId !== current.id || claim.concernVersion !== current.version
+        || claim.generation !== b.generation || claim.authorizationVersion !== b.authorizationVersion
+        || claim.reference !== firestoreBackgroundReference({ id: claim.jobId })) domainReject('concern_changed');
+      const nextClaim = data.seal('concern-followup', id, b.scope, followupClaimSchema, { ...claim, concernVersion: next.version });
+      keepClaim = () => { b.transaction.set(ref, { ...data.tags(b.scope), ...nextClaim }); };
+    }
+    const prepared = await save(b, next, added, prior, opId, false);
+    return { ...prepared, commit() { prepared.commit(); keepClaim?.(); } };
+  }
   /** Internal package preparation; source identities remain evidence, never local execution claims. */
   async function prepareImportedSnapshot(b: Binding, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     rawEvents: unknown[], expected?: { id: string; expectedVersion: number },
     mappedLinks: Map<string, { recordId: string | null; taskId: string | null; attentionId: string | null }> = new Map()): Promise<Prepared> {
     if (b.sharedAccess) domainReject('shared_domain_read_only', 409);
     domainParse(uuid, opId);
-    if (row.section !== 'concerns' || !row.childId) domainReject('invalid_package_scope', 400);
-    const source = domainParse(concernTransferSchema, row.value, 'invalid_package_concern');
-    const sourceEvents = domainParse(z.array(firestoreDocumentConcernEventSchema).min(1).max(CONCERN_STORED_EVENT_LIMIT), rawEvents, 'invalid_package_concern_event');
-    if (source.childId !== row.childId || sourceEvents.length !== source.eventCount
-      || new Set(sourceEvents.map(event => event.id)).size !== sourceEvents.length
-      || sourceEvents.some((event, index) => event.childId !== source.childId || event.concernId !== source.id
-        || event.sequence !== (source.periodSource?.sequences[index] ?? index + 1) || event.timelineId !== source.timelineId)) domainReject('package_concern_event_mismatch', 400);
+    const { source, sourceEvents } = transferTimeline(row, rawEvents);
     const current = expected ? await head(b, expected.id) : null;
     if (expected && (!current || current.version !== expected.expectedVersion || current.version >= 2147483647)) domainReject('concern_changed');
     if (!current && (await b.transaction.get(query(b, 'concerns').limit(200))).size >= 200) domainReject('concern_history_requires_review', 400);
@@ -167,12 +265,7 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
         || selected.attentionId && !original.attentionId)) domainReject('package_concern_event_mismatch', 400);
       const refs = selected ? await links(b, selected) : {};
       if (refs.attentionId) attentionIds.add(refs.attentionId);
-      const origin = makeImportProvenance({ ...row, section: 'concern_events', value: { ...original, version: 1,
-        authorUserId: original.actorUserId, createdAt: original.at } }, integrity, b.actorUserId, now);
-      origin.current.sourceHash = firestoreDomainHash(original);
-      events.push({ id: randomUUID(), at: original.at, kind: original.kind, title: original.title, text: original.text,
-        sourceLabel: `匯入來源 · ${original.sourceLabel}`.slice(0, 256), actorUserId: original.actorUserId,
-        ...refs, importedFrom: origin });
+      events.push(materializeEvent(b, row, integrity, original, refs, now, `匯入來源 · ${original.sourceLabel}`.slice(0, 256)));
     }
     let followUp: Head['followUp'] = null;
     if (source.followUp) {
@@ -333,7 +426,7 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
     for (const row of rows.docs) { const current = await head(b, row.get('concernId')); if (current) items.push(sharedView(b, await hydrate(b, current))); }
     return { authorityVersion: authorityVersion(b), items, canManage: !b.sharedAccess };
   }
-  return { read, head, extension, prepareCreate, prepareChange, prepareImportedSnapshot, beginBackground, finishBackground,
+  return { read, head, extension, compareOriginal, prepareOriginal, prepareCreate, prepareChange, prepareImportedSnapshot, beginBackground, finishBackground,
     forSharedSpace(spaceId: string) {
       domainParse(uuid, spaceId);
       const unavailable = async (): Promise<never> => domainReject('shared_domain_read_only', 409);

@@ -88,9 +88,9 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       if (row.get(key) !== expected) domainReject('import_item_binding', 500);
     return value;
   }
-  async function readState(b: Binding, section: Section, source: z.infer<typeof handoverSourceIdentitySchema>, restoreOriginal?: true) {
+  async function readState(b: Binding, section: Section, source: z.infer<typeof handoverSourceIdentitySchema>, restoreOriginal?: true, originalConcernId?: string) {
     const { mappingId, mappingRef, mapping } = await readImportMapping(data, b, source, restoreOriginal);
-    const knownId = mapping?.target.id ?? (restoreOriginal ? source.resourceId : null);
+    const knownId = originalConcernId ?? mapping?.target.id ?? (restoreOriginal ? source.resourceId : null);
     const careState = section === 'care' && knownId ? await care.readImportRecordState(b, knownId) : null;
     const memoryState = mapping && (section === 'memory_facts' || section === 'memory_topics')
       ? await memory.readImportState(b, section === 'memory_facts' ? 'facts' : 'topics', mapping.target.id) : null;
@@ -107,7 +107,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
     if (topicResourceId && mapping && mapping.target.id !== topicResourceId) domainReject('import_mapping_binding', 500);
     const current = section === 'growth_attention' ? attention?.item ?? null
       : section === 'growth_topics' ? topic ? { ...topic, id: topicResourceId!, childId: b.scope.childId } : null
-      : mapping && section === 'concerns' ? await concerns.head(b, mapping.target.id)
+      : knownId && section === 'concerns' ? await concerns.head(b, knownId)
       : mapping && (section === 'chat' || section === 'chat_imports') ? await chat.readImportedMessage(b, b.scope.childId, mapping.target.id)
       : section === 'profile' ? await care.readProfile(b)
       : attachmentState ? attachmentState.value
@@ -174,7 +174,8 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       const { serverId, accountId, childId } = provenance.current.source;
       const resourceId = history?.parentId ?? provenance.current.source.resourceId;
       const source = handoverSourceIdentitySchema.parse({ serverId, accountId, childId, section, resourceId });
-      const { mappingId, mappingRef, mapping, current, currentVersion, currentId, deleted, locallyChanged, attachmentState } = await readState(b, section, source, raw.restoreOriginal);
+      const originalConcernId = raw.restoreOriginal && section === 'concerns' ? (concernTransferSchema.parse(raw.row.value).periodSource?.concernId ?? resourceId) : undefined;
+      const { mappingId, mappingRef, mapping, current, currentVersion, currentId, deleted, locallyChanged, attachmentState } = await readState(b, section, source, raw.restoreOriginal, originalConcernId);
       const resultResource = currentId ? { id: currentId, version: currentVersion } : null;
       async function finish(outcome: HandoverImportItem['outcome'], reason: string | null, resource = resultResource,
         prepared?: { changeSeq: string | null; commit(): void }, historyCommit?: () => void) {
@@ -202,7 +203,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       }
       if (raw.restoreOriginal) {
         if (target.spaceId || b.sharedAccess || source.accountId !== userId || source.childId !== target.childId
-          || !['care', 'profile', 'tasks', 'private_sources', 'documents', 'visit_preparation', 'child_avatar'].includes(section) || raw.row.section !== section || sourceValue === null
+          || !['care', 'profile', 'tasks', 'private_sources', 'documents', 'visit_preparation', 'child_avatar', 'concerns'].includes(section) || raw.row.section !== section || sourceValue === null
           || section === 'private_sources' && raw.row.value.ownerUserId !== userId)
           domainReject('invalid_import_target', 403);
         if (section === 'child_avatar') {
@@ -215,13 +216,14 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
             && attachmentState && 'avatarSha256' in attachmentState && attachmentState.avatarSha256 === backup.asset.sha256)
             return finish('skipped', 'already_imported');
         }
+        if (originalConcernId && mapping && mapping.target.id !== originalConcernId) return finish('conflict', 'original_unavailable', null);
         // A missing original is not a confirmed removal. Only the domain tombstone permits revival.
         if (resolution.mode === 'preserve' || !current && !(deleted && currentVersion > 0 && (section === 'care' || section === 'private_sources' || section === 'child_avatar'))
           || section === 'profile' && currentVersion === 0) return finish('conflict', 'original_unavailable', null);
         if (resolution.targetId !== currentId || resolution.expectedVersion !== currentVersion)
           return finish('conflict', 'target_version_conflict');
-        if (!deleted && (current && firestoreDomainHash(current) === firestoreDomainHash(raw.row.value)
-          || mapping?.sourceHash === provenance.current.sourceHash && mapping.target.version === currentVersion))
+        if (!deleted && (section !== 'concerns' && current && firestoreDomainHash(current) === firestoreDomainHash(raw.row.value)
+          || mapping?.sourceHash === provenance.current.sourceHash && mapping.sourceVersion === sourceValue.version && mapping.target.id === currentId && mapping.target.version === currentVersion))
           return finish('skipped', 'already_imported');
       }
       if (supplement) {
@@ -303,6 +305,18 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       }
       if (section === 'concerns') {
         const eventRows = domainParse(z.array(firestoreDocumentConcernEventSchema).max(202), raw.concernEvents, 'invalid_package_concern_event');
+        if (raw.restoreOriginal) {
+          try {
+            const prepared = await concerns.prepareOriginal(b, opId, raw.row, raw.integrity, eventRows, { id: currentId!, expectedVersion: currentVersion });
+            if (!prepared) return finish('skipped', 'already_imported');
+            return finish('updated', null, { id: prepared.value.id, version: prepared.value.version }, prepared);
+          } catch (error) {
+            const code = (error as { code?: string }).code;
+            if (code === 'not_found') return finish('conflict', 'original_link_unavailable');
+            if (code === 'concern_changed' || code === 'concern_history_requires_review') return finish('conflict', code);
+            throw error;
+          }
+        }
         const mapped = new Map<string, { recordId: string | null; taskId: string | null; attentionId: string | null }>();
         for (const event of eventRows) {
           const record = event.recordId ? await readState(b, 'care', { ...source, section: 'care', resourceId: event.recordId }) : null;
@@ -453,7 +467,8 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
           let availableResolution: 'replace_current' | 'restore_deleted' | null = null;
           if (!value.sourceSection && value.outcome === 'conflict' && ['target_changed', 'target_deleted', 'target_version_conflict'].includes(value.reason ?? '')) {
             const { serverId, accountId, childId, section, resourceId } = value.source.source;
-            const live = await readState(b, resourceSection, { serverId, accountId, childId, section, resourceId }, selection.restoreOriginal);
+            const live = await readState(b, resourceSection, { serverId, accountId, childId, section, resourceId }, selection.restoreOriginal,
+                selection.restoreOriginal && resourceSection === 'concerns' ? value.source.source.concern?.periodSource?.concernId : undefined);
             if (live.currentId) currentResource = { id: live.currentId, version: live.currentVersion, deleted: live.deleted };
             const stale = live.mapping && (value.source.source.resourceVersion < live.mapping.sourceVersion
               || value.source.source.resourceVersion === live.mapping.sourceVersion && value.source.sourceHash !== live.mapping.sourceHash &&
