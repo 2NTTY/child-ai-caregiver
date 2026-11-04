@@ -10,6 +10,7 @@ import type { PackagePageOptions } from './handover-export.ts';
 import { previewFamilyDocument } from './handover-document-preview.ts';
 import type { DocumentSnapshot as FamilySnapshot } from '../src/shared/family-documents.ts';
 import { createFirestoreCareStore, firestoreCareSchema, firestoreProfileSchema } from './firestore-care.ts';
+import { createFirestoreCareSummary, firestorePreparationSchema } from './firestore-care-summary.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { withClassExportChild } from './firestore-class-handover.ts';
 import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
@@ -87,7 +88,8 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
 }) {
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), avatarData = createFirestoreAvatarData(options);
   const sharing = createFirestoreSharingStore(options);
-  const memory = createFirestoreMemoryStore({ ...options, care: createFirestoreCareStore(options), chat: createFirestoreChatStore({
+  const care = createFirestoreCareStore(options), preparations = createFirestoreCareSummary(options, care);
+  const memory = createFirestoreMemoryStore({ ...options, care, chat: createFirestoreChatStore({
     database: options.database, cipher: options.cipher, projectId: options.projectId, namespace: options.namespace,
   }) });
   function version(binding: FirestoreAuthorityTransaction) {
@@ -228,6 +230,14 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             const item = await createFirestoreFamilyDocumentStore({ ...options, transaction: binding }).readExportMetadata(owner, binding.scope.childId,
               context.id, period === undefined ? undefined : current => { snapshot = current; });
             if (item) items.push(period === undefined ? item : previewFamilyDocument(item, snapshot, period));
+          } else if (classRequest && (section === 'visit_preparation' || section === 'visit_preparation_history')) {
+            const current = (await preparations.readImportState(binding)).value;
+            if (!current) continue;
+            const saved = firestorePreparationSchema.parse(value);
+            const expectedId = section === 'visit_preparation' ? current.childId : JSON.stringify([current.childId, saved.version]);
+            if (context.id !== expectedId || saved.childId !== current.childId || saved.updatedBy !== binding.scope.ownerUserId
+              || saved.version !== row.get('recordVersion') || saved.version > current.version) domainReject('export_scope_changed');
+            items.push(section === 'visit_preparation' ? current : saved);
           } else if (['care_history', 'profile_history', 'memory_fact_history', 'memory_topic_history'].includes(section)) {
             const item = z.object({ id: z.uuid().optional(), childId: z.uuid(), version: z.number().int().positive() }).passthrough().parse(value);
             const kind = section === 'care_history' ? 'care' : section === 'profile_history' ? 'profile' : section === 'memory_fact_history' ? 'fact' : 'topic';

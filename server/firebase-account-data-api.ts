@@ -41,7 +41,8 @@ export async function handleFirebaseAccountData(request: Request, auth: Firebase
   if (path === '/api/account/packages' || path.startsWith('/api/account/packages/')) {
     const packages = services.packages; if (!packages) domainReject('package_service_unavailable', 503);
     if (request.method === 'GET' && path === '/api/account/packages/capabilities' && !url.search) {
-      await sameIdentity(); return json(packages.capabilities());
+      await sameIdentity();
+      return json(packages.capabilities(request.headers.get('x-handover-class-document-review') === '1'));
     }
     if (request.method === 'POST' && path === '/api/account/packages/preview' && !url.search) {
       const result = await packages.preview(user.id, await readJson(request)); await sameIdentity(); return json(result);

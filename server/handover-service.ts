@@ -47,7 +47,7 @@ export function createHandoverService(options: FirestoreDomainOptions & { export
         const archive = await writePersonalHandoverPackage({ exporter, directory, ownerUserId: job.scope.ownerUserId,
           sourceAccountId: classRequest && 'space:' + classRequest.source.spaceId,
           serverId: options.serverId, packageId: job.id, createdAt: job.createdAt, purpose: job.request.purpose,
-          selection: job.request.selection, documentChoices: 'source' in job.request ? undefined : job.request.documentReview?.choices,
+          selection: job.request.selection, documentChoices: job.request.documentReview?.choices,
           expectedScopeVersion: job.sourceVersion, signingKey: options.signingKey, signal });
         const content = { ...await fileHash(archive.path, signal), manifestSha256: archive.manifestSha256 };
         await jobs.prepareUpload(work, content);
@@ -84,7 +84,8 @@ export function createHandoverService(options: FirestoreDomainOptions & { export
       return { ...file, filename: '育有方資料包-' + job.id + '.zip', dispose: () => removeSpool(directory) };
     } catch (error) { await removeSpool(directory); throw error; }
   }
-  return { capabilities: () => ({ classModules: options.exporter.forClass ? classHandoverModuleSchema.options : [] }),
+  return { capabilities: (classDocumentReview = false) => ({ classModules: options.exporter.forClass
+    ? classHandoverModuleSchema.options.filter(module => module !== 'documents' || classDocumentReview) : [] }),
     create: (owner: string, raw: unknown) => {
       if (raw && typeof raw === 'object' && 'source' in raw && !options.exporter.forClass) domainReject('package_class_source_unavailable', 503);
       return jobs.create(owner, raw);

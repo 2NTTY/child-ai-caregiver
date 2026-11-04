@@ -190,9 +190,10 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
       return authority.runTransaction(owner, null, async b => {
         const prior = openOwned(b, command.opId, await b.transaction.get(ref(owner, command.opId)));
         if (prior) { if (prior.fingerprint !== fingerprint) domainReject('operation_conflict'); return currentView(prior, b); }
-        const review = 'source' in command ? undefined : command.documentReview;
-        if (review && review.scopeVersion !== handoverSourceVersion(b)) domainReject('export_scope_changed');
+        const review = command.documentReview;
         const sourceVersion = 'source' in command ? await classBasis(b, command, true) : handoverSourceVersion(b);
+        if ('source' in command && command.selection.modules.includes('documents') && !review) domainReject('document_review_required', 400);
+        if (review && review.scopeVersion !== sourceVersion) domainReject('export_scope_changed');
         if (!('source' in command))
           for (const childId of command.selection.childIds) if (!await b.readChild(childId)) domainReject('forbidden', 403);
         const createdAt = new Date(clock()).toISOString(), expiresAt = new Date(clock() + HANDOVER_EXPORT_RETENTION_MS).toISOString();
