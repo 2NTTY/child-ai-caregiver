@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **11 月 5 日 06:20（香港）** 原站 API／worker `f6c6baeb` 已更新，Web 沿用 `792b7bee`。跨世代刪除重放、本人備份映射及原操作收據以合成資料驗過。正式服務健康及登入保護已核對，完整雲端災難還原與手機新版本仍待驗。[發布紀錄](artifacts/verification/P4_PRIVATE_ERASURE_RESTORE_20261105.json)
+- **11 月 5 日 06:42（香港）** 原站 API／worker／Web `ab39b169` 已提供私人交代的明確刪後恢復、對應新項的再次比較及修改。合成流程核對版本、防重、主題衝突、偽造目標拒絕及還原證明；站外健康、登入保護和 Web 指紋已核。完整雲端災難還原、正式帳戶與手機新版仍待驗。[發布紀錄](artifacts/verification/P4_PRIVATE_NOTE_REVIVAL_20261105.json)
 
 - **11 月 5 日 05:51（香港）** 原站 `792b7bee` 已可將簽署備份內的私人交代還原到現存同 ID 原件，並在新報告比較分段筆數。原有 Android 安裝繼續使用既有功能，新表單及原生分享文案待批量發布。[本批發布證據](artifacts/verification/P4_INSTRUCTIONS_REPORTS_DELIVERY_20261105.json)
 
