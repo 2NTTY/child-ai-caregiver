@@ -1,0 +1,163 @@
+{
+  "package": "P4-HANDOVER01 original memory facts and topics",
+  "revision": "2be8595117edb08e9b55b657d5ceffc5f0bdbd06",
+  "pullRequests": {
+    "backend": 498,
+    "sharedUI": 499
+  },
+  "sourceChecks": [
+    {
+      "check": "signed own-memory ZIP, upload, import service and worker",
+      "result": "passed",
+      "tests": 1,
+      "file": "tests/handover-original-memory.test.ts",
+      "covers": [
+        "legacy comparison",
+        "original fact/topic versions",
+        "native source validity after correction",
+        "confirmation and candidate provenance",
+        "terminal topic refusal",
+        "missing original refusal",
+        "tombstone-backed new IDs",
+        "operation and delivery replay",
+        "cross-account isolation",
+        "restored target mapping",
+        "restore graph and epoch transform"
+      ]
+    },
+    {
+      "check": "existing imported memory domain",
+      "result": "passed",
+      "tests": 1,
+      "file": "tests/handover-memory-domain.test.ts"
+    },
+    {
+      "check": "shared client/owner capability negotiation and existing instruction restore",
+      "result": "passed",
+      "tests": 2,
+      "file": "tests/handover-import-owner.test.ts"
+    },
+    {
+      "check": "server and frontend TypeScript",
+      "result": "passed"
+    },
+    {
+      "check": "Web export and reviewed public Firebase configuration",
+      "result": "passed",
+      "web": {
+        "adminHtmlSha256": "b04135a21579018ba19519e1aa956f561e818946b4a9c9d5931af4af7b1fb6cb",
+        "bundlePath": "/_expo/static/js/web/index-ad493ba52b3dacbac9c60b8ebc7a2fc3.js",
+        "bundleSha256": "67aaa8240133a2db4e32cd3967990eda19b513a35d78647c649da7e2dc1a3dd1"
+      }
+    },
+    {
+      "check": "independent backend/UI and deployment script review",
+      "result": "no blocker"
+    },
+    {
+      "check": "D447 memory patch git apply --check",
+      "result": "passed",
+      "head": "c14cea1e1b9a65c7c22665ed1c5116632a8a7e6c",
+      "mutation": false
+    }
+  ],
+  "observedFailures": [
+    "Initial signed comparison returned one instruction instead of eight memory records. Opt-in comparison now includes facts and topics.",
+    "Initial UI check lacked the memory-resources capability header. Negotiation was added before the green run.",
+    "Initial server typecheck lost createdAt by widening a parsed fact to MemoryFact. The source retains its schema-inferred type.",
+    "During the planned Web restart one TLS readiness probe failed. The bounded readiness loop recovered, and subsequent VM and independent public probes matched health and static hashes."
+  ],
+  "deployment": {
+    "state": "deployed",
+    "target": "original VM yuban-p1",
+    "payload": {
+      "commit": "2be8595117edb08e9b55b657d5ceffc5f0bdbd06",
+      "base": "ab39b1694d8376deb26917b776a466d1060004ce",
+      "remote": "/home/2NTTY/p4-memory-restore-2be85951",
+      "paths": [
+        "server/firebase-handover-import-api.ts",
+        "server/firestore-handover-import-items.ts",
+        "server/firestore-memory.ts",
+        "server/firestore-restore-content.ts",
+        "server/handover-import-records.ts",
+        "server/handover-original-backup.ts",
+        "src/shared/handover-imports.ts"
+      ],
+      "files": {
+        "api-delta.tar.gz": {
+          "bytes": 38329,
+          "sha256": "2d31bb7365a688f1c2bc62c9da2b6e9b7eed7af10a8a47a2034cdea00389e290"
+        },
+        "web.tar.gz": {
+          "bytes": 4909969,
+          "sha256": "682d908929642aaf21c7bbba23aa60ae319a8ccac9ccfa423315ba00b799ee01"
+        },
+        "stage.sh": {
+          "bytes": 4969,
+          "sha256": "c2f2942e0ea78d585170a41db5c6d5672dd012fee5a5cfb8d61d4df8f3709d9b"
+        },
+        "release.sh": {
+          "bytes": 6742,
+          "sha256": "f4c6ff8dbe6b0c050bb758a29cc47a8fdf6be89b0485eba831fe10e7fa314560"
+        },
+        "activity.sh": {
+          "bytes": 2600,
+          "sha256": "e141fb833ee60e33cffda0dd763bafebe6e5bf38811651880b0ded66d386644f"
+        }
+      },
+      "web": {
+        "adminHtmlSha256": "b04135a21579018ba19519e1aa956f561e818946b4a9c9d5931af4af7b1fb6cb",
+        "bundlePath": "/_expo/static/js/web/index-ad493ba52b3dacbac9c60b8ebc7a2fc3.js",
+        "bundleSha256": "67aaa8240133a2db4e32cd3967990eda19b513a35d78647c649da7e2dc1a3dd1"
+      }
+    },
+    "apiWorkerImage": "sha256:a5f6d1139e8ed978a5881e063a21ae89cc3125ac0632ad7cb226e980ba54e8e6",
+    "webImage": "sha256:b4ce81735386d2ff6a68316c6186f09be4cbf030c6160d507e33c967947e0d74",
+    "composeSha256": "e37fcba7aed5ef133aa2b5255386c2de95c80fc8b676c8aed784b1562f067eb4",
+    "public": {
+      "/api/health": {
+        "status": 200
+      },
+      "/api/account/package-imports/capabilities": {
+        "status": 401
+      },
+      "/admin": {
+        "status": 200,
+        "sha256": "b04135a21579018ba19519e1aa956f561e818946b4a9c9d5931af4af7b1fb6cb"
+      },
+      "/_expo/static/js/web/index-ad493ba52b3dacbac9c60b8ebc7a2fc3.js": {
+        "status": 200,
+        "sha256": "67aaa8240133a2db4e32cd3967990eda19b513a35d78647c649da7e2dc1a3dd1"
+      }
+    },
+    "candidate": "Runtime imports and original-memory command/query validation passed; API public trust only, worker signer mount retained",
+    "workGuard": {
+      "activeAgentLeases": 0,
+      "activeTaskOutbox": 0,
+      "unknownTaskOutbox": 0,
+      "activeBackground": 0,
+      "sendingBackground": 0,
+      "unknownBackground": 1,
+      "unresolvedBackground": 0
+    },
+    "rollback": "Before candidate startup, previous image can be restored. After worker startup, keep compatible new readers and data; Web-only rollback remains possible.",
+    "vmExpiry": "2026-11-06T05:33:50.732Z",
+    "finalManifestVerified": "Repacked after normalizing activity.sh to LF. The final remote files.sha256 was read back and matches every published payload entry; both release checksum checks passed. Code remains the seven files at 2be85951."
+  },
+  "limits": {
+    "modelCalls": 0,
+    "notifications": 0,
+    "newCloudResources": 0,
+    "newIndexes": 0,
+    "newSigningKeys": 0,
+    "apkBuilds": 0,
+    "productTestSuite": "targeted only"
+  },
+  "remaining": [
+    "Actual owner account and device interaction",
+    "Android is deferred for a batched build",
+    "Full cloud disaster recovery is not represented by the synthetic graph checks",
+    "Other original backup modules and complete P4 delivery remain open"
+  ],
+  "observedAt": "2026-11-04T23:09:37.242878+00:00"
+}
