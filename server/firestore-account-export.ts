@@ -178,7 +178,8 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
         }
         if (found.size > limit) nextCursor = encode({ userId: owner, section, childId: input.childId ?? null, scopeVersion,
           phase: 'source', after: found.docs[limit - 1].id });
-      } else {
+      } else if (!classRequest || (section !== 'instructions' && section !== 'summary_history')) {
+        // Private instructions and conversation summaries are outside class memory grants.
         const [suffix, kinds] = sections[section as keyof typeof sections], tags = data.tags(binding.scope);
         let query: Query = data.collection(suffix);
         if (suffix === 'photos') {
@@ -238,6 +239,9 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             if (context.id !== expectedId || saved.childId !== current.childId || saved.updatedBy !== binding.scope.ownerUserId
               || saved.version !== row.get('recordVersion') || saved.version > current.version) domainReject('export_scope_changed');
             items.push(section === 'visit_preparation' ? current : saved);
+          } else if (classRequest && (section === 'memory_fact_history' || section === 'memory_topic_history')) {
+            const revision = await memory.readExportRevision(binding, section === 'memory_fact_history' ? 'facts' : 'topics', row);
+            if (revision) items.push(revision);
           } else if (['care_history', 'profile_history', 'memory_fact_history', 'memory_topic_history'].includes(section)) {
             const item = z.object({ id: z.uuid().optional(), childId: z.uuid(), version: z.number().int().positive() }).passthrough().parse(value);
             const kind = section === 'care_history' ? 'care' : section === 'profile_history' ? 'profile' : section === 'memory_fact_history' ? 'fact' : 'topic';

@@ -5,7 +5,7 @@ import type { HandoverImportRow } from './handover-import.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
 import { makeImportProvenance } from './handover-provenance.ts';
 import { contentVisible } from './firestore-disclosure.ts';
-import { firestoreFactSchema, firestoreTopicSchema, firestoreSummarySchema } from './firestore-memory.ts';
+import { firestoreFactSchema, firestoreTopicSchema, firestoreSummarySchema, hasPrivateMessageReference } from './firestore-memory.ts';
 import { createFirestorePrivateInstructions, firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
 import { createFirestoreSharedInputStore, firestoreSourceManagementRevisionSchema } from './firestore-shared-inputs.ts';
 import { z } from 'zod';
@@ -147,7 +147,10 @@ export async function sourceHistoryVisible(data: FirestoreDomainData, b: Binding
     const current = data.open('memory-' + kind, value.resource.id, b.scope,
       z.object({ visibility: z.enum(['private', 'family']) }).passthrough(), row);
     // Sharing a current resource never widens the visibility of an older private source revision.
-    return !b.sharedAccess || current.visibility === 'family' && value.evidence.value.visibility === 'family';
+    if (!b.sharedAccess) return true;
+    if (current.visibility !== 'family' || value.evidence.value.visibility !== 'family') return false;
+    // Redacting signed source evidence would invalidate its hash. Keep private message references in the original scope.
+    return section !== 'memory_facts' || !hasPrivateMessageReference(firestoreFactSchema.parse(value.evidence.value).source);
   }
   if (section === 'instructions') {
     if (b.sharedAccess || b.actorUserId !== b.scope.ownerUserId) return false;
