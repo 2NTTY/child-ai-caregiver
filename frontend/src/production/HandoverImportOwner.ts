@@ -1,4 +1,4 @@
-import { HandoverApiError, type HandoverApi, type ClassImportEnrolments, type HandoverSourceHistoryQuery, type HandoverSourceHistoryPage,
+import { HandoverApiError, originalComparisonItemKey, type HandoverApi, type ClassImportEnrolments, type HandoverSourceHistoryQuery, type HandoverSourceHistoryPage,
   type SelfAvatarComparison, type SelfAvatarComparisonQuery } from '../../../src/client/handover-api.ts';
 import { handoverImportCommandSchema, handoverImportModuleOf, originalBackupModuleSchema, type HandoverImportModule, type HandoverImportResourceSection, type HandoverImportCommand, type HandoverImportView,
   type HandoverImportResult, type HandoverImportResultQuery } from '../../../src/shared/handover-imports.ts';
@@ -9,7 +9,11 @@ import { FamilyDocumentApiError, parseFamilyDocumentSnapshot } from '../../../sr
 import type { DocumentContentPage, DocumentContentQuery, DocumentSnapshot } from '../../../src/shared/family-documents.ts';
 
 export interface SelectedPackage { filename: string; bytes: number; sha256: string; body: BodyInit; release(): void }
-export function originalRestoreResourceSection(module: HandoverImportModule): HandoverImportResourceSection | null {
+export { originalComparisonItemKey };
+export const legacyOriginalModules: OriginalBackupComparisonQuery['module'][] = ['care', 'profile', 'tasks', 'sources'];
+export function originalRestoreResourceSection(module: HandoverImportModule,
+  item?: Pick<OriginalBackupComparison['items'][number], 'resourceSection'>): HandoverImportResourceSection | null {
+  if (module === 'documents') return item?.resourceSection === 'documents' || item?.resourceSection === 'visit_preparation' ? item.resourceSection : null;
   if (module === 'sources') return 'private_sources';
   return module === 'care' || module === 'profile' || module === 'tasks' ? module : null;
 }
@@ -59,6 +63,7 @@ export interface HandoverSourceHistoryState {
   documentContent: HandoverDocumentContentState | null;
 }
 export interface HandoverImportState {
+  originalModules: OriginalBackupComparisonQuery['module'][];
   accountAvatarRestoreEnabled: boolean;
   accountAvatarComparison: { query: SelfAvatarComparisonQuery; manifestSha256: string; value: SelfAvatarComparison | null; error: string | null } | null;
   summary: { batchId: string; status: 'loading' | 'ready' | 'unauthorized' | 'unavailable'; value: HandoverImportSummary | null } | null;
@@ -77,6 +82,7 @@ export interface HandoverImportState {
 const empty = (userId: string | null, identityKey: string | null, online: boolean): HandoverImportState => ({
   userId, identityKey, online, loaded: false, upload: null, items: [], nextCursor: null, classEnrolmentEnabled: false, enrolmentResults: null,
   accountAvatarRestoreEnabled: false, accountAvatarComparison: null,
+  originalModules: [...legacyOriginalModules],
   uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, sourceHistory: null, summary: null, comparison: null, busy: null, pending: null, notice: null });
 type Ticket = { epoch: number; userId: string; controller: AbortController };
 /** Device drafts only; uploaded packages, import authority and progress remain on the Server. */
@@ -190,12 +196,16 @@ export class HandoverImportOwner {
       const value = await this.api.importCapabilities(t.userId, t.controller.signal);
       if (this.current(t)) {
         if (value.accountAvatarRestore !== true) this.clearAccountAvatarComparison();
-        this.update({ classEnrolmentEnabled: value.classEnrolment, accountAvatarRestoreEnabled: value.accountAvatarRestore === true });
+        const originalModules = value.originalModules ?? [...legacyOriginalModules];
+        if (this.state.comparison && !originalModules.includes(this.state.comparison.query.module)) this.clearComparison();
+        this.update({ classEnrolmentEnabled: value.classEnrolment, accountAvatarRestoreEnabled: value.accountAvatarRestore === true, originalModules });
       }
     } catch (error) {
       if (this.current(t)) {
         this.clearAccountAvatarComparison();
-        this.update({ classEnrolmentEnabled: false, accountAvatarRestoreEnabled: false });
+        const originalModules = this.state.originalModules.filter(module => legacyOriginalModules.includes(module));
+        if (this.state.comparison && !originalModules.includes(this.state.comparison.query.module)) this.clearComparison();
+        this.update({ classEnrolmentEnabled: false, accountAvatarRestoreEnabled: false, originalModules });
         if (error instanceof HandoverApiError && ([401, 403].includes(error.status) || ['session_changed', 'identity_changed'].includes(error.code)))
           this.error(t, error);
       }
@@ -271,7 +281,7 @@ export class HandoverImportOwner {
     const upload = this.state.upload, preview = upload?.preview, previous = this.state.comparison;
     if (this.state.pending || upload?.state !== 'ready' || !preview || preview.header.purpose !== 'backup'
       || preview.header.source.accountId !== this.state.userId || !preview.header.selection.childIds.includes(childId)
-      || !preview.header.selection.modules.includes(module) || !originalBackupModuleSchema.safeParse(module).success
+      || !preview.header.selection.modules.includes(module) || !originalBackupModuleSchema.safeParse(module).success || !this.state.originalModules.includes(module)
       || more && (!previous?.nextCursor || previous.query.childId !== childId || previous.query.module !== module)) return;
     const t = this.begin('read'); if (!t) return;
     const query = {uploadId:upload.id,expectedUploadVersion:upload.version,childId,module,includeRestoreTarget:true as const};
@@ -283,24 +293,26 @@ export class HandoverImportOwner {
       if (page.childId !== childId || page.module !== module || page.uploadId !== upload.id || page.manifestSha256 !== preview.manifestSha256)
         throw new HandoverApiError(0,'handover_response_invalid');
       this.update({comparison:{...comparison,loaded:true,nextCursor:page.nextCursor,items:more
-        ? [...comparison.items,...page.items.filter(row => !comparison.items.some(item => item.id === row.id))] : page.items}});
+        ? [...comparison.items,...page.items.filter(row => !comparison.items.some(item => originalComparisonItemKey(item) === originalComparisonItemKey(row)))] : page.items}});
     } catch (error) {
       if (!this.current(t) || this.comparisonTicket !== t) return;
       if (error instanceof HandoverApiError && (error.status === 401 || ['session_changed','identity_changed'].includes(error.code))) this.error(t,error);
       else this.update({comparison:{...comparison,items:[],selected:[],error:importErrorText(error)}});
     } finally { if (this.comparisonTicket === t) this.comparisonTicket = null; this.finish(t); }
   };
-  selectComparison = (id: string, checked: boolean, observed = this.state.comparison) => {
+  selectComparison = (identity: string | Pick<OriginalBackupComparison['items'][number], 'id' | 'resourceSection'>,
+    checked: boolean, observed = this.state.comparison) => {
     const comparison = this.state.comparison;
     if (comparison !== observed || this.state.busy || this.state.pending || !comparison?.loaded || comparison.error) return;
-    const item = comparison.items.find(row => row.id === id);
+    const id = typeof identity === 'string' ? identity : originalComparisonItemKey(identity);
+    const item = comparison.items.find(row => originalComparisonItemKey(row) === id);
     if (!item || !originalComparisonResolution(item)) return;
     this.update({comparison:{...comparison,selected:checked ? [...comparison.selected.filter(value => value !== id),id] : comparison.selected.filter(value => value !== id)}});
   };
   selectReadComparison = (mode: 'replace_current' | 'restore_deleted', checked: boolean, observed = this.state.comparison) => {
     const comparison = this.state.comparison;
     if (comparison !== observed || this.state.busy || this.state.pending || !comparison?.loaded || comparison.error) return;
-    const ids = comparison.items.filter(row => originalComparisonResolution(row) === mode).map(row => row.id);
+    const ids = comparison.items.filter(row => originalComparisonResolution(row) === mode).map(originalComparisonItemKey);
     this.update({comparison:{...comparison,selected:checked ? [...new Set([...comparison.selected,...ids])] : comparison.selected.filter(id => !ids.includes(id))}});
   };
   restoreComparison = async (observed = this.state.comparison) => {
@@ -308,15 +320,15 @@ export class HandoverImportOwner {
     if (comparison !== observed || this.state.busy || this.state.pending || !comparison?.loaded || comparison.error || !comparison.selected.length || !upload?.preview
       || upload.state !== 'ready' || upload.id !== comparison.query.uploadId || upload.version !== comparison.query.expectedUploadVersion
       || upload.preview.manifestSha256 !== comparison.manifestSha256 || upload.preview.header.purpose !== 'backup'
-      || upload.preview.header.source.accountId !== this.state.userId || comparison.query.includeRestoreTarget !== true) return;
-    const rows = comparison.selected.map(id => comparison.items.find(item => item.id === id));
-    if (rows.some(item => !item || !originalComparisonResolution(item))) return;
+      || upload.preview.header.source.accountId !== this.state.userId || comparison.query.includeRestoreTarget !== true
+      || !this.state.originalModules.includes(comparison.query.module)) return;
+    const rows = comparison.selected.map(id => comparison.items.find(item => originalComparisonItemKey(item) === id));
     const {childId,module} = comparison.query;
-    const section = originalRestoreResourceSection(module); if (!section) return;
+    if (rows.some(item => !item || !originalComparisonResolution(item) || !originalRestoreResourceSection(module, item))) return;
     const input = handoverImportCommandSchema.safeParse({opId:crypto.randomUUID(),uploadId:upload.id,expectedUploadVersion:upload.version,
       acceptedManifestSha256:comparison.manifestSha256,restoreOriginal:true,resolutionOnly:true,
       targets:[{sourceChildId:childId,target:{childId,spaceId:null},sections:[module]}],
-      resolutions:rows.map(item => ({sourceChildId:childId,section,resourceId:item!.id,
+      resolutions:rows.map(item => ({sourceChildId:childId,section:originalRestoreResourceSection(module,item)!,resourceId:item!.id,
         resolution:{mode:originalComparisonResolution(item!)!,targetId:item!.targetId!,expectedVersion:item!.localVersion!}}))});
     if (!input.success) {this.update({notice:'所選還原項目或版本已不可用，請重新比較。'});return;}
     this.clearComparison();
