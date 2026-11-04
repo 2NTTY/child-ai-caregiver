@@ -396,7 +396,7 @@ export function HandoverImportControls() {
               {comparisonModule === 'concerns' && comparisonModules.includes('concerns') ? <Text style={styles.body}>{periodConcerns
                 ? '此包只包含選定日期：只補回所選期間缺少的觀察，不改其他時段、標題、狀態或跟進。'
                 : '完整備份會把所選內容覆蓋回同一關注的新修訂，舊修訂仍可追溯。'}不會導入 Agent 執行或提醒授權。</Text> : null}
-              {comparisonModule === 'memory' && comparisonModules.includes('memory') ? <Text style={styles.body}>只比較及還原私人交代；其他記憶、議題及摘要尚未開放原件還原。只有目前仍存在且可核實的原交代可選，並按目前版本提交。</Text> : null}
+              {comparisonModule === 'memory' && comparisonModules.includes('memory') ? <Text style={styles.body}>只比較及還原私人交代；其他記憶、議題及摘要尚未開放原件還原。可選目前交代，或有刪除紀錄的已刪項目。恢復已刪交代會建立新項並保留來源；再次比較會連回已恢復的項目。</Text> : null}
               {comparisonChildren.length && supportedComparisonModules.length ? <>
                 <AppSelect label="比較原有資料的孩子" value={comparisonChild} disabled={writeLocked}
                   options={[{value:'',label:'請選擇原孩子'},...comparisonChildren.map(child => ({value:child.id,label:child.displayName}))]}
@@ -414,7 +414,7 @@ export function HandoverImportControls() {
                     {comparison.query.module === 'attachments' && !comparisonOverwrite.length && !comparisonRestore.length
                       ? <Text style={styles.body}>沒有可還原的孩子頭像；備份沒有圖片、與目前相同或未能核實的項目會保留目前資料。</Text> : null}
                     {comparison.query.module === 'memory' && !comparisonOverwrite.length && !comparisonRestore.length
-                      ? <Text style={styles.body}>沒有可還原的私人交代；與備份相同、原件不存在或未能核實的項目會保留目前資料。</Text> : null}
+                      ? <Text style={styles.body}>沒有可還原的私人交代；與備份相同或未能核實的項目會保留目前資料。</Text> : null}
                     {comparison.items.map(item => <View key={originalComparisonItemKey(item)} style={styles.item}>
                       <Text selectable style={styles.body}>{item.resourceSection === 'documents' ? '文件 · ' : item.resourceSection === 'visit_preparation' ? '到診準備 · ' : item.resourceSection === 'child_avatar' ? '孩子頭像 · ' : item.resourceSection === 'instructions' ? '私人交代 · ' : ''}{item.id} · {comparisonStates[item.state]}</Text>
                       {comparison.query.module === 'concerns' && item.targetId && item.id !== item.targetId ? <Text selectable style={styles.body}>原關注：{item.targetId}</Text> : null}
