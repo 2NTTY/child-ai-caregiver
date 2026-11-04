@@ -1,7 +1,7 @@
 import type { z } from 'zod';
 import type { AccountExportPage } from '../src/shared/account-service.ts';
 import { CONCERN_STORED_EVENT_LIMIT } from '../src/shared/concerns.ts';
-import type { ImportProvenance } from '../src/shared/import-provenance.ts';
+import { handoverIdentityLinks } from './handover-provenance.ts';
 import { firestoreDomainUuid } from './firestore-domain-data.ts';
 import { firestoreConcernSchema, concernTransferSchema } from './firestore-concerns.ts';
 import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
@@ -15,21 +15,6 @@ const normalizedPeriod = ({ from, to }: HandoverPeriod) => ({ from: new Date(fro
 const sliceId = (childId: string, concernId: string, period: HandoverPeriod) =>
   firestoreDomainUuid(['concern-period:1', childId, concernId, normalizedPeriod(period)]);
 function fail(): never { throw new HandoverArchiveError('invalid_package_period'); }
-
-// Retain original identities across handovers, without bringing an earlier head's follow-up or other domain payload into this window.
-export function handoverIdentityLinks(origin?: ImportProvenance): ImportProvenance | undefined {
-  if (!origin) return undefined;
-  function identity(link: ImportProvenance['current']) {
-    const { serverId, accountId, childId, section, resourceId, resourceVersion, authorUserId, createdAt,
-      confirmedBy, confirmedAt, confirmationBasis, assigneeUserId } = link.source;
-    const { concern, concernEvent } = link.source;
-    const reference = link.source.concernReference ?? (concernEvent ? { id: concernEvent.concernId, sequence: concernEvent.sequence }
-      : concern?.periodSource ? { id: concern.periodSource.concernId } : undefined);
-    return { ...link, source: { serverId, accountId, childId, section, resourceId, resourceVersion, authorUserId, createdAt,
-      confirmedBy, confirmedAt, confirmationBasis, assigneeUserId, ...(reference ? { concernReference: reference } : {}) } };
-  }
-  return { current: identity(origin.current), previous: origin.previous.map(identity) };
-}
 
 /** Stream selected events once. Hold only bounded sequence identities per live timeline, never the child's event bodies. */
 export async function* datedConcernPages(childId: string, rawPeriod: HandoverPeriod,

@@ -57,15 +57,28 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), clock = options.serverClock ?? Date.now;
   const avatarData = createFirestoreAvatarData(options);
   const sharing = createFirestoreSharingStore(options);
-  async function classBasis(b: FirestoreAuthorityTransaction, command: HandoverClassExportCommand, checkSelection = false) {
-    const read = (childId: string) => withClassExportChild(sharing, b, command, childId, command.selection.modules[0], async (_, v) => v);
-    const ids = command.selection.childIds, version = await read(ids[0]);
-    // Membership, class roster, authority and the class data sequence are fenced by the same version.
-    if (checkSelection) for (let i = 1; i < ids.length; i += 10) {
-      const versions = await Promise.all(ids.slice(i, i + 10).map(read));
-      if (versions.some(result => result !== version)) domainReject('export_scope_changed');
+  async function avatarHeadBasis(b: FirestoreAuthorityTransaction, childId: string, reviewed?: Map<string, number>) {
+    const head = await avatarData.head(b, avatarBinding({ ...b.scope, childId }, { kind: 'child', childId }));
+    const { canManage: _canManage, ...current } = avatarPublicState(head, false);
+    if (reviewed && current.version !== reviewed.get(childId)) domainReject('export_scope_changed');
+    return [childId, current] as const;
+  }
+  async function classBasis(b: FirestoreAuthorityTransaction, command: HandoverClassExportCommand, checkSelection = false, reviewed?: Map<string, number>) {
+    const media = command.selection.modules.includes('attachments');
+    const ids = media || checkSelection ? command.selection.childIds : command.selection.childIds.slice(0, 1);
+    const heads = [];
+    let sourceVersion: string | undefined;
+    for (let i = 0; i < ids.length; i += 10) {
+      const results = await Promise.all(ids.slice(i, i + 10).map(childId =>
+        withClassExportChild(sharing, b, command, childId, media ? 'attachments' : command.selection.modules[0], async ({ binding }, version) =>
+          ({ version, head: media ? await avatarHeadBasis(binding, childId, reviewed) : null }))));
+      for (const { version, head } of results) {
+        sourceVersion ??= version;
+        if (sourceVersion !== version) domainReject('export_scope_changed');
+        if (head) heads.push(head);
+      }
     }
-    return version;
+    return { sourceVersion: sourceVersion!, avatarBasis: media ? firestoreDomainHash(heads) : null };
   }
   const ref = (owner: string, id: string) => data.ref('handover_exports', 'handover-export', handoverJobId(owner, id));
   function open(scope: WorkRecoveryScope, id: string, snapshot: DocumentSnapshot): FirestoreHandoverJob | null {
@@ -114,10 +127,7 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
     if (!selection.modules.includes('attachments')) return null;
     const heads = [];
     for (const childId of selection.childIds) {
-      const head = await avatarData.head(b, avatarBinding({ ...b.scope, childId }, { kind: 'child', childId }));
-      const { canManage: _canManage, ...current } = avatarPublicState(head, false);
-      if (reviewed && current.version !== reviewed.get(childId)) domainReject('export_scope_changed');
-      heads.push([childId, current]);
+      heads.push(await avatarHeadBasis(b, childId, reviewed));
     }
     return firestoreDomainHash(heads);
   }
@@ -125,10 +135,13 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
     const result = view(job, b);
     if (!['queued', 'building', 'ready'].includes(result.state)) return result;
     if ('source' in job.request) {
-      try { if (await classBasis(b, job.request, checkSelection) === job.sourceVersion) return result; }
+      try {
+        const basis = await classBasis(b, job.request, checkSelection);
+        if (basis.sourceVersion === job.sourceVersion && basis.avatarBasis === job.avatarBasis) return result;
+      }
       catch (e) {
         const failure = e as { status?: number; code?: string };
-        if (![403, 404].includes(failure.status ?? 0) && failure.code !== 'scope_changed') throw e;
+        if (![403, 404].includes(failure.status ?? 0) && failure.code !== 'scope_changed' && failure.code !== 'export_scope_changed') throw e;
       }
       return { ...result, state: 'failed' as const, bytes: null, error: 'export_scope_changed' };
     }
@@ -191,15 +204,18 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
         const prior = openOwned(b, command.opId, await b.transaction.get(ref(owner, command.opId)));
         if (prior) { if (prior.fingerprint !== fingerprint) domainReject('operation_conflict'); return currentView(prior, b); }
         const review = command.documentReview;
-        const sourceVersion = 'source' in command ? await classBasis(b, command, true) : handoverSourceVersion(b);
-        if ('source' in command && command.selection.modules.includes('documents') && !review) domainReject('document_review_required', 400);
-        if (review && review.scopeVersion !== sourceVersion) domainReject('export_scope_changed');
+        if ('source' in command && command.selection.modules.some(module => module === 'documents' || module === 'attachments') && !review)
+          domainReject('document_review_required', 400);
         if (!('source' in command))
           for (const childId of command.selection.childIds) if (!await b.readChild(childId)) domainReject('forbidden', 403);
+        const reviewed = review && new Map(review.avatarVersions?.map(row => [row.childId, row.version]));
+        const basis = 'source' in command ? await classBasis(b, command, true, reviewed)
+          : { sourceVersion: handoverSourceVersion(b), avatarBasis: await avatarBasis(b, command.selection, reviewed) };
+        const { sourceVersion } = basis;
+        if (review && review.scopeVersion !== sourceVersion) domainReject('export_scope_changed');
         const createdAt = new Date(clock()).toISOString(), expiresAt = new Date(clock() + HANDOVER_EXPORT_RETENTION_MS).toISOString();
         const job: FirestoreHandoverJob = { id: command.opId, version: 1, scope: b.scope, objectScope: b.scope, request: command, fingerprint,
-          sourceVersion, avatarBasis: await avatarBasis(b, command.selection,
-            review && new Map(review.avatarVersions?.map(row => [row.childId, row.version]))), authorizationVersion: b.authorizationVersion, generation: b.generation,
+          ...basis, authorizationVersion: b.authorizationVersion, generation: b.generation,
           state: 'queued', createdAt, expiresAt, error: null, content: null, artifact: null, uploadStarted: false, cleaned: false, claim: null, cancellation: null };
         const work = await prepareFirestoreBackgroundWork(data, b.transaction, { kind: 'handover-export', scope: b.scope,
           resourceId: job.id, basis: job.sourceVersion, generation: b.generation, authorizationVersion: b.authorizationVersion }, createdAt);

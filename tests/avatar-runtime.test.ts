@@ -68,6 +68,7 @@ test('production avatar wiring shares HTTP and online services and retains clean
     const record = { options, service: null as unknown as ReturnType<AvatarFactory>, reads: 0, submissions: [] as OnlineSubmission[] };
     record.service = {
       retryAfterSeconds: 2,
+      forSharedSpace: () => ({ content: unavailable }),
       async read(userId, target) { assert.equal(userId, owner);record.reads++;return {
         avatar: { target, version: 0, asset: null, updatedAt: null, canManage: options.config.writesEnabled }, policy: options.config.policy }; },
       async submitOnline(userId, submission) {

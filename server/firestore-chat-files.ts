@@ -1,5 +1,5 @@
 import { sharedWriteAttributionSchema, sharedWriteAttribution, validSharedAttribution } from './shared-write-attribution.ts';
-import { sharedAttachmentReads, attachmentReadFence, withSharedAttachmentWrite } from './firestore-attachment-access.ts';
+import { sharedAttachmentReads, attachmentReadFence, withSharedAttachmentWrite, sharedMessageAttachmentVisible } from './firestore-attachment-access.ts';
 import type { SharedSelection } from '../src/shared/sharing.ts';
 import type { FirestoreAuthority } from './firestore-authority.ts';
 import { createPrivateAttachmentList } from './firestore-attachment-list.ts';
@@ -78,7 +78,7 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
     return descriptor;
   }
   function view(row: FirestoreChatFileRow, b?: FirestoreAuthorityTransaction): ChatFileAttachment {
-    if (b?.sharedAccess && (row.state !== 'ready' || !row.messageId && !row.importedFrom)) domainReject('not_found', 404);
+    if (b?.sharedAccess && !sharedMessageAttachmentVisible(row)) domainReject('not_found', 404);
     return { id: row.id, childId: row.scope.childId, version: row.version, createdAt: row.createdAt,
       state: row.state === "reserved" && row.upload ? row.upload.unknown ? "unknown" : "uploading" : row.state,
       fileName: row.metadata?.fileName ?? null, mimeType: row.metadata?.mimeType ?? null, bytes: row.metadata?.bytes ?? null, sha256: row.metadata?.sha256 ?? null,
@@ -229,7 +229,7 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
         return row;
       }
       if (op.prior) domainReject('operation_erased');
-      if (b.sharedAccess && (row.state !== 'ready' || !row.messageId && !row.importedFrom)) domainReject('not_found', 404);
+      if (b.sharedAccess && !sharedMessageAttachmentVisible(row)) domainReject('not_found', 404);
       if (row.version !== expectedVersion) domainReject('version_conflict');
       const intent: FirebaseErasureIntent = { type: 'file-delete', scope: row.objectScope, assetId: id,
         operationId: b.sharedAccess ? sharedSourceOperationId(actor.actorUserId, operationId) : operationId, at: now() };

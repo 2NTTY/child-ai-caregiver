@@ -55,3 +55,18 @@ export function makeImportProvenance(row: HandoverImportRow, integrity: Handover
   if (!result.success) throw new HandoverArchiveError('invalid_package_provenance');
   return result.data;
 }
+
+// Retain source identities and hashes without transferring private domain details from earlier handovers.
+export function handoverIdentityLinks(origin?: ImportProvenance): ImportProvenance | undefined {
+  if (!origin) return undefined;
+  function identity(link: ImportProvenance['current']) {
+    const { serverId, accountId, childId, section, resourceId, resourceVersion, authorUserId, createdAt,
+      confirmedBy, confirmedAt, confirmationBasis, assigneeUserId } = link.source;
+    const { concern, concernEvent } = link.source;
+    const reference = link.source.concernReference ?? (concernEvent ? { id: concernEvent.concernId, sequence: concernEvent.sequence }
+      : concern?.periodSource ? { id: concern.periodSource.concernId } : undefined);
+    return { ...link, source: { serverId, accountId, childId, section, resourceId, resourceVersion, authorUserId, createdAt,
+      confirmedBy, confirmedAt, confirmationBasis, assigneeUserId, ...(reference ? { concernReference: reference } : {}) } };
+  }
+  return { current: identity(origin.current), previous: origin.previous.map(identity) };
+}

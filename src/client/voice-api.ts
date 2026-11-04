@@ -18,13 +18,13 @@ export function createVoiceApi(fetcher: typeof fetch, origin = '', hash: typeof 
     ? voice.sharedSpaceId === sharing.spaceId && voice.messageId === null
     : voice.sharedSpaceId === undefined;
   const writable = () => { if (sharing) throw new VoiceApiError(403, 'shared_attachment_write_unavailable'); };
-  async function request(url: string, userId: string, signal: AbortSignal, payload?: unknown, sharedDelete = false) {
+  async function request(url: string, userId: string, signal: AbortSignal, payload?: unknown, sharedDelete = false, transcriptRead = false) {
     if (payload !== undefined && !sharedDelete) writable();
     if (sharing) url += (url.includes('?') ? '&' : '?') + new URLSearchParams({ spaceId: sharing.spaceId });
     if (!userId || signal.aborted) throw new VoiceApiError(0, 'identity_changed');
     let response: Response;
     try { response = await fetcher(url, { method: payload === undefined ? 'GET' : 'POST', credentials: 'include', cache: 'no-store', signal,
-      headers: { 'x-expected-user-id': userId, ...(payload === undefined ? {} : { 'content-type': 'application/json' }) },
+      headers: { 'x-expected-user-id': userId, ...(transcriptRead ? {'x-voice-transcript-version':'2'} : {}), ...(payload === undefined ? {} : { 'content-type': 'application/json' }) },
       ...(payload === undefined ? {} : { body: JSON.stringify(payload) }) }); }
     catch { throw new VoiceApiError(0, 'voice_operation_unknown'); }
     if (signal.aborted) throw new VoiceApiError(0, 'identity_changed');
@@ -83,7 +83,7 @@ export function createVoiceApi(fetcher: typeof fetch, origin = '', hash: typeof 
       return result.data;
     },
     async transcript(childId: string, id: string, signal: AbortSignal, userId: string) {
-      const response = await request(base(childId, id) + '/transcript', userId, signal);
+      const response = await request(base(childId, id) + '/transcript', userId, signal, undefined, false, true);
       const parsed = z.object({ transcript: sharing ? voiceTranscriptViewSchema : storedVoiceTranscriptSchema }).strict().safeParse(await response.json());
       if (signal.aborted) throw new VoiceApiError(0, 'identity_changed');
       if (!parsed.success || parsed.data.transcript.voice.id !== id

@@ -69,7 +69,7 @@ export function previewOtherDocument(section: Exclude<HandoverPreviewQuery['sect
 export async function previewHandoverDocuments(exporter: HandoverExportSource, owner: string, raw: unknown) {
   const { period, source, opId, ...query } = domainParse(handoverPreviewQuerySchema, raw);
   const reader = source && opId ? exporter.forClass?.({ opId, purpose: 'handover', source,
-    selection: { childIds: [query.childId], modules: ['documents'], period } }) : exporter;
+    selection: { childIds: [query.childId], modules: [query.section === 'documents' || query.section === 'visit_preparation' ? 'documents' : 'attachments'], period } }) : exporter;
   if (!reader) domainReject('package_class_source_unavailable', 503);
   // Request dated photo metadata without granting the page reader access to attachment bytes.
   const page = await reader.page(owner, query, () => false, { documentPreviewPeriod: period });
