@@ -2,20 +2,23 @@ import { FieldPath, type DocumentSnapshot } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
-import { firebaseErasureIntentSchema, firebaseErasureDescriptorSchema, firebaseErasureIntentHash, type FirebaseErasureJournal } from './firebase-erasure-journal.ts';
+import { firebaseErasureIntentSchema, firebaseErasureDescriptorSchema, firebaseErasureIntentHash, privateSourceErasureOperationId, type FirebaseErasureJournal } from './firebase-erasure-journal.ts';
 import { contentPointerSchema, contentResult, type ContentKind } from './firestore-disclosure.ts';
-import { firestoreOnlineRecordSchema, isFirestoreOnlinePending } from './firestore-online-receipts.ts';
+import { firestoreOnlineRecordSchema, isFirestoreOnlinePending, privateInputReceiptTarget } from './firestore-online-receipts.ts';
 import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
 import { sourceHistoryRecordSchema, sourceHistoryId, historyResourceForContent } from './handover-history-records.ts';
 
 export const contentErasureSchema = z.object({ intent: firebaseErasureIntentSchema.refine(v => v.type === 'content-delete'),
   journal: firebaseErasureDescriptorSchema.nullable(), stage: z.enum(['revisions', 'source_history', 'receipts', 'done']), after: z.string().nullable() }).strict();
 export const contentHistory = { care: ['care_revisions', 'care-revision'], profile: ['profile_revisions', 'profile-revision'],
-  fact: ['memory_fact_revisions', 'memory-fact-revision'], topic: ['memory_topic_revisions', 'memory-topic-revision'] } as const;
+  fact: ['memory_fact_revisions', 'memory-fact-revision'], topic: ['memory_topic_revisions', 'memory-topic-revision'],
+  private_source: ['shared_input_management_revisions', 'shared-input-management'] } as const;
+export type ContentErasureKind = ContentKind | 'private_source';
 export function prepareContentErasure(data: FirestoreDomainData, binding: FirestoreAuthorityTransaction,
-  kind: ContentKind, id: string, throughVersion: number, operationId: string) {
+  kind: ContentErasureKind, id: string, throughVersion: number, operationId: string, origin?: { at: string; sourceOperationId: string }) {
   const value = contentErasureSchema.parse({ intent: { type: 'content-delete', scope: binding.scope, assetId: id, operationId,
-    at: new Date().toISOString(), content: { kind, throughVersion } }, journal: null, stage: 'revisions', after: null });
+    at: origin?.at ?? new Date().toISOString(), content: { kind, throughVersion,
+      ...(kind === 'private_source' ? { sourceOperationId: origin?.sourceOperationId } : {}) } }, journal: null, stage: 'revisions', after: null });
   const ref = data.ref('content_erasures', 'content-erasure', operationId);
   return () => binding.transaction.create(ref, { ...data.tags(binding.scope), stage: value.stage,
     ...data.seal('content-erasure', operationId, binding.scope, contentErasureSchema, value) });
@@ -58,6 +61,9 @@ export function createFirestoreContentErasure(options: FirestoreDomainOptions & 
         if (value.stage === 'revisions') {
           if (decoded.context.scope.childId !== scope.childId || decoded.context.kind !== contentHistory[intent.content!.kind][1]) domainReject('erasure_binding', 500);
           const revision = z.object({ version: z.number().int().positive() }).passthrough().parse(decoded.value);
+          if (intent.content!.kind === 'private_source' && (revision.inputId !== intent.assetId || revision.childId !== scope.childId
+            || revision.ownerUserId !== scope.ownerUserId || decoded.context.id !== JSON.stringify([intent.assetId, revision.version])
+            || data.ref(suffix, decoded.context.kind, decoded.context.id).path !== entry.ref.path)) domainReject('erasure_binding', 500);
           if (revision.version <= intent.content!.throughVersion) writes.push(() => tx.delete(entry.ref));
         } else if (value.stage === 'source_history') {
           const retained = sourceHistoryRecordSchema.parse(decoded.value);
@@ -70,7 +76,9 @@ export function createFirestoreContentErasure(options: FirestoreDomainOptions & 
           const receipt = firestoreOnlineRecordSchema.safeParse(decoded.value);
           if (!receipt.success || isFirestoreOnlinePending(receipt.data) || receipt.data.childId !== scope.childId) continue;
           const pointer = contentPointerSchema.safeParse(receipt.data.result);
-          const target = pointer.success ? pointer.data : contentResult(receipt.data.path, receipt.data.result);
+          const input = intent.content!.kind === 'private_source' ? privateInputReceiptTarget(receipt.data.path, receipt.data.result) : null;
+          const target = input ? { ...input, kind: 'private_source' as const }
+            : pointer.success ? pointer.data : contentResult(receipt.data.path, receipt.data.result);
           if (target?.kind === intent.content!.kind && target.id === intent.assetId && target.version <= intent.content!.throughVersion) {
             const sealed = data.seal('online-receipt', decoded.context.id, decoded.context.scope, firestoreOnlineRecordSchema, { ...receipt.data, result: null });
             writes.push(() => tx.set(entry.ref, { ...data.tags(decoded.context.scope), ...sealed }));
@@ -88,21 +96,28 @@ export function createFirestoreContentErasure(options: FirestoreDomainOptions & 
   async function backfill(row: DocumentSnapshot) {
     const raw = row.data()!, opened = openRecoveryEnvelope({ ...options, locator: raw.recovery,
       envelope: { family: 'domain', version: raw.version, recordVersion: raw.recordVersion, ciphertext: raw.ciphertext } });
-    const { context } = opened, body = opened.value as { version: number; operationId?: string };
-    const kind: ContentKind | null = context.kind === 'care-tombstone' ? 'care' : context.kind === 'memory-tombstone'
+    const { context } = opened, body = opened.value as { version: number; operationId?: string; deletedAt?: string };
+    const kind: ContentErasureKind | null = context.kind === 'care-tombstone' ? 'care' : context.kind === 'shared-input-tombstone' ? 'private_source' : context.kind === 'memory-tombstone'
       ? row.ref.path.startsWith(options.namespace + '_memory_facts/') ? 'fact' : 'topic'
       : context.kind === 'child-profile' && Number(raw.historyFloor) > 1 ? 'profile' : null;
     if (!kind) return;
+    if (kind === 'private_source') {
+      const deleted = z.object({ id: z.uuid(), childId: z.uuid(), version: z.number().int().positive(), operationId: z.uuid(), deletedAt: z.iso.datetime({ offset: true }) }).parse(body);
+      if (deleted.id !== context.id || deleted.childId !== context.scope.childId || deleted.version !== raw.recordVersion
+        || data.ref('shared_inputs', 'shared-input', context.id).path !== row.ref.path) domainReject('erasure_binding', 500);
+    }
     const throughVersion = kind === 'profile' ? Number(raw.historyFloor) - 1 : body.version - 1;
     const hash = firestoreDomainHash(['legacy-content-erasure', context.scope, kind, context.id, throughVersion]);
     const deterministic = hash.slice(0, 8) + '-' + hash.slice(8, 12) + '-5' + hash.slice(13, 16) + '-8' + hash.slice(17, 20) + '-' + hash.slice(20, 32);
-    const opId = body.operationId ?? deterministic, target = data.ref('content_erasures', 'content-erasure', opId);
+    const opId = kind === 'private_source' ? privateSourceErasureOperationId(context.scope, context.id, throughVersion, body.operationId!)
+      : body.operationId ?? deterministic, target = data.ref('content_erasures', 'content-erasure', opId);
     await options.database.runTransaction(async tx => {
       if (!(await authority.readControl(tx)).enabled) return;
       const current = await tx.get(row.ref), prior = await tx.get(target);
       if (prior.exists || !current.exists || firestoreDomainHash(current.data()) !== firestoreDomainHash(raw)) return;
       const value = contentErasureSchema.parse({ intent: { type: 'content-delete', scope: context.scope, assetId: context.id, operationId: opId,
-        at: new Date().toISOString(), content: { kind, throughVersion } }, journal: null, stage: 'revisions', after: null });
+        at: kind === 'private_source' ? body.deletedAt! : new Date().toISOString(), content: { kind, throughVersion,
+          ...(kind === 'private_source' ? { sourceOperationId: body.operationId! } : {}) } }, journal: null, stage: 'revisions', after: null });
       tx.create(target, { ...data.tags(context.scope), stage: value.stage, ...data.seal('content-erasure', opId, context.scope, contentErasureSchema, value) });
     });
   }

@@ -195,7 +195,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
     if (!state) return 0;
     let scanned = 0;
     // One bounded pass upgrades pre-R01 tombstones; normal writers enqueue their own barriers.
-    if (options.journal) for (const suffix of ['care_records', 'child_profiles', 'memory_facts', 'memory_topics']) {
+    if (options.journal) for (const suffix of ['care_records', 'child_profiles', 'memory_facts', 'memory_topics', 'shared_inputs']) {
       const key = 'content-backfill:' + suffix; if (state.complete.includes(key)) continue;
       let q: Query = data.collection(suffix).orderBy(FieldPath.documentId()).limit(5);
       if (state.after[key]) q = q.startAfter(state.after[key]);
@@ -209,7 +209,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       if (stage === 'voice_assets' || stage === 'chat_file_assets') q = q.where('cleanupState','in',['pending','unlinked']);
       if (stage === 'avatar_cleanup') q = q.where('complete', '==', false);
       if (stage === 'handover_exports' || stage === 'handover_uploads') q = q.where('cleaned', '==', false);
-      if (stage === 'content_erasures') q = q.where('stage', 'in', ['revisions', 'receipts']);
+      if (stage === 'content_erasures') q = q.where('stage', 'in', ['revisions', 'source_history', 'receipts']);
       if (stage === 'context_versions') q = q.where('summaryPending', '==', true);
       if (stage === 'work_watches') q = q.where('enabled', '==', true);
       if (stage === 'erasures') q = q.where('state', 'in', ['requested', 'blocked', 'cleaning']);
