@@ -4541,3 +4541,7 @@ Server-only 投影保留結構化批次，由 Gateway 按完整包裝及實際 n
 原 `tsconfig.server.json` 完整 noEmit 零診斷；22 個完整測試檔逐檔精確 192／192、CI 契約 6／6 通過，失敗／取消／跳過／TODO 全為零。新 delivery 全鏈 11 項、Runtime 20 項及原 durable、撤權、來源刪除、session／restore 邊界均在本批範圍。先紅後綠證據、曾失敗的 fixture transaction 順序及測試型別窄化修正均保留，詳見[驗證證據](artifacts/verification/REQ005_PROJECTION_ROOT_FIX_20261104.json)。對 master 的 diff whitespace 檢查通過；未改測試根、排除、工具鏈或網絡隔離 guard。
 
 本機仍無建立指定 network namespace 的權限，沒有把分開執行的合成檢查稱為完整隔離 helper 通過；精確遠端 head 的 GitHub Actions 仍須另查。未調用真模型、正式家庭資料、設備、網站或部署，亦不把本補修當作 REQ-005 整體完成。其他尚未合併 PR 的新修訂須在後續整合另核。
+
+## 2026-11-04｜完整文件及備診的預設選期
+
+選一週時，跨期報告整份略過，入選的待辦仍可隨包交接。原版本、正文、來源與備診的時區邊界已作[本機核對](artifacts/verification/P4_HANDOVER_DOCUMENT_PERIOD_20261104.json)。匯出前讓家長逐份檢視及調整是新增需求，仍待接線。未部署。
