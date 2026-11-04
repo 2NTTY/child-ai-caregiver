@@ -4,6 +4,8 @@
 
 ## 目前與接手
 
+- **11 月 5 日 03:38（香港）** 原站 API、worker、Web 已更新至 `88ce04f7`。管理員可在網站查看指定來源及分頁檢查紀錄。Google／Apple 快捷登入仍缺原站 provider 配置。[知識管理發布紀錄](artifacts/verification/P4_KNOWLEDGE_ADMIN_DELIVERY_20261105.json)
+
 - **11 月 5 日 03:19（香港）** 原站 API／worker 已更新至 `3fb14dc1`，Web 維持 `cbd8101e`。單筆私人來源刪除會寫獨立日誌；新成長報告可比較期間內各段已保存筆數。合成還原與站外健康讀回已核，真備份還原和手機分享仍待驗。[刪除重放與報告發布](artifacts/verification/P4_SOURCE_ERASURE_REPORT_TRENDS_20261105.json)
 
 - **原站更新（11 月 5 日）。** `cbd8101e` 已交付孩子頭像原件還原與上載收據清單。合成流程已核對原 JPEG、來源、範圍及跨帳戶隔離。原生大型包尚待新 binary 的設備驗收。[本批交付證據](artifacts/verification/P4_UPLOAD_HISTORY_CHILD_AVATAR_20261105.json)

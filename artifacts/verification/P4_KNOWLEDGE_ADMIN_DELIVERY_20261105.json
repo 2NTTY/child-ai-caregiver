@@ -1,0 +1,44 @@
+{
+  "commit": "88ce04f7c50930f814b2d3a6ad0fb30765088966",
+  "pullRequests": [
+    469,
+    470
+  ],
+  "observedAt": "2026-11-05T03:38:01+08:00",
+  "local": [
+    "Admin HTTP and real Firestore store with a serial fixture: bounded pagination with equal timestamps, session switch and access denial.",
+    "Web-only owner: explicit reads, pagination, failure recovery and delayed response after sign-out. Both affected TypeScript projects passed."
+  ],
+  "candidate": {
+    "sourceDefinitions": 7,
+    "checkRecordsOnFirstPage": 20,
+    "access": "Existing production Firestore, read-only; no new indexes."
+  },
+  "release": {
+    "host": "ex-machina.eu.org",
+    "apiWorkerImage": "sha256:e61587efe4a9fad73d0db0434dfc1987bf18b79a4bdf7ce808a51ecd933a2ab2",
+    "webImage": "sha256:07950ef0b3813cffcdc2e1797ca2d6d2de402a2ee6a17f7bb0aa3403c7597145",
+    "apiDeltaSha256": "7810e885469f423f690dca9071d23b2978c134f72cbe49f09f4d72ae9e53a742",
+    "webBundleSha256": "e96da2ce2c41216f6f01053c9db096dc1a2edb96763d0de3841920a2e0e587b0",
+    "webEntrySha256": "2a20970b57fe4c6168aa9c890dd0fa628b0c455a9fdc0ad8f2d5573e4668b9c8",
+    "publicHealth": 200,
+    "anonymousKnowledgeStatus": 401,
+    "legacyPostgresContainer": "exited",
+    "activeAgentLeases": 0,
+    "activeOutbox": 0,
+    "existingUnknownBackground": 1
+  },
+  "authReadOnly": {
+    "observedAt": "2026-11-05T03:30:16+08:00",
+    "emailPassword": true,
+    "allowDuplicateEmails": false,
+    "productDomainAuthorized": true,
+    "google.com": "provider configuration not found (404)",
+    "apple.com": "provider configuration not found (404)"
+  },
+  "pending": [
+    "Signed-in production browser acceptance",
+    "Large-scale knowledge import, rebuild, migration and operational acceptance",
+    "Provider setup and same-UID/relay acceptance"
+  ]
+}
