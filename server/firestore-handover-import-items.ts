@@ -32,7 +32,7 @@ import { makeImportProvenance } from './handover-provenance.ts';
 import { historyModule, sourceHistoryRecordSchema, sourceHistoryExport, sourceHistoryId } from './handover-history-records.ts';
 import { parseHistoryRow, prepareSourceHistory, sourceHistoryVisible, validateSourceHistory } from './handover-source-history.ts';
 import { handoverSourceIdentitySchema, handoverImportItemSchema, handoverImportMappingSchema,
-  handoverImportResolutionSchema, handoverImportItemId, readImportMapping,
+  handoverImportResolutionSchema, handoverImportItemId, readImportMapping, supportsOriginalSection,
   handoverImportItemMetadata, handoverImportMappingMetadata, handoverImportItemSection,
   type HandoverImportItem, type HandoverImportMapping, type HandoverImportResolution } from './handover-import-records.ts';
 
@@ -209,7 +209,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       }
       if (raw.restoreOriginal) {
         if (target.spaceId || b.sharedAccess || source.accountId !== userId || source.childId !== target.childId
-          || !['care', 'profile', 'tasks', 'private_sources', 'documents', 'visit_preparation', 'child_avatar', 'concerns', 'instructions'].includes(section) || raw.row.section !== section || sourceValue === null
+          || !supportsOriginalSection(section) || raw.row.section !== section || sourceValue === null
           || section === 'private_sources' && raw.row.value.ownerUserId !== userId)
           domainReject('invalid_import_target', 403);
         if (section === 'child_avatar') {

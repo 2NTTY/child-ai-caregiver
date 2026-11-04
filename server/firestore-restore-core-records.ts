@@ -7,7 +7,7 @@ import { importConfirmationActor } from './handover-provenance.ts';
 import { sourceHistoryRecordSchema, sourceHistoryId, sourceHistoryMetadata } from './handover-history-records.ts';
 import { validateSourceHistory } from './handover-source-history.ts';
 import { handoverImportItemSchema, handoverImportMappingSchema, handoverImportItemId, handoverImportMappingId,
-  handoverImportItemMetadata, handoverImportMappingMetadata } from './handover-import-records.ts';
+  handoverImportItemMetadata, handoverImportMappingMetadata, validOriginalMapping } from './handover-import-records.ts';
 import { firestoreCareStorageSchema as firestoreCareSchema, firestoreProfileStorageSchema as firestoreProfileSchema, firestoreCareRecoverySchemas } from './firestore-care.ts';
 import { validSharedAttribution } from './shared-write-attribution.ts';
 import { firestoreFactStorageSchema as firestoreFactSchema, firestoreTopicStorageSchema as firestoreTopicSchema, firestoreMemoryRecoverySchemas, validMemoryFactAttribution } from './firestore-memory.ts';
@@ -97,9 +97,7 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   if (kind === 'handover-import-mapping') {
     const value = handoverImportMappingSchema.parse(raw);
     requireValue(id === handoverImportMappingId(scope, value.source, value.restoreOriginal) && recordVersion === value.revision);
-    if (value.restoreOriginal) requireValue(value.source.accountId === scope.ownerUserId && value.source.childId === scope.childId
-      && ['care', 'profile', 'tasks'].includes(value.source.section)
-      && (value.source.section === 'care' || value.target.id === value.source.resourceId));
+    if (value.restoreOriginal) requireValue(validOriginalMapping(scope, value));
     return handoverImportMappingMetadata(value);
   }
   if (kind === 'content-erasure') {

@@ -26,6 +26,16 @@ export const handoverImportMappingSchema = z.object({ source: handoverSourceIden
   revision: version.min(1), operationId: uuid, importedAt: time,
 }).strict();
 export type HandoverImportMapping = z.infer<typeof handoverImportMappingSchema>;
+const originalSections = new Set<HandoverSourceIdentity['section']>(['care', 'profile', 'tasks', 'private_sources',
+  'documents', 'visit_preparation', 'child_avatar', 'concerns', 'instructions']);
+export function supportsOriginalSection(section: HandoverSourceIdentity['section']) { return originalSections.has(section); }
+export function validOriginalMapping(scope: WorkRecoveryScope, { source, target }: HandoverImportMapping): boolean {
+  if (source.accountId !== scope.ownerUserId || source.childId !== scope.childId || !supportsOriginalSection(source.section)) return false;
+  if (source.section === 'profile' || source.section === 'child_avatar' || source.section === 'visit_preparation')
+    return source.resourceId === scope.childId && target.id === scope.childId;
+  // A deleted record/source can have a new ID. A bounded concern slice points back to its original timeline.
+  return source.section === 'care' || source.section === 'private_sources' || source.section === 'concerns' || target.id === source.resourceId;
+}
 export function handoverImportItemId(scope: WorkRecoveryScope, opId: string) {
   return JSON.stringify([scope.ownerUserId, scope.workspaceId, scope.childId, opId]);
 }
@@ -38,7 +48,8 @@ export async function readImportMapping(data: FirestoreDomainData, binding: Fire
   const mappingRef = data.ref('handover_import_mappings', 'handover-import-mapping', mappingId);
   const snapshot = await binding.transaction.get(mappingRef);
   const mapping = snapshot.exists ? data.open('handover-import-mapping', mappingId, binding.scope, handoverImportMappingSchema, snapshot) : null;
-  if (mapping && (mapping.restoreOriginal !== restoreOriginal || firestoreDomainHash(mapping.source) !== firestoreDomainHash(source)
+  if (mapping && (mapping.restoreOriginal !== restoreOriginal || mapping.restoreOriginal && !validOriginalMapping(binding.scope, mapping)
+    || firestoreDomainHash(mapping.source) !== firestoreDomainHash(source)
     || mapping.revision !== snapshot.get('recordVersion'))) domainReject('import_mapping_binding', 500);
   return { mappingId, mappingRef, mapping };
 }

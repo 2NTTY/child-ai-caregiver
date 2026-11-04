@@ -15,6 +15,9 @@ import { createFirestoreChatStore } from '../server/firestore-chat.ts';
 import { createFirestoreMemoryStore } from '../server/firestore-memory.ts';
 import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
 import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.ts';
+import { assertFirestoreRestoreContent } from '../server/firestore-restore-content.ts';
+import { handoverImportItemId, handoverImportMappingId, handoverImportMappingMetadata, handoverImportMappingSchema,
+  type HandoverImportMapping } from '../server/handover-import-records.ts';
 import { createFirebaseHandoverObjects } from '../server/firebase-handover-objects.ts';
 import { createHandoverUploadService } from '../server/handover-upload-service.ts';
 import { createHandoverImportService } from '../server/handover-import-service.ts';
@@ -162,5 +165,51 @@ test('signed own instruction backups restore only the pinned original once with 
       resolution: { mode: 'replace_current', targetId: foreign.id, expectedVersion: foreign.version } }] };
     await assert.rejects(service.create('parent', foreignTarget, controller.signal), { code: 'invalid_input' });
     assert.deepEqual(await read('parent', original.id), restored); assert.deepEqual(await read('other', foreign.id), foreign);
+
+    const mapping = await authority.runTransaction('parent', childId, async b => {
+      const source = { serverId, accountId: 'parent', childId, section: 'instructions' as const, resourceId: original.id };
+      const id = handoverImportMappingId(b.scope, source, true), ref = data.ref('handover_import_mappings', 'handover-import-mapping', id);
+      const row = await b.transaction.get(ref); assert.equal(row.exists, true, 'The real restore worker must have written the original mapping');
+      return { scope: b.scope, record: { path: ref.path, data: row.data()! },
+        value: data.open('handover-import-mapping', id, b.scope, handoverImportMappingSchema, row) };
+    });
+    function encodedMapping(value: HandoverImportMapping) {
+      const id = handoverImportMappingId(mapping.scope, value.source, value.restoreOriginal);
+      return { path: data.ref('handover_import_mappings', 'handover-import-mapping', id).path,
+        data: { ...data.tags(mapping.scope), ...handoverImportMappingMetadata(value),
+          ...data.seal('handover-import-mapping', id, mapping.scope, handoverImportMappingSchema, value, value.revision) } };
+    }
+    function roundTrip(record: { path: string; data: unknown }) {
+      const decoded = codec.decode(record), epoch = randomUUID();
+      const transformed = codec.transform(decoded, { generation: randomUUID(),
+        newEpochByWorkspace: new Map([[mapping.scope.workspaceId, epoch]]), photoDescriptors: new Map() });
+      const reopened = codec.decode(transformed);
+      assert.ok(reopened.context.family === 'domain');
+      assert.equal(reopened.context.scope.storageEpoch, epoch);
+      assert.notEqual(reopened.context.scope.storageEpoch, mapping.scope.storageEpoch);
+      return handoverImportMappingSchema.parse(reopened.value);
+    }
+    const legacyCare = handoverImportMappingSchema.parse({ ...mapping.value, source: { ...mapping.value.source, section: 'care' } });
+    assert.deepEqual(roundTrip(encodedMapping(legacyCare)), legacyCare, 'An existing enabled original-mapping partition remains compatible');
+    for (const invalid of [
+      { ...mapping.value, source: { ...mapping.value.source, accountId: 'other' } },
+      { ...mapping.value, source: { ...mapping.value.source, childId: otherChild } },
+      { ...mapping.value, source: { ...mapping.value.source, section: 'memory_facts' } },
+      { ...mapping.value, target: { ...mapping.value.target, id: foreign.id } },
+    ]) {
+      assert.throws(() => codec.decode(encodedMapping(handoverImportMappingSchema.parse(invalid))), { code: 'restore_binding' },
+        'Encryption alone does not authorize a foreign source, disabled original partition or substituted target');
+    }
+    const restoredMapping = roundTrip(mapping.record);
+    assert.deepEqual(restoredMapping, mapping.value, 'Original instruction mappings survive encrypted restore and epoch rebinding without losing their source or operation');
+    assert.equal(restoredMapping.operationId, mapping.value.operationId);
+    assert.equal(restoredMapping.source.resourceId, original.id);
+    assert.deepEqual(restoredMapping.target, { id: original.id, version: restored.version });
+    const receiptPath = data.ref('handover_import_items', 'handover-import-item',
+      handoverImportItemId(mapping.scope, restoredMapping.operationId)).path;
+    const receiptRow = codec.decode({ path: receiptPath, data: fixture.records.get(receiptPath)! });
+    assert.doesNotThrow(() => assertFirestoreRestoreContent([codec.decode(mapping.record), receiptRow]));
+    const changedHash = encodedMapping({ ...restoredMapping, sourceHash: '0'.repeat(64) });
+    assert.throws(() => assertFirestoreRestoreContent([codec.decode(changedHash), receiptRow]), { code: 'restore_content_binding' });
   } finally { controller.abort(); await rm(directory, { recursive: true, force: true }); }
 });
