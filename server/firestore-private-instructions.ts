@@ -62,15 +62,18 @@ export function createFirestorePrivateInstructions(data: FirestoreDomainData) {
   }
   return { read, byKey, keyId, prepareWrite,
     async prepareImported(b: Binding, operationId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
-      current?: { id: string; expectedVersion: number }) {
+      current?: { id: string; expectedVersion: number }, restoreOriginal?: true) {
       if (row.section !== 'instructions') domainReject('invalid_package_data', 400);
       const source = domainParse(firestorePrivateInstructionSchema, row.value, 'invalid_package_data', 400);
+      if (restoreOriginal && (!current || current.id !== source.id || source.childId !== b.scope.childId
+        || row.source.accountId !== b.actorUserId || b.scope.ownerUserId !== b.actorUserId || b.sharedAccess))
+        domainReject('invalid_import_target', 403);
       const previous = current ? await read(b, current.id) : null;
       if (current && (!previous || previous.version !== current.expectedVersion)) domainReject('version_conflict');
       const at = new Date().toISOString(), importedFrom = makeImportProvenance(row, integrity, b.actorUserId, at);
       return prepareWrite(b, operationId, { ...source, id: previous?.id ?? randomUUID(), childId: b.scope.childId,
         version: (previous?.version ?? 0) + 1, sourceMessageId: null, provenance: 'imported_source', importedFrom,
-        createdAt: previous?.createdAt ?? source.createdAt, updatedAt: memoryUpdateDate('instructions', source) ?? at }, previous);
+        createdAt: previous?.createdAt ?? source.createdAt, updatedAt: restoreOriginal ? at : memoryUpdateDate('instructions', source) ?? at }, previous);
     },
   };
 }

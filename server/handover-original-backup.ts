@@ -11,6 +11,7 @@ import { createFirestoreAvatarData } from './firestore-avatar-data.ts';
 import { createFirestoreAuthority } from './firestore-authority.ts';
 import { createFirestoreCareStore, firestoreCareSchema, firestoreProfileSchema } from './firestore-care.ts';
 import { createFirestoreConcernStore, concernTransferSchema } from './firestore-concerns.ts';
+import { createFirestorePrivateInstructions, firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
 import { familyDocumentTransferSchema } from './family-document-transfer.ts';
@@ -78,6 +79,7 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
   const documents = createFirestoreFamilyDocumentStore(options), preparations = createFirestoreCareSummary(options, care);
   const avatars = createFirestoreAvatarData(options);
   const concerns = createFirestoreConcernStore(options);
+  const instructions = createFirestorePrivateInstructions(data);
   return async function compare(owner: string, raw: unknown, signal: AbortSignal): Promise<OriginalBackupComparison> {
     const input = domainParse(originalBackupComparisonQuerySchema, raw);
     if (!options.originalBackup) domainReject('package_original_unavailable', 503);
@@ -94,7 +96,8 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
         try { cursor = cursorSchema.parse(JSON.parse(options.cipher.decrypt(Buffer.from(input.cursor, 'base64url').toString(), aad))); }
         catch { domainReject('invalid_package_cursor', 400); }
       }
-      const section = input.module === 'sources' ? 'private_sources' : input.module === 'attachments' ? 'child_avatar' : input.module;
+      const section = input.module === 'sources' ? 'private_sources' : input.module === 'attachments' ? 'child_avatar'
+        : input.module === 'memory' ? 'instructions' : input.module;
       const page = await reader.readPage({ selection: { childIds: [input.childId], modules: [input.module] },
         sections: section === 'documents' ? ['documents', 'visit_preparation'] : [section], acknowledgedManifestSha256: reader.manifestSha256,
         cursor: cursor?.page, limit: section === 'documents' ? 3 : section === 'concerns' ? 2 : 20 });
@@ -143,6 +146,22 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
             continue;
           }
           if (row.section !== section) domainReject('invalid_package_scope', 400);
+          if (section === 'instructions') {
+            const backup = domainParse(firestorePrivateInstructionSchema, row.value, 'invalid_package_data', 400);
+            if (backup.childId !== input.childId) domainReject('invalid_package_scope', 400);
+            const id = backup.id, live = await instructions.read(binding, id);
+            const { mapping } = await readImportMapping(data, binding, { ...manifest.source, childId: input.childId, section, resourceId: id }, true);
+            const available = live && (!mapping || mapping.target.id === id);
+            const restored = available && mapping?.target.version === live.version && mapping.sourceVersion === backup.version
+              && mapping.sourceHash === firestoreDomainHash(row.value);
+            const changedFields = available && !restored ? (['title', 'text', 'memoryKey', 'provenance', 'sourceMessageId', 'importedFrom'] as const)
+              .filter(key => canonicalJson(live[key]) !== canonicalJson(backup[key])) : [];
+            const state = !available ? 'unavailable' : restored ? 'unchanged' : live.version > backup.version ? 'local_newer'
+              : live.version < backup.version ? 'backup_newer' : changedFields.length ? 'different' : 'unchanged';
+            items.push({ id, resourceSection: section, ...(input.includeRestoreTarget && available ? { targetId: id } : {}),
+              backupVersion: backup.version, localVersion: live?.version ?? null, state, changedFields });
+            continue;
+          }
           if (section === 'concerns') {
             const backup = concernTransferSchema.parse(row.value), events = concernEvents[rowIndex]!;
             if (backup.childId !== input.childId) domainReject('invalid_package_scope', 400);

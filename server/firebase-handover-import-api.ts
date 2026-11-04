@@ -15,11 +15,13 @@ export async function handleHandoverImport(request: Request, owner: string, serv
   try {
     if (request.method === 'GET' && url.pathname === root + '/capabilities') {
       const classFeatures = (request.headers.get('x-handover-class-features') ?? '').split(/[\s,]+/u);
+      const originalFeatures = (request.headers.get('x-handover-original-features') ?? '').split(/[\s,]+/u);
       return respond({ classEnrolment: true,
         ...(classFeatures.includes('concerns') ? { classConcernImports: true } : {}),
         ...(classFeatures.includes('growth') ? { classGrowthImports: true } : {}),
         ...(request.headers.get('x-handover-original-modules') === '1' ? { originalModules: service.originalModules.filter(module =>
-          module !== 'concerns' || (request.headers.get('x-handover-original-features') ?? '').split(/[\s,]+/u).includes('concerns')) } : {}),
+          (module !== 'concerns' || originalFeatures.includes('concerns'))
+          && (module !== 'memory' || originalFeatures.includes('private-instructions'))) } : {}),
         ...(service.accountAvatarRestore && request.headers.get('x-handover-account-backup') === '1'
         ? { accountAvatarRestore: true } : {}) });
     }
