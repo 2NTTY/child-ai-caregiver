@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { handoverDocumentChoiceSchema, handoverDocumentPinSchema, handoverDocumentSectionSchema, handoverSelectionSchema, validHandoverDocumentPins } from './handover.ts';
 
 const scopeVersion = z.string().regex(/^[a-f0-9]{64}$/u);
+export const HANDOVER_EXPORT_COMMAND_BYTES = 256 * 1024;
 export const handoverPreviewQuerySchema = z.object({ section: handoverDocumentSectionSchema,
   childId: z.uuid(), period: handoverSelectionSchema.shape.period, scopeVersion: scopeVersion.optional(), cursor: z.string().min(1).max(2048).optional(),
 }).strict().refine(value => (!value.cursor || !!value.scopeVersion) && (!value.period || Date.parse(value.period.from) <= Date.parse(value.period.to)));

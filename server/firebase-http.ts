@@ -1,6 +1,7 @@
 import { CHAT_FILE_UPLOAD_BODY_BYTES } from './firebase-chat-files-api.ts';
 import { VOICE_UPLOAD_BODY_BYTES } from './firebase-voice-api.ts';
 import { HANDOVER_UPLOAD_MAX_BYTES } from '../src/shared/handover-uploads.ts';
+import { HANDOVER_EXPORT_COMMAND_BYTES } from '../src/shared/handover-jobs.ts';
 import { domainReject } from './firestore-domain-data.ts';
 import { nativeRequestContext, requestOriginAllowed } from "./request-auth-transport.ts";
 import { Readable } from 'node:stream';
@@ -88,7 +89,8 @@ export function createFirebaseNodeHandler(options: {
       const maximum = streamingPackage ? HANDOVER_UPLOAD_MAX_BYTES : method === 'POST' && photoContent.test(pathname) ? MAX_PHOTO_BODY_BYTES
         : method === 'POST' && voiceContent.test(pathname) ? VOICE_UPLOAD_BODY_BYTES
         : method === 'POST' && fileContent.test(pathname) ? CHAT_FILE_UPLOAD_BODY_BYTES
-        : method === 'POST' && documentWrite.test(pathname) ? MAX_DOCUMENT_BODY_BYTES : MAX_BODY_BYTES;
+        : method === 'POST' && documentWrite.test(pathname) ? MAX_DOCUMENT_BODY_BYTES
+        : method === 'POST' && pathname === '/api/account/packages' ? HANDOVER_EXPORT_COMMAND_BYTES : MAX_BODY_BYTES;
       const length = headers.get('content-length');
       if (length !== null && (!/^\d+$/u.test(length) || Number(length) > maximum)) throw new BodyTooLarge();
       if (method === 'POST' && !webhook && !requestOriginAllowed(headers, options.publicOrigin)
