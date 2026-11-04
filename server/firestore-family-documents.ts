@@ -63,7 +63,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
   readExportMetadata(userId: string, childId: string, id: string, onCurrent?: (snapshot: DocumentSnapshot | null) => void): Promise<FamilyDocumentTransfer | null>;
   readImportState(binding: FirestoreAuthorityTransaction, id: string): Promise<{ value: FamilyDocumentTransfer | null; version: number }>;
   prepareImported(binding: FirestoreAuthorityTransaction, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
-    currentSnapshot: DocumentSnapshot | null, current?: { id: string; expectedVersion: number }): Promise<{
+    currentSnapshot: DocumentSnapshot | null, current?: { id: string; expectedVersion: number }, restoreOriginal?: true): Promise<{
       value: { id: string; version: number }; changeSeq: string; commit(): void }>;
   prepareImportedRevision(binding: FirestoreAuthorityTransaction, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     target: { id: string; expectedVersion: number }): Promise<{ outcome: 'created' | 'skipped' | 'conflict'; snapshotId: string; changeSeq?: string; commit?: () => void }>;
@@ -244,8 +244,11 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
     uuid.parse(childId); return runDocumentTransaction(userId, childId, binding => operation(binding, { ...binding.scope }));
   }
   async function transfer(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, row: Metadata, onCurrent?: (snapshot: DocumentSnapshot | null) => void) {
-    const loaded = await sources(binding, scope), values = await bodies(binding, scope, row);
-    await supplement(binding, scope, loaded, [...(values.current ? [values.current] : []), ...values.history]);
+    const loaded = await sources(binding, scope);
+    const current = row.currentId ? await snapshots.read(binding.transaction, scope, row.id, row.currentId) : null;
+    if (row.currentId && !current) domainReject('snapshot_binding', 500);
+    const values = { current, history: [] as DocumentSnapshot[] };
+    await supplement(binding, scope, loaded, current ? [current] : []);
     const item = safe(row, loaded, values);
     onCurrent?.(item.current);
     return familyDocumentTransferSchema.parse({ format: 'yuyoufang-document:1', id: row.id, childId: row.childId,
@@ -271,7 +274,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
       uuid.parse(id); const scope = await child(binding, binding.scope.childId), row = await find(binding, scope, id);
       return { value: row ? await transfer(binding, scope, row) : null, version: row?.version ?? 0 };
     },
-    async prepareImported(binding, opId, raw, integrity, rawSnapshot, current) {
+    async prepareImported(binding, opId, raw, integrity, rawSnapshot, current, restoreOriginal) {
       uuid.parse(opId);
       if (raw.section !== 'documents') reject('invalid_package_data', 400);
       const source = domainParse(familyDocumentTransferSchema, raw.value, 'invalid_package_data', 400);
@@ -281,8 +284,39 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
         || body.version !== source.currentSnapshot.version) || source.currentSnapshot === null && body) reject('invalid_package_data', 400);
       if (body && body.sections.some(section => section.items.some(item => item.sourceIds.some(id => !body.sources.some(value => value.id === id)))))
         reject('invalid_package_data', 400);
-      const scope = await child(binding, binding.scope.childId), previous = current ? await find(binding, scope, current.id) : null;
+      const scope = await child(binding, binding.scope.childId);
+      if (restoreOriginal && (!current || binding.sharedAccess || binding.actorUserId !== scope.ownerUserId
+        || raw.source.accountId !== scope.ownerUserId || raw.childId !== scope.childId || source.id !== current.id)) reject('document_changed');
+      const previous = current ? await find(binding, scope, current.id) : null;
       if (current && (!previous || previous.version !== current.expectedVersion || previous.version >= 2147483647)) reject('document_changed');
+      if (restoreOriginal) {
+        if (!previous || source.request.kind !== previous.request.kind || source.request.purpose !== previous.request.purpose
+          || previous.progress && previous.progress.stage !== 'done') reject('document_changed');
+        // A saved shared-source selection belongs to its original actor/basis. Do not broaden it to an owner read.
+        if (previous.sourceSelection || !body) reject('document_source_changed');
+        const loaded = await sources(binding, scope);
+        const local = await snapshots.read(binding.transaction, scope, previous.id, body.id, body.version);
+        const snapshot: DocumentSnapshot = { ...structuredClone(body), id: randomUUID(), version: previous.version + 1 };
+        // Detached evidence can only come from the exact, already saved local snapshot manifest.
+        if (local && fingerprint(local) === fingerprint(body)) snapshots.inheritCopy(snapshot, local);
+        await supplement(binding, scope, loaded, [snapshot]);
+        const period = source.request.kind === 'growth_report' ? effectiveReportRequest(source.request).period : source.request.period;
+        if (fingerprint(body.period) !== fingerprint(period) || !documentSnapshotValid(snapshot, loaded)
+          || source.request.kind === 'growth_report' && (!body.reportCoverage
+            || body.reportCoverage.mode !== (source.request.reportMode ?? 'fixed')
+            || body.reportCoverage.periodKind !== reportPeriodKind(period))) reject('document_source_changed');
+        if (source.status === 'active') await activeCount(binding, scope, source.request, previous.id);
+        const row: Metadata = { ...previous, version: snapshot.version, request: source.request, currentId: snapshot.id,
+          historyIds: [...(previous.currentId ? [previous.currentId] : []), ...previous.historyIds].slice(0, 10),
+          status: source.status, archivedAt: source.archivedAt };
+        const prepared = snapshots.prepare(scope, row.id, snapshot);
+        const change = await binding.prepareChange(opId, 'documents', false, scope.childId);
+        const envelope = { ...data.tags(scope), documentId: row.id, status: row.status, createdAt: row.createdAt, autoRefresh: row.autoRefresh,
+          ...data.seal('family-document', row.id, scope, metadataSchema, row, row.version) };
+        return { value: { id: row.id, version: row.version }, changeSeq: change.changeSeq, commit() {
+          change.commit(); prepared.commit(binding.transaction); binding.transaction.set(data.ref('documents', 'family-document', row.id), envelope);
+        } };
+      }
       if (source.status === 'active') await activeCount(binding, scope, source.request, previous?.id);
       const at = new Date().toISOString(), id = previous?.id ?? randomUUID();
       if (!previous && (await binding.transaction.get(data.ref('documents', 'family-document', id))).exists) reject('document_changed');

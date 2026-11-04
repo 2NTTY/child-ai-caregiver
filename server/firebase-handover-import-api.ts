@@ -14,7 +14,9 @@ export async function handleHandoverImport(request: Request, owner: string, serv
     headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie, Authorization' } }); };
   try {
     if (request.method === 'GET' && url.pathname === root + '/capabilities')
-      return respond({ classEnrolment: true, ...(service.accountAvatarRestore && request.headers.get('x-handover-account-backup') === '1'
+      return respond({ classEnrolment: true,
+        ...(request.headers.get('x-handover-original-modules') === '1' ? { originalModules: service.originalModules } : {}),
+        ...(service.accountAvatarRestore && request.headers.get('x-handover-account-backup') === '1'
         ? { accountAvatarRestore: true } : {}) });
     if (request.method === 'GET' && url.pathname === root) {
       const entries = [...url.searchParams];

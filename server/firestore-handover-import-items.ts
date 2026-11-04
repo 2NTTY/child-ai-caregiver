@@ -95,7 +95,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
     const memoryState = mapping && (section === 'memory_facts' || section === 'memory_topics')
       ? await memory.readImportState(b, section === 'memory_facts' ? 'facts' : 'topics', mapping.target.id) : null;
     const sourceState = knownId && section === 'private_sources' ? await sources.readImportState(b, knownId) : null;
-    const documentState = mapping && section === 'documents' ? await documents.readImportState(b, mapping.target.id) : null;
+    const documentState = knownId && section === 'documents' ? await documents.readImportState(b, knownId) : null;
     const preparationState = section === 'visit_preparation' ? await preparations.readImportState(b) : null;
     const attachmentState = isHandoverAttachment(section) && (mapping || section === 'child_avatar')
       ? await attachments.readState(b, section, mapping?.target.id ?? b.scope.childId) : null;
@@ -113,8 +113,8 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       : attachmentState ? attachmentState.value
       : preparationState ? preparationState.value
       : section === 'care' ? careState?.value ?? null : section === 'tasks' && knownId ? await online.readImportTask(b, b.scope.childId, knownId)
-      : sourceState ? sourceState.value : !mapping ? null
-      : documentState ? documentState.value : memoryState ? memoryState.value : section === 'instructions' ? await notes.read(b, mapping.target.id) : await memory.readImportedSummary(b, mapping.target.id);
+      : sourceState ? sourceState.value : documentState ? documentState.value : !mapping ? null
+      : memoryState ? memoryState.value : section === 'instructions' ? await notes.read(b, mapping.target.id) : await memory.readImportedSummary(b, mapping.target.id);
     const currentVersion = current?.version ?? careState?.version ?? memoryState?.version ?? sourceState?.version ?? attachmentState?.version ?? 0;
     const currentId = current ? 'id' in current ? current.id : current.childId : knownId ?? (section === 'profile' || section === 'visit_preparation' || section === 'child_avatar' ? b.scope.childId : null);
     const originalTombstone = restoreOriginal && (careState || sourceState) && !current && currentVersion > 0;
@@ -202,7 +202,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       }
       if (raw.restoreOriginal) {
         if (target.spaceId || b.sharedAccess || source.accountId !== userId || source.childId !== target.childId
-          || !['care', 'profile', 'tasks', 'private_sources'].includes(section) || raw.row.section !== section || sourceValue === null
+          || !['care', 'profile', 'tasks', 'private_sources', 'documents', 'visit_preparation'].includes(section) || raw.row.section !== section || sourceValue === null
           || section === 'private_sources' && raw.row.value.ownerUserId !== userId)
           domainReject('invalid_import_target', 403);
         // A missing original is not a confirmed removal. Only the domain tombstone permits revival.
@@ -355,18 +355,27 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       }
       if (section === 'documents') {
         const content = raw.documentContent ? domainParse(documentTransferContentSchema, raw.documentContent, 'invalid_package_data') : null;
-        const prepared = await documents.prepareImported(b, opId, raw.row, raw.integrity, content?.snapshot ?? null,
-          current ? { id: currentId!, expectedVersion: currentVersion } : undefined);
-        return finish(current ? 'updated' : 'created', null, prepared.value, prepared);
+        try {
+          const prepared = await documents.prepareImported(b, opId, raw.row, raw.integrity, content?.snapshot ?? null,
+            current ? { id: currentId!, expectedVersion: currentVersion } : undefined, raw.restoreOriginal);
+          return finish(current ? 'updated' : 'created', null, prepared.value, prepared);
+        } catch (error) {
+          const code = (error as { code?: string }).code;
+          if (raw.restoreOriginal && code && ['document_source_changed', 'document_changed', 'document_limit', 'report_exists'].includes(code))
+            return finish('conflict', code);
+          throw error;
+        }
       }
       if (section === 'visit_preparation') {
         const sourcePreparation = domainParse(firestorePreparationSchema, raw.row.value, 'invalid_package_data');
         const mayReadTasks = !b.sharedAccess || b.sharedAccess.modules?.includes('tasks');
         const task = sourcePreparation.appointmentTaskId && mayReadTasks
-          ? await readState(b, 'tasks', { ...source, section: 'tasks', resourceId: sourcePreparation.appointmentTaskId }) : null;
+          ? await readState(b, 'tasks', { ...source, section: 'tasks', resourceId: sourcePreparation.appointmentTaskId }, raw.restoreOriginal) : null;
         const localTask = task?.current as CareTask | null | undefined;
         const appointment = localTask?.kind === 'appointment' && localTask.occurrence.state === 'scheduled'
           ? { sourceTaskId: sourcePreparation.appointmentTaskId!, targetTaskId: localTask.id, expectedVersion: localTask.version } : undefined;
+        if (raw.restoreOriginal && sourcePreparation.appointmentTaskId && (!appointment || appointment.targetTaskId !== sourcePreparation.appointmentTaskId))
+          return finish('conflict', 'appointment_changed');
         const prepared = await preparations.prepareImported(b, opId, raw.row, raw.integrity, currentVersion, appointment);
         return finish(current ? 'updated' : 'created', null, prepared.value, prepared);
       }
