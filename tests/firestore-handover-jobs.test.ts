@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { serialFirestoreFixture } from './helpers/firestore-session-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestoreHandoverJobs } from '../server/firestore-handover-jobs.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { Readable, Writable } from 'node:stream';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
@@ -39,6 +39,7 @@ test('export requests persist one original job and outbox, reject changed retrie
   const beforeRequest = snapshot();
   const command = { opId: randomUUID(), purpose: 'backup' as const, selection: { childIds: [childId], modules: ['care' as const, 'attachments' as const], period: null } };
   const created = await jobs.create(userId, command);
+  assert.equal(await jobs.matchesIssuedBackup(userId, created.id, 'a'.repeat(64), 'b'.repeat(64)), false, 'queued work is not issued backup proof');
   const beforeUpload = snapshot();
   assert.equal(created.state, 'queued'); assert.equal(created.id, command.opId);
   assert.deepEqual(await jobs.create(userId, command), created);
@@ -118,11 +119,23 @@ test('export requests persist one original job and outbox, reject changed retrie
     currentUser = 'another-user'; assert.notEqual((await request('/' + created.id)).status, 200);
     currentUser = null; assert.equal((await request('')).status, 401); currentUser = userId;
     const downloaded = await service.download(userId, created.id);
+    let manifestSha256: string, archiveSha256: string;
     try {
       const archive = await openHandoverArchive({ path: downloaded.path });
+      manifestSha256 = archive.manifestSha256;
+      archiveSha256 = createHash('sha256').update(await readFile(downloaded.path)).digest('hex');
       try { assert.equal(archive.manifest.packageId, created.id); assert.equal(archive.integrity, 'missing_proof'); }
       finally { archive.close(); }
     } finally { await downloaded.dispose(); }
+    assert.equal(await service.matchesIssuedBackup(userId, created.id, manifestSha256, archiveSha256), true);
+    assert.equal(await service.matchesIssuedBackup(userId, created.id, '0'.repeat(64), archiveSha256), false);
+    assert.equal(await service.matchesIssuedBackup(userId, created.id, manifestSha256, '0'.repeat(64)), false);
+    assert.equal(await service.matchesIssuedBackup(userId, randomUUID(), manifestSha256, archiveSha256), false);
+    const foreign = 'foreign-backup-owner', foreignEmail = 'foreign-backup-owner@example.test';
+    await authority.issueInvitation({ email: foreignEmail, operationId: randomUUID(), expiresAt: new Date(Date.now() + 86400000).toISOString() });
+    await authority.admitIdentity({ userId: foreign, email: foreignEmail, emailVerified: true });
+    await authority.acknowledge({ userId: foreign, operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+    assert.equal(await service.matchesIssuedBackup(foreign, created.id, manifestSha256, archiveSha256), false);
     const codec = createFirestoreRestoreCodec(options);
     const [path, value] = [...fixture.records.entries()].find(([path]) => path.startsWith('unit_pack_handover_exports/'))!;
     const restored = codec.transform(codec.decode({ path, data: value }), { newEpochByWorkspace: new Map([[scope.workspaceId, randomUUID()]]),
@@ -135,9 +148,11 @@ test('export requests persist one original job and outbox, reject changed retrie
       avatars.prepareHead(b, { ...head, version: head.version + 1, updatedAt: new Date().toISOString() })();
     });
     assert.equal((await service.get(userId, created.id)).error, 'export_scope_changed', 'avatar changes invalidate a ready package without changing workspace sequence');
+    assert.equal(await service.matchesIssuedBackup(userId, created.id, manifestSha256, archiveSha256), true, 'issued proof does not authorize a fresh download');
     await assert.rejects(service.download(userId, created.id), { code: 'export_scope_changed' });
     const cancel = { opId: randomUUID(), expectedVersion: ready.version };
     const cancelled = await jobs.cancel(userId, created.id, cancel);
+    assert.equal(await service.matchesIssuedBackup(userId, created.id, manifestSha256, archiveSha256), false);
     assert.equal(cancelled.state, 'cancelled');
     const restarted = createFirestoreHandoverJobs(options);
     assert.deepEqual(await restarted.get(userId, created.id), cancelled);
@@ -178,6 +193,8 @@ test('export requests persist one original job and outbox, reject changed retrie
       for (const [path, value] of targetControl.records) target.records.set(path, value);
       assert.equal((await createFirestoreHandoverJobs({ ...options, database: target.database }).get(userId, created.id)).state, 'expired',
         'original job lookup after epoch rotation returns its retired state, never its old package');
+      assert.equal(await createFirestoreHandoverJobs({ ...options, database: target.database })
+        .matchesIssuedBackup(userId, created.id, manifestSha256, archiveSha256), false);
     }
   } finally { await rm(root, { recursive: true, force: true }); }
 });

@@ -39,6 +39,16 @@ export const handoverImportCommandSchema = z.object({ opId: uuid, uploadId: uuid
   && value.resolutions.every(row => value.targets.some(target => target.sourceChildId === row.sourceChildId && target.sections.includes(handoverImportModuleOf(row.section))))
   && (!value.resolutionOnly || value.resolutions.length > 0 && value.resolutions.every(row => row.resolution.mode !== 'preserve')
     && value.targets.every(row => !('createInClassId' in row.target))));
+export const originalBackupModuleSchema = z.enum(['care', 'profile', 'tasks']);
+export const originalBackupComparisonQuerySchema = z.object({ uploadId: uuid, expectedUploadVersion: count.positive(), childId: uuid,
+  module: originalBackupModuleSchema, cursor: z.string().min(1).max(16000).optional() }).strict();
+export const originalBackupComparisonSchema = z.object({ uploadId: uuid, manifestSha256: hash, childId: uuid, module: originalBackupModuleSchema,
+  items: z.array(z.object({ id: uuid, backupVersion: resourceVersion, localVersion: resourceVersion.nullable(),
+    state: z.enum(['unchanged', 'local_newer', 'backup_newer', 'different', 'deleted', 'unavailable']),
+    changedFields: z.array(z.string().min(1).max(80)).max(64) }).strict()).max(20), nextCursor: z.string().max(16000).nullable() }).strict();
+export type OriginalBackupComparison = z.infer<typeof originalBackupComparisonSchema>;
+export type OriginalBackupComparisonQuery = z.infer<typeof originalBackupComparisonQuerySchema>;
+
 export const handoverImportControlSchema = z.object({ opId: uuid, expectedVersion: count.positive() }).strict();
 export const handoverImportViewSchema = z.object({ id: uuid, version: count.positive(), uploadId: uuid,
   packageId: uuid, packageVersion: count.positive(), manifestSha256: hash,
@@ -51,6 +61,13 @@ export const handoverImportViewSchema = z.object({ id: uuid, version: count.posi
 }).strict();
 export type HandoverImportCommand = z.infer<typeof handoverImportCommandSchema>;
 export type HandoverImportView = z.infer<typeof handoverImportViewSchema>;
+export const handoverImportModuleOutcomeSchema = z.object({ module: handoverImportSectionSchema,
+  created: count, updated: count, skipped: count, conflict: count }).strict();
+export const handoverImportSummarySchema = z.object({ batchId: uuid, state: handoverImportViewSchema.shape.state,
+  processedItems: count, totalItems: count,
+  modules: z.array(handoverImportModuleOutcomeSchema).max(10).nullable(),
+}).strict();
+export type HandoverImportSummary = z.infer<typeof handoverImportSummarySchema>;
 export const handoverImportPageSchema = z.object({ items: z.array(handoverImportViewSchema).max(20),
   nextCursor: z.string().max(2048).nullable() }).strict();
 export const handoverImportResultQuerySchema = z.object({ sourceChildId: uuid, module: handoverImportSectionSchema,

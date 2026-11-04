@@ -3,7 +3,7 @@ import { workRecoveryScopeSchema } from './firestore-work-continuation-recovery.
 import { handoverImportResolutionSchema } from './handover-import-records.ts';
 import { firestoreDomainHash } from './firestore-domain-data.ts';
 import { classImportChildId } from './firestore-sharing-records.ts';
-import { handoverImportSectionSchema, handoverImportTargetSchema, handoverImportResourceSectionSchema, handoverImportModuleOf } from '../src/shared/handover-imports.ts';
+import { handoverImportSectionSchema, handoverImportTargetSchema, handoverImportResourceSectionSchema, handoverImportModuleOf, handoverImportModuleOutcomeSchema } from '../src/shared/handover-imports.ts';
 
 const uuid = z.uuid(), hash = z.string().regex(/^[a-f0-9]{64}$/u), time = z.iso.datetime({ offset: true });
 const count = z.number().int().nonnegative().max(2147483646), text = z.string().min(1).max(256);
@@ -34,6 +34,7 @@ export const importBatchSchema = z.object({ id: uuid, version: count.min(1), sco
   request: importBatchRequestSchema, fingerprint: hash, createdAt: time, updatedAt: time, state: importBatchStateSchema,
   targetScopes: z.array(workRecoveryScopeSchema).min(1).max(10000), authorizationVersion: text, generation: uuid, execution: count.min(1),
   position: count, cursor: z.string().min(1).max(16384).nullable(), counts: importBatchCountsSchema,
+  moduleCounts: z.array(handoverImportModuleOutcomeSchema).max(10).nullable().optional(),
   enrolments: z.array(z.object({ sourceChildId: uuid, outcome: z.enum(['created', 'skipped']), at: time }).strict()).max(100).optional(),
   failedEnrolment: z.object({ sourceChildId: uuid, error: z.string().min(1).max(100) }).strict().optional(),
   claim: z.object({ workId: hash, token: uuid, until: time }).strict().nullable(), error: z.string().max(100).nullable(),
@@ -52,9 +53,21 @@ export const growthImportScopes = (job: HandoverImportBatch) => ['queued', 'runn
 export const importBatchMetadata = (job: HandoverImportBatch) => ({ createdAt: job.createdAt, state: job.state,
   ...(growthImportScopes(job).length ? { growthImportScopes: growthImportScopes(job), batchId: job.id } : {}) });
 export const importBatchControlMetadata = (event: HandoverImportBatchControl) => ({ batchId: event.batchId, createdAt: event.at });
+export function initialImportModuleCounts(request: HandoverImportBatchRequest) {
+  return handoverImportSectionSchema.options.filter(module => request.targets.some(target => target.sections.includes(module)))
+    .map(module => ({ module, created: 0, updated: 0, skipped: 0, conflict: 0 }));
+}
+export function importModuleCounts(job: HandoverImportBatch) {
+  return job.moduleCounts === undefined ? job.position === 0 ? initialImportModuleCounts(job.request) : null : job.moduleCounts;
+}
 export function validImportBatch(job: HandoverImportBatch) {
   const ids = job.request.enrolSourceIds ?? [], done = job.enrolments ?? [];
+  const modules = job.moduleCounts, selected = initialImportModuleCounts(job.request);
+  const validModules = modules == null || modules.length === selected.length
+    && modules.every((row, i) => row.module === selected[i].module)
+    && (['created', 'updated', 'skipped', 'conflict'] as const).every(outcome => modules.reduce((sum, row) => sum + row[outcome], 0) <= job.counts[outcome]);
   return job.id === job.request.opId && job.fingerprint === firestoreDomainHash(job.request) && job.scope.childId === '00000000-0000-0000-0000-000000000000'
+    && validModules
     && done.every((row, i) => row.sourceChildId === ids[i]) && (job.position === 0 && job.state !== 'completed' || done.length === ids.length)
     && (!job.failedEnrolment || job.failedEnrolment.sourceChildId === ids[done.length] && ['failed', 'interrupted'].includes(job.state))
     && job.targetScopes.length === job.request.targets.length && job.targetScopes.every((scope, i) => scope.childId === job.request.targets[i].target.childId)

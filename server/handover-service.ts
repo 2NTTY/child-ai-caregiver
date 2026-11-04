@@ -94,6 +94,7 @@ export function createHandoverService(options: FirestoreDomainOptions & { export
       }
       return jobs.create(owner, raw);
     }, get: jobs.get, list: jobs.list, cancel: jobs.cancel, processExport, cleanup, download,
+    matchesIssuedBackup: jobs.matchesIssuedBackup,
     preview: (owner: string, query: unknown) => previewHandoverDocuments(options.exporter, owner, query),
     async reconcile(owner: string, id: string, signal?: AbortSignal) {
       const job = await jobs.reconcilable(owner, id);

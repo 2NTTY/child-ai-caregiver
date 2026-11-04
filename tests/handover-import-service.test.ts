@@ -23,6 +23,8 @@ import { FirestoreDomainData, FirestoreDomainError, firestoreDomainHash } from '
 import { importBatchId, importBatchMetadata, importBatchSchema } from '../server/handover-import-batch-records.ts';
 import { handoverImportItemId, handoverImportItemMetadata, handoverImportItemSchema } from '../server/handover-import-records.ts';
 import { createHandoverApi } from '../src/client/handover-api.ts';
+import { handoverImportSummarySchema } from '../src/shared/handover-imports.ts';
+import { createFirestoreHandoverImportBatches } from '../server/firestore-handover-import-batches.ts';
 
 test('class import creates roster children only in the worker and reuses the source identity across operations', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'handover-class-intake-')), controller = new AbortController();
@@ -208,17 +210,23 @@ test('verified packages reach formal import worker, retain partial progress and 
     { method: body === undefined ? 'GET' : 'POST', headers: { 'content-type': 'application/json', 'x-expected-user-id': owner },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }) }), { getSession: async () => ({ user: { id: owner } }) } as any,
     { packageImports: service } as any, request => request.json());
-  async function upload(history = false) {
+  async function upload(history = false, mixed = false) {
+    const profile = mixed ? await care.saveProfile('source', sourceChild, { age: { kind: 'unknown' }, dueDate: null,
+      gestationalWeeksRaw: null, region: 'HK', language: null, allergies: null, specialNeeds: null, preferences: null,
+      source: 'Source account', validUntil: null }, (await care.profile('source', sourceChild))!.version, 'Source snapshot') : null;
     const scopeVersion = 'a'.repeat(64), pages = [
       { section: 'children', childId: null, items: [{ id: sourceChild, displayName: 'Source child' }] },
       { section: 'care_history', childId: sourceChild, items: history ? [originals[0]] : [] },
       { section: 'care', childId: sourceChild, items: originals },
+      ...(mixed ? [{ section: 'profile', childId: sourceChild, items: [profile] },
+        { section: 'profile_history', childId: sourceChild, items: [] }, { section: 'tasks', childId: sourceChild, items: [] },
+        { section: 'task_history', childId: sourceChild, items: [] }] : []),
     ];
     async function* entries() { for (let i = 0; i < pages.length; i++) yield { path: `data/${i}.json`, mediaType: 'application/json',
       content: Buffer.from(JSON.stringify({ ...pages[i], scopeVersion })) }; yield { path: 'summary.md', mediaType: 'text/markdown', content: Buffer.from('Test') }; }
     const archive = await writeHandoverArchive({ directory, header: { format: 'yuyoufang-data', version: 1, packageId: randomUUID(), packageVersion: 1,
       createdAt: new Date().toISOString(), purpose: 'handover', source: { serverId: 'https://source.test', accountId: 'source' },
-      selection: { childIds: [sourceChild], modules: ['care'], period: null } }, entries: entries(),
+      selection: { childIds: [sourceChild], modules: mixed ? ['care', 'profile', 'tasks'] : ['care'], period: null } }, entries: entries(),
       coverage: () => pages.map(page => ({ section: page.section, childId: page.childId, items: page.items.length, scopeVersion, complete: true as const })) });
     const bytes = await readFile(archive.path), id = randomUUID();
     await uploads.create('recipient', { opId: id, filename: 'handover.zip', bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') });
@@ -279,6 +287,56 @@ test('verified packages reach formal import worker, retain partial progress and 
     const historyPage = await (await call('/source-history?' + new URLSearchParams({ childId: recipientChild, module: 'care', resourceId: storedHistory[0].resource.id }))).json();
     assert.equal(historyPage.items[0].evidence.value.text, originals[0]!.text);
     await assert.rejects(call('/source-history?' + new URLSearchParams({ childId: recipientChild, module: 'care', resourceId: storedHistory[0].resource.id }), undefined, 'other'));
+    await t.test('module summary counts only main rows, preserves replay and reports old partial counters as unknown', async () => {
+      const mixed = await upload(true, true), mixedCommand = { ...command, opId: randomUUID(), uploadId: mixed.id,
+        expectedUploadVersion: mixed.version, acceptedManifestSha256: mixed.preview!.manifestSha256,
+        targets: [{ sourceChildId: sourceChild, target: { childId: recipientChild, spaceId: null }, sections: ['care', 'profile', 'tasks'] }] };
+      const queued = await (await call('', mixedCommand)).json();
+      const summaryResponse = await call('/' + queued.id + '/summary');
+      assert.equal(summaryResponse!.headers.get('cache-control'), 'private, no-store');
+      assert.deepEqual(await summaryResponse!.json(), { batchId: queued.id, state: 'queued', processedItems: 0, totalItems: 4,
+        modules: ['care', 'profile', 'tasks'].map(module => ({ module, created: 0, updated: 0, skipped: 0, conflict: 0 })) });
+      for (let i = 0; i < 4; i++) { await worker.background.process(await nextDelivery()); elapsed += 2000; }
+      const expected = { batchId: queued.id, state: 'completed', processedItems: 4, totalItems: 4,
+        modules: [{ module: 'care', created: 0, updated: 0, skipped: 2, conflict: 0 },
+          { module: 'profile', created: 1, updated: 0, skipped: 0, conflict: 0 },
+          { module: 'tasks', created: 0, updated: 0, skipped: 0, conflict: 0 }] };
+      assert.deepEqual(handoverImportSummarySchema.parse(await (await call('/' + queued.id + '/summary'))!.json()), expected);
+      await call('', mixedCommand);
+      assert.deepEqual(await (await call('/' + queued.id + '/summary'))!.json(), expected);
+      await assert.rejects(call('/' + queued.id + '/summary', undefined, 'other'), { code: 'import_batch_not_found' });
+      await assert.rejects(call('/' + queued.id + '/summary?other=value'), { code: 'invalid_input' });
+      const oldCommand = { ...mixedCommand, opId: randomUUID() };
+      await call('', oldCommand); await worker.background.process(await nextDelivery()); elapsed += 2000;
+      const partial = await service.get('recipient', oldCommand.opId);
+      const cancelled = await service.cancel('recipient', oldCommand.opId, { opId: randomUUID(), expectedVersion: partial.version });
+      const record = [...fixture.records].find(([path, raw]) => path.includes('_handover_import_batches/')
+        && (codec.decode({ path, data: raw }).value as any).id === oldCommand.opId)!;
+      const old = codec.decode({ path: record[0], data: record[1] }).value as any; delete old.moduleCounts;
+      const data = new FirestoreDomainData(options), identity = importBatchId('recipient', old.id);
+      fixture.records.set(record[0], { ...data.tags(old.scope), ...importBatchMetadata(old),
+        ...data.seal('handover-import-batch', identity, old.scope, importBatchSchema, old, old.version) });
+      assert.equal((await (await call('/' + old.id + '/summary'))!.json()).modules, null);
+      await service.resume('recipient', old.id, { opId: randomUUID(), expectedVersion: cancelled.version }, controller.signal);
+      for (let i = 0; i < 3; i++) { await worker.background.process(await nextDelivery()); elapsed += 2000; }
+      const completed = await (await call('/' + old.id + '/summary'))!.json();
+      assert.equal(completed.state, 'completed'); assert.equal(completed.processedItems, 4); assert.equal(completed.modules, null);
+      const reader = 'summary-reader'; await admit(reader);
+      const sharing = createFirestoreSharingStore(options);
+      let classroom = await sharing.create('recipient', { operationId: randomUUID(), name: 'Summary authority', kind: 'class' });
+      const learner = await sharing.addClassChild('recipient', { operationId: randomUUID(), spaceId: classroom.id,
+        expectedVersion: classroom.version, displayName: 'Summary learner' }); classroom = learner.space;
+      const invitation = await sharing.invite('recipient', { operationId: randomUUID(), spaceId: classroom.id,
+        expectedVersion: classroom.version, email: reader + '@example.test', role: 'caregiver', expiresAt: new Date(Date.now() + 3600000).toISOString() });
+      classroom = await sharing.acceptInvitation(reader, { operationId: randomUUID(), token: invitation.token });
+      const shared = await createFirestoreHandoverImportBatches(options).create(reader, { ...old.request, opId: randomUUID(), totalItems: 0,
+        targets: [{ sourceChildId: sourceChild, target: { childId: learner.child.id, spaceId: classroom.id }, sections: ['care'] }] });
+      assert.deepEqual((await (await call('/' + shared.id + '/summary', undefined, reader))!.json()).modules,
+        [{ module: 'care', created: 0, updated: 0, skipped: 0, conflict: 0 }]);
+      await sharing.updateMember('recipient', { operationId: randomUUID(), spaceId: classroom.id, expectedVersion: classroom.version,
+        targetUserId: reader, role: null });
+      await assert.rejects(call('/' + shared.id + '/summary', undefined, reader), { code: 'space_access_denied' });
+    });
     const imported = resultPage.items.find((item: any) => item.sourceResourceId === originals[0]!.id).recordedResource;
     const revised = await care.revise('recipient', recipientChild, imported.id,
       { text: 'Local edit', details: emptyCareDetails(), source: 'Recipient' }, imported.version, 'Local correction');
@@ -322,7 +380,8 @@ test('verified packages reach formal import worker, retain partial progress and 
     assert.equal([...fixture.records.keys()].filter(path => path.includes('_handover_import_items/')).length, before);
     await uploads.cancel('recipient', uploaded.id, { opId: randomUUID(), expectedVersion: uploaded.version });
     assert.equal((await service.resume('recipient', command.opId, resumeCommand, controller.signal)).state, 'completed');
-    const data = new FirestoreDomainData(options), entries = [...fixture.records].filter(([path]) => path.includes('_handover_import_batches/'));
+    const data = new FirestoreDomainData(options), entries = [...fixture.records].filter(([path, raw]) => path.includes('_handover_import_batches/')
+      && (codec.decode({ path, data: raw }).value as any).scope.ownerUserId === 'recipient');
     const template = codec.decode({ path: entries[0][0], data: entries[0][1] }).value as any;
     assert.equal(template.scope.childId, '00000000-0000-0000-0000-000000000000');
     const expectedIds = new Set(entries.map(([path, value]) => (codec.decode({ path, data: value }).value as any).id));

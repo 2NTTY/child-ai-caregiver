@@ -7,7 +7,7 @@ import type { createHandoverImportService } from './handover-import-service.ts';
 export async function handleHandoverImport(request: Request, owner: string, service: ReturnType<typeof createHandoverImportService>,
   readJson: (request: Request) => Promise<unknown>, sameIdentity: () => Promise<void>) {
   const url = new URL(request.url), root = '/api/account/package-imports';
-  const route = /^\/api\/account\/package-imports\/([0-9a-f-]{36})(?:\/(cancel|resume|items|enrolments))?$/iu.exec(url.pathname);
+  const route = /^\/api\/account\/package-imports\/([0-9a-f-]{36})(?:\/(cancel|resume|items|enrolments|summary))?$/iu.exec(url.pathname);
   if (url.search && !(request.method === 'GET' && (url.pathname === root || url.pathname === root + '/source-history' || route?.[2] === 'items')))
     domainReject('invalid_input', 400);
   const respond = async (result: unknown, status = 200) => { await sameIdentity(); return Response.json(result, { status,
@@ -24,9 +24,12 @@ export async function handleHandoverImport(request: Request, owner: string, serv
       const entries = [...url.searchParams]; if (new Set(entries.map(([key]) => key)).size !== entries.length) domainReject('invalid_input', 400);
       return respond(await service.history(owner, Object.fromEntries(entries)));
     }
+    if (request.method === 'POST' && url.pathname === root + '/compare-original')
+      return respond(await service.compareOriginal(owner, await readJson(request), request.signal));
     if (request.method === 'POST' && url.pathname === root) return respond(await service.create(owner, await readJson(request), request.signal), 201);
     if (!route) domainReject('not_found', 404);
     const id = domainParse(z.uuid(), route[1]);
+    if (request.method === 'GET' && route[2] === 'summary') return respond(await service.summary(owner, id));
     if (request.method === 'GET' && route[2] === 'enrolments') return respond(await service.enrolments(owner, id));
     if (request.method === 'GET' && route[2] === 'items') {
       const entries = [...url.searchParams];
