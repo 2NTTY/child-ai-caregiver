@@ -1,0 +1,38 @@
+{
+  "commit": "59f6700a0621162414de05cf35149de6db1731ad",
+  "previousApplicationCommit": "9503487d1358bdaf4e0a0c239e65fbbb8bd8848f",
+  "includedPullRequests": [
+    459,
+    460
+  ],
+  "localChecks": {
+    "worker": "tests/handover-original-documents.test.ts",
+    "sharedForm": "frontend/scripts/handover-period-ui.test.mjs",
+    "scope": "Signed synthetic personal backup through the registered import worker. Restore document and visit preparation under original identities, preserve later revisions, check original operation and reject the stale appointment. Shared form distinguishes the two resource types even when their source IDs match."
+  },
+  "production": {
+    "verifiedAt": "2026-11-05T02:25:41+08:00",
+    "origin": "https://ex-machina.eu.org",
+    "apiWorkerImage": "sha256:25c26eae1fb87be0d46c782fcf34c2407601de9e1d5ff293f9e4baac2b1831ec",
+    "webImage": "sha256:83f89d6627e2df5f7d5f86635cde85d33bf05228386f1932a97d8fc4d55e755e",
+    "composeSha256": "0679c83ba8eba141f2a3285e3c3e7364d78dce428aeba3e931587d937544a88c",
+    "settingsHtmlSha256": "60ab79d1abdcb5d22f2a893facb1841017103962212dca1c4ab3170a93391be1",
+    "settingsJsSha256": "d148f51f323195de300814758287996dfbd4be4f2368a1eed186e2c091c32c9b",
+    "healthHttp": 200,
+    "anonymousImportCapabilitiesHttp": 401,
+    "signer": "Existing key, worker-only",
+    "activeAgentLeases": 0,
+    "outboxActive": 0,
+    "outboxUnknown": 0,
+    "backgroundActive": 0,
+    "backgroundSending": 0,
+    "backgroundUnknown": 1,
+    "backgroundUnresolved": 0,
+    "rollout": "One transient TLS error during Web readiness polling; external health, HTML and JS checks passed after startup."
+  },
+  "pending": [
+    "Real signed-in family data was not used.",
+    "Android binary and device validation deferred to a batched release.",
+    "Documents using shared source-selection authority still return an item conflict."
+  ]
+}
