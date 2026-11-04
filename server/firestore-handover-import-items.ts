@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { readPrivateInstructionDeletion } from './firestore-content-erasure.ts';
 import { chatImportSourceSchema, importedChatMessageSchema, type ImportedChatAttachment } from '../src/shared/chat-imports.ts';
 import { FieldPath, type DocumentSnapshot } from '@google-cloud/firestore';
 import { handoverSourceHistoryQuerySchema, handoverSourceHistoryPageSchema, handoverImportResultPageSchema } from '../src/shared/handover-imports.ts';
@@ -94,8 +95,8 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
   }
   async function readState(b: Binding, section: Section, source: z.infer<typeof handoverSourceIdentitySchema>, restoreOriginal?: true, originalConcernId?: string) {
     const { mappingId, mappingRef, mapping } = await readImportMapping(data, b, source, restoreOriginal);
-    const knownId = section === 'instructions' && restoreOriginal ? source.resourceId
-      : originalConcernId ?? mapping?.target.id ?? (restoreOriginal ? source.resourceId : null);
+    const knownId = originalConcernId ?? mapping?.target.id ?? (restoreOriginal ? source.resourceId : null);
+    const instructionState = section === 'instructions' && knownId ? await notes.readImportState(b, knownId) : null;
     const careState = section === 'care' && knownId ? await care.readImportRecordState(b, knownId) : null;
     const memoryState = mapping && (section === 'memory_facts' || section === 'memory_topics')
       ? await memory.readImportState(b, section === 'memory_facts' ? 'facts' : 'topics', mapping.target.id) : null;
@@ -118,12 +119,12 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       : attachmentState ? attachmentState.value
       : preparationState ? preparationState.value
       : section === 'care' ? careState?.value ?? null : section === 'tasks' && knownId ? await online.readImportTask(b, b.scope.childId, knownId)
-      : section === 'instructions' ? knownId ? await notes.read(b, knownId) : null
+      : section === 'instructions' ? instructionState?.value ?? null
       : sourceState ? sourceState.value : documentState ? documentState.value : !mapping ? null
       : memoryState ? memoryState.value : await memory.readImportedSummary(b, mapping.target.id);
-    const currentVersion = current?.version ?? careState?.version ?? memoryState?.version ?? sourceState?.version ?? attachmentState?.version ?? 0;
+    const currentVersion = current?.version ?? instructionState?.version ?? careState?.version ?? memoryState?.version ?? sourceState?.version ?? attachmentState?.version ?? 0;
     const currentId = current ? 'id' in current ? current.id : current.childId : knownId ?? (section === 'profile' || section === 'visit_preparation' || section === 'child_avatar' ? b.scope.childId : null);
-    const originalTombstone = restoreOriginal && (careState || sourceState) && !current && currentVersion > 0;
+    const originalTombstone = restoreOriginal && (careState || sourceState || instructionState) && !current && currentVersion > 0;
     const deleted = originalTombstone || mapping !== null && (current === null || section === 'profile' && (current as ChildProfile).data === null)
       || section === 'profile' && currentVersion > 0 && (current as ChildProfile).data === null
       || section === 'child_avatar' && currentVersion > 0 && current === null;
@@ -192,10 +193,16 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
           ...(history || supplement ? { sourceSection: raw.row.section } : {}), ...(documentRevisionHash ? { documentRevisionHash } : {}),
           source: provenance.current, outcome, reason, resource, changeSeq: prepared?.changeSeq ?? auditChange!.changeSeq });
         const id = handoverImportItemId(b.scope, opId), envelope = data.seal('handover-import-item', id, b.scope, handoverImportItemSchema, item);
+        let retiredInstructionOpId: string | undefined;
+        if (prepared && resource && raw.restoreOriginal && section === 'instructions' && resource.id !== source.resourceId) {
+          const proof = await readPrivateInstructionDeletion(data, b, source.resourceId);
+          if (!proof) domainReject('import_mapping_binding', 500);
+          retiredInstructionOpId = proof.operationId;
+        }
         let next: HandoverImportMapping | null = null;
         if (prepared && resource && !history && !supplement) next = handoverImportMappingSchema.parse({ source, sourceVersion: sourceValue!.version,
           ...(raw.restoreOriginal ? { restoreOriginal: true } : {}), sourceHash: provenance.current.sourceHash, ...(documentRevisionHash ? { documentRevisionHash } : {}),
-          target: resource, revision: (mapping?.revision ?? 0) + 1,
+          ...(retiredInstructionOpId ? { retiredInstructionOpId } : {}), target: resource, revision: (mapping?.revision ?? 0) + 1,
           operationId: opId, importedAt: provenance.current.importedAt });
         // Seal all records before the first write. Model/storage/network calls never occur in the callback.
         const mappingEnvelope = next ? data.seal('handover-import-mapping', mappingId, b.scope, handoverImportMappingSchema, next, next.revision) : null;
@@ -223,10 +230,8 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
             return finish('skipped', 'already_imported');
         }
         if (originalConcernId && mapping && mapping.target.id !== originalConcernId) return finish('conflict', 'original_unavailable', null);
-        if (section === 'instructions' && (resolution.mode !== 'replace_current' || mapping && mapping.target.id !== source.resourceId))
-          return finish('conflict', 'original_unavailable', null);
         // A missing original is not a confirmed removal. Only the domain tombstone permits revival.
-        if (resolution.mode === 'preserve' || !current && !(deleted && currentVersion > 0 && (section === 'care' || section === 'private_sources' || section === 'child_avatar'))
+        if (resolution.mode === 'preserve' || !current && !(deleted && currentVersion > 0 && (section === 'care' || section === 'private_sources' || section === 'child_avatar' || section === 'instructions'))
           || section === 'profile' && currentVersion === 0) return finish('conflict', 'original_unavailable', null);
         if (resolution.targetId !== currentId || resolution.expectedVersion !== currentVersion)
           return finish('conflict', 'target_version_conflict');
@@ -431,7 +436,9 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
         prepared = section === 'private_sources' ? await sources.prepareImported(b, opId, raw.row, raw.integrity, expected, raw.restoreOriginal)
           : section === 'memory_facts' ? await memory.prepareImportedFact(b, opId, raw.row, raw.integrity, expected)
           : section === 'memory_topics' ? await memory.prepareImportedTopic(b, opId, raw.row, raw.integrity, expected)
-          : section === 'instructions' ? await notes.prepareImported(b, opId, raw.row, raw.integrity, expected, raw.restoreOriginal)
+          : section === 'instructions' ? raw.restoreOriginal
+            ? await notes.prepareOriginal(b, opId, raw.row, raw.integrity, resolution)
+            : await notes.prepareImported(b, opId, raw.row, raw.integrity, expected)
           : await memory.prepareImportedSummary(b, opId, raw.row, raw.integrity, expected);
       } catch (error) {
         // Domain refusals are per-item results, not permission to merge unrelated identities or revive terminal work.

@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto';
+import { contentErasureSchema, privateInstructionDeletionProof } from './firestore-content-erasure.ts';
+import { privateInstructionErasureOperationId } from './firebase-erasure-journal.ts';
 import { VectorValue } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { KNOWLEDGE_EMBEDDING } from '../src/shared/knowledge.ts';
@@ -53,6 +55,11 @@ export function assertFirestoreRestoreContent(records: readonly FirestoreRestore
       || !['created', 'updated'].includes(receipt.outcome) || receipt.resource?.id !== mapping.target.id || receipt.resource.version !== mapping.target.version
       || source.resourceVersion !== mapping.sourceVersion || receipt.source.sourceHash !== mapping.sourceHash
       || firestoreDomainHash(handoverSourceIdentitySchema.strip().parse(source)) !== firestoreDomainHash(mapping.source)) fail();
+    if (mapping.retiredInstructionOpId) {
+      const deletion = parsed(contentErasureSchema, domain('content-erasure', privateInstructionErasureOperationId(owner, source.resourceId), owner));
+      const proof = privateInstructionDeletionProof(owner, source.resourceId, deletion);
+      if (!proof || proof.operationId !== mapping.retiredInstructionOpId) fail();
+    }
     if (source.section === 'concerns' && (source.concern?.periodSource?.concernId ?? source.resourceId) !== mapping.target.id) fail();
   }
   function revision(taskId: string, version: number, expected: WorkRecoveryScope) {

@@ -2,7 +2,7 @@ import { FieldPath, type DocumentSnapshot } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
-import { firebaseErasureIntentSchema, firebaseErasureDescriptorSchema, firebaseErasureIntentHash, privateSourceErasureOperationId, type FirebaseErasureJournal } from './firebase-erasure-journal.ts';
+import { firebaseErasureIntentSchema, firebaseErasureDescriptorSchema, firebaseErasureIntentHash, privateSourceErasureOperationId, privateInstructionErasureOperationId, type FirebaseErasureJournal } from './firebase-erasure-journal.ts';
 import { contentPointerSchema, contentResult, type ContentKind } from './firestore-disclosure.ts';
 import { firestoreOnlineRecordSchema, isFirestoreOnlinePending, privateInputReceiptTarget } from './firestore-online-receipts.ts';
 import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
@@ -11,6 +11,24 @@ import { firestoreAgentActionSavedSchema, redactErasedNoteEvidence } from './fir
 
 export const contentErasureSchema = z.object({ intent: firebaseErasureIntentSchema.refine(v => v.type === 'content-delete'),
   journal: firebaseErasureDescriptorSchema.nullable(), stage: z.enum(['revisions', 'source_history', 'receipts', 'done']), after: z.string().nullable() }).strict();
+/** Completed journal evidence stays bound to its original subject across storage epochs. */
+export function privateInstructionDeletionProof(scope: FirestoreAuthorityTransaction['scope'], id: string,
+  value: z.infer<typeof contentErasureSchema>) {
+  const { intent, journal } = value, content = intent.content;
+  if (value.stage !== 'done' || value.after !== null || !journal || content?.kind !== 'private_instruction'
+    || intent.operationId !== privateInstructionErasureOperationId(scope, id) || intent.assetId !== id
+    || intent.scope.ownerUserId !== scope.ownerUserId || intent.scope.workspaceId !== scope.workspaceId
+    || intent.scope.childId !== scope.childId || journal.intentSha256 !== firebaseErasureIntentHash(intent)) return null;
+  return { version: content.throughVersion + 1, operationId: content.sourceOperationId };
+}
+export async function readPrivateInstructionDeletion(data: FirestoreDomainData, binding: FirestoreAuthorityTransaction, id: string) {
+  const operationId = privateInstructionErasureOperationId(binding.scope, id);
+  const row = await binding.transaction.get(data.ref('content_erasures', 'content-erasure', operationId));
+  if (!row.exists) return null;
+  if (Object.entries(data.tags(binding.scope)).some(([key, value]) => row.get(key) !== value)) domainReject('erasure_binding', 500);
+  const value = data.open('content-erasure', operationId, binding.scope, contentErasureSchema, row);
+  return privateInstructionDeletionProof(binding.scope, id, value);
+}
 export const contentHistory = { care: ['care_revisions', 'care-revision'], profile: ['profile_revisions', 'profile-revision'],
   fact: ['memory_fact_revisions', 'memory-fact-revision'], topic: ['memory_topic_revisions', 'memory-topic-revision'],
   private_source: ['shared_input_management_revisions', 'shared-input-management'] } as const;
