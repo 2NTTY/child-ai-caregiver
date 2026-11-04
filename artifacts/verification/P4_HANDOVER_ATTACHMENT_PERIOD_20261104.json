@@ -1,0 +1,15 @@
+{
+  "package": "P4-HANDOVER01",
+  "base": "e9755493395e76c665787ee5508ec164727df6b8",
+  "environment": "Windows, Node 24.22.1, real ZIP and application services, synthetic Firestore and object transport",
+  "verified": [
+    "Only in-range file bytes read. Older avatar bytes never requested. An older avatar or an unset avatar does not introduce an imported removal.",
+    "Inspected archive and import preview. Selected file and photo bytes match. The full and dated photo source hashes match.",
+    "The existing concurrent avatar replacement fence still rejects a changed head.",
+    "Real import worker retained an older transcript reference for the same original audio; no new transcription. Future or different original content does not qualify.",
+    "Affected server TypeScript configuration: no diagnostics."
+  ],
+  "red": ["Existing route rejected the dated attachments selection.", "A transcript linked before a metadata update produced one source version conflict."],
+  "checks": ["a dated attachment package reads only selected file bytes and omits out-of-period or absent avatars", "package fences avatar versions across metadata, content and final authorization read", "attachment rows traverse the original package worker before imported chat links with retained transcription"],
+  "notRun": ["live deployment", "cloud storage or Firestore", "device acceptance", "model calls"]
+}

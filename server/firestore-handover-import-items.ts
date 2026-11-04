@@ -198,7 +198,9 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       if (supplement) {
         if (!mapping) return finish('conflict', 'attachment_parent_not_imported');
         if (deleted) return finish('conflict', 'target_deleted');
-        if (supplement.version !== mapping.sourceVersion) return finish('conflict', 'attachment_parent_version_unavailable');
+        const earlierTranscript = raw.row.section === 'voice_transcripts' && supplement.version < mapping.sourceVersion;
+        // prepareTranscript also binds the digest, length, MIME type and duration to the current original.
+        if (supplement.version !== mapping.sourceVersion && !earlierTranscript) return finish('conflict', 'attachment_parent_version_unavailable');
         if (locallyChanged) return finish('conflict', 'target_changed');
         if (raw.row.section !== 'voice_transcripts') return finish('skipped', 'attachment_content_index', mapping.target);
         const prepared = await attachments.prepareTranscript(b,raw.row,mapping.target.id,provenance);
