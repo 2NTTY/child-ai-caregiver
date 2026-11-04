@@ -8,7 +8,7 @@ import { handoverClassScope, handoverClassDestination, handoverClassDestinations
   type HandoverClassDestination, type HandoverClassEnrolmentDestination } from '../../production/handover-class-targets';
 import { PACKAGE_IMPORT_MAX_BYTES, pickImportPackage } from '../../platform/package-import';
 import { HandoverApiError } from '../../../../src/client/handover-api';
-import type { HandoverImportCommand, HandoverImportView } from '../../../../src/shared/handover-imports';
+import { originalBackupModuleSchema, type OriginalBackupComparisonQuery, type HandoverImportModule, type HandoverImportCommand, type HandoverImportView } from '../../../../src/shared/handover-imports';
 import { AppCheckbox } from '../AppCheckbox';
 import { dateTimeParts, hongKongTimeZone } from '../date-time';
 import { FormDialog } from '../FormDialog';
@@ -31,10 +31,13 @@ const uploadStates = { reserved: '尚未上載完成', receiving: '接收或驗�
   failed: '上載失敗，待清理', cancelled: '已取消，待清理', expired: '已到期，待清理' };
 const enrolmentStates = { pending: '待處理，尚未建立學生', created: '已建立班級學生', skipped: '沿用已核對的班級學生', failed: '未能入班' };
 const comparisonStates = {unchanged:'與備份相同',local_newer:'目前版本較新',backup_newer:'備份版本較新',different:'內容不同',deleted:'目前已刪除',unavailable:'未能核實目前狀態'};
-function comparisonFields(module: 'care'|'profile'|'tasks', fields: string[]) {
-  const moduleNames: Record<'care'|'profile'|'tasks',Record<string,string>> = {
+export function comparisonFields(module: HandoverImportModule, fields: string[]) {
+  const moduleNames: Partial<Record<HandoverImportModule,Record<string,string>>> = {
     care:{text:'記錄內容',details:'時間／數量',source:'資料來源'},profile:{data:'孩子概況'},
     tasks:{title:'待辦名稱',details:'待辦內容',occurrence:'時間／狀態',kind:'類別',assigneeUserId:'負責人'},
+    sources:{sourceLabel:'來源名稱',sourceUrl:'來源連結',sourceDateText:'來源日期',sourceNotes:'來源備註',text:'來源原文',
+      management:'用途與摘錄設定',kind:'來源類別',fetchState:'抓取狀態',extraction:'提取狀態',recordId:'已連結照護記錄',
+      confirmationKind:'確認用途',retrievedAt:'讀取時間'},
   };
   const names: Record<string,string> = {...moduleNames[module],reason:'修改原因',updatedAt:'更新時間',
     confirmedAt:'確認時間',confirmedBy:'確認者',confirmationBasis:'確認記錄',importedFrom:'來源記錄',
@@ -54,7 +57,7 @@ export function HandoverImportControls() {
   const [open, setOpen] = useState(false), [page, setPage] = useState(0);
   const [choices, setChoices] = useState<Record<string, Choice>>({}), [accepted, setAccepted] = useState(false);
   const [rosterQuery, setRosterQuery] = useState('');
-  const [comparisonChild, setComparisonChild] = useState(''), [comparisonModule, setComparisonModule] = useState<'care'|'profile'|'tasks'>('care');
+  const [comparisonChild, setComparisonChild] = useState(''), [comparisonModule, setComparisonModule] = useState<OriginalBackupComparisonQuery['module']>(originalBackupModuleSchema.options[0]);
   const trigger = useRef<View>(null);
   const capabilityRead = useRef<string | null>(null);
   const current = !!identityKey && state.identityKey === identityKey && state.userId === userId && account.gate === 'ready';
@@ -66,7 +69,7 @@ export function HandoverImportControls() {
   const needsCapabilities = current && (!!(open && preview) || state.items.some(batch => batch.targets.some(target => target.target.spaceId !== null)));
   useLayoutEffect(() => { setOpen(false); setChoices({}); setPage(0); setAccepted(false); }, [identityKey]);
   useLayoutEffect(() => { setChoices({}); setPage(0); setAccepted(false); }, [upload?.id, preview?.manifestSha256]);
-  useLayoutEffect(() => { setComparisonChild(''); setComparisonModule('care'); controller.clearComparison(); }, [controller, identityKey, upload?.id, preview?.manifestSha256]);
+  useLayoutEffect(() => { setComparisonChild(''); setComparisonModule(originalBackupModuleSchema.options[0]); controller.clearComparison(); }, [controller, identityKey, upload?.id, preview?.manifestSha256]);
   useLayoutEffect(() => { setRosterQuery(classes.state.rosterQuery); }, [classes.state.selected?.id]);
   useLayoutEffect(() => {
     setChoices(before => {
@@ -161,7 +164,7 @@ export function HandoverImportControls() {
     && (preview.integrity === 'trusted' || accepted);
   const comparisonChildren = preview?.header.purpose === 'backup' && preview.header.source.accountId === userId
     ? preview.children.filter(child => recordsState.children.some(local => local.id === child.id && (local.accessRole === 'owner' || local.accessRole === undefined))) : [];
-  const comparisonModules = (['care','profile','tasks'] as const).filter(module => available.includes(module));
+  const comparisonModules = originalBackupModuleSchema.options.filter(module => available.includes(module));
   const comparison = state.comparison?.query.uploadId === upload?.id && state.comparison?.query.childId === comparisonChild
     && state.comparison?.query.module === comparisonModule ? state.comparison : null;
   const comparisonSelected = comparison?.selected ?? [];
@@ -307,14 +310,14 @@ export function HandoverImportControls() {
             {preview.integrity !== 'trusted' ? <AppCheckbox label="我知悉此資料包沒有可信來源證明，仍選擇繼續" checked={accepted} disabled={writeLocked} onChange={setAccepted} /> : null}
             {preview.header.purpose === 'backup' ? <View style={styles.group}>
               <Text style={styles.title}>比較原有資料</Text>
-              <Text style={styles.body}>只比較此帳戶原孩子的照護記錄、孩子資料或待辦。每次只讀一頁狀態，比較本身沒有還原或改寫任何資料；勾選後可另行提交原項還原，Server 會核實本人備份證明及目前版本。</Text>
+              <Text style={styles.body}>比較此帳戶原孩子的{originalBackupModuleSchema.options.map(module => labels[module]).join('、')}。每次只讀一頁狀態，比較本身沒有還原或改寫任何資料；勾選後可另行提交原項還原，Server 會核實本人備份證明及目前版本。</Text>
               {comparisonChildren.length && comparisonModules.length ? <>
                 <AppSelect label="比較原有資料的孩子" value={comparisonChild} disabled={writeLocked}
                   options={[{value:'',label:'請選擇原孩子'},...comparisonChildren.map(child => ({value:child.id,label:child.displayName}))]}
                   onChange={value => {controller.clearComparison();setComparisonChild(value);}} />
                 <AppSelect label="比較資料類別" value={comparisonModules.includes(comparisonModule) ? comparisonModule : ''} disabled={writeLocked}
                   options={comparisonModules.map(module => ({value:module,label:labels[module]}))}
-                  onChange={value => {if (value === 'care' || value === 'profile' || value === 'tasks') {controller.clearComparison();setComparisonModule(value);}}} />
+                  onChange={value => {const parsed=originalBackupModuleSchema.safeParse(value);if (parsed.success) {controller.clearComparison();setComparisonModule(parsed.data);}}} />
                 <AppButton label="比較原有資料" variant="secondary" disabled={writeLocked || !comparisonChildren.some(child => child.id === comparisonChild) || !comparisonModules.includes(comparisonModule)}
                   onPress={() => {void controller.compareOriginal(comparisonChild,comparisonModule);}} />
                 {comparison ? <View style={styles.group} accessibilityLiveRegion="polite">

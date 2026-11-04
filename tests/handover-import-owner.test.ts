@@ -1,12 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { HandoverImportOwner } from '../frontend/src/production/HandoverImportOwner.ts';
+import { HandoverImportOwner, originalRestoreResourceSection } from '../frontend/src/production/HandoverImportOwner.ts';
 import { HandoverApiError, createHandoverApi, type HandoverApi } from '../src/client/handover-api.ts';
 import type { HandoverUploadView } from '../src/shared/handover-uploads.ts';
-import { handoverImportTargetSchema, type HandoverImportView } from '../src/shared/handover-imports.ts';
+import { handoverImportTargetSchema, originalBackupModuleSchema, type HandoverImportView, type HandoverImportModule,
+  type HandoverImportCommand, type OriginalBackupComparison, type OriginalBackupComparisonQuery } from '../src/shared/handover-imports.ts';
 import { packageHash } from '../frontend/src/platform/package-import-hash.ts';
 import { FamilyDocumentApiError } from '../src/client/family-documents-api.ts';
 import { handoverSourceHistoryKey } from '../frontend/src/production/HandoverImportOwner.ts';
+
+test('original restore maps module selections to their existing resource section',()=>{
+  assert.equal(originalRestoreResourceSection('sources'),'private_sources');
+  for (const module of ['care','profile','tasks'] as const) assert.equal(originalRestoreResourceSection(module),module);
+  assert.equal(originalRestoreResourceSection('memory'),null);
+});
 
 test('import owner preserves unknown operations, resumes server batches and clears identity-bound files', async () => {
   const bytes = new ReadableStream<Uint8Array>({ start(c) { c.enqueue(new Uint8Array([97])); c.enqueue(new Uint8Array([98, 99])); c.close(); } });
@@ -284,12 +291,25 @@ test('reopened import owner discovers staged packages without resending contents
   assert.deepEqual(owner.getSnapshot().uploads, []); assert.equal(owner.getSnapshot().upload, null);
 });
 
+function inspectionUpload(uploadId: string, childId: string, modules: HandoverImportModule[]): HandoverUploadView {
+  const at='2026-11-05T00:00:00Z';
+  return {id:uploadId,version:3,state:'ready',filename:'backup.zip',bytes:3,createdAt:at,expiresAt:'2026-11-06T00:00:00Z',error:null,
+    preview:{manifestSha256:'a'.repeat(64),integrity:'trusted',coverage:[],header:{format:'yuyoufang-data',version:1,packageId:uploadId,
+      packageVersion:1,createdAt:at,purpose:'backup',source:{serverId:'https://app.example.test',accountId:'owner'},
+      selection:{childIds:[childId],modules,period:null}},children:[{id:childId,displayName:'Original'}]}};
+}
+function inspectionBatch(id: string, uploadId: string): HandoverImportView {
+  const at='2026-11-05T00:00:00Z';
+  return {id,uploadId,version:1,packageId:uploadId,packageVersion:1,manifestSha256:'a'.repeat(64),integrity:'trusted',state:'completed',
+    targets:[],createdAt:at,updatedAt:at,totalItems:4,processedItems:4,counts:{created:0,updated:0,skipped:0,conflict:0},error:null};
+}
+
 test('backup inspection stays read-only, paged and bound to its upload and identity', async () => {
   const childId='00000000-0000-4000-8000-000000000101',uploadId='00000000-0000-4000-8000-000000000102',batchId='00000000-0000-4000-8000-000000000103';
-  const batch={id:batchId,version:1,state:'completed',targets:[],counts:{created:99,updated:0,skipped:0,conflict:0}};
-  const upload={id:uploadId,version:3,state:'ready',preview:{manifestSha256:'a'.repeat(64),header:{purpose:'backup',source:{accountId:'owner'},selection:{childIds:[childId],modules:['care','tasks']}},children:[{id:childId,displayName:'Original'}]}};
-  let resolveLate,reads=0;
-  const api={setIdentity(){},listImports:async()=>({items:[batch],nextCursor:null}),getUpload:async()=>upload,
+  const batch=inspectionBatch(batchId,uploadId), upload=inspectionUpload(uploadId,childId,['care','tasks']);
+  batch.counts.created=99;
+  let resolveLate!: (value: OriginalBackupComparison) => void,reads=0;
+  const api: Partial<HandoverApi>={setIdentity(){},listImports:async()=>({items:[batch],nextCursor:null}),getUpload:async()=>upload,
     importSummary:async()=>({batchId,state:'completed',processedItems:4,totalItems:4,modules:[{module:'care',created:2,updated:0,skipped:0,conflict:0}]}),
     compareOriginal:async(_user,query)=>{reads++;return {uploadId,manifestSha256:'a'.repeat(64),childId,module:query.module,items:[{id:childId,backupVersion:1,localVersion:2,state:'local_newer',changedFields:['text']}],nextCursor:query.cursor?null:'next'};}};
   const owner=new HandoverImportOwner(api as unknown as HandoverApi);owner.syncContext('owner','identity',true);await owner.load();await owner.openUpload(uploadId);
@@ -311,54 +331,60 @@ test('backup inspection stays read-only, paged and bound to its upload and ident
 });
 
 test('handover inspection client checks the real endpoints and rejects mismatched comparison metadata',async()=>{
-  const id='00000000-0000-4000-8000-000000000111',childId='00000000-0000-4000-8000-000000000112',calls=[];
+  const id='00000000-0000-4000-8000-000000000111',childId='00000000-0000-4000-8000-000000000112';
+  const calls: [Parameters<typeof fetch>[0],RequestInit | undefined][]=[];
   let mismatch=false;
   const api=createHandoverApi('https://app.example.test',async(url,init)=>{
     calls.push([url,init]);return Response.json(String(url).endsWith('/summary')?{batchId:id,state:'completed',processedItems:4,totalItems:4,modules:null}
       :{uploadId:id,manifestSha256:'a'.repeat(64),childId:mismatch?id:childId,module:'care',items:[],nextCursor:null});});
   api.setIdentity('owner');const signal=new AbortController().signal;
   assert.equal((await api.importSummary('owner',id,signal)).modules,null);
-  assert.equal(calls[0][0],`https://app.example.test/api/account/package-imports/${id}/summary`);assert.equal(calls[0][1].method,'GET');
-  const query={uploadId:id,expectedUploadVersion:3,childId,module:'care'};
+  assert.equal(calls[0][0],`https://app.example.test/api/account/package-imports/${id}/summary`);assert.equal(calls[0][1]?.method,'GET');
+  const query: OriginalBackupComparisonQuery={uploadId:id,expectedUploadVersion:3,childId,module:'care'};
   await api.compareOriginal('owner',query,signal);assert.equal(calls[1][0],'https://app.example.test/api/account/package-imports/compare-original');
-  assert.equal(calls[1][1].method,'POST');assert.deepEqual(JSON.parse(calls[1][1].body),query);
+  assert.equal(calls[1][1]?.method,'POST');const body=calls[1][1]?.body;assert.ok(typeof body==='string');assert.deepEqual(JSON.parse(body),query);
   mismatch=true;await assert.rejects(api.compareOriginal('owner',query,signal),{code:'handover_response_invalid'});
 });
 
 test('original restore submits only selected observed targets with one retained operation and never retries as a copy',async()=>{
-  const id=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
-  const upload={id:id(1),version:3,state:'ready',preview:{manifestSha256:'a'.repeat(64),header:{purpose:'backup',source:{accountId:'owner'},selection:{childIds:[id(2)],modules:['care']}},children:[{id:id(2)}]}};
-  const pageRows=[{id:id(3),targetId:id(13),backupVersion:1,localVersion:4,state:'local_newer',changedFields:['text']},
+  const id=(n:number)=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
+  const exercised: readonly HandoverImportModule[]=['care','sources'];
+  for (const module of originalBackupModuleSchema.options.filter(value=>exercised.includes(value))) {
+  const section=module==='care'?'care':'private_sources';
+  const upload=inspectionUpload(id(1),id(2),[module]);
+  const pageRows: OriginalBackupComparison['items']=[{id:id(3),targetId:id(13),backupVersion:1,localVersion:4,state:'local_newer',changedFields:['text']},
     {id:id(4),targetId:id(14),backupVersion:2,localVersion:5,state:'deleted',changedFields:[]},
     {id:id(5),backupVersion:1,localVersion:4,state:'different',changedFields:['text']}];
-  const sent=[],queries=[];let committed;
-  const api={setIdentity(){},getUpload:async()=>upload,compareOriginal:async(_u,query)=>{queries.push(query);return {uploadId:id(1),childId:id(2),module:'care',manifestSha256:'a'.repeat(64),items:query.cursor?[{...pageRows[0],id:id(6),targetId:id(16),state:'backup_newer'}]:pageRows,nextCursor:query.cursor?null:'next'};},
-    createImport:async(_u,command)=>{sent.push(command);committed={id:command.opId,version:1,uploadId:id(1),state:'queued',targets:command.targets};throw new HandoverApiError();},getImport:async()=>committed};
+  const sent:HandoverImportCommand[]=[],queries:OriginalBackupComparisonQuery[]=[];let committed!:HandoverImportView;
+  const api:Partial<HandoverApi>={setIdentity(){},getUpload:async()=>upload,compareOriginal:async(_u,query)=>{queries.push(query);return {uploadId:id(1),childId:id(2),module,manifestSha256:'a'.repeat(64),items:query.cursor?[{...pageRows[0],id:id(6),targetId:id(16),state:'backup_newer'}]:pageRows,nextCursor:query.cursor?null:'next'};},
+    createImport:async(_u,command)=>{sent.push(command);committed={...inspectionBatch(command.opId,id(1)),state:'queued',targets:command.targets.map(target=>handoverImportTargetSchema.parse(target))};throw new HandoverApiError();},getImport:async()=>committed};
   const owner=new HandoverImportOwner(api as unknown as HandoverApi);owner.syncContext('owner','owner:1',true);await owner.openUpload(id(1));
-  await owner.compareOriginal(id(2),'care');assert.equal(queries[0].includeRestoreTarget,true);assert.deepEqual(owner.getSnapshot().comparison?.selected,[]);
+  await owner.compareOriginal(id(2),module);assert.equal(queries[0].includeRestoreTarget,true);assert.deepEqual(owner.getSnapshot().comparison?.selected,[]);
   owner.selectComparison(id(5),true);assert.deepEqual(owner.getSnapshot().comparison?.selected,[],'No received target means no selectable restore');
   owner.selectReadComparison('replace_current',true);owner.selectReadComparison('restore_deleted',true);
-  await owner.compareOriginal(id(2),'care',true);assert.deepEqual(owner.getSnapshot().comparison?.selected,[id(3),id(4)],'Reading another page cannot select its differences');
+  await owner.compareOriginal(id(2),module,true);assert.deepEqual(owner.getSnapshot().comparison?.selected,[id(3),id(4)],'Reading another page cannot select its differences');
   await owner.restoreComparison();assert.equal(sent.length,1);const command=sent[0];
   assert.equal(command.restoreOriginal,true);assert.equal(command.resolutionOnly,true);assert.equal(command.acceptedManifestSha256,'a'.repeat(64));
-  assert.deepEqual(command.targets,[{sourceChildId:id(2),target:{childId:id(2),spaceId:null},sections:['care']}]);
-  assert.deepEqual(command.resolutions.map(row=>[row.resourceId,row.resolution.mode,row.resolution.targetId,row.resolution.expectedVersion]),
-    [[id(3),'replace_current',id(13),4],[id(4),'restore_deleted',id(14),5]]);
+  assert.deepEqual(command.targets,[{sourceChildId:id(2),target:{childId:id(2),spaceId:null},sections:[module]}]);
+  assert.deepEqual(command.resolutions.map(row=>{assert.notEqual(row.resolution.mode,'preserve');
+    assert.ok(row.resolution.mode !== 'preserve');return [row.section,row.resourceId,row.resolution.mode,row.resolution.targetId,row.resolution.expectedVersion];}),
+    [[section,id(3),'replace_current',id(13),4],[section,id(4),'restore_deleted',id(14),5]]);
   assert.equal(owner.getSnapshot().comparison,null);assert.equal(owner.getSnapshot().pending?.checked,false);
   await owner.retryOriginal();assert.equal(sent.length,1,'Unknown submission must first look up the same operation');
   await owner.checkOriginal();assert.equal(owner.getSnapshot().pending,null);assert.equal(owner.getSnapshot().items[0].id,command.opId);assert.equal(sent.length,1);
-  owner.syncContext('owner','owner:2',true);await owner.openUpload(id(1));await owner.compareOriginal(id(2),'care');
+  owner.syncContext('owner','owner:2',true);await owner.openUpload(id(1));await owner.compareOriginal(id(2),module);
   owner.selectReadComparison('replace_current',true);const observed=owner.getSnapshot().comparison;
-  await owner.compareOriginal(id(2),'care');assert.deepEqual(owner.getSnapshot().comparison?.selected,[],'Fresh comparison clears old checked versions');
+  await owner.compareOriginal(id(2),module);assert.deepEqual(owner.getSnapshot().comparison?.selected,[],'Fresh comparison clears old checked versions');
   owner.selectReadComparison('replace_current',true);await owner.restoreComparison(observed);assert.equal(sent.length,1,'A stale rendered submit cannot restore a newly compared selection');
+  }
 });
 
 test('revoked import access clears previously read summary and comparison across list reopening and version changes',async()=>{
   const batchId='00000000-0000-4000-8000-000000000201',childId='00000000-0000-4000-8000-000000000202',uploadId='00000000-0000-4000-8000-000000000203';
-  const batch={id:batchId,version:1,state:'completed',targets:[]};let listed=[batch],denied=false;
-  const api={setIdentity(){},listImports:async()=>{if(denied)throw new HandoverApiError(403,'forbidden');return {items:listed,nextCursor:'more'};},
+  const batch=inspectionBatch(batchId,uploadId);let listed=[batch],denied=false;
+  const api:Partial<HandoverApi>={setIdentity(){},listImports:async()=>{if(denied)throw new HandoverApiError(403,'forbidden');return {items:listed,nextCursor:'more'};},
     importSummary:async()=>({batchId,state:'completed',processedItems:3,totalItems:3,modules:[{module:'care',created:3,updated:0,skipped:0,conflict:0}]}),
-    getUpload:async()=>({id:uploadId,version:3,state:'ready',preview:{manifestSha256:'a'.repeat(64),header:{purpose:'backup',source:{accountId:'owner'},selection:{childIds:[childId],modules:['care']}}}}),
+    getUpload:async()=>inspectionUpload(uploadId,childId,['care']),
     compareOriginal:async()=>({uploadId,manifestSha256:'a'.repeat(64),childId,module:'care',items:[{id:childId,targetId:childId,backupVersion:1,localVersion:2,state:'different',changedFields:['text']}],nextCursor:null})};
   const owner=new HandoverImportOwner(api as unknown as HandoverApi);owner.syncContext('owner','owner:1',true);
   await owner.load();await owner.readSummary(batchId);assert.equal(owner.getSnapshot().summary?.value?.modules?.[0].created,3);

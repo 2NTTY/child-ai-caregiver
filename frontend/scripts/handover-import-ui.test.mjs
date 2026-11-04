@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import ts from 'typescript';
 import * as ownerHelpers from '../src/production/HandoverImportOwner.ts';
+import { originalBackupModuleSchema } from '../../src/shared/handover-imports.ts';
 
 // Actual shared components with synthetic account data; no browser, native picker or network.
 let current, production;
@@ -17,6 +18,7 @@ function load(name) {
     : name === 'react-native' ? { View: 'View', StyleSheet: { create: value => value, hairlineWidth: 1 }, Platform: { OS: 'web' }, AppState: { currentState: 'active' } }
     : name === 'react-native-paper' ? { Text: 'Text' }
     : name.endsWith('/HandoverImportOwner') ? ownerHelpers : name.endsWith('/ProductionProvider') ? { useProduction: () => production }
+    : name.endsWith('/handover-imports') ? { originalBackupModuleSchema }
     : name.endsWith('/useProductionSharing') ? { useProductionSharing: () => ({ controller: {}, state: { identityKey: null, selected: null, shares: { items: [] }, spaces: { items: [] }, teacherClasses: { items: [] }, rosterQuery: '' } }) }
     : name.endsWith('/handover-class-targets') ? { handoverClassScope: () => null, handoverClassDestinations: () => [], handoverClassEnrolmentDestination: () => null }
     : name.endsWith('/package-import') ? { PACKAGE_IMPORT_MAX_BYTES: 268435456, pickImportPackage: async () => null }
@@ -218,11 +220,11 @@ test('shared import components label resources, read literal source histories an
   historyButtons[0].props.onPress(); assert.deepEqual(calls.pop(), ['open', rows[0].id]);
   control(resultView.tree, '選取此已刪項目作明確恢復').props.onChange(true); again(resultView);
   control(resultView.tree, '恢復所選已刪項目（1 項）').props.onPress(); assert.deepEqual(calls.pop(), ['resolve', 'restore_deleted', [rows[3].id]]);
-  const sourceRows = ['input_processing', 'input_linked', 'inputs_capacity'].map((reason, n) => ({ ...rows[0], id: id(60 + n), module: 'sources', resourceSection: 'private_sources',
+  const sourceRows = ['input_processing', 'input_linked', 'inputs_capacity', 'input_source_unavailable'].map((reason, n) => ({ ...rows[0], id: id(60 + n), module: 'sources', resourceSection: 'private_sources',
     sourceSection: n === 1 ? 'private_source_history' : null, outcome: 'conflict', reason }));
   const sourceView = render(HandoverImportResults, { controller, batch: { ...batch, targets: [{ ...batch.targets[0], sections: ['sources'] }] },
     results: { ...results, module: 'sources', items: sourceRows }, identityKey: 'owner:1', locked: false });
-  for (const label of ['私人來源', '私人來源管理歷史', '抓取或提取尚未結清', '已連結照護記錄', '接收對象的私人來源容量已滿']) assert.ok(text(sourceView.tree).includes(label), label);
+  for (const label of ['私人來源', '私人來源管理歷史', '抓取或提取尚未結清', '已連結照護記錄', '接收對象的私人來源容量已滿', '原官方來源已無法核對，已保留目前資料。']) assert.ok(text(sourceView.tree).includes(label), label);
   control(sourceView.tree, '查看來源歷史').props.onPress(); assert.deepEqual(calls.pop(), ['open', sourceRows[0].id]);
   const documentRows = ['documents', 'visit_preparation'].map((resourceSection, i) => ({ ...rows[0], id: id(70 + i), module: 'documents', resourceSection }));
   const documentsView = render(HandoverImportResults, { controller, batch: { ...batch, targets: [{ ...batch.targets[0], sections: ['documents'] }] },
@@ -352,6 +354,9 @@ test('original restore panel defaults to no selections and previews overwrite an
   production={owner:{handoverImportOwner:controller,sharedChild:{subscribe:noop,getSnapshot:()=>({})}},identityKey:'owner:1',userId:'owner',online:true,
     account:{gate:'ready',busy:null,deletion:{phase:'idle'}},recordsState:{children:[{id:id(2),displayName:'Original child',accessRole:'owner'}]}};
   const view=render(load('HandoverImportControls').HandoverImportControls);
+  assert.deepEqual(control(view.tree,'比較資料類別').props.options.map(row=>row.value),originalBackupModuleSchema.options.filter(module=>module==='care'));
+  assert.equal(load('HandoverImportControls').comparisonFields('sources',['sourceLabel','text','management','fetchState','extraction','recordId','unrecognized']),
+    '來源名稱、來源原文、用途與摘錄設定、抓取狀態、提取狀態、已連結照護記錄、其他欄位');
   control(view.tree,'比較原有資料的孩子').props.onChange(id(2));again(view);
   state.comparison={query:{uploadId:id(1),childId:id(2),module:'care',includeRestoreTarget:true},items:rows,selected:[],loaded:true,nextCursor:'next',error:null};again(view);
   assert.equal(control(view.tree,'提交所選原項還原（0 項）').props.disabled,true);

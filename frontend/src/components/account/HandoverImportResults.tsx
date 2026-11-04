@@ -29,6 +29,7 @@ const reasons: Record<string, string> = {
   history_already_imported: '這個來源歷史版本已保存。', already_imported: '這個來源版本已保存。',
   older_source: '來源版本較舊，已保留接收資料。', empty_profile: '來源沒有目前孩子資料，未清除接收資料。',
   input_processing: '原抓取或提取尚未結清，未更新此私人來源。', input_linked: '此私人來源已連結照護記錄，未更新。',
+  input_source_unavailable: '原官方來源已無法核對，已保留目前資料。',
   inputs_capacity: '接收對象的私人來源容量已滿，未新增。',
   document_revision_index: '版本索引已核對，內容由對應來源修訂保存。',
   attachment_not_available: '來源附件尚未可讀，未新增附件。',

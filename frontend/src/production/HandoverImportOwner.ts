@@ -1,5 +1,5 @@
 import { HandoverApiError, type HandoverApi, type ClassImportEnrolments, type HandoverSourceHistoryQuery, type HandoverSourceHistoryPage } from '../../../src/client/handover-api.ts';
-import { handoverImportCommandSchema, handoverImportModuleOf, type HandoverImportResourceSection, type HandoverImportCommand, type HandoverImportView,
+import { handoverImportCommandSchema, handoverImportModuleOf, originalBackupModuleSchema, type HandoverImportModule, type HandoverImportResourceSection, type HandoverImportCommand, type HandoverImportView,
   type HandoverImportResult, type HandoverImportResultQuery } from '../../../src/shared/handover-imports.ts';
 import type { HandoverImportSummary, OriginalBackupComparison, OriginalBackupComparisonQuery } from '../../../src/shared/handover-imports.ts';
 import { handoverUploadCommandSchema, type HandoverUploadCommand, type HandoverUploadView } from '../../../src/shared/handover-uploads.ts';
@@ -8,6 +8,10 @@ import { FamilyDocumentApiError, parseFamilyDocumentSnapshot } from '../../../sr
 import type { DocumentContentPage, DocumentContentQuery, DocumentSnapshot } from '../../../src/shared/family-documents.ts';
 
 export interface SelectedPackage { filename: string; bytes: number; sha256: string; body: BodyInit; release(): void }
+export function originalRestoreResourceSection(module: HandoverImportModule): HandoverImportResourceSection | null {
+  if (module === 'sources') return 'private_sources';
+  return module === 'care' || module === 'profile' || module === 'tasks' ? module : null;
+}
 export function originalComparisonResolution(item: OriginalBackupComparison['items'][number]) {
   if (!item.targetId || item.localVersion === null) return null;
   return item.state === 'deleted' ? 'restore_deleted' as const
@@ -207,7 +211,7 @@ export class HandoverImportOwner {
     const upload = this.state.upload, preview = upload?.preview, previous = this.state.comparison;
     if (this.state.pending || upload?.state !== 'ready' || !preview || preview.header.purpose !== 'backup'
       || preview.header.source.accountId !== this.state.userId || !preview.header.selection.childIds.includes(childId)
-      || !preview.header.selection.modules.includes(module) || !['care','profile','tasks'].includes(module)
+      || !preview.header.selection.modules.includes(module) || !originalBackupModuleSchema.safeParse(module).success
       || more && (!previous?.nextCursor || previous.query.childId !== childId || previous.query.module !== module)) return;
     const t = this.begin('read'); if (!t) return;
     const query = {uploadId:upload.id,expectedUploadVersion:upload.version,childId,module,includeRestoreTarget:true as const};
@@ -248,10 +252,11 @@ export class HandoverImportOwner {
     const rows = comparison.selected.map(id => comparison.items.find(item => item.id === id));
     if (rows.some(item => !item || !originalComparisonResolution(item))) return;
     const {childId,module} = comparison.query;
+    const section = originalRestoreResourceSection(module); if (!section) return;
     const input = handoverImportCommandSchema.safeParse({opId:crypto.randomUUID(),uploadId:upload.id,expectedUploadVersion:upload.version,
       acceptedManifestSha256:comparison.manifestSha256,restoreOriginal:true,resolutionOnly:true,
       targets:[{sourceChildId:childId,target:{childId,spaceId:null},sections:[module]}],
-      resolutions:rows.map(item => ({sourceChildId:childId,section:module,resourceId:item!.id,
+      resolutions:rows.map(item => ({sourceChildId:childId,section,resourceId:item!.id,
         resolution:{mode:originalComparisonResolution(item!)!,targetId:item!.targetId!,expectedVersion:item!.localVersion!}}))});
     if (!input.success) {this.update({notice:'所選還原項目或版本已不可用，請重新比較。'});return;}
     this.clearComparison();
