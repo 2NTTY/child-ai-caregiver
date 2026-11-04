@@ -47,11 +47,11 @@ test('one memory module imports all current resources and source history without
   assert.ok(original);
   const topic = await memory.createTopic('source', sourceChild, { title: '原事情', note: '原交代', visibility: 'private', confirmShared: false });
   assert.ok(topic);
-  const at = new Date().toISOString(), messageId = randomUUID();
+  const at = '2024-06-12T09:00:00.000Z', messageId = randomUUID();
   const note = { id: randomUUID(), childId: sourceChild, version: 1, title: '私人交代', text: '本地新帳戶不得因此自動授權',
     sourceMessageId: messageId, createdAt: at, updatedAt: at, provenance: 'user_statement', memoryKey: 'private-note' };
   const summary = { id: randomUUID(), childId: sourceChild, version: 1, text: '來源時段摘要', createdAt: at,
-    previousId: null, coveredMessageIds: [messageId], lastCoveredMessageId: messageId };
+    previousId: null, coveredMessageIds: [messageId], lastCoveredMessageId: messageId, sourcePeriod: { from: at, to: at } };
   const stored = new Map<string, { body: Buffer; metadata: any }>();
   const objects = createFirebaseHandoverObjects({ config: { projectId: options.projectId, namespace: options.namespace, bucketName: 'synthetic-import' }, files: cipher.files,
     bucket: { async metadata(name) { return stored.get(name)?.metadata ?? null; },
@@ -103,7 +103,10 @@ test('one memory module imports all current resources and source history without
     assert.equal(fact?.status, 'candidate'); assert.equal(fact?.applicable, false);
     const importedNote = await authority.runTransaction('recipient', childId, b => notes.read(b, resource('instructions').id));
     assert.equal(importedNote?.sourceMessageId, null); assert.equal(importedNote?.provenance, 'imported_source');
+    assert.equal(importedNote.updatedAt, at);
+    assert.equal(fact?.contentUpdatedAt, original.contentUpdatedAt);
     const importedSummary = await authority.runTransaction('recipient', childId, b => memory.readImportedSummary(b, resource('summary_history').id));
+    assert.deepEqual(importedSummary?.sourcePeriod, summary.sourcePeriod);
     assert.equal(importedSummary?.coverageScope, 'imported_source'); assert.deepEqual(importedSummary?.coveredMessageIds, [messageId]);
     const activeSummary = await memory.summary('recipient', childId); assert.ok(activeSummary);
     assert.equal(activeSummary.summary, null);
@@ -149,6 +152,55 @@ test('one memory module imports all current resources and source history without
     const live = [...fixture.records].map(([path, data]) => codec.decode({ path, data }));
     const removed = replayContentErasures(new FirestoreDomainData(options), codec, snapshot, live, journalEntries, fixture.records);
     assert.ok(snapshot.some(row => row.context.kind === 'handover-source-history' && removed.has(row.path)), 'restore removes the erased fact source revision');
+
+    const { sourcePeriod: _period, ...legacySummary } = { ...summary, id: randomUUID(), text: 'Legacy summary with later period evidence' };
+    const datedPeriod = { from: at, to: '2024-06-12T09:00:00.001Z' };
+    await uploads.cancel('recipient', uploadId, { opId: randomUUID(), expectedVersion: uploaded.version });
+    const uploadScope = await authority.runTransaction('recipient', null, async binding => binding.scope);
+    const cleanup = await uploads.cleanup(uploadScope, uploadId, controller.signal);
+    const settledCleanup = cleanup.state === 'deferred' ? await createHandoverUploadService({ ...options, objects,
+      serverClock: () => Date.parse(cleanup.nextAt!) }).cleanup(uploadScope, uploadId, controller.signal) : cleanup;
+    assert.equal(settledCleanup.state, 'completed');
+    async function importSummary(value: object, period: typeof datedPeriod | null) {
+      const summaryPages = pages.map(page => ({ ...page, items: page.section === 'children' ? page.items
+        : page.section === 'summary_history' ? [value] : [] }));
+      async function* summaryEntries() {
+        for (let i = 0; i < summaryPages.length; i++) yield { path: `data/${i}.json`, mediaType: 'application/json',
+          content: Buffer.from(JSON.stringify({ ...summaryPages[i], scopeVersion })) };
+        yield { path: 'summary.md', mediaType: 'text/markdown', content: Buffer.from('Summary period compatibility') };
+      }
+      const zip = await writeHandoverArchive({ directory, header: { format: 'yuyoufang-data', version: 1,
+        packageId: randomUUID(), packageVersion: 1, createdAt: at, purpose: 'backup', source: archive.manifest.source,
+        selection: { childIds: [sourceChild], modules: ['memory'], period } }, entries: summaryEntries(),
+        coverage: () => summaryPages.map(page => ({ section: page.section, childId: page.childId, items: page.items.length,
+          scopeVersion, complete: true as const })) });
+      const body = await readFile(zip.path), id = randomUUID();
+      await uploads.create('recipient', { opId: id, filename: 'summary.zip', bytes: body.length, sha256: createHash('sha256').update(body).digest('hex') });
+      const upload = await uploads.receive('recipient', id, Readable.from([body]), controller.signal);
+      const next = { ...command, opId: randomUUID(), uploadId: id, expectedUploadVersion: upload.version,
+        acceptedManifestSha256: upload.preview!.manifestSha256 };
+      assert.equal((await service.create('recipient', next, controller.signal)).state, 'queued');
+      const batch = await run(next.opId);
+      const items = (await service.results('recipient', next.opId, { sourceChildId: sourceChild, module: 'memory' })).items;
+      assert.equal(items.length, 1);
+      return { batch, item: items[0] };
+    }
+    const legacyImport = await importSummary(legacySummary, null);
+    assert.equal(legacyImport.batch.counts.created, 1);
+    const legacyLocalId = legacyImport.item.recordedResource!.id;
+    assert.equal((await authority.runTransaction('recipient', childId, b => memory.readImportedSummary(b, legacyLocalId)))?.sourcePeriod, undefined);
+    const annotatedSummary = { ...legacySummary, sourcePeriod: summary.sourcePeriod };
+    const annotatedImport = await importSummary(annotatedSummary, datedPeriod);
+    assert.equal(annotatedImport.item.recordedResource?.id, legacyLocalId, 'period evidence annotates the original local summary');
+    assert.deepEqual((await authority.runTransaction('recipient', childId, b => memory.readImportedSummary(b, legacyLocalId)))?.sourcePeriod,
+      summary.sourcePeriod, 'the legacy summary exposes recovered dates through its original local ID');
+    assert.equal((await importSummary(annotatedSummary, datedPeriod)).batch.counts.skipped, 1);
+    const incompatible = await importSummary({ ...legacySummary, sourcePeriod: datedPeriod }, datedPeriod);
+    assert.equal(incompatible.item.outcome, 'conflict');
+    assert.equal(incompatible.item.reason, 'source_version_conflict');
+    assert.deepEqual((await authority.runTransaction('recipient', childId, b => memory.readImportedSummary(b, legacyLocalId)))?.sourcePeriod,
+      summary.sourcePeriod, 'conflicting known dates cannot replace existing evidence');
+
     const link = importedSummary!.importedFrom!.current;
     const newerSummary = await authority.runTransaction('recipient', childId, async binding => {
       const prepared = await memory.prepareImportedSummary(binding, randomUUID(), { section: 'summary_history', childId: sourceChild,

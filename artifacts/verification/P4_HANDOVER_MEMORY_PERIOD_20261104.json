@@ -1,0 +1,14 @@
+{
+  "package": "P4-HANDOVER01",
+  "base": "05d7025fbc1404f964b61dcb8e7f470583e6eaa2",
+  "integrationBase": "9493b6f4723576b99a790a69978ad1acfe8a8342",
+  "environment": "Local Node 24, ZIP writer/reader, production memory and import worker services, synthetic Firestore and object storage",
+  "checks": [
+    "Inclusive selection of instructions, versioned facts and topics. Revisions need a selected parent. A crossing or undated summary is absent from the dated ZIP and remains available in a full package.",
+    "The reader rejects a repacked out-of-period summary. Selecting memory does not add chat rows to the package.",
+    "A native summary captures the timestamps of its source messages. An eligible legacy batch can recover the range from its original messages within the same authorized child. An unproven cumulative range remains unknown.",
+    "A full import followed by dated evidence for the same source version enriches the original local summary. Repetition skips, conflicting dates produce an item conflict. No new summary or local chat coverage is created."
+  ],
+  "red": "The initial dated-memory case failed with package_period_not_connected. A worker fixture also reached the ordinary upload limit until its completed upload was cleaned through the normal cleanup service.",
+  "limits": "No live database, model, device, or deployment acceptance. Older snapshots without defensible dates remain available via a full package. Documents and visit preparations are separate."
+}

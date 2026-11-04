@@ -5,9 +5,17 @@ import { historyModule, sourceHistoryExportSchema } from './handover-history-rec
 import { validateSourceHistory } from './handover-source-history.ts';
 import { growthTopicResourceId } from './firestore-growth.ts';
 import { growthTopicSchema } from '../src/shared/growth.ts';
+import { factContentDate, memoryUpdateDate, summarySourcePeriodSchema } from './handover-memory-dates.ts';
+import { firestoreFactSchema, firestoreTopicSchema } from './firestore-memory.ts';
+import { firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
 
 type Selection = HandoverHeader['selection'];
 const timestamp = z.iso.datetime({ offset: true });
+function datedValue<T>(schema: z.ZodType<T>, raw: unknown): T {
+  const parsed = schema.safeParse(raw);
+  if (!parsed.success) throw new HandoverArchiveError('invalid_package_period');
+  return parsed.data;
+}
 const object = (value: unknown): Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 
@@ -18,7 +26,7 @@ export function withinHandoverPeriod(at: string, period: HandoverPeriod) {
   return time >= Date.parse(period.from) && time <= Date.parse(period.to);
 }
 
-const datedParentSections = new Set(['care', 'profile', 'tasks', 'private_sources', 'growth_attention', 'growth_topics']);
+const datedParentSections = new Set(['care', 'profile', 'tasks', 'private_sources', 'growth_attention', 'growth_topics', 'memory_facts', 'memory_topics']);
 /** Retained revisions address the receiving child's local parent, while their event time belongs to the original evidence. */
 export function datedParent(section: string, raw: unknown, childId: string) {
   const history = historyModule(section), parent = history ?? section;
@@ -52,6 +60,18 @@ export function handoverPeriodMatch(section: string, raw: unknown, period: NonNu
   }
   let at: unknown;
   switch (section) {
+    case 'summary_history': {
+      if (value.sourcePeriod === undefined) return 'undated';
+      const proof = summarySourcePeriodSchema.safeParse(value.sourcePeriod);
+      if (!proof.success) throw new HandoverArchiveError('invalid_package_period');
+      return withinHandoverPeriod(proof.data.from, period) && withinHandoverPeriod(proof.data.to, period) ? 'inside' : 'outside';
+    }
+    case 'instructions':
+      at = memoryUpdateDate('instructions', datedValue(firestorePrivateInstructionSchema, value)); break;
+    case 'memory_topics': case 'memory_topic_history':
+      at = memoryUpdateDate('memory_topics', datedValue(firestoreTopicSchema, value)); break;
+    case 'memory_facts': case 'memory_fact_history':
+      at = factContentDate(datedValue(firestoreFactSchema, value)); break;
     case 'care': case 'care_history': at = object(object(value.details).eventTime).at; break;
     case 'tasks': at = object(value.occurrence).dueAt; break;
     case 'task_history': at = object(object(value.task).occurrence).dueAt; break;
@@ -66,7 +86,8 @@ export function handoverPeriodMatch(section: string, raw: unknown, period: NonNu
     case 'child_avatar': at = value.updatedAt; break;
     default: throw new HandoverArchiveError('package_period_not_connected');
   }
-  if (at === null && ['care', 'care_history', 'profile', 'profile_history', 'child_avatar'].includes(section)) return 'undated';
+  if (at === null && ['care', 'care_history', 'profile', 'profile_history', 'child_avatar', 'instructions',
+    'memory_facts', 'memory_fact_history', 'memory_topics', 'memory_topic_history'].includes(section)) return 'undated';
   const instant = timestamp.safeParse(at);
   if (!instant.success) throw new HandoverArchiveError('invalid_package_period');
   return withinHandoverPeriod(instant.data, period) ? 'inside' : 'outside';
