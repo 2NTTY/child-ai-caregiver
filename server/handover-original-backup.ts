@@ -17,7 +17,7 @@ import { createFirestoreCareSummary, firestorePreparationSchema } from './firest
 import { createFirestoreOnlineStore } from './firestore-online.ts';
 import { createFirestoreSharedInputStore, sharedInputImportSchema } from './firestore-shared-inputs.ts';
 import type { createHandoverUploadService } from './handover-upload-service.ts';
-import type { HandoverImportCursor } from './handover-import.ts';
+import { avatarTransferSchema, type HandoverImportCursor } from './handover-import.ts';
 
 type Uploads = ReturnType<typeof createHandoverUploadService>;
 export interface OriginalBackupIssuer {
@@ -75,6 +75,7 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), care = createFirestoreCareStore(options), online = createFirestoreOnlineStore(options);
   const sources = createFirestoreSharedInputStore(options);
   const documents = createFirestoreFamilyDocumentStore(options), preparations = createFirestoreCareSummary(options, care);
+  const avatars = createFirestoreAvatarData(options);
   return async function compare(owner: string, raw: unknown, signal: AbortSignal): Promise<OriginalBackupComparison> {
     const input = domainParse(originalBackupComparisonQuerySchema, raw);
     if (!options.originalBackup) domainReject('package_original_unavailable', 503);
@@ -91,7 +92,7 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
         try { cursor = cursorSchema.parse(JSON.parse(options.cipher.decrypt(Buffer.from(input.cursor, 'base64url').toString(), aad))); }
         catch { domainReject('invalid_package_cursor', 400); }
       }
-      const section = input.module === 'sources' ? 'private_sources' : input.module;
+      const section = input.module === 'sources' ? 'private_sources' : input.module === 'attachments' ? 'child_avatar' : input.module;
       const page = await reader.readPage({ selection: { childIds: [input.childId], modules: [input.module] },
         sections: section === 'documents' ? ['documents', 'visit_preparation'] : [section], acknowledgedManifestSha256: reader.manifestSha256,
         cursor: cursor?.page, limit: section === 'documents' ? 3 : 20 });
@@ -103,6 +104,17 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
         const items: OriginalBackupComparison['items'] = [];
         for (const row of page.rows) {
           if (row.childId !== input.childId) domainReject('invalid_package_scope', 400);
+          if (section === 'child_avatar') {
+            const backup = domainParse(avatarTransferSchema, row.value);
+            if (row.section !== section || backup.target.kind !== 'child' || backup.target.childId !== input.childId)
+              domainReject('invalid_package_scope', 400);
+            const head = await avatars.head(binding, avatarBinding(binding.scope, backup.target));
+            const difference = head.removal?.state === 'pending' ? 'unavailable' : selfAvatarDifference(backup, avatarPublicState(head, false));
+            const state = difference === 'empty_backup' ? 'unchanged' : difference === 'missing' ? 'unavailable' : difference;
+            items.push({ id: input.childId, resourceSection: section, ...(input.includeRestoreTarget ? { targetId: input.childId } : {}),
+              backupVersion: backup.version, localVersion: head.version, state, changedFields: state === 'different' || state === 'deleted' ? ['asset'] : [] });
+            continue;
+          }
           if (section === 'documents') {
             const kind = row.section;
             if (kind !== 'documents' && kind !== 'visit_preparation') domainReject('invalid_package_scope', 400);

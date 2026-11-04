@@ -126,7 +126,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       && 'importSourceHash' in attachmentState.value && attachmentState.value.importSourceHash === mapping?.sourceHash;
     const locallyChanged = mapping ? currentVersion !== mapping.target.version && !sameImportedBytes : section === 'profile' && (current as ChildProfile).data !== null
       || (section === 'visit_preparation' || section === 'child_avatar' || section === 'growth_topics') && currentVersion > 0;
-    return { mappingId, mappingRef, mapping, current, currentVersion, currentId, deleted, locallyChanged };
+    return { mappingId, mappingRef, mapping, current, currentVersion, currentId, deleted, locallyChanged, attachmentState };
   }
   async function apply(userId: string, raw: HandoverImportItemCommand, fence?: HandoverImportFence, signal?: AbortSignal) {
     const target = domainParse(targetSchema, raw.target), historySection = historyModule(raw.row.section);
@@ -174,7 +174,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       const { serverId, accountId, childId } = provenance.current.source;
       const resourceId = history?.parentId ?? provenance.current.source.resourceId;
       const source = handoverSourceIdentitySchema.parse({ serverId, accountId, childId, section, resourceId });
-      const { mappingId, mappingRef, mapping, current, currentVersion, currentId, deleted, locallyChanged } = await readState(b, section, source, raw.restoreOriginal);
+      const { mappingId, mappingRef, mapping, current, currentVersion, currentId, deleted, locallyChanged, attachmentState } = await readState(b, section, source, raw.restoreOriginal);
       const resultResource = currentId ? { id: currentId, version: currentVersion } : null;
       async function finish(outcome: HandoverImportItem['outcome'], reason: string | null, resource = resultResource,
         prepared?: { changeSeq: string | null; commit(): void }, historyCommit?: () => void) {
@@ -202,11 +202,21 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       }
       if (raw.restoreOriginal) {
         if (target.spaceId || b.sharedAccess || source.accountId !== userId || source.childId !== target.childId
-          || !['care', 'profile', 'tasks', 'private_sources', 'documents', 'visit_preparation'].includes(section) || raw.row.section !== section || sourceValue === null
+          || !['care', 'profile', 'tasks', 'private_sources', 'documents', 'visit_preparation', 'child_avatar'].includes(section) || raw.row.section !== section || sourceValue === null
           || section === 'private_sources' && raw.row.value.ownerUserId !== userId)
           domainReject('invalid_import_target', 403);
+        if (section === 'child_avatar') {
+          const backup = handoverAttachmentSchemas.child_avatar.parse(raw.row.value);
+          if (backup.target.kind !== 'child' || backup.target.childId !== target.childId) domainReject('invalid_import_target', 403);
+          if (attachmentState && 'pendingRemoval' in attachmentState && attachmentState.pendingRemoval)
+            return finish('conflict', 'avatar_unavailable');
+          if (!backup.asset) return finish('skipped', 'empty_backup');
+          if (resolution.mode !== 'preserve' && resolution.expectedVersion === currentVersion
+            && attachmentState && 'avatarSha256' in attachmentState && attachmentState.avatarSha256 === backup.asset.sha256)
+            return finish('skipped', 'already_imported');
+        }
         // A missing original is not a confirmed removal. Only the domain tombstone permits revival.
-        if (resolution.mode === 'preserve' || !current && !(deleted && currentVersion > 0 && (section === 'care' || section === 'private_sources'))
+        if (resolution.mode === 'preserve' || !current && !(deleted && currentVersion > 0 && (section === 'care' || section === 'private_sources' || section === 'child_avatar'))
           || section === 'profile' && currentVersion === 0) return finish('conflict', 'original_unavailable', null);
         if (resolution.targetId !== currentId || resolution.expectedVersion !== currentVersion)
           return finish('conflict', 'target_version_conflict');
@@ -280,7 +290,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       if (isHandoverAttachment(section)) {
         const prepared = await attachments.prepare(b, raw.row, content!, { batchId, operationId: opId,
           actorUserId: b.actorUserId, sourceHash: provenance.current.sourceHash }, provenance, currentVersion, uploaded,
-        target.spaceId ? { spaceId: target.spaceId } : undefined, signal);
+        target.spaceId ? { spaceId: target.spaceId } : undefined, signal, raw.restoreOriginal);
         if (prepared.kind === 'reservation') {
           guard?.assertCurrent(); signal?.throwIfAborted(); prepared.commit(); return prepared;
         }

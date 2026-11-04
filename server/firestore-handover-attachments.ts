@@ -84,10 +84,12 @@ export function createHandoverAttachments(ports: HandoverAttachmentPorts = {}) {
         : section === 'voices' ? required(ports.voices).readImportState(b, id) : required(ports.files).readImportState(b, id);
     },
     async prepare(b: Binding, row: HandoverImportRow, content: HandoverAttachmentContent, stage: AttachmentImportStage,
-      provenance: ImportProvenance, expectedVersion: number, uploaded: boolean, selection?: SharedSelection, signal?: AbortSignal) {
+      provenance: ImportProvenance, expectedVersion: number, uploaded: boolean, selection?: SharedSelection, signal?: AbortSignal, restoreOriginal?: true) {
       const id = firestoreBackgroundReference({ id: firestoreDomainHash(['handover-asset',
         b.scope.ownerUserId, b.scope.workspaceId, b.scope.childId, stage.batchId, stage.operationId]) });
       const section = row.section, userId = b.actorUserId, childId = b.scope.childId;
+      if (restoreOriginal && (section !== 'child_avatar' || selection || b.sharedAccess || row.childId !== childId
+        || row.source.accountId !== userId || b.scope.ownerUserId !== userId)) domainReject('invalid_import_target', 403);
       const finish = (value: { version: number }, prepared: { changeSeq: string | null; commit(): void }) => ({
         kind: 'publication' as const, resource: { id: section === 'child_avatar' ? childId : id, version: value.version }, ...prepared,
       });
@@ -113,12 +115,23 @@ export function createHandoverAttachments(ports: HandoverAttachmentPorts = {}) {
       }
       if (section !== 'child_avatar') domainReject('invalid_package_scope', 400);
       const { store, policy } = required(ports.avatars);
-      if (uploaded) { const plan = await store.prepareImportPublication(b, id, stage, provenance); return finish(plan.value, plan); }
-      const plan = await store.prepareImportReservation(b, { expectedVersion, policyId: policy.policyId, mimeType: content.mimeType,
-        bytes: content.bytes, sha256: content.sha256, crop: { centerX: 0.5, centerY: 0.5, zoom: 1 } },
-      { uploadId: id, assetId: firestoreBackgroundReference({ id: firestoreDomainHash(['handover-avatar', id]) }) }, stage);
+      const backup = restoreOriginal ? domainParse(avatarTransferSchema, row.value) : null;
+      if (uploaded) {
+        const plan = restoreOriginal ? await store.prepareSelfRestorePublication(b, id, stage, childId, backup?.importedFrom) : await store.prepareImportPublication(b, id, stage, provenance);
+        return finish(plan.value, plan);
+      }
+      const reservation = { expectedVersion, policyId: policy.policyId, mimeType: content.mimeType,
+        bytes: content.bytes, sha256: content.sha256, crop: { centerX: 0.5, centerY: 0.5, zoom: 1 } };
+      const ids = { uploadId: id, assetId: firestoreBackgroundReference({ id: firestoreDomainHash(['handover-avatar', id]) }) };
+      const asset = backup?.asset;
+      if (restoreOriginal && !asset) domainReject('invalid_package_data', 400);
+      const plan = restoreOriginal ? await store.prepareSelfRestoreReservation(b, reservation, ids, stage, childId)
+        : await store.prepareImportReservation(b, reservation, ids, stage);
       return { kind: 'reservation' as const, commit: plan.commit, upload: async () => {
-        signal?.throwIfAborted(); await store.uploadImported(userId, childId, id, content.content, stage, signal ?? new AbortController().signal, selection);
+        const activeSignal = signal ?? new AbortController().signal;
+        activeSignal.throwIfAborted();
+        if (asset) await store.uploadSelfRestore(userId, id, content.content, asset, stage, activeSignal, childId);
+        else await store.uploadImported(userId, childId, id, content.content, stage, activeSignal, selection);
       } };
     },
   };
