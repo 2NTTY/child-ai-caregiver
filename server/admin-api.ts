@@ -18,10 +18,16 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
   if (url.pathname === '/api/admin/session' && request.method === 'GET') return Response.json({ administrator: permitted });
   if (!permitted) domainReject('forbidden', 403);
   let result: unknown;
-  if (request.method === 'POST' && url.pathname === '/api/admin/operations') {
+  const batchBase = '/api/admin/knowledge-index-batches';
+  const batchPath = /^\/api\/admin\/knowledge-index-batches\/([a-f0-9-]+)(?:\/(stop|resume))?$/.exec(url.pathname);
+  if (request.method === 'POST' && (url.pathname === '/api/admin/operations' || url.pathname === batchBase || batchPath?.[2])) {
     if (request.headers.get('origin') !== options.publicOrigin) domainReject('origin_rejected', 403);
     if ((await auth.assertRecentReauthentication(request.headers)).user.id !== userId) domainReject('identity_changed', 409);
-    result = await admin.submit(userId, await options.readJson(request));
+    const input = await options.readJson(request);
+    if (url.pathname === '/api/admin/operations') result = await admin.submit(userId, input);
+    else if ([...url.searchParams].length) domainReject('invalid_input', 400);
+    else if (url.pathname === batchBase) result = await admin.knowledgeIndexes().create(userId, input);
+    else result = await admin.knowledgeIndexes().control(userId, batchPath![1], batchPath![2] as 'stop'|'resume', input);
   } else if (request.method === 'GET') {
     const cursor = url.searchParams.get('cursor');
     if (url.pathname === '/api/admin/policy') result = await admin.overview();
@@ -29,6 +35,12 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
     else if (url.pathname === '/api/admin/invitation') result = { invitation: await admin.lookup(url.searchParams.get('email') ?? '') };
     else if (url.pathname === '/api/admin/usage') result = await admin.usage(url.searchParams.get('day') ?? new Date().toISOString().slice(0, 10));
     else if (url.pathname === '/api/admin/audit') result = await admin.audit(cursor);
+    else if (url.pathname === '/api/admin/knowledge-versions' || url.pathname === batchBase || (batchPath && !batchPath[2])) {
+      const entries = [...url.searchParams];
+      if (entries.length > 1 || entries.some(([key]) => key !== 'cursor') || (batchPath && entries.length)) domainReject('invalid_input', 400);
+      const indexes = admin.knowledgeIndexes();
+      result = batchPath ? await indexes.get(batchPath[1]) : url.pathname === batchBase ? await indexes.list(cursor) : await indexes.versions(cursor);
+    }
     else if (url.pathname === '/api/admin/knowledge-status') {
       const entries = [...url.searchParams];
       if (entries.length > 1 || entries.some(([key]) => key !== 'cursor')) domainReject('invalid_input', 400);

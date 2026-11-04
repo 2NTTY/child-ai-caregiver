@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { serialFirestoreFixture } from './helpers/firestore-session-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
+import { createKnowledgeIndexBatches } from '../server/firestore-knowledge-index-batches.ts';
 import { createFirestoreAdmin } from '../server/firestore-admin.ts';
 import { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
 import { createFirebaseRequestHandler } from '../server/firebase-app.ts';
@@ -77,4 +78,21 @@ test('admin knowledge status reads bounded actual checks with stable equal-time 
     admin: createFirestoreAdmin(options, readAiConfig({ AI_ENABLED: 'false' })), adminUid: 'admin' });
   assert.equal((await request('', unwired)).status, 503);
   assert.deepEqual([...fixture.records], before, 'Inspection cannot register watches, persist work, publish content or change receipts');
+
+  const indexes = createKnowledgeIndexBatches(options, { listVersions: async () => ({ items: [], nextVersionId: null }),
+    rebuildSearchPageIn: async () => { throw Error('A Web request must not rebuild indexes'); } }, tx => authority.readControl(tx), 'admin');
+  const indexHandler = createFirebaseRequestHandler({ authority, auth, publicOrigin: 'https://example.test', mailConfigured: true,
+    admin: createFirestoreAdmin(options, readAiConfig({ AI_ENABLED: 'false' }), refresh, indexes), adminUid: 'admin' });
+  const path = 'https://example.test/api/admin/knowledge-index-batches';
+  const command = { opId: randomUUID(), targets: [{ versionId: randomUUID(), versionHash: 'b'.repeat(64) }] };
+  const post = (origin: string) => indexHandler(new Request(path, { method: 'POST',
+    headers: { origin, 'x-expected-user-id': actor, 'content-type': 'application/json' }, body: JSON.stringify(command) }));
+  actor = 'ordinary'; assert.equal((await post('https://example.test')).status, 403);
+  actor = 'admin'; assert.equal((await post('https://other.test')).status, 403);
+  const { adminIndexBatchReplySchema } = await import('../src/shared/admin-knowledge-index.ts');
+  const created = await post('https://example.test'); assert.equal(created.status, 200);
+  const createdView = adminIndexBatchReplySchema.parse(await created.json());
+  assert.equal(createdView.batch?.id, command.opId);
+  const read = await indexHandler(new Request(path + '/' + command.opId, { headers: { 'x-expected-user-id': actor } }));
+  assert.deepEqual(await read.json(), createdView);
 });

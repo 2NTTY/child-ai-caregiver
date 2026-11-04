@@ -386,7 +386,8 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     const core: Record<string, unknown> = {};
     for (const [name, value] of Object.entries(raw)) {
       if (['format', 'version', 'recordVersion', 'ciphertext', 'recovery'].includes(name)) core[name] = value;
-      else if (collection === namespace || !privateMetadata.has(name)) reject('restore_record_invalid');
+      else if (collection === namespace || !privateMetadata.has(name)
+        && !(name === 'sort' && collection === namespace + '_knowledge_index_batches')) reject('restore_record_invalid');
     }
     const family = collection === namespace ? 'authority' : 'domain';
     const envelope = family === 'authority' ? parse(authorityEnvelopeSchema, core) : parse(domainEnvelopeSchema, core);

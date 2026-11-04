@@ -31,6 +31,8 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   ruleCandidates(transaction: Transaction, rules: readonly { sourceId: string; key: string }[], filter: KnowledgeFilter): Promise<KnowledgeCandidate[]>;
   importSource(input: unknown): Promise<{ versionId: string; hash: string; unchanged: boolean; state: "draft" | "reviewed" | "withdrawn" }>;
   prepareSearch(versionId: string, expectedHash: string): Promise<{ complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
+  rebuildSearchPageIn(transaction: Transaction, versionId: string, expectedHash: string, start: number): Promise<{
+    complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
   listVersions(afterVersionId?: string): Promise<{ items: { id: string; sourceId: string; hash: string; state: string; publishedAt: string | null; searchReady: boolean }[]; nextVersionId: string | null }>;
   missingDocuments(versionId: string): Promise<{ hash: string; title: string; text: string }[]>;
   embedDocument(document: { hash: string; title: string; text: string }, generate: () => Promise<readonly number[]>): Promise<{ reused: boolean }>;
@@ -252,24 +254,31 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         : filter.ageMatch === "unknown" ? "requires_clarification" : filter.ageMatch === "overlap" ? "conditional" : "applicable", distance: null };
   }
   function bump(source: Source): Source { return { ...source, revision: (BigInt(source.revision) + 1n).toString() }; }
+  function writeSearchPageIn(tx: Transaction, edition: Loaded, start: number, repair: boolean) {
+    const version = edition.version, versionId = version.versionId;
+    const index = knowledgeLexicalIndex(edition.document.title, edition.chunks), prior = version.search;
+    if (prior && (knowledgeHash(prior.hashes) !== knowledgeHash(index.hashes) || prior.termCount !== index.termCount)) reject("knowledge_search_binding_invalid", 503);
+    const end = Math.min(start + KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS);
+    const next: Version = { ...version, chunks: edition.chunks.map(row => ({ chunkId: row.chunkId, key: row.document.key, order: row.order,
+      contentHash: row.contentHash, embeddingHash: row.embeddingHash, applicability: row.document.applicability })),
+      search: { pipeline: KNOWLEDGE_LEXICAL_PIPELINE, hashes: index.hashes, completed: Math.max(prior?.completed ?? 0, end), termCount: index.termCount } };
+    const records = index.buckets.slice(start, end).flatMap((terms, offset) => Object.keys(terms).length ? [{ ...scope, sourceId: version.sourceId,
+      versionId, versionHash: version.versionHash, pipeline: KNOWLEDGE_LEXICAL_PIPELINE, bucket: start + offset, termsHash: index.hashes[start + offset]!, terms }] : []);
+    writeBudget([next, ...records]);
+    // All source reads precede staged writes. Ordinary preparation still skips empty buckets.
+    for (const row of records) tx.set(lexicalRef(versionId, row.bucket), row);
+    if (repair) for (let bucket = start; bucket < end; bucket++) {
+      if (!Object.keys(index.buckets[bucket]!).length) tx.delete(lexicalRef(versionId, bucket));
+    }
+    if (start !== end || !prior) tx.set(versionRef(versionId), next);
+    return { complete: end === KNOWLEDGE_LEXICAL_BUCKETS, bucketsCompleted: end, bucketsTotal: KNOWLEDGE_LEXICAL_BUCKETS, termCount: index.termCount };
+  }
   async function prepareSearch(versionId: string, expectedHash: string) {
     if (!hash.safeParse(expectedHash).success) reject("knowledge_version_invalid", 400);
     return database.runTransaction(async tx => {
       const edition = await load(tx, versionId), version = edition.version;
       if (version.versionHash !== expectedHash) reject("knowledge_review_version_mismatch");
-      const index = knowledgeLexicalIndex(edition.document.title, edition.chunks), prior = version.search;
-      if (prior && (knowledgeHash(prior.hashes) !== knowledgeHash(index.hashes) || prior.termCount !== index.termCount)) reject("knowledge_search_binding_invalid", 503);
-      const start = prior?.completed ?? 0, end = Math.min(start + KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS);
-      const next: Version = { ...version, chunks: edition.chunks.map(row => ({ chunkId: row.chunkId, key: row.document.key, order: row.order,
-        contentHash: row.contentHash, embeddingHash: row.embeddingHash, applicability: row.document.applicability })),
-        search: { pipeline: KNOWLEDGE_LEXICAL_PIPELINE, hashes: index.hashes, completed: end, termCount: index.termCount } };
-      const records = index.buckets.slice(start, end).flatMap((terms, offset) => Object.keys(terms).length ? [{ ...scope, sourceId: version.sourceId,
-        versionId, versionHash: version.versionHash, pipeline: KNOWLEDGE_LEXICAL_PIPELINE, bucket: start + offset, termsHash: index.hashes[start + offset]!, terms }] : []);
-      writeBudget([next, ...records]);
-      // Only this trusted method writes derived postings. All source reads precede staged writes.
-      for (const row of records) tx.set(lexicalRef(versionId, row.bucket), row);
-      if (start !== end || !prior) tx.set(versionRef(versionId), next);
-      return { complete: end === KNOWLEDGE_LEXICAL_BUCKETS, bucketsCompleted: end, bucketsTotal: KNOWLEDGE_LEXICAL_BUCKETS, termCount: index.termCount };
+      return writeSearchPageIn(tx, edition, version.search?.completed ?? 0, false);
     });
   }
   return {
@@ -285,6 +294,19 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       }, { readOnly: true });
     },
     prepareSearch,
+    async rebuildSearchPageIn(tx, versionId, expectedHash, start) {
+      if (!Number.isInteger(start) || start < 0 || start >= KNOWLEDGE_LEXICAL_BUCKETS || start % KNOWLEDGE_LEXICAL_BATCH !== 0)
+        reject("knowledge_search_page_invalid", 400);
+      if (!hash.safeParse(expectedHash).success) reject("knowledge_version_invalid", 400);
+      const edition = await load(tx, versionId), version = edition.version;
+      if (version.versionHash !== expectedHash) reject("knowledge_review_version_mismatch");
+      if (version.reviewState !== "reviewed" || !version.review || version.review.assessment.decision !== "approve"
+        || version.review.assessment.growthRuleImpact === "requires_review") reject("knowledge_version_unreviewed");
+      if (options.audience !== "internal" && (internalKnowledgeSource(edition.document.url) || edition.observed?.watch.definition.audience === "internal_noncommercial"))
+        reject("knowledge_source_internal_review_required", 403);
+      if (start > (version.search?.completed ?? 0)) reject("knowledge_search_prefix_incomplete");
+      return writeSearchPageIn(tx, edition, start, true);
+    },
     async listVersions(afterVersionId) {
       if (afterVersionId !== undefined && !uuid.safeParse(afterVersionId).success) reject("knowledge_version_invalid", 400);
       return database.runTransaction(async tx => {

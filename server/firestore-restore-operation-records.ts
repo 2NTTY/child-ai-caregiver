@@ -18,8 +18,11 @@ import { firestoreHandoverJobSchema, assertHandoverJobIdentity, handoverJobMetad
 import { handoverUploadRecordSchema, handoverUploadId, handoverUploadMetadata, validHandoverUpload } from './handover-upload-records.ts';
 import { importBatchSchema, importBatchControlSchema, importBatchId, importBatchControlId,
   importBatchMetadata, importBatchControlMetadata, validImportBatch } from './handover-import-batch-records.ts';
+import { indexBatchSchema, indexBatchReceiptSchema, indexBatchSort } from './knowledge-index-batch-records.ts';
 
 export const operationRestoreSchemas = {
+  'knowledge-index-batch': { suffix: 'knowledge_index_batches', schema: indexBatchSchema },
+  'knowledge-index-receipt': { suffix: 'knowledge_index_receipts', schema: indexBatchReceiptSchema },
   'handover-upload': { suffix: 'handover_uploads', schema: handoverUploadRecordSchema },
   'handover-import-batch': { suffix: 'handover_import_batches', schema: importBatchSchema },
   'handover-import-control': { suffix: 'handover_import_controls', schema: importBatchControlSchema },
@@ -62,7 +65,8 @@ export type OperationRestoreKind = keyof typeof operationRestoreSchemas;
 export type OperationRestoreValue = z.infer<(typeof operationRestoreSchemas)[OperationRestoreKind]['schema']>;
 export function isOperationRestoreKind(kind: string): kind is OperationRestoreKind { return Object.hasOwn(operationRestoreSchemas, kind); }
 // Historical deliveries and their references retain original identity. They never become new work.
-export const originalRestoreScopeKinds = new Set(['photo-cleanup', 'background-work', 'background-reference', 'handover-export', 'handover-upload']);
+export const originalRestoreScopeKinds = new Set(['photo-cleanup', 'background-work', 'background-reference', 'handover-export', 'handover-upload',
+  'knowledge-index-batch', 'knowledge-index-receipt']);
 export const discardedRestoreKinds = new Set(['native-push-token', 'push-endpoint', 'telegram-pointer', 'contact-callback', 'erasure-receipt-pointer']);
 function check(ok: boolean) { if (!ok) throw Object.assign(new Error('Restore operation binding rejected'), { code: 'restore_binding', status: 409 }); }
 function same(a: unknown, b: unknown) { return firestoreDomainHash(a) === firestoreDomainHash(b); }
@@ -76,6 +80,17 @@ export function restoreOperationRecord(data: FirestoreDomainData, context: Fires
   const metadata: Record<string, unknown> = {};
   check(context.family === 'domain' && context.envelopeVersion === 1 && version >= 1);
   switch (kind) {
+    case 'knowledge-index-batch': {
+      const batch = indexBatchSchema.parse(raw);
+      check(same(scope, SYSTEM) && id === batch.id && version === batch.recordVersion);
+      value = target && batch.state === 'running' ? { ...batch, state: 'interrupted' as const } : batch;
+      Object.assign(metadata, { batchId: batch.id, sort: indexBatchSort(batch) }); break;
+    }
+    case 'knowledge-index-receipt': {
+      const receipt = indexBatchReceiptSchema.parse(raw);
+      check(same(scope, SYSTEM) && id === receipt.opId && version === 1);
+      value = receipt; break;
+    }
     case 'handover-import-batch': {
       const job = importBatchSchema.parse(raw);
       check(validImportBatch(job) && same(job.scope, scope) && id === importBatchId(scope.ownerUserId, job.id) && version === job.version);

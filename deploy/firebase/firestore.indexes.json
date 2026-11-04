@@ -4042,6 +4042,26 @@
   ],
   "fieldOverrides": [
     {
+      "collectionGroup": "yuban_authority_knowledge_index_batches",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_knowledge_index_receipts",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_knowledge_index_batches",
+      "fieldPath": "sort",
+      "indexes": [
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
       "collectionGroup": "yuban_authority_handover_source_history",
       "fieldPath": "*",
       "indexes": []

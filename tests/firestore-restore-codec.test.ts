@@ -30,6 +30,8 @@ import { chatFileObjectAddress } from '../server/firebase-chat-file-objects.ts';
 import { voiceObjectAddress } from '../server/firebase-voice-objects.ts';
 import type { ImportProvenance } from '../src/shared/import-provenance.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
+import { indexBatchSchema, indexBatchReceiptSchema, indexBatchSort } from '../server/knowledge-index-batch-records.ts';
+import { FIREBASE_BACKUP_COLLECTION_SUFFIXES } from '../server/firestore-backup.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000', projectId = 'synthetic-restore-project', namespace = 'synthetic_restore';
 const at = '2026-10-11T12:00:00.000Z', digest = 'a'.repeat(64);
@@ -49,6 +51,53 @@ function record<T>(data: FirestoreDomainData, suffix: string, kind: string, id: 
   schema: z.ZodType<T>, value: T, version = 1) {
   return { path: namespace + '_' + suffix + '/' + firestoreDomainHash([kind, id]), data: data.seal(kind, id, current, schema, value, version) };
 }
+
+test('restore retains knowledge index batch progress and receipts in system scope without reviving running work', () => {
+  const f = fixture();
+  assert.ok(FIREBASE_BACKUP_COLLECTION_SUFFIXES.includes('_knowledge_index_batches'));
+  assert.ok(FIREBASE_BACKUP_COLLECTION_SUFFIXES.includes('_knowledge_index_receipts'));
+  for (const state of ['running', 'paused', 'interrupted', 'completed', 'failed'] as const) {
+    const batch = indexBatchSchema.parse({ id: randomUUID(), state, controlVersion: 3, recordVersion: 7, actorId: 'synthetic-administrator',
+      generation: randomUUID(), workId: digest, lastDispatchRevision: 6, createdAt: at, updatedAt: at, targets: [
+        { versionId: randomUUID(), versionHash: digest, state: 'completed', bucketsCompleted: 256, error: null },
+        { versionId: randomUUID(), versionHash: 'b'.repeat(64), state: state === 'completed' ? 'completed' : state === 'failed' ? 'failed' : 'pending',
+          bucketsCompleted: state === 'completed' ? 256 : 64, error: state === 'failed' ? 'knowledge_version_unreviewed' : null },
+      ] });
+    const original = record(f.data, 'knowledge_index_batches', 'knowledge-index-batch', batch.id, FIRESTORE_TASK_DISPATCH_SCOPE,
+      indexBatchSchema, batch, batch.recordVersion);
+    const decoded = f.codec.decode({ ...original, data: { ...original.data, batchId: randomUUID(), sort: 'untrusted-query-projection' } });
+    const restored = f.codec.transform(decoded, input()), reopened = f.codec.decode(restored);
+    assert.equal(restored.path, original.path);
+    assert.equal(reopened.context.family, 'domain');
+    if (reopened.context.family === 'domain') assert.deepEqual(reopened.context.scope, FIRESTORE_TASK_DISPATCH_SCOPE);
+    assert.deepEqual(indexBatchSchema.parse(reopened.value), { ...batch, state: state === 'running' ? 'interrupted' : state });
+    assert.equal(restored.data.recordVersion, batch.recordVersion);
+    assert.equal(restored.data.batchId, batch.id);
+    assert.equal(restored.data.sort, indexBatchSort(batch));
+    assert.throws(() => f.codec.decode(record(f.data, 'knowledge_index_batches', 'knowledge-index-batch', randomUUID(),
+      FIRESTORE_TASK_DISPATCH_SCOPE, indexBatchSchema, batch, batch.recordVersion)), errors('restore_binding'));
+    assert.throws(() => f.codec.decode(record(f.data, 'knowledge_index_batches', 'knowledge-index-batch', batch.id,
+      scope, indexBatchSchema, batch, batch.recordVersion)), errors('restore_binding'));
+    assert.throws(() => f.codec.decode(record(f.data, 'knowledge_index_batches', 'knowledge-index-batch', batch.id,
+      FIRESTORE_TASK_DISPATCH_SCOPE, indexBatchSchema, batch, batch.recordVersion + 1)), errors('restore_binding'));
+
+    const receipt = indexBatchReceiptSchema.parse({ opId: randomUUID(), batchId: batch.id, actorId: batch.actorId,
+      action: 'create', fingerprint: digest, controlVersion: 1, at });
+    const before = record(f.data, 'knowledge_index_receipts', 'knowledge-index-receipt', receipt.opId,
+      FIRESTORE_TASK_DISPATCH_SCOPE, indexBatchReceiptSchema, receipt);
+    const after = f.codec.transform(f.codec.decode(before), input()), receiptDecoded = f.codec.decode(after);
+    assert.throws(() => f.codec.decode({ ...before, data: { ...before.data, sort: 'not-allowed-on-receipts' } }), errors('restore_record_invalid'));
+    assert.equal(after.path, before.path); assert.deepEqual(receiptDecoded.value, receipt);
+    assert.equal(receiptDecoded.context.family, 'domain');
+    if (receiptDecoded.context.family === 'domain') assert.deepEqual(receiptDecoded.context.scope, FIRESTORE_TASK_DISPATCH_SCOPE);
+    assert.throws(() => f.codec.decode(record(f.data, 'knowledge_index_receipts', 'knowledge-index-receipt', receipt.opId,
+      FIRESTORE_TASK_DISPATCH_SCOPE, indexBatchReceiptSchema, receipt, 2)), errors('restore_binding'));
+    assert.throws(() => f.codec.decode(record(f.data, 'knowledge_index_receipts', 'knowledge-index-receipt', randomUUID(),
+      FIRESTORE_TASK_DISPATCH_SCOPE, indexBatchReceiptSchema, receipt)), errors('restore_binding'));
+    assert.throws(() => f.codec.decode(record(f.data, 'knowledge_index_receipts', 'knowledge-index-receipt', receipt.opId,
+      scope, indexBatchReceiptSchema, receipt)), errors('restore_binding'));
+  }
+});
 function authorityRecord(f: ReturnType<typeof fixture>, kind: 'control' | 'workspace' | 'child' | 'work', id: string, current: WorkRecoveryScope, value: unknown) {
   const aad = workRecoveryAad(projectId, namespace, kind, id, current), ciphertext = f.options.cipher.encrypt(canonicalJson(value), aad);
   return { path: namespace + '/' + firestoreDomainHash([kind, id]), data: { format: 'yuban-work-recovery', version: 1, ciphertext,
