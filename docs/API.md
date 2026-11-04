@@ -967,7 +967,7 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 | POST `/api/admin/operations` | `src/shared/admin.ts` 的 policy／invite／revoke 聯合契約，必帶原 opId；policy 帶 expectedVersion |
 | GET `/api/admin/operations/:opId` | 本管理員原收據或 null；null 不表示原請求必定未生效，重送只能用同一參數／opId |
 
-以上索引批次為 S10 待發布接點。寫入沿既有管理員同源、近期重新驗證及 UID 檢查。每頁與進度交易提交，停止／恢復保留既成結果。還原後進行中的批次須明確恢復。
+以上管理接點已於 2026-11-05 在原站發布。寫入沿既有管理員同源、近期重新驗證及 UID 檢查。每頁與進度交易提交，停止／恢復保留既成結果。還原後進行中的批次須明確恢復。
 
 管理設定的合法範圍統一於 `src/shared/agent-run-limits.ts`：生成 1–12、工具 1–16、查詢 embedding 1–6、互動期限 15–300 秒、單次模型等待 5–180 秒（預設90）、額外重試 0–3 次（預設3）。實際值以已保存 policy 為準；舊 policy／收據缺欄位時保留原有效值：16工具／90秒、單次30秒、零ADK重試；新建政策明確寫入300／90／3，現網須另以管理操作更新，不靜默覆寫。舊 policy 寫入請求可省略新欄位，保持原請求指紋並保留目前值；不以預設覆蓋新設定。API／worker 新 run 固定同一 policy 版本，執行中不動態換額度；本人 key 仍用其個人生成／向量限額，工具／期限共用管理政策。期限只可縮短原受信任 claim 的絕對期限，不能刷新或延長原 run。模型可見餘額供自主規劃，不代表必須用盡。
 
@@ -1249,6 +1249,7 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 - 個人孩子的 `care`、`profile`、`tasks`、`sources`、`documents` 及 `attachments` 的孩子頭像可用 `POST /api/account/package-imports/compare-original` 按頁比較。需要還原時傳 `includeRestoreTarget: true` 取得目前目標 ID；同一原件曾經明確恢復時，目標可能已有新 ID。`POST /api/account/package-imports` 沿原操作提交 `restoreOriginal: true`、`resolutionOnly: true`、已讀 manifest hash，以及逐項目標與版本。只有明確選中的差異才寫入；既有匯入副本的映射與此路徑隔離。其他模組及帳戶全量還原仍待接。
 - 首次還原也須辨認未有交接映射的原件。相同內容及版本略過；較新的修改或已刪項目預設保留。無法證明項目狀態時，須列明未能處理。完整備份的範圍應涵蓋本人有權備份的孩子與模組、私人資料及個人頭像，清單可分頁；選期、選項或平台容量令覆蓋不完整時只標為部分備份。
 - 收件端可向 `GET /api/account/package-imports/capabilities` 傳 `x-handover-original-modules: 1` 查可比較模組。文件模組的每個結果另帶 `resourceSection`，`documents` 是一份文件，`visit_preparation` 是該孩子的到診準備。選取、分頁及送出逐項決定均以該欄位與原 ID 合併識別。同一份文件按目前來源及報告涵蓋期重核，再保存至原 ID 的新版本。仍在整理的文件或來源已改的文件會產生逐項衝突。原文件帶有共享來源選擇（`sourceSelection`）時，目前一律回報 `document_source_changed`。到診準備原預約已完成或不再可用時，保留現況，其他項目可繼續。實際上線版本見 [PLAN](../PLAN.md#active)。
+- 持續關注的原件還原由客戶端另送 `x-handover-original-features: concerns` 並查能力清單。每頁最多比較兩條關注，比對已選觀察的身份與來源。完整備份可明確覆蓋同一關注，舊修訂仍可追溯。期間備份以包內條目 ID 選取，以實際關注 ID 及已見版本提交，只補該期間缺少的觀察，保留目前標題、狀態、跟進及其他時段。兩種還原均不重播舊工作。原件不可核實或要還原的連結已失效時，保留現況並列出結果。實際上線版本見 [PLAN](../PLAN.md#active)。
 - 若所選孩子的附件範圍涵蓋 `child_avatar`，可比較並明確還原其頭像。備份及目標必須是同一帳戶的同一孩子，`resourceSection` 為 `child_avatar`。保存原 JPEG 和該圖片在備份中的來源，帳戶頭像各自獨立。沒有備份圖片時保留現圖；刪除尚未完成時不提供還原。照片、錄音及一般檔案仍可匯入副本。
 - 私人來源已接原件還原。選取模組 `sources`，以 `private_sources`、來源 ID、本地目標 ID 及已見版本提交所選項目。比較列出可還原的不同欄位名稱。只有實際存在刪除紀錄時才可選擇恢復，成功後原紀錄保留。已連結照護記錄、處理尚未結清及官方來源 ID／URL 已不符目錄時，均保留目前資料並記下逐項衝突。還原收藏的官方來源沿用目前目錄身份；外來副本仍是私人參考。模型摘錄授權及擷取工作不隨還原重建。
 - 本人備份可單選「本人頭像」，也可與孩子模組一起匯出。選取綁定本人當時看見的頭像版本。帳戶資料頁的 `childId` 為 `null`，不需先建立孩子。選期時列出圖片更新日期，明確勾選才會帶完整 JPEG。只有包含 `selection.accountAvatar` 的本人備份使用格式 v2。舊有孩子包沿用 v1。客戶端以 `x-handover-account-backup: 1` 商議此能力。

@@ -1,0 +1,54 @@
+{
+  "commit": "235ddd3cb5b0f78bf3b1e13e9bc96921c2362bbf",
+  "pullRequests": [
+    472,
+    473
+  ],
+  "observedAt": "2026-11-05T04:04:54+08:00",
+  "web": {
+    "adminHtmlSha256": "048c6d973ca9a3c90e32f687d83ee6a45bde102c54b00032ce499985ef6ee2d4",
+    "bundlePath": "/_expo/static/js/web/index-91f491b5c3356e17bb5a596c6607ec85.js",
+    "bundleSha256": "f33dcf35687a11435f3fd4f7ed8ff69408e752a58bfda20a35f98f87d495c90b"
+  },
+  "payloads": {
+    "api-delta.tar.gz": {
+      "bytes": 48300,
+      "sha256": "730699387eb002393446d9587bb3250e4f03bc7fa42d1973475f7eccaf70efa3"
+    },
+    "web.tar.gz": {
+      "bytes": 4907394,
+      "sha256": "cc76f1b310c73329619fd6132ffb60b836f844aba50ef8b9c4c309118cbf15fb"
+    }
+  },
+  "production": {
+    "apiWorkerImage": "sha256:5df456da596becc89ee2e638e59fc62c9a094768c7ee230f3432a8c2a8baa1ab",
+    "webImage": "sha256:8578f3c50d96e05a0d7c2d7ed26e4816fd8f43e28a28166f2f7b73c47e4ae095",
+    "vmComposeSha256": "1dc31d121dda5dc125e97b393262704ab3c46ea962e9e28f25c61ae4a9b81bbb",
+    "fieldOverridesApplied": 3,
+    "initialRead": "FAILED_PRECONDITION: new sort DESC index still building. No traffic switch.",
+    "sortIndex": "READY",
+    "candidateVersionPage": 10,
+    "reviewedVersionsOnPage": 10,
+    "candidateBatchesOnPage": 0,
+    "publicHealth": 200,
+    "anonymousBatchStatus": 401,
+    "anonymousVersionList": 401,
+    "publicWebHashesMatched": true,
+    "activeAgentLeases": 0,
+    "activeOutbox": 0,
+    "priorUnknownBackground": 1
+  },
+  "local": [
+    "Firestore corpus test repaired missing, damaged and stale postings in four pages, preserving published evidence and vectors.",
+    "Queue with serial Firestore fixture and HTTP/owner checks validated exact request replay, stale lease, stop/resume and per-version failure.",
+    "Restore codec validated interruption without re-enqueue and immutable receipt bindings.",
+    "Affected server/frontend typechecks passed."
+  ],
+  "pending": [
+    "Signed-in production browser operation",
+    "Large-scale public corpus import, migration, performance and operation handoff"
+  ],
+  "productionTestWrites": 0,
+  "modelCalls": 0,
+  "mobileBuilds": 0
+}
