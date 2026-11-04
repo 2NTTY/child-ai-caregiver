@@ -15,7 +15,8 @@ export async function handleHandoverImport(request: Request, owner: string, serv
   try {
     if (request.method === 'GET' && url.pathname === root + '/capabilities')
       return respond({ classEnrolment: true,
-        ...(request.headers.get('x-handover-original-modules') === '1' ? { originalModules: service.originalModules } : {}),
+        ...(request.headers.get('x-handover-original-modules') === '1' ? { originalModules: service.originalModules.filter(module =>
+          module !== 'concerns' || (request.headers.get('x-handover-original-features') ?? '').split(/[\s,]+/u).includes('concerns')) } : {}),
         ...(service.accountAvatarRestore && request.headers.get('x-handover-account-backup') === '1'
         ? { accountAvatarRestore: true } : {}) });
     if (request.method === 'GET' && url.pathname === root) {

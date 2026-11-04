@@ -28,7 +28,7 @@ export const handoverImportResolutionSchema = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('replace_current'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
   z.object({ mode: z.literal('restore_deleted'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
 ]);
-export const originalBackupModuleSchema = z.enum(['care', 'profile', 'tasks', 'sources', 'documents', 'attachments']);
+export const originalBackupModuleSchema = z.enum(['care', 'profile', 'tasks', 'sources', 'documents', 'attachments', 'concerns']);
 export const selfAvatarRestoreSchema = z.object({ expectedVersion: resourceVersion,
   mode: z.enum(['replace_current', 'restore_deleted']) }).strict();
 export const selfAvatarComparisonQuerySchema = z.object({ uploadId: uuid, expectedUploadVersion: count.positive() }).strict();

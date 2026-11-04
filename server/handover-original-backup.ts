@@ -10,6 +10,7 @@ import { avatarPublicState } from './avatar-policy.ts';
 import { createFirestoreAvatarData } from './firestore-avatar-data.ts';
 import { createFirestoreAuthority } from './firestore-authority.ts';
 import { createFirestoreCareStore, firestoreCareSchema, firestoreProfileSchema } from './firestore-care.ts';
+import { createFirestoreConcernStore, concernTransferSchema } from './firestore-concerns.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
 import { familyDocumentTransferSchema } from './family-document-transfer.ts';
@@ -76,6 +77,7 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
   const sources = createFirestoreSharedInputStore(options);
   const documents = createFirestoreFamilyDocumentStore(options), preparations = createFirestoreCareSummary(options, care);
   const avatars = createFirestoreAvatarData(options);
+  const concerns = createFirestoreConcernStore(options);
   return async function compare(owner: string, raw: unknown, signal: AbortSignal): Promise<OriginalBackupComparison> {
     const input = domainParse(originalBackupComparisonQuerySchema, raw);
     if (!options.originalBackup) domainReject('package_original_unavailable', 503);
@@ -95,14 +97,20 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
       const section = input.module === 'sources' ? 'private_sources' : input.module === 'attachments' ? 'child_avatar' : input.module;
       const page = await reader.readPage({ selection: { childIds: [input.childId], modules: [input.module] },
         sections: section === 'documents' ? ['documents', 'visit_preparation'] : [section], acknowledgedManifestSha256: reader.manifestSha256,
-        cursor: cursor?.page, limit: section === 'documents' ? 3 : 20 });
+        cursor: cursor?.page, limit: section === 'documents' ? 3 : section === 'concerns' ? 2 : 20 });
+      // Package reads are ordered and outside Firestore's retryable transaction callback.
+      const concernEvents: Awaited<ReturnType<typeof reader.readConcernEvents>>[] = [];
+      if (section === 'concerns') for (const row of page.rows) {
+        signal.throwIfAborted();
+        concernEvents.push(await reader.readConcernEvents(row, reader.manifestSha256));
+      }
       return await authority.runTransaction(owner, input.childId, async binding => {
         if (!await binding.readChild(input.childId)) domainReject('forbidden', 403);
         const checkUpload = await options.uploads.assertImportableIn(binding, input.uploadId, job.version);
         const scope = firestoreDomainHash([reader.manifestSha256, binding.scope, binding.authorizationVersion, binding.childAccessVersion, binding.changeSeq]);
         if (cursor && cursor.scope !== scope) domainReject('import_results_changed');
         const items: OriginalBackupComparison['items'] = [];
-        for (const row of page.rows) {
+        for (const [rowIndex, row] of page.rows.entries()) {
           if (row.childId !== input.childId) domainReject('invalid_package_scope', 400);
           if (section === 'child_avatar') {
             const backup = domainParse(avatarTransferSchema, row.value);
@@ -135,6 +143,19 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
             continue;
           }
           if (row.section !== section) domainReject('invalid_package_scope', 400);
+          if (section === 'concerns') {
+            const backup = concernTransferSchema.parse(row.value), events = concernEvents[rowIndex]!;
+            if (backup.childId !== input.childId) domainReject('invalid_package_scope', 400);
+            const compared = await concerns.compareOriginal(binding, row, events);
+            const { mapping } = await readImportMapping(data, binding,
+              { ...manifest.source, childId: input.childId, section, resourceId: backup.id }, true);
+            const restored = compared.state !== 'unavailable' && mapping?.target.id === compared.targetId && mapping.target.version === compared.localVersion
+              && mapping.sourceVersion === backup.version && mapping.sourceHash === firestoreDomainHash({ value: row.value, events });
+            items.push({ id: backup.id, ...(input.includeRestoreTarget ? { targetId: compared.targetId } : {}),
+              backupVersion: backup.version, localVersion: compared.localVersion,
+              state: restored ? 'unchanged' : compared.state, changedFields: restored ? [] : compared.changedFields });
+            continue;
+          }
           const original = section === 'private_sources' ? sharedInputImportSchema.parse(row.value)
             : input.module === 'care' ? firestoreCareSchema.parse(row.value) : input.module === 'profile'
             ? firestoreProfileSchema.parse(row.value) : firestoreTaskSchema.parse(row.value);
