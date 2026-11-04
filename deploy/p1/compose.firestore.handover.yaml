@@ -1,0 +1,16 @@
+# Layer on the Firestore composition to sign exports and verify trusted issuers.
+services:
+  api:
+    environment:
+      HANDOVER_TRUST_FILE: /run/secrets/handover_trust
+    secrets: [handover_trust]
+  worker:
+    environment:
+      HANDOVER_TRUST_FILE: /run/secrets/handover_trust
+      HANDOVER_SIGNING_KEY_FILE: /run/secrets/handover_signer
+    secrets: [handover_trust, handover_signer]
+secrets:
+  handover_trust:
+    file: ${P1_HANDOVER_TRUST_FILE:?Set absolute public trust list path}
+  handover_signer:
+    file: ${P1_HANDOVER_SIGNING_KEY_FILE:?Set absolute protected Ed25519 signing key path}

@@ -6,6 +6,35 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import JSZip from 'jszip';
 import { writeHandoverArchive, openHandoverArchive } from '../server/handover-archive.ts';
+import { readHandoverKeys } from '../server/handover-keys.ts';
+
+test('configured worker signs for its origin and the API verifies with public keys only', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'handover-keys-'));
+  try {
+    const serverId = 'https://example.test', keys = generateKeyPairSync('ed25519');
+    const trustFile = join(dir, 'trust.json'), signerFile = join(dir, 'signer.pem');
+    const publicKey = keys.publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
+    await writeFile(trustFile, JSON.stringify([{ serverId, publicKey }]));
+    await writeFile(signerFile, keys.privateKey.export({ type: 'pkcs8', format: 'pem' }), { mode: 0o600 });
+    const apiEnv = { HANDOVER_TRUST_FILE: trustFile }, workerEnv = { ...apiEnv, HANDOVER_SIGNING_KEY_FILE: signerFile };
+    const api = await readHandoverKeys(apiEnv, serverId, false);
+    const worker = await readHandoverKeys(workerEnv, serverId, true);
+    assert.equal(api.signingKey, undefined);
+    assert.equal((await readHandoverKeys({}, serverId, true)).signingKey, undefined);
+    assert.ok(worker.signingKey);
+    const header = { format: 'yuyoufang-data' as const, version: 1 as const, packageId: randomUUID(), packageVersion: 1,
+      createdAt: '2026-11-04T00:00:00Z', purpose: 'handover' as const, source: { serverId, accountId: 'synthetic' },
+      selection: { childIds: [randomUUID()], modules: ['care' as const], period: null } };
+    async function* entries() { yield { path: 'summary.md', mediaType: 'text/markdown', content: Buffer.from('Sample') }; }
+    const archive = await writeHandoverArchive({ directory: dir, header, coverage: () => [], entries: entries(), signingKey: worker.signingKey });
+    const reader = await openHandoverArchive({ path: archive.path, trustedKeys: api.trustedKeys });
+    try { assert.equal(reader.integrity, 'trusted'); } finally { await reader.close(); }
+    await assert.rejects(readHandoverKeys(workerEnv, 'https://different.test', true));
+    await assert.rejects(readHandoverKeys(workerEnv, serverId, false));
+    await writeFile(trustFile, JSON.stringify([{ serverId, publicKey }, { serverId: 'https://different.test', publicKey }]));
+    await assert.rejects(readHandoverKeys(apiEnv, serverId, false));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
 
 test('handover archive streams data and verifies trust separately from integrity before exposing entries', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'handover-'));
