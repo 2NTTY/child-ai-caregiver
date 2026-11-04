@@ -106,7 +106,18 @@ export function completeReportSnapshot(state: ReportAccumulator, version: number
   if (!previous?.editProtection?.metadataFields.includes("summary")) snapshot.summary = "已逐頁整理目前已保存的家庭共享資料；統計只計保存筆數，不推斷診斷、能力、發展評分或實際事件總量。";
   const kinds = Object.entries(counts.recordKinds).map(([kind, count]) => `${labels[kind as keyof typeof labels] ?? kind}${count}筆`).join("、") || "沒有已保存的期間記錄";
   snapshot.coverageNote = `完整掃描目前已保存的共享來源${state.processedSources}項。期間內記錄${counts.recordsInPeriod}筆（${kinds}）；未知發生時間${counts.recordsUnknownTime}筆另列、不計入期間；照護任務${counts.tasksInPeriod}項；共享關注觀察${counts.observationsInPeriod}項；目前有效確認事實${counts.confirmedFacts}項。這是已保存資料的筆數，並不代表生活中全部發生過的事；無記錄不等於未發生。日期採香港事件日期，約數保留原精度。正文最多選錄80項期間來源、40項無事件日期資料及20項未知日期記錄，長正文亦受容量限制；選錄數並非統計總數。`;
-  if (state.buckets) snapshot.coverageNote += " 分段保存筆數（香港日期）：" + state.buckets.map(value =>
-    `${value.from} 至 ${value.to}：照護記錄${value.records}筆、待辦${value.tasks}項、關注觀察${value.observations}項`).join("；") + "。";
+  if (state.buckets) {
+    snapshot.coverageNote += " 分段保存筆數（香港日期）：" + state.buckets.map(value =>
+      `${value.from} 至 ${value.to}：照護記錄${value.records}筆、待辦${value.tasks}項、關注觀察${value.observations}項`).join("；") + "。";
+    const previous = state.buckets.at(-2), latest = state.buckets.at(-1);
+    if (previous && latest) {
+      const difference = (field: "records" | "tasks" | "observations", unit: string) => {
+        const delta = latest[field] - previous[field];
+        if (delta === 0) return "持平";
+        return `${delta > 0 ? "多" : "少"}${Math.abs(delta)}${unit}`;
+      };
+      snapshot.coverageNote += ` ${latest.from} 至 ${latest.to} 與 ${previous.from} 至 ${previous.to} 相比，已保存的照護記錄${difference("records", "筆")}、待辦${difference("tasks", "項")}、關注觀察${difference("observations", "項")}。`;
+    }
+  }
   return snapshot;
 }

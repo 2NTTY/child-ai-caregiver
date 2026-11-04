@@ -37,10 +37,11 @@ test("complete report counts survive checkpoints and exceed the bounded selected
   assert.match(snapshot.coverageNote, /2026-07-01 至 2026-07-31：照護記錄50筆、待辦1項、關注觀察0項/);
   assert.match(snapshot.coverageNote, /2026-08-01 至 2026-08-31：照護記錄50筆、待辦0項、關注觀察0項/);
   assert.match(snapshot.coverageNote, /2026-09-01 至 2026-09-30：照護記錄5筆、待辦0項、關注觀察1項/);
+  assert.match(snapshot.coverageNote, /2026-09-01 至 2026-09-30 與 2026-08-01 至 2026-08-31 相比，已保存的照護記錄少45筆、待辦持平、關注觀察多1項/);
   accumulateReportInputs(legacy, records.slice(50)); legacy.stage = "done";
   const oldCheckpointSnapshot = completeReportSnapshot(legacy, 10, null);
   assert.equal(oldCheckpointSnapshot.reportCoverage!.counts.recordsInPeriod, 105);
-  assert.equal(legacy.buckets, undefined); assert.doesNotMatch(oldCheckpointSnapshot.coverageNote, /分段保存筆數/,
+  assert.equal(legacy.buckets, undefined); assert.doesNotMatch(oldCheckpointSnapshot.coverageNote, /分段保存筆數|相比/,
     "Old partially processed checkpoints cannot invent trends from their remaining pages");
   const loaded: FamilyDocumentSources = { sourceRevision: "epoch:1:7", profile: state.profile!, entries: [], domains: new Map(), questions: new Set(), activeConcernIds: new Set(), limited: false };
   assert.equal(documentSnapshotValid(snapshot, loaded), true);
