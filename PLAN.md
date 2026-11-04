@@ -58,7 +58,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 的原生 runtime 指紋在本機與 EAS 不一致，本次未產出 APK。下次需要批量安裝時，先核對同一建置封包與依賴位置，再建置、驗簽及覆蓋安裝。[原建置紀錄](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)
 
-**當前入口（2026-11-05）為 [P4-HANDOVER01](#p4-handover01)。** 原站 API／worker／Web `ab39b169` 已接私人交代的明確恢復，沿既有備份比較及批次表單建立新項，保留原刪除紀錄與來源對應。下一步檢查其餘本人記憶及帳戶備份模組；原生大型包與分享留待批量建置和設備驗收。知識維運、跨端與集中服務交付依各包門檻，D 接點等相應接口穩定。[本批證據](artifacts/verification/P4_PRIVATE_NOTE_REVIVAL_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)／[其他進度](STATUS.md)
+**當前入口（2026-11-05）為 [P4-HANDOVER01](#p4-handover01)。** 原站 API／worker／Web `2be85951` 已可比較及還原本人記憶事實、待答主題與私人交代，沿原服務保留來源有效性、候選身份、主題終態及刪除後的新 ID 對應。下一步接照片、錄音與一般檔案的本人原件還原，再補其餘帳戶備份缺口。原生大型包與分享留待批量建置和設備驗收，D 接點等對應接口穩定。[本批證據](artifacts/verification/P4_ORIGINAL_MEMORY_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)／[其他進度](STATUS.md)
 
 測試階段持續交付後端與 Web。Android 共用改動累積後，在實際需要安裝或驗證原生功能時集中建置 APK；個別功能包可先完成共用接線，交付紀錄另列尚未在手機驗收的部分。
 
