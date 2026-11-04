@@ -42,6 +42,8 @@ import { firestoreDocumentConcernEventSchema } from './firestore-document-source
 import { handoverIdentityLinks } from './handover-provenance.ts';
 import type { SharedSelection } from '../src/shared/sharing.ts';
 import { sharedMessageAttachmentVisible } from './firestore-attachment-access.ts';
+import { createFirestorePrivateInstructions } from './firestore-private-instructions.ts';
+import { firestoreAgentActionSavedSchema, redactErasedNoteEvidence } from './firestore-private-note-receipt.ts';
 
 /** Product sections only. Auth credentials, model keys, protocol state and cost/admission ledgers are never exported. */
 const sections = {
@@ -101,6 +103,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
 }) {
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), avatarData = createFirestoreAvatarData(options);
   const sharing = createFirestoreSharingStore(options);
+  const notes = createFirestorePrivateInstructions(data);
   const concerns = createFirestoreConcernStore(options);
   const care = createFirestoreCareStore(options), preparations = createFirestoreCareSummary(options, care);
   const memory = createFirestoreMemoryStore({ ...options, care, chat: createFirestoreChatStore({
@@ -369,6 +372,10 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             if (parent.exists && parent.get('live') === true) {
               await createFirestoreSharedInputStore(options).read(binding, id); items.push(value);
             }
+          } else if (section === 'agent_receipts') {
+            const saved = firestoreAgentActionSavedSchema.parse(value), resource = saved.receipt.resource;
+            const erased = saved.voiceEvidence && resource.kind === 'private_note' && !await notes.read(binding, resource.id);
+            items.push(erased ? redactErasedNoteEvidence(saved, resource.id) : value);
           } else if (section === 'summary_history') {
             const summary = await memory.readSummaryRevision(binding, value, packageOptions?.includeSummaryPeriod);
             if (summary) items.push(summary);

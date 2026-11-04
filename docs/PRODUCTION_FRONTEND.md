@@ -169,6 +169,10 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 
 單筆私人來源永久刪除沿獨立日誌及原刪除操作重放。舊 tombstone 若尚未補登，隔離還原回報 `restore_content_journal_pending`，應讓來源端既有清理 worker 補登後再還原。同版部署 API、worker 及還原讀取器。開始寫入 `private_source` 日誌或含 `buckets` 的報告 checkpoint 後，回退版本也必須能讀這兩種資料，否則保留維護狀態、採用相容修正版。
 
+私人交代永久刪除後，`private_instruction` 日誌使原 ID 在各儲存世代均失效。隔離還原會移除原件、指向它的私人交代索引及收據裡的錄音引文，保留操作結果與其他交代。API、worker 及還原工具須使用可讀這種日誌的版本。啟動新 worker 後若需回退，先保留維護狀態，使用相容版本。
+
+舊版成功收據只有請求指紋，缺少可獨立辨識的交代 ID。若備份可能帶回這筆資料，還原會停在 `restore_instruction_legacy_delete_unresolved`。在來源端用相同操作 ID、原件 ID 和版本查回原刪除，可補登刪除證明；待 worker 寫妥日誌後再還原。若已失去來源端及原請求，不能據此證明舊快照安全，應保持隔離。
+
 還原保留聊天、文件、私人來源、引用、收據及配額，不恢復裝置會話／ADK 協定執行；模型與通知的未知結果不重發。待確認重新核對，Push／Telegram 重新綁定及聯絡授權後才可外發。孩子／帳戶刪除日誌先排除內容，來源仍有未完成的永久附件清理則暫停還原，先以原日誌完成清理；不丟掉該責任來宣稱成功。快照與還原盤點目前均有明示 2,000 筆／32 MiB 操作上限，超限停留原進度，不截斷資料；大規模串流盤點另按容量需求處理。
 
 現行標準啟動使用 `npm run server`／`npm run worker`，或 `docker compose --env-file <protected-compose-env> -f deploy/p1/compose.yaml <command>`；根 Compose 引用 `compose.firestore.yaml`，映像不安裝 SQL 生產依賴。`storage:backup`／`storage:restore` 導向上述 Firebase operator；`db:migrate`／`storage:encrypt`／舊 `setup:local` 明確拒絕，不會操作舊 SQL。歷史 SQL 程式及驗收仍可按固定 Git 版本追溯，舊資料 volume／備份不由這些命令刪除。
