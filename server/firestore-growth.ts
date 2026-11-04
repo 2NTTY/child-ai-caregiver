@@ -10,6 +10,7 @@ import type { FirestoreMemoryStore } from './firestore-memory.ts';
 import type { FirestoreCareStore } from './firestore-care.ts';
 import type { FirestoreOnlineStore } from './firestore-online.ts';
 import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
+import { growthImportPending } from './firestore-growth-import-guard.ts';
 import { GROWTH_RULES, GROWTH_CATALOG_REVISION, growthProposals, growthInputs, growthBasisChanged, nextGrowthCheck } from './growth-rules.ts';
 import { agentKnowledgeFilter } from './product-agent-tools.ts';
 import { parseKnowledgeFilter } from './knowledge-inputs.ts';
@@ -170,8 +171,11 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     { kind: 'child-change', scope: b.scope, resourceId: b.scope.childId, basis, generation: b.generation, authorizationVersion: b.authorizationVersion }, dueAt);
   async function backgroundInputIn(b: Binding, job: FirestoreBackgroundWork) {
     if (job.kind !== 'growth' || !same(job.scope, b.scope) || job.generation !== b.generation || job.authorizationVersion !== b.authorizationVersion) return null;
-    const saved = (await all(b)).find(value => value.item.id === job.resourceId);
+    if (await growthImportPending(data, b)) return null;
+    const records = await all(b), saved = records.find(value => value.item.id === job.resourceId);
     if (!saved || saved.item.state !== 'proposed' || firestoreDomainHash(saved.item.basis) !== job.basis
+      || records.some(other => other.item.id !== saved.item.id && other.item.topicId === saved.item.topicId
+        && ['accepted', 'dismissed'].includes(other.item.state) && same(other.item.basis, saved.item.basis))
       || (await topics(b)).some(value => value.topicId === saved.item.topicId && value.disabled)) return null;
     const item = await visible(b, saved.item, await load(b), !!saved.importedFrom); return item.sourceAvailable ? item : null;
   }
@@ -333,6 +337,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     async evaluate(job: FirestoreBackgroundWork) {
       return authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async b => {
         if (!same(job.scope, b.scope) || job.generation !== b.generation || job.authorizationVersion !== b.authorizationVersion) return { state: 'stopped' as const };
+        if (await growthImportPending(data, b)) return { state: 'deferred' as const, nextAt: new Date(Date.now() + 30_000).toISOString() };
         const loaded = await load(b), history = await all(b), settings = await topics(b), now = new Date(), at = now.toISOString();
         const changes: Saved[] = [], jobs: Awaited<ReturnType<typeof prepareFirestoreBackgroundWork>>[] = [];
         const checks = [nextGrowthCheck(loaded.context, now), ...loaded.sources.map(source => source.validUntil ?? null)];
@@ -340,7 +345,8 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
           const saved = history.filter(value => value.item.topicId === rule.id), latest = saved.at(-1);
           const next = settings.find(value => value.topicId === rule.id)?.disabled ? undefined : loaded.proposals.find(value => value.topicId === rule.id);
           for (const previous of saved.filter(value => active(value.item))) {
-            if (!next || !same(previous.item.basis, next.basis) || previous.importedFrom && !importedSupported(previous.item, next)) changes.push({ ...previous, item: { ...previous.item, version: previous.item.version + 1,
+            if (!next || !same(previous.item.basis, next.basis) || previous.importedFrom && !importedSupported(previous.item, next)
+              || saved.some(other => other.item.id !== previous.item.id && ['accepted', 'dismissed'].includes(other.item.state) && same(other.item.basis, previous.item.basis))) changes.push({ ...previous, item: { ...previous.item, version: previous.item.version + 1,
               state: 'inapplicable', updatedAt: at, lastAction: 'basis_unavailable', actorUserId: null, note: '適用條件或已核對來源已改變。' }, lastRequest: null });
             else if (previous.item.state === 'snoozed' && previous.item.snoozeUntil) {
               if (Date.parse(previous.item.snoozeUntil) <= now.getTime()) changes.push({ ...previous, item: { ...previous.item, version: previous.item.version + 1,
@@ -378,7 +384,10 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
         return { state: 'completed' as const };
       });
     },
-    backgroundInput: (job: FirestoreBackgroundWork) => authority.runTransaction(job.scope.ownerUserId, job.scope.childId, b => backgroundInputIn(b, job)),
+    backgroundInput: (job: FirestoreBackgroundWork) => authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async b => {
+      if (await growthImportPending(data, b)) domainReject('growth_import_pending', 409);
+      return backgroundInputIn(b, job);
+    }),
     authorizeBackground: async (b: Binding, job: FirestoreBackgroundWork) => !!await backgroundInputIn(b, job),
     async taskAllowedIn(b: Binding, taskId: string) {
         const linked = (await all(b)).filter(value => value.item.taskId === taskId); if (!linked.length) return true;

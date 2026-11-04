@@ -10,18 +10,20 @@ import type { HandoverImportCursor } from './handover-import.ts';
 import { historyModules } from './handover-history-records.ts';
 import { createFirestoreHandoverImportItems } from './firestore-handover-import-items.ts';
 import { attachmentSupplementModules, isHandoverAttachment, type HandoverAttachmentPorts } from './firestore-handover-attachments.ts';
+import { growthImportSourceRow } from './firestore-growth.ts';
+import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
 
 type Uploads = ReturnType<typeof createHandoverUploadService>;
 type Opened = Awaited<ReturnType<Uploads['open']>>;
 const supported = new Set<string>([...handoverImportResourceSectionSchema.options, ...Object.keys(historyModules), ...Object.keys(attachmentSupplementModules)]);
-const cursorSchema = z.object({ target: z.number().int().nonnegative(), phase: z.enum(['current', 'documents', 'attachments', 'chat', 'concerns', 'history']).optional(), page: z.object({ manifestSha256: z.string(), selectionHash: z.string(),
+const cursorSchema = z.object({ target: z.number().int().nonnegative(), phase: z.enum(['current', 'documents', 'attachments', 'chat', 'growth_topics', 'growth', 'concerns', 'history']).optional(), page: z.object({ manifestSha256: z.string(), selectionHash: z.string(),
   pageIndex: z.number().int().nonnegative(), rowIndex: z.number().int().nonnegative() }).strict().nullable() }).strict();
 type Cursor = z.infer<typeof cursorSchema>;
 const codeOf = (error: unknown) => error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
   && /^[a-z][a-z0-9_]{0,79}$/u.test(error.code) ? error.code : 'package_import_failed';
 
 /** Verified source, durable cursor and existing domain services; no public caller can submit rows or counts. */
-export function createHandoverImportService(options: FirestoreDomainOptions & { uploads: Uploads; maxItemsPerExecution?: number; attachments?: HandoverAttachmentPorts }) {
+export function createHandoverImportService(options: FirestoreDomainOptions & { uploads: Uploads; maxItemsPerExecution?: number; attachments?: HandoverAttachmentPorts; knowledge?: FirestoreKnowledgeStore }) {
   const maxItems = domainParse(z.number().int().min(1).max(100), options.maxItemsPerExecution ?? 100);
   const batches = createFirestoreHandoverImportBatches({ ...options, sourceGuard: (b, request) => {
     if (!request.uploadVersion || !request.inputFingerprint) domainReject('import_source_not_bound');
@@ -85,20 +87,28 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       const selected = job.request.resolutionOnly ? job.request.resolutions.filter(row => row.sourceChildId === target.sourceChildId) : null;
       if (selected?.length === 0) { cursor = { target: cursor.target + 1, phase: 'current', page: null }; continue; }
       // Existing in-flight cursors keep their old reader selection. New batches always establish parents first.
-      const currentSections = target.sections.flatMap(module => [...HANDOVER_SECTIONS[module]]).filter(section => !Object.hasOwn(historyModules, section));
-      const sections = selected ? [...new Set(selected.map(row => row.section))] : cursor.phase === undefined ? undefined : cursor.phase === 'current'
-        ? currentSections.filter(section => section !== 'documents' && section !== 'visit_preparation' && section !== 'chat' && section !== 'chat_imports' && section !== 'concerns' && !Object.hasOwn(attachmentSupplementModules, section))
+      const currentSections = selected ? [...new Set(selected.map(row => row.section))]
+        : target.sections.flatMap(module => [...HANDOVER_SECTIONS[module]]).filter(section => !Object.hasOwn(historyModules, section));
+      // Saved resolution cursors bind to the original combined section list. Only growth selections need ordered phases.
+      const combinedSelection = selected !== null && !selected.some(row => row.section === 'growth_attention' || row.section === 'growth_topics');
+      const sections = combinedSelection ? currentSections : cursor.phase === undefined ? selected ? currentSections : undefined : cursor.phase === 'current'
+        ? currentSections.filter(section => section !== 'documents' && section !== 'visit_preparation' && section !== 'chat' && section !== 'chat_imports' && section !== 'concerns' && section !== 'growth_attention' && section !== 'growth_topics' && !Object.hasOwn(attachmentSupplementModules, section))
         : cursor.phase === 'documents' ? currentSections.filter(section => section === 'documents' || section === 'visit_preparation')
         : cursor.phase === 'attachments' ? currentSections.filter(section => Object.hasOwn(attachmentSupplementModules, section))
         : cursor.phase === 'chat' ? currentSections.filter(section => section === 'chat' || section === 'chat_imports')
+        : cursor.phase === 'growth_topics' ? currentSections.filter(section => section === 'growth_topics')
+        : cursor.phase === 'growth' ? currentSections.filter(section => section === 'growth_attention')
         : cursor.phase === 'concerns' ? currentSections.filter(section => section === 'concerns')
-        : Object.entries(historyModules).filter(([, section]) => target.sections.includes(handoverImportModuleOf(section))).map(([section]) => section);
-      const afterPhase = (): Cursor => !selected && cursor.phase === 'current' ? { target: cursor.target, phase: 'documents', page: null }
-        : !selected && cursor.phase === 'documents' ? { target: cursor.target, phase: 'attachments', page: null }
-        : !selected && cursor.phase === 'attachments' ? { target: cursor.target, phase: 'chat', page: null }
-        : !selected && cursor.phase === 'chat' ? { target: cursor.target, phase: 'concerns', page: null }
-        : !selected && cursor.phase === 'concerns' ? { target: cursor.target, phase: 'history', page: null }
-        : { target: cursor.target + 1, ...(cursor.phase ? { phase: 'current' as const } : {}), page: null };
+        : selected ? [] : Object.entries(historyModules).filter(([, section]) => target.sections.includes(handoverImportModuleOf(section))).map(([section]) => section);
+      const nextTarget = (): Cursor => ({ target: cursor.target + 1, ...(cursor.phase ? { phase: 'current' as const } : {}), page: null });
+      const afterPhase = (): Cursor => combinedSelection ? nextTarget() : cursor.phase === 'current' ? { target: cursor.target, phase: 'documents', page: null }
+        : cursor.phase === 'documents' ? { target: cursor.target, phase: 'attachments', page: null }
+        : cursor.phase === 'attachments' ? { target: cursor.target, phase: 'chat', page: null }
+        : cursor.phase === 'chat' ? { target: cursor.target, phase: 'growth_topics', page: null }
+        : cursor.phase === 'growth_topics' ? { target: cursor.target, phase: 'growth', page: null }
+        : cursor.phase === 'growth' ? { target: cursor.target, phase: 'concerns', page: null }
+        : cursor.phase === 'concerns' ? { target: cursor.target, phase: 'history', page: null }
+        : nextTarget();
       if (sections?.length === 0) { cursor = afterPhase(); continue; }
       const page = await opened.reader.readPage({ selection: { childIds: [target.sourceChildId], modules: target.sections }, sections,
         acknowledgedManifestSha256: job.request.acceptedManifestSha256 ?? undefined, cursor: cursor.page as HandoverImportCursor | null, limit: 1 });
@@ -106,7 +116,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       const row = page.rows[0]; cursor = next;
       if (!row || row.section === 'children') continue;
       if (selected) {
-        const value = row.value as { id?: unknown } | null;
+        const value = (row.section === 'growth_attention' || row.section === 'growth_topics' ? growthImportSourceRow(row).value : row.value) as { id?: unknown } | null;
         const id = row.section === 'profile' || row.section === 'visit_preparation' || row.section === 'child_avatar' ? row.childId : value && typeof value === 'object' ? value.id : undefined;
         if (!selected.some(item => item.section === row.section && item.resourceId === id)) continue;
       }

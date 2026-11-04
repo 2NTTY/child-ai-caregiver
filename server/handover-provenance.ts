@@ -42,7 +42,7 @@ export function makeImportProvenance(row: HandoverImportRow, integrity: Handover
       ...(row.section === 'growth_attention' && value.evidence && value.source ? { growth: { evidence: value.evidence, previousId: value.previousId, taskId: value.taskId,
         taskState: value.taskState, lastAction: value.lastAction, state: value.state, sourceAvailable: value.sourceAvailable,
         sourceVersionId: (value.source as Record<string, unknown>).versionId, sourceChunkId: (value.source as Record<string, unknown>).chunkId } } : {}),
-      ...(row.section === 'growth_topics' ? { growthTopic: value.topicId } : {}),
+      ...(row.section === 'growth_topics' && typeof value.topicId === 'string' ? { growthTopic: value.topicId } : {}),
       ...(row.section === 'visit_preparation' && typeof value.reviewed === 'boolean' ? { preparation: { appointmentTaskId: value.appointmentTaskId,
         reviewed: value.reviewed, reviewedBasis: value.reviewedBasis } } : {}) },
     sourceHash: createHash('sha256').update(canonicalJson(value)).digest('hex'),

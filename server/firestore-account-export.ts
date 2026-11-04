@@ -27,6 +27,7 @@ import { firestoreTelegramBindingSchema, firestoreTelegramDeliverySchema } from 
 import { firestoreContactRequestSchema, firestoreContactConsentSchema, firestoreContactGrantSchema } from './firestore-contact.ts';
 import { historyModule, sourceHistoryRecordSchema, sourceHistoryExport, sourceHistoryId, sourceHistoryMetadata } from './handover-history-records.ts';
 import { validateSourceHistory, sourceHistoryVisible } from './handover-source-history.ts';
+import { firestoreGrowthSchema, firestoreGrowthTopicSchema } from './firestore-growth.ts';
 
 /** Product sections only. Auth credentials, model keys, protocol state and cost/admission ledgers are never exported. */
 const sections = {
@@ -56,6 +57,7 @@ const sections = {
   private_source_history: ['shared_input_management_revisions', ['shared-input-management']],
   concerns: ['concerns', ['concern']], concern_events: ['concern_events', ['concern-event']], concern_history: ['concern_revisions', ['concern-revision']],
   growth_attention: ['growth_attention', ['growth-attention']], growth_topics: ['growth_topics', ['growth-topic']],
+  growth_history: ['growth_revisions', ['growth-revision']], growth_topic_history: ['growth_topic_revisions', ['growth-topic-revision']],
   work_followups: ['work_events', ['work-event']],
   notification_preferences: ['notification_preferences', ['notification-preferences']],
   native_push_bindings: ['native_push_bindings', ['native-push-binding']], native_push_deliveries: ['native_push_deliveries', ['native-push-delivery']],
@@ -189,6 +191,24 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             const item = z.object({ id: z.uuid().optional(), childId: z.uuid(), version: z.number().int().positive() }).passthrough().parse(value);
             const kind = section === 'care_history' ? 'care' : section === 'profile_history' ? 'profile' : section === 'memory_fact_history' ? 'fact' : 'topic';
             if (await contentVisible(data, binding, kind, kind === 'profile' ? item.childId : z.uuid().parse(item.id), item.version)) items.push(value);
+          } else if (section === 'growth_attention' || section === 'growth_history') {
+            const saved = firestoreGrowthSchema.parse(value), item = saved.item;
+            const expectedId = section === 'growth_history' ? JSON.stringify([item.id, item.version]) : item.id;
+            if (item.childId !== binding.scope.childId || expectedId !== context.id || item.version !== row.get('recordVersion')) domainReject('export_scope_changed');
+            const parent = await binding.transaction.get(data.ref('growth_attention', 'growth-attention', item.id));
+            if (!parent.exists) continue;
+            const current = data.open('growth-attention', item.id, binding.scope, firestoreGrowthSchema, parent).item;
+            if (current.id !== item.id || current.childId !== binding.scope.childId || current.version !== parent.get('recordVersion')) domainReject('export_scope_changed');
+            if (current.version >= item.version) items.push(saved);
+          } else if (section === 'growth_topics' || section === 'growth_topic_history') {
+            const saved = firestoreGrowthTopicSchema.parse(value), id = JSON.stringify([binding.scope.childId, saved.topicId]);
+            const expectedId = section === 'growth_topic_history' ? JSON.stringify([binding.scope.childId, saved.topicId, saved.version]) : id;
+            if (expectedId !== context.id || saved.version !== row.get('recordVersion')) domainReject('export_scope_changed');
+            const parent = await binding.transaction.get(data.ref('growth_topics', 'growth-topic', id));
+            if (!parent.exists) continue;
+            const current = data.open('growth-topic', id, binding.scope, firestoreGrowthTopicSchema, parent);
+            if (current.topicId !== saved.topicId || current.version !== parent.get('recordVersion')) domainReject('export_scope_changed');
+            if (current.version >= saved.version) items.push(saved);
           } else if (section === 'memory_facts' || section === 'memory_topics') {
             const current = section === 'memory_facts' ? await memory.readFact(binding, context.id) : await memory.readTopic(binding, context.id);
             if (current) items.push(current);

@@ -176,7 +176,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
       bucket: composition.local.handoverBucket(config.photoBucket) }) : createCloudStorageHandoverObjects(handoverObjectOptions);
     const handover = createHandoverService({ ...domain, exporter, objects: handoverObjects, serverId: config.publicOrigin });
     const handoverUploads = createHandoverUploadService({ ...domain, objects: handoverObjects });
-    const handoverImports = createHandoverImportService({ ...domain, uploads: handoverUploads,
+    const handoverImports = createHandoverImportService({ ...domain, uploads: handoverUploads, knowledge,
       attachments: { files, voices, photos, transcripts: product.voiceTranscripts,
         ...(avatars ? { avatars: { store: avatars, policy: avatarConfig.policy } } : {}) } });
     const erasureCleanup = createFirestoreErasureCleanup({ ...domain, journal, erasures, photos, voices, files, avatars: avatarCleanup, handover, handoverUploads,

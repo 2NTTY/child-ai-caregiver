@@ -56,9 +56,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-30）：[P4-HANDOVER01](#p4-handover01) 成長匯入。**#382～#405 已合併未部署。個人關注快照、來源事件／修訂、原服務保存、再匯出及共用匯入／閱讀已接通，見[後端證據](artifacts/verification/P4_HANDOVER_CONCERN_IMPORT_20261030.json)及[共用畫面](frontend/verification/P4_HANDOVER_CONCERN_UI_20261030.json)。私人聊天的工具／畫面等有效證據保留，不重跑或當真模型品質。
+**當前入口（2026-11-04）：[P4-HANDOVER01](#p4-handover01) 成長匯入。**#382～#407 已合併未部署。個人關注快照、來源事件／修訂、原服務保存、再匯出及共用匯入／閱讀已接通，見[後端證據](artifacts/verification/P4_HANDOVER_CONCERN_IMPORT_20261030.json)及[共用畫面](frontend/verification/P4_HANDOVER_CONCERN_UI_20261030.json)。私人聊天的工具／畫面等有效證據保留，不重跑或當真模型品質。
 
-`codex/p4-handover-growth-domain` 從 `f226fe09` 已接原成長服務的匯入準備、版本／來源及主題停用；原 store 一條連貫核對及五根型別圖通過，見[證據](artifacts/verification/P4_HANDOVER_GROWTH_DOMAIN_20261030.json)。下一步接統一 worker、來源歷史及共用畫面。來源處理結果／近況留證據，活動操作重新核對本地資料及有效官方依據，舊請求／授權不重播。原主題停用及已結束事項保持，不因匯入而重新提醒。共享寫入、差異、班級／期間、完整私人備份、簽章配置與原生大型包仍未完成；單私人來源刪除的獨立還原重放留 S15。未部署／未作真雲端或設備驗收，不動 D PR，P3／P5 及既有待驗不計完成。
+成長領域準備及相容標籤已合併，原服務證據見[領域核對](artifacts/verification/P4_HANDOVER_GROWTH_DOMAIN_20261030.json)。`codex/p4-handover-growth-import` 接統一 worker、來源歷史、逐項衝突及再次匯出；原生修訂／來源作者保持，舊請求不重播。匯入期間沿原批次台帳暫緩成長評估，避免半套資料產生重複提醒。成長資料往返、衝突及批次中止的[合成核對](artifacts/verification/P4_HANDOVER_GROWTH_IMPORT_20261104.json)已通過。下一步由共用 Web／Android 畫面啟用個人成長匯入及來源閱讀。共享寫入、差異、班級／期間、完整私人備份、簽章配置與原生大型包仍未完成；單私人來源刪除的獨立還原重放留 S15。未部署／未作真雲端或設備驗收，不動 D PR，P3／P5 及既有待驗不計完成。
 
 **已合併未部署：**#358 班級解散與 #359 待辦身份接線，[清理](artifacts/verification/P4_CLASS_ERASURE_20261028.json)及[提醒證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)不重跑。選其他成員、班級 Agent 與外部通知仍待接續，不借管理員 key、不改 D PR。整個 CLASS01／P4、P3／P5 的未完成項不變。
 

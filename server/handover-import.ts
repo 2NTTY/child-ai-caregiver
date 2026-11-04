@@ -61,7 +61,7 @@ function object(value: unknown): value is Record<string, unknown> { return value
 function assertScopedRow(section: string, childId: string, value: Record<string, unknown>) {
   // Domain-specific references can name other resources. Only the owning scope is constrained here.
   const scoped = [value, section === 'task_history' ? value.task : null,
-    section === 'growth_attention' ? value.item : null, section === 'document_content' ? value.snapshot : null];
+    section === 'growth_attention' || section === 'growth_history' ? value.item : null, section === 'document_content' ? value.snapshot : null];
   for (const row of scoped) if (object(row) && Object.hasOwn(row, 'childId') && row.childId !== childId) fail('invalid_package_scope');
   if (section === 'child_avatar' || section === 'child_avatar_content') {
     if (!object(value.target) || value.target.kind !== 'child' || value.target.childId !== childId) fail('invalid_package_scope');
@@ -104,9 +104,9 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
     const required = new Set([key('children', null)]);
     for (const childId of childIds) for (const module of manifest.selection.modules)
       for (const section of HANDOVER_SECTIONS[module]) {
-        // Version-one exports predating imported history legitimately contain only the live chat section.
+        // Earlier version-one exports predate these separately exported history sections.
         // An undeclared data page still fails the required-scope check below.
-        if (section === 'chat_imports' && !expected.has(key(section, childId))) continue;
+        if (['chat_imports', 'growth_history', 'growth_topic_history'].includes(section) && !expected.has(key(section, childId))) continue;
         required.add(key(section, childId));
       }
     if (required.size !== expected.size || [...required].some(id => !expected.has(id))) fail('invalid_package_coverage');

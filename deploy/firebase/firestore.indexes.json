@@ -3994,7 +3994,59 @@
     },
     {"collectionGroup": "yuban_authority_concern_events", "queryScope": "COLLECTION", "fields": [{"fieldPath": "workspaceTag", "order": "ASCENDING"}, {"fieldPath": "epochTag", "order": "ASCENDING"}, {"fieldPath": "userTag", "order": "ASCENDING"}, {"fieldPath": "childTag", "order": "ASCENDING"}, {"fieldPath": "timelineId", "order": "ASCENDING"}, {"fieldPath": "sequence", "order": "ASCENDING"}]},
     {"collectionGroup": "yuban_authority_chat_imported_messages", "queryScope": "COLLECTION", "fields": [{"fieldPath": "workspaceTag", "order": "ASCENDING"}, {"fieldPath": "epochTag", "order": "ASCENDING"}, {"fieldPath": "userTag", "order": "ASCENDING"}, {"fieldPath": "childTag", "order": "ASCENDING"}, {"fieldPath": "createdAt", "order": "DESCENDING"}, {"fieldPath": "messageId", "order": "DESCENDING"}]},
-    {"collectionGroup": "yuban_authority_chat_imported_messages", "queryScope": "COLLECTION", "fields": [{"fieldPath": "workspaceTag", "order": "ASCENDING"}, {"fieldPath": "epochTag", "order": "ASCENDING"}, {"fieldPath": "userTag", "order": "ASCENDING"}, {"fieldPath": "childTag", "order": "ASCENDING"}]}
+    {"collectionGroup": "yuban_authority_chat_imported_messages", "queryScope": "COLLECTION", "fields": [{"fieldPath": "workspaceTag", "order": "ASCENDING"}, {"fieldPath": "epochTag", "order": "ASCENDING"}, {"fieldPath": "userTag", "order": "ASCENDING"}, {"fieldPath": "childTag", "order": "ASCENDING"}]},
+    {
+      "collectionGroup": "yuban_authority_growth_revisions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_growth_topic_revisions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    }
   ],
   "fieldOverrides": [
     {
@@ -4808,6 +4860,11 @@
       "collectionGroup": "yuban_authority_handover_import_batches",
       "fieldPath": "*",
       "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_handover_import_batches",
+      "fieldPath": "growthImportScopes",
+      "indexes": [{ "arrayConfig": "CONTAINS", "queryScope": "COLLECTION" }]
     },
     {
       "collectionGroup": "yuban_authority_handover_import_controls",
