@@ -20,7 +20,9 @@ test('class export retains only chosen current readable pupils and uses capabili
   assert.deepEqual(pupils.map(row => row.childId), [first, second]);
   assert.deepEqual(classExportModules(pupils, ['profile', 'care', 'tasks']), ['care']);
   assert.deepEqual(classExportModules(pupils, []), []);
-  assert.ok(!pupils.some(row => row.modules.includes('chat') || row.modules.includes('memory')));
+  assert.ok(!pupils.some(row => row.modules.includes('chat')), 'private conversations are outside the class roster');
+  assert.deepEqual(classExportModules([chosen], ['profile', 'care', 'tasks']), ['profile', 'care'],
+    'an older server cannot offer memory even when the pupil has a memory grant');
   assert.ok(!classExportPupils({ ...nextPage, selected: { ...state.selected, role: 'caregiver' } }, teachers, [chosen]).some(row => row.childId === first));
   const changedGrant = { ...state, shares: { items: [{ ...state.shares.items[0], version: 3, modules: ['tasks'] }] } };
   assert.notEqual(classExportPupils(changedGrant, teachers, [chosen])[0].basis, chosen.basis);
