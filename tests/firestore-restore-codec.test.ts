@@ -32,6 +32,7 @@ import type { ImportProvenance } from '../src/shared/import-provenance.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { indexBatchSchema, indexBatchReceiptSchema, indexBatchSort } from '../server/knowledge-index-batch-records.ts';
 import { FIREBASE_BACKUP_COLLECTION_SUFFIXES } from '../server/firestore-backup.ts';
+import { transferBatchSchema, transferResultSchema, transferItemId } from '../server/knowledge-transfer-records.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000', projectId = 'synthetic-restore-project', namespace = 'synthetic_restore';
 const at = '2026-10-11T12:00:00.000Z', digest = 'a'.repeat(64);
@@ -51,6 +52,45 @@ function record<T>(data: FirestoreDomainData, suffix: string, kind: string, id: 
   schema: z.ZodType<T>, value: T, version = 1) {
   return { path: namespace + '_' + suffix + '/' + firestoreDomainHash([kind, id]), data: data.seal(kind, id, current, schema, value, version) };
 }
+
+test('restore retains knowledge transfer identities and progress in system scope and stops ready batches', () => {
+  const f = fixture();
+  assert.ok(FIREBASE_BACKUP_COLLECTION_SUFFIXES.includes('_knowledge_transfers'));
+  for (const state of ['ready', 'stopped', 'failed', 'completed'] as const) {
+    const batch = transferBatchSchema.parse({ id: digest, total: 3, next: state === 'completed' ? 3 : 1, revision: 7,
+      generation: randomUUID(), state, lastOperator: 'synthetic-operator', updatedAt: at,
+      lastFailure: state === 'failed' ? { index: 1, sourceId: 'synthetic-guidance', reason: 'knowledge_version_invalid', at } : null });
+    const original = record(f.data, 'knowledge_transfers', 'knowledge-transfer-batch', batch.id, FIRESTORE_TASK_DISPATCH_SCOPE,
+      transferBatchSchema, batch, batch.revision);
+    const restored = f.codec.transform(f.codec.decode(original), input()), reopened = f.codec.decode(restored);
+    assert.equal(restored.path, original.path);
+    assert.deepEqual(reopened.value, { ...batch, state: state === 'ready' ? 'stopped' : state });
+    assert.equal(reopened.context.family, 'domain');
+    if (reopened.context.family === 'domain') assert.deepEqual(reopened.context.scope, FIRESTORE_TASK_DISPATCH_SCOPE);
+    assert.equal(restored.data.recordVersion, batch.revision);
+    assert.deepEqual(Object.keys(restored.data).sort(), [...Object.keys(f.data.tags(FIRESTORE_TASK_DISPATCH_SCOPE)),
+      'format', 'version', 'recordVersion', 'ciphertext', 'recovery'].sort());
+    assert.throws(() => f.codec.decode(record(f.data, 'knowledge_transfers', 'knowledge-transfer-batch', 'b'.repeat(64),
+      FIRESTORE_TASK_DISPATCH_SCOPE, transferBatchSchema, batch, batch.revision)), errors('restore_binding'));
+    assert.throws(() => f.codec.decode(record(f.data, 'knowledge_transfers', 'knowledge-transfer-batch', batch.id,
+      scope, transferBatchSchema, batch, batch.revision)), errors('restore_binding'));
+    assert.throws(() => f.codec.decode(record(f.data, 'knowledge_transfers', 'knowledge-transfer-batch', batch.id,
+      FIRESTORE_TASK_DISPATCH_SCOPE, transferBatchSchema, batch, batch.revision + 1)), errors('restore_binding'));
+  }
+  const result = transferResultSchema.parse({ id: digest, index: 0, sourceId: 'synthetic-guidance', versionHash: 'b'.repeat(64),
+    versionId: randomUUID(), unchanged: true, editionState: 'draft', operator: 'synthetic-operator', at });
+  const id = transferItemId(result.id, result.index);
+  const before = record(f.data, 'knowledge_transfers', 'knowledge-transfer-result', id, FIRESTORE_TASK_DISPATCH_SCOPE, transferResultSchema, result);
+  const after = f.codec.transform(f.codec.decode(before), input()), reopened = f.codec.decode(after);
+  assert.equal(after.path, before.path); assert.deepEqual(reopened.value, result); assert.equal(after.data.recordVersion, 1);
+  if (reopened.context.family === 'domain') assert.deepEqual(reopened.context.scope, FIRESTORE_TASK_DISPATCH_SCOPE);
+  assert.throws(() => f.codec.decode(record(f.data, 'knowledge_transfers', 'knowledge-transfer-result', transferItemId(result.id, 1),
+    FIRESTORE_TASK_DISPATCH_SCOPE, transferResultSchema, result)), errors('restore_binding'));
+  assert.throws(() => f.codec.decode(record(f.data, 'knowledge_transfers', 'knowledge-transfer-result', id,
+    scope, transferResultSchema, result)), errors('restore_binding'));
+  assert.throws(() => f.codec.decode(record(f.data, 'knowledge_transfers', 'knowledge-transfer-result', id,
+    FIRESTORE_TASK_DISPATCH_SCOPE, transferResultSchema, result, 2)), errors('restore_binding'));
+});
 
 test('restore retains knowledge index batch progress and receipts in system scope without reviving running work', () => {
   const f = fixture();
