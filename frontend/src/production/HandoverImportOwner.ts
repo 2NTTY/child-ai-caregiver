@@ -24,7 +24,7 @@ export const hasOriginalChildAvatar = (preview: HandoverUploadView['preview'], c
   !!preview?.coverage.some(row => row.childId === childId && row.section === 'child_avatar' && row.items > 0);
 export function originalComparisonResolution(item: OriginalBackupComparison['items'][number]) {
   if (!item.targetId || item.localVersion === null) return null;
-  if (item.resourceSection === 'instructions' && (item.targetId !== item.id || item.localVersion < 1 || item.state === 'deleted')) return null;
+  if (item.resourceSection === 'instructions' && item.localVersion < 1) return null;
   return item.state === 'deleted' ? 'restore_deleted' as const
     : ['local_newer','different','backup_newer'].includes(item.state) ? 'replace_current' as const : null;
 }
@@ -368,6 +368,7 @@ export class HandoverImportOwner {
       acceptedManifestSha256:comparison.manifestSha256,restoreOriginal:true,resolutionOnly:true,
       targets:[{sourceChildId:childId,target:{childId,spaceId:null},sections:[module]}],
       resolutions:rows.map(item => ({sourceChildId:childId,section:originalRestoreResourceSection(module,item)!,resourceId:item!.id,
+        ...(item!.resourceSection === 'instructions' && item!.targetId !== item!.id ? { useRestoredTarget: true } : {}),
         resolution:{mode:originalComparisonResolution(item!)!,targetId:item!.targetId!,expectedVersion:item!.localVersion!}}))});
     if (!input.success) {this.update({notice:'所選還原項目或版本已不可用，請重新比較。'});return;}
     this.clearComparison();
