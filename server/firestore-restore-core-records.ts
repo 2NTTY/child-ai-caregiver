@@ -47,6 +47,7 @@ export const coreRestoreSchemas = {
   'memory-reopened': { suffix: 'memory_reopened', schema: firestoreMemoryRecoverySchemas.key },
   'conversation-summary-head': { suffix: 'conversation_summary_heads', schema: firestoreMemoryRecoverySchemas.summary },
   'conversation-summary': { suffix: 'conversation_summaries', schema: firestoreMemoryRecoverySchemas.summary },
+  'conversation-summary-progress': { suffix: 'conversation_summary_heads', schema: firestoreMemoryRecoverySchemas.progress },
 } as const;
 export type CoreRestoreKind = keyof typeof coreRestoreSchemas;
 export type CoreRestoreValue = z.infer<(typeof coreRestoreSchemas)[CoreRestoreKind]['schema']>;
@@ -182,6 +183,7 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
     return { entityId: value.summary.id, entityVersion: value.summary.version, currentBatch: false };
   }
   if (kind === 'conversation-summary-head') { equalId(id, [scope.ownerUserId, scope.childId]); return {}; }
+  if (kind === 'conversation-summary-progress') { equalId(id, [scope.ownerUserId, scope.childId]); firestoreMemoryRecoverySchemas.progress.parse(raw); return {}; }
   requireValue(id === value.summary.id);
   return { entityId: value.summary.id, entityVersion: value.summary.version, ...(value.batch ? {
     currentBatch: original.currentBatch === true, lastMessageSortKey: value.batch.lastMessageSortKey } : {}) };

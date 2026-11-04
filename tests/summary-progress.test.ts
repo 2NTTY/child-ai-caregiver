@@ -7,9 +7,9 @@ import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
-import { createFirestoreChatStore } from '../server/firestore-chat.ts';
+import { createFirestoreChatStore, firestoreChatMessageSchema } from '../server/firestore-chat.ts';
 import { createFirestoreCareStore } from '../server/firestore-care.ts';
-import { createFirestoreMemoryStore } from '../server/firestore-memory.ts';
+import { createFirestoreMemoryStore, firestoreMemoryRecoverySchemas, summaryProgressSchema } from '../server/firestore-memory.ts';
 import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
 import { createFirestoreProductAgent } from '../server/firestore-product-agent.ts';
 import { FirestoreDomainData } from '../server/firestore-domain-data.ts';
@@ -26,6 +26,8 @@ import { agentRequestCharacters } from '../server/agent-model-gateway.ts';
 import { AGENT_LIMITS } from '../server/agent-budget.ts';
 import {
   selectSummaryBatchMessages,
+  splitMessageIntoSafeChunks,
+  surrogateSafeIndex,
   SUMMARY_BATCH_TARGET_CHARS,
 } from '../server/summary-window-helper.ts';
 
@@ -510,7 +512,6 @@ test('actual request fitting keeps an ordered prefix and advances only the suppl
 });
 
 for (const scenario of [
-  { name: '10k quotes', owner: 'owner', text: '"'.repeat(10000) },
   { name: 'schema-maximum escaped owner metadata', owner: '\u0001'.repeat(256), text: '"'.repeat(4853) },
 ]) test(`oversized ${scenario.name} stops before model reservation without advancing or skipping coverage`, async () => {
   const h = createHarness(scenario.owner);
@@ -628,4 +629,1355 @@ test('source correction during fitted provider request does not persist a stale 
   assert.equal((await h.memory.prepareMaintenance(h.owner, child.id))!.messages[0].id, original!.id);
   const current = await h.authority.runTransaction(h.owner, child.id, binding => readContextBasis(h.data, binding));
   assert.equal(current.value.summaryPending, true);
+});
+
+test('REQ-005 §4.1: oversized 10k quotes progresses via multi-part segmentation across rounds without stalling', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const message = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  await h.chat.createUserMessageForUser(h.owner, child.id, 'Later fresh message');
+
+  // Progress rounds until all parts complete
+  let roundIndex = 0;
+  while (true) {
+    const round = await runMaintenance(h, child.id);
+    assert.equal(round.result.state, 'completed');
+    assert.equal(round.requests.length, 1);
+    assert.ok(agentRequestCharacters(round.requests[0]) <= 32000, `Request size ${agentRequestCharacters(round.requests[0])} must be <= 32000`);
+
+    const payload = JSON.parse(round.requests[0].contents[0].parts![0].text!);
+    assert.equal(payload.sourceMessages[0].id, message!.id);
+    assert.ok(payload.sourceMessages[0].text.length <= 5000, 'Chunk must not exceed raw ceiling');
+    assert.ok(payload.sourceMessages[0].text.length >= 1, 'Chunk must make progress');
+
+    const progress = await h.authority.runTransaction(h.owner, child.id, async b => {
+      const row = await b.transaction.get(h.data.ref('conversation_summary_heads', 'conversation-summary-progress', JSON.stringify([h.owner, child.id])));
+      return row.exists ? h.data.open('conversation-summary-progress', JSON.stringify([h.owner, child.id]), b.scope, summaryProgressSchema, row) : null;
+    });
+
+    if (!progress) {
+      const head = await h.authority.runTransaction(h.owner, child.id, async b => {
+        const row = await b.transaction.get(h.data.ref('conversation_summary_heads', 'conversation-summary-head', JSON.stringify([h.owner, child.id])));
+        return h.data.open('conversation-summary-head', JSON.stringify([h.owner, child.id]), b.scope, firestoreMemoryRecoverySchemas.summary, row);
+      });
+      assert.notEqual(head?.lastSortKey, '0'.repeat(19), 'Watermark must advance past completed message');
+      assert.equal((head?.batch as any)?.part, undefined, 'Head batch must NEVER contain part (master strict schema compatible)');
+      break;
+    }
+
+    assert.equal(progress.messageId, message!.id);
+    assert.equal(progress.index, roundIndex);
+    roundIndex++;
+    assert.ok(roundIndex <= 5, 'Multi-part quotes progression must complete within 5 rounds');
+  }
+
+  // Next batch should now move on to the later message!
+  const nextPrep = await h.memory.prepareMaintenance(h.owner, child.id);
+  assert.ok(nextPrep);
+  assert.equal(nextPrep.messages[0].text, 'Later fresh message');
+});
+
+test('REQ-005 §4.1: surrogate-safe splitting preserves surrogate pairs and prevents mid-pair cut mutation', () => {
+  // 1. General multi-emoji integrity
+  const emoji = '😀';
+  const emojiText = emoji.repeat(3000);
+  const msg = { id: 'emoji-msg', text: emojiText };
+  const chunks = splitMessageIntoSafeChunks(msg, 5000);
+  assert.equal(chunks.length, 2);
+  for (const chunk of chunks) {
+    assert.doesNotMatch(chunk.text!, /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u);
+  }
+  const reconstructed = chunks.map(c => c.text).join('');
+  assert.equal(reconstructed, emojiText);
+
+  // 2. Mutation guard: emoji placed precisely across the 5000-character boundary
+  // 4999 'a's followed by 😀 (\uD83D\uDE00, 2 code units: \uD83D at 4999, \uDE00 at 5000)
+  const boundaryText = 'a'.repeat(4999) + '😀' + 'b'.repeat(200);
+  assert.equal(surrogateSafeIndex(boundaryText, 5000), 4999, 'surrogateSafeIndex must back up when index falls inside pair');
+  const boundaryMsg = { id: 'boundary-msg', text: boundaryText };
+  const boundaryChunks = splitMessageIntoSafeChunks(boundaryMsg, 5000);
+  assert.equal(boundaryChunks[0].text!.length, 4999, 'Chunk 0 must end before the surrogate pair at 4999');
+  assert.equal(boundaryChunks[0].text!.endsWith('a'), true);
+  assert.equal(boundaryChunks[1].text!.startsWith('😀'), true, 'Chunk 1 must start with intact emoji');
+  assert.doesNotMatch(boundaryChunks[0].text!, /[\uD800-\uDBFF]$/, 'Chunk 0 must not end with orphaned high surrogate');
+  assert.doesNotMatch(boundaryChunks[1].text!, /^[\uDC00-\uDFFF]/, 'Chunk 1 must not start with orphaned low surrogate');
+});
+
+test('REQ-005 §4.1: repairing an earlier batch does not inherit part progress from head into repair revision', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+
+  // 1. Create a fact dependency and an early message (Batch 1)
+  const values = { key: 'Synthetic dependency', content: 'Initial value', source: { kind: 'manual' as const, description: 'owner' }, validUntil: null };
+  const candidate = await h.memory.createFact(h.owner, child.id, { values, intendedVisibility: 'private' });
+  const fact = await h.memory.confirmFact(h.owner, child.id, candidate!.id, { expectedVersion: 1, confirm: true, confirmShared: false });
+  const earlyMsg = await h.chat.createUserMessageForUser(h.owner, child.id, 'Early message to be summarized first');
+
+  // Summarize Batch 1
+  const prep1 = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const saved1 = await h.memory.saveSummary(h.owner, child.id, {
+    previousVersion: prep1.previousVersion,
+    basis: prep1.basis,
+    text: 'Batch 1 summary',
+    coveredMessageIds: [earlyMsg!.id],
+  });
+  assert.ok(saved1);
+
+  // 2. Add an oversized message (Batch 2) and save Part 0 to head
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const prep2 = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const chunks = splitMessageIntoSafeChunks(bigMsg!);
+  await h.memory.saveSummary(h.owner, child.id, {
+    previousVersion: prep2.previousVersion,
+    basis: prep2.basis,
+    text: 'Part 0 summary for Batch 2',
+    coveredMessageIds: [bigMsg!.id],
+    part: {
+      messageId: bigMsg!.id,
+      index: 0,
+      total: chunks.length,
+      isLast: false,
+      sourceHash: chunks[0].sourceHash,
+      startOffset: chunks[0].startOffset,
+      endOffset: chunks[0].endOffset,
+    },
+  });
+
+  // Verify progress doc has active part for Batch 2 (head remains untouched)
+  await h.authority.runTransaction(h.owner, child.id, async b => {
+    const row = await b.transaction.get(h.data.ref('conversation_summary_heads', 'conversation-summary-progress', JSON.stringify([h.owner, child.id])));
+    const progress = h.data.open('conversation-summary-progress', JSON.stringify([h.owner, child.id]), b.scope, summaryProgressSchema, row);
+    assert.equal(progress?.messageId, bigMsg!.id);
+    assert.equal(progress?.index, 0);
+  });
+
+  // 3. Invalidate Batch 1 by revising the fact
+  await h.memory.reviseFact(h.owner, child.id, fact!.id, {
+    expectedVersion: 2,
+    confirm: true,
+    confirmShared: false,
+    values: { ...values, content: 'Revised value triggering repair' },
+    reason: 'Correction',
+  });
+
+  // 4. Perform repair of Batch 1
+  const prepRepair = (await h.memory.prepareMaintenance(h.owner, child.id))!;
+  assert.equal(prepRepair.repairOf, saved1.id);
+
+  const repairSaved = await h.memory.saveSummary(h.owner, child.id, {
+    previousVersion: prepRepair.previousVersion,
+    basis: prepRepair.basis,
+    text: 'Repaired Batch 1 summary',
+    coveredMessageIds: [earlyMsg!.id],
+    repairOf: saved1.id,
+  });
+  assert.ok(repairSaved);
+
+  // 5. CRITICAL MUTATION GUARD: The repair revision in conversation_summaries must NEVER inherit part!
+  await h.authority.runTransaction(h.owner, child.id, async b => {
+    const row = await b.transaction.get(h.data.ref('conversation_summaries', 'conversation-summary', repairSaved.id));
+    const revision = h.data.open('conversation-summary', repairSaved.id, b.scope, firestoreMemoryRecoverySchemas.summary, row);
+    assert.equal((revision?.batch as any)?.part, undefined, 'Repair revision in conversation_summaries must NEVER inherit part!');
+  });
+
+  // 6. The progress doc MUST STILL preserve its active part for Batch 2 so work on Batch 2 resumes seamlessly
+  const nextBatch = await h.memory.prepareMaintenance(h.owner, child.id);
+  assert.ok(nextBatch);
+  assert.equal(nextBatch.part?.messageId, bigMsg!.id);
+  assert.equal(nextBatch.part?.index, 1, 'prepareMaintenance must still resume Batch 2 Part 1 after repair');
+});
+
+test('REQ-005 §4.1 (probe test): 6,000 \\u0001 escape-heavy message progresses via multi-part without permanent input_limit', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const u0001Text = '\u0001'.repeat(6000);
+  const msg = await h.chat.createUserMessageForUser(h.owner, child.id, u0001Text);
+  await h.chat.createUserMessageForUser(h.owner, child.id, 'Subsequent normal message');
+
+  // Round 1: Must NOT stall with input_limit; must complete part 0 within 32k request ceiling
+  const round1 = await runMaintenance(h, child.id);
+  assert.equal(round1.result.state, 'completed', `Round 1 state: ${JSON.stringify(round1.result)}`);
+  assert.equal(round1.requests.length, 1);
+  assert.ok(agentRequestCharacters(round1.requests[0]) <= 32000, `Request size ${agentRequestCharacters(round1.requests[0])} must be <= 32000`);
+
+  // Progress until all parts finish
+  let roundCount = 2;
+  while (true) {
+    const next = await runMaintenance(h, child.id);
+    assert.equal(next.result.state, 'completed');
+    assert.ok(agentRequestCharacters(next.requests[0]) <= 32000);
+    const prep = await h.memory.prepareMaintenance(h.owner, child.id);
+    if (!prep?.part) {
+      assert.equal(prep?.messages[0].text, 'Subsequent normal message', 'Watermark must advance to subsequent message after all parts finish');
+      break;
+    }
+    roundCount++;
+    assert.ok(roundCount <= 10, 'Multi-part progression must complete within 10 rounds');
+  }
+});
+
+test('REQ-005 §4.1: server rejects inconsistent isLast or index beyond total in summary parts', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const chunks = splitMessageIntoSafeChunks(bigMsg!);
+
+  // 1. isLast: true when index is 0 and total is > 1
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep.previousVersion,
+      basis: prep.basis,
+      text: 'Part 0 summary',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: chunks.length,
+        isLast: true, // Invalid!
+        sourceHash: chunks[0].sourceHash,
+        startOffset: chunks[0].startOffset,
+        endOffset: chunks[0].endOffset,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+
+  // 2. index >= total
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep.previousVersion,
+      basis: prep.basis,
+      text: 'Part overflow summary',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: chunks.length, // Invalid!
+        total: chunks.length,
+        isLast: true,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+});
+
+test('REQ-005 §4.1: server enforces contiguous offsets and message bounds across parts', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const chunks = splitMessageIntoSafeChunks(bigMsg!);
+
+  // 1. Non-zero start offset on part 0
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep.previousVersion,
+      basis: prep.basis,
+      text: 'Part 0 invalid start',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: chunks.length,
+        isLast: false,
+        sourceHash: chunks[0].sourceHash,
+        startOffset: 10, // Invalid! Must start at 0
+        endOffset: chunks[0].endOffset,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+
+  // 2. endOffset beyond message length
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep.previousVersion,
+      basis: prep.basis,
+      text: 'Part 0 overflow',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: chunks.length,
+        isLast: false,
+        sourceHash: chunks[0].sourceHash,
+        startOffset: 0,
+        endOffset: quotes10000.length + 500, // Invalid!
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+
+  // 3. Save legitimate Part 0
+  await h.memory.saveSummary(h.owner, child.id, {
+    previousVersion: prep.previousVersion,
+    basis: prep.basis,
+    text: 'Legit Part 0',
+    coveredMessageIds: [bigMsg!.id],
+    part: {
+      messageId: bigMsg!.id,
+      index: 0,
+      total: chunks.length,
+      isLast: false,
+      sourceHash: chunks[0].sourceHash,
+      startOffset: chunks[0].startOffset,
+      endOffset: chunks[0].endOffset,
+    },
+  });
+
+  // 4. Save Part 1 with a gap (startOffset > prev endOffset)
+  const prepPart1 = (await h.memory.prepareSummary(h.owner, child.id))!;
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prepPart1.previousVersion,
+      basis: prepPart1.basis,
+      text: 'Part 1 with gap',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 1,
+        total: chunks.length,
+        isLast: chunks.length === 2,
+        sourceHash: chunks[0].sourceHash,
+        startOffset: (chunks[0].endOffset ?? 0) + 10, // Gap!
+        endOffset: chunks[1].endOffset,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+});
+
+// ----------------------------------------------------------------------------
+// Test 24: Schema Rollback Compatibility (Master Strict Schema Verification)
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: schema rollback compatibility - master strict schema parses conversation-summary-head cleanly mid-progress and upon completion', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const chunks = splitMessageIntoSafeChunks(bigMsg!);
+
+  // Step 1: Save mid-progress slice (Part 0 of N)
+  await h.memory.saveSummary(h.owner, child.id, {
+    previousVersion: prep.previousVersion,
+    basis: prep.basis,
+    text: 'Intermediate Part 0 Summary',
+    coveredMessageIds: [bigMsg!.id],
+    part: {
+      messageId: bigMsg!.id,
+      index: 0,
+      total: chunks.length,
+      isLast: false,
+      sourceHash: chunks[0].sourceHash,
+      startOffset: chunks[0].startOffset,
+      endOffset: chunks[0].endOffset,
+    },
+  });
+
+  // Step 2: Simulate Master reading conversation-summary-head
+  // Master's savedSummarySchema has NO 'part' field and is strictly .strict().
+  // Because in-flight progress is isolated to conversation-summary-progress, head is untouched (null or previous).
+  await h.authority.runTransaction(h.owner, child.id, async b => {
+    const headRow = await b.transaction.get(h.data.ref('conversation_summary_heads', 'conversation-summary-head', JSON.stringify([h.owner, child.id])));
+    if (headRow.exists) {
+      const parsed = firestoreMemoryRecoverySchemas.summary.parse(h.data.open('conversation-summary-head', JSON.stringify([h.owner, child.id]), b.scope, firestoreMemoryRecoverySchemas.summary, headRow));
+      assert.equal((parsed.batch as any)?.part, undefined, 'Head must never contain unknown part field for master');
+    }
+    // Master never reads conversation-summary-progress
+    const progressRow = await b.transaction.get(h.data.ref('conversation_summary_heads', 'conversation-summary-progress', JSON.stringify([h.owner, child.id])));
+    assert.ok(progressRow.exists, 'Progress doc must exist during mid-flight');
+  });
+
+  // Step 3: Complete progression through remaining parts
+  for (let i = 1; i < chunks.length; i++) {
+    const nextPrep = (await h.memory.prepareSummary(h.owner, child.id))!;
+    const isLast = i === chunks.length - 1;
+    await h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: nextPrep.previousVersion,
+      basis: nextPrep.basis,
+      text: `Part ${i} cumulative summary`,
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: i,
+        total: chunks.length,
+        isLast,
+        sourceHash: chunks[i].sourceHash,
+        startOffset: chunks[i].startOffset,
+        endOffset: chunks[i].endOffset,
+      },
+    });
+  }
+
+  // Step 4: After completion, verify head is parseable by master's strict schema with ZERO error
+  await h.authority.runTransaction(h.owner, child.id, async b => {
+    const headRow = await b.transaction.get(h.data.ref('conversation_summary_heads', 'conversation-summary-head', JSON.stringify([h.owner, child.id])));
+    assert.ok(headRow.exists);
+    const parsedHead = firestoreMemoryRecoverySchemas.summary.parse(h.data.open('conversation-summary-head', JSON.stringify([h.owner, child.id]), b.scope, firestoreMemoryRecoverySchemas.summary, headRow));
+    assert.ok(parsedHead);
+    assert.equal((parsedHead.batch as any)?.part, undefined, 'Final committed head must have NO part field');
+    assert.equal(parsedHead.summary.version, 1);
+
+    // Progress doc must be atomically deleted
+    const progressRow = await b.transaction.get(h.data.ref('conversation_summary_heads', 'conversation-summary-progress', JSON.stringify([h.owner, child.id])));
+    assert.equal(progressRow.exists, false, 'Progress doc must be deleted on completion');
+  });
+});
+
+// ----------------------------------------------------------------------------
+// Test 25: Semantic Retention via Incremental Cumulative Rollup
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: cumulative rollup retains earlier slice summaries into final projected summary without semantic amnesia', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+
+  // Create two distinct topics within one oversized message (~10k chars)
+  const topic1 = 'Topic1: 今日小明整跌咗水樽，喊咗好耐。';
+  const topic2 = 'Topic2: 晏晝同小美一齊玩積木好開心，食晒成碗飯。';
+  const filler1 = '"'.repeat(4500);
+  const filler2 = '"'.repeat(4500);
+  const oversizedText = `${topic1} ${filler1}\n\n${topic2} ${filler2}`;
+
+  const msg = await h.chat.createUserMessageForUser(h.owner, child.id, oversizedText);
+  assert.ok(msg);
+
+  // Platform provider records prompt payloads across rounds and simulates LLM accumulating synthesis
+  const seenPayloads: any[] = [];
+  let roundNum = 0;
+  const product = await createFirestoreProductAgent({
+    ...h.options,
+    chat: h.chat,
+    care: h.care,
+    memory: h.memory,
+    online: h.online,
+    authorizeWorker: async () => true,
+    config: readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: h.options.projectId }),
+    platformProvider: {
+      async generate(request) {
+        const textPayload = JSON.parse(request.contents[0].parts![0].text!);
+        seenPayloads.push(textPayload);
+        roundNum++;
+        const prevText = textPayload.previousAccumulatedSummary || textPayload.instruction || '';
+        const summaryText = roundNum === 1
+          ? '第一段摘要：記錄咗小明跌水樽喊嘅事。'
+          : `累積完整摘要：先前摘要（${prevText.includes('跌水樽') ? '包含跌水樽' : '缺'}）+ 晏晝同小美玩積木開心食晒飯。`;
+        return {
+          content: { role: 'model', parts: [{ functionCall: { id: 'summary', name: 'stage_private_summary', args: { text: summaryText } } }] },
+          finishReason: FinishReason.STOP,
+          usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 },
+        };
+      },
+    },
+  });
+
+  // Run maintainSummary rounds until all slices finish
+  let maintainResult = await product.maintainSummary({ userId: h.owner, childId: child.id, reference: randomUUID(), authorize: async () => true });
+  assert.equal(maintainResult.state, 'completed');
+  assert.equal(maintainResult.more, true, 'Round 1 must indicate more work pending');
+
+  let maintainResult2 = await product.maintainSummary({ userId: h.owner, childId: child.id, reference: randomUUID(), authorize: async () => true });
+  assert.equal(maintainResult2.state, 'completed');
+
+  // Verify that the second round payload explicitly contained the previous accumulated summary
+  assert.ok(seenPayloads.length >= 2, 'Must have at least 2 model rounds');
+  assert.ok(
+    seenPayloads[1].instruction.includes('previousAccumulatedSummary') ||
+    seenPayloads[1].instruction.includes('previous accumulated summary'),
+    'Round 2 instruction must refer to previousAccumulatedSummary'
+  );
+  assert.ok(
+    seenPayloads[1].previousAccumulatedSummary?.includes('跌水樽'),
+    'Round 2 previousAccumulatedSummary must contain earlier slice summary text'
+  );
+
+  // Verify initialConversationSummary projects the complete accumulated summary
+  const projected = await h.memory.initialConversationSummary(h.owner, child.id);
+  assert.ok(projected, 'Must have projected summary');
+  assert.ok(projected.summary.text.includes('包含跌水樽'), 'Projected summary must retain earlier slice content (Zero Amnesia)');
+  assert.ok(projected.summary.text.includes('玩積木'), 'Projected summary must include final slice content');
+  assert.equal(projected.summary.lastCoveredMessageId, msg!.id);
+});
+
+// ----------------------------------------------------------------------------
+// Test 26: Anti-Bypass Validation - Offsets and Source Hash Mandatory for total > 1
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: server strictly requires startOffset, endOffset, and sourceHash when total > 1', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const chunks = splitMessageIntoSafeChunks(bigMsg!);
+
+  // 1. Missing startOffset when total > 1
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep.previousVersion,
+      basis: prep.basis,
+      text: 'Part 0 missing startOffset',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: chunks.length,
+        isLast: false,
+        sourceHash: chunks[0].sourceHash,
+        endOffset: chunks[0].endOffset,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+
+  // 2. Missing endOffset when total > 1
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep.previousVersion,
+      basis: prep.basis,
+      text: 'Part 0 missing endOffset',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: chunks.length,
+        isLast: false,
+        sourceHash: chunks[0].sourceHash,
+        startOffset: 0,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+
+  // 3. Missing sourceHash when total > 1
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep.previousVersion,
+      basis: prep.basis,
+      text: 'Part 0 missing sourceHash',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: chunks.length,
+        isLast: false,
+        startOffset: 0,
+        endOffset: chunks[0].endOffset,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+
+  // 4. startOffset >= endOffset
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep.previousVersion,
+      basis: prep.basis,
+      text: 'Part 0 start >= end',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: chunks.length,
+        isLast: false,
+        sourceHash: chunks[0].sourceHash,
+        startOffset: 100,
+        endOffset: 100,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+
+  // 5. Client offsets diverge from server splitMessageIntoSafeChunks boundaries
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep.previousVersion,
+      basis: prep.basis,
+      text: 'Part 0 mismatched bounds',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: chunks.length,
+        isLast: false,
+        sourceHash: chunks[0].sourceHash,
+        startOffset: 0,
+        endOffset: 50, // Server expects chunks[0].endOffset (~5000)
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+});
+
+// ----------------------------------------------------------------------------
+// Test 27: Anti-Bypass Guard G1 - Forged sourceHash on server chunk
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: server rejects forged sourceHash mismatching server chunk hash on initial part', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const chunks = splitMessageIntoSafeChunks(bigMsg!);
+
+  const forgedHash = 'e'.repeat(64);
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep.previousVersion,
+      basis: prep.basis,
+      text: 'Part 0 summary forged hash',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: chunks.length,
+        isLast: false,
+        sourceHash: forgedHash,
+        startOffset: chunks[0].startOffset,
+        endOffset: chunks[0].endOffset,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+});
+
+// ----------------------------------------------------------------------------
+// Test 28: Anti-Bypass Guard G2 - Missing progress record when index > 0
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: server rejects subsequent part index when no progress record exists in Firestore', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const chunks = splitMessageIntoSafeChunks(bigMsg!);
+
+  // Directly attempt to save index 1 without having saved index 0 in progress
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep.previousVersion,
+      basis: prep.basis,
+      text: 'Part 1 uninitiated progress summary',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 1,
+        total: chunks.length,
+        isLast: false,
+        sourceHash: chunks[1].sourceHash,
+        startOffset: chunks[1].startOffset,
+        endOffset: chunks[1].endOffset,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+});
+
+// ----------------------------------------------------------------------------
+// Test 29: Anti-Bypass Guard G3 - Non-consecutive part index skipping intermediate chunks
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: server rejects non-consecutive part index skipping intermediate chunks', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const chunks = splitMessageIntoSafeChunks(bigMsg!);
+  assert.equal(chunks.length, 3);
+
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  await h.memory.saveSummary(h.owner, child.id, {
+    previousVersion: prep.previousVersion,
+    basis: prep.basis,
+    text: 'Part 0 summary',
+    coveredMessageIds: [bigMsg!.id],
+    part: {
+      messageId: bigMsg!.id,
+      index: 0,
+      total: 3,
+      isLast: false,
+      sourceHash: chunks[0].sourceHash,
+      startOffset: chunks[0].startOffset,
+      endOffset: chunks[0].endOffset,
+    },
+  });
+
+  // Align Firestore progress endOffset with chunk 2 startOffset so that offset continuity check is satisfied,
+  // purely isolating the index continuity check (G3: prevPart.index + 1 !== input.part.index).
+  const progressDocId = JSON.stringify([h.owner, child.id]);
+  await h.authority.runTransaction('owner', child.id, async binding => {
+    const docRef = h.data.ref('conversation_summary_heads', 'conversation-summary-progress', progressDocId);
+    const sealed = {
+      ...h.data.tags(binding.scope),
+      ...h.data.seal('conversation-summary-progress', progressDocId, binding.scope, summaryProgressSchema, {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: 3,
+        startOffset: chunks[0].startOffset,
+        endOffset: chunks[2].startOffset,
+        sourceHash: chunks[0].sourceHash,
+        cumulativeSummary: 'Part 0 summary',
+        updatedAt: new Date().toISOString(),
+      }),
+    };
+    binding.transaction.set(docRef, sealed);
+  });
+
+  const prep2 = (await h.memory.prepareSummary(h.owner, child.id))!;
+  // Attempt to skip part 1 and save part 2 directly (index: 2 when previous was 0)
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep2.previousVersion,
+      basis: prep2.basis,
+      text: 'Part 2 skip index summary',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 2,
+        total: 3,
+        isLast: true,
+        sourceHash: chunks[2].sourceHash,
+        startOffset: chunks[2].startOffset,
+        endOffset: chunks[2].endOffset,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+});
+
+// ----------------------------------------------------------------------------
+// Test 30: Anti-Bypass Guard G4 - Message edit mid-progress purges progress
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: editing chat message text mid-progress purges stale progress document and restarts from index 0', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const chunks = splitMessageIntoSafeChunks(bigMsg!);
+
+  // Save part 0
+  await h.memory.saveSummary(h.owner, child.id, {
+    previousVersion: prep.previousVersion,
+    basis: prep.basis,
+    text: 'Part 0 summary',
+    coveredMessageIds: [bigMsg!.id],
+    part: {
+      messageId: bigMsg!.id,
+      index: 0,
+      total: chunks.length,
+      isLast: false,
+      sourceHash: chunks[0].sourceHash,
+      startOffset: chunks[0].startOffset,
+      endOffset: chunks[0].endOffset,
+    },
+  });
+
+  const prepBefore = (await h.memory.prepareSummary(h.owner, child.id))!;
+  assert.equal(prepBefore.part?.index, 0);
+
+  // Edit message in Firestore to have different text
+  await h.authority.runTransaction(h.owner, child.id, async binding => {
+    const docRef = h.data.ref('chat_messages', 'chat-message', bigMsg!.id);
+    const existing = await binding.transaction.get(docRef);
+    const sealed = {
+      ...h.data.tags(binding.scope),
+      messageId: bigMsg!.id,
+      createdAt: bigMsg!.createdAt,
+      sortKey: existing.get('sortKey'),
+      ...h.data.seal('chat-message', bigMsg!.id, binding.scope, firestoreChatMessageSchema, {
+        id: bigMsg!.id,
+        childId: child.id,
+        authorUserId: h.owner,
+        role: 'user',
+        text: '\\'.repeat(10000),
+        createdAt: bigMsg!.createdAt,
+        inReplyTo: null,
+      }),
+    };
+    binding.transaction.set(docRef, sealed);
+  });
+
+  // Calling prepareSummary now detects hash mismatch, purges progress, and leaves part undefined
+  const prepAfter = (await h.memory.prepareSummary(h.owner, child.id))!;
+  assert.equal(prepAfter.part, undefined);
+});
+
+// ----------------------------------------------------------------------------
+// Test 31: Anti-Bypass Guard G5 - endOffset mismatch against server safe chunk
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: server strictly rejects part with endOffset diverging from server safe chunk boundary', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const chunks = splitMessageIntoSafeChunks(bigMsg!);
+
+  // Client provides divergent endOffset (e.g. 50 instead of chunks[0].endOffset ~5000)
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep.previousVersion,
+      basis: prep.basis,
+      text: 'Part 0 divergent endOffset',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: chunks.length,
+        isLast: false,
+        sourceHash: chunks[0].sourceHash,
+        startOffset: chunks[0].startOffset,
+        endOffset: 50,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+});
+
+// ----------------------------------------------------------------------------
+// Test 32: Anti-Bypass Guard G6 - Reject forged total
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: server rejects forged total mismatching server-computed chunk count', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const chunks = splitMessageIntoSafeChunks(bigMsg!);
+
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep.previousVersion,
+      basis: prep.basis,
+      text: 'Part 0 forged total summary',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: chunks.length + 5,
+        isLast: false,
+        sourceHash: chunks[0].sourceHash,
+        startOffset: chunks[0].startOffset,
+        endOffset: chunks[0].endOffset,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+});
+
+// ----------------------------------------------------------------------------
+// Test 33: Anti-Bypass Guard G7 - Reject startOffset mismatch
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: server rejects startOffset mismatching server-computed chunk startOffset', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const chunks = splitMessageIntoSafeChunks(bigMsg!);
+
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep.previousVersion,
+      basis: prep.basis,
+      text: 'Part 0 startOffset mismatch',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: chunks.length,
+        isLast: false,
+        sourceHash: chunks[0].sourceHash,
+        startOffset: 123,
+        endOffset: chunks[0].endOffset,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+});
+
+// ----------------------------------------------------------------------------
+// Test 34: Anti-Bypass Guard G8 - Reject repair carrying part
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: server strictly rejects repair summary write carrying illegal part payload', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+
+  const values = { key: 'Synthetic dependency', content: 'Initial value', source: { kind: 'manual' as const, description: 'owner' }, validUntil: null };
+  const candidate = await h.memory.createFact(h.owner, child.id, { values, intendedVisibility: 'private' });
+  const fact = await h.memory.confirmFact(h.owner, child.id, candidate!.id, { expectedVersion: 1, confirm: true, confirmShared: false });
+
+  const msg1 = await h.chat.createUserMessageForUser(h.owner, child.id, 'Original message to repair');
+  const prep1 = (await h.memory.prepareSummary(h.owner, child.id))!;
+  await h.memory.saveSummary(h.owner, child.id, {
+    previousVersion: prep1.previousVersion,
+    basis: prep1.basis,
+    text: 'Initial summary',
+    coveredMessageIds: [msg1!.id],
+  });
+
+  // Invalidate fact to trigger repair
+  await h.memory.reviseFact(h.owner, child.id, fact!.id, {
+    expectedVersion: 2,
+    confirm: true,
+    confirmShared: false,
+    values: { ...values, content: 'Updated value that invalidates batch' },
+    reason: 'Correction',
+  });
+
+  const prepRepair = await h.memory.prepareMaintenance(h.owner, child.id);
+  assert.ok(prepRepair?.repairOf);
+
+  // Split repair message into completely legitimate chunk
+  const chunks = splitMessageIntoSafeChunks(prepRepair.messages[0]);
+  const legitPart = {
+    messageId: prepRepair.messages[0].id,
+    index: 0,
+    total: chunks.length,
+    isLast: true,
+    sourceHash: chunks[0].sourceHash,
+    startOffset: chunks[0].startOffset,
+    endOffset: chunks[0].endOffset,
+  };
+
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prepRepair.previousVersion,
+      basis: prepRepair.basis,
+      text: 'Repair illegally carrying part',
+      coveredMessageIds: prepRepair.messages.map(m => m.id),
+      repairOf: prepRepair.repairOf,
+      part: legitPart,
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+});
+
+// ----------------------------------------------------------------------------
+// Test 35: Continuity check - Mid-progress partitioning/constant change resets progress
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: server purges progress and restarts from part 0 when partitioning total changes mid-progress', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const chunks = splitMessageIntoSafeChunks(bigMsg!);
+
+  // Save part 0 legitimately
+  await h.memory.saveSummary(h.owner, child.id, {
+    previousVersion: prep.previousVersion,
+    basis: prep.basis,
+    text: 'Part 0 summary',
+    coveredMessageIds: [bigMsg!.id],
+    part: {
+      messageId: bigMsg!.id,
+      index: 0,
+      total: chunks.length,
+      isLast: false,
+      sourceHash: chunks[0].sourceHash,
+      startOffset: chunks[0].startOffset,
+      endOffset: chunks[0].endOffset,
+    },
+  });
+
+  // Verify progress exists with total === chunks.length
+  const prepProgress = (await h.memory.prepareSummary(h.owner, child.id))!;
+  assert.equal(prepProgress.part?.index, 0);
+  assert.equal(prepProgress.part?.total, chunks.length);
+
+  // Simulate constant/partitioning change by mutating progress record total in Firestore
+  const progressDocId = JSON.stringify([h.owner, child.id]);
+  await h.authority.runTransaction('owner', child.id, async binding => {
+    const docRef = h.data.ref('conversation_summary_heads', 'conversation-summary-progress', progressDocId);
+    const sealed = {
+      ...h.data.tags(binding.scope),
+      ...h.data.seal('conversation-summary-progress', progressDocId, binding.scope, summaryProgressSchema, {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: chunks.length + 2,
+        startOffset: chunks[0].startOffset,
+        endOffset: chunks[0].endOffset,
+        sourceHash: chunks[0].sourceHash,
+        cumulativeSummary: 'Part 0 summary',
+        updatedAt: new Date().toISOString(),
+      }),
+    };
+    binding.transaction.set(docRef, sealed);
+  });
+
+  // Next prepareSummary detects progress.total !== chunks.length, purges progress doc, leaving part undefined
+  const prepRestart = (await h.memory.prepareSummary(h.owner, child.id))!;
+  assert.equal(prepRestart.part, undefined, 'Must purge stale progress and leave part undefined for clean restart');
+
+  // Verify progress document in Firestore was deleted
+  await h.authority.runTransaction('owner', child.id, async binding => {
+    const docRef = h.data.ref('conversation_summary_heads', 'conversation-summary-progress', progressDocId);
+    const row = await binding.transaction.get(docRef);
+    assert.equal(row.exists, false, 'Progress doc must be purged when total changed');
+  });
+
+  // Re-save part 0 legitimately to test saveSummary continuity validation
+  await h.memory.saveSummary(h.owner, child.id, {
+    previousVersion: prepRestart.previousVersion,
+    basis: prepRestart.basis,
+    text: 'Part 0 renewed',
+    coveredMessageIds: [bigMsg!.id],
+    part: {
+      messageId: bigMsg!.id,
+      index: 0,
+      total: chunks.length,
+      isLast: false,
+      sourceHash: chunks[0].sourceHash,
+      startOffset: chunks[0].startOffset,
+      endOffset: chunks[0].endOffset,
+    },
+  });
+
+  // Verify saving index 1 with total mismatching prevPart rejects in saveSummary
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prepRestart.previousVersion,
+      basis: prepRestart.basis,
+      text: 'Part 1 mismatched total',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 1,
+        total: chunks.length + 1,
+        isLast: false,
+        sourceHash: chunks[1].sourceHash,
+        startOffset: chunks[1].startOffset,
+        endOffset: chunks[1].endOffset,
+      },
+    }),
+    (err: any) => err.code === 'summary_coverage_changed',
+  );
+
+  // Verify saving index 1 with startOffset not matching prevPart.endOffset rejects in saveSummary
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prepRestart.previousVersion,
+      basis: prepRestart.basis,
+      text: 'Part 1 offset gap',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 1,
+        total: chunks.length,
+        isLast: false,
+        sourceHash: chunks[1].sourceHash,
+        startOffset: chunks[1].startOffset + 50,
+        endOffset: chunks[1].endOffset,
+      },
+    }),
+    (err: any) => err.code === 'summary_coverage_changed',
+  );
+});
+
+// ----------------------------------------------------------------------------
+// Test 36: Guard check - Rejects when targetMsg not in unsummarized stream
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: server strictly rejects part write when target message cannot be resolved in unsummarized stream', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const fakeMsgId = randomUUID();
+
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep.previousVersion,
+      basis: prep.basis,
+      text: 'Summary for non-existent unsummarized stream message',
+      coveredMessageIds: [fakeMsgId],
+      part: {
+        messageId: fakeMsgId,
+        index: 0,
+        total: 2,
+        isLast: false,
+        sourceHash: '0000000000000000000000000000000000000000000000000000000000000000',
+        startOffset: 0,
+        endOffset: 50,
+      },
+    }),
+    (err: any) => err.code === 'summary_coverage_changed',
+  );
+});
+
+// ----------------------------------------------------------------------------
+// Test 37: summaryInput messageId check - Purges progress when head message diverges
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: server purges progress when head message ID does not match active progress messageId', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg1 = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  const chunks = splitMessageIntoSafeChunks(bigMsg1!);
+
+  // Save part 0 for message 1
+  await h.memory.saveSummary(h.owner, child.id, {
+    previousVersion: prep.previousVersion,
+    basis: prep.basis,
+    text: 'Part 0 of msg 1',
+    coveredMessageIds: [bigMsg1!.id],
+    part: {
+      messageId: bigMsg1!.id,
+      index: 0,
+      total: chunks.length,
+      isLast: false,
+      sourceHash: chunks[0].sourceHash,
+      startOffset: chunks[0].startOffset,
+      endOffset: chunks[0].endOffset,
+    },
+  });
+
+  // Mutate progress in Firestore to point to a different messageId
+  const progressDocId = JSON.stringify([h.owner, child.id]);
+  await h.authority.runTransaction('owner', child.id, async binding => {
+    const docRef = h.data.ref('conversation_summary_heads', 'conversation-summary-progress', progressDocId);
+    const sealed = {
+      ...h.data.tags(binding.scope),
+      ...h.data.seal('conversation-summary-progress', progressDocId, binding.scope, summaryProgressSchema, {
+        messageId: randomUUID(),
+        index: 0,
+        total: chunks.length,
+        startOffset: chunks[0].startOffset,
+        endOffset: chunks[0].endOffset,
+        sourceHash: chunks[0].sourceHash,
+        cumulativeSummary: 'Part 0 of msg 1',
+        updatedAt: new Date().toISOString(),
+      }),
+    };
+    binding.transaction.set(docRef, sealed);
+  });
+
+  // Calling prepareSummary detects firstMsg.id !== progress.messageId, deletes progress, leaving part undefined
+  const prepAfter = (await h.memory.prepareSummary(h.owner, child.id))!;
+  assert.equal(prepAfter.part, undefined, 'Must purge stale progress and leave part undefined');
+
+  // Verify progress doc was deleted in Firestore
+  await h.authority.runTransaction('owner', child.id, async binding => {
+    const docRef = h.data.ref('conversation_summary_heads', 'conversation-summary-progress', progressDocId);
+    const row = await binding.transaction.get(docRef);
+    assert.equal(row.exists, false, 'Stale progress doc must be purged from Firestore');
+  });
+});
+
+// ----------------------------------------------------------------------------
+// Test 38: sourcePeriod preservation upon final multipart head publication
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: final multipart summary write preserves sourcePeriod on head record', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  assert.ok(bigMsg);
+  const chunks = splitMessageIntoSafeChunks(bigMsg);
+
+  // Iterate through all chunks, saving parts sequentially
+  let finalSaved: any = null;
+  for (let i = 0; i < chunks.length; i++) {
+    const isLast = i === chunks.length - 1;
+    const prepNext = (await h.memory.prepareSummary(h.owner, child.id))!;
+    const res = await h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prepNext.previousVersion,
+      basis: prepNext.basis,
+      text: `Part ${i} summary`,
+      coveredMessageIds: [bigMsg.id],
+      part: {
+        messageId: bigMsg.id,
+        index: i,
+        total: chunks.length,
+        isLast,
+        sourceHash: chunks[i].sourceHash,
+        startOffset: chunks[i].startOffset,
+        endOffset: chunks[i].endOffset,
+      },
+    });
+
+    if (!isLast) {
+      // In-flight progress: head record must not be published yet
+      const inFlightHead = await h.memory.initialConversationSummary(h.owner, child.id);
+      assert.equal(inFlightHead, null, `Head must not exist during in-flight progress at part ${i}`);
+    } else {
+      finalSaved = res;
+    }
+  }
+
+  // 1. Returned ConversationSummary from saveSummary must contain sourcePeriod
+  assert.ok(finalSaved, 'Final save must return ConversationSummary');
+  assert.ok(finalSaved.sourcePeriod, 'Returned value must contain sourcePeriod');
+  assert.equal(finalSaved.sourcePeriod.from, bigMsg.createdAt);
+  assert.equal(finalSaved.sourcePeriod.to, bigMsg.createdAt);
+
+  // 2. Head summary via summary() API must contain sourcePeriod
+  const summaryResult = await h.memory.summary(h.owner, child.id);
+  assert.ok(summaryResult, 'Summary result must exist');
+  const activeSummary = summaryResult.summary;
+  assert.ok(activeSummary, 'Active summary must exist');
+  assert.ok(activeSummary.sourcePeriod, 'Active summary must contain sourcePeriod');
+  assert.equal(activeSummary.sourcePeriod.from, bigMsg.createdAt);
+  assert.equal(activeSummary.sourcePeriod.to, bigMsg.createdAt);
+
+  // 3. Stored conversation-summary-head document in Firestore must contain sourcePeriod
+  const headDocId = JSON.stringify([h.owner, child.id]);
+  await h.authority.runTransaction('owner', child.id, async b => {
+    const headDoc = await b.transaction.get(h.data.ref('conversation_summary_heads', 'conversation-summary-head', headDocId));
+    assert.equal(headDoc.exists, true, 'Head document must exist in Firestore');
+    const headRecord = h.data.open('conversation-summary-head', headDocId, b.scope, firestoreMemoryRecoverySchemas.summary, headDoc);
+    assert.deepEqual(headRecord.summary.sourcePeriod, { from: bigMsg.createdAt, to: bigMsg.createdAt });
+  });
+
+  // 4. Initial conversation summary projection resolves successfully
+  const publishedHead = await h.memory.initialConversationSummary(h.owner, child.id);
+  assert.ok(publishedHead, 'Published head must exist');
+  assert.ok(publishedHead!.summary.text.includes(`Part ${chunks.length - 1} summary`), 'Published text must include final rollup');
+});
+
+// ----------------------------------------------------------------------------
+// Test 39: Anti-Bypass Guard G2 extension - Purges progress upon divergent total and rejects subsequent part
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: server purges progress upon divergent total in Firestore and rejects subsequent part via G2', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const chunks = splitMessageIntoSafeChunks(bigMsg!);
+  assert.equal(chunks.length, 3);
+
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  await h.memory.saveSummary(h.owner, child.id, {
+    previousVersion: prep.previousVersion,
+    basis: prep.basis,
+    text: 'Part 0 summary',
+    coveredMessageIds: [bigMsg!.id],
+    part: {
+      messageId: bigMsg!.id,
+      index: 0,
+      total: 3,
+      isLast: false,
+      sourceHash: chunks[0].sourceHash,
+      startOffset: chunks[0].startOffset,
+      endOffset: chunks[0].endOffset,
+    },
+  });
+
+  // Tamper Firestore progress to have a divergent total (e.g. 4 instead of 3),
+  // keeping index (0) and endOffset (chunks[0].endOffset) valid.
+  const progressDocId = JSON.stringify([h.owner, child.id]);
+  await h.authority.runTransaction('owner', child.id, async binding => {
+    const docRef = h.data.ref('conversation_summary_heads', 'conversation-summary-progress', progressDocId);
+    const sealed = {
+      ...h.data.tags(binding.scope),
+      ...h.data.seal('conversation-summary-progress', progressDocId, binding.scope, summaryProgressSchema, {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: 4,
+        startOffset: chunks[0].startOffset,
+        endOffset: chunks[0].endOffset,
+        sourceHash: chunks[0].sourceHash,
+        cumulativeSummary: 'Part 0 summary',
+        updatedAt: new Date().toISOString(),
+      }),
+    };
+    binding.transaction.set(docRef, sealed);
+  });
+
+  const prep2 = (await h.memory.prepareSummary(h.owner, child.id))!;
+  // Client attempts to submit valid part 1 (total: 3) matching server chunk count,
+  // but previous progress has total: 4. prevPart.total !== input.part.total must reject.
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep2.previousVersion,
+      basis: prep2.basis,
+      text: 'Part 1 with mismatched progress total',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 1,
+        total: 3,
+        isLast: false,
+        sourceHash: chunks[1].sourceHash,
+        startOffset: chunks[1].startOffset,
+        endOffset: chunks[1].endOffset,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
+});
+
+// ----------------------------------------------------------------------------
+// Test 40: Guard check - Server strictly rejects part write when startOffset does not match progress endOffset
+// ----------------------------------------------------------------------------
+test('REQ-005 §4.1: server strictly rejects part write when startOffset diverges from previous progress endOffset', async () => {
+  const h = createHarness();
+  const { child } = await h.bootstrapUserAndChild();
+  const quotes10000 = '"'.repeat(10000);
+  const bigMsg = await h.chat.createUserMessageForUser(h.owner, child.id, quotes10000);
+  const chunks = splitMessageIntoSafeChunks(bigMsg!);
+  assert.equal(chunks.length, 3);
+
+  const prep = (await h.memory.prepareSummary(h.owner, child.id))!;
+  await h.memory.saveSummary(h.owner, child.id, {
+    previousVersion: prep.previousVersion,
+    basis: prep.basis,
+    text: 'Part 0 summary',
+    coveredMessageIds: [bigMsg!.id],
+    part: {
+      messageId: bigMsg!.id,
+      index: 0,
+      total: 3,
+      isLast: false,
+      sourceHash: chunks[0].sourceHash,
+      startOffset: chunks[0].startOffset,
+      endOffset: chunks[0].endOffset,
+    },
+  });
+
+  // Tamper Firestore progress to have a corrupted endOffset (e.g. 99999),
+  // keeping index (0) and total (3) valid.
+  const progressDocId = JSON.stringify([h.owner, child.id]);
+  await h.authority.runTransaction('owner', child.id, async binding => {
+    const docRef = h.data.ref('conversation_summary_heads', 'conversation-summary-progress', progressDocId);
+    const sealed = {
+      ...h.data.tags(binding.scope),
+      ...h.data.seal('conversation-summary-progress', progressDocId, binding.scope, summaryProgressSchema, {
+        messageId: bigMsg!.id,
+        index: 0,
+        total: 3,
+        startOffset: chunks[0].startOffset,
+        endOffset: 99999,
+        sourceHash: chunks[0].sourceHash,
+        cumulativeSummary: 'Part 0 summary',
+        updatedAt: new Date().toISOString(),
+      }),
+    };
+    binding.transaction.set(docRef, sealed);
+  });
+
+  const prep2 = (await h.memory.prepareSummary(h.owner, child.id))!;
+  // Client submits valid part 1 (startOffset matches expectedChunk.startOffset),
+  // but previous progress endOffset is 99999. input.part.startOffset !== prevPart.endOffset must reject.
+  await assert.rejects(
+    () => h.memory.saveSummary(h.owner, child.id, {
+      previousVersion: prep2.previousVersion,
+      basis: prep2.basis,
+      text: 'Part 1 with mismatched startOffset vs prevPart.endOffset',
+      coveredMessageIds: [bigMsg!.id],
+      part: {
+        messageId: bigMsg!.id,
+        index: 1,
+        total: 3,
+        isLast: false,
+        sourceHash: chunks[1].sourceHash,
+        startOffset: chunks[1].startOffset,
+        endOffset: chunks[1].endOffset,
+      },
+    }),
+    { code: 'summary_coverage_changed' },
+  );
 });

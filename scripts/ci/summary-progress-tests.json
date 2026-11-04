@@ -1,7 +1,7 @@
 [
   {
     "path": "tests/summary-progress.test.ts",
-    "cases": 18
+    "cases": 40
   },
   {
     "path": "tests/agent-runtime.test.ts",

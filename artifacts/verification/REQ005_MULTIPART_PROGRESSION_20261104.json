@@ -1,0 +1,210 @@
+{
+  "recordedAt": "2026-11-04T16:06:00.000000+00:00",
+  "repository": "2NTTY/child-ai-caregiver",
+  "branch": "codex/req005-multipart-progression",
+  "targetBaseCommit": "8c4ee656c36f1853edfc4673480e17e9f4ad5a09",
+  "node": "v24.16.0 (local Windows test environment; CI environment specifies v24.22.1)",
+  "typecheck": {
+    "serverCommand": "node node_modules/typescript/lib/tsc.js --project tsconfig.server.json --noEmit",
+    "serverExitCode": 0,
+    "rootCommand": "node node_modules/typescript/lib/tsc.js --noEmit",
+    "rootExitCode": 0,
+    "configChanged": false
+  },
+  "ciContract": {
+    "cases": 6,
+    "passed": 6
+  },
+  "completeSuites": [
+    {
+      "path": "tests/summary-progress.test.ts",
+      "cases": 40
+    },
+    {
+      "path": "tests/agent-runtime.test.ts",
+      "cases": 20
+    },
+    {
+      "path": "tests/agent-model-gateway.test.ts",
+      "cases": 16
+    },
+    {
+      "path": "tests/firestore-summary-batches.test.ts",
+      "cases": 3
+    },
+    {
+      "path": "tests/firestore-memory-lifecycle.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/memory.test.ts",
+      "cases": 29
+    },
+    {
+      "path": "tests/private-summary-contract.test.ts",
+      "cases": 10
+    },
+    {
+      "path": "tests/summary-prompt-contract.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/agent-durable-ai-usage.test.ts",
+      "cases": 10
+    },
+    {
+      "path": "tests/agent-durable-budget.test.ts",
+      "cases": 4
+    },
+    {
+      "path": "tests/agent-native-session.test.ts",
+      "cases": 27
+    },
+    {
+      "path": "tests/agent-owned-session-cleanup.test.ts",
+      "cases": 11
+    },
+    {
+      "path": "tests/avatar-runtime.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/handover-attachment-pipeline.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/firestore-voice.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/firestore-restore-codec.test.ts",
+      "cases": 8
+    },
+    {
+      "path": "tests/firestore-restore.test.ts",
+      "cases": 6
+    },
+    {
+      "path": "tests/firestore-restore-voice-relations.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/agent-context-integrity.test.ts",
+      "cases": 4
+    },
+    {
+      "path": "tests/initial-conversation-summary.test.ts",
+      "cases": 6
+    },
+    {
+      "path": "tests/memory-summary-projection.test.ts",
+      "cases": 3
+    },
+    {
+      "path": "tests/agent-context-window.test.ts",
+      "cases": 6
+    },
+    {
+      "path": "tests/agent-context-topology.test.ts",
+      "cases": 3
+    },
+    {
+      "path": "tests/agent-prompt.test.ts",
+      "cases": 3
+    },
+    {
+      "path": "tests/agent-prompt-wiring.test.ts",
+      "cases": 4
+    },
+    {
+      "path": "tests/summary-projection-delivery.test.ts",
+      "cases": 11
+    }
+  ],
+  "totals": {
+    "files": 26,
+    "cases": 230,
+    "passed": 230,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "redEvidence": [
+    {
+      "case": "Anti-Bypass Guard G1: forged sourceHash mismatching server safe chunk hash",
+      "result": "39 passed / 1 failed when guard mutated (TAP 序號 27); 40 / 40 passed with guard active"
+    },
+    {
+      "case": "Anti-Bypass Guard G2: subsequent part index > 0 without active progress record in Firestore",
+      "result": "38 passed / 2 failed when guard mutated (TAP 序號 28, 39); 40 / 40 passed with guard active"
+    },
+    {
+      "case": "Anti-Bypass Guard G3: non-consecutive part index skipping intermediate chunks",
+      "result": "39 passed / 1 failed when guard mutated (TAP 序號 29); 40 / 40 passed with guard active"
+    },
+    {
+      "case": "Anti-Bypass Guard G4: mid-progress chat message edit mismatching resume sourceHash",
+      "result": "39 passed / 1 failed when guard mutated (TAP 序號 30); 40 / 40 passed with guard active"
+    },
+    {
+      "case": "Anti-Bypass Guard G5: endOffset diverging from server safe chunk boundary",
+      "result": "37 passed / 3 failed when guard mutated (TAP 序號 23, 26, 31); 40 / 40 passed with guard active"
+    },
+    {
+      "case": "Anti-Bypass Guard G6: forged total chunk count mismatching server-computed split count",
+      "result": "39 passed / 1 failed when guard mutated (TAP 序號 32); 40 / 40 passed with guard active"
+    },
+    {
+      "case": "Anti-Bypass Guard G7: startOffset diverging from server safe chunk boundary",
+      "result": "38 passed / 2 failed when guard mutated (TAP 序號 23, 33); 40 / 40 passed with guard active"
+    },
+    {
+      "case": "Anti-Bypass Guard G8: repair summary write carrying illegal part payload",
+      "result": "39 passed / 1 failed when guard mutated (TAP 序號 34); 40 / 40 passed with guard active"
+    },
+    {
+      "case": "Anti-Bypass Guard G9: startOffset diverging from previous progress endOffset",
+      "result": "39 passed / 1 failed when guard mutated (TAP 序號 40); 40 / 40 passed with guard active"
+    }
+  ],
+  "defenseInDepthHierarchy": {
+    "targetMsgCheck": "server/firestore-memory.ts:519 (!targetMsg) is a defensive TypeScript type guard, shadowed by line 495 coveredMessageIds prefix validation against expected.input.messages.",
+    "prevPartTotalCheck": "server/firestore-memory.ts:539 (prevPart.total !== input.part.total) is a defense-in-depth check, shadowed by line 522 (serverChunks.length !== input.part.total) and line 415 (progress.total === chunks.length)."
+  },
+  "mutationScript": "scripts/verify-multipart-mutations.mjs",
+  "preservedIntermediateFailures": [
+    "Test 25 asserted instruction text string matching for accumulated summary; updated to inspect previousAccumulatedSummary data property after untrusted prose isolation.",
+    "Initial mutation verification revealed shadowed duplicate range checks in saveSummary; cleaned up redundant checks so each guard orthogonally fails dedicated tests.",
+    "Continuity check mid-progress partitioning change and target message unsummarized stream resolution added as Tests 35-37.",
+    "Final multipart summary write sourcePeriod preservation verified under Test 38.",
+    "Isolated mutation tests for G3, G4, and G9 (startOffset !== prevPart.endOffset) added and verified under Tests 29, 30, 39, and 40."
+  ],
+  "scope": [
+    "Multi-part progressive segmentation for legal oversized single messages exceeding maintenance limits.",
+    "Surrogate-safe utf-16 slice partitioning preserving astral plane code points and escape boundaries.",
+    "Anti-bypass server validation guards G1-G9 strictly rejecting forged offsets, forged total, invalid index sequence, hash mismatch, repair contamination, and continuity gaps.",
+    "Continuous progress verification ensuring prevPart.total === part.total and part.startOffset === prevPart.endOffset, purging progress upon constant/partitioning mismatch.",
+    "Isolated prompt synthesis separating untrusted previousAccumulatedSummary into top-level data property.",
+    "Firestore summary head schema backward-compatibility allowing unmigrated master readers to read summary head during progress and upon completion.",
+    "Integrated with PR #425 summarySourcePeriod for final summary head publication."
+  ],
+  "limits": [
+    "Scripted mock provider and synthetic message data only; no real model or production traffic validation.",
+    "The local host cannot create the required network namespace. Individual scoped checks passed, not the full isolated helper.",
+    "Exact remote-head isolated GitHub Actions must be checked separately before merge."
+  ],
+  "sha256": {
+    "server/firestore-memory.ts": "e74e5859612231626460f2e88365ab7e3524aed92f58870f4074991c460a613f",
+    "server/firestore-restore-core-records.ts": "f70be80e55692e56906b83b7e4be8f5eed0bea3f5822b9d7b24989e369072884",
+    "server/memory-validation.ts": "9512cab1b995d03dba604914af0e8baacf268ccdc239078239c9c87207a6be04",
+    "server/private-summary-maintenance.ts": "4e0ec15556f51796069a3d16048763e0a3a97521dd19f459055f782081980e89",
+    "server/summary-window-helper.ts": "2260fab5474e944db1c3087f09c2a9d490bdc45f855c1a0f8b7a81c23f555918",
+    "src/shared/memory.ts": "3575846cde92c3c72cc90292bb8e4f26f093a2b82d7eeeec24b793453d876912",
+    "tests/ci/summary-progress-contract.test.mjs": "cdf424fa945d523f2df6d34b8be726dcab1e1c42a428c16f474bab9da96e93e1",
+    "tests/summary-progress.test.ts": "66699b3dd36f24ebccdcd27bc0030125c73ed36f8928c7f4d29381b5258acd55",
+    "scripts/ci/summary-progress-tests.json": "c8ca658aa752775fd6333384891bea975bb519ebaf34a98ae817dba6910fda20",
+    "scripts/verify-multipart-mutations.mjs": "a23e38980a7957549a035fdd1bbb54f256482dae5669ff4295860fc6114d887a",
+    "docs/REQ005_PR4_MULTIPART_DESIGN_NOTE.md": "1f49bcd32b0ce58d4d0ab8f1b87c4910b930d0f52ea79b866ace922c5cec31c1"
+  }
+}

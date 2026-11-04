@@ -4608,3 +4608,26 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 ## 2026-11-05 文件及到診準備原件還原
 
 #459／#460 經原匯入 worker 及共用表單接線。合成簽署包核對了同一原件、已有修訂、原操作及已完成預約的逐項衝突。候選通過後切換原站，Web 啟動時一次 TLS 握手失敗，待服務就緒後公開健康檢查及檔案 hash 均通過。簽章沿用已有金鑰，Android 待批量建置。[發布證據](artifacts/verification/P4_ORIGINAL_DOCUMENTS_20261105.json)
+
+<a id="log-20261104-req005-multipart-progression"></a>
+### 2026-11-04 — REQ-005 長訊息分段累積推進修正
+
+Recorded At：2026-11-04 14:45 UTC。從 `codex/req005-multipart-progression` 整合最新 `master` (`8c4ee656`，包含已合併之 #410–#412、#425–#436、#445–#446、#455–#461)。重現並解決 REQ-005 §4.1 之多輪長訊息推進架構缺陷：單篇合法長訊息（5,000–10,000 字）超出單次 Gateway 容限時，系統無法推進而停滯。
+
+修正架構與核心不變量：
+1. 推進進度實體自 `conversation_summary_heads` 隔離：進行中分段進度儲存於獨立 document `conversation-summary-progress`，未完成全部切片前不覆寫 `conversation-summary-head`，防止未完成切片影響下游 head 投影與 schema 讀取相容性。
+2. 累積 Rollup 與提示詞結構化隔離：多輪分段維護時，將先前切片之已累積摘要作為結構化資料屬性傳遞，指令字串僅作引用而不內插非信任前段文字，防止模型前段輸出中的指示字元破壞提示詞結構。
+3. 防繞過驗證守衛（G1–G9）：實作防禦驗證守衛（G1 sourceHash 核對、G2 續段進度記錄存在性、G3 切片連續性、G4 訊息內容變更核對、G5 endOffset 切片邊界吻合、G6 總段數吻合、G7 startOffset 切片邊界吻合、G8 修復請求禁止 part 載荷、G9 startOffset 續段無縫接合）。全數 9 項守衛均通過逐項變異測試（先紅後綠），變異腳本已入庫至 `scripts/verify-multipart-mutations.mjs`。
+4. 深度防禦與遮蔽層級確認：明確識別 `!targetMsg` 為 TypeScript 型別窄化守衛（由未摘要隊列覆蓋前綴核對遮蔽）；`prevPart.total !== input.part.total` 為深度防禦檢查（由伺服器安全切片長度核對遮蔽）。
+5. 連續性與邊界完整防護：在 `summaryInput` 與 `saveSummary` 嚴格檢查連續性。若中途切片常數或總切片數改變，自動清理 Firestore 中間進度並重設為 Part 0 重新切分。補齊常數變更、訊息 ID 變更、G3、G4、G9 獨立隔離測試及 head `sourcePeriod` 保存測試（Tests 29, 30, 35–40）。
+6. 主庫時間戳與功能相容：保留並採用 PR #411 引入之 `summaryExpiry` 毫秒級時間戳比較；相容主庫引入之 `summarySourcePeriod`（來自 P4 交接功能 PR #425），在最後切片發布至 Head 時正確封裝來源時間區間。
+7. CI 門檻與工作流覆蓋：離線 CI manifest `scripts/ci/summary-progress-tests.json` 記錄精確 40 個案例（全庫 26 套件 230 案例），離線工作流納入 `codex/req005-multipart-progression` 分支。
+
+驗證範圍與證據：
+- `tsc --project tsconfig.server.json --noEmit`：0 診斷（已修正 Test 38 之 TS2531 物件可能為 null 錯誤）
+- `tsc --noEmit`：0 診斷
+- 26 個完整測試套件精確 230／230 通過（包括 `tests/summary-progress.test.ts` 40／40、`tests/summary-projection-delivery.test.ts` 11／11、上下文拓撲與提示詞 4 檔 16 案例；契約測試 `tests/ci/summary-progress-contract.test.mjs` 6／6 獨立通過）
+- 變異測試：9 項守衛各自觸發相應測試失敗（先紅後綠），腳本已追蹤於 repo，詳見[驗證證據](artifacts/verification/REQ005_MULTIPART_PROGRESSION_20261104.json)
+- 對 upstream master 的 diff whitespace 檢查通過；未修改測試排除規則或網絡隔離 guard。
+
+本機未調用真模型或正式家庭資料；已推送至遠端 PR #447 供 CI 與審查驗證。

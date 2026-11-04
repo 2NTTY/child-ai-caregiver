@@ -5,6 +5,7 @@ import type { AgentInitialTextInput, AgentRuntimePort } from './agent-runtime.ts
 import type { ProductAgentResult } from '../src/shared/product-agent.ts';
 import type { SummaryInput } from '../src/shared/memory.ts';
 import { AgentStopped } from './agent-budget.ts';
+import { splitMessageIntoSafeChunks } from './summary-window-helper.ts';
 
 /** Private, one-generation maintenance using the same claimed Runner, billing and finish transaction as chat. */
 export function createPrivateSummaryMaintenance(options: { memory: FirestoreMemoryStore; store: ProductAgentStore;
@@ -26,9 +27,20 @@ export function createPrivateSummaryMaintenance(options: { memory: FirestoreMemo
     let messages = batch.messages;
     const payload = (): AgentInitialTextInput => ({
       context: { purpose: 'private_incremental_summary', outputContract: 'Call stage_private_summary once. It is staged, not a fact, user confirmation or action.',
-        coverage: { messageIds: messages.map(message => message.id), moreUncovered: batch.moreUncovered || messages.length < batch.messages.length, repairOf: batch.repairOf ?? null },
+        coverage: { messageIds: messages.map(message => message.id),
+          moreUncovered: batch.moreUncovered || messages.length < batch.messages.length || (batch.part ? !batch.part.isLast : false),
+          repairOf: batch.repairOf ?? null,
+          ...(batch.part ? { part: batch.part } : {}) },
         currentSources: batch.currentSources ?? [] },
-      text: JSON.stringify({ sourceMessages: messages, instruction: 'Summarize only this supplied batch. Current source corrections override obsolete statements. Do not carry over a previous summary or invent completed actions.' }),
+      text: JSON.stringify({
+        sourceMessages: messages,
+        ...(batch.part?.cumulativeSummary ? { previousAccumulatedSummary: batch.part.cumulativeSummary } : {}),
+        instruction: batch.part
+          ? (batch.part.cumulativeSummary
+              ? `Incorporate this segment (part ${batch.part.index + 1} of ${batch.part.total}) of the message into the previousAccumulatedSummary provided above. Produce an updated, comprehensive summary reflecting all parts seen so far. This is a partial message slice; do not assume the conversation is finished or infer missing text. Current source corrections override obsolete statements.`
+              : `Summarize this segment (part ${batch.part.index + 1} of ${batch.part.total}) of the supplied batch. This is a partial message slice; do not assume the conversation is finished or infer missing text. Current source corrections override obsolete statements. Do not carry over a previous summary or invent completed actions.`)
+          : 'Summarize only this supplied batch. Current source corrections override obsolete statements. Do not carry over a previous summary or invent completed actions.',
+      }),
     });
     const initial = payload();
     let text: string | undefined;
@@ -44,6 +56,25 @@ export function createPrivateSummaryMaintenance(options: { memory: FirestoreMemo
           if (candidate.unavailableReason || !candidate.messages.length) continue;
           batch = candidate; messages = batch.messages;
           while (!fits(payload()) && !batch.repairOf && messages.length > 1) messages = messages.slice(0, -1);
+          if (!fits(payload()) && !batch.repairOf && messages.length === 1 && !batch.part) {
+            const chunks = splitMessageIntoSafeChunks(messages[0]);
+            if (chunks.length > 1) {
+              const chunk0 = chunks[0];
+              batch = {
+                ...batch,
+                part: {
+                  messageId: messages[0].id,
+                  index: 0,
+                  total: chunks.length,
+                  isLast: false,
+                  sourceHash: chunk0.sourceHash,
+                  startOffset: chunk0.startOffset,
+                  endOffset: chunk0.endOffset,
+                },
+              };
+              messages = [chunk0];
+            }
+          }
           const selected = payload();
           if (fits(selected)) return selected;
         }
@@ -64,6 +95,7 @@ export function createPrivateSummaryMaintenance(options: { memory: FirestoreMemo
     const saved = await options.store.finish(claim.scope, value, result.status === 'completed' && text ? {
       previousVersion: batch.previousVersion, basis: batch.basis, text, coveredMessageIds: messages.map(message => message.id),
       ...(batch.repairOf ? { repairOf: batch.repairOf } : {}),
+      ...(batch.part ? { part: batch.part } : {}),
     } : undefined);
     if (!saved) return { state: 'unknown' as const };
     const uncertain = result.counts.modelCalls > 0 && ['unavailable', 'deadline', 'cancelled'].includes(result.stopReason ?? '');

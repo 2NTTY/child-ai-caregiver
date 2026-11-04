@@ -1,6 +1,6 @@
 import { prepareContentErasure } from './firestore-content-erasure.ts';
 import { factContentDate, summarySourcePeriod, summarySourcePeriodSchema, memoryUpdateDate } from './handover-memory-dates.ts';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import type { DocumentSnapshot, Query } from '@google-cloud/firestore';
 import { z } from 'zod';
 import type { MemoryStore } from './memory.ts';
@@ -21,7 +21,7 @@ import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
 import { importConfirmationActor, makeImportProvenance } from './handover-provenance.ts';
 import type { HandoverImportRow } from './handover-import.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
-import { selectSummaryBatchMessages } from './summary-window-helper.ts';
+import { selectSummaryBatchMessages, splitMessageIntoSafeChunks, type SummaryPartProgress } from './summary-window-helper.ts';
 import { historicalSummaryText, summaryExpiry } from './summary-projection.ts';
 
 export const SUMMARY_PROJECTION_MAX_CHARS = 3000;
@@ -61,6 +61,16 @@ const summarySchema = z.object({ id: uuid, childId: uuid, version, text: z.strin
   : value.importedFrom === undefined);
 export { summarySchema as firestoreSummarySchema };
 const summaryDependencySchema = z.object({ kind: z.enum(['profile', 'fact', 'topic', 'care']), id: uuid, version: z.number().int().nonnegative(), validUntil: time.nullable() }).strict();
+export const summaryProgressSchema = z.object({
+  messageId: uuid,
+  index: z.number().int().nonnegative(),
+  total: z.number().int().positive(),
+  startOffset: z.number().int().nonnegative(),
+  endOffset: z.number().int().positive(),
+  sourceHash: z.string().regex(/^[a-f0-9]{64}$/u),
+  cumulativeSummary: z.string().min(1).max(6000),
+  updatedAt: time,
+}).strict();
 const summaryBatchSchema = z.object({ dependencies: z.array(summaryDependencySchema).max(64), sourceCoverageComplete: z.boolean().optional(), authorizationVersion: z.string(),
   lastMessageSortKey: z.string().regex(/^[0-9]{19}$/u), replaces: uuid.nullable() }).strict();
 const savedSummarySchema = z.object({ summary: summarySchema, basis: z.string().regex(/^[a-f0-9]{64}$/u),
@@ -390,6 +400,10 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     const id = summaryId(binding), row = await binding.transaction.get(data.ref('conversation_summary_heads', 'conversation-summary-head', id));
     const saved = row.exists ? open(binding, 'conversation-summary-head', id, savedSummarySchema, row) : null;
     if (saved?.summary.coverageScope) domainReject('summary_binding', 500);
+
+    const progressRow = await binding.transaction.get(data.ref('conversation_summary_heads', 'conversation-summary-progress', id));
+    let progress = progressRow.exists ? open(binding, 'conversation-summary-progress', id, summaryProgressSchema, progressRow) : null;
+
     const current = await summaryBasis(binding);
     const usable = saved !== null && (saved.batch ? await batchValid(binding, saved)
       : saved.basis === current.basis && (saved.validUntil === null || Date.parse(saved.validUntil) > Date.now()));
@@ -397,10 +411,34 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     let query = scoped(binding, 'chat_messages').orderBy('sortKey', 'asc').limit(51);
     if (saved && (saved.batch || usable)) query = query.startAfter(saved.lastSortKey);
     const rows = await binding.transaction.get(query);
-    const messages = rows.docs.slice(0, 50).map(row => open(binding, 'chat-message', row.get('messageId'), firestoreChatMessageSchema, row));
+    const messages = rows.docs.slice(0, 50).map(r => open(binding, 'chat-message', r.get('messageId'), firestoreChatMessageSchema, r));
+
+    let partProgress: SummaryPartProgress | undefined;
+    if (progress) {
+      const firstMsg = messages[0];
+      const sourceHash = firstMsg ? createHash('sha256').update(firstMsg.text ?? '').digest('hex') : null;
+      const chunks = firstMsg ? splitMessageIntoSafeChunks(firstMsg) : [];
+      if (firstMsg && firstMsg.id === progress.messageId && sourceHash === progress.sourceHash && progress.index + 1 < progress.total && progress.total === chunks.length) {
+        partProgress = {
+          messageId: progress.messageId,
+          index: progress.index,
+          total: progress.total,
+          isLast: progress.index === progress.total - 1,
+          startOffset: progress.startOffset,
+          endOffset: progress.endOffset,
+          sourceHash: progress.sourceHash,
+          cumulativeSummary: progress.cumulativeSummary,
+        };
+      } else {
+        binding.transaction.delete(progressRow.ref);
+        progress = null;
+      }
+    }
+
     const input: SummaryInput = { previous: usable ? saved.summary : null, previousVersion: saved?.summary.version ?? 0,
-      basis: current.basis, messages, moreUncovered: rows.size > 50, summaryMode: 'isolated_batch' };
-    return { input, current, rows, saved, usable };
+      basis: current.basis, messages, moreUncovered: rows.size > 50, summaryMode: 'isolated_batch',
+      ...(partProgress ? { part: partProgress } : {}) };
+    return { input, current, rows, saved, usable, progress };
   }
   async function summaryDependencies(binding: Binding) {
     const profile = await options.care.readProfile(binding), facts = await page(binding, 'facts', undefined, 20, false, true),
@@ -469,13 +507,94 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     const period = summarySourcePeriod(expected.input.messages.slice(0, input.coveredMessageIds.length), expected.input.currentSources);
     if (period) value.sourcePeriod = period;
     const lastMessageSortKey = repair?.saved.batch!.lastMessageSortKey ?? expected.rows.docs[input.coveredMessageIds.length - 1].get('sortKey');
-    const lastSortKey = repair ? head.saved!.lastSortKey : lastMessageSortKey;
+    const isLastPart = !input.part || input.part.isLast;
+    const lastSortKey = (repair || !isLastPart) ? (head.saved?.lastSortKey ?? "0".repeat(19)) : lastMessageSortKey;
     const sourceState = repair ?? await summaryDependencies(binding), dependencies = sourceState.dependencies;
+
+    if (input.part) {
+      if (repair) domainReject('summary_coverage_changed');
+      if (input.part.index >= input.part.total || input.part.isLast !== (input.part.index === input.part.total - 1)) {
+        domainReject('summary_coverage_changed');
+      }
+      if (input.part.total > 1) {
+        if (input.part.startOffset === undefined || input.part.endOffset === undefined || !input.part.sourceHash) {
+          domainReject('summary_coverage_changed');
+        }
+      }
+      const targetMsg = expected.input.messages.find(m => m.id === input.coveredMessageIds[0]);
+      if (!targetMsg) domainReject('summary_coverage_changed');
+
+      const serverChunks = splitMessageIntoSafeChunks(targetMsg);
+      if (serverChunks.length !== input.part.total) domainReject('summary_coverage_changed');
+      const expectedChunk = serverChunks[input.part.index];
+      if (input.part.startOffset !== undefined && input.part.startOffset !== expectedChunk.startOffset) {
+        domainReject('summary_coverage_changed');
+      }
+      if (input.part.endOffset !== undefined && input.part.endOffset !== expectedChunk.endOffset) {
+        domainReject('summary_coverage_changed');
+      }
+      if (input.part.sourceHash && input.part.sourceHash !== expectedChunk.sourceHash) {
+        domainReject('summary_coverage_changed');
+      }
+
+      if (input.part.index > 0) {
+        const prevPart = head.progress;
+        if (
+          !prevPart ||
+          prevPart.index + 1 !== input.part.index ||
+          prevPart.total !== input.part.total ||
+          input.part.startOffset !== prevPart.endOffset
+        ) {
+          domainReject('summary_coverage_changed');
+        }
+      }
+    }
+
+    const change = await binding.prepareChange(operationId, 'memory', false), id = summaryId(binding);
+
+    if (!isLastPart) {
+      const progressRecord: z.infer<typeof summaryProgressSchema> = {
+        messageId: input.coveredMessageIds[0],
+        index: input.part!.index,
+        total: input.part!.total,
+        startOffset: input.part!.startOffset!,
+        endOffset: input.part!.endOffset!,
+        sourceHash: input.part!.sourceHash!,
+        cumulativeSummary: input.text,
+        updatedAt: new Date().toISOString(),
+      };
+      const progressEnvelope = {
+        ...data.tags(binding.scope),
+        ...data.seal('conversation-summary-progress', id, binding.scope, summaryProgressSchema, progressRecord),
+      };
+      return {
+        value,
+        changeSeq: change.changeSeq,
+        commit() {
+          change.commit();
+          binding.transaction.set(data.ref('conversation_summary_heads', 'conversation-summary-progress', id), progressEnvelope);
+        },
+      };
+    }
+
+    const baseBatch = {
+      dependencies,
+      sourceCoverageComplete: sourceState.sourceCoverageComplete,
+      authorizationVersion: binding.authorizationVersion,
+      lastMessageSortKey,
+      replaces: input.repairOf ?? null,
+    };
+
     const expiry = summaryExpiry(dependencies.map(item => item.validUntil));
     if (Number.isNaN(expiry)) domainReject('summary_validity_unknown');
-    const saved: SavedSummary = { summary: value, basis: input.basis, validUntil: expiry === Infinity ? null : new Date(expiry).toISOString(), lastSortKey,
-      batch: { dependencies, sourceCoverageComplete: sourceState.sourceCoverageComplete, authorizationVersion: binding.authorizationVersion, lastMessageSortKey, replaces: input.repairOf ?? null } };
-    const change = await binding.prepareChange(operationId, 'memory', false), id = summaryId(binding);
+    const saved: SavedSummary = {
+      summary: value,
+      basis: input.basis,
+      validUntil: expiry === Infinity ? null : new Date(expiry).toISOString(),
+      lastSortKey,
+      batch: baseBatch,
+    };
+
     const headEnvelope = { ...data.tags(binding.scope), ...data.seal('conversation-summary-head', id, binding.scope, savedSummarySchema, saved, value.version) };
     const revision = { ...data.tags(binding.scope), entityId: value.id, entityVersion: value.version, currentBatch: true, lastMessageSortKey,
       ...data.seal('conversation-summary', value.id, binding.scope, savedSummarySchema, saved, value.version) };
@@ -483,6 +602,9 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
       change.commit(); binding.transaction.set(data.ref('conversation_summary_heads', 'conversation-summary-head', id), headEnvelope);
       binding.transaction.create(data.ref('conversation_summaries', 'conversation-summary', value.id), revision);
       if (input.repairOf) binding.transaction.update(data.ref('conversation_summaries', 'conversation-summary', input.repairOf), { currentBatch: false });
+      if (head.progress && input.coveredMessageIds.includes(head.progress.messageId)) {
+        binding.transaction.delete(data.ref('conversation_summary_heads', 'conversation-summary-progress', id));
+      }
     } };
   }
   async function direct(userId: string, childId: string, kind: Kind, action: string | undefined, id: string | undefined, raw: unknown) {
@@ -621,9 +743,11 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
         }
       }
       // Bound normal accumulation, then fit the complete request before any model admission.
-      const selected = selectSummaryBatchMessages(state.input.messages);
+      const activePart = state.input.part;
+      const selected = selectSummaryBatchMessages(state.input.messages, undefined, activePart);
       if (selected.messages.length) candidates.push({ ...state.input, previous: null, messages: selected.messages,
-        moreUncovered: state.input.moreUncovered || selected.moreUncovered });
+        moreUncovered: state.input.moreUncovered || selected.moreUncovered,
+        ...(selected.part ? { part: selected.part } : {}) });
       // The existing four-batch repair window plus one append prefix is a bounded choice,
       // not permission to clear or skip an invalidated batch that cannot fit this request.
       return candidates.length ? { ...candidates[0], alternatives: candidates.slice(1) } : null;
@@ -778,4 +902,4 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
 }
 
 /** Persisted schemas reused by isolated recovery; not a second domain model. */
-export const firestoreMemoryRecoverySchemas = { summary: savedSummarySchema, key: keySchema, tombstone: tombstoneSchema };
+export const firestoreMemoryRecoverySchemas = { summary: savedSummarySchema, key: keySchema, tombstone: tombstoneSchema, progress: summaryProgressSchema };

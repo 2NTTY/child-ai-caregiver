@@ -23,5 +23,23 @@ export const topicCreateSchema = z.object({ title: text(200), note: rawText(2000
 export const topicChangeSchema = z.object({ expectedVersion: version, status: z.enum(["pending", "answered", "snoozed", "resolved"]),
   note: rawText(2000), resumeAfter: z.iso.datetime({ offset: true }).nullable() }).strict().refine(value => (value.status === "snoozed") === (value.resumeAfter !== null));
 export const topicReopenSchema = z.object({ expectedVersion: version, reason: text(500) }).strict();
-export const summarySaveSchema = z.object({ previousVersion: z.number().int().nonnegative(), text: text(6000),
-  basis: z.string().regex(/^[a-f0-9]{64}$/u), coveredMessageIds: z.array(z.uuid()).min(1).max(50), repairOf: z.uuid().optional() }).strict();
+
+export const summaryPartSchema = z.object({
+  messageId: z.uuid().optional(),
+  index: z.number().int().nonnegative(),
+  total: z.number().int().positive(),
+  isLast: z.boolean(),
+  sourceHash: z.string().regex(/^[a-f0-9]{64}$/u).optional(),
+  startOffset: z.number().int().nonnegative().optional(),
+  endOffset: z.number().int().positive().optional(),
+  cumulativeSummary: text(6000).optional(),
+}).strict();
+
+export const summarySaveSchema = z.object({
+  previousVersion: z.number().int().nonnegative(),
+  text: text(6000),
+  basis: z.string().regex(/^[a-f0-9]{64}$/u),
+  coveredMessageIds: z.array(z.uuid()).min(1).max(50),
+  repairOf: z.uuid().optional(),
+  part: summaryPartSchema.optional(),
+}).strict();

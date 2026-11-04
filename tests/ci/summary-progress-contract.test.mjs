@@ -52,13 +52,13 @@ test('TAP gate rejects missing cases, partial or duplicated totals and every unf
 
 test('workflow runs each reviewed REQ-005 branch but refuses forks and unrelated branches', () => {
   const workflow = readFileSync(resolve(root, '.github/workflows/summary-progress-offline.yml'), 'utf8');
-  const expression = workflow.match(/    if: >-\n((?:      .*\n)+)/)?.[1].trim();
+  const expression = workflow.match(/    if: >-\r?\n((?:      .*\r?\n)+)/)?.[1].trim();
   assert.ok(expression, 'Expected the bounded repository and branch condition');
   const allowed = (branch, repository = '2NTTY/child-ai-caregiver', headRepository = repository) => Boolean(runInNewContext(expression, {
     github: { repository, head_ref: branch, event: { pull_request: { head: { repo: { full_name: headRepository } } } } },
   }));
   for (const branch of ['codex/req005-summary-progress', 'codex/req005-interactive-budget',
-    'codex/req005-projection-consistency', 'codex/req005-turn-topology']) assert.equal(allowed(branch), true, branch);
+    'codex/req005-projection-consistency', 'codex/req005-turn-topology', 'codex/req005-multipart-progression']) assert.equal(allowed(branch), true, branch);
   assert.equal(allowed('unrelated'), false);
   assert.equal(allowed('codex/req005-interactive-budget', 'unrelated/repository'), false);
   assert.equal(allowed('codex/req005-interactive-budget', '2NTTY/child-ai-caregiver', 'fork/child-ai-caregiver'), false);
