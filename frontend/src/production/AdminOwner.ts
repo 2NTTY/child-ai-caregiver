@@ -1,15 +1,17 @@
-import type { AdminCommand, AdminInvitation, AdminOverview, AdminPage, AdminReceipt, AdminUsage } from '../../../src/shared/admin.ts';
+import { adminKnowledgeStatusSchema, type AdminKnowledgeStatus, type AdminCommand, type AdminInvitation, type AdminOverview, type AdminPage, type AdminReceipt, type AdminUsage } from '../../../src/shared/admin.ts';
 export class AdminApiError extends Error {
   readonly status: number; readonly code: string;
   constructor(status: number, code: string) { super('Admin request failed'); this.status = status; this.code = code; }
 }
+export interface AdminKnowledgeState { open: boolean; status: 'unread' | 'loading' | 'ready' | 'error'; page: AdminKnowledgeStatus | null; notice: string | null }
+const emptyKnowledge = (): AdminKnowledgeState => ({ open: false, status: 'unread', page: null, notice: null });
 export interface AdminState { userId: string | null; access: 'unread' | 'loading' | 'allowed' | 'denied' | 'error'; busy: boolean;
   overview: AdminOverview | null; invitations: AdminPage<AdminInvitation>; audit: AdminPage<AdminReceipt>;
   usage: { platform: AdminUsage; personal: AdminUsage } | null; lookup: AdminInvitation | null | undefined;
-  pending: AdminCommand | null; notice: string | null; receipt: AdminReceipt | null }
+  pending: AdminCommand | null; notice: string | null; receipt: AdminReceipt | null; knowledge: AdminKnowledgeState }
 const empty = (userId: string | null): AdminState => ({ userId, access: 'unread', busy: false, overview: null,
   invitations: { items: [], nextCursor: null }, audit: { items: [], nextCursor: null }, usage: null, lookup: undefined,
-  pending: null, notice: null, receipt: null });
+  pending: null, notice: null, receipt: null, knowledge: emptyKnowledge() });
 export function adminError(error: unknown) {
   const code = error instanceof AdminApiError ? error.code : '';
   return ({ recent_reauthentication_required: '請先在下方重新驗證登入，再提交原操作。',
@@ -27,6 +29,11 @@ export class AdminOwner {
   getSnapshot = () => this.state;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   private update(change: Partial<AdminState>) { this.state = { ...this.state, ...change }; this.listeners.forEach(fn => fn()); }
+  private clearReadAccess(error: unknown, access: 'error' | 'denied' = 'error') {
+    this.generation++; this.controllers.forEach(controller => controller.abort()); this.controllers.clear();
+    this.update({ access, busy: false, overview: null, invitations: { items: [], nextCursor: null }, audit: { items: [], nextCursor: null },
+      usage: null, lookup: undefined, receipt: null, knowledge: emptyKnowledge(), notice: adminError(error) });
+  }
   setUser(userId: string | null) {
     if (this.state.userId === userId) return;
     this.generation++; this.controllers.forEach(c => c.abort()); this.controllers.clear(); this.state = empty(userId); this.update({});
@@ -51,15 +58,48 @@ export class AdminOwner {
   async checkAccess() {
     if (!this.state.userId || this.state.access === 'loading') return;
     const generation = this.generation; this.update({ access: 'loading' });
-    try { const result = await this.request<{ administrator: boolean }>('/admin/session'); if (generation === this.generation) this.update({ access: result.administrator ? 'allowed' : 'denied' }); }
-    catch (error) { if (generation === this.generation) this.update({ access: 'error', notice: adminError(error) }); }
+    try { const result = await this.request<{ administrator: boolean }>('/admin/session'); if (generation === this.generation) {
+      if (result.administrator) this.update({ access: 'allowed' }); else this.clearReadAccess(new AdminApiError(403, 'forbidden'), 'denied');
+    } }
+    catch (error) { if (generation === this.generation) {
+      if (error instanceof AdminApiError && ([401, 403].includes(error.status) || error.status === 409 && error.code === 'identity_changed')) this.clearReadAccess(error);
+      else this.update({ access: 'error', notice: adminError(error), knowledge: emptyKnowledge() });
+    } }
   }
   private async read(action: () => Promise<Partial<AdminState>>) {
     if (this.state.access !== 'allowed' || this.state.busy) return;
     const generation = this.generation; this.update({ busy: true, notice: null });
     try { const next = await action(); if (generation === this.generation) this.update(next); }
-    catch (error) { if (generation === this.generation) this.update({ notice: adminError(error), ...(error instanceof AdminApiError && [401,403,409].includes(error.status) ? { access: 'error' as const, overview: null, invitations: { items: [], nextCursor: null }, audit: { items: [], nextCursor: null }, usage: null, lookup: undefined } : {}) }); }
+    catch (error) { if (generation === this.generation) {
+      if (error instanceof AdminApiError && [401, 403, 409].includes(error.status)) this.clearReadAccess(error);
+      else this.update({ notice: adminError(error) });
+    } }
     finally { if (generation === this.generation) this.update({ busy: false }); }
+  }
+  async setKnowledgeOpen(open: boolean) {
+    if (this.state.access !== 'allowed') return;
+    this.update({ knowledge: { ...this.state.knowledge, open } });
+    if (open && this.state.knowledge.status === 'unread') await this.loadKnowledge();
+  }
+  async loadKnowledge(more = false) {
+    if (this.state.access !== 'allowed' || !this.state.knowledge.open || this.state.knowledge.status === 'loading') return;
+    const cursor = more ? this.state.knowledge.page?.nextCursor : null;
+    if (more && !cursor) return;
+    const generation = this.generation;
+    this.update({ knowledge: { ...this.state.knowledge, status: 'loading', notice: null } });
+    try {
+      const page = adminKnowledgeStatusSchema.parse(await this.request<unknown>('/admin/knowledge-status' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : '')));
+      if (generation !== this.generation || !['allowed', 'loading'].includes(this.state.access)) return;
+      const previous = more ? this.state.knowledge.page : null;
+      const merged: AdminKnowledgeStatus = previous ? { watches: page.watches,
+        checks: [...new Map([...previous.checks, ...page.checks].map(item => [item.jobId, item])).values()], nextCursor: page.nextCursor } : page;
+      this.update({ knowledge: { ...this.state.knowledge, page: merged, status: 'ready', notice: null } });
+    } catch (error) {
+      if (generation !== this.generation || !['allowed', 'loading'].includes(this.state.access)) return;
+      const denied = error instanceof AdminApiError && ([401, 403].includes(error.status) || error.status === 409 && error.code === 'identity_changed');
+      if (denied) this.clearReadAccess(error);
+      else this.update({ knowledge: { ...this.state.knowledge, status: 'error', notice: adminError(error) } });
+    }
   }
   load = (day: string) => this.read(async () => {
     const [overview, invitations, usage, audit] = await Promise.all([
