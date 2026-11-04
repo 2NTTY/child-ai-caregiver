@@ -244,6 +244,12 @@ export class FirestoreAuthority {
     return {scope,authorizationVersion:closed.accessVersion,commit:()=>actor.transaction.set(this.ref('workspace',classId),envelope)};
   }
   /** Called only after the class service checks current membership and expected class version. */
+  async classRosterScope(actor: FirestoreAuthorityTransaction, classId: string, childId: string) {
+    parse(uuid, classId); parse(uuid, childId);
+    if (actor.sharedAccess || actor.scope.childId !== NIL) fail('transaction_child_scope');
+    const { workspace } = await this.sourceWorkspace(actor.transaction, ownerScope('space:' + classId, classId));
+    return ownerScope(workspace.ownerUserId, classId, workspace.storageEpoch, childId);
+  }
   async prepareClassChild(actor: FirestoreAuthorityTransaction, classId: string, childId: string,
     input: {operationId:string; displayName:string}): Promise<FirestoreAuthorityPreparedChild> {
     parse(uuid,classId); parse(uuid,childId);

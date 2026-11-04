@@ -5,7 +5,7 @@ import { createFirestoreAuthority, type FirestoreAuthorityOptions, type Firestor
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreChangeSchema } from './firestore-domain-data.ts';
 import { sharedChangesQuerySchema, type SharedChangesQuery, type SharedChangesPage } from '../src/shared/sharing.ts';
 import { SHARING_SCOPE, sharedSpaceSchema, sharedMembershipSchema, resourceShareSchema, sharedInvitationSchema,
-  sharedOperationSchema, sharedAccessBasisSchema, sharedModuleSchema, sharingRestoreSchemas, sharingMetadata,
+  sharedOperationSchema, sharedAccessBasisSchema, sharedModuleSchema, sharingRestoreSchemas, sharingMetadata, classImportChildId,
   type SharingKind } from './firestore-sharing-records.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { sharingCommandSchema, sharingOperationSchema, sharedSpaceViewSchema, sharedChildViewSchema, classRosterQuerySchema, type SharingCommand, type SharingOperation,
@@ -229,8 +229,43 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions &
         membershipId:randomUUID(),spaceGeneration:generation,version:(old?.version??0)+1,stateVersion:value.version,
         role:'owner',state:'active',joinedAt:now()})]};
   }
+  async function writableClass(b: FirestoreAuthorityTransaction, id: string) {
+    const s = await space(b.transaction, id), m = await member(b.transaction, id, b.actorUserId, s);
+    if (s.kind !== 'class') domainReject('class_required', 400);
+    if (m.role === 'viewer') domainReject('read_only', 403);
+    return s;
+  }
+  async function prepareRosterAddition(b: FirestoreAuthorityTransaction, s: Space, childId: string,
+    input: { operationId: string; displayName: string }, importSourceHash?: string) {
+    const prepared = await authority.prepareClassChild(b, s.id, childId, input), value = updated(s);
+    const { child, scope } = prepared.result;
+    return { value: { space: value, child }, writes: [prepared.commit, write(b.transaction, 'shared-space', s.id, value),
+      write(b.transaction, 'resource-share', key(s.id, child.id), { spaceId: s.id, childId: child.id, source: scope,
+        modules: sharedModuleSchema.options, version: 1, state: 'active', sharedBy: s.storageIdentity.ownerUserId,
+        sourceMembershipId: s.id, ...(importSourceHash ? { importSourceHash } : {}) }, true)] };
+  }
   const api = {
     inResourceTransaction,
+    async plannedClassImportScope(b: FirestoreAuthorityTransaction, classId: string, childId: string) {
+      await writableClass(b, classId);
+      return authority.classRosterScope(b, classId, childId);
+    },
+    async prepareClassImportEnrolment(b: FirestoreAuthorityTransaction, scope: WorkRecoveryScope,
+      input: { operationId: string; displayName: string; sourceHash: string }) {
+      const s = await writableClass(b, scope.workspaceId);
+      if (classImportChildId(s.id, input.sourceHash) !== scope.childId
+        || firestoreDomainHash(await authority.classRosterScope(b, s.id, scope.childId)) !== firestoreDomainHash(scope))
+        domainReject('import_target_changed');
+      const grant = await read(b.transaction, 'resource-share', key(s.id, scope.childId), resourceShareSchema, true);
+      if (grant) {
+        if (grant.state !== 'active' || grant.importSourceHash !== input.sourceHash || grant.sourceMembershipId !== s.id
+          || firestoreDomainHash(grant.source) !== firestoreDomainHash(scope)) domainReject('import_class_student_conflict');
+        await authority.assertSharedSource(b.transaction, scope);
+        return { outcome: 'skipped' as const, writes: [] };
+      }
+      const prepared = await prepareRosterAddition(b, s, scope.childId, input, input.sourceHash);
+      return { outcome: 'created' as const, writes: prepared.writes };
+    },
     spacesPage(userId: string, cursor?: string): Promise<SharedPage<SharedSpaceView>> {
       return controlPage(userId, 'shared-membership', null, cursor, async (b, row: Member) => {
         if (row.state !== 'active') domainReject('sharing_binding', 500);
@@ -432,11 +467,7 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions &
         const {s,m}=await current(b,input);
         if(s.kind!=='class')domainReject('class_required',400);
         if(m.role==='viewer')domainReject('read_only',403);
-        const prepared=await authority.prepareClassChild(b,s.id,childId,input), value=updated(s);
-        const child=prepared.result.child;
-        return {value:{space:value,child},writes:[prepared.commit,write(b.transaction,'shared-space',s.id,value),
-          write(b.transaction,'resource-share',key(s.id,child.id),{spaceId:s.id,childId:child.id,source:prepared.result.scope,
-            modules:sharedModuleSchema.options,version:1,state:'active',sharedBy:s.storageIdentity.ownerUserId,sourceMembershipId:s.id},true)]};
+        return prepareRosterAddition(b,s,childId,input);
       });
     },
     attachClass(userId:string,raw:{operationId:string;spaceId:string;expectedVersion:number;teacherSpaceId:string;expectedTeacherVersion:number}):Promise<Space>{
