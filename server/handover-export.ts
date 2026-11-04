@@ -11,7 +11,7 @@ import { DatedPackageMedia, isAttachmentHead, isAttachmentSupplement, type Packa
 
 const contentSections = new Set(['photo_content', 'voice_content', 'file_content', 'child_avatar_content']);
 type PageQuery = { section: string; childId?: string; scopeVersion?: string; cursor?: string };
-export interface HandoverExportSource { page(userId: string, query: PageQuery, packageMedia?: PackageMediaFilter): Promise<AccountExportPage> }
+export interface HandoverExportSource { page(userId: string, query: PageQuery, packageMedia?: PackageMediaFilter, includeSummaryPeriod?: boolean): Promise<AccountExportPage> }
 function fail(code: string): never { throw new HandoverArchiveError(code); }
 const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 
@@ -40,7 +40,8 @@ export async function writePersonalHandoverPackage(input: {
       ? (kind, id) => datedMedia.permitsBytes(childId, kind, id) : undefined;
     do {
       signal.throwIfAborted(); if (++pageCount > 10000) fail('package_size_exceeded');
-      const page = await waitForHandoverStep(input.exporter.page(input.ownerUserId, { section, ...(childId ? { childId } : {}), scopeVersion, ...(cursor ? { cursor } : {}) }, mediaFilter), signal);
+      const page = await waitForHandoverStep(input.exporter.page(input.ownerUserId, { section, ...(childId ? { childId } : {}), scopeVersion, ...(cursor ? { cursor } : {}) }, mediaFilter,
+        section === 'summary_history' && Boolean(header.selection.period)), signal);
       if (page.scopeVersion !== scopeVersion || page.section !== section || page.complete !== (page.nextCursor === null)
         || page.nextCursor && page.nextCursor === cursor) fail('export_scope_changed');
       yield page;

@@ -37,7 +37,7 @@ test('summary batches reuse unaffected history, repair through one claimed Runne
   const { child } = await authority.createChild({ userId: 'owner', displayName: '合成孩子', operationId: randomUUID() });
   const chat = createFirestoreChatStore(options), care = createFirestoreCareStore(options), memory = createFirestoreMemoryStore({ ...options, chat, care });
   const online = createFirestoreOnlineStore({ ...options, mutations: [chat.mutation, care.mutation, memory.mutation] });
-  await chat.createUserMessageForUser('owner', child.id, '2024 年曾去海邊。');
+  const origin = await chat.createUserMessageForUser('owner', child.id, '2024 年曾去海邊。');
   async function save(text: string) {
     const input = (await memory.prepareSummary('owner', child.id))!;
     return (await memory.saveSummary('owner', child.id, { previousVersion: input.previousVersion, basis: input.basis, text,
@@ -56,6 +56,11 @@ test('summary batches reuse unaffected history, repair through one claimed Runne
   await authority.runTransaction('owner', child.id, async b => {
     const row = await b.transaction.get(data.ref('conversation_summaries', 'conversation-summary', first.id));
     const saved = data.open('conversation-summary', first.id, b.scope, firestoreMemoryRecoverySchemas.summary, row);
+    const expectedPeriod = { from: origin!.createdAt, to: origin!.createdAt };
+    assert.deepEqual(saved.summary.sourcePeriod, expectedPeriod);
+    const { sourcePeriod: _period, ...legacySummary } = saved.summary;
+    assert.deepEqual((await memory.readSummaryRevision(b, { ...saved, summary: legacySummary }, true))?.sourcePeriod, expectedPeriod);
+    assert.equal((await memory.readSummaryRevision(b, { ...saved, summary: { ...legacySummary, previousId: randomUUID() } }, true))?.sourcePeriod, undefined);
     assert.equal(await memory.readSummaryRevision(b, { ...saved, batch: { ...saved.batch!, sourceCoverageComplete: false } }), null,
       'Partial dependency discovery must fall back to the full source basis');
   });
