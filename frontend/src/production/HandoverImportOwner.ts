@@ -1,4 +1,5 @@
-import { HandoverApiError, type HandoverApi, type ClassImportEnrolments, type HandoverSourceHistoryQuery, type HandoverSourceHistoryPage } from '../../../src/client/handover-api.ts';
+import { HandoverApiError, type HandoverApi, type ClassImportEnrolments, type HandoverSourceHistoryQuery, type HandoverSourceHistoryPage,
+  type SelfAvatarComparison, type SelfAvatarComparisonQuery } from '../../../src/client/handover-api.ts';
 import { handoverImportCommandSchema, handoverImportModuleOf, originalBackupModuleSchema, type HandoverImportModule, type HandoverImportResourceSection, type HandoverImportCommand, type HandoverImportView,
   type HandoverImportResult, type HandoverImportResultQuery } from '../../../src/shared/handover-imports.ts';
 import type { HandoverImportSummary, OriginalBackupComparison, OriginalBackupComparisonQuery } from '../../../src/shared/handover-imports.ts';
@@ -16,6 +17,10 @@ export function originalComparisonResolution(item: OriginalBackupComparison['ite
   if (!item.targetId || item.localVersion === null) return null;
   return item.state === 'deleted' ? 'restore_deleted' as const
     : ['local_newer','different','backup_newer'].includes(item.state) ? 'replace_current' as const : null;
+}
+export function accountAvatarComparisonResolution(value: SelfAvatarComparison) {
+  return value.state === 'deleted' ? 'restore_deleted' as const
+    : value.state === 'missing' || value.state === 'different' ? 'replace_current' as const : null;
 }
 type Control = { opId: string; expectedVersion: number };
 type UploadSummary = Omit<HandoverUploadView, 'preview'>;
@@ -54,6 +59,8 @@ export interface HandoverSourceHistoryState {
   documentContent: HandoverDocumentContentState | null;
 }
 export interface HandoverImportState {
+  accountAvatarRestoreEnabled: boolean;
+  accountAvatarComparison: { query: SelfAvatarComparisonQuery; manifestSha256: string; value: SelfAvatarComparison | null; error: string | null } | null;
   summary: { batchId: string; status: 'loading' | 'ready' | 'unauthorized' | 'unavailable'; value: HandoverImportSummary | null } | null;
   comparison: { query: Omit<OriginalBackupComparisonQuery, 'cursor'>; manifestSha256: string;
     items: OriginalBackupComparison['items']; selected: string[]; nextCursor: string | null; loaded: boolean; error: string | null } | null;
@@ -69,6 +76,7 @@ export interface HandoverImportState {
 }
 const empty = (userId: string | null, identityKey: string | null, online: boolean): HandoverImportState => ({
   userId, identityKey, online, loaded: false, upload: null, items: [], nextCursor: null, classEnrolmentEnabled: false, enrolmentResults: null,
+  accountAvatarRestoreEnabled: false, accountAvatarComparison: null,
   uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, sourceHistory: null, summary: null, comparison: null, busy: null, pending: null, notice: null });
 type Ticket = { epoch: number; userId: string; controller: AbortController };
 /** Device drafts only; uploaded packages, import authority and progress remain on the Server. */
@@ -80,6 +88,7 @@ export class HandoverImportOwner {
   private documentTicket: Ticket | null = null;
   private capabilityTicket: Ticket | null = null;
   private comparisonTicket: Ticket | null = null;
+  private accountAvatarComparisonTicket: Ticket | null = null;
   private documentPort?: HandoverDocumentContentPort;
   private api: HandoverApi; private accessError: (error: HandoverApiError) => void;
   constructor(api: HandoverApi, accessError: (error: HandoverApiError) => void = () => {}, documentPort?: HandoverDocumentContentPort) { this.api = api; this.accessError = accessError; this.documentPort = documentPort; }
@@ -101,6 +110,7 @@ export class HandoverImportOwner {
       this.historyTicket = null; this.historyRevision++;
       this.documentTicket = null;
       this.comparisonTicket = null;
+      this.accountAvatarComparisonTicket = null;
       this.state = empty(userId, identityKey, online); this.update({});
     } else this.update({ online });
   }
@@ -178,10 +188,14 @@ export class HandoverImportOwner {
     this.capabilityTicket = t;
     try {
       const value = await this.api.importCapabilities(t.userId, t.controller.signal);
-      if (this.current(t)) this.update({ classEnrolmentEnabled: value.classEnrolment });
+      if (this.current(t)) {
+        if (value.accountAvatarRestore !== true) this.clearAccountAvatarComparison();
+        this.update({ classEnrolmentEnabled: value.classEnrolment, accountAvatarRestoreEnabled: value.accountAvatarRestore === true });
+      }
     } catch (error) {
       if (this.current(t)) {
-        this.update({ classEnrolmentEnabled: false });
+        this.clearAccountAvatarComparison();
+        this.update({ classEnrolmentEnabled: false, accountAvatarRestoreEnabled: false });
         if (error instanceof HandoverApiError && ([401, 403].includes(error.status) || ['session_changed', 'identity_changed'].includes(error.code)))
           this.error(t, error);
       }
@@ -203,9 +217,55 @@ export class HandoverImportOwner {
     } finally { this.finish(t); }
   };
   clearComparison = () => {
+    this.clearAccountAvatarComparison();
     const ticket = this.comparisonTicket; this.comparisonTicket = null;
     if (ticket) { ticket.controller.abort(); if (this.active === ticket.controller) { this.active = null; this.update({busy:null}); } }
     if (this.state.comparison) this.update({comparison:null});
+  };
+  clearAccountAvatarComparison = () => {
+    const ticket = this.accountAvatarComparisonTicket; this.accountAvatarComparisonTicket = null;
+    if (ticket) { ticket.controller.abort(); if (this.active === ticket.controller) { this.active = null; this.update({ busy: null }); } }
+    if (this.state.accountAvatarComparison) this.update({ accountAvatarComparison: null });
+  };
+  canCompareAccountAvatar = () => {
+    const upload = this.state.upload, preview = upload?.preview;
+    return !!(this.state.accountAvatarRestoreEnabled && this.state.identityKey && this.state.userId && upload?.state === 'ready'
+      && preview && preview.integrity !== 'untrusted_signer' && preview.header.purpose === 'backup' && preview.header.version === 2
+      && preview.header.source.accountId === this.state.userId && preview.header.selection.accountAvatar);
+  };
+  compareAccountAvatar = async () => {
+    if (this.state.pending || this.state.busy || !this.canCompareAccountAvatar()) return;
+    const upload = this.state.upload!, preview = upload.preview!;
+    this.clearComparison();
+    const t = this.begin('read'); if (!t) return;
+    const query = { uploadId: upload.id, expectedUploadVersion: upload.version };
+    const comparison = { query, manifestSha256: preview.manifestSha256, value: null, error: null };
+    this.accountAvatarComparisonTicket = t; this.update({ accountAvatarComparison: comparison });
+    try {
+      const value = await this.api.compareAccountAvatar(t.userId, query, t.controller.signal);
+      if (!this.current(t) || this.accountAvatarComparisonTicket !== t || this.state.upload?.id !== upload.id || this.state.upload.version !== upload.version) return;
+      if (value.uploadId !== upload.id || value.manifestSha256 !== preview.manifestSha256
+        || value.backupVersion !== preview.header.selection.accountAvatar!.version) throw new HandoverApiError(0, 'handover_response_invalid');
+      this.update({ accountAvatarComparison: { ...comparison, value } });
+    } catch (error) {
+      if (!this.current(t) || this.accountAvatarComparisonTicket !== t) return;
+      if (error instanceof HandoverApiError && (error.status === 401 || ['session_changed', 'identity_changed'].includes(error.code))) this.error(t, error);
+      else this.update({ accountAvatarComparison: { ...comparison, error: importErrorText(error) } });
+    } finally { if (this.accountAvatarComparisonTicket === t) this.accountAvatarComparisonTicket = null; this.finish(t); }
+  };
+  restoreAccountAvatar = async (observed = this.state.accountAvatarComparison) => {
+    const comparison = this.state.accountAvatarComparison, upload = this.state.upload, value = comparison?.value;
+    if (comparison !== observed || this.state.pending || this.state.busy || !this.canCompareAccountAvatar() || !comparison || !value || comparison.error
+      || upload!.id !== comparison.query.uploadId || upload!.version !== comparison.query.expectedUploadVersion
+      || upload!.preview!.manifestSha256 !== comparison.manifestSha256 || value.backupVersion !== upload!.preview!.header.selection.accountAvatar!.version) return;
+    const mode = accountAvatarComparisonResolution(value); if (!mode) return;
+    const parsed = handoverImportCommandSchema.safeParse({ opId: crypto.randomUUID(), uploadId: upload!.id, expectedUploadVersion: upload!.version,
+      acceptedManifestSha256: comparison.manifestSha256, resolutionOnly: true, restoreOriginal: true, targets: [], resolutions: [],
+      accountAvatar: { expectedVersion: value.localVersion, mode } });
+    if (!parsed.success) { this.update({ notice: '本人頭像還原資料已不可用，請重新比較。' }); return; }
+    this.clearComparison();
+    this.update({ pending: { kind: 'create', command: parsed.data, checked: true }, notice: null });
+    await this.retryOriginal();
   };
   compareOriginal = async (childId: string, module: OriginalBackupComparisonQuery['module'], more = false) => {
     const upload = this.state.upload, preview = upload?.preview, previous = this.state.comparison;
@@ -531,7 +591,9 @@ export class HandoverImportOwner {
         if (this.current(t)) { this.put(row); this.update({ pending: p.kind === 'create' || p.rejected ? null : { ...p, checked: true }, ...(p.kind === 'create' ? { upload: null } : {}) }); }
       }
     } catch (e) {
-      if (this.current(t) && ['reserve', 'create'].includes(p.kind) && e instanceof HandoverApiError && e.status === 404)
+      if (this.current(t) && p.kind === 'create' && p.rejected && 'accountAvatar' in p.command && e instanceof HandoverApiError && e.status === 404)
+        this.update({ pending: null, notice: '本人頭像版本已改變，請重新比較後再選擇還原。' });
+      else if (this.current(t) && ['reserve', 'create'].includes(p.kind) && e instanceof HandoverApiError && e.status === 404)
         this.update({ pending: { ...p, checked: true }, notice: '未找到原請求，可繼續同一編號；不會另建批次。' });
       else if (this.current(t) && ['upload', 'discard'].includes(p.kind) && e instanceof HandoverApiError && e.status === 404) {
         this.release(); this.update({ pending: null, upload: null, notice: '原上載已不可使用，可以重新選取資料包。' });
