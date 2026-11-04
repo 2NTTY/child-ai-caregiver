@@ -15,7 +15,7 @@ import { createFirestoreCareStore, firestoreCareSchema, firestoreProfileSchema }
 import { createFirestoreOnlineStore } from './firestore-online.ts';
 import { createFirestoreMemoryStore, firestoreFactSchema, firestoreTopicSchema, firestoreSummarySchema } from './firestore-memory.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
-import { createFirestoreConcernStore, firestoreConcernSchema } from './firestore-concerns.ts';
+import { createFirestoreConcernStore, concernTransferSchema } from './firestore-concerns.ts';
 import { createFirestoreGrowthStore, firestoreGrowthSchema, firestoreGrowthTopicSchema, growthImportSourceRow, growthTopicResourceId } from './firestore-growth.ts';
 import { growthTopicSchema } from '../src/shared/growth.ts';
 import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
@@ -65,7 +65,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
   const schemas = { care: firestoreCareSchema, profile: firestoreProfileSchema, tasks: firestoreTaskSchema,
     memory_facts: firestoreFactSchema, memory_topics: firestoreTopicSchema, instructions: firestorePrivateInstructionSchema, summary_history: firestoreSummarySchema,
     private_sources: sharedInputImportSchema, documents: familyDocumentTransferSchema, visit_preparation: firestorePreparationSchema,
-    chat: chatImportSourceSchema, chat_imports: importedChatMessageSchema, concerns: firestoreConcernSchema,
+    chat: chatImportSourceSchema, chat_imports: importedChatMessageSchema, concerns: concernTransferSchema,
     growth_attention: firestoreGrowthSchema, growth_topics: firestoreGrowthTopicSchema, ...handoverAttachmentSchemas };
   const access = <T>(userId: string, target: Target, section: Section | HandoverImportModule, mode: 'read' | 'write', use: (b: Binding, actor: Binding) => Promise<T>) => {
     const module = section === 'memory' || section === 'sources' || section === 'attachments' || section === 'growth' ? section : handoverImportModuleOf(section);

@@ -52,6 +52,13 @@ export function domainParse<T>(schema: z.ZodType<T>, value: unknown, code = 'inv
   const parsed = schema.safeParse(value); if (!parsed.success) domainReject(code, status); return parsed.data;
 }
 export function firestoreDomainHash(value: unknown): string { return createHash('sha256').update(canonicalJson(value)).digest('hex'); }
+/** UUIDv8 for a domain-separated, deterministic resource identity. */
+export function firestoreDomainUuid(value: unknown): string {
+  const bytes = Buffer.from(firestoreDomainHash(value), 'hex').subarray(0, 16);
+  bytes[6] = (bytes[6]! & 15) | 128; bytes[8] = (bytes[8]! & 63) | 128;
+  const hex = bytes.toString('hex');
+  return [hex.slice(0, 8), hex.slice(8, 12), hex.slice(12, 16), hex.slice(16, 20), hex.slice(20)].join('-');
+}
 export function firestoreReminderOutboxId(taskId: string, taskVersion: number): string { return JSON.stringify([taskId, taskVersion]); }
 export const FIRESTORE_TASK_DISPATCH_SCOPE: WorkRecoveryScope = Object.freeze({ ownerUserId: 'system:task-dispatch',
   workspaceId: '00000000-0000-0000-0000-000000000000', childId: '00000000-0000-0000-0000-000000000000', storageEpoch: '00000000-0000-0000-0000-000000000000' });
