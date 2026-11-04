@@ -16,28 +16,17 @@ import { normalizedFactKey } from './memory-policy.ts';
 import { groundedRecordTime } from './agent-record-time.ts';
 import { groundedRecordQuantity, type QuantityGrounding } from './agent-record-quantity.ts';
 import { createFirestorePrivateInstructions, firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
+import { prepareContentErasure } from './firestore-content-erasure.ts';
+import { privateInstructionErasureOperationId } from './firebase-erasure-journal.ts';
+import { firestoreAgentActionSavedSchema } from './firestore-private-note-receipt.ts';
+export { firestoreAgentActionSavedSchema, firestoreAgentActionReceiptSchema } from './firestore-private-note-receipt.ts';
 export { firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
 
-const uuid = z.uuid(), time = z.iso.datetime({ offset: true }), version = z.number().int().min(0).max(2147483646);
+const uuid = z.uuid(), version = z.number().int().min(0).max(2147483646);
 const permissions = z.object({ version, recordKinds: agentPolicyUpdateSchema.shape.recordKinds,
   allowPrivateNotes: z.boolean(), allowSelfTasks: z.boolean(), allowRecordCorrections: z.boolean(),
   reminderConsentVersion: agentPolicyUpdateSchema.shape.reminderConsentVersion, reminderBindings: agentPolicyUpdateSchema.shape.reminderBindings }).strict();
 export const firestoreAgentPolicySchema = z.object({ value: permissions, authorizationVersion: z.string() }).strict();
-export const firestoreAgentActionReceiptSchema = z.object({
-  id: uuid, runId: uuid, kind: z.enum(['save_record', 'revise_record', 'save_private_note', 'revise_private_note', 'create_self_task', 'change_self_task']),
-  resource: z.object({ kind: z.enum(['care_record', 'private_note', 'task']), id: uuid, version: version.min(1) }).strict(),
-  state: z.enum(['saved', 'updated', 'scheduled', 'completed', 'cancelled']),
-  notification: z.enum(['not_authorized', 'authorized_for_due_event']), channels: z.array(z.enum(['telegram', 'web_push', 'native_push'])).max(3),
-  memoryOutcome: z.enum(['created', 'updated', 'duplicate']).optional(),
-  sourceBasis: z.literal("voice_interpretation").optional(),
-  createdAt: time, quantityGrounding: z.object({ status: z.enum(['source_supported', 'removed', 'absent', 'unchanged']) }).optional(),
-}).strict();
-export const firestoreAgentActionSavedSchema = z.object({
-  receipt: firestoreAgentActionReceiptSchema, hash: z.string().regex(/^[a-f0-9]{64}$/u), sourceMessageId: uuid,
-  sourceMessageIds: z.array(uuid).max(6), policyVersion: version,
-  voiceEvidence: z.object({ kind: z.literal('voice_interpretation'), voiceId: uuid, voiceVersion: version.min(1),
-    sha256: z.string().regex(/^[a-f0-9]{64}$/u), sourceMessageId: uuid, interpretedQuote: z.string().min(1).max(2000) }).strict().optional(),
-}).strict();
 export const firestoreAgentActionCallSchema = z.object({ receiptId: uuid }).strict();
 export const firestoreAgentManualSchema = z.object({ childId: uuid, kind: z.enum(['policy', 'delete_note']),
   hash: z.string().regex(/^[a-f0-9]{64}$/u), result: z.union([permissions.extend({ effective: z.boolean() }), z.boolean(), z.null()]) }).strict();
@@ -154,13 +143,22 @@ export function createFirestoreAgentActions(options: {
       domainParse(uuid, noteId); const input = domainParse(deletion, raw);
       return authority.runTransaction(userId, childId, async b => {
         const receipt = await manual(b, input.operationId, 'delete_note', { noteId, ...input });
-        if (receipt.prior) return domainParse(z.boolean().nullable(), receipt.prior.result, 'receipt_binding', 500);
+        const barrierId = privateInstructionErasureOperationId(b.scope, noteId);
+        const recordBarrier = prepareContentErasure(data, b, 'private_instruction', noteId, input.expectedVersion, barrierId,
+          { sourceOperationId: input.operationId, at: new Date().toISOString() });
+        if (receipt.prior) {
+          const result = domainParse(z.boolean().nullable(), receipt.prior.result, 'receipt_binding', 500);
+          // An exact replay supplies the original target/version that legacy boolean receipts omitted.
+          if (result && !(await b.transaction.get(data.ref('content_erasures', 'content-erasure', barrierId))).exists) recordBarrier();
+          return result;
+        }
         const note = await readNote(b, noteId);
         if (note && note.version !== input.expectedVersion) domainReject('version_conflict');
         const context = note ? await prepareContextChange(data, b) : null;
         const change = note ? await b.prepareChange(input.operationId, 'memory', true) : null;
         context?.(); change?.commit();
         if (note) {
+          recordBarrier();
           b.transaction.delete(data.ref('private_instructions', 'private-instruction', noteId));
           if (note.memoryKey) b.transaction.delete(data.ref('memory_keys', 'memory-key', instructionKey(b, note.memoryKey)));
         }

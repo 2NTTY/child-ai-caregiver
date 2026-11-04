@@ -8,6 +8,7 @@ import { FirestoreDomainData, domainParse, domainReject } from './firestore-doma
 import { prepareContextChange } from './firestore-context-basis.ts';
 import { normalizedFactKey } from './memory-policy.ts';
 import { makeImportProvenance } from './handover-provenance.ts';
+import { privateInstructionErasureOperationId } from './firebase-erasure-journal.ts';
 import type { HandoverImportRow } from './handover-import.ts';
 
 export const firestorePrivateInstructionSchema = agentPrivateNoteSchema;
@@ -43,7 +44,11 @@ export function createFirestorePrivateInstructions(data: FirestoreDomainData) {
     const next = domainParse(firestorePrivateInstructionSchema, value);
     if (next.childId !== b.scope.childId || next.version !== (previous?.version ?? 0) + 1 || previous && next.id !== previous.id)
       domainReject('instruction_binding', 500);
-    if (!previous && (await b.transaction.get(ref(next.id))).exists) domainReject('version_conflict');
+    if (!previous) {
+      const deletion = data.ref('content_erasures', 'content-erasure', privateInstructionErasureOperationId(b.scope, next.id));
+      const [current, retired] = await Promise.all([b.transaction.get(ref(next.id)), b.transaction.get(deletion)]);
+      if (current.exists || retired.exists) domainReject('version_conflict');
+    }
     if (previous?.memoryKey && next.memoryKey !== previous.memoryKey) domainReject('instruction_key_conflict');
     if (next.memoryKey) {
       if (normalizedFactKey(next.memoryKey) !== next.memoryKey) domainReject('invalid_package_data', 400);
