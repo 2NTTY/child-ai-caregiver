@@ -149,17 +149,17 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
           if (section === 'instructions') {
             const backup = domainParse(firestorePrivateInstructionSchema, row.value, 'invalid_package_data', 400);
             if (backup.childId !== input.childId) domainReject('invalid_package_scope', 400);
-            const id = backup.id, live = await instructions.read(binding, id);
+            const id = backup.id;
             const { mapping } = await readImportMapping(data, binding, { ...manifest.source, childId: input.childId, section, resourceId: id }, true);
-            const available = live && (!mapping || mapping.target.id === id);
-            const restored = available && mapping?.target.version === live.version && mapping.sourceVersion === backup.version
+            const targetId = mapping?.target.id ?? id, local = await instructions.readImportState(binding, targetId), live = local.value;
+            const restored = live && mapping?.target.version === live.version && mapping.sourceVersion === backup.version
               && mapping.sourceHash === firestoreDomainHash(row.value);
-            const changedFields = available && !restored ? (['title', 'text', 'memoryKey', 'provenance', 'sourceMessageId', 'importedFrom'] as const)
+            const changedFields = live && !restored ? (['title', 'text', 'memoryKey', 'provenance', 'sourceMessageId', 'importedFrom'] as const)
               .filter(key => canonicalJson(live[key]) !== canonicalJson(backup[key])) : [];
-            const state = !available ? 'unavailable' : restored ? 'unchanged' : live.version > backup.version ? 'local_newer'
+            const state = !live ? local.version > 0 ? 'deleted' : 'unavailable' : restored ? 'unchanged' : live.version > backup.version ? 'local_newer'
               : live.version < backup.version ? 'backup_newer' : changedFields.length ? 'different' : 'unchanged';
-            items.push({ id, resourceSection: section, ...(input.includeRestoreTarget && available ? { targetId: id } : {}),
-              backupVersion: backup.version, localVersion: live?.version ?? null, state, changedFields });
+            items.push({ id, resourceSection: section, ...(input.includeRestoreTarget && local.version > 0 ? { targetId } : {}),
+              backupVersion: backup.version, localVersion: local.version || null, state, changedFields });
             continue;
           }
           if (section === 'concerns') {

@@ -44,15 +44,18 @@ export const handoverImportCommandSchema = z.object({ opId: uuid, uploadId: uuid
   accountAvatar: selfAvatarRestoreSchema.optional(),
   targets: z.array(requestedTargetSchema).max(100),
   resolutions: z.array(z.object({ sourceChildId: uuid, section: handoverImportResourceSectionSchema,
-    resourceId: uuid, resolution: handoverImportResolutionSchema }).strict()).max(10000),
+    resourceId: uuid, useRestoredTarget: z.literal(true).optional(), resolution: handoverImportResolutionSchema }).strict()).max(10000),
 }).strict().refine(value => (value.targets.length > 0 || !!value.accountAvatar)
   && (!value.accountAvatar || value.restoreOriginal === true && value.resolutionOnly === true)
   && new Set(value.targets.map(row => row.sourceChildId)).size === value.targets.length
   && new Set(value.resolutions.map(row => JSON.stringify([row.sourceChildId, row.section, row.resourceId]))).size === value.resolutions.length
   && value.resolutions.every(row => value.targets.some(target => target.sourceChildId === row.sourceChildId && target.sections.includes(handoverImportModuleOf(row.section))))
+  && value.resolutions.every(row => !row.useRestoredTarget || value.restoreOriginal && row.section === 'instructions'
+    && row.resolution.mode !== 'preserve' && row.resolution.targetId !== row.resourceId)
   && (!value.restoreOriginal || value.resolutionOnly && value.acceptedManifestSha256 !== null
     && value.resolutions.every(row => handoverImportModuleOf(row.section) !== 'memory'
-      || row.section === 'instructions' && row.resolution.mode === 'replace_current' && row.resolution.targetId === row.resourceId && row.resolution.expectedVersion > 0)
+      || row.section === 'instructions' && row.resolution.mode !== 'preserve' && row.resolution.expectedVersion > 0
+        && (row.resolution.targetId === row.resourceId || row.useRestoredTarget === true))
     && value.resolutions.every(row => handoverImportModuleOf(row.section) !== 'attachments'
       || row.section === 'child_avatar' && row.resourceId === row.sourceChildId && row.resolution.mode !== 'preserve' && row.resolution.targetId === row.sourceChildId)
     && value.targets.every(row =>
