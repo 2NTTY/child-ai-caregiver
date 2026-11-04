@@ -1,0 +1,9 @@
+{
+  "serverContract": "5dd470f8f3b107e8022283916b3df0a824e143a5",
+  "scenario": "Shared Web/Android form and import preview, Hong Kong calendar dates",
+  "command": "node --test frontend/scripts/handover-period-ui.test.mjs",
+  "verified": ["All-time default", "Inclusive Hong Kong day bounds", "Unsupported selection changes retain dates and prevent submission", "Original period shown in import preview"],
+  "testsPassed": 1,
+  "typecheck": {"config":"frontend/tsconfig.json","roots":["HandoverControls.tsx","HandoverImportControls.tsx"],"diagnostics":0},
+  "limits": "Local component harness only. No live device, deployment or model call."
+}
