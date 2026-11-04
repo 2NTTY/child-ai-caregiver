@@ -28,12 +28,19 @@ const reviewLabels: Record<HandoverPreviewItem['section'], string> = { documents
   files: '檔案', photos: '照片', voices: '錄音', child_avatar: '孩子頭像' };
 const reasonLabels: Record<HandoverPreviewItem['reason'], string> = { all: '全部期間', inside: '完全在指定日期內', crosses: '跨越指定日期',
   outside: '在指定日期之外', uncertain: '日期未能確定', metadata_only: '只有資料，沒有可讀原檔' };
+const noAvatar = { key: null, avatar: null, busy: false, unknown: false };
+const noAvatarSnapshot = () => noAvatar;
+const noAvatarSubscription = () => () => {};
 
 /** One shared account-level entry; the controller owns requests, the Server owns contents and authority. */
 export function HandoverControls() {
   const { owner, userId, identityKey, scopeKey, recordsState, account, online } = useProduction();
   const controller = owner.handoverOwner;
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
+  const avatarLane = owner.avatarOwner?.self;
+  const avatarState = useSyncExternalStore(avatarLane?.subscribe ?? noAvatarSubscription,
+    avatarLane?.getSnapshot ?? noAvatarSnapshot, avatarLane?.getSnapshot ?? noAvatarSnapshot);
+  const [selectedAvatar, setSelectedAvatar] = useState<{ identityKey: string; version: number } | null>(null);
   const [open, setOpen] = useState(false), [purpose, setPurpose] = useState<HandoverExportCommand['purpose']>('handover');
   const [children, setChildren] = useState<string[]>([]), [modules, setModules] = useState<(typeof HANDOVER_MODULES)[number][]>([]);
   const [periodEnabled, setPeriodEnabled] = useState(false), [fromDay, setFromDay] = useState(''), [toDay, setToDay] = useState('');
@@ -41,6 +48,10 @@ export function HandoverControls() {
   const [pupils, setPupils] = useState<ClassExportPupil[]>([]), [rosterQuery, setRosterQuery] = useState('');
   const canDownload = useFileExportAvailable();
   const current = !!identityKey && state.identityKey === identityKey && state.userId === userId && account.gate === 'ready';
+  const selfAvatar = avatarState.key === identityKey && avatarState.avatar?.target.kind === 'self' ? avatarState.avatar : null;
+  const canChooseAvatar = sourceMode === 'personal' && purpose === 'backup' && state.accountAvatarBackup;
+  const avatarSelected = !!(canChooseAvatar && selfAvatar?.asset && !avatarState.busy && !avatarState.unknown
+    && selectedAvatar?.identityKey === identityKey && selectedAvatar.version === selfAvatar.version);
   const locked = !current || !online || !!state.busy || account.deletion.phase !== 'idle';
   const selectable = recordsState.children.filter(child => child.accessRole === 'owner' || child.accessRole === undefined);
   const classes = useProductionSharing('class', open && current && sourceMode === 'class');
@@ -64,7 +75,8 @@ export function HandoverControls() {
     }
   }, [sourceMode, classScope, classes.state.shares.items, classes.state.busy, classModules.join(',')]);
   useEffect(() => { if (open && current && online) void controller.readExportCapabilities(); }, [controller, open, current, identityKey, online]);
-  useLayoutEffect(() => { setOpen(false); setChildren([]); setModules([]); setPeriodEnabled(false); setFromDay(''); setToDay(''); }, [identityKey]);
+  useLayoutEffect(() => { setOpen(false); setChildren([]); setModules([]); setSelectedAvatar(null); setPeriodEnabled(false); setFromDay(''); setToDay(''); }, [identityKey]);
+  useLayoutEffect(() => { setSelectedAvatar(null); }, [selfAvatar?.version, avatarState.key, canChooseAvatar]);
   useEffect(() => { if (current && online) void controller.load(); }, [controller, identityKey, current, online]);
   const waitingId = current ? state.items.find(item => item.state === 'queued' || item.state === 'building')?.id : undefined;
   useEffect(() => {
@@ -81,13 +93,14 @@ export function HandoverControls() {
   const from = DateTime.fromISO(fromDay, { zone: hongKongTimeZone }), to = DateTime.fromISO(toDay, { zone: hongKongTimeZone });
   const validFrom = /^\d{4}-\d{2}-\d{2}$/.test(fromDay) && from.isValid, validTo = /^\d{4}-\d{2}-\d{2}$/.test(toDay) && to.isValid;
   const ordered = validFrom && validTo && from.toMillis() <= to.toMillis();
-  const periodSupported = supportsHandoverPeriodModules(modules);
+  const periodSupported = modules.length ? supportsHandoverPeriodModules(modules) : avatarSelected;
   const period = periodEnabled && ordered ? { from: from.startOf('day').toUTC().toISO()!, to: to.endOf('day').toUTC().toISO()! } : null;
-  const selection = { childIds: sourceMode === 'class' ? chosenPupils.map(pupil => pupil.childId) : children, modules, period };
+  const selection = { childIds: sourceMode === 'class' ? chosenPupils.map(pupil => pupil.childId) : children, modules, period,
+    ...(avatarSelected ? { accountAvatar: { version: selfAvatar!.version } } : {}) };
   const validChildren = sourceMode === 'class' ? !!classScope && !classLocked && classes.state.userId === userId
     && !!pupils.length && chosenPupils.length === pupils.length && modules.every(module => classModules.includes(module as ClassExportModule))
     : !!children.length && children.every(id => selectable.some(child => child.id === id));
-  const validSelection = validChildren && !!modules.length
+  const validSelection = (validChildren && !!modules.length || avatarSelected && !children.length && !modules.length)
     && (!periodEnabled || periodSupported && ordered);
   const needsReview = handoverReviewSections(selection).length > 0;
   const reviewSource = sourceMode === 'class' && classes.state.selected ? { kind: 'class' as const, spaceId: classes.state.selected.id } : undefined;
@@ -107,7 +120,7 @@ export function HandoverControls() {
     <Text style={styles.body}>選擇孩子及資料，以 ZIP 保存結構化內容、附件與閱讀摘要。檔案保留 24 小時，可稍後回來下載。</Text>
     <Text style={styles.body}>預設匯出全部期間；可指定開始及結束日期，並在建立前逐份選擇文件及附件。班級只可交接目前可讀的指定資料；整個帳戶備份仍待接通。</Text>
     <AppButton label="選擇要匯出的資料" variant="secondary" disabled={locked || !!pending}
-      onPress={() => { setChildren([]); setPupils([]); setModules([]); setSourceMode('personal'); setPurpose('handover'); setPeriodEnabled(false); setFromDay(''); setToDay(''); setOpen(true); }} />
+      onPress={() => { setChildren([]); setPupils([]); setModules([]); setSelectedAvatar(null); setSourceMode('personal'); setPurpose('handover'); setPeriodEnabled(false); setFromDay(''); setToDay(''); setOpen(true); }} />
     {!selectable.length ? <Text style={styles.body}>未有可匯出的本人孩子資料。</Text> : null}
     {pending ? <View style={styles.group}>
       <Text style={styles.body}>{pending.checked ? '原狀態已查回，可繼續同一次請求。' : '提交結果尚未確認，請先查回原請求。'}</Text>
@@ -119,7 +132,8 @@ export function HandoverControls() {
     {state.loaded && !state.items.length ? <Text style={styles.body}>尚未建立資料包。</Text> : null}
     {state.items.map(row => <View key={row.id} style={styles.item}>
       <Text style={styles.title}>{row.purpose === 'backup' ? '本人備份' : '交接資料'} · {stateLabels[row.state]}</Text>
-      <Text style={styles.body}>{dateText(row.createdAt)} · {row.selection.childIds.length} 位孩子 · {row.selection.modules.map(module => moduleLabels[module]).join('、')}</Text>
+      <Text style={styles.body}>{dateText(row.createdAt)} · {row.selection.childIds.length} 位孩子 · {[...row.selection.modules.map(module => moduleLabels[module]),
+        ...('accountAvatar' in row.selection && row.selection.accountAvatar ? ['本人頭像'] : [])].join('、')}</Text>
       {row.selection.period ? <Text style={styles.body}>指定日期（香港時間）：{DateTime.fromISO(row.selection.period.from).setZone(hongKongTimeZone).toISODate()} 至 {DateTime.fromISO(row.selection.period.to).setZone(hongKongTimeZone).toISODate()}</Text> : null}
       {row.state === 'ready' ? <Text style={styles.body}>{row.bytes === null ? '' : `${(row.bytes / 1024 / 1024).toFixed(1)} MiB · `}至 {dateText(row.expiresAt)}</Text> : null}
       {row.error ? <Text style={styles.body}>{handoverErrorText(new HandoverApiError(409, row.error))}</Text> : null}
@@ -136,14 +150,27 @@ export function HandoverControls() {
       <View style={styles.group}>
         <Text style={styles.body}>只包含勾選範圍。私人聊天、記憶及來源如需交給別人，請按需要選取；交出後對方保留獨立副本。</Text>
         {state.classModules?.length || sourceMode === 'class' ? <View style={styles.actions}>
-          <AppButton label="本人孩子" variant={sourceMode === 'personal' ? 'primary' : 'quiet'} disabled={locked} onPress={() => { setSourceMode('personal'); setPupils([]); setModules([]); }} />
+          <AppButton label="本人孩子" variant={sourceMode === 'personal' ? 'primary' : 'quiet'} disabled={locked} onPress={() => { setSourceMode('personal'); setPupils([]); setModules([]); setSelectedAvatar(null); }} />
           <AppButton label="班級學生" variant={sourceMode === 'class' ? 'primary' : 'quiet'} disabled={locked || !state.classModules?.length}
-            onPress={() => { setSourceMode('class'); setChildren([]); setModules([]); setPurpose('handover'); }} />
+            onPress={() => { setSourceMode('class'); setChildren([]); setModules([]); setSelectedAvatar(null); setPurpose('handover'); }} />
         </View> : null}
         <View style={styles.actions}>
-          <AppButton label="用作交接" variant={purpose === 'handover' ? 'primary' : 'quiet'} disabled={locked} onPress={() => setPurpose('handover')} />
-          {sourceMode === 'personal' ? <AppButton label="本人備份" variant={purpose === 'backup' ? 'primary' : 'quiet'} disabled={locked} onPress={() => setPurpose('backup')} /> : null}
+          <AppButton label="用作交接" variant={purpose === 'handover' ? 'primary' : 'quiet'} disabled={locked} onPress={() => { setSelectedAvatar(null); setPurpose('handover'); }} />
+          {sourceMode === 'personal' ? <AppButton label="本人備份" variant={purpose === 'backup' ? 'primary' : 'quiet'} disabled={locked} onPress={() => { setSelectedAvatar(null); setPurpose('backup'); }} /> : null}
         </View>
+        {canChooseAvatar ? <View style={styles.group}>
+          <AppCheckbox label="本人頭像" checked={avatarSelected} disabled={locked || !selfAvatar?.asset || avatarState.busy || avatarState.unknown}
+            onChange={checked => {
+              const live = avatarLane?.getSnapshot();
+              setSelectedAvatar(checked && identityKey && live?.key === identityKey && live.avatar?.target.kind === 'self'
+                && live.avatar.asset && live.avatar.version === selfAvatar?.version && !live.busy && !live.unknown
+                ? { identityKey, version: live.avatar.version } : null);
+            }} />
+          <Text style={styles.body}>{selfAvatar?.asset ? `整張本人頭像 · 版本 ${selfAvatar.version}${selfAvatar.updatedAt ? ` · 更新於 ${dateText(selfAvatar.updatedAt)}` : ''}`
+            : selfAvatar ? '目前沒有本人頭像可加入。' : '本人頭像資料尚未讀取，請先在帳戶設定核對頭像。'}</Text>
+          {avatarSelected && period && (!selfAvatar?.updatedAt || Date.parse(selfAvatar.updatedAt) < Date.parse(period.from)
+            || Date.parse(selfAvatar.updatedAt) > Date.parse(period.to)) ? <Text style={styles.body}>已明確選擇整張本人頭像，包括指定日期以外的內容。</Text> : null}
+        </View> : null}
         <Text style={styles.title}>孩子</Text>
         {sourceMode === 'personal' ? selectable.map(child => <AppCheckbox key={child.id} label={child.displayName} checked={children.includes(child.id)} disabled={locked} onChange={value => chooseChild(child.id, value)} />)
           : <View style={styles.group}>
@@ -209,12 +236,17 @@ export function HandoverControls() {
         </View> : null}
         <AppButton label="建立資料包" loading={state.busy === 'write'} disabled={!canCreate}
           onPress={() => { if (!canCreate) return;
+            const liveAvatar = avatarLane?.getSnapshot();
+            if (selection.accountAvatar && (!selectedAvatar || liveAvatar?.key !== selectedAvatar.identityKey
+              || liveAvatar.avatar?.target.kind !== 'self' || !liveAvatar.avatar.asset || liveAvatar.avatar.version !== selectedAvatar.version
+              || liveAvatar.busy || liveAvatar.unknown)) return;
             if (sourceMode === 'class') {
               const live = classExportPupils(classes.controller.getSnapshot(), teachers.controller.getSnapshot(), pupils);
               if (pupils.some(pupil => !live.some(row => row.childId === pupil.childId && row.basis === pupil.basis))) return;
-              void controller.createClass({ ...selection, modules: modules.filter((module): module is ClassExportModule => classModules.includes(module as ClassExportModule)) }, classes.state.selected!.id, reviewBasis);
-            } else if (needsReview) void controller.create(selection, purpose, controller.documentReview(selection));
-            else void controller.create(selection, purpose);
+              void controller.createClass({ childIds: selection.childIds, period: selection.period,
+                modules: modules.filter((module): module is ClassExportModule => classModules.includes(module as ClassExportModule)) }, classes.state.selected!.id, reviewBasis);
+            } else void controller.create(selection, purpose, needsReview ? controller.documentReview(selection) : undefined,
+              selection.accountAvatar ? selectedAvatar! : undefined);
             setOpen(false); }} />
       </View>
     </FormDialog>
