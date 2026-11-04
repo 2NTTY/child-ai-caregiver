@@ -58,7 +58,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 的原生 runtime 指紋在本機與 EAS 不一致，本次未產出 APK。下次需要批量安裝時，先核對同一建置封包與依賴位置，再建置、驗簽及覆蓋安裝。[原建置紀錄](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)
 
-**當前入口（2026-11-05）為 [P4-HANDOVER01](#p4-handover01)。** 原站 `cbd8101e` 可查已清理的上載紀錄，並把本人備份的孩子／帳戶頭像、文件、到診準備、孩子概況、照護記錄、待辦及私人來源還原至原件。其餘模組的差異還原、正式帳戶操作仍待接續。原生大型包接線已合併，舊 APK 維持 20 MiB；新 binary 的實際上載待批量建置驗收。後端 `3fb14dc1` 已補 S15 單筆私人來源刪除重放及 S14 報告分期保存筆數。S10 來源監察與關鍵詞索引批次已上線。`74b7c92f` 已接本人持續關注還原。完整備份可選取原件，期間備份只補缺少的觀察。原站 `9974bcaf` 已接班員關注匯入。接續 S10 公共知識版本移轉，其餘本人備份模組與班級成長匯入仍待補。[班級匯入發布紀錄](artifacts/verification/P4_CLASS_CONCERN_DELIVERY_20261105.json)。[關注還原發布紀錄](artifacts/verification/P4_ORIGINAL_CONCERN_DELIVERY_20261105.json)[索引批次發布紀錄](artifacts/verification/P4_KNOWLEDGE_INDEX_BATCHES_20261105.json)[知識管理發布紀錄](artifacts/verification/P4_KNOWLEDGE_ADMIN_DELIVERY_20261105.json)[刪除重放與報告發布](artifacts/verification/P4_SOURCE_ERASURE_REPORT_TRENDS_20261105.json)[本批交付證據](artifacts/verification/P4_UPLOAD_HISTORY_CHILD_AVATAR_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)
+**當前入口（2026-11-05）為 [P4-HANDOVER01](#p4-handover01)。** 原站 `cbd8101e` 可查已清理的上載紀錄，並把本人備份的孩子／帳戶頭像、文件、到診準備、孩子概況、照護記錄、待辦及私人來源還原至原件。其餘模組的差異還原、正式帳戶操作仍待接續。原生大型包接線已合併，舊 APK 維持 20 MiB；新 binary 的實際上載待批量建置驗收。後端 `3fb14dc1` 已補 S15 單筆私人來源刪除重放及 S14 報告分期保存筆數。S10 來源監察與關鍵詞索引批次已上線。`74b7c92f` 已接本人持續關注還原。完整備份可選取原件，期間備份只補缺少的觀察。原站 `9974bcaf` 已接班員關注匯入。原站後端 `432ae9a7` 已支援操作者分批移轉指定公共知識版本。其餘本人備份模組、班級成長匯入與系統分享接續；S10 規模與維運驗收仍待補。[知識移轉紀錄](artifacts/verification/P4_KNOWLEDGE_EDITION_TRANSFER_20261105.json)。[班級匯入發布紀錄](artifacts/verification/P4_CLASS_CONCERN_DELIVERY_20261105.json)。[關注還原發布紀錄](artifacts/verification/P4_ORIGINAL_CONCERN_DELIVERY_20261105.json)[索引批次發布紀錄](artifacts/verification/P4_KNOWLEDGE_INDEX_BATCHES_20261105.json)[知識管理發布紀錄](artifacts/verification/P4_KNOWLEDGE_ADMIN_DELIVERY_20261105.json)[刪除重放與報告發布](artifacts/verification/P4_SOURCE_ERASURE_REPORT_TRENDS_20261105.json)[本批交付證據](artifacts/verification/P4_UPLOAD_HISTORY_CHILD_AVATAR_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)
 
 測試階段持續交付後端與 Web。Android 共用改動累積後，在實際需要安裝或驗證原生功能時集中建置 APK；個別功能包可先完成共用接線，交付紀錄另列尚未在手機驗收的部分。
 
@@ -746,6 +746,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 - 前置 S10-W02、P2-A04／現行 Firestore 知識接口；只等實際需要的 D 維護接口。
 - 首批在現有 Web 管理後台按需顯示指定來源的註冊／停用狀態、最近成功檢查時間，以及可續讀的檢查紀錄。來源內容是否核准發布沿既有發布流程另行判斷。
 - 關鍵詞索引批次以已核准版本及 hash 固定目標。每頁在同一交易保存索引與進度，停止後保留逐項結果；恢復只接續未完成範圍。這項操作不會重新產生 embedding 或切換發布版本。
+- 主機操作者可按來源 ID／版本 hash 選擇已發布且可分享的版本匯出 ZIP。逐版草稿與收據同筆保存；停止後可從原批次續跑。相容向量須在接收方核准版本後才可用於發布。指令與限制見[維護入口](docs/P2_KNOWLEDGE.md#公共知識版本的批量移轉)。
 - 保留大型管理頁、大規模導入／批量重建、進度／停止／恢復／失敗、效能、維運及知識資料遷移。已前移的官方 PDF、語義換版及必要發布維護不重做。
 - 公共知識包與 HANDOVER01 私人資料包分清；完整跨 Server 權威搬遷屬 P5，不取消 P4 知識資料導入／移轉能力。
 
@@ -756,6 +757,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 - 保留系統分享及其餘既定平台接點、來源／確認／權限與失敗處理，接回現有草稿／附件，不另建業務副本。
 - Android 首包沿 Expo Sharing 原生 `getSharedPayloads`／config plugin 及 Router intent 接點；不用會自動解析網址的 resolver。文字／網址保留原文，照片／音訊／其他檔案沿現有本機副本與大小／格式檢查；只把用戶選中的項目加入目前個人孩子草稿，每則一份附件規則保持。登入、孩子切換、已有草稿、取消與遲到讀取要有明確狀態，不自動上載或觸發 Agent。
 - 新原生配置、API 接線與真機接收分開記錄；iOS 不啟用 Expo 的非標準主 App 喚起 extension，仍按既定標準 Share Extension 方案接續。HANDOVER01 完成後資料包接統一匯入入口，首包不把一般檔案上載宣稱為資料匯入。
+- Android 收到第二份資料包時，可從分享頁返回目前的匯入工作，離頁取消或切換身份會保留原來的防護。畫面按已安裝版本顯示匯入上限。#482 已合併，隨下次需要使用的 APK 批量交付，實機待驗。iOS 套件已核對到專案生成，尚欠原生編譯及收件接線。[套件核對](docs/TECH_REUSE.md#s12-sharing-reuse)
 - **2026-10-28 Android 首包：**本機接線、定向檢查及 Android JS 匯出完成，未建置／發布新版 APK。獨立 review 的原附件離頁保護、孩子 A→B→A 遲到讀取，以及 SDK 文字檔案解析均已修正；沿固定 Expo Sharing 加標準版本補丁，不重寫原生模組。必要失敗、型別限制及真機待驗見[證據](artifacts/verification/P4_ANDROID_SHARE_INPUT_20261028.json)。後續只補新 binary／外部 App 分享接收，不重驗既有附件保存；其餘 P4 可繼續。
 
 <a id="s07-w02"></a>

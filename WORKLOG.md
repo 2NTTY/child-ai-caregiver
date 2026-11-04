@@ -4632,3 +4632,9 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 ## 2026-11-05 班員持續關注交接
 
 #477、#478 合批發布至原站。合成 ZIP 經 worker 加入指定班員並寫入關注；再次處理同一操作，名冊及關注均沒有重複。原站核對新版本、簽章掛載與站外健康；正式班級資料未用於驗收。[發布紀錄](artifacts/verification/P4_CLASS_CONCERN_DELIVERY_20261105.json)
+
+## 2026-11-05 公共知識版本移轉
+
+#480、#481 合批發布。映像清單在切換前補齊兩個 CLI 模組。候選以原站身份作唯讀查詢；發布後因本機 IAP 異常結束，另讀容器實際映像、健康與站外指紋確認成功，沒有重跑部署。正式語料沒有變更。[發布及驗證範圍](artifacts/verification/P4_KNOWLEDGE_EDITION_TRANSFER_20261105.json)
+
+同批收尾的 Android 系統分享修正 #482 已核對匯入未結時的離頁、帳號切換及保留收到的 ZIP。APK 延後批量交付。iOS 的 extension 只完成設定生成核對，原生收件仍待實作。
