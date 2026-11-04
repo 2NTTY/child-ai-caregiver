@@ -1,0 +1,86 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { AdminOwner } from '../src/production/AdminOwner.ts';
+
+test('admin knowledge reads are opt-in, independent, paged and cleared across identities', async () => {
+  const requests = [];
+  const at = '2026-11-05T01:00:00.000Z';
+  const watch = { id: 'synthetic-watch', publisher: 'Synthetic publisher', url: 'https://example.test/source', kind: 'page',
+    registration: 'not_registered', lastAttemptAt: null, lastSuccessfulCheckAt: null, lastStatus: null };
+  const firstCheck = { jobId: '11111111-1111-4111-8111-111111111111', watchId: watch.id, checkedAt: at,
+    state: 'recorded', status: 'unchanged', attempts: 1, itemCount: 1, changedCount: 0, failureCode: null, httpStatus: null };
+  const firstPage = { watches: [watch, { ...watch, id: 'retired-watch' }], checks: [firstCheck], nextCursor: 'opaque_next' };
+  let finishRead;
+  let invitation = async () => Response.json({ invitation: null });
+  let knowledge = () => new Promise(resolve => { finishRead = resolve; });
+  const owner = new AdminOwner('https://synthetic.invalid', async (input, options) => {
+    const url = new URL(input); requests.push({ url, options });
+    assert.equal(options.credentials, 'include'); assert.equal(options.cache, 'no-store');
+    if (url.pathname === '/api/admin/operations') {
+      assert.equal(options.method, 'POST');
+      return Response.json({ error: { code: 'unavailable' } }, { status: 503 });
+    }
+    assert.equal(options.method, 'GET');
+    if (url.pathname === '/api/admin/session') return Response.json({ administrator: true });
+    if (url.pathname === '/api/admin/knowledge-status') return knowledge();
+    if (url.pathname === '/api/admin/invitation') return invitation();
+    return Response.json(url.pathname.endsWith('/policy') ? {} : url.pathname.endsWith('/usage') ? null : { items: [], nextCursor: null });
+  });
+  owner.setUser('admin-a'); await owner.checkAccess(); await owner.load('2026-11-05');
+  assert.equal(requests.some(r => r.url.pathname.endsWith('/knowledge-status')), false);
+  const opening = owner.setKnowledgeOpen(true);
+  assert.equal(owner.getSnapshot().knowledge.status, 'loading');
+  assert.equal(owner.getSnapshot().busy, false);
+  await owner.lookup('invited@example.test');
+  assert.equal(owner.getSnapshot().lookup, null, 'Knowledge reads do not lock the invitation owner');
+  finishRead(Response.json(firstPage)); await opening;
+  assert.deepEqual(owner.getSnapshot().knowledge.page, firstPage);
+  assert.equal(owner.getSnapshot().knowledge.status, 'ready');
+  assert.equal(requests.find(r => r.url.pathname.endsWith('/knowledge-status')).options.headers['x-expected-user-id'], 'admin-a');
+  knowledge = async () => Response.json({ error: { code: 'unavailable' } }, { status: 503 });
+  await owner.loadKnowledge(true);
+  assert.equal(owner.getSnapshot().knowledge.status, 'error');
+  assert.deepEqual(owner.getSnapshot().knowledge.page, firstPage, 'A failed next page retains the already read rows and cursor');
+  assert.ok(owner.getSnapshot().knowledge.notice);
+  assert.equal(owner.getSnapshot().access, 'allowed');
+  const nextCheck = { ...firstCheck, jobId: '22222222-2222-4222-8222-222222222222', status: 'changed', changedCount: 1 };
+  knowledge = async () => Response.json({ watches: [{ ...watch, registration: 'enabled' }], checks: [firstCheck, nextCheck], nextCursor: null });
+  await owner.loadKnowledge(true);
+  assert.equal(requests.at(-1).url.searchParams.get('cursor'), 'opaque_next');
+  assert.equal(owner.getSnapshot().knowledge.page.watches.length, 1, 'The current complete catalog replaces removed watches');
+  assert.equal(owner.getSnapshot().knowledge.page.watches[0].registration, 'enabled');
+  assert.equal(owner.getSnapshot().knowledge.page.checks.length, 2);
+  assert.equal(owner.getSnapshot().knowledge.page.nextCursor, null);
+  await owner.setKnowledgeOpen(false); const readCount = requests.length;
+  await owner.setKnowledgeOpen(true);
+  assert.equal(requests.length, readCount, 'Reopening the same read does not silently refetch');
+  const command = { kind: 'invite', opId: '33333333-3333-4333-8333-333333333333', email: 'invited@example.test', expiresAt: at };
+  await owner.submit(command);
+  assert.equal(owner.getSnapshot().pending.opId, command.opId);
+  let finishInvitation;
+  invitation = () => new Promise(resolve => { finishInvitation = resolve; });
+  const staleInvitation = owner.lookup(command.email);
+  knowledge = async () => Response.json({ error: { code: 'identity_changed' } }, { status: 409 });
+  await owner.loadKnowledge();
+  assert.equal(owner.getSnapshot().access, 'error');
+  assert.equal(owner.getSnapshot().overview, null);
+  assert.deepEqual(owner.getSnapshot().invitations, { items: [], nextCursor: null });
+  assert.deepEqual(owner.getSnapshot().audit, { items: [], nextCursor: null });
+  assert.equal(owner.getSnapshot().usage, null);
+  assert.equal(owner.getSnapshot().knowledge.page, null);
+  assert.equal(owner.getSnapshot().pending.opId, command.opId, 'Identity failure preserves the original unresolved operation');
+  finishInvitation(Response.json({ invitation: { email: command.email, expiresAt: at, state: 'issued' } }));
+  await staleInvitation;
+  assert.equal(owner.getSnapshot().lookup, undefined, 'An in-flight management read cannot repopulate invalidated data');
+  assert.equal(owner.getSnapshot().busy, false);
+  await owner.checkAccess();
+  knowledge = () => new Promise(resolve => { finishRead = resolve; });
+  const staleRead = owner.setKnowledgeOpen(true);
+  owner.setUser('admin-b');
+  assert.equal(owner.getSnapshot().knowledge.open, false);
+  assert.equal(owner.getSnapshot().knowledge.page, null);
+  assert.equal(owner.getSnapshot().knowledge.status, 'unread');
+  finishRead(Response.json(firstPage)); await staleRead;
+  assert.equal(owner.getSnapshot().knowledge.page, null, 'A late result cannot restore the previous administrator rows');
+  owner.dispose();
+});

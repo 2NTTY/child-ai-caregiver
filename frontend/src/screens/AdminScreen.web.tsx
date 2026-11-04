@@ -26,6 +26,11 @@ const inviteForm = z.object({ email: z.email().max(320), days: z.number().int().
 const when = (value: string) => new Date(value).toLocaleString('zh-HK', { timeZone: 'Asia/Hong_Kong', hour12: false });
 const stateLabel = (item: AdminInvitation) => item.state === 'consumed' ? '已註冊' : item.state === 'revoked' ? '已撤銷'
   : Date.parse(item.expiresAt) <= Date.now() ? '已過期' : '待使用';
+const knowledgeRegistration: Record<string, string> = { not_registered: '未註冊監測', enabled: '監測已啟用', disabled: '監測已停用', definition_changed: '來源定義已變更，註冊待核對' };
+const knowledgeResult = (status: string | null) => status === null ? '未查到結果'
+  : ({ changed: '發現變更', unchanged: '未發現變更', failed: '檢查失敗', unavailable: '來源不可用', superseded: '已由其他檢查取代' } as Record<string, string>)[status] ?? status;
+const knowledgeCheckState: Record<string, string> = { running: '檢查中', recorded: '結果已記錄', unknown: '結果未明' };
+const knowledgeTime = (value: string | null) => value === null ? '未查到' : when(value);
 function AuditItem({ item }: { item: AdminReceipt }) {
   return <View style={styles.row}>
     <Text>{when(item.at)} · {item.command.kind === 'policy' ? '修改平台設定' : item.command.kind === 'invite' ? '發出／續期邀請' : '撤銷未使用邀請'}</Text>
@@ -70,7 +75,7 @@ export default function AdminScreen() {
     finally { if (identity === currentUser.current) setReauthBusy(false); }
   };
   if (!userId && auth === 'signedOut') return <Redirect href="/login" />;
-  return <PageFrame title="網站管理" description="邀請資格、平台 AI 設定及實際用量。此頁不讀取家長私人資料。"
+  return <PageFrame title="網站管理" description="邀請資格、平台 AI 設定、實際用量及知識來源監測。此頁不讀取家長私人資料。"
     headerActions={<AppButton label="返回育有方" variant="quiet" onPress={() => router.replace('/')} />}>
     {!visible ? <View style={styles.card}><Text>{state.access === 'denied' ? '此帳號沒有網站管理權限。' : '正在核對網站管理身份。'}</Text>
       {state.notice ? <Text>{state.notice}</Text> : null}
@@ -130,6 +135,40 @@ export default function AdminScreen() {
           <Text style={styles.note}>一般設定於新 run 生效。暫停平台 AI 會在下次模型呼叫前生效；不撤回已保存結果，不取消一般通知。工具次數及期限同樣套用本人 key；本人生成／向量限額及背景同意保持獨立。Agent 每步會讀取剩餘額度，自行按需要減少步驟及預留收尾；上限不是必須用盡的目標。</Text>
           <AppButton label="確認並保存全站設定" disabled={locked || !policyForm.formState.isDirty} onPress={policyForm.handleSubmit(values => submit({ kind: 'policy', opId: crypto.randomUUID(), expectedVersion: state.overview!.policy.version, values }))} />
         </> : <Text>尚未取得設定；不能保存。</Text>}
+      </View>
+      <View style={styles.card}><SectionHeader title="知識來源" subtitle="唯讀查看公開來源監測及已記錄的檢查結果。" />
+        <Text style={styles.note}>來源註冊、檢查與知識發布是不同步驟。啟用監測或發現變更不代表已審核或發布；本區不提供發布狀態。</Text>
+        <AppButton label={state.knowledge.open ? '收起知識來源' : '查看知識來源'} variant="quiet" expanded={state.knowledge.open}
+          disabled={!online && !state.knowledge.open}
+          onPress={() => { void admin.setKnowledgeOpen(!state.knowledge.open); }} />
+        {state.knowledge.open ? <>
+          <AppButton label={state.knowledge.status === 'error' && !state.knowledge.page ? '重試讀取知識來源' : '重新讀取來源及首批檢查'} variant="secondary"
+            disabled={!online || state.knowledge.status === 'loading'} onPress={() => { void admin.loadKnowledge(); }} />
+          {state.knowledge.status === 'loading' ? <Text accessibilityLiveRegion="polite">正在讀取知識來源及檢查紀錄…</Text> : null}
+          {state.knowledge.notice ? <Text accessibilityRole="alert" style={styles.notice}>{state.knowledge.notice}{state.knowledge.page ? ' 已取得的內容保留，可重新讀取或重試載入更多。' : ''}</Text> : null}
+          {state.knowledge.page ? <>
+            <Text accessibilityRole="header">來源監測</Text>
+            {!state.knowledge.page.watches.length ? <Text>未查到可列出的來源定義，暫時未能確認監測狀態。</Text> : null}
+            {state.knowledge.page.watches.map(watch => <View key={watch.id} style={styles.row}>
+              <Text>{watch.publisher} · {knowledgeRegistration[watch.registration]}</Text>
+              <Text selectable style={styles.note}>來源：{watch.id} · {({ page: '網頁', rss: 'RSS 訂閱', pdf: 'PDF 文件' } as Record<string, string>)[watch.kind] ?? watch.kind}</Text>
+              <Text selectable style={styles.note}>{watch.url}</Text>
+              <Text style={styles.note}>最近嘗試：{knowledgeTime(watch.lastAttemptAt)}；最近成功檢查：{knowledgeTime(watch.lastSuccessfulCheckAt)}</Text>
+              <Text style={styles.note}>最近結果：{knowledgeResult(watch.lastStatus)}</Text>
+            </View>)}
+            <Text accessibilityRole="header">檢查紀錄</Text>
+            <Text style={styles.note}>目前已取得 {state.knowledge.page.checks.length} 項；沒有紀錄不代表已完成檢查。</Text>
+            {!state.knowledge.page.checks.length ? <Text>未查到檢查紀錄。</Text> : null}
+            {state.knowledge.page.checks.map(check => <View key={check.jobId} style={styles.row}>
+              <Text>{when(check.checkedAt)} · {knowledgeCheckState[check.state] ?? check.state} · {knowledgeResult(check.status)}</Text>
+              <Text selectable style={styles.note}>來源：{check.watchId} · 檢查：{check.jobId}</Text>
+              <Text style={styles.note}>嘗試 {check.attempts} 次；項目 {check.itemCount} 項，變更 {check.changedCount} 項。</Text>
+              {check.failureCode !== null || check.httpStatus !== null ? <Text style={styles.note}>失敗代碼：{check.failureCode ?? '未提供'}；HTTP：{check.httpStatus ?? '未提供'}</Text> : null}
+            </View>)}
+            {state.knowledge.page.nextCursor ? <AppButton label={state.knowledge.status === 'error' ? '重試載入更多檢查紀錄' : '載入更多檢查紀錄'} variant="secondary"
+              disabled={!online || state.knowledge.status === 'loading'} onPress={() => { void admin.loadKnowledge(true); }} /> : null}
+          </> : null}
+        </> : null}
       </View>
       <View style={styles.card}><SectionHeader title="實際用量與管理紀錄" />
         <AppTextField label="用量日期（UTC，YYYY-MM-DD）" value={day} onChangeText={setDay} disabled={state.busy} />
