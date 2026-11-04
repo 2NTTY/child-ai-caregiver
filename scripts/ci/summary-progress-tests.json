@@ -5,7 +5,7 @@
   },
   {
     "path": "tests/agent-runtime.test.ts",
-    "cases": 19
+    "cases": 20
   },
   {
     "path": "tests/agent-model-gateway.test.ts",
@@ -13,7 +13,7 @@
   },
   {
     "path": "tests/firestore-summary-batches.test.ts",
-    "cases": 1
+    "cases": 3
   },
   {
     "path": "tests/firestore-memory-lifecycle.test.ts",
@@ -98,5 +98,9 @@
   {
     "path": "tests/agent-prompt-wiring.test.ts",
     "cases": 4
+  },
+  {
+    "path": "tests/summary-projection-delivery.test.ts",
+    "cases": 11
   }
 ]

@@ -1,0 +1,166 @@
+{
+  "recordedAt": "2026-11-04T08:06:26.550188+00:00",
+  "repository": "2NTTY/child-ai-caregiver",
+  "pullRequest": 411,
+  "originalHead": "3d141534384a38e677aaeb0d4e4d3844fb6cff51",
+  "remoteHeadBeforeFix": "d613ce79c4847f46c35ac9f4a0c1b31ac84c67f8",
+  "integratedMaster": "1dd85057bd270c113356a3bded29b9eb8e4613e1",
+  "verifiedSourceTree": "c5004c74a95eae63b4214231e1589a41ddb273db",
+  "node": "v24.22.1",
+  "typecheck": {
+    "command": "node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit --pretty false",
+    "exitCode": 0,
+    "configChanged": false
+  },
+  "ciContract": {
+    "cases": 6,
+    "passed": 6
+  },
+  "completeSuites": [
+    {
+      "path": "tests/summary-progress.test.ts",
+      "cases": 18
+    },
+    {
+      "path": "tests/agent-runtime.test.ts",
+      "cases": 20
+    },
+    {
+      "path": "tests/agent-model-gateway.test.ts",
+      "cases": 16
+    },
+    {
+      "path": "tests/firestore-summary-batches.test.ts",
+      "cases": 3
+    },
+    {
+      "path": "tests/firestore-memory-lifecycle.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/memory.test.ts",
+      "cases": 29
+    },
+    {
+      "path": "tests/private-summary-contract.test.ts",
+      "cases": 10
+    },
+    {
+      "path": "tests/summary-prompt-contract.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/agent-durable-ai-usage.test.ts",
+      "cases": 10
+    },
+    {
+      "path": "tests/agent-durable-budget.test.ts",
+      "cases": 4
+    },
+    {
+      "path": "tests/agent-native-session.test.ts",
+      "cases": 27
+    },
+    {
+      "path": "tests/agent-owned-session-cleanup.test.ts",
+      "cases": 11
+    },
+    {
+      "path": "tests/avatar-runtime.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/handover-attachment-pipeline.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/firestore-voice.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/firestore-restore-codec.test.ts",
+      "cases": 8
+    },
+    {
+      "path": "tests/firestore-restore.test.ts",
+      "cases": 6
+    },
+    {
+      "path": "tests/firestore-restore-voice-relations.test.ts",
+      "cases": 1
+    },
+    {
+      "path": "tests/agent-context-integrity.test.ts",
+      "cases": 4
+    },
+    {
+      "path": "tests/initial-conversation-summary.test.ts",
+      "cases": 6
+    },
+    {
+      "path": "tests/memory-summary-projection.test.ts",
+      "cases": 3
+    },
+    {
+      "path": "tests/summary-projection-delivery.test.ts",
+      "cases": 11
+    }
+  ],
+  "totals": {
+    "files": 22,
+    "cases": 192,
+    "passed": 192,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "redEvidence": [
+    {
+      "case": "Firestore projection to gateway: escaped older batch hides fitting latest batch",
+      "result": "failed before root fix; passed after"
+    },
+    {
+      "case": "Offset dependency expiry after quota reservation",
+      "result": "failed before root fix; passed after"
+    },
+    {
+      "case": "Final provider generation config over input limit",
+      "result": "10 passed / 1 failed before admission fix; 11 / 11 after"
+    },
+    {
+      "case": "Runtime selector versus gateway final request boundary",
+      "result": "19 passed / 1 failed before final config and native label alignment; 20 / 20 after"
+    }
+  ],
+  "preservedIntermediateFailures": [
+    "Synthetic cached-expiry fixture initially wrote before all transaction reads; corrected fixture ordering without changing the production transaction contract.",
+    "Strict typecheck initially found optional test text not narrowed; explicit string assertion fixed the two test-only diagnostics.",
+    "Aligning generation config alone exposed ADK 2.1.0 adding the agent label after beforeModelCallback; preconfiguring the identical label fixed the 42-character difference without a magic reserve."
+  ],
+  "scope": [
+    "Whole newest contiguous summary batches selected against fully escaped provider context and final native contents/config with the existing tool reserve.",
+    "Expired or invalid expiry metadata fails closed, including old persisted dependency timestamps and final authorization awaits.",
+    "Omission markers, authorized re-read, source deletion, revocation, legacy untrusted prose and original native parts are covered.",
+    "Existing master #410 changes and exact per-suite gates retained."
+  ],
+  "limits": [
+    "Scripted provider and synthetic data only; no real model, cloud data, device, website or deployment validation.",
+    "The local host cannot create the required network namespace. Individual scoped checks passed, not the full isolated helper.",
+    "Exact remote-head isolated GitHub Actions must be checked separately before merge.",
+    "No claim that all REQ-005 work is complete."
+  ],
+  "sha256": {
+    "server/agent-model-gateway.ts": "082b01075446563d21a0446e967d021014f6fcbf6bd1b16420584edbc5de1e1f",
+    "server/agent-runtime.ts": "23147e5648a9aeeccdf5e4cda2be3d73d80616baaad99805069f2b238dab7990",
+    "server/firestore-memory.ts": "109df33c64c8322055c3f2e14c9131c7cb014b1a4f2100f50d6868dcdf3ea2fd",
+    "server/memory-summary.ts": "77c4b73614825232c023e85f1bb1dafc0576804e1c6aabffd7b36da782002c89",
+    "server/summary-projection.ts": "bb05b783bee90441eadd6658e3c96f5596622831387836501038d77405af1009",
+    "tests/summary-projection-delivery.test.ts": "84b69f43c91b6f47010673c72dff5f12cd18ce7aef8517f3957ea7a198a58869",
+    "tests/agent-runtime.test.ts": "a203f2dace4021fd51840f4dcd4a0200d393dce3cd14d6db513d93f11da235ee",
+    "tests/initial-conversation-summary.test.ts": "852d5533983d2c78dfadef53a2d48e82e41c3f15982a41208dde59c8c7171efc",
+    "tests/firestore-summary-batches.test.ts": "073d1f622d9b180d8e6e1a38829b0d26f27b82fa2d68cdd5a4c50710df391f49",
+    "tests/ci/summary-progress-contract.test.mjs": "97e0ee97d377d257a9aa11e272ca898002fdd1b5d764aef63a223745a2ac1329",
+    "scripts/ci/summary-progress-tests.json": "416c39b35dc0b8a663e96c0ae064a52b2d1c540b84542eb56a9bb9104b0da9cf"
+  }
+}

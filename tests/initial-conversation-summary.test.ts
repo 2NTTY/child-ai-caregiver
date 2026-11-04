@@ -4,7 +4,7 @@ import { FinishReason } from "@google/genai";
 import type { LlmRequest } from "@google/adk";
 import { z } from "zod";
 import { AgentBudget } from "../server/agent-budget.ts";
-import { AgentGatewayModel } from "../server/agent-model-gateway.ts";
+import { AgentGatewayModel, createVertexAgentPayloadBuilder } from "../server/agent-model-gateway.ts";
 import { createAgentRuntime } from "../server/agent-runtime.ts";
 import type { AgentRunInput } from "../server/agent-runtime.ts";
 import type { InitialConversationSummary } from "../server/memory-summary.ts";
@@ -81,7 +81,8 @@ test("complete escaped projection and complete request are bounded without trunc
     const initial = summary(variant === "payload" ? "\u0001".repeat(1000) : "Synthetic complete summary");
     if (variant === "invalid_time") initial.validUntil = "unknown";
     if (variant === "request") {
-      const overhead = JSON.stringify({ contents: original.contents, config: original.config }).length - original.contents[0].parts![0].text!.length;
+      const payload = createVertexAgentPayloadBuilder(config)(original);
+      const overhead = JSON.stringify({ contents: payload.contents, config: payload.config }).length - original.contents[0].parts![0].text!.length;
       original.contents[0].parts![0].text = "x".repeat(budget.limits.inputCharacters - overhead);
     }
     const before = structuredClone(original);

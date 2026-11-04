@@ -22,6 +22,9 @@ import { importConfirmationActor, makeImportProvenance } from './handover-proven
 import type { HandoverImportRow } from './handover-import.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
 import { selectSummaryBatchMessages } from './summary-window-helper.ts';
+import { historicalSummaryText, summaryExpiry } from './summary-projection.ts';
+
+export const SUMMARY_PROJECTION_MAX_CHARS = 3000;
 
 const uuid = z.uuid(), version = z.number().int().positive().max(2147483646), time = z.iso.datetime({ offset: true });
 const user = z.string().min(1).max(256), visibility = z.enum(['private', 'family']), FAR_FUTURE = '9999-12-31T23:59:59.999Z';
@@ -90,7 +93,8 @@ export interface FirestoreMemoryStore extends MemoryStore {
   prepareImportedTopic(binding: Binding, operationId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     current?: { id: string; expectedVersion: number }): Promise<Prepared<MemoryTopic>>;
 }
-export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { chat: FirestoreChatStore; care: FirestoreCareStore }): FirestoreMemoryStore {
+export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { chat: FirestoreChatStore; care: FirestoreCareStore; maxSummaryProjectionCharacters?: number }): FirestoreMemoryStore {
+  const maxSummaryProjectionCharacters = options.maxSummaryProjectionCharacters ?? SUMMARY_PROJECTION_MAX_CHARS;
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), sharing = createFirestoreSharingStore(options);
   const requireMemory = (binding: Binding) => { if (binding.sharedAccess && binding.sharedAccess.module !== 'memory') domainReject('shared_module_scope', 403); };
   const singular = (kind: Kind) => kind === 'facts' ? 'fact' : 'topic';
@@ -327,9 +331,8 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     if (!saved.batch || saved.batch.authorizationVersion !== binding.authorizationVersion) return false;
     // Bounded dependency discovery must not silently treat a partial page as a complete invalidation graph.
     if (!saved.batch.sourceCoverageComplete && saved.basis !== (await summaryBasis(binding)).basis) return false;
-    if (saved.validUntil && Date.parse(saved.validUntil) <= Date.now()) return false;
+    if (!(Date.now() < summaryExpiry([saved.validUntil, ...saved.batch.dependencies.map(item => item.validUntil)]))) return false;
     for (const dependency of saved.batch.dependencies) {
-      if (dependency.validUntil && Date.parse(dependency.validUntil) <= Date.now()) return false;
       const [collection, kind] = dependency.kind === 'profile' ? ['child_profiles', 'child-profile']
         : dependency.kind === 'fact' ? ['memory_facts', 'memory-fact'] : dependency.kind === 'topic'
           ? ['memory_topics', 'memory-topic'] : ['care_records', 'care-record'];
@@ -462,7 +465,9 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     const lastMessageSortKey = repair?.saved.batch!.lastMessageSortKey ?? expected.rows.docs[input.coveredMessageIds.length - 1].get('sortKey');
     const lastSortKey = repair ? head.saved!.lastSortKey : lastMessageSortKey;
     const sourceState = repair ?? await summaryDependencies(binding), dependencies = sourceState.dependencies;
-    const saved: SavedSummary = { summary: value, basis: input.basis, validUntil: dependencies.flatMap(item => item.validUntil ? [item.validUntil] : []).sort()[0] ?? null, lastSortKey,
+    const expiry = summaryExpiry(dependencies.map(item => item.validUntil));
+    if (Number.isNaN(expiry)) domainReject('summary_validity_unknown');
+    const saved: SavedSummary = { summary: value, basis: input.basis, validUntil: expiry === Infinity ? null : new Date(expiry).toISOString(), lastSortKey,
       batch: { dependencies, sourceCoverageComplete: sourceState.sourceCoverageComplete, authorizationVersion: binding.authorizationVersion, lastMessageSortKey, replaces: input.repairOf ?? null } };
     const change = await binding.prepareChange(operationId, 'memory', false), id = summaryId(binding);
     const headEnvelope = { ...data.tags(binding.scope), ...data.seal('conversation-summary-head', id, binding.scope, savedSummarySchema, saved, value.version) };
@@ -705,19 +710,31 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
         return { summary: { id, version, text, createdAt, lastCoveredMessageId }, basis: result.current.basis, validUntil: result.current.validUntil };
       }
       const recent = await recentBatches(binding), valid = recent.batches.filter(batch => batch.valid).reverse();
+      if (!valid.length) return null;
+      const head = valid.at(-1)!.saved;
       const selected: SavedSummary[] = [];
-      // Whole batches only; older history remains available through authorized search, not a growing prompt.
+      // Whole batches only; contiguous suffix from the head backwards.
+      // Older history remains available through authorized search, not a growing prompt.
       for (const item of [...valid].reverse()) {
-        if (JSON.stringify([...selected, item.saved].map(value => ({ id: value.summary.id, sourceMessageIds: value.summary.coveredMessageIds, text: value.summary.text }))).length > 3000) continue;
+        const candidate = [item.saved, ...selected];
+        const candidateLength = JSON.stringify(candidate.map(value => ({ id: value.summary.id, sourceMessageIds: value.summary.coveredMessageIds, text: value.summary.text }))).length;
+        if (candidateLength > maxSummaryProjectionCharacters) {
+          // Contiguous window reached; cannot include this or older batches without creating a gap.
+          break;
+        }
         selected.unshift(item.saved);
       }
-      const latest = selected.at(-1); if (!latest) return null;
+      const latest = selected.at(-1) ?? head;
       const { id, version, createdAt, lastCoveredMessageId } = latest.summary;
-      const text = JSON.stringify({ mode: 'historical_batches_not_current_facts', batches: selected.map(value => ({ id: value.summary.id,
-        sourceMessageIds: value.summary.coveredMessageIds, text: value.summary.text })), complete: false,
-        omittedOrInvalidatedBatches: recent.batches.length - selected.length, olderHistoryAvailable: true });
-      return { summary: { id, version, text, createdAt, lastCoveredMessageId }, basis: result.current.basis,
-        validUntil: selected.flatMap(value => value.validUntil ? [value.validUntil] : []).sort()[0] ?? null };
+      const batchProjection = { batches: selected.map(value => {
+        // Recompute from dependencies too: old stored heads may have a lexically sorted expiry.
+        const expiry = summaryExpiry([value.validUntil, ...value.batch!.dependencies.map(item => item.validUntil)]);
+        return { id: value.summary.id, sourceMessageIds: value.summary.coveredMessageIds, text: value.summary.text,
+          validUntil: expiry === Infinity ? null : new Date(expiry).toISOString() };
+      }), omittedOrInvalidatedBatches: recent.batches.length - selected.length };
+      const expiry = summaryExpiry(batchProjection.batches.map(batch => batch.validUntil));
+      return { summary: { id, version, text: historicalSummaryText(batchProjection), createdAt, lastCoveredMessageId }, basis: result.current.basis,
+        validUntil: expiry === Infinity ? null : new Date(expiry).toISOString(), batchProjection };
     }),
     prepareSummary: (u, c) => authority.runTransaction(u, c, async binding => (await summaryInput(binding)).input),
     saveSummary: (u, c, raw) => authority.runTransaction(u, c, async binding => {

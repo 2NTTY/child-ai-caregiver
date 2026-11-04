@@ -430,7 +430,10 @@ export function createAgentRuntime(options: {
           const runtimeTools = capabilitySelection ? [new AgentCapabilityToolset(tools, () => {
             budget.check(); return capabilitySelection.visibleToolNames();
           })] : tools;
-          const agentConfig: ConstructorParameters<typeof LlmAgent>[0] = { name: "yuban_agent", model,
+          const agentName = "yuban_agent";
+          const agentConfig: ConstructorParameters<typeof LlmAgent>[0] = { name: agentName, model,
+            // ADK otherwise adds this label after beforeModelCallback, outside initial-input sizing.
+            generateContentConfig: { labels: { adk_agent_name: agentName } },
             // Providers return literal instructions without ADK session-state template interpolation.
             instruction: async () => {
               currentInstruction = await renderInstruction();
@@ -466,7 +469,7 @@ export function createAgentRuntime(options: {
                     position === index ? { ...content, parts } : content);
                   const fits = (candidate: AgentInitialTextInput) => agentRequestCharacters({
                     contents: contents(initialTextParts(candidate)),
-                    config: durable ? agentGenerationConfig(selected.config, request.config) : request.config,
+                    config: agentGenerationConfig(selected.config, request.config),
                   }) <= budget.limits.inputCharacters;
                   if (!fittedParts) {
                     const fitted = input.fitInitialInput(fits);

@@ -4,6 +4,7 @@ import { ApiError, FinishReason } from "@google/genai";
 import { agentStopMessage, modelProviderStopReason } from "../src/shared/agent-stop-message.ts";
 import type { LlmRequest, LlmResponse } from "@google/adk";
 import { z } from "zod";
+import { AgentGatewayModel, createVertexAgentPayloadBuilder } from "../server/agent-model-gateway.ts";
 import { createAgentRuntime } from "../server/agent-runtime.ts";
 import type { AgentRunInput, AgentTool } from "../server/agent-runtime.ts";
 import { AGENT_LIMITS } from "../server/agent-budget.ts";
@@ -338,4 +339,49 @@ test('summary input fitting cannot be enabled for an interactive run', async () 
   assert.equal(selections, 0);
   assert.equal(s.requests.length, 0);
   assert.equal(s.reservations(), 0);
+});
+
+
+test('summary input selection and gateway admission share the exact final native request boundary', async t => {
+  const entries: LlmRequest[] = [];
+  const original = AgentGatewayModel.prototype.generateContentAsync;
+  t.mock.method(AgentGatewayModel.prototype, 'generateContentAsync', function(this: AgentGatewayModel, request: LlmRequest) {
+    entries.push(structuredClone({ ...request, toolsDict: {} }));
+    return original.call(this, request);
+  });
+  const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project', AI_AGENT_MAX_INPUT_CHARACTERS: '32000' });
+  const build = createVertexAgentPayloadBuilder(config);
+  for (const overflow of [false, true]) {
+    const s = setup(async () => answer('Synthetic boundary response'));
+    s.input.recipeId = 'memory-refresh'; s.input.trigger = { kind: 'worker', reference: 'synthetic-boundary' };
+    s.input.availableInputs = ['run', 'scope', 'conversation', 'context', 'evidence', 'capabilities', 'outputContract'];
+    const required = { coverage: { messageIds: ['synthetic-source'] }, currentSources: [{ text: 'Mandatory quoted context' }] };
+    s.input.context = required;
+    let selections = 0, selected = '';
+    s.input.fitInitialInput = fits => {
+      selections++;
+      const candidate = (size: number) => ({ text: 'x'.repeat(size), context: required });
+      let low = 1, high = 32000;
+      assert.equal(fits(candidate(low)), true); assert.equal(fits(candidate(high)), false);
+      while (low + 1 < high) { const middle = Math.floor((low + high) / 2); if (fits(candidate(middle))) low = middle; else high = middle; }
+      assert.equal(fits(candidate(low + 1)), false);
+      selected = candidate(low + (overflow ? 1 : 0)).text;
+      return { text: selected, context: required };
+    };
+    const result = await s.runtime.run(s.input);
+    assert.equal(selections, 1);
+    assert.deepEqual(s.input.context, required);
+    if (overflow) {
+      assert.equal(result.status, 'stopped'); assert.equal(result.stopReason, 'input_limit');
+      assert.equal(s.requests.length, 0); assert.equal(s.reservations(), 0);
+    } else {
+      assert.equal(result.status, 'completed', JSON.stringify({ result, selectedLength: selected.length, entries: entries.map(request => { const payload = build(request); return JSON.stringify({ contents: payload.contents, config: payload.config }).length; }) }));
+      assert.equal(s.requests.length, 1); assert.equal(s.reservations(), 1);
+      const request = s.requests[0], payload = build(request);
+      assert.equal(JSON.stringify({ contents: payload.contents, config: payload.config }).length, 32000);
+      assert.equal(request.contents[0].parts![0].text, selected);
+      assert.ok(request.contents[0].parts![1].text!.includes(JSON.stringify(required)));
+      assert.ok(request.config?.tools?.some(tool => 'functionDeclarations' in tool && tool.functionDeclarations?.some(value => value.name === 'read_context')));
+    }
+  }
 });

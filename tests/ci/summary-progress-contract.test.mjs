@@ -78,5 +78,6 @@ test('committed manifest retains every original suite and the common boundary re
     'tests/agent-context-integrity.test.ts', 'tests/initial-conversation-summary.test.ts', 'tests/memory-summary-projection.test.ts',
     'tests/agent-context-window.test.ts', 'tests/agent-context-topology.test.ts',
     'tests/agent-prompt.test.ts', 'tests/agent-prompt-wiring.test.ts',
+    'tests/summary-projection-delivery.test.ts',
   ]) assert.ok(paths.has(path), `Missing required complete suite: ${path}`);
 });

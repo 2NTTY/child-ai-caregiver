@@ -4528,3 +4528,16 @@ Recorded At：2026-11-04 04:46 UTC。依使用者「review pr 然後修掉問題
 ## 2026-11-04｜記憶按來源期間交接
 
 文檔包按內容版本選取記憶，摘要依原訊息及修正資料的日期。先匯入舊包再補同版日期可沿同一筆摘要接續。以 ZIP、摘要儲存及匯入 worker 核對範圍與衝突，見[本機驗證](artifacts/verification/P4_HANDOVER_MEMORY_PERIOD_20261104.json)。未部署；文件與備診快照接續處理。
+
+<a id="log-20261104-req005-projection-root-fix"></a>
+### 2026-11-04 — REQ-005 摘要投影與到期根因補修
+
+Recorded At：2026-11-04 08:05 UTC。依使用者要求深入覆核、修正真正問題後再驗，從 #411 `d613ce79c4847f46c35ac9f4a0c1b31ac84c67f8` 整合 master `1dd85057bd270c113356a3bded29b9eb8e4613e1`，保留已合併 #410 的動態工具餘額與逐檔 CI 門檻。合成 Firestore→Gateway 重現兩項原已存在、但本 PR 尚未補齊的缺口：舊批次的引號經多層 JSON 包裝後超限，連可容納的最新批次亦被整體丟棄；含 UTC offset 的來源到期時間按字串排序，令較早到期內容越過 dispatch。
+
+Server-only 投影保留結構化批次，由 Gateway 按完整包裝及實際 native generation config／總 request 餘額選取連續最新後綴；不調高上限、不截斷批次或任意原始訊息、不把舊衍生 JSON 當可信控制欄位。省略數、head watermark 及不完整標記保留，獲授權 read_context 可按現有餘額重讀。來源到期按 parsed instant 取最早值，舊儲存批次亦由 dependencies 重算；非法值 fail closed，最後核權等待跨過到期時不送出歷史內容。
+
+獨立覆核另找出非 durable base request 未計最終 generation config。已統一 admission／選窗量測，超限時在 quota／provider 前停止，不靜默刪原內容。真 Runner 邊界測試再捕捉 ADK 2.1.0 在 beforeModelCallback 後才補 agent label 的 42 字元差額；改由正式 generateContentConfig 提早提供同一既有 label，而非固定減去 42。最終 native request 恰 32,000 字元可執行，32,001 字元明確拒絕；原 native parts、必需 context 及既有多輪簽章保持不變。
+
+原 `tsconfig.server.json` 完整 noEmit 零診斷；22 個完整測試檔逐檔精確 192／192、CI 契約 6／6 通過，失敗／取消／跳過／TODO 全為零。新 delivery 全鏈 11 項、Runtime 20 項及原 durable、撤權、來源刪除、session／restore 邊界均在本批範圍。先紅後綠證據、曾失敗的 fixture transaction 順序及測試型別窄化修正均保留，詳見[驗證證據](artifacts/verification/REQ005_PROJECTION_ROOT_FIX_20261104.json)。對 master 的 diff whitespace 檢查通過；未改測試根、排除、工具鏈或網絡隔離 guard。
+
+本機仍無建立指定 network namespace 的權限，沒有把分開執行的合成檢查稱為完整隔離 helper 通過；精確遠端 head 的 GitHub Actions 仍須另查。未調用真模型、正式家庭資料、設備、網站或部署，亦不把本補修當作 REQ-005 整體完成。其他尚未合併 PR 的新修訂須在後續整合另核。
