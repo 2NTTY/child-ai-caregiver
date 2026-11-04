@@ -1,0 +1,54 @@
+{
+  "applicationCommit": "6e47267c33b1d0900edf983a2da44ecc0f8cf47b",
+  "previousRelease": "292be609de60c161eb28ebc6a7222c6d3fe903f5",
+  "site": "https://ex-machina.eu.org",
+  "webSwitchStartedAt": "2026-11-05T00:26:12+08:00",
+  "apiWorkerImage": "sha256:ad1c2595d1fc3c3de69b4734a3a20368e28669532487d1142eb43847a586f466",
+  "webImage": "sha256:f9fc03cb125f4a9b9ac97c52dd6efe9b41577f70cedc8bbd1098c36326a83c61",
+  "publicReadback": {
+    "health": 200,
+    "anonymousImportSummary": 401,
+    "settingsHtmlSha256": "6fbd2e113801ce236d4cadea3bdb74eeb73c918e91a604b1b6d3ab2b9bac2106",
+    "javascriptSha256": "ecae7e92a5731523495071c3489c99fbbd1b5b501716a1e73230cd06a3868e96"
+  },
+  "operations": {
+    "priorComposeAndImagesRetained": true,
+    "candidateApiAndWorkerChecked": true,
+    "liveContainerImagesMatchCandidates": true,
+    "activeAgentLeasesBeforeSwitch": 0,
+    "activeRemindersBeforeSwitch": 0,
+    "activeBackgroundBeforeSwitch": 0,
+    "terminalBackgroundUnknownPreserved": 1,
+    "diskKiBAvailableAfterSwitch": 9088328,
+    "indexChanges": 0,
+    "modelCalls": 0,
+    "notifications": 0
+  },
+  "originalRestore": {
+    "modules": ["care", "profile", "tasks"],
+    "evidence": ["tests/handover-original-backup.test.ts", "tests/handover-import-owner.test.ts"],
+    "productionPersonalDataExercised": false
+  },
+  "packageSigning": {
+    "activatedAt": "2026-11-05T00:51:34+08:00",
+    "issuer": "https://ex-machina.eu.org",
+    "algorithm": "Ed25519",
+    "publicKeySpkiDerBase64": "MCowBQYDK2VwAyEAL8nyZG+Uo5euX8Vhys2j+cBtZmGxxmgErC8SABq3VwA=",
+    "publicKeyIdSha256": "3be2009bad678a71b91f1f7d33608c4ff963480714ab48bd495a4ab24df17c45",
+    "permanentSiteComposeSha256": "1cb20aabb741aa770eca40d634fa00b85bf6cf08d453d99a7a565f4807d9e032",
+    "liveReadback": {"api": "healthy, public trust only", "worker": "healthy, public trust and private signer", "signerFileMode": "0400", "siteHealth": 200, "anonymousPackageCapabilities": 401},
+    "probe": "The production worker candidate used the new key with the product archive writer; the public trust list verified its disposable synthetic ZIP as trusted. No user package was created.",
+    "recovery": "Retain the verified public trust list across rebuilds and restores. A lost signer needs a new key and explicit rotation. Private key recovery was not tested."
+  },
+  "android": {
+    "buildId": "e2c42bee-fcc6-4c99-8aa8-4d30616c8591",
+    "project": "@2ntty/yuyoufang",
+    "profile": "preview",
+    "versionCode": 5,
+    "previousVersionCode": 4,
+    "runtime": "d10c49a15a3f790b4d4105dfc8a5ae2c1ca866c9",
+    "submissions": 1,
+    "accountPlan": "Free",
+    "statusAtSubmission": "NEW"
+  }
+}
