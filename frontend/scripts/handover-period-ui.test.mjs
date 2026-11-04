@@ -46,6 +46,70 @@ const nodes = tree => !tree || typeof tree !== 'object' ? [] : Array.isArray(tre
 const text = tree => tree == null || tree === false ? '' : Array.isArray(tree) ? tree.map(text).join(' ') : typeof tree === 'object' ? text(tree.props?.children) : String(tree);
 const control = (view, label) => nodes(view.tree).find(node => node.props?.label === label);
 
+test('original private instruction form gates memory capability and submits only existing instruction identities with original-operation recovery', async () => {
+  const childId = '00000000-0000-4000-8000-000000000091', uploadId = '00000000-0000-4000-8000-000000000092';
+  const instructionId = '00000000-0000-4000-8000-000000000093', missingId = '00000000-0000-4000-8000-000000000094';
+  const at = '2026-11-05T00:00:00Z', manifestSha256 = 'd'.repeat(64), writes = [], queries = [], headers = [];
+  const live = { id: instructionId, targetId: instructionId, resourceSection: 'instructions', backupVersion: 3, localVersion: 6,
+    state: 'local_newer', changedFields: ['title', 'text', 'memoryKey'] };
+  const unavailable = { id: missingId, resourceSection: 'instructions', backupVersion: 2, localVersion: null, state: 'unavailable', changedFields: [] };
+  let modules, items = [live, unavailable], batch;
+  const upload = { id: uploadId, version: 4, filename: 'instructions.zip', bytes: 3, state: 'ready', error: null,
+    createdAt: at, expiresAt: '2026-11-06T00:00:00Z', preview: { integrity: 'trusted', manifestSha256,
+      children: [{ id: childId, displayName: 'Original child' }], coverage: [{ section: 'instructions', childId, items: 2 }],
+      header: { format: 'yuyoufang-data', version: 1, packageId: uploadId, packageVersion: 1, createdAt: at, purpose: 'backup',
+        source: { serverId: 'source.test', accountId: 'owner' }, selection: { childIds: [childId], modules: ['care', 'memory'], period: null } } } };
+  const api = createHandoverApi('https://example.test', async (url, init) => {
+    if (url.endsWith('/capabilities')) { headers.push(new Headers(init.headers)); return Response.json({ classEnrolment: false, originalModules: modules }); }
+    if (url.includes('/package-uploads/')) return Response.json(upload);
+    if (url.endsWith('/compare-original')) { queries.push(JSON.parse(init.body)); return Response.json({ uploadId, manifestSha256, childId, module: 'memory', items, nextCursor: null }); }
+    if (init.method === 'GET') return Response.json(batch);
+    const command = JSON.parse(init.body); writes.push(command);
+    batch = { id: command.opId, version: 1, uploadId, packageId: uploadId, packageVersion: 1, manifestSha256, integrity: 'trusted',
+      targets: command.targets, state: 'queued', processedItems: 0, totalItems: 1, counts: { created: 0, updated: 0, skipped: 0, conflict: 0 },
+      error: null, createdAt: at, updatedAt: at };
+    throw Error('Synthetic lost import response');
+  });
+  const controller = new handoverImportOwner.HandoverImportOwner(api); controller.syncContext('owner', 'owner:1', true);
+  await controller.readImportCapabilities();
+  assert.equal(headers[0].get('x-handover-original-modules'), '1');
+  assert.deepEqual(headers[0].get('x-handover-original-features').split(/[\s,]+/u), ['concerns', 'private-instructions']);
+  await controller.openUpload(uploadId);
+  production = { owner: { handoverImportOwner: controller, sharedChild: { subscribe: noop, getSnapshot: () => ({ phase: 'idle' }) } },
+    userId: 'owner', identityKey: 'owner:1', online: true, recordsState: { children: [{ id: childId, displayName: 'Original child', accessRole: 'owner' }] },
+    account: { gate: 'ready', deletion: { phase: 'idle' } } };
+  const component = load('../src/components/account/HandoverImportControls.tsx').HandoverImportControls, view = render(component);
+  const again = () => render(component, view), settle = () => new Promise(resolve => setImmediate(resolve));
+  control(view, '查看上載與匯入選擇').props.onPress(); again();
+  assert.equal(control(view, '比較資料類別').props.options.some(option => option.value === 'memory'), false);
+  await controller.compareOriginal(childId, 'memory'); assert.equal(queries.length, 0, 'Old-server fallback never requests private instruction restoration');
+  modules = ['care', 'memory']; await controller.readImportCapabilities(); again();
+  assert.deepEqual(control(view, '比較資料類別').props.options.find(option => option.value === 'memory'), { value: 'memory', label: '私人交代' });
+  control(view, '比較原有資料的孩子').props.onChange(childId); control(view, '比較資料類別').props.onChange('memory'); again();
+  control(view, '比較原有資料').props.onPress(); await settle(); again();
+  assert.equal(queries[0].module, 'memory'); assert.match(text(view.tree), /私人交代/); assert.match(text(view.tree), /其他記憶.*尚未開放/);
+  assert.match(text(view.tree), /交代內容/); assert.match(text(view.tree), /交代分類/);
+  assert.equal(nodes(view.tree).filter(node => node.props?.label === '以備份覆蓋此項').length, 1);
+  assert.equal(control(view, '恢復此已刪項目'), undefined);
+  assert.equal(handoverImportOwner.originalComparisonResolution({ ...live, state: 'deleted' }), null);
+  assert.equal(handoverImportOwner.originalComparisonResolution({ ...live, targetId: missingId }), null);
+  assert.equal(handoverImportOwner.originalRestoreResourceSection('memory', { resourceSection: 'child_avatar' }), null);
+  control(view, '以備份覆蓋此項').props.onChange(true); again();
+  control(view, '提交所選原項還原（1 項）').props.onPress(); await settle();
+  assert.equal(writes.length, 1); assert.equal(writes[0].restoreOriginal, true); assert.equal(writes[0].resolutionOnly, true);
+  assert.deepEqual(writes[0].targets, [{ sourceChildId: childId, target: { childId, spaceId: null }, sections: ['memory'] }]);
+  assert.deepEqual(writes[0].resolutions, [{ sourceChildId: childId, section: 'instructions', resourceId: instructionId,
+    resolution: { mode: 'replace_current', targetId: instructionId, expectedVersion: 6 } }]);
+  assert.equal(controller.getSnapshot().pending.command.opId, writes[0].opId);
+  await controller.retryOriginal(); assert.equal(writes.length, 1, 'An unknown request must be checked before retry');
+  await controller.checkOriginal(); assert.equal(controller.getSnapshot().pending, null); assert.equal(controller.getSnapshot().items[0].id, writes[0].opId);
+  await controller.openUpload(uploadId); items = [unavailable]; await controller.compareOriginal(childId, 'memory'); again();
+  assert.match(text(view.tree), /沒有可還原的私人交代/); assert.equal(control(view, '以備份覆蓋此項'), undefined);
+  items = [{ ...live, resourceSection: 'child_avatar' }]; await controller.compareOriginal(childId, 'memory');
+  assert.ok(controller.getSnapshot().comparison.error, 'A memory response cannot expose another resource section');
+  control(view, 'Original child').props.onChange(true); again(); assert.ok(control(view, '記憶與摘要'), 'Independent-copy memory selection keeps its existing label');
+});
+
 test('original concern form negotiates support and preserves slice and original concern identities through period supplementation', async () => {
   const childId = '00000000-0000-4000-8000-000000000081', uploadId = '00000000-0000-4000-8000-000000000082';
   const concernId = '00000000-0000-4000-8000-000000000083', sliceId = '00000000-0000-4000-8000-000000000084';
@@ -75,7 +139,7 @@ test('original concern form negotiates support and preserves slice and original 
   const controller = new handoverImportOwner.HandoverImportOwner(api); controller.syncContext('owner', 'owner:1', true);
   await controller.readImportCapabilities();
   assert.equal(headers[0].get('x-handover-original-modules'), '1');
-  assert.equal(headers[0].get('x-handover-original-features'), 'concerns');
+  assert.ok(headers[0].get('x-handover-original-features').split(/[\s,]+/u).includes('concerns'));
   await controller.openUpload(uploadId);
   production = { owner: { handoverImportOwner: controller, sharedChild: { subscribe: noop, getSnapshot: () => ({ phase: 'idle' }) } },
     userId: 'owner', identityKey: 'owner:1', online: true, recordsState: { children: [{ id: childId, displayName: 'Original child', accessRole: 'owner' }] },
