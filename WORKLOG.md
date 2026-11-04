@@ -4500,3 +4500,7 @@ Recorded At：2026-11-04 04:46 UTC。依使用者「review pr 然後修掉問題
 ## 2026-11-04｜共用匯入畫面承接個人成長
 
 沿 #413 正式契約，兩端共用表單可選本人孩子的成長事項與主題；來源歷史沿原 owner 讀取。兩條合成畫面情景由失敗轉通過，最終三個 TypeScript 入口零診斷。有效範圍與未驗項見[核對紀錄](frontend/verification/P4_HANDOVER_GROWTH_UI_20261104.json)。
+
+## 2026-11-04｜文檔包簽署與來源信任配置
+
+正式 worker 使用既有 Ed25519 格式簽發資料包，API 與 worker 按金鑰及來源身份驗證；公鑰清單可同時接收輪替前後的版本。合成簽發往返、受影響的型別圖及 Compose 私鑰掛載範圍均通過；[證據](artifacts/verification/P4_HANDOVER_PACKAGE_KEYS_20261104.json)。沒有建立正式私鑰、部署或改動既有資料包。

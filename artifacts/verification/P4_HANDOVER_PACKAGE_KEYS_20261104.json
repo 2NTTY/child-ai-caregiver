@@ -1,0 +1,10 @@
+{
+  "base": "cffa25a6d118b4df5f1631f90add4993ac58ae39",
+  "checks": [
+    { "command": "node --test --test-name-pattern='configured worker signs' tests/handover-archive.test.ts", "red": "No production configuration reader", "passed": 1, "failed": 0 },
+    { "compiler": "tsconfig.server.json compilerOptions", "roots": ["server/firebase-runtime.ts", "tests/handover-archive.test.ts"], "diagnostics": 0 },
+    { "compose": "Rendered compose.firestore.yaml with compose.firestore.handover.yaml using synthetic paths; both services retain storage and trust mounts, only worker mounts the signing key" }
+  ],
+  "coverage": ["Configured Ed25519 key signs original archive format, public-only reader verifies trusted issuer", "Mismatched issuer, duplicate public-key identity and misplaced API signer configuration rejected", "Absent signing configuration preserves historical behavior"],
+  "limits": ["Temporary synthetic key pair only; no production credential was created", "No real deployment or container start"]
+}
