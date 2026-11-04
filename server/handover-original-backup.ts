@@ -3,7 +3,7 @@ import type { CareRecord, ChildProfile } from '../src/shared/care.ts';
 import type { CareTask } from '../src/shared/tasks.ts';
 import { readImportMapping } from './handover-import-records.ts';
 import { canonicalJson } from './online-routing.ts';
-import { originalBackupComparisonQuerySchema, originalBackupComparisonSchema, selfAvatarComparisonQuerySchema, selfAvatarComparisonSchema, type OriginalBackupComparison } from '../src/shared/handover-imports.ts';
+import { originalBackupComparisonQuerySchema, originalBackupComparisonSchema, originalMemorySectionSchema, selfAvatarComparisonQuerySchema, selfAvatarComparisonSchema, type OriginalBackupComparison } from '../src/shared/handover-imports.ts';
 import type { AvatarState } from '../src/shared/avatars.ts';
 import { avatarBinding } from './avatar-data.ts';
 import { avatarPublicState } from './avatar-policy.ts';
@@ -12,6 +12,8 @@ import { createFirestoreAuthority } from './firestore-authority.ts';
 import { createFirestoreCareStore, firestoreCareSchema, firestoreProfileSchema } from './firestore-care.ts';
 import { createFirestoreConcernStore, concernTransferSchema } from './firestore-concerns.ts';
 import { createFirestorePrivateInstructions, firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
+import { createFirestoreMemoryStore, firestoreFactSchema, firestoreTopicSchema } from './firestore-memory.ts';
+import { createFirestoreChatStore } from './firestore-chat.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
 import { familyDocumentTransferSchema } from './family-document-transfer.ts';
@@ -80,6 +82,7 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
   const avatars = createFirestoreAvatarData(options);
   const concerns = createFirestoreConcernStore(options);
   const instructions = createFirestorePrivateInstructions(data);
+  const memory = createFirestoreMemoryStore({ ...options, care, chat: createFirestoreChatStore(options) });
   return async function compare(owner: string, raw: unknown, signal: AbortSignal): Promise<OriginalBackupComparison> {
     const input = domainParse(originalBackupComparisonQuerySchema, raw);
     if (!options.originalBackup) domainReject('package_original_unavailable', 503);
@@ -90,7 +93,8 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
       await verifyOriginalBackup(owner, opened, options.originalBackup);
       if (!manifest.selection.childIds.includes(input.childId) || !manifest.selection.modules.includes(input.module))
         domainReject('package_scope_unavailable', 403);
-      const aad = JSON.stringify(['original-backup-comparison:1', owner, input.uploadId, job.version, input.childId, input.module]);
+      const aad = JSON.stringify(['original-backup-comparison:1', owner, input.uploadId, job.version, input.childId, input.module,
+        ...(input.includeMemoryResources ? ['memory-resources'] : [])]);
       let cursor: { scope: string; page: HandoverImportCursor } | null = null;
       if (input.cursor) {
         try { cursor = cursorSchema.parse(JSON.parse(options.cipher.decrypt(Buffer.from(input.cursor, 'base64url').toString(), aad))); }
@@ -99,7 +103,8 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
       const section = input.module === 'sources' ? 'private_sources' : input.module === 'attachments' ? 'child_avatar'
         : input.module === 'memory' ? 'instructions' : input.module;
       const page = await reader.readPage({ selection: { childIds: [input.childId], modules: [input.module] },
-        sections: section === 'documents' ? ['documents', 'visit_preparation'] : [section], acknowledgedManifestSha256: reader.manifestSha256,
+        sections: input.includeMemoryResources ? [...originalMemorySectionSchema.options]
+          : section === 'documents' ? ['documents', 'visit_preparation'] : [section], acknowledgedManifestSha256: reader.manifestSha256,
         cursor: cursor?.page, limit: section === 'documents' ? 3 : section === 'concerns' ? 2 : 20 });
       // Package reads are ordered and outside Firestore's retryable transaction callback.
       const concernEvents: Awaited<ReturnType<typeof reader.readConcernEvents>>[] = [];
@@ -143,6 +148,26 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
               localVersion: live?.version ?? null, changedFields: unavailable || restored ? [] : changedFields,
               state: unavailable || !live ? 'unavailable' : restored ? 'unchanged' : live.version > backup.version ? 'local_newer'
                 : live.version < backup.version ? 'backup_newer' : changedFields.length ? 'different' : 'unchanged' });
+            continue;
+          }
+          if (input.includeMemoryResources && (row.section === 'memory_facts' || row.section === 'memory_topics')) {
+            const kind = row.section === 'memory_facts' ? 'facts' : 'topics';
+            const backup = kind === 'facts' ? domainParse(firestoreFactSchema, row.value, 'invalid_package_data', 400)
+              : domainParse(firestoreTopicSchema, row.value, 'invalid_package_data', 400);
+            if (backup.childId !== input.childId) domainReject('invalid_package_scope', 400);
+            const { mapping } = await readImportMapping(data, binding,
+              { ...manifest.source, childId: input.childId, section: row.section, resourceId: backup.id }, true);
+            const targetId = mapping?.target.id ?? backup.id;
+            const local = await memory.readImportState(binding, kind, targetId), live = local.value;
+            const restored = live && mapping?.target.version === live.version && mapping.sourceVersion === backup.version
+              && mapping.sourceHash === firestoreDomainHash(row.value);
+            const fields = kind === 'facts' ? ['key', 'content', 'source', 'status', 'visibility', 'intendedVisibility', 'validUntil', 'reason', 'confirmedAt', 'confirmedBy']
+              : ['title', 'note', 'status', 'visibility', 'resumeAfter', 'reopenReason', 'reopenedFrom'];
+            const changedFields = live && !restored ? fields.filter(key => canonicalJson(Reflect.get(live, key)) !== canonicalJson(Reflect.get(backup, key))) : [];
+            const state = !live ? local.version > 0 ? 'deleted' : 'unavailable' : restored ? 'unchanged' : live.version > backup.version ? 'local_newer'
+              : live.version < backup.version ? 'backup_newer' : changedFields.length ? 'different' : 'unchanged';
+            items.push({ id: backup.id, resourceSection: row.section, ...(input.includeRestoreTarget && local.version > 0 ? { targetId } : {}),
+              backupVersion: backup.version, localVersion: local.version || null, state, changedFields });
             continue;
           }
           if (row.section !== section) domainReject('invalid_package_scope', 400);

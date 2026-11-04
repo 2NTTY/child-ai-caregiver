@@ -29,7 +29,7 @@ export const handoverImportMappingSchema = z.object({ source: handoverSourceIden
   && value.source.section === 'instructions' && value.target.id !== value.source.resourceId);
 export type HandoverImportMapping = z.infer<typeof handoverImportMappingSchema>;
 const originalSections = new Set<HandoverSourceIdentity['section']>(['care', 'profile', 'tasks', 'private_sources',
-  'documents', 'visit_preparation', 'child_avatar', 'concerns', 'instructions']);
+  'documents', 'visit_preparation', 'child_avatar', 'concerns', 'instructions', 'memory_facts', 'memory_topics']);
 export function supportsOriginalSection(section: HandoverSourceIdentity['section']) { return originalSections.has(section); }
 export function validOriginalMapping(scope: WorkRecoveryScope, { source, target, retiredInstructionOpId }: HandoverImportMapping): boolean {
   if (source.accountId !== scope.ownerUserId || source.childId !== scope.childId || !supportsOriginalSection(source.section)) return false;
@@ -37,7 +37,8 @@ export function validOriginalMapping(scope: WorkRecoveryScope, { source, target,
   if (source.section === 'profile' || source.section === 'child_avatar' || source.section === 'visit_preparation')
     return source.resourceId === scope.childId && target.id === scope.childId;
   // A deleted record/source can have a new ID. A bounded concern slice points back to its original timeline.
-  return source.section === 'care' || source.section === 'private_sources' || source.section === 'concerns' || target.id === source.resourceId;
+  return source.section === 'care' || source.section === 'private_sources' || source.section === 'concerns'
+    || source.section === 'memory_facts' || source.section === 'memory_topics' || target.id === source.resourceId;
 }
 export function handoverImportItemId(scope: WorkRecoveryScope, opId: string) {
   return JSON.stringify([scope.ownerUserId, scope.workspaceId, scope.childId, opId]);
@@ -57,6 +58,16 @@ export async function readImportMapping(data: FirestoreDomainData, binding: Fire
   if (mapping?.retiredInstructionOpId) {
     const proof = mapping.restoreOriginal && await readPrivateInstructionDeletion(data, binding, source.resourceId);
     if (!proof || proof.operationId !== mapping.retiredInstructionOpId) domainReject('import_mapping_binding', 500);
+  }
+  if (mapping?.restoreOriginal && mapping.target.id !== source.resourceId
+    && (source.section === 'memory_facts' || source.section === 'memory_topics')) {
+    const kind = source.section === 'memory_facts' ? 'memory-fact' : 'memory-topic';
+    const original = await binding.transaction.get(data.ref(source.section, kind, source.resourceId));
+    const tombstone = z.object({ id: uuid, childId: uuid, version: version.min(1), operationId: uuid, deletedAt: time }).strict();
+    if (!original.exists || original.get('live') !== false) domainReject('import_mapping_binding', 500);
+    const proof = data.open('memory-tombstone', source.resourceId, binding.scope, tombstone, original);
+    if (proof.id !== source.resourceId || proof.childId !== source.childId || proof.version !== original.get('entityVersion'))
+      domainReject('import_mapping_binding', 500);
   }
   return { mappingId, mappingRef, mapping };
 }

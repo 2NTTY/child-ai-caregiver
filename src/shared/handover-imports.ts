@@ -29,6 +29,7 @@ export const handoverImportResolutionSchema = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('restore_deleted'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
 ]);
 export const originalBackupModuleSchema = z.enum(['care', 'profile', 'tasks', 'sources', 'documents', 'attachments', 'concerns', 'memory']);
+export const originalMemorySectionSchema = z.enum(['instructions', 'memory_facts', 'memory_topics']);
 export const selfAvatarRestoreSchema = z.object({ expectedVersion: resourceVersion,
   mode: z.enum(['replace_current', 'restore_deleted']) }).strict();
 export const selfAvatarComparisonQuerySchema = z.object({ uploadId: uuid, expectedUploadVersion: count.positive() }).strict();
@@ -50,11 +51,11 @@ export const handoverImportCommandSchema = z.object({ opId: uuid, uploadId: uuid
   && new Set(value.targets.map(row => row.sourceChildId)).size === value.targets.length
   && new Set(value.resolutions.map(row => JSON.stringify([row.sourceChildId, row.section, row.resourceId]))).size === value.resolutions.length
   && value.resolutions.every(row => value.targets.some(target => target.sourceChildId === row.sourceChildId && target.sections.includes(handoverImportModuleOf(row.section))))
-  && value.resolutions.every(row => !row.useRestoredTarget || value.restoreOriginal && row.section === 'instructions'
+    && value.resolutions.every(row => !row.useRestoredTarget || value.restoreOriginal && originalMemorySectionSchema.safeParse(row.section).success
     && row.resolution.mode !== 'preserve' && row.resolution.targetId !== row.resourceId)
   && (!value.restoreOriginal || value.resolutionOnly && value.acceptedManifestSha256 !== null
     && value.resolutions.every(row => handoverImportModuleOf(row.section) !== 'memory'
-      || row.section === 'instructions' && row.resolution.mode !== 'preserve' && row.resolution.expectedVersion > 0
+      || originalMemorySectionSchema.safeParse(row.section).success && row.resolution.mode !== 'preserve' && row.resolution.expectedVersion > 0
         && (row.resolution.targetId === row.resourceId || row.useRestoredTarget === true))
     && value.resolutions.every(row => handoverImportModuleOf(row.section) !== 'attachments'
       || row.section === 'child_avatar' && row.resourceId === row.sourceChildId && row.resolution.mode !== 'preserve' && row.resolution.targetId === row.sourceChildId)
@@ -64,14 +65,15 @@ export const handoverImportCommandSchema = z.object({ opId: uuid, uploadId: uuid
   && (!value.resolutionOnly || (value.resolutions.length > 0 || !!value.accountAvatar) && value.resolutions.every(row => row.resolution.mode !== 'preserve')
     && value.targets.every(row => !('createInClassId' in row.target))));
 export const originalBackupComparisonQuerySchema = z.object({ uploadId: uuid, expectedUploadVersion: count.positive(), childId: uuid,
-  module: originalBackupModuleSchema, includeRestoreTarget: z.literal(true).optional(), cursor: z.string().min(1).max(16000).optional() }).strict();
+  module: originalBackupModuleSchema, includeRestoreTarget: z.literal(true).optional(), includeMemoryResources: z.literal(true).optional(),
+  cursor: z.string().min(1).max(16000).optional() }).strict().refine(query => !query.includeMemoryResources || query.module === 'memory');
 export const originalBackupComparisonSchema = z.object({ uploadId: uuid, manifestSha256: hash, childId: uuid, module: originalBackupModuleSchema,
-  items: z.array(z.object({ id: uuid, targetId: uuid.optional(), resourceSection: z.enum(['documents', 'visit_preparation', 'child_avatar', 'instructions']).optional(), backupVersion: resourceVersion, localVersion: resourceVersion.nullable(),
+  items: z.array(z.object({ id: uuid, targetId: uuid.optional(), resourceSection: z.enum(['documents', 'visit_preparation', 'child_avatar', ...originalMemorySectionSchema.options]).optional(), backupVersion: resourceVersion, localVersion: resourceVersion.nullable(),
     state: z.enum(['unchanged', 'local_newer', 'backup_newer', 'different', 'deleted', 'unavailable']),
     changedFields: z.array(z.string().min(1).max(80)).max(64) }).strict()).max(20), nextCursor: z.string().max(16000).nullable() }).strict().refine(page => page.items.every(item =>
   page.module === 'documents' ? item.resourceSection === 'documents' || item.resourceSection === 'visit_preparation'
     : page.module === 'attachments' ? item.resourceSection === 'child_avatar'
-    : page.module === 'memory' ? item.resourceSection === 'instructions' : item.resourceSection === undefined));
+    : page.module === 'memory' ? originalMemorySectionSchema.safeParse(item.resourceSection).success : item.resourceSection === undefined));
 export type OriginalBackupComparison = z.infer<typeof originalBackupComparisonSchema>;
 export type OriginalBackupComparisonQuery = z.infer<typeof originalBackupComparisonQuerySchema>;
 

@@ -60,6 +60,10 @@ export function assertFirestoreRestoreContent(records: readonly FirestoreRestore
       const proof = privateInstructionDeletionProof(owner, source.resourceId, deletion);
       if (!proof || proof.operationId !== mapping.retiredInstructionOpId) fail();
     }
+    if ((source.section === 'memory_facts' || source.section === 'memory_topics') && mapping.target.id !== source.resourceId) {
+      const deletion = domain('memory-tombstone', source.resourceId, owner);
+      if (!deletion.path.split('/')[0]!.endsWith('_' + source.section)) fail();
+    }
     if (source.section === 'concerns' && (source.concern?.periodSource?.concernId ?? source.resourceId) !== mapping.target.id) fail();
   }
   function revision(taskId: string, version: number, expected: WorkRecoveryScope) {
