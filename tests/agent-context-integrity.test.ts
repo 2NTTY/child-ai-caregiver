@@ -35,7 +35,7 @@ for (const characters of [200, 800]) test(`native Runner keeps ${characters}-cha
         seen = (parts.find(part => part.functionResponse?.name === "read_context")?.functionResponse?.response?.data as any).result;
         assert.ok(seen.uncoveredConversation.messages.length > 0);
         assert.deepEqual(seen.privateSummaryInput.messageIds, seen.uncoveredConversation.messages.map((message: ChatMessage) => message.id));
-        assert.deepEqual(Object.keys(seen.privateSummaryInput).sort(), ["messageIds", "moreUncovered", "previousSummaryId"]);
+        assert.deepEqual(Object.keys(seen.privateSummaryInput).sort(), ["messageIds", "moreUncovered", "previousSummaryId", "summaryMode"]);
         for (const message of seen.uncoveredConversation.messages) assert.equal(JSON.stringify(seen).split(message.text).length - 1, 1);
         assert.deepEqual(seen.uncoveredConversation.messages, messages.slice(0, seen.uncoveredConversation.messages.length));
         assert.equal(seen.uncoveredConversation.complete, seen.uncoveredConversation.messages.length === messages.length);
