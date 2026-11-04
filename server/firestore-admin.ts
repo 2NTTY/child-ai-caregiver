@@ -7,12 +7,14 @@ import { adminCommandSchema, adminInvitationSchema, adminReceiptSchema, platform
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreAuthority } from './firestore-authority.ts';
 import { FirestoreAiUsage } from './firestore-ai-usage.ts';
+import type { createFirestoreKnowledgeRefresh } from './firestore-knowledge-refresh.ts';
 const NIL = '00000000-0000-0000-0000-000000000000';
 const scope = { ownerUserId: 'system:admin', workspaceId: NIL, childId: NIL, storageEpoch: NIL };
 export const adminDirectorySchema = z.object({ email: z.email() }).strict();
 const cursorSchema = z.string().regex(/^[a-f0-9]{64}$/);
 /** Control-plane data only. No family records, keys, or arbitrary Firestore access. */
-export function createFirestoreAdmin(options: FirestoreDomainOptions, config: AiConfig) {
+export function createFirestoreAdmin(options: FirestoreDomainOptions, config: AiConfig,
+  knowledge?: Pick<ReturnType<typeof createFirestoreKnowledgeRefresh>, 'adminStatus'>) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
   const policyRef = data.ref('admin_policy', 'platform-policy', 'current');
   const defaults = domainParse(platformPolicySchema, { enabled: config.enabled, model: config.model,
@@ -35,6 +37,10 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions, config: Ai
     }, { readOnly: true });
   }
   return { readPolicy, readPolicyIn,
+    knowledgeStatus(cursor: string | null = null) {
+      if (!knowledge) domainReject('knowledge_status_unavailable', 503);
+      return knowledge.adminStatus(cursor);
+    },
     async overview() { const policy = await readPolicy(); return { policy, serverEnabled: config.enabled, platformConfigured: !!config.project,
       toolCalls: policy.maxToolCalls, deadlineMs: policy.maxRunSeconds * 1000,
       outputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens), inputCharacters: config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default }; },

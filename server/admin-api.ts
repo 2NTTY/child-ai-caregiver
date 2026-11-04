@@ -29,6 +29,11 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
     else if (url.pathname === '/api/admin/invitation') result = { invitation: await admin.lookup(url.searchParams.get('email') ?? '') };
     else if (url.pathname === '/api/admin/usage') result = await admin.usage(url.searchParams.get('day') ?? new Date().toISOString().slice(0, 10));
     else if (url.pathname === '/api/admin/audit') result = await admin.audit(cursor);
+    else if (url.pathname === '/api/admin/knowledge-status') {
+      const entries = [...url.searchParams];
+      if (entries.length > 1 || entries.some(([key]) => key !== 'cursor')) domainReject('invalid_input', 400);
+      result = await admin.knowledgeStatus(cursor);
+    }
     else if (/^\/api\/admin\/operations\/[a-f0-9-]+$/.test(url.pathname)) result = { receipt: await admin.receipt(userId, url.pathname.split('/').at(-1)!) };
     else domainReject('not_found', 404);
   } else domainReject('method_not_allowed', 405);

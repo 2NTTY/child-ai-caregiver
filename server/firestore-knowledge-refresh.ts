@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
-import type { Firestore, Transaction } from "@google-cloud/firestore";
+import { FieldPath, type Firestore, type Transaction } from "@google-cloud/firestore";
 import { z } from "zod";
 import { knowledgeExtractionSchema, knowledgeHash } from "./knowledge-inputs.ts";
 import { definitionHash, observationHash, observationId } from "./knowledge-observation.ts";
 import { refreshJobSchema, type ObservedContent, type RefreshJob, type SourceFetcher, type SourceWatchDefinition } from "./knowledge-refresh-types.ts";
+import { adminKnowledgeStatusSchema, type AdminKnowledgeStatus } from '../src/shared/admin.ts';
+import { domainReject } from './firestore-domain-data.ts';
 
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/), hash = z.string().regex(/^[a-f0-9]{64}$/), date = z.iso.datetime({ offset: true });
 const binding = { schemaVersion: z.literal(1), projectId: z.string(), namespace: z.string() };
@@ -32,6 +34,7 @@ const checkSchema = z.strictObject({ ...binding, jobId: z.uuid(), watchId: id, r
   status: z.enum(["changed", "unchanged", "failed", "unavailable", "superseded"]).nullable(), itemCount: z.number().int().min(0).max(50),
   changedCount: z.number().int().min(0).max(50), failureCode: z.enum(["network", "timeout", "response", "parse"]).nullable(),
   httpStatus: z.union([z.literal(404), z.literal(410)]).nullable() });
+const adminStatusCursorSchema = z.object({ checkedAt: date, jobId: z.uuid() }).strict();
 type Watch = z.infer<typeof watchSchema>;
 type Observation = z.infer<typeof observationSchema>;
 export interface FirestoreKnowledgeObservation { watch: Watch; observation: Observation | null; catalogMatches: boolean }
@@ -127,6 +130,42 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
   };
   return {
     gate,
+    async adminStatus(cursor: string | null = null): Promise<AdminKnowledgeStatus> {
+      let after: z.infer<typeof adminStatusCursorSchema> | null = null;
+      if (cursor !== null) {
+        try {
+          if (!z.string().min(1).max(2048).regex(/^[A-Za-z0-9_-]+$/u).safeParse(cursor).success) throw Error('Invalid cursor');
+          const bytes = Buffer.from(cursor, 'base64url');
+          if (bytes.toString('base64url') !== cursor) throw Error('Invalid cursor');
+          after = adminStatusCursorSchema.parse(JSON.parse(bytes.toString('utf8')));
+        } catch { domainReject('invalid_cursor', 400); }
+      }
+      return database.runTransaction(async tx => {
+        const registered = await Promise.all(definitions.map(definition => watch(tx, definition.id)));
+        if (after) {
+          const saved = await tx.get(checkRef(after.jobId));
+          if (!saved.exists) domainReject('invalid_cursor', 400);
+          const position = parse(checkSchema, saved.data());
+          if (saved.id !== position.jobId) reject('knowledge_binding_invalid');
+          if (position.checkedAt !== after.checkedAt) domainReject('invalid_cursor', 400);
+        }
+        let query = database.collection(namespace + '_knowledge_checks').orderBy('checkedAt', 'desc').orderBy(FieldPath.documentId(), 'desc').limit(21);
+        if (after) query = query.startAfter(after.checkedAt, after.jobId);
+        const page = await tx.get(query), checked = page.docs.map(snapshot => {
+          const row = parse(checkSchema, snapshot.data());
+          if (snapshot.id !== row.jobId) reject('knowledge_binding_invalid');
+          const { jobId, watchId, checkedAt, state, status, attempts, itemCount, changedCount, failureCode, httpStatus } = row;
+          return { jobId, watchId, checkedAt, state, status, attempts, itemCount, changedCount, failureCode, httpStatus };
+        });
+        const checks = checked.slice(0, 20), last = checks.at(-1);
+        return adminKnowledgeStatusSchema.parse({ watches: definitions.map((definition, index) => {
+          const row = registered[index];
+          return { id: definition.id, publisher: definition.publisher, url: definition.url, kind: definition.kind,
+            registration: !row ? 'not_registered' : !matches(row) ? 'definition_changed' : row.enabled ? 'enabled' : 'disabled',
+            lastAttemptAt: row?.lastAttemptAt ?? null, lastSuccessfulCheckAt: row?.lastSuccessfulCheckAt ?? null, lastStatus: row?.lastStatus ?? null };
+        }), checks, nextCursor: checked.length > 20 && last ? Buffer.from(JSON.stringify({ checkedAt: last.checkedAt, jobId: last.jobId })).toString('base64url') : null });
+      }, { readOnly: true });
+    },
     async register(id: string, by: string) {
       operator(by); const definition = catalog.get(id); if (!definition) reject("knowledge_watch_not_in_catalog");
       await database.runTransaction(async tx => {
