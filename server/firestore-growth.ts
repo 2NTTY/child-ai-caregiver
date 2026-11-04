@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { growthActionSchema, growthTopicActionSchema, growthTopicSchema, GROWTH_KNOWLEDGE_NOTICES,
   type GrowthAction, type GrowthAttention, type GrowthPage, type GrowthTopicAction, type GrowthTopicId } from '../src/shared/growth.ts';
 import type { MemoryContext } from '../src/shared/memory.ts';
-import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreDomainUuid, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreAuthority, resourceAuthorityVersion, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import type { FirestoreMemoryStore } from './firestore-memory.ts';
 import type { FirestoreCareStore } from './firestore-care.ts';
@@ -49,9 +49,7 @@ const active = (item: GrowthAttention) => ['proposed', 'snoozed'].includes(item.
 /** Stable UUIDv8 address for the existing four per-child topic slots, not a new topic authority. */
 export function growthTopicResourceId(childId: string, topicId: GrowthTopicId) {
   domainParse(uuid, childId); domainParse(growthTopicSchema, topicId);
-  const bytes = Buffer.from(firestoreDomainHash(['growth-topic-resource:1', childId, topicId]), 'hex').subarray(0, 16);
-  bytes[6] = (bytes[6]! & 15) | 128; bytes[8] = (bytes[8]! & 63) | 128;
-  const value = bytes.toString('hex'); return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`;
+  return firestoreDomainUuid(['growth-topic-resource:1', childId, topicId]);
 }
 
 /** Normalizes only source identity; the original archive payload remains the source hash. */

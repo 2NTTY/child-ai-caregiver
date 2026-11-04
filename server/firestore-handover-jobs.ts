@@ -1,5 +1,6 @@
 import { FieldPath, type DocumentSnapshot, type Query, type Transaction } from '@google-cloud/firestore';
 import { z } from 'zod';
+import { supportsHandoverPeriodModules } from '../src/shared/handover.ts';
 import { handoverCancelCommandSchema, handoverExportCommandSchema, handoverExportStateSchema,
   handoverExportViewSchema, type HandoverExportView } from '../src/shared/handover-jobs.ts';
 import { handoverObjectDescriptorSchema } from './firebase-handover-objects.ts';
@@ -160,7 +161,7 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
     },
     async create(owner: string, raw: unknown) {
       const command = domainParse(handoverExportCommandSchema, raw), fingerprint = firestoreDomainHash(command);
-      if (command.selection.period) domainReject('package_period_not_connected', 400);
+      if (command.selection.period && !supportsHandoverPeriodModules(command.selection.modules)) domainReject('package_period_not_connected', 400);
       return authority.runTransaction(owner, null, async b => {
         const prior = openOwned(b, command.opId, await b.transaction.get(ref(owner, command.opId)));
         if (prior) { if (prior.fingerprint !== fingerprint) domainReject('operation_conflict'); return currentView(prior, b); }

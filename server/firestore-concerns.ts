@@ -13,7 +13,7 @@ import { firestoreCareSchema } from './firestore-care.ts';
 import type { FirestoreAgentProposalExtension } from './firestore-agent-proposals.ts';
 import { firestoreAgentClaimSchema, firestoreAgentRunSchema } from './firestore-agent-runs.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
-import { importProvenanceSchema, type ImportProvenance } from '../src/shared/import-provenance.ts';
+import { concernPeriodOriginSchema, importProvenanceSchema, type ImportProvenance } from '../src/shared/import-provenance.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
 import type { HandoverImportRow } from './handover-import.ts';
 import { makeImportProvenance } from './handover-provenance.ts';
@@ -29,6 +29,7 @@ export const firestoreConcernSchema = z.object({ id: uuid, childId: uuid, title:
     runId: uuid.nullable() }).strict().nullable(),
 }).strict();
 type Head = z.infer<typeof firestoreConcernSchema>;
+export const concernTransferSchema = firestoreConcernSchema.extend({ periodSource: concernPeriodOriginSchema.optional() });
 type StoredEvent = ConcernEvent & { importedFrom?: ImportProvenance };
 const receiptSchema = z.object({ fingerprint: z.string().length(64), id: uuid, version }).strict();
 const followupClaimSchema = z.object({ id: uuid, concernId: uuid, concernVersion: version, jobId: z.string().length(64),
@@ -142,12 +143,12 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
     if (b.sharedAccess) domainReject('shared_domain_read_only', 409);
     domainParse(uuid, opId);
     if (row.section !== 'concerns' || !row.childId) domainReject('invalid_package_scope', 400);
-    const source = domainParse(firestoreConcernSchema, row.value, 'invalid_package_concern');
+    const source = domainParse(concernTransferSchema, row.value, 'invalid_package_concern');
     const sourceEvents = domainParse(z.array(firestoreDocumentConcernEventSchema).min(1).max(CONCERN_STORED_EVENT_LIMIT), rawEvents, 'invalid_package_concern_event');
     if (source.childId !== row.childId || sourceEvents.length !== source.eventCount
       || new Set(sourceEvents.map(event => event.id)).size !== sourceEvents.length
       || sourceEvents.some((event, index) => event.childId !== source.childId || event.concernId !== source.id
-        || event.sequence !== index + 1 || event.timelineId !== source.timelineId)) domainReject('package_concern_event_mismatch', 400);
+        || event.sequence !== (source.periodSource?.sequences[index] ?? index + 1) || event.timelineId !== source.timelineId)) domainReject('package_concern_event_mismatch', 400);
     const current = expected ? await head(b, expected.id) : null;
     if (expected && (!current || current.version !== expected.expectedVersion || current.version >= 2147483647)) domainReject('concern_changed');
     if (!current && (await b.transaction.get(query(b, 'concerns').limit(200))).size >= 200) domainReject('concern_history_requires_review', 400);

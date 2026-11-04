@@ -18,6 +18,7 @@ const uuid = z.uuid(), time = z.iso.datetime({ offset: true }), version = z.numb
 export const firestoreDocumentConcernSchema = z.object({ id: uuid, childId: uuid, version,
   title: z.string().max(160), reason: z.string().max(2000), status: z.enum(['following', 'closed']), timelineId: uuid.optional() }).passthrough();
 export const firestoreDocumentConcernEventSchema = z.object({ concernId: uuid, childId: uuid, sequence: z.number().int().positive(),
+  periodConcernId: uuid.optional(),
   timelineId: uuid.optional(),
   importedFrom: importProvenanceSchema.optional(),
   id: uuid, at: time, kind: z.enum(['observation', 'confirmed_action']), title: z.string().max(160), text: z.string().max(2000),

@@ -13,8 +13,42 @@ import { createFirestoreAccountExport } from '../server/firestore-account-export
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { writePersonalHandoverPackage } from '../server/handover-export.ts';
 import { openHandoverArchive } from '../server/handover-archive.ts';
+import { openHandoverImport } from '../server/handover-import.ts';
 import { avatarDomainFixture } from './helpers/avatar-memory.ts';
 import { avatarReserveResultSchema } from '../src/shared/avatars.ts';
+
+test('a dated package filters by event, due and message time through export and import', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'handover-period-'));
+  const childId = randomUUID(), scopeVersion = 'a'.repeat(64);
+  const period = { from: '2026-11-01T00:00:00+08:00', to: '2026-11-01T23:59:59.999+08:00' };
+  const outside = '2026-11-01T16:00:00Z', lower = '2026-10-31T16:00:00Z';
+  const record = (at: string | null) => ({ id: randomUUID(), childId, version: 1, createdAt: outside,
+    details: { eventTime: { at } }, text: at === null ? 'undated' : at });
+  const inScope = record(lower), outOfScope = record(outside);
+  const task = { id: randomUUID(), childId, version: 1, createdAt: outside, occurrence: { dueAt: period.to } };
+  const message = { id: randomUUID(), childId, createdAt: lower };
+  const rows: Record<string, unknown[]> = {
+    children: [{ id: childId, displayName: 'Child' }], care: [inScope, outOfScope, record(null)], care_history: [inScope, outOfScope],
+    tasks: [task], task_history: [{ task, at: outside }], chat: [message, { ...message, id: randomUUID(), createdAt: outside }],
+    chat_imports: [{ id: randomUUID(), childId, message: { ...message }, importedAt: outside }],
+  };
+  const exporter = { async page(_owner: string, query: { section: string }) {
+    return { section: query.section, scopeVersion, items: rows[query.section] ?? [], complete: true, nextCursor: null, notices: [] };
+  } };
+  try {
+    const archive = await writePersonalHandoverPackage({ exporter, directory, ownerUserId: 'owner', serverId: 'https://example.test',
+      packageId: randomUUID(), createdAt: outside, purpose: 'handover', selection: { childIds: [childId], modules: ['care', 'tasks', 'chat'], period } });
+    const opened = await openHandoverImport({ path: archive.path });
+    try {
+      assert.deepEqual(opened.manifest.selection.period, period);
+      assert.deepEqual(Object.fromEntries(opened.manifest.coverage.map(row => [row.section, row.items])),
+        { children: 1, care: 1, care_history: 1, tasks: 1, task_history: 1, chat: 1, chat_imports: 1 });
+      const page = await opened.readPage({ selection: { childIds: [childId], modules: ['care'] }, sections: ['care'],
+        acknowledgedManifestSha256: opened.manifestSha256, limit: 10 });
+      assert.deepEqual(page.rows.map(row => row.value.id), [inScope.id]);
+    } finally { await opened.close(); }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
 
 test('personal package reuses current scoped export, follows pages and refuses changed or unauthorized sources', async () => {
   const fixture = serialFirestoreFixture(), dir = await mkdtemp(join(tmpdir(), 'handover-export-'));
