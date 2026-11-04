@@ -171,7 +171,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
         return job.kind === 'concern' ? concerns.authorizeBackground(b, job) : job.kind === 'growth' ? growth.authorizeBackground(b, job)
           : job.kind === 'task-agent' ? !!await taskEvents.input(b, job) && await growth.taskAllowedIn(b, job.resourceId) : false;
       } : undefined });
-    const exporter = createFirestoreAccountExport({ ...domain, photos, voices, files, avatars: avatarStore, transcripts: product.voiceTranscripts });
+    const exporter = createFirestoreAccountExport({ ...domain, photos, voices, files, growth, avatars: avatarStore, transcripts: product.voiceTranscripts });
     const handoverObjectOptions = { config: objectOptions.config, files: cipher.files };
     const handoverObjects = composition.local ? createFirebaseHandoverObjects({ ...handoverObjectOptions,
       bucket: composition.local.handoverBucket(config.photoBucket) }) : createCloudStorageHandoverObjects(handoverObjectOptions);

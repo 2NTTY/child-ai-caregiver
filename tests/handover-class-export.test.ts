@@ -16,6 +16,9 @@ import { createFirestoreFamilyDocumentStore } from '../server/firestore-family-d
 import { createFirestoreCareSummary } from '../server/firestore-care-summary.ts';
 import { createFirestoreMemoryStore } from '../server/firestore-memory.ts';
 import { createFirestoreChatStore } from '../server/firestore-chat.ts';
+import { firestoreConcernSchema } from '../server/firestore-concerns.ts';
+import { firestoreDocumentConcernEventSchema } from '../server/firestore-document-sources.ts';
+import { createFirestoreGrowthStore, firestoreGrowthSchema } from '../server/firestore-growth.ts';
 import { FirestoreDomainData } from '../server/firestore-domain-data.ts';
 import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
 import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.ts';
@@ -23,6 +26,7 @@ import { createFirebaseHandoverObjects } from '../server/firebase-handover-objec
 import { createHandoverService } from '../server/handover-service.ts';
 import { createFirebaseWorkerServices } from '../server/firebase-worker-services.ts';
 import { openHandoverArchive } from '../server/handover-archive.ts';
+import { writePersonalHandoverPackage } from '../server/handover-export.ts';
 import { openHandoverImport, type HandoverImportRow } from '../server/handover-import.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import type { HandoverClassExportCommand } from '../src/shared/handover-jobs.ts';
@@ -143,6 +147,68 @@ test('a class handover uses its stable source, selected dated data and actor job
     let classDocument = (await classDocuments.create('teacher', selected.child.id, documentRequest, randomUUID()))!;
     await classDocuments.create('teacher', other.child.id, { ...documentRequest, title: 'SECRET_OTHER_DOCUMENT' }, randomUUID());
     await documents.create('teacher', personalChild, { ...documentRequest, title: 'SECRET_PERSONAL_DOCUMENT' }, randomUUID());
+    const nativeData = new FirestoreDomainData(options);
+    const growth = createFirestoreGrowthStore({ ...options, care, memory, online });
+    // Seed existing encrypted storage formats: shared concern/growth mutation routes are still read-only.
+    async function nativeRows(childId: string, write: (binding: Parameters<typeof memory.prepareConfirmedFact>[0]) => void, shared = true) {
+      const save = async (binding: Parameters<typeof memory.prepareConfirmedFact>[0]) => {
+        const change = await binding.prepareChange(randomUUID(), 'growth', false); write(binding); change.commit();
+      };
+      if (shared) await sharing.withResource('teacher', { spaceId: classroom.id, childId, module: 'growth', mode: 'write' }, access => save(access.binding));
+      else await authority.runTransaction('teacher', childId, save);
+    }
+    async function concernRows(childId: string, title: string, observations: readonly (readonly [string, string])[], shared = true) {
+      const id = randomUUID();
+      await nativeRows(childId, binding => {
+        const head = firestoreConcernSchema.parse({ id, childId, title, reason: 'SECRET_PARENT_CONCERN_REASON', status: 'following',
+          version: observations.length, createdAt: at, updatedAt: at, archivedAt: null, attentionIds: [], eventCount: observations.length, followUp: null });
+        const tags = { ...nativeData.tags(binding.scope), concernId: id, entityVersion: head.version, createdAt: at };
+        binding.transaction.create(nativeData.ref('concerns', 'concern', id),
+          { ...tags, ...nativeData.seal('concern', id, binding.scope, firestoreConcernSchema, head, head.version) });
+        observations.forEach(([observedAt, text], index) => {
+          const event = firestoreDocumentConcernEventSchema.parse({ id: randomUUID(), concernId: id, childId, sequence: index + 1,
+            at: observedAt, kind: 'observation', title: 'Class observation', text, sourceLabel: 'Original class observation', actorUserId: 'teacher' });
+          binding.transaction.create(nativeData.ref('concern_events', 'concern-event', event.id), { ...nativeData.tags(binding.scope),
+            concernId: id, eventId: event.id, sequence: event.sequence,
+            ...nativeData.seal('concern-event', event.id, binding.scope, firestoreDocumentConcernEventSchema, event) });
+          const revision = { ...head, version: index + 1, eventCount: index + 1 }, key = JSON.stringify([id, revision.version]);
+          binding.transaction.create(nativeData.ref('concern_revisions', 'concern-revision', key), { ...tags, entityVersion: revision.version,
+            ...nativeData.seal('concern-revision', key, binding.scope, firestoreConcernSchema, revision, revision.version) });
+        });
+      }, shared);
+      return id;
+    }
+    const concernId = await concernRows(selected.child.id, 'Cross-period class concern', [
+      [new Date(Date.parse(period.from) - 1).toISOString(), 'SECRET_CONCERN_BEFORE'],
+      [period.from, 'First selected class observation'], [period.to, 'Last selected class observation'],
+      [new Date(Date.parse(period.to) + 1).toISOString(), 'SECRET_CONCERN_AFTER'],
+    ]);
+    await concernRows(other.child.id, 'SECRET_OTHER_CONCERN', [[at, 'SECRET_OTHER_CONCERN_OBSERVATION']]);
+    await concernRows(personalChild, 'SECRET_PERSONAL_CONCERN', [[at, 'SECRET_PERSONAL_CONCERN_OBSERVATION']], false);
+    async function growthRows(childId: string, title: string, selectedRefs = false, shared = true) {
+      const item = { id: randomUUID(), childId, topicId: 'solid_food', version: 1, state: 'accepted', title, kind: 'arrange',
+        whyNow: 'Original class reason', advice: 'Unverified stored advice', limits: 'Original limitations',
+        basis: { stage: 'infant-solids', ruleRevision: 'synthetic-rule', sourceHash: 'c'.repeat(64),
+          values: selectedRefs ? { preference: 'GROWTH_MEMORY_REFERENCE_VALUE' } : {} },
+        evidence: { profileVersion: selectedRefs ? profile.version : 0, facts: selectedRefs ? [{ id: classFact.id, version: classFact.version }] : [] },
+        source: { sourceId: 'unverified-class-source', versionId: randomUUID(), chunkId: randomUUID(), contentHash: 'c'.repeat(64),
+          url: 'https://example.test/unverified', title: 'Unverified original source', section: 'one', checkedAt: at, excerpt: 'Original unverified evidence' },
+        sourceAvailable: true, createdAt: at, updatedAt: at, snoozeUntil: null, previousId: null, newReason: 'Original reason',
+        taskId: selectedRefs ? task.id : null, taskState: selectedRefs ? 'scheduled' : null, lastAction: 'accept', actorUserId: 'teacher', note: 'Original class outcome' };
+      const saved = firestoreGrowthSchema.parse({ item, lastRequest: null });
+      await nativeRows(childId, binding => {
+        const tags = { ...nativeData.tags(binding.scope), attentionId: item.id, createdAt: at, entityVersion: 1 };
+        binding.transaction.create(nativeData.ref('growth_attention', 'growth-attention', item.id),
+          { ...tags, ...nativeData.seal('growth-attention', item.id, binding.scope, firestoreGrowthSchema, saved, 1) });
+        const key = JSON.stringify([item.id, 1]);
+        binding.transaction.create(nativeData.ref('growth_revisions', 'growth-revision', key),
+          { ...tags, ...nativeData.seal('growth-revision', key, binding.scope, firestoreGrowthSchema, saved, 1) });
+      }, shared);
+      return saved.item;
+    }
+    const growthItem = await growthRows(selected.child.id, 'Class growth with referenced inputs', true);
+    await growthRows(other.child.id, 'SECRET_OTHER_GROWTH');
+    await growthRows(personalChild, 'SECRET_PERSONAL_GROWTH', false, false);
     const stored = new Map<string, { body: Buffer; metadata: unknown }>();
     const objects = createFirebaseHandoverObjects({ config: { projectId: options.projectId, namespace: options.namespace, bucketName: 'synthetic-class-packages' },
       files: options.cipher.files, bucket: { async metadata(name) { return stored.get(name)?.metadata ?? null; },
@@ -150,12 +216,16 @@ test('a class handover uses its stable source, selected dated data and actor job
           final(done) { const body = Buffer.concat(parts); stored.set(name, { body, metadata: { name, bucket: 'synthetic-class-packages', generation: '1',
             size: String(body.length), metadata: settings.metadata?.metadata } }); done(); } }); },
         readPinned(name) { return Readable.from([stored.get(name)!.body]); }, async removePinned(name) { stored.delete(name); } } });
-    const exporter = createFirestoreAccountExport({ ...options, photos: { async content() { throw Error('Unexpected attachment read'); } } });
+    const exporter = createFirestoreAccountExport({ ...options, growth, photos: { async content() { throw Error('Unexpected attachment read'); } } });
     const service = createHandoverService({ ...options, exporter, objects, serverId: 'https://class-source.test', spoolRoot: directory });
-    assert.deepEqual(service.capabilities().classModules, ['profile', 'care', 'tasks', 'memory'], 'memory is available without document-review negotiation');
-    assert.deepEqual(service.capabilities(true).classModules, ['profile', 'care', 'tasks', 'documents', 'memory'], 'document-aware callers additionally request document capabilities');
+    assert.deepEqual(service.capabilities().classModules, ['profile', 'care', 'tasks', 'memory', 'concerns', 'growth'], 'shared concerns and growth are available without document-review negotiation');
+    assert.deepEqual(service.capabilities(true).classModules, ['profile', 'care', 'tasks', 'documents', 'memory', 'concerns', 'growth'], 'document-aware callers additionally request document capabilities');
     const baseCommand: HandoverClassExportCommand = { opId: randomUUID(), purpose: 'handover', source: { kind: 'class', spaceId: classroom.id },
-      selection: { childIds: [selected.child.id], modules: ['care', 'profile', 'tasks', 'documents', 'memory'], period } };
+      selection: { childIds: [selected.child.id], modules: ['care', 'profile', 'tasks', 'documents', 'memory', 'concerns', 'growth'], period } };
+    const withoutGrowth = createHandoverService({ ...options, objects, serverId: 'https://class-source.test',
+      exporter: createFirestoreAccountExport({ ...options, photos: { async content() { throw Error('Unexpected attachment read'); } } }) });
+    assert.ok(!withoutGrowth.capabilities(true).classModules.includes('growth'));
+    await assert.rejects(withoutGrowth.create('teacher', baseCommand), (error: any) => error.code === 'package_class_source_unavailable');
     const previewQuery = { section: 'documents' as const, childId: selected.child.id, period, source: baseCommand.source, opId: baseCommand.opId };
     const preview = await service.preview('teacher', previewQuery), previewItem = preview.items.find(item => item.id === classDocument.id)!;
     assert.ok(previewItem); assert.equal(previewItem.reason, 'crosses'); assert.equal(previewItem.defaultIncluded, false); assert.equal(previewItem.canInclude, true);
@@ -211,7 +281,7 @@ test('a class handover uses its stable source, selected dated data and actor job
         assert.deepEqual(recipient.manifest.selection, command.selection);
         const { include: _include, ...includedPin } = pin(currentItem);
         assert.deepEqual(recipient.manifest.periodExceptions, [includedPin]);
-        const page = await recipient.readPage({ selection: { childIds: [selected.child.id], modules: ['documents', 'memory'] },
+        const page = await recipient.readPage({ selection: { childIds: [selected.child.id], modules: ['documents', 'memory', 'concerns', 'growth'] },
           acknowledgedManifestSha256: recipient.manifestSha256, limit: 100 });
         const heads = page.rows.filter(row => row.section === 'documents');
         assert.deepEqual(heads.map(row => row.value.id), [classDocument.id]);
@@ -231,6 +301,14 @@ test('a class handover uses its stable source, selected dated data and actor job
         assert.ok(factHistory.every(row => row.childId === selected.child.id && row.visibility === 'family'));
         assert.ok(page.rows.filter(row => row.section.startsWith('memory_')).every(row => row.source.accountId === 'space:' + classroom.id));
         assert.equal(page.rows.some(row => row.section === 'instructions' || row.section === 'summary_history'), false);
+        const concernHeads = page.rows.filter(row => row.section === 'concerns'); assert.equal(concernHeads.length, 1);
+        assert.equal((concernHeads[0].value.periodSource as any).concernId, concernId);
+        assert.deepEqual((await recipient.readConcernEvents(concernHeads[0], recipient.manifestSha256)).map(event => event.text),
+          ['First selected class observation', 'Last selected class observation']);
+        const exportedGrowth = page.rows.filter(row => row.section === 'growth_attention' || row.section === 'growth_history');
+        assert.equal(exportedGrowth.length, 2);
+        assert.ok(exportedGrowth.every(row => (row.value.item as any).id === growthItem.id && (row.value.item as any).sourceAvailable === false),
+          'a stored availability flag is not proof of a locally reviewed source');
       } finally { await recipient.close(); }
       const archive = await openHandoverArchive({ path: downloaded.path });
       try {
@@ -249,12 +327,35 @@ test('a class handover uses its stable source, selected dated data and actor job
         assert.deepEqual(rows('visit_preparation'), [savedPreparation]); assert.equal(rows('visit_preparation_history').length, 2);
         assert.deepEqual(rows('memory_facts'), [classFact]); assert.equal(rows('memory_fact_history').length, 2);
         assert.deepEqual(rows('instructions'), []); assert.deepEqual(rows('summary_history'), []); assert.deepEqual(rows('chat'), []);
+        assert.deepEqual(rows('concern_events').sort((a, b) => a.sequence - b.sequence).map(row => row.text),
+          ['First selected class observation', 'Last selected class observation']);
+        assert.equal(rows('growth_attention').length, 1); assert.equal(rows('growth_attention')[0].item.sourceAvailable, false);
         assert.ok(pages.filter(page => page.section !== 'children').every(page => page.childId === selected.child.id));
         assert.doesNotMatch(JSON.stringify(pages), /SECRET_|createdViaShare|confirmedViaShare|changedViaShare|classAssignment/);
         assert.ok(!JSON.stringify(pages).includes(earlier.id));
         assert.ok(!JSON.stringify(pages).includes(personalChild)); assert.ok(!JSON.stringify(pages).includes(other.child.id));
       } finally { await archive.close(); }
     } finally { await downloaded.dispose(); }
+    const growthOnlyCommand: HandoverClassExportCommand = { ...baseCommand, opId: randomUUID(),
+      selection: { childIds: [selected.child.id], modules: ['growth'], period } };
+    const growthOnly = await writePersonalHandoverPackage({ directory, exporter: exporter.forClass(growthOnlyCommand), ownerUserId: 'teacher',
+      sourceAccountId: 'space:' + classroom.id, serverId: 'https://class-source.test', packageId: growthOnlyCommand.opId,
+      createdAt: at, purpose: 'handover', selection: growthOnlyCommand.selection });
+    const growthReader = await openHandoverImport({ path: growthOnly.path });
+    try {
+      const page = await growthReader.readPage({ selection: { childIds: growthOnlyCommand.selection.childIds, modules: growthOnlyCommand.selection.modules },
+        acknowledgedManifestSha256: growthReader.manifestSha256, limit: 100 });
+      const currentAndHistory = page.rows.filter(row => row.section === 'growth_attention' || row.section === 'growth_history');
+      assert.equal(currentAndHistory.length, 2);
+      for (const row of currentAndHistory) {
+        const item = row.value.item as any;
+        assert.equal(item.id, growthItem.id); assert.equal(item.taskId, null); assert.equal(item.taskState, null);
+        assert.deepEqual(item.evidence, { profileVersion: 0, facts: [] }); assert.deepEqual(item.basis.values, {});
+        assert.equal(item.sourceAvailable, false);
+      }
+      assert.doesNotMatch(JSON.stringify(page.rows), /SECRET_|GROWTH_MEMORY_REFERENCE_VALUE/);
+      assert.ok(!JSON.stringify(page.rows).includes(classFact.id)); assert.ok(!JSON.stringify(page.rows).includes(task.id));
+    } finally { await growthReader.close(); }
     await assert.rejects(service.download('outsider', created.id));
     const currentClass = await sharing.get('manager', classroom.id);
     await sharing.updateMember('manager', { operationId: randomUUID(), spaceId: classroom.id, expectedVersion: currentClass.version,

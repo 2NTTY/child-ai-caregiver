@@ -29,6 +29,18 @@ export const firestoreConcernSchema = z.object({ id: uuid, childId: uuid, title:
     runId: uuid.nullable() }).strict().nullable(),
 }).strict();
 type Head = z.infer<typeof firestoreConcernSchema>;
+export function sharedConcernHead<T extends Pick<Concern, 'attentionIds' | 'followUp'>>(value: T, modules: readonly string[]) {
+  return { ...value, attentionIds: modules.includes('growth') ? value.attentionIds : [],
+    followUp: value.followUp ? { ...value.followUp, runId: null } : null };
+}
+export function sharedConcernEvent<T extends ConcernEvent>(value: T, modules: readonly string[]) {
+  const event = { ...value };
+  delete event.runId;
+  if (!modules.includes('care')) delete event.recordId;
+  if (!modules.includes('tasks')) delete event.taskId;
+  if (!modules.includes('growth') || !event.attentionId) { delete event.attentionId; delete event.attentionVersion; }
+  return event;
+}
 export const concernTransferSchema = firestoreConcernSchema.extend({ periodSource: concernPeriodOriginSchema.optional() });
 type StoredEvent = ConcernEvent & { importedFrom?: ImportProvenance };
 const receiptSchema = z.object({ fingerprint: z.string().length(64), id: uuid, version }).strict();
@@ -48,13 +60,7 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
   function sharedView(b: Binding, value: Concern): Concern {
     if (!b.sharedAccess) return value;
     const modules = b.sharedAccess.modules ?? [];
-    return { ...value, attentionIds:modules.includes('growth') ? value.attentionIds : [],
-      followUp:value.followUp ? { ...value.followUp, runId:null } : null,
-      events:value.events.map(({ runId: _runId, recordId, taskId, attentionId, attentionVersion, ...event }) => ({ ...event,
-        ...(recordId && modules.includes('care') ? { recordId } : {}),
-        ...(taskId && modules.includes('tasks') ? { taskId } : {}),
-        ...(attentionId && modules.includes('growth') ? { attentionId, ...(attentionVersion === undefined ? {} : { attentionVersion }) } : {}),
-      })) };
+    return { ...sharedConcernHead(value, modules), events: value.events.map(event => sharedConcernEvent(event, modules)) };
   }
   function query(b: Binding, suffix: string): Query {
     let q: Query = data.collection(suffix); for (const [key, value] of Object.entries(data.tags(b.scope))) q = q.where(key, '==', value); return q;

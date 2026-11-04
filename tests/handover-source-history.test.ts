@@ -16,6 +16,77 @@ import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { emptyCareDetails } from '../src/shared/care.ts';
 import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
 import { createFirestoreSharingStore } from '../server/firestore-sharing.ts';
+import { createFirestoreConcernStore, firestoreConcernSchema } from '../server/firestore-concerns.ts';
+import { parseHistoryRow, sourceHistoryVisible } from '../server/handover-source-history.ts';
+import { sourceHistoryRecordSchema } from '../server/handover-history-records.ts';
+
+test('class concern source revisions retain private originals but exclude protected evidence and unselected links', async () => {
+  const fixture = serialFirestoreFixture(), options = { database: fixture.database, cipher: createStorageCipher(Buffer.alloc(32, 84)),
+    projectId: 'demo-concern-source-disclosure', namespace: 'unit_concern_source_disclosure' };
+  const authority = createFirestoreAuthority(options), sharing = createFirestoreSharingStore(options);
+  const concerns = createFirestoreConcernStore(options), data = new FirestoreDomainData(options);
+  await authority.initializeControl({ enabled: true, generation: randomUUID() });
+  await authority.issueInvitation({ email: 'owner@example.test', operationId: randomUUID(), expiresAt: new Date(Date.now() + 3600000).toISOString() });
+  await authority.admitIdentity({ userId: 'owner', email: 'owner@example.test', emailVerified: true });
+  await authority.acknowledge({ userId: 'owner', operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  const personalChild = (await authority.createChild({ userId: 'owner', operationId: randomUUID(), displayName: 'Personal child' })).child.id;
+  const at = new Date().toISOString();
+  const personal = await concerns.create('owner', personalChild, { title: 'Original concern', reason: 'Original context',
+    observation: 'Original observation', observedAt: at, links: { recordId: null, taskId: null, attentionId: null }, followUpAt: null }, randomUUID());
+  const original = await authority.runTransaction('owner', personalChild, binding => concerns.head(binding, personal.id));
+  assert.ok(original);
+  const classroom = await sharing.create('owner', { operationId: randomUUID(), name: 'Source disclosure class', kind: 'class' });
+  const learner = await sharing.addClassChild('owner', { operationId: randomUUID(), spaceId: classroom.id,
+    expectedVersion: classroom.version, displayName: 'Class learner' });
+  const localParent = randomUUID(), classChild = learner.child.id;
+  // Seed only the current class parent; source disclosure still uses the formal authorized class binding.
+  await sharing.withResource('owner', { spaceId: classroom.id, childId: classChild, module: 'concerns', mode: 'read' }, async access => {
+    const value = firestoreConcernSchema.parse({ ...original, id: localParent, childId: classChild });
+    access.transaction.set(data.ref('concerns', 'concern', localParent), { ...data.tags(access.scope), concernId: localParent,
+      entityVersion: value.version, createdAt: value.createdAt, ...data.seal('concern', localParent, access.scope, firestoreConcernSchema, value, value.version) });
+  });
+  const origin = { serverId: 'https://original.test', accountId: 'original-owner', packageId: randomUUID(), packageVersion: 1,
+    manifestSha256: 'a'.repeat(64), path: 'data/concern-history.json', rowIndex: 0 };
+  function sourceRecord(section: 'concern_history' | 'concern_events', value: Record<string, unknown>) {
+    const parsed = parseHistoryRow({ section, childId: personalChild, value, source: origin }, 'concerns', 'trusted', 'owner');
+    return sourceHistoryRecordSchema.parse({ format: 'yuyoufang-source-revision:1', childId: classChild,
+      resource: { id: localParent, version: original!.version }, evidence: parsed.evidence,
+      opId: randomUUID(), importedBy: 'owner', importedAt: at });
+  }
+  const event = { id: randomUUID(), concernId: original.id, childId: personalChild, sequence: 1, at, kind: 'observation',
+    title: 'Source observation', text: 'Original source body', sourceLabel: 'Original source', actorUserId: 'original-owner' };
+  const cleanHead = sourceRecord('concern_history', original), cleanEvent = sourceRecord('concern_events', event);
+  const protectedHead = sourceRecord('concern_history', { ...original,
+    followUp: { id: randomUUID(), at, state: 'completed', runId: randomUUID() } });
+  const protectedEvent = sourceRecord('concern_events', { ...event, runId: randomUUID() });
+  const linkedTask = sourceRecord('concern_events', { ...event, taskId: randomUUID() });
+  const linkedCare = sourceRecord('concern_events', { ...event, recordId: randomUUID() });
+  const previousRun = sourceHistoryRecordSchema.parse({ ...cleanEvent, evidence: { ...cleanEvent.evidence,
+    source: { ...cleanEvent.evidence.source, previous: [{ ...cleanEvent.evidence.source.current,
+      source: { ...cleanEvent.evidence.source.current.source, concernEvent: {
+        ...cleanEvent.evidence.source.current.source.concernEvent!, runId: randomUUID() } } }] } } });
+  const records = [cleanHead, cleanEvent, protectedHead, protectedEvent, linkedTask, linkedCare, previousRun];
+  const unchanged = structuredClone(records);
+  await authority.runTransaction('owner', personalChild, async binding => {
+    for (const record of records) assert.equal(await sourceHistoryVisible(data, binding,
+      { ...record, childId: personalChild, resource: { id: personal.id, version: original.version } }), true,
+    'private source history remains available without rewriting its original evidence');
+  });
+  await sharing.withResource('owner', { spaceId: classroom.id, childId: classChild, module: 'concerns', mode: 'read' }, async access => {
+    assert.equal(await sourceHistoryVisible(data, access.binding, cleanHead, ['concerns']), true);
+    assert.equal(await sourceHistoryVisible(data, access.binding, cleanEvent, ['concerns']), true);
+    assert.equal(await sourceHistoryVisible(data, access.binding, protectedHead, ['concerns', 'tasks', 'care']), false,
+      'original follow-up run IDs cannot be disclosed even when linked modules were selected');
+    assert.equal(await sourceHistoryVisible(data, access.binding, protectedEvent, ['concerns', 'tasks', 'care']), false);
+    assert.equal(await sourceHistoryVisible(data, access.binding, linkedTask, ['concerns']), false, 'unselected task locators remain protected');
+    assert.equal(await sourceHistoryVisible(data, access.binding, linkedCare, ['concerns']), false, 'unselected care locators remain protected');
+    assert.equal(await sourceHistoryVisible(data, access.binding, linkedTask, ['concerns', 'tasks']), true);
+    assert.equal(await sourceHistoryVisible(data, access.binding, linkedCare, ['concerns', 'care']), true);
+    assert.equal(await sourceHistoryVisible(data, access.binding, previousRun, ['concerns', 'tasks', 'care']), false,
+      'a private run in previous source provenance cannot be hidden behind a clean current value');
+  });
+  assert.deepEqual(records, unchanged, 'disclosure never redacts or rehashes the retained source originals');
+});
 
 test('source histories remain separate, round-trip, and follow current deletion and restore barriers', async () => {
   const fixture = serialFirestoreFixture(), options = { database: fixture.database, cipher: createStorageCipher(Buffer.alloc(32, 83)),

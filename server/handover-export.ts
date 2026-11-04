@@ -18,6 +18,7 @@ type PageQuery = { section: string; childId?: string; scopeVersion?: string; cur
 export interface PackagePageOptions { includeSummaryPeriod?: boolean; documentFilter?: PackageDocumentFilter; documentPreviewPeriod?: HandoverHeader['selection']['period'] }
 export interface HandoverExportSource {
   page(userId: string, query: PageQuery, packageMedia?: PackageMediaFilter, options?: PackagePageOptions): Promise<AccountExportPage>;
+  classModules?: HandoverClassExportCommand['selection']['modules'];
   forClass?(request: HandoverClassExportCommand): HandoverExportSource;
 }
 function fail(code: string): never { throw new HandoverArchiveError(code); }

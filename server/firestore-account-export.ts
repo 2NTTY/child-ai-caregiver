@@ -14,7 +14,7 @@ import { createFirestoreCareSummary, firestorePreparationSchema } from './firest
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { withClassExportChild } from './firestore-class-handover.ts';
 import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
-import { handoverClassExportCommandSchema, type HandoverClassExportCommand } from '../src/shared/handover-jobs.ts';
+import { classHandoverModuleSchema, handoverClassExportCommandSchema, type HandoverClassExportCommand } from '../src/shared/handover-jobs.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
 import { createFirestoreNotificationMessages } from './firestore-notification-messages.ts';
 import { readNotificationHistory } from './firestore-notification-history.ts';
@@ -36,7 +36,10 @@ import { firestoreContactRequestSchema, firestoreContactConsentSchema, firestore
 import { historyModule, sourceHistoryRecordSchema, sourceHistoryExport, sourceHistoryId, sourceHistoryMetadata } from './handover-history-records.ts';
 import { validateSourceHistory, sourceHistoryVisible } from './handover-source-history.ts';
 import type { PackageMediaFilter } from './handover-attachment-period.ts';
-import { firestoreGrowthSchema, firestoreGrowthTopicSchema } from './firestore-growth.ts';
+import { firestoreGrowthSchema, firestoreGrowthTopicSchema, type createFirestoreGrowthStore } from './firestore-growth.ts';
+import { createFirestoreConcernStore, firestoreConcernSchema, sharedConcernHead, sharedConcernEvent } from './firestore-concerns.ts';
+import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
+import { handoverIdentityLinks } from './handover-concern-period.ts';
 
 /** Product sections only. Auth credentials, model keys, protocol state and cost/admission ledgers are never exported. */
 const sections = {
@@ -85,9 +88,11 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
   files?: Pick<FirestoreChatFilesStore,'content'|'readMetadata'>;
   transcripts?: Pick<FirestoreVoiceTranscripts,'readIn'>;
   avatars?: Pick<FirebaseAvatarApiPort, 'content'>;
+  growth?: Pick<ReturnType<typeof createFirestoreGrowthStore>, 'prepareExportView'>;
 }) {
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), avatarData = createFirestoreAvatarData(options);
   const sharing = createFirestoreSharingStore(options);
+  const concerns = createFirestoreConcernStore(options);
   const care = createFirestoreCareStore(options), preparations = createFirestoreCareSummary(options, care);
   const memory = createFirestoreMemoryStore({ ...options, care, chat: createFirestoreChatStore({
     database: options.database, cipher: options.cipher, projectId: options.projectId, namespace: options.namespace,
@@ -174,7 +179,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             || Object.entries(metadata).some(([key, expected]) => row.get(key) !== expected)) domainReject('export_scope_changed');
           const concernEvent = value.evidence.source.current.source.section === 'concern_events';
           if (sourceModule === 'concerns' && (section === 'concern_events') !== concernEvent) continue;
-          if (await sourceHistoryVisible(data, binding, value)) items.push(sourceHistoryExport(value));
+          if (await sourceHistoryVisible(data, binding, value, classRequest?.selection.modules)) items.push(sourceHistoryExport(value));
         }
         if (found.size > limit) nextCursor = encode({ userId: owner, section, childId: input.childId ?? null, scopeVersion,
           phase: 'source', after: found.docs[limit - 1].id });
@@ -194,6 +199,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
         query = query.orderBy(suffix === 'photos' ? 'sortKey' : FieldPath.documentId()).limit(limit + 1);
         if (previous) query = query.startAfter(previous.after);
         const found = await binding.transaction.get(query);
+        let growthView: Awaited<ReturnType<NonNullable<typeof options.growth>['prepareExportView']>> | undefined;
         for (const row of found.docs.slice(0, limit)) {
           const body = row.data(), opened = openRecoveryEnvelope({ ...options, locator: body.recovery,
             envelope: { family: 'domain', version: body.version, recordVersion: body.recordVersion, ciphertext: body.ciphertext } });
@@ -251,6 +257,21 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
               else if (classRequest) items.push(kind === 'care' ? firestoreCareSchema.parse(value) : firestoreProfileSchema.parse(value));
               else items.push(value);
             }
+          } else if (classRequest && (section === 'concerns' || section === 'concern_history')) {
+            const head = firestoreConcernSchema.parse(value);
+            const expectedId = section === 'concerns' ? head.id : JSON.stringify([head.id, head.version]);
+            if (context.id !== expectedId || head.childId !== binding.scope.childId || head.version !== row.get('recordVersion')
+              || head.id !== row.get('concernId')) domainReject('export_scope_changed');
+            const current = await concerns.head(binding, head.id);
+            if (current && current.version >= head.version) items.push({ ...sharedConcernHead(head, classRequest.selection.modules),
+              importedFrom: handoverIdentityLinks(head.importedFrom) });
+          } else if (classRequest && section === 'concern_events') {
+            const event = firestoreDocumentConcernEventSchema.parse(value);
+            if (context.id !== event.id || event.id !== row.get('eventId') || event.childId !== binding.scope.childId
+              || event.sequence !== row.get('sequence')) domainReject('export_scope_changed');
+            const current = await concerns.head(binding, event.concernId);
+            if (current && current.timelineId === event.timelineId && event.sequence <= current.eventCount)
+              items.push({ ...sharedConcernEvent(event, classRequest.selection.modules), importedFrom: handoverIdentityLinks(event.importedFrom) });
           } else if (section === 'growth_attention' || section === 'growth_history') {
             const saved = firestoreGrowthSchema.parse(value), item = saved.item;
             const expectedId = section === 'growth_history' ? JSON.stringify([item.id, item.version]) : item.id;
@@ -259,7 +280,13 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             if (!parent.exists) continue;
             const current = data.open('growth-attention', item.id, binding.scope, firestoreGrowthSchema, parent).item;
             if (current.id !== item.id || current.childId !== binding.scope.childId || current.version !== parent.get('recordVersion')) domainReject('export_scope_changed');
-            if (current.version >= item.version) items.push(saved);
+            if (current.version < item.version) continue;
+            if (!classRequest) items.push(saved);
+            else {
+              if (!options.growth) domainReject('growth_export_unavailable', 503);
+              growthView ??= await options.growth.prepareExportView(binding, classRequest.selection.modules);
+              items.push({ item: await growthView(saved), lastRequest: null, importedFrom: handoverIdentityLinks(saved.importedFrom) });
+            }
           } else if (section === 'growth_topics' || section === 'growth_topic_history') {
             const saved = firestoreGrowthTopicSchema.parse(value), id = JSON.stringify([binding.scope.childId, saved.topicId]);
             const expectedId = section === 'growth_topic_history' ? JSON.stringify([binding.scope.childId, saved.topicId, saved.version]) : id;
@@ -268,7 +295,8 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             if (!parent.exists) continue;
             const current = data.open('growth-topic', id, binding.scope, firestoreGrowthTopicSchema, parent);
             if (current.topicId !== saved.topicId || current.version !== parent.get('recordVersion')) domainReject('export_scope_changed');
-            if (current.version >= saved.version) items.push(saved);
+            if (current.version >= saved.version) items.push(classRequest
+              ? { ...saved, request: null, importedFrom: handoverIdentityLinks(saved.importedFrom) } : saved);
           } else if (section === 'memory_facts' || section === 'memory_topics') {
             const current = section === 'memory_facts' ? await memory.readFact(binding, context.id) : await memory.readTopic(binding, context.id);
             if (current) items.push(current);
@@ -379,7 +407,10 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
     });
     const { photos: _photos, voices: _voices, files: _files, avatar: _avatar, ...response } = result; return response;
   }
-  return { page: page.bind(null, null), forClass: (request: HandoverClassExportCommand) => ({
-    page: page.bind(null, handoverClassExportCommandSchema.parse(request)),
-  }), messages: createFirestoreNotificationMessages(options).page };
+  const classModules = classHandoverModuleSchema.options.filter(module => module !== 'growth' || !!options.growth);
+  return { page: page.bind(null, null), classModules, forClass(request: HandoverClassExportCommand) {
+    const command = domainParse(handoverClassExportCommandSchema, request);
+    if (!command.selection.modules.every(module => classModules.includes(module))) domainReject('package_class_source_unavailable', 503);
+    return { page: page.bind(null, command) };
+  }, messages: createFirestoreNotificationMessages(options).page };
 }
