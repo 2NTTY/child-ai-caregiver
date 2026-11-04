@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } fr
 import { AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useProduction } from '../../production/ProductionProvider';
-import { importErrorText, originalComparisonResolution, accountAvatarComparisonResolution } from '../../production/HandoverImportOwner';
+import { importErrorText, originalComparisonResolution, originalComparisonItemKey, legacyOriginalModules, accountAvatarComparisonResolution } from '../../production/HandoverImportOwner';
 import { useProductionSharing } from '../../production/useProductionSharing';
 import { handoverClassScope, handoverClassDestination, handoverClassDestinations, handoverClassEnrolmentDestination,
   type HandoverClassDestination, type HandoverClassEnrolmentDestination } from '../../production/handover-class-targets';
@@ -37,7 +37,7 @@ const avatarOutcomes = { created: '已恢復', updated: '已更新', skipped: '�
 const avatarReasons = { empty_backup: '備份沒有圖片', unchanged: '與備份相同', version_conflict: '目前版本已改變', decision_changed: '目前狀態已改變，請重新比較' };
 const noAvatarSnapshot = () => null;
 const noAvatarSubscription = () => () => {};
-export function comparisonFields(module: HandoverImportModule, fields: string[]) {
+export function comparisonFields(module: HandoverImportModule, fields: string[], resourceSection?: 'documents' | 'visit_preparation') {
   const moduleNames: Partial<Record<HandoverImportModule,Record<string,string>>> = {
     care:{text:'記錄內容',details:'時間／數量',source:'資料來源'},profile:{data:'孩子概況'},
     tasks:{title:'待辦名稱',details:'待辦內容',occurrence:'時間／狀態',kind:'類別',assigneeUserId:'負責人'},
@@ -45,7 +45,9 @@ export function comparisonFields(module: HandoverImportModule, fields: string[])
       management:'用途與摘錄設定',kind:'來源類別',fetchState:'抓取狀態',extraction:'提取狀態',recordId:'已連結照護記錄',
       confirmationKind:'確認用途',retrievedAt:'讀取時間'},
   };
-  const names: Record<string,string> = {...moduleNames[module],reason:'修改原因',updatedAt:'更新時間',
+  const documentFields: Record<string, string> = resourceSection === 'visit_preparation' ? { questions: '到診問題', checklist: '攜帶清單', appointmentTaskId: '預約連結', period: '資料期間' }
+    : { request: '文件設定', status: '封存狀態', archivedAt: '封存時間', currentSnapshot: '文件內容' };
+  const names: Record<string,string> = {...moduleNames[module], ...(module === 'documents' ? documentFields : {}), reason:'修改原因',updatedAt:'更新時間',
     confirmedAt:'確認時間',confirmedBy:'確認者',confirmationBasis:'確認記錄',importedFrom:'來源記錄',
     authorUserId:'記錄者',createdBy:'建立者',createdAt:'建立時間'};
   return [...new Set(fields.map(field => Object.hasOwn(names,field) ? names[field] : '其他欄位'))].join('、');
@@ -174,7 +176,8 @@ export function HandoverImportControls() {
     && (preview.integrity === 'trusted' || accepted);
   const comparisonChildren = preview?.header.purpose === 'backup' && preview.header.source.accountId === userId
     ? preview.children.filter(child => recordsState.children.some(local => local.id === child.id && (local.accessRole === 'owner' || local.accessRole === undefined))) : [];
-  const comparisonModules = originalBackupModuleSchema.options.filter(module => available.includes(module));
+  const originalModules = state.originalModules ?? legacyOriginalModules;
+  const comparisonModules = originalModules.filter(module => available.includes(module));
   const comparison = state.comparison?.query.uploadId === upload?.id && state.comparison?.query.childId === comparisonChild
     && state.comparison?.query.module === comparisonModule ? state.comparison : null;
   const comparisonSelected = comparison?.selected ?? [];
@@ -185,8 +188,8 @@ export function HandoverImportControls() {
   const avatarResolution = avatarComparison?.value ? accountAvatarComparisonResolution(avatarComparison.value) : null;
   const comparisonOverwrite = comparison?.items.filter(item => originalComparisonResolution(item) === 'replace_current') ?? [];
   const comparisonRestore = comparison?.items.filter(item => originalComparisonResolution(item) === 'restore_deleted') ?? [];
-  const selectedOverwrite = comparisonOverwrite.filter(item => comparisonSelected.includes(item.id));
-  const selectedRestore = comparisonRestore.filter(item => comparisonSelected.includes(item.id));
+  const selectedOverwrite = comparisonOverwrite.filter(item => comparisonSelected.includes(originalComparisonItemKey(item)));
+  const selectedRestore = comparisonRestore.filter(item => comparisonSelected.includes(originalComparisonItemKey(item)));
   function chooseSource(id: string, checked: boolean) {
     controller.clearComparison();
     setChoices(before => {
@@ -351,7 +354,8 @@ export function HandoverImportControls() {
             </View> : null}
             {preview.header.purpose === 'backup' ? <View style={styles.group}>
               <Text style={styles.title}>比較原有資料</Text>
-              <Text style={styles.body}>比較此帳戶原孩子的{originalBackupModuleSchema.options.map(module => labels[module]).join('、')}。每次只讀一頁狀態，比較本身沒有還原或改寫任何資料；勾選後可另行提交原項還原，Server 會核實本人備份證明及目前版本。</Text>
+              <Text style={styles.body}>{originalModules.length ? `比較此帳戶原孩子已開放的${originalModules.map(module => labels[module]).join('、')}。`
+                : '此服務目前未開放原有資料比較。'}每次只讀一頁狀態，比較本身沒有還原或改寫任何資料；勾選後可另行提交原項還原，Server 會核實本人備份證明及目前版本。</Text>
               {comparisonChildren.length && comparisonModules.length ? <>
                 <AppSelect label="比較原有資料的孩子" value={comparisonChild} disabled={writeLocked}
                   options={[{value:'',label:'請選擇原孩子'},...comparisonChildren.map(child => ({value:child.id,label:child.displayName}))]}
@@ -365,14 +369,14 @@ export function HandoverImportControls() {
                   {comparison.error ? <Text style={styles.body}>{comparison.error}</Text> : !comparison.loaded ? <Text style={styles.body}>正在比較原有資料。</Text> : <>
                     <Text style={styles.body}>{labels[comparison.query.module]} · 已讀 {comparison.items.length} 項{comparison.nextCursor ? '，尚有下一頁。' : '，此類別比較已讀完。'}</Text>
                     {!comparison.items.length ? <Text style={styles.body}>此類別沒有可比較的項目。</Text> : null}
-                    {comparison.items.map(item => <View key={item.id} style={styles.item}>
-                      <Text selectable style={styles.body}>{item.id} · {comparisonStates[item.state]}</Text>
+                    {comparison.items.map(item => <View key={originalComparisonItemKey(item)} style={styles.item}>
+                      <Text selectable style={styles.body}>{item.resourceSection === 'documents' ? '文件 · ' : item.resourceSection === 'visit_preparation' ? '到診準備 · ' : ''}{item.id} · {comparisonStates[item.state]}</Text>
                       <Text style={styles.body}>備份版本 {item.backupVersion} · 目前版本 {item.localVersion ?? '未能確定'}</Text>
-                      {item.changedFields.length ? <Text style={styles.body}>有變更的欄位：{comparisonFields(comparison.query.module,item.changedFields)}</Text> : null}
+                      {item.changedFields.length ? <Text style={styles.body}>有變更的欄位：{comparisonFields(comparison.query.module,item.changedFields,item.resourceSection)}</Text> : null}
                       {originalComparisonResolution(item) ? <AppCheckbox
                         label={originalComparisonResolution(item) === 'restore_deleted' ? '恢復此已刪項目' : '以備份覆蓋此項'}
-                        accessibilityLabel={`${item.id}：${originalComparisonResolution(item) === 'restore_deleted' ? '恢復已刪項目' : '覆蓋目前內容'}`}
-                        checked={comparisonSelected.includes(item.id)} disabled={writeLocked} onChange={checked => controller.selectComparison(item.id,checked,comparison)} /> : null}
+                        accessibilityLabel={`${item.resourceSection === 'documents' ? '文件 ' : item.resourceSection === 'visit_preparation' ? '到診準備 ' : ''}${item.id}：${originalComparisonResolution(item) === 'restore_deleted' ? '恢復已刪項目' : '覆蓋目前內容'}`}
+                        checked={comparisonSelected.includes(originalComparisonItemKey(item))} disabled={writeLocked} onChange={checked => controller.selectComparison(item,checked,comparison)} /> : null}
                     </View>)}
                     <Text style={styles.body}>只選本次已讀差異{comparison.nextCursor ? '；尚未讀取的下一頁不包括在選擇內' : ''}，不代表整包；翻頁不會自動勾選。</Text>
                     {comparisonOverwrite.length ? <AppCheckbox label={`選取已讀覆蓋項目（${comparisonOverwrite.length} 項）`}

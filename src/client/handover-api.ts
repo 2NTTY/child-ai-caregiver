@@ -9,7 +9,7 @@ import { handoverUploadCommandSchema, handoverUploadViewSchema, handoverUploadPa
 import { handoverImportCommandSchema, handoverImportControlSchema, handoverImportViewSchema, handoverImportPageSchema,
   handoverImportResultQuerySchema, handoverImportResultPageSchema,
   handoverSourceHistoryQuerySchema, handoverSourceHistoryPageSchema,
-  handoverImportSummarySchema, originalBackupComparisonSchema, originalBackupComparisonQuerySchema,
+  handoverImportSummarySchema, originalBackupComparisonSchema, originalBackupComparisonQuerySchema, originalBackupModuleSchema,
   selfAvatarComparisonSchema, selfAvatarComparisonQuerySchema,
   type HandoverImportSummary, type OriginalBackupComparison, type OriginalBackupComparisonQuery,
   type HandoverImportResultQuery, type HandoverImportResultPage, type HandoverImportCommand, type HandoverImportView } from '../shared/handover-imports.ts';
@@ -18,7 +18,9 @@ type CancelCommand = z.infer<typeof handoverCancelCommandSchema>;
 type ExportPage = z.infer<typeof handoverExportPageSchema>;
 type ImportControl = z.infer<typeof handoverImportControlSchema>;
 type ImportPage = z.infer<typeof handoverImportPageSchema>;
-const importCapabilitiesSchema = z.object({ classEnrolment: z.boolean(), accountAvatarRestore: z.literal(true).optional() });
+const importCapabilitiesSchema = z.object({ classEnrolment: z.boolean(), accountAvatarRestore: z.literal(true).optional(),
+  originalModules: z.array(z.string().min(1).max(80)).max(100)
+    .transform(modules => originalBackupModuleSchema.options.filter(module => modules.includes(module))).optional() });
 const importEnrolmentsSchema = z.object({ batchId: z.uuid(), items: z.array(z.object({
   sourceChildId: z.uuid(), target: z.object({ spaceId: z.uuid(), childId: z.uuid() }).strict(),
   outcome: z.enum(['pending', 'created', 'skipped', 'failed']), error: z.string().min(1).max(100).nullable(),
@@ -28,7 +30,9 @@ export type HandoverSourceHistoryQuery = z.infer<typeof handoverSourceHistoryQue
 export type HandoverSourceHistoryPage = z.infer<typeof handoverSourceHistoryPageSchema>;
 export type SelfAvatarComparison = z.infer<typeof selfAvatarComparisonSchema>;
 export type SelfAvatarComparisonQuery = z.infer<typeof selfAvatarComparisonQuerySchema>;
-type RequestOptions = { collection?: 'packages' | 'package-uploads' | 'package-imports'; rawBody?: boolean; timeoutMs?: number; classDocumentReview?: boolean };
+export const originalComparisonItemKey = (item: Pick<OriginalBackupComparison['items'][number], 'id' | 'resourceSection'>) =>
+  item.resourceSection ? JSON.stringify([item.resourceSection, item.id]) : item.id;
+type RequestOptions = { collection?: 'packages' | 'package-uploads' | 'package-imports'; rawBody?: boolean; timeoutMs?: number; classDocumentReview?: boolean; originalModules?: boolean };
 
 export interface HandoverApi {
   setIdentity(userId: string | null): void;
@@ -49,7 +53,7 @@ export interface HandoverApi {
   uploadContent(userId: string, id: string, body: BodyInit, signal: AbortSignal): Promise<HandoverUploadView>;
   createImport(userId: string, command: HandoverImportCommand, signal: AbortSignal): Promise<HandoverImportView>;
   getImport(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportView>;
-  importCapabilities(userId: string, signal: AbortSignal): Promise<{ classEnrolment: boolean; accountAvatarRestore?: true }>;
+  importCapabilities(userId: string, signal: AbortSignal): Promise<{ classEnrolment: boolean; accountAvatarRestore?: true; originalModules?: OriginalBackupComparisonQuery['module'][] }>;
   importEnrolments(userId: string, id: string, signal: AbortSignal): Promise<ClassImportEnrolments>;
   importSummary(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportSummary>;
   compareOriginal(userId: string, query: OriginalBackupComparisonQuery, signal: AbortSignal): Promise<OriginalBackupComparison>;
@@ -104,6 +108,7 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
         if (!isCurrent()) throw failure();
         response = await fetcher(api + '/' + (options.collection ?? 'packages') + path, { method: body === undefined ? 'GET' : 'POST', credentials: 'include', cache: 'no-store',
           headers: { Accept: accept, 'x-expected-user-id': userId, 'x-handover-account-backup': '1', ...(options.classDocumentReview ? { 'x-handover-class-document-review': '1' } : {}),
+            ...(options.originalModules ? { 'x-handover-original-modules': '1' } : {}),
             ...(body === undefined ? {} : { 'Content-Type': options.rawBody ? 'application/zip' : 'application/json' }) },
           ...(body === undefined ? {} : { body: options.rawBody ? body as BodyInit : JSON.stringify(body) }), signal: controller.signal });
         if (!isCurrent()) { release(); throw failure(); }
@@ -220,10 +225,10 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
       return json(userId, '/compare-original', signal, originalBackupComparisonSchema, input,
         page => page.uploadId === input.uploadId && page.childId === input.childId && page.module === input.module
           && page.nextCursor !== '' && (!input.cursor || page.nextCursor !== input.cursor)
-          && new Set(page.items.map(row => row.id)).size === page.items.length, { collection: 'package-imports' });
+          && new Set(page.items.map(originalComparisonItemKey)).size === page.items.length, { collection: 'package-imports' });
     },
     importCapabilities: (userId, signal) => json(userId, '/capabilities', signal, importCapabilitiesSchema,
-      undefined, undefined, { collection: 'package-imports' }),
+      undefined, undefined, { collection: 'package-imports', originalModules: true }),
     importEnrolments: (userId, id, signal) => json(userId, '/' + identifier(id) + '/enrolments', signal, importEnrolmentsSchema,
       undefined, page => page.batchId === id && new Set(page.items.map(row => row.sourceChildId)).size === page.items.length,
       { collection: 'package-imports' }),
