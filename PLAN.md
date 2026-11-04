@@ -58,7 +58,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 的原生 runtime 指紋在本機與 EAS 不一致，本次未產出 APK。下次需要批量安裝時，先核對同一建置封包與依賴位置，再建置、驗簽及覆蓋安裝。[原建置紀錄](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)
 
-**當前入口（2026-11-05）為 [P4-HANDOVER01](#p4-handover01)。** 原站 `cbd8101e` 可查已清理的上載紀錄，並把本人備份的孩子／帳戶頭像、文件、到診準備、孩子概況、照護記錄、待辦及私人來源還原至原件。其餘模組的差異還原、正式帳戶操作仍待接續。原生大型包接線已合併，舊 APK 維持 20 MiB；新 binary 的實際上載待批量建置驗收。後端 `3fb14dc1` 已補 S15 單筆私人來源刪除重放及 S14 報告分期保存筆數。S10 來源監察已上線，接續可停止及恢復的關鍵詞索引批次；原件差異還原亦有未完項。[知識管理發布紀錄](artifacts/verification/P4_KNOWLEDGE_ADMIN_DELIVERY_20261105.json)[刪除重放與報告發布](artifacts/verification/P4_SOURCE_ERASURE_REPORT_TRENDS_20261105.json)[本批交付證據](artifacts/verification/P4_UPLOAD_HISTORY_CHILD_AVATAR_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)
+**當前入口（2026-11-05）為 [P4-HANDOVER01](#p4-handover01)。** 原站 `cbd8101e` 可查已清理的上載紀錄，並把本人備份的孩子／帳戶頭像、文件、到診準備、孩子概況、照護記錄、待辦及私人來源還原至原件。其餘模組的差異還原、正式帳戶操作仍待接續。原生大型包接線已合併，舊 APK 維持 20 MiB；新 binary 的實際上載待批量建置驗收。後端 `3fb14dc1` 已補 S15 單筆私人來源刪除重放及 S14 報告分期保存筆數。S10 來源監察與關鍵詞索引批次已上線。接續本人備份的持續關注差異還原；只有選取的時段可納入期間備份，不能用一週的片段覆蓋整條時間線。[索引批次發布紀錄](artifacts/verification/P4_KNOWLEDGE_INDEX_BATCHES_20261105.json)[知識管理發布紀錄](artifacts/verification/P4_KNOWLEDGE_ADMIN_DELIVERY_20261105.json)[刪除重放與報告發布](artifacts/verification/P4_SOURCE_ERASURE_REPORT_TRENDS_20261105.json)[本批交付證據](artifacts/verification/P4_UPLOAD_HISTORY_CHILD_AVATAR_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)
 
 測試階段持續交付後端與 Web。Android 共用改動累積後，在實際需要安裝或驗證原生功能時集中建置 APK；個別功能包可先完成共用接線，交付紀錄另列尚未在手機驗收的部分。
 
@@ -741,7 +741,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 按包使用 executing-plans／using-git-worktrees；必要規則定向 TDD、失敗才 systematic-debugging；Agent 用 adk-typescript-runtime，正式 Web／部署只採適用目前架構的 Skill 部分。合併前 requesting-code-review／verification-before-completion，亦核對是否漏用現成能力。後端先相容部署，Web／App 同源接線；原生 runtime 變動才建新 binary，保留回退。本人登入、設備及外部前置只留受阻項，未驗／延期不計完成。
 
 <a id="s10-w03"></a>
-#### S10-W03：完整知識管理（P4，來源監察已上線）
+#### S10-W03：完整知識管理（P4，來源監察及關鍵詞索引批次已上線）
 
 - 前置 S10-W02、P2-A04／現行 Firestore 知識接口；只等實際需要的 D 維護接口。
 - 首批在現有 Web 管理後台按需顯示指定來源的註冊／停用狀態、最近成功檢查時間，以及可續讀的檢查紀錄。來源內容是否核准發布沿既有發布流程另行判斷。

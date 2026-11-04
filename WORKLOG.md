@@ -4620,3 +4620,7 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 ## 2026-11-05 管理員查看知識來源
 
 #469、#470 合批更新原站。候選使用原站的正式唯讀查詢讀回 7 個指定來源及 20 筆檢查紀錄；站外核對前端指紋、健康及匿名拒絕。管理員登入後的瀏覽器畫面留待實際使用。Android 沿用現有版本。[知識管理發布紀錄](artifacts/verification/P4_KNOWLEDGE_ADMIN_DELIVERY_20261105.json)
+
+## 2026-11-05 管理員關鍵詞索引批次
+
+#472、#473 已合併及發布。首次候選讀取遇到 Firestore 排序索引仍在建立，原站繼續服務。狀態為 READY 後，候選讀回十個已核准版本及零個批次，才切換 API、worker、Web。已核對站外健康、匿名拒絕及前端指紋。沒有對正式來源發起重建。[索引批次發布紀錄](artifacts/verification/P4_KNOWLEDGE_INDEX_BATCHES_20261105.json)
