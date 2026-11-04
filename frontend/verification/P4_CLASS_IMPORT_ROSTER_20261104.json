@@ -1,0 +1,9 @@
+{
+  "base": "9c7e520e0bcbe3a3cd9d13d6cd9b1a9e9f0fba3c",
+  "package": "P4-HANDOVER01 / CLASS01 existing roster",
+  "environment": "Local shared form and production controllers with synthetic transport",
+  "checked": ["Two sources explicitly matched to different roster IDs in one writable class.", "Class paging and search, changed authorization and rejection of a stale submit callback.", "Existing individual/shared module selection and period preview."],
+  "testsPassed": 3,
+  "typecheck": {"version":"6.0.3","roots":4,"diagnostics":0},
+  "limits": "No implicit student creation, production deploy, live cloud call, browser or phone acceptance."
+}

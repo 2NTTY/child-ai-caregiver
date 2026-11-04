@@ -17,6 +17,8 @@ function load(name) {
     : name === 'react-native' ? { View: 'View', StyleSheet: { create: value => value, hairlineWidth: 1 }, Platform: { OS: 'web' }, AppState: { currentState: 'active' } }
     : name === 'react-native-paper' ? { Text: 'Text' }
     : name.endsWith('/HandoverImportOwner') ? ownerHelpers : name.endsWith('/ProductionProvider') ? { useProduction: () => production }
+    : name.endsWith('/useProductionSharing') ? { useProductionSharing: () => ({ controller: {}, state: { identityKey: null, selected: null, shares: { items: [] }, spaces: { items: [] }, teacherClasses: { items: [] }, rosterQuery: '' } }) }
+    : name.endsWith('/handover-class-targets') ? { handoverClassScope: () => null, handoverClassDestinations: () => [] }
     : name.endsWith('/package-import') ? { PACKAGE_IMPORT_MAX_BYTES: 268435456, pickImportPackage: async () => null }
     : name === './HandoverImportHistory' ? load('HandoverImportHistory') : name === './HandoverImportResults' ? load('HandoverImportResults')
     : name.endsWith('/theme') ? { colors: {}, readingType: {}, spacing: {} }
