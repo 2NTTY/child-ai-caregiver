@@ -3,7 +3,7 @@ import type { Readable } from "node:stream";
 import { Storage, type SaveOptions } from "@google-cloud/storage";
 import { z } from "zod";
 import type { StorageCipher } from "./storage-crypto.ts";
-import { workRecoveryScopeSchema } from "./firestore-work-continuation-recovery.ts";
+import { workRecoveryScopeSchema, type WorkRecoveryScope } from "./firestore-work-continuation-recovery.ts";
 import { canonical } from "./firestore-session-codec.ts";
 import { readFirebaseStorageResponse, FIREBASE_PHOTO_TIMEOUT_MS, type FirebasePhotoBucketPort, type FirebasePhotoSdkBucket } from "./firebase-photo-objects.ts";
 
@@ -11,11 +11,22 @@ const FORMAT = "yuban-erasure-journal", MAX_BYTES = 8192;
 const hash = z.string().regex(/^[a-f0-9]{64}$/u);
 const generation = z.string().regex(/^[1-9][0-9]{0,19}$/u).refine(value => BigInt(value) <= 18446744073709551615n);
 const intentBase = { scope: workRecoveryScopeSchema, assetId: z.uuid(), operationId: z.uuid(), at: z.iso.datetime({ offset: true }) };
-const contentIntent = z.object({ kind: z.enum(['care', 'profile', 'fact', 'topic']), throughVersion: z.number().int().positive() }).strict();
+export function privateSourceErasureOperationId(scope: Pick<WorkRecoveryScope, 'ownerUserId' | 'workspaceId' | 'childId'>,
+  id: string, throughVersion: number, sourceOperationId: string): string {
+  const hex = createHash('sha256').update(canonical(['private-source-content-erasure:1', scope.ownerUserId, scope.workspaceId,
+    scope.childId, id, throughVersion, sourceOperationId])).digest('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+const contentIntent = z.discriminatedUnion('kind', [
+  z.object({ kind: z.enum(['care', 'profile', 'fact', 'topic']), throughVersion: z.number().int().positive() }).strict(),
+  z.object({ kind: z.literal('private_source'), throughVersion: z.number().int().positive(), sourceOperationId: z.uuid() }).strict(),
+]);
 const legacyErasureIntentSchema = z.object({ ...intentBase,
   type: z.enum(['photo-delete', 'voice-delete', 'file-delete', 'child-delete', 'class-delete', 'account-delete', 'content-delete']),
   content: contentIntent.optional(), avatar: z.never().optional(),
 }).strict().refine(value => (value.type === 'content-delete') === (value.content !== undefined))
+  .refine(value => value.content?.kind !== 'private_source' || value.operationId === privateSourceErasureOperationId(
+    value.scope, value.assetId, value.content.throughVersion, value.content.sourceOperationId))
   .refine(value=>value.type!=='class-delete' || value.scope.ownerUserId==='space:'+value.scope.workspaceId
     && value.assetId===value.scope.workspaceId && value.scope.childId==='00000000-0000-0000-0000-000000000000'
     && value.assetId!=='00000000-0000-0000-0000-000000000000');

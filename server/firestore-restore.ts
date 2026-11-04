@@ -339,7 +339,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     outputExtras.push({path:data.ref('online_operations','online-receipt',id).path,
       data:{...data.tags(scope),...data.seal('online-receipt',id,scope,firestoreOnlineErasureBarrierSchema,barrier)}});
   }
-  for (const path of replayContentErasures(data,codec,decoded,live,journal,new Map(input.liveDocuments.map(row=>[row.path,row.data])))) removed.add(path);
+  for (const path of replayContentErasures(data,codec,decoded,live,journal,new Map(input.liveDocuments.map(row=>[row.path,row.data])),input.erasureDescriptors,scopeRemoved)) removed.add(path);
   const keep=decoded.filter(record=>(!removed.has(record.path)||cleanup.get(record.context.id)?.record===record||cleanupTombstones.get(record.path)===record) && !discardedRestoreKinds.has(record.context.kind));
   // A completed erasure may leave historical owner-wide receipt metadata in an old
   // backup. Remove its authenticated child scope first, then require the entire

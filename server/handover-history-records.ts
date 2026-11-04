@@ -8,8 +8,8 @@ export const historyModules = { care_history: 'care', profile_history: 'profile'
   document_versions: 'documents', document_content: 'documents', visit_preparation_history: 'visit_preparation',
   concern_history: 'concerns', concern_events: 'concerns', growth_history: 'growth_attention', growth_topic_history: 'growth_topics' } as const;
 export type HistoryModule = HandoverImportResourceSection;
-export function historyResourceForContent(kind: 'care' | 'profile' | 'fact' | 'topic'): HandoverImportResourceSection {
-  return kind === 'fact' ? 'memory_facts' : kind === 'topic' ? 'memory_topics' : kind;
+export function historyResourceForContent(kind: 'care' | 'profile' | 'fact' | 'topic' | 'private_source'): HandoverImportResourceSection {
+  return kind === 'fact' ? 'memory_facts' : kind === 'topic' ? 'memory_topics' : kind === 'private_source' ? 'private_sources' : kind;
 }
 export function historyModule(section: string): HistoryModule | undefined {
   return Object.hasOwn(historyModules, section) ? historyModules[section as keyof typeof historyModules] : undefined;

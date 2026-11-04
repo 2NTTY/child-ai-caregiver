@@ -1,17 +1,19 @@
 import { z } from 'zod';
-import type { FirebaseErasureIntent } from './firebase-erasure-journal.ts';
-import { firebaseErasureIntentHash } from './firebase-erasure-journal.ts';
+import type { FirebaseErasureDescriptor, FirebaseErasureIntent } from './firebase-erasure-journal.ts';
+import { firebaseErasureDescriptorSchema, firebaseErasureIntentHash } from './firebase-erasure-journal.ts';
 import { FirestoreDomainData, domainReject } from './firestore-domain-data.ts';
 import { contentErasureSchema, contentHistory } from './firestore-content-erasure.ts';
 import { contentPointerSchema, contentResult } from './firestore-disclosure.ts';
 import { firestoreCareRecoverySchemas, firestoreProfileStorageSchema as firestoreProfileSchema } from './firestore-care.ts';
-import { firestoreOnlineRecordSchema, isFirestoreOnlinePending } from './firestore-online-receipts.ts';
+import { firestoreOnlineRecordSchema, isFirestoreOnlinePending, privateInputReceiptTarget } from './firestore-online-receipts.ts';
+import { firestoreSharedInputPartSchema, firestoreSharedInputTombstoneSchema, firestoreSourceManagementRevisionSchema } from './firestore-shared-inputs.ts';
 import { sourceHistoryRecordSchema, historyResourceForContent } from './handover-history-records.ts';
 import type { createFirestoreRestoreCodec, FirestoreRestoreDecoded } from './firestore-restore-codec.ts';
 
 /** Reapply independent content barriers before rebuilding any readable data graph. */
 export function replayContentErasures(data: FirestoreDomainData, codec: ReturnType<typeof createFirestoreRestoreCodec>,
-  records: FirestoreRestoreDecoded[], live: readonly FirestoreRestoreDecoded[], journal: readonly FirebaseErasureIntent[], liveMetadata: ReadonlyMap<string, Record<string, unknown>>): Set<string> {
+  records: FirestoreRestoreDecoded[], live: readonly FirestoreRestoreDecoded[], journal: readonly FirebaseErasureIntent[], liveMetadata: ReadonlyMap<string, Record<string, unknown>>,
+  descriptors: ReadonlyMap<string, FirebaseErasureDescriptor> = new Map(), removedScopes: ReadonlySet<string> = new Set()): Set<string> {
   const intents = journal.filter(v => v.type === 'content-delete').sort((a, b) => a.content!.throughVersion - b.content!.throughVersion), removed = new Set<string>();
   for (const row of live.filter(v => v.context.kind === 'content-erasure')) {
     const value = contentErasureSchema.parse(row.value);
@@ -20,25 +22,31 @@ export function replayContentErasures(data: FirestoreDomainData, codec: ReturnTy
   // Pre-upgrade tombstones must be journaled too; absence of a new job is not permission to resurrect them.
   for (const row of live) {
     const ctx = row.context; if (ctx.family !== 'domain') continue;
-    const value = row.value as { version?: number };
-    const kind = ctx.kind === 'care-tombstone' ? 'care' : ctx.kind === 'memory-tombstone'
+    const value = row.value as { version?: number; operationId?: string };
+    const kind = ctx.kind === 'shared-input-tombstone' ? 'private_source' : ctx.kind === 'care-tombstone' ? 'care' : ctx.kind === 'memory-tombstone'
       ? row.path.startsWith(data.options.namespace + '_memory_facts/') ? 'fact' : 'topic'
       : ctx.kind === 'child-profile' && Number(liveMetadata.get(row.path)?.historyFloor) > 1 ? 'profile' : null;
+    if (!kind) continue;
     const through = kind === 'profile' ? Number(liveMetadata.get(row.path)?.historyFloor) - 1 : value.version! - 1;
-    if (kind && !intents.some(v => v.content!.kind === kind && v.assetId === ctx.id && v.scope.ownerUserId === ctx.scope.ownerUserId
-      && v.scope.childId === ctx.scope.childId && v.content!.throughVersion >= through)) domainReject('restore_content_journal_pending');
+    if (!intents.some(v => v.content!.kind === kind && v.assetId === ctx.id && v.scope.ownerUserId === ctx.scope.ownerUserId
+      && v.scope.workspaceId === ctx.scope.workspaceId && v.scope.childId === ctx.scope.childId && v.content!.throughVersion >= through
+      && (v.content!.kind !== 'private_source' || v.content!.throughVersion > through || v.content!.sourceOperationId === value.operationId)))
+      domainReject('restore_content_journal_pending');
   }
   for (const intent of intents) {
-    const content = intent.content!, parentKind = { care: 'care-record', profile: 'child-profile', fact: 'memory-fact', topic: 'memory-topic' }[content.kind];
-    const suffix = { care: 'care_records', profile: 'child_profiles', fact: 'memory_facts', topic: 'memory_topics' }[content.kind];
+    const content = intent.content!;
+    let restoredSource: FirestoreRestoreDecoded | undefined;
     for (let i = 0; i < records.length; i++) {
       const row = records[i], ctx = row.context; if (ctx.family === 'knowledge') continue;
       if (ctx.scope.ownerUserId !== intent.scope.ownerUserId || ctx.scope.workspaceId !== intent.scope.workspaceId) continue;
       if (ctx.kind === 'online-receipt') {
         const receipt = firestoreOnlineRecordSchema.safeParse(row.value);
         if (!receipt.success || isFirestoreOnlinePending(receipt.data) || receipt.data.childId !== intent.scope.childId) continue;
-        const pointer = contentPointerSchema.safeParse(receipt.data.result), target = pointer.success ? pointer.data : contentResult(receipt.data.path, receipt.data.result);
-        if (target?.kind === content.kind && target.id === intent.assetId && target.version <= content.throughVersion) row.value = { ...receipt.data, result: null };
+        const pointer = contentPointerSchema.safeParse(receipt.data.result);
+        const target = content.kind === 'private_source' ? privateInputReceiptTarget(receipt.data.path, receipt.data.result)
+          : pointer.success ? pointer.data : contentResult(receipt.data.path, receipt.data.result);
+        if (target && (!('kind' in target) || target.kind === content.kind) && target.id === intent.assetId
+          && target.version <= content.throughVersion) row.value = { ...receipt.data, result: null };
         continue;
       }
       if (ctx.scope.childId !== intent.scope.childId) continue;
@@ -48,10 +56,32 @@ export function replayContentErasures(data: FirestoreDomainData, codec: ReturnTy
           removed.add(row.path);
         continue;
       }
+      if (content.kind === 'private_source') {
+        if (ctx.kind === 'shared-input-part' || ctx.kind === 'shared-input-management') {
+          const value = ctx.kind === 'shared-input-part' ? firestoreSharedInputPartSchema.parse(row.value) : firestoreSourceManagementRevisionSchema.parse(row.value);
+          if (value.inputId === intent.assetId && value.version <= content.throughVersion) removed.add(row.path);
+          continue;
+        }
+        if (ctx.id !== intent.assetId || removedScopes.has(row.path)) continue;
+        if (ctx.kind === 'shared-input-tombstone') {
+          const tombstone = firestoreSharedInputTombstoneSchema.parse(row.value);
+          if (tombstone.version === content.throughVersion + 1 && tombstone.operationId === content.sourceOperationId) restoredSource = row;
+          continue;
+        }
+        if (ctx.kind !== 'shared-input' || ctx.recordVersion! > content.throughVersion) continue;
+        const original = z.object({ createdAt: z.string() }).parse(row.value);
+        const tombstone = firestoreSharedInputTombstoneSchema.parse({ id: ctx.id, childId: ctx.scope.childId,
+          version: content.throughVersion + 1, operationId: content.sourceOperationId, deletedAt: intent.at });
+        restoredSource = codec.decode({ path: row.path, data: { ...data.tags(ctx.scope), live: false, entityId: ctx.id, createdAt: original.createdAt,
+          ...data.seal('shared-input-tombstone', ctx.id, ctx.scope, firestoreSharedInputTombstoneSchema, tombstone, tombstone.version) } });
+        records[i] = restoredSource;
+        continue;
+      }
       if (ctx.kind === contentHistory[content.kind][1]) {
         const revision = z.object({ id: z.uuid().optional(), childId: z.uuid(), version: z.number().int().positive() }).passthrough().parse(row.value);
         if ((content.kind === 'profile' ? revision.childId : revision.id) === intent.assetId && revision.version <= content.throughVersion) removed.add(row.path);
       }
+      const parentKind = { care: 'care-record', profile: 'child-profile', fact: 'memory-fact', topic: 'memory-topic' }[content.kind];
       if (ctx.kind !== parentKind || ctx.id !== intent.assetId) continue;
       const old = z.object({ version: z.number().int().positive(), createdAt: z.string().optional() }).passthrough().parse(row.value);
       if (content.kind === 'profile') {
@@ -61,10 +91,22 @@ export function replayContentErasures(data: FirestoreDomainData, codec: ReturnTy
           ...data.seal('child-profile', ctx.id, ctx.scope, firestoreProfileSchema, value, value.version) } });
       } else if (old.version <= content.throughVersion) {
         const value = { id: ctx.id, childId: ctx.scope.childId, version: content.throughVersion + 1, operationId: intent.operationId, deletedAt: intent.at };
-        records[i] = codec.decode({ path: data.ref(suffix, parentKind, ctx.id).path, data: { ...data.tags(ctx.scope), live: false,
+        records[i] = codec.decode({ path: row.path, data: { ...data.tags(ctx.scope), live: false,
           entityId: ctx.id, entityVersion: value.version, ...(content.kind === 'care' ? { createdAt: old.createdAt } : {}),
           ...data.seal(content.kind === 'care' ? 'care-tombstone' : 'memory-tombstone', ctx.id, ctx.scope, firestoreCareRecoverySchemas.tombstone, value, value.version) } });
       }
+    }
+    if (restoredSource && restoredSource.context.family === 'domain') {
+      // The independent proof still refers to the original epoch after the restored workspace gets a new one.
+      const hash = firebaseErasureIntentHash(intent), journal = firebaseErasureDescriptorSchema.parse(descriptors.get(hash));
+      if (journal.intentSha256 !== hash) domainReject('restore_content_journal_pending');
+      const scope = restoredSource.context.scope, id = intent.operationId, path = data.ref('content_erasures', 'content-erasure', id).path;
+      const existing = records.findIndex(item => item.path === path);
+      if (existing >= 0 && firebaseErasureIntentHash(contentErasureSchema.parse(records[existing]!.value).intent) !== hash)
+        domainReject('restore_content_journal_pending');
+      const completed = contentErasureSchema.parse({ intent, journal, stage: 'done', after: null });
+      const proof = codec.decode({ path, data: { ...data.tags(scope), stage: completed.stage, ...data.seal('content-erasure', id, scope, contentErasureSchema, completed) } });
+      if (existing < 0) records.push(proof); else records[existing] = proof;
     }
   }
   return removed;
