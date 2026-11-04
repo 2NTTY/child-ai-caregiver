@@ -13,6 +13,7 @@ import { concernTransferSchema } from './firestore-concerns.ts';
 import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
 import { datedParent, handoverPeriodMatch, supportsHandoverPeriod } from './handover-period.ts';
 import { readDatedConcernHead, validDatedConcernEvent } from './handover-concern-period.ts';
+import { attachmentSections, type AttachmentSection, DatedPackageMedia, isAttachmentHead, isAttachmentSupplement } from './handover-attachment-period.ts';
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/u), uuid = z.uuid();
 const selectionSchema = z.object({ childIds: handoverSelectionSchema.shape.childIds, modules: handoverSelectionSchema.shape.modules }).strict()
@@ -26,9 +27,7 @@ const pageSchema = z.object({ section: z.string().min(1).max(80), childId: uuid.
 type DataPage = z.infer<typeof pageSchema>;
 type PageIndex = { path: string; section: string; childId: string | null; items: number };
 const contentSections = new Set(['photo_content', 'voice_content', 'file_content', 'child_avatar_content']);
-const attachmentSections = { photos: ['photo_content', 'photoId'], voices: ['voice_content', 'voiceId'], files: ['file_content', 'fileId'],
-  child_avatar: ['child_avatar_content', 'childId'] } as const;
-export type AttachmentSection = keyof typeof attachmentSections;
+export type { AttachmentSection } from './handover-attachment-period.ts';
 export interface HandoverAttachmentContent {
   section: string; sourceId: string; sourceVersion: number; attachmentPath: string; mimeType: string; bytes: number; sha256: string; content: Buffer;
 }
@@ -87,6 +86,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
   const concernRows = new Set<string>(), concernEvents = new Map<string, { path: string; rowIndex: number } | null>();
   const requiredDatedEvents = new Set<string>();
   const datedParents = new Set<string>(), datedRevisionParents = new Set<string>();
+  const datedMedia = manifest.selection.period && manifest.selection.modules.includes('attachments') ? new DatedPackageMedia() : null;
   const concernEventIdentity = (childId: string, concernId: string, timelineId: unknown, sequence: number) =>
     JSON.stringify([childId, concernId, timelineId ?? null, sequence]);
   const attachmentIdentity = (childId: string, section: AttachmentSection, id: string) => JSON.stringify([childId, section, id]);
@@ -141,8 +141,11 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
           } else if (period && page.section === 'concern_events') {
             const event = parse(firestoreDocumentConcernEventSchema, row, 'invalid_package_concern_event');
             if (!validDatedConcernEvent(event, period)) fail('invalid_package_period');
+          } else if (datedMedia && isAttachmentSupplement(page.section)) {
+            datedMedia.addSupplement(page.section, page.childId!, row);
           } else if (period) {
             if (handoverPeriodMatch(page.section, row, period) !== 'inside') fail('invalid_package_period');
+            if (datedMedia && isAttachmentHead(page.section)) datedMedia.addHead(page.section, page.childId!, row);
             const parent = datedParent(page.section, row);
             if (parent) (parent.revision ? datedRevisionParents : datedParents).add(key(parent.key, page.childId));
           } else if (page.section === 'concerns' && Object.hasOwn(row, 'periodSource')
@@ -186,6 +189,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
     if (manifest.selection.period && (requiredDatedEvents.size !== concernEvents.size
       || [...requiredDatedEvents].some(identity => !concernEvents.get(identity)))) fail('invalid_package_period');
     if ([...datedRevisionParents].some(identity => !datedParents.has(identity))) fail('invalid_package_period');
+    datedMedia?.verify();
     if (manifest.entries.some(entry => entry.path.startsWith('attachments/') && !attachments.has(entry.path))) fail('invalid_package_attachment');
 
     function select(raw: HandoverImportSelection, acknowledged?: string, rawSections?: string[]) {

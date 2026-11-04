@@ -43,9 +43,11 @@ export function handoverPeriodMatch(section: string, raw: unknown, period: NonNu
     case 'task_history': at = object(object(value.task).occurrence).dueAt; break;
     case 'chat': at = value.createdAt; break;
     case 'chat_imports': at = object(value.message).createdAt; break;
+    case 'files': case 'photos': case 'voices': at = value.createdAt; break;
+    case 'child_avatar': at = value.updatedAt; break;
     default: throw new HandoverArchiveError('package_period_not_connected');
   }
-  if (at === null && (section === 'care' || section === 'care_history')) return 'undated';
+  if (at === null && (section === 'care' || section === 'care_history' || section === 'child_avatar')) return 'undated';
   const instant = timestamp.safeParse(at);
   if (!instant.success) throw new HandoverArchiveError('invalid_package_period');
   return withinHandoverPeriod(instant.data, period) ? 'inside' : 'outside';

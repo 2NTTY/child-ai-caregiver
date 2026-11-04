@@ -78,7 +78,8 @@ test('attachment rows traverse the original package worker before imported chat 
       sha256: hash(fileBytes), messageId: sourceMessageId };
     const voice = { id: voiceId, childId: sourceChild, version: 3, createdAt: at, state: 'ready', fileName: 'original.wav', mimeType: 'audio/wav', bytes: voiceBytes.length,
       sha256: hash(voiceBytes), durationMs: 1000, messageId: sourceMessageId };
-    const transcript = { voice: { id: voiceId, version: voice.version, mimeType: voice.mimeType, bytes: voice.bytes, sha256: voice.sha256, durationMs: voice.durationMs },
+    // The message can keep the immutable audio reference from before a later metadata update.
+    const transcript = { voice: { id: voiceId, version: voice.version - 1, mimeType: voice.mimeType, bytes: voice.bytes, sha256: voice.sha256, durationMs: voice.durationMs },
       messageId: sourceMessageId, version: 2, state: 'available', automatic: true, updatedAt: at, reason: null, retryAt: null,
       content: { complete: true, segments: [{ text: 'Original heard words', startMs: 0, endMs: 1000, unclear: false }] } };
     const textMessage = { id: randomUUID(), childId: sourceChild, authorUserId: 'source', role: 'user', text: 'Original private statement', inReplyTo: null, createdAt: at };
