@@ -39,7 +39,7 @@ function decimal(value: number): string {
   return (value < 0 ? "-" : "") + String(whole) + (fraction ? "." + fraction : "");
 }
 
-function eventDay(at: string, formatter: Intl.DateTimeFormat): string {
+function eventDay(at: string | number, formatter: Intl.DateTimeFormat): string {
   const parts = formatter.formatToParts(new Date(at));
   const year = parts.find(part => part.type === "year")!.value.padStart(4, "0");
   const month = parts.find(part => part.type === "month")!.value;
@@ -47,17 +47,32 @@ function eventDay(at: string, formatter: Intl.DateTimeFormat): string {
   return year + "-" + month + "-" + day;
 }
 
+function summaryEndDay(query: SummaryQuery): string {
+  const endDay = new Date(query.startDay + "T00:00:00Z");
+  endDay.setUTCDate(endDay.getUTCDate() + (query.period === "day" ? 1 : 7));
+  return endDay.toISOString().slice(0, 10);
+}
+
+function dayFormatter(timeZone: string) {
+  return new Intl.DateTimeFormat("en-CA", {
+    calendar: "gregory", numberingSystem: "latn", timeZone,
+    year: "numeric", month: "2-digit", day: "2-digit",
+  });
+}
+
+export function containsCareSummaryPeriod(range: { from: string; to: string }, query: SummaryQuery) {
+  const formatter = dayFormatter(query.timeZone);
+  // The two instants immediately outside an inclusive selection must fall outside all covered
+  // calendar days. This also works for short or long days when a UTC offset changes.
+  return eventDay(Date.parse(range.from) - 1, formatter) < query.startDay &&
+    eventDay(Date.parse(range.to) + 1, formatter) >= summaryEndDay(query);
+}
+
 export function summarizeCare(
   records: CareRecord[],
   query: SummaryQuery,
 ): Pick<CareSummary, "counts" | "metrics" | "records" | "missing" | "endDayExclusive"> {
-  const endDay = new Date(query.startDay + "T00:00:00Z");
-  endDay.setUTCDate(endDay.getUTCDate() + (query.period === "day" ? 1 : 7));
-  const endDayExclusive = endDay.toISOString().slice(0, 10);
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    calendar: "gregory", numberingSystem: "latn", timeZone: query.timeZone,
-    year: "numeric", month: "2-digit", day: "2-digit",
-  });
+  const endDayExclusive = summaryEndDay(query), formatter = dayFormatter(query.timeZone);
 
   const selected: CareRecord[] = [];
   let unknownEventTime = 0;

@@ -13,6 +13,48 @@ import type { HandoverImportRow } from '../server/handover-import.ts';
 import type { CareTask } from '../src/shared/tasks.ts';
 import { serialFirestoreFixture } from './helpers/firestore-session-memory.ts';
 import { createCareSummaryApi } from '../src/client/care-summary-api.ts';
+import { datedParent, handoverPeriodMatch } from '../server/handover-period.ts';
+import { makeImportProvenance } from '../server/handover-provenance.ts';
+
+test('dated visit preparation uses complete IANA calendar periods and child-based revision parents across DST', () => {
+  const childId = randomUUID(), localChildId = randomUUID();
+  const source = { childId, version: 17, appointmentTaskId: randomUUID(), questions: ['Original question'],
+    checklist: [{ text: 'Bring the original notes', done: true }], reviewed: true, reviewedBasis: 'source-epoch:42',
+    period: { startDay: '2026-10-26', period: 'week', timeZone: 'America/New_York' },
+    updatedBy: 'source', updatedAt: '2026-09-01T12:00:00Z' };
+  // The autumn clock change makes this seven-day calendar interval 169 hours long.
+  const week = { from: '2026-10-26T04:00:00.000Z', to: '2026-11-02T04:59:59.999Z' };
+  const day = { from: '2026-11-01T04:00:00.000Z', to: week.to };
+  for (const [value, selected] of [[source, week],
+    [{ ...source, period: { ...source.period, startDay: '2026-11-01', period: 'day' } }, day]] as const) {
+    for (const section of ['visit_preparation', 'visit_preparation_history']) {
+      assert.equal(handoverPeriodMatch(section, value, selected), 'inside', `${section} includes both exact calendar boundaries`);
+      assert.equal(handoverPeriodMatch(section, { ...value, updatedAt: '2027-01-01T00:00:00Z' }, selected), 'inside',
+        'saving after the selected period cannot exclude its calendar evidence');
+      assert.equal(handoverPeriodMatch(section, value, { ...selected, from: new Date(Date.parse(selected.from) + 1).toISOString() }), 'outside',
+        'a calendar period starting one millisecond before the selection is not wholly included');
+      assert.equal(handoverPeriodMatch(section, value, { ...selected, to: new Date(Date.parse(selected.to) - 1).toISOString() }), 'outside',
+        'a calendar period ending one millisecond after the selection is not wholly included');
+      assert.deepEqual(datedParent(section, value, childId), {
+        revision: section === 'visit_preparation_history', key: JSON.stringify(['visit_preparation', childId]),
+      }, 'native preparation rows identify their parent by childId without a synthetic id');
+    }
+  }
+  const wrapper = { format: 'yuyoufang-source-revision:1', childId: localChildId,
+    resource: { id: localChildId, version: 1 }, evidence: { module: 'visit_preparation', value: source,
+      source: makeImportProvenance({ section: 'visit_preparation', childId, value: source,
+        source: { serverId: 'https://source.test', accountId: 'source', packageId: randomUUID(), packageVersion: 1,
+          manifestSha256: 'b'.repeat(64), path: 'data/preparation.json', rowIndex: 0 } },
+      'missing_proof', 'recipient', '2027-01-01T00:00:00Z') } };
+  assert.equal(handoverPeriodMatch('visit_preparation_history', wrapper, week), 'inside',
+    'retained evidence uses its original calendar period despite a later import');
+  assert.equal(handoverPeriodMatch('visit_preparation_history', wrapper,
+    { from: '2027-01-01T00:00:00Z', to: '2027-01-01T23:59:59.999Z' }), 'outside',
+  'the import date cannot make an older calendar period eligible');
+  assert.deepEqual(datedParent('visit_preparation_history', wrapper, localChildId), {
+    revision: true, key: JSON.stringify(['visit_preparation', localChildId]),
+  }, 'retained revisions use their receiving local parent rather than the original source child');
+});
 
 test('imported visit preparation retains source evidence and uses original versioned preparation operations', async () => {
   const fixture = serialFirestoreFixture(), options = { database: fixture.database,

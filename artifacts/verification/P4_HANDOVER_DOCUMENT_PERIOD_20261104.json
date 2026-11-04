@@ -1,0 +1,13 @@
+{
+  "package": "P4-HANDOVER01",
+  "base": "4ac4ddf588e6a2ce5f6751feb006b213e5347199",
+  "integrationBase": "389d8fe00f7de1a848d8a4c41a8dead28413194e",
+  "environment": "Synthetic Firestore and object storage; actual document and preparation services, ZIP writer, reader and import worker",
+  "checks": [
+    "Selected documents carry readable current and historical snapshots with matching metadata and bodies. A crossing document is omitted as a whole; an independently selected task remains in the mixed package.",
+    "A repacked mismatched snapshot version is rejected. Undated observations or invalidated bodies are not silently selected.",
+    "Visit preparation uses its original calendar period and zone. A DST transition produces a 169-hour week and a 25-hour day. Removing one millisecond at either boundary excludes the item."
+  ],
+  "firstFailure": "The preparation period case originally stopped with package_period_not_connected. The worker test initially asserted a resourceSection field that is intentionally absent on task results; the corrected assertion checks the recorded task resource.",
+  "limits": "Local checks only. Per-document preview and manual overrides are separate work, and the original site has not been deployed."
+}

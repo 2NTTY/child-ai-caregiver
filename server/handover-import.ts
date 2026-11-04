@@ -14,6 +14,7 @@ import { firestoreDocumentConcernEventSchema } from './firestore-document-source
 import { datedParent, handoverPeriodMatch, supportsHandoverPeriod } from './handover-period.ts';
 import { readDatedConcernHead, validDatedConcernEvent } from './handover-concern-period.ts';
 import { attachmentSections, type AttachmentSection, DatedPackageMedia, isAttachmentHead, isAttachmentSupplement } from './handover-attachment-period.ts';
+import { DatedDocumentPeriodIndex, isDatedDocumentSection } from './handover-document-period-index.ts';
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/u), uuid = z.uuid();
 const selectionSchema = z.object({ childIds: handoverSelectionSchema.shape.childIds, modules: handoverSelectionSchema.shape.modules }).strict()
@@ -87,6 +88,8 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
   const requiredDatedEvents = new Set<string>();
   const datedParents = new Set<string>(), datedRevisionParents = new Set<string>();
   const datedMedia = manifest.selection.period && manifest.selection.modules.includes('attachments') ? new DatedPackageMedia() : null;
+  const datedDocuments = manifest.selection.period && manifest.selection.modules.includes('documents')
+    ? new DatedDocumentPeriodIndex(manifest.selection.period) : null;
   const concernEventIdentity = (childId: string, concernId: string, timelineId: unknown, sequence: number) =>
     JSON.stringify([childId, concernId, timelineId ?? null, sequence]);
   const attachmentIdentity = (childId: string, section: AttachmentSection, id: string) => JSON.stringify([childId, section, id]);
@@ -129,7 +132,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
           const child = parse(z.object({ id: uuid, displayName: z.string().min(1).max(160) }), row, 'invalid_package_data');
           if (!childIds.delete(child.id)) fail('invalid_package_scope'); children.push(child);
         } else {
-          assertScopedRow(page.section, page.childId!, row);
+          if (!datedDocuments || !isDatedDocumentSection(page.section)) assertScopedRow(page.section, page.childId!, row);
           const period = manifest.selection.period;
           if (period && page.section === 'concerns') {
             const { head, sequences } = readDatedConcernHead(row, period);
@@ -141,6 +144,8 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
           } else if (period && page.section === 'concern_events') {
             const event = parse(firestoreDocumentConcernEventSchema, row, 'invalid_package_concern_event');
             if (!validDatedConcernEvent(event, period)) fail('invalid_package_period');
+          } else if (datedDocuments && isDatedDocumentSection(page.section)) {
+            datedDocuments.add(page.section, page.childId!, row);
           } else if (datedMedia && isAttachmentSupplement(page.section)) {
             datedMedia.addSupplement(page.section, page.childId!, row);
           } else if (period) {
@@ -190,6 +195,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
       || [...requiredDatedEvents].some(identity => !concernEvents.get(identity)))) fail('invalid_package_period');
     if ([...datedRevisionParents].some(identity => !datedParents.has(identity))) fail('invalid_package_period');
     datedMedia?.verify();
+    datedDocuments?.verify();
     if (manifest.entries.some(entry => entry.path.startsWith('attachments/') && !attachments.has(entry.path))) fail('invalid_package_attachment');
 
     function select(raw: HandoverImportSelection, acknowledged?: string, rawSections?: string[]) {

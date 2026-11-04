@@ -7,11 +7,13 @@ import { avatarTransferSchema } from './handover-import.ts';
 import { canonicalJson } from './online-routing.ts';
 import { datedParent, handoverPeriodMatch, supportsHandoverPeriod } from './handover-period.ts';
 import { datedConcernPages } from './handover-concern-period.ts';
+import { datedDocumentPages, type PackageDocumentFilter } from './handover-document-period.ts';
 import { DatedPackageMedia, isAttachmentHead, isAttachmentSupplement, type PackageMediaFilter } from './handover-attachment-period.ts';
 
 const contentSections = new Set(['photo_content', 'voice_content', 'file_content', 'child_avatar_content']);
 type PageQuery = { section: string; childId?: string; scopeVersion?: string; cursor?: string };
-export interface HandoverExportSource { page(userId: string, query: PageQuery, packageMedia?: PackageMediaFilter, includeSummaryPeriod?: boolean): Promise<AccountExportPage> }
+export interface PackagePageOptions { includeSummaryPeriod?: boolean; documentFilter?: PackageDocumentFilter }
+export interface HandoverExportSource { page(userId: string, query: PageQuery, packageMedia?: PackageMediaFilter, options?: PackagePageOptions): Promise<AccountExportPage> }
 function fail(code: string): never { throw new HandoverArchiveError(code); }
 const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 
@@ -34,14 +36,14 @@ export async function writePersonalHandoverPackage(input: {
   const datedMedia = header.selection.period && header.selection.modules.includes('attachments') ? new DatedPackageMedia() : null;
   let ordinal = 0, pageCount = 0;
   const path = (kind: 'data' | 'attachments') => `${kind}/${String(++ordinal).padStart(8, '0')}.${kind === 'data' ? 'json' : 'bin'}`;
-  async function* pages(section: string, childId?: string) {
+  async function* pages(section: string, childId?: string, documentFilter?: PackageDocumentFilter) {
     let cursor: string | undefined;
     const mediaFilter: PackageMediaFilter | undefined = datedMedia && childId && (isAttachmentHead(section) || isAttachmentSupplement(section))
       ? (kind, id) => datedMedia.permitsBytes(childId, kind, id) : undefined;
     do {
       signal.throwIfAborted(); if (++pageCount > 10000) fail('package_size_exceeded');
       const page = await waitForHandoverStep(input.exporter.page(input.ownerUserId, { section, ...(childId ? { childId } : {}), scopeVersion, ...(cursor ? { cursor } : {}) }, mediaFilter,
-        section === 'summary_history' && Boolean(header.selection.period)), signal);
+        { includeSummaryPeriod: section === 'summary_history' && Boolean(header.selection.period), documentFilter }), signal);
       if (page.scopeVersion !== scopeVersion || page.section !== section || page.complete !== (page.nextCursor === null)
         || page.nextCursor && page.nextCursor === cursor) fail('export_scope_changed');
       yield page;
@@ -61,6 +63,14 @@ export async function writePersonalHandoverPackage(input: {
     yield { path: path('data'), mediaType: 'application/json', content: Buffer.from(JSON.stringify({ section: 'children', childId: null, scopeVersion, items: children })) };
     for (const childId of header.selection.childIds) {
       for (const module of header.selection.modules) {
+        if (module === 'documents' && header.selection.period) {
+          const counts = new Map<string, number>();
+          for await (const page of datedDocumentPages(childId, header.selection.period, pages, limits.maxEntries)) {
+            counts.set(page.section, (counts.get(page.section) ?? 0) + page.items.length);
+            yield { path: path('data'), mediaType: 'application/json', content: Buffer.from(JSON.stringify({ ...page, childId, scopeVersion })) };
+          }
+          for (const [section, items] of counts) coverage.push({ section, childId, scopeVersion, items, complete: true });
+        }
         if (module === 'concerns' && header.selection.period) {
           const counts = new Map<string, number>();
           for await (const page of datedConcernPages(childId, header.selection.period, pages)) {
@@ -72,6 +82,7 @@ export async function writePersonalHandoverPackage(input: {
         }
         const selectedParents = new Set<string>();
         for (const section of HANDOVER_SECTIONS[module]) {
+          if (module === 'documents' && header.selection.period && !section.startsWith('visit_preparation')) continue;
           let items = 0;
           for await (const page of pages(section, childId)) {
             if (section === 'child_avatar') {

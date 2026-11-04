@@ -8,6 +8,8 @@ import { growthTopicSchema } from '../src/shared/growth.ts';
 import { factContentDate, memoryUpdateDate, summarySourcePeriodSchema } from './handover-memory-dates.ts';
 import { firestoreFactSchema, firestoreTopicSchema } from './firestore-memory.ts';
 import { firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
+import { firestorePreparationSchema } from './firestore-care-summary.ts';
+import { containsCareSummaryPeriod } from './care-summary-policy.ts';
 
 type Selection = HandoverHeader['selection'];
 const timestamp = z.iso.datetime({ offset: true });
@@ -26,7 +28,7 @@ export function withinHandoverPeriod(at: string, period: HandoverPeriod) {
   return time >= Date.parse(period.from) && time <= Date.parse(period.to);
 }
 
-const datedParentSections = new Set(['care', 'profile', 'tasks', 'private_sources', 'growth_attention', 'growth_topics', 'memory_facts', 'memory_topics']);
+const datedParentSections = new Set(['care', 'profile', 'tasks', 'private_sources', 'growth_attention', 'growth_topics', 'memory_facts', 'memory_topics', 'visit_preparation']);
 /** Retained revisions address the receiving child's local parent, while their event time belongs to the original evidence. */
 export function datedParent(section: string, raw: unknown, childId: string) {
   const history = historyModule(section), parent = history ?? section;
@@ -34,7 +36,7 @@ export function datedParent(section: string, raw: unknown, childId: string) {
   const row = object(raw);
   let id: unknown;
   if (history && row.format === 'yuyoufang-source-revision:1') id = object(row.resource).id;
-  else if (parent === 'profile') id = row.childId;
+  else if (parent === 'profile' || parent === 'visit_preparation') id = row.childId;
   else if (parent === 'growth_topics') {
     const topic = growthTopicSchema.safeParse(row.topicId);
     if (!topic.success) throw new HandoverArchiveError('invalid_package_data');
@@ -60,6 +62,8 @@ export function handoverPeriodMatch(section: string, raw: unknown, period: NonNu
   }
   let at: unknown;
   switch (section) {
+    case 'visit_preparation': case 'visit_preparation_history':
+      return containsCareSummaryPeriod(period, datedValue(firestorePreparationSchema, value).period) ? 'inside' : 'outside';
     case 'summary_history': {
       if (value.sourcePeriod === undefined) return 'undated';
       const proof = summarySourcePeriodSchema.safeParse(value.sourcePeriod);

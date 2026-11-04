@@ -167,6 +167,11 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
         if (raw.concernEvents === undefined) domainReject('package_concern_event_missing', 400);
         provenance.current.sourceHash = firestoreDomainHash({ value: raw.row.value, events: raw.concernEvents });
       }
+      // Recent version IDs are an archive directory. A range can omit older entries while
+      // transferring the exact same resource version and current snapshot body.
+      const documentRevisionHash = !history && section === 'documents' ? firestoreDomainHash({
+        value: { ...raw.row.value, recentSnapshotIds: [] }, content: raw.documentContent,
+      }) : undefined;
       const { serverId, accountId, childId } = provenance.current.source;
       const resourceId = history?.parentId ?? provenance.current.source.resourceId;
       const source = handoverSourceIdentitySchema.parse({ serverId, accountId, childId, section, resourceId });
@@ -178,12 +183,13 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
         const auditChange = prepared?.changeSeq ? null : await b.prepareChange(opId, module === 'sources' ? 'care'
           : module === 'attachments' ? 'chat' : module === 'concerns' ? 'growth' : module, false);
         const item = handoverImportItemSchema.parse({ opId, batchId, fingerprint, actorUserId: b.actorUserId, at: provenance.current.importedAt,
-          ...(history || supplement ? { sourceSection: raw.row.section } : {}),
+          ...(history || supplement ? { sourceSection: raw.row.section } : {}), ...(documentRevisionHash ? { documentRevisionHash } : {}),
           source: provenance.current, outcome, reason, resource, changeSeq: prepared?.changeSeq ?? auditChange!.changeSeq });
         const id = handoverImportItemId(b.scope, opId), envelope = data.seal('handover-import-item', id, b.scope, handoverImportItemSchema, item);
         let next: HandoverImportMapping | null = null;
         if (prepared && resource && !history && !supplement) next = handoverImportMappingSchema.parse({ source, sourceVersion: sourceValue!.version,
-          sourceHash: provenance.current.sourceHash, target: resource, revision: (mapping?.revision ?? 0) + 1,
+          sourceHash: provenance.current.sourceHash, ...(documentRevisionHash ? { documentRevisionHash } : {}),
+          target: resource, revision: (mapping?.revision ?? 0) + 1,
           operationId: opId, importedAt: provenance.current.importedAt });
         // Seal all records before the first write. Model/storage/network calls never occur in the callback.
         const mappingEnvelope = next ? data.seal('handover-import-mapping', mappingId, b.scope, handoverImportMappingSchema, next, next.revision) : null;
@@ -236,7 +242,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       const savedPeriod = current && 'sourcePeriod' in current ? current.sourcePeriod : undefined;
       if (sameVersion && period && savedPeriod && firestoreDomainHash(period) !== firestoreDomainHash(savedPeriod))
         return finish('conflict', 'source_version_conflict');
-      if (sameVersion && provenance.current.sourceHash !== mapping.sourceHash) {
+      if (sameVersion && provenance.current.sourceHash !== mapping.sourceHash && !(documentRevisionHash && documentRevisionHash === mapping.documentRevisionHash)) {
         // A dated export can recover a legacy batch's message dates. The same revision in a full
         // or older package can lack that annotation. Keep the signed digest and the saved body.
         if (section !== 'summary_history') return finish('conflict', 'source_version_conflict');
@@ -418,7 +424,8 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
             const live = await readState(b, resourceSection, { serverId, accountId, childId, section, resourceId });
             if (live.currentId) currentResource = { id: live.currentId, version: live.currentVersion, deleted: live.deleted };
             const stale = live.mapping && (value.source.source.resourceVersion < live.mapping.sourceVersion
-              || value.source.source.resourceVersion === live.mapping.sourceVersion && value.source.sourceHash !== live.mapping.sourceHash);
+              || value.source.source.resourceVersion === live.mapping.sourceVersion && value.source.sourceHash !== live.mapping.sourceHash &&
+              !(value.documentRevisionHash && value.documentRevisionHash === live.mapping.documentRevisionHash));
             if (currentResource && !stale) availableResolution = live.deleted ? 'restore_deleted' : live.locallyChanged ? 'replace_current' : null;
           }
           result.push({ id: value.opId, batchId: value.batchId, sourceChildId: selection.sourceChildId, module: selection.module,

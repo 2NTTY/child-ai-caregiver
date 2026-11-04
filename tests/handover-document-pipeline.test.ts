@@ -15,6 +15,8 @@ import { createFirebaseWorkerServices } from '../server/firebase-worker-services
 import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.ts';
 import { assertFirestoreRestoreContent } from '../server/firestore-restore-content.ts';
 import { writePersonalHandoverPackage } from '../server/handover-export.ts';
+import { openHandoverArchive, writeHandoverArchive } from '../server/handover-archive.ts';
+import { openHandoverImport } from '../server/handover-import.ts';
 import { createFirestoreFamilyDocumentStore } from '../server/firestore-family-documents.ts';
 import { createFirestoreCareStore } from '../server/firestore-care.ts';
 import { createFirestoreCareSummary } from '../server/firestore-care-summary.ts';
@@ -45,6 +47,7 @@ test('documents and visit preparation traverse the original package worker with 
   const online = createFirestoreOnlineStore({ ...options, mutations: [summary.mutation] });
   let original = (await documents.create('source', sourceChild, { kind: 'preparation', purpose: 'appointment', title: 'Original document',
     eventDate: null, period: { from: '2026-10-01', to: '2026-10-31' } }, randomUUID()))!;
+  const firstSnapshot = structuredClone(original.current!);
   original = (await documents.change('source', sourceChild, original.id, { action: 'patch', expectedVersion: original.version,
     authorityVersion: (await documents.describe('source', sourceChild, original.id))!.authorityVersion, confirmShared: true,
     edits: [{ op: 'set_metadata', summary: 'Updated source document' }] }, randomUUID()))!;
@@ -158,6 +161,82 @@ test('documents and visit preparation traverse the original package worker with 
     assert.equal((await summary.get('recipient', childId, period)).preparation.appointmentTaskId, null, 'document-only sharing cannot read or link tasks');
     await items.apply('recipient', { ...itemCommand, opId: randomUUID(), row: { ...preparationRow, value: { ...preparationRow.value, version: 4 } } });
     assert.equal((await summary.get('recipient', childId, period)).preparation.appointmentTaskId, mappedTask.resource!.id);
+
+    const datedChild = (await authority.createChild({ userId: 'recipient', operationId: randomUUID(), displayName: 'Dated recipient' })).child.id;
+    let crossing = (await documents.create('source', sourceChild, { kind: 'preparation', purpose: 'appointment',
+      title: 'Cross-period document', eventDate: null, period: { from: '2026-09-30', to: '2026-10-02' } }, randomUUID()))!;
+    crossing = (await documents.change('source', sourceChild, crossing.id, { action: 'patch', expectedVersion: crossing.version,
+      authorityVersion: (await documents.describe('source', sourceChild, crossing.id))!.authorityVersion, confirmShared: true,
+      edits: [{ op: 'set_metadata', summary: 'SECRET_CROSS_PERIOD_DOCUMENT_BODY' }] }, randomUUID()))!;
+    const datedPeriod = { from: '2026-10-01T00:00:00+08:00', to: new Date(Date.now() + 86400000).toISOString() };
+    const selection = { childIds: [sourceChild], modules: ['documents', 'tasks'] as ('documents' | 'tasks')[] };
+    const dated = await writePersonalHandoverPackage({ exporter, directory, ownerUserId: 'source', serverId: 'https://source.test',
+      packageId: randomUUID(), createdAt: new Date().toISOString(), purpose: 'handover', selection: { ...selection, period: datedPeriod } });
+    const reader = await openHandoverImport({ path: dated.path });
+    try {
+      assert.deepEqual(reader.manifest.selection.period, datedPeriod);
+      assert.deepEqual(reader.children.map(child => child.id), [sourceChild]);
+      const page = await reader.readPage({ selection, acknowledgedManifestSha256: reader.manifestSha256, limit: 100 });
+      assert.equal(page.nextCursor, null);
+      assert.ok(!JSON.stringify(page.rows).includes('SECRET_CROSS_PERIOD_DOCUMENT_BODY'));
+      assert.ok(!JSON.stringify(page.rows).includes(crossing.id), 'cross-period reports are omitted in full');
+      const heads = page.rows.filter(row => row.section === 'documents'), versions = page.rows.filter(row => row.section === 'document_versions');
+      assert.deepEqual(heads.map(row => (row.value as any).id), [original.id]);
+      assert.equal(versions.length, 2);
+      const current = (await reader.readDocumentContent(heads[0], reader.manifestSha256))!;
+      assert.deepEqual(current.snapshot, original.current);
+      assert.deepEqual((heads[0].value as any).request.period, original.current!.period);
+      const historical = await Promise.all(versions.map(row => reader.readDocumentContent(row, reader.manifestSha256)));
+      assert.deepEqual(historical.map(value => value!.snapshot!).sort((a, b) => a.version - b.version), [firstSnapshot, original.current]);
+      for (let index = 0; index < versions.length; index++) {
+        const { snapshot, ...metadata } = historical[index]!;
+        assert.deepEqual(metadata, versions[index].value);
+        assert.deepEqual(snapshot!.period, original.current!.period);
+        assert.equal(versions[index].childId, sourceChild);
+      }
+      const preparations = page.rows.filter(row => row.section === 'visit_preparation' || row.section === 'visit_preparation_history');
+      assert.equal(preparations.length, 3);
+      for (const row of preparations) { assert.equal(row.childId, sourceChild); assert.deepEqual((row.value as any).period, period); }
+      assert.deepEqual(page.rows.filter(row => row.section === 'tasks').map(row => (row.value as any).id), [sourceTask.id]);
+    } finally { await reader.close(); }
+
+    const datedBytes = await readFile(dated.path), datedUploadId = randomUUID();
+    await uploads.create('recipient', { opId: datedUploadId, filename: 'dated-documents.zip', bytes: datedBytes.length,
+      sha256: createHash('sha256').update(datedBytes).digest('hex') });
+    const datedUpload = await uploads.receive('recipient', datedUploadId, Readable.from([datedBytes]), controller.signal);
+    const datedCommand = { opId: randomUUID(), uploadId: datedUploadId, expectedUploadVersion: datedUpload.version,
+      acceptedManifestSha256: datedUpload.preview!.manifestSha256,
+      targets: [{ sourceChildId: sourceChild, target: { childId: datedChild, spaceId: null }, sections: ['documents', 'tasks'] }], resolutions: [] };
+    await service.create('recipient', datedCommand, controller.signal); await run(datedCommand.opId);
+    const datedResults = await service.results('recipient', datedCommand.opId, { sourceChildId: sourceChild, module: 'documents' });
+    const datedLocalId = datedResults.items.find(item => !item.sourceSection && item.resourceSection === 'documents')!.recordedResource!.id;
+    const datedDocument = (await documents.get('recipient', datedChild, datedLocalId))!;
+    assert.equal(datedDocument.current!.summary, original.current!.summary);
+    assert.deepEqual(datedDocument.current!.period, original.current!.period);
+    assert.equal((await documents.listSourceVersions('recipient', datedChild, datedLocalId))!.items.length, 2);
+    const datedPreparation = (await summary.get('recipient', datedChild, period)).preparation;
+    assert.deepEqual(datedPreparation.questions, ['Updated question']); assert.deepEqual(datedPreparation.period, period);
+    assert.equal((await service.results('recipient', datedCommand.opId, { sourceChildId: sourceChild, module: 'tasks' })).items
+      .filter(item => !item.sourceSection && item.recordedResource).length, 1);
+
+    const zip = await openHandoverArchive({ path: dated.path });
+    try {
+      const { entries: declared, coverage, ...header } = zip.manifest;
+      async function* mismatchedEntries() {
+        for (const entry of declared) {
+          let content = await zip.readEntry(entry.path, entry.bytes);
+          if (entry.path.startsWith('data/')) {
+            const page = JSON.parse(content.toString('utf8'));
+            if (page.section === 'document_versions' && page.items.length) {
+              page.items[0].snapshotVersion += 100; content = Buffer.from(JSON.stringify(page));
+            }
+          }
+          yield { path: entry.path, mediaType: entry.mediaType, content };
+        }
+      }
+      const mismatched = await writeHandoverArchive({ directory, header, entries: mismatchedEntries(), coverage: () => coverage });
+      await assert.rejects(openHandoverImport({ path: mismatched.path }), (error: any) => error.code === 'invalid_package_period');
+    } finally { await zip.close(); }
     assert.doesNotThrow(() => assertFirestoreRestoreContent([...fixture.records].map(([path, data]) => codec.decode({ path, data }))));
   } finally { controller.abort(); await rm(directory, { recursive: true, force: true }); }
 });
