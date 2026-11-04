@@ -1,7 +1,7 @@
 import { createHash, type KeyObject } from 'node:crypto';
 import { previewHandoverDocuments } from './handover-document-preview.ts';
-import { classHandoverModuleSchema } from '../src/shared/handover-jobs.ts';
-import { domainReject } from './firestore-domain-data.ts';
+import { handoverClassExportCommandSchema } from '../src/shared/handover-jobs.ts';
+import { domainParse, domainReject } from './firestore-domain-data.ts';
 import { createReadStream } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -85,9 +85,13 @@ export function createHandoverService(options: FirestoreDomainOptions & { export
     } catch (error) { await removeSpool(directory); throw error; }
   }
   return { capabilities: (classDocumentReview = false) => ({ classModules: options.exporter.forClass
-    ? classHandoverModuleSchema.options.filter(module => module !== 'documents' || classDocumentReview) : [] }),
-    create: (owner: string, raw: unknown) => {
-      if (raw && typeof raw === 'object' && 'source' in raw && !options.exporter.forClass) domainReject('package_class_source_unavailable', 503);
+    ? (options.exporter.classModules ?? []).filter(module => module !== 'documents' || classDocumentReview) : [] }),
+    create: async (owner: string, raw: unknown) => {
+      if (raw && typeof raw === 'object' && 'source' in raw) {
+        const command = domainParse(handoverClassExportCommandSchema, raw);
+        if (!options.exporter.forClass || !command.selection.modules.every(module => options.exporter.classModules?.includes(module)))
+          domainReject('package_class_source_unavailable', 503);
+      }
       return jobs.create(owner, raw);
     }, get: jobs.get, list: jobs.list, cancel: jobs.cancel, processExport, cleanup, download,
     preview: (owner: string, query: unknown) => previewHandoverDocuments(options.exporter, owner, query),

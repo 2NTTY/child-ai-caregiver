@@ -4,12 +4,13 @@ import type { FirestoreAuthorityTransaction as Binding } from './firestore-autho
 import type { HandoverImportRow } from './handover-import.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
 import { makeImportProvenance } from './handover-provenance.ts';
+import type { ImportProvenance } from '../src/shared/import-provenance.ts';
 import { contentVisible } from './firestore-disclosure.ts';
 import { firestoreFactSchema, firestoreTopicSchema, firestoreSummarySchema, hasPrivateMessageReference } from './firestore-memory.ts';
 import { createFirestorePrivateInstructions, firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
 import { createFirestoreSharedInputStore, firestoreSourceManagementRevisionSchema } from './firestore-shared-inputs.ts';
 import { z } from 'zod';
-import { createFirestoreConcernStore, firestoreConcernSchema } from './firestore-concerns.ts';
+import { createFirestoreConcernStore, firestoreConcernSchema, sharedConcernEvent, sharedConcernHead } from './firestore-concerns.ts';
 import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
 import { firestoreGrowthSchema, firestoreGrowthTopicSchema, growthTopicResourceId } from './firestore-growth.ts';
 import { firestorePreparationSchema } from './firestore-care-summary.ts';
@@ -102,7 +103,20 @@ export function parseHistoryRow(row: HandoverImportRow, module: HistoryModule, i
   return { evidence: { module, source: provenance, value: parsed.value }, provenance,
     parentId: module === 'profile' ? source.childId : domainParse(z.uuid(), source.id), parentVersion: source.version };
 }
-export async function sourceHistoryVisible(data: FirestoreDomainData, b: Binding, value: SourceHistoryRecord) {
+// A source revision is immutable. Disclose it only if both its body and its provenance already fit the selected scope.
+function concernLineageVisible(origin: ImportProvenance | undefined, modules: readonly string[]) {
+  if (!origin) return true;
+  return [origin.current, ...origin.previous].every(({ source }) => {
+    if (source.section !== 'concerns' && source.section !== 'concern_events') return false;
+    if (source.sourceMessageId || source.previousSummaryId || source.snapshotId || source.reopenedFrom
+      || source.growth || source.growthTopic || source.preparation) return false;
+    const { concern, concernEvent: event } = source;
+    return !concern?.followUp?.runId && (!concern?.attentionIds.length || modules.includes('growth'))
+      && !event?.runId && (!event?.recordId || modules.includes('care')) && (!event?.taskId || modules.includes('tasks'))
+      && ((!event?.attentionId && !event?.attentionVersion) || (!!event?.attentionId && modules.includes('growth')));
+  });
+}
+export async function sourceHistoryVisible(data: FirestoreDomainData, b: Binding, value: SourceHistoryRecord, selectedModules?: readonly string[]) {
   if (value.childId !== b.scope.childId) domainReject('source_history_binding', 500);
   const section = value.evidence.module;
   if (section === 'growth_attention' || section === 'growth_topics') {
@@ -124,7 +138,15 @@ export async function sourceHistoryVisible(data: FirestoreDomainData, b: Binding
   }
   if (section === 'concerns') {
     const current = await createFirestoreConcernStore(data.options).head(b, value.resource.id);
-    return !!current && current.version >= value.resource.version;
+    if (!current || current.version < value.resource.version) return false;
+    if (!b.sharedAccess) return true;
+    if (b.sharedAccess.module !== 'concerns') return false;
+    const modules = (b.sharedAccess.modules ?? []).filter(module => !selectedModules || selectedModules.includes(module));
+    if (!concernLineageVisible(value.evidence.source, modules)) return false;
+    const isEvent = value.evidence.source.current.source.section === 'concern_events';
+    const original = isEvent ? firestoreDocumentConcernEventSchema.parse(value.evidence.value) : firestoreConcernSchema.parse(value.evidence.value);
+    const projected = 'sequence' in original ? sharedConcernEvent(original, modules) : sharedConcernHead(original, modules);
+    return concernLineageVisible(original.importedFrom, modules) && firestoreDomainHash(projected) === value.evidence.source.current.sourceHash;
   }
   if (section === 'visit_preparation') {
     if (value.resource.id !== b.scope.childId) return false;

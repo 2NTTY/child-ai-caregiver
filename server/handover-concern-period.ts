@@ -17,7 +17,7 @@ const sliceId = (childId: string, concernId: string, period: HandoverPeriod) =>
 function fail(): never { throw new HandoverArchiveError('invalid_package_period'); }
 
 // Retain original identities across handovers, without bringing an earlier head's follow-up or other domain payload into this window.
-function sourceLinks(origin?: ImportProvenance): ImportProvenance | undefined {
+export function handoverIdentityLinks(origin?: ImportProvenance): ImportProvenance | undefined {
   if (!origin) return undefined;
   function identity(link: ImportProvenance['current']) {
     const { serverId, accountId, childId, section, resourceId, resourceVersion, authorUserId, createdAt,
@@ -56,7 +56,7 @@ export async function* datedConcernPages(childId: string, rawPeriod: HandoverPer
       entry.sequences.push(event.sequence);
       if (!entry.first || Date.parse(event.at) < Date.parse(entry.first)) entry.first = event.at;
       if (!entry.last || Date.parse(event.at) > Date.parse(entry.last)) entry.last = event.at;
-      items.push({ ...event, concernId: entry.id, periodConcernId: entry.head.id, importedFrom: sourceLinks(event.importedFrom) });
+      items.push({ ...event, concernId: entry.id, periodConcernId: entry.head.id, importedFrom: handoverIdentityLinks(event.importedFrom) });
     }
     if (items.length) { emitted = true; yield { section: 'concern_events', items }; }
   }
@@ -71,7 +71,7 @@ export async function* datedConcernPages(childId: string, rawPeriod: HandoverPer
     items.push({ id, childId, version: head.version, timelineId: head.timelineId, eventCount: sequences.length,
       title: selectedHead ? head.title : '持續關注紀錄', reason: selectedHead ? head.reason : '所選期間的觀察及行動',
       createdAt: first, updatedAt: last, status: archivedAt ? 'closed' : 'following', archivedAt, attentionIds: [], followUp: null,
-      importedFrom: sourceLinks(head.importedFrom),
+      importedFrom: handoverIdentityLinks(head.importedFrom),
       periodSource: { concernId: head.id, ...period, sequences: sequences.sort((a, b) => a - b) } });
   }
   yield { section: 'concerns', items };

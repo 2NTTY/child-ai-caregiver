@@ -240,6 +240,23 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
   }
   const store = {
     prepareImportedAttention, prepareImportedTopic,
+    async prepareExportView(b: Binding, modules: readonly string[]) {
+      if (b.sharedAccess?.module !== 'growth') domainReject('shared_module_scope', 403);
+      const readable = (b.sharedAccess.modules ?? []).filter(module => modules.includes(module));
+      const scoped = { ...b, sharedAccess: { ...b.sharedAccess, modules: readable } };
+      const loaded = await load(scoped);
+      return async (saved: Saved) => {
+        const item = await visible(scoped, saved.item, loaded, !!saved.importedFrom);
+        const facts = readable.includes('memory') ? loaded.context.facts.filter(fact => fact.applicable
+          && item.evidence.facts.some(ref => ref.id === fact.id && ref.version === fact.version)) : [];
+        const values = Object.fromEntries(Object.entries(item.basis.values).filter(([key, value]) => readable.includes('memory')
+          && (value === 'unknown' || facts.some(fact => fact.key.trim().toLowerCase() === key && fact.content === value))));
+        return { ...item, taskId: item.taskState === null ? null : item.taskId, basis: { ...item.basis, values },
+          evidence: { profileVersion: readable.includes('profile') && loaded.context.profile.data
+            && loaded.context.profile.version === item.evidence.profileVersion ? item.evidence.profileVersion : 0,
+            facts: facts.map(({ id, version }) => ({ id, version })) } };
+      };
+    },
     async readImportAttention(b: Binding, id: string) {
       if (b.sharedAccess) domainReject('shared_domain_read_only', 409);
       domainParse(uuid, id); return (await all(b)).find(saved => saved.item.id === id) ?? null;
