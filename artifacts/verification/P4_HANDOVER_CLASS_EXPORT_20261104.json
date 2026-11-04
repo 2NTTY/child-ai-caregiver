@@ -1,0 +1,12 @@
+{
+  "base": "adcd95d84057e459c01c7264c86ea5f25ef0fb9d",
+  "package": "P4-HANDOVER01",
+  "environment": "Local Node 24, production services and worker, in-memory Firestore and object transport, real ZIP writer and recipient reader",
+  "checks": [
+    "tests/handover-class-export.test.ts: selected class child and date range across profile, care and tasks; excluded time, personal content and other pupil absent",
+    "Same actor operation returns the same job and object; non-member cannot create/read/download it, membership loss prevents downloading a ready package",
+    "tests/firestore-handover-jobs.test.ts: personal operation replay and cancellation",
+    "tsc --project tsconfig.server.json"
+  ],
+  "notVerified": ["Production deployment", "Cloud SDK and real device", "Class documents, attachments and other modules", "Native disaster recovery"]
+}

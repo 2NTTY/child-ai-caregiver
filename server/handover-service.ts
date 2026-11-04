@@ -1,5 +1,7 @@
 import { createHash, type KeyObject } from 'node:crypto';
 import { previewHandoverDocuments } from './handover-document-preview.ts';
+import { classHandoverModuleSchema } from '../src/shared/handover-jobs.ts';
+import { domainReject } from './firestore-domain-data.ts';
 import { createReadStream } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -39,9 +41,14 @@ export function createHandoverService(options: FirestoreDomainOptions & { export
       if (job.content && job.uploadStarted) artifact = await options.objects.probe({ scope: job.objectScope, packageId: job.id, content: objectContent(job.content), signal }) ?? undefined;
       if (!artifact) {
         directory = await spool();
-        const archive = await writePersonalHandoverPackage({ exporter: options.exporter, directory, ownerUserId: job.scope.ownerUserId,
+        const classRequest = 'source' in job.request ? job.request : undefined;
+        const exporter = classRequest ? options.exporter.forClass?.(classRequest) : options.exporter;
+        if (!exporter) domainReject('package_class_source_unavailable', 503);
+        const archive = await writePersonalHandoverPackage({ exporter, directory, ownerUserId: job.scope.ownerUserId,
+          sourceAccountId: classRequest && 'space:' + classRequest.source.spaceId,
           serverId: options.serverId, packageId: job.id, createdAt: job.createdAt, purpose: job.request.purpose,
-          selection: job.request.selection, documentChoices: job.request.documentReview?.choices, expectedScopeVersion: job.sourceVersion, signingKey: options.signingKey, signal });
+          selection: job.request.selection, documentChoices: 'source' in job.request ? undefined : job.request.documentReview?.choices,
+          expectedScopeVersion: job.sourceVersion, signingKey: options.signingKey, signal });
         const content = { ...await fileHash(archive.path, signal), manifestSha256: archive.manifestSha256 };
         await jobs.prepareUpload(work, content);
         artifact = await options.objects.put({ scope: job.objectScope, packageId: job.id, source: archive.path, directory, content: objectContent(content), signal });
@@ -77,7 +84,11 @@ export function createHandoverService(options: FirestoreDomainOptions & { export
       return { ...file, filename: '育有方資料包-' + job.id + '.zip', dispose: () => removeSpool(directory) };
     } catch (error) { await removeSpool(directory); throw error; }
   }
-  return { create: jobs.create, get: jobs.get, list: jobs.list, cancel: jobs.cancel, processExport, cleanup, download,
+  return { capabilities: () => ({ classModules: options.exporter.forClass ? classHandoverModuleSchema.options : [] }),
+    create: (owner: string, raw: unknown) => {
+      if (raw && typeof raw === 'object' && 'source' in raw && !options.exporter.forClass) domainReject('package_class_source_unavailable', 503);
+      return jobs.create(owner, raw);
+    }, get: jobs.get, list: jobs.list, cancel: jobs.cancel, processExport, cleanup, download,
     preview: (owner: string, query: unknown) => previewHandoverDocuments(options.exporter, owner, query),
     async reconcile(owner: string, id: string, signal?: AbortSignal) {
       const job = await jobs.reconcilable(owner, id);

@@ -63,9 +63,9 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
     if (sharingErasedBy(row.context.kind, row.value, scope, job.intent.type === 'account-delete',job.intent.type==='class-delete')) return true;
     if (job.intent.type === 'account-delete' && row.context.kind === 'authority-invitation')
       return (row.value as { consumedBy?: string }).consumedBy === scope.ownerUserId;
+    if (row.context.kind === 'handover-export' && handoverJobIncludesScope(firestoreHandoverJobSchema.parse(row.value), scope, job.intent.type === 'class-delete')) return true;
     if (scope.ownerUserId !== candidate.ownerUserId) return false;
     if (job.intent.type === 'account-delete' || job.intent.type==='class-delete') return true;
-    if (row.context.kind === 'handover-export') return handoverJobIncludesScope(firestoreHandoverJobSchema.parse(row.value), scope);
     if (row.context.kind === 'authority-operation') {
       const result = (row.value as any).result;
       // Child creation receipts are intentionally stored under the owner-wide NIL scope.
