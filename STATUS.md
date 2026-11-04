@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **本人私人來源還原（2026-11-05）。** 原站 `e8918ddf` 已可比較及還原本人孩子的私人來源。已核對編輯後覆蓋、已刪來源恢復、官方收藏和外來副本的區別，以及共用表單的實際指令。公開 Web 檔案與交付包一致，後端保留正式簽章。新表單未另建 Android APK。下一項為無孩子也可選取的帳戶備份及本人頭像。[交付證據](artifacts/verification/P4_ORIGINAL_SOURCES_20261105.json)
+- **本人備份（2026-11-05）。** 原站 `9503487d` 已接帳戶頭像的匯出、比較及還原，沒有孩子亦可操作。已核合成照片的內容、原操作重送及換圖衝突。Web 已核對實際發布版本，正式帳戶及手機安裝待驗。下一項為文件與到診準備的原件還原。[本次證據](artifacts/verification/P4_PERSONAL_AVATAR_BACKUP_20261105.json)／[先前私人來源交付](artifacts/verification/P4_ORIGINAL_SOURCES_20261105.json)
 
 - **P4 匯出清單（2026-11-04）：**已接 [Web／App 共用表單及 owner](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)。匯出前可分頁查看所有文件及附件，明確選整份跨期或日期不明的版本，亦可剔除原已入選項。資料變更須重讀。原站 API、worker 與 Web 已於 22:17 香港時間更新。公開 Web 檔案與本機已核對版本一致；Android 新版及正式帳戶操作仍待驗。見[發布證據](artifacts/verification/P4_HANDOVER_WEB_DELIVERY_20261104.json)。
 

@@ -56,9 +56,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 已用原簽署提交一次免費 [preview 建置](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)，APK 驗簽及覆蓋安裝另記。
+**匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 的原生 runtime 指紋在本機與 EAS 不一致，本次未產出 APK。下次需要批量安裝時，先核對同一建置封包與依賴位置，再建置、驗簽及覆蓋安裝。[原建置紀錄](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)
 
-**當前入口（2026-11-05）為 [P4-HANDOVER01](#p4-handover01) 本人備份。** 原站 `e8918ddf` 可比較同帳戶、同孩子的概況、照護記錄、待辦及私人來源，按所選原件與版本整批處理。收藏的官方來源仍須符合目前目錄；跨人交接保存獨立副本。原站已啟用文檔包簽章。接下來補帳戶層選取與本人頭像，讓沒有孩子的帳戶亦可備份；其餘孩子模組的原件差異還原繼續追蹤。[本人還原契約](docs/API.md#p4-personal-restore)／[私人來源交付](artifacts/verification/P4_ORIGINAL_SOURCES_20261105.json)
+**當前入口（2026-11-05）為 [P4-HANDOVER01](#p4-handover01) 本人備份。** 原站 `9503487d` 支援本人頭像單獨備份及差異還原，沒有孩子亦可使用；也可選擇與孩子資料一併備份。已有的孩子概況、照護記錄、待辦及私人來源可按所選版本還原，跨人交接保存獨立副本。下一步接文件及到診準備資料，再補其餘孩子模組。正式帳戶操作和 Android 批量安裝另列待驗。[本人還原契約](docs/API.md#p4-personal-restore)／[原站交付](artifacts/verification/P4_PERSONAL_AVATAR_BACKUP_20261105.json)
 
 測試階段持續交付後端與 Web。Android 共用改動累積後，在實際需要安裝或驗證原生功能時集中建置 APK；個別功能包可先完成共用接線，交付紀錄另列尚未在手機驗收的部分。
 
