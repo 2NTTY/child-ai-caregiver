@@ -4,6 +4,8 @@
 
 ## 目前與接手
 
+- **11 月 5 日 05:32（香港）** 原站 `adaaa410` 已可把交接包的成長事項及主題匯入班員。合成 ZIP 核實班級讀回及重送，原站核實版本協商、服務健康與 Web 指紋。Android 待批量建置。[班級成長發布紀錄](artifacts/verification/P4_CLASS_GROWTH_DELIVERY_20261105.json)
+
 - **11 月 5 日 05:02（香港）** 原站後端 `432ae9a7` 已提供公共知識 ZIP 移轉。兩版分批匯入、停止／恢復及收據以合成資料驗證；正式候選以同一 CLI 查回一個不存在的批次。Web 仍為 `9974bcaf`。[發布紀錄](artifacts/verification/P4_KNOWLEDGE_EDITION_TRANSFER_20261105.json)
 
 - **11 月 5 日 04:41（香港）** 原站 `9974bcaf` 已可從交接包把持續關注匯入班員。來源的跟進時間保留供查閱，不會替原家庭執行跟進。合成包驗過匯入及重送；原站驗了服務、登入保護與前端指紋。Android 待批量建置。[發布紀錄](artifacts/verification/P4_CLASS_CONCERN_DELIVERY_20261105.json)
