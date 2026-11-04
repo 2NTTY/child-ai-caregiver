@@ -1,5 +1,21 @@
 import { HandoverApiError, type HandoverApi } from '../../../src/client/handover-api.ts';
-import { handoverExportCommandSchema, type HandoverExportCommand, type HandoverExportView } from '../../../src/shared/handover-jobs.ts';
+import { handoverExportCommandSchema, type HandoverExportCommand, type HandoverExportView,
+  type HandoverPreviewItem, type HandoverPreviewQuery } from '../../../src/shared/handover-jobs.ts';
+
+type ExportSelection = HandoverExportCommand['selection'];
+type DocumentReview = NonNullable<HandoverExportCommand['documentReview']>;
+type ReviewSection = HandoverPreviewQuery['section'];
+export type ExportReviewGroup = { childId: string; section: ReviewSection; items: HandoverPreviewItem[];
+  loaded: boolean; nextCursor: string | null; avatarVersion?: number };
+type ExportReview = { selection: ExportSelection; key: string; basis: string; scopeVersion: string | null;
+  groups: ExportReviewGroup[]; choices: DocumentReview['choices']; error: string | null };
+export const handoverReviewSections = (selection: ExportSelection): ReviewSection[] => [
+  ...(selection.modules.includes('documents') ? ['documents', 'visit_preparation'] as const : []),
+  ...(selection.modules.includes('attachments') ? ['files', 'photos', 'voices', 'child_avatar'] as const : []),
+];
+export const handoverReviewSelectionKey = (selection: ExportSelection) => JSON.stringify({ childIds: [...selection.childIds].sort(),
+  modules: [...selection.modules].sort(), period: selection.period });
+export const handoverReviewItemKey = (item: Pick<HandoverPreviewItem, 'section' | 'childId' | 'id'>) => JSON.stringify([item.section, item.childId, item.id]);
 
 type Pending = { kind: 'create'; command: HandoverExportCommand; checked: boolean }
   | { kind: 'cancel'; id: string; command: { opId: string; expectedVersion: number }; checked: boolean };
@@ -7,20 +23,23 @@ export interface HandoverState {
   userId: string | null; identityKey: string | null; online: boolean; loaded: boolean;
   items: HandoverExportView[]; nextCursor: string | null; pending: Pending | null;
   busy: 'read' | 'write' | 'check' | 'download' | null; notice: string | null;
+  review: ExportReview | null; reviewBusy: boolean;
 }
 const empty = (userId: string | null, identityKey: string | null, online: boolean): HandoverState => ({
-  userId, identityKey, online, loaded: false, items: [], nextCursor: null, pending: null, busy: null, notice: null,
+  userId, identityKey, online, loaded: false, items: [], nextCursor: null, pending: null, busy: null, notice: null, review: null, reviewBusy: false,
 });
 export function handoverErrorText(error: unknown) {
   const code = error instanceof HandoverApiError ? error.code : error instanceof Error ? error.message : '';
   const messages: Record<string, string> = {
     export_scope_changed: '資料已變更，請重新選擇範圍建立資料包。', package_scope_unavailable: '所選資料目前不可使用。',
+    request_body_too_large: '這次選取的項目太多，請分開建立資料包。',
     package_service_unavailable: '資料包服務暫時未能使用，請稍後再試。', package_size_exceeded: '資料超出此批處理容量，請減少所選範圍。',
     package_object_unknown: '檔案保存結果尚未確認，請查回原檔案。', package_download_incomplete: '下載未完整，請重新下載同一份資料包。',
     package_download_invalid: '下載資料不完整或已變更，請重新讀取狀態。', package_restored: '這份暫存資料包已失效，請重新建立。',
     version_conflict: '狀態已改變，請重新讀取後再操作。', session_changed: '登入狀態已改變，請重新登入。',
     identity_changed: '登入狀態已改變，請重新登入。', unauthorized: '請重新登入。', access_denied: '目前沒有權限讀取這份資料。',
     forbidden: '所選資料目前不可匯出，請重新選擇。',
+    package_review_changed: '資料清單已改變，請重新讀取並選擇。',
   };
   return messages[code ?? ''] ?? '暫時未能完成，請核對連線後查回原結果。';
 }
@@ -29,6 +48,7 @@ type Ticket = { epoch: number; userId: string; controller: AbortController };
 export class HandoverOwner {
   private state = empty(null, null, false); private epoch = 0; private active: AbortController | null = null;
   private listeners = new Set<() => void>();
+  private reviewEpoch = 0; private reviewRead: AbortController | null = null;
   private readonly api: HandoverApi; private readonly accessError: (error: HandoverApiError) => void;
   constructor(api: HandoverApi, accessError: (error: HandoverApiError) => void = () => {}) { this.api = api; this.accessError = accessError; }
   getSnapshot = () => this.state;
@@ -37,6 +57,7 @@ export class HandoverOwner {
   syncContext(userId: string | null, identityKey: string | null, online: boolean) {
     if (userId !== this.state.userId || identityKey !== this.state.identityKey) {
       this.epoch++; this.active?.abort(); this.active = null; this.api.setIdentity(null); this.api.setIdentity(userId);
+      this.reviewEpoch++; this.reviewRead?.abort(); this.reviewRead = null;
       this.state = empty(userId, identityKey, online); this.update({});
     } else if (online !== this.state.online) this.update({ online });
   }
@@ -54,7 +75,7 @@ export class HandoverOwner {
     }
     this.update({ notice: handoverErrorText(error) });
     if (error instanceof HandoverApiError && [401, 403].includes(error.status)) {
-      this.update({ items: [], loaded: false }); this.accessError(error);
+      this.setReviewSelection(null); this.update({ items: [], loaded: false }); this.accessError(error);
     }
   }
   private put(row: HandoverExportView) { this.update({ items: this.state.items.some(x => x.id === row.id)
@@ -73,9 +94,75 @@ export class HandoverOwner {
     try { const row = await this.api[reconcile ? 'reconcile' : 'get'](t.userId, id, t.controller.signal); if (this.current(t)) this.put(row); }
     catch (e) { this.error(t, e); } finally { this.finish(t); }
   };
-  create = async (selection: HandoverExportCommand['selection'], purpose: HandoverExportCommand['purpose']) => {
-    if (this.state.pending || this.state.busy || !this.state.online || !this.state.userId) return;
-    const parsed = handoverExportCommandSchema.safeParse({ opId: crypto.randomUUID(), purpose, selection });
+  setReviewSelection = (selection: ExportSelection | null, basis = '') => {
+    const relevant = selection && handoverReviewSections(selection).length ? selection : null;
+    const key = relevant ? handoverReviewSelectionKey(relevant) : null;
+    if (key === (this.state.review?.key ?? null) && (!relevant || this.state.review?.basis === basis)) return;
+    this.reviewEpoch++; this.reviewRead?.abort(); this.reviewRead = null;
+    this.update({ reviewBusy: false, review: relevant ? { selection: { childIds: [...relevant.childIds], modules: [...relevant.modules],
+      period: relevant.period && { ...relevant.period } }, key: key!, basis, scopeVersion: null,
+      groups: relevant.childIds.flatMap(childId => handoverReviewSections(relevant).map(section => ({ childId, section, items: [], loaded: false, nextCursor: null }))),
+      choices: [], error: null } : null });
+  };
+  reviewReady = (selection: ExportSelection) => !handoverReviewSections(selection).length || !!(this.state.review
+    && this.state.review.key === handoverReviewSelectionKey(selection) && this.state.review.scopeVersion && !this.state.reviewBusy
+    && !this.state.review.error && this.state.review.groups.every(group => group.loaded && (group.section !== 'child_avatar' || group.avatarVersion !== undefined)));
+  reviewMatches = (selection: ExportSelection, basis: string) => this.state.review?.key === handoverReviewSelectionKey(selection) && this.state.review.basis === basis;
+  documentReview = (selection: ExportSelection): DocumentReview | undefined => {
+    const review = this.state.review;
+    if (!handoverReviewSections(selection).length || !review || !this.reviewReady(selection)) return undefined;
+    return { scopeVersion: review.scopeVersion!, choices: review.choices.map(choice => ({ ...choice })),
+      ...(selection.modules.includes('attachments') ? { avatarVersions: review.groups.filter(group => group.section === 'child_avatar')
+        .map(group => ({ childId: group.childId, version: group.avatarVersion! })) } : {}) };
+  };
+  chooseReviewItem = (item: HandoverPreviewItem, include: boolean) => {
+    const review = this.state.review;
+    if (!review || this.state.reviewBusy || review.error || !item.canInclude && !item.defaultIncluded) return;
+    const saved = review.groups.flatMap(group => group.items).find(row => handoverReviewItemKey(row) === handoverReviewItemKey(item));
+    if (!saved || JSON.stringify(saved) !== JSON.stringify(item)) return;
+    const choices = review.choices.filter(row => handoverReviewItemKey(row) !== handoverReviewItemKey(item));
+    if (include !== item.defaultIncluded) choices.push({ section: item.section, childId: item.childId, id: item.id, version: item.version,
+      snapshotId: item.snapshotId, snapshotVersion: item.snapshotVersion, include });
+    this.update({ review: { ...review, choices } });
+  };
+  loadReview = async (childId?: string, section?: ReviewSection) => {
+    const review = this.state.review;
+    if (!review || !this.state.userId || !this.state.identityKey || !this.state.online || this.state.reviewBusy) return;
+    const epoch = this.reviewEpoch, identity = this.epoch, userId = this.state.userId, controller = new AbortController();
+    this.reviewRead = controller;
+    const current = () => epoch === this.reviewEpoch && identity === this.epoch && !controller.signal.aborted;
+    this.update({ reviewBusy: true, review: { ...review, error: null } });
+    try {
+      const groups = childId && section ? review.groups.filter(group => group.childId === childId && group.section === section && group.nextCursor)
+        : review.groups.filter(group => !group.loaded);
+      for (const group of groups) {
+        const active = this.state.review!;
+        const next = await this.api.preview(userId, { childId: group.childId, section: group.section, period: active.selection.period,
+          ...(active.scopeVersion ? { scopeVersion: active.scopeVersion } : {}), ...(group.nextCursor ? { cursor: group.nextCursor } : {}) }, controller.signal);
+        if (!current()) return;
+        if (active.scopeVersion && active.scopeVersion !== next.scopeVersion || next.nextCursor && next.nextCursor === group.nextCursor
+          || next.items.some(item => item.childId !== group.childId || item.section !== group.section)
+          || group.section === 'child_avatar' && next.avatarVersion === undefined) throw new HandoverApiError(409, 'package_review_changed');
+        const items = [...group.items, ...next.items];
+        if (new Set(items.map(handoverReviewItemKey)).size !== items.length) throw new HandoverApiError(409, 'package_review_changed');
+        this.update({ review: { ...this.state.review!, scopeVersion: next.scopeVersion, groups: this.state.review!.groups.map(row => row === group
+          ? { ...group, loaded: true, items, nextCursor: next.nextCursor, ...(next.avatarVersion === undefined ? {} : { avatarVersion: next.avatarVersion }) } : row) } });
+      }
+    } catch (error) {
+      if (!current()) return;
+      const stale = error instanceof HandoverApiError && ['export_scope_changed', 'package_review_changed', 'handover_response_invalid', 'forbidden', 'package_scope_unavailable'].includes(error.code);
+      const active = this.state.review!;
+      this.update({ review: { ...active, error: handoverErrorText(error), ...(stale ? { scopeVersion: null, choices: [],
+        groups: active.groups.map(group => ({ ...group, items: [], loaded: false, nextCursor: null, avatarVersion: undefined })) } : {}) } });
+      if (error instanceof HandoverApiError && (error.status === 401 || error.status === 403 || ['session_changed', 'identity_changed'].includes(error.code)))
+        this.error({ epoch: identity, userId, controller }, error);
+    } finally { if (this.reviewRead === controller) { this.reviewRead = null; this.update({ reviewBusy: false }); } }
+  };
+  create = async (selection: ExportSelection, purpose: HandoverExportCommand['purpose'], documentReview?: DocumentReview) => {
+    if (this.state.pending || this.state.busy || !this.state.online || !this.state.userId || !this.reviewReady(selection)) return;
+    const expectedReview = this.documentReview(selection);
+    if (expectedReview && JSON.stringify(documentReview) !== JSON.stringify(expectedReview)) return;
+    const parsed = handoverExportCommandSchema.safeParse({ opId: crypto.randomUUID(), purpose, selection, ...(documentReview ? { documentReview } : {}) });
     if (!parsed.success) { this.update({ notice: '請選擇孩子及要加入的資料。' }); return; }
     this.update({ pending: { kind: 'create', command: parsed.data, checked: true } }); await this.retryOriginal();
   };
@@ -93,8 +180,11 @@ export class HandoverOwner {
         : await this.api.cancel(t.userId, pending.id, pending.command, t.controller.signal);
       if (this.current(t)) { this.put(row); this.update({ pending: null }); }
     } catch (e) {
-      if (this.current(t) && e instanceof HandoverApiError && (['invalid_input', 'version_conflict', 'package_period_not_connected', 'package_scope_unavailable'].includes(e.code)
-        || pending.kind === 'create' && e.status === 403 && e.code === 'forbidden')) this.update({ pending: null });
+      if (this.current(t) && e instanceof HandoverApiError && (e.status === 413 || ['invalid_input', 'version_conflict', 'package_period_not_connected', 'package_scope_unavailable', 'export_scope_changed'].includes(e.code)
+        || pending.kind === 'create' && e.status === 403 && e.code === 'forbidden')) {
+        this.update({ pending: null });
+        if (e.code === 'export_scope_changed') this.setReviewSelection(null);
+      }
       this.error(t, e);
     } finally { this.finish(t); }
   };

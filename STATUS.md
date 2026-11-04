@@ -4,6 +4,8 @@
 
 ## 目前與接手
 
+- **P4 匯出清單（2026-11-04）：**已接 [Web／App 共用表單及 owner](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)。匯出前可分頁查看所有文件及附件，明確選整份跨期或日期不明的版本，亦可剔除原已入選項。資料變更須重讀。此為本機定向核對，未部署、未在實機驗收。
+
 - **P4 統一文檔包接線中（2026-11-04）：**#382～#407、#413～#415 已合併未部署，個人關注匯入及共用來源閱讀已有必要證據。成長領域準備接點及相容標籤已合併；個人成長統一批次、來源歷史及再匯出的[合成往返核對](artifacts/verification/P4_HANDOVER_GROWTH_IMPORT_20261104.json)已通過。共用表單 #414 已接個人成長選取與原資料閱讀；簽章配置已通過合成簽發與讀回，原站未啟用。記錄、待辦、聊天及關注的[期間包核對](artifacts/verification/P4_HANDOVER_PERIOD_20261104.json)通過；共用日期表單[已核對](frontend/verification/P4_HANDOVER_PERIOD_UI_20261104.json)。附件依入庫時間選期，孩子頭像依更新時間，見[本機往返核對](artifacts/verification/P4_HANDOVER_ATTACHMENT_PERIOD_20261104.json)。概況、私人來源及成長整理新增[期間與父項核對](artifacts/verification/P4_HANDOVER_DATED_DOMAINS_20261104.json)。既有班員已可從名冊選擇。首次匯入空班的後端已通過[同源、防重及撤權核對](artifacts/verification/P4_HANDOVER_CLASS_ENROLMENT_20261104.json)，[新增班員的共用畫面](frontend/verification/P4_CLASS_IMPORT_ENROLMENT_UI_20261104.json)已隨 #424 合併。記憶／摘要的[期間包及來源核對](artifacts/verification/P4_HANDOVER_MEMORY_PERIOD_20261104.json)在本機執行。文件與備診的[完整選期及混合包](artifacts/verification/P4_HANDOVER_DOCUMENT_PERIOD_20261104.json)已有本機核對；匯出前逐份清單、手動選擇、原站部署、其餘共享寫入、完整備份、班級匯出及原生大型包仍未完成。唯一下一步見 [PLAN](PLAN.md#active)。AUTH01、分享新 APK、iOS、P3／P5 及 D 原待辦保留，合併不等於原站交付。
 
 - **Web 語音驗收暫緩；本人 Vertex 代表流程已核：**語音修正已交付原站，但使用者仍回報有問題，並指示待 Agent 完成才驗收；具體新症狀未核，不再要求重試，恢復條件見 [S16](PLAN.md#s16-w03)。本人 key 經正式共用設定／聊天 client 保存及新會話讀回後，以 3 次生成／1 次向量完成官方引用、獨立審核、保存及原 run 讀回。全部記本人，平台增加 0；臨時 key／權限及本地 key 已清理。先前失敗仍保留，手機本人 key 輸入／跨端畫面及四 Agent 聯合品質未因此代驗，見 [MODEL03](PLAN.md#model-self03)／[S16](PLAN.md#s16-w03)。歷史情境干擾及並發資料變動缺口仍待原責任接續。

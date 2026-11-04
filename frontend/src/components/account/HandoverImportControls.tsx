@@ -265,6 +265,7 @@ export function HandoverImportControls() {
             : upload.state === 'cancelled' || upload.state === 'expired' ? '上載已停止，Server 會按原工作清理；毋須再次取消。' : '此上載目前不可匯入，請取消後重新選取。'}</Text> : <>
             <Text style={styles.body}>{integrityLabels[preview.integrity]}。來源：{preview.header.source.serverId}</Text>
             {preview.header.selection.period ? <Text style={styles.body}>來源指定日期（香港時間）：{dateTimeParts(preview.header.selection.period.from, hongKongTimeZone)?.date ?? preview.header.selection.period.from} 至 {dateTimeParts(preview.header.selection.period.to, hongKongTimeZone)?.date ?? preview.header.selection.period.to}</Text> : null}
+            {preview.header.periodExceptions?.length ? <Text style={styles.body}>匯出人另外選入了 {preview.header.periodExceptions.length} 份完整文件或附件。這些項目可涵蓋上述日期以外的內容，名稱及日期見包內的「實際匯出的文件及附件」。</Text> : null}
             {preview.integrity !== 'trusted' ? <AppCheckbox label="我知悉此資料包沒有可信來源證明，仍選擇繼續" checked={accepted} disabled={writeLocked} onChange={setAccepted} /> : null}
             <Text style={styles.body}>可匯入孩子資料、照護記錄、待辦、記憶、私人來源、文件與準備單、附件、私人聊天歷史、持續關注及成長整理。附件包含可讀的照片、錄音、檔案、孩子頭像及原有語音轉錄；其他已開放模組包含各自歷史。持續關注及成長整理目前只可匯入本人孩子。</Text>
             <Text style={styles.body}>請逐位指定接收對象，不會按名字自動配對。預設保留接收對象目前的修改及刪除。</Text>

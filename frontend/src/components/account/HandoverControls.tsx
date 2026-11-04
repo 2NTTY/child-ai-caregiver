@@ -6,7 +6,7 @@ import { useProduction } from '../../production/ProductionProvider';
 import { handoverErrorText } from '../../production/HandoverOwner';
 import { HandoverApiError } from '../../../../src/client/handover-api';
 import { HANDOVER_MODULES, supportsHandoverPeriodModules } from '../../../../src/shared/handover';
-import type { HandoverExportCommand, HandoverExportView } from '../../../../src/shared/handover-jobs';
+import type { HandoverExportCommand, HandoverExportView, HandoverPreviewItem } from '../../../../src/shared/handover-jobs';
 import { exportPackage, useFileExportAvailable } from '../../platform/file-export';
 import { AppCheckbox } from '../AppCheckbox';
 import { AppDateField } from '../DateTimeFields';
@@ -22,10 +22,14 @@ const moduleLabels: Record<typeof HANDOVER_MODULES[number], string> = {
 };
 const stateLabels: Record<HandoverExportView['state'], string> = { queued: '已排隊', building: '正在整理', ready: '可下載', failed: '未能完成', cancelled: '已取消', expired: '已到期' };
 const dateText = (value: string) => new Date(value).toLocaleString('zh-HK', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+const reviewLabels: Record<HandoverPreviewItem['section'], string> = { documents: '文件', visit_preparation: '備診準備單',
+  files: '檔案', photos: '照片', voices: '錄音', child_avatar: '孩子頭像' };
+const reasonLabels: Record<HandoverPreviewItem['reason'], string> = { all: '全部期間', inside: '完全在指定日期內', crosses: '跨越指定日期',
+  outside: '在指定日期之外', uncertain: '日期未能確定', metadata_only: '只有資料，沒有可讀原檔' };
 
 /** One shared account-level entry; the controller owns requests, the Server owns contents and authority. */
 export function HandoverControls() {
-  const { owner, userId, identityKey, recordsState, account, online } = useProduction();
+  const { owner, userId, identityKey, scopeKey, recordsState, account, online } = useProduction();
   const controller = owner.handoverOwner;
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   const [open, setOpen] = useState(false), [purpose, setPurpose] = useState<HandoverExportCommand['purpose']>('handover');
@@ -46,7 +50,6 @@ export function HandoverControls() {
     }, 15_000);
     return () => clearInterval(timer);
   }, [controller, waitingId, current, online]);
-  if (!current) return null;
   const pending = state.pending;
   const chooseChild = (id: string, checked: boolean) => setChildren(before => checked ? [...before.filter(value => value !== id), id] : before.filter(value => value !== id));
   const chooseModule = (id: typeof HANDOVER_MODULES[number], checked: boolean) => setModules(before => checked ? [...before.filter(value => value !== id), id] : before.filter(value => value !== id));
@@ -55,11 +58,24 @@ export function HandoverControls() {
   const ordered = validFrom && validTo && from.toMillis() <= to.toMillis();
   const periodSupported = supportsHandoverPeriodModules(modules);
   const period = periodEnabled && ordered ? { from: from.startOf('day').toUTC().toISO()!, to: to.endOf('day').toUTC().toISO()! } : null;
-  const canCreate = !locked && !pending && !!children.length && !!modules.length && (!periodEnabled || periodSupported && ordered);
+  const selection = { childIds: children, modules, period };
+  const validSelection = !!children.length && children.every(id => selectable.some(child => child.id === id)) && !!modules.length
+    && (!periodEnabled || periodSupported && ordered);
+  const needsReview = modules.includes('documents') || modules.includes('attachments');
+  const reviewBasis = JSON.stringify([identityKey, scopeKey, selectable.map(child => [child.id, child.workspaceId, child.accessRole])]);
+  const reviewKey = open && current && validSelection && needsReview ? JSON.stringify(selection) : null;
+  useEffect(() => {
+    controller.setReviewSelection(reviewKey ? selection : null, reviewBasis);
+    if (reviewKey && online) void controller.loadReview();
+    return () => controller.setReviewSelection(null);
+  }, [controller, reviewKey, reviewBasis, online]);
+  if (!current) return null;
+  const review = needsReview && controller.reviewMatches(selection, reviewBasis) ? state.review : null;
+  const canCreate = !locked && !pending && validSelection && (!needsReview || !!review && controller.reviewReady(selection));
   return <View style={styles.group}>
     <Text style={styles.title}>交接與備份資料包</Text>
     <Text style={styles.body}>選擇孩子及資料，以 ZIP 保存結構化內容、附件與閱讀摘要。檔案保留 24 小時，可稍後回來下載。</Text>
-    <Text style={styles.body}>預設匯出全部期間；照護記錄、待辦、私人聊天及持續關注可指定開始及結束日期。班級匯出及整個帳戶備份仍待接通。</Text>
+    <Text style={styles.body}>預設匯出全部期間；可指定開始及結束日期，並在建立前逐份選擇文件及附件。班級匯出及整個帳戶備份仍待接通。</Text>
     <AppButton label="選擇要匯出的資料" variant="secondary" disabled={locked || !!pending || !selectable.length}
       onPress={() => { setChildren([]); setModules([]); setPurpose('handover'); setPeriodEnabled(false); setFromDay(''); setToDay(''); setOpen(true); }} />
     {!selectable.length ? <Text style={styles.body}>未有可匯出的本人孩子資料。</Text> : null}
@@ -104,8 +120,39 @@ export function HandoverControls() {
           <AppDateField label="結束日期" value={toDay} disabled={locked} onChange={setToDay} error={!validTo ? '請填寫有效的結束日期。' : validFrom && !ordered ? '結束日期不可早於開始日期。' : undefined} />
           {!periodSupported ? <Text accessibilityLiveRegion="polite" style={styles.body}>所選模組未支援日期範圍；請只保留{HANDOVER_MODULES.filter(module => supportsHandoverPeriodModules([module])).map(module => moduleLabels[module]).join('、')}，或取消指定日期。</Text> : null}
         </> : null}
+        {needsReview && validSelection ? <View style={styles.group}>
+          <Text style={styles.title}>文件與附件清單</Text>
+          <Text style={styles.body}>以下列出每位孩子可交接的文件及附件。勾選會交出整份可讀檔案，包含所示的完整日期範圍；跨期項目預設略過，可自行加入。</Text>
+          <Text style={styles.body}>這些選擇只影響各份文件或附件，不改其他記錄、待辦或所選日期。未載入的後續頁仍按預設決定處理。</Text>
+          {!review || review.groups.some(group => !group.loaded) ? <Text style={styles.body}>{state.reviewBusy
+            ? '正在準備每位孩子的清單；首次讀取完成後才可建立資料包。'
+            : '清單尚未讀取完成，請重新讀取後建立資料包。'}</Text> : null}
+          {review?.groups.map(group => <View key={`${group.childId}:${group.section}`} style={styles.item}>
+            <Text style={styles.title}>{selectable.find(child => child.id === group.childId)?.displayName ?? '孩子'} · {reviewLabels[group.section]}</Text>
+            {group.loaded && !group.items.length ? <Text style={styles.body}>沒有可列出的項目。</Text> : null}
+            {group.items.map(item => {
+              const choice = review.choices.find(value => value.childId === item.childId && value.section === item.section && value.id === item.id);
+              const included = choice?.include ?? item.defaultIncluded;
+              return <View key={item.id} style={styles.group}>
+                <AppCheckbox label={item.title || reviewLabels[item.section]} checked={included} disabled={locked || state.reviewBusy || !item.canInclude && !item.defaultIncluded}
+                  onChange={include => controller.chooseReviewItem(item, include)} />
+                <Text style={styles.body}>{included ? '會加入' : '會略過'} · {reasonLabels[item.reason]}</Text>
+                <Text style={styles.body}>{item.reason === 'uncertain' ? '可確定的部分日期' : '涵蓋日期'}：{item.from ?? '未有開始日期'} 至 {item.to ?? '未有結束日期'}</Text>
+                {included && !item.defaultIncluded ? <Text style={styles.body}>已明確選擇交出整份內容，包括指定日期以外的部分。</Text> : null}
+              </View>;
+            })}
+            {group.nextCursor ? <AppButton label={`載入更多${reviewLabels[group.section]}`} variant="quiet" disabled={locked || state.reviewBusy}
+              onPress={() => { void controller.loadReview(group.childId, group.section); }} /> : null}
+          </View>)}
+          {review?.error ? <Text accessibilityLiveRegion="polite" style={styles.body}>{review.error}</Text> : null}
+          <AppButton label={state.reviewBusy ? '正在讀取清單' : '重新讀取清單'} variant="quiet" loading={state.reviewBusy} disabled={locked || state.reviewBusy}
+            onPress={() => { controller.setReviewSelection(null); controller.setReviewSelection(selection, reviewBasis); void controller.loadReview(); }} />
+        </View> : null}
         <AppButton label="建立資料包" loading={state.busy === 'write'} disabled={!canCreate}
-          onPress={() => { if (!canCreate) return; void controller.create({ childIds: children, modules, period }, purpose); setOpen(false); }} />
+          onPress={() => { if (!canCreate) return;
+            if (needsReview) void controller.create(selection, purpose, controller.documentReview(selection));
+            else void controller.create(selection, purpose);
+            setOpen(false); }} />
       </View>
     </FormDialog>
   </View>;
