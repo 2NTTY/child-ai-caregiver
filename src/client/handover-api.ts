@@ -13,6 +13,12 @@ type CancelCommand = z.infer<typeof handoverCancelCommandSchema>;
 type ExportPage = z.infer<typeof handoverExportPageSchema>;
 type ImportControl = z.infer<typeof handoverImportControlSchema>;
 type ImportPage = z.infer<typeof handoverImportPageSchema>;
+const importCapabilitiesSchema = z.object({ classEnrolment: z.boolean() });
+const importEnrolmentsSchema = z.object({ batchId: z.uuid(), items: z.array(z.object({
+  sourceChildId: z.uuid(), target: z.object({ spaceId: z.uuid(), childId: z.uuid() }).strict(),
+  outcome: z.enum(['pending', 'created', 'skipped', 'failed']), error: z.string().min(1).max(100).nullable(),
+}).strict()).max(100) }).strict();
+export type ClassImportEnrolments = z.infer<typeof importEnrolmentsSchema>;
 export type HandoverSourceHistoryQuery = z.infer<typeof handoverSourceHistoryQuerySchema>;
 export type HandoverSourceHistoryPage = z.infer<typeof handoverSourceHistoryPageSchema>;
 type RequestOptions = { collection?: 'packages' | 'package-uploads' | 'package-imports'; rawBody?: boolean; timeoutMs?: number };
@@ -32,6 +38,8 @@ export interface HandoverApi {
   uploadContent(userId: string, id: string, body: BodyInit, signal: AbortSignal): Promise<HandoverUploadView>;
   createImport(userId: string, command: HandoverImportCommand, signal: AbortSignal): Promise<HandoverImportView>;
   getImport(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportView>;
+  importCapabilities(userId: string, signal: AbortSignal): Promise<{ classEnrolment: boolean }>;
+  importEnrolments(userId: string, id: string, signal: AbortSignal): Promise<ClassImportEnrolments>;
   listImports(userId: string, signal: AbortSignal, cursor?: string): Promise<ImportPage>;
   importResults(userId: string, id: string, query: HandoverImportResultQuery, signal: AbortSignal): Promise<HandoverImportResultPage>;
   sourceHistory(userId: string, query: HandoverSourceHistoryQuery, signal: AbortSignal): Promise<HandoverSourceHistoryPage>;
@@ -164,6 +172,11 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
         result => result.id === parsed.data.opId && result.uploadId === parsed.data.uploadId, { collection: 'package-imports', timeoutMs: 300_000 });
     },
     getImport: (userId, id, signal) => resourceView('package-imports', handoverImportViewSchema, userId, id, signal),
+    importCapabilities: (userId, signal) => json(userId, '/capabilities', signal, importCapabilitiesSchema,
+      undefined, undefined, { collection: 'package-imports' }),
+    importEnrolments: (userId, id, signal) => json(userId, '/' + identifier(id) + '/enrolments', signal, importEnrolmentsSchema,
+      undefined, page => page.batchId === id && new Set(page.items.map(row => row.sourceChildId)).size === page.items.length,
+      { collection: 'package-imports' }),
     async listImports(userId, signal, cursor) {
       if (cursor !== undefined && (typeof cursor !== 'string' || !cursor || cursor.length > 2048)) throw new HandoverApiError(400, 'invalid_input');
       return json(userId, cursor === undefined ? '' : '?' + new URLSearchParams({ cursor }), signal, handoverImportPageSchema,

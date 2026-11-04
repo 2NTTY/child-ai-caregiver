@@ -1,4 +1,4 @@
-import { HandoverApiError, type HandoverApi, type HandoverSourceHistoryQuery, type HandoverSourceHistoryPage } from '../../../src/client/handover-api.ts';
+import { HandoverApiError, type HandoverApi, type ClassImportEnrolments, type HandoverSourceHistoryQuery, type HandoverSourceHistoryPage } from '../../../src/client/handover-api.ts';
 import { handoverImportCommandSchema, handoverImportModuleOf, type HandoverImportResourceSection, type HandoverImportCommand, type HandoverImportView,
   type HandoverImportResult, type HandoverImportResultQuery } from '../../../src/shared/handover-imports.ts';
 import { handoverUploadCommandSchema, type HandoverUploadCommand, type HandoverUploadView } from '../../../src/shared/handover-uploads.ts';
@@ -45,6 +45,8 @@ export interface HandoverSourceHistoryState {
 }
 export interface HandoverImportState {
   panelRequested?: boolean;
+  classEnrolmentEnabled: boolean;
+  enrolmentResults: ClassImportEnrolments | null;
   userId: string | null; identityKey: string | null; online: boolean; loaded: boolean;
   upload: HandoverUploadView | null; items: HandoverImportView[]; nextCursor: string | null;
   uploads: UploadSummary[]; uploadsLoaded: boolean; uploadsCursor: string | null;
@@ -53,7 +55,7 @@ export interface HandoverImportState {
   busy: 'pick' | 'read' | 'write' | 'check' | null; pending: Pending | null; notice: string | null;
 }
 const empty = (userId: string | null, identityKey: string | null, online: boolean): HandoverImportState => ({
-  userId, identityKey, online, loaded: false, upload: null, items: [], nextCursor: null,
+  userId, identityKey, online, loaded: false, upload: null, items: [], nextCursor: null, classEnrolmentEnabled: false, enrolmentResults: null,
   uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, sourceHistory: null, busy: null, pending: null, notice: null });
 type Ticket = { epoch: number; userId: string; controller: AbortController };
 /** Device drafts only; uploaded packages, import authority and progress remain on the Server. */
@@ -63,6 +65,7 @@ export class HandoverImportOwner {
   private resultsTicket: Ticket | null = null; private resultsRevision = 0;
   private historyTicket: Ticket | null = null; private historyRevision = 0;
   private documentTicket: Ticket | null = null;
+  private capabilityTicket: Ticket | null = null;
   private documentPort?: HandoverDocumentContentPort;
   private api: HandoverApi; private accessError: (error: HandoverApiError) => void;
   constructor(api: HandoverApi, accessError: (error: HandoverApiError) => void = () => {}, documentPort?: HandoverDocumentContentPort) { this.api = api; this.accessError = accessError; this.documentPort = documentPort; }
@@ -74,6 +77,7 @@ export class HandoverImportOwner {
   private release() { const file = this.file; this.file = null; try { file?.release(); } catch { /* Local cache expiry also cleans crash leftovers. */ } }
   syncContext(userId: string | null, identityKey: string | null, online: boolean) {
     if (userId !== this.state.userId || identityKey !== this.state.identityKey) {
+      this.capabilityTicket?.controller.abort(); this.capabilityTicket = null;
       this.epoch++; this.active?.abort(); this.active = null; this.release(); this.api.setIdentity(null); this.api.setIdentity(userId);
       this.resultsTicket = null; this.resultsRevision++;
       this.historyTicket = null; this.historyRevision++;
@@ -94,10 +98,14 @@ export class HandoverImportOwner {
       this.syncContext(null, null, this.state.online); this.accessError(error); return;
     }
     this.update({ notice: importErrorText(error) });
-    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.update({ upload: null, items: [], loaded: false, uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, sourceHistory: null, pending: null }); this.accessError(error); }
+    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.update({ upload: null, items: [], loaded: false, uploads: [], uploadsLoaded: false, uploadsCursor: null, results: null, sourceHistory: null, enrolmentResults: null, pending: null }); this.accessError(error); }
   }
-  private put(row: HandoverImportView) { this.update({ items: this.state.items.some(x => x.id === row.id)
-    ? this.state.items.map(x => x.id === row.id ? row : x) : [row, ...this.state.items] }); }
+  private put(row: HandoverImportView) {
+    const previous = this.state.items.find(item => item.id === row.id);
+    const changed = this.state.enrolmentResults?.batchId === row.id && previous?.version !== row.version;
+    this.update({ items: previous ? this.state.items.map(x => x.id === row.id ? row : x) : [row, ...this.state.items],
+      ...(changed ? { enrolmentResults: null } : {}) });
+  }
   private putUpload(row: HandoverUploadView) {
     const { preview: _preview, ...summary } = row;
     this.update({ uploads: this.state.uploads.some(x => x.id === row.id)
@@ -127,6 +135,7 @@ export class HandoverImportOwner {
     const t = this.begin('read'); if (!t) return;
     try { const page = await this.api.listImports(t.userId, t.controller.signal, cursor ?? undefined);
       if (this.current(t)) this.update({ loaded: true, nextCursor: page.nextCursor,
+        ...(!more ? { enrolmentResults: null } : {}),
         items: more ? [...this.state.items, ...page.items.filter(x => !this.state.items.some(y => x.id === y.id))] : page.items });
     } catch (e) { this.error(t, e); } finally { this.finish(t); }
   };
@@ -134,6 +143,35 @@ export class HandoverImportOwner {
     const t = this.begin('read'); if (!t) return;
     try { const row = await this.api.getImport(t.userId, id, t.controller.signal); if (this.current(t)) this.put(row); }
     catch (e) { this.error(t, e); } finally { this.finish(t); }
+  };
+  readImportCapabilities = async () => {
+    if (!this.state.userId || !this.state.identityKey || !this.state.online || this.capabilityTicket) return;
+    const t = { userId: this.state.userId, epoch: this.epoch, controller: new AbortController() };
+    this.capabilityTicket = t;
+    try {
+      const value = await this.api.importCapabilities(t.userId, t.controller.signal);
+      if (this.current(t)) this.update({ classEnrolmentEnabled: value.classEnrolment });
+    } catch (error) {
+      if (this.current(t)) {
+        this.update({ classEnrolmentEnabled: false });
+        if (error instanceof HandoverApiError && ([401, 403].includes(error.status) || ['session_changed', 'identity_changed'].includes(error.code)))
+          this.error(t, error);
+      }
+    } finally { if (this.capabilityTicket === t) this.capabilityTicket = null; }
+  };
+  readEnrolments = async (id: string) => {
+    const batch = this.state.items.find(item => item.id === id);
+    if (!this.state.classEnrolmentEnabled || !batch || this.state.pending) return;
+    const t = this.begin('read'); if (!t) return;
+    try {
+      const page = await this.api.importEnrolments(t.userId, id, t.controller.signal);
+      if (!this.current(t)) return;
+      if (page.items.some(row => !batch.targets.some(target => target.sourceChildId === row.sourceChildId
+        && target.target.childId === row.target.childId && target.target.spaceId === row.target.spaceId)))
+        throw new HandoverApiError(0, 'handover_response_invalid');
+      this.update({ enrolmentResults: page });
+    } catch (error) { if (this.current(t)) this.update({ enrolmentResults: null }); this.error(t, error); }
+    finally { this.finish(t); }
   };
   private stopResultsRead() {
     const ticket = this.resultsTicket; this.resultsTicket = null;
@@ -322,6 +360,9 @@ export class HandoverImportOwner {
   };
   create = async (targets: HandoverImportCommand['targets'], acceptUntrusted: boolean) => {
     const upload = this.state.upload; if (this.state.pending || this.state.busy || !upload?.preview || upload.state !== 'ready') return;
+    if (targets.some(row => 'createInClassId' in row.target) && !this.state.classEnrolmentEnabled) {
+      this.update({ notice: '此服務目前未開放匯入時新增班員。' }); return;
+    }
     if (upload.preview.integrity !== 'trusted' && !acceptUntrusted) { this.update({ notice: '資料包沒有可信簽章；如要繼續，請勾選知悉此狀態。' }); return; }
     const parsed = handoverImportCommandSchema.safeParse({ opId: crypto.randomUUID(), uploadId: upload.id, expectedUploadVersion: upload.version,
       acceptedManifestSha256: upload.preview.integrity === 'trusted' ? null : upload.preview.manifestSha256, targets, resolutions: [] });
@@ -402,6 +443,8 @@ export function importErrorText(error: unknown) {
     invalid_package_file: '請選擇不超過 256 MiB 的 ZIP 資料包。', package_local_file_missing: '本機檔案已不在，請取消此上載後重新選取。',
     package_native_size_exceeded: '手機目前可上載最多 20 MiB；較大的資料包請用 Web 匯入。', package_local_cache_full: '本機暫存檔案已滿，請稍後再試。',
     package_section_not_connected: '所選資料含尚未接通的類型，沒有繼續匯入；請查看批次結果。',
+    import_class_student_conflict: '原有班員已變更，請重新核對接收班員。',
+    read_only: '你目前只有檢視權限，無法寫入所選對象。', space_access_denied: '你目前沒有此空間的存取權限。',
     package_signature_invalid: '資料包簽章不符，請向來源重新取得。', package_hash_mismatch: '資料包內容校驗不符，請重新取得。',
     package_integrity_failed: '資料包完整性驗證失敗，請向來源重新取得；不能略過此錯誤匯入。',
     package_upload_capacity: '暫存資料包已滿，請取消不再使用的上載或稍後再試。',

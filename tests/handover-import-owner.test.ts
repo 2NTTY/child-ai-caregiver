@@ -115,7 +115,12 @@ test('import owner preserves unknown operations, resumes server batches and clea
   await owner.checkOriginal();
   owner.selectResults(originalBatch.id, id, 'care');
   api.importResults = () => new Promise(resolve => { resultRead = resolve; });
-  const lateResults = owner.readResults(); owner.syncContext('bob', 'results-other-session', true);
+  let capabilityReply!: (value: { classEnrolment: boolean }) => void;
+  api.importCapabilities = () => new Promise(resolve => { capabilityReply = resolve; });
+  const lateCapability = owner.readImportCapabilities(), lateResults = owner.readResults();
+  owner.syncContext('bob', 'results-other-session', true);
+  capabilityReply({ classEnrolment: true }); await lateCapability;
+  assert.equal(owner.getSnapshot().classEnrolmentEnabled, false, 'a previous login cannot enable enrolment');
   resultRead({ batchId: originalBatch.id, sourceChildId: id, module: 'care', items: [result], nextCursor: null, complete: true }); await lateResults;
   assert.equal(owner.getSnapshot().results, null, 'late results do not enter another identity');
 });

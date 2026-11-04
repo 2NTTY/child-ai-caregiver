@@ -6,6 +6,9 @@ export interface HandoverClassDestination {
   value: string; label: string; childId: string; spaceId: string; modules: HandoverImportModule[];
   scopeBasis: string; basis: string;
 }
+export interface HandoverClassEnrolmentDestination extends Omit<HandoverClassDestination, 'childId'> {
+  createInClassId: string;
+}
 // Shared concerns/growth and private source/chat writes are not connected by the package worker.
 const writable = new Set<HandoverImportModule>(['care', 'profile', 'tasks', 'memory', 'documents', 'attachments']);
 export function handoverClassScope(state: SharingState, teachers?: SharingState): string | null {
@@ -24,6 +27,13 @@ export function handoverClassDestination(state: SharingState, grant: SharedGrant
   const modules = grant.modules.filter(module => writable.has(module));
   return { value: `class:${room.id}:${grant.childId}`, label: `${grant.childName}（${room.name}）`, childId: grant.childId, spaceId: room.id, modules,
     scopeBasis, basis: JSON.stringify([scopeBasis, grant.childId, grant.version, [...grant.modules].sort()]) };
+}
+/** A verified capability permits an explicit plan, never a fabricated student identity. */
+export function handoverClassEnrolmentDestination(state: SharingState, teachers: SharingState, enabled: boolean): HandoverClassEnrolmentDestination | null {
+  const scopeBasis = handoverClassScope(state, teachers), room = state.selected;
+  if (enabled !== true || !scopeBasis || !room || state.busy || !state.rosterLoaded) return null;
+  return { value: `class-new:${room.id}`, label: `在此班新增（${room.name}）`, createInClassId: room.id, spaceId: room.id,
+    modules: [...writable], scopeBasis, basis: JSON.stringify(['class-enrolment', scopeBasis]) };
 }
 /** Retain only explicitly selected students across searches, under the same current class admission. */
 export function handoverClassDestinations(state: SharingState, retained: readonly HandoverClassDestination[], teachers?: SharingState): HandoverClassDestination[] {
