@@ -1,0 +1,29 @@
+{
+  "commit": "9503487d1358bdaf4e0a0c239e65fbbb8bd8848f",
+  "previousApplicationCommit": "e8918ddfde9ef5e978bb4d6d1b43d67193fa9a92",
+  "includedPullRequests": [454, 455, 456, 457],
+  "localChecks": {
+    "scope": "Synthetic account without children, opted-in account package and legacy child-only clients. Actual signed archive, upload, version comparison, registered worker, private JPEG byte equality and operation replay. Concurrent replacement returned an item conflict.",
+    "worker": "tests/handover-self-avatar-restore.test.ts",
+    "domain": "tests/avatar-domain.test.ts",
+    "sharedForm": "frontend/scripts/handover-account-avatar-restore.test.mjs"
+  },
+  "production": {
+    "verifiedAt": "2026-11-05T02:01:04+08:00",
+    "origin": "https://ex-machina.eu.org",
+    "apiWorkerImage": "sha256:84d2ada3ff98b137e7c061f4b58fe7ed595c976d03d26c848862b61a8efb8e53",
+    "webImage": "sha256:9157528a71fa7719f3afc9a57071b9fc9ace98e033c57060e67bcf0046920c2f",
+    "composeSha256": "a04e86f7f44be02622ed4574a83d33bc85f31657ff0855319d2e40d12a03969d",
+    "settingsHtmlSha256": "3fbb13e31abb702483e26dbff94200aa03e98d2535f78219ea364b08e2bebc73",
+    "settingsJsSha256": "ecac4f56142379ad30c48c49dac3c4b411769c1fc8e2a5b3f7ca1c262c5ec164",
+    "healthHttp": 200,
+    "anonymousImportCapabilitiesHttp": 401,
+    "candidateComposition": "Account backup and restore capabilities present. Existing public trust on API, readable signer only on worker.",
+    "activeAgentLeases": 0,
+    "activeReminderOrBackgroundWork": 0,
+    "terminalUnknownPreserved": 1,
+    "modelCalls": 0,
+    "notifications": 0
+  },
+  "pending": ["Signed-in production round trip", "Batched Android build and device acceptance", "Remaining original child domains"]
+}
