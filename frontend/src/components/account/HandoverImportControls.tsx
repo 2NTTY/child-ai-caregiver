@@ -43,6 +43,9 @@ export function HandoverImportControls() {
   useLayoutEffect(() => { setOpen(false); setChoices({}); setPage(0); setAccepted(false); }, [identityKey]);
   useLayoutEffect(() => { setChoices({}); setPage(0); setAccepted(false); }, [upload?.id, preview?.manifestSha256]);
   useEffect(() => {
+    if (current && state.panelRequested) { setOpen(true); controller.panelOpened(); }
+  }, [controller, current, state.panelRequested]);
+  useEffect(() => {
     if (!current || !online) return;
     void (async () => { await controller.load();
       const latest = controller.getSnapshot();

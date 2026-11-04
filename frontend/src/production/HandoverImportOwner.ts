@@ -44,6 +44,7 @@ export interface HandoverSourceHistoryState {
   documentContent: HandoverDocumentContentState | null;
 }
 export interface HandoverImportState {
+  panelRequested?: boolean;
   userId: string | null; identityKey: string | null; online: boolean; loaded: boolean;
   upload: HandoverUploadView | null; items: HandoverImportView[]; nextCursor: string | null;
   uploads: UploadSummary[]; uploadsLoaded: boolean; uploadsCursor: string | null;
@@ -67,6 +68,8 @@ export class HandoverImportOwner {
   constructor(api: HandoverApi, accessError: (error: HandoverApiError) => void = () => {}, documentPort?: HandoverDocumentContentPort) { this.api = api; this.accessError = accessError; this.documentPort = documentPort; }
   getSnapshot = () => this.state;
   subscribe = (fn: () => void) => { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; };
+  requestPanel = () => { this.update({ panelRequested: true }); };
+  panelOpened = () => { this.update({ panelRequested: false }); };
   private update(patch: Partial<HandoverImportState>) { this.state = { ...this.state, ...patch }; this.listeners.forEach(fn => fn()); }
   private release() { const file = this.file; this.file = null; try { file?.release(); } catch { /* Local cache expiry also cleans crash leftovers. */ } }
   syncContext(userId: string | null, identityKey: string | null, online: boolean) {
@@ -294,18 +297,28 @@ export class HandoverImportOwner {
     } catch (error) { this.error(t, error); } finally { this.finish(t); }
     if (submit && this.current(t)) await this.retryOriginal();
   };
-  choose = async (pick: (signal: AbortSignal) => Promise<SelectedPackage | null>) => {
-    if (this.state.pending || this.state.upload) return;
+  choose = async (pick: (signal: AbortSignal) => Promise<SelectedPackage | null>, signal?: AbortSignal) => {
+    if (this.state.pending || this.state.upload || signal?.aborted) return;
     const t = this.begin('pick'); if (!t) return;
+    let selectedId: string | null = null;
+    const cancel = () => {
+      const pending = this.state.pending;
+      const sameRequest = selectedId && (pending?.kind === 'reserve' ? pending.command.opId === selectedId : pending?.kind === 'upload' && pending.id === selectedId);
+      if (t.epoch === this.epoch && (this.active === t.controller || sameRequest)) this.active?.abort();
+    };
+    signal?.addEventListener('abort', cancel, { once: true });
     try {
-      const file = await pick(t.controller.signal); if (!file) return;
-      if (!this.current(t)) { file.release(); return; }
-      this.file = file;
-      const command = handoverUploadCommandSchema.safeParse({ opId: crypto.randomUUID(), filename: file.filename, bytes: file.bytes, sha256: file.sha256 });
-      if (!command.success) { this.release(); throw new HandoverApiError(400, 'invalid_package_file'); }
-      this.update({ pending: { kind: 'reserve', command: command.data, checked: true } });
-    } catch (e) { this.error(t, e); } finally { this.finish(t); }
-    if (this.current(t)) await this.retryOriginal();
+      try {
+        const file = await pick(t.controller.signal); if (!file) return;
+        if (!this.current(t)) { file.release(); return; }
+        this.file = file;
+        const command = handoverUploadCommandSchema.safeParse({ opId: crypto.randomUUID(), filename: file.filename, bytes: file.bytes, sha256: file.sha256 });
+        if (!command.success) { this.release(); throw new HandoverApiError(400, 'invalid_package_file'); }
+        selectedId = command.data.opId;
+        this.update({ pending: { kind: 'reserve', command: command.data, checked: true } });
+      } catch (e) { this.error(t, e); } finally { this.finish(t); }
+      if (this.current(t)) await this.retryOriginal();
+    } finally { signal?.removeEventListener('abort', cancel); }
   };
   create = async (targets: HandoverImportCommand['targets'], acceptUntrusted: boolean) => {
     const upload = this.state.upload; if (this.state.pending || this.state.busy || !upload?.preview || upload.state !== 'ready') return;

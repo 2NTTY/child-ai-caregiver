@@ -1,0 +1,12 @@
+{
+  "base": "e9755493395e76c665787ee5508ec164727df6b8",
+  "package": "S12-W02 Android package intake",
+  "checks": [
+    "Explicit package choice only; synthetic Android share-to-import through the production HandoverImportOwner.",
+    "Scope and identity changes, disposal and unknown upload recovery. Existing chat target retained.",
+    "Period form displays eligible modules from the shared contract."
+  ],
+  "targetedTestsPassed": 2,
+  "types": "TypeScript 6.0.3, 8 affected product roots, no diagnostics",
+  "limits": "Synthetic UI/platform transports. No native build, upload to a cloud environment, deployment or real device test."
+}

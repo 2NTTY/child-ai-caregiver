@@ -102,7 +102,7 @@ export function HandoverControls() {
           <Text style={styles.body}>按香港時間（Asia/Hong_Kong），包含開始日零時至結束日最後一刻。</Text>
           <AppDateField label="開始日期" value={fromDay} disabled={locked} onChange={setFromDay} error={validFrom ? undefined : '請填寫有效的開始日期。'} />
           <AppDateField label="結束日期" value={toDay} disabled={locked} onChange={setToDay} error={!validTo ? '請填寫有效的結束日期。' : validFrom && !ordered ? '結束日期不可早於開始日期。' : undefined} />
-          {!periodSupported ? <Text accessibilityLiveRegion="polite" style={styles.body}>所選模組未支援日期範圍；請只保留照護記錄、待辦、私人聊天或持續關注，或取消指定日期。</Text> : null}
+          {!periodSupported ? <Text accessibilityLiveRegion="polite" style={styles.body}>所選模組未支援日期範圍；請只保留{HANDOVER_MODULES.filter(module => supportsHandoverPeriodModules([module])).map(module => moduleLabels[module]).join('、')}，或取消指定日期。</Text> : null}
         </> : null}
         <AppButton label="建立資料包" loading={state.busy === 'write'} disabled={!canCreate}
           onPress={() => { if (!canCreate) return; void controller.create({ childIds: children, modules, period }, purpose); setOpen(false); }} />
