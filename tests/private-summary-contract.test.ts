@@ -4,7 +4,7 @@ import test from "node:test";
 import type { PoolClient } from "pg";
 import type { ChatMessage } from "../src/shared/chat.ts";
 import { AgentBudget } from "../server/agent-budget.ts";
-import { createProductAgentTools } from "../server/product-agent-tools.ts";
+import { createProductAgentTools, uncoveredConversation } from "../server/product-agent-tools.ts";
 import { createStorageCipher } from "../server/storage-crypto.ts";
 import { saveSummary, summaryInput } from "../server/memory-summary.ts";
 
@@ -18,7 +18,7 @@ function toolsFixture(options: { moreUncovered?: boolean; characters?: number; v
     previousId: null, coveredMessageIds: [randomUUID()], lastCoveredMessageId: randomUUID() };
   const prepared = { previous: options.summaryMode ? null : previous, previousVersion: 7, basis: "a".repeat(64), messages,
     moreUncovered: options.moreUncovered ?? false, ...(options.summaryMode ? { summaryMode: options.summaryMode } : {}) };
-  const context = { profile: { childId, version: 0, data: null }, profileApplicable: false, facts: [], topics: [], summary: previous,
+  const context = { profile: { childId, version: 0, data: null, confirmedBy: null, confirmedAt: null, reason: null }, profileApplicable: false, facts: [], topics: [], summary: previous,
     recentMessages: messages, conflictingKeys: [], unavailableFactKeys: [], truncated: { facts: false, topics: false, messages: prepared.moreUncovered } };
   let prepares = 0;
   const runId = randomUUID();
@@ -178,3 +178,130 @@ test("persistence advances only an ordered prefix while more history remains and
     text: "Stale authority", coveredMessageIds: next.messages.map(message => message.id) }), /summary_coverage_changed/u);
   assert.equal(coverage.size, 2);
 });
+
+
+test("REQ-005: 9,000 ASCII message is admitted when interactive tool allowance is abundant, and gracefully omitted when allowance is insufficient", async () => {
+  const userId = "synthetic-owner", childId = randomUUID();
+  const scope = { userId, childId, workspaceId: randomUUID(), authorizationVersion: "1", dataVersion: "1" };
+  const msg9000: ChatMessage = {
+    id: randomUUID(), childId, authorUserId: userId,
+    role: "user", inReplyTo: null, text: "a".repeat(9000), createdAt: "2026-10-07T00:00:00.000Z",
+  };
+  const otherMessages: ChatMessage[] = Array.from({ length: 11 }, (_, i) => ({
+    id: randomUUID(), childId, authorUserId: userId, role: i % 2 ? "model" : "user",
+    inReplyTo: null, text: `Short message ${i}`, createdAt: "2026-10-07T00:00:00.000Z"
+  }));
+  const allMessages = [msg9000, ...otherMessages];
+  const prepared = { previous: null, previousVersion: 0, basis: "a".repeat(64), messages: allMessages, moreUncovered: false };
+  const context = {
+    profile: { childId, version: 0, data: null, confirmedBy: null, confirmedAt: null, reason: null }, profileApplicable: false, facts: [], topics: [], summary: null,
+    recentMessages: allMessages, conflictingKeys: [], unavailableFactKeys: [], truncated: { facts: false, topics: false, messages: false },
+  };
+
+  const abundantBudget = new AgentBudget();
+  const constrainedBudget = new AgentBudget();
+  try {
+    // 1. Abundant budget: 9,000 ASCII message is admitted
+    abundantBudget.configureInputCharacters(64000);
+    abundantBudget.prepareToolResponseBudget(20000, 200);
+    const runId1 = randomUUID();
+    const tools1 = createProductAgentTools({
+      run: { scope, runId: runId1, budget: abundantBudget }, visibility: "private",
+      memory: { context: async () => context, prepareSummary: async () => prepared },
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) }, store: {},
+      knowledge: { createRun: () => ({}) }, authorize: async () => true,
+    } as any);
+    const readTool1 = tools1.tools.find(t => t.name === "read_context")!;
+    const res1 = await readTool1.execute({}, { scope, runId: runId1, callId: "call1", signal: abundantBudget.signal });
+    assert.equal(res1.status, "succeeded");
+    const data1 = res1.data!.result as any;
+    assert.ok(data1.uncoveredConversation.messages.length >= 1);
+    assert.equal(data1.uncoveredConversation.messages[0].id, msg9000.id);
+    assert.equal(data1.privateSummaryInput.messageIds[0], msg9000.id);
+    assert.deepEqual(data1.privateSummaryInput.messageIds, data1.uncoveredConversation.messages.map((m: ChatMessage) => m.id));
+
+    // 2. Constrained budget: 9,000 ASCII message gracefully omitted without crash or fake progress
+    constrainedBudget.configureInputCharacters(32000);
+    constrainedBudget.prepareToolResponseBudget(22000, 200);
+    const runId2 = randomUUID();
+    const tools2 = createProductAgentTools({
+      run: { scope, runId: runId2, budget: constrainedBudget }, visibility: "private",
+      memory: { context: async () => context, prepareSummary: async () => prepared },
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) }, store: {},
+      knowledge: { createRun: () => ({}) }, authorize: async () => true,
+    } as any);
+    const readTool2 = tools2.tools.find(t => t.name === "read_context")!;
+    const res2 = await readTool2.execute({}, { scope, runId: runId2, callId: "call2", signal: constrainedBudget.signal });
+    assert.equal(res2.status, "succeeded");
+    const data2 = res2.data!.result as any;
+    assert.equal(data2.uncoveredConversation.messages.length, 0);
+    assert.equal(data2.uncoveredConversation.omittedFromLoadedBatch, 12);
+    assert.equal(data2.uncoveredConversation.complete, false);
+    assert.equal(data2.privateSummaryInput, null);
+  } finally {
+    abundantBudget.close();
+    constrainedBudget.close();
+  }
+});
+
+
+test("REQ-005: uncoveredConversation respects fallback and dynamic limits on first message without artificial override", () => {
+  const childId = randomUUID(), userId = "synthetic-owner";
+  const msg9000: ChatMessage = {
+    id: randomUUID(), childId, authorUserId: userId,
+    role: "user", inReplyTo: null, text: "a".repeat(9000), createdAt: "2026-10-07T00:00:00.000Z",
+  };
+  const context = {
+    profile: { childId, version: 0, data: null, confirmedBy: null, confirmedAt: null, reason: null }, profileApplicable: false, facts: [], topics: [], summary: null,
+    recentMessages: [msg9000], conflictingKeys: [], unavailableFactKeys: [], truncated: { facts: false, topics: false, messages: false },
+  };
+  // Fallback (8,000 chars): 9,000 char message does NOT fit
+  const fallbackRes = uncoveredConversation(context);
+  assert.equal(fallbackRes.messages.length, 0);
+  assert.equal(fallbackRes.omittedFromLoadedBatch, 1);
+  assert.equal(fallbackRes.complete, false);
+
+  // Dynamic allowance (15,000 chars): 9,000 char message fits cleanly
+  const dynamicRes = uncoveredConversation(context, 15000);
+  assert.equal(dynamicRes.messages.length, 1);
+  assert.equal(dynamicRes.messages[0].id, msg9000.id);
+  assert.equal(dynamicRes.omittedFromLoadedBatch, 0);
+  assert.equal(dynamicRes.complete, true);
+});
+
+test("REQ-005: read_context gracefully trims when metadata itself approaches allowance", async () => {
+  const userId = "synthetic-owner", childId = randomUUID();
+  const scope = { userId, childId, workspaceId: randomUUID(), authorizationVersion: "1", dataVersion: "1" };
+  const lotsOfFacts = Array.from({ length: 30 }, (_, i) => ({
+    id: randomUUID(), childId, visibility: "private" as const, intendedVisibility: "private" as const,
+    key: `fact_${i}`, value: `Heavy factual information item number ${i} with substantial detail`,
+    sourceQuote: `Quote ${i}`, validUntil: null, operationId: randomUUID(), policyVersion: "1"
+  }));
+  const msg: ChatMessage = { id: randomUUID(), childId, authorUserId: userId, role: "user", inReplyTo: null, text: "hello", createdAt: "2026-10-07T00:00:00.000Z" };
+  const context = {
+    profile: { childId, version: 0, data: null, confirmedBy: null, confirmedAt: null, reason: null }, profileApplicable: false, facts: lotsOfFacts, topics: [], summary: null,
+    recentMessages: [msg], conflictingKeys: [], unavailableFactKeys: [], truncated: { facts: false, topics: false, messages: false },
+  };
+  const budget = new AgentBudget();
+  try {
+    budget.configureInputCharacters(32000);
+    // Prepare a constrained response budget where facts must be trimmed to fit
+    budget.prepareToolResponseBudget(16000, 200);
+    const runId = randomUUID();
+    const tools = createProductAgentTools({
+      run: { scope, runId, budget }, visibility: "private",
+      memory: { context: async () => context, prepareSummary: async () => null },
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) }, store: {},
+      knowledge: { createRun: () => ({}) }, authorize: async () => true,
+    } as any);
+    const readTool = tools.tools.find(t => t.name === "read_context")!;
+    const res = await readTool.execute({}, { scope, runId, callId: "call-meta", signal: budget.signal });
+    assert.equal(res.status, "succeeded");
+    const data = res.data!.result as any;
+    assert.ok(data.facts.length < lotsOfFacts.length, "Facts must be trimmed to respect allowance");
+    assert.equal(data.factsPartial, true, "Must flag factsPartial when facts are trimmed for capacity");
+  } finally {
+    budget.close();
+  }
+});
+

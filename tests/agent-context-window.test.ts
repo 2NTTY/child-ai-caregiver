@@ -26,7 +26,7 @@ test("selectRecentConversation detects partial turn when earliest message is an 
   assert.equal(result.coverage.omittedTurnPromptMessageId, "u0");
 });
 
-test("selectRecentConversation reports complete turns when earliest message in window is a user prompt", () => {
+test("selectRecentConversation reports no omitted parent when every reply prompt is selected", () => {
   const messages = [
     { id: "u0", role: "user", text: "第一個問題", inReplyTo: null },
     { id: "m0", role: "model", text: "第一個回答", inReplyTo: "u0" },
@@ -41,6 +41,9 @@ test("selectRecentConversation reports complete turns when earliest message in w
   assert.equal(result.messages[0].id, "u0");
   assert.equal(result.coverage.partialTurn, false);
   assert.equal(result.coverage.omittedTurnPromptMessageId, null);
+  assert.deepEqual(result.coverage.omittedTurnPromptMessageIds, []);
+  assert.equal(result.coverage.upstreamHasEarlierMessages, false);
+  assert.equal(result.coverage.omittedEarlierMessagesIsExact, true);
 });
 
 test("selectRecentConversation detects an orphaned interleaved reply after a selected user prompt", () => {
@@ -64,7 +67,7 @@ test("selectRecentConversation detects an orphaned interleaved reply after a sel
   assert.equal(complete.coverage.omittedTurnPromptMessageId, null);
 });
 
-test("selectRecentConversation identifies the earliest orphaned reply when multiple parents are omitted", () => {
+test("selectRecentConversation retains every missing parent while preserving the earliest compatibility field", () => {
   const messages = [
     { id: "u0", role: "user", text: "First prompt", inReplyTo: null },
     { id: "u1", role: "user", text: "Second prompt", inReplyTo: null },
@@ -80,6 +83,7 @@ test("selectRecentConversation identifies the earliest orphaned reply when multi
   assert.deepEqual(result.messages.map(message => message.id), ["u2", "m0", "m1", "u3", "m3", "u4"]);
   assert.equal(result.coverage.partialTurn, true);
   assert.equal(result.coverage.omittedTurnPromptMessageId, "u0");
+  assert.deepEqual(result.coverage.omittedTurnPromptMessageIds, ["u0", "u1"]);
 });
 
 test("selectRecentConversation handles standalone model reply without inReplyTo gracefully", () => {
@@ -92,6 +96,9 @@ test("selectRecentConversation handles standalone model reply without inReplyTo 
   assert.equal(result.messages.length, 2);
   assert.equal(result.coverage.partialTurn, false, "Model message with null inReplyTo is not a partial reply to an omitted prompt");
   assert.equal(result.coverage.omittedTurnPromptMessageId, null);
+  assert.deepEqual(result.coverage.omittedTurnPromptMessageIds, []);
+  assert.equal(result.coverage.upstreamHasEarlierMessages, false);
+  assert.equal(result.coverage.omittedEarlierMessagesIsExact, true);
 });
 
 test("selectRecentConversation accurately tracks reply-to topology without assuming rigid even/odd parity", () => {
@@ -107,4 +114,7 @@ test("selectRecentConversation accurately tracks reply-to topology without assum
   assert.equal(result.messages.length, 4);
   assert.equal(result.coverage.partialTurn, false);
   assert.equal(result.coverage.omittedTurnPromptMessageId, null);
+  assert.deepEqual(result.coverage.omittedTurnPromptMessageIds, []);
+  assert.equal(result.coverage.upstreamHasEarlierMessages, false);
+  assert.equal(result.coverage.omittedEarlierMessagesIsExact, true);
 });
