@@ -1,4 +1,6 @@
 import { adminKnowledgeStatusSchema, type AdminKnowledgeStatus, type AdminCommand, type AdminInvitation, type AdminOverview, type AdminPage, type AdminReceipt, type AdminUsage } from '../../../src/shared/admin.ts';
+import { emptyIndex, indexTargetLimit, adminIndexVersionPageSchema, adminIndexBatchPageSchema, adminIndexBatchReplySchema,
+  type AdminIndexState, type AdminIndexBatch, type AdminIndexPending } from './admin-knowledge-index.ts';
 export class AdminApiError extends Error {
   readonly status: number; readonly code: string;
   constructor(status: number, code: string) { super('Admin request failed'); this.status = status; this.code = code; }
@@ -8,10 +10,10 @@ const emptyKnowledge = (): AdminKnowledgeState => ({ open: false, status: 'unrea
 export interface AdminState { userId: string | null; access: 'unread' | 'loading' | 'allowed' | 'denied' | 'error'; busy: boolean;
   overview: AdminOverview | null; invitations: AdminPage<AdminInvitation>; audit: AdminPage<AdminReceipt>;
   usage: { platform: AdminUsage; personal: AdminUsage } | null; lookup: AdminInvitation | null | undefined;
-  pending: AdminCommand | null; notice: string | null; receipt: AdminReceipt | null; knowledge: AdminKnowledgeState }
+  pending: AdminCommand | null; notice: string | null; receipt: AdminReceipt | null; knowledge: AdminKnowledgeState; index: AdminIndexState }
 const empty = (userId: string | null): AdminState => ({ userId, access: 'unread', busy: false, overview: null,
   invitations: { items: [], nextCursor: null }, audit: { items: [], nextCursor: null }, usage: null, lookup: undefined,
-  pending: null, notice: null, receipt: null, knowledge: emptyKnowledge() });
+  pending: null, notice: null, receipt: null, knowledge: emptyKnowledge(), index: emptyIndex() });
 export function adminError(error: unknown) {
   const code = error instanceof AdminApiError ? error.code : '';
   return ({ recent_reauthentication_required: '請先在下方重新驗證登入，再提交原操作。',
@@ -32,7 +34,7 @@ export class AdminOwner {
   private clearReadAccess(error: unknown, access: 'error' | 'denied' = 'error') {
     this.generation++; this.controllers.forEach(controller => controller.abort()); this.controllers.clear();
     this.update({ access, busy: false, overview: null, invitations: { items: [], nextCursor: null }, audit: { items: [], nextCursor: null },
-      usage: null, lookup: undefined, receipt: null, knowledge: emptyKnowledge(), notice: adminError(error) });
+      usage: null, lookup: undefined, receipt: null, knowledge: emptyKnowledge(), index: { ...emptyIndex(), pending: this.state.index.pending }, notice: adminError(error) });
   }
   setUser(userId: string | null) {
     if (this.state.userId === userId) return;
@@ -63,7 +65,7 @@ export class AdminOwner {
     } }
     catch (error) { if (generation === this.generation) {
       if (error instanceof AdminApiError && ([401, 403].includes(error.status) || error.status === 409 && error.code === 'identity_changed')) this.clearReadAccess(error);
-      else this.update({ access: 'error', notice: adminError(error), knowledge: emptyKnowledge() });
+      else this.update({ access: 'error', notice: adminError(error), knowledge: emptyKnowledge(), index: { ...emptyIndex(), pending: this.state.index.pending } });
     } }
   }
   private async read(action: () => Promise<Partial<AdminState>>) {
@@ -101,6 +103,117 @@ export class AdminOwner {
       else this.update({ knowledge: { ...this.state.knowledge, status: 'error', notice: adminError(error) } });
     }
   }
+  private updateIndex(change: Partial<AdminIndexState>) { this.update({ index: { ...this.state.index, ...change } }); }
+  private indexCurrent(generation: number) { return generation === this.generation && ['allowed', 'loading'].includes(this.state.access); }
+  private indexAccessError(error: unknown) {
+    const denied = error instanceof AdminApiError && ([401, 403].includes(error.status) || error.status === 409 && error.code === 'identity_changed');
+    if (denied) this.clearReadAccess(error);
+    return denied;
+  }
+  async setIndexOpen(open: boolean) {
+    if (this.state.access !== 'allowed') return;
+    this.updateIndex({ open });
+    if (open) await Promise.all([
+      this.state.index.versions.status === 'unread' ? this.loadIndexVersions() : undefined,
+      this.state.index.batches.status === 'unread' ? this.loadIndexBatches() : undefined,
+    ]);
+  }
+  async loadIndexVersions(more = false) {
+    const current = this.state.index, cursor = more ? current.versions.nextVersionId : null;
+    if (this.state.access !== 'allowed' || !current.open || current.busy || current.versions.status === 'loading' || more && !cursor) return;
+    const generation = this.generation;
+    this.updateIndex({ versions: { ...current.versions, status: 'loading', notice: null } });
+    try {
+      const page = adminIndexVersionPageSchema.parse(await this.request<unknown>('/admin/knowledge-versions' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : '')));
+      if (!this.indexCurrent(generation)) return;
+      const items = more ? [...new Map([...this.state.index.versions.items, ...page.items].map(item => [item.id, item])).values()] : page.items;
+      this.updateIndex({ versions: { ...page, items, status: 'ready', notice: null }, selected: this.state.index.selected.filter(target =>
+        items.some(item => item.id === target.versionId && item.hash === target.versionHash && item.state === 'reviewed')) });
+    } catch (error) {
+      if (this.indexCurrent(generation) && !this.indexAccessError(error)) this.updateIndex({ versions: { ...this.state.index.versions, status: 'error', notice: adminError(error) } });
+    }
+  }
+  async loadIndexBatches(more = false) {
+    const current = this.state.index, cursor = more ? current.batches.nextCursor : null;
+    if (this.state.access !== 'allowed' || !current.open || current.busy || current.batches.status === 'loading' || more && !cursor) return;
+    const generation = this.generation;
+    this.updateIndex({ batches: { ...current.batches, status: 'loading', notice: null } });
+    try {
+      const page = adminIndexBatchPageSchema.parse(await this.request<unknown>('/admin/knowledge-index-batches' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : '')));
+      if (!this.indexCurrent(generation)) return;
+      const items = more ? [...new Map([...this.state.index.batches.items, ...page.items].map(item => [item.id, item])).values()] : page.items;
+      this.updateIndex({ batches: { ...page, items, status: 'ready', notice: null } });
+    } catch (error) {
+      if (this.indexCurrent(generation) && !this.indexAccessError(error)) this.updateIndex({ batches: { ...this.state.index.batches, status: 'error', notice: adminError(error) } });
+    }
+  }
+  selectIndexVersion(id: string, selected: boolean) {
+    const index = this.state.index, item = index.versions.items.find(value => value.id === id);
+    if (this.state.access !== 'allowed' || index.busy || index.pending || !item || item.state !== 'reviewed') return;
+    const targets = index.selected.filter(value => value.versionId !== id);
+    if (selected && targets.length >= indexTargetLimit) { this.updateIndex({ notice: `每批最多選擇 ${indexTargetLimit} 個已審核版本。` }); return; }
+    this.updateIndex({ selected: selected ? [...targets, { versionId: id, versionHash: item.hash }] : targets, notice: null });
+  }
+  private canSendIndex(retry = false) {
+    const index = this.state.index;
+    return this.state.access === 'allowed' && index.open && !index.busy && !this.state.busy && !this.state.pending
+      && (retry || !index.pending) && index.versions.status !== 'loading' && index.batches.status !== 'loading';
+  }
+  async createIndexBatch() {
+    if (!this.canSendIndex()) return;
+    const targets = this.state.index.selected;
+    if (!targets.length || targets.length > indexTargetLimit || !targets.every(target => this.state.index.versions.items.some(item =>
+      item.id === target.versionId && item.hash === target.versionHash && item.state === 'reviewed'))) return;
+    const opId = crypto.randomUUID();
+    await this.sendIndex({ kind: 'create', batchId: opId, payload: { opId, targets: structuredClone(targets) } });
+  }
+  async controlIndexBatch(id: string, kind: 'stop' | 'resume') {
+    if (!this.canSendIndex()) return;
+    const batch = this.state.index.batches.items.find(item => item.id === id);
+    if (!batch || kind === 'stop' && batch.state !== 'running' || kind === 'resume' && !['paused', 'interrupted'].includes(batch.state)) return;
+    await this.sendIndex({ kind, batchId: id, payload: { opId: crypto.randomUUID(), expectedControlVersion: batch.controlVersion } });
+  }
+  private withIndexBatch(batch: AdminIndexBatch) {
+    return { ...this.state.index.batches, items: [batch, ...this.state.index.batches.items.filter(item => item.id !== batch.id)] };
+  }
+  private async sendIndex(command: AdminIndexPending) {
+    const generation = this.generation;
+    this.updateIndex({ busy: true, pending: command, notice: null });
+    try {
+      const path = '/admin/knowledge-index-batches' + (command.kind === 'create' ? '' : '/' + encodeURIComponent(command.batchId) + '/' + command.kind);
+      const { batch } = adminIndexBatchReplySchema.parse(await this.request<unknown>(path, command.payload));
+      if (!this.indexCurrent(generation)) return;
+      if (!batch || batch.id !== command.batchId) throw new Error('Invalid index batch reply');
+      if (command.kind === 'create' && (batch.targets.length !== command.payload.targets.length || !command.payload.targets.every(target =>
+        batch.targets.some(value => value.versionId === target.versionId && value.versionHash === target.versionHash)))
+        || command.kind !== 'create' && batch.controlVersion <= command.payload.expectedControlVersion) throw new Error('Invalid index batch binding');
+      this.updateIndex({ batches: this.withIndexBatch(batch), pending: null, notice: '操作已確認。批次狀態及逐項結果如下；索引處理不等於知識發布。',
+        ...(command.kind === 'create' ? { selected: [] } : {}) });
+    } catch (error) {
+      if (!this.indexCurrent(generation) || this.indexAccessError(error)) return;
+      const rejected = error instanceof AdminApiError && [400, 404, 409, 413, 415, 422, 428, 429].includes(error.status);
+      this.updateIndex({ pending: rejected ? null : command, notice: rejected ? adminError(error)
+        : '索引操作結果未知；先查回批次，再明確重送同一操作。原操作 ID、版本 hash 及控制版本已保留。' });
+    } finally { if (generation === this.generation) this.updateIndex({ busy: false }); }
+  }
+  async refreshIndexBatch(id: string) {
+    const index = this.state.index;
+    if (this.state.access !== 'allowed' || !index.open || index.busy || index.batches.status === 'loading'
+      || !index.batches.items.some(batch => batch.id === id) && index.pending?.batchId !== id) return;
+    const generation = this.generation;
+    this.updateIndex({ busy: true, notice: null });
+    try {
+      const { batch } = adminIndexBatchReplySchema.parse(await this.request<unknown>('/admin/knowledge-index-batches/' + encodeURIComponent(id)));
+      if (!this.indexCurrent(generation)) return;
+      if (batch && batch.id !== id) throw new Error('Invalid index batch reply');
+      this.updateIndex({ batches: batch ? this.withIndexBatch(batch) : { ...this.state.index.batches, items: this.state.index.batches.items.filter(item => item.id !== id) },
+        notice: this.state.index.pending?.batchId === id ? (batch ? '已讀回批次狀態；原操作結果仍待確認，請以原 ID 及原內容重送。'
+          : '暫未查到這個批次；原操作仍保留，可查回或明確重送同一操作。') : batch ? '已讀回最新批次狀態。' : '未查到這個批次。' });
+    } catch (error) { if (this.indexCurrent(generation) && !this.indexAccessError(error)) this.updateIndex({ notice: adminError(error) }); }
+    finally { if (generation === this.generation) this.updateIndex({ busy: false }); }
+  }
+  recoverIndexOperation = async () => { const pending = this.state.index.pending; if (pending) await this.refreshIndexBatch(pending.batchId); };
+  retryIndexOperation = async () => { const pending = this.state.index.pending; if (pending && this.canSendIndex(true)) await this.sendIndex(pending); };
   load = (day: string) => this.read(async () => {
     const [overview, invitations, usage, audit] = await Promise.all([
       this.request<AdminOverview>('/admin/policy'), this.request<AdminPage<AdminInvitation>>('/admin/invitations'),
@@ -114,7 +227,7 @@ export class AdminOwner {
     const merged = [...this.state[kind].items, ...page.items]; return { [kind]: { items: merged, nextCursor: page.nextCursor } };
   });
   async submit(command: AdminCommand) {
-    if (this.state.access !== 'allowed' || this.state.busy || this.state.pending) return;
+    if (this.state.access !== 'allowed' || this.state.busy || this.state.pending || this.state.index.busy || this.state.index.pending) return;
     const generation = this.generation; this.update({ busy: true, pending: command, notice: null, receipt: null });
     try { const receipt = await this.request<AdminReceipt>('/admin/operations', command);
       if (generation === this.generation) this.update({ pending: null, receipt, notice: '已保存。請重新讀取核對目前狀態。' });
