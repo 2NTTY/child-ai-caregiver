@@ -95,7 +95,7 @@ export async function writePersonalHandoverPackage(input: {
                 const match = handoverPeriodMatch(section, item, header.selection.period);
                 if (match !== 'inside') continue;
                 if (datedMedia && isAttachmentHead(section)) datedMedia.addHead(section, childId, item);
-                const parent = datedParent(section, item);
+                const parent = datedParent(section, item, childId);
                 if (parent?.revision && !selectedParents.has(parent.key)) continue;
                 if (parent && !parent.revision) selectedParents.add(parent.key);
               }

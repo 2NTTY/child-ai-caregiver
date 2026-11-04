@@ -146,7 +146,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
           } else if (period) {
             if (handoverPeriodMatch(page.section, row, period) !== 'inside') fail('invalid_package_period');
             if (datedMedia && isAttachmentHead(page.section)) datedMedia.addHead(page.section, page.childId!, row);
-            const parent = datedParent(page.section, row);
+            const parent = datedParent(page.section, row, page.childId!);
             if (parent) (parent.revision ? datedRevisionParents : datedParents).add(key(parent.key, page.childId));
           } else if (page.section === 'concerns' && Object.hasOwn(row, 'periodSource')
             || page.section === 'concern_events' && Object.hasOwn(row, 'periodConcernId')) fail('invalid_package_period');
