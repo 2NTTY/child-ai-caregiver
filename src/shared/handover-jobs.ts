@@ -16,6 +16,17 @@ export type HandoverPreviewQuery = z.infer<typeof handoverPreviewQuerySchema>;
 export type HandoverPreviewPage = z.infer<typeof handoverPreviewPageSchema>;
 export type HandoverPreviewItem = z.infer<typeof handoverPreviewItemSchema>;
 
+// A class supplies its own records. The authenticated account still owns the export job.
+export const handoverClassSourceSchema = z.object({ kind: z.literal('class'), spaceId: z.uuid() }).strict();
+export const classHandoverModuleSchema = z.enum(['profile', 'care', 'tasks']);
+export const handoverClassExportCommandSchema = z.object({
+  opId: z.uuid(), purpose: z.literal('handover'), source: handoverClassSourceSchema,
+  selection: handoverSelectionSchema.safeExtend({
+    modules: z.array(classHandoverModuleSchema).min(1).max(classHandoverModuleSchema.options.length),
+  }),
+}).strict();
+export type HandoverClassExportCommand = z.infer<typeof handoverClassExportCommandSchema>;
+
 export const handoverExportCommandSchema = z.object({ opId: z.uuid(), purpose: z.enum(['handover', 'backup']),
   selection: handoverSelectionSchema, documentReview: z.object({ scopeVersion,
     choices: z.array(handoverDocumentChoiceSchema).max(1000),
