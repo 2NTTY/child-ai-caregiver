@@ -170,6 +170,7 @@ export function HandoverControls() {
           </View>}
         <Text style={styles.title}>資料內容</Text>
         {(sourceMode === 'class' ? classModules : HANDOVER_MODULES).map(module => <AppCheckbox key={module} label={moduleLabels[module]} checked={modules.includes(module)} disabled={locked} onChange={value => chooseModule(module, value)} />)}
+        {sourceMode === 'class' && modules.includes('memory') ? <Text style={styles.body}>記憶只包括已共享的事實、主題及可讀修訂。私人交代、聊天與對話摘要會留在本人帳戶。</Text> : null}
         <AppCheckbox label="指定開始及結束日期" checked={periodEnabled} disabled={locked} onChange={setPeriodEnabled} />
         {periodEnabled ? <>
           <Text style={styles.body}>按香港時間（Asia/Hong_Kong），包含開始日零時至結束日最後一刻。</Text>
