@@ -28,7 +28,7 @@ export const handoverImportResolutionSchema = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('replace_current'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
   z.object({ mode: z.literal('restore_deleted'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
 ]);
-export const originalBackupModuleSchema = z.enum(['care', 'profile', 'tasks']);
+export const originalBackupModuleSchema = z.enum(['care', 'profile', 'tasks', 'sources']);
 export const handoverImportCommandSchema = z.object({ opId: uuid, uploadId: uuid,
   expectedUploadVersion: count.positive(), acceptedManifestSha256: hash.nullable(),
   resolutionOnly: z.boolean().optional(), restoreOriginal: z.literal(true).optional(),
