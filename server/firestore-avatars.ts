@@ -1,6 +1,6 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { avatarTargetSchema, avatarCommitInputSchema, avatarRemoveInputSchema, avatarReserveInputSchema, type AvatarCommitInput, type AvatarTarget, type AvatarUpload, type AvatarState } from '../src/shared/avatars.ts';
+import { avatarTargetSchema, avatarAssetSchema, avatarCommitInputSchema, avatarRemoveInputSchema, avatarReserveInputSchema, type AvatarAsset, type AvatarCommitInput, type AvatarTarget, type AvatarUpload, type AvatarState } from '../src/shared/avatars.ts';
 import type { OnlineSubmission, OnlineReceipt } from '../src/shared/online.ts';
 import { AVATAR_NIL, avatarBinding, avatarHeadRecordSchema, type AvatarBinding } from './avatar-data.ts';
 import { assertAvatarHeadWritable, avatarPublicState, avatarPublicUpload, AVATAR_PENDING_SCAN_LIMIT } from './avatar-policy.ts';
@@ -21,6 +21,7 @@ import { importProvenanceSchema, type ImportProvenance } from '../src/shared/imp
 import { checkedAttachmentImportStage, type AttachmentImportStage } from './handover-attachment-stage.ts';
 import { sharedAttachmentReads, attachmentReadFence, withSharedAttachmentWrite } from './firestore-attachment-access.ts';
 import type { SharedSelection } from '../src/shared/sharing.ts';
+import { selfRestoreCodec } from './avatar-self-restore.ts';
 
 export interface FirestoreAvatarsOptions extends FirestoreAuthorityOptions {
   config: AvatarConfig; codec: Pick<AvatarCodec, 'normalize'>; objects: AvatarObjects;
@@ -34,6 +35,9 @@ export function createFirestoreAvatarStore(options: FirestoreAvatarsOptions): Fi
   prepareImportReservation(authority: FirestoreAuthorityTransaction, input: unknown, ids: { uploadId: string; assetId: string }, stage: AttachmentImportStage): Promise<{ value: AvatarUpload; commit(): void }>;
   uploadImported(userId: string, childId: string, uploadId: string, bytes: Buffer, stage: AttachmentImportStage, signal: AbortSignal, selection?: SharedSelection): Promise<AvatarUpload>;
   prepareImportPublication(authority: FirestoreAuthorityTransaction, uploadId: string, stage: AttachmentImportStage, provenance: ImportProvenance): Promise<{ value: AvatarState; changeSeq: string | null; commit(): void }>;
+  prepareSelfRestoreReservation(authority: FirestoreAuthorityTransaction, input: unknown, ids: { uploadId: string; assetId: string }, stage: AttachmentImportStage): Promise<{ value: AvatarUpload; commit(): void }>;
+  uploadSelfRestore(owner: string, uploadId: string, bytes: Buffer, asset: AvatarAsset, stage: AttachmentImportStage, signal: AbortSignal): Promise<AvatarUpload>;
+  prepareSelfRestorePublication(authority: FirestoreAuthorityTransaction, uploadId: string, stage: AttachmentImportStage): Promise<{ value: AvatarState; changeSeq: string | null; commit(): void }>;
 } {
   const authority = createFirestoreAuthority(options), store = createFirestoreAvatarData(options), receipts = createFirestoreOnlineReceipts(options);
   const { config, objects, journal } = options;
@@ -73,7 +77,7 @@ export function createFirestoreAvatarStore(options: FirestoreAvatarsOptions): Fi
     });
   }
   async function prepareCommit(authority: FirestoreAuthorityTransaction, binding: AvatarBinding, input: AvatarCommitInput,
-    imported?: { stage: AttachmentImportStage; provenance: ImportProvenance }) {
+    imported?: { stage: AttachmentImportStage; provenance?: ImportProvenance }) {
       const head = await store.head(authority, binding), upload = await store.upload(authority, binding, input.uploadId);
       if (!upload || upload.actorUserId !== authority.actorUserId) domainReject('not_found', 404);
       if (imported) {
@@ -82,7 +86,8 @@ export function createFirestoreAvatarStore(options: FirestoreAvatarsOptions): Fi
         if (upload.state === 'committed') {
           if (head.version !== upload.committedVersion || head.descriptor?.asset.id !== upload.assetId || head.removal !== null)
             domainReject('avatar_version_conflict');
-          if (firestoreDomainHash(head.importedFrom) !== firestoreDomainHash(imported.provenance)) domainReject('operation_conflict');
+          if (imported.provenance ? !head.importedFrom || firestoreDomainHash(head.importedFrom) !== firestoreDomainHash(imported.provenance)
+            : head.importedFrom !== undefined) domainReject('operation_conflict');
           return { result: { avatar: avatarPublicState(head, true), cleanupPending: false }, commit() {} };
         }
       } else if (upload.importStage) domainReject('avatar_import_pending');
@@ -98,7 +103,7 @@ export function createFirestoreAvatarStore(options: FirestoreAvatarsOptions): Fi
         domainReject('avatar_integrity_failed', 503);
       const version = head.version + 1, at = new Date(now()).toISOString();
       const next = avatarHeadRecordSchema.parse({ ...head, version, descriptor: upload.descriptor, updatedAt: at, removal: null,
-        ...(imported ? { importedFrom: imported.provenance } : {}) });
+        ...(imported?.provenance ? { importedFrom: imported.provenance } : {}) });
       const result = { avatar: avatarPublicState(next, true), cleanupPending: old !== null };
       const headWrite = store.prepareHead(authority, next), uploadWrite = store.prepareUpload(authority, { ...upload, state: 'committed', committedVersion: version });
       const stageWrite = store.prepareCleanup(authority, { ...staging, committedVersion: version });
@@ -108,11 +113,17 @@ export function createFirestoreAvatarStore(options: FirestoreAvatarsOptions): Fi
   function importBinding(authority: FirestoreAuthorityTransaction) {
     return avatarBinding(authority.scope, { kind: 'child', childId: authority.scope.childId });
   }
-  async function prepareImportReservation(authority: FirestoreAuthorityTransaction, raw: unknown,
+  function selfRestoreBinding(authority: FirestoreAuthorityTransaction) {
+    if (authority.sharedAccess || authority.actorUserId !== authority.scope.ownerUserId || authority.scope.childId !== AVATAR_NIL)
+      domainReject('invalid_scope', 400);
+    if (!config.writesEnabled) domainReject('avatar_unavailable', 503);
+    return avatarBinding(authority.scope, { kind: 'self' });
+  }
+  async function prepareStagedReservation(authority: FirestoreAuthorityTransaction, binding: AvatarBinding, raw: unknown,
     rawIds: { uploadId: string; assetId: string }, rawStage: AttachmentImportStage) {
-    const stage = checkedAttachmentImportStage(authority, rawStage), binding = importBinding(authority);
+    const stage = checkedAttachmentImportStage(authority, rawStage);
     const input = domainParse(avatarReserveInputSchema, raw), ids = domainParse(z.object({ uploadId: z.uuid(), assetId: z.uuid() }).strict(), rawIds);
-    if (!await authority.readChild(binding.scope.childId)) domainReject('not_found', 404);
+    if (binding.target.kind === 'child' && !await authority.readChild(binding.scope.childId)) domainReject('not_found', 404);
     const prior = await store.upload(authority, binding, ids.uploadId);
     if (prior) {
       if (!prior.importStage || prior.assetId !== ids.assetId || prior.reservationOperationId !== ids.uploadId
@@ -123,6 +134,25 @@ export function createFirestoreAvatarStore(options: FirestoreAvatarsOptions): Fi
     }
     const plan = await prepareAvatarReservation(store, authority, binding, input, ids.uploadId, config, now(), ids, stage);
     return { value: plan.result.upload, commit: plan.commit };
+  }
+  async function prepareImportReservation(authority: FirestoreAuthorityTransaction, raw: unknown,
+    ids: { uploadId: string; assetId: string }, stage: AttachmentImportStage) {
+    return prepareStagedReservation(authority, importBinding(authority), raw, ids, stage);
+  }
+  async function prepareSelfRestoreReservation(authority: FirestoreAuthorityTransaction, raw: unknown,
+    ids: { uploadId: string; assetId: string }, stage: AttachmentImportStage) {
+    const binding = selfRestoreBinding(authority), input = domainParse(avatarReserveInputSchema, raw);
+    if (input.mimeType !== 'image/jpeg' || input.crop.centerX !== .5 || input.crop.centerY !== .5 || input.crop.zoom !== 1)
+      domainReject('invalid_input', 400);
+    return prepareStagedReservation(authority, binding, input, ids, stage);
+  }
+  async function prepareSelfRestorePublication(authority: FirestoreAuthorityTransaction, uploadId: string, stage: AttachmentImportStage) {
+    const binding = selfRestoreBinding(authority);
+    checkedAttachmentImportStage(authority, stage);
+    const upload = await store.upload(authority, binding, domainParse(z.uuid(), uploadId));
+    if (!upload) domainReject('not_found', 404);
+    const plan = await prepareCommit(authority, binding, { uploadId, expectedVersion: upload.expectedVersion }, { stage });
+    return { value: plan.result.avatar, changeSeq: null, commit: plan.commit };
   }
   async function prepareImportPublication(authority: FirestoreAuthorityTransaction, uploadId: string,
     stage: AttachmentImportStage, raw: ImportProvenance) {
@@ -219,7 +249,32 @@ export function createFirestoreAvatarStore(options: FirestoreAvatarsOptions): Fi
       };
       return { content: (userId, target, assetId, version) => content(sharedRun, userId, target, assetId, version) };
     },
-    prepareImportReservation, prepareImportPublication,
+    prepareImportReservation, prepareImportPublication, prepareSelfRestoreReservation, prepareSelfRestorePublication,
+    uploadSelfRestore(owner, uploadId, bytes, rawAsset, stage, signal) { return guard(async () => {
+      const source = domainParse(avatarAssetSchema, rawAsset);
+      if (source.width !== config.recipe.outputSize || source.height !== config.recipe.outputSize) domainReject('avatar_policy_changed');
+      if (source.bytes > config.recipe.maxOutputBytes) domainReject('avatar_input_too_large', 413);
+      if (!Buffer.isBuffer(bytes) || bytes.length !== source.bytes || createHash('sha256').update(bytes).digest('hex') !== source.sha256)
+        domainReject('avatar_integrity_failed', 503);
+      const target = { kind: 'self' as const };
+      const restoreRun: AvatarRun = (actor, selected, task) => {
+        if (actor !== owner || selected.kind !== 'self') domainReject('invalid_scope', 400);
+        return authority.runTransaction(actor, null, async b => {
+          const binding = selfRestoreBinding(b);
+          checkedAttachmentImportStage(b, stage);
+          const row = await store.upload(b, binding, domainParse(z.uuid(), uploadId));
+          if (!row || row.mimeType !== 'image/jpeg' || row.bytes !== source.bytes || row.sha256 !== source.sha256) domainReject('operation_conflict');
+          return task(b, binding);
+        });
+      };
+      const restored = createAvatarUploads({ run: restoreRun, store, config, codec: selfRestoreCodec(owner, source), objects, now, ingress, importStage: stage });
+      const status = await restored.status(owner, target, uploadId);
+      if (status.normalized && (status.normalized.sha256 !== source.sha256 || status.normalized.bytes !== source.bytes
+        || status.normalized.width !== source.width || status.normalized.height !== source.height)) domainReject('avatar_integrity_failed', 503);
+      if (status.state !== 'reserved') return status;
+      const admission = await restored.admission(owner, target, uploadId);
+      try { return await admission.upload(bytes, signal); } finally { admission.release(); }
+    }); },
     async readImportState(authority) {
       const childId = authority.scope.childId;
       if (childId === AVATAR_NIL) domainReject('invalid_scope', 400);

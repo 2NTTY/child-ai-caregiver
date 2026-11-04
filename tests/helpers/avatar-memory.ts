@@ -47,8 +47,10 @@ export function avatarMemoryBucket(name: string) {
   };
   return { port, records, writes: () => writes, removes: () => removes, lose: () => { lose = true; }, unavailable: (value: boolean) => { unavailable = value; } };
 }
-export async function avatarDomainFixture(injected: { codec?: Pick<AvatarCodec, 'normalize'> } = {}) {
-  const fake = firestoreDomainFixture(), cipher = createStorageCipher(Buffer.alloc(32, 49));
+export async function avatarDomainFixture<Fixture extends Pick<ReturnType<typeof firestoreDomainFixture>, 'database' | 'records'> = ReturnType<typeof firestoreDomainFixture>>(
+  injected: { codec?: Pick<AvatarCodec, 'normalize'>; fixture?: Fixture } = {},
+) {
+  const fake = injected.fixture ?? firestoreDomainFixture(), cipher = createStorageCipher(Buffer.alloc(32, 49));
   let now = Date.now(), decodes = 0, decodeHook: (() => Promise<void>) | undefined;
   const options = { database: fake.database, cipher, projectId: 'synthetic-avatar-project', namespace: 'synthetic_avatar', serverClock: () => now };
   const config = readAvatarConfig({ AVATAR_WRITES_ENABLED: 'true' }), bucket = avatarMemoryBucket('synthetic-avatar-private'), journalBucket = avatarMemoryBucket('synthetic-avatar-journal');

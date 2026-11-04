@@ -48,7 +48,8 @@ export const avatarUploadRecordSchema = z.object({
   errorCode: z.string().regex(/^[a-z_]{1,80}$/u).nullable(),
   importStage: attachmentImportStageSchema.optional(),
 }).strict().refine(value => value.policyId === avatarPolicyId(value.recipe)
-  && (!value.importStage || value.binding.target.kind === 'child' && value.importStage.actorUserId === value.actorUserId)
+  && (!value.importStage || value.importStage.actorUserId === value.actorUserId
+    && (value.binding.target.kind === 'child' || value.binding.scope.ownerUserId === value.actorUserId))
   && value.crop.zoom <= value.recipe.maxCropZoom && value.bytes <= value.admission.maxInputBytes
   && (value.preparedAsset === null || value.preparedAsset.id === value.assetId)
   && (value.descriptor === null || value.descriptor.asset.id === value.assetId

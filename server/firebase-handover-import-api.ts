@@ -14,7 +14,8 @@ export async function handleHandoverImport(request: Request, owner: string, serv
     headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie, Authorization' } }); };
   try {
     if (request.method === 'GET' && url.pathname === root + '/capabilities')
-      return respond({ classEnrolment: true });
+      return respond({ classEnrolment: true, ...(service.accountAvatarRestore && request.headers.get('x-handover-account-backup') === '1'
+        ? { accountAvatarRestore: true } : {}) });
     if (request.method === 'GET' && url.pathname === root) {
       const entries = [...url.searchParams];
       if (entries.some(([key]) => key !== 'cursor') || entries.length > 1) domainReject('invalid_input', 400);
@@ -26,10 +27,12 @@ export async function handleHandoverImport(request: Request, owner: string, serv
     }
     if (request.method === 'POST' && url.pathname === root + '/compare-original')
       return respond(await service.compareOriginal(owner, await readJson(request), request.signal));
+    if (request.method === 'POST' && url.pathname === root + '/compare-account-avatar')
+      return respond(await service.compareSelfAvatar(owner, await readJson(request), request.signal));
     if (request.method === 'POST' && url.pathname === root) return respond(await service.create(owner, await readJson(request), request.signal), 201);
     if (!route) domainReject('not_found', 404);
     const id = domainParse(z.uuid(), route[1]);
-    if (request.method === 'GET' && route[2] === 'summary') return respond(await service.summary(owner, id));
+    if (request.method === 'GET' && route[2] === 'summary') return respond(await service.summary(owner, id, request.headers.get('x-handover-account-backup') === '1'));
     if (request.method === 'GET' && route[2] === 'enrolments') return respond(await service.enrolments(owner, id));
     if (request.method === 'GET' && route[2] === 'items') {
       const entries = [...url.searchParams];

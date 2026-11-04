@@ -9,7 +9,50 @@ import { createFirestoreAvatarStore } from '../server/firestore-avatars.ts';
 import { createFirestoreSharingStore } from '../server/firestore-sharing.ts';
 import { avatarBinding } from '../server/avatar-data.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
+import sharp from 'sharp';
 const code = (expected: string) => (error: unknown) => error instanceof FirestoreDomainError && error.code === expected;
+
+test('staged self restore preserves verified JPEG bytes and publishes only in the owner transaction', async () => {
+  const f = await avatarDomainFixture();
+  const reserved = avatarReserveResultSchema.parse((await f.online.submit(f.owner,f.reserve())).result).upload;
+  await f.upload(reserved.id);await f.online.submit(f.owner,f.submission('commit',{uploadId:reserved.id,expectedVersion:0}));
+  const before = (await f.avatars.read(f.owner,f.target)).avatar, decodes = f.decodes();
+  const bytes = await sharp({create:{width:f.config.recipe.outputSize,height:f.config.recipe.outputSize,channels:3,background:'#778899'}}).jpeg().toBuffer();
+  const asset = {id:randomUUID(),mimeType:'image/jpeg' as const,bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex'),
+    width:f.config.recipe.outputSize,height:f.config.recipe.outputSize};
+  const stage = {batchId:randomUUID(),operationId:randomUUID(),actorUserId:f.owner,sourceHash:'a'.repeat(64)};
+  const ids = {uploadId:randomUUID(),assetId:randomUUID()}, input = {expectedVersion:before.version,policyId:f.config.policy.policyId,
+    mimeType:'image/jpeg',bytes:bytes.length,sha256:asset.sha256,crop:{centerX:.5,centerY:.5,zoom:1}};
+  await f.authority.runTransaction(f.owner,null,async b=>{
+    await assert.rejects(f.avatars.prepareSelfRestoreReservation({...b,actorUserId:'another-owner'},input,ids,stage),code('invalid_scope'));
+    await assert.rejects(f.avatars.prepareSelfRestoreReservation({...b,scope:{...b.scope,childId:randomUUID()}},input,ids,stage),code('invalid_scope'));
+    await assert.rejects(f.avatars.prepareSelfRestoreReservation({...b,sharedAccess:{...b.sharedAccess!,module:'attachments'}},input,ids,stage),code('invalid_scope'));
+    const disabled=createFirestoreAvatarStore({...f.options,config:{...f.config,writesEnabled:false},codec:{async normalize(){throw Error('Unexpected encode');}},objects:f.objects,journal:f.journal});
+    await assert.rejects(disabled.prepareSelfRestoreReservation(b,input,ids,stage),code('avatar_unavailable'));
+    const plan=await f.avatars.prepareSelfRestoreReservation(b,input,ids,stage);plan.commit();
+  });
+  await assert.rejects(f.avatars.uploadAdmission(f.owner,f.target,ids.uploadId),code('avatar_import_pending'));
+  await assert.rejects(f.avatars.uploadSelfRestore(f.owner,ids.uploadId,Buffer.from('wrong'),asset,stage,new AbortController().signal),code('avatar_integrity_failed'));
+  await assert.rejects(f.avatars.uploadSelfRestore(f.owner,ids.uploadId,bytes,{...asset,width:asset.width+1,height:asset.height+1},stage,new AbortController().signal),code('avatar_policy_changed'));
+  const ready=await f.avatars.uploadSelfRestore(f.owner,ids.uploadId,bytes,asset,stage,new AbortController().signal);
+  assert.equal(ready.state,'ready');assert.equal(ready.normalized?.sha256,asset.sha256);assert.equal(f.decodes(),decodes,'Already normalized bytes are never JPEG encoded again');
+  await assert.rejects(f.online.submit(f.owner,f.submission('commit',{uploadId:ids.uploadId,expectedVersion:before.version})),code('avatar_import_pending'));
+  assert.equal((await f.avatars.read(f.owner,f.target)).avatar.version,before.version);
+  await f.authority.runTransaction(f.owner,null,async b=>{
+    await assert.rejects(f.avatars.prepareSelfRestorePublication(b,ids.uploadId,{...stage,sourceHash:'b'.repeat(64)}),code('operation_conflict'));
+    const plan=await f.avatars.prepareSelfRestorePublication(b,ids.uploadId,stage);
+    assert.equal((await f.data.head(b,f.binding)).version,before.version);plan.commit();
+  });
+  const restored=(await f.avatars.read(f.owner,f.target)).avatar;
+  assert.equal(restored.version,before.version+1);assert.equal(restored.asset?.sha256,asset.sha256);
+  assert.deepEqual((await f.avatars.content(f.owner,f.target,ids.assetId,restored.version)).buffer,bytes);
+  await f.authority.runTransaction(f.owner,null,async b=>{
+    const replay=await f.avatars.prepareSelfRestorePublication(b,ids.uploadId,stage);replay.commit();assert.equal(replay.value.version,restored.version);
+    assert.equal((await f.data.head(b,f.binding)).importedFrom,undefined);
+    assert.equal((await f.data.cleanup(b,f.binding,before.asset!.id))?.reason,'superseded');
+    assert.equal((await f.data.cleanup(b,f.binding,ids.assetId))?.committedVersion,restored.version);
+  });
+});
 
 test('shared child avatar content fences class membership changes during object reads and erases rejected bytes', async () => {
   const f = await avatarDomainFixture(), sharing = createFirestoreSharingStore(f.options), teacher = 'avatar-class-teacher';
