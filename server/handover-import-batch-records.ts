@@ -37,7 +37,10 @@ export const importBatchControlSchema = z.object({ opId: uuid, batchId: uuid, ac
 export type HandoverImportBatchControl = z.infer<typeof importBatchControlSchema>;
 export const importBatchId = (owner: string, id: string) => JSON.stringify([owner, id]);
 export const importBatchControlId = (owner: string, opId: string) => JSON.stringify([owner, opId]);
-export const importBatchMetadata = (job: HandoverImportBatch) => ({ createdAt: job.createdAt, state: job.state });
+export const growthImportScopes = (job: HandoverImportBatch) => ['queued', 'running'].includes(job.state)
+  ? job.targetScopes.filter((_, i) => job.request.targets[i].sections.includes('growth')).map(scope => firestoreDomainHash(scope)) : [];
+export const importBatchMetadata = (job: HandoverImportBatch) => ({ createdAt: job.createdAt, state: job.state,
+  ...(growthImportScopes(job).length ? { growthImportScopes: growthImportScopes(job), batchId: job.id } : {}) });
 export const importBatchControlMetadata = (event: HandoverImportBatchControl) => ({ batchId: event.batchId, createdAt: event.at });
 export function validImportBatch(job: HandoverImportBatch) {
   return job.id === job.request.opId && job.fingerprint === firestoreDomainHash(job.request) && job.scope.childId === '00000000-0000-0000-0000-000000000000'

@@ -9,7 +9,7 @@ export const HANDOVER_SECTIONS = {
   tasks: ['tasks', 'task_history'], documents: ['documents', 'document_versions', 'document_content', 'visit_preparation', 'visit_preparation_history'],
   attachments: ['photos', 'photo_content', 'voices', 'voice_content', 'voice_transcripts', 'files', 'file_content', 'child_avatar', 'child_avatar_content'],
   sources: ['private_sources', 'private_source_history'], concerns: ['concerns', 'concern_events', 'concern_history'],
-  growth: ['growth_attention', 'growth_topics'],
+  growth: ['growth_attention', 'growth_topics', 'growth_history', 'growth_topic_history'],
 } as const;
 const text = (max: number) => z.string().min(1).max(max);
 const hash = z.string().regex(/^[a-f0-9]{64}$/u);

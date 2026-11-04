@@ -57,13 +57,22 @@ export function createFirebaseWorkerServices(runtime: Awaited<ReturnType<typeof 
         if (job.kind === 'push') return runtime.push.process(job, signal);
         if (job.kind === 'telegram') return runtime.telegram.process(job, signal);
         if (job.kind === 'contact') return runtime.contact.process(job, signal);
-        if (job.kind === 'child-change') { await runtime.growth.evaluate(job); return maintenance.childChange(job); }
+        if (job.kind === 'child-change') {
+          const evaluated = await runtime.growth.evaluate(job);
+          return evaluated.state === 'deferred' ? evaluated : maintenance.childChange(job);
+        }
         if (job.kind === 'document-refresh') return runtime.documents.processRefresh(job);
         if (job.kind === 'work-check') return runtime.product.continuation.check(job);
         const continuation = job.kind === 'work-continuation' ? await authority.runTransaction(job.scope.ownerUserId, job.scope.childId,
           b => runtime.product.continuation.input(b, job)) : null;
         const concern = job.kind === 'concern' ? await runtime.concerns.beginBackground(job) : null;
-        const attention = job.kind === 'growth' ? await runtime.growth.backgroundInput(job) : null;
+        let attention: Awaited<ReturnType<typeof runtime.growth.backgroundInput>> = null;
+        try { if (job.kind === 'growth') attention = await runtime.growth.backgroundInput(job); }
+        catch (error) {
+          if (error && typeof error === 'object' && 'code' in error && error.code === 'growth_import_pending')
+            return { state: 'deferred', nextAt: new Date(Date.now() + 30_000).toISOString() };
+          throw error;
+        }
         const task = job.kind === 'task-agent' ? await authority.runTransaction(job.scope.ownerUserId, job.scope.childId,
           b => runtime.taskEvents.input(b, job)) : null;
         if (!['concern', 'growth', 'task-agent', 'work-continuation'].includes(job.kind)) throw new Error('Product background consumer not connected');

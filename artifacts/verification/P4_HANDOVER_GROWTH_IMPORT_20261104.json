@@ -1,0 +1,21 @@
+{
+  "base": "1dd85057bd270c113356a3bded29b9eb8e4613e1",
+  "scope": "Personal growth records in the unified package import worker and source history",
+  "checks": [
+    { "command": "node --test tests/handover-growth-import.test.ts", "passed": 1, "failed": 0, "skipped": 0 },
+    { "compiler": "TypeScript, tsconfig.server.json compilerOptions", "roots": ["server/firebase-runtime.ts", "server/firebase-worker-services.ts", "server/handover-import-service.ts", "tests/handover-growth-import.test.ts"], "diagnostics": 0 }
+  ],
+  "coverage": [
+    "Original ZIP reader accepts earlier v1 packages without growth history; declared coverage remains checked",
+    "Preserves source outcomes, actor and topic history through a second child-to-child transfer",
+    "Links tasks and concerns to local resources; conflicting local topic settings require explicit, versioned replacement",
+    "Queued imports defer child evaluation; finish, cancellation and failure release the scope. The recovery decoder accepts queued batch metadata",
+    "Same operation returns its original result without replaying a decision or notification"
+  ],
+  "resolvedDuringVerification": [
+    "Earlier v1 coverage was incorrectly rejected when the new history sections were absent",
+    "An absent topic field on onward export could make the encrypted receipt unreadable",
+    "Fixture was adapted to existing upload and dispatch page limits; production limits were retained"
+  ],
+  "limits": ["Serial Firestore fixture and synthetic object storage, no cloud contention or real restore exercise", "Index definitions only, not deployed", "Shared writes and the Web/Android growth import controls are separate work"]
+}

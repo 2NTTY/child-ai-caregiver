@@ -15,6 +15,8 @@ import type { HandoverImportRow } from './handover-import.ts';
 import { attachmentSupplementModule, type HandoverAttachmentPorts } from './firestore-handover-attachments.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
+import { growthImportSourceRow } from './firestore-growth.ts';
+import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
 const controlSchema = z.object({ opId: z.uuid(), expectedVersion: z.number().int().positive().max(2147483646) }).strict();
@@ -25,7 +27,7 @@ const listCursorSchema = z.object({ scope: z.string().regex(/^[a-f0-9]{64}$/u), 
 
 /** Internal verified-package coordinator. Public clients never supply verified rows, counts or worker leases. */
 export function createFirestoreHandoverImportBatches(options: FirestoreDomainOptions & { serverClock?: () => number;
-  attachments?: HandoverAttachmentPorts;
+  attachments?: HandoverAttachmentPorts; knowledge?: FirestoreKnowledgeStore;
   sourceGuard?: (b: Binding, request: HandoverImportBatchRequest) => Promise<() => void> }) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), sharing = createFirestoreSharingStore(options);
   const items = createFirestoreHandoverImportItems(options), clock = options.serverClock ?? Date.now;
@@ -39,7 +41,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
     if (!validImportBatch(job) || job.id !== id || job.version !== snapshot.get('recordVersion') || job.scope.ownerUserId !== b.actorUserId
       || firestoreDomainHash(job.scope) !== firestoreDomainHash(scope)) domainReject('import_batch_binding', 500);
     for (const [key, value] of Object.entries({ ...data.tags(scope), ...importBatchMetadata(job) }))
-      if (snapshot.get(key) !== value) domainReject('import_batch_binding', 500);
+      if (Array.isArray(value) ? firestoreDomainHash(snapshot.get(key)) !== firestoreDomainHash(value) : snapshot.get(key) !== value) domainReject('import_batch_binding', 500);
     return job;
   }
   function prepareSave(b: Binding, raw: Batch) {
@@ -56,6 +58,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
       for (const module of selected.sections) {
         if (selected.target.spaceId) {
           if (module === 'sources' || module === 'chat') domainReject('private_scope_unavailable', 403);
+          if (module === 'growth') domainReject('shared_domain_read_only', 403);
           await sharing.inResourceTransaction(b, { ...selected.target, spaceId: selected.target.spaceId, module, mode: 'write' },
             async access => { scope = access.scope; });
         }
@@ -191,8 +194,9 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
       const { path, rowIndex, ...source } = input.row.source;
       if (firestoreDomainHash(source) !== firestoreDomainHash(job.request.source)) domainReject('invalid_package_scope', 400);
       const opId = firestoreBackgroundReference({ id: firestoreDomainHash(['handover-import-row', owner, job.id, path, rowIndex]) });
+      const identity = input.row.section === 'growth_attention' || input.row.section === 'growth_topics' ? growthImportSourceRow(input.row).value : input.row.value;
       const resolution = job.request.resolutions.find(row => row.sourceChildId === input.row.childId && row.section === input.row.section
-        && row.resourceId === (input.row.section === 'child_avatar' ? input.row.childId : input.row.value.id ?? input.row.value.childId))?.resolution ?? { mode: 'preserve' as const };
+        && row.resourceId === (input.row.section === 'child_avatar' ? input.row.childId : identity.id ?? identity.childId))?.resolution ?? { mode: 'preserve' as const };
       let committed: Batch | undefined;
       const item = await items.apply(owner, { opId, batchId: job.id, target: selected.target, row: input.row,
         integrity: job.request.integrity, resolution,
