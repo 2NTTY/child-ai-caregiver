@@ -1,0 +1,8 @@
+export const categories=Object.freeze([{id:'play',label:'一起玩'},{id:'read',label:'讀一小段'},{id:'outside',label:'出門走走'},{id:'ordinary',label:'平凡小事'}]);
+export function createState(){return {phase:'draft',revision:0,draft:{category:'',title:'',note:''},errors:{},review:null,receipt:null};}
+export function validate(draft){const errors={};if(!categories.some(x=>x.id===draft.category))errors.category='選一個情境。';if(!draft.title.trim())errors.title='用一句話留下這個片刻。';else if(draft.title.length>60)errors.title='標題請保持在 60 字以內。';if(draft.note.length>300)errors.note='補充請保持在 300 字以內。';return errors;}
+export function editField(state,key,value){if(!['category','title','note'].includes(key)||state.phase==='receipt')return state;return {...state,phase:'draft',revision:state.revision+1,draft:{...state.draft,[key]:String(value)},review:null,receipt:null,errors:{...state.errors,[key]:undefined}};}
+export function review(state){if(state.phase==='receipt')return state;const errors=validate(state.draft);return Object.keys(errors).length?{...state,phase:'draft',errors,review:null}:{...state,phase:'review',errors:{},review:{revision:state.revision,draft:{...state.draft},confirmed:false}};}
+export function confirmReview(state,value){return state.phase==='review'&&state.review?{...state,review:{...state.review,confirmed:Boolean(value)}}:state;}
+export function commit(state){if(state.phase!=='review'||!state.review?.confirmed||state.review.revision!==state.revision||Object.keys(validate(state.draft)).length)return state;return {...state,phase:'receipt',receipt:{...state.review.draft,revision:state.revision,storage:'page-memory'}};}
+export function undoCommit(state){return state.phase==='receipt'?{...state,phase:'draft',review:null,receipt:null,errors:{}}:state;}
