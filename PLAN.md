@@ -56,9 +56,13 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**本輪原生背景保存修復：**[DM-F02](#dm-f02-background-copy) 只補回等待圖片複製；最新 master 整合後 18 案及完整 frontend 型別已通過。獨立整合 review、精確 PR head 必要 CI 及原生設備驗收仍待完成，未發布。
+**本輪首頁照片修復：**[HC-F01](#hc-f01-home-photo-admission) 維持 #504 後精確 master 的已驗程式及原 CI 配置；本候選只校準以下 TASK／AGENT／DM 的已合併現況，未改產品、測試或原驗證 JSON。可攜八案、完整 frontend 型別及原 mounted 證據按未變輸入重用，沒有新跑；文檔增量 review／HC 精確 head 必要 CI 仍待驗，HC 未合併、未部署。
 
-**本輪 Agent 收據閱讀修復：**[AGENT-F01](#agent-f01-receipt-read) 的最小 client 相容行、34 案及有界本地 mounted／完整型別已驗；獨立整合 review、精確 PR head 的必要遠端 CI 尚待完成，未發布。
+**本輪待辦重新載入修復：**[TASK-F01](#task-f01-reload-delivery) 已由 [PR #502](https://github.com/2NTTY/child-ai-caregiver/pull/502) 正常合併至 `3b21f81e`；兩次必要離線 CI 已成功。正式63項及原瀏覽器／設備缺口不進位，未部署。
+
+**本輪原生背景保存修復：**[DM-F02](#dm-f02-background-copy) 已由 [PR #504](https://github.com/2NTTY/child-ai-caregiver/pull/504) 正常合併至 `88ea2b03`；精確 head 的兩次必要離線 CI 已成功。原生設備與正式四十項驗收仍未完成，未部署。
+
+**本輪 Agent 收據閱讀修復：**[AGENT-F01](#agent-f01-receipt-read) 已由 [PR #503](https://github.com/2NTTY/child-ai-caregiver/pull/503) 正常合併至 `4a9f6bd9`；精確 head 的兩次必要離線 CI 已成功。formal48 及原完整流程／設備缺口維持未驗，未部署。
 
 **本輪指定摘要修復：**接續已合併 #410 的剩餘問題，整合覆核 #447，見 [REQ005-SUMMARY01](#req005-summary01)。單一候選已完成本地程式驗收，durable 摘要未啟用、未部署，正式啟用仍有前置；不改下列 P4 交付與未驗狀態。
 
@@ -94,23 +98,40 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **保留的前批交付：**[MODEL-SELF03](#model-self03)可由用戶在 Web／Android 自行填寫憑證與模型試用；#270 共用導航及 #271 延後聯合補驗已合併，導航接線已隨 `382d217` Web／Android OTA 發布，真機效果待核。依使用者指示，[DEV02](#dev-agent02)最後引用／審核及聯合補驗等待四個 Agent 真正完成且協作者先自行檢查，不提前重跑或接管。iOS 不以新模型驗收取代這些缺口。
 
+<a id="task-f01-reload-delivery"></a>
+### TASK-F01：版本衝突的保草稿重新載入（已合併，未部署）
+
+- **最新交付（2026-11-05 UTC）：**[PR #502](https://github.com/2NTTY/child-ai-caregiver/pull/502) 已經獨立 review、正常合併與遠端讀回，merge commit `3b21f81eebc68f6d885cb20ee5485d3eb5cce83f`，精確 PR head `b4177a6906ab0da2350f96d7388223a85d900934`。補回 conflict/reload 的保草稿入口，沒有新增寫入或自動 rebase。
+- **遠端 CI：**[首次 run 42011309583](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42011309583) 與 [ready 後 run 42012238945](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42012238945) 均成功：完整三案、零 skip 及原完整 `frontend/tsconfig.json --noEmit`。兩次重播不相加為六案，其他 skipped workflow 不當成功證據。前端 [原驗證 JSON](frontend/verification/TASK_F01_RELOAD_AFFORDANCE_20261105.json)及原工作紀錄保留合併前快照，最新交付狀態以本節 PR／CI 為準。
+- **保留未驗：**未部署；formal63 全部 NOT_RUN。完整 ProductionProvider／身份／scope／跨 domain、真瀏覽器焦點／鍵盤／關閉／discard／Back／Forward、輔助技術、原生設備及真服務均不因合併進位。原 mounted 及 shallow 層級仍分開。
+
 <a id="dm-f02-background-copy"></a>
-### DM-F02：等待原生背景圖片複製（本地已驗，遠端待驗）
+### DM-F02：等待原生背景圖片複製（已合併，未部署）
 
 - **範圍／契約：**鎖定 Expo FileSystem 57.0.7 的 `File.copy` 返回 Promise，Android／iOS 均以 AsyncFunction 登記。只在 `frontend/src/platform/background-storage.native.ts` 補 `await input.copy(file)`，完成複製後才驗候選檔、保存 pointer 及按原語義清理舊檔；拒絕回到既有 catch。不改 provider、scope、身份／權限、Web storage、原圖限制、package／lock／tsconfig，不新增 owner、同步 copy、重試或取消能力。
 - **來源／驗證：**精確基線 `4a9f6bd992f985f364f81b478dc1e42c440642f2`、tree `31709ba6cba5fb967eeca06e5616f782655948ab`，分支 `codex/background-copy-await-20261105`。同 tree 的本地來源 commit 與遠端 merge commit 分開記錄。整合保留原整檔十二案並新增六案；必要 pending-copy 案於本次未修基線 **0/1 RED**，修後完整 **18/18、零 skip**。完整原 frontend config 重新 noEmit **1958 program files、exit 0、零診斷**；因 master 的 client 檔屬 program，沒有沿用較舊基線型別結果。[版本、命令及界線](artifacts/verification/DM_F02_BACKGROUND_COPY_20261105.json)。
 - **測試層級：**執行真 storage／provider module；File／Directory／Crypto／SecureStore、React／focus 是明示合成。驗等待 copy／pointer、防重、失敗 rollback、完成後大小驗證、舊檔清理失敗，以及 switch／logout／unmount 的晚完成隔離。先前獨立三案及 partial-positive-size baseline RED 是另份已接受證據，不與本次十八案相加。SDK source／types 相符不是手機 binary 驗收。
-- **CI／完成門檻：**[專用離線 workflow](.github/workflows/background-copy-offline.yml)只對同倉本分支、目標 master 的精確 PR head 執行，沿原 lock 安裝、關閉 lifecycle scripts，離線隔離後套既有 patches，再跑同一完整十八案及原完整 frontend noEmit。零 skip／精確測試數由既有共用 gate 核實；不搬外置 review harness 或私人路徑入 repo。**遠端 CI 尚未執行**，本地只重播測試／型別和靜態核對，不冒稱完整隔離 wrapper 已驗。獨立整合 review 與最終 head 必要 CI 通過後才按正常保護交付；其他 workflow skipped 不當 pass。
+- **最新交付／遠端 CI（2026-11-05 UTC）：**[PR #504](https://github.com/2NTTY/child-ai-caregiver/pull/504) 已經獨立整合 review、正常合併及遠端讀回，merge commit `88ea2b0367d3c313174f43c28cd2573e0541defb`，精確 head `1229a92fe41d79c40723fff8a8270f78a16d96c0`。[首次 run 42024582126](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42024582126) 與 [ready 後 run 42024983087](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42024983087) 均通過[專用離線 workflow](.github/workflows/background-copy-offline.yml)：各自完整18案、零 skip／網路嘗試，及原完整 frontend noEmit。沿原 lock 安裝、停用 lifecycle scripts、離線隔離後套既有 patches 的遠端流程已成功；本地未重播該 wrapper 的歷史描述保留於原 JSON／WORKLOG，不再作現況。沒有外置 review harness 或私人路徑進 repo；其他 skipped workflow 不當 pass。兩次 CI 不相加，正常合併不代表部署或設備驗收。
 - **保留限制：**copy 拒絕的清理自身若再拋錯仍可能遮蓋原錯；pointer failure 測試僅 fail-before-write，不證明 SecureStore uncertain commit 原子性。舊檔 best-effort 清理可留下 app-private orphan；同 durable scope 跨 provider／session 並發、process death、quota／鎖機未修。晚完成可保存原 scope，但不呈現於退休／新 scope，logout 不代表撤回已受理寫入。真設備／native binary、相機相簿、真圖與家庭資料、完整 mounted／瀏覽器／無障礙、模型／服務及正式四十項矩陣仍未驗；沒有部署或以合併代填驗收。
 
+<a id="hc-f01-home-photo-admission"></a>
+### HC-F01：首頁照片被拒後恢復入口（本地已驗，獨立整合 review／遠端 CI 待驗）
+
+- **範圍／基線：**基線 `88ea2b0367d3c313174f43c28cd2573e0541defb`（#504 已合併），分支 `codex/home-photo-rejection-20261105`。只改 `HomeActions.openAgentPhoto` 的同步 boolean 回報、ProductionProvider 的接納結果，以及 HomeQuickActions 在明確 `false` 時解除 opening；三個產品檔與已獨立接受的最小修正逐 bytes 相同。不改 attachment owner、上載、導航 guard、後端、依賴、lock 或 tsconfig，與背景複製修復分開交付。
+- **契約：**`true` 只表示照片已由本地草稿接納，不表示導航、上載或保存完成。拒絕時只釋放新照片並保留舊附件／文字；接納後仍保留 opening，不能無條件解鎖而容許重複 capture。接納後 guard 等待、阻擋或取消仍可能留在首頁並保持 opening，這是本包刻意未擴修的既有缺口。
+- **本地證據分層：**[來源、版本與界線](artifacts/verification/HC_F01_HOME_PHOTO_ADMISSION_20261105.json)。沿用 `4a9f6bd9` 整合的同一 mounted 測試／loader 證據：未修基線 **8/14**（6 個必要斷言 RED）、候選 **14/14**。本次逐一核對 2,300 個 loaded inputs（含 68 個第一方檔案）及 10 個配置／工具輸入，與上游八檔沒有 mounted 來源交集，故明示重用、沒有重跑；使用真 React／RNW／Paper、實際 Web PhotoFilePicker／WebCameraCapture、完整原 `useProductionValue` hook 及真草稿 owner／投影，owner 子介面、路由、File／媒體／URL ports 為合成，不是完整 ProductionProvider、ProductionOwner 或瀏覽器。外置 JSDOM 僅供本地，未搬進 PR／CI。
+- **可攜／型別：**同基線 `88ea2b03` 的程式整合已重跑原 repo-owned 原碼回歸 **8/8**；本次只校準三個根文件，輸入 hash 未變，沒有重跑測試或 compiler；同檔與斷言未變，保留 `4a9f6bd9` 的未修基線 **1/8**（7 個必要斷言 RED）；無條件解鎖 mutant **7/8**，由接納後保持鎖定一案檢出。此層執行完整原 hook／元件及真 draft owner／projection，但 hooks、UI、router 為 shallow ports，effects／實際 picker 不執行，不能混作 mounted 或相加案例。同基線程式整合的原完整 frontend semantic noEmit 為 **exit 0、1,958 program files、零診斷**，含上游背景 storage 的實際 program 交集及三個 HC 產品檔；未縮 include 或刪除 diagnostics。
+- **CI／下一步：**[專用離線 CI](.github/workflows/home-photo-admission-offline.yml)只對同倉本分支、目標 master 的精確 PR head；沿原 lock 安裝後在無網路／無憑證／非 root 的隔離程序套用既有 dependency patches，執行完整 8 案零 skip 及原 frontend noEmit。本地只重播測試參數、核 YAML／shell 及版本；未為重播 wrapper 改動共用 dependencies，**遠端 CI 未執行**。`4a9f6bd9` 十檔已獨立接受；接 #504 的程式整合輸入不變，這個新候選只校準 PLAN／STATUS／WORKLOG 的已交付現況，原產品／portable／CI／verification JSON 不變。仍須文檔窄增量 review、精確最終 head 的必要 CI／分支保護通過後正常合併，合併不代表部署。
+- **保留失敗／未驗：**舊四檔 11 案的歷史基線與候選均 9 過／2 個 mobile-navigation 舊 harness 失敗，本輪沒有重跑或改稱全綠。新 shallow 首輪 useCallback port 錯誤在產品斷言前失敗，只修 port 後重新取得有效 RED；原錯保留。原首頁 formal41 全部 NOT_RUN，真瀏覽器／鍵盤／焦點／手勢／輔助技術、真相機、設備、完整 owner／路由生命週期、真 API／家庭資料及模型未驗。未發布、未部署，不宣稱全站修復或接受 guard 取消後的流程已恢復。
+
 <a id="agent-f01-receipt-read"></a>
-### AGENT-F01：語音操作收據閱讀相容修復（本地已驗，遠端待驗）
+### AGENT-F01：語音操作收據閱讀相容修復（已合併，未部署）
 
 - **範圍／契約：**沿 [API 語音接點](docs/API.md#p3-voice-input)及既有 `AgentActionReceipt`／persisted schema，只在 `src/client/agent-actions-api.ts` 的 strict receipt schema 接回可選 literal `sourceBasis=voice_interpretation`。原合法已保存收據經 handler 返回 200，卻被 client 拒收，是閱讀契約缺口；不據此推論保存失敗或資料遺失。不改 writer、Server 權威、shared schema、渠道上限、owner 或 UI。
 - **來源／本地結果：**基線 `3b21f81e`（已合併 #502）、分支 `codex/agent-receipt-source-basis-20261105`；TASK 八檔與原型別／mounted 輸入交集為空，核對完整輸入 hashes 後沿用原 `180c8c16` gate，不重跑或冒稱新一輪 compiler／mounted。精確基線及檔案 hashes 見[驗證紀錄](artifacts/verification/AGENT_F01_RECEIPT_READ_20261105.json)。完整新 portable 檔 34/34、零 skip；保留同測試必要 voice 案的 baseline RED 及獨立 10 組覆核，不相加成全產品驗收。原 root／server config 完整 noEmit 均 exit 0、零診斷，program 分別 405／3,093 檔；server 包含 client、新測試及真 owner，未裁 include 或隱藏診斷。
 - **受影響 UI 的本地界線：**真 React／RNW／Paper 的 AgentConversation、Receipt、Disclosure，加真 owner／client／handler，已驗一個連續 mounted 情境：7 段功能、24 次 settled disclosure 觀察、9 次合成 GET、零寫入。涵蓋 legacy／voice／mixed、詳情、壞批次不局部成功、重新檢查及換 child／identity 後舊回覆隔離。`useProduction` host、run／inbox、session／store／transport 是明示合成；不是完整 ProductionProvider、瀏覽器布局／手勢／AT、Firestore 或正式帳戶流程。原 UI 不顯示 voice label，本包沒有新增該承諾。
-- **CI／完成門檻：**[新離線 workflow](.github/workflows/agent-receipt-offline.yml)只對同倉、上述分支、目標 master 的精確 PR head 執行，必要項為整檔 34 案零 skip 及原完整 `tsconfig.server.json --noEmit`。root-only 六個 first-party 檔不在本讀取鏈，server 不是 root 全部 program 的超集；兩種原 config 的本地證據分開保留。mounted 使用本地外置 JSDOM 及官方 Babel／Worklets 轉譯，其精確結果只作本地證據，不在 PR／CI 搬入該 harness，不擴 root dependencies／lock。**遠端尚未執行**；最終 head 的必要 CI、獨立整合 review 通過後才可按正常保護合併，不以既有本地綠燈或 skipped checks 代填。
-- **失敗／未驗：**最初缺依賴的 baseline／candidate server 同有 12 條診斷；補本地既有 lock 同版套件的只讀引用後完整通過，保留原失敗。舊六案仍是 4 PASS／2 既有 shallow harness fail，未改成全過；早期 mounted loader／轉譯順序／rAF／oracle 失敗亦保留。formal48 全部 NOT_RUN；三渠道、binding／contact、真模型、真家庭資料、全站／原生及部署不在此包。未發布、不稱已上線修復，不改其他包的未驗狀態。
+- **最新交付／遠端 CI（2026-11-05 UTC）：**[PR #503](https://github.com/2NTTY/child-ai-caregiver/pull/503) 已經獨立整合 review、正常合併及遠端讀回，merge commit `4a9f6bd992f985f364f81b478dc1e42c440642f2`，精確 head `6156ccbdc862298b06c108136c53853c74721f4c`。[首次 run 42017711224](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42017711224) 與 [ready 後 run 42018137406](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42018137406) 均通過[專用離線 workflow](.github/workflows/agent-receipt-offline.yml)：各自完整34案、零 skip 及原完整 `tsconfig.server.json --noEmit`。兩次不相加為68案，其他 skipped checks 不當 pass。root-only 六個第一方檔不在本讀取鏈，server 不是 root 全部 program 的超集，兩種 config 的原本地證據分開保留；外置 JSDOM mounted 未搬進 CI。原 JSON／WORKLOG 是合併前快照，最新遠端結果以本節為準；未部署。
+- **失敗／未驗：**最初缺依賴的 baseline／candidate server 同有 12 條診斷；補本地既有 lock 同版套件的只讀引用後完整通過，保留原失敗。舊六案仍是 4 PASS／2 既有 shallow harness fail，未改成全過；早期 mounted loader／轉譯順序／rAF／oracle 失敗亦保留。formal48 全部 NOT_RUN；三渠道、binding／contact、真模型、真家庭資料、全站／原生及部署不在此包。已合併但未部署、不稱已上線修復，不改其他包的未驗狀態。
 
 <a id="req005-summary01"></a>
 ### REQ005-SUMMARY01：#410 後續修復與 #447 單一摘要整合（候選，未啟用）

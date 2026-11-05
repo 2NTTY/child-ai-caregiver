@@ -1,0 +1,188 @@
+{
+  "package": "HC-F01",
+  "status": "LOCAL_REINTEGRATED_PENDING_INCREMENTAL_REVIEW_AND_EXACT_HEAD_REMOTE_CI",
+  "baseCommit": "88ea2b0367d3c313174f43c28cd2573e0541defb",
+  "baseTree": "9c063b38bbebb9fd01651648d4291d07e2174f8e",
+  "branch": "codex/home-photo-rejection-20261105",
+  "change": "Return local photo admission from HomeActions/ProductionProvider; reset HomeQuickActions opening only on explicit false. Admission is not completed navigation, upload or saving.",
+  "productPins": [
+    {
+      "path": "frontend/src/components/HomeQuickActions.tsx",
+      "baselineSha256": "5f276c7d2f1cb2a98669f5cc5dbd28c406d9cb335fd358a0d41fb0ce8ec028b4",
+      "candidateSha256": "494fb3efff7ee12185770d58b2530e3c1426bbf64716d45e347fbb5ca8ca14ce"
+    },
+    {
+      "path": "frontend/src/production/ProductionProvider.tsx",
+      "baselineSha256": "d1a144ab20e866efe72119bf63ec808ddd93bb22f50964cb236ed20815b1d380",
+      "candidateSha256": "1ffd0c6cfed85ee6cabf2c3320cb770d50f6c17867c59e14991478c3f709fd5c"
+    },
+    {
+      "path": "frontend/src/view-model.ts",
+      "baselineSha256": "d5a43490b3c002613239f3566ac91ffc894fb480939409afae3e61b34b32c699",
+      "candidateSha256": "1d1300092604929adc1d91ce38622869702c7e4f4348ed85d776c7835191d005"
+    }
+  ],
+  "portable": {
+    "file": "frontend/scripts/home-photo-admission.test.cjs",
+    "sha256": "687f7b773ced3dbd946811446d2c608e0a48431650e1a95b2a88032e8eca5cc4",
+    "command": "node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-timeout=30000 --test-concurrency=1 --test-reporter=tap frontend/scripts/home-photo-admission.test.cjs",
+    "baseline": {
+      "tests": 8,
+      "pass": 1,
+      "fail": 7,
+      "exit": 1,
+      "failureKind": "ERR_ASSERTION"
+    },
+    "candidate": {
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "todo": 0,
+      "exit": 0
+    },
+    "unconditionalUnlockMutant": {
+      "tests": 8,
+      "pass": 7,
+      "fail": 1,
+      "exit": 1,
+      "detectedBy": "Accepted photo keeps opening while synthetic navigation is blocked"
+    },
+    "boundary": "Unmodified whole useProductionValue hook and HomeQuickActions body; real draft owner, home projection and shared schema. Shallow hooks/UI/router/owner ports; effects and actual picker not executed. Not mounted UI.",
+    "tapSha256": "f6fe2e80d230f1c01611b74a32d6fddf8bcb7fcfa5d497ff9511b2dc523315ce",
+    "networkTripwireAttempts": 0,
+    "localEnvironment": "Clean environment; exact CI portable test arguments, not full CI wrapper.",
+    "candidateExecutedOnBase": "88ea2b0367d3c313174f43c28cd2573e0541defb",
+    "negativeControlsExecutedOnBase": "4a9f6bd992f985f364f81b478dc1e42c440642f2; reused unchanged test and product-baseline bytes, not rerun"
+  },
+  "mountedLocal": {
+    "baseline": {
+      "tests": 14,
+      "pass": 8,
+      "fail": 6,
+      "exit": 1
+    },
+    "candidate": {
+      "tests": 14,
+      "pass": 14,
+      "fail": 0,
+      "exit": 0
+    },
+    "sameTestsAndLoader": true,
+    "realModules": [
+      "React 19.2.3",
+      "React Native Web 0.21.2",
+      "Paper 5.15.3",
+      "HomeQuickActions",
+      "PhotoFilePicker.web",
+      "WebCameraCapture.web",
+      "entire original useProductionValue hook",
+      "PreviewNavigationGuard",
+      "draft owner",
+      "home projection",
+      "shared schema"
+    ],
+    "syntheticPorts": [
+      "ProductionOwner snapshot/subinterfaces",
+      "router and pathname",
+      "File API",
+      "media stream",
+      "object URL"
+    ],
+    "fullProductionProvider": false,
+    "browser": false,
+    "networkTripwireAttempts": 0,
+    "externalJSDOM": "Local-only; not a repo dependency or CI test.",
+    "testSha256": "b3c4ee1bda86c93a289f3e2d17638f8b0597504f76da9c1cb9fed31dc290bf3a",
+    "loaderSha256": "fba89c823c441e71a679c57db5c8c87b92e6383381e696d836fa7111f17b3198",
+    "stdoutSha256": "3471332f7913ff97722f600aacecf8282d17ec05d38ca00a3d5257a1a6eca2a4",
+    "executedOnBase": "4a9f6bd992f985f364f81b478dc1e42c440642f2",
+    "thisIntegration": "REUSED_AFTER_EXACT_INPUT_HASH_CHECK; NOT_RERUN"
+  },
+  "frontendNoEmit": {
+    "command": "node --max-old-space-size=1536 node_modules/typescript/bin/tsc --project frontend/tsconfig.json --noEmit --pretty false --listFiles",
+    "config": "frontend/tsconfig.json",
+    "exit": 0,
+    "diagnostics": 0,
+    "programFiles": 1958,
+    "candidateFirstPartyFiles": 599,
+    "seconds": 14.086,
+    "maxRSSKiB": 1130500,
+    "includes": [
+      "frontend/src/components/HomeQuickActions.tsx",
+      "frontend/src/production/ProductionProvider.tsx",
+      "frontend/src/view-model.ts",
+      "src/client/agent-actions-api.ts",
+      "frontend/src/platform/background-storage.native.ts"
+    ],
+    "freshForThisBase": true,
+    "rootsOrDiagnosticsPruned": false,
+    "dependencyMode": "Read-only existing lock-matched dependencies, not fresh npm ci; direct Node compiler command in clean environment. CI pins npm 11.8.0.",
+    "stdoutSha256": "5086343a12b358b95a4a28b1d52c5faeddd0d2c495e6465a4d4f0a37897f957b",
+    "stderrNote": "Empty stderr; no diagnostics."
+  },
+  "ci": {
+    "workflow": ".github/workflows/home-photo-admission-offline.yml",
+    "check": "Home photo admission offline",
+    "scope": "Same-repository PR from codex/home-photo-rejection-20261105 into master, exact event head SHA.",
+    "required": [
+      "Complete portable 8 cases with zero skip",
+      "Original full frontend/tsconfig.json noEmit"
+    ],
+    "runtime": "Node 24.22.1 / npm 11.8.0",
+    "network": "Registry install with lifecycle scripts disabled; validation in a no-network, no-credential, non-root namespace using existing dependency patches.",
+    "static": "PASS",
+    "remote": "NOT_RUN",
+    "localWrapper": "NOT_RUN; patch-package is CI-install-only locally and shared dependencies must remain unchanged."
+  },
+  "priorEvidence": {
+    "originalIndependentReview": "2/2 with baseline and unconditional-unlock negative controls; source accepted before this integration. Not rerun or substituted for new integration review.",
+    "oldFourFileRegressions": "Prior exact baseline and candidate both 9 pass / 2 mobile-navigation harness failures; no useHeaderOperationHints double. Not rerun in this integration.",
+    "initialPortableHarnessFailure": "useCallback port invoked callback; failed before product assertions. Only that port was corrected; original failure retained, not counted as valid RED.",
+    "firstIntegrationReview": "Exact 4a9f6bd9 ten-file candidate independently accepted; this 88ea2b03 re-integration awaits incremental review."
+  },
+  "knownUnresolved": "An accepted photo followed by navigation-guard wait, rejection or cancellation keeps opening. This package restores admission rejection only.",
+  "notRun": [
+    "Incremental integration review on 88ea2b03",
+    "Exact final head remote CI",
+    "Original formal home-context register: all 41 NOT_RUN",
+    "Full ProductionProvider/ProductionOwner and router lifecycle",
+    "Browser layout, keyboard, focus, gestures and assistive technology",
+    "Real camera, devices, API, family data, model calls",
+    "Deployment"
+  ],
+  "countsAreNotAdded": true,
+  "packageLockOrTypeConfigChanged": false,
+  "externalWrites": false,
+  "upstreamIntegration": {
+    "oldBase": "4a9f6bd992f985f364f81b478dc1e42c440642f2",
+    "newBase": "88ea2b0367d3c313174f43c28cd2573e0541defb",
+    "newBaseTree": "9c063b38bbebb9fd01651648d4291d07e2174f8e",
+    "upstreamChangedPaths": [
+      ".github/workflows/background-copy-offline.yml",
+      "PLAN.md",
+      "STATUS.md",
+      "WORKLOG.md",
+      "artifacts/verification/DM_F02_BACKGROUND_COPY_20261105.json",
+      "frontend/scripts/background-local.test.mjs",
+      "frontend/src/platform/background-storage.native.ts",
+      "scripts/ci/verify-background-copy-offline.sh"
+    ],
+    "productIntersection": [],
+    "portableSourceIntersection": [],
+    "mountedSourceIntersection": [],
+    "programIntersection": [
+      "frontend/src/platform/background-storage.native.ts"
+    ],
+    "oldCandidateAllowlistIntersection": [
+      "PLAN.md",
+      "STATUS.md",
+      "WORKLOG.md"
+    ],
+    "mountedInputFilesChecked": 2300,
+    "mountedFirstPartyFilesChecked": 68,
+    "configInputFilesChecked": 10,
+    "mountedDisposition": "REUSED_AFTER_EXACT_SOURCE_AND_LOADED_INPUT_HASH_CHECK; not rerun"
+  }
+}

@@ -125,8 +125,10 @@ function useProductionValue(owner: ProductionOwner) {
     reviewOperation: () => { leave(() => router.push("/guide"), "workspace"); },
     open(destination) { leave(() => router.push(productionDestinations[destination] as Href), "workspace"); },
     openAgentPhoto(original) {
-      if (!currentScope() || current.current.pathname !== "/") { original.dispose?.(); return; }
-      if (addAgentAttachment(photoAttachment(original))) openAgentDraft();
+      if (!currentScope() || current.current.pathname !== "/") { original.dispose?.(); return false; }
+      if (!addAgentAttachment(photoAttachment(original))) return false;
+      openAgentDraft();
+      return true;
     },
     composeCare() { leave(() => router.push("/care"), "workspace"); },
     prepareQuestion(question) {

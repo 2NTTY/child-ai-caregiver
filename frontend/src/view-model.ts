@@ -67,7 +67,8 @@ export interface HomeActions {
   refresh(): void;
   reviewOperation(): void;
   open(destination: HomeDestination): void;
-  openAgentPhoto(original: PhotoOriginal): void;
+  // Reports local attachment admission, not completed navigation, upload, or saving.
+  openAgentPhoto(original: PhotoOriginal): boolean;
   composeCare(kind: HomeRecord["kind"]): void;
   prepareQuestion(question: string): void;
   createChildPreview(displayName: string): void;

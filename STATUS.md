@@ -4,9 +4,13 @@
 
 ## 目前與接手
 
-- **DM-F02 原生背景保存修復（2026-11-05 UTC）：**只補等待 `File.copy` Promise；最新 master 整合後必要 baseline 0/1 RED、原整檔 18/18 零 skip、完整 frontend noEmit 1958 檔通過。真原生設備、SecureStore uncertain commit 及跨 session 並發未因此驗收；獨立整合 review、精確 PR head 必要遠端 CI 待完成，未發布。見 [DM-F02 範圍與限制](PLAN.md#dm-f02-background-copy)。
+- **HC-F01 首頁照片拒絕恢復（2026-11-05 UTC）：**已接 #504 後 `88ea2b03`，本候選只校準下列三項已合併現況。HC 產品／測試／CI／原驗證 JSON 未變，沿用同基線可攜8/8、完整 frontend noEmit及經全輸入 hash 核對的原 mounted14/14，沒有再跑或混加。HC 仍未合併、未部署，文檔窄增量 review／精確 head 必要 CI 待驗；接納後 guard 取消仍 opening、formal41未驗。見 [HC-F01 範圍及 gate](PLAN.md#hc-f01-home-photo-admission)。
 
-- **AGENT-F01 收據閱讀修復（2026-11-05 UTC）：**strict client 已接回原合法 `voice_interpretation` 可選標記，產品只改一行；34 案、原 root／server 完整型別及一個真元件 mounted 情境已在本地驗證。合成 host／store／session 不當完整正式流程，舊 shallow harness 的兩項失敗仍保留。獨立整合 review 與精確 PR head 必要遠端 CI 待完成，formal48 未驗、未發布；不是保存失敗或資料遺失的證明。見 [AGENT-F01 範圍及 gate](PLAN.md#agent-f01-receipt-read)。
+- **TASK-F01 保草稿重新載入（2026-11-05 UTC）：**[PR #502](https://github.com/2NTTY/child-ai-caregiver/pull/502) 已正常合併至 `3b21f81e`；精確 head 的[首次CI](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42011309583)及[ready後CI](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42012238945)各完整三案、零 skip及原完整frontend noEmit成功。未部署，formal63與原完整Provider／瀏覽器／設備缺口不進位。見 [TASK-F01 最新交付與限制](PLAN.md#task-f01-reload-delivery)。
+
+- **DM-F02 原生背景保存修復（2026-11-05 UTC）：**[PR #504](https://github.com/2NTTY/child-ai-caregiver/pull/504) 已正常合併至 `88ea2b03`；精確 head 的[首次CI](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42024582126)及[ready後CI](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42024983087)各18/18、零 skip及原完整frontend noEmit成功。未部署；真原生設備、formal40、SecureStore uncertain commit及跨session並發未因此驗收。見 [DM-F02 最新交付與限制](PLAN.md#dm-f02-background-copy)。
+
+- **AGENT-F01 收據閱讀修復（2026-11-05 UTC）：**[PR #503](https://github.com/2NTTY/child-ai-caregiver/pull/503) 已正常合併至 `4a9f6bd9`；精確 head 的[首次CI](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42017711224)及[ready後CI](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42018137406)各34/34、零 skip及原完整server noEmit成功。未部署；formal48、完整正式流程與原兩個shallow harness失敗仍保留，不是保存失敗或資料遺失的證明。見 [AGENT-F01 最新交付與限制](PLAN.md#agent-f01-receipt-read)。
 
 - **#410 後續修復／#447 整合（2026-11-04 UTC）：**候選已整合 master `f0149b`，同源完整型別及 21 整檔／87 項定向補驗全過（含 CI 6 項），保留歷史 554 項及前次 44 項證據，不相加。最新精確 PR head 的 87 檔／555 項＋CI 6 項，561 項必要 CI 仍待驗。單一 durable 慢路徑、完整 fast／SQL與上游原件還原能力保留；正式 work-grant 政策與持續 fencing reader 仍缺，durable 未啟用、未部署，R0／R2 blocked，不稱用戶問題已上線修復。見[本輪範圍與 gate](PLAN.md#req005-summary01)。
 
