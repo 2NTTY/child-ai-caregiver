@@ -1,5 +1,7 @@
 # 育伴港前端現況
 
+**TASK-F01 本地候選。** 已補版本衝突的保草稿重讀入口。可攜接線 **3/3**、完整 frontend noEmit 及真 React／RHF 合成 mounted **1/1** 通過；mounted 未納入 PR／CI。CI 路徑及文件定稿待窄覆核，draft PR／遠端 CI 未完成。完整 ProductionProvider、真瀏覽器焦點／鍵盤／離頁流程及正式 63 項仍未驗。見[當前計劃](PLAN.md#active)。
+
 **班級匯入。** 共用表單可在同一批次選既有班員或於班級新增；重開後仍可按需查閱班員結果。[本機核對](verification/P4_CLASS_IMPORT_ENROLMENT_UI_20261104.json)，未部署。
 
 **按期間交接。** 已接同一 Web／Android 匯出表單、原請求查回及匯入預覽。本機核對日期首尾與切換模組，尚未部署或作設備驗收。
