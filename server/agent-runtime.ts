@@ -22,6 +22,7 @@ import { loadAgentPrompt } from "./agent-prompt.ts";
 import { AgentCapabilitySelection, AgentCapabilityToolset, type AgentToolCatalog } from "./agent-tool-capabilities.ts";
 import { createAgentObserver, type AgentDiagnostic } from "./agent-observer.ts";
 import { WORK_RECOVERY_MAX_SEQUENCE } from "./firestore-work-continuation-recovery.ts";
+import { createRunContextCompactor, type InRunCompactionConfig } from "./context-compactor.ts";
 
 // The application owns metadata-only observability. ADK's default spans/logs may contain bodies.
 process.env.ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS = "false";
@@ -175,6 +176,10 @@ export interface AgentRunInput {
   initialConversationSummary?: import("./memory-summary.ts").InitialConversationSummary;
   /** Revalidate provider-only summary before every step; null explicitly removes it. */
   readConversationSummary?: () => Promise<import("./memory-summary.ts").InitialConversationSummary | null>;
+  /** In-run ADK context compactors for long tool loops (§4.2). Does not replace Firestore cross-session memory. */
+  contextCompactors?: import("@google/adk").BaseContextCompactor[];
+  /** Declarative in-run context compaction configuration (§4.2). */
+  contextCompaction?: boolean | InRunCompactionConfig;
   finalize?: (result: Readonly<AgentRunResult>, context: AgentRunContext, reason: "normal" | "model_limit") => Promise<string | null | { outcome: "no_action" }>;
   /** Opt-in Server presentation after a confirmed model limit; never retries tools. */
   finalizeOnModelLimit?: boolean;
@@ -498,6 +503,16 @@ export function createAgentRuntime(options: {
             budget.check(); return capabilitySelection.visibleToolNames();
           })] : tools;
           const agentName = "yuban_agent";
+          const effectiveCompactors = input.contextCompactors?.length
+            ? input.contextCompactors
+            : input.contextCompaction
+              ? [createRunContextCompactor({
+                  model,
+                  budget,
+                  signal: budget.signal,
+                  ...(typeof input.contextCompaction === "object" ? input.contextCompaction : {})
+                })]
+              : [];
           const agentConfig: ConstructorParameters<typeof LlmAgent>[0] = { name: agentName, model,
             // ADK otherwise adds this label after beforeModelCallback, outside initial-input sizing.
             generateContentConfig: { labels: { adk_agent_name: agentName } },
@@ -507,6 +522,7 @@ export function createAgentRuntime(options: {
               return currentInstruction;
             },
             tools: runtimeTools,
+            ...(effectiveCompactors.length ? { contextCompactors: effectiveCompactors } : {}),
             beforeModelCallback: ({ context, request }) => {
               if (durable) modelAnchors.set(request, modelAttemptKey(context, scope, runId, durable.context.binding.trigger));
               // ADK adds this exact label after this callback. Measure it before
