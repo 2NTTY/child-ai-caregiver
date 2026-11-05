@@ -5,9 +5,10 @@ import { privateSummaryUsageSchema } from '../server/private-summary-work.ts';
 import { summaryRestoreFixture } from './helpers/summary-restore-fixture.ts';
 
 const rejected = (error: unknown) => error instanceof Error && 'code' in error && String(error.code).startsWith('restore_');
-test('private summary backup suffixes are appended after the existing handover suffix', () => {
+test('private summary backup suffixes preserve the upstream handover and knowledge suffix order', () => {
   const suffixes = FIREBASE_BACKUP_COLLECTION_SUFFIXES;
   assert.deepEqual(suffixes.slice(suffixes.indexOf('_handover_source_history') + 1), [
+    '_knowledge_index_batches', '_knowledge_index_receipts', '_knowledge_transfers',
     '_private_summary_works', '_private_summary_revisions', '_private_summary_attempts', '_private_summary_scans', '_private_summary_usage']);
 });
 test('private summary restore codec authenticates locators, schemas, record versions and outer projections', () => {
