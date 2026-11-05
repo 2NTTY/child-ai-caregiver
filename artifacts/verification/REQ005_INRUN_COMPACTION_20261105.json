@@ -4,12 +4,28 @@
   "requirement": "REQUIREMENTS_BACKLOG.md §4.2 In-Run Context Compaction Baseline",
   "branch": "codex/req005-inrun-compaction",
   "pullRequest": 508,
-  "recordedAt": "2026-11-05T22:38:00+08:00",
+  "recordedAt": "2026-11-06T00:28:00+08:00",
   "status": "EXACT_HEAD_REMOTE_CI_PASSED_HOLD_MERGE",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
   "baseTree": "29c803a957b38f7b22e4bde508245e047eaaabcf",
   "exactHead": "93a5ade216718cf8a5f87d66b996552d040737f6",
   "candidateTree": "e93b33fc02f788e0f9c929a2657f68d596bf2cae",
+  "tipHead": "f22cca3a2c78ab3ddfe72c596e0f5469e2cbe5d2",
+  "tipTree": "2d5b971a46828ad27833dde4043afd37d0ec8d96",
+  "headPins": {
+    "featureBaseline": {
+      "commit": "93a5ade216718cf8a5f87d66b996552d040737f6",
+      "tree": "e93b33fc02f788e0f9c929a2657f68d596bf2cae",
+      "ciRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/42045529284",
+      "ciStatus": "SUCCESS"
+    },
+    "documentationTip": {
+      "commit": "f22cca3a2c78ab3ddfe72c596e0f5469e2cbe5d2",
+      "tree": "2d5b971a46828ad27833dde4043afd37d0ec8d96",
+      "ciRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/42047141594",
+      "ciStatus": "SUCCESS"
+    }
+  },
   "priorPushedHead": "da192121173331fe0b1b064b36962fc2208ee52b",
   "rebasedPriorHead": "e2aa90b6be51ef734ad8dc00efac679fd25f2ee4",
   "environment": {
@@ -52,8 +68,10 @@
   "remoteCI": {
     "workflow": ".github/workflows/compaction-offline.yml",
     "pullRequest": 508,
-    "exactHead": "93a5ade216718cf8a5f87d66b996552d040737f6",
-    "successRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/42045529284",
+    "featureHead": "93a5ade216718cf8a5f87d66b996552d040737f6",
+    "featureSuccessRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/42045529284",
+    "tipHead": "f22cca3a2c78ab3ddfe72c596e0f5469e2cbe5d2",
+    "tipSuccessRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/42047141594",
     "retainedFailureRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/42043029937",
     "status": "SUCCESS"
   },
@@ -65,11 +83,13 @@
       "mutationGuards": "0/6 present (feature absent on base)"
     },
     "candidate": {
-      "head": "93a5ade216718cf8a5f87d66b996552d040737f6",
-      "tree": "e93b33fc02f788e0f9c929a2657f68d596bf2cae",
+      "featureHead": "93a5ade216718cf8a5f87d66b996552d040737f6",
+      "featureTree": "e93b33fc02f788e0f9c929a2657f68d596bf2cae",
+      "tipHead": "f22cca3a2c78ab3ddfe72c596e0f5469e2cbe5d2",
+      "tipTree": "2d5b971a46828ad27833dde4043afd37d0ec8d96",
       "unitTests": "11/11 passed (0 fail, 0 skip, 0 todo)",
       "mutationGuards": "6/6 caught (C1-C6 fail-on-mutation green, exit code 0)",
-      "remoteCI": "Exact-head run 42045529284 passed (compaction-offline)"
+      "remoteCI": "Exact-head runs 42045529284 (feature) and 42047141594 (tip) passed (compaction-offline)"
     }
   },
   "verification": {
@@ -124,7 +144,7 @@
     "Opt-in library baseline only (0 production callers in main routes)",
     "No live GCP Vertex / Gemini cloud calls made during offline tests",
     "No persistent Firestore memory writer (by design for §4.2 ephemeral compaction)",
-    "PR #508 opened; remote exact-head CI run 42045529284 passed on 93a5ade2; strict HOLD merge maintained pending Owner code review",
+    "PR #508 opened and verified (CI 42045529284 & 42047141594); closed pending explicit Owner/user confirmation; strict HOLD merge maintained",
     "Token threshold 16000 and retention size 4 are unmeasured engineering starting suggestions, not approved permanent policy"
   ],
   "notRun": [

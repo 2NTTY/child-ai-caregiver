@@ -4798,3 +4798,21 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   - 本地重跑：11/11 passed、6/6 caught (C1-C6 exit 0)、tsc 0 診斷。
 - Changes：`artifacts/verification/REQ005_INRUN_COMPACTION_20261105.json`, `WORKLOG.md`。
 - Limitations / Notice：本包為底層 opt-in 庫代碼，預設未啟用（0 production callers），16000 門檻標記為工程起始建議。已開 PR #508，嚴格維持 HOLD merge，等待 Owner code review。
+<a id="log-20261105-compaction-tip-align"></a>
+### 2026-11-05 16:35 UTC｜REQ005-COMPACTION01 雙層證據（Feature vs Tip）對齊校準
+
+- Recorded At：2026-11-05 16:35 UTC (2026-11-06 00:35 HKT)；Work Date：2026-11-05；Step / Package：REQ005-COMPACTION01
+- Executor：CheungHiuTung-2526
+- AI Assistance：由 Antigravity 協助核對 Round 6/7 審查意見並完成雙層證據（Feature Baseline vs Documentation Tip）對齊
+- Human Verification：尚未進行
+- Goal：在驗證記錄及工作日誌中明確區分功能基線（`93a5ade2`）與收據頂端（`f22cca3a`）兩層 SHA 與樹物件，記錄 tip 離線 CI 42047141594 綠燈結果。
+- Actual Work：
+  1. 校準 `artifacts/verification/REQ005_INRUN_COMPACTION_20261105.json`：
+     - 功能基線層：`exactHead: 93a5ade216718cf8a5f87d66b996552d040737f6`，`candidateTree: e93b33fc02f788e0f9c929a2657f68d596bf2cae`，離線 CI [Run 42045529284](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42045529284) SUCCESS。6 檔核心功能碼與 CI 腳本完全一致。
+     - 文檔收據層：`tipHead: f22cca3a2c78ab3ddfe72c596e0f5469e2cbe5d2`，`tipTree: 2d5b971a46828ad27833dde4043afd37d0ec8d96`，離線 CI [Run 42047141594](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42047141594) SUCCESS。
+     - PR Body 修正：將前次更新中筆誤之 claimed tip SHA 更正為真實 40 位 SHA `f22cca3a2c78ab3ddfe72c596e0f5469e2cbe5d2`。
+  2. 維持 fast-forward append-only，不進行任何 force-push。
+- Verification：
+  - 遠端 GitHub Actions CI：工作流 `compaction-offline.yml` 於 Ubuntu 24.22.1 runner 跑 11 項單元測試、6 項變異攔截及全量 server tsc，Run 42045529284（feature）與 Run 42047141594（tip）雙雙 SUCCESS。
+- Changes：`artifacts/verification/REQ005_INRUN_COMPACTION_20261105.json`, `WORKLOG.md`。
+- Limitations / Notice：本包為底層 opt-in 庫代碼，預設未啟用（0 production callers），16000 門檻標記為工程起始建議。PR #508 處於關閉等待明確覆核確認狀態，嚴格維持 HOLD merge，合入前須有 Owner 2NTTY 明確指示。
