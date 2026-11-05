@@ -1,0 +1,118 @@
+{
+  "package": "TASK-F01",
+  "status": "LOCAL_VERIFIED_PENDING_FINAL_REVIEW_AND_REMOTE_CI",
+  "baseCommit": "180c8c16f193fbc3647038532fca437d83d1b76a",
+  "baseTree": "d3efea86974c772a0e2e61622228ea788c9d6f6b",
+  "branch": "codex/task-reload-affordance-20261105",
+  "sourcePins": [
+    {
+      "path": "frontend/src/components/WriteRecoveryNotice.tsx",
+      "bytes": 2353,
+      "sha256": "8682c257133403c2ecf6c7585c54563f55d904d3ca1e9cdb84e8f5ec323f0037"
+    },
+    {
+      "path": "frontend/src/components/tasks/TasksView.tsx",
+      "bytes": 26565,
+      "sha256": "8f9057e2a9318768aab84c2ebf5b9bfffe043fb5e8c5e9a6f6ee851046fb451c"
+    },
+    {
+      "path": "frontend/scripts/task-recovery-notice.test.cjs",
+      "bytes": 10258,
+      "sha256": "6f6dae85bf1739f482f8f582f7868af329586f8f9d178ee18fecc29bb16b42ec"
+    }
+  ],
+  "scope": "Expose the existing conflict/reload callback and disable both task recovery placements during reading; no new operation, owner, API or authorization.",
+  "regression": {
+    "command": "node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-timeout=30000 --test-concurrency=1 --test-reporter=tap frontend/scripts/task-recovery-notice.test.cjs",
+    "tests": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "exit": 0,
+    "tapSha256": "c924252904f29db0847a966d4b5ae2e92983e805556c3110c52c3aad4ecc3360",
+    "networkTripwireAttempts": 0,
+    "evidenceScope": "Shallow JSX wiring with explicit synthetic React/RHF and presentation scaffolding, not mounted UI."
+  },
+  "baselineEvidence": {
+    "samePortableTestOnUnpatchedBase": "0 passed / 3 failed",
+    "sourceReview": "Original conflict/reload omission and modal reading gate independently confirmed; retained draft and original operation behavior reviewed.",
+    "freshReplayInThisIntegration": false
+  },
+  "frontendTypecheck": {
+    "command": "npm run typecheck --workspace frontend -- --pretty false --listFiles",
+    "config": "frontend/tsconfig.json",
+    "exit": 0,
+    "seconds": 16.348,
+    "programFiles": 1958,
+    "firstPartyFiles": 599,
+    "dependencyFiles": 1359,
+    "rootsOrDiagnosticsFiltered": false,
+    "stdoutSha256": "bf787a6e6841c0a72a895919a45eeb66be6438da4810abd2f36798e96d7b0ec0",
+    "node": "24.22.1",
+    "npm": "11.9.0",
+    "typescript": "6.0.3",
+    "dependencies": "46 frontend direct dependency versions match the existing lock; four missing packages downloaded from the official registry and verified against lock SHA-512, without lifecycle scripts. Existing dependencies were reused read-only.",
+    "notClaimed": "This is not a fresh complete npm ci or remote CI run."
+  },
+  "ci": {
+    "workflow": ".github/workflows/task-reload-offline.yml",
+    "status": "PREPARED_NOT_RUN_REMOTE",
+    "branchScopedSameRepositoryPullRequest": true,
+    "permissions": {
+      "contents": "read"
+    },
+    "install": "Pinned Node 24.22.1 / npm 11.8.0, original lock, official registry, install scripts disabled.",
+    "validation": "Existing patches plus complete regression and original frontend noEmit in a separate no-network namespace, non-root, no inherited credentials. Existing guard and exact TAP-count helper reused unchanged.",
+    "localChecks": "bash syntax, YAML trigger/permission/identity checks, and exact regression arguments passed; the whole remote namespace/patch-install workflow was not executed locally.",
+    "pathFilterCorrection": "Removed two nonexistent task owner/controller paths; included frontend/src/production/task-knowledge-tasks.ts."
+  },
+  "notRun": [
+    "Complete ProductionProvider/auth/scope/cross-domain registry integration",
+    "Real browser focus/keyboard/close/discard/Back/Forward lifecycle",
+    "Formal 63-case matrix",
+    "Native device, screen reader, real APIs, data, accounts or models",
+    "Remote CI, commit, PR, merge or deployment"
+  ],
+  "diagnosticsPreserved": [
+    "First local launcher used the wrong working-directory prefix and unavailable /usr/bin/time; compiler did not start, exit127 retained separately. Corrected launcher ran the unchanged full command successfully.",
+    "Existing historical FAM typecheck missing-dependency evidence is not overwritten.",
+    "Early mounted loader runs failed on native/web resolution, fixed pathname support and RNW ESM internals; retained separately. Final baseline and candidate use the same corrected loader, with no suppressed asynchronous exception or product/dependency byte changes."
+  ],
+  "mountedRecovery": {
+    "status": "PASS_BOUNDED_LOCAL_SYNTHETIC_MOUNT",
+    "tests": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "exit": 0,
+    "baseline": {
+      "passed": 0,
+      "failed": 1,
+      "exit": 1,
+      "soleExpectedFailure": "Mounted conflict modal lacks explicit reloadCurrent entry"
+    },
+    "sameFinalTestAndLoader": true,
+    "uncaughtAsyncErrors": 0,
+    "candidateTapSha256": "cc2562a0cab9499115514457d65e281d960ba7160f8e707723125e0a92b2c777",
+    "baselineTapSha256": "8f5dd5b926bd63208b573c0216c72b2cddad9c12783ac0c530ed57120d96fe64",
+    "testSha256": "abe352a989ee676ce59c8144008eab3bdfad41b07da99b61dc79d815c690a223",
+    "loaderSha256": "23e3272e8994e4579cd81b04f791aa99a04195ddd6b5eba21b2ec34b22b567d3",
+    "realCode": "React/RHF, TasksView, FormDialog, TaskForm, WriteRecoveryNotice, task hooks/runtime/client/transport, QueryClient and domain write guard are mounted and executed.",
+    "syntheticSeams": "In-memory API, identity/child/online environment, fixed /tasks pathname, and host fetcher/setDomainPending sub-interface with a Map registry. This is not the complete ProductionProvider/auth/scope/cross-domain registry.",
+    "observed": [
+      "Explicit reload retains note and old basis",
+      "Reading/offline disable both notices; stale callback cannot re-enter",
+      "Reconnect auto-read is separately counted and does not rebase",
+      "Explicit rebase remounts preserved note and clears reviewed values",
+      "New review begins with unchecked checkbox and save disabled; user confirms again"
+    ],
+    "syntheticRequests": {
+      "GET": 16,
+      "POST": 2,
+      "submitCalls": 1,
+      "networkTripwireAttempts": 0
+    },
+    "limits": "JSDOM has no layout. No real browser, keyboard/focus/AT, full discard/navigation lifecycle, complete ProductionProvider or real service acceptance. Node tripwire is not OS-wide network isolation.",
+    "reproducibility": "Local mounted evidence uses an external read-only JSDOM installation and a web/ESM loader. The mounted test is not included in this PR or its remote CI; portable regression and full frontend typecheck are included."
+  }
+}

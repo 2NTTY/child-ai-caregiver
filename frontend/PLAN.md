@@ -3,6 +3,19 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+## TASK-F01：版本衝突的保草稿重新載入入口（2026-11-05，候選待交付）
+
+基線 `180c8c16`，分支 `codex/task-reload-affordance-20261105`。補回 `conflict/reload` 既有重讀入口，TasksView 表單內外在讀取中一致停用；沿用 owner 防重及原 operation 恢復規則，不新增寫入或自動 rebase。只修入口缺漏，未證實永久卡死。
+
+證據分三層，不合計覆蓋：[來源、命令及限制](verification/TASK_F01_RELOAD_AFFORDANCE_20261105.json)。
+- 可攜 shallow JSX 接線：未修基線 **0/3**、候選 **3/3**；本次完整 CI 參數亦 **3/3、零 skip**。React／RHF／UI 有替身，不是 mounted UI。
+- 完整 frontend semantic noEmit：**exit 0、1958 個 program files**，未裁 roots／diagnostics；沿原 lock 補齊／唯讀復用依賴，非全新 `npm ci`。
+- 真 React／RHF mounted：執行原 TasksView／FormDialog／TaskForm／Notice 及 task owner／client／transport。同一測試及 loader，未修基線 **0/1**（modal 缺入口），候選 **1/1、零 skip／非同步例外**。明確重讀保留 note／舊 basis，reading／offline 不重入；明確 rebase 才換 basis，重新 review 時 checkbox 未勾選、保存停用，須再確認。重連自動讀另計，無自動提交。
+
+Mounted 使用合成 API、身份／孩子／online 環境、host `fetcher`／`setDomainPending` 子介面（Map registry）及固定 `/tasks` pathname，不是完整 ProductionProvider 或真瀏覽器。外置 JSDOM／loader 測試**未納入本 PR／CI**。[專用 CI](../.github/workflows/task-reload-offline.yml)僅對同倉本分支的 master PR，沿原 lock／離線隔離跑完整三案與 frontend noEmit；path filter 已對回實際 owner，**遠端未跑**。
+
+原八檔整合覆核已接受；本次 CI 路徑／文件定稿待獨立窄覆核，再開 draft PR，須精確 head 的必要 CI／分支保護通過，不部署。原正式矩陣 **63/63 仍為 NOT_RUN**；完整 ProductionProvider／跨 domain、真瀏覽器焦點／鍵盤、關閉／取消／discard／Back／Forward 及正式服務仍未驗。Mounted、其他 workflow skipped 或合併不代替這些門檻。
+
 ## FAM-F02：保留已受理班級清理收據（2026-11-05，候選未交付）
 
 基線 `a162e65e`，分支 `codex/family-cleanup-receipts`。沿原 SharingController 在同一 owner／session 保留多筆未完成清理；後續成功、已知拒絕或 unknown 指令不會取代舊收據。每列只以原 operationId 查回，精確完成證明才移除該列；unknown 指令與原 ID 重試仍分開處理，不因清理未完鎖住所有管理。身份／session 結束清除，沒有跨重新載入持久化、Server／API／schema／權限改動。

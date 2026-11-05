@@ -198,7 +198,7 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
         </View>
       </>}
       <FormDialog formKey={model.draft?.key} visible={!!model.draft} scopeKey={scopeKey} title="安排事項" returnFocusRef={pageHeading} onClose={actions.closePanel}
-        recovery={<WriteRecoveryNotice operation={model.operation} recovery={recovery} online={model.online} />}>
+        recovery={<WriteRecoveryNotice operation={model.operation} recovery={recovery} online={model.online && !model.reading} />}>
         {model.draft ? <TaskForm key={model.draft.key} model={model} actions={actions} /> : null}
       </FormDialog>
       {previewControls}
