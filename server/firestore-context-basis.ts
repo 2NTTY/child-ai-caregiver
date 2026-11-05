@@ -26,6 +26,17 @@ export async function prepareContextChange(data: FirestoreDomainData, binding: F
   return () => binding.transaction.set(current.ref, envelope);
 }
 
+/** T0 and pending-clear both read/write this original document, so they conflict even
+ * when an empty work query cannot supply a phantom-range concurrency guarantee. */
+export async function prepareSummaryWorkPending(data: FirestoreDomainData, binding: FirestoreAuthorityTransaction) {
+  const current = await readContextBasis(data, binding);
+  if (!Number.isSafeInteger(current.value.summaryRequest) || !current.value.summaryRequest) domainReject('summary_pending_binding', 500);
+  const value = { ...current.value, summaryPending: true };
+  const envelope = { ...data.tags(binding.scope), summaryPending: true,
+    ...data.seal('context-version', current.id, binding.scope, schema, value) };
+  return () => binding.transaction.set(current.ref, envelope);
+}
+
 /** Persisted schemas reused by isolated recovery; not a second domain model. */
 export const firestoreContextRecoverySchema = schema;
 

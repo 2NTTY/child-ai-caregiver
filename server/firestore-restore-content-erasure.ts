@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { FirebaseErasureDescriptor, FirebaseErasureIntent } from './firebase-erasure-journal.ts';
 import { firebaseErasureDescriptorSchema, firebaseErasureIntentHash } from './firebase-erasure-journal.ts';
 import { FirestoreDomainData, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
-import { contentErasureSchema, contentHistory } from './firestore-content-erasure.ts';
+import { contentErasureSchema, contentErasureScopeMatches, contentHistory } from './firestore-content-erasure.ts';
 import { contentPointerSchema, contentResult } from './firestore-disclosure.ts';
 import { firestoreCareRecoverySchemas, firestoreProfileStorageSchema as firestoreProfileSchema } from './firestore-care.ts';
 import { firestoreOnlineRecordSchema, isFirestoreOnlinePending, privateInputReceiptTarget } from './firestore-online-receipts.ts';
@@ -59,6 +59,8 @@ function noteDeletionRequestHash(noteId: string, expectedVersion: number, operat
   return firestoreDomainHash({ noteId, expectedVersion, confirmDelete: true, operationId });
 }
 
+import { replayPrivateSummaryContentErasure } from './firestore-private-summary-erasure.ts';
+
 /** Reapply independent content barriers before rebuilding any readable data graph. */
 export function replayContentErasures(data: FirestoreDomainData, codec: ReturnType<typeof createFirestoreRestoreCodec>,
   records: FirestoreRestoreDecoded[], live: readonly FirestoreRestoreDecoded[], journal: readonly FirebaseErasureIntent[], liveMetadata: ReadonlyMap<string, Record<string, unknown>>,
@@ -83,7 +85,21 @@ export function replayContentErasures(data: FirestoreDomainData, codec: ReturnTy
       && (v.content!.kind !== 'private_source' || v.content!.throughVersion > through || v.content!.sourceOperationId === value.operationId)))
       domainReject('restore_content_journal_pending');
   }
+  // A snapshot may precede independent journal IO. Attach that original proof before epoch transformation, never mint a new intent.
+  for (const row of records.filter(value => value.context.kind === 'content-erasure')) {
+    if (removedScopes.has(row.path)) continue;
+    if (row.context.family !== 'domain') domainReject('restore_content_journal_pending');
+    const value = contentErasureSchema.parse(row.value), hash = firebaseErasureIntentHash(value.intent);
+    if (!intents.some(intent => firebaseErasureIntentHash(intent) === hash)) domainReject('restore_content_journal_pending');
+    const proof = firebaseErasureDescriptorSchema.parse(descriptors.get(hash) ?? value.journal);
+    const bound = { ...value, journal: proof };
+    if (proof.intentSha256 !== hash || !contentErasureScopeMatches(bound, row.context.scope)
+      || row.context.id !== value.intent.operationId || data.ref('content_erasures', 'content-erasure', row.context.id).path !== row.path)
+      domainReject('restore_content_journal_pending');
+    row.value = bound;
+  }
   for (const intent of intents) {
+    replayPrivateSummaryContentErasure(records, intent);
     const content = intent.content!;
     let proofScope: typeof intent.scope | undefined;
     const notePath = content.kind === 'private_instruction' ? data.ref('private_instructions', 'private-instruction', intent.assetId).path : null;

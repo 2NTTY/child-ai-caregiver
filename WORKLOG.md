@@ -4617,10 +4617,50 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 
 #466、#467 合批發布 API 與 worker。舊刪除證明缺失時合成還原確實中止，補登後重放成功；季度報告的分期筆數涵蓋所有掃描頁。原 VM 候選核對及站外健康讀回通過。一筆原已屬未知的背景結果保留。原生備份真還原及設備分享尚未驗收。[本批證據](artifacts/verification/P4_SOURCE_ERASURE_REPORT_TRENDS_20261105.json)
 
+
+<a id="log-20261104-summary-unified-integration"></a>
+## 2026-11-04｜#410 後續修復與 #447 單一摘要整合交接
+
+- Recorded At：2026-11-04 18:59 UTC；Work Date：2026-11-04。
+- Step / Package：REQ005-SUMMARY01。Goal：收束單一摘要方案，分清候選證據與正式啟用前置。
+- Executor／AI Assistance：AI 輔助程式與證據核對、文件整理；Human Verification：尚未進行本輪人工驗收。
+- Actual Work：候選已接 master `0ed4271f1c2127eb6e73c5320d80a7d88ec282f2`（#459）；保留 #447 原 head `dc1f16cfb39ac74fe5d4d13ef250b88fdf7ffc34` 及 #410 已合併的歷史。Firestore 慢路徑只保留 durable work／grant／lineage，原完整 fast／SQL 保留；不引入普通 partial schema 或第二進度 store。補記 fast 原 root 零 admission 證明、晚到 ACK 查回、公平 scan 及原 ownership 的最後交易重驗邊界。
+- Changes：根 PLAN／STATUS 新增本包現況及 gate，[整合交接](docs/summary-durable-integration-handoff.md)集中接口與啟用前置；未改寫其他包或既有歷史紀錄。
+- Verification：目前僅彙整分項暫證：實際合成多 part→publish→completion 1 項、公平路由及 unknown race 7 項、restore 50 項、index comparator 4 項、CI 契約 6 項各自通過；未當作同一最終候選總驗收。suppressed marker／refresh administrative-progress hook 仍待收尾。正式全 include 型別尚無結論：1536 MiB baseline／candidate 均 OOM；2 GiB 嘗試命中自設 100 秒 CPU 上限。上述失敗保留，不縮 include 或改寫為通過。
+- Limitations / Blockers：正式累積政策數值及能證明舊 writer 持續受 fencing 的 authority reader 未提供；inventory 只為未啟用保守結構，缺失身份仍 unmapped。restore 新 epoch suspended 並保留原帳，沒有 resume／transfer 新授權，R0／R2 仍 blocked。沒有真模型、家庭資料、remote／GCP 或部署操作，不宣稱用戶修復已上線。
+- Plan Update／Next Action：本包保持候選及未啟用。完成兩項收尾後封定來源，以同一候選補必要整檔回歸、完整型別及獨立 review；最終 hash／結果另補，精確 PR head 必要 CI 與正式啟用前置不可由局部證據代填。
+
+### 同日 19:05 UTC 接續更正
+
+候選已核接 27 檔 upstream 增量至 master `cbd8101eb7efa0f0e47d871f082c4ef86199562f`（#465），三方保留最新 P4 文件與原來源追溯。#447 最新 head `c14cea1e1b9a65c7c22665ed1c5116632a8a7e6c` 經獨立核對只作 rebase，原四項 blocker 未修；原 head `dc1f16cfb39ac74fe5d4d13ef250b88fdf7ffc34` 繼續保留。
+
+上項兩項收尾現已完成：suppressed 10／10、refresh 新 8＋舊 20＝28／28、公平路由新版 7／7 均有完整 TAP／來源保全及獨立窄範圍覆核。這些是分項結果，不累加為全案通過。產品程式已收尾，等待同一封定候選 76 檔／預期 532 項及另行 CI 契約 6 項，並以原 native 2 GiB 配置和提高的自設 CPU／wall 有界額度作正式全 include 型別檢查。最終 hash／總結果待補；正式政策／持續 fencing reader、R0／R2、未啟用及未部署邊界不變。
+
+### 同日 19:34 UTC 驗收與上游整合
+
+`cbd8101` 基線的封定候選完成 native 全 include 型別（exit 0）、77 整檔536項及 CI契約6項，全542項通過且零跳過，另P4原件備份與記憶匯入三整檔通過。獨立覆核核實全部原始收據與來源保全；不重複加總前次分批結果。
+
+其後 master 接至 `ac7678b`、再至 `88ce04f`（#470），合共29個upstream路徑已取齊並逐Git blob核實。私人來源刪除的獨立證明保留原epoch，而還原後envelope重封新epoch，與本包嚴格binding有真相容交集，正在以真restore→cleanup紅綠補核。保留最新P4刪除、報告、管理頁與摘要清理能力；新基線型別／完整回歸待封定，不把舊542項當作新基線已通過。正式policy／fence欠缺、未啟用、未部署與R0／R2 blocked均不變。
+
+### 同日 19:48 UTC 封定程式驗收
+
+最新 master `88ce04f` 整合候選以相同來源完成正式全 include native TypeScript（exit 0、零診斷），及 84 個完整測試檔548項＋CI契約6項，合計554項全過、零跳過。新還原後清理的6項回歸包含已由整scope刪除的舊job，不造缺失proof；本次原件備份／記憶匯入相容測試已計入總數，不另重複累加。全部來源保全／退出碼／清理結果及獨立review已核，見[公開驗收紀錄](artifacts/verification/REQ005_DURABLE_SUMMARY_20261104.json)。
+
+此為安全未啟用結構的程式驗收；精確PR head遠端必要CI待交付後核實，合併不繞保護。正式work政策、持續fencing reader、雲端索引與正式啟用驗收仍待提供，沒有GCP操作、真模型或部署，不稱整個P4／REQ-005或用戶正式長訊息問題已完成。
+
 ## 2026-11-05 管理員查看知識來源
 
 #469、#470 合批更新原站。候選使用原站的正式唯讀查詢讀回 7 個指定來源及 20 筆檢查紀錄；站外核對前端指紋、健康及匿名拒絕。管理員登入後的瀏覽器畫面留待實際使用。Android 沿用現有版本。[知識管理發布紀錄](artifacts/verification/P4_KNOWLEDGE_ADMIN_DELIVERY_20261105.json)
 
+
+### 2026-11-04 20:27 UTC｜235ddd3 整合定向補核
+
+- Recorded At：2026-11-04 20:27 UTC；Work Date：2026-11-04。Step / Package：REQ005-SUMMARY01。
+- Actual Work：在獨立候選三方整合 master `235ddd3cb5b0f78bf3b1e13e9bc96921c2362bbf` 的27檔增量；保留摘要與知識管理兩邊能力。索引為無重複精確聯集；備份保留上游138項前綴，再接5項未發布、未啟用摘要集合。
+- Verification：封定來源 manifest SHA-256 `68bc4b88329254527f72bb18fa12bf07634140e7cbc868348a361c63dc700394`（1084檔）通過原全 include native TypeScript，exit 0、零診斷；13個完整交集／相容測試檔共44項全過（已含CI契約6項），零跳過，來源與process group清理均核實。這是235整合的定向補核，不是84檔全套重跑；先前88ce候選554項保留為歷史，不與44項累加。
+- Failure / Repair：runtime舊合成fixture缺必要bucket，原1948亦同樣失敗；補齊後發現documents早已接線、匿名應為401，不能作未接線503探針。保留原全部斷言，改用真正未知synthetic路徑驗503，另加documents的401斷言；未改產品權限。紅證據與獨立review保留。
+- Changes：本段與[公開驗收紀錄](artifacts/verification/REQ005_DURABLE_SUMMARY_20261104.json)追加新版證據；原88ce紀錄及verifiedInputs保留，新增subsequentIntegration明確分開版本。驗後只更新整合文件，執行輸入保持封定來源。
+- Limitations / Next Action：精確PR head必要CI仍待核實，現registry為84檔549項＋CI契約6項，預期555項，不能以本機44項代填。正式policy／持續fencing reader、R0／R2 blocked、未啟用及未部署邊界不變；未作真模型、GCP操作或正式資料驗收。
 ## 2026-11-05 管理員關鍵詞索引批次
 
 #472、#473 已合併及發布。首次候選讀取遇到 Firestore 排序索引仍在建立，原站繼續服務。狀態為 READY 後，候選讀回十個已核准版本及零個批次，才切換 API、worker、Web。已核對站外健康、匿名拒絕及前端指紋。沒有對正式來源發起重建。[索引批次發布紀錄](artifacts/verification/P4_KNOWLEDGE_INDEX_BATCHES_20261105.json)
@@ -4658,3 +4698,11 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 ## 2026-11-05 本人記憶原件還原
 
 #498、#499 合批更新原站 API／worker／Web 至 `2be85951`。沿既有記憶及匯入交易，接通事實／主題比較、同 ID 更正、原墓碑的新項恢復與終態衝突。保留本地來源的動態有效性及原確認來源，舊客戶端仍只比較私人交代。定向 ZIP／worker 情景、既有來源規則、共用 owner 及型別通過；原站及站外指紋已核。初次比較／協商失敗、型別修正及部署中的短暫 TLS readiness 失敗均記於[本批證據](artifacts/verification/P4_ORIGINAL_MEMORY_20261105.json)。沒有模型、通知、新資源、索引、金鑰或 APK 建置；原一筆未知背景工作保留，完整災難還原及實際帳戶／設備項目仍待驗。
+
+### 2026-11-04 23:46 UTC｜f0149b 摘要交集整合補核
+
+- Context：等待遠端寫入期間 master 已新增 54 commits／80 路徑，先保留全部原件還原、知識及其他上游成果，再只整合摘要生命週期交集。
+- Changes：backup 保留上游 139 suffix 前綴並追加 5 summary suffix；索引精確聯集；原件記憶沿原 write/context 交易。新建立的私人交代擦除 job 在 receipt 頁結束後先走原 summary 兩階段，完成後才可發 done proof。restore 生成的歷史 done proof 保留原件刪除語義，不代表 summary 清理完成；advance 沿原相容流程補掃。沒有增加政策或新 ledger。
+- Verification：真交集 RED 7/8 到最小一行修正後 8/8；新同源候選完整 TypeScript exit 0／零診斷，21 完整檔／87 項全過（已含 CI 6 項）、零跳過、來源保全、程序清空。原件交代測試診斷確認舊 memory_facts 停用 oracle 已被上游正式啟用契約淘汰，改用仍停用 summary_history 並新增 memory_facts/topics 正例；保留所有原身分／scope／target 拒絕。原紅與更正均保留。
+- Evidence：本批追加[公開驗收紀錄](artifacts/verification/REQ005_DURABLE_SUMMARY_20261104.json)，歷史 554／44 與最新 87 分版本記錄、不相加。驗後僅五份文件／紀錄更新，產品、測試及配置與封定驗收來源逐 bytes 相同。
+- Limitations / Next Action：精確 PR head 87 檔／555 項＋CI 契約 6 項仍須成功後正常合併；沒有 GCP 或產品部署操作、真模型及正式資料驗收。正式政策／持續 fencing reader、索引 READY 與 production 驗收仍缺，durable 未啟用，R0／R2 blocked。

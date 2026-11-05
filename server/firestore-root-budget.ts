@@ -1,6 +1,6 @@
 /// <reference lib="es2024.string" />
 import { createHash } from 'node:crypto';
-import type { Firestore, DocumentSnapshot } from '@google-cloud/firestore';
+import type { Firestore, DocumentSnapshot, Transaction } from '@google-cloud/firestore';
 import { z } from 'zod';
 import type { StorageCipher } from './storage-crypto.ts';
 import { canonical, isRecord } from './firestore-session-codec.ts';
@@ -141,11 +141,14 @@ export class FirestoreRootBudget implements DurableRootBudget {
       transaction.create(ref, this.#seal(context, state)); return this.#snapshot(state, now);
     });
   }
-  async read(input: RootBudgetContext): Promise<RootBudgetSnapshot> {
+  /** Same original ledger read, inside the caller's trusted authority transaction. Never creates or freezes a root. */
+  async readInTransaction(input: RootBudgetContext, transaction: Transaction): Promise<RootBudgetSnapshot> {
     const context = parse(contextSchema, input, 'invalid_context'), ref = this.#ref(context);
-    return this.#database.runTransaction(async transaction => {
-      const state = this.#load(context, await transaction.get(ref)); return this.#snapshot(state, this.#now());
-    }, { readOnly: true });
+    const state = this.#load(context, await transaction.get(ref)); return this.#snapshot(state, this.#now());
+  }
+  async read(input: RootBudgetContext): Promise<RootBudgetSnapshot> {
+    const context = parse(contextSchema, input, 'invalid_context');
+    return this.#database.runTransaction(transaction => this.readInTransaction(context, transaction), { readOnly: true });
   }
   async reserve(input: RootBudgetContext, attempt: BudgetAttempt): Promise<BudgetAdmission> {
     const context = parse(contextSchema, input, 'invalid_context'), request = parse(attemptSchema, attempt, 'invalid_attempt'), ref = this.#ref(context);
@@ -184,3 +187,6 @@ export class FirestoreRootBudget implements DurableRootBudget {
     });
   }
 }
+
+/** The original validator is reused by encrypted private-summary recovery metadata. */
+export { contextSchema as firestoreRootBudgetContextSchema };

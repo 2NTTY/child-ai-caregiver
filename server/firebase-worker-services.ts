@@ -1,7 +1,9 @@
+import { readSummaryFastOwnedUnknown } from './firestore-private-summary-ownership.ts';
 import { readContextBasis, settleSummaryRequest } from './firestore-context-basis.ts';
 import { FirestoreDomainData, firestoreDomainHash } from './firestore-domain-data.ts';
 import { createFirestoreTaskDispatcher, type FirestoreTaskDispatcherOptions } from './firestore-task-dispatcher.ts';
-import { createFirestoreBackgroundQueue, firestoreBackgroundReference, type BackgroundTransport } from './firestore-background-work.ts';
+import { createFirestoreBackgroundQueue, firestoreBackgroundReference, readFirestoreBackgroundClaim, type BackgroundTransport } from './firestore-background-work.ts';
+import { parseSummaryBackgroundBasis } from './private-summary-work.ts';
 import { concernAgentContext } from './concern-context.ts';
 import { createFirestoreBackgroundMaintenance } from './firestore-background-maintenance.ts';
 import type { openFirebaseRuntime } from './firebase-runtime.ts';
@@ -15,7 +17,8 @@ export function createFirebaseWorkerServices(runtime: Awaited<ReturnType<typeof 
     const worker = runtime.reminders;
     const dispatcher = createFirestoreTaskDispatcher({ ...options, delivery });
     const maintenance = createFirestoreBackgroundMaintenance({ ...options, knowledge: runtime.knowledgeRefresh,
-      journal: runtime.journal, photos: runtime.photos, voices: runtime.voices, files: runtime.files, avatars: runtime.avatarCleanup, handover: runtime.handover, handoverUploads: runtime.handoverUploads, erasures: runtime.erasures, cleanup: runtime.erasureCleanup });
+      journal: runtime.journal, summarySessions: runtime.product?.summarySessions,
+      photos: runtime.photos, voices: runtime.voices, files: runtime.files, avatars: runtime.avatarCleanup, handover: runtime.handover, handoverUploads: runtime.handoverUploads, erasures: runtime.erasures, cleanup: runtime.erasureCleanup });
     const background = createFirestoreBackgroundQueue({ ...options, readControl: tx => authority.readControl(tx),
       transport: backgroundDelivery, signal: controller.signal,
       async execute(job, signal) {
@@ -43,21 +46,61 @@ export function createFirebaseWorkerServices(runtime: Awaited<ReturnType<typeof 
           return runtime.product.transcribeVoice(job, validIdentity, signal);
         }
         if (job.kind === 'memory-refresh') {
-          const data = new FirestoreDomainData(options);
+          const data = new FirestoreDomainData(options), basis = parseSummaryBackgroundBasis(job.basis);
+          if (!basis) return { state: 'stopped' };
+          const reference = firestoreBackgroundReference(job);
+          if (basis.kind === 'part') {
+            const authorize = async () => await validIdentity() && await authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async b =>
+              (await runtime.product.summaryWork.readEntryGate(b)).kind === 'durable'
+                && await runtime.product.summaryWork.authorizeBackgroundPart(b, reference));
+            if (!await authorize()) return { state: 'stopped' };
+            const result = await runtime.product.maintainSummaryPart({ userId: job.scope.ownerUserId, childId: job.scope.childId,
+              workId: basis.binding.workId, reference, authorize, signal }).catch(() => ({ state: 'unknown' as const }));
+            return { state: result.state };
+          }
+          if (basis.kind === 'completion') {
+            // A completion is a canonical scope hint, never a grant or an acknowledgement of coverage.
+            const accepted = await authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async b => {
+              const live = await readFirestoreBackgroundClaim(data, b, reference);
+              if (!live || live.resourceId !== b.scope.childId || live.basis !== job.basis
+                || (await runtime.product.summaryWork.readEntryGate(b)).kind !== 'durable') return false;
+              const current = await readContextBasis(data, b);
+              if (!Number.isSafeInteger(current.value.summaryRequest) || current.value.summaryBlocked) return false;
+              await settleSummaryRequest(data, b, current.value.summaryRequest!, 'more');
+              return true;
+            });
+            return { state: accepted ? 'completed' : 'stopped' };
+          }
           const authorize = async () => await validIdentity() && await authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async b => {
             const current = await readContextBasis(data, b);
+            const gate = await runtime.product.summaryWork.readEntryGate(b);
             return b.generation === job.generation && b.authorizationVersion === job.authorizationVersion
               && firestoreDomainHash(b.scope) === firestoreDomainHash(job.scope) && current.value.summaryPending === true
-              && !current.value.summaryBlocked && String(current.value.summaryRequest) === job.basis;
+              && gate.kind !== 'blocked' && !current.value.summaryBlocked && current.value.summaryRequest === basis.request;
           });
+          if (!await authorize()) return { state: 'stopped' };
           const result = await runtime.product.maintainSummary({ userId: job.scope.ownerUserId, childId: job.scope.childId,
-            reference: firestoreBackgroundReference(job), authorize, signal }).catch(() => ({ state: 'unknown' as const, more: false }));
-          await authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async b => {
-            if (b.generation !== job.generation || b.authorizationVersion !== job.authorizationVersion || firestoreDomainHash(b.scope) !== firestoreDomainHash(job.scope)) return;
-            await settleSummaryRequest(data, b, Number(job.basis),
-              result.state === 'unknown' ? 'unknown' : result.state === 'completed' ? result.more ? 'more' : 'complete' : 'deferred', firestoreBackgroundReference(job));
+            reference, authorize, signal }).catch(() => ({ state: 'unknown' as const, more: false }));
+          const settledState = await authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async b => {
+            if (b.generation !== job.generation || b.authorizationVersion !== job.authorizationVersion || firestoreDomainHash(b.scope) !== firestoreDomainHash(job.scope)) return 'stopped' as const;
+            if ('lineagedUnknown' in result && result.lineagedUnknown === true) {
+              // The earlier check is only a routing hint. Clearing the scope barrier
+              // requires the complete original ownership proof in this same transaction.
+              const mapped = await readSummaryFastOwnedUnknown(data, b, reference);
+              await settleSummaryRequest(data, b, basis.request, mapped ? 'more' : 'unknown', reference);
+              return mapped ? 'completed' as const : 'unknown' as const;
+            }
+            if (result.state === 'completed' && !result.more && (await runtime.product.summaryWork.readEntryGate(b)).kind === 'durable') {
+              const clear = await runtime.product.summaryScan.prepareClearPending(b, basis.request);
+              if (clear.canClear) clear.commit();
+              else await settleSummaryRequest(data, b, basis.request, 'more', reference);
+              return result.state;
+            }
+            await settleSummaryRequest(data, b, basis.request,
+              result.state === 'unknown' ? 'unknown' : result.state === 'completed' ? result.more ? 'more' : 'complete' : 'deferred', reference);
+            return result.state;
           });
-          return { state: result.state };
+          return { state: settledState };
         }
         if (job.kind === 'native-push') return runtime.nativePush.process(job, signal);
         if (job.kind === 'push') return runtime.push.process(job, signal);

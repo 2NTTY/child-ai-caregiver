@@ -66,7 +66,7 @@ for (const name of ['typescript', '@google/adk', '@google/genai', 'zod', 'yazl',
 NODE
 
 stage=server-shared-and-test-types
-"$NODE_BIN" node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit --pretty false
+"$NODE_BIN" --max-old-space-size=3072 node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit --pretty false
 
 stage=ci-contract-tests
 TAP_FILE="$TMPDIR/summary-progress-contract.tap"

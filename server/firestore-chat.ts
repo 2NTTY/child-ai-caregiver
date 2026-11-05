@@ -1,10 +1,12 @@
-import { chatFileMessageReferenceSchema, chatFileLinkInputSchema } from '../src/shared/chat-files.ts';
+import { messageText, firestoreChatMessageSchema } from './chat-message-schema.ts';
+export { firestoreChatMessageSchema } from './chat-message-schema.ts';
+import { chatFileLinkInputSchema } from '../src/shared/chat-files.ts';
 import type { FirestoreChatFilesStore } from './firestore-chat-files.ts';
-import { voiceMessageReferenceSchema, voiceLinkInputSchema } from '../src/shared/voice.ts';
+import { voiceLinkInputSchema } from '../src/shared/voice.ts';
 import type { FirestoreVoiceStore } from './firestore-voice.ts';
-import { photoMessageReferenceSchema, photoLinkInputSchema } from '../src/shared/photos.ts';
+import { photoLinkInputSchema } from '../src/shared/photos.ts';
 import type { FirestorePhotoStore } from './firestore-photos.ts';
-import { officialHelpIdSchema, officialHelpFromTools } from '../src/shared/agent-feedback.ts';
+import { officialHelpFromTools } from '../src/shared/agent-feedback.ts';
 import { prepareContextChange } from './firestore-context-basis.ts';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -22,17 +24,8 @@ import type { HandoverImportRow } from './handover-import.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
 import { makeImportProvenance } from './handover-provenance.ts';
 
-const uuid = z.uuid(), datetime = z.iso.datetime({ offset: true });
-const messageText = z.string().refine(value => value.isWellFormed()
-  && !value.includes('\0') && [...value].length <= 10_000);
+const uuid = z.uuid();
 const text = messageText.refine(value => value.trim().length > 0);
-export const firestoreChatMessageSchema = z.object({
-  id: uuid, childId: uuid, authorUserId: z.string().min(1).max(256).nullable(),
-  role: z.enum(['user', 'model']), text: messageText, inReplyTo: uuid.nullable(), createdAt: datetime,
-  agentRunId: uuid.optional(), officialHelp: z.array(officialHelpIdSchema).max(2).optional(),
-  voice: voiceMessageReferenceSchema.optional(), file: chatFileMessageReferenceSchema.optional(), photo: photoMessageReferenceSchema.optional(),
-}).strict().refine(v => (!(v.voice || v.file || v.photo) || v.role === 'user') && [v.voice, v.file, v.photo].filter(Boolean).length <= 1
-  && (v.text.trim().length > 0 || v.voice !== undefined || v.file !== undefined || v.photo !== undefined));
 const inputSchema = z.object({ text: messageText, voice: voiceLinkInputSchema.optional(), file: chatFileLinkInputSchema.optional(), photo: photoLinkInputSchema.optional() }).strict()
   .refine(v => [v.voice, v.file, v.photo].filter(Boolean).length <= 1 && (v.text.trim().length > 0 || v.voice !== undefined || v.file !== undefined || v.photo !== undefined));
 const messagePath = /^\/api\/children\/([0-9a-f-]{36})\/messages$/iu;

@@ -9,6 +9,7 @@ import { createFirestoreChatFilesStore } from './firestore-chat-files.ts';
 import { createCloudStorageVoiceObjects, createVoiceObjects } from './firebase-voice-objects.ts';
 import { createFirestoreVoiceStore } from './firestore-voice.ts';
 import { readContextBasis } from './firestore-context-basis.ts';
+import { parseSummaryBackgroundBasis } from './private-summary-work.ts';
 import { createFirestoreAdmin } from './firestore-admin.ts';
 import { readAdminUid } from './admin-api.ts';
 import { createKnowledgeIndexBatches } from './firestore-knowledge-index-batches.ts';
@@ -163,9 +164,14 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
         if (!config.taskWorkerEnabled || !(await authority.readControl(b.transaction)).enabled) return false;
         const job = await readFirestoreBackgroundClaim(new FirestoreDomainData(domain), b, reference); if (!job) return false;
         if (job.kind === 'memory-refresh') {
+          const basis = parseSummaryBackgroundBasis(job.basis);
+          if (recipeId !== 'memory-refresh' || !basis || basis.kind === 'completion') return false;
+          const gate = await product.summaryWork.readEntryGate(b);
+          if (gate.kind === 'blocked') return false;
+          if (basis.kind === 'part') return gate.kind === 'durable' && product.summaryWork.authorizeBackgroundPart(b, reference);
           const current = await readContextBasis(new FirestoreDomainData(domain), b);
-          return recipeId === 'memory-refresh' && job.resourceId === b.scope.childId && current.value.summaryPending === true
-            && !current.value.summaryBlocked && String(current.value.summaryRequest) === job.basis;
+          return job.resourceId === b.scope.childId && current.value.summaryPending === true
+            && !current.value.summaryBlocked && current.value.summaryRequest === basis.request;
         }
         if (job.kind === 'work-continuation') return recipeId === 'product-work-followup' && !!await product.continuation.input(b, job);
         if (recipeId !== 'product-background') return false;

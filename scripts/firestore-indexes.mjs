@@ -8,7 +8,13 @@ const base = 'https://firestore.googleapis.com/v1/projects/ai-caregivers-for-chi
 const canonical = value => JSON.stringify(sort(value));
 function sort(value) { return Array.isArray(value) ? value.map(sort) : value && typeof value === 'object'
   ? Object.fromEntries(Object.keys(value).sort().map(key => [key, sort(value[key])])) : value; }
-function shape(index) { return canonical({ queryScope: index.queryScope, fields: index.fields.filter(field => field.fieldPath !== '__name__') }); }
+function shape(index) {
+  // REST appends an omitted document-id field with the final field's direction (ASC for arrays).
+  // Preserve explicit direction: ascending page indexes cannot satisfy descending head queries.
+  const fields = index.fields.at(-1)?.fieldPath === '__name__' ? index.fields
+    : [...index.fields, { fieldPath: '__name__', order: index.fields.at(-1)?.order ?? 'ASCENDING' }];
+  return canonical({ queryScope: index.queryScope, fields });
+}
 const sessionIndexes = ['ASCENDING', 'DESCENDING'].map(order => canonical({
   collectionGroup: 'events', queryScope: 'COLLECTION', fields: [{ fieldPath: 'timestamp', order }, { fieldPath: 'id', order }],
 }));

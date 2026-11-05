@@ -247,10 +247,14 @@ test('signed own instruction backups restore only the pinned original once with 
     }
     const legacyCare = handoverImportMappingSchema.parse({ ...mapping.value, source: { ...mapping.value.source, section: 'care' } });
     assert.deepEqual(roundTrip(encodedMapping(legacyCare)), legacyCare, 'An existing enabled original-mapping partition remains compatible');
+    for (const section of ['memory_facts', 'memory_topics'] as const) {
+      const enabledMemory = handoverImportMappingSchema.parse({ ...mapping.value, source: { ...mapping.value.source, section } });
+      assert.deepEqual(roundTrip(encodedMapping(enabledMemory)), enabledMemory, 'Enabled own-memory partitions remain restorable');
+    }
     for (const invalid of [
       { ...mapping.value, source: { ...mapping.value.source, accountId: 'other' } },
       { ...mapping.value, source: { ...mapping.value.source, childId: otherChild } },
-      { ...mapping.value, source: { ...mapping.value.source, section: 'memory_facts' } },
+      { ...mapping.value, source: { ...mapping.value.source, section: 'summary_history' } },
       { ...mapping.value, target: { ...mapping.value.target, id: foreign.id } },
     ]) {
       assert.throws(() => codec.decode(encodedMapping(handoverImportMappingSchema.parse(invalid))), { code: 'restore_binding' },

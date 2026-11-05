@@ -1,6 +1,6 @@
 /// <reference lib="es2024.string" />
 import { createHash } from 'node:crypto';
-import type { DocumentSnapshot, Firestore } from '@google-cloud/firestore';
+import type { DocumentSnapshot, Firestore, Transaction } from '@google-cloud/firestore';
 import { z } from 'zod';
 import type { StorageCipher } from './storage-crypto.ts';
 import type { ModelBillingSource } from '../src/shared/model-settings.ts';
@@ -149,12 +149,15 @@ export class FirestoreAiUsage implements DurableAiUsage {
       return { decision: 'execute', receipt: receipt(state) };
     });
   }
-  async read(input: DurableAiUsageRequest): Promise<DurableAiUsageReceipt | null> {
+  /** Same original billing/request check, with no nested transaction, reservation or accounting write. */
+  async readInTransaction(input: DurableAiUsageRequest, transaction: Transaction): Promise<DurableAiUsageReceipt | null> {
     const request = parse(requestSchema, input, 'invalid_request'), id = this.#attemptId(request);
-    return this.#database.runTransaction(async transaction => {
-      const snapshot = await transaction.get(this.#ref(id));
-      return snapshot.exists ? receipt(this.#attempt(id, snapshot, request)) : null;
-    }, { readOnly: true });
+    const snapshot = await transaction.get(this.#ref(id));
+    return snapshot.exists ? receipt(this.#attempt(id, snapshot, request)) : null;
+  }
+  async read(input: DurableAiUsageRequest): Promise<DurableAiUsageReceipt | null> {
+    const request = parse(requestSchema, input, 'invalid_request');
+    return this.#database.runTransaction(transaction => this.readInTransaction(request, transaction), { readOnly: true });
   }
   async record(input: DurableAiUsageRequest, result: DurableAiUsageRecord): Promise<DurableAiUsageReceipt> {
     const request = parse(requestSchema, input, 'invalid_request'), record = parse(recordSchema, result, 'invalid_record');
@@ -208,3 +211,6 @@ export class FirestoreAiUsage implements DurableAiUsage {
     }, { readOnly: true });
   }
 }
+
+/** Preserve the original request contract when another ledger stores its recovery reference. */
+export { requestSchema as firestoreDailyUsageRequestSchema };

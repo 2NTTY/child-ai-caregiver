@@ -19,9 +19,10 @@ import { firestoreHandoverJobSchema, handoverJobIncludesScope } from './firestor
 import type { createHandoverService } from './handover-service.ts';
 import type { createHandoverUploadService } from './handover-upload-service.ts';
 import { handoverUploadRecordSchema } from './handover-upload-records.ts';
+import { firestoreAgentRunSchema } from './firestore-agent-runs.ts';
 
 // New domains join the existing backup registry and must carry authenticated recovery scope.
-const collections = FIREBASE_BACKUP_COLLECTION_SUFFIXES.filter(suffix => !['_erasures', '_erasure_receipts', '_sessions', '_adk', '_root_budget', '_ai_usage'].includes(suffix)
+const collections = FIREBASE_BACKUP_COLLECTION_SUFFIXES.filter(suffix => !['_erasures', '_erasure_receipts', '_sessions', '_adk', '_root_budget', '_ai_usage', '_private_summary_usage'].includes(suffix)
   && !suffix.startsWith('_knowledge_'));
 const BATCH = 25;
 export interface FirestoreErasureCleanupOptions extends FirestoreErasureOptions {
@@ -74,6 +75,10 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
     }
     // Avatar cleanup retains prior immutable object epochs after restore; a child erasure covers every one of them.
     if (row.context.kind === 'avatar-cleanup') return scope.workspaceId === candidate.workspaceId && scope.childId === candidate.childId;
+    // Summary restore retains its original protocol identity. Erasing that child must not leave old-epoch derived text behind.
+    const summaryDomain = ['private-summary-work', 'private-summary-lineage', 'private-summary-revision', 'private-summary-attempt', 'private-summary-scan'].includes(row.context.kind);
+    const summaryRun = row.context.kind === 'agent-run' && firestoreAgentRunSchema.parse(row.value).summaryWork !== undefined;
+    if (summaryDomain || summaryRun) return scope.workspaceId === candidate.workspaceId && scope.childId === candidate.childId;
     if (scope.workspaceId !== candidate.workspaceId || scope.storageEpoch !== candidate.storageEpoch) return false;
     if (candidate.childId === scope.childId) return true;
     // Original owner-wide receipts must not retain copies of erased child content.

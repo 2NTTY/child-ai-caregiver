@@ -8,9 +8,19 @@ import { firestoreOnlineRecordSchema, isFirestoreOnlinePending, privateInputRece
 import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
 import { sourceHistoryRecordSchema, sourceHistoryId, historyResourceForContent } from './handover-history-records.ts';
 import { firestoreAgentActionSavedSchema, redactErasedNoteEvidence } from './firestore-private-note-receipt.ts';
+import { preparePrivateSummaryRevisionErasure, preparePrivateSummaryAttemptErasure,
+  type PrivateSummarySessionErasurePort } from './firestore-private-summary-erasure.ts';
 
 export const contentErasureSchema = z.object({ intent: firebaseErasureIntentSchema.refine(v => v.type === 'content-delete'),
-  journal: firebaseErasureDescriptorSchema.nullable(), stage: z.enum(['revisions', 'source_history', 'receipts', 'done']), after: z.string().nullable() }).strict();
+  journal: firebaseErasureDescriptorSchema.nullable(), stage: z.enum(['revisions', 'source_history', 'receipts', 'summary_revisions', 'summary_attempts', 'done']),
+  after: z.string().nullable(), privateSummaryComplete: z.literal(true).optional() }).strict();
+/** Restore may reseal a job into a new epoch, but its independent journal keeps the original subject and intent. */
+export function contentErasureScopeMatches(value: z.infer<typeof contentErasureSchema>, scope: z.infer<typeof firebaseErasureIntentSchema>['scope']): boolean {
+  const original = value.intent.scope;
+  return original.ownerUserId === scope.ownerUserId && original.workspaceId === scope.workspaceId && original.childId === scope.childId
+    && (original.storageEpoch === scope.storageEpoch || value.journal !== null)
+    && (value.journal === null || value.journal.intentSha256 === firebaseErasureIntentHash(value.intent));
+}
 /** Completed journal evidence stays bound to its original subject across storage epochs. */
 export function privateInstructionDeletionProof(scope: FirestoreAuthorityTransaction['scope'], id: string,
   value: z.infer<typeof contentErasureSchema>) {
@@ -44,7 +54,9 @@ export function prepareContentErasure(data: FirestoreDomainData, binding: Firest
     ...data.seal('content-erasure', operationId, binding.scope, contentErasureSchema, value) });
 }
 /** Bounded, resumable physical cleanup. The independent journal survives business backup rollback. */
-export function createFirestoreContentErasure(options: FirestoreDomainOptions & { journal: Pick<FirebaseErasureJournal, 'writeOnce' | 'read'> }) {
+export function createFirestoreContentErasure(options: FirestoreDomainOptions & {
+  journal: Pick<FirebaseErasureJournal, 'writeOnce' | 'read'>; summarySessions?: PrivateSummarySessionErasurePort;
+}) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
   function open(row: DocumentSnapshot) {
     const raw = row.data()!;
@@ -52,17 +64,50 @@ export function createFirestoreContentErasure(options: FirestoreDomainOptions & 
       envelope: { family: 'domain', version: raw.version, recordVersion: raw.recordVersion, ciphertext: raw.ciphertext } });
     if (opened.context.kind !== 'content-erasure' || data.ref('content_erasures', 'content-erasure', opened.context.id).path !== row.ref.path)
       domainReject('erasure_binding', 500);
-    return { scope: opened.context.scope, id: opened.context.id, value: contentErasureSchema.parse(opened.value) };
+    const value = contentErasureSchema.parse(opened.value);
+    if (value.intent.operationId !== opened.context.id || !contentErasureScopeMatches(value, opened.context.scope)
+      || raw.stage !== value.stage || Object.entries(data.tags(opened.context.scope)).some(([key, tag]) => raw[key] !== tag)) domainReject('erasure_binding', 500);
+    return { scope: opened.context.scope, id: opened.context.id, value };
   }
   async function advance(row: DocumentSnapshot) {
-    const original = open(row); if (original.value.stage === 'done') return;
+    const original = open(row);
     const intent = original.value.intent, descriptor = original.value.journal ?? await options.journal.writeOnce(intent);
-    if (firebaseErasureIntentHash(await options.journal.read(intent, descriptor)) !== firebaseErasureIntentHash(intent)) domainReject('erasure_binding', 500);
+    if (descriptor.intentSha256 !== firebaseErasureIntentHash(intent)
+      || firebaseErasureIntentHash(await options.journal.read(intent, descriptor)) !== firebaseErasureIntentHash(intent)) domainReject('erasure_binding', 500);
+    if (original.value.stage === 'done' && original.value.privateSummaryComplete) return;
     await options.database.runTransaction(async tx => {
       if (!(await authority.readControl(tx)).enabled) return;
       const current = await tx.get(row.ref); if (!current.exists) return;
-      const { scope, id, value } = open(current); if (value.stage === 'done') return;
-      if (firebaseErasureIntentHash(value.intent) !== firebaseErasureIntentHash(intent)) domainReject('erasure_binding', 500);
+      const { scope, id, value } = open(current);
+      if (firebaseErasureIntentHash(value.intent) !== firebaseErasureIntentHash(intent)
+        || value.journal && firestoreDomainHash(value.journal) !== firestoreDomainHash(descriptor)) domainReject('erasure_binding', 500);
+      if (value.stage === 'done' && value.privateSummaryComplete) return;
+      const stage = value.stage === 'done' ? 'summary_revisions' : value.stage;
+      if (stage === 'summary_revisions' || stage === 'summary_attempts') {
+        const tags = data.tags(scope), suffix = stage === 'summary_revisions' ? 'private_summary_revisions' : 'private_summary_attempts';
+        // Restore retains immutable protocol identities in their original epoch. A content intent covers every such epoch.
+        let page = data.collection(suffix).where('workspaceTag', '==', tags.workspaceTag).where('userTag', '==', tags.userTag)
+          .where('childTag', '==', tags.childTag).orderBy(FieldPath.documentId()).limit(stage === 'summary_revisions' ? 25 : 1);
+        if (value.stage !== 'done' && value.after) page = page.startAfter(value.after);
+        const rows = await tx.get(page), writes: (() => void)[] = [];
+        for (const entry of rows.docs) {
+          const raw = entry.data(), decoded = openRecoveryEnvelope({ ...options, locator: raw.recovery,
+            envelope: { family: 'domain', version: raw.version, recordVersion: raw.recordVersion, ciphertext: raw.ciphertext } });
+          const kind = stage === 'summary_revisions' ? 'private-summary-revision' : 'private-summary-attempt';
+          if (decoded.context.kind !== kind || data.ref(suffix, kind, decoded.context.id).path !== entry.ref.path
+            || decoded.context.scope.ownerUserId !== scope.ownerUserId || decoded.context.scope.workspaceId !== scope.workspaceId
+            || decoded.context.scope.childId !== scope.childId) domainReject('erasure_binding', 500);
+          if (stage === 'summary_revisions') writes.push(await preparePrivateSummaryRevisionErasure(data, tx, id, decoded.context.id));
+          else writes.push(await preparePrivateSummaryAttemptErasure(data, tx, id, decoded.context.id, options.summarySessions));
+        }
+        const full = rows.size === (stage === 'summary_revisions' ? 25 : 1), next = { ...value, journal: descriptor,
+          after: full ? rows.docs.at(-1)!.id : null,
+          stage: full ? stage : stage === 'summary_revisions' ? 'summary_attempts' as const : 'done' as const,
+          ...(!full && stage === 'summary_attempts' ? { privateSummaryComplete: true as const } : {}) };
+        for (const write of writes) write();
+        tx.set(row.ref, { ...data.tags(scope), stage: next.stage, ...data.seal('content-erasure', id, scope, contentErasureSchema, next) });
+        return;
+      }
       const kind = intent.content!.kind, tags = data.tags(scope);
       if (kind === 'private_instruction') {
         if (value.stage !== 'receipts') domainReject('erasure_binding', 500);
@@ -81,7 +126,7 @@ export function createFirestoreContentErasure(options: FirestoreDomainOptions & 
             ...data.seal('agent-action-receipt', receiptId, scope, firestoreAgentActionSavedSchema, redacted) });
         }
         const after = page.size === 25 ? page.docs.at(-1)!.id : null;
-        const next = { ...value, after, stage: after ? 'receipts' as const : 'done' as const, journal: descriptor };
+        const next = { ...value, after, stage: after ? 'receipts' as const : 'summary_revisions' as const, journal: descriptor };
         tx.set(row.ref, { ...tags, stage: next.stage, ...data.seal('content-erasure', id, scope, contentErasureSchema, next) });
         return;
       }
@@ -130,7 +175,7 @@ export function createFirestoreContentErasure(options: FirestoreDomainOptions & 
       const next = { ...value, journal: descriptor, after: rows.size === 25 ? value.stage === 'revisions' ? String(rows.docs.at(-1)!.get('entityVersion')) : rows.docs.at(-1)!.id : null,
         stage: rows.size === 25 ? value.stage : value.stage === 'revisions'
           ? 'source_history' as const
-          : value.stage === 'source_history' ? 'receipts' as const : 'done' as const };
+          : value.stage === 'source_history' ? 'receipts' as const : 'summary_revisions' as const };
       for (const write of writes) write();
       tx.set(row.ref, { ...data.tags(scope), stage: next.stage, ...data.seal('content-erasure', id, scope, contentErasureSchema, next) });
     });

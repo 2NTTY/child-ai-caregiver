@@ -4,6 +4,8 @@ import type { FirestoreAvatarCleanup } from './firestore-avatar-cleanup.ts';
 import { firestoreChatFileRowSchema, type FirestoreChatFilesStore } from './firestore-chat-files.ts';
 import { firestoreVoiceRowSchema, type FirestoreVoiceStore } from './firestore-voice.ts';
 import { firestoreAgentClaimSchema, firestoreAgentRunSchema } from './firestore-agent-runs.ts';
+import { readPrivateSummaryEntryGate } from './firestore-private-summary-cutover.ts';
+import { readSummaryFastOwnedUnknown } from './firestore-private-summary-ownership.ts';
 import { settleSummaryRequest, firestoreContextRecoverySchema } from './firestore-context-basis.ts';
 import { createFirestoreContentErasure } from './firestore-content-erasure.ts';
 import type { FirebaseErasureJournal } from './firebase-erasure-journal.ts';
@@ -42,6 +44,7 @@ const knowledgePeriod = (weekly: boolean, now = Date.now()) => {
 /** One Scheduler wake reconciles bounded pages. No interval, source model, private context, or provider send lives here. */
 export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOptions & {
   journal?: Pick<FirebaseErasureJournal, 'writeOnce' | 'read'>;
+  summarySessions?: Pick<import('./firestore-session-service.ts').FirestoreSessionService, 'prepareContentErasure'>;
   avatars?: Pick<FirestoreAvatarCleanup, 'process'>;
   voices?: Pick<FirestoreVoiceStore, 'cleanupDeleted' | 'expireUnlinked'>;
   files?: Pick<FirestoreChatFilesStore, 'cleanupDeleted' | 'expireUnlinked'>;
@@ -105,9 +108,21 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
           const claim = data.open('agent-claim', key, b.scope, firestoreAgentClaimSchema, pointer);
           const runRow = await b.transaction.get(data.ref('agent_runs', 'agent-run', claim.runId)); if (!runRow.exists) return;
           const run = data.open('agent-run', claim.runId, b.scope, firestoreAgentRunSchema, runRow);
-          if (run.recipeId === 'memory-refresh' && run.trigger.reference === value.summaryBlockedReference && run.state === 'completed' && run.result?.outcome === 'no_action')
+          const bound = run.id === claim.runId && runRow.get('runId') === run.id && runRow.get('recordVersion') === 1
+            && run.ownerUserId === b.scope.ownerUserId && run.workspaceId === b.scope.workspaceId
+            && run.childId === b.scope.childId && run.storageEpoch === b.scope.storageEpoch
+            && run.authorizationVersion === b.authorizationVersion && run.workerGeneration === b.generation
+            && run.trigger.kind === 'worker' && run.trigger.reference === value.summaryBlockedReference
+            && run.recipeId === 'memory-refresh' && Object.entries(data.tags(b.scope)).every(([key, tag]) => runRow.get(key) === tag);
+          const lateCapacity = bound && run.state === 'stopped' && run.stopReason === 'input_limit'
+            && !!run.summaryFast?.noDispatch && run.summaryFast.selected === null
+            && (await readPrivateSummaryEntryGate(data, b, true)).kind === 'durable';
+          const lineagedUnknown = bound && await readSummaryFastOwnedUnknown(data, b, value.summaryBlockedReference);
+          if (bound && run.state === 'completed' && run.result?.outcome === 'no_action' || lateCapacity || lineagedUnknown)
             await settleSummaryRequest(data, b, value.summaryRequest!, 'more');
-          return; // Missing/stopped/unknown is never permission to repeat a model attempt.
+          // This is only a scope hint. T0 still re-reads the original root/source/certificate
+          // under a new canonical scope lease; other stopped/unknown runs stay blocked.
+          return;
         }
         const queued = await prepareFirestoreBackgroundWork(data, b.transaction, { kind: 'memory-refresh', scope: b.scope, resourceId: b.scope.childId,
           basis: String(value.summaryRequest), generation: b.generation, authorizationVersion: b.authorizationVersion }, new Date().toISOString());
@@ -209,7 +224,8 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       if (stage === 'voice_assets' || stage === 'chat_file_assets') q = q.where('cleanupState','in',['pending','unlinked']);
       if (stage === 'avatar_cleanup') q = q.where('complete', '==', false);
       if (stage === 'handover_exports' || stage === 'handover_uploads') q = q.where('cleaned', '==', false);
-      if (stage === 'content_erasures') q = q.where('stage', 'in', ['revisions', 'source_history', 'receipts']);
+      if (stage === 'content_erasures') q = q.where('stage', 'in',
+        ['revisions', 'source_history', 'receipts', 'summary_revisions', 'summary_attempts', 'done']);
       if (stage === 'context_versions') q = q.where('summaryPending', '==', true);
       if (stage === 'work_watches') q = q.where('enabled', '==', true);
       if (stage === 'erasures') q = q.where('state', 'in', ['requested', 'blocked', 'cleaning']);

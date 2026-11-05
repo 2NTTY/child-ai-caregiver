@@ -5,13 +5,13 @@ import type { Firestore } from '@google-cloud/firestore';
 export function firestoreDomainFixture() {
   const records = new Map<string, any>();
   const versions = new Map<string, number>(); let revision = 0;
-  type Ref = { path: string; collection(name: string): Query };
+  type Ref = { id: string; path: string; collection(name: string): Query };
   type Query = Ref & { query: true; filters: [string, string, any][]; orders: [string, string][]; count: number; cursor: any[] | null;
     doc(id: string): Ref; where(key: string, op: string, value: any): Query; orderBy(key: string, direction?: string): Query;
     limit(count: number): Query; startAfter(...values: any[]): Query };
-  const ref = (path: string): Ref => ({ path, collection: name => query(path + '/' + name) });
+  const ref = (path: string): Ref => ({ id: path.split('/').at(-1)!, path, collection: name => query(path + '/' + name) });
   const query = (path: string, filters: Query['filters'] = [], orders: Query['orders'] = [], count = Infinity, cursor: any[] | null = null): Query => ({
-    path, collection: name => query(path + '/' + name), query: true, filters, orders, count, cursor, doc: id => ref(path + '/' + id),
+    id: path.split('/').at(-1)!, path, collection: name => query(path + '/' + name), query: true, filters, orders, count, cursor, doc: id => ref(path + '/' + id),
     where: (key, op, value) => query(path, [...filters, [key, op, value]], orders, count, cursor),
     orderBy: (key, direction = 'asc') => query(path, filters, [...orders, [key, direction]], count, cursor),
     limit: count => query(path, filters, orders, count, cursor), startAfter: (...values) => query(path, filters, orders, count, values),
@@ -24,18 +24,21 @@ export function firestoreDomainFixture() {
       if (delta) return orders[i][1] === 'desc' ? -delta : delta;
     } return 0;
   };
+  // Firestore queries compare document identity independently of stored envelope fields.
+  // Support both the reserved string and native FieldPath.documentId() in this serial fixture.
+  const queryValue = (doc: any, field: unknown) => String(field) === '__name__' ? doc.id : doc.get(field);
   const read = (target: Ref | Query) => {
     if (!('query' in target)) return snapshot(target.path);
     const docs = [...records.keys()].filter(path => path.startsWith(target.path + '/') && !path.slice(target.path.length + 1).includes('/'))
       .map(snapshot).filter(doc => target.filters.every(([key, op, value]) => {
-        const actual = doc.get(key);
+        const actual = queryValue(doc, key);
         switch (op) {
           case '==': return actual === value; case '>': return actual > value; case '>=': return actual >= value;
           case 'in': return value.includes(actual);
           case '<': return actual < value; case '<=': return actual <= value; default: throw new Error('Unsupported synthetic operator');
         }
-      })).sort((a, b) => compare(target.orders.map(([key]) => a.get(key)), target.orders.map(([key]) => b.get(key)), target.orders))
-      .filter(doc => !target.cursor || compare(target.orders.map(([key]) => doc.get(key)), target.cursor, target.orders) > 0).slice(0, target.count);
+      })).sort((a, b) => compare(target.orders.map(([key]) => queryValue(a, key)), target.orders.map(([key]) => queryValue(b, key)), target.orders))
+      .filter(doc => !target.cursor || compare(target.orders.map(([key]) => queryValue(doc, key)), target.cursor, target.orders) > 0).slice(0, target.count);
     return { docs, size: docs.length, empty: docs.length === 0 };
   };
   let tail = Promise.resolve(), discard = false, lost = false, abortCommit = false, afterDiscard: (() => Promise<void>) | undefined;

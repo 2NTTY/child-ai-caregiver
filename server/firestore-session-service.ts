@@ -1,9 +1,10 @@
 import { BaseSessionService, State, createSession } from '@google/adk';
 import type { AppendEventRequest, CreateSessionRequest, DeleteSessionRequest, Event, GetSessionRequest, ListSessionsRequest, ListSessionsResponse, Session } from '@google/adk';
-import type { Firestore, DocumentSnapshot, Query } from '@google-cloud/firestore';
+import type { Firestore, DocumentSnapshot, Query, Transaction } from '@google-cloud/firestore';
 import type { StorageCipher } from './storage-crypto.ts';
 import type { EncryptedJson, SessionKey, StateMap } from './firestore-session-codec.ts';
 import { randomUUID } from 'node:crypto';
+import { z } from 'zod';
 import { canonical, createCodec, encodeId, identity, isRecord, limitDocument, MAX_EVENTS, MAX_LIST_SESSIONS, persistentEvent, reject } from './firestore-session-codec.ts';
 
 function split(state: StateMap) {
@@ -31,10 +32,16 @@ export interface FirestoreSessionServiceOptions {
   projectId: string;
   namespace: string;
 }
+export interface FirestoreSessionEvidence {
+  readonly key: SessionKey; readonly revision: number; readonly incarnation: string | null;
+  readonly state: Readonly<StateMap>; readonly events: readonly Event[]; readonly lastUpdateTime: number;
+}
 interface SessionHeader {
   version: 1;
   /** Per-create nonce; absent only on sessions written before owned cleanup. */
   incarnation?: string;
+  /** Journal-backed content erasure retains this header so the original run cannot be recreated. */
+  contentErasureIntentId?: string;
   status: 'active' | 'deleting';
   revision: number;
   lastUpdateTime: number;
@@ -79,7 +86,9 @@ export class FirestoreSessionService extends BaseSessionService {
     if (header.version !== 1 || !Number.isSafeInteger(header.revision) || header.revision < 0
       || !['active', 'deleting'].includes(header.status) || !Number.isFinite(header.lastUpdateTime)
       || header.incarnation !== undefined && (typeof header.incarnation !== 'string'
-        || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/u.test(header.incarnation))) reject('invalid_session_header');
+        || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/u.test(header.incarnation))
+      || header.contentErasureIntentId !== undefined && (typeof header.contentErasureIntentId !== 'string' || header.status !== 'deleting'
+        || !z.uuid().safeParse(header.contentErasureIntentId).success)) reject('invalid_session_header');
     return header;
   }
   #active(snapshot: DocumentSnapshot): SessionHeader {
@@ -116,33 +125,50 @@ export class FirestoreSessionService extends BaseSessionService {
     return session;
   }
 
-  async getSession({ appName, userId, sessionId, config }: GetSessionRequest): Promise<Session | undefined> {
-    const key = identity({ appName, userId, sessionId }), paths = this.#paths(key);
-    const recent = config?.numRecentEvents;
+  #readOptions(config: GetSessionRequest['config']) {
+    const recent = config?.numRecentEvents, afterTimestamp = config?.afterTimestamp;
     if (recent !== undefined && (!Number.isSafeInteger(recent) || recent < 0 || recent > MAX_EVENTS)) reject('invalid_event_limit');
-    if (config?.afterTimestamp !== undefined && !Number.isFinite(config.afterTimestamp)) reject('invalid_timestamp');
-    const saved = await this.#database.runTransaction(async transaction => {
-      const [snapshot, app, user] = await transaction.getAll(paths.session, paths.app, paths.user);
-      if (!snapshot.exists) return undefined;
-      const header = this.#active(snapshot);
-      let events: Event[] = [];
-      if (recent !== 0) {
-        let query: Query = paths.events;
-        if (config?.afterTimestamp !== undefined) query = query.where('timestamp', '>=', config.afterTimestamp);
-        query = query.orderBy('timestamp', recent === undefined ? 'asc' : 'desc').orderBy('id', recent === undefined ? 'asc' : 'desc').limit(recent ?? MAX_EVENTS + 1);
-        const rows = await transaction.get(query);
-        if (rows.size > MAX_EVENTS) reject('event_capacity');
-        events = rows.docs.map(row => {
-          const id = row.get('id'); encodeId(id);
-          if (row.id !== encodeId(id)) reject('event_identity_mismatch');
-          const event = this.#codec.open<Event>('event', key, row.get('event'), id);
-          if (event.id !== id || event.timestamp !== row.get('timestamp')) reject('event_identity_mismatch');
-          return event;
-        });
-        if (recent !== undefined) events.reverse();
-      }
-      return { header, app: this.#state(app, 'app', key), user: this.#state(user, 'user', key), events };
-    }, { readOnly: true });
+    if (afterTimestamp !== undefined && !Number.isFinite(afterTimestamp)) reject('invalid_timestamp');
+    return { recent, afterTimestamp };
+  }
+  /** Shared decode only: no native Session object, marker or ownership is created here. */
+  async #readSnapshot(key: SessionKey, options: { recent: number | undefined; afterTimestamp: number | undefined }, transaction: Transaction) {
+    const paths = this.#paths(key), { recent, afterTimestamp } = options;
+    const [snapshot, app, user] = await transaction.getAll(paths.session, paths.app, paths.user);
+    if (!snapshot.exists) return undefined;
+    const header = this.#active(snapshot);
+    let events: Event[] = [];
+    if (recent !== 0) {
+      let query: Query = paths.events;
+      if (afterTimestamp !== undefined) query = query.where('timestamp', '>=', afterTimestamp);
+      query = query.orderBy('timestamp', recent === undefined ? 'asc' : 'desc').orderBy('id', recent === undefined ? 'asc' : 'desc').limit(recent ?? MAX_EVENTS + 1);
+      const rows = await transaction.get(query);
+      if (rows.size > MAX_EVENTS) reject('event_capacity');
+      events = rows.docs.map(row => {
+        const id = row.get('id'); encodeId(id);
+        if (row.id !== encodeId(id)) reject('event_identity_mismatch');
+        const event = this.#codec.open<Event>('event', key, row.get('event'), id);
+        if (event.id !== id || event.timestamp !== row.get('timestamp')) reject('event_identity_mismatch');
+        return event;
+      });
+      if (recent !== undefined) events.reverse();
+    }
+    return { header, app: this.#state(app, 'app', key), user: this.#state(user, 'user', key), events };
+  }
+  /** Complete bounded native evidence only. This does not mint append or cleanup authority. */
+  async readSessionEvidenceInTransaction(input: Pick<GetSessionRequest, 'appName' | 'userId' | 'sessionId'>,
+    transaction: Transaction): Promise<FirestoreSessionEvidence | undefined> {
+    if (!isRecord(input) || Object.keys(input).sort().join(',') !== 'appName,sessionId,userId') reject('evidence_query_not_supported');
+    const key = identity(input), saved = await this.#readSnapshot(key, this.#readOptions(undefined), transaction);
+    if (!saved) return undefined;
+    return Object.freeze({ key, revision: saved.header.revision, incarnation: saved.header.incarnation ?? null,
+      state: Object.freeze(merge(saved.app, saved.user, this.#codec.open('session', key, saved.header.state))),
+      events: Object.freeze(saved.events), lastUpdateTime: saved.header.lastUpdateTime });
+  }
+
+  async getSession({ appName, userId, sessionId, config }: GetSessionRequest): Promise<Session | undefined> {
+    const key = identity({ appName, userId, sessionId }), options = this.#readOptions(config);
+    const saved = await this.#database.runTransaction(transaction => this.#readSnapshot(key, options, transaction), { readOnly: true });
     return saved ? this.#make(key, saved.header, saved.app, saved.user, saved.events) : undefined;
   }
 
@@ -241,6 +267,26 @@ export class FirestoreSessionService extends BaseSessionService {
     return this.#delete(identity(request));
   }
 
+  /** Storage primitive for the server's journal/run coordinator, never an HTTP or model-facing erasure authority. */
+  async prepareContentErasure(transaction: Transaction,
+    input: { ownerUserId: string; runId: string; erasureIntentId: string }): Promise<() => void> {
+    if (!isRecord(input) || Object.keys(input).sort().join(',') !== 'erasureIntentId,ownerUserId,runId'
+      || !z.uuid().safeParse(input.runId).success || !z.uuid().safeParse(input.erasureIntentId).success) reject('invalid_content_erasure');
+    const key = identity({ appName: 'yuban_hk', userId: input.ownerUserId, sessionId: input.runId }), paths = this.#paths(key);
+    const snapshot = await transaction.get(paths.session), header = snapshot.exists ? this.#readHeader(snapshot) : undefined;
+    const events = await transaction.get(paths.events.limit(MAX_EVENTS + 1));
+    if (events.size > MAX_EVENTS) reject('event_capacity');
+    if (header?.contentErasureIntentId && events.size === 0 && Object.keys(this.#codec.open('session', key, header.state)).length === 0)
+      return () => {};
+    const next = limitDocument<SessionHeader>({ ...(header ?? { version: 1, revision: 0, lastUpdateTime: Date.now() }),
+      status: 'deleting', revision: (header?.revision ?? 0) + 1,
+      contentErasureIntentId: header?.contentErasureIntentId ?? input.erasureIntentId, state: this.#codec.seal('session', key, {}) });
+    return () => {
+      for (const event of events.docs) transaction.delete(event.ref);
+      transaction.set(paths.session, next);
+    };
+  }
+
   /** Trusted account erasure, after durable access revocation and the in-flight grace period. */
   async eraseUserPage(appName: string, userId: string): Promise<boolean> {
     const key = identity({ appName, userId, sessionId: 'account-erasure' }), paths = this.#paths(key);
@@ -248,7 +294,7 @@ export class FirestoreSessionService extends BaseSessionService {
     for (const snapshot of page.docs) {
       const sessionId = Buffer.from(snapshot.id.slice(2), 'base64url').toString('utf8');
       if (encodeId(sessionId) !== snapshot.id) reject('invalid_identity');
-      await this.#delete(identity({ appName, userId, sessionId }));
+      await this.#delete(identity({ appName, userId, sessionId }), undefined, true);
     }
     if (page.size) return false;
     return this.#database.runTransaction(async transaction => {
@@ -272,12 +318,13 @@ export class FirestoreSessionService extends BaseSessionService {
     await this.#delete(owned.key, owned.incarnation);
   }
 
-  async #delete(key: SessionKey, incarnation?: string): Promise<void> {
+  async #delete(key: SessionKey, incarnation?: string, eraseContentTombstone = false): Promise<void> {
     const paths = this.#paths(key);
     const exists = await this.#database.runTransaction(async transaction => {
       const snapshot = await transaction.get(paths.session);
       if (!snapshot.exists) return false;
       const header = this.#readHeader(snapshot);
+      if (header.contentErasureIntentId && !eraseContentTombstone) return false;
       if (incarnation !== undefined && header.incarnation !== incarnation) return false;
       if (header.status === 'active') transaction.update(paths.session, { status: 'deleting', revision: header.revision + 1 });
       return true;
@@ -287,6 +334,7 @@ export class FirestoreSessionService extends BaseSessionService {
       const snapshot = await transaction.get(paths.session);
       if (!snapshot.exists) return undefined;
       const header = this.#readHeader(snapshot);
+      if (header.contentErasureIntentId && !eraseContentTombstone) return undefined;
       if (incarnation !== undefined && header.incarnation !== incarnation) return undefined;
       if (header.status !== 'deleting') reject('delete_conflict');
       const events = await transaction.get(paths.events.limit(MAX_EVENTS + 1));

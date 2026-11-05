@@ -1,3 +1,7 @@
+import { makeSummaryChatSource, makeSummaryCorrectionSource, summaryManifestSchema, summarySourceRevisionSchema,
+  type SummarySourceReader, type SummarySourceDecision, type SummaryDependency, type SummaryResolvedSource,
+  type PrivateSummarySourceRevision, type SummaryCoverageProof, summaryLineageKeyForTarget, type SummaryLineageTarget, type SummaryFastTarget, type SummaryFastSource } from './private-summary-work.ts';
+import { summaryDependencySchema, summaryBatchSchema } from './memory-validation.ts';
 import { prepareContentErasure } from './firestore-content-erasure.ts';
 import { factContentDate, summarySourcePeriod, summarySourcePeriodSchema, memoryUpdateDate } from './handover-memory-dates.ts';
 import { randomUUID } from 'node:crypto';
@@ -24,6 +28,7 @@ import type { HandoverImportRow } from './handover-import.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
 import { selectSummaryBatchMessages } from './summary-window-helper.ts';
 import { historicalSummaryText, summaryExpiry } from './summary-projection.ts';
+import { preparePrivateSummaryScanProgress } from './firestore-private-summary-scan.ts';
 
 export const SUMMARY_PROJECTION_MAX_CHARS = 3000;
 
@@ -61,11 +66,9 @@ const summarySchema = z.object({ id: uuid, childId: uuid, version, text: z.strin
 }).strict().refine(value => value.coverageScope === 'imported_source' ? value.importedFrom?.current.source.section === 'summary_history'
   : value.importedFrom === undefined);
 export { summarySchema as firestoreSummarySchema };
-const summaryDependencySchema = z.object({ kind: z.enum(['profile', 'fact', 'topic', 'care']), id: uuid, version: z.number().int().nonnegative(), validUntil: time.nullable() }).strict();
-const summaryBatchSchema = z.object({ dependencies: z.array(summaryDependencySchema).max(64), sourceCoverageComplete: z.boolean().optional(), authorizationVersion: z.string(),
-  lastMessageSortKey: z.string().regex(/^[0-9]{19}$/u), replaces: uuid.nullable() }).strict();
 const savedSummarySchema = z.object({ summary: summarySchema, basis: z.string().regex(/^[a-f0-9]{64}$/u),
   validUntil: time.nullable(), lastSortKey: z.string().regex(/^[0-9]{19}$/u), batch: summaryBatchSchema.optional() }).strict();
+export { savedSummarySchema as firestoreSavedSummarySchema };
 const keySchema = z.object({ id: uuid }).strict();
 const tombstoneSchema = z.object({ id: uuid, childId: uuid, version, operationId: uuid, deletedAt: time }).strict();
 const pathPattern = /^\/api\/children\/([0-9a-f-]{36})\/memory\/(facts|topics)(?:\/([0-9a-f-]{36})\/(confirm|revise|deactivate|delete|change|reopen)|\/(confirmed))?$/iu;
@@ -75,7 +78,14 @@ type SavedSummary = z.infer<typeof savedSummarySchema>;
 type Prepared<T> = { value: T; changeSeq: string; commit(): void };
 /** Bounded Server-only alternatives; none are covered until the selected batch is saved. */
 export interface SummaryMaintenanceInput extends SummaryInput { alternatives?: SummaryInput[] }
-export interface FirestoreMemoryStore extends MemoryStore {
+export type PreparedCompletedSummary = ({ kind: 'prepared' } & Prepared<ConversationSummary>)
+  | Exclude<SummarySourceDecision, { kind: 'eligible' | 'no_work' }>;
+export interface FirestoreMemoryStore extends MemoryStore, SummarySourceReader {
+  readFreshMaintenance(binding: Binding): Promise<SummaryInput | null>;
+  /** Bounded private scan readers; never advance coverage or change source admission. */
+  readSummaryScanHead(binding: Binding): Promise<{ basis: string; freshCaughtUp: boolean; upperSortKey: string | null }>;
+  readSummaryScanPage(binding: Binding, input: { upperSortKey: string; after: { sortKey: string; id: string } | null; limit: number }):
+    Promise<{ items: { id: string; sortKey: string; version: number }[]; exhausted: boolean }>;
   forSharedSpace(spaceId: string): MemoryStore;
   mutation: FirestoreOnlineMutation;
   readSummaryRevision(binding: Binding, raw: unknown, includePeriod?: boolean): Promise<ConversationSummary | null>;
@@ -84,6 +94,7 @@ export interface FirestoreMemoryStore extends MemoryStore {
   prepareImportedSummary(binding: Binding, operationId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     current?: { id: string; expectedVersion: number }): Promise<Prepared<ConversationSummary>>;
   prepareMaintenance(userId: string, childId: string): Promise<SummaryMaintenanceInput | null>;
+  prepareCompletedWorkWrite(binding: Binding, input: { revision: PrivateSummarySourceRevision; text: string }, operationId: string): Promise<PreparedCompletedSummary>;
   prepareSummaryWrite(binding: Binding, raw: unknown, operationId: string): Promise<Prepared<ConversationSummary>>;
   readFact(binding: Binding, id: string): Promise<MemoryFact | null>;
   readTopic(binding: Binding, id: string): Promise<MemoryTopic | null>;
@@ -457,6 +468,376 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     if (unique.length > 64) return null; // Keep the invalidated batch hidden instead of dropping dependency evidence.
     return { input, saved, dependencies: unique, sourceCoverageComplete: true };
   }
+  function requirePrivateSummary(binding: Binding) {
+    if (binding.sharedAccess || binding.actorUserId !== binding.scope.ownerUserId) domainReject('private_scope_unavailable', 403);
+  }
+  async function resolvedChat(binding: Binding, messageId: string): Promise<SummaryResolvedSource | null> {
+    const message = await options.chat.readMessage(binding, binding.scope.childId, messageId);
+    if (!message) return null;
+    const row = await binding.transaction.get(data.ref('chat_messages', 'chat-message', messageId));
+    const built = makeSummaryChatSource(message, domainParse(z.string().regex(/^[0-9]{19}$/u), row.get('sortKey'), 'chat_binding', 500));
+    const { text: _text, childId: _child, authorUserId: _author, ...modelMetadata } = message;
+    return { ...built, modelMetadata };
+  }
+  async function currentDependency(binding: Binding, expected: SummaryDependency): Promise<
+    { kind: 'current'; value: { version: number; validUntil?: string | null }; dependency: SummaryDependency }
+    | { kind: 'suppressed' | 'source_changed'; reason: 'dependency_suppressed' | 'dependency_expired' | 'source_changed' }> {
+    let value: { version: number; validUntil?: string | null } | null;
+    if (expected.kind === 'profile') {
+      if (expected.id !== binding.scope.childId) return { kind: 'source_changed', reason: 'source_changed' };
+      const profile = await options.care.readProfile(binding);
+      value = { ...profile, validUntil: profile.data?.validUntil
+        ? new Date(Date.parse(profile.data.validUntil + 'T00:00:00Z') + 16 * 60 * 60 * 1000).toISOString() : null };
+    } else if (expected.kind === 'fact') {
+      const fact = await read(binding, 'facts', expected.id) as MemoryFact | null;
+      value = fact ? await factResult(binding, fact) : null;
+      if (value && !(value as MemoryFact).applicable) return { kind: 'suppressed', reason: 'dependency_suppressed' };
+    } else if (expected.kind === 'topic') value = await read(binding, 'topics', expected.id);
+    else value = await options.care.readRecord(binding, expected.id);
+    if (!value) return { kind: 'suppressed', reason: 'dependency_suppressed' };
+    if (value.validUntil && Date.parse(value.validUntil) <= Date.now()) return { kind: 'suppressed', reason: 'dependency_expired' };
+    return { kind: 'current', value, dependency: { ...expected, version: value.version, validUntil: value.validUntil ?? null } };
+  }
+  /** Bounded structural proof for a complete current batch, independent of the pending revision's old graph. */
+  async function coveredBatch(binding: Binding, row: DocumentSnapshot, head: Awaited<ReturnType<typeof summaryInput>>): Promise<SavedSummary | null> {
+    if (!row.exists || row.get('currentBatch') !== true) return null;
+    const saved = open(binding, 'conversation-summary', row.get('entityId'), savedSummarySchema, row), summary = saved.summary;
+    if (!saved.batch || summary.coverageScope || summary.previousId !== null || summary.childId !== binding.scope.childId
+      || summary.id !== row.get('entityId') || summary.version !== row.get('entityVersion')
+      || row.ref.path !== data.ref('conversation_summaries', 'conversation-summary', summary.id).path
+      || saved.batch.lastMessageSortKey !== row.get('lastMessageSortKey')
+      || !head.saved || head.saved.lastSortKey < saved.batch.lastMessageSortKey || saved.lastSortKey < saved.batch.lastMessageSortKey
+      || summary.lastCoveredMessageId !== summary.coveredMessageIds.at(-1)
+      || new Set(summary.coveredMessageIds).size !== summary.coveredMessageIds.length) return null;
+    const peers = await binding.transaction.get(scoped(binding, 'conversation_summaries').where('currentBatch', '==', true)
+      .where('lastMessageSortKey', '==', saved.batch.lastMessageSortKey).limit(2));
+    if (peers.size !== 1 || peers.docs[0].ref.path !== row.ref.path) return null;
+    let first: string | null = null, last: string | null = null;
+    for (const id of summary.coveredMessageIds) {
+      const message = await resolvedChat(binding, id);
+      if (!message || message.source.kind !== 'chat_text' || last !== null && message.source.sortKey <= last) return null;
+      first ??= message.source.sortKey;
+      last = message.source.sortKey;
+    }
+    if (first === null || last !== saved.batch.lastMessageSortKey) return null;
+    // Use the existing full-summary bound (50 plus one overflow row), not a new scan policy.
+    const complete = await binding.transaction.get(scoped(binding, 'chat_messages').where('sortKey', '>=', first)
+      .where('sortKey', '<=', last).orderBy('sortKey', 'asc').limit(51));
+    if (complete.size !== summary.coveredMessageIds.length || complete.docs.some((row, index) =>
+      row.get('messageId') !== summary.coveredMessageIds[index]
+      || row.ref.path !== data.ref('chat_messages', 'chat-message', summary.coveredMessageIds[index]).path)) return null;
+    return saved;
+  }
+  async function authoritativeCoverage(binding: Binding, manifest: PrivateSummarySourceRevision['manifest'], head: Awaited<ReturnType<typeof summaryInput>>):
+    Promise<Exclude<SummarySourceDecision, { kind: 'eligible' | 'no_work' }> | null> {
+    const blocked = { kind: 'blocked' as const, reason: 'coverage_unverifiable' as const };
+    if (manifest.kind === 'fresh_message') {
+      const unit = manifest.units[0];
+      if (unit.kind !== 'chat_text') return blocked;
+      const actual = await resolvedChat(binding, unit.messageId);
+      if (!actual) return { kind: 'suppressed', reason: 'source_missing' };
+      if (actual.source.kind !== 'chat_text' || actual.source.sortKey !== unit.sortKey) return blocked;
+      const watermark = head.saved && (head.saved.batch || head.usable) ? head.saved.lastSortKey : null;
+      if (watermark === null || unit.sortKey > watermark) return null;
+      // Locate one candidate, then separately prove endpoint uniqueness and exact bounded membership.
+      const rows = await binding.transaction.get(scoped(binding, 'conversation_summaries').where('currentBatch', '==', true)
+        .where('lastMessageSortKey', '>=', unit.sortKey).orderBy('lastMessageSortKey', 'asc').limit(1));
+      if (rows.size !== 1) return blocked;
+      const candidate = await coveredBatch(binding, rows.docs[0], head);
+      if (!candidate || !candidate.summary.coveredMessageIds.includes(unit.messageId) || !await batchValid(binding, candidate)) return blocked;
+      return { kind: 'already_covered', proof: { kind: 'fresh_watermark', coveredMessageIds: manifest.coveredMessageIds,
+        headVersion: head.input.previousVersion, lastCoveredSortKey: watermark, replacementSummaryId: candidate.summary.id } };
+    }
+    const row = await binding.transaction.get(data.ref('conversation_summaries', 'conversation-summary', manifest.repairOf));
+    if (!row.exists) return { kind: 'suppressed', reason: 'source_missing' };
+    const original = open(binding, 'conversation-summary', manifest.repairOf, savedSummarySchema, row);
+    if (!original.batch || original.summary.coverageScope || original.summary.id !== manifest.repairOf
+      || original.summary.childId !== binding.scope.childId || row.get('lastMessageSortKey') !== original.batch.lastMessageSortKey
+      || row.get('entityVersion') !== original.summary.version
+      || JSON.stringify(original.summary.coveredMessageIds) !== JSON.stringify(manifest.coveredMessageIds)) return blocked;
+    if (original.batch.authorizationVersion !== binding.authorizationVersion) return { kind: 'blocked', reason: 'source_authority_changed' };
+    if (row.get('currentBatch') !== true) {
+      const proof = await replacementProof(binding, original);
+      return proof ? { kind: 'already_covered', proof } : blocked;
+    }
+    const candidate = await coveredBatch(binding, row, head);
+    if (!candidate) return blocked;
+    if (!await batchValid(binding, candidate)) return null; // A real invalid whole batch is the repair source, not completion.
+    return { kind: 'already_covered', proof: { kind: 'repair_replacement', coveredMessageIds: manifest.coveredMessageIds,
+      headVersion: head.input.previousVersion, lastCoveredSortKey: head.saved?.lastSortKey ?? null, replacementSummaryId: candidate.summary.id } };
+  }
+  async function replacementProof(binding: Binding, original: SavedSummary): Promise<SummaryCoverageProof | null> {
+    if (!original.batch) return null;
+    const rows = await binding.transaction.get(scoped(binding, 'conversation_summaries').where('currentBatch', '==', true)
+      .where('lastMessageSortKey', '==', original.batch.lastMessageSortKey).limit(2));
+    if (rows.size !== 1) return null;
+    const head = await summaryInput(binding), replacement = await coveredBatch(binding, rows.docs[0], head);
+    if (!replacement || JSON.stringify(replacement.summary.coveredMessageIds) !== JSON.stringify(original.summary.coveredMessageIds)
+      || !await batchValid(binding, replacement)) return null;
+    return { kind: 'repair_replacement', coveredMessageIds: original.summary.coveredMessageIds,
+      headVersion: head.input.previousVersion, lastCoveredSortKey: head.saved?.lastSortKey ?? null,
+      replacementSummaryId: replacement.summary.id };
+  }
+  async function selectSource(binding: Binding, rawTarget: Parameters<SummarySourceReader['selectSource']>[1]): Promise<SummarySourceDecision> {
+    requirePrivateSummary(binding);
+    const target = domainParse(z.discriminatedUnion('kind', [z.object({ kind: z.literal('next_fresh') }).strict(),
+      z.object({ kind: z.literal('repair_batch'), summaryId: uuid }).strict()]), rawTarget);
+    const head = await summaryInput(binding);
+    if (target.kind === 'next_fresh') {
+      const first = head.input.messages[0]; if (!first) return { kind: 'no_work' };
+      const resolved = await resolvedChat(binding, first.id); if (!resolved) return { kind: 'suppressed', reason: 'source_missing' };
+      const sourceRow = await binding.transaction.get(data.ref('chat_messages', 'chat-message', first.id));
+      const observation = { target: { kind: 'fresh_message' as const, messageId: first.id },
+        sourceVersion: sourceRow.get('recordVersion') as number, sourceBasis: head.current.basis };
+      const sourceState = await summaryDependencies(binding);
+      for (const dependency of sourceState.dependencies) {
+        const current = await currentDependency(binding, dependency);
+        if (current.kind !== 'current') return current.kind === 'suppressed' ? { ...current, observation } : current;
+      }
+      const manifest = summaryManifestSchema.parse({ format: 'private-summary-manifest/v1', kind: 'fresh_message', mode: 'private',
+        coveredMessageIds: [first.id], repairOf: null, appendAfterSortKey: head.saved && (head.saved.batch || head.usable) ? head.saved.lastSortKey : null,
+        sourceBasis: head.current.basis, sourceCoverageComplete: sourceState.sourceCoverageComplete,
+        dependencies: sourceState.dependencies, units: [resolved.source] });
+      return { kind: 'eligible', manifest, resolvedSources: [resolved] };
+    }
+    const row = await binding.transaction.get(data.ref('conversation_summaries', 'conversation-summary', target.summaryId));
+    if (!row.exists) return { kind: 'suppressed', reason: 'source_missing' };
+    const saved = open(binding, 'conversation-summary', target.summaryId, savedSummarySchema, row);
+    if (!saved.batch || saved.summary.coverageScope || saved.summary.id !== target.summaryId
+      || saved.summary.childId !== binding.scope.childId || row.get('lastMessageSortKey') !== saved.batch.lastMessageSortKey
+      || saved.summary.version !== row.get('recordVersion') || saved.summary.version !== row.get('entityVersion')
+      || saved.summary.id !== row.get('entityId') || row.ref.path !== data.ref('conversation_summaries', 'conversation-summary', target.summaryId).path)
+      return { kind: 'blocked', reason: 'coverage_unverifiable' };
+    if (saved.batch.authorizationVersion !== binding.authorizationVersion) return { kind: 'blocked', reason: 'source_authority_changed' };
+    if (row.get('currentBatch') !== true) {
+      const proof = await replacementProof(binding, saved);
+      return proof ? { kind: 'already_covered', proof } : { kind: 'blocked', reason: 'coverage_unverifiable' };
+    }
+    if (await batchValid(binding, saved)) return { kind: 'no_work' };
+    if (!saved.batch.sourceCoverageComplete) return { kind: 'blocked', reason: 'incomplete_dependencies' };
+    const observation = { target: { kind: 'repair_batch' as const, summaryId: target.summaryId },
+      sourceVersion: saved.summary.version, sourceBasis: head.current.basis };
+    const dependencies: SummaryDependency[] = [], corrections: SummaryResolvedSource[] = [];
+    for (const old of saved.batch.dependencies) {
+      const current = await currentDependency(binding, old);
+      if (current.kind !== 'current') return current.kind === 'suppressed' ? { ...current, observation } : current;
+      if (old.kind === 'fact') {
+        const source = (current.value as MemoryFact).source;
+        if (source.kind === 'care_record') dependencies.push({ kind: 'care', id: source.recordId, version: source.version, validUntil: null });
+      }
+      dependencies.push(current.dependency);
+      if (current.value.version !== old.version) corrections.push({ ...makeSummaryCorrectionSource(current.dependency, current.value),
+        modelMetadata: { kind: old.kind, id: old.id, version: current.value.version } });
+    }
+    const unique = [...new Map(dependencies.map(item => [item.kind + ':' + item.id, item])).values()];
+    if (!summaryBatchSchema.shape.dependencies.safeParse(unique).success) return { kind: 'blocked', reason: 'incomplete_dependencies' };
+    const resolvedSources: SummaryResolvedSource[] = [];
+    for (const messageId of saved.summary.coveredMessageIds) {
+      const resolved = await resolvedChat(binding, messageId); if (!resolved) return { kind: 'suppressed', reason: 'source_missing', observation };
+      resolvedSources.push(resolved);
+    }
+    resolvedSources.push(...corrections);
+    const manifest = summaryManifestSchema.parse({ format: 'private-summary-manifest/v1', kind: 'repair_batch', mode: 'private',
+      coveredMessageIds: saved.summary.coveredMessageIds, repairOf: target.summaryId, appendAfterSortKey: head.saved?.lastSortKey ?? null,
+      sourceBasis: head.current.basis, sourceCoverageComplete: true, dependencies: unique, units: resolvedSources.map(item => item.source) });
+    return { kind: 'eligible', manifest, resolvedSources };
+  }
+  async function readFastSource(binding: Binding, rawTarget: SummaryFastTarget): Promise<SummaryFastSource> {
+    requirePrivateSummary(binding);
+    const target = domainParse(z.discriminatedUnion('kind', [
+      z.object({ kind: z.literal('fresh_prefix'), firstMessageId: uuid,
+        messageCount: z.number().int().positive().max(Number.MAX_SAFE_INTEGER) }).strict(),
+      z.object({ kind: z.literal('repair_batch'), summaryId: uuid }).strict(),
+    ]), rawTarget);
+    if (target.kind === 'repair_batch') {
+      const source = await selectSource(binding, target);
+      if (source.kind !== 'eligible') return source;
+      const repair = await repairInput(binding, target.summaryId);
+      if (!repair || firestoreDomainHash(repair.input.messages.map(message => message.id)) !== firestoreDomainHash(source.manifest.coveredMessageIds))
+        return { kind: 'blocked', reason: 'repair_unavailable' };
+      return { kind: 'eligible', input: repair.input,
+        sourceHash: firestoreDomainHash(['private-summary-fast/v1', binding.scope, repair.input, source.manifest]),
+        lineageKeys: [summaryLineageKeyForTarget(binding.scope, { kind: 'repair_batch', repairOf: target.summaryId })] };
+    }
+    const head = await summaryInput(binding);
+    if (head.input.messages[0]?.id !== target.firstMessageId || target.messageCount > head.input.messages.length)
+      return { kind: 'source_changed', reason: 'source_changed' };
+    const source = await selectSource(binding, { kind: 'next_fresh' });
+    if (source.kind !== 'eligible') return source;
+    const messages = head.input.messages.slice(0, target.messageCount);
+    // Reuse the existing full-message coverage bound, not a new fast-path policy limit.
+    domainParse(summarySaveSchema.shape.coveredMessageIds, messages.map(message => message.id));
+    const units = [];
+    for (const message of messages) {
+      const resolved = await resolvedChat(binding, message.id);
+      if (!resolved) return { kind: 'suppressed', reason: 'source_missing' };
+      units.push(resolved.source);
+    }
+    const input: SummaryInput = { ...head.input, messages,
+      moreUncovered: head.input.moreUncovered || target.messageCount < head.input.messages.length };
+    return { kind: 'eligible', input,
+      sourceHash: firestoreDomainHash(['private-summary-fast/v1', binding.scope, input, source.manifest, units]),
+      lineageKeys: messages.map(message => summaryLineageKeyForTarget(binding.scope, { kind: 'fresh_message', messageId: message.id })) };
+  }
+  async function revalidateSource(binding: Binding, rawRevision: PrivateSummarySourceRevision): Promise<Exclude<SummarySourceDecision, { kind: 'no_work' }>> {
+    requirePrivateSummary(binding);
+    const revision = domainParse(summarySourceRevisionSchema, rawRevision), manifest = revision.manifest;
+    if (firestoreDomainHash(revision.scope) !== firestoreDomainHash(binding.scope)
+      || revision.authorizationVersion !== binding.authorizationVersion || revision.workerGeneration !== binding.generation)
+      return { kind: 'blocked', reason: 'source_authority_changed' };
+    const head = await summaryInput(binding), covered = await authoritativeCoverage(binding, manifest, head);
+    if (covered) return covered;
+    if (!manifest.sourceCoverageComplete && manifest.sourceBasis !== head.current.basis)
+      return { kind: 'blocked', reason: 'incomplete_dependencies_changed' };
+    const current = new Map<string, Awaited<ReturnType<typeof currentDependency>> & { kind: 'current' }>();
+    for (const dependency of manifest.dependencies) {
+      const source = await currentDependency(binding, dependency); if (source.kind !== 'current') return source;
+      if (firestoreDomainHash(source.dependency) !== firestoreDomainHash(dependency)) return { kind: 'source_changed', reason: 'dependency_changed' };
+      current.set(dependency.kind + ':' + dependency.id, source);
+    }
+    const resolvedSources: SummaryResolvedSource[] = [];
+    for (const unit of manifest.units) {
+      let resolved: SummaryResolvedSource | null;
+      if (unit.kind === 'chat_text') resolved = await resolvedChat(binding, unit.messageId);
+      else {
+        const source = current.get(unit.dependency.kind + ':' + unit.dependency.id);
+        if (!source) return { kind: 'blocked', reason: 'incomplete_dependencies' };
+        resolved = { ...makeSummaryCorrectionSource(source.dependency, source.value),
+          modelMetadata: { kind: unit.dependency.kind, id: unit.dependency.id, version: source.value.version } };
+      }
+      if (!resolved) return { kind: 'suppressed', reason: 'source_missing' };
+      if (firestoreDomainHash(resolved.source) !== firestoreDomainHash(unit)) return { kind: 'source_changed', reason: 'source_changed' };
+      resolvedSources.push(resolved);
+    }
+    if (manifest.kind === 'fresh_message') {
+      const source = manifest.units[0]; if (source.kind !== 'chat_text') return { kind: 'blocked', reason: 'coverage_unverifiable' };
+      const watermark = head.saved && (head.saved.batch || head.usable) ? head.saved.lastSortKey : null;
+      if (watermark !== manifest.appendAfterSortKey || head.input.messages[0]?.id !== source.messageId)
+        return { kind: 'blocked', reason: 'coverage_unverifiable' };
+    } else {
+      const row = await binding.transaction.get(data.ref('conversation_summaries', 'conversation-summary', manifest.repairOf));
+      if (!row.exists) return { kind: 'suppressed', reason: 'source_missing' };
+      const saved = open(binding, 'conversation-summary', manifest.repairOf, savedSummarySchema, row);
+      if (!saved.batch || saved.summary.coverageScope || saved.summary.id !== manifest.repairOf
+        || saved.summary.childId !== binding.scope.childId || row.get('lastMessageSortKey') !== saved.batch.lastMessageSortKey
+        || JSON.stringify(saved.summary.coveredMessageIds) !== JSON.stringify(manifest.coveredMessageIds))
+        return { kind: 'blocked', reason: 'coverage_unverifiable' };
+      if (saved.batch.authorizationVersion !== binding.authorizationVersion)
+        return { kind: 'blocked', reason: 'source_authority_changed' };
+      if (row.get('currentBatch') !== true) {
+        const proof = await replacementProof(binding, saved);
+        return proof ? { kind: 'already_covered', proof } : { kind: 'blocked', reason: 'coverage_unverifiable' };
+      }
+    }
+    return { kind: 'eligible', manifest, resolvedSources };
+  }
+  async function rebuildSummarySource(binding: Binding, rawRevision: PrivateSummarySourceRevision): Promise<Exclude<SummarySourceDecision, { kind: 'no_work' }>> {
+    requirePrivateSummary(binding);
+    const revision = domainParse(summarySourceRevisionSchema, rawRevision), original = revision.manifest;
+    const old = await revalidateSource(binding, revision);
+    if (old.kind !== 'source_changed') return old;
+    const head = await summaryInput(binding);
+    type Current = Extract<Awaited<ReturnType<typeof currentDependency>>, { kind: 'current' }>;
+    const graph = new Map<string, Current>(), corrections = new Set<string>();
+    const keyOf = (value: SummaryDependency) => value.kind + ':' + value.id;
+    const oldGraph = new Map(original.dependencies.map(value => [keyOf(value), value]));
+    const priorCorrections = new Set(original.units.flatMap(unit => unit.kind === 'correction_json' ? [keyOf(unit.dependency)] : []));
+    const add = (value: Current, correction: boolean) => {
+      const key = keyOf(value.dependency), prior = graph.get(key);
+      if (prior && firestoreDomainHash(prior.dependency) !== firestoreDomainHash(value.dependency)) return false;
+      graph.set(key, value); if (correction || priorCorrections.has(key)) corrections.add(key); return true;
+    };
+    for (const declared of original.dependencies) {
+      const current = await currentDependency(binding, declared); if (current.kind !== 'current') return current;
+      const changed = firestoreDomainHash(current.dependency) !== firestoreDomainHash(declared);
+      if (!add(current, changed)) return { kind: 'blocked', reason: 'incomplete_dependencies' };
+      if (declared.kind === 'fact') {
+        const source = (current.value as MemoryFact).source;
+        if (source.kind === 'care_record') {
+          const dependency: SummaryDependency = { kind: 'care', id: source.recordId, version: source.version, validUntil: null };
+          const care = await currentDependency(binding, dependency); if (care.kind !== 'current') return care;
+          if (care.dependency.version !== dependency.version || !add(care, !oldGraph.has(keyOf(dependency))))
+            return { kind: 'blocked', reason: 'incomplete_dependencies' };
+        }
+      }
+    }
+    const dependencies = [...graph.values()].map(value => value.dependency);
+    if (!summaryBatchSchema.shape.dependencies.safeParse(dependencies).success) return { kind: 'blocked', reason: 'incomplete_dependencies' };
+    const resolvedSources: SummaryResolvedSource[] = [];
+    for (const messageId of original.coveredMessageIds) {
+      const resolved = await resolvedChat(binding, messageId); if (!resolved) return { kind: 'suppressed', reason: 'source_missing' };
+      resolvedSources.push(resolved);
+    }
+    if (original.kind === 'fresh_message') {
+      const watermark = head.saved && (head.saved.batch || head.usable) ? head.saved.lastSortKey : null;
+      if (watermark !== original.appendAfterSortKey || head.input.messages[0]?.id !== original.coveredMessageIds[0])
+        return { kind: 'blocked', reason: 'coverage_unverifiable' };
+    }
+    for (const [key, current] of graph) if (corrections.has(key)) resolvedSources.push({
+      ...makeSummaryCorrectionSource(current.dependency, current.value),
+      modelMetadata: { kind: current.dependency.kind, id: current.dependency.id, version: current.value.version } });
+    const units = resolvedSources.map(value => value.source);
+    // Incidental head/global-basis movement is not a source revision.
+    if (firestoreDomainHash(units) === firestoreDomainHash(original.units)
+      && firestoreDomainHash(dependencies) === firestoreDomainHash(original.dependencies)) return { kind: 'eligible', manifest: original, resolvedSources };
+    const manifest = summaryManifestSchema.parse({ ...original, sourceBasis: head.current.basis, dependencies, units });
+    return { kind: 'eligible', manifest, resolvedSources };
+  }
+  /** Store-only serializer for a completed immutable source. The work coordinator proves the terminal chain. */
+  async function prepareCompletedWorkWrite(binding: Binding, input: { revision: PrivateSummarySourceRevision; text: string }, operationId: string): Promise<PreparedCompletedSummary> {
+    requirePrivateSummary(binding);
+    const revision = domainParse(summarySourceRevisionSchema, input.revision), text = domainParse(summarySaveSchema.shape.text, input.text);
+    const row = await binding.transaction.get(data.ref('private_summary_revisions', 'private-summary-revision', revision.id));
+    if (!row.exists) domainReject('private_summary_source_missing');
+    const persisted = open(binding, 'private-summary-revision', revision.id, summarySourceRevisionSchema, row);
+    if (firestoreDomainHash(persisted) !== firestoreDomainHash(revision)) domainReject('private_summary_source_binding');
+    const source = await revalidateSource(binding, persisted);
+    if (source.kind !== 'eligible') return source;
+    const manifest = persisted.manifest, id = summaryId(binding);
+    const headRow = await binding.transaction.get(data.ref('conversation_summary_heads', 'conversation-summary-head', id));
+    const head = headRow.exists ? open(binding, 'conversation-summary-head', id, savedSummarySchema, headRow) : null;
+    if (head?.summary.coverageScope) domainReject('summary_binding', 500);
+    const lastUnit = manifest.units[manifest.coveredMessageIds.length - 1];
+    if (lastUnit.kind !== 'chat_text') domainReject('private_summary_source_binding');
+    const lastMessageSortKey = lastUnit.sortKey;
+    if (manifest.kind === 'repair_batch') {
+      if (!head || head.lastSortKey < lastMessageSortKey) return { kind: 'blocked', reason: 'coverage_unverifiable' };
+      const originalRow = await binding.transaction.get(data.ref('conversation_summaries', 'conversation-summary', manifest.repairOf));
+      const original = open(binding, 'conversation-summary', manifest.repairOf, savedSummarySchema, originalRow);
+      if (!original.batch || original.batch.lastMessageSortKey !== lastMessageSortKey) return { kind: 'blocked', reason: 'coverage_unverifiable' };
+    }
+    const value: ConversationSummary = { id: randomUUID(), childId: binding.scope.childId, version: (head?.summary.version ?? 0) + 1,
+      text, createdAt: new Date().toISOString(), previousId: null, coveredMessageIds: manifest.coveredMessageIds,
+      lastCoveredMessageId: manifest.coveredMessageIds.at(-1)! };
+    const messages = source.resolvedSources.flatMap(unit => unit.source.kind === 'chat_text'
+      ? [domainParse(z.object({ createdAt: time }), unit.modelMetadata, 'private_summary_source_binding')] : []);
+    const corrections = source.resolvedSources.flatMap(unit => unit.source.kind === 'correction_json'
+      ? [{ kind: unit.source.dependency.kind, current: JSON.parse(unit.sourceText) }] : []);
+    const period = summarySourcePeriod(messages, corrections);
+    if (period) value.sourcePeriod = period;
+    const dependencies = manifest.dependencies;
+    const expiry = summaryExpiry(dependencies.map(item => item.validUntil));
+    if (Number.isNaN(expiry)) domainReject('summary_validity_unknown');
+    const saved: SavedSummary = { summary: value, basis: manifest.sourceBasis,
+      validUntil: expiry === Infinity ? null : new Date(expiry).toISOString(),
+      lastSortKey: manifest.kind === 'repair_batch' ? head!.lastSortKey : lastMessageSortKey,
+      batch: { dependencies, sourceCoverageComplete: manifest.sourceCoverageComplete, authorizationVersion: persisted.authorizationVersion,
+        lastMessageSortKey, replaces: manifest.repairOf } };
+    return { kind: 'prepared', ...await prepareSavedSummaryWrite(binding, saved, operationId) };
+  }
+  async function prepareSavedSummaryWrite(binding: Binding, saved: SavedSummary, operationId: string): Promise<Prepared<ConversationSummary>> {
+    const value = saved.summary, batch = saved.batch;
+    if (!batch) domainReject('summary_binding', 500);
+    const change = await binding.prepareChange(operationId, 'memory', false), id = summaryId(binding);
+    const headEnvelope = { ...data.tags(binding.scope), ...data.seal('conversation-summary-head', id, binding.scope, savedSummarySchema, saved, value.version) };
+    const revision = { ...data.tags(binding.scope), entityId: value.id, entityVersion: value.version, currentBatch: true, lastMessageSortKey: batch.lastMessageSortKey,
+      ...data.seal('conversation-summary', value.id, binding.scope, savedSummarySchema, saved, value.version) };
+    return { value, changeSeq: change.changeSeq, commit() {
+      change.commit(); binding.transaction.set(data.ref('conversation_summary_heads', 'conversation-summary-head', id), headEnvelope);
+      binding.transaction.create(data.ref('conversation_summaries', 'conversation-summary', value.id), revision);
+      if (batch.replaces) binding.transaction.update(data.ref('conversation_summaries', 'conversation-summary', batch.replaces), { currentBatch: false });
+    } };
+  }
   async function prepareSummaryWrite(binding: Binding, raw: unknown, operationId: string): Promise<Prepared<ConversationSummary>> {
     const input = domainParse(summarySaveSchema, raw), head = await summaryInput(binding);
     const repair = input.repairOf ? await repairInput(binding, input.repairOf) : null;
@@ -478,15 +859,9 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     if (Number.isNaN(expiry)) domainReject('summary_validity_unknown');
     const saved: SavedSummary = { summary: value, basis: input.basis, validUntil: expiry === Infinity ? null : new Date(expiry).toISOString(), lastSortKey,
       batch: { dependencies, sourceCoverageComplete: sourceState.sourceCoverageComplete, authorizationVersion: binding.authorizationVersion, lastMessageSortKey, replaces: input.repairOf ?? null } };
-    const change = await binding.prepareChange(operationId, 'memory', false), id = summaryId(binding);
-    const headEnvelope = { ...data.tags(binding.scope), ...data.seal('conversation-summary-head', id, binding.scope, savedSummarySchema, saved, value.version) };
-    const revision = { ...data.tags(binding.scope), entityId: value.id, entityVersion: value.version, currentBatch: true, lastMessageSortKey,
-      ...data.seal('conversation-summary', value.id, binding.scope, savedSummarySchema, saved, value.version) };
-    return { value, changeSeq: change.changeSeq, commit() {
-      change.commit(); binding.transaction.set(data.ref('conversation_summary_heads', 'conversation-summary-head', id), headEnvelope);
-      binding.transaction.create(data.ref('conversation_summaries', 'conversation-summary', value.id), revision);
-      if (input.repairOf) binding.transaction.update(data.ref('conversation_summaries', 'conversation-summary', input.repairOf), { currentBatch: false });
-    } };
+    const prepared = await prepareSavedSummaryWrite(binding, saved, operationId);
+    const progress = await preparePrivateSummaryScanProgress(data, binding, input.repairOf ? 'repair' : 'fresh');
+    return { ...prepared, commit() { prepared.commit(); progress(); } };
   }
   async function direct(userId: string, childId: string, kind: Kind, action: string | undefined, id: string | undefined, raw: unknown) {
     const operationId = randomUUID();
@@ -563,6 +938,12 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     return { ref, saved, row };
   }
   const store: FirestoreMemoryStore = {
+    async readFreshMaintenance(binding) {
+      requirePrivateSummary(binding);
+      const state = await summaryInput(binding), selected = selectSummaryBatchMessages(state.input.messages);
+      return selected.messages.length ? { ...state.input, previous: null, messages: selected.messages,
+        moreUncovered: state.input.moreUncovered || selected.moreUncovered } : null;
+    },
     forSharedSpace(spaceId) {
       domainParse(uuid, spaceId);
       const access = <T>(u: string, c: string, read: (b: Binding) => Promise<T>) =>
@@ -588,7 +969,58 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
         createTopic: mutationDenied, changeTopic: mutationDenied, reopenTopic: mutationDenied, delete: mutationDenied,
       };
     },
-    mutation, prepareSummaryWrite, readSummaryRevision,
+    async readSummaryScanHead(binding) {
+      requirePrivateSummary(binding);
+      const head = await summaryInput(binding);
+      const rows = await binding.transaction.get(scoped(binding, 'conversation_summaries').where('currentBatch', '==', true)
+        .orderBy('lastMessageSortKey', 'desc').orderBy('__name__', 'desc').limit(1));
+      let upperSortKey: string | null = null;
+      if (rows.docs[0]) {
+        const row = rows.docs[0], id = row.get('entityId');
+        const saved = open(binding, 'conversation-summary', id, savedSummarySchema, row);
+        if (saved.summary.id !== id || saved.summary.childId !== binding.scope.childId || saved.summary.coverageScope || !saved.batch
+          || saved.summary.version !== row.get('recordVersion') || row.id !== data.ref('conversation_summaries', 'conversation-summary', id).id
+          || row.get('lastMessageSortKey') !== saved.batch.lastMessageSortKey) domainReject('summary_binding', 500);
+        upperSortKey = saved.batch.lastMessageSortKey;
+      }
+      return { basis: head.input.basis, freshCaughtUp: head.input.messages.length === 0 && !head.input.moreUncovered, upperSortKey };
+    },
+    async readSummaryScanPage(binding, input) {
+      requirePrivateSummary(binding);
+      domainParse(z.object({ upperSortKey: z.string().regex(/^[0-9]{19}$/u), after: z.object({
+        sortKey: z.string().regex(/^[0-9]{19}$/u), id: uuid }).strict().nullable(), limit: z.number().int().min(1).max(4) }).strict(), input);
+      let query = scoped(binding, 'conversation_summaries').where('currentBatch', '==', true)
+        .where('lastMessageSortKey', '<=', input.upperSortKey).orderBy('lastMessageSortKey', 'desc').orderBy('__name__', 'desc').limit(input.limit);
+      if (input.after) query = query.startAfter(input.after.sortKey, data.ref('conversation_summaries', 'conversation-summary', input.after.id).id);
+      const rows = await binding.transaction.get(query);
+      const items = rows.docs.map(row => {
+        const id = row.get('entityId'), saved = open(binding, 'conversation-summary', id, savedSummarySchema, row);
+        if (saved.summary.id !== id || saved.summary.childId !== binding.scope.childId || saved.summary.coverageScope || !saved.batch
+          || row.id !== data.ref('conversation_summaries', 'conversation-summary', id).id || saved.summary.version !== row.get('recordVersion')
+          || row.get('lastMessageSortKey') !== saved.batch.lastMessageSortKey) domainReject('summary_binding', 500);
+        return { id: saved.summary.id, sortKey: saved.batch.lastMessageSortKey, version: saved.summary.version };
+      });
+      return { items, exhausted: rows.size < input.limit };
+    },
+    mutation, prepareSummaryWrite, prepareCompletedWorkWrite, readSummaryRevision,
+    selectSource, revalidateSource, readFastSource,
+    rebuildSummarySource,
+    async readSummaryLineageTargets(binding, rawTarget) {
+      requirePrivateSummary(binding);
+      const input = domainParse(z.discriminatedUnion('kind', [z.object({ kind: z.literal('next_fresh') }).strict(),
+        z.object({ kind: z.literal('repair_batch'), summaryId: uuid }).strict()]), rawTarget);
+      let target: SummaryLineageTarget;
+      if (input.kind === 'next_fresh') {
+        const first = (await summaryInput(binding)).input.messages[0];
+        if (!first) return [];
+        target = { kind: 'fresh_message', messageId: first.id };
+      } else {
+        // A deleted/replaced repair source can still have original work and usage. This private,
+        // scoped identity lookup is not source admission; the full reader revalidates afterwards.
+        target = { kind: 'repair_batch', repairOf: input.summaryId };
+      }
+      return [{ target, lineageKey: summaryLineageKeyForTarget(binding.scope, target) }];
+    },
     readImportedSummary: async (binding, id) => (await importedSummaryRecord(binding, id))?.saved.summary ?? null,
     prepareImportedSummaryPeriod: async (binding, id, expectedVersion, period) => {
       const entry = await importedSummaryRecord(binding, id);

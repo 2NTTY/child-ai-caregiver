@@ -4,23 +4,56 @@
       "collectionGroup": "yuban_authority_handover_uploads",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "workspaceTag", "order": "ASCENDING" },
-        { "fieldPath": "epochTag", "order": "ASCENDING" },
-        { "fieldPath": "childTag", "order": "ASCENDING" },
-        { "fieldPath": "userTag", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "yuban_authority_handover_uploads",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "workspaceTag", "order": "ASCENDING" },
-        { "fieldPath": "epochTag", "order": "ASCENDING" },
-        { "fieldPath": "childTag", "order": "ASCENDING" },
-        { "fieldPath": "userTag", "order": "ASCENDING" },
-        { "fieldPath": "cleaned", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "cleaned",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
@@ -700,9 +733,18 @@
       "collectionGroup": "yuban_authority_shared_spaces",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "teacherSpaceId", "order": "ASCENDING" },
-        { "fieldPath": "active", "order": "ASCENDING" },
-        { "fieldPath": "entryId", "order": "ASCENDING" }
+        {
+          "fieldPath": "teacherSpaceId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "active",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "entryId",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
@@ -3807,10 +3849,78 @@
         }
       ]
     },
-    {"collectionGroup":"yuban_authority_shared_memberships","queryScope":"COLLECTION","fields":[{"fieldPath":"memberTag","order":"ASCENDING"},{"fieldPath":"active","order":"ASCENDING"},{"fieldPath":"spaceId","order":"ASCENDING"}]},
-    {"collectionGroup":"yuban_authority_shared_memberships","queryScope":"COLLECTION","fields":[{"fieldPath":"spaceId","order":"ASCENDING"},{"fieldPath":"active","order":"ASCENDING"},{"fieldPath":"entryId","order":"ASCENDING"}]},
-    {"collectionGroup":"yuban_authority_resource_shares","queryScope":"COLLECTION","fields":[{"fieldPath":"spaceId","order":"ASCENDING"},{"fieldPath":"active","order":"ASCENDING"},{"fieldPath":"entryId","order":"ASCENDING"}]},
-    {"collectionGroup":"yuban_authority_shared_invitations","queryScope":"COLLECTION","fields":[{"fieldPath":"spaceId","order":"ASCENDING"},{"fieldPath":"active","order":"ASCENDING"},{"fieldPath":"entryId","order":"ASCENDING"}]},
+    {
+      "collectionGroup": "yuban_authority_shared_memberships",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "memberTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "active",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "spaceId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_shared_memberships",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "spaceId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "active",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "entryId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_resource_shares",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "spaceId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "active",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "entryId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_shared_invitations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "spaceId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "active",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "entryId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
     {
       "collectionGroup": "yuban_authority_handover_exports",
       "queryScope": "COLLECTION",
@@ -3841,57 +3951,138 @@
       "collectionGroup": "yuban_authority_handover_import_items",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "workspaceTag", "order": "ASCENDING" },
-        { "fieldPath": "epochTag", "order": "ASCENDING" },
-        { "fieldPath": "childTag", "order": "ASCENDING" },
-        { "fieldPath": "userTag", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "yuban_authority_handover_import_items",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "workspaceTag", "order": "ASCENDING" },
-        { "fieldPath": "epochTag", "order": "ASCENDING" },
-        { "fieldPath": "childTag", "order": "ASCENDING" },
-        { "fieldPath": "userTag", "order": "ASCENDING" },
-        { "fieldPath": "batchId", "order": "ASCENDING" },
-        { "fieldPath": "section", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "batchId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "section",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "yuban_authority_handover_import_mappings",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "workspaceTag", "order": "ASCENDING" },
-        { "fieldPath": "epochTag", "order": "ASCENDING" },
-        { "fieldPath": "childTag", "order": "ASCENDING" },
-        { "fieldPath": "userTag", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "yuban_authority_handover_import_batches",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "workspaceTag", "order": "ASCENDING" },
-        { "fieldPath": "epochTag", "order": "ASCENDING" },
-        { "fieldPath": "childTag", "order": "ASCENDING" },
-        { "fieldPath": "userTag", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "yuban_authority_handover_import_controls",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "workspaceTag", "order": "ASCENDING" },
-        { "fieldPath": "epochTag", "order": "ASCENDING" },
-        { "fieldPath": "childTag", "order": "ASCENDING" },
-        { "fieldPath": "userTag", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
@@ -3984,9 +4175,88 @@
         }
       ]
     },
-    {"collectionGroup": "yuban_authority_concern_events", "queryScope": "COLLECTION", "fields": [{"fieldPath": "workspaceTag", "order": "ASCENDING"}, {"fieldPath": "epochTag", "order": "ASCENDING"}, {"fieldPath": "userTag", "order": "ASCENDING"}, {"fieldPath": "childTag", "order": "ASCENDING"}, {"fieldPath": "timelineId", "order": "ASCENDING"}, {"fieldPath": "sequence", "order": "ASCENDING"}]},
-    {"collectionGroup": "yuban_authority_chat_imported_messages", "queryScope": "COLLECTION", "fields": [{"fieldPath": "workspaceTag", "order": "ASCENDING"}, {"fieldPath": "epochTag", "order": "ASCENDING"}, {"fieldPath": "userTag", "order": "ASCENDING"}, {"fieldPath": "childTag", "order": "ASCENDING"}, {"fieldPath": "createdAt", "order": "DESCENDING"}, {"fieldPath": "messageId", "order": "DESCENDING"}]},
-    {"collectionGroup": "yuban_authority_chat_imported_messages", "queryScope": "COLLECTION", "fields": [{"fieldPath": "workspaceTag", "order": "ASCENDING"}, {"fieldPath": "epochTag", "order": "ASCENDING"}, {"fieldPath": "userTag", "order": "ASCENDING"}, {"fieldPath": "childTag", "order": "ASCENDING"}]},
+    {
+      "collectionGroup": "yuban_authority_concern_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timelineId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sequence",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_chat_imported_messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "messageId",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_chat_imported_messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        }
+      ]
+    },
     {
       "collectionGroup": "yuban_authority_growth_revisions",
       "queryScope": "COLLECTION",
@@ -4036,6 +4306,242 @@
         {
           "fieldPath": "__name__",
           "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_works",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_revisions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_attempts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_usage",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_works",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_works",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_works",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "workState",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_works",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "completionWakeState",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_agent_runs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_agent_runs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
         }
       ]
     }
@@ -4891,13 +5397,72 @@
     {
       "collectionGroup": "yuban_authority_handover_import_batches",
       "fieldPath": "growthImportScopes",
-      "indexes": [{ "arrayConfig": "CONTAINS", "queryScope": "COLLECTION" }]
+      "indexes": [
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        }
+      ]
     },
     {
       "collectionGroup": "yuban_authority_handover_import_controls",
       "fieldPath": "*",
       "indexes": []
     },
-    {"collectionGroup": "yuban_authority_chat_imported_messages", "fieldPath": "*", "indexes": []}
+    {
+      "collectionGroup": "yuban_authority_chat_imported_messages",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_works",
+      "fieldPath": "ciphertext",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_works",
+      "fieldPath": "recovery",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_revisions",
+      "fieldPath": "ciphertext",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_revisions",
+      "fieldPath": "recovery",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_attempts",
+      "fieldPath": "ciphertext",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_attempts",
+      "fieldPath": "recovery",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_usage",
+      "fieldPath": "ciphertext",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_usage",
+      "fieldPath": "recovery",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_scans",
+      "fieldPath": "ciphertext",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_private_summary_scans",
+      "fieldPath": "recovery",
+      "indexes": []
+    }
   ]
 }

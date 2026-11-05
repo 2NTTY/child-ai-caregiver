@@ -56,6 +56,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
+**本輪指定摘要修復：**接續已合併 #410 的剩餘問題，整合覆核 #447，見 [REQ005-SUMMARY01](#req005-summary01)。單一候選已完成本地程式驗收，durable 摘要未啟用、未部署，正式啟用仍有前置；不改下列 P4 交付與未驗狀態。
+
 **匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 的原生 runtime 指紋在本機與 EAS 不一致，本次未產出 APK。下次需要批量安裝時，先核對同一建置封包與依賴位置，再建置、驗簽及覆蓋安裝。[原建置紀錄](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)
 
 **當前入口（2026-11-05）為 [P4-HANDOVER01](#p4-handover01)。** 原站 API／worker／Web `2be85951` 已可比較及還原本人記憶事實、待答主題與私人交代，沿原服務保留來源有效性、候選身份、主題終態及刪除後的新 ID 對應。下一步接照片、錄音與一般檔案的本人原件還原，再補其餘帳戶備份缺口。原生大型包與分享留待批量建置和設備驗收，D 接點等對應接口穩定。[本批證據](artifacts/verification/P4_ORIGINAL_MEMORY_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)／[其他進度](STATUS.md)
@@ -87,6 +89,19 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 **本批整合：**#244 已收束 review 過的角色、本地環境及個人模型接點；程式基線 `00aa6ad`，合併批次沿用原驗證，部署另見MODEL02。[DEV-AGENT01](#dev-agent01) 已可供協作者在分支改完即本地試用，方法見[本地開發入口](docs/AGENT_LOCAL.md)。環境交付與角色品質／功能增補分開；不因長來源或多模態尚缺能力而另造測試 Agent、阻止使用現有環境。
 
 **保留的前批交付：**[MODEL-SELF03](#model-self03)可由用戶在 Web／Android 自行填寫憑證與模型試用；#270 共用導航及 #271 延後聯合補驗已合併，導航接線已隨 `382d217` Web／Android OTA 發布，真機效果待核。依使用者指示，[DEV02](#dev-agent02)最後引用／審核及聯合補驗等待四個 Agent 真正完成且協作者先自行檢查，不提前重跑或接管。iOS 不以新模型驗收取代這些缺口。
+
+<a id="req005-summary01"></a>
+### REQ005-SUMMARY01：#410 後續修復與 #447 單一摘要整合（候選，未啟用）
+
+- **基線／來源：**候選已接 master `f0149b79e2f7f653f63559a237f53ee3b7a34b4c`，保留上游原件記憶／私人交代還原、知識傳送與既有 P4 能力。#410 已合併，本包是其後續修復。#447 原 head `dc1f16cfb39ac74fe5d4d13ef250b88fdf7ffc34` 保留追溯；替換前 head `c14cea1e1b9a65c7c22665ed1c5116632a8a7e6c` 經獨立核對只是 rebase，原四項 blocker 未修。本包採下述單一方案替換，驗收按封定基線分開記錄。
+- **唯一方案：**Firestore 長來源／repair 只沿 durable work、原 grant、lineage 及原帳續跑；不引入普通 `summarySave.part` 或第二套 `conversation-summary-progress` store。完整 prefix fast 與 SQL 原路徑保留，partial 不可冒充完整 coverage。完整 native request fitting、來源／授權重驗、終態先保存後 cleanup、sourcePeriod 與 expiry 均沿現有契約，接口見[整合交接](docs/summary-durable-integration-handoff.md)。
+- **Fast／排程：**原 fast run 在派發前持久綁來源及原 root context；只有原 root 已確實 stopped、所有 admission 為零並保存證明，才可轉一次 T0。ACK 晚到由排程查回原證明／結果，不重開帳。公平持久 scan 固定每輪上界，沿原 source／work 身份續頁；unknown 只在最後排程交易重新核實完整原 claim/run/pointers 後才可解除全域阻擋，pending 清除亦須精確 request CAS。
+- **歷史完整驗收（88ce04f）：**該封定候選通過 84 個完整測試檔／548 項及 CI 契約 6 項，合計 554 項全過、零跳過。包含 P4 原件備份與記憶匯入三整檔、最新私人來源刪除／報告／管理相容面，以及還原後清理 6 項回歸。這不是所有 P4 功能的全面驗收。完整 TAP、退出碼與來源保全經獨立核對，來源 hash 及每檔數字見[公開驗收紀錄](artifacts/verification/REQ005_DURABLE_SUMMARY_20261104.json)；精確 PR head 遠端必要 CI 仍須成功後才正常合併。
+- **前次整合補驗（235ddd3）：**該次同源候選另通過 13 個完整測試檔／44 項（已含 CI 契約 6 項），涵蓋知識索引批次、runtime／worker、backup／restore、索引比較及摘要刪除相容面，零失敗或跳過，並完成獨立核對。這是上述 554 項歷史驗收的定向補驗，不相加或冒稱新基線全套已重跑。該次 registry 為 84 檔／549 項＋CI 6 項，未以本機定向結果代填遠端全套。
+- **最新整合補驗（f0149b）：**上游 80 路徑按實際交集整合；同源候選 21 個完整測試檔／87 項（含 CI 契約 6 項）全部通過，零跳過。新建立的私人交代清理 job 必先完成 summary stages 才能發完成證明，並通過真還原／新 epoch／重開清理流程。restore 生成的歷史 done proof 保留原件刪除語義，不代表 summary 清理完成；advance 沿原相容流程補掃。原件交代測試的舊停用記憶分區假設按已啟用上游契約修正，保留原拒絕與兩個記憶分區正例；沒有改產品權限。歷史 554、前次 44 與本次 87 不相加，未冒稱最新本機全套重跑。最新 registry 為 87 檔／555 項＋CI 6 項，遠端精確 head 預期 561 項仍須通過。
+- **型別狀態：**最新 f0149b 同源候選沿原 `tsconfig.server.json` 的 server／shared／test 全 include 完成 native TypeScript 檢查，exit 0、零診斷；未縮 include／strict。正式命令及 CI 只對 tsc 明確設定 3 GiB heap。先前資源限額、OOM、型別診斷與手工 fixture 失敗均保留，沒有改寫成通過。
+- **正式啟用阻塞：**尚無可信正式累積 work-grant 政策數值，亦無可證舊 writer 從 inventory 上界捕獲之前至今持續被 fenced 的實際 authority reader；`installed:true` 或 `control.paused` 不能代證舊 binary 已停止。inventory 目前僅保守未啟用結構，舊身份或完整映射缺失仍為 unmapped。正式 durable 入口 fail closed；從未啟用且沒有 retained durable 歷史的 scope 可維持原短 fast，不以 policy 缺失回退已啟用 scope。
+- **恢復／未驗／收尾：**restore 新 epoch 維持 `restore_suspended`，保留原 grant、usage 及 reservation，不授 resume、transfer 或新空帳；R0／R2 仍 blocked。各階段本地驗收、最新完整型別與獨立 review 已完成；精確 PR head 必要 CI 仍須通過，才可依正常分支保護合併。正式政策、舊 writer fencing、雲端索引 READY、真 Firestore／模型、設備與正式啟用另有前置；本包沒有 GCP 或產品部署操作，不稱用戶問題已上線修復或 REQ-005 全案完成。
 
 <a id="agent-review-repair01"></a>
 ### AGENT-REVIEW-REPAIR01：D 的六項 Agent PR 修復與最新需求對齊（候選，未驗收完成）

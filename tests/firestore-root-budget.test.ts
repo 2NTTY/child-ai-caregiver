@@ -212,3 +212,23 @@ test('Firestore accepts current Agent limits, preserves every reservation and re
     assert.deepEqual((await reopened.open(legacy)).limits, legacy.binding.limits);
   } finally { budget.close(); }
 });
+
+test('transaction-bound root reads preserve original decoding, missing/conflict errors and expired versus frozen state without writing', async () => {
+  const f = fixture(), input = context();
+  const read = (value = input) => f.options.database.runTransaction(tx => f.service.readInTransaction(value, tx));
+  await assert.rejects(read(), code('root_not_found'));
+  await f.service.open(input); await f.service.reserve(input, model());
+  const before = structuredClone([...f.records]);
+  assert.deepEqual(await read(), await f.service.read(input));
+  assert.deepEqual([...f.records], before);
+  await assert.rejects(read(context({ settingsVersion: 'different-profile' })), code('binding_conflict'));
+  f.setNow(input.binding.deadlineAtMs);
+  assert.equal((await read()).status, 'expired');
+  assert.deepEqual(await read(), await f.service.read(input));
+  assert.deepEqual([...f.records], before, 'Read never freezes the original root');
+  await f.service.stop(input);
+  const frozen = structuredClone([...f.records]);
+  assert.equal((await read()).status, 'stopped');
+  assert.deepEqual(await read(), await f.service.read(input));
+  assert.deepEqual([...f.records], frozen);
+});

@@ -25,3 +25,8 @@ export const topicChangeSchema = z.object({ expectedVersion: version, status: z.
 export const topicReopenSchema = z.object({ expectedVersion: version, reason: text(500) }).strict();
 export const summarySaveSchema = z.object({ previousVersion: z.number().int().nonnegative(), text: text(6000),
   basis: z.string().regex(/^[a-f0-9]{64}$/u), coveredMessageIds: z.array(z.uuid()).min(1).max(50), repairOf: z.uuid().optional() }).strict();
+
+const uuid = z.uuid(), time = z.iso.datetime({ offset: true });
+export const summaryDependencySchema = z.object({ kind: z.enum(['profile', 'fact', 'topic', 'care']), id: uuid, version: z.number().int().nonnegative(), validUntil: time.nullable() }).strict();
+export const summaryBatchSchema = z.object({ dependencies: z.array(summaryDependencySchema).max(64), sourceCoverageComplete: z.boolean().optional(), authorizationVersion: z.string(),
+  lastMessageSortKey: z.string().regex(/^[0-9]{19}$/u), replaces: uuid.nullable() }).strict();

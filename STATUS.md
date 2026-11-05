@@ -4,6 +4,8 @@
 
 ## 目前與接手
 
+- **#410 後續修復／#447 整合（2026-11-04 UTC）：**候選已整合 master `f0149b`，同源完整型別及 21 整檔／87 項定向補驗全過（含 CI 6 項），保留歷史 554 項及前次 44 項證據，不相加。最新精確 PR head 的 87 檔／555 項＋CI 6 項，561 項必要 CI 仍待驗。單一 durable 慢路徑、完整 fast／SQL與上游原件還原能力保留；正式 work-grant 政策與持續 fencing reader 仍缺，durable 未啟用、未部署，R0／R2 blocked，不稱用戶問題已上線修復。見[本輪範圍與 gate](PLAN.md#req005-summary01)。
+
 - **11 月 5 日 07:09（香港）** 原站 API／worker／Web `2be85951` 已接本人記憶事實／主題還原及共用比較表單。合成簽署包核實原來源、版本、防重、墓碑恢復及主題終態；必要型別、Web 建置和站外健康／指紋通過。其餘附件原件還原、完整帳戶還原、雲端災難還原及正式帳戶／手機操作仍待接續。[發布紀錄](artifacts/verification/P4_ORIGINAL_MEMORY_20261105.json)
 
 - **11 月 5 日 05:51（香港）** 原站 `792b7bee` 已可將簽署備份內的私人交代還原到現存同 ID 原件，並在新報告比較分段筆數。原有 Android 安裝繼續使用既有功能，新表單及原生分享文案待批量發布。[本批發布證據](artifacts/verification/P4_INSTRUCTIONS_REPORTS_DELIVERY_20261105.json)

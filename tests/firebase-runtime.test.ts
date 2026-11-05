@@ -14,7 +14,8 @@ test('production Firebase composition constructs real SDK clients without SQL co
   try {
     runtime = await openFirebaseRuntime({ NODE_ENV: 'production', SERVER_ORIGIN: 'https://synthetic.example.test',
       GCP_PROJECT_ID: 'synthetic-care-project', FIREBASE_DATABASE_ID: 'synthetic-care',
-      FIREBASE_NAMESPACE: 'synthetic_care', STORAGE_KEY_FILE: key });
+      FIREBASE_NAMESPACE: 'synthetic_care', FIREBASE_PHOTO_BUCKET: 'synthetic-care-photos',
+      FIREBASE_ERASURE_BUCKET: 'synthetic-care-erasures', STORAGE_KEY_FILE: key });
     const response = await runtime.handler(new Request('https://synthetic.example.test/healthz'));
     assert.deepEqual(await response.json(), { status: 'ok', storage: 'firestore', stage: 'foundation' });
     assert.equal(runtime.database.databaseId, 'synthetic-care');
@@ -23,7 +24,11 @@ test('production Firebase composition constructs real SDK clients without SQL co
     assert.equal(anonymous.status, 401);
     assert.equal((await anonymous.json()).error.code, 'unauthorized');
     assert.equal(typeof runtime.online.submit, 'function');
-    const unsupported = await runtime.handler(new Request('https://synthetic.example.test/api/children/00000000-0000-4000-8000-000000000001/documents'));
+    const documents = await runtime.handler(new Request('https://synthetic.example.test/api/children/00000000-0000-4000-8000-000000000001/documents'));
+    assert.equal(documents.status, 401);
+    assert.equal((await documents.json()).error.code, 'unauthorized');
+    // Documents is wired in production; use an unknown route to exercise the unavailable-domain fallback.
+    const unsupported = await runtime.handler(new Request('https://synthetic.example.test/api/synthetic-unimplemented-domain'));
     assert.equal(unsupported.status, 503);
     assert.equal((await unsupported.json()).error.code, 'firebase_domain_not_ready');
     const first = runtime.close(); assert.equal(runtime.close(), first); await first;
