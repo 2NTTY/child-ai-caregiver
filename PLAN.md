@@ -56,6 +56,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
+**本輪原生背景保存修復：**[DM-F02](#dm-f02-background-copy) 只補回等待圖片複製；最新 master 整合後 18 案及完整 frontend 型別已通過。獨立整合 review、精確 PR head 必要 CI 及原生設備驗收仍待完成，未發布。
+
 **本輪 Agent 收據閱讀修復：**[AGENT-F01](#agent-f01-receipt-read) 的最小 client 相容行、34 案及有界本地 mounted／完整型別已驗；獨立整合 review、精確 PR head 的必要遠端 CI 尚待完成，未發布。
 
 **本輪指定摘要修復：**接續已合併 #410 的剩餘問題，整合覆核 #447，見 [REQ005-SUMMARY01](#req005-summary01)。單一候選已完成本地程式驗收，durable 摘要未啟用、未部署，正式啟用仍有前置；不改下列 P4 交付與未驗狀態。
@@ -91,6 +93,15 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 **本批整合：**#244 已收束 review 過的角色、本地環境及個人模型接點；程式基線 `00aa6ad`，合併批次沿用原驗證，部署另見MODEL02。[DEV-AGENT01](#dev-agent01) 已可供協作者在分支改完即本地試用，方法見[本地開發入口](docs/AGENT_LOCAL.md)。環境交付與角色品質／功能增補分開；不因長來源或多模態尚缺能力而另造測試 Agent、阻止使用現有環境。
 
 **保留的前批交付：**[MODEL-SELF03](#model-self03)可由用戶在 Web／Android 自行填寫憑證與模型試用；#270 共用導航及 #271 延後聯合補驗已合併，導航接線已隨 `382d217` Web／Android OTA 發布，真機效果待核。依使用者指示，[DEV02](#dev-agent02)最後引用／審核及聯合補驗等待四個 Agent 真正完成且協作者先自行檢查，不提前重跑或接管。iOS 不以新模型驗收取代這些缺口。
+
+<a id="dm-f02-background-copy"></a>
+### DM-F02：等待原生背景圖片複製（本地已驗，遠端待驗）
+
+- **範圍／契約：**鎖定 Expo FileSystem 57.0.7 的 `File.copy` 返回 Promise，Android／iOS 均以 AsyncFunction 登記。只在 `frontend/src/platform/background-storage.native.ts` 補 `await input.copy(file)`，完成複製後才驗候選檔、保存 pointer 及按原語義清理舊檔；拒絕回到既有 catch。不改 provider、scope、身份／權限、Web storage、原圖限制、package／lock／tsconfig，不新增 owner、同步 copy、重試或取消能力。
+- **來源／驗證：**精確基線 `4a9f6bd992f985f364f81b478dc1e42c440642f2`、tree `31709ba6cba5fb967eeca06e5616f782655948ab`，分支 `codex/background-copy-await-20261105`。同 tree 的本地來源 commit 與遠端 merge commit 分開記錄。整合保留原整檔十二案並新增六案；必要 pending-copy 案於本次未修基線 **0/1 RED**，修後完整 **18/18、零 skip**。完整原 frontend config 重新 noEmit **1958 program files、exit 0、零診斷**；因 master 的 client 檔屬 program，沒有沿用較舊基線型別結果。[版本、命令及界線](artifacts/verification/DM_F02_BACKGROUND_COPY_20261105.json)。
+- **測試層級：**執行真 storage／provider module；File／Directory／Crypto／SecureStore、React／focus 是明示合成。驗等待 copy／pointer、防重、失敗 rollback、完成後大小驗證、舊檔清理失敗，以及 switch／logout／unmount 的晚完成隔離。先前獨立三案及 partial-positive-size baseline RED 是另份已接受證據，不與本次十八案相加。SDK source／types 相符不是手機 binary 驗收。
+- **CI／完成門檻：**[專用離線 workflow](.github/workflows/background-copy-offline.yml)只對同倉本分支、目標 master 的精確 PR head 執行，沿原 lock 安裝、關閉 lifecycle scripts，離線隔離後套既有 patches，再跑同一完整十八案及原完整 frontend noEmit。零 skip／精確測試數由既有共用 gate 核實；不搬外置 review harness 或私人路徑入 repo。**遠端 CI 尚未執行**，本地只重播測試／型別和靜態核對，不冒稱完整隔離 wrapper 已驗。獨立整合 review 與最終 head 必要 CI 通過後才按正常保護交付；其他 workflow skipped 不當 pass。
+- **保留限制：**copy 拒絕的清理自身若再拋錯仍可能遮蓋原錯；pointer failure 測試僅 fail-before-write，不證明 SecureStore uncertain commit 原子性。舊檔 best-effort 清理可留下 app-private orphan；同 durable scope 跨 provider／session 並發、process death、quota／鎖機未修。晚完成可保存原 scope，但不呈現於退休／新 scope，logout 不代表撤回已受理寫入。真設備／native binary、相機相簿、真圖與家庭資料、完整 mounted／瀏覽器／無障礙、模型／服務及正式四十項矩陣仍未驗；沒有部署或以合併代填驗收。
 
 <a id="agent-f01-receipt-read"></a>
 ### AGENT-F01：語音操作收據閱讀相容修復（本地已驗，遠端待驗）

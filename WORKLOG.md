@@ -4716,3 +4716,13 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Verification：必要 baseline voice RED、候選 34/34 GREEN、獨立 10 組保留為分開證據；本次以新 CI test arguments 重播同一 34 案零 skip。原 root／server 完整 noEmit 為 405／3,093 program files、exit 0；未變輸入按 hash 核對後復用，不稱本次重新跑 compiler。真元件 mounted 是一個連續情境、7 段功能／24 次 settled 觀察、9 次合成 GET及零寫入，不把觀察數算獨立測試數。
 - Failure / Repair：baseline／candidate 原 server 各 12 條缺依賴診斷，補既有 lock 同版唯讀引用後全 config 通過。舊六案各 4 PASS／2 既有 shallow loader fail 保留。mounted 的初次 TS-only loader、Worklets 轉譯順序、rAF 及 visibility oracle 失敗保留，最終使用官方轉譯與真 settled visibility；沒有為過測試改產品或偽造可見性。
 - Limitations / Next Action：mounted 依賴本地外置 JSDOM，不隨本 PR 納 CI；最終 head 整檔 34 案及完整 server noEmit 的必要遠端 CI 尚未執行。正常 review／CI 前不合併；無正式服務、真資料、模型、GCP、Site 或部署操作，formal48 全 NOT_RUN。此修復只證明讀取相容，不證明真家庭保存失敗或資料遺失。
+
+
+## 2026-11-05 UTC｜DM-F02 原生背景複製等待修復
+
+- Goal / Actual Work：鎖定 Expo FileSystem 57.0.7 的 copy 為 Promise，原 storage 未等待便讀取目的檔。產品只補 `await input.copy(file)`，不改 pointer／舊檔清理、provider 或持久 owner。
+- AI Assistance / Human Verification：AI 完成 SDK 契約及既有獨立 review 證據核對，將原兩檔最小修整合至 master `4a9f6bd9` 的精確 tree；本地 donor commit 不冒充遠端 merge commit。沒有真人／原生設備驗收；本次整合仍待獨立 review。
+- Changes：原生 storage 一行、既有 background-local 整檔新增六案、專用離線 workflow／gate 及根 PLAN／STATUS／本紀錄；package、lock、tsconfig 及其他產品檔不變。[可公開驗證紀錄](artifacts/verification/DM_F02_BACKGROUND_COPY_20261105.json)。
+- Verification：最新未修基線的必要 pending-copy 案 0/1 RED；最小修後以精確 CI 參數跑原整檔 18/18、零 skip，JS network tripwire 零嘗試。原完整 frontend config 重新 noEmit：1958 program files、exit 0／零診斷、15.411 秒、RSS 1,127,716 KiB，未裁 include 或過濾診斷。既有獨立三案及另一 baseline RED 分開保留，不累加覆蓋。
+- Failure / Repair：原 RED 明確為 copy pending 時 save 已 settle。沿用唯讀、lock 同版依賴；首次依賴 metadata 清單誤列本地不存在的 CI-only patch-package，讀取失敗後改為如實記錄缺件，未補裝或修改共享依賴。測試／型別不需要該 CI 安裝工具。完整遠端 npm ci／namespace wrapper 尚未執行，靜態核對不是遠端通過。
+- Limitations / Next Action：File／Crypto／SecureStore 與 React／focus 有合成 port；清理再次拋錯遮原錯、uncertain pointer commit、跨 session 並發及 app-private orphan 為既有限制。真機 binary／相機相簿、真家庭資料、完整掛載／瀏覽器／無障礙、正式四十項矩陣、模型／正式服務均未驗。獨立整合 review 與精確 head 必要 CI 待完成，沒有建立 PR、遠端提交、合併或部署。
