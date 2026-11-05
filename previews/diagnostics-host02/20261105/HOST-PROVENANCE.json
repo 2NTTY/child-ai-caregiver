@@ -1,0 +1,457 @@
+{
+  "package": "host02-html-patch-preservation",
+  "kind": "EXACT_HTML_PATCH_AND_SCOPED_ACCEPTANCE_SUMMARY_NOT_A_RUNNABLE_PREVIEW",
+  "createdDateUTC": "2026-11-05",
+  "sourceAccess": {
+    "exactHtmlInputs": "Included under before/; byte-identical to the locally verified parent build artifacts.",
+    "exactHtmlOutputs": "Included under after/; byte-identical to the browser-checked host02 candidate.",
+    "fullSourcesAndRuntimeAssets": "Verified locally but not included in this package. No public remote commit is asserted to reproduce those complete candidate source closures.",
+    "baseBranchMeaning": "The Git base commit isolates this preservation packet. It is not asserted to be the source commit of the older application bundles."
+  },
+  "preservedLocalCandidateManifestSha256": "2038504cf3d2750096dbdd752a60c57aac55403b63c4150080db758b07215a6b",
+  "newRuntimePatchApplied": false,
+  "newMetroBuild": false,
+  "changedApplicationFilesPerVariant": [
+    "index.html"
+  ],
+  "variants": [
+    {
+      "variant": "care",
+      "sourceFilesVerifiedLocally": 611,
+      "sourceManifestSha256": "7dfd7d6a0ec4f34e881c18be87e5e4ecb9225f0f87fc34f8c910bb7d7d1ace12",
+      "dependencyManifestSha256": "f0638d6f5c3035eebe2933191b90860ab99821062376356709c0b3bcabad2ed2",
+      "parentRuntimeSha256": "1c603f1d2d048fd7d00beac52752e2ab229f1d9709e424650d06c797acf8fd62",
+      "originalArtifacts": [
+        {
+          "path": "_expo/static/css/appScrollView-6f986a3ecd1fe2401851b9bfaecc47d6.css",
+          "beforeSha256": "c3c3cf3e37c3bdc0cde835d614f2b3b359d6dee61babb0246f4b57a2d9897509",
+          "afterSha256": "c3c3cf3e37c3bdc0cde835d614f2b3b359d6dee61babb0246f4b57a2d9897509",
+          "bytes": 731,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/css/backgroundSurface-b5302b9200592e670418c03284126d3d.css",
+          "beforeSha256": "f75dd2226a593e323998b295c94980d78f4b384714961326e3dd8a6e3b723855",
+          "afterSha256": "f75dd2226a593e323998b295c94980d78f4b384714961326e3dd8a6e3b723855",
+          "bytes": 689,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/css/datePickerAction-3e4d4e9ab56a7138a60b71685ea86299.css",
+          "beforeSha256": "4eb2999cc45a8f1e75e0d0f882900920cf56d5a8eb07335ba604ea21ef2404cb",
+          "afterSha256": "4eb2999cc45a8f1e75e0d0f882900920cf56d5a8eb07335ba604ea21ef2404cb",
+          "bytes": 1348,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css",
+          "beforeSha256": "d8101bc5d3b92e79f678ab77342049357bd134e74d529c2062912bb5dfaa1517",
+          "afterSha256": "d8101bc5d3b92e79f678ab77342049357bd134e74d529c2062912bb5dfaa1517",
+          "bytes": 14266,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/css/paperMotion-6434b3e3c8b5092feeac23f391cbd7d2.css",
+          "beforeSha256": "a45f655c8833b06ae0d8fbeaea146411f0adad9f256e53a21192de0683245a97",
+          "afterSha256": "a45f655c8833b06ae0d8fbeaea146411f0adad9f256e53a21192de0683245a97",
+          "bytes": 210,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/js/web/index-2e1c3893361a7d2895cd145ae4423ca0.js",
+          "beforeSha256": "c6e9730ee8a7a74f7d7b3a16a572d4862ad6c968d0181cb92278abee32c48638",
+          "afterSha256": "c6e9730ee8a7a74f7d7b3a16a572d4862ad6c968d0181cb92278abee32c48638",
+          "bytes": 6001416,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/js/web/index-2e1c3893361a7d2895cd145ae4423ca0.js.map",
+          "beforeSha256": "ca73511bb57413854acad68694f4d36d414fb2df82eb9670a287ba244a10af1b",
+          "afterSha256": "ca73511bb57413854acad68694f4d36d414fb2df82eb9670a287ba244a10af1b",
+          "bytes": 17670701,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialCommunityIcons.6e435534bd35da5fef04168860a9b8fa.ttf",
+          "beforeSha256": "61e8aba5a4e981fe22cf7c8e8bcdbea00476e75c62c37f01bf7ee33361d68428",
+          "afterSha256": "61e8aba5a4e981fe22cf7c8e8bcdbea00476e75c62c37f01bf7ee33361d68428",
+          "bytes": 1307660,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/arrow_down.017bc6ba3fc25503e5eb5e53826d48a8.png",
+          "beforeSha256": "6deca32b56b97fa1fa87facd6996b46cc45190a553400e7febdf1d2093099b57",
+          "afterSha256": "6deca32b56b97fa1fa87facd6996b46cc45190a553400e7febdf1d2093099b57",
+          "bytes": 9456,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/error.d1ea1496f9057eb392d5bbf3732a61b7.png",
+          "beforeSha256": "c15ec72a74d13957211808313d5c35deb7f7606c6d22dbddceb0000d4e0547ad",
+          "afterSha256": "c15ec72a74d13957211808313d5c35deb7f7606c6d22dbddceb0000d4e0547ad",
+          "bytes": 469,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/file.19eeb73b9593a38f8e9f418337fc7d10.png",
+          "beforeSha256": "a69a2edb5b6c60b8433d5b6d23c69f520ccd8a602f3f60e7996e489718bc175c",
+          "afterSha256": "a69a2edb5b6c60b8433d5b6d23c69f520ccd8a602f3f60e7996e489718bc175c",
+          "bytes": 138,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/forward.d8b800c443b8972542883e0b9de2bdc6.png",
+          "beforeSha256": "708a79cf561b8a2a4850ce0254584d3a5231046be08fb7fadf4b6edfdb31178b",
+          "afterSha256": "708a79cf561b8a2a4850ce0254584d3a5231046be08fb7fadf4b6edfdb31178b",
+          "bytes": 188,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/pkg.ab19f4cbc543357183a20571f68380a3.png",
+          "beforeSha256": "27f4d229d440925bf7212d5dfffa45d596b2c7b3bb2905c96b839b2081a1dbeb",
+          "afterSha256": "27f4d229d440925bf7212d5dfffa45d596b2c7b3bb2905c96b839b2081a1dbeb",
+          "bytes": 364,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png",
+          "beforeSha256": "9adb8c5efca932e2b732b293da813bd2e31952263056bce9e2517fec0f0b6a76",
+          "afterSha256": "9adb8c5efca932e2b732b293da813bd2e31952263056bce9e2517fec0f0b6a76",
+          "bytes": 653,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/back-icon.35ba0eaec5a4f5ed12ca16fabeae451d.png",
+          "beforeSha256": "84cf5eb3b20250f69e0e4733beb4da5f417f0682892a5ad1b5e62570753c21b1",
+          "afterSha256": "84cf5eb3b20250f69e0e4733beb4da5f417f0682892a5ad1b5e62570753c21b1",
+          "bytes": 207,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55.png",
+          "beforeSha256": "d03a5cd7a66ef10c5147916f9d5878b2d0a0a5ad46f405a31cd9967efaa55afd",
+          "afterSha256": "d03a5cd7a66ef10c5147916f9d5878b2d0a0a5ad46f405a31cd9967efaa55afd",
+          "bytes": 220,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@2x.png",
+          "beforeSha256": "ab5613d2ce70fa67c5926e831353664945199fc195fa6fe76c5fe3cec452e31a",
+          "afterSha256": "ab5613d2ce70fa67c5926e831353664945199fc195fa6fe76c5fe3cec452e31a",
+          "bytes": 334,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@3x.png",
+          "beforeSha256": "c4e54e6a0a7de636aa153378fbc62ea4a41695bfedf807f90df7b18ffd733f67",
+          "afterSha256": "c4e54e6a0a7de636aa153378fbc62ea4a41695bfedf807f90df7b18ffd733f67",
+          "bytes": 502,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@4x.png",
+          "beforeSha256": "c86bb485eee687e06c500fc4234f51a6784b4530c2ae11d0c76481110bce3105",
+          "afterSha256": "c86bb485eee687e06c500fc4234f51a6784b4530c2ae11d0c76481110bce3105",
+          "bytes": 645,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7.png",
+          "beforeSha256": "b1bc1810ca23e2c38cd76971c43591d726161061240d8b792b05757196ddb528",
+          "afterSha256": "b1bc1810ca23e2c38cd76971c43591d726161061240d8b792b05757196ddb528",
+          "bytes": 141,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@2x.png",
+          "beforeSha256": "cbdf9213e55f65c48d076acd8423b7c9aee4f1b81101ff6c95a38c4cd8a86461",
+          "afterSha256": "cbdf9213e55f65c48d076acd8423b7c9aee4f1b81101ff6c95a38c4cd8a86461",
+          "bytes": 201,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@3x.png",
+          "beforeSha256": "d05c9d30d79f45a78e5585a2e7ec67c6a06a883dd9137e1d5059e8c87b33ce76",
+          "afterSha256": "d05c9d30d79f45a78e5585a2e7ec67c6a06a883dd9137e1d5059e8c87b33ce76",
+          "bytes": 266,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@4x.png",
+          "beforeSha256": "2325c53a73e54c438cbbc60dffdd8b513d471ba42e2f56713ef404b95e0ca1fc",
+          "afterSha256": "2325c53a73e54c438cbbc60dffdd8b513d471ba42e2f56713ef404b95e0ca1fc",
+          "bytes": 332,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png",
+          "beforeSha256": "5d075e0c287c4f4441b5b5c8fc7ea5cd27c11bb617ecea09755955bcb1889083",
+          "afterSha256": "5d075e0c287c4f4441b5b5c8fc7ea5cd27c11bb617ecea09755955bcb1889083",
+          "bytes": 928,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/sitemap.412dd9275b6b48ad28f5e3d81bb1f626.png",
+          "beforeSha256": "acf691957a3bcce7d195856dce98a5cf14dce10bea28aa5c10b3550c078e23b5",
+          "afterSha256": "acf691957a3bcce7d195856dce98a5cf14dce10bea28aa5c10b3550c078e23b5",
+          "bytes": 465,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/unmatched.20e71bdf79e3a97bf55fd9e164041578.png",
+          "beforeSha256": "efc79da3c4c97dfb1571bff6202958ab0529c5aa31e8392600578b3e359d1447",
+          "afterSha256": "efc79da3c4c97dfb1571bff6202958ab0529c5aa31e8392600578b3e359d1447",
+          "bytes": 4752,
+          "changed": false
+        },
+        {
+          "path": "assets/assets/images/harbour-family-hero.acf73643e80f2452876d97c45756232e.png",
+          "beforeSha256": "2d6831182f397c2388f0f6239be093b7480eef2c70fe4ff4894cdcb1dee13c29",
+          "afterSha256": "2d6831182f397c2388f0f6239be093b7480eef2c70fe4ff4894cdcb1dee13c29",
+          "bytes": 2377969,
+          "changed": false
+        },
+        {
+          "path": "index.html",
+          "beforeSha256": "91ff38932f2e27d7a242b9da74dc2e9a936bfe79015bf7854543d3468e37e9a5",
+          "afterSha256": "425a22a38cea034e6d41ef9e57573b799e5def5f0479c3a3debeba9fe6f4ec58",
+          "bytes": 1712,
+          "changed": true
+        }
+      ]
+    },
+    {
+      "variant": "handbook",
+      "sourceFilesVerifiedLocally": 634,
+      "sourceManifestSha256": "603c58875a96bd3a60351b15cd646a5cc5607544119e4caa0fe511efc1a320d1",
+      "dependencyManifestSha256": "884e4ff6864e1054be5fed1be563b58eacb4f6c4600913ebaaf78e5787e3649d",
+      "parentRuntimeSha256": "1c603f1d2d048fd7d00beac52752e2ab229f1d9709e424650d06c797acf8fd62",
+      "originalArtifacts": [
+        {
+          "path": "_expo/static/css/appScrollView-6f986a3ecd1fe2401851b9bfaecc47d6.css",
+          "beforeSha256": "c3c3cf3e37c3bdc0cde835d614f2b3b359d6dee61babb0246f4b57a2d9897509",
+          "afterSha256": "c3c3cf3e37c3bdc0cde835d614f2b3b359d6dee61babb0246f4b57a2d9897509",
+          "bytes": 731,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/css/backgroundSurface-b5302b9200592e670418c03284126d3d.css",
+          "beforeSha256": "f75dd2226a593e323998b295c94980d78f4b384714961326e3dd8a6e3b723855",
+          "afterSha256": "f75dd2226a593e323998b295c94980d78f4b384714961326e3dd8a6e3b723855",
+          "bytes": 689,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/css/datePickerAction-3e4d4e9ab56a7138a60b71685ea86299.css",
+          "beforeSha256": "4eb2999cc45a8f1e75e0d0f882900920cf56d5a8eb07335ba604ea21ef2404cb",
+          "afterSha256": "4eb2999cc45a8f1e75e0d0f882900920cf56d5a8eb07335ba604ea21ef2404cb",
+          "bytes": 1348,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css",
+          "beforeSha256": "d8101bc5d3b92e79f678ab77342049357bd134e74d529c2062912bb5dfaa1517",
+          "afterSha256": "d8101bc5d3b92e79f678ab77342049357bd134e74d529c2062912bb5dfaa1517",
+          "bytes": 14266,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/css/paperMotion-6434b3e3c8b5092feeac23f391cbd7d2.css",
+          "beforeSha256": "a45f655c8833b06ae0d8fbeaea146411f0adad9f256e53a21192de0683245a97",
+          "afterSha256": "a45f655c8833b06ae0d8fbeaea146411f0adad9f256e53a21192de0683245a97",
+          "bytes": 210,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/js/web/AdminWorkspaceView-abceee20790ee1a9507ab76e6c990e92.js",
+          "beforeSha256": "4d80f380d88ac88a3e13d52e680e593f7d585eec464ed53e5be34db669e9935f",
+          "afterSha256": "4d80f380d88ac88a3e13d52e680e593f7d585eec464ed53e5be34db669e9935f",
+          "bytes": 14739,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/js/web/AdminWorkspaceView-abceee20790ee1a9507ab76e6c990e92.js.map",
+          "beforeSha256": "0cf09a1a6f5316fad98a6ffd2f7e93bfb5ca447a31d369baad704d9515167c14",
+          "afterSha256": "0cf09a1a6f5316fad98a6ffd2f7e93bfb5ca447a31d369baad704d9515167c14",
+          "bytes": 27070,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/js/web/AvatarCropPreview-649d2cb378ac55164b56139d9ecc9676.js",
+          "beforeSha256": "f6e37a78bdbbe03c04bbde9b388b5b4a4859a40612c9e7f943e02d9d8184a437",
+          "afterSha256": "f6e37a78bdbbe03c04bbde9b388b5b4a4859a40612c9e7f943e02d9d8184a437",
+          "bytes": 31557,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/js/web/AvatarCropPreview-649d2cb378ac55164b56139d9ecc9676.js.map",
+          "beforeSha256": "8872b2cb20c61bf9fe1f76d182d7e3157f35d0f7c7ccfdb48060c26d2e6e7404",
+          "afterSha256": "8872b2cb20c61bf9fe1f76d182d7e3157f35d0f7c7ccfdb48060c26d2e6e7404",
+          "bytes": 107611,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/js/web/index-88428ad5008d273c094f79267e9e9ad1.js",
+          "beforeSha256": "44216c574c7eef5d2cf7576ece830c7280e2869a3cb492264b56e9dbc175d8f7",
+          "afterSha256": "44216c574c7eef5d2cf7576ece830c7280e2869a3cb492264b56e9dbc175d8f7",
+          "bytes": 5970090,
+          "changed": false
+        },
+        {
+          "path": "_expo/static/js/web/index-88428ad5008d273c094f79267e9e9ad1.js.map",
+          "beforeSha256": "b41526d770f586f8d4ed1910a12617d6b717fd7dabf1e057df27aae784fe535e",
+          "afterSha256": "b41526d770f586f8d4ed1910a12617d6b717fd7dabf1e057df27aae784fe535e",
+          "bytes": 17654869,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialCommunityIcons.6e435534bd35da5fef04168860a9b8fa.ttf",
+          "beforeSha256": "61e8aba5a4e981fe22cf7c8e8bcdbea00476e75c62c37f01bf7ee33361d68428",
+          "afterSha256": "61e8aba5a4e981fe22cf7c8e8bcdbea00476e75c62c37f01bf7ee33361d68428",
+          "bytes": 1307660,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/arrow_down.017bc6ba3fc25503e5eb5e53826d48a8.png",
+          "beforeSha256": "6deca32b56b97fa1fa87facd6996b46cc45190a553400e7febdf1d2093099b57",
+          "afterSha256": "6deca32b56b97fa1fa87facd6996b46cc45190a553400e7febdf1d2093099b57",
+          "bytes": 9456,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/error.d1ea1496f9057eb392d5bbf3732a61b7.png",
+          "beforeSha256": "c15ec72a74d13957211808313d5c35deb7f7606c6d22dbddceb0000d4e0547ad",
+          "afterSha256": "c15ec72a74d13957211808313d5c35deb7f7606c6d22dbddceb0000d4e0547ad",
+          "bytes": 469,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/file.19eeb73b9593a38f8e9f418337fc7d10.png",
+          "beforeSha256": "a69a2edb5b6c60b8433d5b6d23c69f520ccd8a602f3f60e7996e489718bc175c",
+          "afterSha256": "a69a2edb5b6c60b8433d5b6d23c69f520ccd8a602f3f60e7996e489718bc175c",
+          "bytes": 138,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/forward.d8b800c443b8972542883e0b9de2bdc6.png",
+          "beforeSha256": "708a79cf561b8a2a4850ce0254584d3a5231046be08fb7fadf4b6edfdb31178b",
+          "afterSha256": "708a79cf561b8a2a4850ce0254584d3a5231046be08fb7fadf4b6edfdb31178b",
+          "bytes": 188,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/pkg.ab19f4cbc543357183a20571f68380a3.png",
+          "beforeSha256": "27f4d229d440925bf7212d5dfffa45d596b2c7b3bb2905c96b839b2081a1dbeb",
+          "afterSha256": "27f4d229d440925bf7212d5dfffa45d596b2c7b3bb2905c96b839b2081a1dbeb",
+          "bytes": 364,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png",
+          "beforeSha256": "9adb8c5efca932e2b732b293da813bd2e31952263056bce9e2517fec0f0b6a76",
+          "afterSha256": "9adb8c5efca932e2b732b293da813bd2e31952263056bce9e2517fec0f0b6a76",
+          "bytes": 653,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/back-icon.35ba0eaec5a4f5ed12ca16fabeae451d.png",
+          "beforeSha256": "84cf5eb3b20250f69e0e4733beb4da5f417f0682892a5ad1b5e62570753c21b1",
+          "afterSha256": "84cf5eb3b20250f69e0e4733beb4da5f417f0682892a5ad1b5e62570753c21b1",
+          "bytes": 207,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55.png",
+          "beforeSha256": "d03a5cd7a66ef10c5147916f9d5878b2d0a0a5ad46f405a31cd9967efaa55afd",
+          "afterSha256": "d03a5cd7a66ef10c5147916f9d5878b2d0a0a5ad46f405a31cd9967efaa55afd",
+          "bytes": 220,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@2x.png",
+          "beforeSha256": "ab5613d2ce70fa67c5926e831353664945199fc195fa6fe76c5fe3cec452e31a",
+          "afterSha256": "ab5613d2ce70fa67c5926e831353664945199fc195fa6fe76c5fe3cec452e31a",
+          "bytes": 334,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@3x.png",
+          "beforeSha256": "c4e54e6a0a7de636aa153378fbc62ea4a41695bfedf807f90df7b18ffd733f67",
+          "afterSha256": "c4e54e6a0a7de636aa153378fbc62ea4a41695bfedf807f90df7b18ffd733f67",
+          "bytes": 502,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@4x.png",
+          "beforeSha256": "c86bb485eee687e06c500fc4234f51a6784b4530c2ae11d0c76481110bce3105",
+          "afterSha256": "c86bb485eee687e06c500fc4234f51a6784b4530c2ae11d0c76481110bce3105",
+          "bytes": 645,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7.png",
+          "beforeSha256": "b1bc1810ca23e2c38cd76971c43591d726161061240d8b792b05757196ddb528",
+          "afterSha256": "b1bc1810ca23e2c38cd76971c43591d726161061240d8b792b05757196ddb528",
+          "bytes": 141,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@2x.png",
+          "beforeSha256": "cbdf9213e55f65c48d076acd8423b7c9aee4f1b81101ff6c95a38c4cd8a86461",
+          "afterSha256": "cbdf9213e55f65c48d076acd8423b7c9aee4f1b81101ff6c95a38c4cd8a86461",
+          "bytes": 201,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@3x.png",
+          "beforeSha256": "d05c9d30d79f45a78e5585a2e7ec67c6a06a883dd9137e1d5059e8c87b33ce76",
+          "afterSha256": "d05c9d30d79f45a78e5585a2e7ec67c6a06a883dd9137e1d5059e8c87b33ce76",
+          "bytes": 266,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@4x.png",
+          "beforeSha256": "2325c53a73e54c438cbbc60dffdd8b513d471ba42e2f56713ef404b95e0ca1fc",
+          "afterSha256": "2325c53a73e54c438cbbc60dffdd8b513d471ba42e2f56713ef404b95e0ca1fc",
+          "bytes": 332,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png",
+          "beforeSha256": "5d075e0c287c4f4441b5b5c8fc7ea5cd27c11bb617ecea09755955bcb1889083",
+          "afterSha256": "5d075e0c287c4f4441b5b5c8fc7ea5cd27c11bb617ecea09755955bcb1889083",
+          "bytes": 928,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/sitemap.412dd9275b6b48ad28f5e3d81bb1f626.png",
+          "beforeSha256": "acf691957a3bcce7d195856dce98a5cf14dce10bea28aa5c10b3550c078e23b5",
+          "afterSha256": "acf691957a3bcce7d195856dce98a5cf14dce10bea28aa5c10b3550c078e23b5",
+          "bytes": 465,
+          "changed": false
+        },
+        {
+          "path": "assets/___recovery-20261031-2056/static-account-lifecycle-handbook-noemit-20261101/project/node_modules/expo-router/assets/unmatched.20e71bdf79e3a97bf55fd9e164041578.png",
+          "beforeSha256": "efc79da3c4c97dfb1571bff6202958ab0529c5aa31e8392600578b3e359d1447",
+          "afterSha256": "efc79da3c4c97dfb1571bff6202958ab0529c5aa31e8392600578b3e359d1447",
+          "bytes": 4752,
+          "changed": false
+        },
+        {
+          "path": "assets/assets/images/harbour-family-hero.acf73643e80f2452876d97c45756232e.png",
+          "beforeSha256": "2d6831182f397c2388f0f6239be093b7480eef2c70fe4ff4894cdcb1dee13c29",
+          "afterSha256": "2d6831182f397c2388f0f6239be093b7480eef2c70fe4ff4894cdcb1dee13c29",
+          "bytes": 2377969,
+          "changed": false
+        },
+        {
+          "path": "index.html",
+          "beforeSha256": "2c745efbb3d5717e4628f03dbe1dbc6772daf4a09d5d19fcd44454a0126b1c4f",
+          "afterSha256": "38d6a436b8efced6249ed61303d4900928856e5b9a1fd8b7e28ff6bc32ea095c",
+          "bytes": 1716,
+          "changed": true
+        }
+      ]
+    }
+  ]
+}
