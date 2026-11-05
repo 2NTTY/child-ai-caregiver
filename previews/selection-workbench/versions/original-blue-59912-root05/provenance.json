@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "name": "Original blue Care reconstruction with non-overlapping provenance notice",
+  "source": {
+    "repository": "https://github.com/2NTTY/child-ai-caregiver",
+    "commit": "59912bd1f79dae120d393f66f944e4241ee483cb",
+    "tree": "aec1c9a4d90ce3162279da864adea7fd90405f07"
+  },
+  "artifact": {
+    "reconstruction": true,
+    "originalV92ReleaseArchive": false,
+    "baseUrl": "",
+    "staticFileCount": 44,
+    "staticBytes": 9601427,
+    "packagingRevision": "05",
+    "bundlesRecompiledForNoticeFix": false,
+    "syntheticRootSentinelIncluded": false
+  },
+  "syntheticBoundary": {
+    "data": "Synthetic examples only",
+    "reads": "Explicit allowlisted synthetic reads; unavailable reads return503",
+    "writes": "Unavailable/refused; no fake successful writes",
+    "realAccountsModelsAndDeviceActions": "Unavailable",
+    "persistentStorage": "Unavailable; page-local memory only",
+    "existingServiceWorker": "Guard fails closed; real deployed origin still requires separate verification"
+  },
+  "acceptance": {
+    "status": "PASS_BOUNDED_LOCAL_BROWSER",
+    "desktopViewport": [
+      1180,
+      757
+    ],
+    "iframeCssViewports": [
+      [
+        320,
+        700
+      ],
+      [
+        390,
+        700
+      ]
+    ],
+    "checked": [
+      "notice expansion/collapse and original interception regressions",
+      "Tasks navigation in both notice states",
+      "real keyboard skip-to-main",
+      "information drawer and primary content scroll",
+      "home/tasks/profile, direct-route hard reload, Back/Forward, brand-home link"
+    ],
+    "notVerified": [
+      "true top-level narrow viewport/device",
+      "four-size responsive matrix",
+      "full assistive-technology/accessibility audit",
+      "native app",
+      "full-site or long-lifecycle acceptance",
+      "real existing Site preservation and service worker"
+    ],
+    "deploymentStatus": "Not deployed by this payload"
+  },
+  "limitations": [
+    "Original product UI is retained; unavailable private features are not simulated as success.",
+    "Original Admin origin-based /login link is not adapted to a prefix.",
+    "A prefix is not a separate-origin security sandbox."
+  ]
+}

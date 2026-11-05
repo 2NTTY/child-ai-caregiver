@@ -9,3 +9,10 @@ The selection workbench (選配工作台) contains isolated, synthetic UI candid
 Start with the selected version's README and serve that complete version directory over local HTTP. GitHub's file browser does not run the website. This branch does not deploy or replace the existing preview site or production application. The preview12 and preview15 files remain unchanged.
 
 All 88 full semantic-acceptance gates remain pending. Preview18's bounded packaging and gallery checks do not resolve its documented chat, care, profile, focus, device, or accessibility limitations. Read the version's verified scope and known limits before evaluating a candidate.
+
+## Original blue Care reconstruction
+
+[Original blue Care, reconstruction05](versions/original-blue-59912-root05/README.md) is a separate synthetic, read-only preview reconstructed from commit `59912bd1f79dae120d393f66f944e4241ee483cb`. It retains the historical blue interface, with the corrected provenance notice. It is not the original sealed v92 archive or an additional preview18 module or candidate.
+
+Follow that version's README. From `versions/original-blue-59912-root05/`, run `python3 verify.py`, then `python3 -m http.server 8000 --bind 127.0.0.1 --directory static`, and open `http://127.0.0.1:8000/`. Serve `static/` as an independent HTTP document root, not a workbench subpath or `file://`. Uploading these files does not deploy a website. The existing preview12, preview15 and preview18 files remain unchanged.
+

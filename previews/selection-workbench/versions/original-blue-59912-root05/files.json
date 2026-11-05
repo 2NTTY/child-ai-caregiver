@@ -1,0 +1,586 @@
+{
+  "schemaVersion": 1,
+  "manifestFile": "files.json",
+  "digestScope": "Every allowlisted file except files.json. Pin this manifest digest externally.",
+  "allowedPaths": [
+    "README.md",
+    "files.json",
+    "provenance.json",
+    "screenshots/home.png",
+    "screenshots/profile.png",
+    "screenshots/tasks.png",
+    "static/_expo/static/css/appScrollView-6f986a3ecd1fe2401851b9bfaecc47d6.css",
+    "static/_expo/static/css/backgroundSurface-b5302b9200592e670418c03284126d3d.css",
+    "static/_expo/static/css/datePickerAction-3e4d4e9ab56a7138a60b71685ea86299.css",
+    "static/_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css",
+    "static/_expo/static/css/paperMotion-6434b3e3c8b5092feeac23f391cbd7d2.css",
+    "static/_expo/static/js/web/index-91090e027fb810e3d3a24690f793416a.js",
+    "static/admin/index.html",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialCommunityIcons.6e435534bd35da5fef04168860a9b8fa.ttf",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/arrow_down.017bc6ba3fc25503e5eb5e53826d48a8.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/error.d1ea1496f9057eb392d5bbf3732a61b7.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/file.19eeb73b9593a38f8e9f418337fc7d10.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/forward.d8b800c443b8972542883e0b9de2bdc6.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/pkg.ab19f4cbc543357183a20571f68380a3.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/back-icon.35ba0eaec5a4f5ed12ca16fabeae451d.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@2x.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@3x.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@4x.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@2x.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@3x.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@4x.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/sitemap.412dd9275b6b48ad28f5e3d81bb1f626.png",
+    "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/unmatched.20e71bdf79e3a97bf55fd9e164041578.png",
+    "static/assets/assets/images/harbour-family-hero.acf73643e80f2452876d97c45756232e.png",
+    "static/care/index.html",
+    "static/chat/index.html",
+    "static/contact/index.html",
+    "static/family/index.html",
+    "static/growth/index.html",
+    "static/guide/index.html",
+    "static/history/index.html",
+    "static/index.html",
+    "static/login/index.html",
+    "static/memory/index.html",
+    "static/more/index.html",
+    "static/photos/index.html",
+    "static/profile/index.html",
+    "static/settings/index.html",
+    "static/sources/index.html",
+    "static/summary/index.html",
+    "static/tasks/index.html",
+    "verify.py"
+  ],
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 2697,
+      "sha256": "279db33eede9c06289b8a5fa5dd476ebc0d26bb18ec1d2ec1239db17c6c3915c",
+      "gitBlobSha1": "eb3b059e70305e8a6b48a652e9d86410d063a876"
+    },
+    {
+      "path": "provenance.json",
+      "bytes": 2198,
+      "sha256": "918a85b10888717221ad6ed5297af5304a8b8b92064a68e2797b7f509d4ad89b",
+      "gitBlobSha1": "d5a52f4d86fd2d028398542fae63edea700fcb8b"
+    },
+    {
+      "path": "screenshots/home.png",
+      "bytes": 68945,
+      "sha256": "219275bb7b445af2a5f261fc1dd1014023bc07d7edca0e6013d65c59864b9970",
+      "gitBlobSha1": "5e1200378d5571e86f4b92d8bd0f2e006da1a58c"
+    },
+    {
+      "path": "screenshots/profile.png",
+      "bytes": 65458,
+      "sha256": "f344379a78465cd4eb0940fe76e0ade4fdecd8fe53ddc66c65c4efb7de6c3f1d",
+      "gitBlobSha1": "a85042aba07273acaca3a737bac3cf7dcc88d0f8"
+    },
+    {
+      "path": "screenshots/tasks.png",
+      "bytes": 62189,
+      "sha256": "f5f07d98db55e79827b4cffd1c87e747235cac9ee372d31fd9e91e27fbc63e0e",
+      "gitBlobSha1": "ce7166897c33866aa20821813116e788a2c74bca"
+    },
+    {
+      "path": "static/_expo/static/css/appScrollView-6f986a3ecd1fe2401851b9bfaecc47d6.css",
+      "bytes": 731,
+      "sha256": "c3c3cf3e37c3bdc0cde835d614f2b3b359d6dee61babb0246f4b57a2d9897509",
+      "gitBlobSha1": "7da17d71aa64205e403153076e09b69dedd2167f"
+    },
+    {
+      "path": "static/_expo/static/css/backgroundSurface-b5302b9200592e670418c03284126d3d.css",
+      "bytes": 689,
+      "sha256": "f75dd2226a593e323998b295c94980d78f4b384714961326e3dd8a6e3b723855",
+      "gitBlobSha1": "7eb1282a23316ccbfca3057869578e8c9ffc3749"
+    },
+    {
+      "path": "static/_expo/static/css/datePickerAction-3e4d4e9ab56a7138a60b71685ea86299.css",
+      "bytes": 1348,
+      "sha256": "4eb2999cc45a8f1e75e0d0f882900920cf56d5a8eb07335ba604ea21ef2404cb",
+      "gitBlobSha1": "263b2ed0ad3ed2db1d16b230d0e16b946f57bb49"
+    },
+    {
+      "path": "static/_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css",
+      "bytes": 14266,
+      "sha256": "d8101bc5d3b92e79f678ab77342049357bd134e74d529c2062912bb5dfaa1517",
+      "gitBlobSha1": "95e6e480242cf6bbd1ac6cd6c7709b401761cb8c"
+    },
+    {
+      "path": "static/_expo/static/css/paperMotion-6434b3e3c8b5092feeac23f391cbd7d2.css",
+      "bytes": 210,
+      "sha256": "a45f655c8833b06ae0d8fbeaea146411f0adad9f256e53a21192de0683245a97",
+      "gitBlobSha1": "ec198436c7dfb22f985cac282c86b7356c76e0ef"
+    },
+    {
+      "path": "static/_expo/static/js/web/index-91090e027fb810e3d3a24690f793416a.js",
+      "bytes": 5831439,
+      "sha256": "70339ed7361d8cc8b4bf7bc3c14708086c526538f77bf799dea7503be3d099c0",
+      "gitBlobSha1": "a25f719eca57d8002b8e25c719f86738249a6ea7"
+    },
+    {
+      "path": "static/admin/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialCommunityIcons.6e435534bd35da5fef04168860a9b8fa.ttf",
+      "bytes": 1307660,
+      "sha256": "61e8aba5a4e981fe22cf7c8e8bcdbea00476e75c62c37f01bf7ee33361d68428",
+      "gitBlobSha1": "bba7dcf6c6e6a8352938d681a39aa4aead4f33ed"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/arrow_down.017bc6ba3fc25503e5eb5e53826d48a8.png",
+      "bytes": 9456,
+      "sha256": "6deca32b56b97fa1fa87facd6996b46cc45190a553400e7febdf1d2093099b57",
+      "gitBlobSha1": "f81adec02af440824e7d722dead33c3dd8ca1a7f"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/error.d1ea1496f9057eb392d5bbf3732a61b7.png",
+      "bytes": 469,
+      "sha256": "c15ec72a74d13957211808313d5c35deb7f7606c6d22dbddceb0000d4e0547ad",
+      "gitBlobSha1": "13dfd1036a883a2fcd0014072cd4685bb048a74e"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/file.19eeb73b9593a38f8e9f418337fc7d10.png",
+      "bytes": 138,
+      "sha256": "a69a2edb5b6c60b8433d5b6d23c69f520ccd8a602f3f60e7996e489718bc175c",
+      "gitBlobSha1": "f8441bc4f8c5ceed1c7dda29b5578ab302e3aa8f"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/forward.d8b800c443b8972542883e0b9de2bdc6.png",
+      "bytes": 188,
+      "sha256": "708a79cf561b8a2a4850ce0254584d3a5231046be08fb7fadf4b6edfdb31178b",
+      "gitBlobSha1": "2a5bc8e77129da741157c757ad32d6afea9e1f95"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/pkg.ab19f4cbc543357183a20571f68380a3.png",
+      "bytes": 364,
+      "sha256": "27f4d229d440925bf7212d5dfffa45d596b2c7b3bb2905c96b839b2081a1dbeb",
+      "gitBlobSha1": "828e6322aaa3f44cda9483e9917473a82e08fb7f"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png",
+      "bytes": 653,
+      "sha256": "9adb8c5efca932e2b732b293da813bd2e31952263056bce9e2517fec0f0b6a76",
+      "gitBlobSha1": "7c1fd8493d91711b33e87bd36d6e9ae4363ed656"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/back-icon.35ba0eaec5a4f5ed12ca16fabeae451d.png",
+      "bytes": 207,
+      "sha256": "84cf5eb3b20250f69e0e4733beb4da5f417f0682892a5ad1b5e62570753c21b1",
+      "gitBlobSha1": "17e52e8550e5668f7117bcb755beb70c3a21c9e9"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55.png",
+      "bytes": 220,
+      "sha256": "d03a5cd7a66ef10c5147916f9d5878b2d0a0a5ad46f405a31cd9967efaa55afd",
+      "gitBlobSha1": "01a7b6365ff7b18cc92aebac3b40a0c5138ef37c"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@2x.png",
+      "bytes": 334,
+      "sha256": "ab5613d2ce70fa67c5926e831353664945199fc195fa6fe76c5fe3cec452e31a",
+      "gitBlobSha1": "c852b6ba50fd2ed8b46ad189685664bac454bf82"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@3x.png",
+      "bytes": 502,
+      "sha256": "c4e54e6a0a7de636aa153378fbc62ea4a41695bfedf807f90df7b18ffd733f67",
+      "gitBlobSha1": "5f44c5464f7ea1331a49cd4709cfdd06b4517ec1"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@4x.png",
+      "bytes": 645,
+      "sha256": "c86bb485eee687e06c500fc4234f51a6784b4530c2ae11d0c76481110bce3105",
+      "gitBlobSha1": "d9af7b68070ef97abf8b805a32b99bdb7e2c340d"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7.png",
+      "bytes": 141,
+      "sha256": "b1bc1810ca23e2c38cd76971c43591d726161061240d8b792b05757196ddb528",
+      "gitBlobSha1": "4e3e31b8c10f677b1acc8374da60dbd114c6159d"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@2x.png",
+      "bytes": 201,
+      "sha256": "cbdf9213e55f65c48d076acd8423b7c9aee4f1b81101ff6c95a38c4cd8a86461",
+      "gitBlobSha1": "12981d865dff2856895900be499751454c9528f7"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@3x.png",
+      "bytes": 266,
+      "sha256": "d05c9d30d79f45a78e5585a2e7ec67c6a06a883dd9137e1d5059e8c87b33ce76",
+      "gitBlobSha1": "b4f5127fdaace81e584b0087bff62afd10bc6847"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@4x.png",
+      "bytes": 332,
+      "sha256": "2325c53a73e54c438cbbc60dffdd8b513d471ba42e2f56713ef404b95e0ca1fc",
+      "gitBlobSha1": "34396d478f85572dd50c67a708cd3a752d785005"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png",
+      "bytes": 928,
+      "sha256": "5d075e0c287c4f4441b5b5c8fc7ea5cd27c11bb617ecea09755955bcb1889083",
+      "gitBlobSha1": "87a30caff95ccb0bc812f8ee77abbe8a7a8f0ac6"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/sitemap.412dd9275b6b48ad28f5e3d81bb1f626.png",
+      "bytes": 465,
+      "sha256": "acf691957a3bcce7d195856dce98a5cf14dce10bea28aa5c10b3550c078e23b5",
+      "gitBlobSha1": "8e3297fc67665cb61e5f4b0b84819c9cac7c2546"
+    },
+    {
+      "path": "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/unmatched.20e71bdf79e3a97bf55fd9e164041578.png",
+      "bytes": 4752,
+      "sha256": "efc79da3c4c97dfb1571bff6202958ab0529c5aa31e8392600578b3e359d1447",
+      "gitBlobSha1": "ca8d666e4034705257bd2165771f56610101c4ea"
+    },
+    {
+      "path": "static/assets/assets/images/harbour-family-hero.acf73643e80f2452876d97c45756232e.png",
+      "bytes": 2377969,
+      "sha256": "2d6831182f397c2388f0f6239be093b7480eef2c70fe4ff4894cdcb1dee13c29",
+      "gitBlobSha1": "559b829b607065dacd351c4bc80e4f10432d0002"
+    },
+    {
+      "path": "static/care/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/chat/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/contact/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/family/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/growth/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/guide/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/history/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/login/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/memory/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/more/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/photos/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/profile/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/settings/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/sources/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/summary/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "static/tasks/index.html",
+      "bytes": 2603,
+      "sha256": "08c5f483552fbf0ce9bdbb39eeaf43ec9222b60ad19f5156e3abbdc065a77ab5",
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da"
+    },
+    {
+      "path": "verify.py",
+      "bytes": 8262,
+      "sha256": "6f95b3ac03487db4661c45a3aabdcea6cd413f165a88c9d1c706a44e48580b91",
+      "gitBlobSha1": "01afbe2f866446cc159e4e3611577e8067abd1be"
+    }
+  ],
+  "gitBlobGroups": [
+    {
+      "gitBlobSha1": "01a7b6365ff7b18cc92aebac3b40a0c5138ef37c",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "01afbe2f866446cc159e4e3611577e8067abd1be",
+      "paths": [
+        "verify.py"
+      ]
+    },
+    {
+      "gitBlobSha1": "12981d865dff2856895900be499751454c9528f7",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@2x.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "13dfd1036a883a2fcd0014072cd4685bb048a74e",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/error.d1ea1496f9057eb392d5bbf3732a61b7.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "17e52e8550e5668f7117bcb755beb70c3a21c9e9",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/back-icon.35ba0eaec5a4f5ed12ca16fabeae451d.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "263b2ed0ad3ed2db1d16b230d0e16b946f57bb49",
+      "paths": [
+        "static/_expo/static/css/datePickerAction-3e4d4e9ab56a7138a60b71685ea86299.css"
+      ]
+    },
+    {
+      "gitBlobSha1": "2a5bc8e77129da741157c757ad32d6afea9e1f95",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/forward.d8b800c443b8972542883e0b9de2bdc6.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "34396d478f85572dd50c67a708cd3a752d785005",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@4x.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "4e3e31b8c10f677b1acc8374da60dbd114c6159d",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "559b829b607065dacd351c4bc80e4f10432d0002",
+      "paths": [
+        "static/assets/assets/images/harbour-family-hero.acf73643e80f2452876d97c45756232e.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "5e1200378d5571e86f4b92d8bd0f2e006da1a58c",
+      "paths": [
+        "screenshots/home.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "5f44c5464f7ea1331a49cd4709cfdd06b4517ec1",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@3x.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "7c1fd8493d91711b33e87bd36d6e9ae4363ed656",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "7da17d71aa64205e403153076e09b69dedd2167f",
+      "paths": [
+        "static/_expo/static/css/appScrollView-6f986a3ecd1fe2401851b9bfaecc47d6.css"
+      ]
+    },
+    {
+      "gitBlobSha1": "7eb1282a23316ccbfca3057869578e8c9ffc3749",
+      "paths": [
+        "static/_expo/static/css/backgroundSurface-b5302b9200592e670418c03284126d3d.css"
+      ]
+    },
+    {
+      "gitBlobSha1": "828e6322aaa3f44cda9483e9917473a82e08fb7f",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/pkg.ab19f4cbc543357183a20571f68380a3.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "87a30caff95ccb0bc812f8ee77abbe8a7a8f0ac6",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "8d147a937d0e35617516d8c80ebb71156a0f27da",
+      "paths": [
+        "static/admin/index.html",
+        "static/care/index.html",
+        "static/chat/index.html",
+        "static/contact/index.html",
+        "static/family/index.html",
+        "static/growth/index.html",
+        "static/guide/index.html",
+        "static/history/index.html",
+        "static/index.html",
+        "static/login/index.html",
+        "static/memory/index.html",
+        "static/more/index.html",
+        "static/photos/index.html",
+        "static/profile/index.html",
+        "static/settings/index.html",
+        "static/sources/index.html",
+        "static/summary/index.html",
+        "static/tasks/index.html"
+      ]
+    },
+    {
+      "gitBlobSha1": "8e3297fc67665cb61e5f4b0b84819c9cac7c2546",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/sitemap.412dd9275b6b48ad28f5e3d81bb1f626.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "95e6e480242cf6bbd1ac6cd6c7709b401761cb8c",
+      "paths": [
+        "static/_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css"
+      ]
+    },
+    {
+      "gitBlobSha1": "a25f719eca57d8002b8e25c719f86738249a6ea7",
+      "paths": [
+        "static/_expo/static/js/web/index-91090e027fb810e3d3a24690f793416a.js"
+      ]
+    },
+    {
+      "gitBlobSha1": "a85042aba07273acaca3a737bac3cf7dcc88d0f8",
+      "paths": [
+        "screenshots/profile.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "b4f5127fdaace81e584b0087bff62afd10bc6847",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@3x.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "bba7dcf6c6e6a8352938d681a39aa4aead4f33ed",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialCommunityIcons.6e435534bd35da5fef04168860a9b8fa.ttf"
+      ]
+    },
+    {
+      "gitBlobSha1": "c852b6ba50fd2ed8b46ad189685664bac454bf82",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@2x.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "ca8d666e4034705257bd2165771f56610101c4ea",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/unmatched.20e71bdf79e3a97bf55fd9e164041578.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "ce7166897c33866aa20821813116e788a2c74bca",
+      "paths": [
+        "screenshots/tasks.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "d5a52f4d86fd2d028398542fae63edea700fcb8b",
+      "paths": [
+        "provenance.json"
+      ]
+    },
+    {
+      "gitBlobSha1": "d9af7b68070ef97abf8b805a32b99bdb7e2c340d",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@4x.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "eb3b059e70305e8a6b48a652e9d86410d063a876",
+      "paths": [
+        "README.md"
+      ]
+    },
+    {
+      "gitBlobSha1": "ec198436c7dfb22f985cac282c86b7356c76e0ef",
+      "paths": [
+        "static/_expo/static/css/paperMotion-6434b3e3c8b5092feeac23f391cbd7d2.css"
+      ]
+    },
+    {
+      "gitBlobSha1": "f81adec02af440824e7d722dead33c3dd8ca1a7f",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/arrow_down.017bc6ba3fc25503e5eb5e53826d48a8.png"
+      ]
+    },
+    {
+      "gitBlobSha1": "f8441bc4f8c5ceed1c7dda29b5578ab302e3aa8f",
+      "paths": [
+        "static/assets/___recovery-20261031-2056/static-account-lifecycle-care-noemit-20261101/project/node_modules/expo-router/assets/file.19eeb73b9593a38f8e9f418337fc7d10.png"
+      ]
+    }
+  ],
+  "summary": {
+    "fileCount": 51,
+    "staticFileCount": 44,
+    "staticBytes": 9601427,
+    "hashedFilesBytes": 9811176,
+    "manifestBytes": 28848,
+    "totalBytes": 9840024,
+    "distinctHashedGitBlobs": 33
+  }
+}
