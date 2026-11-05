@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "receiptVersion": "1.0.0",
+  "package": "REQ005-SOFTBUDGET01",
+  "requirement": "REQUIREMENTS_BACKLOG.md §3.1 Centralized Resource Policy & 0.25 Soft Budget Management",
+  "branch": "codex/req005-soft-budget",
+  "recordedAt": "2026-11-05T22:15:00+08:00",
+  "status": "LOCAL_VERIFIED_PENDING_INCREMENTAL_REVIEW_AND_EXACT_HEAD_REMOTE_CI",
+  "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+  "baseTree": "29c803a957b38f7b22e4bde508245e047eaaabcf",
+  "environment": {
+    "node": "v24.16.0",
+    "os": "win32-x64",
+    "ciNodeTarget": "v24.22.1"
+  },
+  "invariantsVerified": [
+    "DEFAULT_SOFT_BUDGET_RATIO is centralized at 0.25 (1/4) in src/shared/agent-run-limits.ts",
+    "SOFT_BUDGET_RATIO_RANGE enforces legal bounds between 0.05 and 1.0 with 0.25 default",
+    "softBudget is derived against selected limits without creating a duplicate quota",
+    "softRemaining and softExceeded are exposed as advisory planning signals in planningSnapshot",
+    "Exceeding soft budget never halts execution or throws AgentStopped; hard limits remain sole barrier"
+  ],
+  "files": [
+    {
+      "path": "src/shared/agent-run-limits.ts",
+      "sha256": "0455554b3b39e8d292d4aabdf64d3223d6ab3a64a22eb46ad7e8247b9e95f102"
+    },
+    {
+      "path": "server/agent-budget.ts",
+      "sha256": "5212edee72d01209bcd889ea5b7791b967883cc5f4a1bef48182a42789f4a0e1"
+    },
+    {
+      "path": "tests/agent-budget.test.ts",
+      "sha256": "acbdf4bfe8a53556bc47b379c706ebb3f8c56978c3e23118eb9c08819b35af88"
+    },
+    {
+      "path": "scripts/verify-soft-budget-mutations.mjs",
+      "sha256": "db81fd103ea01b499838b7be9d322846fbc44431bd66545d6bd7936ccb2d5af8"
+    },
+    {
+      "path": "scripts/ci/verify-soft-budget-offline.sh",
+      "sha256": "0d501e67e25010e0e30fb3ead7e86b0b9bda81f454857f01446156b684829e47"
+    },
+    {
+      "path": ".github/workflows/soft-budget-offline.yml",
+      "sha256": "8b63490cb1e664782644c6ca392a798659318298fd392af3a146ddbb5bc120e1"
+    },
+    {
+      "path": "WORKLOG.md",
+      "sha256": "be1904fa8f1278a19cecd2cc7fcf0f9ee3327fd81a9993321173355146c2dcd7"
+    }
+  ],
+  "redThenGreen": {
+    "baseline": {
+      "commit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+      "tree": "29c803a957b38f7b22e4bde508245e047eaaabcf",
+      "unitTests": "5/5 passed (soft budget tests absent)",
+      "mutationGuards": "0/5 present (feature absent on base)"
+    },
+    "candidate": {
+      "unitTests": "9/9 passed (0 fail, 0 skip, 0 todo)",
+      "mutationGuards": "5/5 caught (S1-S5 fail-on-mutation green, exit code 0)"
+    }
+  }
+}

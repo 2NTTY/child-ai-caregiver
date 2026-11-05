@@ -4755,3 +4755,17 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Failure / Repair：原完整 server 型別 1536 MiB heap V8 OOM（exit -6）；3072 MiB 單次重試 SIGKILL（exit -9），原因未證，監測未觸發 512 MiB 餘量門檻。未產生完整 program／TS 診斷，仍 NOT_PASSED，沒有第三跑或縮 config。sharing suite 候選15/16、精確基線client overlay 14/16，同一 care restore journal descriptor RED 保留，只消除 growth 讀取失敗。首次 growth-read 缺 transform-types 的 launcher failure 及原盤點 required RED 亦保留，不冒充產品通過。
 - Related Current-State Correction：按已保存的 [PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 交付收據，校準根 PLAN／STATUS 唯一緊鄰 HC current 節：2026-11-05 13:00:09 UTC 正常合併至 `f453226f`，精確 head `74e7b66d0646fc2970af55eb864a6770cd63655a` 的 [CI 42030612566](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42030612566)／[CI 42031114003](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42031114003) 各 8/8 與完整 frontend 型別、locked install／offline wrapper 成功；未部署。舊 HC WORKLOG／verification JSON 仍保留合併前快照，formal41 及原限制不進位，其他包不改。
 - Limitations / Next Action：完整 GR hook／host、scope／身份排程、瀏覽器／焦點／AT、原生、真 Firestore／API／家庭資料、模型及原正式矩陣未驗。先獨立 review 全部十檔，再由精確 head 必要 offline CI 執行 33 案及 frontend／root／server 三個原完整 config；clean install、正向完整 namespace wrapper 與 GitHub job 尚未跑，不能以本地 frontend／root PASS 代填 server gate。GR 未 commit、remote 寫入、開 PR、合併或部署。
+
+
+<a id="log-20261105-soft-budget"></a>
+## 2026-11-05 UTC｜REQ-005 PR 6 集中資源政策與 0.25 軟預算管理
+
+- Recorded At：2026-11-05 14:15:00 UTC；Work Date：2026-11-05。Step / Package：REQ-005 §3.1 集中政策參數與 0.25 軟預算諮詢信號 (缺口 1)。
+- Goal / Actual Work：依據 REQ-005 §3.1 及 §9 階段 1，集中化管理資源政策。於 `src/shared/agent-run-limits.ts` 集中宣告 `DEFAULT_SOFT_BUDGET_RATIO = 0.25` 及 `SOFT_BUDGET_RATIO_RANGE = { min: 0.05, max: 1.0, default: 0.25 }`；於 `server/agent-budget.ts` 引入並導出常數，擴展 `AgentRunLimits` 與 `freezeAgentRunLimits` 支援邊界防護與驗證；於 `AgentBudget` 類別增加 `softBudgetRatio` getter，並在 `configurePersonal` 支援個人/運行層級配置；在 `planningSnapshot` 推導 `softBudget`、`softRemaining` 與 `softExceeded` 信號。嚴格落實核心不變量：軟預算與硬配額共用同一帳本，軟預算僅作為 planning 諮詢信號，超額時絕不拋出 `AgentStopped` 或阻斷運行。
+- AI Assistance / Human Verification：AI 完成代碼修改、9 個單元測試、5 個變異測試防護守衛（S1–S5）、專用離線驗證工作流與驗證收據。Human Verification：尚未進行。
+- Changes：`src/shared/agent-run-limits.ts`、`server/agent-budget.ts`、`tests/agent-budget.test.ts`、`scripts/verify-soft-budget-mutations.mjs`、`.github/workflows/soft-budget-offline.yml`、`scripts/ci/verify-soft-budget-offline.sh`、`artifacts/verification/REQ005_SOFT_BUDGET_20261105.json` 及本追加日誌。
+- Verification：
+  - 單元測試：`node --test tests/agent-budget.test.ts` 9/9 PASS（0 fail, 0 skip）。
+  - 變異防護：`node scripts/verify-soft-budget-mutations.mjs` 5/5 守衛（S1–S5）全數攔截（fail-on-mutation green, exit 0）。
+  - 型別檢查：`npx tsc --project tsconfig.server.json --noEmit` 與 `npx tsc --noEmit` 均 0 診斷（exit 0）。
+- Limitations / Next Action：PR 6 專注於軟預算集中化管理與 planningSnapshot 信號暴露，不跨越至 PR 7 的 1024 token clamp 解鎖或 PR 8 的個人 key 隘壓解鎖。待獨立 review 與遠端 CI 通過後合入 master。
