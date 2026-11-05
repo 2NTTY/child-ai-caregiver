@@ -45,6 +45,7 @@ export function SharedSpacesScreen({ mode = "family" }: { mode?: SharingMode }) 
   const acceptForm = useForm({ resolver: zodResolver(tokenSchema), defaultValues: { token: "" } });
   const inviteForm = useForm<z.infer<typeof inviteSchema>>({ resolver: zodResolver(inviteSchema), defaultValues: { email: "", role: "caregiver", days: "7" } });
   const selected = state.selected, locked = !state.online || !!state.busy || !!state.pending;
+  const cleanupReceipts = [...state.cleanupReceipts, ...(state.receipt?.exit?.cleanupState === "completed" ? [state.receipt] : [])];
   const ready = !!state.identityKey && !!state.userId;
   const editable = selected && selected.role !== "viewer";
   const owner = selected?.role === "owner";
@@ -78,13 +79,14 @@ export function SharedSpacesScreen({ mode = "family" }: { mode?: SharingMode }) 
         <AppButton label="查回原操作結果" loading={state.busy === "check"} disabled={!state.online || !!state.busy} onPress={() => { void controller.checkOriginal(); }} />
         {state.pending.checked ? <AppButton label="繼續剛才的操作" variant="secondary" disabled={!state.online || !!state.busy} onPress={() => { void controller.retryOriginal(); }} /> : null}
       </View> : null}
-      {state.receipt?.exit?.cleanupState ? <View style={styles.group}>
-        <Text accessibilityLiveRegion="polite" style={styles.body}>{state.receipt.exit.cleanupState === "pending"
+      {cleanupReceipts.map(cleanup => <View key={cleanup.operationId} style={styles.group}>
+        <Text style={styles.body}>班級識別碼：{cleanup.exit?.spaceId}</Text>
+        <Text accessibilityLiveRegion="polite" style={styles.body}>{cleanup.exit?.cleanupState === "pending"
           ? "班級解散已受理，所有成員已失去存取；班級所屬的孩子、記錄及附件仍在永久清理中，尚未確認清理完成。"
           : "班級所屬的孩子、記錄及附件已完成永久清理。"}成員的私人原件及帳戶不受影響。</Text>
-        {state.receipt.exit.cleanupState === "pending" ? <AppButton label="查核班級清理進度" variant="secondary" loading={state.busy === "check"}
-          disabled={!state.online || !!state.busy || !!state.pending} onPress={() => { void controller.checkOriginal(); }} /> : null}
-      </View> : null}
+        {cleanup.exit?.cleanupState === "pending" ? <AppButton label="查核班級清理進度" variant="secondary" loading={state.busy === "check"}
+          disabled={!state.online || !!state.busy} onPress={() => { void controller.checkOriginal(cleanup.operationId); }} /> : null}
+      </View>)}
       {state.invitationToken ? <View style={styles.group}>
         <Text style={styles.body}>邀請已確認。請手動選取或按住下方代碼複製，再自行交給指定電郵的成員；系統沒有代寄電郵。</Text>
         <Text selectable style={styles.token}>{state.invitationToken}</Text>

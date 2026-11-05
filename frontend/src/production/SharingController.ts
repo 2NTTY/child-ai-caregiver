@@ -10,14 +10,14 @@ export interface SharingState {
   teacherSpaces: SharedPage<SharedSpaceView>; teacherClasses: SharedPage<SharedSpaceView>; teacherClassesLoaded: boolean;
   rosterQuery: string; rosterLoaded: boolean;
   members: SharedPage<SharedMemberView>; shares: SharedPage<SharedGrantView>; invitations: SharedPage<SharedInviteView>;
-  pending: Pending | null; invitationToken: string | null; receipt: SharingOperation | null; notice: string | null;
+  pending: Pending | null; invitationToken: string | null; receipt: SharingOperation | null; cleanupReceipts: SharingOperation[]; notice: string | null;
 }
 const page = <T>(): SharedPage<T> => ({ items: [], nextCursor: null });
 const noEffectRejections = new Set(["invalid_input", "version_conflict", "read_only", "space_manager_required", "invitation_expired",
   "invitation_recipient", "invitation_revoked", "invitation_already_used", "already_member", "transfer_target", "space_transfer_or_dissolve_required",
   "teacher_space_has_classes", "class_members_managed_by_teachers", "class_already_attached", "class_not_attached", "teacher_space_required", "class_required"]);
 const initial = (userId: string | null, identityKey: string | null, online: boolean): SharingState => ({ userId, identityKey, online, loaded: false, busy: null,
-  spaces: page(), selected: null, teacherSpaces: page(), teacherClasses: page(), teacherClassesLoaded: false, rosterQuery: "", rosterLoaded: false, members: page(), shares: page(), invitations: page(), pending: null, invitationToken: null, receipt: null, notice: null });
+  spaces: page(), selected: null, teacherSpaces: page(), teacherClasses: page(), teacherClassesLoaded: false, rosterQuery: "", rosterLoaded: false, members: page(), shares: page(), invitations: page(), pending: null, invitationToken: null, receipt: null, cleanupReceipts: [], notice: null });
 const errorText = (error: unknown, mode: SharingMode = "family") => {
   const code = error instanceof SharingApiError ? error.code : "";
   const messages: Record<string, string> = {
@@ -149,7 +149,11 @@ export class SharingController {
       || "spaceId" in command && (operation.space && operation.space.id !== command.spaceId || operation.exit && operation.exit.spaceId !== command.spaceId))
       throw new SharingApiError(0, "sharing_response_invalid");
     const redacted = "redacted" in operation && operation.redacted === true;
+    // Accepted cleanup outlives the latest command result, within this owner/session only.
+    const cleanupReceipts = this.state.cleanupReceipts.filter(receipt => receipt.operationId !== operation.operationId);
+    if (operation.action === "dissolve" && operation.exit?.cleanupState === "pending") cleanupReceipts.push(operation);
     this.update({ pending: null, receipt: operation, invitationToken: redacted ? null : operation.invitationToken ?? null,
+      cleanupReceipts,
       selected: this.matchesMode(operation.space) ? operation.space : null, rosterLoaded: false, teacherClasses: page(), teacherClassesLoaded: false, teacherSpaces: page(),
       rosterQuery: operation.space?.id === this.state.selected?.id ? this.state.rosterQuery : "",
       members: page(), shares: page(), invitations: page(), notice: "原操作已確認，正在重新讀取目前狀態。" });
@@ -170,7 +174,8 @@ export class SharingController {
     const parsed = sharingCommandSchema.safeParse(command);
     if (!parsed.success) { this.update({ notice: `請核對操作欄位及目前${sharingLabel(this.mode)}版本。` }); return; }
     const ticket = this.begin("write"); if (!ticket) return;
-    this.update({ pending: { command: parsed.data, checked: false, unknown: false }, receipt: null, invitationToken: null });
+    this.update({ pending: { command: parsed.data, checked: false, unknown: false },
+      receipt: this.state.receipt?.exit?.cleanupState === "pending" ? this.state.receipt : null, invitationToken: null });
     await this.send(ticket);
   }
   private async send(ticket: Ticket) {
@@ -188,10 +193,15 @@ export class SharingController {
       }
     } finally { this.finish(ticket); }
   }
-  async checkOriginal() {
+  async checkOriginal(cleanupOperationId?: string) {
+    if (cleanupOperationId !== undefined) {
+      const receipt = this.state.cleanupReceipts.find(receipt => receipt.operationId === cleanupOperationId);
+      if (receipt) await this.checkCleanupReceipt(receipt);
+      return;
+    }
     if (!this.state.pending) {
-      const receipt = this.state.receipt;
-      if (receipt?.action === "dissolve" && receipt.exit?.cleanupState === "pending") await this.checkCleanupReceipt(receipt);
+      const receipt = this.state.cleanupReceipts[0];
+      if (receipt) await this.checkCleanupReceipt(receipt);
       return;
     }
     const ticket = this.begin("check"); if (!ticket) return;
@@ -214,7 +224,10 @@ export class SharingController {
         || operation.exit?.spaceId !== receipt.exit?.spaceId || operation.exit?.version !== receipt.exit?.version
         || operation.exit?.state !== "dissolved" || !operation.exit.cleanupState)
         throw new SharingApiError(0, "sharing_response_invalid");
-      this.update({ receipt: operation, notice: operation.exit.cleanupState === "completed"
+      this.update({ cleanupReceipts: this.state.cleanupReceipts.flatMap(retained => retained.operationId !== operation.operationId ? [retained]
+        : operation.exit!.cleanupState === "completed" ? [] : [operation]),
+        ...(this.state.receipt?.operationId === operation.operationId ? { receipt: operation } : {}),
+        notice: operation.exit.cleanupState === "completed"
         ? "班級所屬資料清理已完成。" : "班級已關閉，所屬資料仍在清理中。請稍後沿原操作查核。" });
     } catch (error) { if (this.current(ticket)) this.update({ notice: "未能核對班級清理進度；已受理的解散不會重新提交。" + errorText(error, this.mode) }); }
     finally { this.finish(ticket); }

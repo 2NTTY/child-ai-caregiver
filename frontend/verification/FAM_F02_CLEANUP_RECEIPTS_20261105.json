@@ -1,0 +1,244 @@
+{
+  "package": "FAM-F02",
+  "status": "INTEGRATED_CANDIDATE_PENDING_REVIEW",
+  "baseCommit": "a162e65e4ccf32c52a19dafd3109cd2b857e4a64",
+  "baseTree": "3063d8489db4cfb8cdb86eb51c253a6928c5923e",
+  "branch": "codex/family-cleanup-receipts",
+  "originalFixBase": "f0149b79e2f7f653f63559a237f53ee3b7a34b4c",
+  "sourceDeltaSha256": "8c5f405241a35502e8458696c0aae590c46851040ac26d94c6fa4d74ebc4e8fb",
+  "sourcePins": [
+    {
+      "path": "frontend/src/production/SharingController.ts",
+      "beforeSha256": "703a31cb1ee033b01a46e9ca626c2f591d69186368b25b4510f8931bd234bbeb",
+      "afterSha256": "1d11a78a9ae46a4b241098a29358475e53391bdaa601ddc99619c55c76879709",
+      "bytes": 22154
+    },
+    {
+      "path": "frontend/src/production/useProductionSharing.ts",
+      "beforeSha256": "1ec7e442074e3b140ec36becb86a775e2e0d9793c5c25cf537418e66a8b77dc6",
+      "afterSha256": "9220e89ec99b7c7dfa46f79a914ce17f6163f457c55b63231bdf4bc8cb819bac",
+      "bytes": 3123
+    },
+    {
+      "path": "frontend/src/screens/familyScreen.tsx",
+      "beforeSha256": "8f238249504caabb5f69fb99f704cd5d2f6bf9898582eed0508dd0311319aa37",
+      "afterSha256": "e9b42b9a881c3ae14832897e33a7aeb4eb804f8931ef9ee00d50803a94942aeb",
+      "bytes": 31321
+    },
+    {
+      "path": "frontend/src/production/sharing-cleanup-receipt.test.mts",
+      "afterSha256": "6d491d853e159734242343d078d13d472dfc879fb5c0d0154f3b7b642904464b",
+      "bytes": 18364,
+      "new": true
+    }
+  ],
+  "environment": {
+    "node": "24.22.1",
+    "npm": "11.9.0",
+    "typescript": "6.0.3",
+    "react": "19.2.3",
+    "reactDom": "19.2.3",
+    "reactHookForm": "7.88.0",
+    "hookformResolvers": "5.9.1",
+    "zod": "4.5.4",
+    "dependencyInstallation": false,
+    "realNetworkCalls": false,
+    "transport": "Injected in-memory fetch; preload tripwire blocks fetch/socket/http/tls/dns/dgram. This is not OS network isolation."
+  },
+  "baseline": {
+    "existingControllerTests": {
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "exitCode": 0,
+      "logSha256": "cfdd0c2b001cd95157fbcd9df377d830b61daae2c1f6c64ea42d991bf0f9c91b"
+    },
+    "newRegressionBeforeProductPatch": {
+      "tests": 28,
+      "passed": 6,
+      "failed": 22,
+      "skipped": 0,
+      "cancelled": 0,
+      "exitCode": 1,
+      "logSha256": "9a0bfad985e9299d9f23d4cdfe66ca1956474984c1b7baaf59e54d89fb113fb8",
+      "reason": "Assertions show accepted cleanup is lost or unreachable; original test bytes preserved."
+    }
+  },
+  "checks": [
+    {
+      "name": "Native controller regression",
+      "status": "PASS",
+      "startedAtUtc": "2026-11-05T03:19:37.650268+00:00",
+      "exitCode": 0,
+      "counts": {
+        "tests": 32,
+        "passed": 32,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "logSha256": "9cb54f23b5d3ddaf65d299339a37cdccd1659b22c50e67a6547c789d1be52787",
+      "wallSeconds": 0.354,
+      "peakChildRssKiB": 89708,
+      "networkTripwireBlockedAttempts": 0
+    },
+    {
+      "name": "React SSR screen/hook wiring",
+      "status": "PASS",
+      "startedAtUtc": "2026-11-05T03:23:03.695573+00:00",
+      "exitCode": 0,
+      "counts": {
+        "tests": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "logSha256": "df4e16801cd97a427fc82e92ad543ad09c47fb3f907686e4858ddefdf203061f",
+      "wallSeconds": 0.717,
+      "peakChildRssKiB": 148404,
+      "networkTripwireBlockedAttempts": 0
+    }
+  ],
+  "nativeTestCommand": "node --test frontend/src/production/sharing-cleanup-receipt.test.mts frontend/src/production/sharing-controller.test.mts",
+  "nativeTestExecutionNote": "The recorded local run additionally preloaded the network tripwire. No production fetch was allowed.",
+  "uiWiringScope": [
+    "Full actual familyScreen.tsx and useProductionSharing.ts were transpiled and executed with real React SSR, react-hook-form, resolvers, SharingController, SharingApi and schemas.",
+    "Only source/import/dependency paths changed in the existing four-test harness; assertions and scenarios stayed unchanged.",
+    "Host owner, router, visual primitives and server snapshot adapter are explicit test doubles. Button callbacks were invoked from captured props; subscription scheduling and native/browser interactions were not tested."
+  ],
+  "fullFrontendTypecheck": {
+    "status": "BLOCKED_BY_MISSING_DEPENDENCIES",
+    "command": "node --max-old-space-size=1536 node_modules/typescript/bin/tsc --noEmit --project frontend/tsconfig.json --pretty false",
+    "configuration": "Original frontend tsconfig, unmodified include and strict; no fake declarations or skipped diagnostics.",
+    "exitCode": 2,
+    "diagnosticCount": 4,
+    "diagnosticCode": "TS2307",
+    "missingPackages": {
+      "@invertase/react-native-apple-authentication": "2.5.1",
+      "@react-native-google-signin/google-signin": "16.1.5"
+    },
+    "affectedFiles": [
+      "frontend/src/platform/firebase-social-auth.native.ts:12:90",
+      "frontend/src/platform/firebase-social-auth.native.ts:28:32",
+      "frontend/src/platform/native-provider-adapter.ts:2:121",
+      "frontend/src/platform/native-provider-adapter.ts:12:70"
+    ],
+    "logSha256": "d6a907376e68dadc993c73884db38db17c27a391a6e83e86e35887b208425436",
+    "wallSeconds": 16.025,
+    "peakChildRssKiB": 1141472,
+    "baselineComparison": {
+      "method": "Identical full config and dependencies; only the three changed product files read from exact a162 Git blobs through an in-memory compiler read overlay. Candidate disk bytes unchanged.",
+      "rootCount": 505,
+      "sourceCount": 1951,
+      "exitCode": 2,
+      "diagnosticsByteEqual": true,
+      "logSha256": "d6a907376e68dadc993c73884db38db17c27a391a6e83e86e35887b208425436",
+      "wallSeconds": 14.523,
+      "peakChildRssKiB": 1213864
+    },
+    "conclusion": "The four missing-dependency diagnostics also occur on the exact baseline. The complete frontend typecheck has NOT passed."
+  },
+  "retainedHistoricalEvidence": {
+    "originalFixSealSha256": "f2704b07b493f1eeda79548e3429f3701902afc137f0b3ec0f4b1d1d3c6e35fc",
+    "independentReviewSealSha256": "8fbf52b660d7b694925921bd802e0697357f4793347e2cb44e4eb831c9398192",
+    "historicalIndependentTests": 50,
+    "scope": "Prior exact-source controller/client/schema and explicit host-stub hook/SSR review; not 50 newly rerun integration tests. Counts across versions are not added."
+  },
+  "notExercised": [
+    "Full mounted ProductionOwner and subscription scheduling",
+    "Browser visuals, pointer/keyboard focus and accessibility",
+    "Native devices",
+    "Real API/server cleanup worker, real family data or model calls",
+    "Build/export/deployment",
+    "Root/server typecheck or repository-wide test suite",
+    "Remote PR CI or merge"
+  ],
+  "nextGate": [
+    "Independent review of the exact 10-file delta including the same-feature CI and documentation",
+    "Normal PR creation only after parent review",
+    "Actual exact-head Family cleanup offline run: all 36 cases with no skips plus full frontend typecheck",
+    "Normal protected merge only after required exact-head checks; skipped unrelated workflows cannot substitute"
+  ],
+  "scopeBoundaries": [
+    "Session-local cleanup receipts only; no reload persistence or new owner/store",
+    "Only original operation ID GET checks for retained receipts; unknown command retains its own original-ID lookup/retry",
+    "No Server, API, schema, authority, permission or dependency changes",
+    "FAM-F01, FAM-F03, AC-F02, Admin R1 and FR01 are outside this patch"
+  ],
+  "remoteActions": {
+    "commit": false,
+    "push": false,
+    "pullRequestCreated": false,
+    "merged": false,
+    "deployed": false
+  },
+  "subsequentCiPreparation": {
+    "status": "PREPARED_NOT_RUN_REMOTELY",
+    "workflow": ".github/workflows/family-cleanup-offline.yml",
+    "runner": "scripts/ci/verify-family-cleanup-offline.sh",
+    "purpose": "Exact-head CI for this same FAM-F02 repair; unrelated workflows being skipped is not a pass.",
+    "trigger": {
+      "event": "pull_request",
+      "base": "master",
+      "head": "codex/family-cleanup-receipts",
+      "sameRepositoryOnly": true,
+      "pathFiltered": true
+    },
+    "permissions": {
+      "contents": "read"
+    },
+    "jobTimeoutMinutes": 15,
+    "toolchain": {
+      "node": "24.22.1",
+      "npm": "11.8.0",
+      "lockfileUnchanged": true,
+      "newDependencies": false,
+      "checkoutAction": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "setupNodeAction": "949feb2413d6458794dcd2491c4babbbce0c15c1"
+    },
+    "installation": "Official registry only; validate locked URLs/integrities; npm ci --ignore-scripts with no action dependency cache; existing repository patches applied explicitly inside offline phase.",
+    "executionBoundary": "New Linux network namespace with only down loopback, no IPv4/IPv6 routes; env -i, empty HOME/TMPDIR, non-root UID, no_new_privs and all capabilities removed. Checked at runtime, not yet exercised remotely.",
+    "expectedSuites": [
+      {
+        "path": "frontend/src/production/sharing-cleanup-receipt.test.mts",
+        "cases": 28
+      },
+      {
+        "path": "frontend/src/production/sharing-controller.test.mts",
+        "cases": 4
+      },
+      {
+        "path": "frontend/scripts/family-cleanup-wiring.test.mjs",
+        "cases": 4
+      }
+    ],
+    "totalsGate": "Existing scripts/ci/summary-progress-contract.mjs check command requires exact per-file cases and zero fail/cancelled/skipped/todo.",
+    "typeGate": "Original complete frontend/tsconfig.json; noEmit, 1536 MiB heap, 180-second command timeout; matching native auth packages come from unchanged lock.",
+    "newLocalChecks": {
+      "workflowYamlAndShellSyntax": "PASS",
+      "branchForkNegativeControls": "PASS",
+      "officialLockResolutionValidation": "PASS",
+      "relocatedUiHarness": {
+        "status": "PASS",
+        "tests": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "exitCode": 0,
+        "startedAtUtc": "2026-11-05T03:32:47.069010+00:00",
+        "logSha256": "d8ca81bb4a02dd74d973a6ff021816f55fa864528f20024438606ad19a0475a0",
+        "assertionsChanged": false,
+        "reason": "Only rerun needed to prove the new committed paths and exact CI command. Do not add this repeated four to prior stage counts."
+      },
+      "networkTripwireNegativeControl": "Expected exit 1, blockedAttempts=1; attempted synthetic fetch prevented in process.",
+      "tapSkippedCaseNegativeControl": "Expected exit 1; the existing checker rejects skipped tests.",
+      "controller32Rerun": false,
+      "compilerRerun": false,
+      "dependencyInstall": false,
+      "linuxIsolationRun": false
+    },
+    "preservedEarlierFailure": "The local full frontend check remains BLOCKED_BY_MISSING_DEPENDENCIES with the recorded candidate/baseline exit 2. Workflow preparation does not close this gate.",
+    "requiredNextEvidence": "Independent review of CI additions, then actual exact-head run proving all three complete suites and full frontend typecheck pass."
+  }
+}

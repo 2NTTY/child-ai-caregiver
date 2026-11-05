@@ -3,6 +3,16 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+## FAM-F02：保留已受理班級清理收據（2026-11-05，候選未交付）
+
+基線 `a162e65e`，分支 `codex/family-cleanup-receipts`。沿原 SharingController 在同一 owner／session 保留多筆未完成清理；後續成功、已知拒絕或 unknown 指令不會取代舊收據。每列只以原 operationId 查回，精確完成證明才移除該列；unknown 指令與原 ID 重試仍分開處理，不因清理未完鎖住所有管理。身份／session 結束清除，沒有跨重新載入持久化、Server／API／schema／權限改動。
+
+整合後原生 controller／真 client／schema 回歸 **32/32** 通過；同一新測試在未修基線為 6 過／22 預期失敗，原失敗保留。實際 hook／畫面的 **4/4** SSR 接線核對另外通過，host、router 及視覺元件有明示替身，不代表完整 ProductionOwner 掛載或瀏覽器通過。完整 frontend 型別檢查為 **BLOCKED_BY_MISSING_DEPENDENCIES**：缺 Apple／Google 原生登入套件，候選及只還原三個產品檔的精確基線均為相同四條 TS2307、exit 2；不能寫成全型別通過。[版本、命令及限制](verification/FAM_F02_CLEANUP_RECEIPTS_20261105.json)。
+
+同包已準備[專用 PR CI](../.github/workflows/family-cleanup-offline.yml)：只對本分支的同倉 master PR，以原唯一 lockfile／官方 registry 安裝，關閉安裝 lifecycle scripts；之後在無網路、無憑證、非 root 的隔離程序套用原依賴 patches，執行三個完整測試檔（預期 28＋4＋4，零 skip）及原完整 frontend noEmit。既有四項 SSR harness 已搬入 `frontend/scripts`，斷言不變；新路徑與精確 CI 測試參數本地 4/4 通過，workflow／shell 靜態核對通過，**遠端 CI 尚未執行**，不把其他 workflow skipped 或靜態解析當通過。
+
+下一步由主對話覆核十檔精確整合差異，再依正常 PR／必要 CI 流程交付；本輪未提交遠端、建 PR、合併或部署。原本地完整型別阻塞及失敗證據保留，須由精確 head 的完整 CI 實跑解除。完整掛載、瀏覽器／焦點／無障礙、原生裝置與真服務未驗，FAM-F01／FAM-F03 及其他家庭驗收不因本包自動完成。
+
 ## 本人備份比較與匯入結果（2026-11-05）
 
 沿「匯入資料」面板查看每個模組實際建立、更新、略過和衝突的數量。舊批次沒有分項統計時仍可查逐項結果。本人備份可先選原孩子，比較孩子概況、照護記錄及待辦，再勾選要覆蓋或恢復的已讀項目。一批選擇只提交一次；換帳戶、換備份或重新比較後須重新選擇。其他孩子或班級沿獨立副本匯入流程。共用表單及 owner 已在本機接通，Web 發布、Android 新 binary 及正式帳戶驗收另記。[原件與副本契約](../docs/API.md#p4-personal-restore)

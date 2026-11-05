@@ -31,7 +31,7 @@ export function useProductionSharing(mode: SharingMode = "family", enabled = tru
     ...current, identityKey: null, userId: null, online, loaded: false, busy: null, spaces: { items: [], nextCursor: null }, selected: null, rosterQuery: "", rosterLoaded: false,
     teacherSpaces: { items: [], nextCursor: null }, teacherClasses: { items: [], nextCursor: null }, teacherClassesLoaded: false,
     members: { items: [], nextCursor: null }, shares: { items: [], nextCursor: null }, invitations: { items: [], nextCursor: null },
-    pending: null, invitationToken: null, receipt: null, notice: null,
+    pending: null, invitationToken: null, receipt: null, cleanupReceipts: [], notice: null,
   };
   useEffect(() => { if (enabled && state.userId && state.online && !state.loaded) void controller.loadSpaces(); }, [controller, state.identityKey, state.online, enabled]);
   return { controller, state };
