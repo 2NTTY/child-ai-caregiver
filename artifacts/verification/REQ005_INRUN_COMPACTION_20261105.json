@@ -3,12 +3,15 @@
   "package": "REQ005-COMPACTION01",
   "requirement": "REQUIREMENTS_BACKLOG.md §4.2 In-Run Context Compaction Baseline",
   "branch": "codex/req005-inrun-compaction",
-  "recordedAt": "2026-11-05T21:50:00+08:00",
-  "status": "LOCAL_VERIFIED_PENDING_INCREMENTAL_REVIEW_AND_EXACT_HEAD_REMOTE_CI",
+  "pullRequest": 508,
+  "recordedAt": "2026-11-05T22:38:00+08:00",
+  "status": "EXACT_HEAD_REMOTE_CI_PASSED_HOLD_MERGE",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
   "baseTree": "29c803a957b38f7b22e4bde508245e047eaaabcf",
-  "candidateTree": "6a0457a658658c4bf290a4220b1c995aa3bac422",
+  "exactHead": "93a5ade216718cf8a5f87d66b996552d040737f6",
+  "candidateTree": "e93b33fc02f788e0f9c929a2657f68d596bf2cae",
   "priorPushedHead": "da192121173331fe0b1b064b36962fc2208ee52b",
+  "rebasedPriorHead": "e2aa90b6be51ef734ad8dc00efac679fd25f2ee4",
   "environment": {
     "node": "v24.16.0",
     "os": "win32-x64",
@@ -42,10 +45,18 @@
     },
     {
       "path": "scripts/ci/verify-compaction-offline.sh",
-      "blob": "01efd708dc57416cd4b01a85e7db625a219decbd",
-      "sha256": "ff7a98267a7e408e8b8880918dfa1464a6378a90d5a49f1528a4c01dcd2bf629"
+      "blob": "085ad9994151accae97e057dbd890bf7677abfe9",
+      "sha256": "19e7f1e210a032d56d5dc70f8733f758c613abc0fee3d3cd26ae2b5b3e063f72"
     }
   ],
+  "remoteCI": {
+    "workflow": ".github/workflows/compaction-offline.yml",
+    "pullRequest": 508,
+    "exactHead": "93a5ade216718cf8a5f87d66b996552d040737f6",
+    "successRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/42045529284",
+    "retainedFailureRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/42043029937",
+    "status": "SUCCESS"
+  },
   "redThenGreen": {
     "baseline": {
       "commit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
@@ -54,9 +65,11 @@
       "mutationGuards": "0/6 present (feature absent on base)"
     },
     "candidate": {
-      "tree": "6a0457a658658c4bf290a4220b1c995aa3bac422",
+      "head": "93a5ade216718cf8a5f87d66b996552d040737f6",
+      "tree": "e93b33fc02f788e0f9c929a2657f68d596bf2cae",
       "unitTests": "11/11 passed (0 fail, 0 skip, 0 todo)",
-      "mutationGuards": "6/6 caught (C1-C6 fail-on-mutation green, exit code 0)"
+      "mutationGuards": "6/6 caught (C1-C6 fail-on-mutation green, exit code 0)",
+      "remoteCI": "Exact-head run 42045529284 passed (compaction-offline)"
     }
   },
   "verification": {
@@ -111,7 +124,7 @@
     "Opt-in library baseline only (0 production callers in main routes)",
     "No live GCP Vertex / Gemini cloud calls made during offline tests",
     "No persistent Firestore memory writer (by design for §4.2 ephemeral compaction)",
-    "Remote exact-head CI run pending PR creation on origin",
+    "PR #508 opened; remote exact-head CI run 42045529284 passed on 93a5ade2; strict HOLD merge maintained pending Owner code review",
     "Token threshold 16000 and retention size 4 are unmeasured engineering starting suggestions, not approved permanent policy"
   ],
   "notRun": [
@@ -120,6 +133,10 @@
     "Cloud Firestore index verification (unneeded for in-run memory compaction)"
   ],
   "retainedFailures": [
+    {
+      "check": "GitHub Actions compaction-offline run 42043029937 on exact head aa9bca61",
+      "reason": "tsc in server typecheck exceeded --max-old-space-size=2048 with exit code 134 (V8 heap OOM); resolved on 93a5ade2 by removing the 2048 MiB cap in verify-compaction-offline.sh, allowing tsc to complete successfully under default heap allocation in run 42045529284"
+    },
     {
       "check": "scripts/ci/verify-compaction-offline.sh on Windows host",
       "reason": "Preflight Linux unshare/PARENT_NETNS network isolation is designed strictly for GitHub Actions Ubuntu runners and fails on Windows developer workstations"

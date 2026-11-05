@@ -4771,10 +4771,30 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   5. 變異測試 CRLF 安全防護：修復 `scripts/verify-compaction-mutations.mjs` 正則換行匹配，確保 Windows CRLF 環境下 6 項安全變異全數攔截。
   6. 運行時配置擴展：`server/agent-runtime.ts` 擴充 `AgentRunInput` 之 `contextCompaction` 宣告式參數。
 - Verification：
-  - Node 版本：`v24.16.0`（Windows win32-x64），基線對齊最新 master `f453226fca1befc6aef8e020407d2191f89de784`。
+  - Node 版本：`v24.16.0`（Windows win32-x64），基線對齊最新 master `2abe7aed60b192b253414f6464e3fd070cc377e7`（PR #506）。
   - 單元測試：`node --test tests/agent-context-compaction.test.ts`，11/11 通過，0 失敗，0 跳過。測試命名全數重構為行為導向小寫句。
   - 變異安全防護：`node scripts/verify-compaction-mutations.mjs`，6/6 變異全數有效攔截（C1: 略過預算准入、C2: 略過串流前取消、C3: 略過串流中取消、C4: 吞沒取消錯誤、C5: 削弱防外推、C6: 運行時未裝配），Exit code 0。
   - 靜態型別：`npx tsc --noEmit` 通過；`tsconfig.server.json` 針對本次修訂檔（含 Test 11 `LlmRequest` 修正）0 診斷。
   - 離線 CI 工作流：新增 `.github/workflows/compaction-offline.yml` 及 `scripts/ci/verify-compaction-offline.sh`，鎖定合約驗證。
 - Changes：`server/context-compactor.ts`, `server/agent-runtime.ts`, `tests/agent-context-compaction.test.ts`, `scripts/verify-compaction-mutations.mjs`, `.github/workflows/compaction-offline.yml`, `scripts/ci/verify-compaction-offline.sh`, `PLAN.md`, `WORKLOG.md`, `artifacts/verification/REQ005_INRUN_COMPACTION_20261105.json`。
-- Limitations / Notice：本包為底層 opt-in 庫代碼，預設未啟用（0 production callers），16000 門檻標記為工程起始建議（待集中政策批准），不改變現有生產對話路徑，亦不取代 Firestore 跨會話記憶（REQ-005 §4.1）。無 GCP / 真模型 / 產品部署操作。未建立 PR、未向遠端推送。
+- Limitations / Notice：本包為底層 opt-in 庫代碼，預設未啟用（0 production callers），16000 門檻標記為工程起始建議（待集中政策批准），不改變現有生產對話路徑，亦不取代 Firestore 跨會話記憶（REQ-005 §4.1）。無 GCP / 真模型 / 產品部署操作。已建立 PR #508 並推送到遠端 codex/req005-inrun-compaction，嚴格維持 HOLD merge，已通過遠端 exact-head 離線 CI（Run 42045529284）。
+<a id="log-20261105-compaction-pr508"></a>
+### 2026-11-05 14:35 UTC｜REQ005-COMPACTION01 PR #508 證據校準與離線 CI 驗收
+
+- Recorded At：2026-11-05 14:35 UTC (22:35 HKT)；Work Date：2026-11-05；Step / Package：REQ005-COMPACTION01
+- Executor：CheungHiuTung-2526
+- AI Assistance：由 Antigravity 協助核對 Round 5 審查意見並完成證據校準
+- Human Verification：尚未進行
+- Goal：校準 PR #508 驗證紀錄與工作日誌，記錄 exact-head 遠端 CI 成功與保留失敗。
+- Actual Work：
+  1. 校準 `artifacts/verification/REQ005_INRUN_COMPACTION_20261105.json`：
+     - `candidateTree` 刷新為 `e93b33fc02f788e0f9c929a2657f68d596bf2cae`（對齊 exact head `93a5ade2` 之樹 SHA）。
+     - 更新 `trackedFiles` 中 `scripts/ci/verify-compaction-offline.sh` 之 blob (`085ad9994151accae97e057dbd890bf7677abfe9`) 與 SHA-256 (`19e7f1e210a032d56d5dc70f8733f758c613abc0fee3d3cd26ae2b5b3e063f72`)。
+     - 補充 `exactHead`（`93a5ade2`）與遠端 CI 成功收據（Run 42045529284）。
+     - 於 `retainedFailures` 保留 exact head `aa9bca61` 於 CI 42043029937 因 `--max-old-space-size=2048` 造成之 tsc V8 heap OOM（exit 134），記錄移除 cap 後於 93a5ade2 CI 42045529284 成功恢復。
+  2. 依 Round 5 要求停止 rewrite 歷史，以新 commit 形式追加證據修正，不再對已開 PR 執行 force-push。
+- Verification：
+  - 遠端 GitHub Actions CI：工作流 `compaction-offline.yml` 於 Ubuntu 24.22.1 runner 跑 11 項單元測試、6 項變異攔截及全量 server tsc，Run [42045529284](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42045529284) SUCCESS。
+  - 本地重跑：11/11 passed、6/6 caught (C1-C6 exit 0)、tsc 0 診斷。
+- Changes：`artifacts/verification/REQ005_INRUN_COMPACTION_20261105.json`, `WORKLOG.md`。
+- Limitations / Notice：本包為底層 opt-in 庫代碼，預設未啟用（0 production callers），16000 門檻標記為工程起始建議。已開 PR #508，嚴格維持 HOLD merge，等待 Owner code review。
