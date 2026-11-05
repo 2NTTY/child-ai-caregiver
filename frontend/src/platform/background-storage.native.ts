@@ -30,7 +30,7 @@ export const backgroundStorage = {
     const folder = directory(); folder.create({ intermediates: true, idempotent: true });
     const file = new File(folder, `${previous.id}-${randomUUID()}.img`);
     try {
-      input.copy(file);
+      await input.copy(file);
       const image = selected(file);
       // A small atomic secure-store pointer commits the new private file; never store photo bytes in key/value storage.
       await SecureStore.setItemAsync(previous.id, JSON.stringify(file.name), { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY });

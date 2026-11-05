@@ -194,18 +194,30 @@ test('local selection only accepts bounded raster signatures, not SVG or filenam
 });
 
 function nativePorts() {
-  const files = new Map(), secrets = new Map(), calls = []; let failCommit = false, chooser = { canceled: true }, serial = 0;
+  // Explicit in-memory device ports. No Expo, native file or SecureStore is executed.
+  const files = new Map(), secrets = new Map(), calls = [], deleteFailures = new Set();
+  let failCommit = false, chooser = { canceled: true }, serial = 0, copyHandler, commitHandler;
   class Directory { constructor(...parts) { this.uri = parts.map(value => value.uri ?? value).join('/'); } create() {} }
   class File {
     constructor(...parts) { this.uri = parts.map(value => value.uri ?? value).join('/'); this.name = this.uri.split('/').at(-1); }
-    get exists() { return files.has(this.uri); } get size() { return files.get(this.uri)?.length ?? 0; }
+    get exists() { calls.push(['exists', this.uri]); return files.has(this.uri); }
+    get size() { calls.push(['size', this.uri]); return files.get(this.uri)?.length ?? 0; }
     async bytes() { return files.get(this.uri); }
-    copy(destination) { calls.push(['copy', this.uri]); files.set(destination.uri, files.get(this.uri).slice()); }
-    delete() { calls.push(['delete', this.uri]); files.delete(this.uri); }
+    copy(destination) {
+      calls.push(['copy', this.uri, destination.uri]);
+      const complete = (bytes = files.get(this.uri).slice()) => { files.set(destination.uri, bytes); calls.push(['copy-complete', destination.uri]); };
+      return copyHandler ? copyHandler({ source: this.uri, destination: destination.uri, complete }) : Promise.resolve(complete());
+    }
+    delete() { calls.push(['delete', this.uri]); if (deleteFailures.has(this.uri)) throw new Error('Synthetic delete failure'); files.delete(this.uri); }
   }
   const secure = { WHEN_UNLOCKED_THIS_DEVICE_ONLY: 1, isAvailableAsync: async () => true,
     getItemAsync: async key => secrets.get(key) ?? null,
-    setItemAsync: async (key, value) => { if (failCommit) throw new Error('Synthetic commit failure'); secrets.set(key, value); },
+    setItemAsync: async (key, value, options) => {
+      calls.push(['commit-start', key, value, options]);
+      await commitHandler?.();
+      if (failCommit) throw new Error('Synthetic commit failure');
+      secrets.set(key, value); calls.push(['commit-complete', key]);
+    },
     deleteItemAsync: async key => { secrets.delete(key); } };
   const resolve = name => {
     if (name === 'expo-file-system') return { Directory, File, Paths: { document: 'file://private-app' } };
@@ -216,8 +228,121 @@ function nativePorts() {
     if (name === './background-image') return { backgroundImageMime };
     throw new Error('Unexpected native import: ' + name);
   };
-  return { files, secrets, calls, resolve, fail(value) { failCommit = value; }, choose(value) { chooser = value; } };
+  return { files, secrets, calls, resolve, fail(value) { failCommit = value; }, choose(value) { chooser = value; },
+    copyWith(value) { copyHandler = value; }, commitWith(value) { commitHandler = value; }, deleteFailures };
 }
+
+test('native storage waits for copy and pointer commit before retiring the previous image', async () => {
+  const p = nativePorts(), { backgroundStorage } = compile('platform/background-storage.native.ts', p.resolve, true);
+  const input = { uri: 'file://system-picker/synthetic.png' }; p.files.set(input.uri, new Uint8Array([1, 2, 3]));
+  const previous = await backgroundStorage.save('service:user-a', input), pointers = [...p.secrets];
+  const copying = deferred(), committing = deferred(), started = deferred();
+  p.copyWith(({ complete }) => { started.resolve(); return copying.promise.then(() => complete()); });
+  p.commitWith(() => committing.promise); p.calls.length = 0;
+  let settled = false;
+  const save = backgroundStorage.save('service:user-a', input);
+  save.then(() => { settled = true; }, () => { settled = true; });
+  try {
+    await started.promise; await flush();
+    const destination = p.calls.find(([kind]) => kind === 'copy')[2];
+    assert.equal(settled, false, 'save must still wait while File.copy is pending');
+    assert.deepEqual(p.secrets, new Map(pointers)); assert.equal(p.files.has(previous.uri), true);
+    assert.equal(p.calls.some(([kind, uri]) => kind === 'exists' && uri === destination), false, 'do not validate an incomplete destination');
+    copying.resolve(); await flush();
+    assert.equal(settled, false, 'copy completion alone does not commit the pointer');
+    assert.deepEqual(p.secrets, new Map(pointers)); assert.equal(p.files.has(previous.uri), true);
+    committing.resolve(); const saved = await save;
+    assert.equal(saved.uri, destination); assert.equal((await backgroundStorage.read('service:user-a')).uri, destination);
+    assert.equal(p.files.has(previous.uri), false); assert.equal(p.files.has(input.uri), true);
+    const event = kind => p.calls.findIndex(([name]) => name === kind);
+    assert.ok(event('copy-complete') < p.calls.findIndex(([kind, uri]) => kind === 'exists' && uri === destination));
+    assert.ok(event('copy-complete') < event('commit-start')); assert.ok(event('commit-complete') < event('delete'));
+    assert.deepEqual(p.calls.find(([kind]) => kind === 'commit-start')[3], { keychainAccessible: 1 });
+    assert.equal([...p.secrets.values()].some(value => value.includes('file://')), false, 'only a filename is committed');
+  } finally { copying.resolve(); committing.resolve(); await save.catch(() => {}); }
+});
+
+test('native copy rejection preserves the original error and removes only its partial candidate', async () => {
+  for (const partial of [false, true]) {
+    const p = nativePorts(), { backgroundStorage } = compile('platform/background-storage.native.ts', p.resolve, true);
+    const input = { uri: 'file://system-picker/synthetic.png' }; p.files.set(input.uri, new Uint8Array([1, 2, 3]));
+    const previous = await backgroundStorage.save('service:user-a', input), pointers = new Map(p.secrets), copying = deferred(), started = deferred();
+    p.copyWith(({ destination }) => { if (partial) p.files.set(destination, new Uint8Array([1])); started.resolve(); return copying.promise; });
+    const error = new Error('Synthetic copy failure');
+    const rejected = assert.rejects(backgroundStorage.save('service:user-a', input), actual => actual === error);
+    await started.promise; copying.reject(error); await rejected;
+    assert.deepEqual(p.secrets, pointers); assert.equal((await backgroundStorage.read('service:user-a')).uri, previous.uri);
+    assert.deepEqual([...p.files.keys()].sort(), [input.uri, previous.uri].sort(), 'neither input nor previous background is a rollback target');
+  }
+});
+
+test('native storage validates the completed copy and rolls back invalid or uncommitted candidates', async () => {
+  for (const outcome of ['empty', 'oversized', 'pointer-rejected']) {
+    const p = nativePorts(), { backgroundStorage } = compile('platform/background-storage.native.ts', p.resolve, true);
+    const input = { uri: 'file://system-picker/synthetic.png' }; p.files.set(input.uri, new Uint8Array([1, 2, 3]));
+    const previous = await backgroundStorage.save('service:user-a', input), pointers = new Map(p.secrets), copying = deferred(), started = deferred();
+    p.copyWith(({ complete }) => { started.resolve(); return copying.promise.then(() => complete(new Uint8Array(outcome === 'empty' ? 0 : outcome === 'oversized' ? 4 * 1024 * 1024 + 1 : 3))); });
+    p.fail(outcome === 'pointer-rejected');
+    const rejected = assert.rejects(backgroundStorage.save('service:user-a', input), outcome === 'pointer-rejected' ? /Synthetic commit failure/ : /Stored background invalid/);
+    await started.promise; copying.resolve(); await rejected;
+    assert.deepEqual(p.secrets, pointers); assert.equal((await backgroundStorage.read('service:user-a')).uri, previous.uri);
+    assert.deepEqual([...p.files.keys()].sort(), [input.uri, previous.uri].sort());
+  }
+});
+
+test('native committed replacement survives old-file cleanup failure and restore removes only the selected file', async () => {
+  const p = nativePorts(), { backgroundStorage } = compile('platform/background-storage.native.ts', p.resolve, true);
+  const input = { uri: 'file://system-picker/synthetic.png' }; p.files.set(input.uri, new Uint8Array([1, 2, 3]));
+  const previous = await backgroundStorage.save('service:user-a', input);
+  p.deleteFailures.add(previous.uri);
+  const saved = await backgroundStorage.save('service:user-a', input);
+  assert.equal((await backgroundStorage.read('service:user-a')).uri, saved.uri);
+  assert.equal(p.files.has(previous.uri), true, 'existing best-effort retirement may retain an app-private orphan');
+  saved.dispose(); assert.equal(p.files.has(saved.uri), true);
+  await backgroundStorage.remove('service:user-a'); assert.equal(await backgroundStorage.read('service:user-a'), null);
+  assert.equal(p.files.has(saved.uri), false); assert.equal(p.files.has(previous.uri), true); assert.equal(p.files.has(input.uri), true);
+});
+
+test('native pending copy keeps the visible image and prevents overlapping provider writes', async () => {
+  const p = nativePorts(), { backgroundStorage } = compile('platform/background-storage.native.ts', p.resolve, true);
+  const input = { ...picture('input'), uri: 'file://system-picker/synthetic.png' }; p.files.set(input.uri, new Uint8Array([1, 2, 3]));
+  const previous = await backgroundStorage.save('service:user-a', input), s = context(backgroundStorage, 'service:user-a');
+  await flush(); s.render(); const copying = deferred(), started = deferred();
+  p.copyWith(({ complete }) => { started.resolve(); return copying.promise.then(() => complete()); }); p.calls.length = 0;
+  const save = s.value().select(input); await started.promise; s.render();
+  assert.equal(s.value().selected.uri, previous.uri); assert.equal(s.value().busy, true); assert.equal(s.value().notice, '');
+  const duplicate = picture('duplicate'); await s.value().select(duplicate); await s.value().restore();
+  assert.equal(duplicate.released, 1); assert.equal(p.calls.filter(([kind]) => kind === 'copy').length, 1);
+  assert.equal((await backgroundStorage.read('service:user-a')).uri, previous.uri);
+  copying.resolve(); await save; s.render();
+  assert.notEqual(s.value().selected.uri, previous.uri); assert.equal(s.value().busy, false); assert.ok(s.value().notice.includes('已保存'));
+  assert.equal(input.released, 1); assert.equal(p.files.has(input.uri), true); s.h.unmount();
+});
+
+test('native late copy commits only its original scope without resurfacing after scope change, logout or unmount', async () => {
+  // Real provider + storage modules, existing synthetic React/focus harness, memory-only device ports.
+  for (const retirement of ['switch', 'logout', 'unmount']) {
+    const p = nativePorts(), { backgroundStorage } = compile('platform/background-storage.native.ts', p.resolve, true);
+    const input = { ...picture('input'), uri: 'file://system-picker/synthetic.png' }; p.files.set(input.uri, new Uint8Array([1, 2, 3]));
+    const previous = await backgroundStorage.save('service:user-a', input), other = await backgroundStorage.save('service:user-b', input);
+    const s = context(backgroundStorage, 'service:user-a'); await flush(); s.render();
+    const copying = deferred(), started = deferred();
+    p.copyWith(({ complete }) => { started.resolve(); return copying.promise.then(() => complete()); });
+    const save = s.value().select(input); await started.promise;
+    if (retirement === 'unmount') s.h.unmount(); else s.scope(retirement === 'switch' ? 'service:user-b' : null);
+    await flush(); if (retirement !== 'unmount') s.render();
+    copying.resolve(); await save;
+    if (retirement !== 'unmount') {
+      s.render(); assert.equal(s.value().selected?.uri ?? null, retirement === 'switch' ? other.uri : null);
+      assert.equal(s.value().notice.includes('已保存'), false); s.h.unmount();
+    }
+    assert.notEqual((await backgroundStorage.read('service:user-a')).uri, previous.uri, 'retiring presentation does not cancel an accepted durable write');
+    assert.equal((await backgroundStorage.read('service:user-b')).uri, other.uri);
+    assert.equal(p.files.has(previous.uri), false); assert.equal(p.files.has(other.uri), true); assert.equal(p.files.has(input.uri), true);
+    assert.equal(input.released, 1);
+  }
+});
+
 test('native storage uses existing private-file and small-pointer ports, rolls back failed commits and separates accounts', async () => {
   const p = nativePorts(), { backgroundStorage } = compile('platform/background-storage.native.ts', p.resolve, true);
   const input = { uri: 'file://system-picker/synthetic.png' }; p.files.set(input.uri, new Uint8Array([0x89, 0x50, 0x4e, 0x47]));

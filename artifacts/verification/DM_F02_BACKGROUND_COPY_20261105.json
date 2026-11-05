@@ -1,0 +1,139 @@
+{
+  "package": "DM-F02",
+  "status": "LOCAL_VERIFIED_PENDING_INTEGRATION_REVIEW_AND_EXACT_HEAD_REMOTE_CI",
+  "baseCommit": "4a9f6bd992f985f364f81b478dc1e42c440642f2",
+  "baseTree": "31709ba6cba5fb967eeca06e5616f782655948ab",
+  "branch": "codex/background-copy-await-20261105",
+  "lineage": {
+    "localSourceCommit": "f08011983451b73877ef41aa2c4dd08ed34cd4e9",
+    "matchesRemoteBaseTree": true,
+    "localAndRemoteCommitAreDifferent": true
+  },
+  "sourcePins": [
+    {
+      "path": "frontend/src/platform/background-storage.native.ts",
+      "bytes": 3004,
+      "sha256": "c1daacd7662cc8f23b07d2ab74f36efed0aff032bc510c4961dc57ee482bc11b"
+    },
+    {
+      "path": "frontend/scripts/background-local.test.mjs",
+      "bytes": 31723,
+      "sha256": "88faeefe1b243190d80ba607752a9860883cf41bc8ca341346b9da47eecc03d5"
+    },
+    {
+      "path": "frontend/scripts/scope-transition-harness.mjs",
+      "bytes": 7453,
+      "sha256": "144fff21e28594c38bdfe2fc422ffe4fcdd8f82ebd06f76efc2fb2dc9b806192"
+    },
+    {
+      "path": "frontend/tsconfig.json",
+      "bytes": 222,
+      "sha256": "1571bfb7783a106586c8431560a1e1377d409c6e763fce900d979abdb297a85d"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 788532,
+      "sha256": "8a41ca18cc15664908469a0cde2e937f85738ad40c7e77f5954242e9b9f7b5ed"
+    }
+  ],
+  "change": "Only await the existing File.copy Promise. No pointer, cleanup, provider, owner, identity, scope, package, lock or tsconfig changes.",
+  "sdk": {
+    "expoFileSystem": "57.0.7",
+    "copyReturn": "Promise",
+    "nativeRegistration": "Android and iOS AsyncFunction",
+    "nativeBinaryVerified": false
+  },
+  "baselineRed": {
+    "sameTestFile": true,
+    "product": "Exact unchanged base native storage module",
+    "case": "native storage waits for copy and pointer commit before retiring the previous image",
+    "tests": 1,
+    "pass": 0,
+    "fail": 1,
+    "exit": 1,
+    "reason": "save settled while File.copy was still pending",
+    "outputSha256": "ab87b7860a8a0fb08caad223da5c22bbf6ed32a31d1c8298c79b05b8e21354cf"
+  },
+  "portable": {
+    "command": "node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-timeout=30000 --test-concurrency=1 --test-reporter=tap frontend/scripts/background-local.test.mjs",
+    "tests": 18,
+    "pass": 18,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit": 0,
+    "outputSha256": "4e40c7c6d3d6d1d43e186f90ddca267454739eab01b90a1a3836aa45bd79ed0c",
+    "networkTripwireAttempts": 0,
+    "originalCases": 12,
+    "addedCases": 6,
+    "synthetic": [
+      "File/Directory",
+      "Crypto",
+      "SecureStore fail-before-write pointer",
+      "React/focus hooks"
+    ],
+    "realModules": [
+      "native storage",
+      "background provider",
+      "Web storage",
+      "picker adapters"
+    ],
+    "limits": "JS network tripwire is not OS network isolation or native-device validation."
+  },
+  "frontendNoEmit": {
+    "command": "node --max-old-space-size=2048 node_modules/typescript/bin/tsc --project frontend/tsconfig.json --noEmit --pretty false --listFiles",
+    "config": "frontend/tsconfig.json",
+    "fullOriginalConfig": true,
+    "programFiles": 1958,
+    "diagnostics": 0,
+    "exit": 0,
+    "seconds": 15.411,
+    "maxRSSKiB": 1127716,
+    "programManifestSha256": "47648802a03b09f11a63b7c76a30e30062ada8015fca4c307783da9b74ab2376",
+    "rerunOnThisIntegration": true,
+    "node": "24.22.1",
+    "typescript": "6.0.3",
+    "freshInstall": false,
+    "dependencyMode": "Previously installed lock-version-matched dependencies reused read-only; no dependency installation or patching."
+  },
+  "priorIndependentEvidence": {
+    "acceptedReviewCases": 3,
+    "partialPositiveSizeBaseline": "0/1 RED",
+    "rerunInThisIntegration": false,
+    "countsAreNotAdded": true
+  },
+  "ci": {
+    "workflow": ".github/workflows/background-copy-offline.yml",
+    "helper": "scripts/ci/verify-background-copy-offline.sh",
+    "requiredJob": "Background copy offline",
+    "scope": "Same repository, master target, stated branch, exact PR head",
+    "required": [
+      "complete background-local file: exactly 18 passing cases and no skip",
+      "original complete frontend noEmit"
+    ],
+    "static": "YAML and three bash run bodies parsed; helper syntax checked; exact test arguments matched actual local run; TAP skip/wrong-count/duplicate-summary rejected.",
+    "remote": "NOT_RUN",
+    "fullWrapperLocally": "NOT_RUN",
+    "node": "24.22.1",
+    "npm": "11.8.0",
+    "npmCi": "NOT_RUN locally; CI installs unchanged lock with scripts disabled then applies existing repository patches offline."
+  },
+  "retainedLimits": [
+    "Cleanup failure can mask the original error.",
+    "SecureStore uncertain commit is not modelled by fail-before-write.",
+    "Cross-provider/session writes to the same durable scope are not serialized by this change.",
+    "Old-file cleanup is best-effort and can leave an app-private orphan.",
+    "Late accepted writes can finish in the original scope; logout/unmount do not cancel or undo persistence."
+  ],
+  "notRun": [
+    "native binary or real Android/iOS device",
+    "camera or photo library",
+    "real family data or photos",
+    "complete mounted UI, browser, gestures or accessibility",
+    "process death, quota, lock state or OS backup",
+    "formal 40-case matrix",
+    "real model, API or production service",
+    "PR creation, remote commit/ref, merge or deployment"
+  ]
+}

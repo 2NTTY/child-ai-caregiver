@@ -4,6 +4,8 @@
 
 ## 目前與接手
 
+- **DM-F02 原生背景保存修復（2026-11-05 UTC）：**只補等待 `File.copy` Promise；最新 master 整合後必要 baseline 0/1 RED、原整檔 18/18 零 skip、完整 frontend noEmit 1958 檔通過。真原生設備、SecureStore uncertain commit 及跨 session 並發未因此驗收；獨立整合 review、精確 PR head 必要遠端 CI 待完成，未發布。見 [DM-F02 範圍與限制](PLAN.md#dm-f02-background-copy)。
+
 - **AGENT-F01 收據閱讀修復（2026-11-05 UTC）：**strict client 已接回原合法 `voice_interpretation` 可選標記，產品只改一行；34 案、原 root／server 完整型別及一個真元件 mounted 情境已在本地驗證。合成 host／store／session 不當完整正式流程，舊 shallow harness 的兩項失敗仍保留。獨立整合 review 與精確 PR head 必要遠端 CI 待完成，formal48 未驗、未發布；不是保存失敗或資料遺失的證明。見 [AGENT-F01 範圍及 gate](PLAN.md#agent-f01-receipt-read)。
 
 - **#410 後續修復／#447 整合（2026-11-04 UTC）：**候選已整合 master `f0149b`，同源完整型別及 21 整檔／87 項定向補驗全過（含 CI 6 項），保留歷史 554 項及前次 44 項證據，不相加。最新精確 PR head 的 87 檔／555 項＋CI 6 項，561 項必要 CI 仍待驗。單一 durable 慢路徑、完整 fast／SQL與上游原件還原能力保留；正式 work-grant 政策與持續 fencing reader 仍缺，durable 未啟用、未部署，R0／R2 blocked，不稱用戶問題已上線修復。見[本輪範圍與 gate](PLAN.md#req005-summary01)。
