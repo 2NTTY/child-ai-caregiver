@@ -4768,4 +4768,5 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   - 單元測試：`node --test tests/agent-budget.test.ts` 9/9 PASS（0 fail, 0 skip）。
   - 變異防護：`node scripts/verify-soft-budget-mutations.mjs` 5/5 守衛（S1–S5）全數攔截（fail-on-mutation green, exit 0）。
   - 型別檢查：`npx tsc --project tsconfig.server.json --noEmit` 與 `npx tsc --noEmit` 均 0 診斷（exit 0）。
-- Limitations / Next Action：PR 6 專注於軟預算集中化管理與 planningSnapshot 信號暴露，不跨越至 PR 7 的 1024 token clamp 解鎖或 PR 8 的個人 key 隘壓解鎖。待獨立 review 與遠端 CI 通過後合入 master。
+  - 遠端離線 CI：GitHub Actions Run 42042529809（Job 127296771198）耗時 1m20s 於 exact head fc5d5f7bbf0c839b40e71a842ab3ee8ad4528c0e 成功通過（PASS）。
+- Limitations / Next Action：PR 6 專注於軟預算集中化管理與 planningSnapshot 信號暴露，軟預算僅供規劃諮詢，不代表 REQ-005 已完成，不跨越至 PR 7 的 1024 token clamp 或 PR 8 的個人 key 隘壓解鎖。Collaborator PR untouched。嚴格維持 HOLD merge，待 Owner 2NTTY 獨立審核。
