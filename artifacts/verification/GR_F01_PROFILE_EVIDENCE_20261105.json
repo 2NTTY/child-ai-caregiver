@@ -1,0 +1,450 @@
+{
+  "package": "GR-F01",
+  "status": "LOCAL_CANDIDATE_PENDING_INDEPENDENT_REVIEW_AND_REQUIRED_CI",
+  "baseCommit": "f453226fca1befc6aef8e020407d2191f89de784",
+  "baseTree": "6a23c19be66e0c29395260bd264470b62615f829",
+  "branch": "codex/growth-profile-evidence-20261105",
+  "changeSummary": [
+    "Only GrowthAttention.evidence.profileVersion admits the existing integer-zero sentinel; the prior upper bound remains unchanged.",
+    "The live source disclosure shows unavailable evidence for zero instead of calling it child-profile revision zero; positive versions retain their existing display.",
+    "No persistence schema, server writer, authority, permission, owner, model, endpoint or dependency change."
+  ],
+  "authoritativeSources": [
+    {
+      "path": "server/firestore-growth.ts",
+      "lines": "29-39, 138-177, 191-226, 273-281, 313-355",
+      "finding": "Existing storage permits nonnegative profile evidence. Shared projection returns zero for withheld/absent/mismatched/deleted profile evidence. Unsupported imports store zero; private list and topic responses return the same page."
+    },
+    {
+      "path": "src/shared/import-provenance.ts",
+      "lines": "28",
+      "finding": "Existing imported growth evidence also accepts nonnegative profileVersion."
+    },
+    {
+      "path": "src/shared/growth.ts",
+      "lines": "14-24",
+      "finding": "The unchanged type remains numeric; zero is not a new schema field or a profile revision."
+    },
+    {
+      "path": "server/growth-api.ts",
+      "lines": "10-36",
+      "finding": "The existing handler returns store pages; successful topic writes return the page through the same reader."
+    }
+  ],
+  "changes": [
+    {
+      "path": "src/client/growth-api.ts",
+      "baseSha256": "a214b1df9dff7dbdb81bfcde9a05069c245dd925e237d7a0211e173ac4a4a62e",
+      "candidateSha256": "045cfd012c31fa45cf63db249f36c0436e08f599c947d0f52cf60b0ff27d230e"
+    },
+    {
+      "path": "frontend/src/production/TaskKnowledgeGrowthCandidates.tsx",
+      "baseSha256": "f9b80e183a0c510badccca87540bda50a9c6d919cb8fefbfaa91a407aa521836",
+      "candidateSha256": "ab7cb32852640a2268e7d58273005cbe00b986074ee52e5f6347e8532b79a081"
+    },
+    {
+      "path": "tests/growth-profile-evidence.test.ts",
+      "baseSha256": null,
+      "candidateSha256": "67ee38935b05c3e68b7f00e59dd422e6b62d2901772d945f44cc3dc4d5506bae"
+    },
+    {
+      "path": "frontend/scripts/growth-profile-evidence.test.mjs",
+      "baseSha256": null,
+      "candidateSha256": "e77bd5892d87d94b66be97f00fe50f8ed26b54759b3569e4f73a236c4c42d002"
+    },
+    {
+      "path": ".github/workflows/growth-profile-evidence-offline.yml",
+      "baseSha256": null,
+      "candidateSha256": "58a59c45fffecfbd23cc6cdf7b5c543e339882ad06a2c16b168b143ba1d17500"
+    },
+    {
+      "path": "scripts/ci/verify-growth-profile-evidence-offline.sh",
+      "baseSha256": null,
+      "candidateSha256": "5e359a10253e84c5bde67eb120f0ae8a1cfcb790f43ebb3fa938abbd62820d9a"
+    }
+  ],
+  "newRegression": {
+    "clientServerRed": {
+      "tests": 10,
+      "pass": 3,
+      "fail": 7,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "uiRed": {
+      "tests": 2,
+      "pass": 1,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "combinedGreen": {
+      "tests": 12,
+      "pass": 12,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "redNote": "Original pre-fix source, same final tests. An earlier test arrangement stopped at private GET; its separate initial RED is retained. Final RED reaches actual topic response parsing.",
+    "clientServerLayer": "Actual authority/sharing/care/memory/growth stores, storage encryption/schema, importer prepare/commit, Growth handler and client; serial in-memory Firestore fixture, synthetic identities/records, injected fetch/current-user port. No Firestore service, emulator, real endpoint or model.",
+    "uiLayer": "Actual TaskKnowledgeGrowthCandidates and AttentionForm source with real growth display helpers, transpiled using locked TypeScript. Explicit shallow React/RHF/UI/navigation/draft-guard collaborators. Not mounted React, DOM, browser, focus, AT or native-device evidence."
+  },
+  "existingRegression": [
+    {
+      "file": "frontend/src/production/growth-read.test.mts",
+      "command": [
+        "node",
+        "--max-old-space-size=384",
+        "--import",
+        "/workspace/scratch/c112a98a8be9/growth-profile-basis-grf01-fix01-20261105/network-guard.mjs",
+        "--experimental-test-module-mocks",
+        "--experimental-transform-types",
+        "--test",
+        "--test-concurrency=1",
+        "--test-timeout=30000",
+        "--test-reporter=tap",
+        "frontend/src/production/growth-read.test.mts"
+      ],
+      "startedAt": "2026-11-05T13:13:29.334820+00:00",
+      "wallSeconds": 0.322,
+      "exitCode": 0,
+      "counts": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "file": "frontend/scripts/growth-timeline-order.test.mjs",
+      "command": [
+        "node",
+        "--max-old-space-size=384",
+        "--import",
+        "/workspace/scratch/c112a98a8be9/growth-profile-basis-grf01-fix01-20261105/network-guard.mjs",
+        "--experimental-test-module-mocks",
+        "--experimental-transform-types",
+        "--test",
+        "--test-concurrency=1",
+        "--test-timeout=30000",
+        "--test-reporter=tap",
+        "frontend/scripts/growth-timeline-order.test.mjs"
+      ],
+      "startedAt": "2026-11-05T13:13:29.657175+00:00",
+      "wallSeconds": 0.299,
+      "exitCode": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "file": "tests/firestore-sharing.test.ts",
+      "command": [
+        "node",
+        "--max-old-space-size=384",
+        "--import",
+        "/workspace/scratch/c112a98a8be9/growth-profile-basis-grf01-fix01-20261105/network-guard.mjs",
+        "--experimental-test-module-mocks",
+        "--experimental-transform-types",
+        "--test",
+        "--test-concurrency=1",
+        "--test-timeout=30000",
+        "--test-reporter=tap",
+        "tests/firestore-sharing.test.ts"
+      ],
+      "startedAt": "2026-11-05T13:13:29.956566+00:00",
+      "wallSeconds": 6.326,
+      "exitCode": 1,
+      "counts": {
+        "tests": 16,
+        "pass": 15,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "file": "tests/handover-growth-import.test.ts",
+      "command": [
+        "node",
+        "--max-old-space-size=384",
+        "--import",
+        "/workspace/scratch/c112a98a8be9/growth-profile-basis-grf01-fix01-20261105/network-guard.mjs",
+        "--experimental-test-module-mocks",
+        "--experimental-transform-types",
+        "--test",
+        "--test-concurrency=1",
+        "--test-timeout=30000",
+        "--test-reporter=tap",
+        "tests/handover-growth-import.test.ts"
+      ],
+      "startedAt": "2026-11-05T13:16:03.986175+00:00",
+      "wallSeconds": 3.548,
+      "exitCode": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "file": "tests/handover-class-growth-import.test.ts",
+      "command": [
+        "node",
+        "--max-old-space-size=384",
+        "--import",
+        "/workspace/scratch/c112a98a8be9/growth-profile-basis-grf01-fix01-20261105/network-guard.mjs",
+        "--experimental-test-module-mocks",
+        "--experimental-transform-types",
+        "--test",
+        "--test-concurrency=1",
+        "--test-timeout=30000",
+        "--test-reporter=tap",
+        "tests/handover-class-growth-import.test.ts"
+      ],
+      "startedAt": "2026-11-05T13:16:07.534381+00:00",
+      "wallSeconds": 2.546,
+      "exitCode": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    }
+  ],
+  "preservedUnrelatedFailure": {
+    "file": "tests/firestore-sharing.test.ts",
+    "name": "shared care uses the original domain, actor receipts, current grants and deletion barriers",
+    "location": "tests/firestore-sharing.test.ts:814; server/firestore-restore-content-erasure.ts:94",
+    "candidate": {
+      "tests": 16,
+      "pass": 15,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "baseline": {
+      "tests": 16,
+      "pass": 14,
+      "fail": 2,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "comparison": "Full unchanged suite rerun with only the changed Growth client loaded from its exact base blob. Baseline additionally fails the shared Growth read at line 149; candidate removes that failure. The care restore journal-descriptor failure remains in both. No care/restore patch or weakened assertion.",
+    "baselineClientSha256": "a214b1df9dff7dbdb81bfcde9a05069c245dd925e237d7a0211e173ac4a4a62e"
+  },
+  "completeTypechecks": {
+    "frontend": {
+      "config": "frontend/tsconfig.json",
+      "command": [
+        "node",
+        "--max-old-space-size=1536",
+        "node_modules/typescript/bin/tsc",
+        "--noEmit",
+        "--project",
+        "frontend/tsconfig.json",
+        "--pretty",
+        "false",
+        "--listFiles"
+      ],
+      "startedAt": "2026-11-05T13:08:31.128394+00:00",
+      "wallSeconds": 15.162,
+      "exitCode": 0,
+      "diagnostics": [],
+      "programFileCount": 1958,
+      "ramBefore": "               total        used        free      shared  buff/cache   available\nMem:            9967        6031        1518          77        2830        3935\nSwap:              0           0           0\n"
+    },
+    "root": {
+      "config": "tsconfig.json",
+      "command": [
+        "node",
+        "--max-old-space-size=1536",
+        "node_modules/typescript/bin/tsc",
+        "--noEmit",
+        "--project",
+        "tsconfig.json",
+        "--pretty",
+        "false",
+        "--listFiles"
+      ],
+      "startedAt": "2026-11-05T13:08:46.290621+00:00",
+      "wallSeconds": 4.274,
+      "exitCode": 0,
+      "diagnostics": [],
+      "programFileCount": 405,
+      "ramBefore": "               total        used        free      shared  buff/cache   available\nMem:            9967        6201        2169          77        2008        3765\nSwap:              0           0           0\n"
+    },
+    "server": {
+      "status": "NOT_PASSED",
+      "originalConfiguration": "tsconfig.server.json",
+      "attempts": [
+        {
+          "heapMiB": 1536,
+          "exitCode": -6,
+          "reason": "V8 JavaScript heap out of memory; no TypeScript diagnostics emitted",
+          "wallSeconds": 23.063
+        },
+        {
+          "command": [
+            "node",
+            "--max-old-space-size=3072",
+            "node_modules/typescript/bin/tsc",
+            "--noEmit",
+            "--project",
+            "tsconfig.server.json",
+            "--pretty",
+            "false",
+            "--listFiles"
+          ],
+          "exitCode": -9,
+          "wallSeconds": 27.053,
+          "programFileCount": 0,
+          "peakObservedRssKiB": 2574912,
+          "minimumMemAvailableKiB": 1468048,
+          "stopReason": null
+        }
+      ],
+      "interpretation": "Second attempt was externally terminated with SIGKILL (-9); cause not established. The monitor did not terminate it and observed free-memory headroom never reached its 512 MiB declining threshold. Visible process RSS/address-space limits are unlimited; cgroup has no visible accounting mount. No third attempt, no reduced include, no filtered diagnostics."
+    }
+  },
+  "ci": {
+    "workflow": ".github/workflows/growth-profile-evidence-offline.yml",
+    "helper": "scripts/ci/verify-growth-profile-evidence-offline.sh",
+    "status": "PREPARED_NOT_RUN_ON_GITHUB",
+    "trigger": "Same-repository master pull request on codex/growth-profile-evidence-20261105; checkout exact head SHA.",
+    "localExactTestCommands": [
+      {
+        "file": "tests/growth-profile-evidence.test.ts",
+        "cases": 10,
+        "command": [
+          "node",
+          "--max-old-space-size=384",
+          "--import",
+          "./frontend/scripts/family-cleanup-network-guard.mjs",
+          "--experimental-transform-types",
+          "--test",
+          "--test-timeout=30000",
+          "--test-concurrency=1",
+          "--test-reporter=tap",
+          "tests/growth-profile-evidence.test.ts"
+        ],
+        "startedAt": "2026-11-05T13:17:33.082231+00:00",
+        "wallSeconds": 1.677,
+        "exitCode": 0,
+        "totalsCheckExit": 0
+      },
+      {
+        "file": "frontend/scripts/growth-profile-evidence.test.mjs",
+        "cases": 2,
+        "command": [
+          "node",
+          "--max-old-space-size=384",
+          "--import",
+          "./frontend/scripts/family-cleanup-network-guard.mjs",
+          "--experimental-transform-types",
+          "--test",
+          "--test-timeout=30000",
+          "--test-concurrency=1",
+          "--test-reporter=tap",
+          "frontend/scripts/growth-profile-evidence.test.mjs"
+        ],
+        "startedAt": "2026-11-05T13:17:34.759552+00:00",
+        "wallSeconds": 0.789,
+        "exitCode": 0,
+        "totalsCheckExit": 0
+      },
+      {
+        "file": "frontend/src/production/growth-read.test.mts",
+        "cases": 17,
+        "command": [
+          "node",
+          "--max-old-space-size=384",
+          "--import",
+          "./frontend/scripts/family-cleanup-network-guard.mjs",
+          "--experimental-transform-types",
+          "--test",
+          "--test-timeout=30000",
+          "--test-concurrency=1",
+          "--test-reporter=tap",
+          "frontend/src/production/growth-read.test.mts"
+        ],
+        "startedAt": "2026-11-05T13:17:35.548418+00:00",
+        "wallSeconds": 0.423,
+        "exitCode": 0,
+        "totalsCheckExit": 0
+      },
+      {
+        "file": "frontend/scripts/growth-timeline-order.test.mjs",
+        "cases": 4,
+        "command": [
+          "node",
+          "--max-old-space-size=384",
+          "--import",
+          "./frontend/scripts/family-cleanup-network-guard.mjs",
+          "--experimental-transform-types",
+          "--test",
+          "--test-timeout=30000",
+          "--test-concurrency=1",
+          "--test-reporter=tap",
+          "frontend/scripts/growth-timeline-order.test.mjs"
+        ],
+        "startedAt": "2026-11-05T13:17:35.971418+00:00",
+        "wallSeconds": 0.402,
+        "exitCode": 0,
+        "totalsCheckExit": 0
+      }
+    ],
+    "preparationChecks": {
+      "yamlParse": "PASS",
+      "shellSyntax": "PASS",
+      "lockRegistryIntegrityValidation": "PASS",
+      "sameNamespacePreflight": "REJECTED_AS_REQUIRED",
+      "skippedTapSummary": "REJECTED_AS_REQUIRED",
+      "actualGitHubJob": "NOT_RUN",
+      "offlineNamespacePositiveExecution": "NOT_RUN",
+      "cleanNpmCi": "NOT_RUN",
+      "repositoryDependencyMutation": false
+    },
+    "requiredTests": 33,
+    "typeGates": [
+      "frontend/tsconfig.json (1536 MiB)",
+      "tsconfig.json (1536 MiB)",
+      "tsconfig.server.json (3072 MiB)"
+    ],
+    "boundary": "Pinned official actions/Node/npm, unchanged lockfile, official registry and integrity validation, ignore-scripts installation, no cache or persisted checkout credentials. Existing patches and tests run as non-root in an empty-network namespace with cleared environment/capabilities. This full wrapper and clean install have not run locally or remotely."
+  },
+  "preservedFailures": [
+    "Original audit required two shared-profile failures remain in the original sealed input package.",
+    "Local server typecheck V8 OOM and unknown SIGKILL remain NOT_PASSED.",
+    "Existing shared-care restore journal-descriptor test remains failing on baseline and candidate.",
+    "First existing growth-read launcher lacked --experimental-transform-types; unsupported parameter-property syntax was a launcher error. Corrected commands pass without source changes."
+  ],
+  "notRun": [
+    "Complete mounted growth hook / ProductionProvider lifecycle and account/scope scheduling",
+    "Browser, DOM, keyboard/focus, assistive technology and native devices",
+    "Real Firestore or authenticated service traffic, real family records or model calls",
+    "Full repository test suite, build/export or deployment",
+    "Actual clean CI install, positive offline-namespace wrapper and GitHub job",
+    "PR creation, commit, push, merge or Site publication"
+  ],
+  "nextGate": "Independent review of this complete seven-file delta, then exact-head required offline CI including the original complete server typecheck. Local frontend/root PASS does not close that gate."
+}

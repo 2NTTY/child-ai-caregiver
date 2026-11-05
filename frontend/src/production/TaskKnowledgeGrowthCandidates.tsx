@@ -88,7 +88,7 @@ function AttentionForm({ item, model, actions, onTask }: { item: GrowthAttention
     <Text selectable style={s.meta}>適用限制：{item.limits}</Text>
     <SummaryDisclosure label="原來源、依據與版本" scopeKey={`${model.scopeKey}:${item.id}`}>
       <Text selectable style={s.body}>{item.source.title} · {item.source.section}</Text><Text selectable style={s.body}>{item.source.excerpt}</Text>
-      <Text style={s.meta}>來源版本 {item.source.versionId} · 核對於 {growthTime(item.source.checkedAt)} · 孩子檔案版本 {item.evidence.profileVersion}</Text>
+      <Text style={s.meta}>來源版本 {item.source.versionId} · 核對於 {growthTime(item.source.checkedAt)} · {item.evidence.profileVersion > 0 ? `孩子檔案版本 ${item.evidence.profileVersion}` : "孩子檔案依據未提供或不再適用"}</Text>
       {url ? <AppButton label="開啟 HTTPS 來源" variant="quiet" onPress={() => { void Linking.openURL(url).catch(() => setError("來源連結未能開啟。")); }} /> : <Text style={s.meta}>來源連結未通過 HTTPS 核對。</Text>}
     </SummaryDisclosure>
     {item.taskId ? <><Text style={s.meta}>已有連結事項；讀取時狀態：{item.taskState ?? "未能核對"}，不代表已完成。</Text><AppButton label="核對連結事項" variant="secondary" onPress={() => onTask(item.taskId!)} /></> : null}

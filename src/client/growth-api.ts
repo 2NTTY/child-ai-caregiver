@@ -44,7 +44,8 @@ const itemSchema = z.object({
   state: z.enum(["proposed", "snoozed", "accepted", "dismissed", "inapplicable"]),
   title: z.string(), kind: z.enum(["observe", "arrange", "consult"]), whyNow: z.string(), advice: z.string(), limits: z.string(),
   basis: z.object({ stage: z.string(), ruleRevision: z.string(), sourceHash: z.string(), values: z.record(z.string(), z.string()) }),
-  evidence: z.object({ profileVersion: version, facts: z.array(z.object({ id: uuid, version })) }),
+  // Zero is the existing withheld/unavailable profile-evidence sentinel, not a profile revision.
+  evidence: z.object({ profileVersion: z.number().int().nonnegative().max(2147483647), facts: z.array(z.object({ id: uuid, version })) }),
   source: z.object({ sourceId: z.string(), versionId: uuid, chunkId: uuid, contentHash: z.string(),
     url: z.string(), title: z.string(), section: z.string(), checkedAt: timestamp, excerpt: z.string() }),
   sourceAvailable: z.boolean(), createdAt: timestamp, updatedAt: timestamp, snoozeUntil: timestamp.nullable(),
