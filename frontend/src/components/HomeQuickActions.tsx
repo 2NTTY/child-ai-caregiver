@@ -28,7 +28,7 @@ function HomeAgentCapture({ model, actions, docked = false, captureOriginal, act
   return <BackgroundSurface padded frosted testID="home-quick-actions" style={[styles.section, docked && styles.docked]}>
     <Text accessibilityRole="header" style={styles.heading}>有新情況，直接交代</Text>
     <View style={styles.captureRow}><PhotoFilePicker disabled={!available || opening} capturePreferred captureOriginal={captureOriginal}
-      onPick={original => { setError(null); setOpening(true); actions.openAgentPhoto(original); }} onError={setError}
+      onPick={original => { setError(null); setOpening(true); if (actions.openAgentPhoto(original) === false) setOpening(false); }} onError={setError}
       renderTrigger={trigger => <Pressable testID="home-agent-camera" accessibilityRole="button" accessibilityLabel="拍照給助手"
         accessibilityHint={trigger.unavailableReason ?? "開啟相機，拍攝後在目前孩子的對話中檢視；不會自動上傳或保存"}
         accessibilityState={{ disabled: trigger.disabled, busy: trigger.reading || opening }} aria-disabled={trigger.disabled} aria-busy={trigger.reading || opening}

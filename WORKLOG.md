@@ -4726,3 +4726,20 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Verification：最新未修基線的必要 pending-copy 案 0/1 RED；最小修後以精確 CI 參數跑原整檔 18/18、零 skip，JS network tripwire 零嘗試。原完整 frontend config 重新 noEmit：1958 program files、exit 0／零診斷、15.411 秒、RSS 1,127,716 KiB，未裁 include 或過濾診斷。既有獨立三案及另一 baseline RED 分開保留，不累加覆蓋。
 - Failure / Repair：原 RED 明確為 copy pending 時 save 已 settle。沿用唯讀、lock 同版依賴；首次依賴 metadata 清單誤列本地不存在的 CI-only patch-package，讀取失敗後改為如實記錄缺件，未補裝或修改共享依賴。測試／型別不需要該 CI 安裝工具。完整遠端 npm ci／namespace wrapper 尚未執行，靜態核對不是遠端通過。
 - Limitations / Next Action：File／Crypto／SecureStore 與 React／focus 有合成 port；清理再次拋錯遮原錯、uncertain pointer commit、跨 session 並發及 app-private orphan 為既有限制。真機 binary／相機相簿、真家庭資料、完整掛載／瀏覽器／無障礙、正式四十項矩陣、模型／正式服務均未驗。獨立整合 review 與精確 head 必要 CI 待完成，沒有建立 PR、遠端提交、合併或部署。
+
+
+## 2026-11-05 UTC｜HC-F01 接續 #504 的精確整合
+
+- Goal / Actual Work：已接受的十檔 HC-F01 候選接最新 master `88ea2b0367d3c313174f43c28cd2573e0541defb`／tree `9c063b38bbebb9fd01651648d4291d07e2174f8e`。產品三檔、可攜八案及兩個 CI 檔與上一候選逐 bytes 相同；根文件保留 #504 的 DM 條目與全部原 WORKLOG。
+- AI Assistance / Human Verification：AI 核實上游八檔、來源及實際 program／mounted loaded inputs 交集；上一精確 `4a9f6bd9` 候選已獨立接受，本次增量 review 待完成。未作真人／設備驗收。
+- Changes：沿同一十檔 allowlist；根 PLAN／STATUS／本紀錄與[驗證紀錄](artifacts/verification/HC_F01_HOME_PHOTO_ADMISSION_20261105.json)更新整合基線及證據出處。不是把 DM 的八檔再納入本 PR，沒有依賴、lock、tsconfig 或其他產品變更。
+- Verification：本次重跑原完整可攜 **8/8、零 skip**，原完整 frontend semantic noEmit **exit 0、零診斷、1958 files**（14.086 秒、RSS 1,130,500 KiB）；mounted 14/14 使用上一整合證據，逐一核對 2,300 loaded inputs（68 第一方）與10配置／工具輸入相同後重用，沒有稱為新跑。上游與 mounted／portable／三產品檔交集為空；完整 program 與 `frontend/src/platform/background-storage.native.ts` 有一檔交集，故重新 noEmit。有效 baseline 8過6RED（mounted）、1過7RED（portable）及 always-unlock 7過1RED 保留原出處，案例不相加。
+- Failure / Repair：上一候選的 shallow port 初錯、CI-only 本地缺件及舊四檔9過2 mobile harness fail 全保留；本次不重做舊包或改 oracle。
+- Limitations / Next Action：本次未 commit、remote 寫入、開 PR、合併或部署。需增量 review 及最終精確 head 的必要離線 CI 成功；14 mounted 仍非完整 Provider／owner 或瀏覽器。接納後 guard 取消仍 opening、formal41 全 NOT_RUN、真相機／設備／API／家庭資料／模型等缺口維持原狀。
+
+
+## 2026-11-05 UTC｜TASK／AGENT／DM 當前交付狀態校準
+
+- Actual Work：根 PLAN／STATUS 的現況落後已完成交付，現依真正 PR／CI 結果原位校準：TASK-F01 [#502](https://github.com/2NTTY/child-ai-caregiver/pull/502)／`3b21f81e`、AGENT-F01 [#503](https://github.com/2NTTY/child-ai-caregiver/pull/503)／`4a9f6bd9`、DM-F02 [#504](https://github.com/2NTTY/child-ai-caregiver/pull/504)／`88ea2b03` 均已正常合併。根 PLAN 各當前節已鏈接兩次精確 head 必要 CI 成功結果；沒有部署，不把其他 skipped checks 當通過。
+- Evidence / Preservation：舊 WORKLOG及四份驗證JSON維持原合併前快照，不回寫歷史；current狀態與歷史證據分開。TASK formal63、AGENT formal48、DM formal40及原瀏覽器／真機／服務限制全保留。
+- HC Candidate / Next Action：HC 自己仍未合併、未部署及待精確head CI。相對上一個同基線候選只改這三個根文件；產品／portable／CI／原HC verification JSON逐bytes不變，既有八案、完整noEmit及十四案mounted只核輸入hash後重用，沒有重跑。文檔窄增量review通過後才按正常流程交付。
