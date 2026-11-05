@@ -4706,3 +4706,13 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Verification：真交集 RED 7/8 到最小一行修正後 8/8；新同源候選完整 TypeScript exit 0／零診斷，21 完整檔／87 項全過（已含 CI 6 項）、零跳過、來源保全、程序清空。原件交代測試診斷確認舊 memory_facts 停用 oracle 已被上游正式啟用契約淘汰，改用仍停用 summary_history 並新增 memory_facts/topics 正例；保留所有原身分／scope／target 拒絕。原紅與更正均保留。
 - Evidence：本批追加[公開驗收紀錄](artifacts/verification/REQ005_DURABLE_SUMMARY_20261104.json)，歷史 554／44 與最新 87 分版本記錄、不相加。驗後僅五份文件／紀錄更新，產品、測試及配置與封定驗收來源逐 bytes 相同。
 - Limitations / Next Action：精確 PR head 87 檔／555 項＋CI 契約 6 項仍須成功後正常合併；沒有 GCP 或產品部署操作、真模型及正式資料驗收。正式政策／持續 fencing reader、索引 READY 與 production 驗收仍缺，durable 未啟用，R0／R2 blocked。
+
+
+## 2026-11-05 UTC｜AGENT-F01 收據閱讀相容修復
+
+- Goal / Actual Work：原 shared／persisted schema 與 writer 已有 `voice_interpretation`，但 client strict schema 拒收合法 GET 結果。本包只補可選 literal；保留原 run／ID／版本、批次完整性及權限邊界，不改保存、owner 或 UI。
+- AI Assistance / Human Verification：AI 完成原契約核對、最小修復、獨立 source review、本地完整型別及真元件有界 mounted 檢查；未作真人／設備驗收。整合後仍須獨立 review。
+- Changes：產品一行、新 portable 整檔 34 案、精確 head 的最小離線 CI，以及根 PLAN／STATUS／本紀錄；原 package、lock 及 tsconfig 不變。[可公開的驗證範圍與 hashes](artifacts/verification/AGENT_F01_RECEIPT_READ_20261105.json)。
+- Verification：必要 baseline voice RED、候選 34/34 GREEN、獨立 10 組保留為分開證據；本次以新 CI test arguments 重播同一 34 案零 skip。原 root／server 完整 noEmit 為 405／3,093 program files、exit 0；未變輸入按 hash 核對後復用，不稱本次重新跑 compiler。真元件 mounted 是一個連續情境、7 段功能／24 次 settled 觀察、9 次合成 GET及零寫入，不把觀察數算獨立測試數。
+- Failure / Repair：baseline／candidate 原 server 各 12 條缺依賴診斷，補既有 lock 同版唯讀引用後全 config 通過。舊六案各 4 PASS／2 既有 shallow loader fail 保留。mounted 的初次 TS-only loader、Worklets 轉譯順序、rAF 及 visibility oracle 失敗保留，最終使用官方轉譯與真 settled visibility；沒有為過測試改產品或偽造可見性。
+- Limitations / Next Action：mounted 依賴本地外置 JSDOM，不隨本 PR 納 CI；最終 head 整檔 34 案及完整 server noEmit 的必要遠端 CI 尚未執行。正常 review／CI 前不合併；無正式服務、真資料、模型、GCP、Site 或部署操作，formal48 全 NOT_RUN。此修復只證明讀取相容，不證明真家庭保存失敗或資料遺失。

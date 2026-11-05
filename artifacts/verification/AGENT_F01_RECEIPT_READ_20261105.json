@@ -1,0 +1,192 @@
+{
+  "package": "AGENT-F01",
+  "status": "LOCAL_VERIFIED_PENDING_INTEGRATION_REVIEW_AND_EXACT_HEAD_REMOTE_CI",
+  "baseCommit": "3b21f81eebc68f6d885cb20ee5485d3eb5cce83f",
+  "baseTree": "1b380e4cc881311b658a2bdcf9ff11a3e12aa8b6",
+  "branch": "codex/agent-receipt-source-basis-20261105",
+  "sourcePins": [
+    {
+      "path": "src/client/agent-actions-api.ts",
+      "bytes": 9932,
+      "sha256": "b73bbd2d6561255f8e8e6b51c8a54633786c681508cbac9a020ab107c64c542a"
+    },
+    {
+      "path": "tests/agent-actions-receipt-compatibility.test.ts",
+      "bytes": 13176,
+      "sha256": "1df19e53fb631f0d4a77d7cff87681c457c75f5a7d9998bddb54a6e5e343ff0f"
+    }
+  ],
+  "change": "Accept the existing optional voice_interpretation literal in the strict receipt read schema. No writer, shared schema, authorization, owner, UI, package, lock or tsconfig changes.",
+  "contract": "A legal persisted receipt can reach the handler HTTP 200 response and still be rejected by the old client. This does not establish a failed save or data loss.",
+  "portable": {
+    "command": "node --import ./frontend/scripts/family-cleanup-network-guard.mjs --experimental-test-module-mocks --test-isolation=none --test --test-timeout=30000 --test-concurrency=1 --test-reporter=tap tests/agent-actions-receipt-compatibility.test.ts",
+    "tests": 34,
+    "pass": 34,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit": 0,
+    "tapSha256": "1ad327fd7400bdcf0f6167399868fae971eee7631d445cfafb10bfa4d2dcc8b0",
+    "networkTripwireAttempts": 0,
+    "realModules": [
+      "persisted receipt schema",
+      "handler",
+      "client",
+      "AgentAuthorizationOwner"
+    ],
+    "synthetic": [
+      "store",
+      "session lookup",
+      "injected transport"
+    ],
+    "localScope": "Exact CI portable arguments with reused read-only dependencies and a clean environment; not a complete CI wrapper or namespace replay."
+  },
+  "priorEvidence": {
+    "originalVoiceCaseOnBaseline": "RED exit 1",
+    "independentReview": "10 groups passed, zero skip; required voice case RED on baseline",
+    "countsAreNotAdded": true,
+    "oldSixCaseSuite": {
+      "baseline": "4 pass / 2 existing shallow harness failures",
+      "candidate": "4 pass / 2 existing shallow harness failures",
+      "rerunInThisPRPreparation": false,
+      "failure": "The old loader resolves AppStatusBadge.ts instead of the real AppStatusBadge.tsx; its later UI assertions were not reached."
+    }
+  },
+  "localTypechecks": {
+    "baselineCommit": "180c8c16f193fbc3647038532fca437d83d1b76a",
+    "node": "24.22.1",
+    "typescript": "6.0.3",
+    "method": "Original complete configs; no include pruning or diagnostic filtering. Reuse only after exact input/config hashes and changed-path intersections are checked.",
+    "root": {
+      "config": "tsconfig.json",
+      "programFiles": 405,
+      "exit": 0,
+      "diagnostics": 0,
+      "maxRSSKiB": 549580,
+      "programManifestSha256": "dc61360d47a3819f3867dc88ba7ec270844fd81977548d6857a68c3d04b87ed4"
+    },
+    "server": {
+      "config": "tsconfig.server.json",
+      "programFiles": 3093,
+      "exit": 0,
+      "diagnostics": 0,
+      "maxRSSKiB": 2563716,
+      "programManifestSha256": "bbdd803c4d5c94a8058e221d0c7dfb3ae4fedf171f656b7b8c37046615ca1b37",
+      "requiredIncluded": [
+        "src/client/agent-actions-api.ts",
+        "tests/agent-actions-receipt-compatibility.test.ts",
+        "frontend/src/production/AgentAuthorizationOwner.ts"
+      ]
+    },
+    "rootOnlyFirstPartyFiles": [
+      "src/client/push-browser.ts",
+      "src/client/telegram-api.ts",
+      "src/client/use-online-updates.ts",
+      "src/config/environment.ts",
+      "src/client/EmergencyHelp.tsx",
+      "src/client/FamilyPanel.tsx"
+    ],
+    "ciSelection": "The six root-only first-party files are outside the changed receipt read chain; server covers the changed client, new test and production imports. Server is not claimed to be the complete root program or the full npm typecheck script.",
+    "preservedInitialFailure": "Baseline and candidate each had the same 12 missing-dependency diagnostics. Five existing lock-exact packages were linked read-only before the successful complete server run; no installation or lifecycle scripts ran locally."
+  },
+  "boundedMountedUI": {
+    "status": "PASSED_LOCALLY_NOT_INCLUDED_IN_PR_OR_CI",
+    "scenarios": 1,
+    "functionalStages": 7,
+    "settledDisclosureObservations": 24,
+    "syntheticReceiptGETs": 9,
+    "writeAttempts": 0,
+    "globalNetworkAttempts": 0,
+    "inputFiles": 2314,
+    "resultSha256": "ae5408f2cdebb619a1179bde02cad65a848f86aca4b4ed5ab01ad287a0bfa1df",
+    "tapSha256": "6e45def68ce10d3b8a9875d7990f0e502135e0b3864201562b2f52bf10dd3864",
+    "realModules": [
+      "React/ReactDOM 19.2.3",
+      "RNW 0.21.2",
+      "Paper 5.15.3",
+      "Reanimated 4.5.1",
+      "Worklets 0.10.1",
+      "AgentConversation",
+      "Receipt",
+      "MotionDisclosure",
+      "AgentAuthorizationOwner",
+      "client",
+      "persisted receipt schema",
+      "handler"
+    ],
+    "synthetic": [
+      "useProduction host context",
+      "run/inbox/identity",
+      "store/session/transport"
+    ],
+    "coverage": [
+      "legacy/voice/mixed saved or updated receipts and resource ID/version",
+      "real disclosure controls with settled aria-expanded/aria-hidden/inert/display",
+      "malformed mixed batch fails atomically",
+      "read-only refresh recovers",
+      "child and identity changes fence late responses",
+      "close and reopen does not restore old identity receipts"
+    ],
+    "notProved": [
+      "full ProductionProvider/ProductionOwner",
+      "HTTP listener or Firestore",
+      "browser layout or geometry",
+      "trusted pointer/keyboard input",
+      "continuous animation quality",
+      "AT or Native",
+      "real-account persistence"
+    ],
+    "preservedFailures": [
+      "TS-only loader visibility",
+      "Worklets/CommonJS transform order",
+      "check before real requestAnimationFrame",
+      "RNW false ARIA omission oracle",
+      "incorrect expectation that forced refresh retains expanded unmounted rows"
+    ],
+    "ciDecision": "Retain sealed local evidence. Do not import the external JSDOM/Babel harness, add dependencies/lockfiles, or expand presentation mocks solely to move this bounded UI check into CI."
+  },
+  "remoteCI": {
+    "status": "NOT_RUN",
+    "workflow": ".github/workflows/agent-receipt-offline.yml",
+    "helper": "scripts/ci/verify-agent-receipt-offline.sh",
+    "target": "Exact same-repository PR head from codex/agent-receipt-source-basis-20261105 to master",
+    "requiredScope": [
+      "complete 34-case portable file with zero skips",
+      "original complete tsconfig.server.json noEmit with 3072 MiB heap"
+    ],
+    "runtime": "Node 24.22.1 / npm 11.8.0",
+    "isolation": "Official-registry lock install with lifecycle scripts disabled; only existing repository dependency patches applied after network namespace isolation, non-root UID, dropped capabilities, no-new-privileges and clean environment.",
+    "mounted": "NOT_INCLUDED_LOCAL_EVIDENCE_ONLY",
+    "mustVerify": "A successful required run on the final PR head and independent integration review before a normal protected merge."
+  },
+  "notRun": [
+    "formal48: all NOT_RUN",
+    "three-channel behavior",
+    "reminder binding/contact allowlist changes",
+    "real model/API/family data",
+    "full-site/browser/native acceptance",
+    "deployment"
+  ],
+  "deployment": "NOT_DEPLOYED",
+  "integration": {
+    "fromLocalGateCommit": "180c8c16f193fbc3647038532fca437d83d1b76a",
+    "newBaseCommit": "3b21f81eebc68f6d885cb20ee5485d3eb5cce83f",
+    "newBaseTree": "1b380e4cc881311b658a2bdcf9ff11a3e12aa8b6",
+    "upstreamChange": "Merged PR #502",
+    "upstreamChangedPaths": [
+      ".github/workflows/task-reload-offline.yml",
+      "frontend/PLAN.md",
+      "frontend/STATUS.md",
+      "frontend/scripts/task-recovery-notice.test.cjs",
+      "frontend/src/components/WriteRecoveryNotice.tsx",
+      "frontend/src/components/tasks/TasksView.tsx",
+      "frontend/verification/TASK_F01_RELOAD_AFFORDANCE_20261105.json",
+      "scripts/ci/verify-task-reload-offline.sh"
+    ],
+    "rootProgramIntersection": [],
+    "serverProgramIntersection": [],
+    "mountedRuntimeIntersection": [],
+    "inputReuse": "All original program/runtime input hashes and candidate first-party bytes were checked. Package, lock and type configs are unchanged. No compiler or mounted rerun in this PR preparation."
+  }
+}
