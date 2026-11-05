@@ -4755,3 +4755,26 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Failure / Repair：原完整 server 型別 1536 MiB heap V8 OOM（exit -6）；3072 MiB 單次重試 SIGKILL（exit -9），原因未證，監測未觸發 512 MiB 餘量門檻。未產生完整 program／TS 診斷，仍 NOT_PASSED，沒有第三跑或縮 config。sharing suite 候選15/16、精確基線client overlay 14/16，同一 care restore journal descriptor RED 保留，只消除 growth 讀取失敗。首次 growth-read 缺 transform-types 的 launcher failure 及原盤點 required RED 亦保留，不冒充產品通過。
 - Related Current-State Correction：按已保存的 [PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 交付收據，校準根 PLAN／STATUS 唯一緊鄰 HC current 節：2026-11-05 13:00:09 UTC 正常合併至 `f453226f`，精確 head `74e7b66d0646fc2970af55eb864a6770cd63655a` 的 [CI 42030612566](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42030612566)／[CI 42031114003](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42031114003) 各 8/8 與完整 frontend 型別、locked install／offline wrapper 成功；未部署。舊 HC WORKLOG／verification JSON 仍保留合併前快照，formal41 及原限制不進位，其他包不改。
 - Limitations / Next Action：完整 GR hook／host、scope／身份排程、瀏覽器／焦點／AT、原生、真 Firestore／API／家庭資料、模型及原正式矩陣未驗。先獨立 review 全部十檔，再由精確 head 必要 offline CI 執行 33 案及 frontend／root／server 三個原完整 config；clean install、正向完整 namespace wrapper 與 GitHub job 尚未跑，不能以本地 frontend／root PASS 代填 server gate。GR 未 commit、remote 寫入、開 PR、合併或部署。
+<a id="log-20261105-inrun-compaction"></a>
+### 2026-11-05 12:30 UTC｜REQ005-COMPACTION01 單輪對話即時壓縮庫基準
+
+- Recorded At：2026-11-05 12:30 UTC (20:30 HKT)；Work Date：2026-11-05；Step / Package：REQ005-COMPACTION01
+- Executor：CheungHiuTung-2526
+- AI Assistance：由 Antigravity 協助實作與核對，依 REQ-005 §4.2 建立最小庫契約
+- Human Verification：尚未進行
+- Goal：落實 `REQUIREMENTS_BACKLOG.md` §4.2 單輪對話運行期間即時上下文壓縮（In-run transient context compaction）基礎庫能力，提供 opt-in 接口並完成安全驗收。
+- Actual Work：
+  1. 新增 `server/context-compactor.ts`：串接 `@google/adk` 2.1.0 `TokenBasedContextCompactor` 與 `LlmSummarizer`。
+  2. 雙重計量防護：實作 `createManagedCompactionModel`，在底層模型為 `AgentGatewayModel` 時由 Gateway 自行管理准入，避免雙重 `admitModel` 扣額；在未受管模型調用時嚴格執行准入扣額。
+  3. 雙階段取消保全：串流發起前及 chunk 迭代中嚴格檢查 `signal.throwIfAborted()`，取消時拋出標準 `AbortError`，fallback 絕不吞沒。
+  4. 工具原子性保護：ADK `calculateRetainStartIndex` 保證 FunctionCall 與 FunctionResponse 成對保留，不被保留邊界切割。
+  5. 變異測試 CRLF 安全防護：修復 `scripts/verify-compaction-mutations.mjs` 正則換行匹配，確保 Windows CRLF 環境下 6 項安全變異全數攔截。
+  6. 運行時配置擴展：`server/agent-runtime.ts` 擴充 `AgentRunInput` 之 `contextCompaction` 宣告式參數。
+- Verification：
+  - Node 版本：`v24.16.0`（Windows win32-x64），基線對齊最新 master `f453226fca1befc6aef8e020407d2191f89de784`。
+  - 單元測試：`node --test tests/agent-context-compaction.test.ts`，11/11 通過，0 失敗，0 跳過。測試命名全數重構為行為導向小寫句。
+  - 變異安全防護：`node scripts/verify-compaction-mutations.mjs`，6/6 變異全數有效攔截（C1: 略過預算准入、C2: 略過串流前取消、C3: 略過串流中取消、C4: 吞沒取消錯誤、C5: 削弱防外推、C6: 運行時未裝配），Exit code 0。
+  - 靜態型別：`npx tsc --noEmit` 通過；`tsconfig.server.json` 針對本次修訂檔（含 Test 11 `LlmRequest` 修正）0 診斷。
+  - 離線 CI 工作流：新增 `.github/workflows/compaction-offline.yml` 及 `scripts/ci/verify-compaction-offline.sh`，鎖定合約驗證。
+- Changes：`server/context-compactor.ts`, `server/agent-runtime.ts`, `tests/agent-context-compaction.test.ts`, `scripts/verify-compaction-mutations.mjs`, `.github/workflows/compaction-offline.yml`, `scripts/ci/verify-compaction-offline.sh`, `PLAN.md`, `WORKLOG.md`, `artifacts/verification/REQ005_INRUN_COMPACTION_20261105.json`。
+- Limitations / Notice：本包為底層 opt-in 庫代碼，預設未啟用（0 production callers），16000 門檻標記為工程起始建議（待集中政策批准），不改變現有生產對話路徑，亦不取代 Firestore 跨會話記憶（REQ-005 §4.1）。無 GCP / 真模型 / 產品部署操作。未建立 PR、未向遠端推送。
