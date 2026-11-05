@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-HK">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>閱間 · 文件閱讀 D01 · 選配工作台</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.mjs"></script>
+</head>
+<body data-layout="library">
+  <a class="skip-link" href="#reading-start">跳到閱讀正文</a>
+  <header class="site-header">
+    <a class="back-link" href="../index.html">← 選配工作台</a>
+    <span class="wordmark"><span aria-hidden="true">▥</span> 閱間</span>
+    <span class="tag">D01 · 原創全合成探索</span>
+  </header>
+  <main id="main">
+    <section class="masthead" aria-labelledby="page-title">
+      <div class="masthead-copy">
+        <p class="eyebrow">A PLACE FOR WORDS & THEIR SOURCES</p>
+        <h1 id="page-title">讓文字有空間，<br><span>讓來源有位置。</span></h1>
+        <p class="intro">一本可以慢慢讀，也可以逐章檢閱的小冊子。</p>
+        <p class="boundary">原創全合成探索 · 未五版抽取 · 未接正式 owner。<br>不是家庭週摘要，亦不作健康或發展評估。</p>
+      </div>
+      <div class="book-art" aria-hidden="true">
+        <div class="art-orbit"></div><div class="art-book"><span>閱<br>間</span><small>WORDS<br>& SOURCES<br>VOL. 01</small></div><div class="art-slip">READ /<br>LOOK CLOSER.</div>
+      </div>
+    </section>
+    <div class="layout-switch" role="group" aria-label="閱讀布局">
+      <button id="layout-library" data-layout-choice="library" aria-pressed="true"><span class="layout-no" aria-hidden="true">01</span><span><strong>文庫閱讀室</strong><small>連續讀全文，隨時看來源</small></span><span class="selection-mark" aria-hidden="true">●</span></button>
+      <button id="layout-desk" data-layout-choice="desk" aria-pressed="false"><span class="layout-no" aria-hidden="true">02</span><span><strong>檔案調查桌</strong><small>逐章對照正文與來源</small></span><span class="selection-mark" aria-hidden="true">●</span></button>
+    </div>
+    <section class="control-desk" aria-label="文件與版本選擇">
+      <label>合成文件<select id="document-select"></select></label>
+      <label>閱讀版本<select id="version-select"></select></label>
+      <div class="search-field"><label for="search">搜尋此版本</label><div class="search-row"><input id="search" type="search" maxlength="160" placeholder="例如：茶杯" autocomplete="off" aria-describedby="search-help"><button id="clear-search" type="button">清除搜尋</button></div><small id="search-help">只搜尋目前版本的章節與正文，不搜尋來源。</small></div>
+    </section>
+    <section id="search-region" class="search-region" aria-labelledby="search-heading" hidden><h2 id="search-heading">搜尋結果</h2><p id="search-summary" role="status"></p><div id="search-results"></div></section>
+    <section class="bookmark-bar" aria-label="本頁閱讀書籤"><div><strong>本頁書籤</strong><span id="bookmark-label">尚未設定。重新整理即清除。</span></div><div class="bookmark-actions"><button id="set-bookmark">把目前章節設為書籤</button><button id="return-bookmark" disabled>回到書籤</button><button id="clear-bookmark" disabled>清除書籤</button></div></section>
+    <p id="announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+    <div class="reader-layout">
+      <nav class="chapter-index" aria-labelledby="index-title"><div class="index-heading"><span aria-hidden="true">CONTENTS /</span><h2 id="index-title">章節索引</h2></div><ol id="chapter-list"></ol><p class="index-note">「目前」表示你最後選擇的章節，不是已讀進度。</p></nav>
+      <div class="document-workspace">
+        <header class="document-heading" id="reading-start" tabindex="-1"><p id="document-code" class="eyebrow"></p><h2 id="document-title"></h2><p id="document-subtitle"></p><p id="version-note" class="edition-note"></p></header>
+        <div id="reading-body"></div>
+        <div class="chapter-pagination" id="chapter-pagination"><button id="previous-chapter">← 上一章</button><span id="chapter-position"></span><button id="next-chapter">下一章 →</button></div>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer"><span class="footer-brand">閱間 / D01</span><p>所有文字與來源均為原創合成示例。只有本頁記憶體，沒有保存、傳送、模型或 API。<br>未接 useFamilyDocuments 或 task-knowledge-summary 正式 owner；正式文件與照顧摘要仍有各自邊界。</p></footer>
+  <dialog id="source-dialog" aria-labelledby="source-title"><div class="dialog-top"><span class="eyebrow">SOURCE / DETAIL</span><button id="close-dialog">關閉來源詳情</button></div><h2 id="source-title" tabindex="-1"></h2><div id="source-body"></div><button id="return-dialog" class="primary-button">返回閱讀</button></dialog>
+  <noscript><p class="noscript">這個互動合成候選需要 JavaScript；未有載入任何正式文件。</p></noscript>
+</body>
+</html>

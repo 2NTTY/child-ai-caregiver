@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-HK">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>微光週誌 · 生活回顧 R01 · 選配工作台</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body data-view="atlas">
+  <a class="skip" href="#main">跳到生活回顧</a>
+  <header class="site-header">
+    <a href="../index.html" class="back-link">← 選配工作台</a>
+    <span class="wordmark"><span aria-hidden="true">✳</span> 育伴港 <span class="wordmark-divider">/</span> 生活回顧</span>
+    <span class="sample-badge">R01 · 全合成示例</span>
+  </header>
+  <main id="main" tabindex="-1">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="tiny-star" aria-hidden="true">✦</span> LITTLE MOMENTS, OUR OWN ORBIT</p>
+        <h1 id="hero-title">把一週微光，<br><em>連成自己的星圖。</em></h1>
+        <p id="hero-summary">不是成長成績單。只是把曾經留意到的小事，<br class="wide-only">放回日子裡，再看一眼。</p>
+        <span class="hero-footnote">無需每天記下，生活依然在發生。</span>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <svg viewBox="0 0 400 280" class="orbit-art"><use href="art.svg#orbit"></use></svg>
+        <svg viewBox="0 0 400 280" class="editorial-art"><use href="art.svg#cover"></use></svg>
+        <span class="art-caption">AN ORDINARY WEEK<br>IS WORTH KEEPING.</span>
+      </div>
+    </section>
+    <div class="view-switch" role="group" aria-label="生活回顧呈現方式">
+      <button id="view-atlas" aria-pressed="true"><span class="view-number">01</span><span><strong>星圖任務日誌</strong><small>先找日期，再讀片刻</small></span><span class="view-mark" aria-hidden="true">↗</span></button>
+      <button id="view-weekly" aria-pressed="false"><span class="view-number">02</span><span><strong>編輯式週刊</strong><small>按情境，串起一週</small></span><span class="view-mark" aria-hidden="true">↗</span></button>
+    </div>
+    <p class="boundary"><span aria-hidden="true">◇</span> 原創獨立探索，未抽取五版或接正式資料。內容全為合成，本頁不保存、不發送；重新整理會回預設。</p>
+
+    <section class="workspace" aria-labelledby="week-title">
+      <div class="week-controls">
+        <div class="week-caption"><p class="eyebrow" id="section-kicker">STARMAP / WEEKLY LOG</p><h2 id="week-title">10月26日 — 11月1日</h2><p id="week-year">2026 · 週一至週日 · 固定示例日期</p></div>
+        <div class="week-navigation" role="group" aria-label="切換示例週">
+          <button id="previous-week" aria-label="查看上週的合成示例">← 上週</button>
+          <label class="date-label">跳到某一週<input id="jump-date" type="date" value="2026-10-26" min="2026-10-19" max="2026-11-01" aria-describedby="date-hint"></label>
+          <button id="next-week" aria-label="查看下週的合成示例">下週 →</button>
+        </div>
+      </div>
+      <p id="date-hint" class="control-hint">可選 2026/10/19–11/01。選任一天，會定位到該週。</p>
+      <div id="date-error" class="date-error" role="alert" hidden></div>
+      <div class="filter-row">
+        <label>片刻情境<select id="category"><option value="all">所有情境</option><option value="together">同行時光</option><option value="outside">戶外發現</option><option value="create">手作小事</option><option value="quiet">慢慢一刻</option></select></label>
+        <label>合成資料情境<select id="scenario"><option value="typical">一般示例</option><option value="sparse">少量資料 · 僅一則</option><option value="empty">空白資料 · 沒有記錄</option></select></label>
+        <button id="clear-filters" class="text-button">清除日期與情境篩選</button>
+      </div>
+      <div class="coverage-box" aria-labelledby="coverage-title">
+        <div class="coverage-main"><span class="coverage-icon" aria-hidden="true">◌</span><div><h3 id="coverage-title">這一週，記錄覆蓋到哪裡？</h3><p id="coverage-summary"></p></div></div>
+        <p>有記錄 ≠ 整天資料完整。<br>未記錄 ≠ 沒有發生，也不是零分。</p>
+      </div>
+      <section class="date-section" aria-labelledby="date-title">
+        <div class="section-heading"><div><p class="eyebrow atlas-only">A DATE, A SMALL COORDINATE</p><h3 id="date-title">沿著日子，找回片刻</h3></div><button id="all-dates" aria-pressed="true">整週一起看</button></div>
+        <ol id="date-map" class="date-map" aria-label="本週每日記錄狀態及日期選擇"></ol>
+        <p class="map-note"><span aria-hidden="true">●</span> 有片刻文字 <span aria-hidden="true">◌</span> 未記錄 <span class="map-explanation">星點大小相同，路徑只表示日期順序，沒有分數或比較。</span></p>
+      </section>
+      <section class="reading-section" aria-labelledby="reading-title">
+        <div class="section-heading reading-heading"><div><p class="eyebrow" id="reading-kicker">MOMENT LOG</p><h3 id="reading-title">這一週留下的片刻</h3></div><p id="result-count" role="status" aria-live="polite" aria-atomic="true"></p></div>
+        <p id="reading-note" class="reading-note">按日期排列。每一則都是合成文字，不代表整天的全部。</p>
+        <div id="recap-content"></div>
+        <div class="empty-state" id="empty-state" hidden>
+          <span class="empty-symbol" aria-hidden="true">◌</span><p class="eyebrow">ROOM FOR THE UNRECORDED</p><h4 id="empty-title"></h4><p id="empty-copy"></p><button id="empty-action">回到整週、所有情境</button>
+        </div>
+      </section>
+    </section>
+    <section class="about" aria-labelledby="about-title">
+      <p class="eyebrow">SAME MOMENTS, TWO WAYS TO READ</p><h2 id="about-title">換一種讀法，不換一段生活。</h2>
+      <div class="about-columns"><article><span>01 / CHRONOLOGICAL</span><h3>星圖任務日誌</h3><p>先看日期及缺記，再按時間閱讀。空白日子也有自己的位置，沒有「補完任務」的壓力。</p></article><article><span>02 / EDITORIAL</span><h3>編輯式週刊</h3><p>第一則作開篇，其餘按情境成欄。主文是目前結果最早一則，不是最佳片刻，也不是模型推薦。</p></article></div>
+      <details><summary>參考來源、資料邊界及待驗項目</summary><div class="source-details"><p><a href="https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/" target="_blank" rel="noopener noreferrer">W3C WAI 對話框模式</a>用於詳情的關閉、鍵盤循環和返回焦點；<a href="https://observablehq.com/@observablehq/plot-line-chart-with-gaps" target="_blank" rel="noopener noreferrer">Observable 缺資料圖表示例</a>及<a href="https://talk.observablehq.com/t/d3-line-chart-to-account-for-missing-data/6621" target="_blank" rel="noopener noreferrer">Observable 社群討論</a>提醒保留缺資料位置，不用連線假裝完整。</p><p>本頁沒有使用圖表庫、品牌素材或原站程式。星圖與插畫為原創。公開來源只支持設計參考，不是本頁已通過無障礙驗證的證明。模型測試與瀏覽器驗收分開；實體裝置、讀屏與正式資料整合仍待驗。</p><p>所有日期、引述與生活描述都是合成內容；沒有真家庭資料、照片、訊息、帳戶、外部 API 或模型。這裡不作醫療推論、不比較孩子好壞，也沒有保存或分享按鈕。</p></div></details>
+    </section>
+  </main>
+  <footer><span>育伴港 / 候選 R01 · 新探索</span><button id="reset-demo">重設本頁示例</button><span>生活不是成績單。</span></footer>
+  <dialog id="moment-dialog" aria-labelledby="detail-title">
+    <div class="dialog-topline"><p class="eyebrow">A MOMENT, NOT A MEASURE</p><button id="close-detail" aria-label="關閉片刻詳情">×</button></div>
+    <div class="detail-art" id="detail-art" aria-hidden="true"></div><p id="detail-meta" class="detail-meta"></p><h2 id="detail-title"></h2><p id="detail-snippet" class="detail-snippet"></p>
+    <h3>當時留下的合成文字</h3><p id="detail-body"></p><p id="detail-quote" class="detail-quote"></p>
+    <div class="detail-boundary"><strong>只是一則合成片刻</strong><p>沒有記下的部分是未知，不是零。這段內容不代表整天、孩子能力或健康狀況。</p></div><button id="return-detail" class="return-button">回到回顧</button>
+  </dialog>
+  <p id="announce" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+  <noscript><p class="noscript">互動回顧需要 JavaScript。全部內容仍只在本頁運作，沒有連線服務。</p></noscript>
+</body>
+</html>
