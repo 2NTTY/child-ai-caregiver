@@ -56,7 +56,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**本輪首頁照片修復：**[HC-F01](#hc-f01-home-photo-admission) 維持 #504 後精確 master 的已驗程式及原 CI 配置；本候選只校準以下 TASK／AGENT／DM 的已合併現況，未改產品、測試或原驗證 JSON。可攜八案、完整 frontend 型別及原 mounted 證據按未變輸入重用，沒有新跑；文檔增量 review／HC 精確 head 必要 CI 仍待驗，HC 未合併、未部署。
+**本輪成長依據閱讀修復：**[GR-F01](#gr-f01-profile-evidence-read) 已完成最小 client／閱讀文案候選、四整檔 33 案及完整 frontend／root 型別；server 原完整型別兩次程序失敗，仍為 NOT_PASSED。待整包獨立 review 與精確 head 必要 CI，未合併、未部署。
+
+**本輪首頁照片修復：**[HC-F01](#hc-f01-home-photo-admission) 已由 [PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 於 2026-11-05 13:00:09 UTC 正常合併至 `f453226f`，精確 head 的兩次必要離線 CI 均成功。未部署，formal41 及原完整 owner／設備缺口不進位。
 
 **本輪待辦重新載入修復：**[TASK-F01](#task-f01-reload-delivery) 已由 [PR #502](https://github.com/2NTTY/child-ai-caregiver/pull/502) 正常合併至 `3b21f81e`；兩次必要離線 CI 已成功。正式63項及原瀏覽器／設備缺口不進位，未部署。
 
@@ -114,15 +116,26 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **最新交付／遠端 CI（2026-11-05 UTC）：**[PR #504](https://github.com/2NTTY/child-ai-caregiver/pull/504) 已經獨立整合 review、正常合併及遠端讀回，merge commit `88ea2b0367d3c313174f43c28cd2573e0541defb`，精確 head `1229a92fe41d79c40723fff8a8270f78a16d96c0`。[首次 run 42024582126](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42024582126) 與 [ready 後 run 42024983087](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42024983087) 均通過[專用離線 workflow](.github/workflows/background-copy-offline.yml)：各自完整18案、零 skip／網路嘗試，及原完整 frontend noEmit。沿原 lock 安裝、停用 lifecycle scripts、離線隔離後套既有 patches 的遠端流程已成功；本地未重播該 wrapper 的歷史描述保留於原 JSON／WORKLOG，不再作現況。沒有外置 review harness 或私人路徑進 repo；其他 skipped workflow 不當 pass。兩次 CI 不相加，正常合併不代表部署或設備驗收。
 - **保留限制：**copy 拒絕的清理自身若再拋錯仍可能遮蓋原錯；pointer failure 測試僅 fail-before-write，不證明 SecureStore uncertain commit 原子性。舊檔 best-effort 清理可留下 app-private orphan；同 durable scope 跨 provider／session 並發、process death、quota／鎖機未修。晚完成可保存原 scope，但不呈現於退休／新 scope，logout 不代表撤回已受理寫入。真設備／native binary、相機相簿、真圖與家庭資料、完整 mounted／瀏覽器／無障礙、模型／服務及正式四十項矩陣仍未驗；沒有部署或以合併代填驗收。
 
+<a id="gr-f01-profile-evidence-read"></a>
+### GR-F01：成長 profile evidence 0 閱讀相容修復（本地候選，server 型別及必要 CI 未過）
+
+- **範圍／基線：**基線 `f453226fca1befc6aef8e020407d2191f89de784`（#505 已合併），分支 `codex/growth-profile-evidence-20261105`。只補 `src/client/growth-api.ts` 的合法 profile evidence 0，及 `TaskKnowledgeGrowthCandidates` 的相應閱讀提示；不改 server writer、持久 schema、authority、共享權限、owner、API 路由、模型或依賴。#505 的三個產品檔與修改檔沒有直接交集，但在本次完整 frontend program，已同基線編譯。
+- **既有語義：**原保存／匯入 schema 已容許非負 `evidence.profileVersion`；共享未提供、缺失、已刪除或不再吻合的 profile evidence，以及 unsupported 私人匯入均可回 0。這表示沒有可核對的 profile evidence，**不是已驗孩子檔案版本 0**，也不改成 null。client 只放寬此欄，保留原上限與 item／topic／fact／寫入 expectedVersion 的正整數規則；UI 正版本原樣，0 明示「孩子檔案依據未提供或不再適用」，不回填隱藏參照或丟棄資料列。
+- **本地分層證據：**[版本、來源及保留失敗](artifacts/verification/GR_F01_PROFILE_EVIDENCE_20261105.json)。新真 store／handler／client 十案由 **3/10 PASS** 變 **10/10**，涵蓋共享遮蔽、真私人 importer 的 0、topic 收據與 lost reply 的原請求讀回／重播。真元件 shallow 文案由 **1/2** 變 **2/2**；React／RHF／UI 等為明示替身，不是 mounted 或瀏覽器。沿最終 CI 參數重跑上述兩檔及原 growth-read 17 案、timeline-order 4 案，共 **四整檔 33/33、零 skip**；重跑不另加覆蓋數。所有資料及交易均為合成 in-memory，沒有正式資料或模型呼叫。
+- **完整型別界線：**原 `frontend/tsconfig.json` **1958 files**、根 `tsconfig.json` **405 files** 均 noEmit exit 0；未裁 include。原 `tsconfig.server.json` **NOT_PASSED**：1536 MiB heap V8 OOM、exit -6；3072 MiB 單次重試收到 SIGKILL、exit -9，原因未證，並非監測器因 512 MiB 餘量門檻終止。兩次未產生完整 program／TS 診斷，不推論程式型別通過；原 stderr／監測保留，沒有第三跑或縮 config。
+- **其他回歸／既有 RED：**私人及班級 growth-import 原整檔各 1/1 通過。完整 sharing suite 候選 **15/16**，精確基線 client overlay 為 **14/16**；候選只消除 growth 讀取失敗，同一 shared-care restore journal descriptor 失敗（`tests/firestore-sharing.test.ts:814`）仍在兩者出現。沒有修 care／restore 或放寬斷言，不能稱共享整套全過；原盤點 required 2 FAIL 的封印不倒寫。
+- **必要 CI／下一步：**[專用 workflow](.github/workflows/growth-profile-evidence-offline.yml)及[helper](scripts/ci/verify-growth-profile-evidence-offline.sh)已備同倉／指定分支／master PR 的精確 head 檢查。沿原 lock、官方 pinned 工具及 ignore-scripts 安裝，在 non-root、無憑證／capability、無網絡 namespace 執行四整檔 33 案、完整 frontend／root／server 三個原 config。四組測試命令與 wrapper 靜態／負向前置已核；**clean install、正向完整 wrapper 與 GitHub CI 未實跑**。先完成產品、測試、CI 與文件的獨立 review，再由精確 head 必要 CI 補過 server gate；本地其他 PASS 不代填，未合併、未部署。
+- **保留未驗：**完整 growth hook／ProductionProvider 的身份、scope 與排程交錯，瀏覽器／焦點／鍵盤／AT、原生設備、真 Firestore／API／家庭資料及模型，以及原完整驗收矩陣均未因此結案。原七檔證據封印不變，本次僅補根文件與校準相鄰 HC 現況，按 hashes 重用測試／型別，沒有重跑。
+
 <a id="hc-f01-home-photo-admission"></a>
-### HC-F01：首頁照片被拒後恢復入口（本地已驗，獨立整合 review／遠端 CI 待驗）
+### HC-F01：首頁照片被拒後恢復入口（已合併，未部署）
 
 - **範圍／基線：**基線 `88ea2b0367d3c313174f43c28cd2573e0541defb`（#504 已合併），分支 `codex/home-photo-rejection-20261105`。只改 `HomeActions.openAgentPhoto` 的同步 boolean 回報、ProductionProvider 的接納結果，以及 HomeQuickActions 在明確 `false` 時解除 opening；三個產品檔與已獨立接受的最小修正逐 bytes 相同。不改 attachment owner、上載、導航 guard、後端、依賴、lock 或 tsconfig，與背景複製修復分開交付。
 - **契約：**`true` 只表示照片已由本地草稿接納，不表示導航、上載或保存完成。拒絕時只釋放新照片並保留舊附件／文字；接納後仍保留 opening，不能無條件解鎖而容許重複 capture。接納後 guard 等待、阻擋或取消仍可能留在首頁並保持 opening，這是本包刻意未擴修的既有缺口。
 - **本地證據分層：**[來源、版本與界線](artifacts/verification/HC_F01_HOME_PHOTO_ADMISSION_20261105.json)。沿用 `4a9f6bd9` 整合的同一 mounted 測試／loader 證據：未修基線 **8/14**（6 個必要斷言 RED）、候選 **14/14**。本次逐一核對 2,300 個 loaded inputs（含 68 個第一方檔案）及 10 個配置／工具輸入，與上游八檔沒有 mounted 來源交集，故明示重用、沒有重跑；使用真 React／RNW／Paper、實際 Web PhotoFilePicker／WebCameraCapture、完整原 `useProductionValue` hook 及真草稿 owner／投影，owner 子介面、路由、File／媒體／URL ports 為合成，不是完整 ProductionProvider、ProductionOwner 或瀏覽器。外置 JSDOM 僅供本地，未搬進 PR／CI。
-- **可攜／型別：**同基線 `88ea2b03` 的程式整合已重跑原 repo-owned 原碼回歸 **8/8**；本次只校準三個根文件，輸入 hash 未變，沒有重跑測試或 compiler；同檔與斷言未變，保留 `4a9f6bd9` 的未修基線 **1/8**（7 個必要斷言 RED）；無條件解鎖 mutant **7/8**，由接納後保持鎖定一案檢出。此層執行完整原 hook／元件及真 draft owner／projection，但 hooks、UI、router 為 shallow ports，effects／實際 picker 不執行，不能混作 mounted 或相加案例。同基線程式整合的原完整 frontend semantic noEmit 為 **exit 0、1,958 program files、零診斷**，含上游背景 storage 的實際 program 交集及三個 HC 產品檔；未縮 include 或刪除 diagnostics。
-- **CI／下一步：**[專用離線 CI](.github/workflows/home-photo-admission-offline.yml)只對同倉本分支、目標 master 的精確 PR head；沿原 lock 安裝後在無網路／無憑證／非 root 的隔離程序套用既有 dependency patches，執行完整 8 案零 skip 及原 frontend noEmit。本地只重播測試參數、核 YAML／shell 及版本；未為重播 wrapper 改動共用 dependencies，**遠端 CI 未執行**。`4a9f6bd9` 十檔已獨立接受；接 #504 的程式整合輸入不變，這個新候選只校準 PLAN／STATUS／WORKLOG 的已交付現況，原產品／portable／CI／verification JSON 不變。仍須文檔窄增量 review、精確最終 head 的必要 CI／分支保護通過後正常合併，合併不代表部署。
-- **保留失敗／未驗：**舊四檔 11 案的歷史基線與候選均 9 過／2 個 mobile-navigation 舊 harness 失敗，本輪沒有重跑或改稱全綠。新 shallow 首輪 useCallback port 錯誤在產品斷言前失敗，只修 port 後重新取得有效 RED；原錯保留。原首頁 formal41 全部 NOT_RUN，真瀏覽器／鍵盤／焦點／手勢／輔助技術、真相機、設備、完整 owner／路由生命週期、真 API／家庭資料及模型未驗。未發布、未部署，不宣稱全站修復或接受 guard 取消後的流程已恢復。
+- **可攜／型別：**同基線 `88ea2b03` 的程式整合已重跑原 repo-owned 原碼回歸 **8/8**；合併前的文檔增量只校準三個根文件，輸入 hash 未變，沒有重跑測試或 compiler；同檔與斷言未變，保留 `4a9f6bd9` 的未修基線 **1/8**（7 個必要斷言 RED）；無條件解鎖 mutant **7/8**，由接納後保持鎖定一案檢出。此層執行完整原 hook／元件及真 draft owner／projection，但 hooks、UI、router 為 shallow ports，effects／實際 picker 不執行，不能混作 mounted 或相加案例。同基線程式整合的原完整 frontend semantic noEmit 為 **exit 0、1,958 program files、零診斷**，含上游背景 storage 的實際 program 交集及三個 HC 產品檔；未縮 include 或刪除 diagnostics。
+- **最新交付／遠端 CI（2026-11-05 13:00:09 UTC）：**[PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 已經獨立整合 review、正常合併及遠端讀回，merge commit `f453226fca1befc6aef8e020407d2191f89de784`，精確 head `74e7b66d0646fc2970af55eb864a6770cd63655a`。[首次 run 42030612566](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42030612566) 與 [ready 後 run 42031114003](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42031114003) 均通過[專用離線 workflow](.github/workflows/home-photo-admission-offline.yml)：各自完整 8 案、零 skip／網路嘗試、原完整 frontend noEmit，fresh locked install 與 offline wrapper 亦成功。兩次不相加，其他 skipped workflows 不當 pass。原 verification JSON／WORKLOG 保留合併前快照，本節校準當前交付；沒有部署或以正常合併代替正式驗收。
+- **保留失敗／未驗：**舊四檔 11 案的歷史基線與候選均 9 過／2 個 mobile-navigation 舊 harness 失敗，本輪沒有重跑或改稱全綠。新 shallow 首輪 useCallback port 錯誤在產品斷言前失敗，只修 port 後重新取得有效 RED；原錯保留。原首頁 formal41 全部 NOT_RUN，真瀏覽器／鍵盤／焦點／手勢／輔助技術、真相機、設備、完整 owner／路由生命週期、真 API／家庭資料及模型未驗。未部署，不宣稱全站修復或接受 guard 取消後的流程已恢復。
 
 <a id="agent-f01-receipt-read"></a>
 ### AGENT-F01：語音操作收據閱讀相容修復（已合併，未部署）

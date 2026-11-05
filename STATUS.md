@@ -4,7 +4,9 @@
 
 ## 目前與接手
 
-- **HC-F01 首頁照片拒絕恢復（2026-11-05 UTC）：**已接 #504 後 `88ea2b03`，本候選只校準下列三項已合併現況。HC 產品／測試／CI／原驗證 JSON 未變，沿用同基線可攜8/8、完整 frontend noEmit及經全輸入 hash 核對的原 mounted14/14，沒有再跑或混加。HC 仍未合併、未部署，文檔窄增量 review／精確 head 必要 CI 待驗；接納後 guard 取消仍 opening、formal41未驗。見 [HC-F01 範圍及 gate](PLAN.md#hc-f01-home-photo-admission)。
+- **GR-F01 成長依據閱讀相容（2026-11-05 UTC）：**基線 `f453226f` 的候選只補合法 profile evidence 0 及閱讀提示，不把 0 當已驗孩子檔案版本。四整檔 33/33、完整 frontend／root 型別已通過；server 原完整型別分別 V8 OOM／原因未證的 SIGKILL，仍 NOT_PASSED。共享 care 的既有 RED 保留，整包獨立 review／精確 head 必要 CI 及正式矩陣待驗，未合併、未部署。見 [GR-F01 範圍與 gate](PLAN.md#gr-f01-profile-evidence-read)。
+
+- **HC-F01 首頁照片拒絕恢復（2026-11-05 13:00:09 UTC）：**[PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 已正常合併至 `f453226f`；精確 head 的兩次必要離線 CI 各完整 8/8、零 skip、原完整 frontend noEmit 及 fresh locked install／offline wrapper 成功。未部署；接納後 guard 取消仍 opening、formal41 與原完整 owner／設備缺口維持未驗。見 [HC-F01 最新交付與限制](PLAN.md#hc-f01-home-photo-admission)。
 
 - **TASK-F01 保草稿重新載入（2026-11-05 UTC）：**[PR #502](https://github.com/2NTTY/child-ai-caregiver/pull/502) 已正常合併至 `3b21f81e`；精確 head 的[首次CI](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42011309583)及[ready後CI](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42012238945)各完整三案、零 skip及原完整frontend noEmit成功。未部署，formal63與原完整Provider／瀏覽器／設備缺口不進位。見 [TASK-F01 最新交付與限制](PLAN.md#task-f01-reload-delivery)。
 

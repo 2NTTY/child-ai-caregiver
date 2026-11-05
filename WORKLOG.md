@@ -4743,3 +4743,15 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Actual Work：根 PLAN／STATUS 的現況落後已完成交付，現依真正 PR／CI 結果原位校準：TASK-F01 [#502](https://github.com/2NTTY/child-ai-caregiver/pull/502)／`3b21f81e`、AGENT-F01 [#503](https://github.com/2NTTY/child-ai-caregiver/pull/503)／`4a9f6bd9`、DM-F02 [#504](https://github.com/2NTTY/child-ai-caregiver/pull/504)／`88ea2b03` 均已正常合併。根 PLAN 各當前節已鏈接兩次精確 head 必要 CI 成功結果；沒有部署，不把其他 skipped checks 當通過。
 - Evidence / Preservation：舊 WORKLOG及四份驗證JSON維持原合併前快照，不回寫歷史；current狀態與歷史證據分開。TASK formal63、AGENT formal48、DM formal40及原瀏覽器／真機／服務限制全保留。
 - HC Candidate / Next Action：HC 自己仍未合併、未部署及待精確head CI。相對上一個同基線候選只改這三個根文件；產品／portable／CI／原HC verification JSON逐bytes不變，既有八案、完整noEmit及十四案mounted只核輸入hash後重用，沒有重跑。文檔窄增量review通過後才按正常流程交付。
+
+
+## 2026-11-05 UTC｜GR-F01 閱讀相容候選與當前 gate
+
+- Recorded At：2026-11-05 13:28:42 UTC；Work Date：2026-11-05。Step / Package：GR-F01。
+- Goal / Actual Work：以 master `f453226fca1befc6aef8e020407d2191f89de784`／tree `6a23c19be66e0c29395260bd264470b62615f829`、分支 `codex/growth-profile-evidence-20261105` 修補既有合法 profile evidence 0 被 client 拒收的閱讀錯配。0 是未提供／無可用的依據，不是已驗孩子檔案版本 0。只改此欄 parser 與真來源 disclosure 文案，不改持久 schema、writer、authority、權限、owner、API 或模型。
+- AI Assistance / Human Verification：AI 核對保存、共享、匯入及 handler 真來源，完成最小修復、合成測試、型別及 CI 準備；未做真人／設備驗收，完整獨立 review 待完成。
+- Changes：兩個產品檔、兩個可攜測試檔、workflow／helper 及[驗證紀錄](artifacts/verification/GR_F01_PROFILE_EVIDENCE_20261105.json)七檔先行封存；本次只補根 PLAN／STATUS／本 append-only 紀錄，總 allowlist 十檔。七檔逐 bytes／hash 保持，重用其證據，沒有重新測試或 compiler；原 verification JSON 不回寫。
+- Verification：真 authority／store／importer／handler／client 合成十案由 3 PASS／7 FAIL 變 10/10；真元件 shallow 由 1/2 變 2/2。按最終 CI 命令跑四整檔 10＋2＋17＋4＝33/33、零 skip；兩次紀錄不重複累加。原完整 frontend 1958 files、root 405 files noEmit exit 0，保留 #505 的實際 program 交集。私人及班級 growth-import 原整檔各 1/1 通過，與上述證據分層。
+- Failure / Repair：原完整 server 型別 1536 MiB heap V8 OOM（exit -6）；3072 MiB 單次重試 SIGKILL（exit -9），原因未證，監測未觸發 512 MiB 餘量門檻。未產生完整 program／TS 診斷，仍 NOT_PASSED，沒有第三跑或縮 config。sharing suite 候選15/16、精確基線client overlay 14/16，同一 care restore journal descriptor RED 保留，只消除 growth 讀取失敗。首次 growth-read 缺 transform-types 的 launcher failure 及原盤點 required RED 亦保留，不冒充產品通過。
+- Related Current-State Correction：按已保存的 [PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 交付收據，校準根 PLAN／STATUS 唯一緊鄰 HC current 節：2026-11-05 13:00:09 UTC 正常合併至 `f453226f`，精確 head `74e7b66d0646fc2970af55eb864a6770cd63655a` 的 [CI 42030612566](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42030612566)／[CI 42031114003](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42031114003) 各 8/8 與完整 frontend 型別、locked install／offline wrapper 成功；未部署。舊 HC WORKLOG／verification JSON 仍保留合併前快照，formal41 及原限制不進位，其他包不改。
+- Limitations / Next Action：完整 GR hook／host、scope／身份排程、瀏覽器／焦點／AT、原生、真 Firestore／API／家庭資料、模型及原正式矩陣未驗。先獨立 review 全部十檔，再由精確 head 必要 offline CI 執行 33 案及 frontend／root／server 三個原完整 config；clean install、正向完整 namespace wrapper 與 GitHub job 尚未跑，不能以本地 frontend／root PASS 代填 server gate。GR 未 commit、remote 寫入、開 PR、合併或部署。
