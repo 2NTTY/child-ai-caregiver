@@ -4815,4 +4815,24 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Verification：
   - 遠端 GitHub Actions CI：工作流 `compaction-offline.yml` 於 Ubuntu 24.22.1 runner 跑 11 項單元測試、6 項變異攔截及全量 server tsc，Run 42045529284（feature）與 Run 42047141594（tip）雙雙 SUCCESS。
 - Changes：`artifacts/verification/REQ005_INRUN_COMPACTION_20261105.json`, `WORKLOG.md`。
-- Limitations / Notice：本包為底層 opt-in 庫代碼，預設未啟用（0 production callers），16000 門檻標記為工程起始建議。PR #508 處於關閉等待明確覆核確認狀態，嚴格維持 HOLD merge，合入前須有 Owner 2NTTY 明確指示。
+- Limitations / Notice：本包為底層 opt-in 庫代碼，預設未啟用（0 production callers），16000 門檻標記為工程起始建議。PR #508 已 reopen 處於開放狀態，嚴格維持 HOLD merge，合入前須有 Owner 2NTTY 明確指示。
+
+<a id="log-20261105-compaction-r8-receipt"></a>
+### 2026-11-05 16:45 UTC｜REQ005-COMPACTION01 PR #508 頂端收據全量入冊（Round 8）
+
+- Recorded At：2026-11-05 16:45 UTC (2026-11-06 00:45 HKT)；Work Date：2026-11-05；Step / Package：REQ005-COMPACTION01
+- Executor：CheungHiuTung-2526
+- AI Assistance：由 Antigravity 協助核對 Round 8 審查意見並完成 tip 6c46d663 收據入冊與狀態更新
+- Human Verification：尚未進行
+- Goal：將最新 tip commit 6c46d663、tree 5d96b472 與離線 CI 42065483445 寫入驗證收據及工作日誌，更新 PR reopen 狀態。
+- Actual Work：
+  1. 校準 `artifacts/verification/REQ005_INRUN_COMPACTION_20261105.json`：
+     - `tipHead` 登錄為 `6c46d6639848afddb79043dc4a71bcc1ae113aa4`，`tipTree` 為 `5d96b472318ade2decefe263bd103fb103a77832`。
+     - 遠端 CI 成功收據登錄 [Run 42065483445](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42065483445)（SUCCESS，1m18s）。
+     - 完整串聯功能基線（`93a5ade2`）、中繼文檔（`f22cca3a`）與對齊收據（`6c46d663`）全鏈條。
+  2. 更新 WORKLOG 措辭，明確 PR #508 已經 reopen 並維持嚴格 HOLD merge。
+  3. 維持 fast-forward append-only，不進行任何 force-push。
+- Verification：
+  - 遠端 GitHub Actions CI：工作流 `compaction-offline.yml` 於 Ubuntu 24.22.1 runner 跑 11 項單元測試、6 項變異攔截及全量 server tsc，Run [42065483445](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42065483445) SUCCESS（1m18s）。
+- Changes：`artifacts/verification/REQ005_INRUN_COMPACTION_20261105.json`, `WORKLOG.md`。
+- Limitations / Notice：本包為底層 opt-in 庫代碼，預設未啟用（0 production callers），16000 門檻標記為工程起始建議。PR #508 已 reopen 處於開放狀態，嚴格維持 HOLD merge，合入前須有 Owner 2NTTY 明確指示。
