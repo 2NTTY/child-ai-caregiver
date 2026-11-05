@@ -56,6 +56,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
+**本輪 Agent 收據閱讀修復：**[AGENT-F01](#agent-f01-receipt-read) 的最小 client 相容行、34 案及有界本地 mounted／完整型別已驗；獨立整合 review、精確 PR head 的必要遠端 CI 尚待完成，未發布。
+
 **本輪指定摘要修復：**接續已合併 #410 的剩餘問題，整合覆核 #447，見 [REQ005-SUMMARY01](#req005-summary01)。單一候選已完成本地程式驗收，durable 摘要未啟用、未部署，正式啟用仍有前置；不改下列 P4 交付與未驗狀態。
 
 **匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 的原生 runtime 指紋在本機與 EAS 不一致，本次未產出 APK。下次需要批量安裝時，先核對同一建置封包與依賴位置，再建置、驗簽及覆蓋安裝。[原建置紀錄](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)
@@ -89,6 +91,15 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 **本批整合：**#244 已收束 review 過的角色、本地環境及個人模型接點；程式基線 `00aa6ad`，合併批次沿用原驗證，部署另見MODEL02。[DEV-AGENT01](#dev-agent01) 已可供協作者在分支改完即本地試用，方法見[本地開發入口](docs/AGENT_LOCAL.md)。環境交付與角色品質／功能增補分開；不因長來源或多模態尚缺能力而另造測試 Agent、阻止使用現有環境。
 
 **保留的前批交付：**[MODEL-SELF03](#model-self03)可由用戶在 Web／Android 自行填寫憑證與模型試用；#270 共用導航及 #271 延後聯合補驗已合併，導航接線已隨 `382d217` Web／Android OTA 發布，真機效果待核。依使用者指示，[DEV02](#dev-agent02)最後引用／審核及聯合補驗等待四個 Agent 真正完成且協作者先自行檢查，不提前重跑或接管。iOS 不以新模型驗收取代這些缺口。
+
+<a id="agent-f01-receipt-read"></a>
+### AGENT-F01：語音操作收據閱讀相容修復（本地已驗，遠端待驗）
+
+- **範圍／契約：**沿 [API 語音接點](docs/API.md#p3-voice-input)及既有 `AgentActionReceipt`／persisted schema，只在 `src/client/agent-actions-api.ts` 的 strict receipt schema 接回可選 literal `sourceBasis=voice_interpretation`。原合法已保存收據經 handler 返回 200，卻被 client 拒收，是閱讀契約缺口；不據此推論保存失敗或資料遺失。不改 writer、Server 權威、shared schema、渠道上限、owner 或 UI。
+- **來源／本地結果：**基線 `3b21f81e`（已合併 #502）、分支 `codex/agent-receipt-source-basis-20261105`；TASK 八檔與原型別／mounted 輸入交集為空，核對完整輸入 hashes 後沿用原 `180c8c16` gate，不重跑或冒稱新一輪 compiler／mounted。精確基線及檔案 hashes 見[驗證紀錄](artifacts/verification/AGENT_F01_RECEIPT_READ_20261105.json)。完整新 portable 檔 34/34、零 skip；保留同測試必要 voice 案的 baseline RED 及獨立 10 組覆核，不相加成全產品驗收。原 root／server config 完整 noEmit 均 exit 0、零診斷，program 分別 405／3,093 檔；server 包含 client、新測試及真 owner，未裁 include 或隱藏診斷。
+- **受影響 UI 的本地界線：**真 React／RNW／Paper 的 AgentConversation、Receipt、Disclosure，加真 owner／client／handler，已驗一個連續 mounted 情境：7 段功能、24 次 settled disclosure 觀察、9 次合成 GET、零寫入。涵蓋 legacy／voice／mixed、詳情、壞批次不局部成功、重新檢查及換 child／identity 後舊回覆隔離。`useProduction` host、run／inbox、session／store／transport 是明示合成；不是完整 ProductionProvider、瀏覽器布局／手勢／AT、Firestore 或正式帳戶流程。原 UI 不顯示 voice label，本包沒有新增該承諾。
+- **CI／完成門檻：**[新離線 workflow](.github/workflows/agent-receipt-offline.yml)只對同倉、上述分支、目標 master 的精確 PR head 執行，必要項為整檔 34 案零 skip 及原完整 `tsconfig.server.json --noEmit`。root-only 六個 first-party 檔不在本讀取鏈，server 不是 root 全部 program 的超集；兩種原 config 的本地證據分開保留。mounted 使用本地外置 JSDOM 及官方 Babel／Worklets 轉譯，其精確結果只作本地證據，不在 PR／CI 搬入該 harness，不擴 root dependencies／lock。**遠端尚未執行**；最終 head 的必要 CI、獨立整合 review 通過後才可按正常保護合併，不以既有本地綠燈或 skipped checks 代填。
+- **失敗／未驗：**最初缺依賴的 baseline／candidate server 同有 12 條診斷；補本地既有 lock 同版套件的只讀引用後完整通過，保留原失敗。舊六案仍是 4 PASS／2 既有 shallow harness fail，未改成全過；早期 mounted loader／轉譯順序／rAF／oracle 失敗亦保留。formal48 全部 NOT_RUN；三渠道、binding／contact、真模型、真家庭資料、全站／原生及部署不在此包。未發布、不稱已上線修復，不改其他包的未驗狀態。
 
 <a id="req005-summary01"></a>
 ### REQ005-SUMMARY01：#410 後續修復與 #447 單一摘要整合（候選，未啟用）

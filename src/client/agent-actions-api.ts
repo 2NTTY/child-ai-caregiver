@@ -56,6 +56,7 @@ const receiptSchema = z.object({
   notification: z.enum(["not_authorized", "authorized_for_due_event"]),
   channels: z.array(contactChannelSchema).max(2).refine(values => new Set(values).size === values.length), createdAt: timestamp,
   memoryOutcome: z.enum(["created", "updated", "duplicate"]).optional(),
+  sourceBasis: z.literal("voice_interpretation").optional(),
   quantityGrounding: z.object({ status: z.enum(["source_supported", "removed", "absent", "unchanged"]) }).strict().optional(),
 }).strict();
 const receiptsResponse = z.object({ receipts: z.array(receiptSchema).max(8) }).strict();
