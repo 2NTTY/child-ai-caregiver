@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>持續關注 · 兩種閱讀選配</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<a class="skip" href="#reading-workspace">跳到關注閱讀</a>
+<main id="ongoing">
+  <header class="masthead">
+    <p class="eyebrow">育伴港 / 選配工作台 / OG01</p>
+    <span class="prototype">獨立合成示例</span>
+  </header>
+  <section class="intro" aria-labelledby="page-title">
+    <div><p class="eyebrow">ONGOING · READING ROOM</p><h1 id="page-title">留一點空間，<br>慢慢了解。</h1><p class="lead">同一份持續關注，兩種閱讀方式。<br>先看看，再決定適合自己的節奏。</p></div>
+    <div class="layout-picker" role="group" aria-label="選擇閱讀架構">
+      <button type="button" data-layout="A" aria-pressed="true"><span class="letter">A</span><span><strong>關注索引</strong><small>三行掃讀 · 可並讀原因</small></span><span class="choice-mark" aria-hidden="true">↗</span></button>
+      <button type="button" data-layout="B" aria-pressed="false"><span class="letter">B</span><span><strong>閱讀小冊</strong><small>章節目錄 · 一次專注一項</small></span><span class="choice-mark" aria-hidden="true">↗</span></button>
+    </div>
+  </section>
+  <section class="workspace" id="reading-workspace" tabindex="-1" aria-labelledby="section-title">
+    <header class="workspace-heading"><div><p class="eyebrow" data-child>示例孩子 A</p><h2 id="section-title">持續關注</h2></div><button type="button" class="outline" data-action="open-growth">前往成長頁（示範） ↗</button></header>
+    <p class="window-note" data-window></p>
+    <div class="state" role="status" aria-live="polite" tabindex="-1" data-state></div>
+    <div class="operation" role="status" aria-live="polite" data-operation hidden></div>
+    <div class="index" data-index><ol data-rows></ol></div>
+    <div class="reader" data-reader hidden>
+      <nav class="chapters" aria-label="已載入關注的閱讀目錄"><p class="eyebrow">本頁目錄</p><ol data-chapters></ol><p class="caption">數字只是來源次序，<br>不是優先級或風險。</p></nav>
+      <article class="reading-page" aria-labelledby="reading-title" data-reading-page>
+        <p class="eyebrow" data-reading-position></p><h3 id="reading-title" tabindex="-1" data-reading-title></h3>
+        <p class="badge" data-reading-status></p><div class="rule"></div><p class="reason" data-reading-detail></p>
+        <p class="caption">這裡保留已讀到的原因。完整經過請到成長頁核對；本示例不定位個別關注。</p>
+        <div class="page-controls"><button type="button" data-action="previous">← 上一項</button><span data-position></span><button type="button" data-action="next">下一項 →</button></div>
+      </article>
+    </div>
+    <p class="receipt" role="status" aria-live="polite" data-receipt></p>
+  </section>
+  <aside class="demo-controls" aria-labelledby="demo-heading">
+    <div><p class="eyebrow">僅本頁 · 不連接服務</p><h2 id="demo-heading">試試閱讀中斷</h2><p>切換示例孩子、延後回覆或更新失敗。這些操作只改合成情境，不是產品帳戶設定。</p></div>
+    <div class="control-grid">
+      <fieldset><legend>示例孩子</legend><div class="button-row"><button type="button" data-scope="A" aria-pressed="true">孩子 A</button><button type="button" data-scope="B" aria-pressed="false">孩子 B</button></div></fieldset>
+      <fieldset><legend>相鄰狀態</legend><div class="button-row"><button type="button" data-action="offline" aria-pressed="false">模擬離線</button><button type="button" data-action="unknown">保留原操作未知</button></div></fieldset>
+      <div class="field"><label for="read-outcome">下一次合成讀取</label><select id="read-outcome" data-outcome><option value="success">成功讀回同一窗口</option><option value="failure">更新失敗，舊讀取仍可看</option><option value="empty">成功讀到空窗口</option><option value="unavailable">來源未提供</option><option value="error">關注讀取錯誤</option></select></div>
+      <div class="field"><span class="field-label">分兩步體驗延後回覆</span><div class="button-row"><button type="button" class="filled" data-action="read">開始合成讀取</button><button type="button" data-action="deliver" disabled>送達合成回覆</button></div><p class="caption" data-pending>沒有等待中的合成讀取</p></div>
+    </div>
+  </aside>
+  <footer><p>只讀呈現，不完成任務、不結束關注，也不把未知結果當作成功。<br>示例文字與孩子全為合成；尚未接正式 owner、API 或模型。</p><a href="./sources.md">來源與驗證範圍 ↗</a></footer>
+</main>
+<script type="module" src="./app.mjs"></script>
+</body></html>

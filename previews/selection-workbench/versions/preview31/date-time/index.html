@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+ <meta name="color-scheme" content="dark light">
+ <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+ <title>時刻校準台 · DT01 日期時間選配</title><link rel="stylesheet" href="./styles.css">
+ <script type="module" src="./app.mjs"></script>
+</head>
+<body data-layout="A">
+ <a class="skip" href="#main">跳到日期時間示例</a>
+ <div class="shell">
+  <header class="masthead"><a href="#main" class="brand" aria-label="DT01 日期時間示例">育伴港<span>CHRONO / 01</span></a><span class="badge">獨立候選 · 合成資料</span></header>
+  <main id="main" tabindex="-1">
+   <section class="hero" aria-labelledby="hero-title">
+    <div><p class="eyebrow">日期 · 時間 · 時區</p><h1 id="hero-title">把同一刻，<br>說清楚。</h1><p class="lead">先確認當地時間，再看見它對應的 UTC。<br>兩種操作方式，同一份本頁草稿。</p></div>
+    <div class="orbit" aria-hidden="true"><div class="orbit-ring"></div><div class="orbit-core"><span>LOCAL ↔ UTC</span><strong id="hero-clock">10:15</strong><span id="hero-zone">香港時間</span></div><i class="orbital-dot"></i></div>
+   </section>
+   <nav class="layouts" aria-label="選擇資訊架構">
+    <button id="layout-A" type="button" aria-pressed="true"><span class="option-mark">A</span><span><strong>時刻校準台</strong><small>所有欄位同屏，快速核對</small></span></button>
+    <button id="layout-B" type="button" aria-pressed="false"><span class="option-mark">B</span><span><strong>時區航線</strong><small>循序前進，每一步都清楚</small></span></button>
+   </nav>
+   <section class="selected-card" aria-labelledby="selection-title">
+    <div class="selection-head"><p class="eyebrow">PAGE-ONLY SELECTION</p><span class="badge">不保存正式資料</span></div>
+    <h2 id="selection-title">本頁選用值</h2><p class="local-value" id="chosen-local"></p><p id="chosen-zone" class="muted"></p>
+    <p class="raw-label">原值 / 最近一次本頁 callback</p><p id="chosen-value" class="raw-value"></p>
+    <div class="actions"><button id="open-picker" class="primary" type="button" aria-haspopup="dialog" aria-controls="picker">編輯日期與時間 <span aria-hidden="true">↗</span></button><button id="clear-value" class="quiet" type="button">清除本頁選用值</button></div>
+    <p class="fine">選用只更新這個頁面。關閉或重新整理後不保留，也不會建立待辦、提醒或寫入家庭資料。</p>
+   </section>
+   <section class="concepts" aria-label="三種不同的時間資訊"><article><span>01 / 輸入</span><h3>當地日期與時間</h3><p>你輸入的牆上時鐘時間。格式明示，不自動猜成今天。</p></article><article><span>02 / 解讀</span><h3>指定時區</h3><p>同一組日期時間，在不同时區代表不同時刻。時區是本頁獨立設定。</p></article><article><span>03 / 選用</span><h3>明確 UTC 時刻</h3><p>夏令時間不存在或重複的時刻會被拒絕。選用並不等於正式保存。</p></article></section>
+  </main>
+  <footer><span>DT01 / 日期時間輸入</span><span>HTML 合成預覽 · 原生選擇器與讀屏尚未驗收</span></footer>
+ </div>
+ <dialog id="picker" aria-labelledby="picker-title" aria-describedby="picker-notice">
+  <div class="dialog-shell">
+   <header class="dialog-header"><div><p class="eyebrow">CHOOSE A MOMENT</p><h2 id="picker-title" tabindex="-1">校準這一刻</h2></div><button id="close-picker" class="quiet" type="button" aria-label="取消並關閉日期時間輸入">關閉</button></header>
+   <p id="picker-notice" class="fine">合成示例，純本頁操作。取消只放棄日期與時間草稿；時區設定即時套用，不會被取消復原。</p>
+   <div class="dialog-layouts" role="group" aria-label="切換輸入方式"><button id="dialog-layout-A" type="button" aria-pressed="true">A 快速核對</button><button id="dialog-layout-B" type="button" aria-pressed="false">B 分步航線</button></div>
+   <nav id="step-nav" class="step-nav" aria-label="輸入步驟" hidden><button id="step-0" type="button">01 <span>時區</span></button><button id="step-1" type="button">02 <span>日期</span></button><button id="step-2" type="button">03 <span>時間</span></button><button id="step-3" type="button">04 <span>核對</span></button></nav>
+   <div id="editor-grid" class="editor-grid">
+    <section id="stage-zone" class="stage zone-stage" aria-labelledby="zone-title"><p class="stage-number">01 / CONTEXT</p><h3 id="zone-title">這是哪裡的時間？</h3><label for="zone">時區（本頁即時設定）</label><input id="zone" type="text" list="zones" autocomplete="off" spellcheck="false" aria-describedby="zone-help"><datalist id="zones"><option value="Asia/Hong_Kong">香港</option><option value="UTC">UTC</option><option value="Asia/Taipei">台北</option><option value="Asia/Tokyo">東京</option><option value="Asia/Singapore">新加坡</option><option value="Europe/London">倫敦</option><option value="America/New_York">紐約</option><option value="Australia/Sydney">悉尼</option></datalist><p id="zone-help" class="help">輸入 IANA 時區，例如 Asia/Hong_Kong。保留未列出的原設定，選用時才驗證。</p><p class="zone-note">更換時區不改開啟中的日期與時間草稿；它會改變這組時間的解讀。</p></section>
+    <section id="stage-date" class="stage" aria-labelledby="date-title"><p class="stage-number">02 / CALENDAR DAY</p><h3 id="date-title">先選一天</h3><label for="date">日期</label><input id="date" type="text" autocomplete="off" spellcheck="false" placeholder="2024-02-29" aria-describedby="date-help"><p id="date-help" class="help">YYYY-MM-DD，2000 至 2100 年。例如 2024-02-29。</p></section>
+    <section id="stage-time" class="stage" aria-labelledby="time-title"><p class="stage-number">03 / WALL CLOCK</p><h3 id="time-title">再填當地時間</h3><label for="time">時間</label><input id="time" type="text" autocomplete="off" spellcheck="false" placeholder="10:15" aria-describedby="time-help"><p id="time-help" class="help">HH:mm，24 小時制。例如 10:15。空白不預填現在。</p></section>
+    <section id="stage-review" class="stage review-stage" aria-labelledby="review-title"><p class="stage-number">04 / INTERPRETATION</p><h3 id="review-title" tabindex="-1">核對同一刻</h3><div class="time-route"><span class="route-dot"></span><div><p class="raw-label">你輸入的當地時間</p><p id="draft-local" class="review-local"></p><p id="draft-zone" class="help"></p></div><span class="route-dot end"></span><div><p class="raw-label">對應 UTC</p><p id="draft-utc" class="review-utc"></p></div></div><p id="interpretation-note" class="help"></p><p class="fine">這是輸入解讀，不是保存收據。</p></section>
+   </div>
+   <p id="error" class="error" role="alert" hidden></p>
+   <div id="step-actions" class="step-actions" hidden><button id="back-step" class="quiet" type="button">上一步</button><button id="next-step" type="button">下一步</button></div>
+   <footer class="dialog-footer"><span id="draft-caption">草稿只留在本頁</span><div class="actions"><button id="cancel-picker" class="quiet" type="button">取消</button><button id="choose-time" class="primary" type="button">選用此時刻</button></div></footer>
+  </div>
+ </dialog>
+</body>
+</html>
