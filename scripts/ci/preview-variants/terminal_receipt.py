@@ -41,6 +41,25 @@ def read_object(root,rel,limit=MAX_JSON):
     except (ValueError,UnicodeError):return None
     return r if type(r)is dict else None
 
+# Exact npm 11 error-code labels only. Recognition is not cause attribution.
+NPM_ERROR_CODES={'EUSAGE','ERESOLVE','EINTEGRITY','EFBIG','ENOSPC','EACCES','EPERM','ENOENT','E401','E403','E404','ETIMEDOUT','ECONNRESET','ENOTFOUND','EAI_AGAIN'}
+
+def locked_install_diagnostic(setup,terminal):
+    result={'scope':'observed-npm-code-not-root-cause','status':'unavailable','code':None}
+    terminal=terminal if type(terminal)is dict else {};exit=terminal.get('exitCode');meta=terminal.get('rawLog')
+    if type(exit)is not int or not -255<=exit<=255 or exit==0 or type(meta)is not dict:return result
+    if meta.get('path')!='output.raw'or not integer(meta.get('bytes'),32*1024*1024)or not digest(meta.get('sha256')):return result
+    raw=read_bytes(setup,'locked-install/output.raw',32*1024*1024)
+    if raw is None or len(raw)!=meta['bytes']or sha(raw)!=meta['sha256']:return result
+    # A partial scan cannot establish a unique code. Never print the prefix/tail.
+    if len(raw)>MAX_LOG:return {**result,'status':'truncated'}
+    lines=[line for line in raw.split(b'\n')if line.startswith(b'npm error code ')]
+    if len(lines)>1:return {**result,'status':'ambiguous'}
+    if len(lines)==1 and raw.endswith(b'\n'):
+        for code in NPM_ERROR_CODES:
+            if lines[0]==b'npm error code '+code.encode('ascii'):return {**result,'status':'recognized','code':code}
+    return {**result,'status':'unknown'}
+
 def safe_process(x):
     x=x if type(x)is dict else {};exit=x.get('exitCode');elapsed=x.get('wallSeconds')
     bfields=['timedOut','groupEmpty','allOwnedReaped','lingeringChildrenAfterLeader']
@@ -219,7 +238,7 @@ def terminal_exit_code(encoded):
     obj=json.loads(encoded);return 0 if obj.get('status')=='PASS'and obj.get('evidenceComplete')is True else 1
 
 def base_receipt(variant,event_sha,control_sha,outcomes):
-    return {'schema':SCHEMA,'repository':REPOSITORY,'branch':BRANCH,'variant':variant if variant in BASES else None,'eventSha':digest(event_sha,40),'checkoutSha':None,'controlManifestSha256':digest(control_sha),'publicBase':BASES.get(variant),'inputManifestSha256':None,'lockSha256':None,'inputIdentityScope':'reviewed-manifest-expectations','assembly':None,'assemblyObserved':False,'finalSourceMatched':False,'status':'INCOMPLETE','reason':'mandatory_evidence_missing','evidenceComplete':False,'workflow':{k:v if v in OUTCOMES else 'unknown'for k,v in outcomes.items()if k in ('checkout','base','node','setup','offline')},'stages':[],'compiler':None,'bundle':None,'semanticEvidence':[],'diagnostics':[],'truncation':{'rawLog':False,'receiptBytes':False},'harbourCompiledAdmission':'OPEN','bundlePublication':'OPEN_NOT_UPLOADED','originalIntegrationExecuted':False,'rootSuiteExecuted':False}
+    return {'schema':SCHEMA,'repository':REPOSITORY,'branch':BRANCH,'variant':variant if variant in BASES else None,'eventSha':digest(event_sha,40),'checkoutSha':None,'controlManifestSha256':digest(control_sha),'publicBase':BASES.get(variant),'inputManifestSha256':None,'lockSha256':None,'inputIdentityScope':'reviewed-manifest-expectations','assembly':None,'assemblyObserved':False,'finalSourceMatched':False,'status':'INCOMPLETE','reason':'mandatory_evidence_missing','evidenceComplete':False,'workflow':{k:v if v in OUTCOMES else 'unknown'for k,v in outcomes.items()if k in ('checkout','base','node','setup','offline')},'stages':[],'compiler':None,'bundle':None,'semanticEvidence':[],'diagnostics':[],'lockedInstallDiagnostic':None,'truncation':{'rawLog':False,'receiptBytes':False},'harbourCompiledAdmission':'OPEN','bundlePublication':'OPEN_NOT_UPLOADED','originalIntegrationExecuted':False,'rootSuiteExecuted':False}
 
 def collect(area,here,variant,event_sha,checkout_sha,control_sha,outcomes):
     result=base_receipt(variant,event_sha,control_sha,outcomes)
@@ -249,6 +268,8 @@ def collect(area,here,variant,event_sha,checkout_sha,control_sha,outcomes):
         if stage=='assembly':result['assemblyObserved']=bool(passed)
         state='passed'if passed else 'failed'if active==stage or terminal is not None else 'not-run'
         result['stages'].append({'id':stage,'status':state,'process':process,'counts':None});complete=complete and passed
+        if stage=='locked-install'and state=='failed'and process is not None and type(process['exitCode'])is int and process['exitCode']!=0:
+            result['lockedInstallDiagnostic']=locked_install_diagnostic(setup,terminal)
     bootstrap=read_object(work,'sandbox-terminal.json');bootphase=(read_object(work,'bootstrap-progress.json')or {}).get('phase')
     result['bootstrapPhase']=bootphase if bootphase in BOOTSTRAP else None
     code=(bootstrap or {}).get('sandboxExitCode');result['bootstrapExitCode']=code if type(code)is int and -255<=code<=255 else None

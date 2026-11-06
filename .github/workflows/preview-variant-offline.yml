@@ -28,7 +28,7 @@ jobs:
             base: 4050c0a16d0a9735923434abc9749ecd416d7926
     env:
       EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
-      EXPECTED_CONTROL_MANIFEST_SHA256: bfc64b85633ad95e0481b165e11d468e52fd4d97771d32c211446dc9f55bb4ab
+      EXPECTED_CONTROL_MANIFEST_SHA256: dd8a24abb27491e3c217157ca6792827d667100d7ee2ce0ed0026b7a2dd6eb16
       VARIANT: ${{ matrix.variant }}
     steps:
       - name: Checkout exact publisher-admitted PR head

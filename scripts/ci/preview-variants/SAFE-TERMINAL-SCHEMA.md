@@ -25,3 +25,14 @@ Caps:
 A PASS requires all mandatory setup/process results, correct event/checkout/admission identity, source/lock identities, full compiler scope, every original forms/runtime case result, Harbour evidence, export census, final source match and complete terminal summary. Missing/inconsistent mandatory fields cannot be a PASS. The finalizer revalidates controls and discards arbitrary scratch strings. It does not `cat` raw files or serialize exceptions/environment/source contents.
 
 This is evidence serialization and localization, not evidence that the real workflow ran. Local tests use explicitly synthetic temporary receipt fixtures. If cancellation, service termination or an unstarted finalizer prevents emission, the parent must treat absence of a valid receipt as incomplete, not successful persistence.
+
+## Optional locked-install code observation
+
+`lockedInstallDiagnostic` is null except when the locked-install stage has a failed process with an exact integer nonzero exit. Its only fields are:
+- `scope`: fixed `observed-npm-code-not-root-cause`.
+- `status`: `recognized`, `unknown`, `ambiguous`, `unavailable`, or `truncated`.
+- `code`: null or one of `EUSAGE`, `ERESOLVE`, `EINTEGRITY`, `EFBIG`, `ENOSPC`, `EACCES`, `EPERM`, `ENOENT`, `E401`, `E403`, `E404`, `ETIMEDOUT`, `ECONNRESET`, `ENOTFOUND`, `EAI_AGAIN`.
+
+The finalizer reads only the existing private locked-install output.raw through the existing regular-file/symlink/32 MiB bound, and requires its bytes and SHA256 to equal the supervisor's fixed-name rawLog identity. Missing, malformed or mismatched evidence is unavailable. A log over the 256 KiB scan cap is truncated and no code is emitted. For a log within that cap, only a single complete exact ASCII `npm error code CODE` line may be recognized, and the log must end in a newline. Repeated, conflicting or additional unknown code-marker lines are ambiguous. All other content is discarded. Unknown is not a cause classification.
+
+Recognition means only that the private log contained one admitted npm code label. It does not establish which npm internal phase failed, identify a package, or establish a root cause. No raw message, tail, URL, package identity, path or environment value is emitted. This optional observation does not affect stage success, evidence completeness, terminal reason, or terminal exit code. Installation flags, environment, lifecycle policy, process limits and product commands are unchanged.

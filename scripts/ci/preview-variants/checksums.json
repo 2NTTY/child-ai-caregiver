@@ -3,13 +3,13 @@
   "files": [
     {
       "path": "README.md",
-      "bytes": 7761,
-      "sha256": "a7195b286545361caf366c16e305830df327f7f24c8acd83239fa08c223011d0"
+      "bytes": 8406,
+      "sha256": "e7f5091dcf55c36e2d39a95ce297cee93bd11a87aabdda6ec88c0988f60e57e8"
     },
     {
       "path": "SAFE-TERMINAL-SCHEMA.md",
-      "bytes": 4454,
-      "sha256": "442fc0aef607d0ee84a262c83c0748f9abcdeb0783947a73d855f3baf18acfe8"
+      "bytes": 6095,
+      "sha256": "242520f7cc47b4cf58bb74af470ad42e707e23988b82861d6d447f0afd2f39bd"
     },
     {
       "path": "assemble.py",
@@ -148,8 +148,8 @@
     },
     {
       "path": "terminal_receipt.py",
-      "bytes": 26869,
-      "sha256": "78a7b3d41ac434cd8c873b549255a7e482f3cbeab8c4a0d9cf872f8c602bf0db"
+      "bytes": 28538,
+      "sha256": "6eed7360923c0298cb5a4d247cad65387956d220f9bd5ad2533eb31279a497fc"
     },
     {
       "path": "tests/test_assemble.py",
@@ -160,6 +160,11 @@
       "path": "tests/test_controls.py",
       "bytes": 8798,
       "sha256": "92b0cc59d6b4ca43aae11957a2210ed824784bde7aff28290ec6acd863de3123"
+    },
+    {
+      "path": "tests/test_install_diagnostic.py",
+      "bytes": 6749,
+      "sha256": "b9707b685cd3da27880f069da139e625ff06374fe43562b9076c11d3417022ea"
     },
     {
       "path": "tests/test_recipe.py",
