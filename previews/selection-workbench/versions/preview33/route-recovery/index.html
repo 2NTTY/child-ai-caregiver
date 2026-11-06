@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RR01 · 全域與聊天錯誤恢復選配</title><link rel="stylesheet" href="./style.css"></head>
+<body>
+<header class="masthead"><a href="./research.html">RR01 / 設計與邊界</a><span>育伴港 · 選配工作台</span></header>
+<main>
+<section class="intro" aria-labelledby="page-title"><p class="eyebrow">ROUTE RECOVERY / 01</p><h1 id="page-title">畫面停下來時，<br>下一步要清楚。</h1><p>比較兩種恢復資訊架構。沒有真實重新載入、離頁、API 或模型呼叫。</p></section>
+<section class="choicebar" aria-label="選擇資訊架構"><button type="button" data-choose-layout="card" aria-pressed="true"><b>A · 一頁恢復卡</b><span>操作在前，參考後置</span></button><button type="button" data-choose-layout="navigator" aria-pressed="false"><b>B · 恢復導覽台</b><span>先選意圖，再看下一步</span></button></section>
+<div class="canvas-label"><span>可操作合成候選 / SYNTHETIC ONLY</span><span id="scope-label">聊天頁面</span></div>
+<div id="recovery-host"></div>
+<section class="lab" aria-labelledby="lab-heading"><div class="lab-intro"><div><p class="eyebrow">LOCAL FIXTURE CONTROLS</p><h2 id="lab-heading">合成控制台</h2></div><p>先按候選中的重新顯示，再讓 callback 完成或拒絕。切換 A/B 會沿用同一筆等待。</p></div><div class="lab-controls"><button type="button" data-lab="resolve" disabled>完成當前 callback</button><button type="button" data-lab="reject" disabled>拒絕當前 callback</button><button type="button" data-lab="new-chat">新的聊天故障</button><button type="button" data-lab="new-root">新的全域故障</button><button type="button" data-lab="loading">載入中示例</button><button type="button" data-lab="late" disabled>完成舊 callback（晚到）</button></div><p id="receipt" class="receipt"></p><p id="lab-status" role="status" class="fine">所有內容與回覆均為本機合成。新的故障只退休舊畫面，不聲稱取消已受理工作。</p></section>
+<footer><p>這是自寫 DOM adapter，不是真正 React ErrorBoundary。真實重掛、草稿／收據存續、離頁守衛與裝置無障礙仍待驗。</p><a href="./research.html">來源、設計取捨與採用步驟 →</a></footer>
+</main><script type="module" src="./entry.mjs"></script>
+</body></html>

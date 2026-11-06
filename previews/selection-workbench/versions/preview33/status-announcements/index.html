@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>SA01 · 狀態提示的兩種閱讀方式</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <a class="skip-link" href="#candidate">跳到候選內容</a>
+  <header class="masthead"><span class="brand-mark" aria-hidden="true">育</span><div><p class="eyebrow">育伴港 · 選配工作台</p><p class="brand-title">讓變化清楚，讓閱讀繼續。</p></div><span class="edition">SA01 / 合成候選</span></header>
+  <main id="workbench">
+    <section class="intro" aria-labelledby="page-title"><div><p class="eyebrow">狀態播報與讀屏優先級</p><h1 id="page-title">訊息出現在哪裡，<br>才不會打斷你？</h1><p class="lede">一份合成狀態，兩種閱讀方式。切換配置只改變排列，不重播訊息，也不改變緊急程度。</p></div><aside class="boundary"><strong>這裡只是一個畫面實驗</strong><p>沒有保存、發送或真語音。請勿輸入真實家庭資料。畫面中的 live region 是合成 DOM，未以原生裝置或讀屏軟體驗證。</p></aside></section>
+    <section class="compare-bar" aria-label="選擇資訊架構"><div class="layout-choices"><button type="button" data-layout="context" aria-pressed="true"><b>A</b><span>就地提示<small>在工作旁看見變化</small></span></button><button type="button" data-layout="review" aria-pressed="false"><b>B</b><span>事件核對台<small>先找來源，再看詳情</small></span></button></div><p id="layout-note">三張工作卡，提示跟著內容走。</p></section>
+    <section class="fixture-controls" aria-labelledby="fixture-title"><div class="section-heading"><h2 id="fixture-title">試一個合成情境</h2><p>按鈕只改這頁的示例，不執行真實操作。</p></div><div class="control-groups"><fieldset><legend>表單</legend><button type="button" data-action="form-error">模擬欄位錯誤</button><button type="button" data-action="form-clear">清除示例錯誤</button></fieldset><fieldset><legend>讀取</legend><button type="button" data-action="read-error">模擬讀取失敗</button><button type="button" data-action="read-stale">顯示較早資料</button><button type="button" data-action="read-ready">回到就緒</button></fieldset><fieldset><legend>操作</legend><button type="button" data-action="operation-saved">模擬成功</button><button type="button" data-action="operation-failed">模擬失敗</button><button type="button" data-action="operation-unknown">模擬結果未知</button></fieldset></div></section>
+    <div id="candidate" tabindex="-1"></div>
+    <details class="contract-tools"><summary>進一步比較：重複事件、生命週期與焦點</summary><p>這些是事件契約示例。新 key 但相同文字，未必產生新的 DOM 文字變更，更不保證讀屏再播一次。</p><div class="probe-buttons"><button type="button" data-action="duplicate">重送相同 key</button><button type="button" data-action="same-key-edit">同 key 改文字與優先級</button><button type="button" data-action="new-key-same-text">新 key，相同已接受文字</button><button type="button" data-action="read-loading">合成讀取延遲門檻已到</button><button type="button" data-action="toggle-visible">切換操作卡可見性</button><button type="button" data-lifecycle="mount">卸載播報區</button><button type="button" data-lifecycle="scope">換一組合成範圍</button></div><p id="lifecycle-note"></p><p>卸載後的新快照不補播；重新掛載也靜默。換範圍清除舊事件紀錄並拒絕舊 handle。沒有 timer、真通知佇列或跨來源排程。</p></details>
+    <section class="footnotes" aria-label="如何理解這個候選"><p><strong>只播轉換，不讀歷史。</strong> 初次開頁的兩個歷史快照可見，但播報區為空。普通訊息不搶焦點；修正欄位只在你點擊入口時聚焦。</p><p><strong>兩種 IA，共同一份資料。</strong> 可見卡片和 B 的紀錄不帶 live 屬性。三個 caller 各有 gate，沒有替你重新排序或合併播報。</p><a href="./sources.md">來源、研究與驗證界線</a></section>
+  </main>
+  <div id="announcements"></div>
+  <footer>SA01 · 僅供選型 · 尚未整合正式產品</footer>
+  <noscript>此候選需要 JavaScript 才能切換合成情境；目前不會執行任何操作。</noscript>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-Hant-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="育伴港 C01 原創任務日曆候選：路線日程與月曆記事，共用固定合成資料與選中日期。唯讀，未接入正式系統。">
+<title>C01 日程有方向 · 育伴港候選</title>
+<link rel="stylesheet" href="./style.css">
+<script type="module" src="./app.mjs"></script>
+</head>
+<body data-layout="route" id="top">
+<a class="skip-link" href="#main">跳至日程</a>
+<main id="main" tabindex="-1"><div id="app"></div><noscript><section class="no-script"><h1>日程候選需要 JavaScript</h1><p>這是離線資料的前端展示，未接入正式任務。啟用 JavaScript 後可切換兩種呈現方式；不會傳送資料。</p></section></noscript></main>
+<p id="status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+<footer class="candidate-footer"><details><summary>C01 的設計來源與驗收邊界</summary><div class="source-notes"><p>這是原創候選，不是既有五版的複製或正式 adapter。固定來源 e8918dd 的日曆與宿主選擇邏輯用作邊界參考；只有合成模型與 HTML 結構通過 Node 測試。瀏覽器操作、320px 版面、觸控、讀屏及正式接線仍待獨立驗收。</p><p>所有來源僅作閱讀與設計參考，未搬運程式、圖片或實測相關產品。</p><ul><li><a href="https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/examples/datepicker-dialog/" target="_blank" rel="noreferrer noopener">W3C APG：日期格鍵盤與焦點模式（已讀原文）</a></li><li><a href="https://designsystem.digital.gov/components/date-picker/" target="_blank" rel="noreferrer noopener">USWDS：日期情境與無障礙限制（已讀原文）</a></li><li><a href="https://fullcalendar.io/docs/list-view" target="_blank" rel="noreferrer noopener">FullCalendar：清單視圖與空狀態（已讀官方說明）</a></li><li><a href="https://fullcalendar.io/docs/accessibility" target="_blank" rel="noreferrer noopener">FullCalendar：互動元素標籤與鍵盤（已讀官方說明）</a></li><li><a href="https://github.com/fullcalendar/fullcalendar" target="_blank" rel="noreferrer noopener">GitHub：FullCalendar 專案結構（已讀 README，未安裝）</a></li><li><a href="https://www.reddit.com/r/UXDesign/comments/1wdgqj0/personal_calendars_need_something_between_the/" target="_blank" rel="noreferrer noopener">r/UXDesign：月曆與議程之間的設計討論（已讀貼文及部分回覆，非驗證結論）</a></li></ul></div></details><p>育伴港 · C01 原創候選 / 只有閱讀與導航 / 不連接真實家庭資料</p></footer>
+</body></html>
