@@ -2,11 +2,11 @@
 
 The selection workbench (選配工作台) contains isolated, synthetic UI candidates for comparison.
 
-## Version entry · preview27 candidate · 2026-11-06
+## Version entry · preview29 candidate · 2026-11-06
 
-Start with **[preview27's dated release status](versions/preview27/RELEASE-STATUS.md)**, then its [application README](versions/preview27/README.md) and [index.html source](versions/preview27/index.html). This experimental source snapshot contains 35 candidates across 34 modules, with 306 public files. Native checks for its four new modules are **NOT_RUN**; all 88 full semantic-acceptance gates remain pending. This is not a deployed Site or a master merge.
+Start with **[preview29's dated release status](versions/preview29/RELEASE-STATUS.md)**, then its [application README](versions/preview29/README.md) and [index.html source](versions/preview29/index.html). This experimental source snapshot contains 37 candidates across 36 modules, with 319 public files. It adds MP01 motion settings and SA01 status announcements relative to [Earlier preview27](versions/preview27/RELEASE-STATUS.md). Native and HTTP checks for this release are **NOT_RUN**; all 88 full semantic-acceptance gates remain pending. This is not a deployed Site or a master merge.
 
-For local viewing, use the complete `versions/preview27/` as its own HTTP document root: `python3 -m http.server 8000 --bind 127.0.0.1 --directory .`, then open `http://127.0.0.1:8000/index.html`. Run it from that version directory, not the repository root. No npm install or build is needed. GitHub's file browser is not a running website, and `file://` is not a reliable ES-module entry. These instructions have not been executed for this release.
+For local viewing, use the complete `versions/preview29/` as its own HTTP document root: `python3 -m http.server 8000 --bind 127.0.0.1 --directory .`, then open `http://127.0.0.1:8000/index.html`. Run it from that version directory, not the repository root. No npm install or build is needed. GitHub's file browser is not a running website, and `file://` is not a reliable ES-module entry. These instructions have not been executed for this release.
 
 ## Historical navigation (preserved)
 
