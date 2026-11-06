@@ -2,6 +2,16 @@
 
 The selection workbench (選配工作台) contains isolated, synthetic UI candidates for comparison.
 
+## Version entry · preview27 candidate · 2026-11-06
+
+Start with **[preview27's dated release status](versions/preview27/RELEASE-STATUS.md)**, then its [application README](versions/preview27/README.md) and [index.html source](versions/preview27/index.html). This experimental source snapshot contains 35 candidates across 34 modules, with 306 public files. Native checks for its four new modules are **NOT_RUN**; all 88 full semantic-acceptance gates remain pending. This is not a deployed Site or a master merge.
+
+For local viewing, use the complete `versions/preview27/` as its own HTTP document root: `python3 -m http.server 8000 --bind 127.0.0.1 --directory .`, then open `http://127.0.0.1:8000/index.html`. Run it from that version directory, not the repository root. No npm install or build is needed. GitHub's file browser is not a running website, and `file://` is not a reliable ES-module entry. These instructions have not been executed for this release.
+
+## Historical navigation (preserved)
+
+The “Latest” labels below describe their original historical snapshots, not the candidate entry above. All existing version files, candidate content, selections and undo behavior remain unchanged.
+
 - **Latest experimental source archive: [preview23](versions/preview23/RELEASE-STATUS.md)** contains 25 candidates across 24 modules, 88 catalog boundaries, and 104 research URLs. It adds the independently reviewed SL01 and CD01 source snapshots, with bounded standalone checks only. Integrated native acceptance remains INCOMPLETE; a Chromium code 9 was associated with the tested URL and its cause is UNKNOWN. This is not full-site acceptance or a deployment. Read the dated release status before the [application README](versions/preview23/README.md). PC, AP, TC, child-scope and CW additions are not included. All earlier versions and their evidence limits remain unchanged.
 - **Latest bounded candidate snapshot: [preview21](versions/preview21/README.md)** contains 23 candidates across 22 modules, an 88-boundary catalog, and 94 research URLs. Read its dated [release status and limits](versions/preview21/RELEASE-STATUS.md) first. MR01 memory reading and CI01 citation reading have bounded interaction checks; overall native acceptance remains INCOMPLETE because an earlier long browser session ended with Chromium code 9. A short follow-up did not reproduce it, but the cause remains unknown. This is a selection preview, not a complete accepted product.
 - [preview18](versions/preview18/README.md) has 19 candidates across 18 modules. It adds CH01 chat reading, CR01 saved care records, and CP01 / P01 child-profile reading to preview15. The catalog contains 88 modules and 78 public research URLs.
