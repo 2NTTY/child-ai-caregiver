@@ -1,0 +1,195 @@
+{
+  "schema": "public-control-checksums-v1",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 7761,
+      "sha256": "a7195b286545361caf366c16e305830df327f7f24c8acd83239fa08c223011d0"
+    },
+    {
+      "path": "SAFE-TERMINAL-SCHEMA.md",
+      "bytes": 4454,
+      "sha256": "442fc0aef607d0ee84a262c83c0748f9abcdeb0783947a73d855f3baf18acfe8"
+    },
+    {
+      "path": "assemble.py",
+      "bytes": 7240,
+      "sha256": "cce90fa710863e6c3af5e87231235fa70795adcb9d5c64961450c01c7396041f"
+    },
+    {
+      "path": "controls.py",
+      "bytes": 11863,
+      "sha256": "5bbdcba24f3476e5c5ae186221bd4e718eb2d3c0537a79db000bb6d27416c865"
+    },
+    {
+      "path": "deltas/FOURTH-PUBLIC-BASELINE-DELTA.diff",
+      "bytes": 309338,
+      "sha256": "4cd65ae8d5671075796435cc0a08740ba8b37be45071ad1751c5f33f15b49c59"
+    },
+    {
+      "path": "deltas/HARBOUR-PUBLIC-BASELINE-DELTA.diff",
+      "bytes": 404147,
+      "sha256": "1ad46445c6abf597dd813a2e89dc189465d7bb181555a83d9f8b08339dc6f729"
+    },
+    {
+      "path": "finalize_terminal.py",
+      "bytes": 1588,
+      "sha256": "fa11f5bdadf48d68187228edcb2676becad4abf2ae4407956ba1f5ac1a6ce5ea"
+    },
+    {
+      "path": "inputs.json",
+      "bytes": 470776,
+      "sha256": "da2495126862889de87cfb1438c25d61ff9e86bec70c069af905a98f04356e95"
+    },
+    {
+      "path": "launch-offline.sh",
+      "bytes": 1209,
+      "sha256": "90cf4b61b2167bb4de226fc51525f105e96e296cf67312d802d95e189f55452e"
+    },
+    {
+      "path": "prepare.py",
+      "bytes": 5717,
+      "sha256": "4147d0e96b139e33647303b8b6941ae7e551b8d3fe46608926d43a65b2bbfd24"
+    },
+    {
+      "path": "resolve-tools.cjs",
+      "bytes": 845,
+      "sha256": "818fb7d07dda90bd4cb637705e4e9d6e5483cc1cc7c0b55591f59fb6d0d02b77"
+    },
+    {
+      "path": "runner.py",
+      "bytes": 14723,
+      "sha256": "2ce4bd5194f9b552db3ce3eb2f86784955ad42bd0d775c72d92ad28425a743c7"
+    },
+    {
+      "path": "runtime/fourth/bootstrap.test.mjs",
+      "bytes": 3920,
+      "sha256": "728bc274f422a662112c76ae20c59bba8ce7a8fc7609afed2c46bdde7d804602"
+    },
+    {
+      "path": "runtime/fourth/closed.test.mjs",
+      "bytes": 2704,
+      "sha256": "bb994b9af76e5fbf99197b2c691cecd64fe750aaeabe521bdf70062c28931c2f"
+    },
+    {
+      "path": "runtime/fourth/gc.test.mjs",
+      "bytes": 601,
+      "sha256": "9c40487dcea3508b4a3f12140a28ec3d7b666394e7dfad7156fb1466822c4991"
+    },
+    {
+      "path": "runtime/fourth/observation.test.mjs",
+      "bytes": 1324,
+      "sha256": "796058a1778c2fa0fe503a64aedf9721d43a87b0c596e0eae41787870c0c3115"
+    },
+    {
+      "path": "runtime/fourth/port.test.mjs",
+      "bytes": 1636,
+      "sha256": "f892ad6988cfa5b152f946938b3a13c9b92b415f7376e64ee7e9a20c0b4b6ff0"
+    },
+    {
+      "path": "runtime/fourth/realm.mjs",
+      "bytes": 2558,
+      "sha256": "29ac80b7fdfe60455ee0e734bee16b7018f030c3f7c2383c48c499a552dbd4c9"
+    },
+    {
+      "path": "runtime/fourth/response-gc-probe.mjs",
+      "bytes": 918,
+      "sha256": "2212ec624e7dd6cf2fbaf0870c737c00b9579f3bb6778cecc0aa8a596bf8cfff"
+    },
+    {
+      "path": "runtime/fourth/runtime.test.mjs",
+      "bytes": 11908,
+      "sha256": "f2b6d3d17ac8cfc5e7a4973e6aadd607f6b71e8a5aa52eb19dfec8a9e7b7e10b"
+    },
+    {
+      "path": "runtime/fourth/subject.mjs",
+      "bytes": 216,
+      "sha256": "af963eb7bded5a66a39e8bd9019a23f29b32c892373958ecf85c1a9012b6a331"
+    },
+    {
+      "path": "runtime/harbour/collector.test.mjs",
+      "bytes": 9497,
+      "sha256": "0d247e983c895bb2534521c69d5b3ce49a383737dea0a826b25ccbd06c94cef8"
+    },
+    {
+      "path": "runtime/harbour/facade.test.mjs",
+      "bytes": 3517,
+      "sha256": "4daaf7adf76dee0d189d6dfc8c2df9884863d44033b501a466f743bbda130e3a"
+    },
+    {
+      "path": "runtime/harbour/fixture.mjs",
+      "bytes": 3171,
+      "sha256": "d9b008538e8d682dcf382a2dd7428a2d12277f69446d867400b2c75851b9c3f3"
+    },
+    {
+      "path": "runtime/harbour/realm.mjs",
+      "bytes": 2558,
+      "sha256": "29ac80b7fdfe60455ee0e734bee16b7018f030c3f7c2383c48c499a552dbd4c9"
+    },
+    {
+      "path": "runtime/harbour/regression.test.mjs",
+      "bytes": 11908,
+      "sha256": "f2b6d3d17ac8cfc5e7a4973e6aadd607f6b71e8a5aa52eb19dfec8a9e7b7e10b"
+    },
+    {
+      "path": "runtime/harbour/session.test.mjs",
+      "bytes": 10271,
+      "sha256": "5b8ed7cec2e748ecb2b8e87f6434f398da5940158fd3d97ebff349af999c0b26"
+    },
+    {
+      "path": "runtime/harbour/subject.mjs",
+      "bytes": 216,
+      "sha256": "af963eb7bded5a66a39e8bd9019a23f29b32c892373958ecf85c1a9012b6a331"
+    },
+    {
+      "path": "sandbox-root.sh",
+      "bytes": 2500,
+      "sha256": "d7db6e3038f248caffecb82a1799d7a0ff023abe7880319949fef83c0f2a4d5b"
+    },
+    {
+      "path": "terminal_receipt.py",
+      "bytes": 26869,
+      "sha256": "78a7b3d41ac434cd8c873b549255a7e482f3cbeab8c4a0d9cf872f8c602bf0db"
+    },
+    {
+      "path": "tests/test_assemble.py",
+      "bytes": 1982,
+      "sha256": "09fc661b14b78bbc2a3a41c54b5070155f58b706b5a1d4a6297cc4c237a48a73"
+    },
+    {
+      "path": "tests/test_controls.py",
+      "bytes": 8798,
+      "sha256": "92b0cc59d6b4ca43aae11957a2210ed824784bde7aff28290ec6acd863de3123"
+    },
+    {
+      "path": "tests/test_recipe.py",
+      "bytes": 1810,
+      "sha256": "8a693049e9e8e92d75f7e1c7a52df03daac51b7d94ef580274b348b7bf0cd8d9"
+    },
+    {
+      "path": "tests/test_rereview.py",
+      "bytes": 9082,
+      "sha256": "153f3d9c57fd51b90663240e3fe99f8da9118128963358b820fe01b8e56a73d5"
+    },
+    {
+      "path": "tests/test_review_fixes.py",
+      "bytes": 1340,
+      "sha256": "edd9ed1928eb3aea7e1d99f93be0fbdb261ad7b241f12911b3ba013088759f21"
+    },
+    {
+      "path": "tests/test_runner.py",
+      "bytes": 2350,
+      "sha256": "27ef599394d34cce3d54fa4389375214545813c0f71f1dbeee51dbd44e8be90b"
+    },
+    {
+      "path": "tests/test_terminal.py",
+      "bytes": 4500,
+      "sha256": "9a4ee9f5ecffdb9873bc29138b6d1b94d9583bb30156c6ea7593152372ea9c07"
+    },
+    {
+      "path": "tests/test_terminal_integration.py",
+      "bytes": 10312,
+      "sha256": "b90565d2ff8a11d5b5098bffd5e79fe178eaca8590225d8d279d1a69f0413bd1"
+    }
+  ]
+}

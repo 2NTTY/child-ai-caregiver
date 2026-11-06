@@ -1,0 +1,178 @@
+# Local reviewed candidate. Activation only removes .disabled from this filename.
+# Publisher must admit the exact final head and payload before every allowed event.
+name: Exact Fourth Harbour offline verification
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'scripts/ci/preview-variants/**'
+      - '.github/workflows/preview-variant-offline.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: >-
+      github.repository == '2NTTY/child-ai-caregiver' &&
+      github.event.pull_request.head.repo.full_name == '2NTTY/child-ai-caregiver' &&
+      github.event.pull_request.head.ref == 'codex/preview-hf-offline-ci-20261106'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - variant: fourth
+            base: 76493c5e0747cb5da908fdb708879fd96509d093
+          - variant: harbour
+            base: 4050c0a16d0a9735923434abc9749ecd416d7926
+    env:
+      EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+      EXPECTED_CONTROL_MANIFEST_SHA256: bfc64b85633ad95e0481b165e11d468e52fd4d97771d32c211446dc9f55bb4ab
+      VARIANT: ${{ matrix.variant }}
+    steps:
+      - name: Checkout exact publisher-admitted PR head
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: 2NTTY/child-ai-caregiver
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+      - name: Verify fixed reviewed control manifest before candidate code
+        id: pin
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          export CONTROL_ROOT="$GITHUB_WORKSPACE/candidate/scripts/ci/preview-variants"
+          python3 -I -B - <<'PY_GUARD'
+          import hashlib,json,os,pathlib,re,sys
+          root=pathlib.Path(os.environ['CONTROL_ROOT'])
+          expected=os.environ['EXPECTED_CONTROL_MANIFEST_SHA256']
+          ok=False
+          try:
+              manifest=root/'checksums.json'
+              assert re.fullmatch('[0-9a-f]{64}',expected)
+              assert not any(p.is_symlink() for p in [manifest,*manifest.parents])
+              data=manifest.read_bytes(); assert len(data)<=1048576
+              assert hashlib.sha256(data).hexdigest()==expected
+              spec=json.loads(data); names=set()
+              for row in spec['files']:
+                  name=row['path']; assert isinstance(name,str) and 0<len(name)<=256
+                  assert not name.startswith('/') and '\\' not in name and ':' not in name
+                  assert all(32<=ord(c)<127 for c in name)
+                  assert all(p not in ('','.','..','.git') for p in name.split('/'))
+                  assert name not in names; names.add(name)
+                  p=root/name; assert not any(x.is_symlink() for x in [p,*p.parents])
+                  assert p.is_file() and p.stat().st_size==row['bytes']<=8388608
+                  assert hashlib.sha256(p.read_bytes()).hexdigest()==row['sha256']
+              actual=set()
+              for p in root.rglob('*'):
+                  assert not p.is_symlink()
+                  if p.is_file():actual.add(p.relative_to(root).as_posix())
+              assert actual==names|{'checksums.json'}
+              ok=True
+          except Exception:
+              pass
+          if not ok:
+              print('HF_CONTROL_GUARD_FAILED')
+              raise SystemExit(1)
+          print('HF_CONTROL_PAYLOAD_VERIFIED')
+          PY_GUARD
+      - name: Checkout immutable public input base
+        id: base
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: 2NTTY/child-ai-caregiver
+          ref: ${{ matrix.base }}
+          path: public-base
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+      - name: Select official pinned Node
+        id: node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24.22.1
+          package-manager-cache: false
+      - name: Exact assembly and fresh lifecycle-disabled registry install
+        id: setup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          AREA="$RUNNER_TEMP/preview-hf-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${VARIANT}"
+          SETUP_LOG="$RUNNER_TEMP/preview-hf-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${VARIANT}-setup.raw"
+          test ! -e "$SETUP_LOG" && test ! -L "$SETUP_LOG"
+          python3 -B "$GITHUB_WORKSPACE/candidate/scripts/ci/preview-variants/prepare.py" "$VARIANT" \
+            --base "$GITHUB_WORKSPACE/public-base" --area "$AREA" \
+            --candidate-checkout "$GITHUB_WORKSPACE/candidate" \
+            --node "$(readlink -f "$(command -v node)")" > "$SETUP_LOG" 2>&1
+      - name: No-network no-credential complete frontend checks
+        id: offline
+        shell: bash
+        env:
+          TOOLCHAIN: ${{ steps.setup.outputs.toolchain }}
+        run: |
+          set -Eeuo pipefail
+          AREA="$RUNNER_TEMP/preview-hf-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${VARIANT}"
+          bash "$GITHUB_WORKSPACE/candidate/scripts/ci/preview-variants/launch-offline.sh" \
+            "$AREA" "$GITHUB_WORKSPACE/candidate/scripts/ci/preview-variants" \
+            "$TOOLCHAIN" "$VARIANT" "$EXPECTED_SHA" > "$AREA/work/launch.raw" 2>&1
+      - name: Emit bounded safe terminal receipt on reachable success or failure
+        if: ${{ always() }}
+        shell: bash
+        env:
+          RUN_OUTCOMES: '{"checkout":"${{ steps.checkout.outcome }}","base":"${{ steps.base.outcome }}","node":"${{ steps.node.outcome }}","setup":"${{ steps.setup.outcome }}","offline":"${{ steps.offline.outcome }}"}'
+        run: |
+          set -Eeuo pipefail
+          export CONTROL_ROOT="$GITHUB_WORKSPACE/candidate/scripts/ci/preview-variants"
+          export CANDIDATE_CHECKOUT="$GITHUB_WORKSPACE/candidate"
+          export AREA="$RUNNER_TEMP/preview-hf-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${VARIANT}"
+          python3 -I -B - <<'PY_GUARD'
+          import hashlib,json,os,pathlib,re,sys
+          root=pathlib.Path(os.environ['CONTROL_ROOT'])
+          expected=os.environ['EXPECTED_CONTROL_MANIFEST_SHA256']
+          ok=False
+          try:
+              manifest=root/'checksums.json'
+              assert re.fullmatch('[0-9a-f]{64}',expected)
+              assert not any(p.is_symlink() for p in [manifest,*manifest.parents])
+              data=manifest.read_bytes(); assert len(data)<=1048576
+              assert hashlib.sha256(data).hexdigest()==expected
+              spec=json.loads(data); names=set()
+              for row in spec['files']:
+                  name=row['path']; assert isinstance(name,str) and 0<len(name)<=256
+                  assert not name.startswith('/') and '\\' not in name and ':' not in name
+                  assert all(32<=ord(c)<127 for c in name)
+                  assert all(p not in ('','.','..','.git') for p in name.split('/'))
+                  assert name not in names; names.add(name)
+                  p=root/name; assert not any(x.is_symlink() for x in [p,*p.parents])
+                  assert p.is_file() and p.stat().st_size==row['bytes']<=8388608
+                  assert hashlib.sha256(p.read_bytes()).hexdigest()==row['sha256']
+              actual=set()
+              for p in root.rglob('*'):
+                  assert not p.is_symlink()
+                  if p.is_file():actual.add(p.relative_to(root).as_posix())
+              assert actual==names|{'checksums.json'}
+              ok=True
+          except Exception:
+              pass
+          if not ok:
+              event=os.environ.get('EXPECTED_SHA','')
+              event=event if re.fullmatch('[0-9a-f]{40}',event) else None
+              variant=os.environ.get('VARIANT')
+              variant=variant if variant in ('fourth','harbour') else None
+              print('HF_TERMINAL_V1 '+json.dumps({'schema':'preview-hf-safe-terminal-v1','status':'INCOMPLETE','evidenceComplete':False,'reason':'controls_unavailable','eventSha':event,'variant':variant,'stages':[],'compiler':None},separators=(',',':')))
+              raise SystemExit(1)
+          import subprocess
+          argv=[sys.executable,'-B',str(root/'finalize_terminal.py'),'--area',os.environ['AREA'],'--checkout',os.environ['CANDIDATE_CHECKOUT'],'--variant',os.environ['VARIANT'],'--sha',os.environ['EXPECTED_SHA'],'--control',expected,'--outcomes',os.environ['RUN_OUTCOMES']]
+          result=subprocess.run(argv,env={'PATH':'/usr/bin:/bin','LC_ALL':'C.UTF-8','PYTHONDONTWRITEBYTECODE':'1'})
+          raise SystemExit(result.returncode)
+          PY_GUARD
+      # No uploader. always() cannot guarantee execution after service termination
+      # or cancellation. No valid terminal receipt means verification incomplete.
