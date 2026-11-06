@@ -2,11 +2,11 @@
 
 The selection workbench (選配工作台) contains isolated, synthetic UI candidates for comparison.
 
-## Version entry · preview29 candidate · 2026-11-06
+## Version entry · preview30 candidate · 2026-11-06
 
-Start with **[preview29's dated release status](versions/preview29/RELEASE-STATUS.md)**, then its [application README](versions/preview29/README.md) and [index.html source](versions/preview29/index.html). This experimental source snapshot contains 37 candidates across 36 modules, with 319 public files. It adds MP01 motion settings and SA01 status announcements relative to [Earlier preview27](versions/preview27/RELEASE-STATUS.md). Native and HTTP checks for this release are **NOT_RUN**; all 88 full semantic-acceptance gates remain pending. This is not a deployed Site or a master merge.
+Start with **[preview30's dated release status](versions/preview30/RELEASE-STATUS.md)**, then its [application README](versions/preview30/README.md) and [index.html source](versions/preview30/index.html). This experimental source snapshot contains 39 candidates across 38 modules, with 334 public files. It adds QK01 quick actions and RR01 route recovery relative to [Earlier preview29](versions/preview29/RELEASE-STATUS.md); [Earlier preview27](versions/preview27/RELEASE-STATUS.md) remains available. Native and HTTP checks for this release are **NOT_RUN**; all 88 full semantic-acceptance gates remain pending. This is not a deployed Site or a master merge.
 
-For local viewing, use the complete `versions/preview29/` as its own HTTP document root: `python3 -m http.server 8000 --bind 127.0.0.1 --directory .`, then open `http://127.0.0.1:8000/index.html`. Run it from that version directory, not the repository root. No npm install or build is needed. GitHub's file browser is not a running website, and `file://` is not a reliable ES-module entry. These instructions have not been executed for this release.
+For local viewing, use the complete `versions/preview30/` as its own HTTP document root: `python3 -m http.server 8000 --bind 127.0.0.1 --directory .`, then open `http://127.0.0.1:8000/index.html`. Run it from that version directory, not the repository root. No npm install or build is needed. GitHub's file browser is not a running website, and `file://` is not a reliable ES-module entry. These instructions have not been executed for this release.
 
 ## Historical navigation (preserved)
 

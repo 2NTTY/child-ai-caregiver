@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>裝置動效偏好 · MP01</title><meta name="color-scheme" content="light dark"><link rel="stylesheet" href="./style.css"></head>
+<body>
+<a class="skip" href="#workspace">跳到偏好內容</a>
+<div class="shell" id="shell" data-layout="A">
+<header class="masthead"><div><p class="eyebrow">育伴港 · 選配工作台 / MP01</p><h1>動多少，由你決定。</h1><p>裝置動效偏好，兩種選配方向。</p></div><span class="sample-tag">獨立合成示例</span></header>
+<p class="scope-note">這裏只改本頁的合成選擇，不會更改你的系統、瀏覽器或帳戶偏好。重新載入此頁會清除所有示例。</p>
+<div class="directions" role="group" aria-label="比較呈現方向"><button id="layout-A" aria-pressed="true"><span>A</span> 偏好核對單</button><button id="layout-B" aria-pressed="false"><span>B</span> 動效試映場</button></div>
+<main id="workspace" tabindex="-1">
+<section id="panel-A" aria-labelledby="title-A">
+<div class="paper-grid"><div class="preference-card"><p class="eyebrow">01 / 清楚知道現在如何顯示</p><h2 id="title-A">讓畫面安靜一點</h2><p class="lead">減少非必要移動。內容、操作與未保存草稿照常。</p>
+<div class="verdict"><span class="status-dot" aria-hidden="true"></span><div><p class="small">合成有效狀態</p><strong id="effective-A"></strong></div></div>
+<label class="switch-row" for="manual-A"><span><strong>減少動畫</strong><span class="small">關閉後恢復跟隨系統</span></span><input id="manual-A" type="checkbox" role="switch" aria-describedby="reason-A storage-A"></label>
+<p id="reason-A" class="reason"></p><p id="storage-A" class="storage-note"></p>
+</div><aside class="receipt" aria-labelledby="receipt-title"><p class="eyebrow">02 / 偏好核對</p><h2 id="receipt-title">是哪一項在生效？</h2><dl><div><dt>系統訊號（合成）</dt><dd id="system-A"></dd></div><div><dt>本頁手動選擇</dt><dd id="manual-value-A"></dd></div><div><dt>保存範圍（合成）</dt><dd id="storage-value-A"></dd></div></dl><p class="receipt-rule">系統要求減少，或仍未確認時，這裏都不能強行開啟動畫。</p><div class="static-example"><span aria-hidden="true">○ → ●</span><p><strong>動作仍然完整</strong><br>減少移動不會少掉內容或關閉按鈕。</p></div></aside></div>
+</section>
+<section id="panel-B" hidden aria-labelledby="title-B">
+<div class="theatre"><div class="theatre-top"><div><p class="eyebrow">B / MOTION SCREENING ROOM</p><h2 id="title-B">先看分鏡，再選節奏</h2></div><span class="scene-number" aria-hidden="true">MP·01</span></div>
+<div class="theatre-grid"><section class="screen" aria-labelledby="scene-title"><div class="screen-label"><span>局部示例 · 無自動播放</span><span id="scene-code">CUT 01</span></div><div class="stage" id="stage"><div class="stage-orbit" aria-hidden="true"><div class="sample-token"></div><div class="stage-cross">+</div></div><div class="stage-caption"><p class="small">靜態分鏡</p><h3 id="scene-title">一張卡片抵達</h3><p id="scene-copy">內容先在原位完整顯示，移動只作局部裝飾。</p></div></div>
+<div class="scene-choices" role="group" aria-label="選擇試映分鏡"><button data-scene="arrive" aria-pressed="true">01 抵達</button><button data-scene="update" aria-pressed="false">02 更新</button><button data-scene="select" aria-pressed="false">03 選取</button></div>
+<div class="playback"><button id="play" class="primary">播放一次局部示例</button><button id="stop" disabled>停止示例</button></div><p id="play-status" class="play-status">尚未播放。你可以只閱讀靜態分鏡。</p></section>
+<aside class="console" aria-labelledby="console-title"><p class="eyebrow">PREFERENCE CONSOLE</p><h3 id="console-title">選擇本頁手動偏好</h3><fieldset><legend>不覆蓋系統要求</legend><label class="mode-choice"><input type="radio" name="manual-B" id="follow-B" value="follow" aria-describedby="reason-B"><span><strong>依系統</strong><small>不額外減少</small></span></label><label class="mode-choice"><input type="radio" name="manual-B" id="reduce-B" value="reduce" aria-describedby="reason-B"><span><strong>額外減少</strong><small>非必要移動保持靜態</small></span></label></fieldset><div class="console-result"><span class="small">合成有效狀態</span><strong id="effective-B"></strong></div><p id="reason-B"></p><p id="storage-B" class="small"></p><p class="console-footnote">試映結束不代表保存、提交或任何業務操作成功。</p></aside></div></div>
+</section>
+<section class="safety" aria-labelledby="safety-title"><h2 id="safety-title">你的實際瀏覽器仍受保護</h2><p id="safety-status">正在確認。未確認前不播放。</p><p class="small">即使下面模擬「系統允許」，也不能繞過真實減少動畫設定。離頁、隱藏、改尺寸或切換方向都會停止。</p></section>
+<details class="lab"><summary>展開合成情境工具 <span>只在本頁記憶體內演示</span></summary><div class="lab-body"><p>切換情境會重設示例生命週期。以下「儲存」是一個記憶體替身，並非你的瀏覽器儲存空間。</p><label for="scenario">載入合成情境</label><select id="scenario"><option value="ready">系統允許 · 儲存可用</option><option value="system">系統要求減少</option><option value="unknown">系統未知 · 已結束讀取</option><option value="loading">系統仍在讀取</option><option value="write-fail">儲存寫入失敗</option><option value="read-fail">儲存完全不可用</option><option value="native">原生 session 示例</option></select><div class="lab-buttons"><button id="finish-read" hidden>完成合成系統讀取</button><button id="reload">模擬重新開啟</button><button id="external">另一模擬頁設為減少</button><button id="reset">重設示例</button></div><p id="lab-status" class="small"></p></div></details>
+<div id="announcement" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+</main>
+<footer><p>MP01 · 兩方向共用一個合成偏好狀態。尚未接入正式產品；不是原生元件或完整動效系統。</p><p>鍵盤、實際畫面、原生裝置與輔助技術驗收仍待進行。</p></footer>
+</div><script type="module" src="./app.mjs"></script>
+</body></html>
