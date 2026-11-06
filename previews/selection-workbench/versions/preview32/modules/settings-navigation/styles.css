@@ -1,0 +1,121 @@
+:root{color-scheme:light;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;font-synthesis:none;color:#163d39;background:#efeee6;line-height:1.65}
+*{box-sizing:border-box}
+html{overflow-y:scroll}
+body{margin:0;min-width:0}
+button,select,input{font:inherit}
+button, select, input{min-height:48px;max-width:100%;border:1px solid #677c75;border-radius:7px;color:#163d39;background:#fffef8}
+p, h1, h2, h3, li, button{overflow-wrap:anywhere}
+button{padding:10px 16px;cursor:pointer;line-height:1.4;transition:background-color 140ms ease,border-color 140ms ease}
+button:hover{background:#e6eddf}
+button[aria-disabled="true"]{cursor:wait;border-style:dashed}
+input,select{padding:10px 12px;width:100%}
+label{display:block;font-size:.875rem;font-weight:700;margin-bottom:6px}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid #8b390c;outline-offset:4px}
+h1,h2,h3,p{margin-top:0}
+h1{font-size:clamp(2rem,4.8vw,4.3rem);line-height:1.18;letter-spacing:-.055em;margin-bottom:20px;max-width:15em}
+h2{font-size:1.75rem;line-height:1.3;letter-spacing:-.03em}
+h3{font-size:1.05rem;line-height:1.5}
+.shell{max-width:1320px;margin:auto;padding:36px clamp(18px,4vw,62px) 60px}
+.skip{position:absolute;top:8px;left:18px;transform:translateY(-200%);z-index:3}
+.skip:focus{transform:none}
+.masthead{border-top:4px solid #163d39;padding-top:18px;position:relative}
+.eyebrow{font-size:.73rem;letter-spacing:.14em;font-weight:800;color:#36594e;margin-bottom:15px}
+.intro{max-width:58em;color:#405a50;font-size:1rem}
+.layout-switch{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0 18px}
+.layout-switch button{border-radius:0;border-color:#163d39;min-width:160px;font-weight:750}
+.layout-switch [aria-pressed="true"]{color:#fffef8;background:#163d39;box-shadow:4px 4px 0 #d07d42}
+.context-heading{font-size:.85rem;font-weight:650;letter-spacing:0;margin:22px 0 4px}
+.live-status{font-size:.8rem;color:#445e52;min-height:1.7em;margin:0 0 20px}
+.workspace{display:grid;grid-template-columns:224px minmax(0,1fr);gap:24px;align-items:start}
+.index-nav{background:#163d39;color:#fffef8;border-radius:0 30px 0 0;padding:24px 16px;min-width:0}
+.index-nav .eyebrow{color:#d2e3c2;padding-left:10px}
+.index-nav [role="tablist"]{display:flex;flex-direction:column;gap:6px;min-width:0}
+.index-nav button{display:flex;gap:16px;align-items:center;text-align:left;width:100%;background:transparent;color:#e3eddf;border:1px solid transparent;border-radius:3px;padding:13px 11px;position:relative}
+.index-nav button:hover{background:#254d45}
+.index-nav [aria-selected="true"]{background:#f0e8cb;color:#163d39;border-color:#f0e8cb;font-weight:800;box-shadow:-4px 0 0 #df9259}
+.index-nav :focus-visible{outline-color:#f9bf8d}
+.nav-number{font-size:.72rem;font-variant-numeric:tabular-nums;letter-spacing:.08em;flex-shrink:0}
+.nav-foot{color:#cfddcc;font-size:.75rem;border-top:1px solid #6e8779;margin:24px 10px 0;padding-top:16px}
+.panel-stack{min-width:0}
+.section-panel{background:#fffef8;border:1px solid #c7d0bd;min-width:0;padding:36px clamp(22px,3.4vw,44px);position:relative;min-height:460px}
+.panel-index{position:absolute;right:24px;top:12px;font-size:6rem;line-height:1;color:#e7ebdd;font-weight:850;letter-spacing:-.08em;pointer-events:none;margin:0}
+.section-panel h2{position:relative;font-size:clamp(2rem,4vw,3rem);margin:16px 0 12px;max-width:calc(100% - 3rem)}
+.scope-badge{position:relative;display:inline-block;background:#e8eddf;color:#36594e;padding:4px 10px;font-size:.8rem;max-width:100%;margin-bottom:4px}
+.panel-kicker{font-size:1.15rem;font-weight:700;margin-bottom:10px;color:#163d39}
+.panel-description{max-width:40em;color:#445e52;font-size:1rem}
+.method-summary{margin:28px 0;border:1px solid #a0b39c;border-left:5px solid #bd662c;background:#f3f4e8;padding:22px;min-width:0;color:#163d39}
+.method-summary h3{font-size:1.15rem;margin:0 0 12px}
+.method-summary .eyebrow{font-size:.66rem;letter-spacing:.1em;margin-bottom:12px}
+.method-list{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;min-width:0}
+.method-list li{border:1px solid #75916e;background:#fffef8;padding:7px 12px;font-size:.95rem;font-weight:750;max-width:100%;min-width:0}
+.summary-note{font-size:.85rem;margin:0 0 10px;color:#385347}
+.reading-note{font-size:.73rem;color:#526c5b;margin:0}
+.method-summary[data-state="error"]{border-left-color:#9b312d;background:#fff1e9}
+.method-summary[data-state="unknown"]{border-left-color:#8d6716;background:#fff8df}
+.boundary{display:flex;align-items:flex-start;gap:12px;margin-top:28px;padding-top:20px;border-top:1px solid #c7d0bd;color:#445e52}
+.boundary p{margin:0;font-size:.92rem}
+.boundary-mark{font-size:1.5rem;color:#9b512a;line-height:1.2;flex-shrink:0}
+.scope-foot{font-size:.74rem;color:#536c5e;margin:20px 0 0}
+.pending-note{border-left:3px solid #8c9f7d;padding-left:12px;font-size:.8rem;color:#445e52;margin-top:20px}
+.scenario-lab{border:1px dashed #80927e;padding:18px 20px;margin-top:36px;background:#f4f4eb}
+.scenario-lab summary{cursor:pointer;min-height:32px;font-weight:750;color:#36594e;line-height:2}
+.scenario-lab p{font-size:.85rem;color:#445e52;margin:10px 0 18px}
+.lab-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.field{flex:1 1 220px;min-width:0}
+.lab-controls button{flex:1 1 160px}
+/* Atlas is a directory-first reading architecture, not restyled tabs. */
+#app[data-layout="atlas"]{color:#2d324b;background:#f6f1e7;min-height:100vh}
+#app[data-layout="atlas"] .masthead{border-top-color:#2d324b}
+#app[data-layout="atlas"] h1{font-size:clamp(1.9rem,3.6vw,3.2rem);max-width:none}
+#app[data-layout="atlas"] .intro,#app[data-layout="atlas"] .live-status{color:#53566d}
+#app[data-layout="atlas"] .layout-switch [aria-pressed="true"]{background:#343a66;border-color:#343a66;box-shadow:4px 4px 0 #d2ac79;color:#fffef8}
+.atlas-intro{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:36px;padding:28px 0 30px;border-top:1px solid #b8b2ad;border-bottom:1px solid #b8b2ad;margin-bottom:28px;align-items:center}
+.atlas-opening h2{font-size:clamp(1.8rem,3vw,2.75rem);line-height:1.2;max-width:8em;margin-bottom:18px;color:#343a66}
+.atlas-opening p:last-child{color:#53566d;font-size:.9rem;max-width:30em;margin-bottom:0}
+.atlas-opening .eyebrow{color:#63577a}
+.atlas-summary-slot{min-width:0}
+.atlas-summary-slot .method-summary{margin:0;background:#fffaf0;border-color:#b3a58d;border-left-color:#6c62a0}
+#app[data-layout="atlas"] .workspace{grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:28px}
+.atlas-directory{min-width:0}
+.atlas-directory h2{font-size:1.25rem;color:#343a66;margin-bottom:18px}
+.atlas-directory input{border-color:#888295;color:#343a66;background:#fffcf5}
+.micro{font-size:.75rem;color:#53566d;margin:7px 0}
+.search-result{font-size:.8rem;color:#53566d;margin:14px 0 20px}
+.directory-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:24px;min-width:0}
+.directory-group h3{grid-column:1/-1;letter-spacing:.08em;font-size:.74rem;margin:0 0 3px;color:#63577a}
+.directory-group button{text-align:left;display:grid;grid-template-columns:minmax(0,1fr) 16px;gap:5px;padding:16px 14px;border-color:#bdb5af;background:#fffcf5;color:#343a66;border-radius:0;min-width:0}
+.category-name{font-size:1rem;font-weight:750;grid-column:1;min-width:0}
+.category-description{font-size:.75rem;color:#53566d;grid-column:1;min-width:0}
+.category-arrow{grid-column:2;grid-row:1/3;align-self:center}
+.directory-group button:hover{background:#eeebf7}
+.directory-group [aria-current="true"]{background:#e9e6f5;border-color:#6c62a0;box-shadow:inset 0 -4px 0 #6c62a0}
+#app[data-layout="atlas"] .panel-stack{position:sticky;top:20px}
+#app[data-layout="atlas"] .section-panel{background:#343a66;color:#fffaf0;border:0;border-radius:0 0 32px 0;min-height:420px;padding:32px 28px}
+#app[data-layout="atlas"] .panel-index{color:#4a507e}
+#app[data-layout="atlas"] .scope-badge{color:#f0e7cb;background:#4b527f}
+#app[data-layout="atlas"] .section-panel h2,#app[data-layout="atlas"] .panel-kicker{color:#fffaf0}
+#app[data-layout="atlas"] .panel-description,#app[data-layout="atlas"] .boundary,#app[data-layout="atlas"] .scope-foot{color:#e0e1f0}
+#app[data-layout="atlas"] .boundary{border-color:#888cb0}
+#app[data-layout="atlas"] .boundary-mark{color:#edbe86}
+#app[data-layout="atlas"] .section-panel :focus-visible{outline-color:#f2c389}
+/* JS reads this same container's width; it switches at <720, not window width. */
+#app.is-compact .shell{padding-top:22px;padding-bottom:40px}
+#app.is-compact h1{font-size:2rem;letter-spacing:-.045em}
+#app.is-compact .workspace,#app.is-compact[data-layout="atlas"] .workspace{grid-template-columns:minmax(0,1fr);gap:18px}
+#app.is-compact .index-nav{border-radius:0 18px 0 0;padding:16px 12px}
+#app.is-compact .index-nav [role="tablist"]{flex-direction:row;overflow-x:auto;padding:5px 5px 12px;scrollbar-width:thin;scrollbar-color:#d2e3c2 #163d39}
+#app.is-compact .index-nav button{width:auto;flex:0 0 auto;white-space:nowrap;gap:8px}
+#app.is-compact .index-nav .nav-foot{margin:4px 4px 0;padding-top:10px}
+#app.is-compact .section-panel{padding:24px 20px;min-height:0}
+#app.is-compact .panel-index{font-size:5rem;right:20px}
+#app.is-compact .method-summary{padding:18px}
+#app.is-compact .atlas-intro{grid-template-columns:minmax(0,1fr);gap:22px;padding:22px 0}
+#app.is-compact .atlas-opening h2{max-width:none}
+#app.is-compact[data-layout="atlas"] .panel-stack{position:static}
+#app.is-compact[data-layout="atlas"] .section-panel{padding:26px 20px;min-height:0}
+#app.is-compact .layout-switch button{flex:1 1 125px;min-width:0}
+#app.is-compact .directory-group{gap:8px}
+#app.is-compact .directory-group button{padding:14px 10px}
+@media(prefers-reduced-motion:reduce){*{transition:none;animation:none;scroll-behavior:auto}}
+@media(forced-colors:active){button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:3px solid CanvasText;outline-offset:4px}.panel-index{display:none}.index-nav button{border:1px solid ButtonText}.method-summary{border:1px solid CanvasText}.index-nav [aria-selected="true"],.directory-group [aria-current="true"],.layout-switch [aria-pressed="true"]{border-style:double;border-width:3px}}
