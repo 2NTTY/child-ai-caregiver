@@ -4827,3 +4827,22 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   - 維持擴充常數與靜態租約緩衝對齊，360s 租約與 300s 取消提供 60s 靜態緩衝，屬工程起始基準。合作式取消非強制終止；端到端 15 分鐘任務仍待後續心跳續約與雲端基礎設施調整。
   - 純本地分支，零 git push，零 GitHub PR。
 
+### 2026-11-07 歷史記錄客觀校準與 CI Guard 接線 (Audit B01, B09 / Gap 5)
+
+- Recorded At：2026-11-07 09:50 UTC (17:50 HKT)；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `ccd540a5634d8613f88856853f508e2912ba1c93`，保留歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `scripts/ci/verify-summary-progress-offline.sh`：新增 `stage=package-invariant-guard`，將 `scripts/verify-timeout-lease-mutations.mjs` 正式納入離線 CI 執行管線，於沙盒中驗證不變量守衛。
+  2. 邊界與限制客觀記錄：綱要層允許至 900 秒，但目前互動式 AgentBudget 建構子維持 300 秒硬檢驗；CloudTasks 派發維持 120 秒，Worker 認領維持 90 秒。360 秒租約與 300 秒取消信號提供 60 秒靜態緩衝，屬工程建議起始基準；因取消信號為合作式（cooperative cancellation via AbortSignal），非硬性線程中止，不作絕對免除失敗之保證。端到端 15 分鐘完整長任務需後續心跳續約與雲端基礎設施調整。
+  3. 歷史時間戳記客觀說明：前次提交（`ccd540a5`）生成時間為 16:58:04 HKT，模板預填為 17:05 HKT（09:05 UTC）；依 append-only 規範，在此客觀記錄提交實際發生順序，保留原始日誌歷史。
+- Verification：
+  - `bash -n scripts/ci/verify-summary-progress-offline.sh`：exit 0
+  - `tests/ai-config.test.ts`：11/11 PASS (TAP check 11 通過)
+  - `tests/firestore-background-recovery.test.ts`：1/1 PASS (TAP check 1 通過)
+  - `tests/agent-runtime.test.ts`：20/20 PASS (TAP check 20 通過)
+  - `scripts/verify-timeout-lease-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tests/ci/summary-progress-contract.test.mjs`：6/6 PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 維持 NOT READY / HOLD merge 狀態，等待 Owner 統籌合併。純本地分支，零 git push，零 GitHub PR。
+

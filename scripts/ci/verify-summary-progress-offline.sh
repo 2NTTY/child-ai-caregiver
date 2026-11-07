@@ -85,6 +85,15 @@ for index in "${!TEST_FILES[@]}"; do
   "$NODE_BIN" "$CONTRACT" check "$TAP_FILE" "${TEST_CASES[$index]}"
 done
 
+stage=package-invariant-guard
+for guard in scripts/verify-*-mutations.mjs; do
+  if [[ -f "$guard" ]]; then
+    printf 'package-invariant-guard=%s\n' "$guard"
+    git ls-files --error-unmatch -- "$guard" >/dev/null
+    "$NODE_BIN" "$guard"
+  fi
+done
+
 stage=final-source-integrity
 git diff --exit-code HEAD
 test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"

@@ -1,13 +1,13 @@
 {
-  "receiptVersion": "2026-11-07.v4",
+  "receiptVersion": "2026-11-07.v5",
   "package": "REQ005-PR9",
   "title": "Align background work lease and timeout limits (REQ-005 §4 §7)",
   "branch": "codex/req005-timeout-lease-alignment",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
-  "parentTip": "3cb406f66700889a43beb7c737552d3a6d6c99d9",
+  "parentTip": "ccd540a5634d8613f88856853f508e2912ba1c93",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
   "executor": "AI Assistant (local execution)",
-  "timestampUtc": "2026-11-07T08:57:45.950Z",
+  "timestampUtc": "2026-11-07T09:39:32.168Z",
   "environment": {
     "nodeVersion": "v24.16.0",
     "os": "win32",
@@ -72,14 +72,19 @@
       "bytes": 5228
     },
     "WORKLOG.md": {
-      "sha256": "c88a9eabd2b8a6f29570a6a8c8eae35cf0ea4f954e728f03a50d1570d7b8fae1",
-      "gitBlob": "5f398caa60ceca70813104d2062db6aeeb8b06d8",
-      "bytes": 768064
+      "sha256": "5998cd5892d341de2a1d9557b39394edaf3db31102c6e2ff2f47bc34817b0f2b",
+      "gitBlob": "adee159c7bd468e4abd85f01a84be78346a9a0d3",
+      "bytes": 770021
     },
     "scripts/ci/summary-progress-tests.json": {
       "sha256": "bfb42579bf21ba794fbf4043ecb2284f0a3c8ee231dfd6453709b412f5e8d938",
       "gitBlob": "5baa18bbb5fd3d519fdb6233c75c091d77670dcb",
       "bytes": 7260
+    },
+    "scripts/ci/verify-summary-progress-offline.sh": {
+      "sha256": "f30288a41f27260837e9f69f46b5bda8f5267b2ede0c13795cda385f202a869d",
+      "gitBlob": "fcce900ddc249ac8a061c9a955e0824085758dbe",
+      "bytes": 4017
     },
     "scripts/verify-timeout-lease-mutations.mjs": {
       "sha256": "21160fcefd3ef0ff402ad7226912f09d41cfad952cfd0afd8480ee79cbef6dde",
