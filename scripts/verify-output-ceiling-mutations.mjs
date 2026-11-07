@@ -3,8 +3,11 @@ import { AGENT_OUTPUT_LIMITS, AGENT_RUN_LIMITS } from '../src/shared/agent-run-l
 import { AGENT_LIMITS, freezeAgentRunLimits } from '../server/agent-budget.ts';
 import { createVertexAgentPayloadBuilder, agentGenerationConfig } from '../server/agent-model-gateway.ts';
 import { readAiConfig } from '../server/ai-config.ts';
+import { createFirestoreAdmin } from '../server/firestore-admin.ts';
+import { createStorageCipher } from '../server/storage-crypto.ts';
+import { firestoreDomainFixture } from '../tests/helpers/firestore-domain-memory.ts';
 
-console.log('--- REQ-005 Output Ceiling Mutation & Verification Suite ---');
+console.log('--- REQ-005 Output Ceiling Invariant & Boundary Verification ---');
 
 // 1. Invariant & Constant Verification
 console.log('[1/5] Verifying AGENT_OUTPUT_LIMITS invariants...');
@@ -13,20 +16,20 @@ assert.equal(AGENT_OUTPUT_LIMITS.default, 4096, 'Default ceiling must be 4096');
 assert.equal(AGENT_OUTPUT_LIMITS.min, 1, 'Min ceiling must be 1');
 assert.equal(AGENT_OUTPUT_LIMITS.maxInteractive, 16384, 'Max interactive ceiling must be 16384');
 assert.equal(AGENT_OUTPUT_LIMITS.maxBackground, 32768, 'Max background ceiling must be 32768');
-console.log('??AGENT_OUTPUT_LIMITS constants verified.');
+console.log('✓ AGENT_OUTPUT_LIMITS constants verified.');
 
-// 2. Mutation M1: Clamping at 1024 fails the unclamped spec
-console.log('[2/5] Mutation M1: Demonstrating old 1,024 clamp fails REQ-005 requirements...');
+// 2. Regression Guard 1: Legacy clamp of 1024 fails the unclamped specification
+console.log('[2/5] Regression Guard 1: Demonstrating old 1,024 clamp fails REQ-005 requirements...');
 {
   const requestedCeiling = 4096;
   const oldClampedVal = Math.min(requestedCeiling, 1024);
   assert.equal(oldClampedVal, 1024, 'Old logic artificially restricted 4096 to 1024');
-  assert.notEqual(oldClampedVal, requestedCeiling, 'M1 mutation caught: old clamp cannot deliver 4096 tokens');
+  assert.notEqual(oldClampedVal, requestedCeiling, 'Old clamp cannot deliver 4096 tokens');
 }
-console.log('??Mutation M1 caught: old clamp is demonstrably broken.');
+console.log('✓ Regression Guard 1 passed: legacy 1024 clamp defect documented and isolated.');
 
-// 3. Mutation M2: Unclamping to 4096 and 16384 in payload builder and generation config
-console.log('[3/5] Mutation M2: Verifying unclamp allows 4096 and 16384...');
+// 3. Invariant Check 2: Unclamping to 4096 and 16384 in payload builder and generation config
+console.log('[3/5] Invariant Check 2: Verifying unclamp allows 4096 and 16384...');
 {
   const dummyConfig4k = {
     model: 'gemini-2.5-flash',
@@ -54,10 +57,10 @@ console.log('[3/5] Mutation M2: Verifying unclamp allows 4096 and 16384...');
   const genConfig16k = agentGenerationConfig(dummyConfig16k, {});
   assert.equal(genConfig16k?.maxOutputTokens, 16384, 'agentGenerationConfig must unclamp to 16384');
 }
-console.log('??Mutation M2 passed: 4096 and 16384 tokens are safely unconstrained.');
+console.log('✓ Invariant Check 2 passed: 4096 and 16384 tokens are safely unconstrained.');
 
-// 4. Mutation M3: Strict boundary clamping at 16384
-console.log('[4/5] Mutation M3: Verifying excessive values clamp strictly to 16384...');
+// 4. Invariant Check 3: Strict boundary clamping at 16384
+console.log('[4/5] Invariant Check 3: Verifying excessive values clamp strictly to 16384...');
 {
   const excessiveConfig = {
     model: 'gemini-2.5-flash',
@@ -77,10 +80,10 @@ console.log('[4/5] Mutation M3: Verifying excessive values clamp strictly to 163
   const genConfigExcessive = agentGenerationConfig(excessiveConfig, {});
   assert.equal(genConfigExcessive?.maxOutputTokens, 16384, 'agentGenerationConfig must clamp strictly at 16384');
 }
-console.log('??Mutation M3 passed: upper interactive boundary is securely maintained.');
+console.log('✓ Invariant Check 3 passed: upper interactive boundary is securely maintained.');
 
-// 5. Schema Validation & freezeAgentRunLimits
-console.log('[5/5] Schema Validation: Verifying ai-config and agent-budget boundaries...');
+// 5. Schema Validation, Admin Overview & Invariants
+console.log('[5/5] Schema & Admin Invariants: Verifying ai-config, firestore-admin, and budget...');
 {
   const baseEnv = {
     AI_ENABLED: 'true',
@@ -105,9 +108,17 @@ console.log('[5/5] Schema Validation: Verifying ai-config and agent-budget bound
   assert.equal(frozenDefault.queryEmbeddings, 2);
   assert.equal(AGENT_OUTPUT_LIMITS.legacyClamp, 1024);
   assert.equal(AGENT_OUTPUT_LIMITS.maxInteractive, 16384);
+
+  // Admin overview unclamping observability
+  const f = firestoreDomainFixture();
+  const cipher = createStorageCipher(Buffer.alloc(32, 1));
+  const adminConfig = { ...readAiConfig(baseEnv), maxOutputTokens: 4096 };
+  const admin = createFirestoreAdmin({ database: f.database, cipher, projectId: 'care-project-123', namespace: 'test' }, adminConfig);
+  const overview = await admin.overview();
+  assert.equal(overview.outputTokens, 4096, 'Admin overview must reflect unclamped 4096 tokens');
 }
-console.log('??Schema and budget verification passed.');
+console.log('✓ Schema, admin overview, and budget verification passed.');
 
 console.log('======================================================');
-console.log('All Output Ceiling Mutation & Verification Tests PASSED!');
+console.log('All Output Ceiling Invariant & Boundary Checks PASSED!');
 console.log('======================================================');

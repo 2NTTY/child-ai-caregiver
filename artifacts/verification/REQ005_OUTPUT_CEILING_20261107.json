@@ -1,12 +1,28 @@
 {
-  "receiptVersion": "2026-11-07.v2",
+  "receiptVersion": "2026-11-07.v3",
   "package": "REQ005-PR7",
   "title": "Unclamp interactive output token ceiling to 16384 (REQ-005 §4 §7)",
   "branch": "codex/req005-output-ceiling",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+  "parentTip": "13dece721154ebd4326601930098160d7bb72236",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
-  "executor": "AI Agent (Antigravity)",
-  "timestampUtc": "2026-11-07T07:10:00Z",
+  "executor": "AI Assistant (local execution)",
+  "timestampUtc": "2026-11-07T08:40:21.330Z",
+  "environment": {
+    "nodeVersion": "v24.16.0",
+    "os": "win32",
+    "shell": "powershell",
+    "tscVersion": "6.0.3"
+  },
+  "commandsExecuted": [
+    "node --experimental-test-module-mocks --test tests/agent-model-gateway.test.ts",
+    "node --experimental-test-module-mocks --test tests/ai-config.test.ts",
+    "node --experimental-test-module-mocks --test tests/gemini-key-provider.test.ts",
+    "node scripts/verify-output-ceiling-mutations.mjs",
+    "node scripts/ci/summary-progress-contract.mjs list scripts/ci/summary-progress-tests.json",
+    "node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit",
+    "node node_modules/typescript/bin/tsc --noEmit"
+  ],
   "status": "LOCAL_VERIFIED",
   "remotePushed": false,
   "pullRequestOpened": false,
@@ -38,18 +54,33 @@
     "tsconfigRoot": "PASS (0 diagnostics, exit 0)"
   },
   "retainedFailures": [
-    "tests/gemini-key-provider.test.ts: metadata check synthetic 429 assertion error (present on master, retained verbatim)"
+    "tests/gemini-key-provider.test.ts: metadata check synthetic 429 assertion error (present on master baseline, retained verbatim)"
   ],
   "knownLimitations": [
     "Interactive model request output ceiling unclamp only (1,024 -> 16,384)",
     "maxBackground (32,768) and default (4,096) are defined as constants; worker execution and per-run budget plumbing scoped for background PRs",
-    "Local branch only; zero remote writes"
+    "Local branch only; zero remote writes; strictly zero GitHub PR"
   ],
   "files": {
-    "src/shared/agent-run-limits.ts": {
-      "sha256": "a2795ee4cc5c846074122503b402f456d25fb4159e708bb6dd1d9930c660173f",
-      "gitBlob": "fc6e07f1e37ac4482248666ece32e3c08b6b70a3",
-      "bytes": 855
+    ".github/workflows/summary-progress-offline.yml": {
+      "sha256": "3f127bb396c7c1044e4c57f55bfaac09c4394b3039100e14cd21002cf20288ef",
+      "gitBlob": "16b68e5babc627331150ddddbd031b9545cca329",
+      "bytes": 5219
+    },
+    "WORKLOG.md": {
+      "sha256": "df11ce69d32ca90538b5f1d2c135e4d23aa694f9598ba872ea1e0971da5f778b",
+      "gitBlob": "e24f83fa58f2d624cb391addd8a33b60fb8962a8",
+      "bytes": 766207
+    },
+    "scripts/ci/summary-progress-tests.json": {
+      "sha256": "b9403456ee609b5e2a59f860a77fe67e79f4d5ec269b2dfb90f9c5e1b8b126ec",
+      "gitBlob": "bcc25d51e669b7e4870a2aad9b15b9bac4b485a3",
+      "bytes": 7113
+    },
+    "scripts/verify-output-ceiling-mutations.mjs": {
+      "sha256": "7f365673e2c8be7da9c11be4db9cb2f47218e1c6676249eeaf0fc88f5cba23d3",
+      "gitBlob": "a187be10bf772535f4e083b19e6488e6cfeb2a68",
+      "bytes": 6311
     },
     "server/agent-budget.ts": {
       "sha256": "ac0849303da8db31bdc45fd266de1321f623731c5ceafbe70ed18f255291c4d7",
@@ -66,6 +97,11 @@
       "gitBlob": "22896d595432635e8109e93bab56ed3ace08c1be",
       "bytes": 5679
     },
+    "server/firestore-admin.ts": {
+      "sha256": "a7839249bd5271d4493d792860b7a27d386057f6b23cd07fab24a410426d57d1",
+      "gitBlob": "88100c4ee148778c5327a3bdeff9197a672e8f26",
+      "bytes": 8143
+    },
     "server/gemini-key-provider.ts": {
       "sha256": "c01c226a0701ab9ae8aa9615efe767f917d8893462edd633f5a97a6f76af4079",
       "gitBlob": "bb1379102c2a506ed389c76eab1205fee08be613",
@@ -75,6 +111,11 @@
       "sha256": "36705cccb2a5dcc9c431d9b9a9ab2d390396542287bdf967f7b4c9c399887f83",
       "gitBlob": "3bda3d3219fa8a394967f0962f4ac550df5c1548",
       "bytes": 9242
+    },
+    "src/shared/agent-run-limits.ts": {
+      "sha256": "a2795ee4cc5c846074122503b402f456d25fb4159e708bb6dd1d9930c660173f",
+      "gitBlob": "fc6e07f1e37ac4482248666ece32e3c08b6b70a3",
+      "bytes": 855
     },
     "tests/agent-model-gateway.test.ts": {
       "sha256": "7bc3c5ada26631f13dda0bd0deee96d5e81ff2a201b4ac61996ea738ebec4b30",
@@ -90,16 +131,6 @@
       "sha256": "e66b774cf9330a9cc2fa25aad0d11db7f6bbcfe3e987f9bc5fcadcb9572e62d3",
       "gitBlob": "191f8fe7db9ecb1f119ff9bfc7d4846372166b66",
       "bytes": 12148
-    },
-    "scripts/verify-output-ceiling-mutations.mjs": {
-      "sha256": "f0ff8053037db88e3c8e8ad5b2420717db77bd13228bcac38bc249a18f4a910f",
-      "gitBlob": "69cc63011f61ab13db8e300941a1e79fbc573558",
-      "bytes": 5485
-    },
-    "WORKLOG.md": {
-      "sha256": "e5d89f52a49e6a66a0cc9d395c54d1666344e91bec83de6aaf31accc4f6eeef6",
-      "gitBlob": "85b1b370132a1c8bd1b119c00e4801d63508aca8",
-      "bytes": 764358
     }
   }
 }

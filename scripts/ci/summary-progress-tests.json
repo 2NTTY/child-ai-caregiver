@@ -9,7 +9,7 @@
   },
   {
     "path": "tests/agent-model-gateway.test.ts",
-    "cases": 16
+    "cases": 18
   },
   {
     "path": "tests/firestore-summary-batches.test.ts",

@@ -4788,3 +4788,24 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   - 本 PR 嚴格聚焦於互動式模型請求之輸出 Token 解鉗（1,024 → 16,384）。
   - `maxBackground: 32768` 與 `default: 4096` 僅為架構常數宣告，背景 Worker 完整輸出管線與 per-run budget 接線留待後續背景作業 PR 交付。
   - 嚴格維持純本地分支，未 push、未開 GitHub PR。
+
+### 2026-11-07 Round 2 審核跟進修正 (Audit A05 / Gap 2)
+
+- Recorded At：2026-11-07 08:45 UTC；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `13dece721154ebd4326601930098160d7bb72236`，嚴格保留 reflog 歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `server/firestore-admin.ts`：將 `overview()` 輸出由 `Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens)` 改為 `Math.min(config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive)`，使管理員可觀測性與互動 Gateway 同步解鉗至 16,384 tokens。
+  2. `scripts/ci/summary-progress-tests.json`：將 `tests/agent-model-gateway.test.ts` 宣告測試數由 16 更新至 18，對齊 TAP 輸出合約。
+  3. `.github/workflows/summary-progress-offline.yml`：在 `github.head_ref` 白名單加入 `codex/req005-output-ceiling`。
+  4. `scripts/verify-output-ceiling-mutations.mjs`：修正終端輸出及註釋，將「Mutation」字眼改為「Invariant Check & Regression Guard」，並補入 `createFirestoreAdmin` overview 驗證。
+  5. 收據與文件：更新收據檔案清單（補入 `firestore-admin.ts`、`summary-progress-tests.json`、`summary-progress-offline.yml`），補全可重現命令與環境。
+- Verification：
+  - `tests/agent-model-gateway.test.ts`：18/18 PASS
+  - `tests/ai-config.test.ts`：11/11 PASS
+  - `tests/gemini-key-provider.test.ts`：3/4 PASS, 1 baseline failure (synthetic 429 error assertion 如實保留)
+  - `scripts/verify-output-ceiling-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 維持窄 scope，僅覆蓋互動模型輸出上限（16,384）。背景 32,768 為常數宣告，管線待後續背景 PR。
+  - 純本地分支，零 git push，零 GitHub PR。
+
