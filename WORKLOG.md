@@ -5015,3 +5015,62 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 ### 下一步 (Next Action)
 - 提交前向 commit，push 至遠端分支 `codex/req005-closeout-validation`。
 - 更新 PR #514 描述（修復字面 `---\n`），核實 exact-head CI SUCCESS。
+
+
+<a id="log-20261108-req005-closeout-r5-evidence-calibration"></a>
+## LOG-20261108-006
+
+- Recorded At：2026-11-08T05:40:00+08:00
+- Work Date：2026-11-08
+- Step / Package：REQ-005 §9 (PR #514 Round 5)
+- Executor：AI Assistant（本機執行與測試證據校準）
+- Goal：落實 `PR10_11_AUDIT_ROUND5.md` Round 5 覆核要求，嚴格校準官方 26 項驗收場景實測矩陣之測試路徑、案例計數與驗證結論：
+  1. 移除真實不存在之測試路徑與虛構案例名稱：
+     - 場景 2 移除虛構測試名稱 `resolves personal key quota without admin ceiling clamping`，改引用 PR #511 commit `0d790544` 於 `tests/personal-model-settings.test.ts` 行 49–57 之真實斷言（admin=4 vs personal=8 驗證 personal 得 8、platform 得 4），並註記 admission deadline 平台快照限制；
+     - 場景 12 徹底移除 master 與各候選分支均不存在之 `tests/firestore-restore-apply.test.ts`，改引用真實存在且通過之 `tests/firestore-restore-codec.test.ts`（10/10 PASS）與 `tests/firestore-restore.test.ts`（restore fencing 隔離未知與租約中任務）；
+     - 場景 25 移除 PR #508 測試檔中不存在之 `unknown status preservation during compaction fallback` 案例名稱，改為如實說明 `tests/agent-context-compaction.test.ts` 驗證 fallback 終止與保留，`tests/agent-actions-receipt-compatibility.test.ts` 驗證真實 voice receipt schema，但端到端 compaction -> opId lookup -> unknown status -> no replay 整合案例待補。
+  2. 更正測試案例與 guard 數目：
+     - 場景 1 更正 `tests/personal-model-settings.test.ts` 實跑案例數為 2/2 PASS（非 7/7），標明 resolver 與設定解析可證，UI 入口有效值顯示待整合；
+     - 場景 24 更正 PR #508 commit `1f744a65` 之 compaction 測試數為 11/11 PASS（非 14/14），mutation guards 為 6/6 PASS（C1–C6，非 4/4），與 PR #508 實際交付一致。
+  3. 收窄證據不足或僅具子集證據之場景結論：
+     - 場景 5 修正為 `PARTIAL / SPEC MAPPED | LIVE MODEL NOT RUN`，指出 `tests/product-agent.test.ts` 實際覆蓋私人候選保存、引用與背景任務，無專屬 hi／謝謝短路 fixture；
+     - 場景 11 修正為 `PARTIAL / SYNTHETIC VERIFIED`，說明單 run softExceeded snapshot 已驗證，但跨 run 持續高水位模式檢測與即時告警通道待決；
+     - 場景 25 降級標註為 `PARTIAL / NOT VERIFIED | LIVE MODEL NOT RUN`；
+     - 逐一收窄場景 1, 2, 3, 4, 6, 7, 8, 9, 10, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23, 26 之驗收結論，明確標明 PARTIAL 邊界與待決項目。
+  4. 收據與基準校準：
+     - 更新 `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json` 至 `2026-11-08.v6`；
+     - `featureCommit` 釘選至前版基準 commit `85a7facf4e805e616627b858e56a9da66ed60a6d`，`calibratedCommit` 標示為 `a29b70737ebd2d53fa24f06cdd867e6e752daacc`；
+     - 重新計算受影響檔案之 SHA-256、gitBlob 與位元組數。
+  5. 嚴格維持 HOLD merge，僅由專案負責人 2NTTY 裁決合併。
+
+### 實際工作 (Actual Work)
+1. **校準 26 項官方驗收場景實測矩陣 (`PLAN.md#req005-closeout01`)**：
+   - 逐一比對 repo 與各 PR 候選之真實測試檔案、案例名稱與斷言，修正數目與路徑，全面降級過度聲明之 VERIFIED 標籤為 PARTIAL / BASELINE / SYNTHETIC VERIFIED。
+2. **更新現況投影 (`STATUS.md`)**：
+   - 更新為反映 Round 5 審計校準結果。
+3. **收據更新與基準釘選**：
+   - 更新 `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json` 為 `2026-11-08.v6`，重新計算受影響檔案之 SHA-256、gitBlob 與位元組數。
+
+### 變更檔案 (Changes)
+- `PLAN.md`
+- `STATUS.md`
+- `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json`
+- `WORKLOG.md`
+
+### 驗證 (Verification)
+- 需求／驗收：REQ-005 §9 官方 26 項驗收場景實測矩陣真實測試路徑、案例數目與邊界結論精確校準
+- 方法：
+  - `node --test tests/ci/summary-progress-contract.test.mjs` (6/6 PASS)
+  - `node --max-old-space-size=3072 node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit` (0 diagnostics, exit 0)
+  - `npx tsc --noEmit` (0 diagnostics, exit 0)
+- 結果：全部通過 (ALL PASS, 0 fail, exit 0)
+- 證據收據：`artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json` (v6)
+
+### 限制與阻塞 (Limitations / Blockers)
+- 26 項官方場景中，真模型 API 連線、真實 GCP 帳單貨幣配額、生產實體 101 筆 Firestore 壓測、外部維護者告警通道及前端畫面續頁按鈕接線均未執行，如實標註為 NOT RUN / PENDING。
+- 衝突狀態：本分支與 PR 10（#513）存在 2 個檔案之合併衝突（`WORKLOG.md` 與 `.github/workflows/summary-progress-offline.yml`）。
+- 嚴格維持 HOLD merge，僅由專案負責人 2NTTY 裁決合併。
+
+### 下一步 (Next Action)
+- 提交前向 commit，push 至遠端分支 `codex/req005-closeout-validation`。
+- 更新 PR #514 描述（校準真實 40 碼 HEAD commit SHA 與現 head CI run），核實 exact-head CI SUCCESS。
