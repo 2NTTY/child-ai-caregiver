@@ -12,7 +12,7 @@ test("AI configuration defaults to a disabled server-only setup", () => {
     dailyGlobalAttempts: 100,
     personalDailyGlobalAttempts: 1000,
     maxAttempts: 2,
-    timeoutMs: 30000,
+    timeoutMs: 90000,
     maxInputCharacters: 10000,
     agentMaxInputCharacters: 64000,
     agentThinkingLevel: "minimal",
@@ -99,7 +99,7 @@ test("AI configuration enforces integer ranges without leaking values", () => {
     AI_DAILY_USER_ATTEMPTS: ["0", "1001"],
     AI_DAILY_GLOBAL_ATTEMPTS: ["0", "10001"],
     AI_MAX_ATTEMPTS: ["0", "3"],
-    AI_TIMEOUT_MS: ["999", "60001"],
+    AI_TIMEOUT_MS: ["999", "300001"],
     AI_MAX_INPUT_CHARACTERS: ["0", "20001"],
     AI_MAX_OUTPUT_TOKENS: ["0", "4097"],
   };
@@ -167,3 +167,9 @@ test("background knowledge maintenance flags default off and reject unsafe combi
   }), { message: "Invalid AI_BACKGROUND_KNOWLEDGE_LIVE_FETCH configuration" });
 });
 
+
+test("ai configuration accepts aligned timeout up to 300000 ms", () => {
+  assert.equal(readAiConfig({ AI_TIMEOUT_MS: "180000" }).timeoutMs, 180000);
+  assert.equal(readAiConfig({ AI_TIMEOUT_MS: "300000" }).timeoutMs, 300000);
+  assert.throws(() => readAiConfig({ AI_TIMEOUT_MS: "300001" }), /Invalid AI_TIMEOUT_MS/);
+});

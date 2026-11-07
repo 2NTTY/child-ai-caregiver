@@ -4755,3 +4755,36 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Failure / Repair：原完整 server 型別 1536 MiB heap V8 OOM（exit -6）；3072 MiB 單次重試 SIGKILL（exit -9），原因未證，監測未觸發 512 MiB 餘量門檻。未產生完整 program／TS 診斷，仍 NOT_PASSED，沒有第三跑或縮 config。sharing suite 候選15/16、精確基線client overlay 14/16，同一 care restore journal descriptor RED 保留，只消除 growth 讀取失敗。首次 growth-read 缺 transform-types 的 launcher failure 及原盤點 required RED 亦保留，不冒充產品通過。
 - Related Current-State Correction：按已保存的 [PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 交付收據，校準根 PLAN／STATUS 唯一緊鄰 HC current 節：2026-11-05 13:00:09 UTC 正常合併至 `f453226f`，精確 head `74e7b66d0646fc2970af55eb864a6770cd63655a` 的 [CI 42030612566](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42030612566)／[CI 42031114003](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42031114003) 各 8/8 與完整 frontend 型別、locked install／offline wrapper 成功；未部署。舊 HC WORKLOG／verification JSON 仍保留合併前快照，formal41 及原限制不進位，其他包不改。
 - Limitations / Next Action：完整 GR hook／host、scope／身份排程、瀏覽器／焦點／AT、原生、真 Firestore／API／家庭資料、模型及原正式矩陣未驗。先獨立 review 全部十檔，再由精確 head 必要 offline CI 執行 33 案及 frontend／root／server 三個原完整 config；clean install、正向完整 namespace wrapper 與 GitHub job 尚未跑，不能以本地 frontend／root PASS 代填 server gate。GR 未 commit、remote 寫入、開 PR、合併或部署。
+
+
+<a id="log-20261107-timeout-lease-alignment"></a>
+## 2026-11-07｜REQ-005 PR 9 背景工作租約與請求逾時上限對齊（REQ-005 §4 §7）
+
+- Recorded At：2026-11-07 07:25 UTC；Work Date：2026-11-07。
+- Step / Package：REQ005-PR9 (Audit B01–B09 / Gap 5)。
+- Branch：`codex/req005-timeout-lease-alignment`（基線：`2abe7aed60b192b253414f6464e3fd070cc377e7`）。
+- Author / Committer：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`。
+- Executor：AI Agent (Antigravity)。
+- AI Assistance：Full code modification, invariant script execution, and verification receipt authoring under explicit user direction.
+- Human Verification：Awaiting user review and Grok read-only audit review.
+- Goal / Actual Work：修復 `server/firestore-background-work.ts`、`server/background-knowledge-maintenance.ts`、`src/shared/agent-run-limits.ts` 與 `server/ai-config.ts` 中過短之背景租約與請求邊界限制，使背景工作租約由 120s 擴大至 360s、單次執行信號由 95s 擴大至 300s，提供 60 秒安全落庫餘裕；並放寬共享請求上限（單次上限 300s、整輪上限 900s）。
+- Invariants & Changes：
+  - `src/shared/agent-run-limits.ts`：更新 `deadlineSeconds: { min: 15, max: 900, default: 300 }` 與 `modelRequestSeconds: { min: 5, max: 300, default: 90 }`，允許管理員與政策配置更長之單次與整輪期限；前端 HTTP 逾時自動聯動對齊為 930 秒（15.5 分鐘）。
+  - `server/ai-config.ts`：將 `AI_TIMEOUT_MS` 之數值上限放寬至 300,000 ms。
+  - `server/firestore-background-work.ts`：定義並匯出常數 `BACKGROUND_WORK_LEASE_MS = 360_000`（360 秒租約）與 `BACKGROUND_WORK_TIMEOUT_MS = 300_000`（300 秒單次執行逾時），確保租約嚴格包裹執行期並預留 60 秒 CAS 寫入緩衝。
+  - `server/background-knowledge-maintenance.ts`：將 `BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS` 對齊至 360,000 ms。
+  - `tests/ai-config.test.ts`：修正 `AI_TIMEOUT_MS` 預設值斷言為 90,000 ms，更新邊界測試並新增全小寫命名測試 `ai configuration accepts aligned timeout up to 300000 ms`。
+- Verification & Test Manifest：
+  - `tests/ai-config.test.ts`：11/11 PASS。
+  - `tests/firestore-background-recovery.test.ts`：1/1 PASS。
+  - `tests/agent-runtime.test.ts`：20/20 PASS。
+  - `scripts/verify-timeout-lease-mutations.mjs`：5/5 不變量與邊界驗證全數通過。
+  - 型別診斷：`node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit` 與 `tsc --noEmit` 雙雙 0 診斷、exit 0。
+  - 驗收憑證：[REQ005_TIMEOUT_LEASE_ALIGNMENT_20261107.json](artifacts/verification/REQ005_TIMEOUT_LEASE_ALIGNMENT_20261107.json)（嚴格依據 git-blob LF 計算 SHA-256）。
+- Retained Failures：無。
+- Limitations & Boundaries：
+  - 本 PR 聚焦於背景工作租約與請求邊界常數對齊；背景租約透過 360s 包裹 300s 執行提供靜態 60s 緩衝，尚未引入執行期間主動續租（active heartbeat renewal）機制。
+  - 互動執行 `AgentBudget` constructor 目前仍維持 `<= AGENT_LIMITS.deadlineMs`（300s）檢驗，互動端到端突破 300s 執行需待 runtime 預算架構協調。
+  - 外層 Cloud Tasks 分發逾時仍為 120s（`dispatchSeconds = 120`），背景 Worker 入口預設仍為 90s，端到端 15 分鐘背景作業需搭配雲端設施調度隊列調整。
+  - 360s 租約與 300s 執行為工程起始基線，待生產監控量度及 Owner 審批。
+  - 嚴格維持純本地分支，未 push、未開 GitHub PR。

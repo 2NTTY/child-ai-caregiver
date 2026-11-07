@@ -1,0 +1,84 @@
+{
+  "receiptVersion": "2026-11-07.v2",
+  "package": "REQ005-PR9",
+  "title": "Align background work lease timeouts and request limits (REQ-005 §4 §7)",
+  "branch": "codex/req005-timeout-lease-alignment",
+  "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+  "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
+  "executor": "AI Agent (Antigravity)",
+  "timestampUtc": "2026-11-07T07:30:00Z",
+  "status": "LOCAL_VERIFIED",
+  "remotePushed": false,
+  "pullRequestOpened": false,
+  "testSummary": {
+    "ai-config.test.ts": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "firestore-background-recovery.test.ts": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "agent-runtime.test.ts": {
+      "total": 20,
+      "passed": 20,
+      "failed": 0
+    },
+    "verify-timeout-lease-mutations.mjs": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0
+    }
+  },
+  "typeCheck": {
+    "tsconfigServer": "PASS (0 diagnostics, exit 0)",
+    "tsconfigRoot": "PASS (0 diagnostics, exit 0)"
+  },
+  "retainedFailures": [],
+  "knownLimitations": [
+    "Background work lease provides static 60s buffer (360s lease vs 300s execution) without active heartbeat renewal during execution",
+    "Interactive AgentBudget constructor enforces <= AGENT_LIMITS.deadlineMs (300s)",
+    "Cloud Tasks dispatch deadline remains 120s; background worker admission remains 90s",
+    "360s lease and 300s execution are initial engineering baseline proposals subject to Owner review",
+    "Local branch only; zero remote writes"
+  ],
+  "files": {
+    "src/shared/agent-run-limits.ts": {
+      "sha256": "b03b08d438771d7cc9c895a37adc9d278cebd66d47520741dc3d59fc582dc7a6",
+      "gitBlob": "6c458f4dfffc626e1bb5fd4f727ccd06d8c53b87",
+      "bytes": 469
+    },
+    "server/ai-config.ts": {
+      "sha256": "ec76cb71936b0e3c42387316561323c0805b3e089fbbe5a2569491647546238a",
+      "gitBlob": "b8ad3909cc42ca027def6aff41ab96bb4ac63a7f",
+      "bytes": 5628
+    },
+    "server/firestore-background-work.ts": {
+      "sha256": "7b4e23ec3f477c07992e6913cad12177736b2010a2be0cf070c6a734cf4dc18c",
+      "gitBlob": "bdd055a0d2eda9ffe05f316f5f4e760982eb3a73",
+      "bytes": 17115
+    },
+    "server/background-knowledge-maintenance.ts": {
+      "sha256": "bae58ac6129a29c609edd4948e100c15b8ee62867ecf5e79d4af33993ede6287",
+      "gitBlob": "e35e900cf1132578c7a9214d2326baa4ed78b580",
+      "bytes": 32951
+    },
+    "tests/ai-config.test.ts": {
+      "sha256": "3d572de9e9d275a1f67b7114749b3b7bce4ca4b7819e9b12705c109da0e217a2",
+      "gitBlob": "0f48c95363095326c97a33ec109847939c043aeb",
+      "bytes": 8137
+    },
+    "scripts/verify-timeout-lease-mutations.mjs": {
+      "sha256": "6fd5d85a52204cb497ebfb5af472db0ba6b4ee930447feb8202da6faec2d9a67",
+      "gitBlob": "fdd390eaa254a29e0a917a4e687f14ae29a4ec33",
+      "bytes": 4892
+    },
+    "WORKLOG.md": {
+      "sha256": "b46ff02effa7ad64a118b0e61b088d3fd417378e6c6d37c0724e0c074861e8ee",
+      "gitBlob": "2374b17fe92600d48e21cb2158864e2777b7bbcb",
+      "bytes": 764479
+    }
+  }
+}
