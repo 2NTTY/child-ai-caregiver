@@ -1,13 +1,13 @@
 {
-  "receiptVersion": "2026-11-07.v3",
+  "receiptVersion": "2026-11-07.v4",
   "package": "REQ005-PR7",
   "title": "Unclamp interactive output token ceiling to 16384 (REQ-005 §4 §7)",
   "branch": "codex/req005-output-ceiling",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
-  "parentTip": "13dece721154ebd4326601930098160d7bb72236",
+  "parentTip": "0b4367836c1aa58f6dd837fcc325016aa6ebb846",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
   "executor": "AI Assistant (local execution)",
-  "timestampUtc": "2026-11-07T08:40:21.330Z",
+  "timestampUtc": "2026-11-07T08:58:36.014Z",
   "environment": {
     "nodeVersion": "v24.16.0",
     "os": "win32",
@@ -20,6 +20,7 @@
     "node --experimental-test-module-mocks --test tests/gemini-key-provider.test.ts",
     "node scripts/verify-output-ceiling-mutations.mjs",
     "node scripts/ci/summary-progress-contract.mjs list scripts/ci/summary-progress-tests.json",
+    "node --test tests/ci/summary-progress-contract.test.mjs",
     "node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit",
     "node node_modules/typescript/bin/tsc --noEmit"
   ],
@@ -47,6 +48,11 @@
       "total": 5,
       "passed": 5,
       "failed": 0
+    },
+    "summary-progress-contract.test.mjs": {
+      "total": 6,
+      "passed": 6,
+      "failed": 0
     }
   },
   "typeCheck": {
@@ -54,11 +60,12 @@
     "tsconfigRoot": "PASS (0 diagnostics, exit 0)"
   },
   "retainedFailures": [
-    "tests/gemini-key-provider.test.ts: metadata check synthetic 429 assertion error (present on master baseline, retained verbatim)"
+    "tests/gemini-key-provider.test.ts: metadata check synthetic 429 assertion error (present on master baseline, retained verbatim; omitted from 0-fail CI manifest pending Owner resolution)"
   ],
   "knownLimitations": [
     "Interactive model request output ceiling unclamp only (1,024 -> 16,384)",
     "maxBackground (32,768) and default (4,096) are defined as constants; worker execution and per-run budget plumbing scoped for background PRs",
+    "tests/gemini-key-provider.test.ts contains 1 master baseline failure (synthetic 429 error assertion), hence cannot be placed in 0-fail offline CI manifest without Owner exemption",
     "Local branch only; zero remote writes; strictly zero GitHub PR"
   ],
   "files": {
@@ -68,14 +75,14 @@
       "bytes": 5219
     },
     "WORKLOG.md": {
-      "sha256": "df11ce69d32ca90538b5f1d2c135e4d23aa694f9598ba872ea1e0971da5f778b",
-      "gitBlob": "e24f83fa58f2d624cb391addd8a33b60fb8962a8",
-      "bytes": 766207
+      "sha256": "f00c5f1b56abd543f5dcfb96b52ff8b0eed0169fae82ea235530bfb0119929b1",
+      "gitBlob": "70695631bfbbd089eabaef1d8b727a84513d61a1",
+      "bytes": 767892
     },
     "scripts/ci/summary-progress-tests.json": {
-      "sha256": "b9403456ee609b5e2a59f860a77fe67e79f4d5ec269b2dfb90f9c5e1b8b126ec",
-      "gitBlob": "bcc25d51e669b7e4870a2aad9b15b9bac4b485a3",
-      "bytes": 7113
+      "sha256": "2d4e08cd04d04a2c07d757e1c4bfa8112763e234c3210b1401964b617e5088b0",
+      "gitBlob": "43349bdd63bbb0442c1854f21a6f86f7316fbf2a",
+      "bytes": 7177
     },
     "scripts/verify-output-ceiling-mutations.mjs": {
       "sha256": "7f365673e2c8be7da9c11be4db9cb2f47218e1c6676249eeaf0fc88f5cba23d3",

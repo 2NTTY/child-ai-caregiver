@@ -4809,3 +4809,22 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   - 維持窄 scope，僅覆蓋互動模型輸出上限（16,384）。背景 32,768 為常數宣告，管線待後續背景 PR。
   - 純本地分支，零 git push，零 GitHub PR。
 
+### 2026-11-07 Round 3 審核跟進修正 (Audit A05 / Gap 2)
+
+- Recorded At：2026-11-07 09:10 UTC；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `0b4367836c1aa58f6dd837fcc325016aa6ebb846`，保留歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `scripts/ci/summary-progress-tests.json`：將 `tests/ai-config.test.ts`（11 案）正式加入 CI manifest，補齊 PR 7 相關測試之離線 CI 契約覆蓋（`agent-model-gateway.test.ts` 既有 18 案已在清單中）。
+  2. `tests/gemini-key-provider.test.ts` CI 邊界明確化：因 master 基線即存在第 4 案 synthetic SDK 429 assertion 失敗（3/4 通過、exit 1），而離線 CI 契約嚴格強制 `fail 0`，故該檔無法在未獲 Owner 豁免或修復 master 基線前直接納入零失敗 manifest。本 PR 如實保留該失敗並清楚界定，絕不謊報全綠。
+  3. 收據與文件：更新收據檔案清單（更新 `summary-progress-tests.json`），客觀校準記錄時間。
+- Verification：
+  - `tests/agent-model-gateway.test.ts`：18/18 PASS (TAP check 18 通過)
+  - `tests/ai-config.test.ts`：11/11 PASS (TAP check 11 通過)
+  - `tests/gemini-key-provider.test.ts`：3/4 PASS (1 baseline failure 如實披露)
+  - `scripts/verify-output-ceiling-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tests/ci/summary-progress-contract.test.mjs`：6/6 PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 維持窄 scope，僅解鎖互動式輸出 Token 上限（16,384）。背景 32,768 為常數宣告，管線待後續背景 PR。
+  - 純本地分支，零 git push，零 GitHub PR。
+
