@@ -190,15 +190,15 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
     return receipt;
   }
   async function activeCount(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, request?: Metadata['request'], except?: string) {
-    const rows = await binding.transaction.get(query('documents', scope).where('status', '==', 'active').limit(50));
+    if (request?.kind !== 'growth_report') return;
+    const rows = await binding.transaction.get(query('documents', scope).where('status', '==', 'active'));
     for (const row of rows.docs) {
       const item = await find(binding, scope, domainParse(uuid, row.get('documentId'), 'invalid_document', 500));
       if (!item) domainReject('document_binding', 500);
-      if (request?.kind === 'growth_report' && item.id !== except && item.request.kind === 'growth_report'
+      if (item.id !== except && item.request.kind === 'growth_report'
         && (item.request.reportMode ?? 'fixed') === (request.reportMode ?? 'fixed')
         && (request.reportMode === 'living' || canonicalJson(item.request.period) === canonicalJson(request.period))) reject('report_exists');
     }
-    if (rows.docs.filter(row => row.get('documentId') !== except).length >= 50) reject('document_limit', 400);
   }
   async function mutate(userId: string, childId: string, opId: string, payload: unknown,
     prepare: (binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, loaded: FamilyDocumentSources) => Promise<{ row: Metadata; snapshot?: DocumentSnapshot }>) {

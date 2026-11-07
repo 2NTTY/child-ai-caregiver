@@ -346,5 +346,9 @@
   {
     "path": "tests/private-instruction-erasure.test.ts",
     "cases": 1
+  },
+  {
+    "path": "tests/firestore-cursor-pagination.test.ts",
+    "cases": 3
   }
 ]

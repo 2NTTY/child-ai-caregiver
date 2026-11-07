@@ -1,0 +1,103 @@
+{
+  "receiptVersion": "2026-11-07.v1",
+  "package": "REQ005-PR10",
+  "title": "Replace fixed 50-item aggregate walls with Firestore cursor pagination (REQ-005 §8)",
+  "branch": "codex/req005-cursor-pagination",
+  "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+  "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
+  "executor": "AI Assistant (local execution)",
+  "timestampUtc": "2026-11-07T15:31:24.533Z",
+  "environment": {
+    "nodeVersion": "v24.16.0",
+    "os": "win32",
+    "shell": "powershell",
+    "tscVersion": "6.0.3"
+  },
+  "commandsExecuted": [
+    "node --experimental-strip-types --test tests/firestore-cursor-pagination.test.ts",
+    "node scripts/verify-cursor-pagination-mutations.mjs",
+    "node scripts/ci/summary-progress-contract.mjs list scripts/ci/summary-progress-tests.json",
+    "node --test tests/ci/summary-progress-contract.test.mjs",
+    "node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit"
+  ],
+  "status": "LOCAL_VERIFIED",
+  "remotePushed": false,
+  "pullRequestOpened": false,
+  "testSummary": {
+    "firestore-cursor-pagination.test.ts": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0
+    },
+    "verify-cursor-pagination-mutations.mjs": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0
+    },
+    "summary-progress-contract.test.mjs": {
+      "total": 6,
+      "passed": 6,
+      "failed": 0
+    }
+  },
+  "typeCheck": {
+    "tsconfigServer": "PASS (0 diagnostics, exit 0)"
+  },
+  "retainedSafetyGuards": [
+    "Growth report duplication uniqueness check (report_exists) preserved on active documents",
+    "Individual concern event timeline bounds (CONCERN_EVENT_LIMIT = 200) preserved on timeline growth",
+    "Deterministic keyset and cursor pagination order preserved"
+  ],
+  "eliminatedAggregateWalls": [
+    "Eliminated 50 active family documents creation limit (document_limit)",
+    "Eliminated 50 shared inputs creation capacity limit (inputs_capacity)",
+    "Eliminated 200 total child concerns creation and listing limit (concern_history_requires_review)"
+  ],
+  "files": {
+    ".github/workflows/summary-progress-offline.yml": {
+      "sha256": "331d0c16e3440e46030443404346548d1b538bdb69c7f446a2b65d409518d1da",
+      "gitBlob": "bca82718a5cf7cc0d2de58f01d9401ff84c6eb41",
+      "bytes": 5222
+    },
+    "WORKLOG.md": {
+      "sha256": "53d35e8c3cdefdb1a88ac2df5c5473aec7859be1766d732f081d918706dc2e59",
+      "gitBlob": "2503cc049bc552029545383f9fdd587db4ca3ee7",
+      "bytes": 764111
+    },
+    "scripts/ci/summary-progress-tests.json": {
+      "sha256": "92c8cd6a8116173225894785655889109f2da5831cb7fc9652f1ac88c522c0e7",
+      "gitBlob": "2c9ce85677be31f40dc81cfafafa6c0b6159654e",
+      "bytes": 7194
+    },
+    "scripts/ci/verify-summary-progress-offline.sh": {
+      "sha256": "f30288a41f27260837e9f69f46b5bda8f5267b2ede0c13795cda385f202a869d",
+      "gitBlob": "fcce900ddc249ac8a061c9a955e0824085758dbe",
+      "bytes": 4017
+    },
+    "scripts/verify-cursor-pagination-mutations.mjs": {
+      "sha256": "baf8e256c80238e0df5f20f97cccc75d9731ac56424d25b22996d2d4be2d154f",
+      "gitBlob": "5296ba5487f27f0de8fb5a75b1295e3bbf385dd3",
+      "bytes": 7645
+    },
+    "server/firestore-concerns.ts": {
+      "sha256": "8d8a898e65c26d7d7b5a7ba6194d8bdd11b9344d969364b23b54cf95aff585f8",
+      "gitBlob": "ddbb9ee24236c16450f1263bea39cd002b6b8cdf",
+      "bytes": 36794
+    },
+    "server/firestore-family-documents.ts": {
+      "sha256": "7cd432e229e707bfa1e4b93f7185ce4281378ace3e0b7c50c8ec6e3b643475b1",
+      "gitBlob": "38d6799b5af898ac6cac5d3336f85e1a1c7d5a18",
+      "bytes": 53560
+    },
+    "server/firestore-shared-inputs.ts": {
+      "sha256": "69ea0613365a89054d608ab5384740de7fa8e53f2f9ede019a216d2e2fd27e26",
+      "gitBlob": "35c8297424c398c97421f0ca488481d79c2a124e",
+      "bytes": 31335
+    },
+    "tests/firestore-cursor-pagination.test.ts": {
+      "sha256": "40c78109a6afae029d26ea949c7090f561485538b3b9ac710864d7f519df17dd",
+      "gitBlob": "fec77b4f6cb0a650393fd9de5a70167d1249b76c",
+      "bytes": 7110
+    }
+  }
+}

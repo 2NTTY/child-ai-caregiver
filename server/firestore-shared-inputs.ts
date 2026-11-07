@@ -136,8 +136,6 @@ export function createFirestoreSharedInputStore(options: FirestoreDomainOptions)
   }
   async function prepareCreate(b: Binding, opId: string, raw: SharedInputCreate, management?: SourceManagement): Promise<Prepared<SharedInput>> {
     const input = domainParse(sharedInputCreateSchema, raw);
-    const count = await b.transaction.get(query(b, 'shared_inputs').where('live', '==', true).limit(50));
-    if (count.size >= 50) domainReject('inputs_capacity');
     const source = input.kind === 'public_source' ? publicSources.find(source => source.id === input.sourceId) : null;
     if (input.kind === 'public_source' && !source) domainReject('invalid_input', 400);
     const id = randomUUID(), body = input.kind === 'public_source' ? '' : input.text;
@@ -207,9 +205,6 @@ export function createFirestoreSharedInputStore(options: FirestoreDomainOptions)
       versionMatches(previous.row, current.expectedVersion);
       if (previous.row.recordId) domainReject('input_linked');
       if ([previous.row.fetchState, previous.row.extraction.state].some(state => state === 'running' || state === 'unknown')) domainReject('input_processing');
-    } else {
-      const count = await b.transaction.get(query(b, 'shared_inputs').where('live', '==', true).limit(50));
-      if (count.size >= 50) domainReject('inputs_capacity');
     }
     const id = previous?.row.id ?? randomUUID();
     if (!previous && (await b.transaction.get(rowRef(id))).exists) domainReject('input_conflict');
@@ -267,7 +262,7 @@ export function createFirestoreSharedInputStore(options: FirestoreDomainOptions)
     prepareCreate, prepareManage, read: async (b, id) => view(await load(b, id)),
     async list(owner, child) {
       return authority.runTransaction(owner, child, async b => {
-        const rows = await b.transaction.get(query(b, 'shared_inputs').where('live', '==', true).orderBy('createdAt', 'desc').orderBy('entityId', 'asc').limit(50));
+        const rows = await b.transaction.get(query(b, 'shared_inputs').where('live', '==', true).orderBy('createdAt', 'desc').orderBy('entityId', 'asc'));
         const inputs: SharedInput[] = []; for (const snap of rows.docs) inputs.push(view(await load(b, domainParse(uuid, snap.get('entityId'), 'input_binding', 500))));
         return { inputs, sources: publicSources.map(({ id, url, publisher }) => ({ id, url, publisher })), canCreate: true };
       });

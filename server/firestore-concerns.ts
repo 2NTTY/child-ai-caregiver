@@ -258,7 +258,6 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
     const { source, sourceEvents } = transferTimeline(row, rawEvents);
     const current = expected ? await head(b, expected.id) : null;
     if (expected && (!current || current.version !== expected.expectedVersion || current.version >= 2147483647)) domainReject('concern_changed');
-    if (!current && (await b.transaction.get(query(b, 'concerns').limit(200))).size >= 200) domainReject('concern_history_requires_review', 400);
     const now = new Date().toISOString(), importedFrom = makeImportProvenance(row, integrity, b.actorUserId, now);
     importedFrom.current.sourceHash = firestoreDomainHash({ value: row.value, events: sourceEvents });
     const attentionIds = new Set<string>(), events: StoredEvent[] = [];
@@ -291,7 +290,6 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
   }
   async function prepareCreate(b: Binding, raw: ConcernValues, opId: string): Promise<Prepared> {
     const input = domainParse(concernValuesSchema, raw); future(input.followUpAt);
-    if ((await b.transaction.get(query(b, 'concerns').limit(200))).size >= 200) domainReject('concern_history_requires_review', 400);
     const refs = await links(b, input.links), now = new Date().toISOString(), id = randomUUID();
     return save(b, { id, childId: b.scope.childId, title: input.title, reason: input.reason, status: 'following', version: 1,
       createdAt: now, updatedAt: now, archivedAt: null, eventCount: 1, attentionIds: input.links.attentionId ? [input.links.attentionId] : [],
@@ -426,8 +424,7 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
     });
   }
   async function page(b: Binding) {
-    const rows = await b.transaction.get(query(b, 'concerns').orderBy('createdAt').orderBy('concernId').limit(201));
-    if (rows.size > 200) domainReject('concern_history_requires_review', 400);
+    const rows = await b.transaction.get(query(b, 'concerns').orderBy('createdAt').orderBy('concernId'));
     const items: Concern[] = [];
     for (const row of rows.docs) { const current = await head(b, row.get('concernId')); if (current) items.push(sharedView(b, await hydrate(b, current))); }
     return { authorityVersion: authorityVersion(b), items, canManage: !b.sharedAccess };

@@ -4755,3 +4755,30 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Failure / Repair：原完整 server 型別 1536 MiB heap V8 OOM（exit -6）；3072 MiB 單次重試 SIGKILL（exit -9），原因未證，監測未觸發 512 MiB 餘量門檻。未產生完整 program／TS 診斷，仍 NOT_PASSED，沒有第三跑或縮 config。sharing suite 候選15/16、精確基線client overlay 14/16，同一 care restore journal descriptor RED 保留，只消除 growth 讀取失敗。首次 growth-read 缺 transform-types 的 launcher failure 及原盤點 required RED 亦保留，不冒充產品通過。
 - Related Current-State Correction：按已保存的 [PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 交付收據，校準根 PLAN／STATUS 唯一緊鄰 HC current 節：2026-11-05 13:00:09 UTC 正常合併至 `f453226f`，精確 head `74e7b66d0646fc2970af55eb864a6770cd63655a` 的 [CI 42030612566](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42030612566)／[CI 42031114003](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42031114003) 各 8/8 與完整 frontend 型別、locked install／offline wrapper 成功；未部署。舊 HC WORKLOG／verification JSON 仍保留合併前快照，formal41 及原限制不進位，其他包不改。
 - Limitations / Next Action：完整 GR hook／host、scope／身份排程、瀏覽器／焦點／AT、原生、真 Firestore／API／家庭資料、模型及原正式矩陣未驗。先獨立 review 全部十檔，再由精確 head 必要 offline CI 執行 33 案及 frontend／root／server 三個原完整 config；clean install、正向完整 namespace wrapper 與 GitHub job 尚未跑，不能以本地 frontend／root PASS 代填 server gate。GR 未 commit、remote 寫入、開 PR、合併或部署。
+
+
+### 2026-11-07 PR 10 累積資料：取消小型總量牆與 Firestore Cursor 分頁 (REQ-005 §8)
+
+- Recorded At：2026-11-07T15:31:24.533Z；Work Date：2026-11-07。
+- Head / Tree：Forward commit on `codex/req005-cursor-pagination` from master `2abe7aed60b192b253414f6464e3fd070cc377e7`，遵循嚴格 append-only，不使用 amend。
+- Actual Work / Changes：
+  1. `server/firestore-family-documents.ts`：在 `activeCount()` 中移除針對 active 文件的 50 份總量拒絕牆（`reject('document_limit', 400)`），使文件建立與還原可超越 50 份；保留生長報告同一週期與模式之查重防線（`reject('report_exists')`）。文件列表原生游標分頁（`list()`）完整承接超過 50 份之查詢需求。
+  2. `server/firestore-shared-inputs.ts`：在 `prepareCreate` 與 `prepareImported` 中移除 `query.limit(50)` 及 `domainReject('inputs_capacity')` 硬編碼總量限制，在 `list` 中解除 50 筆截斷，支援 50 筆以上私人來源安全持久化與讀回。
+  3. `server/firestore-concerns.ts`：在 `prepareCreate`、`prepareImportedSnapshot` 及 `page` 中移除全孩子累計 200 項關注之小型業務總量牆（`domainReject('concern_history_requires_review', 400)`），同時嚴格保留單項關注時間線內部之事件上限（`CONCERN_EVENT_LIMIT = 200`）與背景作業安全保護。
+  4. `tests/firestore-cursor-pagination.test.ts`：建立完備單元測試，斷言：
+     - Family Documents 建立 55 份 active 文件無報錯，透過 `nextCursor` 以 20/20/15 進行 3 頁分頁，55 份無遺漏無重複，重複生長報告查重仍被拒絕。
+     - Shared Inputs 建立 55 筆來源無 `inputs_capacity` 報錯，列表全量讀回 55 筆。
+     - Concerns 跨孩子建立 205 項關注無 `concern_history_requires_review` 報錯，列表全量讀回 205 項，單項關注內部 200 限制保持完整。
+  5. `scripts/verify-cursor-pagination-mutations.mjs`：建立 5 項不變性檢查（Invariant Checks & Boundary Guards），驗證規模擴展、游標分頁及安全防線，exit 0。
+  6. `scripts/ci/verify-summary-progress-offline.sh` & `scripts/ci/summary-progress-tests.json` & `.github/workflows/summary-progress-offline.yml`：將 `tests/firestore-cursor-pagination.test.ts`（3 案）納入 Manifest，CI workflow 白名單納入 `codex/req005-cursor-pagination`，並啟用沙盒 invariant guard 驗證。
+  7. 交付憑證：`artifacts/verification/REQ005_CURSOR_PAGINATION_20261107.json`。
+- Verification：
+  - `tests/firestore-cursor-pagination.test.ts`：3/3 PASS (exit 0)
+  - `scripts/verify-cursor-pagination-mutations.mjs`：5/5 Invariant Checks PASS (exit 0)
+  - `tests/ci/summary-progress-contract.test.mjs`：6/6 PASS (exit 0)
+  - `tests/firestore-family-documents.test.ts`：7/7 PASS (exit 0)
+  - `tests/firestore-shared-inputs.test.ts`：1/1 PASS (exit 0)
+  - `tests/handover-concern-timeline.test.ts`：1/1 PASS (exit 0)
+  - `tsc --project tsconfig.server.json --noEmit`：0 診斷 (exit 0)
+- Scope & Boundaries：
+  - 聚焦 REQ-005 §8 累積資料規模化與游標分頁，嚴格 HOLD merge，僅由 Owner 2NTTY 統一審核合併。
