@@ -1,14 +1,14 @@
 {
-  "receiptVersion": "2026-11-08.v6",
+  "receiptVersion": "2026-11-08.v7",
   "package": "REQ005-PR11",
   "title": "Closeout checklist and acceptance calibration (REQ-005 §9)",
   "branch": "codex/req005-closeout-validation",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
   "featureCommit": "85a7facf4e805e616627b858e56a9da66ed60a6d",
-  "calibratedCommit": "a29b70737ebd2d53fa24f06cdd867e6e752daacc",
+  "calibratedCommit": "9823283f3f57c793e0fb24ed163e58d923c645fb",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
   "executor": "AI Assistant (local execution)",
-  "timestampUtc": "2026-11-07T21:40:00.000Z",
+  "timestampUtc": "2026-11-07T21:58:00.000Z",
   "environment": {
     "nodeVersion": "v24.22.1",
     "os": "win32",
@@ -26,7 +26,7 @@
   "pullRequestNumber": 514,
   "coverageSummary": {
     "officialStages": "Stages 0 - 4 mapped and calibrated across decoupled PRs (Stages 0-3 mapped / synthetic verified on candidates, Stage 4 pending live model run)",
-    "acceptanceScenarios": "26 official scenarios mapped strictly according to REQUIREMENTS_BACKLOG.md §9 with exact test files & realistic boundary markers (baseline verified, synthetic verified with explicit candidate commit SHAs, partial, mapped in spec, and unexecuted live model / production store markers; non-existent test paths and fake case names purged; test counts calibrated to real suite runs); 200-event timeline limit documented as supplemental invariant",
+    "acceptanceScenarios": "26 official scenarios mapped strictly according to REQUIREMENTS_BACKLOG.md §9 with exact test files & realistic boundary markers (baseline verified, synthetic verified with explicit candidate commit SHAs, partial, mapped in spec, and unexecuted live model / production store markers; scenario 12 restore case attribution calibrated to firestore-restore-codec.test.ts:245; markdown 6-column table pipes escaped); 200-event timeline limit documented as supplemental invariant",
     "prDecouplingLineage": "Complete lineage mapped: PR 1-4 (merged baseline #408, #409, #447), PR 5 (#508 transient compactor, commit 1f744a65), PR 6 (#507 soft budget, commit 4442cef0), PR 7 (#510 output ceiling, commit eea9f5d7), PR 8 (#511 personal key policy, commit 0d790544), PR 9 (#512 timeout lease, commit 999af2a0), PR 10 (#513 cursor pagination & duplicate guards, commit 20b08990), PR 11 (#514 closeout validation)",
     "undecidedItemsBoundary": "Full 11 REQ-005 §9 undecided items faithfully detailed; items 4, 6, 8, 9 marked partial pending specification / live channels"
   },
@@ -55,19 +55,19 @@
       "bytes": 5224
     },
     "WORKLOG.md": {
-      "sha256": "1bfaa72aaf3e94960838cb7cf2222645da66521f7837217beb041e8bba21374b",
-      "gitBlob": "24daee944da8e79670cdd35f1e216bcbb2f8148d",
-      "bytes": 790905
+      "sha256": "4ef7f34224658614943c40b8a81cfb135b0174dcc503f3c8a06dfc26621a7e66",
+      "gitBlob": "f9b1013c15ebfac7ec1336e645c7f8b8a04dafe3",
+      "bytes": 794787
     },
     "PLAN.md": {
-      "sha256": "4a45ec5db80c66fefd077081e996e807d453c85cd1b56f53e23927c1558a3273",
-      "gitBlob": "49783f75c3ad11659c475d533f899fe76f3278ab",
-      "bytes": 246373
+      "sha256": "dde24a76a036c0bd2fd3ee2627ecd9733fa932f92f1c74af95f6f3b28493114f",
+      "gitBlob": "25a48adf01cd7e1a20eaa866e929daa4a7aa57b0",
+      "bytes": 246512
     },
     "STATUS.md": {
-      "sha256": "6c488d6c50152f616213290ff7bce23d6a27bacbb4f8dd7d6bd4a27dfca350b5",
-      "gitBlob": "efd1cde3d43ce9841b4fd023eb644e2c8ae197bc",
-      "bytes": 18766
+      "sha256": "96cd409f5b0d36f52005b08f5871ad867597db1f7a25921e60a2e06948cd3895",
+      "gitBlob": "3bdb26ac5deee696f4b3ecf1c688fbaa89a8cbc7",
+      "bytes": 18756
     }
   }
 }

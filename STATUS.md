@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **REQ-005 收束核對與驗收校準（2026-11-08 UTC）：**候選 PR #514 (`codex/req005-closeout-validation`) 依 Round 5 覆核及 `AGENTS.md#document-updates` 規範，校準官方 26 項驗收場景實測矩陣（更正真實測試案例數目、移除不存在測試路徑及虛構案例名稱、收窄未足額證據場景至 PARTIAL／NOT VERIFIED 並註明真模型 NOT RUN 邊界）與 11 項未決清單，完整整併入 [PLAN.md#req005-closeout01](PLAN.md#req005-closeout01)，並自 git 移除獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md`。全量 PR 處於嚴格 HOLD merge，未執行真模型或生產 Firestore 調用。見 [PLAN 當前工作](PLAN.md#active)。
+- **REQ-005 收束核對與驗收校準（2026-11-08 UTC）：**候選 PR #514 (`codex/req005-closeout-validation`) 依 Round 6 覆核及 `AGENTS.md#document-updates` 規範，校準官方 26 項驗收場景實測矩陣（修正場景 12 測試案例歸屬、修復 Markdown 表格狀態欄轉義管道符號以維持嚴格 6 欄格式、標明真實測試案例數目與收窄邊界）與 11 項未決清單，完整整併入 [PLAN.md#req005-closeout01](PLAN.md#req005-closeout01)，並自 git 移除獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md`。全量 PR 處於嚴格 HOLD merge，未執行真模型或生產 Firestore 調用。見 [PLAN 當前工作](PLAN.md#active)。
 
 - **GR-F01 成長依據閱讀相容（2026-11-05 UTC）：**基線 `f453226f` 的候選只補合法 profile evidence 0 及閱讀提示，不把 0 當已驗孩子檔案版本。四整檔 33/33、完整 frontend／root 型別已通過；server 原完整型別分別 V8 OOM／原因未證的 SIGKILL，仍 NOT_PASSED。共享 care 的既有 RED 保留，整包獨立 review／精確 head 必要 CI 及正式矩陣待驗，未合併、未部署。見 [GR-F01 範圍與 gate](PLAN.md#gr-f01-profile-evidence-read)。
 

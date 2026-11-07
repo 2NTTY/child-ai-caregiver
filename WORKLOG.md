@@ -5074,3 +5074,57 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 ### 下一步 (Next Action)
 - 提交前向 commit，push 至遠端分支 `codex/req005-closeout-validation`。
 - 更新 PR #514 描述（校準真實 40 碼 HEAD commit SHA 與現 head CI run），核實 exact-head CI SUCCESS。
+
+
+<a id="log-20261108-req005-closeout-r6-table-and-case-calibration"></a>
+## LOG-20261108-007
+
+- Recorded At：2026-11-08T05:58:00+08:00
+- Work Date：2026-11-08
+- Step / Package：REQ-005 §9 (PR #514 Round 6)
+- Executor：AI Assistant（本機執行與矩陣格式／案例歸屬校準）
+- Goal：落實 `PR10_11_AUDIT_ROUND6.md` Round 6 覆核要求，校準場景 12 測試案例歸屬、修復 Markdown 表格分欄轉義與收據血統標籤：
+  1. 校準場景 12 測試案例真實歸屬（F1）：
+     - 將測試案例 `restore fences leased/unknown work, preserves stable reminder identities and barriers, and resets only the dispatch scan` 精確配對至其實際定義之 `tests/firestore-restore-codec.test.ts:245`；
+     - 於 `tests/firestore-restore.test.ts` 後方引用該檔實際測試案例 `F07 restores a private conversation and receipt while invalidating interrupted execution and confirmation`（行 153）；
+     - 消除測試案例與檔案路徑之配對偏差。
+  2. 修復 Markdown 表格狀態欄轉義管道符號（F2）：
+     - 於場景 4, 5, 13, 14, 16, 18, 19, 25 之「驗收結論」欄位中，將 8 個未轉義之管道符號 `|` 改為轉義符號 `\|`；
+     - 確保 26 項驗收場景實測矩陣全量 28 行（表頭、分隔線與 26 項場景）均嚴格維持 6 欄格式（每行 7 個未轉義 `|`），消除多出第 7 欄之展示問題。
+  3. 收據與基準校準：
+     - 更新 `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json` 至 `2026-11-08.v7`；
+     - `featureCommit` 維持釘選至 `85a7facf4e805e616627b858e56a9da66ed60a6d`（收據功能基準）；`calibratedCommit` 標示為前版 commit `9823283f3f57c793e0fb24ed163e58d923c645fb`；
+     - 重新計算受影響檔案之 SHA-256、gitBlob 與位元組數。
+  4. 嚴格維持 HOLD merge，僅由專案負責人 2NTTY 裁決合併。
+
+### 實際工作 (Actual Work)
+1. **校準場景 12 測試案例歸屬與 Markdown 矩陣分欄格式 (`PLAN.md#req005-closeout01`)**：
+   - 修正場景 12 案例與檔案配對，將 8 個裸 `|` 改為 `\|`，驗證全量行數欄位均為 6 欄。
+2. **更新現況投影 (`STATUS.md`)**：
+   - 更新為反映 Round 6 審計校準結果。
+3. **收據更新與基準釘選**：
+   - 更新 `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json` 為 `2026-11-08.v7`，重新計算受影響檔案之 SHA-256、gitBlob 與位元組數。
+
+### 變更檔案 (Changes)
+- `PLAN.md`
+- `STATUS.md`
+- `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json`
+- `WORKLOG.md`
+
+### 驗證 (Verification)
+- 需求／驗收：REQ-005 §9 官方 26 項驗收場景實測矩陣測試案例精確歸屬與 Markdown 6 欄格式修復
+- 方法：
+  - `node --test tests/ci/summary-progress-contract.test.mjs` (6/6 PASS)
+  - `node --max-old-space-size=3072 node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit` (0 diagnostics, exit 0)
+  - `npx tsc --noEmit` (0 diagnostics, exit 0)
+- 結果：全部通過 (ALL PASS, 0 fail, exit 0)
+- 證據收據：`artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json` (v7)
+
+### 限制與阻塞 (Limitations / Blockers)
+- 26 項官方場景中，真模型 API 連線、真實 GCP 帳單貨幣配額、生產實體 101 筆 Firestore 壓測、外部維護者告警通道及前端畫面續頁按鈕接線均未執行，如實標註為 NOT RUN / PENDING。
+- 衝突狀態：本分支與 PR 10（#513）存在 2 個檔案之合併衝突（`WORKLOG.md` 與 `.github/workflows/summary-progress-offline.yml`）。
+- 嚴格維持 HOLD merge，僅由專案負責人 2NTTY 裁決合併。
+
+### 下一步 (Next Action)
+- 提交前向 commit，push 至遠端分支 `codex/req005-closeout-validation`。
+- 更新 PR #514 描述（校準真實 40 碼 HEAD commit SHA、CI run 及收據 feature label），核實 exact-head CI SUCCESS。
