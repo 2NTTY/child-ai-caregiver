@@ -1,14 +1,14 @@
 {
-  "receiptVersion": "2026-11-08.v4",
+  "receiptVersion": "2026-11-08.v5",
   "package": "REQ005-PR11",
   "title": "Closeout checklist and acceptance calibration (REQ-005 §9)",
   "branch": "codex/req005-closeout-validation",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
-  "featureCommit": "758ad5d68334845271b790a4be62e965e498c7e6",
+  "featureCommit": "a29b70737ebd2d53fa24f06cdd867e6e752daacc",
   "calibratedCommit": "758ad5d68334845271b790a4be62e965e498c7e6",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
   "executor": "AI Assistant (local execution)",
-  "timestampUtc": "2026-11-07T20:17:00.000Z",
+  "timestampUtc": "2026-11-07T20:57:00.000Z",
   "environment": {
     "nodeVersion": "v24.22.1",
     "os": "win32",
@@ -26,8 +26,8 @@
   "pullRequestNumber": 514,
   "coverageSummary": {
     "officialStages": "Stages 0 - 4 mapped and calibrated across decoupled PRs (Stages 0-3 mapped / synthetic verified on candidates, Stage 4 pending live model run)",
-    "acceptanceScenarios": "18 scenarios mapped with exact test files & specific cases: scenario 13 verified with PR #513 head 20b08990 client schema and agent cursor fix; scenario 18 verified with 55-item synthetic fixture & baseline 4001 chunking, with live 101-item store marked PRODUCTION STORE NOT RUN",
-    "prDecouplingLineage": "Complete lineage mapped: PR 1-4 (merged baseline #408, #409, #447), PR 5 (#508 transient compactor), PR 6 (#507 soft budget), PR 7 (#510 output ceiling), PR 8 (#511 personal key policy), PR 9 (#512 timeout lease), PR 10 (#513 cursor pagination & duplicate guards, head 20b08990), PR 11 (#514 closeout validation)",
+    "acceptanceScenarios": "26 official scenarios mapped strictly according to REQUIREMENTS_BACKLOG.md §9 with exact test files & realistic boundary markers (baseline verified, synthetic verified with explicit candidate commit SHAs, partial, mapped in spec, and unexecuted live model / production store markers); 200-event timeline limit documented as supplemental invariant",
+    "prDecouplingLineage": "Complete lineage mapped: PR 1-4 (merged baseline #408, #409, #447), PR 5 (#508 transient compactor, commit 1f744a65), PR 6 (#507 soft budget, commit 4442cef0), PR 7 (#510 output ceiling, commit eea9f5d7), PR 8 (#511 personal key policy, commit 0d790544), PR 9 (#512 timeout lease, commit 999af2a0), PR 10 (#513 cursor pagination & duplicate guards, commit 20b08990), PR 11 (#514 closeout validation)",
     "undecidedItemsBoundary": "Full 11 REQ-005 §9 undecided items faithfully detailed; items 4, 6, 8, 9 marked partial pending specification / live channels"
   },
   "typeCheck": {
@@ -43,7 +43,8 @@
   "limitations": [
     "Documentation, CI whitelist and verification receipt calibration package only; no production application code changes",
     "Acceptance matrix reflects PR-level synthetic verification and baseline integration, not master merge completion",
-    "Document governance adheres strictly to AGENTS.md#document-updates: docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md removed from git; closeout checklist, stages, 18 scenarios, and 11 undecided items consolidated directly into PLAN.md#req005-closeout01",
+    "Document governance adheres strictly to AGENTS.md#document-updates: docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md removed from git; closeout checklist, stages, 26 official scenarios, and 11 undecided items consolidated directly into PLAN.md#req005-closeout01",
+    "26 official acceptance scenarios mapped strictly to real repository and candidate test declarations without non-existent test references; unexecuted live model API calls, GCP billing quotas, and production 101-item store load tests faithfully marked NOT RUN / PENDING",
     "HOLD merge strictly enforced pending Owner review"
   ],
   "retainedFailures": [],
@@ -54,19 +55,19 @@
       "bytes": 5224
     },
     "WORKLOG.md": {
-      "sha256": "c1d2f6b90ee08576463e2836c57bdab677f7615c5536b70b470e0d9d9d1ff3c0",
-      "gitBlob": "0007a07639f377db8b6cc9d2576e03be01054702",
-      "bytes": 778052
+      "sha256": "b1f1df3f7139def90c63a56285b051d9d900b2023bd25a7a9dc7bf433e9d7725",
+      "gitBlob": "5cd3b01e8e6743b8bb8c5cd35f51ce932ad9cff8",
+      "bytes": 785764
     },
     "PLAN.md": {
-      "sha256": "98f16364558c2618fdcf98dd3f39afe45c8514facbfb371dab987706b4213905",
-      "gitBlob": "c860685f02eefe9236c44a466483a1adca5cee56",
-      "bytes": 232038
+      "sha256": "7f203fe5fac9785c1583260376deed36dc375897677d403952da5d5bcaff9dd4",
+      "gitBlob": "40ebacd04a2a916b1ff0dfe2c6f4b4fb75108312",
+      "bytes": 239867
     },
     "STATUS.md": {
-      "sha256": "9e13e0a8f28c45c17369e97afb31f99e69eaaf3ca502b10965e2f81135431f8b",
-      "gitBlob": "6e757622d6f5404a102fba6be9a358cb5f0bcc6c",
-      "bytes": 18717
+      "sha256": "d69cd456b53eb93f38aea962c97d7635dd0ed852c3d127c54ea48d13dd8a1596",
+      "gitBlob": "d4ac9e9ce158848b3260970616757f4b37c7759d",
+      "bytes": 18753
     }
   }
 }

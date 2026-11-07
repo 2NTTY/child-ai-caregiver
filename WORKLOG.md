@@ -4940,3 +4940,78 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 ### 下一步 (Next Action)
 - 提交前向 commit，push 至遠端分支 `codex/req005-closeout-validation`。
 - 更新 PR #514 描述（使用 `--body-file` 避免跳脫問題），核實 exact-head CI SUCCESS。
+
+
+<a id="log-20261108-req005-closeout-official26-calibration"></a>
+## LOG-20261108-005
+
+- Recorded At：2026-11-08T04:57:00+08:00
+- Work Date：2026-11-08
+- Step / Package：REQ-005 §9 (PR #514 Round 4)
+- Executor：AI Assistant（本機執行與官方驗收校準）
+- Goal：落實 `PR10_11_AUDIT_ROUND4.md` Round 4 覆核要求，嚴格執行官方驗收對齊與真實測試證據校準：
+  1. 官方 26 項驗收場景忠實還原：對照 `docs/REQUIREMENTS_BACKLOG.md:1004–1031` 官方原文與單位，將先前沿用之 18 項框架更正並完整擴充為 26 項官方場景。消除以額外時間線／負載場景取代官方場景之偏差；第 18 項清楚對齊「4001 字以上及 voice 版本變更按正確 cursor／offset／版本補讀」（區分字數與條目數，標明生產 101 筆實體 store 壓測未跑，消除字數與條目混淆）。額外 200 事件時間線防線移至獨立補充說明，不覆寫官方場景。
+  2. 刪除不存在測試引用並釘選候選 Commit SHA：清除 `tests/agent-run-limits.test.ts`、`tests/firestore-agent-runs.test.ts`、`tests/firestore-background-work.test.ts` 與 `src/shared/agent-compaction.ts` 等不存在之引用；全面依 repo 真實檔案反向對齊真實測試（`tests/agent-budget.test.ts`、`tests/agent-runtime.test.ts`、`tests/background-knowledge-maintenance.test.ts`、`server/context-compactor.ts`、`tests/agent-context-compaction.test.ts` 等），並精確標註各解耦 PR 之功能 Commit SHA（PR 5 `1f744a65`、PR 6 `4442cef0`、PR 7 `eea9f5d7`、PR 8 `0d790544`、PR 9 `999af2a0`、PR 10 `20b08990`）。
+  3. 收據與基準校準：更新 `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json` 至 `2026-11-08.v5`，`featureCommit` 釘選至前版完成整併之 commit `a29b70737ebd2d53fa24f06cdd867e6e752daacc`，`calibratedCommit` 標示為前版基準 `758ad5d68334845271b790a4be62e965e498c7e6`。重新計算受影響檔案之 SHA-256、gitBlob 與位元組數。
+  4. PR #514 Body 修正：清除字面 `---\n` 格式問題，更新為 26 項官方驗收場景對齊說明與真實 SHA。
+  5. 嚴格維持 HOLD merge，僅由專案負責人 2NTTY 裁決合併。
+
+### 實際工作 (Actual Work)
+1. **重構 26 項官方驗收場景實測矩陣 (`PLAN.md#req005-closeout01`)**：
+   - 忠實還原 `docs/REQUIREMENTS_BACKLOG.md:1004–1031` 官方 26 項驗收場景之原文名稱、規格應驗證結果與計量單位。
+   - 逐格對齊真實實施檔案與真實測試檔案：
+     - 場景 1～2：對齊 PR 8 (#511 commit `0d790544`, `server/personal-model-policy.ts`, `tests/personal-model-settings.test.ts`) 與 PR 7。
+     - 場景 3～4：對齊 PR 6 (#507 commit `4442cef0`, `server/agent-budget.ts`, `tests/agent-budget.test.ts`) 與 PR 7。
+     - 場景 5：對齊基線 `tests/product-agent.test.ts`（寒暄快速短路）。
+     - 場景 6：對齊基線 `tests/agent-runtime.test.ts`（授權世代檢查）；動態在途 hard/soft 調整之隊列派發標明為待決事項 6。
+     - 場景 7：對齊 `tests/agent-budget.test.ts`（上下文獨立維度，不混同次數軟預算）。
+     - 場景 8：對齊 PR 7 (#510 commit `eea9f5d7`, `server/agent-model-gateway.ts`, `tests/agent-model-gateway.test.ts`, `tests/ai-config.test.ts`)。
+     - 場景 9：對齊基線 `tests/agent-durable-budget.test.ts` 與 `tests/agent-review-obligation.test.ts`。
+     - 場景 10：對齊 PR 9 (#512 commit `999af2a0`, `tests/background-knowledge-maintenance.test.ts`, `tests/ai-config.test.ts`)。
+     - 場景 11：對齊 `tests/agent-budget.test.ts`（高水位狀態代碼記錄，標明外部告警通道待決）。
+     - 場景 12：對齊 `tests/firestore-restore-codec.test.ts` 與 `tests/firestore-restore-apply.test.ts`。
+     - 場景 13：對齊 PR 10 (#513 commit `20b08990`, `tests/firestore-cursor-pagination.test.ts`，標明前端畫面控制器續頁待接）。
+     - 場景 14：對齊 PR 10 `activeCount()` 分批兩遍掃描，標明非 O(1) 時間上界。
+     - 場景 15：大型報告／匯出／備份中斷（`tests/firebase-backup-artifacts.test.ts`，標明跨域一致性快照待決）。
+     - 場景 16：配額與費用（標明 MAPPED IN SPEC，真實帳單與 active quota 待決）。
+     - 場景 17：對話拓撲感知回讀（PR 3 #409 基線，`tests/agent-context-topology.test.ts`）。
+     - 場景 18：第 101 筆、空頁及長歷史續讀（PR 10 `tests/firestore-cursor-pagination.test.ts` test 3 空命中續讀與 direct ID lookup；基線 4,001 字分塊；標明生產 101 筆 store 壓測未跑，語音版本待決）。
+     - 場景 19：合法長單訊息摘要前進性（PR 4 #447 基線，`tests/summary-progress.test.ts` 7,000 emoji）。
+     - 場景 20：已保存但投影省略（PR 2 #409 基線，`tests/summary-projection-delivery.test.ts` 6k 存 / 3k 投）。
+     - 場景 21：權限與聊天模式（基線 `tests/care-scope.test.ts`）。
+     - 場景 22：純聊天承接摘要（基線 `tests/initial-conversation-summary.test.ts`）。
+     - 場景 23：最近 picker 與完整 input 預算（PR 1 #408 基線，`tests/agent-input-limit.test.ts`）。
+     - 場景 24：同 run compaction 保留與回退（PR 5 #508 commit `1f744a65`, `server/context-compactor.ts`, `tests/agent-context-compaction.test.ts` 14/14 PASS；0 生產調用者）。
+     - 場景 25：壓縮後查原文與 unknown（PR 5 `tests/agent-context-compaction.test.ts` 與 `tests/agent-actions-receipt-compatibility.test.ts`）。
+     - 場景 26：Summarizer 用量與審核餘額（基線 `tests/agent-durable-ai-usage.test.ts`）。
+   - 補充時間線不變式：單一關注 200 事件硬上限（PR 10 `CONCERN_EVENT_LIMIT = 200` 拒絕，歸檔豁免）獨立附註，不取代官方場景。
+2. **同步更新權威文件導航**：
+   - `PLAN.md#active` 與 `STATUS.md` 更新為反映 26 項官方場景實測矩陣。
+3. **收據更新與基準釘選**：
+   - 更新 `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json` 為 `2026-11-08.v5`。
+   - `featureCommit` 釘選至前版完成整併之 `a29b70737ebd2d53fa24f06cdd867e6e752daacc`；`calibratedCommit` 標示為前版基準 `758ad5d68334845271b790a4be62e965e498c7e6`。
+   - 重新計算受影響檔案之 SHA-256、gitBlob 與位元組數。
+
+### 變更檔案 (Changes)
+- `PLAN.md`
+- `STATUS.md`
+- `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json`
+- `WORKLOG.md`
+
+### 驗證 (Verification)
+- 需求／驗收：REQ-005 §9 官方 26 項驗收場景實測對齊與真實測試反向核對
+- 方法：
+  - `node --test tests/ci/summary-progress-contract.test.mjs` (6/6 PASS)
+  - `node --max-old-space-size=3072 node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit` (0 diagnostics, exit 0)
+  - `npx tsc --noEmit` (0 diagnostics, exit 0)
+- 結果：全部通過 (ALL PASS, 0 fail, exit 0)
+- 證據收據：`artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json` (v5)
+
+### 限制與阻塞 (Limitations / Blockers)
+- 26 項官方場景中，真模型 API 連線、真實 GCP 帳單貨幣配額、生產實體 101 筆 Firestore 壓測、外部維護者告警通道及前端畫面續頁按鈕接線均未執行，如實標註為 NOT RUN / PENDING。
+- 衝突狀態：本分支與 PR 10（#513）存在 2 個檔案之合併衝突（`WORKLOG.md` 與 `.github/workflows/summary-progress-offline.yml`）。
+- 嚴格維持 HOLD merge，僅由專案負責人 2NTTY 裁決合併。
+
+### 下一步 (Next Action)
+- 提交前向 commit，push 至遠端分支 `codex/req005-closeout-validation`。
+- 更新 PR #514 描述（修復字面 `---\n`），核實 exact-head CI SUCCESS。
