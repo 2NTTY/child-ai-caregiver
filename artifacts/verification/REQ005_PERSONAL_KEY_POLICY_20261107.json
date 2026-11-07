@@ -1,0 +1,57 @@
+{
+  "receiptVersion": "2026-11-07.v2",
+  "package": "REQ005-PR8",
+  "title": "Decouple personal provider key from admin capping (REQ-005 §1 §3)",
+  "branch": "codex/req005-personal-key-policy",
+  "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+  "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
+  "executor": "AI Agent (Antigravity)",
+  "timestampUtc": "2026-11-07T07:20:00Z",
+  "status": "LOCAL_VERIFIED",
+  "remotePushed": false,
+  "pullRequestOpened": false,
+  "testSummary": {
+    "personal-model-settings.test.ts": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0
+    },
+    "verify-personal-key-policy-mutations.mjs": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0
+    }
+  },
+  "typeCheck": {
+    "tsconfigServer": "PASS (0 diagnostics, exit 0)",
+    "tsconfigRoot": "PASS (0 diagnostics, exit 0)"
+  },
+  "retainedFailures": [],
+  "knownLimitations": [
+    "Resolver layer decoupling only in resolvePersonalModelLimits",
+    "Interactive canonical root run deadline in readInteractiveRunSeconds(tx) continues to read platform policy until admission snapshot migration",
+    "Local branch only; zero remote writes"
+  ],
+  "files": {
+    "server/personal-model-policy.ts": {
+      "sha256": "2b634b9fcabae1f253abae907a44d0d901b6ec0364bc96e9d8cf4de3fa0d901f",
+      "gitBlob": "6215ce2b00151d965677653c235c1f7f5cbe8dc1",
+      "bytes": 1433
+    },
+    "tests/personal-model-settings.test.ts": {
+      "sha256": "faf58485e85aa7487f2f91646115734c62392caf12c8f42434571712051cfe65",
+      "gitBlob": "6da0aa12318f3c2bc2b2034e1113ccc95d7a7632",
+      "bytes": 13305
+    },
+    "scripts/verify-personal-key-policy-mutations.mjs": {
+      "sha256": "3779d016dca89f2649e620d987f32582360a21883df148bc9a7e78949125f90f",
+      "gitBlob": "5796c6cfd49c5e0d21b6791ef6754678996ee48c",
+      "bytes": 6748
+    },
+    "WORKLOG.md": {
+      "sha256": "cd88fbb12974315800dcd543c3ae95cfa05cfdfcb9278b1d8a45501c35d49c40",
+      "gitBlob": "a67b91d38c0eb98e6322dde647aec06f8f053612",
+      "bytes": 764156
+    }
+  }
+}

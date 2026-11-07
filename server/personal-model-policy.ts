@@ -3,22 +3,30 @@ import type { EffectiveModelLimits, ModelSettings } from '../src/shared/model-se
 
 /** One resolver for settings display, interactive roles, media and background work. */
 export function resolvePersonalModelLimits(settings: ModelSettings, policy: PlatformPolicy): EffectiveModelLimits {
-  const cappedByAdministrator: string[] = [];
-  const cap = (field: string, requested: number | undefined, maximum: number) => {
-    if (requested !== undefined && requested > maximum) cappedByAdministrator.push(field);
-    return Math.min(requested ?? maximum, maximum);
-  };
-  const personal = settings.mode === 'personal';
+  if (settings.mode === 'personal') {
+    return {
+      policyVersion: policy.version,
+      dailyLimit: settings.dailyLimit,
+      dailyGlobalLimit: policy.personalDailyGlobalAttempts,
+      maxModelCalls: settings.maxModelCalls,
+      maxQueryEmbeddings: settings.maxQueryEmbeddings,
+      maxToolCalls: settings.maxToolCalls ?? policy.maxToolCalls,
+      maxRunSeconds: settings.maxRunSeconds ?? policy.maxRunSeconds,
+      modelRequestSeconds: settings.modelRequestSeconds ?? policy.modelRequestSeconds,
+      maxModelRetries: settings.maxModelRetries ?? policy.maxModelRetries,
+      cappedByAdministrator: [],
+    };
+  }
   return {
     policyVersion: policy.version,
-    dailyLimit: personal ? settings.dailyLimit : policy.dailyUserAttempts,
-    dailyGlobalLimit: personal ? policy.personalDailyGlobalAttempts : policy.dailyGlobalAttempts,
-    maxModelCalls: personal && !settings.limitPolicyVersion ? settings.maxModelCalls : cap('maxModelCalls', personal ? settings.maxModelCalls : undefined, policy.maxModelCalls),
-    maxQueryEmbeddings: personal && !settings.limitPolicyVersion ? settings.maxQueryEmbeddings : cap('maxQueryEmbeddings', personal ? settings.maxQueryEmbeddings : undefined, policy.maxQueryEmbeddings),
-    maxToolCalls: cap('maxToolCalls', personal ? settings.maxToolCalls : undefined, policy.maxToolCalls),
-    maxRunSeconds: cap('maxRunSeconds', personal ? settings.maxRunSeconds : undefined, policy.maxRunSeconds),
-    modelRequestSeconds: cap('modelRequestSeconds', personal ? settings.modelRequestSeconds : undefined, policy.modelRequestSeconds),
-    maxModelRetries: cap('maxModelRetries', personal ? settings.maxModelRetries : undefined, policy.maxModelRetries),
-    cappedByAdministrator,
+    dailyLimit: policy.dailyUserAttempts,
+    dailyGlobalLimit: policy.dailyGlobalAttempts,
+    maxModelCalls: policy.maxModelCalls,
+    maxQueryEmbeddings: policy.maxQueryEmbeddings,
+    maxToolCalls: policy.maxToolCalls,
+    maxRunSeconds: policy.maxRunSeconds,
+    modelRequestSeconds: policy.modelRequestSeconds,
+    maxModelRetries: policy.maxModelRetries,
+    cappedByAdministrator: [],
   };
 }

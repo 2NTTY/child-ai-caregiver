@@ -50,7 +50,11 @@ test('personal settings share policy, recover the original write, isolate accoun
     dailyUserAttempts: 12, dailyGlobalAttempts: 20, personalDailyGlobalAttempts: 1000,
     maxModelCalls: 4, maxQueryEmbeddings: 2, maxToolCalls: 16, maxRunSeconds: 300, modelRequestSeconds: 90, maxModelRetries: 3, updatedAt: null });
   assert.equal(resolvePersonalModelLimits({ ...before.settings, mode: 'personal', maxModelCalls: 8 }, policy).maxModelCalls, 8);
-  assert.equal(resolvePersonalModelLimits({ ...before.settings, mode: 'personal', maxModelCalls: 8, limitPolicyVersion: 2 }, policy).maxModelCalls, 4);
+  assert.equal(resolvePersonalModelLimits({ ...before.settings, mode: 'personal', maxModelCalls: 8, limitPolicyVersion: 2 }, policy).maxModelCalls, 8);
+  assert.deepEqual(resolvePersonalModelLimits({ ...before.settings, mode: 'personal', maxModelCalls: 8, limitPolicyVersion: 2 }, policy).cappedByAdministrator, []);
+  assert.equal(resolvePersonalModelLimits({ ...before.settings, mode: 'platform', maxModelCalls: 8 }, policy).maxModelCalls, 4);
+  assert.equal(resolvePersonalModelLimits({ ...before.settings, mode: 'platform', maxModelCalls: 2 }, policy).maxModelCalls, 4);
+  assert.deepEqual(resolvePersonalModelLimits({ ...before.settings, mode: 'platform', maxModelCalls: 8 }, policy).cappedByAdministrator, []);
   const command: ModelSettingsCommand = { opId: randomUUID(), expectedVersion: 0, mode: 'personal', provider: 'gemini', model: 'gemini-2.5-flash',
     apiKey: key, dailyLimit: 200, maxModelCalls: 12, maxQueryEmbeddings: 6, maxToolCalls: 5, maxRunSeconds: 60,
     modelRequestSeconds: 15, maxModelRetries: 1, backgroundEnabled: false, consent: true };
@@ -66,7 +70,7 @@ test('personal settings share policy, recover the original write, isolate accoun
   const view = await routing.view('owner'), selected = await routing.resolve('owner', 'interactive');
   assert.equal(selected.config.model, command.model); assert.equal(selected.config.timeoutMs, 15000);
   assert.equal(selected.config.agentMaxRetries, 1); assert.equal(selected.billingSource, 'personal');
-  assert.equal(selected.runLimits.modelCalls, Math.min(command.maxModelCalls, before.effective!.maxModelCalls));
+  assert.equal(selected.runLimits.modelCalls, command.maxModelCalls);
   assert.equal(selected.runLimits.toolCalls, 5); assert.equal(selected.runLimits.deadlineMs, 60000);
   assert.deepEqual(view.usage, before.usage); assert.equal(platformSelected, 0);
   assert.equal((await routing.resolve('owner', 'worker')).config.enabled, false);

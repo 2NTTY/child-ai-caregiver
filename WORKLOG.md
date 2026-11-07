@@ -4755,3 +4755,34 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Failure / Repair：原完整 server 型別 1536 MiB heap V8 OOM（exit -6）；3072 MiB 單次重試 SIGKILL（exit -9），原因未證，監測未觸發 512 MiB 餘量門檻。未產生完整 program／TS 診斷，仍 NOT_PASSED，沒有第三跑或縮 config。sharing suite 候選15/16、精確基線client overlay 14/16，同一 care restore journal descriptor RED 保留，只消除 growth 讀取失敗。首次 growth-read 缺 transform-types 的 launcher failure 及原盤點 required RED 亦保留，不冒充產品通過。
 - Related Current-State Correction：按已保存的 [PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 交付收據，校準根 PLAN／STATUS 唯一緊鄰 HC current 節：2026-11-05 13:00:09 UTC 正常合併至 `f453226f`，精確 head `74e7b66d0646fc2970af55eb864a6770cd63655a` 的 [CI 42030612566](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42030612566)／[CI 42031114003](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42031114003) 各 8/8 與完整 frontend 型別、locked install／offline wrapper 成功；未部署。舊 HC WORKLOG／verification JSON 仍保留合併前快照，formal41 及原限制不進位，其他包不改。
 - Limitations / Next Action：完整 GR hook／host、scope／身份排程、瀏覽器／焦點／AT、原生、真 Firestore／API／家庭資料、模型及原正式矩陣未驗。先獨立 review 全部十檔，再由精確 head 必要 offline CI 執行 33 案及 frontend／root／server 三個原完整 config；clean install、正向完整 namespace wrapper 與 GitHub job 尚未跑，不能以本地 frontend／root PASS 代填 server gate。GR 未 commit、remote 寫入、開 PR、合併或部署。
+
+
+<a id="log-20261107-personal-key-policy"></a>
+## 2026-11-07｜REQ-005 PR 8 個人自備 Key 政策解耦（resolvePersonalModelLimits 解除鉗位）
+
+- Recorded At：2026-11-07 07:15 UTC；Work Date：2026-11-07。
+- Step / Package：REQ005-PR8 (Audit A03 / Gap 3)。
+- Branch：`codex/req005-personal-key-policy`（基線：`2abe7aed60b192b253414f6464e3fd070cc377e7`）。
+- Author / Committer：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`。
+- Executor：AI Agent (Antigravity)。
+- AI Assistance：Full code modification, invariant script execution, and verification receipt authoring under explicit user direction.
+- Human Verification：Awaiting user review and Grok read-only audit review.
+- Goal / Actual Work：修復 `server/personal-model-policy.ts` 解析器中個人自備 Key 與平台政策強行鉗位之缺陷（Audit A03）。在個人模式下消除 `!settings.limitPolicyVersion` 陷阱與 `Math.min(personal, admin)` 鉗位，完全採納用戶配置之呼叫次數、檢索次數與進階調度限制；在平台模式下嚴格維持平台政策原語義，杜絕殘留個人偏好意外縮小平台配額。
+- Invariants & Changes：
+  - `server/personal-model-policy.ts`：
+    - `settings.mode === 'personal'`：直接採納用戶配置之 `maxModelCalls`、`maxQueryEmbeddings` 以及選填之進階調度限制（`maxToolCalls`、`maxRunSeconds`、`modelRequestSeconds`、`maxModelRetries`），缺省欄位回退至 platform policy，`cappedByAdministrator` 保持為空陣列。
+    - `settings.mode !== 'personal'`（平台模式）：直接回傳 `policy.<field>`，完全忽略殘留個人設定，確保平台配額不受殘留數值污染，`cappedByAdministrator` 保持為空陣列。
+  - `tests/personal-model-settings.test.ts`：
+    - 驗證個人模式搭配 `limitPolicyVersion: 2` 時，`maxModelCalls: 8` 完整保留。
+    - 驗證平台模式下若存在殘留 `maxModelCalls: 8` 或殘留低偏好 `maxModelCalls: 2`，均嚴格解析為平台政策上限 4，且 `cappedByAdministrator` 為空。
+    - 驗證 `routing.resolve` 於個人模式下之 `selected.runLimits.modelCalls` 忠實採用用戶指定之 12。
+- Verification & Test Manifest：
+  - `tests/personal-model-settings.test.ts`：2/2 PASS。
+  - `scripts/verify-personal-key-policy-mutations.mjs`：5/5 不變量與防護驗證全數通過（含 M1 陷阱消除、個人進階預設回退、平台模式高/低偏好防護、全域每日配額隔離）。
+  - 型別診斷：`node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit` 與 `tsc --noEmit` 雙雙 0 診斷、exit 0。
+  - 驗收憑證：[REQ005_PERSONAL_KEY_POLICY_20261107.json](artifacts/verification/REQ005_PERSONAL_KEY_POLICY_20261107.json)（嚴格依據 git-blob LF 計算 SHA-256）。
+- Retained Failures：無。
+- Limitations & Boundaries：
+  - 本 PR 聚焦於 `resolvePersonalModelLimits` 解析器層級之解耦。
+  - 互動執行根期限在 `firestore-agent-runs.ts` 入口處由 `readInteractiveRunSeconds(tx)` 持續讀取平台政策，端到端之多租戶 admission 快照遷移留待後續工作，非本 PR 範圍。
+  - 嚴格維持純本地分支，未 push、未開 GitHub PR。
