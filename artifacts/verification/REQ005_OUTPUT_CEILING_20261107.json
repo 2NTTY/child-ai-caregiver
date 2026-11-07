@@ -1,13 +1,13 @@
 {
-  "receiptVersion": "2026-11-07.v5",
+  "receiptVersion": "2026-11-07.v6",
   "package": "REQ005-PR7",
   "title": "Unclamp interactive output token ceiling to 16384 (REQ-005 §4 §7)",
   "branch": "codex/req005-output-ceiling",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
-  "parentTip": "6a8a72f27ed09b58c7fcc5ad89a99b0aa05d137e",
+  "parentTip": "6f63aa0f1fd15c079d7d92fa01503cd338ac1105",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
   "executor": "AI Assistant (local execution)",
-  "timestampUtc": "2026-11-07T09:38:13.479Z",
+  "timestampUtc": "2026-11-07T10:05:02.658Z",
   "environment": {
     "nodeVersion": "v24.16.0",
     "os": "win32",
@@ -60,12 +60,12 @@
     "tsconfigRoot": "PASS (0 diagnostics, exit 0)"
   },
   "retainedFailures": [
-    "tests/gemini-key-provider.test.ts: metadata check synthetic 429 assertion error (present on master baseline, retained verbatim; omitted from 0-fail CI manifest pending Owner resolution)"
+    "tests/gemini-key-provider.test.ts: metadata check synthetic 429 assertion error (present on master baseline 2abe7aed, confirmed independently in review; pending Owner resolution or CI exemption, omitted from 0-fail CI manifest)"
   ],
   "knownLimitations": [
     "Interactive model request output ceiling unclamp only (1,024 -> 16,384)",
     "maxBackground (32,768) and default (4,096) are defined as constants; worker execution and per-run budget plumbing scoped for background PRs",
-    "tests/gemini-key-provider.test.ts contains 1 master baseline failure (synthetic 429 error assertion), pending Owner resolution or CI exemption",
+    "tests/gemini-key-provider.test.ts master baseline failure requires Owner action (repair baseline or grant exemption); currently Pending Owner Action (NOT yet approved)",
     "Local branch only; zero remote writes; strictly zero GitHub PR"
   ],
   "files": {
@@ -75,9 +75,9 @@
       "bytes": 5219
     },
     "WORKLOG.md": {
-      "sha256": "fbbfbec9e0ba393c36477f9c0947fd96f43e4e095e6a2e9b076b87b14a6a4dca",
-      "gitBlob": "883b43a4c4f11718ceff0f7d48377df4ef9fbdc6",
-      "bytes": 769400
+      "sha256": "55db4fd777fb5b076b6c5f5d272b2d67b45719633a897545c7f67da87919cc06",
+      "gitBlob": "0542562d4cdad3e6d887c168e02cebe7a35e738c",
+      "bytes": 770908
     },
     "scripts/ci/summary-progress-tests.json": {
       "sha256": "2d4e08cd04d04a2c07d757e1c4bfa8112763e234c3210b1401964b617e5088b0",
