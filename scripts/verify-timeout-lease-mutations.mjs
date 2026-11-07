@@ -5,7 +5,7 @@ import { readAiConfig } from '../server/ai-config.ts';
 import { BACKGROUND_WORK_LEASE_MS, BACKGROUND_WORK_TIMEOUT_MS } from '../server/firestore-background-work.ts';
 import { BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS } from '../server/background-knowledge-maintenance.ts';
 
-console.log('--- REQ-005 Timeout & Lease Alignment Mutation Suite ---');
+console.log('--- REQ-005 Timeout & Lease Alignment Invariant & Boundary Suite ---');
 
 // 1. Invariant & Constant Verification
 console.log('[1/5] Verifying aligned timeout and lease limits...');
@@ -19,7 +19,7 @@ assert.equal(BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS, 360000, 'Background knowledge cl
 console.log('✓ Timeout and lease constants aligned.');
 
 // 2. Mutation M1: Whole-turn deadline (15 minutes / 900s)
-console.log('[2/5] Mutation M1: Verifying whole-turn deadline bounds in platformPolicySchema...');
+console.log('[2/5] Invariant Check 1: Verifying whole-turn deadline bounds in platformPolicySchema...');
 {
   const basePolicy = {
     version: 1,
@@ -44,10 +44,10 @@ console.log('[2/5] Mutation M1: Verifying whole-turn deadline bounds in platform
   const oldMaxDeadline = 300;
   assert.ok(900 > oldMaxDeadline, 'Old 300s deadline artificially constrained 15-minute executions');
 }
-console.log('✓ Mutation M1 caught: 900s whole-turn supported and bounded.');
+console.log('✓ Invariant Check 1 passed: 900s whole-turn supported and bounded.');
 
 // 3. Mutation M2: Single-request timeout (180s/300s)
-console.log('[3/5] Mutation M2: Verifying single-request timeout in ai-config and platformPolicySchema...');
+console.log('[3/5] Invariant Check 2: Verifying single-request timeout in ai-config and platformPolicySchema...');
 {
   // Accepts 180s (180,000 ms) and 300s (300,000 ms)
   const config180 = readAiConfig({ AI_TIMEOUT_MS: '180000' });
@@ -77,26 +77,26 @@ console.log('[3/5] Mutation M2: Verifying single-request timeout in ai-config an
   // Rejects 301s
   assert.throws(() => platformPolicySchema.parse({ ...basePolicy, modelRequestSeconds: 301 }), /too_big|<=300/);
 }
-console.log('✓ Mutation M2 passed: 300s single-request timeout verified.');
+console.log('✓ Invariant Check 2 passed: 300s single-request timeout verified.');
 
-// 4. Mutation M3: Distributed background lease safety buffer
-console.log('[4/5] Mutation M3: Verifying distributed lease encloses execution timeout...');
+// 4. Invariant Check 3: Distributed background lease safety buffer
+console.log('[4/5] Invariant Check 3: Verifying distributed lease encloses execution timeout...');
 {
   const leaseBuffer = BACKGROUND_WORK_LEASE_MS - BACKGROUND_WORK_TIMEOUT_MS;
   assert.ok(leaseBuffer >= 60_000, `Lease buffer must be at least 60s, got ${leaseBuffer / 1000}s`);
   assert.ok(BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS >= BACKGROUND_WORK_TIMEOUT_MS, 'Knowledge lease must enclose single request timeout');
 }
-console.log('✓ Mutation M3 passed: lease safety buffer securely maintained.');
+console.log('✓ Invariant Check 3 passed: lease safety buffer securely maintained.');
 
-// 5. Mutation M4: Client-side fetch timeout alignment
-console.log('[5/5] Mutation M4: Verifying client-side HTTP timeout derivation...');
+// 5. Invariant Check 4: Client-side fetch timeout alignment
+console.log('[5/5] Invariant Check 4: Verifying client-side HTTP timeout derivation...');
 {
   // In src/client/chat-api.ts: (AGENT_RUN_LIMITS.deadlineSeconds.max + 30) * 1000
   const clientTimeoutMs = (AGENT_RUN_LIMITS.deadlineSeconds.max + 30) * 1000;
   assert.equal(clientTimeoutMs, 930_000, 'Client fetch timeout must be 930s (15.5m), giving 30s buffer over server run deadline');
 }
-console.log('✓ Mutation M4 passed: client timeout derivation aligned.');
+console.log('✓ Invariant Check 4 passed: client timeout derivation aligned.');
 
 console.log('======================================================');
-console.log('All Timeout & Lease Alignment Mutation Tests PASSED!');
+console.log('All Timeout & Lease Invariant Checks PASSED!');
 console.log('======================================================');

@@ -1,12 +1,27 @@
 {
-  "receiptVersion": "2026-11-07.v2",
+  "receiptVersion": "2026-11-07.v3",
   "package": "REQ005-PR9",
-  "title": "Align background work lease timeouts and request limits (REQ-005 §4 §7)",
+  "title": "Align background work lease and timeout limits (REQ-005 §4 §7)",
   "branch": "codex/req005-timeout-lease-alignment",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+  "parentTip": "776a27900bdc76d982c014494a304cdaf1700351",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
-  "executor": "AI Agent (Antigravity)",
-  "timestampUtc": "2026-11-07T07:30:00Z",
+  "executor": "AI Assistant (local execution)",
+  "timestampUtc": "2026-11-07T08:43:42.913Z",
+  "environment": {
+    "nodeVersion": "v24.16.0",
+    "os": "win32",
+    "shell": "powershell",
+    "tscVersion": "6.0.3"
+  },
+  "commandsExecuted": [
+    "node --experimental-test-module-mocks --test tests/ai-config.test.ts",
+    "node --experimental-test-module-mocks --test tests/firestore-background-recovery.test.ts",
+    "node --experimental-test-module-mocks --test tests/agent-runtime.test.ts",
+    "node scripts/verify-timeout-lease-mutations.mjs",
+    "node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit",
+    "node node_modules/typescript/bin/tsc --noEmit"
+  ],
   "status": "LOCAL_VERIFIED",
   "remotePushed": false,
   "pullRequestOpened": false,
@@ -38,47 +53,51 @@
   },
   "retainedFailures": [],
   "knownLimitations": [
-    "Background work lease provides static 60s buffer (360s lease vs 300s execution) without active heartbeat renewal during execution",
-    "Interactive AgentBudget constructor enforces <= AGENT_LIMITS.deadlineMs (300s)",
-    "Cloud Tasks dispatch deadline remains 120s; background worker admission remains 90s",
-    "360s lease and 300s execution are initial engineering baseline proposals subject to Owner review",
-    "Local branch only; zero remote writes"
+    "Expanded boundary constants and static lease buffer (360s lease enclosing 300s single execution with 60s buffer) delivered as initial engineering baseline; awaiting live telemetry and Owner authorization",
+    "Cooperative cancellation via AbortSignal: timeout does not forcefully abort synchronously running tasks; no absolute guarantee of stopping within 300s",
+    "Schema accepts up to 900s run seconds, but runtime interactive AgentBudget constructor maintains 300s check; CloudTasks dispatch remains 120s and worker claim remains 90s; full 15-minute execution requires active heartbeat renewal and infrastructure task configuration updates",
+    "Local branch only; zero remote writes; strictly zero GitHub PR"
   ],
   "files": {
-    "src/shared/agent-run-limits.ts": {
-      "sha256": "b03b08d438771d7cc9c895a37adc9d278cebd66d47520741dc3d59fc582dc7a6",
-      "gitBlob": "6c458f4dfffc626e1bb5fd4f727ccd06d8c53b87",
-      "bytes": 469
+    ".github/workflows/summary-progress-offline.yml": {
+      "sha256": "87bf46e776144954f741896671347ede91e95964bf6af17b11ad8bfae8fee173",
+      "gitBlob": "5c4f0d94bb849951c6f10900484df0ee13cd180a",
+      "bytes": 5228
+    },
+    "WORKLOG.md": {
+      "sha256": "767c327ed26a52a0aa8feedd973ef5dcd7c2adb0dc32f3cd25918ffb4e04b9ef",
+      "gitBlob": "a4774607bdc7e7f5ec40262f38ce2154a7c045c0",
+      "bytes": 766401
+    },
+    "scripts/verify-timeout-lease-mutations.mjs": {
+      "sha256": "85fb26b8cff01b972732f61a146197a0fa2f8839c63452f9c21760a5dc959849",
+      "gitBlob": "5909a58ece0620f6538c10681df6d4acb03ea92f",
+      "bytes": 4956
     },
     "server/ai-config.ts": {
       "sha256": "ec76cb71936b0e3c42387316561323c0805b3e089fbbe5a2569491647546238a",
       "gitBlob": "b8ad3909cc42ca027def6aff41ab96bb4ac63a7f",
       "bytes": 5628
     },
-    "server/firestore-background-work.ts": {
-      "sha256": "7b4e23ec3f477c07992e6913cad12177736b2010a2be0cf070c6a734cf4dc18c",
-      "gitBlob": "bdd055a0d2eda9ffe05f316f5f4e760982eb3a73",
-      "bytes": 17115
-    },
     "server/background-knowledge-maintenance.ts": {
       "sha256": "bae58ac6129a29c609edd4948e100c15b8ee62867ecf5e79d4af33993ede6287",
       "gitBlob": "e35e900cf1132578c7a9214d2326baa4ed78b580",
       "bytes": 32951
     },
+    "server/firestore-background-work.ts": {
+      "sha256": "7b4e23ec3f477c07992e6913cad12177736b2010a2be0cf070c6a734cf4dc18c",
+      "gitBlob": "bdd055a0d2eda9ffe05f316f5f4e760982eb3a73",
+      "bytes": 17115
+    },
+    "src/shared/agent-run-limits.ts": {
+      "sha256": "b03b08d438771d7cc9c895a37adc9d278cebd66d47520741dc3d59fc582dc7a6",
+      "gitBlob": "6c458f4dfffc626e1bb5fd4f727ccd06d8c53b87",
+      "bytes": 469
+    },
     "tests/ai-config.test.ts": {
       "sha256": "3d572de9e9d275a1f67b7114749b3b7bce4ca4b7819e9b12705c109da0e217a2",
       "gitBlob": "0f48c95363095326c97a33ec109847939c043aeb",
       "bytes": 8137
-    },
-    "scripts/verify-timeout-lease-mutations.mjs": {
-      "sha256": "6fd5d85a52204cb497ebfb5af472db0ba6b4ee930447feb8202da6faec2d9a67",
-      "gitBlob": "fdd390eaa254a29e0a917a4e687f14ae29a4ec33",
-      "bytes": 4892
-    },
-    "WORKLOG.md": {
-      "sha256": "b46ff02effa7ad64a118b0e61b088d3fd417378e6c6d37c0724e0c074861e8ee",
-      "gitBlob": "2374b17fe92600d48e21cb2158864e2777b7bbcb",
-      "bytes": 764479
     }
   }
 }

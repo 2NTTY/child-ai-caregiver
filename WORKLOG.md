@@ -4788,3 +4788,23 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   - 外層 Cloud Tasks 分發逾時仍為 120s（`dispatchSeconds = 120`），背景 Worker 入口預設仍為 90s，端到端 15 分鐘背景作業需搭配雲端設施調度隊列調整。
   - 360s 租約與 300s 執行為工程起始基線，待生產監控量度及 Owner 審批。
   - 嚴格維持純本地分支，未 push、未開 GitHub PR。
+
+### 2026-11-07 Round 2 審核跟進修正 (Audit B01, B09 / Gap 5)
+
+- Recorded At：2026-11-07 08:55 UTC；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `776a27900bdc76d982c014494a304cdaf1700351`，保留 reflog 歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `.github/workflows/summary-progress-offline.yml`：在 `github.head_ref` 白名單加入 `codex/req005-timeout-lease-alignment`。
+  2. `scripts/verify-timeout-lease-mutations.mjs`：修正終端輸出及註釋，將「Mutation」字眼改為「Invariant Check」，如實陳述為常數邊界與不變量防回歸驗證。
+  3. 收據與文件：更新收據檔案清單（補入 `summary-progress-offline.yml`），補全可重現命令與環境。
+- Verification：
+  - `tests/ai-config.test.ts`：11/11 PASS
+  - `tests/firestore-background-recovery.test.ts`：1/1 PASS
+  - `tests/agent-runtime.test.ts`：20/20 PASS
+  - `scripts/verify-timeout-lease-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries (明確撤回絕對保證與聲稱邊界)：
+  - 360 秒租約與 300 秒單次逾時提供 60 秒靜態安全緩衝，屬工程起始建議基準，待生產監控量度及 Owner 審批。由於逾時取消屬合作式信號（cooperative cancellation via AbortSignal），非硬性強制中斷，不作絕對隔離或杜絕失敗之聲稱。
+  - 綱要層允許至 900 秒整輪期限，但目前互動式 `AgentBudget` runtime 建構子仍維持 300 秒硬檢驗；外層 Cloud Tasks 調度派發（120 秒）與 Worker 認領預設（90 秒）亦維持原狀。端到端 15 分鐘完整長任務管線仍需主動心跳續約（active heartbeat renewal）與雲端基礎設施調度調整，本 PR 僅交付常數邊界擴充與靜態租約緩衝對齊。
+  - 純本地分支，零 git push，零 GitHub PR。
+
