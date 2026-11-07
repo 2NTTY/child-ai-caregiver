@@ -4984,3 +4984,53 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 
 ### Next Action
 - Commit 並 push 至 `codex/req005-cursor-pagination`，更新 PR #513 描述，核實 exact-head CI SUCCESS；切換至 PR #514 分支處理文件收束。
+
+
+<a id="req005-pr10-round4-calibration-20261108"></a>
+## 2026-11-08 04:53:00 HKT - PR10 #513 Round 4 覆核校準：功能驗證 Commit 釘選、前端畫面控制器待接邊界釐清
+
+- Anchor：`#req005-pr10-round4-calibration-20261108`
+- Recorded At：2026-11-08T04:53:00+08:00
+- Work Date：2026-11-08
+- Step / Package：REQ-005 §8 (PR #513 Round 4)
+- Executor：AI Assistant（本機執行與邊界校準）
+- Goal：落實 `PR10_11_AUDIT_ROUND4.md` Round 4 覆核要求：
+  1. 功能驗證 Commit 釘選校準：將收據 `featureCommit` 釘選至真正包含 client schema 容許與 Agent 游標邊界對齊之實施 commit `20b089902f223e5b5679a46bd42dfd3b2b32d336`；並將前版審計基準明確標示為 `fad8462f98f5286e0025d54ebd30513efa8b3e4a`，區分基準與功能驗證。
+  2. 前端畫面接線限制釐清：在收據限制與 PR 說明中明載：游標分頁能力已完整貫穿 Firestore Store、HTTP API、Client SDK（`ConcernsApi['getPage']` 支援 options 與 URL 參數）及 Agent 工具（`read_concerns` 20 筆對齊）；而現有生產前端成長畫面控制器（`frontend/src/production/task-knowledge-growth.ts`）目前仍僅執行首頁投影讀取，尚未接通分頁續讀按鈕或滾動載入，不將底層庫能力與畫面已啟用混為一談。
+  3. 容量邊界確認：持續維持生長報告查重為「單次 query 分批 100 筆有界，單個 transaction 內全量掃描」之如實陳述，不冒稱為 O(1) 上界。
+  4. 收據與檔案 Hash 更新：更新 `artifacts/verification/REQ005_CURSOR_PAGINATION_20261107.json` 至 `2026-11-08.v5`，重新計算受影響檔案之 SHA-256、gitBlob 與位元組數。
+- AI Assistance：收據結構更新、限制條目補充與 Hash 計算。
+- Human Verification：嚴格維持 HOLD merge，僅由專案負責人 2NTTY 裁決合併。
+
+### Actual Work
+- `artifacts/verification/REQ005_CURSOR_PAGINATION_20261107.json`：
+  - 更新為 `receiptVersion: "2026-11-08.v5"`。
+  - 將 `featureCommit` 更新為 `20b089902f223e5b5679a46bd42dfd3b2b32d336`。
+  - 保留 `calibratedCommit: "fad8462f98f5286e0025d54ebd30513efa8b3e4a"` 作為前版審計基準。
+  - 在 `limitations` 中明確記錄：「前端成長畫面控制器（`frontend/src/production/task-knowledge-growth.ts`）目前僅執行首頁單次讀取，尚未接通續頁按鈕／滾動觸發；游標分頁能力在 store、HTTP API、client SDK 及 Agent 工具已具備並經測試驗證，畫面續頁啟用保留為後續 UI 介面工作。」
+  - 重新計算受影響檔案之 SHA-256、gitBlob 與位元組數。
+
+### Changes
+- `artifacts/verification/REQ005_CURSOR_PAGINATION_20261107.json`
+- `WORKLOG.md`
+
+### Verification
+- 需求／驗收：REQ-005 §8 功能 Commit 釘選、前端啟用邊界明確化
+- 方法：
+  - `node --test tests/ci/summary-progress-contract.test.mjs` (6/6 PASS)
+  - `node --experimental-strip-types --test tests/firestore-cursor-pagination.test.ts` (3/3 PASS)
+  - `node scripts/verify-cursor-pagination-mutations.mjs` (5/5 PASS)
+  - `node --max-old-space-size=3072 node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit` (0 diagnostics, exit 0)
+  - `npx tsc --noEmit` (0 diagnostics, exit 0)
+- 結果：全部通過 (ALL PASS, 0 fail, exit 0)
+- 證據收據：`artifacts/verification/REQ005_CURSOR_PAGINATION_20261107.json` (v5)
+
+### Limitations / Blockers
+- 前端畫面控制器（`frontend/src/production/task-knowledge-growth.ts`）尚未接通分頁續頁，現有畫面僅展示第一頁關注事項。
+- 查重機制為 transaction 內全量分批掃描，未在生產 Firestore 負載下壓測超時。
+- 未執行真實 Gemini Live 模型連線調用。
+- 與 PR 11（#514）存在 2 個檔案之合併衝突（`WORKLOG.md` 與 `.github/workflows/summary-progress-offline.yml`）。
+- 嚴格維持 HOLD merge，僅由專案負責人 2NTTY 裁決合併。
+
+### Next Action
+- 將 PR #513 本次文件校準 commit 並 push，更新 PR #513 描述。切換至 PR #514 分支重構 26 官方場景矩陣。

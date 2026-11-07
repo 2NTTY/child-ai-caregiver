@@ -1,14 +1,14 @@
 {
-  "receiptVersion": "2026-11-08.v4",
+  "receiptVersion": "2026-11-08.v5",
   "package": "REQ005-PR10",
   "title": "Replace fixed 50-item aggregate walls with Firestore cursor pagination (REQ-005 §8)",
   "branch": "codex/req005-cursor-pagination",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
-  "featureCommit": "fad8462f98f5286e0025d54ebd30513efa8b3e4a",
+  "featureCommit": "20b089902f223e5b5679a46bd42dfd3b2b32d336",
   "calibratedCommit": "fad8462f98f5286e0025d54ebd30513efa8b3e4a",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
   "executor": "AI Assistant (local execution)",
-  "timestampUtc": "2026-11-07T20:08:00.000Z",
+  "timestampUtc": "2026-11-07T20:53:00.000Z",
   "environment": {
     "nodeVersion": "v24.22.1",
     "os": "win32",
@@ -102,8 +102,12 @@
     "Production deployment"
   ],
   "limitations": [
-    "Verification executed against in-memory Firestore fixture and Node.js test runner",
-    "Growth report duplicate detection uses bounded queries of limit 100 within a full-transaction scan; not tested for transaction timeout under massive Firestore datasets",
+    "Executed against in-memory Firestore synthetic fixture and Node.js test runner",
+    "Production Firestore load testing and emulator stress testing not run",
+    "Gemini Live real API calls not executed",
+    "Production mobile application and web browser UI rendering not executed",
+    "Production front-end growth screen controller (frontend/src/production/task-knowledge-growth.ts) executes single-page initial getPage and has not yet wired paginated continuation triggers; cursor pagination capability is enabled and verified across Firestore store, HTTP API, client SDK, and Agent tools, while UI continuation remains pending controller wiring",
+    "Growth report deduplication (activeCount) executes bounded batch reads (limit 100 with startAfter) across active rows within a single Firestore transaction; it guarantees bounded query batch size and prevents memory bloat, but is not an O(1) constant-time bound under massive data datasets",
     "HOLD merge strictly enforced pending Owner review"
   ],
   "retainedFailures": [],
@@ -114,9 +118,9 @@
       "bytes": 5222
     },
     "WORKLOG.md": {
-      "sha256": "37c58e5bc6c9699812143016cd5abe2f3e51be161561247dfb9ef8f77f7a22ef",
-      "gitBlob": "32f6385fb34dc89e3774366912f636640785599a",
-      "bytes": 782060
+      "sha256": "760526f0b77272b58afc39f8c7c7118a39335e57d5f618f7a63b400cc1e421b8",
+      "gitBlob": "3fd7ecd74a8755c7334d3b7f233037de36eb1599",
+      "bytes": 786102
     },
     "scripts/ci/summary-progress-tests.json": {
       "sha256": "92c8cd6a8116173225894785655889109f2da5831cb7fc9652f1ac88c522c0e7",
