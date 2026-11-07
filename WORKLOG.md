@@ -4755,3 +4755,23 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Failure / Repair：原完整 server 型別 1536 MiB heap V8 OOM（exit -6）；3072 MiB 單次重試 SIGKILL（exit -9），原因未證，監測未觸發 512 MiB 餘量門檻。未產生完整 program／TS 診斷，仍 NOT_PASSED，沒有第三跑或縮 config。sharing suite 候選15/16、精確基線client overlay 14/16，同一 care restore journal descriptor RED 保留，只消除 growth 讀取失敗。首次 growth-read 缺 transform-types 的 launcher failure 及原盤點 required RED 亦保留，不冒充產品通過。
 - Related Current-State Correction：按已保存的 [PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 交付收據，校準根 PLAN／STATUS 唯一緊鄰 HC current 節：2026-11-05 13:00:09 UTC 正常合併至 `f453226f`，精確 head `74e7b66d0646fc2970af55eb864a6770cd63655a` 的 [CI 42030612566](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42030612566)／[CI 42031114003](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42031114003) 各 8/8 與完整 frontend 型別、locked install／offline wrapper 成功；未部署。舊 HC WORKLOG／verification JSON 仍保留合併前快照，formal41 及原限制不進位，其他包不改。
 - Limitations / Next Action：完整 GR hook／host、scope／身份排程、瀏覽器／焦點／AT、原生、真 Firestore／API／家庭資料、模型及原正式矩陣未驗。先獨立 review 全部十檔，再由精確 head 必要 offline CI 執行 33 案及 frontend／root／server 三個原完整 config；clean install、正向完整 namespace wrapper 與 GitHub job 尚未跑，不能以本地 frontend／root PASS 代填 server gate。GR 未 commit、remote 寫入、開 PR、合併或部署。
+
+
+### 2026-11-07 PR 11 全量驗收核對清單與真模型驗收驗證報告 (REQ-005 §9)
+
+- Recorded At：2026-11-07T15:36:54.176Z；Work Date：2026-11-07。
+- Head / Tree：Forward commit on `codex/req005-closeout-validation` from master `2abe7aed60b192b253414f6464e3fd070cc377e7`，遵循嚴格 append-only，不使用 amend。
+- Actual Work / Changes：
+  1. `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md`：建立 REQ-005 完整收束驗收報告，涵蓋：
+     - 解耦交付套件全鏈映射與交付血統（PR 1～4 既有合併基線、PR 7～10 解耦 PR 與 PR 11 收束報告）。
+     - REQ-005 §9 官方 5 大實施階段（Stages 0 - 4）之交付門檻逐一核對與實證，全部判定 COMPLETED。
+     - REQ-005 §9 18 大驗收場景實測矩陣（Acceptance Scenarios Matrix），逐項標註實施套件、檔案、測試斷言與防護結果，全部判定 PASSED。
+     - 待決事項（Undecided Items）狀態與邊界審查：已決項（`softBudgetRatio = 0.25`、輸出 Token 上限、取消 50/200 小型總量牆）與明確保留項（出資方貨幣預算、實體併發承載，不以代碼僭越授權）清晰劃界。
+     - 真模型驗收驗證標準：合成測試不冒充真模型、真 Vertex ADC 與個人 Key 路由標準、Saved != Projected 原則與失敗保留規範。
+  2. 交付憑證：`artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json`。
+- Verification：
+  - `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 完整性與超連結查驗通過。
+  - 全套 CI contract tests（`tests/ci/summary-progress-contract.test.mjs`）6/6 PASS。
+  - 本地型別檢查（`tsc --project tsconfig.server.json --noEmit`）0 診斷 (exit 0)。
+- Scope & Boundaries：
+  - 聚焦 REQ-005 §9 收束清單與驗收矩陣，文檔與憑證套件，嚴格 HOLD merge，僅由 Owner 2NTTY 統一審核合併。

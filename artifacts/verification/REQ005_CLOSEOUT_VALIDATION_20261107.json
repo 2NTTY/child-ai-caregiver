@@ -1,0 +1,44 @@
+{
+  "receiptVersion": "2026-11-07.v1",
+  "package": "REQ005-PR11",
+  "title": "Closeout checklist and live model acceptance validation (REQ-005 §9)",
+  "branch": "codex/req005-closeout-validation",
+  "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+  "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
+  "executor": "AI Assistant (local execution)",
+  "timestampUtc": "2026-11-07T15:36:54.176Z",
+  "environment": {
+    "nodeVersion": "v24.16.0",
+    "os": "win32",
+    "shell": "powershell",
+    "tscVersion": "6.0.3"
+  },
+  "commandsExecuted": [
+    "node --test tests/ci/summary-progress-contract.test.mjs",
+    "node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit"
+  ],
+  "status": "LOCAL_VERIFIED",
+  "remotePushed": false,
+  "pullRequestOpened": false,
+  "coverageSummary": {
+    "officialStages": "Stages 0 - 4 complete audit (5/5 COMPLETED)",
+    "acceptanceScenarios": "18/18 scenarios mapped, verified and passed",
+    "prDecouplingLineage": "PR 1 - PR 10 mapped with GitHub PR IDs & receipts",
+    "undecidedItemsBoundary": "softBudgetRatio=0.25 resolved; financial quota & hardware limits retained as explicit Owner prerogatives"
+  },
+  "typeCheck": {
+    "tsconfigServer": "PASS (0 diagnostics, exit 0)"
+  },
+  "files": {
+    "docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md": {
+      "sha256": "c041cf06cb3ded659f5bdb60e339bd59c026430c44aaf0f0de83201fe6483fa1",
+      "gitBlob": "ad2367e6864ceec60926c12b9e70f92c62b1b496",
+      "bytes": 13386
+    },
+    "WORKLOG.md": {
+      "sha256": "ca6a16b8a26a6b3de832b42c645eed9445c234f06fbdbd0c9005fb2c46e4bf67",
+      "gitBlob": "c8c53bbef4bbe3a1c01cefb98caccd9af287e081",
+      "bytes": 762827
+    }
+  }
+}
