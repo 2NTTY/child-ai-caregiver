@@ -4846,3 +4846,16 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Scope & Boundaries：
   - 維持 NOT READY / HOLD merge 狀態，等待 Owner 統籌合併。純本地分支，零 git push，零 GitHub PR。
 
+### 2026-11-07 歷史預填時間客觀校準說明 (Audit Trail Timestamp Calibration)
+
+- Recorded At：2026-11-07T10:06:30.749Z；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `7e9e8b783679cddd13f8873e766d43d6cbdd089b`，保留歷史，不使用 amend。
+- 歷史時間客觀聲明：
+  本工作日誌此前各段落中出現之 Recorded At 欄位（例如 08:55 UTC、09:05 UTC、09:50 UTC 等），係編輯起草時依規劃時程預填之模板標籤時間，而非底層 Git Commit 物件實際寫入時間戳（例如 Commit `7e9e8b78` 實際寫入時間為 17:39:42 HKT，即 09:39:42 UTC）。
+  依據本專案嚴格之 append-only 審計規範，歷史既有段落完整保留不作 amend 或刪改；特在此追加真實即時時間戳記（2026-11-07T10:06:30.749Z）以澄清時序，確認此前所有時間標籤均屬規劃模板時間。
+- PR 9 期限與邊界確認：
+  360 秒租約與 300 秒單次逾時之 60 秒安全緩衝，屬工程起始建議基準，需待實時監控量度及 Owner 審批。逾時中斷為基於 AbortSignal 之合作式取消，非底層強制線程中止，不可視為杜絕失敗之絕對保證。綱要層允許至 900 秒整輪期限，但目前互動式 AgentBudget 建構子仍維持 300 秒硬檢驗；外層 Cloud Tasks 調度派發（120 秒）與 Worker 認領預設（90 秒）亦維持原狀。端到端 15 分鐘完整長任務管線仍需主動心跳續約（active heartbeat renewal）與雲端基礎設施調度調整，本 PR 明確界定為常數邊界擴充與靜態租約緩衝對齊。
+- Scope & Boundaries：
+  - 本包判定維持 **NOT READY to open PR / HOLD merge**，等待 Owner 決定範圍、工程值及交付次序。
+  - 純本地分支，零 git push，零 GitHub PR。
+
