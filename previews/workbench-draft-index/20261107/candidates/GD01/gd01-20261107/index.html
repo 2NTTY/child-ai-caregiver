@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<title>GD01 · 使用說明三步閱讀</title>
+<link rel="stylesheet" href="./guide.css">
+<script type="module" src="./app.mjs"></script>
+</head>
+<body>
+<main>
+<header>
+<p class="eyebrow">GD01 · 新增可選合成呈現</p>
+<h1>使用說明三步閱讀</h1>
+<p class="notice">閱讀呈現／模擬導航。以下為原產品使用說明；此候選只示範閱讀與導航意圖，不執行文中操作。</p>
+<p class="meta">不包含選孩、建立孩子、原操作查核／重試或登出。不會保存閱讀進度。</p>
+</header>
+<section class="preview-controls" aria-label="合成呈現控制">
+<div class="variants" role="group" aria-label="閱讀版式">
+<button type="button" id="variant-A" aria-pressed="true">A · 目錄閱讀</button>
+<button type="button" id="variant-B" aria-pressed="false">B · 路徑卡</button>
+</div>
+<div><label for="guide-status">合成狀態（僅示範開場文字）</label>
+<select id="guide-status"><option value="first_login">首次登入 · first_login</option><option value="incomplete">尚需引導 · incomplete</option><option value="not_required">隨時重看 · not_required</option><option value="unknown">狀態未知 · unknown</option></select></div>
+</section>
+<p id="intro" class="intro"></p>
+<div id="workspace" class="workspace variant-A">
+<nav aria-label="使用引導步驟"><p class="eyebrow">使用路徑 · 3 步</p><div id="steps"></div></nav>
+<article id="reading" aria-label="目前閱讀"></article>
+</div>
+<noscript>此候選需要 JavaScript 才能展示三步閱讀互動；目前未執行任何操作。</noscript>
+<footer>獨立合成候選，尚未整合正式產品。閱讀順序不表示任務完成。</footer>
+</main>
+</body>
+</html>
