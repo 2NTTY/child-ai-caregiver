@@ -1,13 +1,13 @@
 {
-  "receiptVersion": "2026-11-07.v6",
+  "receiptVersion": "2026-11-07.v7",
   "package": "REQ005-PR7",
-  "title": "Unclamp interactive output token ceiling to 16384 (REQ-005 §4 §7)",
+  "title": "Unclamp interactive agent output token ceiling (REQ-005 §4)",
   "branch": "codex/req005-output-ceiling",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
-  "parentTip": "6f63aa0f1fd15c079d7d92fa01503cd338ac1105",
+  "parentTip": "e3e86dcf560f3c30b6ba742e3efa1232bc061182",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
   "executor": "AI Assistant (local execution)",
-  "timestampUtc": "2026-11-07T10:05:02.658Z",
+  "timestampUtc": "2026-11-07T14:01:08.209Z",
   "environment": {
     "nodeVersion": "v24.16.0",
     "os": "win32",
@@ -40,9 +40,8 @@
     },
     "gemini-key-provider.test.ts": {
       "total": 4,
-      "passed": 3,
-      "failed": 1,
-      "baselineRetainedFailures": 1
+      "passed": 4,
+      "failed": 0
     },
     "verify-output-ceiling-mutations.mjs": {
       "total": 5,
@@ -59,13 +58,10 @@
     "tsconfigServer": "PASS (0 diagnostics, exit 0)",
     "tsconfigRoot": "PASS (0 diagnostics, exit 0)"
   },
-  "retainedFailures": [
-    "tests/gemini-key-provider.test.ts: metadata check synthetic 429 assertion error (present on master baseline 2abe7aed, confirmed independently in review; pending Owner resolution or CI exemption, omitted from 0-fail CI manifest)"
-  ],
+  "retainedFailures": [],
   "knownLimitations": [
-    "Interactive model request output ceiling unclamp only (1,024 -> 16,384)",
-    "maxBackground (32,768) and default (4,096) are defined as constants; worker execution and per-run budget plumbing scoped for background PRs",
-    "tests/gemini-key-provider.test.ts master baseline failure requires Owner action (repair baseline or grant exemption); currently Pending Owner Action (NOT yet approved)",
+    "Interactive agent output unclamp verified up to 16384 tokens; background pipeline unclamp (32768) deferred to subsequent PRs",
+    "Direct Gemini provider error contract normalized to PersonalProviderError; shared gateway handles bounded retry and status-only telemetry",
     "Local branch only; zero remote writes; strictly zero GitHub PR"
   ],
   "files": {
@@ -75,14 +71,14 @@
       "bytes": 5219
     },
     "WORKLOG.md": {
-      "sha256": "55db4fd777fb5b076b6c5f5d272b2d67b45719633a897545c7f67da87919cc06",
-      "gitBlob": "0542562d4cdad3e6d887c168e02cebe7a35e738c",
-      "bytes": 770908
+      "sha256": "d2faf7a7bb1223c4b7415c363dcaa02e868621c89f5d2f4883948b1d77a6426d",
+      "gitBlob": "0550c161f39c13565bd1489a8993a05b5fb4ed66",
+      "bytes": 772839
     },
     "scripts/ci/summary-progress-tests.json": {
-      "sha256": "2d4e08cd04d04a2c07d757e1c4bfa8112763e234c3210b1401964b617e5088b0",
-      "gitBlob": "43349bdd63bbb0442c1854f21a6f86f7316fbf2a",
-      "bytes": 7177
+      "sha256": "3c4c564c3b0ed813766605dc93d6865b148a248aae1e1288f68d27fddd9f34c3",
+      "gitBlob": "26970dcc64d7cc9696a6b8f059d64733fb464a55",
+      "bytes": 7250
     },
     "scripts/ci/verify-summary-progress-offline.sh": {
       "sha256": "f30288a41f27260837e9f69f46b5bda8f5267b2ede0c13795cda385f202a869d",
@@ -115,9 +111,9 @@
       "bytes": 8143
     },
     "server/gemini-key-provider.ts": {
-      "sha256": "c01c226a0701ab9ae8aa9615efe767f917d8893462edd633f5a97a6f76af4079",
-      "gitBlob": "bb1379102c2a506ed389c76eab1205fee08be613",
-      "bytes": 10856
+      "sha256": "77deb13113ea2fdacf028455df483841ff09b8be0fc615807a2a52fc001aba21",
+      "gitBlob": "113b4966f2e74bda1d76db6046b6b51dbc743c66",
+      "bytes": 10919
     },
     "server/openai-compatible-provider.ts": {
       "sha256": "36705cccb2a5dcc9c431d9b9a9ab2d390396542287bdf967f7b4c9c399887f83",
@@ -140,9 +136,9 @@
       "bytes": 8165
     },
     "tests/gemini-key-provider.test.ts": {
-      "sha256": "e66b774cf9330a9cc2fa25aad0d11db7f6bbcfe3e987f9bc5fcadcb9572e62d3",
-      "gitBlob": "191f8fe7db9ecb1f119ff9bfc7d4846372166b66",
-      "bytes": 12148
+      "sha256": "6faa58afac4e7e9c7c300e18fef0ab97bccf5db40bdef38fb1395e628bed0c4e",
+      "gitBlob": "e9d1b90c623943aed1396e46a3bd0a810afb73ba",
+      "bytes": 12384
     }
   }
 }

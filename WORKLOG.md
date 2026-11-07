@@ -4857,3 +4857,22 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   - 本包判定維持 **NOT READY to open PR / HOLD merge**，等待 Owner 決定範圍、工程值及交付次序。
   - 純本地分支，零 git push，零 GitHub PR。
 
+### 2026-11-07 PR 7 Gemini Provider 錯誤邊界契約窄修與 CI Manifest 納入
+
+- Recorded At：2026-11-07T14:01:08.004Z；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `e3e86dcf560f3c30b6ba742e3efa1232bc061182`，保留歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `server/gemini-key-provider.ts`：修復 direct Agent provider 之錯誤邊界。在 `generate()` 捕捉未映射之 `ApiError`（例如 429 RESOURCE_EXHAUSTED）時，呼叫既有之 `personalProviderHttpError(error.status, error.message, 'generation')` 轉化為清理過之 `PersonalProviderError`，確保不洩漏原始 request body、API key 或內部 cause，同時保留 HTTP 429 狀態碼供外層 shared Agent gateway 執行精確計量、退避重試與記帳。
+  2. `tests/gemini-key-provider.test.ts`：將第 4 案之 direct Agent provider 與 embedding 錯誤斷言對齊最新之 `PersonalProviderError` 契約（檢查 `httpStatus === 429`、`sanitized(error)`），全檔 4 個測試全數通過（4/4 PASS, exit 0）。
+  3. `scripts/ci/summary-progress-tests.json`：將 `tests/gemini-key-provider.test.ts`（4 案）正式加入離線 CI Manifest（Manifest 增至 89 檔條目，零失敗契約完全通過）。
+- Verification：
+  - `tests/gemini-key-provider.test.ts`：4/4 PASS (exit 0)
+  - `tests/agent-model-gateway.test.ts`：18/18 PASS (exit 0)
+  - `tests/ai-config.test.ts`：11/11 PASS (exit 0)
+  - `scripts/verify-output-ceiling-mutations.mjs`：5/5 Invariant Checks PASS (exit 0)
+  - `tests/ci/summary-progress-contract.test.mjs`：6/6 PASS (exit 0)
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷 (exit 0)
+- Scope & Boundaries：
+  - PR 7 本地所有候選測試全綠，正式由 NOT READY 晉升為 **READY to open PR for Owner review**。
+  - 純本地分支，零 git push，零 GitHub PR。全部 HOLD merge，等待 Owner 2NTTY 統籌合併。
+

@@ -350,5 +350,9 @@
   {
     "path": "tests/ai-config.test.ts",
     "cases": 11
+  },
+  {
+    "path": "tests/gemini-key-provider.test.ts",
+    "cases": 4
   }
 ]

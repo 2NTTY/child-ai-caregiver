@@ -102,7 +102,7 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
             if (cause === 'invalid_key') throw new AgentStopped('model_key_invalid');
             if (cause === 'region_unavailable') throw new AgentStopped('model_region_unavailable');
             if (cause === 'model_unavailable') throw new AgentStopped('model_not_available');
-            throw error;
+            throw personalProviderHttpError(error.status, error.message, 'generation');
           }
           throw failure(error);
         }

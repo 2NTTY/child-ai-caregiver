@@ -6,6 +6,7 @@ import { readAiConfig } from "../server/ai-config.ts";
 import { EmbeddingFailure } from "../server/embedding-gateway.ts";
 import { createGeminiKeyProviders } from "../server/gemini-key-provider.ts";
 import { ProviderFailure } from "../server/model-gateway.ts";
+import { PersonalProviderError } from "../server/personal-provider-error.ts";
 
 const config = { ...readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }), maxOutputTokens: 2048 };
 const apiKey = "synthetic-private-api-key";
@@ -168,9 +169,11 @@ test("metadata checks use only GET and native SDK errors or cancellation cannot 
     error => error instanceof ProviderFailure && error.kind === "rate_limited" && sanitized(error));
   const request: LlmRequest = { model: config.model, liveConnectConfig: {}, contents: [{ role: "user", parts: [{ text: "Synthetic question" }] }], toolsDict: {} };
   await assert.rejects(providers.agent.generate(request, signal()),
-    error => error instanceof ProviderFailure && error.kind === "rate_limited" && sanitized(error));
+    error => error instanceof PersonalProviderError && error.diagnostic.httpStatus === 429
+      && error.diagnostic.reason === "model_provider_rate_limit" && sanitized(error));
   await assert.rejects(providers.embedding.embed(query, signal()),
-    error => error instanceof EmbeddingFailure && error.code === "unavailable" && sanitized(error));
+    error => error instanceof PersonalProviderError && error.diagnostic.httpStatus === 429
+      && error.diagnostic.reason === "embedding_provider_rate_limit" && sanitized(error));
   assert.equal(await providers.check(signal()), false);
   assert.equal(calls.length, 7);
   const aborted = new AbortController();
