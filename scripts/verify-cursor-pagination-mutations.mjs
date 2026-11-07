@@ -3,8 +3,8 @@ import { randomUUID } from 'node:crypto';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
 import { createFirestoreFamilyDocumentStore } from '../server/firestore-family-documents.ts';
-import { createFirestoreSharedInputStore } from '../server/firestore-shared-inputs.ts';
-import { createFirestoreConcernStore } from '../server/firestore-concerns.ts';
+import { createFirestoreSharedInputStore, encodeSharedInputCursor } from '../server/firestore-shared-inputs.ts';
+import { createFirestoreConcernStore, encodeConcernCursor } from '../server/firestore-concerns.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { CONCERN_EVENT_LIMIT } from '../src/shared/concerns.ts';
@@ -97,8 +97,8 @@ console.log('[2/5] Invariant Check 2: Verifying cursor pagination across 55 docu
   console.log('✓ Invariant Check 2 passed: 3-page cursor pagination traversed 55 items with zero drop or duplication.');
 }
 
-// 3. Invariant Check 3: Shared Inputs scale past 50 live items
-console.log('[3/5] Invariant Check 3: Verifying shared inputs scale past legacy 50 wall...');
+// 3. Invariant Check 3: Shared Inputs scale past 50 live items with cursor pagination
+console.log('[3/5] Invariant Check 3: Verifying shared inputs scale past legacy 50 wall with cursor pagination...');
 {
   const { sources, bootstrap } = setupTestEnvironment();
   const { child, userId } = await bootstrap('sources-scale-owner');
@@ -115,13 +115,43 @@ console.log('[3/5] Invariant Check 3: Verifying shared inputs scale past legacy 
     assert.ok(input);
   }
 
-  const list = await sources.list(userId, child.id);
-  assert.equal(list.inputs.length, 55, 'Shared inputs list must return all 55 items without 50 truncation');
-  console.log('✓ Invariant Check 3 passed: 55 shared inputs created and returned without inputs_capacity limit.');
+  // Bounded default page (max 50)
+  const defaultList = await sources.list(userId, child.id, {});
+  assert.equal(defaultList.inputs.length, 50, 'Default page must be bounded to 50 items');
+  assert.equal(defaultList.hasMore, true);
+  assert.ok(defaultList.nextCursor);
+
+  // 3-page cursor pagination (20 + 20 + 15 = 55)
+  const sp1 = await sources.list(userId, child.id, { limit: 20 });
+  assert.equal(sp1.inputs.length, 20);
+  assert.equal(sp1.hasMore, true);
+  assert.ok(sp1.nextCursor);
+
+  const sp2 = await sources.list(userId, child.id, { limit: 20, cursor: sp1.nextCursor });
+  assert.equal(sp2.inputs.length, 20);
+  assert.equal(sp2.hasMore, true);
+  assert.ok(sp2.nextCursor);
+
+  const sp3 = await sources.list(userId, child.id, { limit: 20, cursor: sp2.nextCursor });
+  assert.equal(sp3.inputs.length, 15);
+  assert.equal(sp3.hasMore, false);
+  assert.equal(sp3.nextCursor, null);
+
+  const allSourceIds = [...sp1.inputs, ...sp2.inputs, ...sp3.inputs].map(s => s.id);
+  assert.equal(new Set(allSourceIds).size, 55, 'Cursor pagination must cover 55 unique inputs');
+
+  // Cross-child cursor boundary validation
+  const crossChild = encodeSharedInputCursor({
+    v: 1, kind: 'shared_inputs', userId, childId: randomUUID(),
+    after: { at: new Date().toISOString(), id: randomUUID() },
+  });
+  await assert.rejects(sources.list(userId, child.id, { cursor: crossChild }), (err) => err.code === 'invalid_input');
+
+  console.log('✓ Invariant Check 3 passed: 55 shared inputs created, cursor paginated, and boundary-checked.');
 }
 
-// 4. Invariant Check 4: Concerns scale past 200 items across child
-console.log('[4/5] Invariant Check 4: Verifying child concerns scale past legacy 200 aggregate wall...');
+// 4. Invariant Check 4: Concerns scale past 200 items across child with cursor pagination
+console.log('[4/5] Invariant Check 4: Verifying child concerns scale past legacy 200 aggregate wall with cursor pagination...');
 {
   const { concerns, bootstrap } = setupTestEnvironment();
   const { child, userId } = await bootstrap('concern-scale-owner');
@@ -138,17 +168,46 @@ console.log('[4/5] Invariant Check 4: Verifying child concerns scale past legacy
     assert.ok(item);
   }
 
-  const list = await concerns.list(userId, child.id);
-  assert.equal(list.items.length, 205, 'Concerns list must return all 205 concerns without concern_history_requires_review error');
-  console.log('✓ Invariant Check 4 passed: 205 child concerns created and listed without 200 aggregate wall.');
+  // 5-page cursor pagination across 205 concerns (50 + 50 + 50 + 50 + 5 = 205)
+  const cp1 = await concerns.list(userId, child.id, { limit: 50 });
+  assert.equal(cp1.items.length, 50);
+  assert.equal(cp1.hasMore, true);
+  assert.ok(cp1.nextCursor);
+
+  const cp2 = await concerns.list(userId, child.id, { limit: 50, cursor: cp1.nextCursor });
+  assert.equal(cp2.items.length, 50);
+  assert.equal(cp2.hasMore, true);
+
+  const cp3 = await concerns.list(userId, child.id, { limit: 50, cursor: cp2.nextCursor });
+  assert.equal(cp3.items.length, 50);
+  assert.equal(cp3.hasMore, true);
+
+  const cp4 = await concerns.list(userId, child.id, { limit: 50, cursor: cp3.nextCursor });
+  assert.equal(cp4.items.length, 50);
+  assert.equal(cp4.hasMore, true);
+
+  const cp5 = await concerns.list(userId, child.id, { limit: 50, cursor: cp4.nextCursor });
+  assert.equal(cp5.items.length, 5);
+  assert.equal(cp5.hasMore, false);
+  assert.equal(cp5.nextCursor, null);
+
+  // Cross-child cursor boundary validation
+  const crossChild = encodeConcernCursor({
+    v: 1, kind: 'concerns', userId, childId: randomUUID(),
+    after: { at: new Date().toISOString(), id: randomUUID() },
+  });
+  await assert.rejects(concerns.list(userId, child.id, { cursor: crossChild }), (err) => err.code === 'invalid_input');
+
+  console.log('✓ Invariant Check 4 passed: 205 child concerns created and cursor-paginated without aggregate wall.');
 }
 
-// 5. Invariant Check 5: Domain Invariant Guards (Duplicate Growth Reports & Timeline Event Bounds)
-console.log('[5/5] Invariant Check 5: Verifying safety invariants remain intact...');
+// 5. Invariant Check 5: Domain Invariant Guards (Duplicate Growth Reports & Timeline Event 200 Rejection)
+console.log('[5/5] Invariant Check 5: Verifying safety invariants remain intact under mutation...');
 {
-  const { documents, bootstrap } = setupTestEnvironment();
+  const { documents, concerns, bootstrap } = setupTestEnvironment();
   const { child, userId } = await bootstrap('safety-guard-owner');
 
+  // Guard A: Duplicate growth report rejection
   const reportReq = {
     kind: 'growth_report',
     purpose: 'handoff',
@@ -165,8 +224,46 @@ console.log('[5/5] Invariant Check 5: Verifying safety invariants remain intact.
     'Duplicate growth report in same period must still be rejected'
   );
 
-  assert.equal(CONCERN_EVENT_LIMIT, 200, 'Individual concern timeline limit must stay at 200');
-  console.log('✓ Invariant Check 5 passed: growth report duplication check and timeline limits verified.');
+  // Guard B: Concern single timeline 200-event append rejection (active regression check)
+  const concern = await concerns.create(userId, child.id, {
+    title: '單一關注事件上限保護',
+    reason: '安全邊界測試',
+    followUpAt: null,
+    observedAt: new Date().toISOString(),
+    observation: '初始觀察',
+    links: { recordId: null, taskId: null, attentionId: null },
+  }, randomUUID());
+
+  const { authorityVersion } = await concerns.list(userId, child.id);
+  let currentVer = 1;
+  for (let i = 0; i < 199; i++) {
+    const updated = await concerns.change(userId, child.id, concern.id, {
+      action: 'append',
+      expectedVersion: currentVer,
+      authorityVersion,
+      text: `觀察追加 ${i + 1}`,
+      observedAt: new Date().toISOString(),
+      links: { recordId: null, taskId: null, attentionId: null },
+    }, randomUUID());
+    currentVer = updated.version;
+  }
+  assert.equal(currentVer, CONCERN_EVENT_LIMIT, `Version must reach ${CONCERN_EVENT_LIMIT}`);
+
+  // 201st append MUST reject with concern_history_requires_review (400)
+  await assert.rejects(
+    concerns.change(userId, child.id, concern.id, {
+      action: 'append',
+      expectedVersion: currentVer,
+      authorityVersion,
+      text: '第 201 次追加必須被拒絕',
+      observedAt: new Date().toISOString(),
+      links: { recordId: null, taskId: null, attentionId: null },
+    }, randomUUID()),
+    (err) => err.code === 'concern_history_requires_review' && err.status === 400,
+    '201st append must reject with concern_history_requires_review'
+  );
+
+  console.log('✓ Invariant Check 5 passed: duplicate growth report and 200-event timeline limit strictly enforced.');
 }
 
 console.log('================================================================');

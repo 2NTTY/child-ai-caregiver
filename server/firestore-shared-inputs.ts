@@ -54,7 +54,32 @@ const emptyExtraction = (): Row['extraction'] => ({ state: 'not_requested', runI
 const confirmationSchema = z.object({ expectedVersion: version, confirmShared: z.literal(true), kind: z.enum(['reference', 'family_record']),
   confirmChildFact: z.boolean(), values: careValuesSchema }).strict();
 const publicSources = SOURCE_WATCHES.filter(source => source.kind === 'page' && source.audience === 'public_noncommercial');
+export const sharedInputCursorSchema = z.object({
+  v: z.literal(1),
+  kind: z.literal('shared_inputs'),
+  userId: z.string().min(1).max(256),
+  childId: uuid,
+  after: z.object({ at: z.string().min(1), id: uuid }).strict(),
+}).strict();
+export type SharedInputListCursor = z.infer<typeof sharedInputCursorSchema>;
+export function encodeSharedInputCursor(value: SharedInputListCursor) {
+  return Buffer.from(JSON.stringify(value)).toString('base64url');
+}
+export function decodeSharedInputCursor(raw: string, userId: string, childId: string): SharedInputListCursor {
+  try {
+    if (!/^[A-Za-z0-9_-]{1,2048}$/.test(raw)) throw new Error();
+    const bytes = Buffer.from(raw, 'base64url');
+    if (bytes.toString('base64url') !== raw) throw new Error();
+    const value = sharedInputCursorSchema.parse(JSON.parse(bytes.toString('utf8')));
+    if (value.userId !== userId || value.childId !== childId) throw new Error();
+    return value;
+  } catch {
+    domainReject('invalid_input', 400);
+  }
+}
+
 export interface FirestoreSharedInputStore extends SharedInputStore {
+  list(owner: string, child: string, options?: { limit?: number; cursor?: string | null }): Promise<Awaited<ReturnType<SharedInputStore['list']>> & { hasMore?: boolean; nextCursor?: string | null }>;
   claim(...args:Parameters<SharedInputStore['claim']>):Promise<Awaited<ReturnType<SharedInputStore['claim']>> & {claimedRun?: import('./product-agent-store.ts').AgentRunClaim}>;
   mutation: FirestoreOnlineMutation;
   read(binding: Binding, id: string): Promise<SharedInput>;
@@ -260,11 +285,28 @@ export function createFirestoreSharedInputStore(options: FirestoreDomainOptions)
   const store: FirestoreSharedInputStore = {
     prepareImported, readImportState,
     prepareCreate, prepareManage, read: async (b, id) => view(await load(b, id)),
-    async list(owner, child) {
+    async list(owner, child, options) {
       return authority.runTransaction(owner, child, async b => {
-        const rows = await b.transaction.get(query(b, 'shared_inputs').where('live', '==', true).orderBy('createdAt', 'desc').orderBy('entityId', 'asc'));
-        const inputs: SharedInput[] = []; for (const snap of rows.docs) inputs.push(view(await load(b, domainParse(uuid, snap.get('entityId'), 'input_binding', 500))));
-        return { inputs, sources: publicSources.map(({ id, url, publisher }) => ({ id, url, publisher })), canCreate: true };
+        const cursor = options?.cursor ? decodeSharedInputCursor(options.cursor, owner, child) : null;
+        let q = query(b, 'shared_inputs').where('live', '==', true).orderBy('createdAt', 'desc').orderBy('entityId', 'asc');
+        if (cursor) q = q.startAfter(cursor.after.at, cursor.after.id);
+        const pageSize = Math.max(1, Math.min(options?.limit ?? 50, 100));
+        const rows = await b.transaction.get(q.limit(pageSize + 1));
+        const hasMore = rows.docs.length > pageSize;
+        const pageDocs = rows.docs.slice(0, pageSize);
+        const inputs: SharedInput[] = [];
+        for (const snap of pageDocs) inputs.push(view(await load(b, domainParse(uuid, snap.get('entityId'), 'input_binding', 500))));
+        const last = pageDocs.at(-1);
+        const nextCursor = hasMore && last ? encodeSharedInputCursor({
+          v: 1, kind: 'shared_inputs', userId: owner, childId: child,
+          after: { at: last.get('createdAt'), id: last.get('entityId') },
+        }) : null;
+        return {
+          inputs,
+          sources: publicSources.map(({ id, url, publisher }) => ({ id, url, publisher })),
+          canCreate: true,
+          ...(options !== undefined ? { hasMore, nextCursor } : {}),
+        };
       });
     },
     get: (owner, child, id) => authority.runTransaction(owner, child, async b => view(await load(b, id))),

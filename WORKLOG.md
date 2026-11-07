@@ -4782,3 +4782,60 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   - `tsc --project tsconfig.server.json --noEmit`：0 診斷 (exit 0)
 - Scope & Boundaries：
   - 聚焦 REQ-005 §8 累積資料規模化與游標分頁，嚴格 HOLD merge，僅由 Owner 2NTTY 統一審核合併。
+
+
+<a id="log-20261108-req005-cursor-pagination-calibration"></a>
+## LOG-20261108-001
+
+- Recorded At：2026-11-08T00:35:00+08:00
+- Work Date：2026-11-08
+- Step / Package：REQ-005 §8 (PR #513)
+- Executor：AI Assistant
+- Goal：Address audit findings in `PR10_11_AUDIT.md` for PR #513: implement bounded keyset cursor pagination for shared inputs and concerns, indexed growth report deduplication, active 200-event append rejection test and counterexample verification, all-lowercase test names, and complete metadata.
+- AI Assistance：Implemented cursor pagination, boundary validation, negative counterexample regression test, and metadata calibration.
+- Human Verification：Pending Owner (2NTTY) review. HOLD merge.
+
+### Actual Work
+- `server/firestore-family-documents.ts`：在 root document envelope 補齊 `kind: prepared.row.request.kind`；在 `activeCount()` 中採用 `where('status', '==', 'active').where('kind', '==', 'growth_report')` 進行有界索引去重查詢，取代全量未索引掃描。
+- `server/firestore-shared-inputs.ts`：輸出 `sharedInputCursorSchema`、`encodeSharedInputCursor` 與 `decodeSharedInputCursor`；為 `FirestoreSharedInputStore['list']` 實作有界游標分頁（預設 50，上限 100），支援 `limit` 與 `cursor` 參數，提供 `hasMore` 與 `nextCursor`，且在未帶參數時保持既有 `{ inputs, sources, canCreate }` 契約以相容既有客戶端。
+- `server/firestore-concerns.ts`：輸出 `concernCursorSchema`、`encodeConcernCursor` 與 `decodeConcernCursor`；為 `page()` 與 `createFirestoreConcernStore['list']` 實作有界游標分頁（預設 50，上限 100），支援 `startAfter` 續頁，避免全量 concerns 載入與 hydrate 記憶體暴增。
+- `tests/firestore-cursor-pagination.test.ts`：依照全小寫無 REQ 前綴命名規則更新測試標題，並強化：
+  1. `family documents scale past legacy 50 cap with cursor pagination and duplicate guards`（20/20/15 分頁、去重防線、篡改游標拒絕）。
+  2. `shared inputs scale past legacy 50 wall with cursor pagination and boundary checks`（20/20/15 分頁、預設 50 邊界、跨孩子/篡改游標拒絕 400）。
+  3. `concerns scale past legacy 200 aggregate wall with cursor pagination and timeline limit enforcement`（50/50/50/50/5 分頁、跨孩子游標拒絕、第 201 筆事件追加真實拒絕 `concern_history_requires_review` 400，以及 200 筆時允許 archive 安全結束）。
+- `scripts/verify-cursor-pagination-mutations.mjs`：更新 5 項不變性檢查，全面涵蓋 shared inputs 游標分頁、concerns 游標分頁、跨孩子游標拒絕，以及單一關注真實追加第 201 筆事件拒絕。
+- 反例變異實證：將 `prepareChange` 中之 `full = value.eventCount >= CONCERN_EVENT_LIMIT` 變異為 `full = false`，測試立即呈現 RED（AssertionError: Missing expected rejection），還原後重新恢復 3/3 GREEN。
+
+### Changes
+- `server/firestore-family-documents.ts`
+- `server/firestore-shared-inputs.ts`
+- `server/firestore-concerns.ts`
+- `tests/firestore-cursor-pagination.test.ts`
+- `scripts/verify-cursor-pagination-mutations.mjs`
+- `artifacts/verification/REQ005_CURSOR_PAGINATION_20261107.json`
+- `WORKLOG.md`
+
+### Verification
+- Requirement / Acceptance：REQ-005 §8 累積資料規模化、游標分頁與時間線邊界防線
+- Method：
+  - `node --experimental-strip-types --test tests/firestore-cursor-pagination.test.ts` (3/3 PASS)
+  - `node scripts/verify-cursor-pagination-mutations.mjs` (5/5 PASS)
+  - `node --test tests/ci/summary-progress-contract.test.mjs` (6/6 PASS)
+  - `node --experimental-strip-types --test tests/firestore-family-documents.test.ts tests/firestore-shared-inputs.test.ts tests/firestore-cursor-pagination.test.ts tests/concern-capacity.test.ts` (19/19 PASS)
+  - `node --max-old-space-size=3072 node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit` (0 diagnostics, exit 0)
+  - `npx tsc --noEmit` (0 diagnostics, exit 0)
+- Environment / Revision：Node v24.22.1 / win32 / powershell / branch `codex/req005-cursor-pagination`
+- Result：全部通過 (ALL PASS, 0 skip / fail)
+- Evidence：`artifacts/verification/REQ005_CURSOR_PAGINATION_20261107.json`
+
+### Limitations / Blockers
+- 合成 in-memory fixture 驗證，未執行真實 Firestore 生產負載測試或 emulator 壓測。
+- 未執行真實 Gemini Live 模型連線調用。
+- 未執行實機瀏覽器與原生行動端畫面渲染。
+- 嚴格維持 HOLD merge，僅由專案負責人 2NTTY 裁決合併。
+
+### Plan Update
+- PR #513 補齊有界游標分頁契約與真實時間線防線拒絕測試，待推送到遠端分支並觸發 CI。
+
+### Next Action
+- 將變更 commit 並 push 至 `codex/req005-cursor-pagination`，更新 PR #513 描述，確認 exact-head CI SUCCESS，接續處理 PR #514。

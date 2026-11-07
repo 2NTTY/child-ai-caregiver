@@ -191,8 +191,11 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
   }
   async function activeCount(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, request?: Metadata['request'], except?: string) {
     if (request?.kind !== 'growth_report') return;
-    const rows = await binding.transaction.get(query('documents', scope).where('status', '==', 'active'));
-    for (const row of rows.docs) {
+    const kindRows = await binding.transaction.get(query('documents', scope).where('status', '==', 'active').where('kind', '==', 'growth_report'));
+    const rows = kindRows.docs.length > 0
+      ? kindRows.docs
+      : (await binding.transaction.get(query('documents', scope).where('status', '==', 'active').limit(50))).docs;
+    for (const row of rows) {
       const item = await find(binding, scope, domainParse(uuid, row.get('documentId'), 'invalid_document', 500));
       if (!item) domainReject('document_binding', 500);
       if (item.id !== except && item.request.kind === 'growth_report'
@@ -218,7 +221,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
       const preparedSnapshot = prepared.snapshot ? snapshots.prepare(scope, prepared.row.id, prepared.snapshot) : null;
       const change = await binding.prepareChange(opId, 'documents', false, childId);
       const envelope = { ...data.tags(scope), documentId: prepared.row.id, status: prepared.row.status, createdAt: prepared.row.createdAt,
-        autoRefresh: prepared.row.autoRefresh,
+        autoRefresh: prepared.row.autoRefresh, kind: prepared.row.request.kind,
         ...data.seal('family-document', prepared.row.id, scope, metadataSchema, prepared.row, prepared.row.version) };
       const changedViaShare = sharedWriteAttribution(binding, prepared.row.id, prepared.row.version);
       const id = operationId(userId, opId), receipt = { ownerUserId: userId, childId, storageEpoch: scope.storageEpoch,

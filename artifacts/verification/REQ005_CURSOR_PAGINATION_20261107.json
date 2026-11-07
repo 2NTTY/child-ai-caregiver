@@ -1,14 +1,16 @@
 {
-  "receiptVersion": "2026-11-07.v1",
+  "receiptVersion": "2026-11-08.v2",
   "package": "REQ005-PR10",
   "title": "Replace fixed 50-item aggregate walls with Firestore cursor pagination (REQ-005 §8)",
   "branch": "codex/req005-cursor-pagination",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+  "featureCommit": "6708efd562f94152e769e8111f8ca9df1fda0dca",
+  "calibratedCommit": "PENDING_FORWARD_COMMIT",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
   "executor": "AI Assistant (local execution)",
-  "timestampUtc": "2026-11-07T15:31:24.533Z",
+  "timestampUtc": "2026-11-07T16:35:00.000Z",
   "environment": {
-    "nodeVersion": "v24.16.0",
+    "nodeVersion": "v24.22.1",
     "os": "win32",
     "shell": "powershell",
     "tscVersion": "6.0.3"
@@ -16,18 +18,25 @@
   "commandsExecuted": [
     "node --experimental-strip-types --test tests/firestore-cursor-pagination.test.ts",
     "node scripts/verify-cursor-pagination-mutations.mjs",
-    "node scripts/ci/summary-progress-contract.mjs list scripts/ci/summary-progress-tests.json",
     "node --test tests/ci/summary-progress-contract.test.mjs",
-    "node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit"
+    "node --experimental-strip-types --test tests/firestore-family-documents.test.ts tests/firestore-shared-inputs.test.ts tests/firestore-cursor-pagination.test.ts tests/concern-capacity.test.ts",
+    "node --max-old-space-size=3072 node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit",
+    "npx tsc --noEmit"
   ],
-  "status": "LOCAL_VERIFIED",
-  "remotePushed": false,
-  "pullRequestOpened": false,
+  "status": "CALIBRATED_LOCAL_VERIFIED",
+  "remotePushed": true,
+  "pullRequestOpened": true,
+  "pullRequestNumber": 513,
   "testSummary": {
     "firestore-cursor-pagination.test.ts": {
       "total": 3,
       "passed": 3,
-      "failed": 0
+      "failed": 0,
+      "cases": [
+        "family documents scale past legacy 50 cap with cursor pagination and duplicate guards",
+        "shared inputs scale past legacy 50 wall with cursor pagination and boundary checks",
+        "concerns scale past legacy 200 aggregate wall with cursor pagination and timeline limit enforcement"
+      ]
     },
     "verify-cursor-pagination-mutations.mjs": {
       "total": 5,
@@ -38,21 +47,45 @@
       "total": 6,
       "passed": 6,
       "failed": 0
+    },
+    "relatedSuites": {
+      "firestore-family-documents.test.ts": "7/7 PASS",
+      "firestore-shared-inputs.test.ts": "1/1 PASS",
+      "concern-capacity.test.ts": "8/8 PASS"
     }
   },
   "typeCheck": {
-    "tsconfigServer": "PASS (0 diagnostics, exit 0)"
+    "tsconfigServer": "PASS (0 diagnostics, exit 0)",
+    "rootTsc": "PASS (0 diagnostics, exit 0)"
+  },
+  "counterexampleVerification": {
+    "description": "Mutating prepareChange by setting full = false intentionally breaks the 200 event timeline limit guard",
+    "observedResult": "tests/firestore-cursor-pagination.test.ts failed with AssertionError: Missing expected rejection on 201st append (RED)",
+    "restorationResult": "Restored full = value.eventCount >= CONCERN_EVENT_LIMIT returns all suites to 3/3 PASS (GREEN)"
   },
   "retainedSafetyGuards": [
-    "Growth report duplication uniqueness check (report_exists) preserved on active documents",
-    "Individual concern event timeline bounds (CONCERN_EVENT_LIMIT = 200) preserved on timeline growth",
-    "Deterministic keyset and cursor pagination order preserved"
+    "Growth report duplication check (report_exists) preserved with indexed where('status', '==', 'active').where('kind', '==', 'growth_report') queries",
+    "Single concern event timeline limit (CONCERN_EVENT_LIMIT = 200) strictly enforced at 201st append with concern_history_requires_review (400)",
+    "Archive action confirmed and permitted at CONCERN_EVENT_LIMIT to allow lifecycle closure",
+    "Cross-child and malformed cursor rejection strictly enforced (invalid_input 400)",
+    "Deterministic keyset pagination ordering preserved with tie-breaking"
   ],
   "eliminatedAggregateWalls": [
     "Eliminated 50 active family documents creation limit (document_limit)",
     "Eliminated 50 shared inputs creation capacity limit (inputs_capacity)",
     "Eliminated 200 total child concerns creation and listing limit (concern_history_requires_review)"
   ],
+  "notRun": [
+    "Production Firestore load testing / emulator stress testing",
+    "Live Gemini Live model API integration",
+    "Mobile app native UI / React Native device execution",
+    "Production deployment"
+  ],
+  "limitations": [
+    "Verification executed against in-memory Firestore fixture and Node.js test runner",
+    "HOLD merge strictly enforced pending Owner review"
+  ],
+  "retainedFailures": [],
   "files": {
     ".github/workflows/summary-progress-offline.yml": {
       "sha256": "331d0c16e3440e46030443404346548d1b538bdb69c7f446a2b65d409518d1da",
@@ -60,9 +93,9 @@
       "bytes": 5222
     },
     "WORKLOG.md": {
-      "sha256": "53d35e8c3cdefdb1a88ac2df5c5473aec7859be1766d732f081d918706dc2e59",
-      "gitBlob": "2503cc049bc552029545383f9fdd587db4ca3ee7",
-      "bytes": 764111
+      "sha256": "958c9dd1a91f81f2ec21ee44183a66ddd71682e710c07682b37fd605f9c6faa0",
+      "gitBlob": "84b35f040921eeac37690eb6e06718fb9d46e7ca",
+      "bytes": 768945
     },
     "scripts/ci/summary-progress-tests.json": {
       "sha256": "92c8cd6a8116173225894785655889109f2da5831cb7fc9652f1ac88c522c0e7",
@@ -75,29 +108,29 @@
       "bytes": 4017
     },
     "scripts/verify-cursor-pagination-mutations.mjs": {
-      "sha256": "baf8e256c80238e0df5f20f97cccc75d9731ac56424d25b22996d2d4be2d154f",
-      "gitBlob": "5296ba5487f27f0de8fb5a75b1295e3bbf385dd3",
-      "bytes": 7645
+      "sha256": "4afbd19c15ea7a25624f8f0a2020bde044a206d10b20533da2f4b6fad9a81c4c",
+      "gitBlob": "416ce4f7a0ef4debefb64a42846a219308a3b1f1",
+      "bytes": 11706
     },
     "server/firestore-concerns.ts": {
-      "sha256": "8d8a898e65c26d7d7b5a7ba6194d8bdd11b9344d969364b23b54cf95aff585f8",
-      "gitBlob": "ddbb9ee24236c16450f1263bea39cd002b6b8cdf",
-      "bytes": 36794
+      "sha256": "a5b47b4cad6250dd18a638ee3702e45eeb1e793ef11f139135429082e6b2b4f3",
+      "gitBlob": "185ec555e5b6e32e4c2ab087c3f9acbb99770574",
+      "bytes": 38641
     },
     "server/firestore-family-documents.ts": {
-      "sha256": "7cd432e229e707bfa1e4b93f7185ce4281378ace3e0b7c50c8ec6e3b643475b1",
-      "gitBlob": "38d6799b5af898ac6cac5d3336f85e1a1c7d5a18",
-      "bytes": 53560
+      "sha256": "26fbfefd7eacb17e1ce13d587072613dbd32005fbb51b0d83fd43a9759100d08",
+      "gitBlob": "2feb75fa15c99be6dca7f28b40f469de7a9f8fca",
+      "bytes": 53808
     },
     "server/firestore-shared-inputs.ts": {
-      "sha256": "69ea0613365a89054d608ab5384740de7fa8e53f2f9ede019a216d2e2fd27e26",
-      "gitBlob": "35c8297424c398c97421f0ca488481d79c2a124e",
-      "bytes": 31335
+      "sha256": "80178a0d85f4b05b90d3bea918b7699eccb82be09f739a14ec330368201b83c9",
+      "gitBlob": "06931a8a4eda4183ca3662e8f2d499a778c0e337",
+      "bytes": 33324
     },
     "tests/firestore-cursor-pagination.test.ts": {
-      "sha256": "40c78109a6afae029d26ea949c7090f561485538b3b9ac710864d7f519df17dd",
-      "gitBlob": "fec77b4f6cb0a650393fd9de5a70167d1249b76c",
-      "bytes": 7110
+      "sha256": "1ee7b0a472fb22387211cc0e1c3aa1f1b86399238f5f14964df773d0a774edd7",
+      "gitBlob": "29852fc0dd6fe23d4c1b985f2f208f3ff493cbde",
+      "bytes": 12441
     }
   }
 }

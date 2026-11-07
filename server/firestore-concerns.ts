@@ -43,6 +43,29 @@ export function sharedConcernEvent<T extends ConcernEvent>(value: T, modules: re
   return event;
 }
 export const concernTransferSchema = firestoreConcernSchema.extend({ periodSource: concernPeriodOriginSchema.optional() });
+export const concernCursorSchema = z.object({
+  v: z.literal(1),
+  kind: z.literal('concerns'),
+  userId: z.string().min(1).max(256),
+  childId: uuid,
+  after: z.object({ at: z.string().min(1), id: uuid }).strict(),
+}).strict();
+export type ConcernListCursor = z.infer<typeof concernCursorSchema>;
+export function encodeConcernCursor(value: ConcernListCursor) {
+  return Buffer.from(JSON.stringify(value)).toString('base64url');
+}
+export function decodeConcernCursor(raw: string, userId: string, childId: string): ConcernListCursor {
+  try {
+    if (!/^[A-Za-z0-9_-]{1,2048}$/.test(raw)) throw new Error();
+    const bytes = Buffer.from(raw, 'base64url');
+    if (bytes.toString('base64url') !== raw) throw new Error();
+    const value = concernCursorSchema.parse(JSON.parse(bytes.toString('utf8')));
+    if (value.userId !== userId || value.childId !== childId) throw new Error();
+    return value;
+  } catch {
+    domainReject('invalid_input', 400);
+  }
+}
 type EventRow = z.infer<typeof firestoreDocumentConcernEventSchema>;
 function publicEvent({ concernId, childId, sequence, timelineId, periodConcernId, importedFrom, ...event }: EventRow): ConcernEvent {
   return event;
@@ -423,18 +446,33 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
       const prepared = await save(b, value, added, current.events, randomUUID()); prepared.commit(); return { state };
     });
   }
-  async function page(b: Binding) {
-    const rows = await b.transaction.get(query(b, 'concerns').orderBy('createdAt').orderBy('concernId'));
+  async function page(b: Binding, options?: { limit?: number; cursor?: string | null }) {
+    const cursor = options?.cursor ? decodeConcernCursor(options.cursor, b.actorUserId, b.scope.childId) : null;
+    let q = query(b, 'concerns').orderBy('createdAt').orderBy('concernId');
+    if (cursor) q = q.startAfter(cursor.after.at, cursor.after.id);
+    const pageSize = Math.max(1, Math.min(options?.limit ?? 50, 100));
+    const rows = await b.transaction.get(q.limit(pageSize + 1));
+    const hasMore = rows.docs.length > pageSize;
+    const pageDocs = rows.docs.slice(0, pageSize);
     const items: Concern[] = [];
-    for (const row of rows.docs) { const current = await head(b, row.get('concernId')); if (current) items.push(sharedView(b, await hydrate(b, current))); }
-    return { authorityVersion: authorityVersion(b), items, canManage: !b.sharedAccess };
+    for (const row of pageDocs) {
+      const current = await head(b, row.get('concernId'));
+      if (current) items.push(sharedView(b, await hydrate(b, current)));
+    }
+    const last = pageDocs.at(-1);
+    const nextCursor = hasMore && last ? encodeConcernCursor({
+      v: 1, kind: 'concerns', userId: b.actorUserId, childId: b.scope.childId,
+      after: { at: last.get('createdAt'), id: last.get('concernId') },
+    }) : null;
+    return { authorityVersion: authorityVersion(b), items, canManage: !b.sharedAccess, hasMore, nextCursor };
   }
   return { read, head, extension, compareOriginal, prepareOriginal, prepareCreate, prepareChange, prepareImportedSnapshot, beginBackground, finishBackground,
     forSharedSpace(spaceId: string) {
       domainParse(uuid, spaceId);
       const unavailable = async (): Promise<never> => domainReject('shared_domain_read_only', 409);
       return {
-        list:(u: string, c: string) => sharing.withResource(u, { spaceId, childId:c, module:'concerns', mode:'read' }, access => page(access.binding)),
+        list:(u: string, c: string, options?: { limit?: number; cursor?: string | null }) =>
+          sharing.withResource(u, { spaceId, childId:c, module:'concerns', mode:'read' }, access => page(access.binding, options)),
         get:(u: string, c: string, id: string) => sharing.withResource(u, { spaceId, childId:c, module:'concerns', mode:'read' }, async access => {
           const value = await read(access.binding, id); return value ? sharedView(access.binding, value) : null;
         }),
@@ -444,7 +482,8 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
     authorizeBackground: async (b: Binding, job: FirestoreBackgroundWork) => {
       const value = await currentFollowup(b, job); return !!value && value.followUp?.state === 'queued' && value.eventCount < CONCERN_EVENT_LIMIT;
     },
-    list: (userId: string, childId: string) => authority.runTransaction(userId, childId, page),
+    list: (userId: string, childId: string, options?: { limit?: number; cursor?: string | null }) =>
+      authority.runTransaction(userId, childId, b => page(b, options)),
     get: (userId: string, childId: string, id: string) => authority.runTransaction(userId, childId, b => read(b, id)),
     create: (userId: string, childId: string, values: ConcernValues, opId: string) =>
       operation(userId, childId, opId, { action: 'create', values }, b => prepareCreate(b, values, opId)),
