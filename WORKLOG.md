@@ -4838,3 +4838,16 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Scope & Boundaries：
   - 維持 NOT READY / HOLD merge 狀態，等待 Owner 統籌合併。純本地分支，零 git push，零 GitHub PR。
 
+### 2026-11-07 歷史預填時間客觀校準說明 (Audit Trail Timestamp Calibration)
+
+- Recorded At：2026-11-07T10:05:30.828Z；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `192398e5dfa20f8b8276ddc7ce813a66e66c196a`，保留歷史，不使用 amend。
+- 歷史時間客觀聲明：
+  本工作日誌此前各段落中出現之 Recorded At 欄位（例如 08:50 UTC、09:00 UTC、09:48 UTC 等），係編輯起草時依規劃時程預填之模板標籤時間，而非底層 Git Commit 物件實際寫入時間戳（例如 Commit `192398e5` 實際寫入時間為 17:39:04 HKT，即 09:39:04 UTC）。
+  依據本專案嚴格之 append-only 審計規範，歷史既有段落完整保留不作 amend 或刪改；特在此追加真實即時時間戳記（2026-11-07T10:05:30.828Z）以澄清時序，確認此前所有時間標籤均屬規劃模板時間。
+- PR 8 個人端到端期限邊界確認：
+  確認反例：當管理員政策為 `maxRunSeconds = 60s`，而個人偏好設定為 `maxRunSeconds = 180s` 時，由於目前 admission transaction（`readInteractiveRunSeconds(tx)`）仍讀取政策快照，故端到端有效運行期限仍被約束為較早之 60s。此項為已披露之未完成範圍，端到端個人期限解耦明確留待後續 admission 遷移 PR。
+- Scope & Boundaries：
+  - 本包判定維持 **NOT READY to open PR / HOLD merge**，等待 Owner 決定範圍、工程值及交付次序。
+  - 純本地分支，零 git push，零 GitHub PR。
+
