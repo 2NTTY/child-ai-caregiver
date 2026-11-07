@@ -1,14 +1,14 @@
 {
-  "receiptVersion": "2026-11-08.v3",
+  "receiptVersion": "2026-11-08.v4",
   "package": "REQ005-PR10",
   "title": "Replace fixed 50-item aggregate walls with Firestore cursor pagination (REQ-005 §8)",
   "branch": "codex/req005-cursor-pagination",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
-  "featureCommit": "aa683011451100f27435c649cc84abed7c6ede25",
-  "calibratedCommit": "aa683011451100f27435c649cc84abed7c6ede25",
+  "featureCommit": "fad8462f98f5286e0025d54ebd30513efa8b3e4a",
+  "calibratedCommit": "fad8462f98f5286e0025d54ebd30513efa8b3e4a",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
   "executor": "AI Assistant (local execution)",
-  "timestampUtc": "2026-11-07T17:23:00.000Z",
+  "timestampUtc": "2026-11-07T20:08:00.000Z",
   "environment": {
     "nodeVersion": "v24.22.1",
     "os": "win32",
@@ -73,6 +73,14 @@
     "endToEndPaginationVerification": {
       "description": "HTTP API and Agent tools (list_private_sources and read_concerns) navigate beyond item 50 to items 51-55 and locate concern #150 without truncation or 404",
       "observedResult": "Default list discloses nextCursor when >50 items; client inputs() paginates across cursor pages; read_concerns directly fetches concern #150 by ID and continues searching across pages when page 1 has 0 matches (GREEN)"
+    },
+    "concernsClientSchemaCounterexample": {
+      "description": "Fetching concerns via ConcernsApi.getPage when store returns hasMore/nextCursor",
+      "observedResult": "Old strict pageSchema rejected unexpected hasMore/nextCursor with ConcernApiError (schema); updated pageSchema allows optional fields, passing empty and multi-page HTTP checks (GREEN)"
+    },
+    "agentConcernTraversalCounterexample": {
+      "description": "Agent read_concerns requested 50 from store but sliced to 20, jumping nextCursor past items 21-50 or returning null cursor on 40 items",
+      "observedResult": "Updated read_concerns aligns store limit with 20 items, ensuring 40, 21, and 55 items traverse without skip or duplicate (GREEN)"
     }
   },
   "retainedSafetyGuards": [
@@ -95,6 +103,7 @@
   ],
   "limitations": [
     "Verification executed against in-memory Firestore fixture and Node.js test runner",
+    "Growth report duplicate detection uses bounded queries of limit 100 within a full-transaction scan; not tested for transaction timeout under massive Firestore datasets",
     "HOLD merge strictly enforced pending Owner review"
   ],
   "retainedFailures": [],
@@ -105,9 +114,9 @@
       "bytes": 5222
     },
     "WORKLOG.md": {
-      "sha256": "a591fdceaaf016afc73b915ad8ca6364af3de1f97a8aee8b227b230ac4f1d655",
-      "gitBlob": "583834093cc2e56d9672736c291d40d894308c69",
-      "bytes": 776765
+      "sha256": "37c58e5bc6c9699812143016cd5abe2f3e51be161561247dfb9ef8f77f7a22ef",
+      "gitBlob": "32f6385fb34dc89e3774366912f636640785599a",
+      "bytes": 782060
     },
     "scripts/ci/summary-progress-tests.json": {
       "sha256": "92c8cd6a8116173225894785655889109f2da5831cb7fc9652f1ac88c522c0e7",
@@ -125,9 +134,9 @@
       "bytes": 11706
     },
     "server/agent-concern-tools.ts": {
-      "sha256": "d194c560bd59dbfa6897861c47379744fcb923f8daeecaa2acdbd238e894ea7f",
-      "gitBlob": "3579aca9b3862e7ebbe9489663de6054952c9964",
-      "bytes": 4565
+      "sha256": "6439957a3dc2a05949620c9e2f90b50ac9e645167344080b3d74af01ec464e19",
+      "gitBlob": "b6cad7f6ce3e2d671cf8aa80ac72f6c52155eb72",
+      "bytes": 4527
     },
     "server/agent-source-tools.ts": {
       "sha256": "fe9a04a46c6f30e98ff7ca1c15be4f436054a98772e1b5152ece1a1e5763ce43",
@@ -174,6 +183,11 @@
       "gitBlob": "e993cec063f8e610ffe60d098a359142db9f712a",
       "bytes": 20168
     },
+    "src/client/concerns-api.ts": {
+      "sha256": "b77131bdf14296d69962d11a27bdf81ac18c5bd4dc6d6558169cfa1170049f02",
+      "gitBlob": "f4a7ffda3e6b7d2b9fb63483f33edac787b046d9",
+      "bytes": 11642
+    },
     "src/client/shared-input-api.ts": {
       "sha256": "a6433a85fc7a07b7062514161781c5f5b035d8cfc5b183ff4562256d5547c67c",
       "gitBlob": "fedd034e4a41add8f30fe802f005294becfccffd",
@@ -185,9 +199,9 @@
       "bytes": 2415
     },
     "tests/firestore-cursor-pagination.test.ts": {
-      "sha256": "c5f2517875f088e05c9b7de86b8f0182dbac6e4b3095762deacaf7d73bef5d76",
-      "gitBlob": "4561b941f145df7b083d9d21c1344193b8494457",
-      "bytes": 20235
+      "sha256": "be278871c4af1031fcf940b61dc90a2cdfc276e86d24b6544f040404a9036e2c",
+      "gitBlob": "da5ee3d61c8d32078f9cb5be36def3fa441a89fe",
+      "bytes": 27089
     }
   }
 }

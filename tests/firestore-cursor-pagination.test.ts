@@ -12,6 +12,7 @@ import type { DocumentRequest } from '../src/shared/family-documents.ts';
 import { CONCERN_EVENT_LIMIT } from '../src/shared/concerns.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { createSharedInputApi } from '../src/client/shared-input-api.ts';
+import { createConcernsApi } from '../src/client/concerns-api.ts';
 import { handleSharedInputRequest } from '../server/shared-input-api.ts';
 import { createAgentSourceTools } from '../server/agent-source-tools.ts';
 import { handleConcernRequest } from '../server/concern-api.ts';
@@ -278,7 +279,7 @@ test('shared inputs scale past legacy 50 wall with cursor pagination and boundar
 });
 
 test('concerns scale past legacy 200 aggregate wall with cursor pagination and timeline limit enforcement', async () => {
-  const { concerns, init, createTestChild } = setupFixture();
+  const { concerns, init, createTestChild, authority } = setupFixture();
   await init();
   const child = await createTestChild();
   const owner = 'pagination-owner';
@@ -454,4 +455,143 @@ test('concerns scale past legacy 200 aggregate wall with cursor pagination and t
     cursor = nextData.nextCursor;
   }
   assert.equal(found, true, 'Concern #150 must be found by continuing search via nextCursor');
+
+  // 7. End-to-end Concerns Client API pagination (src/client/concerns-api.ts via handleConcernRequest)
+  const concernFetcher: typeof fetch = async (url, init) => {
+    const req = new Request(url, init);
+    return handleConcernRequest(req, owner, concerns, async () => true);
+  };
+  const concernsClient = createConcernsApi('http://localhost', concernFetcher);
+
+  // 7a. Empty concerns list does not throw ConcernApiError (schema regression guard)
+  const emptyChild = (await authority.createChild({ userId: owner, operationId: randomUUID(), displayName: 'Empty Concerns Child' })).child;
+  const emptyPage = await concernsClient.getPage(emptyChild.id, signal, owner);
+  assert.equal(emptyPage.items.length, 0);
+  assert.equal(emptyPage.hasMore, false);
+  assert.equal(emptyPage.nextCursor, null);
+
+  // 7b. Client getPage pagination with limit and cursor across 205 items
+  const cClientPage1 = await concernsClient.getPage(child.id, signal, owner, { limit: 50 });
+  assert.equal(cClientPage1.items.length, 50);
+  assert.equal(cClientPage1.hasMore, true);
+  assert.ok(cClientPage1.nextCursor);
+
+  const cClientPage2 = await concernsClient.getPage(child.id, signal, owner, { limit: 50, cursor: cClientPage1.nextCursor });
+  assert.equal(cClientPage2.items.length, 50);
+  assert.equal(cClientPage2.hasMore, true);
+  assert.ok(cClientPage2.nextCursor);
+
+  // 8. Agent read_concerns boundary traversal: 21, 40, and 55 items (P1-B regression guards)
+  // 8a. 40 items traversal: Call 1 yields 20 items and non-null nextCursor; Call 2 yields remaining 20 and null cursor
+  const child40 = (await authority.createChild({ userId: owner, operationId: randomUUID(), displayName: 'Child 40 Concerns' })).child;
+  const child40Ids: string[] = [];
+  for (let i = 1; i <= 40; i++) {
+    const created = await concerns.create(owner, child40.id, {
+      title: `關注 40-${i}`,
+      reason: `第 ${i} 項記錄`,
+      observation: `觀察 ${i}`,
+      observedAt: '2026-11-07T00:00:00.000Z',
+      links: { recordId: null, taskId: null, attentionId: null },
+      followUpAt: null,
+    }, randomUUID());
+    child40Ids.push(created.id);
+  }
+  const ctx40 = {
+    scope: { userId: owner, workspaceId: child40.id, childId: child40.id, authorizationVersion: '1.0', dataVersion: '1:0' },
+    runId: randomUUID(),
+    budget: {} as any,
+  };
+  const tools40 = createAgentConcernTools(concerns, {} as any, ctx40, async () => true);
+  const readTool40 = tools40.find(t => t.name === 'read_concerns')!;
+
+  const read40Page1 = await readTool40.execute({}, { callId: 'r40-1', signal } as any);
+  assert.equal(read40Page1.status, 'succeeded');
+  const r40Data1 = (read40Page1.data as any).result;
+  assert.equal(r40Data1.items.length, 20);
+  assert.equal(r40Data1.hasMore, true, '40-item list on page 1 must report hasMore: true');
+  assert.ok(r40Data1.nextCursor, '40-item list on page 1 must return non-null nextCursor to reach items 21-40');
+
+  const read40Page2 = await readTool40.execute({ cursor: r40Data1.nextCursor }, { callId: 'r40-2', signal } as any);
+  assert.equal(read40Page2.status, 'succeeded');
+  const r40Data2 = (read40Page2.data as any).result;
+  assert.equal(r40Data2.items.length, 20);
+  assert.equal(r40Data2.hasMore, false, '40-item list on page 2 must report hasMore: false');
+  assert.equal(r40Data2.nextCursor, null);
+
+  const all40Delivered = [...r40Data1.items, ...r40Data2.items].map((it: any) => it.id);
+  assert.equal(all40Delivered.length, 40);
+  assert.equal(new Set(all40Delivered).size, 40, 'All 40 items must be traversed without skip or duplication');
+
+  // 8b. 21 items traversal: Call 1 yields 20, Call 2 yields 1
+  const child21 = (await authority.createChild({ userId: owner, operationId: randomUUID(), displayName: 'Child 21 Concerns' })).child;
+  for (let i = 1; i <= 21; i++) {
+    await concerns.create(owner, child21.id, {
+      title: `關注 21-${i}`,
+      reason: `第 ${i} 項記錄`,
+      observation: `觀察 ${i}`,
+      observedAt: '2026-11-07T00:00:00.000Z',
+      links: { recordId: null, taskId: null, attentionId: null },
+      followUpAt: null,
+    }, randomUUID());
+  }
+  const ctx21 = {
+    scope: { userId: owner, workspaceId: child21.id, childId: child21.id, authorizationVersion: '1.0', dataVersion: '1:0' },
+    runId: randomUUID(),
+    budget: {} as any,
+  };
+  const tools21 = createAgentConcernTools(concerns, {} as any, ctx21, async () => true);
+  const readTool21 = tools21.find(t => t.name === 'read_concerns')!;
+
+  const read21Page1 = await readTool21.execute({}, { callId: 'r21-1', signal } as any);
+  const r21Data1 = (read21Page1.data as any).result;
+  assert.equal(r21Data1.items.length, 20);
+  assert.equal(r21Data1.hasMore, true);
+  assert.ok(r21Data1.nextCursor);
+
+  const read21Page2 = await readTool21.execute({ cursor: r21Data1.nextCursor }, { callId: 'r21-2', signal } as any);
+  const r21Data2 = (read21Page2.data as any).result;
+  assert.equal(r21Data2.items.length, 1);
+  assert.equal(r21Data2.hasMore, false);
+  assert.equal(r21Data2.nextCursor, null);
+
+  // 8c. 55 items multi-match search traversal: zero matches skipped
+  const child55 = (await authority.createChild({ userId: owner, operationId: randomUUID(), displayName: 'Child 55 Concerns' })).child;
+  const targetKeyword = '過敏複查焦點';
+  const matchingIndices = new Set([5, 22, 38, 45, 53]);
+  for (let i = 1; i <= 55; i++) {
+    const isMatch = matchingIndices.has(i);
+    await concerns.create(owner, child55.id, {
+      title: isMatch ? `關注 55-${i} [${targetKeyword}]` : `關注 55-${i}`,
+      reason: `第 ${i} 項描述`,
+      observation: `觀察 ${i}`,
+      observedAt: '2026-11-07T00:00:00.000Z',
+      links: { recordId: null, taskId: null, attentionId: null },
+      followUpAt: null,
+    }, randomUUID());
+  }
+  const ctx55 = {
+    scope: { userId: owner, workspaceId: child55.id, childId: child55.id, authorizationVersion: '1.0', dataVersion: '1:0' },
+    runId: randomUUID(),
+    budget: {} as any,
+  };
+  const tools55 = createAgentConcernTools(concerns, {} as any, ctx55, async () => true);
+  const readTool55 = tools55.find(t => t.name === 'read_concerns')!;
+
+  const found55Matches: string[] = [];
+  let cur55: string | null = null;
+  do {
+    const pageRes = await readTool55.execute({
+      searchText: targetKeyword,
+      cursor: cur55,
+    }, { callId: 'r55-search', signal } as any);
+    assert.equal(pageRes.status, 'succeeded');
+    const pData = (pageRes.data as any).result;
+    for (const item of pData.items) {
+      found55Matches.push(item.id);
+    }
+    cur55 = pData.nextCursor;
+  } while (cur55);
+
+  assert.equal(found55Matches.length, 5, 'All 5 matching concerns across 55 items must be found in traversal');
+  assert.equal(new Set(found55Matches).size, 5, 'No duplicates in search traversal');
 });

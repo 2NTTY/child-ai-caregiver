@@ -29,12 +29,11 @@ export function createAgentConcernTools(concerns:Pick<ConcernStore, "list" | "ge
     parameters:z.object({concernId:z.uuid().nullable().optional(),searchText:z.string().max(100).nullable().optional(),cursor:z.string().nullable().optional()}).strict(),authorize,
     execute:args=>guarded(async()=>{
       if(!args.concernId) {
-        const page=await concerns.list(scope.userId,scope.childId,args.cursor?{cursor:args.cursor as string,limit:50}:{limit:50});
-        if(!page)throw new FamilyError(404,"not_found");
         const query=(args.searchText as string|null|undefined)?.trim().toLocaleLowerCase("zh-HK");
-        const items=page.items.filter(item=>!query||(item.title+" "+item.reason).toLocaleLowerCase("zh-HK").includes(query));
-        const hasMore=Boolean(page.hasMore||items.length>20);
-        return {authorityVersion:page.authorityVersion,hasMore,nextCursor:page.nextCursor??null,items:items.slice(0,20).map(({id,title,version,status,followUp})=>({id,title,version,status,followUp}))};
+        const page=await concerns.list(scope.userId,scope.childId,{limit:20,cursor:(args.cursor as string|null|undefined)??undefined});
+        if(!page)throw new FamilyError(404,"not_found");
+        const items=query?page.items.filter(item=>(item.title+" "+item.reason).toLocaleLowerCase("zh-HK").includes(query)):page.items;
+        return {authorityVersion:page.authorityVersion,hasMore:Boolean(page.hasMore),nextCursor:page.nextCursor??null,items:items.map(({id,title,version,status,followUp})=>({id,title,version,status,followUp}))};
       }
       const item=await concerns.get(scope.userId,scope.childId,args.concernId as string);
       if(!item)throw new FamilyError(404,"not_found");

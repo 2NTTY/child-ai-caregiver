@@ -4926,3 +4926,61 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 
 ### Next Action
 - 將 PR #513 變更 commit 並 push，更新 PR #513 標題（<72 字元）與描述，確認 exact-head CI SUCCESS；隨後切換至 PR #514 分支處理。
+
+
+## 2026-11-08 04:08:00 HKT - PR10 #513 Round 3 覆核修正：關注 Client Schema 欄位容許、Agent 游標邊界對齊、歷史時間更正與查重事務說明
+
+- Anchor：`#req005-pr10-round3-fix-20261108`
+- Recorded At：2026-11-08T04:08:00+08:00
+- Work Date：2026-11-08
+- Step / Package：REQ-005 §8 (PR #513 Round 3)
+- Executor：AI Assistant（本機執行與校準）
+- Goal：落實 `PR10_11_AUDIT_ROUND3.md` 之 P1-A、P1-B、P2 限制校準與時間／收據更正：
+  1. 歷史時間誤差更正：先前 `ba5e797f`（00:34:17）之 WORKLOG 記錄 Recorded At 為 00:35:00（超前 43 秒），本段如實補正該歷史快照誤差，確認目前與日後記錄均嚴格早於或等於提交時間。
+  2. P1-A 關注 Client Schema 拒絕修復：`src/client/concerns-api.ts` 的 `pageSchema` 補充選填 `hasMore: z.boolean().optional()` 與 `nextCursor: z.string().nullable().optional()`，消弭 HTTP 200 下因新增分頁欄位遭 client `.strict()` 拒絕之 `ConcernApiError`；擴充 `getPage` 介面支援 `options?: { limit?: number; cursor?: string | null }` 並在 URL 附加查詢參數。
+  3. P1-B Agent read_concerns 游標跳越與漏讀修復：`server/agent-concern-tools.ts` 改為向 store 請求 `{ limit: 20 }`，與工具宣告之「列最多 20 項」完全對齊，根除請求 50 筆卻截斷交付 20 筆導致第 21–50 筆被游標跳過或 40 筆時回傳 `nextCursor: null` 之問題；使回傳游標與交付邊界精確吻合。
+  4. P2 查重限制說明：釐清 `activeCount()` 查重機制為「單次 query 分批 100 筆有界，但單個 transaction 內進行全量掃描」，明列實體大規模負載下之交易時間累積限制，不冒稱為固定常數時間之演算法保證。
+  5. 驗證與釘選：新增關注 client 空清單與分頁測試、Agent 21／40／55 筆無篩選與多命中搜尋 traversal 回歸測試；更新收據 `featureCommit` 釘選至前版基準 `fad8462f`。
+- AI Assistance：實作 Client schema 擴充、Agent 游標邊界對齊、Traversal 回歸測試與收據計算。
+- Human Verification：嚴格維持 HOLD merge，僅由專案負責人 2NTTY 裁決合併。
+
+### Actual Work
+- `src/client/concerns-api.ts`：
+  - 更新 `pageSchema` 容許 `hasMore` 與 `nextCursor`，維持 `.strict()`。
+  - `ConcernsApi['getPage']` 簽名與實作擴充 `options?: { limit?: number; cursor?: string | null }`，將 `limit` 與 `cursor` 轉為 URL 查詢參數。
+- `server/agent-concern-tools.ts`：
+  - `read_concerns` 向 store 調用 `{ limit: 20, cursor }`，回傳之 `hasMore` 與 `nextCursor` 與當前交付之 20 筆項目邊界 100% 一致，絕不跳漏。
+- `tests/firestore-cursor-pagination.test.ts`：
+  - 測試 3 補充第 7 項：真實 `createConcernsApi` + `handleConcernRequest` 端到端測試，驗證空清單正常解析（不拋 `ConcernApiError`）及 205 筆關注之客戶端 `getPage` 游標分頁。
+  - 測試 3 補充第 8 項：Agent `read_concerns` 40 筆遍歷（兩頁各 20 筆、游標不中斷、40 筆全數取回）、21 筆遍歷（首頁 20、次頁 1）與 55 筆多命中關鍵字搜尋遍歷（跨頁無漏讀、5 筆命中全數查回且零重複）。
+- `artifacts/verification/REQ005_CURSOR_PAGINATION_20261107.json`：
+  - 更新為 `v4`，`featureCommit` 釘選至 `fad8462f98f5286e0025d54ebd30513efa8b3e4a`，更新受影響檔案之 SHA-256、gitBlob 與位元組數。
+
+### Changes
+- `src/client/concerns-api.ts`
+- `server/agent-concern-tools.ts`
+- `tests/firestore-cursor-pagination.test.ts`
+- `artifacts/verification/REQ005_CURSOR_PAGINATION_20261107.json`
+- `WORKLOG.md`
+
+### Verification
+- 需求／驗收標準：REQ-005 §8 累積資料規模化、端到端分頁相容性與無漏讀遍歷
+- 驗證方法：
+  - `node --experimental-strip-types --test tests/firestore-cursor-pagination.test.ts` (3/3 PASS)
+  - `node scripts/verify-cursor-pagination-mutations.mjs` (5/5 PASS)
+  - `node --test tests/ci/summary-progress-contract.test.mjs` (6/6 PASS)
+  - `node --experimental-strip-types --test tests/firestore-family-documents.test.ts tests/firestore-shared-inputs.test.ts tests/firestore-restore-codec.test.ts tests/concern-capacity.test.ts tests/handover-concern-timeline.test.ts` (27/27 PASS)
+  - `node --max-old-space-size=3072 node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit` (0 diagnostics, exit 0)
+  - `npx tsc --noEmit` (0 diagnostics, exit 0)
+- 環境：Node v24.22.1 / win32 / powershell / branch `codex/req005-cursor-pagination`
+- 結果：全部通過 (ALL PASS, 0 fail, exit 0)
+- 證據收據：`artifacts/verification/REQ005_CURSOR_PAGINATION_20261107.json`
+
+### Limitations / Blockers
+- 合成 in-memory fixture 驗證；生長報告查重為分批 query、全量 transaction scan，未在大規模實體 Firestore 負載下壓測超時。
+- 未執行真實 Gemini Live 模型連線調用。
+- 衝突狀態：本分支與 PR 11（#514）預期存在 2 個檔案之衝突（`WORKLOG.md` 與 `.github/workflows/summary-progress-offline.yml`）。
+- 嚴格維持 HOLD merge，僅由專案負責人 2NTTY 裁決合併。
+
+### Next Action
+- Commit 並 push 至 `codex/req005-cursor-pagination`，更新 PR #513 描述，核實 exact-head CI SUCCESS；切換至 PR #514 分支處理文件收束。
