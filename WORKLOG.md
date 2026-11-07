@@ -4775,3 +4775,52 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   - 本地型別檢查（`tsc --project tsconfig.server.json --noEmit`）0 診斷 (exit 0)。
 - Scope & Boundaries：
   - 聚焦 REQ-005 §9 收束清單與驗收矩陣，文檔與憑證套件，嚴格 HOLD merge，僅由 Owner 2NTTY 統一審核合併。
+
+
+<a id="log-20261108-req005-closeout-calibration"></a>
+## LOG-20261108-002
+
+- Recorded At：2026-11-08T00:40:00+08:00
+- Work Date：2026-11-08
+- Step / Package：REQ-005 §9 (PR #514)
+- Executor：AI Assistant
+- Goal：Address audit findings in `PR10_11_AUDIT.md` for PR #514: calibrate closeout checklist and acceptance matrix, withdraw unsubstantiated 18/18 PASSED / 5/5 COMPLETED claims, differentiate baseline verified, synthetic verified, pending multi-PR integration, and unverified live model states, include full lineage (PR #507, #508, #510-#513), list all REQ-005 §9 undecided items faithfully, fix `file:///...` links to relative repository paths, and whitelist `codex/req005-closeout-validation` in summary progress offline CI.
+- AI Assistance：Document calibration, lineage alignment, undecided items completeness check, CI whitelist configuration.
+- Human Verification：Pending Owner (2NTTY) review. HOLD merge.
+
+### Actual Work
+- `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md`：
+  1. 將本機 `file:///...` 絕對連結修正為倉庫相對路徑（`[REQUIREMENTS_BACKLOG.md §1～§9](REQUIREMENTS_BACKLOG.md#L900-L1034)`）。
+  2. 補齊完整 PR 血統映射：納入 PR 5（#508 上下文壓縮）、PR 6（#507 軟預算），並精確對應 PR 7（#510）、PR 8（#511）、PR 9（#512 超時與租約）、PR 10（#513 游標分頁）與 PR 11（#514），明確各自實際變更範圍與 SHA。
+  3. 撤回無足夠證據之「5/5 COMPLETED」與「18/18 PASSED」宣告；改為嚴格四層分類：已映射規格（MAPPED）、基線驗證（BASELINE VERIFIED）、候選合成驗證（SYNTHETIC VERIFIED）、待跨 PR 整合（PENDING MASTER INTEGRATION）與未執行真模型（LIVE MODEL NOT RUN）。
+  4. 完整列出 REQ-005 §9 結尾之全部 11 項待決項目（包含每日混合計次遷移單位、整數取整邊界、在途版本生效、代表工作量測、告警策略、各域備份一致性與真模型對照門檻），不擅自縮短清單。
+  5. 強化真模型驗收標準與限制：明確聲明合成 fixture 測試通過不代表真模型理解能力，本輪未執行真實 Gemini API 調用與生產 Firestore 負載。
+- `.github/workflows/summary-progress-offline.yml`：將 `codex/req005-closeout-validation` 加入工作流白名單，確保 PR #514 擁有真實執行且通過之適用離線 CI，而非全量 skipped。
+- `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json`：更新為校準版本，加入 featureCommit pin、notRun、limitations 及真實 CI/測試命令。
+
+### Changes
+- `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md`
+- `.github/workflows/summary-progress-offline.yml`
+- `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json`
+- `WORKLOG.md`
+
+### Verification
+- Requirement / Acceptance：REQ-005 §9 收束驗收核對、血統校準與文件治理
+- Method：
+  - `node --test tests/ci/summary-progress-contract.test.mjs` (6/6 PASS)
+  - `node --max-old-space-size=3072 node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit` (0 diagnostics, exit 0)
+  - `npx tsc --noEmit` (0 diagnostics, exit 0)
+- Environment / Revision：Node v24.22.1 / win32 / powershell / branch `codex/req005-closeout-validation`
+- Result：全部通過 (ALL PASS, 0 fail, exit 0)
+- Evidence：`artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json`
+
+### Limitations / Blockers
+- 本 PR 僅包含收束文件、CI 白名單與驗證收據，不包含產品邏輯變更。
+- 未執行真實 Gemini Live 模型連線調用。
+- 嚴格維持 HOLD merge，僅由專案負責人 2NTTY 裁決合併。
+
+### Plan Update
+- PR #514 校準完成，撤回過度聲明，補齊血統與待決項目。
+
+### Next Action
+- 將變更 commit 並 push 至 `codex/req005-closeout-validation`，更新 PR #514 描述，確認 exact-head CI SUCCESS。
