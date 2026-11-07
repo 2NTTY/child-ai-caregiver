@@ -122,6 +122,11 @@
       "gitBlob": "2feb75fa15c99be6dca7f28b40f469de7a9f8fca",
       "bytes": 53808
     },
+    "server/firestore-restore-codec.ts": {
+      "sha256": "2fb069dc35d62375054ad1379d2ec7997a95368343a5128051b458a2f4b065a1",
+      "gitBlob": "3d529280e051a9144949ca71bda9848d3a9cf784",
+      "bytes": 60941
+    },
     "server/firestore-shared-inputs.ts": {
       "sha256": "80178a0d85f4b05b90d3bea918b7699eccb82be09f739a14ec330368201b83c9",
       "gitBlob": "06931a8a4eda4183ca3662e8f2d499a778c0e337",
