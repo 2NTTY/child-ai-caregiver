@@ -4824,3 +4824,61 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 
 ### Next Action
 - 將變更 commit 並 push 至 `codex/req005-closeout-validation`，更新 PR #514 描述，確認 exact-head CI SUCCESS。
+
+
+<a id="log-20261108-req005-closeout-lineage-and-governance"></a>
+## LOG-20261108-003
+
+- Recorded At：2026-11-08T01:39:00+08:00
+- Work Date：2026-11-08
+- Step / Package：REQ-005 §9 (PR #514)
+- Executor：AI Assistant（本機執行）
+- Goal：落實 `PR10_11_AUDIT_ROUND2.md` Round 2 覆核要求，校準 PR 11（#514）之交付血統、逐項驗證邊界、待決清單完整性、文件治理目的地與時間戳記；維持嚴格 HOLD merge。
+- AI Assistance：文件血統校準、驗收矩陣邊界對齊、待決事項細化、治理目的地整合與驗證收據更新。
+- Human Verification：待專案負責人（Owner 2NTTY）審查。嚴格維持 HOLD merge。
+
+### 實際工作 (Actual Work)
+1. **歷史快照與時間校準說明**：
+   - 依據 `AGENTS.md` 之 append-only 規範，先前 `LOG-20261108-002` 所記之 Recorded At（00:40:00）比其提交 commit `7a827b9f`（00:38:00）超前 2 分鐘；本筆記錄如實補正，日後收據與日誌時間戳記均以嚴格早於或等於提交時間之本機實際時間為準。
+2. **交付血統與職責精確校準**：
+   - **PR 8（#511）**：校準核心職責為個人模型政策解析（`server/personal-model-policy.ts`）、Vertex ADC 降級備援、個人 Key 不被平台 admin 壓低防護與 `tests/personal-model-settings.test.ts` 邊界測試，絕非每日摘要進度追蹤或排程用量。
+   - **場景 1 與場景 2 歸屬修正**：依實際 diff 將場景 1（管理員／個人改設定）與場景 2（個人 key 高於平台值）精確歸屬至 PR 8（#511 `server/personal-model-policy.ts`），非 PR 7（#510）。
+   - **PR 5（#508）**：明確標註為 ADK JS `TokenBasedContextCompactor` 選擇性暫態 in-run compaction 與成對原子壓縮容錯回退（0 個生產調用者，不替代跨 session 持久記憶）；7,000 emoji 長訊息摘要前進性明確歸屬至基線長訊息分段（PR 4 / #447）。
+   - **PR 10（#513）最新狀態**：更新為 head `fad8462f`，標註已落實端到端 Keyset Cursor 分頁（貫穿 store、HTTP API、client、Agent tools）與雙遍 legacy／indexed 查重，exact-head CI SUCCESS（run `42396439039`）。
+3. **驗收矩陣與待決事項邊界對齊**：
+   - **場景 13**：更新為反映 PR 10（head `fad8462f`）已實作端到端游標分頁與雙遍查重，消除首頁截斷與漏查重風險。
+   - **場景 18**：嚴格區分 55 筆合成游標分頁（`tests/firestore-cursor-pagination.test.ts`）與基線 4001 字分塊（`tests/firestore-family-documents.test.ts`），明示為合成測試驗證，生產實體負載未執行。
+   - **待決事項 6（運行中政策生效）**：調整為「部分解決（Partial / In-Flight Transitions Pending Specification）」，說明撤權即時攔截已驗證，但在途動態調高／降低 hard 與改 soft 之跨隊列過渡契約待決。
+   - **待決事項 9（各域分頁與備份一致性）**：調整為「部分解決（Partial in PR #513 / Cross-Domain Consistency Pending）」，說明核心三域已解決，跨異質資料域並行變更一致性待決。
+4. **文件治理與權威目的地落實 (`AGENTS.md#document-updates`)**：
+   - 於 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 開頭與結尾明確聲明本文件為 PR #514 之專項審查提案草稿，本 PR 不自行豁免文件治理規則。
+   - 待專案負責人（Owner 2NTTY）審閱裁決後，依指示整併入權威文件 `PLAN.md#active` 及 `STATUS.md`，並將本草稿歸檔或收回。
+   - 同步更新權威文件 `PLAN.md#active`（新增 `REQ005-CLOSEOUT01` 摘要與錨點）及 `STATUS.md`（投影當前校準現況）。
+5. **版本釘選與收據更新**：
+   - `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json`：更新 `receiptVersion` 為 `"2026-11-08.v3"`，將 `featureCommit` 與 `calibratedCommit` 釘選至經 Round 2 審計之候選基準 `7a827b9f99259d57d94dec35996c25563b086a3e`，消除 `PENDING_FORWARD_COMMIT` 且避免 tip-pin 循環。重新計算所有受影響檔案之 SHA-256、gitBlob 與位元組數。
+
+### 變更檔案 (Changes)
+- `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md`
+- `PLAN.md`
+- `STATUS.md`
+- `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json`
+- `WORKLOG.md`
+
+### 驗證 (Verification)
+- 需求／驗收：REQ-005 §9 全量收束核對、交付血統校準與治理邊界對齊
+- 方法：
+  - `node --test tests/ci/summary-progress-contract.test.mjs` (6/6 PASS)
+  - `node --max-old-space-size=3072 node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit` (0 diagnostics, exit 0)
+  - `npx tsc --noEmit` (0 diagnostics, exit 0)
+- 結果：全部通過 (ALL PASS, 0 fail, exit 0)
+- 證據：`artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json`
+
+### 限制與阻塞 (Limitations / Blockers)
+- 未執行真實 Gemini Live 模型連線調用。
+- 未執行生產環境實體 Firestore 壓測。
+- 衝突狀態：本分支與 PR 10（#513）預期存在 2 個檔案之合併衝突（`WORKLOG.md` 與 `.github/workflows/summary-progress-offline.yml`）。
+- 嚴格維持 HOLD merge，僅由專案負責人 2NTTY 裁決合併。
+
+### 下一步 (Next Action)
+- 提交前向 commit，push 至遠端分支 `codex/req005-closeout-validation`。
+- 更新 PR #514 描述（使用 `--body-file` 避免跳脫問題），核實 exact-head CI SUCCESS。

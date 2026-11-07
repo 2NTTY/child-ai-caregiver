@@ -56,6 +56,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
+**本輪 REQ-005 全量收束校準（候選提案）：**[REQ005-CLOSEOUT01](#req005-closeout01) 提供 REQ-005 §9 收束核對清單與驗收邊界矩陣（[PR #514](https://github.com/2NTTY/child-ai-caregiver/pull/514)），校準 PR 1～PR 10 交付血統（PR 8 映射至個人金鑰政策、PR 5 為 0 生產調用暫態壓縮器、PR 10 於 `fad8462f` 實作端到端游標分頁與雙遍查重）、18 項場景與 11 項待決事項邊界。專項核對清單 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 作為審查提案，待 Owner 裁決後整併入正式文件。未執行真模型調用，全量 PR 處於嚴格 HOLD merge 等待 Owner 審批。
+
 **本輪成長依據閱讀修復：**[GR-F01](#gr-f01-profile-evidence-read) 已完成最小 client／閱讀文案候選、四整檔 33 案及完整 frontend／root 型別；server 原完整型別兩次程序失敗，仍為 NOT_PASSED。待整包獨立 review 與精確 head 必要 CI，未合併、未部署。
 
 **本輪首頁照片修復：**[HC-F01](#hc-f01-home-photo-admission) 已由 [PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 於 2026-11-05 13:00:09 UTC 正常合併至 `f453226f`，精確 head 的兩次必要離線 CI 均成功。未部署，formal41 及原完整 owner／設備缺口不進位。
@@ -158,6 +160,22 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **型別狀態：**最新 f0149b 同源候選沿原 `tsconfig.server.json` 的 server／shared／test 全 include 完成 native TypeScript 檢查，exit 0、零診斷；未縮 include／strict。正式命令及 CI 只對 tsc 明確設定 3 GiB heap。先前資源限額、OOM、型別診斷與手工 fixture 失敗均保留，沒有改寫成通過。
 - **正式啟用阻塞：**尚無可信正式累積 work-grant 政策數值，亦無可證舊 writer 從 inventory 上界捕獲之前至今持續被 fenced 的實際 authority reader；`installed:true` 或 `control.paused` 不能代證舊 binary 已停止。inventory 目前僅保守未啟用結構，舊身份或完整映射缺失仍為 unmapped。正式 durable 入口 fail closed；從未啟用且沒有 retained durable 歷史的 scope 可維持原短 fast，不以 policy 缺失回退已啟用 scope。
 - **恢復／未驗／收尾：**restore 新 epoch 維持 `restore_suspended`，保留原 grant、usage 及 reservation，不授 resume、transfer 或新空帳；R0／R2 仍 blocked。各階段本地驗收、最新完整型別與獨立 review 已完成；精確 PR head 必要 CI 仍須通過，才可依正常分支保護合併。正式政策、舊 writer fencing、雲端索引 READY、真 Firestore／模型、設備與正式啟用另有前置；本包沒有 GCP 或產品部署操作，不稱用戶問題已上線修復或 REQ-005 全案完成。
+
+<a id="req005-closeout01"></a>
+### REQ005-CLOSEOUT01：REQ-005 全量收束核對與驗收校準（候選提案，HOLD merge）
+
+- **基線／來源：** 候選分支 `codex/req005-closeout-validation` 接 master `2abe7aed60b192b253414f6464e3fd070cc377e7`，對應 [PR #514](https://github.com/2NTTY/child-ai-caregiver/pull/514)。
+- **交付血統校準：**
+  - **PR 1～4**（#408, #409, #447）：已合併基線，涵蓋預算動態適配、3k/6k 儲存一致性、對話拓撲樹狀回讀與長訊息分段推展。
+  - **PR 5**（[#508](https://github.com/2NTTY/child-ai-caregiver/pull/508)）：ADK JS `TokenBasedContextCompactor` 選擇性暫態 in-run compaction 與成對原子壓縮容錯回退（0 個生產調用者，不替代跨 session 持久記憶）。
+  - **PR 6**（[#507](https://github.com/2NTTY/child-ai-caregiver/pull/507)）：集中軟預算推導（`softBudgetRatio = 0.25`）。
+  - **PR 7**（[#510](https://github.com/2NTTY/child-ai-caregiver/pull/510)）：放寬輸出上限至 4096 / 16384；Gemini 429/403 錯誤標準化為 PersonalProviderError 與 retryAfter。
+  - **PR 8**（[#511](https://github.com/2NTTY/child-ai-caregiver/pull/511)）：個人模型政策解析（`server/personal-model-policy.ts`）、Vertex ADC 降級備援、個人 Key 不被平台 admin 壓低防護與邊界測試（非摘要進度追蹤或排程用量）。
+  - **PR 9**（[#512](https://github.com/2NTTY/child-ai-caregiver/pull/512)）：租約期限（lease duration）、背景知識維護與傳輸超時邊界防禦。
+  - **PR 10**（[#513](https://github.com/2NTTY/child-ai-caregiver/pull/513)）：移除 50 文件／50 來源／200 關注小型業務牆；端到端 Keyset Cursor 分頁（貫穿 store、HTTP API、client、Agent tools）與雙遍 legacy／indexed 查重（head `fad8462f`，CI SUCCESS）。
+  - **PR 11**（[#514](https://github.com/2NTTY/child-ai-caregiver/pull/514)）：收束核對清單與真模型驗收驗證標準校準提案。
+- **文件治理（AGENTS.md#document-updates）：** 專項核對清單 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 作為 PR 專項審查提案，待 Owner 2NTTY 審批後整併回 `PLAN.md#active` 及 `STATUS.md`。
+- **邊界與未驗：** 未執行真 Gemini Live 模型調用，未執行生產實體 Firestore 壓測。全量 PR 處於嚴格 HOLD merge，僅由專案負責人 2NTTY 審核合併。
 
 <a id="agent-review-repair01"></a>
 ### AGENT-REVIEW-REPAIR01：D 的六項 Agent PR 修復與最新需求對齊（候選，未驗收完成）
