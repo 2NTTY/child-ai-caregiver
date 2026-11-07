@@ -4821,3 +4821,20 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   - 維持 resolver-only 解耦，admission snapshot 遷移留待後續 PR。
   - 純本地分支，零 git push，零 GitHub PR。
 
+### 2026-11-07 歷史記錄客觀校準與 CI Guard 接線 (Audit A01 / Gap 1)
+
+- Recorded At：2026-11-07 09:48 UTC (17:48 HKT)；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `425d21390a9b60e51aee17e3868692f7d41148f3`，保留歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `scripts/ci/verify-summary-progress-offline.sh`：新增 `stage=package-invariant-guard`，將 `scripts/verify-personal-key-policy-mutations.mjs` 正式納入離線 CI 執行管線，於沙盒中驗證不變量守衛。
+  2. 具體數值反例記錄：當管理員政策為 `maxRunSeconds = 60s`，而個人偏好設定為 `maxRunSeconds = 180s` 時，由於目前 admission transaction（`readInteractiveRunSeconds(tx)`）仍讀取政策快照，故端到端有效運行期限仍被約束為較早之 60s。此項為已披露之邊界，端到端個人期限解耦明確留待後續 admission 遷移 PR。
+  3. 歷史時間戳記客觀說明：前次提交（`425d2139`）生成時間為 16:57:16 HKT，模板預填為 17:00 HKT（09:00 UTC）；依 append-only 規範，在此客觀記錄提交實際發生順序，保留原始日誌歷史。
+- Verification：
+  - `bash -n scripts/ci/verify-summary-progress-offline.sh`：exit 0
+  - `tests/personal-model-settings.test.ts`：2/2 PASS (TAP check 2 通過)
+  - `scripts/verify-personal-key-policy-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tests/ci/summary-progress-contract.test.mjs`：6/6 PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 維持 NOT READY / HOLD merge 狀態，等待 Owner 統籌合併。純本地分支，零 git push，零 GitHub PR。
+

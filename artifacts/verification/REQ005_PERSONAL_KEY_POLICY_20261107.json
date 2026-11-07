@@ -1,13 +1,13 @@
 {
-  "receiptVersion": "2026-11-07.v4",
+  "receiptVersion": "2026-11-07.v5",
   "package": "REQ005-PR8",
   "title": "Decouple personal provider key from admin capping (REQ-005 §1)",
   "branch": "codex/req005-personal-key-policy",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
-  "parentTip": "23b8f054c84a95fcec4457864e91a2f4cd983614",
+  "parentTip": "425d21390a9b60e51aee17e3868692f7d41148f3",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
   "executor": "AI Assistant (local execution)",
-  "timestampUtc": "2026-11-07T08:57:07.796Z",
+  "timestampUtc": "2026-11-07T09:38:53.735Z",
   "environment": {
     "nodeVersion": "v24.16.0",
     "os": "win32",
@@ -49,7 +49,7 @@
   "retainedFailures": [],
   "knownLimitations": [
     "Resolver-only decoupling: settings and limits resolution decoupled from admin policy capping",
-    "Admission snapshot deadline migration (readInteractiveRunSeconds) deferred to subsequent PR; effective runtime deadline takes earlier tx limit until admission migration is delivered",
+    "Admission snapshot deadline counterexample: policy maxRunSeconds=60s vs personal maxRunSeconds=180s results in effective 60s deadline because admission transaction (readInteractiveRunSeconds) still reads platform snapshot; end-to-end deadline migration deferred to subsequent PR",
     "Local branch only; zero remote writes; strictly zero GitHub PR"
   ],
   "files": {
@@ -59,14 +59,19 @@
       "bytes": 5224
     },
     "WORKLOG.md": {
-      "sha256": "3dcfc7fb695fa22a67d14e099d71577f13896de09f5dad6dffa44bfd4b8ecf54",
-      "gitBlob": "5becb50a87b3cbaa14f5a41b8ee3200811699770",
-      "bytes": 766684
+      "sha256": "98d36ad304cade5f68696b299a2f5ab814a9bb7ecb7fe1c461bbb1ec3e280af4",
+      "gitBlob": "6461d3d7913c222fc9dc82dd53fe56af087be441",
+      "bytes": 768386
     },
     "scripts/ci/summary-progress-tests.json": {
       "sha256": "1a7c593ac73bb273787e5b079fff0edbbe9f28ab468c999cf7053625138434c6",
       "gitBlob": "0ce862667490bcee0a57f645f1a707c588cc54d0",
       "bytes": 7190
+    },
+    "scripts/ci/verify-summary-progress-offline.sh": {
+      "sha256": "f30288a41f27260837e9f69f46b5bda8f5267b2ede0c13795cda385f202a869d",
+      "gitBlob": "fcce900ddc249ac8a061c9a955e0824085758dbe",
+      "bytes": 4017
     },
     "scripts/verify-personal-key-policy-mutations.mjs": {
       "sha256": "53e1208cf11dbac8d1daf2bd0231c9355c0e2fe63c91476521d2fd70e4475516",
