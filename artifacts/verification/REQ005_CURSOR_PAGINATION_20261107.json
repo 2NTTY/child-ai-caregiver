@@ -1,14 +1,14 @@
 {
-  "receiptVersion": "2026-11-08.v2",
+  "receiptVersion": "2026-11-08.v3",
   "package": "REQ005-PR10",
   "title": "Replace fixed 50-item aggregate walls with Firestore cursor pagination (REQ-005 §8)",
   "branch": "codex/req005-cursor-pagination",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
-  "featureCommit": "6708efd562f94152e769e8111f8ca9df1fda0dca",
-  "calibratedCommit": "PENDING_FORWARD_COMMIT",
+  "featureCommit": "aa683011451100f27435c649cc84abed7c6ede25",
+  "calibratedCommit": "aa683011451100f27435c649cc84abed7c6ede25",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
   "executor": "AI Assistant (local execution)",
-  "timestampUtc": "2026-11-07T16:35:00.000Z",
+  "timestampUtc": "2026-11-07T17:23:00.000Z",
   "environment": {
     "nodeVersion": "v24.22.1",
     "os": "win32",
@@ -19,7 +19,7 @@
     "node --experimental-strip-types --test tests/firestore-cursor-pagination.test.ts",
     "node scripts/verify-cursor-pagination-mutations.mjs",
     "node --test tests/ci/summary-progress-contract.test.mjs",
-    "node --experimental-strip-types --test tests/firestore-family-documents.test.ts tests/firestore-shared-inputs.test.ts tests/firestore-cursor-pagination.test.ts tests/concern-capacity.test.ts",
+    "node --experimental-strip-types --test tests/firestore-family-documents.test.ts tests/firestore-shared-inputs.test.ts tests/firestore-restore-codec.test.ts tests/concern-capacity.test.ts tests/handover-concern-timeline.test.ts",
     "node --max-old-space-size=3072 node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit",
     "npx tsc --noEmit"
   ],
@@ -51,7 +51,9 @@
     "relatedSuites": {
       "firestore-family-documents.test.ts": "7/7 PASS",
       "firestore-shared-inputs.test.ts": "1/1 PASS",
-      "concern-capacity.test.ts": "8/8 PASS"
+      "firestore-restore-codec.test.ts": "10/10 PASS",
+      "concern-capacity.test.ts": "8/8 PASS",
+      "handover-concern-timeline.test.ts": "1/1 PASS"
     }
   },
   "typeCheck": {
@@ -59,12 +61,22 @@
     "rootTsc": "PASS (0 diagnostics, exit 0)"
   },
   "counterexampleVerification": {
-    "description": "Mutating prepareChange by setting full = false intentionally breaks the 200 event timeline limit guard",
-    "observedResult": "tests/firestore-cursor-pagination.test.ts failed with AssertionError: Missing expected rejection on 201st append (RED)",
-    "restorationResult": "Restored full = value.eventCount >= CONCERN_EVENT_LIMIT returns all suites to 3/3 PASS (GREEN)"
+    "timelineGuardCounterexample": {
+      "description": "Mutating prepareChange by setting full = false intentionally breaks the 200 event timeline limit guard",
+      "observedResult": "tests/firestore-cursor-pagination.test.ts failed with AssertionError: Missing expected rejection on 201st append (RED)",
+      "restorationResult": "Restored full = value.eventCount >= CONCERN_EVENT_LIMIT returns all suites to 3/3 PASS (GREEN)"
+    },
+    "legacyDuplicateCounterexample": {
+      "description": "Creating a growth report without envelope kind (simulating pre-R1 legacy record) and creating a second indexed report, then attempting duplicate of legacy report",
+      "observedResult": "Old single-pass indexed scan missed legacy record duplicate; new bounded two-pass scan in activeCount() strictly catches and rejects duplicate with report_exists (GREEN)"
+    },
+    "endToEndPaginationVerification": {
+      "description": "HTTP API and Agent tools (list_private_sources and read_concerns) navigate beyond item 50 to items 51-55 and locate concern #150 without truncation or 404",
+      "observedResult": "Default list discloses nextCursor when >50 items; client inputs() paginates across cursor pages; read_concerns directly fetches concern #150 by ID and continues searching across pages when page 1 has 0 matches (GREEN)"
+    }
   },
   "retainedSafetyGuards": [
-    "Growth report duplication check (report_exists) preserved with indexed where('status', '==', 'active').where('kind', '==', 'growth_report') queries",
+    "Growth report duplication check (report_exists) preserved with bounded two-pass scan checking indexed where('status', '==', 'active').where('kind', '==', 'growth_report') and active legacy records",
     "Single concern event timeline limit (CONCERN_EVENT_LIMIT = 200) strictly enforced at 201st append with concern_history_requires_review (400)",
     "Archive action confirmed and permitted at CONCERN_EVENT_LIMIT to allow lifecycle closure",
     "Cross-child and malformed cursor rejection strictly enforced (invalid_input 400)",
@@ -93,9 +105,9 @@
       "bytes": 5222
     },
     "WORKLOG.md": {
-      "sha256": "958c9dd1a91f81f2ec21ee44183a66ddd71682e710c07682b37fd605f9c6faa0",
-      "gitBlob": "84b35f040921eeac37690eb6e06718fb9d46e7ca",
-      "bytes": 768945
+      "sha256": "a591fdceaaf016afc73b915ad8ca6364af3de1f97a8aee8b227b230ac4f1d655",
+      "gitBlob": "583834093cc2e56d9672736c291d40d894308c69",
+      "bytes": 776765
     },
     "scripts/ci/summary-progress-tests.json": {
       "sha256": "92c8cd6a8116173225894785655889109f2da5831cb7fc9652f1ac88c522c0e7",
@@ -112,30 +124,70 @@
       "gitBlob": "416ce4f7a0ef4debefb64a42846a219308a3b1f1",
       "bytes": 11706
     },
+    "server/agent-concern-tools.ts": {
+      "sha256": "d194c560bd59dbfa6897861c47379744fcb923f8daeecaa2acdbd238e894ea7f",
+      "gitBlob": "3579aca9b3862e7ebbe9489663de6054952c9964",
+      "bytes": 4565
+    },
+    "server/agent-source-tools.ts": {
+      "sha256": "fe9a04a46c6f30e98ff7ca1c15be4f436054a98772e1b5152ece1a1e5763ce43",
+      "gitBlob": "4337c63bd11253d4b88facb350ab124faae17412",
+      "bytes": 5573
+    },
+    "server/concern-api.ts": {
+      "sha256": "735268701191fd840514341a69e6c55f64631e0cda357d49121e207502a07492",
+      "gitBlob": "d71fa6db99e4b99c0e2f6975ba3615ab98a77ef3",
+      "bytes": 3619
+    },
+    "server/concern-store.ts": {
+      "sha256": "3ffe29c6a90ddd9d41f0c574873ff216ea8e99d381a0cf3016d779ec647ed5ae",
+      "gitBlob": "fb89afe999add451ddbece38c4b69286977ecca0",
+      "bytes": 29531
+    },
     "server/firestore-concerns.ts": {
       "sha256": "a5b47b4cad6250dd18a638ee3702e45eeb1e793ef11f139135429082e6b2b4f3",
       "gitBlob": "185ec555e5b6e32e4c2ab087c3f9acbb99770574",
       "bytes": 38641
     },
     "server/firestore-family-documents.ts": {
-      "sha256": "26fbfefd7eacb17e1ce13d587072613dbd32005fbb51b0d83fd43a9759100d08",
-      "gitBlob": "2feb75fa15c99be6dca7f28b40f469de7a9f8fca",
-      "bytes": 53808
+      "sha256": "467f935cc983188c006058e1b6bb7f4fc1e6fce365caf4f4cd7f009c130e7dc1",
+      "gitBlob": "8f2bae041d1a213df012d73def7a6082cdbf19ce",
+      "bytes": 55879
     },
     "server/firestore-restore-codec.ts": {
-      "sha256": "2fb069dc35d62375054ad1379d2ec7997a95368343a5128051b458a2f4b065a1",
-      "gitBlob": "3d529280e051a9144949ca71bda9848d3a9cf784",
-      "bytes": 60941
+      "sha256": "a0a5a2782f5cdabe6b0b3d5e9d60093295d5f24d004dfa9324316d3ff9bccdda",
+      "gitBlob": "54f28aae5d4f225cece964949e75f453568716c7",
+      "bytes": 60320
     },
     "server/firestore-shared-inputs.ts": {
-      "sha256": "80178a0d85f4b05b90d3bea918b7699eccb82be09f739a14ec330368201b83c9",
-      "gitBlob": "06931a8a4eda4183ca3662e8f2d499a778c0e337",
-      "bytes": 33324
+      "sha256": "5dcf651625152a4bf10839fb8233b1f36a9f4a647edf88a7c8f6d60d7402db24",
+      "gitBlob": "ee9fac6d2d2763eba2242ae803da10af0c11815a",
+      "bytes": 33366
+    },
+    "server/shared-input-api.ts": {
+      "sha256": "a171160dbd3c6e6159882eba8bd8dd89b7f648e7e0c3f8a80de5b32da4af0795",
+      "gitBlob": "d4ae75ab2466e3a011f4b886e2983d19a2b929e1",
+      "bytes": 4557
+    },
+    "server/shared-input-store.ts": {
+      "sha256": "21925e324823654275e1e6cad67ea053500a390f596ead5a725f4c27dd4d023b",
+      "gitBlob": "e993cec063f8e610ffe60d098a359142db9f712a",
+      "bytes": 20168
+    },
+    "src/client/shared-input-api.ts": {
+      "sha256": "a6433a85fc7a07b7062514161781c5f5b035d8cfc5b183ff4562256d5547c67c",
+      "gitBlob": "fedd034e4a41add8f30fe802f005294becfccffd",
+      "bytes": 22123
+    },
+    "src/shared/concerns.ts": {
+      "sha256": "6feabfc9ac6b4931b4faad3ffe965d2706a28c543cdd57e11a4b49a66b046340",
+      "gitBlob": "885c8e4b86d1bcb16965159dacf3058cc27672f7",
+      "bytes": 2415
     },
     "tests/firestore-cursor-pagination.test.ts": {
-      "sha256": "1ee7b0a472fb22387211cc0e1c3aa1f1b86399238f5f14964df773d0a774edd7",
-      "gitBlob": "29852fc0dd6fe23d4c1b985f2f208f3ff493cbde",
-      "bytes": 12441
+      "sha256": "c5f2517875f088e05c9b7de86b8f0182dbac6e4b3095762deacaf7d73bef5d76",
+      "gitBlob": "4561b941f145df7b083d9d21c1344193b8494457",
+      "bytes": 20235
     }
   }
 }

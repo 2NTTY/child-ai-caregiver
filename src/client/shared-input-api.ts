@@ -23,7 +23,13 @@ export class SharedInputApiError extends Error {
 export type SharedInputWriteResult = { input: SharedInput; recordId?: string } | { deleted: true } | null;
 export type SharedInputReconciliation = { state: "confirmed"; result: SharedInputWriteResult } | { state: "unconfirmed" } | null;
 export interface SharedInputApi {
-  inputs(childId: string, signal: AbortSignal, userId: string): Promise<{ inputs: SharedInput[]; sources: PublicInputSource[]; canCreate: boolean }>;
+  inputs(childId: string, signal: AbortSignal, userId: string, options?: { limit?: number; cursor?: string | null }): Promise<{
+    inputs: SharedInput[];
+    sources: PublicInputSource[];
+    canCreate: boolean;
+    hasMore?: boolean;
+    nextCursor?: string | null;
+  }>;
   input(childId: string, inputId: string, signal: AbortSignal, userId: string): Promise<SharedInput>;
   create(childId: string, input: SharedInputCreate, signal: AbortSignal, userId: string): Promise<SharedInputWriteResult>;
   fetch(input: SharedInput, signal: AbortSignal, userId: string): Promise<SharedInput>;
@@ -232,10 +238,20 @@ export function createSharedInputApi(baseUrl = "", fetcher: typeof fetch = fetch
         throw error;
       } finally { if (!online.hasPending()) pendingTarget = null; }
     },
-    async inputs(childId, signal, userId) {
+    async inputs(childId, signal, userId, options) {
       identity(childId, userId);
-      const parsed = z.object({ inputs: z.array(inputSchema), sources: z.array(sourceSchema), canCreate: z.boolean() }).strict()
-        .safeParse(await request(collection(childId), signal, userId));
+      const searchParams = new URLSearchParams();
+      if (options?.limit !== undefined) searchParams.set("limit", String(options.limit));
+      if (options?.cursor) searchParams.set("cursor", options.cursor);
+      const query = searchParams.toString();
+      const path = collection(childId) + (query ? `?${query}` : "");
+      const parsed = z.object({
+        inputs: z.array(inputSchema),
+        sources: z.array(sourceSchema),
+        canCreate: z.boolean(),
+        hasMore: z.boolean().optional(),
+        nextCursor: z.string().nullable().optional(),
+      }).strict().safeParse(await request(path, signal, userId));
       if (!parsed.success || new Set(parsed.data.inputs.map(input => input.id)).size !== parsed.data.inputs.length
         || new Set(parsed.data.sources.map(source => source.id)).size !== parsed.data.sources.length) throw new SharedInputApiError();
       for (const input of parsed.data.inputs) checkedInput({ input }, childId, userId);

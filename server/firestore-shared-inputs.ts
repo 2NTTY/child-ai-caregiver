@@ -4,7 +4,7 @@ import { privateSourceErasureOperationId } from './firebase-erasure-journal.ts';
 import type { Query, DocumentSnapshot } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { sharedInputCreateSchema, sourceManagementChangeSchema, sourceManagementSchema,
-  type SharedInput, type SharedInputCreate, type SourceManagement, type SourceManagementChange } from '../src/shared/shared-inputs.ts';
+  type SharedInput, type SharedInputCreate, type SourceManagement, type SourceManagementChange, type PublicInputSource } from '../src/shared/shared-inputs.ts';
 import { photoDraftSchema } from '../src/shared/photos.ts';
 import { emptyCareDetails } from '../src/shared/care.ts';
 import { careValuesSchema } from './care-validation.ts';
@@ -79,7 +79,13 @@ export function decodeSharedInputCursor(raw: string, userId: string, childId: st
 }
 
 export interface FirestoreSharedInputStore extends SharedInputStore {
-  list(owner: string, child: string, options?: { limit?: number; cursor?: string | null }): Promise<Awaited<ReturnType<SharedInputStore['list']>> & { hasMore?: boolean; nextCursor?: string | null }>;
+  list(owner: string, child: string, options?: { limit?: number; cursor?: string | null }): Promise<{
+    inputs: SharedInput[];
+    sources: PublicInputSource[];
+    canCreate: boolean;
+    hasMore: boolean;
+    nextCursor: string | null;
+  }>;
   claim(...args:Parameters<SharedInputStore['claim']>):Promise<Awaited<ReturnType<SharedInputStore['claim']>> & {claimedRun?: import('./product-agent-store.ts').AgentRunClaim}>;
   mutation: FirestoreOnlineMutation;
   read(binding: Binding, id: string): Promise<SharedInput>;
@@ -305,7 +311,8 @@ export function createFirestoreSharedInputStore(options: FirestoreDomainOptions)
           inputs,
           sources: publicSources.map(({ id, url, publisher }) => ({ id, url, publisher })),
           canCreate: true,
-          ...(options !== undefined ? { hasMore, nextCursor } : {}),
+          hasMore,
+          nextCursor,
         };
       });
     },

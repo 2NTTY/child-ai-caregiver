@@ -213,7 +213,7 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
         return { concern: decodeHeader(row), events: events.slice(0, 200).reverse().map(event => decodeEvent(row, event)), complete: events.length <= 200 };
       });
     },
-    list(userId: string, childId: string) {
+    list(userId: string, childId: string, _options?: { limit?: number; cursor?: string | null }) {
       return access(userId, childId, false, async (client, workspaceId, canManage): Promise<ConcernPage> => {
         const rows = (await client.query<Row>("SELECT * FROM concerns WHERE child_id=$1 ORDER BY created_at,id LIMIT 201", [childId])).rows;
         if (rows.length > MAX_CONCERNS) throw new FamilyError(400, "concern_history_requires_review");

@@ -11,6 +11,11 @@ import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import type { DocumentRequest } from '../src/shared/family-documents.ts';
 import { CONCERN_EVENT_LIMIT } from '../src/shared/concerns.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
+import { createSharedInputApi } from '../src/client/shared-input-api.ts';
+import { handleSharedInputRequest } from '../server/shared-input-api.ts';
+import { createAgentSourceTools } from '../server/agent-source-tools.ts';
+import { handleConcernRequest } from '../server/concern-api.ts';
+import { createAgentConcernTools } from '../server/agent-concern-tools.ts';
 
 const docRequest: DocumentRequest = {
   kind: 'preparation',
@@ -45,11 +50,11 @@ function setupFixture() {
     return (await authority.createChild({ userId, operationId: randomUUID(), displayName: '分頁規模驗證孩子' })).child;
   }
 
-  return { authority, online, documents, sources, concerns, init, createTestChild };
+  return { authority, online, documents, sources, concerns, init, createTestChild, fake };
 }
 
 test('family documents scale past legacy 50 cap with cursor pagination and duplicate guards', async () => {
-  const { documents, init, createTestChild } = setupFixture();
+  const { documents, init, createTestChild, fake } = setupFixture();
   await init();
   const child = await createTestChild();
   const owner = 'pagination-owner';
@@ -107,7 +112,48 @@ test('family documents scale past legacy 50 cap with cursor pagination and dupli
     'Duplicate growth report must still be rejected'
   );
 
-  // 5. Cursor tamper rejection
+  // 5. Verify growth report duplicate check catches legacy unindexed documents lacking envelope kind (Round 2 audit probe)
+  const legacyRequest: DocumentRequest = {
+    kind: 'growth_report',
+    purpose: 'handoff',
+    title: '歷史既有生長報告',
+    eventDate: '2026-03-31',
+    period: { from: '2026-01-01', to: '2026-03-31' },
+    reportMode: 'fixed',
+  };
+  const legacyDoc = await documents.create(owner, child.id, legacyRequest, randomUUID());
+  assert.ok(legacyDoc);
+
+  // Simulate pre-R1 legacy record: remove the 'kind' metadata from the Firestore envelope
+  for (const [key, record] of fake.records.entries()) {
+    if (key.includes(legacyDoc.id)) {
+      delete record.kind;
+    }
+  }
+
+  // Create another indexed report with a different period
+  const indexedRequest: DocumentRequest = {
+    kind: 'growth_report',
+    purpose: 'handoff',
+    title: '新版生長報告',
+    eventDate: '2026-09-30',
+    period: { from: '2026-07-01', to: '2026-09-30' },
+    reportMode: 'fixed',
+  };
+  const indexedDoc = await documents.create(owner, child.id, indexedRequest, randomUUID());
+  assert.ok(indexedDoc);
+
+  // Attempt to create duplicate of the legacy report (same period & reportMode)
+  await assert.rejects(
+    documents.create(owner, child.id, {
+      ...legacyRequest,
+      title: '嘗試建立重複歷史報告',
+    }, randomUUID()),
+    (err: any) => err.code === 'report_exists',
+    'Duplicate of legacy growth report lacking envelope kind must be rejected with report_exists'
+  );
+
+  // 6. Cursor tamper rejection
   await assert.rejects(
     documents.list(owner, child.id, { cursor: 'tampered-invalid-cursor' }),
     (err: any) => err.code === 'invalid_input',
@@ -178,6 +224,57 @@ test('shared inputs scale past legacy 50 wall with cursor pagination and boundar
     sources.list(owner, child.id, { cursor: crossChildCursor }),
     (err: any) => err.code === 'invalid_input' && err.status === 400
   );
+
+  // 5. Default 2-argument list call discloses nextCursor and hasMore (P1-A fix)
+  const noArgList = await sources.list(owner, child.id);
+  assert.equal(noArgList.inputs.length, 50);
+  assert.equal(noArgList.hasMore, true);
+  assert.ok(noArgList.nextCursor, '2-arg store.list call must disclose nextCursor');
+
+  // 6. End-to-end HTTP Client API pagination (navigates past item 50 to items 51-55)
+  const fetcher: typeof fetch = async (url, init) => {
+    const req = new Request(url, init);
+    return handleSharedInputRequest(req, owner, sources);
+  };
+  const api = createSharedInputApi('http://localhost', fetcher);
+  const signal = new AbortController().signal;
+
+  const apiPage1 = await api.inputs(child.id, signal, owner);
+  assert.equal(apiPage1.inputs.length, 50);
+  assert.equal(apiPage1.hasMore, true);
+  assert.ok(apiPage1.nextCursor, 'Client API must return nextCursor for page 1');
+
+  const apiPage2 = await api.inputs(child.id, signal, owner, { cursor: apiPage1.nextCursor });
+  assert.equal(apiPage2.inputs.length, 5);
+  assert.equal(apiPage2.hasMore, false);
+  assert.equal(apiPage2.nextCursor, null);
+  const apiRetrievedIds = [...apiPage1.inputs, ...apiPage2.inputs].map(i => i.id);
+  assert.equal(new Set(apiRetrievedIds).size, 55, 'Client API must retrieve all 55 unique inputs');
+
+  // 7. End-to-end Agent tool list_private_sources pagination
+  const agentRunContext = {
+    scope: { userId: owner, workspaceId: child.id, childId: child.id, authorizationVersion: '1.0', dataVersion: '1:0' },
+    runId: randomUUID(),
+    budget: {} as any,
+  };
+  const agentTools = createAgentSourceTools(sources, {} as any, agentRunContext, async () => true);
+  const listSourcesTool = agentTools.tools.find(t => t.name === 'list_private_sources')!;
+
+  const toolPage1 = await listSourcesTool.execute({}, { callId: 'c1', signal } as any);
+  assert.equal(toolPage1.status, 'succeeded');
+  const page1Data = (toolPage1.data as any).result;
+  assert.equal(page1Data.sources.length, 50);
+  assert.equal(page1Data.hasMore, true);
+  assert.ok(page1Data.nextCursor, 'Agent tool page 1 must return nextCursor');
+
+  const toolPage2 = await listSourcesTool.execute({ cursor: page1Data.nextCursor }, { callId: 'c2', signal } as any);
+  assert.equal(toolPage2.status, 'succeeded');
+  const page2Data = (toolPage2.data as any).result;
+  assert.equal(page2Data.sources.length, 5);
+  assert.equal(page2Data.hasMore, false);
+  assert.equal(page2Data.nextCursor, null);
+  const toolRetrievedIds = [...page1Data.sources, ...page2Data.sources].map((s: any) => s.id);
+  assert.equal(new Set(toolRetrievedIds).size, 55, 'Agent tool must retrieve all 55 unique sources across cursor pages');
 });
 
 test('concerns scale past legacy 200 aggregate wall with cursor pagination and timeline limit enforcement', async () => {
@@ -293,4 +390,68 @@ test('concerns scale past legacy 200 aggregate wall with cursor pagination and t
     confirm: true,
   }, randomUUID());
   assert.equal(archived.status, 'closed', 'Concern can still be archived when at event limit');
+
+  // 5. End-to-end HTTP API concern pagination (handleConcernRequest)
+  const req1 = new Request(`http://localhost/api/children/${child.id}/concerns?limit=50`, {
+    headers: { 'x-expected-user-id': owner },
+  });
+  const res1 = await handleConcernRequest(req1, owner, concerns, async () => true);
+  assert.equal(res1.status, 200);
+  const body1 = await res1.json();
+  assert.equal(body1.page.items.length, 50);
+  assert.equal(body1.page.hasMore, true);
+  assert.ok(body1.page.nextCursor, 'HTTP concerns page 1 must have nextCursor');
+
+  const req2 = new Request(`http://localhost/api/children/${child.id}/concerns?limit=50&cursor=${encodeURIComponent(body1.page.nextCursor)}`, {
+    headers: { 'x-expected-user-id': owner },
+  });
+  const res2 = await handleConcernRequest(req2, owner, concerns, async () => true);
+  assert.equal(res2.status, 200);
+  const body2 = await res2.json();
+  assert.equal(body2.page.items.length, 50);
+
+  // 6. End-to-end Agent tool read_concerns: direct ID lookup and empty-page search pagination (P1-A fix)
+  const concernAgentContext = {
+    scope: { userId: owner, workspaceId: child.id, childId: child.id, authorizationVersion: '1.0', dataVersion: '1:0' },
+    runId: randomUUID(),
+    budget: {} as any,
+  };
+  const concernTools = createAgentConcernTools(concerns, {} as any, concernAgentContext, async () => true);
+  const readConcernsTool = concernTools.find(t => t.name === 'read_concerns')!;
+  const signal = new AbortController().signal;
+
+  // Direct read of concern #150 by concernId (far past the first 50 items)
+  const concern150Id = allConcernIds[150];
+  const directRead = await readConcernsTool.execute({ concernId: concern150Id }, { callId: 'cr-1', signal } as any);
+  assert.equal(directRead.status, 'succeeded', 'Direct concern read must succeed for items past page 1');
+  assert.equal((directRead.data as any).result.concern.id, concern150Id);
+
+  // Search query on page 1 matching item 150 yields 0 items on page 1, but discloses hasMore: true and nextCursor!
+  const searchPage1 = await readConcernsTool.execute({
+    searchText: '持續關注事項 150',
+    cursor: null,
+  }, { callId: 'cr-2', signal } as any);
+  assert.equal(searchPage1.status, 'succeeded');
+  const sData1 = (searchPage1.data as any).result;
+  assert.equal(sData1.items.length, 0, 'Page 1 has no matches for concern 150');
+  assert.equal(sData1.hasMore, true, 'hasMore must be true when next page exists');
+  assert.ok(sData1.nextCursor, 'nextCursor must be returned when empty match has more pages');
+
+  // Continue reading with nextCursor to locate concern #150 across pages
+  let cursor = sData1.nextCursor;
+  let found = false;
+  while (cursor && !found) {
+    const nextSearch = await readConcernsTool.execute({
+      searchText: '持續關注事項 150',
+      cursor,
+    }, { callId: 'cr-next', signal } as any);
+    assert.equal(nextSearch.status, 'succeeded');
+    const nextData = (nextSearch.data as any).result;
+    if (nextData.items.length > 0) {
+      assert.ok(nextData.items.some((item: any) => item.id === concern150Id));
+      found = true;
+    }
+    cursor = nextData.nextCursor;
+  }
+  assert.equal(found, true, 'Concern #150 must be found by continuing search via nextCursor');
 });

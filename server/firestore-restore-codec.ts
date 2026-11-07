@@ -556,7 +556,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
           state: row.state === 'leased' ? 'unknown' : row.state });
         return { oldPath: decoded.path, path: pathFor({ ...context, scope }), data: sealFirestoreReminderOutbox(data, scope, rebound) };
       }
-      case 'family-document': { const row = parse(documents.metadata, value); Object.assign(metadata, { documentId: row.id, status: row.status, createdAt: row.createdAt, autoRefresh: row.autoRefresh }); break; }
+      case 'family-document': { const row = parse(documents.metadata, value); Object.assign(metadata, { documentId: row.id, status: row.status, createdAt: row.createdAt, autoRefresh: row.autoRefresh, kind: row.request.kind }); break; }
       case 'document-operation': value = { ...parse(documents.operation, value), storageEpoch: scope.storageEpoch }; break;
       case 'document-snapshot': { const row = parse(snapshots.manifest, value); Object.assign(metadata, { documentId: row.documentId, snapshotId: row.snapshotId, snapshotVersion: documentSnapshotIndexVersion(row) }); break; }
       case 'document-snapshot-chunk': for (const name of Object.keys(metadata)) delete metadata[name]; break;
