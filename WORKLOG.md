@@ -4882,3 +4882,61 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 ### 下一步 (Next Action)
 - 提交前向 commit，push 至遠端分支 `codex/req005-closeout-validation`。
 - 更新 PR #514 描述（使用 `--body-file` 避免跳脫問題），核實 exact-head CI SUCCESS。
+
+
+<a id="log-20261108-req005-closeout-doc-governance-and-evidence-refinement"></a>
+## LOG-20261108-004
+
+- Recorded At：2026-11-08T04:17:00+08:00
+- Work Date：2026-11-08
+- Step / Package：REQ-005 §9 (PR #514 Round 3)
+- Executor：AI Assistant（本機執行與治理校準）
+- Goal：落實 `PR10_11_AUDIT_ROUND3.md` Round 3 覆核要求，嚴格執行文件治理與精確驗收邊界校準：
+  1. 文件治理落實（`AGENTS.md#document-updates`）：依專案「不增額外審計文件、以既有權威治理文件為唯一入口」規範，移除獨立審查草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md`（git rm），將 10 套件交付血統、5 大階段狀態校準、18 項驗收場景實測矩陣（含逐項具體測試檔名與精確邊界）及 11 項未決清單完整收束至權威文件 `PLAN.md#req005-closeout01`，並同步更新 `STATUS.md`。
+  2. 場景 13 與 18 實證校準：
+     - 場景 13 關聯 PR 10（#513 head `20b08990`）修復之 client schema 容許與 Agent `read_concerns` 20 筆邊界對齊（消除 40 筆與 55 筆漏讀與截斷）；標註測試為 `tests/firestore-cursor-pagination.test.ts`；狀態標註為 `SYNTHETIC VERIFIED (PR #513 head 20b08990) | PRODUCTION STORE NOT RUN`。
+     - 場景 18 嚴格區分 55 筆 synthetic fixture 與 baseline 4001 chunking；標註 live 101 筆實體 store 為 `PRODUCTION STORE NOT RUN`，不以合成測試冒充生產 101 筆上界測試。
+     - 其餘場景逐一明列具體測試檔名（如 `tests/personal-model-settings.test.ts`、`tests/agent-budget.test.ts`、`tests/firestore-restore-codec.test.ts` 等），未跑真模型處標註 `LIVE MODEL NOT RUN`，未覆蓋處標註 `PARTIAL` 或 `NOT RUN`。
+  3. 收據更新與釘選：更新 `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json` 至 `v4`，`featureCommit` 釘選至前版基準 `758ad5d68334845271b790a4be62e965e498c7e6`；自收據移除 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md`，重新計算受影響檔案之 SHA-256、gitBlob 與位元組數。
+  4. 跨分支衝突澄清：明確標示與 PR 10（#513）存在 2 個衝突檔案（`WORKLOG.md` 與 `.github/workflows/summary-progress-offline.yml`）。
+  5. 嚴格維持 HOLD merge，僅由專案負責人 2NTTY 裁決合併。
+
+### 實際工作 (Actual Work)
+1. **獨立文件移除與權威文件整併 (`AGENTS.md#document-updates`)**：
+   - 使用 `git rm` 自版本控制移除 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md`，消除增生之獨立審查文件。
+   - 將全量收束核對清單、解耦 PR 血統表（PR 1～11，特別是 PR 10 head `20b08990` CI SUCCESS）、5 大階段狀態校準、18 項驗收場景實測矩陣（含逐項測試檔名、斷言證據與邊界狀態）及 11 項官方未決清單完整整合至權威文件 `PLAN.md#req005-closeout01`。
+   - 同步更新 `PLAN.md#active` 導航錨點與 `STATUS.md` 之投影狀態。
+2. **驗收矩陣實證精確細化**：
+   - 場景 13：關聯 PR 10 修復之 concerns client schema 容許與 Agent `read_concerns` 20 筆邊界對齊（消除 40 筆與 55 筆漏讀與截斷）；列出具體測試檔 `tests/firestore-cursor-pagination.test.ts`；標註 `SYNTHETIC VERIFIED (PR #513 head 20b08990) | PRODUCTION STORE NOT RUN`。
+   - 場景 18：精確區分 55 筆合成 fixture（`tests/firestore-cursor-pagination.test.ts`）與基線 4,001 條目分塊（`tests/firestore-family-documents.test.ts`）；標明生產 101 筆實體 store 為 `PRODUCTION STORE (101-item) NOT RUN`。
+   - 場景 14：明確註明雙遍分批（100 筆）掃描在單一 transaction 內執行，不冒稱為固定 O(1) 時間／讀取上界保證。
+   - 其餘場景逐一對應至真實測試檔名（`tests/personal-model-settings.test.ts`、`tests/agent-budget.test.ts`、`tests/product-agent.test.ts`、`tests/firestore-agent-runs.test.ts`、`tests/agent-run-limits.test.ts`、`tests/agent-model-gateway.test.ts`、`tests/agent-durable-budget.test.ts`、`tests/firestore-background-work.test.ts`、`tests/firestore-restore-codec.test.ts`、`tests/agent-context-compaction.test.ts`、`tests/summary-progress.test.ts`）。
+3. **收據更新與基準釘選**：
+   - 更新 `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json` 為 `2026-11-08.v4`，`featureCommit` 與 `calibratedCommit` 釘選至前版基準 `758ad5d68334845271b790a4be62e965e498c7e6`。
+   - 移除已刪除之 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md`，重新計算受影響檔案（`PLAN.md`、`STATUS.md`、`WORKLOG.md`、`.github/workflows/summary-progress-offline.yml`）之 SHA-256、gitBlob 與位元組數。
+
+### 變更檔案 (Changes)
+- `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` (deleted)
+- `PLAN.md`
+- `STATUS.md`
+- `artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json`
+- `WORKLOG.md`
+
+### 驗證 (Verification)
+- 需求／驗收：REQ-005 §9 全量收束核對、文件治理整併與精確驗證邊界對齊
+- 方法：
+  - `node --test tests/ci/summary-progress-contract.test.mjs` (6/6 PASS)
+  - `node --max-old-space-size=3072 node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit` (0 diagnostics, exit 0)
+  - `npx tsc --noEmit` (0 diagnostics, exit 0)
+- 結果：全部通過 (ALL PASS, 0 fail, exit 0)
+- 證據收據：`artifacts/verification/REQ005_CLOSEOUT_VALIDATION_20261107.json`
+
+### 限制與阻塞 (Limitations / Blockers)
+- 未執行真實 Gemini Live 模型連線調用。
+- 未執行生產環境實體 Firestore 壓測。
+- 衝突狀態：本分支與 PR 10（#513）存在 2 個檔案之合併衝突（`WORKLOG.md` 與 `.github/workflows/summary-progress-offline.yml`）。
+- 嚴格維持 HOLD merge，僅由專案負責人 2NTTY 裁決合併。
+
+### 下一步 (Next Action)
+- 提交前向 commit，push 至遠端分支 `codex/req005-closeout-validation`。
+- 更新 PR #514 描述（使用 `--body-file` 避免跳脫問題），核實 exact-head CI SUCCESS。
