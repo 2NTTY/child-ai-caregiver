@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { resolvePersonalModelLimits } from '../server/personal-model-policy.ts';
 import { platformPolicySchema } from '../src/shared/admin.ts';
 
-console.log('--- REQ-005 Personal Key Policy Decoupling Mutation & Verification Suite ---');
+console.log('--- REQ-005 Personal Key Policy Decoupling Invariant & Verification Suite ---');
 
 const basePolicy = platformPolicySchema.parse({
   version: 1,
@@ -52,7 +52,7 @@ console.log('[1/5] Verifying personal key configuration is not clamped by lower 
 console.log('✓ Personal key decoupling verified.');
 
 // 2. Mutation M1: Demonstrating old min(personal, admin) with limitPolicyVersion: 2 fails
-console.log('[2/5] Mutation M1: Verifying limitPolicyVersion: 2 does not trigger old capping trap...');
+console.log('[2/5] Invariant Check 2: Verifying limitPolicyVersion: 2 does not trigger old capping trap...');
 {
   const settingsWithV2 = { ...baseSettings, limitPolicyVersion: 2 };
   const limits = resolvePersonalModelLimits(settingsWithV2, basePolicy);
@@ -65,7 +65,7 @@ console.log('[2/5] Mutation M1: Verifying limitPolicyVersion: 2 does not trigger
   assert.equal(oldBuggyMaxModelCalls, 4, 'Old buggy behavior clamped to 4');
   assert.notEqual(limits.maxModelCalls, oldBuggyMaxModelCalls, 'Decoupled policy successfully rejected old defect');
 }
-console.log('✓ Mutation M1 caught: old limitPolicyVersion trap eliminated.');
+console.log('✓ Invariant Check 2 passed: old limitPolicyVersion trap eliminated.');
 
 // 3. Fallback when advanced limits omitted in personal mode
 console.log('[3/5] Verifying fallback to policy defaults when personal advanced limits omitted...');
@@ -125,5 +125,5 @@ console.log('[5/5] Verifying daily global attempt segregation...');
 console.log('✓ Daily global attempts segregated correctly between personal and platform.');
 
 console.log('================================================================');
-console.log('All Personal Key Decoupling Mutation & Verification Tests PASSED!');
+console.log('All Personal Key Policy Invariant Checks PASSED!');
 console.log('================================================================');

@@ -4786,3 +4786,21 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   - 本 PR 聚焦於 `resolvePersonalModelLimits` 解析器層級之解耦。
   - 互動執行根期限在 `firestore-agent-runs.ts` 入口處由 `readInteractiveRunSeconds(tx)` 持續讀取平台政策，端到端之多租戶 admission 快照遷移留待後續工作，非本 PR 範圍。
   - 嚴格維持純本地分支，未 push、未開 GitHub PR。
+
+### 2026-11-07 Round 2 審核跟進修正 (Audit A01 / Gap 1)
+
+- Recorded At：2026-11-07 08:50 UTC；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `9452fec4470959237d75b58e1b1ca59a3d17f34b`，保留 reflog 歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `.github/workflows/summary-progress-offline.yml`：在 `github.head_ref` 白名單加入 `codex/req005-personal-key-policy`。
+  2. `scripts/verify-personal-key-policy-mutations.mjs`：修正終端輸出及註釋，將「Mutation」字眼改為「Invariant Check」，如實陳述為不變量與防回歸驗證。
+  3. 收據與文件：更新收據檔案清單（補入 `summary-progress-offline.yml`），補全可重現命令與環境。
+- Verification：
+  - `tests/personal-model-settings.test.ts`：2/2 PASS
+  - `scripts/verify-personal-key-policy-mutations.mjs`：5/5 Invariant Checks PASS (含平台模式殘留過濾驗證)
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 核心平台回歸已解，維持 resolver-only 邊界。
+  - Admission 快照遷移（`readInteractiveRunSeconds(tx)`）留待後續 PR，不虛報端到端期限已完全解鉗。
+  - 純本地分支，零 git push，零 GitHub PR。
+

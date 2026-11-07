@@ -1,12 +1,25 @@
 {
-  "receiptVersion": "2026-11-07.v2",
+  "receiptVersion": "2026-11-07.v3",
   "package": "REQ005-PR8",
-  "title": "Decouple personal provider key from admin capping (REQ-005 §1 §3)",
+  "title": "Decouple personal provider key from admin capping (REQ-005 §1)",
   "branch": "codex/req005-personal-key-policy",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+  "parentTip": "9452fec4470959237d75b58e1b1ca59a3d17f34b",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
-  "executor": "AI Agent (Antigravity)",
-  "timestampUtc": "2026-11-07T07:20:00Z",
+  "executor": "AI Assistant (local execution)",
+  "timestampUtc": "2026-11-07T08:42:02.669Z",
+  "environment": {
+    "nodeVersion": "v24.16.0",
+    "os": "win32",
+    "shell": "powershell",
+    "tscVersion": "6.0.3"
+  },
+  "commandsExecuted": [
+    "node --experimental-test-module-mocks --test tests/personal-model-settings.test.ts",
+    "node scripts/verify-personal-key-policy-mutations.mjs",
+    "node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit",
+    "node node_modules/typescript/bin/tsc --noEmit"
+  ],
   "status": "LOCAL_VERIFIED",
   "remotePushed": false,
   "pullRequestOpened": false,
@@ -28,11 +41,26 @@
   },
   "retainedFailures": [],
   "knownLimitations": [
-    "Resolver layer decoupling only in resolvePersonalModelLimits",
-    "Interactive canonical root run deadline in readInteractiveRunSeconds(tx) continues to read platform policy until admission snapshot migration",
-    "Local branch only; zero remote writes"
+    "Resolver-only decoupling: settings and limits resolution decoupled from admin policy capping",
+    "Admission snapshot deadline migration (readInteractiveRunSeconds) deferred to subsequent PR; effective runtime deadline takes earlier tx limit until admission migration is delivered",
+    "Local branch only; zero remote writes; strictly zero GitHub PR"
   ],
   "files": {
+    ".github/workflows/summary-progress-offline.yml": {
+      "sha256": "40dc80b3c3884193ca02d230b0cf0545c110787bfc9f23f7d1b150d6a74125b2",
+      "gitBlob": "6d4a05b9039c1653401b799cd8dab7d0a429aa5f",
+      "bytes": 5224
+    },
+    "WORKLOG.md": {
+      "sha256": "1800b82df3e9280bd88ac38c9d6bcc8a0425804a76ab5e24658a24dd6ff5097f",
+      "gitBlob": "b581cd75dae8c1ce7f7a0ca8f36535e30a6fab7c",
+      "bytes": 765438
+    },
+    "scripts/verify-personal-key-policy-mutations.mjs": {
+      "sha256": "bd0c9a6d8a56a75d00dc1a81caf6eaf0c167ef7313a0ba699cf0d9ba15130011",
+      "gitBlob": "9c9af17f1d419214984db613b390c40c746dd48f",
+      "bytes": 6744
+    },
     "server/personal-model-policy.ts": {
       "sha256": "2b634b9fcabae1f253abae907a44d0d901b6ec0364bc96e9d8cf4de3fa0d901f",
       "gitBlob": "6215ce2b00151d965677653c235c1f7f5cbe8dc1",
@@ -42,16 +70,6 @@
       "sha256": "faf58485e85aa7487f2f91646115734c62392caf12c8f42434571712051cfe65",
       "gitBlob": "6da0aa12318f3c2bc2b2034e1113ccc95d7a7632",
       "bytes": 13305
-    },
-    "scripts/verify-personal-key-policy-mutations.mjs": {
-      "sha256": "3779d016dca89f2649e620d987f32582360a21883df148bc9a7e78949125f90f",
-      "gitBlob": "5796c6cfd49c5e0d21b6791ef6754678996ee48c",
-      "bytes": 6748
-    },
-    "WORKLOG.md": {
-      "sha256": "cd88fbb12974315800dcd543c3ae95cfa05cfdfcb9278b1d8a45501c35d49c40",
-      "gitBlob": "a67b91d38c0eb98e6322dde647aec06f8f053612",
-      "bytes": 764156
     }
   }
 }
