@@ -51,7 +51,7 @@ console.log('[1/5] Verifying personal key configuration is not clamped by lower 
 }
 console.log('✓ Personal key decoupling verified.');
 
-// 2. Mutation M1: Demonstrating old min(personal, admin) with limitPolicyVersion: 2 fails
+// 2. Invariant Check 2: Demonstrating old min(personal, admin) with limitPolicyVersion: 2 fails
 console.log('[2/5] Invariant Check 2: Verifying limitPolicyVersion: 2 does not trigger old capping trap...');
 {
   const settingsWithV2 = { ...baseSettings, limitPolicyVersion: 2 };
@@ -60,7 +60,7 @@ console.log('[2/5] Invariant Check 2: Verifying limitPolicyVersion: 2 does not t
   assert.equal(limits.maxQueryEmbeddings, 6, 'limitPolicyVersion: 2 must not cap maxQueryEmbeddings to policy (2)');
   assert.deepEqual(limits.cappedByAdministrator, []);
 
-  // Simulate old buggy behavior to prove mutation detection:
+  // Simulate old buggy behavior to verify invariant rejection:
   const oldBuggyMaxModelCalls = Math.min(settingsWithV2.maxModelCalls, basePolicy.maxModelCalls);
   assert.equal(oldBuggyMaxModelCalls, 4, 'Old buggy behavior clamped to 4');
   assert.notEqual(limits.maxModelCalls, oldBuggyMaxModelCalls, 'Decoupled policy successfully rejected old defect');

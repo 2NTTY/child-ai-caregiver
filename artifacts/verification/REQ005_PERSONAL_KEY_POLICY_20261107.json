@@ -1,13 +1,13 @@
 {
-  "receiptVersion": "2026-11-07.v3",
+  "receiptVersion": "2026-11-07.v4",
   "package": "REQ005-PR8",
   "title": "Decouple personal provider key from admin capping (REQ-005 §1)",
   "branch": "codex/req005-personal-key-policy",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
-  "parentTip": "9452fec4470959237d75b58e1b1ca59a3d17f34b",
+  "parentTip": "23b8f054c84a95fcec4457864e91a2f4cd983614",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
   "executor": "AI Assistant (local execution)",
-  "timestampUtc": "2026-11-07T08:42:02.669Z",
+  "timestampUtc": "2026-11-07T08:57:07.796Z",
   "environment": {
     "nodeVersion": "v24.16.0",
     "os": "win32",
@@ -17,6 +17,8 @@
   "commandsExecuted": [
     "node --experimental-test-module-mocks --test tests/personal-model-settings.test.ts",
     "node scripts/verify-personal-key-policy-mutations.mjs",
+    "node scripts/ci/summary-progress-contract.mjs list scripts/ci/summary-progress-tests.json",
+    "node --test tests/ci/summary-progress-contract.test.mjs",
     "node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit",
     "node node_modules/typescript/bin/tsc --noEmit"
   ],
@@ -32,6 +34,11 @@
     "verify-personal-key-policy-mutations.mjs": {
       "total": 5,
       "passed": 5,
+      "failed": 0
+    },
+    "summary-progress-contract.test.mjs": {
+      "total": 6,
+      "passed": 6,
       "failed": 0
     }
   },
@@ -52,14 +59,19 @@
       "bytes": 5224
     },
     "WORKLOG.md": {
-      "sha256": "1800b82df3e9280bd88ac38c9d6bcc8a0425804a76ab5e24658a24dd6ff5097f",
-      "gitBlob": "b581cd75dae8c1ce7f7a0ca8f36535e30a6fab7c",
-      "bytes": 765438
+      "sha256": "3dcfc7fb695fa22a67d14e099d71577f13896de09f5dad6dffa44bfd4b8ecf54",
+      "gitBlob": "5becb50a87b3cbaa14f5a41b8ee3200811699770",
+      "bytes": 766684
+    },
+    "scripts/ci/summary-progress-tests.json": {
+      "sha256": "1a7c593ac73bb273787e5b079fff0edbbe9f28ab468c999cf7053625138434c6",
+      "gitBlob": "0ce862667490bcee0a57f645f1a707c588cc54d0",
+      "bytes": 7190
     },
     "scripts/verify-personal-key-policy-mutations.mjs": {
-      "sha256": "bd0c9a6d8a56a75d00dc1a81caf6eaf0c167ef7313a0ba699cf0d9ba15130011",
-      "gitBlob": "9c9af17f1d419214984db613b390c40c746dd48f",
-      "bytes": 6744
+      "sha256": "53e1208cf11dbac8d1daf2bd0231c9355c0e2fe63c91476521d2fd70e4475516",
+      "gitBlob": "04b5a60e05b0f3dcf05e34f3f7224f33be72b948",
+      "bytes": 6752
     },
     "server/personal-model-policy.ts": {
       "sha256": "2b634b9fcabae1f253abae907a44d0d901b6ec0364bc96e9d8cf4de3fa0d901f",

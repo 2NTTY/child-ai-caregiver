@@ -346,5 +346,9 @@
   {
     "path": "tests/private-instruction-erasure.test.ts",
     "cases": 1
+  },
+  {
+    "path": "tests/personal-model-settings.test.ts",
+    "cases": 2
   }
 ]

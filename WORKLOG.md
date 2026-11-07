@@ -4804,3 +4804,20 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   - Admission 快照遷移（`readInteractiveRunSeconds(tx)`）留待後續 PR，不虛報端到端期限已完全解鉗。
   - 純本地分支，零 git push，零 GitHub PR。
 
+### 2026-11-07 Round 3 審核跟進修正 (Audit A01 / Gap 1)
+
+- Recorded At：2026-11-07 09:00 UTC；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `23b8f054c84a95fcec4457864e91a2f4cd983614`，保留歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `scripts/ci/summary-progress-tests.json`：將 `tests/personal-model-settings.test.ts`（2 案）正式加入 CI manifest，補齊 PR 8 專屬單元測試之離線 CI 契約覆蓋。
+  2. `scripts/verify-personal-key-policy-mutations.mjs`：徹底清除殘留之 `Mutation M1` 與 `prove mutation detection` 註釋，全面改為 Invariant Check 說法。
+  3. 收據與文件：更新收據檔案清單（補入 `summary-progress-tests.json`），客觀校準記錄時間。
+- Verification：
+  - `tests/personal-model-settings.test.ts`：2/2 PASS (TAP check 2 通過)
+  - `scripts/verify-personal-key-policy-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tests/ci/summary-progress-contract.test.mjs`：6/6 PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 維持 resolver-only 解耦，admission snapshot 遷移留待後續 PR。
+  - 純本地分支，零 git push，零 GitHub PR。
+
