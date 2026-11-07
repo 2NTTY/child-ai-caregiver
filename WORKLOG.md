@@ -4828,3 +4828,19 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   - 維持窄 scope，僅解鎖互動式輸出 Token 上限（16,384）。背景 32,768 為常數宣告，管線待後續背景 PR。
   - 純本地分支，零 git push，零 GitHub PR。
 
+### 2026-11-07 歷史記錄客觀校準與 CI Guard 接線 (Audit A05 / Gap 2)
+
+- Recorded At：2026-11-07 09:45 UTC (17:45 HKT)；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `6a8a72f27ed09b58c7fcc5ad89a99b0aa05d137e`，保留歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `scripts/ci/verify-summary-progress-offline.sh`：新增 `stage=package-invariant-guard`，將 `scripts/verify-output-ceiling-mutations.mjs` 正式納入離線 CI 執行管線，於沙盒中驗證不變量守衛。
+  2. 歷史時間戳記客觀說明：前次提交（`6a8a72f2`）生成時間為 16:58:53 HKT，模板預填為 17:10 HKT（09:10 UTC）；依 append-only 規範，在此客觀記錄提交實際發生順序，保留原始日誌歷史。
+  3. `tests/gemini-key-provider.test.ts` 邊界：維持「待 Owner 決策項（Pending Owner Action）」，因 master 基線 synthetic 429 失敗（exit 1）與離線 CI 契約之 `fail 0` 衝突，故排除於零失敗 manifest 之外，等待 Owner 決定修復或豁免。
+- Verification：
+  - `bash -n scripts/ci/verify-summary-progress-offline.sh`：exit 0
+  - `tests/ci/summary-progress-contract.test.mjs`：6/6 PASS
+  - `scripts/verify-output-ceiling-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 維持 NOT READY / HOLD merge 狀態，等待 Owner 統籌合併。純本地分支，零 git push，零 GitHub PR。
+

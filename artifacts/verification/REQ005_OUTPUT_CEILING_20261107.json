@@ -1,13 +1,13 @@
 {
-  "receiptVersion": "2026-11-07.v4",
+  "receiptVersion": "2026-11-07.v5",
   "package": "REQ005-PR7",
   "title": "Unclamp interactive output token ceiling to 16384 (REQ-005 §4 §7)",
   "branch": "codex/req005-output-ceiling",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
-  "parentTip": "0b4367836c1aa58f6dd837fcc325016aa6ebb846",
+  "parentTip": "6a8a72f27ed09b58c7fcc5ad89a99b0aa05d137e",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
   "executor": "AI Assistant (local execution)",
-  "timestampUtc": "2026-11-07T08:58:36.014Z",
+  "timestampUtc": "2026-11-07T09:38:13.479Z",
   "environment": {
     "nodeVersion": "v24.16.0",
     "os": "win32",
@@ -65,7 +65,7 @@
   "knownLimitations": [
     "Interactive model request output ceiling unclamp only (1,024 -> 16,384)",
     "maxBackground (32,768) and default (4,096) are defined as constants; worker execution and per-run budget plumbing scoped for background PRs",
-    "tests/gemini-key-provider.test.ts contains 1 master baseline failure (synthetic 429 error assertion), hence cannot be placed in 0-fail offline CI manifest without Owner exemption",
+    "tests/gemini-key-provider.test.ts contains 1 master baseline failure (synthetic 429 error assertion), pending Owner resolution or CI exemption",
     "Local branch only; zero remote writes; strictly zero GitHub PR"
   ],
   "files": {
@@ -75,14 +75,19 @@
       "bytes": 5219
     },
     "WORKLOG.md": {
-      "sha256": "f00c5f1b56abd543f5dcfb96b52ff8b0eed0169fae82ea235530bfb0119929b1",
-      "gitBlob": "70695631bfbbd089eabaef1d8b727a84513d61a1",
-      "bytes": 767892
+      "sha256": "fbbfbec9e0ba393c36477f9c0947fd96f43e4e095e6a2e9b076b87b14a6a4dca",
+      "gitBlob": "883b43a4c4f11718ceff0f7d48377df4ef9fbdc6",
+      "bytes": 769400
     },
     "scripts/ci/summary-progress-tests.json": {
       "sha256": "2d4e08cd04d04a2c07d757e1c4bfa8112763e234c3210b1401964b617e5088b0",
       "gitBlob": "43349bdd63bbb0442c1854f21a6f86f7316fbf2a",
       "bytes": 7177
+    },
+    "scripts/ci/verify-summary-progress-offline.sh": {
+      "sha256": "f30288a41f27260837e9f69f46b5bda8f5267b2ede0c13795cda385f202a869d",
+      "gitBlob": "fcce900ddc249ac8a061c9a955e0824085758dbe",
+      "bytes": 4017
     },
     "scripts/verify-output-ceiling-mutations.mjs": {
       "sha256": "7f365673e2c8be7da9c11be4db9cb2f47218e1c6676249eeaf0fc88f5cba23d3",
