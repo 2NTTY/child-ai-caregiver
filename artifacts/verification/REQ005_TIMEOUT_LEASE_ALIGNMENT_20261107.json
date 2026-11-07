@@ -1,13 +1,13 @@
 {
-  "receiptVersion": "2026-11-07.v3",
+  "receiptVersion": "2026-11-07.v4",
   "package": "REQ005-PR9",
   "title": "Align background work lease and timeout limits (REQ-005 §4 §7)",
   "branch": "codex/req005-timeout-lease-alignment",
   "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
-  "parentTip": "776a27900bdc76d982c014494a304cdaf1700351",
+  "parentTip": "3cb406f66700889a43beb7c737552d3a6d6c99d9",
   "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
   "executor": "AI Assistant (local execution)",
-  "timestampUtc": "2026-11-07T08:43:42.913Z",
+  "timestampUtc": "2026-11-07T08:57:45.950Z",
   "environment": {
     "nodeVersion": "v24.16.0",
     "os": "win32",
@@ -19,6 +19,8 @@
     "node --experimental-test-module-mocks --test tests/firestore-background-recovery.test.ts",
     "node --experimental-test-module-mocks --test tests/agent-runtime.test.ts",
     "node scripts/verify-timeout-lease-mutations.mjs",
+    "node scripts/ci/summary-progress-contract.mjs list scripts/ci/summary-progress-tests.json",
+    "node --test tests/ci/summary-progress-contract.test.mjs",
     "node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit",
     "node node_modules/typescript/bin/tsc --noEmit"
   ],
@@ -45,6 +47,11 @@
       "total": 5,
       "passed": 5,
       "failed": 0
+    },
+    "summary-progress-contract.test.mjs": {
+      "total": 6,
+      "passed": 6,
+      "failed": 0
     }
   },
   "typeCheck": {
@@ -65,14 +72,19 @@
       "bytes": 5228
     },
     "WORKLOG.md": {
-      "sha256": "767c327ed26a52a0aa8feedd973ef5dcd7c2adb0dc32f3cd25918ffb4e04b9ef",
-      "gitBlob": "a4774607bdc7e7f5ec40262f38ce2154a7c045c0",
-      "bytes": 766401
+      "sha256": "c88a9eabd2b8a6f29570a6a8c8eae35cf0ea4f954e728f03a50d1570d7b8fae1",
+      "gitBlob": "5f398caa60ceca70813104d2062db6aeeb8b06d8",
+      "bytes": 768064
+    },
+    "scripts/ci/summary-progress-tests.json": {
+      "sha256": "bfb42579bf21ba794fbf4043ecb2284f0a3c8ee231dfd6453709b412f5e8d938",
+      "gitBlob": "5baa18bbb5fd3d519fdb6233c75c091d77670dcb",
+      "bytes": 7260
     },
     "scripts/verify-timeout-lease-mutations.mjs": {
-      "sha256": "85fb26b8cff01b972732f61a146197a0fa2f8839c63452f9c21760a5dc959849",
-      "gitBlob": "5909a58ece0620f6538c10681df6d4acb03ea92f",
-      "bytes": 4956
+      "sha256": "21160fcefd3ef0ff402ad7226912f09d41cfad952cfd0afd8480ee79cbef6dde",
+      "gitBlob": "c15bdc8357656e2fafc46c25ccb54ef7b10a1768",
+      "bytes": 4969
     },
     "server/ai-config.ts": {
       "sha256": "ec76cb71936b0e3c42387316561323c0805b3e089fbbe5a2569491647546238a",

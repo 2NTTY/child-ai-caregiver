@@ -18,7 +18,7 @@ assert.equal(BACKGROUND_WORK_TIMEOUT_MS, 300000, 'Background work execution time
 assert.equal(BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS, 360000, 'Background knowledge claim TTL must be 360s');
 console.log('✓ Timeout and lease constants aligned.');
 
-// 2. Mutation M1: Whole-turn deadline (15 minutes / 900s)
+// 2. Invariant Check 1: Whole-turn deadline (15 minutes / 900s)
 console.log('[2/5] Invariant Check 1: Verifying whole-turn deadline bounds in platformPolicySchema...');
 {
   const basePolicy = {
@@ -44,9 +44,9 @@ console.log('[2/5] Invariant Check 1: Verifying whole-turn deadline bounds in pl
   const oldMaxDeadline = 300;
   assert.ok(900 > oldMaxDeadline, 'Old 300s deadline artificially constrained 15-minute executions');
 }
-console.log('✓ Invariant Check 1 passed: 900s whole-turn supported and bounded.');
+console.log('✓ Invariant Check 1 passed: 900s whole-turn schema bounds verified.');
 
-// 3. Mutation M2: Single-request timeout (180s/300s)
+// 3. Invariant Check 2: Single-request timeout (180s/300s)
 console.log('[3/5] Invariant Check 2: Verifying single-request timeout in ai-config and platformPolicySchema...');
 {
   // Accepts 180s (180,000 ms) and 300s (300,000 ms)

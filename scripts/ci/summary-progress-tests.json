@@ -346,5 +346,13 @@
   {
     "path": "tests/private-instruction-erasure.test.ts",
     "cases": 1
+  },
+  {
+    "path": "tests/ai-config.test.ts",
+    "cases": 11
+  },
+  {
+    "path": "tests/firestore-background-recovery.test.ts",
+    "cases": 1
   }
 ]

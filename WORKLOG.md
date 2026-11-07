@@ -4808,3 +4808,22 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   - 綱要層允許至 900 秒整輪期限，但目前互動式 `AgentBudget` runtime 建構子仍維持 300 秒硬檢驗；外層 Cloud Tasks 調度派發（120 秒）與 Worker 認領預設（90 秒）亦維持原狀。端到端 15 分鐘完整長任務管線仍需主動心跳續約（active heartbeat renewal）與雲端基礎設施調度調整，本 PR 僅交付常數邊界擴充與靜態租約緩衝對齊。
   - 純本地分支，零 git push，零 GitHub PR。
 
+### 2026-11-07 Round 3 審核跟進修正 (Audit B01, B09 / Gap 5)
+
+- Recorded At：2026-11-07 09:05 UTC；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `3cb406f66700889a43beb7c737552d3a6d6c99d9`，保留歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `scripts/ci/summary-progress-tests.json`：將 `tests/ai-config.test.ts`（11 案）與 `tests/firestore-background-recovery.test.ts`（1 案）正式加入 CI manifest，補齊 PR 9 相關測試之離線 CI 契約覆蓋（`agent-runtime.test.ts` 既有 20 案已在清單中）。
+  2. `scripts/verify-timeout-lease-mutations.mjs`：清除殘留之 `Mutation M1/M2` 註釋，並將 900s 輸出校準為 `schema bounds verified`，避免誤導為全端到端已可用。
+  3. 收據與文件：更新收據檔案清單（補入 `summary-progress-tests.json`），客觀校準記錄時間。
+- Verification：
+  - `tests/ai-config.test.ts`：11/11 PASS (TAP check 11 通過)
+  - `tests/firestore-background-recovery.test.ts`：1/1 PASS (TAP check 1 通過)
+  - `tests/agent-runtime.test.ts`：20/20 PASS (TAP check 20 通過)
+  - `scripts/verify-timeout-lease-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tests/ci/summary-progress-contract.test.mjs`：6/6 PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 維持擴充常數與靜態租約緩衝對齊，360s 租約與 300s 取消提供 60s 靜態緩衝，屬工程起始基準。合作式取消非強制終止；端到端 15 分鐘任務仍待後續心跳續約與雲端基礎設施調整。
+  - 純本地分支，零 git push，零 GitHub PR。
+
