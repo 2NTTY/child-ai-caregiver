@@ -11,7 +11,7 @@ import type { AiConfig } from "./ai-config.ts";
 import { nativeModelThinkingLevel } from "./model-thinking.ts";
 import type { AiUsageStore, AttemptOutcome, TokenUsage } from "./ai-usage.ts";
 import { decodePhoto } from "./photo-files.ts";
-import { AGENT_LIMITS, AGENT_TOOL_RESPONSE_RESERVE, AgentBudget, AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
+import { AGENT_LIMITS, AGENT_OUTPUT_LIMITS, AGENT_TOOL_RESPONSE_RESERVE, AgentBudget, AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
 import type { AgentModelPurpose, AgentReviewReserve } from "./agent-budget.ts";
 import { logVertexFailure } from "./vertex-diagnostics.ts";
 import { modelProviderStopReason } from "../src/shared/agent-stop-message.ts";
@@ -48,7 +48,7 @@ export function agentRequestCharacters(request: Pick<LlmRequest, "contents" | "c
 /** Shared projection for complete-request sizing and the durable provider attempt. */
 export function agentGenerationConfig(config: AiConfig, requestConfig: LlmRequest["config"]): LlmRequest["config"] {
   return { ...requestConfig, candidateCount: 1,
-    maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
+    maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive),
     thinkingConfig: { thinkingLevel: nativeModelThinkingLevel(config.model, config.agentThinkingLevel) } };
 }
 
@@ -72,7 +72,7 @@ export function vertexAgentClientOptions(config: AiConfig): GoogleGenAIOptions {
 export function createVertexAgentPayloadBuilder(config: AiConfig) {
   const thinkingLevel = nativeModelThinkingLevel(config.model, config.agentThinkingLevel);
   return (request: Pick<LlmRequest, "contents" | "config">): GenerateContentParameters => ({ model: config.model, contents: request.contents,
-    config: { ...request.config, candidateCount: 1, maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
+    config: { ...request.config, candidateCount: 1, maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive),
       thinkingConfig: { thinkingLevel } } });
 }
 

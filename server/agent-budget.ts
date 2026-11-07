@@ -2,7 +2,8 @@ import { createHash } from "node:crypto";
 import type { ModelProviderStopReason } from "../src/shared/agent-stop-message.ts";
 import { canonical } from "./firestore-session-codec.ts";
 import { RootBudgetError, type BudgetAttempt, type DurableRootBudget, type RootBudgetContext, type RootBudgetSnapshot } from "./durable-root-budget.ts";
-import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
+import { AGENT_RUN_LIMITS, AGENT_OUTPUT_LIMITS } from '../src/shared/agent-run-limits.ts';
+export { AGENT_OUTPUT_LIMITS };
 import { PERSONAL_RUN_LIMITS } from "../src/shared/model-settings.ts";
 
 export const AGENT_LIMITS = Object.freeze({ modelCalls: 4, toolCalls: AGENT_RUN_LIMITS.toolCalls.default, queryEmbeddings: 2,

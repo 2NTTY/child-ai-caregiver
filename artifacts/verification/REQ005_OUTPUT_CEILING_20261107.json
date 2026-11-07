@@ -1,0 +1,105 @@
+{
+  "receiptVersion": "2026-11-07.v2",
+  "package": "REQ005-PR7",
+  "title": "Unclamp interactive output token ceiling to 16384 (REQ-005 §4 §7)",
+  "branch": "codex/req005-output-ceiling",
+  "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+  "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
+  "executor": "AI Agent (Antigravity)",
+  "timestampUtc": "2026-11-07T07:10:00Z",
+  "status": "LOCAL_VERIFIED",
+  "remotePushed": false,
+  "pullRequestOpened": false,
+  "testSummary": {
+    "agent-model-gateway.test.ts": {
+      "total": 18,
+      "passed": 18,
+      "failed": 0
+    },
+    "ai-config.test.ts": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "gemini-key-provider.test.ts": {
+      "total": 4,
+      "passed": 3,
+      "failed": 1,
+      "baselineRetainedFailures": 1
+    },
+    "verify-output-ceiling-mutations.mjs": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0
+    }
+  },
+  "typeCheck": {
+    "tsconfigServer": "PASS (0 diagnostics, exit 0)",
+    "tsconfigRoot": "PASS (0 diagnostics, exit 0)"
+  },
+  "retainedFailures": [
+    "tests/gemini-key-provider.test.ts: metadata check synthetic 429 assertion error (present on master, retained verbatim)"
+  ],
+  "knownLimitations": [
+    "Interactive model request output ceiling unclamp only (1,024 -> 16,384)",
+    "maxBackground (32,768) and default (4,096) are defined as constants; worker execution and per-run budget plumbing scoped for background PRs",
+    "Local branch only; zero remote writes"
+  ],
+  "files": {
+    "src/shared/agent-run-limits.ts": {
+      "sha256": "a2795ee4cc5c846074122503b402f456d25fb4159e708bb6dd1d9930c660173f",
+      "gitBlob": "fc6e07f1e37ac4482248666ece32e3c08b6b70a3",
+      "bytes": 855
+    },
+    "server/agent-budget.ts": {
+      "sha256": "ac0849303da8db31bdc45fd266de1321f623731c5ceafbe70ed18f255291c4d7",
+      "gitBlob": "531872a2720a2ed34673d873d1c035124140ef24",
+      "bytes": 15766
+    },
+    "server/agent-model-gateway.ts": {
+      "sha256": "584cb565d624ec1cd738ece797906258b649784b8e92a640b7f2cad445ab3bcd",
+      "gitBlob": "ea2ae1380961f651d0daee4eb9652f957d8ef538",
+      "bytes": 24779
+    },
+    "server/ai-config.ts": {
+      "sha256": "09da77710962b1fea7c0f6fd5b37e774c67771120e35796be49d6aa5481df796",
+      "gitBlob": "22896d595432635e8109e93bab56ed3ace08c1be",
+      "bytes": 5679
+    },
+    "server/gemini-key-provider.ts": {
+      "sha256": "c01c226a0701ab9ae8aa9615efe767f917d8893462edd633f5a97a6f76af4079",
+      "gitBlob": "bb1379102c2a506ed389c76eab1205fee08be613",
+      "bytes": 10856
+    },
+    "server/openai-compatible-provider.ts": {
+      "sha256": "36705cccb2a5dcc9c431d9b9a9ab2d390396542287bdf967f7b4c9c399887f83",
+      "gitBlob": "3bda3d3219fa8a394967f0962f4ac550df5c1548",
+      "bytes": 9242
+    },
+    "tests/agent-model-gateway.test.ts": {
+      "sha256": "7bc3c5ada26631f13dda0bd0deee96d5e81ff2a201b4ac61996ea738ebec4b30",
+      "gitBlob": "452c27eef733a3f038b79d9f6a88d13c1df7084a",
+      "bytes": 22891
+    },
+    "tests/ai-config.test.ts": {
+      "sha256": "7a266458ff41a889b6da633745f7b01ea49fc81811bf1ccd7c594779e008c338",
+      "gitBlob": "3d16e99d1db291be34d4cf6656ba3affd7e445f1",
+      "bytes": 8165
+    },
+    "tests/gemini-key-provider.test.ts": {
+      "sha256": "e66b774cf9330a9cc2fa25aad0d11db7f6bbcfe3e987f9bc5fcadcb9572e62d3",
+      "gitBlob": "191f8fe7db9ecb1f119ff9bfc7d4846372166b66",
+      "bytes": 12148
+    },
+    "scripts/verify-output-ceiling-mutations.mjs": {
+      "sha256": "f0ff8053037db88e3c8e8ad5b2420717db77bd13228bcac38bc249a18f4a910f",
+      "gitBlob": "69cc63011f61ab13db8e300941a1e79fbc573558",
+      "bytes": 5485
+    },
+    "WORKLOG.md": {
+      "sha256": "e5d89f52a49e6a66a0cc9d395c54d1666344e91bec83de6aaf31accc4f6eeef6",
+      "gitBlob": "85b1b370132a1c8bd1b119c00e4801d63508aca8",
+      "bytes": 764358
+    }
+  }
+}

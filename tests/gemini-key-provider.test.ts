@@ -46,7 +46,7 @@ test("native SDK preserves Agent parts and bounds the P1 and Agent request setti
   const agentBody = JSON.parse(String(calls[0]!.init.body));
   assert.deepEqual(agentBody.contents, request.contents);
   assert.equal(agentBody.generationConfig.candidateCount, 1);
-  assert.equal(agentBody.generationConfig.maxOutputTokens, 1024);
+  assert.equal(agentBody.generationConfig.maxOutputTokens, 2048);
   assert.equal(agentBody.generationConfig.thinkingConfig.thinkingLevel, "MINIMAL");
   assert.equal(agentBody.injected, undefined);
   assert.equal(new Headers(calls[0]!.init.headers).get("x-untrusted"), null);
@@ -62,7 +62,7 @@ test("native SDK preserves Agent parts and bounds the P1 and Agent request setti
   const modelBody = JSON.parse(String(calls[1]!.init.body));
   assert.deepEqual(modelBody.contents, [{ role: "user", parts: [{ text: "Synthetic question" }] }]);
   assert.deepEqual(modelBody.systemInstruction.parts, [{ text: input.systemInstruction }]);
-  assert.equal(modelBody.generationConfig.maxOutputTokens, 1024);
+  assert.equal(modelBody.generationConfig.maxOutputTokens, 2048);
   assert.equal(calls.length, 2);
 });
 

@@ -4755,3 +4755,36 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Failure / Repair：原完整 server 型別 1536 MiB heap V8 OOM（exit -6）；3072 MiB 單次重試 SIGKILL（exit -9），原因未證，監測未觸發 512 MiB 餘量門檻。未產生完整 program／TS 診斷，仍 NOT_PASSED，沒有第三跑或縮 config。sharing suite 候選15/16、精確基線client overlay 14/16，同一 care restore journal descriptor RED 保留，只消除 growth 讀取失敗。首次 growth-read 缺 transform-types 的 launcher failure 及原盤點 required RED 亦保留，不冒充產品通過。
 - Related Current-State Correction：按已保存的 [PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 交付收據，校準根 PLAN／STATUS 唯一緊鄰 HC current 節：2026-11-05 13:00:09 UTC 正常合併至 `f453226f`，精確 head `74e7b66d0646fc2970af55eb864a6770cd63655a` 的 [CI 42030612566](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42030612566)／[CI 42031114003](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42031114003) 各 8/8 與完整 frontend 型別、locked install／offline wrapper 成功；未部署。舊 HC WORKLOG／verification JSON 仍保留合併前快照，formal41 及原限制不進位，其他包不改。
 - Limitations / Next Action：完整 GR hook／host、scope／身份排程、瀏覽器／焦點／AT、原生、真 Firestore／API／家庭資料、模型及原正式矩陣未驗。先獨立 review 全部十檔，再由精確 head 必要 offline CI 執行 33 案及 frontend／root／server 三個原完整 config；clean install、正向完整 namespace wrapper 與 GitHub job 尚未跑，不能以本地 frontend／root PASS 代填 server gate。GR 未 commit、remote 寫入、開 PR、合併或部署。
+
+
+<a id="log-20261107-output-ceiling"></a>
+## 2026-11-07｜REQ-005 PR 7 互動輸出 Token 上限解除（1,024 → 16,384）
+
+- Recorded At：2026-11-07 07:00 UTC；Work Date：2026-11-07。
+- Step / Package：REQ005-PR7 (Audit A05 / Gap 2)。
+- Branch：`codex/req005-output-ceiling`（基線：`2abe7aed60b192b253414f6464e3fd070cc377e7`）。
+- Author / Committer：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`。
+- Executor：AI Agent (Antigravity)。
+- AI Assistance：Full code modification, invariant script execution, and verification receipt authoring under explicit user direction.
+- Human Verification：Awaiting user review and Grok read-only audit review.
+- Goal / Actual Work：解除 `server/agent-model-gateway.ts`、`server/ai-config.ts`、`server/gemini-key-provider.ts` 及 `server/openai-compatible-provider.ts` 中硬編碼之 1,024 互動輸出 Token 鉗位（Audit A05），使互動式代理人執行支援環境變數與合法請求配置至 4,096 及 16,384 tokens。
+- Invariants & Changes：
+  - `src/shared/agent-run-limits.ts`：定義並匯出常數 `AGENT_OUTPUT_LIMITS = { legacyClamp: 1024, default: 4096, min: 1, maxInteractive: 16384, maxBackground: 32768 }`。
+  - `server/agent-budget.ts`：僅轉發匯出 `AGENT_OUTPUT_LIMITS`；收窄 PR 範圍，移除未接線之 `outputTokens?: number` 欄位，避免死契約殘留。
+  - `server/agent-model-gateway.ts`：將 `agentGenerationConfig` 與 `createVertexAgentPayloadBuilder` 中之 `Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens)` 解除為 `Math.min(config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive)`。
+  - `server/ai-config.ts`：擴充 `AI_MAX_OUTPUT_TOKENS` 合法範圍上限至 `AGENT_OUTPUT_LIMITS.maxInteractive`（16,384）。
+  - `server/gemini-key-provider.ts` 與 `server/openai-compatible-provider.ts`：同步解除 1,024 限制，改用 `AGENT_OUTPUT_LIMITS.maxInteractive`。
+  - `tests/gemini-key-provider.test.ts`：將測試中配置 `maxOutputTokens: 2048` 之斷言由舊鉗位 1024 更新為實際放寬之 2048。
+  - `tests/ai-config.test.ts`：新增全小寫命名測試 `ai configuration accepts unclamped output token ceilings up to 16384`。
+- Verification & Test Manifest：
+  - `tests/agent-model-gateway.test.ts`：18/18 PASS。
+  - `tests/ai-config.test.ts`：11/11 PASS。
+  - `tests/gemini-key-provider.test.ts`：3/4 PASS（1 fail，為既有 master 基線之 synthetic SDK 429 斷言失敗，保留不隱瞞）。
+  - `scripts/verify-output-ceiling-mutations.mjs`：5/5 不變量與邊界驗證全數通過。
+  - 型別診斷：`node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit` 與 `tsc --noEmit` 雙雙 0 診斷、exit 0。
+  - 驗收憑證：[REQ005_OUTPUT_CEILING_20261107.json](artifacts/verification/REQ005_OUTPUT_CEILING_20261107.json)（嚴格依據 git-blob LF 計算 SHA-256）。
+- Retained Failures：`tests/gemini-key-provider.test.ts` 第 4 案（metadata check synthetic 429 error assertion）於 master 即存在，非本 PR 引入，真實保留。
+- Limitations & Boundaries：
+  - 本 PR 嚴格聚焦於互動式模型請求之輸出 Token 解鉗（1,024 → 16,384）。
+  - `maxBackground: 32768` 與 `default: 4096` 僅為架構常數宣告，背景 Worker 完整輸出管線與 per-run budget 接線留待後續背景作業 PR 交付。
+  - 嚴格維持純本地分支，未 push、未開 GitHub PR。

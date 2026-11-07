@@ -6,7 +6,7 @@ import { nativePersonalThinkingConfig } from "./model-thinking.ts";
 import type { ModelKeyCheck, PersonalModelCatalog, PersonalModelProvider } from '../src/shared/model-settings.ts';
 import { personalModelCatalog, personalModelEntry } from './personal-model-catalog.ts';
 import { personalModelIdSchema } from '../src/shared/model-settings-schema.ts';
-import { AGENT_LIMITS, AgentStopped } from "./agent-budget.ts";
+import { AGENT_LIMITS, AGENT_OUTPUT_LIMITS, AgentStopped } from "./agent-budget.ts";
 import type { AgentModelProvider } from "./agent-model-gateway.ts";
 import { EmbeddingFailure } from "./embedding-gateway.ts";
 import type { EmbeddingProvider, EmbeddingReply } from "./embedding-gateway.ts";
@@ -89,7 +89,7 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
         try {
           const response = await client.models.generateContent({ model: config.model, contents: request.contents,
             config: { ...request.config, httpOptions, candidateCount: 1,
-              maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
+              maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive),
               thinkingConfig, abortSignal: signal } });
           const candidate = response.candidates?.[0];
           // Preserve native parts and opaque signatures for the next ADK turn.
@@ -115,7 +115,7 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
           const response = await client.models.generateContent({ model: config.model,
             contents: input.messages.map(message => ({ role: message.role, parts: [{ text: message.text }] })),
             config: { systemInstruction: input.systemInstruction, httpOptions,
-              maxOutputTokens: Math.min(options.maxOutputTokens, config.maxOutputTokens, AGENT_LIMITS.outputTokens),
+              maxOutputTokens: Math.min(options.maxOutputTokens, config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive),
               candidateCount: 1, thinkingConfig, abortSignal: options.signal } });
           return readVertexReply(response);
         } catch (error) {
