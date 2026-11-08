@@ -14,6 +14,8 @@ import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
 import { createFirestoreAvatarData } from './firestore-avatar-data.ts';
 import { avatarBinding } from './avatar-data.ts';
 import { avatarPublicState } from './avatar-policy.ts';
+import { createNotificationPreferencesData } from './firestore-notification-preferences.ts';
+import { handoverNotificationPreferencesSchema } from '../src/shared/handover.ts';
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/u), time = z.iso.datetime({ offset: true });
 const exportRequest = z.union([handoverExportCommandSchema, handoverClassExportCommandSchema]);
@@ -56,6 +58,7 @@ export function assertHandoverJobIdentity(job: FirestoreHandoverJob, scope: Work
 export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { serverClock?: () => number }) {
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), clock = options.serverClock ?? Date.now;
   const avatarData = createFirestoreAvatarData(options);
+  const preferences = createNotificationPreferencesData(data);
   const sharing = createFirestoreSharingStore(options);
   async function avatarHeadBasis(b: FirestoreAuthorityTransaction, childId: string, reviewed?: Map<string, number>) {
     const head = await avatarData.head(b, avatarBinding({ ...b.scope, childId }, { kind: 'child', childId }));
@@ -124,8 +127,13 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
       error: terminal ? job.error : expired ? 'package_expired' : sourceChanged ? 'export_scope_changed' : job.error });
   }
   async function avatarBasis(b: FirestoreAuthorityTransaction, selection: HandoverExportView['selection'], reviewed?: Map<string, number>, creating = false) {
-    if (!selection.modules.includes('attachments') && !selection.accountAvatar) return null;
+    if (!selection.modules.includes('attachments') && !selection.accountAvatar && !selection.notificationPreferences) return null;
     const heads = [];
+    if (selection.notificationPreferences) {
+      const value = domainParse(handoverNotificationPreferencesSchema, await preferences.read(b));
+      if (creating && value.version !== selection.notificationPreferences.version) domainReject('export_scope_changed');
+      heads.push(['notification_preferences', value]);
+    }
     if (selection.accountAvatar) {
       const head = await avatarData.head(b, avatarBinding(b.scope, { kind: 'self' }));
       const {canManage: _canManage,...state} = avatarPublicState(head, false);

@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { CareTask, TaskReminder, TaskWorkState } from '../src/shared/tasks.ts';
-import { taskTimeZoneSchema } from '../src/shared/tasks.ts';
 import { DEFAULT_NOTIFICATION_PREFERENCES, type NotificationPreferences } from '../src/shared/family.ts';
+import { storedNotificationPreferences } from './firestore-notification-preferences.ts';
 import { nextReminderCheck, reminderDecision, reminderLocalTime } from './task-policy.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreReminderOutboxId, firestoreReminderOutboxSchema,
@@ -17,9 +17,7 @@ const decimal = firestoreReminderOutboxSchema.shape.authorizationVersion, NIL = 
 export const firestoreTaskDeliverySchema = z.object({ kind: z.literal('task-reminder'), scope: workRecoveryScopeSchema,
   taskId: uuid, occurrenceId: uuid, taskVersion: version, authorizationVersion: decimal, generation: uuid, scheduledAt: datetime }).strict();
 export type FirestoreTaskDelivery = z.infer<typeof firestoreTaskDeliverySchema>;
-export const firestoreNotificationPreferencesSchema = z.object({ timeZone: taskTimeZoneSchema,
-  quietStart: z.string().regex(/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/u), quietEnd: z.string().regex(/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/u),
-  allowAppointmentDuringQuiet: z.boolean(), version }).strict();
+export const firestoreNotificationPreferencesSchema = storedNotificationPreferences;
 export const firestoreTaskReminderSchema: z.ZodType<TaskReminder> = z.object({ id: uuid, batchId: uuid, taskId: uuid,
   occurrenceId: uuid, taskVersion: version, phase: z.enum(['initial', 'follow_up']), createdAt: datetime }).strict();
 export const firestoreTaskReminderBatchSchema = z.object({ id: uuid, recipientUserId: z.string().min(1).max(256),
