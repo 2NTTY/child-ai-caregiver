@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } fr
 import { AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useProduction } from '../../production/ProductionProvider';
-import { importErrorText, originalComparisonResolution, originalComparisonItemKey, legacyOriginalModules, accountAvatarComparisonResolution, hasOriginalChildAvatar } from '../../production/HandoverImportOwner';
+import { importErrorText, originalComparisonResolution, originalComparisonItemKey, legacyOriginalModules, accountAvatarComparisonResolution, hasOriginalAttachments } from '../../production/HandoverImportOwner';
 import { useProductionSharing } from '../../production/useProductionSharing';
 import { handoverClassScope, handoverClassDestination, handoverClassDestinations, handoverClassEnrolmentDestination,
   handoverClassFeatures, handoverClassFeatureModules,
@@ -30,7 +30,8 @@ const memoryResourceLabels: Record<(typeof originalMemorySectionSchema.options)[
 const comparisonResourceLabel = (section: OriginalBackupComparison['items'][number]['resourceSection']) => {
   const memory = originalMemorySectionSchema.safeParse(section);
   return memory.success ? memoryResourceLabels[memory.data] : section === 'documents' ? '文件'
-    : section === 'visit_preparation' ? '到診準備' : section === 'child_avatar' ? '孩子頭像' : '';
+    : section === 'visit_preparation' ? '到診準備' : section === 'child_avatar' ? '孩子頭像'
+      : section === 'photos' ? '照片' : section === 'voices' ? '錄音' : section === 'files' ? '檔案' : '';
 };
 const states: Record<HandoverImportView['state'], string> = {
   queued: '已排隊', running: '正在匯入', completed: '已完成', cancelled: '已取消', failed: '未能完成', interrupted: '還原後已中斷',
@@ -49,7 +50,7 @@ const noAvatarSnapshot = () => null;
 const noAvatarSubscription = () => () => {};
 export function comparisonFields(module: HandoverImportModule, fields: string[], resourceSection?: OriginalBackupComparison['items'][number]['resourceSection']) {
   const moduleNames: Partial<Record<HandoverImportModule,Record<string,string>>> = {
-    care:{text:'記錄內容',details:'時間／數量',source:'資料來源'},profile:{data:'孩子概況'},attachments:{asset:'頭像圖片'},
+    care:{text:'記錄內容',details:'時間／數量',source:'資料來源'},profile:{data:'孩子概況'},attachments:{asset:resourceSection === 'child_avatar' ? '頭像圖片' : '原附件'},
     concerns:{title:'關注標題',status:'關注狀態',events:'觀察時間線',selectedEvents:'所選期間觀察'},
     memory:{title:'交代標題',text:'交代內容',memoryKey:'交代分類',provenance:'來源類別',sourceMessageId:'來源訊息'},
     tasks:{title:'待辦名稱',details:'待辦內容',occurrence:'時間／狀態',kind:'類別',assigneeUserId:'負責人'},
@@ -77,7 +78,7 @@ export function HandoverImportControls() {
   const { owner, userId, identityKey, recordsState, account, online } = useProduction();
   const controller = owner.handoverImportOwner;
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
-  const originalLabels = { ...labels, attachments: '孩子頭像', memory: state.originalMemoryResourcesEnabled ? '記憶與交代' : '私人交代' };
+  const originalLabels = { ...labels, attachments: state.originalAttachmentResourcesEnabled ? '照片、錄音、檔案與孩子頭像' : '孩子頭像', memory: state.originalMemoryResourcesEnabled ? '記憶與交代' : '私人交代' };
   const classFeatures = handoverClassFeatures(state);
   const shared = useSyncExternalStore(owner.sharedChild.subscribe, owner.sharedChild.getSnapshot, owner.sharedChild.getSnapshot);
   const avatarLane = owner.avatarOwner?.self;
@@ -199,7 +200,7 @@ export function HandoverImportControls() {
     ? preview.children.filter(child => recordsState.children.some(local => local.id === child.id && (local.accessRole === 'owner' || local.accessRole === undefined))) : [];
   const originalModules = state.originalModules ?? legacyOriginalModules;
   const supportedComparisonModules = originalModules.filter(module => available.includes(module));
-  const comparisonModules = supportedComparisonModules.filter(module => module !== 'attachments' || hasOriginalChildAvatar(preview, comparisonChild));
+  const comparisonModules = supportedComparisonModules.filter(module => module !== 'attachments' || hasOriginalAttachments(preview, comparisonChild, state.originalAttachmentResourcesEnabled));
   const comparison = state.comparison?.query.uploadId === upload?.id && state.comparison?.query.childId === comparisonChild
     && state.comparison?.query.module === comparisonModule ? state.comparison : null;
   const comparisonSelected = comparison?.selected ?? [];
@@ -411,6 +412,9 @@ export function HandoverImportControls() {
               {comparisonModule === 'memory' && comparisonModules.includes('memory') ? <Text style={styles.body}>{state.originalMemoryResourcesEnabled
                 ? '可比較及還原私人交代、記憶事實和待答主題；原資料來源、確認者及確認時間會保留，候選事實仍須確認，已結束主題不會重新開啟。只有核實原刪除紀錄的已刪項目才可恢復，恢復時建立新項並保留備份來源；再次比較會連回已恢復的項目。摘要尚未開放原件還原。'
                 : '只比較及還原私人交代；其他記憶、議題及摘要尚未開放原件還原。可選目前交代，或有刪除紀錄的已刪項目。恢復已刪交代會建立新項並保留來源；再次比較會連回已恢復的項目。'}</Text> : null}
+              {comparisonModule === 'attachments' && comparisonModules.includes('attachments') ? <Text style={styles.body}>{state.originalAttachmentResourcesEnabled
+                ? '可比較照片、錄音、檔案及孩子頭像。照片、錄音與檔案只可恢復已核實刪除的原件；恢復時建立新項，保留原刪除紀錄及備份來源。已保存的語音轉錄會一併保留，不會重新轉錄。'
+                : '此服務只開放孩子頭像原件還原。'}</Text> : null}
               {comparisonChildren.length && supportedComparisonModules.length ? <>
                 <AppSelect label="比較原有資料的孩子" value={comparisonChild} disabled={writeLocked}
                   options={[{value:'',label:'請選擇原孩子'},...comparisonChildren.map(child => ({value:child.id,label:child.displayName}))]}
@@ -418,7 +422,7 @@ export function HandoverImportControls() {
                 {comparisonModules.length ? <AppSelect label="比較資料類別" value={comparisonModules.includes(comparisonModule) ? comparisonModule : ''} disabled={writeLocked}
                   options={comparisonModules.map(module => ({value:module,label:originalLabels[module]}))}
                   onChange={value => {const parsed=originalBackupModuleSchema.safeParse(value);if (parsed.success) {controller.clearComparison();setComparisonModule(parsed.data);}}} />
-                  : <Text style={styles.body}>{comparisonChild ? '此孩子的備份沒有可比較的孩子頭像或已開放資料。' : '請先選擇要比較的原孩子。'}</Text>}
+                  : <Text style={styles.body}>{comparisonChild ? `此孩子的備份沒有可比較的${originalLabels.attachments}或已開放資料。` : '請先選擇要比較的原孩子。'}</Text>}
                 <AppButton label="比較原有資料" variant="secondary" disabled={writeLocked || !comparisonChildren.some(child => child.id === comparisonChild) || !comparisonModules.includes(comparisonModule)}
                   onPress={() => {void controller.compareOriginal(comparisonChild,comparisonModule);}} />
                 {comparison ? <View style={styles.group} accessibilityLiveRegion="polite">
@@ -426,7 +430,7 @@ export function HandoverImportControls() {
                     <Text style={styles.body}>{originalLabels[comparison.query.module]} · 已讀 {comparison.items.length} 項{comparison.nextCursor ? '，尚有下一頁。' : '，此類別比較已讀完。'}</Text>
                     {!comparison.items.length ? <Text style={styles.body}>此類別沒有可比較的項目。</Text> : null}
                     {comparison.query.module === 'attachments' && !comparisonOverwrite.length && !comparisonRestore.length
-                      ? <Text style={styles.body}>沒有可還原的孩子頭像；備份沒有圖片、與目前相同或未能核實的項目會保留目前資料。</Text> : null}
+                      ? <Text style={styles.body}>沒有可還原的{originalLabels.attachments}；與目前相同或未能核實的項目會保留目前資料。</Text> : null}
                     {comparison.query.module === 'memory' && !comparisonOverwrite.length && !comparisonRestore.length
                       ? <Text style={styles.body}>沒有可還原的{originalLabels.memory}；與備份相同或未能核實的項目會保留目前資料。</Text> : null}
                     {comparison.items.map(item => <View key={originalComparisonItemKey(item)} style={styles.item}>
