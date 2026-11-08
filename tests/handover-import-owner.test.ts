@@ -8,6 +8,51 @@ import { handoverImportTargetSchema, originalBackupModuleSchema, type HandoverIm
 import { packageHash } from '../frontend/src/platform/package-import-hash.ts';
 import { FamilyDocumentApiError } from '../src/client/family-documents-api.ts';
 import { handoverSourceHistoryKey } from '../frontend/src/production/HandoverImportOwner.ts';
+import { DEFAULT_NOTIFICATION_PREFERENCES } from '../src/shared/family.ts';
+
+test('account restore compares selected settings and submits both pinned differences in one batch', async () => {
+  const uploadId = crypto.randomUUID();
+  const upload = inspectionUpload(uploadId, crypto.randomUUID(), []);
+  const preview = upload.preview!;
+  preview.header.version = 3;
+  preview.header.selection = { modules: [], childIds: [], period: null, accountAvatar: { version: 5 }, notificationPreferences: { version: 0 } };
+  preview.children = [];
+  const commands: HandoverImportCommand[] = [];
+  const api = createHandoverApi('https://app.example.test', async (input, init) => {
+    const url = String(input);
+    if (url.endsWith('/capabilities')) return Response.json({ classEnrolment: false, notificationPreferencesRestore: true, accountAvatarRestore: true });
+    if (url.endsWith('/package-uploads/' + uploadId)) return Response.json(upload);
+    const basis = { manifestSha256: preview.manifestSha256, uploadId };
+    if (url.endsWith('/compare-account-avatar')) return Response.json({ ...basis, backupVersion: 5, localVersion: 2, state: 'different' });
+    if (url.endsWith('/compare-notification-preferences')) return Response.json({ ...basis, backupVersion: 0, localVersion: 3, state: 'different',
+      backup: DEFAULT_NOTIFICATION_PREFERENCES, current: { ...DEFAULT_NOTIFICATION_PREFERENCES, version: 3, quietStart: '21:00' } });
+    if (url.endsWith('/package-imports')) {
+      const command = JSON.parse(String(init?.body)) as HandoverImportCommand;
+      commands.push(command);
+      return Response.json({ ...inspectionBatch(command.opId, uploadId), targets: [], totalItems: 2, processedItems: 0, state: 'queued' });
+    }
+    throw Error('Unexpected route');
+  });
+  const owner = new HandoverImportOwner(api);
+  owner.syncContext('owner', 'session-1', true);
+  await owner.openUpload(uploadId);
+  await owner.readImportCapabilities();
+  await owner.compareAccountAvatar();
+  await owner.compareNotificationPreferences();
+  const first = owner.getSnapshot();
+  assert.equal(first.accountAvatarComparison?.value?.backupVersion, 5);
+  assert.equal(first.preferencesComparison?.value?.current.quietStart, '21:00');
+  await owner.compareNotificationPreferences();
+  await owner.restoreAccountParts({ preferences: first.preferencesComparison, avatar: first.accountAvatarComparison });
+  assert.equal(commands.length, 0, 'a stale comparison cannot authorize either item');
+  const latest = owner.getSnapshot();
+  await owner.restoreAccountParts({ preferences: latest.preferencesComparison, avatar: latest.accountAvatarComparison });
+  assert.equal(commands.length, 1);
+  assert.deepEqual(commands[0].notificationPreferences, { expectedVersion: 3 });
+  assert.deepEqual(commands[0].accountAvatar, { expectedVersion: 2, mode: 'replace_current' });
+  assert.deepEqual(commands[0].targets, []);
+  assert.equal(commands[0].acceptedManifestSha256, preview.manifestSha256);
+});
 
 test('original restore maps module selections to their existing resource section',()=>{
   assert.equal(originalRestoreResourceSection('sources'),'private_sources');
