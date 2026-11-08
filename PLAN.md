@@ -765,6 +765,8 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 
 **AUTH01 原生接點（已實作、未開放）：**復用 Google Sign-In 16.1.5、Apple Authentication 2.5.1 及既有 expo-crypto；原生 credential 回同一 Firebase session／同 UID linking 流程。Google 清本機選擇，Apple 使用每次 nonce／state，沒有第二份登入權威。共用 production owner、平台配置、原生 adapter、iOS plugin introspection 及 Android Hermes 匯出已有[證據](artifacts/verification/P4_AUTH_NATIVE_20261027.json)，未跑付費 build／真 provider／真機。新增原生套件須新 binary，舊 runtime 不推 OTA。下一段仍是 Firebase 自動連結／電郵准入配置、Apple 原邀請地址接續及真正配置；只在其完成後開放登入方式。
 
+**AUTH01 邀請與同 UID 連結。** Server 交易核對已批准的原方式、原收件地址驗證、原裝置 session 及目標 provider 身份；Web／原生共用交換契約。11 月 8 日唯讀核對原站仍使用電郵密碼，Google／Apple 均未配置。開放前須接回共用表單的明確連結與中斷恢復，並驗供應商登入及 relay 郵件。[接口與待驗](docs/API.md#p4-auth-providers)
+
 <a id="p4-family"></a>
 **P4-FAMILY 父包（進行中）：**由 FAMILY-A／B 承接原家庭 UI／API、成員邀請、owner／caregiver／viewer 及跨域共享；不以隱藏入口當完成。先共用契約，再開家庭／班級入口，P3 本人功能不以此為前置。
 

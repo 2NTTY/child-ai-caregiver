@@ -4768,3 +4768,10 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - [#518](https://github.com/2NTTY/child-ai-caregiver/pull/518) 將普通設定讀寫接回文檔包。無孩子的本人備份可選取偏好，還原前比對當前版本；與頭像一起還原時，同一批次分別記錄兩項結果。[#519](https://github.com/2NTTY/child-ai-caregiver/pull/519) 接回共用表單，沿原上載與批次查回結果。
 - 最先失敗的合成流程揭示缺少原件比較接點；另修正測試未預期原上載已有清理工作的斷言。最終四項後端流程及原 HTTP 上載測試通過。共用 client／owner 19 項及四個針對畫面檢查通過。兩條既有畫面斷言仍失敗，分別涉及私人交代測試寫死能力清單、孩子頭像提示的文字間距；保留失敗狀態。
 - 原站選取前版及兩批變更發布。未用正式帳戶還原設定、發通知或建立 APK。雲端完整災難恢復仍待驗。[部署證據](artifacts/verification/P4_ACCOUNT_PREFERENCES_20261108.json)
+
+### 2026-11-09 · P4-AUTH01 快捷登入准入
+
+- 修正前，同 UID 新增未批准 provider 的回歸案例未有拒絕。修正後，合成受邀身份沿 Web 和原生交換證明目前裝置與原電郵，再批准 Apple 私密轉寄身份。另一個 Apple 身份、只列在 token 名單的 provider 及在交易中撤銷的裝置均被拒絕。
+- 11 月 8 日唯讀核實原站 `allowDuplicateEmails=false`，原網域與密碼登入已配置，Google／Apple 的 provider 設定尚未建立。沒有更改 Auth 配置、寄信或執行真人登入。
+- Node 24 執行 `tests/firebase-auth.test.ts` 與 `tests/firestore-authority.test.ts`，41 項通過；Server 型別及 diff 檢查通過。新增的首次邀請斷言另在該流程通過。測試使用合成 token 及 Firestore 交易替身。
+- 共用客戶端仍需在確認時帶目標方式；Firebase 已連結但產品未收到原請求時，應重新驗證已連結的身份才補交。正式開放前另驗 Apple 團隊配置與本人登入。

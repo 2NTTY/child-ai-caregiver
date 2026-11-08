@@ -1321,7 +1321,11 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 <a id="p4-auth-providers"></a>
 ### P4-AUTH01：同 UID 登入方式（實作中，尚未部署）
 
-`GET /api/auth/providers` 沿現有 Cookie／原生 session，並要求 `x-expected-user-id` 與目前身份相同；只返回 `{userId, providers, currentProvider}`。providers 由 Admin SDK 的目前 providerData 投影為 password／google.com／apple.com，currentProvider 取已驗 session claims；不回第三方身份、token、電郵或 provider 原始資料，不由前端聲稱連結狀態。回應沿私人 no-store。
+`GET /api/auth/providers` 沿現有 Cookie／原生 session，並要求 `x-expected-user-id` 與目前身份相同。回應 `{userId, providers, currentProvider}` 只列當前 Firebase 身份與產品已批准方式的交集。已撤銷的裝置或已解除連結的第三方身份無法用原憑據讀取。回應沿私人 no-store。
+
+在 `POST /api/auth/session` 或 `/api/auth/native-session`，普通登入沿用 `{idToken}`。親自確認連結時才送 `{idToken, linkProvider}`。舊 session 必須已驗證原收件地址，且以已批准的原身份在五分鐘內重新驗證。新 token 須由指定 provider 實際登入，UID 需相同，第三方身份須與 Admin SDK 現值相符。設定連結及核對原裝置撤銷在同一 Firestore 交易內完成。單憑 Firebase 自動連結或電郵相同無法取得產品 session。
+
+若 Firebase 已連結而產品端回應中斷，先查回本人登入方式。若仍缺，使用者可重新驗證原方式，再以已連結的目標 provider 驗證本人及重送同一關係。同一 provider／身份重送只沿用原批准。客戶端須支援這個接續流程後才開放快捷登入。
 
 共用 Firebase client 增加 provider 登入、本人登入方式讀取、以原方式重新驗證，以及先核對原 UID 後連結新 provider。身份 token 仍只經原 `/api/auth/session` 或 `/api/auth/native-session` 交換；沒有新增業務憑據格式。原密碼重新驗證字串保持相容，provider-only 使用 `{provider}`。連結先以原方式重新驗證，暫存 SDK 身份最多兩分鐘，再由另一個明確同意手勢呼叫原生 linking，避免連續 popup 被阻擋。SDK 成功但交換結果未知時先讀回目前方法，不自動重做連結；這個公開讀回須等待原 SDK 操作及取消清理完成，不能用未定局的舊列表解除 unknown。內部重新驗證的唯讀核對不等待自身 queue。取消／切換身份拒絕遲到交換，清理暫存 provider 身份；不推定已取消 provider 端已完成的連結。
 
