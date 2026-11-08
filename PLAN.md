@@ -70,7 +70,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 的原生 runtime 指紋在本機與 EAS 不一致，本次未產出 APK。下次需要批量安裝時，先核對同一建置封包與依賴位置，再建置、驗簽及覆蓋安裝。[原建置紀錄](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)
 
-**當前入口（2026-11-08）為 [P4-HANDOVER01](#p4-handover01)。** 原站已交付本人記憶原件還原，以及這次新增的照片、錄音與一般檔案比較／還原。錄音可帶回包內已有的轉錄。下一步補其餘本人備份及原件還原範圍；Android 共用表單留待批量建置、原生大型包與分享留待設備驗收。D 的接點等相關接口穩定。[本次發布與未驗項](artifacts/verification/P4_ORIGINAL_ATTACHMENTS_20261108.json)／[既有記憶還原證據](artifacts/verification/P4_ORIGINAL_MEMORY_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)
+**當前入口（2026-11-08）為 [P4-HANDOVER01](#p4-handover01)。** 原站已接本人記憶、照片、錄音、檔案及帳戶通知偏好的差異還原。沒有孩子亦可單選通知偏好，或與本人頭像同批還原。下一步補其餘本人原件的覆蓋範圍，包括成長整理與私人聊天。Android 共用表單待批量發布，原生大型包與分享待設備驗收。D 的接點等相關接口穩定。[帳戶偏好發布](artifacts/verification/P4_ACCOUNT_PREFERENCES_20261108.json)／[附件發布](artifacts/verification/P4_ORIGINAL_ATTACHMENTS_20261108.json)／[記憶還原](artifacts/verification/P4_ORIGINAL_MEMORY_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)
 
 測試階段持續交付後端與 Web。Android 共用改動累積後，在實際需要安裝或驗證原生功能時集中建置 APK；個別功能包可先完成共用接線，交付紀錄另列尚未在手機驗收的部分。
 

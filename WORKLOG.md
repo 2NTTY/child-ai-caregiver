@@ -4762,3 +4762,9 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - 合成簽署包經匯出、上載、worker 及還原後讀回。修正了已選轉錄未計入批次總數，以及初版表單沒有送能力協商 header。後端兩條相關流程與完整 Server 型別、共用表單 12 條 owner 檢查與前端型別均通過。
 - 以當時原站版本 `2be85951` 加入兩份修改。發布 worktree 在 restore codec 遇到相鄰摘要改動，保留原站解碼器並加入已核對的附件世代校驗；重新驗過發行樹的簽署包還原。實際部署的 Git tree 為 `02e6c785`。站外 HTML、JS、健康及登入邊界均已核實。[版本、指紋與未驗範圍](artifacts/verification/P4_ORIGINAL_ATTACHMENTS_20261108.json)
 - 下一步補其餘本人備份範圍；真人帳戶、Android 新版本及完整災難還原另列。原 VM 已於 11 月 8 日啟動，12 月 8 日 22:32:58（香港）自動關機。
+
+### 2026-11-08 · P4-HANDOVER01 帳戶通知偏好
+
+- [#518](https://github.com/2NTTY/child-ai-caregiver/pull/518) 將普通設定讀寫接回文檔包。無孩子的本人備份可選取偏好，還原前比對當前版本；與頭像一起還原時，同一批次分別記錄兩項結果。[#519](https://github.com/2NTTY/child-ai-caregiver/pull/519) 接回共用表單，沿原上載與批次查回結果。
+- 最先失敗的合成流程揭示缺少原件比較接點；另修正測試未預期原上載已有清理工作的斷言。最終四項後端流程及原 HTTP 上載測試通過。共用 client／owner 19 項及四個針對畫面檢查通過。兩條既有畫面斷言仍失敗，分別涉及私人交代測試寫死能力清單、孩子頭像提示的文字間距；保留失敗狀態。
+- 原站選取前版及兩批變更發布。未用正式帳戶還原設定、發通知或建立 APK。雲端完整災難恢復仍待驗。[部署證據](artifacts/verification/P4_ACCOUNT_PREFERENCES_20261108.json)
