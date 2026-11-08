@@ -1,6 +1,11 @@
 import { createHash } from 'node:crypto';
 import { contentErasureSchema, privateInstructionDeletionProof } from './firestore-content-erasure.ts';
 import { privateInstructionErasureOperationId } from './firebase-erasure-journal.ts';
+import { isOriginalAttachment } from '../src/shared/handover-imports.ts';
+import { originalAttachmentKinds, originalAttachmentRetired } from './handover-original-attachments.ts';
+import { firestoreChatFileRowSchema } from './firestore-chat-files.ts';
+import { firestoreVoiceRowSchema } from './firestore-voice.ts';
+import { firestorePhotoSchemas } from './firestore-photos.ts';
 import { VectorValue } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { KNOWLEDGE_EMBEDDING } from '../src/shared/knowledge.ts';
@@ -59,6 +64,13 @@ export function assertFirestoreRestoreContent(records: readonly FirestoreRestore
       const deletion = parsed(contentErasureSchema, domain('content-erasure', privateInstructionErasureOperationId(owner, source.resourceId), owner));
       const proof = privateInstructionDeletionProof(owner, source.resourceId, deletion);
       if (!proof || proof.operationId !== mapping.retiredInstructionOpId) fail();
+    }
+    if (isOriginalAttachment(source.section)) {
+      const original = required('domain', originalAttachmentKinds[source.section], source.resourceId);
+      const asset = source.section === 'photos' ? parsed(firestorePhotoSchemas.photo, original)
+        : source.section === 'voices' ? parsed(firestoreVoiceRowSchema, original) : parsed(firestoreChatFileRowSchema, original);
+      if (!originalAttachmentRetired(source.section, asset, owner, source.resourceId)
+        || source.section === 'photos' && index.has(identity('domain', 'photo-cleanup', source.resourceId))) fail();
     }
     if ((source.section === 'memory_facts' || source.section === 'memory_topics') && mapping.target.id !== source.resourceId) {
       const deletion = domain('memory-tombstone', source.resourceId, owner);
