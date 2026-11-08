@@ -18,6 +18,7 @@ export async function handleHandoverImport(request: Request, owner: string, serv
       const originalFeatures = (request.headers.get('x-handover-original-features') ?? '').split(/[\s,]+/u);
       return respond({ classEnrolment: true,
         ...(originalFeatures.includes('memory-resources') ? { originalMemoryResources: true } : {}),
+        ...(service.originalAttachmentResources && originalFeatures.includes('attachment-resources') ? { originalAttachmentResources: true } : {}),
         ...(classFeatures.includes('concerns') ? { classConcernImports: true } : {}),
         ...(classFeatures.includes('growth') ? { classGrowthImports: true } : {}),
         ...(request.headers.get('x-handover-original-modules') === '1' ? { originalModules: service.originalModules.filter(module =>

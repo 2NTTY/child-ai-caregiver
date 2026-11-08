@@ -88,6 +88,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
   const documentRows = new Set<string>(), documentContent = new Map<string, { path: string; rowIndex: number } | null>();
   const attachmentRows = new Set<string>(), attachmentContent = new Map<string, Map<string, { path: string; rowIndex: number } | null>>();
   const concernRows = new Set<string>(), concernEvents = new Map<string, { path: string; rowIndex: number } | null>();
+  const voiceTranscripts = new Map<string, { pageIndex: number; rowIndex: number } | null>();
   const requiredDatedEvents = new Set<string>();
   const datedParents = new Set<string>(), datedRevisionParents = new Set<string>();
   const datedMedia = manifest.selection.period && manifest.selection.modules.includes('attachments') ? new DatedPackageMedia() : null;
@@ -98,6 +99,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
   const concernEventIdentity = (childId: string, concernId: string, timelineId: unknown, sequence: number) =>
     JSON.stringify([childId, concernId, timelineId ?? null, sequence]);
   const attachmentIdentity = (childId: string, section: AttachmentSection, id: string) => JSON.stringify([childId, section, id]);
+  const transcriptIdentity = (childId: string, voiceId: string) => JSON.stringify([childId, voiceId]);
   const attachmentVersion = (version: unknown, assetId: unknown = null) => JSON.stringify([typeof version === 'number' ? version : null, typeof assetId === 'string' ? assetId : null]);
   const documentIdentity = (childId: string, documentId: string, snapshotId: string, version: number) => JSON.stringify([childId, documentId, snapshotId, version]);
   const documentRowBinding = (section: string, childId: string | null, path: string, rowIndex: number, value: Record<string, unknown>) =>
@@ -200,6 +202,10 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
           concernEvents.set(identity, concernEvents.has(identity) ? null : { path: entry.path, rowIndex });
         }
         if (Object.hasOwn(attachmentSections, page.section)) attachmentRows.add(documentRowBinding(page.section, page.childId, entry.path, rowIndex, row));
+        if (page.section === 'voice_transcripts' && object(row.voice) && typeof row.voice.id === 'string') {
+          const identity = transcriptIdentity(page.childId!, row.voice.id);
+          voiceTranscripts.set(identity, voiceTranscripts.has(identity) ? null : { pageIndex: pages.length, rowIndex });
+        }
         if (page.section === 'document_content' && typeof row.documentId === 'string' && typeof row.snapshotId === 'string'
           && typeof row.snapshotVersion === 'number') {
           const identity = documentIdentity(page.childId!, row.documentId, row.snapshotId, row.snapshotVersion);
@@ -250,8 +256,25 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
       if (!ref || ref.childId === null || !allowed.modules.includes('attachments') || !allowed.childIds.includes(ref.childId)) fail('package_scope_unavailable');
       return { ...ref, content: await archive.readEntry(path, ref.bytes) };
     }
+    function selectedVoiceTranscripts(childId: string, voiceIds: readonly string[], acknowledgedManifestSha256?: string) {
+      select({ childIds: [childId], modules: ['attachments'] }, acknowledgedManifestSha256, ['voice_transcripts']);
+      const ids = parse(z.array(uuid).max(10000), voiceIds, 'invalid_package_selection');
+      const locations = new Map<number, Set<number>>();
+      let count = 0;
+      for (const id of new Set(ids)) {
+        const location = voiceTranscripts.get(transcriptIdentity(childId, id));
+        if (location === null) fail('package_voice_transcript_duplicate');
+        if (!location) continue;
+        const rows = locations.get(location.pageIndex) ?? new Set<number>();
+        rows.add(location.rowIndex); locations.set(location.pageIndex, rows); count++;
+      }
+      return { locations, count, ids: [...new Set(ids)].sort() };
+    }
     return {
       manifest: structuredClone(manifest), manifestSha256, integrity, children: structuredClone(children), close: archive.close,
+      countVoiceTranscripts(childId: string, voiceIds: readonly string[], acknowledgedManifestSha256?: string) {
+        return selectedVoiceTranscripts(childId, voiceIds, acknowledgedManifestSha256).count;
+      },
       async readAccountAvatar(acknowledgedManifestSha256: string, includeContent = false) {
         if (!accountHead || manifest.purpose !== 'backup' || acknowledgedManifestSha256 !== manifestSha256) fail('package_scope_unavailable');
         return { head: structuredClone(accountHead),
@@ -357,17 +380,25 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
           : canonicalJson(version) !== canonicalJson(revision)) fail('package_document_content_mismatch');
         return content;
       },
-      async readPage(request: { selection: HandoverImportSelection; acknowledgedManifestSha256?: string; sections?: string[]; cursor?: HandoverImportCursor | null; limit?: number }) {
-        const { selection, selectionHash, allows } = select(request.selection, request.acknowledgedManifestSha256, request.sections);
+      async readPage(request: { selection: HandoverImportSelection; acknowledgedManifestSha256?: string; sections?: string[]; voiceTranscriptIds?: string[]; cursor?: HandoverImportCursor | null; limit?: number }) {
+        const { selection, selectionHash: baseSelectionHash, allows } = select(request.selection, request.acknowledgedManifestSha256, request.sections);
+        if (request.voiceTranscriptIds !== undefined && (selection.childIds.length !== 1
+          || request.sections?.length !== 1 || request.sections[0] !== 'voice_transcripts')) fail('invalid_package_selection');
+        const transcripts = request.voiceTranscriptIds === undefined ? null
+          : selectedVoiceTranscripts(selection.childIds[0], request.voiceTranscriptIds, request.acknowledgedManifestSha256);
+        const selectionHash = transcripts ? createHash('sha256').update(JSON.stringify({ baseSelectionHash, voiceTranscriptIds: transcripts.ids })).digest('hex') : baseSelectionHash;
         const limit = parse(z.number().int().min(1).max(100), request.limit ?? 50, 'invalid_package_limit');
         const cursor = request.cursor ? parse(cursorSchema, request.cursor, 'invalid_package_cursor') : null;
         if (cursor && (cursor.manifestSha256 !== manifestSha256 || cursor.selectionHash !== selectionHash
-          || cursor.pageIndex >= pages.length || cursor.rowIndex >= pages[cursor.pageIndex].items || !allows(pages[cursor.pageIndex]))) fail('invalid_package_cursor');
+          || cursor.pageIndex >= pages.length || cursor.rowIndex >= pages[cursor.pageIndex].items || !allows(pages[cursor.pageIndex])
+          || transcripts && !transcripts.locations.get(cursor.pageIndex)?.has(cursor.rowIndex))) fail('invalid_package_cursor');
         const rows: HandoverImportRow[] = [];
         for (let i = cursor?.pageIndex ?? 0; i < pages.length; i++) {
+          if (transcripts && !transcripts.locations.has(i)) continue;
           const index = pages[i]; if (!allows(index) || !index.items) continue;
           const page = await read(index.path);
           for (let j = i === cursor?.pageIndex ? cursor.rowIndex : 0; j < page.items.length; j++) {
+            if (transcripts && !transcripts.locations.get(i)!.has(j)) continue;
             if (page.section === 'children' && !selection.childIds.includes(page.items[j].id as string)) continue;
             if (rows.length === limit) return { rows, nextCursor: { manifestSha256, selectionHash, pageIndex: i, rowIndex: j } };
             rows.push({ section: page.section, childId: page.childId, value: page.items[j], source: { ...manifest.source,

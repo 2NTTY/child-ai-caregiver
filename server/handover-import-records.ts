@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { readPrivateInstructionDeletion } from './firestore-content-erasure.ts';
 import { importProvenanceLinkSchema } from '../src/shared/import-provenance.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
-import { handoverImportResolutionSchema, handoverHistorySectionSchema } from '../src/shared/handover-imports.ts';
+import { handoverImportResolutionSchema, handoverHistorySectionSchema, isOriginalAttachment, originalAttachmentSectionSchema } from '../src/shared/handover-imports.ts';
+import { readOriginalAttachment } from './handover-original-attachments.ts';
 export { handoverImportResolutionSchema } from '../src/shared/handover-imports.ts';
 
 const uuid = z.uuid(), hash = z.string().regex(/^[a-f0-9]{64}$/u), time = z.iso.datetime({ offset: true });
@@ -29,11 +30,12 @@ export const handoverImportMappingSchema = z.object({ source: handoverSourceIden
   && value.source.section === 'instructions' && value.target.id !== value.source.resourceId);
 export type HandoverImportMapping = z.infer<typeof handoverImportMappingSchema>;
 const originalSections = new Set<HandoverSourceIdentity['section']>(['care', 'profile', 'tasks', 'private_sources',
-  'documents', 'visit_preparation', 'child_avatar', 'concerns', 'instructions', 'memory_facts', 'memory_topics']);
+  'documents', 'visit_preparation', 'child_avatar', 'concerns', 'instructions', 'memory_facts', 'memory_topics', ...originalAttachmentSectionSchema.options]);
 export function supportsOriginalSection(section: HandoverSourceIdentity['section']) { return originalSections.has(section); }
 export function validOriginalMapping(scope: WorkRecoveryScope, { source, target, retiredInstructionOpId }: HandoverImportMapping): boolean {
   if (source.accountId !== scope.ownerUserId || source.childId !== scope.childId || !supportsOriginalSection(source.section)) return false;
   if (retiredInstructionOpId) return source.section === 'instructions' && target.id !== source.resourceId;
+  if (isOriginalAttachment(source.section)) return target.id !== source.resourceId;
   if (source.section === 'profile' || source.section === 'child_avatar' || source.section === 'visit_preparation')
     return source.resourceId === scope.childId && target.id === scope.childId;
   // A deleted record/source can have a new ID. A bounded concern slice points back to its original timeline.
@@ -59,6 +61,9 @@ export async function readImportMapping(data: FirestoreDomainData, binding: Fire
     const proof = mapping.restoreOriginal && await readPrivateInstructionDeletion(data, binding, source.resourceId);
     if (!proof || proof.operationId !== mapping.retiredInstructionOpId) domainReject('import_mapping_binding', 500);
   }
+  if (mapping?.restoreOriginal && isOriginalAttachment(source.section)
+    && !(await readOriginalAttachment(data, binding, source.section, source.resourceId)).deleted)
+    domainReject('import_mapping_binding', 500);
   if (mapping?.restoreOriginal && mapping.target.id !== source.resourceId
     && (source.section === 'memory_facts' || source.section === 'memory_topics')) {
     const kind = source.section === 'memory_facts' ? 'memory-fact' : 'memory-topic';

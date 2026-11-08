@@ -3,7 +3,8 @@ import type { CareRecord, ChildProfile } from '../src/shared/care.ts';
 import type { CareTask } from '../src/shared/tasks.ts';
 import { readImportMapping } from './handover-import-records.ts';
 import { canonicalJson } from './online-routing.ts';
-import { originalBackupComparisonQuerySchema, originalBackupComparisonSchema, originalMemorySectionSchema, selfAvatarComparisonQuerySchema, selfAvatarComparisonSchema, type OriginalBackupComparison } from '../src/shared/handover-imports.ts';
+import { originalBackupComparisonQuerySchema, originalBackupComparisonSchema, originalMemorySectionSchema, originalAttachmentSectionSchema, isOriginalAttachment, selfAvatarComparisonQuerySchema, selfAvatarComparisonSchema, type OriginalBackupComparison } from '../src/shared/handover-imports.ts';
+import { readOriginalAttachment } from './handover-original-attachments.ts';
 import type { AvatarState } from '../src/shared/avatars.ts';
 import { avatarBinding } from './avatar-data.ts';
 import { avatarPublicState } from './avatar-policy.ts';
@@ -21,7 +22,7 @@ import { createFirestoreCareSummary, firestorePreparationSchema } from './firest
 import { createFirestoreOnlineStore } from './firestore-online.ts';
 import { createFirestoreSharedInputStore, sharedInputImportSchema } from './firestore-shared-inputs.ts';
 import type { createHandoverUploadService } from './handover-upload-service.ts';
-import { avatarTransferSchema, type HandoverImportCursor } from './handover-import.ts';
+import { avatarTransferSchema, fileTransferSchema, photoTransferSchema, voiceTransferSchema, type HandoverImportCursor } from './handover-import.ts';
 
 type Uploads = ReturnType<typeof createHandoverUploadService>;
 export interface OriginalBackupIssuer {
@@ -94,7 +95,7 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
       if (!manifest.selection.childIds.includes(input.childId) || !manifest.selection.modules.includes(input.module))
         domainReject('package_scope_unavailable', 403);
       const aad = JSON.stringify(['original-backup-comparison:1', owner, input.uploadId, job.version, input.childId, input.module,
-        ...(input.includeMemoryResources ? ['memory-resources'] : [])]);
+        ...(input.includeMemoryResources ? ['memory-resources'] : []), ...(input.includeAttachmentResources ? ['attachment-resources'] : [])]);
       let cursor: { scope: string; page: HandoverImportCursor } | null = null;
       if (input.cursor) {
         try { cursor = cursorSchema.parse(JSON.parse(options.cipher.decrypt(Buffer.from(input.cursor, 'base64url').toString(), aad))); }
@@ -104,6 +105,7 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
         : input.module === 'memory' ? 'instructions' : input.module;
       const page = await reader.readPage({ selection: { childIds: [input.childId], modules: [input.module] },
         sections: input.includeMemoryResources ? [...originalMemorySectionSchema.options]
+          : input.includeAttachmentResources ? ['child_avatar', ...originalAttachmentSectionSchema.options]
           : section === 'documents' ? ['documents', 'visit_preparation'] : [section], acknowledgedManifestSha256: reader.manifestSha256,
         cursor: cursor?.page, limit: section === 'documents' ? 3 : section === 'concerns' ? 2 : 20 });
       // Package reads are ordered and outside Firestore's retryable transaction callback.
@@ -120,6 +122,21 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
         const items: OriginalBackupComparison['items'] = [];
         for (const [rowIndex, row] of page.rows.entries()) {
           if (row.childId !== input.childId) domainReject('invalid_package_scope', 400);
+          if (input.includeAttachmentResources && isOriginalAttachment(row.section)) {
+            const kind = row.section;
+            const backup = kind === 'photos' ? photoTransferSchema.parse(row.value)
+              : kind === 'files' ? fileTransferSchema.parse(row.value) : voiceTransferSchema.parse(row.value);
+            if (backup.childId !== binding.scope.childId) domainReject('invalid_package_scope', 400);
+            const { mapping } = await readImportMapping(data, binding,
+              { ...manifest.source, childId: backup.childId, section: kind, resourceId: backup.id }, true);
+            const targetId = mapping?.target.id ?? backup.id, local = await readOriginalAttachment(data, binding, kind, targetId);
+            const metadata = 'metadata' in backup ? backup.metadata : backup;
+            const same = local.value && local.value.sha256 === metadata.sha256 && local.value.bytes === metadata.bytes && local.value.mimeType === metadata.mimeType;
+            const state = backup.state !== 'ready' ? 'unavailable' : same ? 'unchanged' : local.deleted ? 'deleted' : 'unavailable';
+            items.push({ id: backup.id, resourceSection: kind, ...(input.includeRestoreTarget && state !== 'unavailable' ? { targetId } : {}),
+              backupVersion: backup.version, localVersion: local.version || null, state, changedFields: state === 'deleted' ? ['asset'] : [] });
+            continue;
+          }
           if (section === 'child_avatar') {
             const backup = domainParse(avatarTransferSchema, row.value);
             if (row.section !== section || backup.target.kind !== 'child' || backup.target.childId !== input.childId)

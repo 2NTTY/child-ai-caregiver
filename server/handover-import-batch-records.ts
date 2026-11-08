@@ -19,7 +19,7 @@ export const importBatchRequestSchema = z.object({ opId: uuid, uploadId: uuid,
   enrolSourceIds: z.array(uuid).min(1).max(100).optional(),
   source: z.object({ serverId: text, accountId: text, packageId: uuid, packageVersion: count.min(1), manifestSha256: hash }).strict(),
   integrity: z.enum(['trusted', 'untrusted_signer', 'missing_proof']), acceptedManifestSha256: hash.nullable(),
-  targets: z.array(importBatchTargetSchema).max(10000), totalItems: count,
+  targets: z.array(importBatchTargetSchema).max(10000), totalItems: count, selectedTranscriptItems: count.min(1).optional(),
   resolutions: z.array(z.object({ sourceChildId: uuid, section: handoverImportResourceSectionSchema, resourceId: uuid,
     useRestoredTarget: z.literal(true).optional(), resolution: handoverImportResolutionSchema }).strict()).max(10000),
 }).strict().refine(value => (value.targets.length > 0 || !!value.accountAvatar)
@@ -31,7 +31,9 @@ export const importBatchRequestSchema = z.object({ opId: uuid, uploadId: uuid,
     && value.targets.every(row => row.target.spaceId === null && row.target.childId === row.sourceChildId
       && row.sections.every(module => originalBackupModuleSchema.safeParse(module).success)))
   && (!value.resolutionOnly || (value.resolutions.length > 0 || !!value.accountAvatar) && value.resolutions.every(row => row.resolution.mode !== 'preserve')
-    && value.totalItems === value.resolutions.length + (value.accountAvatar ? 1 : 0))
+    && value.totalItems === value.resolutions.length + (value.accountAvatar ? 1 : 0) + (value.selectedTranscriptItems ?? 0))
+  && (!value.selectedTranscriptItems || value.restoreOriginal && value.resolutionOnly
+    && value.selectedTranscriptItems <= value.resolutions.filter(row => row.section === 'voices').length)
   && (!value.enrolSourceIds || !value.resolutionOnly && new Set(value.enrolSourceIds).size === value.enrolSourceIds.length
     && value.enrolSourceIds.every(id => value.targets.some(row => row.sourceChildId === id && row.target.spaceId
       && row.target.childId === classImportChildId(row.target.spaceId, classImportSourceHash(value.source, id)))))
