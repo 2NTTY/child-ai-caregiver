@@ -3,8 +3,11 @@ import type { CareRecord, ChildProfile } from '../src/shared/care.ts';
 import type { CareTask } from '../src/shared/tasks.ts';
 import { readImportMapping } from './handover-import-records.ts';
 import { canonicalJson } from './online-routing.ts';
-import { originalBackupComparisonQuerySchema, originalBackupComparisonSchema, originalMemorySectionSchema, originalAttachmentSectionSchema, isOriginalAttachment, selfAvatarComparisonQuerySchema, selfAvatarComparisonSchema, type OriginalBackupComparison } from '../src/shared/handover-imports.ts';
+import { accountBackupComparisonQuerySchema, accountPreferencesComparisonSchema, originalBackupComparisonQuerySchema, originalBackupComparisonSchema,
+  originalMemorySectionSchema, originalAttachmentSectionSchema, isOriginalAttachment, selfAvatarComparisonSchema,
+  type OriginalBackupComparison } from '../src/shared/handover-imports.ts';
 import { readOriginalAttachment } from './handover-original-attachments.ts';
+import { createNotificationPreferencesData, sameNotificationPreferences } from './firestore-notification-preferences.ts';
 import type { AvatarState } from '../src/shared/avatars.ts';
 import { avatarBinding } from './avatar-data.ts';
 import { avatarPublicState } from './avatar-policy.ts';
@@ -47,10 +50,31 @@ export function selfAvatarDifference(backup: Pick<AvatarState, 'asset'>, live: A
   return live.asset.sha256 === backup.asset.sha256 ? 'unchanged' as const : 'different' as const;
 }
 
+export function createAccountPreferencesComparison(options: FirestoreDomainOptions & { uploads: Uploads; originalBackup?: OriginalBackupIssuer }) {
+  const authority = createFirestoreAuthority(options), preferences = createNotificationPreferencesData(new FirestoreDomainData(options));
+  return async (owner: string, raw: unknown, signal: AbortSignal) => {
+    const { uploadId, expectedUploadVersion } = domainParse(accountBackupComparisonQuerySchema, raw);
+    const opened = await options.uploads.open(owner, uploadId, signal);
+    try {
+      if (expectedUploadVersion !== opened.job.version) domainReject('version_conflict');
+      await verifyOriginalBackup(owner, opened, options.originalBackup);
+      const { manifestSha256 } = opened.reader;
+      const backup = await opened.reader.readNotificationPreferences(manifestSha256);
+      return await authority.runTransaction(owner, null, async b => {
+        const checkSource = await options.uploads.assertImportableIn(b, uploadId, expectedUploadVersion);
+        const current = await preferences.read(b);
+        checkSource(); signal.throwIfAborted();
+        return accountPreferencesComparisonSchema.parse({ uploadId, manifestSha256, backupVersion: backup.version,
+          localVersion: current.version, backup, current, state: sameNotificationPreferences(backup, current) ? 'unchanged' : 'different' });
+      });
+    } finally { await opened.dispose(); }
+  };
+}
+
 export function createSelfAvatarComparison(options: FirestoreDomainOptions & { uploads: Uploads; originalBackup?: OriginalBackupIssuer }) {
   const authority = createFirestoreAuthority(options), data = createFirestoreAvatarData(options);
   return async (owner: string, raw: unknown, signal: AbortSignal) => {
-    const { uploadId, expectedUploadVersion } = domainParse(selfAvatarComparisonQuerySchema, raw);
+    const { uploadId, expectedUploadVersion } = domainParse(accountBackupComparisonQuerySchema, raw);
     const opened = await options.uploads.open(owner, uploadId, signal);
     try {
       await verifyOriginalBackup(owner, opened, options.originalBackup);

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { HANDOVER_SECTIONS, handoverSelectionSchema } from '../src/shared/handover.ts';
+import { HANDOVER_SECTIONS, handoverSelectionSchema, handoverNotificationPreferencesSchema } from '../src/shared/handover.ts';
 import { HandoverArchiveError, handoverLimits, openHandoverArchive } from './handover-archive.ts';
 import { familyDocumentTransferSchema, documentTransferVersionSchema, documentTransferContentSchema, type DocumentTransferContent } from './family-document-transfer.ts';
 import { canonicalJson } from './online-routing.ts';
@@ -85,6 +85,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
   const attachments = new Map<string, { childId: string | null; mimeType: string; bytes: number }>();
   let accountHead: z.infer<typeof avatarTransferSchema> | null = null;
   let accountImage: z.infer<typeof attachmentContentSchemas.child_avatar> | null = null;
+  let notificationPreferences: z.infer<typeof handoverNotificationPreferencesSchema> | null = null;
   const documentRows = new Set<string>(), documentContent = new Map<string, { path: string; rowIndex: number } | null>();
   const attachmentRows = new Set<string>(), attachmentContent = new Map<string, Map<string, { path: string; rowIndex: number } | null>>();
   const concernRows = new Set<string>(), concernEvents = new Map<string, { path: string; rowIndex: number } | null>();
@@ -124,6 +125,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
   try {
     if (!supportsHandoverPeriod(manifest.selection)) fail('package_period_not_connected');
     const required = new Set([key('children', null)]);
+    if (manifest.selection.notificationPreferences) required.add(key('notification_preferences', null));
     if (manifest.selection.accountAvatar) {
       required.add(key('self_avatar', null));
       required.add(key('self_avatar_content', null));
@@ -147,6 +149,13 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
       if (count > expected.get(pageKey)!.items) fail('invalid_package_coverage');
       seen.set(pageKey, count);
       for (const [rowIndex, row] of page.items.entries()) {
+        if (page.section === 'notification_preferences') {
+          const preferences = parse(handoverNotificationPreferencesSchema, row, 'invalid_package_notification_preferences');
+          if (notificationPreferences || preferences.version !== manifest.selection.notificationPreferences?.version)
+            fail('invalid_package_notification_preferences');
+          notificationPreferences = preferences;
+          continue;
+        }
         if (page.section === 'self_avatar') {
           const head = parse(avatarTransferSchema, row, 'invalid_package_attachment');
           if (accountHead || head.target.kind !== 'self' || head.version !== manifest.selection.accountAvatar?.version)
@@ -225,6 +234,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
       pages.push({ path: entry.path, section: page.section, childId: page.childId, items: page.items.length });
     }
     if (childIds.size || [...expected].some(([id, coverage]) => !seen.has(id) || seen.get(id) !== coverage.items)) fail('invalid_package_coverage');
+    if (manifest.selection.notificationPreferences && !notificationPreferences) fail('invalid_package_notification_preferences');
     if (manifest.selection.accountAvatar && (!accountHead || Boolean(accountHead.asset) !== Boolean(accountImage)
       || accountImage && (accountImage.version !== accountHead.version || canonicalJson(accountImage.asset) !== canonicalJson(accountHead.asset))))
       fail('invalid_package_attachment');
@@ -272,6 +282,10 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
     }
     return {
       manifest: structuredClone(manifest), manifestSha256, integrity, children: structuredClone(children), close: archive.close,
+      readNotificationPreferences(acknowledgedManifestSha256: string) {
+        if (!notificationPreferences || manifest.purpose !== 'backup' || acknowledgedManifestSha256 !== manifestSha256) fail('package_scope_unavailable');
+        return structuredClone(notificationPreferences);
+      },
       countVoiceTranscripts(childId: string, voiceIds: readonly string[], acknowledgedManifestSha256?: string) {
         return selectedVoiceTranscripts(childId, voiceIds, acknowledgedManifestSha256).count;
       },

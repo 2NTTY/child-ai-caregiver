@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { supportsAccountPreferencePackage } from '../src/shared/handover.ts';
 import { domainParse, domainReject } from './firestore-domain-data.ts';
 import { HandoverArchiveError } from './handover-archive.ts';
 import { HandoverObjectError } from './firebase-handover-objects.ts';
@@ -25,7 +26,8 @@ export async function handleHandoverImport(request: Request, owner: string, serv
           (module !== 'concerns' || originalFeatures.includes('concerns'))
           && (module !== 'memory' || originalFeatures.includes('private-instructions'))) } : {}),
         ...(service.accountAvatarRestore && request.headers.get('x-handover-account-backup') === '1'
-        ? { accountAvatarRestore: true } : {}) });
+        ? { accountAvatarRestore: true } : {}),
+        ...(service.notificationPreferencesRestore && supportsAccountPreferencePackage(request.headers) ? { notificationPreferencesRestore: true } : {}) });
     }
     if (request.method === 'GET' && url.pathname === root) {
       const entries = [...url.searchParams];
@@ -40,10 +42,18 @@ export async function handleHandoverImport(request: Request, owner: string, serv
       return respond(await service.compareOriginal(owner, await readJson(request), request.signal));
     if (request.method === 'POST' && url.pathname === root + '/compare-account-avatar')
       return respond(await service.compareSelfAvatar(owner, await readJson(request), request.signal));
-    if (request.method === 'POST' && url.pathname === root) return respond(await service.create(owner, await readJson(request), request.signal), 201);
+    if (request.method === 'POST' && url.pathname === root + '/compare-notification-preferences' && supportsAccountPreferencePackage(request.headers))
+      return respond(await service.compareNotificationPreferences(owner, await readJson(request), request.signal));
+    if (request.method === 'POST' && url.pathname === root) {
+      const input = await readJson(request);
+      if (input && typeof input === 'object' && 'notificationPreferences' in input && !supportsAccountPreferencePackage(request.headers))
+        domainReject('unsupported_package_format', 409);
+      return respond(await service.create(owner, input, request.signal), 201);
+    }
     if (!route) domainReject('not_found', 404);
     const id = domainParse(z.uuid(), route[1]);
-    if (request.method === 'GET' && route[2] === 'summary') return respond(await service.summary(owner, id, request.headers.get('x-handover-account-backup') === '1'));
+    if (request.method === 'GET' && route[2] === 'summary') return respond(await service.summary(owner, id,
+      request.headers.get('x-handover-account-backup') === '1', supportsAccountPreferencePackage(request.headers)));
     if (request.method === 'GET' && route[2] === 'enrolments') return respond(await service.enrolments(owner, id));
     if (request.method === 'GET' && route[2] === 'items') {
       const entries = [...url.searchParams];

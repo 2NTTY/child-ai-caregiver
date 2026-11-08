@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createOriginalBackupComparison, createSelfAvatarComparison, verifyOriginalBackup, type OriginalBackupIssuer } from './handover-original-backup.ts';
+import { createOriginalBackupComparison, createSelfAvatarComparison, createAccountPreferencesComparison, verifyOriginalBackup, type OriginalBackupIssuer } from './handover-original-backup.ts';
 import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
 import { handoverImportCommandSchema, handoverImportResultQuerySchema, handoverImportViewSchema, handoverImportResourceSectionSchema, handoverImportModuleOf, originalBackupModuleSchema, type HandoverImportCommand } from '../src/shared/handover-imports.ts';
 import { createFirestoreHandoverImportBatches } from './firestore-handover-import-batches.ts';
@@ -78,6 +78,10 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       totalItems++;
       if (!options.attachments?.avatars) preflightError = 'package_section_not_connected';
     }
+    if (command.notificationPreferences) {
+      await reader.readNotificationPreferences(reader.manifestSha256);
+      totalItems++;
+    }
     const enrolSourceIds: string[] = [];
     const targets = command.targets.map(row => {
       if (!('createInClassId' in row.target)) return { ...row, target: row.target };
@@ -91,6 +95,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       ...(command.resolutionOnly === undefined ? {} : { resolutionOnly: command.resolutionOnly }),
       ...(command.restoreOriginal ? { restoreOriginal: true } : {}),
       ...(command.accountAvatar ? { accountAvatar: command.accountAvatar } : {}),
+      ...(command.notificationPreferences ? { notificationPreferences: command.notificationPreferences } : {}),
       source: { ...reader.manifest.source, packageId: reader.manifest.packageId, packageVersion: reader.manifest.packageVersion,
         manifestSha256: reader.manifestSha256 }, integrity: reader.integrity, acceptedManifestSha256: command.acceptedManifestSha256,
       targets, ...(enrolSourceIds.length ? { enrolSourceIds } : {}), resolutions: command.resolutions, totalItems };
@@ -101,6 +106,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     ...(job.request.resolutionOnly === undefined ? {} : { resolutionOnly: job.request.resolutionOnly }),
     ...(job.request.restoreOriginal ? { restoreOriginal: true } : {}),
     ...(job.request.accountAvatar ? { accountAvatar: job.request.accountAvatar } : {}),
+    ...(job.request.notificationPreferences ? { notificationPreferences: job.request.notificationPreferences } : {}),
     targets: job.request.targets.map(row => job.request.enrolSourceIds?.includes(row.sourceChildId)
       ? { ...row, target: { createInClassId: row.target.spaceId! } } : row), resolutions: job.request.resolutions });
   async function start(owner: string, raw: unknown, signal: AbortSignal) {
@@ -177,6 +183,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
   async function process(work: FirestoreBackgroundWork, signal: AbortSignal) {
     let job = await batches.claim(work); if (!job) return { state: 'stopped' as const };
     let opened: Opened | undefined, pendingStudent: string | undefined;
+    let pendingAccountResult: 'accountAvatarResult' | 'notificationPreferencesResult' | undefined;
     try {
       opened = await options.uploads.open(work.scope.ownerUserId, job.request.uploadId, signal);
       const checked = await verified(work.scope.ownerUserId, opened, commandFor(job));
@@ -188,8 +195,20 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       let processed = 0;
       if (job.request.accountAvatar && !job.accountAvatarResult) {
         const avatar = await opened.reader.readAccountAvatar(opened.reader.manifestSha256, true);
+        pendingAccountResult = 'accountAvatarResult';
         try { job = await batches.applySelfAvatar(work, avatar, operationSignal); }
         finally { avatar.content?.fill(0); }
+        pendingAccountResult = undefined;
+        if (job.state === 'completed') return { state: 'completed' as const };
+        processed++;
+      }
+      if (job.request.notificationPreferences && !job.notificationPreferencesResult) {
+        if (processed >= maxItems || Date.now() >= until && processed > 0)
+          return { state: 'deferred' as const, nextAt: new Date(Date.now() + 1000).toISOString() };
+        const backup = await opened.reader.readNotificationPreferences(opened.reader.manifestSha256);
+        pendingAccountResult = 'notificationPreferencesResult';
+        job = await batches.applyNotificationPreferences(work, backup, operationSignal);
+        pendingAccountResult = undefined;
         if (job.state === 'completed') return { state: 'completed' as const };
         processed++;
       }
@@ -235,6 +254,8 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       const current = await batches.get(work.scope.ownerUserId, work.resourceId);
       if (current.state === 'completed') return { state: 'completed' as const };
       if (['cancelled', 'failed', 'interrupted'].includes(current.state)) return { state: 'stopped' as const };
+      if (pendingAccountResult && current[pendingAccountResult])
+        return { state: 'deferred' as const, nextAt: new Date(Date.now() + 1000).toISOString() };
       if (pendingStudent && current.enrolments?.some(row => row.sourceChildId === pendingStudent))
         return { state: 'deferred' as const, nextAt: new Date(Date.now() + 1000).toISOString() };
       await batches.fail(work, codeOf(error), pendingStudent); return { state: 'stopped' as const };
@@ -243,9 +264,11 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
   const items = createFirestoreHandoverImportItems(options);
   return { create: start, process, originalModules: options.originalBackup ? originalBackupModuleSchema.options.filter(module => module !== 'attachments' || !!options.attachments?.avatars) : [],
     accountAvatarRestore: !!options.attachments?.avatars && !!options.originalBackup,
+    notificationPreferencesRestore: !!options.originalBackup,
     originalAttachmentResources: !!options.originalBackup && !!options.attachments?.files && !!options.attachments?.photos
       && !!options.attachments?.voices && !!options.attachments?.transcripts,
     compareOriginal: createOriginalBackupComparison(options),
+    compareNotificationPreferences: createAccountPreferencesComparison(options),
     compareSelfAvatar: createSelfAvatarComparison(options), history: items.history, summary: batches.summary,
     async enrolments(owner: string, id: string) {
       const job = await batches.get(owner, id);
