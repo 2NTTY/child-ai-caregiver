@@ -4768,3 +4768,9 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - [#518](https://github.com/2NTTY/child-ai-caregiver/pull/518) 將普通設定讀寫接回文檔包。無孩子的本人備份可選取偏好，還原前比對當前版本；與頭像一起還原時，同一批次分別記錄兩項結果。[#519](https://github.com/2NTTY/child-ai-caregiver/pull/519) 接回共用表單，沿原上載與批次查回結果。
 - 最先失敗的合成流程揭示缺少原件比較接點；另修正測試未預期原上載已有清理工作的斷言。最終四項後端流程及原 HTTP 上載測試通過。共用 client／owner 19 項及四個針對畫面檢查通過。兩條既有畫面斷言仍失敗，分別涉及私人交代測試寫死能力清單、孩子頭像提示的文字間距；保留失敗狀態。
 - 原站選取前版及兩批變更發布。未用正式帳戶還原設定、發通知或建立 APK。雲端完整災難恢復仍待驗。[部署證據](artifacts/verification/P4_ACCOUNT_PREFERENCES_20261108.json)
+
+## 2026-11-09　S12-W02 iOS 系統分享
+
+- 從 `5f3cd680` 接既有收件、草稿和資料包服務。採用已安裝的 Expo Sharing 產生原生 target，首次工程檢查確認舊配置尚未啟用；現已用 Expo 57 範本生成 Xcode 工程，核對嵌入位置、兩個 target 的 App Group、extension-only API 設定，以及原生程式改動的發布分類。
+- 收件流程以合成檔案核對同名隔離、重開、切換帳戶和遲到複製。已加入草稿或已接納的匯入不因裝置副本清理失敗而再執行。共用頁面、Android 原有 ZIP 接線及前端型別通過。Node 端 ZIP 測試補上原生 UUID 產生器的測試替身後通過。
+- 尚未以 Xcode 編譯或在 iPhone 收件；簽署、TestFlight、裝置驗收及其他平台此前未驗項維持原狀。此次沒有雲端 build、部署或模型呼叫。
