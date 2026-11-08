@@ -4755,3 +4755,10 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Failure / Repair：原完整 server 型別 1536 MiB heap V8 OOM（exit -6）；3072 MiB 單次重試 SIGKILL（exit -9），原因未證，監測未觸發 512 MiB 餘量門檻。未產生完整 program／TS 診斷，仍 NOT_PASSED，沒有第三跑或縮 config。sharing suite 候選15/16、精確基線client overlay 14/16，同一 care restore journal descriptor RED 保留，只消除 growth 讀取失敗。首次 growth-read 缺 transform-types 的 launcher failure 及原盤點 required RED 亦保留，不冒充產品通過。
 - Related Current-State Correction：按已保存的 [PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 交付收據，校準根 PLAN／STATUS 唯一緊鄰 HC current 節：2026-11-05 13:00:09 UTC 正常合併至 `f453226f`，精確 head `74e7b66d0646fc2970af55eb864a6770cd63655a` 的 [CI 42030612566](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42030612566)／[CI 42031114003](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42031114003) 各 8/8 與完整 frontend 型別、locked install／offline wrapper 成功；未部署。舊 HC WORKLOG／verification JSON 仍保留合併前快照，formal41 及原限制不進位，其他包不改。
 - Limitations / Next Action：完整 GR hook／host、scope／身份排程、瀏覽器／焦點／AT、原生、真 Firestore／API／家庭資料、模型及原正式矩陣未驗。先獨立 review 全部十檔，再由精確 head 必要 offline CI 執行 33 案及 frontend／root／server 三個原完整 config；clean install、正向完整 namespace wrapper 與 GitHub job 尚未跑，不能以本地 frontend／root PASS 代填 server gate。GR 未 commit、remote 寫入、開 PR、合併或部署。
+
+## 2026-11-08｜P4-HANDOVER01 本人附件還原與原站發布
+
+- 後端 #515、Web／Android 共用表單 #516 已合併。本人備份可比對原照片、錄音及一般檔案；清理已結束的刪除項目可以明確恢復，包內已有的轉錄隨原錄音接回。
+- 合成簽署包經匯出、上載、worker 及還原後讀回。修正了已選轉錄未計入批次總數，以及初版表單沒有送能力協商 header。後端兩條相關流程與完整 Server 型別、共用表單 12 條 owner 檢查與前端型別均通過。
+- 以當時原站版本 `2be85951` 加入兩份修改。發布 worktree 在 restore codec 遇到相鄰摘要改動，保留原站解碼器並加入已核對的附件世代校驗；重新驗過發行樹的簽署包還原。實際部署的 Git tree 為 `02e6c785`。站外 HTML、JS、健康及登入邊界均已核實。[版本、指紋與未驗範圍](artifacts/verification/P4_ORIGINAL_ATTACHMENTS_20261108.json)
+- 下一步補其餘本人備份範圍；真人帳戶、Android 新版本及完整災難還原另列。原 VM 已於 11 月 8 日啟動，12 月 8 日 22:32:58（香港）自動關機。
