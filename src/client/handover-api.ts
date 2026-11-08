@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { resolveApiBaseUrl } from '../config/api-base-url.ts';
+import { accountPreferencesFeature } from '../shared/handover.ts';
 import { handoverCancelCommandSchema, handoverExportCommandSchema, handoverExportPageSchema, handoverExportViewSchema,
   handoverPreviewQuerySchema, handoverPreviewPageSchema,
   handoverClassExportCommandSchema, classHandoverModuleSchema, type HandoverClassExportCommand,
@@ -10,7 +11,7 @@ import { handoverImportCommandSchema, handoverImportControlSchema, handoverImpor
   handoverImportResultQuerySchema, handoverImportResultPageSchema,
   handoverSourceHistoryQuerySchema, handoverSourceHistoryPageSchema,
   handoverImportSummarySchema, originalBackupComparisonSchema, originalBackupComparisonQuerySchema, originalBackupModuleSchema,
-  selfAvatarComparisonSchema, selfAvatarComparisonQuerySchema,
+  selfAvatarComparisonSchema, selfAvatarComparisonQuerySchema, accountPreferencesComparisonSchema,
   type HandoverImportSummary, type OriginalBackupComparison, type OriginalBackupComparisonQuery,
   type HandoverImportResultQuery, type HandoverImportResultPage, type HandoverImportCommand, type HandoverImportView } from '../shared/handover-imports.ts';
 
@@ -18,7 +19,7 @@ type CancelCommand = z.infer<typeof handoverCancelCommandSchema>;
 type ExportPage = z.infer<typeof handoverExportPageSchema>;
 type ImportControl = z.infer<typeof handoverImportControlSchema>;
 type ImportPage = z.infer<typeof handoverImportPageSchema>;
-const importCapabilitiesSchema = z.object({ classEnrolment: z.boolean(), classConcernImports: z.literal(true).optional(), classGrowthImports: z.literal(true).optional(), accountAvatarRestore: z.literal(true).optional(),
+const importCapabilitiesSchema = z.object({ classEnrolment: z.boolean(), classConcernImports: z.literal(true).optional(), classGrowthImports: z.literal(true).optional(), accountAvatarRestore: z.literal(true).optional(), notificationPreferencesRestore: z.literal(true).optional(),
   originalMemoryResources: z.literal(true).optional(), originalAttachmentResources: z.literal(true).optional(),
   originalModules: z.array(z.string().min(1).max(80)).max(100)
     .transform(modules => originalBackupModuleSchema.options.filter(module => modules.includes(module))).optional() });
@@ -31,13 +32,14 @@ export type HandoverSourceHistoryQuery = z.infer<typeof handoverSourceHistoryQue
 export type HandoverSourceHistoryPage = z.infer<typeof handoverSourceHistoryPageSchema>;
 export type SelfAvatarComparison = z.infer<typeof selfAvatarComparisonSchema>;
 export type SelfAvatarComparisonQuery = z.infer<typeof selfAvatarComparisonQuerySchema>;
+export type AccountPreferencesComparison = z.infer<typeof accountPreferencesComparisonSchema>;
 export const originalComparisonItemKey = (item: Pick<OriginalBackupComparison['items'][number], 'id' | 'resourceSection'>) =>
   item.resourceSection ? JSON.stringify([item.resourceSection, item.id]) : item.id;
 type RequestOptions = { collection?: 'packages' | 'package-uploads' | 'package-imports'; rawBody?: boolean; timeoutMs?: number; classDocumentReview?: boolean; originalModules?: boolean };
 
 export interface HandoverApi {
   setIdentity(userId: string | null): void;
-  exportCapabilities(userId: string, signal: AbortSignal): Promise<{ classModules: HandoverClassExportCommand['selection']['modules']; accountAvatarBackup?: true }>;
+  exportCapabilities(userId: string, signal: AbortSignal): Promise<{ classModules: HandoverClassExportCommand['selection']['modules']; accountAvatarBackup?: true; notificationPreferencesBackup?: true }>;
   createClass(userId: string, command: HandoverClassExportCommand, signal: AbortSignal): Promise<HandoverExportView>;
   preview(userId: string, query: HandoverPreviewQuery, signal: AbortSignal): Promise<HandoverPreviewPage>;
   create(userId: string, command: HandoverExportCommand, signal: AbortSignal): Promise<HandoverExportView>;
@@ -54,11 +56,12 @@ export interface HandoverApi {
   uploadContent(userId: string, id: string, body: BodyInit, signal: AbortSignal): Promise<HandoverUploadView>;
   createImport(userId: string, command: HandoverImportCommand, signal: AbortSignal): Promise<HandoverImportView>;
   getImport(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportView>;
-  importCapabilities(userId: string, signal: AbortSignal): Promise<{ classEnrolment: boolean; classConcernImports?: true; classGrowthImports?: true; accountAvatarRestore?: true; originalMemoryResources?: true; originalAttachmentResources?: true; originalModules?: OriginalBackupComparisonQuery['module'][] }>;
+  importCapabilities(userId: string, signal: AbortSignal): Promise<{ classEnrolment: boolean; classConcernImports?: true; classGrowthImports?: true; accountAvatarRestore?: true; notificationPreferencesRestore?: true; originalMemoryResources?: true; originalAttachmentResources?: true; originalModules?: OriginalBackupComparisonQuery['module'][] }>;
   importEnrolments(userId: string, id: string, signal: AbortSignal): Promise<ClassImportEnrolments>;
   importSummary(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportSummary>;
   compareOriginal(userId: string, query: OriginalBackupComparisonQuery, signal: AbortSignal): Promise<OriginalBackupComparison>;
   compareAccountAvatar(userId: string, query: SelfAvatarComparisonQuery, signal: AbortSignal): Promise<SelfAvatarComparison>;
+  compareNotificationPreferences?(userId: string, query: SelfAvatarComparisonQuery, signal: AbortSignal): Promise<AccountPreferencesComparison>;
   listImports(userId: string, signal: AbortSignal, cursor?: string): Promise<ImportPage>;
   importResults(userId: string, id: string, query: HandoverImportResultQuery, signal: AbortSignal): Promise<HandoverImportResultPage>;
   sourceHistory(userId: string, query: HandoverSourceHistoryQuery, signal: AbortSignal): Promise<HandoverSourceHistoryPage>;
@@ -108,7 +111,7 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
       const pending = (async () => {
         if (!isCurrent()) throw failure();
         response = await fetcher(api + '/' + (options.collection ?? 'packages') + path, { method: body === undefined ? 'GET' : 'POST', credentials: 'include', cache: 'no-store',
-          headers: { Accept: accept, 'x-expected-user-id': userId, 'x-handover-account-backup': '1', ...(options.classDocumentReview ? { 'x-handover-class-document-review': '1' } : {}),
+          headers: { Accept: accept, 'x-expected-user-id': userId, 'x-handover-account-backup': '1', 'x-handover-account-features': accountPreferencesFeature, ...(options.classDocumentReview ? { 'x-handover-class-document-review': '1' } : {}),
             ...(options.originalModules ? { 'x-handover-original-modules': '1', 'x-handover-original-features': 'concerns,private-instructions,memory-resources,attachment-resources', 'x-handover-class-features': 'concerns,growth' } : {}),
             ...(body === undefined ? {} : { 'Content-Type': options.rawBody ? 'application/zip' : 'application/json' }) },
           ...(body === undefined ? {} : { body: options.rawBody ? body as BodyInit : JSON.stringify(body) }), signal: controller.signal });
@@ -155,7 +158,7 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
     setIdentity,
     exportCapabilities: (userId, signal) => json(userId, '/capabilities', signal,
       z.object({ classModules: z.array(z.string().min(1).max(80)).max(100)
-        .transform(modules => classHandoverModuleSchema.options.filter(module => modules.includes(module))), accountAvatarBackup: z.literal(true).optional() }), undefined, undefined, { classDocumentReview: true }),
+        .transform(modules => classHandoverModuleSchema.options.filter(module => modules.includes(module))), accountAvatarBackup: z.literal(true).optional(), notificationPreferencesBackup: z.literal(true).optional() }), undefined, undefined, { classDocumentReview: true }),
     async createClass(userId, input, signal) {
       const parsed = handoverClassExportCommandSchema.safeParse(input); if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
       return json(userId, '', signal, handoverExportViewSchema, parsed.data, result => result.id === parsed.data.opId);
@@ -219,6 +222,12 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
       const parsed = selfAvatarComparisonQuerySchema.safeParse(query);
       if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
       return json(userId, '/compare-account-avatar', signal, selfAvatarComparisonSchema, parsed.data,
+        result => result.uploadId === parsed.data.uploadId, { collection: 'package-imports' });
+    },
+    async compareNotificationPreferences(userId, query, signal) {
+      const parsed = selfAvatarComparisonQuerySchema.safeParse(query);
+      if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
+      return json(userId, '/compare-notification-preferences', signal, accountPreferencesComparisonSchema, parsed.data,
         result => result.uploadId === parsed.data.uploadId, { collection: 'package-imports' });
     },
     async compareOriginal(userId, query, signal) {

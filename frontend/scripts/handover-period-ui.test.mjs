@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { test } from 'node:test';
 import * as handoverOwner from '../src/production/HandoverOwner.ts';
 import * as handoverContract from '../../src/shared/handover.ts';
+import * as familyContract from '../../src/shared/family.ts';
 import * as handoverImportContract from '../../src/shared/handover-imports.ts';
 import * as handoverImportOwner from '../src/production/HandoverImportOwner.ts';
 import { createHandoverApi, HandoverApiError } from '../../src/client/handover-api.ts';
@@ -16,7 +17,8 @@ let current, production;
 const hooks = { useState(initial) { const instance = current, index = instance.cursor++;
   if (!(index in instance.slots)) instance.slots[index] = initial;
   return [instance.slots[index], next => { instance.slots[index] = typeof next === 'function' ? next(instance.slots[index]) : next; }]; },
-  useEffect: noop, useLayoutEffect: noop, useRef: () => ({ current: null }), useSyncExternalStore: (_subscribe, get) => get() };
+  useEffect: noop, useLayoutEffect: noop, useRef(initial) { const index = current.cursor++;
+    if (!(index in current.slots)) current.slots[index] = { current: initial }; return current.slots[index]; }, useSyncExternalStore: (_subscribe, get) => get() };
 const cache = new Map();
 function load(path) {
   if (cache.has(path)) return cache.get(path);
@@ -25,6 +27,9 @@ function load(path) {
     : name === 'react-native' ? { View: 'View', StyleSheet: { create: value => value }, Platform: { OS: 'web' }, AppState: { currentState: 'active' } }
     : name === 'react-native-paper' ? { Text: 'Text' }
     : name.endsWith('/ProductionProvider') ? { useProduction: () => production }
+    : name.endsWith('/SettingsDomains') ? { useProductionSettingsDomains: () => ({ preferences: {
+      scopeKey: JSON.stringify([production.identityKey, 1]), preferences: handoverContract.handoverNotificationPreferencesSchema.parse(familyContract.DEFAULT_NOTIFICATION_PREFERENCES),
+      online: true, fresh: true, original: null, busy: false, refresh: noop } }) }
     : name.endsWith('/useProductionSharing') ? { useProductionSharing: () => ({ controller: {}, state: { identityKey: null, selected: null, shares: { items: [] }, spaces: { items: [] }, teacherClasses: { items: [] }, rosterQuery: '' } }) }
     : name.endsWith('/handover-class-targets') ? classTargets
     : name.endsWith('/handover-class-export') ? classExport
@@ -32,6 +37,7 @@ function load(path) {
     : name.endsWith('/HandoverImportOwner') ? handoverImportOwner
     : name.endsWith('/handover-api') ? { HandoverApiError }
     : name.endsWith('/handover') ? handoverContract
+    : name.endsWith('/family') ? familyContract
     : name.endsWith('/handover-imports') ? handoverImportContract
     : name.endsWith('/date-time') ? load('../src/components/date-time.ts')
     : name.endsWith('/file-export') ? { useFileExportAvailable: () => true }
@@ -251,7 +257,7 @@ test('handover period selection preserves inclusive Hong Kong days with supporte
       createdAt: '2026-11-04T00:00:00Z', expiresAt: '2026-11-05T00:00:00Z', bytes: null, error: null };
   }, async preview() { return { items: [], scopeVersion: 'a'.repeat(64), nextCursor: null }; } });
   controller.syncContext('owner', 'owner:1', true);
-  production = { owner: { handoverOwner: controller }, userId: 'owner', identityKey: 'owner:1', online: true,
+  production = { owner: { handoverOwner: controller, getSnapshot: () => ({ identityKey: 'owner:1', sessionGeneration: 1 }) }, userId: 'owner', identityKey: 'owner:1', online: true,
     recordsState: { children: [{ id, displayName: 'Own child', accessRole: 'owner' }] }, account: { gate: 'ready', deletion: { phase: 'idle' } } };
   const component = load('../src/components/account/HandoverControls.tsx').HandoverControls, view = render(component);
   const again = () => render(component, view);
