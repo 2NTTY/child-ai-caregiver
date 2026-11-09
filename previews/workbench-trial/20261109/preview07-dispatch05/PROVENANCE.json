@@ -1,0 +1,142 @@
+{
+  "archiveVersion": "workbench-trial-preview07-dispatch05-20261109",
+  "repository": "2NTTY/child-ai-caregiver",
+  "githubBaseCommit": "5f3cd680de426cb77fd94b9a346076740c885c6d",
+  "source": {
+    "directory": "source",
+    "files": 704,
+    "canonicalSha256": "c94b8fd018402103248859f81b4a08c12eaf8bea566fb35e290a7a6636bc02c6",
+    "inventory": "SOURCE.json"
+  },
+  "publicOverlay": {
+    "directory": "public-overlay",
+    "files": [
+      {
+        "path": "_expo/static/js/web/AdminScreenContent-8ccfe093737df5f90405c7fcbec4c7c7.js",
+        "bytes": 13943,
+        "sha256": "e146635fb44f4638826fddc647946d1a450d66f891da69e0a4c5cbc9b28977dd"
+      },
+      {
+        "path": "_expo/static/js/web/AvatarCropPreviewContent-318d092e729b2531881ca9b4a724bc72.js",
+        "bytes": 30599,
+        "sha256": "40c53b4b93194b8ee55a8cefc40f1c4c87f398105e8826f08f06030737eff2aa"
+      },
+      {
+        "path": "_expo/static/js/web/index-497a6f7e4c4eabdb035d072d879ddcd4.js",
+        "bytes": 6213747,
+        "sha256": "4f052435a02e2a47ebc877314c68adcb3964d346a0112d0aed299e6e6d7494c2"
+      },
+      {
+        "path": "experiments/dispatch.js",
+        "bytes": 6664,
+        "sha256": "0adfce12a29b1ed4524919f6396935e1b03a914cdcf589a03db2cdcc7ad67b89"
+      },
+      {
+        "path": "experiments/workbench-trial/entry.c7e8f5ad62b540c6.js",
+        "bytes": 11715,
+        "sha256": "c7e8f5ad62b540c663a019f38e17d03887f67b377bde9b46361d25b1655f9d70"
+      },
+      {
+        "path": "experiments/workbench-trial/identity.ca480445b619f326.js",
+        "bytes": 5751,
+        "sha256": "ca480445b619f32697f70c82f2fffdfbb7a9ef5b34f006629987880f09778b52"
+      },
+      {
+        "path": "experiments/workbench-trial/index.html",
+        "bytes": 1957,
+        "sha256": "b47ce56f4dcb2ea71e27ef219b703b4e1914a04ebb8e8f373ba3f43cf644c2de"
+      },
+      {
+        "path": "qa/adapter.js",
+        "bytes": 11926,
+        "sha256": "fc1d5ec2791bc97670cfaa7e53d87a5c274dce62ed768d1aeefa0f6cf342f613"
+      }
+    ],
+    "requiresBaseline": {
+      "kind": "separate Site source repository",
+      "commit": "80284456ff207b7b4421fe2c0c9874c1976cf6fb",
+      "existingFiles": 342
+    },
+    "mergedFiles": 349,
+    "preservedBaselineFiles": 341,
+    "changedExistingFiles": [
+      "experiments/dispatch.js"
+    ],
+    "standalone": false,
+    "addedFiles": 7
+  },
+  "verification": {
+    "previouslyPassed": {
+      "matchedProductTests": 272,
+      "frontendTypecheck": "PASS",
+      "productionExport": "PASS"
+    },
+    "boundedLocalBrowser": {
+      "viewport": {
+        "width": 1180,
+        "height": 757,
+        "devicePixelRatio": 1
+      },
+      "postBootstrapCases": 13,
+      "postBootstrapLostEvents": 0,
+      "postBootstrapFailures": 0,
+      "defaultNetworkCalls": 0,
+      "cleanup": "One native dispose/unmount; final roots, timers, pending, held and forced counts zero."
+    },
+    "repeatedForArchive": false,
+    "releaseAdmission": false,
+    "localStartup": "Initial diagnostic case lost 246 events and remains inconclusive.",
+    "boundedPublicBrowser": {
+      "siteVersion": 97,
+      "viewport": {
+        "width": 1180,
+        "height": 757,
+        "devicePixelRatio": 1
+      },
+      "landingToTasks": "PASS: /experiments/workbench-trial/ to /tasks?experiment=workbench-trial",
+      "scriptAndSriChain": "PASS for the observed dispatcher, entry, identity, adapter and main; dispatcher has no SRI attribute.",
+      "flows": [
+        "Four Fourth regions: Apply and Exit.",
+        "Completed-route continuity and ordinary Control reuse without reapplying."
+      ],
+      "postBootstrapCases": [
+        2,
+        3
+      ],
+      "postBootstrapLostEvents": 0,
+      "postBootstrapFailures": 0,
+      "startup": "Initial diagnostic case lost 255 events and remains inconclusive.",
+      "nativeCleanup": "PASS within observed scope.",
+      "historicalEntryFirstScreens": [
+        "Original",
+        "Harbour",
+        "Care",
+        "Handbook",
+        "Fourth"
+      ],
+      "historicalScope": "Distinct first-screen reachability only; not complete legacy or full visual-fidelity acceptance."
+    }
+  },
+  "limits": [
+    "Public landing and bounded routing/loading flows passed; broad HTTP/CSP enforcement and full public interaction coverage are unverified.",
+    "Mobile, other native viewport profiles and broad accessibility acceptance are not complete.",
+    "Full legacy behavior, Original/five-site fidelity and complete release acceptance are not complete.",
+    "The source snapshot is not the current production master tree. External test harnesses, installed dependencies and private evidence are not included."
+  ],
+  "publication": {
+    "githubArchiveStatus": "PREPARED_LOCALLY_NOT_UPLOADED",
+    "sitePublished": true,
+    "site": {
+      "version": 97,
+      "sourceRepository": "separate Site source repository; not the GitHub archive branch",
+      "sourceCommit": "5c3a99cb62189a7583529ccd7f01b79eb466cfc2",
+      "deployedAt": "2026-11-09T12:09:33.494008+00:00",
+      "visibility": "PUBLIC",
+      "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/experiments/workbench-trial/"
+    },
+    "masterMerged": false,
+    "pullRequestOpened": false,
+    "credentialsIncluded": false,
+    "hostingConfigurationIncluded": false
+  }
+}

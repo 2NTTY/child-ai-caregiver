@@ -1,0 +1,80 @@
+{
+  "name": "normal-tasks-synthetic-bootstrap-v1",
+  "fixtureSha256": "d108aca1f8248e76e28ce4ab5c3497005cff5f1e6f15f2d23081b8d32bd2d5e4",
+  "asOf": "2026-10-04T16:00:00+08:00",
+  "declaration": "Explicit synthetic read-only extension; no real identity, consent, live sync or mutation receipts. Approximate age is not the unchanged canonical display label.",
+  "session": {
+    "user": {
+      "id": "preview-owner",
+      "name": "媽媽",
+      "email": "preview-owner@example.invalid"
+    }
+  },
+  "children": {
+    "children": [
+      {
+        "id": "c0b00000-0000-4000-8000-000000000001",
+        "workspaceId": "c0b00000-0000-4000-8000-000000000012",
+        "displayName": "小晴",
+        "createdAt": "2026-10-02T08:30:00+08:00",
+        "accessRole": "owner"
+      }
+    ],
+    "nextCursor": null
+  },
+  "account": {
+    "enabled": false,
+    "registration": "trial",
+    "mailConfigured": false,
+    "policyVersion": "2026-10-08",
+    "notice": "合成示例：帳戶驗證、寄信及帳戶退出操作未接入。",
+    "user": {
+      "id": "preview-owner",
+      "emailVerified": false,
+      "acknowledged": false,
+      "acknowledgementVersion": null
+    }
+  },
+  "profile": {
+    "profile": {
+      "childId": "c0b00000-0000-4000-8000-000000000001",
+      "version": 1,
+      "data": {
+        "age": {
+          "kind": "approximate",
+          "rawValue": "3",
+          "unit": "years",
+          "asOf": "2026-10-04"
+        },
+        "dueDate": null,
+        "gestationalWeeksRaw": null,
+        "region": "香港",
+        "language": null,
+        "allergies": null,
+        "specialNeeds": null,
+        "preferences": null,
+        "source": "normal Tasks 合成 bootstrap",
+        "validUntil": null
+      },
+      "confirmedBy": "preview-owner",
+      "confirmedAt": "2026-10-04T16:00:00+08:00",
+      "reason": "合成示例確認標記，並非真人確認"
+    }
+  },
+  "spaces": {
+    "workspaces": [
+      {
+        "id": "c0b00000-0000-4000-8000-000000000012",
+        "storageEpoch": "c0b00000-0000-4000-8000-000000000013"
+      }
+    ]
+  },
+  "changes": {
+    "workspaceId": "c0b00000-0000-4000-8000-000000000012",
+    "storageEpoch": "c0b00000-0000-4000-8000-000000000013",
+    "cursor": "0",
+    "accessVersion": 1,
+    "changes": [],
+    "hasMore": false
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "expo": {
+    "name": "育有方",
+    "slug": "yuyoufang",
+    "version": "0.1.0",
+    "platforms": [
+      "web",
+      "android",
+      "ios"
+    ],
+    "android": {
+      "package": "org.yuyoufang.app",
+      "softwareKeyboardLayoutMode": "resize",
+      "versionCode": 1,
+      "icon": "./assets/brand/app-icon-ios.png"
+    },
+    "ios": {
+      "bundleIdentifier": "org.yuyoufang.app",
+      "supportsTablet": false,
+      "icon": "./assets/brand/app-icon-ios.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "拍攝你選擇交給育有方整理的照片。",
+          "photosPermission": "選擇你希望交給育有方整理的照片。"
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "錄製你選擇交給育有方的語音。",
+          "enableBackgroundRecording": false,
+          "enableBackgroundPlayback": false,
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "yuyoufang-reminders"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/brand/favicon.png",
+          "imageWidth": 128,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
+        }
+      ]
+    ],
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/brand/favicon.png",
+      "output": "single"
+    },
+    "scheme": "yuyoufang",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "8c63b9fc-b823-4b40-ba36-375ce43fa578"
+      }
+    }
+  }
+}

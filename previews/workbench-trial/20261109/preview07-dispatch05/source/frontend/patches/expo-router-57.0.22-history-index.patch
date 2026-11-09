@@ -1,0 +1,11 @@
+--- a/node_modules/expo-router/build/fork/createMemoryHistory.js
++++ b/node_modules/expo-router/build/fork/createMemoryHistory.js
+@@ -173,6 +173,8 @@
+                     // This was triggered by `history.go(n)`, we shouldn't call the listener
+                     return;
+                 }
++                // Synchronize the traversed slot before listener-triggered history writes.
++                index = history.index;
+                 listener();
+             };
+             window.addEventListener('popstate', onPopState);

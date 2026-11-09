@@ -1,0 +1,157 @@
+/** Exact selected source style expressions, applied only by a future stable host seam.
+ * These are web reference records; native consumers must retain platform-default fonts.
+ * No StyleSheet creation, CSS injection, global zoom, provider or interactive component.
+ */
+import { originalColors as colors, originalSpacing as spacing, originalRadius as radius,
+  originalTypography, originalThemeFacts } from './source-theme';
+const chineseFont = originalTypography.webFont;
+const readingType = originalTypography.reading;
+const typeScale = { small: 14, body: 16 } as const;
+const mobileLayout = { pageInset: 16, touchTarget: originalThemeFacts.touchTarget } as const;
+
+export const originalTaskStyles = {
+  transparent: { backgroundColor: "transparent" },
+  pageContainer: { flex: 1, minWidth: 0, minHeight: 0 },
+  pageScroll: { flex: 1, backgroundColor: colors.canvas },
+  page: { width: "100%", maxWidth: 1260, alignSelf: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xl, gap: spacing.lg },
+  mobilePage: { paddingHorizontal: mobileLayout.pageInset, paddingVertical: mobileLayout.pageInset },
+  headerActions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "center" },
+  hidden: { display: "none" },
+  stack: { gap: spacing.lg, minWidth: 0 },
+  workspace: { gap: spacing.lg, minWidth: 0 },
+  workspaceWide: { flexDirection: "row", alignItems: "flex-start" },
+  column: { minWidth: 0, width: "100%" },
+  listColumn: { flex: 1.05, width: undefined },
+  detailColumn: { flex: 1, width: undefined },
+  listSurface: { gap: spacing.md, minWidth: 0 },
+  emptyCard: { minHeight: 176, padding: spacing.xl, justifyContent: "center" },
+  scheduleList: { minWidth: 0, gap: spacing.sm },
+  mobileCalendar: { marginBottom: spacing.md },
+  backlogToolbar: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, minWidth: 0 },
+  searchField: { flexGrow: 1, flexShrink: 1, flexBasis: 180, minWidth: 160 },
+  listContext: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: spacing.sm, rowGap: spacing.xs },
+  contextLink: { paddingVertical: spacing.xs },
+  contextLinkText: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, textDecorationLine: "underline" },
+  pagination: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, paddingTop: spacing.sm },
+  loadMore: { gap: spacing.sm, alignItems: "flex-start" },
+  reviewShortcut: { flexDirection: "row", alignItems: "center", gap: spacing.md, minHeight: 48, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderLeftWidth: 3, borderLeftColor: colors.statusWarmLine, backgroundColor: colors.paleAmber },
+  reviewCopy: { flex: 1, minWidth: 0, flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", columnGap: spacing.md, rowGap: spacing.xs },
+  reviewTitle: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool, fontWeight: "700" },
+  reviewNote: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.meta },
+  timeGroup: { minWidth: 0 },
+  groupHeading: { flexDirection: "row", gap: spacing.sm, alignItems: "baseline", paddingBottom: spacing.sm },
+  groupTitle: { fontFamily: chineseFont, color: colors.teal, ...readingType.tool, fontWeight: "700" },
+  pressed: { backgroundColor: colors.pressedOverlay },
+  reviewPressed: { backgroundColor: colors.warningPressed },
+  meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
+} as const;
+
+export const originalRowStyles = {
+  row: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine, borderLeftWidth: 3, borderLeftColor: "transparent", paddingHorizontal: spacing.sm, paddingVertical: spacing.lg, minHeight: 80, minWidth: 0 },
+  leading: { alignSelf: "flex-start", paddingTop: 2 },
+  copy: { flex: 1, minWidth: 0, gap: spacing.xs },
+  metadata: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: spacing.sm, rowGap: spacing.xs, minWidth: 0 },
+  title: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
+  time: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, flexShrink: 1 },
+  assignee: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flexShrink: 1 },
+  warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.meta },
+  review: { borderLeftColor: colors.statusWarmLine },
+  highlight: { backgroundColor: colors.paleTeal, borderRadius: radius.small },
+  focused: { borderLeftColor: colors.teal },
+  pressed: { backgroundColor: colors.paleTeal },
+  selectedPressed: { backgroundColor: colors.selectedNav },
+} as const;
+
+export const originalCalendarStyles = {
+  calendar: { width: "100%", maxWidth: 360, minWidth: 0, alignSelf: "flex-start", padding: spacing.md, gap: spacing.sm, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.softLine, borderRadius: radius.medium },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.xs },
+  month: { fontFamily: chineseFont, color: colors.ink, fontSize: 16, lineHeight: 24, fontWeight: "700", flexShrink: 1 },
+  monthActions: { flexDirection: "row" },
+  monthButton: { width: 40, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.small },
+  grid: { gap: 2 },
+  week: { flexDirection: "row", minWidth: 0 },
+  weekday: { flex: 1, minWidth: 0, textAlign: "center", fontFamily: chineseFont, color: colors.muted, ...readingType.meta, paddingVertical: spacing.xs },
+  day: { flex: 1, minWidth: 0, minHeight: 44, alignItems: "center", justifyContent: "center", paddingVertical: 3, borderWidth: 1, borderColor: "transparent", borderRadius: radius.small },
+  emptyDay: { flex: 1, minWidth: 0 },
+  dayNumber: { minWidth: 26, height: 26, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "transparent", borderRadius: radius.pill },
+  dayText: { fontFamily: chineseFont, color: colors.ink, fontSize: 14, lineHeight: 20 },
+  selectedText: { fontWeight: "700" },
+  currentDay: { borderColor: colors.controlOutline },
+  selectedDay: { backgroundColor: colors.paleTeal, borderColor: colors.ink },
+  focused: { borderColor: colors.ink, borderWidth: 2 },
+  disabled: { opacity: 0.5 },
+  pressed: { backgroundColor: colors.paleTeal },
+  selectedPressed: { backgroundColor: colors.selectedNav },
+  dots: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3, height: 8 },
+  dot: { width: 6, height: 6, borderRadius: radius.pill },
+  scheduledDot: { backgroundColor: colors.ink },
+  reviewDot: { backgroundColor: colors.statusWarmLine },
+  legend: { flexDirection: "row", flexWrap: "wrap", columnGap: spacing.md, rowGap: spacing.xs },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
+  note: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
+  warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.meta },
+} as const;
+
+export const originalPrimitiveStyles = {
+  button: { maxWidth: "100%", borderRadius: radius.small },
+  buttonContent: { minHeight: 44, paddingHorizontal: 4 },
+  compactButtonContent: { minHeight: 40 },
+  buttonLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "700" },
+  outlineButton: { borderColor: colors.controlOutline },
+  quietButton: { alignSelf: "flex-start" },
+  disabledFilledButton: { backgroundColor: colors.softLine },
+  disabledOutlineButton: { backgroundColor: "transparent", borderColor: colors.line },
+  disabledLabel: { color: colors.muted },
+  disclosureButton: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: colors.controlOutline, backgroundColor: "transparent" },
+  disclosureLabel: { color: colors.ink, lineHeight: 22, flexShrink: 1 },
+  focusedButton: { borderColor: colors.ink },
+  buttonPressed: { backgroundColor: colors.pressedOverlay },
+  tabToolbar: { flexDirection: "row", alignItems: "center", minWidth: 0, width: "100%", gap: spacing.sm },
+  tabToolbarTabs: { flex: 1, minWidth: 0 },
+  tabToolbarActions: { flexDirection: "row", alignItems: "center", flexShrink: 0, gap: spacing.sm },
+  mobileTarget: { minHeight: mobileLayout.touchTarget, minWidth: mobileLayout.touchTarget },
+  tabsScroll: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.line },
+  tabs: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  tab: { minHeight: 46, paddingHorizontal: spacing.sm, justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
+  countedTab: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  tabActive: { borderBottomColor: colors.teal },
+  tabText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" },
+  tabTextActive: { color: colors.deepTeal, fontWeight: "800" },
+  input: { backgroundColor: colors.controlSurface, fontFamily: chineseFont },
+  inputOutline: { borderColor: colors.controlOutline, borderRadius: radius.small },
+  selectionTrigger: { minHeight: 44, maxWidth: "100%", flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: radius.small, backgroundColor: colors.controlSurface },
+  selectionLabel: { flex: 1, minWidth: 0, fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "600", lineHeight: 22 },
+  selectionCount: { flexShrink: 0, minWidth: 28, minHeight: 24, paddingHorizontal: spacing.sm, borderRadius: radius.pill, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },
+  selectionCountText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "700", lineHeight: 22, fontVariant: ["tabular-nums"] },
+  selectionDisabled: { opacity: 0.5 },
+  selectionPressed: { backgroundColor: colors.paleTeal },
+  tabPressed: { backgroundColor: colors.paleTeal },
+} as const;
+
+export const originalNoticeStyles = {
+  staticIndicator: { width: 16, height: 16, marginTop: 2, borderRadius: 8, borderWidth: 2, borderColor: colors.teal },
+  notice: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, paddingVertical: spacing.sm },
+  error: { borderLeftWidth: 2, borderLeftColor: colors.errorInk, paddingLeft: spacing.md },
+  copy: { flex: 1, minWidth: 0, gap: spacing.sm },
+  title: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
+  body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
+  emptySurface: { minWidth: 0, alignSelf: "stretch", gap: spacing.sm, padding: spacing.lg,
+    backgroundColor: colors.neutralSurface, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.medium },
+  emptyHeading: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
+  emptyTitle: { flex: 1, minWidth: 0, fontFamily: chineseFont, color: colors.ink, ...readingType.body, fontWeight: "600" },
+  emptyDetail: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
+} as const;
+
+export const originalBadgeTones = {
+  neutral: { background: colors.neutralSurface, border: colors.line, ink: colors.muted, icon: "radiobox-blank" },
+  info: { background: colors.paleTeal, border: colors.sage, ink: colors.ink, icon: "information-outline" },
+  success: { background: "#E5F4EB", border: "#82B59A", ink: "#216E4E", icon: "check-circle" },
+  warning: { background: colors.paleAmber, border: colors.statusWarmLine, ink: colors.warningInk, icon: "clock-outline" },
+  error: { background: colors.paleCoral, border: colors.coral, ink: colors.errorInk, icon: "close" },
+} as const;
+
+export const originalBadgeStyles = {
+  badge: { alignSelf: "flex-start", maxWidth: "100%", minWidth: 0, flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderRadius: radius.small },
+  label: { fontFamily: chineseFont, fontSize: 12, lineHeight: 18, fontWeight: "700", flexShrink: 1 },
+} as const;

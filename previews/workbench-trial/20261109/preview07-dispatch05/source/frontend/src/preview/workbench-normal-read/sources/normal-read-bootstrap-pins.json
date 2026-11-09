@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "extensionName": "normal-tasks-synthetic-bootstrap-v1",
+  "extensionSha256": "2e9175cd7b4f4556742cf785799255872155433e37c47f90c784280549105dee",
+  "fixtureSha256": "d108aca1f8248e76e28ce4ab5c3497005cff5f1e6f15f2d23081b8d32bd2d5e4",
+  "origin": "https://normal-bootstrap.invalid",
+  "readBindingSha256": "fc50e272b7b30fe350d81afab2459b79a5da889048cda94c12c3c5a40f2081b4",
+  "readContractsSha256": "1994f76d82a1abc0ed4cf6a1b27026a6993ece1cac903c9ab4799c01dab89cee"
+}

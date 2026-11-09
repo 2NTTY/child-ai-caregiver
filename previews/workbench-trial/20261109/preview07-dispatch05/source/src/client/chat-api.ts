@@ -1,0 +1,232 @@
+import { AGENT_RUN_LIMITS } from '../shared/agent-run-limits.ts';
+import { chatFileMessageReferenceSchema, type ChatFileMessageReference } from '../shared/chat-files.ts';
+import { voiceMessageReferenceSchema, type VoiceMessageReference } from '../shared/voice.ts';
+import { photoMessageReferenceSchema, type PhotoMessageReference } from '../shared/photos.ts';
+import { officialHelpIdSchema, type AgentProgress } from '../shared/agent-feedback.ts';
+import { readAgentFeedback } from './agent-feedback-reader.ts';
+import type { ChatMessage, ChatPage, ChatReplyState } from "../shared/chat.ts";
+import type { OnlineReceipt } from "../shared/online.ts";
+import type { SessionUser } from "./records-api.ts";
+import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
+
+export type ChatErrorCode = "ai_disabled" | "ai_busy" | "ai_capacity_busy" | "ai_quota_exceeded" | "ai_timeout" | "ai_unavailable"
+  | "invalid_input" | "unauthorized" | "session_changed" | "not_found";
+
+const knownCodes = new Set<ChatErrorCode>([
+  "ai_disabled", "ai_busy", "ai_capacity_busy", "ai_quota_exceeded", "ai_timeout", "ai_unavailable",
+  "invalid_input", "unauthorized", "session_changed", "not_found",
+]);
+
+export class ChatApiError extends Error {
+  readonly status: number;
+  readonly code: ChatErrorCode | null;
+  readonly onlineCode: string | null;
+  readonly confirmed: boolean;
+
+  constructor(status = 0, code: ChatErrorCode | null = null, onlineCode: string | null = null, confirmed = false) {
+    super("Chat request could not be confirmed");
+    this.name = "ChatApiError";
+    this.status = status;
+    this.code = code;
+    this.onlineCode = onlineCode;
+    this.confirmed = confirmed;
+  }
+}
+
+export interface ChatUsage {
+  day: string;
+  attempts: number;
+  inputTokens: number;
+  outputTokens: number;
+  cachedTokens: number;
+  unknownUsageAttempts: number;
+}
+
+export interface ChatApi {
+  getSession(signal: AbortSignal): Promise<SessionUser | null>;
+  listMessages(childId: string, signal: AbortSignal, before?: string | null): Promise<ChatPage>;
+  cancelReply?(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<boolean>;
+  saveMessage(childId: string, text: string, signal: AbortSignal, expectedUserId: string, voice?: Pick<VoiceMessageReference,"id"|"version">, file?: Pick<ChatFileMessageReference,"id"|"version">, photo?: Pick<PhotoMessageReference,"id"|"version">): Promise<ChatMessage>;
+  requestReply(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string, onProgress?: (event: AgentProgress) => void): Promise<ChatMessage>;
+  getOriginalReply?(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<ChatReplyState | null>;
+  getReplyState?(childId: string, runId: string, signal: AbortSignal, expectedUserId: string): Promise<"running" | "completed" | "stopped" | "unknown">;
+  getStatus(signal: AbortSignal): Promise<boolean>;
+  getUsage(signal: AbortSignal): Promise<ChatUsage>;
+  reconcilePending?(signal: AbortSignal, userId: string): Promise<OnlineReceipt | { state: "unconfirmed" } | null>;
+  resetOnline?(): void;
+  hasPendingOnline?(): boolean;
+}
+
+function object(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function id(value: unknown): value is string {
+  return typeof value === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(value);
+}
+
+function message(value: unknown): value is ChatMessage {
+  return object(value) && id(value.id) && id(value.childId)
+    && (value.authorUserId === null || id(value.authorUserId))
+    && (value.role === "user" || value.role === "model")
+    && (value.agentRunId === undefined || id(value.agentRunId))
+    && (value.officialHelp === undefined || Array.isArray(value.officialHelp) && value.officialHelp.length <= 2 && value.officialHelp.every(card => officialHelpIdSchema.safeParse(card).success))
+    && (value.voice === undefined || value.role === "user" && voiceMessageReferenceSchema.safeParse(value.voice).success)
+    && (value.file === undefined || value.role === "user" && !value.voice && chatFileMessageReferenceSchema.safeParse(value.file).success)
+    && (value.photo === undefined || value.role === "user" && photoMessageReferenceSchema.safeParse(value.photo).success)
+    && [value.voice, value.file, value.photo].filter(item => item !== undefined).length <= 1
+    && typeof value.text === "string"
+    && (value.inReplyTo === null || id(value.inReplyTo))
+    && typeof value.createdAt === "string" && Number.isFinite(Date.parse(value.createdAt))
+    && (value.role === "user" ? value.authorUserId !== null && value.inReplyTo === null
+      : value.authorUserId === null && value.inReplyTo !== null);
+}
+
+function nonnegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
+export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"], fetcher: typeof fetch = fetch): ChatApi {
+  const base = baseUrl.replace(/\/$/, "");
+  const apiUrl = base.endsWith("/api") ? base : `${base}/api`;
+  const online = createOnlineTransport(apiUrl, fetcher);
+
+  async function onlineCall<T>(signal: AbortSignal, action: (outerSignal: AbortSignal) => Promise<T>): Promise<T> {
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    signal.addEventListener("abort", abort, { once: true });
+    if (signal.aborted) controller.abort();
+    const timeout = setTimeout(abort, 20_000);
+    try { return await action(controller.signal); }
+    catch (error) {
+      if (error instanceof OnlineTransportError) throw new ChatApiError(error.status, null, error.code, error.confirmed);
+      throw new ChatApiError();
+    } finally {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", abort);
+    }
+  }
+
+  async function request(path: string, signal: AbortSignal, body?: unknown, expectedUserId?: string, timeoutMs = 20_000, onProgress?: (event: AgentProgress) => void): Promise<unknown> {
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    signal.addEventListener("abort", abort, { once: true });
+    if (signal.aborted) controller.abort();
+    const timeout = setTimeout(abort, timeoutMs);
+    try {
+      const response = await fetcher(`${apiUrl}${path}`, {
+        method: body === undefined ? "GET" : "POST",
+        credentials: "include",
+        cache: "no-store",
+        headers: {
+          Accept: onProgress ? "text/event-stream" : "application/json",
+          ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+          ...(expectedUserId === undefined ? {} : { "x-expected-user-id": expectedUserId }),
+        },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        let code: ChatErrorCode | null = null;
+        try {
+          const value: unknown = await response.json();
+          if (object(value) && object(value.error) && typeof value.error.code === "string"
+            && knownCodes.has(value.error.code as ChatErrorCode)) code = value.error.code as ChatErrorCode;
+        } catch { /* The status is still available when the body is malformed. */ }
+        throw new ChatApiError(response.status, code);
+      }
+      if (onProgress && response.headers.get('content-type')?.startsWith('text/event-stream')) {
+        const result = await readAgentFeedback(response, onProgress);
+        if (result.status < 200 || result.status >= 300) {
+          const body = result.body, code = object(body) && object(body.error) && knownCodes.has(body.error.code as ChatErrorCode) ? body.error.code as ChatErrorCode : null;
+          throw new ChatApiError(result.status, code);
+        }
+        return result.body;
+      }
+      return await response.json();
+    } catch (error) {
+      if (error instanceof ChatApiError) throw error;
+      throw new ChatApiError();
+    } finally {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", abort);
+    }
+  }
+
+  return {
+    getSession,
+    reconcilePending: (signal, userId) => onlineCall(signal, outerSignal => online.checkPending(outerSignal, userId)),
+    resetOnline: () => online.reset(),
+    hasPendingOnline: () => online.hasPending(),
+    async listMessages(childId, signal, before) {
+      const value = await request(`/children/${encodeURIComponent(childId)}/messages${before ? `?before=${encodeURIComponent(before)}` : ""}`, signal);
+      if (!object(value) || !Array.isArray(value.messages) || !value.messages.every(message)
+        || !Number.isInteger(value.limit) || (value.limit as number) < 1 || (value.limit as number) > 100
+        || value.messages.length > (value.limit as number)
+        || value.messages.some((item: ChatMessage) => item.childId !== childId)) throw new ChatApiError();
+      if (value.nextCursor !== undefined && value.nextCursor !== null && !id(value.nextCursor)) throw new ChatApiError();
+      return { messages: value.messages, limit: value.limit as number, nextCursor: value.nextCursor as string | null | undefined };
+    },
+    async cancelReply(childId, messageId, signal, expectedUserId) {
+      const value = await request(`/children/${encodeURIComponent(childId)}/messages/${encodeURIComponent(messageId)}/reply/cancel`, signal, {}, expectedUserId);
+      if (!object(value) || typeof value.accepted !== "boolean") throw new ChatApiError();
+      return value.accepted;
+    },
+    async saveMessage(childId, text, signal, expectedUserId, voice, file, photo) {
+      if ([voice, file, photo].filter(Boolean).length > 1) throw new ChatApiError(400, "invalid_input");
+      const value = await onlineCall(signal, outerSignal => online.submit({ path: `/api/children/${encodeURIComponent(childId)}/messages`, payload: { text, ...(voice ? {voice:{id:voice.id,expectedVersion:voice.version}} : {}), ...(file ? {file:{id:file.id,expectedVersion:file.version}} : {}), ...(photo ? {photo:{id:photo.id,expectedVersion:photo.version}} : {}) } }, outerSignal, expectedUserId));
+      if (!object(value) || !message(value.message) || value.message.childId !== childId
+        || value.message.role !== "user" || value.message.authorUserId !== expectedUserId || value.message.text !== text
+        || (voice ? value.message.voice?.id !== voice.id || value.message.voice.version !== voice.version + 1 : !!value.message.voice)
+        || (file ? value.message.file?.id !== file.id || value.message.file.version !== file.version + 1 : !!value.message.file)
+        || (photo ? value.message.photo?.id !== photo.id || value.message.photo.version !== photo.version : !!value.message.photo)) {
+        throw new ChatApiError();
+      }
+      return value.message;
+    },
+    async requestReply(childId, messageId, signal, expectedUserId, onProgress) {
+      let runId: string | undefined;
+      const value = await request(`/children/${encodeURIComponent(childId)}/messages/${encodeURIComponent(messageId)}/reply`,
+        signal, {}, expectedUserId, (AGENT_RUN_LIMITS.deadlineSeconds.max + 30) * 1000, onProgress ? event => {
+          if (event.messageId !== messageId || runId && event.runId !== runId) throw new ChatApiError();
+          runId = event.runId; onProgress(event);
+        } : undefined);
+      if (!object(value) || !message(value.message) || value.message.childId !== childId
+        || value.message.role !== "model" || value.message.inReplyTo !== messageId) throw new ChatApiError();
+      return value.message;
+    },
+    async getOriginalReply(childId, messageId, signal, expectedUserId) {
+      const value = await request(`/children/${encodeURIComponent(childId)}/messages/${encodeURIComponent(messageId)}/reply`, signal, undefined, expectedUserId);
+      if (!object(value) || !("reply" in value)) throw new ChatApiError();
+      if (value.reply === null) return null;
+      const state = value.reply;
+      if (!object(state) || state.messageId !== messageId || !id(state.runId)
+        || !["running", "completed", "stopped", "unknown"].includes(String(state.status))
+        || state.stopReason !== null && (typeof state.stopReason !== "string" || state.stopReason.length > 128)) throw new ChatApiError();
+      return state as unknown as ChatReplyState;
+    },
+    async getReplyState(childId, runId, signal, expectedUserId) {
+      const value = await request(`/children/${encodeURIComponent(childId)}/agent/runs/${encodeURIComponent(runId)}`, signal, undefined, expectedUserId);
+      if (!object(value) || !object(value.result) || value.result.runId !== runId
+        || !['running', 'completed', 'stopped', 'unknown'].includes(String(value.result.status))) throw new ChatApiError();
+      return value.result.status as 'running' | 'completed' | 'stopped' | 'unknown';
+    },
+    async getStatus(signal) {
+      const value = await request("/ai/status", signal);
+      if (!object(value) || typeof value.available !== "boolean") throw new ChatApiError();
+      return value.available;
+    },
+    async getUsage(signal) {
+      const value = await request("/ai/usage", signal);
+      if (!object(value) || typeof value.day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value.day)
+        || !nonnegativeInteger(value.attempts) || !nonnegativeInteger(value.inputTokens)
+        || !nonnegativeInteger(value.outputTokens) || !nonnegativeInteger(value.cachedTokens)
+        || !nonnegativeInteger(value.unknownUsageAttempts)) throw new ChatApiError();
+      return {
+        day: value.day, attempts: value.attempts, inputTokens: value.inputTokens,
+        outputTokens: value.outputTokens, cachedTokens: value.cachedTokens,
+        unknownUsageAttempts: value.unknownUsageAttempts,
+      };
+    },
+  };
+}

@@ -1,0 +1,7 @@
+/* Only the welcome artwork changes fade technique. Unsupported masks keep the
+   original solid gradient; the independent background owns all backdrop blur. */
+@supports ((mask-image: linear-gradient(to right, transparent, #000)) or (-webkit-mask-image: linear-gradient(to right, transparent, #000))) {
+  [data-home-welcome-artwork="true"] [data-testid="home-background-css-fade"] {
+    display: none;
+  }
+}

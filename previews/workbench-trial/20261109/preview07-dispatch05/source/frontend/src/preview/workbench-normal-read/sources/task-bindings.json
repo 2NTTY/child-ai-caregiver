@@ -1,0 +1,1206 @@
+{
+  "schemaVersion": 1,
+  "purpose": "historical-source-candidates-and-normal-data-contract-only",
+  "receipts": {
+    "four": {
+      "sha256": "907ec9573cfb6213a30a019363fcb56b82441be5ee01706700d169e44997fc9a"
+    },
+    "original": {
+      "sha256": "979f1911d6132bf3bb2e08d62483619b67ada7f5ef6fb769ebe8ec6448f5bba1"
+    },
+    "recipe": {
+      "sha256": "e49b453d98d3bcb34ea51bb67d068078d90e9c50c8862ae70b81f3bbe237074b"
+    }
+  },
+  "variants": {
+    "original": {
+      "source": {
+        "kind": "composite",
+        "appCommit": null,
+        "sourceTree": "de0cbacb583c923fba8f88f27fd5f6b8d5409c1c",
+        "recipeSha256": "e49b453d98d3bcb34ea51bb67d068078d90e9c50c8862ae70b81f3bbe237074b"
+      },
+      "files": [
+        {
+          "path": "frontend/src/components/tasks/TasksView.tsx",
+          "mode": "100644",
+          "gitBlob": "8adc10f3074fecd0484994ef958a6b88e721cbe6",
+          "bytes": 26547,
+          "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622"
+        },
+        {
+          "path": "frontend/src/screens/tasksScreen.tsx",
+          "mode": "100644",
+          "gitBlob": "42111574df4bbba4f3fcdadcfa5cee4e02752b93",
+          "bytes": 2070,
+          "sha256": "c5e9edb39172c1d5283ffaf4243afbab57dc57ac9ad65f9efa7e5fe33f5ddc0f"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskListRow.tsx",
+          "mode": "100644",
+          "gitBlob": "108f6ca2cad3b2be7cfd27b485e70bb58b485306",
+          "bytes": 4237,
+          "sha256": "f17f83115786cbf11bfb238da0279ba96c95b6359c3bb2c9f56e3eaca9f0bc69"
+        },
+        {
+          "path": "frontend/src/components/tasks/TasksCalendar.tsx",
+          "mode": "100644",
+          "gitBlob": "a9cf5e2331fadad538d58e92f9ea8a10e8ac7580",
+          "bytes": 7852,
+          "sha256": "5e23c4e32d4582261ba37172595483ba61f272afdba1f183e0e2cd0c89fcdcd7"
+        },
+        {
+          "path": "frontend/src/components/tasks/task-calendar.ts",
+          "mode": "100644",
+          "gitBlob": "208a2cb61c9eb2012ecd5fd0e9e688e8939b80b0",
+          "bytes": 6256,
+          "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskContent.tsx",
+          "mode": "100644",
+          "gitBlob": "ccc1f556854a37026291b3a9459e1a3c01ba15a7",
+          "bytes": 8816,
+          "sha256": "a231e74cd889e609558ae6586ac2d0785853153674aad2ac9584a5be3e899df1"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskDetail.tsx",
+          "mode": "100644",
+          "gitBlob": "566c6487ef2a58bede129b72a44375de7f2cda64",
+          "bytes": 7342,
+          "sha256": "5ab3289f11ca09a7c37a635871dd0a11974fe97a92a72c055a144b3017fb1154"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskForm.tsx",
+          "mode": "100644",
+          "gitBlob": "277cd7d6f38b09a5b0c93fd20f63ac0c6fc6a8ed",
+          "bytes": 11333,
+          "sha256": "9108275750c71187dc0868df78381be4a50d99a1f69fe1d5ab9ecea1f1b01f70"
+        },
+        {
+          "path": "frontend/src/components/tasks/task-form.ts",
+          "mode": "100644",
+          "gitBlob": "1c708f769433c2096c46ac7e78d8d6a715d3f500",
+          "bytes": 3535,
+          "sha256": "5a40a277b2a95f588410999c51185a789d02c8a5f8f5b09378829ceb968dbb0f"
+        },
+        {
+          "path": "frontend/src/components/WriteRecoveryNotice.tsx",
+          "mode": "100644",
+          "gitBlob": "a8068389fb6e7bb9b0727c6b40cad8d862f80c82",
+          "bytes": 2296,
+          "sha256": "886f74c4a699b04674b751b73d7d58b0be0f5211d4db5564ab96e19e58c8f78c"
+        },
+        {
+          "path": "frontend/src/preview/PreviewNavigationGuard.tsx",
+          "mode": "100644",
+          "gitBlob": "8da4dcb72e9258cc7b2c2b2318099f72b791449b",
+          "bytes": 8630,
+          "sha256": "dd11ca746453ea10a80c65fa2782820e5568c90c3ddac59808fca70d8cc5873e"
+        },
+        {
+          "path": "frontend/src/preview/PreviewContext.tsx",
+          "mode": "100644",
+          "gitBlob": "3354c02f1da1637c0953ca994f7625851ca9b2fa",
+          "bytes": 214,
+          "sha256": "8b4ec15e63e2fc981e7d4516642493609fb1ab6368e6d77bcb41ec8ef5b1d34d"
+        },
+        {
+          "path": "frontend/src/preview/usePreviewOperation.ts",
+          "mode": "100644",
+          "gitBlob": "d2b45e77f5b8f10b8ca11010e7330e35a523c67b",
+          "bytes": 6058,
+          "sha256": "ecc752cb126045fd5be2b8e513cfd914e6e9eb9b5f3fa6d591954a4e5623d555"
+        },
+        {
+          "path": "frontend/src/theme.ts",
+          "mode": "100644",
+          "gitBlob": "4ccb33cb8f83a0e7c84829c74495a3ca63dfbe7c",
+          "bytes": 4982,
+          "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2"
+        },
+        {
+          "path": "frontend/src/task-view-model.ts",
+          "mode": "100644",
+          "gitBlob": "a532cc69b77d2ff2522d5fcbfc36ee15a2de8e28",
+          "bytes": 10691,
+          "sha256": "7ba37779456c46f1f852f53a6e30e208eea4b7a957f04c31b63d2f4ff078cdd2"
+        },
+        {
+          "path": "frontend/src/view-model.ts",
+          "mode": "100644",
+          "gitBlob": "33446458c8aac4d61d4af2190eecb482cbb4546c",
+          "bytes": 3140,
+          "sha256": "d5a43490b3c002613239f3566ac91ffc894fb480939409afae3e61b34b32c699"
+        },
+        {
+          "path": "frontend/src/preview/task-fixture.ts",
+          "mode": "100644",
+          "gitBlob": "45d1305c18e14f008de659b5b6591f979326f573",
+          "bytes": 9064,
+          "sha256": "080e5124b1af28d1b06aad9de2debb60ab7bb11569c8b09755b6f474685b1ed6"
+        },
+        {
+          "path": "frontend/src/preview/useTasksPreview.ts",
+          "mode": "100644",
+          "gitBlob": "c85b13a371900dca7fe830e31d84f32994e82194",
+          "bytes": 12418,
+          "sha256": "d857541f37941b8a90252a4033d9a35dbab1b88ad3f3c7264552c8619b61eb10"
+        },
+        {
+          "path": "frontend/src/preview/TasksWorkspaceProvider.tsx",
+          "mode": "100644",
+          "gitBlob": "afad0d3ed3c3390580b1f6dfaf8a8e8c92893069",
+          "bytes": 2465,
+          "sha256": "6d32d403a4ef70c9da01cf1dd42c87717fc9e4802dfcbda1df918aed3b43b208"
+        },
+        {
+          "path": "frontend/src/workspaces/TasksWorkspace.tsx",
+          "mode": "100644",
+          "gitBlob": "d1855c40ffa334b514ba1db3bc77233b8eece07e",
+          "bytes": 1086,
+          "sha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68"
+        },
+        {
+          "path": "frontend/app/_layout.tsx",
+          "mode": "100644",
+          "gitBlob": "9461e301f548e31142e58dd2b208474a9e20ec47",
+          "bytes": 1992,
+          "sha256": "22c72cade77cc452023a76363d22a92f521b9cfdd17ea512639d4f1afe01829f"
+        },
+        {
+          "path": "frontend/app/(dashboard)/_layout.tsx",
+          "mode": "100644",
+          "gitBlob": "4883208296703ea051aceae021618dc95dba9ed2",
+          "bytes": 5012,
+          "sha256": "fa3fe198416483c29a5ed654fa65bc13507cb96ef99ccbd0de16d31f3a6bf3ce"
+        },
+        {
+          "path": "frontend/app/(dashboard)/tasks.tsx",
+          "mode": "100644",
+          "gitBlob": "54b8f0ab2634e4e69c783fa7d154dae69f5f98ef",
+          "bytes": 57,
+          "sha256": "cc74e560d831c098b384af096c9c45651c0f2206bbc7934c2f1abf3adb9135b1"
+        },
+        {
+          "path": "frontend/src/components/AppShell.tsx",
+          "mode": "100644",
+          "gitBlob": "7ffb57811b0c1ab7ea38b2ff5a13e19587fce3c7",
+          "bytes": 15903,
+          "sha256": "a903880e15765bfac271e8ddea44f6ab00329fb7b38ee5fa3eb3b1b22aac6f26"
+        },
+        {
+          "path": "frontend/src/components/NotificationBell.tsx",
+          "mode": "100644",
+          "gitBlob": "1232cefaace3b880910ba4b336802868d96efd2a",
+          "bytes": 2604,
+          "sha256": "b212af966f139e951406bce63bdf7df3dc7bb991f55cdd7d95c83b7962114d97"
+        },
+        {
+          "path": "frontend/src/preview/BackgroundContext.tsx",
+          "mode": "100644",
+          "gitBlob": "58ad506fc68f5ff56aabf012876f45146b6c6a66",
+          "bytes": 4912,
+          "sha256": "9b0d96f69fde9c893a6d7ca822d44027df17fbe9e44010650f32d3cd0be411af"
+        }
+      ],
+      "slots": {
+        "header-actions": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx"
+          ],
+          "anchors": [
+            "pageActions",
+            "tasks-page-actions"
+          ]
+        },
+        "filters": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx",
+            "frontend/src/components/tasks/task-calendar.ts"
+          ],
+          "anchors": [
+            "tasks-tab-toolbar",
+            "backlogToolbar"
+          ]
+        },
+        "date-list": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx",
+            "frontend/src/components/tasks/TaskListRow.tsx",
+            "frontend/src/components/tasks/TaskContent.tsx",
+            "frontend/src/task-view-model.ts"
+          ],
+          "anchors": [
+            "task-time-group-",
+            "TaskListRow"
+          ]
+        },
+        "calendar-layout": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx",
+            "frontend/src/components/tasks/TasksCalendar.tsx",
+            "frontend/src/components/tasks/task-calendar.ts"
+          ],
+          "anchors": [
+            "tasks-workspace",
+            "task-calendar-panel",
+            "TasksCalendar"
+          ]
+        }
+      },
+      "schema": {
+        "status": "manual-normal-shape-bound-to-pinned-source",
+        "files": [
+          "frontend/src/task-view-model.ts",
+          "frontend/src/view-model.ts",
+          "frontend/src/preview/task-fixture.ts",
+          "frontend/src/preview/useTasksPreview.ts",
+          "frontend/src/preview/TasksWorkspaceProvider.tsx",
+          "frontend/src/workspaces/TasksWorkspace.tsx"
+        ],
+        "runtimeWiring": false,
+        "differences": []
+      },
+      "sourceLabel": "schema-original"
+    },
+    "harbour": {
+      "source": {
+        "kind": "git-commit",
+        "appCommit": "4050c0a16d0a9735923434abc9749ecd416d7926",
+        "sourceTree": "fcc2393ea5f6bf6963fbf9b281f24bd02de76ea2"
+      },
+      "files": [
+        {
+          "path": "frontend/src/components/tasks/TasksView.tsx",
+          "mode": "100644",
+          "gitBlob": "77a6c429dfb40bd1b0b25d2a0be92ea100406c39",
+          "bytes": 28176,
+          "sha256": "031c6868c63b4b6df1904ab1f200c6b7e3ee9892bf0e22257edb0b5ac135c046"
+        },
+        {
+          "path": "frontend/src/screens/tasksScreen.tsx",
+          "mode": "100644",
+          "gitBlob": "697448b9f5416c28f3b1a1614b1c7441b0d6d916",
+          "bytes": 4417,
+          "sha256": "b1f501004b6b5d1a72367e2016bc58b9e909d92ecd2708eb00e0029df56acbec"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskListRow.tsx",
+          "mode": "100644",
+          "gitBlob": "1e6ea4135bf6dcf02dc7b2144bcf5c13e5926d86",
+          "bytes": 4334,
+          "sha256": "e1bc8e856f315176ba8b39fc9813c115c783c7d8f4d7e34fa62df472630a8b80"
+        },
+        {
+          "path": "frontend/src/components/tasks/TasksCalendar.tsx",
+          "mode": "100644",
+          "gitBlob": "1101b6ebedef4e7cbda7805b5d0b12cf536aee30",
+          "bytes": 7867,
+          "sha256": "3d282ea49db3bec1d0009d580ae6f9cc2cdf1a82e006bba6b101b3cacd43e5c0"
+        },
+        {
+          "path": "frontend/src/components/tasks/task-calendar.ts",
+          "mode": "100644",
+          "gitBlob": "208a2cb61c9eb2012ecd5fd0e9e688e8939b80b0",
+          "bytes": 6256,
+          "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskContent.tsx",
+          "mode": "100644",
+          "gitBlob": "b4862bd054a056054d67ba5f728976475c6c2648",
+          "bytes": 8973,
+          "sha256": "fe7ca8a3e64038900b83ae69d0b0dfbf8c05c6687884aeb52163d4431cf75704"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskDetail.tsx",
+          "mode": "100644",
+          "gitBlob": "56d4a2c9ac52be0c17ac8fa01e72ae306a7e0e9f",
+          "bytes": 8441,
+          "sha256": "8b8ed55eecc3cef814098f7cadf31ee42a74b37683ed6edef0a060406e368791"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskForm.tsx",
+          "mode": "100644",
+          "gitBlob": "59f7da7706c0b598bdd113d464f5569d3313c29a",
+          "bytes": 11820,
+          "sha256": "e588a3bde2025d0662924924233814deb9e59e97a5c5d5c70c9ff3bc517b6b79"
+        },
+        {
+          "path": "frontend/src/components/tasks/task-form.ts",
+          "mode": "100644",
+          "gitBlob": "1c708f769433c2096c46ac7e78d8d6a715d3f500",
+          "bytes": 3535,
+          "sha256": "5a40a277b2a95f588410999c51185a789d02c8a5f8f5b09378829ceb968dbb0f"
+        },
+        {
+          "path": "frontend/src/components/WriteRecoveryNotice.tsx",
+          "mode": "100644",
+          "gitBlob": "007a9c7984c6314173d1db9b088c2210d773835c",
+          "bytes": 2606,
+          "sha256": "d8ebd4040a8210c9595af39cb895e1038aa7b0eaa0dc184633eb5de6fbf520b3"
+        },
+        {
+          "path": "frontend/src/preview/PreviewNavigationGuard.tsx",
+          "mode": "100644",
+          "gitBlob": "855f53fc29580eb2f67ee03dd9537e34e816695c",
+          "bytes": 15783,
+          "sha256": "03b5ce4f7ed4fbfd7bccc2e880aa579e033ca73b71728347003b25571038b23b"
+        },
+        {
+          "path": "frontend/src/preview/PreviewContext.tsx",
+          "mode": "100644",
+          "gitBlob": "3354c02f1da1637c0953ca994f7625851ca9b2fa",
+          "bytes": 214,
+          "sha256": "8b4ec15e63e2fc981e7d4516642493609fb1ab6368e6d77bcb41ec8ef5b1d34d"
+        },
+        {
+          "path": "frontend/src/preview/usePreviewOperation.ts",
+          "mode": "100644",
+          "gitBlob": "d2b45e77f5b8f10b8ca11010e7330e35a523c67b",
+          "bytes": 6058,
+          "sha256": "ecc752cb126045fd5be2b8e513cfd914e6e9eb9b5f3fa6d591954a4e5623d555"
+        },
+        {
+          "path": "frontend/src/theme.ts",
+          "mode": "100644",
+          "gitBlob": "8abf00bb41d506b2afba1b4e339ac96c29642c86",
+          "bytes": 4732,
+          "sha256": "5fa570023e71dcbab4c5cbcbd69865dba2d38ec3defb4e21db5ac15d57f50c23"
+        },
+        {
+          "path": "frontend/src/task-view-model.ts",
+          "mode": "100644",
+          "gitBlob": "293135a74d012992f81acb5bd15dea64987dcd26",
+          "bytes": 10908,
+          "sha256": "7c99fff1bc34afa2db07961574ab6ac7c8bd7f7bcfc1f98b309faeb49b87191e"
+        },
+        {
+          "path": "frontend/src/view-model.ts",
+          "mode": "100644",
+          "gitBlob": "b325aaaa0ce01af2e4ae6b260479f2969f881d0a",
+          "bytes": 3305,
+          "sha256": "497d6a1bd1e3b02fd4e7bd9028a2f15d2774d74fcb9fae598ac39fc4895bf345"
+        },
+        {
+          "path": "frontend/src/preview/task-fixture.ts",
+          "mode": "100644",
+          "gitBlob": "45d1305c18e14f008de659b5b6591f979326f573",
+          "bytes": 9064,
+          "sha256": "080e5124b1af28d1b06aad9de2debb60ab7bb11569c8b09755b6f474685b1ed6"
+        },
+        {
+          "path": "frontend/src/preview/useTasksPreview.ts",
+          "mode": "100644",
+          "gitBlob": "c85b13a371900dca7fe830e31d84f32994e82194",
+          "bytes": 12418,
+          "sha256": "d857541f37941b8a90252a4033d9a35dbab1b88ad3f3c7264552c8619b61eb10"
+        },
+        {
+          "path": "frontend/src/preview/TasksWorkspaceProvider.tsx",
+          "mode": "100644",
+          "gitBlob": "afad0d3ed3c3390580b1f6dfaf8a8e8c92893069",
+          "bytes": 2465,
+          "sha256": "6d32d403a4ef70c9da01cf1dd42c87717fc9e4802dfcbda1df918aed3b43b208"
+        },
+        {
+          "path": "frontend/src/workspaces/TasksWorkspace.tsx",
+          "mode": "100644",
+          "gitBlob": "d1855c40ffa334b514ba1db3bc77233b8eece07e",
+          "bytes": 1086,
+          "sha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68"
+        },
+        {
+          "path": "frontend/src/navigation/route-state.ts",
+          "mode": "100644",
+          "gitBlob": "57d941710fdc199d59ac0a1e8444f21fa5722485",
+          "bytes": 4033,
+          "sha256": "76d74d8cf908f645db2e70d3b46613042e5d22c81f50ed42110f829804473e55"
+        },
+        {
+          "path": "frontend/src/navigation/useRouteNavigation.ts",
+          "mode": "100644",
+          "gitBlob": "cd226313f972cf7cbddbb50776156ca8c08811c2",
+          "bytes": 3633,
+          "sha256": "10e28c032ca49f78337e7e27f675286268cabf740353c3d94866fc9087d74920"
+        }
+      ],
+      "slots": {
+        "header-actions": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx"
+          ],
+          "anchors": [
+            "pageActions",
+            "tasks-page-actions"
+          ]
+        },
+        "filters": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx",
+            "frontend/src/components/tasks/task-calendar.ts"
+          ],
+          "anchors": [
+            "tasks-tab-toolbar",
+            "backlogToolbar"
+          ]
+        },
+        "date-list": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx",
+            "frontend/src/components/tasks/TaskListRow.tsx",
+            "frontend/src/components/tasks/TaskContent.tsx",
+            "frontend/src/task-view-model.ts"
+          ],
+          "anchors": [
+            "task-time-group-",
+            "TaskListRow"
+          ]
+        },
+        "calendar-layout": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx",
+            "frontend/src/components/tasks/TasksCalendar.tsx",
+            "frontend/src/components/tasks/task-calendar.ts"
+          ],
+          "anchors": [
+            "tasks-workspace",
+            "task-calendar-panel",
+            "TasksCalendar"
+          ]
+        }
+      },
+      "schema": {
+        "status": "manual-normal-shape-bound-to-pinned-source",
+        "files": [
+          "frontend/src/task-view-model.ts",
+          "frontend/src/view-model.ts",
+          "frontend/src/preview/task-fixture.ts",
+          "frontend/src/preview/useTasksPreview.ts",
+          "frontend/src/preview/TasksWorkspaceProvider.tsx",
+          "frontend/src/workspaces/TasksWorkspace.tsx"
+        ],
+        "runtimeWiring": false,
+        "differences": [
+          "Optional historyRead and retryHistory are not provided by this normal snapshot."
+        ]
+      },
+      "sourceLabel": "schema-harbour"
+    },
+    "care": {
+      "source": {
+        "kind": "git-commit",
+        "appCommit": "520d4c88a74faf460a464c38931cd9e1a84e0ec8",
+        "sourceTree": "c0abef888f7bf10054a0b7b07cfc85b78b259073"
+      },
+      "files": [
+        {
+          "path": "frontend/src/components/tasks/TasksView.tsx",
+          "mode": "100644",
+          "gitBlob": "72efef0f02cb04d66809809b060a22a707dc4067",
+          "bytes": 26199,
+          "sha256": "d91cab2a10babbbbcd0c92f2673362228cbdaea2731a254b4d2bbca0d085a73d"
+        },
+        {
+          "path": "frontend/src/screens/tasksScreen.tsx",
+          "mode": "100644",
+          "gitBlob": "24c3aa810da94c72bab0ae76c8bf8f52984b8fad",
+          "bytes": 6955,
+          "sha256": "ac0b35e693d8e30cadc73dab29e02ad241d031fc6eb3a2e5d1918414e89c4345"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskListRow.tsx",
+          "mode": "100644",
+          "gitBlob": "5ab9791207065f49b8d56158713c9a27aefd047d",
+          "bytes": 4088,
+          "sha256": "0a7f40c135eb8597ae2f4baf48fb7aae623fb5aef4ce27b365c2d7f79efa8479"
+        },
+        {
+          "path": "frontend/src/components/tasks/TasksCalendar.tsx",
+          "mode": "100644",
+          "gitBlob": "621e12e4ce42b8188e381654e6b9c42008bfecc2",
+          "bytes": 9642,
+          "sha256": "73e04fc8420aa93dfbf8dccba6918479d9a577066c48aceb7d129fa4158eb635"
+        },
+        {
+          "path": "frontend/src/components/tasks/task-calendar.ts",
+          "mode": "100644",
+          "gitBlob": "208a2cb61c9eb2012ecd5fd0e9e688e8939b80b0",
+          "bytes": 6256,
+          "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskContent.tsx",
+          "mode": "100644",
+          "gitBlob": "19df4a22e4c29e2e31ee009ba169d178d05586f5",
+          "bytes": 9219,
+          "sha256": "874e141107aa4e5a5ffaa019a42dfe79775249769ac86cb15d7c293d544669e7"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskDetail.tsx",
+          "mode": "100644",
+          "gitBlob": "2436aa6f29ef93e31454b2e3f1d4f2384eb6b708",
+          "bytes": 8290,
+          "sha256": "dfcb883141082402cef942597361d9bdaa88caeb692f4a9cfdda067cb93dce9c"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskForm.tsx",
+          "mode": "100644",
+          "gitBlob": "b49ed296b481418590cc423be6fbfa8a26c67548",
+          "bytes": 13597,
+          "sha256": "f9f1e22cdd7830573d0d41785b24f2c8140239b74d33a68b9770ee8ccdcf954c"
+        },
+        {
+          "path": "frontend/src/components/tasks/task-form.ts",
+          "mode": "100644",
+          "gitBlob": "1c708f769433c2096c46ac7e78d8d6a715d3f500",
+          "bytes": 3535,
+          "sha256": "5a40a277b2a95f588410999c51185a789d02c8a5f8f5b09378829ceb968dbb0f"
+        },
+        {
+          "path": "frontend/src/components/WriteRecoveryNotice.tsx",
+          "mode": "100644",
+          "gitBlob": "007a9c7984c6314173d1db9b088c2210d773835c",
+          "bytes": 2606,
+          "sha256": "d8ebd4040a8210c9595af39cb895e1038aa7b0eaa0dc184633eb5de6fbf520b3"
+        },
+        {
+          "path": "frontend/src/preview/PreviewNavigationGuard.tsx",
+          "mode": "100644",
+          "gitBlob": "cdc08eb0c5d01909f23d0035239524db31f7f5d4",
+          "bytes": 17808,
+          "sha256": "b1ff7382d2ef1cf3dab7c9a042b098628fe7a8bb2f4c0ba8cf990dc8c74fff2d"
+        },
+        {
+          "path": "frontend/src/preview/PreviewContext.tsx",
+          "mode": "100644",
+          "gitBlob": "3354c02f1da1637c0953ca994f7625851ca9b2fa",
+          "bytes": 214,
+          "sha256": "8b4ec15e63e2fc981e7d4516642493609fb1ab6368e6d77bcb41ec8ef5b1d34d"
+        },
+        {
+          "path": "frontend/src/preview/usePreviewOperation.ts",
+          "mode": "100644",
+          "gitBlob": "d2b45e77f5b8f10b8ca11010e7330e35a523c67b",
+          "bytes": 6058,
+          "sha256": "ecc752cb126045fd5be2b8e513cfd914e6e9eb9b5f3fa6d591954a4e5623d555"
+        },
+        {
+          "path": "frontend/src/theme.ts",
+          "mode": "100644",
+          "gitBlob": "a8dfa9fe188b2fadb702c7302c4f498188d2285d",
+          "bytes": 4654,
+          "sha256": "b65c1463c7396e23cf6da65320b609cbe916d2d79e8e12ee70cd689b84e75a3a"
+        },
+        {
+          "path": "frontend/src/task-view-model.ts",
+          "mode": "100644",
+          "gitBlob": "034c8c0ac21d19dd20aabfe0aa435bf32f74b85b",
+          "bytes": 10701,
+          "sha256": "ea857535441e3b0d4cfdfb4f48ceacc7e58bd3fa1db4eb79be9d11a80d75a9f8"
+        },
+        {
+          "path": "frontend/src/view-model.ts",
+          "mode": "100644",
+          "gitBlob": "15a4a9f2de7c98bf745ceb46e137b48ac4c827e3",
+          "bytes": 3274,
+          "sha256": "eab592230a6afb4e8f319c68a7ea437ac6b81a906a6ed78cb5e1b925b0e865d8"
+        },
+        {
+          "path": "frontend/src/preview/task-fixture.ts",
+          "mode": "100644",
+          "gitBlob": "45d1305c18e14f008de659b5b6591f979326f573",
+          "bytes": 9064,
+          "sha256": "080e5124b1af28d1b06aad9de2debb60ab7bb11569c8b09755b6f474685b1ed6"
+        },
+        {
+          "path": "frontend/src/preview/useTasksPreview.ts",
+          "mode": "100644",
+          "gitBlob": "c85b13a371900dca7fe830e31d84f32994e82194",
+          "bytes": 12418,
+          "sha256": "d857541f37941b8a90252a4033d9a35dbab1b88ad3f3c7264552c8619b61eb10"
+        },
+        {
+          "path": "frontend/src/preview/TasksWorkspaceProvider.tsx",
+          "mode": "100644",
+          "gitBlob": "afad0d3ed3c3390580b1f6dfaf8a8e8c92893069",
+          "bytes": 2465,
+          "sha256": "6d32d403a4ef70c9da01cf1dd42c87717fc9e4802dfcbda1df918aed3b43b208"
+        },
+        {
+          "path": "frontend/src/workspaces/TasksWorkspace.tsx",
+          "mode": "100644",
+          "gitBlob": "d1855c40ffa334b514ba1db3bc77233b8eece07e",
+          "bytes": 1086,
+          "sha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68"
+        },
+        {
+          "path": "frontend/src/navigation/route-state.ts",
+          "mode": "100644",
+          "gitBlob": "c75100a99c26215455e0020dbe31c4c5c6ff24c7",
+          "bytes": 6111,
+          "sha256": "82f5b2bf16ac4d737386a39af28ff8e6e3ea603497047cdfc68286467f592b8d"
+        },
+        {
+          "path": "frontend/src/navigation/useGuardedRoute.ts",
+          "mode": "100644",
+          "gitBlob": "1f76393f3525abef64b00d724ced0feca1c64c1b",
+          "bytes": 1525,
+          "sha256": "2a7c7294b5feb41e74206ca79104dfc04abafab03aeb8d607447602087146601"
+        }
+      ],
+      "slots": {
+        "header-actions": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx"
+          ],
+          "anchors": [
+            "pageActions",
+            "tasks-page-actions"
+          ]
+        },
+        "filters": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx",
+            "frontend/src/components/tasks/task-calendar.ts"
+          ],
+          "anchors": [
+            "tasks-tab-toolbar",
+            "backlogToolbar"
+          ]
+        },
+        "date-list": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx",
+            "frontend/src/components/tasks/TaskListRow.tsx",
+            "frontend/src/components/tasks/TaskContent.tsx",
+            "frontend/src/task-view-model.ts"
+          ],
+          "anchors": [
+            "task-time-group-",
+            "TaskListRow"
+          ]
+        },
+        "calendar-layout": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx",
+            "frontend/src/components/tasks/TasksCalendar.tsx",
+            "frontend/src/components/tasks/task-calendar.ts"
+          ],
+          "anchors": [
+            "tasks-workspace",
+            "task-calendar-panel",
+            "TasksCalendar"
+          ]
+        }
+      },
+      "schema": {
+        "status": "manual-normal-shape-bound-to-pinned-source",
+        "files": [
+          "frontend/src/task-view-model.ts",
+          "frontend/src/view-model.ts",
+          "frontend/src/preview/task-fixture.ts",
+          "frontend/src/preview/useTasksPreview.ts",
+          "frontend/src/preview/TasksWorkspaceProvider.tsx",
+          "frontend/src/workspaces/TasksWorkspace.tsx"
+        ],
+        "runtimeWiring": false,
+        "differences": [
+          "closePanel may return false; no callbacks are projected here."
+        ]
+      },
+      "sourceLabel": "schema-care"
+    },
+    "handbook": {
+      "source": {
+        "kind": "git-commit",
+        "appCommit": "72a00c860118e254e05249b471efb2a676aaaa42",
+        "sourceTree": "8af71f2826cec47d5625053b68b87aba2ab52722"
+      },
+      "files": [
+        {
+          "path": "frontend/src/components/tasks/TasksView.tsx",
+          "mode": "100644",
+          "gitBlob": "212b1655addd263b623d256652dc68d2295debb1",
+          "bytes": 28643,
+          "sha256": "f93a8a2ab88a917a78fe4293cc0adef098a16b86f281e7df1e1d5e214ce7a7d8"
+        },
+        {
+          "path": "frontend/src/screens/tasksScreen.tsx",
+          "mode": "100644",
+          "gitBlob": "c3c455f47aa12749eb69dfbcd3152187dfdf85b6",
+          "bytes": 8526,
+          "sha256": "aba3d2fed172bc1c896c0c9cafeeee4c1a5b474da8dd4bc11b97530b9fe8eac8"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskListRow.tsx",
+          "mode": "100644",
+          "gitBlob": "5e01c6f55bac6e923f0b975ab5ac590c561a900c",
+          "bytes": 4522,
+          "sha256": "0431b9cc97f6563e2607e740339731cf20c88bb2169d4be2d8517f771526beb8"
+        },
+        {
+          "path": "frontend/src/components/tasks/TasksCalendar.tsx",
+          "mode": "100644",
+          "gitBlob": "abbcb11a5c424a68b8f48a540837f60ad3310ca9",
+          "bytes": 7849,
+          "sha256": "5ccdbc8a7d4bb1d86566c17445510b63621a7742c23ab43a463af279bf8b2eb4"
+        },
+        {
+          "path": "frontend/src/components/tasks/task-calendar.ts",
+          "mode": "100644",
+          "gitBlob": "208a2cb61c9eb2012ecd5fd0e9e688e8939b80b0",
+          "bytes": 6256,
+          "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskContent.tsx",
+          "mode": "100644",
+          "gitBlob": "48b82e1bf593ea8391a8b17ff65d530673770475",
+          "bytes": 8670,
+          "sha256": "50b57f43346202479f647d4542993a724aaa4ebb55e8648ce32c6be5eaecdec4"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskDetail.tsx",
+          "mode": "100644",
+          "gitBlob": "608a477d3d6895c7f42553f94b469d046e0f6476",
+          "bytes": 7641,
+          "sha256": "438525acad8c253883cdd507c05422d4a7ea4d5d0c349c1a7c00d9c651e460c1"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskForm.tsx",
+          "mode": "100644",
+          "gitBlob": "61dd46650def7adef781bdcee68216c91571e4df",
+          "bytes": 14782,
+          "sha256": "c13fdbb6bcd627cdd14b2a13184b1d9cd96d9769bc5a0f50231c840314367739"
+        },
+        {
+          "path": "frontend/src/components/tasks/task-form.ts",
+          "mode": "100644",
+          "gitBlob": "1c708f769433c2096c46ac7e78d8d6a715d3f500",
+          "bytes": 3535,
+          "sha256": "5a40a277b2a95f588410999c51185a789d02c8a5f8f5b09378829ceb968dbb0f"
+        },
+        {
+          "path": "frontend/src/components/WriteRecoveryNotice.tsx",
+          "mode": "100644",
+          "gitBlob": "a8068389fb6e7bb9b0727c6b40cad8d862f80c82",
+          "bytes": 2296,
+          "sha256": "886f74c4a699b04674b751b73d7d58b0be0f5211d4db5564ab96e19e58c8f78c"
+        },
+        {
+          "path": "frontend/src/preview/PreviewNavigationGuard.tsx",
+          "mode": "100644",
+          "gitBlob": "e73e556f7ccb06ff257daabc62410c2e5d4b8320",
+          "bytes": 15978,
+          "sha256": "7bc03fed3bf2519044fba1aa5d31d84445fc4848af42672cdd1654d8b3fb9c33"
+        },
+        {
+          "path": "frontend/src/preview/PreviewContext.tsx",
+          "mode": "100644",
+          "gitBlob": "3354c02f1da1637c0953ca994f7625851ca9b2fa",
+          "bytes": 214,
+          "sha256": "8b4ec15e63e2fc981e7d4516642493609fb1ab6368e6d77bcb41ec8ef5b1d34d"
+        },
+        {
+          "path": "frontend/src/preview/usePreviewOperation.ts",
+          "mode": "100644",
+          "gitBlob": "d2b45e77f5b8f10b8ca11010e7330e35a523c67b",
+          "bytes": 6058,
+          "sha256": "ecc752cb126045fd5be2b8e513cfd914e6e9eb9b5f3fa6d591954a4e5623d555"
+        },
+        {
+          "path": "frontend/src/theme.ts",
+          "mode": "100644",
+          "gitBlob": "d9ca46fbef853ae3db3fcda8701247181415dff7",
+          "bytes": 4984,
+          "sha256": "545826ca8018608a29cee78d4e845a0ffc0023baf326e1ca619f0321f06ddb80"
+        },
+        {
+          "path": "frontend/src/task-view-model.ts",
+          "mode": "100644",
+          "gitBlob": "a532cc69b77d2ff2522d5fcbfc36ee15a2de8e28",
+          "bytes": 10691,
+          "sha256": "7ba37779456c46f1f852f53a6e30e208eea4b7a957f04c31b63d2f4ff078cdd2"
+        },
+        {
+          "path": "frontend/src/view-model.ts",
+          "mode": "100644",
+          "gitBlob": "d77aa23fbb4e7e096c47b8e5a956bc4ddaad6262",
+          "bytes": 3247,
+          "sha256": "4c3ba063511e51330b0b69c65e4e32bab23b1dfc090452426d2f1628eaaad398"
+        },
+        {
+          "path": "frontend/src/preview/task-fixture.ts",
+          "mode": "100644",
+          "gitBlob": "45d1305c18e14f008de659b5b6591f979326f573",
+          "bytes": 9064,
+          "sha256": "080e5124b1af28d1b06aad9de2debb60ab7bb11569c8b09755b6f474685b1ed6"
+        },
+        {
+          "path": "frontend/src/preview/useTasksPreview.ts",
+          "mode": "100644",
+          "gitBlob": "c85b13a371900dca7fe830e31d84f32994e82194",
+          "bytes": 12418,
+          "sha256": "d857541f37941b8a90252a4033d9a35dbab1b88ad3f3c7264552c8619b61eb10"
+        },
+        {
+          "path": "frontend/src/preview/TasksWorkspaceProvider.tsx",
+          "mode": "100644",
+          "gitBlob": "afad0d3ed3c3390580b1f6dfaf8a8e8c92893069",
+          "bytes": 2465,
+          "sha256": "6d32d403a4ef70c9da01cf1dd42c87717fc9e4802dfcbda1df918aed3b43b208"
+        },
+        {
+          "path": "frontend/src/workspaces/TasksWorkspace.tsx",
+          "mode": "100644",
+          "gitBlob": "d1855c40ffa334b514ba1db3bc77233b8eece07e",
+          "bytes": 1086,
+          "sha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68"
+        },
+        {
+          "path": "frontend/src/navigation/route-state.ts",
+          "mode": "100644",
+          "gitBlob": "ce5f3de7f0cc5fef23f09da0a2e65728791ec752",
+          "bytes": 6290,
+          "sha256": "7b998ddb9fac53820324f69c17f99ea769920db0693c12b2c3326aeb91fb8d09"
+        },
+        {
+          "path": "frontend/src/navigation/NavigationAuthority.tsx",
+          "mode": "100644",
+          "gitBlob": "c4640e70cac3061ca4d39200fbfa86349cd20cf1",
+          "bytes": 2241,
+          "sha256": "29c34af57ae455ca6d28aafe1a008991bf3c102048a89bd2aa0deb02f7b6d84e"
+        }
+      ],
+      "slots": {
+        "header-actions": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx"
+          ],
+          "anchors": [
+            "pageActions",
+            "tasks-page-actions"
+          ]
+        },
+        "filters": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx",
+            "frontend/src/components/tasks/task-calendar.ts"
+          ],
+          "anchors": [
+            "tasks-tab-toolbar",
+            "backlogToolbar"
+          ]
+        },
+        "date-list": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx",
+            "frontend/src/components/tasks/TaskListRow.tsx",
+            "frontend/src/components/tasks/TaskContent.tsx",
+            "frontend/src/task-view-model.ts"
+          ],
+          "anchors": [
+            "task-time-group-",
+            "TaskListRow"
+          ]
+        },
+        "calendar-layout": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx",
+            "frontend/src/components/tasks/TasksCalendar.tsx",
+            "frontend/src/components/tasks/task-calendar.ts"
+          ],
+          "anchors": [
+            "tasks-workspace",
+            "task-calendar-panel",
+            "TasksCalendar"
+          ]
+        }
+      },
+      "schema": {
+        "status": "manual-normal-shape-bound-to-pinned-source",
+        "files": [
+          "frontend/src/task-view-model.ts",
+          "frontend/src/view-model.ts",
+          "frontend/src/preview/task-fixture.ts",
+          "frontend/src/preview/useTasksPreview.ts",
+          "frontend/src/preview/TasksWorkspaceProvider.tsx",
+          "frontend/src/workspaces/TasksWorkspace.tsx"
+        ],
+        "runtimeWiring": false,
+        "differences": []
+      },
+      "sourceLabel": "schema-handbook"
+    },
+    "fourth": {
+      "source": {
+        "kind": "git-commit",
+        "appCommit": "76493c5e0747cb5da908fdb708879fd96509d093",
+        "sourceTree": "bf3ea11faf2bc58f664518c79575686ebb2bba84"
+      },
+      "files": [
+        {
+          "path": "frontend/src/components/tasks/TasksView.tsx",
+          "mode": "100644",
+          "gitBlob": "0195dad4e5b3da55195f9e462560fc23a999bce5",
+          "bytes": 26663,
+          "sha256": "6e0c5ebc97ee0128f1b9f4e33705833dbce6e5e2339d71e083b555e0e5959b7d"
+        },
+        {
+          "path": "frontend/src/screens/tasksScreen.tsx",
+          "mode": "100644",
+          "gitBlob": "42111574df4bbba4f3fcdadcfa5cee4e02752b93",
+          "bytes": 2070,
+          "sha256": "c5e9edb39172c1d5283ffaf4243afbab57dc57ac9ad65f9efa7e5fe33f5ddc0f"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskListRow.tsx",
+          "mode": "100644",
+          "gitBlob": "ee4230f7964445bed2f54e0da0fd0498db93be68",
+          "bytes": 4343,
+          "sha256": "8057af9ef2be9ba80000dc6519ad83792c012c1d926a2bb1d9838dae1dce8822"
+        },
+        {
+          "path": "frontend/src/components/tasks/TasksCalendar.tsx",
+          "mode": "100644",
+          "gitBlob": "91519cc4aae63cbfdeb3699b861a77faaf447e0d",
+          "bytes": 7867,
+          "sha256": "1cd31a02f3520ac656201f3dc450e801b3d69b835fd6bab422457774eedca3da"
+        },
+        {
+          "path": "frontend/src/components/tasks/task-calendar.ts",
+          "mode": "100644",
+          "gitBlob": "208a2cb61c9eb2012ecd5fd0e9e688e8939b80b0",
+          "bytes": 6256,
+          "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskContent.tsx",
+          "mode": "100644",
+          "gitBlob": "ccc1f556854a37026291b3a9459e1a3c01ba15a7",
+          "bytes": 8816,
+          "sha256": "a231e74cd889e609558ae6586ac2d0785853153674aad2ac9584a5be3e899df1"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskDetail.tsx",
+          "mode": "100644",
+          "gitBlob": "231474e1e8dd96487e09c971efdc3cccea11701a",
+          "bytes": 7468,
+          "sha256": "bbe798606b24b9567a4d0316a1beebfa0bff1bcf84d10af410d339138ea28ea7"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskForm.tsx",
+          "mode": "100644",
+          "gitBlob": "277cd7d6f38b09a5b0c93fd20f63ac0c6fc6a8ed",
+          "bytes": 11333,
+          "sha256": "9108275750c71187dc0868df78381be4a50d99a1f69fe1d5ab9ecea1f1b01f70"
+        },
+        {
+          "path": "frontend/src/components/tasks/task-form.ts",
+          "mode": "100644",
+          "gitBlob": "1c708f769433c2096c46ac7e78d8d6a715d3f500",
+          "bytes": 3535,
+          "sha256": "5a40a277b2a95f588410999c51185a789d02c8a5f8f5b09378829ceb968dbb0f"
+        },
+        {
+          "path": "frontend/src/components/WriteRecoveryNotice.tsx",
+          "mode": "100644",
+          "gitBlob": "a8068389fb6e7bb9b0727c6b40cad8d862f80c82",
+          "bytes": 2296,
+          "sha256": "886f74c4a699b04674b751b73d7d58b0be0f5211d4db5564ab96e19e58c8f78c"
+        },
+        {
+          "path": "frontend/src/preview/PreviewNavigationGuard.tsx",
+          "mode": "100644",
+          "gitBlob": "2b23228117a2827a5242c0d1e44d0b7d0c3be0f9",
+          "bytes": 9101,
+          "sha256": "cc5f4ae3d4242805c2445905384289de4e230e808773ee66b3ccab4722c295bb"
+        },
+        {
+          "path": "frontend/src/preview/PreviewContext.tsx",
+          "mode": "100644",
+          "gitBlob": "3354c02f1da1637c0953ca994f7625851ca9b2fa",
+          "bytes": 214,
+          "sha256": "8b4ec15e63e2fc981e7d4516642493609fb1ab6368e6d77bcb41ec8ef5b1d34d"
+        },
+        {
+          "path": "frontend/src/preview/usePreviewOperation.ts",
+          "mode": "100644",
+          "gitBlob": "d2b45e77f5b8f10b8ca11010e7330e35a523c67b",
+          "bytes": 6058,
+          "sha256": "ecc752cb126045fd5be2b8e513cfd914e6e9eb9b5f3fa6d591954a4e5623d555"
+        },
+        {
+          "path": "frontend/src/theme.ts",
+          "mode": "100644",
+          "gitBlob": "87126ebe5d1512cdd3adbfc9c8ee006dc58d4b6b",
+          "bytes": 4657,
+          "sha256": "3f8b4a0424e8b4807bb7be71d00e93d0c2c41a8f22c983de9e0bb1ce68f59404"
+        },
+        {
+          "path": "frontend/src/task-view-model.ts",
+          "mode": "100644",
+          "gitBlob": "a532cc69b77d2ff2522d5fcbfc36ee15a2de8e28",
+          "bytes": 10691,
+          "sha256": "7ba37779456c46f1f852f53a6e30e208eea4b7a957f04c31b63d2f4ff078cdd2"
+        },
+        {
+          "path": "frontend/src/view-model.ts",
+          "mode": "100644",
+          "gitBlob": "33446458c8aac4d61d4af2190eecb482cbb4546c",
+          "bytes": 3140,
+          "sha256": "d5a43490b3c002613239f3566ac91ffc894fb480939409afae3e61b34b32c699"
+        },
+        {
+          "path": "frontend/src/preview/task-fixture.ts",
+          "mode": "100644",
+          "gitBlob": "45d1305c18e14f008de659b5b6591f979326f573",
+          "bytes": 9064,
+          "sha256": "080e5124b1af28d1b06aad9de2debb60ab7bb11569c8b09755b6f474685b1ed6"
+        },
+        {
+          "path": "frontend/src/preview/useTasksPreview.ts",
+          "mode": "100644",
+          "gitBlob": "c85b13a371900dca7fe830e31d84f32994e82194",
+          "bytes": 12418,
+          "sha256": "d857541f37941b8a90252a4033d9a35dbab1b88ad3f3c7264552c8619b61eb10"
+        },
+        {
+          "path": "frontend/src/preview/TasksWorkspaceProvider.tsx",
+          "mode": "100644",
+          "gitBlob": "afad0d3ed3c3390580b1f6dfaf8a8e8c92893069",
+          "bytes": 2465,
+          "sha256": "6d32d403a4ef70c9da01cf1dd42c87717fc9e4802dfcbda1df918aed3b43b208"
+        },
+        {
+          "path": "frontend/src/workspaces/TasksWorkspace.tsx",
+          "mode": "100644",
+          "gitBlob": "d1855c40ffa334b514ba1db3bc77233b8eece07e",
+          "bytes": 1086,
+          "sha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68"
+        }
+      ],
+      "slots": {
+        "header-actions": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx"
+          ],
+          "anchors": [
+            "pageActions",
+            "tasks-page-actions"
+          ]
+        },
+        "filters": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx",
+            "frontend/src/components/tasks/task-calendar.ts"
+          ],
+          "anchors": [
+            "tasks-tab-toolbar",
+            "backlogToolbar"
+          ]
+        },
+        "date-list": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx",
+            "frontend/src/components/tasks/TaskListRow.tsx",
+            "frontend/src/components/tasks/TaskContent.tsx",
+            "frontend/src/task-view-model.ts"
+          ],
+          "anchors": [
+            "task-time-group-",
+            "TaskListRow"
+          ]
+        },
+        "calendar-layout": {
+          "status": "candidate-only",
+          "adapter": null,
+          "reason": "Whole source region identified; extraction, shared owner and style adapter not implemented.",
+          "files": [
+            "frontend/src/components/tasks/TasksView.tsx",
+            "frontend/src/components/tasks/TasksCalendar.tsx",
+            "frontend/src/components/tasks/task-calendar.ts"
+          ],
+          "anchors": [
+            "tasks-workspace",
+            "task-calendar-panel",
+            "TasksCalendar"
+          ]
+        }
+      },
+      "schema": {
+        "status": "manual-normal-shape-bound-to-pinned-source",
+        "files": [
+          "frontend/src/task-view-model.ts",
+          "frontend/src/view-model.ts",
+          "frontend/src/preview/task-fixture.ts",
+          "frontend/src/preview/useTasksPreview.ts",
+          "frontend/src/preview/TasksWorkspaceProvider.tsx",
+          "frontend/src/workspaces/TasksWorkspace.tsx"
+        ],
+        "runtimeWiring": false,
+        "differences": []
+      },
+      "sourceLabel": "schema-fourth"
+    }
+  }
+}

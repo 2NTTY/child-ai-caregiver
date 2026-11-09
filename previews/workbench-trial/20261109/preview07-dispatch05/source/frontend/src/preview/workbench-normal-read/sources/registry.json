@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "capabilities": {
+    "runtimeReady": false,
+    "selectable": false,
+    "dataMapped": false
+  },
+  "sources": {
+    "original": {
+      "status": "source-verified",
+      "reason": null,
+      "source": {
+        "kind": "composite",
+        "appCommit": null,
+        "sourceTree": "de0cbacb583c923fba8f88f27fd5f6b8d5409c1c",
+        "recipeSha256": "e49b453d98d3bcb34ea51bb67d068078d90e9c50c8862ae70b81f3bbe237074b"
+      },
+      "modules": {
+        "header-actions": null,
+        "filters": null,
+        "date-list": null,
+        "calendar-layout": null
+      },
+      "sourceVerified": true,
+      "receiptSha256": "979f1911d6132bf3bb2e08d62483619b67ada7f5ef6fb769ebe8ec6448f5bba1"
+    },
+    "harbour": {
+      "status": "source-verified",
+      "reason": null,
+      "source": {
+        "kind": "git-commit",
+        "appCommit": "4050c0a16d0a9735923434abc9749ecd416d7926",
+        "sourceTree": "fcc2393ea5f6bf6963fbf9b281f24bd02de76ea2"
+      },
+      "modules": {
+        "header-actions": null,
+        "filters": null,
+        "date-list": null,
+        "calendar-layout": null
+      },
+      "sourceVerified": true,
+      "receiptSha256": "907ec9573cfb6213a30a019363fcb56b82441be5ee01706700d169e44997fc9a"
+    },
+    "care": {
+      "status": "source-verified",
+      "reason": null,
+      "source": {
+        "kind": "git-commit",
+        "appCommit": "520d4c88a74faf460a464c38931cd9e1a84e0ec8",
+        "sourceTree": "c0abef888f7bf10054a0b7b07cfc85b78b259073"
+      },
+      "modules": {
+        "header-actions": null,
+        "filters": null,
+        "date-list": null,
+        "calendar-layout": null
+      },
+      "sourceVerified": true,
+      "receiptSha256": "907ec9573cfb6213a30a019363fcb56b82441be5ee01706700d169e44997fc9a"
+    },
+    "handbook": {
+      "status": "source-verified",
+      "reason": null,
+      "source": {
+        "kind": "git-commit",
+        "appCommit": "72a00c860118e254e05249b471efb2a676aaaa42",
+        "sourceTree": "8af71f2826cec47d5625053b68b87aba2ab52722"
+      },
+      "modules": {
+        "header-actions": null,
+        "filters": null,
+        "date-list": null,
+        "calendar-layout": null
+      },
+      "sourceVerified": true,
+      "receiptSha256": "907ec9573cfb6213a30a019363fcb56b82441be5ee01706700d169e44997fc9a"
+    },
+    "fourth": {
+      "status": "source-verified",
+      "reason": null,
+      "source": {
+        "kind": "git-commit",
+        "appCommit": "76493c5e0747cb5da908fdb708879fd96509d093",
+        "sourceTree": "bf3ea11faf2bc58f664518c79575686ebb2bba84"
+      },
+      "modules": {
+        "header-actions": null,
+        "filters": null,
+        "date-list": null,
+        "calendar-layout": null
+      },
+      "sourceVerified": true,
+      "receiptSha256": "907ec9573cfb6213a30a019363fcb56b82441be5ee01706700d169e44997fc9a"
+    }
+  }
+}
