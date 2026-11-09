@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+ <meta name="color-scheme" content="light">
+ <title>表單錯誤導航 · FEN01 · 選配工作台</title>
+ <link rel="stylesheet" href="./style.css"><script type="module" src="./app.mjs"></script>
+</head>
+<body data-layout="A">
+ <a class="skip" href="#summary-heading">跳到錯誤摘要</a>
+ <div class="page">
+  <header class="masthead"><div class="brand"><span class="brand-mark" aria-hidden="true">港</span><div>育伴港<small>選配工作台</small></div></div><span class="edition">FEN01 / v0.1.1<br>表單錯誤導航</span></header>
+  <main>
+   <div class="hero"><p class="eyebrow">REVIEW, REPAIR, RETURN.</p><h1>不用重填，<br><span>找到要修正的那一處。</span></h1><p>一份草稿，兩種校對方式。從錯誤摘要直接回到對應欄位。</p></div>
+   <div class="safety"><strong>全合成 · 只在本頁記憶中</strong><span>請勿輸入真實家庭或個人資料。沒有保存、提交、網絡請求或正式表單接線。</span></div>
+   <section class="controls" aria-label="比較及合成控制">
+    <div class="layout-switch" role="group" aria-label="選擇錯誤呈現"><button type="button" id="layout-A" aria-pressed="true"><b>A</b> 校對清單</button><button type="button" id="layout-B" aria-pressed="false"><b>B</b> 逐項導覽</button></div>
+    <div class="demo-controls"><label for="scope">合成表單<select id="scope"><option value="demo-A">示例 A</option><option value="demo-B">示例 B</option></select></label><button type="button" id="long-errors">載入長錯誤範例</button><button type="button" id="lock" aria-pressed="false">鎖定合成欄位</button></div>
+   </section>
+   <p class="scope-note">切換合成表單會重設草稿及錯誤，布局保留。錯誤是上一次檢查結果，不會在輸入時自行消失。</p>
+   <div class="work-area">
+    <section id="summary" class="summary" aria-label="錯誤摘要"></section>
+    <section id="form-panel" class="form-panel" aria-labelledby="form-heading">
+     <div class="paper-label"><span>DEMO DRAFT</span><span id="scope-label">示例 A</span></div>
+     <h2 id="form-heading">你的合成草稿</h2><p class="form-intro">這三個示例欄位不屬於真實記錄、帳戶或家庭。</p>
+     <div class="field"><label for="field-title">示例標題</label><input id="field-title" type="text" autocomplete="off" placeholder="例如：紙船小實驗" aria-describedby="help-title error-title"><p id="help-title" class="help">只輸入合成文字，不會自動補寫內容。</p><p id="error-title" class="inline-error"></p></div>
+     <button type="button" id="details-toggle" class="details-toggle" aria-controls="details-fields" aria-expanded="false">展開補充欄位 <span aria-hidden="true">＋</span></button>
+     <div id="details-fields" hidden>
+      <div class="field"><label for="field-category">示例分類</label><input id="field-category" type="text" autocomplete="off" placeholder="例如：合成活動" aria-describedby="help-category error-category"><p id="help-category" class="help">用作示範跳到收起的欄位。</p><p id="error-category" class="inline-error"></p></div>
+      <div class="field"><label for="field-note">示例說明</label><textarea id="field-note" rows="4" autocomplete="off" placeholder="寫一小段虛構活動說明" aria-describedby="help-note error-note"></textarea><p id="help-note" class="help">輸入與摘要分開保留，切換 A/B 不會清空。</p><p id="error-note" class="inline-error"></p></div>
+     </div>
+     <div class="form-actions"><button type="button" id="check" class="primary">演示重新檢查</button><button type="button" id="fill">載入完整合成範例</button></div>
+     <p class="helper-note">檢查僅判斷示例欄位有否文字，不是正式驗證或保存。</p>
+    </section>
+   </div>
+   <p id="feedback" role="status" aria-live="polite" aria-atomic="true" class="feedback"></p>
+   <div id="announcer" role="alert" aria-live="assertive" aria-atomic="true" class="visually-hidden"></div>
+   <noscript>請啟用 JavaScript 才能操作此合成候選。</noscript>
+  </main>
+  <footer><p>FEN01 · forms / FormErrorSummary 子邊界 · 重新整理即清除草稿</p><p>不是完整表單容器、離頁保護、正式資料驗證或業務提交。瀏覽器／讀屏／正式整合仍待驗收。</p></footer>
+ </div>
+</body>
+</html>

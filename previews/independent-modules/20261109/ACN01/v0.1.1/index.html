@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'none'; font-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="color-scheme" content="dark light">
+  <title>服務入場 · ACN01 · 選配工作台</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body data-layout="A">
+  <a class="skip-link" href="#candidate">跳到候選內容</a>
+  <div class="canvas">
+    <header class="masthead">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">港</span><div>育伴港 <span class="brand-note">選配工作台</span></div></div>
+      <span class="edition">ACN01 / v0.1.1 · 獨立候選</span>
+    </header>
+    <main>
+      <div class="hero"><p class="eyebrow">A SMALL CHECK, A CLEAR START</p><h1>安心開始，<br><span>先知道接下來的事。</span></h1><p>帳戶驗證與服務入場，兩種不同的閱讀方式。</p></div>
+      <div class="safety-note"><strong>全合成互動示範</strong><span>不登入、不寄信、不接受真條款、不存資料，也不開啟私人內容。</span></div>
+      <section class="workbench-controls" aria-label="比較與合成情境">
+        <div class="layout-group" role="group" aria-label="選擇布局">
+          <button id="layout-A" type="button" aria-pressed="true"><span>A</span> 登艙通行證</button>
+          <button id="layout-B" type="button" aria-pressed="false"><span>B</span> 資料說明卷宗</button>
+        </div>
+        <div class="scenario-controls">
+          <label for="scenario">合成情境<select id="scenario"></select></label>
+          <label for="identity">合成身分<select id="identity"><option value="synthetic-account-A">示例帳戶 A</option><option value="synthetic-account-B">示例帳戶 B</option></select></label>
+          <button id="online" type="button" aria-pressed="true">模擬在線</button>
+          <button id="policy-change" type="button">演示說明版本變更</button>
+        </div>
+      </section>
+      <div id="candidate" tabindex="-1"></div>
+      <div class="result" id="result" role="status" aria-live="polite" aria-atomic="true"></div>
+      <noscript><p class="warning">請啟用 JavaScript 才能操作合成候選。這不是正式帳戶入口。</p></noscript>
+    </main>
+    <footer><p>ACN01 · account-admission · 本頁重新整理即清除示例狀態</p><p>來源程式與設計參考另列交付文件；未接正式 owner。瀏覽器、讀屏與真裝置驗收待完成。</p></footer>
+  </div>
+</body>
+</html>

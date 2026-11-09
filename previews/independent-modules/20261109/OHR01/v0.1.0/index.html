@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+ <meta name="color-scheme" content="light"><title>頁首操作狀態 · OHR01 · 選配工作台</title>
+ <link rel="stylesheet" href="./style.css"><script type="module" src="./app.mjs"></script>
+</head>
+<body data-layout="A">
+ <a class="skip" href="#hint-heading">跳到操作提示</a>
+ <div class="page">
+  <header class="masthead"><div class="brand"><span aria-hidden="true" class="brand-seal">港</span><span>育伴港<small>選配工作台</small></span></div><span class="version">OHR01 / v0.1.0<br>頁首操作狀態與處理入口</span></header>
+  <main>
+   <div class="hero"><div><p class="eyebrow">OPERATIONS, IN CONTEXT.</p><h1>每個狀態，<br><span>都有它的去處。</span></h1></div><p class="hero-caption">讓進行中、未知結果和版本衝突<br>回到真正負責處理它們的頁面。</p></div>
+   <div class="safety"><strong>全合成 · 不接正式資料</strong><span>這些不是你的記錄。沒有真路由、帳戶操作、保存、批准或網絡請求。</span></div>
+   <section class="compare" aria-label="布局選擇"><div class="layout-switch" role="group" aria-label="選擇呈現"><button id="layout-A" type="button" aria-pressed="true"><b>A</b> 狀態光帶</button><button id="layout-B" type="button" aria-pressed="false"><b>B</b> 航務面板</button></div><p>換布局保留合成範圍、原狀態與待決導向。</p></section>
+   <section class="fixture-controls" aria-labelledby="fixture-heading"><div><p class="eyebrow">SYNTHETIC CONTROLS</p><h2 id="fixture-heading">試一個邊界情境</h2></div><div class="select-grid">
+    <label for="identity">合成身分<select id="identity"><option value="demo-user-A">示例身分 A</option><option value="demo-user-B">示例身分 B</option></select></label>
+    <label for="child">合成孩子範圍<select id="child"><option value="demo-child-A">示例範圍 A</option><option value="demo-child-B">示例範圍 B</option><option value="none">未選範圍</option></select></label>
+    <label for="scenario">owner 狀態範例<select id="scenario"><option value="mixed">各種待核對狀態</option><option value="quiet">只有 none / saved</option><option value="lost">核對頁已失去存取</option><option value="mismatch">檔案頁來自舊範圍</option><option value="long">完整長頁名</option></select></label>
+    <label for="guard">接下來的導向<select id="guard"><option value="immediate">合成即時放行</option><option value="delayed">停在確認前</option></select></label>
+   </div><div class="fixture-footer"><p>換身分重設示例範圍及入口。換範圍會使範圍請求失效，身分請求則沿當前身分核對。</p><button type="button" id="replay" disabled>回放最近延遲回呼</button></div></section>
+   <div class="workspace"><section id="hint-region" class="hint-region" aria-label="操作提示"></section><section id="stage" class="stage" aria-label="合成處理入口"></section></div>
+   <p id="feedback" class="feedback" role="status" aria-live="polite" aria-atomic="true"></p>
+   <noscript>啟用 JavaScript 後可操作這個全合成候選。</noscript>
+  </main>
+  <footer><p>OHR01 · key-facts / 操作提示投影 · 只在本頁記憶中</p><p>不替代原 owner、正式離頁 guard、伺服器授權或資料恢復。瀏覽器、讀屏及正式接線仍待驗收。</p></footer>
+ </div>
+</body>
+</html>
