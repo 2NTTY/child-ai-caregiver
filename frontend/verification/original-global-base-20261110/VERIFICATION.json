@@ -1,0 +1,58 @@
+{
+  "status": "IMPLEMENTED_INDEPENDENTLY_REVIEWED_SCOPED_VERIFICATION_WITH_PROFILE_GAPS",
+  "verificationLayers": {
+    "fixture": "PASS exact source/installed Paper/lossless typed outputs; full2356 leaf provenance independently reviewed",
+    "red": "VALID_EXPECTED_FAILURE four assertions, no resource or loader failure",
+    "focusedGreen": "PASS 4/4; source/contract and awaited mounted probes reached, controlled ports explicitly scoped",
+    "noEmit": "PASS single full frontend run with official --listFiles; P678+D1352, old linked frontend0",
+    "officialExpoCompilation": "CHILD_EXIT_0 single --source-maps export,2189 modules",
+    "originalExportWrapper": "FAIL exit2, original receipt unchanged; finite source classifier encountered official NUL virtual source",
+    "postExportOfflineValidation": "PASS separate reviewed Python on original export bytes;2194 sources=P539+D1648+7exact generated;old frontend0",
+    "staticCarrier": "PASS 1249fixed inputs, native25/unbound518/bound520,29officialassets exact,3maps omitted from served namespace",
+    "browser": "SCOPED observations independently accepted; full matrix false, exact 1440/390/320 not run. Browser001/032 single-frame caveat preserved; browser002 independently accepted only as no persistent overlap observed after settling and blur in its targeted reproduction.",
+    "independentFinalBrowserReview": "Browser001 review01 and browser002 accepted at their stated scope. Root summary and archival seal plan independently reviewed; no full-matrix or release admission."
+  },
+  "privateEvidence": {
+    "files": 7348,
+    "bytes": 567009712,
+    "canonicalSha256": "8417899b81a620ccf5644a4e7ef4afa079e2b882e603d3fc2349a0d4d1862ba8",
+    "closureHashes": {
+      "FINAL-MANIFEST.json": "2f25b8abc7e2973c57fddeeb5fc0f96d374bd691b8327bc04dcb1475115ef421",
+      "FINAL-SEAL.json": "b78ba411a2086aba656f9d85d0900003b4a800d38ff2895cdb2e18272e8837ad",
+      "FINAL-READBACK.json": "ac8268cf8b51cec70f3ab75cbd193811b1c52ffd1124ee7b2853c01dcdafa191",
+      "REPORT.md": "8caa70091d87a753852c5e7b70aaca1e4e1681481527792f5cd3b8da6f19841e",
+      "RESULT.json": "03856e2649804cd5bef156113f246059c92afdbb2acfe8bb6faea31b2d94506a"
+    },
+    "independentSealReviewSha256": "7c74424d631cbdce4f88794b93075beba50afb4bc519f4fbf5303536385225cb",
+    "allManifestMembersRehashedForArchive": true
+  },
+  "notVerified": [
+    "exact 1440/390/320 profiles",
+    "full 27-recipe browser matrix",
+    "full accessibility and pressed states",
+    "DEV Strict/teardown/full owner",
+    "reload draft recovery",
+    "complete Original app or production backend/AI",
+    "first-phase completion or release acceptance"
+  ],
+  "caveats": [
+    "Original export wrapper FAIL exit2 remains distinct from official child exit0 and separate offline PASS.",
+    "Browser001/032 single-frame overlap caveat retained. Browser002 supports only no persistent overlap observed after settling/blur in its targeted reproduction.",
+    "Browser002 immediate DOM and later screenshot differ in timing; 004/005 JPEG bytes identical, not before/after animation proof.",
+    "Actual browser:1180x757,1024x757,500x757 DPR1;150 percent desktop zoom787x505 DPR1.5 is not mobile.",
+    "Historical export70990/preview39216 remain UNKNOWN.",
+    "Prior full historical source membership and runtime closure limitations remain."
+  ],
+  "archiveActions": {
+    "productTestsRerun": false,
+    "browserRerun": false,
+    "published": false,
+    "productionSourceChanged": false,
+    "prOpened": false,
+    "masterMerged": false,
+    "privateRawIncluded": false,
+    "screenshotsIncluded": false,
+    "sourceMapsIncluded": false,
+    "dependenciesIncluded": false
+  }
+}

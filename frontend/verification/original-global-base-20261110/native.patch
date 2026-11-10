@@ -1,0 +1,475 @@
+--- a/frontend/app/_layout.tsx
++++ b/frontend/app/_layout.tsx
+@@ -1,3 +1,4 @@
++import { taskWorkbenchColors, taskWorkbenchCss } from "../src/preview/tasks-global-base/contract";
+ import { MountedLifecycleWitness } from "../src/preview/tasks-interactive-qa/MountedLifecycleWitness";
+ import { TasksChoiceSceneProvider } from "../src/preview/tasks-choice-host/TasksChoiceSceneProvider";
+ export { RouteError as ErrorBoundary, RouteLoading as SuspenseFallback } from "../src/components/RouteFeedback";
+@@ -21,17 +22,17 @@
+     <SafeAreaProvider><MotionProvider><MountedLifecycleWitness><TasksChoiceSceneProvider><MotionPaperProvider>
+       <Head>
+         <title>{brand.name}</title>
+-        <meta name="theme-color" content="#F3F6F4" />
++        <meta name="theme-color" content={taskWorkbenchColors.canvas} />
+         <style id="harbour-desk-accessibility">{`
+ html { color-scheme: light; }
+-:focus-visible { outline: 3px solid #245C50; outline-offset: 3px; }
+-[data-field-frame]:focus-within > div { outline: 2px solid #245C50; outline-offset: 2px; border-radius: 8px; }
++:focus-visible { outline: 3px solid ${taskWorkbenchColors.ink}; outline-offset: 3px; }
++[data-field-frame]:focus-within > div { outline: 2px solid ${taskWorkbenchColors.ink}; outline-offset: 2px; border-radius: 8px; }
+ [data-testid="workspace-skip-link"] { top: -100px; clip-path: inset(50%); pointer-events: none; }
+ [data-testid="workspace-skip-link"]:focus { top: 12px; clip-path: none; pointer-events: auto; }
+ h1, h2, h3, h4, h5, h6, [role="heading"] { scroll-margin-top: 24px; text-wrap: balance; }
+-button, a, [role="button"] { touch-action: manipulation; -webkit-tap-highlight-color: rgba(36, 92, 80, 0.16); }
++button, a, [role="button"] { touch-action: manipulation; -webkit-tap-highlight-color: ${taskWorkbenchCss.tapHighlight}; }
+ [role="dialog"] { overscroll-behavior: contain; }
+-@media (hover: hover) and (pointer: fine) { [data-hover-surface="true"]:hover:not([aria-disabled="true"]) { background-color: rgba(36, 92, 80, 0.08); } }
++@media (hover: hover) and (pointer: fine) { [data-hover-surface="true"]:hover:not([aria-disabled="true"]) { background-color: ${taskWorkbenchColors.pressedOverlay}; } }
+ @media (pointer: fine) { html { overscroll-behavior: none; } }
+ @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+         `}</style>
+--- a/frontend/src/components/tasks/presentation/CareWorkspaceSwitch.tsx
++++ b/frontend/src/components/tasks/presentation/CareWorkspaceSwitch.tsx
+@@ -2,8 +2,8 @@
+ import { useCareManualTabControls } from "./useCareManualTabControls";
+ import { Pressable, StyleSheet, View } from "react-native";
+ import { Text } from "react-native-paper";
+-import { spacing } from "../../../theme";
+-import { careColors as colors, careFont as chineseFont } from "./taskFilterThemes";
++import { spacing, chineseFont } from "../../../theme";
++import { taskWorkbenchColors as colors } from "../../../preview/tasks-global-base/contract";
+ 
+ // A task-oriented alternative to a dense tab strip. The caller owns selection,
+ // navigation guards and panels; this component owns only keyboard presentation.
+--- a/frontend/src/components/tasks/presentation/taskFilterAppearance.ts
++++ b/frontend/src/components/tasks/presentation/taskFilterAppearance.ts
+@@ -1,11 +1,12 @@
+ import type { AppTextFieldAppearance, UnderlineTabsAppearance } from "../../ui";
+ import type { TaskPresentationVariant } from "./contracts";
+-import { careColors, careFont, careTheme, handbookColors, handbookFont, handbookTheme, fourthColors, fourthFont, fourthTheme } from "./taskFilterThemes";
++import { chineseFont } from "../../../theme";
++import { taskWorkbenchColors, taskWorkbenchPaperTheme } from "../../../preview/tasks-global-base/contract";
+ 
+ const sources = {
+-  care: { colors: careColors, font: careFont, theme: careTheme, radius: 8 },
+-  handbook: { colors: handbookColors, font: handbookFont, theme: handbookTheme, radius: 8 },
+-  fourth: { colors: fourthColors, font: fourthFont, theme: fourthTheme, radius: 10 },
++  care: { colors: taskWorkbenchColors, font: chineseFont, theme: taskWorkbenchPaperTheme, radius: 8 },
++  handbook: { colors: taskWorkbenchColors, font: chineseFont, theme: taskWorkbenchPaperTheme, radius: 8 },
++  fourth: { colors: taskWorkbenchColors, font: chineseFont, theme: taskWorkbenchPaperTheme, radius: 10 },
+ } as const;
+ const fields: Partial<Record<TaskPresentationVariant, AppTextFieldAppearance>> = {};
+ const tabs: Partial<Record<TaskPresentationVariant, UnderlineTabsAppearance>> = {};
+@@ -29,4 +30,4 @@
+ }
+ export const taskSearchAppearance = (variant?: TaskPresentationVariant) => variant === undefined ? undefined : fields[variant];
+ export const taskTabsAppearance = (variant: TaskPresentationVariant) => tabs[variant];
+-export const handbookFilterHeadingStyle = { borderBottomColor: handbookColors.line };
++export const handbookFilterHeadingStyle = { borderBottomColor: taskWorkbenchColors.line };
+--- a/frontend/src/components/tasks/presentation/taskSelectionAppearance.ts
++++ b/frontend/src/components/tasks/presentation/taskSelectionAppearance.ts
+@@ -1,34 +1,32 @@
+-import { Platform } from "react-native";
++import { chineseFont } from "../../../theme";
++import { taskWorkbenchColors as colors } from "../../../preview/tasks-global-base/contract";
+ import type { AppSelectionTriggerAppearance } from "../../ui";
+ import type { TaskPresentationVariant } from "./contracts";
+ 
+-// Exact ui.tsx/theme.ts differences from the pinned Care, Handbook and Fourth
+-// sources. Shared geometry, touch targets and behavior stay on the host primitive.
+-const careFont = Platform.select({ web: "Inter, -apple-system, BlinkMacSystemFont, 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif", default: undefined });
+-const handbookFont = Platform.select({ web: "'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', sans-serif", default: undefined });
+-const fourthFont = Platform.select({ web: "'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif", default: undefined });
++// Pinned source geometry with fixed host color/font roles. Shared touch targets
++// and behavior stay on the host primitive; source identities remain historical.
+ 
+ const appearances: Readonly<Record<Exclude<TaskPresentationVariant, "harbour">, AppSelectionTriggerAppearance>> = {
+   care: {
+-    style: { borderColor: "#708A7C", backgroundColor: "#FFFFFF", borderRadius: 8 },
+-    labelStyle: { color: "#173534", fontFamily: careFont },
+-    countStyle: { backgroundColor: "#DCEEE7" },
+-    countLabelStyle: { color: "#173534", fontFamily: careFont },
+-    pressedStyle: { backgroundColor: "#EAF4EF" }, iconColor: "#104E49",
++    style: { borderColor: colors.controlOutline, backgroundColor: colors.controlSurface, borderRadius: 8 },
++    labelStyle: { color: colors.ink, fontFamily: chineseFont },
++    countStyle: { backgroundColor: colors.sage },
++    countLabelStyle: { color: colors.ink, fontFamily: chineseFont },
++    pressedStyle: { backgroundColor: colors.paleTeal }, iconColor: colors.deepTeal,
+   },
+   handbook: {
+-    style: { borderColor: "#657F8A", backgroundColor: "#FFFFFF", borderRadius: 8 },
+-    labelStyle: { color: "#183747", fontFamily: handbookFont },
+-    countStyle: { backgroundColor: "#D5E9E6" },
+-    countLabelStyle: { color: "#183747", fontFamily: handbookFont },
+-    pressedStyle: { backgroundColor: "#E4F0F1" }, iconColor: "#14556B",
++    style: { borderColor: colors.controlOutline, backgroundColor: colors.controlSurface, borderRadius: 8 },
++    labelStyle: { color: colors.ink, fontFamily: chineseFont },
++    countStyle: { backgroundColor: colors.sage },
++    countLabelStyle: { color: colors.ink, fontFamily: chineseFont },
++    pressedStyle: { backgroundColor: colors.paleTeal }, iconColor: colors.deepTeal,
+   },
+   fourth: {
+-    style: { borderColor: "#718B8C", backgroundColor: "#FFFFFE", borderRadius: 10 },
+-    labelStyle: { color: "#183E45", fontFamily: fourthFont },
+-    countStyle: { backgroundColor: "#D9ECE7" },
+-    countLabelStyle: { color: "#183E45", fontFamily: fourthFont },
+-    pressedStyle: { backgroundColor: "#E8F4F0" }, iconColor: "#07585D",
++    style: { borderColor: colors.controlOutline, backgroundColor: colors.controlSurface, borderRadius: 10 },
++    labelStyle: { color: colors.ink, fontFamily: chineseFont },
++    countStyle: { backgroundColor: colors.sage },
++    countLabelStyle: { color: colors.ink, fontFamily: chineseFont },
++    pressedStyle: { backgroundColor: colors.paleTeal }, iconColor: colors.deepTeal,
+   },
+ };
+ 
+--- a/frontend/src/preview/tasks-care-presentation/styles.ts
++++ b/frontend/src/preview/tasks-care-presentation/styles.ts
+@@ -1,8 +1,9 @@
+ import { Platform, StyleSheet } from 'react-native';
+ import type { AppButtonAppearance } from '../../components/ui';
+ import type { CareButtonVariant } from './presentation';
+-import { careColors as colors, careSpacing as spacing, careReadingType as readingType, careWebFont } from './source-theme';
+-const chineseFont = Platform.select({ web: careWebFont, default: undefined });
++import { careSpacing as spacing, careReadingType as readingType } from './source-theme';
++import { taskWorkbenchColors as colors, taskWorkbenchFontFor } from '../tasks-global-base/contract';
++const chineseFont = taskWorkbenchFontFor(Platform.OS === 'web' ? 'web' : 'native');
+ 
+ /** Local source geometry; see SOURCE-MAP.json for source lines and adaptations. */
+ export const careStyles = StyleSheet.create({
+--- a/frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx
++++ b/frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx
+@@ -1,3 +1,4 @@
++import { TASK_WORKBENCH_BASE } from '../tasks-global-base/contract';
+ import { readTaskRecipePrefill } from './recipe-handoff';
+ import { CallbackCommitWitness, MountedRequestContext } from '../tasks-interactive-qa/MountedLifecycleWitness';
+ import { beginPublication, endPublication, recordControlRender, candidateWitnessFields, type RequestLabel } from '../tasks-interactive-qa/callback-witness';
+@@ -431,12 +432,12 @@
+       <View ref={this.workbenchFocusRef} tabIndex={-1} accessibilityLabel="待辦候選配方狀態">
+         <Text accessibilityRole="header" style={styles.heading}>待辦選配工作台</Text>
+         <Text>預設比較方向為原版／Handbook，首個草稿以 Handbook 為方向；這不表示 H/F 是你的選擇。</Text>
+-        <Text>H 是臨時整合宿主，不是原版。原版全局主題與完整五版左右預覽尚未接入。</Text>
++        <Text nativeID={TASK_WORKBENCH_BASE.id} testID="workbench-global-base">固定原版全局基底 v1；選配保留來源布局與資訊層級，顏色及字體按原版語義呈現。H 保留為資料與行為宿主；這不是完整原版。</Text>
+         <Text>候選編輯不會改動下方產品。詳情、表單、未儲存提示及未知結果恢復保留為同一行為套件。</Text>
+         <Text accessibilityLiveRegion="polite">{!available?'目前範圍不可用。':scope.occupied?'候選編輯已暫停，請先依原頁面完成或恢復目前操作。':
+           !scope.admissionVerified?'候選配方可編輯；組合預覽尚未開放，現有 H 產品仍可正常互動。':selecting?(sceneCommitted?'選配模式：產品操作暫停。':'正在準備選配模式。'):'產品互動模式。'}</Text>
+       </View>
+-      <View style={styles.versions}>{VARIANT_IDS.map(id=><Text key={id}>{VERSION_LABELS[id]}{id==='original'?'：歷史操作按鈕、分類分頁、搜尋框外框與事項列；分類、搜尋框與範圍／日期觸發器可固定組合選配，完整原版來源與全局主題未驗證':'：來源對照，非整版選配'}</Text>)}</View>
++      <View style={styles.versions}>{VARIANT_IDS.map(id=><Text key={id}>{VERSION_LABELS[id]}{id==='original'?'：歷史操作按鈕、分類分頁、搜尋框外框與事項列；分類、搜尋框與範圍／日期觸發器可固定組合選配，完整原版來源仍未驗證；固定全局基底不是整版原版':'：來源對照，非整版選配'}</Text>)}</View>
+       {TASK_SLOT_IDS.map(slot=>{
+         const selection=draft.current[slot];
+         return <View key={slot} style={styles.slot}>
+--- a/frontend/src/preview/tasks-handbook-presentation/HandbookTaskRowContent.tsx
++++ b/frontend/src/preview/tasks-handbook-presentation/HandbookTaskRowContent.tsx
+@@ -3,7 +3,7 @@
+ import { AppIcon } from '../../components/AppIcon';
+ import { describeHandbookRow, handbookRowVisualLayers, type HandbookRowDisplay, type HandbookRowVisualState } from './presentation';
+ import { handbookStyles as styles, handbookBadgeTones } from './styles';
+-import { handbookColors as colors } from './source-theme';
++import { taskWorkbenchColors as colors } from '../tasks-global-base/contract';
+ 
+ /** Apply to the EXISTING host row Pressable. No wrapper/ref/event or navigation owner. */
+ export function handbookTaskRowStyle(state: HandbookRowVisualState): StyleProp<ViewStyle> {
+--- a/frontend/src/preview/tasks-handbook-presentation/styles.ts
++++ b/frontend/src/preview/tasks-handbook-presentation/styles.ts
+@@ -1,6 +1,7 @@
+ import { Platform, StyleSheet } from 'react-native';
+-import { handbookColors as colors, handbookSpacing as spacing, handbookReadingType as readingType, handbookWebFont } from './source-theme';
+-const chineseFont = Platform.select({ web: handbookWebFont, default: undefined });
++import { handbookSpacing as spacing, handbookReadingType as readingType } from './source-theme';
++import { taskWorkbenchColors as colors, taskWorkbenchFontFor } from '../tasks-global-base/contract';
++const chineseFont = taskWorkbenchFontFor(Platform.OS === 'web' ? 'web' : 'native');
+ /** Exact presentation geometry from pinned JournalLayout, TasksView and TaskListRow. */
+ export const handbookStyles = StyleSheet.create({
+   heading: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: spacing.lg, paddingBottom: spacing.xl },
+--- a/frontend/src/preview/tasks-hf-full-presentation/presentation.ts
++++ b/frontend/src/preview/tasks-hf-full-presentation/presentation.ts
+@@ -1,4 +1,5 @@
+ import type { TextStyle, ViewStyle } from 'react-native';
++import { taskWorkbenchColors, taskWorkbenchFontFor } from '../tasks-global-base/contract';
+ 
+ export type HFTasksSource = 'harbour' | 'fourth';
+ export type HFTasksPresentationOptions = Readonly<{ compact: boolean; platform: 'web' | 'native' }>;
+@@ -21,21 +22,8 @@
+   if (source !== 'harbour' && source !== 'fourth') return undefined;
+   const harbour = source === 'harbour';
+   const { compact, platform } = options;
+-  const colors = harbour ? {
+-    ink: '#233A35', teal: '#245C50', muted: '#52655F', white: '#FFFFFF',
+-    line: '#CAD5CF', softLine: '#E0E8E3', neutralSurface: '#F2F6F3',
+-    errorInk: '#AB2631', paleCoral: '#FFF0F0', controlOutline: '#7D9087',
+-    pressedOverlay: 'rgba(35, 58, 53, 0.08)',
+-  } : {
+-    ink: '#183E45', teal: '#0C6E72', muted: '#52656B', white: '#FFFFFE',
+-    line: '#C8D9D7', softLine: '#DFE9E6', neutralSurface: '#F3F8F7',
+-    errorInk: '#B52D3A', paleCoral: '#FFF2F1', controlOutline: '#718B8C',
+-    pressedOverlay: 'rgba(24, 62, 69, 0.08)',
+-  };
+-  const fontFamily = platform === 'web'
+-    ? harbour ? "'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', sans-serif"
+-      : "'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif"
+-    : undefined;
++  const colors = taskWorkbenchColors;
++  const fontFamily = taskWorkbenchFontFor(platform);
+   const tool = harbour ? { fontSize: 14, lineHeight: 22 } : { fontSize: 16, lineHeight: 24 };
+   const meta = harbour ? { fontSize: 12, lineHeight: 18 } : { fontSize: 13, lineHeight: 20 };
+   const body = { fontSize: 16, lineHeight: 26 };
+--- a/frontend/src/preview/tasks-module-presentation02/source-region-appearance.ts
++++ b/frontend/src/preview/tasks-module-presentation02/source-region-appearance.ts
+@@ -5,9 +5,9 @@
+ import type { AppStatusBadgeAppearance } from '../../components/AppStatusBadge';
+ import { getHFTasksPresentation, type HFTasksPresentation } from '../tasks-hf-full-presentation/presentation';
+ import { careStyles, careButtonAppearance, careButtonSourceContract, careReadIndicatorAppearance } from '../tasks-care-presentation/styles';
+-import { careColors } from '../tasks-care-presentation/source-theme';
+ import { handbookStyles, handbookActionAppearance } from '../tasks-handbook-presentation/styles';
+-import { handbookColors, handbookWebFont, handbookReadingType } from '../tasks-handbook-presentation/source-theme';
++import { handbookReadingType } from '../tasks-handbook-presentation/source-theme';
++import { taskWorkbenchColors, taskWorkbenchFontFor } from '../tasks-global-base/contract';
+ 
+ /** Source-local missing regions only, never a provider, owner or admission. */
+ export type ModuleSourceVariant = 'harbour' | 'fourth' | 'handbook' | 'care';
+@@ -30,49 +30,8 @@
+   return Object.freeze(copy) as T;
+ }
+ 
+-// Exact Fourth theme, ordinary-row and badge source expressions; provenance is pinned.
+-const fourthColors = {
+-  // Distinct semantic roles: dark reading ink, teal actions, restrained warm emphasis.
+-  ink: "#183E45",
+-  teal: "#0C6E72",
+-  deepTeal: "#07585D",
+-  paper: "#FFFFFE",
+-  white: "#FFFFFE",
+-  canvas: "#F3F8F7",
+-  sage: "#D9ECE7",
+-  paleTeal: "#E8F4F0",
+-  accent: "#EBC356",
+-  onAccent: "#183E45",
+-  amber: "#92721F",
+-  paleAmber: "#FFF7E0",
+-  warningInk: "#715416",
+-  coral: "#B52D3A",
+-  paleCoral: "#FFF2F1",
+-  errorInk: "#B52D3A",
+-  muted: "#52656B",
+-  line: "#C8D9D7",
+-  softLine: "#DFE9E6",
+-  controlOutline: "#718B8C",
+-  controlSurface: "#FFFFFE",
+-  neutralSurface: "#F3F8F7",
+-  sidebar: "#EAF3F0",
+-  selectedNav: "#D9ECE7",
+-  quietSurface: "#F1F7F4",
+-  mintSurface: "#E8F4F0",
+-  previewSurface: "#F3F8F7",
+-  pressedOverlay: "rgba(24, 62, 69, 0.08)",
+-  accentPressed: "#DBB247",
+-  inkPressed: "#07585D",
+-  selectedPressed: "#C6DFD7",
+-  warningPressed: "#F5EBCB",
+-  darkActionRipple: "rgba(0, 0, 0, 0.12)",
+-  statusWarm: "#FFF7E0",
+-  statusUnknown: "#FFF7E0",
+-  statusWarmLine: "#92721F",
+-  statusUnknownLine: "#92721F",
+-  statusFailedLine: "#B52D3A",
+-  overlay: "rgba(24, 62, 69, 0.28)",
+-} as const;
++// Historical Fourth geometry; color roles belong to the independently pinned host.
++const fourthColors = taskWorkbenchColors;
+ const fourthTones = {
+   neutral: { background: fourthColors.neutralSurface, border: fourthColors.line, ink: fourthColors.muted, icon: "radiobox-blank" },
+   info: { background: fourthColors.paleTeal, border: fourthColors.sage, ink: fourthColors.ink, icon: "information-outline" },
+@@ -105,7 +64,7 @@
+       title: es.title, detail: es.detail,
+       icon: {size:e.icon.size,color:e.icon.color,style:es.icon},
+     };
+-    const fontFamily = platform === 'web' ? "'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif" : undefined;
++    const fontFamily = taskWorkbenchFontFor(platform);
+     return freeze({header:hf.header, list:hf.dateList.styles, empty,
+       read:{...r.styles,loadingColor:r.loading.color,nonLoadingIcon:r.nonLoadingIcon,empty},
+       ...(source === 'fourth' ? {row:fourthRow(fontFamily),iconColor:fourthColors.muted,warningIconColor:fourthColors.warningInk,
+@@ -122,7 +81,7 @@
+   if (source !== 'handbook') return undefined;
+   // Historical Handbook EmptyListCard, ReadStateNotice and TasksView footer;
+   // existing accepted heading/group/row vocabulary is reused, not reconstructed.
+-  const fontFamily=platform==='web'?handbookWebFont:undefined,c=handbookColors;
++  const fontFamily=taskWorkbenchFontFor(platform),c=taskWorkbenchColors;
+   const empty: EmptyListAppearance={structure:'inline-title',
+     card:{minWidth:0,alignSelf:'stretch',gap:8,padding:16,backgroundColor:c.neutralSurface,borderColor:c.softLine,borderWidth:1,borderRadius:12},
+     heading:{flexDirection:'row',alignItems:'flex-start',gap:8},
+@@ -147,14 +106,14 @@
+       hoverStyle:variant==='primary'?undefined:handbookStyles.buttonHovered};
+   }
+   const hf=getHFTasksPresentation(source,{compact:false,platform})!, b=hf.dateList.buttonAppearance,s=b.styles;
+-  const h=source==='harbour',ink=h?'#233A35':fourthColors.ink,teal=h?'#245C50':fourthColors.teal,white=h?'#FFFFFF':fourthColors.white;
++  const {ink,teal,white}=taskWorkbenchColors;
+   const filled=variant==='primary';
+   return {control:'paper-button',mode:filled?'contained':'outlined',buttonColor:filled?teal:'transparent',textColor:filled?white:ink,
+     rippleColor:filled?'rgba(0, 0, 0, 0.12)':undefined,theme:b.theme,
+     style:[s.button,!filled&&s.outlineButton,variant==='quiet'&&s.quietButton],
+     contentStyle:[s.buttonContent,density==='compact'&&s.compactButtonContent],labelStyle:s.buttonLabel,compactLabelStyle:b.compactLabel,
+     touchContentStyle:s.mobileTarget,disabledStyle:filled?{backgroundColor:b.theme.colors.surfaceDisabled}:s.disabledOutlineButton,
+-    disclosure:{style:[s.button,{alignSelf:'flex-start',flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,paddingHorizontal:12,paddingVertical:8,borderWidth:1,borderColor:h?'#7D9087':fourthColors.controlOutline,backgroundColor:'transparent'}],
++    disclosure:{style:[s.button,{alignSelf:'flex-start',flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,paddingHorizontal:12,paddingVertical:8,borderWidth:1,borderColor:taskWorkbenchColors.controlOutline,backgroundColor:'transparent'}],
+       contentStyle:[s.buttonContent,density==='compact'&&s.compactButtonContent],labelStyle:[s.buttonLabel,{color:ink,lineHeight:22,flexShrink:1}],touchStyle:s.mobileTarget,
+       disabledStyle:s.disabledOutlineButton,disabledLabelStyle:s.disabledLabel,focusStyle:s.focusedButton,pressedStyle:s.buttonPressed,iconColor:ink,disabledIconColor:b.theme.colors.onSurfaceDisabled}};
+ }
+--- a/frontend/src/theme.ts
++++ b/frontend/src/theme.ts
+@@ -1,53 +1,56 @@
+ import { Platform } from "react-native";
+ import { MD3LightTheme, configureFonts } from "react-native-paper";
+ 
+-// Harbour Desk: cool paper, evergreen ink and a restrained amber action signal.
+-// Semantic roles remain stable for all existing domain views and native adapters.
+ export const colors = {
+-  ink: "#233A35",
+-  teal: "#245C50",
+-  deepTeal: "#16483D",
+-  paper: "#FFFFFF",
+-  canvas: "#F3F6F4",
+-  sage: "#D3E5DC",
+-  paleTeal: "#E8F1EC",
+-  accent: "#EBC483",
+-  onAccent: "#3D301A",
+-  amber: "#90631F",
+-  paleAmber: "#FFF5DF",
+-  coral: "#BE343D",
+-  paleCoral: "#FFF0F0",
+-  errorInk: "#AB2631",
+-  white: "#FFFFFF",
+-  muted: "#52655F",
+-  line: "#CAD5CF",
+-  softLine: "#E0E8E3",
+-  controlOutline: "#7D9087",
+-  controlSurface: "#FFFFFF",
+-  neutralSurface: "#F2F6F3",
+-  sidebar: "#F9FBF9",
+-  selectedNav: "#DCEBE3",
+-  quietSurface: "#F0F6F2",
+-  mintSurface: "#E8F1EC",
+-  previewSurface: "#F3F6F4",
+-  pressedOverlay: "rgba(35, 58, 53, 0.08)",
+-  accentPressed: "#D8AE69",
+-  inkPressed: "#16483D",
+-  selectedPressed: "#C8DDD0",
+-  warningPressed: "#F3E5C5",
++  // Happy Hues 14 anchors; legacy role names are aliases, not additional green seeds.
++  ink: "#272343",
++  teal: "#272343",
++  deepTeal: "#272343",
++  paper: "#FFFFFE",
++  canvas: "#F7FCFC",
++  sage: "#BAE8E8",
++  paleTeal: "#E3F6F5",
++  accent: "#FFD803",
++  onAccent: "#272343",
++  amber: "#A38B19",
++  paleAmber: "#FFF7D8",
++  // Destructive actions and errors share a vivid red, separate from the brand palette.
++  coral: "#D61F26",
++  paleCoral: "#FEF2F2",
++  errorInk: "#D61F26",
++  white: "#FFFFFE",
++  muted: "#2D334A",
++  line: "#CAC9D4",
++  softLine: "#E6E6EA",
++  controlOutline: "#737284",
++  // Aqua navigation frames white cards and controls. Inset content uses a quieter tint.
++  controlSurface: "#FFFFFE",
++  neutralSurface: "#F7FCFC",
++  sidebar: "#E3F6F5",
++  selectedNav: "#BAE8E8",
++  quietSurface: "#EDFAF9",
++  mintSurface: "#E3F6F5",
++  previewSurface: "#F7FCFC",
++  // Temporary interaction shades; content and borders keep their full opacity.
++  pressedOverlay: "rgba(39, 35, 67, 0.08)",
++  accentPressed: "#E5C20B",
++  inkPressed: "#221F3B",
++  selectedPressed: "#A8D0D4",
++  warningPressed: "#F2EAC8",
++  // Dark filled actions deepen on hover/press without a white wash.
+   darkActionRipple: "rgba(0, 0, 0, 0.12)",
+-  statusWarm: "#FFF5DF",
+-  statusUnknown: "#FFF5DF",
+-  statusWarmLine: "#90631F",
+-  statusUnknownLine: "#90631F",
+-  statusFailedLine: "#BE343D",
+-  warningInk: "#704C13",
+-  overlay: "rgba(26, 48, 40, 0.28)",
++  statusWarm: "#FFF7D8",
++  statusUnknown: "#FFF7D8",
++  statusWarmLine: "#A38B19",
++  statusUnknownLine: "#A38B19",
++  statusFailedLine: "#D61F26",
++  warningInk: "#5E4F0C",
++  overlay: "rgba(39, 35, 67, 0.24)",
+ } as const;
+ 
+ export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, hero: 40 } as const;
+-export const radius = { small: 8, medium: 14, large: 20, pill: 999 } as const;
+-export const typeScale = { caption: 12, small: 14, body: 16, title: 20, heading: 30, hero: 38 } as const;
++export const radius = { small: 10, medium: 16, large: 22, pill: 999 } as const;
++export const typeScale = { caption: 12, small: 14, body: 16, title: 20, heading: 28, hero: 34 } as const;
+ export const readingLayout = { maxWidth: 880, compactInset: 16, wideInset: 24 } as const;
+ export const readingType = {
+   body: { fontSize: 16, lineHeight: 26 },
+@@ -63,7 +66,7 @@
+ export const iconTokens = { strokeWidth: 1.8, small: 18, navigation: 22, feature: 28 } as const;
+ // Mobile sizes are logical units. Text retains the platform's font scaling and intrinsic height.
+ export const mobileLayout = {
+-  breakpoint: 650, pageInset: 16, sectionGap: 16, cardInset: 16, cardRadius: 14,
++  breakpoint: 650, pageInset: 16, sectionGap: 16, cardInset: 16, cardRadius: 16,
+   touchTarget: 48, headerMinHeight: 64, tabMinHeight: 64,
+   childAvatar: 40, askMinHeight: 56, quickTileMinHeight: 88,
+ } as const;
+@@ -77,12 +80,12 @@
+   label: { fontSize: 12, lineHeight: 16 },
+   caption: { fontSize: 12, lineHeight: 16 },
+ } as const;
+-export const chineseFont = Platform.select({ web: "'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', sans-serif", default: undefined });
++export const chineseFont = Platform.select({ web: "'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif", default: undefined });
+ 
+ export const paperTheme = {
+   ...MD3LightTheme,
+   // MD3 components multiply this unit; it is not a pixel radius.
+-  roundness: 3,
++  roundness: 4,
+   fonts: Platform.OS === "web" && chineseFont
+     ? configureFonts({ config: { fontFamily: chineseFont } })
+     : MD3LightTheme.fonts,
+@@ -112,8 +115,8 @@
+     onError: colors.white,
+     errorContainer: colors.paleCoral,
+     onErrorContainer: colors.errorInk,
+-    surfaceDisabled: "rgba(35, 58, 53, 0.12)",
+-    onSurfaceDisabled: "rgba(35, 58, 53, 0.38)",
++    surfaceDisabled: "rgba(39, 35, 67, 0.12)",
++    onSurfaceDisabled: "rgba(39, 35, 67, 0.38)",
+     inverseSurface: colors.ink,
+     inverseOnSurface: colors.white,
+     inversePrimary: colors.sage,
+--- /dev/null
++++ b/frontend/src/preview/tasks-global-base/contract.ts
+@@ -0,0 +1,20 @@
++import { colors, paperTheme } from '../../theme';
++
++/** Fixed host semantics, not source identity, a data owner or runtime admission. */
++export const TASK_WORKBENCH_BASE = Object.freeze({
++  id: 'workbench-original-base-v1',
++  sourceVariantId: 'original',
++  themeSourceSha256: '747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2',
++} as const);
++
++export const taskWorkbenchColors = colors;
++export const taskWorkbenchPaperTheme = paperTheme;
++
++/** Exact historical web family order; native keeps its existing platform fallback. */
++export function taskWorkbenchFontFor(platform: 'web' | 'native'): string | undefined {
++  return platform === 'web' ? "'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif" : undefined;
++}
++
++export const taskWorkbenchCss = Object.freeze({
++  tapHighlight: 'rgba(39, 35, 67, 0.16)',
++} as const);

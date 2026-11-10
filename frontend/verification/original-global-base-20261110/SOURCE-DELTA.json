@@ -1,0 +1,161 @@
+{
+  "baselineCanonicalSha256": "46a9c9847098cd92c3cbd44bd3be9b111f52a7aa2701c091570c0e2aa1514ce9",
+  "sourceCanonicalSha256": "5953db425a7a072b88764068a6052d6f15fe3e2498044dfa2fbf22e5839250f9",
+  "added": 1,
+  "modified": 11,
+  "unchanged": 704,
+  "delta": [
+    {
+      "path": "frontend/app/_layout.tsx",
+      "before": {
+        "path": "frontend/app/_layout.tsx",
+        "bytes": 3160,
+        "sha256": "b265bbd7b4e1a0b29d2f90a68f9628bcff622e3ac2f9a83f16e9abfa5380a021"
+      },
+      "after": {
+        "path": "frontend/app/_layout.tsx",
+        "bytes": 3341,
+        "sha256": "4abde3d9e6b5c27e37f22df72f149570a71f1cb5af261bf5487da906f2c39304"
+      }
+    },
+    {
+      "path": "frontend/src/components/tasks/presentation/CareWorkspaceSwitch.tsx",
+      "before": {
+        "path": "frontend/src/components/tasks/presentation/CareWorkspaceSwitch.tsx",
+        "bytes": 2676,
+        "sha256": "02a5eee0073c9601474de91a797e31ea928d503cbbab8cc1ec85fbd508cd1fbf"
+      },
+      "after": {
+        "path": "frontend/src/components/tasks/presentation/CareWorkspaceSwitch.tsx",
+        "bytes": 2698,
+        "sha256": "6675ad8eb8a15e657f9728f59f9b32592282a60ca11a337a439780a55bc9dfd9"
+      }
+    },
+    {
+      "path": "frontend/src/components/tasks/presentation/taskFilterAppearance.ts",
+      "before": {
+        "path": "frontend/src/components/tasks/presentation/taskFilterAppearance.ts",
+        "bytes": 1938,
+        "sha256": "c73644a8741d351a98bb65c973bba482df1f549d22471c7a4e20c02d538cd050"
+      },
+      "after": {
+        "path": "frontend/src/components/tasks/presentation/taskFilterAppearance.ts",
+        "bytes": 2003,
+        "sha256": "7bb647fea7a0daa20292f0e29186a2dabf5032e41345b0ee8928af89a794a5c5"
+      }
+    },
+    {
+      "path": "frontend/src/components/tasks/presentation/taskSelectionAppearance.ts",
+      "before": {
+        "path": "frontend/src/components/tasks/presentation/taskSelectionAppearance.ts",
+        "bytes": 2235,
+        "sha256": "bbdeb61026c3f2a0d256d5ebed2161802427c73ab4890aefbdb64cb1f09f4f44"
+      },
+      "after": {
+        "path": "frontend/src/components/tasks/presentation/taskSelectionAppearance.ts",
+        "bytes": 2020,
+        "sha256": "9759c898cee51cda9b134c52948e3c274fdc562fb80cf5109cb2daea9b15ac78"
+      }
+    },
+    {
+      "path": "frontend/src/preview/tasks-care-presentation/styles.ts",
+      "before": {
+        "path": "frontend/src/preview/tasks-care-presentation/styles.ts",
+        "bytes": 7394,
+        "sha256": "7ff42a577e5ae1fde86ca5ab50f08c7c9943e2f1c94ff6dfbae1014e41468358"
+      },
+      "after": {
+        "path": "frontend/src/preview/tasks-care-presentation/styles.ts",
+        "bytes": 7465,
+        "sha256": "334ecf18ce550c76381990993bb89cc45388f9319eb4ca0b7d08632d33e7fbf5"
+      }
+    },
+    {
+      "path": "frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx",
+      "before": {
+        "path": "frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx",
+        "bytes": 36366,
+        "sha256": "4007a9710c76c8b26bf97bc9ae7113c8647979b9c079810eca1363ff867f4ce1"
+      },
+      "after": {
+        "path": "frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx",
+        "bytes": 36596,
+        "sha256": "7030255ebc5cd16616b766af6745d23a5d338e5d0958f3ff48eb4fd3112f40bb"
+      }
+    },
+    {
+      "path": "frontend/src/preview/tasks-global-base/contract.ts",
+      "before": null,
+      "after": {
+        "path": "frontend/src/preview/tasks-global-base/contract.ts",
+        "bytes": 841,
+        "sha256": "c12e737e3aad2aa1b77dc3f3c2787f21fe34fc164848b7379a99e93f683fd7e1"
+      }
+    },
+    {
+      "path": "frontend/src/preview/tasks-handbook-presentation/HandbookTaskRowContent.tsx",
+      "before": {
+        "path": "frontend/src/preview/tasks-handbook-presentation/HandbookTaskRowContent.tsx",
+        "bytes": 1861,
+        "sha256": "3b801597e25e745fbcb3511cc49161195bbedababa3b7187dc29befece064593"
+      },
+      "after": {
+        "path": "frontend/src/preview/tasks-handbook-presentation/HandbookTaskRowContent.tsx",
+        "bytes": 1881,
+        "sha256": "d325a83677e433b8d7d0825f855f5efddbddf88c296293a3f32f7d3beeb89fcf"
+      }
+    },
+    {
+      "path": "frontend/src/preview/tasks-handbook-presentation/styles.ts",
+      "before": {
+        "path": "frontend/src/preview/tasks-handbook-presentation/styles.ts",
+        "bytes": 5949,
+        "sha256": "5148aa86e2678d00543a2d96756dd41674f4d1cc480a0e56b4c586b66300bd90"
+      },
+      "after": {
+        "path": "frontend/src/preview/tasks-handbook-presentation/styles.ts",
+        "bytes": 6008,
+        "sha256": "f9d001f93d023849a81ee7f30077e4be0e8e9abf98b6f109af7f1d5b21f825f0"
+      }
+    },
+    {
+      "path": "frontend/src/preview/tasks-hf-full-presentation/presentation.ts",
+      "before": {
+        "path": "frontend/src/preview/tasks-hf-full-presentation/presentation.ts",
+        "bytes": 12221,
+        "sha256": "01388d873c31e1c2a3388d54fd30f037bdf1358f745af369c97518555b50df59"
+      },
+      "after": {
+        "path": "frontend/src/preview/tasks-hf-full-presentation/presentation.ts",
+        "bytes": 11624,
+        "sha256": "b7b3b0e338c705f3ba42cd78f37cea6d7aaaea85e35bf8b354d442d271f3ccd7"
+      }
+    },
+    {
+      "path": "frontend/src/preview/tasks-module-presentation02/source-region-appearance.ts",
+      "before": {
+        "path": "frontend/src/preview/tasks-module-presentation02/source-region-appearance.ts",
+        "bytes": 11531,
+        "sha256": "83626c682da7e8b8bdbcfa429b8999cb667f3321a7f9f3b07c5e33846804098c"
+      },
+      "after": {
+        "path": "frontend/src/preview/tasks-module-presentation02/source-region-appearance.ts",
+        "bytes": 10262,
+        "sha256": "0ac1e0acd35e895e49c00ee230c90f41c4bc7a7699558509ac55ada69b4ebba6"
+      }
+    },
+    {
+      "path": "frontend/src/theme.ts",
+      "before": {
+        "path": "frontend/src/theme.ts",
+        "bytes": 4732,
+        "sha256": "5fa570023e71dcbab4c5cbcbd69865dba2d38ec3defb4e21db5ac15d57f50c23"
+      },
+      "after": {
+        "path": "frontend/src/theme.ts",
+        "bytes": 4982,
+        "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2"
+      }
+    }
+  ]
+}

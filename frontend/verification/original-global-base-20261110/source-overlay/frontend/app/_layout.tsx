@@ -1,0 +1,53 @@
+import { taskWorkbenchColors, taskWorkbenchCss } from "../src/preview/tasks-global-base/contract";
+import { MountedLifecycleWitness } from "../src/preview/tasks-interactive-qa/MountedLifecycleWitness";
+import { TasksChoiceSceneProvider } from "../src/preview/tasks-choice-host/TasksChoiceSceneProvider";
+export { RouteError as ErrorBoundary, RouteLoading as SuspenseFallback } from "../src/components/RouteFeedback";
+import { Stack } from "expo-router";
+import Head from "expo-router/head";
+import { brand } from "../src/branding";
+import { BrandLogo } from "../src/components/BrandLogo";
+import { spacing } from "../src/theme";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { StyleSheet, View, useWindowDimensions } from "react-native";
+import { PreviewNavigationGuard } from "../src/preview/PreviewNavigationGuard";
+import { MotionProvider } from "../src/motion";
+import { MotionPaperProvider } from "../src/motion/MotionPaperProvider";
+import { ProductionFirstScreenGate } from "../src/production/ProductionFirstScreenGate";
+import { StartupLoadingLabel } from "../src/startup/StartupLoadingLabel";
+import { ProductionProvider } from "../src/production/ProductionProvider";
+
+export default function RootLayout() {
+  const { width } = useWindowDimensions();
+  return (
+    <SafeAreaProvider><MotionProvider><MountedLifecycleWitness><TasksChoiceSceneProvider><MotionPaperProvider>
+      <Head>
+        <title>{brand.name}</title>
+        <meta name="theme-color" content={taskWorkbenchColors.canvas} />
+        <style id="harbour-desk-accessibility">{`
+html { color-scheme: light; }
+:focus-visible { outline: 3px solid ${taskWorkbenchColors.ink}; outline-offset: 3px; }
+[data-field-frame]:focus-within > div { outline: 2px solid ${taskWorkbenchColors.ink}; outline-offset: 2px; border-radius: 8px; }
+[data-testid="workspace-skip-link"] { top: -100px; clip-path: inset(50%); pointer-events: none; }
+[data-testid="workspace-skip-link"]:focus { top: 12px; clip-path: none; pointer-events: auto; }
+h1, h2, h3, h4, h5, h6, [role="heading"] { scroll-margin-top: 24px; text-wrap: balance; }
+button, a, [role="button"] { touch-action: manipulation; -webkit-tap-highlight-color: ${taskWorkbenchCss.tapHighlight}; }
+[role="dialog"] { overscroll-behavior: contain; }
+@media (hover: hover) and (pointer: fine) { [data-hover-surface="true"]:hover:not([aria-disabled="true"]) { background-color: ${taskWorkbenchColors.pressedOverlay}; } }
+@media (pointer: fine) { html { overscroll-behavior: none; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+        `}</style>
+      </Head>
+      <PreviewNavigationGuard><ProductionProvider><ProductionFirstScreenGate width={width} launch={<View style={styles.launch}>
+          <BrandLogo style={styles.logo} decorative />
+          <StartupLoadingLabel label={`正在開啟${brand.name}`} />
+        </View>}>
+        <Stack screenOptions={{ headerShown: false, animation: "none" }} />
+      </ProductionFirstScreenGate></ProductionProvider></PreviewNavigationGuard>
+    </MotionPaperProvider></TasksChoiceSceneProvider></MountedLifecycleWitness></MotionProvider></SafeAreaProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  launch: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.lg },
+  logo: { width: 164, height: 53 },
+});

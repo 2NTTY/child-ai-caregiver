@@ -1,0 +1,19 @@
+{
+  "repository": "2NTTY/child-ai-caregiver",
+  "parentCommit": "e0979fd282f41a7d17d25b1ec517055e3347dde4",
+  "predecessorArchive": "frontend/verification/original-calendar-handoff-20261110",
+  "predecessorArchiveTree": "c56ea3763c7b5f4995ecf3ce13c46c37bdc7dea1",
+  "predecessorFilesFreshMetadataVerified": 14,
+  "sourceCanonicalSha256": "5953db425a7a072b88764068a6052d6f15fe3e2498044dfa2fbf22e5839250f9",
+  "comparisonCanonicalSha256": "c1deb06e6450c0efed8f6636a40c3567905bb76accb3efd430cdd2df76694517",
+  "reconstructedSourceFiles": 716,
+  "comparisonUnchangedFiles": 126,
+  "modified": 11,
+  "added": 1,
+  "unchanged": 704,
+  "hostBaseId": "workbench-original-base-v1",
+  "historicalThemeSha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2",
+  "mappingCanonicalSha256": "2457813f6e3eaed92f716ecb21c3f35811ff61adac34b6fa030ae2b23c6c6da2",
+  "historicalTreeMembershipFullyVerified": false,
+  "earlierAncestorsFreshlyDownloaded": false
+}
