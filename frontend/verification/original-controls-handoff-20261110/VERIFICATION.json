@@ -1,0 +1,113 @@
+{
+  "status": "EXACT_CONTROLS_COMPARISON_HANDOFF_LOCALLY_VERIFIED_PARTIAL",
+  "focused": {
+    "red001": {
+      "exitCode": 1,
+      "pass": 0,
+      "fail": 4
+    },
+    "green001": {
+      "exitCode": 0,
+      "pass": 4,
+      "fail": 0
+    },
+    "fixedInputsEach": 855
+  },
+  "focusedLimits": "Actual React Control/binding/scene/applied ports and comparison modules, with controlled visual/router/owner/frame ports. Not complete owner acceptance.",
+  "fullFrontendTypecheck": {
+    "stage": "typecheck",
+    "passed": true,
+    "actualExitCode": 0,
+    "sourceCanonicalSha256": "806188d8356508354d479b0ee91f2de84dc84108a865ae5ddf70e5ee4085bff0",
+    "sourceFiles": 715,
+    "wallSeconds": 13.33286004900583,
+    "peakRssBytes": 1147260928,
+    "terminalOwnershipComplete": true,
+    "logsComplete": true,
+    "browserAcceptance": false,
+    "publication": false
+  },
+  "singleExport": {
+    "stage": "export",
+    "passed": true,
+    "actualExitCode": 0,
+    "sourceCanonicalSha256": "806188d8356508354d479b0ee91f2de84dc84108a865ae5ddf70e5ee4085bff0",
+    "sourceFiles": 715,
+    "wallSeconds": 61.5985577259853,
+    "peakRssBytes": 656089088,
+    "terminalOwnershipComplete": true,
+    "logsComplete": true,
+    "browserAcceptance": false,
+    "publication": false
+  },
+  "main": {
+    "file": "index-1092cd706082157f16a8a601e4eb176d.js",
+    "sha256": "d2173bd605215c7a05bd0e3685c2b2d5ce28b5a4e35a745c5bf224d1497f36ee",
+    "outputIncluded": false
+  },
+  "desktop": {
+    "desktopViewport": [
+      1180,
+      757
+    ],
+    "devicePixelRatio": 1,
+    "exactControlsLink": true,
+    "onlyTextPrefill": true,
+    "explicitRestoreEnterApply": true,
+    "queryRetained": true,
+    "rangeCancelFocusReturn": true,
+    "legacyCombinationNotUpgraded": true,
+    "frameNameSourceRouteStable": true,
+    "directFrameObjectIdentityProven": false,
+    "rawPackets": 25,
+    "screenshots": 4,
+    "sourceScriptReferenceAndServedBytesChecked": true
+  },
+  "inheritedDateAndHeightEvidence": {
+    "providerUnchanged": true,
+    "actualCSSViewport": [
+      393,
+      252
+    ],
+    "nativeDesktopZoomPercent": 300,
+    "devicePixelRatio": 3,
+    "notMobileOrExact390": true,
+    "notRerunForThisHandoff": true,
+    "sealSha256": "ce2966beae9c91aec5980569373a4b1c967b34cf3a13fd02b9ab9da2458f1d9a"
+  },
+  "evidenceSealSha256": "ced7ac3bdc98452c71b477702ae4ed97023040db3a1da4cbe86d63167131a7a9",
+  "evidenceLimits": [
+    "Browser frame name/src and displayed source/route remained stable; direct DOM/window object identity was not readable. Controlled tests cover reference/build/navigation separately.",
+    "Browser script URLs and rehashed local served bytes are not independent HTTP response-body attestation.",
+    "Early loaded runtime modules have exit-time hashes only; tool anchors are not a complete pre-run dependency closure.",
+    "A failed browser label locator made no page change; role locator then worked. A comparison confirm caused a click timeout before explicit acceptance; no repeat click. A read-only contentWindow lookup was unavailable. All attempts retained privately.",
+    "Chrome extension metadata errors, native animation fallback and synthetic growth/concerns 503 warnings retained; console not claimed clean.",
+    "Original GREEN comparison metadata bytes were saved before a description-only correction. Original RED VERSION metadata bytes were copied from the retained immutable baseline and hash-matched, not reconstructed. Tests and final plan unchanged.",
+    "Inherited retired height RED plan draft lacks full retained bytes; one older controls metadata preimage was reconstructed and hash-matched. Prior archive limits remain.",
+    "Fixed runtime layers can still cover date at some scroll positions; inherited normal-scroll path is not all-position unobstructed proof.",
+    "Earlier export 70990 remains UNKNOWN. Reconnect lost preview39216 exit/reaping; stopped status and absence in visible namespace did not resolve its original exit. No build rerun. New preview17424 exited zero after successful local validation."
+  ],
+  "notVerified": [
+    "full Original or whole filters slot/calendar",
+    "whole package, first phase or release acceptance",
+    "mobile/native/touch or exact390",
+    "new393 date matrix",
+    "complete accessibility or full owner/forms/scope/permission/unknown-recovery matrix",
+    "browser legacy JSON undo",
+    "direct frame object identity"
+  ],
+  "safety": {
+    "rawIncluded": false,
+    "screenshotsIncluded": false,
+    "credentialsIncluded": false,
+    "compiledOutputsIncluded": false,
+    "localPathsIncluded": false,
+    "publication": false,
+    "merge": false,
+    "prOpened": false,
+    "guardsRelaxed": false,
+    "forcedClick": false,
+    "nativeCarrierIframeUsed": false,
+    "productTestsRerunForArchival": false
+  }
+}
