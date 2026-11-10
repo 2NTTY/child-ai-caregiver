@@ -1,0 +1,103 @@
+--- a/experiments/workbench-compare/app.mjs
++++ b/experiments/workbench-compare/app.mjs
+@@ -1,4 +1,4 @@
+-import {createChoiceList,resolveChoice,TASK_PARTS,PAGE_LABELS} from './design-choices.mjs';
++import {createChoiceList,resolveChoice,TASK_PARTS,PAGE_LABELS,CHAT_CHOICE_VARIANTS} from './design-choices.mjs';
+ import {createObservationSession} from './session.mjs';
+ import {catalog} from './catalog.mjs';
+ import {replaceComparison,visualOrder,routeAvailability} from './host-actions.mjs';
+@@ -6,13 +6,15 @@
+ const sessions=new Map(),panels=get('panels'),choices=createChoiceList();
+ let swapped=false,everMounted=false,view='pair',mobileSide='left';
+ const caseForRoute=route=>catalog.routeSupport[route]?.caseKey??'ready';
+-const INITIAL_SURFACES=Object.freeze({tasks:Object.freeze(['tasks-reading-panel']),care:Object.freeze(['care-page-scroll','care-review-tabs-bar']),settings:Object.freeze(['account-settings']),growth:Object.freeze(['growth-scroll','growth-tabs-toolbar'])});
++const INITIAL_SURFACES=Object.freeze({tasks:Object.freeze(['tasks-reading-panel']),care:Object.freeze(['care-page-scroll','care-review-tabs-bar']),settings:Object.freeze(['account-settings']),growth:Object.freeze(['growth-scroll','growth-tabs-toolbar']),chat:Object.freeze(['chat-top-toolbar','chat-reading-panel'])});
++const initialSurfaceIds=(route,version)=>route==='chat'&&!CHAT_CHOICE_VARIANTS.includes(version?.id)?null:INITIAL_SURFACES[route];
++const chatChoiceLabel=CHAT_CHOICE_VARIANTS.map(id=>catalog.versions.find(version=>version.id===id).label.split(' · ')[0]).join('／');
+ for(const side of sides){
+  const select=get(side+'-version');for(const version of catalog.versions)select.add(new Option(version.label,version.id));select.value=catalog.defaults[side];
+  for(const part of TASK_PARTS)get(side+'-part').add(new Option(part.label,part.id));
+ }
+ for(const [id,label] of Object.entries(PAGE_LABELS)){
+- const option=new Option(label+(catalog.routeSupport[id]?.status==='unavailable'?'（尚未適配）':id==='photos'||id==='chat'?'（暫不可挑選）':''),id);
++ const option=new Option(label+(catalog.routeSupport[id]?.status==='unavailable'?'（尚未適配）':id==='photos'?'（暫不可挑選）':id==='chat'?`（${chatChoiceLabel} 可挑選）`:''),id);
+  option.disabled=catalog.routeSupport[id]?.status==='unavailable';get('route').add(option);
+ }
+ get('route').value='tasks';get('width').value=window.innerWidth<=700?'390':'1440';
+@@ -28,8 +30,8 @@
+  session.pickLocked=true;
+  session.pickLockNote??=`選擇核對：${reason}。${session.acceptedSequence>0?'首次接受文件後':'首次接受文件前'}。${detail}`;
+ }
+-function initialSurfaceReady(frame,root,route){
+- const ids=INITIAL_SURFACES[route],ready=root?.querySelector('[data-testid="frontend-preview-ready"]');
++function initialSurfaceReady(frame,root,route,version){
++ const ids=initialSurfaceIds(route,version),ready=root?.querySelector('[data-testid="frontend-preview-ready"]');
+  if(!ids || !ready || ready.getAttribute('data-startup-state')!=='ready' || ready.getAttribute('data-startup-data')!=='ready' || ready.getAttribute('aria-busy')!=='false')return false;
+  return ids.every(id=>{
+   const surface=ready.querySelector(`[data-testid="${id}"]`);
+@@ -50,7 +52,7 @@
+  try {
+   const state=session?.gate.snapshot(),marker=frame.contentWindow.__HISTORICAL_COMPARE_OBSERVATION__;
+   const root=frame.contentWindow.document.getElementById('root'),text=root?.textContent?.trim()??'';
+-  const surfaceReady=!!session && initialSurfaceReady(frame,root,session.initialRoute);
++  const surfaceReady=!!session && initialSurfaceReady(frame,root,session.initialRoute,session.version);
+   actualRoute=frame.contentWindow.location.pathname+frame.contentWindow.location.search;
+   if(session && matchesSession(session,marker)){
+    if(state && marker.documentId===state.documentId)observation=state;
+@@ -59,13 +61,13 @@
+    }
+    if(session.pickArmed && (pageKey(actualRoute)!==session.initialRoute || pageKey(marker.route)!==session.initialRoute))lockPick(session,'頁面與開啟目標不同',`開啟目標：${PAGE_LABELS[session.initialRoute]}；目前頁面：${pageName(actualRoute)}；標記頁面：${pageName(marker.route)}。`);
+   }
+-  // Tasks, Care, Settings account and Growth have existing first-screen/page witnesses. Only the
++  // Existing page witnesses include only admitted Harbour/Care Chat. Only the
+   // initial page is armed; subsequent cross-page visits remain permanently locked.
+-  const initialPage=observation && session.pickArmed && session.pickDocumentId===marker.documentId && !session.pickLocked && pageKey(observation.route)===session.initialRoute && marker.sequence===session.acceptedSequence && (!Object.hasOwn(INITIAL_SURFACES,session.initialRoute)||surfaceReady);
++  const initialPage=observation && session.pickArmed && session.pickDocumentId===marker.documentId && !session.pickLocked && pageKey(observation.route)===session.initialRoute && marker.sequence===session.acceptedSequence && (!initialSurfaceIds(session.initialRoute,session.version)||surfaceReady);
+   rendered=!!initialPage && !!root?.childElementCount && !!text && !/something went wrong|application error|uncaught error|minified react error|對照環境未能安全啟動|SOURCE_UNAVAILABLE/i.test(text) && !/^(?:正在載入[.…。]*|loading[.…。]*)$/i.test(text);
+  }catch{ /* An unreadable or retired source remains unavailable. */ }
+  const availability=routeAvailability(observation,actualRoute,session?.selectedCase.routes??[]);
+- const waiting=!!session && Object.hasOwn(INITIAL_SURFACES,session.initialRoute) && !session.pickArmed,interactive=availability.available&&!waiting;
++ const waiting=!!session && initialSurfaceIds(session.initialRoute,session.version) && !session.pickArmed,interactive=availability.available&&!waiting;
+  const handoffFocus=!interactive && !frame.inert && document.activeElement===frame;
+  frame.inert=!interactive;frame.tabIndex=interactive?0:-1;frame.setAttribute('aria-hidden',String(!interactive));frame.style.visibility=availability.available?'visible':'hidden';
+  notice.hidden=interactive;
+@@ -75,7 +77,7 @@
+  const choice=resolveChoice(context),isTasks=choice?.route==='tasks';
+  get(side+'-pick').disabled=!choice;get(side+'-part-pick').disabled=!isTasks;get(side+'-parts').hidden=!isTasks;
+  get(side+'-route').textContent=choice?.pageLabel??(actualRoute?PAGE_LABELS[actualRoute.split('?')[0].replace(/^\/+|\/+$/g,'')]??'等待可比較頁面':'正在載入');
+- get(side+'-pick-note').textContent=choice?'可選整個頁面'+(isTasks?'，或展開只選其中一部分。':'。'):session?.pickLocked?'你已在這側切換頁面。若要選這頁的設計，請在上方選好頁面，再按「開啟比較」。':/^\/(photos|chat)(?:\/|\?|$)/.test(actualRoute??'')?'這個頁面尚未通過可用畫面驗收，暫不可加入選擇。':'畫面未就緒或無法核對，暫不可加入選擇。';
++ get(side+'-pick-note').textContent=choice?'可選整個頁面'+(isTasks?'，或展開只選其中一部分。':'。'):session?.pickLocked?'你已在這側切換頁面。若要選這頁的設計，請在上方選好頁面，再按「開啟比較」。':waiting&&session.initialRoute==='chat'?`正在等候所選${PAGE_LABELS[session.initialRoute]}畫面就緒，暫不可加入選擇。`:pageKey(actualRoute)==='chat'&&!CHAT_CHOICE_VARIANTS.includes(session?.version.id)?'這個版本的助手畫面暫不可加入選擇。':pageKey(actualRoute)==='photos'?'這個頁面尚未通過可用畫面驗收，暫不可加入選擇。':'畫面未就緒或無法核對，暫不可加入選擇。';
+  get(side+'-viewport').textContent=panel.dataset.viewport??'';
+  get(side+'-source').textContent=(session?.sourceText??'')+'\n'+(session?.pickLockNote??'選擇核對：尚未鎖定。');
+  return context;
+@@ -109,7 +111,7 @@
+   for(const attribute of old.attributes)if(!['src','name'].includes(attribute.name))frame.setAttribute(attribute.name,attribute.value);
+   const epoch=crypto.randomUUID().replaceAll('-','');frame.name=`historical-comparison:${side}:${version.id}:${caseKey}:${epoch}`;old.replaceWith(frame);
+   const gate=createObservationSession({side,variant:version.id,origin:location.origin,epoch,mainSha256:version.mainSha256,caseKey,caseId:selectedCase.caseId,caseSha256:selectedCase.caseSha256},frame.contentWindow);
+- const session={gate,frame,version,caseKey,selectedCase,side,initialRoute:route,pickDocumentId:null,pickLocked:false,pickArmed:!Object.hasOwn(INITIAL_SURFACES,route),pickArmSequence:0,acceptedSequence:0,observer:null};sessions.set(side,session);
++ const session={gate,frame,version,caseKey,selectedCase,side,initialRoute:route,pickDocumentId:null,pickLocked:false,pickArmed:!initialSurfaceIds(route,version),pickArmSequence:0,acceptedSequence:0,observer:null};sessions.set(side,session);
+   frame.addEventListener('load',()=>{
+    try {
+     session.observer?.disconnect();session.observer=null;
+--- a/experiments/workbench-compare/design-choices.mjs
++++ b/experiments/workbench-compare/design-choices.mjs
+@@ -3,6 +3,8 @@
+ 
+ // Fingerprint of the retained catalog, not an adapter/composition acceptance receipt.
+ export const CATALOG_SHA256='c42b5657bb29b029f761c239a21573bc4a07ff03249316195be858f58d7b19e1';
++// Initial display-only preference scope, not full Chat or model acceptance.
++export const CHAT_CHOICE_VARIANTS=Object.freeze(['harbour','care']);
+ export const TASK_PARTS=Object.freeze([
+  Object.freeze({id:'header-actions',label:'頁首與操作'}),
+  Object.freeze({id:'filters',label:'分類、搜尋與範圍'}),
+@@ -27,8 +29,8 @@
+  if(!Object.hasOwn(PAGE_LABELS,route) || !paths.includes(actualPath) || !pinned.routes[route] || catalog.routeSupport[route]?.status!=='source-contract-bound-runtime-unverified')return null;
+  const selectedCase=catalog.cases[catalog.routeSupport[route]?.caseKey??'ready'];
+  if(!routeAvailability(observation,actualRoute,selectedCase.routes).available)return null;
+- // Existing browser gaps remain viewable, but cannot be mistaken for valid picks.
+- if(route==='photos' || route==='chat')return null;
++ // Keep Photos and the three unadmitted Chat designs view-only.
++ if(route==='photos' || (route==='chat' && !CHAT_CHOICE_VARIANTS.includes(pinned.id)))return null;
+  const part=partId==='page'?{id:'page',label:'整個頁面'}:route==='tasks'?TASK_PARTS.find(part=>part.id===partId):null;
+  if(!part)return null;
+  const payload=pinned.routes[route];

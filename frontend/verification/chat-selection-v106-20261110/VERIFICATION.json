@@ -1,0 +1,229 @@
+{
+  "version": 106,
+  "sitesSource": "f769e6129a4b1778a5f05389246459d9013e3c32",
+  "deploymentStatus": "succeeded",
+  "entryUrl": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/experiments/workbench-compare/",
+  "access": {
+    "audience": "public",
+    "revision": 2,
+    "completePolicyUnchanged": true
+  },
+  "product": {
+    "files": 504,
+    "changedFiles": 2,
+    "unchangedFiles": 502,
+    "canonicalSha256": "b067e2c88b7e07e3f16c9b7ace1e454f4c3e8f22e8551ef7fcae0a043eab3403",
+    "fullPublishedCheckoutMatchesCandidate": true,
+    "sourceArchiveAndSavedVersionProvenanceVerified": true,
+    "freshBrowserHttpBodyHashing": false
+  },
+  "controlledTests": {
+    "fullSuiteCases": 149,
+    "fullSuitePassed": 149,
+    "fullSuiteFailed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "fullSuiteIncluded": false,
+    "originalCases": 103,
+    "originalCasesUnchanged": 102,
+    "originalCasesIntentionallyUpdated": 1,
+    "newCases": 46,
+    "originalChange": "One obsolete all-Chat ban was narrowed to allow only Harbour/Care Chat page choices, retaining the other-three Chat/all-Photos bans and all-five Tasks identities.",
+    "archiveSubsetCases": 46,
+    "archiveSubset": [
+      "45 Chat selection cases",
+      "1 non-Chat waiting-note regression"
+    ],
+    "archiveReplayExecuted": false,
+    "publisherReranFullSuite": false,
+    "subsetPassedWithinRetainedFinal149CaseRun": true,
+    "negativeControl": "The retained v105 app and v105 resolver both run, with their original catalog/actions imports. Shared session/frame-entry/boundary/HTML dependencies are byte-exact to v105.",
+    "intermediateHistory": {
+      "red001": {
+        "cases": 45,
+        "expectedAssertionFailures": 40,
+        "passingControls": 5
+      },
+      "regression001": {
+        "cases": 148,
+        "passed": 148,
+        "published": false
+      },
+      "red002": {
+        "cases": 1,
+        "expectedAssertionFailures": 1
+      },
+      "finalRegression002": {
+        "cases": 149,
+        "passed": 149
+      },
+      "rawHistoryIncluded": false
+    },
+    "limits": "Real host, resolver, session, frame-entry and boundary code over controlled DOM, history, clipboard and transport ports. These tests do not execute React, browser layout, real Back/BFCache or accessibility engines."
+  },
+  "independentSourceReview": {
+    "critical": 0,
+    "important": 0,
+    "minor": [
+      {
+        "id": "M1",
+        "accepted": true,
+        "description": "Equivalent Photos URL aliases now use the existing dedicated prohibition sentence instead of the generic not-ready sentence. Selection remains denied; no Photos runtime admission."
+      }
+    ]
+  },
+  "actualBrowser": {
+    "scope": "One bounded same-preview desktop Harbour/Care Chat design-selection pass.",
+    "firstOpen": {
+      "waitingAndDisabledPicks": "PASS",
+      "distinctHarbourAndCareLayouts": "PASS",
+      "sameSixRecentSyntheticMessagesInEachRenderedDOM": "PASS",
+      "emptyNativeTextareasAndDisabledSend": "PASS",
+      "screenshotScope": "Visible layouts and conversation tail only; six messages per side were counted in rendered DOM, not all shown simultaneously in one screenshot."
+    },
+    "readiness": {
+      "eachFrame": {
+        "readyGateCount": 1,
+        "startupState": "ready",
+        "startupData": "ready",
+        "ariaBusy": false,
+        "hostIframeInert": false,
+        "hostIframeAriaHidden": false
+      },
+      "witnesses": [
+        "chat-top-toolbar",
+        "chat-reading-panel"
+      ],
+      "eachWitnessCount": 1,
+      "eachWitnessInsideReadyGate": true,
+      "nonzeroClientRectanglesAndNoHiddenAncestors": true,
+      "dimensionsCSSPixels": {
+        "harbour": {
+          "toolbar": [
+            1192,
+            78
+          ],
+          "readingPanel": [
+            1192,
+            746
+          ]
+        },
+        "care": {
+          "toolbar": [
+            1240,
+            77
+          ],
+          "readingPanel": [
+            1240,
+            759
+          ]
+        }
+      },
+      "geometryLimit": "Rectangle and ancestry checks are not independent viewport-intersection proof; screenshots separately showed the layouts."
+    },
+    "wholePageReceipts": {
+      "status": "PASS",
+      "count": 2,
+      "eachPickClickedOnce": true,
+      "syntheticQAExamplesNotUserPreferences": true,
+      "exactExpectedReceipts": [
+        {
+          "variant": "harbour",
+          "sourceReference": "4050c0a16d0a9735923434abc9749ecd416d7926",
+          "main": "_expo/static/js/web/index-8c1626aa51e6cdb1709947452b81393b.js",
+          "mainSha256": "472c2c8eb19dc223b6b0cd6779de08c7c325cc28913374d0be7b1a50509a79c8",
+          "payloadPath": "experiments/workbench-compare/payload/harbour/chat.js",
+          "payloadSha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492",
+          "route": "chat",
+          "actualPath": "/chat",
+          "partId": "page",
+          "catalogSha256": "c42b5657bb29b029f761c239a21573bc4a07ff03249316195be858f58d7b19e1"
+        },
+        {
+          "variant": "care",
+          "sourceReference": "520d4c88a74faf460a464c38931cd9e1a84e0ec8",
+          "main": "_expo/static/js/web/index-2415366a63d8fd7ec5acfa4b5bf1fd24.js",
+          "mainSha256": "155a1683b9a11baa2aed6c5988ec1f084e7ce0b4376d1f10b5bf3af8257bf255",
+          "payloadPath": "experiments/workbench-compare/payload/care/chat.js",
+          "payloadSha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831",
+          "route": "chat",
+          "actualPath": "/chat",
+          "partId": "page",
+          "catalogSha256": "c42b5657bb29b029f761c239a21573bc4a07ff03249316195be858f58d7b19e1"
+        }
+      ]
+    },
+    "navigation": {
+      "harbourTodayLinkToHomeLocksItsPick": "PASS",
+      "careStaysOnChatAndEligible": "PASS",
+      "actualBrowserBackReturnsHarbourChatButOldPickStaysLocked": "PASS",
+      "cancelPreservesBothEpochNamesHarbourLockCareEligibilityAndExactReceipts": "PASS",
+      "newOpenReplacesBothEpochNamesWaitsThenEnablesBothAndRetainsExactReceipts": "PASS"
+    },
+    "clipboardPaste": {
+      "status": "NOT_RERUN",
+      "reason": "No ordinary host-only paste destination was available. No fabricated input, clipboard injection, Chat composer interaction or copy-only status was substituted.",
+      "priorVersionEvidenceNotReusedAsChatPasteAcceptance": true
+    },
+    "directHiddenIdentityInspection": "NOT_PERFORMED: current marker objects, accepted sequence numbers, frozen configuration and private document IDs were not directly read or changed.",
+    "identityEvidence": "Source review and controlled tests plus visible source diagnostics, exact receipts and actual lifecycle behavior. Not HTTP response-body hashing.",
+    "duplicatePickInteraction": "NOT_RERUN; covered by controlled tests only.",
+    "postLoadPendingSelectorMutation": "NOT_RERUN; covered by controlled tests only.",
+    "confirmDialogs": "Three Open clicks each timed out at an active confirmation dialog. Each current dialog was inspected and handled once; no uncertain click was blindly repeated."
+  },
+  "scope": {
+    "admittedChatVariants": [
+      "harbour",
+      "care"
+    ],
+    "admittedPart": "page",
+    "otherThreeChatSelectionDenied": true,
+    "allPhotosSelectionDenied": true,
+    "nativeCompositionAdmission": false,
+    "fullChatAcceptance": false
+  },
+  "notAcceptedOrNotRun": [
+    "Fresh actual Chat clipboard paste, duplicate-pick interaction, or post-load pending-selector mutation.",
+    "Full 18-message history, pagination, editing, or conversation/content workflows.",
+    "Actual Original/Handbook/Fourth Chat designs or any Photos rendering/interaction.",
+    "Send, model/backend, attachment, voice, photo/file operations, or real family data.",
+    "Native composition or adapter acceptance.",
+    "Fresh mobile, keyboard, accessibility/screen-reader, gestures, zoom, or cross-browser matrix.",
+    "Sustained stability, Photos Chromium error9 cause or repair, or clock repair.",
+    "Production readiness, GCP deployment, or merge acceptance."
+  ],
+  "photosError9": {
+    "status": "UNRESOLVED",
+    "notAReactInvariantFinding": true,
+    "chatTextareaIsNotPhotosPaperTextInputAcceptance": true
+  },
+  "executionAndCleanup": {
+    "unexpectedProductFailuresReported": [],
+    "localSetupFailures": "Two launch preparations failed before Node/helper startup and before remote actions; subsequent corrected setup succeeded. These are not product failures.",
+    "publicationHelperRuns": 2,
+    "runsSequentialAndNormallyReaped": true,
+    "sampledMemoryLimitsAreNotHardAggregateBounds": true,
+    "ownedBrowserTabBlankedThenClosed": true,
+    "preexistingUnownedTabUntouched": true,
+    "noUncertainExternalOutcomeReported": true,
+    "archivePreparationRanNodeBrowserOrNetwork": false
+  },
+  "evidenceSha256": {
+    "candidateManifest": "f5c4cf0ed66198b7e0b006757e3195e3e80cc611b5725bd2881cd938a6fd305c",
+    "candidateResult": "81a3474fcfe7b0e0995bec9dcdbf706522c2c23af17ace65419ddd2e0cac756d",
+    "testChanges": "17e4403b220640e5d3f7d03700f027cdbe387966e9368131dc8f445cd7fd0cac",
+    "finalControlledTAP": "eef1ad544c64813e117f2b1d5579ccd5888520891a8fc380ea620ccc5ef72e57",
+    "independentSourceReview": "3c3643099eeb880d7cc8da8b2ad338d4ce8d5e1f261d4843ef7e829d6c3340e6",
+    "independentSourceReviewResult": "1284a9c33f1c8cc25a5d14b66c3c0c530cc5bbc65217ef723feca098ea1833e5",
+    "acceptedMinorDisposition": "dd482836bd342eaf74b4d2734fed390e637e751e55a69ea315417bc44611342f",
+    "publicationReport": "16781453aa0c2ff8d24c55b29d657fd55d55543188383ec2a6c9b097eb981a27",
+    "publicationResult": "143a91f00d2311f75ddca637a5e24417bcca09d445b8f933247a882876b1ec7b",
+    "publicationSeal": "e3c65ad6b9ce67538b604a4cd7ec58517fa408f2b0c1b9982e92dfbadc6fafec",
+    "independentSavedVersionReadback": "56be7675084e65e404e8008ee7e9ec7c86381fe1463ad11d55cf7d146bb72137",
+    "actualWitnessEvidence": "979ab4576e860b6c6c920761723d0e4bdf30d1fbeb9931783ad7db94ea9ba7a7",
+    "actualReceiptCheck": "b624946d90de5f563818583f3015b1f433d62c7f5cd5f60591ec9ec2fcc07053",
+    "actualInitialRenderedDOM": "8ccb8667548b38dcd7784a7180d61a3ed5f07fc503586ad9d6db9fb06c17b440",
+    "actualReopenedRenderedDOM": "a9091a413be242caf40fefa94d3d78199645c014e4c7fbcc4bbdd779c49af6a5"
+  },
+  "notIncluded": "Raw service/browser output, screenshots, private service/file identifiers or download links, credentials, machine paths, the deployment package, intermediate implementations, and the other 103 final-suite cases."
+}

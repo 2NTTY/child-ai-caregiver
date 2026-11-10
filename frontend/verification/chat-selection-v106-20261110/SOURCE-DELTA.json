@@ -1,0 +1,42 @@
+{
+  "baseVersion": 105,
+  "baseSitesSource": "21c413613731c735caf9d6a7e9426712bbfbc1e2",
+  "publishedVersion": 106,
+  "publishedSitesSource": "f769e6129a4b1778a5f05389246459d9013e3c32",
+  "baseCanonicalSha256": "303e963c94e84026e1454193a67fbb3981fc0f0465b3474530cd79ad5e089d57",
+  "canonicalSha256": "b067e2c88b7e07e3f16c9b7ace1e454f4c3e8f22e8551ef7fcae0a043eab3403",
+  "baseArchive": {
+    "commit": "efa603a5c43ee52199ed40d440aef014ced10515",
+    "path": "frontend/verification/growth-readiness-v105-20261110",
+    "url": "https://github.com/2NTTY/child-ai-caregiver/tree/efa603a5c43ee52199ed40d440aef014ced10515/frontend/verification/growth-readiness-v105-20261110"
+  },
+  "changed": [
+    {
+      "path": "experiments/workbench-compare/app.mjs",
+      "before": {
+        "bytes": 18208,
+        "sha256": "e1d6fa01c4e9b6dd0a3e12397a37900353387853a50afbaf158aae247b3981c7"
+      },
+      "after": {
+        "bytes": 18861,
+        "sha256": "1770be06b25dba9617ac9a7807174fbd411db0fc403eca3d0bdc9e31b0cfecd8"
+      }
+    },
+    {
+      "path": "experiments/workbench-compare/design-choices.mjs",
+      "before": {
+        "bytes": 4133,
+        "sha256": "b6b1c818f2fbffdd4317694c2a0dc556cc6a692ed9dac042d11b903ec0ba6b62"
+      },
+      "after": {
+        "bytes": 4308,
+        "sha256": "38fefabc06d3026b47113a7ba9fee2ca038e0e42c74e74091842ec42f6e90e4e"
+      }
+    }
+  ],
+  "unchangedProductFiles": 502,
+  "addedProductFiles": [],
+  "deletedProductFiles": [],
+  "patchSha256": "fe8f5d53fcb7e979bf9a931bd7e420c65c1e3ec5d57d27b4c8f4f5acea2857f4",
+  "changeScope": "Shared H/C-only Chat whole-page selection allowlist, initial existing-witness readiness, and loaded-session explanatory text. No renderer, fixture, clock, catalog, boundary, transport or native composition changes."
+}

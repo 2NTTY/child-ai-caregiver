@@ -1,0 +1,18 @@
+{
+  "originalTestCases": 103,
+  "unchangedOriginalCases": 102,
+  "changedOriginalCases": 1,
+  "newChatCases": 45,
+  "newScopeRegressionCases": 1,
+  "finalTotal": 149,
+  "changes": [
+    {
+      "file": "design-choices.test.mjs",
+      "oldSha256": "098c638fb1c74f5b448804e3789112bf800bd41d8d45b73a4e2213d766b95f34",
+      "newSha256": "0f929cb01975527dad10e1b589169cf957517401415d9c33695566b2b15eb671",
+      "patch": "--- v105/design-choices.test.mjs\n+++ candidate/design-choices.test.mjs\n@@ -28,7 +28,7 @@\n  ])assert.equal(s.add(bad,'page').status,'unavailable');\n  assert.equal(s.add(context(),'unknown-part').status,'unavailable');assert.equal(s.add(context('care','/care'),'filters').status,'unavailable');assert.equal(s.items().length,0);\n });\n-test('known Photos and Chat evidence gaps cannot become valid choices and all five task versions remain distinguishable',()=>{\n- const s=list();for(const id of ['original','harbour','care','journal','uiux-upgrade']){assert.equal(s.add(context(id,'/photos'),'page').status,'unavailable');assert.equal(s.add(context(id,'/chat'),'page').status,'unavailable');assert.equal(s.add(context(id),'header-actions').status,'added');}\n- assert.deepEqual(s.items().map(c=>c.variantId),['original','harbour','care','journal','uiux-upgrade']);\n+test('Photos and unadmitted Chat remain denied; admitted H/C Chat page scope is separate from all-five Tasks',()=>{\n+ const s=list();for(const id of ['original','harbour','care','journal','uiux-upgrade']){assert.equal(s.add(context(id,'/photos'),'page').status,'unavailable');assert.equal(s.add(context(id,'/chat'),'page').status,['harbour','care'].includes(id)?'added':'unavailable');assert.equal(s.add(context(id),'header-actions').status,'added');}\n+ assert.deepEqual(s.items().filter(c=>c.route==='tasks').map(c=>c.variantId),['original','harbour','care','journal','uiux-upgrade']);\n });\n"
+    }
+  ],
+  "reason": "Replace only the intentionally obsolete all-five Chat ban with H/C whole-page permission and retain other-three Chat/all-Photos/Tasks identity checks.",
+  "helperChange": "host accepts an explicit choiceModule injection so frozen v105 controls execute the actual old resolver, not new policy. New Chat shape helper only supplies controlled DOM geometry."
+}

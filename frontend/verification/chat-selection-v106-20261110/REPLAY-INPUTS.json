@@ -1,0 +1,196 @@
+{
+  "kind": "controlled-dom-chat-selection-regression-subset",
+  "testFiles": [
+    "checks/chat-selection.test.mjs",
+    "checks/scope-isolation.test.mjs"
+  ],
+  "cases": 46,
+  "caseNames": [
+    "harbour Chat startup remains inert and honestly waiting",
+    "care Chat startup remains inert and honestly waiting",
+    "harbour Chat survives bootstrap and exports independently pinned loaded source",
+    "care Chat survives bootstrap and exports independently pinned loaded source",
+    "Chat option states H/C-only scope; each loaded side uses its own policy rather than pending controls",
+    "Chat toolbar missing denies arming until that witness is visible",
+    "Chat toolbar hidden denies arming until that witness is visible",
+    "Chat toolbar inert denies arming until that witness is visible",
+    "Chat toolbar aria-hidden denies arming until that witness is visible",
+    "Chat toolbar display-none denies arming until that witness is visible",
+    "Chat toolbar visibility-hidden denies arming until that witness is visible",
+    "Chat toolbar transparent denies arming until that witness is visible",
+    "Chat toolbar zero-width denies arming until that witness is visible",
+    "Chat toolbar zero-height denies arming until that witness is visible",
+    "Chat panel missing denies arming until that witness is visible",
+    "Chat panel hidden denies arming until that witness is visible",
+    "Chat panel inert denies arming until that witness is visible",
+    "Chat panel aria-hidden denies arming until that witness is visible",
+    "Chat panel display-none denies arming until that witness is visible",
+    "Chat panel visibility-hidden denies arming until that witness is visible",
+    "Chat panel transparent denies arming until that witness is visible",
+    "Chat panel zero-width denies arming until that witness is visible",
+    "Chat panel zero-height denies arming until that witness is visible",
+    "Chat loading gate remains unavailable",
+    "Chat error-data gate remains unavailable",
+    "Chat loading-data gate remains unavailable",
+    "Chat loading-state gate remains unavailable",
+    "Chat busy gate remains unavailable",
+    "Chat missing-gate gate remains unavailable",
+    "Chat hidden-parent gate remains unavailable",
+    "Chat inert-parent gate remains unavailable",
+    "Chat aria-hidden-parent gate remains unavailable",
+    "Chat rejects a ready unrelated page and blank/error text even when identity is valid",
+    "Chat needs the exact current accepted sequence and window/origin/identity",
+    "queued pre-arm Home does not retroactively lock Chat; a post-arm cross-page message still does",
+    "harbour cross-page lock survives return/BFCache/Cancel; new Open replaces epochs and retains choices",
+    "care cross-page lock survives return/BFCache/Cancel; new Open replaces epochs and retains choices",
+    "Chat source configuration failure is sticky after correcting configuration and surface",
+    "Chat changed-document failure cannot heal and retired document messages cannot restore choice",
+    "original Chat keeps view-only startup/navigation behavior without the new wait boundary",
+    "journal Chat keeps view-only startup/navigation behavior without the new wait boundary",
+    "uiux-upgrade Chat keeps view-only startup/navigation behavior without the new wait boundary",
+    "resolver admits only H/C Chat page and rejects all other variants, Photos, parts, wrong pins and invalid context",
+    "H/C choice export deduplicates and contains only design identifiers, not messages or URL/case content",
+    "frozen v105 app and resolver independently retain both original defects",
+    "non-Chat readiness routes retain their existing waiting pick-note text"
+  ],
+  "inputs": [
+    {
+      "path": "CHAT-SELECTION.patch",
+      "bytes": 10461,
+      "sha256": "fe8f5d53fcb7e979bf9a931bd7e420c65c1e3ec5d57d27b4c8f4f5acea2857f4"
+    },
+    {
+      "path": "TEST-CHANGES.json",
+      "bytes": 2269,
+      "sha256": "17e4403b220640e5d3f7d03700f027cdbe387966e9368131dc8f445cd7fd0cac"
+    },
+    {
+      "path": "checks/chat-harness.mjs",
+      "bytes": 1550,
+      "sha256": "1c0bd1dee6cbad1336ff81451fbecc6e3c4381c7a24846fb18f495e3cf1a7f77"
+    },
+    {
+      "path": "checks/chat-selection.test.mjs",
+      "bytes": 15335,
+      "sha256": "d2af4add050fbdc3f493c0c2559e4b48eb543fdfa97454b4954175e2dfa9e3a9"
+    },
+    {
+      "path": "checks/chat-sources.json",
+      "bytes": 2147,
+      "sha256": "e06b8237f577d8052cd6f64ad67321a740ba0662a6c034cfec2c8e790e396de1"
+    },
+    {
+      "path": "checks/host.mjs",
+      "bytes": 10918,
+      "sha256": "5a5d1fcead18a3f6a9a84360cb9fb7450b4188158b654beef39f6bed6f0d9ee7"
+    },
+    {
+      "path": "checks/real-lifecycle.mjs",
+      "bytes": 2264,
+      "sha256": "e29e0e33dd5b02adce768c85f237be051c54789b58e90581e0920e87d4c7fde3"
+    },
+    {
+      "path": "checks/scope-isolation.test.mjs",
+      "bytes": 1033,
+      "sha256": "5ed059bcfdf28aae624bc6e3beb3eb6b455340cb3a6c963bc2482f8d4f6cde33"
+    },
+    {
+      "path": "dist/experiments/workbench-compare/app.mjs",
+      "bytes": 18861,
+      "sha256": "1770be06b25dba9617ac9a7807174fbd411db0fc403eca3d0bdc9e31b0cfecd8"
+    },
+    {
+      "path": "dist/experiments/workbench-compare/boundary.js",
+      "bytes": 3726,
+      "sha256": "e5e99c55767d138237f35d70b1a21cb94c35bd34de4cb42fc755d6bf7186939b"
+    },
+    {
+      "path": "dist/experiments/workbench-compare/catalog.mjs",
+      "bytes": 38703,
+      "sha256": "c42b5657bb29b029f761c239a21573bc4a07ff03249316195be858f58d7b19e1"
+    },
+    {
+      "path": "dist/experiments/workbench-compare/design-choices.mjs",
+      "bytes": 4308,
+      "sha256": "38fefabc06d3026b47113a7ba9fee2ca038e0e42c74e74091842ec42f6e90e4e"
+    },
+    {
+      "path": "dist/experiments/workbench-compare/frame-entry.js",
+      "bytes": 42240,
+      "sha256": "c2afa3733c373f85efd9d35b3966bba1a87de211880ce3844b0b907b816f36b6"
+    },
+    {
+      "path": "dist/experiments/workbench-compare/host-actions.mjs",
+      "bytes": 1399,
+      "sha256": "77a73bcc2ceab608ae378dc686e194bd4ad78a4fe560896f072ef814b1fd0dfd"
+    },
+    {
+      "path": "dist/experiments/workbench-compare/index.html",
+      "bytes": 7800,
+      "sha256": "a8d8e6d95a60096064dda953529f731912d64b9b558ed64aebeb0deaf1a6ca6a"
+    },
+    {
+      "path": "dist/experiments/workbench-compare/session.mjs",
+      "bytes": 2258,
+      "sha256": "35fef8cb2f4dc097c0ea4225a62af0878e38ffa3c0e5627c94a15be064c17cfc"
+    },
+    {
+      "path": "history/public-v105/dist/experiments/workbench-compare/app.mjs",
+      "bytes": 18208,
+      "sha256": "e1d6fa01c4e9b6dd0a3e12397a37900353387853a50afbaf158aae247b3981c7"
+    },
+    {
+      "path": "history/public-v105/dist/experiments/workbench-compare/boundary.js",
+      "bytes": 3726,
+      "sha256": "e5e99c55767d138237f35d70b1a21cb94c35bd34de4cb42fc755d6bf7186939b"
+    },
+    {
+      "path": "history/public-v105/dist/experiments/workbench-compare/catalog.mjs",
+      "bytes": 38703,
+      "sha256": "c42b5657bb29b029f761c239a21573bc4a07ff03249316195be858f58d7b19e1"
+    },
+    {
+      "path": "history/public-v105/dist/experiments/workbench-compare/design-choices.mjs",
+      "bytes": 4133,
+      "sha256": "b6b1c818f2fbffdd4317694c2a0dc556cc6a692ed9dac042d11b903ec0ba6b62"
+    },
+    {
+      "path": "history/public-v105/dist/experiments/workbench-compare/frame-entry.js",
+      "bytes": 42240,
+      "sha256": "c2afa3733c373f85efd9d35b3966bba1a87de211880ce3844b0b907b816f36b6"
+    },
+    {
+      "path": "history/public-v105/dist/experiments/workbench-compare/host-actions.mjs",
+      "bytes": 1399,
+      "sha256": "77a73bcc2ceab608ae378dc686e194bd4ad78a4fe560896f072ef814b1fd0dfd"
+    },
+    {
+      "path": "history/public-v105/dist/experiments/workbench-compare/index.html",
+      "bytes": 7800,
+      "sha256": "a8d8e6d95a60096064dda953529f731912d64b9b558ed64aebeb0deaf1a6ca6a"
+    },
+    {
+      "path": "history/public-v105/dist/experiments/workbench-compare/session.mjs",
+      "bytes": 2258,
+      "sha256": "35fef8cb2f4dc097c0ea4225a62af0878e38ffa3c0e5627c94a15be064c17cfc"
+    }
+  ],
+  "fullSuiteCases": 149,
+  "fullSuiteIncluded": false,
+  "archiveReplayExecuted": false,
+  "runtimePrerequisites": [
+    "Node.js 22.8 or later for the documented test flags",
+    "Python 3.9 or later for byte verification"
+  ],
+  "thirdPartyPackagesRequired": false,
+  "browserOrReactExecution": false,
+  "candidateCanonicalSha256": "b067e2c88b7e07e3f16c9b7ace1e454f4c3e8f22e8551ef7fcae0a043eab3403",
+  "baseCanonicalSha256": "303e963c94e84026e1454193a67fbb3981fc0f0465b3474530cd79ad5e089d57",
+  "sourcePinsOrigin": "Earlier independently checked Chat source contracts, not the implementation builder.",
+  "negativeControl": "Both the exact v105 app and exact v105 resolver are retained, with their original imports. Shared session, catalog, host-actions, frame-entry, boundary and HTML bytes equal v105.",
+  "limits": [
+    "Controlled DOM dimensions, history ports, clipboard and transport do not establish actual browser behavior.",
+    "Main and payload source hashes are expectations; the subset does not execute or render those bundles.",
+    "A complete 504-file SOURCE.json-matching dist is needed for full preview rendering, not for these controlled tests."
+  ]
+}
