@@ -1,0 +1,122 @@
+{
+  "status": "ORIGINAL_CALENDAR_SLOT_LOCALLY_OPERABLE_SCOPED_VERIFICATION",
+  "sourceCanonicalSha256": "3d0beb50c8bfac0504199581b61a55492f0e3882359153417f9ce064e17af9b4",
+  "focused": {
+    "contract": 2,
+    "hostProjectorIntegration": 5,
+    "trueReactTasksView": 1,
+    "trueReactControl": 1,
+    "baselineHarnessSmoke": 1,
+    "allPassed": true,
+    "limits": "Source and React element cases, true React TasksView with real route hooks local fallback and controlled visual/model ports, true Control with controlled ports. Not production owner, browser, RN measurements, true animations, protected detail content or mobile acceptance.",
+    "effectiveRed": {
+      "contract": "contract-red002",
+      "integration": "integration-red004",
+      "mountedTasksView": "mounted-red004",
+      "mountedControl": "missing exact recipe second case in mounted-red001/002/003; not re-run solely for harness repair"
+    }
+  },
+  "fullFrontendNoEmit": {
+    "stage": "typecheck",
+    "passed": true,
+    "actualExitCode": 0,
+    "sourceCanonicalSha256": "3d0beb50c8bfac0504199581b61a55492f0e3882359153417f9ce064e17af9b4",
+    "sourceFiles": 715,
+    "wallSeconds": 14.055360386002576,
+    "peakRssBytes": 1168334848,
+    "terminalOwnershipComplete": true,
+    "logsComplete": true,
+    "browserAcceptance": false,
+    "publication": false
+  },
+  "singleExport": {
+    "stage": "export",
+    "passed": true,
+    "actualExitCode": 0,
+    "sourceCanonicalSha256": "3d0beb50c8bfac0504199581b61a55492f0e3882359153417f9ce064e17af9b4",
+    "sourceFiles": 715,
+    "wallSeconds": 62.07281860700459,
+    "peakRssBytes": 625274880,
+    "terminalOwnershipComplete": true,
+    "logsComplete": true,
+    "browserAcceptance": false,
+    "publication": false
+  },
+  "exportMethod": "Actual argv did not include planned --clear flag. Independent HOME/TMP/cache/dist/.expo roots were absent before launch; isolated fresh-cache export. Not claimed to have executed --clear.",
+  "main": {
+    "path": "_expo/static/js/web/index-0c130aac5a8cfb2882d6e4ef36683546.js",
+    "sha256": "b473081f62dd20e04dedfb6d07f29af31b906247803e5c9e4435d66a8aee2134",
+    "outputIncluded": false
+  },
+  "browser": {
+    "desktop": [
+      1180,
+      757,
+      1
+    ],
+    "compactDesktopZoom": [
+      393,
+      252,
+      3
+    ],
+    "zoomPercent": 300,
+    "nativeTopLevelCarrier": true,
+    "manualDraftEnterApplyObserved": true,
+    "restoreJSONTestedInMountedControl": true,
+    "browserJSONRestoreTested": false,
+    "queryAndRangeRetained": true,
+    "prevNextResetDayToggleClear": true,
+    "tabAndEnterMonthNavigation": true,
+    "dayEnterSelection": true,
+    "compactDateDayClearNormalPointer": true,
+    "compactCalendarWidthCSS": 356.3333435058594,
+    "compactDaySampleHeightCSS": 44,
+    "compactPageViewportHeightCSS": 158.6666717529297,
+    "horizontalOverflowObserved": false,
+    "compactDetailCalendarHiddenAndSixTabStepsExcludeList": true,
+    "detailReturnQueryRangePreserved": true,
+    "samePlacementDOMIdentityTest": "Actual React harness only, not browser proof",
+    "navigationFocusLimit": "Calendar route selection/navigation may return focus to page on shared Expo route update. Month control Tab focus has visible 3px outline; no full focus retention/a11y claim.",
+    "compactReturnLimit": "Existing route navigation returns with date disclosure collapsed; reopening succeeds. Not browser DOM identity or expanded-state retention proof.",
+    "screenshots": 5,
+    "rawPackets": 28
+  },
+  "sourceReview": "FINAL_SCOPED_ALLOW",
+  "evidenceSealSha256": "000bb1de4c7ac4f5a846bcce8963c52051729cf2ef35fb188ec3aad6ff8fac6b",
+  "evidenceSealedFiles": 1787,
+  "evidenceLimits": [
+    "Actual React mounted fixture uses exact route hooks local fallback and full focus module, but controlled visual/model/motion/protected ports; not a full ProductionOwner/provider test.",
+    "Native browser source script reference plus rehashed served files is not independent HTTP response-body attestation.",
+    "Same-placement DOM identity was asserted in actual React, not in browser. Shared Expo route changes can return focus to page; no blanket focus continuity claim.",
+    "Compact detail return retains query/range but date disclosure is collapsed; ordinary reopening succeeds. No browser expanded-state or cross-route DOM identity claim.",
+    "Early runtime module receipts include exit-time-only hashes. Compiler/Expo anchors do not attest the complete dependency closure.",
+    "Three mounted initialization failures were not product RED. Complete harness method repair then baseline smoke and valid RED/GREEN were preserved locally. Earlier locator/text/assertion fixes changed tests only and retained same-fixed-input RED/GREEN.",
+    "Control stale callback test was strengthened after noEmit, without changing product TS roots or rerunning source tests/build.",
+    "Browser tab ctrl+plus had no zoom effect; native Chromium equal method produced observed300 percent. Original screenshot bytes are JPEG despite retained png filenames; inventory records actual format. No screenshots are published.",
+    "Historical body hashes are verified, full historical tree/assembly membership remains unverified.",
+    "Old export 70990 and preview 39216 exit/reaping remain UNKNOWN. The new owned preview exited zero and tab was unloaded/closed.",
+    "Prior archive evidence limits remain; current local calendar checks do not close unrelated inherited matrix gaps."
+  ],
+  "notVerified": [
+    "full Original/global theme/first phase/release",
+    "new calendar comparison-page carry-in",
+    "mobile/native/touch or exact 390",
+    "full owner/forms/scope/permissions/unknown-recovery and full accessibility matrix",
+    "browser JSON restore; tested with mounted Control only",
+    "all invalid/loaded-only states in browser; representative projector/host tests only"
+  ],
+  "safety": {
+    "rawIncluded": false,
+    "screenshotsIncluded": false,
+    "credentialsIncluded": false,
+    "compiledOutputsIncluded": false,
+    "localPathsIncluded": false,
+    "publication": false,
+    "merge": false,
+    "prOpened": false,
+    "guardsRelaxed": false,
+    "forcedClick": false,
+    "nativeCarrierIframeUsed": false,
+    "productTestsRerunForArchival": false
+  }
+}

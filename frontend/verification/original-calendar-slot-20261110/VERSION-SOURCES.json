@@ -1,0 +1,1155 @@
+{
+  "origins": [
+    {
+      "sourceId": "original-historical-fragments01",
+      "kind": "referenceFiles",
+      "candidates": [
+        [
+          "original",
+          "header-actions",
+          "original-actions-fragment01"
+        ],
+        [
+          "original",
+          "filters",
+          "original-filters-controls01"
+        ],
+        [
+          "original",
+          "filters",
+          "original-filters-combination01"
+        ],
+        [
+          "original",
+          "filters",
+          "original-search-frame-fragment01"
+        ],
+        [
+          "original",
+          "filters",
+          "original-tabs-fragment01"
+        ]
+      ],
+      "files": [
+        {
+          "sourceId": "original-historical-fragments01",
+          "path": "frontend/src/components/tasks/TasksView.tsx",
+          "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622",
+          "bytes": 26547
+        },
+        {
+          "sourceId": "original-historical-fragments01",
+          "path": "frontend/src/components/ui.tsx",
+          "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563",
+          "bytes": 28747
+        },
+        {
+          "sourceId": "original-historical-fragments01",
+          "path": "frontend/src/theme.ts",
+          "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2",
+          "bytes": 4982
+        }
+      ]
+    },
+    {
+      "sourceId": "original-filters-controls01",
+      "kind": "sourceFiles",
+      "candidates": [
+        [
+          "original",
+          "filters",
+          "original-filters-controls01"
+        ]
+      ],
+      "files": [
+        {
+          "sourceId": "original-filters-controls01",
+          "path": "frontend/src/components/tasks/TasksView.tsx",
+          "sha256": "8899915587963321fcce2a3283b3c5134ff606f979b9f61f52b4c3b8228f75d8",
+          "bytes": 40138
+        },
+        {
+          "sourceId": "original-filters-controls01",
+          "path": "frontend/src/components/tasks/presentation/TasksFiltersPresentation.tsx",
+          "sha256": "7838e33f24cd44776b0644bd9c5b881bd834887909727e236680ede039d9abab",
+          "bytes": 11904
+        },
+        {
+          "sourceId": "original-filters-controls01",
+          "path": "frontend/src/components/ui.tsx",
+          "sha256": "8eb9cede192eff81495bf9ee478da6baa6504eafa141b40cd1db30e6b64060e5",
+          "bytes": 37848
+        },
+        {
+          "sourceId": "original-filters-controls01",
+          "path": "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+          "sha256": "cc38c6ef4c78f27472fdb893d342c1294927f1c5d11e489b8e17c2f7e8edb3e7",
+          "bytes": 5030
+        },
+        {
+          "sourceId": "original-filters-controls01",
+          "path": "frontend/src/preview/tasks-original-presentation/search-frame-appearance.ts",
+          "sha256": "5404093984c5bc8b146ff9f1b71d4e0a72b6975b7b25810b6abd35cb22ca9e93",
+          "bytes": 687
+        },
+        {
+          "sourceId": "original-filters-controls01",
+          "path": "frontend/src/preview/tasks-original-presentation/selection-trigger-appearance.ts",
+          "sha256": "583082810dd5480fec65354b355519f8629df2b0e8e34a485a4289c22697dd84",
+          "bytes": 891
+        },
+        {
+          "sourceId": "original-filters-controls01",
+          "path": "frontend/src/preview/tasks-original-presentation/source-theme.ts",
+          "sha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a",
+          "bytes": 2396
+        },
+        {
+          "sourceId": "original-filters-controls01",
+          "path": "frontend/src/preview/tasks-original-presentation/styles.ts",
+          "sha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48",
+          "bytes": 12283
+        },
+        {
+          "sourceId": "original-filters-controls01",
+          "path": "frontend/src/preview/tasks-original-presentation/tabs-appearance.ts",
+          "sha256": "9d1d52a2e66120b1049daf4bbe8f9f82bb186cb1ece2f569c82d072396dbc506",
+          "bytes": 1125
+        }
+      ],
+      "identity": {
+        "candidateId": "original-filters-controls01",
+        "kind": "immutable-recipe-origin-not-current-runtime",
+        "commit": "873bffe77a7012c316b9d5a1e299bc28249f39c5",
+        "sourceCanonicalSha256": "806188d8356508354d479b0ee91f2de84dc84108a865ae5ddf70e5ee4085bff0",
+        "digest": "f9cb4a7b599b00704ee378bc6a457a7c4350cec5fbc3ac5e4fccf563afc333fb",
+        "files": [
+          {
+            "sourceId": "original-filters-controls01",
+            "path": "frontend/src/components/tasks/TasksView.tsx",
+            "sha256": "8899915587963321fcce2a3283b3c5134ff606f979b9f61f52b4c3b8228f75d8"
+          },
+          {
+            "sourceId": "original-filters-controls01",
+            "path": "frontend/src/components/tasks/presentation/TasksFiltersPresentation.tsx",
+            "sha256": "7838e33f24cd44776b0644bd9c5b881bd834887909727e236680ede039d9abab"
+          },
+          {
+            "sourceId": "original-filters-controls01",
+            "path": "frontend/src/components/ui.tsx",
+            "sha256": "8eb9cede192eff81495bf9ee478da6baa6504eafa141b40cd1db30e6b64060e5"
+          },
+          {
+            "sourceId": "original-filters-controls01",
+            "path": "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+            "sha256": "cc38c6ef4c78f27472fdb893d342c1294927f1c5d11e489b8e17c2f7e8edb3e7"
+          },
+          {
+            "sourceId": "original-filters-controls01",
+            "path": "frontend/src/preview/tasks-original-presentation/search-frame-appearance.ts",
+            "sha256": "5404093984c5bc8b146ff9f1b71d4e0a72b6975b7b25810b6abd35cb22ca9e93"
+          },
+          {
+            "sourceId": "original-filters-controls01",
+            "path": "frontend/src/preview/tasks-original-presentation/selection-trigger-appearance.ts",
+            "sha256": "583082810dd5480fec65354b355519f8629df2b0e8e34a485a4289c22697dd84"
+          },
+          {
+            "sourceId": "original-filters-controls01",
+            "path": "frontend/src/preview/tasks-original-presentation/source-theme.ts",
+            "sha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a"
+          },
+          {
+            "sourceId": "original-filters-controls01",
+            "path": "frontend/src/preview/tasks-original-presentation/styles.ts",
+            "sha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48"
+          },
+          {
+            "sourceId": "original-filters-controls01",
+            "path": "frontend/src/preview/tasks-original-presentation/tabs-appearance.ts",
+            "sha256": "9d1d52a2e66120b1049daf4bbe8f9f82bb186cb1ece2f569c82d072396dbc506"
+          }
+        ]
+      }
+    },
+    {
+      "sourceId": "original-filters-combination01",
+      "kind": "sourceFiles",
+      "candidates": [
+        [
+          "original",
+          "filters",
+          "original-filters-combination01"
+        ]
+      ],
+      "files": [
+        {
+          "sourceId": "original-filters-combination01",
+          "path": "frontend/src/components/tasks/TasksView.tsx",
+          "sha256": "472527a650c18f56d6d093415d072e51efef00df5c875ce46a5b2dcd736b7399",
+          "bytes": 39743
+        },
+        {
+          "sourceId": "original-filters-combination01",
+          "path": "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+          "sha256": "fe53217e0180d9763b83b8a4e641082bac606f22fee6488bb196f3e0391a3ece",
+          "bytes": 4792
+        },
+        {
+          "sourceId": "original-filters-combination01",
+          "path": "frontend/src/preview/tasks-original-presentation/search-frame-appearance.ts",
+          "sha256": "5404093984c5bc8b146ff9f1b71d4e0a72b6975b7b25810b6abd35cb22ca9e93",
+          "bytes": 687
+        },
+        {
+          "sourceId": "original-filters-combination01",
+          "path": "frontend/src/preview/tasks-original-presentation/source-theme.ts",
+          "sha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a",
+          "bytes": 2396
+        },
+        {
+          "sourceId": "original-filters-combination01",
+          "path": "frontend/src/preview/tasks-original-presentation/styles.ts",
+          "sha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48",
+          "bytes": 12283
+        },
+        {
+          "sourceId": "original-filters-combination01",
+          "path": "frontend/src/preview/tasks-original-presentation/tabs-appearance.ts",
+          "sha256": "9d1d52a2e66120b1049daf4bbe8f9f82bb186cb1ece2f569c82d072396dbc506",
+          "bytes": 1125
+        }
+      ],
+      "identity": {
+        "candidateId": "original-filters-combination01",
+        "kind": "immutable-recipe-origin-not-current-runtime",
+        "commit": "bd20f92184b2490fea2b2cb4065e4cdc5916f3bb",
+        "sourceCanonicalSha256": "b5d4f9a902c725503400ee0e4aafc8dd6d1ae653e665ecc450107a3eb95ac27d",
+        "digest": "2042fac89ea1bf8b4998859bc44c5ee144d90108a4eaf9f7346277aca088fb5c",
+        "files": [
+          {
+            "sourceId": "original-filters-combination01",
+            "path": "frontend/src/components/tasks/TasksView.tsx",
+            "sha256": "472527a650c18f56d6d093415d072e51efef00df5c875ce46a5b2dcd736b7399"
+          },
+          {
+            "sourceId": "original-filters-combination01",
+            "path": "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+            "sha256": "fe53217e0180d9763b83b8a4e641082bac606f22fee6488bb196f3e0391a3ece"
+          },
+          {
+            "sourceId": "original-filters-combination01",
+            "path": "frontend/src/preview/tasks-original-presentation/search-frame-appearance.ts",
+            "sha256": "5404093984c5bc8b146ff9f1b71d4e0a72b6975b7b25810b6abd35cb22ca9e93"
+          },
+          {
+            "sourceId": "original-filters-combination01",
+            "path": "frontend/src/preview/tasks-original-presentation/source-theme.ts",
+            "sha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a"
+          },
+          {
+            "sourceId": "original-filters-combination01",
+            "path": "frontend/src/preview/tasks-original-presentation/styles.ts",
+            "sha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48"
+          },
+          {
+            "sourceId": "original-filters-combination01",
+            "path": "frontend/src/preview/tasks-original-presentation/tabs-appearance.ts",
+            "sha256": "9d1d52a2e66120b1049daf4bbe8f9f82bb186cb1ece2f569c82d072396dbc506"
+          }
+        ]
+      }
+    },
+    {
+      "sourceId": "harbour-h629",
+      "kind": "referenceFiles",
+      "candidates": [
+        [
+          "harbour",
+          "header-actions",
+          "header-actions"
+        ],
+        [
+          "harbour",
+          "header-actions",
+          "header-source-regions02"
+        ],
+        [
+          "harbour",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "harbour",
+          "date-list",
+          "row-appearance"
+        ],
+        [
+          "harbour",
+          "date-list",
+          "date-list-source-regions02"
+        ],
+        [
+          "harbour",
+          "calendar-layout",
+          "calendar-presentation"
+        ],
+        [
+          "fourth",
+          "date-list",
+          "row-appearance"
+        ]
+      ],
+      "files": [
+        {
+          "sourceId": "harbour-h629",
+          "path": "frontend/src/components/tasks/TaskHistoryView.tsx",
+          "sha256": "d2c190c55afaae55d39ba59f20b5d93cd9e4f0a4bfcc004512ce9614fe2c6912",
+          "bytes": 9484
+        },
+        {
+          "sourceId": "harbour-h629",
+          "path": "frontend/src/components/tasks/TaskListRow.tsx",
+          "sha256": "e1bc8e856f315176ba8b39fc9813c115c783c7d8f4d7e34fa62df472630a8b80",
+          "bytes": 4334
+        },
+        {
+          "sourceId": "harbour-h629",
+          "path": "frontend/src/components/tasks/TasksCalendar.tsx",
+          "sha256": "3d282ea49db3bec1d0009d580ae6f9cc2cdf1a82e006bba6b101b3cacd43e5c0",
+          "bytes": 7867
+        },
+        {
+          "sourceId": "harbour-h629",
+          "path": "frontend/src/components/tasks/TasksView.tsx",
+          "sha256": "8483cfd203691284cdaf7550e7c5adeb6418f00242a38e684d19f0b25a8e9fd4",
+          "bytes": 28953
+        },
+        {
+          "sourceId": "harbour-h629",
+          "path": "frontend/src/components/tasks/task-calendar.ts",
+          "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4",
+          "bytes": 6256
+        },
+        {
+          "sourceId": "harbour-h629",
+          "path": "frontend/src/screens/tasksScreen.tsx",
+          "sha256": "8f363e127d12a7db13bd0d2b1e7645450d0e6f35e7a280d5f5884b5ebb297dab",
+          "bytes": 5793
+        },
+        {
+          "sourceId": "harbour-h629",
+          "path": "frontend/src/task-view-model.ts",
+          "sha256": "7c99fff1bc34afa2db07961574ab6ac7c8bd7f7bcfc1f98b309faeb49b87191e",
+          "bytes": 10908
+        },
+        {
+          "sourceId": "harbour-h629",
+          "path": "frontend/src/theme.ts",
+          "sha256": "5fa570023e71dcbab4c5cbcbd69865dba2d38ec3defb4e21db5ac15d57f50c23",
+          "bytes": 4732
+        },
+        {
+          "sourceId": "harbour-h629",
+          "path": "frontend/src/workspaces/TasksWorkspace.tsx",
+          "sha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68",
+          "bytes": 1086
+        }
+      ]
+    },
+    {
+      "sourceId": "filter-calendar-presentation01",
+      "kind": "sourceFiles",
+      "candidates": [
+        [
+          "harbour",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "harbour",
+          "calendar-layout",
+          "calendar-presentation"
+        ],
+        [
+          "care",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "care",
+          "calendar-layout",
+          "calendar-presentation"
+        ],
+        [
+          "handbook",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "handbook",
+          "calendar-layout",
+          "calendar-presentation"
+        ],
+        [
+          "fourth",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "fourth",
+          "calendar-layout",
+          "calendar-presentation"
+        ]
+      ],
+      "files": [
+        {
+          "sourceId": "filter-calendar-presentation01",
+          "path": "frontend/src/components/tasks/presentation/CareWorkspaceSwitch.tsx",
+          "sha256": "c064f5a07647079135978f6ead0971d5181fe0eae013065120282277a7337f53",
+          "bytes": 2626
+        },
+        {
+          "sourceId": "filter-calendar-presentation01",
+          "path": "frontend/src/components/tasks/presentation/TasksCalendarLayoutPresentation.tsx",
+          "sha256": "bdcdaef10cf83a99b3c30d61c562883dedd56f0b789b70bd1d366b10f6f18d82",
+          "bytes": 4415
+        },
+        {
+          "sourceId": "filter-calendar-presentation01",
+          "path": "frontend/src/components/tasks/presentation/TasksCalendarPresentation.tsx",
+          "sha256": "30a90e62f83b887dd957dc85a0b5c2ba464f3707605c9bdf8ed802503131b9e9",
+          "bytes": 13314
+        },
+        {
+          "sourceId": "filter-calendar-presentation01",
+          "path": "frontend/src/components/tasks/presentation/TasksFiltersPresentation.tsx",
+          "sha256": "94210d4a00e5765b7c5b0dd26f5b02e65b78a5a84401ac1e95bb8138bf66ee2c",
+          "bytes": 9579
+        },
+        {
+          "sourceId": "filter-calendar-presentation01",
+          "path": "frontend/src/components/tasks/presentation/contracts.ts",
+          "sha256": "452674044227b493fd4f4df6e097867312ff82154920d1665a0cb0bf4ce0c3d1",
+          "bytes": 2132
+        },
+        {
+          "sourceId": "filter-calendar-presentation01",
+          "path": "frontend/src/components/tasks/presentation/useCareManualTabControls.ts",
+          "sha256": "ea1f72ee1fece34acbc1e2bdfaa3c1f33bd4c83ae06b3a66cb2ad0679d10f075",
+          "bytes": 2140
+        }
+      ],
+      "evidenceSeal": {
+        "sha256": "36f9a33ee8bf6fb69bc7b7e7341e2edb9f5b3ffcb93953f2fd3df6095812a666"
+      }
+    },
+    {
+      "sourceId": "row-appearance-source01-20261108",
+      "kind": "sourceFiles",
+      "candidates": [
+        [
+          "harbour",
+          "date-list",
+          "row-appearance"
+        ],
+        [
+          "fourth",
+          "date-list",
+          "row-appearance"
+        ]
+      ],
+      "files": [
+        {
+          "sourceId": "row-appearance-source01-20261108",
+          "path": "frontend/src/components/tasks/TaskListRow.tsx",
+          "sha256": "4c21e1c8ac185209a140574d3d7b81741da364fadae4405a39c3453bd4edf005",
+          "bytes": 4909
+        },
+        {
+          "sourceId": "row-appearance-source01-20261108",
+          "path": "frontend/src/components/tasks/TasksView.tsx",
+          "sha256": "50787bada67f8250a086f117d137a06346e3e88c82d24f4c19dd3197ec221f2d",
+          "bytes": 29089
+        }
+      ]
+    },
+    {
+      "sourceId": "care-520d4c88",
+      "kind": "referenceFiles",
+      "candidates": [
+        [
+          "care",
+          "header-actions",
+          "header-source-regions02"
+        ],
+        [
+          "care",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "care",
+          "date-list",
+          "date-list-source-regions02"
+        ],
+        [
+          "care",
+          "calendar-layout",
+          "calendar-presentation"
+        ]
+      ],
+      "files": [
+        {
+          "sourceId": "care-520d4c88",
+          "path": "frontend/src/components/tasks/TaskListRow.tsx",
+          "sha256": "0a7f40c135eb8597ae2f4baf48fb7aae623fb5aef4ce27b365c2d7f79efa8479",
+          "bytes": 4088
+        },
+        {
+          "sourceId": "care-520d4c88",
+          "path": "frontend/src/components/tasks/TasksCalendar.tsx",
+          "sha256": "73e04fc8420aa93dfbf8dccba6918479d9a577066c48aceb7d129fa4158eb635",
+          "bytes": 9642
+        },
+        {
+          "sourceId": "care-520d4c88",
+          "path": "frontend/src/components/tasks/TasksView.tsx",
+          "sha256": "d91cab2a10babbbbcd0c92f2673362228cbdaea2731a254b4d2bbca0d085a73d",
+          "bytes": 26199
+        },
+        {
+          "sourceId": "care-520d4c88",
+          "path": "frontend/src/components/tasks/task-calendar.ts",
+          "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4",
+          "bytes": 6256
+        },
+        {
+          "sourceId": "care-520d4c88",
+          "path": "frontend/src/theme.ts",
+          "sha256": "b65c1463c7396e23cf6da65320b609cbe916d2d79e8e12ee70cd689b84e75a3a",
+          "bytes": 4654
+        }
+      ]
+    },
+    {
+      "sourceId": "handbook-72a00c86",
+      "kind": "referenceFiles",
+      "candidates": [
+        [
+          "handbook",
+          "header-actions",
+          "header-presentation"
+        ],
+        [
+          "handbook",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "handbook",
+          "date-list",
+          "date-list-presentation"
+        ],
+        [
+          "handbook",
+          "date-list",
+          "date-list-source-regions02"
+        ],
+        [
+          "handbook",
+          "calendar-layout",
+          "calendar-presentation"
+        ]
+      ],
+      "files": [
+        {
+          "sourceId": "handbook-72a00c86",
+          "path": "frontend/src/components/tasks/TaskListRow.tsx",
+          "sha256": "0431b9cc97f6563e2607e740339731cf20c88bb2169d4be2d8517f771526beb8",
+          "bytes": 4522
+        },
+        {
+          "sourceId": "handbook-72a00c86",
+          "path": "frontend/src/components/tasks/TasksCalendar.tsx",
+          "sha256": "5ccdbc8a7d4bb1d86566c17445510b63621a7742c23ab43a463af279bf8b2eb4",
+          "bytes": 7849
+        },
+        {
+          "sourceId": "handbook-72a00c86",
+          "path": "frontend/src/components/tasks/TasksView.tsx",
+          "sha256": "f93a8a2ab88a917a78fe4293cc0adef098a16b86f281e7df1e1d5e214ce7a7d8",
+          "bytes": 28643
+        },
+        {
+          "sourceId": "handbook-72a00c86",
+          "path": "frontend/src/components/tasks/task-calendar.ts",
+          "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4",
+          "bytes": 6256
+        },
+        {
+          "sourceId": "handbook-72a00c86",
+          "path": "frontend/src/screens/tasksScreen.tsx",
+          "sha256": "aba3d2fed172bc1c896c0c9cafeeee4c1a5b474da8dd4bc11b97530b9fe8eac8",
+          "bytes": 8526
+        },
+        {
+          "sourceId": "handbook-72a00c86",
+          "path": "frontend/src/theme.ts",
+          "sha256": "545826ca8018608a29cee78d4e845a0ffc0023baf326e1ca619f0321f06ddb80",
+          "bytes": 4984
+        }
+      ]
+    },
+    {
+      "sourceId": "fourth-f599",
+      "kind": "referenceFiles",
+      "candidates": [
+        [
+          "fourth",
+          "header-actions",
+          "header-actions"
+        ],
+        [
+          "fourth",
+          "header-actions",
+          "header-source-regions02"
+        ],
+        [
+          "fourth",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "fourth",
+          "date-list",
+          "date-list-source-regions02"
+        ],
+        [
+          "fourth",
+          "calendar-layout",
+          "calendar-presentation"
+        ]
+      ],
+      "files": [
+        {
+          "sourceId": "fourth-f599",
+          "path": "frontend/src/components/tasks/TaskListRow.tsx",
+          "sha256": "8057af9ef2be9ba80000dc6519ad83792c012c1d926a2bb1d9838dae1dce8822",
+          "bytes": 4343
+        },
+        {
+          "sourceId": "fourth-f599",
+          "path": "frontend/src/components/tasks/TasksCalendar.tsx",
+          "sha256": "1cd31a02f3520ac656201f3dc450e801b3d69b835fd6bab422457774eedca3da",
+          "bytes": 7867
+        },
+        {
+          "sourceId": "fourth-f599",
+          "path": "frontend/src/components/tasks/TasksView.tsx",
+          "sha256": "f19ff82be6aa169991cb80cae336530704ee67f64b4d3c8db3597266d89b1fb8",
+          "bytes": 26954
+        },
+        {
+          "sourceId": "fourth-f599",
+          "path": "frontend/src/components/tasks/task-calendar.ts",
+          "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4",
+          "bytes": 6256
+        },
+        {
+          "sourceId": "fourth-f599",
+          "path": "frontend/src/screens/tasksScreen.tsx",
+          "sha256": "c5e9edb39172c1d5283ffaf4243afbab57dc57ac9ad65f9efa7e5fe33f5ddc0f",
+          "bytes": 2070
+        },
+        {
+          "sourceId": "fourth-f599",
+          "path": "frontend/src/theme.ts",
+          "sha256": "3f8b4a0424e8b4807bb7be71d00e93d0c2c41a8f22c983de9e0bb1ce68f59404",
+          "bytes": 4657
+        },
+        {
+          "sourceId": "fourth-f599",
+          "path": "frontend/src/workspaces/TasksWorkspace.tsx",
+          "sha256": "35b350e164255a1beac5a965e83397a102af72b271f3307c47d463f399cb1c68",
+          "bytes": 1086
+        }
+      ]
+    }
+  ],
+  "currentIntegration": {
+    "sourceCanonicalSha256": "3d0beb50c8bfac0504199581b61a55492f0e3882359153417f9ce064e17af9b4",
+    "candidateId": "original-calendar-slot01",
+    "digest": "860369c54a3c9c108805cab5d213632ca71c596c471ad54351ed2cd15696fd1f",
+    "files": [
+      {
+        "sourceId": "original-calendar-slot01",
+        "path": "frontend/src/components/tasks/TasksView.tsx",
+        "sha256": "e617fb89471f75a9f2d55ab6ec554b8c1feac9086c8be8bdb582a00d0ef6da9e"
+      },
+      {
+        "sourceId": "original-calendar-slot01",
+        "path": "frontend/src/components/tasks/presentation/TasksCalendarLayoutPresentation.tsx",
+        "sha256": "ede92e1cb37a9845014d50cf4580618dbccd716c89270b8b8003fd2aa2d700b1"
+      },
+      {
+        "sourceId": "original-calendar-slot01",
+        "path": "frontend/src/components/tasks/presentation/TasksCalendarPresentation.tsx",
+        "sha256": "a96cb217cc4a227530aab7321442c9ad3bcb6960ee0eadffd67a627286e67d34"
+      },
+      {
+        "sourceId": "original-calendar-slot01",
+        "path": "frontend/src/components/tasks/presentation/contracts.ts",
+        "sha256": "d61713dae93d213a3f9ab9de1579e1028a74ef83125ca107e41e6c4549cf5e2e"
+      },
+      {
+        "sourceId": "original-calendar-slot01",
+        "path": "frontend/src/components/tasks/task-calendar.ts",
+        "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4"
+      },
+      {
+        "sourceId": "original-calendar-slot01",
+        "path": "frontend/src/components/ui.tsx",
+        "sha256": "8eb9cede192eff81495bf9ee478da6baa6504eafa141b40cd1db30e6b64060e5"
+      },
+      {
+        "sourceId": "original-calendar-slot01",
+        "path": "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+        "sha256": "403115e992e97e2d2a9a1646c53b3954d280878f2f1cecb2880dc23d456447a3"
+      },
+      {
+        "sourceId": "original-calendar-slot01",
+        "path": "frontend/src/preview/tasks-original-presentation/action-appearance.ts",
+        "sha256": "050d1ecc7e0bc814f672727c13b6c57a72ecbc0b92319a7ce1a4aab7477786ee"
+      },
+      {
+        "sourceId": "original-calendar-slot01",
+        "path": "frontend/src/preview/tasks-original-presentation/header.ts",
+        "sha256": "934de26fe77b0ae543694510c0507b61bca75c5fcd13fcc873dac444ee3dcd0a"
+      },
+      {
+        "sourceId": "original-calendar-slot01",
+        "path": "frontend/src/preview/tasks-original-presentation/source-theme.ts",
+        "sha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a"
+      },
+      {
+        "sourceId": "original-calendar-slot01",
+        "path": "frontend/src/preview/tasks-original-presentation/styles.ts",
+        "sha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48"
+      }
+    ]
+  },
+  "samePathComparisons": [
+    {
+      "sourceId": "original-historical-fragments01",
+      "kind": "referenceFiles",
+      "candidates": [
+        [
+          "original",
+          "header-actions",
+          "original-actions-fragment01"
+        ],
+        [
+          "original",
+          "filters",
+          "original-filters-controls01"
+        ],
+        [
+          "original",
+          "filters",
+          "original-filters-combination01"
+        ],
+        [
+          "original",
+          "filters",
+          "original-search-frame-fragment01"
+        ],
+        [
+          "original",
+          "filters",
+          "original-tabs-fragment01"
+        ]
+      ],
+      "path": "frontend/src/components/tasks/TasksView.tsx",
+      "originSha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622",
+      "currentSha256": "e617fb89471f75a9f2d55ab6ec554b8c1feac9086c8be8bdb582a00d0ef6da9e",
+      "changed": true
+    },
+    {
+      "sourceId": "original-filters-controls01",
+      "kind": "sourceFiles",
+      "candidates": [
+        [
+          "original",
+          "filters",
+          "original-filters-controls01"
+        ]
+      ],
+      "path": "frontend/src/components/tasks/TasksView.tsx",
+      "originSha256": "8899915587963321fcce2a3283b3c5134ff606f979b9f61f52b4c3b8228f75d8",
+      "currentSha256": "e617fb89471f75a9f2d55ab6ec554b8c1feac9086c8be8bdb582a00d0ef6da9e",
+      "changed": true
+    },
+    {
+      "sourceId": "original-filters-controls01",
+      "kind": "sourceFiles",
+      "candidates": [
+        [
+          "original",
+          "filters",
+          "original-filters-controls01"
+        ]
+      ],
+      "path": "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+      "originSha256": "cc38c6ef4c78f27472fdb893d342c1294927f1c5d11e489b8e17c2f7e8edb3e7",
+      "currentSha256": "403115e992e97e2d2a9a1646c53b3954d280878f2f1cecb2880dc23d456447a3",
+      "changed": true
+    },
+    {
+      "sourceId": "original-filters-combination01",
+      "kind": "sourceFiles",
+      "candidates": [
+        [
+          "original",
+          "filters",
+          "original-filters-combination01"
+        ]
+      ],
+      "path": "frontend/src/components/tasks/TasksView.tsx",
+      "originSha256": "472527a650c18f56d6d093415d072e51efef00df5c875ce46a5b2dcd736b7399",
+      "currentSha256": "e617fb89471f75a9f2d55ab6ec554b8c1feac9086c8be8bdb582a00d0ef6da9e",
+      "changed": true
+    },
+    {
+      "sourceId": "original-filters-combination01",
+      "kind": "sourceFiles",
+      "candidates": [
+        [
+          "original",
+          "filters",
+          "original-filters-combination01"
+        ]
+      ],
+      "path": "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+      "originSha256": "fe53217e0180d9763b83b8a4e641082bac606f22fee6488bb196f3e0391a3ece",
+      "currentSha256": "403115e992e97e2d2a9a1646c53b3954d280878f2f1cecb2880dc23d456447a3",
+      "changed": true
+    },
+    {
+      "sourceId": "harbour-h629",
+      "kind": "referenceFiles",
+      "candidates": [
+        [
+          "harbour",
+          "header-actions",
+          "header-actions"
+        ],
+        [
+          "harbour",
+          "header-actions",
+          "header-source-regions02"
+        ],
+        [
+          "harbour",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "harbour",
+          "date-list",
+          "row-appearance"
+        ],
+        [
+          "harbour",
+          "date-list",
+          "date-list-source-regions02"
+        ],
+        [
+          "harbour",
+          "calendar-layout",
+          "calendar-presentation"
+        ],
+        [
+          "fourth",
+          "date-list",
+          "row-appearance"
+        ]
+      ],
+      "path": "frontend/src/components/tasks/TasksView.tsx",
+      "originSha256": "8483cfd203691284cdaf7550e7c5adeb6418f00242a38e684d19f0b25a8e9fd4",
+      "currentSha256": "e617fb89471f75a9f2d55ab6ec554b8c1feac9086c8be8bdb582a00d0ef6da9e",
+      "changed": true
+    },
+    {
+      "sourceId": "filter-calendar-presentation01",
+      "kind": "sourceFiles",
+      "candidates": [
+        [
+          "harbour",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "harbour",
+          "calendar-layout",
+          "calendar-presentation"
+        ],
+        [
+          "care",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "care",
+          "calendar-layout",
+          "calendar-presentation"
+        ],
+        [
+          "handbook",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "handbook",
+          "calendar-layout",
+          "calendar-presentation"
+        ],
+        [
+          "fourth",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "fourth",
+          "calendar-layout",
+          "calendar-presentation"
+        ]
+      ],
+      "path": "frontend/src/components/tasks/presentation/TasksCalendarLayoutPresentation.tsx",
+      "originSha256": "bdcdaef10cf83a99b3c30d61c562883dedd56f0b789b70bd1d366b10f6f18d82",
+      "currentSha256": "ede92e1cb37a9845014d50cf4580618dbccd716c89270b8b8003fd2aa2d700b1",
+      "changed": true
+    },
+    {
+      "sourceId": "filter-calendar-presentation01",
+      "kind": "sourceFiles",
+      "candidates": [
+        [
+          "harbour",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "harbour",
+          "calendar-layout",
+          "calendar-presentation"
+        ],
+        [
+          "care",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "care",
+          "calendar-layout",
+          "calendar-presentation"
+        ],
+        [
+          "handbook",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "handbook",
+          "calendar-layout",
+          "calendar-presentation"
+        ],
+        [
+          "fourth",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "fourth",
+          "calendar-layout",
+          "calendar-presentation"
+        ]
+      ],
+      "path": "frontend/src/components/tasks/presentation/TasksCalendarPresentation.tsx",
+      "originSha256": "30a90e62f83b887dd957dc85a0b5c2ba464f3707605c9bdf8ed802503131b9e9",
+      "currentSha256": "a96cb217cc4a227530aab7321442c9ad3bcb6960ee0eadffd67a627286e67d34",
+      "changed": true
+    },
+    {
+      "sourceId": "filter-calendar-presentation01",
+      "kind": "sourceFiles",
+      "candidates": [
+        [
+          "harbour",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "harbour",
+          "calendar-layout",
+          "calendar-presentation"
+        ],
+        [
+          "care",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "care",
+          "calendar-layout",
+          "calendar-presentation"
+        ],
+        [
+          "handbook",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "handbook",
+          "calendar-layout",
+          "calendar-presentation"
+        ],
+        [
+          "fourth",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "fourth",
+          "calendar-layout",
+          "calendar-presentation"
+        ]
+      ],
+      "path": "frontend/src/components/tasks/presentation/contracts.ts",
+      "originSha256": "452674044227b493fd4f4df6e097867312ff82154920d1665a0cb0bf4ce0c3d1",
+      "currentSha256": "d61713dae93d213a3f9ab9de1579e1028a74ef83125ca107e41e6c4549cf5e2e",
+      "changed": true
+    },
+    {
+      "sourceId": "row-appearance-source01-20261108",
+      "kind": "sourceFiles",
+      "candidates": [
+        [
+          "harbour",
+          "date-list",
+          "row-appearance"
+        ],
+        [
+          "fourth",
+          "date-list",
+          "row-appearance"
+        ]
+      ],
+      "path": "frontend/src/components/tasks/TasksView.tsx",
+      "originSha256": "50787bada67f8250a086f117d137a06346e3e88c82d24f4c19dd3197ec221f2d",
+      "currentSha256": "e617fb89471f75a9f2d55ab6ec554b8c1feac9086c8be8bdb582a00d0ef6da9e",
+      "changed": true
+    },
+    {
+      "sourceId": "care-520d4c88",
+      "kind": "referenceFiles",
+      "candidates": [
+        [
+          "care",
+          "header-actions",
+          "header-source-regions02"
+        ],
+        [
+          "care",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "care",
+          "date-list",
+          "date-list-source-regions02"
+        ],
+        [
+          "care",
+          "calendar-layout",
+          "calendar-presentation"
+        ]
+      ],
+      "path": "frontend/src/components/tasks/TasksView.tsx",
+      "originSha256": "d91cab2a10babbbbcd0c92f2673362228cbdaea2731a254b4d2bbca0d085a73d",
+      "currentSha256": "e617fb89471f75a9f2d55ab6ec554b8c1feac9086c8be8bdb582a00d0ef6da9e",
+      "changed": true
+    },
+    {
+      "sourceId": "handbook-72a00c86",
+      "kind": "referenceFiles",
+      "candidates": [
+        [
+          "handbook",
+          "header-actions",
+          "header-presentation"
+        ],
+        [
+          "handbook",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "handbook",
+          "date-list",
+          "date-list-presentation"
+        ],
+        [
+          "handbook",
+          "date-list",
+          "date-list-source-regions02"
+        ],
+        [
+          "handbook",
+          "calendar-layout",
+          "calendar-presentation"
+        ]
+      ],
+      "path": "frontend/src/components/tasks/TasksView.tsx",
+      "originSha256": "f93a8a2ab88a917a78fe4293cc0adef098a16b86f281e7df1e1d5e214ce7a7d8",
+      "currentSha256": "e617fb89471f75a9f2d55ab6ec554b8c1feac9086c8be8bdb582a00d0ef6da9e",
+      "changed": true
+    },
+    {
+      "sourceId": "fourth-f599",
+      "kind": "referenceFiles",
+      "candidates": [
+        [
+          "fourth",
+          "header-actions",
+          "header-actions"
+        ],
+        [
+          "fourth",
+          "header-actions",
+          "header-source-regions02"
+        ],
+        [
+          "fourth",
+          "filters",
+          "filters-presentation"
+        ],
+        [
+          "fourth",
+          "date-list",
+          "date-list-source-regions02"
+        ],
+        [
+          "fourth",
+          "calendar-layout",
+          "calendar-presentation"
+        ]
+      ],
+      "path": "frontend/src/components/tasks/TasksView.tsx",
+      "originSha256": "f19ff82be6aa169991cb80cae336530704ee67f64b4d3c8db3597266d89b1fb8",
+      "currentSha256": "e617fb89471f75a9f2d55ab6ec554b8c1feac9086c8be8bdb582a00d0ef6da9e",
+      "changed": true
+    }
+  ],
+  "limits": "Immutable candidate/reference origins are not current module attestations. Legacy recipe metadata is unchanged; execution loads only the candidate project."
+}

@@ -1,0 +1,101 @@
+{
+  "repository": "2NTTY/child-ai-caregiver",
+  "date": "2026-11-10",
+  "archiveBaseCommit": "5f3cd680de426cb77fd94b9a346076740c885c6d",
+  "nativeBaseline": {
+    "commit": "873bffe77a7012c316b9d5a1e299bc28249f39c5",
+    "archivePath": "frontend/verification/original-controls-handoff-20261110",
+    "archiveTree": "acc97bb8a09ab4abb340f866c9954141590b4cf4",
+    "canonicalSha256": "806188d8356508354d479b0ee91f2de84dc84108a865ae5ddf70e5ee4085bff0",
+    "freshRemoteBlobMetadataVerified": 14
+  },
+  "source": {
+    "files": 715,
+    "canonicalSha256": "3d0beb50c8bfac0504199581b61a55492f0e3882359153417f9ce064e17af9b4",
+    "changed": [
+      "frontend/src/components/tasks/TasksView.tsx",
+      "frontend/src/components/tasks/presentation/TasksCalendarLayoutPresentation.tsx",
+      "frontend/src/components/tasks/presentation/TasksCalendarPresentation.tsx",
+      "frontend/src/components/tasks/presentation/contracts.ts",
+      "frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx",
+      "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+      "frontend/src/preview/tasks-variant-catalog/catalog.d.mts",
+      "frontend/src/preview/tasks-variant-catalog/catalog.mjs"
+    ],
+    "reconstructedFromPublicSourceChain": true
+  },
+  "exactNewTuple": [
+    "calendar-layout",
+    "original",
+    "original-calendar-slot01"
+  ],
+  "coverage": "historical-calendar-layout-slot",
+  "adapterVersion": "original-calendar-slot01-v1",
+  "integrationDigest": "860369c54a3c9c108805cab5d213632ca71c596c471ad54351ed2cd15696fd1f",
+  "integrationPins": 11,
+  "legacyRecipesPreserved": 27,
+  "sourceOrigins": {
+    "groups": 9,
+    "bodies": 53,
+    "samePathComparisons": 13,
+    "oldOriginsNotRewritten": true
+  },
+  "historicalReferenceBodies": [
+    {
+      "path": "frontend/src/components/tasks/TasksCalendar.tsx",
+      "bytes": 7852,
+      "sha256": "5e23c4e32d4582261ba37172595483ba61f272afdba1f183e0e2cd0c89fcdcd7",
+      "gitBlob": "a9cf5e2331fadad538d58e92f9ea8a10e8ac7580",
+      "baselineCurrentSha256": "3d282ea49db3bec1d0009d580ae6f9cc2cdf1a82e006bba6b101b3cacd43e5c0",
+      "sameAsBaselineCurrent": false,
+      "treeMembershipVerified": false
+    },
+    {
+      "path": "frontend/src/components/tasks/task-calendar.ts",
+      "bytes": 6256,
+      "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4",
+      "gitBlob": "208a2cb61c9eb2012ecd5fd0e9e688e8939b80b0",
+      "baselineCurrentSha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4",
+      "sameAsBaselineCurrent": true,
+      "treeMembershipVerified": false
+    },
+    {
+      "path": "frontend/src/components/tasks/TasksView.tsx",
+      "bytes": 26547,
+      "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622",
+      "gitBlob": "8adc10f3074fecd0484994ef958a6b88e721cbe6",
+      "baselineCurrentSha256": "8899915587963321fcce2a3283b3c5134ff606f979b9f61f52b4c3b8228f75d8",
+      "sameAsBaselineCurrent": false,
+      "treeMembershipVerified": false
+    },
+    {
+      "path": "frontend/src/theme.ts",
+      "bytes": 4982,
+      "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2",
+      "gitBlob": "4ccb33cb8f83a0e7c84829c74495a3ca63dfbe7c",
+      "baselineCurrentSha256": "5fa570023e71dcbab4c5cbcbd69865dba2d38ec3defb4e21db5ac15d57f50c23",
+      "sameAsBaselineCurrent": false,
+      "treeMembershipVerified": false
+    },
+    {
+      "path": "frontend/src/components/ui.tsx",
+      "bytes": 28747,
+      "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563",
+      "gitBlob": "96e77558004ba8f778759527a7ad0b48fcc78a55",
+      "baselineCurrentSha256": "8eb9cede192eff81495bf9ee478da6baa6504eafa141b40cd1db30e6b64060e5",
+      "sameAsBaselineCurrent": false,
+      "treeMembershipVerified": false
+    }
+  ],
+  "fullHistoricalTreeMembershipVerified": false,
+  "comparison": {
+    "unchangedFiles": 126,
+    "canonicalSha256": "bc2fe80f7de807f308e02fac29681cebe007a2883d6c327718d82846741076b4",
+    "newCalendarWired": false
+  },
+  "singleOwnerUnchanged": true,
+  "manualApplyRequired": true,
+  "sourceHistory": "Immediate predecessor 14 archive bodies checked against fresh immutable tree entries. Parent commit freshly read; retained full tree receipts bind that subtree and prior source chain. Earlier ancestors are not freshly redownloaded.",
+  "productionSourceApplied": false,
+  "fullOriginal": false
+}

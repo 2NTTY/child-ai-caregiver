@@ -1,0 +1,351 @@
+--- a/frontend/src/components/tasks/TasksView.tsx
++++ b/frontend/src/components/tasks/TasksView.tsx
+@@ -127,7 +127,7 @@
+   const noPendingTasks = listReadState === "ready" && model.online && openCount === 0 && !model.hasMoreTasks;
+   const reviewCount = backlog.counts.review;
+   const showPanel = !!model.selected;
+-  const moduleLayout = calendarVariant ? taskCalendarLayout({ variant: calendarVariant, width: containerLayout.width,
++  const moduleLayout = calendarVariant ? taskCalendarLayout({ variant: calendarVariant, width: containerLayout.width, compact,
+     tab, showPanel, readUnavailable, noPendingTasks }) : null;
+   const wide = moduleLayout?.wide ?? containerLayout.width >= 840;
+   const showAside = moduleLayout?.showAside ?? (showPanel || (wide && tab === "pending" && !readUnavailable));
+@@ -229,7 +229,7 @@
+     {model.access === "editable" ? <AppButton label="請助手安排" variant="secondary" density="compact" disabled={occupied} onPress={() => { setActionMenu({ scope: scopeKey, open: false }); onAgent(); }} /> : null}
+     <AppButton label="歷史" accessibilityLabel="事項歷史" variant="quiet" density="compact" disabled={occupied} onPress={() => { setActionMenu({ scope: scopeKey, open: false }); onHistory(); }} />
+   </>;
+-  return <View {...headerActionsHF01SceneProps} ref={pageLayout.ref} onLayout={pageLayout.onLayout} style={styles.pageContainer}><ScrollView ref={scrollRef} testID="tasks-page-scroll" style={[styles.pageScroll, customBackground && styles.transparent]} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16} onScroll={event => { if (listVisible) { scrollPosition.current = event.nativeEvent.contentOffset.y; rememberScroll(scrollPosition.current); } }}>
++  return <View {...headerActionsHF01SceneProps} ref={pageLayout.ref} onLayout={pageLayout.onLayout} style={styles.pageContainer}><ScrollView ref={scrollRef} testID="tasks-page-scroll" style={[styles.pageScroll, customBackground && styles.transparent]} contentContainerStyle={moduleLayout?.pageContentStyle ?? [styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16} onScroll={event => { if (listVisible) { scrollPosition.current = event.nativeEvent.contentOffset.y; rememberScroll(scrollPosition.current); } }}>
+     <BackgroundSurface padded frosted testID="tasks-reading-panel" ref={containerLayout.ref} role="region" accessibilityLabel="待辦" tabIndex={-1} {...(Platform.OS === "web" ? { dataSet: { pageSurface: "true" } } : {})} onLayout={containerLayout.onLayout} style={styles.stack}>
+       <HeaderActionsHF01FocusBoundary controller={headerActionsHF01} actualAuthorityToken={headerActionsHF01AuthorityToken}
+                 access={model.access} occupied={occupied} compact={wrappingHeader ? false : compact} pageContextRef={pageHeading}
+--- a/frontend/src/components/tasks/presentation/TasksCalendarLayoutPresentation.tsx
++++ b/frontend/src/components/tasks/presentation/TasksCalendarLayoutPresentation.tsx
+@@ -2,11 +2,13 @@
+ import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+ import { MotionDisclosure } from "../../../motion";
+ import { colors, spacing } from "../../../theme";
+-import { isTaskPresentationVariant, type TaskPresentationTab, type TaskPresentationVariant } from "./contracts";
++import { originalTaskStyles } from '../../../preview/tasks-original-presentation/styles';
++import { isTaskCalendarPresentationVariant, type TaskPresentationTab, type TaskCalendarPresentationVariant } from "./contracts";
+ 
+ export type TaskCalendarPlacement = "inline" | "aside" | "none";
+ export interface TaskCalendarLayoutInput {
+-  variant: TaskPresentationVariant;
++  variant: TaskCalendarPresentationVariant;
++  compact: boolean;
+   width: number;
+   tab: TaskPresentationTab;
+   showPanel: boolean;
+@@ -14,6 +16,7 @@
+   noPendingTasks: boolean;
+ }
+ export interface TaskCalendarLayoutDescriptor {
++  pageContentStyle?: StyleProp<ViewStyle>;
+   wide: boolean;
+   showAside: boolean;
+   listVisible: boolean;
+@@ -27,7 +30,23 @@
+ }
+ /** No measurement, state, callbacks or remounts. Existing host nodes/refs consume these styles. */
+ export function taskCalendarLayout(p: TaskCalendarLayoutInput): TaskCalendarLayoutDescriptor | null {
+-  if (!isTaskPresentationVariant(p.variant)) return null;
++  if (!isTaskCalendarPresentationVariant(p.variant)) return null;
++  if (p.variant === 'original-calendar-slot01') {
++    const wide = p.width >= 840;
++    const eligible = p.tab === 'pending' && !p.readUnavailable;
++    const showAside = p.showPanel || (wide && eligible);
++    const listVisible = wide || !p.showPanel;
++    return {
++      wide, showAside, listVisible,
++      calendarPlacement: !eligible ? 'none' : wide ? !p.showPanel ? 'aside' : 'none' : !p.noPendingTasks ? 'inline' : 'none',
++      calendarTriggerVisible: eligible && !p.noPendingTasks && !wide,
++      pageContentStyle: [originalTaskStyles.page, p.compact && originalTaskStyles.mobilePage],
++      workspaceStyle: [originalTaskStyles.workspace, wide && showAside && originalTaskStyles.workspaceWide],
++      listColumnStyle: [originalTaskStyles.column, wide && showAside && originalTaskStyles.listColumn, !listVisible && originalTaskStyles.hidden],
++      asideColumnStyle: [originalTaskStyles.column, wide && originalTaskStyles.detailColumn],
++      listSurfaceStyle: originalTaskStyles.listSurface, calendarSurfaceStyle: originalTaskStyles.stack,
++    };
++  }
+   const care = p.variant === "care";
+   const handbook = p.variant === "handbook";
+   const wide = p.width >= (care ? 1100 : 840);
+--- a/frontend/src/components/tasks/presentation/TasksCalendarPresentation.tsx
++++ b/frontend/src/components/tasks/presentation/TasksCalendarPresentation.tsx
+@@ -1,19 +1,22 @@
+ import { useState } from "react";
+-import { Pressable, StyleSheet, View } from "react-native";
++import { Platform, Pressable, StyleSheet, View } from "react-native";
+ import { Text } from "react-native-paper";
+ import { DateTime } from "luxon";
+ import { chineseFont, colors, radius, readingType, spacing } from "../../../theme";
+ import { AppIcon } from "../../AppIcon";
+ import { AppButton, AppSelect } from "../../ui";
+ import { shiftTaskCalendarMonth, taskCalendarDayLabel, type TaskCalendarDay } from "../task-calendar";
+-import { isTaskPresentationVariant, type TaskCalendarPresentationProps, type TaskPresentationVariant } from "./contracts";
++import { originalCalendarStyles } from '../../../preview/tasks-original-presentation/styles';
++import { originalColors, originalTypography } from '../../../preview/tasks-original-presentation/source-theme';
++import { originalTaskActionAppearance } from '../../../preview/tasks-original-presentation/action-appearance';
++import { isTaskCalendarPresentationVariant, type TaskCalendarPresentationProps, type TaskCalendarPresentationVariant } from "./contracts";
+ 
+ function CalendarDay({ variant, day, current, selected, disabled, onPress }: {
+-  variant: TaskPresentationVariant; day: TaskCalendarDay; current: boolean; selected: boolean; disabled: boolean; onPress(): void;
++  variant: TaskCalendarPresentationVariant; day: TaskCalendarDay; current: boolean; selected: boolean; disabled: boolean; onPress(): void;
+ }) {
+   // Local focus styling only. Product day selection is never stored here.
+   const [focused, setFocused] = useState(false);
+-  const styles = variant === "care" ? careStyles : baseStyles;
++  const styles = variant === 'original-calendar-slot01' ? originalStyles : variant === "care" ? careStyles : baseStyles;
+   return <Pressable testID={`task-calendar-day-${day.date}`} accessibilityRole="button"
+     accessibilityLabel={`${taskCalendarDayLabel(day)}${current ? "；資料基準日" : ""}${selected ? "；已選取，再按取消日期篩選" : ""}`}
+     accessibilityState={{ selected, disabled }} aria-pressed={selected} aria-disabled={disabled}
+@@ -39,10 +42,12 @@
+ 
+ /** Renders the owner's existing projection and calls only its supplied callbacks. */
+ export function TasksCalendarPresentation({ variant, calendar, context, selectedDay, width, disabled, onSelectDay, onChangeMonth, rootRef, onLayout }: TaskCalendarPresentationProps) {
+-  if (!isTaskPresentationVariant(variant)) return null;
++  if (!isTaskCalendarPresentationVariant(variant)) return null;
++  const original = variant === "original-calendar-slot01";
++  const quietAppearance = original ? originalTaskActionAppearance("quiet", Platform.OS === "web" ? "web" : "native") : undefined;
+   const care = variant === "care";
+   const compact = care && width < 388;
+-  const styles = care ? careStyles : baseStyles;
++  const styles = original ? originalStyles : care ? careStyles : baseStyles;
+   const currentLabel = calendar.currentDay ? DateTime.fromISO(calendar.currentDay, { zone: context.timeZone }).toFormat("M月d日") : null;
+   const selectDay = (day: string | null) => { if (!disabled) onSelectDay(day); };
+   function moveMonth(amount: number) {
+@@ -58,9 +63,9 @@
+         {care ? <><CareMonthNavigation direction="previous" accessibilityLabel="上一個月" disabled={disabled || !calendar.month} onPress={() => moveMonth(-1)} />
+           <CareMonthNavigation direction="next" accessibilityLabel="下一個月" disabled={disabled || !calendar.month} onPress={() => moveMonth(1)} /></> : <>
+           <Pressable accessibilityRole="button" accessibilityLabel="上一個月" disabled={disabled || !calendar.month} aria-disabled={disabled || !calendar.month}
+-            accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(-1)} style={({ pressed }) => [styles.monthButton, pressed && !disabled && !!calendar.month && styles.pressed]}><AppIcon name="chevron-left" size={20} color={colors.ink} /></Pressable>
++            accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(-1)} style={({ pressed }) => [styles.monthButton, pressed && !disabled && !!calendar.month && styles.pressed]}><AppIcon name="chevron-left" size={20} color={original ? originalColors.ink : colors.ink} /></Pressable>
+           <Pressable accessibilityRole="button" accessibilityLabel="下一個月" disabled={disabled || !calendar.month} aria-disabled={disabled || !calendar.month}
+-            accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(1)} style={({ pressed }) => [styles.monthButton, pressed && !disabled && !!calendar.month && styles.pressed]}><AppIcon name="chevron-right" size={20} color={colors.ink} /></Pressable>
++            accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(1)} style={({ pressed }) => [styles.monthButton, pressed && !disabled && !!calendar.month && styles.pressed]}><AppIcon name="chevron-right" size={20} color={original ? originalColors.ink : colors.ink} /></Pressable>
+         </>}
+       </View>
+     </View>
+@@ -82,8 +87,8 @@
+       <View style={styles.legendItem}><View accessible={false} style={[styles.dot, styles.reviewDot]} /><Text style={styles.note}>待覆核</Text></View>
+     </View> : null}
+     <View style={styles.actions}>
+-      {selectedDay ? <AppButton label="取消日期篩選" accessibilityLabel="只取消日期篩選，保留搜尋及原有範圍" variant="quiet" density="compact" disabled={disabled} onPress={() => selectDay(null)} /> : null}
+-      {calendar.currentDay ? <AppButton label={`回到 ${currentLabel}`} accessibilityLabel={`回到資料基準日所在月份 ${calendar.currentDay}`} variant="quiet" density="compact" disabled={disabled} onPress={() => { if (!disabled) onChangeMonth(null); }} /> : null}
++      {selectedDay ? <AppButton appearance={quietAppearance} label="取消日期篩選" accessibilityLabel="只取消日期篩選，保留搜尋及原有範圍" variant="quiet" density="compact" disabled={disabled} onPress={() => selectDay(null)} /> : null}
++      {calendar.currentDay ? <AppButton appearance={quietAppearance} label={`回到 ${currentLabel}`} accessibilityLabel={`回到資料基準日所在月份 ${calendar.currentDay}`} variant="quiet" density="compact" disabled={disabled} onPress={() => { if (!disabled) onChangeMonth(null); }} /> : null}
+     </View>
+     {care ? <Text style={styles.note}>以 {context.timeZone} 顯示 · 只計已載入事項</Text> : null}
+     {calendar.unconfirmedCount > 0 ? <Text style={styles.warning}>{calendar.unconfirmedCount} 項日期待核對，可從清單範圍選擇查看。</Text> : null}
+@@ -133,3 +138,13 @@
+ const handbookStyles = StyleSheet.create({
+   calendar: { width: "100%", maxWidth: 360, minWidth: 0, alignSelf: "flex-start", paddingVertical: spacing.md, gap: spacing.sm, backgroundColor: "transparent", borderTopWidth: 1, borderTopColor: colors.line },
+ });
++
++// Exact historical records; only the platform font fallback is adapted.
++const originalStyles = StyleSheet.create({
++  ...originalCalendarStyles,
++  month: { ...originalCalendarStyles.month, fontFamily: Platform.OS === "web" ? originalTypography.webFont : undefined },
++  weekday: { ...originalCalendarStyles.weekday, fontFamily: Platform.OS === "web" ? originalTypography.webFont : undefined },
++  dayText: { ...originalCalendarStyles.dayText, fontFamily: Platform.OS === "web" ? originalTypography.webFont : undefined },
++  note: { ...originalCalendarStyles.note, fontFamily: Platform.OS === "web" ? originalTypography.webFont : undefined },
++  warning: { ...originalCalendarStyles.warning, fontFamily: Platform.OS === "web" ? originalTypography.webFont : undefined },
++});
+--- a/frontend/src/components/tasks/presentation/contracts.ts
++++ b/frontend/src/components/tasks/presentation/contracts.ts
+@@ -7,6 +7,10 @@
+ export type TaskPresentationVariant = "harbour" | "fourth" | "handbook" | "care";
+ export function isTaskPresentationVariant(value: unknown): value is TaskPresentationVariant {
+   return value === "harbour" || value === "fourth" || value === "handbook" || value === "care";
++}
++export type TaskCalendarPresentationVariant = TaskPresentationVariant | 'original-calendar-slot01';
++export function isTaskCalendarPresentationVariant(value: unknown): value is TaskCalendarPresentationVariant {
++  return value === 'original-calendar-slot01' || isTaskPresentationVariant(value);
+ }
+ export type TaskPresentationTab = "pending" | "completed";
+ export interface TaskFiltersPresentationProps {
+@@ -44,7 +48,7 @@
+   /** Observation of this actual root only; no product-state ownership. */
+   rootRef?: Ref<View>;
+   onLayout?: (event: LayoutChangeEvent) => void;
+-  variant: TaskPresentationVariant;
++  variant: TaskCalendarPresentationVariant;
+   /** The existing task-calendar projection of the current owner's loaded items. */
+   calendar: TaskCalendarMonth;
+   context: TaskScheduleContext;
+--- a/frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx
++++ b/frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx
+@@ -38,7 +38,7 @@
+ const EMPTY_SCENE:HeaderActionsHF01SceneProps = Object.freeze({});
+ const VERSION_LABELS = {original:'原版',harbour:'Harbour',care:'Care',handbook:'Handbook',fourth:'Fourth'} as const;
+ const SLOT_LABELS:Record<TaskSlotId,string> = {'header-actions':'頁首與操作',filters:'分類與篩選','date-list':'日期分組與清單','calendar-layout':'月曆與布局'};
+-const COVERAGE_LABELS = {'historical-filters-controls':'分類＋搜尋＋範圍／日期觸發器','historical-filters-combination':'分類＋搜尋框組合','historical-search-frame-fragment':'歷史搜尋框外框片段','historical-tabs-fragment':'歷史分類分頁片段','historical-actions-fragment':'歷史操作按鈕片段','historical-row-fragment':'歷史事項列片段','actions-only':'操作區局部','row-appearance':'事項列外觀',
++const COVERAGE_LABELS = {'historical-calendar-layout-slot':'完整月曆布局／單一宿主','historical-filters-controls':'分類＋搜尋＋範圍／日期觸發器','historical-filters-combination':'分類＋搜尋框組合','historical-search-frame-fragment':'歷史搜尋框外框片段','historical-tabs-fragment':'歷史分類分頁片段','historical-actions-fragment':'歷史操作按鈕片段','historical-row-fragment':'歷史事項列片段','actions-only':'操作區局部','row-appearance':'事項列外觀',
+   'header-appearance':'標題與操作外觀','controlled-filters-h-theme':'篩選外觀／H 元件',
+   'header-source-regions-partial-host':'頁首完整區域／宿主元件限制','date-list-source-regions-partial-host':'清單完整區域／宿主元件限制',
+   'date-groups-and-rows':'日期分組與事項列','controlled-calendar-layout-h-theme':'月曆布局／H 元件'} as const;
+--- a/frontend/src/preview/tasks-choice-host/module-presentation.ts
++++ b/frontend/src/preview/tasks-choice-host/module-presentation.ts
+@@ -1,6 +1,6 @@
+ import type { HeaderVariant } from '../task-header-actions-hf01/selection';
+ import type { TaskRecipeSnapshot } from './recipe';
+-import type { TaskPresentationVariant } from '../../components/tasks/presentation/contracts';
++import type { TaskCalendarPresentationVariant, TaskPresentationVariant } from '../../components/tasks/presentation/contracts';
+ 
+ export type TaskSourceRegionProfile = Readonly<{variantId: 'harbour'|'fourth'|'handbook'|'care'; presentationId:'source-regions02'}>;
+ export function isTaskSourceRegionProfile(value: unknown): value is TaskSourceRegionProfile {
+@@ -12,7 +12,7 @@
+   'header-actions': 'harbour' | 'fourth' | 'handbook' | 'original-actions-fragment01' | TaskSourceRegionProfile | null;
+   filters: TaskPresentationVariant | 'original-tabs-fragment01' | 'original-search-frame-fragment01' | 'original-filters-combination01' | 'original-filters-controls01' | null;
+   'date-list': 'harbour' | 'fourth' | 'handbook' | 'original-row-fragment01' | TaskSourceRegionProfile | null;
+-  'calendar-layout': TaskPresentationVariant | null;
++  'calendar-layout': TaskCalendarPresentationVariant | null;
+ }>;
+ function headerOrRow(value: unknown): 'harbour' | 'fourth' | 'handbook' | null {
+   return value === 'harbour' || value === 'fourth' || value === 'handbook' ? value : null;
+@@ -43,7 +43,8 @@
+             ? 'original-filters-controls01' : controlled(snapshot.filters?.variantId),
+     'date-list': snapshot['date-list']?.slotId === 'date-list' && snapshot['date-list'].variantId === 'original' && snapshot['date-list'].candidateId === 'original-row-fragment01'
+       ? 'original-row-fragment01' : regionProfile(snapshot['date-list'], 'date-list-source-regions02'),
+-    'calendar-layout': controlled(snapshot['calendar-layout']?.variantId),
++    'calendar-layout': snapshot['calendar-layout']?.slotId === 'calendar-layout' && snapshot['calendar-layout'].variantId === 'original' && snapshot['calendar-layout'].candidateId === 'original-calendar-slot01'
++      ? 'original-calendar-slot01' : controlled(snapshot['calendar-layout']?.variantId),
+   };
+   return Object.values(result).some(value => value !== null) ? Object.freeze(result) : undefined;
+ }
+--- a/frontend/src/preview/tasks-variant-catalog/catalog.d.mts
++++ b/frontend/src/preview/tasks-variant-catalog/catalog.d.mts
+@@ -19,15 +19,15 @@
+ }>;
+ export type NarrowCandidate = Readonly<{
+   slotId: TaskSlotId;
+-  candidateId: 'original-filters-controls01' | 'original-filters-combination01' | 'original-search-frame-fragment01' | 'original-tabs-fragment01' | 'original-actions-fragment01' | 'original-row-fragment01' | 'header-actions' | 'row-appearance' | 'header-presentation' | 'filters-presentation' | 'date-list-presentation' | 'calendar-presentation' | 'header-source-regions02' | 'date-list-source-regions02';
++  candidateId: 'original-calendar-slot01' | 'original-filters-controls01' | 'original-filters-combination01' | 'original-search-frame-fragment01' | 'original-tabs-fragment01' | 'original-actions-fragment01' | 'original-row-fragment01' | 'header-actions' | 'row-appearance' | 'header-presentation' | 'filters-presentation' | 'date-list-presentation' | 'calendar-presentation' | 'header-source-regions02' | 'date-list-source-regions02';
+   variantId: 'original' | 'harbour' | 'fourth' | 'handbook' | 'care';
+   hostVariantId: 'harbour';
+-  coverage: 'historical-filters-controls' | 'historical-filters-combination' | 'historical-search-frame-fragment' | 'historical-tabs-fragment' | 'historical-actions-fragment' | 'historical-row-fragment' | 'actions-only' | 'row-appearance' | 'header-appearance' | 'controlled-filters-h-theme' | 'date-groups-and-rows' | 'controlled-calendar-layout-h-theme' | 'header-source-regions-partial-host' | 'date-list-source-regions-partial-host';
++  coverage: 'historical-calendar-layout-slot' | 'historical-filters-controls' | 'historical-filters-combination' | 'historical-search-frame-fragment' | 'historical-tabs-fragment' | 'historical-actions-fragment' | 'historical-row-fragment' | 'actions-only' | 'row-appearance' | 'header-appearance' | 'controlled-filters-h-theme' | 'date-groups-and-rows' | 'controlled-calendar-layout-h-theme' | 'header-source-regions-partial-host' | 'date-list-source-regions-partial-host';
+   adapterVersion: string;
+   sourceAvailability: 'available';
+   acceptance: 'bounded-source-accepted' | 'source-reviewed-integration-unverified';
+   appearanceLimit?: string;
+-  /** Source-level partial adapter only, never a mount/release authorization. */
++  /** Source-level adapter coverage is explicit; never a mount/release authorization. */
+   prospectiveComposable: true;
+   runtimeAdmission: false;
+   sourceFingerprint: SourceFingerprint;
+--- a/frontend/src/preview/tasks-variant-catalog/catalog.mjs
++++ b/frontend/src/preview/tasks-variant-catalog/catalog.mjs
+@@ -822,6 +822,104 @@
+     sourceFiles:ORIGINAL_FILTERS_CONTROLS.files, referenceFiles:ORIGINAL_FILTERS_CONTROLS.references,
+   }];
+ }
++const ORIGINAL_CALENDAR_SLOT = {
++  "digest": "860369c54a3c9c108805cab5d213632ca71c596c471ad54351ed2cd15696fd1f",
++  "files": [
++    {
++      "sourceId": "original-calendar-slot01",
++      "path": "frontend/src/components/tasks/TasksView.tsx",
++      "sha256": "e617fb89471f75a9f2d55ab6ec554b8c1feac9086c8be8bdb582a00d0ef6da9e"
++    },
++    {
++      "sourceId": "original-calendar-slot01",
++      "path": "frontend/src/components/tasks/presentation/TasksCalendarLayoutPresentation.tsx",
++      "sha256": "ede92e1cb37a9845014d50cf4580618dbccd716c89270b8b8003fd2aa2d700b1"
++    },
++    {
++      "sourceId": "original-calendar-slot01",
++      "path": "frontend/src/components/tasks/presentation/TasksCalendarPresentation.tsx",
++      "sha256": "a96cb217cc4a227530aab7321442c9ad3bcb6960ee0eadffd67a627286e67d34"
++    },
++    {
++      "sourceId": "original-calendar-slot01",
++      "path": "frontend/src/components/tasks/presentation/contracts.ts",
++      "sha256": "d61713dae93d213a3f9ab9de1579e1028a74ef83125ca107e41e6c4549cf5e2e"
++    },
++    {
++      "sourceId": "original-calendar-slot01",
++      "path": "frontend/src/components/tasks/task-calendar.ts",
++      "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4"
++    },
++    {
++      "sourceId": "original-calendar-slot01",
++      "path": "frontend/src/components/ui.tsx",
++      "sha256": "8eb9cede192eff81495bf9ee478da6baa6504eafa141b40cd1db30e6b64060e5"
++    },
++    {
++      "sourceId": "original-calendar-slot01",
++      "path": "frontend/src/preview/tasks-choice-host/module-presentation.ts",
++      "sha256": "403115e992e97e2d2a9a1646c53b3954d280878f2f1cecb2880dc23d456447a3"
++    },
++    {
++      "sourceId": "original-calendar-slot01",
++      "path": "frontend/src/preview/tasks-original-presentation/action-appearance.ts",
++      "sha256": "050d1ecc7e0bc814f672727c13b6c57a72ecbc0b92319a7ce1a4aab7477786ee"
++    },
++    {
++      "sourceId": "original-calendar-slot01",
++      "path": "frontend/src/preview/tasks-original-presentation/header.ts",
++      "sha256": "934de26fe77b0ae543694510c0507b61bca75c5fcd13fcc873dac444ee3dcd0a"
++    },
++    {
++      "sourceId": "original-calendar-slot01",
++      "path": "frontend/src/preview/tasks-original-presentation/source-theme.ts",
++      "sha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a"
++    },
++    {
++      "sourceId": "original-calendar-slot01",
++      "path": "frontend/src/preview/tasks-original-presentation/styles.ts",
++      "sha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48"
++    }
++  ],
++  "references": [
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/tasks/TasksCalendar.tsx",
++      "sha256": "5e23c4e32d4582261ba37172595483ba61f272afdba1f183e0e2cd0c89fcdcd7"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/tasks/task-calendar.ts",
++      "sha256": "b6bd0b7d763eb0f21b3d4c71685036ec04a5c2bd7d78532ae7a1713d02c386a4"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/tasks/TasksView.tsx",
++      "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/theme.ts",
++      "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/ui.tsx",
++      "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563"
++    }
++  ]
++};
++function originalCalendarSlotCandidates(variantId, slotId) {
++  if (variantId !== 'original' || slotId !== 'calendar-layout') return [];
++  return [{slotId,variantId,hostVariantId:'harbour',candidateId:'original-calendar-slot01',
++    coverage:'historical-calendar-layout-slot',adapterVersion:'original-calendar-slot01-v1',
++    sourceAvailability:'available',acceptance:'source-reviewed-integration-unverified',
++    prospectiveComposable:true,runtimeAdmission:false,protectedOwner:OWNER,
++    appearanceLimit:'Complete fixed historical month/grid/indicators/actions and responsive calendar-layout adaptation on the single H data and route owner. Protected detail, shell, backdrop and Paper semantics remain H; not full Original/global theme or release admission. Native exact JSON and explicit manual apply only; comparison handoff is not connected.',
++    sourceFingerprint:{assemblyMembersSha256:ORIGINAL_CALENDAR_SLOT.digest,files:ORIGINAL_CALENDAR_SLOT.files.map(({path,sha256})=>({path:path.slice('frontend/'.length),sha256}))},
++    dependenciesFingerprint:ORIGINAL_CALENDAR_SLOT.digest,sourceFiles:ORIGINAL_CALENDAR_SLOT.files,referenceFiles:ORIGINAL_CALENDAR_SLOT.references,
++  }];
++}
+ function makeSlot(variantId, slotId) {
+   const identity = SOURCE_IDENTITIES[variantId];
+   const paths = {
+@@ -847,7 +945,7 @@
+     sourceDifference:slotId === 'header-actions' ? DIFFERENCES[variantId].header
+       : slotId === 'calendar-layout' ? DIFFERENCES[variantId].layout : DIFFERENCES[variantId].state,
+     wholeSlotComposable:false, acceptance:'not-accepted', runtimeAdmission:false,
+-    narrowCandidates:[...originalFiltersControlsCandidates(variantId,slotId),...originalFiltersCombinationCandidates(variantId,slotId),...originalSearchFrameCandidates(variantId,slotId),...originalTabsFragmentCandidates(variantId,slotId),...originalActionsFragmentCandidates(variantId,slotId),...originalRowFragmentCandidates(variantId,slotId),...narrowCandidates(variantId,slotId),...presentationCandidates(variantId,slotId),...sourceRegionCandidates(variantId,slotId)],
++    narrowCandidates:[...originalCalendarSlotCandidates(variantId,slotId),...originalFiltersControlsCandidates(variantId,slotId),...originalFiltersCombinationCandidates(variantId,slotId),...originalSearchFrameCandidates(variantId,slotId),...originalTabsFragmentCandidates(variantId,slotId),...originalActionsFragmentCandidates(variantId,slotId),...originalRowFragmentCandidates(variantId,slotId),...narrowCandidates(variantId,slotId),...presentationCandidates(variantId,slotId),...sourceRegionCandidates(variantId,slotId)],
+   };
+ }
+ function makeVariant(variantId) {
