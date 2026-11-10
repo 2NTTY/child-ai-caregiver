@@ -1,0 +1,66 @@
+{
+  "kind": "separate-follow-up-public-Care-acceptance",
+  "version": 103,
+  "sitesSource": "d18926188ab2912e58e7161ab79cf4e22949d8cb",
+  "relationship": "Adds the three variants absent from the original publisher run; does not rewrite VERIFICATION.json or older receipts.",
+  "newVariants": [
+    "harbour",
+    "care",
+    "uiux-upgrade"
+  ],
+  "route": "/care",
+  "selectionPart": "page",
+  "sourceChecks": [
+    {
+      "variant": "harbour",
+      "route": "/care",
+      "part": "page",
+      "source": "4050c0a16d0a9735923434abc9749ecd416d7926",
+      "mainSha256": "472c2c8eb19dc223b6b0cd6779de08c7c325cc28913374d0be7b1a50509a79c8",
+      "payloadSha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492",
+      "observedIdentityMatchesExactRetainedArtifact": true
+    },
+    {
+      "variant": "care",
+      "route": "/care",
+      "part": "page",
+      "source": "520d4c88a74faf460a464c38931cd9e1a84e0ec8",
+      "mainSha256": "155a1683b9a11baa2aed6c5988ec1f084e7ce0b4376d1f10b5bf3af8257bf255",
+      "payloadSha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831",
+      "observedIdentityMatchesExactRetainedArtifact": true
+    },
+    {
+      "variant": "uiux-upgrade",
+      "route": "/care",
+      "part": "page",
+      "source": "76493c5e0747cb5da908fdb708879fd96509d093",
+      "mainSha256": "4ccd0b26fe54d82509d482049e2c0e936a6f3003d23119a9804af83145306e7a",
+      "payloadSha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c",
+      "observedIdentityMatchesExactRetainedArtifact": true
+    }
+  ],
+  "readyGate": {
+    "startupState": "ready",
+    "startupData": "ready",
+    "ariaBusy": "false"
+  },
+  "careMarkersAllVisibleNonzeroAndInsideGate": true,
+  "selectionCount": 3,
+  "selectionsAreUserPreferences": false,
+  "sourceOrPublicationChanged": false,
+  "combinedScope": "Together with VERIFICATION.json, initial Care display/readiness and whole-page source identity selection were observed for all five designs. The Original navigation/Back/Cancel/reopen sequence remains the only newly accepted navigation sequence.",
+  "notTested": [
+    "In-frame Care actions or all historical records",
+    "Navigation/Back/Cancel/reopen for these three variants",
+    "Clipboard/copy fallback",
+    "Other page types",
+    "Physical mobile, full keyboard/accessibility or cross-browser matrix",
+    "Backend/model or real family data operations"
+  ],
+  "evidenceDigests": {
+    "followupReportSha256": "36227a9699f9fc42daef1a76c4675cb9dd73007ea599ff12a826ee911a548ff3",
+    "followupResultSha256": "1d108900499fe8d2a9e6edab2c0b9bd84aa847f1a27156e3f9cb24c642e2c469",
+    "followupSealSha256": "eec56a5818d923e5d76d5491c89a1c9a35881bfd50e37c6ca32ee0e04c35deb4",
+    "followupSiteReadbackSha256": "0be7893b0d9969c301d0871687fdbddaed1b01f6fc79db438f22db2e7f9ab689"
+  }
+}

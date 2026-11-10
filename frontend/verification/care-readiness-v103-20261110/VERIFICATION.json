@@ -1,0 +1,79 @@
+{
+  "scope": "Original and Handbook initial Care display and selection; one Original navigation/Back/Cancel/reopen sequence",
+  "version": 103,
+  "sitesSource": "d18926188ab2912e58e7161ab79cf4e22949d8cb",
+  "appSha256": "a6881c5146f38b292c0f70f4aef39a9658fb2fa1785e5ecce2054d0c65ac31cb",
+  "publicChecks": {
+    "originalCareVisible": true,
+    "handbookCareVisible": true,
+    "bothReadyGatesReadyNonBusy": true,
+    "bothCareMarkersNonzeroAndVisibleAncestry": true,
+    "bothPickButtonsEnabledAfterReadiness": true,
+    "bothWholePageSelectionsAdded": true,
+    "bothChoiceSourceHashesMatchExactArtifacts": true,
+    "originalHomeNavigationLocksPicking": true,
+    "normalBrowserBackDoesNotUnlock": true,
+    "cancelPreservesFrameEpochNamesLockAndChoices": true,
+    "confirmedOpenCreatesNewFrameEpochNamesAndEnablesPicking": true,
+    "twoSyntheticChoicesPreservedAcrossCancelAndOpen": true
+  },
+  "testSelectionsAreUserPreferences": false,
+  "controlledTests": {
+    "model": "Real host/session/frame-entry/boundary with controlled DOM/history ports; not React or browser rendering",
+    "red001": {
+      "pass": 4,
+      "fail": 10,
+      "note": "Nine behavior assertion failures and one harness TypeError; preserved and corrected before product editing."
+    },
+    "red002": {
+      "pass": 5,
+      "fail": 9,
+      "note": "Corrected clean red baseline on untouched v102."
+    },
+    "green001": {
+      "pass": 24,
+      "fail": 0
+    },
+    "regression001": {
+      "pass": 44,
+      "fail": 1,
+      "note": "Legacy negative-control fixture erased root children; fixture corrected without product changes."
+    },
+    "regression002": {
+      "pass": 45,
+      "fail": 0,
+      "allComparisonCheckFilesIncluded": true,
+      "normalOwnedProcessReap": true,
+      "completeLogs": true
+    }
+  },
+  "sourceReview": {
+    "critical": 0,
+    "important": 0,
+    "minor": 0,
+    "fullBaselineAndCandidateFilesChecked": 504
+  },
+  "publisherFreshChecks": [
+    "Syntax check",
+    "All 504 product identities and exact packaging",
+    "Actual ready gate and visible Care markers in Original and Handbook",
+    "Native saved-version/source and succeeded-deployment readback"
+  ],
+  "acceptanceLimits": [
+    "Only Original and Handbook Care surfaces were publicly accepted, not the other three variants or complete route matrix.",
+    "Cancel continuity was observed via frame epoch names, loaded UI, lock and choice list; hidden documentId was not read.",
+    "Not a complete mobile, keyboard, a11y, clipboard, cross-browser or five-Care matrix.",
+    "Chat and Photos eligibility is unchanged; no backend/model or real family data operations.",
+    "Official publication metadata and artifact identity are not direct deployed HTTP response-body hashes.",
+    "Archive preparation did not rerun Node, browser, build or product tests."
+  ],
+  "evidenceDigests": {
+    "publisherReportSha256": "33ca37857387c15eafa7290d0f24f50daa0561135aefff247e301ef1442a99d7",
+    "publisherResultSha256": "32df57de5f5e78f37a691100f5fe612c9d85b47e03eb7e37650c3bb5b573b4b6",
+    "publisherSealSha256": "7c8f58cbb9d1d16259a2362aa340520eb0e623406c703c9c8b5cbccad2690db9",
+    "publisherInputCheckSha256": "5503cb7cf933691cb5cef61dae3a58372b5e1182581a0e3866f445101a4d188f",
+    "publisherPackagingCheckSha256": "72752fd5c113d375fefc7aa70a936a68c136a0ae96fdb940f01caf159a0751af",
+    "independentSourceReviewSha256": "ec625baa2ad668470a125a253c9342577e8febfe3a65a452e009192e36f3e448",
+    "independentReviewSnapshotSha256": "f0629ab60ed63f9ea4bb7182e9c0ef0e4d487f8a585f8e5dd4a11a0c1bad360a"
+  }
+}

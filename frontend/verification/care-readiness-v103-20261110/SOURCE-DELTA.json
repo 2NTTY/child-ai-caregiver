@@ -1,0 +1,38 @@
+{
+  "repository": "2NTTY/child-ai-caregiver",
+  "branch": "codex/simple-workbench-compare-20261110",
+  "parentCommit": "067f6e3380fd1d86ff6db2a91ef663f8b51c6ac0",
+  "archiveKind": "Source-only one-file delta, not a standalone runnable preview",
+  "publicEntry": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/experiments/workbench-compare/",
+  "version": 103,
+  "sitesSource": "d18926188ab2912e58e7161ab79cf4e22949d8cb",
+  "deployment": "appgdep_6af37cb66ab081918787368dc0516535",
+  "access": "public",
+  "accessRevision": 2,
+  "baselineVersion": 102,
+  "baselineSitesSource": "4754cd8400f18956d54ab3e1b3f811fec816c194",
+  "baselineManifestUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/067f6e3380fd1d86ff6db2a91ef663f8b51c6ac0/frontend/verification/simple-workbench-compare-20261110/SOURCE.json",
+  "baselineManifestSha256": "f3c0ebfe020a7c23f29ffac4639a03de411c5664749f25cd74bd4da958630595",
+  "priorArchiveReadmeUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/067f6e3380fd1d86ff6db2a91ef663f8b51c6ac0/frontend/verification/simple-workbench-compare-20261110/README.md",
+  "modified": [
+    {
+      "path": "experiments/workbench-compare/app.mjs",
+      "before": {
+        "path": "experiments/workbench-compare/app.mjs",
+        "bytes": 17681,
+        "sha256": "0f29ffedcc5eb36c93a7470f15b0039233194c264c05dcc4dfa987b12bb1995c"
+      },
+      "after": {
+        "path": "experiments/workbench-compare/app.mjs",
+        "bytes": 18087,
+        "sha256": "a6881c5146f38b292c0f70f4aef39a9658fb2fa1785e5ecce2054d0c65ac31cb"
+      }
+    }
+  ],
+  "added": [],
+  "deleted": [],
+  "unchangedFiles": 503,
+  "preserveV102Archive": true,
+  "completeRuntimeIncluded": false,
+  "directDeployedHttpBodiesHashed": false
+}
