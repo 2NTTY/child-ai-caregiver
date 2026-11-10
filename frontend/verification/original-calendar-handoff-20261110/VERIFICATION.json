@@ -1,0 +1,121 @@
+{
+  "status": "SCOPED_CALENDAR_COMPARISON_HANDOFF_LOCALLY_VERIFIED",
+  "sourceCanonicalSha256": "46a9c9847098cd92c3cbd44bd3be9b111f52a7aa2701c091570c0e2aa1514ce9",
+  "comparisonCanonicalSha256": "c1deb06e6450c0efed8f6636a40c3567905bb76accb3efd430cdd2df76694517",
+  "focused": {
+    "red001": "0/4 expected missing calendar handoff",
+    "green001": "4/4",
+    "sameTestFixtureBytes": true,
+    "allFixedInputsIdenticalAcrossRedGreen": false
+  },
+  "focusedLimits": "Four groups cover exact codec; real comparison modules with controlled DOM/frame ports; fixed source and legacy recipes; and real React Control with controlled owner/router/visual ports. The nine check/fixture bodies are identical across RED/GREEN, but the two product roots differ, so all 911 fixed inputs are not identical across RED/GREEN. Not a full ProductionOwner test.",
+  "freshFullFrontendNoEmit": {
+    "exitCode": 0,
+    "diagnostics": 0,
+    "fixedInputs": 1636,
+    "executionTimeSnapshots": 20,
+    "fullProgramIncludingAllowJs": true
+  },
+  "singleFreshOfficialExport": {
+    "exitCode": 0,
+    "modules": 2189,
+    "files": 31,
+    "fixedInputs": 1636,
+    "executionTimeSnapshots": 20,
+    "workers": 1,
+    "heapMiB": 1024,
+    "continuousAvailableMiBGate": 1920
+  },
+  "exportMethod": "The official Expo command used previously absent isolated HOME/TMP/cache/dist/.expo roots and did not include --clear, as planned. No product test, typecheck, export or browser flow was rerun for archival.",
+  "main": {
+    "path": "_expo/static/js/web/index-9e95d0c0d9860ce92030f63feadfd218.js",
+    "sha256": "e28ad240ef6a03367c8168217bd6449b2c0dfe288bacd5b78809df939dd1f38d",
+    "compiledOutputIncluded": false
+  },
+  "desktop": {
+    "status": "SCOPED_DESKTOP_CARRY_IN_AND_LEGACY_COMPATIBILITY_PASS",
+    "viewportCssPixels": [
+      1180,
+      757
+    ],
+    "devicePixelRatio": 1,
+    "originalOptions": 6,
+    "exclusiveFiltersOptions": 3,
+    "calendarIndependent": true,
+    "calendarPins": 11,
+    "legacyControlsPins": 9,
+    "candidateTextOnlyThenExplicitRestoreEnterApply": true,
+    "calendarAppearanceBeforeApply": {
+      "radius": "14px",
+      "background": "rgb(255, 255, 255)"
+    },
+    "calendarAppearanceAfterManualApply": {
+      "radius": "16px",
+      "background": "rgb(255, 255, 254)"
+    },
+    "monthSelected": "2026-11",
+    "daySelected": "2026-11-01",
+    "underlyingFilterPreserved": "near",
+    "legacyCalendarRemainsH": true,
+    "comparisonEvidenceScope": "DOM-visible src/name/title/routes unchanged; browser contentWindow/object identity was not inspected. Controlled focused tests separately assert references.",
+    "scriptIdentityEvidence": "Observed main, identity and entry paths/SRI match bound local files; file bytes rehashed, not independent HTTP response-body attestation.",
+    "observationCorrections": [
+      "01 exact label selector had no match; fresh DOM grounded #left-version.",
+      "03 click timeout left expected JS confirmation open; 04 inspected it, 05 accepted once without repeated click.",
+      "18 AX checkbox role did not match DOM role; no click executed. 19 showed BUTTON/role button and aria-pressed false; 20 clicked observed button once.",
+      "Generic state helper selected array read aria-checked and remained empty. Actual day success is separately proven by aria-pressed=true, AX selected value1 and URL day.",
+      "First completion summary exceeded tool 80-character limit and was rejected; shorter completion was accepted."
+    ]
+  },
+  "sourceReview": {
+    "verdict": "FINAL_SCOPED_ALLOW",
+    "sha256": "43a059d065d39b855133be64de7dcfc6de15ecde30d6f32b693cb24cc36dee2b"
+  },
+  "privateEvidenceSeals": {
+    "primary": {
+      "sha256": "a369bf7b5a3e795353c7dabaa12cee865c5d5e5ddc6d43436fb258ba79f7cb76",
+      "members": 1599
+    },
+    "supplemental": {
+      "sha256": "2eceb1c6fc9bd01d91318b25088469a980f7dea43dfdf89d657a6b301548de53",
+      "members": 45
+    },
+    "distinctMembers": 1644,
+    "bothRequired": true,
+    "correction": "The original seal excluded the runtime parent and omitted 40 execution-time input snapshot bodies. All original bytes remain unchanged. The supplemental seal includes those 40 bodies plus the original seal, its SHA and verification receipt, correction and supplemental script. This was an inventory correction, not a rerun or product/result change."
+  },
+  "evidenceLimits": [
+    "Existing single-owner contract preserved; fullProductionOwner is not verified.",
+    "Observed browser frame src/name/title/routes stayed stable; browser contentWindow/object identity was not inspected. Controlled-port reference assertions are separate evidence.",
+    "Observed script paths/SRI match rehashed bound local files, not independent HTTP response-body attestation or full runtime dependency closure.",
+    "Early runtime modules have exit-time hashes only; seven compiler/Expo anchors are not a complete dependency closure.",
+    "Two screenshots are original JPEG bytes at 1180x757. They cover only the current viewport, with lower calendar content outside it, not a full layout audit. Screenshots are not published.",
+    "An offline browser-evidence parser first failed with a SyntaxError before execution; one whitespace correction then validated retained evidence. Original failure preserved, no product or browser rerun.",
+    "Inherited desktop 300 percent zoom at 393x252 CSS pixels and DPR3 was not rerun here and is neither a phone nor exact390 proof.",
+    "Full historical tree/assembly membership remains unverified; existing predecessor limitations are not closed by this handoff.",
+    "Historical export70990 and preview39216 remain UNKNOWN. The new owned preview5564 exited zero; owned tabs were normally unloaded and closed, preserving unrelated tabs."
+  ],
+  "notVerified": [
+    "phone/native/touch or exact390/mobile equivalence",
+    "full Original/global theme or whole filters slot",
+    "arbitrary five-version mixing",
+    "full production owner/backend/AI/forms/scope/permissions/unknown-recovery matrix",
+    "complete accessibility, full calendar visual audit, first-phase or release acceptance",
+    "inherited complete month/reset/clear/compact/detail matrix not rerun in this handoff"
+  ],
+  "safety": {
+    "privateRawIncluded": false,
+    "screenshotsIncluded": false,
+    "credentialsIncluded": false,
+    "localPathsIncluded": false,
+    "compiledOutputsIncluded": false,
+    "dependenciesIncluded": false,
+    "sitePublished": false,
+    "prOpened": false,
+    "masterMerged": false,
+    "guardsRelaxed": false,
+    "forcedClicks": false,
+    "nativeCarrierIframeUsed": false,
+    "productTestsRerunForArchival": false
+  }
+}

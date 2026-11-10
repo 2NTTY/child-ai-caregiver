@@ -1,0 +1,22 @@
+--- baseline/frontend/src/preview/tasks-choice-host/candidate-fragment.mjs
++++ candidate/frontend/src/preview/tasks-choice-host/candidate-fragment.mjs
+@@ -3,7 +3,7 @@
+ const PREFIX='#tasks-candidate-v1=',LIMIT=4096,VARIANTS=['harbour','care','handbook','fourth'];
+ function validSlots(slots){
+  if(!slots||typeof slots!=='object'||Array.isArray(slots)||Object.keys(slots).length!==4||!CANDIDATE_SLOTS.every(s=>Object.hasOwn(slots,s)))return false;
+- return CANDIDATE_SLOTS.every(s=>slots[s]===null||(Array.isArray(slots[s])&&slots[s].length===2&&(VARIANTS.includes(slots[s][0])||(slots[s][0]==='original'&&((s==='date-list'&&slots[s][1]==='original-row-fragment01')||(s==='header-actions'&&slots[s][1]==='original-actions-fragment01')||(s==='filters'&&slots[s][1]==='original-tabs-fragment01')||(s==='filters'&&slots[s][1]==='original-filters-combination01')||(s==='filters'&&slots[s][1]==='original-filters-controls01'))))&&typeof slots[s][1]==='string'&&/^[a-z0-9-]{1,64}$/.test(slots[s][1])));
++ return CANDIDATE_SLOTS.every(s=>slots[s]===null||(Array.isArray(slots[s])&&slots[s].length===2&&(VARIANTS.includes(slots[s][0])||(slots[s][0]==='original'&&((s==='date-list'&&slots[s][1]==='original-row-fragment01')||(s==='header-actions'&&slots[s][1]==='original-actions-fragment01')||(s==='filters'&&slots[s][1]==='original-tabs-fragment01')||(s==='filters'&&slots[s][1]==='original-filters-combination01')||(s==='filters'&&slots[s][1]==='original-filters-controls01')||(s==='calendar-layout'&&slots[s][1]==='original-calendar-slot01'))))&&typeof slots[s][1]==='string'&&/^[a-z0-9-]{1,64}$/.test(slots[s][1])));
+ }
+ export function decodeTaskCandidateFragment(hash){
+  if(hash===''||typeof hash==='string'&&!hash.startsWith('#tasks-candidate-'))return {status:'none'};
+--- baseline/frontend/src/preview/tasks-variant-catalog/catalog.mjs
++++ candidate/frontend/src/preview/tasks-variant-catalog/catalog.mjs
+@@ -915,7 +915,7 @@
+     coverage:'historical-calendar-layout-slot',adapterVersion:'original-calendar-slot01-v1',
+     sourceAvailability:'available',acceptance:'source-reviewed-integration-unverified',
+     prospectiveComposable:true,runtimeAdmission:false,protectedOwner:OWNER,
+-    appearanceLimit:'Complete fixed historical month/grid/indicators/actions and responsive calendar-layout adaptation on the single H data and route owner. Protected detail, shell, backdrop and Paper semantics remain H; not full Original/global theme or release admission. Native exact JSON and explicit manual apply only; comparison handoff is not connected.',
++    appearanceLimit:'Complete fixed historical month/grid/indicators/actions and responsive calendar-layout adaptation on the single H data and route owner. Protected detail, shell, backdrop and Paper semantics remain H; not full Original/global theme or release admission. Comparison handoff is candidate text only, requiring explicit restore and apply.',
+     sourceFingerprint:{assemblyMembersSha256:ORIGINAL_CALENDAR_SLOT.digest,files:ORIGINAL_CALENDAR_SLOT.files.map(({path,sha256})=>({path:path.slice('frontend/'.length),sha256}))},
+     dependenciesFingerprint:ORIGINAL_CALENDAR_SLOT.digest,sourceFiles:ORIGINAL_CALENDAR_SLOT.files,referenceFiles:ORIGINAL_CALENDAR_SLOT.references,
+   }];

@@ -1,0 +1,67 @@
+{
+  "repository": "2NTTY/child-ai-caregiver",
+  "date": "2026-11-10",
+  "archiveBaseCommit": "5f3cd680de426cb77fd94b9a346076740c885c6d",
+  "nativeBaseline": {
+    "commit": "6dd814cee589932a030a64d2a210cf756fee076d",
+    "archivePath": "frontend/verification/original-calendar-slot-20261110",
+    "archiveTree": "742ebcc00e4ff77d9951f5849b002cabd3a8f146",
+    "canonicalSha256": "3d0beb50c8bfac0504199581b61a55492f0e3882359153417f9ce064e17af9b4",
+    "freshRemoteBlobMetadataVerified": 14
+  },
+  "comparisonBaseline": {
+    "commit": "873bffe77a7012c316b9d5a1e299bc28249f39c5",
+    "archivePath": "frontend/verification/original-controls-handoff-20261110",
+    "archiveTree": "acc97bb8a09ab4abb340f866c9954141590b4cf4",
+    "canonicalSha256": "bc2fe80f7de807f308e02fac29681cebe007a2883d6c327718d82846741076b4",
+    "freshRemoteBlobMetadataVerified": 14
+  },
+  "source": {
+    "files": 715,
+    "canonicalSha256": "46a9c9847098cd92c3cbd44bd3be9b111f52a7aa2701c091570c0e2aa1514ce9",
+    "changed": [
+      "frontend/src/preview/tasks-choice-host/candidate-fragment.mjs",
+      "frontend/src/preview/tasks-variant-catalog/catalog.mjs"
+    ],
+    "reconstructedFromPublicSourceChain": true
+  },
+  "comparison": {
+    "files": 126,
+    "canonicalSha256": "c1deb06e6450c0efed8f6636a40c3567905bb76accb3efd430cdd2df76694517",
+    "changed": [
+      "experiments/workbench-compare/candidate-fragment.mjs",
+      "experiments/workbench-compare/index.html",
+      "experiments/workbench-compare/native-catalog.mjs",
+      "experiments/workbench-compare/recipe-handoff.mjs"
+    ],
+    "hostSourcesReconstructed": 17,
+    "unchangedCompiledAssetsOmitted": 109
+  },
+  "exactNewTuple": [
+    "calendar-layout",
+    "original",
+    "original-calendar-slot01"
+  ],
+  "coverage": "historical-calendar-layout-slot",
+  "adapterVersion": "original-calendar-slot01-v1",
+  "calendarPins": 11,
+  "calendarPinsDigest": "860369c54a3c9c108805cab5d213632ca71c596c471ad54351ed2cd15696fd1f",
+  "legacyControlsPins": 9,
+  "legacyRecipesPreserved": 27,
+  "sourceOrigins": {
+    "groups": 9,
+    "bodies": 53,
+    "samePathComparisons": 13,
+    "oldOriginsNotRewritten": true
+  },
+  "originalOptions": 6,
+  "mutuallyExclusiveFiltersOptions": 3,
+  "calendarIndependent": true,
+  "singleOwnerContractUnchanged": true,
+  "onlyTextPrefill": true,
+  "explicitRestoreEnterApplyRequired": true,
+  "sourceHistory": "Both immediate predecessor commits and immutable archive trees were freshly read. Each predecessor public body matches its fresh Git blob SHA, byte count and mode. Retained full tree receipts bind those subtrees to their commits. The native 715-file and comparison 17-host-source versions were reconstructed from the retained public source chain and fully hash-checked. Earlier ancestors were not freshly redownloaded or retested.",
+  "fullHistoricalTreeMembershipVerified": false,
+  "productionSourceApplied": false,
+  "fullOriginal": false
+}
