@@ -1,0 +1,64 @@
+{
+  "repository": "2NTTY/child-ai-caregiver",
+  "parentCommit": "a88cebc0c748e0845c31c15cfbd5305543ea111d",
+  "branch": "codex/simple-workbench-compare-20261110",
+  "archiveKind": "Source-only delta, not a standalone runnable preview",
+  "publicEntry": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/experiments/workbench-compare/",
+  "version": 102,
+  "sitesSource": "4754cd8400f18956d54ab3e1b3f811fec816c194",
+  "deployment": "appgdep_6af369e9841c819189b7f0f5b71d25e5",
+  "access": "public",
+  "accessRevision": 2,
+  "baselineVersion": 99,
+  "baselineSitesSource": "28eddf12ef3d9fbb452889810c239311f33b9513",
+  "immediateFix2Base": {
+    "version": 101,
+    "sitesSource": "5023a7539cc0718fea44f1366d3bf8d6c859edbb",
+    "modified": 1,
+    "unchanged": 503,
+    "file": "experiments/workbench-compare/app.mjs",
+    "beforeSha256": "8accea3a2a9b3e2c6302767714ecac9f071fc56af3e9449d1f9bfe87a9804203",
+    "afterSha256": "0f29ffedcc5eb36c93a7470f15b0039233194c264c05dcc4dfa987b12bb1995c"
+  },
+  "existingArchive": "frontend/verification/original-global-base-20261110",
+  "earlierComparisonManifest": {
+    "path": "frontend/verification/original-global-base-20261110/COMPARISON-SOURCE.json",
+    "gitBlobSha1": "a40e4371ca8bf606a9eb7847540f91c2a68a44d4",
+    "fileCount": 126,
+    "rowsMatchingV99": 125,
+    "differentPaths": [
+      "experiments/dispatch.js"
+    ],
+    "note": "Not the complete v99 tree. The different dispatch is pinned in BASELINE-SOURCE.json and remains a retained baseline dependency, not an additional source file in this archive."
+  },
+  "unchangedDirectImports": [
+    {
+      "path": "experiments/workbench-compare/session.mjs",
+      "bytes": 2258,
+      "sha256": "35fef8cb2f4dc097c0ea4225a62af0878e38ffa3c0e5627c94a15be064c17cfc",
+      "gitBlobSha1": "f480ee25d7a49683004ccf0d728c78dea08e8603",
+      "sourceUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/658fbed704a77d84e2e05123cca4665355ecc49f/frontend/verification/original-actions-fragment-20261110/comparison-host/experiments/workbench-compare/session.mjs"
+    },
+    {
+      "path": "experiments/workbench-compare/catalog.mjs",
+      "bytes": 38703,
+      "sha256": "c42b5657bb29b029f761c239a21573bc4a07ff03249316195be858f58d7b19e1",
+      "gitBlobSha1": "c16709c775a0df05ef511ae1912a7e48ed6cf23b",
+      "sourceUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/658fbed704a77d84e2e05123cca4665355ecc49f/frontend/verification/original-actions-fragment-20261110/comparison-host/experiments/workbench-compare/catalog.mjs"
+    },
+    {
+      "path": "experiments/workbench-compare/host-actions.mjs",
+      "bytes": 1399,
+      "sha256": "77a73bcc2ceab608ae378dc686e194bd4ad78a4fe560896f072ef814b1fd0dfd",
+      "gitBlobSha1": "64d626a8880118143220f9eabe9c57017a82d050",
+      "sourceUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/658fbed704a77d84e2e05123cca4665355ecc49f/frontend/verification/original-actions-fragment-20261110/comparison-host/experiments/workbench-compare/host-actions.mjs"
+    }
+  ],
+  "directImportSourceCommit": "658fbed704a77d84e2e05123cca4665355ecc49f",
+  "directImportCommitIsNotClaimedAsAncestor": true,
+  "baselineFilesRehashed": 503,
+  "candidateFilesRehashed": 504,
+  "completePublicRuntimeIncluded": false,
+  "fullHistoricalSourceMembershipVerified": false,
+  "deployedHttpBodiesFreshlyHashed": false
+}

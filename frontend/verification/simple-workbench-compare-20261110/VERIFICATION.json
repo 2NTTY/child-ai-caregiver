@@ -1,0 +1,155 @@
+{
+  "status": "LIMITED_TASKS_SELECTION_AND_ONE_CHOICE_UI_COPY_ACCEPTED_WITH_REMAINING_LIMITATIONS",
+  "version": 102,
+  "sitesSource": "4754cd8400f18956d54ab3e1b3f811fec816c194",
+  "initialPublicAcceptance": {
+    "statusAtThatObservation": "LIMITED_TASKS_SELECTION_ACCEPTED_WITH_UNVERIFIED_CLIPBOARD_AND_A11Y",
+    "qa": {
+      "initialOriginalHandbookTasks": "PASS",
+      "fiveTasksRenderersAndSelectionIdentity": "PASS",
+      "wholePageAndKnownOriginalCalendarPart": "PASS",
+      "pendingVsLoadedIdentity": "PASS",
+      "visualSwapIdentity": "PASS",
+      "crossPageViewingAndStickyPickLock": "PASS",
+      "backRemainsLocked": "PASS",
+      "cancelRetainsDocumentsLockAndChoices": "PASS",
+      "confirmedOpenCreatesNewEligibleDocumentsAndRetainsChoices": "PASS",
+      "removeChoice": "PASS",
+      "copyUI": "REPORTED_SUCCESS",
+      "clipboardContent": "UNVERIFIED_EMPTY_TOOL_READ",
+      "publicCopyFallback": "UNVERIFIED_NOT_TRIGGERED",
+      "narrow": {
+        "method": "normal desktop Chromium zoom",
+        "scale": 1.75,
+        "cssWidth": 674,
+        "cssHeight": 432,
+        "abSwitchAndHiddenSideDisabled": "PASS",
+        "focusRelocationIntoVisibleToggle": "PASS",
+        "focusVisible": false,
+        "outlineStyle": "none",
+        "fullKeyboardA11y": "UNVERIFIED",
+        "physicalMobile": false
+      }
+    },
+    "note": "Historical facts remain intact. The separate later normal UI copy/paste check below resolves only its own one-choice semantic transfer."
+  },
+  "laterNormalUiCopy": {
+    "status": "SCOPED_NORMAL_UI_COPY_PASTE_SEMANTIC_PASS",
+    "choice": "original:/tasks:page",
+    "copyClicks": 1,
+    "nativePasteShortcuts": 1,
+    "pasteMethod": "Chromium native app.pressKey('Control_L+v')",
+    "textInjected": false,
+    "navigatorReadOrWrite": false,
+    "clipboardPermissionChanged": false,
+    "observedCharacters": 1096,
+    "newlines": 0,
+    "parsedJsonExactlyEqual": true,
+    "allPinsEqual": true,
+    "byteExactClipboardClaim": false,
+    "searchCleared": true,
+    "restoredItemVisible": true,
+    "publicationOrProductChange": false
+  },
+  "copyInterpretation": "One normal Copy followed by one native Chromium paste into the existing verified local-only search delivered the expected public design title, Original/Tasks/whole-page label, paste-back/no-auto-sync guidance and exactly equal parsed JSON/pins. The single-line input normalized newlines to spaces. This does not retroactively verify the earlier multi-choice copy, establish byte-exact formatting, exercise public fallback, explain the tool-layer discrepancy or prove all browsers/OSs.",
+  "observedViewports": {
+    "desktop": {
+      "cssWidth": 1180,
+      "cssHeight": 757,
+      "devicePixelRatio": 1
+    },
+    "narrow": {
+      "cssWidth": 674,
+      "cssHeight": 432,
+      "devicePixelRatio": 1.75,
+      "method": "175 percent desktop Chromium zoom",
+      "physicalMobile": false
+    }
+  },
+  "sourceReview": {
+    "verdict": "Approved for limited public Tasks acceptance",
+    "scope": "Initial Tasks readiness only; other routes retain previous conservative behavior",
+    "appSha256": "0f29ffedcc5eb36c93a7470f15b0039233194c264c05dcc4dfa987b12bb1995c",
+    "reviewSha256": "ed9f07ce56bb3365451cb663022cd25922173c8f75cc300ab0a80d8e22a9ce67"
+  },
+  "recordedControlledTests": {
+    "red": {
+      "tests": 10,
+      "passed": 5,
+      "expectedFailures": 5
+    },
+    "green": {
+      "tests": 10,
+      "passed": 10,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "model": "Controlled DOM/layout/history with real frame-entry and boundary; not the React bundle or a browser engine",
+    "testsRerunForArchive": false
+  },
+  "recordedPublication": {
+    "succeeded": true,
+    "sourceAndLocalTarProductBytesMatch": true,
+    "other503FilesMatchV101": true,
+    "initialSiteIdentityReadbackUtc": "2026-11-10T19:10:30Z",
+    "copyPreflightIdentityReadbackUtc": "2026-11-10T19:16:44Z",
+    "deployedHttpBodiesDirectlyHashed": false
+  },
+  "publisherReceiptDigests": {
+    "REPORT.md": "11b710b8f42e0d6086614cc8d1c8a5dcf2dba71af875428bb355666653db81f1",
+    "RESULT.json": "6cd842f6131de5d66ab05fdbd9fe6bb629eecd6b9bb074770806153ef0e16b6f",
+    "EVIDENCE-MANIFEST.json": "c04199c347c82704bfab2e8305a1f687957da89ca2e21b713cd6d221d10da5df",
+    "FINAL-LOCAL-READBACK.json": "57f45037cccaad4acc7dc1b2a8cdcbf5537f0689e11ab700fbeea1d5900685db",
+    "CANDIDATE-MANIFEST.json": "e4e75d52fb10d8f6c9e1c2e45b5a1953473fdd5f222e311b389400624becc791",
+    "REMOTE-READBACK.json": "35da52ad3f1ac56cc9593b05858cbc327c4c7170d9de35b86e780cf7d6db1b76"
+  },
+  "copyReceiptDigests": {
+    "REPORT.md": "618604189409e4f620bbc4bddd3606d83249e2197662f76d13abf24fe91db6a3",
+    "RESULT.json": "77a235faef3159ec2b2f9c64e2237424a651c9b56158984f1bc5356e8f934edf",
+    "EVIDENCE-MANIFEST.json": "883339ca1745d062a881ded7923e62ef1574414633f7515a6d30477dfe7ca605",
+    "EXPECTED.json": "f672e46662eec60b59b16a53926e8fa7c0ef9c9dcba4f1ab8b21b11b5faf5976",
+    "OBSERVED.json": "02d336c565beb8bacd519640b868936832e80818efdf42718188c9c2e158aa48"
+  },
+  "retainedPublisherSeal": {
+    "explicitReceiptFiles": 18,
+    "canonicalSha256": "241915f52135da1b13e1a102a263ec2402a3ca0c0eb743c9805e715f6f67bf69",
+    "canonicalDigestTakenFromManifest": true,
+    "manifestSha256": "c04199c347c82704bfab2e8305a1f687957da89ca2e21b713cd6d221d10da5df",
+    "allListedFilesRehashed": true,
+    "rawContentsIncluded": false
+  },
+  "retainedCopySeal": {
+    "explicitReceiptFiles": 7,
+    "canonicalSha256": "903936dd8b930933598bb448d8ccf7b2aeaf671ccb8f9f8474634d91eb07cbb7",
+    "canonicalDigestTakenFromManifest": true,
+    "manifestSha256": "883339ca1745d062a881ded7923e62ef1574414633f7515a6d30477dfe7ca605",
+    "allListedFilesRehashed": true,
+    "rawContentsIncluded": false
+  },
+  "sealScope": "Explicit receipt files only, not recursive closure over a source checkout or unrelated artifacts.",
+  "limitations": [
+    "Non-Tasks initial readiness and unavailable-route picking remain unaccepted.",
+    "No physical mobile, exact 1440/390/320 layouts, full keyboard/focus/accessibility matrix or all-part acceptance.",
+    "At narrow desktop zoom focus moved into a visible toggle, but focus-visible=false and outline-style=none; no visible keyboard focus-ring claim.",
+    "Home remained viewable after in-frame navigation while picking stayed locked; the host showed a waiting label. Correct Home labeling and selectable Home readiness are not verified.",
+    "Public copy fallback, earlier multi-choice clipboard content, byte-exact clipboard formatting and cross-browser/OS behavior remain unverified.",
+    "Choices are intentionally in-memory and lost on reload/close. Every recorded choice was synthetic QA, not a user preference.",
+    "Full Original/global ownership/recovery, full owner/Strict/teardown, the broader historical matrix and full historical source membership remain unverified.",
+    "Known Photos error9 and Chat limitations are unchanged; historical export70990 and preview39216 remain UNKNOWN. Prior failures are not overwritten."
+  ],
+  "archiveActions": {
+    "sourceChanged": false,
+    "productTestsRerun": false,
+    "browserRerun": false,
+    "buildRerun": false,
+    "newPreviewPublication": false,
+    "prOpened": false,
+    "masterMerged": false,
+    "privateRawIncluded": false,
+    "credentialsIncluded": false,
+    "familyDataIncluded": false,
+    "screenshotsIncluded": false,
+    "compiledRuntimeIncluded": false
+  }
+}

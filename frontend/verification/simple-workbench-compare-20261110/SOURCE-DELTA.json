@@ -1,0 +1,76 @@
+{
+  "baselineVersion": 99,
+  "candidateVersion": 102,
+  "modified": 4,
+  "added": 1,
+  "deleted": 0,
+  "unchanged": 499,
+  "files": [
+    {
+      "path": "experiments/index.html",
+      "before": {
+        "path": "experiments/index.html",
+        "bytes": 4702,
+        "sha256": "8d9ecc7ded481cfb2f5a440b3801c706a2c71f4c61f53133d4a53bbcdb714a2a"
+      },
+      "after": {
+        "path": "experiments/index.html",
+        "bytes": 4799,
+        "sha256": "c901af097e04e19fcefe911c443c49121d98b325c8001de8f0f4dfe40d0c4d50"
+      },
+      "archivePath": "source-overlay/experiments/index.html"
+    },
+    {
+      "path": "experiments/workbench-compare/app.mjs",
+      "before": {
+        "path": "experiments/workbench-compare/app.mjs",
+        "bytes": 7461,
+        "sha256": "61e7ec027bc75dc5d19c1f1e6203bd756c3f94ff825219c72fd499962eba4cee"
+      },
+      "after": {
+        "path": "experiments/workbench-compare/app.mjs",
+        "bytes": 17681,
+        "sha256": "0f29ffedcc5eb36c93a7470f15b0039233194c264c05dcc4dfa987b12bb1995c"
+      },
+      "archivePath": "source-overlay/experiments/workbench-compare/app.mjs"
+    },
+    {
+      "path": "experiments/workbench-compare/design-choices.mjs",
+      "before": null,
+      "after": {
+        "path": "experiments/workbench-compare/design-choices.mjs",
+        "bytes": 4133,
+        "sha256": "b6b1c818f2fbffdd4317694c2a0dc556cc6a692ed9dac042d11b903ec0ba6b62"
+      },
+      "archivePath": "source-overlay/experiments/workbench-compare/design-choices.mjs"
+    },
+    {
+      "path": "experiments/workbench-compare/index.html",
+      "before": {
+        "path": "experiments/workbench-compare/index.html",
+        "bytes": 4952,
+        "sha256": "bfd7ac47d7b92a308be7bac55df91a7a7f5a844901bdfa66951b7d32f63a27a7"
+      },
+      "after": {
+        "path": "experiments/workbench-compare/index.html",
+        "bytes": 7800,
+        "sha256": "a8d8e6d95a60096064dda953529f731912d64b9b558ed64aebeb0deaf1a6ca6a"
+      },
+      "archivePath": "source-overlay/experiments/workbench-compare/index.html"
+    },
+    {
+      "path": "experiments/workbench-compare/style.css",
+      "before": {
+        "path": "experiments/workbench-compare/style.css",
+        "bytes": 1561,
+        "sha256": "ecce23be8b8605a7dbb1639cdf90cc5ea421493fd0d2da6279a773571fe64ce7"
+      },
+      "after": {
+        "path": "experiments/workbench-compare/style.css",
+        "bytes": 5160,
+        "sha256": "f764def7de3bda974299d3c1962498c69f29402baa60ce042a309b5aecc82346"
+      },
+      "archivePath": "source-overlay/experiments/workbench-compare/style.css"
+    }
+  ]
+}
