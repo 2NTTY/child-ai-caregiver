@@ -1,0 +1,183 @@
+--- baseline/experiments/workbench-compare/candidate-fragment.mjs
++++ candidate/experiments/workbench-compare/candidate-fragment.mjs
+@@ -3,7 +3,7 @@
+ const PREFIX='#tasks-candidate-v1=',LIMIT=4096,VARIANTS=['harbour','care','handbook','fourth'];
+ function validSlots(slots){
+  if(!slots||typeof slots!=='object'||Array.isArray(slots)||Object.keys(slots).length!==4||!CANDIDATE_SLOTS.every(s=>Object.hasOwn(slots,s)))return false;
+- return CANDIDATE_SLOTS.every(s=>slots[s]===null||(Array.isArray(slots[s])&&slots[s].length===2&&(VARIANTS.includes(slots[s][0])||(slots[s][0]==='original'&&((s==='date-list'&&slots[s][1]==='original-row-fragment01')||(s==='header-actions'&&slots[s][1]==='original-actions-fragment01')||(s==='filters'&&slots[s][1]==='original-tabs-fragment01'))))&&typeof slots[s][1]==='string'&&/^[a-z0-9-]{1,64}$/.test(slots[s][1])));
++ return CANDIDATE_SLOTS.every(s=>slots[s]===null||(Array.isArray(slots[s])&&slots[s].length===2&&(VARIANTS.includes(slots[s][0])||(slots[s][0]==='original'&&((s==='date-list'&&slots[s][1]==='original-row-fragment01')||(s==='header-actions'&&slots[s][1]==='original-actions-fragment01')||(s==='filters'&&slots[s][1]==='original-tabs-fragment01')||(s==='filters'&&slots[s][1]==='original-filters-combination01'))))&&typeof slots[s][1]==='string'&&/^[a-z0-9-]{1,64}$/.test(slots[s][1])));
+ }
+ export function decodeTaskCandidateFragment(hash){
+  if(hash===''||typeof hash==='string'&&!hash.startsWith('#tasks-candidate-'))return {status:'none'};
+--- baseline/experiments/workbench-compare/index.html
++++ candidate/experiments/workbench-compare/index.html
+@@ -1,9 +1,9 @@
+ <!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"><title>育伴港 · 五版全站對照</title><link rel="stylesheet" href="./style.css"><script type="module" src="./app.mjs"></script></head><body>
+ <header><h1>五版全站對照</h1><p>真實歷史版本，左右獨立試看。這裡不是待辦模組組合頁。</p><a href="/experiments/workbench-trial/" target="_blank" rel="noopener noreferrer">另開單一 owner 的待辦組合試用</a>
+-<p class="warning">全站唯讀合成對照。一般頁面使用同一固定「小晴」ready 合成案例；登入頁另用同一固定 signedout 案例。兩側均各持獨立副本，固定日期為2026-10-25、偏好時區為Asia/Hong_Kong；真瀏覽器同資料呈現仍待驗證。Original 只提供歷史操作按鈕、分類分頁及事項列片段候選；完整原版與全局主題仍未驗證。</p>
++<p class="warning">全站唯讀合成對照。一般頁面使用同一固定「小晴」ready 合成案例；登入頁另用同一固定 signedout 案例。兩側均各持獨立副本，固定日期為2026-10-25、偏好時區為Asia/Hong_Kong；真瀏覽器同資料呈現仍待驗證。Original 只提供歷史操作按鈕、事項列、分類分頁及分類＋搜尋框局部組合候選；完整原版與全局主題仍未驗證。</p>
+ <p>對話只讀取這個案例已有的18條純文字歷史，不可傳訊或調用模型。照片頁使用各版真實畫面，顯示同案例的空相簿；沒有加入照片，不開啟相簿、相機或上傳。設定頁只讀停用模型、未設密鑰及未連接通知的合成狀態；保存、探測、登出、刪除及匯出不會成功。登入頁只可查看真實版面、切換模式及檢查空欄驗證；請勿輸入真實電郵或密碼。登入、註冊、重設密碼、驗證電郵、OAuth 及通行密鑰均不可執行。</p>
+ <form id="controls"><label>A 版本<select id="left-version"></select></label><label>B 版本<select id="right-version"></select></label><label>同一頁面<select id="route"></select></label><label>CSS 視口<select id="width"><option>1440</option><option>1024</option><option>390</option><option>320</option></select></label><button type="button" id="apply">開啟所選對照</button><button type="button" id="swap">左右交換</button><label>檢視<select id="mode"><option value="pair">左右對照</option><option value="left">只看 A</option><option value="right">只看 B</option><option value="left-native">A 原尺寸</option><option value="right-native">B 原尺寸</option></select></label></form>
+ <p id="status" role="status" aria-live="polite">正在準備對照。</p><p>情境：<span id="case">共用 ready 合成案例。</span>同步捲動尚未提供。按「開啟所選對照」替換已載入頁面時，會確認丟棄兩側本地狀態。瀏覽器重新整理會重設對照，不另提示。</p></header>
+-<section id="recipe-handoff" aria-label="待辦模組候選配方"><h2>從對照選配待辦模組</h2><p>只使用合成示例，不會帶入家庭資料。Original 只可帶入歷史操作按鈕、分類分頁及事項列片段候選，並非完整原版；全局主題仍未驗證。另開頁面只預填候選文字，尚未還原、尚未套用；請使用原工作台的明確還原、進入選配模式及套用操作。詳情、表單及 dirty/unknown 恢復整組保留；不連接帳戶、模型或對外傳送服務。</p></section>
++<section id="recipe-handoff" aria-label="待辦模組候選配方"><h2>從對照選配待辦模組</h2><p>只使用合成示例，不會帶入家庭資料。Original 只可帶入歷史操作按鈕、事項列、分類分頁及分類＋搜尋框局部組合候選，並非完整原版；全局主題仍未驗證。另開頁面只預填候選文字，尚未還原、尚未套用；請使用原工作台的明確還原、進入選配模式及套用操作。詳情、表單及 dirty/unknown 恢復整組保留；不連接帳戶、模型或對外傳送服務。</p></section>
+ <main id="panels"><section id="left-panel" aria-labelledby="left-title"><h2 id="left-title">A</h2><p id="left-source" class="source"></p><p id="left-route"></p><div class="viewport"><p id="left-unavailable" class="unavailable" role="status" tabindex="-1">正在核對來源與路由，對照暫不可操作。</p><iframe inert tabindex="-1" aria-hidden="true" title="A 歷史版本對照" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer" allow="camera 'none'; microphone 'none'; geolocation 'none'; clipboard-write 'none'; payment 'none'"></iframe></div></section><section id="right-panel" aria-labelledby="right-title"><h2 id="right-title">B</h2><p id="right-source" class="source"></p><p id="right-route"></p><div class="viewport"><p id="right-unavailable" class="unavailable" role="status" tabindex="-1">正在核對來源與路由，對照暫不可操作。</p><iframe inert tabindex="-1" aria-hidden="true" title="B 歷史版本對照" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer" allow="camera 'none'; microphone 'none'; geolocation 'none'; clipboard-write 'none'; payment 'none'"></iframe></div></section></main>
+ </body></html>
+--- baseline/experiments/workbench-compare/native-catalog.mjs
++++ candidate/experiments/workbench-compare/native-catalog.mjs
+@@ -620,6 +620,126 @@
+     sourceFiles:ORIGINAL_TABS_FRAGMENT.files, referenceFiles:ORIGINAL_TABS_FRAGMENT.references,
+   }];
+ }
++// Historical input frame only, not a full search control or filters slot.
++const ORIGINAL_SEARCH_FRAME_FRAGMENT = {
++  "digest": "2924cd365f8f4890504a91f9875af69f7aeec276664e7ea7465fa1291e99946c",
++  "files": [
++    {
++      "sourceId": "original-search-frame-fragment01",
++      "path": "frontend/src/preview/tasks-original-presentation/search-frame-appearance.ts",
++      "sha256": "5404093984c5bc8b146ff9f1b71d4e0a72b6975b7b25810b6abd35cb22ca9e93"
++    },
++    {
++      "sourceId": "original-search-frame-fragment01",
++      "path": "frontend/src/preview/tasks-original-presentation/source-theme.ts",
++      "sha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a"
++    },
++    {
++      "sourceId": "original-search-frame-fragment01",
++      "path": "frontend/src/preview/tasks-original-presentation/styles.ts",
++      "sha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48"
++    }
++  ],
++  "references": [
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/tasks/TasksView.tsx",
++      "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/theme.ts",
++      "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/ui.tsx",
++      "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563"
++    }
++  ]
++};
++function originalSearchFrameCandidates(variantId, slotId) {
++  if (variantId !== 'original' || slotId !== 'filters') return [];
++  return [{slotId, variantId, hostVariantId:'harbour', candidateId:'original-search-frame-fragment01',
++    coverage:'historical-search-frame-fragment', adapterVersion:'original-search-frame-fragment01-v1',
++    sourceAvailability:'available', acceptance:'source-reviewed-integration-unverified',
++    prospectiveComposable:true, runtimeAdmission:false, protectedOwner:OWNER,
++    appearanceLimit:'Historical search input frame only: background, outline, radius and web font. H focus, label and icon theme, query/clear state and callbacks remain. Alternative to tabs in the same filters slot; no full search/filter/global theme claim. Comparison URL transport unsupported.',
++    // Legacy wire-field: fragment manifest digest, NOT assembly membership.
++    sourceFingerprint:{assemblyMembersSha256:ORIGINAL_SEARCH_FRAME_FRAGMENT.digest,
++      files:ORIGINAL_SEARCH_FRAME_FRAGMENT.files.map(({path,sha256})=>({path:path.slice('frontend/'.length),sha256}))},
++    dependenciesFingerprint:ORIGINAL_SEARCH_FRAME_FRAGMENT.digest,
++    sourceFiles:ORIGINAL_SEARCH_FRAME_FRAGMENT.files, referenceFiles:ORIGINAL_SEARCH_FRAME_FRAGMENT.references,
++  }];
++}
++// One explicit partial filters version composes both existing appearances.
++// It changes neither query/route ownership nor the meaning of older recipes.
++const ORIGINAL_FILTERS_COMBINATION = {
++  "digest": "2042fac89ea1bf8b4998859bc44c5ee144d90108a4eaf9f7346277aca088fb5c",
++  "files": [
++    {
++      "sourceId": "original-filters-combination01",
++      "path": "frontend/src/components/tasks/TasksView.tsx",
++      "sha256": "472527a650c18f56d6d093415d072e51efef00df5c875ce46a5b2dcd736b7399"
++    },
++    {
++      "sourceId": "original-filters-combination01",
++      "path": "frontend/src/preview/tasks-choice-host/module-presentation.ts",
++      "sha256": "fe53217e0180d9763b83b8a4e641082bac606f22fee6488bb196f3e0391a3ece"
++    },
++    {
++      "sourceId": "original-filters-combination01",
++      "path": "frontend/src/preview/tasks-original-presentation/search-frame-appearance.ts",
++      "sha256": "5404093984c5bc8b146ff9f1b71d4e0a72b6975b7b25810b6abd35cb22ca9e93"
++    },
++    {
++      "sourceId": "original-filters-combination01",
++      "path": "frontend/src/preview/tasks-original-presentation/source-theme.ts",
++      "sha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a"
++    },
++    {
++      "sourceId": "original-filters-combination01",
++      "path": "frontend/src/preview/tasks-original-presentation/styles.ts",
++      "sha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48"
++    },
++    {
++      "sourceId": "original-filters-combination01",
++      "path": "frontend/src/preview/tasks-original-presentation/tabs-appearance.ts",
++      "sha256": "9d1d52a2e66120b1049daf4bbe8f9f82bb186cb1ece2f569c82d072396dbc506"
++    }
++  ],
++  "references": [
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/tasks/TasksView.tsx",
++      "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/ui.tsx",
++      "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/theme.ts",
++      "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2"
++    }
++  ]
++};
++function originalFiltersCombinationCandidates(variantId, slotId) {
++  if (variantId !== 'original' || slotId !== 'filters') return [];
++  return [{slotId, variantId, hostVariantId:'harbour', candidateId:'original-filters-combination01',
++    coverage:'historical-filters-combination', adapterVersion:'original-filters-combination01-v1',
++    sourceAvailability:'available', acceptance:'source-reviewed-integration-unverified',
++    prospectiveComposable:true, runtimeAdmission:false, protectedOwner:OWNER,
++    appearanceLimit:'Historical classification tabs and search input frame applied together through the existing single owner. H range, date, notices and Paper focus/label/icon theme remain. Older individual recipes keep their meaning. Not complete Original filters or global theme; comparison handoff is candidate text only, requiring explicit restore and apply.',
++    // Legacy wire-field: exact partial composition digest, NOT full assembly membership.
++    sourceFingerprint:{assemblyMembersSha256:ORIGINAL_FILTERS_COMBINATION.digest,
++      files:ORIGINAL_FILTERS_COMBINATION.files.map(({path,sha256})=>({path:path.slice('frontend/'.length),sha256}))},
++    dependenciesFingerprint:ORIGINAL_FILTERS_COMBINATION.digest,
++    sourceFiles:ORIGINAL_FILTERS_COMBINATION.files, referenceFiles:ORIGINAL_FILTERS_COMBINATION.references,
++  }];
++}
+ function makeSlot(variantId, slotId) {
+   const identity = SOURCE_IDENTITIES[variantId];
+   const paths = {
+@@ -645,7 +765,7 @@
+     sourceDifference:slotId === 'header-actions' ? DIFFERENCES[variantId].header
+       : slotId === 'calendar-layout' ? DIFFERENCES[variantId].layout : DIFFERENCES[variantId].state,
+     wholeSlotComposable:false, acceptance:'not-accepted', runtimeAdmission:false,
+-    narrowCandidates:[...originalTabsFragmentCandidates(variantId,slotId),...originalActionsFragmentCandidates(variantId,slotId),...originalRowFragmentCandidates(variantId,slotId),...narrowCandidates(variantId,slotId),...presentationCandidates(variantId,slotId),...sourceRegionCandidates(variantId,slotId)],
++    narrowCandidates:[...originalFiltersCombinationCandidates(variantId,slotId),...originalSearchFrameCandidates(variantId,slotId),...originalTabsFragmentCandidates(variantId,slotId),...originalActionsFragmentCandidates(variantId,slotId),...originalRowFragmentCandidates(variantId,slotId),...narrowCandidates(variantId,slotId),...presentationCandidates(variantId,slotId),...sourceRegionCandidates(variantId,slotId)],
+   };
+ }
+ function makeVariant(variantId) {
+--- baseline/experiments/workbench-compare/recipe-handoff.mjs
++++ candidate/experiments/workbench-compare/recipe-handoff.mjs
+@@ -2,7 +2,7 @@
+ import {encodeTaskCandidateFragment} from './candidate-fragment.mjs';
+ const labels={original:'Original',harbour:'Harbour',care:'Care',handbook:'Handbook',fourth:'Fourth'};
+ const slots={'header-actions':'頁首與操作',filters:'頁籤、搜尋與範圍','date-list':'日期分組任務列','calendar-layout':'月曆與宿主布局'};
+-const coverage={'historical-tabs-fragment':'歷史分類分頁片段','historical-actions-fragment':'歷史操作按鈕片段','historical-row-fragment':'歷史事項列片段','actions-only':'操作區局部','row-appearance':'事項列外觀','header-appearance':'標題與操作外觀','controlled-filters-h-theme':'篩選外觀／H 元件','header-source-regions-partial-host':'頁首區域／宿主限制','date-list-source-regions-partial-host':'清單區域／宿主限制','date-groups-and-rows':'日期分組與事項列','controlled-calendar-layout-h-theme':'月曆布局／H 元件'};
++const coverage={'historical-filters-combination':'分類＋搜尋框組合','historical-tabs-fragment':'歷史分類分頁片段','historical-actions-fragment':'歷史操作按鈕片段','historical-row-fragment':'歷史事項列片段','actions-only':'操作區局部','row-appearance':'事項列外觀','header-appearance':'標題與操作外觀','controlled-filters-h-theme':'篩選外觀／H 元件','header-source-regions-partial-host':'頁首區域／宿主限制','date-list-source-regions-partial-host':'清單區域／宿主限制','date-groups-and-rows':'日期分組與事項列','controlled-calendar-layout-h-theme':'月曆布局／H 元件'};
+ export function mountRecipeHandoff(host,doc){
+  let ready=false;const selected=Object.fromEntries(TASK_SLOT_IDS.map(s=>[s,null])),buttons=[],summaries={};
+  const node=(tag,text)=>{const n=doc.createElement(tag);n.textContent=text??'';return n;};
+@@ -20,7 +20,7 @@
+   const group=node('fieldset'),legend=node('legend',slots[slot]);group.append(legend);
+   for(const variant of VARIANT_IDS){
+    for(const candidate of getTaskSlot(variant,slot)?.narrowCandidates??[]){
+-    if((variant==='original'&&!((slot==='date-list'&&candidate.candidateId==='original-row-fragment01'&&candidate.coverage==='historical-row-fragment')||(slot==='header-actions'&&candidate.candidateId==='original-actions-fragment01'&&candidate.coverage==='historical-actions-fragment')||(slot==='filters'&&candidate.candidateId==='original-tabs-fragment01'&&candidate.coverage==='historical-tabs-fragment')))||candidate.sourceAvailability!=='available'||!candidate.prospectiveComposable||candidate.hostVariantId!=='harbour'||!['bounded-source-accepted','source-reviewed-integration-unverified'].includes(candidate.acceptance))continue;
++    if((variant==='original'&&!((slot==='date-list'&&candidate.candidateId==='original-row-fragment01'&&candidate.coverage==='historical-row-fragment')||(slot==='header-actions'&&candidate.candidateId==='original-actions-fragment01'&&candidate.coverage==='historical-actions-fragment')||(slot==='filters'&&candidate.candidateId==='original-tabs-fragment01'&&candidate.coverage==='historical-tabs-fragment')||(slot==='filters'&&candidate.candidateId==='original-filters-combination01'&&candidate.coverage==='historical-filters-combination')))||candidate.sourceAvailability!=='available'||!candidate.prospectiveComposable||candidate.hostVariantId!=='harbour'||!['bounded-source-accepted','source-reviewed-integration-unverified'].includes(candidate.acceptance))continue;
+     const button=node('button',`${labels[variant]} · ${coverage[candidate.coverage]??candidate.coverage}（待驗收）`);button.type='button';button.setAttribute('data-slot',slot);button.setAttribute('data-variant',variant);
+     button.addEventListener('click',()=>{if(!ready)return;selected[slot]=[variant,candidate.candidateId];refresh();});buttons.push(button);group.append(button);
+    }

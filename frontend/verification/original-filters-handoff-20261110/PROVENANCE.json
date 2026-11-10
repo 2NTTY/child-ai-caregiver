@@ -1,0 +1,104 @@
+{
+  "candidate": "original-filters-combination-comparison-handoff01",
+  "preparedDate": "2026-11-10",
+  "repository": "2NTTY/child-ai-caregiver",
+  "archiveBaseCommit": "5f3cd680de426cb77fd94b9a346076740c885c6d",
+  "nativeBaseline": {
+    "commit": "f20ebe477c685d7970a3994773891a5626d1a5c6",
+    "path": "frontend/verification/original-filters-combination-20261110",
+    "tree": "397af85f9bcd25107c9cc1fa372090da24810a64",
+    "remoteFilesVerified": 11
+  },
+  "comparisonBaseline": {
+    "commit": "695a37b6680e49f035f854b73796515ffdd0b223",
+    "path": "frontend/verification/original-tabs-handoff-20261110",
+    "tree": "a1a2c3f5b22bd7eae561ebbaa9aa81793a9b8397",
+    "remoteFilesVerified": 14
+  },
+  "nativeSource": {
+    "files": 714,
+    "canonicalSha256": "b5d4f9a902c725503400ee0e4aafc8dd6d1ae653e665ecc450107a3eb95ac27d",
+    "baselineCanonicalSha256": "20e1c062b17752b5575e2a251dcd0ae3150b56c9486a8237425a7c59e3d5eec9",
+    "changedFiles": [
+      "frontend/src/preview/tasks-choice-host/candidate-fragment.mjs",
+      "frontend/src/preview/tasks-variant-catalog/catalog.mjs"
+    ],
+    "addedFiles": [],
+    "deletedFiles": [],
+    "reconstructionVerified": true,
+    "instructions": "Reconstruct the pinned filters-combination archive source chain, replace these two source-overlay files and verify SOURCE.json."
+  },
+  "comparison": {
+    "files": 126,
+    "canonicalSha256": "49544ce4715e0a0ad00c7d8597e5a1b281804498f270d8c9e3fdabcd6cb36f75",
+    "baselineCanonicalSha256": "2637c33580860476bc0cdb9293cdc166c15964e5534dc1545c8966bff2d3e583",
+    "changedFiles": [
+      "experiments/workbench-compare/candidate-fragment.mjs",
+      "experiments/workbench-compare/index.html",
+      "experiments/workbench-compare/native-catalog.mjs",
+      "experiments/workbench-compare/recipe-handoff.mjs"
+    ],
+    "hostSourcesReconstructed": 17,
+    "compiledAssetsOmitted": 109,
+    "instructions": "Reconstruct the 17 comparison host sources through the tabs-handoff archive, then replace these four comparison-overlay files. The 109 unchanged compiled assets are not included."
+  },
+  "exactNewURLTuple": [
+    "filters",
+    "original",
+    "original-filters-combination01"
+  ],
+  "oldOriginalURLCandidates": [
+    "original-actions-fragment01",
+    "original-tabs-fragment01",
+    "original-row-fragment01"
+  ],
+  "searchOnlyURLTransport": false,
+  "fragmentContract": {
+    "slotId": "filters",
+    "candidateId": "original-filters-combination01",
+    "variantId": "original",
+    "coverage": "historical-filters-combination",
+    "adapterVersion": "original-filters-combination01-v1",
+    "digest": "2042fac89ea1bf8b4998859bc44c5ee144d90108a4eaf9f7346277aca088fb5c",
+    "sourcePinCount": 6,
+    "pinsChanged": false,
+    "singleOwnerUnchanged": true,
+    "legacyStandaloneRecipesPreserved": true,
+    "runtimeAdmission": false,
+    "wholeSlotAccepted": false
+  },
+  "historicalSelectedBodies": [
+    {
+      "logicalPath": "frontend/src/components/tasks/TasksView.tsx",
+      "bytes": 26547,
+      "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622",
+      "gitBlob": "8adc10f3074fecd0484994ef958a6b88e721cbe6"
+    },
+    {
+      "logicalPath": "frontend/src/theme.ts",
+      "bytes": 4982,
+      "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2",
+      "gitBlob": "4ccb33cb8f83a0e7c84829c74495a3ca63dfbe7c"
+    },
+    {
+      "logicalPath": "frontend/src/components/ui.tsx",
+      "bytes": 28747,
+      "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563"
+    }
+  ],
+  "fullHistoricalTreeMembershipVerified": false,
+  "fullOriginalAppCommit": null,
+  "nativeMain": {
+    "src": "/_expo/static/js/web/index-59773fe1cde075e4523acf0d1d4f29aa.js",
+    "sha256": "7ed2b25d8efa5426c372d17fa31f635faf6aa482e70c084b3a6d59f833a2fdaa",
+    "buildOutputIncluded": false
+  },
+  "safety": {
+    "syntheticPreviewOnly": true,
+    "privateRawIncluded": false,
+    "credentialsIncluded": false,
+    "productionSourceApplied": false,
+    "sitePublished": false,
+    "masterMerged": false
+  }
+}

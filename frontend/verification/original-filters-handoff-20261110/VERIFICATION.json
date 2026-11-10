@@ -1,0 +1,107 @@
+{
+  "result": "BOUNDED_ORIGINAL_FILTERS_COMPARISON_HANDOFF_PASS_WITH_EXPLICIT_LIMITS",
+  "observedDate": "2026-11-10",
+  "sourceCanonicalSha256": "b5d4f9a902c725503400ee0e4aafc8dd6d1ae653e665ecc450107a3eb95ac27d",
+  "comparisonCanonicalSha256": "49544ce4715e0a0ad00c7d8597e5a1b281804498f270d8c9e3fdabcd6cb36f75",
+  "focusedTests": {
+    "pass": 4,
+    "fail": 0,
+    "validRedFailures": 4,
+    "loadedProductSources": 32,
+    "loadedRuntimeEntries": 1132,
+    "fixedInputs": 131,
+    "method": "Exact codec, comparison controlled ports, text prefill, genuine React mounted Control with controlled RN/Paper/owner/router ports.",
+    "allInvalidInputMatrixDynamicallyCovered": false,
+    "allRuntimePrePinnedAndLoadToExitAttested": false,
+    "focusedRunnerPreExecutionAttested": false,
+    "exitCode": 0,
+    "scope": [
+      "Exact combo tuple plus old three tuples; selected malformed/oversize/extra-field/wrong-slot/search-only references rejected.",
+      "Actual comparison app/session/handoff with controlled DOM/frame ports: dual Tasks gate, one filters choice, preserved actions/rows and frame identities, invalid epochs/documents rejected.",
+      "Catalog-pinned text prefill only for empty receipt, strict recipe validation and legacy JSON parse/projection.",
+      "Genuine mounted React Control/binding/scene/applied port with controlled RN/Paper/owner/router ports: restore/enter do not apply, viewport/scope retirement, stale callback and occupied-operation checks."
+    ],
+    "dynamicCaseLimit": "No independent JSON.version=2, malformed JSON or complete tabs-wrong-slot matrix. Those unchanged conditions were source-reviewed.",
+    "runtimeReceiptLimit": "Load-hook plus exit require.cache receipts; some early runtime entries have exit-only hashes. Not all external runtime dependencies have pre-run pins or full load-to-exit custody.",
+    "runnerReceiptLimit": "Focused runner/supervisor provenance was recorded after focused execution, not retrospective execution-time attestation. Fresh stages separately pinned their runner/supervisor at execution."
+  },
+  "typecheck": {
+    "fresh": true,
+    "exitCode": 0,
+    "wallSeconds": 12.934960022976156,
+    "sampledOwnedPeakRssBytes": 1130217472
+  },
+  "export": {
+    "runs": 1,
+    "exitCode": 0,
+    "wallSeconds": 57.671004999021534,
+    "sampledOwnedPeakRssBytes": 638169088,
+    "completeTerminalAndLogs": true,
+    "signalsOrUncertainty": false,
+    "bounds": {
+      "workers": 1,
+      "heapMiB": 1024,
+      "sampledRssMiB": 1152,
+      "continuousMemAvailableFloorMiB": 1920,
+      "wallAndCpuSeconds": 240
+    },
+    "samplingLimitation": "Sampled watchdogs are not hard aggregate resource caps."
+  },
+  "independentReviews": {
+    "sourceAndFocused": "NO_BLOCKER_WITH_EXPLICIT_LIMITS",
+    "finalStageAndBrowserEvidence": "NO_ADDITIONAL_BLOCKER_WITH_EXPLICIT_LIMITS",
+    "independentExecution": false
+  },
+  "browser": {
+    "engine": "Chromium",
+    "cssWidth": 1180,
+    "localSyntheticOnly": true,
+    "observations": [
+      "Four exact Original choices require both comparison frames at Tasks; tabs and combo replace the same filters slot while actions/rows and existing frames remain.",
+      "The actual link opens a native page with candidate text only, default Handbook draft and unchanged product.",
+      "Explicit restore changes only the draft; entering selection makes input inert without applying; explicit apply and return show Original tabs and search frame together.",
+      "The synthetic query entered before apply remains; one root/tablist/search input and clear restoring two rows are observed.",
+      "Both frozen tabs-only and search-only JSON recipes were actually restored and manually applied, retaining their separate appearance meanings.",
+      "Owned browser tabs and preview were closed, and the preview process exited zero."
+    ],
+    "toolNotes": [
+      "A click waited on an expected confirmation dialog and timed out. The dialog was inspected and accepted once without repeating the click; subsequent state verified progress.",
+      "After close, one stale tab inventory prompted a read-only probe that returned unknown tab. The final inventory confirmed both owned tabs gone."
+    ],
+    "privateRawPacketsOrScreenshotsIncluded": false,
+    "narrowOrNativeTested": false,
+    "fullAccessibilityOrOwnerMatrixTested": false,
+    "forwardTested": false
+  },
+  "setupNote": "An initial local binder invocation omitted required arguments and stopped before writes. The corrected invocation used the actual managed preview receipt; export was not repeated.",
+  "fullFormsSuiteRerun": false,
+  "baselineComboURLRejectIntentionallySuperseded": true,
+  "oldHandoffExport": {
+    "outcome": "UNKNOWN_UNCHANGED",
+    "reason": "A historical interrupted export has no recovered terminal or harvest. This successful export does not resolve that outcome.",
+    "originalEvidenceRetained": true
+  },
+  "limits": [
+    "Only the exact combined filters candidate transport is new; not whole Original filters, date-range/calendar/host/global theme or full application identity.",
+    "Classification-only and the combination remain alternatives for one filters slot; search-only keeps JSON restoration but no comparison URL qualification.",
+    "Native owner, Control, bindings, renderers, TS/config and six fragment pins are unchanged.",
+    "Comparison and native pages retain distinct synthetic cases; only candidate identifiers are transferred.",
+    "No new narrow/native, broad accessibility, Forward, full owner/forms/account/scope/persistence/unknown-recovery or four-variant regression acceptance.",
+    "Stage metadata retains its historical staging labels; actual source/code/diffs and this bounded result identify current scope.",
+    "Not a standalone website or production release."
+  ],
+  "evidenceDigests": {
+    "focusedResult": "b1eade1d8046cf94a611b636253959f98b83bdc3a061d09e8f28b8d2b2023bce",
+    "baselineRedResult": "389fe14e0ef70a7f84ecdfbd46da5aea3e700da3a6c3053a591207452a31022c",
+    "typecheckResult": "b4e50b52fbef1c0e1d6f990221dc1fd71bf47f6ca96cc9ebffef5c66acce6672",
+    "exportResult": "a6b134d86cd404789a5f7ec0d5bd25aae98989809172d604db9dc941c18b7c14",
+    "sourceReviewNotIncluded": "c5ac10a6d4ac44a52726d786c2c25ffa49ecf6c9045e7e74018872f15516cb40",
+    "finalReviewNotIncluded": "b9e4d3f4fe0e8459d1bee0cf57e99b7134926816e973de6546e034f61f671087",
+    "browserPacketsNotIncluded": "2db6ecd5a0b96fd352cda0e85c80b24d25c1f214516ea2fc584217b365712dbb",
+    "finalEvidenceManifest": "7abbcc8b09d75d6fe7387dfbc81059143b77bd7222e33fe1cf689d9e0b13d3d4"
+  },
+  "sealedEvidenceFiles": 91,
+  "fullApplicationAcceptance": false,
+  "releaseAdmission": false,
+  "testsRerunForArchive": false
+}

@@ -1,0 +1,22 @@
+--- baseline/frontend/src/preview/tasks-choice-host/candidate-fragment.mjs
++++ candidate/frontend/src/preview/tasks-choice-host/candidate-fragment.mjs
+@@ -3,7 +3,7 @@
+ const PREFIX='#tasks-candidate-v1=',LIMIT=4096,VARIANTS=['harbour','care','handbook','fourth'];
+ function validSlots(slots){
+  if(!slots||typeof slots!=='object'||Array.isArray(slots)||Object.keys(slots).length!==4||!CANDIDATE_SLOTS.every(s=>Object.hasOwn(slots,s)))return false;
+- return CANDIDATE_SLOTS.every(s=>slots[s]===null||(Array.isArray(slots[s])&&slots[s].length===2&&(VARIANTS.includes(slots[s][0])||(slots[s][0]==='original'&&((s==='date-list'&&slots[s][1]==='original-row-fragment01')||(s==='header-actions'&&slots[s][1]==='original-actions-fragment01')||(s==='filters'&&slots[s][1]==='original-tabs-fragment01'))))&&typeof slots[s][1]==='string'&&/^[a-z0-9-]{1,64}$/.test(slots[s][1])));
++ return CANDIDATE_SLOTS.every(s=>slots[s]===null||(Array.isArray(slots[s])&&slots[s].length===2&&(VARIANTS.includes(slots[s][0])||(slots[s][0]==='original'&&((s==='date-list'&&slots[s][1]==='original-row-fragment01')||(s==='header-actions'&&slots[s][1]==='original-actions-fragment01')||(s==='filters'&&slots[s][1]==='original-tabs-fragment01')||(s==='filters'&&slots[s][1]==='original-filters-combination01'))))&&typeof slots[s][1]==='string'&&/^[a-z0-9-]{1,64}$/.test(slots[s][1])));
+ }
+ export function decodeTaskCandidateFragment(hash){
+  if(hash===''||typeof hash==='string'&&!hash.startsWith('#tasks-candidate-'))return {status:'none'};
+--- baseline/frontend/src/preview/tasks-variant-catalog/catalog.mjs
++++ candidate/frontend/src/preview/tasks-variant-catalog/catalog.mjs
+@@ -732,7 +732,7 @@
+     coverage:'historical-filters-combination', adapterVersion:'original-filters-combination01-v1',
+     sourceAvailability:'available', acceptance:'source-reviewed-integration-unverified',
+     prospectiveComposable:true, runtimeAdmission:false, protectedOwner:OWNER,
+-    appearanceLimit:'Historical classification tabs and search input frame applied together through the existing single owner. H range, date, notices and Paper focus/label/icon theme remain. Older individual recipes keep their meaning. Not complete Original filters or global theme; comparison URL transport unsupported.',
++    appearanceLimit:'Historical classification tabs and search input frame applied together through the existing single owner. H range, date, notices and Paper focus/label/icon theme remain. Older individual recipes keep their meaning. Not complete Original filters or global theme; comparison handoff is candidate text only, requiring explicit restore and apply.',
+     // Legacy wire-field: exact partial composition digest, NOT full assembly membership.
+     sourceFingerprint:{assemblyMembersSha256:ORIGINAL_FILTERS_COMBINATION.digest,
+       files:ORIGINAL_FILTERS_COMBINATION.files.map(({path,sha256})=>({path:path.slice('frontend/'.length),sha256}))},
