@@ -1,0 +1,99 @@
+{
+  "result": "BOUNDED_FILTERS_COMBINATION_PASS_WITH_EXPLICIT_LIMITS",
+  "observedDate": "2026-11-10",
+  "sourceCanonicalSha256": "20e1c062b17752b5575e2a251dcd0ae3150b56c9486a8237425a7c59e3d5eec9",
+  "focusedTests": {
+    "pass": 4,
+    "fail": 0,
+    "loadedProductSources": 44,
+    "loadedRuntimeModules": 10,
+    "testInputsPinned": 4,
+    "method": "Source/React-element inspection with controlled hooks and dependency ports; not mounted.",
+    "red001": "Four expected missing-feature assertions before product implementation.",
+    "exitCode": 0,
+    "scope": [
+      "Exact tuple and six source pins; wrong slot/variant/ID, extra key, stale adapter or forged fingerprints rejected.",
+      "One combined projection; baseline tabs-only/search-only recipe descriptors and semantics unchanged; draft revision and pure session gates retained.",
+      "Actual TasksView and search producer elements combine both appearances with one producer and unchanged callback/guard/route paths.",
+      "Completed, unreadable and no-pending states do not gain a search field; occupied/lost-access and H focus/label/icon behavior remain."
+    ],
+    "mountedUI": false
+  },
+  "packageTestForms": {
+    "rerun": false,
+    "baselinePass": 21,
+    "reason": "Relevant form/owner/schema sources unchanged; prior evidence retained, not a new pass claim."
+  },
+  "typecheck": {
+    "fresh": true,
+    "exitCode": 0,
+    "wallSeconds": 13.03302909299964,
+    "sampledOwnedPeakRssBytes": 1168617472
+  },
+  "export": {
+    "runs": 1,
+    "exitCode": 0,
+    "wallSeconds": 61.5286995699862,
+    "sampledOwnedPeakRssBytes": 595124224,
+    "completeTerminalAndLogs": true,
+    "signalsOrUncertainty": false,
+    "bounds": {
+      "workers": 1,
+      "heapMiB": 1024,
+      "sampledRssMiB": 1152,
+      "continuousMemAvailableFloorMiB": 1920,
+      "wallAndCpuSeconds": 240
+    },
+    "samplingLimitation": "RSS watchdog is sampled, not a hard aggregate cap."
+  },
+  "independentStaticReview": {
+    "result": "NO_BLOCKER_WITH_EXPLICIT_LIMITS",
+    "scope": "Five-file patch, six source pins, legacy recipe and owner contracts, comparison immutability, source/check/runtime custody and existing RED/GREEN records. No independent test/typecheck/build/browser rerun."
+  },
+  "browser": {
+    "engine": "Chromium",
+    "cssWidth": 1180,
+    "localSyntheticOnly": true,
+    "observations": [
+      "The synthetic query was entered before choosing the combined candidate, then preserved across draft selection, selection entry, explicit apply and return.",
+      "Draft selection and selection entry did not alter the applied H appearance; selection made the product inert.",
+      "Explicit apply rendered Original 46px classification tabs and the 10px input frame together, using one root, one classification tablist and one search input.",
+      "Clear search restored two rows. Completed navigation hid search; one browser Back returned to pending with both appearances. Forward was not tested.",
+      "Two frozen baseline recipe JSONs each restored only the draft, then manual apply retained their original tabs-only or search-only appearance.",
+      "Owned browser and preview resources closed with preview exit zero."
+    ],
+    "probeCorrection": "An initial inert probe targeted an outer QA root; a subsequent read of the input inert ancestor confirmed true. Both observations were retained privately; no product change or acceptance retry was involved.",
+    "privateRawPacketsOrScreenshotsIncluded": false,
+    "narrowOrNativeTested": false,
+    "fullAccessibilityOrOwnerMatrixTested": false
+  },
+  "comparisonCombinationHandoff": "NOT_IMPLEMENTED_OR_BROWSER_VERIFIED",
+  "comparisonFilesUnchanged": 126,
+  "oldHandoffExport": {
+    "outcome": "UNKNOWN_UNCHANGED",
+    "reason": "The earlier interrupted export had no recovered terminal or harvest. This successful export does not establish its historical outcome.",
+    "originalEvidenceRetained": true
+  },
+  "limits": [
+    "Only classification tabs and the search input frame are combined. Range trigger/menu, dates, notices, calendar, host and global theme are not complete Original.",
+    "One exact combined choice reuses both adapters. Old standalone choices remain single-fragment alternatives with their original recipe meaning.",
+    "New combination and search-only are not accepted by the comparison URL; the existing three-fragment whitelist and 126-file comparison payload are unchanged.",
+    "No new narrow/native, broad keyboard/accessibility, full owner/account/scope/persistence, Forward or cross-route/four-variant regression matrix.",
+    "Full historical tree/app identity and complete font/state visual equivalence are unverified.",
+    "This source archive is not a standalone runnable website or production release."
+  ],
+  "evidenceDigests": {
+    "focusedResult": "71e79853d436aa5a356a0a7bd39e9d18365bb1062594f839b60daaa566aa55f3",
+    "baselineRedResult": "786494e3af2f1a9098fc2df860b56c265947f255bb03132dd4eefb06d382fc82",
+    "exportResult": "9ae6385015f833a634bbec1f1dbe27cc77461b279a4c6cdfa69909b79a944f57",
+    "typecheckResult": "b6d40cff2b7f9da7f153ac50193f2f36d9d4ac4dbb6a46212d9f37464346b8f7",
+    "independentReviewNotIncluded": "7acf89dcb4a8602414432108af61d42eab8a48aeff64fe5619a4dfc2114d029f",
+    "browserPacketsNotIncluded": "6cffabaddd14414fd86a47e35a45ae6ac050b00228625d024189135881ca38b3",
+    "finalEvidenceManifest": "b74a17dd2fedd1057e2531228847811348f3ca324c94023d9539aa49ea25b289"
+  },
+  "sealedEvidenceFiles": 86,
+  "baselineEvidenceFilesUnchanged": 105,
+  "fullApplicationAcceptance": false,
+  "releaseAdmission": false,
+  "testsRerunForArchive": false
+}

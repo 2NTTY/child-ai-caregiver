@@ -1,0 +1,92 @@
+{
+  "candidate": "original-filters-combination01",
+  "preparedDate": "2026-11-10",
+  "repository": "2NTTY/child-ai-caregiver",
+  "archiveBaseCommit": "5f3cd680de426cb77fd94b9a346076740c885c6d",
+  "nativeBaseline": {
+    "commit": "cd0df7049791c454fa49fa66edc4752586947d8e",
+    "path": "frontend/verification/original-search-frame-20261110",
+    "tree": "a0a1e0254782f38e6e28c431bd29e81c20f8b01b",
+    "remoteFilesVerified": 13
+  },
+  "nativeSource": {
+    "files": 714,
+    "canonicalSha256": "20e1c062b17752b5575e2a251dcd0ae3150b56c9486a8237425a7c59e3d5eec9",
+    "baselineFiles": 714,
+    "baselineCanonicalSha256": "8226dc76ab13d5ee9fe56b9de2c997958ae4c2d3fa3605e35bab15e7d7b0c5e0",
+    "changedFiles": [
+      "frontend/src/components/tasks/TasksView.tsx",
+      "frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx",
+      "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+      "frontend/src/preview/tasks-variant-catalog/catalog.d.mts",
+      "frontend/src/preview/tasks-variant-catalog/catalog.mjs"
+    ],
+    "addedFiles": [],
+    "deletedFiles": [],
+    "reconstructionVerified": true,
+    "instructions": "Reconstruct the pinned search-frame archive and its source chain, then replace these five source-overlay files and verify every SOURCE.json row."
+  },
+  "historicalSelectedBodies": [
+    {
+      "logicalPath": "frontend/src/components/tasks/TasksView.tsx",
+      "bytes": 26547,
+      "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622",
+      "gitBlob": "8adc10f3074fecd0484994ef958a6b88e721cbe6"
+    },
+    {
+      "logicalPath": "frontend/src/theme.ts",
+      "bytes": 4982,
+      "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2",
+      "gitBlob": "4ccb33cb8f83a0e7c84829c74495a3ca63dfbe7c"
+    },
+    {
+      "logicalPath": "frontend/src/components/ui.tsx",
+      "bytes": 28747,
+      "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563"
+    }
+  ],
+  "fullHistoricalTreeMembershipVerified": false,
+  "fullOriginalAppCommit": null,
+  "comparison": {
+    "unchangedFiles": 126,
+    "canonicalSha256": "2637c33580860476bc0cdb9293cdc166c15964e5534dc1545c8966bff2d3e583",
+    "baselineCommit": "cd0df7049791c454fa49fa66edc4752586947d8e",
+    "combinationURLTransport": false,
+    "existingURLFragments": [
+      "original-actions-fragment01",
+      "original-tabs-fragment01",
+      "original-row-fragment01"
+    ],
+    "filesDuplicatedInThisArchive": false
+  },
+  "fragmentContract": {
+    "slotId": "filters",
+    "variantId": "original",
+    "candidateId": "original-filters-combination01",
+    "coverage": "historical-filters-combination",
+    "adapterVersion": "original-filters-combination01-v1",
+    "digest": "2042fac89ea1bf8b4998859bc44c5ee144d90108a4eaf9f7346277aca088fb5c",
+    "sourcePinCount": 6,
+    "oneExactChoiceCombines": [
+      "original-tabs-fragment01",
+      "original-search-frame-fragment01"
+    ],
+    "legacyRecipesKeepOriginalSingleFragmentMeaning": true,
+    "runtimeAdmission": false,
+    "catalogAcceptance": "source-reviewed-integration-unverified",
+    "notWholeFilterSlot": true
+  },
+  "nativeMain": {
+    "src": "/_expo/static/js/web/index-16f41011852394a5048ba0b00ac3a18d.js",
+    "sha256": "b86c275bc0d3361351b43aae4e501fba229c3c9518c99bb7fec0e0dc13f8d83f",
+    "buildOutputIncluded": false
+  },
+  "safety": {
+    "syntheticPreviewOnly": true,
+    "privateRawIncluded": false,
+    "credentialsIncluded": false,
+    "productionSourceApplied": false,
+    "sitePublished": false,
+    "masterMerged": false
+  }
+}

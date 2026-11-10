@@ -1,0 +1,172 @@
+--- baseline/frontend/src/components/tasks/TasksView.tsx
++++ candidate/frontend/src/components/tasks/TasksView.tsx
+@@ -48,8 +48,9 @@
+   const customBackground = useCustomBackground();
+   const containerLayout = useContainerWidth();
+   const compact = pageLayout.width < mobileLayout.breakpoint;
+-  const originalTabs = modulePresentation?.filters === 'original-tabs-fragment01';
+-  const originalSearchFrame = modulePresentation?.filters === 'original-search-frame-fragment01';
++  const originalFiltersCombined = modulePresentation?.filters === 'original-filters-combination01';
++  const originalTabs = originalFiltersCombined || modulePresentation?.filters === 'original-tabs-fragment01';
++  const originalSearchFrame = originalFiltersCombined || modulePresentation?.filters === 'original-search-frame-fragment01';
+   const filtersVariant = originalTabs || originalSearchFrame ? null : modulePresentation?.filters;
+   const calendarVariant = modulePresentation?.["calendar-layout"];
+   const handbookHeader = modulePresentation?.["header-actions"] === "handbook";
+--- baseline/frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx
++++ candidate/frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx
+@@ -38,7 +38,7 @@
+ const EMPTY_SCENE:HeaderActionsHF01SceneProps = Object.freeze({});
+ const VERSION_LABELS = {original:'原版',harbour:'Harbour',care:'Care',handbook:'Handbook',fourth:'Fourth'} as const;
+ const SLOT_LABELS:Record<TaskSlotId,string> = {'header-actions':'頁首與操作',filters:'分類與篩選','date-list':'日期分組與清單','calendar-layout':'月曆與布局'};
+-const COVERAGE_LABELS = {'historical-search-frame-fragment':'歷史搜尋框外框片段','historical-tabs-fragment':'歷史分類分頁片段','historical-actions-fragment':'歷史操作按鈕片段','historical-row-fragment':'歷史事項列片段','actions-only':'操作區局部','row-appearance':'事項列外觀',
++const COVERAGE_LABELS = {'historical-filters-combination':'分類＋搜尋框組合','historical-search-frame-fragment':'歷史搜尋框外框片段','historical-tabs-fragment':'歷史分類分頁片段','historical-actions-fragment':'歷史操作按鈕片段','historical-row-fragment':'歷史事項列片段','actions-only':'操作區局部','row-appearance':'事項列外觀',
+   'header-appearance':'標題與操作外觀','controlled-filters-h-theme':'篩選外觀／H 元件',
+   'header-source-regions-partial-host':'頁首完整區域／宿主元件限制','date-list-source-regions-partial-host':'清單完整區域／宿主元件限制',
+   'date-groups-and-rows':'日期分組與事項列','controlled-calendar-layout-h-theme':'月曆布局／H 元件'} as const;
+@@ -436,12 +436,12 @@
+         <Text accessibilityLiveRegion="polite">{!available?'目前範圍不可用。':scope.occupied?'候選編輯已暫停，請先依原頁面完成或恢復目前操作。':
+           !scope.admissionVerified?'候選配方可編輯；組合預覽尚未開放，現有 H 產品仍可正常互動。':selecting?(sceneCommitted?'選配模式：產品操作暫停。':'正在準備選配模式。'):'產品互動模式。'}</Text>
+       </View>
+-      <View style={styles.versions}>{VARIANT_IDS.map(id=><Text key={id}>{VERSION_LABELS[id]}{id==='original'?'：歷史操作按鈕、分類分頁、搜尋框外框與事項列片段；完整原版來源與全局主題未驗證':'：來源對照，非整版選配'}</Text>)}</View>
++      <View style={styles.versions}>{VARIANT_IDS.map(id=><Text key={id}>{VERSION_LABELS[id]}{id==='original'?'：歷史操作按鈕、分類分頁、搜尋框外框與事項列；分類與搜尋框可一併選配，完整原版來源與全局主題未驗證':'：來源對照，非整版選配'}</Text>)}</View>
+       {TASK_SLOT_IDS.map(slot=>{
+         const selection=draft.current[slot];
+         return <View key={slot} style={styles.slot}>
+           <Text accessibilityRole="header" style={styles.slotTitle}>{SLOT_LABELS[slot]}</Text>
+-          <Text>{slot==='header-actions'?'操作局部或 Handbook 標題與操作外觀；原版操作片段保留 H 頁標題與工具列宿主。':slot==='date-list'?'事項列局部或 Handbook 日期分組與列外觀；空態、載入及分頁仍為 H。':slot==='filters'?'受控分類與篩選外觀；原版分類分頁或搜尋框外框二選一；範圍與提示保留 H，不代表完整篩選槽。':'受控月曆與清單布局；沿用 H 元件與保護詳情，實際尺寸及互動仍待驗收。'}</Text>
++          <Text>{slot==='header-actions'?'操作局部或 Handbook 標題與操作外觀；原版操作片段保留 H 頁標題與工具列宿主。':slot==='date-list'?'事項列局部或 Handbook 日期分組與列外觀；空態、載入及分頁仍為 H。':slot==='filters'?'受控分類與篩選外觀；原版分類分頁與搜尋框外框可一併套用，舊單獨片段保留；範圍、日期與提示保留 H，完整原版篩選尚未完成。':'受控月曆與清單布局；沿用 H 元件與保護詳情，實際尺寸及互動仍待驗收。'}</Text>
+           <View style={styles.row}>{VARIANT_IDS.map(variant=>{
+             const candidates=getTaskSlot(variant,slot)?.narrowCandidates??[];
+             return candidates.length ? candidates.map(candidate=><AppButton key={`${variant}:${candidate.candidateId}`}
+@@ -453,7 +453,7 @@
+           })}</View>
+           <Text>候選籃：{selection?`${VERSION_LABELS[selection.variantId]} · ${COVERAGE_LABELS[selection.coverage]}（待套用／待驗收）`:'未選配；目前沿用 H 宿主'}</Text>
+           <AppButton label="清除此槽草稿" accessibilityLabel={`清除${SLOT_LABELS[slot]}草稿`} variant="quiet" disabled={!candidateEditable||!selection} onPress={()=>this.choose(frame,event,{type:'clearSlot',slotId:slot})}/>
+-          <Text>{checkTaskSlotCapability('original',slot,'compose').prospectiveComposable?'':'完整原版未驗證，不能還原為整版原版；操作按鈕、分類分頁、搜尋框外框與事項列僅為局部片段，可在此選配或用配方文字還原。'}</Text>
++          <Text>{checkTaskSlotCapability('original',slot,'compose').prospectiveComposable?'':'完整原版未驗證，不能還原為整版原版；分類＋搜尋框組合及各單獨片段仍屬局部，可在此選配或用配方文字還原，須明確套用。'}</Text>
+         </View>;
+       })}
+       <View style={styles.row}>
+--- baseline/frontend/src/preview/tasks-choice-host/module-presentation.ts
++++ candidate/frontend/src/preview/tasks-choice-host/module-presentation.ts
+@@ -10,7 +10,7 @@
+ /** Readonly appearance only. The Control's existing scene admission owns delivery. */
+ export type TaskModulePresentation = Readonly<{
+   'header-actions': 'harbour' | 'fourth' | 'handbook' | 'original-actions-fragment01' | TaskSourceRegionProfile | null;
+-  filters: TaskPresentationVariant | 'original-tabs-fragment01' | 'original-search-frame-fragment01' | null;
++  filters: TaskPresentationVariant | 'original-tabs-fragment01' | 'original-search-frame-fragment01' | 'original-filters-combination01' | null;
+   'date-list': 'harbour' | 'fourth' | 'handbook' | 'original-row-fragment01' | TaskSourceRegionProfile | null;
+   'calendar-layout': TaskPresentationVariant | null;
+ }>;
+@@ -36,7 +36,9 @@
+     filters: snapshot.filters?.slotId === 'filters' && snapshot.filters.variantId === 'original' && snapshot.filters.candidateId === 'original-tabs-fragment01'
+       ? 'original-tabs-fragment01'
+       : snapshot.filters?.slotId === 'filters' && snapshot.filters.variantId === 'original' && snapshot.filters.candidateId === 'original-search-frame-fragment01'
+-        ? 'original-search-frame-fragment01' : controlled(snapshot.filters?.variantId),
++        ? 'original-search-frame-fragment01'
++        : snapshot.filters?.slotId === 'filters' && snapshot.filters.variantId === 'original' && snapshot.filters.candidateId === 'original-filters-combination01'
++          ? 'original-filters-combination01' : controlled(snapshot.filters?.variantId),
+     'date-list': snapshot['date-list']?.slotId === 'date-list' && snapshot['date-list'].variantId === 'original' && snapshot['date-list'].candidateId === 'original-row-fragment01'
+       ? 'original-row-fragment01' : regionProfile(snapshot['date-list'], 'date-list-source-regions02'),
+     'calendar-layout': controlled(snapshot['calendar-layout']?.variantId),
+--- baseline/frontend/src/preview/tasks-variant-catalog/catalog.d.mts
++++ candidate/frontend/src/preview/tasks-variant-catalog/catalog.d.mts
+@@ -18,10 +18,10 @@
+ }>;
+ export type NarrowCandidate = Readonly<{
+   slotId: TaskSlotId;
+-  candidateId: 'original-search-frame-fragment01' | 'original-tabs-fragment01' | 'original-actions-fragment01' | 'original-row-fragment01' | 'header-actions' | 'row-appearance' | 'header-presentation' | 'filters-presentation' | 'date-list-presentation' | 'calendar-presentation' | 'header-source-regions02' | 'date-list-source-regions02';
++  candidateId: 'original-filters-combination01' | 'original-search-frame-fragment01' | 'original-tabs-fragment01' | 'original-actions-fragment01' | 'original-row-fragment01' | 'header-actions' | 'row-appearance' | 'header-presentation' | 'filters-presentation' | 'date-list-presentation' | 'calendar-presentation' | 'header-source-regions02' | 'date-list-source-regions02';
+   variantId: 'original' | 'harbour' | 'fourth' | 'handbook' | 'care';
+   hostVariantId: 'harbour';
+-  coverage: 'historical-search-frame-fragment' | 'historical-tabs-fragment' | 'historical-actions-fragment' | 'historical-row-fragment' | 'actions-only' | 'row-appearance' | 'header-appearance' | 'controlled-filters-h-theme' | 'date-groups-and-rows' | 'controlled-calendar-layout-h-theme' | 'header-source-regions-partial-host' | 'date-list-source-regions-partial-host';
++  coverage: 'historical-filters-combination' | 'historical-search-frame-fragment' | 'historical-tabs-fragment' | 'historical-actions-fragment' | 'historical-row-fragment' | 'actions-only' | 'row-appearance' | 'header-appearance' | 'controlled-filters-h-theme' | 'date-groups-and-rows' | 'controlled-calendar-layout-h-theme' | 'header-source-regions-partial-host' | 'date-list-source-regions-partial-host';
+   adapterVersion: string;
+   sourceAvailability: 'available';
+   acceptance: 'bounded-source-accepted' | 'source-reviewed-integration-unverified';
+--- baseline/frontend/src/preview/tasks-variant-catalog/catalog.mjs
++++ candidate/frontend/src/preview/tasks-variant-catalog/catalog.mjs
+@@ -672,6 +672,74 @@
+     sourceFiles:ORIGINAL_SEARCH_FRAME_FRAGMENT.files, referenceFiles:ORIGINAL_SEARCH_FRAME_FRAGMENT.references,
+   }];
+ }
++// One explicit partial filters version composes both existing appearances.
++// It changes neither query/route ownership nor the meaning of older recipes.
++const ORIGINAL_FILTERS_COMBINATION = {
++  "digest": "2042fac89ea1bf8b4998859bc44c5ee144d90108a4eaf9f7346277aca088fb5c",
++  "files": [
++    {
++      "sourceId": "original-filters-combination01",
++      "path": "frontend/src/components/tasks/TasksView.tsx",
++      "sha256": "472527a650c18f56d6d093415d072e51efef00df5c875ce46a5b2dcd736b7399"
++    },
++    {
++      "sourceId": "original-filters-combination01",
++      "path": "frontend/src/preview/tasks-choice-host/module-presentation.ts",
++      "sha256": "fe53217e0180d9763b83b8a4e641082bac606f22fee6488bb196f3e0391a3ece"
++    },
++    {
++      "sourceId": "original-filters-combination01",
++      "path": "frontend/src/preview/tasks-original-presentation/search-frame-appearance.ts",
++      "sha256": "5404093984c5bc8b146ff9f1b71d4e0a72b6975b7b25810b6abd35cb22ca9e93"
++    },
++    {
++      "sourceId": "original-filters-combination01",
++      "path": "frontend/src/preview/tasks-original-presentation/source-theme.ts",
++      "sha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a"
++    },
++    {
++      "sourceId": "original-filters-combination01",
++      "path": "frontend/src/preview/tasks-original-presentation/styles.ts",
++      "sha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48"
++    },
++    {
++      "sourceId": "original-filters-combination01",
++      "path": "frontend/src/preview/tasks-original-presentation/tabs-appearance.ts",
++      "sha256": "9d1d52a2e66120b1049daf4bbe8f9f82bb186cb1ece2f569c82d072396dbc506"
++    }
++  ],
++  "references": [
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/tasks/TasksView.tsx",
++      "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/ui.tsx",
++      "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/theme.ts",
++      "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2"
++    }
++  ]
++};
++function originalFiltersCombinationCandidates(variantId, slotId) {
++  if (variantId !== 'original' || slotId !== 'filters') return [];
++  return [{slotId, variantId, hostVariantId:'harbour', candidateId:'original-filters-combination01',
++    coverage:'historical-filters-combination', adapterVersion:'original-filters-combination01-v1',
++    sourceAvailability:'available', acceptance:'source-reviewed-integration-unverified',
++    prospectiveComposable:true, runtimeAdmission:false, protectedOwner:OWNER,
++    appearanceLimit:'Historical classification tabs and search input frame applied together through the existing single owner. H range, date, notices and Paper focus/label/icon theme remain. Older individual recipes keep their meaning. Not complete Original filters or global theme; comparison URL transport unsupported.',
++    // Legacy wire-field: exact partial composition digest, NOT full assembly membership.
++    sourceFingerprint:{assemblyMembersSha256:ORIGINAL_FILTERS_COMBINATION.digest,
++      files:ORIGINAL_FILTERS_COMBINATION.files.map(({path,sha256})=>({path:path.slice('frontend/'.length),sha256}))},
++    dependenciesFingerprint:ORIGINAL_FILTERS_COMBINATION.digest,
++    sourceFiles:ORIGINAL_FILTERS_COMBINATION.files, referenceFiles:ORIGINAL_FILTERS_COMBINATION.references,
++  }];
++}
+ function makeSlot(variantId, slotId) {
+   const identity = SOURCE_IDENTITIES[variantId];
+   const paths = {
+@@ -697,7 +765,7 @@
+     sourceDifference:slotId === 'header-actions' ? DIFFERENCES[variantId].header
+       : slotId === 'calendar-layout' ? DIFFERENCES[variantId].layout : DIFFERENCES[variantId].state,
+     wholeSlotComposable:false, acceptance:'not-accepted', runtimeAdmission:false,
+-    narrowCandidates:[...originalSearchFrameCandidates(variantId,slotId),...originalTabsFragmentCandidates(variantId,slotId),...originalActionsFragmentCandidates(variantId,slotId),...originalRowFragmentCandidates(variantId,slotId),...narrowCandidates(variantId,slotId),...presentationCandidates(variantId,slotId),...sourceRegionCandidates(variantId,slotId)],
++    narrowCandidates:[...originalFiltersCombinationCandidates(variantId,slotId),...originalSearchFrameCandidates(variantId,slotId),...originalTabsFragmentCandidates(variantId,slotId),...originalActionsFragmentCandidates(variantId,slotId),...originalRowFragmentCandidates(variantId,slotId),...narrowCandidates(variantId,slotId),...presentationCandidates(variantId,slotId),...sourceRegionCandidates(variantId,slotId)],
+   };
+ }
+ function makeVariant(variantId) {

@@ -1,0 +1,66 @@
+{
+  "candidate": "original-filters-combination01",
+  "manifestExcludesItself": true,
+  "files": [
+    {
+      "path": "PROVENANCE.json",
+      "bytes": 3570,
+      "sha256": "402ebac8a52c30364bb202555329649c048e3b7a67e5032341696079ae4745b3",
+      "gitBlobSha1": "94522ea36b19e127ae5f656b32209ab1481b9bcf"
+    },
+    {
+      "path": "README.md",
+      "bytes": 4310,
+      "sha256": "3b048cd98fbe51d3fc50ed75193122a3c389f2a2b1898c83d86fd7c189491d3b",
+      "gitBlobSha1": "c962ccfcbe8e35d1d87f0c0ee0aa0139a619cb86"
+    },
+    {
+      "path": "SOURCE.json",
+      "bytes": 129177,
+      "sha256": "c9bf8669b500b5cf09c876c02d157df5f6d7358f9105240021f9d7b601ddd462",
+      "gitBlobSha1": "2ef45bda80efdb61f7c8d936286cab4fcb84ed12"
+    },
+    {
+      "path": "VERIFICATION.json",
+      "bytes": 5645,
+      "sha256": "b942d9b797d0d7c9712f7437c2c1dfd91da4beebc53ad518d4b857c807b72bc4",
+      "gitBlobSha1": "42effe5d161f218447708c7133477b55d2ebd061"
+    },
+    {
+      "path": "native.patch",
+      "bytes": 15540,
+      "sha256": "7d1d97af2b84c67eadfc27c6ea417bf42aeb99e6c1a7632f30e1d351e73c0c61",
+      "gitBlobSha1": "d0610a285eb966dafcd1ac28ace2ac70c62f282b"
+    },
+    {
+      "path": "source-overlay/frontend/src/components/tasks/TasksView.tsx",
+      "bytes": 39743,
+      "sha256": "472527a650c18f56d6d093415d072e51efef00df5c875ce46a5b2dcd736b7399",
+      "gitBlobSha1": "d301323200a530ba7510d005f8b71014b5ded03c"
+    },
+    {
+      "path": "source-overlay/frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx",
+      "bytes": 36113,
+      "sha256": "2c10de82f2dba6bfcc78e6c53457df2334bb3cb718da751b6ac8a1809866221d",
+      "gitBlobSha1": "4901cdbcec313bb4833ec382cd551fc8695bb5d3"
+    },
+    {
+      "path": "source-overlay/frontend/src/preview/tasks-choice-host/module-presentation.ts",
+      "bytes": 4792,
+      "sha256": "fe53217e0180d9763b83b8a4e641082bac606f22fee6488bb196f3e0391a3ece",
+      "gitBlobSha1": "f275659c1763d9d54abc88af16344448f5c1df06"
+    },
+    {
+      "path": "source-overlay/frontend/src/preview/tasks-variant-catalog/catalog.d.mts",
+      "bytes": 5548,
+      "sha256": "74c3123bf2567b74c9447d217ae4b77bf258680521614a960e9702d3046b373d",
+      "gitBlobSha1": "434636c3d8f68a283ef94106f0ffa52e8b285041"
+    },
+    {
+      "path": "source-overlay/frontend/src/preview/tasks-variant-catalog/catalog.mjs",
+      "bytes": 51972,
+      "sha256": "50b0fcd06df2c09bde80cc356f7dac5189a667a95ecf450fe62fd570b248c7bb",
+      "gitBlobSha1": "4b9f8705aaff22e72c31d2d5dd344412be2dc725"
+    }
+  ]
+}
