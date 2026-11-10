@@ -1,0 +1,90 @@
+{
+  "candidate": "original-search-frame-fragment01",
+  "preparedDate": "2026-11-10",
+  "repository": "2NTTY/child-ai-caregiver",
+  "archiveBaseCommit": "5f3cd680de426cb77fd94b9a346076740c885c6d",
+  "nativeBaseline": {
+    "commit": "695a37b6680e49f035f854b73796515ffdd0b223",
+    "path": "frontend/verification/original-tabs-handoff-20261110",
+    "tree": "a1a2c3f5b22bd7eae561ebbaa9aa81793a9b8397",
+    "remoteFilesVerified": 14
+  },
+  "nativeSource": {
+    "files": 714,
+    "canonicalSha256": "8226dc76ab13d5ee9fe56b9de2c997958ae4c2d3fa3605e35bab15e7d7b0c5e0",
+    "baselineFiles": 713,
+    "baselineCanonicalSha256": "d7449cce9c0af17b0d3ad3ee5a507165df15ce3ecffee58824f91fd7471bc229",
+    "changedFiles": [
+      "frontend/src/components/tasks/TasksView.tsx",
+      "frontend/src/components/tasks/presentation/TasksFiltersPresentation.tsx",
+      "frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx",
+      "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+      "frontend/src/preview/tasks-original-presentation/search-frame-appearance.ts",
+      "frontend/src/preview/tasks-variant-catalog/catalog.d.mts",
+      "frontend/src/preview/tasks-variant-catalog/catalog.mjs"
+    ],
+    "addedFiles": [
+      "frontend/src/preview/tasks-original-presentation/search-frame-appearance.ts"
+    ],
+    "deletedFiles": [],
+    "reconstructionVerified": true,
+    "instructions": "Reconstruct the pinned three-fragment handoff baseline through its source chain, replace/add these seven source-overlay files, and verify every SOURCE.json row."
+  },
+  "historicalSelectedBodies": [
+    {
+      "logicalPath": "frontend/src/components/tasks/TasksView.tsx",
+      "bytes": 26547,
+      "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622",
+      "gitBlob": "8adc10f3074fecd0484994ef958a6b88e721cbe6"
+    },
+    {
+      "logicalPath": "frontend/src/theme.ts",
+      "bytes": 4982,
+      "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2",
+      "gitBlob": "4ccb33cb8f83a0e7c84829c74495a3ca63dfbe7c"
+    },
+    {
+      "logicalPath": "frontend/src/components/ui.tsx",
+      "bytes": 28747,
+      "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563"
+    }
+  ],
+  "fullHistoricalTreeMembershipVerified": false,
+  "fullOriginalAppCommit": null,
+  "comparison": {
+    "unchangedFiles": 126,
+    "canonicalSha256": "2637c33580860476bc0cdb9293cdc166c15964e5534dc1545c8966bff2d3e583",
+    "baselineCommit": "695a37b6680e49f035f854b73796515ffdd0b223",
+    "searchFrameURLTransport": false,
+    "existingURLFragments": [
+      "original-actions-fragment01",
+      "original-tabs-fragment01",
+      "original-row-fragment01"
+    ],
+    "filesDuplicatedInThisArchive": false
+  },
+  "fragmentContract": {
+    "slotId": "filters",
+    "variantId": "original",
+    "candidateId": "original-search-frame-fragment01",
+    "adapterVersion": "original-search-frame-fragment01-v1",
+    "digest": "2924cd365f8f4890504a91f9875af69f7aeec276664e7ea7465fa1291e99946c",
+    "mutuallyExclusiveWith": "original-tabs-fragment01",
+    "runtimeAdmission": false,
+    "catalogAcceptance": "source-reviewed-integration-unverified",
+    "notWholeFilterSlot": true
+  },
+  "nativeMain": {
+    "src": "/_expo/static/js/web/index-233e6afee785f45e843279d2faf6a75e.js",
+    "sha256": "c82f004d9dd1b4bb81d90dbddecf1120a3f9387748f62a2d74ee751e12f5e9f1",
+    "buildOutputIncluded": false
+  },
+  "safety": {
+    "syntheticPreviewOnly": true,
+    "privateRawIncluded": false,
+    "credentialsIncluded": false,
+    "productionSourceApplied": false,
+    "sitePublished": false,
+    "masterMerged": false
+  }
+}

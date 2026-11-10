@@ -1,0 +1,102 @@
+{
+  "result": "BOUNDED_SEARCH_FRAME_PASS_WITH_EXPLICIT_LIMITS",
+  "observedDate": "2026-11-10",
+  "sourceCanonicalSha256": "8226dc76ab13d5ee9fe56b9de2c997958ae4c2d3fa3605e35bab15e7d7b0c5e0",
+  "focusedTests": {
+    "pass": 5,
+    "fail": 0,
+    "loadedProductSources": 44,
+    "testInputsPinned": 3,
+    "method": "source/React-element inspection with controlled hooks and dependency ports; not mounted",
+    "red001": "3 missing-feature assertions and 2 fixture ReferenceErrors",
+    "red002": "5 expected missing-feature assertions before product implementation",
+    "exitCode": 0,
+    "fixtureCorrection": "The first RED contained two fixture ReferenceErrors. The missing assert import was fixed and all five expected feature assertions failed on unchanged product source before implementation.",
+    "scope": [
+      "Exact tuple, source pins, strict recipe validation and projection.",
+      "Old three-fragment URL remains valid; new search fragment rejected by existing whitelist.",
+      "Actual source/React elements preserve one producer, value, label, placeholder, clear/query callbacks, routes, guards and range/day/calendar paths.",
+      "Pure historical frame appearance preserves H Paper theme and native font fallback."
+    ],
+    "mountedUI": false
+  },
+  "packageTestForms": {
+    "pass": 21,
+    "fail": 0,
+    "allFiveScriptFiles": true,
+    "notWholeApplicationSuite": true,
+    "exitCode": 0
+  },
+  "typecheck": {
+    "fresh": true,
+    "exitCode": 0,
+    "wallSeconds": 12.749223172984784,
+    "sampledOwnedPeakRssBytes": 1153900544
+  },
+  "export": {
+    "runs": 1,
+    "exitCode": 0,
+    "wallSeconds": 58.562370495987125,
+    "sampledOwnedPeakRssBytes": 651747328,
+    "completeTerminalAndLogs": true,
+    "signalsOrUncertainty": false,
+    "bounds": {
+      "workers": 1,
+      "heapMiB": 1024,
+      "sampledRssMiB": 1152,
+      "continuousMemAvailableFloorMiB": 1920,
+      "wallAndCpuSeconds": 240
+    },
+    "samplingLimitation": "RSS watchdog is sampled, not a hard aggregate cap."
+  },
+  "independentStaticReview": {
+    "result": "PASS_NO_BLOCKING_CODE_DEFECT",
+    "scope": "Source and historical pins, seven-file patch, exact recipe/URL boundaries, single-owner and guarded callbacks, existing test records. Not an independent mounted UI/browser/typecheck run."
+  },
+  "browser": {
+    "engine": "Chromium",
+    "cssWidth": 1180,
+    "localSyntheticOnly": true,
+    "observations": [
+      "Synthetic query reduced the list to one matching item.",
+      "Draft selection and selection entry kept the H 8px frame and existing query; selection made the product inert.",
+      "Only explicit apply and return changed the frame to historical background #FFFFFE, outline #737284 and radius 10px; query remained unchanged.",
+      "Actual clear-search click emptied the query, removed the clear button and restored both synthetic rows.",
+      "One root, classification tablist and search input; exact exported main observed.",
+      "Choosing Original tabs as a draft did not change the applied search frame. Explicit apply then restored the H search frame while applying Original tabs: the same filters slot is mutually exclusive.",
+      "H placeholder and focus theme retained; owned tab closed and managed preview stopped with exit zero."
+    ],
+    "privateRawPacketsOrScreenshotsIncluded": false,
+    "nativeFontFallback": "Source/element assertion only; no native browser run.",
+    "fontLoadingOrAllStatesVisuallyEquivalent": false
+  },
+  "comparisonSearchHandoff": "NOT_IMPLEMENTED_OR_BROWSER_VERIFIED",
+  "comparisonFilesUnchanged": 126,
+  "oldHandoffExport": {
+    "outcome": "UNKNOWN_UNCHANGED",
+    "reason": "Historical interrupted export had no recovered terminal/harvest. This successful export does not establish its historical outcome.",
+    "originalEvidenceRetained": true
+  },
+  "limits": [
+    "This is only the historical input frame, not complete search, filters, date range, calendar, host or full Original.",
+    "Search frame and Original classification tabs are alternatives within one filters slot, never combined by this candidate.",
+    "Only workbench selection or strict recipe JSON supports the new candidate. Comparison page and URL still support the previous three exact fragments.",
+    "No new narrow/native, broad keyboard/accessibility, whole owner/account/scope/persistence, undo/import/export, cross-route or four-variant regression matrix.",
+    "No full historical tree/app identity or complete historical font/state visual equivalence established.",
+    "This source archive is not a standalone runnable website or production release."
+  ],
+  "evidenceDigests": {
+    "focusedResult": "ad29b5eefdea06bc5263a08463c8de2be729d098d1964cc04e31ba32d57b23e9",
+    "packageFormsResult": "db738c72bcae4105c4f0eebb75978dbe2d410f7b0227dccf119c3fb7bc2d489e",
+    "exportResult": "848bc7702aef412115fc5e428e51a9322d2a531bf9e57502c8d9742d759b387a",
+    "typecheckResult": "f50bd1ce569e500d409fefd8f3b0fe64cbc0ae75d7a85a43231c35b0f79ff342",
+    "independentReviewNotIncluded": "2589bee25f0f3425d46a65052c24e28300b588aa872dcdfaa758d04459130d5f",
+    "browserPacketsNotIncluded": "26d45ead9b0ca204a6b14d02fbbacd2d46d2223980c004472498a29cfa4fad77",
+    "finalEvidenceManifest": "5a334325e34c50b36a791e42e9906b554f02567910462a12a10317d59ffdfdfd"
+  },
+  "sealedEvidenceFiles": 105,
+  "baselineEvidenceFilesUnchanged": 75,
+  "fullApplicationAcceptance": false,
+  "releaseAdmission": false,
+  "testsRerunForArchive": false
+}
