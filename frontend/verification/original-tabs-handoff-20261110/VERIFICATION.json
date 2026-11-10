@@ -1,0 +1,95 @@
+{
+  "result": "BOUNDED_THREE_FRAGMENT_HANDOFF_PASS_WITH_EXPLICIT_LIMITS",
+  "observedDate": "2026-11-10",
+  "sourceCanonicalSha256": "d7449cce9c0af17b0d3ad3ee5a507165df15ce3ecffee58824f91fd7471bc229",
+  "comparisonCanonicalSha256": "2637c33580860476bc0cdb9293cdc166c15964e5534dc1545c8966bff2d3e583",
+  "focusedTests": {
+    "passed": 4,
+    "failed": 0,
+    "exitCode": 0,
+    "baselineRedFailed": 4,
+    "loadedProductSourcesRehashed": 32,
+    "scope": [
+      "Three exact Original slot/ID tuples and existing mixed candidates; wrong slot/ID/version/extra data and malformed encodings rejected.",
+      "Comparison controls require both observed frames at Tasks; recipe selection preserves frame identity and route.",
+      "Native import reconstructs catalog-pinned recipe text only for an empty receipt.",
+      "Genuine mounted Control requires separate restore, selection entry and apply; return preserves presentation, admission loss clears it."
+    ],
+    "controlledPorts": "Mounted Control uses controlled visual, owner, router and DOM-admission ports; not a full product-owner or RNW visual test.",
+    "historicalFixture": {
+      "name": "regression.test.mjs host fixture",
+      "executionCustodyIncluded": false,
+      "postRunSha256": "3bdf77eef9d0b20f921dd6f74c096ea2fb247dd427eddd2f15fa5c26deeb834a",
+      "limitation": "The comparison test read a historical fixture outside execution-time pins and load receipts. The post-run hash cannot establish its execution-time bytes; do not claim all test inputs were pinned."
+    }
+  },
+  "typecheck": {
+    "status": "INHERITED_NOT_RERUN",
+    "basis": "Only two .mjs native source files differ; all TypeScript, declaration, configuration and remaining source bytes equal the prior passing tabs-fragment candidate.",
+    "priorExitCode": 0,
+    "priorWallSeconds": 13.150900228007231,
+    "priorResultSha256": "e34922af30b0401df84c41ec45aca7c289de79f322ec4ac6c0b57e9043ad1dbe"
+  },
+  "export": {
+    "runs": 1,
+    "exitCode": 0,
+    "wallSeconds": 60.766280234005535,
+    "sampledOwnedPeakRssBytes": 621809664,
+    "completeTerminalAndLogs": true,
+    "signalsOrUncertainty": false,
+    "bounds": {
+      "workers": 1,
+      "heapMiB": 1024,
+      "sampledRssMiB": 1152,
+      "memAvailableFloorMiB": 1920,
+      "wallAndCpuSeconds": 240
+    },
+    "samplingLimitation": "RSS watchdog is sampled, not a hard aggregate cap."
+  },
+  "independentStaticReview": {
+    "result": "PASS_NO_BLOCKING_CODE_DEFECT",
+    "scope": "Source hashes, two/four-file deltas, strict contracts and existing execution records. Not an independent browser run.",
+    "fixtureGapDisclosed": true
+  },
+  "browser": {
+    "engine": "Chromium",
+    "cssWidth": 1180,
+    "localSyntheticOnly": true,
+    "observations": [
+      "Controls enable only after both comparison frames visibly reach Tasks.",
+      "Actual link includes three exact identifiers and null calendar; frame routes remain unchanged by candidate selection.",
+      "Native page preloads source-pinned text but keeps the default Handbook basket and product.",
+      "Explicit restore changes only the basket. Selection entry makes product inert without applying.",
+      "Explicit apply and return show assistant/manual/history actions, Original dark tabs with 46px minimum height, and Original 80px rows together.",
+      "One root, one tablist and exact new export main observed; product inert removed on return.",
+      "Owned tabs closed and local preview stopped with exit zero."
+    ],
+    "privateRawPacketsOrScreenshotsIncluded": false,
+    "observationNotes": [
+      "A role locator timed out because selection mode made product tabs inert; read-only DOM inspection confirmed state without repeating the action.",
+      "Immediate inventory briefly retained a closing comparison tab; final inventory confirmed both owned tabs gone."
+    ]
+  },
+  "oldHandoffExport": {
+    "outcome": "UNKNOWN_UNCHANGED",
+    "reason": "Historical interrupted export had no recovered terminal/harvest. This successful export does not establish its historical outcome.",
+    "originalEvidenceRetained": true
+  },
+  "limits": [
+    "Only three historical fragments are transported, not whole Original, full filter slot, calendar or global theme.",
+    "Comparison and native workbench retain distinct synthetic cases; only candidate identifiers are transferred.",
+    "No new narrow/native, broad keyboard/accessibility, whole product-owner/account/scope, persistence or four-variant regression matrix.",
+    "Stage metadata remains immutable; a copied comparison manifest source description still mentions only actions/row. Actual hashes, code, UI and tests include tabs.",
+    "This source archive is not a standalone runnable website or production release."
+  ],
+  "evidenceDigests": {
+    "focusedResult": "030f5c39ae06d76f275d8e3a56a0f94d888b62970de6217a802337cffbc58995",
+    "exportResult": "bd063bd37d75255f47faff4cc7eb3e63af3a862d60e297b92b8fecb7e6415112",
+    "independentReviewNotIncluded": "be921a5213b671a83b85becf987e7e314e6a664d786e5b0ead8aab16487c9fcd",
+    "browserPacketsNotIncluded": "9703aa50278e65cef61362e836c09b3fe09bf6f2e2a3fdfbed44b7267a66d474",
+    "finalEvidenceManifest": "c30755864e7a6b0590392a606c6754ce242321521a8f905f05ba741c3c871928"
+  },
+  "fullApplicationAcceptance": false,
+  "releaseAdmission": false,
+  "testsRerunForArchive": false
+}

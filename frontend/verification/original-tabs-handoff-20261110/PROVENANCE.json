@@ -1,0 +1,60 @@
+{
+  "candidate": "original-tabs-comparison-handoff01",
+  "preparedDate": "2026-11-10",
+  "repository": "2NTTY/child-ai-caregiver",
+  "archiveBaseCommit": "5f3cd680de426cb77fd94b9a346076740c885c6d",
+  "nativeBaseline": {
+    "commit": "cfd3adf87cb700e77cf9143c880a003d6d5c0ef9",
+    "path": "frontend/verification/original-tabs-fragment-20261110",
+    "tree": "e79dd56550cbfb8db1e7cff1ffba5245859306d8",
+    "remoteFilesVerified": 12
+  },
+  "comparisonBaseline": {
+    "commit": "2ef279d4733577b2b42b35a780eddcd8f04652aa",
+    "path": "frontend/verification/original-actions-handoff-20261110",
+    "tree": "4e1a0f6e44ae543ac1edbf830126794d5799e6bc",
+    "remoteFilesVerified": 14
+  },
+  "nativeSource": {
+    "files": 713,
+    "canonicalSha256": "d7449cce9c0af17b0d3ad3ee5a507165df15ce3ecffee58824f91fd7471bc229",
+    "baselineCanonicalSha256": "12c47eaa4cd38687d8ac86d847c14f7af1f895498ae7aaea53b074ec009d013d",
+    "changedFiles": [
+      "frontend/src/preview/tasks-choice-host/candidate-fragment.mjs",
+      "frontend/src/preview/tasks-variant-catalog/catalog.mjs"
+    ],
+    "addedFiles": [],
+    "deletedFiles": [],
+    "reconstructionVerified": true,
+    "instructions": "Reconstruct the pinned tabs-fragment baseline through its source chain, replace these two source-overlay files, and verify every SOURCE.json row."
+  },
+  "comparison": {
+    "files": 126,
+    "canonicalSha256": "2637c33580860476bc0cdb9293cdc166c15964e5534dc1545c8966bff2d3e583",
+    "baselineCanonicalSha256": "7918e21a441bb71c7b543f3b1ffe3128c8220b16816e2ccf960648d499b83afd",
+    "changedFiles": [
+      "experiments/workbench-compare/candidate-fragment.mjs",
+      "experiments/workbench-compare/index.html",
+      "experiments/workbench-compare/native-catalog.mjs",
+      "experiments/workbench-compare/recipe-handoff.mjs"
+    ],
+    "hostSourcesReconstructed": 17,
+    "compiledAssetsOmitted": 109,
+    "instructions": "Reconstruct the 17 comparison host sources through the actions-handoff archive, then replace these four comparison-overlay files. The full tested payload inventory is retained; 109 unchanged compiled assets are omitted."
+  },
+  "nativeMain": {
+    "src": "/_expo/static/js/web/index-4edc8177e793f6b6e6796aaf0f264790.js",
+    "sha256": "47682b5c644a4ef9a136174cdd360faab84cb0d367f515fe55ea59fc6d3fd179",
+    "buildOutputIncluded": false
+  },
+  "fullOriginalIdentityVerified": false,
+  "globalThemeAccepted": false,
+  "safety": {
+    "syntheticPreviewOnly": true,
+    "privateRawIncluded": false,
+    "credentialsIncluded": false,
+    "productionSourceApplied": false,
+    "sitePublished": false,
+    "masterMerged": false
+  }
+}
