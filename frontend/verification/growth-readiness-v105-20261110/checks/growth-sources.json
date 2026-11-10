@@ -1,0 +1,42 @@
+[
+  {
+    "variantId": "original",
+    "sourceReference": "historical-site-baseline-80284456",
+    "main": "_expo/static/js/web/index-bd76e37195c959192eab162f36438f50.js",
+    "mainSha256": "786f8608718d34dc7b005a9f1c088febd195bd98712ac682a7930a1f4e8a3a27",
+    "payloadPath": "experiments/workbench-compare/payload/original/growth.js",
+    "payloadSha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+  },
+  {
+    "variantId": "harbour",
+    "sourceReference": "4050c0a16d0a9735923434abc9749ecd416d7926",
+    "main": "_expo/static/js/web/index-8c1626aa51e6cdb1709947452b81393b.js",
+    "mainSha256": "472c2c8eb19dc223b6b0cd6779de08c7c325cc28913374d0be7b1a50509a79c8",
+    "payloadPath": "experiments/workbench-compare/payload/harbour/growth.js",
+    "payloadSha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+  },
+  {
+    "variantId": "care",
+    "sourceReference": "520d4c88a74faf460a464c38931cd9e1a84e0ec8",
+    "main": "_expo/static/js/web/index-2415366a63d8fd7ec5acfa4b5bf1fd24.js",
+    "mainSha256": "155a1683b9a11baa2aed6c5988ec1f084e7ce0b4376d1f10b5bf3af8257bf255",
+    "payloadPath": "experiments/workbench-compare/payload/care/growth.js",
+    "payloadSha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+  },
+  {
+    "variantId": "journal",
+    "sourceReference": "72a00c860118e254e05249b471efb2a676aaaa42",
+    "main": "_expo/static/js/web/index-cee3b614aec68037e34d895c245d460d.js",
+    "mainSha256": "1f6c4f943595bed72b8fc8e4b1944000ca7b9120d40babeb034f09eb4ac5e875",
+    "payloadPath": "experiments/workbench-compare/payload/journal/growth.js",
+    "payloadSha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+  },
+  {
+    "variantId": "uiux-upgrade",
+    "sourceReference": "76493c5e0747cb5da908fdb708879fd96509d093",
+    "main": "_expo/static/js/web/index-4d34b1edaafa990ad02850c72a08b475.js",
+    "mainSha256": "4ccd0b26fe54d82509d482049e2c0e936a6f3003d23119a9804af83145306e7a",
+    "payloadPath": "experiments/workbench-compare/payload/uiux-upgrade/growth.js",
+    "payloadSha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+  }
+]

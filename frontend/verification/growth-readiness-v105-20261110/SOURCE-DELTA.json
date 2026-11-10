@@ -1,0 +1,27 @@
+{
+  "baseVersion": 104,
+  "baseSitesSource": "a466c340ba245102d0643bd7764ab2ed157d4e5b",
+  "publishedVersion": 105,
+  "publishedSitesSource": "21c413613731c735caf9d6a7e9426712bbfbc1e2",
+  "baseCanonicalSha256": "a1ca2aa5ed5fd915a57bc26f82b1914f2b7e3fd557193f5f7c07a2f5a8a6e3b1",
+  "canonicalSha256": "303e963c94e84026e1454193a67fbb3981fc0f0465b3474530cd79ad5e089d57",
+  "baseArchive": "https://github.com/2NTTY/child-ai-caregiver/tree/129a3bc751db1b2568580f6e57b9481c2af726d6/frontend/verification/settings-readiness-v104-20261110",
+  "changed": [
+    {
+      "path": "experiments/workbench-compare/app.mjs",
+      "before": {
+        "path": "experiments/workbench-compare/app.mjs",
+        "bytes": 18138,
+        "sha256": "2725351755f2989606fa6a319f65899ec33eadc886b92eb33dd7dc23ccffdfc4"
+      },
+      "after": {
+        "path": "experiments/workbench-compare/app.mjs",
+        "bytes": 18208,
+        "sha256": "e1d6fa01c4e9b6dd0a3e12397a37900353387853a50afbaf158aae247b3981c7"
+      }
+    }
+  ],
+  "unchangedProductFiles": 503,
+  "addedProductFiles": 0,
+  "deletedProductFiles": 0
+}

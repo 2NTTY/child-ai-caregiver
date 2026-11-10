@@ -1,0 +1,129 @@
+{
+  "version": 105,
+  "sitesSource": "21c413613731c735caf9d6a7e9426712bbfbc1e2",
+  "deploymentStatus": "succeeded",
+  "entryUrl": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/experiments/workbench-compare/",
+  "access": {
+    "mode": "public",
+    "revision": 2,
+    "changed": false
+  },
+  "product": {
+    "fileCount": 504,
+    "changedFiles": [
+      "experiments/workbench-compare/app.mjs"
+    ],
+    "unchangedFiles": 503,
+    "appSha256": "e1d6fa01c4e9b6dd0a3e12397a37900353387853a50afbaf158aae247b3981c7",
+    "canonicalSha256": "303e963c94e84026e1454193a67fbb3981fc0f0465b3474530cd79ad5e089d57"
+  },
+  "controlledTests": {
+    "red001": {
+      "total": 43,
+      "pass": 5,
+      "intendedAssertionFailures": 38,
+      "harnessErrors": 0
+    },
+    "red002": {
+      "total": 43,
+      "pass": 4,
+      "intendedAssertionFailures": 39,
+      "harnessErrors": 0
+    },
+    "redTestStrengthening": "Before production changes, the queued post-arm test gained an initial eligibility assertion; both original inputs/logs were retained.",
+    "regression001": {
+      "total": 103,
+      "pass": 103,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "existing60TestsUnchanged": true,
+    "sourceCustodyAndNormalReap": true,
+    "mode": "Real host/session/frame-entry/boundary with controlled DOM/history/clipboard ports, not React/browser",
+    "archivedReplaySubsetTests": 43
+  },
+  "independentReview": {
+    "critical": 0,
+    "important": 0,
+    "minor": 0
+  },
+  "publicChecks": {
+    "reviewAndHandoffPins": "PASS",
+    "baselineAndCandidateFullTree": "PASS",
+    "packageAndHosting": "PASS",
+    "syntax": "PASS",
+    "nativeSourceVersionAccess": "PASS",
+    "firstGrowthOpenWaiting": "PASS",
+    "distinctOriginalHandbookGrowthScreens": "PASS",
+    "readyGateAndFixedVisibleWitnesses": "PASS",
+    "wholePagePicksAndExactReceipts": "PASS",
+    "postArmNavigationLock": "PASS",
+    "actualBrowserBackPermanentLock": "PASS",
+    "cancelEpochLockChoicesPreserved": "PASS",
+    "explicitReopenEpochsWaitingEligibleChoicesPreserved": "PASS",
+    "clipboard": "NOT_RERUN",
+    "controlledSuite": "RETAINED_103_OF_103_NOT_RERUN",
+    "expoBuild": "NOT_RERUN"
+  },
+  "publicScope": {
+    "variants": [
+      "original",
+      "journal"
+    ],
+    "initialRoute": "growth",
+    "navigationVariant": "original",
+    "actualBrowserBack": true,
+    "syntheticChoicesOnly": true,
+    "allFiveVariantsAccepted": false,
+    "samePathSubviewAcceptance": false
+  },
+  "optionalIndex": {
+    "left": 1,
+    "right": 1,
+    "required": false,
+    "absentStateBrowserTested": false,
+    "emptyOrAbsentValid": true
+  },
+  "notRun": [
+    "Other three variants",
+    "Full page matrix",
+    "Growth content actions and subviews",
+    "Actual absent-index or empty-concern rendering",
+    "Mobile keyboard accessibility and gesture matrix",
+    "Clipboard copy/paste",
+    "Backend or real model behavior",
+    "Direct HTTP response-body hash attestation"
+  ],
+  "witnessLimits": [
+    "Nonzero rectangles alone do not establish viewport intersection; actual-screen evidence separately confirms display.",
+    "Both optional indexes happened to be present in the public check; absent-index acceptance is source/controlled-test evidence only."
+  ],
+  "cleanup": {
+    "ownedTabBlankedAndClosed": true,
+    "preExistingTabUntouched": true,
+    "visibleNodeProcesses": []
+  },
+  "evidenceDigests": {
+    "publicationReportSha256": "de9886da4096335a0bad7cc35599380973d87265db7b79993bb61f04f1f5c2ef",
+    "publicationResultSha256": "45fae490b6be8aa92bb01ff2f3172f7c04d01ecd4e170db05fa93c75579c99c3",
+    "publicationEvidenceSealSha256": "df0ff10edab1d56867eab2da43fbcc5b3de01ce1cba299374b388699cb322920",
+    "independentReviewReportSha256": "0c53101bd76c7514c901862aca6f39eb82d56d5e20efd56897af3e758193424f",
+    "independentReviewResultSha256": "27d76733d7011673a0c4d80259be1e146efc9c24aaaa7b6fbffe31341537e350",
+    "red001ResultSha256": "ddd450b93d880babd6ad6bde688a2449467ec80b2ddd759dd083ba7dcba9c794",
+    "red002ResultSha256": "e9bd1bb3a5c39a983155c0dbe98ad2db9aa31b1dcef9ce073e043de9367c3e48",
+    "fullRegressionResultSha256": "488e36a53f5f0cac55cb48559ee747c71cda023396cecb6e9ecf5ddd303edebd"
+  },
+  "notIncluded": [
+    "Raw browser/service records",
+    "Screenshots",
+    "Credentials",
+    "Private file IDs",
+    "Full local workspaces or deployment archive"
+  ],
+  "notes": [
+    "Exact published app, controlled Growth replay subset and exact public v104 negative controls only.",
+    "Full runtime must be supplied separately and verified against SOURCE.json before replay.",
+    "No independent replay or CI run is claimed by this archive. Prior acceptance retains its original version/scope."
+  ]
+}
