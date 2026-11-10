@@ -1,0 +1,170 @@
+{
+  "status": "LOCAL_PARTIAL_CONTROLS_AND_SHORT_HEIGHT_FIX_VERIFIED_NOT_RELEASED",
+  "controls": {
+    "validFocusedPair": {
+      "redPassed": 1,
+      "redExpectedFailures": 4,
+      "greenPassed": 5
+    },
+    "focusedScope": "Source/React-element and genuine React mounts with controlled visual, owner, router and Dialog ports; not full owner acceptance.",
+    "earlierFailedGreenPreserved": true,
+    "fullFrontendTypecheck": {
+      "stage": "typecheck",
+      "passed": true,
+      "actualExitCode": 0,
+      "sourceCanonicalSha256": "82e77f32aef274831bf6aabc23e4cd0f0f253fd06a3eb7c9d5938fe0a304052d",
+      "sourceFiles": 715,
+      "wallSeconds": 14.465229530003853,
+      "peakRssBytes": 1176322048,
+      "terminalOwnershipComplete": true,
+      "logsComplete": true,
+      "browserAcceptance": false,
+      "publication": false
+    },
+    "singleExport": {
+      "stage": "export",
+      "passed": true,
+      "actualExitCode": 0,
+      "sourceCanonicalSha256": "82e77f32aef274831bf6aabc23e4cd0f0f253fd06a3eb7c9d5938fe0a304052d",
+      "sourceFiles": 715,
+      "wallSeconds": 62.203628129995195,
+      "peakRssBytes": 550920192,
+      "terminalOwnershipComplete": true,
+      "logsComplete": true,
+      "browserAcceptance": false,
+      "publication": false
+    },
+    "main": {
+      "src": "/_expo/static/js/web/index-ecdf274e632d2e4b7190af74ca32ae7c.js",
+      "sha256": "ebd1bc09f0f715df0bc1040efceb477a24cfc3fbd96311f014ef1afc2cb62330"
+    },
+    "desktop": {
+      "viewport": [
+        1180,
+        757
+      ],
+      "oldCombinationTextOnlyPrefill": true,
+      "newRecipeRestoreAndEnterDoNotApply": true,
+      "manualApplyRequired": true,
+      "queryPreserved": true,
+      "rangeCancelSelectAllAndFocus": true,
+      "completedThenSingleBack": true,
+      "initialPageZeroAndNoDay": true
+    }
+  },
+  "heightFix": {
+    "sourceCanonicalSha256": "fa7c7e963bc8c3c9f8a78e7a5d9df02c29bbfe19cb3b41bad610a5f068e1d2d4",
+    "focusedPair": {
+      "red": "red002",
+      "passed": 2,
+      "expectedFailed": 1,
+      "green": "green002",
+      "greenPassed": 3
+    },
+    "focusedScope": "Real React/JSDOM provider and portal with a sentinel state/input; not CSS layout or complete Tasks owner/selection-lease acceptance.",
+    "fullFrontendTypecheck": {
+      "stage": "typecheck",
+      "passed": true,
+      "actualExitCode": 0,
+      "sourceCanonicalSha256": "fa7c7e963bc8c3c9f8a78e7a5d9df02c29bbfe19cb3b41bad610a5f068e1d2d4",
+      "sourceFiles": 715,
+      "wallSeconds": 13.408767134009395,
+      "peakRssBytes": 1177862144,
+      "terminalOwnershipComplete": true,
+      "logsComplete": true,
+      "browserAcceptance": false,
+      "publication": false
+    },
+    "singleExport": {
+      "stage": "export",
+      "passed": true,
+      "actualExitCode": 0,
+      "sourceCanonicalSha256": "fa7c7e963bc8c3c9f8a78e7a5d9df02c29bbfe19cb3b41bad610a5f068e1d2d4",
+      "sourceFiles": 715,
+      "wallSeconds": 62.59453308599768,
+      "peakRssBytes": 555675648,
+      "terminalOwnershipComplete": true,
+      "logsComplete": true,
+      "browserAcceptance": false,
+      "publication": false
+    },
+    "main": {
+      "src": "/_expo/static/js/web/index-32dca3c7aa041ff5751a2f9b9b2be579.js",
+      "sha256": "5ff5a40e92541f435ea9bba7df9212d27af65fc59f5f5d029e29f7496f204475"
+    },
+    "viewport": [
+      393,
+      252
+    ],
+    "nativeBrowserZoomPercent": 300,
+    "devicePixelRatio": 3,
+    "contentWidth": 388.3333435058594,
+    "productHeight": 320,
+    "pageClientHeight": 159,
+    "unmodifiedBaselineHAndOriginalPageHeight": 0,
+    "hAndOriginalOrdinaryPointerOpenClose": true,
+    "daySelectSameDayCancelClearOnly": true,
+    "queryRangeAndMonthPreserved": true,
+    "desktop1180RangeRegression": true,
+    "desktopSceneClientAndScrollHeight": [
+      701,
+      701
+    ]
+  },
+  "evidenceLimits": [
+    "The first controls GREEN failed due to three fixture/assertion mistakes; stopped and retained before the final same-input RED002/GREEN002 pair.",
+    "For controls sealing, one retired VERSION-SOURCES metadata preimage was reconstructed from the frozen origin and matched to its historical hash; it was not an originally retained full file. Historical test preimages were retained.",
+    "The height harness first loaded ReactDOM before JSDOM, causing a legacy attachEvent focus error. That attempt was retained and excluded; the clean final pair used the corrected harness and unchanged assertions.",
+    "The retired first two-test height RED plan draft has only its unchanged before/after pin: 11459 bytes, SHA256 11abf549d749d17bdb6969b2d4124b2b5f827f3cc733f595c7e0b218f5c114a1. Full draft bytes were not retained; no reconstruction or full rehash is claimed. Final RED002/GREEN002 use the same retained final plan.",
+    "Early runtime receipts contain exit-time hashes only. Compiler/Expo anchors are not a complete dependency closure or external pre-run bootstrap attestation.",
+    "One query-entry position still placed the date center behind a fixed runtime layer; no date click was attempted there. Normal scrolling moved the full target into the hit-tested region. This does not prove all scroll positions are unobstructed.",
+    "The restored 100% view retained the Original range appearance; that observation does not prove resize retirement or selection-lease invalidation.",
+    "Browser script URLs and local output hashes establish the retained delivery chain; no independent browser HTTP response-body digest was captured.",
+    "The historical export session 70990 still has UNKNOWN exit/reaping; later clean exports do not resolve it.",
+    "The inherited stage receipt text Two focused is stale; actual accepted height TAP results contain three test groups."
+  ],
+  "notVerified": [
+    "exact 390 CSS-pixel viewport",
+    "mobile/native devices or touch",
+    "complete accessibility",
+    "complete owner/forms/account/scope/persistence/unknown-recovery matrix",
+    "Forward and selection-time resize retirement",
+    "complete Original, complete filters slot or first phase",
+    "new controls01 comparison-page URL transport",
+    "whole-package or production release acceptance"
+  ],
+  "privateEvidence": {
+    "rawIncluded": false,
+    "screenshotsIncluded": false,
+    "credentialsIncluded": false,
+    "buildOutputsIncluded": false,
+    "evidenceDigestsOnly": [
+      {
+        "label": "previous-comparison-handoff",
+        "sha256": "7abbcc8b09d75d6fe7387dfbc81059143b77bd7222e33fe1cf689d9e0b13d3d4"
+      },
+      {
+        "label": "controls",
+        "sha256": "1ee257bf49224acd64aaa2f6ddc2e717aebe6a063e4d9eb3064996c89c551b64"
+      },
+      {
+        "label": "short-height-fix",
+        "sha256": "ce2966beae9c91aec5980569373a4b1c967b34cf3a13fd02b9ab9da2458f1d9a"
+      },
+      {
+        "label": "pointer-diagnosis",
+        "sha256": "769128e09145dbaeae6f0b286266b55040cc579f7b268ce1830a0900d0d715b9"
+      },
+      {
+        "label": "earlier-keyboard-only-zoom",
+        "sha256": "fc7d16a891212cfb6aa9552cc65da2fee3169ff7245a74f98bb6073828f82287"
+      }
+    ]
+  },
+  "cleanup": "Owned preview and browser resources closed; no claim about unseen machine processes.",
+  "archiveOnly": true,
+  "publication": false,
+  "merge": false,
+  "prOpened": false,
+  "testsRerunForArchival": false
+}

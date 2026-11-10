@@ -1,0 +1,15 @@
+--- baseline/frontend/src/preview/tasks-choice-host/TasksChoiceSceneProvider.web.tsx
++++ candidate/frontend/src/preview/tasks-choice-host/TasksChoiceSceneProvider.web.tsx
+@@ -25,10 +25,10 @@
+     };
+   }, []);
+   return <TasksChoiceSceneContext.Provider value={scene}>
+-    <div ref={container} data-tasks-choice-scene-root="" style={{ display:'flex',flexDirection:'column',flex:1,height:'100%',minHeight:0,minWidth:0 }}>
++    <div ref={container} data-tasks-choice-scene-root="" style={{ display:'flex',flexDirection:'column',flex:1,height:'100%',minHeight:0,minWidth:0,overflowY:'auto',overflowX:'hidden' }}>
+       <div ref={controls} data-tasks-choice-controls-host="" tabIndex={-1} aria-label="待辦候選配方控制區"
+         style={{ display:'flex',flexDirection:'column',flexShrink:0,maxHeight:'min(360px,45%)',minHeight:0,minWidth:0,overflow:'hidden' }}/>
+-      <div ref={product} data-tasks-choice-product-root="" style={{ display:'flex',flexDirection:'column',flex:1,minHeight:0,minWidth:0 }}>
++      <div ref={product} data-tasks-choice-product-root="" style={{ display:'flex',flexDirection:'column',flex:1,minHeight:320,minWidth:0 }}>
+         {children}
+       </div>
+     </div>

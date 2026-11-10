@@ -1,0 +1,131 @@
+{
+  "origin": {
+    "candidateId": "original-filters-combination01",
+    "kind": "immutable-recipe-origin-not-current-runtime",
+    "commit": "bd20f92184b2490fea2b2cb4065e4cdc5916f3bb",
+    "sourceCanonicalSha256": "b5d4f9a902c725503400ee0e4aafc8dd6d1ae653e665ecc450107a3eb95ac27d",
+    "digest": "2042fac89ea1bf8b4998859bc44c5ee144d90108a4eaf9f7346277aca088fb5c",
+    "files": [
+      {
+        "sourceId": "original-filters-combination01",
+        "path": "frontend/src/components/tasks/TasksView.tsx",
+        "sha256": "472527a650c18f56d6d093415d072e51efef00df5c875ce46a5b2dcd736b7399"
+      },
+      {
+        "sourceId": "original-filters-combination01",
+        "path": "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+        "sha256": "fe53217e0180d9763b83b8a4e641082bac606f22fee6488bb196f3e0391a3ece"
+      },
+      {
+        "sourceId": "original-filters-combination01",
+        "path": "frontend/src/preview/tasks-original-presentation/search-frame-appearance.ts",
+        "sha256": "5404093984c5bc8b146ff9f1b71d4e0a72b6975b7b25810b6abd35cb22ca9e93"
+      },
+      {
+        "sourceId": "original-filters-combination01",
+        "path": "frontend/src/preview/tasks-original-presentation/source-theme.ts",
+        "sha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a"
+      },
+      {
+        "sourceId": "original-filters-combination01",
+        "path": "frontend/src/preview/tasks-original-presentation/styles.ts",
+        "sha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48"
+      },
+      {
+        "sourceId": "original-filters-combination01",
+        "path": "frontend/src/preview/tasks-original-presentation/tabs-appearance.ts",
+        "sha256": "9d1d52a2e66120b1049daf4bbe8f9f82bb186cb1ece2f569c82d072396dbc506"
+      }
+    ]
+  },
+  "currentIntegration": {
+    "kind": "actual-current-source",
+    "sourceCanonicalSha256": "fa7c7e963bc8c3c9f8a78e7a5d9df02c29bbfe19cb3b41bad610a5f068e1d2d4",
+    "digest": "f9cb4a7b599b00704ee378bc6a457a7c4350cec5fbc3ac5e4fccf563afc333fb",
+    "files": [
+      {
+        "sourceId": "original-filters-controls01",
+        "path": "frontend/src/components/tasks/TasksView.tsx",
+        "sha256": "8899915587963321fcce2a3283b3c5134ff606f979b9f61f52b4c3b8228f75d8"
+      },
+      {
+        "sourceId": "original-filters-controls01",
+        "path": "frontend/src/components/tasks/presentation/TasksFiltersPresentation.tsx",
+        "sha256": "7838e33f24cd44776b0644bd9c5b881bd834887909727e236680ede039d9abab"
+      },
+      {
+        "sourceId": "original-filters-controls01",
+        "path": "frontend/src/components/ui.tsx",
+        "sha256": "8eb9cede192eff81495bf9ee478da6baa6504eafa141b40cd1db30e6b64060e5"
+      },
+      {
+        "sourceId": "original-filters-controls01",
+        "path": "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+        "sha256": "cc38c6ef4c78f27472fdb893d342c1294927f1c5d11e489b8e17c2f7e8edb3e7"
+      },
+      {
+        "sourceId": "original-filters-controls01",
+        "path": "frontend/src/preview/tasks-original-presentation/search-frame-appearance.ts",
+        "sha256": "5404093984c5bc8b146ff9f1b71d4e0a72b6975b7b25810b6abd35cb22ca9e93"
+      },
+      {
+        "sourceId": "original-filters-controls01",
+        "path": "frontend/src/preview/tasks-original-presentation/selection-trigger-appearance.ts",
+        "sha256": "583082810dd5480fec65354b355519f8629df2b0e8e34a485a4289c22697dd84"
+      },
+      {
+        "sourceId": "original-filters-controls01",
+        "path": "frontend/src/preview/tasks-original-presentation/source-theme.ts",
+        "sha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a"
+      },
+      {
+        "sourceId": "original-filters-controls01",
+        "path": "frontend/src/preview/tasks-original-presentation/styles.ts",
+        "sha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48"
+      },
+      {
+        "sourceId": "original-filters-controls01",
+        "path": "frontend/src/preview/tasks-original-presentation/tabs-appearance.ts",
+        "sha256": "9d1d52a2e66120b1049daf4bbe8f9f82bb186cb1ece2f569c82d072396dbc506"
+      }
+    ]
+  },
+  "samePathComparison": [
+    {
+      "path": "frontend/src/components/tasks/TasksView.tsx",
+      "originSha256": "472527a650c18f56d6d093415d072e51efef00df5c875ce46a5b2dcd736b7399",
+      "currentSha256": "8899915587963321fcce2a3283b3c5134ff606f979b9f61f52b4c3b8228f75d8",
+      "changed": true
+    },
+    {
+      "path": "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+      "originSha256": "fe53217e0180d9763b83b8a4e641082bac606f22fee6488bb196f3e0391a3ece",
+      "currentSha256": "cc38c6ef4c78f27472fdb893d342c1294927f1c5d11e489b8e17c2f7e8edb3e7",
+      "changed": true
+    },
+    {
+      "path": "frontend/src/preview/tasks-original-presentation/search-frame-appearance.ts",
+      "originSha256": "5404093984c5bc8b146ff9f1b71d4e0a72b6975b7b25810b6abd35cb22ca9e93",
+      "currentSha256": "5404093984c5bc8b146ff9f1b71d4e0a72b6975b7b25810b6abd35cb22ca9e93",
+      "changed": false
+    },
+    {
+      "path": "frontend/src/preview/tasks-original-presentation/source-theme.ts",
+      "originSha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a",
+      "currentSha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a",
+      "changed": false
+    },
+    {
+      "path": "frontend/src/preview/tasks-original-presentation/styles.ts",
+      "originSha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48",
+      "currentSha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48",
+      "changed": false
+    },
+    {
+      "path": "frontend/src/preview/tasks-original-presentation/tabs-appearance.ts",
+      "originSha256": "9d1d52a2e66120b1049daf4bbe8f9f82bb186cb1ece2f569c82d072396dbc506",
+      "currentSha256": "9d1d52a2e66120b1049daf4bbe8f9f82bb186cb1ece2f569c82d072396dbc506",
+      "changed": false
+    }
+  ]
+}

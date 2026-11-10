@@ -1,0 +1,265 @@
+--- baseline/frontend/src/components/tasks/TasksView.tsx
++++ candidate/frontend/src/components/tasks/TasksView.tsx
+@@ -48,7 +48,10 @@
+   const customBackground = useCustomBackground();
+   const containerLayout = useContainerWidth();
+   const compact = pageLayout.width < mobileLayout.breakpoint;
+-  const originalFiltersCombined = modulePresentation?.filters === 'original-filters-combination01';
++  const originalFiltersControls = modulePresentation?.filters === 'original-filters-controls01';
++  const originalFiltersCombined = originalFiltersControls || modulePresentation?.filters === 'original-filters-combination01';
++  const originalFiltersVersion = originalFiltersControls ? 'original-filters-controls01' : modulePresentation?.filters === 'original-filters-combination01'
++    ? 'original-filters-combination01' : modulePresentation?.filters === 'original-search-frame-fragment01' ? 'original-search-frame-fragment01' : undefined;
+   const originalTabs = originalFiltersCombined || modulePresentation?.filters === 'original-tabs-fragment01';
+   const originalSearchFrame = originalFiltersCombined || modulePresentation?.filters === 'original-search-frame-fragment01';
+   const filtersVariant = originalTabs || originalSearchFrame ? null : modulePresentation?.filters;
+@@ -270,7 +273,7 @@
+               {filterPresentation ? <TasksFiltersPresentation {...filterPresentation} region="review" /> : !readUnavailable && reviewCount > 0 ? <Pressable testID="tasks-review-shortcut" accessibilityRole="button" accessibilityLabel={`查看已載入的 ${reviewCount} 項待覆核安排，已停止催辦`} disabled={occupied} accessibilityState={{ disabled: occupied }} aria-disabled={occupied} onPress={() => { if (occupied) return; setQuery(""); changeRoute({tab:"pending",filter:tab === "pending" && filter === "review" ? "near" : "review",page:0,day:null,taskId:null}, tab === "pending" ? "replace" : "push"); }} style={({ pressed }) => [styles.reviewShortcut, pressed && !occupied && styles.reviewPressed]}><View style={styles.reviewCopy}><Text style={styles.reviewTitle}>{reviewCount} 項待覆核{model.hasMoreTasks ? "（已載入）" : ""}</Text><Text style={styles.reviewNote}>{filter === "review" && tab === "pending" ? "返回近期安排" : "完成或取消仍未確定 · 已停催"}</Text></View><AppIcon name={filter === "review" && tab === "pending" ? "chevron-left" : "chevron-right"} size={18} color={colors.warningInk} /></Pressable> : null}
+               {filterPresentation ? <TasksFiltersPresentation {...filterPresentation} region="completed-note" /> : tab === "completed" && !readUnavailable && completed.length > 0 ? <Text style={styles.meta}>{model.hasMoreTasks ? "目前只按已載入資料顯示最近 10 項，載入更多後會重新排序。" : "只顯示最近 10 項；較早及已取消的安排可到事項歷史查看。"}</Text> : null}
+               <AppTabPanel tabsId={tabsId} tabKey={tab} active>
+-              <TasksFiltersSearch {...filterHost} variant={filtersVariant ?? undefined} searchFrameFragment={originalSearchFrame ? "original-search-frame-fragment01" : undefined} />
++              <TasksFiltersSearch {...filterHost} variant={filtersVariant ?? undefined} originalFiltersVersion={originalFiltersVersion} />
+               {calendarPlacement === "inline" ? <MotionDisclosure expanded={calendarOpen} scopeKey={scopeKey}><View style={styles.mobileCalendar}>{calendar}</View></MotionDisclosure> : null}
+               <View style={sourceDate?.list.scheduleList ?? (handbookDateList ? handbookStyles.scheduleList : styles.scheduleList)}>
+               {filterPresentation ? <TasksFiltersPresentation {...filterPresentation} region="context" /> : tab === "pending" && !readUnavailable && !noPendingTasks ? <View style={styles.listContext}>
+--- baseline/frontend/src/components/tasks/presentation/TasksFiltersPresentation.tsx
++++ candidate/frontend/src/components/tasks/presentation/TasksFiltersPresentation.tsx
+@@ -7,6 +7,7 @@
+ import type { TaskBacklogFilter } from "../task-calendar";
+ import { taskSearchAppearance, taskTabsAppearance, handbookFilterHeadingStyle } from "./taskFilterAppearance";
+ import { originalTaskSearchFrameAppearance } from '../../../preview/tasks-original-presentation/search-frame-appearance';
++import { originalTaskSelectionTriggerAppearance } from '../../../preview/tasks-original-presentation/selection-trigger-appearance';
+ import { taskSelectionAppearance } from "./taskSelectionAppearance";
+ import { CareWorkspaceSwitch } from "./CareWorkspaceSwitch";
+ import { isTaskPresentationVariant, type TaskFiltersPresentationProps, type TaskPresentationTab } from "./contracts";
+@@ -23,16 +24,19 @@
+ export type TasksFiltersSearchProps = Omit<TaskFiltersPresentationProps, "variant" | "region"> & {
+   variant?: TaskFiltersPresentationProps["variant"];
+   /** Mutually exclusive with full variant appearance; this does not own query state. */
+-  searchFrameFragment?: "original-search-frame-fragment01";
++  originalFiltersVersion?: "original-search-frame-fragment01" | "original-filters-combination01" | "original-filters-controls01";
+ };
+ 
+ /** Keep one search/select producer while admitted appearance data comes and goes. */
+ export function TasksFiltersSearch(p: TasksFiltersSearchProps) {
+   if (p.variant !== undefined && !isTaskPresentationVariant(p.variant)) return null;
+   const { variant, occupied, tab, filter, query, selectedDay, backlog } = p;
+-  const selectionAppearance = taskSelectionAppearance(variant);
+-  const searchAppearance = variant === undefined && p.searchFrameFragment === "original-search-frame-fragment01"
+-    ? originalTaskSearchFrameAppearance(Platform.OS === "web" ? "web" : "native") : taskSearchAppearance(variant);
++  const originalVersion = variant === undefined && (p.originalFiltersVersion === "original-search-frame-fragment01"
++    || p.originalFiltersVersion === "original-filters-combination01" || p.originalFiltersVersion === "original-filters-controls01") ? p.originalFiltersVersion : undefined;
++  const platform = Platform.OS === "web" ? "web" : "native";
++  const selectionAppearance = originalVersion === "original-filters-controls01"
++    ? originalTaskSelectionTriggerAppearance(platform) : taskSelectionAppearance(variant);
++  const searchAppearance = originalVersion ? originalTaskSearchFrameAppearance(platform) : taskSearchAppearance(variant);
+   if (tab !== "pending" || p.readUnavailable || p.noPendingTasks) return null;
+   const activate = (callback: () => void) => { if (!occupied) callback(); };
+   const changeFilter = (value: TaskBacklogFilter | "day") => { if (value !== "day") activate(() => p.onChangeFilter(value)); };
+--- baseline/frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx
++++ candidate/frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx
+@@ -38,7 +38,7 @@
+ const EMPTY_SCENE:HeaderActionsHF01SceneProps = Object.freeze({});
+ const VERSION_LABELS = {original:'原版',harbour:'Harbour',care:'Care',handbook:'Handbook',fourth:'Fourth'} as const;
+ const SLOT_LABELS:Record<TaskSlotId,string> = {'header-actions':'頁首與操作',filters:'分類與篩選','date-list':'日期分組與清單','calendar-layout':'月曆與布局'};
+-const COVERAGE_LABELS = {'historical-filters-combination':'分類＋搜尋框組合','historical-search-frame-fragment':'歷史搜尋框外框片段','historical-tabs-fragment':'歷史分類分頁片段','historical-actions-fragment':'歷史操作按鈕片段','historical-row-fragment':'歷史事項列片段','actions-only':'操作區局部','row-appearance':'事項列外觀',
++const COVERAGE_LABELS = {'historical-filters-controls':'分類＋搜尋＋範圍／日期觸發器','historical-filters-combination':'分類＋搜尋框組合','historical-search-frame-fragment':'歷史搜尋框外框片段','historical-tabs-fragment':'歷史分類分頁片段','historical-actions-fragment':'歷史操作按鈕片段','historical-row-fragment':'歷史事項列片段','actions-only':'操作區局部','row-appearance':'事項列外觀',
+   'header-appearance':'標題與操作外觀','controlled-filters-h-theme':'篩選外觀／H 元件',
+   'header-source-regions-partial-host':'頁首完整區域／宿主元件限制','date-list-source-regions-partial-host':'清單完整區域／宿主元件限制',
+   'date-groups-and-rows':'日期分組與事項列','controlled-calendar-layout-h-theme':'月曆布局／H 元件'} as const;
+@@ -436,12 +436,12 @@
+         <Text accessibilityLiveRegion="polite">{!available?'目前範圍不可用。':scope.occupied?'候選編輯已暫停，請先依原頁面完成或恢復目前操作。':
+           !scope.admissionVerified?'候選配方可編輯；組合預覽尚未開放，現有 H 產品仍可正常互動。':selecting?(sceneCommitted?'選配模式：產品操作暫停。':'正在準備選配模式。'):'產品互動模式。'}</Text>
+       </View>
+-      <View style={styles.versions}>{VARIANT_IDS.map(id=><Text key={id}>{VERSION_LABELS[id]}{id==='original'?'：歷史操作按鈕、分類分頁、搜尋框外框與事項列；分類與搜尋框可一併選配，完整原版來源與全局主題未驗證':'：來源對照，非整版選配'}</Text>)}</View>
++      <View style={styles.versions}>{VARIANT_IDS.map(id=><Text key={id}>{VERSION_LABELS[id]}{id==='original'?'：歷史操作按鈕、分類分頁、搜尋框外框與事項列；分類、搜尋框與範圍／日期觸發器可固定組合選配，完整原版來源與全局主題未驗證':'：來源對照，非整版選配'}</Text>)}</View>
+       {TASK_SLOT_IDS.map(slot=>{
+         const selection=draft.current[slot];
+         return <View key={slot} style={styles.slot}>
+           <Text accessibilityRole="header" style={styles.slotTitle}>{SLOT_LABELS[slot]}</Text>
+-          <Text>{slot==='header-actions'?'操作局部或 Handbook 標題與操作外觀；原版操作片段保留 H 頁標題與工具列宿主。':slot==='date-list'?'事項列局部或 Handbook 日期分組與列外觀；空態、載入及分頁仍為 H。':slot==='filters'?'受控分類與篩選外觀；原版分類分頁與搜尋框外框可一併套用，舊單獨片段保留；範圍、日期與提示保留 H，完整原版篩選尚未完成。':'受控月曆與清單布局；沿用 H 元件與保護詳情，實際尺寸及互動仍待驗收。'}</Text>
++          <Text>{slot==='header-actions'?'操作局部或 Handbook 標題與操作外觀；原版操作片段保留 H 頁標題與工具列宿主。':slot==='date-list'?'事項列局部或 Handbook 日期分組與列外觀；空態、載入及分頁仍為 H。':slot==='filters'?'受控分類與篩選外觀；原版分類、搜尋框與範圍／日期觸發器可固定組合套用，舊分類＋搜尋組合及單獨片段保留。選單、月曆內容及提示仍為 H；完整原版篩選尚未完成。':'受控月曆與清單布局；沿用 H 元件與保護詳情，實際尺寸及互動仍待驗收。'}</Text>
+           <View style={styles.row}>{VARIANT_IDS.map(variant=>{
+             const candidates=getTaskSlot(variant,slot)?.narrowCandidates??[];
+             return candidates.length ? candidates.map(candidate=><AppButton key={`${variant}:${candidate.candidateId}`}
+@@ -453,7 +453,7 @@
+           })}</View>
+           <Text>候選籃：{selection?`${VERSION_LABELS[selection.variantId]} · ${COVERAGE_LABELS[selection.coverage]}（待套用／待驗收）`:'未選配；目前沿用 H 宿主'}</Text>
+           <AppButton label="清除此槽草稿" accessibilityLabel={`清除${SLOT_LABELS[slot]}草稿`} variant="quiet" disabled={!candidateEditable||!selection} onPress={()=>this.choose(frame,event,{type:'clearSlot',slotId:slot})}/>
+-          <Text>{checkTaskSlotCapability('original',slot,'compose').prospectiveComposable?'':'完整原版未驗證，不能還原為整版原版；分類＋搜尋框組合及各單獨片段仍屬局部，可在此選配或用配方文字還原，須明確套用。'}</Text>
++          <Text>{checkTaskSlotCapability('original',slot,'compose').prospectiveComposable?'':'完整原版未驗證，不能還原為整版原版；固定篩選組合、舊分類＋搜尋框組合及各單獨片段仍屬局部，可在此選配或用配方文字還原，須明確套用。'}</Text>
+         </View>;
+       })}
+       <View style={styles.row}>
+--- baseline/frontend/src/preview/tasks-choice-host/module-presentation.ts
++++ candidate/frontend/src/preview/tasks-choice-host/module-presentation.ts
+@@ -10,7 +10,7 @@
+ /** Readonly appearance only. The Control's existing scene admission owns delivery. */
+ export type TaskModulePresentation = Readonly<{
+   'header-actions': 'harbour' | 'fourth' | 'handbook' | 'original-actions-fragment01' | TaskSourceRegionProfile | null;
+-  filters: TaskPresentationVariant | 'original-tabs-fragment01' | 'original-search-frame-fragment01' | 'original-filters-combination01' | null;
++  filters: TaskPresentationVariant | 'original-tabs-fragment01' | 'original-search-frame-fragment01' | 'original-filters-combination01' | 'original-filters-controls01' | null;
+   'date-list': 'harbour' | 'fourth' | 'handbook' | 'original-row-fragment01' | TaskSourceRegionProfile | null;
+   'calendar-layout': TaskPresentationVariant | null;
+ }>;
+@@ -38,7 +38,9 @@
+       : snapshot.filters?.slotId === 'filters' && snapshot.filters.variantId === 'original' && snapshot.filters.candidateId === 'original-search-frame-fragment01'
+         ? 'original-search-frame-fragment01'
+         : snapshot.filters?.slotId === 'filters' && snapshot.filters.variantId === 'original' && snapshot.filters.candidateId === 'original-filters-combination01'
+-          ? 'original-filters-combination01' : controlled(snapshot.filters?.variantId),
++          ? 'original-filters-combination01'
++          : snapshot.filters?.slotId === 'filters' && snapshot.filters.variantId === 'original' && snapshot.filters.candidateId === 'original-filters-controls01'
++            ? 'original-filters-controls01' : controlled(snapshot.filters?.variantId),
+     'date-list': snapshot['date-list']?.slotId === 'date-list' && snapshot['date-list'].variantId === 'original' && snapshot['date-list'].candidateId === 'original-row-fragment01'
+       ? 'original-row-fragment01' : regionProfile(snapshot['date-list'], 'date-list-source-regions02'),
+     'calendar-layout': controlled(snapshot['calendar-layout']?.variantId),
+--- baseline/frontend/src/preview/tasks-variant-catalog/catalog.d.mts
++++ candidate/frontend/src/preview/tasks-variant-catalog/catalog.d.mts
+@@ -1,8 +1,9 @@
+ /** Public metadata contract. No value in this catalog grants runtime admission. */
+ export type TaskVariantId = 'original' | 'harbour' | 'care' | 'handbook' | 'fourth';
+ export type TaskSlotId = 'header-actions' | 'filters' | 'date-list' | 'calendar-layout';
++/** Immutable sourceId version references, not the current runtime load manifest. */
+ export type SourceFile = Readonly<{ sourceId: string; path: string; sha256: string }>;
+-/** Matches the existing HF01 frontend-relative selection fingerprint shape. */
++/** HF01 frontend-relative version provenance, not current runtime module attestation. */
+ export type SourceFingerprint = Readonly<{
+   assemblyMembersSha256: string;
+   files: readonly Readonly<{ path: string; sha256: string }>[];
+@@ -18,10 +19,10 @@
+ }>;
+ export type NarrowCandidate = Readonly<{
+   slotId: TaskSlotId;
+-  candidateId: 'original-filters-combination01' | 'original-search-frame-fragment01' | 'original-tabs-fragment01' | 'original-actions-fragment01' | 'original-row-fragment01' | 'header-actions' | 'row-appearance' | 'header-presentation' | 'filters-presentation' | 'date-list-presentation' | 'calendar-presentation' | 'header-source-regions02' | 'date-list-source-regions02';
++  candidateId: 'original-filters-controls01' | 'original-filters-combination01' | 'original-search-frame-fragment01' | 'original-tabs-fragment01' | 'original-actions-fragment01' | 'original-row-fragment01' | 'header-actions' | 'row-appearance' | 'header-presentation' | 'filters-presentation' | 'date-list-presentation' | 'calendar-presentation' | 'header-source-regions02' | 'date-list-source-regions02';
+   variantId: 'original' | 'harbour' | 'fourth' | 'handbook' | 'care';
+   hostVariantId: 'harbour';
+-  coverage: 'historical-filters-combination' | 'historical-search-frame-fragment' | 'historical-tabs-fragment' | 'historical-actions-fragment' | 'historical-row-fragment' | 'actions-only' | 'row-appearance' | 'header-appearance' | 'controlled-filters-h-theme' | 'date-groups-and-rows' | 'controlled-calendar-layout-h-theme' | 'header-source-regions-partial-host' | 'date-list-source-regions-partial-host';
++  coverage: 'historical-filters-controls' | 'historical-filters-combination' | 'historical-search-frame-fragment' | 'historical-tabs-fragment' | 'historical-actions-fragment' | 'historical-row-fragment' | 'actions-only' | 'row-appearance' | 'header-appearance' | 'controlled-filters-h-theme' | 'date-groups-and-rows' | 'controlled-calendar-layout-h-theme' | 'header-source-regions-partial-host' | 'date-list-source-regions-partial-host';
+   adapterVersion: string;
+   sourceAvailability: 'available';
+   acceptance: 'bounded-source-accepted' | 'source-reviewed-integration-unverified';
+--- baseline/frontend/src/preview/tasks-variant-catalog/catalog.mjs
++++ candidate/frontend/src/preview/tasks-variant-catalog/catalog.mjs
+@@ -674,6 +674,7 @@
+ }
+ // One explicit partial filters version composes both existing appearances.
+ // It changes neither query/route ownership nor the meaning of older recipes.
++// Immutable recipe origin references. Current same-path integration bytes are verified separately.
+ const ORIGINAL_FILTERS_COMBINATION = {
+   "digest": "2042fac89ea1bf8b4998859bc44c5ee144d90108a4eaf9f7346277aca088fb5c",
+   "files": [
+@@ -738,6 +739,87 @@
+       files:ORIGINAL_FILTERS_COMBINATION.files.map(({path,sha256})=>({path:path.slice('frontend/'.length),sha256}))},
+     dependenciesFingerprint:ORIGINAL_FILTERS_COMBINATION.digest,
+     sourceFiles:ORIGINAL_FILTERS_COMBINATION.files, referenceFiles:ORIGINAL_FILTERS_COMBINATION.references,
++  }];
++}
++const ORIGINAL_FILTERS_CONTROLS = {
++  "digest": "f9cb4a7b599b00704ee378bc6a457a7c4350cec5fbc3ac5e4fccf563afc333fb",
++  "files": [
++    {
++      "sourceId": "original-filters-controls01",
++      "path": "frontend/src/components/tasks/TasksView.tsx",
++      "sha256": "8899915587963321fcce2a3283b3c5134ff606f979b9f61f52b4c3b8228f75d8"
++    },
++    {
++      "sourceId": "original-filters-controls01",
++      "path": "frontend/src/components/tasks/presentation/TasksFiltersPresentation.tsx",
++      "sha256": "7838e33f24cd44776b0644bd9c5b881bd834887909727e236680ede039d9abab"
++    },
++    {
++      "sourceId": "original-filters-controls01",
++      "path": "frontend/src/components/ui.tsx",
++      "sha256": "8eb9cede192eff81495bf9ee478da6baa6504eafa141b40cd1db30e6b64060e5"
++    },
++    {
++      "sourceId": "original-filters-controls01",
++      "path": "frontend/src/preview/tasks-choice-host/module-presentation.ts",
++      "sha256": "cc38c6ef4c78f27472fdb893d342c1294927f1c5d11e489b8e17c2f7e8edb3e7"
++    },
++    {
++      "sourceId": "original-filters-controls01",
++      "path": "frontend/src/preview/tasks-original-presentation/search-frame-appearance.ts",
++      "sha256": "5404093984c5bc8b146ff9f1b71d4e0a72b6975b7b25810b6abd35cb22ca9e93"
++    },
++    {
++      "sourceId": "original-filters-controls01",
++      "path": "frontend/src/preview/tasks-original-presentation/selection-trigger-appearance.ts",
++      "sha256": "583082810dd5480fec65354b355519f8629df2b0e8e34a485a4289c22697dd84"
++    },
++    {
++      "sourceId": "original-filters-controls01",
++      "path": "frontend/src/preview/tasks-original-presentation/source-theme.ts",
++      "sha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a"
++    },
++    {
++      "sourceId": "original-filters-controls01",
++      "path": "frontend/src/preview/tasks-original-presentation/styles.ts",
++      "sha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48"
++    },
++    {
++      "sourceId": "original-filters-controls01",
++      "path": "frontend/src/preview/tasks-original-presentation/tabs-appearance.ts",
++      "sha256": "9d1d52a2e66120b1049daf4bbe8f9f82bb186cb1ece2f569c82d072396dbc506"
++    }
++  ],
++  "references": [
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/tasks/TasksView.tsx",
++      "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/theme.ts",
++      "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/ui.tsx",
++      "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563"
++    }
++  ]
++};
++function originalFiltersControlsCandidates(variantId, slotId) {
++  if (variantId !== 'original' || slotId !== 'filters') return [];
++  return [{slotId, variantId, hostVariantId:'harbour', candidateId:'original-filters-controls01',
++    coverage:'historical-filters-controls', adapterVersion:'original-filters-controls01-v1',
++    sourceAvailability:'available', acceptance:'source-reviewed-integration-unverified',
++    prospectiveComposable:true, runtimeAdmission:false, protectedOwner:OWNER,
++    appearanceLimit:'Fixed historical classification, search frame and range/date trigger appearance through the existing single owner. H select menus, calendar content, notices, focus and callbacks remain. Older recipes retain their source versions and meanings. Not full Original filters or global theme. Comparison URL unsupported; exact JSON restore and explicit apply required.',
++    // Exact local integration members, not a complete import closure or assembly.
++    sourceFingerprint:{assemblyMembersSha256:ORIGINAL_FILTERS_CONTROLS.digest,
++      files:ORIGINAL_FILTERS_CONTROLS.files.map(({path,sha256})=>({path:path.slice('frontend/'.length),sha256}))},
++    dependenciesFingerprint:ORIGINAL_FILTERS_CONTROLS.digest,
++    sourceFiles:ORIGINAL_FILTERS_CONTROLS.files, referenceFiles:ORIGINAL_FILTERS_CONTROLS.references,
+   }];
+ }
+ function makeSlot(variantId, slotId) {
+@@ -765,7 +847,7 @@
+     sourceDifference:slotId === 'header-actions' ? DIFFERENCES[variantId].header
+       : slotId === 'calendar-layout' ? DIFFERENCES[variantId].layout : DIFFERENCES[variantId].state,
+     wholeSlotComposable:false, acceptance:'not-accepted', runtimeAdmission:false,
+-    narrowCandidates:[...originalFiltersCombinationCandidates(variantId,slotId),...originalSearchFrameCandidates(variantId,slotId),...originalTabsFragmentCandidates(variantId,slotId),...originalActionsFragmentCandidates(variantId,slotId),...originalRowFragmentCandidates(variantId,slotId),...narrowCandidates(variantId,slotId),...presentationCandidates(variantId,slotId),...sourceRegionCandidates(variantId,slotId)],
++    narrowCandidates:[...originalFiltersControlsCandidates(variantId,slotId),...originalFiltersCombinationCandidates(variantId,slotId),...originalSearchFrameCandidates(variantId,slotId),...originalTabsFragmentCandidates(variantId,slotId),...originalActionsFragmentCandidates(variantId,slotId),...originalRowFragmentCandidates(variantId,slotId),...narrowCandidates(variantId,slotId),...presentationCandidates(variantId,slotId),...sourceRegionCandidates(variantId,slotId)],
+   };
+ }
+ function makeVariant(variantId) {
+--- baseline/frontend/src/preview/tasks-original-presentation/selection-trigger-appearance.ts
++++ candidate/frontend/src/preview/tasks-original-presentation/selection-trigger-appearance.ts
+@@ -0,0 +1,15 @@
++import type { AppSelectionTriggerAppearance } from '../../components/ui';
++import { originalPrimitiveStyles as styles } from './styles';
++import { originalColors } from './source-theme';
++
++/** Historical trigger appearance only; the existing select and calendar retain behavior. */
++export function originalTaskSelectionTriggerAppearance(platform: 'web' | 'native'): AppSelectionTriggerAppearance {
++  return {
++    style: styles.selectionTrigger,
++    labelStyle: { ...styles.selectionLabel, fontFamily: platform === 'web' ? styles.selectionLabel.fontFamily : undefined },
++    countStyle: styles.selectionCount,
++    countLabelStyle: { ...styles.selectionCountText, fontVariant: [...styles.selectionCountText.fontVariant], fontFamily: platform === 'web' ? styles.selectionCountText.fontFamily : undefined },
++    pressedStyle: styles.selectionPressed,
++    iconColor: originalColors.deepTeal,
++  };
++}

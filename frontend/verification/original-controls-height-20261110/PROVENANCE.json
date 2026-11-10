@@ -1,0 +1,72 @@
+{
+  "repository": "2NTTY/child-ai-caregiver",
+  "preparedDate": "2026-11-10",
+  "archiveBaseCommit": "5f3cd680de426cb77fd94b9a346076740c885c6d",
+  "baseline": {
+    "commit": "bd20f92184b2490fea2b2cb4065e4cdc5916f3bb",
+    "archivePath": "frontend/verification/original-filters-handoff-20261110",
+    "archiveTree": "8a8284040ce1d53109c68a605cba0ab976180e51",
+    "filesFreshlyVerifiedAgainstRemoteBlobs": 14,
+    "sourceCanonicalSha256": "b5d4f9a902c725503400ee0e4aafc8dd6d1ae653e665ecc450107a3eb95ac27d",
+    "sourceFiles": 714,
+    "earlierChain": "Reconstructed from retained exact archive bodies and their pinned remote receipts; not all older blobs were downloaded again."
+  },
+  "controls": {
+    "candidateId": "original-filters-controls01",
+    "sourceFiles": 715,
+    "sourceCanonicalSha256": "82e77f32aef274831bf6aabc23e4cd0f0f253fd06a3eb7c9d5938fe0a304052d",
+    "changedOrAddedFiles": [
+      "frontend/src/components/tasks/TasksView.tsx",
+      "frontend/src/components/tasks/presentation/TasksFiltersPresentation.tsx",
+      "frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx",
+      "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+      "frontend/src/preview/tasks-original-presentation/selection-trigger-appearance.ts",
+      "frontend/src/preview/tasks-variant-catalog/catalog.d.mts",
+      "frontend/src/preview/tasks-variant-catalog/catalog.mjs"
+    ],
+    "partialPinCount": 9,
+    "partialDigest": "f9cb4a7b599b00704ee378bc6a457a7c4350cec5fbc3ac5e4fccf563afc333fb",
+    "controlsSourceReconstructionVerified": true
+  },
+  "heightFix": {
+    "changedFiles": [
+      "frontend/src/preview/tasks-choice-host/TasksChoiceSceneProvider.web.tsx"
+    ],
+    "sourceFiles": 715,
+    "sourceCanonicalSha256": "fa7c7e963bc8c3c9f8a78e7a5d9df02c29bbfe19cb3b41bad610a5f068e1d2d4",
+    "other714FilesUnchanged": true,
+    "fixedSourceReconstructionVerified": true,
+    "change": "Only preview scene overflowY auto, overflowX hidden and product minHeight 320; no admission or viewport override."
+  },
+  "comparison": {
+    "files": 126,
+    "canonicalSha256": "49544ce4715e0a0ad00c7d8597e5a1b281804498f270d8c9e3fdabcd6cb36f75",
+    "unchanged": true,
+    "controls01URLTransport": false,
+    "existingCombinationURLTextPrefill": true,
+    "explicitRestoreAndManualApplyRequired": true
+  },
+  "historicalSelectedBodies": [
+    {
+      "logicalPath": "frontend/src/components/tasks/TasksView.tsx",
+      "bytes": 26547,
+      "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622",
+      "gitBlob": "8adc10f3074fecd0484994ef958a6b88e721cbe6"
+    },
+    {
+      "logicalPath": "frontend/src/theme.ts",
+      "bytes": 4982,
+      "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2",
+      "gitBlob": "4ccb33cb8f83a0e7c84829c74495a3ca63dfbe7c"
+    },
+    {
+      "logicalPath": "frontend/src/components/ui.tsx",
+      "bytes": 28747,
+      "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563"
+    }
+  ],
+  "historicalIdentityLimit": "The historical UI body is independently pinned; not asserted to belong to the same complete historical tree. Trigger appearance only. Dialog, calendar, route and owner remain H.",
+  "fullOriginal": false,
+  "completeFilterSlot": false,
+  "productionSourceApplied": false
+}
