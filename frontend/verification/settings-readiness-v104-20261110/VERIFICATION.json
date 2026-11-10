@@ -1,0 +1,110 @@
+{
+  "version": 104,
+  "sitesSource": "a466c340ba245102d0643bd7764ab2ed157d4e5b",
+  "deploymentStatus": "succeeded",
+  "entryUrl": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/experiments/workbench-compare/",
+  "access": "public",
+  "accessRevision": 2,
+  "product": {
+    "files": 504,
+    "changed": 1,
+    "unchanged": 503,
+    "appSha256": "2725351755f2989606fa6a319f65899ec33eadc886b92eb33dd7dc23ccffdfc4"
+  },
+  "controlledTests": {
+    "red001": {
+      "total": 15,
+      "pass": 4,
+      "intendedAssertionFailures": 11,
+      "harnessErrors": 0
+    },
+    "regression001": {
+      "total": 60,
+      "pass": 60,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "existing45TestsUnchanged": true,
+    "sourceCustodyAndNormalReap": true,
+    "mode": "Real host/session/frame-entry/boundary with controlled DOM/history ports, not React/browser",
+    "archivedReplaySubsetTests": 15
+  },
+  "independentReview": {
+    "critical": 0,
+    "important": 0,
+    "minor": [
+      "Controlled Back-named test uses pushState return, not actual history traversal. Separate public browser Back check passed."
+    ]
+  },
+  "publicChecks": {
+    "reviewCustody": "PASS",
+    "fullCandidate": "PASS",
+    "archive": "PASS",
+    "syntax": "PASS",
+    "initialLoadingPicksDisabled": "PASS",
+    "originalHandbookDistinctActualAccountScreens": "PASS",
+    "readyGateAndAccountWitness": "PASS",
+    "bothWholePageSyntheticPicksExactSource": "PASS",
+    "originalAppearanceBrowseWhilePickDenied": "PASS",
+    "samePathAccountReturnPickRestored": "PASS",
+    "crossPagePickLocked": "PASS",
+    "actualBrowserBackLock": "PASS",
+    "cancelPreservesEpochsLockAndChoices": "PASS",
+    "explicitOpenChangesEpochsRestoresPicksAndRetainsChoices": "PASS",
+    "finalNativeSourceVersionAccessReadback": "PASS",
+    "allFiveVariants": "NOT_RUN",
+    "allSettingsSectionsAndControls": "NOT_RUN",
+    "unrelatedRouteMatrix": "NOT_RUN",
+    "mobileKeyboardA11yGestures": "NOT_RUN",
+    "clipboard": "NOT_RUN",
+    "backendModel": "NOT_RUN",
+    "httpResponseBodyHash": "NOT_RUN",
+    "nodeTestSuite": "NOT_RERUN; prior independently reviewed 60/60",
+    "expoBuild": "NOT_RERUN"
+  },
+  "publicScope": {
+    "variants": [
+      "original",
+      "journal"
+    ],
+    "initialRoute": "settings",
+    "initialSection": "account",
+    "sectionTransitionVariant": "original",
+    "sectionTransition": "Appearance and Account using read-only tabs",
+    "navigationVariant": "original",
+    "actualBrowserBack": true,
+    "syntheticChoicesOnly": true,
+    "allFiveVariantsAccepted": false,
+    "allSettingsSectionsSelectable": false
+  },
+  "witnessLimits": [
+    "Nonzero rectangles alone do not establish viewport intersection; actual screen evidence separately confirms visible account content.",
+    "Original initial ancestor adapter output omitted the requested inert property; Handbook attribute inspection reported it. Neither is promoted to comprehensive accessibility acceptance."
+  ],
+  "cleanup": {
+    "ownedTabBlankedAndClosed": true,
+    "preExistingTabUntouched": true,
+    "ownedProcessesExited": true
+  },
+  "evidenceDigests": {
+    "publicationReportSha256": "7be32db388691f24a09779690d64b221733e0a2a1d91eccc29853bb8bd5f5141",
+    "publicationResultSha256": "bcca311f5b232f8045900e7e1f2b89fcf1b894066e09208edc56727f7d057509",
+    "publicationEvidenceSealSha256": "a87e04b015b0aba43571196ba56595a1fd7ef2b608553fd3b0963ebf5f412a4d",
+    "independentReviewReportSha256": "cb7c4766639039053dc60048a2258ebd5b8aad4b1e8b4815b25d59f7816416a5",
+    "independentReviewSnapshotSha256": "0166d974adc92e7f878edfeb5178cc4f36dd48b0e5199d810031016e96dd3b64",
+    "redResultSha256": "5ac1c0f8a82b1d0b96c83cd9c1008440e7bc3130ad3e25777fa4486179cf876a",
+    "fullRegressionResultSha256": "774d88ea297b0219ef2281c90f3f7b2b39e37d7565bcfd1bb24b3925f712ff24"
+  },
+  "notIncluded": [
+    "Raw browser/service records",
+    "Screenshots",
+    "Credentials",
+    "Full local workspaces"
+  ],
+  "notes": [
+    "Archive contains exact published app plus controlled replay subset and exact public v103 negative controls.",
+    "Full runtime must be supplied separately and verified against SOURCE.json before replay.",
+    "No CI run is implied. Prior version acceptance is not relabeled as fresh v104 evidence."
+  ]
+}
