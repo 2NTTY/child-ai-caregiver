@@ -1,0 +1,76 @@
+{
+  "result": "BOUNDED_LOCAL_HANDOFF_PASS_NOT_FULL_APPLICATION_ACCEPTANCE",
+  "observedDate": "2026-11-10",
+  "sourceCanonicalSha256": "0fc36b2d237d0a2e06133292c8d7bf1d00d031f8adae194ff83ddcadee88f405",
+  "comparisonCanonicalSha256": "7918e21a441bb71c7b543f3b1ffe3128c8220b16816e2ccf960648d499b83afd",
+  "focusedTests": {
+    "passed": 4,
+    "failed": 0,
+    "exitCode": 0,
+    "retainedNotRerunForRecoveryOrUpload": true,
+    "loadedSourcesRehashed": 32,
+    "scope": [
+      "Exact Original actions and row tuples admitted; wrong slots, other Original identifiers, extra data and malformed encodings rejected.",
+      "Comparison controls require both observed frames to be Tasks and do not change frame identity or route.",
+      "Native source-pinned import is text-only and requires an empty receipt; whole Original stays unavailable.",
+      "Mounted control requires explicit restore, enter-selection and apply before presentation changes."
+    ],
+    "correction": "An earlier run had three passes and one failure from the test accessor modulePresentation.header. Only the accessor changed to modulePresentation[header-actions]; corrected run passed all four. Earlier evidence was preserved."
+  },
+  "typecheck": {
+    "status": "INHERITED_NOT_RERUN",
+    "reason": "All TypeScript, declaration and configuration inputs are byte-identical to the prior passing candidate. The changed .mjs modules have retained focused execution and a fresh replacement export."
+  },
+  "originalExport": {
+    "outcome": "UNKNOWN",
+    "reason": "Interrupted after starting Metro; original process session later unavailable, no terminal/result or output. Current absence of visible processes did not establish historical exit or harvest.",
+    "evidencePreservedUnchanged": true,
+    "notCountedAsSuccessfulOrCleanlyHarvested": true
+  },
+  "replacementExport": {
+    "passed": true,
+    "exitCode": 0,
+    "wallSeconds": 57.43783291699947,
+    "peakOwnedRssBytes": 635736064,
+    "completeTerminalAndLogs": true,
+    "freshSourceAndGeneratedPaths": true,
+    "minimumSampledMemAvailableBytes": 2346237952,
+    "originalEvidenceAndGeneratedSurfaceUnchanged": true,
+    "replacementRuns": 1
+  },
+  "browser": {
+    "engine": "Chromium",
+    "localSyntheticOnly": true,
+    "cssWidth": 1180,
+    "observations": [
+      "Both frames must reach Tasks before Original fragment controls enable.",
+      "The real comparison link carries only the two exact candidate identifiers.",
+      "New native page preloads source-pinned text, leaves the default Handbook basket and H product unchanged, and reports no automatic restore/apply.",
+      "Explicit restore changes only the basket; selection entry remains unapplied; explicit apply and return to product show assistant, manual creation, history.",
+      "All three product action buttons have no inert ancestor; one root and the exact replacement main script are observed.",
+      "Owned browser tabs were closed; existing tabs were preserved; the local service was stopped."
+    ],
+    "privateRawPacketsIncluded": false
+  },
+  "notRun": [
+    "Full visual, narrow-screen, accessibility, cross-route or native-device matrix",
+    "Full Original header/identity/theme, filters or calendar acceptance",
+    "Real data, model/backend calls, broad owner-guard or persistence matrix",
+    "Fresh product tests or build solely for archival upload"
+  ],
+  "limits": [
+    "Only historical actions and row fragments are transported; explicit restore and apply remain required.",
+    "Comparison and native workbench keep their existing distinct synthetic cases. Identifiers are transported, not family data.",
+    "No standalone website or production release is represented by this archive."
+  ],
+  "evidenceDigests": {
+    "focusedResult": "caf52902007725e4ecb16878fc32272df2dc23a2c54650d3d4c2560a2b49b3e6",
+    "focusedOutputNotIncluded": "31a78ab97dc49340b077651e56aa9d846419178ff259ebca4c900a6c8d871806",
+    "replacementExportResult": "e134910099bd49772f427f8362c6fb2af32b800feb687b31f85db0b0b2ada2ca",
+    "browserPacketsNotIncluded": "38b22784d6a82f9c2131d5258ed2569f7f0b86a843242fcf1f060533f62a6bad",
+    "finalEvidenceManifest": "05b78bb590e9d14100d532ed62e73dc2b6011ceb3b87af61bedaffcfc17ee4e6"
+  },
+  "releaseAdmission": false,
+  "fullApplicationAcceptance": false,
+  "testsRerunForArchive": false
+}

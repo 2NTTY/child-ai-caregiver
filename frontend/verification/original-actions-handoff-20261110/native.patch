@@ -1,0 +1,22 @@
+--- baseline/frontend/src/preview/tasks-choice-host/candidate-fragment.mjs
++++ candidate/frontend/src/preview/tasks-choice-host/candidate-fragment.mjs
+@@ -3,7 +3,7 @@
+ const PREFIX='#tasks-candidate-v1=',LIMIT=4096,VARIANTS=['harbour','care','handbook','fourth'];
+ function validSlots(slots){
+  if(!slots||typeof slots!=='object'||Array.isArray(slots)||Object.keys(slots).length!==4||!CANDIDATE_SLOTS.every(s=>Object.hasOwn(slots,s)))return false;
+- return CANDIDATE_SLOTS.every(s=>slots[s]===null||(Array.isArray(slots[s])&&slots[s].length===2&&(VARIANTS.includes(slots[s][0])||(s==='date-list'&&slots[s][0]==='original'&&slots[s][1]==='original-row-fragment01'))&&typeof slots[s][1]==='string'&&/^[a-z0-9-]{1,64}$/.test(slots[s][1])));
++ return CANDIDATE_SLOTS.every(s=>slots[s]===null||(Array.isArray(slots[s])&&slots[s].length===2&&(VARIANTS.includes(slots[s][0])||(slots[s][0]==='original'&&((s==='date-list'&&slots[s][1]==='original-row-fragment01')||(s==='header-actions'&&slots[s][1]==='original-actions-fragment01'))))&&typeof slots[s][1]==='string'&&/^[a-z0-9-]{1,64}$/.test(slots[s][1])));
+ }
+ export function decodeTaskCandidateFragment(hash){
+  if(hash===''||typeof hash==='string'&&!hash.startsWith('#tasks-candidate-'))return {status:'none'};
+--- baseline/frontend/src/preview/tasks-variant-catalog/catalog.mjs
++++ candidate/frontend/src/preview/tasks-variant-catalog/catalog.mjs
+@@ -560,7 +560,7 @@
+     coverage:'historical-actions-fragment', adapterVersion:'original-actions-fragment01-v2',
+     sourceAvailability:'available', acceptance:'source-reviewed-integration-unverified',
+     prospectiveComposable:true, runtimeAdmission:false, protectedOwner:OWNER,
+-    appearanceLimit:'Selected historical action buttons and disclosure only; existing HF01 owner with matching Fourth action arrangement, H heading and toolbar geometry remain. Composite identity and global theme unverified; comparison header handoff unsupported.',
++    appearanceLimit:'Selected historical action buttons and disclosure only; existing HF01 owner with matching Fourth action arrangement, H heading and toolbar geometry remain. Composite identity and global theme unverified; comparison handoff is candidate text only, requiring explicit restore and apply.',
+     // Legacy wire-field: fragment manifest digest, NOT assembly membership.
+     sourceFingerprint:{assemblyMembersSha256:ORIGINAL_ACTIONS_FRAGMENT.digest,
+       files:ORIGINAL_ACTIONS_FRAGMENT.files.map(({path,sha256})=>({path:path.slice('frontend/'.length),sha256}))},

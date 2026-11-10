@@ -1,0 +1,644 @@
+{
+  "canonicalSha256": "7918e21a441bb71c7b543f3b1ffe3128c8220b16816e2ccf960648d499b83afd",
+  "files": [
+    {
+      "path": "experiments/dispatch.js",
+      "bytes": 7007,
+      "sha256": "91005b87232c48ce3f0560b811b7c021d7369e57421de8141de5035dfe92a9af"
+    },
+    {
+      "path": "experiments/workbench-compare/app.mjs",
+      "bytes": 7461,
+      "sha256": "61e7ec027bc75dc5d19c1f1e6203bd756c3f94ff825219c72fd499962eba4cee"
+    },
+    {
+      "path": "experiments/workbench-compare/boundary.js",
+      "bytes": 3726,
+      "sha256": "e5e99c55767d138237f35d70b1a21cb94c35bd34de4cb42fc755d6bf7186939b"
+    },
+    {
+      "path": "experiments/workbench-compare/candidate-fragment.mjs",
+      "bytes": 1632,
+      "sha256": "20e9f5d120ae60d4fa0813ea4dc7f57fa2c435c1f124cd6682432b0308a48ec5"
+    },
+    {
+      "path": "experiments/workbench-compare/catalog.mjs",
+      "bytes": 38703,
+      "sha256": "c42b5657bb29b029f761c239a21573bc4a07ff03249316195be858f58d7b19e1"
+    },
+    {
+      "path": "experiments/workbench-compare/chain/care/care.js",
+      "bytes": 1175603,
+      "sha256": "6a68612a5cada9d5526aa86fc6698fe9276cb1c88716f3629cc5a5a8a11610fe"
+    },
+    {
+      "path": "experiments/workbench-compare/chain/harbour/harbour.js",
+      "bytes": 1109189,
+      "sha256": "92e39b4439cfdab998df3fff2a51dc361f6775dd6edf2612983d56ea1a7e820c"
+    },
+    {
+      "path": "experiments/workbench-compare/chain/journal/journal.js",
+      "bytes": 1109189,
+      "sha256": "af4b8813f5c50bf547cd026bf52409213eada8469273b5be9b46951afbba4fa3"
+    },
+    {
+      "path": "experiments/workbench-compare/chain/original/attachment-fixture.js",
+      "bytes": 19159,
+      "sha256": "65eadb4a34f1cf98c3f7eed27e1a9802b763964be3a77fe59310632f7fbf9981"
+    },
+    {
+      "path": "experiments/workbench-compare/chain/original/avatar-qa.js",
+      "bytes": 16739,
+      "sha256": "72e1779b221c7ed2fcbfe9d7fc6dc8e82284046287a85a2a0e8fb0b6c6211b35"
+    },
+    {
+      "path": "experiments/workbench-compare/chain/original/safety.js",
+      "bytes": 3517,
+      "sha256": "40820c3f86d9583b13c14f0b77284447ef5a5553f3dbca94de70ad26eb1aa78d"
+    },
+    {
+      "path": "experiments/workbench-compare/chain/original/synthetic-ports.js",
+      "bytes": 96219,
+      "sha256": "651f5972aaa524399141e2e22eb63f2be84e788896abe0df7d307b35df2efc75"
+    },
+    {
+      "path": "experiments/workbench-compare/chain/uiux-upgrade/fourth-file-safety.js",
+      "bytes": 1443,
+      "sha256": "6c88a89317d8909dad0f4706be9e64182205739f00e8ac4154ccb63f25088a79"
+    },
+    {
+      "path": "experiments/workbench-compare/chain/uiux-upgrade/fourth-preview-fixture.js",
+      "bytes": 1174626,
+      "sha256": "f219501550cdf30f966bb0f5bdac13b607302f4d1754ca5d38b96fc1c6ccbcde"
+    },
+    {
+      "path": "experiments/workbench-compare/frame-entry.js",
+      "bytes": 42240,
+      "sha256": "c2afa3733c373f85efd9d35b3966bba1a87de211880ce3844b0b907b816f36b6"
+    },
+    {
+      "path": "experiments/workbench-compare/host-actions.mjs",
+      "bytes": 1399,
+      "sha256": "77a73bcc2ceab608ae378dc686e194bd4ad78a4fe560896f072ef814b1fd0dfd"
+    },
+    {
+      "path": "experiments/workbench-compare/index.html",
+      "bytes": 4546,
+      "sha256": "60911200087dd9c7a9aca38377655241a99a40faabb190e96a5b208eabf824eb"
+    },
+    {
+      "path": "experiments/workbench-compare/install-case.js",
+      "bytes": 784,
+      "sha256": "9e2646352336259f547ef4c62146d39858f41de89cfddbf7484ccca40f5251cb"
+    },
+    {
+      "path": "experiments/workbench-compare/launch.js",
+      "bytes": 918,
+      "sha256": "58614b896d3e32fbecf4cd2dd49c081afb011011a0106c01c66b728addc230a4"
+    },
+    {
+      "path": "experiments/workbench-compare/native-catalog.mjs",
+      "bytes": 42711,
+      "sha256": "81f347587dadd9aaaa82a0a7b9b4b11b30c534717dc245733350677b4b46a48c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/+not-found.js",
+      "bytes": 33435,
+      "sha256": "8d7ccc98e66c606a35bab3f51dbb1a474f4d2d541951398ea2d886b9ee266b4c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/_sitemap.js",
+      "bytes": 33435,
+      "sha256": "8d7ccc98e66c606a35bab3f51dbb1a474f4d2d541951398ea2d886b9ee266b4c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/admin.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/care.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/chat.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/contact.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/family.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/growth.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/guide.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/history.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/index.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/login.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/memory.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/more.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/photos.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/profile.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/settings.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/sources.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/summary.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/care/tasks.js",
+      "bytes": 36512,
+      "sha256": "3ae6a828a5c4a3072fa51b28f3942d576ecf89064d5428e6b85f4a0b38ae2831"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/+not-found.js",
+      "bytes": 35380,
+      "sha256": "f6b86ebddc24e9e01b7b0259cbe689790b47808aaf578a81cce179eecc3c2a75"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/_sitemap.js",
+      "bytes": 35380,
+      "sha256": "f6b86ebddc24e9e01b7b0259cbe689790b47808aaf578a81cce179eecc3c2a75"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/admin.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/care.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/chat.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/contact.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/family.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/growth.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/guide.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/history.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/index.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/login.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/memory.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/more.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/photos.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/profile.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/settings.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/sources.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/summary.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/harbour/tasks.js",
+      "bytes": 39082,
+      "sha256": "62bb82f360b84dc5b20989d08b7aa9d1cd7b08a0dd75288a6095047530f26492"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/+not-found.js",
+      "bytes": 34256,
+      "sha256": "94284fbe59a0c51a547424f7921d7c3a84a2ee205743973f2dbb144360078b08"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/_sitemap.js",
+      "bytes": 34256,
+      "sha256": "94284fbe59a0c51a547424f7921d7c3a84a2ee205743973f2dbb144360078b08"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/admin.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/care.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/chat.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/contact.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/family.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/growth.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/guide.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/history.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/index.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/login.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/memory.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/more.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/photos.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/profile.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/settings.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/sources.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/summary.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/journal/tasks.js",
+      "bytes": 37505,
+      "sha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/+not-found.js",
+      "bytes": 36503,
+      "sha256": "793f153b9fc99c1ebe4d36f2372d650e6eb62ca4cd3dbca0863eab2e1e8bdda8"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/_sitemap.js",
+      "bytes": 36503,
+      "sha256": "793f153b9fc99c1ebe4d36f2372d650e6eb62ca4cd3dbca0863eab2e1e8bdda8"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/admin.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/care.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/chat.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/contact.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/family.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/growth.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/guide.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/history.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/index.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/login.js",
+      "bytes": 39256,
+      "sha256": "14c60de055a4ca984760a1b3e3c6e29a7a66286d75e0fdcc04eb6ffb60d8476c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/memory.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/more.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/photos.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/profile.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/settings.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/sources.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/summary.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/original/tasks.js",
+      "bytes": 39310,
+      "sha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/+not-found.js",
+      "bytes": 35260,
+      "sha256": "ee585b550312f5c3a7795a4a0bdabd39bfa133ae5e91f51fd0e3ab5be348cab9"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/_sitemap.js",
+      "bytes": 35260,
+      "sha256": "ee585b550312f5c3a7795a4a0bdabd39bfa133ae5e91f51fd0e3ab5be348cab9"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/admin.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/care.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/chat.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/contact.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/family.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/growth.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/guide.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/history.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/index.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/login.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/memory.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/more.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/photos.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/profile.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/settings.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/sources.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/summary.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/payload/uiux-upgrade/tasks.js",
+      "bytes": 37936,
+      "sha256": "55a3543947c662542de4c83f98daf136812e875510a14a67ac1f46091a61575c"
+    },
+    {
+      "path": "experiments/workbench-compare/prelude.js",
+      "bytes": 5039,
+      "sha256": "7c4e19a7187ba46554ec4150520796586981b9d9d4f92d3d8303e5866c64fa51"
+    },
+    {
+      "path": "experiments/workbench-compare/recipe-handoff.mjs",
+      "bytes": 3792,
+      "sha256": "27a24b70d89785a50fa4640edff05b7dd200c2253b9898a9edd845216f04c511"
+    },
+    {
+      "path": "experiments/workbench-compare/session.mjs",
+      "bytes": 2258,
+      "sha256": "35fef8cb2f4dc097c0ea4225a62af0878e38ffa3c0e5627c94a15be064c17cfc"
+    },
+    {
+      "path": "experiments/workbench-compare/shared-factory.js",
+      "bytes": 50315,
+      "sha256": "c995a50a75351b906cb536dbe1b0c93c04890f6053695c08f2a731c068b646e0"
+    },
+    {
+      "path": "experiments/workbench-compare/shared-reader.js",
+      "bytes": 8304,
+      "sha256": "f7cef344a7155926a0c2894e3798b9f96f75711e8a2bee9bc63c4be486b78bab"
+    },
+    {
+      "path": "experiments/workbench-compare/style.css",
+      "bytes": 1561,
+      "sha256": "ecce23be8b8605a7dbb1639cdf90cc5ea421493fd0d2da6279a773571fe64ce7"
+    }
+  ],
+  "changedHostFiles": [
+    "experiments/workbench-compare/candidate-fragment.mjs",
+    "experiments/workbench-compare/index.html",
+    "experiments/workbench-compare/native-catalog.mjs",
+    "experiments/workbench-compare/recipe-handoff.mjs"
+  ],
+  "baseHostFiles": 17,
+  "unmodifiedCompiledRuntimeFilesOmitted": 109,
+  "standaloneWebsite": false
+}

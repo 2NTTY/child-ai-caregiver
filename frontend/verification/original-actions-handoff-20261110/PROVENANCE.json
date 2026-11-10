@@ -1,0 +1,55 @@
+{
+  "candidate": "original-actions-comparison-handoff01",
+  "preparedDate": "2026-11-10",
+  "repository": "2NTTY/child-ai-caregiver",
+  "archiveBaseCommit": "5f3cd680de426cb77fd94b9a346076740c885c6d",
+  "priorArchive": {
+    "commit": "658fbed704a77d84e2e05123cca4665355ecc49f",
+    "path": "frontend/verification/original-actions-fragment-20261110",
+    "tree": "111f43bd48fa6112504511444cb728b12b212029",
+    "files": 47,
+    "remoteBlobIdentityVerified": true
+  },
+  "nativeSource": {
+    "files": 712,
+    "canonicalSha256": "0fc36b2d237d0a2e06133292c8d7bf1d00d031f8adae194ff83ddcadee88f405",
+    "baselineCanonicalSha256": "a0214123052b0abe533ed043cafdb4c2876e504ee4867438f4383e3763da3010",
+    "overlay": "source-overlay",
+    "changedFiles": [
+      "frontend/src/preview/tasks-choice-host/candidate-fragment.mjs",
+      "frontend/src/preview/tasks-variant-catalog/catalog.mjs"
+    ],
+    "addedFiles": [],
+    "deletedFiles": [],
+    "reconstructionVerified": true,
+    "instructions": "Reconstruct the 712-file prior archive using its pinned 704-file base and 22-file overlay, then replace the two paths in this source-overlay. Verify all SOURCE.json hashes."
+  },
+  "comparison": {
+    "canonicalSha256": "7918e21a441bb71c7b543f3b1ffe3128c8220b16816e2ccf960648d499b83afd",
+    "baselineCanonicalSha256": "2a1a692b4e2316de2662a6a46820725f28502de5fe6d3006600e2fbc70d792f2",
+    "overlay": "comparison-overlay",
+    "changedFiles": [
+      "experiments/workbench-compare/candidate-fragment.mjs",
+      "experiments/workbench-compare/index.html",
+      "experiments/workbench-compare/native-catalog.mjs",
+      "experiments/workbench-compare/recipe-handoff.mjs"
+    ],
+    "reconstructedHostFiles": 17,
+    "fullPayloadFiles": 126,
+    "compiledRuntimeFilesOmitted": 109,
+    "standaloneWebsite": false
+  },
+  "nativeMain": {
+    "src": "/_expo/static/js/web/index-bca88190f96fbdc9178323e945646514.js",
+    "sha256": "490cac87db3ba6653574b3e5f340877c76ae2a26b776b964431f71db5af4940f",
+    "buildOutputIncluded": false
+  },
+  "safety": {
+    "onlySyntheticPreview": true,
+    "productionSourceApplied": false,
+    "privateRawIncluded": false,
+    "credentialsIncluded": false,
+    "sitePublished": false,
+    "masterMerged": false
+  }
+}
