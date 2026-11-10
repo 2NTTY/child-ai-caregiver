@@ -1,0 +1,195 @@
+--- baseline/frontend/src/components/tasks/TasksView.tsx
++++ candidate/frontend/src/components/tasks/TasksView.tsx
+@@ -4,6 +4,7 @@
+ import { isTaskSourceRegionProfile, type TaskModulePresentation } from "../../preview/tasks-choice-host/module-presentation";
+ import { HandbookTasksHeader } from "../../preview/tasks-handbook-presentation/HandbookTasksHeader";
+ import { handbookStyles } from "../../preview/tasks-handbook-presentation/styles";
++import { originalTaskTabsAppearance } from '../../preview/tasks-original-presentation/tabs-appearance';
+ import { TasksFiltersPresentation, TasksFiltersSearch } from "./presentation/TasksFiltersPresentation";
+ import { TasksCalendarPresentation } from "./presentation/TasksCalendarPresentation";
+ import { taskCalendarLayout } from "./presentation/TasksCalendarLayoutPresentation";
+@@ -47,7 +48,8 @@
+   const customBackground = useCustomBackground();
+   const containerLayout = useContainerWidth();
+   const compact = pageLayout.width < mobileLayout.breakpoint;
+-  const filtersVariant = modulePresentation?.filters;
++  const originalTabs = modulePresentation?.filters === 'original-tabs-fragment01';
++  const filtersVariant = modulePresentation?.filters === 'original-tabs-fragment01' ? null : modulePresentation?.filters;
+   const calendarVariant = modulePresentation?.["calendar-layout"];
+   const handbookHeader = modulePresentation?.["header-actions"] === "handbook";
+   const handbookDateList = modulePresentation?.["date-list"] === "handbook";
+@@ -261,7 +263,7 @@
+           <MotionDetail activeKey={showPanel ? "panel" : "list"} scopeKey={scopeKey} direction="back" compact={!wide && !showPanel} style={moduleLayout?.listColumnStyle ?? [styles.column, wide && showAside && styles.listColumn, !listVisible && styles.hidden]}>
+             <BackgroundSurface padded ref={listRef} tabIndex={-1} testID="tasks-list" enabled={sourceSurface ? false : undefined} style={moduleLayout?.listSurfaceStyle ?? styles.listSurface} pointerEvents={listVisible ? "auto" : "none"} aria-hidden={!listVisible} accessibilityElementsHidden={!listVisible} importantForAccessibility={listVisible ? "auto" : "no-hide-descendants"}>
+ 
+-              <TabToolbar testID="tasks-tab-toolbar" stacked={compact && containerLayout.width < 360} actions={wrappingHeader ? undefined : hf01 ? <TasksHeaderActionsHF01 region="toolbar" {...hf01.toolbar} appearance={headerAppearance} /> : compact ? <View style={styles.headerActions}>{createAction}<AppButton label="其他" accessibilityLabel="其他待辦操作" variant="quiet" density="compact" expanded={actionMenuOpen} disabled={occupied} onPress={() => setActionMenu({ scope: scopeKey, open: !actionMenuOpen })} /></View> : pageActions}>{filterPresentation ? <TasksFiltersPresentation {...filterPresentation} region="tabs" /> : <UnderlineTabs id={tabsId} label="事項分類" items={[{ key: "pending", label: "待處理", count: readUnavailable ? undefined : `${openCount}${model.hasMoreTasks ? "+" : ""}` }, { key: "completed", label: "已完成" }]} value={tab} onChange={next => { if (occupied) return; setQuery(""); changeRoute({tab:next,filter:"near",page:0,day:null,taskId:null}, "push"); clearListAnchor(); }} />}</TabToolbar>
++              <TabToolbar testID="tasks-tab-toolbar" stacked={compact && containerLayout.width < 360} actions={wrappingHeader ? undefined : hf01 ? <TasksHeaderActionsHF01 region="toolbar" {...hf01.toolbar} appearance={headerAppearance} /> : compact ? <View style={styles.headerActions}>{createAction}<AppButton label="其他" accessibilityLabel="其他待辦操作" variant="quiet" density="compact" expanded={actionMenuOpen} disabled={occupied} onPress={() => setActionMenu({ scope: scopeKey, open: !actionMenuOpen })} /></View> : pageActions}>{filterPresentation ? <TasksFiltersPresentation {...filterPresentation} region="tabs" /> : <UnderlineTabs appearance={originalTabs ? originalTaskTabsAppearance(Platform.OS === "web" ? "web" : "native") : undefined} id={tabsId} label="事項分類" items={[{ key: "pending", label: "待處理", count: readUnavailable ? undefined : `${openCount}${model.hasMoreTasks ? "+" : ""}` }, { key: "completed", label: "已完成" }]} value={tab} onChange={next => { if (occupied) return; setQuery(""); changeRoute({tab:next,filter:"near",page:0,day:null,taskId:null}, "push"); clearListAnchor(); }} />}</TabToolbar>
+               {wrappingHeader ? null : hf01 ? <TasksHeaderActionsHF01 region="disclosure" {...hf01.disclosure} appearance={headerAppearance} /> : compact ? <MotionDisclosure expanded={actionMenuOpen} scopeKey={scopeKey}><View testID="tasks-page-actions" style={styles.headerActions}>{pageActions}</View></MotionDisclosure> : null}
+               {filterPresentation ? <TasksFiltersPresentation {...filterPresentation} region="review" /> : !readUnavailable && reviewCount > 0 ? <Pressable testID="tasks-review-shortcut" accessibilityRole="button" accessibilityLabel={`查看已載入的 ${reviewCount} 項待覆核安排，已停止催辦`} disabled={occupied} accessibilityState={{ disabled: occupied }} aria-disabled={occupied} onPress={() => { if (occupied) return; setQuery(""); changeRoute({tab:"pending",filter:tab === "pending" && filter === "review" ? "near" : "review",page:0,day:null,taskId:null}, tab === "pending" ? "replace" : "push"); }} style={({ pressed }) => [styles.reviewShortcut, pressed && !occupied && styles.reviewPressed]}><View style={styles.reviewCopy}><Text style={styles.reviewTitle}>{reviewCount} 項待覆核{model.hasMoreTasks ? "（已載入）" : ""}</Text><Text style={styles.reviewNote}>{filter === "review" && tab === "pending" ? "返回近期安排" : "完成或取消仍未確定 · 已停催"}</Text></View><AppIcon name={filter === "review" && tab === "pending" ? "chevron-left" : "chevron-right"} size={18} color={colors.warningInk} /></Pressable> : null}
+               {filterPresentation ? <TasksFiltersPresentation {...filterPresentation} region="completed-note" /> : tab === "completed" && !readUnavailable && completed.length > 0 ? <Text style={styles.meta}>{model.hasMoreTasks ? "目前只按已載入資料顯示最近 10 項，載入更多後會重新排序。" : "只顯示最近 10 項；較早及已取消的安排可到事項歷史查看。"}</Text> : null}
+--- baseline/frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx
++++ candidate/frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx
+@@ -38,7 +38,7 @@
+ const EMPTY_SCENE:HeaderActionsHF01SceneProps = Object.freeze({});
+ const VERSION_LABELS = {original:'原版',harbour:'Harbour',care:'Care',handbook:'Handbook',fourth:'Fourth'} as const;
+ const SLOT_LABELS:Record<TaskSlotId,string> = {'header-actions':'頁首與操作',filters:'分類與篩選','date-list':'日期分組與清單','calendar-layout':'月曆與布局'};
+-const COVERAGE_LABELS = {'historical-actions-fragment':'歷史操作按鈕片段','historical-row-fragment':'歷史事項列片段','actions-only':'操作區局部','row-appearance':'事項列外觀',
++const COVERAGE_LABELS = {'historical-tabs-fragment':'歷史分類分頁片段','historical-actions-fragment':'歷史操作按鈕片段','historical-row-fragment':'歷史事項列片段','actions-only':'操作區局部','row-appearance':'事項列外觀',
+   'header-appearance':'標題與操作外觀','controlled-filters-h-theme':'篩選外觀／H 元件',
+   'header-source-regions-partial-host':'頁首完整區域／宿主元件限制','date-list-source-regions-partial-host':'清單完整區域／宿主元件限制',
+   'date-groups-and-rows':'日期分組與事項列','controlled-calendar-layout-h-theme':'月曆布局／H 元件'} as const;
+@@ -436,12 +436,12 @@
+         <Text accessibilityLiveRegion="polite">{!available?'目前範圍不可用。':scope.occupied?'候選編輯已暫停，請先依原頁面完成或恢復目前操作。':
+           !scope.admissionVerified?'候選配方可編輯；組合預覽尚未開放，現有 H 產品仍可正常互動。':selecting?(sceneCommitted?'選配模式：產品操作暫停。':'正在準備選配模式。'):'產品互動模式。'}</Text>
+       </View>
+-      <View style={styles.versions}>{VARIANT_IDS.map(id=><Text key={id}>{VERSION_LABELS[id]}{id==='original'?'：歷史操作按鈕與事項列片段；完整原版來源與全局主題未驗證':'：來源對照，非整版選配'}</Text>)}</View>
++      <View style={styles.versions}>{VARIANT_IDS.map(id=><Text key={id}>{VERSION_LABELS[id]}{id==='original'?'：歷史操作按鈕、分類分頁與事項列片段；完整原版來源與全局主題未驗證':'：來源對照，非整版選配'}</Text>)}</View>
+       {TASK_SLOT_IDS.map(slot=>{
+         const selection=draft.current[slot];
+         return <View key={slot} style={styles.slot}>
+           <Text accessibilityRole="header" style={styles.slotTitle}>{SLOT_LABELS[slot]}</Text>
+-          <Text>{slot==='header-actions'?'操作局部或 Handbook 標題與操作外觀；原版操作片段保留 H 頁標題與工具列宿主。':slot==='date-list'?'事項列局部或 Handbook 日期分組與列外觀；空態、載入及分頁仍為 H。':slot==='filters'?'受控分類與篩選外觀；沿用 H 元件與主題尺寸，未做歷史整版等同驗收。':'受控月曆與清單布局；沿用 H 元件與保護詳情，實際尺寸及互動仍待驗收。'}</Text>
++          <Text>{slot==='header-actions'?'操作局部或 Handbook 標題與操作外觀；原版操作片段保留 H 頁標題與工具列宿主。':slot==='date-list'?'事項列局部或 Handbook 日期分組與列外觀；空態、載入及分頁仍為 H。':slot==='filters'?'受控分類與篩選外觀；原版僅分類分頁片段，搜尋、範圍與提示保留 H，不代表完整篩選槽。':'受控月曆與清單布局；沿用 H 元件與保護詳情，實際尺寸及互動仍待驗收。'}</Text>
+           <View style={styles.row}>{VARIANT_IDS.map(variant=>{
+             const candidates=getTaskSlot(variant,slot)?.narrowCandidates??[];
+             return candidates.length ? candidates.map(candidate=><AppButton key={`${variant}:${candidate.candidateId}`}
+@@ -453,7 +453,7 @@
+           })}</View>
+           <Text>候選籃：{selection?`${VERSION_LABELS[selection.variantId]} · ${COVERAGE_LABELS[selection.coverage]}（待套用／待驗收）`:'未選配；目前沿用 H 宿主'}</Text>
+           <AppButton label="清除此槽草稿" accessibilityLabel={`清除${SLOT_LABELS[slot]}草稿`} variant="quiet" disabled={!candidateEditable||!selection} onPress={()=>this.choose(frame,event,{type:'clearSlot',slotId:slot})}/>
+-          <Text>{checkTaskSlotCapability('original',slot,'compose').prospectiveComposable?'':'完整原版未驗證，不能還原為整版原版；操作按鈕與事項列僅為局部片段，可在此選配或用配方文字還原。'}</Text>
++          <Text>{checkTaskSlotCapability('original',slot,'compose').prospectiveComposable?'':'完整原版未驗證，不能還原為整版原版；操作按鈕、分類分頁與事項列僅為局部片段，可在此選配或用配方文字還原。'}</Text>
+         </View>;
+       })}
+       <View style={styles.row}>
+--- baseline/frontend/src/preview/tasks-choice-host/module-presentation.ts
++++ candidate/frontend/src/preview/tasks-choice-host/module-presentation.ts
+@@ -10,7 +10,7 @@
+ /** Readonly appearance only. The Control's existing scene admission owns delivery. */
+ export type TaskModulePresentation = Readonly<{
+   'header-actions': 'harbour' | 'fourth' | 'handbook' | 'original-actions-fragment01' | TaskSourceRegionProfile | null;
+-  filters: TaskPresentationVariant | null;
++  filters: TaskPresentationVariant | 'original-tabs-fragment01' | null;
+   'date-list': 'harbour' | 'fourth' | 'handbook' | 'original-row-fragment01' | TaskSourceRegionProfile | null;
+   'calendar-layout': TaskPresentationVariant | null;
+ }>;
+@@ -33,7 +33,8 @@
+   const result: TaskModulePresentation = {
+     'header-actions': isOriginalActions(snapshot['header-actions']) ? 'original-actions-fragment01'
+       : regionProfile(snapshot['header-actions'], 'header-source-regions02'),
+-    filters: controlled(snapshot.filters?.variantId),
++    filters: snapshot.filters?.slotId === 'filters' && snapshot.filters.variantId === 'original' && snapshot.filters.candidateId === 'original-tabs-fragment01'
++      ? 'original-tabs-fragment01' : controlled(snapshot.filters?.variantId),
+     'date-list': snapshot['date-list']?.slotId === 'date-list' && snapshot['date-list'].variantId === 'original' && snapshot['date-list'].candidateId === 'original-row-fragment01'
+       ? 'original-row-fragment01' : regionProfile(snapshot['date-list'], 'date-list-source-regions02'),
+     'calendar-layout': controlled(snapshot['calendar-layout']?.variantId),
+--- baseline/frontend/src/preview/tasks-original-presentation/tabs-appearance.ts
++++ candidate/frontend/src/preview/tasks-original-presentation/tabs-appearance.ts
+@@ -0,0 +1,22 @@
++import type { UnderlineTabsAppearance } from '../../components/ui';
++import { originalPrimitiveStyles as styles } from './styles';
++import { originalColors, originalTypography } from './source-theme';
++
++/** Historical classification tabs only. The current UnderlineTabs keeps its
++ * controls, manual keyboard activation, refs, measurement and CSS web marker.
++ * No tab/query owner, provider, font loading or complete filter/theme claim.
++ */
++export function originalTaskTabsAppearance(platform: 'web' | 'native'): UnderlineTabsAppearance {
++  const fontFamily = platform === 'web' ? originalTypography.webFont : undefined;
++  return {
++    railStyle: [styles.tabsScroll, { backgroundColor: 'transparent', borderTopLeftRadius: 0, borderTopRightRadius: 0 }],
++    tabStyle: styles.tab,
++    activeStyle: styles.tabActive,
++    pressedStyle: styles.tabPressed,
++    labelStyle: { ...styles.tabText, fontFamily },
++    activeLabelStyle: styles.tabTextActive,
++    countStyle: styles.selectionCount,
++    countLabelStyle: { ...styles.selectionCountText, fontFamily, fontVariant: ['tabular-nums'] },
++    markerColor: originalColors.teal,
++  };
++}
+--- baseline/frontend/src/preview/tasks-variant-catalog/catalog.d.mts
++++ candidate/frontend/src/preview/tasks-variant-catalog/catalog.d.mts
+@@ -18,10 +18,10 @@
+ }>;
+ export type NarrowCandidate = Readonly<{
+   slotId: TaskSlotId;
+-  candidateId: 'original-actions-fragment01' | 'original-row-fragment01' | 'header-actions' | 'row-appearance' | 'header-presentation' | 'filters-presentation' | 'date-list-presentation' | 'calendar-presentation' | 'header-source-regions02' | 'date-list-source-regions02';
++  candidateId: 'original-tabs-fragment01' | 'original-actions-fragment01' | 'original-row-fragment01' | 'header-actions' | 'row-appearance' | 'header-presentation' | 'filters-presentation' | 'date-list-presentation' | 'calendar-presentation' | 'header-source-regions02' | 'date-list-source-regions02';
+   variantId: 'original' | 'harbour' | 'fourth' | 'handbook' | 'care';
+   hostVariantId: 'harbour';
+-  coverage: 'historical-actions-fragment' | 'historical-row-fragment' | 'actions-only' | 'row-appearance' | 'header-appearance' | 'controlled-filters-h-theme' | 'date-groups-and-rows' | 'controlled-calendar-layout-h-theme' | 'header-source-regions-partial-host' | 'date-list-source-regions-partial-host';
++  coverage: 'historical-tabs-fragment' | 'historical-actions-fragment' | 'historical-row-fragment' | 'actions-only' | 'row-appearance' | 'header-appearance' | 'controlled-filters-h-theme' | 'date-groups-and-rows' | 'controlled-calendar-layout-h-theme' | 'header-source-regions-partial-host' | 'date-list-source-regions-partial-host';
+   adapterVersion: string;
+   sourceAvailability: 'available';
+   acceptance: 'bounded-source-accepted' | 'source-reviewed-integration-unverified';
+--- baseline/frontend/src/preview/tasks-variant-catalog/catalog.mjs
++++ candidate/frontend/src/preview/tasks-variant-catalog/catalog.mjs
+@@ -568,6 +568,58 @@
+     sourceFiles:ORIGINAL_ACTIONS_FRAGMENT.files, referenceFiles:ORIGINAL_ACTIONS_FRAGMENT.references,
+   }];
+ }
++// Exact historical classification-tab appearance; no complete Original filter slot.
++const ORIGINAL_TABS_FRAGMENT = {
++  "digest": "3f338bc7f355d670ba472c102697faf5d3fb7deb2e85bd2886c45b7b6fe32df6",
++  "files": [
++    {
++      "sourceId": "original-tabs-fragment01",
++      "path": "frontend/src/preview/tasks-original-presentation/source-theme.ts",
++      "sha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a"
++    },
++    {
++      "sourceId": "original-tabs-fragment01",
++      "path": "frontend/src/preview/tasks-original-presentation/styles.ts",
++      "sha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48"
++    },
++    {
++      "sourceId": "original-tabs-fragment01",
++      "path": "frontend/src/preview/tasks-original-presentation/tabs-appearance.ts",
++      "sha256": "9d1d52a2e66120b1049daf4bbe8f9f82bb186cb1ece2f569c82d072396dbc506"
++    }
++  ],
++  "references": [
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/tasks/TasksView.tsx",
++      "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/ui.tsx",
++      "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/theme.ts",
++      "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2"
++    }
++  ]
++};
++function originalTabsFragmentCandidates(variantId, slotId) {
++  if (variantId !== 'original' || slotId !== 'filters') return [];
++  return [{slotId, variantId, hostVariantId:'harbour', candidateId:'original-tabs-fragment01',
++    coverage:'historical-tabs-fragment', adapterVersion:'original-tabs-fragment01-v1',
++    sourceAvailability:'available', acceptance:'source-reviewed-integration-unverified',
++    prospectiveComposable:true, runtimeAdmission:false, protectedOwner:OWNER,
++    appearanceLimit:'Selected historical classification tabs only; current host manual keyboard activation and web CSS marker remain. Search, scope select, notices, calendar and owner remain H. Composite identity and global theme unverified; comparison URL transport unsupported.',
++    // Legacy wire-field: fragment manifest digest, NOT assembly membership.
++    sourceFingerprint:{assemblyMembersSha256:ORIGINAL_TABS_FRAGMENT.digest,
++      files:ORIGINAL_TABS_FRAGMENT.files.map(({path,sha256})=>({path:path.slice('frontend/'.length),sha256}))},
++    dependenciesFingerprint:ORIGINAL_TABS_FRAGMENT.digest,
++    sourceFiles:ORIGINAL_TABS_FRAGMENT.files, referenceFiles:ORIGINAL_TABS_FRAGMENT.references,
++  }];
++}
+ function makeSlot(variantId, slotId) {
+   const identity = SOURCE_IDENTITIES[variantId];
+   const paths = {
+@@ -593,7 +645,7 @@
+     sourceDifference:slotId === 'header-actions' ? DIFFERENCES[variantId].header
+       : slotId === 'calendar-layout' ? DIFFERENCES[variantId].layout : DIFFERENCES[variantId].state,
+     wholeSlotComposable:false, acceptance:'not-accepted', runtimeAdmission:false,
+-    narrowCandidates:[...originalActionsFragmentCandidates(variantId,slotId),...originalRowFragmentCandidates(variantId,slotId),...narrowCandidates(variantId,slotId),...presentationCandidates(variantId,slotId),...sourceRegionCandidates(variantId,slotId)],
++    narrowCandidates:[...originalTabsFragmentCandidates(variantId,slotId),...originalActionsFragmentCandidates(variantId,slotId),...originalRowFragmentCandidates(variantId,slotId),...narrowCandidates(variantId,slotId),...presentationCandidates(variantId,slotId),...sourceRegionCandidates(variantId,slotId)],
+   };
+ }
+ function makeVariant(variantId) {

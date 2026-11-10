@@ -1,0 +1,84 @@
+{
+  "result": "BOUNDED_LOCAL_TABS_FRAGMENT_PASS_NOT_FULL_ORIGINAL_ACCEPTANCE",
+  "observedDate": "2026-11-10",
+  "sourceCanonicalSha256": "12c47eaa4cd38687d8ac86d847c14f7af1f895498ae7aaea53b074ec009d013d",
+  "focusedTests": {
+    "passed": 5,
+    "failed": 0,
+    "exitCode": 0,
+    "method": "Source/React-element inspection with controlled hook and dependency ports; not actual React mount/RNW/browser.",
+    "scope": [
+      "Exact tuple/source pins, wrong slots, stale adapter rejected and new URL tuple not admitted.",
+      "Existing module projections preserved; exact new tuple only.",
+      "Historical appearance values and native font fallback.",
+      "Only fallback UnderlineTabs appearance changes; host route callback and occupied guard retained.",
+      "Current tab primitive preserves manual keyboard activation and selected semantics."
+    ],
+    "correction": "First candidate run had 4 passes and 1 failure because the inspection harness did not expand the existing HF render-prop boundary. The harness was corrected without changing product source. Corrected baseline red check failed as expected; final candidate passed 5/5. Original evidence preserved.",
+    "metadataClarification": "Copied focused contract text saying four tests and mounted visual was inaccurate; preserved separately with clarification. These five checks are element inspection only."
+  },
+  "typecheck": {
+    "passed": true,
+    "fresh": true,
+    "exitCode": 0,
+    "wallSeconds": 13.150900228007231,
+    "peakOwnedRssBytes": 1157156864
+  },
+  "export": {
+    "passed": true,
+    "exitCode": 0,
+    "runs": 1,
+    "wallSeconds": 60.67881179001415,
+    "peakOwnedRssBytes": 562696192,
+    "completeTerminalAndLogs": true,
+    "signalsOrUncertainty": false
+  },
+  "independentStaticReview": {
+    "status": "PASS_NO_BLOCKING_CODE_DEFECT",
+    "actualDeltaFiles": 6,
+    "sourcePinsVerified": true,
+    "singleOwnerAndExistingControlPreserved": true,
+    "notAnIndependentBrowserRun": true
+  },
+  "browser": {
+    "engine": "Chromium",
+    "localSyntheticOnly": true,
+    "cssWidth": 1180,
+    "observations": [
+      "Editing the candidate basket does not apply presentation; product remains the H host.",
+      "Selection mode makes the product inert. Explicit apply sets only the classification-tab appearance; other slots were left unselected.",
+      "ArrowRight focuses completed while pending remains selected. Space activates completed.",
+      "Pointer selects pending; Back/Forward restore completed/pending with Original tab color retained.",
+      "One product root and one classification tablist; expected new main script observed. H page heading and search placeholder remain.",
+      "Owned tab was closed and official local preview service stopped."
+    ],
+    "privateRawPacketsOrScreenshotsIncluded": false
+  },
+  "oldHandoffExport": {
+    "outcome": "UNKNOWN_UNCHANGED",
+    "reason": "The prior handoff attempt had no recovered exit/harvest. This new tabs-candidate export cannot establish its outcome."
+  },
+  "notRun": [
+    "Narrow-screen/four-width matrix or native-device checks",
+    "Full Original identity, full filters/calendar/host/theme or visual equivalence",
+    "Three-fragment mixed recipe complete lifecycle, broad guard/persistence/accessibility matrix",
+    "Direct source/dependency fingerprint tampering cases and every filter-region callback/render permutation",
+    "Fresh product tests or builds solely for this archive"
+  ],
+  "limits": [
+    "Only historical classification-tab appearance is added; current host manual keyboard activation and web CSS marker are deliberate adaptations.",
+    "The comparison URL whitelist remains unchanged and does not admit the new tabs tuple. Full recipe JSON uses the exact catalog-pinned candidate.",
+    "The archive is not a standalone runnable website or release."
+  ],
+  "evidenceDigests": {
+    "focusedResult": "da73fa6b62d248a097ce3d206948bb42e814e7a914fd327299270507649cd8b1",
+    "typecheckResult": "e34922af30b0401df84c41ec45aca7c289de79f322ec4ac6c0b57e9043ad1dbe",
+    "exportResult": "24c274cd72942c1056bfc00fc8628f87df37c10b4db68d96ed8238fdc7dccde5",
+    "independentReviewNotIncluded": "13d7c43367a28327157706492f73235efb654cb0f8625d172265ff43cc4d2087",
+    "browserPacketsNotIncluded": "ff1e7315f715249f9ad5de965045c936fd4a7aa3865beb10e41b76fc7a02eed6",
+    "finalEvidenceManifest": "7e68b069bf5e9201773f16d0ee2a5f4a29b3fe17cb4416b62f5528c008626fd1"
+  },
+  "fullApplicationAcceptance": false,
+  "releaseAdmission": false,
+  "testsRerunForArchive": false
+}

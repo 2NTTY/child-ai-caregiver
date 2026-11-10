@@ -1,0 +1,74 @@
+{
+  "candidate": "original-tabs-fragment01",
+  "preparedDate": "2026-11-10",
+  "repository": "2NTTY/child-ai-caregiver",
+  "archiveBaseCommit": "5f3cd680de426cb77fd94b9a346076740c885c6d",
+  "priorArchive": {
+    "commit": "2ef279d4733577b2b42b35a780eddcd8f04652aa",
+    "path": "frontend/verification/original-actions-handoff-20261110",
+    "tree": "4e1a0f6e44ae543ac1edbf830126794d5799e6bc",
+    "files": 14,
+    "remoteBlobIdentityVerified": true
+  },
+  "nativeSource": {
+    "files": 713,
+    "canonicalSha256": "12c47eaa4cd38687d8ac86d847c14f7af1f895498ae7aaea53b074ec009d013d",
+    "baselineCanonicalSha256": "0fc36b2d237d0a2e06133292c8d7bf1d00d031f8adae194ff83ddcadee88f405",
+    "overlay": "source-overlay",
+    "changedFiles": [
+      "frontend/src/components/tasks/TasksView.tsx",
+      "frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx",
+      "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+      "frontend/src/preview/tasks-original-presentation/tabs-appearance.ts",
+      "frontend/src/preview/tasks-variant-catalog/catalog.d.mts",
+      "frontend/src/preview/tasks-variant-catalog/catalog.mjs"
+    ],
+    "addedFiles": [
+      "frontend/src/preview/tasks-original-presentation/tabs-appearance.ts"
+    ],
+    "deletedFiles": [],
+    "reconstructionVerified": true,
+    "instructions": "Reconstruct the prior archive using its pinned source-base chain, then apply these six source-overlay files. Verify every SOURCE.json row. One file is added; five existing files are replaced."
+  },
+  "comparison": {
+    "changed": false,
+    "newTabsFragmentURLTransport": false,
+    "previousArchiveRetained": true
+  },
+  "historicalReferences": [
+    {
+      "logicalPath": "frontend/src/components/tasks/TasksView.tsx",
+      "bytes": 26547,
+      "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622"
+    },
+    {
+      "logicalPath": "frontend/src/theme.ts",
+      "bytes": 4982,
+      "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2"
+    },
+    {
+      "logicalPath": "frontend/src/components/ui.tsx",
+      "bytes": 28747,
+      "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563"
+    }
+  ],
+  "historicalIdentity": {
+    "appCommit": null,
+    "fullTreeMembershipVerified": false,
+    "fullOriginalIdentityVerified": false,
+    "globalThemeAccepted": false
+  },
+  "nativeMain": {
+    "src": "/_expo/static/js/web/index-c8e8e89dae9a110457d769442fe69a7a.js",
+    "sha256": "c20cebfa80388e8c6f00ad15abd2099888376cb0b1e37eb9fcf27e2720c488b9",
+    "buildOutputIncluded": false
+  },
+  "safety": {
+    "onlySyntheticPreview": true,
+    "productionSourceApplied": false,
+    "privateRawIncluded": false,
+    "credentialsIncluded": false,
+    "sitePublished": false,
+    "masterMerged": false
+  }
+}
