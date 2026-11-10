@@ -1,0 +1,88 @@
+{
+  "candidate": "HR01 Signal Dock",
+  "version": "0.1.0-draft",
+  "sourceDate": "2026-11-09",
+  "archivePreparedDate": "2026-11-10",
+  "repository": "2NTTY/child-ai-caregiver",
+  "archiveBaseCommit": "5f3cd680de426cb77fd94b9a346076740c885c6d",
+  "testedBaseline": {
+    "kind": "isolated synthetic preview source snapshot, not the production master tree",
+    "sourceFiles": 711,
+    "canonicalSha256": "afe753d928985069a99e167ce4d2549afdc5b3148a4dafa144a62aada1e62995",
+    "allFilesIncluded": false
+  },
+  "originalOwnership": "Existing repository implementation retains scrolling, geometry, caller data and operation ownership. HR01 adds only the appearance contract and candidate paint.",
+  "originalRailAtArchiveBase": {
+    "path": "frontend/src/components/HorizontalOverflowRail.tsx",
+    "sha256": "2b8e506a81bc088433b3e0d0205be87a06eb0bfef9e02810bc395dac58f32ddd",
+    "matchesAuditedBaseline": true
+  },
+  "changedFiles": [
+    {
+      "path": "frontend/src/components/HorizontalOverflowRail.tsx",
+      "beforeBytes": 10649,
+      "beforeSha256": "2b8e506a81bc088433b3e0d0205be87a06eb0bfef9e02810bc395dac58f32ddd",
+      "afterBytes": 11339,
+      "afterSha256": "08d3eee2e2b7834f2495a54dda0a0cf83a9e3d5d7b6a988edbf59769bd0c22ee"
+    },
+    {
+      "path": "frontend/src/components/appearance/horizontalRailHintAppearance.ts",
+      "beforeBytes": 0,
+      "beforeSha256": null,
+      "afterBytes": 775,
+      "afterSha256": "e922d5042b389d76f66c16fc1104b78e2f52d7e0a4b7eb7f7c55d6387698c1fc"
+    }
+  ],
+  "patchSha256": "fa82f5cfb652c017817d89fcb4310f769b6114302925177d7375cf81debc5a23",
+  "testedSourcePins": [
+    {
+      "path": "frontend/src/components/HorizontalOverflowRail.tsx",
+      "bytes": 10649,
+      "sha256": "2b8e506a81bc088433b3e0d0205be87a06eb0bfef9e02810bc395dac58f32ddd"
+    },
+    {
+      "path": "frontend/src/components/horizontalOverflow.ts",
+      "bytes": 1364,
+      "sha256": "8252e20d70cba42291f0c9e6de801430ea76cd6ff0bb21f0f0a563d2d73bc2ab"
+    },
+    {
+      "path": "frontend/src/components/ui.tsx",
+      "bytes": 37848,
+      "sha256": "8eb9cede192eff81495bf9ee478da6baa6504eafa141b40cd1db30e6b64060e5"
+    },
+    {
+      "path": "frontend/src/components/ChildKeyFacts.tsx",
+      "bytes": 2581,
+      "sha256": "f3122e4f090c95d2f83854d4749850258bb1658d80e239a4c729d48be63138ec"
+    },
+    {
+      "path": "frontend/src/components/HeaderOperationHint.tsx",
+      "bytes": 1489,
+      "sha256": "9a642ae85aa6a36f628a48f72bb17e120ed84a4b26a5f046b0eb1c2e84e8431a"
+    },
+    {
+      "path": "frontend/src/components/chat/AnswerSources.tsx",
+      "bytes": 18484,
+      "sha256": "cb7bd9c4ca7ef6fcf0a019bb92ac20306f8bb2348534041a7f8ccebd28f86fb5"
+    },
+    {
+      "path": "frontend/src/components/chat/locateCitationSource.ts",
+      "bytes": 810,
+      "sha256": "0c9fa358467346d02547fb3c2bd6232432ffa7eca5abc78cef922ca028f14814"
+    }
+  ],
+  "references": [
+    {
+      "url": "https://www.w3.org/WAI/ARIA/apg/patterns/tabs/examples/tabs-manual/",
+      "read": "2026-11-09",
+      "author": "W3C WAI APG"
+    },
+    {
+      "url": "https://www.figma.com/blog/press-start-video-game-navigation/",
+      "read": "2026-11-09",
+      "author": "Aashrey Sharma"
+    }
+  ],
+  "thirdPartyAssetsCopied": false,
+  "archivalScope": "Additive files under frontend/verification only; no production source application, PR, merge or Site publication."
+}

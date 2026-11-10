@@ -1,0 +1,54 @@
+{
+  "candidate": "HR01 Signal Dock 0.1.0-draft",
+  "manifestExcludesItself": true,
+  "files": [
+    {
+      "path": "PROVENANCE.json",
+      "bytes": 3387,
+      "sha256": "9be62f6dad5b22ec73c11236b22101cb1fa53d7bccdef939a0d33bb3fb4faf37",
+      "gitBlobSha1": "4a1c7e74b0163fde4941f28d64525bc8f317e543"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3499,
+      "sha256": "8ee21082a018f21fd250f81862bfac47ac7469cdd0e29108a8e646481d775cd4",
+      "gitBlobSha1": "7a778556970df1ce4a92f20dcb38de6db51924d4"
+    },
+    {
+      "path": "VERIFICATION.json",
+      "bytes": 5314,
+      "sha256": "73d10fcce0ac1996de69ccc53e288faa3c7aa875a27a469461960ef7d2cde7e1",
+      "gitBlobSha1": "aca0e9ff889b7ce7e4f9d82de044e34261f33619"
+    },
+    {
+      "path": "overlay/frontend/src/components/HorizontalOverflowRail.tsx",
+      "bytes": 11339,
+      "sha256": "08d3eee2e2b7834f2495a54dda0a0cf83a9e3d5d7b6a988edbf59769bd0c22ee",
+      "gitBlobSha1": "b1caceadbdd93dafb1ea4b41586e224b7fad02bc"
+    },
+    {
+      "path": "overlay/frontend/src/components/appearance/horizontalRailHintAppearance.ts",
+      "bytes": 775,
+      "sha256": "e922d5042b389d76f66c16fc1104b78e2f52d7e0a4b7eb7f7c55d6387698c1fc",
+      "gitBlobSha1": "a0043c068b138edb6525aef7de1e8ea0df28a77a"
+    },
+    {
+      "path": "screenshots/synthetic-320px.jpg",
+      "bytes": 57336,
+      "sha256": "671f8ad3ed10cf6b90a65f300f45d83e848647568c01502230cace52f3f81c02",
+      "gitBlobSha1": "d1ed7eaaeccfc8a93aea17dbf01d3559f881bcb1"
+    },
+    {
+      "path": "screenshots/synthetic-keyboard-focus.jpg",
+      "bytes": 47918,
+      "sha256": "e0987b041a6e43498d3b771e1e78cb3e10cd30f74891601dfee37396f761c6bc",
+      "gitBlobSha1": "b7d0d59fb2c00430cddb8f5d43516161c2a60c51"
+    },
+    {
+      "path": "signal-dock.patch",
+      "bytes": 3576,
+      "sha256": "fa82f5cfb652c017817d89fcb4310f769b6114302925177d7375cf81debc5a23",
+      "gitBlobSha1": "4f669d8d7ebd2aeed04223d2b3ed893217cad48d"
+    }
+  ]
+}

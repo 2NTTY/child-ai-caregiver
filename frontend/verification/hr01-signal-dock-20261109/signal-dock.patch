@@ -1,0 +1,64 @@
+--- a/frontend/src/components/HorizontalOverflowRail.tsx
++++ b/frontend/src/components/HorizontalOverflowRail.tsx
+@@ -8,10 +8,14 @@
+ import { AppScrollView } from "./AppScrollView";
+ import { horizontalOverflow, horizontalRevealOffset, nextHorizontalItem, type HorizontalRailItem, type HorizontalRailMetrics } from "./horizontalOverflow";
+ 
++import type { HorizontalRailHintAppearance } from "./appearance/horizontalRailHintAppearance";
++
+ interface HorizontalOverflowRailProps extends Omit<ScrollViewProps, "horizontal" | "showsHorizontalScrollIndicator"> {
+   items: readonly HorizontalRailItem[];
+   hintLabel: string;
+   hintColor?: string;
++  /** Optional paint-only hint. Never changes scroll or caller ownership. */
++  hintAppearance?: HorizontalRailHintAppearance;
+   rowTestID?: string;
+   hintTestID?: string;
+   hintSlotTestID?: string;
+@@ -24,7 +28,7 @@
+ 
+ /** A tab/disclosure rail with an independent trailing hint, never a content overlay. */
+ export const HorizontalOverflowRail = forwardRef<ScrollView, HorizontalOverflowRailProps>(function HorizontalOverflowRail(
+-  { items, hintLabel, hintColor = colors.muted, rowTestID, hintTestID, hintSlotTestID, revealTarget, revealRevision,
++  { items, hintLabel, hintColor = colors.muted, hintAppearance, rowTestID, hintTestID, hintSlotTestID, revealTarget, revealRevision,
+     animatedScroll = true, layoutRevision, onRevealItem, style, children, onLayout, onContentSizeChange, onScroll,
+     onScrollBeginDrag, onTouchStart, ...props }, forwardedRef,
+ ) {
+@@ -170,8 +174,11 @@
+           onHoverIn={() => setHintHovered(true)} onHoverOut={() => setHintHovered(false)}
+           onFocus={() => setHintFocused(true)} onBlur={() => setHintFocused(false)}>
+           {({ pressed }) => <View pointerEvents="none" style={[styles.hintGlyph,
+-            hintHovered && styles.hovered, pressed && styles.pressed, hintFocused && styles.focused]}>
+-            <AppIcon name="chevron-right" size={20} color={hintColor} />
++            hintAppearance && { backgroundColor: hintAppearance.backgroundColor, borderColor: hintAppearance.borderColor, borderRadius: hintAppearance.borderRadius },
++            hintHovered && [styles.hovered, hintAppearance && { backgroundColor: hintAppearance.hoveredBackgroundColor }],
++            pressed && [styles.pressed, hintAppearance && { backgroundColor: hintAppearance.pressedBackgroundColor }],
++            hintFocused && [styles.focused, hintAppearance && { borderColor: hintAppearance.focusedBorderColor }]]}>
++            <AppIcon name="chevron-right" size={20} color={hintAppearance?.iconColor ?? hintColor} />
+           </View>}
+         </Pressable>
+       </Animated.View>
+--- /dev/null
++++ b/frontend/src/components/appearance/horizontalRailHintAppearance.ts
+@@ -0,0 +1,21 @@
++/** Paint-only seam. No dimensions, layout, opacity, events, refs or domain data. */
++export interface HorizontalRailHintAppearance {
++  readonly backgroundColor: string;
++  readonly borderColor: string;
++  readonly borderRadius: 0 | 6 | 8 | 16;
++  readonly iconColor: string;
++  readonly hoveredBackgroundColor: string;
++  readonly pressedBackgroundColor: string;
++  readonly focusedBorderColor: string;
++}
++
++/** HR01: isolated Signal Dock proposal, never the application default. */
++export const signalDockRailHintAppearance: HorizontalRailHintAppearance = Object.freeze({
++  backgroundColor: "#202744",
++  borderColor: "#202744",
++  borderRadius: 6,
++  iconColor: "#FFE08A",
++  hoveredBackgroundColor: "#303A60",
++  pressedBackgroundColor: "#151B31",
++  focusedBorderColor: "#FFFFFF",
++});

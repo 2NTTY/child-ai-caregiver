@@ -1,0 +1,98 @@
+{
+  "candidate": "HR01 Signal Dock 0.1.0-draft",
+  "observedDate": "2026-11-09",
+  "overallResult": "PARTIAL_BOUNDED_VERIFICATION_WITH_OPEN_FAILURES",
+  "fullApplicationAcceptance": false,
+  "releaseAdmission": false,
+  "testsRerunForArchive": false,
+  "controlledTests": {
+    "counts": {
+      "tests": 18,
+      "pass": 18,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "exitCode": 0,
+    "inputHashesStable": true,
+    "loadedFiles": 1232,
+    "scope": "Real React/RNW rail and real caller callbacks; controlled geometry and motion/icon/Paper boundaries. Not actual browser layout."
+  },
+  "browser": {
+    "engine": "Chromium",
+    "scope": "real Chromium, real rail/callers/RNW/OverlayScrollbars; controlled motion/Paper/Icon boundary",
+    "checks": {
+      "threeCallerDelegation": "PASS_IN_FIXTURE",
+      "manualKeyboardSelection": "PASS_IN_FIXTURE",
+      "appearanceRoundTrip": "PASS_IN_FIXTURE",
+      "containerWidths240320900": "PASS_IN_FIXTURE",
+      "citationEndFocus": "FAIL_IN_BOTH_APPEARANCES",
+      "endOffsetStability": "UNRESOLVED_SINGLE_TRANSIENT"
+    },
+    "geometry": "Real browser measurements; no mocked item dimensions.",
+    "controlledBoundaries": [
+      "Immediate motion updates and disabled motion preferences",
+      "Reduced Paper and AppIcon substitutes",
+      "Synthetic review callbacks without router",
+      "Local citation horizontal locating without complete chat reading-position owner"
+    ],
+    "observations": [
+      "At 320px, each viewport measured 272px and each hint measured 48x48px; content widths were 672, 829 and 848px.",
+      "Tabs: reveal and ArrowRight moved focus without selection; Space selected the focused tab. Tab then focused the reveal control, with its white border visible.",
+      "Operation hints: reveal focused the next hint without review; explicit Enter dispatched review.",
+      "Citations: reveal dispatched horizontal=true and vertical=false to the real local locating helper, without opening or expanding a source.",
+      "Candidate-to-original-to-candidate retained observed offsets [257,138,129], selection and callback log.",
+      "At 240px, each viewport measured 192px and each hint remained 48x48px. At 900px, viewport/content measured 900px and the hint/48px slot was absent.",
+      "Tabs reached x=400 with the last item aligned and the hint hidden/disabled; focus remained on the final tab. This was an instantaneous observation, not a long-duration stability claim."
+    ],
+    "openFindings": [
+      {
+        "id": "HR01-BROWSER-01",
+        "status": "FAIL_IN_BOTH_APPEARANCES",
+        "detail": "At citation end x=576, the hint was hidden/disabled, but focus fell to BODY rather than the viewport. Reproduced with original and candidate appearances. Full-application impact is unverified."
+      },
+      {
+        "id": "HR01-BROWSER-02",
+        "status": "UNRESOLVED_SINGLE_TRANSIENT",
+        "detail": "One later observation moved x=576 to x=528 and redisplayed the hint. Subsequent original/candidate endpoint observations stayed at 576. Root cause remains unproven; the earlier observation is not erased."
+      }
+    ]
+  },
+  "preservedEarlierFailures": [
+    "Unit RED001: 2 pass/13 fail because the Reanimated test mock lacked __esModule.",
+    "Unit RED002: expected missing-appearance failures followed by OOM/watchdog termination; the test viewport was not focusable. Large DOM assertion formatting was suspected, not proven. The historical supervisor outcome remains uncertain; later process checks found no surviving test process.",
+    "Unit RED003: 13 pass/2 expected appearance failures after bounded test corrections; normal exit.",
+    "Unit GREEN001: 15/15. GREEN002: 17/18 because hover used mouseover instead of RNW pointerenter. Test-only correction yielded recorded GREEN003 18/18.",
+    "Browser bundle001: fixture bundler template syntax error. Bundle002: reduced motion adapter lacked Easing.bezier. Bundle003 succeeded after fixture-only corrections.",
+    "Existing pointerEvents deprecation warning remained; zero-warning acceptance is not claimed."
+  ],
+  "notRun": [
+    "Full TypeScript check",
+    "Full test suite",
+    "Whole-application export",
+    "Full application integration",
+    "Native device",
+    "Assistive technology",
+    "Touch or drag",
+    "Forced colors",
+    "RTL",
+    "Zoom or text scaling",
+    "Complete chat vertical reading-position preservation"
+  ],
+  "selectedScreenshots": [
+    {
+      "path": "screenshots/synthetic-320px.jpg",
+      "caption": "Actual browser: synthetic three-caller fixture at 320px container width."
+    },
+    {
+      "path": "screenshots/synthetic-keyboard-focus.jpg",
+      "caption": "Actual browser: focus on the reveal control after keyboard tab selection; content is entirely synthetic."
+    }
+  ],
+  "evidenceDigests": {
+    "controlledResultSha256": "b52bd6382eadec4d1578112272ede5fced907395a37104212dbd80d543b49089",
+    "controlledOutputSha256": "0f0e2699621ed532cecfe3a956978ff1aa425c29b9296d2c0ff8a2c273ce7dc8",
+    "browserResultSha256": "6ba50b25cf964e6b04d8235915aa38cc330f45cfe8432ec9e7d4e36b1d9e3a2d"
+  },
+  "privacy": "Only project code, public references, synthetic captures and sanitized results. No real-family data, private raw runtime packet, credential or model call."
+}
