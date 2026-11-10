@@ -1,0 +1,118 @@
+{
+  "candidate": "original-actions-fragment02",
+  "catalogCandidateId": "original-actions-fragment01",
+  "adapterVersion": "original-actions-fragment01-v2",
+  "preparedDate": "2026-11-10",
+  "repository": "2NTTY/child-ai-caregiver",
+  "githubArchiveBase": "5f3cd680de426cb77fd94b9a346076740c885c6d",
+  "nativeSource": {
+    "files": 712,
+    "canonicalSha256": "a0214123052b0abe533ed043cafdb4c2876e504ee4867438f4383e3763da3010",
+    "inventory": "SOURCE.json",
+    "baseCommit": "86ae05efe291f4b85af3c62900100c2761297759",
+    "basePath": "previews/workbench-trial/20261109/preview07-dispatch05/source",
+    "baseTree": "45e98c7907341d54800aa6c4ebdbc59c76a55080",
+    "baseFiles": 704,
+    "baseCanonicalSha256": "c94b8fd018402103248859f81b4a08c12eaf8bea566fb35e290a7a6636bc02c6",
+    "overlay": "source-overlay",
+    "newFiles": [
+      "frontend/src/components/tasks/presentation/taskFilterAppearance.ts",
+      "frontend/src/components/tasks/presentation/taskFilterThemes.ts",
+      "frontend/src/components/tasks/presentation/taskSelectionAppearance.ts",
+      "frontend/src/preview/tasks-choice-host/candidate-fragment.d.mts",
+      "frontend/src/preview/tasks-choice-host/candidate-fragment.mjs",
+      "frontend/src/preview/tasks-choice-host/recipe-handoff.ts",
+      "frontend/src/preview/tasks-original-presentation/OriginalTaskRowContent.tsx",
+      "frontend/src/preview/tasks-original-presentation/action-appearance.ts"
+    ],
+    "changedFiles": [
+      "frontend/app/_layout.tsx",
+      "frontend/src/components/tasks/TaskListRow.tsx",
+      "frontend/src/components/tasks/TasksView.tsx",
+      "frontend/src/components/tasks/presentation/CareWorkspaceSwitch.tsx",
+      "frontend/src/components/tasks/presentation/TasksFiltersPresentation.tsx",
+      "frontend/src/components/ui.tsx",
+      "frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx",
+      "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+      "frontend/src/preview/tasks-choice-host/recipe.ts",
+      "frontend/src/preview/tasks-interactive-qa/SyntheticTasksAcceptanceTools.web.tsx",
+      "frontend/src/preview/tasks-variant-catalog/catalog.d.mts",
+      "frontend/src/preview/tasks-variant-catalog/catalog.mjs",
+      "frontend/src/production/ProductionProvider.tsx",
+      "frontend/src/screens/tasksScreen.tsx"
+    ],
+    "deletedFiles": [],
+    "reconstructionVerified": true
+  },
+  "latestNativeChange": {
+    "baseline": "original-comparison-handoff01",
+    "baselineCanonicalSha256": "3883b1f61dbde42be795c8a85edae5d58d9bb0d47e456afcb4dd96043edb8087",
+    "baselineArchiveCommit": "93ada0142447f1b4f15a41164461994af7c6e855",
+    "changedFiles": [
+      "frontend/src/components/tasks/TasksView.tsx",
+      "frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx",
+      "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+      "frontend/src/preview/tasks-original-presentation/action-appearance.ts",
+      "frontend/src/preview/tasks-variant-catalog/catalog.d.mts",
+      "frontend/src/preview/tasks-variant-catalog/catalog.mjs"
+    ],
+    "patch": "latest-native.patch"
+  },
+  "spacingCorrection": {
+    "initialCandidate": "original-actions-fragment01",
+    "initialCanonicalSha256": "d172195264588f19b4ab7367c2d47f601fcf80af5c526712b393163abc420d13",
+    "changedFiles": [
+      "frontend/src/preview/tasks-original-presentation/action-appearance.ts",
+      "frontend/src/preview/tasks-variant-catalog/catalog.mjs"
+    ],
+    "patch": "spacing-fix.patch",
+    "initialSourceAndEvidencePreserved": true
+  },
+  "historicalReferences": {
+    "selectedBodiesOnly": true,
+    "compositeIdentityVerified": false,
+    "fullTreeMembershipVerified": false,
+    "appCommit": null,
+    "files": [
+      {
+        "path": "frontend/src/components/tasks/TasksView.tsx",
+        "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622",
+        "bytes": 26547
+      },
+      {
+        "path": "frontend/src/components/ui.tsx",
+        "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563",
+        "bytes": 28747
+      },
+      {
+        "path": "frontend/src/theme.ts",
+        "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2",
+        "bytes": 4982
+      }
+    ]
+  },
+  "comparison": {
+    "inventory": "COMPARISON-SOURCE.json",
+    "canonicalSha256": "2a1a692b4e2316de2662a6a46820725f28502de5fe6d3006600e2fbc70d792f2",
+    "hostFiles": 17,
+    "allPayloadFiles": 126,
+    "changedFromPriorHandoff": [
+      "experiments/workbench-compare/native-catalog.mjs"
+    ],
+    "headerHandoffSupported": false,
+    "standalone": false,
+    "limitation": "Exact compiled historical/runtime assets are pinned by inventory but not duplicated; this archive is not a runnable website."
+  },
+  "nativeExport": {
+    "main": "index-2d6b458780f5d6a5f2210035b5fa3908.js",
+    "sha256": "719999fe0267004363b958b441d185013962eaf5ecc58ca29ac41703b2f726d8",
+    "included": false
+  },
+  "safety": {
+    "onlySyntheticPreview": true,
+    "sitePublished": false,
+    "credentialsIncluded": false,
+    "privateRawIncluded": false,
+    "productionFilesApplied": false
+  }
+}

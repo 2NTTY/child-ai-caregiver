@@ -1,0 +1,273 @@
+// Pinned source declarations, scoped to filter controls, never a provider/global theme.
+import { Platform } from "react-native";
+import { MD3LightTheme, configureFonts } from "react-native-paper";
+
+// restore-namespaced-preview-inputs01-20261108/projections/care/frontend/src/theme.ts
+export const careColors = {
+  // Care Workspace: a quiet task workbench with deep teal actions and readable local CJK typography.
+  ink: "#173534", teal: "#166B63", deepTeal: "#104E49", paper: "#FFFFFF", canvas: "#F5F7F5",
+  sage: "#DCEEE7", paleTeal: "#EAF4EF", accent: "#F2BD67", onAccent: "#173534",
+  amber: "#916000", paleAmber: "#FFF5DF", coral: "#C1293D", paleCoral: "#FFF0F2", errorInk: "#B42337",
+  white: "#FFFFFF", muted: "#526761", line: "#C8D7CF", softLine: "#DFE7E2", controlOutline: "#708A7C",
+  controlSurface: "#FFFFFF", neutralSurface: "#F5F7F5", sidebar: "#FFFFFF", selectedNav: "#DCEEE7",
+  quietSurface: "#F0F5F2", mintSurface: "#EAF4EF", previewSurface: "#F5F7F5",
+  pressedOverlay: "rgba(24, 44, 69, 0.08)", accentPressed: "#E5A847", inkPressed: "#102D2B",
+  selectedPressed: "#D2E7DC", warningPressed: "#F4E6C8", darkActionRipple: "rgba(0, 0, 0, 0.12)",
+  statusWarm: "#FFF5DF", statusUnknown: "#FFF5DF", statusWarmLine: "#916000", statusUnknownLine: "#916000",
+  statusFailedLine: "#B42337", warningInk: "#79520B", overlay: "rgba(16, 34, 57, 0.36)",
+} as const;
+
+export const careFont = Platform.select({ web: "Inter, -apple-system, BlinkMacSystemFont, 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif", default: undefined });
+
+export const careTheme = {
+  ...MD3LightTheme,
+  // MD3 components multiply this unit; it is not a pixel radius.
+  roundness: 4,
+  fonts: Platform.OS === "web" && careFont
+    ? configureFonts({ config: { fontFamily: careFont } })
+    : MD3LightTheme.fonts,
+  colors: {
+    ...MD3LightTheme.colors,
+    primary: careColors.teal,
+    onPrimary: careColors.white,
+    primaryContainer: careColors.paleTeal,
+    onPrimaryContainer: careColors.ink,
+    secondary: careColors.muted,
+    onSecondary: careColors.white,
+    secondaryContainer: careColors.sage,
+    onSecondaryContainer: careColors.ink,
+    tertiary: careColors.deepTeal,
+    onTertiary: careColors.white,
+    tertiaryContainer: careColors.sage,
+    onTertiaryContainer: careColors.ink,
+    background: careColors.canvas,
+    onBackground: careColors.ink,
+    surface: careColors.white,
+    surfaceVariant: careColors.paper,
+    onSurface: careColors.ink,
+    onSurfaceVariant: careColors.muted,
+    outline: careColors.controlOutline,
+    outlineVariant: careColors.softLine,
+    error: careColors.errorInk,
+    onError: careColors.white,
+    errorContainer: careColors.paleCoral,
+    onErrorContainer: careColors.errorInk,
+    surfaceDisabled: "rgba(24, 44, 69, 0.12)",
+    onSurfaceDisabled: "rgba(24, 44, 69, 0.38)",
+    inverseSurface: careColors.ink,
+    inverseOnSurface: careColors.white,
+    inversePrimary: careColors.sage,
+    shadow: careColors.ink,
+    scrim: careColors.ink,
+    backdrop: careColors.overlay,
+    elevation: {
+      level0: "transparent",
+      level1: careColors.white,
+      level2: careColors.quietSurface,
+      level3: careColors.white,
+      level4: careColors.sidebar,
+      level5: careColors.paleTeal,
+    },
+  },
+};
+
+// restore-namespaced-preview-inputs01-20261108/projections/handbook/frontend/src/theme.ts
+export const handbookColors = {
+  // Care handbook palette. Legacy role names keep existing domain components compatible.
+  ink: "#183747",
+  teal: "#176A80",
+  deepTeal: "#14556B",
+  paper: "#FFFFFF",
+  canvas: "#EDF4F6",
+  sage: "#D5E9E6",
+  paleTeal: "#E4F0F1",
+  accent: "#F2C45A",
+  onAccent: "#183747",
+  amber: "#A38B19",
+  paleAmber: "#FFF7D8",
+  // Destructive actions and errors share a vivid red, separate from the brand palette.
+  coral: "#C51C23",
+  paleCoral: "#FEF2F2",
+  errorInk: "#C51C23",
+  white: "#FFFFFF",
+  muted: "#506571",
+  line: "#B9CCD2",
+  softLine: "#DCE7EB",
+  controlOutline: "#657F8A",
+  // Aqua navigation frames white cards and controls. Inset content uses a quieter tint.
+  controlSurface: "#FFFFFF",
+  neutralSurface: "#EDF4F6",
+  sidebar: "#E4F0F1",
+  selectedNav: "#D5E9E6",
+  quietSurface: "#F2F7F8",
+  mintSurface: "#E4F0F1",
+  previewSurface: "#EDF4F6",
+  // Temporary interaction shades; content and borders keep their full opacity.
+  pressedOverlay: "rgba(24, 55, 71, 0.08)",
+  accentPressed: "#E1B34A",
+  inkPressed: "#102A38",
+  selectedPressed: "#BBDAD8",
+  warningPressed: "#F2EAC8",
+  // Dark filled actions deepen on hover/press without a white wash.
+  darkActionRipple: "rgba(0, 0, 0, 0.12)",
+  statusWarm: "#FFF7D8",
+  statusUnknown: "#FFF7D8",
+  statusWarmLine: "#A38B19",
+  statusUnknownLine: "#A38B19",
+  statusFailedLine: "#C51C23",
+  warningInk: "#5E4F0C",
+  overlay: "rgba(24, 55, 71, 0.24)",
+} as const;
+
+export const handbookFont = Platform.select({ web: "'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', sans-serif", default: undefined });
+
+export const handbookTheme = {
+  ...MD3LightTheme,
+  // MD3 components multiply this unit; it is not a pixel radius.
+  roundness: 4,
+  fonts: Platform.OS === "web" && handbookFont
+    ? configureFonts({ config: { fontFamily: handbookFont } })
+    : MD3LightTheme.fonts,
+  colors: {
+    ...MD3LightTheme.colors,
+    primary: handbookColors.teal,
+    onPrimary: handbookColors.white,
+    primaryContainer: handbookColors.paleTeal,
+    onPrimaryContainer: handbookColors.ink,
+    secondary: handbookColors.muted,
+    onSecondary: handbookColors.white,
+    secondaryContainer: handbookColors.sage,
+    onSecondaryContainer: handbookColors.ink,
+    tertiary: handbookColors.deepTeal,
+    onTertiary: handbookColors.white,
+    tertiaryContainer: handbookColors.sage,
+    onTertiaryContainer: handbookColors.ink,
+    background: handbookColors.canvas,
+    onBackground: handbookColors.ink,
+    surface: handbookColors.white,
+    surfaceVariant: handbookColors.paper,
+    onSurface: handbookColors.ink,
+    onSurfaceVariant: handbookColors.muted,
+    outline: handbookColors.controlOutline,
+    outlineVariant: handbookColors.softLine,
+    error: handbookColors.errorInk,
+    onError: handbookColors.white,
+    errorContainer: handbookColors.paleCoral,
+    onErrorContainer: handbookColors.errorInk,
+    surfaceDisabled: "rgba(24, 55, 71, 0.12)",
+    onSurfaceDisabled: "rgba(24, 55, 71, 0.38)",
+    inverseSurface: handbookColors.ink,
+    inverseOnSurface: handbookColors.white,
+    inversePrimary: handbookColors.sage,
+    shadow: handbookColors.ink,
+    scrim: handbookColors.ink,
+    backdrop: handbookColors.overlay,
+    elevation: {
+      level0: "transparent",
+      level1: handbookColors.white,
+      level2: handbookColors.quietSurface,
+      level3: handbookColors.white,
+      level4: handbookColors.sidebar,
+      level5: handbookColors.paleTeal,
+    },
+  },
+};
+
+// restore-harbour-fourth-sources01-20261107/fourth/project/frontend/src/theme.ts
+export const fourthColors = {
+  // Distinct semantic roles: dark reading ink, teal actions, restrained warm emphasis.
+  ink: "#183E45",
+  teal: "#0C6E72",
+  deepTeal: "#07585D",
+  paper: "#FFFFFE",
+  white: "#FFFFFE",
+  canvas: "#F3F8F7",
+  sage: "#D9ECE7",
+  paleTeal: "#E8F4F0",
+  accent: "#EBC356",
+  onAccent: "#183E45",
+  amber: "#92721F",
+  paleAmber: "#FFF7E0",
+  warningInk: "#715416",
+  coral: "#B52D3A",
+  paleCoral: "#FFF2F1",
+  errorInk: "#B52D3A",
+  muted: "#52656B",
+  line: "#C8D9D7",
+  softLine: "#DFE9E6",
+  controlOutline: "#718B8C",
+  controlSurface: "#FFFFFE",
+  neutralSurface: "#F3F8F7",
+  sidebar: "#EAF3F0",
+  selectedNav: "#D9ECE7",
+  quietSurface: "#F1F7F4",
+  mintSurface: "#E8F4F0",
+  previewSurface: "#F3F8F7",
+  pressedOverlay: "rgba(24, 62, 69, 0.08)",
+  accentPressed: "#DBB247",
+  inkPressed: "#07585D",
+  selectedPressed: "#C6DFD7",
+  warningPressed: "#F5EBCB",
+  darkActionRipple: "rgba(0, 0, 0, 0.12)",
+  statusWarm: "#FFF7E0",
+  statusUnknown: "#FFF7E0",
+  statusWarmLine: "#92721F",
+  statusUnknownLine: "#92721F",
+  statusFailedLine: "#B52D3A",
+  overlay: "rgba(24, 62, 69, 0.28)",
+} as const;
+
+export const fourthFont = Platform.select({ web: "'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif", default: undefined });
+
+export const fourthTheme = {
+  ...MD3LightTheme,
+  // MD3 components multiply this unit; it is not a pixel radius.
+  roundness: 4,
+  fonts: Platform.OS === "web" && fourthFont
+    ? configureFonts({ config: { fontFamily: fourthFont } })
+    : MD3LightTheme.fonts,
+  colors: {
+    ...MD3LightTheme.colors,
+    primary: fourthColors.teal,
+    onPrimary: fourthColors.white,
+    primaryContainer: fourthColors.paleTeal,
+    onPrimaryContainer: fourthColors.ink,
+    secondary: fourthColors.muted,
+    onSecondary: fourthColors.white,
+    secondaryContainer: fourthColors.sage,
+    onSecondaryContainer: fourthColors.ink,
+    tertiary: fourthColors.deepTeal,
+    onTertiary: fourthColors.white,
+    tertiaryContainer: fourthColors.sage,
+    onTertiaryContainer: fourthColors.ink,
+    background: fourthColors.canvas,
+    onBackground: fourthColors.ink,
+    surface: fourthColors.white,
+    surfaceVariant: fourthColors.paper,
+    onSurface: fourthColors.ink,
+    onSurfaceVariant: fourthColors.muted,
+    outline: fourthColors.controlOutline,
+    outlineVariant: fourthColors.softLine,
+    error: fourthColors.errorInk,
+    onError: fourthColors.white,
+    errorContainer: fourthColors.paleCoral,
+    onErrorContainer: fourthColors.errorInk,
+    surfaceDisabled: "rgba(24, 62, 69, 0.12)",
+    onSurfaceDisabled: "rgba(24, 62, 69, 0.38)",
+    inverseSurface: fourthColors.ink,
+    inverseOnSurface: fourthColors.white,
+    inversePrimary: fourthColors.sage,
+    shadow: fourthColors.ink,
+    scrim: fourthColors.ink,
+    backdrop: fourthColors.overlay,
+    elevation: {
+      level0: "transparent",
+      level1: fourthColors.white,
+      level2: fourthColors.quietSurface,
+      level3: fourthColors.white,
+      level4: fourthColors.sidebar,
+      level5: fourthColors.paleTeal,
+    },
+  },
+};
+

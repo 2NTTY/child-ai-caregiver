@@ -1,0 +1,80 @@
+{
+  "candidate": "original-actions-fragment02",
+  "result": "BOUNDED_LOCAL_PASS_NOT_FULL_ACCEPTANCE",
+  "observedDate": "2026-11-10",
+  "sourceCanonicalSha256": "a0214123052b0abe533ed043cafdb4c2876e504ee4867438f4383e3763da3010",
+  "focusedTests": {
+    "redPassed": 5,
+    "redFailed": 1,
+    "redReason": "Actual style merge order produced horizontal padding 4 instead of 12.",
+    "greenPassed": 6,
+    "greenFailed": 0,
+    "exitCode": 0,
+    "scope": [
+      "Exact tuple/projection, source hashes and unavailable whole Original/header transport.",
+      "Historical appearance and actual disclosure style-merge order.",
+      "Real HF control element/ref/callback shape and disabled/access props.",
+      "Genuine mounted Control explicit mixed choice/apply, and byte-identical protected owner/control code."
+    ],
+    "controlledPorts": [
+      "RN/Paper presentation and guard/DOM ports"
+    ]
+  },
+  "typecheck": {
+    "status": "FRESH_PASS",
+    "exitCode": 0,
+    "wallSeconds": 12.644524826027919
+  },
+  "productionExport": {
+    "passed": true,
+    "exitCode": 0,
+    "wallSeconds": 58.55121207301272,
+    "runsOnFinalSource": 1,
+    "initialCandidateExportAlsoRetained": true,
+    "secondCandidateReason": "One confirmed browser spacing defect; not a blind rebuild."
+  },
+  "browser": {
+    "engine": "Chromium",
+    "scope": "Actual local synthetic preview; not published-site or real-data acceptance.",
+    "wideCssWidth": 1180,
+    "narrowCssWidth": 590,
+    "narrowBrowserZoomPercent": 200,
+    "observations": [
+      "Final main script and one root verified; Original actions+row choices require explicit apply and exit.",
+      "Wide order: assistant, manual creation, history. Narrow: one collapsed 操作 trigger, padding 8px 12px, height 48, radius 10, border #737284.",
+      "Trigger opens exactly one disclosure with three 48px actions; Escape collapses and focuses the actual trigger.",
+      "Narrow manual creation opens the existing form; clean close and trigger reopen work. Trigger has no inert ancestor.",
+      "Restored 100% browser zoom and wide viewport; all three actions have no inert ancestors. Owned test tab closed."
+    ],
+    "inheritedFromInitialCandidate": [
+      "Wide computed text colors/font-family CSS, not font file loading.",
+      "Dirty continue/discard guard and history routing. These owner/callback bytes are unchanged in 02 and these flows were not rerun on 02."
+    ],
+    "privatePacketsIncluded": false
+  },
+  "independentReview": "No remaining code or evidence-integrity blockers for bounded local fragment verification.",
+  "uncompleted": [
+    "Complete Original composite identity, header/title, global theme, filters and calendar slots.",
+    "Comparison-to-native Original header handoff; the existing Original transport remains row-only.",
+    "Draft restoration across browser reload/local storage. History Back retains the basket but clears applied presentation to H, requiring explicit reapply."
+  ],
+  "notRun": [
+    "Full functional/safety/accessibility/visual matrix",
+    "All mixed combinations and route interruptions",
+    "Native devices or font-file loading",
+    "Real data, model, backend, complete save/unknown/recovery flows",
+    "New public deployment or release admission"
+  ],
+  "evidenceDigests": {
+    "focusedResult": "f28c07b5273c14694844f8a6398a1332d01910a4440c10ac80c38e8524abf830",
+    "focusedOutput": "c856c91d1d0beee71caa0a411c3db1c7df62a8a96b2ecaf4f7806bc814401d97",
+    "typecheckResult": "c6e914d414b777ed544224c36ab6ed252e32835def9086160f63d35a042b80d3",
+    "exportResult": "7e30b9554cd3c802d365722dddbed190a23d0b868841429e492c19f87fbe2dfb",
+    "browserPacketsNotIncluded": "abb49016364b12f099c35e5ea685a16afdf5b2389e090c4dfec32c87d07852b8",
+    "independentReview": "c93af6a6350111faa8f958ccee1e9c5473002d4e03793389d82f670932fe9314",
+    "localEvidenceManifest": "b01d032f34f9a031bae76c055bbbde92fc495ffe76858811b74f84dde2c7b522"
+  },
+  "testsRerunForArchive": false,
+  "fullApplicationAcceptance": false,
+  "releaseAdmission": false
+}

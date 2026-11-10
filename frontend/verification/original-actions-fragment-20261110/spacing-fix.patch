@@ -1,0 +1,37 @@
+--- workbench-original-actions-fragment01-20261110/frontend/src/preview/tasks-original-presentation/action-appearance.ts
++++ workbench-original-actions-fragment02-20261110/frontend/src/preview/tasks-original-presentation/action-appearance.ts
+@@ -20,7 +20,7 @@
+     // separate source style branch on the existing disclosure appearance port.
+     disclosure: {
+       style: [styles.button, styles.disclosureButton],
+-      contentStyle: [styles.buttonContent, styles.compactButtonContent],
++      contentStyle: styles.compactButtonContent,
+       labelStyle: [label, styles.disclosureLabel],
+       touchStyle: styles.mobileTarget,
+       disabledStyle: styles.disabledOutlineButton,
+--- workbench-original-actions-fragment01-20261110/frontend/src/preview/tasks-variant-catalog/catalog.mjs
++++ workbench-original-actions-fragment02-20261110/frontend/src/preview/tasks-variant-catalog/catalog.mjs
+@@ -508,12 +508,12 @@
+ }
+ // Selected historical action fragments only; no complete header or Original identity.
+ const ORIGINAL_ACTIONS_FRAGMENT = {
+-  "digest": "4687522bcc70fb8d7755ee83a4a2911b7ad956badd0e01e78909e4d3d545c4fa",
++  "digest": "33a949586d2e602c68f1269c7825860e6d8c48a5c8d207c695b01e610c30c60c",
+   "files": [
+     {
+       "sourceId": "original-actions-fragment01",
+       "path": "frontend/src/preview/tasks-original-presentation/action-appearance.ts",
+-      "sha256": "00dcd0f44c920178d9e238257b449381278e0c601c6f35bf2852dd9b8c8d3911"
++      "sha256": "050d1ecc7e0bc814f672727c13b6c57a72ecbc0b92319a7ce1a4aab7477786ee"
+     },
+     {
+       "sourceId": "original-actions-fragment01",
+@@ -557,7 +557,7 @@
+ function originalActionsFragmentCandidates(variantId, slotId) {
+   if (variantId !== 'original' || slotId !== 'header-actions') return [];
+   return [{slotId, variantId, hostVariantId:'harbour', candidateId:'original-actions-fragment01',
+-    coverage:'historical-actions-fragment', adapterVersion:'original-actions-fragment01-v1',
++    coverage:'historical-actions-fragment', adapterVersion:'original-actions-fragment01-v2',
+     sourceAvailability:'available', acceptance:'source-reviewed-integration-unverified',
+     prospectiveComposable:true, runtimeAdmission:false, protectedOwner:OWNER,
+     appearanceLimit:'Selected historical action buttons and disclosure only; existing HF01 owner with matching Fourth action arrangement, H heading and toolbar geometry remain. Composite identity and global theme unverified; comparison header handoff unsupported.',

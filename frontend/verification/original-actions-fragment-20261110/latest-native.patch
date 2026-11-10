@@ -1,0 +1,231 @@
+--- workbench-original-comparison-handoff01-20261110/frontend/src/components/tasks/TasksView.tsx
++++ workbench-original-actions-fragment02-20261110/frontend/src/components/tasks/TasksView.tsx
+@@ -1,4 +1,5 @@
+ import { CareTasksHeader } from "../../preview/tasks-care-presentation/CareTasksHeader";
++import { originalTaskActionAppearance } from "../../preview/tasks-original-presentation/action-appearance";
+ import { getSourceRegionAppearance, taskSourceButtonAppearance } from "../../preview/tasks-module-presentation02/source-region-appearance";
+ import { isTaskSourceRegionProfile, type TaskModulePresentation } from "../../preview/tasks-choice-host/module-presentation";
+ import { HandbookTasksHeader } from "../../preview/tasks-handbook-presentation/HandbookTasksHeader";
+@@ -57,7 +58,12 @@
+   const sourceHeader = headerProfile ? getSourceRegionAppearance(headerProfile.variantId, compact, sourcePlatform) : undefined;
+   const sourceDate = dateProfile ? getSourceRegionAppearance(dateProfile.variantId, compact, sourcePlatform) : undefined;
+   const careHeader = headerProfile?.variantId === "care", wrappingHeader = handbookHeader || careHeader;
+-  const headerAppearance = headerProfile && (headerProfile.variantId === "harbour" || headerProfile.variantId === "fourth") ? {
++  const headerAppearance = headerChoice === "original-actions-fragment01" ? {
++    create: originalTaskActionAppearance("secondary", sourcePlatform),
++    assistant: originalTaskActionAppearance("primary", sourcePlatform),
++    history: originalTaskActionAppearance("quiet", sourcePlatform),
++    trigger: originalTaskActionAppearance("quiet", sourcePlatform),
++  } : headerProfile && (headerProfile.variantId === "harbour" || headerProfile.variantId === "fourth") ? {
+     create: taskSourceButtonAppearance(headerProfile.variantId, headerProfile.variantId === "harbour" ? "primary" : "secondary", "compact", sourcePlatform),
+     assistant: taskSourceButtonAppearance(headerProfile.variantId, headerProfile.variantId === "harbour" ? "secondary" : "primary", "compact", sourcePlatform),
+     history: taskSourceButtonAppearance(headerProfile.variantId, "quiet", "compact", sourcePlatform),
+--- workbench-original-comparison-handoff01-20261110/frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx
++++ workbench-original-actions-fragment02-20261110/frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx
+@@ -38,7 +38,7 @@
+ const EMPTY_SCENE:HeaderActionsHF01SceneProps = Object.freeze({});
+ const VERSION_LABELS = {original:'原版',harbour:'Harbour',care:'Care',handbook:'Handbook',fourth:'Fourth'} as const;
+ const SLOT_LABELS:Record<TaskSlotId,string> = {'header-actions':'頁首與操作',filters:'分類與篩選','date-list':'日期分組與清單','calendar-layout':'月曆與布局'};
+-const COVERAGE_LABELS = {'historical-row-fragment':'歷史事項列片段','actions-only':'操作區局部','row-appearance':'事項列外觀',
++const COVERAGE_LABELS = {'historical-actions-fragment':'歷史操作按鈕片段','historical-row-fragment':'歷史事項列片段','actions-only':'操作區局部','row-appearance':'事項列外觀',
+   'header-appearance':'標題與操作外觀','controlled-filters-h-theme':'篩選外觀／H 元件',
+   'header-source-regions-partial-host':'頁首完整區域／宿主元件限制','date-list-source-regions-partial-host':'清單完整區域／宿主元件限制',
+   'date-groups-and-rows':'日期分組與事項列','controlled-calendar-layout-h-theme':'月曆布局／H 元件'} as const;
+@@ -436,12 +436,12 @@
+         <Text accessibilityLiveRegion="polite">{!available?'目前範圍不可用。':scope.occupied?'候選編輯已暫停，請先依原頁面完成或恢復目前操作。':
+           !scope.admissionVerified?'候選配方可編輯；組合預覽尚未開放，現有 H 產品仍可正常互動。':selecting?(sceneCommitted?'選配模式：產品操作暫停。':'正在準備選配模式。'):'產品互動模式。'}</Text>
+       </View>
+-      <View style={styles.versions}>{VARIANT_IDS.map(id=><Text key={id}>{VERSION_LABELS[id]}{id==='original'?'：歷史事項列片段；完整原版來源與全局主題未驗證':'：來源對照，非整版選配'}</Text>)}</View>
++      <View style={styles.versions}>{VARIANT_IDS.map(id=><Text key={id}>{VERSION_LABELS[id]}{id==='original'?'：歷史操作按鈕與事項列片段；完整原版來源與全局主題未驗證':'：來源對照，非整版選配'}</Text>)}</View>
+       {TASK_SLOT_IDS.map(slot=>{
+         const selection=draft.current[slot];
+         return <View key={slot} style={styles.slot}>
+           <Text accessibilityRole="header" style={styles.slotTitle}>{SLOT_LABELS[slot]}</Text>
+-          <Text>{slot==='header-actions'?'操作局部或 Handbook 標題與操作外觀；歷史保留 H 按鈕語意。':slot==='date-list'?'事項列局部或 Handbook 日期分組與列外觀；空態、載入及分頁仍為 H。':slot==='filters'?'受控分類與篩選外觀；沿用 H 元件與主題尺寸，未做歷史整版等同驗收。':'受控月曆與清單布局；沿用 H 元件與保護詳情，實際尺寸及互動仍待驗收。'}</Text>
++          <Text>{slot==='header-actions'?'操作局部或 Handbook 標題與操作外觀；原版操作片段保留 H 頁標題與工具列宿主。':slot==='date-list'?'事項列局部或 Handbook 日期分組與列外觀；空態、載入及分頁仍為 H。':slot==='filters'?'受控分類與篩選外觀；沿用 H 元件與主題尺寸，未做歷史整版等同驗收。':'受控月曆與清單布局；沿用 H 元件與保護詳情，實際尺寸及互動仍待驗收。'}</Text>
+           <View style={styles.row}>{VARIANT_IDS.map(variant=>{
+             const candidates=getTaskSlot(variant,slot)?.narrowCandidates??[];
+             return candidates.length ? candidates.map(candidate=><AppButton key={`${variant}:${candidate.candidateId}`}
+@@ -453,7 +453,7 @@
+           })}</View>
+           <Text>候選籃：{selection?`${VERSION_LABELS[selection.variantId]} · ${COVERAGE_LABELS[selection.coverage]}（待套用／待驗收）`:'未選配；目前沿用 H 宿主'}</Text>
+           <AppButton label="清除此槽草稿" accessibilityLabel={`清除${SLOT_LABELS[slot]}草稿`} variant="quiet" disabled={!candidateEditable||!selection} onPress={()=>this.choose(frame,event,{type:'clearSlot',slotId:slot})}/>
+-          <Text>{checkTaskSlotCapability('original',slot,'compose').prospectiveComposable?'':'完整原版未驗證，不能還原為整版原版；歷史事項列片段僅能在此選配或用配方文字還原。'}</Text>
++          <Text>{checkTaskSlotCapability('original',slot,'compose').prospectiveComposable?'':'完整原版未驗證，不能還原為整版原版；操作按鈕與事項列僅為局部片段，可在此選配或用配方文字還原。'}</Text>
+         </View>;
+       })}
+       <View style={styles.row}>
+--- workbench-original-comparison-handoff01-20261110/frontend/src/preview/tasks-choice-host/module-presentation.ts
++++ workbench-original-actions-fragment02-20261110/frontend/src/preview/tasks-choice-host/module-presentation.ts
+@@ -9,7 +9,7 @@
+ }
+ /** Readonly appearance only. The Control's existing scene admission owns delivery. */
+ export type TaskModulePresentation = Readonly<{
+-  'header-actions': 'harbour' | 'fourth' | 'handbook' | TaskSourceRegionProfile | null;
++  'header-actions': 'harbour' | 'fourth' | 'handbook' | 'original-actions-fragment01' | TaskSourceRegionProfile | null;
+   filters: TaskPresentationVariant | null;
+   'date-list': 'harbour' | 'fourth' | 'handbook' | 'original-row-fragment01' | TaskSourceRegionProfile | null;
+   'calendar-layout': TaskPresentationVariant | null;
+@@ -24,10 +24,15 @@
+   return selection?.candidateId === candidateId && selection.variantId !== 'original' && ['harbour','fourth','handbook','care'].includes(selection.variantId)
+     ? Object.freeze({variantId: selection.variantId, presentationId:'source-regions02' as const}) : headerOrRow(selection?.variantId);
+ }
+-/** Consume an already strict-pinned recipe; do not invent a source for empty/Original slots. */
++function isOriginalActions(selection: TaskRecipeSnapshot['header-actions']): boolean {
++  return selection?.slotId === 'header-actions' && selection.variantId === 'original'
++    && selection.candidateId === 'original-actions-fragment01';
++}
++/** Consume an already strict-pinned recipe; Original admits only named fragments. */
+ export function projectTaskModulePresentation(snapshot: TaskRecipeSnapshot): TaskModulePresentation | undefined {
+   const result: TaskModulePresentation = {
+-    'header-actions': regionProfile(snapshot['header-actions'], 'header-source-regions02'),
++    'header-actions': isOriginalActions(snapshot['header-actions']) ? 'original-actions-fragment01'
++      : regionProfile(snapshot['header-actions'], 'header-source-regions02'),
+     filters: controlled(snapshot.filters?.variantId),
+     'date-list': snapshot['date-list']?.slotId === 'date-list' && snapshot['date-list'].variantId === 'original' && snapshot['date-list'].candidateId === 'original-row-fragment01'
+       ? 'original-row-fragment01' : regionProfile(snapshot['date-list'], 'date-list-source-regions02'),
+@@ -38,9 +43,11 @@
+ /** Existing action-behavior adapter, explicitly NOT the selected presentation source.
+  * Handbook uses the host's real Harbour callbacks/guards. Every recipe choice
+  * changes the complete recipe revision before the existing HF frame is committed.
++ * The exact Original actions fragment reuses Fourth's matching action order and
++ * compact disclosure shape; its presentation source remains Original, not Fourth.
+  */
+ export function taskHeaderBehaviorVariant(snapshot: TaskRecipeSnapshot | null): HeaderVariant {
+-  return snapshot?.['header-actions']?.variantId === 'fourth' ? 'fourth' : 'harbour';
++  return snapshot?.['header-actions']?.variantId === 'fourth' || isOriginalActions(snapshot?.['header-actions'] ?? null) ? 'fourth' : 'harbour';
+ }
+ 
+ /** Compatibility only. Care is carried explicitly by modulePresentation, not relabeled H. */
+--- workbench-original-comparison-handoff01-20261110/frontend/src/preview/tasks-original-presentation/action-appearance.ts
++++ workbench-original-actions-fragment02-20261110/frontend/src/preview/tasks-original-presentation/action-appearance.ts
+@@ -0,0 +1,34 @@
++import type { AppButtonAppearance } from '../../components/ui';
++import { describeOriginalActionAppearance } from './header';
++import { originalColors, originalTypography } from './source-theme';
++import { originalPrimitiveStyles as styles } from './styles';
++
++/** Selected historical actions only, inside the existing HF01 controls.
++ * AppButton owns viewport/touch, disabled, focus and expanded state. This port
++ * supplies no refs, events, owner, provider, font loading or global theme.
++ */
++export function originalTaskActionAppearance(
++  variant: 'primary' | 'secondary' | 'quiet', platform: 'web' | 'native',
++): AppButtonAppearance {
++  const base = describeOriginalActionAppearance(variant, false, false, false);
++  const label = { ...styles.buttonLabel, fontFamily: platform === 'web' ? originalTypography.webFont : undefined };
++  return {
++    ...base,
++    labelStyle: label,
++    compactLabelStyle: originalTypography.mobileItem,
++    // The actual expanded control is a Pressable, not Paper Button. Keep its
++    // separate source style branch on the existing disclosure appearance port.
++    disclosure: {
++      style: [styles.button, styles.disclosureButton],
++      contentStyle: styles.compactButtonContent,
++      labelStyle: [label, styles.disclosureLabel],
++      touchStyle: styles.mobileTarget,
++      disabledStyle: styles.disabledOutlineButton,
++      disabledLabelStyle: styles.disabledLabel,
++      focusStyle: styles.focusedButton,
++      pressedStyle: styles.buttonPressed,
++      iconColor: originalColors.ink,
++      disabledIconColor: originalColors.muted,
++    },
++  };
++}
+--- workbench-original-comparison-handoff01-20261110/frontend/src/preview/tasks-variant-catalog/catalog.d.mts
++++ workbench-original-actions-fragment02-20261110/frontend/src/preview/tasks-variant-catalog/catalog.d.mts
+@@ -18,10 +18,10 @@
+ }>;
+ export type NarrowCandidate = Readonly<{
+   slotId: TaskSlotId;
+-  candidateId: 'original-row-fragment01' | 'header-actions' | 'row-appearance' | 'header-presentation' | 'filters-presentation' | 'date-list-presentation' | 'calendar-presentation' | 'header-source-regions02' | 'date-list-source-regions02';
++  candidateId: 'original-actions-fragment01' | 'original-row-fragment01' | 'header-actions' | 'row-appearance' | 'header-presentation' | 'filters-presentation' | 'date-list-presentation' | 'calendar-presentation' | 'header-source-regions02' | 'date-list-source-regions02';
+   variantId: 'original' | 'harbour' | 'fourth' | 'handbook' | 'care';
+   hostVariantId: 'harbour';
+-  coverage: 'historical-row-fragment' | 'actions-only' | 'row-appearance' | 'header-appearance' | 'controlled-filters-h-theme' | 'date-groups-and-rows' | 'controlled-calendar-layout-h-theme' | 'header-source-regions-partial-host' | 'date-list-source-regions-partial-host';
++  coverage: 'historical-actions-fragment' | 'historical-row-fragment' | 'actions-only' | 'row-appearance' | 'header-appearance' | 'controlled-filters-h-theme' | 'date-groups-and-rows' | 'controlled-calendar-layout-h-theme' | 'header-source-regions-partial-host' | 'date-list-source-regions-partial-host';
+   adapterVersion: string;
+   sourceAvailability: 'available';
+   acceptance: 'bounded-source-accepted' | 'source-reviewed-integration-unverified';
+--- workbench-original-comparison-handoff01-20261110/frontend/src/preview/tasks-variant-catalog/catalog.mjs
++++ workbench-original-actions-fragment02-20261110/frontend/src/preview/tasks-variant-catalog/catalog.mjs
+@@ -506,6 +506,68 @@
+     sourceFiles:ORIGINAL_ROW_FRAGMENT.files, referenceFiles:ORIGINAL_ROW_FRAGMENT.references,
+   }];
+ }
++// Selected historical action fragments only; no complete header or Original identity.
++const ORIGINAL_ACTIONS_FRAGMENT = {
++  "digest": "33a949586d2e602c68f1269c7825860e6d8c48a5c8d207c695b01e610c30c60c",
++  "files": [
++    {
++      "sourceId": "original-actions-fragment01",
++      "path": "frontend/src/preview/tasks-original-presentation/action-appearance.ts",
++      "sha256": "050d1ecc7e0bc814f672727c13b6c57a72ecbc0b92319a7ce1a4aab7477786ee"
++    },
++    {
++      "sourceId": "original-actions-fragment01",
++      "path": "frontend/src/preview/tasks-original-presentation/contracts.ts",
++      "sha256": "e719a0781f63f7ff8bca60fac4a412e720c94c1184255d8f4e74b707d8a7096b"
++    },
++    {
++      "sourceId": "original-actions-fragment01",
++      "path": "frontend/src/preview/tasks-original-presentation/header.ts",
++      "sha256": "934de26fe77b0ae543694510c0507b61bca75c5fcd13fcc873dac444ee3dcd0a"
++    },
++    {
++      "sourceId": "original-actions-fragment01",
++      "path": "frontend/src/preview/tasks-original-presentation/source-theme.ts",
++      "sha256": "89040def89e675e67a1c111cc765e2198ba1b477b84de9393acfb983e0d60c7a"
++    },
++    {
++      "sourceId": "original-actions-fragment01",
++      "path": "frontend/src/preview/tasks-original-presentation/styles.ts",
++      "sha256": "65343352e1fd211b423b59cf87e4f6c0dda6c79fb0a2cca0fdeaf6719fec3a48"
++    }
++  ],
++  "references": [
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/tasks/TasksView.tsx",
++      "sha256": "08096e0f7d128be39eddeddc0549a12867b1d6a787b5a610172239360debe622"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/components/ui.tsx",
++      "sha256": "85840c349cb443b84438b9c602b0d12d05f5eecdcdeb6e47af30e77c63424563"
++    },
++    {
++      "sourceId": "original-historical-fragments01",
++      "path": "frontend/src/theme.ts",
++      "sha256": "747b825d2c49eb72b2d73c5919c0aa6217b0750d3651ddea1d053337d8a088a2"
++    }
++  ]
++};
++function originalActionsFragmentCandidates(variantId, slotId) {
++  if (variantId !== 'original' || slotId !== 'header-actions') return [];
++  return [{slotId, variantId, hostVariantId:'harbour', candidateId:'original-actions-fragment01',
++    coverage:'historical-actions-fragment', adapterVersion:'original-actions-fragment01-v2',
++    sourceAvailability:'available', acceptance:'source-reviewed-integration-unverified',
++    prospectiveComposable:true, runtimeAdmission:false, protectedOwner:OWNER,
++    appearanceLimit:'Selected historical action buttons and disclosure only; existing HF01 owner with matching Fourth action arrangement, H heading and toolbar geometry remain. Composite identity and global theme unverified; comparison header handoff unsupported.',
++    // Legacy wire-field: fragment manifest digest, NOT assembly membership.
++    sourceFingerprint:{assemblyMembersSha256:ORIGINAL_ACTIONS_FRAGMENT.digest,
++      files:ORIGINAL_ACTIONS_FRAGMENT.files.map(({path,sha256})=>({path:path.slice('frontend/'.length),sha256}))},
++    dependenciesFingerprint:ORIGINAL_ACTIONS_FRAGMENT.digest,
++    sourceFiles:ORIGINAL_ACTIONS_FRAGMENT.files, referenceFiles:ORIGINAL_ACTIONS_FRAGMENT.references,
++  }];
++}
+ function makeSlot(variantId, slotId) {
+   const identity = SOURCE_IDENTITIES[variantId];
+   const paths = {
+@@ -531,7 +593,7 @@
+     sourceDifference:slotId === 'header-actions' ? DIFFERENCES[variantId].header
+       : slotId === 'calendar-layout' ? DIFFERENCES[variantId].layout : DIFFERENCES[variantId].state,
+     wholeSlotComposable:false, acceptance:'not-accepted', runtimeAdmission:false,
+-    narrowCandidates:[...originalRowFragmentCandidates(variantId,slotId),...narrowCandidates(variantId,slotId),...presentationCandidates(variantId,slotId),...sourceRegionCandidates(variantId,slotId)],
++    narrowCandidates:[...originalActionsFragmentCandidates(variantId,slotId),...originalRowFragmentCandidates(variantId,slotId),...narrowCandidates(variantId,slotId),...presentationCandidates(variantId,slotId),...sourceRegionCandidates(variantId,slotId)],
+   };
+ }
+ function makeVariant(variantId) {
