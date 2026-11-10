@@ -1,0 +1,72 @@
+{
+  "candidate": "original-comparison-handoff01",
+  "preparedDate": "2026-11-10",
+  "repository": "2NTTY/child-ai-caregiver",
+  "githubArchiveBase": "5f3cd680de426cb77fd94b9a346076740c885c6d",
+  "nativeSource": {
+    "files": 711,
+    "canonicalSha256": "3883b1f61dbde42be795c8a85edae5d58d9bb0d47e456afcb4dd96043edb8087",
+    "inventory": "SOURCE.json",
+    "baseCommit": "86ae05efe291f4b85af3c62900100c2761297759",
+    "basePath": "previews/workbench-trial/20261109/preview07-dispatch05/source",
+    "baseTree": "45e98c7907341d54800aa6c4ebdbc59c76a55080",
+    "baseFiles": 704,
+    "baseCanonicalSha256": "c94b8fd018402103248859f81b4a08c12eaf8bea566fb35e290a7a6636bc02c6",
+    "overlay": "source-overlay",
+    "newFiles": [
+      "frontend/src/components/tasks/presentation/taskFilterAppearance.ts",
+      "frontend/src/components/tasks/presentation/taskFilterThemes.ts",
+      "frontend/src/components/tasks/presentation/taskSelectionAppearance.ts",
+      "frontend/src/preview/tasks-choice-host/candidate-fragment.d.mts",
+      "frontend/src/preview/tasks-choice-host/candidate-fragment.mjs",
+      "frontend/src/preview/tasks-choice-host/recipe-handoff.ts",
+      "frontend/src/preview/tasks-original-presentation/OriginalTaskRowContent.tsx"
+    ],
+    "changedFiles": [
+      "frontend/app/_layout.tsx",
+      "frontend/src/components/tasks/TaskListRow.tsx",
+      "frontend/src/components/tasks/presentation/CareWorkspaceSwitch.tsx",
+      "frontend/src/components/tasks/presentation/TasksFiltersPresentation.tsx",
+      "frontend/src/components/ui.tsx",
+      "frontend/src/preview/tasks-choice-host/TasksChoiceHostControl.tsx",
+      "frontend/src/preview/tasks-choice-host/module-presentation.ts",
+      "frontend/src/preview/tasks-choice-host/recipe.ts",
+      "frontend/src/preview/tasks-interactive-qa/SyntheticTasksAcceptanceTools.web.tsx",
+      "frontend/src/preview/tasks-variant-catalog/catalog.d.mts",
+      "frontend/src/preview/tasks-variant-catalog/catalog.mjs",
+      "frontend/src/production/ProductionProvider.tsx",
+      "frontend/src/screens/tasksScreen.tsx"
+    ],
+    "deletedFiles": [],
+    "reconstructionVerified": true
+  },
+  "latestNativeChange": {
+    "baseline": "row-toggle-fix01",
+    "baselineCanonicalSha256": "afe753d928985069a99e167ce4d2549afdc5b3148a4dafa144a62aada1e62995",
+    "changedFiles": [
+      "frontend/src/preview/tasks-choice-host/candidate-fragment.mjs",
+      "frontend/src/preview/tasks-variant-catalog/catalog.mjs"
+    ],
+    "patch": "latest-native.patch"
+  },
+  "comparison": {
+    "inventory": "COMPARISON-SOURCE.json",
+    "canonicalSha256": "750db1e968743eacdfe97e9fd6ce342da493e236aee6579624eb8787f0659d38",
+    "hostFiles": 17,
+    "allPayloadFiles": 126,
+    "standalone": false,
+    "limitation": "Historical compiled chains, artwork, fonts and runtime assets are pinned by inventory but not duplicated in this source archive. The comparison host requires those exact assets; it is not a standalone website."
+  },
+  "nativeExport": {
+    "main": "index-1e8055c6f8db18d1801856dfc2cbf95b.js",
+    "sha256": "c3da349c73fc9d1f7e14df92515adc31d6a27fc5e4c2b00dbe06115424e78d8d",
+    "included": false
+  },
+  "safety": {
+    "onlySyntheticPreview": true,
+    "sitePublished": false,
+    "credentialsIncluded": false,
+    "privateRawIncluded": false,
+    "productionFilesApplied": false
+  }
+}

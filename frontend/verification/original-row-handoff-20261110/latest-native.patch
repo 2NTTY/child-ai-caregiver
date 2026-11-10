@@ -1,0 +1,22 @@
+--- row-toggle/frontend/src/preview/tasks-choice-host/candidate-fragment.mjs
++++ original-handoff/frontend/src/preview/tasks-choice-host/candidate-fragment.mjs
+@@ -3,7 +3,7 @@
+ const PREFIX='#tasks-candidate-v1=',LIMIT=4096,VARIANTS=['harbour','care','handbook','fourth'];
+ function validSlots(slots){
+  if(!slots||typeof slots!=='object'||Array.isArray(slots)||Object.keys(slots).length!==4||!CANDIDATE_SLOTS.every(s=>Object.hasOwn(slots,s)))return false;
+- return CANDIDATE_SLOTS.every(s=>slots[s]===null||(Array.isArray(slots[s])&&slots[s].length===2&&VARIANTS.includes(slots[s][0])&&typeof slots[s][1]==='string'&&/^[a-z0-9-]{1,64}$/.test(slots[s][1])));
++ return CANDIDATE_SLOTS.every(s=>slots[s]===null||(Array.isArray(slots[s])&&slots[s].length===2&&(VARIANTS.includes(slots[s][0])||(s==='date-list'&&slots[s][0]==='original'&&slots[s][1]==='original-row-fragment01'))&&typeof slots[s][1]==='string'&&/^[a-z0-9-]{1,64}$/.test(slots[s][1])));
+ }
+ export function decodeTaskCandidateFragment(hash){
+  if(hash===''||typeof hash==='string'&&!hash.startsWith('#tasks-candidate-'))return {status:'none'};
+--- row-toggle/frontend/src/preview/tasks-variant-catalog/catalog.mjs
++++ original-handoff/frontend/src/preview/tasks-variant-catalog/catalog.mjs
+@@ -498,7 +498,7 @@
+     coverage:'historical-row-fragment', adapterVersion:'original-row-fragment01-v1',
+     sourceAvailability:'available', acceptance:'source-reviewed-integration-unverified',
+     prospectiveComposable:true, runtimeAdmission:false, protectedOwner:OWNER,
+-    appearanceLimit:'Verified historical row fragments only; existing H toggle/guards, groups, read/empty/paging remain. Composite identity and global theme unverified; comparison handoff unsupported.',
++    appearanceLimit:'Verified historical row fragments only; existing H toggle/guards, groups, read/empty/paging remain. Composite identity and global theme unverified; comparison handoff is candidate text only, requiring explicit restore and apply.',
+     // Legacy wire-field: digest of this fragment manifest, NOT assembly membership.
+     sourceFingerprint:{assemblyMembersSha256:ORIGINAL_ROW_FRAGMENT.digest,
+       files:ORIGINAL_ROW_FRAGMENT.files.map(({path,sha256})=>({path:path.slice('frontend/'.length),sha256}))},

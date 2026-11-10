@@ -1,0 +1,79 @@
+{
+  "candidate": "original-comparison-handoff01",
+  "result": "BOUNDED_LOCAL_PASS_NOT_FULL_ACCEPTANCE",
+  "observedDate": "2026-11-10",
+  "sourceCanonicalSha256": "3883b1f61dbde42be795c8a85edae5d58d9bb0d47e456afcb4dd96043edb8087",
+  "focusedTests": {
+    "redPassed": 0,
+    "redFailed": 4,
+    "redReason": "Exact Original transport, choice, synchronized catalog and prefill not yet implemented.",
+    "greenPassed": 4,
+    "greenFailed": 0,
+    "exitCode": 0,
+    "wallSeconds": 1.4492158829816617,
+    "completeLogs": true,
+    "processOwnershipComplete": true,
+    "scope": [
+      "Exact tuple and mixed candidate transport; reject wrong slots, IDs, malformed tuples, extra keys, unsupported versions and oversized input.",
+      "Verified Tasks scope on both frames; basket changes do not navigate or replace comparison frames.",
+      "Null-receipt-only prefill and pinned native selection; retained or unknown receipts are not replaced.",
+      "Real React Control and TaskListRow binding: initial Handbook draft, explicit restore, enter, apply, return and admission withdrawal."
+    ],
+    "controlledPorts": [
+      "React Native/Paper presentation ports",
+      "Router, owner and guard ports"
+    ]
+  },
+  "typecheck": {
+    "status": "INHERITED_NOT_RERUN",
+    "baseline": "row-toggle-fix01",
+    "baselineCanonicalSha256": "afe753d928985069a99e167ce4d2549afdc5b3148a4dafa144a62aada1e62995",
+    "allTypeScriptAndDeclarationsUnchanged": true
+  },
+  "productionExport": {
+    "passed": true,
+    "exitCode": 0,
+    "wallSeconds": 60.18725130401435,
+    "runs": 1
+  },
+  "browser": {
+    "engine": "Chromium",
+    "scope": "Actual local synthetic preview, not a published-site test.",
+    "mixedBasket": {
+      "header-actions": "care/header-source-regions02",
+      "filters": "handbook/filters-presentation",
+      "date-list": "original/original-row-fragment01",
+      "calendar-layout": "harbour/calendar-presentation"
+    },
+    "observations": [
+      "Comparison link opened a fresh native Tasks tab with revision 0 and empty undo in import text; live basket still Handbook, product mode active and Apply disabled.",
+      "Explicit pointer Restore changed the basket without applying. Enter made product content inert, aria-hidden and pointer-events:none.",
+      "Apply retained the mixed basket and rendered the Original title with computed color #272343 and a Noto Sans TC font-family stack. Font-file loading was not independently verified.",
+      "Return removed interaction suppression; same-row pointer open/close removed taskId and kept focus and the title styling.",
+      "Native routing removed the handoff URL fields while the basket and appearance persisted."
+    ],
+    "privatePacketsIncluded": false
+  },
+  "independentReview": "No blocking source/contract findings or material contradiction in final bounded browser evidence.",
+  "uncompleted": [
+    "Complete Original identity, multi-slot composition and global theme remain unverified.",
+    "Draft restoration across browser reload is not implemented; storage remains disabled."
+  ],
+  "notRun": [
+    "Full test matrix or full rerun",
+    "All mixed combinations",
+    "Mobile widths and native iOS/Android",
+    "All dirty/saving/unknown/conflict combinations",
+    "New public deployment or release CI"
+  ],
+  "evidenceDigests": {
+    "focusedResult": "fbdd5cf893574fc7b8f3306a4f9b666a989cabafb84e365cd12cea0d89f9ed9b",
+    "focusedOutput": "b5a1e26e5020337e33657ca8a40e480ac99d40de0b5e9133e0b33685422cb97a",
+    "exportResult": "96829dc76b88e0eef9caa646276358aa72e8dce5cf7657d58658b91fc8705256",
+    "privateBrowserPackets": "971d52023aeea8bff3ded2c254249eac724656b52a1427d7639310380a7cf33c",
+    "localEvidenceManifest": "3231936e1e54255327bfae4af63afebc3c29e7112c1517f24cf9432dfdc15dfc"
+  },
+  "testsRerunForArchive": false,
+  "fullApplicationAcceptance": false,
+  "releaseAdmission": false
+}
