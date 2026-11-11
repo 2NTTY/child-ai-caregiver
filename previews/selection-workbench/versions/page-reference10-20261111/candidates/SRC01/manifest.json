@@ -1,0 +1,88 @@
+{
+  "reference_id": "SRC01",
+  "title": "SuperLocalMemory V2 — Memories",
+  "category_zh_TW": "知識記憶管理／知識資料庫列表；不是引文或書目管理",
+  "purpose": "本地設計比較，保留官方原圖，不改寫、不換膚、不翻譯畫面",
+  "displayed_ui_version": "V2",
+  "screenshot_generated_date_as_documented": "2026-02-12",
+  "artifact_pin": "c1669e9456cb01dda3d0d04bca3bfacca07ecbe9",
+  "pin_caveat": "此 SHA 是後續倉庫快照；畫面與上游截圖說明仍明確為 V2，不可標為 V3.7 或當前介面。",
+  "repo_url": "https://github.com/qualixar/superlocalmemory",
+  "source_snapshot_url": "https://github.com/qualixar/superlocalmemory/tree/c1669e9456cb01dda3d0d04bca3bfacca07ecbe9",
+  "image": {
+    "file": "original/SRC01-superlocalmemory-v2-memories.png",
+    "source_url": "https://raw.githubusercontent.com/qualixar/superlocalmemory/c1669e9456cb01dda3d0d04bca3bfacca07ecbe9/assets/screenshots/dashboard/dashboard-memories.png",
+    "source_page_url": "https://github.com/qualixar/superlocalmemory/blob/c1669e9456cb01dda3d0d04bca3bfacca07ecbe9/assets/screenshots/dashboard/dashboard-memories.png",
+    "sha256": "418dac98a6d4bf71130f69b7f38738afad52353c47548112a01658a09da354d4",
+    "bytes": 221340,
+    "width": 3840,
+    "height": 2160,
+    "modified": false,
+    "scope": "完整官方視窗截圖，非整個資料集或長頁所有列"
+  },
+  "content_evidence": {
+    "file": "evidence/screenshot-README.upstream.md",
+    "source_url": "https://raw.githubusercontent.com/qualixar/superlocalmemory/c1669e9456cb01dda3d0d04bca3bfacca07ecbe9/assets/screenshots/dashboard/README.md",
+    "profile": "demo-visual",
+    "memories": 30,
+    "explicit_synthetic_non_sensitive": true
+  },
+  "license": {
+    "screenshot_set_notice": "GNU Affero General Public License v3.0 or later",
+    "license_text": "licenses/AGPL-3.0.upstream.txt",
+    "copyright": "Copyright © 2026 Varun Pratap Bhardwaj",
+    "creator": "Varun Pratap Bhardwaj",
+    "upstream_attribution_included": true
+  },
+  "source_files": [
+    {
+      "file": "licenses/AGPL-3.0.upstream.txt",
+      "source_url": "https://raw.githubusercontent.com/qualixar/superlocalmemory/c1669e9456cb01dda3d0d04bca3bfacca07ecbe9/LICENSE",
+      "sha256": "aa2e4c2fc89b699a208a5baa2339df3124b4a545cb5ad09f31877c5b4cb412d3",
+      "bytes": 34565,
+      "modified": false
+    },
+    {
+      "file": "evidence/screenshot-README.upstream.md",
+      "source_url": "https://raw.githubusercontent.com/qualixar/superlocalmemory/c1669e9456cb01dda3d0d04bca3bfacca07ecbe9/assets/screenshots/dashboard/README.md",
+      "sha256": "2792fb3bf6398a6dd85752310a172571ed162fd947d75af31e5f2c449b6c765b",
+      "bytes": 6551,
+      "modified": false
+    },
+    {
+      "file": "evidence/NOTICE.upstream.txt",
+      "source_url": "https://raw.githubusercontent.com/qualixar/superlocalmemory/c1669e9456cb01dda3d0d04bca3bfacca07ecbe9/NOTICE",
+      "sha256": "a6361e5bcfc670d61f94292ce2bc9afb01c88bb4d0246f3998f6a3bec97033b7",
+      "bytes": 2310,
+      "modified": false
+    },
+    {
+      "file": "evidence/ATTRIBUTION.upstream.md",
+      "source_url": "https://raw.githubusercontent.com/qualixar/superlocalmemory/c1669e9456cb01dda3d0d04bca3bfacca07ecbe9/ATTRIBUTION.md",
+      "sha256": "b7cf3512408c9afedb17931c5d22487412e1f2720d080be2710c72285179e846",
+      "bytes": 4634,
+      "modified": false
+    },
+    {
+      "file": "evidence/AUTHORS.upstream.md",
+      "source_url": "https://raw.githubusercontent.com/qualixar/superlocalmemory/c1669e9456cb01dda3d0d04bca3bfacca07ecbe9/AUTHORS.md",
+      "sha256": "7bd83113d51266e617d344271db2c3c67109bfc4c6bd03dcdb7778fdc77f9d61",
+      "bytes": 410,
+      "modified": false
+    }
+  ],
+  "actions": {
+    "browser_used": false,
+    "published": false,
+    "uploaded": false,
+    "application_launched": false,
+    "models_called": false,
+    "accounts_accessed": false,
+    "upstream_modified": false
+  },
+  "excluded": [
+    "Paperless-ngx",
+    "Karakeep"
+  ],
+  "verified_date_utc": "2026-11-11T13:32:25.126604+00:00"
+}

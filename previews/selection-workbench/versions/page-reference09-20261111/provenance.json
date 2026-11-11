@@ -1,0 +1,1854 @@
+{
+  "version": "page-reference09-20261111",
+  "kind": "static-page-reference-index",
+  "selected": false,
+  "implementedFrontend": false,
+  "sitePublished": false,
+  "existingWorkbenchCommit": "4c4011d7713b41beb98f521cc2393853ed9b3a3a",
+  "candidates": [
+    {
+      "branch": "dot/page-home-nc01-20261111",
+      "sha": "3ceb1bfa1cfba8928bd515fdfee5c3a768749693",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/H-01/README.md",
+          "path": "candidates/H-01/README.md",
+          "gitBlob": "d56fb855cebda39728921ce1ce6404383d26f866",
+          "bytes": 2296
+        },
+        {
+          "originalPath": "docs/design-previews/H-01/SHA256SUMS",
+          "path": "candidates/H-01/SHA256SUMS",
+          "gitBlob": "b7e8c53ca5e453c8661de3830a8d0c0e5a6c072a",
+          "bytes": 433
+        },
+        {
+          "originalPath": "docs/design-previews/H-01/candidate.json",
+          "path": "candidates/H-01/candidate.json",
+          "gitBlob": "37e4a56c454aea7b2a0a07543fea08f32fd610d6",
+          "bytes": 2489
+        },
+        {
+          "originalPath": "docs/design-previews/H-01/index.html",
+          "path": "candidates/H-01/index.html",
+          "gitBlob": "1315009f087bb74ada8644de79a5e3959e6e695a",
+          "bytes": 2692
+        },
+        {
+          "originalPath": "docs/design-previews/H-01/reference/license-copying.txt",
+          "path": "candidates/H-01/reference/license-copying.txt",
+          "gitBlob": "1d658d6d37633decaec4382fcc8a2c05ac21bdf9",
+          "bytes": 19466
+        },
+        {
+          "originalPath": "docs/design-previews/H-01/reference/webinterface_dashboard.png",
+          "path": "candidates/H-01/reference/webinterface_dashboard.png",
+          "gitBlob": "21c3555d2dc694c744bdab148a967730d4a1cdc8",
+          "bytes": 148703
+        }
+      ]
+    },
+    {
+      "branch": "dot/page-chat-reference-pc01-20261111",
+      "sha": "62c2a8bc2355fbf8c3725a21f40bcb3efdd9687c",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/PC01/README.md",
+          "path": "candidates/PC01/README.md",
+          "gitBlob": "7a7a9ffb6dd2dd843254f936affea3d34dbdf665",
+          "bytes": 2545
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/SHA256SUMS",
+          "path": "candidates/PC01/SHA256SUMS",
+          "gitBlob": "592508a1a3eb4f7d84b53dc5e4fb3e6aff2d5395",
+          "bytes": 521
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/candidate.json",
+          "path": "candidates/PC01/candidate.json",
+          "gitBlob": "67a9b45cbf11042e29fff04b8a85b44aee78300a",
+          "bytes": 973
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/candidate/index.html",
+          "path": "candidates/PC01/candidate/index.html",
+          "gitBlob": "6d73c0c4a8b8c421aed51baf70240144a557e19f",
+          "bytes": 5520
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/candidate/style.css",
+          "path": "candidates/PC01/candidate/style.css",
+          "gitBlob": "8f45976cf1dfbe3aab8bb0d5f9bdb3641e5bf2bd",
+          "bytes": 3829
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/reference/LICENSE",
+          "path": "candidates/PC01/reference/LICENSE",
+          "gitBlob": "ce2aca011368ed3c3af6ffd8e1d333b5bef08589",
+          "bytes": 1073
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/reference/generative-ui-light.pinned.png",
+          "path": "candidates/PC01/reference/generative-ui-light.pinned.png",
+          "gitBlob": "20a2051328d43611f922f98fbcdaf6f55deab852",
+          "bytes": 147373
+        }
+      ]
+    },
+    {
+      "branch": "dot/page-care-bb01-20261111",
+      "sha": "cbcd1b5bbc96e49c0fb1ba9b45b6d7f518a83d3b",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/C-01/README.md",
+          "path": "candidates/C-01/README.md",
+          "gitBlob": "114ae7e787fd4d41b01630f17130aae67cbebf25",
+          "bytes": 3337
+        },
+        {
+          "originalPath": "docs/design-previews/C-01/SHA256SUMS",
+          "path": "candidates/C-01/SHA256SUMS",
+          "gitBlob": "8b6d3773e7d909d99b4354cfbc5db2108a037101",
+          "bytes": 407
+        },
+        {
+          "originalPath": "docs/design-previews/C-01/candidate.json",
+          "path": "candidates/C-01/candidate.json",
+          "gitBlob": "28fc20a956a67c785831538daba543c9e64bfa6e",
+          "bytes": 3497
+        },
+        {
+          "originalPath": "docs/design-previews/C-01/index.html",
+          "path": "candidates/C-01/index.html",
+          "gitBlob": "823c904f924b3098f73323352dc6da08c24a251d",
+          "bytes": 2606
+        },
+        {
+          "originalPath": "docs/design-previews/C-01/reference/LICENSE",
+          "path": "candidates/C-01/reference/LICENSE",
+          "gitBlob": "640e149090f51577e773d9ee6b6cc1b600f97f10",
+          "bytes": 1337
+        },
+        {
+          "originalPath": "docs/design-previews/C-01/reference/timeline.png",
+          "path": "candidates/C-01/reference/timeline.png",
+          "gitBlob": "de34e2945d8dfadbf96c4aaf2860f8f618e2806b",
+          "bytes": 78367
+        }
+      ]
+    },
+    {
+      "branch": "dot/page-settings-s01-20261111",
+      "sha": "b481737a82fdf283dcfb06863550476a674cdef4",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/S-01/README.md",
+          "path": "candidates/S-01/README.md",
+          "gitBlob": "709e950daa231e3b9cb8ac4a202eb270382d06c6",
+          "bytes": 4124
+        },
+        {
+          "originalPath": "docs/design-previews/S-01/SHA256SUMS",
+          "path": "candidates/S-01/SHA256SUMS",
+          "gitBlob": "533dd1290007c80a9e593bb9136f38f9f7e30f31",
+          "bytes": 413
+        },
+        {
+          "originalPath": "docs/design-previews/S-01/candidate.json",
+          "path": "candidates/S-01/candidate.json",
+          "gitBlob": "231ccfc11261de8ba135bb1416b55cae4347dfc7",
+          "bytes": 3173
+        },
+        {
+          "originalPath": "docs/design-previews/S-01/index.html",
+          "path": "candidates/S-01/index.html",
+          "gitBlob": "4028b34fd579123dab7fcfb47126ebe855ab6bca",
+          "bytes": 4889
+        },
+        {
+          "originalPath": "docs/design-previews/S-01/reference/LICENSE.md",
+          "path": "candidates/S-01/reference/LICENSE.md",
+          "gitBlob": "fad4d887a681dd49233e5ed01ee2c7a1513089a0",
+          "bytes": 1063
+        },
+        {
+          "originalPath": "docs/design-previews/S-01/reference/forms-light.png",
+          "path": "candidates/S-01/reference/forms-light.png",
+          "gitBlob": "15d76120dccefbb695af757ae7cc2af2bab0585f",
+          "bytes": 29685
+        }
+      ]
+    },
+    {
+      "branch": "dot/page-memory-mr01-20261111",
+      "sha": "f884863fa166a447d4d864332efbf625d1f6d94e",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/MR-01/README.md",
+          "path": "candidates/MR-01/README.md",
+          "gitBlob": "94a81ca229c66959234ef8baf0236c8ee814ff5a",
+          "bytes": 4856
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/SHA256SUMS",
+          "path": "candidates/MR-01/SHA256SUMS",
+          "gitBlob": "fb45c64e0d8d09bae5ff003b996b014c3e540ed2",
+          "bytes": 503
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/candidate.json",
+          "path": "candidates/MR-01/candidate.json",
+          "gitBlob": "19e8d50075fc5fec612679d3b7c1508e7cd21a20",
+          "bytes": 2683
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/index.html",
+          "path": "candidates/MR-01/index.html",
+          "gitBlob": "1fc3c3af7de65112a931d1733f193ef83447846d",
+          "bytes": 5216
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/reference/LICENSE",
+          "path": "candidates/MR-01/reference/LICENSE",
+          "gitBlob": "dbbe3558157f5861bff35dcb37b328b679b0ccfd",
+          "bytes": 34520
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/reference/source-README.md",
+          "path": "candidates/MR-01/reference/source-README.md",
+          "gitBlob": "e686e04e62c5659dd7e5c19120ee9e5fc1aed87d",
+          "bytes": 16254
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/reference/trilium-app.png",
+          "path": "candidates/MR-01/reference/trilium-app.png",
+          "gitBlob": "872a10c141ab86911130799b079b53203a63a992",
+          "bytes": 196432
+        }
+      ]
+    },
+    {
+      "branch": "dot/page-tasks-tk02-20261111",
+      "sha": "7f30ab12e11370c3b62f42778c08702101d961fd",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/TK02/README.md",
+          "path": "candidates/TK02/README.md",
+          "gitBlob": "284ea3300b71d4de9d4bb47393e84b2de9624782",
+          "bytes": 3066
+        },
+        {
+          "originalPath": "docs/design-previews/TK02/SHA256SUMS",
+          "path": "candidates/TK02/SHA256SUMS",
+          "gitBlob": "113b459a7e6d49fe57b4bfdc7c977a518982abcc",
+          "bytes": 414
+        },
+        {
+          "originalPath": "docs/design-previews/TK02/candidate.json",
+          "path": "candidates/TK02/candidate.json",
+          "gitBlob": "c5740a769f56d78b266cb933b9e451ecc3d48d85",
+          "bytes": 3375
+        },
+        {
+          "originalPath": "docs/design-previews/TK02/index.html",
+          "path": "candidates/TK02/index.html",
+          "gitBlob": "a23b924cbd3444dd9070cc0ba0f06f7aa1eb3772",
+          "bytes": 3824
+        },
+        {
+          "originalPath": "docs/design-previews/TK02/reference/LICENSE",
+          "path": "candidates/TK02/reference/LICENSE",
+          "gitBlob": "4ebcbdf9291d5317433929f0afb4c411513381cd",
+          "bytes": 1072
+        },
+        {
+          "originalPath": "docs/design-previews/TK02/reference/task-list-light.png",
+          "path": "candidates/TK02/reference/task-list-light.png",
+          "gitBlob": "48031305af4ec9d046e11042d56675c38a32c881",
+          "bytes": 260561
+        }
+      ]
+    },
+    {
+      "candidateId": "H-03",
+      "upstreamRepository": "xvvvyz/tilde",
+      "upstreamCommit": "1961fdedb7dff32a4f51d5c11f706a0b35da59ff",
+      "sourceModified": false,
+      "entry": "candidates/H-03/original/index.html",
+      "files": [
+        {
+          "path": "candidates/H-03/original/.nojekyll",
+          "bytes": 1,
+          "gitBlob": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+          "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+        },
+        {
+          "path": "candidates/H-03/original/.prettierrc",
+          "bytes": 118,
+          "gitBlob": "8ae6ac37c05a0d9f681f312ca2850c84398e3312",
+          "sha256": "355ef933a57f969df219c9a6e85de04c54829b6a1c9ce898a371f076fd832c12"
+        },
+        {
+          "path": "candidates/H-03/original/CNAME",
+          "bytes": 14,
+          "gitBlob": "577a6cb0caafaa691a27a1bdcd6370f54c5714f7",
+          "sha256": "63a72349596d1b04de1b5717db542da0920949fb05d5458f69596ddd87345c76"
+        },
+        {
+          "path": "candidates/H-03/original/README.md",
+          "bytes": 1170,
+          "gitBlob": "f1d2cef999c7cf5b0eccc40c69de449ea101fcc8",
+          "sha256": "e073f2cf2a1cecf8f4b7b563c7e9f8d9665ac2b490f01794908a77ec93be0899"
+        },
+        {
+          "path": "candidates/H-03/original/UNLICENSE",
+          "bytes": 1210,
+          "gitBlob": "cf1ab25da0349f84a3fdd40032f0ce99db813b8b",
+          "sha256": "88d9b4eb60579c191ec391ca04c16130572d7eedc4a86daa58bf28c6e14c9bcd"
+        },
+        {
+          "path": "candidates/H-03/original/fonts/OFL",
+          "bytes": 4402,
+          "gitBlob": "f831dbc69f05a4d5abbb54c530f0123bc0ff2d8b",
+          "sha256": "c6dec685825f73b18c20926fddc65e8315642e12986f15db0699170940a09efc"
+        },
+        {
+          "path": "candidates/H-03/original/fonts/SpaceGrotesk-Bold.woff2",
+          "bytes": 41780,
+          "gitBlob": "6025ccfa08b3f8d8d9383a61fb3a3a07c628553c",
+          "sha256": "06d705cebbab916f0c0fe82b6c6f4cae06aa07fd6f5ee078421206040326ef63"
+        },
+        {
+          "path": "candidates/H-03/original/fonts/SpaceGrotesk-Regular.woff2",
+          "bytes": 42708,
+          "gitBlob": "568d15a2e9dc9d77b93d85a5bc4d8cf9d0d071ef",
+          "sha256": "c6620e3d49a9f9dba3be3aa93c89d6d5a51096cb1c616d2691edb630551d5da5"
+        },
+        {
+          "path": "candidates/H-03/original/index.html",
+          "bytes": 27870,
+          "gitBlob": "d69a9737f65549101158dfec2ff1ef73ca92c9ec",
+          "sha256": "efe2ed7eb143b50da093192e9f483facd52a86f48f67956bf52e693ee563125e"
+        }
+      ],
+      "priorStandaloneReview": "PASS_BOUNDED_DESKTOP_RESTING_ONLY",
+      "nativeCodeActive": true,
+      "noSavedScreenshot": true,
+      "license": [
+        "Unlicense",
+        "SIL-OFL-1.1"
+      ],
+      "numbering": "Tilde is H-03; separate unpublished Homer H-02 is untouched",
+      "cnameApplied": false,
+      "priorStandaloneLocalOnly": true,
+      "distributionScope": "Unmodified attributed reference source package under included licenses; not permission for a future branded implementation or trademark endorsement."
+    },
+    {
+      "candidateId": "TK03",
+      "upstreamRepository": "mrvladus/Errands",
+      "upstreamCommit": "a586fc7ef8bb755d4b01ebdcef25e4e53c19d460",
+      "sourceModified": false,
+      "entry": "candidates/TK03/index.html",
+      "files": [
+        {
+          "path": "candidates/TK03/LICENSE-Errands.txt",
+          "bytes": 1093,
+          "gitBlob": "d3998a2852358ed86a7affb0cdbe13467342abcd",
+          "sha256": "6a13dd0186cd67d3533ead401ea891f7864388eb72f9d4b5bc76ade8adb040a0"
+        },
+        {
+          "path": "candidates/TK03/assets/errands-original.png",
+          "bytes": 65091,
+          "gitBlob": "eb19c6d38fb37a6118ccd88ec62fc3f2bb2b4545",
+          "sha256": "e965a4888408fc2e8b50baba8ce88ab74f995472597a7071b30e78c762a1bf4f"
+        },
+        {
+          "path": "candidates/TK03/index.html",
+          "bytes": 5458,
+          "gitBlob": "66e51400d7bbf3e76739741413afd89f3e879e91",
+          "sha256": "3fd5933b104247d9c3e69acb4dff33d3ad87704fe3fe87223d260f0994f21a72"
+        },
+        {
+          "path": "candidates/TK03/manifest.json",
+          "bytes": 2083,
+          "gitBlob": "7012ca563ef697f82a51cb5c9602deb0450eac2a",
+          "sha256": "30f791db30ab03ad4699af9e47f0f84bd6200a721313ef11561c4b07e0849140"
+        }
+      ],
+      "priorStandaloneReview": "PASS_BOUNDED_STATIC_DESKTOP",
+      "release": "46.2.9",
+      "imageLastChangedAtSourceVersion": "46.2",
+      "imageRuntimeVersion": "unknown",
+      "license": [
+        "MIT"
+      ],
+      "sourceImageBlob": "eb19c6d38fb37a6118ccd88ec62fc3f2bb2b4545",
+      "licenseBlob": "d3998a2852358ed86a7affb0cdbe13467342abcd",
+      "priorStandaloneLocalOnly": true,
+      "distributionScope": "Unmodified attributed reference source package under included licenses; not permission for a future branded implementation or trademark endorsement."
+    },
+    {
+      "candidateId": "S-02",
+      "upstreamRepository": "astaxie/TokenHub",
+      "upstreamCommit": "898d7a5cf1d9b7c31f9d1fd39e9389712299b3a1",
+      "commitAuthor": "astaxie",
+      "sourcePackageVersion": "0.1.0",
+      "imageLabelAndSourcePageVersion": "v0.2.0",
+      "releaseBuildVerified": false,
+      "imageCaptureDate": "unknown",
+      "imageState": "General Settings shown area only; other tabs/off-screen content unverified",
+      "sourceModified": false,
+      "entry": "candidates/S-02/index.html",
+      "priorStandaloneReview": "PASS_BOUNDED_STATIC_DESKTOP_AND_WRAPPER_NAVIGATION",
+      "retainedAuthorStatus": "Original provenance retains packaging-stage browser not tested; later independent display review is separate.",
+      "license": [
+        "Apache-2.0",
+        "ISC",
+        "MIT"
+      ],
+      "rightsBoundary": "Repository-level source provenance, not separate trademark permission or full legal clearance. Brands identify upstream only.",
+      "includedNotices": [
+        "TokenHub Apache-2.0 Copyright 2026 TokenHub contributors",
+        "Lucide 1.17.0 ISC and Feather MIT",
+        "Next 16.2.9 MIT"
+      ],
+      "files": [
+        {
+          "path": "candidates/S-02/assets/settings-en.png",
+          "bytes": 383033,
+          "gitBlob": "365e3d03b3a331e0ca45387220bf77307ea281e2",
+          "sha256": "a9d2be60227f37c6c0364e730b751b66c9a3923f9804bebde341d05e0441ba14"
+        },
+        {
+          "path": "candidates/S-02/index.html",
+          "bytes": 1823,
+          "gitBlob": "60accd5587e0770f3c50bcefe7790903db392c55",
+          "sha256": "db85488e53b6f20e163744cdff0ef7afee0b14f64f7dc9209e00739a0d13b320"
+        },
+        {
+          "path": "candidates/S-02/notices/LICENSE-Lucide-1.17.0.txt",
+          "bytes": 3208,
+          "gitBlob": "718bb3f0e44153809972abed31839375804bf652",
+          "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
+        },
+        {
+          "path": "candidates/S-02/notices/LICENSE-Next-16.2.9.txt",
+          "bytes": 1079,
+          "gitBlob": "5948ee9bd0de5064423688a2967ab3111c2658ed",
+          "sha256": "ee765244e2d59f5234d474f62e0766fa0c8b99af967fdd4c0cb8dcb0c76ea224"
+        },
+        {
+          "path": "candidates/S-02/notices/LICENSE-TokenHub-Apache-2.0.txt",
+          "bytes": 10248,
+          "gitBlob": "8c05b09bd59e45220582f58a65724a5e96b4329f",
+          "sha256": "da21ef1c27c43354055432e2ee6dc804efcb08da774da190598150fca0a75d8f"
+        },
+        {
+          "path": "candidates/S-02/notices.html",
+          "bytes": 16360,
+          "gitBlob": "838d85dabd1e77d086ff27f36fbb8a0ebb70ab08",
+          "sha256": "3db0d4b8a68604f1b5221735f299fefdf7abd6de88eb29d509b7592dc1195876"
+        },
+        {
+          "path": "candidates/S-02/provenance.html",
+          "bytes": 3207,
+          "gitBlob": "189886165bca250047d5aa773058297bf29ce882",
+          "sha256": "a0a37cc31a73c65ab297f2b880f394d5d690c9cc9c9fd90684a121111d5c9880"
+        },
+        {
+          "path": "candidates/S-02/style.css",
+          "bytes": 873,
+          "gitBlob": "49319e15e6f99b95b997702fe4ae912126142ded",
+          "sha256": "411833eda5e2843d0901df9b3e86349fe2f9b22ff5d4af84c639618217a93928"
+        }
+      ],
+      "priorStandaloneLocalOnly": true,
+      "priorStandalonePublicReleaseApproved": false,
+      "distributionScope": "Unmodified attributed reference source package under included licenses; not permission for a future branded implementation or trademark endorsement."
+    },
+    {
+      "candidateId": "MR-02",
+      "upstreamRepository": "silverbulletmd/silverbullet",
+      "upstreamCommit": "237ef6a24d57272acc70c9959fea13ac401c0c80",
+      "sourceModified": false,
+      "entry": "candidates/MR-02/index.html",
+      "priorStandaloneReview": "PASS_BOUNDED_STATIC_DESKTOP",
+      "preservedLeafMetadata": "Unchanged author-time browser-pending/local-only wording records the earlier packaging stage; this index records later bounded integration review and authorized source-branch distribution.",
+      "imageCaptureBuild": "unknown",
+      "imageCaptureDate": "unknown",
+      "files": [
+        {
+          "path": "candidates/MR-02/README.md",
+          "bytes": 4811,
+          "gitBlob": "b1a8a16bc9eee9309bc5171ef41c6351459991c6",
+          "sha256": "0a301e332bcd9771dc8cbe16e879f80d1a84e40e3912687b460a73c88bff9131"
+        },
+        {
+          "path": "candidates/MR-02/SHA256SUMS",
+          "bytes": 533,
+          "gitBlob": "271627996f6a9eb593be56cf80ddc28cab0719e4",
+          "sha256": "281d6af3cc57bac54489ca08057458d11c18b0bc8185424e22c23f7bf1cd01ed"
+        },
+        {
+          "path": "candidates/MR-02/candidate.json",
+          "bytes": 3094,
+          "gitBlob": "e32c3e0f75bb44b4df1a96304bdd859940bfb140",
+          "sha256": "97168af9c0cb1c5e16ba810c5e95aec231bd677a0239d93d97c457a507fac38b"
+        },
+        {
+          "path": "candidates/MR-02/index.html",
+          "bytes": 6325,
+          "gitBlob": "791115cde309a8a884e0e20a4a1ac22d0934331e",
+          "sha256": "079b46e29e1ffaa5c146c99eed39b2e86393baeebeb170f4011ad37b6807d043"
+        },
+        {
+          "path": "candidates/MR-02/reference/LICENSE.md",
+          "bytes": 1050,
+          "gitBlob": "bc1ccb41adfe59f32908a6652ef9f3abedeaec98",
+          "sha256": "ccf525a3b5c9ac8d843e118932036e6517d4d603f9ff3e474522b632c3996c65"
+        },
+        {
+          "path": "candidates/MR-02/reference/silverbullet-markdown-basics-preview.png",
+          "bytes": 80630,
+          "gitBlob": "e58b28dba09ad58d51f882f8ce8cad4fa7cabd67",
+          "sha256": "622e6e6749444759f8ddc81781530dde2a1460a0ae98a716c07d9478e17830cd"
+        },
+        {
+          "path": "candidates/MR-02/reference/source-tutorial.md",
+          "bytes": 6968,
+          "gitBlob": "63e78546d2b092cc13982decdcf26eb925224ec2",
+          "sha256": "90ff29cdf17019d83fc802b15e9720826fc8084620de0b27d785b6a48e0e9474"
+        }
+      ],
+      "version": "1.0.0",
+      "license": [
+        "MIT"
+      ],
+      "copyright": "Copyright 2022, Zef Hemel",
+      "sourceImageBlob": "e58b28dba09ad58d51f882f8ce8cad4fa7cabd67",
+      "sourceTutorialBlob": "63e78546d2b092cc13982decdcf26eb925224ec2",
+      "imageLastPathCommit": "a8fe718f35e05f57dc7e7cd56611d5077be9ffda",
+      "sourceAppVersion": "unknown",
+      "sampleContent": "upstream-published instructional sample, not a private account read",
+      "samplePersonFictional": "unknown",
+      "rightsBoundary": "MIT associated-documentation basis; not separate image permission or blanket future code/font/trademark clearance.",
+      "priorStandaloneLocalOnly": true,
+      "distributionScope": "Unmodified attributed source-reference files only; not future branded implementation, broad trademark rights or source-app runtime."
+    },
+    {
+      "candidateId": "LG01",
+      "upstreamRepository": "twbs/bootstrap",
+      "upstreamCommit": "1a6fdfae6be09b09eaced8f0e442ca6f7680a61e",
+      "sourceModified": false,
+      "entry": "candidates/LG01/LG01.html",
+      "priorStandaloneReview": "PASS_BOUNDED_STATIC_DESKTOP",
+      "preservedLeafMetadata": "Unchanged author-time browser-pending/local-only wording records the earlier packaging stage; this index records later bounded integration review and authorized source-branch distribution.",
+      "imageCaptureBuild": "unknown",
+      "imageCaptureDate": "unknown",
+      "files": [
+        {
+          "path": "candidates/LG01/LG01-original.png",
+          "bytes": 4568,
+          "gitBlob": "477335984d853dca8f1d1b99d9ea3e7e62d11363",
+          "sha256": "90a19ffdb4692d790ebe9229eb361891f423b4ddca58f9d1140e2d7f32eb1ec3"
+        },
+        {
+          "path": "candidates/LG01/LG01.html",
+          "bytes": 10608,
+          "gitBlob": "88fa1d2aaf42e167cfd933993ae3611540f23605",
+          "sha256": "e6b3351cd99fd67469c59ea09c7c0871a2cbf3553d33acaa74a79c8cfba731e5"
+        },
+        {
+          "path": "candidates/LG01/LICENSE.upstream-MIT.txt",
+          "bytes": 1131,
+          "gitBlob": "72dda234edaa4d2b0e9e2c5420d8685e920ec3e5",
+          "sha256": "5b30317c9c35bb6f05101c501de866cc6852ab9b655dcf5941733f6644c3ebd0"
+        },
+        {
+          "path": "candidates/LG01/provenance.json",
+          "bytes": 5719,
+          "gitBlob": "75c174d502e17b9ab274fa0f74099890d28a1b2f",
+          "sha256": "b8f039419b9723caef9cc47e25dad73a814f240b32773ba6c859cfc058c8444d"
+        }
+      ],
+      "sourceTag": "v5.1.3",
+      "license": {
+        "image": "CC BY 3.0",
+        "codeNotice": "MIT"
+      },
+      "sourceImageBlob": "477335984d853dca8f1d1b99d9ea3e7e62d11363",
+      "imageLastPathCommit": "f20fece3a8cdd0e76a42c2737524b7652bf54d26",
+      "previewPixelsAreRuntimeCSSSize": false,
+      "rightsBoundary": "Complete official documentation preview canvas; Bootstrap team/contributors attribution and CC BY links retained. Unmodified mark identifies Bootstrap source only, not own-product branding, endorsement or general trademark permission.",
+      "priorStandaloneLocalOnly": true,
+      "distributionScope": "Unmodified attributed source-reference files only; not future branded implementation, broad trademark rights or source-app runtime."
+    },
+    {
+      "candidateId": "C-02",
+      "upstreamRepository": "victoriano/home-assistant-baby-monitor",
+      "upstreamCommit": "9a3b9a864a635b7735fd55109d401e7ecb140c18",
+      "commitAuthor": "Victoriano Izquierdo",
+      "sourceReadmeRelease": "0.1.0",
+      "imageCaptureBuild": "unknown",
+      "imageCaptureDate": "unknown",
+      "imageSourceDate": "2026-07-12T08:30:41Z (commit time only)",
+      "sourceModified": false,
+      "localOnly": true,
+      "entry": "candidates/C-02/index.html",
+      "priorStandaloneReview": "PASS_BOUNDED_STATIC_DESKTOP",
+      "preservedLeafMetadata": "Author-time no-browser/local-only wording remains unchanged; later independent review is separate.",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2026 Victoriano Izquierdo",
+      "sourceImageBlob": "7bc9379d573f62f14284e8c143911f396bb1c723",
+      "sourceLicenseBlob": "3ad14fd1bd053307d93691ff577736184e6561dc",
+      "syntheticEvidence": {
+        "readmeBlob": "7e3d425eda4acd37511534f46e135e46ead1caee",
+        "lines": [
+          29,
+          30
+        ],
+        "statement": "Screenshots use synthetic demo data; no real child, camera or Home Assistant credentials included."
+      },
+      "viewportLimit": "Original lower event rows are cut off at source image boundary; entire supplied 1280x720 canvas preserved, not a full scrollable page.",
+      "rightsBoundary": "MIT associated-documentation basis; no separate image permission, brand endorsement, medical/current-runtime claim or future full implementation clearance.",
+      "files": [
+        {
+          "path": "candidates/C-02/README.txt",
+          "bytes": 1186,
+          "gitBlob": "971db163bd41ecbe26798d207effc6d4eb7cff60",
+          "sha256": "4dbc3b6b09ef70c61b46cae143e3aa99efe24b7adeed57af7de4a6a9386fe7b6"
+        },
+        {
+          "path": "candidates/C-02/checksums.json",
+          "bytes": 793,
+          "gitBlob": "a570b8916ee7d7717786a93cb8aacdcbdee845ad",
+          "sha256": "bd243d77aeee8f1c84326ac74ff3298899b1c85605e7803a235e66365555e76f"
+        },
+        {
+          "path": "candidates/C-02/evidence/LICENSE.txt",
+          "bytes": 1077,
+          "gitBlob": "3ad14fd1bd053307d93691ff577736184e6561dc",
+          "sha256": "fc404477be3f0c40cd664069d0c5ffced3eb1b9874c7fddcc2ef273c5142b9d1"
+        },
+        {
+          "path": "candidates/C-02/evidence/provenance.json",
+          "bytes": 1387,
+          "gitBlob": "79a69c6b28ad2237ff9bf8717e2cc07003b1dc1f",
+          "sha256": "55cef9bd6e8ea908fdc62ae8468c7340994e9fe7467332f074b2f156a5040923"
+        },
+        {
+          "path": "candidates/C-02/evidence/upstream-README.txt",
+          "bytes": 6650,
+          "gitBlob": "7e3d425eda4acd37511534f46e135e46ead1caee",
+          "sha256": "9fcfaa57e3b994c19c5d95369295f8744abab7533a1b9215f032e6a034d06a98"
+        },
+        {
+          "path": "candidates/C-02/index.html",
+          "bytes": 4370,
+          "gitBlob": "5f1ac7931599a0e2599d592d7637bfe7319e34d4",
+          "sha256": "15e18caa1f53b0cb6e80fa75d1ce9e1f10ff69f108d0a72ec827e99a1aec54ad"
+        },
+        {
+          "path": "candidates/C-02/original/rhythm.jpg",
+          "bytes": 60037,
+          "gitBlob": "7bc9379d573f62f14284e8c143911f396bb1c723",
+          "sha256": "f654656721d56561d4dc4e32840da3c62825cee2fdc9a6237f31e199dc0ff872"
+        }
+      ]
+    },
+    {
+      "candidateId": "GR01",
+      "upstreamRepository": "shadcn-ui/ui",
+      "upstreamCommit": "dd41d19e2f80ff6891951f7ced74c2c9a650b065",
+      "entry": "candidates/GR01/original/dashboard-light.png",
+      "pageCategory": "general business growth/progress, not parenting/child growth",
+      "isParentingPage": false,
+      "sourceModified": false,
+      "localOnly": true,
+      "imageCaptureBuild": "unknown",
+      "imageCaptureDate": "unknown",
+      "sourceImageBlob": "fca14b5b4709f792b1d5261f8412ee36d75867d6",
+      "priorStandaloneReview": "PASS_BOUNDED_ORIGINAL_IMAGE_DOCUMENT_ONLY",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2023 shadcn",
+      "sampleEvidence": "Fixed official example code/data. This does not establish that every named person is fictional; no private account read. Chart code default 7d differs from screenshot 3-month state.",
+      "packagedSubset": "Four independently served files only; original full author package and TSX/data evidence remain separate. Included manifest retains fixed upstream evidence URLs.",
+      "preservedAuthorClaims": "Author-time no-browser wording and current-official-URL byte-equality claim retained; latter not independently repeated. New integration remains browser pending.",
+      "rightsBoundary": "Associated-documentation source-image basis; no separate image permission, brand endorsement, or broad future avatar/font/brand/code reuse clearance.",
+      "files": [
+        {
+          "path": "candidates/GR01/LICENSE.md",
+          "bytes": 1063,
+          "gitBlob": "fad4d887a681dd49233e5ed01ee2c7a1513089a0",
+          "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+        },
+        {
+          "path": "candidates/GR01/README.md",
+          "bytes": 2731,
+          "gitBlob": "82314135d9da96f6ed42d2f7662f37a8f154fa00",
+          "sha256": "2ab4b0bee8f238ab6d32a5caa6c9c858ae131a500ad689499b7a3f6c52f228ef"
+        },
+        {
+          "path": "candidates/GR01/manifest.json",
+          "bytes": 4302,
+          "gitBlob": "7a14b53d9dfd0242c585e9d80d8878b15cab96a8",
+          "sha256": "8e0fdcc0cc963ec15d4d75c9ee8442c885006b49889f3e169683aa414e3a6ebd"
+        },
+        {
+          "path": "candidates/GR01/original/dashboard-light.png",
+          "bytes": 208758,
+          "gitBlob": "fca14b5b4709f792b1d5261f8412ee36d75867d6",
+          "sha256": "f49387cbf151cad0fda73868da2b0d8bc34f4e531200dc34cf7c749771c5cb0f"
+        }
+      ]
+    },
+    {
+      "candidateId": "LG02",
+      "upstreamRepository": "coreui/coreui-free-bootstrap-admin-template",
+      "upstreamCommit": "2d15de5eecd14e04f24aba367c3e96d2ab7c1a6b",
+      "release": "v5.2.0",
+      "entry": "candidates/LG02/index.html",
+      "localOnly": true,
+      "sourceModified": true,
+      "modifications": "Only two head meta tags (restrictive CSP and no-referrer) plus explanatory comment, already present in independently reviewed site. Original visible body and 42 dist resources are unchanged. Integration changes no candidate bytes.",
+      "theme": "CSS default LIGHT only; original automatic dark theme/storage scripts retained but blocked, not preserved behavior.",
+      "interactionBoundary": "Native input/button markup remains, not an image. No typing, login, registration, control activation or real data. Index links without embedding. No authentication/API/model connected.",
+      "priorStandaloneReview": "PASS_BOUNDED_STATIC_LIGHT_DESKTOP_ONLY",
+      "licenses": [
+        "CoreUI template MIT",
+        "CoreUI 5.3.0 MIT",
+        "CoreUI Icons Free 3.0.1 SVG/JS icons CC-BY-4.0; fonts OFL; other code MIT",
+        "Simplebar 6.3.0 MIT",
+        "Popper 2.11.8 MIT",
+        "color-modes.js CC-BY-3.0"
+      ],
+      "notice": "candidates/LG02/NOTICE.txt",
+      "packageBoundary": "Only 50 independently served site files. No upstream ZIP, research files or font files copied.",
+      "releaseArtifactEvidence": {
+        "publishedAt": "2025-02-13T15:24:09Z",
+        "localZipSha256": "6b6e48370556a516b5975bc6ec53cd6e23850b6195056ee887c1c619dc0a6e11",
+        "publisherDigest": null,
+        "limit": "Local digest is not a publisher signature or reproducible build proof."
+      },
+      "rightsBoundary": "Full source notices retained. No blanket trademark endorsement or future authentication implementation approval. Original source package restricts this display to local serving.",
+      "files": [
+        {
+          "path": "candidates/LG02/NOTICE.txt",
+          "bytes": 1801,
+          "gitBlob": "2ba4f6599b54dd02846e5baf0bbb581c834ebfdd",
+          "sha256": "bde38870eb93a9792303d1db5b90df948d68db5a1ebb308fe362ffaab811eb2b"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/android-icon-144x144.png",
+          "bytes": 13344,
+          "gitBlob": "76a365d3d09420f5f7965594916123775802c3bb",
+          "sha256": "92d384bef56de03d6cbb70fa31b446e40b1f49de9e11384c68830e3685a28f83"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/android-icon-192x192.png",
+          "bytes": 17566,
+          "gitBlob": "b14fee802212b387a667605c1020d531ddd3f644",
+          "sha256": "149e5d7f605f9c933060a1d25a2751f05c010f00df25cea1f72af76956783f21"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/android-icon-36x36.png",
+          "bytes": 2495,
+          "gitBlob": "e715de405856558a34037ef5f7f31e6484066570",
+          "sha256": "a4640fe95f240b0304885c9bb98699dadad3ddac487963b271c32ca93ce8353d"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/android-icon-48x48.png",
+          "bytes": 3537,
+          "gitBlob": "932cceadd0c633ad32bc17e571af3b15362122f8",
+          "sha256": "523cacbcea9d98353097e50a76d6eb7f95f72753a27fbe1b210e25bb52b74023"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/android-icon-72x72.png",
+          "bytes": 5297,
+          "gitBlob": "7459a6f03b1196d453343d041c4f6faa7783fd0a",
+          "sha256": "91226d5945308063cd91ebf6ac3ef3699958a9bee9ed3206da275660a006390c"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/android-icon-96x96.png",
+          "bytes": 7298,
+          "gitBlob": "0ec4116348784778f373e9ace8bf6d87d3226823",
+          "sha256": "d30ac8c4ee1450e756105f1f365f2252e3794aa6ddc40b5283d59a6cf0c74161"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/apple-icon-114x114.png",
+          "bytes": 9891,
+          "gitBlob": "f432405737d76bfab5bc40706ab7705d62a7ff7b",
+          "sha256": "2eeb03cb36dbec9049d696ad0f2502cde2966aa6e43caac849d51da582a88c57"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/apple-icon-120x120.png",
+          "bytes": 10620,
+          "gitBlob": "b7363619d39811ac11f6ac0076d0534d057ee7fd",
+          "sha256": "0ed06af93834ec374a06ce999c1bcb79ccc1c18d3a6d5fd9be57d0955ca01432"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/apple-icon-144x144.png",
+          "bytes": 13344,
+          "gitBlob": "76a365d3d09420f5f7965594916123775802c3bb",
+          "sha256": "92d384bef56de03d6cbb70fa31b446e40b1f49de9e11384c68830e3685a28f83"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/apple-icon-152x152.png",
+          "bytes": 14451,
+          "gitBlob": "c9e6b681c72779e1b88fcf0b6f8df0e36625ecc1",
+          "sha256": "e33f3370c1152ac3c932e6d1d071e3b3d76e20ee7e5a720f70025dee4368d0ef"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/apple-icon-180x180.png",
+          "bytes": 17458,
+          "gitBlob": "d1f419b42ebd269af28ae4f093b47f77ba75c8e5",
+          "sha256": "a3acbfd6cc52d36e17a5d8bb43913672a23584ae2bc41aa5b85ccb1f80323927"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/apple-icon-57x57.png",
+          "bytes": 4120,
+          "gitBlob": "2d5cc5d37dcd7933553f539816eb9e7f32d5c205",
+          "sha256": "2b7f3090203685e2891b9b7c7d4a523c5a6825387c58cf5f5b5430d141493b2a"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/apple-icon-60x60.png",
+          "bytes": 4034,
+          "gitBlob": "cdd0b4ead22fc0ffaddc8c6368a1f34155c6f07c",
+          "sha256": "0612546744ad3da92a936fb239f8e46ca4dfb3c2084b66dc6fe6dd73529a4865"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/apple-icon-72x72.png",
+          "bytes": 5297,
+          "gitBlob": "7459a6f03b1196d453343d041c4f6faa7783fd0a",
+          "sha256": "91226d5945308063cd91ebf6ac3ef3699958a9bee9ed3206da275660a006390c"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/apple-icon-76x76.png",
+          "bytes": 5539,
+          "gitBlob": "2ccbd5ad6813083a812e5b0d13e996ac3b15980c",
+          "sha256": "7b616a93d4e30eae6dd0d6b65d964d5df9ccd7ea8760ead8255f582f007f65ae"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/apple-icon-precomposed.png",
+          "bytes": 18140,
+          "gitBlob": "ac6dec0e296cbd8fc63ab9666aae249c7a754fdb",
+          "sha256": "8538dd55c2e559349ec257441004d3b25f4983126cef3877d334c184f9715faa"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/apple-icon.png",
+          "bytes": 18140,
+          "gitBlob": "ac6dec0e296cbd8fc63ab9666aae249c7a754fdb",
+          "sha256": "8538dd55c2e559349ec257441004d3b25f4983126cef3877d334c184f9715faa"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/browserconfig.xml",
+          "bytes": 281,
+          "gitBlob": "c5541482230075d4b4800ebbb7ac42fad29e5133",
+          "sha256": "13bc647273455808acd0f6605124ab3a78bbae67b532f8b993dc0f8ce2a03d0d"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/favicon-16x16.png",
+          "bytes": 1201,
+          "gitBlob": "d879e8849cee0f7545f8f5af51e957567e4b2aa0",
+          "sha256": "e30e9333bbca5114ba988c17ee5b96f6ada64abc615f3c5567461afb3d2748e1"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/favicon-32x32.png",
+          "bytes": 2196,
+          "gitBlob": "6b3d4863b6020ed736de959e156194c8d30f4600",
+          "sha256": "a23e93a65c2062ce5f935a782f0a837c801636f3a596f4e153a89877b6dcbbc7"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/favicon-96x96.png",
+          "bytes": 7298,
+          "gitBlob": "0ec4116348784778f373e9ace8bf6d87d3226823",
+          "sha256": "d30ac8c4ee1450e756105f1f365f2252e3794aa6ddc40b5283d59a6cf0c74161"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/favicon.ico",
+          "bytes": 1150,
+          "gitBlob": "bf08304b0067988afce059b076de8fb0b68a936d",
+          "sha256": "627a22f33cc9279baec6d8042e7d07ce097d0ee41f58073c3abbccb9a5b3b63f"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/manifest.json",
+          "bytes": 808,
+          "gitBlob": "3b557aab8c689776456224765fdb1195eb5d8131",
+          "sha256": "abd31dac9a72a48e62151efd02af56b49b415f4edb067cf7286154bffa5146bc"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/ms-icon-144x144.png",
+          "bytes": 13344,
+          "gitBlob": "76a365d3d09420f5f7965594916123775802c3bb",
+          "sha256": "92d384bef56de03d6cbb70fa31b446e40b1f49de9e11384c68830e3685a28f83"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/ms-icon-150x150.png",
+          "bytes": 14113,
+          "gitBlob": "c190acd39c5d45a7ad3ce22e0565d3416479a121",
+          "sha256": "00e764deac17051cf41d7675a045503d622c99946b5c6b44a3e9dd152d156fb4"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/ms-icon-310x310.png",
+          "bytes": 37803,
+          "gitBlob": "c6623f82f51b8dea407765259e95268f9115ffb5",
+          "sha256": "9d563ecb42a2a3ca11cead19808e6aba834061bc4b8e276df8ff24d9cf1af025"
+        },
+        {
+          "path": "candidates/LG02/assets/favicon/ms-icon-70x70.png",
+          "bytes": 5120,
+          "gitBlob": "583595a58149573f072155a4783a3be8ca0aa6f3",
+          "sha256": "8fecd31441932bdb13f45ac4dd69d3d159d3bda06eeb80e5725e8e37db7c142c"
+        },
+        {
+          "path": "candidates/LG02/css/examples.css",
+          "bytes": 1788,
+          "gitBlob": "ec3cc502bf01cf579586d4e6b9344614daa01304",
+          "sha256": "4d5c6e6772de15729aa78e609f8900c107c35953a7c44a5f9a39bf82ebaa0eb5"
+        },
+        {
+          "path": "candidates/LG02/css/examples.css.map",
+          "bytes": 11758,
+          "gitBlob": "e2551c012f4bda3003c54551579357bcd148703d",
+          "sha256": "b8607a4669464c1c3aa48c7913a1004456b8148e8451c65deb36fd4ca166e4f3"
+        },
+        {
+          "path": "candidates/LG02/css/style.css",
+          "bytes": 370118,
+          "gitBlob": "6c247139a6f641571deb400977090803bc2f3ed1",
+          "sha256": "241d91792679ab86c9e4a1373cb17813c5f0f7c8b3c11f870cc2411178741e04"
+        },
+        {
+          "path": "candidates/LG02/css/style.css.map",
+          "bytes": 860361,
+          "gitBlob": "de443386ae41b76c1b644c69e86b1fc94e80c0da",
+          "sha256": "dc6189833bf4629c0eb58949bca31b64b43cf6383c056a1dc3225d1f3674aab5"
+        },
+        {
+          "path": "candidates/LG02/css/vendors/simplebar.css",
+          "bytes": 129,
+          "gitBlob": "b50355e4e995a55a8769b0cbdeaa81c4c83fcda0",
+          "sha256": "105a5f5ff824599599c6a0387bd50f6ce4054a6171009254f9a982bdc39d975f"
+        },
+        {
+          "path": "candidates/LG02/css/vendors/simplebar.css.map",
+          "bytes": 264,
+          "gitBlob": "a2ee7ab53bc3d2c4817aa8aa0aa00ecc0f4ef3b0",
+          "sha256": "9dd9af578ae303f05bb853fc72d12b090e60ff2e2bcc4e73c2b082b1236dda60"
+        },
+        {
+          "path": "candidates/LG02/index.html",
+          "bytes": 5969,
+          "gitBlob": "38a19f12da60aaca082db2e1ca9a215e514eb756",
+          "sha256": "2d6d05f0c90688ada53511f6031a4f8e4094310470e43c519729b2baeb24a9d5"
+        },
+        {
+          "path": "candidates/LG02/js/color-modes.js",
+          "bytes": 2270,
+          "gitBlob": "3a9de433c2762c95a1030917420983d178213bb9",
+          "sha256": "3a26abf7d6b583c6df9e588c83b6ebe85fe7e12f2d8ffad0eb16162367f567e7"
+        },
+        {
+          "path": "candidates/LG02/js/color-modes.js.map",
+          "bytes": 4760,
+          "gitBlob": "f0bf63ffcf4316aa34fb86e2a845197acf3540f1",
+          "sha256": "b59a0c194febfd826bbcbce4ade4bdf88e573fece6c1e2223e3977fb8f07eb96"
+        },
+        {
+          "path": "candidates/LG02/js/config.js",
+          "bytes": 657,
+          "gitBlob": "5aa398d1a8838108a70e87e351aaa680d494543b",
+          "sha256": "9ef2c90cf83ed302a7f5742c09a477f52763914259d0209a2f6e28dd7e38a9ea"
+        },
+        {
+          "path": "candidates/LG02/js/config.js.map",
+          "bytes": 1309,
+          "gitBlob": "486f06d29aa4e4b43b77341f5a1be66fe05ac952",
+          "sha256": "70aabfd2062dee52e984a739a8ed1f56b4bdd450c7c182ddff043a2dcd5bfd72"
+        },
+        {
+          "path": "candidates/LG02/licenses/color-modes-CC-BY-3.0-NOTICE.txt",
+          "bytes": 419,
+          "gitBlob": "2c2a2e447a1670fbbd7b368585689b6ef2a278b0",
+          "sha256": "308627904bc92164843ea4fd55c168c0fb049190bac7ffb429b2f7af3fbed744"
+        },
+        {
+          "path": "candidates/LG02/licenses/coreui-5.3.0-MIT.txt",
+          "bytes": 1095,
+          "gitBlob": "011fbbab11ad0136c2c04cfb2ac93beca3d9ad78",
+          "sha256": "690245d4c3cc57d34b3daa328d1da34e13a9b85721518790d0aebdc371af4fc5"
+        },
+        {
+          "path": "candidates/LG02/licenses/coreui-icons-3.0.1-LICENSE.txt",
+          "bytes": 8493,
+          "gitBlob": "15633a560443b49ea108230fe9dfe9770bf7d8b0",
+          "sha256": "171b668bd4fa31e5b75141d30290e5ab9eefcc881027ef24d0bd9e91aea8689b"
+        },
+        {
+          "path": "candidates/LG02/licenses/coreui-template-MIT.txt",
+          "bytes": 1097,
+          "gitBlob": "433069ca0433e0dacccee54d46e5b4be06b475fb",
+          "sha256": "2284f0b371c6773e1dce193d35942f70dcecee81486cd2ee299b5a14063ddc5d"
+        },
+        {
+          "path": "candidates/LG02/licenses/popper-2.11.8-MIT.txt",
+          "bytes": 1082,
+          "gitBlob": "0370c4581eb5d70cbffe2ac4ea8722cb13fd9b0b",
+          "sha256": "bf67e2c9b7974543bb18ced3a0b37f53729aaff953b442dd89a3adaf90fd93e8"
+        },
+        {
+          "path": "candidates/LG02/licenses/simplebar-6.3.0-MIT.txt",
+          "bytes": 1080,
+          "gitBlob": "1567b0ecdea709f93c60641548237ae1cbef448e",
+          "sha256": "ecac7147196913380d69bde30b1ccb25e680c5a8ec5be1189078e5c69e8cc9e2"
+        },
+        {
+          "path": "candidates/LG02/vendors/@coreui/coreui/js/coreui.bundle.min.js",
+          "bytes": 87911,
+          "gitBlob": "acb7db1af87946efae5c9d7b0d33addd9e1b1cf7",
+          "sha256": "1ecfb71f8a7af5335c8a0e1157f7c4b7b3b3eb321c359544e281e119b387803c"
+        },
+        {
+          "path": "candidates/LG02/vendors/@coreui/coreui/js/coreui.bundle.min.js.map",
+          "bytes": 361573,
+          "gitBlob": "7cd6f413234fe9ef54a1950a74e96f6e8944185b",
+          "sha256": "e4c5f22c1e825a211bf58280de21fb7a44b7149fea5b829e01fe3dbdeadf524d"
+        },
+        {
+          "path": "candidates/LG02/vendors/@coreui/icons/svg/free.svg",
+          "bytes": 419345,
+          "gitBlob": "ed86831fc11a1e6ebee30ff246c9fa4e5b88c57d",
+          "sha256": "50d8017761510ef0e00c53d1212554cefa77e46b1f58bdd0d701effdf7c49064"
+        },
+        {
+          "path": "candidates/LG02/vendors/simplebar/css/simplebar.css",
+          "bytes": 4237,
+          "gitBlob": "0af2c455a06660605528d3a3b4a3ac4702781086",
+          "sha256": "85504bc8ec59b56c04d0e2c132958b2f05c5830405b02ebf2ddb01c2c862cc97"
+        },
+        {
+          "path": "candidates/LG02/vendors/simplebar/js/simplebar.min.js",
+          "bytes": 27518,
+          "gitBlob": "ae245ec89f41650556b5e72c0b57d14d643c8e18",
+          "sha256": "950a0ad3fa13883e8ef9acdaa73e4c7a9adcac9236e1d6c1af13c03ef038135d"
+        }
+      ]
+    },
+    {
+      "candidateId": "PC03",
+      "upstreamRepository": "hbtabi/ai-chat-ui",
+      "upstreamCommit": "ea31b09ee3eb8eaeb156911e180c47309093d1db",
+      "packageVersion": "0.1.0",
+      "entry": "candidates/PC03/PC03.html",
+      "localOnly": true,
+      "sourceModified": false,
+      "sourceImageBlob": "b0af263405488afa3451d0deb17e2ea5f97d27ba",
+      "imageCaptureBuild": "unknown",
+      "imageCaptureDate": "unknown",
+      "liveDemoDeploymentCommit": "unknown",
+      "viewportBoundary": "Complete original 1440x900 application viewport, NOT the entire scrollable conversation. Initial user prompt and final rule-of-thumb text are outside the pictured area. No crop or invented continuation.",
+      "demoEvidence": "Pinned demo.ts explicitly identifies sample conversations for screenshots; pictured text and sidebar titles match. SparkIcon SVG and gradient CSS are same-repository source; no external model-logo asset observed.",
+      "priorStandaloneReview": "PASS_BOUNDED_STATIC_DESKTOP_ONLY",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2026 Mohammed Hassan bin Tayyeb",
+      "packageBoundary": "Only four independently served files: original wrapper, PNG, MIT and provenance. Research/demo/source evidence remains in separate author package; no source app executed. Preserved provenance evidence paths describe the full author package.",
+      "preservedAuthorClaims": "Author-time complete-chat-page phrasing refers to composition, not the whole transcript. Browser-pending and local-only metadata remain historical; this integration is browser pending. HTTP retrieval is not current layout/deployment verification.",
+      "rightsBoundary": "Repository-associated documentation image under full retained MIT notice, not exhaustive dependency/brand rights review or future implementation clearance.",
+      "files": [
+        {
+          "path": "candidates/PC03/LICENSE.upstream-MIT.txt",
+          "bytes": 1083,
+          "gitBlob": "d8e7f95fe9cac25762be81fe476adba0df5de2d7",
+          "sha256": "78959736257d8971c3999e603f7a9b6c30099844dad1a1edd4ad5a98b6ec3a74"
+        },
+        {
+          "path": "candidates/PC03/PC03-original.png",
+          "bytes": 158338,
+          "gitBlob": "b0af263405488afa3451d0deb17e2ea5f97d27ba",
+          "sha256": "999b863af70f68c27558171c3890a87c951938cb7272bf040271debd17a974c6"
+        },
+        {
+          "path": "candidates/PC03/PC03.html",
+          "bytes": 215933,
+          "gitBlob": "d4e9ec20ba855ecc71413b0fd5648825d3d79dc7",
+          "sha256": "ec4053557a51c777dc5c8a0a973dc269c1bd7e485ab3b6e23ce72f7e768eb44a"
+        },
+        {
+          "path": "candidates/PC03/provenance.json",
+          "bytes": 3672,
+          "gitBlob": "e87b2d2ad886dd64d63ad90f8262e3e7fa5f6ee2",
+          "sha256": "8610017c68d70e9f2bd84aa61999117a32a12df653ec28544eb19eb4fe512c2d"
+        }
+      ]
+    },
+    {
+      "candidateId": "HIS01",
+      "upstreamRepository": "nextcloud/documentation",
+      "upstreamCommit": "4290071b5ee1addf6ee9e563dbf7f2b3e307eda5",
+      "entry": "candidates/HIS01/index.html",
+      "sourceModified": false,
+      "localOnly": true,
+      "sourceImageBlob": "e4dc2d18b62f415687696a30030fa08e0ee50df2",
+      "imageCaptureBuild": "unknown; not inferred from current Nextcloud 35 documentation label",
+      "imageCaptureTime": "unknown",
+      "imageOriginCommit": "aeb5b8b90e1ed8486948fdc0e0ccf534290d792a",
+      "originAuthorTime": "2026-04-14T15:40:56Z",
+      "originCommitterTime": "2026-04-15T07:15:33Z",
+      "viewportBoundary": "Complete original 1280x720 viewport, not full scrolling activity history. No crop, extension or reconstruction.",
+      "syntheticEvidence": {
+        "workflow": "nextcloud/activity@b4a754dee07cf123fb7eaefa9681e0ed058afad2/cypress/e2e/screenshots.cy.ts",
+        "exampleContact": "nextcloud/server@c6aeaca10355170b65dabbb2edf144c96da003a4/apps/dav/lib/ExampleContentFiles/exampleContact.vcf",
+        "qualification": "Workflow creates random test user and matching sample files/tags; server example contact and service establish visible Leon Green/birthday as shipped example content. VCard/embedded image not packaged or executed."
+      },
+      "license": "CC-BY-3.0 documentation license, not application-code license",
+      "attribution": "Nextcloud developers, Activity stream showing all recent activities, Nextcloud User Manual. Original image, unchanged. No endorsement.",
+      "priorStandaloneReview": "PASS_BOUNDED_STATIC_DESKTOP_ORIGINAL_VIEWPORT",
+      "packageBoundary": "Eight clean served whitelist files only. Internal failure log, test script and handoff excluded. Original full author package retained separately. No source wrapper CSP added; passive external attribution links remain.",
+      "preservedAuthorClaims": "Earlier no-browser/pending-review status and current-hosted-image-equality claim remain historical. Pinned source identity is relied on; new integration browser review not run. Research-era source filenames in evidence are historical, actual display paths in manifest/index.",
+      "rightsBoundary": "Pinned documentation-image CC BY basis with original full notice; no broad trademark authorization, application-code relicensing or future implementation clearance.",
+      "files": [
+        {
+          "path": "candidates/HIS01/LICENSE-CC-BY-3.0.txt",
+          "bytes": 19466,
+          "gitBlob": "1d658d6d37633decaec4382fcc8a2c05ac21bdf9",
+          "sha256": "5138a74ac20f2965d97b2a9c35219ca74e24f4a93618b33f0e36e4b3c7873197"
+        },
+        {
+          "path": "candidates/HIS01/assets/nextcloud-activity-original.png",
+          "bytes": 204670,
+          "gitBlob": "e4dc2d18b62f415687696a30030fa08e0ee50df2",
+          "sha256": "4cceded73d2f8930bb9a4254b276dc0e7c7fad2300abe615cd2be6f099348d97"
+        },
+        {
+          "path": "candidates/HIS01/evidence/EVIDENCE.md",
+          "bytes": 5270,
+          "gitBlob": "275ffc853a35670a8be477c5706db80dec2c9c5f",
+          "sha256": "d3f4caa8d0ddbc8bd46cf08eb4353d4a21efdc6c2f0fb12e1d2e1b95b5f9f8d6"
+        },
+        {
+          "path": "candidates/HIS01/evidence/README.rst",
+          "bytes": 6212,
+          "gitBlob": "e16f43c6c195d2d0171d6572a1562cde28619406",
+          "sha256": "83e923211592956db34d774883c9232d08f7d34fa90d078757c190b00572b5e3"
+        },
+        {
+          "path": "candidates/HIS01/evidence/activity.rst",
+          "bytes": 4397,
+          "gitBlob": "9275e5972f56e96513c3139ae093352d12cef50e",
+          "sha256": "51a0899228eaae3d12a591eac0c97cb4d68617a6ad424f1f22a3acbc15ef95a1"
+        },
+        {
+          "path": "candidates/HIS01/index.html",
+          "bytes": 3052,
+          "gitBlob": "281699836e652002f5981636d42e565172cf6c66",
+          "sha256": "d39e194a74a8349a5b31798952dcdff148befe1f8cdf85dc6179d5efcfe74289"
+        },
+        {
+          "path": "candidates/HIS01/manifest.json",
+          "bytes": 2322,
+          "gitBlob": "195ce56946384b8b07cdce9304d1465eda7eaf86",
+          "sha256": "21f0e91730384daf31abb40b1e8687384734e1d907a163724cb8ee2418b574e6"
+        },
+        {
+          "path": "candidates/HIS01/validation.txt",
+          "bytes": 672,
+          "gitBlob": "dd92386114724f0d5dd6ba8cf7538c1b7468c3de",
+          "sha256": "1f47f4839ac16590650a840eba11ab136ed91851eaa5055c0d919f988704dea6"
+        }
+      ]
+    },
+    {
+      "candidateId": "GD01",
+      "upstreamRepository": "alex-shpak/hugo-book",
+      "upstreamCommit": "d7742624e734836fc2a93f90b30a34c38b6ec174",
+      "entry": "candidates/GD01/GD01-original.png",
+      "sourceImageBlob": "6f4241d953d6e287e0fd32dc33fc595613bbaa31",
+      "imageCaptureBuild": "unknown",
+      "imageCaptureTime": "unknown; source commit time is not capture proof",
+      "sourceModified": false,
+      "localOnly": true,
+      "pageCategory": "official self-documentation guide, not parenting guidance or private family content",
+      "dataEvidence": "Pinned Introduction and exampleSite config match the public real-project documentation. Date from enableGitInfo, not a family event; prose not claimed entirely fictional.",
+      "licenses": [
+        "Hugo Book code and associated repository files MIT, Copyright (c) 2018 Alex Shpak",
+        "Example-site content CC-BY-4.0, Alex Shpak and Hugo Book contributors",
+        "Google Material Symbols Apache-2.0"
+      ],
+      "iconEvidence": "Eight visible SVG path-data matches; seven Google files commit-pinned, rocket official stable URL not immutable (archived bytes verified).",
+      "priorStandaloneReview": "PASS_BOUNDED_DESKTOP_ORIGINAL_IMAGE_DOCUMENT",
+      "packageBoundary": "Six unchanged display/source/rights files. Full original package and SVG research retained separately; no source wrapper exists or is fabricated. ATTRIBUTION evidence path refers to separate original package.",
+      "rightsBoundary": "Source notices retained, no broad font/brand/third-party clearance or endorsement.",
+      "files": [
+        {
+          "path": "candidates/GD01/ATTRIBUTION.txt",
+          "bytes": 1319,
+          "sha256": "72cc3dc164657f7ab51745841f98afc0f96c051d8a83cd11bcb4f00d57842f11",
+          "gitBlob": "bd9879cd78c366664ebb7b964522bcc186e36f95"
+        },
+        {
+          "path": "candidates/GD01/GD01-original.png",
+          "bytes": 164882,
+          "sha256": "7ce4dfa28ab3dbb6f6d97d1691d1708791a213fc4afd517bede51c971475dc00",
+          "gitBlob": "6f4241d953d6e287e0fd32dc33fc595613bbaa31"
+        },
+        {
+          "path": "candidates/GD01/licenses/Content-CC-BY-4.0.txt",
+          "bytes": 550,
+          "sha256": "cde6f3731021d7526e13b6bc91f2192968f9ab322ec3a854a2f0d563cac08fd5",
+          "gitBlob": "3e829cbecdf79497f4479237b64b726b72d4ebe9"
+        },
+        {
+          "path": "candidates/GD01/licenses/Hugo-Book-MIT.txt",
+          "bytes": 1077,
+          "sha256": "450c3f8358cc7b0fd3465e59a79ed8c7eed68eeff189bd002843e40c394d6be3",
+          "gitBlob": "e7a669ab2fdc6f7401b8472af82b0444db0ec8ed"
+        },
+        {
+          "path": "candidates/GD01/licenses/Material-Symbols-Apache-2.0.txt",
+          "bytes": 11357,
+          "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
+          "gitBlob": "7a4a3ea2424c09fbe48d455aed1eaa94d9124835"
+        },
+        {
+          "path": "candidates/GD01/manifest.json",
+          "bytes": 1145,
+          "sha256": "f71df40f4fcf45ca931c633c4cf7f06d487977f62c16e8969a4661a83b3a6644",
+          "gitBlob": "ad9764ec6d335a43ad87eb9b04fefc42c2a8c3b8"
+        }
+      ]
+    },
+    {
+      "candidateId": "PF01",
+      "upstreamRepository": "0050piyush/flowscope",
+      "upstreamCommit": "72d2a0b637d28b9a87740ae6dab6c0710a01fd87",
+      "entry": "candidates/PF01/PF01.html",
+      "screenId": "bright-profile-09",
+      "sourceImageBlob": "9ec311f906d2d18085b8ce24bca45fe591154195",
+      "imageCaptureBuild": "unknown",
+      "imageCaptureTime": "unknown; metadata created date is not capture proof",
+      "sourceModified": false,
+      "localOnly": true,
+      "pageCategory": "general learning profile, not child details, health or parenting",
+      "isChildDetailsPage": false,
+      "isParentingPage": false,
+      "sourceDimensions": [
+        780,
+        1688
+      ],
+      "sourceMetadataViewport": [
+        390,
+        844
+      ],
+      "dataEvidence": "Publisher explicitly declares original fictional screens. Fixed bBrightProfile name, initials avatar and learning stats match. No real-account or portrait photo.",
+      "licenses": [
+        "Screen/data CC0-1.0 according to pinned publisher statement",
+        "Code MIT, Copyright (c) 2026 Flowscope contributors"
+      ],
+      "priorStandaloneReview": "PASS_BOUNDED_DESKTOP_WRAPPER_AND_FULL_IMAGE_SCROLL",
+      "packageBoundary": "Six unchanged wrapper/image/source/rights files; generator, full screen data, tests and research not included or executed. Manifest evidence paths reference separate full original author package; fixed upstream URLs retained.",
+      "rightsBoundary": "Publisher statements and source verified, not independent audit of all third-party rights or trademark permissions. Inter rasterized only; no font binary.",
+      "preservedAuthorClaims": "Original no-browser/local-only metadata is packaging history; later bounded desktop review not current08 acceptance.",
+      "files": [
+        {
+          "path": "candidates/PF01/LICENSE.upstream-MIT.txt",
+          "bytes": 1079,
+          "sha256": "7388643d084ab4354abe7c79bd1568f28a5d27938a032c092ceccd4d66d1446d",
+          "gitBlob": "b995cf144cbba7f51af51e2c969a80604326991c"
+        },
+        {
+          "path": "candidates/PF01/PF01.html",
+          "bytes": 127651,
+          "sha256": "cfa447bc45ef6dd84b479d3311f3d745cba443b5b01aeb44c1fe04d4617489e6",
+          "gitBlob": "7d2901e2631111eadceb7eaef053236b6b9f20f6"
+        },
+        {
+          "path": "candidates/PF01/SOURCE-AND-RIGHTS.txt",
+          "bytes": 1652,
+          "sha256": "0c7523a19e4c2daf0ee96b512af51ca9135159e0278afd2efa629cc62cca179b",
+          "gitBlob": "1478d076e5cb6200975ae08994047a3a240b99cf"
+        },
+        {
+          "path": "candidates/PF01/evidence/README.upstream.md",
+          "bytes": 6025,
+          "sha256": "69e16ec05200448381c41e8325b8147a35a2f8d72de4cad5b8bb1845792d9e08",
+          "gitBlob": "3b86ce9b22702ffe9bcaccf38388ffb9bc080009"
+        },
+        {
+          "path": "candidates/PF01/manifest.json",
+          "bytes": 5760,
+          "sha256": "1a2558f01169bbde70e609738b9607a9f5b402a11aaf20b9087853ca2398a85a",
+          "gitBlob": "0ecb558894bd1b8bb76d5112adebb0799b4d1071"
+        },
+        {
+          "path": "candidates/PF01/original/bright-profile-09.png",
+          "bytes": 92127,
+          "sha256": "bd23c71d663416e69370002bc8cc297dc8b4e654b82cbd4c6ce70becf3e211f2",
+          "gitBlob": "9ec311f906d2d18085b8ce24bca45fe591154195"
+        }
+      ]
+    },
+    {
+      "candidateId": "SRC01",
+      "upstreamRepository": "qualixar/superlocalmemory",
+      "upstreamCommit": "c1669e9456cb01dda3d0d04bca3bfacca07ecbe9",
+      "entry": "candidates/SRC01/original/SRC01-superlocalmemory-v2-memories.png",
+      "sourceImageBlob": "047347e28d36cc76ff3ef511a55b00638af6eab7",
+      "sourceModified": false,
+      "localOnly": true,
+      "displayedVersion": "V2",
+      "pageCategory": "knowledge-memory management/database list, NOT academic citation or bibliography management",
+      "sourceSnapshotDate": "2026-07-15T04:05:01Z",
+      "versionBoundary": "Later V3.7 repository snapshot does not change depicted V2 or establish current product/capture build.",
+      "captureBuild": "unknown",
+      "upstreamDocumentedGenerationDate": "2026-02-12; retained historical claim, not rerun capture",
+      "imageDimensions": [
+        3840,
+        2160
+      ],
+      "documentedCaptureViewport": "1920x1080 @2x",
+      "viewportBoundary": "Complete original supplied viewport, original lower-edge truncation retained. Not all30 rows or full scrolling page; dense fit-to-width text readability untested.",
+      "syntheticEvidence": "Same-commit screenshot README explicitly specifies demo-visual,30 synthetic non-sensitive software-development memories, no real API keys/passwords/proprietary data. Not inferred from generic appearance.",
+      "historicalSizeDiscrepancy": "README inventory says~803KB; exact pinned PNG221340 bytes. Integrity follows independently fetched immutable bytes/hash, not old inventory.",
+      "license": "Screenshot-set notice: GNU Affero General Public License v3.0 or later; full upstream AGPL and notices retained",
+      "copyright": "Copyright ©2026 Varun Pratap Bhardwaj",
+      "creator": "Varun Pratap Bhardwaj",
+      "priorStandaloneReview": "PASS_BOUNDED_LOCAL_ORIGINAL_IMAGE_CARRIER_DESKTOP",
+      "packageBoundary": "Nine original image/source/rights files only. Full13-file author package unchanged separately; source README test/checksum paths refer to original package. No original HTML wrapper exists or is fabricated; reviewer transient wrapper not reused.",
+      "rightsBoundary": "No MIT/CC0 relicensing or unrestricted-asset claim. Later V3/research/paper assertions archived only, not verified/endorsed. No full future redistribution/derivative/commercial/third-party rights compliance certification.",
+      "files": [
+        {
+          "path": "candidates/SRC01/ATTRIBUTION.txt",
+          "bytes": 984,
+          "sha256": "d0c0d6917dde10db3c0dc95318136b14a5195c632a7f0a968cc15d0c9e90f1fc",
+          "gitBlob": "2ec27d0b28d9325439e31c9f3f29b4cff873dbbf"
+        },
+        {
+          "path": "candidates/SRC01/README.zh-TW.md",
+          "bytes": 2682,
+          "sha256": "b7d08181e74e67d1457207d7b7ceabdb2e05a2cf2f7d83773a96a8e263858f34",
+          "gitBlob": "0d3daa5460224ff15705bf5d7aed534a3a418765"
+        },
+        {
+          "path": "candidates/SRC01/evidence/ATTRIBUTION.upstream.md",
+          "bytes": 4634,
+          "sha256": "b7cf3512408c9afedb17931c5d22487412e1f2720d080be2710c72285179e846",
+          "gitBlob": "b56aae439049831faf35deae8aca44bb1dd8700b"
+        },
+        {
+          "path": "candidates/SRC01/evidence/AUTHORS.upstream.md",
+          "bytes": 410,
+          "sha256": "7bd83113d51266e617d344271db2c3c67109bfc4c6bd03dcdb7778fdc77f9d61",
+          "gitBlob": "a7050424422a6e2f7f61e1c11eb4c62f71e2533f"
+        },
+        {
+          "path": "candidates/SRC01/evidence/NOTICE.upstream.txt",
+          "bytes": 2310,
+          "sha256": "a6361e5bcfc670d61f94292ce2bc9afb01c88bb4d0246f3998f6a3bec97033b7",
+          "gitBlob": "9b3a3e851b435be8fa2be4e89e395ea88b563203"
+        },
+        {
+          "path": "candidates/SRC01/evidence/screenshot-README.upstream.md",
+          "bytes": 6551,
+          "sha256": "2792fb3bf6398a6dd85752310a172571ed162fd947d75af31e5f2c449b6c765b",
+          "gitBlob": "4d70026b05faa45c6fc433a5a7c8b8f70e96ebc3"
+        },
+        {
+          "path": "candidates/SRC01/licenses/AGPL-3.0.upstream.txt",
+          "bytes": 34565,
+          "sha256": "aa2e4c2fc89b699a208a5baa2339df3124b4a545cb5ad09f31877c5b4cb412d3",
+          "gitBlob": "f667274c66488e51a0ab75a9c1d60b22b7b9707d"
+        },
+        {
+          "path": "candidates/SRC01/manifest.json",
+          "bytes": 4057,
+          "sha256": "1ac76c4b0314d53a7706c62d17f9c353936ec4f4a1b5424942013b9f7eaca710",
+          "gitBlob": "e29385650f7fbf291384e47bc16f4b285d69feb2"
+        },
+        {
+          "path": "candidates/SRC01/original/SRC01-superlocalmemory-v2-memories.png",
+          "bytes": 221340,
+          "sha256": "418dac98a6d4bf71130f69b7f38738afad52353c47548112a01658a09da354d4",
+          "gitBlob": "047347e28d36cc76ff3ef511a55b00638af6eab7"
+        }
+      ]
+    }
+  ],
+  "previousIntegrationCommit": null,
+  "integrationVerification": "STATIC_ONLY_BROWSER_NOT_RUN",
+  "referenceCounts": {
+    "home": 2,
+    "chat": 2,
+    "care": 2,
+    "settings": 2,
+    "memory": 2,
+    "tasks": 2,
+    "login": 2,
+    "businessProgress": 1,
+    "history": 1,
+    "guideReading": 1,
+    "generalLearningProfile": 1,
+    "knowledgeMemoryList": 1
+  },
+  "excludedCandidateIds": [
+    "PC02"
+  ],
+  "exclusionReason": "Separate local 04 remains unchanged. PC02 source package is local-only and its model-logo rights are not confirmed. No PC02 files are included.",
+  "previousIntegrationVersion": "page-reference08-20261111",
+  "baselineLocalManifestSha256": "e6783baf2c9a2023424e43a0ffb2ebba53f29caf89413dd8719e5f6ba6b99cfc",
+  "latestVerifiedRemoteAncestorCommit": "c6becbb8ed0d7210d181257ffcb7709295d0e890",
+  "baselineBoundary": "Exact local08 author public159 and root README, cross-checked against independently reviewed159-file carrier. No remote08 commit assumed; pending07 write never accessed or handled.",
+  "previousVersionMetadata": {
+    "version": "page-reference08-20261111",
+    "kind": "static-page-reference-index",
+    "selected": false,
+    "implementedFrontend": false,
+    "sitePublished": false,
+    "existingWorkbenchCommit": "4c4011d7713b41beb98f521cc2393853ed9b3a3a",
+    "previousIntegrationCommit": null,
+    "integrationVerification": "STATIC_ONLY_BROWSER_NOT_RUN",
+    "referenceCounts": {
+      "home": 2,
+      "chat": 2,
+      "care": 2,
+      "settings": 2,
+      "memory": 2,
+      "tasks": 2,
+      "login": 2,
+      "businessProgress": 1,
+      "history": 1,
+      "guideReading": 1,
+      "generalLearningProfile": 1
+    },
+    "excludedCandidateIds": [
+      "PC02"
+    ],
+    "exclusionReason": "Separate local 04 remains unchanged. PC02 source package is local-only and its model-logo rights are not confirmed. No PC02 files are included.",
+    "previousIntegrationVersion": "page-reference07-20261111",
+    "baselineLocalManifestSha256": "24c2fced2a663615148556c35f678d69a69c9e3b36d70419a9029b542df49aa9",
+    "latestVerifiedRemoteAncestorCommit": "c6becbb8ed0d7210d181257ffcb7709295d0e890",
+    "baselineBoundary": "Exact reviewed local 07 carrier, 148 manifest identities. 07 pending source-upload action is untouched; no remote07 commit or delivery assumed.",
+    "previousVersionMetadata": {
+      "version": "page-reference07-20261111",
+      "kind": "static-page-reference-index",
+      "selected": false,
+      "implementedFrontend": false,
+      "sitePublished": false,
+      "existingWorkbenchCommit": "4c4011d7713b41beb98f521cc2393853ed9b3a3a",
+      "previousIntegrationCommit": "c6becbb8ed0d7210d181257ffcb7709295d0e890",
+      "integrationVerification": "PASS_BOUNDED_DESKTOP_AND_STATIC",
+      "previousVersionMetadata": {
+        "version": "page-reference06-20261111",
+        "integrationVerification": "PASS_BOUNDED_DESKTOP_AND_STATIC",
+        "currentScope": {
+          "checked": [
+            "source and carrier byte identities",
+            "local entries/resources and anchors",
+            "unchanged nine sections and shared styles",
+            "passive index and retained native-page boundary",
+            "source licenses and public instructional sample provenance",
+            "PC02 exclusion",
+            "MR-02 and LG01 actual integrated image rendering",
+            "both new section anchors",
+            "both relocated standalone entries and browser Back"
+          ],
+          "notRun": [
+            "mobile",
+            "keyboard",
+            "screenReader",
+            "originalInteractiveUX",
+            "tsc",
+            "export",
+            "productSuite"
+          ],
+          "sitePublished": false,
+          "sourceBranchDistribution": "prepared for authorized independent GitHub branch after verification",
+          "browser": {
+            "date": "2026-11-11",
+            "observedAt": "2026-11-11T11:45:06.470Z",
+            "viewport": [
+              1180,
+              757,
+              1
+            ],
+            "indexImagesComplete": 10,
+            "horizontalOverflow": false,
+            "MR-02": {
+              "natural": [
+                1960,
+                1120
+              ],
+              "display": [
+                1117,
+                638.28125
+              ],
+              "captionGap": 8,
+              "anchorHeadingTop": 41.328125
+            },
+            "LG01": {
+              "natural": [
+                960,
+                600
+              ],
+              "display": [
+                960,
+                600
+              ],
+              "captionGap": 8,
+              "anchorHeadingTop": 40.75
+            },
+            "reused": "Nine unchanged sections/styles and fixed source bytes; earlier independently bounded evidence.",
+            "H-03Opened": false
+          }
+        },
+        "previousVersionMetadata": {
+          "version": "page-reference05-20261111",
+          "integrationVerification": "PASS_BOUNDED_DESKTOP_AND_STATIC",
+          "currentScope": {
+            "checked": [
+              "source identities and licenses",
+              "all local resource paths",
+              "unchanged original six sections/styles and historical README",
+              "private 04 retained and PC02 absent",
+              "three new anchors, standalone entries and browser Back",
+              "eight index images decoded",
+              "H-03 resting original display and regular font"
+            ],
+            "notRun": [
+              "mobile",
+              "darkMode",
+              "keyboard",
+              "screenReader",
+              "originalInteractiveUX",
+              "search",
+              "externalNavigation",
+              "tsc",
+              "export",
+              "productSuite"
+            ],
+            "sitePublished": false,
+            "distribution": "authorized independent GitHub source-preview branch package; no selected frontend or Site deployment",
+            "viewport": [
+              1180,
+              757
+            ],
+            "devicePixelRatio": 1,
+            "observedUTC": "2026-11-11T11:24:22.245Z",
+            "preservedLeafMetadata": "Author-time local-only/unpublished or browser-pending strings are preserved historical packaging records, not this later integration status."
+          },
+          "previousVersionMetadata": {
+            "version": "page-reference03-20261111",
+            "integrationVerification": "PASS_BOUNDED_STATIC_DESKTOP_INCREMENT",
+            "verificationScope": {
+              "date": "2026-11-11",
+              "viewport": [
+                1180,
+                757,
+                1
+              ],
+              "checked": [
+                "TK02 image in integrated index",
+                "new TK02 section anchor",
+                "new TK02 standalone entry link",
+                "affected header and captions"
+              ],
+              "measurements": {
+                "anchorHeadingTop": 40.640625,
+                "imageNaturalSize": [
+                  1079,
+                  1919
+                ],
+                "imageDisplaySize": [
+                  540,
+                  960.375
+                ],
+                "captionGap": 28,
+                "horizontalOverflow": false
+              },
+              "reused": "Earlier five unchanged sections/styles and all fixed candidate byte identities",
+              "notRun": [
+                "mobile",
+                "keyboard",
+                "screenReader",
+                "originalInteractiveUX",
+                "tsc",
+                "export",
+                "productSuite"
+              ]
+            },
+            "previousVersionMetadata": {
+              "verificationScope": {
+                "date": "2026-11-11",
+                "viewport": [
+                  1180,
+                  757,
+                  1
+                ],
+                "checked": [
+                  "S-01 and MR-01 images in integrated index",
+                  "new section anchors",
+                  "new standalone entry links"
+                ],
+                "reused": "Earlier unchanged sections/styles and fixed candidate byte identities",
+                "notRun": [
+                  "mobile",
+                  "keyboard",
+                  "screenReader",
+                  "originalInteractiveUX",
+                  "tsc",
+                  "export",
+                  "productSuite"
+                ]
+              }
+            }
+          }
+        },
+        "authorPackagingVerification": "STATIC_ONLY_BROWSER_NOT_RUN"
+      },
+      "referenceCounts": {
+        "home": 2,
+        "chat": 2,
+        "care": 2,
+        "settings": 2,
+        "memory": 2,
+        "tasks": 2,
+        "login": 2,
+        "businessProgress": 1,
+        "history": 1
+      },
+      "excludedCandidateIds": [
+        "PC02"
+      ],
+      "exclusionReason": "Separate local 04 remains unchanged. PC02 source package is local-only and its model-logo rights are not confirmed. No PC02 files are included.",
+      "currentScope": {
+        "checked": [
+          "147 author public file identities; all 144 candidate files unchanged",
+          "fresh 75-file remote 06 baseline and 71 old candidates",
+          "13 original static tests and 176 author seals",
+          "five new section anchors, relocated standalone/native/image entries and browser Back",
+          "four integrated new original images and full aspect ratios; fourteen index images loaded",
+          "LG02 same-origin CSS, CSP/no-referrer, empty fields, default light appearance; no login controls activated",
+          "source notices, official sample provenance, and five exact prior-reviewed whitelists",
+          "original eleven sections, shared CSS, historical versions and user choices preserved"
+        ],
+        "notRun": [
+          "mobile",
+          "keyboard",
+          "screenReader",
+          "originalInteractiveUX",
+          "native login interaction",
+          "network packet inspection",
+          "live demo",
+          "search",
+          "external navigation",
+          "tsc",
+          "export",
+          "build",
+          "productSuite"
+        ],
+        "sitePublished": false,
+        "sourceBranchDistribution": "authorized independent GitHub source-preview branch only; no hosted deployment; LG02 local-serving restriction remains",
+        "browser": {
+          "observedAt": "2026-11-11T12:28:21.672Z",
+          "viewport": [
+            1180,
+            757,
+            1
+          ],
+          "indexImagesComplete": 14,
+          "horizontalOverflow": false,
+          "PC03": {
+            "natural": [
+              1440,
+              900
+            ],
+            "display": [
+              1117,
+              698.125
+            ],
+            "captionGap": 8,
+            "anchorHeadingTop": 41.484375
+          },
+          "C-02": {
+            "natural": [
+              1280,
+              720
+            ],
+            "display": [
+              1117,
+              628.3125
+            ],
+            "captionGap": 8,
+            "anchorHeadingTop": 40.53125
+          },
+          "GR01": {
+            "natural": [
+              2668,
+              2824
+            ],
+            "display": [
+              1117,
+              1182.296875
+            ],
+            "captionGap": 8,
+            "anchorHeadingTop": 41.265625
+          },
+          "HIS01": {
+            "natural": [
+              1280,
+              720
+            ],
+            "display": [
+              1117,
+              628.3125
+            ],
+            "captionGap": 8,
+            "anchorHeadingTop": 41.078125
+          },
+          "LG02": {
+            "observedAt": "2026-11-11T12:29:12.617Z",
+            "anchorHeadingTop": 40.890625,
+            "styleRuleCounts": [
+              25,
+              1,
+              1570,
+              19
+            ],
+            "fieldsEmpty": true,
+            "forms": 0,
+            "buttons": "three original type=button; not activated",
+            "theme": null,
+            "cardRects": [
+              [
+                270,
+                200.671875,
+                332.484375,
+                355.640625
+              ],
+              [
+                602.484375,
+                200.671875,
+                307.5,
+                355.640625
+              ]
+            ],
+            "horizontalOverflow": false
+          },
+          "allFiveStandaloneEntriesAndBack": true,
+          "H-03Opened": false
+        },
+        "LG02Boundary": {
+          "serving": "LOCAL ONLY remains; do not host or deploy login page",
+          "sourceDistribution": "MIT/CC BY notices permit the included source redistribution; unchanged isolated source files only, no external runtime service",
+          "noRestrictionWaiver": true,
+          "limits": "No publisher digest/reproducible-build attestation, packet-capture assurance, general trademark permission or future auth implementation approval."
+        }
+      },
+      "authorPackagingVerification": "STATIC_ONLY_BROWSER_NOT_RUN",
+      "authorPackagingScope": {
+        "checked": [
+          "candidate file identities and licenses",
+          "source synthetic-demo evidence",
+          "local entries/assets/anchors",
+          "unchanged eleven sections/styles and reviewed baseline",
+          "passive index and native-page disclosure",
+          "PC02 exclusion",
+          "GR01 explicitly business/non-parenting, original image only",
+          "LG02 exact isolated site files, restrictive CSP/no-referrer, light-only and no-login boundary, no upstream ZIP",
+          "PC03 exact original image and embedded PNG, demo provenance, viewport-not-transcript boundary, MIT notice",
+          "HIS01 clean eight-file whitelist only; synthetic contact/workflow provenance, CC BY attribution, viewport-not-history boundary; internal failure log excluded"
+        ],
+        "notRun": [
+          "browser",
+          "HTTP",
+          "mobile",
+          "keyboard",
+          "screenReader",
+          "originalInteractiveUX",
+          "tsc",
+          "export",
+          "productSuite",
+          "native login interaction",
+          "network packet inspection",
+          "live demo"
+        ],
+        "uploaded": false,
+        "sitePublished": false
+      }
+    },
+    "currentScope": {
+      "checked": [
+        "148 reviewed local07 baseline identities",
+        "all156 candidate byte identities",
+        "old16 sections/sharedCSS/history",
+        "18 entries and local resources/anchors",
+        "16 original image dimensions and PF01 embedded PNG",
+        "GD01 separated MIT/content CC BY4.0/icon Apache2.0 notices",
+        "PF01 fictional general learning profile, not child/parenting; CC0 screen/data and MIT code distinction",
+        "new six-file whitelists; no generator or research program executed",
+        "original author packages and39 checksum entries unchanged"
+      ],
+      "notRun": [
+        "browser",
+        "HTTP",
+        "mobile",
+        "keyboard",
+        "screenReader",
+        "sourceAppInteraction",
+        "networkPacketInspection",
+        "tsc",
+        "export",
+        "build",
+        "fullSuite"
+      ],
+      "uploaded": false,
+      "sitePublished": false
+    }
+  },
+  "priorIndependentAcceptance": {
+    "version": "page-reference08-20261111",
+    "status": "PASS_BOUNDED_GD01_PF01_DESKTOP_AND_STATIC",
+    "scope": "Same-day independent review of exact159-file input: two added anchors, original image/wrapper entries and Back;1180x757 DPR1. Author-stage browser-pending metadata retained unchanged. Not current09 acceptance.",
+    "reportSha256": "35c5851a9129015656962a063d91645d99c29a7f09cdc934d46657ba337d9e91"
+  },
+  "currentScope": {
+    "checked": [
+      "local08 public159, root README and independent carrier exact",
+      "165 candidate file identities",
+      "original18 sections/sharedCSS/history",
+      "19 entries/resources/anchors and17 image dimensions",
+      "SRC01 nine-file source/rights whitelist and all13 author inputs unchanged",
+      "V2/non-citation/original-bottom-truncation/synthetic-data limits",
+      "AGPL full text and upstream attribution/notices",
+      "12 SRC01 checksums plus38 inherited and6 C02 checksums"
+    ],
+    "notRun": [
+      "browser",
+      "HTTP",
+      "mobile",
+      "keyboard",
+      "screenReader",
+      "dense-table-small-size-readability",
+      "sourceAppInteraction",
+      "tsc",
+      "export",
+      "build",
+      "fullSuite"
+    ],
+    "uploaded": false,
+    "sitePublished": false,
+    "pending07WriteTouched": false
+  }
+}

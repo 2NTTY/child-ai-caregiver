@@ -1,0 +1,22 @@
+GD01 — Hugo Book: Introduction
+
+Creator: Alex Shpak and Hugo Book contributors.
+Official source: https://github.com/alex-shpak/hugo-book
+Pinned version: d7742624e734836fc2a93f90b30a34c38b6ec174 (Update screenshots; 2026-05-22T20:23:14Z)
+Original image: https://raw.githubusercontent.com/alex-shpak/hugo-book/d7742624e734836fc2a93f90b30a34c38b6ec174/images/screenshot.png
+Changes: none. GD01-original.png is an exact byte-for-byte copy.
+
+Hugo Book code and associated repository files: MIT License.
+Copyright (c) 2018 Alex Shpak. Full notice retained in licenses/Hugo-Book-MIT.txt.
+
+Example-site content: Creative Commons Attribution 4.0 International (CC BY 4.0), as stated in the screenshot footer and pinned exampleSite/hugo.toml.
+https://creativecommons.org/licenses/by/4.0/
+Attribution, source and legal-code link retained in licenses/Content-CC-BY-4.0.txt.
+
+Visible Material Symbols: Google, Apache License 2.0.
+https://developers.google.com/fonts/docs/material_symbols
+Full license retained in licenses/Material-Symbols-Apache-2.0.txt.
+Eight visible SVG symbol paths were matched exactly to official Google files; see evidence/icon-matches.json.
+
+No endorsement by the authors, Google, Hugo or Creative Commons is implied.
+No separately distributed font file, photograph or decorative illustration is included.

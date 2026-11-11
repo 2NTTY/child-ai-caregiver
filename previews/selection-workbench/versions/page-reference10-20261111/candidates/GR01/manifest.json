@@ -1,0 +1,90 @@
+{
+  "reference_id": "GR01",
+  "title": "一般業務成長／進度概覽參考（非育兒頁）",
+  "source_product": "shadcn/ui",
+  "source_page": "https://ui.shadcn.com/examples/dashboard",
+  "official_image_url": "https://ui.shadcn.com/examples/dashboard-light.png",
+  "repository": "https://github.com/shadcn-ui/ui",
+  "commit": "dd41d19e2f80ff6891951f7ced74c2c9a650b065",
+  "image": {
+    "path": "original/dashboard-light.png",
+    "width": 2668,
+    "height": 2824,
+    "sha256": "f49387cbf151cad0fda73868da2b0d8bc34f4e531200dc34cf7c749771c5cb0f",
+    "unchanged": true,
+    "cropped": false,
+    "redesigned": false
+  },
+  "license": {
+    "spdx": "MIT",
+    "copyright": "Copyright (c) 2023 shadcn",
+    "file": "LICENSE.md",
+    "retain_notice": true
+  },
+  "scope": {
+    "category": "general_business_growth_progress_overview",
+    "is_parenting_page": false,
+    "is_child_growth_page": false,
+    "local_only": true,
+    "browser_used": false,
+    "published": false
+  },
+  "files": [
+    {
+      "package_path": "original/dashboard-light.png",
+      "upstream_path": "apps/v4/public/examples/dashboard-light.png",
+      "upstream_blob_sha": "fca14b5b4709f792b1d5261f8412ee36d75867d6",
+      "sha256": "f49387cbf151cad0fda73868da2b0d8bc34f4e531200dc34cf7c749771c5cb0f",
+      "bytes": 208758,
+      "source_url": "https://github.com/shadcn-ui/ui/blob/dd41d19e2f80ff6891951f7ced74c2c9a650b065/apps/v4/public/examples/dashboard-light.png"
+    },
+    {
+      "package_path": "LICENSE.md",
+      "upstream_path": "LICENSE.md",
+      "upstream_blob_sha": "fad4d887a681dd49233e5ed01ee2c7a1513089a0",
+      "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f",
+      "bytes": 1063,
+      "source_url": "https://github.com/shadcn-ui/ui/blob/dd41d19e2f80ff6891951f7ced74c2c9a650b065/LICENSE.md"
+    },
+    {
+      "package_path": "evidence/app-sidebar.tsx",
+      "upstream_path": "apps/v4/app/(app)/examples/dashboard/components/app-sidebar.tsx",
+      "upstream_blob_sha": "e9a10c0f2a0103fbb40c707ffbbd20b6c0c1a9bc",
+      "sha256": "ebbdd9577afbb4a400d284314e6cc836eaf5afa743f72230b4868763b3df4859",
+      "bytes": 3695,
+      "source_url": "https://github.com/shadcn-ui/ui/blob/dd41d19e2f80ff6891951f7ced74c2c9a650b065/apps/v4/app/(app)/examples/dashboard/components/app-sidebar.tsx"
+    },
+    {
+      "package_path": "evidence/chart-area-interactive.tsx",
+      "upstream_path": "apps/v4/app/(app)/examples/dashboard/components/chart-area-interactive.tsx",
+      "upstream_blob_sha": "6c3359d836dc994054f86b9396f0d276d49cae06",
+      "sha256": "17c29b5a7deb3769e87ddb6c6a956f4a0af04cc355206dab91a905648501b1ee",
+      "bytes": 10647,
+      "source_url": "https://github.com/shadcn-ui/ui/blob/dd41d19e2f80ff6891951f7ced74c2c9a650b065/apps/v4/app/(app)/examples/dashboard/components/chart-area-interactive.tsx"
+    },
+    {
+      "package_path": "evidence/section-cards.tsx",
+      "upstream_path": "apps/v4/app/(app)/examples/dashboard/components/section-cards.tsx",
+      "upstream_blob_sha": "39cf6ecafb5e0835fb230a2f5f54050d331197f0",
+      "sha256": "2bea460ee6379641482eb18288ffd432235837197d0ef729138dd43b48d4c876",
+      "bytes": 3660,
+      "source_url": "https://github.com/shadcn-ui/ui/blob/dd41d19e2f80ff6891951f7ced74c2c9a650b065/apps/v4/app/(app)/examples/dashboard/components/section-cards.tsx"
+    },
+    {
+      "package_path": "evidence/data.json",
+      "upstream_path": "apps/v4/app/(app)/examples/dashboard/data.json",
+      "upstream_blob_sha": "ec0873641b74d2a9cb135326f214457b99be6dab",
+      "sha256": "a8dcfbe6d014ab33adb4be2ccc221313d0bbf5d1d69a06bc08527b66148e849a",
+      "bytes": 12795,
+      "source_url": "https://github.com/shadcn-ui/ui/blob/dd41d19e2f80ff6891951f7ced74c2c9a650b065/apps/v4/app/(app)/examples/dashboard/data.json"
+    },
+    {
+      "package_path": "evidence/data-table.tsx",
+      "upstream_path": "apps/v4/app/(app)/examples/dashboard/components/data-table.tsx",
+      "upstream_blob_sha": "c3c68f5d082d64f14e37881f89358dac8aaa98e1",
+      "sha256": "d05b74af48e3585521b916bae116b32c575688b2c87bf555ec5933ff3a26ee88",
+      "bytes": 27088,
+      "source_url": "https://github.com/shadcn-ui/ui/blob/dd41d19e2f80ff6891951f7ced74c2c9a650b065/apps/v4/app/(app)/examples/dashboard/components/data-table.tsx"
+    }
+  ]
+}

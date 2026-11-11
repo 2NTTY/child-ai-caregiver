@@ -1,0 +1,11 @@
+Hugo Book — Introduction
+Alex Shpak and Hugo Book contributors
+Example-site content is licensed CC BY 4.0 as declared by the original screenshot footer and exampleSite/hugo.toml.
+
+License: Creative Commons Attribution 4.0 International
+https://creativecommons.org/licenses/by/4.0/
+Legal code: https://creativecommons.org/licenses/by/4.0/legalcode
+Source: https://github.com/alex-shpak/hugo-book/tree/d7742624e734836fc2a93f90b30a34c38b6ec174
+Changes: none.
+No endorsement is implied.
+No additional restrictions are applied to the licensed material.

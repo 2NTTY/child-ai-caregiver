@@ -1,0 +1,18 @@
+* { box-sizing: border-box; }
+body { margin: 0; color: #202020; background: #fff; font: 16px/1.6 system-ui, sans-serif; }
+header, main, footer { padding: 16px 24px; }
+header { border-bottom: 1px solid #ddd; }
+h1 { font-size: 1.5rem; margin: 0 0 8px; }
+h2 { font-size: 1.2rem; }
+p { margin: 8px 0; }
+a { color: #0757a3; text-underline-offset: 3px; }
+a:focus-visible { outline: 3px solid #0757a3; outline-offset: 4px; }
+nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+figure { margin: 0; }
+figure img { display: block; width: 100%; height: auto; }
+figcaption { margin-top: 12px; }
+pre, code { font-family: ui-monospace, monospace; overflow-wrap: anywhere; }
+pre { white-space: pre-wrap; border: 1px solid #ddd; padding: 16px; }
+footer { border-top: 1px solid #ddd; }
+.notice { max-width: 1000px; }
+@media (max-width: 600px) { header, main, footer { padding: 12px; } }

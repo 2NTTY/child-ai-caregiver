@@ -1,0 +1,26 @@
+PF01 - Flowscope Bright Profile
+一般學習檔案參考，不是兒童資料頁。
+
+固定來源
+Repository: https://github.com/0050piyush/flowscope
+Commit: 72d2a0b637d28b9a87740ae6dab6c0710a01fd87
+Original image: https://raw.githubusercontent.com/0050piyush/flowscope/72d2a0b637d28b9a87740ae6dab6c0710a01fd87/site/assets/screens/bright-profile-09.png
+License statement: https://github.com/0050piyush/flowscope/blob/72d2a0b637d28b9a87740ae6dab6c0710a01fd87/README.md#-licenses
+
+上游 README 授權聲明原文
+Two licenses, kept separate on purpose:
+
+- **Data** (`data/` — screens, flows, app metadata): **[CC0 (public domain)](https://creativecommons.org/publicdomain/zero/1.0/)**. Every screen in the library is an **original fictional design** created for Flowscope — no real app's copyrighted UI is reproduced. Use the data for anything, no attribution required.
+- **Code** (everything else): **[MIT](./LICENSE)** — do what you want, keep the copyright notice.
+
+授權界線
+上游明確將每個畫面描述為原創虛構設計，並將 screen/data 標為 CC0。
+本包按此聲明保留原圖，同時保留 MIT 原文，適用於一併保存的程式與文件。
+CC0 1.0: https://creativecommons.org/publicdomain/zero/1.0/
+MIT 原文: LICENSE.upstream-MIT.txt
+完整上游 README: evidence/README.upstream.md
+
+不表示商標、第三方權利或官方背書已獲一般授權。此包不是完整法律清查。
+原圖沒有裁切、修圖、翻譯、覆蓋、拼接或重新編碼。
+只做本地靜態封裝；未使用 browser、未發布、未執行上游應用。
+Cozy 子女資料候選未收錄，背景素材來源待核實。

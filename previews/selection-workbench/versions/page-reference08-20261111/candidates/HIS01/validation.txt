@@ -1,0 +1,11 @@
+test_attribution_sources_and_limits_visible (__main__.PackageTests.test_attribution_sources_and_limits_visible) ... ok
+test_complete_cc_by_license_unchanged (__main__.PackageTests.test_complete_cc_by_license_unchanged) ... ok
+test_manifest_and_synthetic_evidence (__main__.PackageTests.test_manifest_and_synthetic_evidence) ... ok
+test_original_png_unchanged (__main__.PackageTests.test_original_png_unchanged) ... ok
+test_passive_local_wrapper (__main__.PackageTests.test_passive_local_wrapper) ... ok
+test_required_files (__main__.PackageTests.test_required_files) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.004s
+
+OK

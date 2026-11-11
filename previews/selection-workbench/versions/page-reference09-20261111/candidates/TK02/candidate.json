@@ -1,0 +1,88 @@
+{
+  "id": "TK02",
+  "page": "待辦",
+  "version": "1.0.0",
+  "createdAt": "2026-11-11",
+  "kind": "unmodified-source-image-page-reference",
+  "selected": false,
+  "implementedFrontend": false,
+  "sitePublished": false,
+  "browserVerified": true,
+  "mobileVerified": false,
+  "interactiveUXVerified": false,
+  "sourceImageDirectlyViewed": true,
+  "source": {
+    "repository": "super-productivity/super-productivity",
+    "commit": "108534af2939cb93660f9ab6cdc0463e40a3a682",
+    "path": "fastlane/metadata/android/en-US/images/phoneScreenshots/2_task-list-light.png",
+    "imageGitBlob": "48031305af4ec9d046e11042d56675c38a32c881",
+    "imageBytes": 260561,
+    "imageWidth": 1079,
+    "imageHeight": 1919,
+    "imageLastPathCommit": "665f7c1f7823abe6fbf42347badd5faea2cbfc8f",
+    "imageLastPathCommitDate": "2025-10-14T09:08:48Z",
+    "imageLastPathCommitAuthor": "Licaon_Kter",
+    "imageCreator": null,
+    "appVersion": null,
+    "license": "MIT",
+    "licenseGitBlob": "4ebcbdf9291d5317433929f0afb4c411513381cd",
+    "copyright": "Copyright (c) 2018 Johannes Millan",
+    "licenseBasis": "Official repository MIT License explicitly covers software and associated documentation files. This official screenshot is distributed in that repository. No separately obtained image permission and no per-image exception located.",
+    "imageUrl": "https://github.com/super-productivity/super-productivity/blob/108534af2939cb93660f9ab6cdc0463e40a3a682/fastlane/metadata/android/en-US/images/phoneScreenshots/2_task-list-light.png",
+    "sourceCodeUrl": "https://github.com/super-productivity/super-productivity/tree/108534af2939cb93660f9ab6cdc0463e40a3a682"
+  },
+  "differences": {
+    "imageBytesChanged": false,
+    "changes": [
+      "External candidate label, provenance and scope text only",
+      "Proportional display scaling only"
+    ],
+    "notInferred": [
+      "Desktop layout",
+      "Other pages or unseen scroll content",
+      "Interactive UX",
+      "Screenshot capture date",
+      "App version"
+    ]
+  },
+  "publication": {
+    "status": "reviewed-independent-github-branch-artifact",
+    "rightsStatus": "reusable-under-repository-MIT-with-notices",
+    "imageSpecificSeparatePermission": false,
+    "licenseConditions": "Preserve the copyright notice, complete MIT permission and no-warranty notice; keep pinned source links. No endorsement or new trademark rights.",
+    "readyForUnconditionalPublicRelease": false
+  },
+  "preservation": {
+    "previousTK01": "not-modified",
+    "userSelection": "not-modified"
+  },
+  "dataBoundary": "Only upstream public screenshot. No project family/child/account records, model calls or GCP connections.",
+  "reviewRevision": 1,
+  "browserVerification": {
+    "status": "PASS_BOUNDED_STATIC_DESKTOP",
+    "date": "2026-11-11",
+    "viewport": [
+      1180,
+      757
+    ],
+    "devicePixelRatio": 1,
+    "imageNaturalSize": [
+      1079,
+      1919
+    ],
+    "imageRenderedSize": [
+      540,
+      960.375
+    ],
+    "captionGap": 28,
+    "horizontalOverflow": false,
+    "scope": "Original image complete rendering and outer captions only; full-page screenshot visually compared with original.",
+    "notTested": [
+      "mobile device",
+      "interactive UX",
+      "keyboard",
+      "screen reader"
+    ],
+    "screenshotEvidence": "Observed in review tool transcript; no local screenshot file claimed."
+  }
+}
