@@ -22,7 +22,8 @@ export const handoverReviewSections = (selection: ExportSelection): ReviewSectio
 ];
 export const handoverReviewSelectionKey = (selection: ExportSelection) => JSON.stringify({ childIds: [...selection.childIds].sort(),
   modules: [...selection.modules].sort(), period: selection.period, ...(selection.accountAvatar ? { accountAvatar: selection.accountAvatar } : {}),
-  ...(selection.notificationPreferences ? { notificationPreferences: selection.notificationPreferences } : {}) });
+  ...(selection.notificationPreferences ? { notificationPreferences: selection.notificationPreferences } : {}),
+  ...(selection.mixedRooms ? { mixedRooms: selection.mixedRooms.map(pin => ({ ...pin, childIds: [...pin.childIds].sort() })).sort((a, b) => a.id.localeCompare(b.id)) } : {}) });
 export const handoverReviewItemKey = (item: Pick<HandoverPreviewItem, 'section' | 'childId' | 'id'>) => JSON.stringify([item.section, item.childId, item.id]);
 
 type Pending = { kind: 'create'; command: HandoverExportCommand | HandoverClassExportCommand; checked: boolean }
@@ -35,9 +36,10 @@ export interface HandoverState {
   classModules: HandoverClassExportCommand['selection']['modules'] | null;
   accountAvatarBackup: boolean;
   notificationPreferencesBackup: boolean;
+  mixedConversations: boolean;
 }
 const empty = (userId: string | null, identityKey: string | null, online: boolean): HandoverState => ({
-  userId, identityKey, online, loaded: false, items: [], nextCursor: null, pending: null, busy: null, notice: null, review: null, reviewBusy: false, classModules: null, accountAvatarBackup: false, notificationPreferencesBackup: false,
+  userId, identityKey, online, loaded: false, items: [], nextCursor: null, pending: null, busy: null, notice: null, review: null, reviewBusy: false, classModules: null, accountAvatarBackup: false, notificationPreferencesBackup: false, mixedConversations: false,
 });
 export function handoverErrorText(error: unknown) {
   const code = error instanceof HandoverApiError ? error.code : error instanceof Error ? error.message : '';
@@ -119,7 +121,8 @@ export class HandoverOwner {
     this.reviewEpoch++; this.reviewRead?.abort(); this.reviewRead = null;
     this.update({ reviewBusy: false, review: relevant ? { selection: { childIds: [...relevant.childIds], modules: [...relevant.modules],
       period: relevant.period && { ...relevant.period }, ...(relevant.accountAvatar ? { accountAvatar: { ...relevant.accountAvatar } } : {}),
-      ...(relevant.notificationPreferences ? { notificationPreferences: { ...relevant.notificationPreferences } } : {}) }, key: key!, basis, scopeVersion: null,
+      ...(relevant.notificationPreferences ? { notificationPreferences: { ...relevant.notificationPreferences } } : {}),
+      ...(relevant.mixedRooms ? { mixedRooms: relevant.mixedRooms.map(pin => ({ ...pin, childIds: [...pin.childIds] })) } : {}) }, key: key!, basis, scopeVersion: null,
       ...(source ? { source: { ...source }, opId: crypto.randomUUID() } : {}),
       groups: relevant.childIds.flatMap(childId => handoverReviewSections(relevant).map(section => ({ childId, section, items: [], loaded: false, nextCursor: null }))),
       choices: [], error: null } : null });
@@ -196,20 +199,22 @@ export class HandoverOwner {
     try {
       const capability = await this.api.exportCapabilities(t.userId, controller.signal);
       if (this.current(t)) {
-        if (capability.notificationPreferencesBackup !== true && this.state.review?.selection.notificationPreferences) this.setReviewSelection(null);
+        if (capability.notificationPreferencesBackup !== true && this.state.review?.selection.notificationPreferences
+          || capability.mixedConversations !== true && this.state.review?.selection.mixedRooms) this.setReviewSelection(null);
         this.update({ classModules: capability.classModules, accountAvatarBackup: capability.accountAvatarBackup === true,
-          notificationPreferencesBackup: capability.notificationPreferencesBackup === true });
+          notificationPreferencesBackup: capability.notificationPreferencesBackup === true, mixedConversations: capability.mixedConversations === true });
       }
     } catch (error) {
       if (this.current(t)) {
-        if (this.state.review?.selection.notificationPreferences) this.setReviewSelection(null);
-        this.update({ classModules: [], accountAvatarBackup: false, notificationPreferencesBackup: false });
+        if (this.state.review?.selection.notificationPreferences || this.state.review?.selection.mixedRooms) this.setReviewSelection(null);
+        this.update({ classModules: [], accountAvatarBackup: false, notificationPreferencesBackup: false, mixedConversations: false });
         if (error instanceof HandoverApiError && (error.status === 401 || ['identity_changed', 'session_changed'].includes(error.code))) this.error(t, error);
       }
     } finally { if (this.capabilityRead === controller) this.capabilityRead = null; }
   };
   createClass = async (selection: HandoverClassExportCommand['selection'], spaceId: string, basis?: string) => {
     if ('accountAvatar' in selection || 'notificationPreferences' in selection || this.state.pending || this.state.busy || !this.state.online || !this.state.userId
+      || selection.mixedRooms && !this.state.mixedConversations
       || !selection.modules.every(module => this.state.classModules?.includes(module))) return;
     const source: ClassSource = { kind: 'class', spaceId }, review = this.state.review;
     const needsReview = handoverReviewSections(selection).length > 0;
@@ -225,6 +230,7 @@ export class HandoverOwner {
     accountAvatarBasis?: { identityKey: string; version: number }, notificationPreferencesBasis?: NotificationPreferencesExportBasis,
     reviewBasis?: string) => {
     if (this.state.pending || this.state.busy || !this.state.online || !this.state.userId || !this.reviewReady(selection)) return;
+    if (selection.mixedRooms && !this.state.mixedConversations) return;
     if (selection.accountAvatar && (purpose !== 'backup' || !this.state.accountAvatarBackup
       || accountAvatarBasis?.identityKey !== this.state.identityKey || accountAvatarBasis.version !== selection.accountAvatar.version)) return;
     if (selection.notificationPreferences && (purpose !== 'backup' || !this.state.notificationPreferencesBackup
@@ -246,6 +252,9 @@ export class HandoverOwner {
   };
   retryOriginal = async () => {
     const pending = this.state.pending; if (!pending?.checked) return;
+    if (pending.kind === 'create' && pending.command.selection.mixedRooms && !this.state.mixedConversations) {
+      this.update({ notice: '請先重新確認服務支援混合對話資料包，再接續原請求。' }); return;
+    }
     const t = this.begin('write'); if (!t) return;
     this.update({ pending: { ...pending, checked: false } });
     try {

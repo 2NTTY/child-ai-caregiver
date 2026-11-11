@@ -17,6 +17,7 @@ import { useProductionMixedChats } from './useProductionMixedChats';
 import { useProduction } from './ProductionProvider';
 import type { MixedChatController, MixedChatState } from './MixedChatController';
 import type { SharingController, SharingState } from './SharingController';
+import { MixedConversationExport } from './MixedConversationExport';
 
 function MixedReply({ result, at }: { result: ProductAgentResult; at: string }) {
   const run = projectAgentRun(result, '00000000-0000-0000-0000-000000000000', at);
@@ -162,6 +163,7 @@ function MixedConversationView({ controller, state, selected, children, kind, se
     {state.busy === 'read' ? <Text accessibilityLiveRegion="polite" style={styles.body}>正在讀取本人對話及原回覆…</Text> : null}
     {state.room ? <View style={styles.group}>
       <SectionHeader title="本人對話" subtitle={`這段對話的孩子：${names(state.room.childIds)}`} />
+      <MixedConversationExport room={state.room} children={children} contextKey={state.contextKey} disabled={locked} />
       {state.nextMessageCursor ? <AppButton label="載入較早留言及回覆" variant="quiet" disabled={locked}
         onPress={() => { if (state.room) void controller.openRoom(state.room.id, true); }} /> : null}
       {!state.messages.length ? <Text style={styles.body}>還沒有留言。請在下方輸入問題。</Text> : null}
