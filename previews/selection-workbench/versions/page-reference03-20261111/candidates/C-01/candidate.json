@@ -1,0 +1,71 @@
+{
+  "id": "C-01",
+  "page": "照顧記錄／記錄列表",
+  "version": "1.0.0",
+  "title": "Baby Buddy Timeline 原作頁面視窗",
+  "status": "static-original-display-desktop-reviewed-not-selected",
+  "implementedFrontend": false,
+  "published": false,
+  "userSelected": false,
+  "entry": "index.html",
+  "thumbnail": "reference/timeline.png",
+  "source": {
+    "project": "babybuddy/babybuddy",
+    "page": "https://docs.baby-buddy.net/user-guide/getting-started/#timeline",
+    "image": "https://docs.baby-buddy.net/assets/images/timeline.png",
+    "commit": "376bb9456c96c37dd1813ad5b9fe86f4cc582dd7",
+    "commitDate": "2026-11-07T21:29:45Z",
+    "immutableImage": "https://raw.githubusercontent.com/babybuddy/babybuddy/376bb9456c96c37dd1813ad5b9fe86f4cc582dd7/docs/assets/images/timeline.png",
+    "imageCommit": "acde3156c6de781f90a85d021eaf086b28a7a008",
+    "imageCommitDate": "2022-01-30T21:59:21Z",
+    "imagePath": "docs/assets/images/timeline.png",
+    "imageBlob": "de34e2945d8dfadbf96c4aaf2860f8f618e2806b",
+    "appVersion": null,
+    "versionNote": "Screenshot added on 2022-01-30. No app version identified. Current source commit is not screenshot runtime version.",
+    "license": "BSD-2-Clause",
+    "copyright": "Copyright (c) 2017 - 2022, Baby Buddy's Contributors",
+    "licenseURL": "https://github.com/babybuddy/babybuddy/blob/376bb9456c96c37dd1813ad5b9fe86f4cc582dd7/LICENSE",
+    "licenseLocal": "reference/LICENSE",
+    "sha256": "870b66867370bf25b849b2d8d1a47b4fb70163563a501f42c4e6d051d726fcb5",
+    "bytes": 78367,
+    "width": 3360,
+    "height": 1824,
+    "visuallyInspected": true,
+    "inspectionMethod": "Independent direct-image and managed-preview Chromium desktop inspection",
+    "licenseBasis": "Image is tracked in the same repository under docs/assets/images; root BSD-2-Clause license retained. No separate image-specific notice found in the pinned repository tree.",
+    "imageContributor": "Christopher C. Wells (cdubz)"
+  },
+  "differences": [
+    "Original PNG retained byte for byte, without crops, recoloring, translation, relabeling or redraw.",
+    "Neutral comparison header/footer added outside the image, containing ID, scope, source, copyright and license.",
+    "Image scales proportionally on narrow screens; no source mobile layout inferred."
+  ],
+  "referenceBoundary": "Full original desktop screenshot viewport, not the entire scrollable timeline. The final wake-up entry is clipped in the source; missing content is not invented.",
+  "notClaimed": [
+    "interactive UX reconstruction",
+    "current 2026 source UI",
+    "entire scrollable timeline",
+    "unseen menus or pressed states",
+    "source mobile layout",
+    "keyboard or screen-reader acceptance",
+    "selected design",
+    "production integration"
+  ],
+  "dataBoundary": "Only the publicly documented original illustration is included. No project child/family records, photos, messages, credentials, models, production API or GCP access. Official image has a silhouette, not a child photograph. Screenshot example provenance is public documentation; exact data generator was not independently proven.",
+  "verification": {
+    "browser": true,
+    "tsc": false,
+    "export": false,
+    "published": false,
+    "viewport": [
+      1180,
+      757
+    ],
+    "devicePixelRatio": 1,
+    "scope": "static original-image display only",
+    "interaction": false,
+    "mobile": false,
+    "screenReader": false
+  },
+  "observedAtUTC": "2026-11-11T08:33:31.030817+00:00"
+}

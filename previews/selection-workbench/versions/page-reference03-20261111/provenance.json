@@ -1,0 +1,350 @@
+{
+  "version": "page-reference03-20261111",
+  "kind": "static-page-reference-index",
+  "selected": false,
+  "implementedFrontend": false,
+  "sitePublished": false,
+  "existingWorkbenchCommit": "4c4011d7713b41beb98f521cc2393853ed9b3a3a",
+  "candidates": [
+    {
+      "branch": "dot/page-home-nc01-20261111",
+      "sha": "3ceb1bfa1cfba8928bd515fdfee5c3a768749693",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/H-01/README.md",
+          "path": "candidates/H-01/README.md",
+          "gitBlob": "d56fb855cebda39728921ce1ce6404383d26f866",
+          "bytes": 2296
+        },
+        {
+          "originalPath": "docs/design-previews/H-01/SHA256SUMS",
+          "path": "candidates/H-01/SHA256SUMS",
+          "gitBlob": "b7e8c53ca5e453c8661de3830a8d0c0e5a6c072a",
+          "bytes": 433
+        },
+        {
+          "originalPath": "docs/design-previews/H-01/candidate.json",
+          "path": "candidates/H-01/candidate.json",
+          "gitBlob": "37e4a56c454aea7b2a0a07543fea08f32fd610d6",
+          "bytes": 2489
+        },
+        {
+          "originalPath": "docs/design-previews/H-01/index.html",
+          "path": "candidates/H-01/index.html",
+          "gitBlob": "1315009f087bb74ada8644de79a5e3959e6e695a",
+          "bytes": 2692
+        },
+        {
+          "originalPath": "docs/design-previews/H-01/reference/license-copying.txt",
+          "path": "candidates/H-01/reference/license-copying.txt",
+          "gitBlob": "1d658d6d37633decaec4382fcc8a2c05ac21bdf9",
+          "bytes": 19466
+        },
+        {
+          "originalPath": "docs/design-previews/H-01/reference/webinterface_dashboard.png",
+          "path": "candidates/H-01/reference/webinterface_dashboard.png",
+          "gitBlob": "21c3555d2dc694c744bdab148a967730d4a1cdc8",
+          "bytes": 148703
+        }
+      ]
+    },
+    {
+      "branch": "dot/page-chat-reference-pc01-20261111",
+      "sha": "62c2a8bc2355fbf8c3725a21f40bcb3efdd9687c",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/PC01/README.md",
+          "path": "candidates/PC01/README.md",
+          "gitBlob": "7a7a9ffb6dd2dd843254f936affea3d34dbdf665",
+          "bytes": 2545
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/SHA256SUMS",
+          "path": "candidates/PC01/SHA256SUMS",
+          "gitBlob": "592508a1a3eb4f7d84b53dc5e4fb3e6aff2d5395",
+          "bytes": 521
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/candidate.json",
+          "path": "candidates/PC01/candidate.json",
+          "gitBlob": "67a9b45cbf11042e29fff04b8a85b44aee78300a",
+          "bytes": 973
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/candidate/index.html",
+          "path": "candidates/PC01/candidate/index.html",
+          "gitBlob": "6d73c0c4a8b8c421aed51baf70240144a557e19f",
+          "bytes": 5520
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/candidate/style.css",
+          "path": "candidates/PC01/candidate/style.css",
+          "gitBlob": "8f45976cf1dfbe3aab8bb0d5f9bdb3641e5bf2bd",
+          "bytes": 3829
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/reference/LICENSE",
+          "path": "candidates/PC01/reference/LICENSE",
+          "gitBlob": "ce2aca011368ed3c3af6ffd8e1d333b5bef08589",
+          "bytes": 1073
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/reference/generative-ui-light.pinned.png",
+          "path": "candidates/PC01/reference/generative-ui-light.pinned.png",
+          "gitBlob": "20a2051328d43611f922f98fbcdaf6f55deab852",
+          "bytes": 147373
+        }
+      ]
+    },
+    {
+      "branch": "dot/page-care-bb01-20261111",
+      "sha": "cbcd1b5bbc96e49c0fb1ba9b45b6d7f518a83d3b",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/C-01/README.md",
+          "path": "candidates/C-01/README.md",
+          "gitBlob": "114ae7e787fd4d41b01630f17130aae67cbebf25",
+          "bytes": 3337
+        },
+        {
+          "originalPath": "docs/design-previews/C-01/SHA256SUMS",
+          "path": "candidates/C-01/SHA256SUMS",
+          "gitBlob": "8b6d3773e7d909d99b4354cfbc5db2108a037101",
+          "bytes": 407
+        },
+        {
+          "originalPath": "docs/design-previews/C-01/candidate.json",
+          "path": "candidates/C-01/candidate.json",
+          "gitBlob": "28fc20a956a67c785831538daba543c9e64bfa6e",
+          "bytes": 3497
+        },
+        {
+          "originalPath": "docs/design-previews/C-01/index.html",
+          "path": "candidates/C-01/index.html",
+          "gitBlob": "823c904f924b3098f73323352dc6da08c24a251d",
+          "bytes": 2606
+        },
+        {
+          "originalPath": "docs/design-previews/C-01/reference/LICENSE",
+          "path": "candidates/C-01/reference/LICENSE",
+          "gitBlob": "640e149090f51577e773d9ee6b6cc1b600f97f10",
+          "bytes": 1337
+        },
+        {
+          "originalPath": "docs/design-previews/C-01/reference/timeline.png",
+          "path": "candidates/C-01/reference/timeline.png",
+          "gitBlob": "de34e2945d8dfadbf96c4aaf2860f8f618e2806b",
+          "bytes": 78367
+        }
+      ]
+    },
+    {
+      "branch": "dot/page-settings-s01-20261111",
+      "sha": "b481737a82fdf283dcfb06863550476a674cdef4",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/S-01/README.md",
+          "path": "candidates/S-01/README.md",
+          "gitBlob": "709e950daa231e3b9cb8ac4a202eb270382d06c6",
+          "bytes": 4124
+        },
+        {
+          "originalPath": "docs/design-previews/S-01/SHA256SUMS",
+          "path": "candidates/S-01/SHA256SUMS",
+          "gitBlob": "533dd1290007c80a9e593bb9136f38f9f7e30f31",
+          "bytes": 413
+        },
+        {
+          "originalPath": "docs/design-previews/S-01/candidate.json",
+          "path": "candidates/S-01/candidate.json",
+          "gitBlob": "231ccfc11261de8ba135bb1416b55cae4347dfc7",
+          "bytes": 3173
+        },
+        {
+          "originalPath": "docs/design-previews/S-01/index.html",
+          "path": "candidates/S-01/index.html",
+          "gitBlob": "4028b34fd579123dab7fcfb47126ebe855ab6bca",
+          "bytes": 4889
+        },
+        {
+          "originalPath": "docs/design-previews/S-01/reference/LICENSE.md",
+          "path": "candidates/S-01/reference/LICENSE.md",
+          "gitBlob": "fad4d887a681dd49233e5ed01ee2c7a1513089a0",
+          "bytes": 1063
+        },
+        {
+          "originalPath": "docs/design-previews/S-01/reference/forms-light.png",
+          "path": "candidates/S-01/reference/forms-light.png",
+          "gitBlob": "15d76120dccefbb695af757ae7cc2af2bab0585f",
+          "bytes": 29685
+        }
+      ]
+    },
+    {
+      "branch": "dot/page-memory-mr01-20261111",
+      "sha": "f884863fa166a447d4d864332efbf625d1f6d94e",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/MR-01/README.md",
+          "path": "candidates/MR-01/README.md",
+          "gitBlob": "94a81ca229c66959234ef8baf0236c8ee814ff5a",
+          "bytes": 4856
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/SHA256SUMS",
+          "path": "candidates/MR-01/SHA256SUMS",
+          "gitBlob": "fb45c64e0d8d09bae5ff003b996b014c3e540ed2",
+          "bytes": 503
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/candidate.json",
+          "path": "candidates/MR-01/candidate.json",
+          "gitBlob": "19e8d50075fc5fec612679d3b7c1508e7cd21a20",
+          "bytes": 2683
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/index.html",
+          "path": "candidates/MR-01/index.html",
+          "gitBlob": "1fc3c3af7de65112a931d1733f193ef83447846d",
+          "bytes": 5216
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/reference/LICENSE",
+          "path": "candidates/MR-01/reference/LICENSE",
+          "gitBlob": "dbbe3558157f5861bff35dcb37b328b679b0ccfd",
+          "bytes": 34520
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/reference/source-README.md",
+          "path": "candidates/MR-01/reference/source-README.md",
+          "gitBlob": "e686e04e62c5659dd7e5c19120ee9e5fc1aed87d",
+          "bytes": 16254
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/reference/trilium-app.png",
+          "path": "candidates/MR-01/reference/trilium-app.png",
+          "gitBlob": "872a10c141ab86911130799b079b53203a63a992",
+          "bytes": 196432
+        }
+      ]
+    },
+    {
+      "branch": "dot/page-tasks-tk02-20261111",
+      "sha": "7f30ab12e11370c3b62f42778c08702101d961fd",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/TK02/README.md",
+          "path": "candidates/TK02/README.md",
+          "gitBlob": "284ea3300b71d4de9d4bb47393e84b2de9624782",
+          "bytes": 3066
+        },
+        {
+          "originalPath": "docs/design-previews/TK02/SHA256SUMS",
+          "path": "candidates/TK02/SHA256SUMS",
+          "gitBlob": "113b459a7e6d49fe57b4bfdc7c977a518982abcc",
+          "bytes": 414
+        },
+        {
+          "originalPath": "docs/design-previews/TK02/candidate.json",
+          "path": "candidates/TK02/candidate.json",
+          "gitBlob": "c5740a769f56d78b266cb933b9e451ecc3d48d85",
+          "bytes": 3375
+        },
+        {
+          "originalPath": "docs/design-previews/TK02/index.html",
+          "path": "candidates/TK02/index.html",
+          "gitBlob": "a23b924cbd3444dd9070cc0ba0f06f7aa1eb3772",
+          "bytes": 3824
+        },
+        {
+          "originalPath": "docs/design-previews/TK02/reference/LICENSE",
+          "path": "candidates/TK02/reference/LICENSE",
+          "gitBlob": "4ebcbdf9291d5317433929f0afb4c411513381cd",
+          "bytes": 1072
+        },
+        {
+          "originalPath": "docs/design-previews/TK02/reference/task-list-light.png",
+          "path": "candidates/TK02/reference/task-list-light.png",
+          "gitBlob": "48031305af4ec9d046e11042d56675c38a32c881",
+          "bytes": 260561
+        }
+      ]
+    }
+  ],
+  "previousIntegrationCommit": "e70df27f1023582abb4331f03a296901c42f3cb8",
+  "integrationVerification": "PASS_BOUNDED_STATIC_DESKTOP_INCREMENT",
+  "previousVersionMetadata": {
+    "verificationScope": {
+      "date": "2026-11-11",
+      "viewport": [
+        1180,
+        757,
+        1
+      ],
+      "checked": [
+        "S-01 and MR-01 images in integrated index",
+        "new section anchors",
+        "new standalone entry links"
+      ],
+      "reused": "Earlier unchanged sections/styles and fixed candidate byte identities",
+      "notRun": [
+        "mobile",
+        "keyboard",
+        "screenReader",
+        "originalInteractiveUX",
+        "tsc",
+        "export",
+        "productSuite"
+      ]
+    }
+  },
+  "verificationScope": {
+    "date": "2026-11-11",
+    "viewport": [
+      1180,
+      757,
+      1
+    ],
+    "checked": [
+      "TK02 image in integrated index",
+      "new TK02 section anchor",
+      "new TK02 standalone entry link",
+      "affected header and captions"
+    ],
+    "measurements": {
+      "anchorHeadingTop": 40.640625,
+      "imageNaturalSize": [
+        1079,
+        1919
+      ],
+      "imageDisplaySize": [
+        540,
+        960.375
+      ],
+      "captionGap": 28,
+      "horizontalOverflow": false
+    },
+    "reused": "Earlier five unchanged sections/styles and all fixed candidate byte identities",
+    "notRun": [
+      "mobile",
+      "keyboard",
+      "screenReader",
+      "originalInteractiveUX",
+      "tsc",
+      "export",
+      "productSuite"
+    ]
+  }
+}

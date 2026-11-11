@@ -1,5 +1,11 @@
 # Selection Workbench
 
+## Six-page integration candidate · 2026-11-11
+
+[Page reference 03](versions/page-reference03-20261111/README.md) adds the reviewed TK02 Tasks original phone screenshot to the same passive page index. [Index source](versions/page-reference03-20261111/index.html). The existing five sections, original candidate files and shared CSS are unchanged; attribution, full MIT license and fixed sources are retained. Every page still has one reference.
+
+This increment passed bounded static checks and desktop browser checks of the new TK02 image, anchor and standalone entry link. Earlier unchanged sections reuse their fixed-version evidence. Mobile-device, original interactive UX, keyboard and screen-reader acceptance remain **NOT RUN**. Only a separate GitHub source-preview branch is saved; no Site publication occurred. Page reference 02 and all earlier versions remain unchanged. H-02 is outside this increment. No component mixing, selected frontend, selection writes, PR or merge are included.
+
 ## Five-page integration candidate · 2026-11-11
 
 [Page reference 02](versions/page-reference02-20261111/README.md) minimally extends the same passive index with S-01 Settings / Appearance and MR-01 Memory and references. [Index source](versions/page-reference02-20261111/index.html). Each of the five pages still has only one reference. Original candidate bytes, source attribution and licenses are retained; no component mixing or selection writes are introduced.

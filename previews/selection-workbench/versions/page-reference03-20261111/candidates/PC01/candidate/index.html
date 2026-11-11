@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; connect-src 'none'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>PC01 v1.0.1 · 助手對話參考候選</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="record"><strong>PC01 · 助手對話</strong><span>v1.0.1／未入選／完整桌面靜態候選</span><p>照 assistant-ui 官方原作圖重建。保留原英文示例；下方所有操作圖示均為展示，不會發送訊息、使用工具或調用模型。桌面靜態畫面已核對；互動、手機與讀屏未驗。</p><a href="../reference/generative-ui-light.pinned.png">查看本次已核對的原作圖</a> · <a href="https://github.com/assistant-ui/assistant-ui/blob/3e04e44f33f8313356305f0b01e2321133228632/README.md">固定版本來源</a> · <a href="../reference/LICENSE">MIT 授權</a></header>
+<div class="canvas-scroll" role="region" aria-label="固定桌面參考畫布，窄螢幕可橫向捲動" tabindex="0">
+<main class="canvas" lang="en" aria-label="Static reconstruction of the assistant-ui Weather in Tokyo example">
+<svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+<symbol id="check" viewBox="0 0 24 24"><path d="m5 12 4 4 10-10"/></symbol>
+<symbol id="chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+<symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
+<symbol id="cloud" viewBox="0 0 24 24"><path d="M6 18h12a4 4 0 0 0 .5-8A7 7 0 0 0 5 9a4.6 4.6 0 0 0 1 9Z"/></symbol>
+<symbol id="partly" viewBox="0 0 24 24"><path d="M13 2v2m0 10v2M5 9H3m20 0h-2M7 3l1.5 1.5M19 3l-1.5 1.5"/><path d="M9.2 9a4 4 0 1 1 7.3 2.3M6 21h9a3 3 0 0 0 .3-6A5.3 5.3 0 0 0 5 14.5 3.3 3.3 0 0 0 6 21Z"/></symbol>
+<symbol id="rain" viewBox="0 0 24 24"><path d="M4 14a4 4 0 0 1 1-7 6 6 0 0 1 11.5-1A4 4 0 0 1 20 13M7 13v2m5-1v2m5-3v2M7 19v1m5-1v2m5-2v1"/></symbol>
+<symbol id="copy" viewBox="0 0 24 24"><rect x="9" y="8" width="12" height="14" rx="2"/><path d="M5 16H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/></symbol>
+<symbol id="thumb" viewBox="0 0 24 24"><path d="M7 10v11H3V10Zm0 0 4-8c3 0 3 3 2 7h6a2 2 0 0 1 2 2l-2 8a2 2 0 0 1-2 2H7"/></symbol>
+<symbol id="reload" viewBox="0 0 24 24"><path d="M20 10a8 8 0 0 0-14-5L3 8m0-6v6h6M4 14a8 8 0 0 0 14 5l3-3m0 6v-6h-6"/></symbol>
+<symbol id="plus" viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></symbol>
+<symbol id="mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3"/></symbol>
+<symbol id="up" viewBox="0 0 24 24"><path d="M12 20V4m-7 7 7-7 7 7"/></symbol>
+</defs></svg>
+<article class="window" aria-labelledby="chat-title">
+<div class="chrome"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><h1 id="chat-title">Weather in Tokyo</h1></div>
+<div class="question">What's the weather like in Tokyo this afternoon?</div>
+<div class="tool-status"><svg><use href="#check"/></svg><span>Used tool: <b>get_weather</b></span><svg><use href="#chevron"/></svg></div>
+<section class="weather" aria-label="Synthetic weather example">
+<div class="weather-place">Tokyo, Japan</div><svg class="weather-icon"><use href="#partly"/></svg>
+<div class="temperature">18°C</div><div class="conditions">Partly cloudy, feels like 17°C</div>
+<div class="hours">
+<div><span>1 PM</span><svg><use href="#partly"/></svg><b>19°</b></div>
+<div><span>2 PM</span><svg><use href="#sun"/></svg><b>21°</b></div>
+<div><span>3 PM</span><svg><use href="#sun"/></svg><b>21°</b></div>
+<div><span>4 PM</span><svg><use href="#cloud"/></svg><b>19°</b></div>
+<div><span>5 PM</span><svg><use href="#rain"/></svg><b>17°</b></div>
+</div>
+</section>
+<p class="answer">It's 18°C and partly cloudy right now, peaking at 21°C around 2 PM. Expect a light drizzle<br>after 5, so bring an umbrella if you're out this evening.</p>
+<div class="actions" aria-label="Non-interactive action icons: copy, thumbs up, thumbs down, regenerate, more"><svg aria-hidden="true"><use href="#copy"/></svg><svg aria-hidden="true"><use href="#thumb"/></svg><svg class="down" aria-hidden="true"><use href="#thumb"/></svg><svg aria-hidden="true"><use href="#reload"/></svg><span aria-hidden="true">•••</span></div>
+<div class="composer" aria-label="Non-interactive message composer illustration"><span class="placeholder">Send a message...</span><svg class="attach" aria-hidden="true"><use href="#plus"/></svg><svg class="microphone" aria-hidden="true"><use href="#mic"/></svg><span class="send" aria-hidden="true"><svg><use href="#up"/></svg></span></div>
+</article>
+</main>
+</div>
+<footer class="record notes"><p>來源：assistant-ui/assistant-ui，commit <code>3e04e44f33f8313356305f0b01e2321133228632</code>，<code>.github/assets/generative-ui-light.png</code>。原圖 2280 × 1580，候選畫布按 50% 比例重建。</p><p>差異：文字由系統字體重新排版；圖示及提問尾角以 SVG／CSS 重畫，未宣稱逐像素一致；外圍編號與來源說明不屬原作。沒有根據單張桌面圖自行推測手機版、彈窗或互動流程，也沒有更改育伴港原版、既有選擇或權限。</p><p>Copyright (c) 2026 AgentbaseAI Inc. · MIT License</p></footer>
+</body>
+</html>
