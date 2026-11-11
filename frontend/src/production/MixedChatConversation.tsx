@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import type { ProductAgentResult } from '../../../src/shared/product-agent.ts';
 import type { MixedTaskBatch } from '../../../src/shared/mixed-task-batch.ts';
+import type { MixedTranscriptRow } from '../../../src/shared/mixed-chat-transfer.ts';
 import { mixedChatTextSchema } from '../../../src/shared/mixed-chat.ts';
 import { ChatMessage } from '../components/chat/ChatMessage';
 import { OfficialHelpCards } from '../components/chat/OfficialHelpCards';
@@ -18,6 +19,20 @@ import { useProduction } from './ProductionProvider';
 import type { MixedChatController, MixedChatState } from './MixedChatController';
 import type { SharingController, SharingState } from './SharingController';
 import { MixedConversationExport } from './MixedConversationExport';
+
+function ArchivedMixedReply({ reply, messageId }: { reply: MixedTranscriptRow['reply']; messageId: string }) {
+  const labels = { completed: '已完成', not_started: '尚未開始', running: '進行中', unknown: '結果未確認', stopped: '已停止' };
+  return <View style={styles.group}>
+    <Text style={styles.body}>匯入的原回覆記錄 · 原狀態：{labels[reply.status]}。這是來源當時的記錄，不會重做原模型或執行原操作。</Text>
+    {reply.status === 'completed' ? <>
+      <ChatMessage message={{ id: `archived-${messageId}`, role: 'assistant', text: reply.text, phase: 'complete' }} />
+      {reply.citations.map((citation, index) => <View key={`${citation.sourceId}:${citation.chunkId}:${index}`} style={styles.group}>
+        <Text style={styles.body}>原引用：{citation.title} · {citation.section}{citation.pageStart === undefined ? '' : ` · 第 ${citation.pageStart}${citation.pageEnd === undefined ? '' : `–${citation.pageEnd}`} 頁`}</Text>
+        <Text selectable style={styles.body}>{citation.url}</Text>
+      </View>)}
+    </> : null}
+  </View>;
+}
 
 function MixedReply({ result, at }: { result: ProductAgentResult; at: string }) {
   const run = projectAgentRun(result, '00000000-0000-0000-0000-000000000000', at);
@@ -169,14 +184,15 @@ function MixedConversationView({ controller, state, selected, children, kind, se
       {!state.messages.length ? <Text style={styles.body}>還沒有留言。請在下方輸入問題。</Text> : null}
       {state.messages.map(message => {
         const result = state.results[message.id];
+        const archived = state.archivedReplies[message.id];
         const waiting = state.busy === 'reply' && state.pending?.kind === 'reply' && state.pending.messageId === message.id;
         const stopping = state.pending?.kind === 'reply' && state.pending.method === 'DELETE' && state.pending.messageId === message.id;
         return <View key={message.id} style={styles.group}>
           <ChatMessage message={{ id: message.id, role: 'user', text: message.text }} />
-          {result ? <MixedReply key={result.runId} result={result} at={message.createdAt} />
+          {archived ? <ArchivedMixedReply reply={archived} messageId={message.id} /> : result ? <MixedReply key={result.runId} result={result} at={message.createdAt} />
             : <Text accessibilityLiveRegion="polite" style={styles.body}>{waiting ? '正在等待正式助手回覆…' : state.resultErrors.includes(message.id)
               ? '未能讀取原回覆，請重新查核。' : result === null ? '這則留言尚無可讀的助手回覆。' : '留言已保存，助手回覆尚未查核。'}</Text>}
-          <AppButton label="查核這則原回覆" variant="quiet" disabled={!state.online || !!state.busy || !!state.pending}
+          {!archived ? <><AppButton label="查核這則原回覆" variant="quiet" disabled={!state.online || !!state.busy || !!state.pending}
             onPress={() => { void controller.readReply(message.id); }} />
           {!result && !waiting ? <AppButton label="請助手回覆這則留言" variant="secondary" disabled={locked || running || result !== null}
             onPress={() => { void controller.startReply(message.id); }} /> : null}
@@ -185,7 +201,7 @@ function MixedConversationView({ controller, state, selected, children, kind, se
             onPress={() => { void controller.stopReply(message.id); }} /> : null}
           {result?.tools.some(tool => tool.name === 'prepare_selected_tasks') || Object.hasOwn(state.batches, message.id)
             || state.pending?.kind === 'batch' && state.pending.messageId === message.id
-            ? <TaskBatch controller={controller} state={state} messageId={message.id} externalLocked={externalLocked} /> : null}
+            ? <TaskBatch controller={controller} state={state} messageId={message.id} externalLocked={externalLocked} /> : null}</> : null}
         </View>;
       })}
       <AppTextField label="向助手提問" multiline value={state.draft} disabled={locked || running} onChangeText={controller.setDraft} />

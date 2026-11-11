@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } fr
 import { AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useProduction } from '../../production/ProductionProvider';
-import { importErrorText, originalComparisonResolution, originalComparisonItemKey, legacyOriginalModules, accountAvatarComparisonResolution, hasOriginalAttachments } from '../../production/HandoverImportOwner';
+import { importErrorText, originalComparisonResolution, originalComparisonItemKey, legacyOriginalModules, accountAvatarComparisonResolution, hasOriginalAttachments, mixedImportMappingsComplete } from '../../production/HandoverImportOwner';
 import type { HandoverImportState } from '../../production/HandoverImportOwner';
 import type { NotificationPreferences } from '../../../../src/shared/family';
 import { useProductionSharing } from '../../production/useProductionSharing';
@@ -100,6 +100,7 @@ export function HandoverImportControls() {
     avatarLane?.getSnapshot ?? noAvatarSnapshot, avatarLane?.getSnapshot ?? noAvatarSnapshot);
   const [open, setOpen] = useState(false), [page, setPage] = useState(0);
   const [choices, setChoices] = useState<Record<string, Choice>>({}), [accepted, setAccepted] = useState(false);
+  const [mixedRoomIds, setMixedRoomIds] = useState<string[]>([]);
   const [chosenAvatar, chooseAvatar] = useState<HandoverImportState['accountAvatarComparison']>(null);
   const [chosenPreferences, choosePreferences] = useState<HandoverImportState['preferencesComparison']>(null);
   const [rosterQuery, setRosterQuery] = useState('');
@@ -112,9 +113,13 @@ export function HandoverImportControls() {
   const locked = !current || !online || !!state.busy || !!account.busy || account.deletion.phase !== 'idle';
   const writeLocked = locked || !!state.pending;
   const upload = current ? state.upload : null, preview = upload?.state === 'ready' ? upload.preview : null;
+  const mixedRooms = state.mixedConversationImportEnabled ? preview?.header.selection.mixedRooms ?? [] : [];
+  const selectedMixedRooms = mixedRooms.filter(room => mixedRoomIds.includes(room.id));
+  const mixedMappingChildren = new Set(selectedMixedRooms.flatMap(room => room.childIds));
   const needsCapabilities = current && (!!(open && preview) || state.items.some(batch => batch.targets.some(target => target.target.spaceId !== null)));
   useLayoutEffect(() => { setOpen(false); setChoices({}); setPage(0); setAccepted(false); }, [identityKey]);
   useLayoutEffect(() => { setChoices({}); setPage(0); setAccepted(false); }, [upload?.id, preview?.manifestSha256]);
+  useLayoutEffect(() => { setMixedRoomIds([]); }, [identityKey, upload?.id, preview?.manifestSha256, state.mixedConversationImportEnabled]);
   useLayoutEffect(() => { chooseAvatar(null); }, [state.accountAvatarComparison]);
   useLayoutEffect(() => { choosePreferences(null); }, [state.preferencesComparison]);
   useLayoutEffect(() => { setComparisonChild(''); setComparisonModule(originalBackupModuleSchema.options[0]); controller.clearComparison(); }, [controller, identityKey, upload?.id, preview?.manifestSha256]);
@@ -201,6 +206,8 @@ export function HandoverImportControls() {
       && (section === 'sources' || section === 'chat' || handoverClassFeatureModules.some(module => section === module
         && (!classFeatures[module] || !destination.classDestination && !destination.classEnrolment)) || section === 'memory' && personalMemory.has(sourceChildId)));
   }
+  const supportsMixedMapping = (sourceChildId: string, destination: Destination) => !mixedMappingChildren.has(sourceChildId)
+    || destination.spaceId === null || !!destination.classDestination || !!destination.classEnrolment;
   const selected = Object.entries(choices), pageSize = 10, sourceCount = preview?.children.length ?? 0;
   const pageCount = Math.max(1, Math.ceil(sourceCount / pageSize)), currentPage = Math.min(page, pageCount - 1);
   const sourceRows = preview?.children.slice(currentPage * pageSize, (currentPage + 1) * pageSize) ?? [];
@@ -208,12 +215,15 @@ export function HandoverImportControls() {
   for (const [sourceChildId, choice] of selected) {
     const destination = destinations.find(item => item.value === choice.target);
     if (destination && choice.classDestination?.basis === destination.classDestination?.basis && choice.classEnrolment?.basis === destination.classEnrolment?.basis
-      && choice.sections.length && choice.sections.every(section => available.includes(section) && availableFor(sourceChildId, section, destination)))
+      && (choice.sections.length || mixedMappingChildren.has(sourceChildId))
+      && supportsMixedMapping(sourceChildId, destination)
+      && choice.sections.every(section => available.includes(section) && availableFor(sourceChildId, section, destination)))
       targets.push({ sourceChildId, target: 'createInClassId' in destination ? { createInClassId: destination.createInClassId }
         : { childId: destination.childId, spaceId: destination.spaceId }, sections: choice.sections });
   }
   const canCreate = !!preview && selected.length > 0 && selected.length <= 100 && targets.length === selected.length
-    && (preview.integrity === 'trusted' || accepted);
+    && (preview.integrity === 'trusted' || accepted) && mixedRoomIds.length === selectedMixedRooms.length
+    && mixedImportMappingsComplete(preview, targets, mixedRoomIds);
   const comparisonChildren = preview?.header.purpose === 'backup' && preview.header.source.accountId === userId
     ? preview.children.filter(child => recordsState.children.some(local => local.id === child.id && (local.accessRole === 'owner' || local.accessRole === undefined))) : [];
   const originalModules = state.originalModules ?? legacyOriginalModules;
@@ -292,7 +302,8 @@ export function HandoverImportControls() {
       const live = handoverClassEnrolmentDestination(classes.controller.getSnapshot(), teachers.controller.getSnapshot(), latestState.classEnrolmentEnabled, latestFeatures);
       if (!live || plannedStudents.some(plan => live.basis !== plan.basis)) return;
     }
-    await controller.create(targets, accepted);
+    if (mixedRoomIds.length && latestState.mixedConversationImportEnabled !== true) return;
+    await controller.create(targets, accepted, mixedRoomIds);
     const latest = controller.getSnapshot();
     if (latest.identityKey === identityKey && latest.userId === userId && !latest.upload && !latest.pending) setOpen(false);
   }
@@ -345,6 +356,8 @@ export function HandoverImportControls() {
     {state.items.map(row => <View key={row.id} style={styles.item}>
       <Text style={styles.title}>匯入批次 · {states[row.state]}</Text>
       <Text style={styles.body}>{dateText(row.createdAt)} · {row.targets.length} 位來源孩子 · 已處理 {row.processedItems}／{row.totalItems} 項</Text>
+      {row.state === 'completed' && row.targets.length > 0 && (state.mixedConversationImportEnabled || row.targets.some(target => !target.sections.length))
+        ? <Text style={styles.body}>如有匯入完整混合對話，可到「更多 → 本人多孩對話」或所選班級的本人對話，按「讀取本人的既有對話」查閱。</Text> : null}
       <Text style={styles.body}>新增 {row.counts.created} · 更新 {row.counts.updated} · 略過 {row.counts.skipped} · 衝突 {row.counts.conflict}</Text>
       {row.counts.conflict ? <Text style={styles.body}>有衝突的項目保留原資料，可查看逐項結果及可用的處理方式。</Text> : null}
       {row.error ? <Text style={styles.body}>{importErrorText(new HandoverApiError(409, row.error))}</Text> : null}
@@ -369,7 +382,8 @@ export function HandoverImportControls() {
           : <><Text style={styles.body}>只計已提交的業務項目；修訂、附件內容及轉錄不重複計數。中止或未完成批次只顯示已提交部分。</Text>
             {state.summary.value?.modules.map(item => <Text key={item.module} style={styles.body}>{labels[item.module]}：建立 {item.created} · 更新 {item.updated} · 略過 {item.skipped} · 衝突 {item.conflict}</Text>)}
             {state.summary.value?.modules.length === 0 ? <Text style={styles.body}>{state.summary.value.accountAvatar || state.summary.value.notificationPreferences
-              ? '此批次沒有孩子模組項目。' : '尚未有已提交的業務項目。'}</Text> : null}</>}
+              ? '此批次沒有孩子模組項目。' : state.summary.value.processedItems > 0
+                ? '已提交部分未列入孩子模組分項，請參閱批次總進度。' : '尚未有已提交的業務項目。'}</Text> : null}</>}
         {state.summary.status === 'ready' && state.summary.value?.accountAvatar ? <View style={styles.group}>
           {state.summary.value.accountAvatar.result ? <>
             <Text style={styles.body}>本人頭像：{avatarOutcomes[state.summary.value.accountAvatar.result.outcome]}{state.summary.value.accountAvatar.result.reason
@@ -546,17 +560,35 @@ export function HandoverImportControls() {
               {classes.state.notice ? <Text accessibilityLiveRegion="polite" style={styles.body}>{classes.state.notice}</Text> : null}
               {teachers.state.notice ? <Text accessibilityLiveRegion="polite" style={styles.body}>{teachers.state.notice}</Text> : null}
             </View>
-            {!available.length ? <Text style={styles.body}>此資料包未包含目前可匯入的模組。</Text> : null}
+            {mixedRooms.length ? <View style={styles.group}>
+              <Text style={styles.title}>選擇完整混合對話</Text>
+              <Text style={styles.body}>不會預選任何整段對話。勾選後，請逐位映射所有涉及的孩子；整段只能匯入本人的不同孩子，或同一班級內的不同學生。可不選其他孩子模組，只匯入對話獨立副本。</Text>
+              <Text style={styles.body}>匯入後，本人孩子的對話可從「更多 → 本人多孩對話」讀取既有對話；班級對話請到所選班級的本人對話讀取。原回覆只供歷史查閱，可在同一段對話另提新問題。</Text>
+              {mixedRooms.map(room => <View key={room.id} style={styles.item}>
+                <AppCheckbox label={`匯入完整對話 ${room.id}`} checked={mixedRoomIds.includes(room.id)} disabled={writeLocked}
+                  description={`來源版本 ${room.version}；所有涉及孩子：${room.childIds.map(id => preview.children.find(child => child.id === id)?.displayName ?? id).join('、')}`}
+                  onChange={checked => setMixedRoomIds(before => checked ? [...before.filter(id => id !== room.id), room.id] : before.filter(id => id !== room.id))} />
+                {mixedRoomIds.includes(room.id) ? <Text style={styles.body}>接收對象：{room.childIds.map(id => {
+                  const child = preview.children.find(source => source.id === id);
+                  const destination = destinations.find(item => item.value === choices[id]?.target);
+                  return `${child?.displayName ?? id} → ${destination?.label ?? '尚未映射'}`;
+                }).join('；')}</Text> : null}
+              </View>)}
+              {mixedRoomIds.length && !mixedImportMappingsComplete(preview, targets, mixedRoomIds)
+                ? <Text accessibilityLiveRegion="polite" style={styles.body}>請先為整段對話的每位孩子，選擇同一範圍內的不同接收對象。</Text> : null}
+            </View> : null}
+            {!available.length && !mixedRooms.length ? <Text style={styles.body}>此資料包未包含目前可匯入的模組。</Text> : null}
             <Text style={styles.title}>共 {sourceCount} 位來源孩子 · 已選 {selected.length}／100 位 · 第 {currentPage + 1}／{pageCount} 頁</Text>
             {sourceRows.map(child => {
               const choice = choices[child.id], destination = destinations.find(item => item.value === choice?.target
-                && item.classDestination?.basis === choice?.classDestination?.basis && item.classEnrolment?.basis === choice?.classEnrolment?.basis);
+                && item.classDestination?.basis === choice?.classDestination?.basis && item.classEnrolment?.basis === choice?.classEnrolment?.basis
+                && supportsMixedMapping(child.id, item));
               return <View key={child.id} style={styles.item}>
                 <AppCheckbox label={child.displayName} accessibilityLabel={`匯入來源孩子：${child.displayName}`} checked={!!choice}
-                  disabled={writeLocked || !available.length || !choice && selected.length >= 100} onChange={checked => chooseSource(child.id, checked)} />
+                  disabled={writeLocked || !available.length && !mixedRooms.some(room => room.childIds.includes(child.id)) || !choice && selected.length >= 100} onChange={checked => chooseSource(child.id, checked)} />
                 {choice ? <>
                   <AppSelect label={`接收「${child.displayName}」的對象`} value={destination?.value ?? ''} disabled={writeLocked}
-                    options={[{ value: '', label: '請選擇接收對象' }, ...destinations.map(item => ({ value: item.value, label: item.label }))]}
+                    options={[{ value: '', label: '請選擇接收對象' }, ...destinations.filter(item => supportsMixedMapping(child.id, item)).map(item => ({ value: item.value, label: item.label }))]}
                     onChange={value => chooseTarget(child.id, value)} />
                   {choice.target && !destination ? <Text style={styles.body}>原接收對象現不可用，請重新選擇。</Text> : null}
                   {destination?.classEnrolment ? <Text style={styles.body}>匯入時會建立班員。若這位來源學生之前已匯入此班，會沿用原班員。</Text> : null}

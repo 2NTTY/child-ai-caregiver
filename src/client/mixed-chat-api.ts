@@ -4,6 +4,7 @@ import { resolveApiBaseUrl } from '../config/api-base-url.ts';
 import { mixedChatCreateSchema, mixedChatAppendSchema, mixedChatRoomSchema, mixedChatMessageSchema } from '../shared/mixed-chat.ts';
 import { productAgentResultSchema } from '../shared/product-agent-result.ts';
 import { mixedTaskBatchSchema, mixedBatchControlSchema, mixedBatchAdvanceSchema } from '../shared/mixed-task-batch.ts';
+import { mixedArchivedReplySchema } from '../shared/mixed-chat-transfer.ts';
 
 export class MixedChatApiError extends Error {
   readonly status: number; readonly code: string;
@@ -13,7 +14,9 @@ const roomReply = z.strictObject({ room: mixedChatRoomSchema });
 const messageReply = z.strictObject({ message: mixedChatMessageSchema });
 const cursorSchema = z.string().min(1).max(8192).nullable();
 const roomPage = z.strictObject({ rooms: z.array(mixedChatRoomSchema).max(3), nextCursor: cursorSchema });
-const detailReply = z.strictObject({ room: mixedChatRoomSchema, messages: z.array(mixedChatMessageSchema).max(16), nextCursor: cursorSchema });
+const archivedReplySchema = z.strictObject({ messageId: z.uuid(), reply: mixedArchivedReplySchema });
+const detailReply = z.strictObject({ room: mixedChatRoomSchema, messages: z.array(mixedChatMessageSchema).max(16), nextCursor: cursorSchema,
+  archivedReplies: z.array(archivedReplySchema).max(16).optional() });
 const resultReply = z.strictObject({ result: productAgentResultSchema.nullable() });
 const batchReply = z.strictObject({ batch: mixedTaskBatchSchema.nullable() });
 function checked<T>(schema: z.ZodType<T>, value: unknown): T {
@@ -35,7 +38,7 @@ export function createMixedChatApi(baseUrl = '', fetcher: typeof fetch = fetch) 
     signal.addEventListener('abort', cancel, { once: true }); const timer = setTimeout(cancel, timeoutMs);
     try {
       const response = await fetcher(api + path, { method, credentials: 'include', cache: 'no-store', signal: controller.signal,
-        headers: { Accept: 'application/json', 'x-expected-user-id': userId, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+        headers: { Accept: 'application/json', 'x-expected-user-id': userId, 'x-handover-mixed-import': '1', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
       const value: unknown = await response.json();
       if (controller.signal.aborted) throw new MixedChatApiError();
@@ -58,7 +61,9 @@ export function createMixedChatApi(baseUrl = '', fetcher: typeof fetch = fetch) 
     async detail(roomId: string, userId: string, signal: AbortSignal, cursor?: string) {
       const result = checked(detailReply, await request('/' + identifier(roomId) + query(cursor), 'GET', userId, signal));
       if (result.room.id !== roomId || result.messages.some(message => message.roomId !== roomId || message.version > result.room.version)
-        || new Set(result.messages.map(message => message.id)).size !== result.messages.length || cursor !== undefined && result.nextCursor === cursor)
+        || new Set(result.messages.map(message => message.id)).size !== result.messages.length || cursor !== undefined && result.nextCursor === cursor
+        || result.archivedReplies?.some(row => !result.messages.some(message => message.id === row.messageId))
+        || new Set(result.archivedReplies?.map(row => row.messageId)).size !== (result.archivedReplies?.length ?? 0))
         throw new MixedChatApiError(0, 'mixed_chat_response_invalid');
       return result;
     },

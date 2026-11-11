@@ -2,6 +2,7 @@ import { MixedChatApiError, type MixedChatApi } from '../../../src/client/mixed-
 import type { MixedChatRoom, MixedChatMessage } from '../../../src/shared/mixed-chat.ts';
 import type { ProductAgentResult } from '../../../src/shared/product-agent.ts';
 import type { MixedTaskBatch } from '../../../src/shared/mixed-task-batch.ts';
+import type { MixedTranscriptRow } from '../../../src/shared/mixed-chat-transfer.ts';
 
 type CreateInput = Parameters<MixedChatApi['create']>[0];
 type AppendInput = Parameters<MixedChatApi['append']>[1];
@@ -16,12 +17,13 @@ export interface MixedChatState {
   rooms: MixedChatRoom[]; roomsLoaded: boolean; nextRoomCursor: string | null;
   room: MixedChatRoom | null; messages: MixedChatMessage[]; nextMessageCursor: string | null;
   results: Record<string, ProductAgentResult | null>; resultErrors: string[];
+  archivedReplies: Record<string, MixedTranscriptRow['reply']>;
   batches: Record<string, MixedTaskBatch | null>; batchErrors: string[];
   draft: string; busy: 'read' | 'write' | 'reply' | null; pending: Pending | null; notice: string | null;
 }
 const initial = (): MixedChatState => ({ userId: null, identityKey: null, contextKey: null, online: false,
   rooms: [], roomsLoaded: false, nextRoomCursor: null, room: null, messages: [], nextMessageCursor: null,
-  results: {}, resultErrors: [], batches: {}, batchErrors: [], draft: '', busy: null, pending: null, notice: null });
+  results: {}, resultErrors: [], archivedReplies: {}, batches: {}, batchErrors: [], draft: '', busy: null, pending: null, notice: null });
 type Ticket = { sequence: number; userId: string; controller: AbortController };
 
 /** One account's private conversations. Server authorization and saved run results remain authoritative. */
@@ -67,7 +69,7 @@ export class MixedChatController {
   }
   private failure(error: unknown, write = false) {
     if (error instanceof MixedChatApiError && [401, 403, 404, 409].includes(error.status)) {
-      this.update({ room: null, messages: [], results: {}, resultErrors: [], batches: {}, batchErrors: [], rooms: [], roomsLoaded: false, pending: null, draft: '',
+      this.update({ room: null, messages: [], results: {}, resultErrors: [], archivedReplies: {}, batches: {}, batchErrors: [], rooms: [], roomsLoaded: false, pending: null, draft: '',
         notice: this.scope?.kind === 'personal' ? '對話、孩子或權限已改變，請重新讀取本人的孩子及對話。'
           : '對話、班級或權限已改變，請重新讀取名冊及本人對話。' });
       this.scopeChanged();
@@ -93,14 +95,16 @@ export class MixedChatController {
   async openRoom(roomId: string, more = false) {
     if (this.state.pending || more && (this.state.room?.id !== roomId || !this.state.nextMessageCursor)) return;
     const ticket = this.begin('read'); if (!ticket) return;
-    if (!more) this.update({ room: null, messages: [], results: {}, resultErrors: [], batches: {}, batchErrors: [], draft: '', nextMessageCursor: null });
+    if (!more) this.update({ room: null, messages: [], results: {}, resultErrors: [], archivedReplies: {}, batches: {}, batchErrors: [], draft: '', nextMessageCursor: null });
     try {
       const page = await this.api.detail(roomId, ticket.userId, ticket.controller.signal, more ? this.state.nextMessageCursor! : undefined);
       if (!this.current(ticket)) return;
       if (!this.inScope(page.room)) throw new MixedChatApiError(409, 'scope_changed');
       const messages = new Map([...page.messages, ...(more ? this.state.messages : [])].map(message => [message.id, message]));
-      this.update({ room: page.room, messages: [...messages.values()].sort((a, b) => a.version - b.version), nextMessageCursor: page.nextCursor });
+      const archivedReplies = { ...(more ? this.state.archivedReplies : {}), ...Object.fromEntries((page.archivedReplies ?? []).map(row => [row.messageId, row.reply])) };
+      this.update({ room: page.room, messages: [...messages.values()].sort((a, b) => a.version - b.version), nextMessageCursor: page.nextCursor, archivedReplies });
       await Promise.all(page.messages.map(async message => {
+        if (Object.hasOwn(archivedReplies, message.id)) return;
         try {
           const result = await this.api.reply(roomId, message.id, 'GET', ticket.userId, ticket.controller.signal);
           if (this.current(ticket) && this.state.room?.id === roomId) this.update({ results: { ...this.state.results, [message.id]: result },
@@ -136,7 +140,7 @@ export class MixedChatController {
     try {
       if (pending.kind === 'create') {
         const room = await this.api.create(pending.input, ticket.userId, ticket.controller.signal);
-        if (this.current(ticket)) this.update({ pending: null, ...(pending.contextKey === this.state.contextKey ? { room, messages: [], results: {}, resultErrors: [], batches: {}, batchErrors: [], draft: '', nextMessageCursor: null,
+        if (this.current(ticket)) this.update({ pending: null, ...(pending.contextKey === this.state.contextKey ? { room, messages: [], results: {}, resultErrors: [], archivedReplies: {}, batches: {}, batchErrors: [], draft: '', nextMessageCursor: null,
           rooms: [room, ...this.state.rooms.filter(value => value.id !== room.id)] } : {}) });
         if (this.current(ticket)) return room.id;
       } else if (pending.kind === 'append') {
@@ -163,17 +167,19 @@ export class MixedChatController {
     } catch (error) { if (this.current(ticket)) this.failure(error, true); } finally { this.finish(ticket); }
   }
   async startReply(messageId: string) {
-    if (this.state.pending || !this.state.room || !this.state.messages.some(message => message.id === messageId)
+    if (Object.hasOwn(this.state.archivedReplies, messageId) || this.state.pending || !this.state.room || !this.state.messages.some(message => message.id === messageId)
       || Object.entries(this.state.results).some(([id, result]) => id !== messageId && result?.status === 'running')) return;
     await this.write({ kind: 'reply', contextKey: this.state.contextKey, checked: false, roomId: this.state.room.id, messageId, method: 'POST' });
   }
   async stopReply(messageId: string) {
+    if (Object.hasOwn(this.state.archivedReplies, messageId)) return;
     const pending = this.state.pending, room = this.state.room;
     if (!room || !this.state.messages.some(message => message.id === messageId)
       || pending && !(pending.kind === 'reply' && pending.roomId === room.id && pending.messageId === messageId)) return;
     await this.write({ kind: 'reply', contextKey: this.state.contextKey, checked: false, roomId: room.id, messageId, method: 'DELETE' }, true);
   }
   async readReply(messageId: string) {
+    if (Object.hasOwn(this.state.archivedReplies, messageId)) return;
     const pending = this.state.pending, room = this.state.room;
     if (pending && !(pending.kind === 'reply' && pending.messageId === messageId)) return;
     const roomId = pending?.kind === 'reply' ? pending.roomId : room?.id;
@@ -207,6 +213,7 @@ export class MixedChatController {
     else if (pending?.kind === 'batch' && pending.checked) await this.writeBatch(pending);
   }
   private batchHint(messageId: string) {
+    if (Object.hasOwn(this.state.archivedReplies, messageId)) return false;
     return this.state.results[messageId]?.tools.some(tool => tool.name === 'prepare_selected_tasks')
       || Object.hasOwn(this.state.batches, messageId)
       || this.state.pending?.kind === 'batch' && this.state.pending.messageId === messageId;
