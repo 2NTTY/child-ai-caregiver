@@ -353,7 +353,11 @@
   },
   {
     "path": "tests/ai-config.test.ts",
-    "cases": 11
+    "cases": 12
+  },
+  {
+    "path": "tests/firestore-background-recovery.test.ts",
+    "cases": 1
   },
   {
     "path": "tests/gemini-key-provider.test.ts",

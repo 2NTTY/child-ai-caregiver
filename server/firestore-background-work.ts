@@ -25,6 +25,9 @@ export const firestoreBackgroundWorkSchema = identitySchema.extend({ id: z.strin
 }).strict();
 export const firestoreBackgroundDeliverySchema = z.object({ kind: z.literal('product-work'),
   id: z.string().regex(/^[a-f0-9]{64}$/u), generation: uuid, dispatchRevision: version, scheduledAt: time }).strict();
+export const BACKGROUND_WORK_LEASE_MS = 360_000;
+export const BACKGROUND_WORK_TIMEOUT_MS = 300_000;
+
 export type FirestoreBackgroundWork = z.infer<typeof firestoreBackgroundWorkSchema>;
 export type FirestoreBackgroundDelivery = z.infer<typeof firestoreBackgroundDeliverySchema>;
 export type BackgroundIdentity = z.infer<typeof identitySchema>;
@@ -185,12 +188,12 @@ export function createFirestoreBackgroundQueue(options: BackgroundQueueOptions) 
       const failures = Math.min(3, job.failures + (job.lease ? 1 : 0));
       if (failures >= 3) { save(tx, { ...job, failures, state: 'failed', lease: null }); return { state: 'failed' as const }; }
       const next = { ...job, state: 'leased' as const, failures, attempts: job.attempts + 1,
-        dispatch: 'confirmed' as const, lease: { token, until: new Date(Date.now() + 120_000).toISOString() } };
+        dispatch: 'confirmed' as const, lease: { token, until: new Date(Date.now() + BACKGROUND_WORK_LEASE_MS).toISOString() } };
       save(tx, next); return { state: 'claimed' as const, job: next };
     });
     if (claimed.state !== 'claimed') return { state: claimed.state };
     let outcome: Awaited<ReturnType<BackgroundQueueOptions['execute']>>;
-    try { outcome = await options.execute(claimed.job, AbortSignal.any([AbortSignal.timeout(95_000), ...(options.signal ? [options.signal] : [])])); }
+    try { outcome = await options.execute(claimed.job, AbortSignal.any([AbortSignal.timeout(BACKGROUND_WORK_TIMEOUT_MS), ...(options.signal ? [options.signal] : [])])); }
     catch (error) {
       const status = error && typeof error === 'object' && 'status' in error ? error.status : null;
       outcome = { state: status === 403 || status === 404 || status === 409 ? 'stopped' : 'unknown' };

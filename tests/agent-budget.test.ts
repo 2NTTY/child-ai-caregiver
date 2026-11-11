@@ -35,9 +35,12 @@ test("cancellation prevents starting work and stops waiting for an uncooperative
 });
 
 test("one deadline bounds model and tool waits and cannot exceed the production maximum", async () => {
-  assert.throws(() => new AgentBudget(undefined, AGENT_LIMITS.deadlineMs + 1));
-  const budget = new AgentBudget(undefined, 10);
+  assert.throws(() => new AgentBudget(undefined, 900001));
+  const deadlineAtMs = Date.now() + 10;
+  const budget = new AgentBudget(undefined, 900000, deadlineAtMs);
   try {
+    budget.configurePersonal({ modelCalls: 4, queryEmbeddings: 2, deadlineMs: 900000 });
+    assert.equal(budget.deadlineAtMs, deadlineAtMs);
     await assert.rejects(budget.wait(() => new Promise(() => {})), { reason: "deadline" });
     assert.throws(() => budget.take("toolCalls"), { reason: "deadline" });
   } finally { budget.close(); }

@@ -103,7 +103,7 @@ export class AgentBudget {
   private readonly onAbort = () => this.controller.abort(new AgentStopped("cancelled"));
 
   constructor(parent?: AbortSignal, deadlineMs: number = AGENT_LIMITS.deadlineMs, deadlineAtMs?: number) {
-    if (!Number.isSafeInteger(deadlineMs) || deadlineMs < 1 || deadlineMs > AGENT_LIMITS.deadlineMs) throw new Error("Invalid agent deadline");
+    if (!Number.isSafeInteger(deadlineMs) || deadlineMs < 1 || deadlineMs > AGENT_RUN_LIMITS.deadlineSeconds.max * 1000) throw new Error("Invalid agent deadline");
     this.parent = parent;
     if (deadlineAtMs !== undefined && (!Number.isSafeInteger(deadlineAtMs) || deadlineAtMs < 1)) throw new Error("Invalid absolute agent deadline");
     this.expiresAt = Math.min(this.startedAt + deadlineMs, deadlineAtMs ?? Infinity);

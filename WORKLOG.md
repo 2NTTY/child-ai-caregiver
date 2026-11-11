@@ -5010,3 +5010,105 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Scope & Boundaries：
   - 本包判定維持 **NOT READY to open PR / HOLD merge**，等待 Owner 決定範圍、工程值及交付次序。
   - 純本地分支，零 git push，零 GitHub PR。
+
+<a id="log-20261107-timeout-lease-alignment"></a>
+## 2026-11-07｜REQ-005 PR 9 背景工作租約與請求逾時上限對齊（REQ-005 §4 §7）
+
+- Recorded At：2026-11-07 07:25 UTC；Work Date：2026-11-07。
+- Step / Package：REQ005-PR9 (Audit B01–B09 / Gap 5)。
+- Branch：`codex/req005-timeout-lease-alignment`（基線：`2abe7aed60b192b253414f6464e3fd070cc377e7`）。
+- Author / Committer：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`。
+- Executor：AI Agent (Antigravity)。
+- AI Assistance：Full code modification, invariant script execution, and verification receipt authoring under explicit user direction.
+- Human Verification：Awaiting user review and Grok read-only audit review.
+- Goal / Actual Work：修復 `server/firestore-background-work.ts`、`server/background-knowledge-maintenance.ts`、`src/shared/agent-run-limits.ts` 與 `server/ai-config.ts` 中過短之背景租約與請求邊界限制，使背景工作租約由 120s 擴大至 360s、單次執行信號由 95s 擴大至 300s，提供 60 秒安全落庫餘裕；並放寬共享請求上限（單次上限 300s、整輪上限 900s）。
+- Invariants & Changes：
+  - `src/shared/agent-run-limits.ts`：更新 `deadlineSeconds: { min: 15, max: 900, default: 300 }` 與 `modelRequestSeconds: { min: 5, max: 300, default: 90 }`，允許管理員與政策配置更長之單次與整輪期限；前端 HTTP 逾時自動聯動對齊為 930 秒（15.5 分鐘）。
+  - `server/ai-config.ts`：將 `AI_TIMEOUT_MS` 之數值上限放寬至 300,000 ms。
+  - `server/firestore-background-work.ts`：定義並匯出常數 `BACKGROUND_WORK_LEASE_MS = 360_000`（360 秒租約）與 `BACKGROUND_WORK_TIMEOUT_MS = 300_000`（300 秒單次執行逾時），確保租約嚴格包裹執行期並預留 60 秒 CAS 寫入緩衝。
+  - `server/background-knowledge-maintenance.ts`：將 `BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS` 對齊至 360,000 ms。
+  - `tests/ai-config.test.ts`：修正 `AI_TIMEOUT_MS` 預設值斷言為 90,000 ms，更新邊界測試並新增全小寫命名測試 `ai configuration accepts aligned timeout up to 300000 ms`。
+- Verification & Test Manifest：
+  - `tests/ai-config.test.ts`：11/11 PASS。
+  - `tests/firestore-background-recovery.test.ts`：1/1 PASS。
+  - `tests/agent-runtime.test.ts`：20/20 PASS。
+  - `scripts/verify-timeout-lease-mutations.mjs`：5/5 不變量與邊界驗證全數通過。
+  - 型別診斷：`node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit` 與 `tsc --noEmit` 雙雙 0 診斷、exit 0。
+  - 驗收憑證：[REQ005_TIMEOUT_LEASE_ALIGNMENT_20261107.json](artifacts/verification/REQ005_TIMEOUT_LEASE_ALIGNMENT_20261107.json)（嚴格依據 git-blob LF 計算 SHA-256）。
+- Retained Failures：無。
+- Limitations & Boundaries：
+  - 本 PR 聚焦於背景工作租約與請求邊界常數對齊；背景租約透過 360s 包裹 300s 執行提供靜態 60s 緩衝，尚未引入執行期間主動續租（active heartbeat renewal）機制。
+  - 互動執行 `AgentBudget` constructor 目前仍維持 `<= AGENT_LIMITS.deadlineMs`（300s）檢驗，互動端到端突破 300s 執行需待 runtime 預算架構協調。
+  - 外層 Cloud Tasks 分發逾時仍為 120s（`dispatchSeconds = 120`），背景 Worker 入口預設仍為 90s，端到端 15 分鐘背景作業需搭配雲端設施調度隊列調整。
+  - 360s 租約與 300s 執行為工程起始基線，待生產監控量度及 Owner 審批。
+  - 嚴格維持純本地分支，未 push、未開 GitHub PR。
+
+### 2026-11-07 Round 2 審核跟進修正 (Audit B01, B09 / Gap 5)
+
+- Recorded At：2026-11-07 08:55 UTC；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `776a27900bdc76d982c014494a304cdaf1700351`，保留 reflog 歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `.github/workflows/summary-progress-offline.yml`：在 `github.head_ref` 白名單加入 `codex/req005-timeout-lease-alignment`。
+  2. `scripts/verify-timeout-lease-mutations.mjs`：修正終端輸出及註釋，將「Mutation」字眼改為「Invariant Check」，如實陳述為常數邊界與不變量防回歸驗證。
+  3. 收據與文件：更新收據檔案清單（補入 `summary-progress-offline.yml`），補全可重現命令與環境。
+- Verification：
+  - `tests/ai-config.test.ts`：11/11 PASS
+  - `tests/firestore-background-recovery.test.ts`：1/1 PASS
+  - `tests/agent-runtime.test.ts`：20/20 PASS
+  - `scripts/verify-timeout-lease-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries (明確撤回絕對保證與聲稱邊界)：
+  - 360 秒租約與 300 秒單次逾時提供 60 秒靜態安全緩衝，屬工程起始建議基準，待生產監控量度及 Owner 審批。由於逾時取消屬合作式信號（cooperative cancellation via AbortSignal），非硬性強制中斷，不作絕對隔離或杜絕失敗之聲稱。
+  - 綱要層允許至 900 秒整輪期限，但目前互動式 `AgentBudget` runtime 建構子仍維持 300 秒硬檢驗；外層 Cloud Tasks 調度派發（120 秒）與 Worker 認領預設（90 秒）亦維持原狀。端到端 15 分鐘完整長任務管線仍需主動心跳續約（active heartbeat renewal）與雲端基礎設施調度調整，本 PR 僅交付常數邊界擴充與靜態租約緩衝對齊。
+  - 純本地分支，零 git push，零 GitHub PR。
+
+### 2026-11-07 Round 3 審核跟進修正 (Audit B01, B09 / Gap 5)
+
+- Recorded At：2026-11-07 09:05 UTC；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `3cb406f66700889a43beb7c737552d3a6d6c99d9`，保留歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `scripts/ci/summary-progress-tests.json`：將 `tests/ai-config.test.ts`（11 案）與 `tests/firestore-background-recovery.test.ts`（1 案）正式加入 CI manifest，補齊 PR 9 相關測試之離線 CI 契約覆蓋（`agent-runtime.test.ts` 既有 20 案已在清單中）。
+  2. `scripts/verify-timeout-lease-mutations.mjs`：清除殘留之 `Mutation M1/M2` 註釋，並將 900s 輸出校準為 `schema bounds verified`，避免誤導為全端到端已可用。
+  3. 收據與文件：更新收據檔案清單（補入 `summary-progress-tests.json`），客觀校準記錄時間。
+- Verification：
+  - `tests/ai-config.test.ts`：11/11 PASS (TAP check 11 通過)
+  - `tests/firestore-background-recovery.test.ts`：1/1 PASS (TAP check 1 通過)
+  - `tests/agent-runtime.test.ts`：20/20 PASS (TAP check 20 通過)
+  - `scripts/verify-timeout-lease-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tests/ci/summary-progress-contract.test.mjs`：6/6 PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 維持擴充常數與靜態租約緩衝對齊，360s 租約與 300s 取消提供 60s 靜態緩衝，屬工程起始基準。合作式取消非強制終止；端到端 15 分鐘任務仍待後續心跳續約與雲端基礎設施調整。
+  - 純本地分支，零 git push，零 GitHub PR。
+
+### 2026-11-07 歷史記錄客觀校準與 CI Guard 接線 (Audit B01, B09 / Gap 5)
+
+- Recorded At：2026-11-07 09:50 UTC (17:50 HKT)；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `ccd540a5634d8613f88856853f508e2912ba1c93`，保留歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `scripts/ci/verify-summary-progress-offline.sh`：新增 `stage=package-invariant-guard`，將 `scripts/verify-timeout-lease-mutations.mjs` 正式納入離線 CI 執行管線，於沙盒中驗證不變量守衛。
+  2. 邊界與限制客觀記錄：綱要層允許至 900 秒，但目前互動式 AgentBudget 建構子維持 300 秒硬檢驗；CloudTasks 派發維持 120 秒，Worker 認領維持 90 秒。360 秒租約與 300 秒取消信號提供 60 秒靜態緩衝，屬工程建議起始基準；因取消信號為合作式（cooperative cancellation via AbortSignal），非硬性線程中止，不作絕對免除失敗之保證。端到端 15 分鐘完整長任務需後續心跳續約與雲端基礎設施調整。
+  3. 歷史時間戳記客觀說明：前次提交（`ccd540a5`）生成時間為 16:58:04 HKT，模板預填為 17:05 HKT（09:05 UTC）；依 append-only 規範，在此客觀記錄提交實際發生順序，保留原始日誌歷史。
+- Verification：
+  - `bash -n scripts/ci/verify-summary-progress-offline.sh`：exit 0
+  - `tests/ai-config.test.ts`：11/11 PASS (TAP check 11 通過)
+  - `tests/firestore-background-recovery.test.ts`：1/1 PASS (TAP check 1 通過)
+  - `tests/agent-runtime.test.ts`：20/20 PASS (TAP check 20 通過)
+  - `scripts/verify-timeout-lease-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tests/ci/summary-progress-contract.test.mjs`：6/6 PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 維持 NOT READY / HOLD merge 狀態，等待 Owner 統籌合併。純本地分支，零 git push，零 GitHub PR。
+
+### 2026-11-07 歷史預填時間客觀校準說明 (Audit Trail Timestamp Calibration)
+
+- Recorded At：2026-11-07T10:06:30.749Z；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `7e9e8b783679cddd13f8873e766d43d6cbdd089b`，保留歷史，不使用 amend。
+- 歷史時間客觀聲明：
+  本工作日誌此前各段落中出現之 Recorded At 欄位（例如 08:55 UTC、09:05 UTC、09:50 UTC 等），係編輯起草時依規劃時程預填之模板標籤時間，而非底層 Git Commit 物件實際寫入時間戳（例如 Commit `7e9e8b78` 實際寫入時間為 17:39:42 HKT，即 09:39:42 UTC）。
+  依據本專案嚴格之 append-only 審計規範，歷史既有段落完整保留不作 amend 或刪改；特在此追加真實即時時間戳記（2026-11-07T10:06:30.749Z）以澄清時序，確認此前所有時間標籤均屬規劃模板時間。
+- PR 9 期限與邊界確認：
+  360 秒租約與 300 秒單次逾時之 60 秒安全緩衝，屬工程起始建議基準，需待實時監控量度及 Owner 審批。逾時中斷為基於 AbortSignal 之合作式取消，非底層強制線程中止，不可視為杜絕失敗之絕對保證。綱要層允許至 900 秒整輪期限，但目前互動式 AgentBudget 建構子仍維持 300 秒硬檢驗；外層 Cloud Tasks 調度派發（120 秒）與 Worker 認領預設（90 秒）亦維持原狀。端到端 15 分鐘完整長任務管線仍需主動心跳續約（active heartbeat renewal）與雲端基礎設施調度調整，本 PR 明確界定為常數邊界擴充與靜態租約緩衝對齊。
+- Scope & Boundaries：
+  - 本包判定維持 **NOT READY to open PR / HOLD merge**，等待 Owner 決定範圍、工程值及交付次序。
+  - 純本地分支，零 git push，零 GitHub PR。
