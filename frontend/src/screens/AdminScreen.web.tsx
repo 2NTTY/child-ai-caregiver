@@ -13,6 +13,7 @@ import { AppCheckbox } from '../components/AppCheckbox';
 import { useProduction } from '../production/ProductionProvider';
 import { colors, spacing } from '../theme';
 import { AuthenticationProofControl } from '../components/account/AuthenticationProofControl';
+import { AdminKnowledgeTransfers } from '../components/admin/AdminKnowledgeTransfers';
 import type { ReauthenticationInput } from '../../../src/shared/auth-providers';
 
 const fields = [
@@ -175,6 +176,8 @@ export default function AdminScreen() {
           </> : null}
         </> : null}
       </View>
+      <AdminKnowledgeTransfers key={userId} admin={admin} state={state.transfers} online={online}
+        writeLocked={!online || reauthBusy || state.transfers.busy || !!state.transfers.pending} />
       <View style={styles.card}><SectionHeader title="知識關鍵詞索引" subtitle="手動選擇已審核版本，分批建立索引及查看逐項結果。" />
         <Text style={styles.note}>索引處理與知識發布分開；完成索引不代表已發布。本區只在開啟或按下讀取時查詢，不會自動輪詢。</Text>
         <AppButton label={state.index.open ? '收起知識索引' : state.index.pending ? '查看知識索引（有操作待核對）' : '查看知識索引'}
