@@ -37,6 +37,9 @@ test("native provider credentials keep one Firebase sign-in/link path and reject
       googleCredential: token => credential("google.com", token),
       appleCredential: (token, nonce) => credential("apple.com", token, nonce),
       signIn: async proof => { events.push("firebase-sign-in"); assert.equal(proof.providerId, "google.com"); return original; },
+      reauthenticate: async (user, proof) => {
+        events.push("firebase-reauthenticate"); assert.equal(proof.providerId, "apple.com"); assert.equal(user, original); return user;
+      },
       link: async (user, proof) => {
         events.push("firebase-link"); assert.equal(user, original); assert.equal(proof.providerId, "apple.com");
         assert.equal((proof as AuthCredential & { rawNonce: string }).rawNonce, appleInputs.at(-1)!.nonce); return user;
@@ -63,6 +66,8 @@ test("native provider credentials keep one Firebase sign-in/link path and reject
   const android = createNativeProviderAdapter({ ...configured, platform: "android" }, ports);
   await android.signIn("google.com"); assert.equal(events.includes("play-services"), true);
   await android.link(original, "apple.com");
+  assert.equal(await android.reauthenticate(original, "apple.com"), original);
+  assert.equal(events.at(-1), "firebase-reauthenticate");
   assert.deepEqual(androidConfiguration, { clientId: configured.appleServiceId, redirectUri: configured.appleRedirectUri,
     responseType: "ID_TOKEN", scope: "ALL", nonceEnabled: true, nonce: appleInputs.at(-1)!.nonce, state: appleInputs.at(-1)!.state });
   assert.deepEqual(createNativeProviderAdapter({ ...configured, platform: "ios", googleIosClientId: "" }, ports).providers, ["apple.com"]);

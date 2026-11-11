@@ -1,10 +1,64 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { randomUUID } from 'node:crypto';
-import { createHandoverApi, HandoverApiError } from '../src/client/handover-api.ts';
+import { createHandoverApi, HandoverApiError, type AccountPreferencesComparison } from '../src/client/handover-api.ts';
 import type { HandoverExportCommand, HandoverExportView } from '../src/shared/handover-jobs.ts';
 import type { HandoverUploadCommand, HandoverUploadView } from '../src/shared/handover-uploads.ts';
 import type { HandoverImportCommand, HandoverImportView } from '../src/shared/handover-imports.ts';
+
+test('account preference capabilities and comparison use negotiated transport across JSON, ZIP upload and download', async () => {
+  const uploadId = randomUUID(), signal = new AbortController().signal, at = '2026-11-08T00:00:00Z';
+  const query = { uploadId, expectedUploadVersion: 3 };
+  const comparison: AccountPreferencesComparison = { uploadId, manifestSha256: 'a'.repeat(64), backupVersion: 1, localVersion: 2, state: 'different',
+    backup: { timeZone: 'Asia/Hong_Kong', quietStart: '21:30', quietEnd: '07:15', allowAppointmentDuringQuiet: true, version: 1 },
+    current: { timeZone: 'UTC', quietStart: '23:00', quietEnd: '06:00', allowAppointmentDuringQuiet: false, version: 2 } };
+  const upload: HandoverUploadView = { id: uploadId, version: 3, filename: 'account.zip', bytes: 4, createdAt: at, expiresAt: '2026-11-09T00:00:00Z',
+    state: 'ready', error: null, preview: null };
+  const zip = new Blob([new Uint8Array([80, 75, 3, 4])], { type: 'application/zip' });
+  let modern = false, response: unknown = comparison, hold = false, release!: (value: Response) => void, calls = 0;
+  const api = createHandoverApi('https://example.test', async (input, init) => {
+    calls++; assert.ok(init); const path = new URL(String(input)).pathname, headers = new Headers(init.headers);
+    assert.equal(init.credentials, 'include'); assert.equal(init.cache, 'no-store'); assert.equal(headers.get('x-expected-user-id'), 'owner');
+    assert.equal(headers.get('x-handover-account-backup'), '1'); assert.equal(headers.get('x-handover-account-features'), 'notification-preferences');
+    if (path === '/api/account/packages/capabilities') return Response.json({ classModules: [], ...(modern ? { notificationPreferencesBackup: true } : {}) });
+    if (path === '/api/account/package-imports/capabilities') return Response.json({ classEnrolment: false, ...(modern ? { notificationPreferencesRestore: true } : {}) });
+    if (path.endsWith('/content')) {
+      assert.equal(init.method, 'POST'); assert.equal(headers.get('content-type'), 'application/zip'); assert.equal(init.body, zip);
+      return Response.json(upload);
+    }
+    if (path.endsWith('/download')) {
+      assert.equal(headers.get('accept'), 'application/zip'); assert.equal(init.method, 'GET');
+      return new Response(new Uint8Array([80, 75, 3, 4]), { headers: { 'content-type': 'application/zip', 'content-length': '4' } });
+    }
+    assert.equal(path, '/api/account/package-imports/compare-notification-preferences');
+    assert.equal(init.method, 'POST'); assert.equal(headers.get('content-type'), 'application/json'); assert.deepEqual(JSON.parse(String(init.body)), query);
+    return hold ? new Promise(resolve => { release = resolve; }) : Response.json(response);
+  });
+  api.setIdentity('owner');
+  assert.equal(Object.hasOwn(await api.exportCapabilities('owner', signal), 'notificationPreferencesBackup'), false);
+  assert.equal(Object.hasOwn(await api.importCapabilities('owner', signal), 'notificationPreferencesRestore'), false);
+  modern = true;
+  assert.equal((await api.exportCapabilities('owner', signal)).notificationPreferencesBackup, true);
+  assert.equal((await api.importCapabilities('owner', signal)).notificationPreferencesRestore, true);
+  assert.deepEqual(await api.compareNotificationPreferences!('owner', query, signal), comparison);
+  for (const malformed of [
+    { ...comparison, uploadId: randomUUID() }, { ...comparison, backupVersion: 0 },
+    { ...comparison, current: { ...comparison.current, quietStart: '24:00' } }, { ...comparison, unexpected: true },
+  ]) {
+    response = malformed;
+    await assert.rejects(api.compareNotificationPreferences!('owner', query, signal), { code: 'handover_response_invalid' });
+  }
+  const beforeInvalid = calls;
+  await assert.rejects(api.compareNotificationPreferences!('owner', { ...query, expectedUploadVersion: 0 }, signal), { code: 'invalid_input' });
+  assert.equal(calls, beforeInvalid, 'Invalid version consent cannot reach the transport');
+  assert.deepEqual(await api.uploadContent('owner', uploadId, zip, signal), upload);
+  const downloaded = await api.download('owner', uploadId, 4, signal, async (value, isCurrent) => {
+    assert.equal(isCurrent(), true); return new Uint8Array(await value.arrayBuffer());
+  });
+  assert.deepEqual(downloaded, new Uint8Array([80, 75, 3, 4]));
+  hold = true; const pending = api.compareNotificationPreferences!('owner', query, signal), rejected = assert.rejects(pending, { code: 'session_changed' });
+  api.setIdentity('other'); release(Response.json(comparison)); await rejected;
+});
 
 test('source history reuses authenticated transport and validates destination, resource and pagination bindings', async () => {
   const childId = randomUUID(), resourceId = randomUUID(), spaceId = randomUUID(), signal = new AbortController().signal;

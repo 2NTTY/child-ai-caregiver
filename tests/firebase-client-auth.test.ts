@@ -30,7 +30,7 @@ test("social identity links only after original UID proof and exchanges through 
   assert.equal(links, 0);
   await api.prepareProviderLink('alice', credentials.password, signal());
   await api.linkProvider('alice', 'apple.com', true, signal());
-  assert.equal(links, 1); assert.equal(f.state.current, null);
+  assert.equal(links, 1); assert.deepEqual(f.state.linkExchanges, ['apple.com']); assert.equal(f.state.current, null);
   providerUser = { uid: 'bob', email: f.alice.email, emailVerified: true };
   const exchanges = f.state.exchanges.length;
   await assert.rejects(api.reauthenticate('alice', { provider: 'google.com' }, signal()), ClientApiError);
@@ -54,14 +54,21 @@ test("cancelled social sign-in clears late identity without exchanging a busines
 });
 test("provider reconciliation waits for a cancelled link to settle before reading enrolled methods", async () => {
   const f = fixture(), pending = deferred<FirebaseIdentityUser>();
-  let linked = false, reads = 0;
+  let linked = false, approved = false, reads = 0, proofs = 0;
   Object.assign(f.sdk, { social: { providers: ['apple.com'], async signIn() { throw new Error('Unexpected sign-in'); },
-    async link(user: FirebaseIdentityUser) { await pending.promise; linked = true; return user; },
+    async link(user: FirebaseIdentityUser) {
+      assert.equal(linked, false); await pending.promise; linked = true;
+      Object.assign(user, { providerData: [{ providerId: 'apple.com' }] }); return user;
+    },
+    async reauthenticate(user: FirebaseIdentityUser) { proofs++; return user; },
   } });
   const fetcher: typeof fetch = async (url, init) => {
+    if (String(url).endsWith('/auth/session') && JSON.parse(String(init?.body)).linkProvider === 'apple.com') {
+      approved = true; return Response.json({ user: f.state.session });
+    }
     if (!String(url).endsWith('/auth/providers')) return f.fetcher(url, init);
     reads++;
-    return Response.json({ userId: 'alice', providers: linked ? ['password', 'apple.com'] : ['password'], currentProvider: 'password' });
+    return Response.json({ userId: 'alice', providers: approved ? ['password', 'apple.com'] : ['password'], currentProvider: 'password' });
   };
   const api = createFirebaseAuthApi({ baseUrl: '/api', publicOrigin, config, sdk: f.sdk, fetcher });
   await api.authenticate('signIn', credentials, signal());
@@ -74,15 +81,19 @@ test("provider reconciliation waits for a cancelled link to settle before readin
   try {
     await turn(); assert.equal(reads, 0, 'An unsettled link cannot be reconciled from an older provider list');
   } finally { pending.resolve(f.alice); await cleanup; }
-  assert.deepEqual((await reconciliation).providers, ['password', 'apple.com']);
+  assert.deepEqual((await reconciliation).providers, ['password']);
   assert.equal(reads, 1); assert.equal(f.state.current, null); assert.equal(f.state.exchanges.length, before);
+  await api.prepareProviderLink('alice', credentials.password, signal());
+  await api.linkProvider('alice', 'apple.com', true, signal());
+  assert.deepEqual((await api.authenticationMethods('alice', signal())).providers, ['password', 'apple.com']);
+  assert.equal(proofs, 1);
 });
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(done => { resolve = done; }); return { promise, resolve }; }
 function fixture(verified = true) {
   const alice = { uid: "alice", email: credentials.email, emailVerified: verified };
   const state = { current: null as FirebaseIdentityUser | null, session: null as SessionUser | null,
     clearCalls: 0, signinCalls: 0, signupCalls: 0, nameCalls: 0, reloadCalls: 0, verificationCalls: 0, exchanges: [] as string[],
-    resetCalls: 0, confirmCalls: 0, revokeCalls: 0, signoutCalls: 0 };
+    resetCalls: 0, confirmCalls: 0, revokeCalls: 0, signoutCalls: 0, linkExchanges: [] as string[] };
   const sdk: FirebaseIdentitySdk = {
     currentUser: () => state.current,
     signIn: async (email, password) => { assert.equal(email, credentials.email); assert.equal(password, credentials.password);
@@ -104,7 +115,10 @@ function fixture(verified = true) {
     const expected = new Headers(init?.headers).get("x-expected-user-id");
     if (path === "/api/auth/session") {
       const body = JSON.parse(String(init?.body));
-      assert.deepEqual(Object.keys(body), ["idToken"]);
+      if (body.linkProvider !== undefined) {
+        assert.deepEqual(Object.keys(body), ["idToken", "linkProvider"]);
+        assert.equal(body.linkProvider, "apple.com"); state.linkExchanges.push(body.linkProvider);
+      } else assert.deepEqual(Object.keys(body), ["idToken"]);
       assert.equal(body.idToken, "synthetic-id-token-" + state.current!.uid);
       assert.equal(expected, state.session?.id ?? state.current!.uid);
       state.exchanges.push(state.current!.uid);

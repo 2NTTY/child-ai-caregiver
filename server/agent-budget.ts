@@ -2,9 +2,10 @@ import { createHash } from "node:crypto";
 import type { ModelProviderStopReason } from "../src/shared/agent-stop-message.ts";
 import { canonical } from "./firestore-session-codec.ts";
 import { RootBudgetError, type BudgetAttempt, type DurableRootBudget, type RootBudgetContext, type RootBudgetSnapshot } from "./durable-root-budget.ts";
-import { AGENT_RUN_LIMITS, AGENT_OUTPUT_LIMITS } from '../src/shared/agent-run-limits.ts';
-export { AGENT_OUTPUT_LIMITS };
+import { AGENT_RUN_LIMITS, AGENT_OUTPUT_LIMITS, DEFAULT_SOFT_BUDGET_RATIO, SOFT_BUDGET_RATIO_RANGE } from '../src/shared/agent-run-limits.ts';
 import { PERSONAL_RUN_LIMITS } from "../src/shared/model-settings.ts";
+
+export { AGENT_OUTPUT_LIMITS, DEFAULT_SOFT_BUDGET_RATIO, SOFT_BUDGET_RATIO_RANGE };
 
 export const AGENT_LIMITS = Object.freeze({ modelCalls: 4, toolCalls: AGENT_RUN_LIMITS.toolCalls.default, queryEmbeddings: 2,
   deadlineMs: AGENT_RUN_LIMITS.deadlineSeconds.default * 1000, outputTokens: 1024, inputCharacters: 32000 });
@@ -22,7 +23,13 @@ export const CHAT_DELIVERY_REVIEW_MODEL_CALLS = Object.freeze({ current: 4, prop
 export const AGENT_INTERACTIVE_INPUT = Object.freeze({ default: 64000, min: 32000, max: 64000 });
 export const AGENT_TOOL_RESPONSE_RESERVE = 4096;
 
-export type AgentRunLimits = Readonly<{ modelCalls: number; queryEmbeddings: number; toolCalls?: number; deadlineMs?: number }>;
+export type AgentRunLimits = Readonly<{
+  modelCalls: number;
+  queryEmbeddings: number;
+  toolCalls?: number;
+  deadlineMs?: number;
+  softBudgetRatio?: number;
+}>;
 /** Trusted Server call roles; never inferred from a prompt, tool argument or attempt key. */
 export type AgentModelPurpose = "delivery_review" | "delivery_repair" | "compose_review";
 /** Server-owned live obligation; a run may acquire review work after an ordinary tool step. */
@@ -37,7 +44,7 @@ export function freezeAgentRunLimits(limits: AgentRunLimits): AgentRunLimits {
     const value = selected[key], range = PERSONAL_RUN_LIMITS[key];
     if (!Number.isSafeInteger(value) || value < range.min || value > range.max) throw new Error("Invalid agent run limits");
   }
-  const extended: { modelCalls: number; queryEmbeddings: number; toolCalls?: number; deadlineMs?: number } = selected;
+  const extended: { modelCalls: number; queryEmbeddings: number; toolCalls?: number; deadlineMs?: number; softBudgetRatio?: number } = selected;
   if (limits.toolCalls !== undefined) {
     if (!Number.isSafeInteger(limits.toolCalls) || limits.toolCalls < AGENT_RUN_LIMITS.toolCalls.min || limits.toolCalls > AGENT_RUN_LIMITS.toolCalls.max) throw new Error("Invalid agent tool limit");
     extended.toolCalls = limits.toolCalls;
@@ -45,6 +52,12 @@ export function freezeAgentRunLimits(limits: AgentRunLimits): AgentRunLimits {
   if (limits.deadlineMs !== undefined) {
     if (!Number.isSafeInteger(limits.deadlineMs) || limits.deadlineMs < AGENT_RUN_LIMITS.deadlineSeconds.min * 1000 || limits.deadlineMs > AGENT_RUN_LIMITS.deadlineSeconds.max * 1000) throw new Error("Invalid agent deadline limit");
     extended.deadlineMs = limits.deadlineMs;
+  }
+  if (limits.softBudgetRatio !== undefined) {
+    if (typeof limits.softBudgetRatio !== "number" || !Number.isFinite(limits.softBudgetRatio) || limits.softBudgetRatio < SOFT_BUDGET_RATIO_RANGE.min || limits.softBudgetRatio > SOFT_BUDGET_RATIO_RANGE.max) {
+      throw new Error("Invalid agent soft budget ratio");
+    }
+    extended.softBudgetRatio = limits.softBudgetRatio;
   }
   return Object.freeze(extended);
 }
@@ -74,6 +87,8 @@ export class AgentBudget {
   private readonly used = { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 };
   private configured = false;
   hasPersonalLimits(): boolean { return this.configured; }
+  private softRatio: number = DEFAULT_SOFT_BUDGET_RATIO;
+  get softBudgetRatio(): number { return this.softRatio; }
   private inputConfigured = false;
   private responseCharacters: number | null = null;
   private selectedLimits: { [K in keyof typeof AGENT_LIMITS]: number } = { ...AGENT_LIMITS };
@@ -163,7 +178,7 @@ export class AgentBudget {
    * present/finish cannot spend the reserved delivery-review model call. Soft metadata
    * alone is not enough (see Slice B4 vs B2).
    */
-  planningSnapshot(hasTerminalTool: boolean, options?: { reserveDeliveryReview?: AgentReviewReserve }) {
+  planningSnapshot(hasTerminalTool: boolean, options?: { reserveDeliveryReview?: AgentReviewReserve; softBudgetRatio?: number }) {
     this.check();
     const reviewReserve = hasReviewReserve(options?.reserveDeliveryReview) ? 1 : 0;
     // Hard finish reserve includes the review call when active (not soft guidance only).
@@ -174,7 +189,34 @@ export class AgentBudget {
       queryEmbeddings: this.selectedLimits.queryEmbeddings - this.used.queryEmbeddings,
       timeMs: Math.max(0, this.expiresAt - Date.now()),
     };
-    return { usedBeforeThisCall: this.counts, remaining,
+    const effectiveSoftRatio = typeof options?.softBudgetRatio === "number" && Number.isFinite(options.softBudgetRatio)
+      ? Math.max(SOFT_BUDGET_RATIO_RANGE.min, Math.min(SOFT_BUDGET_RATIO_RANGE.max, options.softBudgetRatio))
+      : this.softRatio;
+    const softBudget = {
+      modelCalls: Math.max(1, Math.floor(this.selectedLimits.modelCalls * effectiveSoftRatio)),
+      toolCalls: Math.max(1, Math.floor(this.selectedLimits.toolCalls * effectiveSoftRatio)),
+      queryEmbeddings: Math.max(1, Math.floor(this.selectedLimits.queryEmbeddings * effectiveSoftRatio)),
+    };
+    const softRemaining = {
+      modelCalls: Math.max(0, softBudget.modelCalls - this.used.modelCalls),
+      toolCalls: Math.max(0, softBudget.toolCalls - this.used.toolCalls),
+      queryEmbeddings: Math.max(0, softBudget.queryEmbeddings - this.used.queryEmbeddings),
+    };
+    const softExceeded = {
+      modelCalls: this.used.modelCalls >= softBudget.modelCalls,
+      toolCalls: this.used.toolCalls >= softBudget.toolCalls,
+      queryEmbeddings: this.used.queryEmbeddings >= softBudget.queryEmbeddings,
+      any: this.used.modelCalls >= softBudget.modelCalls ||
+           this.used.toolCalls >= softBudget.toolCalls ||
+           this.used.queryEmbeddings >= softBudget.queryEmbeddings,
+    };
+    return {
+      usedBeforeThisCall: this.counts,
+      remaining,
+      softBudgetRatio: effectiveSoftRatio,
+      softBudget,
+      softRemaining,
+      softExceeded,
       phase: remaining.modelCallsIncludingThisCall <= hardFinishReserve || remaining.timeMs <= 15000
         || hasTerminalTool && remaining.toolCalls <= 1 ? "finish" as const : "work" as const,
       reserveForFinish: { modelCalls: hardFinishReserve, toolCalls: hasTerminalTool ? 1 : 0 },
@@ -222,7 +264,11 @@ export class AgentBudget {
   /** Server-resolved personal settings or an explicitly fixed trusted profile; never model/request args. */
   configurePersonal(limits: AgentRunLimits) {
     if (this.configured || Object.values(this.used).some(count => count !== 0)) throw new Error("Agent limits already selected");
-    this.selectedLimits = { ...this.selectedLimits, ...freezeAgentRunLimits(limits) };
+    const frozen = freezeAgentRunLimits(limits);
+    this.selectedLimits = { ...this.selectedLimits, ...frozen };
+    if (frozen.softBudgetRatio !== undefined) {
+      this.softRatio = frozen.softBudgetRatio;
+    }
     if (limits.deadlineMs !== undefined) {
       this.expiresAt = Math.min(this.expiresAt, this.startedAt + limits.deadlineMs);
       clearTimeout(this.timer);

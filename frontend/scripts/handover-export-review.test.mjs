@@ -6,6 +6,8 @@ import { HandoverApiError, createHandoverApi } from '../../src/client/handover-a
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import * as classExport from '../src/production/handover-class-export.ts';
+import * as handover from '../../src/shared/handover.ts';
+import * as family from '../../src/shared/family.ts';
 
 test('export review pages bind child, scope and avatar absence while preserving explicit whole-file choices', async () => {
   const first = randomUUID(), second = randomUUID(), file = randomUUID(), snapshotId = randomUUID(), writes = [], queries = [];
@@ -90,20 +92,23 @@ test('shared export checklist shows literal complete dates and requires loaded f
   const state = { userId: 'owner', identityKey: 'owner:1', busy: null, pending: null, items: [], review: null, reviewBusy: false };
   const controller = { subscribe() {}, getSnapshot: () => state, reviewMatches: () => true, reviewReady: () => reviewReady,
     documentReview: () => ({ scopeVersion: 'a'.repeat(64), choices: [] }), create: (...args) => sent.push(args), chooseReviewItem: (...args) => sent.push(args) };
-  const production = { owner: { handoverOwner: controller }, userId: 'owner', identityKey: 'owner:1', scopeKey: 'scope:1', online: true,
+  const production = { owner: { handoverOwner: controller, getSnapshot: () => ({ identityKey: 'owner:1', sessionGeneration: 1 }) }, userId: 'owner', identityKey: 'owner:1', scopeKey: 'scope:1', online: true,
     recordsState: { children: [{ id, displayName: 'Own child', accessRole: 'owner' }] }, account: { gate: 'ready', deletion: { phase: 'idle' } } };
   const jsx = (type, props, key) => ({ type, props, key });
   const hooks = { useState(initial) { const index = instance.cursor++; if (!(index in instance.slots)) instance.slots[index] = initial;
     return [instance.slots[index], next => { instance.slots[index] = typeof next === 'function' ? next(instance.slots[index]) : next; }]; },
+    useRef(initial) { const index = instance.cursor++; if (!(index in instance.slots)) instance.slots[index] = { current: initial }; return instance.slots[index]; },
     useEffect() {}, useLayoutEffect() {}, useSyncExternalStore: (_subscribe, get) => get() };
   const resolve = name => name === 'react' ? hooks : name === 'react/jsx-runtime' ? { jsx, jsxs: jsx }
     : name === 'react-native' ? { View: 'View', StyleSheet: { create: value => value }, Platform: { OS: 'web' }, AppState: { currentState: 'active' } }
     : name === 'react-native-paper' ? { Text: 'Text' } : name.endsWith('/ProductionProvider') ? { useProduction: () => production }
+    : name.endsWith('/SettingsDomains') ? { useProductionSettingsDomains: () => ({ preferences: { scopeKey: JSON.stringify(['owner:1', 1]),
+      preferences: handover.handoverNotificationPreferencesSchema.parse(family.DEFAULT_NOTIFICATION_PREFERENCES), online: true, fresh: true, original: null, busy: false, refresh() {} } }) }
     : name.endsWith('/HandoverOwner') ? { handoverReviewSections }
     : name.endsWith('/useProductionSharing') ? { useProductionSharing: () => ({ controller: {}, state: { identityKey: null, selected: null,
       shares: { items: [] }, spaces: { items: [] }, teacherClasses: { items: [] } } }) }
     : name.endsWith('/handover-class-export') ? classExport
-    : name.endsWith('/handover') ? { HANDOVER_MODULES: ['documents', 'attachments'], supportsHandoverPeriodModules: () => true }
+    : name.endsWith('/handover') ? handover : name.endsWith('/family') ? family
     : name.endsWith('/file-export') ? { useFileExportAvailable: () => true } : name.endsWith('/date-time') ? { hongKongTimeZone: 'Asia/Hong_Kong' }
     : name.endsWith('/theme') ? { colors: {}, readingType: {}, spacing: {} } : name === 'luxon' ? require(name)
     : new Proxy({}, { get: (_target, key) => String(key) });
