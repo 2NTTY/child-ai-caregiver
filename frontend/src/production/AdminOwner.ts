@@ -1,6 +1,8 @@
 import { adminKnowledgeStatusSchema, type AdminKnowledgeStatus, type AdminCommand, type AdminInvitation, type AdminOverview, type AdminPage, type AdminReceipt, type AdminUsage } from '../../../src/shared/admin.ts';
 import { emptyIndex, indexTargetLimit, adminIndexVersionPageSchema, adminIndexBatchPageSchema, adminIndexBatchReplySchema,
   type AdminIndexState, type AdminIndexBatch, type AdminIndexPending } from './admin-knowledge-index.ts';
+import { adminTransferDigestSchema, adminTransferListSchema, adminTransferDetailSchema, adminTransferReplySchema } from '../../../src/shared/admin-knowledge-transfer.ts';
+import { emptyTransfers, type AdminTransferState, type AdminTransferBatch, type AdminTransferPending } from './admin-knowledge-transfer.ts';
 export class AdminApiError extends Error {
   readonly status: number; readonly code: string;
   constructor(status: number, code: string) { super('Admin request failed'); this.status = status; this.code = code; }
@@ -10,10 +12,10 @@ const emptyKnowledge = (): AdminKnowledgeState => ({ open: false, status: 'unrea
 export interface AdminState { userId: string | null; access: 'unread' | 'loading' | 'allowed' | 'denied' | 'error'; busy: boolean;
   overview: AdminOverview | null; invitations: AdminPage<AdminInvitation>; audit: AdminPage<AdminReceipt>;
   usage: { platform: AdminUsage; personal: AdminUsage } | null; lookup: AdminInvitation | null | undefined;
-  pending: AdminCommand | null; notice: string | null; receipt: AdminReceipt | null; knowledge: AdminKnowledgeState; index: AdminIndexState }
+  pending: AdminCommand | null; notice: string | null; receipt: AdminReceipt | null; knowledge: AdminKnowledgeState; index: AdminIndexState; transfers: AdminTransferState }
 const empty = (userId: string | null): AdminState => ({ userId, access: 'unread', busy: false, overview: null,
   invitations: { items: [], nextCursor: null }, audit: { items: [], nextCursor: null }, usage: null, lookup: undefined,
-  pending: null, notice: null, receipt: null, knowledge: emptyKnowledge(), index: emptyIndex() });
+  pending: null, notice: null, receipt: null, knowledge: emptyKnowledge(), index: emptyIndex(), transfers: emptyTransfers() });
 export function adminError(error: unknown) {
   const code = error instanceof AdminApiError ? error.code : '';
   return ({ recent_reauthentication_required: '請先在下方重新驗證登入，再提交原操作。',
@@ -26,6 +28,7 @@ export function adminError(error: unknown) {
 export class AdminOwner {
   private state = empty(null); private generation = 0; private listeners = new Set<() => void>();
   private controllers = new Set<AbortController>();
+  private transferSelection = 0;
   private baseUrl: string; private fetcher: typeof fetch;
   constructor(baseUrl: string, fetcher: typeof fetch = fetch) { const base = baseUrl.replace(/\/$/, ''); this.baseUrl = base.endsWith('/api') ? base : base + '/api'; this.fetcher = fetcher; }
   getSnapshot = () => this.state;
@@ -34,7 +37,8 @@ export class AdminOwner {
   private clearReadAccess(error: unknown, access: 'error' | 'denied' = 'error') {
     this.generation++; this.controllers.forEach(controller => controller.abort()); this.controllers.clear();
     this.update({ access, busy: false, overview: null, invitations: { items: [], nextCursor: null }, audit: { items: [], nextCursor: null },
-      usage: null, lookup: undefined, receipt: null, knowledge: emptyKnowledge(), index: { ...emptyIndex(), pending: this.state.index.pending }, notice: adminError(error) });
+      usage: null, lookup: undefined, receipt: null, knowledge: emptyKnowledge(), index: { ...emptyIndex(), pending: this.state.index.pending },
+      transfers: { ...emptyTransfers(), pending: this.state.transfers.pending }, notice: adminError(error) });
   }
   setUser(userId: string | null) {
     if (this.state.userId === userId) return;
@@ -65,7 +69,8 @@ export class AdminOwner {
     } }
     catch (error) { if (generation === this.generation) {
       if (error instanceof AdminApiError && ([401, 403].includes(error.status) || error.status === 409 && error.code === 'identity_changed')) this.clearReadAccess(error);
-      else this.update({ access: 'error', notice: adminError(error), knowledge: emptyKnowledge(), index: { ...emptyIndex(), pending: this.state.index.pending } });
+      else this.update({ access: 'error', notice: adminError(error), knowledge: emptyKnowledge(), index: { ...emptyIndex(), pending: this.state.index.pending },
+        transfers: { ...emptyTransfers(), pending: this.state.transfers.pending } });
     } }
   }
   private async read(action: () => Promise<Partial<AdminState>>) {
@@ -214,6 +219,112 @@ export class AdminOwner {
   }
   recoverIndexOperation = async () => { const pending = this.state.index.pending; if (pending) await this.refreshIndexBatch(pending.batchId); };
   retryIndexOperation = async () => { const pending = this.state.index.pending; if (pending && this.canSendIndex(true)) await this.sendIndex(pending); };
+  private updateTransfers(change: Partial<AdminTransferState>) { this.update({ transfers: { ...this.state.transfers, ...change } }); }
+  private withTransferBatch(batch: AdminTransferBatch) {
+    const previous = this.state.transfers.batches.items.find(item => item.id === batch.id);
+    return { ...this.state.transfers.batches, items: [previous && previous.revision > batch.revision ? previous : batch,
+      ...this.state.transfers.batches.items.filter(item => item.id !== batch.id)] };
+  }
+  async setTransfersOpen(open: boolean) {
+    if (this.state.access !== 'allowed') return;
+    this.updateTransfers({ open });
+    if (open && this.state.transfers.batches.status === 'unread') await this.loadTransfers();
+  }
+  async loadTransfers(more = false) {
+    const current = this.state.transfers, cursor = more ? current.batches.nextCursor : null;
+    if (this.state.access !== 'allowed' || !current.open || current.batches.status === 'loading' || more && !cursor) return;
+    const generation = this.generation;
+    this.updateTransfers({ batches: { ...current.batches, status: 'loading', notice: null } });
+    try {
+      const page = adminTransferListSchema.parse(await this.request<unknown>('/admin/knowledge-transfers' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : '')));
+      if (!this.indexCurrent(generation)) return;
+      const previous = this.state.transfers.batches.items;
+      const values = more ? [...previous, ...page.items] : page.items;
+      const items = [...new Map(values.map(item => {
+        const old = previous.find(value => value.id === item.id);
+        return [item.id, old && old.revision > item.revision ? old : item];
+      })).values()];
+      this.updateTransfers({ batches: { ...page, items, status: 'ready', notice: null } });
+    } catch (error) {
+      if (this.indexCurrent(generation) && !this.indexAccessError(error)) this.updateTransfers({ batches: {
+        ...this.state.transfers.batches, status: 'error', notice: adminError(error) } });
+    }
+  }
+  async loadTransfer(digest: string, more = false) {
+    const current = this.state.transfers;
+    if (this.state.access !== 'allowed' || !current.open) return;
+    if (!adminTransferDigestSchema.safeParse(digest).success) {
+      this.updateTransfers({ notice: '請輸入完整的 64 位小寫 ZIP SHA-256 指紋。' }); return;
+    }
+    const from = more ? current.detail.nextFrom : 0;
+    if (more && (current.detail.digest !== digest || from === null || current.detail.status === 'loading')) return;
+    const generation = this.generation, selection = ++this.transferSelection;
+    this.updateTransfers({ notice: null, detail: { ...(more ? current.detail : emptyTransfers().detail), digest, status: 'loading', notice: null } });
+    try {
+      const page = adminTransferDetailSchema.parse(await this.request<unknown>('/admin/knowledge-transfers/' + digest + '?from=' + from));
+      if (!this.indexCurrent(generation) || selection !== this.transferSelection) return;
+      if (page.batch.id !== digest || page.items.some(item => item.index < from! || item.index >= page.batch.next)
+        || page.nextFrom !== null && page.nextFrom <= from!) throw new Error('Invalid transfer detail binding');
+      const items = more ? [...new Map([...this.state.transfers.detail.items, ...page.items].map(item => [item.index, item])).values()] : page.items;
+      this.updateTransfers({ batches: this.withTransferBatch(page.batch), detail: { ...page, digest, items, status: 'ready', notice: null } });
+    } catch (error) {
+      if (!this.indexCurrent(generation) || this.indexAccessError(error) || selection !== this.transferSelection) return;
+      this.updateTransfers({ detail: {
+        ...this.state.transfers.detail, status: 'error', notice: error instanceof AdminApiError && error.status === 404 ? '未查到此指紋的匯入批次。' : adminError(error) } });
+    }
+  }
+  async controlTransfer(kind: 'stop' | 'resume') {
+    const current = this.state.transfers, batch = current.detail.batch;
+    if (this.state.access !== 'allowed' || !current.open || current.busy || current.pending
+      || current.detail.status !== 'ready' || !batch || batch.state === 'completed'
+      || kind === 'stop' && batch.state === 'stopped' || kind === 'resume' && batch.state === 'ready') return;
+    const command: AdminTransferPending = { digest: batch.id, kind, expectedRevision: batch.revision };
+    const generation = this.generation, selection = this.transferSelection;
+    this.updateTransfers({ busy: true, pending: command, notice: null });
+    try {
+      const reply = adminTransferReplySchema.parse(await this.request<unknown>('/admin/knowledge-transfers/' + command.digest + '/' + kind,
+        { expectedRevision: command.expectedRevision }));
+      if (!this.indexCurrent(generation)) return;
+      if (reply.batch.id !== command.digest || reply.batch.revision <= command.expectedRevision
+        || reply.batch.state !== (kind === 'stop' ? 'stopped' : 'ready')) throw new Error('Invalid transfer control binding');
+      this.updateTransfers({ batches: this.withTransferBatch(reply.batch), pending: null,
+        ...(selection === this.transferSelection && this.state.transfers.detail.digest === command.digest ? {
+          detail: { ...this.state.transfers.detail, batch: reply.batch } } : {}),
+        notice: selection === this.transferSelection ? kind === 'resume'
+          ? '原包已可接續；匯入執行者仍須取得同一 ZIP。請按需讀回進度。' : '此批次已停止；已入庫版本保留。'
+          : this.state.transfers.notice });
+    } catch (error) {
+      if (!this.indexCurrent(generation) || this.indexAccessError(error)) return;
+      const rejected = error instanceof AdminApiError && [400, 404, 413, 415, 422, 428, 429].includes(error.status);
+      if (rejected) this.updateTransfers({ pending: null, notice: adminError(error) });
+      else {
+        this.updateTransfers({ notice: '操作結果或版本待核對，正在按原指紋查回；不會自動重送。' });
+        await this.readTransferRecovery(command, generation, selection);
+      }
+    } finally { if (generation === this.generation) this.updateTransfers({ busy: false }); }
+  }
+  private async readTransferRecovery(command: AdminTransferPending, generation: number, selection: number) {
+    try {
+      const page = adminTransferDetailSchema.parse(await this.request<unknown>('/admin/knowledge-transfers/' + command.digest + '?from=0'));
+      if (!this.indexCurrent(generation)) return;
+      if (page.batch.id !== command.digest || page.batch.revision < command.expectedRevision) throw new Error('Invalid transfer recovery binding');
+      this.updateTransfers({ batches: this.withTransferBatch(page.batch), pending: null,
+        ...(selection === this.transferSelection && this.state.transfers.detail.digest === command.digest ? {
+          detail: { ...page, digest: command.digest, status: 'ready', notice: null } } : {}),
+        notice: selection === this.transferSelection ? '已查回原批次的目前狀態，沒有重送操作；請核對後再決定。恢復只使同一 ZIP 可接續。'
+          : this.state.transfers.notice });
+    } catch (error) {
+      if (this.indexCurrent(generation) && !this.indexAccessError(error)) this.updateTransfers({ notice: '未能查回原批次；請先核對連線，再按原指紋查回，暫不能提交其他匯入控制。' });
+    }
+  }
+  async recoverTransferOperation() {
+    const current = this.state.transfers;
+    if (this.state.access !== 'allowed' || !current.open || current.busy || !current.pending) return;
+    const generation = this.generation;
+    this.updateTransfers({ busy: true });
+    try { await this.readTransferRecovery(current.pending, generation, this.transferSelection); }
+    finally { if (generation === this.generation) this.updateTransfers({ busy: false }); }
+  }
   load = (day: string) => this.read(async () => {
     const [overview, invitations, usage, audit] = await Promise.all([
       this.request<AdminOverview>('/admin/policy'), this.request<AdminPage<AdminInvitation>>('/admin/invitations'),
