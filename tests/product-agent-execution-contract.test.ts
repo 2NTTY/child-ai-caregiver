@@ -67,6 +67,72 @@ test("a daily assessment can stay quiet and persist one future observation with 
   assert.equal(calls, 1);
 });
 
+test("daily records capability reads exact household locators without exposing writes", async () => {
+  const noteId = "66666666-6666-4666-8666-666666666666", recordId = "77777777-7777-4777-8777-777777777777";
+  const at = "2026-11-11T17:00:00.000Z";
+  const note = { id: noteId, childId, version: 1, title: "Synthetic due observation",
+    text: "Synthetic parent asked to check the missing water bottle after returning home.", sourceMessageId: reference,
+    createdAt: at, updatedAt: at, provenance: "user_statement" as const };
+  const record = { id: recordId, childId, version: 1, authorUserId: userId, createdAt: at, confirmedBy: userId,
+    confirmedAt: at, reason: "Synthetic parent statement", text: "Synthetic parent returned home.", source: "Synthetic parent",
+    confirmationBasis: "preauthorized_user_statement" as const,
+    details: { kind: "note" as const, quantity: null,
+      eventTime: { rawText: at, at, timeZone: "Asia/Hong_Kong", precision: "exact" as const } } };
+  const exactReads: string[] = [], providerErrors: string[] = [];
+  const writeNames = ["save_ordinary_record", "revise_ordinary_record", "save_private_instruction", "revise_private_instruction",
+    "create_ordinary_reminder", "change_ordinary_reminder", "save_work", "request_confirmation", "contact_caregiver"];
+  let calls = 0;
+  const f = fixture(async request => {
+    try {
+      const step = calls++;
+      for (const name of writeNames) assert.equal(Object.hasOwn(request.toolsDict, name), false, `Daily run exposed ${name}`);
+      if (step === 0) {
+        assert.equal(Object.hasOwn(request.toolsDict, "read_private_instructions"), false);
+        assert.equal(Object.hasOwn(request.toolsDict, "read_care_records"), false);
+        return call("load_capabilities", { capabilities: ["records"] }, "load-daily-records");
+      }
+      if (step === 1) {
+        assert.ok(Object.hasOwn(request.toolsDict, "read_private_instructions"), "The loaded daily records capability must expose the canonical private-note reader");
+        assert.ok(Object.hasOwn(request.toolsDict, "read_care_records"), "The loaded daily records capability must expose the canonical care-record reader");
+      }
+      const responses = request.contents.flatMap(content => content.parts ?? []).flatMap(part => part.functionResponse ? [part.functionResponse] : []);
+      if (step === 1) return call("read_private_instructions", { id: noteId, query: "", afterId: null }, "read-exact-note");
+      const noteResponse = responses.find(response => response.name === "read_private_instructions")?.response;
+      assert.equal(noteResponse?.status, "succeeded");
+      assert.deepEqual((noteResponse?.data as { items?: unknown } | undefined)?.items, [note], "The model must receive the original exact note, including its source");
+      if (step === 2) return call("read_care_records", { id: recordId, query: "" }, "read-exact-record");
+      const recordResponse = responses.find(response => response.name === "read_care_records")?.response;
+      assert.equal(recordResponse?.status, "succeeded");
+      assert.deepEqual((recordResponse?.data as { records?: unknown } | undefined)?.records, [record], "The model must receive the original exact care record");
+      assert.equal(step, 3, "The scripted daily assessment must terminate after the two exact reads");
+      return call("present_answer", { kind: "no_action", paragraphs: [] }, "daily-locators-read");
+    } catch (error) { providerErrors.push((error as Error).message); throw error; }
+  });
+  f.options.actions = {
+    noteById: async (owner: string, child: string, id: string) => {
+      assert.deepEqual([owner, child, id], [userId, childId, noteId]); exactReads.push("note"); return note;
+    },
+    recordById: async (owner: string, child: string, id: string) => {
+      assert.deepEqual([owner, child, id], [userId, childId, recordId]); exactReads.push("record"); return record;
+    },
+    notes: async () => { assert.fail("An exact private-note locator must not fall back to a search page"); },
+    records: async () => { assert.fail("An exact care-record locator must not fall back to a search page"); },
+    execute: async () => { assert.fail("A read-only daily assessment must never execute an action"); },
+  } as unknown as NonNullable<typeof f.options.actions>;
+  const result = await f.service().background({ userId, childId, reference, context: { eventType: "proactive_daily",
+    householdChanged: true, householdChangesComplete: true,
+    householdChanges: [{ revision: 1, domain: "private_note", id: noteId }, { revision: 2, domain: "care_record", id: recordId }] },
+    authorize: async () => true });
+  assert.deepEqual(providerErrors, [], "The standard daily capability loader must expose both original resource readers");
+  assert.equal(result?.status, "completed", JSON.stringify(result));
+  assert.deepEqual(exactReads, ["note", "record"]);
+  assert.deepEqual(result.tools.map(({ name, status }) => ({ name, status })), [
+    { name: "load_capabilities", status: "succeeded" }, { name: "read_private_instructions", status: "succeeded" },
+    { name: "read_care_records", status: "succeeded" }, { name: "present_answer", status: "succeeded" },
+  ]);
+  assert.equal(calls, 4);
+});
+
 test("a reviewed daily repair withdraws the original observation and replays only the repaired result", async () => {
   const nextCheck = { at: new Date(Date.now() + 86_400_000).toISOString(), reason: "Synthetic observation proposed by the original draft" };
   const chunk: KnowledgeEvidence = { chunkId: '44444444-4444-4444-8444-444444444444', classification: 'official_guidance',

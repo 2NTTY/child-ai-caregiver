@@ -28,7 +28,7 @@ import type { TaskStore } from "./tasks.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import { FamilyError } from "./family-access.ts";
 import { FirestoreDomainError } from './firestore-domain-data.ts';
-import { createAgentActionTools } from "./agent-action-tools.ts";
+import { createAgentActionReadTools, createAgentActionTools, type AgentActionReaders } from "./agent-action-tools.ts";
 import { createAgentSourceTools } from "./agent-source-tools.ts";
 import { createAgentDocumentTools } from "./agent-document-tools.ts";
 import { createDataComposeTools } from "./data-compose.ts";
@@ -120,6 +120,7 @@ export function createProductAgentTools(options: {
   concerns?: Pick<import("./concern-store.ts").ConcernStore, "list" | "get">;
   sources?: import("./shared-input-store.ts").SharedInputStore;
   actions?: import("./agent-actions-store.ts").AgentActionsStore;
+  actionReaders?: AgentActionReaders;
   summary?:Pick<import("./care-summary-store.ts").CareSummaryStore, "get">;
   contact?:Pick<import("./contact-store.ts").ContactStore, 'options' | 'request'>;
   growth?: Pick<import("./growth-store.ts").GrowthStore, "list">;
@@ -496,6 +497,8 @@ export function createProductAgentTools(options: {
   if (options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentWorkTools(store, memory, run, permitted, noteConfirmedMemoryFacts));
   if (options.actions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(options.actions, run, permitted)
     .filter(tool=>!options.ordinaryToolNames || options.ordinaryToolNames.includes(tool.name)));
+  else if (options.actionReaders && options.visibility !== "family") tools.splice(tools.length - 1, 0,
+    ...createAgentActionReadTools(options.actionReaders, run, permitted));
   if(privateSources)tools.splice(tools.length-1,0,...privateSources.tools);
   if(options.documents && options.includeDocuments && options.visibility!=="family") {
     tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,store,run,permitted));
