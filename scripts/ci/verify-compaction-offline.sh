@@ -29,7 +29,7 @@ test "$("$NODE_BIN" --version)" = "v24.22.1"
 CONTRACT=scripts/ci/summary-progress-contract.mjs
 TEST_FILE=tests/agent-context-compaction.test.ts
 MUTATION_SCRIPT=scripts/verify-compaction-mutations.mjs
-EXPECTED_CASES=11
+EXPECTED_CASES=12
 
 for source in "$TEST_FILE" "$MUTATION_SCRIPT" "$CONTRACT" tsconfig.server.json server/context-compactor.ts server/agent-runtime.ts; do
   test -f "$source" && test ! -L "$source"

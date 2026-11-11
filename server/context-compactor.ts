@@ -1,6 +1,7 @@
 import {
   TokenBasedContextCompactor,
   LlmSummarizer,
+  isCompactedEvent,
   type BaseContextCompactor,
   type InvocationContext,
   type Event,
@@ -27,8 +28,6 @@ export interface InRunCompactionConfig {
   tokenThreshold?: number;
   /** Number of raw events to retain uncompacted (default: 4) */
   eventRetentionSize?: number;
-  /** Custom summarization prompt */
-  prompt?: string;
 }
 
 export const DEFAULT_COMPACTION_PROMPT =
@@ -77,17 +76,20 @@ export function createManagedCompactionModel(
  * 2. Tool-call / response atomicity (FunctionCall and FunctionResponse pairs retained together)
  * 3. Gateway budget accounting and cancellation signal enforcement
  * 4. Anti-extrapolation and anti-consent prompt invariants
- * 5. Monotonic timestamp ordering ensuring ADK does not drop retained events
+ * 5. Deferral when ADK's timestamp boundary would hide retained raw events
  */
 export function createRunContextCompactor(options: ContextCompactorOptions): BaseContextCompactor {
   const tokenThreshold = options.tokenThreshold ?? DEFAULT_IN_RUN_COMPACTION_TOKEN_THRESHOLD;
   const eventRetentionSize = options.eventRetentionSize ?? DEFAULT_IN_RUN_COMPACTION_EVENT_RETENTION;
-  const prompt = options.prompt ?? DEFAULT_COMPACTION_PROMPT;
+  if (!Number.isSafeInteger(tokenThreshold) || tokenThreshold < 1
+    || !Number.isSafeInteger(eventRetentionSize) || eventRetentionSize < 1) {
+    throw new Error("Invalid context compaction limits");
+  }
 
   const managedModel = createManagedCompactionModel(options.model, options.budget, options.signal);
   const summarizer = new LlmSummarizer({
     llm: managedModel,
-    prompt
+    prompt: DEFAULT_COMPACTION_PROMPT
   });
 
   const baseCompactor = new TokenBasedContextCompactor({
@@ -98,42 +100,32 @@ export function createRunContextCompactor(options: ContextCompactorOptions): Bas
 
   return {
     shouldCompact(context: InvocationContext): boolean {
-      if (baseCompactor.shouldCompact(context)) {
-        return true;
-      }
-      // Fallback for test/mock sessions where usageMetadata may not be populated
-      const events = context.session?.events ?? [];
-      const rawEvents = events.filter((e: any) => !(e.author === "system" && e.content?.role === "model" && typeof e.endTime === "number"));
-      if (rawEvents.length <= eventRetentionSize) return false;
-      const chars = rawEvents.reduce((acc, ev) => acc + JSON.stringify(ev.content ?? {}).length, 0);
-      const estimatedTokens = Math.ceil(chars / 4);
-      return estimatedTokens > tokenThreshold;
+      return baseCompactor.shouldCompact(context);
     },
 
     async compact(context: InvocationContext): Promise<void> {
       try {
-        await baseCompactor.compact(context);
-
-        // Monotonic timestamp protection (REQ-005 §4.2):
-        // In high-frequency runs, retained events might share the same millisecond timestamp as the compacted event.
-        // ADK's getActiveEvents filters events with (event.timestamp > latestCompactedEvent.endTime).
-        // Ensure that every retained event following the compacted event has a strictly increasing timestamp > endTime.
-        const events = context.session?.events ?? [];
-        const compacted = events.filter((e: any) => e.author === "system" && e.content?.role === "model" && typeof e.endTime === "number");
-        if (compacted.length > 0) {
-          const latestCompacted = compacted[compacted.length - 1] as any;
-          const endTime = latestCompacted.endTime;
-          const compactedIdx = events.indexOf(latestCompacted);
-          let curTime = endTime;
-          for (let i = 0; i < events.length; i++) {
-            if (i === compactedIdx) continue;
-            const ev = events[i];
-            if (ev.timestamp && ev.timestamp <= endTime && i > compactedIdx) {
-              curTime++;
-              ev.timestamp = curTime;
+        // A global summary is visible to every sub-agent. Installing it in a
+        // mixed session would also replace each sibling's own active window.
+        if (context.isolationScope === undefined && context.session.events.some(event => event.isolationScope !== undefined)) return;
+        options.signal?.throwIfAborted();
+        // Let ADK choose its exact raw-event/tool-pair boundary. Keep the guard
+        // local to this invocation so concurrent scopes never share context.
+        const guarded = new TokenBasedContextCompactor({ tokenThreshold, eventRetentionSize,
+          summarizer: { async summarize(eventsToCompact: Event[]) {
+            const last = eventsToCompact.at(-1);
+            const events = context.session.events;
+            const index = last ? events.indexOf(last) : -1;
+            if (!last || index < 0 || !Number.isFinite(last.timestamp) || events.slice(index + 1).some(event =>
+              !isCompactedEvent(event)
+              && (event.isolationScope === undefined || event.isolationScope === context.isolationScope)
+              && event.timestamp <= last.timestamp)) {
+              throw new Error("Compaction deferred until retained events have a separate timestamp boundary");
             }
-          }
-        }
+            return summarizer.summarize(eventsToCompact);
+          } }
+        });
+        await guarded.compact(context);
       } catch (err: any) {
         if (
           err?.name === "AbortError" ||

@@ -8,7 +8,7 @@ import {
 } from "../server/context-compactor.ts";
 import { AgentStopped } from "../server/agent-budget.ts";
 import { AgentGatewayModel } from "../server/agent-model-gateway.ts";
-import { type BaseLlm, type LlmRequest, type LlmResponse, type InvocationContext, type Session, type BaseContextCompactor } from "@google/adk";
+import { createEvent, type BaseLlm, type LlmRequest, type LlmResponse, type InvocationContext, type Session, type BaseContextCompactor } from "@google/adk";
 
 function createMockLlm(summaryText: string = "Summarized interactions."): BaseLlm {
   return {
@@ -26,7 +26,7 @@ function createMockLlm(summaryText: string = "Summarized interactions."): BaseLl
 function createMockSession(events: any[] = []): Session {
   return {
     id: "mock_session_1",
-    events
+    events: events.map(event => createEvent({ ...event, author: event.author === "model" ? "yuban_agent" : event.author }))
   } as unknown as Session;
 }
 
@@ -50,7 +50,7 @@ test("in-run context compaction triggers when token threshold is exceeded and re
     { author: "user", content: { role: "user", parts: [{ text: "A".repeat(300) }] }, timestamp: 1000 },
     { author: "model", content: { role: "model", parts: [{ text: "B".repeat(300) }] }, timestamp: 1001 },
     { author: "user", content: { role: "user", parts: [{ text: "Recent user question" }] }, timestamp: 1002 },
-    { author: "model", content: { role: "model", parts: [{ text: "Recent model reply" }] }, timestamp: 1003 }
+    { author: "model", content: { role: "model", parts: [{ text: "Recent model reply" }] }, timestamp: 1003, usageMetadata: { promptTokenCount: 200 } }
   ]);
   const ctx = createMockInvocationContext(session);
 
@@ -169,12 +169,14 @@ test("anti-extrapolation and anti-consent prompt invariants are strictly present
   );
 });
 
-test("monotonic timestamp protection advances retained timestamps to avoid adk drop", async () => {
+test("tied retention boundary defers compaction without spending budget or changing timestamps", async () => {
+  let admissions = 0;
   const model = createMockLlm("Batch summary.");
   const compactor = createRunContextCompactor({
     model,
     tokenThreshold: 20,
-    eventRetentionSize: 2
+    eventRetentionSize: 2,
+    budget: { admitModel: async () => { admissions++; } }
   });
 
   const session = createMockSession([
@@ -184,20 +186,44 @@ test("monotonic timestamp protection advances retained timestamps to avoid adk d
     { author: "model", content: { role: "model", parts: [{ text: "M4" }] }, timestamp: 500 }
   ]);
   const ctx = createMockInvocationContext(session);
+  const original = JSON.stringify(session.events);
 
   await compactor.compact(ctx);
+  assert.equal(JSON.stringify(session.events), original);
+  assert.equal(admissions, 0);
 
-  const compacted = session.events.find(e => e.author === "system") as any;
-  assert.ok(compacted, "Compacted event exists");
-  const endTime = compacted.endTime;
+  session.events.push(createEvent({ author: "user", content: { role: "user", parts: [{ text: "New question" }] }, timestamp: 501 }),
+    createEvent({ author: "yuban_agent", content: { role: "model", parts: [{ text: "New reply" }] }, timestamp: 502 }));
+  await compactor.compact(ctx);
+  const compacted = session.events.find(event => event.author === "system") as any;
+  assert.ok(compacted);
+  assert.equal(compacted.endTime, 500);
+  assert.equal(JSON.stringify(session.events.slice(0, 4)), original);
+  assert.deepEqual(session.events.filter(event => event.author !== "system" && event.timestamp > compacted.endTime).map(event => event.timestamp), [501, 502]);
+  assert.equal(admissions, 1);
+});
 
-  const compactedIdx = session.events.indexOf(compacted);
-  for (let i = compactedIdx + 1; i < session.events.length; i++) {
-    assert.ok(
-      session.events[i].timestamp > endTime,
-      `Event ${i} timestamp (${session.events[i].timestamp}) must be strictly greater than compacted endTime (${endTime})`
-    );
-  }
+test("native trigger respects isolated visibility and observed token usage", async () => {
+  const compactor = createRunContextCompactor({ model: createMockLlm(), tokenThreshold: 100, eventRetentionSize: 1 });
+  const session = createMockSession([
+    { author: "user", content: { role: "user", parts: [{ text: "A".repeat(2000) }] }, timestamp: 1, isolationScope: "other" },
+    { author: "model", content: { role: "model", parts: [{ text: "B".repeat(2000) }] }, timestamp: 2, isolationScope: "other" },
+    { author: "user", content: { role: "user", parts: [{ text: "Local question" }] }, timestamp: 3, isolationScope: "local" },
+    { author: "model", content: { role: "model", parts: [{ text: "Local answer" }] }, timestamp: 4, isolationScope: "local" },
+  ]);
+  const ctx = createMockInvocationContext(session);
+  session.events.push(...createMockSession([
+    { author: "user", content: { role: "user", parts: [{ text: "Global question" }] }, timestamp: 5 },
+    { author: "yuban_agent", content: { role: "model", parts: [{ text: "Answer" }] }, timestamp: 6 }
+  ]).events);
+  await compactor.compact(ctx);
+  assert.equal(session.events.length, 6, "A global summary cannot replace another scope's active history");
+  session.events.splice(4);
+  ctx.isolationScope = "local";
+  assert.equal(compactor.shouldCompact(ctx), false, "Hidden scope cannot inflate the local token estimate");
+  session.events.at(-1)!.usageMetadata = { promptTokenCount: 2 };
+  session.events.at(-1)!.content!.parts = [{ text: "C".repeat(2000) }];
+  assert.equal(compactor.shouldCompact(ctx), false, "Observed token usage takes precedence over character estimates");
 });
 
 test("pre-stream cancellation throws immediately if signal is aborted", async () => {

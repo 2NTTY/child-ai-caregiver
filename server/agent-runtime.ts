@@ -510,7 +510,8 @@ export function createAgentRuntime(options: {
                   model,
                   budget,
                   signal: budget.signal,
-                  ...(typeof input.contextCompaction === "object" ? input.contextCompaction : {})
+                  tokenThreshold: typeof input.contextCompaction === "object" ? input.contextCompaction.tokenThreshold : undefined,
+                  eventRetentionSize: typeof input.contextCompaction === "object" ? input.contextCompaction.eventRetentionSize : undefined,
                 })]
               : [];
           const agentConfig: ConstructorParameters<typeof LlmAgent>[0] = { name: agentName, model,
