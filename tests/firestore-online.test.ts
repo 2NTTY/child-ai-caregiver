@@ -237,3 +237,41 @@ test('appointment quiet hours remain enforced until an owner preference and legi
   assert.equal([...f.fake.records.keys()].filter(path => path.startsWith(f.options.namespace + '_task_reminders/')).length, 1);
   assert.deepEqual(await f.online.submit('synthetic-owner', command), receipt);
 });
+
+test('online changes advances cleanly past sequence gaps left when an earlier child and its change projections are erased', async () => {
+  const f = fixture(); await f.initialize(); await f.identity();
+  const erased = await f.child();
+  await f.task(erased.child.id);
+  const active = await f.child();
+  const activeTask = await f.task(active.child.id);
+  const beforeGap = await f.online.changes('synthetic-owner', erased.input.operation.workspaceId, erased.input.operation.storageEpoch, '0');
+  assert.deepEqual(beforeGap.changes.map(c => c.changeSeq), ['1', '2', '3', '4']);
+
+  // Simulate child erasure cleanup removing the erased child's barrier & _changes rows while workspace.changeSeq stays monotonic.
+  const erasurePrefix = f.options.namespace + '_changes/';
+  for (const [path, raw] of [...f.fake.records]) {
+    if (path.startsWith(erasurePrefix) && (raw as { childId?: string | null }).childId === erased.child.id) {
+      f.fake.records.delete(path);
+    }
+  }
+  const afterGap = await f.online.changes('synthetic-owner', erased.input.operation.workspaceId, erased.input.operation.storageEpoch, '0');
+  assert.deepEqual(afterGap.changes.map(c => c.changeSeq), ['3', '4']);
+  assert.deepEqual(afterGap.changes.map(c => c.childId), [active.child.id, active.child.id]);
+  assert.equal(afterGap.cursor, '4');
+  assert.equal(afterGap.hasMore, false);
+  const steady = await f.online.changes('synthetic-owner', erased.input.operation.workspaceId, erased.input.operation.storageEpoch, afterGap.cursor);
+  assert.deepEqual(steady.changes, []);
+  assert.equal(steady.cursor, '4');
+
+  // Trailing erased-child changes must also advance cursor cleanly without HTTP 503.
+  const trailing = await f.child();
+  for (const [path, raw] of [...f.fake.records]) {
+    if (path.startsWith(erasurePrefix) && (raw as { childId?: string | null }).childId === trailing.child.id) {
+      f.fake.records.delete(path);
+    }
+  }
+  const afterTrailing = await f.online.changes('synthetic-owner', erased.input.operation.workspaceId, erased.input.operation.storageEpoch, '4');
+  assert.deepEqual(afterTrailing.changes, []);
+  assert.equal(afterTrailing.cursor, '5');
+  assert.equal((await f.online.tasks.get('synthetic-owner', active.child.id, activeTask.task.id))?.id, activeTask.task.id);
+});
