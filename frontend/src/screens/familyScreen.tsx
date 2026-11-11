@@ -12,6 +12,7 @@ import { AppDialog } from "../components/AppDialog";
 import { SettingsSection } from "../components/settings/SettingsSection";
 import { useProduction } from "../production/ProductionProvider";
 import { useProductionSharing } from "../production/useProductionSharing";
+import { MixedChatConversation } from '../production/MixedChatConversation';
 import { sharingLabel, type SharingMode } from "../production/SharingController";
 import { useDomainWriteGuard } from "../production/useDomainEnvironment";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
@@ -144,7 +145,7 @@ export function SharedSpacesScreen({ mode = "family" }: { mode?: SharingMode }) 
           {!state.shares.items.length ? <Text style={styles.body}>{classMode ? state.busy === "read" ? "正在讀取名冊…" : !state.rosterLoaded ? "名冊尚未核對，請重新讀取。" : state.shares.nextCursor ? "這一頁未有符合的孩子，名冊仍可繼續搜尋。" : state.rosterQuery ? "完整搜尋中未有符合的孩子。" : "班級名冊目前沒有孩子。" : "目前沒有已分享的孩子模組。"}</Text> : null}
           {state.shares.items.map(grant => <View key={grant.childId} style={styles.group}>
             <Text style={styles.body}>{grant.childName}：{grant.modules.map(module => moduleLabel[module]).join("、")}</Text>
-            {classMode && grant.modules.includes('tasks') ? <AppCheckbox label={`查詢${grant.childName}的待辦`}
+            {classMode && grant.modules.includes('tasks') ? <AppCheckbox label={`選取${grant.childName}`}
               checked={state.classTasks.selected.includes(grant.childId)} disabled={locked || !state.rosterLoaded}
               onChange={checked => controller.selectClassTaskChild(grant.childId, checked)} /> : null}
             <AppButton label={`開啟${grant.childName}的共享資料`} variant="secondary" disabled={locked} onPress={()=>leave(()=>{void (async()=>{
@@ -176,6 +177,7 @@ export function SharedSpacesScreen({ mode = "family" }: { mode?: SharingMode }) 
                 onPress={() => { void controller.loadClassTasks(child.childId); }} /> : null}
             </View>)}
           </View> : null}
+          {classMode ? <MixedChatConversation sharing={controller} management={state} /> : null}
           {classMode ? editable ? <>
             <SectionHeader title="新增班級孩子" />
             <Text style={styles.body}>孩子及其記錄保存於這個班級，不會加入你的私人孩子列表。</Text>

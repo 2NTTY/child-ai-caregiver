@@ -153,3 +153,7 @@ Care／Task／Memory／Summary 的原 opId 與 confirmed／unconfirmed／null �
 ## 驗證與較早資料
 
 實際新修訂驗證及已取回的舊證據索引只見 [PLAN](PLAN.md#evidence)。保存的較早 HANDOFF（Library version 3）及 Growth v38 只作歷史接線依據；本文件已按取回程式更新差異。原最終 v44 QA 產物未取回，不代表當時沒有執行瀏覽器檢查；它們目前不能支持新修訂驗收。未取回的舊截圖或專項文件亦明示不可用，不補造鏈結或把舊結果轉述成新 pass。
+
+### 班級助手的共用接點
+
+在班級名冊勾選孩子後，Web 與 Android 使用同一個「我的班級對話」。SharingController 提供當前班級與選取，MixedChatController 管理本人對話及原留言的運行。重開對話讀取原結果，停止只作用於該則留言。變更身份、班級或選取會清除舊畫面。班級讀取、原操作恢復及停止競態有 controller／client 合成核對；真機及原站待驗。
