@@ -17,20 +17,25 @@ import { FirestoreDomainError } from './firestore-domain-data.ts';
 import { readFirestoreBackgroundClaim, firestoreBackgroundReference } from './firestore-background-work.ts';
 import { summaryFastBindingSchema, summaryManifestHash, summaryLineageKeyForTarget, parseSummaryBackgroundBasis, type SummaryFastBinding } from './private-summary-work.ts';
 import { readPrivateSummaryEntryGate, summaryFastPayloadHash } from './firestore-private-summary-cutover.ts';
+import { mixedRunScopeSchema } from './mixed-chat-records.ts';
 import type { SummaryInput } from '../src/shared/memory.ts';
 
 const uuid = z.uuid(), time = z.iso.datetime({ offset: true }), decimal = z.string().regex(/^(0|[1-9][0-9]{0,18})$/u);
+const accountChildId='00000000-0000-0000-0000-000000000000';
 export const firestoreAgentRunSchema = z.object({
   id: uuid, childId: uuid, ownerUserId: z.string().min(1).max(256), workspaceId: uuid, storageEpoch: uuid,
   authorizationVersion: decimal, dataVersion: z.string().max(100),
   trigger: z.object({ kind: z.enum(['interactive', 'worker']), reference: uuid }).strict(),
   workerGeneration: uuid.optional(),
+  mixedChat:mixedRunScopeSchema.optional(),
   summaryFast: summaryFastBindingSchema.optional(),
   summaryWork: summaryRunBindingSchema.optional(), summaryRetirementId: z.string().regex(/^[a-f0-9]{64}$/u).nullable().optional(), summaryEffect: summaryEffectReceiptSchema.optional(),
   sourceMessageId: uuid.nullable(), recipeId: z.string().min(1).max(128),
   state: z.enum(['running', 'completed', 'stopped', 'unknown']), stopReason: z.string().max(128).nullable(),
   createdAt: time, expiresAt: time, result: productAgentResultSchema.nullable(),
-}).strict().refine(run => (!run.summaryWork || run.summaryRetirementId !== undefined)
+}).strict().refine(run => run.mixedChat ? run.childId === accountChildId && run.trigger.kind === 'interactive'
+    && run.recipeId === 'product-interactive' && run.sourceMessageId === run.trigger.reference : run.childId !== accountChildId)
+  .refine(run => (!run.summaryWork || run.summaryRetirementId !== undefined)
   && (run.summaryRetirementId === undefined || !!run.summaryWork)
   && (!run.summaryRetirementId || !!run.summaryWork
     && run.summaryRetirementId === summaryRetirementId(run.summaryWork.workId, summaryAttemptId(run.summaryWork))
@@ -56,7 +61,7 @@ export const firestoreAgentRunSchema = z.object({
 export type FirestoreAgentRun = z.infer<typeof firestoreAgentRunSchema>;
 export type SummaryFastProbeClaim = { kind: 'claimed'; claim: AgentRunClaim; run: FirestoreAgentRun; commit(): void }
   | { kind: 'blocked'; reason: string; workId?: string; runId?: string };
-export const firestoreAgentClaimSchema = z.object({ runId: uuid }).strict();
+export const firestoreAgentClaimSchema = z.object({ runId: uuid, mixedChat:mixedRunScopeSchema.optional() }).strict();
 export interface FirestoreAgentRunOptions extends FirestoreDomainOptions {
   chat: FirestoreChatStore;
   memory: FirestoreMemoryStore;
@@ -131,7 +136,8 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
     if (!snapshot.exists) return null;
     const claim = data.open('agent-claim', id, b.scope, firestoreAgentClaimSchema, snapshot);
     const run = await read(b, claim.runId);
-    if (run.trigger.kind !== kind || run.trigger.reference !== reference) domainReject('agent_claim_binding', 500);
+    if (run.trigger.kind !== kind || run.trigger.reference !== reference
+      || firestoreDomainHash(claim.mixedChat ?? null) !== firestoreDomainHash(run.mixedChat ?? null)) domainReject('agent_claim_binding', 500);
     return run;
   }
   const originalReplyRun = (b: Binding, id: string) => originalRun(b, 'interactive', id);
@@ -293,7 +299,7 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
       dataVersion: b.scope.storageEpoch + ':' + changeSeq, summaryEffect: effect, result });
     return { run: saved, commit() { write(b, saved); } };
   }
-  async function prepareClaimBase(b: Binding, input: { trigger: NonNullable<AgentRunClaim['trigger']>; recipeId: string; candidateRunId: string }, summaryWork?: SummaryRunBinding, noDispatchEffect?: SummaryEffectReceipt, summaryFast?: SummaryFastBinding) {
+  async function prepareClaimBase(b: Binding, input: { trigger: NonNullable<AgentRunClaim['trigger']>; recipeId: string; candidateRunId: string; mixedRoomId?:string }, summaryWork?: SummaryRunBinding, noDispatchEffect?: SummaryEffectReceipt, summaryFast?: SummaryFastBinding) {
     const { trigger, recipeId, candidateRunId } = input;
     if (b.sharedAccess || b.actorUserId !== b.scope.ownerUserId) domainReject('agent_scope_changed');
     domainParse(uuid, candidateRunId);
@@ -302,11 +308,17 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
       && (await readPrivateSummaryEntryGate(data, b, false)).kind !== 'legacy') domainReject('summary_fast_probe_required');
     if (summaryWork ? trigger.kind !== 'worker' || recipeId !== 'memory-refresh'
       : trigger.kind === 'interactive' ? recipeId !== 'product-interactive' : !options.authorizeWorker) domainReject('domain_not_ready', 503);
-    if (trigger.kind === 'interactive') {
+    let mixedChat:z.infer<typeof mixedRunScopeSchema> | undefined;
+    if (input.mixedRoomId) {
+      if (trigger.kind !== 'interactive' || recipeId !== 'product-interactive') domainReject('agent_scope_changed');
+      const {room,basis}=await options.chat.mixed.sourceIn(b,input.mixedRoomId,trigger.reference);
+      mixedChat={roomId:room.id,scope:room.scope,childIds:room.childIds,basis};
+    } else if (trigger.kind === 'interactive') {
       const source = await options.chat.readMessage(b, b.scope.childId, trigger.reference);
       if (!source || source.role !== 'user' || source.authorUserId !== b.scope.ownerUserId) domainReject('not_found', 404);
     } else if (!summaryWork && !await options.authorizeWorker?.(b, trigger.reference, recipeId)) domainReject('background_not_authorized', 403);
     const old = await originalRun(b, trigger.kind, trigger.reference);
+    if (old && old.mixedChat?.roomId !== mixedChat?.roomId) domainReject('agent_claim_binding',409);
     if (old && firestoreDomainHash(old.summaryWork ?? null) !== firestoreDomainHash(summaryWork ?? null)) domainReject('summary_run_binding');
     const fastIdentity = (value: SummaryFastBinding) => ({ target: value.target, lineageKey: value.lineageKey,
       manifestHash: value.manifestHash, candidate: value.candidate });
@@ -320,6 +332,7 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
     const run: FirestoreAgentRun = old ? expired(old) : {
       id: candidateRunId, childId: b.scope.childId, ownerUserId: b.scope.ownerUserId, workspaceId: b.scope.workspaceId, storageEpoch: b.scope.storageEpoch,
       authorizationVersion: b.authorizationVersion, dataVersion: current(b).dataVersion, trigger,
+      ...(mixedChat ? {mixedChat} : {}),
       ...(trigger.kind === 'worker' ? {workerGeneration:b.generation} : {}), ...(summaryWork ? { summaryWork, summaryRetirementId: null } : {}),
       ...(summaryFast ? { summaryFast } : {}),
       sourceMessageId: trigger.kind === 'interactive' ? trigger.reference : null, recipeId, state: 'running', stopReason: null,
@@ -334,13 +347,75 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
     return { claim, run, commit() {
       if (!old) {
         const id = claimId(b, trigger.kind, trigger.reference);
-        const envelope = { ...data.tags(b.scope), ...data.seal('agent-claim', id, b.scope, firestoreAgentClaimSchema, { runId: run.id }) };
+        const envelope = { ...data.tags(b.scope), ...data.seal('agent-claim', id, b.scope, firestoreAgentClaimSchema,
+          { runId: run.id, ...(mixedChat ? {mixedChat} : {}) }) };
         write(b, run, true); b.transaction.create(data.ref('agent_claims', 'agent-claim', id), envelope);
       } else if (old.state !== run.state) write(b, run);
     } };
   }
   return {
     authority, data, current, matches, read, requireLive, advance, write, originalReplyRun, originalRun, prepareClaim, prepareFastProbeClaim, prepareSummaryClaim, prepareSummaryCoveredClaim, prepareSummaryAdministrativeCoverage, prepareSummaryFinish, requireSummaryReady, projectClaim,
+    async claimMixed(userId:string,roomId:string,messageId:string) {
+      const candidateRunId=randomUUID();
+      return authority.runTransaction(userId,null,async b=>{
+        const prepared=await prepareClaimBase(b,{trigger:{kind:'interactive',reference:messageId},recipeId:'product-interactive',candidateRunId,mixedRoomId:domainParse(uuid,roomId)});
+        prepared.commit(); return prepared.claim;
+      });
+    },
+    async mixedInput(userId:string,roomId:string,messageId:string) {
+      return authority.runTransaction(userId,null,async b=>{
+        const source=await options.chat.mixed.sourceIn(b,roomId,messageId,true);
+        const messages:{id:string;role:'user'|'model';text:string;inReplyTo?:string}[]=[];
+        for (const message of source.earlier) {
+          messages.push(message);
+          const old=await originalReplyRun(b,message.id);
+          if (old?.mixedChat?.roomId===roomId && old.result?.status==='completed' && old.result.text)
+            messages.push({id:old.id,role:'model',text:old.result.text,inReplyTo:message.id});
+        }
+        messages.push(source.message);
+        return {room:source.room,taskScope:source.taskScope,messages,hasEarlier:source.hasEarlier};
+      });
+    },
+    async authorizeMixed(userId:string,roomId:string,messageId:string,runId:string) {
+      try {
+        return await authority.runTransaction(userId,null,async b=>{
+          const source=await options.chat.mixed.sourceIn(b,roomId,messageId);
+          const run=expired(await read(b,runId));
+          return run.state==='running' && run.mixedChat?.roomId===roomId && run.sourceMessageId===messageId
+            && run.mixedChat.basis===source.basis && matches(b,current(b),run);
+        });
+      } catch(error) {
+        if ((error instanceof FirestoreDomainError || error instanceof FirestoreAuthorityError) && [403,404,409,428].includes(error.status)) return false;
+        throw error;
+      }
+    },
+    async mixedResult(userId:string,roomId:string,messageId:string,cancel=false) {
+      return authority.runTransaction(userId,null,async b=>{
+        await options.chat.mixed.sourceIn(b,roomId,messageId);
+        const original=await originalReplyRun(b,messageId);
+        if (!original) return null;
+        if (original.mixedChat?.roomId !== roomId) domainReject('agent_claim_binding',409);
+        let run=expired(original);
+        if (cancel && run.state === 'running') run={...run,state:'stopped',stopReason:'cancelled'};
+        if (run.state !== original.state) write(b,run);
+        return {...(run.result ?? empty(run)),status:run.state,stopReason:run.stopReason};
+      });
+    },
+    async finishMixed(userId:string,roomId:string,messageId:string,raw:ProductAgentResult) {
+      const value=domainParse(productAgentResultSchema,raw);
+      if (value.status==='running' || value.outcome || value.proposals.length) domainReject('invalid_result',500);
+      return authority.runTransaction(userId,null,async b=>{
+        const source=await options.chat.mixed.sourceIn(b,roomId,messageId);
+        const run=await originalReplyRun(b,messageId);
+        if (!run || run.id !== value.runId || run.mixedChat?.roomId !== roomId) domainReject('agent_scope_changed');
+        if (run.result || !(run.state==='running' || run.state==='unknown' && run.stopReason==='interrupted')) return false;
+        const result=run.mixedChat.basis===source.basis && matches(b,current(b),run) ? value :
+          {...empty(run),status:'stopped' as const,stopReason:'source_changed',counts:value.counts,countsKnown:value.countsKnown};
+        const change=await b.prepareChange(run.id,'chat',false);
+        write(b,{...run,state:result.status,stopReason:result.stopReason,result});
+        change.commit(); return true;
+      });
+    },
     async replyState(userId: string, childId: string, messageId: string) {
       domainParse(uuid, messageId);
       try { return await authority.runTransaction(userId, childId, async b => {

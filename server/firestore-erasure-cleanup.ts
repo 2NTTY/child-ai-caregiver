@@ -183,7 +183,7 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
       if(job.intent.type==='class-delete' && opened.context.kind==='child')await authority.finishClassChildErasure(opened.context.scope);
       if (retainBarrier(opened, job)) continue;
       if (opened.context.kind === 'agent-run' || opened.context.kind === 'run')
-        await options.deleteAgentSession(owner, opened.context.id);
+        await options.deleteAgentSession(opened.context.scope.ownerUserId, opened.context.id);
       await database.runTransaction(async tx => {
         const progress = await erasures.read(tx, owner, opId), current = await tx.get(snapshot.ref);
         if (!progress || progress.cleanup.stage !== stage || progress.cleanup.cursor !== job.cleanup.cursor) domainReject('erasure_progress_changed');

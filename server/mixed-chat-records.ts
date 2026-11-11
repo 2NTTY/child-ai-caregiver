@@ -5,6 +5,7 @@ import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.t
 
 const id = z.uuid(), fingerprint = z.string().regex(/^[a-f0-9]{64}$/u);
 const membership = z.strictObject({membershipId:id, membershipScopeId:id}).nullable();
+export const mixedRunScopeSchema=z.strictObject({roomId:id,scope:mixedChatScopeSchema,childIds:mixedChildIdsSchema,basis:fingerprint});
 export const mixedRoomRecordSchema = mixedChatRoomSchema.extend({
   operationId:id, fingerprint, membership, latestMessageId:id.nullable(),
 });
@@ -37,9 +38,11 @@ export function validMixedRecord(kind:MixedKind, id:string, scope:WorkRecoverySc
 // Both live erasure and isolated restore apply this to each row, including messages whose room has been removed.
 export function mixedChatErasedBy(kind:string, raw:unknown, ownerUserId:string,
   erasedScope:Pick<WorkRecoveryScope,'ownerUserId'|'workspaceId'|'childId'>, wholeOwner:boolean): boolean {
-  if (kind !== 'mixed-room' && kind !== 'mixed-message') return false;
+  const runScope=(kind === 'agent-run' || kind === 'agent-claim') && raw && typeof raw === 'object'
+    && 'mixedChat' in raw ? mixedRunScopeSchema.parse(raw.mixedChat) : null;
+  if (!runScope && kind !== 'mixed-room' && kind !== 'mixed-message') return false;
   if (wholeOwner && erasedScope.ownerUserId === ownerUserId) return true;
-  const record=kind === 'mixed-room' ? mixedRoomRecordSchema.parse(raw) : mixedMessageRecordSchema.parse(raw);
+  const record=runScope ?? (kind === 'mixed-room' ? mixedRoomRecordSchema.parse(raw) : mixedMessageRecordSchema.parse(raw));
   if (record.scope.kind === 'class') {
     return erasedScope.ownerUserId === 'space:'+record.scope.spaceId && erasedScope.workspaceId === record.scope.spaceId
       && (wholeOwner || record.childIds.includes(erasedScope.childId));

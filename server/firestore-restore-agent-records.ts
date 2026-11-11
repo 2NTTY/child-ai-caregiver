@@ -36,12 +36,13 @@ function ids(id: string): unknown[] {
   check(Array.isArray(value) && JSON.stringify(value) === id); return value as unknown[];
 }
 function equal(id: string, expected: unknown[]): void { check(JSON.stringify(ids(id)) === JSON.stringify(expected)); }
+const NIL = '00000000-0000-0000-0000-000000000000';
 
 /** Preserve business receipts and history; restored protocol claims never authorize new execution. */
 export function restoreAgentRecord(context: FirestoreRecoveryContext & { kind: AgentRestoreKind }, raw: AgentRestoreValue,
   targetScope?: WorkRecoveryScope): { value: AgentRestoreValue; metadata: Record<string, unknown> } {
   const { kind, id, scope, recordVersion } = context;
-  check(scope.workspaceId !== '00000000-0000-0000-0000-000000000000' && scope.childId !== '00000000-0000-0000-0000-000000000000'
+  check(scope.workspaceId !== NIL && (scope.childId !== NIL || kind === 'agent-run' || kind === 'agent-claim')
     && context.family === 'domain' && context.envelopeVersion === 1 && recordVersion !== undefined);
   const singleton = () => check(recordVersion === 1);
   let value: AgentRestoreValue = raw, metadata: Record<string, unknown> = {};
@@ -59,7 +60,8 @@ export function restoreAgentRecord(context: FirestoreRecoveryContext & { kind: A
       metadata = { runId: id, createdAt: row.createdAt, triggerKind: row.trigger.kind }; break;
     }
     case 'agent-claim': {
-      singleton(); const key = ids(id);
+      singleton(); const key = ids(id), row = firestoreAgentClaimSchema.parse(raw);
+      check(row.mixedChat ? scope.childId === NIL && key[2] === 'interactive' : scope.childId !== NIL);
       check(key.length === 4 && key[0] === scope.ownerUserId && key[1] === scope.childId
         && ['interactive', 'worker'].includes(String(key[2])) && z.uuid().safeParse(key[3]).success); break;
     }
