@@ -23,6 +23,7 @@ import { chatFileObjectAddress, type ChatFileObjects } from '../server/firebase-
 import { createFirestoreChatStore } from '../server/firestore-chat.ts';
 import { createFirestoreMemoryStore } from '../server/firestore-memory.ts';
 import { createFirestoreAgentRuns } from '../server/firestore-agent-runs.ts';
+import { createMixedTaskBatches } from '../server/firestore-mixed-task-batches.ts';
 
 const rejected=(code:string)=>(error:unknown)=>(error as {code?:string}).code===code;
 test('class dissolution resumes one journal-backed cleanup and cannot revive data from an older backup',async()=>{
@@ -95,6 +96,11 @@ test('class dissolution resumes one journal-backed cleanup and cannot revive dat
   const personalMixed = await mixed('manager', { kind: 'personal' }, peer.child.id);
   const runs = createFirestoreAgentRuns({ ...options, chat, memory: createFirestoreMemoryStore({ ...options, chat, care }) });
   const classRun = await runs.claimMixed('viewer', classMixed.roomId, classMixed.messageId);
+  const batches=createMixedTaskBatches({...options,chat,online,runs});
+  const values={kind:'create',title:'帶水樽',details:'',type:'ordinary',dueAt:'2027-01-01T08:00:00+08:00',timeZone:'Asia/Hong_Kong'};
+  await assert.rejects(batches.propose('viewer',classMixed.roomId,classMixed.messageId,classRun.runId,values),rejected('read_only'));
+  const ownRun=await runs.claimMixed('manager',personalMixed.roomId,personalMixed.messageId);
+  const ownDraft=await batches.propose('manager',personalMixed.roomId,personalMixed.messageId,ownRun.runId,values);
   const command={action:'dissolve' as const,spaceId:classroom.id,expectedVersion:classroom.version,operationId:randomUUID()};
   const {action,...direct}=command;
   await assert.rejects(store.dissolve('viewer',direct),rejected('space_manager_required'));
@@ -147,6 +153,10 @@ test('class dissolution resumes one journal-backed cleanup and cannot revive dat
   assert.equal(after.some(row=>row.context.kind==='chat-file-asset'),false);
   fake.records.clear();for(const row of restored.records)fake.records.set(row.path,row.data);
   generation=restored.generation;await control(true);
+  const fenced=await batches.get('manager',personalMixed.roomId,personalMixed.messageId);
+  assert.equal(fenced?.state,'cancelled');
+  assert.equal(fenced?.items[0].reason,'storage_epoch_changed');
+  assert.equal((await batches.control('manager',personalMixed.roomId,personalMixed.messageId,{action:'confirm',digest:ownDraft.digest})).state,'cancelled');
   assert.equal((await api.operation(command.operationId,'manager',signal))?.exit?.cleanupState,'completed');
   assert.equal((await store.controlOperation('manager',enrol.operationId))?.redacted,true);
   await control(false);

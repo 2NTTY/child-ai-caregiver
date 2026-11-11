@@ -5,6 +5,7 @@ import { handleFirebaseVoiceRequest, type FirebaseVoiceApiPort } from './firebas
 import { requestOriginAllowed } from "./request-auth-transport.ts";
 import { z } from 'zod';
 import { assistantTaskContextRequestSchema } from '../src/shared/assistant-task-context.ts';
+import { mixedBatchAdvanceSchema } from '../src/shared/mixed-task-batch.ts';
 import { handleAdminRequest } from './admin-api.ts';
 import type { FirestoreAdmin } from './firestore-admin.ts';
 import { accountAcknowledgementSchema } from "../src/shared/account-service.ts";
@@ -197,14 +198,29 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (expected !== userId) throw new RequestError(expected ? 'identity_changed' : 'account_precondition_required',expected ? 409 : 428);
         const store=options.chat?.mixed;
         if (!store) throw new RequestError('mixed_chat_unavailable',503);
-        const match=/^\/api\/account\/mixed-chats(?:\/([a-f0-9-]+)(\/messages(?:\/([a-f0-9-]+)\/reply)?)?)?$/u.exec(path);
+        const match=/^\/api\/account\/mixed-chats(?:\/([a-f0-9-]+)(\/messages(?:\/([a-f0-9-]+)\/(reply|task-batch(?:\/advance)?))?)?)?$/u.exec(path);
         if (!match) throw new RequestError('not_found',404);
         if ([match[1],match[3]].some(id=>id && !z.uuid().safeParse(id).success)) throw new RequestError('not_found',404);
         const cursor=new URL(request.url).searchParams.get('cursor');
         let result;
         if (match[1] && match[3]) {
           if (!options.product) throw new RequestError('agent_unavailable',503);
-          if (request.method==='POST') {
+          if (match[4]?.startsWith('task-batch')) {
+            const batches=options.product.mixedTaskBatches;
+            if (match[4]==='task-batch' && request.method==='GET') result={batch:await batches.get(userId,match[1],match[3])};
+            else if (match[4]==='task-batch' && request.method==='POST')
+              result={batch:await batches.control(userId,match[1],match[3],await readJson(request))};
+            else if (match[4]==='task-batch/advance' && request.method==='POST') {
+              const {digest,position}=domainParse(mixedBatchAdvanceSchema,await readJson(request));
+              let batch;
+              for (let i=position;i<position+5;i++) {
+                if ((await auth.getSession({headers:request.headers}))?.user.id!==userId) throw new RequestError('operation_result_unknown',503);
+                batch=await batches.step(userId,match[1],match[3],i,digest);
+                if (batch.state!=='running' || i+1>=batch.items.length) break;
+              }
+              result={batch};
+            } else throw new RequestError('method_not_allowed',405);
+          } else if (request.method==='POST') {
             const isCurrentUser=async()=>(await auth.getSession({headers:request.headers}))?.user.id===userId;
             result={result:await options.product.agent.replyMixed(userId,match[1],match[3],isCurrentUser)};
           } else if (request.method==='GET') {

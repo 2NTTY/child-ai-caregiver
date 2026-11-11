@@ -79,6 +79,16 @@ export function createFirestoreMixedChat(options:FirestoreDomainOptions) {
   }
 
   return {
+    async batchIn(b:Binding,roomId:string,messageId:string) {
+      const room=openRoom(b,await b.transaction.get(roomRef(roomId)),roomId);
+      const {basis}=await authorizeRoom(b,room), message=await readMessageIn(b,room,messageId);
+      return {room:publicRoom(room),basis,batch:message.taskBatch,
+        save(batch:NonNullable<MixedMessageRecord['taskBatch']>) {
+          const value={...message,taskBatch:batch};
+          b.transaction.set(messageRef(messageId),{...data.tags(b.scope),
+            ...data.seal('mixed-message',messageId,b.scope,mixedMessageRecordSchema,value,message.version)});
+        }};
+    },
     async sourceIn(b:Binding,roomId:string,messageId:string,includeEarlier=false) {
       if (b.sharedAccess || b.actorUserId !== b.scope.ownerUserId || b.scope.childId !== '00000000-0000-0000-0000-000000000000')
         domainReject('private_scope_unavailable',403);
