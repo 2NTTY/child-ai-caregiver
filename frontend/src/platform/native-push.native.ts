@@ -1,11 +1,19 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
-import { ANDROID_PUSH_CHANNEL, apnsPushTokenSchema, nativePushTokenSchema, parseNativePushData, type NativePushPlatform } from "../../../src/shared/native-push.ts";
+import { ANDROID_PUSH_CHANNEL, apnsPushTokenSchema, nativePushTokenSchema, parseNativePushData, type NativePushPlatform, type NativePushReference } from "../../../src/shared/native-push.ts";
 import type { NativePushEvents, NativePushPermission } from "./native-push.ts";
 
+let foregroundCheck: ((reference: NativePushReference) => Promise<boolean>) | null = null;
+export function setNativePushForegroundCheck(check: (reference: NativePushReference) => Promise<boolean>): () => void {
+  foregroundCheck = check; return () => { if (foregroundCheck === check) foregroundCheck = null; };
+}
 // Only fixed product references may display a foreground preview; no payload action is executed.
 if (Platform.OS === "android" || Platform.OS === "ios") Notifications.setNotificationHandler({ handleNotification: async notification => {
-  const visible = parseNativePushData(notification.request.content.data) !== null;
+  const reference = parseNativePushData(notification.request.content.data), check = foregroundCheck;
+  let visible = reference !== null;
+  if (reference && check) {
+    try { visible = await check(reference) && foregroundCheck === check; } catch { visible = false; }
+  }
   return { shouldShowBanner: visible, shouldShowList: visible, shouldPlaySound: false, shouldSetBadge: false };
 } });
 export const nativePushPlatform = (): NativePushPlatform | null => Platform.OS === "android" || Platform.OS === "ios" ? Platform.OS : null;

@@ -12,10 +12,11 @@ import { mayRetryAuthorization, maySavePolicy, reminderEligible } from "./AgentA
 import { useProduction } from "./ProductionProvider";
 import { isProductionRouteConnected } from "./routes";
 import { usePreviewLeaveGuard, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
+import { ProactiveSettings } from "./ProactiveSettings";
 
 const recordOptions = [{ kind: "note", label: "日常備註" }, { kind: "feeding", label: "餵食" }, { kind: "sleep", label: "睡眠" }, { kind: "diaper", label: "換片" }] as const;
 const channelLabel = (channel: string) => channel === "telegram" ? "Telegram" : "瀏覽器推送";
-export function AgentAuthorization() {
+export function AgentAuthorization({ active = false }: { active?: boolean }) {
   const { authorization: state, authorizationActions: actions, owner, scopeKey } = useProduction();
   const [deleteSelection, setDeleteSelection] = useState<{ id: string; version: number; scopeKey: string | null } | null>(null);
   const router = useRouter(), navigate = usePreviewNavigation();
@@ -37,6 +38,7 @@ export function AgentAuthorization() {
   return <View style={styles.root}>
     <StatusAnnouncement eventKey={quietNotesRead ? "refreshing" : "settled"} message={quietNotesRead ? "正在重新核對資料。" : ""} />
     <View style={styles.contents}>
+      <ProactiveSettings active={active} />
       <SectionCard><SectionHeader title="助手授權" density="compact" subtitle="按你的明確交代保存日常資料；勾選不會自行保存。" />
         <Text style={styles.meta}>照護記錄及本人待辦會按家庭權限共享。私人備註只供本人查看，不會成為已確認健康事實。未授權的種類不會自動寫入。</Text>
         <View style={styles.actions}><AppButton label="讀取目前授權" variant="quiet" loading={state.policyState === "loading"} disabled={locked || state.policyState === "denied"} onPress={actions.readPolicy} />

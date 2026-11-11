@@ -3,6 +3,8 @@ import { emptyIndex, indexTargetLimit, adminIndexVersionPageSchema, adminIndexBa
   type AdminIndexState, type AdminIndexBatch, type AdminIndexPending } from './admin-knowledge-index.ts';
 import { adminTransferDigestSchema, adminTransferListSchema, adminTransferDetailSchema, adminTransferReplySchema } from '../../../src/shared/admin-knowledge-transfer.ts';
 import { emptyTransfers, type AdminTransferState, type AdminTransferBatch, type AdminTransferPending } from './admin-knowledge-transfer.ts';
+import { adminDemoConfigSchema, adminDemoReceiptSchema, emptyDemo, demoSettled, browserDemoStorage, storedDemoPending, demoPendingKey,
+  type AdminDemoState, type AdminDemoStorage } from './admin-proactive-demo.ts';
 export class AdminApiError extends Error {
   readonly status: number; readonly code: string;
   constructor(status: number, code: string) { super('Admin request failed'); this.status = status; this.code = code; }
@@ -12,10 +14,10 @@ const emptyKnowledge = (): AdminKnowledgeState => ({ open: false, status: 'unrea
 export interface AdminState { userId: string | null; access: 'unread' | 'loading' | 'allowed' | 'denied' | 'error'; busy: boolean;
   overview: AdminOverview | null; invitations: AdminPage<AdminInvitation>; audit: AdminPage<AdminReceipt>;
   usage: { platform: AdminUsage; personal: AdminUsage } | null; lookup: AdminInvitation | null | undefined;
-  pending: AdminCommand | null; notice: string | null; receipt: AdminReceipt | null; knowledge: AdminKnowledgeState; index: AdminIndexState; transfers: AdminTransferState }
+  pending: AdminCommand | null; notice: string | null; receipt: AdminReceipt | null; knowledge: AdminKnowledgeState; index: AdminIndexState; transfers: AdminTransferState; demo: AdminDemoState }
 const empty = (userId: string | null): AdminState => ({ userId, access: 'unread', busy: false, overview: null,
   invitations: { items: [], nextCursor: null }, audit: { items: [], nextCursor: null }, usage: null, lookup: undefined,
-  pending: null, notice: null, receipt: null, knowledge: emptyKnowledge(), index: emptyIndex(), transfers: emptyTransfers() });
+  pending: null, notice: null, receipt: null, knowledge: emptyKnowledge(), index: emptyIndex(), transfers: emptyTransfers(), demo: emptyDemo() });
 export function adminError(error: unknown) {
   const code = error instanceof AdminApiError ? error.code : '';
   return ({ recent_reauthentication_required: '請先在下方重新驗證登入，再提交原操作。',
@@ -30,7 +32,8 @@ export class AdminOwner {
   private controllers = new Set<AbortController>();
   private transferSelection = 0;
   private baseUrl: string; private fetcher: typeof fetch;
-  constructor(baseUrl: string, fetcher: typeof fetch = fetch) { const base = baseUrl.replace(/\/$/, ''); this.baseUrl = base.endsWith('/api') ? base : base + '/api'; this.fetcher = fetcher; }
+  private demoStorage: AdminDemoStorage | null;
+  constructor(baseUrl: string, fetcher: typeof fetch = fetch, demoStorage = browserDemoStorage()) { const base = baseUrl.replace(/\/$/, ''); this.baseUrl = base.endsWith('/api') ? base : base + '/api'; this.fetcher = fetcher; this.demoStorage = demoStorage; }
   getSnapshot = () => this.state;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   private update(change: Partial<AdminState>) { this.state = { ...this.state, ...change }; this.listeners.forEach(fn => fn()); }
@@ -38,11 +41,14 @@ export class AdminOwner {
     this.generation++; this.controllers.forEach(controller => controller.abort()); this.controllers.clear();
     this.update({ access, busy: false, overview: null, invitations: { items: [], nextCursor: null }, audit: { items: [], nextCursor: null },
       usage: null, lookup: undefined, receipt: null, knowledge: emptyKnowledge(), index: { ...emptyIndex(), pending: this.state.index.pending },
-      transfers: { ...emptyTransfers(), pending: this.state.transfers.pending }, notice: adminError(error) });
+      transfers: { ...emptyTransfers(), pending: this.state.transfers.pending }, demo: { ...emptyDemo(), pending: this.state.demo.pending, recoveryStored: this.state.demo.recoveryStored }, notice: adminError(error) });
   }
   setUser(userId: string | null) {
     if (this.state.userId === userId) return;
-    this.generation++; this.controllers.forEach(c => c.abort()); this.controllers.clear(); this.state = empty(userId); this.update({});
+    this.generation++; this.controllers.forEach(c => c.abort()); this.controllers.clear(); this.state = empty(userId);
+    const pending = userId ? storedDemoPending(this.demoStorage, this.baseUrl, userId) : null;
+    if (pending) this.state.demo = { ...emptyDemo(), pending, recoveryStored: true, notice: '已找回此管理員的原示範操作 ID；請先查回收據，暫不能開始另一項示範。' };
+    this.update({});
   }
   dispose() { this.generation++; this.controllers.forEach(c => c.abort()); this.controllers.clear(); this.listeners.clear(); }
   private async request<T>(path: string, body?: unknown): Promise<T> {
@@ -70,7 +76,7 @@ export class AdminOwner {
     catch (error) { if (generation === this.generation) {
       if (error instanceof AdminApiError && ([401, 403].includes(error.status) || error.status === 409 && error.code === 'identity_changed')) this.clearReadAccess(error);
       else this.update({ access: 'error', notice: adminError(error), knowledge: emptyKnowledge(), index: { ...emptyIndex(), pending: this.state.index.pending },
-        transfers: { ...emptyTransfers(), pending: this.state.transfers.pending } });
+        transfers: { ...emptyTransfers(), pending: this.state.transfers.pending }, demo: { ...emptyDemo(), pending: this.state.demo.pending, recoveryStored: this.state.demo.recoveryStored } });
     } }
   }
   private async read(action: () => Promise<Partial<AdminState>>) {
@@ -107,6 +113,72 @@ export class AdminOwner {
       if (denied) this.clearReadAccess(error);
       else this.update({ knowledge: { ...this.state.knowledge, status: 'error', notice: adminError(error) } });
     }
+  }
+  private updateDemo(change: Partial<AdminDemoState>) {
+    if ('pending' in change && this.state.userId) {
+      const key = demoPendingKey(this.baseUrl, this.state.userId);
+      try {
+        if (change.pending) this.demoStorage?.setItem(key, change.pending); else this.demoStorage?.removeItem(key);
+        change = { ...change, recoveryStored: !!this.demoStorage && !!change.pending };
+      } catch { change = { ...change, recoveryStored: false }; }
+    }
+    this.update({ demo: { ...this.state.demo, ...change } });
+  }
+  async loadDemo() {
+    if (this.state.access !== 'allowed' || this.state.demo.busy || this.state.demo.status === 'loading') return;
+    const generation = this.generation;
+    this.updateDemo({ status: 'loading', enabled: false, notice: null });
+    try {
+      const config = adminDemoConfigSchema.parse(await this.request<unknown>('/admin/proactive-demo'));
+      if (this.indexCurrent(generation)) this.updateDemo({ status: 'ready', enabled: config.enabled });
+    } catch (error) {
+      if (this.indexCurrent(generation) && !this.indexAccessError(error)) this.updateDemo({ status: 'error', enabled: false, notice: adminError(error) });
+    }
+  }
+  private canSendDemo(retry = false) {
+    const demo = this.state.demo;
+    return this.state.access === 'allowed' && demo.status === 'ready' && demo.enabled && !demo.busy
+      && !this.state.busy && !this.state.pending && !this.state.index.busy && !this.state.index.pending
+      && !this.state.transfers.busy && !this.state.transfers.pending && (retry || !demo.pending);
+  }
+  async sendDemo() {
+    if (this.canSendDemo()) await this.sendDemoOperation(crypto.randomUUID());
+  }
+  async retryDemo() {
+    const opId = this.state.demo.pending;
+    if (opId && this.canSendDemo(true)) await this.sendDemoOperation(opId);
+  }
+  private acceptDemoReceipt(value: unknown, opId: string) {
+    const receipt = adminDemoReceiptSchema.parse(value);
+    if (receipt.opId !== opId) throw new Error('Invalid demo receipt binding');
+    const settled = demoSettled(receipt);
+    this.updateDemo({ receipt, pending: settled ? null : opId,
+      notice: settled ? '已取得示範收據；請查看逐項交送狀態。' : '交送仍待核對；原操作 ID 已保留，請查回最新狀態。' });
+  }
+  private async sendDemoOperation(opId: string) {
+    const generation = this.generation;
+    this.updateDemo({ busy: true, pending: opId, receipt: null, notice: null });
+    try {
+      const value = await this.request<unknown>('/admin/proactive-demo', { opId });
+      if (this.indexCurrent(generation)) this.acceptDemoReceipt(value, opId);
+    } catch (error) {
+      if (!this.indexCurrent(generation) || this.indexAccessError(error)) return;
+      // Even a rejected retry cannot prove that a previous attempt had no effect.
+      this.updateDemo({ pending: opId, notice: error instanceof AdminApiError && error.code === 'recent_reauthentication_required'
+        ? adminError(error) : '示範結果未能確認；請先查回原操作，再按需要以原 ID 重送。' });
+    } finally { if (generation === this.generation) this.updateDemo({ busy: false }); }
+  }
+  async recoverDemo() {
+    const demo = this.state.demo, opId = demo.pending ?? demo.receipt?.opId;
+    if (this.state.access !== 'allowed' || demo.busy || !opId) return;
+    const generation = this.generation;
+    this.updateDemo({ busy: true, notice: null });
+    try {
+      const value = await this.request<unknown>('/admin/proactive-demo/' + encodeURIComponent(opId));
+      if (this.indexCurrent(generation)) this.acceptDemoReceipt(value, opId);
+    } catch (error) {
+      if (this.indexCurrent(generation) && !this.indexAccessError(error)) this.updateDemo({ notice: '未能查回原操作收據；目前資料及原操作 ID 保留，請核對連線後再查回。' });
+    } finally { if (generation === this.generation) this.updateDemo({ busy: false }); }
   }
   private updateIndex(change: Partial<AdminIndexState>) { this.update({ index: { ...this.state.index, ...change } }); }
   private indexCurrent(generation: number) { return generation === this.generation && ['allowed', 'loading'].includes(this.state.access); }

@@ -6,16 +6,19 @@ import type { ProductionOwner } from "./ProductionOwner";
 export function useNativePushNavigation(owner: ProductionOwner, identityKey: string | null, userId: string | null,
   navigate: (target: NativePushTarget) => void, notice: (message: string) => void) {
   const callbacks = useRef({ navigate, notice }); callbacks.current = { navigate, notice };
+  const generation = owner.getSnapshot().sessionGeneration;
   useEffect(() => {
     if (!nativePushSupported() || !identityKey || !userId) return;
     const api = createNativePushApi(owner.apiBaseUrl, owner.fetcher), controller = new AbortController();
-    const current = () => !controller.signal.aborted && owner.getSnapshot().identityKey === identityKey;
+    let revision = 0;
+    const current = () => !controller.signal.aborted && owner.getSnapshot().identityKey === identityKey && owner.getSnapshot().sessionGeneration === generation;
     const stop = listenNativePush({ tokenChanged() {}, opened(reference) {
+      const expected = ++revision;
       void api.open(reference, controller.signal, userId).then(target => {
-        if (current()) callbacks.current.navigate(target);
-      }).catch(() => { if (current()) callbacks.current.notice("通知事項暫未能核對；可在待辦及通知歷史查看。沒有執行或完成任何事項。"); })
+        if (current() && expected === revision) callbacks.current.navigate(target);
+      }).catch(() => { if (current() && expected === revision) callbacks.current.notice("通知內容暫未能核對；請重新讀取原聊天、待辦或通知歷史。"); })
         .finally(() => { if (current()) { try { clearNativePushOpen(); } catch { /* Read/navigation outcome remains authoritative. */ } } });
     } });
     return () => { controller.abort(); stop(); api.resetOnline(); };
-  }, [owner, identityKey, userId]);
+  }, [owner, identityKey, userId, generation]);
 }

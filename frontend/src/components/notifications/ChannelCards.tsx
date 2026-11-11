@@ -201,6 +201,12 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
         {!model.browserSupported && model.permission !== "unsupported" ? <Text style={styles.warning}>此設備未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。</Text> : null}
       </View>
       <BrowserEnableForm platform={model.platform} form={form} disabled={!canEnable} stageEnable={actions.stageEnable} production={production} />
+      {native && sourceActions.setChatNotificationsEnabled ? <View style={styles.entry}>
+        <AppCheckbox label="在此手機接收助手聊天通知" checked={model.chatNotificationsEnabled === true}
+          disabled={actionBlocked || model.chatNotificationsBusy || model.chatNotificationsEnabled == null || !model.currentBindingId}
+          onChange={sourceActions.setChatNotificationsEnabled} />
+        <Text style={styles.meta}>{model.chatNotificationsEnabled == null ? "聊天通知設定尚未核對，請重新讀取。" : "只影響此手機；正在前台查看該孩子的主聊天時，暫停此手機的聊天通知。"}</Text>
+      </View> : null}
       <ChannelReviewPanel model={model} actions={actions} production={production} />
       <View style={[styles.stack, styles.group]}>
         <Text accessibilityRole="header" style={styles.title}>本人{native ? "裝置" : deviceName}訂閱</Text>

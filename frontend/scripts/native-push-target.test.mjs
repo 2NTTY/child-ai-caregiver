@@ -22,17 +22,17 @@ function navigationHarness() {
   const js = ts.transpileModule(`return (${callback.getText(source)});`, {
     compilerOptions: { target: ts.ScriptTarget.ES2022 },
   }).outputText;
-  let identityKey = 'parent-a', pending, finishSelection;
-  const events = [], snapshot = { identityKey };
-  const owner = { getSnapshot: () => ({ identityKey }), controller: {
-    selectChild(id) { events.push(['child', id]); return new Promise(resolve => { finishSelection = resolve; }); },
-  } };
+  let identityKey = 'parent-a', generation = 1, childId = null, pending, finishSelection;
+  const events = [], snapshot = { identityKey, sessionGeneration: generation };
+  const owner = { getSnapshot: () => ({ identityKey, sessionGeneration: generation, activeChild: childId ? { id: childId } : null }),
+    selectPersonalChild(id) { events.push(['child', id]); return new Promise(resolve => { finishSelection = () => { childId = id; resolve(); }; }); },
+  };
   const navigate = new Function('owner', 'snapshot', 'leave', 'router', 'setLocalNotice', js)(
     owner, snapshot, action => { pending = action; }, { push: route => events.push(['route', route]) },
     message => events.push(['notice', message]),
   );
   return { navigate, events, approve: () => pending(), selected: () => finishSelection(),
-    switchIdentity: () => { identityKey = 'parent-b'; } };
+    switchIdentity: () => { identityKey = 'parent-b'; }, renewSession: () => { generation++; } };
 }
 
 test('authorized care notification retains its exact task after child selection and identity guards', async () => {
@@ -54,4 +54,12 @@ test('authorized care notification retains its exact task after child selection 
   channelTest.navigate({ kind: 'test', childId: null, taskId: null }); channelTest.approve();
   await new Promise(setImmediate);
   assert.deepEqual(channelTest.events, [['route', '/settings']], 'channel tests keep the settings destination');
+});
+
+test('chat notification opens the original child main chat and retains its exact message', async () => {
+  const target = { kind: 'chat', childId: '11111111-1111-4111-8111-111111111111', messageId: '22222222-2222-4222-8222-222222222222' };
+  const h = navigationHarness(); h.navigate(target); h.approve(); h.selected(); await new Promise(setImmediate);
+  assert.deepEqual(h.events[1], ['route', { pathname: '/chat', params: { messageId: target.messageId, childId: target.childId } }]);
+  const stale = navigationHarness(); stale.navigate(target); stale.approve(); stale.renewSession(); stale.selected(); await new Promise(setImmediate);
+  assert.deepEqual(stale.events, [['child', target.childId]], 'same-account session renewal rejects the late navigation');
 });

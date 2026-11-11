@@ -1,4 +1,5 @@
 import { useNativePushNavigation } from "./useNativePushNavigation";
+import { useNativeChatPresence } from "./useNativeChatPresence";
 import { useProductionActivity } from "./useProductionActivity";
 import { createProductionTransport } from "./production-transport";
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
@@ -45,6 +46,8 @@ function useProductionValue(owner: ProductionOwner) {
   const current = useRef({ scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey, pathname });
   current.current = { scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey, pathname };
   const previousPath = useRef(pathname);
+  useNativeChatPresence(owner, snapshot.account.gate === "ready" ? snapshot.identityKey : null, snapshot.records.user?.id ?? null,
+    pathname === "/chat" && !snapshot.sharedChild.target && snapshot.scopeKey ? snapshot.chat.selectedChildId : null, snapshot.records.online);
   useEffect(() => {
     const pending=owner.voiceOwner.getSnapshot();
     const message=pending.voice?snapshot.chat.messages.find(item=>item.voice?.id===pending.voice!.id):null;
@@ -62,12 +65,16 @@ function useProductionValue(owner: ProductionOwner) {
     if (message && snapshot.scopeKey && pending.localId) { owner.draftOwner.remove(snapshot.scopeKey,pending.localId); owner.photoOwner.linked(message.id,message.photo!.id); }
   }, [owner,snapshot.chat.messages,snapshot.chat.drafts,snapshot.scopeKey,photoUpload.photo?.id]);
   useNativePushNavigation(owner, snapshot.account.gate === "ready" ? snapshot.identityKey : null, snapshot.records.user?.id ?? null, target => {
-    const identity = snapshot.identityKey;
+    const identity = snapshot.identityKey, generation = snapshot.sessionGeneration;
     leave(() => { void (async () => {
-      if (!identity || owner.getSnapshot().identityKey !== identity) return;
+      if (!identity || owner.getSnapshot().identityKey !== identity || owner.getSnapshot().sessionGeneration !== generation) return;
       if (target.childId) await owner.selectPersonalChild(target.childId);
-      if (owner.getSnapshot().identityKey === identity) router.push(target.kind === "test" ? "/settings" : { pathname: "/tasks", params: { taskId: target.taskId! } });
-    })().catch(() => { if (owner.getSnapshot().identityKey === identity) setLocalNotice("通知事項未能開啟，請在待辦重新讀取。"); }); }, target.childId ? "child" : undefined);
+      if (owner.getSnapshot().identityKey !== identity || owner.getSnapshot().sessionGeneration !== generation) return;
+      if (target.childId && owner.getSnapshot().activeChild?.id !== target.childId) throw new Error("notification_child_unavailable");
+      router.push(target.kind === "test" ? "/settings" : target.kind === "chat"
+        ? { pathname: "/chat", params: { messageId: target.messageId, childId: target.childId } }
+        : { pathname: "/tasks", params: { taskId: target.taskId! } });
+    })().catch(() => { if (owner.getSnapshot().identityKey === identity && owner.getSnapshot().sessionGeneration === generation) setLocalNotice("通知內容未能開啟，請重新讀取原聊天或待辦。"); }); }, target.childId ? "child" : undefined);
   }, setLocalNotice);
   const visibleDraft = draft.scope === snapshot.scopeKey ? draft : emptyAssistantDraft;
   const model = useMemo(() => projectProductionHome(snapshot), [snapshot]);

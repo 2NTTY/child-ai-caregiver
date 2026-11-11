@@ -128,6 +128,9 @@ test("native permission, token rotation and fixed notification callbacks follow 
     device.respond({ actionIdentifier: "complete", notification: { request: { content: { data: { ...data, deliveryId: binding.id } } } } });
     assert.equal(opened.length, 1);
     assert.equal((await device.handler.handleNotification({ request: { content: { data } } })).shouldShowBanner, true);
+    const stopForeground = api.setNativePushForegroundCheck(async (value: unknown) => { assert.deepEqual(value, reference); return false; });
+    assert.equal((await device.handler.handleNotification({ request: { content: { data } } })).shouldShowBanner, false, "authorized current chat suppresses foreground banner");
+    stopForeground();
     assert.equal((await device.handler.handleNotification({ request: { content: { data: { ...data, url: "https://invalid.test" } } } })).shouldShowBanner, false);
     api.clearNativePushOpen(); stop();
     device.rotate({ type: os, data: "EF".repeat(32) });

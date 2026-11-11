@@ -4,6 +4,7 @@ import type { NativePushBinding, NativePushBindingV2, NativePushRegistration, Na
 import { nativePushSupported, nativePushPlatform, nativePushPermission, requestNativePushToken, listenNativePush } from "../platform/native-push";
 import type { ChannelReview, PushBindingView, PushSettingsActions, PushSettingsModel } from "../channel-view-model";
 import { pushTestAllowed } from "../channel-view-model";
+import { nativeChatPresenceFor } from "./NativeChatPresenceController";
 import { useDomainWriteGuard } from "./useDomainEnvironment";
 import { settingsAccessError, settingsFailure, settingsRead, useSettingsRefresh, useSettingsRequests, type SettingsEnvironment } from "./SettingsDomainSupport";
 type PushReview = Omit<ChannelReview, "kind"> & { kind: "enable" | "revoke" | "test" } & { id: string | null };
@@ -16,6 +17,17 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
   const [permission, setPermission] = useState<PushSettingsModel["permission"]>("default"), [readState, setReadState] = useState<PushSettingsModel["readState"]>("loading");
   const [review, setReview] = useState<PushReview | null>(null), [original, setOriginal] = useState<OriginalPush | null>(null), [notice, setNotice] = useState("");
   const [conflict, setConflict] = useState(false), [savedReference, setSavedReference] = useState<string | null>(null);
+  const [chatNotificationsEnabled, setChatEnabled] = useState<boolean | null>(null), [chatNotificationsBusy, setChatBusy] = useState(false);
+  const chatGeneration = env.owner.getSnapshot().sessionGeneration;
+  const currentChatIdentity = () => env.currentIdentity() && env.owner.getSnapshot().sessionGeneration === chatGeneration;
+  const presence = useMemo(() => env.identityKey && env.userId ? nativeChatPresenceFor(env.owner, env.identityKey, env.userId) : null,
+    [env.owner, env.identityKey, env.userId, chatGeneration]);
+  useEffect(() => { setChatEnabled(null); setChatBusy(false); }, [presence]);
+  const readChatPreference = async () => {
+    if (!presence) return;
+    try { const next = await presence.read(); if (currentChatIdentity()) setChatEnabled(next.chatNotificationsEnabled); }
+    catch { if (currentChatIdentity()) setChatEnabled(null); }
+  };
   const pending = useRef<OriginalPush | null>(null), currentStatus = useRef(status), currentReview = useRef(review), currentBinding = useRef(bindingId);
   currentStatus.current = status; currentReview.current = review; currentBinding.current = bindingId;
   const platformAvailable = (value: NativePushStatus | NativePushStatusV2, target = platform) =>
@@ -51,6 +63,7 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
     const entry = pending.current;
     if (entry) { entry.reviewed = false; entry.consent = false; retain(entry); }
     try {
+      await readChatPreference();
       const receipt = entry ? await api.reconcilePending(request.signal, env.userId) : null;
       if (entry && receipt?.state === "confirmed") entry.confirmed = true;
       const next = await read(request.signal, request.current); if (!request.current() || !next) return;
@@ -102,6 +115,16 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
   };
   const stage = (next: PushReview) => { if (!requests.busy && env.online && readState === "ready" && !pending.current && !!env.canStartWrite()) { setReview(next); setSavedReference(null); setConflict(false); } };
   const actions: PushSettingsActions = { refresh: () => { void refresh(); },
+    setChatNotificationsEnabled(enabled) {
+      if (!presence || !currentChatIdentity() || !env.online || chatNotificationsBusy || requests.busy || !env.canStartWrite()) return;
+      setChatBusy(true);
+      void presence.setEnabled(enabled).then(next => {
+        if (currentChatIdentity()) { setChatEnabled(next.chatNotificationsEnabled); setNotice("此手機的助手聊天通知設定已保存。"); }
+      }).catch(async () => {
+        await readChatPreference();
+        if (currentChatIdentity()) setNotice("聊天通知設定未能確認，已重新核對；請查看目前選項後再選擇。");
+      }).finally(() => { if (currentChatIdentity()) setChatBusy(false); });
+    },
     stageEnable(label) { if (label.trim() && label.trim().length <= 80) stage({ kind: "enable", id: null, targetLabel: label.trim(), expectedVersion: null, confirmed: false }); },
     stageRevoke(id) { const item = status?.bindings.find(binding => binding.id === id); if (item && item.status !== "revoked") stage({ kind: "revoke", id, targetLabel: item.label, expectedVersion: item.version, confirmed: false }); },
     stageTest(id) { const item = status?.bindings.find(binding => binding.id === id); if (status && item && pushTestAllowed(status, bindingView(status, item))) stage({ kind: "test", id, targetLabel: item.label, expectedVersion: item.version, confirmed: false }); },
@@ -120,6 +143,7 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
   useDomainWriteGuard(!!review, !!original || requests.writing, "account");
   const visible = env.currentIdentity() ? status : null;
   const model: PushSettingsModel = { platform: platform ?? "android", online: env.online, readState: env.currentIdentity() ? readState : "session_changed", locked: requests.busy || !!original,
+    chatNotificationsEnabled: env.currentIdentity() ? chatNotificationsEnabled : null, chatNotificationsBusy,
     conflict, notice, workerEnabled: visible?.workerEnabled ?? false, review, available: visible ? platformAvailable(visible) : false, browserSupported: nativePushSupported(), permission,
     currentBindingId: visible ? bindingId : null, bindings: visible?.bindings.map(item => bindingView(visible, item)) ?? [],
     deliveries: visible?.deliveries.map(item => ({ ...item, label: visible.bindings.find(binding => binding.id === item.bindingId)?.label ?? "本人訂閱", reasonLabel: item.reason })) ?? [],

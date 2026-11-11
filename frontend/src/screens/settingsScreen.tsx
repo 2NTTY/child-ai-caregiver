@@ -99,7 +99,7 @@ export default function SettingsPage() {
       <ProductionChannelSettings />
     </AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="assistant" active={tab === "assistant"}>
-      {scopeKey ? <AgentAuthorization key={scopeKey} /> : <SectionCard><Text style={styles.body}>先選擇孩子。</Text></SectionCard>}
+      {scopeKey ? <AgentAuthorization key={scopeKey} active={pathname === "/settings" && tab === "assistant"} /> : <SectionCard><Text style={styles.body}>先選擇孩子。</Text></SectionCard>}
     </AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="model" active={tab === "model"}><ModelSettingsView model={modelSettings.model} actions={modelSettings.actions} active={pathname === "/settings" && tab === "model"} /></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="privacy" active={tab === "privacy"} style={styles.sections}>
