@@ -1,0 +1,39 @@
+{
+  "baselineFileCount": 510,
+  "candidateFileCount": 516,
+  "addedBytes": 12774,
+  "added": [
+    {
+      "path": "experiments/private-notes-reading-pn01/app.mjs",
+      "bytes": 2555,
+      "sha256": "1414696f8e8e80c5a4d90e23b16acf308932db67559195f3df90f0fcc546f2d8"
+    },
+    {
+      "path": "experiments/private-notes-reading-pn01/index.html",
+      "bytes": 1348,
+      "sha256": "299fa744b37e69e37dd4489cfd22e96e814a04f1c1ac2749416937815c6ee715"
+    },
+    {
+      "path": "experiments/private-notes-reading-pn01/notes-data.mjs",
+      "bytes": 1947,
+      "sha256": "8c00c68a0441b1fbb8ae30736743b55bf837e1a2ceffbf0d36ca6b155dbd7fc4"
+    },
+    {
+      "path": "experiments/private-notes-reading-pn01/notes-state.mjs",
+      "bytes": 662,
+      "sha256": "2efbf54ab91ee03d1cdfdbc5cebe2500aa8d62769241a91db56b5758feda4236"
+    },
+    {
+      "path": "experiments/private-notes-reading-pn01/notes-view.mjs",
+      "bytes": 2374,
+      "sha256": "26febc10098d15a04b20c38459c1075baf55ab2de67f3bfb7a2c2a0450e02085"
+    },
+    {
+      "path": "experiments/private-notes-reading-pn01/notes.css",
+      "bytes": 3888,
+      "sha256": "be008f4d9db5cceb0d33db873e116503a12a97d86e6cd1966a7051302bb9184e"
+    }
+  ],
+  "modified": [],
+  "deleted": []
+}

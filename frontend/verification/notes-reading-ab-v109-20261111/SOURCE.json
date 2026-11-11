@@ -1,0 +1,76 @@
+{
+  "version": 109,
+  "sitesSource": "2e9c44f7e5cb46a092063d6ff420bd50271a1ecc",
+  "deploymentVerified": true,
+  "deploymentStatus": "succeeded",
+  "requestedPublicUrl": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/experiments/private-notes-reading-pn01/index.html",
+  "observedPublicUrl": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/experiments/private-notes-reading-pn01/",
+  "access": {
+    "mode": "public",
+    "revision": 2,
+    "completePolicyUnchanged": true
+  },
+  "baseline": {
+    "version": 108,
+    "sourceCommit": "5de2d2a20fdfbf249b1099c970f97c53b35f4645",
+    "files": 510,
+    "bytes": 135535215,
+    "canonicalSha256": "4247734441586ff42b0ee8230210be9e1047eafdf3c37732dad21e6e81a6d166",
+    "allOriginalRowsAndBytesUnchanged": true
+  },
+  "publishedDist": {
+    "files": 516,
+    "bytes": 135547989,
+    "canonicalSha256": "6e5feeb82130f9d324be71ab44e56ca3d108edb66db4df877928bcf70fee877c",
+    "publisherHashedActualOfficialCheckout": true
+  },
+  "newEntry": {
+    "prefix": "experiments/private-notes-reading-pn01/",
+    "files": 6,
+    "bytes": 12774,
+    "canonicalSha256": "4728c7932ed6b237aca107346debddbb5c1e46b65d0db634869af91b1167be1e",
+    "archiveSourceDirectory": "public/",
+    "sourceBytesUnchanged": true
+  },
+  "manifestSemantics": {
+    "FULL-MANIFEST.json": "Original author expected-manifest bytes retained unchanged, including its prepublication kind label. Actual publication and complete checkout identity were subsequently verified independently and are recorded here.",
+    "SIX-ADD-DELTA.json": "Original exact six-add delta retained unchanged. No baseline files modified or deleted."
+  },
+  "packaging": {
+    "regularFiles": 517,
+    "exactParentDirectories": 104,
+    "regularMemberBytes": 135548095,
+    "hostingArchivePath": "dist/.openai/hosting.json",
+    "hostingSourcePath": ".openai/hosting.json",
+    "hostingBytes": 106,
+    "hostingSha256": "549f3efc195a91897cf37536a232f5ea858aba0e6fe64bded9387ab366aeaa6e",
+    "hostingBytesUnchanged": true,
+    "gitClean": true,
+    "onlySixNewSourcePaths": true,
+    "officialSourcePushAndLsRemoteEqualityVerified": true,
+    "persistentOriginAssumed": false,
+    "preSaveCheckExit": 0,
+    "beforeAfterArchiveChecksIdentical": true,
+    "gzip": {
+      "bytes": 35390070,
+      "sha256": "29fe7bc78af1a75317fc3382c528299e8e7a9c8dbac6ace16f4063517ad539f4"
+    },
+    "decompressedTar": {
+      "bytes": 136110080,
+      "sha256": "c2938dd9dc05d298b658a9b49c7a1241d98de29eb5548cd6eba4348f9a359be2"
+    },
+    "nativeArchiveMetadata": {
+      "contentHash": "sha256:3fba26640b440c8a54f96be9356178fa2ee79be4ef01fd1056b83921caa02724",
+      "bytes": 136038400,
+      "files": 517,
+      "semantics": "Native service metadata only; not equated with local raw tar hashing or live HTTP response identity.",
+      "downloadedAndByteCompared": false
+    }
+  },
+  "provenanceLimits": {
+    "liveHttpResponseBodiesHashed": false,
+    "nativeContentHashEquatedWithRawTarSha256": false,
+    "archivedFullBaselineSource": false,
+    "sourceCommitIsGitHubArchiveCommit": false
+  }
+}

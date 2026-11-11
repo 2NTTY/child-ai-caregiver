@@ -1,0 +1,152 @@
+{
+  "version": 109,
+  "sitesSource": "2e9c44f7e5cb46a092063d6ff420bd50271a1ecc",
+  "status": "PASS_BOUNDED_SINGLE_ROOT_DESKTOP_NOT_FULL_VERSION",
+  "fullVersionAccepted": false,
+  "gates": {
+    "A": {
+      "name": "managed local preview",
+      "status": "PASS",
+      "viewport": [
+        1165,
+        747
+      ],
+      "nativeInput": "Tab four times and Enter selects note 2; Shift+Tab four times and Space selects B; Shift+Tab and Enter returns A.",
+      "focusObserved": [
+        "note 2 h2",
+        "B control",
+        "A control"
+      ],
+      "visibleCoverage": [
+        "A note 2 all three paragraphs, opening and final sentence",
+        "B all three full notes, including same note 2 paragraphs and third-note import notice",
+        "A returns to note 2; footer metadata and final sentence readable"
+      ],
+      "sourceOnlyOrControlledDomSubstitute": false
+    },
+    "B": {
+      "name": "source/archive/save/deploy",
+      "status": "PASS",
+      "actualBaselineFiles": 510,
+      "actualPublishedFiles": 516,
+      "regularArchiveMembers": 517,
+      "exactParentDirectories": 104,
+      "onlySixAdded": true,
+      "savedNativeVersion": 109,
+      "deploymentStatus": "succeeded",
+      "completePublicScopeUnchanged": true,
+      "productChangesByPublisher": false,
+      "publicationBeforePassingPackagingCheck": false,
+      "packagingCheckerCorrections": [
+        {
+          "incorrectAssumption": "Hosting file at archive root .openai/hosting.json",
+          "actualContract": "Official static package uses dist/.openai/hosting.json with source-identical bytes.",
+          "initialExit": 1,
+          "saveBlockedUntilCorrected": true
+        },
+        {
+          "incorrectAssumption": "Persistent refs/remotes/origin/main exists",
+          "actualContract": "Official source helper uses direct remote URL, normal push and ls-remote equality; no persistent origin is required.",
+          "initialExit": 1,
+          "saveBlockedUntilCorrected": true
+        }
+      ],
+      "finalPackagingCheckExit": 0
+    },
+    "C": {
+      "name": "public smoke",
+      "status": "PASS",
+      "navigation": {
+        "requestedUrl": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/experiments/private-notes-reading-pn01/index.html",
+        "observedFinalUrl": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/experiments/private-notes-reading-pn01/",
+        "httpRedirectStatusInferred": false,
+        "smokeCompletedOnObservedFinalUrl": true,
+        "directSlashNavigationTested": false,
+        "reloadTested": false
+      },
+      "actions": "Click note 2, scroll through full text; click B and scroll through all three notes; Shift+Tab and Enter returns A; note 2 retained and focus remains A.",
+      "visibleFullTextAndImportNoticeRechecked": true,
+      "completeLocalKeyboardSequenceRepeated": false
+    }
+  },
+  "implementationTests": {
+    "authorResult": {
+      "tests": 17,
+      "passed": 17,
+      "failed": 0,
+      "exit": 0,
+      "stateCases": 7,
+      "controlledDomCases": 10
+    },
+    "staticGroups": {
+      "passed": 5,
+      "total": 5,
+      "independentReviewerAlsoRan": true
+    },
+    "archivePreparationReplayedProductTests": false,
+    "authorResultsBindToArchivedSourceAndTestBytes": true,
+    "redEvidenceLimit": "State-red and view-red each failed loading one missing module. Neither executed 7/10 failing behavior assertions.",
+    "runnerIncident": "Node 24 default spec output did not fill the TAP-only summary parser. Adding --test-reporter=tap corrected reporting only; original logs and runner were retained. This was not a product fix.",
+    "portableSubset": {
+      "files": [
+        "tests/state.test.mjs",
+        "tests/view.test.mjs",
+        "tests/dom-double.mjs"
+      ],
+      "runtime": "Node 24; other versions not validated here",
+      "command": "node --max-old-space-size=128 --test --test-reporter=tap --test-concurrency=1 tests/state.test.mjs tests/view.test.mjs",
+      "externalPackagesRequired": false,
+      "staticImportEdgesChecked": 15,
+      "runByArchivePreparation": false,
+      "htmlLikeStressLiteral": "Synthetic test code only, not a runtime fixture or real data.",
+      "excluded": "Original diagnostic runner and static checker are not in this portable replay subset."
+    }
+  },
+  "codeReview": {
+    "critical": 0,
+    "important": 0,
+    "minor": 1,
+    "disposition": "Accepted only for a single page with a single reading root.",
+    "M1": "V10 uses separate documents. Fixed control and heading IDs collide for multiple mounts in one document; general multi-instance support is not claimed."
+  },
+  "dataScope": {
+    "threeSyntheticNotesOnly": true,
+    "realUserPreferences": false,
+    "familyOrHealthData": false,
+    "modelOrBackendCalls": false,
+    "saveDeleteSearchOrPersistentStorage": false,
+    "connectedToWorkbench": false,
+    "qaChoiceIsUserPreference": false
+  },
+  "inheritedUnresolved": {
+    "Chat": "PARTIAL_BLOCKED",
+    "Fourth": "Existing missing-receipt and lifecycle acceptance gaps remain.",
+    "Summary": "UNVERIFIED",
+    "Photos": "UNVERIFIED",
+    "GuideV108": "Existing bounded PASS unchanged; no broader acceptance inferred."
+  },
+  "notRun": [
+    "narrow/mobile viewport",
+    "effective zoom",
+    "touch",
+    "native IME",
+    "AT speech",
+    "measured contrast",
+    "runtime network/CSP telemetry",
+    "same-document multiple roots",
+    "whole-site suite",
+    "original workbench Guide regression",
+    "unresolved Fourth/Summary/Photos checks",
+    "comprehensive security audit",
+    "GitHub CI"
+  ],
+  "privacy": {
+    "onlySourceTestsSyntheticExamplesAndSafeMetadataIncluded": true,
+    "rawLogsScreenshotsServiceRecordsAndCredentialsIncluded": false
+  },
+  "provenanceLimits": {
+    "liveHttpResponseBodiesHashed": false,
+    "nativeContentHashEquatedWithRawTarSha256": false,
+    "archiveReadbackIsRuntimeAcceptance": false
+  }
+}
