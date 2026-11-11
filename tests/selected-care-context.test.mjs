@@ -119,3 +119,46 @@ test('selected class care requires current class membership and exact class scop
   await f.sharing.leave('reader',{spaceId:room.id,expectedVersion:room.version,operationId:randomUUID()});
   await assert.rejects(f.care.readSelectedCare('reader',{...input,cursor:first.nextCursor}),{code:'space_access_denied'});
 });
+
+test('selected care can shrink child pages without skipping unscanned matches or invalidating the cursor',async()=>{
+  const f=await setup(),rows=[];
+  for (let i=0;i<4;i++) rows.push(f.seed(i,{text:'目標 '+i}));
+  const input={scope:{kind:'personal'},childId:f.children[0].child.id,filters:{query:'目標'}};
+  const first=await f.care.readSelectedCare('owner',{...input,limit:1});
+  assert.deepEqual(first.records.map(r=>r.id),[rows[3].id]); assert.equal(first.scanned,1);
+  assert.equal(first.nextCursor.id,rows[3].id);
+  const second=await f.care.readSelectedCare('owner',{...input,cursor:first.nextCursor,limit:2});
+  assert.deepEqual(second.records.map(r=>r.id),[rows[2].id,rows[1].id]); assert.equal(second.scanned,2);
+  const smaller=await f.care.readSelectedCare('owner',{...input,cursor:first.nextCursor,limit:1});
+  assert.deepEqual(smaller.records.map(r=>r.id),[rows[2].id]); assert.equal(smaller.nextCursor.id,rows[2].id);
+  const last=await f.care.readSelectedCare('owner',{...input,cursor:second.nextCursor});
+  assert.deepEqual(last.records.map(r=>r.id),[rows[0].id]); assert.equal(last.nextCursor,null);
+  for (const limit of [0,4,1.5]) await assert.rejects(f.care.readSelectedCare('owner',{...input,limit}),{code:'invalid_input'});
+});
+
+test('selected care filters real calendar days in each original event timezone rather than creation time or Hong Kong',async()=>{
+  const f=await setup(),at='2026-11-10T23:30:00Z';
+  const details=(timeZone,instant=at)=>({kind:'feeding',quantity:null,
+    eventTime:{rawText:'原有時間',at:instant,timeZone,precision:'exact'}});
+  const hongKong=f.seed(0,{text:'半樽，香港',details:details('Asia/Hong_Kong')});
+  const utc=f.seed(1,{text:'半樽，UTC',details:details('UTC')});
+  f.seed(2,{text:'半樽，美國仍是前一天',details:details('America/Los_Angeles','2026-11-11T07:30:00Z')});
+  const local=f.seed(3,{text:'半樽，美國當天',details:details('America/Los_Angeles','2026-11-11T08:30:00Z')});
+  f.seed(4,{text:'半樽，日期未知',details:emptyCareDetails('feeding')});
+  f.seed(5,{text:'不相關的未知日期',details:emptyCareDetails('feeding')});
+  const input={scope:{kind:'personal'},childId:f.children[0].child.id,filters:{query:'半樽',kind:'feeding',eventDate:'2026-11-11'}};
+  const page=await f.care.readSelectedCare('owner',input);
+  assert.deepEqual(page.records.map(r=>r.id),[local.id,hongKong.id]);
+  assert.equal(page.scanned,6); assert.equal(page.undatedMatches,1); assert.equal(page.nextCursor,null);
+  assert.deepEqual(page.records[0].details,local.details);
+  const previous=await f.care.readSelectedCare('owner',{...input,filters:{...input.filters,eventDate:'2026-11-10',eventTo:at}});
+  assert.deepEqual(previous.records.map(r=>r.id),[utc.id]);
+  const first=await f.care.readSelectedCare('owner',{...input,limit:1});
+  assert.equal(first.nextCursor.id,local.id); assert.equal(first.undatedMatches,1);
+  const next=await f.care.readSelectedCare('owner',{...input,cursor:first.nextCursor,limit:1});
+  assert.deepEqual(next.records.map(r=>r.id),[hongKong.id]); assert.equal(next.nextCursor,null);
+  await assert.rejects(f.care.readSelectedCare('owner',{...input,cursor:first.nextCursor,filters:{...input.filters,eventDate:'2026-11-10'}}),{code:'cursor_changed'});
+  for (const eventDate of ['2026-02-29','2026-04-31','2026-11-1'])
+    await assert.rejects(f.care.readSelectedCare('owner',{...input,filters:{eventDate}}),{code:'invalid_input'});
+  assert.deepEqual((await f.care.readSelectedCare('owner',{...input,filters:{eventDate:'2024-02-29'}})).records,[]);
+});

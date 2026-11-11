@@ -20,6 +20,7 @@ import type { HandoverIntegrity } from '../src/shared/handover.ts';
 import type { HandoverImportRow } from './handover-import.ts';
 import { importConfirmationActor, makeImportProvenance } from './handover-provenance.ts';
 import { selectedCareRequestSchema, type SelectedCareRequest, type SelectedCarePage } from '../src/shared/assistant-care-context.ts';
+import { reminderLocalTime } from './task-policy.ts';
 
 const uuid = z.uuid(), version = z.number().int().min(0).max(2147483646), time = z.iso.datetime({ offset: true });
 const user = z.string().min(1).max(256);
@@ -287,12 +288,13 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
           binding.childAccessVersion, binding.changeSeq, binding.sharedAccess?.basis ?? null, binding.sharedAccess?.classMember ?? null]);
         if (cursor && cursor.basis !== basis) domainReject('cursor_changed');
         let undatedMatches = 0;
-        const page = await readSearchPage(binding, childId, cursor, 25, 3, value => {
+        const page = await readSearchPage(binding, childId, cursor, 25, input.limit ?? 3, value => {
           if (!matchesCare(value, filters)) return false;
           const at = value.details.eventTime.at;
           if (at === null) undatedMatches++;
-          if (!filters.eventFrom && !filters.eventTo) return true;
+          if (!filters.eventFrom && !filters.eventTo && !filters.eventDate) return true;
           if (at === null) return false;
+          if (filters.eventDate && reminderLocalTime(at, value.details.eventTime.timeZone).day !== filters.eventDate) return false;
           const eventAt = Date.parse(at);
           return (!filters.eventFrom || eventAt >= Date.parse(filters.eventFrom))
             && (!filters.eventTo || eventAt <= Date.parse(filters.eventTo));
