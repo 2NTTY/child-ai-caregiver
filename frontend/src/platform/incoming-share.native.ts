@@ -11,6 +11,7 @@ import { copyNativeFile } from '../components/agent/native-chat-file';
 import { copyNativeVoice } from '../components/agent/native-voice-file';
 import { photoOriginalFromBytes } from '../production/photo-original';
 import { prepareImportPackage } from './package-import.native';
+import { createIosShareMailbox } from './ios-share-mailbox';
 
 function photoMime(bytes: Uint8Array): 'image/jpeg' | 'image/png' | null {
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
@@ -18,7 +19,7 @@ function photoMime(bytes: Uint8Array): 'image/jpeg' | 'image/png' | null {
   return png.every((value, index) => bytes[index] === value) ? 'image/png' : null;
 }
 
-function sharedFile(payload: IncomingSharePayload) {
+function androidSharedFile(payload: IncomingSharePayload) {
   if (Platform.OS !== 'android') throw new Error('incoming_share_unavailable');
   // External file paths could target this app's private storage. Accept external provider URIs instead.
   if (!['image', 'audio', 'video', 'file'].includes(payload.shareType)
@@ -29,8 +30,7 @@ function sharedFile(payload: IncomingSharePayload) {
   if (authority === applicationId || authority.startsWith(applicationId + '.')) throw new Error('incoming_share_own_provider_rejected');
   return new File(payload.value);
 }
-async function prepare(payload: IncomingSharePayload) {
-  const original = sharedFile(payload);
+async function prepare(payload: IncomingSharePayload, original: File) {
   return withNativePickedFile(original, CHAT_FILE_LIMITS.bytes, async (file, nativeMime, fileName) => {
     if (!file.exists || file.size < 1 || file.size > CHAT_FILE_LIMITS.bytes) throw new Error('invalid_file');
     const concrete = nativeMime && !['*/*', 'application/octet-stream'].includes(nativeMime);
@@ -47,18 +47,21 @@ async function prepare(payload: IncomingSharePayload) {
   });
 }
 
-/** Raw Android input only; URL values remain text and are never resolved or fetched. */
+/** System shares are drafts. Links remain text until the user chooses what to do with them. */
 export function createIncomingSharePlatform(): IncomingSharePlatform {
+  const mailbox = Platform.OS === 'ios' ? createIosShareMailbox() : undefined;
+  const sharedFile = (payload: IncomingSharePayload) => mailbox ? mailbox.file(payload) : androidSharedFile(payload);
   return {
-    read: () => Platform.OS === 'android' ? getSharedPayloads() : [],
-    clear() { if (Platform.OS === 'android') clearSharedPayloads(); },
+    read: (capacity, identity) => mailbox ? mailbox.read(capacity, identity) : Platform.OS === 'android' ? getSharedPayloads() : [],
+    clear() { if (mailbox) mailbox.clear(); else if (Platform.OS === 'android') clearSharedPayloads(); },
+    ...(mailbox ? { acknowledge: mailbox.acknowledge, discard: mailbox.discard } : {}),
     subscribe(listener) {
-      if (Platform.OS !== 'android') return () => {};
+      if (!mailbox && Platform.OS !== 'android') return () => {};
       const app = AppState.addEventListener('change', state => { if (state === 'active') listener(); });
-      const link = Linking.addEventListener('url', () => listener());
-      return () => { app.remove(); link.remove(); };
+      const link = mailbox ? undefined : Linking.addEventListener('url', () => listener());
+      return () => { app.remove(); link?.remove(); };
     },
-    prepare,
+    async prepare(payload) { return prepare(payload, sharedFile(payload)); },
     async preparePackage(payload, signal) {
       signal.throwIfAborted();
       if (payload.shareType !== 'file') throw new Error('invalid_package_file');

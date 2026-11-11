@@ -13,7 +13,8 @@ import { createFirestoreCareStore, firestoreCareSchema, firestoreProfileSchema }
 import { createFirestoreCareSummary, firestorePreparationSchema } from './firestore-care-summary.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { withClassExportChild } from './firestore-class-handover.ts';
-import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
+import { HANDOVER_SECTIONS, handoverNotificationPreferencesSchema } from '../src/shared/handover.ts';
+import { createNotificationPreferencesData } from './firestore-notification-preferences.ts';
 import { classHandoverModuleSchema, handoverClassExportCommandSchema, type HandoverClassExportCommand } from '../src/shared/handover-jobs.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
 import { createFirestoreNotificationMessages } from './firestore-notification-messages.ts';
@@ -104,6 +105,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), avatarData = createFirestoreAvatarData(options);
   const sharing = createFirestoreSharingStore(options);
   const notes = createFirestorePrivateInstructions(data);
+  const preferences = createNotificationPreferencesData(data);
   const concerns = createFirestoreConcernStore(options);
   const care = createFirestoreCareStore(options), preparations = createFirestoreCareSummary(options, care);
   const memory = createFirestoreMemoryStore({ ...options, care, chat: createFirestoreChatStore({
@@ -177,6 +179,9 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
         if (history.next) nextCursor = encode({ userId: owner, section, childId: null, scopeVersion, after: history.next });
       } else if (section === 'account') {
         items = [{ id: owner, email: binding.identityEmail, workspaceId: binding.scope.workspaceId, createdAt: binding.workspaceCreatedAt }];
+      } else if (section === 'notification_preferences') {
+        if (previous) domainReject('invalid_export_cursor', 400);
+        items = [handoverNotificationPreferencesSchema.parse(await preferences.read(binding))];
       } else if (previous?.phase === 'source') {
         const tags = data.tags(binding.scope), limit = 10;
         let query: Query = data.collection('handover_source_history').where('workspaceTag', '==', tags.workspaceTag)
@@ -447,7 +452,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
     && options.files?.forSharedSpace && options.transcripts?.readForSharedExport && options.avatars?.forSharedSpace);
   const classModules = classHandoverModuleSchema.options.filter(module =>
     (module !== 'growth' || !!options.growth) && (module !== 'attachments' || sharedMedia));
-  return { page: page.bind(null, null), accountAvatarAvailable: !!options.avatars, classModules, forClass(request: HandoverClassExportCommand) {
+  return { page: page.bind(null, null), accountAvatarAvailable: !!options.avatars, notificationPreferencesAvailable: true, classModules, forClass(request: HandoverClassExportCommand) {
     const command = domainParse(handoverClassExportCommandSchema, request);
     if (!command.selection.modules.every(module => classModules.includes(module))) domainReject('package_class_source_unavailable', 503);
     return { page: page.bind(null, command) };

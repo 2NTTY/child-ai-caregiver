@@ -4,14 +4,18 @@ import { connectAuthEmulator, confirmPasswordReset, createUserWithEmailAndPasswo
   reload, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, updateProfile, type User, type Auth } from "firebase/auth";
 import { ClientApiError, createRecordsApi, type RecordsIdentityAdapter, type SessionUser } from "./records-api.ts";
 import type { AccountIdentityAdapter } from "./account-auth-api.ts";
-import { accountAuthMethodsSchema, socialAuthProviderSchema, type AccountAuthMethods, type ReauthenticationInput, type SocialAuthProvider } from "../shared/auth-providers.ts";
+import { accountAuthMethodsSchema, sessionExchangeErrorCode, socialAuthProviderSchema, type AccountAuthMethods, type ReauthenticationInput, type SocialAuthProvider } from "../shared/auth-providers.ts";
 
 export interface FirebasePublicConfig { apiKey: string; authDomain: string; projectId: string; appId: string; authEmulatorUrl?: string }
-export interface FirebaseIdentityUser { readonly uid: string; readonly email: string | null; readonly emailVerified: boolean }
+export interface FirebaseIdentityUser {
+  readonly uid: string; readonly email: string | null; readonly emailVerified: boolean;
+  readonly providerData?: readonly { readonly providerId: string }[];
+}
 export interface FirebaseSocialIdentitySdk {
   readonly providers: readonly SocialAuthProvider[];
   signIn(provider: SocialAuthProvider): Promise<FirebaseIdentityUser>;
   link(user: FirebaseIdentityUser, provider: SocialAuthProvider): Promise<FirebaseIdentityUser>;
+  reauthenticate(user: FirebaseIdentityUser, provider: SocialAuthProvider): Promise<FirebaseIdentityUser>;
 }
 export type FirebaseSocialIdentityFactory = (auth: Auth) => FirebaseSocialIdentitySdk;
 /** The SDK port exists for bounded offline verification; it never represents the business session. */
@@ -159,31 +163,27 @@ export function createFirebaseAuthApi(options: Options): FirebaseClientAuthApi {
       clearTimeout(timed); combined.removeEventListener("abort", rejectAbort);
     });
   }
-  async function exchange(idToken: string, expectedUserId: string, ticket: Ticket) {
+  async function exchange(idToken: string, expectedUserId: string, ticket: Ticket, linkProvider?: SocialAuthProvider) {
     guard(ticket);
     if (options.nativeSession) {
-      try { await options.nativeSession.exchange(idToken, expectedUserId, ticket.signal); guard(ticket); }
+      try { await options.nativeSession.exchange(idToken, expectedUserId, ticket.signal, linkProvider); guard(ticket); }
       catch (error) {
         const value = error as { status?: number; code?: string | null };
-        throw new ClientApiError(value.status, exchangeCode(value.code));
+        throw new ClientApiError(value.status, sessionExchangeErrorCode(value.code));
       }
       return;
     }
     const response = await fetcher(urls.apiUrl + "/auth/session", { method: "POST", credentials: "include", cache: "no-store",
-      signal: ticket.signal, headers: { "content-type": "application/json", "x-expected-user-id": expectedUserId }, body: JSON.stringify({ idToken }) });
+      signal: ticket.signal, headers: { "content-type": "application/json", "x-expected-user-id": expectedUserId }, body: JSON.stringify({ idToken, linkProvider }) });
     guard(ticket);
     if (!response.ok) {
       let code: string | null = null;
       try { const value = await response.json();
-        code = exchangeCode(value?.code);
+        code = sessionExchangeErrorCode(value?.code);
       } catch { /* Do not expose response bodies. */ }
       throw new ClientApiError(response.status, code);
     }
     await response.body?.cancel();
-  }
-  function exchangeCode(value: unknown): string | null {
-    return typeof value === 'string' && ['invitation_required', 'invitation_unavailable', 'EMAIL_NOT_VERIFIED',
-      'identity_changed', 'identity_email_changed', 'sign_out_required', 'recent_reauthentication_required'].includes(value) ? value : null;
   }
   const socialProviders = Object.freeze(socialAuthProviderSchema.options.filter(provider => sdk.social?.providers.includes(provider)));
   function social(provider: SocialAuthProvider) {
@@ -259,6 +259,7 @@ export function createFirebaseAuthApi(options: Options): FirebaseClientAuthApi {
       let retain = false;
       try {
         const user = await originalIdentity(userId, input, ticket);
+        if (!user.emailVerified) throw new ClientApiError(403, 'email_not_verified');
         const proof = await sdk.idToken(user); guard(ticket);
         await exchange(proof, userId, ticket); guard(ticket);
         linkPreparation = { user, generation: ticket.generation, expiresAt: Date.now() + 120_000 };
@@ -273,12 +274,14 @@ export function createFirebaseAuthApi(options: Options): FirebaseClientAuthApi {
         if (!prepared || prepared.generation !== ticket.generation || prepared.user.uid !== userId
           || prepared.expiresAt <= Date.now() || sdk.currentUser() !== prepared.user) throw reauthenticationRequired();
         clearLink();
-        const linked = checkedUser(await social(provider).link(prepared.user, provider), ticket);
+        const sdkProvider = social(provider);
+        const linked = checkedUser(prepared.user.providerData?.some(entry => entry.providerId === provider)
+          ? await sdkProvider.reauthenticate(prepared.user, provider) : await sdkProvider.link(prepared.user, provider), ticket);
         if (linked.uid !== userId) throw reauthenticationRequired();
         const original = await server.getSession(ticket.signal); guard(ticket);
         if (!original || original.id !== userId) throw reauthenticationRequired();
         const proof = await sdk.idToken(linked); guard(ticket);
-        await exchange(proof, userId, ticket);
+        await exchange(proof, userId, ticket, provider);
       } finally { await clear(); }
     }, false, 90_000),
     cancelProviderLink: () => api.clearSession(),

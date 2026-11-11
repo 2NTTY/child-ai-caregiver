@@ -85,7 +85,7 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
   assert.equal(original.config.timeoutMs, 90000); assert.equal(original.config.agentMaxRetries, 3);
   assert.equal(newer.config.timeoutMs, 60000); assert.equal(worker.config.timeoutMs, 60000);
   assert.equal(newer.config.agentMaxRetries, 1); assert.equal(worker.config.agentMaxRetries, 1);
-  assert.equal(await options.database.runTransaction(tx => apiRouting.readInteractiveRunSeconds(tx)), 180);
+  assert.equal(await authority.runTransaction('parent', null, b => apiRouting.readInteractiveRunSeconds(b.transaction, b.scope)), 180);
   const { modelRequestSeconds: omittedRequest, maxModelRetries: omittedRetries, maxRunSeconds: omittedRun, ...legacyPolicy } = baseline;
   const historical = platformPolicySchema.parse(legacyPolicy);
   assert.equal(historical.maxRunSeconds, 90); assert.equal(historical.modelRequestSeconds, 30); assert.equal(historical.maxModelRetries, 0);

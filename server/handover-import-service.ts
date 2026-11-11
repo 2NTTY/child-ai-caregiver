@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createOriginalBackupComparison, createSelfAvatarComparison, verifyOriginalBackup, type OriginalBackupIssuer } from './handover-original-backup.ts';
+import { createOriginalBackupComparison, createSelfAvatarComparison, createAccountPreferencesComparison, verifyOriginalBackup, type OriginalBackupIssuer } from './handover-original-backup.ts';
 import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
 import { handoverImportCommandSchema, handoverImportResultQuerySchema, handoverImportViewSchema, handoverImportResourceSectionSchema, handoverImportModuleOf, originalBackupModuleSchema, type HandoverImportCommand } from '../src/shared/handover-imports.ts';
 import { createFirestoreHandoverImportBatches } from './firestore-handover-import-batches.ts';
@@ -45,13 +45,21 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     }
     if (reader.integrity !== 'trusted' && command.acceptedManifestSha256 !== reader.manifestSha256)
       domainReject('package_trust_acknowledgement_required', 400);
-    let totalItems = 0, preflightError: string | undefined;
+    let totalItems = 0, selectedTranscriptItems = 0, preflightError: string | undefined;
     for (const target of command.targets) {
       if (!reader.manifest.selection.childIds.includes(target.sourceChildId)
         || target.sections.some(module => !reader.manifest.selection.modules.includes(module))) domainReject('package_scope_unavailable', 400);
       const newStudent = 'createInClassId' in target.target;
       const sections = new Set<string>(command.resolutionOnly ? command.resolutions.filter(row => row.sourceChildId === target.sourceChildId).map(row => row.section)
         : target.sections.flatMap(module => [...HANDOVER_SECTIONS[module]]));
+      if (command.restoreOriginal && command.resolutionOnly) {
+        const voiceIds = command.resolutions.filter(row => row.sourceChildId === target.sourceChildId && row.section === 'voices').map(row => row.resourceId);
+        if (voiceIds.length) {
+          const count = reader.countVoiceTranscripts(target.sourceChildId, voiceIds, command.acceptedManifestSha256 ?? undefined);
+          selectedTranscriptItems += count;
+          if (count && !options.attachments?.transcripts) preflightError = 'package_section_not_connected';
+        }
+      }
       for (const coverage of reader.manifest.coverage) if (coverage.childId === target.sourceChildId && sections.has(coverage.section)) {
         totalItems += coverage.items;
         if (newStudent && coverage.items && (coverage.section === 'instructions' || coverage.section === 'summary_history'))
@@ -64,11 +72,15 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
           preflightError = 'package_section_not_connected';
       }
     }
-    if (command.resolutionOnly) totalItems = command.resolutions.length;
+    if (command.resolutionOnly) totalItems = command.resolutions.length + selectedTranscriptItems;
     if (command.accountAvatar) {
       await reader.readAccountAvatar(reader.manifestSha256);
       totalItems++;
       if (!options.attachments?.avatars) preflightError = 'package_section_not_connected';
+    }
+    if (command.notificationPreferences) {
+      await reader.readNotificationPreferences(reader.manifestSha256);
+      totalItems++;
     }
     const enrolSourceIds: string[] = [];
     const targets = command.targets.map(row => {
@@ -79,9 +91,11 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     });
     const request: HandoverImportBatchRequest = { opId: command.opId, uploadId: command.uploadId,
       uploadVersion: job.version, inputFingerprint: firestoreDomainHash(command),
+      ...(selectedTranscriptItems ? { selectedTranscriptItems } : {}),
       ...(command.resolutionOnly === undefined ? {} : { resolutionOnly: command.resolutionOnly }),
       ...(command.restoreOriginal ? { restoreOriginal: true } : {}),
       ...(command.accountAvatar ? { accountAvatar: command.accountAvatar } : {}),
+      ...(command.notificationPreferences ? { notificationPreferences: command.notificationPreferences } : {}),
       source: { ...reader.manifest.source, packageId: reader.manifest.packageId, packageVersion: reader.manifest.packageVersion,
         manifestSha256: reader.manifestSha256 }, integrity: reader.integrity, acceptedManifestSha256: command.acceptedManifestSha256,
       targets, ...(enrolSourceIds.length ? { enrolSourceIds } : {}), resolutions: command.resolutions, totalItems };
@@ -92,6 +106,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     ...(job.request.resolutionOnly === undefined ? {} : { resolutionOnly: job.request.resolutionOnly }),
     ...(job.request.restoreOriginal ? { restoreOriginal: true } : {}),
     ...(job.request.accountAvatar ? { accountAvatar: job.request.accountAvatar } : {}),
+    ...(job.request.notificationPreferences ? { notificationPreferences: job.request.notificationPreferences } : {}),
     targets: job.request.targets.map(row => job.request.enrolSourceIds?.includes(row.sourceChildId)
       ? { ...row, target: { createInClassId: row.target.spaceId! } } : row), resolutions: job.request.resolutions });
   async function start(owner: string, raw: unknown, signal: AbortSignal) {
@@ -116,8 +131,10 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       // Existing in-flight cursors keep their old reader selection. New batches always establish parents first.
       const currentSections = selected ? [...new Set(selected.map(row => row.section))]
         : target.sections.flatMap(module => [...HANDOVER_SECTIONS[module]]).filter(section => !Object.hasOwn(historyModules, section));
-      // Saved resolution cursors bind to the original combined section list. Only growth selections need ordered phases.
-      const combinedSelection = selected !== null && !selected.some(row => row.section === 'growth_attention' || row.section === 'growth_topics');
+      const selectedVoiceIds = job.request.restoreOriginal && selected ? selected.filter(row => row.section === 'voices').map(row => row.resourceId) : [];
+      if (selectedVoiceIds.length) currentSections.push('voice_transcripts');
+      // Saved resolution cursors retain their combined sections; new original voice restores also order their dependents.
+      const combinedSelection = selected !== null && !selectedVoiceIds.length && !selected.some(row => row.section === 'growth_attention' || row.section === 'growth_topics');
       const sections = combinedSelection ? currentSections : cursor.phase === undefined ? selected ? currentSections : undefined : cursor.phase === 'current'
         ? currentSections.filter(section => section !== 'documents' && section !== 'visit_preparation' && section !== 'chat' && section !== 'chat_imports' && section !== 'concerns' && section !== 'growth_attention' && section !== 'growth_topics' && !Object.hasOwn(attachmentSupplementModules, section))
         : cursor.phase === 'documents' ? currentSections.filter(section => section === 'documents' || section === 'visit_preparation')
@@ -138,14 +155,20 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
         : nextTarget();
       if (sections?.length === 0) { cursor = afterPhase(); continue; }
       const page = await opened.reader.readPage({ selection: { childIds: [target.sourceChildId], modules: target.sections }, sections,
+        ...(selectedVoiceIds.length && cursor.phase === 'attachments' ? { voiceTranscriptIds: selectedVoiceIds } : {}),
         acknowledgedManifestSha256: job.request.acceptedManifestSha256 ?? undefined, cursor: cursor.page as HandoverImportCursor | null, limit: 1 });
       const next: Cursor = page.nextCursor ? { ...cursor, page: page.nextCursor } : afterPhase();
       const row = page.rows[0]; cursor = next;
       if (!row || row.section === 'children') continue;
       if (selected) {
-        const value = (row.section === 'growth_attention' || row.section === 'growth_topics' ? growthImportSourceRow(row).value : row.value) as { id?: unknown } | null;
-        const id = row.section === 'profile' || row.section === 'visit_preparation' || row.section === 'child_avatar' ? row.childId : value && typeof value === 'object' ? value.id : undefined;
-        if (!selected.some(item => item.section === row.section && item.resourceId === id)) continue;
+        if (row.section === 'voice_transcripts' && selectedVoiceIds.length) {
+          const voice = row.value.voice;
+          if (!voice || typeof voice !== 'object' || !('id' in voice) || !selectedVoiceIds.includes(voice.id as string)) continue;
+        } else {
+          const value = (row.section === 'growth_attention' || row.section === 'growth_topics' ? growthImportSourceRow(row).value : row.value) as { id?: unknown } | null;
+          const id = row.section === 'profile' || row.section === 'visit_preparation' || row.section === 'child_avatar' ? row.childId : value && typeof value === 'object' ? value.id : undefined;
+          if (!selected.some(item => item.section === row.section && item.resourceId === id)) continue;
+        }
       }
       if (!supported.has(row.section)) domainReject('package_section_not_connected', 400);
       const documentContent = row.section === 'documents' || row.section === 'document_versions'
@@ -160,6 +183,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
   async function process(work: FirestoreBackgroundWork, signal: AbortSignal) {
     let job = await batches.claim(work); if (!job) return { state: 'stopped' as const };
     let opened: Opened | undefined, pendingStudent: string | undefined;
+    let pendingAccountResult: 'accountAvatarResult' | 'notificationPreferencesResult' | undefined;
     try {
       opened = await options.uploads.open(work.scope.ownerUserId, job.request.uploadId, signal);
       const checked = await verified(work.scope.ownerUserId, opened, commandFor(job));
@@ -171,8 +195,20 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       let processed = 0;
       if (job.request.accountAvatar && !job.accountAvatarResult) {
         const avatar = await opened.reader.readAccountAvatar(opened.reader.manifestSha256, true);
+        pendingAccountResult = 'accountAvatarResult';
         try { job = await batches.applySelfAvatar(work, avatar, operationSignal); }
         finally { avatar.content?.fill(0); }
+        pendingAccountResult = undefined;
+        if (job.state === 'completed') return { state: 'completed' as const };
+        processed++;
+      }
+      if (job.request.notificationPreferences && !job.notificationPreferencesResult) {
+        if (processed >= maxItems || Date.now() >= until && processed > 0)
+          return { state: 'deferred' as const, nextAt: new Date(Date.now() + 1000).toISOString() };
+        const backup = await opened.reader.readNotificationPreferences(opened.reader.manifestSha256);
+        pendingAccountResult = 'notificationPreferencesResult';
+        job = await batches.applyNotificationPreferences(work, backup, operationSignal);
+        pendingAccountResult = undefined;
         if (job.state === 'completed') return { state: 'completed' as const };
         processed++;
       }
@@ -218,6 +254,8 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       const current = await batches.get(work.scope.ownerUserId, work.resourceId);
       if (current.state === 'completed') return { state: 'completed' as const };
       if (['cancelled', 'failed', 'interrupted'].includes(current.state)) return { state: 'stopped' as const };
+      if (pendingAccountResult && current[pendingAccountResult])
+        return { state: 'deferred' as const, nextAt: new Date(Date.now() + 1000).toISOString() };
       if (pendingStudent && current.enrolments?.some(row => row.sourceChildId === pendingStudent))
         return { state: 'deferred' as const, nextAt: new Date(Date.now() + 1000).toISOString() };
       await batches.fail(work, codeOf(error), pendingStudent); return { state: 'stopped' as const };
@@ -226,7 +264,11 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
   const items = createFirestoreHandoverImportItems(options);
   return { create: start, process, originalModules: options.originalBackup ? originalBackupModuleSchema.options.filter(module => module !== 'attachments' || !!options.attachments?.avatars) : [],
     accountAvatarRestore: !!options.attachments?.avatars && !!options.originalBackup,
+    notificationPreferencesRestore: !!options.originalBackup,
+    originalAttachmentResources: !!options.originalBackup && !!options.attachments?.files && !!options.attachments?.photos
+      && !!options.attachments?.voices && !!options.attachments?.transcripts,
     compareOriginal: createOriginalBackupComparison(options),
+    compareNotificationPreferences: createAccountPreferencesComparison(options),
     compareSelfAvatar: createSelfAvatarComparison(options), history: items.history, summary: batches.summary,
     async enrolments(owner: string, id: string) {
       const job = await batches.get(owner, id);

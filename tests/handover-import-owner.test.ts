@@ -8,6 +8,51 @@ import { handoverImportTargetSchema, originalBackupModuleSchema, type HandoverIm
 import { packageHash } from '../frontend/src/platform/package-import-hash.ts';
 import { FamilyDocumentApiError } from '../src/client/family-documents-api.ts';
 import { handoverSourceHistoryKey } from '../frontend/src/production/HandoverImportOwner.ts';
+import { DEFAULT_NOTIFICATION_PREFERENCES } from '../src/shared/family.ts';
+
+test('account restore compares selected settings and submits both pinned differences in one batch', async () => {
+  const uploadId = crypto.randomUUID();
+  const upload = inspectionUpload(uploadId, crypto.randomUUID(), []);
+  const preview = upload.preview!;
+  preview.header.version = 3;
+  preview.header.selection = { modules: [], childIds: [], period: null, accountAvatar: { version: 5 }, notificationPreferences: { version: 0 } };
+  preview.children = [];
+  const commands: HandoverImportCommand[] = [];
+  const api = createHandoverApi('https://app.example.test', async (input, init) => {
+    const url = String(input);
+    if (url.endsWith('/capabilities')) return Response.json({ classEnrolment: false, notificationPreferencesRestore: true, accountAvatarRestore: true });
+    if (url.endsWith('/package-uploads/' + uploadId)) return Response.json(upload);
+    const basis = { manifestSha256: preview.manifestSha256, uploadId };
+    if (url.endsWith('/compare-account-avatar')) return Response.json({ ...basis, backupVersion: 5, localVersion: 2, state: 'different' });
+    if (url.endsWith('/compare-notification-preferences')) return Response.json({ ...basis, backupVersion: 0, localVersion: 3, state: 'different',
+      backup: DEFAULT_NOTIFICATION_PREFERENCES, current: { ...DEFAULT_NOTIFICATION_PREFERENCES, version: 3, quietStart: '21:00' } });
+    if (url.endsWith('/package-imports')) {
+      const command = JSON.parse(String(init?.body)) as HandoverImportCommand;
+      commands.push(command);
+      return Response.json({ ...inspectionBatch(command.opId, uploadId), targets: [], totalItems: 2, processedItems: 0, state: 'queued' });
+    }
+    throw Error('Unexpected route');
+  });
+  const owner = new HandoverImportOwner(api);
+  owner.syncContext('owner', 'session-1', true);
+  await owner.openUpload(uploadId);
+  await owner.readImportCapabilities();
+  await owner.compareAccountAvatar();
+  await owner.compareNotificationPreferences();
+  const first = owner.getSnapshot();
+  assert.equal(first.accountAvatarComparison?.value?.backupVersion, 5);
+  assert.equal(first.preferencesComparison?.value?.current.quietStart, '21:00');
+  await owner.compareNotificationPreferences();
+  await owner.restoreAccountParts({ preferences: first.preferencesComparison, avatar: first.accountAvatarComparison });
+  assert.equal(commands.length, 0, 'a stale comparison cannot authorize either item');
+  const latest = owner.getSnapshot();
+  await owner.restoreAccountParts({ preferences: latest.preferencesComparison, avatar: latest.accountAvatarComparison });
+  assert.equal(commands.length, 1);
+  assert.deepEqual(commands[0].notificationPreferences, { expectedVersion: 3 });
+  assert.deepEqual(commands[0].accountAvatar, { expectedVersion: 2, mode: 'replace_current' });
+  assert.deepEqual(commands[0].targets, []);
+  assert.equal(commands[0].acceptedManifestSha256, preview.manifestSha256);
+});
 
 test('original restore maps module selections to their existing resource section',()=>{
   assert.equal(originalRestoreResourceSection('sources'),'private_sources');
@@ -489,4 +534,79 @@ test('negotiated original memory compares and submits distinct resource sections
   assert.equal(owner.getSnapshot().originalMemoryResourcesEnabled, false);
   assert.equal(Object.hasOwn(queries[1], 'includeMemoryResources'), false, 'An absent capability never sends the new comparison flag');
   assert.deepEqual(owner.getSnapshot().comparison?.items.map(row => row.resourceSection), ['instructions']);
+});
+
+test('negotiated original attachments restore only proven deleted assets and keep legacy comparison limited to child avatars', async () => {
+  const id = (n: number) => '00000000-0000-4000-8000-' + String(n).padStart(12, '0');
+  const upload = inspectionUpload(id(1), id(2), ['attachments']);
+  upload.preview!.coverage = ['files', 'voices', 'photos'].map(section => ({ section, childId: id(2), items: 2 }));
+  const rows: OriginalBackupComparison['items'] = [
+    { id: id(3), targetId: id(3), resourceSection: 'files', backupVersion: 3, localVersion: 5, state: 'deleted', changedFields: ['asset'] },
+    { id: id(3), targetId: id(3), resourceSection: 'voices', backupVersion: 3, localVersion: 6, state: 'deleted', changedFields: ['asset'] },
+    { id: id(4), targetId: id(14), resourceSection: 'photos', backupVersion: 2, localVersion: 7, state: 'deleted', changedFields: ['asset'] },
+    { id: id(5), targetId: id(5), resourceSection: 'files', backupVersion: 3, localVersion: 3, state: 'unchanged', changedFields: [] },
+    { id: id(6), resourceSection: 'photos', backupVersion: 2, localVersion: null, state: 'unavailable', changedFields: [] },
+    { id: id(7), targetId: id(7), resourceSection: 'voices', backupVersion: 3, localVersion: 0, state: 'deleted', changedFields: ['asset'] },
+    { id: id(8), targetId: id(8), resourceSection: 'files', backupVersion: 2, localVersion: 4, state: 'different', changedFields: ['asset'] },
+  ];
+  const avatar: OriginalBackupComparison['items'][number] = {
+    id: id(2), targetId: id(2), resourceSection: 'child_avatar', backupVersion: 1, localVersion: 0, state: 'different', changedFields: ['asset'],
+  };
+  const queries: OriginalBackupComparisonQuery[] = [], commands: HandoverImportCommand[] = [], capabilityHeaders: Headers[] = [];
+  let modern = true, unexpectedAssets = false;
+  const api = createHandoverApi('https://app.example.test', async (input, init) => {
+    const url = String(input); let response: unknown;
+    if (url.endsWith('/package-imports/capabilities')) {
+      capabilityHeaders.push(new Headers(init?.headers));
+      response = { classEnrolment: false, originalModules: ['attachments'], ...(modern ? { originalAttachmentResources: true } : {}) };
+    } else if (url.endsWith('/package-uploads/' + id(1))) response = upload;
+    else if (url.endsWith('/compare-original')) {
+      const query = JSON.parse(String(init?.body)) as OriginalBackupComparisonQuery; queries.push(query);
+      response = { uploadId: id(1), childId: id(2), module: 'attachments', manifestSha256: 'a'.repeat(64),
+        items: query.includeAttachmentResources || unexpectedAssets ? rows : [avatar], nextCursor: null };
+    } else if (url.endsWith('/package-imports')) {
+      const command = JSON.parse(String(init?.body)) as HandoverImportCommand; commands.push(command);
+      response = { ...inspectionBatch(command.opId, id(1)), state: 'queued',
+        targets: command.targets.map(target => handoverImportTargetSchema.parse(target)) };
+    } else throw Error('Unexpected request: ' + url);
+    return Response.json(response);
+  });
+  const owner = new HandoverImportOwner(api); owner.syncContext('owner', 'owner:1', true);
+  await owner.readImportCapabilities();
+  assert.ok(capabilityHeaders[0].get('x-handover-original-features')?.split(',').includes('attachment-resources'));
+  await owner.openUpload(id(1)); await owner.compareOriginal(id(2), 'attachments');
+  assert.equal(queries[0].includeAttachmentResources, true, 'Asset-only backups remain comparable without child avatar coverage');
+  assert.equal(queries[0].includeRestoreTarget, true); assert.equal(owner.getSnapshot().comparison?.error, null);
+  for (const row of rows) owner.selectComparison(row, true);
+  assert.equal(owner.getSnapshot().comparison?.selected.length, 3, 'Only proven positive-version deletions are selectable; immutable live originals stay unchanged');
+  await owner.restoreComparison();
+  assert.equal(commands.length, 1);
+  assert.deepEqual(commands[0].resolutions, [
+    { sourceChildId: id(2), section: 'files', resourceId: id(3), resolution: { mode: 'restore_deleted', targetId: id(3), expectedVersion: 5 } },
+    { sourceChildId: id(2), section: 'voices', resourceId: id(3), resolution: { mode: 'restore_deleted', targetId: id(3), expectedVersion: 6 } },
+    { sourceChildId: id(2), section: 'photos', resourceId: id(4), useRestoredTarget: true,
+      resolution: { mode: 'restore_deleted', targetId: id(14), expectedVersion: 7 } },
+  ]);
+  assert.equal(commands[0].restoreOriginal, true); assert.equal(commands[0].resolutionOnly, true);
+  assert.deepEqual(commands[0].targets, [{ sourceChildId: id(2), target: { childId: id(2), spaceId: null }, sections: ['attachments'] }]);
+  await owner.openUpload(id(1)); await owner.compareOriginal(id(2), 'attachments'); owner.selectReadComparison('restore_deleted', true);
+  const observed = owner.getSnapshot().comparison;
+  modern = false; await owner.readImportCapabilities();
+  assert.equal(owner.getSnapshot().comparison, null, 'A capability downgrade clears read versions and checked rows');
+  await owner.restoreComparison(observed); assert.equal(commands.length, 1);
+  const reads = queries.length;
+  await owner.compareOriginal(id(2), 'attachments'); assert.equal(queries.length, reads, 'Legacy servers cannot compare an asset-only backup');
+  upload.preview!.coverage.push({ section: 'child_avatar', childId: id(2), items: 1 });
+  await owner.openUpload(id(1)); await owner.compareOriginal(id(2), 'attachments');
+  assert.equal(Object.hasOwn(queries.at(-1)!, 'includeAttachmentResources'), false);
+  assert.deepEqual(owner.getSnapshot().comparison?.items.map(row => row.resourceSection), ['child_avatar']);
+  owner.selectComparison(avatar, true); await owner.restoreComparison();
+  assert.equal(commands.length, 2); assert.equal(commands[1].resolutions[0].section, 'child_avatar');
+  unexpectedAssets = true; await owner.openUpload(id(1)); await owner.compareOriginal(id(2), 'attachments');
+  assert.ok(owner.getSnapshot().comparison?.error, 'Unnegotiated asset rows are rejected');
+  assert.deepEqual(owner.getSnapshot().comparison?.items, []);
+  upload.preview!.coverage = upload.preview!.coverage.filter(row => row.section !== 'child_avatar');
+  modern = true; owner.syncContext('owner', 'owner:2', true); await owner.openUpload(id(1));
+  const identityReads = queries.length;
+  await owner.compareOriginal(id(2), 'attachments'); assert.equal(queries.length, identityReads, 'Identity changes clear negotiated asset support');
 });

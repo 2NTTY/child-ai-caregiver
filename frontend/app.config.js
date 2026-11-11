@@ -27,8 +27,13 @@ export default ({ config }) => {
   const existingSharing = sharingIndex >= 0 && Array.isArray(plugins[sharingIndex]) ? plugins[sharingIndex][1] ?? {} : {};
   const sharingPlugin = ['expo-sharing', { ...existingSharing,
     android: { ...existingSharing.android, enabled: true, singleShareMimeTypes: ['*/*'], multipleShareMimeTypes: ['*/*'] },
-    ios: { ...existingSharing.ios, enabled: false } }];
+    ios: isAndroid ? { enabled: false } : { ...existingSharing.ios, enabled: true, appGroupId: 'group.org.yuyoufang.app',
+      activationRule: { supportsText: true, supportsWebUrlWithMaxCount: 20, supportsFileWithMaxCount: 20,
+        supportsImageWithMaxCount: 20, supportsMovieWithMaxCount: 20, supportsAttachmentsWithMaxCount: 20 } } }];
   if (sharingIndex < 0) plugins.push(sharingPlugin); else plugins[sharingIndex] = sharingPlugin;
+  // Xcode mods run in reverse registration order; configure the target after Expo creates it.
+  const receiverPlugin = './plugins/with-ios-share-inbox.cjs';
+  if (!isAndroid && !plugins.includes(receiverPlugin)) plugins.splice(plugins.indexOf(sharingPlugin), 0, receiverPlugin);
   if (providers.includes('google.com') && (isIos || isAndroid)) {
     const oauthId = /^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/;
     if (!oauthId.test(process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '')) throw new Error('Configure the Google Web client ID');
