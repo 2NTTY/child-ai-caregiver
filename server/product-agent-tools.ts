@@ -4,6 +4,7 @@ import { photoLinkInputSchema, photoMessageReferenceSchema } from '../src/shared
 import { officialHelpIdSchema, type OfficialHelpId } from '../src/shared/agent-feedback.ts';
 import { z } from "zod";
 import { assistantTaskContextRequestSchema, type AssistantTaskContextPage } from '../src/shared/assistant-task-context.ts';
+import { selectedCareFiltersSchema, selectedCareCursorSchema, type SelectedCarePage, type SelectedCareRequest } from '../src/shared/assistant-care-context.ts';
 import { summaryQuery } from "../src/shared/care-summary.ts";
 import type { MemoryContext, MemoryFact, SummaryInput } from "../src/shared/memory.ts";
 import { readAgentWorkSchema } from "../src/shared/agent-work.ts";
@@ -104,6 +105,8 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 
 export function createProductAgentTools(options: {
   prepareMixedTasks?:(action:MixedBatchAction)=>Promise<MixedTaskBatch>;
+  mixedCare?:(input:{from:number;limit:number;singleChild?:boolean;filters:SelectedCareRequest['filters'];cursor?:SelectedCareRequest['cursor']})=>
+    Promise<{children:SelectedCarePage[];nextFrom:number|null}>;
   mixedTasks?: (input:{from:number; childId?:string; cursor?:{afterId:string;basis:string}}) =>
     Promise<AssistantTaskContextPage & {nextFrom:number|null}>;
   photos?: Pick<import('./firestore-photos.ts').FirestorePhotoStore, 'get' | 'list' | 'agentImage' | 'authorizeImage'>;
@@ -136,7 +139,7 @@ export function createProductAgentTools(options: {
   const memoryGrounding = new Map<string, { fact: MemoryFact; source: ChatDeliverySource }>();
   let groundingLoaded = false;
   let selectedSources: ChatDeliverySource[] = [];
-  const taskPages=new Map<string,ChatDeliverySource>();
+  const selectedEvidence=new Map<string,ChatDeliverySource>();
   let proposedBatch:MixedTaskBatch|null=null;
   let selectedMemoryFacts: MemoryFact[] = [];
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
@@ -243,9 +246,9 @@ export function createProductAgentTools(options: {
       const kind = paragraph.kind ?? parsed.kind;
       const official = options.reviewedGrowthPresentation || kind === "caregiving" || kind === "safety_help";
       if ((kind === "caregiving" || kind === "safety_help") && !paragraph.citationIds.some(id => evidence.get(id)?.chunk.classification === "official_guidance")) throw new FamilyError(400, "citation_required");
-      if (kind === "private_reference" && !paragraph.citationIds.some(id => privateSources?.evidence.has(id) || taskPages.has(id)) && !run.images?.references().length && !run.voice) throw new FamilyError(400, "citation_required");
+      if (kind === "private_reference" && !paragraph.citationIds.some(id => privateSources?.evidence.has(id) || selectedEvidence.has(id)) && !run.images?.references().length && !run.voice) throw new FamilyError(400, "citation_required");
       for (const id of paragraph.citationIds) {
-        if (taskPages.has(id) && !official) continue;
+        if (selectedEvidence.has(id) && !official) continue;
         if (privateSources?.evidence.has(id) && !options.reviewedGrowthPresentation) continue;
         const item = evidence.get(id);
         if (!item || official && item.chunk.classification !== "official_guidance") throw new FamilyError(400, "invalid_citation");
@@ -254,8 +257,8 @@ export function createProductAgentTools(options: {
     if (new Set(parsed.paragraphs.flatMap(paragraph => paragraph.citationIds)).size > 6) throw new FamilyError(400, "citation_limit");
   }
   function deliverySource(id: string): ChatDeliverySource | null {
-    const taskPage=taskPages.get(id);
-    if (taskPage) return taskPage;
+    const selectedSource=selectedEvidence.get(id);
+    if (selectedSource) return selectedSource;
     const privateCitation = privateSources?.evidence.get(id);
     if (privateCitation) {
       const excerpt = chatDeliveryExcerpt(privateCitation.excerpt);
@@ -542,7 +545,54 @@ export function createProductAgentTools(options: {
             break;
           }
           children.push(item);
-          taskPages.set(citationId,{citationId,version:hash,contentHash:hash,classification:'private',...chatDeliveryReviewSourceExcerpt(text)});
+          selectedEvidence.set(citationId,{citationId,version:hash,contentHash:hash,classification:'private',...chatDeliveryReviewSourceExcerpt(text)});
+        }
+        return {children,nextFrom};
+      })});
+  }
+  if (options.mixedCare) {
+    const read=options.mixedCare;
+    const parameters=z.strictObject({from:z.int().min(0).default(0),
+      filters:selectedCareFiltersSchema,cursor:selectedCareCursorSchema.optional()});
+    tools.push({name:'search_selected_care',effect:'read',authorize:permitted,parameters,
+      description:'讀取這段對話已選孩子的照護記錄，首次只需傳 filters，會取得姓名和各人記錄。問某日飲奶可傳 {"filters":{"eventDate":"2026-06-15","kind":"feeding"}}，eventDate 按事件當地日期。nextFrom 接下一組；同一孩子續頁帶回其 from、原 filters 及 nextCursor 作 cursor。引用記錄的 citationId，保留原單位與約數。undatedMatches 是本頁日期未知的相關記錄，仍有游標時不能當成完整歷史。',
+      parameterErrorHints:()=>[{path:'filters',reason:'invalid_parameters',expected:'Start with {"filters":{}} or a kind/eventDate filter. The server already has the selected children. Only reuse from and cursor returned by this tool.'}],
+      execute:args=>guard(async()=>{
+        const input=parameters.parse(args);
+        function describe(child:SelectedCarePage,from:number) {
+          const sources:ChatDeliverySource[]=[];
+          function evidence(value:unknown) {
+            const text=JSON.stringify(value), hash=chatDeliveryContentHash(text), citationId='care:'+hash;
+            sources.push({citationId,version:hash,contentHash:hash,classification:'private',...chatDeliveryReviewSourceExcerpt(text)});
+            return citationId;
+          }
+          const scope={childId:child.childId,name:child.childName};
+          const records=child.records.map(record=>({...record,citationId:evidence({...scope,...record})}));
+          const coverage={...scope,filters:input.filters,matchesOnPage:records.length,scanned:child.scanned,undatedMatches:child.undatedMatches,
+            continued:!!input.cursor,hasMore:child.nextCursor!==null};
+          return {item:{...child,from,records,coverageCitationId:evidence(coverage)},sources};
+        }
+        const allowance=Math.max(0,budget.toolResponseCharacters-256);
+        const limit=allowance<4000 ? 1 : 3;
+        const page=await read({...input,limit});
+        const children:ReturnType<typeof describe>['item'][]=[];
+        let nextFrom=page.nextFrom;
+        for (const child of page.children) {
+          const from=input.from+children.length;
+          let {item,sources}=describe(child,from);
+          const fits=(candidate:typeof item)=>JSON.stringify({children:[...children,candidate],nextFrom:from+1}).length<=allowance;
+          if (!children.length && !fits(item) && child.records.length>1) {
+            const smaller=await read({...input,from,limit:1,singleChild:true});
+            if (!smaller.children[0]) throw new AgentStopped('unauthorized');
+            ({item,sources}=describe(smaller.children[0],from));
+          }
+          if (!fits(item)) {
+            if (!children.length) throw new FamilyError(400,'response_limit');
+            nextFrom=input.from+children.length;
+            break;
+          }
+          children.push(item);
+          for (const source of sources) selectedEvidence.set(source.citationId,source);
         }
         return {children,nextFrom};
       })});
@@ -559,7 +609,7 @@ export function createProductAgentTools(options: {
      }},
   );
   return {
-    tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
+    tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_selected_care','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
       : options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "read_knowledge_context", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
       : tools.filter(tool => (options.includeTaskProposals!==false || !["propose_task","propose_task_change"].includes(tool.name))
         && (options.includeContact!==false || !["read_contact_options","contact_caregiver"].includes(tool.name))),
@@ -620,7 +670,7 @@ export function createProductAgentTools(options: {
           : [{ text: "暫時未有可引用的補充說明。請查看關注卡片的適用依據及來源。", citationIds: [] }])
         : answer.paragraphs;
       const rendered = paragraphs.map(paragraph => paragraph.text + (paragraph.citationIds.length
-        ? " " + paragraph.citationIds.map(id => taskPages.has(id) ? "[待辦資料]" : privateSources?.evidence.has(id)?"[私人來源 "+(privateSourceCitations.findIndex(item=>item.citationId===id)+1)+"]":"[" + (citations.findIndex(item=>item.chunk.chunkId===id)+1) + "]").join("") : "")).join("\n\n");
+        ? " " + paragraph.citationIds.map(id => selectedEvidence.has(id) ? (id.startsWith('care:') ? "[照護記錄]" : "[待辦資料]") : privateSources?.evidence.has(id)?"[私人來源 "+(privateSourceCitations.findIndex(item=>item.citationId===id)+1)+"]":"[" + (citations.findIndex(item=>item.chunk.chunkId===id)+1) + "]").join("") : "")).join("\n\n");
       return { text: rendered, citations: citations.map(item => item.chunk), privateSourceCitations, retrievalMode: mode };
     },
     deliveryDraft(): ChatDeliveryDraft | null {
