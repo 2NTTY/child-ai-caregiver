@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { mixedTaskBatchSchema } from '../src/shared/mixed-task-batch.ts';
 import { mixedChatRoomSchema, mixedChatMessageSchema, mixedChildIdsSchema, mixedChatScopeSchema } from '../src/shared/mixed-chat.ts';
-import { firestoreDomainUuid } from './firestore-domain-data.ts';
+import { firestoreDomainHash, firestoreDomainUuid } from './firestore-domain-data.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 
 const id = z.uuid(), fingerprint = z.string().regex(/^[a-f0-9]{64}$/u);
@@ -11,10 +12,32 @@ export const mixedRoomRecordSchema = mixedChatRoomSchema.extend({
 });
 export const mixedMessageRecordSchema = mixedChatMessageSchema.extend({
   operationId:id, fingerprint, previousMessageId:id.nullable(), scope:mixedChatScopeSchema, childIds:mixedChildIdsSchema,
+  taskBatch:mixedTaskBatchSchema.extend({epoch:id,authorizationVersion:z.string(),targetBasis:z.array(fingerprint).min(1).max(100),
+    confirmed:z.boolean()}).optional(),
 });
 export type MixedRoomRecord = z.infer<typeof mixedRoomRecordSchema>;
 export type MixedMessageRecord = z.infer<typeof mixedMessageRecordSchema>;
 export type MixedKind = 'mixed-room' | 'mixed-message';
+
+function validBatch(message:MixedMessageRecord,owner:string) {
+  const batch=message.taskBatch;
+  if (!batch) return true;
+  if (batch.id!==firestoreDomainUuid(['mixed-task-batch',owner,message.roomId,message.id])
+    || batch.items.length!==batch.targetBasis.length) return false;
+  const targets=batch.action.kind==='create' ? (batch.action.childIds??message.childIds).map(childId=>({childId,taskId:null,expectedVersion:null}))
+    : batch.action.targets;
+  if (targets.length!==batch.items.length) return false;
+  const initial=batch.items.map((item,i)=>({...item,taskId:targets[i].taskId,status:'pending',reason:null,version:null}));
+  if (!initial.every((item,i)=>message.childIds.includes(item.childId) && item.childId===targets[i].childId
+    && item.expectedVersion===targets[i].expectedVersion && item.operationId===firestoreDomainUuid(['mixed-task-item',batch.id,item.childId,item.taskId])
+    && (batch.action.kind==='create' || batch.items[i].taskId===item.taskId))) return false;
+  if (firestoreDomainHash([batch.id,batch.runId,batch.action,initial,batch.targetBasis,batch.authorizationVersion,batch.epoch])!==batch.digest) return false;
+  const pending=batch.items.some(item=>item.status==='pending'), failed=batch.items.some(item=>item.status==='failed'||item.status==='conflict');
+  if (!batch.items.every(item=>item.status!=='completed'||item.taskId!==null&&item.version!==null)) return false;
+  if (batch.state==='awaiting_confirmation') return !batch.confirmed && batch.items.every(item=>item.status==='pending');
+  if (batch.state==='cancelled') return !pending;
+  return batch.confirmed && (batch.state==='running'?pending:!pending && (batch.state==='partial')===failed);
+}
 
 export function mixedRecordId(kind:MixedKind, ownerUserId:string, operationId:string) {
   return firestoreDomainUuid([kind, ownerUserId, operationId]);
@@ -31,7 +54,7 @@ export function validMixedRecord(kind:MixedKind, id:string, scope:WorkRecoverySc
       && (room.scope.kind === 'class') === (room.membership !== null);
   }
   const parsed=mixedMessageRecordSchema.safeParse(raw);
-  return parsed.success && parsed.data.id === id && mixedRecordId(kind,scope.ownerUserId,parsed.data.operationId) === id
+  return parsed.success && validBatch(parsed.data,scope.ownerUserId) && parsed.data.id === id && mixedRecordId(kind,scope.ownerUserId,parsed.data.operationId) === id
     && version === parsed.data.version && (parsed.data.previousMessageId === null) === (version === 2);
 }
 
