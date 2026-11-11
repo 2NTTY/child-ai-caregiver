@@ -32,7 +32,44 @@
       "knownOutputTokens": 77,
       "persistedRunReadBack": true,
       "externalNotifications": 0
+    },
+    {
+      "runId": "1e8bed09-e2c4-4216-babc-e2b7d8e8cd59",
+      "state": "completed",
+      "outcome": "no_action",
+      "modelCalls": 5,
+      "toolCalls": 5,
+      "queryEmbeddings": 0,
+      "observation": "A due, explicitly requested household check did not produce a message. The private worker catalog lacked its canonical note reader."
+    },
+    {
+      "runId": "920378e5-9bc7-4a9e-8f08-311e90f10bbb",
+      "state": "stopped",
+      "reason": "delivery_review_rejected",
+      "modelCalls": 5,
+      "toolCalls": 4,
+      "queryEmbeddings": 0,
+      "observation": "After enabling the reader, an exact note read returned the original content hash. The first presentation lacked a usable citation. The independent reviewer rejected the later draft. Private draft and detailed judge issues were not retained.",
+      "sameRunReplayWithoutExtraCalls": true,
+      "mainChatMessageSaved": false,
+      "externalNotifications": 0
+    },
+    {
+      "runId": "3c952bb0-06ef-44bf-9bfb-fcdd14f2ba55",
+      "sourceCommit": "e9c23b7163ed17236ecbadcf1891d93ee3deba12",
+      "environment": "Local Firebase emulators, same production worker and Vertex Gemini, synthetic due household request",
+      "state": "completed",
+      "outcome": "contact",
+      "modelCalls": 4,
+      "toolCalls": 3,
+      "queryEmbeddings": 0,
+      "independentReview": "pass",
+      "sameOriginalCitationAndContentHash": true,
+      "mainChatMessagesSaved": 1,
+      "replay": "same run, no new generation or second message",
+      "delivery": "one queued receipt",
+      "externalNotifications": 0
     }
   ],
-  "separateReleaseChecks": ["Production service and index readiness", "Signed compatible Android install", "Device receives the demo with the App closed", "Opens the exact message and replies", "Web reads back that same reply"]
+  "separateReleaseChecks": ["Production service and index readiness", "Signed Android build", "Installation on tester's device", "Device receives the demo with the App closed", "Opens the exact message and replies", "Web reads back that same reply"]
 }

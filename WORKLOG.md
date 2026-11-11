@@ -5914,3 +5914,7 @@ Web／手機共用對話頁按固定範圍列出所有孩子，沿既有資料�
 隔離環境由 Web 管理 API 建立一則主聊天訊息，沿原操作查回同一收據，合成 Android 收件箱只得一項。第一次真模型巡查在呈現參數被拒後耗盡該次預算。補清可讀的家庭變動位置與呈現參數後，第二次沿正式 worker 用兩次生成完成 `no_action`，重啟後讀回同一 run。裝置前景過期、每日巡查與專項工作重疊、普通公告的補提邊界另有針對性檢查。手機實收與跨端回覆單獨驗收。[實際紀錄](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json)
 
 同日原站發布 `p4-notify-d464982f`。兩個複合索引及私人狀態欄位排除均已生效。已核 API／worker 健康、Web 資產雜湊、未登入的管理示範請求回 401。示範對象已配置，發布過程沒有代發通知或變更裝置同意。Android 使用同一提交建立 preview 版本 6。 [發布及實機進度](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
+
+以「家長已約好再問」驗巡查時，發現背景 Agent 無法按 ID 讀回交代。補上讀取後，下一個真 run 讀到了原文，但提交的第一段缺少可用引用，後續草稿亦未通過獨立審核。#561 將精確讀取得到的原文及版本交給審核，正式顯示前再核對。針對性檢查涵蓋原項仍有效，以及審核中內容改動或刪除。Android 版本 6 已用 `apksigner` 核對簽署與前版一致。[本機驗證](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json) · [APK 及交付紀錄](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
+
+修正後用一項新的已到時間交代走同一正式 worker。真 Gemini 讀原項，以該次引用交獨立審核，審核通過後保存一則主聊天訊息及一張待派送收據；重播同一工作不再生成。共四次模型呼叫、三次工具、零 embedding，實際外發為零。已將 `90ecde37` 的 API 及 worker 發布到原站，健康檢查回 200、未登入的示範入口回 401。實機收件及跨端回覆保留待驗。

@@ -27,11 +27,29 @@
     "versionCode": 6,
     "profile": "preview",
     "runtime": "a682961caee9a918563ec71e5373417a986d8a24",
-    "artifactStatus": "build_submitted"
+    "artifactStatus": "finished_signature_verified",
+    "completedAt": "2026-11-11T18:44:58.996Z",
+    "bytes": 120541280,
+    "sha256": "35d4aa8c66817d6a37175fd44eb9fbe8e94edd9a97f903471e77b12b98faf458",
+    "v2SignerSha256": "6153ebdd00cbadc004506cc468e2aab5f5430320a90c8bd00df336e0853aa8a0",
+    "sameSignerAsPreviousApk": true,
+    "download": "https://expo.dev/artifacts/eas/GNAP3ybSxSQZhMwMN36eFhMEgAvz3zE44ikNtOG89gQ.apk"
+  },
+  "backendFollowup": {
+    "pullRequest": 561,
+    "commit": "90ecde37a91051180d7af3f32c92763b73de78e3",
+    "tag": "p4-notify-backend-90ecde37",
+    "apiWorkerDeltaSha256": "91034547d0098efe1deaff953e0e128e3b9916c8bd3a041ee4a47f7cb071bcaf",
+    "apiWorkerDeltaBytes": 47526,
+    "apiAndWorker": "healthy",
+    "publicHealthHttp": 200,
+    "unauthenticatedAdminDemoHttp": 401,
+    "webImageUnchanged": true,
+    "deviceNotificationSentByDeployment": false
   },
   "physicalDemo": {
     "operatorBinding": "Configured for the designated test account and one of its owned children",
-    "deviceConsent": "No active chat notification binding at the pre-release check",
+    "deviceConsent": "Post-release read-only check: the bound account has native push enabled; zero active Android devices, zero devices opted in to chat notifications.",
     "demoSent": false,
     "receiptOnHandset": "pending",
     "openExactMessageAndReply": "pending",
