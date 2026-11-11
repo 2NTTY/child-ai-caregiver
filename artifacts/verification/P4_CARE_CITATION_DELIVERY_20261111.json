@@ -1,0 +1,35 @@
+{
+  "release": {
+    "tag": "p4-group-2f442c36",
+    "apiCommit": "2f442c36c127b2cb195aeffe552b1bd64248bf5f",
+    "webCommit": "2f442c36c127b2cb195aeffe552b1bd64248bf5f",
+    "mergedPullRequest": 547,
+    "mergedCommit": "2a64f21316a4ac6fa0442974c87753b4733b9ea9",
+    "previousTag": "p4-group-83afe271",
+    "observedHongKong": "2026-11-11T23:11:06+08:00",
+    "apiArchiveSha256": "65220ee8c3bf4f5d86fdc38cd3f70e2d034bd5b575baa6578269fd411cbb6b04",
+    "webArchiveSha256": "9bcc5edf6ff70de3b64d37a4ba1dfa2016bc9956beeed7b84a3ced6011a50bf5",
+    "apiWorkerImage": "sha256:5afc36335347a176dab9800607dc3761472774ad8f0424231cfbac976e2def2c",
+    "webImage": "sha256:1a9466da12d8f2defe30a7235d430912c28996ea251f92b5493f0e6ff4b4ac40",
+    "liveComposeSha256": "ef05695e9b9a021af4f7cbad882263d5ce7d22c24f8c5098eaa01f22a2330b7f",
+    "public": {
+      "health": 200,
+      "storage": "firestore",
+      "unauthenticatedCareCitation": 401,
+      "adminHtmlSha256": "27a9db5a792fc022470d962d626ef1ff7f9dbb85da2e222f47a39c0ab02e8e67",
+      "bundle": "/_expo/static/js/web/index-dc1d878964abb5379a13e4f9ffeef3b7.js",
+      "bundleSha256": "953c76bcf3b8db5e63dcf5ccac2f13e3be2eed57155b16a4468573eb7ba2124a"
+    },
+    "rollback": "Prior Compose, images and Web retained. After new writes retain the compatible API and worker during Web rollback."
+  },
+  "verification": {
+    "synthetic": [
+      "Production tool assembly attached to the accepted paragraph its actual reviewed record locator. A literal marker in model text and coverage references stayed inert.",
+      "Authenticated HTTP route read original text under the current personal or class scope. Version mismatch returned 409. Deletion, historical hash and lost membership withheld the original.",
+      "Shared controller and text-rendering checks covered on-demand opening, collapse, context changes and late responses. Server and frontend type checks passed on their respective changes."
+    ],
+    "deployment": "Offline image probe passed before cutover. No active Agent lease, sending work or unresolved background effects at the guard. API and worker became healthy. One TLS probe failed briefly while Web restarted; final checks passed both on the VM and externally.",
+    "notRun": ["Authenticated walkthrough on a live family account", "Android release or device walkthrough", "Another Gemini generation for the citation reader"]
+  },
+  "resume": "../../docs/P4_RESUME.md"
+}

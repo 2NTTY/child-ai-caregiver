@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-P4 其餘工作暫存於[接手清單](docs/P4_RESUME.md)。正式站版本以清單連結的發布證據為準，工作包仍保留原完成門檻。
+**11 月 11 日 23:11（香港），P4 暫停點。** 原站 Web／API／worker 已更新至 `p4-group-2f442c36`。新多孩回覆可點讀通過審核的照護原文；Android 待批量交付。下次直接從[接手清單](docs/P4_RESUME.md)選一組，保留各包原完成門檻。[原站發布證據](artifacts/verification/P4_CARE_CITATION_DELIVERY_20261111.json)
 
 - **11 月 11 日，Web 示範交接。** 原站 Web、API 及 worker 已發布至 `p4-group-83afe271`。個人從「更多 → 本人多孩對話」進入，老師沿班級名冊進入。助手可查所選孩子的照護記錄及待辦，也能準備一批待辦供一次確認；統一匯入頁可收取完整對話副本。兩條真 Gemini 流程使用隔離合成資料。跨孩記憶／文件召回仍待開發，Android 待批量交付。[照護查詢](artifacts/verification/P4_SELECTED_CARE_VERTEX_20261111.json)／[原站交付](artifacts/verification/P4_SELECTED_CARE_DELIVERY_20261111.json)
 
