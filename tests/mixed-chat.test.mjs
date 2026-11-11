@@ -8,6 +8,12 @@ import { createFirestoreSharingStore } from '../server/firestore-sharing.ts';
 import { createFirestoreChatStore } from '../server/firestore-chat.ts';
 import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
 import { createFirestoreAgentRuns } from '../server/firestore-agent-runs.ts';
+import { createProductAgentTools } from '../server/product-agent-tools.ts';
+import { createFirestoreProductAgent } from '../server/firestore-product-agent.ts';
+import { createFirestoreCareStore } from '../server/firestore-care.ts';
+import { createFirestoreMemoryStore } from '../server/firestore-memory.ts';
+import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
+import { readAiConfig } from '../server/ai-config.ts';
 import { createFirebaseRequestHandler } from '../server/firebase-app.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 
@@ -24,8 +30,8 @@ test('mixed messages are account-private, idempotent and lose disclosure when cl
     await authority.acknowledge({userId,policyVersion:SERVICE_POLICY_VERSION,operationId:randomUUID()});
   }
   const origin='https://example.test';
-  let actor='owner', expireOnRead=0;
-  const server = () => createFirebaseRequestHandler({ authority, chat:createFirestoreChatStore(options),
+  let actor='owner', expireOnRead=0, product;
+  const server = () => createFirebaseRequestHandler({ authority, product, chat:createFirestoreChatStore(options),
     auth:{getSession:async()=>expireOnRead>0 && --expireOnRead===0 ? null : {user:{id:actor}},
       handler:async()=>new Response(null,{status:404})},publicOrigin:origin,mailConfigured:true });
   let handle=server();
@@ -73,6 +79,51 @@ test('mixed messages are account-private, idempotent and lose disclosure when cl
   const history=await (await call(path)).json();
   assert.deepEqual(history.messages.map(m=>m.text),[input.text]);
   assert.deepEqual((await (await call('')).json()).rooms.map(r=>r.id),[room.id]);
+  const care=createFirestoreCareStore(options),memory=createFirestoreMemoryStore({...options,chat,care}),online=createFirestoreOnlineStore(options);
+  let generations=0, blockGeneration=false;
+  const started=Promise.withResolvers(), finish=Promise.withResolvers();
+  product=await createFirestoreProductAgent({...options,chat,care,memory,online,
+    config:readAiConfig({AI_ENABLED:'true',GCP_PROJECT_ID:options.projectId}),platformProvider:{async generate(request,signal){
+      generations++;
+      if (blockGeneration) {
+        started.resolve(signal); await finish.promise;
+        return {content:{role:'model',parts:[{text:'cancelled answer'}]},finishReason:'STOP'};
+      }
+      const parts=request.contents.flatMap(content=>content.parts??[]);
+      const respond=part=>({content:{role:'model',parts:[part]},finishReason:'STOP',usageMetadata:{promptTokenCount:10,candidatesTokenCount:5}});
+      if (generations===1) return respond({functionCall:{id:'read',name:'read_selected_tasks',args:{from:0}}});
+      if (generations===2) {
+        const evidence=JSON.stringify(parts.map(p=>p.functionResponse)).match(/tasks:[a-f0-9]{64}/u);
+        assert.ok(evidence,'review must have an actual scope-bound task result');
+        return respond({functionCall:{id:'present',name:'present_answer',args:{kind:'private_reference',
+          paragraphs:[{text:'第一位選中的孩子目前沒有待辦。',citationIds:[evidence[0]]}]}}});
+      }
+      assert.equal(generations,3);
+      const text=parts.map(p=>p.text??'').join('\n');
+      const draft=JSON.parse(text.slice(text.indexOf('{')));
+      assert.ok(draft.sources[0].excerpt.includes(childIds[0]) || draft.sources[0].excerpt.includes(childIds[1]));
+      return respond({text:JSON.stringify({draftHash:draft.draftHash,decision:'pass',issues:[]})});
+    }}});
+  handle=server();
+  const question=(await (await call(path+'/messages',{operationId:randomUUID(),expectedVersion:2,text:'呢兩位同學有咩待辦？'})).json()).message;
+  const replyPath=path+'/messages/'+question.id+'/reply';
+  const answer=(await (await call(replyPath,{})).json()).result;
+  assert.equal(answer?.status,'completed',JSON.stringify(answer));
+  assert.equal(answer.deliveryReview.decision,'pass');
+  assert.equal((await (await call(replyPath)).json()).result.runId,answer.runId);
+  assert.equal((await (await call(replyPath,{})).json()).result.runId,answer.runId);
+  assert.equal(generations,3);
+  const later=(await (await call(path+'/messages',{operationId:randomUUID(),expectedVersion:3,text:'再看看？'})).json()).message;
+  const laterPath=path+'/messages/'+later.id+'/reply';
+  blockGeneration=true;
+  const pending=call(laterPath,{});
+  const signal=await started.promise;
+  const stopped=await handle(new Request(origin+'/api/account/mixed-chats'+laterPath,{method:'DELETE',
+    headers:{origin,'x-expected-user-id':actor}}));
+  const wasAborted=signal.aborted;
+  finish.resolve(); await pending;
+  assert.equal((await stopped.json()).result.stopReason,'cancelled');
+  assert.equal(wasAborted,true,'stopping the original run interrupts the active provider call');
   const personal=[];
   for (const name of ['兄','弟']) personal.push((await authority.createChild({userId:actor,displayName:name,operationId:randomUUID()})).child.id);
   const both=await (await call('',{operationId:randomUUID(),scope:{kind:'personal'},childIds:personal})).json();
@@ -91,5 +142,20 @@ test('mixed messages are account-private, idempotent and lose disclosure when cl
   assert.ok(!(await revoked.text()).includes(input.text));
   assert.deepEqual((await (await call('')).json()).rooms.map(r=>r.id),[both.room.id]);
   assert.equal((await call(path+'/messages',input)).status,403);
+  assert.equal((await call(replyPath)).status,403);
   assert.equal(await runs.authorizeMixed(actor,room.id,message.id,claimed.runId),false);
+});
+
+test('group task evidence returns a complete prefix and resumes at the first unread child within the model budget', async()=>{
+  const children=Array.from({length:3},()=>({childId:randomUUID(),childName:'學生',tasks:[],nextCursor:null}));
+  const run={scope:{userId:'member',childId:randomUUID()},runId:randomUUID(),budget:{toolResponseCharacters:830}};
+  const surface=createProductAgentTools({run,authorize:async()=>true,store:{},memory:{},tasks:{},knowledge:{createRun:()=>({})},
+    mixedTasks:async({from})=>({children:children.slice(from),nextFrom:null})});
+  const read=surface.tools.find(tool=>tool.name==='read_selected_tasks');
+  const page=await read.execute({from:0});
+  assert.equal(page.data.result.children.length,1);
+  assert.equal(page.data.result.nextFrom,1);
+  assert.equal((await read.execute({from:1})).data.result.children[0].childId,children[1].childId);
+  run.budget.toolResponseCharacters=520;
+  assert.equal((await read.execute({from:0})).data.code,'response_limit');
 });

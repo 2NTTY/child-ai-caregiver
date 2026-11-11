@@ -3,9 +3,10 @@ import type { AgentHistoryMessage } from "../src/shared/agent-work.ts";
 import type { KnowledgeFilter, KnowledgeQueryAge, KnowledgeQueryContext } from "../src/shared/knowledge.ts";
 import { FamilyError } from "./family-access.ts";
 import { knowledgeQueryAgeSchema } from "./knowledge-inputs.ts";
+type KnowledgeProfile = {profileApplicable:false;profile?:never} | Pick<MemoryContext,'profileApplicable'|'profile'>;
 
 /** Approximate values are discovery hints; no birth date or eligibility is inferred. */
-export function profileKnowledgeAge(context: MemoryContext, now = new Date()): { age: KnowledgeFilter["age"]; precision: KnowledgeQueryContext["precision"]; asOf?: string } {
+export function profileKnowledgeAge(context: KnowledgeProfile, now = new Date()): { age: KnowledgeFilter["age"]; precision: KnowledgeQueryContext["precision"]; asOf?: string } {
   const input = context.profileApplicable ? context.profile.data?.age : null;
   if (input?.kind === "birth_date") {
     const birth = new Date(input.date + "T00:00:00Z");
@@ -30,13 +31,13 @@ export function profileKnowledgeAge(context: MemoryContext, now = new Date()): {
   }
   return { age: null, precision: "unknown" };
 }
-export function baseAgentKnowledgeFilter(context: MemoryContext, now = new Date()): KnowledgeFilter {
+export function baseAgentKnowledgeFilter(context: KnowledgeProfile, now = new Date()): KnowledgeFilter {
   const profile = context.profileApplicable ? context.profile.data : null;
   const value = profileKnowledgeAge(context, now), region = profile?.region?.trim() || "HK";
   return { region: /^(香港|Hong Kong)$/iu.test(region) ? "HK" : region, classification: "official_guidance", age: value.age, topics: [],
     ageMatch: value.precision === "confirmed" ? "contained" : value.precision === "approximate" ? "overlap" : "unknown" };
 }
-export async function resolveKnowledgeQueryContext(context: MemoryContext, raw: KnowledgeQueryAge | undefined,
+export async function resolveKnowledgeQueryContext(context: KnowledgeProfile, raw: KnowledgeQueryAge | undefined,
   options: { childId: string; visibility: "private" | "family"; readHistory: (messageId: string, offset: number) => Promise<AgentHistoryMessage | null> }, now = new Date()) {
   const base = baseAgentKnowledgeFilter(context, now), profileAge = profileKnowledgeAge(context, now);
   let queryContext: KnowledgeQueryContext = { age: base.age, ageMatch: base.ageMatch!, precision: profileAge.precision, ...(profileAge.asOf ? { asOf: profileAge.asOf } : {}) };
