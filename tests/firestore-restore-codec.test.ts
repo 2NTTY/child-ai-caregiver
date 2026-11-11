@@ -33,6 +33,7 @@ import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { indexBatchSchema, indexBatchReceiptSchema, indexBatchSort } from '../server/knowledge-index-batch-records.ts';
 import { FIREBASE_BACKUP_COLLECTION_SUFFIXES } from '../server/firestore-backup.ts';
 import { transferBatchSchema, transferResultSchema, transferItemId } from '../server/knowledge-transfer-records.ts';
+import { mixedRoomRecordSchema, mixedMessageRecordSchema, mixedRecordId } from '../server/mixed-chat-records.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000', projectId = 'synthetic-restore-project', namespace = 'synthetic_restore';
 const at = '2026-10-11T12:00:00.000Z', digest = 'a'.repeat(64);
@@ -52,6 +53,31 @@ function record<T>(data: FirestoreDomainData, suffix: string, kind: string, id: 
   schema: z.ZodType<T>, value: T, version = 1) {
   return { path: namespace + '_' + suffix + '/' + firestoreDomainHash([kind, id]), data: data.seal(kind, id, current, schema, value, version) };
 }
+
+test('mixed restore validates original bindings and rebuilds only scoped tags and the room locator', () => {
+  const f = fixture(), operationId = randomUUID(), messageOperationId = randomUUID();
+  const roomId = mixedRecordId('mixed-room', ownerScope.ownerUserId, operationId);
+  const messageId = mixedRecordId('mixed-message', ownerScope.ownerUserId, messageOperationId);
+  const room = mixedRoomRecordSchema.parse({ id: roomId, version: 2, scope: { kind: 'personal' }, childIds: [scope.childId],
+    createdAt: at, updatedAt: at, operationId, fingerprint: digest, membership: null, latestMessageId: messageId });
+  const message = mixedMessageRecordSchema.parse({ id: messageId, roomId, version: 2, role: 'user', text: 'Synthetic mixed text',
+    createdAt: at, operationId: messageOperationId, fingerprint: digest, previousMessageId: null, scope: room.scope, childIds: room.childIds });
+  for (const [kind, suffix, id, schema, value] of [
+    ['mixed-room', 'mixed_rooms', roomId, mixedRoomRecordSchema, room],
+    ['mixed-message', 'mixed_messages', messageId, mixedMessageRecordSchema, message],
+  ] as const) {
+    const before = record(f.data, suffix, kind, id, ownerScope, schema as z.ZodType<typeof value>, value, 2);
+    if (kind === 'mixed-room') Object.assign(before.data, { roomId: randomUUID() });
+    const after = f.codec.transform(f.codec.decode(before), input()), reopened = f.codec.decode(after);
+    assert.deepEqual(reopened.value, value);
+    if (reopened.context.family !== 'knowledge') assert.deepEqual(reopened.context.scope, { ...ownerScope, storageEpoch: newEpoch });
+    assert.deepEqual(Object.keys(after.data).sort(), [...Object.keys(f.data.tags(ownerScope)),
+      'format', 'version', 'recordVersion', 'ciphertext', 'recovery', ...(kind === 'mixed-room' ? ['roomId'] : [])].sort());
+    if (kind === 'mixed-room') assert.equal(after.data.roomId, roomId);
+    assert.throws(() => f.codec.decode(record(f.data, suffix, kind, randomUUID(), ownerScope, schema as z.ZodType<typeof value>, value, 2)), errors('restore_binding'));
+    assert.throws(() => f.codec.decode(record(f.data, suffix, kind, id, ownerScope, schema as z.ZodType<typeof value>, value, 3)), errors('restore_binding'));
+  }
+});
 
 test('restore retains knowledge transfer identities and progress in system scope and stops ready batches', () => {
   const f = fixture();

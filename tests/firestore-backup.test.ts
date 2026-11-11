@@ -3,7 +3,12 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { FieldValue } from '@google-cloud/firestore';
 import { canonical } from '../server/firestore-session-codec.ts';
-import { firebaseBackupDocumentDigest, assertFirebaseBackupInventory, assertFirebaseNativeExport, type FirebaseBackupInventory } from '../server/firestore-backup.ts';
+import { firebaseBackupDocumentDigest, assertFirebaseBackupInventory, assertFirebaseNativeExport, FIREBASE_BACKUP_COLLECTION_SUFFIXES, type FirebaseBackupInventory } from '../server/firestore-backup.ts';
+
+test('mixed backup domains append after the existing stable erasure stages', () => {
+  assert.equal(FIREBASE_BACKUP_COLLECTION_SUFFIXES.indexOf('_private_summary_usage'), 143);
+  assert.deepEqual(FIREBASE_BACKUP_COLLECTION_SUFFIXES.slice(144), ['_mixed_rooms', '_mixed_messages']);
+});
 
 test('native backup inventory preserves vectors and rejects changed, missing or extra documents', () => {
   const documents = [{ path: 'synthetic/source', data: { vector: FieldValue.vector([1, 2, 3]), text: '合成公共來源' } },

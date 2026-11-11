@@ -20,6 +20,7 @@ import { handleSharingControlRequest } from '../server/sharing-control-api.ts';
 import { FirestoreDomainData, firestoreDomainHash } from '../server/firestore-domain-data.ts';
 import { createFirestoreChatFilesStore, firestoreChatFileRowSchema } from '../server/firestore-chat-files.ts';
 import { chatFileObjectAddress, type ChatFileObjects } from '../server/firebase-chat-file-objects.ts';
+import { mixedRoomRecordSchema, mixedMessageRecordSchema, mixedRecordId } from '../server/mixed-chat-records.ts';
 
 const rejected=(code:string)=>(error:unknown)=>(error as {code?:string}).code===code;
 test('class dissolution resumes one journal-backed cleanup and cannot revive data from an older backup',async()=>{
@@ -78,6 +79,23 @@ test('class dissolution resumes one journal-backed cleanup and cannot revive dat
   const invitation=await store.invite('manager',{spaceId:classroom.id,expectedVersion:classroom.version,operationId:randomUUID(),
     email:'viewer@example.test',role:'viewer',expiresAt:'2026-10-30T00:00:00Z'});
   classroom=await store.acceptInvitation('viewer',{operationId:randomUUID(),token:invitation.token});
+  async function mixed(owner: string, selected: { kind: 'personal' } | { kind: 'class'; spaceId: string }, childId: string) {
+    const bodyScope = await authority.runTransaction(owner, null, async binding => ({ ...binding.scope }));
+    const operationId = randomUUID(), messageOperationId = randomUUID();
+    const roomId = mixedRecordId('mixed-room', owner, operationId), messageId = mixedRecordId('mixed-message', owner, messageOperationId);
+    const at = new Date(now).toISOString(), fingerprint = 'd'.repeat(64);
+    const room = mixedRoomRecordSchema.parse({ id: roomId, version: 2, scope: selected, childIds: [childId], createdAt: at, updatedAt: at,
+      operationId, fingerprint, membership: selected.kind === 'class' ? { membershipId: randomUUID(), membershipScopeId: selected.spaceId } : null,
+      latestMessageId: messageId });
+    const message = mixedMessageRecordSchema.parse({ id: messageId, roomId, version: 2, role: 'user', text: 'Synthetic original mixed content',
+      createdAt: at, operationId: messageOperationId, fingerprint, previousMessageId: null, scope: selected, childIds: [childId] });
+    const roomPath = data.ref('mixed_rooms', 'mixed-room', roomId).path, messagePath = data.ref('mixed_messages', 'mixed-message', messageId).path;
+    fake.records.set(roomPath, { ...data.tags(bodyScope), roomId, ...data.seal('mixed-room', roomId, bodyScope, mixedRoomRecordSchema, room, 2) });
+    fake.records.set(messagePath, { ...data.tags(bodyScope), ...data.seal('mixed-message', messageId, bodyScope, mixedMessageRecordSchema, message, 2) });
+    return { roomId, messageId, roomPath, messagePath };
+  }
+  const classMixed = await mixed('viewer', { kind: 'class', spaceId: classroom.id }, child.child.id);
+  const personalMixed = await mixed('manager', { kind: 'personal' }, peer.child.id);
   const command={action:'dissolve' as const,spaceId:classroom.id,expectedVersion:classroom.version,operationId:randomUUID()};
   const {action,...direct}=command;
   await assert.rejects(store.dissolve('viewer',direct),rejected('space_manager_required'));
@@ -101,6 +119,10 @@ test('class dissolution resumes one journal-backed cleanup and cannot revive dat
   now+=121_000;let progress=await cleaner.advance(job.intent.scope.ownerUserId,job.intent.operationId);
   for(let n=0;progress.state!=='completed'&&n<FIREBASE_BACKUP_COLLECTION_SUFFIXES.length+8;n++)progress=await cleaner.advance(job.intent.scope.ownerUserId,job.intent.operationId);
   assert.equal(progress.state,'completed');
+  assert.equal(fake.records.has(classMixed.roomPath), false, 'A class receipt erases derived rooms stored under another member owner');
+  assert.equal(fake.records.has(classMixed.messagePath), false);
+  assert.equal(fake.records.has(personalMixed.roomPath), true, 'Unrelated personal mixed rooms survive the appended cleanup stages');
+  assert.equal(fake.records.has(personalMixed.messagePath), true);
   assert.equal(removedObjects,1);assert.equal(fake.records.has(data.ref('chat_file_assets','chat-file-asset',fileId).path),false);
   assert.equal((await api.operation(command.operationId,'manager',signal))?.exit?.cleanupState,'completed');
   assert.equal((await store.controlOperation('manager',enrol.operationId))?.redacted,true);
@@ -115,6 +137,8 @@ test('class dissolution resumes one journal-backed cleanup and cannot revive dat
     documents:backup,liveDocuments:documents(),erasures:[...intents.values()],erasureDescriptors:proofs,photoDescriptors:new Map(),
     authUsers:['manager','viewer','outsider'].map(userId=>({userId,email:userId+'@example.test',disabled:false,emailVerified:true}))});
   const after=restored.records.map(row=>codec.decode(row));
+  assert.equal(after.some(row => [classMixed.roomId, classMixed.messageId].includes(row.context.id)), false, 'The original class erasure receipt fences old mixed content during restore');
+  assert.equal(after.filter(row => [personalMixed.roomId, personalMixed.messageId].includes(row.context.id)).length, 2);
   assert.equal(after.filter(row=>row.context.kind==='care-record'&&row.context.scope.ownerUserId==='space:'+classroom.id).length,0);
   assert.equal((after.find(row=>row.context.kind==='workspace'&&row.context.id===classroom.id)!.value as any).status,'deleted');
   assert.equal(after.filter(row=>row.context.kind==='account'&&(row.value as any).status==='active').length,3);

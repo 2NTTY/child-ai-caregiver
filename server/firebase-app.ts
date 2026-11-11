@@ -82,7 +82,7 @@ export interface FirebaseRequestHandlerOptions {
   photoAgent?: PhotoAgent;
   accountData?: FirebaseAccountDataPort;
   library?: Pick<PersonalLibrary, "page">;
-  chat?: ChatStore;
+  chat?: ChatStore & { mixed?: import('./firestore-chat.ts').FirestoreChatStore['mixed'] };
   care?: FirestoreCareStore;
   summary?: FirestoreCareSummary;
   memory?: MemoryStore & { forSharedSpace?(spaceId: string): MemoryStore };
@@ -189,6 +189,30 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
       if (path.startsWith('/api/admin/') && request.headers.has('authorization')) return errorResponse('forbidden', 403);
       if (path.startsWith('/api/admin/') && options.admin) return uncached(await handleAdminRequest(request, { auth, admin: options.admin, adminUid: options.adminUid ?? null, publicOrigin, readJson }));
       if (path.startsWith("/api/auth/")) return uncached(await auth.handler(request));
+      if (path === '/api/account/mixed-chats' || path.startsWith('/api/account/mixed-chats/')) {
+        if (request.method !== 'GET' && !requestOriginAllowed(request.headers,publicOrigin)) throw new RequestError('origin_rejected',403);
+        const userId=(await auth.getSession({headers:request.headers}))?.user.id;
+        if (!userId) throw new RequestError('unauthorized',401);
+        const expected=request.headers.get('x-expected-user-id');
+        if (expected !== userId) throw new RequestError(expected ? 'identity_changed' : 'account_precondition_required',expected ? 409 : 428);
+        const store=options.chat?.mixed;
+        if (!store) throw new RequestError('mixed_chat_unavailable',503);
+        const match=/^\/api\/account\/mixed-chats(?:\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})(\/messages)?)?$/u.exec(path);
+        if (!match) throw new RequestError('not_found',404);
+        const cursor=new URL(request.url).searchParams.get('cursor');
+        let result;
+        if (request.method === 'GET' && !match[2]) result=match[1] ? await store.detail(userId,match[1],cursor) : await store.list(userId,cursor);
+        else if (request.method === 'POST' && !match[1]) result=await store.create(userId,await readJson(request));
+        else if (request.method === 'POST' && match[1] && match[2]) result=await store.append(userId,match[1],await readJson(request,64*1024));
+        else throw new RequestError('method_not_allowed',405);
+        try {
+          if ((await auth.getSession({headers:request.headers}))?.user.id !== userId) throw new RequestError('identity_changed',409);
+        } catch (error) {
+          if (request.method === 'POST') throw new RequestError('operation_result_unknown',503);
+          throw error;
+        }
+        return json(result,request.method === 'POST' ? 201 : 200);
+      }
       if (path === '/api/account/messages' && !options.accountData) return errorResponse('message_history_unavailable', 503);
       if (options.accountData && (path === '/api/account/messages' || path === '/api/account/export' || path === '/api/account/packages' || path.startsWith('/api/account/packages/') || path === '/api/account/package-imports' || path.startsWith('/api/account/package-imports/') || path === '/api/account/package-uploads' || path.startsWith('/api/account/package-uploads/') || path === '/api/account/delete' || path.startsWith('/api/account/deletion/'))) {
         if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);

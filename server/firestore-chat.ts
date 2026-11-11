@@ -1,4 +1,5 @@
 import { messageText, firestoreChatMessageSchema } from './chat-message-schema.ts';
+import { createFirestoreMixedChat } from './firestore-mixed-chat.ts';
 export { firestoreChatMessageSchema } from './chat-message-schema.ts';
 import { chatFileLinkInputSchema } from '../src/shared/chat-files.ts';
 import type { FirestoreChatFilesStore } from './firestore-chat-files.ts';
@@ -36,6 +37,7 @@ const lockSchema = z.object({ leases: z.array(z.object({ messageId: uuid, token:
   expiresAtMs: z.number().int().nonnegative() }).strict()).max(4) }).strict();
 
 export interface FirestoreChatStore extends ChatStore {
+  mixed: ReturnType<typeof createFirestoreMixedChat>;
   mutation: FirestoreOnlineMutation;
   readMessage(binding: FirestoreAuthorityTransaction, childId: string, messageId: string): Promise<ChatMessage | null>;
   readImportedMessage(binding: FirestoreAuthorityTransaction, childId: string, id: string): Promise<ImportedChatMessage | null>;
@@ -114,7 +116,7 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { voi
     },
   };
   return {
-    mutation, readMessage, readImportedMessage,
+    mixed: createFirestoreMixedChat(options), mutation, readMessage, readImportedMessage,
     getImportedForUser: (userId, childId, id) => authority.runTransaction(userId, childId, b => readImportedMessage(b, childId, id)),
     async listImportedForUser(userId, childId, cursor = null) {
       return authority.runTransaction(userId, childId, async b => {

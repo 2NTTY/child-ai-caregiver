@@ -20,6 +20,7 @@ import type { createHandoverService } from './handover-service.ts';
 import type { createHandoverUploadService } from './handover-upload-service.ts';
 import { handoverUploadRecordSchema } from './handover-upload-records.ts';
 import { firestoreAgentRunSchema } from './firestore-agent-runs.ts';
+import { mixedChatErasedBy } from './mixed-chat-records.ts';
 
 // New domains join the existing backup registry and must carry authenticated recovery scope.
 const collections = FIREBASE_BACKUP_COLLECTION_SUFFIXES.filter(suffix => !['_erasures', '_erasure_receipts', '_sessions', '_adk', '_root_budget', '_ai_usage', '_private_summary_usage'].includes(suffix)
@@ -61,6 +62,8 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
   }
   function matches(job: FirestoreScopeErasure, row: OpenedRecoveryEnvelope) {
     const scope = job.intent.scope, candidate = row.context.scope;
+    if (mixedChatErasedBy(row.context.kind, row.value, candidate.ownerUserId, scope,
+      job.intent.type === 'account-delete' || job.intent.type === 'class-delete')) return true;
     if (sharingErasedBy(row.context.kind, row.value, scope, job.intent.type === 'account-delete',job.intent.type==='class-delete')) return true;
     if (job.intent.type === 'account-delete' && row.context.kind === 'authority-invitation')
       return (row.value as { consumedBy?: string }).consumedBy === scope.ownerUserId;

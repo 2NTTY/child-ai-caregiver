@@ -3,6 +3,7 @@ import { privateSummaryReservationSchema } from './private-summary-work.ts';
 import { privateSummaryCutoverSchema } from './private-summary-scan.ts';
 import { replayAvatarLifecycle, assertRestoredAvatarRelations, restoredAvatarCleanupRecords, mergeAvatarCopyResponsibilities } from './firestore-restore-avatars.ts';
 import { isSharingAuthorityPath, sharingErasedBy, sharedSpaceSchema } from './firestore-sharing-records.ts';
+import { mixedChatErasedBy } from './mixed-chat-records.ts';
 import { replaySharingAuthority } from './firestore-restore-sharing.ts';
 import type { AvatarObjectDescriptor, AvatarCleanupRecord } from './avatar-data.ts';
 import { replayChatFileErasures, assertRestoredChatFileRelations } from './firestore-restore-chat-files.ts';
@@ -225,7 +226,9 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     const {scope,kind}=record.context;
     const accountErased=scopeJournal.some(v=>v.type==='account-delete'&&v.scope.ownerUserId===scope.ownerUserId);
     const body=record.value as Record<string,any>;
-    const matches=accountErased||erasedByScope(scope.ownerUserId,scope.workspaceId,scope.childId)
+    const matches=scopeJournal.some(intent => mixedChatErasedBy(kind, body, scope.ownerUserId, intent.scope,
+        intent.type === 'account-delete' || intent.type === 'class-delete'))
+      || accountErased||erasedByScope(scope.ownerUserId,scope.workspaceId,scope.childId)
       || kind==='handover-export'&&scopeJournal.some(intent=>handoverJobIncludesScope(firestoreHandoverJobSchema.parse(body),intent.scope,intent.type==='class-delete'))
       || scopeJournal.some(intent => sharingErasedBy(kind, body, intent.scope, intent.type === 'account-delete',intent.type==='class-delete'))
       || ['online-receipt','authority-operation','document-operation','change-projection','change'].includes(kind)
