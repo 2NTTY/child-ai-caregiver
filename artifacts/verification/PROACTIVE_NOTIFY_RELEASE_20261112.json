@@ -1,0 +1,40 @@
+{
+  "dateHongKong": "2026-11-12",
+  "commit": "d464982f5d96d37484059b0b036b2406ac3919cc",
+  "sourcePullRequests": [551, 552, 553],
+  "service": {
+    "tag": "p4-notify-d464982f",
+    "previous": "p4-group-2f442c36",
+    "apiWorkerDeltaSha256": "00e465c27f692e02dcb38a8d8646b88574bbeead1af703c2e3eb561d5881c576",
+    "webArchiveSha256": "049072b11cef5f7a8aba3a38e136c496ecc818e2006c210174997e81b18cc58e",
+    "probes": {
+      "readOnlyCandidate": "passed",
+      "apiAndWorker": "healthy",
+      "publicApiHealthHttp": 200,
+      "unauthenticatedAdminDemoHttp": 401,
+      "publicAdminHtmlSha256": "5d6e379e15e89d4e941fcdc11b4a9c52c070d768071b07c8c088e35ec1a86b8c",
+      "shippedJavaScriptMatchesLocalExport": true
+    },
+    "firestore": {
+      "readyNewComposites": ["native_push_deliveries: scope and chat creation cursor", "work_watches: scope and enabled flag"],
+      "excludedFromDefaultIndexing": ["proactive_state:*"]
+    },
+    "recovery": "Retain compatible API and worker after new data has been written. The previous Web image and saved configuration remain available for a UI rollback."
+  },
+  "android": {
+    "buildId": "cd0e42da-918e-41a2-a0ef-a4a6563a7b4c",
+    "applicationId": "org.yuyoufang.app",
+    "versionCode": 6,
+    "profile": "preview",
+    "runtime": "a682961caee9a918563ec71e5373417a986d8a24",
+    "artifactStatus": "build_submitted"
+  },
+  "physicalDemo": {
+    "operatorBinding": "Configured for the designated test account and one of its owned children",
+    "deviceConsent": "No active chat notification binding at the pre-release check",
+    "demoSent": false,
+    "receiptOnHandset": "pending",
+    "openExactMessageAndReply": "pending",
+    "sameReplyOnWeb": "pending"
+  }
+}

@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **主動通知。** 後端的三種喚醒沿原工作台帳，Web 管理按鈕及共用助手沿同一主聊天。隔離示範已驗保存、交送預覽及重開讀回。真 Gemini 巡查完成一次安靜結束。手機收到及回覆後 Web 讀回，須由相容 Android 版本驗收。[本機紀錄](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json)
+- **主動通知已上原站。** `p4-notify-d464982f` 的 Web、API 及 worker 已核版本、健康及管理入口保護。管理按鈕已綁定指定示範對象。真 Gemini 巡查完成過一次安靜結束，本機示範已驗收據、交送預覽及重開讀回。實機驗收從 Android 版本 6 的「在此手機接收助手聊天通知」開始，接續主聊天與 Web 回覆。 [發布與待驗](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json) · [本機紀錄](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json)
 
 **11 月 12 日開始[主動助手、手機通知與一鍵示範](PLAN.md#proactive-notifications)。其後的 [REQ-001 官方來源搜索](PLAN.md#agent-search-first)仍待驗。** P4 暫停於 11 月 11 日 23:11（香港）的原站版本 `p4-group-2f442c36`。新多孩回覆可點讀通過審核的照護原文，Android 待批量交付。五組餘項及恢復位置見[接手清單](docs/P4_RESUME.md)。[原站發布證據](artifacts/verification/P4_CARE_CITATION_DELIVERY_20261111.json)
 

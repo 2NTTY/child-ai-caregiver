@@ -5912,3 +5912,5 @@ Web／手機共用對話頁按固定範圍列出所有孩子，沿既有資料�
 ### 2026-11-12　主動助手與手機通知
 
 隔離環境由 Web 管理 API 建立一則主聊天訊息，沿原操作查回同一收據，合成 Android 收件箱只得一項。第一次真模型巡查在呈現參數被拒後耗盡該次預算。補清可讀的家庭變動位置與呈現參數後，第二次沿正式 worker 用兩次生成完成 `no_action`，重啟後讀回同一 run。裝置前景過期、每日巡查與專項工作重疊、普通公告的補提邊界另有針對性檢查。手機實收與跨端回覆單獨驗收。[實際紀錄](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json)
+
+同日原站發布 `p4-notify-d464982f`。兩個複合索引及私人狀態欄位排除均已生效。已核 API／worker 健康、Web 資產雜湊、未登入的管理示範請求回 401。示範對象已配置，發布過程沒有代發通知或變更裝置同意。Android 使用同一提交建立 preview 版本 6。 [發布及實機進度](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
