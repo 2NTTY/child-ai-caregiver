@@ -13,10 +13,11 @@ import { AppCheckbox } from '../components/AppCheckbox';
 import { MotionDisclosure } from '../motion';
 import { chineseFont, colors, readingType, spacing } from '../theme';
 import { projectAgentRun } from './agent-projection';
+import { publicAnswerSources } from '../agent-view-model';
 import { useDomainWriteGuard } from './useDomainEnvironment';
 import { useProductionMixedChats } from './useProductionMixedChats';
 import { useProduction } from './ProductionProvider';
-import type { MixedChatController, MixedChatState } from './MixedChatController';
+import { mixedCareRecordCitations, type MixedChatController, type MixedChatState } from './MixedChatController';
 import type { SharingController, SharingState } from './SharingController';
 import { MixedConversationExport } from './MixedConversationExport';
 
@@ -34,18 +35,34 @@ function ArchivedMixedReply({ reply, messageId }: { reply: MixedTranscriptRow['r
   </View>;
 }
 
-function MixedReply({ result, at }: { result: ProductAgentResult; at: string }) {
+function MixedReply({ result, at, controller, messageId, careCitation }: {
+  result: ProductAgentResult; at: string; controller: MixedChatController; messageId: string; careCitation: MixedChatState['careCitation'];
+}) {
   const run = projectAgentRun(result, '00000000-0000-0000-0000-000000000000', at);
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const help = officialHelpFromTools(result.tools);
+  const careCitationCount = mixedCareRecordCitations(result).length;
   return <View style={styles.group}>
     {help.length ? <OfficialHelpCards ids={help} /> : null}
-    <ChatMessage message={{ id: run.id, role: 'assistant', text: run.text, sources: run.citations,
+    <ChatMessage message={{ id: run.id, role: 'assistant', text: run.text, sources: publicAnswerSources(run),
       phase: run.status === 'running' ? 'thinking' : run.status === 'unknown' ? 'unknown' : run.status === 'stopped' ? 'stopped' : 'complete',
       note: [run.stopReasonLabel, run.stopReasonDetail].filter(Boolean).join(' '),
       activities: run.tools.map(tool => ({ id: tool.id, label: tool.nameLabel,
         state: tool.status === 'succeeded' ? 'succeeded' : tool.status === 'unknown' ? 'unknown' : 'failed' })) }}
-      degraded={run.retrievalMode === 'keyword_degraded'} />
+      degraded={run.retrievalMode === 'keyword_degraded'} careCitationCount={careCitationCount}
+      onOpenCareCitation={careCitationCount ? ordinal => { void controller.readCareCitation(messageId, ordinal); } : undefined} />
+    {careCitation?.messageId === messageId ? <View testID="mixed-care-citation-original" style={styles.group}>
+      <SectionHeader title={`照護記錄 ${careCitation.ordinal} 原文`} subtitle="私人照護記錄；每次開啟均重新核對目前存取權限及原版本。" />
+      {careCitation.loading ? <Text accessibilityLiveRegion="polite" style={styles.body}>正在讀取照護原文…</Text> : null}
+      {careCitation.error ? <><Text accessibilityLiveRegion="polite" style={styles.body}>{careCitation.error}</Text>
+        <AppButton label="重新讀取照護原文" variant="quiet" onPress={() => { void controller.readCareCitation(messageId, careCitation.ordinal); }} /></> : null}
+      {careCitation.citation ? <>
+        <Text style={styles.body}>{careCitation.citation.childName} · 版本 {careCitation.citation.version}</Text>
+        <Text style={styles.body}>來源：{careCitation.citation.source} · {careCitation.citation.eventTimeLabel ?? '未有記載事件日期'}</Text>
+        <Text selectable style={styles.body}>{careCitation.citation.text}</Text>
+      </> : null}
+      <AppButton label="收起照護原文" variant="quiet" onPress={controller.closeCareCitation} />
+    </View> : null}
     {run.privateSourceCitations?.length ? <>
       <AppButton label="查看私人參考" variant="quiet" expanded={sourcesOpen} onPress={() => setSourcesOpen(value => !value)} />
       <MotionDisclosure expanded={sourcesOpen} scopeKey={run.id}><View style={styles.group}>
@@ -189,7 +206,8 @@ function MixedConversationView({ controller, state, selected, children, kind, se
         const stopping = state.pending?.kind === 'reply' && state.pending.method === 'DELETE' && state.pending.messageId === message.id;
         return <View key={message.id} style={styles.group}>
           <ChatMessage message={{ id: message.id, role: 'user', text: message.text }} />
-          {archived ? <ArchivedMixedReply reply={archived} messageId={message.id} /> : result ? <MixedReply key={result.runId} result={result} at={message.createdAt} />
+          {archived ? <ArchivedMixedReply reply={archived} messageId={message.id} /> : result ? <MixedReply key={result.runId} result={result} at={message.createdAt}
+            controller={controller} messageId={message.id} careCitation={state.careCitation} />
             : <Text accessibilityLiveRegion="polite" style={styles.body}>{waiting ? '正在等待正式助手回覆…' : state.resultErrors.includes(message.id)
               ? '未能讀取原回覆，請重新查核。' : result === null ? '這則留言尚無可讀的助手回覆。' : '留言已保存，助手回覆尚未查核。'}</Text>}
           {!archived ? <><AppButton label="查核這則原回覆" variant="quiet" disabled={!state.online || !!state.busy || !!state.pending}

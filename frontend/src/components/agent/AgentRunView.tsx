@@ -6,6 +6,7 @@ import {
   agentProposalLabels, agentRunLabels, agentTime, agentToolLabels, mayCheckShared, mayDecide,
   mayRetryOriginal, proposalExpired, type AgentProposalView,
   type AgentRunActions, type AgentRunModel,
+  publicAnswerSources,
 } from "../../agent-view-model";
 import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
@@ -173,7 +174,7 @@ function RunAnswer({ run, activity, actions, onLocateSource }: {
   const [expanded, setExpanded] = useState(false);
   if (!run.text && !run.citations.length) return null;
   const answer = <ChatMessage testID="agent-answer" embedded
-    message={{ id: run.id, role: "assistant", text: run.text, sources: run.citations.length ? run.citations : undefined,
+    message={{ id: run.id, role: "assistant", text: run.text, sources: publicAnswerSources(run),
       phase: run.status === "running" ? "thinking" : run.status === "unknown" ? "unknown" : run.status === "stopped" ? "stopped" : "complete" }}
     phaseLabel={agentRunLabels[run.status]} onOpenSource={actions.openSource} onLocateSource={onLocateSource}
     degraded={run.retrievalMode === "keyword_degraded"} />;

@@ -32,19 +32,31 @@ function CitationReference({ number, source, locate }: { number: number; source:
   return <CitationMarker ref={anchor} number={number} label={`查看引用【${number}】：${source.title}`} onPress={() => locate(source.id, anchor)} />;
 }
 
-export function CitationText({ children, style }: { children: string; style?: StyleProp<TextStyle> }) {
+export function CitationText({ children, style, careCitationCount = 0, onOpenCareCitation }: {
+  children: string; style?: StyleProp<TextStyle>; careCitationCount?: number; onOpenCareCitation?: (ordinal: number) => void;
+}) {
   const context = useContext(CitationContext);
-  if (!context) return <Text selectable style={style}>{children}</Text>;
+  if (!context && !onOpenCareCitation) return <Text selectable style={style}>{children}</Text>;
   const parts: ReactNode[] = [];
-  const pattern = /【([1-9]\d*)】|\[([1-9]\d*)\]/g;
+  const pattern = /【([1-9]\d*)】|\[([1-9]\d*)\]|\[照護記錄 ([1-9]\d*)\]/g;
   let offset = 0;
   for (const match of children.matchAll(pattern)) {
+    if (match[3]) {
+      const ordinal = Number(match[3]);
+      if (!onOpenCareCitation || !Number.isSafeInteger(ordinal) || ordinal > careCitationCount) continue;
+      const position = match.index!;
+      parts.push(children.slice(offset, position));
+      parts.push(<CitationMarker key={position} number={ordinal} markerText={match[0]} label={`查看照護記錄 ${ordinal} 原文`}
+        onPress={() => onOpenCareCitation(ordinal)} />);
+      offset = position + match[0].length;
+      continue;
+    }
     const sourceNumber = Number(match[1] ?? match[2]);
-    const source = context.sources[sourceNumber - 1];
+    const source = context?.sources[sourceNumber - 1];
     if (!source) continue;
     const position = match.index!;
     parts.push(children.slice(offset, position));
-    parts.push(<CitationReference key={position} number={sourceNumber} source={source} locate={context.locate} />);
+    parts.push(<CitationReference key={position} number={sourceNumber} source={source} locate={context!.locate} />);
     offset = position + match[0].length;
   }
   parts.push(children.slice(offset));

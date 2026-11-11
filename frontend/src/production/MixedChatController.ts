@@ -3,6 +3,12 @@ import type { MixedChatRoom, MixedChatMessage } from '../../../src/shared/mixed-
 import type { ProductAgentResult } from '../../../src/shared/product-agent.ts';
 import type { MixedTaskBatch } from '../../../src/shared/mixed-task-batch.ts';
 import type { MixedTranscriptRow } from '../../../src/shared/mixed-chat-transfer.ts';
+import { selectedCareRecordCitations, type SelectedCareCitation } from '../../../src/shared/assistant-care-citation.ts';
+
+export function mixedCareRecordCitations(result: ProductAgentResult | null | undefined) {
+  return result?.status === 'completed' && result.deliveryReview?.decision === 'pass'
+    ? selectedCareRecordCitations(result.deliveryReview.sourceVersions) : [];
+}
 
 type CreateInput = Parameters<MixedChatApi['create']>[0];
 type AppendInput = Parameters<MixedChatApi['append']>[1];
@@ -18,12 +24,13 @@ export interface MixedChatState {
   room: MixedChatRoom | null; messages: MixedChatMessage[]; nextMessageCursor: string | null;
   results: Record<string, ProductAgentResult | null>; resultErrors: string[];
   archivedReplies: Record<string, MixedTranscriptRow['reply']>;
+  careCitation: { messageId: string; ordinal: number; loading: boolean; citation: SelectedCareCitation | null; error: string | null } | null;
   batches: Record<string, MixedTaskBatch | null>; batchErrors: string[];
   draft: string; busy: 'read' | 'write' | 'reply' | null; pending: Pending | null; notice: string | null;
 }
 const initial = (): MixedChatState => ({ userId: null, identityKey: null, contextKey: null, online: false,
   rooms: [], roomsLoaded: false, nextRoomCursor: null, room: null, messages: [], nextMessageCursor: null,
-  results: {}, resultErrors: [], archivedReplies: {}, batches: {}, batchErrors: [], draft: '', busy: null, pending: null, notice: null });
+  results: {}, resultErrors: [], archivedReplies: {}, careCitation: null, batches: {}, batchErrors: [], draft: '', busy: null, pending: null, notice: null });
 type Ticket = { sequence: number; userId: string; controller: AbortController };
 
 /** One account's private conversations. Server authorization and saved run results remain authoritative. */
@@ -33,6 +40,8 @@ export class MixedChatController {
   private listeners = new Set<() => void>();
   private active: AbortController | null = null;
   private sequence = 0;
+  private careSequence = 0;
+  private careController: AbortController | null = null;
   private api: MixedChatApi;
   private scopeChanged: () => void;
   constructor(api: MixedChatApi, scopeChanged: () => void = () => {}) { this.api = api; this.scopeChanged = scopeChanged; }
@@ -43,19 +52,21 @@ export class MixedChatController {
     const contextKey = scope ? JSON.stringify([scope, selectionKey]) : null;
     const identityChanged = userId !== this.state.userId || identityKey !== this.state.identityKey;
     if (identityChanged || contextKey !== this.state.contextKey) {
+      this.closeCareCitation();
       this.active?.abort(); this.active = null; this.sequence++;
       const pending = identityChanged ? null : this.state.pending;
       this.scope = scope;
       this.state = { ...initial(), userId, identityKey, online, contextKey, pending };
       this.update({});
     } else if (online !== this.state.online) {
-      if (!online) { this.active?.abort(); this.active = null; this.sequence++; }
+      if (!online) { this.closeCareCitation(); this.active?.abort(); this.active = null; this.sequence++; }
       this.update({ online, ...(!online ? { busy: null } : {}) });
     }
   }
   private begin(busy: MixedChatState['busy'], interruptReply = false): Ticket | null {
     if (!this.state.userId || !this.state.identityKey || !this.scope || !this.state.online || this.state.busy && !(interruptReply
       && (this.state.busy === 'reply' || this.state.busy === 'write' && this.state.pending?.kind === 'batch'))) return null;
+    this.closeCareCitation();
     if (interruptReply) this.active?.abort();
     const controller = new AbortController(); this.active = controller;
     const ticket = { sequence: ++this.sequence, userId: this.state.userId, controller };
@@ -69,6 +80,7 @@ export class MixedChatController {
   }
   private failure(error: unknown, write = false) {
     if (error instanceof MixedChatApiError && [401, 403, 404, 409].includes(error.status)) {
+      this.closeCareCitation();
       this.update({ room: null, messages: [], results: {}, resultErrors: [], archivedReplies: {}, batches: {}, batchErrors: [], rooms: [], roomsLoaded: false, pending: null, draft: '',
         notice: this.scope?.kind === 'personal' ? '對話、孩子或權限已改變，請重新讀取本人的孩子及對話。'
           : '對話、班級或權限已改變，請重新讀取名冊及本人對話。' });
@@ -78,6 +90,43 @@ export class MixedChatController {
       this.update({ ...(rejected ? { pending: null } : {}), notice: rejected ? '這次輸入未獲接納，請核對後再試。'
         : '原操作結果未確認；請查回原操作，勿重新送出另一筆。' });
     } else this.update({ notice: '未能讀取本人對話或原回覆，請重新讀取。' });
+  }
+  closeCareCitation = () => {
+    this.careController?.abort(); this.careController = null; this.careSequence++;
+    if (this.state.careCitation) this.update({ careCitation: null });
+  };
+  async readCareCitation(messageId: string, ordinal: number) {
+    const { room, userId, identityKey, contextKey, online } = this.state;
+    const result = this.state.results[messageId];
+    if (!room || !userId || !identityKey || !online || this.state.busy || this.state.pending || Object.hasOwn(this.state.archivedReplies, messageId)
+      || !this.state.messages.some(message => message.id === messageId) || !Number.isSafeInteger(ordinal) || ordinal < 1) return;
+    const reference = mixedCareRecordCitations(result)[ordinal - 1];
+    const childId = reference && room.childIds[reference.childIndex];
+    if (!reference || !childId) return;
+    this.closeCareCitation();
+    const controller = new AbortController(), sequence = ++this.careSequence, runId = result!.runId;
+    this.careController = controller;
+    const current = () => sequence === this.careSequence && !controller.signal.aborted && this.state.userId === userId
+      && this.state.identityKey === identityKey && this.state.contextKey === contextKey && this.state.room?.id === room.id
+      && this.state.results[messageId]?.runId === runId;
+    this.update({ careCitation: { messageId, ordinal, loading: true, citation: null, error: null } });
+    try {
+      const citation = await this.api.careCitation(room.id, messageId, ordinal, userId, controller.signal);
+      if (!current()) return;
+      const liveReference = mixedCareRecordCitations(this.state.results[messageId])[ordinal - 1];
+      if (citation.citationId !== reference.citationId || citation.recordId !== reference.recordId || citation.version !== reference.version
+        || citation.childId !== childId || this.state.room?.childIds[reference.childIndex] !== childId
+        || liveReference?.citationId !== reference.citationId || liveReference.version !== reference.version)
+        throw new MixedChatApiError(0, 'mixed_chat_response_invalid');
+      this.update({ careCitation: { messageId, ordinal, loading: false, citation, error: null } });
+    } catch (error) {
+      if (!current()) return;
+      if (error instanceof MixedChatApiError && error.status === 401) { this.failure(error); return; }
+      const message = error instanceof MixedChatApiError && error.status === 409 ? '來源已更改，未能顯示這筆原文；請重新查閱。'
+        : error instanceof MixedChatApiError && [403, 404].includes(error.status) ? '目前已無法查看這筆照護記錄。'
+          : '未能讀取照護原文，請重試。';
+      this.update({ careCitation: { messageId, ordinal, loading: false, citation: null, error: message } });
+    } finally { if (this.careController === controller) this.careController = null; }
   }
   setDraft = (draft: string) => { if (!this.state.busy && !this.state.pending) this.update({ draft }); };
   async loadRooms(more = false) {
@@ -301,5 +350,5 @@ export class MixedChatController {
       }
     } finally { this.finish(ticket); }
   }
-  dispose() { this.active?.abort(); this.sequence++; this.listeners.clear(); }
+  dispose() { this.closeCareCitation(); this.active?.abort(); this.sequence++; this.listeners.clear(); }
 }

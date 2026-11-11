@@ -59,11 +59,11 @@ function controllerFor(owner: ProductionOwner, sharing?: SharingController) {
 export function useProductionMixedChats(sharing?: SharingController) {
   const { owner, identityKey, sessionGeneration, userId, auth, account } = useProduction();
   const entry = useMemo(() => controllerFor(owner, sharing), [owner, sharing]);
-  useLayoutEffect(() => { entry.bind(); }, [entry]);
+  useLayoutEffect(() => { entry.bind(); return () => entry.controller.closeCareCitation(); }, [entry]);
   const current = useSyncExternalStore(entry.controller.subscribe, entry.controller.getSnapshot, entry.controller.getSnapshot);
   const expected = auth === 'signedIn' && account.gate === 'ready' && identityKey ? identityKey + ':mixed:' + sessionGeneration : null;
   const visible = current.identityKey === expected && current.userId === userId;
-  const state = visible ? current : { ...current, room: null, rooms: [], messages: [], results: {}, resultErrors: [], archivedReplies: {}, batches: {}, batchErrors: [], draft: '',
+  const state = visible ? current : { ...current, room: null, rooms: [], messages: [], results: {}, resultErrors: [], archivedReplies: {}, careCitation: null, batches: {}, batchErrors: [], draft: '',
     pending: null, busy: null, notice: null, roomsLoaded: false, nextRoomCursor: null, nextMessageCursor: null };
   return { controller: entry.controller, state, selected: visible ? entry.selection() : [], selectChild: entry.selectChild };
 }

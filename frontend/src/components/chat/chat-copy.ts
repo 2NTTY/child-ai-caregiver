@@ -2,7 +2,7 @@
 export const CHAT_SOURCE_COPY = {
   footerTitle: "參考來源",
   degradedWarning: "檢索已降級；請核對原來源及適用範圍。",
-  emptySources: "本次沒有可核對的來源片段。",
+  emptySources: "這則回覆沒有引用知識庫資料。",
   returnToCitation: "返回引用句",
   hintMoreSources: "查看更多來源",
   tabAccessibilityLabel: "回答參考來源",
