@@ -1,7 +1,7 @@
 import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
 import { z } from 'zod';
 import type { AiConfig } from './ai-config.ts';
-import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, PLATFORM_AGENT_RUN_LIMITS } from './agent-budget.ts';
+import { AGENT_LIMITS, AGENT_OUTPUT_LIMITS, AGENT_INTERACTIVE_INPUT, PLATFORM_AGENT_RUN_LIMITS } from './agent-budget.ts';
 import { adminCommandSchema, adminInvitationSchema, adminReceiptSchema, platformPolicySchema,
   type AdminInvitation, type AdminReceipt, type PlatformPolicy } from '../src/shared/admin.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
@@ -45,7 +45,7 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions, config: Ai
     },
     async overview() { const policy = await readPolicy(); return { policy, serverEnabled: config.enabled, platformConfigured: !!config.project,
       toolCalls: policy.maxToolCalls, deadlineMs: policy.maxRunSeconds * 1000,
-      outputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens), inputCharacters: config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default }; },
+      outputTokens: Math.min(config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive), inputCharacters: config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default }; },
     receipt,
     async submit(actorId: string, raw: unknown): Promise<AdminReceipt> {
       const command = domainParse(adminCommandSchema, raw), fingerprint = firestoreDomainHash(command);

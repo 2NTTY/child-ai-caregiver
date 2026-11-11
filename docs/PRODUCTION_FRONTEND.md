@@ -232,6 +232,7 @@ iOS 與 Android 使用同一原生 transport、SecureStore、AppState、畫面�
 - `ios-preview` 是獨立 EAS store distribution profile，channel 為 `ios-preview`，使用 `preview` 公開環境；不是 Android 的 internal APK profile，也不是直接公開 App Store。仍採 fingerprint runtime 及遞增 build number，不手填舊 runtime。
 - 建置 iOS 必須明確選 `--platform ios --profile ios-preview`；Firebase JS 公開設定、HTTPS API、Expo project 仍必須齊備。iOS 不要求或讀取 Android `google-services.json`；Firebase Auth 用現有 JS SDK，不因 APNs 另加原生 Firebase Messaging。
 - `npm run build:ios-ui --workspace frontend` 只匯出 iOS JS／Hermes 與資產，不能安裝到 iPhone，也不代表簽署或 TestFlight 已完成；此本機檢查不需要 Apple 團隊或付費會員。
+- 首次簽署系統分享時，主 App 和擴充 `org.yuyoufang.app.expo-sharing-extension` 均須由所選團隊獲配 App Group `group.org.yuyoufang.app`。EAS 從 Expo 配置取得兩個 target 的關聯；更改 Swift 接收程式後使用新的 iOS binary。真機可從「檔案」分享一份 ZIP，返回來源後開啟育有方，確認同一分享可交給既有匯入流程。文字及媒體則由使用者選擇加入草稿。
 - 實際註冊 App、首次簽署及提交前，確認有權使用的付費 Apple Developer 團隊、Bundle ID 可用性、App Store Connect App 身份及 Apple 要求的出口合規資料。沒有團隊不猜 Team ID，不用普通 Apple ID 假稱可發布 TestFlight；不自動購買會員。
 - 組織會員可以正式邀請使用者並授予必要簽署權限；個人會員的 App Store Connect 邀請不授予 Developer Program 憑證權限。使用原擁有人的授權操作，不傳密碼。TestFlight-only App 不承諾可直接轉戶，依 [Apple 轉移條件](https://developer.apple.com/help/app-store-connect/transfer-an-app/app-transfer-criteria/) 處理。
 - 私有 `.p8`、`.p12`、描述檔及其他簽署憑據留工程外；`.easignore` 亦排除它們。APNs Server 私鑰不進 App 或 EAS 前端封包；上傳前核對實際 archive，不能只以 ignore 存在當作已檢查。

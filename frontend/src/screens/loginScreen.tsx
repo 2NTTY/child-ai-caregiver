@@ -123,6 +123,8 @@ export default function LoginPage() {
         <AppButton label={mode === "signIn" ? "登入" : "建立帳戶"} loading={busy} disabled={!canSubmit} onPress={() => { void submit(); }} />
         {socialProviders.map(provider => <AppButton key={provider} label={`以 ${provider === "google.com" ? "Google" : "Apple"} 繼續`} variant="secondary"
           disabled={!canSubmit} onPress={() => { setPassword(""); setPasswordVisible(false); setResult(null); void authenticateProvider(provider); }} />)}
+        {mode === 'signUp' && account.status?.registration === 'invite' && socialProviders.includes('apple.com')
+          ? <Text style={styles.formNote}>使用 Apple「隱藏我的電郵」？請先用收到邀請的地址註冊並完成電郵驗證，再到「設定」的「登入與安全」連結 Apple。之後即可用 Apple 登入原帳戶。</Text> : null}
         {result || account.notice || recordsState.notice ? <Text accessibilityLiveRegion="polite" style={styles.result}>{result ?? account.notice ?? recordsState.notice}</Text> : null}
         {!online ? <Text style={styles.formNote}>目前未能連線，請連線後再試。</Text> : null}
         {auth === "unavailable" ? <AppButton label="重新檢查登入狀態" disabled={!online} variant="secondary" onPress={() => { void refresh(); }} /> : null}

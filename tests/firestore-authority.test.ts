@@ -59,6 +59,36 @@ function fixture() {
   return { fake, database, options, service, generation, values, open, initialize, identity, child, prepared, discardedResults,
     retry(hook?: () => Promise<void>) { discarded = true; onRetry = hook; }, loseReply() { lost = true; }, setNow(value: number) { now = value; }, now: () => now };
 }
+
+test('an invited password identity admits a hidden Apple identity only after an explicit link to the same UID', async () => {
+  const f = fixture(); await f.initialize(); await f.identity();
+  const identity = { userId: 'synthetic-owner', email: 'owner@example.test', emailVerified: true };
+  const password = { provider: 'password', subject: 'password' } as const;
+  const apple = { provider: 'apple.com', subject: 'opaque-apple-subject' } as const;
+  const liveLink = { original: password, target: apple, assertOriginalSession: async () => {} };
+  const signIn = (method: typeof password | typeof apple) => f.service.admitIdentity(identity, { method });
+  await assert.rejects(signIn(apple), rejected('auth_account_link_required', 403));
+  await assert.rejects(f.service.admitIdentity(identity, { method: apple, link: { ...liveLink, original: apple } }),
+    rejected('auth_account_link_required', 403));
+  await assert.rejects(f.service.admitIdentity({ ...identity, emailVerified: false }, {
+    method: password, link: liveLink,
+  }), rejected('email_not_verified', 403));
+  const original = await signIn(password);
+  await assert.rejects(f.service.admitIdentity(identity, { method: apple, link: { ...liveLink,
+    assertOriginalSession: async () => { throw new Error('revoked during enrollment'); } } }), /revoked during enrollment/);
+  await assert.rejects(signIn(apple), rejected('auth_account_link_required', 403));
+  await f.service.admitIdentity(identity, { method: apple, link: liveLink });
+  await f.service.admitIdentity(identity, { method: apple, link: liveLink });
+  assert.deepEqual(await signIn(apple), original);
+  await assert.rejects(f.service.admitIdentity(identity, { method: { ...apple, subject: 'another-apple-subject' } }),
+    rejected('auth_account_link_required', 403));
+
+  const first = { userId: 'new-apple-user', email: 'invited-relay@privaterelay.appleid.com', emailVerified: true };
+  await f.service.issueInvitation({ email: first.email, expiresAt: new Date(f.now() + 100_000).toISOString(), operationId: randomUUID() });
+  await assert.rejects(f.service.admitIdentity(first, { method: apple }), rejected('email_not_verified', 403));
+  await f.service.admitIdentity(first, { method: apple, verifiedInvitationAddress: true });
+  await assert.rejects(f.service.admitIdentity(first, { method: password }), rejected('auth_account_link_required', 403));
+});
 const rejected = (code: string, status?: number) => (error: unknown) => error instanceof FirestoreAuthorityError
   && error.code === code && (status === undefined || error.status === status)
   && !error.message.includes('Private') && !error.message.includes('@');

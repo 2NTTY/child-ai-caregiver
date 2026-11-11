@@ -12,7 +12,7 @@ const sourcePurposes: Record<string, string> = { answer_reference: '回答參考
 const concernStates: Record<string, string> = { following: '持續關注', closed: '已結束' };
 const concernKinds: Record<string, string> = { observation: '原觀察', confirmed_action: '來源已確認行動' };
 const growthStates: Record<string, string> = { proposed: '待處理', snoozed: '已暫緩', accepted: '已接受', dismissed: '已忽略', inapplicable: '不適用' };
-const growthTopics: Record<string, string> = { solid_food: '引入固體食物', toddler_play: '幼兒遊戲與溝通', preschool_development: '學前發展觀察', school_vision: '學童視力關注' };
+export const handoverGrowthTopicLabels: Record<string, string> = { solid_food: '引入固體食物', toddler_play: '幼兒遊戲與溝通', preschool_development: '學前發展觀察', school_vision: '學童視力關注' };
 const growthKinds: Record<string, string> = { observe: '留意觀察', arrange: '安排事項', consult: '諮詢專業意見' };
 const growthActions: Record<string, string> = { accept: '接受', snooze: '暫緩', dismiss: '忽略', proposed: '提出建議', snooze_due: '暫緩到期',
   topic_disabled: '停用主題', basis_unavailable: '適用依據已變更', imported_context_unavailable: '匯入資料未符合目前適用條件' };
@@ -78,7 +78,7 @@ export function HandoverImportHistory({ controller, history, locked }: {
           <Text style={styles.body}>來源更新者：{content(value, 'updatedBy')} · 時間：{content(value, 'updatedAt')}</Text>
         </> : module === 'growth_attention' || module === 'growth_topics' ? <>
           <Text style={styles.body}>原狀態、資料與行動只作來源記錄，不代表本地用戶已確認或再次執行；來源建議須按目前資料重新核對適用性。</Text>
-          <Text style={styles.body}>原主題：{growthTopics[String(module === 'growth_topics' ? value.topicId : attention?.topicId)] ?? '未提供'}</Text>
+          <Text style={styles.body}>原主題：{handoverGrowthTopicLabels[String(module === 'growth_topics' ? value.topicId : attention?.topicId)] ?? '未提供'}</Text>
           {module === 'growth_attention' && attention ? <>
             <Text selectable style={styles.content}>{content(attention, 'title')}</Text>
             <Text style={styles.body}>原狀態：{growthStates[String(attention.state)] ?? '未提供'} · 原建議種類：{growthKinds[String(attention.kind)] ?? '未提供'}</Text>

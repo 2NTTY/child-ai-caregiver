@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 import { getRandomBytesAsync } from "expo-crypto";
-import { GoogleAuthProvider, OAuthProvider, signInWithCredential, linkWithCredential, type User } from "firebase/auth";
+import { GoogleAuthProvider, OAuthProvider, signInWithCredential, linkWithCredential, reauthenticateWithCredential, type User } from "firebase/auth";
 import type { FirebaseSocialIdentityFactory } from "../../../src/client/firebase-auth-api.ts";
 import { createNativeProviderAdapter, type NativeProviderPorts } from "./native-provider-adapter";
 
@@ -33,6 +33,7 @@ export const firebaseSocialFactory: FirebaseSocialIdentityFactory = auth => {
       appleCredential: (token, rawNonce) => new OAuthProvider("apple.com").credential({ idToken: token, rawNonce }),
       signIn: async credential => (await signInWithCredential(auth, credential)).user,
       link: async (user, credential) => (await linkWithCredential(user as User, credential)).user,
+      reauthenticate: async (user, credential) => (await reauthenticateWithCredential(user as User, credential)).user,
     },
   });
 };

@@ -4756,6 +4756,166 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Related Current-State Correction：按已保存的 [PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 交付收據，校準根 PLAN／STATUS 唯一緊鄰 HC current 節：2026-11-05 13:00:09 UTC 正常合併至 `f453226f`，精確 head `74e7b66d0646fc2970af55eb864a6770cd63655a` 的 [CI 42030612566](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42030612566)／[CI 42031114003](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42031114003) 各 8/8 與完整 frontend 型別、locked install／offline wrapper 成功；未部署。舊 HC WORKLOG／verification JSON 仍保留合併前快照，formal41 及原限制不進位，其他包不改。
 - Limitations / Next Action：完整 GR hook／host、scope／身份排程、瀏覽器／焦點／AT、原生、真 Firestore／API／家庭資料、模型及原正式矩陣未驗。先獨立 review 全部十檔，再由精確 head 必要 offline CI 執行 33 案及 frontend／root／server 三個原完整 config；clean install、正向完整 namespace wrapper 與 GitHub job 尚未跑，不能以本地 frontend／root PASS 代填 server gate。GR 未 commit、remote 寫入、開 PR、合併或部署。
 
+## 2026-11-08｜P4-HANDOVER01 本人附件還原與原站發布
+
+- 後端 #515、Web／Android 共用表單 #516 已合併。本人備份可比對原照片、錄音及一般檔案；清理已結束的刪除項目可以明確恢復，包內已有的轉錄隨原錄音接回。
+- 合成簽署包經匯出、上載、worker 及還原後讀回。修正了已選轉錄未計入批次總數，以及初版表單沒有送能力協商 header。後端兩條相關流程與完整 Server 型別、共用表單 12 條 owner 檢查與前端型別均通過。
+- 以當時原站版本 `2be85951` 加入兩份修改。發布 worktree 在 restore codec 遇到相鄰摘要改動，保留原站解碼器並加入已核對的附件世代校驗；重新驗過發行樹的簽署包還原。實際部署的 Git tree 為 `02e6c785`。站外 HTML、JS、健康及登入邊界均已核實。[版本、指紋與未驗範圍](artifacts/verification/P4_ORIGINAL_ATTACHMENTS_20261108.json)
+- 下一步補其餘本人備份範圍；真人帳戶、Android 新版本及完整災難還原另列。原 VM 已於 11 月 8 日啟動，12 月 8 日 22:32:58（香港）自動關機。
+
+### 2026-11-08 · P4-HANDOVER01 帳戶通知偏好
+
+- [#518](https://github.com/2NTTY/child-ai-caregiver/pull/518) 將普通設定讀寫接回文檔包。無孩子的本人備份可選取偏好，還原前比對當前版本；與頭像一起還原時，同一批次分別記錄兩項結果。[#519](https://github.com/2NTTY/child-ai-caregiver/pull/519) 接回共用表單，沿原上載與批次查回結果。
+- 最先失敗的合成流程揭示缺少原件比較接點；另修正測試未預期原上載已有清理工作的斷言。最終四項後端流程及原 HTTP 上載測試通過。共用 client／owner 19 項及四個針對畫面檢查通過。兩條既有畫面斷言仍失敗，分別涉及私人交代測試寫死能力清單、孩子頭像提示的文字間距；保留失敗狀態。
+- 原站選取前版及兩批變更發布。未用正式帳戶還原設定、發通知或建立 APK。雲端完整災難恢復仍待驗。[部署證據](artifacts/verification/P4_ACCOUNT_PREFERENCES_20261108.json)
+
+## 2026-11-09　S12-W02 iOS 系統分享
+
+- 從 `5f3cd680` 接既有收件、草稿和資料包服務。採用已安裝的 Expo Sharing 產生原生 target，首次工程檢查確認舊配置尚未啟用；現已用 Expo 57 範本生成 Xcode 工程，核對嵌入位置、兩個 target 的 App Group、extension-only API 設定，以及原生程式改動的發布分類。
+- 收件流程以合成檔案核對同名隔離、重開、切換帳戶和遲到複製。已加入草稿或已接納的匯入不因裝置副本清理失敗而再執行。共用頁面、Android 原有 ZIP 接線及前端型別通過。Node 端 ZIP 測試補上原生 UUID 產生器的測試替身後通過。
+- 尚未以 Xcode 編譯或在 iPhone 收件；簽署、TestFlight、裝置驗收及其他平台此前未驗項維持原狀。此次沒有雲端 build、部署或模型呼叫。
+
+### 2026-11-09 · P4-AUTH01 快捷登入准入
+
+- 修正前，同 UID 新增未批准 provider 的回歸案例未有拒絕。修正後，合成受邀身份沿 Web 和原生交換證明目前裝置與原電郵，再批准 Apple 私密轉寄身份。另一個 Apple 身份、只列在 token 名單的 provider 及在交易中撤銷的裝置均被拒絕。
+- 11 月 8 日唯讀核實原站 `allowDuplicateEmails=false`，原網域與密碼登入已配置，Google／Apple 的 provider 設定尚未建立。沒有更改 Auth 配置、寄信或執行真人登入。
+- Node 24 執行 `tests/firebase-auth.test.ts` 與 `tests/firestore-authority.test.ts`，41 項通過；Server 型別及 diff 檢查通過。新增的首次邀請斷言另在該流程通過。測試使用合成 token 及 Firestore 交易替身。
+- 共用客戶端仍需在確認時帶目標方式；Firebase 已連結但產品未收到原請求時，應重新驗證已連結的身份才補交。正式開放前另驗 Apple 團隊配置與本人登入。
+
+
+<a id="log-20261105-soft-budget"></a>
+## 2026-11-05 UTC｜REQ-005 PR 6 集中資源政策與 0.25 軟預算管理
+
+- Recorded At：2026-11-05 14:15:00 UTC；Work Date：2026-11-05。Step / Package：REQ-005 §3.1 集中政策參數與 0.25 軟預算諮詢信號 (缺口 1)。
+- Goal / Actual Work：依據 REQ-005 §3.1 及 §9 階段 1，集中化管理資源政策。於 `src/shared/agent-run-limits.ts` 集中宣告 `DEFAULT_SOFT_BUDGET_RATIO = 0.25` 及 `SOFT_BUDGET_RATIO_RANGE = { min: 0.05, max: 1.0, default: 0.25 }`；於 `server/agent-budget.ts` 引入並導出常數，擴展 `AgentRunLimits` 與 `freezeAgentRunLimits` 支援邊界防護與驗證；於 `AgentBudget` 類別增加 `softBudgetRatio` getter，並在 `configurePersonal` 支援個人/運行層級配置；在 `planningSnapshot` 推導 `softBudget`、`softRemaining` 與 `softExceeded` 信號。嚴格落實核心不變量：軟預算與硬配額共用同一帳本，軟預算僅作為 planning 諮詢信號，超額時絕不拋出 `AgentStopped` 或阻斷運行。
+- AI Assistance / Human Verification：AI 完成代碼修改、9 個單元測試、5 個變異測試防護守衛（S1–S5）、專用離線驗證工作流與驗證收據。Human Verification：尚未進行。
+- Changes：`src/shared/agent-run-limits.ts`、`server/agent-budget.ts`、`tests/agent-budget.test.ts`、`scripts/verify-soft-budget-mutations.mjs`、`.github/workflows/soft-budget-offline.yml`、`scripts/ci/verify-soft-budget-offline.sh`、`artifacts/verification/REQ005_SOFT_BUDGET_20261105.json` 及本追加日誌。
+- Verification：
+  - 單元測試：`node --test tests/agent-budget.test.ts` 9/9 PASS（0 fail, 0 skip）。
+  - 變異防護：`node scripts/verify-soft-budget-mutations.mjs` 5/5 守衛（S1–S5）全數攔截（fail-on-mutation green, exit 0）。
+  - 型別檢查：`npx tsc --project tsconfig.server.json --noEmit` 與 `npx tsc --noEmit` 均 0 診斷（exit 0）。
+  - 遠端離線 CI：GitHub Actions Run 42042529809（Job 127296771198）耗時 1m20s 於 exact head fc5d5f7bbf0c839b40e71a842ab3ee8ad4528c0e 成功通過（PASS）。
+- Limitations / Next Action：PR 6 專注於軟預算集中化管理與 planningSnapshot 信號暴露，軟預算僅供規劃諮詢，不代表 REQ-005 已完成，不跨越至 PR 7 的 1024 token clamp 或 PR 8 的個人 key 隘壓解鎖。Collaborator PR untouched。嚴格維持 HOLD merge，待 Owner 2NTTY 獨立審核。
+
+
+<a id="log-20261107-output-ceiling"></a>
+## 2026-11-07｜REQ-005 PR 7 互動輸出 Token 上限解除（1,024 → 16,384）
+
+- Recorded At：2026-11-07 07:00 UTC；Work Date：2026-11-07。
+- Step / Package：REQ005-PR7 (Audit A05 / Gap 2)。
+- Branch：`codex/req005-output-ceiling`（基線：`2abe7aed60b192b253414f6464e3fd070cc377e7`）。
+- Author / Committer：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`。
+- Executor：AI Agent (Antigravity)。
+- AI Assistance：Full code modification, invariant script execution, and verification receipt authoring under explicit user direction.
+- Human Verification：Awaiting user review and Grok read-only audit review.
+- Goal / Actual Work：解除 `server/agent-model-gateway.ts`、`server/ai-config.ts`、`server/gemini-key-provider.ts` 及 `server/openai-compatible-provider.ts` 中硬編碼之 1,024 互動輸出 Token 鉗位（Audit A05），使互動式代理人執行支援環境變數與合法請求配置至 4,096 及 16,384 tokens。
+- Invariants & Changes：
+  - `src/shared/agent-run-limits.ts`：定義並匯出常數 `AGENT_OUTPUT_LIMITS = { legacyClamp: 1024, default: 4096, min: 1, maxInteractive: 16384, maxBackground: 32768 }`。
+  - `server/agent-budget.ts`：僅轉發匯出 `AGENT_OUTPUT_LIMITS`；收窄 PR 範圍，移除未接線之 `outputTokens?: number` 欄位，避免死契約殘留。
+  - `server/agent-model-gateway.ts`：將 `agentGenerationConfig` 與 `createVertexAgentPayloadBuilder` 中之 `Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens)` 解除為 `Math.min(config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive)`。
+  - `server/ai-config.ts`：擴充 `AI_MAX_OUTPUT_TOKENS` 合法範圍上限至 `AGENT_OUTPUT_LIMITS.maxInteractive`（16,384）。
+  - `server/gemini-key-provider.ts` 與 `server/openai-compatible-provider.ts`：同步解除 1,024 限制，改用 `AGENT_OUTPUT_LIMITS.maxInteractive`。
+  - `tests/gemini-key-provider.test.ts`：將測試中配置 `maxOutputTokens: 2048` 之斷言由舊鉗位 1024 更新為實際放寬之 2048。
+  - `tests/ai-config.test.ts`：新增全小寫命名測試 `ai configuration accepts unclamped output token ceilings up to 16384`。
+- Verification & Test Manifest：
+  - `tests/agent-model-gateway.test.ts`：18/18 PASS。
+  - `tests/ai-config.test.ts`：11/11 PASS。
+  - `tests/gemini-key-provider.test.ts`：3/4 PASS（1 fail，為既有 master 基線之 synthetic SDK 429 斷言失敗，保留不隱瞞）。
+  - `scripts/verify-output-ceiling-mutations.mjs`：5/5 不變量與邊界驗證全數通過。
+  - 型別診斷：`node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit` 與 `tsc --noEmit` 雙雙 0 診斷、exit 0。
+  - 驗收憑證：[REQ005_OUTPUT_CEILING_20261107.json](artifacts/verification/REQ005_OUTPUT_CEILING_20261107.json)（嚴格依據 git-blob LF 計算 SHA-256）。
+- Retained Failures：`tests/gemini-key-provider.test.ts` 第 4 案（metadata check synthetic 429 error assertion）於 master 即存在，非本 PR 引入，真實保留。
+- Limitations & Boundaries：
+  - 本 PR 嚴格聚焦於互動式模型請求之輸出 Token 解鉗（1,024 → 16,384）。
+  - `maxBackground: 32768` 與 `default: 4096` 僅為架構常數宣告，背景 Worker 完整輸出管線與 per-run budget 接線留待後續背景作業 PR 交付。
+  - 嚴格維持純本地分支，未 push、未開 GitHub PR。
+
+### 2026-11-07 Round 2 審核跟進修正 (Audit A05 / Gap 2)
+
+- Recorded At：2026-11-07 08:45 UTC；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `13dece721154ebd4326601930098160d7bb72236`，嚴格保留 reflog 歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `server/firestore-admin.ts`：將 `overview()` 輸出由 `Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens)` 改為 `Math.min(config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive)`，使管理員可觀測性與互動 Gateway 同步解鉗至 16,384 tokens。
+  2. `scripts/ci/summary-progress-tests.json`：將 `tests/agent-model-gateway.test.ts` 宣告測試數由 16 更新至 18，對齊 TAP 輸出合約。
+  3. `.github/workflows/summary-progress-offline.yml`：在 `github.head_ref` 白名單加入 `codex/req005-output-ceiling`。
+  4. `scripts/verify-output-ceiling-mutations.mjs`：修正終端輸出及註釋，將「Mutation」字眼改為「Invariant Check & Regression Guard」，並補入 `createFirestoreAdmin` overview 驗證。
+  5. 收據與文件：更新收據檔案清單（補入 `firestore-admin.ts`、`summary-progress-tests.json`、`summary-progress-offline.yml`），補全可重現命令與環境。
+- Verification：
+  - `tests/agent-model-gateway.test.ts`：18/18 PASS
+  - `tests/ai-config.test.ts`：11/11 PASS
+  - `tests/gemini-key-provider.test.ts`：3/4 PASS, 1 baseline failure (synthetic 429 error assertion 如實保留)
+  - `scripts/verify-output-ceiling-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 維持窄 scope，僅覆蓋互動模型輸出上限（16,384）。背景 32,768 為常數宣告，管線待後續背景 PR。
+  - 純本地分支，零 git push，零 GitHub PR。
+
+### 2026-11-07 Round 3 審核跟進修正 (Audit A05 / Gap 2)
+
+- Recorded At：2026-11-07 09:10 UTC；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `0b4367836c1aa58f6dd837fcc325016aa6ebb846`，保留歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `scripts/ci/summary-progress-tests.json`：將 `tests/ai-config.test.ts`（11 案）正式加入 CI manifest，補齊 PR 7 相關測試之離線 CI 契約覆蓋（`agent-model-gateway.test.ts` 既有 18 案已在清單中）。
+  2. `tests/gemini-key-provider.test.ts` CI 邊界明確化：因 master 基線即存在第 4 案 synthetic SDK 429 assertion 失敗（3/4 通過、exit 1），而離線 CI 契約嚴格強制 `fail 0`，故該檔無法在未獲 Owner 豁免或修復 master 基線前直接納入零失敗 manifest。本 PR 如實保留該失敗並清楚界定，絕不謊報全綠。
+  3. 收據與文件：更新收據檔案清單（更新 `summary-progress-tests.json`），客觀校準記錄時間。
+- Verification：
+  - `tests/agent-model-gateway.test.ts`：18/18 PASS (TAP check 18 通過)
+  - `tests/ai-config.test.ts`：11/11 PASS (TAP check 11 通過)
+  - `tests/gemini-key-provider.test.ts`：3/4 PASS (1 baseline failure 如實披露)
+  - `scripts/verify-output-ceiling-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tests/ci/summary-progress-contract.test.mjs`：6/6 PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 維持窄 scope，僅解鎖互動式輸出 Token 上限（16,384）。背景 32,768 為常數宣告，管線待後續背景 PR。
+  - 純本地分支，零 git push，零 GitHub PR。
+
+### 2026-11-07 歷史記錄客觀校準與 CI Guard 接線 (Audit A05 / Gap 2)
+
+- Recorded At：2026-11-07 09:45 UTC (17:45 HKT)；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `6a8a72f27ed09b58c7fcc5ad89a99b0aa05d137e`，保留歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `scripts/ci/verify-summary-progress-offline.sh`：新增 `stage=package-invariant-guard`，將 `scripts/verify-output-ceiling-mutations.mjs` 正式納入離線 CI 執行管線，於沙盒中驗證不變量守衛。
+  2. 歷史時間戳記客觀說明：前次提交（`6a8a72f2`）生成時間為 16:58:53 HKT，模板預填為 17:10 HKT（09:10 UTC）；依 append-only 規範，在此客觀記錄提交實際發生順序，保留原始日誌歷史。
+  3. `tests/gemini-key-provider.test.ts` 邊界：維持「待 Owner 決策項（Pending Owner Action）」，因 master 基線 synthetic 429 失敗（exit 1）與離線 CI 契約之 `fail 0` 衝突，故排除於零失敗 manifest 之外，等待 Owner 決定修復或豁免。
+- Verification：
+  - `bash -n scripts/ci/verify-summary-progress-offline.sh`：exit 0
+  - `tests/ci/summary-progress-contract.test.mjs`：6/6 PASS
+  - `scripts/verify-output-ceiling-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 維持 NOT READY / HOLD merge 狀態，等待 Owner 統籌合併。純本地分支，零 git push，零 GitHub PR。
+
+### 2026-11-07 歷史預填時間客觀校準說明 (Audit Trail Timestamp Calibration)
+
+- Recorded At：2026-11-07T10:05:02.621Z；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `6f63aa0f1fd15c079d7d92fa01503cd338ac1105`，保留歷史，不使用 amend。
+- 歷史時間客觀聲明：
+  本工作日誌此前各段落中出現之 Recorded At 欄位（例如 08:45 UTC、09:10 UTC、09:45 UTC 等），係編輯起草時依規劃時程預填之模板標籤時間，而非底層 Git Commit 物件實際寫入時間戳（例如 Commit `6f63aa0f` 實際寫入時間為 17:38:24 HKT，即 09:38:24 UTC）。
+  依據本專案嚴格之 append-only 審計規範，歷史既有段落完整保留不作 amend 或刪改；特在此追加真實即時時間戳記（2026-11-07T10:05:02.621Z）以澄清時序，確認此前所有時間標籤均屬規劃模板時間。
+- PR 7 Gemini 測試狀態待決說明：
+  `tests/gemini-key-provider.test.ts` 之第 4 案失敗（3/4 通過、exit 1）已由 Grok 唯讀審核在 master 基線 `2abe7aed` 上直接重現，確認為 master 既有缺陷。目前「尚未取得 Owner 豁免批准，亦未修復該基線」，該檔維持排除於零失敗 manifest 之外，明確標記為「待決狀態（Pending Owner Action），非已獲豁免」。
+- Scope & Boundaries：
+  - 本包判定維持 **NOT READY to open PR / HOLD merge**，等待 Owner 決定範圍、工程值及交付次序。
+  - 純本地分支，零 git push，零 GitHub PR。
+
+### 2026-11-07 PR 7 Gemini Provider 錯誤邊界契約窄修與 CI Manifest 納入
+
+- Recorded At：2026-11-07T14:01:08.004Z；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `e3e86dcf560f3c30b6ba742e3efa1232bc061182`，保留歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `server/gemini-key-provider.ts`：修復 direct Agent provider 之錯誤邊界。在 `generate()` 捕捉未映射之 `ApiError`（例如 429 RESOURCE_EXHAUSTED）時，呼叫既有之 `personalProviderHttpError(error.status, error.message, 'generation')` 轉化為清理過之 `PersonalProviderError`，確保不洩漏原始 request body、API key 或內部 cause，同時保留 HTTP 429 狀態碼供外層 shared Agent gateway 執行精確計量、退避重試與記帳。
+  2. `tests/gemini-key-provider.test.ts`：將第 4 案之 direct Agent provider 與 embedding 錯誤斷言對齊最新之 `PersonalProviderError` 契約（檢查 `httpStatus === 429`、`sanitized(error)`），全檔 4 個測試全數通過（4/4 PASS, exit 0）。
+  3. `scripts/ci/summary-progress-tests.json`：將 `tests/gemini-key-provider.test.ts`（4 案）正式加入離線 CI Manifest（Manifest 增至 89 檔條目，零失敗契約完全通過）。
+- Verification：
+  - `tests/gemini-key-provider.test.ts`：4/4 PASS (exit 0)
+  - `tests/agent-model-gateway.test.ts`：18/18 PASS (exit 0)
+  - `tests/ai-config.test.ts`：11/11 PASS (exit 0)
+  - `scripts/verify-output-ceiling-mutations.mjs`：5/5 Invariant Checks PASS (exit 0)
+  - `tests/ci/summary-progress-contract.test.mjs`：6/6 PASS (exit 0)
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷 (exit 0)
+- Scope & Boundaries：
+  - PR 7 本地所有候選測試全綠，正式由 NOT READY 晉升為 **READY to open PR for Owner review**。
+  - 純本地分支，零 git push，零 GitHub PR。全部 HOLD merge，等待 Owner 2NTTY 統籌合併。
 
 <a id="log-20261107-personal-key-policy"></a>
 ## 2026-11-07｜REQ-005 PR 8 個人自備 Key 政策解耦（resolvePersonalModelLimits 解除鉗位）
@@ -4850,4 +5010,3 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Scope & Boundaries：
   - 本包判定維持 **NOT READY to open PR / HOLD merge**，等待 Owner 決定範圍、工程值及交付次序。
   - 純本地分支，零 git push，零 GitHub PR。
-
