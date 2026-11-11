@@ -1,0 +1,37 @@
+{
+  "id": "noted-profile-09",
+  "app_id": "noted",
+  "app_name": "Noted",
+  "title": "Profile",
+  "pattern": "Profile",
+  "elements": [
+    "Avatar",
+    "Button",
+    "List Item",
+    "Badge"
+  ],
+  "platform": "Android",
+  "category": "Productivity",
+  "colors": [
+    "#FFFFFF",
+    "#F1F5F9",
+    "#4F46E5",
+    "#0F172A",
+    "#10B981"
+  ],
+  "tokens": {
+    "bg": "#FFFFFF",
+    "surface": "#F1F5F9",
+    "primary": "#4F46E5",
+    "text": "#0F172A",
+    "muted": "#64748B",
+    "radius": "14px",
+    "font": "Inter"
+  },
+  "text": "Profile JW Jonas Weber Product designer · Bremen Free plan 12-day streak 128 Tasks 96 Done 75% Rate My tasks 6 due today 6 Shared with me 3 projects Pinned 8 items Settings Today Calendar Search Chat Profile",
+  "image": "assets/screens/noted-profile-09.png",
+  "width": 390,
+  "height": 844,
+  "popularity": 81,
+  "created": "2026-10-15"
+}

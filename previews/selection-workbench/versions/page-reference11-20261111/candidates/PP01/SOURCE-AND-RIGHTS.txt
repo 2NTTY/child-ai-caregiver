@@ -1,0 +1,27 @@
+PP01 - Flowscope / Noted Profile
+一般生產力檔案（非兒童／學習頁）。未入選；不是育伴港真正前端。
+
+固定來源：https://github.com/0050piyush/flowscope
+固定 tree：72d2a0b637d28b9a87740ae6dab6c0710a01fd87
+原圖路徑：site/assets/screens/noted-profile-09.png
+原圖：https://github.com/0050piyush/flowscope/blob/72d2a0b637d28b9a87740ae6dab6c0710a01fd87/site/assets/screens/noted-profile-09.png
+來源資料分類：Productivity；不能當作第二個學習檔案或兒童資料頁。
+原圖 780×1688／95238 bytes，Git blob fe8c267c77d47531ad9f99ef99214e81b19c8b7c。
+
+上游 README 分開聲明 screen/data 採 CC0（https://creativecommons.org/publicdomain/zero/1.0/），code 採 MIT。
+完整聲明：evidence/README.upstream.md；完整 MIT：LICENSE.upstream-MIT.txt。
+Copyright (c) 2026 Flowscope contributors。這裡不把圖片和程式統稱 MIT。
+
+上游明示所有畫面是為 Flowscope 製作的 original fictional design。
+同固定 tree 的 bNotedProfile 將 JW、Jonas Weber、Product designer · Bremen、Free plan、12-day streak、128 Tasks、96 Done、75% Rate、6 due today、3 projects、8 items 固定寫在原始程式，與已直接目視原圖相符。
+evidence/synthetic-evidence.json 留存精確行號／原文片段與固定來源 URL；screen-metadata.json 是原 screens JSON 中未改動的單筆資料語義，並非整個原檔的 byte 副本。
+完整原始 generator、screens JSON 與 Git tree 保留在本地交接證據，不放入此展示目錄或執行。
+
+完整只指原始 PNG 全範圍，從頂部狀態列到四個清單項目、底部導覽與手勢條；不補畫圖外長頁、不實作圖上控制。
+原圖未裁切、翻譯、覆蓋、重畫、拼接或重新編碼。字母頭像沒有真人照片，沒有使用真實家庭資料。
+資料 created 日期 2026-10-15 不是已證 capture 日期；實際 build／拍攝時間未知。來源 renderer 390×844 @2x 不代表已驗真手機或本版 responsive。
+
+圖標由 generator 宣告 hand-drawn feather-style；Inter 僅保留於 raster 原圖，不另附字體或 SVG，不宣稱實際 capture 字體載入／版本已獨立驗證。
+這是可追溯的發佈者聲明及靜態來源核對，不是所有第三方權利／商標的全面法律清查、原作者背書或抽取素材授權。
+僅本地靜態候選。未做獨立 browser／desktop／手機／鍵盤／讀屏驗收；PF01 的先前驗收不套用於 Noted。
+Cozy 保持原素材權利 hold；未加入。沒有發布、遠端寫入、PR 或合併。

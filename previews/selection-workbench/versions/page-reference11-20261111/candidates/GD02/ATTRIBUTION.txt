@@ -1,0 +1,34 @@
+GD02 — Docsy / Welcome to Docsy
+Creator: The Docsy Authors.
+Reference type: unchanged official historical theme-gallery screenshot.
+Official repository: https://github.com/docsy/docsy
+Original image: https://raw.githubusercontent.com/docsy/docsy/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/images/screenshot.png
+Image addition commit: c4007ce2a2cde2dbcca5ac4d4550b60933656ad8
+Image addition time: 2019-11-20T17:19:43Z
+This is the documented addition date, not a proven screenshot capture timestamp.
+Changes to original image: NONE. No crop, resize, repaint, composite or re-render.
+
+HISTORICAL SOURCE DECLARATION — APACHE 2.0
+At the 2019 pin, theme.toml says "Apache 2.0"; root LICENSE and userguide/LICENSE both contain Apache License 2.0.
+https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/LICENSE
+https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/userguide/LICENSE
+The exact historical texts are retained under licenses/.
+
+LATER DOCUMENTATION DECLARATION — CC BY 4.0, SEPARATE EVIDENCE
+The 2026 README explicitly declares code Apache-2.0 and documentation CC-BY-4.0.
+https://github.com/docsy/docsy/blob/8fd67088bc6253c56f2fef26bdf2bed357509a3d/README.md
+https://github.com/docsy/docsy/blob/8fd67088bc6253c56f2fef26bdf2bed357509a3d/LICENSE-DOCS
+A verbatim copy of the later license and README are retained, with attribution to the Docsy Authors.
+Do not rewrite history: this package does NOT assert that the 2019 screenshot carried an explicit CC BY notice, nor that a 2026 declaration proves the original capture date.
+
+THIRD-PARTY SOURCE NOTICES
+Bootstrap source is pinned by the 2019 Docsy submodule to 3b558734382ce58b51e5fc676453bfd53bba9201, MIT, Copyright 2011–2018 Twitter, Inc. and The Bootstrap Authors. Notice retained.
+Font Awesome source is pinned to 538a5bc4cf7989821d052e3ff919e2bead07021c. Its explicit split is: SVG/JS icons CC BY 4.0; web/desktop fonts SIL OFL 1.1; non-font/non-icon code MIT. Its full upstream declaration is retained.
+The historical templates use Font Awesome edit, GitHub, tasks and search icon classes. The screenshot retains their rendered appearance; no font binaries, separate icon files or logo files are distributed in this package.
+Docsy/GitHub and other project names remain source-identification marks, not a claim of endorsement or permission to rebrand.
+
+BOUNDARIES
+This image shows a page-level desktop composition, not the entire long article or footer. It is not a current-version screenshot, a mobile reference, an interaction test, or a completed frontend.
+Only public project documentation is visible; not user/family data. It is factual self-documentation of a real project, not wholly synthetic prose.
+Local evidence package only. No browser used, no website changed, no publication performed.
+

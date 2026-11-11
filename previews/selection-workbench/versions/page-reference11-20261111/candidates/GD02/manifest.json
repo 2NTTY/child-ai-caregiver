@@ -1,0 +1,144 @@
+{
+  "id": "GD02",
+  "reference": "Docsy / Welcome to Docsy — official historical gallery screenshot",
+  "repository": "docsy/docsy",
+  "creator": "The Docsy Authors",
+  "pin": "c4007ce2a2cde2dbcca5ac4d4550b60933656ad8",
+  "pinDate": "2019-11-20T17:19:43Z",
+  "pinDateMeaning": "Image addition commit time; exact capture time is unknown.",
+  "image": "https://raw.githubusercontent.com/docsy/docsy/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/images/screenshot.png",
+  "imageLocal": "GD02-original.png",
+  "imageGitBlob": "2106c36fce9e8735874386ddc35dc2111d784def",
+  "sha256": "28cff1426196ff2a7814ad4fed2d4396e37350a25a847208a3ba3023af7db144",
+  "bytes": 311057,
+  "dimensions": [
+    1500,
+    1000
+  ],
+  "downloaded": "2026-11-11",
+  "visuallyInspected": true,
+  "modified": false,
+  "browserUsed": false,
+  "published": false,
+  "fullLongPage": false,
+  "showsFooter": false,
+  "currentVersionScreenshot": false,
+  "scope": "Original unchanged historical page-level composition; not the whole long article; local evidence package only.",
+  "2026Crosscheck": {
+    "commit": "8fd67088bc6253c56f2fef26bdf2bed357509a3d",
+    "path": "theme/images/screenshot.png",
+    "sameImageBlob": true,
+    "sameImageBytes": true,
+    "notCaptureDate": true
+  },
+  "license": {
+    "historical2019": "Apache-2.0 explicitly recorded by theme.toml, root LICENSE and userguide/LICENSE.",
+    "later2026": "Current pinned README says code Apache-2.0 and documentation CC-BY-4.0; retained separately, not backdated.",
+    "fontAwesome": "Pinned upstream declares SVG/JS icons CC-BY-4.0, web/desktop icon fonts SIL-OFL-1.1, code MIT.",
+    "bootstrap": "MIT; pinned historical dependency notice retained."
+  },
+  "dataOrigin": "Official public project self-documentation. Not entirely synthetic text; no private-user dataset.",
+  "privacy": "No people photographs, family records, private contacts, health records, private messages or account data in selected image.",
+  "evidenceSources": [
+    {
+      "path": "evidence/2019-README.md",
+      "upstream_path": "README.md",
+      "commit": "c4007ce2a2cde2dbcca5ac4d4550b60933656ad8",
+      "git_blob": "89dde4e5cecd453724a9b76d52681e714db74d0b",
+      "url": "https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/README.md"
+    },
+    {
+      "path": "evidence/2019-theme.toml",
+      "upstream_path": "theme.toml",
+      "commit": "c4007ce2a2cde2dbcca5ac4d4550b60933656ad8",
+      "git_blob": "1a7b62773d7a18e01b977462602c7d3b0db2ed70",
+      "url": "https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/theme.toml"
+    },
+    {
+      "path": "evidence/2019-userguide_config.toml",
+      "upstream_path": "userguide/config.toml",
+      "commit": "c4007ce2a2cde2dbcca5ac4d4550b60933656ad8",
+      "git_blob": "4b78757446e22217ace8b4893082335a73953e32",
+      "url": "https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/userguide/config.toml"
+    },
+    {
+      "path": "evidence/2019-userguide_content_en_docs__index.md",
+      "upstream_path": "userguide/content/en/docs/_index.md",
+      "commit": "c4007ce2a2cde2dbcca5ac4d4550b60933656ad8",
+      "git_blob": "ff67eb7dc863d724d6521def16cb679b79091350",
+      "url": "https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/userguide/content/en/docs/_index.md"
+    },
+    {
+      "path": "evidence/2019-layouts_partials_footer.html",
+      "upstream_path": "layouts/partials/footer.html",
+      "commit": "c4007ce2a2cde2dbcca5ac4d4550b60933656ad8",
+      "git_blob": "dfb1f64d7c59219220fbe76599d00edf41833221",
+      "url": "https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/layouts/partials/footer.html"
+    },
+    {
+      "path": "evidence/2019-layouts_partials_page-meta-links.html",
+      "upstream_path": "layouts/partials/page-meta-links.html",
+      "commit": "c4007ce2a2cde2dbcca5ac4d4550b60933656ad8",
+      "git_blob": "8e2650f81e3c509cb6e5873f38fa2c989ccad6a8",
+      "url": "https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/layouts/partials/page-meta-links.html"
+    },
+    {
+      "path": "evidence/2019-layouts_partials_navbar.html",
+      "upstream_path": "layouts/partials/navbar.html",
+      "commit": "c4007ce2a2cde2dbcca5ac4d4550b60933656ad8",
+      "git_blob": "284283b3c414c4e38c3c3954c148c77168ad0644",
+      "url": "https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/layouts/partials/navbar.html"
+    },
+    {
+      "path": "evidence/2019-assets_scss_main.scss",
+      "upstream_path": "assets/scss/main.scss",
+      "commit": "c4007ce2a2cde2dbcca5ac4d4550b60933656ad8",
+      "git_blob": "7d4995b7f338c5e377a40d166fdd78284c42ba6e",
+      "url": "https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/assets/scss/main.scss"
+    },
+    {
+      "path": "evidence/2019-.gitmodules",
+      "upstream_path": ".gitmodules",
+      "commit": "c4007ce2a2cde2dbcca5ac4d4550b60933656ad8",
+      "git_blob": "e28e880cf58f41d014f31ef08a0ed0084bac56ef",
+      "url": "https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/.gitmodules"
+    },
+    {
+      "path": "licenses/Docsy-2019-Apache-2.0.txt",
+      "git_blob": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+      "url": "https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/LICENSE"
+    },
+    {
+      "path": "licenses/Docsy-2019-userguide-Apache-2.0.txt",
+      "git_blob": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+      "url": "https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/userguide/LICENSE"
+    },
+    {
+      "path": "licenses/Font-Awesome-pinned-LICENSE.txt",
+      "git_blob": "f31bef92b64e9d493204176354b2d7f83d8d7eae",
+      "url": "https://github.com/FortAwesome/Font-Awesome/blob/538a5bc4cf7989821d052e3ff919e2bead07021c/LICENSE.txt"
+    },
+    {
+      "path": "licenses/Bootstrap-pinned-MIT.txt",
+      "git_blob": "86f4b8ca04f8d10574f189b8f73bdf0d575675e3",
+      "url": "https://github.com/twbs/bootstrap/blob/3b558734382ce58b51e5fc676453bfd53bba9201/LICENSE"
+    },
+    {
+      "path": "evidence/2019-assets_scss_variables.scss",
+      "git_blob": "e133638cdd8270bdeed39e1d5a658e13c9d7344d",
+      "url": "https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/assets/scss/_variables.scss"
+    },
+    {
+      "path": "evidence/2026-Docsy-README.md",
+      "git_blob": "7ff566318cd0b5d0c30d806b7f2be2451edd5101",
+      "url": "https://github.com/docsy/docsy/blob/8fd67088bc6253c56f2fef26bdf2bed357509a3d/README.md",
+      "context": "2026 declaration; not a claim about the 2019 capture"
+    },
+    {
+      "path": "licenses/Docsy-2026-documentation-CC-BY-4.0.txt",
+      "git_blob": "219720c5c5e2001bc2cdf546b21dc234347b6ec3",
+      "url": "https://github.com/docsy/docsy/blob/8fd67088bc6253c56f2fef26bdf2bed357509a3d/LICENSE-DOCS",
+      "context": "2026 declaration; not a claim about the 2019 capture"
+    }
+  ]
+}

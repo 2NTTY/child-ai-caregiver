@@ -1,0 +1,32 @@
+{
+  "candidateId": "HIS01",
+  "candidate": "Nextcloud — All activities",
+  "status": "local-only-pending-review",
+  "primaryRepository": "https://github.com/nextcloud/documentation",
+  "officialGuide": "https://docs.nextcloud.com/server/stable/user_manual/en/activity.html",
+  "sourceCommit": "4290071b5ee1addf6ee9e563dbf7f2b3e307eda5",
+  "imagePath": "user_manual/images/activity-stream-all.png",
+  "imageUrl": "https://raw.githubusercontent.com/nextcloud/documentation/4290071b5ee1addf6ee9e563dbf7f2b3e307eda5/user_manual/images/activity-stream-all.png",
+  "imageSha256": "4cceded73d2f8930bb9a4254b276dc0e7c7fad2300abe615cd2be6f099348d97",
+  "imageDimensions": [
+    1280,
+    720
+  ],
+  "imageBytes": 204670,
+  "imageOriginCommit": "aeb5b8b90e1ed8486948fdc0e0ccf534290d792a",
+  "imageOriginCommitDate": "2026-04-15T07:15:33Z",
+  "license": "CC-BY-3.0",
+  "licenseFile": "LICENSE-CC-BY-3.0.txt",
+  "attribution": "Nextcloud developers, Activity stream showing all recent activities, Nextcloud User Manual, CC BY 3.0. Original image, unchanged.",
+  "rightsEvidence": "Documentation README declares CC BY 3.0; full license preserved. Image is committed in and referenced by the manual. No image-specific contrary notice found. No trademark endorsement rights asserted.",
+  "privacyEvidence": "Official screenshot workflow uses random test user and seeded sample files. Visible Leon Green birthday is shipped exampleContact.vcf (FN Leon Green, BDAY 20000101, placeholder example.com contact). No live user account, private message, credentials, or real family data visible.",
+  "versionCaveat": "Current official guide is labelled Nextcloud 35; exact runtime build of the historical screenshot is not confirmed. Source artifact is pinned and unchanged.",
+  "captureCaveat": "Complete 1280x720 application viewport, not a full scrolling capture of all historical records. No responsive/interactive behavior claimed.",
+  "localPage": "index.html",
+  "localImage": "assets/nextcloud-activity-original.png",
+  "evidenceFile": "evidence/EVIDENCE.md",
+  "browserUsed": false,
+  "published": false,
+  "imageModified": false,
+  "scope": "Offline faithful original-image comparison candidate with passive attribution/evidence wrapper only; no active controls, redesign, browser launch, frontend implementation, or publication."
+}

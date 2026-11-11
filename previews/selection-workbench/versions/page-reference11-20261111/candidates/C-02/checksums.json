@@ -1,0 +1,26 @@
+{
+  "README.txt": {
+    "bytes": 1186,
+    "sha256": "4dbc3b6b09ef70c61b46cae143e3aa99efe24b7adeed57af7de4a6a9386fe7b6"
+  },
+  "evidence/LICENSE.txt": {
+    "bytes": 1077,
+    "sha256": "fc404477be3f0c40cd664069d0c5ffced3eb1b9874c7fddcc2ef273c5142b9d1"
+  },
+  "evidence/provenance.json": {
+    "bytes": 1387,
+    "sha256": "55cef9bd6e8ea908fdc62ae8468c7340994e9fe7467332f074b2f156a5040923"
+  },
+  "evidence/upstream-README.txt": {
+    "bytes": 6650,
+    "sha256": "9fcfaa57e3b994c19c5d95369295f8744abab7533a1b9215f032e6a034d06a98"
+  },
+  "index.html": {
+    "bytes": 4370,
+    "sha256": "15e18caa1f53b0cb6e80fa75d1ce9e1f10ff69f108d0a72ec827e99a1aec54ad"
+  },
+  "original/rhythm.jpg": {
+    "bytes": 60037,
+    "sha256": "f654656721d56561d4dc4e32840da3c62825cee2fdc9a6237f31e199dc0ff872"
+  }
+}

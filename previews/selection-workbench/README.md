@@ -1,5 +1,27 @@
 # Selection Workbench
 
+## Reviewed source backup: page-reference11 / PP01 · 2026-11-11
+
+[Version 11](versions/page-reference11-20261111/README.md) · [Version 11 index source](versions/page-reference11-20261111/index.html)
+
+This independent branch adds the exact reviewed 185-file reference11 snapshot over remote reference10 commit `a56f7d8391b091c1caf3f7f3cb95a240d4542b61`. Earlier version directories, candidate bytes, original source notices and user choices are preserved. No PR, master merge, force push, Sites publication or hosted deployment is included.
+
+Version 11 adds only PP01, Flowscope / Noted, as a separate general productivity-profile category. It is not a child, learning, health or caregiving page, not a second PF01 learning-profile option and not a selected or implemented product frontend. There are 21 references across 13 categories, comprising 19 unchanged original images and two existing explicitly linked native pages. The four earlier single-option category gaps remain.
+
+Independent static/source/diff review passed: 7/7 focused tests, 207/207 author checksums, exact original PNG and five preserved fixed-tree source identities, unchanged 175 previous candidate files, all 20 prior sections and shared CSS. PP01's original 780 × 1688 PNG remains unchanged; the publisher's fictional screen/data CC0 declaration and complete code MIT notice stay separate. Source metadata dates, renderer viewport and Android label are not proof of actual capture build/date or a real-device test. Rasterized font version and comprehensive third-party/trademark clearance remain unverified; no font binary or extracted vector asset is added.
+
+A separate bounded desktop review passed PP01's visible anchor, complete original-image display, source/rights caption, original-size file entry and Browser Back at 1180 × 757 CSS pixels, DPR 1. The index image displayed at 390 × 844 with an 8 px caption gap and no horizontal overflow. The native image viewer fitted the full PNG to 349 × 757. Back restored the correct section and visible, focused entry, not a pixel-exact scroll position (205 CSS px difference). No original app control was operated. This is not all-site, phone, narrow-screen, keyboard, screen-reader, touch, 1:1 zoom or full-product acceptance.
+
+The baseline GD02 observation is retained: at 400 × 606 using ordinary desktop zoom, the host page passed bounded checks but the native PNG viewer horizontally overflowed. Exact 390 × 844 remains unverified. This does not establish PP01 behaviour at those sizes.
+
+**LG02 must still only be served locally.** Its no-login/no-data-entry restriction, isolation and source notices remain unchanged. GitHub source backup is not website hosting and does not lift that boundary. Cozy and PC02 exclusions remain. No account, real family data, source application/generator, model or GCP operation is included.
+
+The version snapshot is preserved exactly as reviewed. Its local-draft, NOT_RUN, pending and not-uploaded fields describe the author's earlier packaging stage, not the later independent reviews or this source backup. This additive cover records the later bounded results without rewriting that history. Only the reviewed public snapshot and this root README are included; private research, raw source evidence outside the display whitelist, review logs, credentials and internal paths are excluded. Earlier backup notes follow unchanged.
+
+---
+
+# Selection Workbench
+
 ## Verified source backup: page-reference08, 09 and 10 · 2026-11-11
 
 This independent source-backup branch preserves three complete version snapshots over verified remote 07 commit `0103549a778eed3d4704152fb2424b561f385ad2`. No PR, master merge, force push or Sites/hosted deployment. Original versions, candidate bytes, notices, source claims and user selections are unchanged. No selected product frontend or component remix has been implemented.
