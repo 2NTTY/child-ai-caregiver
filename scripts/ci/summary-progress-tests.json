@@ -293,7 +293,7 @@
   },
   {
     "path": "tests/firestore-indexes-comparator.test.ts",
-    "cases": 4
+    "cases": 5
   },
   {
     "path": "tests/firestore-summary-progress-hooks.test.ts",
