@@ -1,5 +1,11 @@
 # Selection Workbench
 
+## Five-page integration candidate · 2026-11-11
+
+[Page reference 02](versions/page-reference02-20261111/README.md) minimally extends the same passive index with S-01 Settings / Appearance and MR-01 Memory and references. [Index source](versions/page-reference02-20261111/index.html). Each of the five pages still has only one reference. Original candidate bytes, source attribution and licenses are retained; no component mixing or selection writes are introduced.
+
+This independent GitHub source-preview increment passed bounded static checks and a targeted Chromium desktop integration check (1180 × 757, DPR 1): the new S-01/MR-01 images, section anchors and standalone entry links were verified. Earlier unchanged sections/styles and exact candidate bytes reuse their fixed-version evidence. Mobile, keyboard, screen-reader and original interactive-UX acceptance remain **NOT RUN**. It is not a deployed Site. Page reference 01 and all historical versions below remain unchanged.
+
 ## Page-reference integration candidate · 2026-11-11
 
 [Page reference 01](versions/page-reference01-20261111/README.md) adds a passive, numbered index for the existing H-01 home, PC01 assistant-chat and C-01 care-record references. [Index source](versions/page-reference01-20261111/index.html). Each page currently has one reference, not multiple alternatives for that page. Source images, original candidate files, attribution and licenses are preserved byte for byte.
