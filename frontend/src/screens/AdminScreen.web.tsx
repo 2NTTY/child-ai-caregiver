@@ -123,7 +123,7 @@ export default function AdminScreen() {
           <AppButton label="確認撤銷此邀請" variant="danger" disabled={locked} onPress={() => { submit({ kind: 'revoke', email: revoke.email, opId: crypto.randomUUID() }); setRevoke(null); }} />
           <AppButton label="保留邀請" variant="quiet" onPress={() => setRevoke(null)} /></View> : null}
       </View>
-      <AdminProactiveDemo key={userId} admin={admin} state={state.demo} online={online}
+      <AdminProactiveDemo key={`proactive-demo:${userId}`} admin={admin} state={state.demo} online={online}
         writeLocked={locked || state.transfers.busy || !!state.transfers.pending} />
       <View style={styles.card}><SectionHeader title="平台 AI 與限額" />
         {state.overview ? <>
@@ -179,7 +179,7 @@ export default function AdminScreen() {
           </> : null}
         </> : null}
       </View>
-      <AdminKnowledgeTransfers key={userId} admin={admin} state={state.transfers} online={online}
+      <AdminKnowledgeTransfers key={`knowledge-transfers:${userId}`} admin={admin} state={state.transfers} online={online}
         writeLocked={!online || reauthBusy || state.transfers.busy || !!state.transfers.pending} />
       <View style={styles.card}><SectionHeader title="知識關鍵詞索引" subtitle="手動選擇已審核版本，分批建立索引及查看逐項結果。" />
         <Text style={styles.note}>索引處理與知識發布分開；完成索引不代表已發布。本區只在開啟或按下讀取時查詢，不會自動輪詢。</Text>
