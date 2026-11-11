@@ -224,7 +224,8 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
       taskId: task.id, occurrenceId: task.occurrence.id, taskVersion: task.version, dueAt: task.occurrence.dueAt, ...scope,
       authorizationVersion: binding.authorizationVersion, generation: binding.generation, state: 'pending', attempts: 0, failures: 0, lease: null } : null;
     const prepared = await binding.prepareChange(operationId, 'tasks', false, childId);
-    const invalidateDocuments = await prepareContextChange(data, binding);
+    // Task occurrences already own their due, cancelled and completed reminder state.
+    const invalidateDocuments = await prepareContextChange(data, binding, { proactive: false });
     const createdViaShare = old ? old.createdViaShare : sharedWriteAttribution(binding, task.id, 1);
     const changedViaShare = sharedWriteAttribution(binding, task.id, task.version);
     const classAssignment = !old || imported || 'action' in input && input.action === 'reschedule'

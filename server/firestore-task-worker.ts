@@ -24,12 +24,16 @@ export const firestoreTaskReminderBatchSchema = z.object({ id: uuid, recipientUs
   category: z.enum(['ordinary', 'appointment']), key: z.string().min(1).max(128), state: z.enum(['open', 'sealed']), createdAt: datetime }).strict();
 export const firestoreTaskNotificationOutboxSchema = z.object({ id: uuid, reminderId: uuid, taskId: uuid, occurrenceId: uuid,
   taskVersion: version, recipientUserId: z.string().min(1).max(256), createdAt: datetime,
-  state: z.enum(['pending', 'leased', 'delivered', 'unknown', 'cancelled']) }).strict();
+  state: z.enum(['pending', 'leased', 'delivered', 'unknown', 'cancelled']), chatContact: z.literal(true).optional() }).strict();
 export interface FirestoreTaskCurrentAuth { userId: string; disabled: boolean; emailVerified: boolean; email: string | null }
 export interface FirestoreTaskWorkerOptions extends FirestoreDomainOptions {
   enabled: boolean;
   currentAuth(userId: string): Promise<FirestoreTaskCurrentAuth>;
   serverClock?: () => number;
+  /** Null keeps the existing authorized reminder route. A prepared contact owns the transaction's one change. */
+  prepareParentContact?(binding: FirestoreAuthorityTransaction, input: {
+    opId: string; task: CareTask; reminder: TaskReminder; text: string;
+  }): Promise<{ commit(): void } | null>;
 }
 export type FirestoreTaskResult = { state: 'processed' | 'deferred' | 'not_due' | 'busy' | 'stale' | 'stopped' | 'failed' | 'unknown' | 'disabled';
   receipt: TaskReminder | null; nextAt: string | null };
@@ -234,20 +238,27 @@ export function createFirestoreTaskWorker(options: FirestoreTaskWorkerOptions): 
           : nextReminderCheck(current!, prefs, phase === 'initial' ? { ...evidence, initialAt: instant } : evidence, instant);
         const state = decision === 'unknown' ? 'unknown' : nextAt ? 'pending' : 'processed';
         const changed = { ...work, state: state as FirestoreReminderOutbox['state'], lease: null, ...(nextAt ? { dueAt: nextAt } : {}) };
-        const prepared = await binding.prepareChange(changeId, 'tasks', false);
-        const background = phase && !binding.sharedAccess?.classMember ? await prepareFirestoreBackgroundWork(data, binding.transaction, { kind: 'task-agent', scope: binding.scope,
+        const previouslyContacted = prior.notifications.some(value => value.chatContact === true);
+        const contact = phase === 'initial' && !previouslyContacted && !binding.sharedAccess
+          && binding.actorUserId === binding.scope.ownerUserId && current!.assigneeUserId === binding.scope.ownerUserId
+          ? await options.prepareParentContact?.(binding, { opId: receipt!.id, task: current!, reminder: receipt!,
+            text: `你安排的待辦「${current!.title}」已到時間。請查看待辦及更新進度；這則提示不代表事項已完成。` }) ?? null : null;
+        const chatContact = !!contact || previouslyContacted;
+        const prepared = contact ? null : await binding.prepareChange(changeId, 'tasks', false);
+        const background = phase && !chatContact && !binding.sharedAccess?.classMember ? await prepareFirestoreBackgroundWork(data, binding.transaction, { kind: 'task-agent', scope: binding.scope,
           resourceId: work.taskId, basis: receipt!.id, generation: binding.generation, authorizationVersion: binding.authorizationVersion }, instant) : null;
         const workEnvelope = sealOutbox(binding.scope, changed);
         const batchValue = phase && !batch ? { id: batchId, recipientUserId: recipient.actorUserId, category, key, state: 'open' as const, createdAt: instant } : null;
         const batchEnvelope = batchValue ? { ...data.tags(recipientScope), ...data.seal('task-reminder-batch', batchId, recipientScope, firestoreTaskReminderBatchSchema, batchValue) } : null;
         const notification = phase ? { id: receipt!.id, reminderId: receipt!.id, taskId: work.taskId, occurrenceId: work.occurrenceId,
-          taskVersion: work.taskVersion, recipientUserId: recipient.actorUserId, createdAt: instant, state: 'pending' as const } : null;
+          taskVersion: work.taskVersion, recipientUserId: recipient.actorUserId, createdAt: instant,
+          state: previouslyContacted ? 'cancelled' as const : 'pending' as const, ...(chatContact ? { chatContact: true as const } : {}) } : null;
         const reminderEnvelope = phase ? { ...data.tags(binding.scope), taskId: work.taskId, occurrenceId: work.occurrenceId,
           ...data.seal('task-reminder', receipt!.id, binding.scope, firestoreTaskReminderSchema, receipt!, work.taskVersion) } : null;
         const notificationEnvelope = notification ? { ...data.tags(binding.scope), state: notification.state,
           ...data.seal('task-notification-outbox', notification.id, binding.scope, firestoreTaskNotificationOutboxSchema, notification, work.taskVersion) } : null;
         if (Date.parse(lease.until) <= now()) return result('stale');
-        prepared.commit(); background?.commit(); binding.transaction.set(row.ref, workEnvelope);
+        prepared?.commit(); contact?.commit(); background?.commit(); binding.transaction.set(row.ref, workEnvelope);
         if (batchEnvelope) binding.transaction.create(batchRef, batchEnvelope);
         if (reminderEnvelope) binding.transaction.create(data.ref('task_reminders', 'task-reminder', receipt!.id), reminderEnvelope);
         if (notificationEnvelope) binding.transaction.create(data.ref('notification_outbox', 'task-notification-outbox', notification!.id), notificationEnvelope);

@@ -24,6 +24,9 @@ const dailySchema = z.object({ eventId: uuid, day: z.string() }).strict();
 export const firestoreWorkDailyRecoverySchema = dailySchema;
 type Watch = z.infer<typeof firestoreWorkWatchSchema>;
 type Event = z.infer<typeof firestoreWorkEventSchema>;
+export interface WorkCoverageRequest { resources: Pick<WorkResource, 'kind' | 'id'>[]; knowledgeSourceIds: string[] }
+export interface WorkCoverage { resources: Pick<WorkResource, 'kind' | 'id'>[]; knowledgeSourceIds: string[]; complete: boolean }
+export type WorkCoverageReader = (binding: Binding, request: WorkCoverageRequest) => Promise<WorkCoverage>;
 const active = (work: AgentWork) => ['active', 'waiting'].includes(work.status) && !!work.followUp;
 const tomorrow = () => new Date((Math.floor((Date.now() + 8 * 3600_000) / 86400_000) + 1) * 86400_000 - 8 * 3600_000).toISOString();
 
@@ -156,6 +159,32 @@ export function createFirestoreWorkFollowUp(options: FirestoreDomainOptions & {
     });
   }
   return { prepare, check, input, finish,
+    async coverage(b: Binding, request: WorkCoverageRequest): Promise<WorkCoverage> {
+      if (b.sharedAccess || b.actorUserId !== b.scope.ownerUserId) return { resources: [], knowledgeSourceIds: [], complete: false };
+      if (request.resources.length > 8 || request.knowledgeSourceIds.length > 8) domainReject('work_coverage_limit', 400);
+      let query: Query = data.collection('work_watches');
+      for (const [key, value] of Object.entries(data.tags(b.scope))) query = query.where(key, '==', value);
+      const rows = await b.transaction.get(query.orderBy(FieldPath.documentId()).limit(11));
+      const resources = new Map<string, Pick<WorkResource, 'kind' | 'id'>>(), knowledgeSourceIds = new Set<string>();
+      for (const row of rows.docs.slice(0, 10)) {
+        const saved = await watch(b, row.get('workId'));
+        if (!saved?.enabled || saved.authorizationVersion !== b.authorizationVersion) continue;
+        const resourceMatch = request.resources.some(ref => saved.resources.some(value => value.kind === ref.kind && value.id === ref.id));
+        const sourceMatch = request.knowledgeSourceIds.some(id => saved.knowledge.some(value => value.sourceId === id));
+        if (!resourceMatch && !sourceMatch) continue;
+        const work = await b.readWork(saved.workId);
+        if (!work || !active(work) || work.version !== saved.workVersion) continue;
+        const current = await capture(b, work);
+        if (current.resources.some(resource => !resource.available || resource.terminal)) continue;
+        if (work.followUp?.watchResources) for (const ref of request.resources) {
+          if (current.resources.some(value => value.kind === ref.kind && value.id === ref.id && value.available && !value.terminal))
+            resources.set(ref.kind + ':' + ref.id, ref);
+        }
+        for (const id of request.knowledgeSourceIds) if (work.followUp?.knowledgeSourceIds.includes(id)
+          && current.knowledge.some(value => value.sourceId === id && value.available)) knowledgeSourceIds.add(id);
+      }
+      return { resources: [...resources.values()], knowledgeSourceIds: [...knowledgeSourceIds], complete: rows.size <= 10 };
+    },
     async project(b: Binding, work: AgentWork): Promise<AgentWork> {
       const saved = await watch(b, work.id), last = saved?.latestEventId ? await event(b, saved.latestEventId) : null;
       if (!last) return work;

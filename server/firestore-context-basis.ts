@@ -2,7 +2,14 @@ import { z } from 'zod';
 import type { FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
 
+export const householdChangeSchema = z.object({ revision: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+  domain: z.enum(['care_record', 'profile', 'memory_fact', 'memory_topic', 'private_note', 'concern']), id: z.uuid() }).strict();
+export type HouseholdChange = z.infer<typeof householdChangeSchema>;
 const schema = z.object({ revision: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+  proactiveRevision: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).optional(),
+  proactiveChanges: z.array(householdChangeSchema).max(8).optional(),
+  proactiveChangesFloor: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).optional(),
+  lastUserMessageId: z.uuid().optional(),
   summaryRequest: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).optional(), summaryPending: z.boolean().optional(),
   summaryAfter: z.iso.datetime({ offset: true }).nullable().optional(), summaryBlocked: z.boolean().optional(), summaryBlockedReference: z.uuid().nullable().optional() }).strict();
 const idFor = (binding: FirestoreAuthorityTransaction) => JSON.stringify([binding.scope.ownerUserId, binding.scope.childId]);
@@ -14,16 +21,36 @@ export async function readContextBasis(data: FirestoreDomainData, binding: Fires
   const value = row.exists ? data.open('context-version', id, binding.scope, schema, row) : { revision: 0 };
   const revision = value.revision;
   const basis = firestoreDomainHash([binding.scope, binding.authorizationVersion, revision]);
-  return { id, ref, revision, basis, value };
+  return { id, ref, revision, proactiveRevision: value.proactiveRevision ?? revision, basis, value };
 }
-export async function prepareContextChange(data: FirestoreDomainData, binding: FirestoreAuthorityTransaction, chatOnly = false) {
+export async function prepareContextChange(data: FirestoreDomainData, binding: FirestoreAuthorityTransaction,
+  { chatOnly = false, userMessageId, proactive = !chatOnly, resource }: { chatOnly?: boolean; userMessageId?: string; proactive?: boolean;
+    resource?: Omit<HouseholdChange, 'revision'> } = {}) {
   const current = await readContextBasis(data, binding);
   if (current.revision >= Number.MAX_SAFE_INTEGER) domainReject('version_exhausted');
-  const value = { ...current.value, revision: current.revision + (chatOnly ? 0 : 1), summaryRequest: (current.value.summaryRequest ?? 0) + 1,
+  const nextRevision = current.proactiveRevision + Number(proactive);
+  if (!Number.isSafeInteger(nextRevision)) domainReject('version_exhausted');
+  const previousChanges = current.value.proactiveChanges ?? [];
+  const entries = proactive && resource ? [...previousChanges, householdChangeSchema.parse({ ...resource, revision: nextRevision })] : previousChanges;
+  const dropped = entries.length > 8 ? entries[entries.length - 9]!.revision : 0;
+  const floor = Math.max(current.value.proactiveChangesFloor ?? current.proactiveRevision, dropped, proactive && !resource ? nextRevision : 0);
+  const value = { ...current.value, ...(userMessageId ? {lastUserMessageId:z.uuid().parse(userMessageId)} : {}),
+    revision: current.revision + (chatOnly ? 0 : 1), proactiveRevision: current.proactiveRevision + Number(proactive),
+    proactiveChanges: entries.slice(-8), proactiveChangesFloor: floor,
+    summaryRequest: (current.value.summaryRequest ?? 0) + 1,
     summaryPending: true, summaryAfter: new Date(Date.now() + 120000).toISOString() };
   if (!Number.isSafeInteger(value.summaryRequest)) domainReject('version_exhausted');
   const envelope = { ...data.tags(binding.scope), summaryPending: true, ...data.seal('context-version', current.id, binding.scope, schema, value) };
   return () => binding.transaction.set(current.ref, envelope);
+}
+
+/** The retained ring never implies that older or legacy changes were fully enumerated. */
+export function selectHouseholdChanges(context: Awaited<ReturnType<typeof readContextBasis>>, sinceRevision: number, throughRevision = context.proactiveRevision) {
+  if (!Number.isSafeInteger(sinceRevision) || sinceRevision < 0 || throughRevision > context.proactiveRevision || sinceRevision > throughRevision)
+    domainReject('proactive_change_range_invalid', 500);
+  const changes = (context.value.proactiveChanges ?? []).filter(row => row.revision > sinceRevision && row.revision <= throughRevision);
+  const unique = [...new Map(changes.map(row => [row.domain + ':' + row.id, row])).values()];
+  return { changes: unique, complete: sinceRevision >= (context.value.proactiveChangesFloor ?? context.proactiveRevision) };
 }
 
 /** T0 and pending-clear both read/write this original document, so they conflict even

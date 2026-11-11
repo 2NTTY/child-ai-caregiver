@@ -10,11 +10,11 @@ export const importedChatContentSchema = z.object({
   id: uuid, childId: uuid, authorUserId: z.string().min(1).max(256).nullable(),
   role: z.enum(['user', 'model']), text: z.string().refine(value => value.isWellFormed()
     && !value.includes('\0') && [...value].length <= 10_000),
-  inReplyTo: uuid.nullable(), createdAt: z.iso.datetime({ offset: true }),
+  inReplyTo: uuid.nullable(), proactive: z.literal(true).optional(), createdAt: z.iso.datetime({ offset: true }),
   voice: voiceMessageReferenceSchema.optional(), file: chatFileMessageReferenceSchema.optional(),
   photo: photoMessageReferenceSchema.optional(),
-}).refine(value => (value.role === 'user' ? value.authorUserId !== null && value.inReplyTo === null
-  : value.authorUserId === null && value.inReplyTo !== null)
+}).refine(value => (value.role === 'user' ? value.authorUserId !== null && value.inReplyTo === null && !value.proactive
+  : value.authorUserId === null && (value.inReplyTo === null) === (value.proactive === true))
   && [value.voice, value.file, value.photo].filter(Boolean).length <= 1
   && (!(value.voice || value.file || value.photo) || value.role === 'user')
   && (!!value.text.trim() || !!value.voice || !!value.file || !!value.photo));

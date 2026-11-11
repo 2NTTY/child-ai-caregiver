@@ -28,6 +28,7 @@ import { firestoreHandoverJobSchema, assertHandoverJobIdentity } from './firesto
 import type { createHandoverService } from './handover-service.ts';
 import type { createHandoverUploadService } from './handover-upload-service.ts';
 import { handoverUploadRecordSchema, handoverUploadId, validHandoverUpload } from './handover-upload-records.ts';
+import type { createProactiveEventSources } from './proactive-event-sources.ts';
 
 const stages = ['documents', 'work_watches', 'photo_imports', 'photo_cleanup', 'erasures', 'content_erasures', 'context_versions', 'voice_assets', 'chat_file_assets', 'avatar_cleanup', 'handover_exports', 'handover_uploads'] as const;
 const cursorSchema = z.object({ after: z.record(z.string(), z.string().nullable()), complete: z.array(z.string()),
@@ -50,6 +51,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
   files?: Pick<FirestoreChatFilesStore, 'cleanupDeleted' | 'expireUnlinked'>;
   handover?: Pick<ReturnType<typeof createHandoverService>, 'cleanup'>;
   handoverUploads?: Pick<ReturnType<typeof createHandoverUploadService>, 'cleanup'>;
+  proactiveEvents?: Pick<ReturnType<typeof createProactiveEventSources>, 'prepareGlobal'>;
   enabled: boolean; knowledge: FirestoreKnowledgeRefresh;
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'cleanupDeleted'> & Partial<Pick<ReturnType<typeof createFirestorePhotoStore>, 'expireImport'>>;
   erasures: FirestoreErasureStore; cleanup: ReturnType<typeof createFirestoreErasureCleanup>;
@@ -263,6 +265,8 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       if (current.token !== token) domainReject('maintenance_lease_changed');
       tx.set(ref, stateEnvelope(id, SYSTEM, { ...state, minute, token: null, until: 0 }));
     });
+    try { await options.proactiveEvents?.prepareGlobal(); }
+    catch { console.warn('proactive_public_prepare_failed'); }
     return scanned;
   }
   async function childChange(job: FirestoreBackgroundWork) {

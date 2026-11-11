@@ -44,7 +44,8 @@ export async function handleChatRequest(request: Request, userId: string | null,
     if (params.getAll("before").length > 1 || before !== null && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu.test(before))
       return apiError("invalid_input", "請重新讀取聊天歷史。", 400);
     const page = await store.listForUser(userId, childId, before);
-    return page ? jsonResponse(page) : apiError("not_found", "找不到資料。", 404);
+    if (!page) return apiError("not_found", "找不到資料。", 404);
+    return jsonResponse(request.headers.get('x-chat-proactive') === '1' ? page : {...page,messages:page.messages.filter(message => !message.proactive)});
   }
   if (request.method !== "POST") return apiError("method_not_allowed", "不支援此操作。", 405);
 

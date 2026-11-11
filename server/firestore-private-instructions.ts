@@ -67,7 +67,7 @@ export function createFirestorePrivateInstructions(data: FirestoreDomainData) {
       ...data.seal('private-instruction', next.id, b.scope, firestorePrivateInstructionSchema, next, next.version) };
     const key = next.memoryKey ? keyId(b, next.memoryKey) : null;
     const keyEnvelope = key ? { ...data.tags(b.scope), ...data.seal('memory-key', key, b.scope, keySchema, { id: next.id }) } : null;
-    const context = await prepareContextChange(data, b), change = await b.prepareChange(operationId, 'memory', false);
+    const context = await prepareContextChange(data, b, { resource: { domain: 'private_note', id: next.id } }), change = await b.prepareChange(operationId, 'memory', false);
     return { value: next, changeSeq: change.changeSeq, commit() {
       context(); change.commit(); b.transaction.set(ref(next.id), envelope);
       if (key && keyEnvelope) b.transaction.set(data.ref('memory_keys', 'memory-key', key), keyEnvelope);

@@ -8,24 +8,24 @@ import {firestorePushDeliverySchema} from './firestore-web-push.ts';
 import {firestoreTelegramDeliverySchema} from './firestore-telegram.ts';
 import {firestoreContactRequestSchema} from './firestore-contact.ts';
 
-const definitions=[['push_deliveries','push-delivery','deliveryId'],['telegram_deliveries','telegram-delivery','deliveryId'],['contact_requests','contact-request','requestId'],['native_push_deliveries','native-push-delivery','deliveryId']] as const;
+const definitions=[['push_deliveries','push-delivery','deliveryId','createdAt'],['telegram_deliveries','telegram-delivery','deliveryId','createdAt'],['contact_requests','contact-request','requestId','createdAt'],['native_push_deliveries','native-push-delivery','deliveryId','createdAt'],['native_push_deliveries','native-push-delivery','deliveryId','chatCreatedAt']] as const;
 const position=z.object({at:z.iso.datetime({offset:true}),id:z.uuid()}).strict();
-const cursorSchema=z.array(z.object({after:position.nullable(),done:z.boolean()}).strict()).min(3).max(4);
+const cursorSchema=z.array(z.object({after:position.nullable(),done:z.boolean()}).strict()).min(3).max(5);
 /** Bounded merge by original request creation. A request alone is never delivery evidence. */
 export async function readNotificationHistory(options:FirestoreDomainOptions,b:FirestoreAuthorityTransaction,raw?:string){
   const data=new FirestoreDomainData(options),tags=data.tags(b.scope);
   let cursor:z.infer<typeof cursorSchema>;
   try {cursor=raw?cursorSchema.parse(JSON.parse(raw)):definitions.map(()=>({after:null,done:false}));}
   catch {return domainReject('invalid_export_cursor',400);}
-  if(cursor.length===3)cursor.push({after:null,done:false});
-  const streams=await Promise.all(definitions.map(async([suffix,,field],index)=>{
+  while(cursor.length<definitions.length)cursor.push({after:null,done:false});
+  const streams=await Promise.all(definitions.map(async([suffix,,field,sortField],index)=>{
     if(cursor[index].done)return [];
     let q:Query=data.collection(suffix).where('workspaceTag','==',tags.workspaceTag).where('epochTag','==',tags.epochTag).where('userTag','==',tags.userTag);
     if(suffix!=='contact_requests')q=q.where('childTag','==',tags.childTag);
-    q=q.orderBy('createdAt','desc').orderBy(field,'desc').limit(11);
+    q=q.orderBy(sortField,'desc').orderBy(field,'desc').limit(11);
     if(cursor[index].after)q=q.startAfter(cursor[index].after!.at,cursor[index].after!.id);
     const page=await b.transaction.get(q);
-    return page.docs.map(row=>({row,position:domainParse(position,{at:row.get('createdAt'),id:row.get(field)},'delivery_binding',500)}));
+    return page.docs.map(row=>({row,position:domainParse(position,{at:row.get(sortField),id:row.get(field)},'delivery_binding',500)}));
   }));
   const offsets=definitions.map(()=>0),items:unknown[]=[],seen=new Set<string>();
   for(let scanned=0;scanned<10;scanned++){
@@ -45,9 +45,9 @@ export async function readNotificationHistory(options:FirestoreDomainOptions,b:F
       ||Object.entries(data.tags(context.scope)).some(([key,v])=>row.get(key)!==v))domainReject('delivery_binding',500);
     if(selected!==2){
       if(context.scope.childId!==b.scope.childId)domainReject('delivery_binding',500);
-      const delivery=selected===0?firestorePushDeliverySchema.parse(value).delivery:selected===3?firestoreNativeDeliverySchema.parse(value).delivery:firestoreTelegramDeliverySchema.parse(value).delivery;
+      const delivery=selected===0?firestorePushDeliverySchema.parse(value).delivery:selected>=3?firestoreNativeDeliverySchema.parse(value).delivery:firestoreTelegramDeliverySchema.parse(value).delivery;
       if(delivery.id!==next.id||delivery.createdAt!==next.at)domainReject('delivery_binding',500);
-      if(!seen.has(delivery.id)){seen.add(delivery.id);items.push({id:delivery.id,channel:selected===0?'push':selected===3?'native_push':'telegram',status:delivery.status,
+      if(!seen.has(delivery.id)){seen.add(delivery.id);items.push({id:delivery.id,channel:selected===0?'push':selected>=3?'native_push':'telegram',status:delivery.status,
         created_at:delivery.createdAt,attempted_at:delivery.attemptedAt,finished_at:delivery.finishedAt,
         acknowledged_at:'acknowledgedAt' in delivery?delivery.acknowledgedAt:null});}
     }else{

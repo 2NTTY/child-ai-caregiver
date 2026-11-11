@@ -12,6 +12,8 @@ import { firestoreCareStorageSchema as firestoreCareSchema, firestoreProfileStor
 import { validSharedAttribution } from './shared-write-attribution.ts';
 import { firestoreFactStorageSchema as firestoreFactSchema, firestoreTopicStorageSchema as firestoreTopicSchema, firestoreMemoryRecoverySchemas, validMemoryFactAttribution } from './firestore-memory.ts';
 import { firestoreChatMessageSchema, firestoreChatRecoverySchemas } from './firestore-chat.ts';
+import { proactiveMessageId } from './proactive-chat.ts';
+import { proactivePolicySchema, proactiveSettingReceiptSchema, proactiveAssessmentSchema,proactiveRevisitSchema, proactiveCueSchema, proactiveReservationSchema } from './firestore-proactive-wakes.ts';
 import { importedChatMessageSchema } from '../src/shared/chat-imports.ts';
 import { firestoreContextRecoverySchema } from './firestore-context-basis.ts';
 import type { FirestoreRecoveryContext } from './firestore-recovery-envelope.ts';
@@ -41,6 +43,12 @@ export const coreRestoreSchemas = {
   'chat-imported-message': { suffix: 'chat_imported_messages', schema: importedChatMessageSchema },
   'chat-reply': { suffix: 'chat_replies', schema: firestoreChatRecoverySchemas.reply },
   'chat-reply-leases': { suffix: 'chat_reply_leases', schema: firestoreChatRecoverySchemas.leases },
+  'proactive-policy': {suffix:'proactive_state',schema:proactivePolicySchema},
+  'proactive-setting-receipt': {suffix:'proactive_state',schema:proactiveSettingReceiptSchema},
+  'proactive-assessment': {suffix:'proactive_state',schema:proactiveAssessmentSchema},
+  'proactive-revisit': {suffix:'proactive_state',schema:proactiveRevisitSchema},
+  'proactive-cue': {suffix:'proactive_state',schema:proactiveCueSchema},
+  'proactive-reservation': {suffix:'proactive_state',schema:proactiveReservationSchema},
   'memory-fact': { suffix: 'memory_facts', schema: firestoreFactSchema },
   'memory-fact-revision': { suffix: 'memory_fact_revisions', schema: firestoreFactSchema },
   'memory-topic': { suffix: 'memory_topics', schema: firestoreTopicSchema },
@@ -98,6 +106,14 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   if (kind === 'context-version') { equalId(id, [scope.ownerUserId, scope.childId]); requireValue(recordVersion === 1);
     return { summaryPending: firestoreContextRecoverySchema.parse(raw).summaryPending === true }; }
   requireValue(scope.childId !== NIL);
+  if (kind === 'proactive-policy' || kind === 'proactive-setting-receipt' || kind === 'proactive-assessment' || kind==='proactive-revisit'
+    || kind==='proactive-cue' || kind==='proactive-reservation') {
+    const tail = kind === 'proactive-policy' ? [] : kind === 'proactive-setting-receipt'
+      ? [proactiveSettingReceiptSchema.parse(raw).opId] : kind==='proactive-revisit'?[proactiveRevisitSchema.parse(raw).jobId]
+        :kind==='proactive-cue'?[proactiveCueSchema.parse(raw).jobId]:kind==='proactive-reservation'?[proactiveReservationSchema.parse(raw).id]
+          :[proactiveAssessmentSchema.parse(raw).id];
+    equalId(id,[scope.ownerUserId,scope.childId,...tail]); requireValue(recordVersion===1); return {};
+  }
   if (kind === 'handover-source-history') {
     const value = validateSourceHistory(sourceHistoryRecordSchema.parse(raw));
     requireValue(id === sourceHistoryId(scope, value) && value.childId === scope.childId && recordVersion === 1);
@@ -162,11 +178,15 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   if (kind === 'chat-message') {
     const value = firestoreChatMessageSchema.parse(raw);
     requireValue(value.id === id && value.childId === scope.childId && recordVersion === 1 && (value.role === 'user'
-      ? value.authorUserId === scope.ownerUserId && value.inReplyTo === null : value.authorUserId === null && value.inReplyTo !== null));
+      ? value.authorUserId === scope.ownerUserId && value.inReplyTo === null : value.authorUserId === null && (value.inReplyTo === null) === !!value.proactive));
     return { messageId: id, createdAt: value.createdAt, sortKey: z.string().regex(/^[0-9]{19}$/u).parse(original.sortKey) };
   }
   if (kind === 'chat-reply') {
-    const ids = parts(id); requireValue(ids.length === 3 && ids[0] === scope.ownerUserId && ids[1] === scope.childId && z.uuid().safeParse(ids[2]).success && recordVersion === 1);
+    const ids = parts(id), receipt = firestoreChatRecoverySchemas.reply.parse(raw);
+    requireValue(ids[0] === scope.ownerUserId && ids[1] === scope.childId && recordVersion === 1);
+    if ('proactive' in receipt) requireValue(ids.length === 4 && ids[2] === 'proactive' && ids[3] === receipt.messageId
+      && receipt.messageId === proactiveMessageId(scope.ownerUserId,scope.childId,receipt.origin,receipt.opId));
+    else requireValue(ids.length === 3 && z.uuid().safeParse(ids[2]).success);
     return {};
   }
   if (kind === 'memory-fact' || kind === 'memory-fact-revision') {

@@ -139,7 +139,7 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
     const value = firestoreCareSchema.parse(saved);
     const revisionId = JSON.stringify([id, value.version]), ref = data.ref('care_revisions', 'care-revision', revisionId);
     if ((await binding.transaction.get(ref)).exists) domainReject('revision_conflict');
-    const contextChange = await prepareContextChange(data, binding);
+    const contextChange = await prepareContextChange(data, binding, { resource: { domain: 'care_record', id } });
     const change = await binding.prepareChange(operationId, 'care', false);
     const envelope = { ...data.tags(binding.scope), entityId: id, entityVersion: value.version, createdAt: value.createdAt, live: true,
       ...data.seal('care-record', id, binding.scope, firestoreCareStorageSchema, saved, value.version) };
@@ -157,7 +157,7 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
   async function prepareRecordDeletion(binding: Binding, current: CareRecord, operationId: string, erasureOperationId = operationId): Promise<Prepared<boolean>> {
     const id = current.id, expectedVersion = current.version;
     const value = { id, childId: binding.scope.childId, version: expectedVersion + 1, operationId: erasureOperationId, deletedAt: new Date().toISOString() };
-    const contextChange = await prepareContextChange(data, binding);
+    const contextChange = await prepareContextChange(data, binding, { proactive: false });
     const change = await binding.prepareChange(operationId, 'care', true);
     const envelope = { ...data.tags(binding.scope), entityId: id, entityVersion: value.version, createdAt: current.createdAt, live: false,
       ...data.seal('care-tombstone', id, binding.scope, tombstoneSchema, value, value.version) };
@@ -186,7 +186,12 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
     const erase = parsed === null && expectedVersion > 0 ? prepareContentErasure(data, binding, 'profile', id, expectedVersion, operationId) : null;
     const revisionId = JSON.stringify([id, value.version]), revisionRef = data.ref('profile_revisions', 'profile-revision', revisionId);
     if ((await binding.transaction.get(revisionRef)).exists) domainReject('revision_conflict');
-    const contextChange = await prepareContextChange(data, binding);
+    const careBasis = (profile: typeof parsed) => profile && [profile.age, profile.dueDate, profile.gestationalWeeksRaw,
+      profile.region, profile.allergies, profile.specialNeeds, profile.preferences, profile.validUntil];
+    const contextChange = await prepareContextChange(data, binding, {
+      proactive: !!parsed && firestoreDomainHash(careBasis(current.data)) !== firestoreDomainHash(careBasis(parsed)),
+      resource: { domain: 'profile', id },
+    });
     const change = await binding.prepareChange(operationId, 'profile', parsed === null);
     const envelope = { ...data.tags(binding.scope), historyFloor: floor,
       ...data.seal('child-profile', id, binding.scope, firestoreProfileStorageSchema, saved, value.version) };
