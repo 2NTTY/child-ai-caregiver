@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { taskValuesSchema, taskChangeSchema, taskDueAtSchema, taskTimeZoneSchema } from './tasks.ts';
 
-const id=z.uuid(), version=z.int().positive().max(2147483647);
+const id=z.uuid(), version=z.int().min(1).max(2147483647);
 const digest=z.string().regex(/^[a-f0-9]{64}$/u);
 const targets=z.array(z.strictObject({childId:id,taskId:id,expectedVersion:version})).min(1).max(100)
   .refine(list=>new Set(list.map(item=>item.taskId)).size===list.length);

@@ -1,0 +1,13 @@
+{
+  "scope": "One private class conversation via the product HTTP handler, ADK Runner, actual Vertex provider and normal task batch service. HTTP identity and Firestore backing were synthetic and isolated.",
+  "base": "2a35f0f53a1c53c05035b87d9491db455aec77ff",
+  "model": "gemini-3.1-flash-lite",
+  "before": {"providerRequests": 1, "status": "model_http_400", "toolCalls": 0},
+  "regression": "The real ADK FunctionTool declaration emitted oneOf and exclusiveMinimum for prepare_selected_tasks. The focused Vertex schema check failed before and passed after the fix. Invalid versions and model-supplied confirmation remain rejected.",
+  "after": {
+    "runStatus": "completed", "providerRequests": 4, "reportedPromptTokens": 35662, "reportedCandidateTokens": 497,
+    "tools": ["read_selected_tasks", "prepare_selected_tasks", "present_answer"],
+    "observations": ["No tasks saved before the user's confirmation", "One confirmation applied to both selected pupils", "Both saved tasks had the requested title subject and Hong Kong due time", "Repeating the original advance returned identical item receipts", "The original reply run was read back"]
+  },
+  "limitations": ["No production family records, live UI, device, external notification or new APK were used.", "Only this model and conversation were exercised."]
+}

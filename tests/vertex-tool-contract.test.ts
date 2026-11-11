@@ -125,6 +125,24 @@ test("document change declarations use supported union fields without changing s
   assert.equal(writes, 1);
 });
 
+test("mixed task reads and batch proposals expose supported Vertex declarations and keep strict arguments", () => {
+  const budget = new AgentBudget();
+  try {
+    const { tools } = createProductAgentTools({ run: { scope: {}, runId: "mixed", budget }, memory: {}, tasks: {}, store: {},
+      knowledge: { createRun: () => ({}) }, authorize: async () => false, mixedTasks: async () => ({children: [], nextFrom: null}),
+      prepareMixedTasks: () => { throw Error("This test must never execute a proposal"); },
+    } as never);
+    const proposal = tools.find(tool => tool.name === "prepare_selected_tasks")!;
+    assert.ok(proposal && tools.some(tool => tool.name === "read_selected_tasks"));
+    assert.deepEqual(tools.flatMap(tool => contractIssues(native(tool)._getDeclaration()!.parameters, tool.name)), []);
+    const target = { childId: id, taskId: id, expectedVersion: 1 };
+    const complete = { kind: "complete", note: "", targets: [target] };
+    assert.ok(proposal.parameters.safeParse({ action: complete }).success);
+    assert.equal(proposal.parameters.safeParse({ action: { ...complete, confirmed: true } }).success, false);
+    assert.equal(proposal.parameters.safeParse({ action: { ...complete, targets: [{ ...target, expectedVersion: 0 }] } }).success, false);
+  } finally { budget.close(); }
+});
+
 test("the real product-interactive Runner request keeps its system configuration and supported schemas", async context => {
   const config = readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" });
   let requests = 0, reservations = 0, records = 0;
