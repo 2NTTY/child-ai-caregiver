@@ -190,15 +190,59 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
     return receipt;
   }
   async function activeCount(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, request?: Metadata['request'], except?: string) {
-    const rows = await binding.transaction.get(query('documents', scope).where('status', '==', 'active').limit(50));
-    for (const row of rows.docs) {
-      const item = await find(binding, scope, domainParse(uuid, row.get('documentId'), 'invalid_document', 500));
-      if (!item) domainReject('document_binding', 500);
-      if (request?.kind === 'growth_report' && item.id !== except && item.request.kind === 'growth_report'
-        && (item.request.reportMode ?? 'fixed') === (request.reportMode ?? 'fixed')
-        && (request.reportMode === 'living' || canonicalJson(item.request.period) === canonicalJson(request.period))) reject('report_exists');
+    if (request?.kind !== 'growth_report') return;
+    const checkedIds = new Set<string>();
+    if (except) checkedIds.add(except);
+
+    // 1. Check indexed growth reports in bounded batches
+    let lastIndexed: { at: string; id: string } | null = null;
+    let moreIndexed = true;
+    while (moreIndexed) {
+      let q = query('documents', scope).where('status', '==', 'active').where('kind', '==', 'growth_report').orderBy('createdAt', 'desc').orderBy('documentId', 'desc').limit(100);
+      if (lastIndexed) q = q.startAfter(lastIndexed.at, lastIndexed.id);
+      const batch = await binding.transaction.get(q);
+      moreIndexed = batch.docs.length === 100;
+      if (batch.docs.length > 0) {
+        const last = batch.docs[batch.docs.length - 1];
+        lastIndexed = { at: last.get('createdAt'), id: last.get('documentId') };
+      }
+      for (const row of batch.docs) {
+        const docId = domainParse(uuid, row.get('documentId'), 'invalid_document', 500);
+        if (checkedIds.has(docId)) continue;
+        checkedIds.add(docId);
+        const item = await find(binding, scope, docId);
+        if (!item) domainReject('document_binding', 500);
+        if (item.request.kind === 'growth_report'
+          && (item.request.reportMode ?? 'fixed') === (request.reportMode ?? 'fixed')
+          && (request.reportMode === 'living' || canonicalJson(item.request.period) === canonicalJson(request.period))) reject('report_exists');
+      }
     }
-    if (rows.docs.filter(row => row.get('documentId') !== except).length >= 50) reject('document_limit', 400);
+
+    // 2. Scan active documents in bounded batches to catch legacy records lacking the 'kind' metadata
+    let lastActive: { at: string; id: string } | null = null;
+    let moreActive = true;
+    while (moreActive) {
+      let q = query('documents', scope).where('status', '==', 'active').orderBy('createdAt', 'desc').orderBy('documentId', 'desc').limit(100);
+      if (lastActive) q = q.startAfter(lastActive.at, lastActive.id);
+      const batch = await binding.transaction.get(q);
+      moreActive = batch.docs.length === 100;
+      if (batch.docs.length > 0) {
+        const last = batch.docs[batch.docs.length - 1];
+        lastActive = { at: last.get('createdAt'), id: last.get('documentId') };
+      }
+      for (const row of batch.docs) {
+        const rowKind = row.get('kind');
+        if (rowKind && rowKind !== 'growth_report') continue;
+        const docId = domainParse(uuid, row.get('documentId'), 'invalid_document', 500);
+        if (checkedIds.has(docId)) continue;
+        checkedIds.add(docId);
+        const item = await find(binding, scope, docId);
+        if (!item) domainReject('document_binding', 500);
+        if (item.request.kind === 'growth_report'
+          && (item.request.reportMode ?? 'fixed') === (request.reportMode ?? 'fixed')
+          && (request.reportMode === 'living' || canonicalJson(item.request.period) === canonicalJson(request.period))) reject('report_exists');
+      }
+    }
   }
   async function mutate(userId: string, childId: string, opId: string, payload: unknown,
     prepare: (binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, loaded: FamilyDocumentSources) => Promise<{ row: Metadata; snapshot?: DocumentSnapshot }>) {
@@ -218,7 +262,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
       const preparedSnapshot = prepared.snapshot ? snapshots.prepare(scope, prepared.row.id, prepared.snapshot) : null;
       const change = await binding.prepareChange(opId, 'documents', false, childId);
       const envelope = { ...data.tags(scope), documentId: prepared.row.id, status: prepared.row.status, createdAt: prepared.row.createdAt,
-        autoRefresh: prepared.row.autoRefresh,
+        autoRefresh: prepared.row.autoRefresh, kind: prepared.row.request.kind,
         ...data.seal('family-document', prepared.row.id, scope, metadataSchema, prepared.row, prepared.row.version) };
       const changedViaShare = sharedWriteAttribution(binding, prepared.row.id, prepared.row.version);
       const id = operationId(userId, opId), receipt = { ownerUserId: userId, childId, storageEpoch: scope.storageEpoch,
@@ -312,7 +356,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
         const prepared = snapshots.prepare(scope, row.id, snapshot);
         const change = await binding.prepareChange(opId, 'documents', false, scope.childId);
         const envelope = { ...data.tags(scope), documentId: row.id, status: row.status, createdAt: row.createdAt, autoRefresh: row.autoRefresh,
-          ...data.seal('family-document', row.id, scope, metadataSchema, row, row.version) };
+          kind: row.request.kind, ...data.seal('family-document', row.id, scope, metadataSchema, row, row.version) };
         return { value: { id: row.id, version: row.version }, changeSeq: change.changeSeq, commit() {
           change.commit(); prepared.commit(binding.transaction); binding.transaction.set(data.ref('documents', 'family-document', row.id), envelope);
         } };
@@ -333,7 +377,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
       const prepared = snapshot ? snapshots.prepare(scope, id, snapshot) : null;
       const change = await binding.prepareChange(opId, 'documents', false, scope.childId);
       const envelope = { ...data.tags(scope), documentId: id, status: row.status, createdAt: row.createdAt, autoRefresh: false,
-        ...data.seal('family-document', id, scope, metadataSchema, row, row.version) };
+        kind: row.request.kind, ...data.seal('family-document', id, scope, metadataSchema, row, row.version) };
       return { value: { id, version: row.version }, changeSeq: change.changeSeq, commit() {
         change.commit(); prepared?.commit(binding.transaction); binding.transaction.set(data.ref('documents', 'family-document', id), envelope);
       } };
@@ -609,7 +653,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
           const receipt = { ownerUserId: binding.actorUserId, childId, storageEpoch: scope.storageEpoch, operationId: opId,
             fingerprint: fingerprint({ backgroundJob: job.id }), document: row, ...(changedViaShare ? { changedViaShare } : {}) };
           const envelope = { ...data.tags(scope), documentId: row.id, status: row.status, createdAt: row.createdAt, autoRefresh: row.autoRefresh,
-            ...data.seal('family-document', row.id, scope, metadataSchema, row, row.version) };
+            kind: row.request.kind, ...data.seal('family-document', row.id, scope, metadataSchema, row, row.version) };
           change.commit(); prepared?.commit(binding.transaction); next?.commit(); binding.transaction.set(data.ref('documents', 'family-document', row.id), envelope);
           binding.transaction.create(data.ref('document_operations', 'document-operation', receiptId),
             { ...data.tags(binding.scope), ...data.seal('document-operation', receiptId, binding.scope, operationSchema, receipt) });

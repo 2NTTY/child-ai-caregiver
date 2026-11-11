@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { GrowthConcernPagination } from "./GrowthConcernPagination";
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Button, Text } from "react-native-paper";
 import { growthArchivedConcerns, growthConcernAtCapacity, growthConcernCanRestore } from "../../growth-view-model";
@@ -48,7 +49,7 @@ export function GrowthHistoryView({ searchText, dateRange, onRecord, onTask }: {
     {!selected ? <GrowthOperationRecovery model={model} actions={actions} includeRefresh /> : null}
     {!model.online ? <Text style={s.warning}>目前離線，內容可能未更新。</Text> : null}
     {model.load === "error" ? <Text style={s.warning}>未能更新關注歷史，請稍後重試。</Text> : null}
-      {!archived.length && model.online && model.load === "ready" ? <EmptyListCard testID="growth-history-empty" title={searchText || dateRange.from || dateRange.to ? "沒有符合篩選的關注" : "暫無已結束關注"} /> : null}
+      {!archived.length && model.online && model.load === "ready" ? <EmptyListCard testID="growth-history-empty" title={model.page.concerns.hasMore ? "已載入內容沒有符合的關注" : searchText || dateRange.from || dateRange.to ? "沒有符合篩選的關注" : "暫無已結束關注"} /> : null}
       {!archived.length && model.online && model.load === "loading" ? <ReadStateNotice state="loading" title="正在讀取關注歷史…" /> : null}
       <HistoryCardGrid testID="growth-history-cards">{archived.map(concern => <Pressable key={concern.id} testID={`growth-history-${concern.id}`}
         ref={node => { if (node) cards.current.set(concern.id, node); else cards.current.delete(concern.id); }}
@@ -61,6 +62,7 @@ export function GrowthHistoryView({ searchText, dateRange, onRecord, onTask }: {
         <View style={styles.concernRow}><Text style={[s.meta, styles.concernSummary]}>{concern.archivedAt && !Number.isNaN(Date.parse(concern.archivedAt)) ? `結束於 ${new Date(concern.archivedAt).toLocaleDateString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "numeric", day: "numeric" })}` : "結束日期未提供"}</Text>
           <AppIcon name="chevron-right" size={18} color={colors.muted} importantForAccessibility="no" /></View>
       </Pressable>)}</HistoryCardGrid>
+      <GrowthConcernPagination model={model} actions={actions} />
       <FormDialog visible={!!selected} scopeKey={scopeKey} formKey={selected ? `${selected.id}:${selected.version}` : undefined} title={selected?.title ?? "關注歷史"}
         returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={() => setSelection(null)}>
         {selected ? <View style={s.stack} testID={`growth-history-detail-${selected.id}`}>

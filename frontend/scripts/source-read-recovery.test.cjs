@@ -27,7 +27,7 @@ const audits = [];
 
 // Real React owner, QueryClient, SharedInputApi, online transport and response parsers.
 // Only environment/navigation ports and native platform are doubled. No browser or live backend coverage.
-function fixture() {
+function fixture(domain = 'sources') {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'https://synthetic.invalid/sources' });
   Object.assign(global, { window: dom.window, document: dom.window.document, IS_REACT_ACT_ENVIRONMENT: true });
   let nativeCalls = 0, projection, env, selectedInput = input();
@@ -38,6 +38,7 @@ function fixture() {
   const makeEnvironment = identityKey => {
     const scopeKey = `${identityKey}:${childId}`;
     return { scopeKey, identityKey, childId, userId: 'synthetic-parent', childName: 'Synthetic child', role: 'owner', online: true,
+      owner: { fetcher: (...args) => transport(...args) }, allows: () => true,
       apiBaseUrl: '/api', queryClient: client, current: () => env.scopeKey === scopeKey,
       currentIdentity: () => env.identityKey === identityKey, canStartWrite: () => true, invalidate() {},
       accessError: error => accessLoss.push({ scopeKey, error }) };
@@ -47,7 +48,7 @@ function fixture() {
   const transport = async (url, init) => {
     const pathname = new URL(url, 'https://synthetic.invalid').pathname;
     const body = init.body ? JSON.parse(init.body) : null;
-    requests.push({ path: pathname, method: init.method, body });
+    requests.push({ path: pathname, search: new URL(url, 'https://synthetic.invalid').searchParams, method: init.method, body });
     assert.equal(init.headers['x-expected-user-id'], 'synthetic-parent');
     if (pathname === '/api/online/context') {
       assert.equal(init.method, 'POST');
@@ -58,6 +59,9 @@ function fixture() {
       return respond(submitResponses, () => { throw new Error('Unexpected submit'); }, { body, signal: init.signal });
     }
     assert.equal(init.method, 'GET', 'No direct fetch/extract/model or other write is permitted');
+    if (pathname === `/api/children/${childId}/growth`) return json({ page: { authorityVersion: 'synthetic:1', items: [], topics: [], historyHasMore: false, notices: [], eligibleAssignees: [], canManage: true } });
+    if (pathname === `/api/children/${childId}/concerns`) return respond(listResponses,
+      () => json({ page: { authorityVersion: 'synthetic:1', items: [], canManage: true, hasMore: false, nextCursor: null } }), { signal: init.signal });
     if (pathname.startsWith('/api/online/operations/')) {
       assert.ok(receiptResponses.length, 'Every receipt lookup must be explicitly queued');
       return respond(receiptResponses, () => { throw new Error('Unexpected receipt lookup'); }, { path: pathname, signal: init.signal });
@@ -89,8 +93,9 @@ function fixture() {
     }, module, module.exports);
     return module.exports;
   }
-  const { usePhotoInputSources } = compile('frontend/src/production/usePhotoInputSources.ts');
-  function Owner() { projection = usePhotoInputSources(); return null; }
+  const hook = domain === 'sources' ? compile('frontend/src/production/usePhotoInputSources.ts').usePhotoInputSources
+    : () => compile('frontend/src/production/task-knowledge-growth.ts').useTaskKnowledgeGrowth(env);
+  function Owner() { projection = hook(); return null; }
   const root = createRoot(document.getElementById('root'));
   const settle = () => act(async () => { await tick(); });
   const render = () => act(async () => { root.render(React.createElement(Owner, { key: env.scopeKey })); await tick(); });
@@ -228,4 +233,49 @@ for (const status of [200, 403]) test(`old identity late ${status} cannot clear 
 
 test.after(() => {
   if (process.env.SOURCE_READ_AUDIT) fs.writeFileSync(process.env.SOURCE_READ_AUDIT, JSON.stringify(audits, null, 2) + '\n');
+});
+
+for (const domain of ['sources', 'concerns']) test(`${domain} continuation preserves empty pages, retries and discards old identity replies`, async () => {
+  const h = fixture(domain), wait = deferred();
+  const makePage = (cursor, items = []) => domain === 'sources' ? json({ inputs: items, sources: [], canCreate: true, hasMore: !!cursor, nextCursor: cursor })
+    : json({ page: { authorityVersion: 'synthetic:1', items, canManage: true, hasMore: !!cursor, nextCursor: cursor } });
+  const concern = { id: inputId, childId, title: 'Continuation concern', reason: 'Synthetic reason', version: 1, status: 'following',
+    createdAt: '2026-10-07T00:00:00Z', updatedAt: '2026-10-07T00:00:00Z', archivedAt: null, attentionIds: [], events: [], historyComplete: true, followUp: null };
+  const rows = Array.from({ length: 50 }, (_, i) => ({ ...(domain === 'sources' ? input() : concern), id: `22222222-2222-4222-8222-${String(i).padStart(12, '0')}` }));
+  const boundary = () => domain === 'sources' ? h.get().model : h.get().model.page.concerns;
+  const more = actions => domain === 'sources' ? actions.loadMore() : actions.loadMoreConcerns();
+  try {
+    h.listResponses.push(() => makePage('page-2', rows)); await h.start();
+    assert.equal(boundary().items.length, 50);
+    assert.equal(boundary().hasMore, true);
+    h.listResponses.push(() => makePage('page-3')); await h.action(more);
+    assert.equal(boundary().items.length, 50); assert.equal(boundary().nextCursor, 'page-3', 'Empty partial page must advance, not finish');
+    h.listResponses.push(() => json({}, 503)); await h.action(more);
+    assert.equal(boundary().nextCursor, 'page-3'); assert.equal(boundary().items.length, 50); assert.ok(boundary().pageError);
+    h.listResponses.push(() => makePage(null, [domain === 'sources' ? input() : concern])); await h.action(more);
+    assert.equal(boundary().items.length, 51); assert.equal(boundary().hasMore, false);
+    const reads = h.requests.filter(r => r.search.has('cursor'));
+    assert.deepEqual(reads.map(r => r.search.get('cursor')), ['page-2', 'page-3', 'page-3']);
+    assert.ok(reads.every(r => r.search.get('limit') === '50'));
+    h.listResponses.push(() => makePage('late-page', rows)); await h.action(a => a.refresh());
+    h.listResponses.push(() => wait.promise); await h.action(more);
+    await h.switchIdentity();
+    await h.resolve(wait, makePage(null, [domain === 'sources' ? input() : concern]));
+    assert.equal(h.get().model.scopeKey.startsWith('identity-2:'), true);
+    assert.equal(boundary().items.length, domain === 'sources' ? 1 : 0, 'Late old page must not enter the new owner');
+    assertReadOnly(h);
+  } finally { wait.resolve(makePage(null)); await h.close(); }
+});
+
+for (const domain of ['sources', 'concerns']) test(`${domain} continuation revocation clears loaded content`, async () => {
+  const h = fixture(domain);
+  try {
+    h.listResponses.push(() => domain === 'sources' ? json({ inputs: [input()], sources: [], canCreate: true, hasMore: true, nextCursor: 'page-2' })
+      : json({ page: { authorityVersion: 'synthetic:1', items: [], canManage: true, hasMore: true, nextCursor: 'page-2' } }));
+    await h.start(); h.listResponses.push(() => json({}, 403));
+    await h.action(a => domain === 'sources' ? a.loadMore() : a.loadMoreConcerns());
+    assert.equal(h.get().model.access, 'lost');
+    assert.equal(domain === 'sources' ? h.get().model.items.length : h.get().model.page, domain === 'sources' ? 0 : null);
+    assert.equal(h.accessLoss.length, 1);
+  } finally { await h.close(); }
 });

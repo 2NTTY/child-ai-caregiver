@@ -88,7 +88,7 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
     <SourceStatus model={model.load === "error" && model.operation.state === "none" && model.access !== "lost" ? { ...model, notice: "" } : model} actions={actions} production={production} />
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[s.columns, !columns && s.single]}>
       <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="我的私人來源清單" style={[s.aside, !columns && s.full]}><SectionCard surface="plain" testID="source-list"><SectionHeader density="compact" title="我的私人來源" count={listResultAvailable && readFresh ? model.items.length : undefined} subtitle="完整原文、網址、備註及候選只有本人可讀取。" icon="lock-outline" />
-        {listResultAvailable && readFresh && model.items.length === 0 ? <EmptyListCard title="暫時沒有私人來源" detail="可先說明用途，或手動加入你有權提供的資料。" /> : null}
+        {listResultAvailable && readFresh && model.items.length === 0 && !model.hasMore ? <EmptyListCard title="暫時沒有私人來源" detail="可先說明用途，或手動加入你有權提供的資料。" /> : null}
         <MotionList items={model.items} keyExtractor={input => input.id} scopeKey={listScope} regionKey="source-list" eligible={listMotion} testID="source-list-motion" renderItem={(input, row) => {
           const readiness = sourceReadiness(input, model);
           return <View style={[s.item, model.selected?.id === input.id && s.itemSelected]} testID={`source-item-${input.id}`}>
@@ -98,6 +98,13 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
           {model.intake ? <Text style={s.meta}>{model.intake.mode === "production" ? input.management ? `${sourcePurposeOptions.find(option => option.value === input.management?.purpose)?.label} · ${input.management.enabled ? "可使用" : "已停用"}` : "用途尚未設定" : sourceIntakePurposeLabel(model.intakeByInputId?.[input.id])}</Text> : null}
           <AppButton ref={node => deletionFocus.rowRef(input.id, node)} label={model.selected?.id === input.id ? "目前來源" : "查看來源"} accessibilityLabel={`查看私人來源：${input.sourceLabel}`} variant={model.selected?.id === input.id ? "secondary" : "quiet"} disabled={row.exiting || !canRead || !model.online || model.load !== "ready"} onPress={() => {if (!row.exiting) actions.openInput(input);}} />
         </View>; }} />
+        {model.hasMore && model.access !== "lost" ? <View style={s.stack}>
+          <Text style={s.meta}>目前只顯示已載入的來源，還有更多內容。</Text>
+          {model.pageError ? <Text style={s.warning}>{model.pageError}</Text> : null}
+          <AppButton label={model.pageError ? "重試載入更多來源" : "載入更多來源"} variant="secondary"
+            disabled={!canRead || !model.online || !actions.loadMore} onPress={() => actions.loadMore?.()} />
+          {model.pageError ? <AppButton label="重新讀取來源" variant="quiet" disabled={model.busy || !model.online} onPress={actions.refresh} /> : null}
+        </View> : null}
       </SectionCard></View>
       <View style={[s.main, s.editorSurface, !columns && s.full]}>
         {model.selected ? <View style={s.detailHeading}><Text style={s.meta}>目前來源 · 版本 {model.selected.version}</Text><Text accessibilityRole="header" style={s.detailTitle}>{model.selected.sourceLabel}</Text><Text style={s.meta}>私人保存、整理用途和家庭共享分開核對</Text></View> : null}
