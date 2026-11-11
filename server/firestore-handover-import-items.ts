@@ -107,7 +107,7 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
     const originalAsset = restoreOriginal && isOriginalAttachment(section) && knownId ? await readOriginalAttachment(data, b, section, knownId) : null;
     const attachmentState = originalAsset ?? (isHandoverAttachment(section) && (mapping || section === 'child_avatar')
       ? await attachments.readState(b, section, mapping?.target.id ?? b.scope.childId) : null);
-    const attention = mapping && section === 'growth_attention' ? await growth.readImportAttention(b, mapping.target.id) : null;
+    const attention = knownId && section === 'growth_attention' ? await growth.readImportAttention(b, knownId) : null;
     const topicId = section === 'growth_topics' ? growthTopicSchema.options.find(id => growthTopicResourceId(source.childId, id) === source.resourceId) : undefined;
     if (section === 'growth_topics' && !topicId) domainReject('invalid_package_growth', 400);
     const topic = topicId ? await growth.readImportTopic(b, topicId) : null;
@@ -373,6 +373,17 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
           return finish(current ? 'updated' : 'created', null, { id: prepared.value.id, version: prepared.value.version }, prepared);
         } catch (error) {
           if ((error as { code?: string }).code === 'concern_followup_active') return finish('conflict', 'concern_followup_active');
+          throw error;
+        }
+      }
+      if (raw.restoreOriginal && (section === 'growth_attention' || section === 'growth_topics')) {
+        try {
+          const prepared = await growth.prepareOriginal(b, opId, raw.row, raw.integrity, { id: currentId!, expectedVersion: currentVersion });
+          return prepared ? finish('updated', null, prepared.resource, prepared) : finish('skipped', 'already_imported', resultResource);
+        } catch (error) {
+          const code = (error as { code?: string }).code;
+          if (code && ['original_unavailable', 'growth_changed', 'growth_link_changed', 'growth_terminal_state', 'growth_snooze_changed',
+            'growth_source_changed', 'growth_topic_disabled', 'growth_history_requires_review'].includes(code)) return finish('conflict', code);
           throw error;
         }
       }

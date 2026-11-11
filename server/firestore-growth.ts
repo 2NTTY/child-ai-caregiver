@@ -22,6 +22,7 @@ import { assertClassImportAccess } from './firestore-class-handover.ts';
 import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
 import type { HandoverImportRow } from './handover-import.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
+import type { originalGrowthBlockReasonSchema } from '../src/shared/handover-imports.ts';
 import { makeImportProvenance } from './handover-provenance.ts';
 
 const uuid = z.uuid(), time = z.iso.datetime({ offset: true }), version = z.number().int().positive().max(2147483647);
@@ -85,6 +86,24 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
   function query(b: Binding, suffix: string): Query {
     let q: Query = data.collection(suffix); for (const [key, value] of Object.entries(data.tags(b.scope))) q = q.where(key, '==', value); return q;
   }
+  async function readImportAttention(b: Binding, id: string) {
+    assertClassImportAccess(b, 'growth', 'read');
+    domainParse(uuid, id);
+    const snap = await b.transaction.get(data.ref('growth_attention', 'growth-attention', id));
+    if (!snap.exists || Object.entries(data.tags(b.scope)).some(([key, value]) => snap.get(key) !== value)) return null;
+    const saved = data.open('growth-attention', id, b.scope, firestoreGrowthSchema, snap);
+    if (saved.item.id !== id || snap.get('attentionId') !== id || saved.item.childId !== b.scope.childId
+      || saved.item.version !== snap.get('recordVersion') || saved.item.createdAt !== snap.get('createdAt')) domainReject('growth_binding', 500);
+    return saved;
+  }
+  async function readTopicSlot(b: Binding, topicId: GrowthTopicId) {
+    domainParse(growthTopicSchema, topicId);
+    const id = JSON.stringify([b.scope.childId, topicId]), snap = await b.transaction.get(data.ref('growth_topics', 'growth-topic', id));
+    if (!snap.exists || Object.entries(data.tags(b.scope)).some(([key, value]) => snap.get(key) !== value)) return null;
+    const saved = data.open('growth-topic', id, b.scope, firestoreGrowthTopicSchema, snap);
+    if (saved.topicId !== topicId || saved.version !== snap.get('recordVersion')) domainReject('growth_binding', 500);
+    return saved;
+  }
   async function all(b: Binding): Promise<Saved[]> {
     const rows = await b.transaction.get(query(b, 'growth_attention').orderBy('createdAt').orderBy('attentionId').limit(501));
     if (rows.size > 500) domainReject('growth_history_requires_review', 400);
@@ -98,11 +117,8 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
   async function topics(b: Binding): Promise<Topic[]> {
     const result: Topic[] = [];
     for (const rule of GROWTH_RULES) {
-      const id = JSON.stringify([b.scope.childId, rule.id]), row = await b.transaction.get(data.ref('growth_topics', 'growth-topic', id));
-      if (!row.exists) continue;
-      const item = data.open('growth-topic', id, b.scope, firestoreGrowthTopicSchema, row);
-      if (item.topicId !== rule.id || item.version !== row.get('recordVersion')) domainReject('growth_binding', 500);
-      result.push(item);
+      const item = await readTopicSlot(b, rule.id);
+      if (item) result.push(item);
     }
     return result;
   }
@@ -226,7 +242,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     return { value, changeSeq: change.changeSeq, commit() { change.commit(); context?.(); write(b, value); job?.commit(); } };
   }
   async function prepareImportedTopic(b: Binding, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
-    expected?: { expectedVersion: number }) {
+    expected?: { expectedVersion: number }, restoreOriginal = false) {
     assertClassImportAccess(b, 'growth', 'write');
     domainParse(uuid, opId);
     if (row.section !== 'growth_topics') domainReject('invalid_package_scope', 400);
@@ -240,7 +256,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     const value: Topic = { ...source, version: currentVersion + 1, at: now, request: null, importedFrom: origin };
     const id = JSON.stringify([b.scope.childId, source.topicId]), revisionId = JSON.stringify([b.scope.childId, source.topicId, value.version]);
     const change = await b.prepareChange(opId, 'growth', false), context = b.sharedAccess ? null : await prepareContextChange(data, b);
-    const wake = b.sharedAccess ? null : await childWake(b, 'import-topic:' + source.topicId + ':' + value.version);
+    const wake = b.sharedAccess || restoreOriginal ? null : await childWake(b, 'import-topic:' + source.topicId + ':' + value.version);
     return { value, resourceId: growthTopicResourceId(b.scope.childId, source.topicId), changeSeq: change.changeSeq,
       commit() { change.commit(); context?.(); wake?.commit();
         b.transaction.set(data.ref('growth_topics', 'growth-topic', id), { ...data.tags(b.scope), ...data.seal('growth-topic', id, b.scope, firestoreGrowthTopicSchema, value, value.version) });
@@ -250,7 +266,76 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
           updatedAt: now, actorUserId: b.actorUserId, lastAction: 'topic_disabled', note: '已停用此主題；只有明確重新啟用才可再評估。' }, lastRequest: null });
       } };
   }
+  async function inspectOriginal(b: Binding, row: HandoverImportRow) {
+    if (b.sharedAccess || b.actorUserId !== b.scope.ownerUserId || row.source.accountId !== b.actorUserId || row.childId !== b.scope.childId)
+      domainReject('invalid_import_target', 403);
+    type Reason = z.infer<typeof originalGrowthBlockReasonSchema>;
+    if (row.section === 'growth_topics') {
+      const source = domainParse(firestoreGrowthTopicSchema, row.value, 'invalid_package_growth');
+      const live = await readTopicSlot(b, source.topicId);
+      const reason: Reason | null = !live ? 'original_unavailable' : live.disabled && !source.disabled ? 'growth_topic_disabled' : null;
+      return { section: row.section, id: growthTopicResourceId(b.scope.childId, source.topicId), topicId: source.topicId, at: source.at, backupVersion: source.version,
+        localVersion: live?.version ?? null, reason, changedFields: live && live.disabled !== source.disabled ? ['disabled'] : [] } as const;
+    }
+    if (row.section !== 'growth_attention') domainReject('invalid_package_scope', 400);
+    const source = domainParse(firestoreGrowthSchema, row.value, 'invalid_package_growth');
+    const item = source.item;
+    if (item.childId !== b.scope.childId) domainReject('invalid_package_scope', 400);
+    const live = (await readImportAttention(b, item.id))?.item;
+    const fields = ['title', 'kind', 'whyNow', 'advice', 'limits', 'basis', 'evidence', 'source',
+      'state', 'snoozeUntil', 'previousId', 'newReason', 'taskId', 'lastAction', 'actorUserId', 'note'] as const;
+    const changedFields = live ? fields.filter(key => !same(live[key], item[key])) : [];
+    let reason: Reason | null = null;
+    let linkedState: GrowthAttention['taskState'] = null;
+    if (!live) reason = 'original_unavailable';
+    else if (live.topicId !== item.topicId || live.createdAt !== item.createdAt) reason = 'original_unavailable';
+    else if (!active(live) && live.state !== item.state) reason = 'growth_terminal_state';
+    else if (live.previousId !== item.previousId || live.taskId && live.taskId !== item.taskId) reason = 'growth_link_changed';
+    else if (changedFields.length) {
+      if (item.taskId) {
+        const linked = await task(b, item.taskId);
+        if (!linked) reason = 'growth_link_changed';
+        else linkedState = linked.occurrence.state;
+      }
+      if (!reason && item.previousId) {
+        const previous = await readImportAttention(b, item.previousId);
+        if (!previous || previous.item.id === item.id || previous.item.topicId !== item.topicId) reason = 'growth_link_changed';
+      }
+      if (!reason && active(item)) {
+        if ((await readTopicSlot(b, item.topicId))?.disabled) reason = 'growth_topic_disabled';
+        else if (live.state === 'snoozed' && item.state === 'proposed' || item.state === 'snoozed'
+          && (!item.snoozeUntil || Date.parse(item.snoozeUntil) <= Date.now())) reason = 'growth_snooze_changed';
+        else if (!(await visible(b, item, await load(b), !!source.importedFrom)).sourceAvailable) reason = 'growth_source_changed';
+      }
+    }
+    return { section: row.section, id: item.id, topicId: item.topicId, at: item.createdAt, backupVersion: item.version, localVersion: live?.version ?? null,
+      reason, changedFields, source, linkedState } as const;
+  }
+  async function prepareOriginal(b: Binding, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
+    expected: { id: string; expectedVersion: number }) {
+    const checked = await inspectOriginal(b, row);
+    if (checked.reason) domainReject(checked.reason);
+    if (checked.id !== expected.id || checked.localVersion !== expected.expectedVersion || expected.expectedVersion >= 2147483647)
+      domainReject('growth_changed');
+    if (!checked.changedFields.length) return null;
+    if (checked.section === 'growth_topics') {
+      const prepared = await prepareImportedTopic(b, opId, row, integrity, expected, true);
+      return { resource: { id: checked.id, version: prepared.value.version }, changeSeq: prepared.changeSeq, commit: prepared.commit };
+    }
+    // Restore the record, never the historical accept request, task creation or delivery.
+    const sourceAvailable = active(checked.source.item) || (await visible(b, checked.source.item, await load(b), !!checked.source.importedFrom)).sourceAvailable;
+    const item = { ...checked.source.item, version: expected.expectedVersion + 1, updatedAt: new Date().toISOString(),
+      taskState: checked.linkedState, sourceAvailable };
+    const saved: Saved = { ...checked.source, item, lastRequest: null };
+    const change = await b.prepareChange(opId, 'growth', false), context = await prepareContextChange(data, b);
+    return { resource: { id: item.id, version: item.version }, changeSeq: change.changeSeq,
+      commit() { change.commit(); context(); write(b, saved); } };
+  }
   const store = {
+    inspectOriginal, prepareOriginal, readImportAttention,
+    readImportTopic(b: Binding, topicId: GrowthTopicId) {
+      assertClassImportAccess(b, 'growth', 'read'); return readTopicSlot(b, topicId);
+    },
     prepareImportedAttention, prepareImportedTopic,
     async prepareExportView(b: Binding, modules: readonly string[]) {
       if (b.sharedAccess?.module !== 'growth') domainReject('shared_module_scope', 403);
@@ -261,14 +346,6 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
         const item = await visible(scoped, saved.item, loaded, !!saved.importedFrom);
         return { ...item, taskId: item.taskState === null ? null : item.taskId };
       };
-    },
-    async readImportAttention(b: Binding, id: string) {
-      assertClassImportAccess(b, 'growth', 'read');
-      domainParse(uuid, id); return (await all(b)).find(saved => saved.item.id === id) ?? null;
-    },
-    async readImportTopic(b: Binding, topicId: GrowthTopicId) {
-      assertClassImportAccess(b, 'growth', 'read');
-      domainParse(growthTopicSchema, topicId); return (await topics(b)).find(saved => saved.topicId === topicId) ?? null;
     },
     forSharedSpace(spaceId: string) {
       domainParse(uuid, spaceId);

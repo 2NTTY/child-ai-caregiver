@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { readPrivateInstructionDeletion } from './firestore-content-erasure.ts';
 import { importProvenanceLinkSchema } from '../src/shared/import-provenance.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
-import { handoverImportResolutionSchema, handoverHistorySectionSchema, isOriginalAttachment, originalAttachmentSectionSchema } from '../src/shared/handover-imports.ts';
+import { handoverImportResolutionSchema, handoverHistorySectionSchema, isOriginalAttachment, originalAttachmentSectionSchema, originalGrowthSectionSchema } from '../src/shared/handover-imports.ts';
 import { readOriginalAttachment } from './handover-original-attachments.ts';
 export { handoverImportResolutionSchema } from '../src/shared/handover-imports.ts';
 
@@ -30,7 +30,7 @@ export const handoverImportMappingSchema = z.object({ source: handoverSourceIden
   && value.source.section === 'instructions' && value.target.id !== value.source.resourceId);
 export type HandoverImportMapping = z.infer<typeof handoverImportMappingSchema>;
 const originalSections = new Set<HandoverSourceIdentity['section']>(['care', 'profile', 'tasks', 'private_sources',
-  'documents', 'visit_preparation', 'child_avatar', 'concerns', 'instructions', 'memory_facts', 'memory_topics', ...originalAttachmentSectionSchema.options]);
+  'documents', 'visit_preparation', 'child_avatar', 'concerns', 'instructions', 'memory_facts', 'memory_topics', ...originalAttachmentSectionSchema.options, ...originalGrowthSectionSchema.options]);
 export function supportsOriginalSection(section: HandoverSourceIdentity['section']) { return originalSections.has(section); }
 export function validOriginalMapping(scope: WorkRecoveryScope, { source, target, retiredInstructionOpId }: HandoverImportMapping): boolean {
   if (source.accountId !== scope.ownerUserId || source.childId !== scope.childId || !supportsOriginalSection(source.section)) return false;
