@@ -5892,3 +5892,9 @@ Web／手機共用對話頁按固定範圍列出所有孩子，沿既有資料�
 原站 Web／API／worker 已發布至 `2cc1145d`，核對了公開靜態檔、Firestore 健康及未登入私人 API。[交付記錄](artifacts/verification/P4_GROUP_DELIVERY_20261111.json)
 
 收件流程使用已驗 ZIP 的版本位置、原 worker 租約、收件人私人房間和業務交易。單一合成流程涵蓋兩名同名孩子的對應、拒絕部分範圍、保留引用、原狀態讀回、原操作防重、再次匯入略過及本地續寫衝突。另核對歷史問題不能觸發模型，以及個人收據的還原解碼／刪除判斷。這批使用隔離 Firestore 替身，未使用模型或手機。
+
+### 2026-11-11　多孩照護查詢與 Web 示範交接
+
+第一次真模型查詢選對工具，卻猜了已選孩子的 ID。工具改由 Server 從當前對話綁定孩子，按記錄時區查詢曆日。修正後，一次搜尋取得兩名孩子的原始記錄，Gemini 保留了第二筆的約數，獨立審核通過，重新開啟同一留言返回原 run。Vertex 工具契約 6 項、照護查詢 9 項及 Server 型別檢查通過。[實際模型結果](artifacts/verification/P4_SELECTED_CARE_VERTEX_20261111.json)
+
+原站同批交付完整對話收件與查詢，保留相容回退。真模型使用合成資料，正式站核對版本、健康及登入保護。Android 待批量交付。[發布紀錄](artifacts/verification/P4_SELECTED_CARE_DELIVERY_20261111.json)

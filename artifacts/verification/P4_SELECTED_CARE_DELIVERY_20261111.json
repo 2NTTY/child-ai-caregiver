@@ -1,0 +1,36 @@
+{
+  "release": {
+    "tag": "p4-group-83afe271",
+    "apiCommit": "83afe271659603502d39c457349f08d0fb6dfc4e",
+    "webCommit": "3706e82ca4a57cba05062e64686293a07a0f14c9",
+    "previousTag": "p4-group-2cc1145d",
+    "observedHongKong": "2026-11-11T22:40+08:00",
+    "apiArchiveSha256": "a0f228b20ad82d14b666dbc6ed03df6de9cb3684c598c6789a4d67978df5ff20",
+    "webArchiveSha256": "1ef722ac5962399b6a8bf0e5dcbdfac01dc388fdde11a72843e4e69a45740cb0",
+    "apiWorkerImage": "sha256:f7249b2e2e1b16ac436d7366d035962ed5bee3209897323f6c4f64e1ca203f5c",
+    "webImage": "sha256:5429d0e7f3682254900ca3a2f3124b25addabbe00687b17fc27f216d6247fab8",
+    "liveComposeSha256": "12eb7db053ce0445380e1e8fa74722eb415c380a72b23d103cda5f2c3996d894",
+    "public": {
+      "health": 200,
+      "storage": "firestore",
+      "unauthenticatedMixedChats": 401,
+      "unauthenticatedImportCapabilities": 401,
+      "adminHtmlSha256": "fedcc77f54af6fccf6a510ac1b0ee77b2e5391e705cb014113dc24ea2726d20b",
+      "bundle": "/_expo/static/js/web/index-202781e698345ae639e4e5a15dd07a1a.js",
+      "bundleSha256": "a8f083596a2d27cffb31d087b6538185df1f239fcdf0277f851df246113114b4"
+    },
+    "rollback": "Compatible API and worker retained after writes. Previous Compose, Web and images retained."
+  },
+  "checks": [
+    "VM identity checked, staged images imported offline, signer mounts and active work checked before cutover.",
+    "During Web restart one health probe briefly failed TLS; final host and external health checks were successful.",
+    "Public Web bundle matched prebuilt shared client. No production family data, model calls or notifications were used to verify deployment."
+  ],
+  "modelEvidence": "P4_SELECTED_CARE_VERTEX_20261111.json",
+  "batchEvidence": "P4_GROUP_TASK_VERTEX_20261111.json",
+  "pending": [
+    "Authenticated production device walkthrough and Android combined release",
+    "Memory and document recall across selected children",
+    "Remaining centralized-service P4 acceptance"
+  ]
+}
