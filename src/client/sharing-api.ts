@@ -2,6 +2,7 @@ import { z } from "zod";
 import { sharedSpaceViewSchema, sharedSpacePageSchema, sharedMemberPageSchema, sharedGrantPageSchema, sharedInvitePageSchema, sharedChildViewSchema,
   sharingCommandSchema, sharingOperationSchema, classRosterQuerySchema, type SharingCommand, type SharingOperation } from "../shared/sharing-control.ts";
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
+import { assistantTaskContextRequestSchema, assistantTaskContextPageSchema, type AssistantTaskContextRequest } from '../shared/assistant-task-context.ts';
 
 export class SharingApiError extends Error {
   readonly status: number; readonly code: string;
@@ -14,13 +15,13 @@ const invalidRedaction = (operation: SharingOperation) => "redacted" in operatio
   && (operation.space !== null || operation.invitationToken !== undefined || operation.exit !== undefined);
 export function createSharingApi(baseUrl = "", fetcher: typeof fetch = fetch) {
   const base = resolveApiBaseUrl(baseUrl).replace(/\/$/u, ""), api = base.endsWith("/api") ? base : base + "/api";
-  async function request(path: string, userId: string, signal: AbortSignal, body?: unknown): Promise<unknown> {
+  async function request(path: string, userId: string, signal: AbortSignal, body?: unknown, root = '/shared-spaces'): Promise<unknown> {
     if (!userId || signal.aborted) throw new SharingApiError(409, "identity_changed");
     const controller = new AbortController(), cancel = () => controller.abort();
     signal.addEventListener("abort", cancel, { once: true });
     const timer = setTimeout(cancel, 20_000);
     try {
-      const response = await fetcher(api + "/shared-spaces" + path, { method: body === undefined ? "GET" : "POST", credentials: "include", cache: "no-store",
+      const response = await fetcher(api + root + path, { method: body === undefined ? "GET" : "POST", credentials: "include", cache: "no-store",
         headers: { Accept: "application/json", "x-expected-user-id": userId, ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
         signal: controller.signal, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
       const value: unknown = await response.json();
@@ -43,6 +44,21 @@ export function createSharingApi(baseUrl = "", fetcher: typeof fetch = fetch) {
     return result;
   }
   return {
+    async taskContext(input: AssistantTaskContextRequest, userId: string, signal: AbortSignal) {
+      const parsed = assistantTaskContextRequestSchema.safeParse(input);
+      if (!parsed.success) throw new SharingApiError(400, 'invalid_input');
+      const result = checked(assistantTaskContextPageSchema, await request('', userId, signal, parsed.data, '/assistant/task-context'));
+      const ids = new Set<string>();
+      for (const child of result.children) {
+        const target = parsed.data.targets.find(value => value.childId === child.childId);
+        if (!target || ids.has(child.childId) || new Set(child.tasks.map(task => task.id)).size !== child.tasks.length
+          || child.nextCursor !== null && JSON.stringify(child.nextCursor) === JSON.stringify(target.cursor))
+          throw new SharingApiError(0, 'sharing_response_invalid');
+        ids.add(child.childId);
+      }
+      if (ids.size !== parsed.data.targets.length) throw new SharingApiError(0, 'sharing_response_invalid');
+      return result;
+    },
     spaces: (userId: string, signal: AbortSignal, cursor?: string) => page(sharedSpacePageSchema, "", userId, signal, cursor),
     classes: (userId: string, signal: AbortSignal, cursor?: string) => page(sharedSpacePageSchema, '/classes', userId, signal, cursor),
     teachers: (userId: string, signal: AbortSignal, cursor?: string) => page(sharedSpacePageSchema, '/teachers', userId, signal, cursor),

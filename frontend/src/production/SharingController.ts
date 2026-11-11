@@ -1,14 +1,22 @@
 import { SharingApiError, type SharingApi } from "../../../src/client/sharing-api.ts";
 import { sharingCommandSchema, type SharedSpaceView, type SharedMemberView, type SharedGrantView, type SharedInviteView, type SharedPage, type SharingCommand, type SharingOperation } from "../../../src/shared/sharing-control.ts";
+import { scopeTaskChildrenPerRead, type AssistantTaskContextPage } from '../../../src/shared/assistant-task-context.ts';
 
 type Pending = { command: SharingCommand; checked: boolean; unknown: boolean };
 export type SharingMode = "family" | "class" | "teachers";
 export const sharingLabel = (kind: SharingMode) => kind === "class" ? "班級" : kind === "teachers" ? "教師空間" : "家庭";
+export interface ClassTaskState {
+  selected: string[]; children: AssistantTaskContextPage['children']; status: 'unread' | 'loading' | 'ready' | 'error'; notice: string | null;
+}
+export const emptyClassTasks = (): ClassTaskState => ({ selected: [], children: [], status: 'unread', notice: null });
+const classTaskScopeKey = (space: SharedSpaceView | null) => space?.kind === 'class'
+  ? JSON.stringify([space.id, space.version, space.role, space.teacherSpaceId ?? null, space.teacherSpaceVersion ?? null]) : null;
 export interface SharingState {
   identityKey: string | null; userId: string | null; online: boolean; loaded: boolean; busy: "read" | "write" | "check" | null;
   spaces: SharedPage<SharedSpaceView>; selected: SharedSpaceView | null;
   teacherSpaces: SharedPage<SharedSpaceView>; teacherClasses: SharedPage<SharedSpaceView>; teacherClassesLoaded: boolean;
   rosterQuery: string; rosterLoaded: boolean;
+  classTasks: ClassTaskState;
   members: SharedPage<SharedMemberView>; shares: SharedPage<SharedGrantView>; invitations: SharedPage<SharedInviteView>;
   pending: Pending | null; invitationToken: string | null; receipt: SharingOperation | null; cleanupReceipts: SharingOperation[]; notice: string | null;
 }
@@ -17,7 +25,7 @@ const noEffectRejections = new Set(["invalid_input", "version_conflict", "read_o
   "invitation_recipient", "invitation_revoked", "invitation_already_used", "already_member", "transfer_target", "space_transfer_or_dissolve_required",
   "teacher_space_has_classes", "class_members_managed_by_teachers", "class_already_attached", "class_not_attached", "teacher_space_required", "class_required"]);
 const initial = (userId: string | null, identityKey: string | null, online: boolean): SharingState => ({ userId, identityKey, online, loaded: false, busy: null,
-  spaces: page(), selected: null, teacherSpaces: page(), teacherClasses: page(), teacherClassesLoaded: false, rosterQuery: "", rosterLoaded: false, members: page(), shares: page(), invitations: page(), pending: null, invitationToken: null, receipt: null, cleanupReceipts: [], notice: null });
+  spaces: page(), selected: null, teacherSpaces: page(), teacherClasses: page(), teacherClassesLoaded: false, rosterQuery: "", rosterLoaded: false, classTasks: emptyClassTasks(), members: page(), shares: page(), invitations: page(), pending: null, invitationToken: null, receipt: null, cleanupReceipts: [], notice: null });
 const errorText = (error: unknown, mode: SharingMode = "family") => {
   const code = error instanceof SharingApiError ? error.code : "";
   const messages: Record<string, string> = {
@@ -52,13 +60,26 @@ export class SharingController {
   constructor(api: SharingApi, mode: SharingMode = "family") { this.api = api; this.mode = mode; }
   getSnapshot = () => this.state;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
-  private update(patch: Partial<SharingState>) { this.state = { ...this.state, ...patch }; this.listeners.forEach(listener => listener()); }
+  private update(patch: Partial<SharingState>) {
+    const next = { ...this.state, ...patch };
+    const changedGrant = patch.shares?.items.some(grant => {
+      const prior = this.state.shares.items.find(value => value.childId === grant.childId);
+      return prior && (prior.version !== grant.version || prior.childName !== grant.childName || JSON.stringify(prior.modules) !== JSON.stringify(grant.modules));
+    });
+    const observed = (patch.spaces ?? patch.teacherClasses)?.items.find(space => space.id === next.selected?.id);
+    const member = patch.members?.items.find(value => value.userId === next.userId);
+    const priorMember = this.state.members.items.find(value => value.userId === next.userId);
+    if (classTaskScopeKey(this.state.selected) !== classTaskScopeKey(next.selected) || patch.rosterLoaded === false || changedGrant
+      || observed && classTaskScopeKey(observed) !== classTaskScopeKey(next.selected)
+      || member && priorMember && (member.version !== priorMember.version || member.role !== priorMember.role)) next.classTasks = emptyClassTasks();
+    this.state = next; this.listeners.forEach(listener => listener());
+  }
   syncContext(userId: string | null, identityKey: string | null, online: boolean) {
     if (this.state.userId !== userId || this.state.identityKey !== identityKey) {
       this.active?.abort(); this.active = null; this.epoch++; this.state = initial(userId, identityKey, online); this.update({});
     } else if (online !== this.state.online) {
       if (!online) { this.active?.abort(); this.active = null; this.epoch++; }
-      this.update({ online, ...(!online ? { busy: null, pending: this.state.pending ? { ...this.state.pending, checked: false, unknown: true } : null } : {}) });
+      this.update({ online, ...(!online ? { busy: null, classTasks: emptyClassTasks(), pending: this.state.pending ? { ...this.state.pending, checked: false, unknown: true } : null } : {}) });
     }
   }
   private begin(busy: SharingState["busy"]): Ticket | null {
@@ -99,6 +120,7 @@ export class SharingController {
     if (this.current(ticket)) this.update({ spaces: this.merge(more ? this.state.spaces : page(), next, item => item.id), loaded: true });
   });
   selectSpace = (spaceId: string) => this.read(async ticket => {
+    this.update({ classTasks: emptyClassTasks() });
     if (this.state.selected?.id !== spaceId) this.update({ selected: null, teacherSpaces: page(), teacherClasses: page(), teacherClassesLoaded: false, rosterQuery: "", rosterLoaded: false, members: page(), shares: page(), invitations: page(), invitationToken: null });
     await this.selection(spaceId, ticket);
   });
@@ -115,6 +137,51 @@ export class SharingController {
       this.update({ rosterQuery: query, rosterLoaded: false, shares: page() });
       const shares = await this.api.roster(selected.id, ticket.userId, ticket.controller.signal, undefined, query);
       if (this.current(ticket)) this.update({ shares: this.merge(page(), shares, item => item.childId), rosterLoaded: true });
+    });
+  };
+  selectClassTaskChild(childId: string, selected: boolean) {
+    if (this.state.selected?.kind !== 'class' || !this.state.rosterLoaded || this.state.busy || this.state.pending) return;
+    const grant = this.state.shares.items.find(value => value.childId === childId && value.modules.includes('tasks'));
+    if (!grant) return;
+    const ids = this.state.classTasks.selected.filter(id => id !== childId);
+    this.update({ classTasks: { ...this.state.classTasks, selected: selected ? [...ids, childId] : ids,
+      children: this.state.classTasks.children.filter(value => selected || value.childId !== childId), status: 'unread', notice: null } });
+  }
+  loadClassTasks = (childId?: string) => {
+    if (this.state.selected?.kind !== 'class' || !this.state.rosterLoaded || this.state.pending) return Promise.resolve();
+    return this.read(async ticket => {
+      const scope = this.state.selected!;
+      const existing = childId ? this.state.classTasks.children.find(value => value.childId === childId) : undefined;
+      const targets = childId ? existing?.nextCursor ? [{ childId, cursor: existing.nextCursor }] : []
+        : this.state.classTasks.selected.map(childId => ({ childId }));
+      if (!targets.length) return;
+      this.update({ classTasks: { ...this.state.classTasks, ...(!childId ? { children: [] } : {}), status: 'loading', notice: null } });
+      try {
+        for (let offset = 0; offset < targets.length; offset += scopeTaskChildrenPerRead) {
+          const result = await this.api.taskContext({ scope: { kind: 'class', spaceId: scope.id, spaceVersion: scope.version,
+            teacherSpaceVersion: scope.teacherSpaceVersion ?? null }, targets: targets.slice(offset, offset + scopeTaskChildrenPerRead) }, ticket.userId, ticket.controller.signal);
+          if (!this.current(ticket) || classTaskScopeKey(scope) !== classTaskScopeKey(this.state.selected)) return;
+          const previous = this.state.classTasks.children;
+          const children = childId ? previous.map(value => value.childId !== childId ? value : {
+            ...result.children[0], tasks: [...value.tasks, ...result.children[0].tasks] }) : [...previous, ...result.children];
+          if (children.some(value => new Set(value.tasks.map(task => task.id)).size !== value.tasks.length)) throw new SharingApiError(0, 'sharing_response_invalid');
+          this.update({ classTasks: { ...this.state.classTasks, children } });
+        }
+        if (this.current(ticket)) this.update({ classTasks: { ...this.state.classTasks, status: 'ready' } });
+      } catch (error) {
+        if (!this.current(ticket)) return;
+        if (error instanceof SharingApiError && error.status === 409) {
+          this.update({ classTasks: emptyClassTasks(), rosterLoaded: false, shares: page() });
+          if (['identity_changed', 'session_changed'].includes(error.code)) {
+            this.update({ selected: null, teacherSpaces: page(), teacherClasses: page(), teacherClassesLoaded: false,
+              members: page(), invitations: page(), invitationToken: null, notice: errorText(error, this.mode) }); return;
+          }
+          await this.selection(scope.id, ticket);
+          if (this.current(ticket)) this.update({ classTasks: { ...emptyClassTasks(), notice: '班級或待辦範圍已改變，已重新讀取名冊；請重新選擇孩子再查詢。' } });
+        } else if (error instanceof SharingApiError && [401, 403, 404].includes(error.status)) {
+          this.update({ classTasks: emptyClassTasks() }); throw error;
+        } else this.update({ classTasks: { ...this.state.classTasks, status: 'error', notice: '未能讀取全部所選待辦；已取得的項目保留，請按需重新讀取。' } });
+      }
     });
   };
   more = (kind: "members" | "shares" | "invitations") => this.read(async ticket => {

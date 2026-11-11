@@ -21,6 +21,7 @@ import { chineseFont, colors, readingType, spacing } from "../theme";
 
 const nameSchema = z.object({ name: z.string().trim().min(1, "請填寫名稱。").max(160, "名稱最多160個字元。") });
 const childSchema = z.object({ displayName: z.string().trim().min(1, "請填寫孩子姓名。").max(160, "孩子姓名最多160個字元。") });
+const classTaskStates = { scheduled: '待處理', completed: '已完成', cancelled: '已取消', needs_review: '待核對' };
 const tokenSchema = z.object({ token: z.string().trim().regex(/^[A-Za-z0-9_-]{43}$/u, "請貼入完整邀請代碼。") });
 const inviteSchema = z.object({ email: z.email("請填寫有效電郵地址。").max(320), role: z.enum(["caregiver", "viewer"]), days: z.enum(["7", "30"]) });
 const moduleLabel: Record<SharedModule, string> = { profile: "孩子概況", care: "照顧記錄", memory: "家庭記憶", tasks: "待辦", documents: "文件", growth: "成長", concerns: "關注", attachments: "附件" };
@@ -143,6 +144,9 @@ export function SharedSpacesScreen({ mode = "family" }: { mode?: SharingMode }) 
           {!state.shares.items.length ? <Text style={styles.body}>{classMode ? state.busy === "read" ? "正在讀取名冊…" : !state.rosterLoaded ? "名冊尚未核對，請重新讀取。" : state.shares.nextCursor ? "這一頁未有符合的孩子，名冊仍可繼續搜尋。" : state.rosterQuery ? "完整搜尋中未有符合的孩子。" : "班級名冊目前沒有孩子。" : "目前沒有已分享的孩子模組。"}</Text> : null}
           {state.shares.items.map(grant => <View key={grant.childId} style={styles.group}>
             <Text style={styles.body}>{grant.childName}：{grant.modules.map(module => moduleLabel[module]).join("、")}</Text>
+            {classMode && grant.modules.includes('tasks') ? <AppCheckbox label={`查詢${grant.childName}的待辦`}
+              checked={state.classTasks.selected.includes(grant.childId)} disabled={locked || !state.rosterLoaded}
+              onChange={checked => controller.selectClassTaskChild(grant.childId, checked)} /> : null}
             <AppButton label={`開啟${grant.childName}的共享資料`} variant="secondary" disabled={locked} onPress={()=>leave(()=>{void (async()=>{
               if(!identityKey||productionOwner.getSnapshot().identityKey!==identityKey)return;
               await productionOwner.selectSharedChild(selected.id,grant.childId);
@@ -154,6 +158,24 @@ export function SharedSpacesScreen({ mode = "family" }: { mode?: SharingMode }) 
             </View> : null}
           </View>)}
           {state.shares.nextCursor ? <AppButton label={classMode ? "繼續載入名冊" : "載入更多分享"} variant="quiet" disabled={!state.online || !!state.busy} onPress={() => { void controller.more("shares"); }} /> : null}
+          {classMode ? <View style={styles.group}>
+            <SectionHeader title="班級待辦查詢" subtitle="在名冊選取孩子，再按需讀取他們的待辦。" />
+            <Text style={styles.body}>已選 {state.classTasks.selected.length} 位孩子；已讀取 {state.classTasks.children.length} 位。可繼續載入名冊選取其他孩子，各孩子的待辦亦可續看下一頁。</Text>
+            <AppButton label="讀取所選孩子的待辦" variant="secondary" disabled={locked || !state.rosterLoaded || !state.classTasks.selected.length}
+              onPress={() => { void controller.loadClassTasks(); }} />
+            {state.classTasks.status === 'loading' ? <Text style={styles.body} accessibilityLiveRegion="polite">正在讀取班級待辦…</Text> : null}
+            {state.classTasks.notice ? <Text style={styles.body} accessibilityLiveRegion="polite">{state.classTasks.notice}</Text> : null}
+            {state.classTasks.children.map(child => <View key={child.childId} style={styles.group}>
+              <Text style={styles.body} accessibilityRole="header">{child.childName} · 已取得 {child.tasks.length} 項待辦</Text>
+              {!child.tasks.length ? <Text style={styles.body}>這次查詢沒有待辦。</Text> : null}
+              {child.tasks.map(task => <View key={task.id} style={styles.group}>
+                <Text style={styles.body}>{task.title} · {classTaskStates[task.state]}</Text>
+                <Text style={styles.body}>到期：{new Date(task.dueAt).toLocaleString('zh-HK', { timeZone: 'Asia/Hong_Kong', hour12: false })}（香港時間）</Text>
+              </View>)}
+              {child.nextCursor ? <AppButton label={`繼續查看${child.childName}的待辦`} variant="quiet" disabled={locked}
+                onPress={() => { void controller.loadClassTasks(child.childId); }} /> : null}
+            </View>)}
+          </View> : null}
           {classMode ? editable ? <>
             <SectionHeader title="新增班級孩子" />
             <Text style={styles.body}>孩子及其記錄保存於這個班級，不會加入你的私人孩子列表。</Text>
