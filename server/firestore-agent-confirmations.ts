@@ -73,7 +73,8 @@ export function createFirestoreAgentConfirmations(options: {
       });
     },
     async requestConfirmation(scope: AgentScope, askingRunId: string, raw: z.infer<typeof requestAgentConfirmationSchema>) {
-      const input = domainParse(requestAgentConfirmationSchema, raw);
+      const rawInput = domainParse(requestAgentConfirmationSchema, raw);
+      const input = { ...rawInput, workId: rawInput.workId ?? null };
       return authority.runTransaction(scope.userId, scope.childId, async b => {
         await runs.requireLive(b, scope, askingRunId);
         const target = await proposals.read(b, input.runId, input.proposalId), p = proposals.visible(target), run = await runs.read(b, input.runId);

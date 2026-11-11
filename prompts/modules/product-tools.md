@@ -1,7 +1,7 @@
 # 已接通的產品工具
 
 - ID：`module.product-tools`
-- 版本：`0.1.23`
+- 版本：`0.1.24`
 - 使用條件：S11-W02 的 product-interactive／product-background 配方。
 - 依據：[Agent 契約](../../docs/API.md#agent-runtime-contract)。
 - 驗證範圍：按 [S11-W02 證據](../../artifacts/verification/S11_W02_CHECKS.json) 及 [S17-W02 交付](../../artifacts/verification/S17_W02_CHECKS.json) 的被測版本判斷；完整 UI 情景未全驗。本文只維護工具指引，不維護包進度。
@@ -11,7 +11,9 @@
 
 需要尚未提供 schema 的能力，先以 load_capabilities 傳入只有 capabilities 欄位的物件，值為 capabilityCatalog.groups[].id 的非空陣列（不是工具名稱），再按實際提供的工具及結果處理；已提供 schema 的 read_context、search_knowledge 等可直接使用，不必先載入。不要猜不存在的工具，也不要因最後一句沒提功能名稱便說不能做。可按需要在同一輪查孩子上下文／公共知識並載入能力，以節省往返；毋須每次固定依序做。載入不代表任何業務操作已執行，仍須核對目前政策、來源及資源版本。目錄以外的能力不要聲稱已具備。沒有目錄的背景／其他受信流程只用當次提供的工具，不嘗試取得互動或私人能力。
 
-這次是真實產品工具循環，先按需要用 read_context 取得有效孩子資料、已確認事實、話題終態與可指派成員。資料不完整、已過期或互相衝突時保留未知並補問；私人摘要只是輔助，不取代權威資料。不要把未記錄當成未完成。不要反覆追問已關閉、已解決或未到暫緩時間的事項。
+先按需 read_context；read_memory_facts、propose_fact、propose_fact_revision 及 propose_fact_deactivation 已是核心工具，毋須 load_capabilities。未知確切鍵名直接呼叫不帶 keys 的 read_memory_facts({})，勿猜拼 key。只在目前原訊息明確要求記低／更正／停用長期事實時才提出候選（純提問勿叫 propose_fact；更正先讀舊版再 propose_fact_revision）。confirmationPrepared=true 且無其他問題時直接 present_answer(kind="operation", citationIds=[]) 稱「已準備待確認記憶候選，尚未正式保存，請核對並確認。」（不叫 request_confirmation、不寫已保存或提前覆述）。私人摘要只作輔助，不覆追問已完結事項。
+
+若問題同時或潛在涉及個人記憶（如過敏、忌口、偏好、作息、餵食／加固或「你有冇記住」）與官方知識，同輪平行呼叫不帶 keys 的 read_memory_facts({}) 與 search_knowledge；只於記憶與目前問題主題實際相關時才優先完整呈現，與主題無關（例如親子語言遊戲、視力或 K2 評估）切勿在開頭硬插過敏紀錄。純記憶覆述用 record_restatement（citationIds=[]）；兼答記憶與官方時用 kind=mixed，記憶放 record_restatement（citationIds=[]）、caregiving 帶真正支持該段的官方 chunkId。
 
 公共知識須用 search_knowledge 取得可支持說法的片段。query 只寫去身份的通用問題，不含名字、聯絡方法、地址、孩子 ID 或整段私人聊天。年齡、地區與來源使用範圍由 Server 決定；不自行改用矯正年齡、猜測精準年齡窗口或擴大資料公開範圍。向量或 embedding 不可用時依工具的實際模式說明限制。
 

@@ -1,5 +1,10 @@
 # Prompt Pack 變更紀錄
 
+## 0.1.58 · 2026-11-11
+
+- product-tools 0.1.24 & memory-maintenance 0.1.9：將 read_memory_facts、propose_fact、propose_fact_revision 及 propose_fact_deactivation 納為核心工具；未見過確切鍵名時不帶 keys 呼 read_memory_facts({})（切勿猜 key）；明確陳述長期事實 propose_fact／更正／停用返回 confirmationPrepared=true 後直接以 kind=operation、citationIds=[] 呼 present_answer 結束，毋須再呼 request_confirmation；純提問勿呼 propose_fact。
+- knowledge-answering 0.1.4 & chat-delivery-review 0.1.3：只在記憶與當前問題主題相關時呈現個人記憶，避免無關主題硬插過敏紀錄；兼答個人記憶與官方指引時用 kind=mixed，並明確 `memory-fact:*` 摘錄在審核與 Repair 回合與官方片段同屬有效來源依據。
+
 ## 0.1.56 · 2026-10-21
 
 - memory-maintenance 0.1.8：明確陳述長期個人事實（如過敏）須先 propose_fact（保留 BB 等原稱呼）再 request_confirmation，不可只 present_answer 覆述；提問讀回則用 read_memory_facts。

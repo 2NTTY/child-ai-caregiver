@@ -236,10 +236,15 @@ export class ProductAgentOwner {
         // Only explicit contractual rejections are failures; transport/5xx remain unknown.
         const rejected = error instanceof ProductAgentApiError && (requiresFreshAgentConfirmation(error)
           || error.status === 400 && ["invalid_input", "sharing_confirmation_required"].includes(error.code ?? ""));
+        const rejectedText = input.decision === "accept"
+          ? (error instanceof ProductAgentApiError && error.code === "fact_key_conflict"
+            ? "未接受成功：已有相同鍵（key）的有效確認事實，請在記憶頁更新原項目或重新向 AI 提出更正。"
+            : "未接受成功")
+          : "未略過成功";
         this.model({ sharedConfirmed: {}, pendingDecision: { ...attempt, rejected,
           reconfirm: error instanceof ProductAgentApiError && requiresFreshAgentConfirmation(error) },
           notice: { tone: rejected ? "error" : "warning", text: rejected
-            ? input.decision === "accept" ? "未接受成功" : "未略過成功" : "暫時無法確認結果" } });
+            ? rejectedText : "暫時無法確認結果" } });
       }
     } finally { request.finish(); }
     if (request.current() && !this.snapshot.model.pendingDecision && this.snapshot.pending.state === "ready" && !this.pendingRead) void this.readPending(false, true);
