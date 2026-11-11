@@ -960,6 +960,9 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 | GET `/api/admin/invitation?email=` | 完整電郵定位既有資格；不以未列入列表推定不存在 |
 | GET `/api/admin/usage?day=YYYY-MM-DD` | UTC 日的平台／本人 key 全站 counters，無聊天掃描 |
 | GET `/api/admin/audit?cursor=` | 最多 20 筆不可變管理收據／前後值 |
+| GET `/api/admin/knowledge-transfers?cursor=` | 按已登記的 ZIP SHA-256 分頁，每頁最多 20 個批次，回 `{items,nextCursor}`。舊批次可直接按指紋查回。 |
+| GET `/api/admin/knowledge-transfers/{digest}?from=0` | 在同一讀取交易回 `{batch,items,nextFrom}`，每頁最多 20 個已提交版本。查無批次回 404。 |
+| POST `/api/admin/knowledge-transfers/{digest}/stop` 或 `/resume` | 提交 `{expectedRevision}`，與 CLI 共用台帳的版本核對，回 `{batch}`。恢復使原包可接續寫入；匯入執行者仍需取得相同 ZIP，結果不明時按指紋查回。 |
 | GET `/api/admin/knowledge-status?cursor=`（S10 已發布） | 管理員按需讀取現行來源目錄的註冊／停用／定義變更狀態，以及實際檢查紀錄。每頁最多 20 筆，依檢查時間與工作 ID 倒序續讀。失敗原因、最近嘗試與最近成功分開顯示。這項查詢不觸發來源抓取或發布。 |
 | GET `/api/admin/knowledge-versions?cursor=` | 管理員按頁查看允許來源的版本 ID、hash、核准狀態及索引就緒情況，每頁最多 20 筆。 |
 | GET／POST `/api/admin/knowledge-index-batches` | GET 分頁讀取批次；POST 帶原 `opId` 及最多 50 個選定版本的 ID／hash，建立同 ID 的關鍵詞索引重建批次。 |

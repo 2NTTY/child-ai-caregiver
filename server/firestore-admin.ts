@@ -13,9 +13,11 @@ const scope = { ownerUserId: 'system:admin', workspaceId: NIL, childId: NIL, sto
 export const adminDirectorySchema = z.object({ email: z.email() }).strict();
 const cursorSchema = z.string().regex(/^[a-f0-9]{64}$/);
 import type { KnowledgeIndexBatches } from './firestore-knowledge-index-batches.ts';
+import type { createKnowledgeTransfers } from './firestore-knowledge-transfers.ts';
 /** Control-plane data only. No family records, keys, or arbitrary Firestore access. */
 export function createFirestoreAdmin(options: FirestoreDomainOptions, config: AiConfig,
-  knowledge?: Pick<ReturnType<typeof createFirestoreKnowledgeRefresh>, 'adminStatus'>, indexBatches?: KnowledgeIndexBatches) {
+  knowledge?: Pick<ReturnType<typeof createFirestoreKnowledgeRefresh>, 'adminStatus'>, indexBatches?: KnowledgeIndexBatches,
+  transfers?: Pick<ReturnType<typeof createKnowledgeTransfers>, 'list' | 'page' | 'control'>) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
   const policyRef = data.ref('admin_policy', 'platform-policy', 'current');
   const defaults = domainParse(platformPolicySchema, { enabled: config.enabled, model: config.model,
@@ -38,6 +40,7 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions, config: Ai
     }, { readOnly: true });
   }
   return { readPolicy, readPolicyIn,
+    knowledgeTransfers() { return transfers ?? domainReject('knowledge_transfers_unavailable', 503); },
     knowledgeIndexes() { return indexBatches ?? domainReject('knowledge_indexes_unavailable', 503); },
     knowledgeStatus(cursor: string | null = null) {
       if (!knowledge) domainReject('knowledge_status_unavailable', 503);

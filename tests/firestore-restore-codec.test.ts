@@ -64,12 +64,14 @@ test('restore retains knowledge transfer identities and progress in system scope
       transferBatchSchema, batch, batch.revision);
     const restored = f.codec.transform(f.codec.decode(original), input()), reopened = f.codec.decode(restored);
     assert.equal(restored.path, original.path);
+    assert.equal(restored.data.transferDigest, batch.id);
     assert.deepEqual(reopened.value, { ...batch, state: state === 'ready' ? 'stopped' : state });
     assert.equal(reopened.context.family, 'domain');
     if (reopened.context.family === 'domain') assert.deepEqual(reopened.context.scope, FIRESTORE_TASK_DISPATCH_SCOPE);
     assert.equal(restored.data.recordVersion, batch.revision);
     assert.deepEqual(Object.keys(restored.data).sort(), [...Object.keys(f.data.tags(FIRESTORE_TASK_DISPATCH_SCOPE)),
-      'format', 'version', 'recordVersion', 'ciphertext', 'recovery'].sort());
+      'format', 'version', 'recordVersion', 'ciphertext', 'recovery', 'transferDigest'].sort());
+    assert.throws(() => f.codec.decode({ ...restored, data: { ...restored.data, transferDigest: 'c'.repeat(64) } }), errors('restore_binding'));
     assert.throws(() => f.codec.decode(record(f.data, 'knowledge_transfers', 'knowledge-transfer-batch', 'b'.repeat(64),
       FIRESTORE_TASK_DISPATCH_SCOPE, transferBatchSchema, batch, batch.revision)), errors('restore_binding'));
     assert.throws(() => f.codec.decode(record(f.data, 'knowledge_transfers', 'knowledge-transfer-batch', batch.id,

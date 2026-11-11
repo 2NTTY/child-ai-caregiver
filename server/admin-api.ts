@@ -1,6 +1,17 @@
 import type { FirebaseAuthPort } from './firebase-auth.ts';
 import type { FirestoreAdmin } from './firestore-admin.ts';
-import { domainReject } from './firestore-domain-data.ts';
+import { domainParse, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
+import { adminTransferControlSchema, adminTransferDigestSchema } from '../src/shared/admin-knowledge-transfer.ts';
+import { adminTransferView } from './knowledge-transfer-records.ts';
+import { FirestoreKnowledgeError } from './firestore-knowledge.ts';
+
+async function transferRequest<T>(read: () => Promise<T>) {
+  try { return await read(); } catch (error) {
+    if (error instanceof FirestoreKnowledgeError && ['knowledge_transfer_unknown', 'knowledge_transfer_changed',
+      'knowledge_transfer_maintenance'].includes(error.code)) domainReject(error.code, error.status);
+    throw error;
+  }
+}
 /** Deployment-only UID. Empty is deliberately locked, never first-user or email-based promotion. */
 export function readAdminUid(env: Record<string, string | undefined>): string | null {
   const value = env.YUBAN_ADMIN_UID;
@@ -20,12 +31,20 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
   let result: unknown;
   const batchBase = '/api/admin/knowledge-index-batches';
   const batchPath = /^\/api\/admin\/knowledge-index-batches\/([a-f0-9-]+)(?:\/(stop|resume))?$/.exec(url.pathname);
-  if (request.method === 'POST' && (url.pathname === '/api/admin/operations' || url.pathname === batchBase || batchPath?.[2])) {
+  const transfersBase = '/api/admin/knowledge-transfers';
+  const transferPath = /^\/api\/admin\/knowledge-transfers\/([a-f0-9]{64})(?:\/(stop|resume))?$/u.exec(url.pathname);
+  if (request.method === 'POST' && (url.pathname === '/api/admin/operations' || url.pathname === batchBase || batchPath?.[2] || transferPath?.[2])) {
     if (request.headers.get('origin') !== options.publicOrigin) domainReject('origin_rejected', 403);
     if ((await auth.assertRecentReauthentication(request.headers)).user.id !== userId) domainReject('identity_changed', 409);
     const input = await options.readJson(request);
     if (url.pathname === '/api/admin/operations') result = await admin.submit(userId, input);
     else if ([...url.searchParams].length) domainReject('invalid_input', 400);
+    else if (transferPath) {
+      const { expectedRevision } = domainParse(adminTransferControlSchema, input);
+      const operator = 'web-' + firestoreDomainHash(['knowledge-transfer-operator', userId]);
+      const batch = await transferRequest(() => admin.knowledgeTransfers().control(transferPath[1], transferPath[2] as 'stop' | 'resume', expectedRevision, operator));
+      result = { batch: adminTransferView(batch) };
+    }
     else if (url.pathname === batchBase) result = await admin.knowledgeIndexes().create(userId, input);
     else result = await admin.knowledgeIndexes().control(userId, batchPath![1], batchPath![2] as 'stop'|'resume', input);
   } else if (request.method === 'GET') {
@@ -35,6 +54,18 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
     else if (url.pathname === '/api/admin/invitation') result = { invitation: await admin.lookup(url.searchParams.get('email') ?? '') };
     else if (url.pathname === '/api/admin/usage') result = await admin.usage(url.searchParams.get('day') ?? new Date().toISOString().slice(0, 10));
     else if (url.pathname === '/api/admin/audit') result = await admin.audit(cursor);
+    else if (url.pathname === transfersBase || (transferPath && !transferPath[2])) {
+      const entries = [...url.searchParams];
+      if (entries.length > 1 || entries.some(([key]) => key !== (transferPath ? 'from' : 'cursor'))) domainReject('invalid_input', 400);
+      if (transferPath) {
+        const raw = url.searchParams.get('from') ?? '0';
+        if (!/^(0|[1-9][0-9]{0,3})$/u.test(raw) || Number(raw) > 4096) domainReject('invalid_input', 400);
+        result = await transferRequest(() => admin.knowledgeTransfers().page(transferPath[1], Number(raw)));
+      } else {
+        if (cursor !== null) domainParse(adminTransferDigestSchema, cursor);
+        result = await admin.knowledgeTransfers().list(cursor);
+      }
+    }
     else if (url.pathname === '/api/admin/knowledge-versions' || url.pathname === batchBase || (batchPath && !batchPath[2])) {
       const entries = [...url.searchParams];
       if (entries.length > 1 || entries.some(([key]) => key !== 'cursor') || (batchPath && entries.length)) domainReject('invalid_input', 400);

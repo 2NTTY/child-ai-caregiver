@@ -87,6 +87,7 @@ export function restoreOperationRecord(data: FirestoreDomainData, context: Fires
       const batch = transferBatchSchema.parse(raw);
       check(same(scope, SYSTEM) && id === batch.id && version === batch.revision);
       value = target && batch.state === 'ready' ? { ...batch, state: 'stopped' as const } : batch;
+      metadata.transferDigest = batch.id;
       break;
     }
     case 'knowledge-transfer-result': {
