@@ -460,6 +460,15 @@ for (const quotes of [5400, 5500]) test(`real worker preserves baseline progress
   assert.equal(result.state, 'completed', JSON.stringify(result));
   assert.equal(requests.length, 1);
   assert.ok(agentRequestCharacters(requests[0]) <= 32000);
+  const metadata = JSON.parse(String(requests[0].config?.systemInstruction).split('Server runtime metadata:\n')[1]);
+  assert.deepEqual(Object.keys(metadata.budget).sort(), ['usedBeforeThisCall', 'remaining', 'phase',
+    'reserveForFinish', 'reserveForDeliveryReview', 'softRemaining'].sort());
+  assert.deepEqual(metadata.budget.usedBeforeThisCall, { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 });
+  assert.equal(metadata.budget.remaining.modelCallsIncludingThisCall, metadata.limits.modelCalls);
+  assert.deepEqual(metadata.budget.reserveForFinish, { modelCalls: 1, toolCalls: 1 });
+  assert.deepEqual(metadata.budget.reserveForDeliveryReview, { modelCalls: 0 });
+  assert.equal(metadata.budget.phase, 'finish');
+  assert.ok(metadata.budget.softRemaining.modelCalls > 0);
   const supplied = JSON.parse(requests[0].contents[0].parts![0].text!);
   assert.deepEqual(supplied.sourceMessages.map((message: any) => message.id), [original!.id]);
   assert.equal(supplied.sourceMessages[0].text, '"'.repeat(quotes));
