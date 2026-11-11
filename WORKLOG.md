@@ -5904,3 +5904,7 @@ Web／手機共用對話頁按固定範圍列出所有孩子，沿既有資料�
 以前回覆只保存不可反查的照護證據 hash。新回覆沿原審核綁定保存引用的孩子位置、記錄 ID 與版本；原文由正式讀取接口按需取回。合成測試從未編號與缺路由兩處失敗起步，補驗引用排序、原文、改版、撤權及介面遲到回應。未讀取家庭資料或再呼叫模型。正式發布結果另記；其餘五組的起點見 [P4 接手清單](docs/P4_RESUME.md)。
 
 香港 23:11，[PR #547](https://github.com/2NTTY/child-ai-caregiver/pull/547) 的原站 Web／API／worker 已切換，站外核對 Firestore 健康 200、未登入點讀 401 及實際 JS 指紋。Web 重啟時一次 TLS 探測失敗，最終兩處核對通過。Android 仍待批量交付；P4 於此暫停。[發布證據](artifacts/verification/P4_CARE_CITATION_DELIVERY_20261111.json)
+
+### REQ-001 官方來源搜索優先
+
+按[需求文件的交付次序](docs/REQUIREMENTS_BACKLOG.md#2-跨包的首交付切片與依賴)更新[當前工作](PLAN.md#agent-search-first)及[P4 接手清單](docs/P4_RESUME.md)。以既有公共檢索及同版續讀承接第一條 Web 示範，P4 大批量維運保留原門檻。本次只調整文件，示範流程仍待驗收。
