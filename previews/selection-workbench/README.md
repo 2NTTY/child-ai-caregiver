@@ -1,4 +1,12 @@
-# Selection workbench
+# Selection Workbench
+
+## Eleven-reference source preview · page-reference06 · 2026-11-11
+
+[Page reference 06](versions/page-reference06-20261111/README.md) adds only MR-02 SilverBullet and LG01 Bootstrap Sign-in over reviewed 05. [Index source](versions/page-reference06-20261111/index.html). Home, Settings, Tasks and Memory now each have two references; Chat, Care and Login each have one. No PC02 files or selection writes are introduced.
+
+MR-02 retains the original image, MIT notice and public tutorial; app/capture version and the example person's fictional status remain unknown. LG01 retains a complete official preview thumbnail, not measured runtime UI, with documentation CC BY 3.0 attribution, full code MIT notice and original-brand restrictions. Neither source adds operational login/note controls or implies broad asset/trademark clearance.
+
+This increment passed scoped static checks and a bounded Chrome desktop review of the two new images, anchors, standalone entries and browser Back (1180 × 757, DPR 1). Existing nine sections, shared CSS, sources, historical versions and user choices are unchanged. This is the authorized independent GitHub source-preview package, not a Sites deployment, real frontend, mobile/interactive acceptance, mixed-component design, PR or merge. Original leaf author-time local-only/browser-pending text remains unchanged as historical packaging evidence; current scope is recorded in the 06 index and provenance.
 
 ## Nine-reference source preview 05 · 2026-11-11
 

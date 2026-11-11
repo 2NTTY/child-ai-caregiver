@@ -1,0 +1,779 @@
+{
+  "version": "page-reference06-20261111",
+  "kind": "static-page-reference-index",
+  "selected": false,
+  "implementedFrontend": false,
+  "sitePublished": false,
+  "existingWorkbenchCommit": "4c4011d7713b41beb98f521cc2393853ed9b3a3a",
+  "candidates": [
+    {
+      "branch": "dot/page-home-nc01-20261111",
+      "sha": "3ceb1bfa1cfba8928bd515fdfee5c3a768749693",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/H-01/README.md",
+          "path": "candidates/H-01/README.md",
+          "gitBlob": "d56fb855cebda39728921ce1ce6404383d26f866",
+          "bytes": 2296
+        },
+        {
+          "originalPath": "docs/design-previews/H-01/SHA256SUMS",
+          "path": "candidates/H-01/SHA256SUMS",
+          "gitBlob": "b7e8c53ca5e453c8661de3830a8d0c0e5a6c072a",
+          "bytes": 433
+        },
+        {
+          "originalPath": "docs/design-previews/H-01/candidate.json",
+          "path": "candidates/H-01/candidate.json",
+          "gitBlob": "37e4a56c454aea7b2a0a07543fea08f32fd610d6",
+          "bytes": 2489
+        },
+        {
+          "originalPath": "docs/design-previews/H-01/index.html",
+          "path": "candidates/H-01/index.html",
+          "gitBlob": "1315009f087bb74ada8644de79a5e3959e6e695a",
+          "bytes": 2692
+        },
+        {
+          "originalPath": "docs/design-previews/H-01/reference/license-copying.txt",
+          "path": "candidates/H-01/reference/license-copying.txt",
+          "gitBlob": "1d658d6d37633decaec4382fcc8a2c05ac21bdf9",
+          "bytes": 19466
+        },
+        {
+          "originalPath": "docs/design-previews/H-01/reference/webinterface_dashboard.png",
+          "path": "candidates/H-01/reference/webinterface_dashboard.png",
+          "gitBlob": "21c3555d2dc694c744bdab148a967730d4a1cdc8",
+          "bytes": 148703
+        }
+      ]
+    },
+    {
+      "branch": "dot/page-chat-reference-pc01-20261111",
+      "sha": "62c2a8bc2355fbf8c3725a21f40bcb3efdd9687c",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/PC01/README.md",
+          "path": "candidates/PC01/README.md",
+          "gitBlob": "7a7a9ffb6dd2dd843254f936affea3d34dbdf665",
+          "bytes": 2545
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/SHA256SUMS",
+          "path": "candidates/PC01/SHA256SUMS",
+          "gitBlob": "592508a1a3eb4f7d84b53dc5e4fb3e6aff2d5395",
+          "bytes": 521
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/candidate.json",
+          "path": "candidates/PC01/candidate.json",
+          "gitBlob": "67a9b45cbf11042e29fff04b8a85b44aee78300a",
+          "bytes": 973
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/candidate/index.html",
+          "path": "candidates/PC01/candidate/index.html",
+          "gitBlob": "6d73c0c4a8b8c421aed51baf70240144a557e19f",
+          "bytes": 5520
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/candidate/style.css",
+          "path": "candidates/PC01/candidate/style.css",
+          "gitBlob": "8f45976cf1dfbe3aab8bb0d5f9bdb3641e5bf2bd",
+          "bytes": 3829
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/reference/LICENSE",
+          "path": "candidates/PC01/reference/LICENSE",
+          "gitBlob": "ce2aca011368ed3c3af6ffd8e1d333b5bef08589",
+          "bytes": 1073
+        },
+        {
+          "originalPath": "docs/design-previews/PC01/reference/generative-ui-light.pinned.png",
+          "path": "candidates/PC01/reference/generative-ui-light.pinned.png",
+          "gitBlob": "20a2051328d43611f922f98fbcdaf6f55deab852",
+          "bytes": 147373
+        }
+      ]
+    },
+    {
+      "branch": "dot/page-care-bb01-20261111",
+      "sha": "cbcd1b5bbc96e49c0fb1ba9b45b6d7f518a83d3b",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/C-01/README.md",
+          "path": "candidates/C-01/README.md",
+          "gitBlob": "114ae7e787fd4d41b01630f17130aae67cbebf25",
+          "bytes": 3337
+        },
+        {
+          "originalPath": "docs/design-previews/C-01/SHA256SUMS",
+          "path": "candidates/C-01/SHA256SUMS",
+          "gitBlob": "8b6d3773e7d909d99b4354cfbc5db2108a037101",
+          "bytes": 407
+        },
+        {
+          "originalPath": "docs/design-previews/C-01/candidate.json",
+          "path": "candidates/C-01/candidate.json",
+          "gitBlob": "28fc20a956a67c785831538daba543c9e64bfa6e",
+          "bytes": 3497
+        },
+        {
+          "originalPath": "docs/design-previews/C-01/index.html",
+          "path": "candidates/C-01/index.html",
+          "gitBlob": "823c904f924b3098f73323352dc6da08c24a251d",
+          "bytes": 2606
+        },
+        {
+          "originalPath": "docs/design-previews/C-01/reference/LICENSE",
+          "path": "candidates/C-01/reference/LICENSE",
+          "gitBlob": "640e149090f51577e773d9ee6b6cc1b600f97f10",
+          "bytes": 1337
+        },
+        {
+          "originalPath": "docs/design-previews/C-01/reference/timeline.png",
+          "path": "candidates/C-01/reference/timeline.png",
+          "gitBlob": "de34e2945d8dfadbf96c4aaf2860f8f618e2806b",
+          "bytes": 78367
+        }
+      ]
+    },
+    {
+      "branch": "dot/page-settings-s01-20261111",
+      "sha": "b481737a82fdf283dcfb06863550476a674cdef4",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/S-01/README.md",
+          "path": "candidates/S-01/README.md",
+          "gitBlob": "709e950daa231e3b9cb8ac4a202eb270382d06c6",
+          "bytes": 4124
+        },
+        {
+          "originalPath": "docs/design-previews/S-01/SHA256SUMS",
+          "path": "candidates/S-01/SHA256SUMS",
+          "gitBlob": "533dd1290007c80a9e593bb9136f38f9f7e30f31",
+          "bytes": 413
+        },
+        {
+          "originalPath": "docs/design-previews/S-01/candidate.json",
+          "path": "candidates/S-01/candidate.json",
+          "gitBlob": "231ccfc11261de8ba135bb1416b55cae4347dfc7",
+          "bytes": 3173
+        },
+        {
+          "originalPath": "docs/design-previews/S-01/index.html",
+          "path": "candidates/S-01/index.html",
+          "gitBlob": "4028b34fd579123dab7fcfb47126ebe855ab6bca",
+          "bytes": 4889
+        },
+        {
+          "originalPath": "docs/design-previews/S-01/reference/LICENSE.md",
+          "path": "candidates/S-01/reference/LICENSE.md",
+          "gitBlob": "fad4d887a681dd49233e5ed01ee2c7a1513089a0",
+          "bytes": 1063
+        },
+        {
+          "originalPath": "docs/design-previews/S-01/reference/forms-light.png",
+          "path": "candidates/S-01/reference/forms-light.png",
+          "gitBlob": "15d76120dccefbb695af757ae7cc2af2bab0585f",
+          "bytes": 29685
+        }
+      ]
+    },
+    {
+      "branch": "dot/page-memory-mr01-20261111",
+      "sha": "f884863fa166a447d4d864332efbf625d1f6d94e",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/MR-01/README.md",
+          "path": "candidates/MR-01/README.md",
+          "gitBlob": "94a81ca229c66959234ef8baf0236c8ee814ff5a",
+          "bytes": 4856
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/SHA256SUMS",
+          "path": "candidates/MR-01/SHA256SUMS",
+          "gitBlob": "fb45c64e0d8d09bae5ff003b996b014c3e540ed2",
+          "bytes": 503
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/candidate.json",
+          "path": "candidates/MR-01/candidate.json",
+          "gitBlob": "19e8d50075fc5fec612679d3b7c1508e7cd21a20",
+          "bytes": 2683
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/index.html",
+          "path": "candidates/MR-01/index.html",
+          "gitBlob": "1fc3c3af7de65112a931d1733f193ef83447846d",
+          "bytes": 5216
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/reference/LICENSE",
+          "path": "candidates/MR-01/reference/LICENSE",
+          "gitBlob": "dbbe3558157f5861bff35dcb37b328b679b0ccfd",
+          "bytes": 34520
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/reference/source-README.md",
+          "path": "candidates/MR-01/reference/source-README.md",
+          "gitBlob": "e686e04e62c5659dd7e5c19120ee9e5fc1aed87d",
+          "bytes": 16254
+        },
+        {
+          "originalPath": "docs/design-previews/MR-01/reference/trilium-app.png",
+          "path": "candidates/MR-01/reference/trilium-app.png",
+          "gitBlob": "872a10c141ab86911130799b079b53203a63a992",
+          "bytes": 196432
+        }
+      ]
+    },
+    {
+      "branch": "dot/page-tasks-tk02-20261111",
+      "sha": "7f30ab12e11370c3b62f42778c08702101d961fd",
+      "author": "2NTTY",
+      "committer": "2NTTY",
+      "files": [
+        {
+          "originalPath": "docs/design-previews/TK02/README.md",
+          "path": "candidates/TK02/README.md",
+          "gitBlob": "284ea3300b71d4de9d4bb47393e84b2de9624782",
+          "bytes": 3066
+        },
+        {
+          "originalPath": "docs/design-previews/TK02/SHA256SUMS",
+          "path": "candidates/TK02/SHA256SUMS",
+          "gitBlob": "113b459a7e6d49fe57b4bfdc7c977a518982abcc",
+          "bytes": 414
+        },
+        {
+          "originalPath": "docs/design-previews/TK02/candidate.json",
+          "path": "candidates/TK02/candidate.json",
+          "gitBlob": "c5740a769f56d78b266cb933b9e451ecc3d48d85",
+          "bytes": 3375
+        },
+        {
+          "originalPath": "docs/design-previews/TK02/index.html",
+          "path": "candidates/TK02/index.html",
+          "gitBlob": "a23b924cbd3444dd9070cc0ba0f06f7aa1eb3772",
+          "bytes": 3824
+        },
+        {
+          "originalPath": "docs/design-previews/TK02/reference/LICENSE",
+          "path": "candidates/TK02/reference/LICENSE",
+          "gitBlob": "4ebcbdf9291d5317433929f0afb4c411513381cd",
+          "bytes": 1072
+        },
+        {
+          "originalPath": "docs/design-previews/TK02/reference/task-list-light.png",
+          "path": "candidates/TK02/reference/task-list-light.png",
+          "gitBlob": "48031305af4ec9d046e11042d56675c38a32c881",
+          "bytes": 260561
+        }
+      ]
+    },
+    {
+      "candidateId": "H-03",
+      "upstreamRepository": "xvvvyz/tilde",
+      "upstreamCommit": "1961fdedb7dff32a4f51d5c11f706a0b35da59ff",
+      "sourceModified": false,
+      "entry": "candidates/H-03/original/index.html",
+      "files": [
+        {
+          "path": "candidates/H-03/original/.nojekyll",
+          "bytes": 1,
+          "gitBlob": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+          "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+        },
+        {
+          "path": "candidates/H-03/original/.prettierrc",
+          "bytes": 118,
+          "gitBlob": "8ae6ac37c05a0d9f681f312ca2850c84398e3312",
+          "sha256": "355ef933a57f969df219c9a6e85de04c54829b6a1c9ce898a371f076fd832c12"
+        },
+        {
+          "path": "candidates/H-03/original/CNAME",
+          "bytes": 14,
+          "gitBlob": "577a6cb0caafaa691a27a1bdcd6370f54c5714f7",
+          "sha256": "63a72349596d1b04de1b5717db542da0920949fb05d5458f69596ddd87345c76"
+        },
+        {
+          "path": "candidates/H-03/original/README.md",
+          "bytes": 1170,
+          "gitBlob": "f1d2cef999c7cf5b0eccc40c69de449ea101fcc8",
+          "sha256": "e073f2cf2a1cecf8f4b7b563c7e9f8d9665ac2b490f01794908a77ec93be0899"
+        },
+        {
+          "path": "candidates/H-03/original/UNLICENSE",
+          "bytes": 1210,
+          "gitBlob": "cf1ab25da0349f84a3fdd40032f0ce99db813b8b",
+          "sha256": "88d9b4eb60579c191ec391ca04c16130572d7eedc4a86daa58bf28c6e14c9bcd"
+        },
+        {
+          "path": "candidates/H-03/original/fonts/OFL",
+          "bytes": 4402,
+          "gitBlob": "f831dbc69f05a4d5abbb54c530f0123bc0ff2d8b",
+          "sha256": "c6dec685825f73b18c20926fddc65e8315642e12986f15db0699170940a09efc"
+        },
+        {
+          "path": "candidates/H-03/original/fonts/SpaceGrotesk-Bold.woff2",
+          "bytes": 41780,
+          "gitBlob": "6025ccfa08b3f8d8d9383a61fb3a3a07c628553c",
+          "sha256": "06d705cebbab916f0c0fe82b6c6f4cae06aa07fd6f5ee078421206040326ef63"
+        },
+        {
+          "path": "candidates/H-03/original/fonts/SpaceGrotesk-Regular.woff2",
+          "bytes": 42708,
+          "gitBlob": "568d15a2e9dc9d77b93d85a5bc4d8cf9d0d071ef",
+          "sha256": "c6620e3d49a9f9dba3be3aa93c89d6d5a51096cb1c616d2691edb630551d5da5"
+        },
+        {
+          "path": "candidates/H-03/original/index.html",
+          "bytes": 27870,
+          "gitBlob": "d69a9737f65549101158dfec2ff1ef73ca92c9ec",
+          "sha256": "efe2ed7eb143b50da093192e9f483facd52a86f48f67956bf52e693ee563125e"
+        }
+      ],
+      "priorStandaloneReview": "PASS_BOUNDED_DESKTOP_RESTING_ONLY",
+      "nativeCodeActive": true,
+      "noSavedScreenshot": true,
+      "license": [
+        "Unlicense",
+        "SIL-OFL-1.1"
+      ],
+      "numbering": "Tilde is H-03; separate unpublished Homer H-02 is untouched",
+      "cnameApplied": false,
+      "priorStandaloneLocalOnly": true,
+      "distributionScope": "Unmodified attributed reference source package under included licenses; not permission for a future branded implementation or trademark endorsement."
+    },
+    {
+      "candidateId": "TK03",
+      "upstreamRepository": "mrvladus/Errands",
+      "upstreamCommit": "a586fc7ef8bb755d4b01ebdcef25e4e53c19d460",
+      "sourceModified": false,
+      "entry": "candidates/TK03/index.html",
+      "files": [
+        {
+          "path": "candidates/TK03/LICENSE-Errands.txt",
+          "bytes": 1093,
+          "gitBlob": "d3998a2852358ed86a7affb0cdbe13467342abcd",
+          "sha256": "6a13dd0186cd67d3533ead401ea891f7864388eb72f9d4b5bc76ade8adb040a0"
+        },
+        {
+          "path": "candidates/TK03/assets/errands-original.png",
+          "bytes": 65091,
+          "gitBlob": "eb19c6d38fb37a6118ccd88ec62fc3f2bb2b4545",
+          "sha256": "e965a4888408fc2e8b50baba8ce88ab74f995472597a7071b30e78c762a1bf4f"
+        },
+        {
+          "path": "candidates/TK03/index.html",
+          "bytes": 5458,
+          "gitBlob": "66e51400d7bbf3e76739741413afd89f3e879e91",
+          "sha256": "3fd5933b104247d9c3e69acb4dff33d3ad87704fe3fe87223d260f0994f21a72"
+        },
+        {
+          "path": "candidates/TK03/manifest.json",
+          "bytes": 2083,
+          "gitBlob": "7012ca563ef697f82a51cb5c9602deb0450eac2a",
+          "sha256": "30f791db30ab03ad4699af9e47f0f84bd6200a721313ef11561c4b07e0849140"
+        }
+      ],
+      "priorStandaloneReview": "PASS_BOUNDED_STATIC_DESKTOP",
+      "release": "46.2.9",
+      "imageLastChangedAtSourceVersion": "46.2",
+      "imageRuntimeVersion": "unknown",
+      "license": [
+        "MIT"
+      ],
+      "sourceImageBlob": "eb19c6d38fb37a6118ccd88ec62fc3f2bb2b4545",
+      "licenseBlob": "d3998a2852358ed86a7affb0cdbe13467342abcd",
+      "priorStandaloneLocalOnly": true,
+      "distributionScope": "Unmodified attributed reference source package under included licenses; not permission for a future branded implementation or trademark endorsement."
+    },
+    {
+      "candidateId": "S-02",
+      "upstreamRepository": "astaxie/TokenHub",
+      "upstreamCommit": "898d7a5cf1d9b7c31f9d1fd39e9389712299b3a1",
+      "commitAuthor": "astaxie",
+      "sourcePackageVersion": "0.1.0",
+      "imageLabelAndSourcePageVersion": "v0.2.0",
+      "releaseBuildVerified": false,
+      "imageCaptureDate": "unknown",
+      "imageState": "General Settings shown area only; other tabs/off-screen content unverified",
+      "sourceModified": false,
+      "entry": "candidates/S-02/index.html",
+      "priorStandaloneReview": "PASS_BOUNDED_STATIC_DESKTOP_AND_WRAPPER_NAVIGATION",
+      "retainedAuthorStatus": "Original provenance retains packaging-stage browser not tested; later independent display review is separate.",
+      "license": [
+        "Apache-2.0",
+        "ISC",
+        "MIT"
+      ],
+      "rightsBoundary": "Repository-level source provenance, not separate trademark permission or full legal clearance. Brands identify upstream only.",
+      "includedNotices": [
+        "TokenHub Apache-2.0 Copyright 2026 TokenHub contributors",
+        "Lucide 1.17.0 ISC and Feather MIT",
+        "Next 16.2.9 MIT"
+      ],
+      "files": [
+        {
+          "path": "candidates/S-02/assets/settings-en.png",
+          "bytes": 383033,
+          "gitBlob": "365e3d03b3a331e0ca45387220bf77307ea281e2",
+          "sha256": "a9d2be60227f37c6c0364e730b751b66c9a3923f9804bebde341d05e0441ba14"
+        },
+        {
+          "path": "candidates/S-02/index.html",
+          "bytes": 1823,
+          "gitBlob": "60accd5587e0770f3c50bcefe7790903db392c55",
+          "sha256": "db85488e53b6f20e163744cdff0ef7afee0b14f64f7dc9209e00739a0d13b320"
+        },
+        {
+          "path": "candidates/S-02/notices/LICENSE-Lucide-1.17.0.txt",
+          "bytes": 3208,
+          "gitBlob": "718bb3f0e44153809972abed31839375804bf652",
+          "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
+        },
+        {
+          "path": "candidates/S-02/notices/LICENSE-Next-16.2.9.txt",
+          "bytes": 1079,
+          "gitBlob": "5948ee9bd0de5064423688a2967ab3111c2658ed",
+          "sha256": "ee765244e2d59f5234d474f62e0766fa0c8b99af967fdd4c0cb8dcb0c76ea224"
+        },
+        {
+          "path": "candidates/S-02/notices/LICENSE-TokenHub-Apache-2.0.txt",
+          "bytes": 10248,
+          "gitBlob": "8c05b09bd59e45220582f58a65724a5e96b4329f",
+          "sha256": "da21ef1c27c43354055432e2ee6dc804efcb08da774da190598150fca0a75d8f"
+        },
+        {
+          "path": "candidates/S-02/notices.html",
+          "bytes": 16360,
+          "gitBlob": "838d85dabd1e77d086ff27f36fbb8a0ebb70ab08",
+          "sha256": "3db0d4b8a68604f1b5221735f299fefdf7abd6de88eb29d509b7592dc1195876"
+        },
+        {
+          "path": "candidates/S-02/provenance.html",
+          "bytes": 3207,
+          "gitBlob": "189886165bca250047d5aa773058297bf29ce882",
+          "sha256": "a0a37cc31a73c65ab297f2b880f394d5d690c9cc9c9fd90684a121111d5c9880"
+        },
+        {
+          "path": "candidates/S-02/style.css",
+          "bytes": 873,
+          "gitBlob": "49319e15e6f99b95b997702fe4ae912126142ded",
+          "sha256": "411833eda5e2843d0901df9b3e86349fe2f9b22ff5d4af84c639618217a93928"
+        }
+      ],
+      "priorStandaloneLocalOnly": true,
+      "priorStandalonePublicReleaseApproved": false,
+      "distributionScope": "Unmodified attributed reference source package under included licenses; not permission for a future branded implementation or trademark endorsement."
+    },
+    {
+      "candidateId": "MR-02",
+      "upstreamRepository": "silverbulletmd/silverbullet",
+      "upstreamCommit": "237ef6a24d57272acc70c9959fea13ac401c0c80",
+      "sourceModified": false,
+      "entry": "candidates/MR-02/index.html",
+      "priorStandaloneReview": "PASS_BOUNDED_STATIC_DESKTOP",
+      "preservedLeafMetadata": "Unchanged author-time browser-pending/local-only wording records the earlier packaging stage; this index records later bounded integration review and authorized source-branch distribution.",
+      "imageCaptureBuild": "unknown",
+      "imageCaptureDate": "unknown",
+      "files": [
+        {
+          "path": "candidates/MR-02/README.md",
+          "bytes": 4811,
+          "gitBlob": "b1a8a16bc9eee9309bc5171ef41c6351459991c6",
+          "sha256": "0a301e332bcd9771dc8cbe16e879f80d1a84e40e3912687b460a73c88bff9131"
+        },
+        {
+          "path": "candidates/MR-02/SHA256SUMS",
+          "bytes": 533,
+          "gitBlob": "271627996f6a9eb593be56cf80ddc28cab0719e4",
+          "sha256": "281d6af3cc57bac54489ca08057458d11c18b0bc8185424e22c23f7bf1cd01ed"
+        },
+        {
+          "path": "candidates/MR-02/candidate.json",
+          "bytes": 3094,
+          "gitBlob": "e32c3e0f75bb44b4df1a96304bdd859940bfb140",
+          "sha256": "97168af9c0cb1c5e16ba810c5e95aec231bd677a0239d93d97c457a507fac38b"
+        },
+        {
+          "path": "candidates/MR-02/index.html",
+          "bytes": 6325,
+          "gitBlob": "791115cde309a8a884e0e20a4a1ac22d0934331e",
+          "sha256": "079b46e29e1ffaa5c146c99eed39b2e86393baeebeb170f4011ad37b6807d043"
+        },
+        {
+          "path": "candidates/MR-02/reference/LICENSE.md",
+          "bytes": 1050,
+          "gitBlob": "bc1ccb41adfe59f32908a6652ef9f3abedeaec98",
+          "sha256": "ccf525a3b5c9ac8d843e118932036e6517d4d603f9ff3e474522b632c3996c65"
+        },
+        {
+          "path": "candidates/MR-02/reference/silverbullet-markdown-basics-preview.png",
+          "bytes": 80630,
+          "gitBlob": "e58b28dba09ad58d51f882f8ce8cad4fa7cabd67",
+          "sha256": "622e6e6749444759f8ddc81781530dde2a1460a0ae98a716c07d9478e17830cd"
+        },
+        {
+          "path": "candidates/MR-02/reference/source-tutorial.md",
+          "bytes": 6968,
+          "gitBlob": "63e78546d2b092cc13982decdcf26eb925224ec2",
+          "sha256": "90ff29cdf17019d83fc802b15e9720826fc8084620de0b27d785b6a48e0e9474"
+        }
+      ],
+      "version": "1.0.0",
+      "license": [
+        "MIT"
+      ],
+      "copyright": "Copyright 2022, Zef Hemel",
+      "sourceImageBlob": "e58b28dba09ad58d51f882f8ce8cad4fa7cabd67",
+      "sourceTutorialBlob": "63e78546d2b092cc13982decdcf26eb925224ec2",
+      "imageLastPathCommit": "a8fe718f35e05f57dc7e7cd56611d5077be9ffda",
+      "sourceAppVersion": "unknown",
+      "sampleContent": "upstream-published instructional sample, not a private account read",
+      "samplePersonFictional": "unknown",
+      "rightsBoundary": "MIT associated-documentation basis; not separate image permission or blanket future code/font/trademark clearance.",
+      "priorStandaloneLocalOnly": true,
+      "distributionScope": "Unmodified attributed source-reference files only; not future branded implementation, broad trademark rights or source-app runtime."
+    },
+    {
+      "candidateId": "LG01",
+      "upstreamRepository": "twbs/bootstrap",
+      "upstreamCommit": "1a6fdfae6be09b09eaced8f0e442ca6f7680a61e",
+      "sourceModified": false,
+      "entry": "candidates/LG01/LG01.html",
+      "priorStandaloneReview": "PASS_BOUNDED_STATIC_DESKTOP",
+      "preservedLeafMetadata": "Unchanged author-time browser-pending/local-only wording records the earlier packaging stage; this index records later bounded integration review and authorized source-branch distribution.",
+      "imageCaptureBuild": "unknown",
+      "imageCaptureDate": "unknown",
+      "files": [
+        {
+          "path": "candidates/LG01/LG01-original.png",
+          "bytes": 4568,
+          "gitBlob": "477335984d853dca8f1d1b99d9ea3e7e62d11363",
+          "sha256": "90a19ffdb4692d790ebe9229eb361891f423b4ddca58f9d1140e2d7f32eb1ec3"
+        },
+        {
+          "path": "candidates/LG01/LG01.html",
+          "bytes": 10608,
+          "gitBlob": "88fa1d2aaf42e167cfd933993ae3611540f23605",
+          "sha256": "e6b3351cd99fd67469c59ea09c7c0871a2cbf3553d33acaa74a79c8cfba731e5"
+        },
+        {
+          "path": "candidates/LG01/LICENSE.upstream-MIT.txt",
+          "bytes": 1131,
+          "gitBlob": "72dda234edaa4d2b0e9e2c5420d8685e920ec3e5",
+          "sha256": "5b30317c9c35bb6f05101c501de866cc6852ab9b655dcf5941733f6644c3ebd0"
+        },
+        {
+          "path": "candidates/LG01/provenance.json",
+          "bytes": 5719,
+          "gitBlob": "75c174d502e17b9ab274fa0f74099890d28a1b2f",
+          "sha256": "b8f039419b9723caef9cc47e25dad73a814f240b32773ba6c859cfc058c8444d"
+        }
+      ],
+      "sourceTag": "v5.1.3",
+      "license": {
+        "image": "CC BY 3.0",
+        "codeNotice": "MIT"
+      },
+      "sourceImageBlob": "477335984d853dca8f1d1b99d9ea3e7e62d11363",
+      "imageLastPathCommit": "f20fece3a8cdd0e76a42c2737524b7652bf54d26",
+      "previewPixelsAreRuntimeCSSSize": false,
+      "rightsBoundary": "Complete official documentation preview canvas; Bootstrap team/contributors attribution and CC BY links retained. Unmodified mark identifies Bootstrap source only, not own-product branding, endorsement or general trademark permission.",
+      "priorStandaloneLocalOnly": true,
+      "distributionScope": "Unmodified attributed source-reference files only; not future branded implementation, broad trademark rights or source-app runtime."
+    }
+  ],
+  "previousIntegrationCommit": "f60c29f53baf2461b4925b84bba74b09cf42b95f",
+  "integrationVerification": "PASS_BOUNDED_DESKTOP_AND_STATIC",
+  "previousVersionMetadata": {
+    "version": "page-reference05-20261111",
+    "integrationVerification": "PASS_BOUNDED_DESKTOP_AND_STATIC",
+    "currentScope": {
+      "checked": [
+        "source identities and licenses",
+        "all local resource paths",
+        "unchanged original six sections/styles and historical README",
+        "private 04 retained and PC02 absent",
+        "three new anchors, standalone entries and browser Back",
+        "eight index images decoded",
+        "H-03 resting original display and regular font"
+      ],
+      "notRun": [
+        "mobile",
+        "darkMode",
+        "keyboard",
+        "screenReader",
+        "originalInteractiveUX",
+        "search",
+        "externalNavigation",
+        "tsc",
+        "export",
+        "productSuite"
+      ],
+      "sitePublished": false,
+      "distribution": "authorized independent GitHub source-preview branch package; no selected frontend or Site deployment",
+      "viewport": [
+        1180,
+        757
+      ],
+      "devicePixelRatio": 1,
+      "observedUTC": "2026-11-11T11:24:22.245Z",
+      "preservedLeafMetadata": "Author-time local-only/unpublished or browser-pending strings are preserved historical packaging records, not this later integration status."
+    },
+    "previousVersionMetadata": {
+      "version": "page-reference03-20261111",
+      "integrationVerification": "PASS_BOUNDED_STATIC_DESKTOP_INCREMENT",
+      "verificationScope": {
+        "date": "2026-11-11",
+        "viewport": [
+          1180,
+          757,
+          1
+        ],
+        "checked": [
+          "TK02 image in integrated index",
+          "new TK02 section anchor",
+          "new TK02 standalone entry link",
+          "affected header and captions"
+        ],
+        "measurements": {
+          "anchorHeadingTop": 40.640625,
+          "imageNaturalSize": [
+            1079,
+            1919
+          ],
+          "imageDisplaySize": [
+            540,
+            960.375
+          ],
+          "captionGap": 28,
+          "horizontalOverflow": false
+        },
+        "reused": "Earlier five unchanged sections/styles and all fixed candidate byte identities",
+        "notRun": [
+          "mobile",
+          "keyboard",
+          "screenReader",
+          "originalInteractiveUX",
+          "tsc",
+          "export",
+          "productSuite"
+        ]
+      },
+      "previousVersionMetadata": {
+        "verificationScope": {
+          "date": "2026-11-11",
+          "viewport": [
+            1180,
+            757,
+            1
+          ],
+          "checked": [
+            "S-01 and MR-01 images in integrated index",
+            "new section anchors",
+            "new standalone entry links"
+          ],
+          "reused": "Earlier unchanged sections/styles and fixed candidate byte identities",
+          "notRun": [
+            "mobile",
+            "keyboard",
+            "screenReader",
+            "originalInteractiveUX",
+            "tsc",
+            "export",
+            "productSuite"
+          ]
+        }
+      }
+    }
+  },
+  "referenceCounts": {
+    "home": 2,
+    "chat": 1,
+    "care": 1,
+    "settings": 2,
+    "memory": 2,
+    "tasks": 2,
+    "login": 1
+  },
+  "excludedCandidateIds": [
+    "PC02"
+  ],
+  "exclusionReason": "Separate local 04 remains unchanged. PC02 source package is local-only and its model-logo rights are not confirmed. No PC02 files are included.",
+  "currentScope": {
+    "checked": [
+      "source and carrier byte identities",
+      "local entries/resources and anchors",
+      "unchanged nine sections and shared styles",
+      "passive index and retained native-page boundary",
+      "source licenses and public instructional sample provenance",
+      "PC02 exclusion",
+      "MR-02 and LG01 actual integrated image rendering",
+      "both new section anchors",
+      "both relocated standalone entries and browser Back"
+    ],
+    "notRun": [
+      "mobile",
+      "keyboard",
+      "screenReader",
+      "originalInteractiveUX",
+      "tsc",
+      "export",
+      "productSuite"
+    ],
+    "sitePublished": false,
+    "sourceBranchDistribution": "prepared for authorized independent GitHub branch after verification",
+    "browser": {
+      "date": "2026-11-11",
+      "observedAt": "2026-11-11T11:45:06.470Z",
+      "viewport": [
+        1180,
+        757,
+        1
+      ],
+      "indexImagesComplete": 10,
+      "horizontalOverflow": false,
+      "MR-02": {
+        "natural": [
+          1960,
+          1120
+        ],
+        "display": [
+          1117,
+          638.28125
+        ],
+        "captionGap": 8,
+        "anchorHeadingTop": 41.328125
+      },
+      "LG01": {
+        "natural": [
+          960,
+          600
+        ],
+        "display": [
+          960,
+          600
+        ],
+        "captionGap": 8,
+        "anchorHeadingTop": 40.75
+      },
+      "reused": "Nine unchanged sections/styles and fixed source bytes; earlier independently bounded evidence.",
+      "H-03Opened": false
+    }
+  },
+  "authorPackagingVerification": "STATIC_ONLY_BROWSER_NOT_RUN"
+}
