@@ -14,6 +14,7 @@ import { useProduction } from '../production/ProductionProvider';
 import { colors, spacing } from '../theme';
 import { AuthenticationProofControl } from '../components/account/AuthenticationProofControl';
 import { AdminKnowledgeTransfers } from '../components/admin/AdminKnowledgeTransfers';
+import { AdminProactiveDemo } from '../components/admin/AdminProactiveDemo';
 import type { ReauthenticationInput } from '../../../src/shared/auth-providers';
 
 const fields = [
@@ -81,7 +82,7 @@ export default function AdminScreen() {
     finally { if (identity === currentUser.current) setReauthBusy(false); }
   };
   if (!userId && auth === 'signedOut') return <Redirect href="/login" />;
-  return <PageFrame title="網站管理" description="邀請資格、平台 AI 設定、實際用量及知識來源監測。此頁不讀取家長私人資料。"
+  return <PageFrame title="網站管理" description="邀請資格、平台 AI 設定、實際用量、知識來源監測及示範訊息。"
     headerActions={<AppButton label="返回育有方" variant="quiet" onPress={() => router.replace('/')} />}>
     {!visible ? <View style={styles.card}><Text>{state.access === 'denied' ? '此帳號沒有網站管理權限。' : '正在核對網站管理身份。'}</Text>
       {state.notice ? <Text>{state.notice}</Text> : null}
@@ -122,6 +123,8 @@ export default function AdminScreen() {
           <AppButton label="確認撤銷此邀請" variant="danger" disabled={locked} onPress={() => { submit({ kind: 'revoke', email: revoke.email, opId: crypto.randomUUID() }); setRevoke(null); }} />
           <AppButton label="保留邀請" variant="quiet" onPress={() => setRevoke(null)} /></View> : null}
       </View>
+      <AdminProactiveDemo key={userId} admin={admin} state={state.demo} online={online}
+        writeLocked={locked || state.transfers.busy || !!state.transfers.pending} />
       <View style={styles.card}><SectionHeader title="平台 AI 與限額" />
         {state.overview ? <>
           <Text>生效版本 {state.overview.policy.version} · 模型 {state.overview.policy.model}</Text>

@@ -17,12 +17,13 @@ import { ChatProgressIndicator } from "./ChatMessage";
 export interface ChatTimelineControls { followLatest(): void; holdReadingPosition(): void }
 
 // Items are already-authorized display rows in chronological order; this component does not fetch or persist messages.
-export function ChatTimeline<T extends { id: string }>({ items, renderItem, header, footer, emptyState, presentation = "standard", compact = false, recentLimit = 20, scrollRef, controlsRef, followRequest, newReplyId, history }: {
+export function ChatTimeline<T extends { id: string }>({ items, renderItem, header, footer, emptyState, presentation = "standard", compact = false, recentLimit = 20, scrollRef, controlsRef, followRequest, newReplyId, history, onVisibleItems }: {
   items: readonly T[]; renderItem: (item: T) => ReactNode; header?: ReactNode; footer?: ReactNode; emptyState?: ReactNode; presentation?: "standard" | "conversation"; compact?: boolean; recentLimit?: number;
   scrollRef?: MutableRefObject<ScrollView | null>; controlsRef?: MutableRefObject<ChatTimelineControls | null>; followRequest?: string;
   // Set with an appended assistant reply, never for initial/history reads or token updates.
   newReplyId?: string;
   history?: { cursor: string | null; loading: boolean; enabled: boolean; load(): Promise<void> };
+  onVisibleItems?(ids: string[]): void;
 }) {
   const motionScope = useId();
   const knownIds = useRef(new Set(items.map(item => item.id)));
@@ -42,6 +43,15 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
   const start = firstIndex < 0 ? Math.max(0, items.length - limit) : firstIndex;
   const ownScroll = useRef<ScrollView | null>(null), ownControls = useRef<ChatTimelineControls | null>(null);
   const following = useRef(true), metrics = useRef({ y: 0, height: 0, viewport: 0 });
+  const rowLayouts = useRef(new Map<string, { y: number; height: number }>());
+  function reportVisible() {
+    if (!onVisibleItems) return;
+    const { y, viewport } = metrics.current;
+    onVisibleItems(viewport > 0 ? items.slice(start).filter(item => {
+      const row = rowLayouts.current.get(item.id);
+      return row && Math.min(row.y + row.height, y + viewport) - Math.max(row.y, y) >= Math.min(24, row.height);
+    }).map(item => item.id) : []);
+  }
   const frame = useRef<number | null>(null), programmatic = useRef(false);
   const historyRequest = useRef<{ firstId: string | null; cursor: string } | null>(null);
   const [failedCursor, setFailedCursor] = useState<string | null>(null);
@@ -96,6 +106,7 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     const moved = Math.abs(contentOffset.y - metrics.current.y) > 1;
     metrics.current = { y: contentOffset.y, height: contentSize.height, viewport: layoutMeasurement.height };
+    reportVisible();
     if (programmatic.current) return;
     if (historyRequest.current && readerGesture.current && moved) readingAnchor.capture();
     if (!following.current || (readerGesture.current && moved)) updateLatestVisibility();
@@ -125,6 +136,7 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
   }
   function contentChanged(_width: number, height: number) {
     metrics.current.height = height;
+    reportVisible();
     if (following.current) queueBottom();
     else updateLatestVisibility();
   }
@@ -132,7 +144,7 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
     <AppScrollView testID="chat-timeline-scroll" ref={node => { ownScroll.current = node; if (scrollRef) scrollRef.current = node; }} style={styles.scroll}
       maintainVisibleContentPosition={readingAnchor.maintainVisibleContentPosition}
       contentContainerStyle={[styles.content, compact && styles.compact, presentation === "conversation" && styles.conversation, !items.length && !!emptyState && styles.empty]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16}
-      onScroll={onScroll} onScrollBeginDrag={readerIntent} onContentSizeChange={contentChanged} onLayout={event => { metrics.current.viewport = event.nativeEvent.layout.height; if (following.current) queueBottom(); else updateLatestVisibility(); }}>
+      onScroll={onScroll} onScrollBeginDrag={readerIntent} onContentSizeChange={contentChanged} onLayout={event => { metrics.current.viewport = event.nativeEvent.layout.height; reportVisible(); if (following.current) queueBottom(); else updateLatestVisibility(); }}>
       <View testID="chat-history-entry" collapsable={false} style={styles.history}>
         {header}
         {history?.loading ? <ChatProgressIndicator /> : start === 0 && history?.cursor && failedCursor === history.cursor ?
@@ -141,7 +153,8 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
             items.length && presentation === "standard" ? <Text testID="chat-history-start" style={styles.hint}>已到對話最早位置</Text> : null}
       </View>
       {!items.length ? emptyState : null}
-      {items.slice(start).map(item => <TimelineEntry key={item.id} id={item.id} scopeKey={motionScope} arriving={arrivingId === item.id}>{renderItem(item)}</TimelineEntry>)}
+      {items.slice(start).map(item => <TimelineEntry key={item.id} id={item.id} scopeKey={motionScope} arriving={arrivingId === item.id}
+        onLayout={layout => { rowLayouts.current.set(item.id, layout); reportVisible(); }}>{renderItem(item)}</TimelineEntry>)}
       {footer}
     </AppScrollView>
     {!atLatest ? <View testID="chat-return-latest" pointerEvents="box-none" style={styles.returnOverlay}>
@@ -153,10 +166,10 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
   </View>;
 }
 
-function TimelineEntry({ id, scopeKey, arriving, children }: { id: string; scopeKey: string; arriving: boolean; children: ReactNode }) {
+function TimelineEntry({ id, scopeKey, arriving, children, onLayout }: { id: string; scopeKey: string; arriving: boolean; children: ReactNode; onLayout(layout: { y: number; height: number }): void }) {
   // Keep the original arrival decision throughout this mount, including streaming updates.
   const [animateOnMount] = useState(arriving);
-  return <View testID="chat-timeline-entry" nativeID={`chat-entry-${id}`} style={styles.item}>
+  return <View testID="chat-timeline-entry" nativeID={`chat-entry-${id}`} style={styles.item} onLayout={event => onLayout(event.nativeEvent.layout)}>
     <MotionEntrance triggerKey={id} scopeKey={scopeKey} preset="message" animateOnMount={animateOnMount}>{children}</MotionEntrance>
   </View>;
 }

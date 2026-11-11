@@ -10,3 +10,4 @@ export async function nativePushPermission(): Promise<NativePushPermission> { re
 export async function requestNativePushToken(): Promise<string> { throw new Error("native_push_unavailable"); }
 export function listenNativePush(_events: NativePushEvents): () => void { return () => {}; }
 export function clearNativePushOpen(): void {}
+export function setNativePushForegroundCheck(_check: (reference: NativePushReference) => Promise<boolean>): () => void { return () => {}; }

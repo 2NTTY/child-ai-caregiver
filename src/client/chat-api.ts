@@ -82,8 +82,9 @@ function message(value: unknown): value is ChatMessage {
     && typeof value.text === "string"
     && (value.inReplyTo === null || id(value.inReplyTo))
     && typeof value.createdAt === "string" && Number.isFinite(Date.parse(value.createdAt))
-    && (value.role === "user" ? value.authorUserId !== null && value.inReplyTo === null
-      : value.authorUserId === null && value.inReplyTo !== null);
+    && (value.proactive === undefined || value.proactive === true)
+    && (value.role === "user" ? value.authorUserId !== null && value.inReplyTo === null && !value.proactive
+      : value.authorUserId === null && (value.inReplyTo === null) === (value.proactive === true));
 }
 
 function nonnegativeInteger(value: unknown): value is number {
@@ -124,6 +125,7 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
         cache: "no-store",
         headers: {
           Accept: onProgress ? "text/event-stream" : "application/json",
+            ...(body === undefined && path.includes("/messages") ? { "X-Chat-Proactive": "1" } : {}),
           ...(body === undefined ? {} : { "Content-Type": "application/json" }),
           ...(expectedUserId === undefined ? {} : { "x-expected-user-id": expectedUserId }),
         },

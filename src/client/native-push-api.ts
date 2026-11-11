@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { OnlineReceipt } from "../shared/online.ts";
 import { pushDeliverySchema, type PushDelivery } from "../shared/web-push.ts";
-import { nativePushBindingSchema, nativePushBindingV2Schema, nativePushStatusSchema, nativePushStatusV2Schema, type NativePushBinding, type NativePushBindingV2, type NativePushPlatform, type NativePushRegistration, type NativePushStatus, type NativePushStatusV2, type NativePushReference } from "../shared/native-push.ts";
+import { nativeChatPresenceSchema, nativePushBindingSchema, nativePushBindingV2Schema, nativePushStatusSchema, nativePushStatusV2Schema, type NativePushBinding, type NativePushBindingV2, type NativePushPlatform, type NativePushRegistration, type NativePushStatus, type NativePushStatusV2, type NativePushReference } from "../shared/native-push.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
 export class NativePushApiError extends Error {
@@ -17,9 +17,14 @@ export class NativePushApiError extends Error {
   }
 }
 
-export type NativePushTarget = { kind: "test" | "care"; childId: string | null; taskId: string | null };
+export type NativePushTarget = { kind: "test" | "care"; childId: string | null; taskId: string | null }
+  | { kind: "chat"; childId: string; messageId: string };
+export type NativeChatPresence = z.infer<typeof nativeChatPresenceSchema>;
+export type NativeChatPresenceUpdate = { childId: string | null; expectedPresenceVersion: number; bindingId?: string; chatNotificationsEnabled?: boolean };
 export interface NativePushApi<Binding extends NativePushBinding = NativePushBinding, Status extends NativePushStatus = NativePushStatus> {
   open(reference: NativePushReference, signal: AbortSignal, userId: string): Promise<NativePushTarget>;
+  chatPresence(signal: AbortSignal, userId: string): Promise<NativeChatPresence>;
+  updateChatPresence(input: NativeChatPresenceUpdate, signal: AbortSignal, userId: string): Promise<NativeChatPresence>;
   status(signal: AbortSignal, userId: string): Promise<Status>;
   register(input: NativePushRegistration, signal: AbortSignal, userId: string): Promise<Binding>;
   revoke(id: string, expectedVersion: number, signal: AbortSignal, userId: string): Promise<Binding>;
@@ -121,6 +126,22 @@ export function createNativePushApi(baseUrl: string, fetcher: typeof fetch = fet
   const bindingPath = (id: string) => resourcePath + "/subscriptions/" + encodeURIComponent(id);
 
   return {
+    async chatPresence(signal, userId) {
+      return call(signal, userId, async innerSignal => {
+        const response = await fetcher(apiUrl + "/native-push/chat-presence", { method: "GET", cache: "no-store", signal: innerSignal,
+          headers: { Accept: "application/json", "x-expected-user-id": userId } });
+        if (!response.ok) throw new NativePushApiError(response.status);
+        return nativeChatPresenceSchema.parse(await response.json());
+      });
+    },
+    async updateChatPresence(input, signal, userId) {
+      return call(signal, userId, async innerSignal => {
+        const response = await fetcher(apiUrl + "/native-push/chat-presence", { method: "POST", cache: "no-store", signal: innerSignal,
+          headers: { Accept: "application/json", "Content-Type": "application/json", "x-expected-user-id": userId }, body: JSON.stringify(input) });
+        if (!response.ok) throw new NativePushApiError(response.status);
+        return nativeChatPresenceSchema.parse(await response.json());
+      });
+    },
     async open(reference, signal, userId) {
       return call(signal, userId, async innerSignal => {
         const response = await fetcher(apiUrl + "/native-push/open?reference=" + encodeURIComponent(JSON.stringify(reference)), {
@@ -128,7 +149,8 @@ export function createNativePushApi(baseUrl: string, fetcher: typeof fetch = fet
         });
         if (!response.ok) throw new NativePushApiError(response.status);
         return z.discriminatedUnion("kind", [z.object({ kind: z.literal("test"), childId: z.null(), taskId: z.null() }).strict(),
-          z.object({ kind: z.literal("care"), childId: z.uuid(), taskId: z.uuid() }).strict()]).parse(await response.json());
+          z.object({ kind: z.literal("care"), childId: z.uuid(), taskId: z.uuid() }).strict(),
+          z.object({ kind: z.literal("chat"), childId: z.uuid(), messageId: z.uuid() }).strict()]).parse(await response.json());
       });
     },
     resetOnline,

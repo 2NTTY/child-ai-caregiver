@@ -1,0 +1,38 @@
+{
+  "dateHongKong": "2026-11-12",
+  "scope": "REQ-010 / AC-PROACTIVE-01 through 03, isolated local integration",
+  "adminDemo": {
+    "environment": "Auth and Firestore emulators, local native notification inbox",
+    "observed": ["One authenticated admin POST", "Same operation receipt and main chat message on readback", "One inbox entry", "Persisted result readable after restart"],
+    "delivery": "stopped/local_preview_not_sent",
+    "modelCalls": 0,
+    "externalNotifications": 0
+  },
+  "worker": [
+    {
+      "runId": "2d92f5b6-48fb-4922-b9e9-5d15c745e78c",
+      "state": "stopped",
+      "reason": "model_limit",
+      "observation": "The earlier bounded run rejected the attempted presentation arguments before termination.",
+      "modelCalls": 3,
+      "toolCalls": 3,
+      "queryEmbeddings": 0,
+      "knownInputTokens": 24678,
+      "knownOutputTokens": 137
+    },
+    {
+      "runId": "8b44bc97-7b0a-4565-9a46-263b7fba43ba",
+      "provider": "Vertex Gemini using the production worker entry and local synthetic household data",
+      "state": "completed",
+      "outcome": "no_action",
+      "modelCalls": 2,
+      "toolCalls": 2,
+      "queryEmbeddings": 0,
+      "knownInputTokens": 17433,
+      "knownOutputTokens": 77,
+      "persistedRunReadBack": true,
+      "externalNotifications": 0
+    }
+  ],
+  "separateReleaseChecks": ["Production service and index readiness", "Signed compatible Android install", "Device receives the demo with the App closed", "Opens the exact message and replies", "Web reads back that same reply"]
+}

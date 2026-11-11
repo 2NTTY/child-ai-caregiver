@@ -4,7 +4,7 @@ import { VoiceMessage } from '../production/VoiceMessage';
 import { OfficialHelpCards } from '../components/chat/OfficialHelpCards';
 import { AGENT_PROGRESS_LABELS } from '../../../src/shared/agent-feedback';
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { usePathname, useRouter } from "expo-router";
+import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type PressableStateCallbackType, type ScrollView as NativeScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import { AppButton, SectionCard } from "../components/ui";
@@ -18,6 +18,8 @@ import { chatColors, chatFont, chatLayout, chatType } from "../components/chat/c
 import { useProduction } from "../production/ProductionProvider";
 import { AgentConversation } from "../production/AgentConversation";
 import { ChatPhotoMessage } from "../production/ChatPhotoMessage";
+import { NotificationChatTarget } from "../production/NotificationChatTarget";
+import { useChatExposure, useChatForeground } from "../production/useChatExposure";
 import { usePreviewLeaveGuard, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { proposalExpired, publicAnswerSources } from "../agent-view-model";
 import { colors, mobileLayout } from "../theme";
@@ -30,6 +32,7 @@ const activityRailMinimum = chatLayout.maxWidth + 2 * (activityRail.width + acti
 const runPhases = { running: "thinking", completed: "complete", stopped: "stopped", unknown: "unknown" } satisfies Record<string, ChatReplyPhase>;
 export default function ChatPage() {
   const { scopeKey } = useProduction();
+  const { messageId } = useLocalSearchParams<{ messageId?: string }>();
   const customBackground = useCustomBackground();
   const viewportWidth = useWindowDimensions().width;
   const [paneWidth, setPaneWidth] = useState(0), [pageWidth, setPageWidth] = useState(0);
@@ -38,12 +41,14 @@ export default function ChatPage() {
       <ChatContents key={scopeKey ?? "no-authorized-child"} compact={(paneWidth || viewportWidth) < mobileLayout.breakpoint}
         externalActivity={pageWidth >= activityRailMinimum} onPaneLayout={event => setPaneWidth(event.nativeEvent.layout.width)} />
     </View>
+    <NotificationChatTarget key={`${scopeKey}:${messageId}`} />
   </View>;
 }
 function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   compact: boolean; externalActivity?: boolean; onPaneLayout?(event: LayoutChangeEvent): void;
 }) {
   const pathname = usePathname(), router = useRouter(), navigate = usePreviewNavigation();
+  const { messageId: notificationMessageId } = useLocalSearchParams<{ messageId?: string }>();
   const { model, actions, scopeKey, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
     addAgentAttachment, removeAgentAttachment, composerFocusRequest, sendChat, requestChatReply, agentRuns, agentModel,
     voiceUpload, checkVoiceUpload, fileUpload, checkFileUpload, photoUpload, checkPhotoUpload, agentPending, readAgentPending, authorization, chatWritesAllowed, selectAgentRun, openAgentSource } = useProduction();
@@ -54,6 +59,8 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   const [followRequest, setFollowRequest] = useState<string>();
   const detailsTrigger = useRef<View | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false), [privacyOpen, setPrivacyOpen] = useState(false);
+  const foreground = useChatForeground(), [visibleIds, setVisibleIds] = useState<string[]>([]);
+  useChatExposure(foreground && pathname === "/chat" && !notificationMessageId && !detailsOpen && !privacyOpen, visibleIds);
   const previous = useRef({ ids: new Set(chat.messages.map(item => item.id)), busy: chat.busy });
   const lastMessage = chat.messages[chat.messages.length - 1];
   const newReplyId = lastMessage?.role === "model" && !previous.current.ids.has(lastMessage.id) && previous.current.busy === "reply" ? lastMessage.id : undefined;
@@ -142,6 +149,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
     </BackgroundSurface>
     <BackgroundSurface frosted testID="chat-reading-panel" onLayout={onPaneLayout} style={styles.readingPanel} activeStyle={styles.boundedReadingPanel}>
     <ChatTimeline items={child ? chat.messages : []} recentLimit={6} compact={compact} presentation="conversation" emptyState={empty}
+      onVisibleItems={ids => setVisibleIds(previous => previous.join(",") === ids.join(",") ? previous : ids)}
       history={{ cursor: child ? chat.nextCursor : null, loading: chat.loadingOlder,
         enabled: !!child && !busy && !chat.loading && chat.online, load: () => chatController.loadOlderMessages() }}
       footer={feedback} scrollRef={scrollRef} controlsRef={timelineRef} followRequest={followRequest} newReplyId={newReplyId} renderItem={message => {

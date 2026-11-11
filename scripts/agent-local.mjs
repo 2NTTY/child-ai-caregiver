@@ -14,15 +14,18 @@ const inspectionArgs = [...args].filter(arg => arg === '--inspect-knowledge' || 
 const inspection = inspectionArgs.length === 1;
 if (inspectionArgs.length > 1) throw Error('Choose one knowledge work to inspect');
 if ([...args].some(arg => !['--reset', '--confirm-local-reset', '--no-web', '--no-model', '--no-watch', '--prepare-knowledge',
-  '--maintain-knowledge', '--live-source', '--new-knowledge-work', '--knowledge-watch=fhs-solid-food', '--knowledge-watch=fhs-feeding-booklet-en', '--help'].includes(arg)
+  '--maintain-knowledge', '--live-source', '--new-knowledge-work', '--knowledge-watch=fhs-solid-food', '--knowledge-watch=fhs-feeding-booklet-en', '--demo-notifications', '--help'].includes(arg)
   && !inspectionArgs.includes(arg))) throw Error('Unknown local Agent option');
 if (inspection && ['--reset', '--prepare-knowledge', '--maintain-knowledge'].some(arg => args.has(arg)))
   throw Error('Knowledge inspection cannot reset data, prepare or start maintenance');
 if (!args.has('--maintain-knowledge') && [...args].some(arg => arg === '--live-source' || arg === '--new-knowledge-work' || arg.startsWith('--knowledge-watch=')))
   throw Error('Knowledge work options require --maintain-knowledge');
 if (args.has('--maintain-knowledge') && args.has('--prepare-knowledge')) throw Error('Choose preparation or maintenance, not both');
+if (args.has('--demo-notifications') && (!args.has('--no-model') || inspection || args.has('--maintain-knowledge') || args.has('--prepare-knowledge') || args.has('--reset')))
+  throw Error('Local notification demo requires --no-model and cannot inspect, reset or run knowledge work');
 if (args.has('--help')) {
   console.log('agent:local [--no-web] [--no-model] [--no-watch]\nSet GEMINI_API_KEY or LOCAL_AGENT_CONFIG (protected JSON). ADC: LOCAL_MODEL_PROVIDER=vertex-adc, LOCAL_MODEL_PROJECT.\nFirst knowledge preparation: --prepare-knowledge (at most one paid embedding; later starts reuse it).\nIndependent maintenance: --maintain-knowledge [--knowledge-watch=fhs-solid-food|fhs-feeding-booklet-en] [--live-source] [--new-knowledge-work]. Default: curated fixture; original work ID reused.\nInspect saved work without a model or credentials: --inspect-knowledge[=<operation-fingerprint>].\nReset only this worktree: --reset --confirm-local-reset');
+  console.log('Local notification demo: --no-model --demo-notifications (fixed emulator account/child, synthetic Android inbox binding; never externally sent).');
   process.exit(0);
 }
 const exists = async path => { try { await access(path); return true; } catch { return false; } };
@@ -42,7 +45,7 @@ await new Promise((done, reject) => { singleton.once('error', reject); singleton
 if (args.has('--reset')) {
   if (!args.has('--confirm-local-reset')) throw Error('Reset requires --confirm-local-reset; no data was removed');
   // directory is a fixed child of this checkout, never a config-supplied path.
-  for (const item of ['state.json', 'export', 'export-next', 'export-previous']) await rm(join(directory, item), { recursive: true, force: true });
+  for (const item of ['state.json', 'demo-bootstrap.json', 'export', 'export-next', 'export-previous']) await rm(join(directory, item), { recursive: true, force: true });
   console.log('Removed only this worktree local data. Model credential files were preserved.');
   singleton.close(); process.exit(0);
 }
@@ -228,6 +231,19 @@ try {
     console.log('Local knowledge saved. Normal startup reuses the published version and vector.');
     await stop();
   } else {
+  if (args.has('--demo-notifications')) {
+    await new Promise((done, reject) => {
+      const child = start('demo-bootstrap', [join(root, 'scripts', 'agent-local-demo.mjs')], env, root, true);
+      child.once('exit', code => code === 0 ? done() : reject(Error('Local demo bootstrap failed; inspect ' + join(directory, 'demo-bootstrap.log'))));
+    });
+    const demo = JSON.parse(await readFile(join(directory, 'demo-bootstrap.json'), 'utf8'));
+    if (demo.projectId !== saved.projectId || demo.email !== saved.email || !demo.userId || !demo.childId) throw Error('Local demo target binding mismatch');
+    env.YUBAN_DEMO_USER_ID = demo.userId; env.YUBAN_DEMO_CHILD_ID = demo.childId;
+    console.log('Local-only notification demo target: ' + demo.childId + '\nSynthetic Android binding: ' + demo.bindingId
+      + '\nNever externally sent. After normal local login, click one demo in /admin and inspect /__local/inbox.');
+    if (demo.quietHours?.active) console.log('Quiet hours are currently active (' + demo.quietHours.start + '-' + demo.quietHours.end + ' ' + demo.quietHours.timeZone
+      + '); the demo may remain quiet_hours until the existing policy permits delivery. No preference was changed.');
+  }
   if (!args.has('--no-web')) start('web', [join(root, 'node_modules', 'expo', 'bin', 'cli'), 'start', '--web', '--localhost', '--port', String(basePort + 1)], publicEnv, join(root, 'frontend'));
   // Native watch-path disables dependency watching on supported hosts. Windows
   // dependency activity must not restart an in-flight paid run; prompt edits do.
