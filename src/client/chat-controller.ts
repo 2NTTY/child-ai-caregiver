@@ -391,6 +391,7 @@ export class ChatController {
     if (!this.current(scope)) return null;
     this.update({ remoteReply: result, replyError: result?.status === "running" ? null
       : result ? result.status === "completed" ? "原運行已完成，正在核對已保存的回覆。"
+        : result.status === "stopped" && result.stopReason === "busy" ? CHAT_REPLY_ERROR_COPY.ai_capacity_busy
         : agentStopMessage(result.stopReason) ?? "原運行未完成，請查看原結果；沒有重新執行。" : null,
       messages: result ? this.state.messages.map(item => item.id === messageId ? { ...item, agentRunId: result.runId } : item) : this.state.messages });
     return result;
@@ -471,6 +472,7 @@ export class ChatController {
 
   private async performReply(scope: RequestScope, messageId: string): Promise<void> {
     const childId = scope.childId!;
+    let capacityBusyReply: ChatReplyState | null = null;
     try {
       if (!await this.verifyIdentity(scope)) return;
       const reply = await this.api.requestReply(childId, messageId, scope.controller.signal, scope.userId, event => {
@@ -514,10 +516,14 @@ export class ChatController {
           if (childAccessDenied(recoveryError)) { this.forgetChild(childId); return; }
         }
       }
-      this.update({ replyError: notice });
+      const capacityBusy = error instanceof ChatApiError && error.code === "ai_capacity_busy";
+      const busyRunId = capacityBusy && this.state.feedback?.messageId === messageId ? this.state.feedback.runId : "";
+      if (capacityBusy) capacityBusyReply = { messageId, runId: busyRunId, status: "stopped", stopReason: "busy" };
+      this.update({ replyError: notice,
+        ...(busyRunId ? { messages: this.state.messages.map(item => item.id === messageId ? { ...item, agentRunId: busyRunId } : item) } : {}) });
       if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
         // Preserve the current text; a late history response must never replace a newer draft.
-        this.updateDraft(childId, error instanceof ChatApiError && error.code === "ai_capacity_busy"
+        this.updateDraft(childId, capacityBusy
           ? { phase: "draft", savedUserMessageId: null, candidateMessageId: null, knownIds: [], notice }
           : { phase: "reply_failed", notice });
       }
@@ -526,7 +532,7 @@ export class ChatController {
         if (this.state.drafts[childId]?.phase === "replying") {
           this.updateDraft(childId, { phase: "reply_failed", notice: "暫未能確認回覆，原文已保存。請重新讀取聊天後再試。" });
         }
-        this.update({ busy: null, replyingMessageId: null, feedback: null, remoteReply: null });
+        this.update({ busy: null, replyingMessageId: null, feedback: null, remoteReply: capacityBusyReply });
         void this.refreshMetadata();
       }
     }

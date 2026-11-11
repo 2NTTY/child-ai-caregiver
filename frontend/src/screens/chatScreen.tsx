@@ -3,6 +3,7 @@ import { ChatFileMessage } from '../production/ChatFileMessage';
 import { VoiceMessage } from '../production/VoiceMessage';
 import { OfficialHelpCards } from '../components/chat/OfficialHelpCards';
 import { AGENT_PROGRESS_LABELS } from '../../../src/shared/agent-feedback';
+import { agentStopMessage } from '../../../src/shared/agent-stop-message';
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "expo-router";
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type PressableStateCallbackType, type ScrollView as NativeScrollView } from "react-native";
@@ -110,7 +111,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
     {chat.busy === "reply" && chat.feedback?.cards.length ? <OfficialHelpCards ids={chat.feedback.cards} /> : null}
     {chat.error ? <Text accessibilityRole="alert" style={styles.error}>{chat.error}</Text> : null}
     {draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim()) ? <Text accessibilityRole="alert" style={styles.warning}>{draft.notice}</Text> : null}
-    {chat.replyError && chat.replyError !== draft?.notice ? <Text accessibilityRole="alert" style={styles.error}>{chat.replyError}</Text> : null}
+    {chat.replyError && (!(draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim())) || chat.replyError !== draft?.notice) ? <Text accessibilityRole="alert" style={styles.error}>{chat.replyError}</Text> : null}
     {chat.error || phase === "save_unknown" || phase === "checked" ? <AppButton label={phase === "save_unknown" || phase === "checked" ? "重新讀取並查核原保存" : "重試讀取聊天"}
       variant="quiet" density="compact" loading={chat.loading} disabled={busy || chat.loading || !chat.online} onPress={() => { void chatController.reloadMessages(); }} /> : null}
     {chat.cancelNotice ? <Text accessibilityLiveRegion="polite" style={styles.warning}>{chat.cancelNotice}</Text> : null}
@@ -149,8 +150,11 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
         const sourcesMatch = run?.text === message.text || !!run?.text && !!run.stopReasonLabel
           && (run.status === "stopped" || run.status === "unknown")
           && message.text === `這次回覆未完成：${run.stopReasonLabel}。\n\n${run.text}`;
+        const stoppedWithoutQueue = run?.status === "stopped" && run.stopReasonLabel === agentStopMessage("busy")
+          || chat.remoteReply?.messageId === message.id && chat.remoteReply.status === "stopped" && chat.remoteReply.stopReason === "busy";
         const pendingReply = message.role === "user" && message.authorUserId === chat.userId && chat.messages.slice(-chat.limit).some(item => item.id === message.id)
-          && !chat.messages.some(item => item.role === "model" && item.inReplyTo === message.id);
+          && !chat.messages.some(item => item.role === "model" && item.inReplyTo === message.id)
+          && !stoppedWithoutQueue;
         return <ChatMessage message={{ id: message.id, role: message.role === "model" ? "assistant" : "user", text: message.text,
           phase: run ? runPhases[run.status] : undefined, sources: sourcesMatch ? publicAnswerSources(run) : undefined }}
           phaseLabel={run?.status === "running" ? "運行仍在處理" : undefined} onLocateSource={locateSource}
