@@ -41,6 +41,8 @@ export function createFirestoreMixedChat(options:FirestoreDomainOptions) {
   }
   async function checkSelection(b:Binding, selection:Selection, expected?:z.infer<typeof assistantTaskScopeSchema>) {
     let membership:MixedRoomRecord['membership']=null;
+    const versions:string[]=[];
+    let taskScope:z.infer<typeof assistantTaskScopeSchema>={kind:'personal'};
     for (const childId of selection.childIds) {
       if (selection.scope.kind === 'personal') {
         if (!await b.readChild(childId)) domainReject('not_found',404);
@@ -50,16 +52,19 @@ export function createFirestoreMixedChat(options:FirestoreDomainOptions) {
           if (!member) domainReject('class_required',403);
           if (expected?.kind === 'class' && (access.basis.spaceVersion !== expected.spaceVersion
             || (access.basis.teacherSpaceVersion ?? null) !== expected.teacherSpaceVersion)) domainReject('sharing_scope_changed');
+          versions.push(firestoreDomainHash([childId,access.basis,access.binding.changeSeq]));
+          taskScope={kind:'class',spaceId:member.spaceId,spaceVersion:access.basis.spaceVersion,teacherSpaceVersion:access.basis.teacherSpaceVersion ?? null};
           return {membershipId:member.membershipId,membershipScopeId:member.membershipScopeId};
         });
       }
     }
-    return membership;
+    return {membership,taskScope,basis:firestoreDomainHash([b.authorizationVersion,b.changeSeq,selection.scope,selection.childIds,versions])};
   }
   async function authorizeRoom(b:Binding,room:MixedRoomRecord) {
     const current=await checkSelection(b,room);
-    if (current?.membershipId !== room.membership?.membershipId || current?.membershipScopeId !== room.membership?.membershipScopeId)
+    if (current.membership?.membershipId !== room.membership?.membershipId || current.membership?.membershipScopeId !== room.membership?.membershipScopeId)
       domainReject('sharing_scope_changed',403);
+    return current;
   }
   async function readRoom(b:Binding,id:string) {
     const room=openRoom(b,await b.transaction.get(roomRef(id)),id);
@@ -69,8 +74,27 @@ export function createFirestoreMixedChat(options:FirestoreDomainOptions) {
   function sealRoom(b:Binding,room:MixedRoomRecord) {
     return {...data.tags(b.scope), roomId:room.id, ...data.seal('mixed-room',room.id,b.scope,mixedRoomRecordSchema,room,room.version)};
   }
+  function readMessageIn(b:Binding,room:MixedRoomRecord,id:string) {
+    return b.transaction.get(messageRef(id)).then(row=>openMessage(b,row,id,room));
+  }
 
   return {
+    async sourceIn(b:Binding,roomId:string,messageId:string,includeEarlier=false) {
+      if (b.sharedAccess || b.actorUserId !== b.scope.ownerUserId || b.scope.childId !== '00000000-0000-0000-0000-000000000000')
+        domainReject('private_scope_unavailable',403);
+      const room=openRoom(b,await b.transaction.get(roomRef(roomId)),roomId);
+      const {basis,taskScope}=await authorizeRoom(b,room);
+      const message=await readMessageIn(b,room,messageId), earlier:MixedChatMessage[]=[];
+      let previous=message.previousMessageId;
+      if (includeEarlier) {
+        while (previous && earlier.length<3) {
+          const row=await readMessageIn(b,room,previous);
+          if (row.version !== message.version-earlier.length-1) domainReject('mixed_chat_binding',500);
+          earlier.unshift(publicMessage(row)); previous=row.previousMessageId;
+        }
+      }
+      return {room:publicRoom(room),message:publicMessage(message),basis,taskScope,earlier,hasEarlier:previous!==null};
+    },
     async create(userId:string,raw:unknown) {
       const input=domainParse(mixedChatCreateSchema,raw), childIds=[...input.childIds].sort();
       const id=mixedRecordId('mixed-room',userId,input.operationId), fingerprint=firestoreDomainHash({...input,childIds});
@@ -83,7 +107,7 @@ export function createFirestoreMixedChat(options:FirestoreDomainOptions) {
           return {room:publicRoom(room)};
         }
         const scope:MixedChatRoom['scope']=input.scope.kind==='class'?{kind:'class',spaceId:input.scope.spaceId}:{kind:'personal'};
-        const membership=await checkSelection(b,{scope,childIds},input.scope);
+        const {membership}=await checkSelection(b,{scope,childIds},input.scope);
         const change=await b.prepareChange(input.operationId,'chat',false), now=new Date().toISOString();
         const room:MixedRoomRecord={id,scope,childIds,membership,version:1,createdAt:now,updatedAt:now,
           operationId:input.operationId,fingerprint,latestMessageId:null};

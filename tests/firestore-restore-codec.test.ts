@@ -34,6 +34,7 @@ import { indexBatchSchema, indexBatchReceiptSchema, indexBatchSort } from '../se
 import { FIREBASE_BACKUP_COLLECTION_SUFFIXES } from '../server/firestore-backup.ts';
 import { transferBatchSchema, transferResultSchema, transferItemId } from '../server/knowledge-transfer-records.ts';
 import { mixedRoomRecordSchema, mixedMessageRecordSchema, mixedRecordId } from '../server/mixed-chat-records.ts';
+import { firestoreAgentRunSchema, firestoreAgentClaimSchema } from '../server/firestore-agent-runs.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000', projectId = 'synthetic-restore-project', namespace = 'synthetic_restore';
 const at = '2026-10-11T12:00:00.000Z', digest = 'a'.repeat(64);
@@ -53,6 +54,43 @@ function record<T>(data: FirestoreDomainData, suffix: string, kind: string, id: 
   schema: z.ZodType<T>, value: T, version = 1) {
   return { path: namespace + '_' + suffix + '/' + firestoreDomainHash([kind, id]), data: data.seal(kind, id, current, schema, value, version) };
 }
+
+test('restore permits account scope only for mixed agent runs and claims while preserving stopped execution and deduplication', () => {
+  const f = fixture(), runId = randomUUID(), sourceMessageId = randomUUID();
+  const mixedChat = { roomId: randomUUID(), scope: { kind: 'personal' as const }, childIds: [scope.childId], basis: digest };
+  const mixedRun = firestoreAgentRunSchema.parse({ id: runId, childId: NIL, ownerUserId: scope.ownerUserId,
+    workspaceId: scope.workspaceId, storageEpoch: scope.storageEpoch, authorizationVersion: '1', dataVersion: scope.storageEpoch + ':4',
+    trigger: { kind: 'interactive', reference: sourceMessageId }, sourceMessageId, recipeId: 'product-interactive', mixedChat,
+    state: 'running', stopReason: null, createdAt: at, expiresAt: '2026-10-11T12:01:00.000Z', result: null });
+  const { mixedChat: omittedMixedChat, ...ordinaryRun } = mixedRun;
+  void omittedMixedChat;
+  for (const mixed of [false, true]) {
+    const current = mixed ? ownerScope : scope;
+    const run = mixed ? mixedRun : firestoreAgentRunSchema.parse({ ...ordinaryRun, childId: scope.childId });
+    const claimId = JSON.stringify([current.ownerUserId, current.childId, 'interactive', sourceMessageId]);
+    const claim = firestoreAgentClaimSchema.parse({ runId, ...(mixed ? { mixedChat } : {}) });
+    const restoredRun = f.codec.decode(f.codec.transform(f.codec.decode(record(f.data, 'agent_runs', 'agent-run', runId,
+      current, firestoreAgentRunSchema, run)), input()));
+    assert.deepEqual(restoredRun.value, { ...run, storageEpoch: newEpoch, dataVersion: newEpoch + ':4', state: 'unknown', stopReason: 'interrupted' });
+    const originalClaim = record(f.data, 'agent_claims', 'agent-claim', claimId, current, firestoreAgentClaimSchema, claim);
+    const restoredClaim = f.codec.transform(f.codec.decode(originalClaim), input());
+    assert.equal(restoredClaim.path, originalClaim.path);
+    assert.deepEqual(f.codec.decode(restoredClaim).value, claim);
+  }
+  const claimId = (current: WorkRecoveryScope, kind = 'interactive') => JSON.stringify([current.ownerUserId, current.childId, kind, sourceMessageId]);
+  assert.deepEqual(f.codec.decode(record(f.data, 'agent_claims', 'agent-claim', claimId(scope, 'worker'), scope,
+    firestoreAgentClaimSchema, { runId })).value, { runId });
+  assert.throws(() => f.codec.decode(record(f.data, 'agent_claims', 'agent-claim', claimId(ownerScope), ownerScope,
+    firestoreAgentClaimSchema, { runId })), errors('restore_binding'));
+  assert.throws(() => f.codec.decode(record(f.data, 'agent_claims', 'agent-claim', claimId(scope), scope,
+    firestoreAgentClaimSchema, { runId, mixedChat })), errors('restore_binding'));
+  assert.throws(() => f.codec.decode(record(f.data, 'agent_claims', 'agent-claim', claimId(ownerScope, 'worker'), ownerScope,
+    firestoreAgentClaimSchema, { runId, mixedChat })), errors('restore_binding'));
+  assert.throws(() => f.codec.decode(record(f.data, 'agent_runs', 'agent-run', runId, scope,
+    firestoreAgentRunSchema, mixedRun)), errors('restore_binding'));
+  assert.throws(() => f.codec.decode(record(f.data, 'agent_runs', 'agent-run', runId, ownerScope,
+    z.unknown(), ordinaryRun)), errors('restore_record_invalid'));
+});
 
 test('mixed restore validates original bindings and rebuilds only scoped tags and the room locator', () => {
   const f = fixture(), operationId = randomUUID(), messageOperationId = randomUUID();

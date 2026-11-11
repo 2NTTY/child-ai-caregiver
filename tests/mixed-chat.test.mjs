@@ -7,18 +7,19 @@ import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestoreSharingStore } from '../server/firestore-sharing.ts';
 import { createFirestoreChatStore } from '../server/firestore-chat.ts';
 import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
+import { createFirestoreAgentRuns } from '../server/firestore-agent-runs.ts';
 import { createFirebaseRequestHandler } from '../server/firebase-app.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 
 test('mixed messages are account-private, idempotent and lose disclosure when class access ends', async () => {
   const { database } = serialFirestoreFixture();
   const options = { database, cipher: createStorageCipher(Buffer.alloc(32, 70)), namespace:'test_mixed', projectId:'demo-mixed',
-    serverClock: () => Date.parse('2026-11-11T00:00:00Z') };
+    serverClock: Date.now };
   const authority = createFirestoreAuthority(options), sharing = createFirestoreSharingStore(options);
   await authority.initializeControl({ generation:randomUUID(), enabled:true });
   for (const userId of ['owner','colleague']) {
     const email = userId+'@example.test';
-    await authority.issueInvitation({email, expiresAt:'2026-11-15T00:00:00Z',operationId:randomUUID()});
+    await authority.issueInvitation({email, expiresAt:new Date(Date.now()+86400000).toISOString(),operationId:randomUUID()});
     await authority.admitIdentity({userId,email,emailVerified:true});
     await authority.acknowledge({userId,policyVersion:SERVICE_POLICY_VERSION,operationId:randomUUID()});
   }
@@ -55,6 +56,16 @@ test('mixed messages are account-private, idempotent and lose disclosure when cl
   const sent=await call(path+'/messages',input);
   assert.equal(sent.status,201);
   const {message}=await sent.json();
+  const chat=createFirestoreChatStore(options);
+  const runs=createFirestoreAgentRuns({...options,chat,memory:{}});
+  const claimed=await runs.claimMixed(actor,room.id,message.id);
+  const repeated=await runs.claimMixed(actor,room.id,message.id);
+  assert.equal(claimed.created,true);
+  assert.equal(repeated.created,false);
+  assert.equal(repeated.runId,claimed.runId);
+  assert.equal(await runs.authorizeMixed(actor,room.id,message.id,claimed.runId),true);
+  assert.equal((await runs.mixedResult(actor,room.id,message.id,true)).stopReason,'cancelled');
+  assert.equal((await runs.claimMixed(actor,room.id,message.id)).state,'stopped');
   assert.equal((await (await call(path+'/messages',input)).json()).message.id,message.id);
   assert.equal((await call(path+'/messages',{...input,text:'另一問題'})).status,409);
   assert.equal((await call(path+'/messages',{...input,operationId:randomUUID()})).status,409);
@@ -80,4 +91,5 @@ test('mixed messages are account-private, idempotent and lose disclosure when cl
   assert.ok(!(await revoked.text()).includes(input.text));
   assert.deepEqual((await (await call('')).json()).rooms.map(r=>r.id),[both.room.id]);
   assert.equal((await call(path+'/messages',input)).status,403);
+  assert.equal(await runs.authorizeMixed(actor,room.id,message.id,claimed.runId),false);
 });
