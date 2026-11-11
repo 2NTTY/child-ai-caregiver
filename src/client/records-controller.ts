@@ -66,6 +66,8 @@ const PROVIDER_AUTH_NOTICE: Readonly<Record<string, string>> = Object.freeze({
   auth_popup_blocked: "登入視窗被瀏覽器阻擋。請允許此網站開啟彈出視窗，再親自按登入。",
   authentication_cancelled: "已取消第三方登入。你可以重新選擇登入方式。",
   auth_account_link_required: "這個電郵已使用另一種登入方式。請先以原有方式登入，再到帳戶設定連結 Google 或 Apple。",
+  invitation_unavailable: "請使用收到邀請的電郵地址。如邀請已過期，請聯絡邀請你的人續期。",
+  email_not_verified: "請先驗證收到邀請的電郵，再登入原帳戶連結第三方登入方式。",
   auth_credential_in_use: "這個第三方身份已連結至另一個帳戶。請以該身份登入原帳戶，或選擇其他身份。",
   auth_provider_already_linked: "這個登入方式已連結至本人帳戶。請重新讀取登入狀態及帳戶的登入方式。",
   auth_provider_disabled: "網站尚未啟用所選登入方式。請改用已可用方式，或聯絡管理員啟用。",

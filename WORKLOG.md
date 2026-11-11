@@ -4756,6 +4756,32 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - Related Current-State Correction：按已保存的 [PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 交付收據，校準根 PLAN／STATUS 唯一緊鄰 HC current 節：2026-11-05 13:00:09 UTC 正常合併至 `f453226f`，精確 head `74e7b66d0646fc2970af55eb864a6770cd63655a` 的 [CI 42030612566](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42030612566)／[CI 42031114003](https://github.com/2NTTY/child-ai-caregiver/actions/runs/42031114003) 各 8/8 與完整 frontend 型別、locked install／offline wrapper 成功；未部署。舊 HC WORKLOG／verification JSON 仍保留合併前快照，formal41 及原限制不進位，其他包不改。
 - Limitations / Next Action：完整 GR hook／host、scope／身份排程、瀏覽器／焦點／AT、原生、真 Firestore／API／家庭資料、模型及原正式矩陣未驗。先獨立 review 全部十檔，再由精確 head 必要 offline CI 執行 33 案及 frontend／root／server 三個原完整 config；clean install、正向完整 namespace wrapper 與 GitHub job 尚未跑，不能以本地 frontend／root PASS 代填 server gate。GR 未 commit、remote 寫入、開 PR、合併或部署。
 
+## 2026-11-08｜P4-HANDOVER01 本人附件還原與原站發布
+
+- 後端 #515、Web／Android 共用表單 #516 已合併。本人備份可比對原照片、錄音及一般檔案；清理已結束的刪除項目可以明確恢復，包內已有的轉錄隨原錄音接回。
+- 合成簽署包經匯出、上載、worker 及還原後讀回。修正了已選轉錄未計入批次總數，以及初版表單沒有送能力協商 header。後端兩條相關流程與完整 Server 型別、共用表單 12 條 owner 檢查與前端型別均通過。
+- 以當時原站版本 `2be85951` 加入兩份修改。發布 worktree 在 restore codec 遇到相鄰摘要改動，保留原站解碼器並加入已核對的附件世代校驗；重新驗過發行樹的簽署包還原。實際部署的 Git tree 為 `02e6c785`。站外 HTML、JS、健康及登入邊界均已核實。[版本、指紋與未驗範圍](artifacts/verification/P4_ORIGINAL_ATTACHMENTS_20261108.json)
+- 下一步補其餘本人備份範圍；真人帳戶、Android 新版本及完整災難還原另列。原 VM 已於 11 月 8 日啟動，12 月 8 日 22:32:58（香港）自動關機。
+
+### 2026-11-08 · P4-HANDOVER01 帳戶通知偏好
+
+- [#518](https://github.com/2NTTY/child-ai-caregiver/pull/518) 將普通設定讀寫接回文檔包。無孩子的本人備份可選取偏好，還原前比對當前版本；與頭像一起還原時，同一批次分別記錄兩項結果。[#519](https://github.com/2NTTY/child-ai-caregiver/pull/519) 接回共用表單，沿原上載與批次查回結果。
+- 最先失敗的合成流程揭示缺少原件比較接點；另修正測試未預期原上載已有清理工作的斷言。最終四項後端流程及原 HTTP 上載測試通過。共用 client／owner 19 項及四個針對畫面檢查通過。兩條既有畫面斷言仍失敗，分別涉及私人交代測試寫死能力清單、孩子頭像提示的文字間距；保留失敗狀態。
+- 原站選取前版及兩批變更發布。未用正式帳戶還原設定、發通知或建立 APK。雲端完整災難恢復仍待驗。[部署證據](artifacts/verification/P4_ACCOUNT_PREFERENCES_20261108.json)
+
+## 2026-11-09　S12-W02 iOS 系統分享
+
+- 從 `5f3cd680` 接既有收件、草稿和資料包服務。採用已安裝的 Expo Sharing 產生原生 target，首次工程檢查確認舊配置尚未啟用；現已用 Expo 57 範本生成 Xcode 工程，核對嵌入位置、兩個 target 的 App Group、extension-only API 設定，以及原生程式改動的發布分類。
+- 收件流程以合成檔案核對同名隔離、重開、切換帳戶和遲到複製。已加入草稿或已接納的匯入不因裝置副本清理失敗而再執行。共用頁面、Android 原有 ZIP 接線及前端型別通過。Node 端 ZIP 測試補上原生 UUID 產生器的測試替身後通過。
+- 尚未以 Xcode 編譯或在 iPhone 收件；簽署、TestFlight、裝置驗收及其他平台此前未驗項維持原狀。此次沒有雲端 build、部署或模型呼叫。
+
+### 2026-11-09 · P4-AUTH01 快捷登入准入
+
+- 修正前，同 UID 新增未批准 provider 的回歸案例未有拒絕。修正後，合成受邀身份沿 Web 和原生交換證明目前裝置與原電郵，再批准 Apple 私密轉寄身份。另一個 Apple 身份、只列在 token 名單的 provider 及在交易中撤銷的裝置均被拒絕。
+- 11 月 8 日唯讀核實原站 `allowDuplicateEmails=false`，原網域與密碼登入已配置，Google／Apple 的 provider 設定尚未建立。沒有更改 Auth 配置、寄信或執行真人登入。
+- Node 24 執行 `tests/firebase-auth.test.ts` 與 `tests/firestore-authority.test.ts`，41 項通過；Server 型別及 diff 檢查通過。新增的首次邀請斷言另在該流程通過。測試使用合成 token 及 Firestore 交易替身。
+- 共用客戶端仍需在確認時帶目標方式；Firebase 已連結但產品未收到原請求時，應重新驗證已連結的身份才補交。正式開放前另驗 Apple 團隊配置與本人登入。
+
 
 <a id="log-20261105-soft-budget"></a>
 ## 2026-11-05 UTC｜REQ-005 PR 6 集中資源政策與 0.25 軟預算管理

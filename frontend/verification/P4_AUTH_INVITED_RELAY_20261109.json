@@ -1,0 +1,15 @@
+{
+  "package": "P4-AUTH01",
+  "date": "2026-11-09",
+  "scope": "Shared Web/native invited account linking and recovery",
+  "checks": [
+    {"test": "firebase-client-auth and native-provider-adapter", "passed": 13, "failed": 0},
+    {"test": "frontend TypeScript", "passed": true},
+    {"test": "Firebase JS SDK 13.0.0 / Auth Emulator in firebase-tools 15.34.0, isolated demo project on loopback",
+     "setup": "Create a password account for the invited address, mark its synthetic email verified in the emulator, then sign in again. Use a synthetic Apple identity with a different relay address.",
+     "operations": ["linkWithCredential", "reauthenticateWithCredential", "signOut then signInWithCredential"],
+     "checkedAfterEach": ["same Firebase UID", "primary email still equals the invited address", "fresh ID token sign_in_provider is apple.com", "token contains the expected Apple subject"]}
+  ],
+  "initialFailures": ["Interrupted-link retry called link a second time", "Sandbox blocked the emulator's loopback connection, repeated against loopback with access"],
+  "pending": ["Backend PR 524 and compatible client release", "Real Apple/Google identity and email relay", "Browser popup and native operating-system sign-in"]
+}

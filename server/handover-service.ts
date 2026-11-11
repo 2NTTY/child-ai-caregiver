@@ -84,7 +84,8 @@ export function createHandoverService(options: FirestoreDomainOptions & { export
       return { ...file, filename: '育有方資料包-' + job.id + '.zip', dispose: () => removeSpool(directory) };
     } catch (error) { await removeSpool(directory); throw error; }
   }
-  return { capabilities: (classDocumentReview = false, accountBackup = false) => ({
+  return { capabilities: (classDocumentReview = false, accountBackup = false, notificationPreferences = false) => ({
+    ...(notificationPreferences && options.exporter.notificationPreferencesAvailable ? { notificationPreferencesBackup: true as const } : {}),
     ...(accountBackup && options.exporter.accountAvatarAvailable ? { accountAvatarBackup: true as const } : {}), classModules: options.exporter.forClass
     ? (options.exporter.classModules ?? []).filter(module => classDocumentReview || (module !== 'documents' && module !== 'attachments')) : [] }),
     create: async (owner: string, raw: unknown) => {
@@ -92,8 +93,10 @@ export function createHandoverService(options: FirestoreDomainOptions & { export
         const command = domainParse(handoverClassExportCommandSchema, raw);
         if (!options.exporter.forClass || !command.selection.modules.every(module => options.exporter.classModules?.includes(module)))
           domainReject('package_class_source_unavailable', 503);
-      } else if (!options.exporter.accountAvatarAvailable && domainParse(handoverExportCommandSchema, raw).selection.accountAvatar) {
-        domainReject('avatar_export_unavailable', 503);
+      } else {
+        const command = domainParse(handoverExportCommandSchema, raw);
+        if (!options.exporter.accountAvatarAvailable && command.selection.accountAvatar) domainReject('avatar_export_unavailable', 503);
+        if (!options.exporter.notificationPreferencesAvailable && command.selection.notificationPreferences) domainReject('package_section_not_connected', 503);
       }
       return jobs.create(owner, raw);
     }, get: jobs.get, list: jobs.list, cancel: jobs.cancel, processExport, cleanup, download,

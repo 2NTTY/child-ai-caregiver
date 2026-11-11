@@ -1,9 +1,11 @@
 import type { AssistantAttachment } from './assistant-draft.ts';
 import type { SelectedPackage } from './production/HandoverImportOwner.ts';
 
-export type IncomingSharePayload = { value: string; shareType: 'text' | 'url' | 'image' | 'audio' | 'video' | 'file'; mimeType?: string };
+export type IncomingSharePayload = { value: string; shareType: 'text' | 'url' | 'image' | 'audio' | 'video' | 'file'; mimeType?: string; localShareId?: string };
 export interface IncomingSharePlatform {
-  read(): readonly IncomingSharePayload[];
+  read(remaining?: number, identity?: string | null): readonly IncomingSharePayload[];
+  acknowledge?(payloads: readonly IncomingSharePayload[], identity?: string | null): void;
+  discard?(payload: IncomingSharePayload): void;
   clear(): void;
   subscribe(listener: () => void): () => void;
   prepare(payload: IncomingSharePayload): Promise<AssistantAttachment>;
@@ -25,21 +27,36 @@ export type IncomingShareSnapshot = { items: readonly IncomingShareItem[]; busyI
 export function createIncomingShareInbox(platform: IncomingSharePlatform) {
   let state: IncomingShareSnapshot = {items:[],busyId:null,error:null};
   let identity: string | null = null, generation = 0, serial = 0, mustClearNative = false;
+  let accountBinding: string | null = null;
   let scope: string | null = null;
   let packageRead: AbortController | null = null;
+  const pendingReleases = new Map<number, IncomingSharePayload>();
   const listeners = new Set<() => void>();
   const update = (patch: Partial<IncomingShareSnapshot>) => { state={...state,...patch}; listeners.forEach(fn=>fn()); };
   const clear = () => { generation++; packageRead?.abort(); update({items:[],busyId:null,error:null}); };
+  const retryReleases = () => {
+    for (const [id,payload] of pendingReleases) {
+      try { platform.discard?.(payload); pendingReleases.delete(id); } catch { /* Keep adopted receipts out of the selectable inbox while cleanup retries. */ }
+    }
+    return pendingReleases.size === 0;
+  };
+  const adopted = (item: IncomingShareItem) => {
+    pendingReleases.set(item.id,item.payload);
+    update({items:state.items.filter(value=>value.id!==item.id),error:null});
+    if(!retryReleases())update({error:'內容已接收；裝置分享副本尚未清理，稍後會重試，請沿原草稿或原匯入操作繼續。'});
+  };
   return {
     getSnapshot: () => state,
     subscribe(listener:()=>void) { listeners.add(listener); return ()=>{listeners.delete(listener);}; },
-    observeIdentity(next:string|null) {
-      if(identity===next)return;
+    observeIdentity(next:string|null,binding:string|null=null) {
+      const nextBinding=next===null?null:binding;
+      if(identity===next&&accountBinding===nextBinding)return;
       if(identity!==null) {
         clear(); mustClearNative=true;
-        try {platform.clear();mustClearNative=false;} catch { /* Retry cleanup before accepting a new account's native input. */ }
+        try {platform.clear();pendingReleases.clear();mustClearNative=false;} catch { /* Retry cleanup before accepting a new account's native input. */ }
       }
       identity=next;
+      accountBinding=nextBinding;
     },
     observeScope(next:string|null) {
       if(scope===next)return;
@@ -49,21 +66,35 @@ export function createIncomingShareInbox(platform: IncomingSharePlatform) {
     },
     receive() {
       try {
-        if(mustClearNative) {platform.clear();mustClearNative=false;return;}
-        const raw=platform.read();
+        if(mustClearNative) {platform.clear();pendingReleases.clear();mustClearNative=false;}
+        const cleaned=retryReleases();
+        const raw=platform.read(Math.max(0,20-state.items.length),accountBinding);
         if(!raw.length)return;
-        if(raw.length+state.items.length>20) {update({error:'分享項目太多，請先處理目前內容，再重新分享。'});return;}
         if(raw.some(item=>!item || !['text','url','image','audio','video','file'].includes(item.shareType)
           || typeof item.value!=='string' || !item.value.trim() || item.value.length>10_000
-          || item.mimeType!==undefined && (typeof item.mimeType!=='string'||item.mimeType.length>200))) {
-          platform.clear();update({error:'分享內容無法讀取或超出每則文字限制，請從來源重新選取。'});return;
+          || item.mimeType!==undefined && (typeof item.mimeType!=='string'||item.mimeType.length>200)
+          || item.localShareId!==undefined && (typeof item.localShareId!=='string'||!item.localShareId||item.localShareId.length>1000))) {
+          if(!platform.acknowledge)platform.clear();
+          update({error:'分享內容無法讀取或超出每則文字限制，請從來源重新選取。'});return;
         }
+        const staged = new Set([...state.items.map(item=>item.payload.localShareId),...[...pendingReleases.values()].map(item=>item.localShareId)].filter(id=>id!==undefined));
+        const fresh=raw.filter(item=>{
+          if(item.localShareId===undefined)return true;
+          if(staged.has(item.localShareId))return false;
+          staged.add(item.localShareId);return true;
+        });
+        if(fresh.length+state.items.length>20) {update({error:'分享項目太多，請先處理目前內容，再重新分享。'});return;}
         // A second lifecycle callback cannot stage the same native intent twice.
-        platform.clear();
-        update({items:[...state.items,...raw.map(payload=>({id:++serial,payload:{...payload}}))],error:null});
+        if(platform.acknowledge)platform.acknowledge(raw,accountBinding);else platform.clear();
+        update({items:[...state.items,...fresh.map(payload=>({id:++serial,payload:{...payload}}))],...(cleaned?{error:null}:{})});
       } catch {update({error:'未能讀取系統分享內容，請從來源重新分享。'});}
     },
-    discard(id:number) { if(state.busyId===id){generation++;packageRead?.abort();} update({items:state.items.filter(item=>item.id!==id),busyId:state.busyId===id?null:state.busyId,error:null}); },
+    discard(id:number) {
+      const item=state.items.find(value=>value.id===id);if(!item)return false;
+      if(state.busyId===id){generation++;packageRead?.abort();update({busyId:null});}
+      try {platform.discard?.(item.payload);} catch {update({error:'未能捨棄裝置上的分享副本；這項內容仍保留，請稍後重試。'});return false;}
+      update({items:state.items.filter(value=>value.id!==id),error:null});return true;
+    },
     clear,
     async takePackage(id:number,target:IncomingSharePackageTarget|null):Promise<boolean> {
       const item=state.items.find(value=>value.id===id);
@@ -79,7 +110,7 @@ export function createIncomingShareInbox(platform: IncomingSharePlatform) {
         },controller.signal);
         const current=valid();
         // Once the existing owner adopts a file, its original request is the only recovery path.
-        if(accepted&&actor===identity)update({items:state.items.filter(value=>value.id!==id)});
+        if(accepted&&actor===identity)adopted(item);
         if(!accepted&&current)update({error:'未能接收資料包，請核對 ZIP 格式及目前裝置的資料包大小限制，或查看設定的原匯入狀態。'});
         return accepted&&current;
       } catch {
@@ -104,7 +135,7 @@ export function createIncomingShareInbox(platform: IncomingSharePlatform) {
         const accepted=text?target.appendText(item.payload.value):target.appendAttachment(attachment!);
         if(!accepted) {update({error:'目前草稿未能加入內容。請先送出或移除原附件，並核對文字長度。'});return false;}
         attachment=undefined; // Ownership has moved to the existing draft.
-        update({items:state.items.filter(value=>value.id!==id),error:null});
+        adopted(item);
         return true;
       } catch {
         if(epoch===generation)update({error:'未能讀取這份附件，請檢查格式及大小，或從來源重新分享。'});

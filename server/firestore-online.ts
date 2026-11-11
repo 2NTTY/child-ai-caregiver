@@ -2,8 +2,8 @@ import type { NativeRequestContext } from './native-push-context.ts';
 import type { SharedChangesQuery, SharedChangesPage } from '../src/shared/sharing.ts';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { DEFAULT_NOTIFICATION_PREFERENCES, type NotificationPreferences } from '../src/shared/family.ts';
-import { firestoreNotificationPreferencesSchema } from './firestore-task-worker.ts';
+import type { NotificationPreferences } from '../src/shared/family.ts';
+import { createNotificationPreferencesData } from './firestore-notification-preferences.ts';
 import type { Child } from '../src/shared/records.ts';
 import type { OnlineContext, OnlineCommand, OnlineSubmission, OnlineReceipt, OnlineChanges } from '../src/shared/online.ts';
 import type { Workspace } from './workspaces.ts';
@@ -29,9 +29,6 @@ import { makeImportProvenance } from './handover-provenance.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
 const decimal = firestoreChangeSchema.shape.changeSeq, uuid = z.uuid();
-const preferencesInput = firestoreNotificationPreferencesSchema.omit({ version: true }).extend({
-  expectedVersion: z.number().int().min(0).max(2147483646),
-}).strict().refine(value => value.quietStart !== value.quietEnd);
 
 const cursorSchema = z.object({ scope: workRecoveryScopeSchema, changeSeq: decimal, filter: z.literal('children'),
   createdAt: z.iso.datetime({ offset: true }), childId: uuid }).strict();
@@ -89,14 +86,7 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
     if (raw?.workspaceTag !== tags.workspaceTag || raw?.epochTag !== tags.epochTag || raw?.userTag !== tags.userTag
       || raw?.childTag !== tags.childTag) domainReject('projection_binding', 500);
   }
-  async function readPreferences(binding: FirestoreAuthorityTransaction): Promise<NotificationPreferences> {
-    const scope = binding.scope, snapshot = await binding.transaction.get(data.ref('notification_preferences', 'notification-preferences', scope.ownerUserId));
-    if (!snapshot.exists) return { ...DEFAULT_NOTIFICATION_PREFERENCES };
-    matchesTags(snapshot.data(), scope);
-    const value = data.open('notification-preferences', scope.ownerUserId, scope, firestoreNotificationPreferencesSchema, snapshot);
-    if (scope.childId !== NIL || value.version !== snapshot.get('recordVersion')) domainReject('preferences_binding', 500);
-    return value;
-  }
+  const preferencesData = createNotificationPreferencesData(data);
   function currentContext(binding: FirestoreAuthorityTransaction): OnlineContext {
     return { workspaceId: binding.scope.workspaceId, storageEpoch: binding.scope.storageEpoch };
   }
@@ -315,7 +305,7 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
         kind: source.kind, assigneeUserId, dueAt: source.occurrence.dueAt, timeZone: source.occurrence.timeZone } }, operationId,
       { state: source.occurrence.state, provenance, ...(target ? { expectedVersion: target.expectedVersion } : {}) });
     },
-    notificationPreferences(userId) { return authority.runTransaction(userId, null, readPreferences); },
+    notificationPreferences(userId) { return authority.runTransaction(userId, null, preferencesData.read); },
     async spaces(userId) {
       return authority.runTransaction(userId, null, async binding => {
         if (binding.workspaceCreatedAt === null) domainReject('domain_not_ready', 503);
@@ -386,17 +376,9 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
           changeSeq = prepared.changeSeq; result = { child: prepared.result.child }; statusCode = 201;
           receiptChildId = prepared.result.child.id; commitDomain = prepared.commit;
         } else if (submission.path === '/api/notification-preferences') {
-          const input = domainParse(preferencesInput, submission.payload), current = await readPreferences(binding);
-          if (current.version !== input.expectedVersion) domainReject('version_conflict');
-          const { expectedVersion, ...values } = input, preferences = { ...values, version: expectedVersion + 1 };
-          const prepared = await binding.prepareChange(submission.operation.opId, 'preferences', false);
-          const envelope = { ...data.tags(binding.scope), ...data.seal('notification-preferences', userId, binding.scope,
-            firestoreNotificationPreferencesSchema, preferences, preferences.version) };
-          changeSeq = prepared.changeSeq; result = { preferences }; statusCode = 200; receiptChildId = null;
-          commitDomain = () => {
-            prepared.commit();
-            binding.transaction.set(data.ref('notification_preferences', 'notification-preferences', userId), envelope);
-          };
+          const prepared = await preferencesData.prepare(binding, submission.operation.opId, submission.payload, await preferencesData.read(binding));
+          changeSeq = prepared.changeSeq; result = { preferences: prepared.preferences }; statusCode = 200; receiptChildId = null;
+          commitDomain = prepared.commit;
         } else {
           // Recognized but unconnected product domains cannot return a successful synthetic mutation.
           onlineRoute(submission);

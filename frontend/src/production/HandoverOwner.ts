@@ -7,6 +7,9 @@ type ExportSelection = HandoverExportCommand['selection'];
 type DocumentReview = NonNullable<HandoverExportCommand['documentReview']>;
 type ClassSource = HandoverClassExportCommand['source'];
 type ReviewSection = HandoverPreviewQuery['section'];
+export type NotificationPreferencesExportBasis = { identityKey: string; scopeKey: string; version: number };
+const samePreferencesBasis = (first: NotificationPreferencesExportBasis | null, second?: NotificationPreferencesExportBasis | null) =>
+  first?.identityKey === second?.identityKey && first?.scopeKey === second?.scopeKey && first?.version === second?.version;
 export type ExportReviewGroup = { childId: string; section: ReviewSection; items: HandoverPreviewItem[];
   loaded: boolean; nextCursor: string | null; avatarVersion?: number };
 type ExportReview = { selection: ExportSelection; key: string; basis: string; scopeVersion: string | null;
@@ -18,7 +21,8 @@ export const handoverReviewSections = (selection: ExportSelection): ReviewSectio
   ...(selection.modules.includes('attachments') ? ['files', 'photos', 'voices', 'child_avatar'] as const : []),
 ];
 export const handoverReviewSelectionKey = (selection: ExportSelection) => JSON.stringify({ childIds: [...selection.childIds].sort(),
-  modules: [...selection.modules].sort(), period: selection.period, ...(selection.accountAvatar ? { accountAvatar: selection.accountAvatar } : {}) });
+  modules: [...selection.modules].sort(), period: selection.period, ...(selection.accountAvatar ? { accountAvatar: selection.accountAvatar } : {}),
+  ...(selection.notificationPreferences ? { notificationPreferences: selection.notificationPreferences } : {}) });
 export const handoverReviewItemKey = (item: Pick<HandoverPreviewItem, 'section' | 'childId' | 'id'>) => JSON.stringify([item.section, item.childId, item.id]);
 
 type Pending = { kind: 'create'; command: HandoverExportCommand | HandoverClassExportCommand; checked: boolean }
@@ -30,9 +34,10 @@ export interface HandoverState {
   review: ExportReview | null; reviewBusy: boolean;
   classModules: HandoverClassExportCommand['selection']['modules'] | null;
   accountAvatarBackup: boolean;
+  notificationPreferencesBackup: boolean;
 }
 const empty = (userId: string | null, identityKey: string | null, online: boolean): HandoverState => ({
-  userId, identityKey, online, loaded: false, items: [], nextCursor: null, pending: null, busy: null, notice: null, review: null, reviewBusy: false, classModules: null, accountAvatarBackup: false,
+  userId, identityKey, online, loaded: false, items: [], nextCursor: null, pending: null, busy: null, notice: null, review: null, reviewBusy: false, classModules: null, accountAvatarBackup: false, notificationPreferencesBackup: false,
 });
 export function handoverErrorText(error: unknown) {
   const code = error instanceof HandoverApiError ? error.code : error instanceof Error ? error.message : '';
@@ -59,6 +64,7 @@ export class HandoverOwner {
   private listeners = new Set<() => void>();
   private reviewEpoch = 0; private reviewRead: AbortController | null = null;
   private capabilityRead: AbortController | null = null;
+  private notificationPreferencesBasis: NotificationPreferencesExportBasis | null = null;
   private readonly api: HandoverApi; private readonly accessError: (error: HandoverApiError) => void;
   constructor(api: HandoverApi, accessError: (error: HandoverApiError) => void = () => {}) { this.api = api; this.accessError = accessError; }
   getSnapshot = () => this.state;
@@ -69,6 +75,7 @@ export class HandoverOwner {
       this.epoch++; this.active?.abort(); this.active = null; this.api.setIdentity(null); this.api.setIdentity(userId);
       this.reviewEpoch++; this.reviewRead?.abort(); this.reviewRead = null;
       this.capabilityRead?.abort(); this.capabilityRead = null;
+      this.notificationPreferencesBasis = null;
       this.state = empty(userId, identityKey, online); this.update({});
     } else if (online !== this.state.online) this.update({ online });
   }
@@ -111,10 +118,17 @@ export class HandoverOwner {
     if (key === (this.state.review?.key ?? null) && (!relevant || this.state.review?.basis === basis && sameSource(this.state.review?.source, source))) return;
     this.reviewEpoch++; this.reviewRead?.abort(); this.reviewRead = null;
     this.update({ reviewBusy: false, review: relevant ? { selection: { childIds: [...relevant.childIds], modules: [...relevant.modules],
-      period: relevant.period && { ...relevant.period }, ...(relevant.accountAvatar ? { accountAvatar: { ...relevant.accountAvatar } } : {}) }, key: key!, basis, scopeVersion: null,
+      period: relevant.period && { ...relevant.period }, ...(relevant.accountAvatar ? { accountAvatar: { ...relevant.accountAvatar } } : {}),
+      ...(relevant.notificationPreferences ? { notificationPreferences: { ...relevant.notificationPreferences } } : {}) }, key: key!, basis, scopeVersion: null,
       ...(source ? { source: { ...source }, opId: crypto.randomUUID() } : {}),
       groups: relevant.childIds.flatMap(childId => handoverReviewSections(relevant).map(section => ({ childId, section, items: [], loaded: false, nextCursor: null }))),
       choices: [], error: null } : null });
+  };
+  syncNotificationPreferencesBasis = (basis: NotificationPreferencesExportBasis | null) => {
+    const current = basis?.identityKey === this.state.identityKey ? basis : null;
+    if (samePreferencesBasis(this.notificationPreferencesBasis, current)) return;
+    this.notificationPreferencesBasis = current ? { ...current } : null;
+    if (this.state.review?.selection.notificationPreferences) this.setReviewSelection(null);
   };
   reviewReady = (selection: ExportSelection) => !handoverReviewSections(selection).length || !!(this.state.review
     && this.state.review.key === handoverReviewSelectionKey(selection) && this.state.review.scopeVersion && !this.state.reviewBusy
@@ -181,16 +195,21 @@ export class HandoverOwner {
     this.capabilityRead = controller;
     try {
       const capability = await this.api.exportCapabilities(t.userId, controller.signal);
-      if (this.current(t)) this.update({ classModules: capability.classModules, accountAvatarBackup: capability.accountAvatarBackup === true });
+      if (this.current(t)) {
+        if (capability.notificationPreferencesBackup !== true && this.state.review?.selection.notificationPreferences) this.setReviewSelection(null);
+        this.update({ classModules: capability.classModules, accountAvatarBackup: capability.accountAvatarBackup === true,
+          notificationPreferencesBackup: capability.notificationPreferencesBackup === true });
+      }
     } catch (error) {
       if (this.current(t)) {
-        this.update({ classModules: [], accountAvatarBackup: false });
+        if (this.state.review?.selection.notificationPreferences) this.setReviewSelection(null);
+        this.update({ classModules: [], accountAvatarBackup: false, notificationPreferencesBackup: false });
         if (error instanceof HandoverApiError && (error.status === 401 || ['identity_changed', 'session_changed'].includes(error.code))) this.error(t, error);
       }
     } finally { if (this.capabilityRead === controller) this.capabilityRead = null; }
   };
   createClass = async (selection: HandoverClassExportCommand['selection'], spaceId: string, basis?: string) => {
-    if ('accountAvatar' in selection || this.state.pending || this.state.busy || !this.state.online || !this.state.userId
+    if ('accountAvatar' in selection || 'notificationPreferences' in selection || this.state.pending || this.state.busy || !this.state.online || !this.state.userId
       || !selection.modules.every(module => this.state.classModules?.includes(module))) return;
     const source: ClassSource = { kind: 'class', spaceId }, review = this.state.review;
     const needsReview = handoverReviewSections(selection).length > 0;
@@ -203,11 +222,17 @@ export class HandoverOwner {
     this.update({ pending: { kind: 'create', command: parsed.data, checked: true } }); await this.retryOriginal();
   };
   create = async (selection: ExportSelection, purpose: HandoverExportCommand['purpose'], documentReview?: DocumentReview,
-    accountAvatarBasis?: { identityKey: string; version: number }) => {
+    accountAvatarBasis?: { identityKey: string; version: number }, notificationPreferencesBasis?: NotificationPreferencesExportBasis,
+    reviewBasis?: string) => {
     if (this.state.pending || this.state.busy || !this.state.online || !this.state.userId || !this.reviewReady(selection)) return;
     if (selection.accountAvatar && (purpose !== 'backup' || !this.state.accountAvatarBackup
       || accountAvatarBasis?.identityKey !== this.state.identityKey || accountAvatarBasis.version !== selection.accountAvatar.version)) return;
+    if (selection.notificationPreferences && (purpose !== 'backup' || !this.state.notificationPreferencesBackup
+      || !notificationPreferencesBasis || !this.notificationPreferencesBasis
+      || !samePreferencesBasis(this.notificationPreferencesBasis, notificationPreferencesBasis)
+      || notificationPreferencesBasis.version !== selection.notificationPreferences.version)) return;
     if (handoverReviewSections(selection).length && this.state.review?.source) return;
+    if (selection.notificationPreferences && handoverReviewSections(selection).length && this.state.review?.basis !== reviewBasis) return;
     const expectedReview = this.documentReview(selection);
     if (expectedReview && JSON.stringify(documentReview) !== JSON.stringify(expectedReview)) return;
     const parsed = handoverExportCommandSchema.safeParse({ opId: crypto.randomUUID(), purpose, selection, ...(documentReview ? { documentReview } : {}) });

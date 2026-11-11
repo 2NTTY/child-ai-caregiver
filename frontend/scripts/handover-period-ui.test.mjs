@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { test } from 'node:test';
 import * as handoverOwner from '../src/production/HandoverOwner.ts';
 import * as handoverContract from '../../src/shared/handover.ts';
+import * as familyContract from '../../src/shared/family.ts';
 import * as handoverImportContract from '../../src/shared/handover-imports.ts';
 import * as handoverImportOwner from '../src/production/HandoverImportOwner.ts';
 import { createHandoverApi, HandoverApiError } from '../../src/client/handover-api.ts';
@@ -16,7 +17,8 @@ let current, production;
 const hooks = { useState(initial) { const instance = current, index = instance.cursor++;
   if (!(index in instance.slots)) instance.slots[index] = initial;
   return [instance.slots[index], next => { instance.slots[index] = typeof next === 'function' ? next(instance.slots[index]) : next; }]; },
-  useEffect: noop, useLayoutEffect: noop, useRef: () => ({ current: null }), useSyncExternalStore: (_subscribe, get) => get() };
+  useEffect: noop, useLayoutEffect: noop, useRef(initial) { const index = current.cursor++;
+    if (!(index in current.slots)) current.slots[index] = { current: initial }; return current.slots[index]; }, useSyncExternalStore: (_subscribe, get) => get() };
 const cache = new Map();
 function load(path) {
   if (cache.has(path)) return cache.get(path);
@@ -25,6 +27,9 @@ function load(path) {
     : name === 'react-native' ? { View: 'View', StyleSheet: { create: value => value }, Platform: { OS: 'web' }, AppState: { currentState: 'active' } }
     : name === 'react-native-paper' ? { Text: 'Text' }
     : name.endsWith('/ProductionProvider') ? { useProduction: () => production }
+    : name.endsWith('/SettingsDomains') ? { useProductionSettingsDomains: () => ({ preferences: {
+      scopeKey: JSON.stringify([production.identityKey, 1]), preferences: handoverContract.handoverNotificationPreferencesSchema.parse(familyContract.DEFAULT_NOTIFICATION_PREFERENCES),
+      online: true, fresh: true, original: null, busy: false, refresh: noop } }) }
     : name.endsWith('/useProductionSharing') ? { useProductionSharing: () => ({ controller: {}, state: { identityKey: null, selected: null, shares: { items: [] }, spaces: { items: [] }, teacherClasses: { items: [] }, rosterQuery: '' } }) }
     : name.endsWith('/handover-class-targets') ? classTargets
     : name.endsWith('/handover-class-export') ? classExport
@@ -32,6 +37,7 @@ function load(path) {
     : name.endsWith('/HandoverImportOwner') ? handoverImportOwner
     : name.endsWith('/handover-api') ? { HandoverApiError }
     : name.endsWith('/handover') ? handoverContract
+    : name.endsWith('/family') ? familyContract
     : name.endsWith('/handover-imports') ? handoverImportContract
     : name.endsWith('/date-time') ? load('../src/components/date-time.ts')
     : name.endsWith('/file-export') ? { useFileExportAvailable: () => true }
@@ -73,7 +79,8 @@ test('original private instruction form gates memory capability and submits only
   const controller = new handoverImportOwner.HandoverImportOwner(api); controller.syncContext('owner', 'owner:1', true);
   await controller.readImportCapabilities();
   assert.equal(headers[0].get('x-handover-original-modules'), '1');
-  assert.deepEqual(headers[0].get('x-handover-original-features').split(/[\s,]+/u), ['concerns', 'private-instructions']);
+  const originalFeatures = new Set(headers[0].get('x-handover-original-features').split(/[\s,]+/u));
+  assert.ok(originalFeatures.has('concerns')); assert.ok(originalFeatures.has('private-instructions'));
   await controller.openUpload(uploadId);
   production = { owner: { handoverImportOwner: controller, sharedChild: { subscribe: noop, getSnapshot: () => ({ phase: 'idle' }) } },
     userId: 'owner', identityKey: 'owner:1', online: true, recordsState: { children: [{ id: childId, displayName: 'Original child', accessRole: 'owner' }] },
@@ -91,8 +98,10 @@ test('original private instruction form gates memory capability and submits only
   assert.match(text(view.tree), /交代內容/); assert.match(text(view.tree), /交代分類/);
   assert.equal(nodes(view.tree).filter(node => node.props?.label === '以備份覆蓋此項').length, 1);
   assert.equal(control(view, '恢復此已刪項目'), undefined);
-  assert.equal(handoverImportOwner.originalComparisonResolution({ ...live, state: 'deleted' }), null);
-  assert.equal(handoverImportOwner.originalComparisonResolution({ ...live, targetId: missingId }), null);
+  assert.equal(handoverImportOwner.originalComparisonResolution({ ...live, state: 'deleted' }), 'restore_deleted');
+  assert.equal(handoverImportOwner.originalComparisonResolution({ ...unavailable, state: 'deleted' }), null);
+  assert.equal(handoverImportOwner.originalComparisonResolution({ ...live, targetId: missingId }), 'replace_current',
+    'A previously restored instruction can have a server-verified successor ID');
   assert.equal(handoverImportOwner.originalRestoreResourceSection('memory', { resourceSection: 'child_avatar' }), null);
   control(view, '以備份覆蓋此項').props.onChange(true); again();
   control(view, '提交所選原項還原（1 項）').props.onPress(); await settle();
@@ -104,7 +113,7 @@ test('original private instruction form gates memory capability and submits only
   await controller.retryOriginal(); assert.equal(writes.length, 1, 'An unknown request must be checked before retry');
   await controller.checkOriginal(); assert.equal(controller.getSnapshot().pending, null); assert.equal(controller.getSnapshot().items[0].id, writes[0].opId);
   await controller.openUpload(uploadId); items = [unavailable]; await controller.compareOriginal(childId, 'memory'); again();
-  assert.match(text(view.tree), /沒有可還原的私人交代/); assert.equal(control(view, '以備份覆蓋此項'), undefined);
+  assert.match(text(view.tree), /沒有可還原的\s*私人交代/); assert.equal(control(view, '以備份覆蓋此項'), undefined);
   items = [{ ...live, resourceSection: 'child_avatar' }]; await controller.compareOriginal(childId, 'memory');
   assert.ok(controller.getSnapshot().comparison.error, 'A memory response cannot expose another resource section');
   control(view, 'Original child').props.onChange(true); again(); assert.ok(control(view, '記憶與摘要'), 'Independent-copy memory selection keeps its existing label');
@@ -236,7 +245,7 @@ test('original child avatar form limits attachment restoration to covered child 
   assert.equal(writes[0].accountAvatar, undefined, 'child restoration does not select the account avatar');
   await controller.openUpload(uploadId); state = 'unchanged';
   await controller.compareOriginal(childId, 'attachments'); again();
-  assert.match(text(view.tree), /沒有可還原的孩子頭像/);
+  assert.match(text(view.tree), /沒有可還原的\s*孩子頭像/);
   assert.equal(control(view, '恢復此已刪項目'), undefined); assert.equal(control(view, '以備份覆蓋此項'), undefined);
   control(view, 'Covered child').props.onChange(true); again();
   assert.ok(control(view, '附件'), 'the independent-copy attachment selection keeps its original label and scope');
@@ -251,7 +260,7 @@ test('handover period selection preserves inclusive Hong Kong days with supporte
       createdAt: '2026-11-04T00:00:00Z', expiresAt: '2026-11-05T00:00:00Z', bytes: null, error: null };
   }, async preview() { return { items: [], scopeVersion: 'a'.repeat(64), nextCursor: null }; } });
   controller.syncContext('owner', 'owner:1', true);
-  production = { owner: { handoverOwner: controller }, userId: 'owner', identityKey: 'owner:1', online: true,
+  production = { owner: { handoverOwner: controller, getSnapshot: () => ({ identityKey: 'owner:1', sessionGeneration: 1 }) }, userId: 'owner', identityKey: 'owner:1', online: true,
     recordsState: { children: [{ id, displayName: 'Own child', accessRole: 'owner' }] }, account: { gate: 'ready', deletion: { phase: 'idle' } } };
   const component = load('../src/components/account/HandoverControls.tsx').HandoverControls, view = render(component);
   const again = () => render(component, view);

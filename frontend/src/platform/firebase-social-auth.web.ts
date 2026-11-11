@@ -1,4 +1,4 @@
-import { browserPopupRedirectResolver, GoogleAuthProvider, OAuthProvider, linkWithPopup, signInWithPopup, type User } from "firebase/auth";
+import { browserPopupRedirectResolver, GoogleAuthProvider, OAuthProvider, linkWithPopup, reauthenticateWithPopup, signInWithPopup, type User } from "firebase/auth";
 import type { FirebaseSocialIdentityFactory } from "../../../src/client/firebase-auth-api.ts";
 import { socialAuthProviderSchema, type SocialAuthProvider } from "../../../src/shared/auth-providers.ts";
 
@@ -15,4 +15,5 @@ export const firebaseSocialFactory: FirebaseSocialIdentityFactory = auth => ({
   providers,
   signIn: async provider => (await signInWithPopup(auth, providerInstance(provider), browserPopupRedirectResolver)).user,
   link: async (user, provider) => (await linkWithPopup(user as User, providerInstance(provider), browserPopupRedirectResolver)).user,
+  reauthenticate: async (user, provider) => (await reauthenticateWithPopup(user as User, providerInstance(provider), browserPopupRedirectResolver)).user,
 });
