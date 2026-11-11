@@ -90,12 +90,14 @@ test('one explicit confirmation pins a multi-child batch, partial conflict and r
     scope:{kind:'class',spaceId:classroom.id,spaceVersion:classroom.version,teacherSpaceVersion:null}})).room;
   const classMessage=(await chat.mixed.append(user,classRoom.id,{operationId:randomUUID(),expectedVersion:1,text:'替兩位同學安排下次上課要帶水樽'})).message;
   const care=createFirestoreCareStore(options),memory=createFirestoreMemoryStore({...options,chat,care});
-  const product=await createFirestoreProductAgent({...options,chat,memory,care,online,config:readAiConfig({AI_ENABLED:'true',GCP_PROJECT_ID:options.projectId})});
-  const classRun=await runs.claimMixed(user,classRoom.id,classMessage.id);
-  await product.mixedTaskBatches.propose(user,classRoom.id,classMessage.id,classRun.runId,action);
-  await runs.finishMixed(user,classRoom.id,classMessage.id,{runId:classRun.runId,status:'completed',stopReason:null,provenance:null,
-    text:'請核對。',citations:[],privateSourceCitations:[],retrievalMode:'not_used',tools:[],countsKnown:true,
-    counts:{modelCalls:0,toolCalls:0,queryEmbeddings:0},proposals:[]});
+  let calls=0;
+  const product=await createFirestoreProductAgent({...options,chat,memory,care,online,config:readAiConfig({AI_ENABLED:'true',GCP_PROJECT_ID:options.projectId}),
+    platformProvider:{async generate(){
+      calls++;
+      const part=calls===1?{functionCall:{id:'propose',name:'prepare_selected_tasks',args:{action}}}
+        :{functionCall:{id:'finish',name:'present_answer',args:{kind:'operation',paragraphs:[{text:'請核對待辦。',citationIds:[]}]}}};
+      return {content:{role:'model',parts:[part]},usageMetadata:{promptTokenCount:8,candidatesTokenCount:5},finishReason:'STOP'};
+    }}});
   const origin='https://example.test',handler=createFirebaseRequestHandler({authority,chat,product,publicOrigin:origin,mailConfigured:true,
     auth:{getSession:async()=>({user:{id:user}}),handler:async()=>new Response(null,{status:404})}});
   const api=async(tail,body)=>{
@@ -103,6 +105,9 @@ test('one explicit confirmation pins a multi-child batch, partial conflict and r
       method:body?'POST':'GET',headers:{origin,'content-type':'application/json','x-expected-user-id':user},...(body?{body:JSON.stringify(body)}:{})}));
     const json=await response.json();assert.equal(response.status,200,JSON.stringify(json));return json;
   };
+  const answer=(await api('reply',{})).result;
+  assert.equal(answer.status,'completed',JSON.stringify(answer));
+  assert.match(answer.text,/一次確認/u);
   const preview=(await api('task-batch')).batch;
   assert.equal(preview.state,'awaiting_confirmation');
   assert.equal((await online.tasks.forSharedSpace(classroom.id).list(user,classChildren[0])).items.length,0);
@@ -111,4 +116,5 @@ test('one explicit confirmation pins a multi-child batch, partial conflict and r
   assert.equal(done.state,'completed');
   assert.deepEqual((await api('task-batch/advance',{position:0,digest:preview.digest})).batch.items,done.items);
   for(const item of done.items) assert.equal((await online.tasks.forSharedSpace(classroom.id).get(user,item.childId,item.taskId)).title,action.title);
+  assert.equal(calls,2,'one model run for both children, no model calls on control or replay');
 });
