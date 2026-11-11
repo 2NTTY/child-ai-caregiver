@@ -253,6 +253,8 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
       }
       displaced = { scope: occupied.scope, saved: old };
     }
+    const replacesOwnBinding = displaced !== null && displaced.scope.ownerUserId === b.scope.ownerUserId
+      && displaced.scope.workspaceId === b.scope.workspaceId && displaced.scope.storageEpoch === b.scope.storageEpoch;
     const at = new Date().toISOString(); let saved: SavedBinding, oldPointer: string | null = null;
     if (input.bindingId) {
       saved = await binding(b, input.bindingId);
@@ -268,14 +270,17 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
       saved = { ...saved, token, tokenHash: hash, binding: { ...saved.binding, label: input.label,
         tokenRevision: saved.binding.tokenRevision + 1, updatedAt: at } };
     } else {
-      const active = await b.transaction.get(query(b, 'native_push_bindings').where('status', '==', 'active').limit(5));
+      const active = await b.transaction.get(query(b, 'native_push_bindings').where('status', '==', 'active').limit(replacesOwnBinding ? 6 : 5));
       const created = await b.transaction.get(query(b, 'native_push_bindings').where('createdAt', '>', new Date(Date.now() - 86400_000).toISOString()).limit(20));
-      if (active.size >= 5 || created.size >= 20) domainReject('subscription_limit');
+      const displacedId = replacesOwnBinding ? displaced?.saved.binding.id : undefined;
+      if (active.docs.filter(row => row.get('bindingId') !== displacedId).length >= 5 || created.size >= 20) domainReject('subscription_limit');
       if (active.docs.some(row => row.get('sessionTag') === session.sessionHash)) domainReject('subscription_changed');
       saved = { token, tokenHash: hash, sessionHash: session.sessionHash, ...(apns ? { apns: { ...apns } } : {}),
         binding: { id: randomUUID(), version: 1, tokenRevision: 1, status: 'active', label: input.label, createdAt: at, updatedAt: at } };
     }
-    const changed = displaced ? await authority.prepareReceiptChange(b.transaction, displaced.scope, randomUUID(), 'preferences') : null;
+    // The enclosing registration already publishes the preference change in this workspace.
+    const changed = displaced && !replacesOwnBinding
+      ? await authority.prepareReceiptChange(b.transaction, displaced.scope, randomUUID(), 'preferences') : null;
     return { binding: saved.binding, apns: saved.apns, commit() {
       changed?.commit();
       if (displaced) {
