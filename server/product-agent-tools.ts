@@ -515,7 +515,7 @@ export function createProductAgentTools(options: {
   if (options.prepareMixedTasks) {
     const prepare=options.prepareMixedTasks;
     tools.push({name:'prepare_selected_tasks',description:'家長或老師要求替所選孩子建立、改期、取消或完成多項待辦時，準備一份整批確認。建立時缺省涵蓋這段對話的所有孩子，也可指定子集；修改時使用 read_selected_tasks 讀到的原任務 ID 和版本。工具只列出待確認內容，使用者確認後才實行。',
-      parameters:z.strictObject({action:mixedBatchActionSchema}),authorize:permitted,execute:args=>guard(async()=>{
+      parameters:z.strictObject({action:z.union(mixedBatchActionSchema.options)}),authorize:permitted,execute:args=>guard(async()=>{
         proposedBatch=await prepare(mixedBatchActionSchema.parse(args.action));
         return {batchId:proposedBatch.id,targetCount:proposedBatch.items.length,state:proposedBatch.state,confirmationPrepared:true};
       })});
