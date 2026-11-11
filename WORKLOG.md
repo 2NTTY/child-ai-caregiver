@@ -4781,3 +4781,18 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - 11 月 8 日唯讀核實原站 `allowDuplicateEmails=false`，原網域與密碼登入已配置，Google／Apple 的 provider 設定尚未建立。沒有更改 Auth 配置、寄信或執行真人登入。
 - Node 24 執行 `tests/firebase-auth.test.ts` 與 `tests/firestore-authority.test.ts`，41 項通過；Server 型別及 diff 檢查通過。新增的首次邀請斷言另在該流程通過。測試使用合成 token 及 Firestore 交易替身。
 - 共用客戶端仍需在確認時帶目標方式；Firebase 已連結但產品未收到原請求時，應重新驗證已連結的身份才補交。正式開放前另驗 Apple 團隊配置與本人登入。
+
+
+<a id="log-20261105-soft-budget"></a>
+## 2026-11-05 UTC｜REQ-005 PR 6 集中資源政策與 0.25 軟預算管理
+
+- Recorded At：2026-11-05 14:15:00 UTC；Work Date：2026-11-05。Step / Package：REQ-005 §3.1 集中政策參數與 0.25 軟預算諮詢信號 (缺口 1)。
+- Goal / Actual Work：依據 REQ-005 §3.1 及 §9 階段 1，集中化管理資源政策。於 `src/shared/agent-run-limits.ts` 集中宣告 `DEFAULT_SOFT_BUDGET_RATIO = 0.25` 及 `SOFT_BUDGET_RATIO_RANGE = { min: 0.05, max: 1.0, default: 0.25 }`；於 `server/agent-budget.ts` 引入並導出常數，擴展 `AgentRunLimits` 與 `freezeAgentRunLimits` 支援邊界防護與驗證；於 `AgentBudget` 類別增加 `softBudgetRatio` getter，並在 `configurePersonal` 支援個人/運行層級配置；在 `planningSnapshot` 推導 `softBudget`、`softRemaining` 與 `softExceeded` 信號。嚴格落實核心不變量：軟預算與硬配額共用同一帳本，軟預算僅作為 planning 諮詢信號，超額時絕不拋出 `AgentStopped` 或阻斷運行。
+- AI Assistance / Human Verification：AI 完成代碼修改、9 個單元測試、5 個變異測試防護守衛（S1–S5）、專用離線驗證工作流與驗證收據。Human Verification：尚未進行。
+- Changes：`src/shared/agent-run-limits.ts`、`server/agent-budget.ts`、`tests/agent-budget.test.ts`、`scripts/verify-soft-budget-mutations.mjs`、`.github/workflows/soft-budget-offline.yml`、`scripts/ci/verify-soft-budget-offline.sh`、`artifacts/verification/REQ005_SOFT_BUDGET_20261105.json` 及本追加日誌。
+- Verification：
+  - 單元測試：`node --test tests/agent-budget.test.ts` 9/9 PASS（0 fail, 0 skip）。
+  - 變異防護：`node scripts/verify-soft-budget-mutations.mjs` 5/5 守衛（S1–S5）全數攔截（fail-on-mutation green, exit 0）。
+  - 型別檢查：`npx tsc --project tsconfig.server.json --noEmit` 與 `npx tsc --noEmit` 均 0 診斷（exit 0）。
+  - 遠端離線 CI：GitHub Actions Run 42042529809（Job 127296771198）耗時 1m20s 於 exact head fc5d5f7bbf0c839b40e71a842ab3ee8ad4528c0e 成功通過（PASS）。
+- Limitations / Next Action：PR 6 專注於軟預算集中化管理與 planningSnapshot 信號暴露，軟預算僅供規劃諮詢，不代表 REQ-005 已完成，不跨越至 PR 7 的 1024 token clamp 或 PR 8 的個人 key 隘壓解鎖。Collaborator PR untouched。嚴格維持 HOLD merge，待 Owner 2NTTY 獨立審核。
