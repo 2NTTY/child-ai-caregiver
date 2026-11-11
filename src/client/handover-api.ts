@@ -19,7 +19,7 @@ type CancelCommand = z.infer<typeof handoverCancelCommandSchema>;
 type ExportPage = z.infer<typeof handoverExportPageSchema>;
 type ImportControl = z.infer<typeof handoverImportControlSchema>;
 type ImportPage = z.infer<typeof handoverImportPageSchema>;
-const importCapabilitiesSchema = z.object({ classEnrolment: z.boolean(), classConcernImports: z.literal(true).optional(), classGrowthImports: z.literal(true).optional(), accountAvatarRestore: z.literal(true).optional(), notificationPreferencesRestore: z.literal(true).optional(),
+const importCapabilitiesSchema = z.object({ classEnrolment: z.boolean(), mixedConversationImport: z.literal(true).optional(), classConcernImports: z.literal(true).optional(), classGrowthImports: z.literal(true).optional(), accountAvatarRestore: z.literal(true).optional(), notificationPreferencesRestore: z.literal(true).optional(),
   originalMemoryResources: z.literal(true).optional(), originalAttachmentResources: z.literal(true).optional(),
   originalModules: z.array(z.string().min(1).max(80)).max(100)
     .transform(modules => originalBackupModuleSchema.options.filter(module => modules.includes(module))).optional() });
@@ -56,7 +56,7 @@ export interface HandoverApi {
   uploadContent(userId: string, id: string, body: BodyInit, signal: AbortSignal): Promise<HandoverUploadView>;
   createImport(userId: string, command: HandoverImportCommand, signal: AbortSignal): Promise<HandoverImportView>;
   getImport(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportView>;
-  importCapabilities(userId: string, signal: AbortSignal): Promise<{ classEnrolment: boolean; classConcernImports?: true; classGrowthImports?: true; accountAvatarRestore?: true; notificationPreferencesRestore?: true; originalMemoryResources?: true; originalAttachmentResources?: true; originalModules?: OriginalBackupComparisonQuery['module'][] }>;
+  importCapabilities(userId: string, signal: AbortSignal): Promise<{ classEnrolment: boolean; mixedConversationImport?: true; classConcernImports?: true; classGrowthImports?: true; accountAvatarRestore?: true; notificationPreferencesRestore?: true; originalMemoryResources?: true; originalAttachmentResources?: true; originalModules?: OriginalBackupComparisonQuery['module'][] }>;
   importEnrolments(userId: string, id: string, signal: AbortSignal): Promise<ClassImportEnrolments>;
   importSummary(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportSummary>;
   compareOriginal(userId: string, query: OriginalBackupComparisonQuery, signal: AbortSignal): Promise<OriginalBackupComparison>;
@@ -112,6 +112,7 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
         if (!isCurrent()) throw failure();
         response = await fetcher(api + '/' + (options.collection ?? 'packages') + path, { method: body === undefined ? 'GET' : 'POST', credentials: 'include', cache: 'no-store',
           headers: { Accept: accept, 'x-expected-user-id': userId, 'x-handover-account-backup': '1', 'x-handover-account-features': [accountPreferencesFeature, mixedConversationFeature].join(','), ...(options.classDocumentReview ? { 'x-handover-class-document-review': '1' } : {}),
+            ...(options.collection === 'package-imports' ? { 'x-handover-mixed-import': '1' } : {}),
             ...(options.originalModules ? { 'x-handover-original-modules': '1', 'x-handover-original-features': 'concerns,private-instructions,memory-resources,attachment-resources,growth', 'x-handover-class-features': 'concerns,growth' } : {}),
             ...(body === undefined ? {} : { 'Content-Type': options.rawBody ? 'application/zip' : 'application/json' }) },
           ...(body === undefined ? {} : { body: options.rawBody ? body as BodyInit : JSON.stringify(body) }), signal: controller.signal });

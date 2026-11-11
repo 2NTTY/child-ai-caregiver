@@ -10,6 +10,18 @@ import type { DocumentContentPage, DocumentContentQuery, DocumentSnapshot } from
 import { handoverClassFeatures, handoverClassFeatureModules } from './handover-class-targets.ts';
 
 export interface SelectedPackage { filename: string; bytes: number; sha256: string; body: BodyInit; release(): void }
+export function mixedImportMappingsComplete(preview: HandoverUploadView['preview'], targets: HandoverImportCommand['targets'], roomIds: readonly string[]) {
+  if (new Set(roomIds).size !== roomIds.length) return false;
+  return roomIds.every(id => {
+    const room = preview?.header.selection.mixedRooms?.find(pin => pin.id === id);
+    if (!room) return false;
+    const mappings = room.childIds.map(childId => targets.find(row => row.sourceChildId === childId));
+    if (mappings.some(row => !row)) return false;
+    const scopes = new Set(mappings.map(row => 'createInClassId' in row!.target ? row!.target.createInClassId : row!.target.spaceId));
+    const children = new Set(mappings.map(row => 'createInClassId' in row!.target ? `new:${row!.sourceChildId}` : row!.target.childId));
+    return scopes.size === 1 && children.size === room.childIds.length;
+  });
+}
 export { originalComparisonItemKey };
 export const legacyOriginalModules: OriginalBackupComparisonQuery['module'][] = ['care', 'profile', 'tasks', 'sources'];
 export function originalRestoreResourceSection(module: HandoverImportModule,
@@ -78,6 +90,7 @@ export interface HandoverSourceHistoryState {
   documentContent: HandoverDocumentContentState | null;
 }
 export interface HandoverImportState {
+  mixedConversationImportEnabled: boolean;
   originalModules: OriginalBackupComparisonQuery['module'][];
   originalMemoryResourcesEnabled: boolean;
   originalAttachmentResourcesEnabled: boolean;
@@ -103,6 +116,7 @@ export interface HandoverImportState {
   busy: 'pick' | 'read' | 'write' | 'check' | null; pending: Pending | null; notice: string | null;
 }
 const empty = (userId: string | null, identityKey: string | null, online: boolean): HandoverImportState => ({
+  mixedConversationImportEnabled: false,
   userId, identityKey, online, loaded: false, upload: null, items: [], nextCursor: null, classEnrolmentEnabled: false, classConcernImportsEnabled: false, classGrowthImportsEnabled: false, enrolmentResults: null,
   accountAvatarRestoreEnabled: false, accountAvatarComparison: null, preferencesRestoreEnabled: false, preferencesComparison: null,
   originalModules: [...legacyOriginalModules], originalMemoryResourcesEnabled: false, originalAttachmentResourcesEnabled: false,
@@ -156,7 +170,7 @@ export class HandoverImportOwner {
       this.syncContext(null, null, this.state.online); this.accessError(error); return;
     }
     this.update({ notice: importErrorText(error) });
-    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.clearComparison(); this.update({ upload: null, items: [], loaded: false, uploads: [], uploadsLoaded: false, uploadsCursor: null, cleanedUploads: null, results: null, sourceHistory: null, enrolmentResults: null, summary: null, pending: null, classConcernImportsEnabled: false, classGrowthImportsEnabled: false }); this.accessError(error); }
+    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.clearComparison(); this.update({ upload: null, items: [], loaded: false, uploads: [], uploadsLoaded: false, uploadsCursor: null, cleanedUploads: null, results: null, sourceHistory: null, enrolmentResults: null, summary: null, pending: null, mixedConversationImportEnabled: false, classConcernImportsEnabled: false, classGrowthImportsEnabled: false }); this.accessError(error); }
   }
   private put(row: HandoverImportView) {
     const previous = this.state.items.find(item => item.id === row.id);
@@ -252,7 +266,7 @@ export class HandoverImportOwner {
         if (this.state.comparison && (!originalModules.includes(this.state.comparison.query.module)
           || this.state.comparison.query.module === 'memory' && !!this.state.comparison.query.includeMemoryResources !== originalMemoryResourcesEnabled
           || this.state.comparison.query.module === 'attachments' && !!this.state.comparison.query.includeAttachmentResources !== originalAttachmentResourcesEnabled)) this.clearComparison();
-        this.update({ classEnrolmentEnabled: value.classEnrolment, classConcernImportsEnabled: value.classConcernImports === true, classGrowthImportsEnabled: value.classGrowthImports === true, accountAvatarRestoreEnabled: value.accountAvatarRestore === true,
+        this.update({ mixedConversationImportEnabled: value.mixedConversationImport === true, classEnrolmentEnabled: value.classEnrolment, classConcernImportsEnabled: value.classConcernImports === true, classGrowthImportsEnabled: value.classGrowthImports === true, accountAvatarRestoreEnabled: value.accountAvatarRestore === true,
           preferencesRestoreEnabled: value.notificationPreferencesRestore === true && !!this.api.compareNotificationPreferences, originalModules, originalMemoryResourcesEnabled, originalAttachmentResourcesEnabled });
       }
     } catch (error) {
@@ -261,7 +275,7 @@ export class HandoverImportOwner {
         this.clearPreferencesComparison();
         const originalModules = this.state.originalModules.filter(module => legacyOriginalModules.includes(module));
         if (this.state.comparison && !originalModules.includes(this.state.comparison.query.module)) this.clearComparison();
-        this.update({ classEnrolmentEnabled: false, classConcernImportsEnabled: false, classGrowthImportsEnabled: false, accountAvatarRestoreEnabled: false,
+        this.update({ mixedConversationImportEnabled: false, classEnrolmentEnabled: false, classConcernImportsEnabled: false, classGrowthImportsEnabled: false, accountAvatarRestoreEnabled: false,
           preferencesRestoreEnabled: false, originalModules, originalMemoryResourcesEnabled: false, originalAttachmentResourcesEnabled: false });
         if (error instanceof HandoverApiError && ([401, 403].includes(error.status) || ['session_changed', 'identity_changed'].includes(error.code)))
           this.error(t, error);
@@ -626,8 +640,15 @@ export class HandoverImportOwner {
       if (this.current(t)) await this.retryOriginal();
     } finally { signal?.removeEventListener('abort', cancel); }
   };
-  create = async (targets: HandoverImportCommand['targets'], acceptUntrusted: boolean) => {
+  create = async (targets: HandoverImportCommand['targets'], acceptUntrusted: boolean, mixedRoomIds: string[] = []) => {
     const upload = this.state.upload; if (this.state.pending || this.state.busy || !upload?.preview || upload.state !== 'ready') return;
+    if (mixedRoomIds.length && (!this.state.mixedConversationImportEnabled || !mixedImportMappingsComplete(upload.preview, targets, mixedRoomIds))) {
+      this.update({ notice: '請核對服務支援，並將整段對話的所有孩子分別對應至本人的不同孩子或同一班級內的不同學生。' }); return;
+    }
+    const mixedChildren = new Set(upload.preview.header.selection.mixedRooms?.filter(room => mixedRoomIds.includes(room.id)).flatMap(room => room.childIds));
+    if (targets.some(row => !row.sections.length && !mixedChildren.has(row.sourceChildId))) {
+      this.update({ notice: '請選擇要匯入的孩子模組，或明確選取涉及該孩子的完整對話。' }); return;
+    }
     const features = handoverClassFeatures(this.state);
     if (targets.some(row => ('createInClassId' in row.target || row.target.spaceId !== null)
       && handoverClassFeatureModules.some(module => row.sections.includes(module) && !features[module]))) {
@@ -638,7 +659,8 @@ export class HandoverImportOwner {
     }
     if (upload.preview.integrity !== 'trusted' && !acceptUntrusted) { this.update({ notice: '資料包沒有可信簽章；如要繼續，請勾選知悉此狀態。' }); return; }
     const parsed = handoverImportCommandSchema.safeParse({ opId: crypto.randomUUID(), uploadId: upload.id, expectedUploadVersion: upload.version,
-      acceptedManifestSha256: upload.preview.integrity === 'trusted' ? null : upload.preview.manifestSha256, targets, resolutions: [] });
+      acceptedManifestSha256: upload.preview.integrity === 'trusted' ? null : upload.preview.manifestSha256, targets, resolutions: [],
+      ...(mixedRoomIds.length ? { mixedRoomIds } : {}) });
     if (!parsed.success) { this.update({ notice: '請選擇來源孩子、接收對象及要匯入的模組。' }); return; }
     this.update({ pending: { kind: 'create', command: parsed.data, checked: true } }); await this.retryOriginal();
   };

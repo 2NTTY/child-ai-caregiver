@@ -63,7 +63,7 @@ export function useProductionMixedChats(sharing?: SharingController) {
   const current = useSyncExternalStore(entry.controller.subscribe, entry.controller.getSnapshot, entry.controller.getSnapshot);
   const expected = auth === 'signedIn' && account.gate === 'ready' && identityKey ? identityKey + ':mixed:' + sessionGeneration : null;
   const visible = current.identityKey === expected && current.userId === userId;
-  const state = visible ? current : { ...current, room: null, rooms: [], messages: [], results: {}, resultErrors: [], batches: {}, batchErrors: [], draft: '',
+  const state = visible ? current : { ...current, room: null, rooms: [], messages: [], results: {}, resultErrors: [], archivedReplies: {}, batches: {}, batchErrors: [], draft: '',
     pending: null, busy: null, notice: null, roomsLoaded: false, nextRoomCursor: null, nextMessageCursor: null };
   return { controller: entry.controller, state, selected: visible ? entry.selection() : [], selectChild: entry.selectChild };
 }
