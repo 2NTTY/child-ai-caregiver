@@ -47,9 +47,33 @@
     "webImageUnchanged": true,
     "deviceNotificationSentByDeployment": false
   },
+  "returningDeviceRegistration": {
+    "pullRequest": 562,
+    "commit": "38c7fb5530fc9f9e0a65de432f2647a3206f51a1",
+    "tag": "p4-native-rebind-38c7fb55",
+    "apiWorkerDeltaSha256": "8bc925807a1bd2a442df026f45af9b01c5baa6e632f55f603770e9f11ff31328",
+    "apiWorkerDeltaBytes": 9539,
+    "localApiRegression": "A fresh login reusing the same Android token returned 503 before the fix. It now replaces a retired binding at device capacity and records the new chat opt-in.",
+    "apiAndWorker": "healthy",
+    "publicHealthHttp": 200,
+    "unauthenticatedAdminDemoHttp": 401,
+    "deviceNotificationSentByDeployment": false
+  },
+  "webDemoPanelFollowup": {
+    "pullRequest": 563,
+    "commit": "fd338c50850cf469d280228438ac2fbb224fee2f",
+    "tag": "p4-admin-web-fd338c50",
+    "isolatedReactDomButtonCountsBefore": [1, 1, 2, 2, 3],
+    "isolatedReactDomButtonCountsAfter": [1, 1, 1, 1, 1],
+    "archiveSha256": "5b8dfebd8fe22ea23aa348719f95508b1d70fff4ce7ec4b7aa3d6031e5065d59",
+    "publicAdminHtmlSha256": "98253b84e5def924d40285f95e5943cbabe0f9b4899a7d3689460420c1b5c6f1",
+    "publicJavaScriptSha256": "116d79a706996f9f9aac47cfca4d9bad85f60f5ba0707885a452b0451b0867e7",
+    "publicHealthHttp": 200,
+    "apiAndWorkerContainerIdsPreserved": true
+  },
   "physicalDemo": {
     "operatorBinding": "Configured for the designated test account and one of its owned children",
-    "deviceConsent": "Post-release read-only check: the bound account has native push enabled; zero active Android devices, zero devices opted in to chat notifications.",
+    "deviceConsent": "Confirmed after the operator enabled chat notifications: exactly one active Android binding with a token, a valid session and chat opt-in. The prior binding is revoked.",
     "demoSent": false,
     "receiptOnHandset": "pending",
     "openExactMessageAndReply": "pending",
