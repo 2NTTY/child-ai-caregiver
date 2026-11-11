@@ -6000,3 +6000,9 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 ## 2026-11-18 家庭附件庫直接上傳
 
 P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授權及原操作收據。使用同一個合成家庭走正式 HTTP，核對照顧者保存、唯讀成員讀回原件、舊草稿隔離、途中撤權及原操作重試。照片和錄音只補各自的上傳接點。資料來自記憶體 Firestore 與合成物件服務；正式交付及設備證據見接手清單。
+
+### 2026-11-12　B-P1 外部知識檢索 query 最小化（codex/search-query-minimization，本地未開 PR）
+
+在基線 `origin/master`（`d464982f`）建立本地分支 `codex/search-query-minimization`（未 push／未開 PR），按 [REQ-001 §4.1／§7](docs/REQUIREMENTS_BACKLOG.md#req-001) 完成外部搜尋 query 去識別守衛：新增 [query 最小化檢查模組](server/knowledge-query-minimization.ts)，於 [`search_knowledge`](server/product-agent-tools.ts) 及 [`createKnowledgeRetriever`](server/knowledge-retriever.ts) 外呼入口（在快取、embedding 扣額及候選檢索前）攔截 URL／email／UUID／通訊帳號、長數字／香港電話、完整生日（中英數／標點／年份＋月份標籤）、香港街道／屋苑座數／樓層門牌地址、私人對話轉錄與明確姓名稱謂，以及本次由 `read_care_summary`、`read_selected_tasks`、`search_selected_care` 載入的非泛稱孩子姓名；同時保留年齡段、症狀持續時間、粗粒度地區（如 `香港`、`沙田區`、`九龍城區`）與公共設施名稱，並於 [`search_knowledge` 描述](server/agent-knowledge-tool-descriptions.ts) 與工具 `public_query_required` 恢復提示明確指引模型移除私密識別後重試，不增開分類 LLM，也不宣稱完整匿名化。
+
+本機離線驗證（含 [網路阻斷 guard](frontend/scripts/family-cleanup-network-guard.mjs)）：[search-query-minimization 測試](tests/search-query-minimization.test.ts)（5/5，涵蓋全 3 個兒童資料讀取工具載入姓名攔截、`createAgentRuntime` 阻斷後無額外分類模型重試並保留內部 `memoryFacts`、以及 `createKnowledgeRetriever` 直呼與 `family` 可見度檢查）及相關知識／產品代理／prompt／Vertex contract／runtime 測試共 10 個測試檔（75/75 全過），並以 [離線驗證腳本](scripts/ci/verify-search-query-minimization-offline.sh) 與 [CI workflow](.github/workflows/search-query-minimization-offline.yml) 鎖定門檻。同時本機直跑上游既有 `tests/avatar-runtime.test.ts`（失敗於基線 `server/firebase-runtime.ts:214` `mixedTranscriptPage`）及 `tests/product-agent-assignee-recovery.test.ts`（4 例中 1 例失敗於 `agent-confirmation-store.ts` `access_version::text,storage_epoch::text` SQL fixture）確認為 `origin/master` 基線既有問題且不屬本包範圍。本階段尚無真 Gemini 模型實測或外部 Web 檢索串接（屬 `B-P2+`）。
