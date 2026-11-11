@@ -19,6 +19,9 @@ import { AGENT_CONFIRMATION_PENDING_TEXT, AGENT_CONFIRMATION_SAVED_TEXT } from "
 import { PRODUCT_AGENT_TOOL_CATALOG, WORK_CONTINUATION_TOOL_CATALOG } from "./product-agent-capabilities.ts";
 
 import type { FirestoreWorkContinuationStore, ClaimedWorkContinuation } from "./firestore-work-continuation-store.ts";
+import { scopeTaskChildrenPerRead } from '../src/shared/assistant-task-context.ts';
+import type { createFirestoreAgentRuns } from './firestore-agent-runs.ts';
+import type { FirestoreOnlineStore } from './firestore-online.ts';
 
 function unfinishedDeliveryText(stopReason: string | null | undefined): string {
   if (stopReason === "delivery_review_incomplete" || stopReason === "delivery_review_rejected"
@@ -114,6 +117,8 @@ export function createProductAgent(options: {
   readChatFile?: import("./chat-file-agent.ts").ChatFileAgentReader;
   voices?: Pick<import("./firestore-voice.ts").FirestoreVoiceStore, "agentAudio" | "authorizeAudio">;
   workContinuationAuthority?: FirestoreWorkContinuationStore;
+  mixed?:{runs:Pick<ReturnType<typeof createFirestoreAgentRuns>,'claimMixed'|'authorizeMixed'|'mixedInput'|'mixedResult'|'finishMixed'>;
+    online:Pick<FirestoreOnlineStore,'readTaskContext'>};
   documents?: import("./family-document-store.ts").FamilyDocumentStore;
   concerns?: Pick<import("./concern-store.ts").ConcernStore, "list" | "get">;
   sources?: import("./shared-input-store.ts").SharedInputStore;
@@ -127,6 +132,64 @@ export function createProductAgent(options: {
   const activeReplies = new Map<string, AbortController>();
   const replyKey = (userId: string, childId: string, messageId: string) => JSON.stringify([userId, childId, messageId]);
   return {
+    async replyMixed(userId:string,roomId:string,messageId:string,isCurrentUser:()=>Promise<boolean>) {
+      const mixed=options.mixed;
+      if (!mixed || !await isCurrentUser()) return null;
+      const {runs,online}=mixed;
+      const claim=await runs.claimMixed(userId,roomId,messageId);
+      if (!claim.created) return runs.mixedResult(userId,roomId,messageId);
+      const key=replyKey(userId,'mixed:'+roomId,messageId), cancellation=new AbortController();
+      activeReplies.set(key,cancellation);
+      try {
+        const input=await runs.mixedInput(userId,roomId,messageId);
+        const authorize=async()=>await isCurrentUser() && await runs.authorizeMixed(userId,roomId,messageId,claim.runId);
+        const recent=selectRecentConversation(input.messages,input.messages.length-1,{upstreamHasEarlierMessages:input.hasEarlier});
+        let tools:ReturnType<typeof createProductAgentTools>;
+        const rendered:{value:AgentPresentation|null}={value:null};
+        const review:{value:ChatDeliveryReviewBinding|null;text:string|null}={value:null,text:null};
+        const result=await options.runtime.run({
+          scope:claim.scope,runId:claim.runId,claimedRun:claim,deadlineAtMs:Date.parse(claim.expiresAt),
+          trigger:{kind:'interactive',reference:messageId},recipeId:'product-interactive',authorize,signal:cancellation.signal,
+          availableInputs:['run','scope','conversation','context','evidence','capabilities'],
+          context:{currentMessageId:messageId,selectedChildren:input.room.childIds.length,recentConversationCoverage:recent.coverage,
+            instructionPolicy:'這是發起者的私人多孩對話。按本次選定範圍讀待辦，依名冊區分同名孩子。引用 read_selected_tasks 給的 citationId 並交由 present_answer 核對。只有已讀頁屬證據。公共問題可搜尋官方資料。'},
+          messages:recent.messages.map(({role,text})=>({role,text})),
+          tools:run=>{
+            tools=createProductAgentTools({run,authorize,store:options.store,memory:options.memory,tasks:options.tasks,knowledge:options.knowledge,
+              trustedUserMessage:input.messages.at(-1)!.text,
+              mixedTasks:async ({from,childId,cursor})=>{
+                if (childId && !input.room.childIds.includes(childId)) throw new AgentStopped('unauthorized');
+                const ids=childId ? [childId] : input.room.childIds.slice(from,from+scopeTaskChildrenPerRead);
+                if (!ids.length) return {children:[],nextFrom:null};
+                const page=await online.readTaskContext(userId,{scope:input.taskScope,targets:ids.map(id=>({childId:id,...(cursor ? {cursor} : {})}))});
+                if (!await authorize()) throw new AgentStopped('unauthorized');
+                return {...page,nextFrom:!childId && from+ids.length<input.room.childIds.length ? from+ids.length : null};
+              }});
+            return tools.tools;
+          },finalizeOnModelLimit:true,presentationRepair:'present_answer',
+          finalize:async (runResult,ctx)=>{
+            rendered.value=await tools.presentation();
+            return acceptReviewedDelivery(tools,rendered,review,runResult,ctx);
+          },
+        });
+        if (!await isCurrentUser()) return null;
+        const presentation=result.status==='completed'?rendered.value:null;
+        const value=withDeliveryReview({runId:claim.runId,status:result.status,stopReason:result.stopReason??null,
+          provenance:result.provenance??null,text:presentation?.text??unfinishedDeliveryText(result.stopReason),
+          citations:presentation?.citations??[],privateSourceCitations:[],retrievalMode:presentation?.retrievalMode??'not_used',
+          tools:result.tools.map(({name,status,reference})=>({name,status,...(reference ? {reference} : {})})),countsKnown:true,counts:result.counts,proposals:[]},review);
+        await runs.finishMixed(userId,roomId,messageId,value);
+        return await runs.mixedResult(userId,roomId,messageId);
+      } finally {
+        if (activeReplies.get(key)===cancellation) activeReplies.delete(key);
+      }
+    },
+    async cancelMixed(userId:string,roomId:string,messageId:string) {
+      if (!options.mixed) return null;
+      const result=await options.mixed.runs.mixedResult(userId,roomId,messageId,true);
+      if (result?.stopReason==='cancelled') activeReplies.get(replyKey(userId,'mixed:'+roomId,messageId))?.abort();
+      return result;
+    },
     async backgroundClaimed(input: ClaimedWorkContinuation, currentWorker: () => boolean, signal?: AbortSignal): Promise<ProductAgentResult | null> {
       const authority = options.workContinuationAuthority;
       if (!authority || input.decision !== "execute") throw new Error("work_continuation_assembly_required");

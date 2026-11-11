@@ -2,6 +2,7 @@ import { agentChatFileReadSchema, type ChatFileAgentReader } from './chat-file-a
 import { photoLinkInputSchema, photoMessageReferenceSchema } from '../src/shared/photos.ts';
 import { officialHelpIdSchema, type OfficialHelpId } from '../src/shared/agent-feedback.ts';
 import { z } from "zod";
+import { assistantTaskContextRequestSchema, type AssistantTaskContextPage } from '../src/shared/assistant-task-context.ts';
 import { summaryQuery } from "../src/shared/care-summary.ts";
 import type { MemoryContext, MemoryFact, SummaryInput } from "../src/shared/memory.ts";
 import { readAgentWorkSchema } from "../src/shared/agent-work.ts";
@@ -101,6 +102,8 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 }
 
 export function createProductAgentTools(options: {
+  mixedTasks?: (input:{from:number; childId?:string; cursor?:{afterId:string;basis:string}}) =>
+    Promise<AssistantTaskContextPage & {nextFrom:number|null}>;
   photos?: Pick<import('./firestore-photos.ts').FirestorePhotoStore, 'get' | 'list' | 'agentImage' | 'authorizeImage'>;
   readChatFile?: ChatFileAgentReader;
   onOfficialHelp?: (id: OfficialHelpId) => void;
@@ -131,6 +134,7 @@ export function createProductAgentTools(options: {
   const memoryGrounding = new Map<string, { fact: MemoryFact; source: ChatDeliverySource }>();
   let groundingLoaded = false;
   let selectedSources: ChatDeliverySource[] = [];
+  const taskPages=new Map<string,ChatDeliverySource>();
   let selectedMemoryFacts: MemoryFact[] = [];
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;
@@ -236,8 +240,9 @@ export function createProductAgentTools(options: {
       const kind = paragraph.kind ?? parsed.kind;
       const official = options.reviewedGrowthPresentation || kind === "caregiving" || kind === "safety_help";
       if ((kind === "caregiving" || kind === "safety_help") && !paragraph.citationIds.some(id => evidence.get(id)?.chunk.classification === "official_guidance")) throw new FamilyError(400, "citation_required");
-      if (kind === "private_reference" && !paragraph.citationIds.some(id => privateSources?.evidence.has(id)) && !run.images?.references().length && !run.voice) throw new FamilyError(400, "citation_required");
+      if (kind === "private_reference" && !paragraph.citationIds.some(id => privateSources?.evidence.has(id) || taskPages.has(id)) && !run.images?.references().length && !run.voice) throw new FamilyError(400, "citation_required");
       for (const id of paragraph.citationIds) {
+        if (taskPages.has(id) && !official) continue;
         if (privateSources?.evidence.has(id) && !options.reviewedGrowthPresentation) continue;
         const item = evidence.get(id);
         if (!item || official && item.chunk.classification !== "official_guidance") throw new FamilyError(400, "invalid_citation");
@@ -246,6 +251,8 @@ export function createProductAgentTools(options: {
     if (new Set(parsed.paragraphs.flatMap(paragraph => paragraph.citationIds)).size > 6) throw new FamilyError(400, "citation_limit");
   }
   function deliverySource(id: string): ChatDeliverySource | null {
+    const taskPage=taskPages.get(id);
+    if (taskPage) return taskPage;
     const privateCitation = privateSources?.evidence.get(id);
     if (privateCitation) {
       const excerpt = chatDeliveryExcerpt(privateCitation.excerpt);
@@ -330,8 +337,8 @@ export function createProductAgentTools(options: {
       execute: (args, context) => guard(async () => {
         const query = args.query as string;
         if (/@|https?:|[0-9a-f]{8}-[0-9a-f-]{27}|(?:\d[ -]?){8}/iu.test(query)) throw new FamilyError(400, "public_query_required");
-        const resolved = await resolveKnowledgeQueryContext(await current(), args.queryAge as import("../src/shared/knowledge.ts").KnowledgeQueryAge | undefined,
-          { childId: scope.childId, visibility: options.visibility ?? "private", readHistory: (messageId, offset) =>
+        const resolved = await resolveKnowledgeQueryContext(options.mixedTasks ? {profileApplicable:false} : await current(), args.queryAge as import("../src/shared/knowledge.ts").KnowledgeQueryAge | undefined,
+          { childId: scope.childId, visibility: options.mixedTasks ? 'family' : options.visibility ?? "private", readHistory: (messageId, offset) =>
             budget.wait(() => store.readHistory(scope.userId, scope.childId, { messageId, offset, limit: 4000 })) });
         const filter = { ...resolved.filter, classification: args.classification as KnowledgeFilter["classification"] };
         const result = { ...await retrieval.search(query, filter, context.queryEmbeddingAttemptKey), queryContext: resolved.queryContext, complete: true, omittedChunks: 0, returned: 0, hasMore: false };
@@ -423,13 +430,13 @@ export function createProductAgentTools(options: {
         if (parsed.kind === "no_action" && contactReference) throw new FamilyError(400, "operation_result_required");
         // Durable personal-fact statements must persist a pending candidate first; chat delivery
         // must not stand in for propose_fact. Questions / read-backs are unaffected.
-        if (!options.background && parsed.kind !== "no_action" && pendingMemoryProposalCount === 0
+        if (!options.background && !options.mixedTasks && parsed.kind !== "no_action" && pendingMemoryProposalCount === 0
           && options.trustedUserMessage && looksLikeDurableMemoryFactStatement(options.trustedUserMessage)
           && !parsed.paragraphs.some(item => item.citationIds.length)) {
           throw new FamilyError(400, "propose_fact_required");
         }
         // Memory paragraphs need their own evidence even beside official knowledge citations.
-        if (!options.background && parsed.kind !== "no_action"
+        if (!options.background && !options.mixedTasks && parsed.kind !== "no_action"
           && isMemoryRestatementAnswer(parsed as AgentAnswer)) {
           await ensureConfirmedMemoryGrounding();
         }
@@ -502,6 +509,33 @@ export function createProductAgentTools(options: {
     }),
   });
   let contactReference:string|null=null;
+  if (options.mixedTasks) {
+    const cursorSchema=assistantTaskContextRequestSchema.shape.targets.element.shape.cursor;
+    const parameters=z.strictObject({from:z.int().min(0).default(0),childId:z.uuid().optional(),cursor:cursorSchema});
+    tools.push({name:'read_selected_tasks',effect:'read',
+      description:'按固定選取順序讀取最多五名孩子的待辦。先從 from=0 開始；nextFrom 可接下一組。續讀某一名孩子時帶回 childId 及其 nextCursor。以每頁的 citationId 引用讀到的原始資料。',
+      parameters,authorize:permitted,execute:args=>guard(async()=>{
+        const query=parameters.parse(args);
+        if (query.cursor && !query.childId) throw new FamilyError(400,'invalid_input');
+        const page=await options.mixedTasks!(query);
+        const children: (AssistantTaskContextPage['children'][number] & {citationId:string})[]=[];
+        let nextFrom=page.nextFrom;
+        const allowance=Math.max(0,budget.toolResponseCharacters-512);
+        for (const child of page.children) {
+          const text=JSON.stringify({childId:child.childId,name:child.childName,tasks:child.tasks,continued:!!query.cursor,hasMore:child.nextCursor!==null});
+          const hash=chatDeliveryContentHash(text), citationId='tasks:'+hash;
+          const item={...child,citationId};
+          if (JSON.stringify({children:[...children,item],nextFrom:query.from+children.length+1}).length>allowance) {
+            if (!children.length) throw new FamilyError(400,'response_limit');
+            nextFrom=query.from+children.length;
+            break;
+          }
+          children.push(item);
+          taskPages.set(citationId,{citationId,version:hash,contentHash:hash,classification:'private',...chatDeliveryReviewSourceExcerpt(text)});
+        }
+        return {children,nextFrom};
+      })});
+  }
   if(options.contact)tools.splice(tools.length-1,0,
     {name:"read_contact_options",description:"讀取指定已確認家庭任務的當前聯絡資格。Server 核對到期事件、任務版本、明確授權、接收者自己同意及可用渠道；只返回合資格對象及指定／備援原因，不推測誰有空。",
      parameters:z.object({taskId:z.uuid()}).strict(),authorize:permitted,
@@ -514,7 +548,8 @@ export function createProductAgentTools(options: {
      }},
   );
   return {
-    tools: options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "read_knowledge_context", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
+    tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
+      : options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "read_knowledge_context", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
       : tools.filter(tool => (options.includeTaskProposals!==false || !["propose_task","propose_task_change"].includes(tool.name))
         && (options.includeContact!==false || !["read_contact_options","contact_caregiver"].includes(tool.name))),
     summaryDraft: () => summaryInput && summaryText ? { previousVersion: summaryInput.previousVersion, basis: summaryInput.basis,
@@ -552,7 +587,7 @@ export function createProductAgentTools(options: {
       // review cannot wipe a durable pending candidate when the model restated BB/allergy.
       if (ids.length === 0 && !options.background
         && (answer.kind === "operation" || answer.kind === "clarification" || answer.kind === "record_restatement")) {
-        if (store.confirmationQuestions) {
+        if (!options.mixedTasks && store.confirmationQuestions) {
           const questions = await store.confirmationQuestions(scope.userId, scope.childId, runId);
           if (!await authorize() || !questions) throw new AgentStopped("unauthorized");
           if (questions.length === 1 && questions[0]?.trim()) {
@@ -570,7 +605,7 @@ export function createProductAgentTools(options: {
           : [{ text: "暫時未有可引用的補充說明。請查看關注卡片的適用依據及來源。", citationIds: [] }])
         : answer.paragraphs;
       const rendered = paragraphs.map(paragraph => paragraph.text + (paragraph.citationIds.length
-        ? " " + paragraph.citationIds.map(id => privateSources?.evidence.has(id)?"[私人來源 "+(privateSourceCitations.findIndex(item=>item.citationId===id)+1)+"]":"[" + (citations.findIndex(item=>item.chunk.chunkId===id)+1) + "]").join("") : "")).join("\n\n");
+        ? " " + paragraph.citationIds.map(id => taskPages.has(id) ? "[待辦資料]" : privateSources?.evidence.has(id)?"[私人來源 "+(privateSourceCitations.findIndex(item=>item.citationId===id)+1)+"]":"[" + (citations.findIndex(item=>item.chunk.chunkId===id)+1) + "]").join("") : "")).join("\n\n");
       return { text: rendered, citations: citations.map(item => item.chunk), privateSourceCitations, retrievalMode: mode };
     },
     deliveryDraft(): ChatDeliveryDraft | null {
