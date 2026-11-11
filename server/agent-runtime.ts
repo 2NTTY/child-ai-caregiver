@@ -444,12 +444,20 @@ export function createAgentRuntime(options: {
             const visible = capabilitySelection ? [...capabilitySelection.visibleToolNames(ids)] : tools.map(tool => tool.name);
             const instruction = (projected: typeof planning, projectedScope: Readonly<AgentScope> = scope) => {
               const finishing = terminalToolNames.size > 0 && projected.phase === 'finish';
+              const modelBudget = input.fitInitialInput ? {
+                usedBeforeThisCall: projected.usedBeforeThisCall,
+                remaining: projected.remaining,
+                phase: projected.phase,
+                reserveForFinish: projected.reserveForFinish,
+                reserveForDeliveryReview: projected.reserveForDeliveryReview,
+                softRemaining: projected.softRemaining,
+              } : projected;
               return `${currentPrompt.text}\n\nServer runtime metadata:\n${JSON.stringify({ runId, scope: projectedScope, trigger: input.trigger,
                 now: new Date().toISOString(), timeZone: "Asia/Hong_Kong", locale: "zh-HK", packVersion: currentPrompt.packVersion,
                 recipeId: currentPrompt.recipeId, capabilities: finishing ? visible.filter(name => terminalToolNames.has(name)) : visible,
                 ...(capabilitySelection && !finishing ? { capabilityCatalog: capabilitySelection.metadata(ids) } : {}),
                 limits: { ...budget.limits, outputTokens: agentGenerationConfig(selected.config, undefined)!.maxOutputTokens },
-                budget: projected })}`;
+                budget: modelBudget })}`;
             };
             if (privateSummaryEnabled) {
               // Next parts retain this grant/profile/prompt and immutable scope identity.
