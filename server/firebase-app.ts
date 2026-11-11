@@ -198,14 +198,18 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (expected !== userId) throw new RequestError(expected ? 'identity_changed' : 'account_precondition_required',expected ? 409 : 428);
         const store=options.chat?.mixed;
         if (!store) throw new RequestError('mixed_chat_unavailable',503);
-        const match=/^\/api\/account\/mixed-chats(?:\/([a-f0-9-]+)(\/messages(?:\/([a-f0-9-]+)\/(reply|task-batch(?:\/advance)?))?)?)?$/u.exec(path);
+        const match=/^\/api\/account\/mixed-chats(?:\/([a-f0-9-]+)(\/messages(?:\/([a-f0-9-]+)\/(reply|task-batch(?:\/advance)?|care-citations\/([1-6])))?)?)?$/u.exec(path);
         if (!match) throw new RequestError('not_found',404);
         if ([match[1],match[3]].some(id=>id && !z.uuid().safeParse(id).success)) throw new RequestError('not_found',404);
         const cursor=new URL(request.url).searchParams.get('cursor');
         let result;
         if (match[1] && match[3]) {
           if (!options.product) throw new RequestError('agent_unavailable',503);
-          if (match[4]?.startsWith('task-batch')) {
+          if (match[4]?.startsWith('care-citations/')) {
+            if (request.method!=='GET') throw new RequestError('method_not_allowed',405);
+            if (new URL(request.url).search) throw new RequestError('invalid_input',400);
+            result={citation:await options.product.runs.mixedCareCitation(userId,match[1],match[3],Number(match[5]))};
+          } else if (match[4]?.startsWith('task-batch')) {
             const batches=options.product.mixedTaskBatches;
             if (match[4]==='task-batch' && request.method==='GET') result={batch:await batches.get(userId,match[1],match[3])};
             else if (match[4]==='task-batch' && request.method==='POST')

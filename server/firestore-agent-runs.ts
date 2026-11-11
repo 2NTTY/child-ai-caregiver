@@ -20,6 +20,10 @@ import { readPrivateSummaryEntryGate, summaryFastPayloadHash } from './firestore
 import { mixedRunScopeSchema } from './mixed-chat-records.ts';
 import type { MixedRoomPin, MixedTransferScope, MixedTranscriptPage, MixedTranscriptRow } from '../src/shared/mixed-chat-transfer.ts';
 import type { SummaryInput } from '../src/shared/memory.ts';
+import { selectedCareRecordCitations, selectedCareCitationReplySchema, type SelectedCareCitation } from '../src/shared/assistant-care-citation.ts';
+import type { FirestoreCareStore } from './firestore-care.ts';
+import { createFirestoreSharingStore } from './firestore-sharing.ts';
+import { assistantTaskScopeSchema } from '../src/shared/assistant-task-context.ts';
 
 const uuid = z.uuid(), time = z.iso.datetime({ offset: true }), decimal = z.string().regex(/^(0|[1-9][0-9]{0,18})$/u);
 const accountChildId='00000000-0000-0000-0000-000000000000';
@@ -66,6 +70,7 @@ export const firestoreAgentClaimSchema = z.object({ runId: uuid, mixedChat:mixed
 export interface FirestoreAgentRunOptions extends FirestoreDomainOptions {
   chat: FirestoreChatStore;
   memory: FirestoreMemoryStore;
+  care?: Pick<FirestoreCareStore, 'readRecord'>;
   serverClock?: () => number;
   readInteractiveRunSeconds?: (tx: import("@google-cloud/firestore").Transaction, scope: Binding['scope']) => Promise<number>;
   /** Only the authenticated worker composition supplies this canonical lease/resource gate. */
@@ -79,6 +84,7 @@ export interface FirestoreAgentResultProjection {
 /** Private business run authority. Native ADK sessions remain protocol state, never execution receipts. */
 export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
+  const sharing = createFirestoreSharingStore(options);
   const now = options.serverClock ?? Date.now;
   const ref = (id: string) => data.ref('agent_runs', 'agent-run', id);
   const claimId = (b: Binding, kind: 'interactive' | 'worker', reference: string) =>
@@ -400,6 +406,49 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
         if (cancel && run.state === 'running') run={...run,state:'stopped',stopReason:'cancelled'};
         if (run.state !== original.state) write(b,run);
         return {...(run.result ?? empty(run)),status:run.state,stopReason:run.stopReason};
+      });
+    },
+    async mixedCareCitation(userId:string,roomId:string,messageId:string,ordinal:number):Promise<SelectedCareCitation> {
+      domainParse(z.int().min(1).max(6),ordinal);
+      if (!options.care) domainReject('care_citation_unavailable',503);
+      const care=options.care;
+      return authority.runTransaction(userId,null,async b=>{
+        const source=await options.chat.mixed.sourceIn(b,roomId,messageId).catch(error=>{
+          if (error instanceof FirestoreDomainError && error.code==='imported_message_read_only') domainReject('not_found',404);
+          throw error;
+        });
+        const run=await originalReplyRun(b,messageId), review=run?.result?.deliveryReview;
+        if (!run || run.state!=='completed' || run.result?.status!=='completed' || !review
+          || review.decision!=='pass' || review.visibility!=='private' || run.mixedChat?.roomId!==roomId
+          || run.sourceMessageId!==messageId || firestoreDomainHash([run.mixedChat.scope,run.mixedChat.childIds])
+            !==firestoreDomainHash([source.room.scope,source.room.childIds])
+          || firestoreDomainHash(review.scope)!==firestoreDomainHash({userId:run.ownerUserId,workspaceId:run.workspaceId,
+            childId:run.childId,authorizationVersion:run.authorizationVersion,dataVersion:run.dataVersion})) domainReject('not_found',404);
+        const citation=selectedCareRecordCitations(review.sourceVersions)[ordinal-1];
+        const childId=citation && run.mixedChat.childIds[citation.childIndex];
+        if (!citation || !childId) domainReject('not_found',404);
+        async function readCitation(binding:Binding):Promise<SelectedCareCitation> {
+          const child=await binding.readChild(childId);
+          if (!child) domainReject('not_found',404);
+          const record=await care.readRecord(binding,citation.recordId);
+          if (!record || record.childId!==childId) domainReject('not_found',404);
+          if (record.version!==citation.version) domainReject('care_citation_changed',409);
+          return domainParse(selectedCareCitationReplySchema,{citation:{citationId:citation.citationId,recordId:record.id,
+            version:record.version,childId,childName:child.displayName,text:record.text,source:record.source,
+            eventTimeLabel:record.details.eventTime.rawText || null}}).citation;
+        }
+        const expected=domainParse(assistantTaskScopeSchema,source.taskScope,'mixed_chat_binding',500);
+        if (expected.kind==='personal') {
+          const current=await authority.assertPersonalSource(b.transaction,{...b.scope,childId});
+          // Reuse this transaction under the verified child scope; an account binding cannot decrypt child records.
+          return readCitation({...b,scope:current.scope,authorizationVersion:current.authorizationVersion});
+        }
+        return sharing.inResourceTransaction(b,{spaceId:expected.spaceId,childId,module:'care',mode:'read'},access=>{
+          if (!access.binding.sharedAccess?.classMember) domainReject('class_required',403);
+          if (access.basis.spaceVersion!==expected.spaceVersion || (access.basis.teacherSpaceVersion??null)!==expected.teacherSpaceVersion)
+            domainReject('sharing_scope_changed',403);
+          return readCitation(access.binding);
+        });
       });
     },
     async mixedTranscriptPage(userId:string,pin:MixedRoomPin,scope:MixedTransferScope,childIds:string[],cursor:string|null):Promise<MixedTranscriptPage> {
