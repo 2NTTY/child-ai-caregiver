@@ -1,0 +1,53 @@
+{
+  "candidate": "Errands — Shopping List",
+  "primaryRepository": "https://github.com/mrvladus/Errands",
+  "release": "46.2.9",
+  "releaseCommit": "a586fc7ef8bb755d4b01ebdcef25e4e53c19d460",
+  "imagePath": "screenshots/main.png",
+  "imageBlob": "eb19c6d38fb37a6118ccd88ec62fc3f2bb2b4545",
+  "imageSha256": "e965a4888408fc2e8b50baba8ce88ab74f995472597a7071b30e78c762a1bf4f",
+  "imageDimensions": [
+    1122,
+    822
+  ],
+  "imageOriginCommit": "b6f9fd3360ececa45562140fff2e40a19d28e052",
+  "imageOriginCommitDate": "2024-05-18T10:19:00Z",
+  "sourceVersionAtOriginCommit": "46.2",
+  "rightsEvidence": "MIT at repository root, associated documentation covered; README references screenshot in same repository; only LICENSE file in recursive tree, no discovered image-specific exception. Image-specific license declaration not separately present.",
+  "versionCaveat": "The screenshot is verifiably shipped in 46.2.9 but last changed at a 46.2 source commit. Exact runtime build used to capture image is not stated.",
+  "inspection": "Original image unchanged; bounded local desktop wrapper display verified; original app not executed, no publication.",
+  "candidateId": "TK03",
+  "status": "local-only-bounded-desktop-reviewed",
+  "browserUsed": true,
+  "published": false,
+  "imageModified": false,
+  "localPage": "index.html",
+  "localImage": "assets/errands-original.png",
+  "licenseFile": "LICENSE-Errands.txt",
+  "scope": "Unmodified original image with neutral static evidence wrapper; no redesign, active UI, external resource loading, or publication.",
+  "browserVerification": {
+    "observedAt": "2026-11-11T11:06:57.282Z",
+    "viewport": [
+      1180,
+      757
+    ],
+    "devicePixelRatio": 1,
+    "imageNaturalSize": [
+      1122,
+      822
+    ],
+    "imageDisplaySize": [
+      1122,
+      822
+    ],
+    "captionGap": 12,
+    "horizontalOverflow": false,
+    "notTested": [
+      "mobile",
+      "original interaction",
+      "keyboard",
+      "screen reader"
+    ],
+    "evidence": "Full-page screenshot in tool transcript, no local screenshot file claimed."
+  }
+}

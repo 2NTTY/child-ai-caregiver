@@ -1,5 +1,13 @@
 # Selection Workbench
 
+## Sixteen-reference source preview · page-reference07 · 2026-11-11
+
+[Page reference 07](versions/page-reference07-20261111/README.md) adds only C-02 Baby Monitor Rhythm, GR01 general-business Dashboard, LG02 isolated CoreUI Login, PC03 AI Chat UI and HIS01 Nextcloud Activity to reviewed 06. [Index source](versions/page-reference07-20261111/index.html). Home, Chat, Care, Settings, Tasks, Memory and Login each have two references; general Business Progress and Activity History each have one. No PC02 or other pending candidate is included.
+
+C-02 retains its original bottom-truncated viewport and pinned README's synthetic-demo evidence. GR01 is a general-business progress overview, NOT a parenting/child-growth page; no invented HTML reconstruction. LG02 preserves the isolated native site, discloses its CSP/no-referrer modification and LIGHT-only appearance, forbids login/data entry and excludes the upstream ZIP. PC03 is a complete demo application viewport, NOT the entire scrollable conversation. HIS01 preserves the clean eight-file CC BY display whitelist and verified synthetic example data, not internal logs; it is one viewport, not all history. All exact originals, full notices, source/version limits and unknowns remain.
+
+This increment passed scoped static checks and bounded Chrome desktop review of all five new anchors, relocated displays and browser Back (1180 × 757, DPR 1). Existing eleven sections, shared CSS, originals, history and choices remain unchanged. This is the authorized independent GitHub SOURCE-preview branch package, not a hosted website or Sites deployment. LG02's explicit local-serving-only boundary remains unchanged; source redistribution with its MIT/CC BY notices does not waive that boundary or authorize live authentication. No controls or data were entered. Mobile, original interactive UX and packet capture remain untested. No component mixing, actual frontend implementation, PR or merge. Author-stage leaf metadata stays intact; current scope is in the 07 index and provenance.
+
 ## Eleven-reference source preview · page-reference06 · 2026-11-11
 
 [Page reference 06](versions/page-reference06-20261111/README.md) adds only MR-02 SilverBullet and LG01 Bootstrap Sign-in over reviewed 05. [Index source](versions/page-reference06-20261111/index.html). Home, Settings, Tasks and Memory now each have two references; Chat, Care and Login each have one. No PC02 files or selection writes are introduced.

@@ -1,0 +1,69 @@
+{
+  "id": "MR-01",
+  "page": "記憶與參考",
+  "version": "1.0.0",
+  "createdAt": "2026-11-11",
+  "kind": "unmodified-source-image-page-reference",
+  "selected": false,
+  "implementedFrontend": false,
+  "sitePublished": false,
+  "browserVerified": true,
+  "mobileVerified": false,
+  "interactiveUXVerified": false,
+  "source": {
+    "repository": "TriliumNext/Trilium",
+    "commit": "b8ae1382455bf907379a97f149357d584f6a44ba",
+    "path": "docs/app.png",
+    "imageCommit": "9bf4aa29680673934d78695c625c2ebde41be2b9",
+    "imageCommitDate": "2026-01-03T22:28:00Z",
+    "imageCommitAuthor": "Adorian Doran",
+    "imageCommitLogin": "adoriandoran",
+    "imageGitBlob": "872a10c141ab86911130799b079b53203a63a992",
+    "imageBytes": 196432,
+    "imageWidth": 1294,
+    "imageHeight": 910,
+    "license": "AGPL-3.0-or-later",
+    "licenseBasis": "Pinned repository README declaration and root LICENSE; no separately obtained screenshot permission.",
+    "copyright": "Copyright 2017-2025 zadam, Elian Doran, and other contributors",
+    "appVersion": null,
+    "sourceUrl": "https://github.com/TriliumNext/Trilium/blob/b8ae1382455bf907379a97f149357d584f6a44ba/README.md",
+    "imageUrl": "https://github.com/TriliumNext/Trilium/blob/b8ae1382455bf907379a97f149357d584f6a44ba/docs/app.png",
+    "sourceCodeUrl": "https://github.com/TriliumNext/Trilium/tree/b8ae1382455bf907379a97f149357d584f6a44ba"
+  },
+  "sourceImageDirectlyViewed": true,
+  "differences": {
+    "imageBytesChanged": false,
+    "changes": [
+      "External candidate numbering, provenance and scope labels only",
+      "Proportional display scaling only"
+    ],
+    "notInferred": [
+      "Offscreen content",
+      "Mobile layout",
+      "Interactive UX",
+      "Current app version"
+    ]
+  },
+  "publication": {
+    "status": "independent-github-source-preview-only",
+    "licenseConditions": "Preserve source copyright, full AGPL license, pinned source/source-code links and no-warranty notice; no endorsement or new trademark rights.",
+    "readyForUnconditionalPublicRelease": false,
+    "reviewedScope": "Unmodified upstream documentation image and source notices only; no Trilium code, execution or production integration."
+  },
+  "dataBoundary": "Official packaged Trilium Demo only. No user/family/child records or model/GCP connections.",
+  "verification": {
+    "scope": "desktop-static-source-image-only",
+    "date": "2026-11-11",
+    "viewport": {
+      "width": 1180,
+      "height": 757,
+      "dpr": 1
+    },
+    "http": "PASS_ISOLATED_LOCAL_PREVIEW",
+    "mobile": "NOT_RUN",
+    "keyboard": "NOT_RUN",
+    "screenReader": "NOT_RUN",
+    "interactive": "NOT_RUN",
+    "integration": "NOT_RUN"
+  }
+}
