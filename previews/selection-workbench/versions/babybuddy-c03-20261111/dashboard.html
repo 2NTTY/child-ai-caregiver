@@ -1,0 +1,520 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Dashboard - Jamie Chen | Baby Buddy</title>
+
+    <link rel="stylesheet" href="assets/css/app.css" />
+
+</head>
+<body style="padding-top: 3rem;">
+
+
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+        <a class="navbar-brand" href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented"><span class="text-info">Baby</span> Buddy</a>
+
+        <div class="d-lg-none d-md-none ml-auto p-0 mr-2">
+            <a class="text-success mr-2" href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented"><i class="icon icon-2x icon-timer" aria-hidden="true"></i></a>
+            <div class="dropdown show d-inline">
+                <a class="text-success"
+                   href="#"
+                   role="button"
+                   id="nav-quick-add-link"
+                   data-toggle="dropdown"
+                   aria-haspopup="true"
+                   aria-expanded="false"><i class="icon icon-2x icon-add" aria-hidden="true"></i>
+                </a>
+
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="nav-quick-add-link">
+                    
+                        <a class="dropdown-item p-2" href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented">
+                            <i class="icon icon-diaperchange" aria-hidden="true"></i> Diaper Change
+                        </a>
+                    
+                    
+                        <a class="dropdown-item p-2" href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented">
+                            <i class="icon icon-feeding" aria-hidden="true"></i> Feeding
+                        </a>
+                    
+                    
+                        <a class="dropdown-item p-2" href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented">
+                            <i class="icon icon-sleep" aria-hidden="true"></i> Sleep
+                        </a>
+                    
+                    
+                        <a class="dropdown-item p-2" href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented">
+                            <i class="icon icon-tummytime" aria-hidden="true"></i> Tummy Time
+                        </a>
+                    
+                </div>
+            </div>
+
+        </div>
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse"
+                data-target="#navbar-app" aria-controls="navbar-app"
+                aria-expanded="false"  aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbar-app">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented">
+                        <i class="icon icon-dashboard" aria-hidden="true"></i> Dashboard
+                    </a>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a id="nav-activity-menu-link"
+                       class="nav-link dropdown-toggle"
+                       href="#"
+                       data-toggle="dropdown"
+                       aria-haspopup="true"
+                       aria-expanded="false"><i class="icon icon-child" aria-hidden="true"></i> Activities</a>
+                    <div class="dropdown-menu" aria-labelledby="nav-activity-menu-link">
+
+                        
+                            <a class="dropdown-item"
+                               href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented"><i class="icon icon-diaperchange" aria-hidden="true"></i> Changes</a>
+                        
+                        
+                            <a class="dropdown-item pl-5"
+                               href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented"><i class="icon icon-add" aria-hidden="true"></i> Change</a>
+                        
+
+                        
+                            <a class="dropdown-item"
+                               href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented"><i class="icon icon-feeding" aria-hidden="true"></i> Feedings</a>
+                        
+                        
+                            <a class="dropdown-item pl-5"
+                               href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented"><i class="icon icon-add" aria-hidden="true"></i> Feeding</a>
+                        
+
+                        
+                            <a class="dropdown-item"
+                               href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented"><i class="icon icon-sleep" aria-hidden="true"></i> Sleep</a>
+                        
+                        
+                            <a class="dropdown-item pl-5"
+                               href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented"><i class="icon icon-add" aria-hidden="true"></i> Sleep entry</a>
+                        
+
+                        
+                            <a class="dropdown-item"
+                               href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented"><i class="icon icon-tummytime" aria-hidden="true"></i> Tummy Time</a>
+                        
+                        
+                            <a class="dropdown-item pl-5"
+                               href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented"><i class="icon icon-add" aria-hidden="true"></i> Tummy Time entry</a>
+                        
+
+                        <div class="dropdown-divider"></div>
+
+                        
+                            <a class="dropdown-item" href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented">
+                                <i class="icon icon-child" aria-hidden="true"></i> Children
+                            </a>
+                        
+
+                        
+                            <a class="dropdown-item" href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented">
+                                <i class="icon icon-note" aria-hidden="true"></i> Notes
+                            </a>
+                        
+
+                    </div>
+                </li>
+
+                
+                    <li class="nav-item dropdown">
+    <a id="nav-timer-menu-link"
+       class="nav-link dropdown-toggle"
+       href="#"
+       data-toggle="dropdown"
+       aria-haspopup="true"
+       aria-expanded="false"><i class="icon icon-timer" aria-hidden="true"></i> Timers</a>
+    <div class="dropdown-menu" aria-labelledby="nav-timer-menu-link">
+        
+            <a class="dropdown-item" href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented">
+                <i class="icon icon-timer" aria-hidden="true"></i> Quick Start Timer
+            </a>
+            <a class="dropdown-item" href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented">
+                <i class="icon icon-add" aria-hidden="true"></i> Start Timer
+            </a>
+        
+        
+            <a class="dropdown-item" href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented">
+                <i class="icon icon-list" aria-hidden="true"></i> View Timers
+            </a>
+        
+        
+            <div class="dropdown-divider"></div>
+            <h6 class="dropdown-header">Active Timers</h6>
+            
+                <a class="dropdown-item" href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented">Evening sleep (caregiver)</a>
+            
+        
+    </div>
+</li>
+                
+            </ul>
+
+            
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item dropdown">
+                        <a id="nav-user-menu-link"
+                           class="nav-link dropdown-toggle"
+                           href="#"
+                           data-toggle="dropdown"
+                           aria-haspopup="true"
+                           aria-expanded="false"><i class="icon icon-user" aria-hidden="true"></i> caregiver
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="nav-user-menu-link">
+                            <a href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented"
+                               class="dropdown-item"
+                               target="_blank">API Browser</a>
+
+                            
+
+                            <a href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented"
+                               class="dropdown-item">Logout</a>
+                        </div>
+                    </li>
+                </ul>
+            
+        </div>
+    </nav>
+
+
+
+    <nav aria-label="breadcrumb" role="navigation">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented">Home</a></li>
+            
+    <li class="breadcrumb-item"><a href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented">Children</a></li>
+    <li class="breadcrumb-item font-weight-bold"><a href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented">Jamie Chen</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+
+        </ol>
+    </nav>
+
+
+
+    <div id="view-dashboard-child" role="main" aria-label="Jamie Chen Dashboard" class="container-fluid">
+        <div class="row justify-content-md-center">
+            <div class="col-lg-12 mb-4">
+                
+    <div class="row align-items-start">
+        <div class="col-lg-4 col-md-6 col-sm-12">
+            <div class="card card-feeding border-primary mb-3">
+    <div class="card-header text-white bg-primary h4">
+        <i class="icon icon-feeding pull-left" aria-hidden="true"></i>
+        Last Feeding
+    </div>
+    <div class="card-body text-primary">
+        <span class="card-title h4"><strong>
+    
+        1 hour, 15 minutes ago
+    
+</strong></span>
+        <div class="card-text text-muted">
+    
+        formula, bottle
+        
+            , 4oz.
+        
+    
+</div>
+    </div>
+</div>
+            <div class="card card-feeding border-primary mb-3">
+    <div class="card-header text-white bg-primary h4">
+        <i class="icon icon-feeding pull-left" aria-hidden="true"></i>
+        Last Feeding Method
+    </div>
+    <div class="card-body text-primary">
+        <span class="card-title h4"><strong>
+    
+        <div class="display-4 text-center">bottle</div>
+    
+</strong></span>
+        <div class="card-text text-muted"></div>
+    </div>
+</div>
+            <div class="card card-timer border-light mb-3">
+    <div class="card-header text-dark bg-light h4">
+        <i class="icon icon-timer pull-left" aria-hidden="true"></i>
+        Active Timers
+    </div>
+    <div class="card-body text-light">
+        <span class="card-title h4"><strong>
+    
+        1 active timer
+    
+</strong></span>
+        <div class="card-text"></div>
+    </div>
+    
+    <ul class="list-group list-group-flush">
+    
+        <a href="#preview-only" aria-disabled="true" title="Static reference only; destination is not implemented" class="list-group-item list-group-item-action">
+            <strong>Evening sleep</strong> <p class="text-muted small m-0">Started by caregiver at 7:40 p.m.</p>
+        </a>
+    
+    </ul>
+
+</div>
+        </div>
+        <div class="col-lg-4 col-md-6 col-sm-12">
+            <div class="card card-sleep border-secondary mb-3">
+    <div class="card-header text-white bg-secondary h4">
+        <i class="icon icon-sleep pull-left" aria-hidden="true"></i>
+        Last Slept
+    </div>
+    <div class="card-body">
+        <span class="card-title h4"><strong>
+    
+        2 hours, 50 minutes ago
+    
+</strong></span>
+        <div class="card-text text-muted">50 minutes</div>
+    </div>
+</div>
+            <div class="card card-sleep border-secondary mb-3">
+    <div class="card-header text-white bg-secondary h4">
+        <i class="icon icon-sleep pull-left" aria-hidden="true"></i>
+        Today's Sleep
+    </div>
+    <div class="card-body">
+        <span class="card-title h4"><strong>
+    
+        <strong>10 hours, 25 minutes</strong>
+    
+</strong></span>
+        <div class="card-text text-muted">
+    7 sleep entries
+</div>
+    </div>
+</div>
+            <div class="card card-sleep border-secondary mb-3">
+    <div class="card-header text-white bg-secondary h4">
+        <i class="icon icon-sleep pull-left" aria-hidden="true"></i>
+        Today's Naps <small><em>(7AM - 7PM)</em></small>
+    </div>
+    <div class="card-body">
+        <span class="card-title h4"><strong>
+    
+        <strong>3</strong> naps
+    
+</strong></span>
+        <div class="card-text text-muted">
+    2 hours, 35 minutes
+</div>
+    </div>
+</div>
+            <div class="card card-tummytime border-success mb-3">
+    <div class="card-header text-white bg-success h4">
+        <i class="icon icon-tummytime pull-left" aria-hidden="true"></i>
+        Today's Tummy Time
+    </div>
+    <div class="card-body text-success">
+        <span class="card-title h4"><strong>
+    
+        19 minutes
+    
+</strong></span>
+        <div class="card-text text-muted"></div>
+    </div>
+    
+    <ul class="list-group list-group-flush text-muted small">
+    
+        <li class="list-group-item">5 minutes at 6:25 p.m.</li>
+    
+        <li class="list-group-item">8 minutes at 3:05 p.m.</li>
+    
+        <li class="list-group-item">6 minutes at 10:15 a.m.</li>
+    
+    </ul>
+
+</div>
+        </div>
+        <div class="col-lg-4 col-md-6 col-sm-12">
+            <div class="card card-diaperchange border-danger mb-3">
+    <div class="card-header text-white bg-danger h4">
+        <i class="icon icon-diaperchange pull-left" aria-hidden="true"></i>
+        Last Diaper Change
+    </div>
+    <div class="card-body text-danger">
+        <span class="card-title h4"><strong>
+    
+        <strong>3 hours, 35 minutes</strong> ago
+    
+</strong></span>
+        <div class="card-text text-muted">
+    wet
+</div>
+    </div>
+</div>
+            <div class="card card-diaperchange border-danger mb-3">
+    <div class="card-header text-white bg-danger h4">
+        <i class="icon icon-diaperchange pull-left" aria-hidden="true"></i>
+        Diaper Changes
+    </div>
+    <div class="card-body text-danger">
+        <span class="card-title h4"><strong>
+    Past Week
+</strong></span>
+        <div class="card-text text-muted">
+    
+        
+            <div class="progress mt-3">
+
+                
+                    <div class="progress-bar bg-primary lead"
+                         role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="62.5" style="width: 62.5%;">5&nbsp;wet</div>
+                
+
+                
+                    <div class="progress-bar bg-secondary lead"
+                         role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="37.5" style="width: 37.5%;">
+                        <strong>3</strong>&nbsp;solid</div>
+                
+            </div>
+            <div class="text-center text-light small">
+                
+                    today
+                
+            </div>
+        
+    
+        
+            <div class="progress mt-3">
+
+                
+                    <div class="progress-bar bg-primary lead"
+                         role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="75.0" style="width: 75.0%;">6&nbsp;wet</div>
+                
+
+                
+                    <div class="progress-bar bg-secondary lead"
+                         role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="25.0" style="width: 25.0%;">
+                        <strong>2</strong>&nbsp;solid</div>
+                
+            </div>
+            <div class="text-center text-light small">
+                
+                    yesterday
+                
+            </div>
+        
+    
+        
+            <div class="progress mt-3">
+
+                
+                    <div class="progress-bar bg-primary lead"
+                         role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="57.1429" style="width: 57.1429%;">4&nbsp;wet</div>
+                
+
+                
+                    <div class="progress-bar bg-secondary lead"
+                         role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="42.8571" style="width: 42.8571%;">
+                        <strong>3</strong>&nbsp;solid</div>
+                
+            </div>
+            <div class="text-center text-light small">
+                
+                    2 days ago
+                
+            </div>
+        
+    
+        
+            <div class="progress mt-3">
+
+                
+                    <div class="progress-bar bg-primary lead"
+                         role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="71.4286" style="width: 71.4286%;">5&nbsp;wet</div>
+                
+
+                
+                    <div class="progress-bar bg-secondary lead"
+                         role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="28.5714" style="width: 28.5714%;">
+                        <strong>2</strong>&nbsp;solid</div>
+                
+            </div>
+            <div class="text-center text-light small">
+                
+                    3 days ago
+                
+            </div>
+        
+    
+        
+            <div class="progress mt-3">
+
+                
+                    <div class="progress-bar bg-primary lead"
+                         role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="66.6667" style="width: 66.6667%;">6&nbsp;wet</div>
+                
+
+                
+                    <div class="progress-bar bg-secondary lead"
+                         role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="33.3333" style="width: 33.3333%;">
+                        <strong>3</strong>&nbsp;solid</div>
+                
+            </div>
+            <div class="text-center text-light small">
+                
+                    4 days ago
+                
+            </div>
+        
+    
+        
+            <div class="progress mt-3">
+
+                
+                    <div class="progress-bar bg-primary lead"
+                         role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="66.6667" style="width: 66.6667%;">4&nbsp;wet</div>
+                
+
+                
+                    <div class="progress-bar bg-secondary lead"
+                         role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="33.3333" style="width: 33.3333%;">
+                        <strong>2</strong>&nbsp;solid</div>
+                
+            </div>
+            <div class="text-center text-light small">
+                
+                    5 days ago
+                
+            </div>
+        
+    
+</div>
+    </div>
+</div>
+        </div>
+    </div>
+
+            </div>
+        </div>
+    </div>
+
+
+<script src="assets/jquery.min.js"></script>
+<script src="assets/popper.min.js"></script>
+<script src="assets/bootstrap.min.js"></script>
+    <script src="assets/readonly.js"></script>
+
+
+</body>
+</html>

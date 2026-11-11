@@ -1,5 +1,27 @@
 # Selection Workbench
 
+## Reviewed source-only companion: C-03 Baby Buddy Dashboard · 2026-11-11
+
+[C-03 source and disclosures](versions/babybuddy-c03-20261111/index.html) · [Complete Dashboard source](versions/babybuddy-c03-20261111/dashboard.html) · [Candidate README](versions/babybuddy-c03-20261111/README.md) · [Preserved reference12](versions/page-reference12-20261111/README.md)
+
+This independent successor branch adds only the exact reviewed C-03 public package over reference12 commit `aef3f5165d7e4d59aed63b92c614b5b006d4e5c1`. The companion snapshot is 24 files / 1,468,712 bytes. Reference12, reference11 and every earlier version, source notice and selection remain unchanged. C-01 Timeline and C-02 Rhythm are not replaced. The reference12 index and its 23-reference count are not rewritten; this is an additional standalone candidate, not a newly tested combined workbench or selected product frontend. No PR, master merge, force push, Sites publication or hosted deployment is included.
+
+C-03 is a source-template-derived **child Dashboard**, not an original screenshot, live app, or the different `core/templates/core/child_detail.html` page. The source is `babybuddy/babybuddy@f02f28b7f96f8bb1b9a0212a377c327ce33e7699`, authored 2017-10-28, package 0.1.0. The original base/navbar/child template hierarchy, nine-card order, source theme, Bootstrap layout classes and Font Awesome mappings are retained. All displayed names, times and metrics are new deterministic synthetic fixtures, not copied from the historical screenshot. The screenshot's personal-data provenance was not independently established, so neither that original image nor its pictured identity/numbers are redistributed.
+
+Source and licence review passed for this bounded backup. Fresh Git commit/tree readback matches all 37 preserved source files. The BSD-2-Clause notice is complete and unchanged. Four official npm archives match the pinned package-lock integrity and recorded archive hashes; all 358 extracted dependency files match those archives. The public historical JS copies differ only by removal of source-map comments, and all six original Font Awesome font files are exact. Bootstrap 4.0.0-beta.2, jQuery 3.2.1 and Popper 1.12.5 retain MIT notices; Font Awesome 4.7.0 font OFL 1.1 and code/style MIT remain distinct. No fonts are renamed or modified, and no brand endorsement or comprehensive legal/security certification is claimed.
+
+The package uses fixed fixture adapters rather than the original database/query tags. Django 5.2.8 and LibSass 0.23.0 differ from the historical rendering toolchain; unrelated styles/favicons and original refresh logic are omitted. This is not pixel-identical to the historical screenshot and is not a production dependency recommendation. The historical libraries remain isolated reference assets. Only original dropdown/navbar collapse mechanisms are retained. Cross-page destinations are disabled; no substitute form, modal, timer creation, save/delete, authentication, backend, model or storage behavior is invented. CSP denies connections and form actions, and all automatic assets are local.
+
+Independent bounded desktop review passed at 1180 × 757 CSS px, DPR 1: source index to Dashboard, three-column nine-card layout, complete lower content by scrolling, fixture values and chart bounds, actual Font Awesome load, Activities/Timers/user dropdowns, one disabled route, limited Escape/focus, and Back/Forward. No horizontal overflow was observed. The extra full-page screenshot attempt timed out; earlier viewport/interaction evidence is retained, not represented as a successful full-page artifact. Extension metadata errors were observed, so no global zero-console-error claim is made. Phone/narrow navbar collapse, breakpoint matrix, full keyboard and screen-reader journeys, cross-browser behavior, matched-viewport pixel diff and real app routes remain unverified or intentionally unimplemented. No browser was restarted for this backup.
+
+All 24 public files match the independent browser freeze and carrier. Fresh 6/6 focused static tests, 23/23 public checksums and readonly-script syntax checks pass. A bounded public text/credential/internal-path/injection scan and HTML/CSS local-resource closure check found no blocking issue. The SVG is an unchanged font asset with no script, external image/link or event-handler content. These checks do not upgrade historical dependencies to production-safe software.
+
+The candidate's earlier pending/browser-not-verified/not-published fields are preserved as author-stage history; the later bounded review is recorded here without rewriting that snapshot. Only its reviewed public package and this additive root README are backed up. Original screenshot, private raw source/evidence/logs, build tools, environment, full dependency trees and credentials are excluded. Existing LG02 local-serving/no-login/no-data-entry restrictions, GD02 narrow-view limitations and all other historical boundaries remain. Nothing has been selected or deployed. The previous root README follows byte-for-byte unchanged.
+
+---
+
+# Selection Workbench
+
 ## Reviewed source backup: page-reference12 / HIS02 and SRC02 · 2026-11-11
 
 [Version 12](versions/page-reference12-20261111/README.md) · [Version 12 index source](versions/page-reference12-20261111/index.html) · [Preserved version 11](versions/page-reference11-20261111/README.md)

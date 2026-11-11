@@ -1,0 +1,63 @@
+{
+  "candidate_id": "C-03",
+  "title": "Baby Buddy child Dashboard",
+  "source_repository": "babybuddy/babybuddy",
+  "source_commit": "f02f28b7f96f8bb1b9a0212a377c327ce33e7699",
+  "source_commit_date": "2017-10-28T03:20:52Z",
+  "source_app_version": "0.1.0",
+  "source_template": "dashboard/templates/dashboard/child.html",
+  "source_license": "BSD-2-Clause",
+  "copyright": "Copyright (c) 2017, Baby Buddy’s Contributors",
+  "presentation": "Complete source-template page with deterministic synthetic fixture; not original screenshot or live app",
+  "original_screenshot": {
+    "path": "screenshot.png",
+    "git_blob": "aea0ca570e98876a3415b61e5dd97f828676bc49",
+    "inspected_locally": true,
+    "redistributed": false,
+    "personal_data_provenance": "Not independently established; no identity or numeric values copied"
+  },
+  "entry": "dashboard.html",
+  "browser_verified": false,
+  "published": false,
+  "selected": false,
+  "implemented_frontend": false,
+  "dependencies": [
+    {
+      "name": "bootstrap",
+      "version": "4.0.0-beta.2",
+      "integrity_verified": true
+    },
+    {
+      "name": "font-awesome",
+      "version": "4.7.0",
+      "integrity_verified": true
+    },
+    {
+      "name": "jquery",
+      "version": "3.2.1",
+      "integrity_verified": true
+    },
+    {
+      "name": "popper.js",
+      "version": "1.12.5",
+      "integrity_verified": true
+    }
+  ],
+  "changes": [
+    "All child, user, time, feeding, sleep, diaper and tummy-time values replaced with new deterministic synthetic fixture.",
+    "Original Django template hierarchy, nine cards, order, Bootstrap layout classes, source theme and Font Awesome icon mapping preserved.",
+    "Original source SCSS compiled with libsass 0.23.0 rather than historical gulp/node-sass; unrelated report styles omitted.",
+    "Data query tags replaced with fixture-only rendering; no historical app/database/server executed.",
+    "Only original dropdown and navbar collapse interactions retained using lock-pinned original JS libraries.",
+    "Cross-page links replaced with non-navigating #preview-only anchors and aria-disabled/title; no substitute pages/modal designs added.",
+    "Unneeded favicon/manifest, vendor date-picker CSS and original data-refresh JS removed.",
+    "Nonvisual main landmark and progressbar values added."
+  ],
+  "limits": [
+    "No browser executed: desktop/mobile visual fidelity, font loading, menu/collapse behavior, keyboard and screen-reader behavior pending single-owner review.",
+    "Original screenshot displays Dashboard, not core/templates/core/child_detail.html. The latter is a different name/birth-date/age/actions page.",
+    "Not byte-identical to original screenshot; fixture data intentionally differ and modern Django/LibSass rendering may have minor formatting differences.",
+    "Historical dependencies are retained only for this isolated reference; not suitable as production dependency recommendations.",
+    "No real family data, photos, backend/model calls, persistence, authentication, source repository writes or deployment."
+  ]
+}
