@@ -4774,3 +4774,10 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 - 從 `5f3cd680` 接既有收件、草稿和資料包服務。採用已安裝的 Expo Sharing 產生原生 target，首次工程檢查確認舊配置尚未啟用；現已用 Expo 57 範本生成 Xcode 工程，核對嵌入位置、兩個 target 的 App Group、extension-only API 設定，以及原生程式改動的發布分類。
 - 收件流程以合成檔案核對同名隔離、重開、切換帳戶和遲到複製。已加入草稿或已接納的匯入不因裝置副本清理失敗而再執行。共用頁面、Android 原有 ZIP 接線及前端型別通過。Node 端 ZIP 測試補上原生 UUID 產生器的測試替身後通過。
 - 尚未以 Xcode 編譯或在 iPhone 收件；簽署、TestFlight、裝置驗收及其他平台此前未驗項維持原狀。此次沒有雲端 build、部署或模型呼叫。
+
+### 2026-11-09 · P4-AUTH01 快捷登入准入
+
+- 修正前，同 UID 新增未批准 provider 的回歸案例未有拒絕。修正後，合成受邀身份沿 Web 和原生交換證明目前裝置與原電郵，再批准 Apple 私密轉寄身份。另一個 Apple 身份、只列在 token 名單的 provider 及在交易中撤銷的裝置均被拒絕。
+- 11 月 8 日唯讀核實原站 `allowDuplicateEmails=false`，原網域與密碼登入已配置，Google／Apple 的 provider 設定尚未建立。沒有更改 Auth 配置、寄信或執行真人登入。
+- Node 24 執行 `tests/firebase-auth.test.ts` 與 `tests/firestore-authority.test.ts`，41 項通過；Server 型別及 diff 檢查通過。新增的首次邀請斷言另在該流程通過。測試使用合成 token 及 Firestore 交易替身。
+- 共用客戶端仍需在確認時帶目標方式；Firebase 已連結但產品未收到原請求時，應重新驗證已連結的身份才補交。正式開放前另驗 Apple 團隊配置與本人登入。

@@ -2,9 +2,11 @@ import { NATIVE_SESSION_PREFIX, nativeRequestContext, nativeSessionCredential, r
 import { createHash } from "node:crypto";
 import type { IncomingHttpHeaders } from "node:http";
 import type { Auth, DecodedIdToken, UserRecord } from "firebase-admin/auth";
+import type { FirestoreDeviceSessions } from "./firestore-device-sessions.ts";
 import type { ServerAuthPort, ServerAuthSession, ServerAuthSessionWithHeaders } from "./auth-port.ts";
 import { DeviceSessionError, type DeviceSessionsPort } from "./firestore-device-sessions.ts";
-import { accountAuthProviderSchema, type AccountAuthMethods } from '../src/shared/auth-providers.ts';
+import { accountAuthProviderSchema, socialAuthProviderSchema, type AccountAuthMethods, type AccountAuthProvider } from '../src/shared/auth-providers.ts';
+import type { ProviderAdmission, ProviderGrants, ProviderIdentity } from './firestore-authority.ts';
 
 export const FIREBASE_SESSION_LIFETIME_MS = 5 * 24 * 60 * 60 * 1000;
 export const FIREBASE_RECENT_AUTH_SECONDS = 5 * 60;
@@ -16,12 +18,12 @@ const invalidCredentials = new Set(["auth/id-token-expired", "auth/id-token-revo
   "auth/user-disabled", "auth/user-not-found"]);
 const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 export interface FirebaseIdentityAdmission {
-  admitIdentity(input: { userId: string; email: string; emailVerified: boolean }): Promise<unknown>;
-  assertSessionAdmission(userId: string, currentIdentity: { email: string; emailVerified: boolean }): Promise<void>;
+  admitIdentity(input: { userId: string; email: string; emailVerified: boolean }, proof: ProviderAdmission): Promise<unknown>;
+  assertSessionAdmission(userId: string, currentIdentity: { email: string; emailVerified: boolean }, method: ProviderIdentity): Promise<ProviderGrants>;
 }
 export interface FirebaseAuthPortOptions {
   auth: Pick<Auth, "verifyIdToken" | "createSessionCookie" | "verifySessionCookie" | "getUser">;
-  sessions: DeviceSessionsPort;
+  sessions: DeviceSessionsPort & Pick<FirestoreDeviceSessions, 'assertActiveIn'>;
   lifecycle: FirebaseIdentityAdmission;
   publicOrigin: string;
   serverClock?: () => number;
@@ -44,6 +46,8 @@ interface AuthenticatedSession {
   session: ServerAuthSession & { user: { id: string; name: string; email: string } };
   sessionHash: string;
   authTimeSeconds: number;
+  method: ProviderIdentity;
+  verifiedEmailAtIssue: boolean;
   methods: AccountAuthMethods;
 }
 
@@ -86,11 +90,13 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
       throw new FirebaseAuthError(503, "authentication_unavailable");
     }
   }
-  async function admission(operation: () => Promise<unknown>) {
-    try { await operation(); }
+  async function admission<T>(operation: () => Promise<T>): Promise<T> {
+    try { return await operation(); }
     catch (error) {
+      if (error instanceof DeviceSessionError || error instanceof FirebaseAuthError) throw error;
       const admissionDeniedCodes = new Set(["invitation_required", "invitation_unavailable", "account_inactive",
-        "account_not_ready", "service_disabled", "identity_email_changed", "binding"]);
+        "account_not_ready", "service_disabled", "identity_email_changed", "binding", "email_not_verified",
+        "auth_account_link_required", "auth_credential_in_use"]);
       if (record(error) && error.status === 403 && typeof error.code === "string" && admissionDeniedCodes.has(error.code)) {
         throw new FirebaseAuthError(403, error.code);
       }
@@ -115,6 +121,24 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
       || user.email !== decoded.email || typeof user.emailVerified !== "boolean") throw new FirebaseAuthError(401, "unauthorized");
     return user;
   }
+  function directorySubject(provider: AccountAuthProvider, user: UserRecord): string | null {
+    const entry = user.providerData?.find(item => item.providerId === provider);
+    if (!entry?.uid) return null;
+    return provider === 'password' ? 'password' : createHash('sha256').update(entry.uid).digest('hex');
+  }
+  function providerIdentity(decoded: DecodedIdToken, user: UserRecord, provider: AccountAuthProvider): ProviderIdentity {
+    if (provider === 'password') return { provider, subject: 'password' };
+    const identities = decoded.firebase?.identities?.[provider];
+    const subject = directorySubject(provider, user);
+    if (!subject || !Array.isArray(identities) || identities.length !== 1 || typeof identities[0] !== 'string'
+      || createHash('sha256').update(identities[0]).digest('hex') !== subject) throw new FirebaseAuthError(401, 'unauthorized');
+    return { provider, subject };
+  }
+  function signInMethod(decoded: DecodedIdToken, user: UserRecord) {
+    const method = accountAuthProviderSchema.safeParse(decoded.firebase?.sign_in_provider);
+    if (!method.success) throw new FirebaseAuthError(401, 'unauthorized');
+    return providerIdentity(decoded, user, method.data);
+  }
   function extractCookie(headers: Headers) {
     const matches = (headers.get("cookie") ?? "").split(";").map(part => part.trim()).filter(part => part.startsWith(cookieName + "="));
     if (!matches.length) return null;
@@ -131,12 +155,12 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
       const decoded = validatedClaims(await sdk(() => auth.verifySessionCookie(cookie, true)));
       const user = await currentIdentity(decoded), sessionHash = hashCookie(cookie, native);
       await sessions.assertActive({ userId: user.uid, sessionHash });
-      await admission(() => lifecycle.assertSessionAdmission(user.uid, { email: user.email!, emailVerified: user.emailVerified }));
-      const providers = accountAuthProviderSchema.options.filter(provider => user.providerData?.some(item => item.providerId === provider));
-      const current = accountAuthProviderSchema.safeParse(decoded.firebase?.sign_in_provider);
+      const method = signInMethod(decoded, user);
+      const grants = await admission(() => lifecycle.assertSessionAdmission(user.uid, { email: user.email!, emailVerified: user.emailVerified }, method));
+      const providers = accountAuthProviderSchema.options.filter(provider => grants[provider] !== undefined && grants[provider] === directorySubject(provider, user));
       return { session: { user: { id: user.uid, name: typeof user.displayName === "string" ? user.displayName : "", email: user.email! } },
-        sessionHash, authTimeSeconds: decoded.auth_time, methods: { userId: user.uid, providers,
-          currentProvider: current.success && providers.includes(current.data) ? current.data : null } };
+        sessionHash, authTimeSeconds: decoded.auth_time, method, verifiedEmailAtIssue: decoded.email_verified === true,
+        methods: { userId: user.uid, providers, currentProvider: providers.includes(method.provider) ? method.provider : null } };
     } catch (error) {
       if (error instanceof FirebaseAuthError && error.status === 401 || error instanceof DeviceSessionError && error.status === 401) return null;
       throw error;
@@ -194,7 +218,9 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
       const input = await body(request);
       if (path === "/api/auth/session" || nativeExchange) {
         if (!nativeExchange && request.headers.has("authorization")) throw new FirebaseAuthError(403, "origin_rejected");
-        if (Object.keys(input).length !== 1 || typeof input.idToken !== "string" || !input.idToken || input.idToken.length > MAX_BODY_BYTES) {
+        const target = input.linkProvider === undefined ? undefined : socialAuthProviderSchema.safeParse(input.linkProvider);
+        if (target && !target.success || Object.keys(input).some(key => key !== 'idToken' && key !== 'linkProvider')
+          || typeof input.idToken !== "string" || !input.idToken || input.idToken.length > MAX_BODY_BYTES) {
           throw new FirebaseAuthError(400, "auth_body_invalid");
         }
         const existing = await readSession(request.headers);
@@ -205,14 +231,30 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
         if (existing && existing.session.user.id !== user.uid) throw new FirebaseAuthError(409, "sign_out_required");
         const expected = request.headers.get("x-expected-user-id");
         if (!existing && expected !== null && expected !== user.uid) throw new FirebaseAuthError(409, "identity_changed");
-        await admission(() => lifecycle.admitIdentity({ userId: user.uid, email: user.email!, emailVerified: user.emailVerified }));
-        await admission(() => lifecycle.assertSessionAdmission(user.uid, { email: user.email!, emailVerified: user.emailVerified }));
+        const method = signInMethod(decoded, user);
+        const providerEmail = user.providerData?.find(entry => entry.providerId === method.provider)?.email;
+        const proof: ProviderAdmission = { method, verifiedInvitationAddress: decoded.email_verified === true
+          && typeof providerEmail === 'string' && providerEmail.toLowerCase() === user.email!.toLowerCase() };
+        if (target?.success) {
+          if (!existing) throw new FirebaseAuthError(401, 'recent_reauthentication_required');
+          recent(existing.authTimeSeconds);
+          if (!existing.verifiedEmailAtIssue || !user.emailVerified || decoded.email_verified !== true) throw new FirebaseAuthError(403, 'email_not_verified');
+          if (method.provider !== target.data) throw new FirebaseAuthError(403, 'auth_provider_proof_required');
+          proof.link = { original: existing.method, target: { provider: target.data, subject: method.subject },
+            assertOriginalSession: async tx => {
+              recent(existing.authTimeSeconds);
+              await sessions.assertActiveIn(tx, { userId: user.uid, sessionHash: existing.sessionHash });
+            } };
+        }
+        await admission(() => lifecycle.admitIdentity({ userId: user.uid, email: user.email!, emailVerified: user.emailVerified }, proof));
+        await admission(() => lifecycle.assertSessionAdmission(user.uid, { email: user.email!, emailVerified: user.emailVerified }, method));
         const cookie = await sdk(() => auth.createSessionCookie(input.idToken as string, { expiresIn: FIREBASE_SESSION_LIFETIME_MS }));
         if (!cookie || cookie.length > MAX_BODY_BYTES || !/^[A-Za-z0-9._~-]+$/.test(cookie)) {
           throw new FirebaseAuthError(503, "authentication_unavailable");
         }
         const issuedClaims = validatedClaims(await sdk(() => auth.verifySessionCookie(cookie, true)));
         if (issuedClaims.uid !== user.uid || issuedClaims.email !== user.email || issuedClaims.auth_time !== decoded.auth_time
+          || issuedClaims.firebase?.sign_in_provider !== method.provider
           || !Number.isSafeInteger(issuedClaims.exp) || !Number.isSafeInteger(issuedClaims.iat)
           || issuedClaims.exp * 1000 <= now() || issuedClaims.iat * 1000 > now() + 5_000
           // Bound duration using the issuer clock; sub-second host skew must not reject a valid five-day cookie.
