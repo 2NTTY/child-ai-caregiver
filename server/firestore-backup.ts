@@ -29,7 +29,8 @@ export const FIREBASE_BACKUP_COLLECTION_SUFFIXES = Object.freeze(['', '_sessions
   '_shared_spaces', '_shared_memberships', '_resource_shares', '_shared_invitations', '_shared_operations', '_handover_exports',
   '_handover_import_items', '_handover_import_mappings', '_handover_import_batches', '_handover_import_controls', '_handover_uploads', '_handover_source_history',
   '_knowledge_index_batches', '_knowledge_index_receipts', '_knowledge_transfers',
-  '_private_summary_works', '_private_summary_revisions', '_private_summary_attempts', '_private_summary_scans', '_private_summary_usage']);
+  '_private_summary_works', '_private_summary_revisions', '_private_summary_attempts', '_private_summary_scans', '_private_summary_usage',
+  '_mixed_rooms', '_mixed_messages']);
 export interface FirebaseBackupOptions { database: Firestore; cipher: StorageCipher; projectId: string; namespace: string }
 export interface FirebaseBackupDocument { path: string; data: DocumentData }
 export interface FirebaseBackupInventory {

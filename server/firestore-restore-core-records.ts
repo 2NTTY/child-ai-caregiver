@@ -15,12 +15,15 @@ import { firestoreChatMessageSchema, firestoreChatRecoverySchemas } from './fire
 import { importedChatMessageSchema } from '../src/shared/chat-imports.ts';
 import { firestoreContextRecoverySchema } from './firestore-context-basis.ts';
 import type { FirestoreRecoveryContext } from './firestore-recovery-envelope.ts';
+import { mixedRoomRecordSchema, mixedMessageRecordSchema, validMixedRecord } from './mixed-chat-records.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
 const FAR_FUTURE = '9999-12-31T23:59:59.999Z';
 export const coreRestoreSchemas = {
   ...sharingRestoreSchemas,
   ...materialRestoreSchemas,
+  'mixed-room': { suffix: 'mixed_rooms', schema: mixedRoomRecordSchema },
+  'mixed-message': { suffix: 'mixed_messages', schema: mixedMessageRecordSchema },
   'handover-import-item': { suffix: 'handover_import_items', schema: handoverImportItemSchema },
   'handover-import-mapping': { suffix: 'handover_import_mappings', schema: handoverImportMappingSchema },
   'handover-source-history': { suffix: 'handover_source_history', schema: sourceHistoryRecordSchema },
@@ -76,6 +79,10 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   if (isSharingKind(kind)) return sharingRestoreMetadata({ ...context, kind }, raw);
   if (isMaterialRestoreKind(kind)) return materialRestoreMetadata({ ...context, kind }, materialRestoreSchemas[kind].schema.parse(raw), original);
   requireValue(context.family === 'domain' && context.envelopeVersion === 1 && recordVersion !== undefined);
+  if (kind === 'mixed-room' || kind === 'mixed-message') {
+    requireValue(validMixedRecord(kind, id, scope, recordVersion!, raw));
+    return kind === 'mixed-room' ? { roomId: id } : {};
+  }
   if (kind === 'chat-reply-leases') {
     requireValue(id === 'active' && scope.ownerUserId === 'system:chat-reply' && scope.workspaceId === NIL && scope.childId === NIL && scope.storageEpoch === NIL && recordVersion === 1);
     firestoreChatRecoverySchemas.leases.parse(raw); return {};

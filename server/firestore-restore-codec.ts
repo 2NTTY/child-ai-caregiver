@@ -393,7 +393,8 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       else if (collection === namespace || !privateMetadata.has(name)
         && !(name === 'retiredStorageEpoch' && ['photos', 'chat_file_assets', 'voice_assets'].some(suffix => collection === namespace + '_' + suffix))
         && !(name === 'sort' && collection === namespace + '_knowledge_index_batches')
-        && !(name === 'transferDigest' && collection === namespace + '_knowledge_transfers')) reject('restore_record_invalid');
+        && !(name === 'transferDigest' && collection === namespace + '_knowledge_transfers')
+        && !(name === 'roomId' && collection === namespace + '_mixed_rooms')) reject('restore_record_invalid');
     }
     const family = collection === namespace ? 'authority' : 'domain';
     const envelope = family === 'authority' ? parse(authorityEnvelopeSchema, core) : parse(domainEnvelopeSchema, core);

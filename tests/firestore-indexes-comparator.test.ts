@@ -12,6 +12,17 @@ const shape = runInNewContext(source.slice(start, end) + '\nshape;');
 const field = (fieldPath: string, order = 'ASCENDING') => ({ fieldPath, order });
 const index = (fields: Array<{ fieldPath: string; order?: string; arrayConfig?: string }>) => ({ queryScope: 'COLLECTION', fields });
 
+test('mixed chat excludes private fields and lists rooms through the owner tag without composites', () => {
+  const config = JSON.parse(readFileSync(new URL('../deploy/firebase/firestore.indexes.json', import.meta.url), 'utf8'));
+  for (const collectionGroup of ['yuban_authority_mixed_rooms', 'yuban_authority_mixed_messages']) {
+    for (const fieldPath of ['*', 'ciphertext', 'recovery']) assert.deepEqual(config.fieldOverrides.filter((entry: any) =>
+      entry.collectionGroup === collectionGroup && entry.fieldPath === fieldPath), [{ collectionGroup, fieldPath, indexes: [] }]);
+    assert.equal(config.indexes.some((entry: any) => entry.collectionGroup === collectionGroup), false);
+  }
+  assert.deepEqual(config.fieldOverrides.find((entry: any) => entry.collectionGroup === 'yuban_authority_mixed_rooms' && entry.fieldPath === 'userTag').indexes,
+    [{ order: 'ASCENDING', queryScope: 'COLLECTION' }]);
+});
+
 test('growth report duplicate queries have the complete scoped ordered index', () => {
   const config = JSON.parse(readFileSync(new URL('../deploy/firebase/firestore.indexes.json', import.meta.url), 'utf8'));
   const fields = ['workspaceTag', 'epochTag', 'userTag', 'childTag', 'status', 'kind'].map(name => field(name));
