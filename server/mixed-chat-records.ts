@@ -1,17 +1,30 @@
 import { z } from 'zod';
 import { mixedTaskBatchSchema } from '../src/shared/mixed-task-batch.ts';
+import { mixedArchivedReplySchema } from '../src/shared/mixed-chat-transfer.ts';
 import { mixedChatRoomSchema, mixedChatMessageSchema, mixedChildIdsSchema, mixedChatScopeSchema } from '../src/shared/mixed-chat.ts';
 import { firestoreDomainHash, firestoreDomainUuid } from './firestore-domain-data.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 
 const id = z.uuid(), fingerprint = z.string().regex(/^[a-f0-9]{64}$/u);
 const membership = z.strictObject({membershipId:id, membershipScopeId:id}).nullable();
+const packageOrigin = z.strictObject({ serverId:z.string().min(1).max(256), accountId:z.string().min(1).max(256),
+  authorAccountId:z.string().min(1).max(256), roomId:id, packageId:id, packageVersion:z.int().positive(), manifestSha256:fingerprint });
+export type MixedPackageOrigin = z.infer<typeof packageOrigin>;
+export const mixedImportReceiptSchema = z.strictObject({
+  batchId:id, sourceRoomId:id, sourceVersion:z.int().positive(), sourceId:id, roomId:id, targetId:id,
+  at:z.iso.datetime(), scope:mixedChatScopeSchema, childIds:mixedChildIdsSchema,
+  outcome:z.enum(['created','skipped','conflict']), reason:z.enum(['already_imported','source_changed','local_history_changed']).nullable(),
+});
+export const mixedReceiptId = (owner:string, batchId:string, sourceRoomId:string, version:number) =>
+  firestoreDomainUuid(['mixed-import-receipt',owner,batchId,sourceRoomId,version]);
 export const mixedRunScopeSchema=z.strictObject({roomId:id,scope:mixedChatScopeSchema,childIds:mixedChildIdsSchema,basis:fingerprint});
 export const mixedRoomRecordSchema = mixedChatRoomSchema.extend({
   operationId:id, fingerprint, membership, latestMessageId:id.nullable(),
+  importedFrom:packageOrigin.optional(),
 });
 export const mixedMessageRecordSchema = mixedChatMessageSchema.extend({
   operationId:id, fingerprint, previousMessageId:id.nullable(), scope:mixedChatScopeSchema, childIds:mixedChildIdsSchema,
+  archive: z.strictObject({ origin:packageOrigin, sourceId:id, reply:mixedArchivedReplySchema }).optional(),
   taskBatch:mixedTaskBatchSchema.extend({epoch:id,authorizationVersion:z.string(),targetBasis:z.array(fingerprint).min(1).max(100),
     confirmed:z.boolean()}).optional(),
 });
@@ -22,6 +35,7 @@ export type MixedKind = 'mixed-room' | 'mixed-message';
 function validBatch(message:MixedMessageRecord,owner:string) {
   const batch=message.taskBatch;
   if (!batch) return true;
+  if (message.archive) return false;
   if (batch.id!==firestoreDomainUuid(['mixed-task-batch',owner,message.roomId,message.id])
     || batch.items.length!==batch.targetBasis.length) return false;
   const targets=batch.action.kind==='create' ? (batch.action.childIds??message.childIds).map(childId=>({childId,taskId:null,expectedVersion:null}))
@@ -63,9 +77,10 @@ export function mixedChatErasedBy(kind:string, raw:unknown, ownerUserId:string,
   erasedScope:Pick<WorkRecoveryScope,'ownerUserId'|'workspaceId'|'childId'>, wholeOwner:boolean): boolean {
   const runScope=(kind === 'agent-run' || kind === 'agent-claim') && raw && typeof raw === 'object'
     && 'mixedChat' in raw ? mixedRunScopeSchema.parse(raw.mixedChat) : null;
-  if (!runScope && kind !== 'mixed-room' && kind !== 'mixed-message') return false;
+  if (!runScope && kind !== 'mixed-room' && kind !== 'mixed-message' && kind !== 'mixed-import-receipt') return false;
   if (wholeOwner && erasedScope.ownerUserId === ownerUserId) return true;
-  const record=runScope ?? (kind === 'mixed-room' ? mixedRoomRecordSchema.parse(raw) : mixedMessageRecordSchema.parse(raw));
+  const record=runScope ?? (kind === 'mixed-import-receipt' ? mixedImportReceiptSchema.parse(raw)
+    : kind === 'mixed-room' ? mixedRoomRecordSchema.parse(raw) : mixedMessageRecordSchema.parse(raw));
   if (record.scope.kind === 'class') {
     return erasedScope.ownerUserId === 'space:'+record.scope.spaceId && erasedScope.workspaceId === record.scope.spaceId
       && (wholeOwner || record.childIds.includes(erasedScope.childId));

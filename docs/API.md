@@ -1354,5 +1354,10 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 - 新 Android intent filter 需要新 binary，OTA 不代替；Web 平台 adapter 為空實作，不宣稱網站已有 OS 分享接收。iOS 標準 extension 及 HANDOVER01 資料包匯入仍待接線，不把一般檔案傳送算成資料包導入。
 
 ### 完整混合對話的文檔包
+
+收件端在現有 `package-imports/capabilities` 請求帶 `x-handover-mixed-import: 1`，取得 `mixedConversationImport` 後才開放選取。沿原 POST 傳 `mixedRoomIds` 和全部對應的 `targets`。只複製對話的孩子可用 `sections: []`；每個來源孩子須對應不同目標，並全部位於本人或同一班級。簽章及未附證明的確認沿原匯入契約。
+
+房間及每則原訊息各留一筆收據。`GET /api/account/package-imports/:id/mixed-items?offset=0` 使用相同 header，每頁最多 16 筆，依 `nextOffset` 接續。來源不同或收件人已在同一位置續寫時保留本地內容，記錄衝突。混合對話 detail 使用相同 header 時按頁回傳 `archivedReplies`；原本正在處理的回覆只供歷史查閱，新問題使用當地新留言及新 run。
+
 客戶端於 x-handover-account-features 加入 mixed-conversations 後，沿原 packages/capabilities 查 mixedConversations。建立交接包／備份可於 selection.mixedRooms 選入對話 ID、版本及該對話全部 childIds。若只想帶走完整對話，modules 可留空。班級來源只可包括操作者在該班的私人對話。指定期間時整段對話的原始留言必須落在所選期間內。
 這類 ZIP 使用格式 v4。manifest 另外標明對話發起帳戶，mixed_chat 位於帳戶層。每則留言保留原訊息版本、時間及當時的回覆狀態；已完成回覆包含正文及可追溯的公開引用。接收端讀取須選齊該段涉及的孩子。資料包不帶會話、run、工具、確認權或可執行的工作。舊格式沿原解析方式。

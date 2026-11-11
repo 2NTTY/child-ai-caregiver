@@ -406,6 +406,8 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
       return authority.runTransaction(userId,null,async b=>{
         const page=await options.chat.mixed.exportPageIn(b,pin,scope,new Set(childIds),cursor);
         const items=await Promise.all(page.messages.map(async message=>{
+          const archived=page.archivedReplies?.find(entry=>entry.messageId===message.id);
+          if (archived) return {message,reply:archived.reply};
           const original=await originalReplyRun(b,message.id);
           const run=original && expired(original);
           if (run && (run.mixedChat?.roomId!==pin.id || run.sourceMessageId!==message.id)) domainReject('agent_claim_binding',409);

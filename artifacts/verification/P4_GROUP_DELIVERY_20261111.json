@@ -1,0 +1,20 @@
+{
+  "release": {
+    "tag": "p4-group-2cc1145d",
+    "apiCommit":"2cc1145dcef041d4cf97ad432a1cb4d1b94ca1df",
+    "webCommit":"493fa8ba9bb7eed2c7ab5993a645c1dba072e803",
+    "previousTag":"p4-preferences-b9ed1746",
+    "observedHongKong":"2026-11-11T21:47+08:00",
+    "apiArchiveSha256":"65a4bd376a958eed2093664980d57ac7d994b28c741687c920da7a2e5506dd0f",
+    "webArchiveSha256":"f8224a83f1ef3ac76f82ed250ea6ec8e3b5cf54054c211e6aa54edbf6991b0d9",
+    "apiWorkerImage":"sha256:4a4ff8527249540a7ba9637fd41d88a74a2f5f9aed71cac73b7db57aef7dae66",
+    "webImage":"sha256:307b23c46a47e764b28d5595a680c816f94a91a8b1c1ea6b5d6fb4e695776d7a",
+    "liveComposeSha256":"231e8d897a62df3b4e63202405425b56d40cd33ec5862cebf80fc68da8bcc5a4",
+    "public":{"health":200,"storage":"firestore","unauthenticatedMixedChats":401,"adminHtmlSha256":"f877adc40cfa6221dfbcf2cbbea100fa01c351bcb2f6810ce4f2e2e86460642d","bundle":"/_expo/static/js/web/index-2ae9f7a6c2850c874cb361ed9363c79e.js","bundleSha256":"42dafe338b77d4915304717a5268017cf3558dd8405cba43e08260f6bcc7e332"},
+    "rollback":"Retain the compatible API/worker after new writes. Original Compose, Web and images were kept. The previous candidate without the Vertex fix was never cut over."
+  },
+  "indexes":{"desiredComposite":176,"missingAfter":0,"buildingAfter":0,"actualCompositeAdditions":11,"fieldSettingsApplied":18,"existingVectorIndex":"Already READY; the old comparator incorrectly tried to recreate it and received HTTP 409. PR #539 fixed document-key placement."},
+  "otherObservations":["Original VM was running, scheduled to stop on 2026-12-08T14:32:58.484Z. The legacy PostgreSQL container remained exited.","The existing Web bundle was reused after the server-only tool declaration fix. Positive integer version validation has the same accepted values in that client."],
+  "modelEvidence":"P4_GROUP_TASK_VERTEX_20261111.json",
+  "pending":["No authenticated production family write or device acceptance in this release","Android binary deferred for a combined release","Independent recipient-side transcript storage and full P4 completion remain separate"]
+}

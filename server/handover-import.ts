@@ -16,7 +16,7 @@ import { readDatedConcernHead, validDatedConcernEvent } from './handover-concern
 import { attachmentSections, type AttachmentSection, DatedPackageMedia, isAttachmentHead, isAttachmentSupplement } from './handover-attachment-period.ts';
 import { DatedDocumentPeriodIndex, isDatedDocumentSection } from './handover-document-period-index.ts';
 import { HandoverDocumentChoices } from './handover-document-choices.ts';
-import { mixedTranscriptRowSchema, type MixedRoomPin } from '../src/shared/mixed-chat-transfer.ts';
+import { mixedTranscriptRowSchema, type MixedRoomPin, type MixedTranscriptRow } from '../src/shared/mixed-chat-transfer.ts';
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/u), uuid = z.uuid();
 const selectionSchema = z.object({ childIds: handoverSelectionSchema.shape.childIds.min(1), modules: handoverSelectionSchema.shape.modules.min(1) }).strict()
@@ -29,6 +29,10 @@ const pageSchema = z.object({ section: z.string().min(1).max(80), childId: uuid.
   items: z.array(z.record(z.string(), z.unknown())).max(10000), notices: z.array(z.string().max(2000)).max(100).optional() }).strict();
 type DataPage = z.infer<typeof pageSchema>;
 type PageIndex = { path: string; section: string; childId: string | null; items: number };
+type MixedTranscriptLocation = { pageIndex: number; rowIndex: number };
+type MixedRoomIndex = { pin: MixedRoomPin; nextVersion: number; locations: Map<number, Set<number>>;
+  versions: Map<number, MixedTranscriptLocation> };
+type MixedTranscriptSelection = { roomId: string; childIds: string[]; acknowledgedManifestSha256?: string };
 const contentSections = new Set(['photo_content', 'voice_content', 'file_content', 'child_avatar_content']);
 export type { AttachmentSection } from './handover-attachment-period.ts';
 export interface HandoverAttachmentContent {
@@ -77,13 +81,16 @@ export interface HandoverImportRow {
   source: { serverId: string; accountId: string; packageId: string; packageVersion: number;
     manifestSha256: string; path: string; rowIndex: number };
 }
+export interface HandoverMixedTranscriptRow extends HandoverImportRow {
+  section: 'mixed_chat'; childId: null; value: MixedTranscriptRow;
+}
 
 /** Format/scope validation only. Content accuracy, target authorization and durable writes belong to domain services. */
 export async function openHandoverImport(input: Parameters<typeof openHandoverArchive>[0]) {
   const limits = handoverLimits(input.limits), archive = await openHandoverArchive(input);
   const { manifest, manifestSha256, integrity } = archive;
   const pages: PageIndex[] = [], children: { id: string; displayName: string }[] = [];
-  const mixedRooms = new Map<string, { pin: MixedRoomPin; nextVersion: number; locations: Map<number, Set<number>> }>();
+  const mixedRooms = new Map<string, MixedRoomIndex>();
   const mixedMessageIds = new Set<string>();
   const attachments = new Map<string, { childId: string | null; mimeType: string; bytes: number }>();
   let accountHead: z.infer<typeof avatarTransferSchema> | null = null;
@@ -127,7 +134,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
   }
   try {
     for (const pin of manifest.selection.mixedRooms ?? []) {
-      mixedRooms.set(pin.id, { pin, nextVersion: pin.version, locations: new Map<number, Set<number>>() });
+      mixedRooms.set(pin.id, { pin, nextVersion: pin.version, locations: new Map<number, Set<number>>(), versions: new Map() });
     }
     if (!supportsHandoverPeriod(manifest.selection)) fail('package_period_not_connected');
     const required = new Set([key('children', null)]);
@@ -163,6 +170,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
             fail('invalid_package_mixed_transcript');
           if (manifest.selection.period && !withinHandoverPeriod(transcript.message.createdAt, manifest.selection.period)) fail('invalid_package_period');
           mixedMessageIds.add(transcript.message.id); room.nextVersion--;
+          room.versions.set(transcript.message.version, { pageIndex: pages.length, rowIndex });
           const rows = room.locations.get(pages.length) ?? new Set<number>();
           rows.add(rowIndex); room.locations.set(pages.length, rows);
           continue;
@@ -300,23 +308,44 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
       }
       return { locations, count, ids: [...new Set(ids)].sort() };
     }
+    function selectMixedTranscript(request: MixedTranscriptSelection) {
+      const roomId = parse(uuid, request.roomId, 'invalid_package_selection');
+      const selected = parse(handoverSelectionSchema.shape.childIds.min(1), request.childIds, 'invalid_package_selection');
+      if (new Set(selected).size !== selected.length) fail('invalid_package_selection');
+      const room = mixedRooms.get(roomId);
+      if (!room || selected.some(id => !manifest.selection.childIds.includes(id))
+        || room.pin.childIds.some(id => !selected.includes(id))) fail('package_scope_unavailable');
+      if (integrity !== 'trusted' && request.acknowledgedManifestSha256 !== manifestSha256) fail('package_trust_acknowledgement_required');
+      const selectionHash = createHash('sha256').update(JSON.stringify({ section: 'mixed_chat', roomId, version: room.pin.version,
+        childIds: [...selected].sort() })).digest('hex');
+      return { room, selectionHash };
+    }
+    function mixedTranscriptRow(room: MixedRoomIndex, pageIndex: number, rowIndex: number, page: DataPage): HandoverMixedTranscriptRow {
+      if (page.section !== 'mixed_chat' || page.childId !== null) fail('invalid_package_scope');
+      const transcript = parse(mixedTranscriptRowSchema, page.items[rowIndex], 'invalid_package_mixed_transcript');
+      const location = room.versions.get(transcript.message.version);
+      if (transcript.message.roomId !== room.pin.id || location?.pageIndex !== pageIndex || location.rowIndex !== rowIndex)
+        fail('invalid_package_mixed_transcript');
+      return { section: 'mixed_chat', childId: null, value: transcript, source: { ...manifest.source,
+        packageId: manifest.packageId, packageVersion: manifest.packageVersion, manifestSha256, path: pages[pageIndex].path, rowIndex } };
+    }
     return {
       manifest: structuredClone(manifest), manifestSha256, integrity, children: structuredClone(children), close: archive.close,
-      async readMixedTranscriptPage(request: { roomId: string; childIds: string[]; acknowledgedManifestSha256?: string; cursor?: HandoverImportCursor | null; limit?: number }) {
-        const roomId = parse(uuid, request.roomId, 'invalid_package_selection');
-        const selected = parse(handoverSelectionSchema.shape.childIds.min(1), request.childIds, 'invalid_package_selection');
-        if (new Set(selected).size !== selected.length) fail('invalid_package_selection');
-        const room = mixedRooms.get(roomId);
-        if (!room || selected.some(id => !manifest.selection.childIds.includes(id))
-          || room.pin.childIds.some(id => !selected.includes(id))) fail('package_scope_unavailable');
-        if (integrity !== 'trusted' && request.acknowledgedManifestSha256 !== manifestSha256) fail('package_trust_acknowledgement_required');
-        const selectionHash = createHash('sha256').update(JSON.stringify({ section: 'mixed_chat', roomId, version: room.pin.version,
-          childIds: [...selected].sort() })).digest('hex');
+      async readMixedTranscriptVersion(request: MixedTranscriptSelection & { version: number }): Promise<HandoverMixedTranscriptRow> {
+        const { room } = selectMixedTranscript(request);
+        const version = parse(z.number().int().min(2).max(room.pin.version), request.version, 'invalid_package_selection');
+        const location = room.versions.get(version);
+        if (!location) fail('invalid_package_mixed_transcript');
+        const { pageIndex, rowIndex } = location;
+        return mixedTranscriptRow(room, pageIndex, rowIndex, await read(pages[pageIndex].path));
+      },
+      async readMixedTranscriptPage(request: MixedTranscriptSelection & { cursor?: HandoverImportCursor | null; limit?: number }) {
+        const { room, selectionHash } = selectMixedTranscript(request);
         const limit = parse(z.number().int().min(1).max(100), request.limit ?? 50, 'invalid_package_limit');
         const cursor = request.cursor ? parse(cursorSchema, request.cursor, 'invalid_package_cursor') : null;
         if (cursor && (cursor.manifestSha256 !== manifestSha256 || cursor.selectionHash !== selectionHash
           || !room.locations.get(cursor.pageIndex)?.has(cursor.rowIndex))) fail('invalid_package_cursor');
-        const rows: HandoverImportRow[] = [];
+        const rows: HandoverMixedTranscriptRow[] = [];
         for (const [pageIndex, indices] of room.locations) {
           if (pageIndex < (cursor?.pageIndex ?? 0)) continue;
           const index = pages[pageIndex], page = await read(index.path);
@@ -324,10 +353,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
           for (const rowIndex of indices) {
             if (pageIndex === cursor?.pageIndex && rowIndex < cursor.rowIndex) continue;
             if (rows.length === limit) return { rows, nextCursor: { manifestSha256, selectionHash, pageIndex, rowIndex } };
-            const transcript = parse(mixedTranscriptRowSchema, page.items[rowIndex], 'invalid_package_mixed_transcript');
-            if (transcript.message.roomId !== roomId || transcript.message.version > room.pin.version) fail('invalid_package_mixed_transcript');
-            rows.push({ section: 'mixed_chat', childId: null, value: transcript, source: { ...manifest.source,
-              packageId: manifest.packageId, packageVersion: manifest.packageVersion, manifestSha256, path: index.path, rowIndex } });
+            rows.push(mixedTranscriptRow(room, pageIndex, rowIndex, page));
           }
         }
         return { rows, nextCursor: null };

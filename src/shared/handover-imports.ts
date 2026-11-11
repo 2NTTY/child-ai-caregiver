@@ -19,7 +19,7 @@ export function handoverImportModuleOf(section: HandoverImportResourceSection): 
 }
 export const handoverImportTargetSchema = z.object({ sourceChildId: uuid,
   target: z.object({ childId: uuid, spaceId: uuid.nullable() }).strict(),
-  sections: z.array(handoverImportSectionSchema).min(1).max(10)
+  sections: z.array(handoverImportSectionSchema).max(10)
     .refine(value => new Set(value).size === value.length),
 }).strict();
 const requestedTargetSchema = handoverImportTargetSchema.extend({
@@ -59,6 +59,7 @@ export const selfAvatarRestoreResultSchema = z.object({ outcome: z.enum(['create
   backupVersion: resourceVersion, localVersion: resourceVersion, assetId: uuid.nullable() }).strict();
 export const handoverImportCommandSchema = z.object({ opId: uuid, uploadId: uuid,
   expectedUploadVersion: count.positive(), acceptedManifestSha256: hash.nullable(),
+  mixedRoomIds: z.array(uuid).min(1).max(100).refine(ids => new Set(ids).size === ids.length).optional(),
   resolutionOnly: z.boolean().optional(), restoreOriginal: z.literal(true).optional(),
   accountAvatar: selfAvatarRestoreSchema.optional(),
   notificationPreferences: accountPreferencesRestoreSchema.optional(),
@@ -66,6 +67,8 @@ export const handoverImportCommandSchema = z.object({ opId: uuid, uploadId: uuid
   resolutions: z.array(z.object({ sourceChildId: uuid, section: handoverImportResourceSectionSchema,
     resourceId: uuid, useRestoredTarget: z.literal(true).optional(), resolution: handoverImportResolutionSchema }).strict()).max(10000),
 }).strict().refine(value => (value.targets.length > 0 || !!value.accountAvatar || !!value.notificationPreferences)
+  && (value.mixedRoomIds ? !value.resolutionOnly && !value.restoreOriginal && value.targets.length > 0
+    : value.targets.every(target => target.sections.length > 0))
   && (!(value.accountAvatar || value.notificationPreferences) || value.restoreOriginal === true && value.resolutionOnly === true)
   && new Set(value.targets.map(row => row.sourceChildId)).size === value.targets.length
   && new Set(value.resolutions.map(row => JSON.stringify([row.sourceChildId, row.section, row.resourceId]))).size === value.resolutions.length

@@ -228,7 +228,8 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
           } else if (request.method==='DELETE') {
             result={result:await options.product.agent.cancelMixed(userId,match[1],match[3])};
           } else throw new RequestError('method_not_allowed',405);
-        } else if (request.method === 'GET' && !match[2]) result=match[1] ? await store.detail(userId,match[1],cursor) : await store.list(userId,cursor);
+        } else if (request.method === 'GET' && !match[2]) result=match[1] ? await store.detail(userId,match[1],cursor,
+          request.headers.get('x-handover-mixed-import')==='1') : await store.list(userId,cursor);
         else if (request.method === 'POST' && !match[1]) result=await store.create(userId,await readJson(request));
         else if (request.method === 'POST' && match[1] && match[2]) result=await store.append(userId,match[1],await readJson(request,64*1024));
         else throw new RequestError('method_not_allowed',405);

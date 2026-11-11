@@ -25,6 +25,10 @@ import { createFirestoreAvatarData } from './firestore-avatar-data.ts';
 import { selfAvatarDifference } from './handover-original-backup.ts';
 import { createNotificationPreferencesData, sameNotificationPreferences } from './firestore-notification-preferences.ts';
 import type { NotificationPreferences } from '../src/shared/family.ts';
+import { mixedImportDestination, mixedImportStep } from './handover-mixed-selection.ts';
+import { createFirestoreMixedChat } from './firestore-mixed-chat.ts';
+import { mixedImportReceiptSchema, mixedReceiptId } from './mixed-chat-records.ts';
+import type { MixedTranscriptRow } from '../src/shared/mixed-chat-transfer.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
 const controlSchema = z.object({ opId: z.uuid(), expectedVersion: z.number().int().positive().max(2147483646) }).strict();
@@ -41,6 +45,8 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
   const items = createFirestoreHandoverImportItems(options), clock = options.serverClock ?? Date.now;
   const avatarData = createFirestoreAvatarData(options);
   const preferences = createNotificationPreferencesData(data);
+  const mixedChat = createFirestoreMixedChat(options);
+  const receiptRef = (id:string) => data.ref('handover_import_items','mixed-import-receipt',id);
   const at = () => new Date(clock()).toISOString();
   const ref = (owner: string, id: string) => data.ref('handover_import_batches', 'handover-import-batch', importBatchId(owner, id));
   async function read(b: Binding, id: string, existing?: DocumentSnapshot) {
@@ -66,6 +72,17 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
     for (const selected of request.targets) {
       let scope: WorkRecoveryScope | undefined;
       const enrol = request.enrolSourceIds?.includes(selected.sourceChildId);
+      if (!selected.sections.length && !enrol) {
+        if (selected.target.spaceId) {
+          scope = await sharing.inResourceTransaction(b,{...selected.target,spaceId:selected.target.spaceId,module:'tasks',mode:'read'},async access=>{
+            if (!access.binding.sharedAccess?.classMember) domainReject('class_required',403);
+            return access.scope;
+          });
+        } else {
+          if (!await b.readChild(selected.target.childId)) domainReject('forbidden',403);
+          scope={...actorScope(b),childId:selected.target.childId};
+        }
+      }
       for (const module of selected.sections) {
         if (selected.target.spaceId) {
           if (module === 'sources' || module === 'chat') domainReject('private_scope_unavailable', 403);
@@ -191,7 +208,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
           if (!selected.target.spaceId) {
             if (!await b.readChild(selected.target.childId)) domainReject('forbidden', 403);
             if (firestoreDomainHash({ ...b.scope, childId: selected.target.childId }) !== firestoreDomainHash(expected)) domainReject('import_target_changed');
-          } else for (const module of selected.sections) {
+          } else for (const module of selected.sections.length ? selected.sections : ['tasks' as const]) {
             if (module === 'sources' || module === 'chat') domainReject('private_scope_unavailable', 403);
             await sharing.inResourceTransaction(b, { ...selected.target, spaceId: selected.target.spaceId, module, mode: 'read' }, async access => {
               if (firestoreDomainHash(access.scope) !== firestoreDomainHash(expected)) domainReject('import_target_changed');
@@ -219,6 +236,59 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
         const next: Batch = { ...job, state: 'running', version: job.version + 1, updatedAt: at(),
           claim: { workId: work.id, token: work.lease!.token, until: work.lease!.until } };
         const save = prepareSave(b, next); assertCurrentLease(); save(); return next;
+      });
+    },
+    async applyMixed(work: FirestoreBackgroundWork, position:number, row:MixedTranscriptRow|null, signal:AbortSignal) {
+      return authority.runTransaction(work.scope.ownerUserId,null,async b=>{
+        const job=await read(b,work.resourceId), assertLease=await held(b,work,job);
+        if (job.state!=='running' || job.claim?.token!==work.lease?.token || job.claim?.workId!==work.id) domainReject('import_batch_stopped');
+        if (job.position!==position || (job.enrolments?.length??0)!==(job.request.enrolSourceIds?.length??0)) domainReject('import_cursor_changed');
+        const selection=job.request.mixed, step=mixedImportStep(selection,position);
+        if (!step || !selection) domainReject('import_cursor_changed');
+        const assertSource=await options.sourceGuard?.(b,job.request);
+        const destination=mixedImportDestination(step.room,job.request.targets);
+        const origin={...job.request.source,roomId:step.room.id,authorAccountId:selection.authorAccountId};
+        const scopes=new Map(destination.pairs.map(pair=>[pair.childId,
+          job.targetScopes[job.request.targets.findIndex(target=>target.sourceChildId===pair.source)]!]));
+        const now=at(), result=await mixedChat.prepareImportIn(b,destination,origin,step.version,row,job.mixedConflictRoom===step.room.id,now,scopes);
+        const receiptId=mixedReceiptId(b.actorUserId,job.id,step.room.id,step.version);
+        const receipt=mixedImportReceiptSchema.parse({batchId:job.id,sourceRoomId:step.room.id,sourceVersion:step.version,
+          sourceId:row?.message.id??step.room.id,at:now,scope:destination.scope,childIds:destination.childIds,
+          roomId:result.roomId,targetId:result.targetId,outcome:result.outcome,reason:result.reason});
+        const completed=position+1===job.request.totalItems;
+        const next:Batch={...job,version:job.version+1,position:position+1,updatedAt:now,
+          ...(result.outcome==='conflict' ? {mixedConflictRoom:step.room.id} : {}),
+          state:completed?'completed':'running',claim:completed?null:job.claim,cursor:completed?null:JSON.stringify({target:0,phase:'current',page:null}),
+          counts:{...job.counts,[result.outcome]:job.counts[result.outcome]+1},moduleCounts:importModuleCounts(job)?.map(module=>
+            module.module==='chat'?{...module,[result.outcome]:module[result.outcome]+1}:module)??null};
+        const save=prepareSave(b,next);
+        const envelope={...data.tags(job.scope),...data.seal('mixed-import-receipt',receiptId,job.scope,mixedImportReceiptSchema,receipt,1)};
+        assertLease(); assertSource?.(); signal.throwIfAborted();
+        if ('commit' in result) result.commit?.();
+        b.transaction.create(receiptRef(receiptId),envelope);
+        save(); return next;
+      });
+    },
+    async mixedResults(owner:string,batchId:string,offset:number) {
+      return authority.runTransaction(owner,null,async b=>{
+        const job=await read(b,batchId), selection=job.request.mixed, items=[];
+        const checkedRooms=new Set<string>();
+        const count=Math.min(job.position,selection?.rooms.reduce((sum,room)=>sum+room.version,0)??0);
+        if (!Number.isSafeInteger(offset)||offset<0||offset>count) domainReject('invalid_cursor',400);
+        for (let i=offset;i<Math.min(count,offset+16);i++) {
+          const step=mixedImportStep(selection,i)!;
+          const id=mixedReceiptId(owner,batchId,step.room.id,step.version), snap=await b.transaction.get(receiptRef(id));
+          if (!snap.exists) domainReject('import_result_unavailable',404);
+          const receipt=data.open('mixed-import-receipt',id,job.scope,mixedImportReceiptSchema,snap);
+          if (receipt.batchId!==batchId || receipt.sourceRoomId!==step.room.id || receipt.sourceVersion!==step.version)
+            domainReject('import_batch_binding',500);
+          if (!checkedRooms.has(receipt.roomId)) {
+            await mixedChat.authorizeRoomIn(b,receipt.roomId);
+            checkedRooms.add(receipt.roomId);
+          }
+          items.push(receipt);
+        }
+        return {items,nextOffset:offset+items.length<count?offset+items.length:null};
       });
     },
     async applyNotificationPreferences(work: FirestoreBackgroundWork, backup: NotificationPreferences, signal: AbortSignal) {

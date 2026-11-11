@@ -12,12 +12,12 @@ const citation = z.strictObject({
   title: z.string(), url: z.string(), section: z.string(),
   pageStart: z.int().optional(), pageEnd: z.int().optional(),
 });
-export const mixedTranscriptRowSchema = z.strictObject({
-  message: mixedChatMessageSchema,
-  reply: z.discriminatedUnion('status', [
+export const mixedArchivedReplySchema = z.discriminatedUnion('status', [
     z.strictObject({ status: z.literal('completed'), text: z.string(), citations: z.array(citation) }),
     z.strictObject({ status: z.enum(['not_started', 'running', 'unknown', 'stopped']) }),
-  ]),
+  ]);
+export const mixedTranscriptRowSchema = z.strictObject({
+  message: mixedChatMessageSchema, reply: mixedArchivedReplySchema,
 });
 export type MixedTranscriptRow = z.infer<typeof mixedTranscriptRowSchema>;
 export interface MixedTranscriptPage {

@@ -166,7 +166,29 @@ test('mixed messages are account-private, idempotent and lose disclosure when cl
       assert.equal(second.rows[0].value.reply.text,answer.text);
       assert.equal(second.nextCursor,null);
       assert.ok(!JSON.stringify(second.rows).includes(answer.runId));
+      const rows=[...first.rows,...second.rows];
+      for(let version=2;version<=groupPin.version;version++) {
+        assert.deepEqual(await reader.readMixedTranscriptVersion({roomId:room.id,childIds,version}),
+          rows.find(row=>row.value.message.version===version));
+      }
+      await assert.rejects(reader.readMixedTranscriptVersion({roomId:room.id,childIds:[childIds[0]],version:2}),
+        {code:'package_scope_unavailable'});
+      await assert.rejects(reader.readMixedTranscriptVersion({roomId:randomUUID(),childIds,version:2}),
+        {code:'package_scope_unavailable'});
+      for(const version of [1,groupPin.version+1,2.5]) {
+        await assert.rejects(reader.readMixedTranscriptVersion({roomId:room.id,childIds,version}),
+          {code:'invalid_package_selection'});
+      }
     } finally { await reader.close(); }
+    const untrusted=await openHandoverImport({path:archive.path});
+    try {
+      assert.equal(untrusted.integrity,'untrusted_signer');
+      await assert.rejects(untrusted.readMixedTranscriptVersion({roomId:room.id,childIds,version:2}),
+        {code:'package_trust_acknowledgement_required'});
+      const acknowledged={roomId:room.id,childIds,acknowledgedManifestSha256:untrusted.manifestSha256};
+      assert.deepEqual(await untrusted.readMixedTranscriptVersion({...acknowledged,version:2}),
+        (await untrusted.readMixedTranscriptPage(acknowledged)).rows.find(row=>row.value.message.version===2));
+    } finally { await untrusted.close(); }
   } finally { await rm(directory,{recursive:true,force:true}); }
   actor='owner';
   assert.deepEqual((await (await call('')).json()).rooms,[]);

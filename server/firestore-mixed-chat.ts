@@ -3,10 +3,12 @@ import { z } from 'zod';
 import { assistantTaskScopeSchema } from '../src/shared/assistant-task-context.ts';
 import { mixedChatAppendSchema, mixedChatCreateSchema, type MixedChatRoom, type MixedChatMessage } from '../src/shared/mixed-chat.ts';
 import { createFirestoreAuthority, FirestoreAuthorityError, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
-import { FirestoreDomainData, FirestoreDomainError, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { FirestoreDomainData, FirestoreDomainError, domainParse, domainReject, firestoreDomainHash, firestoreDomainUuid, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
-import { mixedRecordId, validMixedRecord, mixedRoomRecordSchema, mixedMessageRecordSchema, type MixedRoomRecord, type MixedMessageRecord } from './mixed-chat-records.ts';
-import type { MixedRoomPin, MixedTransferScope } from '../src/shared/mixed-chat-transfer.ts';
+import { mixedRecordId, validMixedRecord, mixedRoomRecordSchema, mixedMessageRecordSchema, type MixedRoomRecord, type MixedMessageRecord, type MixedPackageOrigin } from './mixed-chat-records.ts';
+import type { MixedRoomPin, MixedTransferScope, MixedTranscriptRow } from '../src/shared/mixed-chat-transfer.ts';
+import type { mixedImportDestination } from './handover-mixed-selection.ts';
+import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 
 type Binding = FirestoreAuthorityTransaction;
 type Selection = Pick<MixedChatRoom, 'scope'|'childIds'>;
@@ -40,17 +42,24 @@ export function createFirestoreMixedChat(options:FirestoreDomainOptions) {
       || firestoreDomainHash([value.scope,value.childIds]) !== firestoreDomainHash([room.scope,room.childIds])) domainReject('not_found',404);
     return value;
   }
-  async function checkSelection(b:Binding, selection:Selection, expected?:z.infer<typeof assistantTaskScopeSchema>) {
+  async function checkSelection(b:Binding, selection:Selection, expected?:z.infer<typeof assistantTaskScopeSchema>,
+    pinnedTargets?:ReadonlyMap<string,WorkRecoveryScope>) {
     let membership:MixedRoomRecord['membership']=null;
     const versions:string[]=[];
     let taskScope:z.infer<typeof assistantTaskScopeSchema>={kind:'personal'};
     for (const childId of selection.childIds) {
+      function checkTarget(current:WorkRecoveryScope) {
+        if (pinnedTargets && (!pinnedTargets.has(childId) || firestoreDomainHash(current)!==firestoreDomainHash(pinnedTargets.get(childId))))
+          domainReject('import_target_changed');
+      }
       if (selection.scope.kind === 'personal') {
         if (!await b.readChild(childId)) domainReject('not_found',404);
+        checkTarget({...b.scope,childId});
       } else {
         membership=await sharing.inResourceTransaction(b,{spaceId:selection.scope.spaceId,childId,module:'tasks',mode:'read'},async access=>{
           const member=access.binding.sharedAccess?.classMember;
           if (!member) domainReject('class_required',403);
+          checkTarget(access.scope);
           if (expected?.kind === 'class' && (access.basis.spaceVersion !== expected.spaceVersion
             || (access.basis.teacherSpaceVersion ?? null) !== expected.teacherSpaceVersion)) domainReject('sharing_scope_changed');
           versions.push(firestoreDomainHash([childId,access.basis,access.binding.changeSeq]));
@@ -61,8 +70,8 @@ export function createFirestoreMixedChat(options:FirestoreDomainOptions) {
     }
     return {membership,taskScope,basis:firestoreDomainHash([b.authorizationVersion,b.changeSeq,selection.scope,selection.childIds,versions])};
   }
-  async function authorizeRoom(b:Binding,room:MixedRoomRecord) {
-    const current=await checkSelection(b,room);
+  async function authorizeRoom(b:Binding,room:MixedRoomRecord,pinnedTargets?:ReadonlyMap<string,WorkRecoveryScope>) {
+    const current=await checkSelection(b,room,undefined,pinnedTargets);
     if (current.membership?.membershipId !== room.membership?.membershipId || current.membership?.membershipScopeId !== room.membership?.membershipScopeId)
       domainReject('sharing_scope_changed',403);
     return current;
@@ -88,23 +97,73 @@ export function createFirestoreMixedChat(options:FirestoreDomainOptions) {
     if (room.version !== pin.version) domainReject('export_scope_changed');
     return room;
   }
-  async function messagePageIn(b:Binding,room:MixedRoomRecord,cursor:string|null) {
+  async function messagePageIn(b:Binding,room:MixedRoomRecord,cursor:string|null,includeArchive=false) {
     if (cursor) domainParse(z.uuid(),cursor);
-    const messages:MixedChatMessage[]=[];
+    const messages:MixedChatMessage[]=[], archivedReplies:{messageId:string;reply:MixedTranscriptRow['reply']}[]=[];
     let id=cursor ?? room.latestMessageId;
     let version=cursor ? null : room.version;
     while (id && messages.length<messagePageSize) {
       const message=await readMessageIn(b,room,id);
+      if (includeArchive && message.archive) archivedReplies.push({messageId:message.id,reply:message.archive.reply});
       if (version!==null && version!==message.version) domainReject('mixed_chat_binding',500);
       messages.push(publicMessage(message)); id=message.previousMessageId; version=message.version-1;
     }
-    return {room:publicRoom(room),messages:messages.reverse(),nextCursor:id};
+    return {room:publicRoom(room),messages:messages.reverse(),nextCursor:id,
+      ...(archivedReplies.length ? {archivedReplies:archivedReplies.reverse()} : {})};
   }
 
   return {
     exportRoomIn,
+    authorizeRoomIn:readRoom,
+    async prepareImportIn(b:Binding,destination:ReturnType<typeof mixedImportDestination>,origin:MixedPackageOrigin,
+      sourceVersion:number,row:MixedTranscriptRow|null,blocked:boolean,at:string,pinnedTargets:ReadonlyMap<string,WorkRecoveryScope>) {
+      if (b.sharedAccess || b.actorUserId !== b.scope.ownerUserId || b.scope.childId !== '00000000-0000-0000-0000-000000000000')
+        domainReject('private_scope_unavailable',403);
+      const {scope,childIds,pairs}=destination;
+      const identity=[origin.serverId,origin.accountId,origin.authorAccountId,origin.roomId,pairs];
+      const roomOp=firestoreDomainUuid(['import-mixed-room',identity]), id=mixedRecordId('mixed-room',b.actorUserId,roomOp);
+      const messageOp=firestoreDomainUuid(['import-mixed-message',id,sourceVersion]);
+      const targetId=row ? mixedRecordId('mixed-message',b.actorUserId,messageOp) : id;
+      const existing=await b.transaction.get(roomRef(id));
+      const room=existing.exists ? openRoom(b,existing,id) : null;
+      const {membership}=room ? await authorizeRoom(b,room,pinnedTargets) : await checkSelection(b,destination,undefined,pinnedTargets);
+      const fingerprint=firestoreDomainHash(identity);
+      if (room && (!room.importedFrom || room.fingerprint!==fingerprint)) domainReject('operation_conflict');
+      if ((row===null)!==(sourceVersion===1) || row && (row.message.roomId!==origin.roomId || row.message.version!==sourceVersion))
+        domainReject('invalid_package_mixed_transcript',400);
+      const base={roomId:id,targetId};
+      const unchanged={...base,outcome:'skipped' as const,reason:'already_imported' as const};
+      if (blocked) return {...base,outcome:'conflict' as const,reason:'local_history_changed' as const};
+      if (!row) {
+        if (room) return unchanged;
+        const head:MixedRoomRecord={id,version:1,childIds,scope,membership,operationId:roomOp,fingerprint,latestMessageId:null,
+          createdAt:at,updatedAt:at,importedFrom:origin};
+        const change=await b.prepareChange(roomOp,'chat',false);
+        return {...base,outcome:'created' as const,reason:null,commit:()=>{
+          b.transaction.create(roomRef(id),sealRoom(b,head)); change.commit();
+        }};
+      }
+      if (!room) domainReject('import_cursor_changed');
+      const original=await b.transaction.get(messageRef(targetId)), contentHash=firestoreDomainHash(row);
+      if (original.exists) {
+        const old=openMessage(b,original,targetId,room);
+        return old.archive && old.fingerprint===contentHash ? unchanged : {...base,outcome:'conflict' as const,reason:'source_changed' as const};
+      }
+      if (room.version!==sourceVersion-1) return {...base,outcome:'conflict' as const,reason:'local_history_changed' as const};
+      const message:MixedMessageRecord={...row.message,id:targetId,roomId:id,scope,childIds,previousMessageId:room.latestMessageId,
+        operationId:messageOp,fingerprint:contentHash,archive:{origin,sourceId:row.message.id,reply:row.reply}};
+      const change=await b.prepareChange(messageOp,'chat',false);
+      return {...base,outcome:'created' as const,reason:null,commit:()=>{
+        b.transaction.create(messageRef(targetId),{...data.tags(b.scope),...data.seal('mixed-message',targetId,b.scope,mixedMessageRecordSchema,message,sourceVersion)});
+        // The source period is about the conversation. Import time is recorded in its receipt.
+        const date=message.createdAt;
+        const createdAt=room.version===1 || Date.parse(date)<Date.parse(room.createdAt) ? date : room.createdAt;
+        const updatedAt=room.version===1 || Date.parse(date)>Date.parse(room.updatedAt) ? date : room.updatedAt;
+        b.transaction.set(roomRef(id),sealRoom(b,{...room,version:sourceVersion,latestMessageId:targetId,createdAt,updatedAt})); change.commit();
+      }};
+    },
     async exportPageIn(b:Binding,pin:MixedRoomPin,scope:MixedTransferScope,selected:ReadonlySet<string>,cursor:string|null) {
-      return messagePageIn(b,await exportRoomIn(b,pin,scope,selected),cursor);
+      return messagePageIn(b,await exportRoomIn(b,pin,scope,selected),cursor,true);
     },
     async batchIn(b:Binding,roomId:string,messageId:string) {
       const room=openRoom(b,await b.transaction.get(roomRef(roomId)),roomId);
@@ -122,6 +181,7 @@ export function createFirestoreMixedChat(options:FirestoreDomainOptions) {
       const room=openRoom(b,await b.transaction.get(roomRef(roomId)),roomId);
       const {basis,taskScope}=await authorizeRoom(b,room);
       const message=await readMessageIn(b,room,messageId), earlier:MixedChatMessage[]=[];
+      if (message.archive) domainReject('imported_message_read_only',409);
       let previous=message.previousMessageId;
       if (includeEarlier) {
         while (previous && earlier.length<3) {
@@ -172,8 +232,8 @@ export function createFirestoreMixedChat(options:FirestoreDomainOptions) {
         return {message:publicMessage(message)};
       });
     },
-    async detail(userId:string,roomId:string,cursor:string|null) {
-      return authority.runTransaction(userId,null,async b=>messagePageIn(b,await readRoom(b,roomId),cursor));
+    async detail(userId:string,roomId:string,cursor:string|null,includeArchive=false) {
+      return authority.runTransaction(userId,null,async b=>messagePageIn(b,await readRoom(b,roomId),cursor,includeArchive));
     },
     async list(userId:string,cursor:string|null) {
       if (cursor) domainParse(z.string().regex(/^[a-f0-9]{64}$/u),cursor);
