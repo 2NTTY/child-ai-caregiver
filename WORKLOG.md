@@ -5918,3 +5918,7 @@ Web／手機共用對話頁按固定範圍列出所有孩子，沿既有資料�
 以「家長已約好再問」驗巡查時，發現背景 Agent 無法按 ID 讀回交代。補上讀取後，下一個真 run 讀到了原文，但提交的第一段缺少可用引用，後續草稿亦未通過獨立審核。#561 將精確讀取得到的原文及版本交給審核，正式顯示前再核對。針對性檢查涵蓋原項仍有效，以及審核中內容改動或刪除。Android 版本 6 已用 `apksigner` 核對簽署與前版一致。[本機驗證](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json) · [APK 及交付紀錄](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
 
 修正後用一項新的已到時間交代走同一正式 worker。真 Gemini 讀原項，以該次引用交獨立審核，審核通過後保存一則主聊天訊息及一張待派送收據；重播同一工作不再生成。共四次模型呼叫、三次工具、零 embedding，實際外發為零。已將 `90ecde37` 的 API 及 worker 發布到原站，健康檢查回 200、未登入的示範入口回 401。實機收件及跨端回覆保留待驗。
+
+Android 版本 6 在系統允許通知後，換了登入的同一部手機仍無法登記。原站只讀核對發現舊登記連著已失效的登入。本機沿正式 API 重現 503，原因是一次重新登記在同一筆 Firestore 交易重複建立相同的變更序號。#562 修正後，原測試涵蓋滿五部時替換舊登記、舊登入撤銷及新登入獨立選擇聊天通知。原站以 `38c7fb55` 更新 API／worker，兩者健康，公開健康端點回 200。示範通知尚未發送。[交付紀錄](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
+
+原站隨後核實示範帳號有一部有效手機開啟聊天通知，舊登記已撤銷。Web 管理頁的示範卡和知識交接卡用了相同 React key。以已發布程式的 key 在離線 Edge 重演，五次畫面更新後示範按鈕增至三個；#563 修正後每次均只得一個。只發布 Web `fd338c50`，對外管理頁及 JavaScript 的雜湊與發布包相符。[實測及發布紀錄](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
