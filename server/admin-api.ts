@@ -20,7 +20,7 @@ export function readAdminUid(env: Record<string, string | undefined>): string | 
   return value;
 }
 export async function handleAdminRequest(request: Request, options: { auth: FirebaseAuthPort; admin: FirestoreAdmin;
-  adminUid: string | null; publicOrigin: string; readJson(request: Request): Promise<unknown> }) {
+  adminUid: string | null; proactiveDemo?: ReturnType<typeof import('./proactive-demo.ts').createProactiveDemo>; publicOrigin: string; readJson(request: Request): Promise<unknown> }) {
   const { auth, admin, adminUid } = options, url = new URL(request.url);
   const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
   if (!userId) domainReject('unauthorized', 401);
@@ -33,13 +33,17 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
   const batchPath = /^\/api\/admin\/knowledge-index-batches\/([a-f0-9-]+)(?:\/(stop|resume))?$/.exec(url.pathname);
   const transfersBase = '/api/admin/knowledge-transfers';
   const transferPath = /^\/api\/admin\/knowledge-transfers\/([a-f0-9]{64})(?:\/(stop|resume))?$/u.exec(url.pathname);
-  if (request.method === 'POST' && (url.pathname === '/api/admin/operations' || url.pathname === batchBase || batchPath?.[2] || transferPath?.[2])) {
+  const demoPath = '/api/admin/proactive-demo';
+  if (request.method === 'POST' && (url.pathname === demoPath || url.pathname === '/api/admin/operations' || url.pathname === batchBase || batchPath?.[2] || transferPath?.[2])) {
     if (request.headers.get('origin') !== options.publicOrigin) domainReject('origin_rejected', 403);
     if ((await auth.assertRecentReauthentication(request.headers)).user.id !== userId) domainReject('identity_changed', 409);
     const input = await options.readJson(request);
     if (url.pathname === '/api/admin/operations') result = await admin.submit(userId, input);
     else if ([...url.searchParams].length) domainReject('invalid_input', 400);
-    else if (transferPath) {
+    else if (url.pathname === demoPath) {
+      if (!options.proactiveDemo) domainReject('demo_not_configured',409);
+      result = await options.proactiveDemo.publish(input);
+    } else if (transferPath) {
       const { expectedRevision } = domainParse(adminTransferControlSchema, input);
       const operator = 'web-' + firestoreDomainHash(['knowledge-transfer-operator', userId]);
       const batch = await transferRequest(() => admin.knowledgeTransfers().control(transferPath[1], transferPath[2] as 'stop' | 'resume', expectedRevision, operator));
@@ -49,7 +53,9 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
     else result = await admin.knowledgeIndexes().control(userId, batchPath![1], batchPath![2] as 'stop'|'resume', input);
   } else if (request.method === 'GET') {
     const cursor = url.searchParams.get('cursor');
-    if (url.pathname === '/api/admin/policy') result = await admin.overview();
+    if (url.pathname === demoPath) result = {enabled: options.proactiveDemo?.enabled === true};
+    else if (url.pathname.startsWith(demoPath + '/') && options.proactiveDemo) result = await options.proactiveDemo.get(url.pathname.slice(demoPath.length + 1));
+    else if (url.pathname === '/api/admin/policy') result = await admin.overview();
     else if (url.pathname === '/api/admin/invitations') result = await admin.invitations(cursor);
     else if (url.pathname === '/api/admin/invitation') result = { invitation: await admin.lookup(url.searchParams.get('email') ?? '') };
     else if (url.pathname === '/api/admin/usage') result = await admin.usage(url.searchParams.get('day') ?? new Date().toISOString().slice(0, 10));

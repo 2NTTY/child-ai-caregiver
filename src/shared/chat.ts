@@ -9,6 +9,8 @@ export interface ChatMessage {
   role: "user" | "model";
   text: string;
   inReplyTo: string | null;
+  /** A server-initiated message in the existing private conversation. */
+  proactive?: true;
   createdAt: string;
   agentRunId?: string;
   officialHelp?: OfficialHelpId[];

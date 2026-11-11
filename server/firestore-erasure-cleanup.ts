@@ -21,6 +21,7 @@ import type { createHandoverUploadService } from './handover-upload-service.ts';
 import { handoverUploadRecordSchema } from './handover-upload-records.ts';
 import { firestoreAgentRunSchema } from './firestore-agent-runs.ts';
 import { mixedChatErasedBy } from './mixed-chat-records.ts';
+import { firestoreNativeBindingSchema, firestoreNativeDeliverySchema } from './firestore-native-push.ts';
 
 // New domains join the existing backup registry and must carry authenticated recovery scope.
 const collections = FIREBASE_BACKUP_COLLECTION_SUFFIXES.filter(suffix => !['_erasures', '_erasure_receipts', '_sessions', '_adk', '_root_budget', '_ai_usage', '_private_summary_usage'].includes(suffix)
@@ -84,6 +85,9 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
     if (summaryDomain || summaryRun) return scope.workspaceId === candidate.workspaceId && scope.childId === candidate.childId;
     if (scope.workspaceId !== candidate.workspaceId || scope.storageEpoch !== candidate.storageEpoch) return false;
     if (candidate.childId === scope.childId) return true;
+    // Account-scoped native metadata can reference this child without sharing its child query tag.
+    if (row.context.kind === 'native-push-delivery') return firestoreNativeDeliverySchema.parse(row.value).chatTarget?.childId === scope.childId;
+    if (row.context.kind === 'native-push-binding') return firestoreNativeBindingSchema.parse(row.value).chat?.childId === scope.childId;
     // Original owner-wide receipts must not retain copies of erased child content.
     const value = row.value as Record<string, any>;
     return ['online-receipt', 'authority-operation', 'document-operation'].includes(row.context.kind)
@@ -193,6 +197,13 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
         // Deleting these keys would let an old create operation acquire a new identity.
         if (fresh.context.kind === 'authority-operation') {
           await authority.redactOperation(tx, fresh.context.id, fresh.context.scope);
+        } else if (fresh.context.kind === 'native-push-binding' && job.intent.type === 'child-delete') {
+          const value = firestoreNativeBindingSchema.parse(fresh.value);
+          if (!value.chat || value.chat.childId !== job.intent.scope.childId) domainReject('erasure_document_binding', 503);
+          // Preserve the device token and explicit notification consent for the remaining children.
+          const saved = { ...value, chat: { ...value.chat, childId: null, expiresAt: null, presenceVersion: value.chat.presenceVersion + 1 } };
+          tx.set(current.ref, { ...current.data(), ...erasures.data.seal('native-push-binding', fresh.context.id,
+            fresh.context.scope, firestoreNativeBindingSchema, saved, value.binding.version) });
         } else if(fresh.context.kind==='shared-operation') {
           const value=sharedOperationSchema.parse(fresh.value);
           tx.set(current.ref,{...erasures.data.tags(fresh.context.scope),...erasures.data.seal('shared-operation',fresh.context.id,

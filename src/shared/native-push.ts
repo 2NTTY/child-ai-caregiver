@@ -14,6 +14,18 @@ export const nativePushReferenceSchema = z.object({
   bindingVersion: z.number().int().positive(), deliveryId: z.uuid(),
 }).strict();
 export type NativePushReference = z.infer<typeof nativePushReferenceSchema>;
+export const nativeChatDestinationSchema = z.object({ screen: z.literal("chat"), childId: z.uuid(), messageId: z.uuid() }).strict();
+export type NativeChatDestination = z.infer<typeof nativeChatDestinationSchema>;
+export const nativeChatPresenceInputSchema = z.object({
+  childId: z.uuid().nullable(), bindingId: z.uuid().optional(), expectedBindingVersion: z.number().int().positive().optional(),
+  expectedPresenceVersion: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER - 1).optional(),
+  chatNotificationsEnabled: z.boolean().optional(),
+}).strict();
+export type NativeChatPresenceInput = z.infer<typeof nativeChatPresenceInputSchema>;
+export const nativeChatPresenceSchema = z.object({ bindingId: z.uuid().nullable(),
+  presenceVersion: z.number().int().nonnegative(), chatNotificationsEnabled: z.boolean(), expiresAt: z.iso.datetime().nullable().optional(),
+}).strict();
+export type NativeChatPresence = z.infer<typeof nativeChatPresenceSchema>;
 export const nativePushContent = Object.freeze({
   test: { title: "育有方渠道測試", body: "這是本人 Android 通知測試，沒有孩子資料。" },
   care: { title: "育有方有新的提示", body: "請開啟育有方查看實際事項。收到提示不代表照護事項完成。" },

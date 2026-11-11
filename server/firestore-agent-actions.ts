@@ -154,7 +154,7 @@ export function createFirestoreAgentActions(options: {
         }
         const note = await readNote(b, noteId);
         if (note && note.version !== input.expectedVersion) domainReject('version_conflict');
-        const context = note ? await prepareContextChange(data, b) : null;
+        const context = note ? await prepareContextChange(data, b, { proactive: false }) : null;
         const change = note ? await b.prepareChange(input.operationId, 'memory', true) : null;
         context?.(); change?.commit();
         if (note) {

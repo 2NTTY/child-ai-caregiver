@@ -207,7 +207,9 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     if (!current && (await binding.transaction.get(refFor(kind, id))).exists) domainReject('memory_conflict');
     const revisionId = JSON.stringify([id, nextVersion]), revisionRef = data.ref('memory_' + singular(kind) + '_revisions', 'memory-' + singular(kind) + '-revision', revisionId);
     if (!deleted && (await binding.transaction.get(revisionRef)).exists) domainReject('revision_conflict');
-    const commitKeys = await uniqueness(binding, kind, current, next), contextChange = await prepareContextChange(data, binding);
+    const actionable = next !== null && (kind === 'facts' ? (next as MemoryFact).applicable && factIsApplicable(next as MemoryFact) : topicMayAsk(next as MemoryTopic));
+    const commitKeys = await uniqueness(binding, kind, current, next), contextChange = await prepareContextChange(data, binding,
+      { proactive: actionable, resource: { domain: kind === 'facts' ? 'memory_fact' : 'memory_topic', id } });
     const change = await binding.prepareChange(operationId, 'memory', deleted);
     const tags = data.tags(binding.scope);
     let envelope: Record<string, unknown>, revision: Record<string, unknown> | undefined, publicValue: MemoryFact | MemoryTopic | boolean = true;

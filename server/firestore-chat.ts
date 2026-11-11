@@ -1,5 +1,7 @@
 import { messageText, firestoreChatMessageSchema } from './chat-message-schema.ts';
 import { createFirestoreMixedChat } from './firestore-mixed-chat.ts';
+import { createParentContact, proactiveReceiptSchema } from './proactive-chat.ts';
+import type { FirestoreNativePush } from './firestore-native-push.ts';
 export { firestoreChatMessageSchema } from './chat-message-schema.ts';
 import { chatFileLinkInputSchema } from '../src/shared/chat-files.ts';
 import type { FirestoreChatFilesStore } from './firestore-chat-files.ts';
@@ -36,7 +38,9 @@ const lockScope: WorkRecoveryScope = { ownerUserId: 'system:chat-reply',
 const lockSchema = z.object({ leases: z.array(z.object({ messageId: uuid, token: uuid,
   expiresAtMs: z.number().int().nonnegative() }).strict()).max(4) }).strict();
 
-export interface FirestoreChatStore extends ChatStore {
+export interface FirestoreChatStore extends ChatStore, ReturnType<typeof createParentContact> {
+  getOriginalMessageForUser(userId: string, childId: string, messageId: string): Promise<ChatMessage|null>;
+  markSeenForUser(userId: string, childId: string, messageId: string): Promise<{seen:true}>;
   mixed: ReturnType<typeof createFirestoreMixedChat>;
   mutation: FirestoreOnlineMutation;
   readMessage(binding: FirestoreAuthorityTransaction, childId: string, messageId: string): Promise<ChatMessage | null>;
@@ -50,7 +54,7 @@ export interface FirestoreChatStore extends ChatStore {
 }
 
 /** The original chat contract, with private encrypted rows and caller-wide online receipts. */
-export function createFirestoreChatStore(options: FirestoreDomainOptions & { voice?: Pick<FirestoreVoiceStore, 'prepareLink'>; files?: Pick<FirestoreChatFilesStore, 'prepareLink'>; photos?: Pick<FirestorePhotoStore, 'prepareLink'> }): FirestoreChatStore {
+export function createFirestoreChatStore(options: FirestoreDomainOptions & { notifications?: Pick<FirestoreNativePush,'prepareChatDeliveries'>; voice?: Pick<FirestoreVoiceStore, 'prepareLink'>; files?: Pick<FirestoreChatFilesStore, 'prepareLink'>; photos?: Pick<FirestorePhotoStore, 'prepareLink'> }): FirestoreChatStore {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
   const scopeFor = (binding: FirestoreAuthorityTransaction, childId: string) => ({ ...binding.scope, childId });
   const messageRef = (id: string) => data.ref('chat_messages', 'chat-message', id);
@@ -76,7 +80,7 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { voi
     if (message.id !== id || message.childId !== scope.childId || snapshot.get('messageId') !== id
       || message.createdAt !== snapshot.get('createdAt') || snapshot.get('recordVersion') !== 1
       || (message.role === 'user' ? message.authorUserId !== scope.ownerUserId || message.inReplyTo !== null
-        : message.authorUserId !== null || message.inReplyTo === null)) domainReject('chat_binding', 500);
+        : message.authorUserId !== null || (message.inReplyTo === null) !== !!message.proactive)) domainReject('chat_binding', 500);
     return message;
   }
   async function readMessage(binding: FirestoreAuthorityTransaction, childId: string, id: string) {
@@ -89,12 +93,14 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { voi
     if (!await binding.readChild(message.childId)) domainReject('not_found', 404);
     const ref = messageRef(message.id);
     if ((await binding.transaction.get(ref)).exists) domainReject('message_conflict');
-    const summaryChange = await prepareContextChange(data, { ...binding, scope }, true);
+    const summaryChange = await prepareContextChange(data, { ...binding, scope },
+      { chatOnly: true, userMessageId: message.role === 'user' ? message.id : undefined });
     const change = await binding.prepareChange(opId, 'chat', false, message.childId);
     const envelope = { ...data.tags(scope), messageId: message.id, createdAt: message.createdAt, sortKey: data.sortKey(change.changeSeq),
       ...data.seal('chat-message', message.id, scope, firestoreChatMessageSchema, message) };
     return { changeSeq: change.changeSeq, commit() { change.commit(); summaryChange(); binding.transaction.create(ref, envelope); } };
   }
+  const contact = createParentContact(data,readMessage,prepare,options.notifications);
   const mutation: FirestoreOnlineMutation = {
     supports: path => messagePath.test(path),
     async prepare(binding, submission) {
@@ -116,6 +122,9 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { voi
     },
   };
   return {
+    ...contact,
+    getOriginalMessageForUser: (userId,childId,id) => authority.runTransaction(userId,childId,b => readMessage(b,childId,id)),
+    markSeenForUser: (userId,childId,id) => authority.runTransaction(userId,childId,b => contact.markSeen(b,id)),
     mixed: createFirestoreMixedChat(options), mutation, readMessage, readImportedMessage,
     getImportedForUser: (userId, childId, id) => authority.runTransaction(userId, childId, b => readImportedMessage(b, childId, id)),
     async listImportedForUser(userId, childId, cursor = null) {
@@ -189,6 +198,7 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { voi
         const claimKey = JSON.stringify([userId, childId, 'interactive', inReplyTo]);
         const claimRow = await binding.transaction.get(data.ref('agent_claims', 'agent-claim', claimKey));
         let saved = message;
+        let deliver = false;
         if (claimRow.exists) {
           const { runId } = data.open('agent-claim', claimKey, binding.scope, firestoreAgentClaimSchema, claimRow);
           const runRow = await binding.transaction.get(data.ref('agent_runs', 'agent-run', runId));
@@ -197,10 +207,14 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { voi
             || run.ownerUserId !== userId || run.authorizationVersion !== binding.authorizationVersion
             || run.storageEpoch !== binding.scope.storageEpoch || run.state === 'running') domainReject('agent_reply_binding');
           saved = { ...message, agentRunId: runId, officialHelp: officialHelpFromTools(run.result?.tools ?? []) };
+          const result = run.result;
+          deliver = run.state === 'completed' && result?.status === 'completed' && result.outcome !== 'no_action'
+            && !!result.text.trim() && (saved.text === result.text || saved.text.startsWith(result.text + '\n\n'));
         }
         const write = await prepare(binding, saved, saved.id);
         const marker = data.seal('chat-reply', replyId, binding.scope, z.object({ messageId: uuid }).strict(), { messageId: message.id });
-        write.commit(); binding.transaction.create(replyRef, { ...data.tags(binding.scope), ...marker }); return saved;
+        const dispatch = deliver ? await options.notifications?.prepareChatDeliveries(binding,saved.id) : null;
+        write.commit(); dispatch?.commit(); binding.transaction.create(replyRef, { ...data.tags(binding.scope), ...marker }); return saved;
       });
     },
     async acquireReplyLock(messageId) {
@@ -231,4 +245,4 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { voi
 }
 
 /** Persisted schemas reused by isolated recovery; not a second domain model. */
-export const firestoreChatRecoverySchemas = { reply: z.object({ messageId: uuid }).strict(), leases: lockSchema };
+export const firestoreChatRecoverySchemas = { reply: z.union([z.object({ messageId: uuid }).strict(), proactiveReceiptSchema]), leases: lockSchema };

@@ -47,7 +47,7 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
   const actions = createFirestoreAgentActions({ ...options, runs, proposals });
   const confirmations = createFirestoreAgentConfirmations({ runs, proposals, chat: options.chat,
     policyVersion: async b => (await actions.readPolicy(b)).version });
-  async function resourceBasis(b: Binding, resource: WorkResource): Promise<ResourceBasis> {
+  async function resourceBasis(b: Binding, resource: Pick<WorkResource, 'id' | 'kind'> & {version?: number}): Promise<ResourceBasis> {
     let version: number | undefined, status = 'current', available = true, terminal = false;
     try {
       if (resource.kind === 'memory_fact') {
@@ -78,7 +78,7 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
         }
       }
     } catch (error) { if (!error || typeof error !== 'object' || !('status' in error) || Number(error.status) !== 404) throw error; }
-    return { ...resource, version: version ?? resource.version, status: version === undefined ? 'unavailable' : status,
+    return { ...resource, version: version ?? resource.version ?? 0, status: version === undefined ? 'unavailable' : status,
       available: version !== undefined && available, terminal };
   }
   async function validateResource(b: Binding, resource: WorkResource) {
@@ -121,5 +121,5 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
     } }, true),
     writeDocument: documents.writeDocument, documentReceipts: documents.documentReceipts,
   };
-  return { store, actions, runs, continuation };
+  return { store, actions, runs, continuation, resourceBasis };
 }

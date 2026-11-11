@@ -73,6 +73,8 @@ export interface FirebaseRequestHandlerOptions {
   mailConfigured: boolean;
   admin?: FirestoreAdmin;
   adminUid?: string | null;
+  proactiveDemo?: ReturnType<typeof import('./proactive-demo.ts').createProactiveDemo>;
+  proactiveSettings?: (uid:string,childId:string,command?:unknown) => Promise<{enabled:boolean,timeZone:string,version:number}>;
   online?: FirestoreOnlineStore;
   sharing?: SharingControl;
   documents?: FamilyDocumentStore & { forSharedSpace?(selection: import('../src/shared/sharing.ts').SharedSelection): FamilyDocumentStore };
@@ -83,7 +85,7 @@ export interface FirebaseRequestHandlerOptions {
   photoAgent?: PhotoAgent;
   accountData?: FirebaseAccountDataPort;
   library?: Pick<PersonalLibrary, "page">;
-  chat?: ChatStore & { mixed?: import('./firestore-chat.ts').FirestoreChatStore['mixed'] };
+  chat?: ChatStore & Partial<Pick<import('./firestore-chat.ts').FirestoreChatStore,'mixed'|'getOriginalMessageForUser'|'markSeenForUser'>>;
   care?: FirestoreCareStore;
   summary?: FirestoreCareSummary;
   memory?: MemoryStore & { forSharedSpace?(spaceId: string): MemoryStore };
@@ -161,6 +163,19 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (request.method !== 'POST' || !channel?.config || !telegramWebhookAuthorized(request.headers.get('x-telegram-bot-api-secret-token'), channel.config)) return errorResponse('forbidden', 403);
         return uncached(await handleTelegramWebhook(request, channel.store, channel.gateway, channel.config.botId, options.contact));
       }
+      if (path === '/api/native-push/chat-presence' && options.nativePush) {
+        if (request.method !== 'GET' && request.method !== 'POST') throw new RequestError('method_not_allowed', 405);
+        if (request.method === 'POST' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
+        const session = await auth.nativeSessionProof?.(request.headers);
+        if (!session) throw new RequestError('unauthorized', 401);
+        const expected = request.headers.get('x-expected-user-id');
+        if (expected !== session.userId) throw new RequestError(expected ? 'session_changed' : 'account_precondition_required', expected ? 409 : 428);
+        const result = request.method === 'GET' ? await options.nativePush.readChatPresence(session.userId, session)
+          : await options.nativePush.setChatPresence(session.userId, session, await readJson(request));
+        const current = await auth.nativeSessionProof?.(request.headers);
+        if (current?.userId !== session.userId || current.sessionHash !== session.sessionHash) throw new RequestError('session_changed', 409);
+        return json(result);
+      }
       if (request.method === 'GET' && path === '/api/native-push/open' && options.nativePush) {
         const session = await auth.nativeSessionProof?.(request.headers);
         if (!session) throw new RequestError('unauthorized', 401);
@@ -169,10 +184,12 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (!raw || raw.length > 1024) throw new RequestError('invalid_input', 400);
         let value; try { value = JSON.parse(raw); } catch { throw new RequestError('invalid_input', 400); }
         const ref = await options.nativePush.authorizeOpen(session.userId, session, value);
-        const result = ref.kind === 'test' ? { kind: 'test', childId: null, taskId: null } : await options.contact?.resolveNativeOpen(session.userId, ref);
+        const result = 'screen' in ref ? { kind: 'chat', childId: ref.childId, messageId: ref.messageId }
+          : ref.kind === 'test' ? { kind: 'test', childId: null, taskId: null } : await options.contact?.resolveNativeOpen(session.userId, ref);
         if (!result) throw new RequestError('not_found', 404);
         // Recheck after lookup; a tap never marks receipt or completes a task.
-        if ((await auth.nativeSessionProof?.(request.headers))?.sessionHash !== session.sessionHash) throw new RequestError('session_changed', 409);
+        const current = await auth.nativeSessionProof?.(request.headers);
+        if (current?.userId !== session.userId || current.sessionHash !== session.sessionHash) throw new RequestError('session_changed', 409);
         return json(result);
       }
       if (request.method === 'GET' && ((path === '/api/native-push' || path === '/api/native-push/v2') && options.nativePush || path === '/api/web-push' && options.push || path === '/api/telegram' && options.telegram)) {
@@ -188,7 +205,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         return json({ status: "ok", storage: "firestore", stage: "foundation" });
       }
       if (path.startsWith('/api/admin/') && request.headers.has('authorization')) return errorResponse('forbidden', 403);
-      if (path.startsWith('/api/admin/') && options.admin) return uncached(await handleAdminRequest(request, { auth, admin: options.admin, adminUid: options.adminUid ?? null, publicOrigin, readJson }));
+      if (path.startsWith('/api/admin/') && options.admin) return uncached(await handleAdminRequest(request, { auth, admin: options.admin, adminUid: options.adminUid ?? null, proactiveDemo:options.proactiveDemo,publicOrigin, readJson }));
       if (path.startsWith("/api/auth/")) return uncached(await auth.handler(request));
       if (path === '/api/account/mixed-chats' || path.startsWith('/api/account/mixed-chats/')) {
         if (request.method !== 'GET' && !requestOriginAllowed(request.headers,publicOrigin)) throw new RequestError('origin_rejected',403);
@@ -447,6 +464,31 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const response = await handleMemoryRequest(request, userId, memory);
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
         return uncached(response);
+      }
+      const proactiveSettings = /^\/api\/children\/([0-9a-f-]{36})\/proactive-settings$/iu.exec(path);
+      if (proactiveSettings && options.proactiveSettings) {
+        if (!['GET','POST'].includes(request.method) || new URL(request.url).search) throw new RequestError('invalid_input',400);
+        if (request.method==='POST' && !requestOriginAllowed(request.headers,publicOrigin)) throw new RequestError('origin_rejected',403);
+        const uid = (await auth.getSession({headers:request.headers}))?.user.id;
+        if (!uid) throw new RequestError('unauthorized',401);
+        if (request.headers.get('x-expected-user-id') !== uid) throw new RequestError('identity_changed',409);
+        const value = await options.proactiveSettings(uid,proactiveSettings[1].toLowerCase(),request.method==='POST'?await readJson(request):undefined);
+        if ((await auth.getSession({headers:request.headers}))?.user.id !== uid) throw new RequestError('identity_changed',409);
+        return json(value);
+      }
+      const exactChat = /^\/api\/children\/([0-9a-f-]{36})\/chat\/messages\/([0-9a-f-]{36})(\/seen)?$/iu.exec(path);
+      if (exactChat && options.chat) {
+        const seen = !!exactChat[3], child = exactChat[1].toLowerCase(), id = exactChat[2].toLowerCase();
+        if (request.method !== (seen ? 'POST' : 'GET')) throw new RequestError('method_not_allowed',405);
+        if (seen && !requestOriginAllowed(request.headers,publicOrigin)) throw new RequestError('origin_rejected',403);
+        const uid = (await auth.getSession({headers:request.headers}))?.user.id;
+        if (!uid) throw new RequestError('unauthorized',401);
+        if (request.headers.get('x-expected-user-id') !== uid) throw new RequestError('identity_changed',409);
+        if (new URL(request.url).search) throw new RequestError('invalid_input',400);
+        const result = seen ? await options.chat.markSeenForUser?.(uid,child,id) : await options.chat.getOriginalMessageForUser?.(uid,child,id);
+        if (!result) throw new RequestError('not_found',404);
+        if ((await auth.getSession({headers:request.headers}))?.user.id !== uid) throw new RequestError('identity_changed',409);
+        return json(seen ? result : {message:result});
       }
       const summaryPath = /^\/api\/children\/([0-9a-f-]{36})\/summary$/iu.exec(path);
       if (summaryPath && options.summary) {

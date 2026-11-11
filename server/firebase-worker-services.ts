@@ -16,7 +16,7 @@ export function createFirebaseWorkerServices(runtime: Awaited<ReturnType<typeof 
       enabled: config.taskWorkerEnabled, currentAuth: runtime.currentAuth };
     const worker = runtime.reminders;
     const dispatcher = createFirestoreTaskDispatcher({ ...options, delivery });
-    const maintenance = createFirestoreBackgroundMaintenance({ ...options, knowledge: runtime.knowledgeRefresh,
+    const maintenance = createFirestoreBackgroundMaintenance({ ...options, knowledge: runtime.knowledgeRefresh,proactiveEvents:runtime.proactiveEvents,
       journal: runtime.journal, summarySessions: runtime.product?.summarySessions,
       photos: runtime.photos, voices: runtime.voices, files: runtime.files, avatars: runtime.avatarCleanup, handover: runtime.handover, handoverUploads: runtime.handoverUploads, erasures: runtime.erasures, cleanup: runtime.erasureCleanup });
     const background = createFirestoreBackgroundQueue({ ...options, readControl: tx => authority.readControl(tx),
@@ -39,6 +39,27 @@ export function createFirebaseWorkerServices(runtime: Awaited<ReturnType<typeof 
           return !current.disabled && current.emailVerified && !!current.email;
         };
         if (!await validIdentity()) return { state: 'stopped' };
+        if (job.kind === 'proactive-day') return authority.runTransaction(job.scope.ownerUserId,job.scope.childId,
+          b => runtime.proactive.daily(b,job,new Date().toISOString()));
+        if (job.kind === 'proactive-assessment') {
+          const load = () => authority.runTransaction(job.scope.ownerUserId,job.scope.childId,b=>runtime.proactive.input(b,job));
+          const choice = await load();
+          if (!choice) return {state:'stopped'};
+          const reference = firestoreBackgroundReference(job);
+          const result = await runtime.product.agent.background({userId:job.scope.ownerUserId,childId:job.scope.childId,reference,
+            context:{eventType:choice.eventType,householdChanged:choice.householdChanged,householdChanges:choice.householdChanges,
+              householdChangesComplete:choice.householdChangesComplete,publicEvents:choice.publicEvents,
+              ...(choice.reason?{observation:choice.reason}:{})},
+            authorize:async()=>await validIdentity() && !!await load(),signal});
+          return authority.runTransaction(job.scope.ownerUserId,job.scope.childId,async b=>{
+            const run = await runtime.product.runs.originalRun(b,'worker',reference);
+            if (!result || !run) return { state: 'unknown' as const };
+            if (run.id!==result.runId || run.workerGeneration!==b.generation ||
+              !runtime.product.runs.matches(b,runtime.product.runs.current(b),run) || !await currentSources(b,result))
+              return {state:'stopped' as const};
+            return runtime.proactive.settle(b,job,result);
+          });
+        }
         if (job.kind === 'handover-export') return runtime.handover.processExport(job, signal);
         if (job.kind === 'handover-import') return runtime.handoverImports.process(job, signal);
         if (job.kind === 'voice-transcription') {
@@ -139,14 +160,36 @@ export function createFirebaseWorkerServices(runtime: Awaited<ReturnType<typeof 
               : task ?? { eventType: 'growth_attention', attention, policy: 'Server-reviewed applicability; no medical rule generation, task execution or external notification' }),
             authorize, signal });
           if (concern) return runtime.concerns.finishBackground(job);
-          if (continuation) return runtime.product.continuation.finish(job);
+          if (continuation) {
+            if (result?.status==='completed' && result.outcome!=='no_action' && result.text.trim() && await validIdentity()) {
+              await authority.runTransaction(job.scope.ownerUserId,job.scope.childId,async b=>{
+                const run = await runtime.product.runs.originalRun(b,'worker',reference);
+                if (!run || run.id!==result.runId || run.workerGeneration!==b.generation || !runtime.product.runs.matches(b,runtime.product.runs.current(b),run)
+                  || !(await runtime.proactive.read(b)).enabled || !await runtime.product.continuation.input(b,job)
+                  || !await currentSources(b,result)) return;
+                await runtime.chat.contactParent(b,{opId:reference,origin:'followup',runId:run.id,text:result.text});
+              });
+            }
+            return runtime.product.continuation.finish(job);
+          }
           return { state: result?.status === 'completed' ? 'completed' : result?.status === 'stopped' ? 'stopped' : 'unknown' };
         } catch {
           // Canonical run receipts determine recovery. Never create another run after a lost final response.
           if (concern) return runtime.concerns.finishBackground(job);
-          if (continuation) return runtime.product.continuation.finish(job);
+          if (continuation) {
+            const delivered = await authority.runTransaction(job.scope.ownerUserId, job.scope.childId,
+              b => runtime.chat.getContact(b, 'followup', reference));
+            if (delivered) return runtime.product.continuation.finish(job);
+          }
           return { state: 'unknown' };
         }
       } });
+  async function currentSources(b:import('./firestore-authority.ts').FirestoreAuthorityTransaction,result:import('../src/shared/product-agent.ts').ProductAgentResult) {
+    for (const citation of result.citations) {
+      const [active] = await runtime.knowledge?.continuationSources(b.transaction,[citation.sourceId]) ?? [];
+      if (!active?.available || active.versionId!==citation.versionId || active.hash!==citation.versionHash) return false;
+    }
+    return true;
+  }
   return { worker, dispatcher, maintenance, background };
 }

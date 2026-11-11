@@ -169,7 +169,8 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
     const wake = schedulePending && value.followUp?.state === 'pending' ? await prepareFirestoreBackgroundWork(data, b.transaction,
       { kind: 'concern', scope: b.scope, resourceId: value.id, basis: value.followUp.id,
         generation: b.generation, authorizationVersion: b.authorizationVersion }, value.followUp.at) : null;
-    const context = await prepareContextChange(data, b), change = await b.prepareChange(opId, 'growth', false);
+    const context = await prepareContextChange(data, b, { proactive: value.status !== 'closed' && value.archivedAt === null
+      && !value.followUp?.state.match(/^(pending|queued|unknown)$/u), resource: { domain: 'concern', id: value.id } }), change = await b.prepareChange(opId, 'growth', false);
     const tags = { ...data.tags(b.scope), concernId: value.id, entityVersion: value.version, createdAt: value.createdAt };
     const storedEvents = events.map((entry, i) => {
       const row = { ...entry, concernId: value.id, childId: value.childId, sequence: prior.length + i + 1,

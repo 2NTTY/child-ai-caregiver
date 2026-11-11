@@ -24,6 +24,10 @@ import { createFirestoreNativePush } from './firestore-native-push.ts';
 import { createNativePushGateway, readNativePushConfig } from './native-push-gateway.ts';
 import { createApnsPushGateway, readApnsPushConfig } from './apns-push-gateway.ts';
 import { createFirebaseRequestHandler } from './firebase-app.ts';
+import { createProactiveDemo } from './proactive-demo.ts';
+import { createProactiveWakes, readProactivePolicy } from './firestore-proactive-wakes.ts';
+import { profileIsApplicable, topicMayAsk } from './memory-policy.ts';
+import { createProactiveEventSources, parseProactivePublicSelections } from './proactive-event-sources.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { createFirestoreOnlineStore } from './firestore-online.ts';
 import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
@@ -131,7 +135,6 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
         throw new Error('Firebase worker identity unavailable');
       }
     };
-    const reminders = createFirestoreTaskWorker({ ...domain, enabled: config.taskWorkerEnabled, currentAuth });
     const localDelivery = composition.local?.deliveries?.(domain);
     const apnsConfig = localDelivery ? null : await readApnsPushConfig(env);
     const nativePushGateway = localDelivery?.nativePushGateway ?? { ...createNativePushGateway(readNativePushConfig(env)),
@@ -143,18 +146,45 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const push = createFirestoreWebPush({ ...domain, gateway: pushGateway, enabled: !!localDelivery || !!pushConfig, currentAuth });
     const telegram = createFirestoreTelegram({ ...domain, config: telegramConfig, gateway: telegramGateway, currentAuth,
       ...(localDelivery ? { startUrl: localDelivery.telegramStartUrl } : {}) });
-    const chat = createFirestoreChatStore({ ...domain, voice: voices, files, photos }), care = createFirestoreCareStore(domain);
+    const chat = createFirestoreChatStore({ ...domain, voice: voices, files, photos, notifications: nativePush }), care = createFirestoreCareStore(domain);
     const sources = createFirestoreSharedInputStore(domain), concerns = createFirestoreConcernStore(domain);
     const memory = createFirestoreMemoryStore({ ...domain, chat, care });
+    const proactiveData = new FirestoreDomainData(domain);
+    const reminders = createFirestoreTaskWorker({ ...domain, enabled: config.taskWorkerEnabled, currentAuth,
+      async prepareParentContact(b,{opId,text}) {
+        if (!(await readProactivePolicy(proactiveData,b)).enabled) return null;
+        return chat.prepareParentContact(b,{opId,text,origin:'task'});
+      } });
     const summary = createFirestoreCareSummary(domain, care);
     const mutations = [summary.mutation, chat.mutation, care.mutation, memory.mutation, sources.mutation, push.mutation, telegram.mutation, nativePush.mutation];
     const online = createFirestoreOnlineStore({ ...domain, photos, erasures, avatars, reminders, mutations });
     const documents = createFirestoreFamilyDocumentStore({ database, cipher, projectId: config.projectId, namespace: config.namespace });
     const knowledgeRefresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
     const knowledge = config.knowledgeSourceIds === null ? undefined : createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, observations: knowledgeRefresh.gate });
+    const proactiveEvents = createProactiveEventSources({...domain,care,knowledge,sourceIds:config.knowledgeSourceIds ?? [],
+      managedSelections:parseProactivePublicSelections(env.PROACTIVE_PUBLIC_EVENTS_JSON)});
     const growth = createFirestoreGrowthStore({ ...domain, memory, care, online, knowledge });
     const taskEvents = createFirestoreTaskAgentEvents(domain);
     let product: Awaited<ReturnType<typeof createFirestoreProductAgent>>;
+    const proactive = createProactiveWakes(domain, chat, proactiveEvents.readCandidates, nativePush, {
+      coverage: (binding, candidates) => product.continuation.coverage(binding, candidates),
+      async readHouseholdChange(binding, change) {
+        if (change.domain === 'profile') {
+          return change.id === binding.scope.childId && profileIsApplicable((await care.readProfile(binding)).data);
+        }
+        if (change.domain === 'memory_topic') {
+          const topic = await memory.readTopic(binding, change.id);
+          return !!topic && topicMayAsk(topic);
+        }
+        if (change.domain === 'concern') {
+          const concern = await concerns.head(binding, change.id);
+          return !!concern && concern.status !== 'closed'
+            && !(concern.followUp && ['pending', 'queued', 'unknown'].includes(concern.followUp.state));
+        }
+        const resource = await product.resourceBasis(binding, { kind: change.domain, id: change.id });
+        return resource.available && !resource.terminal;
+      },
+    });
     const contact = createFirestoreContact({ ...domain, push, telegram, pushGateway, telegramGateway, nativePush, nativePushGateway, telegramBotId: telegramConfig?.botId ?? null, growth,
       runs: () => product.runs, currentAuth });
     mutations.push(contact.mutation);
@@ -175,6 +205,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
             && !current.value.summaryBlocked && current.value.summaryRequest === basis.request;
         }
         if (job.kind === 'work-continuation') return recipeId === 'product-work-followup' && !!await product.continuation.input(b, job);
+        if (job.kind === 'proactive-assessment') return recipeId === 'product-work-followup' && !!await proactive.input(b,job);
         if (recipeId !== 'product-background') return false;
         return job.kind === 'concern' ? concerns.authorizeBackground(b, job) : job.kind === 'growth' ? growth.authorizeBackground(b, job)
           : job.kind === 'task-agent' ? !!await taskEvents.input(b, job) && await growth.taskAllowedIn(b, job.resourceId) : false;
@@ -208,11 +239,13 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const knowledgeIndexes = knowledge ? createKnowledgeIndexBatches(domain, knowledge, tx => authority.readControl(tx), configuredAdminUid) : undefined;
     const knowledgeTransfers = knowledge ? createKnowledgeTransfers(domain, tx => authority.readControl(tx)) : undefined;
     const admin = createFirestoreAdmin(domain, aiConfig, knowledgeRefresh, knowledgeIndexes, knowledgeTransfers);
-    const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: composition.worker ? null : configuredAdminUid, authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },
+    const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: composition.worker && !composition.local ? null : configuredAdminUid, authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },
+      proactiveDemo: createProactiveDemo(env,authority,chat,nativePush), proactiveSettings:(uid,child,command) => authority.runTransaction(uid,child,
+        async b => command === undefined ? proactive.view(await proactive.read(b)) : proactive.configure(b,command)),
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;
     let closing: Promise<void> | undefined;
-    return { ...persistence, admin, knowledgeIndexes, configuredAdminUid, sessions, auth, nativeAuth, currentAuth, reminders, online, documents, photos, avatars, avatarObjects, avatarCleanup, voices, voiceObjects, files, fileObjects, objects, journal, erasures, erasureCleanup, exporter, handover, handoverUploads, handoverImports, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, nativePush, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
+    return { proactive,proactiveEvents,...persistence, admin, knowledgeIndexes, configuredAdminUid, sessions, auth, nativeAuth, currentAuth, reminders, online, documents, photos, avatars, avatarObjects, avatarCleanup, voices, voiceObjects, files, fileObjects, objects, journal, erasures, erasureCleanup, exporter, handover, handoverUploads, handoverImports, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, nativePush, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
       close() { return closing ??= (async () => { try { await avatarCodec?.close(); await deleteApp(ownedApp); } finally { await persistence.close(); } })(); } };
   } catch (error) {
     try { await avatarCodec?.close(); if (app) await deleteApp(app); } finally { await persistence.close(); }

@@ -30,7 +30,7 @@ export const FIREBASE_BACKUP_COLLECTION_SUFFIXES = Object.freeze(['', '_sessions
   '_handover_import_items', '_handover_import_mappings', '_handover_import_batches', '_handover_import_controls', '_handover_uploads', '_handover_source_history',
   '_knowledge_index_batches', '_knowledge_index_receipts', '_knowledge_transfers',
   '_private_summary_works', '_private_summary_revisions', '_private_summary_attempts', '_private_summary_scans', '_private_summary_usage',
-  '_mixed_rooms', '_mixed_messages']);
+  '_mixed_rooms', '_mixed_messages', '_proactive_state']);
 export interface FirebaseBackupOptions { database: Firestore; cipher: StorageCipher; projectId: string; namespace: string }
 export interface FirebaseBackupDocument { path: string; data: DocumentData }
 export interface FirebaseBackupInventory {

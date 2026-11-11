@@ -2978,6 +2978,18 @@
       ]
     },
     {
+      "collectionGroup": "yuban_authority_work_watches",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "workspaceTag", "order": "ASCENDING" },
+        { "fieldPath": "epochTag", "order": "ASCENDING" },
+        { "fieldPath": "userTag", "order": "ASCENDING" },
+        { "fieldPath": "childTag", "order": "ASCENDING" },
+        { "fieldPath": "enabled", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "yuban_authority_work_events",
       "queryScope": "COLLECTION",
       "fields": [
@@ -4558,6 +4570,18 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "yuban_authority_native_push_deliveries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "workspaceTag", "order": "ASCENDING" },
+        { "fieldPath": "epochTag", "order": "ASCENDING" },
+        { "fieldPath": "userTag", "order": "ASCENDING" },
+        { "fieldPath": "childTag", "order": "ASCENDING" },
+        { "fieldPath": "chatCreatedAt", "order": "DESCENDING" },
+        { "fieldPath": "deliveryId", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -4773,6 +4797,11 @@
     },
     {
       "collectionGroup": "yuban_authority_profile_revisions",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_proactive_state",
       "fieldPath": "*",
       "indexes": []
     },

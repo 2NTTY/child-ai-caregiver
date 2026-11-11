@@ -37,7 +37,8 @@ export function firestoreDomainFixture() {
           case 'in': return value.includes(actual);
           case '<': return actual < value; case '<=': return actual <= value; default: throw new Error('Unsupported synthetic operator');
         }
-      })).sort((a, b) => compare(target.orders.map(([key]) => queryValue(a, key)), target.orders.map(([key]) => queryValue(b, key)), target.orders))
+      })).filter(doc => target.orders.every(([key]) => queryValue(doc, key) !== undefined))
+      .sort((a, b) => compare(target.orders.map(([key]) => queryValue(a, key)), target.orders.map(([key]) => queryValue(b, key)), target.orders))
       .filter(doc => !target.cursor || compare(target.orders.map(([key]) => queryValue(doc, key)), target.cursor, target.orders) > 0).slice(0, target.count);
     return { docs, size: docs.length, empty: docs.length === 0 };
   };
