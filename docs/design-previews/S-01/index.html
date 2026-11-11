@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; script-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>設定 S-01 · shadcn/ui 原作完整畫面</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;background:#fff;color:#202428;font:16px/1.65 system-ui,sans-serif}
+    header,main,footer{max-width:1344px;margin:0 auto;padding:24px 32px}
+    h1{font-size:26px;line-height:1.4;margin:0 0 10px}
+    h2{font-size:20px;line-height:1.4;margin:24px 0 8px}
+    p{margin:8px 0}
+    a{color:#005a8b;overflow-wrap:anywhere}
+    a:focus-visible{outline:3px solid #005a8b;outline-offset:4px}
+    figure{margin:0}
+    img{display:block;width:100%;height:auto}
+    figcaption{margin:12px 0 0;font-size:14px}
+    .meta{font-size:14px;color:#4c5560}
+    .scope{border:1px solid #ccd2d8;padding:12px 16px;margin-top:16px}
+    footer{border-top:1px solid #ccd2d8;font-size:14px}
+    ul{padding-left:22px}
+    @media(max-width:600px){header,main,footer{padding:20px 16px}h1{font-size:23px}}
+  </style>
+</head>
+<body>
+  <header>
+    <p class="meta">選配工作台 · 設定 · S-01 v1.0.0 · 2026-11-11 · 未入選</p>
+    <h1>shadcn/ui · Settings / Appearance</h1>
+    <p>完整原始設定畫面，逐 byte 保留；不裁切、不換色、不翻譯、不混搭。原圖下方可看來源及差異。</p>
+    <div class="scope">
+      <p>這是 2023 年官方示例的靜態原圖展示，不是育伴港真正前端。畫面內的導覽、下拉選單、主題及按鈕不可操作。</p>
+      <p>只展示 Appearance 當前頁，不代表其他設定分頁或完整互動流程。未保存選擇、未修改原版、未發布網站。</p>
+    </div>
+  </header>
+  <main>
+    <figure>
+      <a href="reference/forms-light.png" aria-label="開啟 S-01 原尺寸圖片，1280 × 791">
+        <img src="reference/forms-light.png" width="1280" height="791" aria-describedby="reference-description" alt="S-01：shadcn/ui 白色設定整頁。上方 Settings 標題，左側 Profile、Account、Appearance、Notifications、Display 導覽；Appearance 已選取。右側含 Font 字體選單、Light 與 Dark 主題卡及 Update preferences 按鈕。">
+      </a>
+      <figcaption id="reference-description">原圖 1280 × 791；Settings 頁標題、五項左側導覽、字體選單、明暗主題卡和更新偏好按鈕完整保留。這是原作示例提供的畫面範圍，不含網站全域外框。窄螢幕只等比例縮圖，不是原作手機版。</figcaption>
+    </figure>
+    <section aria-labelledby="source-title">
+      <h2 id="source-title">原作來源與版本</h2>
+      <p>shadcn/ui · Copyright (c) 2023 shadcn · MIT License。圖片加入於 2023-05-19 的固定提交 <code>4ccff13f9c68cd12bca289faa8d513b3f748ea37</code>；不是 2026 年現行介面的聲明。</p>
+      <ul>
+        <li><a href="https://v3.shadcn.com/examples/forms/appearance">官方 v3 Appearance 示例頁</a></li>
+        <li><a href="https://github.com/shadcn-ui/ui/blob/4ccff13f9c68cd12bca289faa8d513b3f748ea37/apps/www/public/examples/forms-light.png">固定版本原圖</a></li>
+        <li><a href="https://github.com/shadcn-ui/ui/blob/4ccff13f9c68cd12bca289faa8d513b3f748ea37/apps/www/app/examples/forms/layout.tsx">固定版本原作版面程式</a></li>
+        <li><a href="reference/LICENSE.md">隨附未修改 MIT 授權</a> · <a href="https://github.com/shadcn-ui/ui/blob/4ccff13f9c68cd12bca289faa8d513b3f748ea37/LICENSE.md">固定版本授權出處</a></li>
+      </ul>
+    </section>
+    <section aria-labelledby="difference-title">
+      <h2 id="difference-title">本展示的差異與檢查範圍</h2>
+      <p>原圖沒有修改。只在圖外加入本頁編號、中文解說、來源連結及等比例顯示容器；沒有重畫原作 HTML，也沒有加入育伴港欄位或過往設計。</p>
+      <p>已直接目視原圖，並做檔案、雜湊、授權、靜態路徑及無主動外連檢查。另於 2026-11-11 經隔離 HTTP 預覽完成 Chromium 桌面靜態畫面核對；手機、鍵盤、讀屏及原作互動未驗，不能把原圖展示當成產品驗收。</p>
+    </section>
+  </main>
+  <footer>
+    <p>僅官方公開示例圖片；沒有家庭資料、照片、訊息、模型、後端或 GCP 接線。名稱及標誌歸原權利人，本展示不表示原作者背書。</p>
+    <p>比較後可在對話告訴小蘭「設定 S-01」。此頁不代選，也不改動任何既有選擇。</p>
+    <p><a href="README.md">版本說明</a> · <a href="candidate.json">來源及驗證清單</a> · <a href="SHA256SUMS">檔案雜湊</a></p>
+  </footer>
+</body>
+</html>
