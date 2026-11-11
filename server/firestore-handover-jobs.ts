@@ -16,6 +16,7 @@ import { avatarBinding } from './avatar-data.ts';
 import { avatarPublicState } from './avatar-policy.ts';
 import { createNotificationPreferencesData } from './firestore-notification-preferences.ts';
 import { handoverNotificationPreferencesSchema } from '../src/shared/handover.ts';
+import { createFirestoreMixedChat } from './firestore-mixed-chat.ts';
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/u), time = z.iso.datetime({ offset: true });
 const exportRequest = z.union([handoverExportCommandSchema, handoverClassExportCommandSchema]);
@@ -59,6 +60,16 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), clock = options.serverClock ?? Date.now;
   const avatarData = createFirestoreAvatarData(options);
   const preferences = createNotificationPreferencesData(data);
+  const mixed = createFirestoreMixedChat(options);
+  async function verifyMixedSelection(b: FirestoreAuthorityTransaction, request: FirestoreHandoverJob['request']) {
+    const selected = new Set(request.selection.childIds);
+    for (const pin of request.selection.mixedRooms ?? []) {
+      const room = await mixed.exportRoomIn(b, pin, 'source' in request ? request.source : {kind:'personal'}, selected);
+      const period = request.selection.period;
+      if (period && (Date.parse(room.createdAt) < Date.parse(period.from) || Date.parse(room.updatedAt) > Date.parse(period.to)))
+        domainReject('mixed_conversation_outside_period',409);
+    }
+  }
   const sharing = createFirestoreSharingStore(options);
   async function avatarHeadBasis(b: FirestoreAuthorityTransaction, childId: string, reviewed?: Map<string, number>) {
     const head = await avatarData.head(b, avatarBinding({ ...b.scope, childId }, { kind: 'child', childId }));
@@ -73,7 +84,7 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
     let sourceVersion: string | undefined;
     for (let i = 0; i < ids.length; i += 10) {
       const results = await Promise.all(ids.slice(i, i + 10).map(childId =>
-        withClassExportChild(sharing, b, command, childId, media ? 'attachments' : command.selection.modules[0], async ({ binding }, version) =>
+        withClassExportChild(sharing, b, command, childId, media ? 'attachments' : command.selection.modules[0] ?? 'tasks', async ({ binding }, version) =>
           ({ version, head: media ? await avatarHeadBasis(binding, childId, reviewed) : null }))));
       for (const { version, head } of results) {
         sourceVersion ??= version;
@@ -148,6 +159,14 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
   async function currentView(job: FirestoreHandoverJob, b: FirestoreAuthorityTransaction, checkSelection = false) {
     const result = view(job, b);
     if (!['queued', 'building', 'ready'].includes(result.state)) return result;
+    if (checkSelection && job.request.selection.mixedRooms) {
+      try { await verifyMixedSelection(b, job.request); }
+      catch (error) {
+        const status=(error as {status?:number}).status;
+        if (status!==403 && status!==404 && status!==409) throw error;
+        return {...result,state:'failed' as const,bytes:null,error:'export_scope_changed'};
+      }
+    }
     if ('source' in job.request) {
       try {
         const basis = await classBasis(b, job.request, checkSelection);
@@ -233,6 +252,7 @@ export function createFirestoreHandoverJobs(options: FirestoreDomainOptions & { 
           domainReject('document_review_required', 400);
         if (!('source' in command))
           for (const childId of command.selection.childIds) if (!await b.readChild(childId)) domainReject('forbidden', 403);
+        if (command.selection.mixedRooms) await verifyMixedSelection(b, command);
         const reviewed = review && new Map(review.avatarVersions?.map(row => [row.childId, row.version]));
         const basis = 'source' in command ? await classBasis(b, command, true, reviewed)
           : { sourceVersion: handoverSourceVersion(b), avatarBasis: await avatarBasis(b, command.selection, reviewed, true) };

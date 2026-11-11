@@ -20,7 +20,8 @@ export function withClassExportChild<T>(sharing: Sharing, actor: FirestoreAuthor
   command: HandoverClassExportCommand, childId: string, module: Module,
   read: (access: SharedResourceAccess, sourceVersion: string) => Promise<T>) {
   const { spaceId } = command.source;
-  if (!command.selection.childIds.includes(childId) || !command.selection.modules.includes(module))
+  const { mixedRooms } = command.selection;
+  if (!command.selection.childIds.includes(childId) || !(command.selection.modules.includes(module) || mixedRooms && module === 'tasks'))
     domainReject('invalid_export_scope', 400);
   return sharing.inResourceTransaction(actor, { spaceId, childId, module, mode: 'read' }, async access => {
     const shared = access.binding.sharedAccess;
@@ -32,7 +33,8 @@ export function withClassExportChild<T>(sharing: Sharing, actor: FirestoreAuthor
     const sourceVersion = firestoreDomainHash(['class-handover:1', command.opId, actor.actorUserId, actor.scope.storageEpoch,
       basis.actorAuthorizationVersion, spaceId, basis.spaceVersion, basis.teacherSpaceId ?? null, basis.teacherSpaceVersion ?? null,
       shared.classMember.membershipId, basis.membershipVersion, access.scope.storageEpoch,
-      access.binding.authorizationVersion, access.binding.childAccessVersion, access.binding.changeSeq]);
+      access.binding.authorizationVersion, access.binding.childAccessVersion, access.binding.changeSeq,
+      ...(mixedRooms ? [actor.changeSeq] : [])]);
     return read(access, sourceVersion);
   });
 }

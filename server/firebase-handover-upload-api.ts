@@ -5,7 +5,7 @@ import { HandoverArchiveError } from './handover-archive.ts';
 import { HandoverObjectError } from './firebase-handover-objects.ts';
 import type { createHandoverUploadService } from './handover-upload-service.ts';
 import type { HandoverUploadView } from '../src/shared/handover-uploads.ts';
-import { supportsAccountPreferencePackage } from '../src/shared/handover.ts';
+import { supportsAccountPreferencePackage, supportsMixedConversationPackage } from '../src/shared/handover.ts';
 
 export async function handleHandoverUpload(request: Request, owner: string, service: ReturnType<typeof createHandoverUploadService>,
   readJson: (request: Request) => Promise<unknown>, sameIdentity: () => Promise<void>) {
@@ -16,8 +16,10 @@ export async function handleHandoverUpload(request: Request, owner: string, serv
     headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie, Authorization' } });
   const accountBackup = request.headers.get('x-handover-account-backup') === '1';
   const notificationPreferencesBackup = supportsAccountPreferencePackage(request.headers);
+  const mixedConversations = supportsMixedConversationPackage(request.headers);
   async function respond(view: HandoverUploadView, status = 200) {
     await sameIdentity();
+    if (view.preview?.header.selection.mixedRooms && !mixedConversations) domainReject('unsupported_package_format', 409);
     if (view.preview?.header.selection.accountAvatar && !accountBackup) domainReject('unsupported_package_format', 409);
     if (view.preview?.header.selection.notificationPreferences && !notificationPreferencesBackup) domainReject('unsupported_package_format', 409);
     return json(view, status);
@@ -44,7 +46,7 @@ export async function handleHandoverUpload(request: Request, owner: string, serv
       if (request.headers.get('content-type') !== 'application/zip' || !request.body) domainReject('invalid_package_content', 400);
       const source = Readable.fromWeb(request.body as import('node:stream/web').ReadableStream);
       try {
-        return respond(await service.receive(owner, id, source, request.signal, accountBackup, notificationPreferencesBackup));
+        return respond(await service.receive(owner, id, source, request.signal, accountBackup, notificationPreferencesBackup, mixedConversations));
       } finally { source.destroy(); }
     }
     domainReject('not_found', 404);

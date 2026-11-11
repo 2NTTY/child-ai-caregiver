@@ -11,7 +11,7 @@ import { handleHandoverImport } from './firebase-handover-import-api.ts';
 import type { createHandoverImportService } from './handover-import-service.ts';
 import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
-import { supportsAccountPreferencePackage } from '../src/shared/handover.ts';
+import { supportsAccountPreferencePackage, supportsMixedConversationPackage } from '../src/shared/handover.ts';
 
 export interface FirebaseAccountDataPort {
   erasures: FirestoreErasureStore;
@@ -43,9 +43,10 @@ export async function handleFirebaseAccountData(request: Request, auth: Firebase
     const packages = services.packages; if (!packages) domainReject('package_service_unavailable', 503);
     const accountBackup = request.headers.get('x-handover-account-backup') === '1';
     const notificationPreferencesBackup = supportsAccountPreferencePackage(request.headers);
+    const mixedConversations = supportsMixedConversationPackage(request.headers);
     if (request.method === 'GET' && path === '/api/account/packages/capabilities' && !url.search) {
       await sameIdentity();
-      return json(packages.capabilities(request.headers.get('x-handover-class-document-review') === '1', accountBackup, notificationPreferencesBackup));
+      return json(packages.capabilities(request.headers.get('x-handover-class-document-review') === '1', accountBackup, notificationPreferencesBackup, mixedConversations));
     }
     if (request.method === 'POST' && path === '/api/account/packages/preview' && !url.search) {
       const result = await packages.preview(user.id, await readJson(request)); await sameIdentity(); return json(result);
@@ -53,6 +54,8 @@ export async function handleFirebaseAccountData(request: Request, auth: Firebase
     const route = /^\/api\/account\/packages\/([0-9a-f-]{36})(?:\/(download|cancel|reconcile))?$/iu.exec(path);
     if (request.method === 'POST' && path === '/api/account/packages') {
       const input = await readJson(request);
+      if (!mixedConversations && input && typeof input === 'object' && 'selection' in input && input.selection
+        && typeof input.selection === 'object' && 'mixedRooms' in input.selection) domainReject('unsupported_package_format', 409);
       if (!accountBackup && input && typeof input === 'object' && 'selection' in input && input.selection
         && typeof input.selection === 'object' && 'accountAvatar' in input.selection) domainReject('unsupported_package_format', 409);
       if (!notificationPreferencesBackup && input && typeof input === 'object' && 'selection' in input && input.selection
@@ -64,12 +67,13 @@ export async function handleFirebaseAccountData(request: Request, auth: Firebase
       if ([...url.searchParams.keys()].some(key => key !== 'cursor' || url.searchParams.getAll(key).length !== 1)) domainReject('invalid_cursor', 400);
       const result = await packages.list(user.id, url.searchParams.get('cursor') ?? undefined); await sameIdentity();
       return json({ ...result, items: result.items.filter(row => (accountBackup || !row.selection.accountAvatar)
-        && (notificationPreferencesBackup || !row.selection.notificationPreferences)) });
+        && (notificationPreferencesBackup || !row.selection.notificationPreferences) && (mixedConversations || !row.selection.mixedRooms)) });
     }
     if (!route || url.search) domainReject('not_found', 404);
     const id = domainParse(z.uuid(), route[1]);
-    if (!accountBackup || !notificationPreferencesBackup || request.method === 'GET' && !route[2]) {
+    if (!accountBackup || !notificationPreferencesBackup || !mixedConversations || request.method === 'GET' && !route[2]) {
       const result = await packages.get(user.id, id);
+      if (!mixedConversations && result.selection.mixedRooms) domainReject('unsupported_package_format', 409);
       if (!accountBackup && result.selection.accountAvatar) domainReject('unsupported_package_format', 409);
       if (!notificationPreferencesBackup && result.selection.notificationPreferences) domainReject('unsupported_package_format', 409);
       if (request.method === 'GET' && !route[2]) { await sameIdentity(); return json(result); }

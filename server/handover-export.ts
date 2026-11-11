@@ -1,6 +1,7 @@
 import type { KeyObject } from 'node:crypto';
 import { createHash } from 'node:crypto';
 import type { AccountExportPage } from '../src/shared/account-service.ts';
+import { mixedTranscriptRowSchema, type MixedRoomPin, type MixedTransferScope, type MixedTranscriptPage } from '../src/shared/mixed-chat-transfer.ts';
 import type { HandoverClassExportCommand } from '../src/shared/handover-jobs.ts';
 import { HANDOVER_SECTIONS, handoverHeaderSchema, handoverNotificationPreferencesSchema, validHandoverDocumentPins, type HandoverHeader, type HandoverDocumentChoice, type HandoverCoverage } from '../src/shared/handover.ts';
 import { HandoverArchiveError, writeHandoverArchive, waitForHandoverStep, handoverLimits, type HandoverEntryInput, type HandoverLimits } from './handover-archive.ts';
@@ -19,6 +20,7 @@ export interface PackagePageOptions { includeSummaryPeriod?: boolean; documentFi
 export interface HandoverExportSource {
   accountAvatarAvailable?: boolean;
   notificationPreferencesAvailable?: boolean;
+  mixedTranscriptPage?(userId:string,pin:MixedRoomPin,scope:MixedTransferScope,selected:string[],cursor:string|null):Promise<MixedTranscriptPage>;
   page(userId: string, query: PageQuery, packageMedia?: PackageMediaFilter, options?: PackagePageOptions): Promise<AccountExportPage>;
   classModules?: HandoverClassExportCommand['selection']['modules'];
   forClass?(request: HandoverClassExportCommand): HandoverExportSource;
@@ -58,7 +60,9 @@ export async function writePersonalHandoverPackage(input: {
   if (!validHandoverDocumentPins(input.selection, choices)) fail('invalid_package_scope');
   const exceptions = input.selection.period ? choices.filter(pin => pin.include).map(({include: _include, ...pin}) => pin) : [];
   const overrides = new HandoverDocumentChoices(choices.filter(pin => !input.selection.period || pin.section !== 'documents'), 'export_scope_changed');
-  const header = handoverHeaderSchema.parse({ format: 'yuyoufang-data', version: notificationPreferences ? 3 : accountAvatar ? 2 : 1, packageId: input.packageId, packageVersion: 1,
+  const pins=input.selection.mixedRooms;
+  const header = handoverHeaderSchema.parse({ format: 'yuyoufang-data', version: pins ? 4 : notificationPreferences ? 3 : accountAvatar ? 2 : 1, packageId: input.packageId, packageVersion: 1,
+    ...(pins ? {mixedAuthorAccountId:input.ownerUserId} : {}),
     ...(exceptions.length ? { periodExceptions: exceptions } : {}),
     createdAt: input.createdAt, purpose: input.purpose, source: { serverId: input.serverId, accountId: input.sourceAccountId ?? input.ownerUserId }, selection: input.selection });
   if (!supportsHandoverPeriod(header.selection)) fail('package_period_not_connected');
@@ -93,12 +97,40 @@ export async function writePersonalHandoverPackage(input: {
     if (wanted.size) for await (const page of pages('children')) {
       for (const child of page.items) {
         if (child && typeof child === 'object' && 'id' in child && typeof child.id === 'string' && wanted.delete(child.id))
-          children.push(header.selection.period && 'displayName' in child ? { id: child.id, displayName: child.displayName } : child);
+          children.push((header.selection.period || !header.selection.modules.length) && 'displayName' in child ? { id: child.id, displayName: child.displayName } : child);
       }
     }
     if (wanted.size) fail('package_scope_unavailable');
     coverage.push({ section: 'children', childId: null, scopeVersion, items: children.length, complete: true });
     yield { path: path('data'), mediaType: 'application/json', content: Buffer.from(JSON.stringify({ section: 'children', childId: null, scopeVersion, items: children })) };
+    if (pins) {
+      const read=input.exporter.mixedTranscriptPage;
+      if (!read) fail('package_section_not_connected');
+      let total=0;
+      const scope:MixedTransferScope=input.sourceAccountId?.startsWith('space:') ?
+        {kind:'class',spaceId:input.sourceAccountId.slice(6)} : {kind:'personal'};
+      for (const pin of pins) {
+        let cursor:string|null=null, expected=pin.version;
+        do {
+          signal.throwIfAborted();
+          const page: MixedTranscriptPage = await waitForHandoverStep(read(input.ownerUserId,pin,scope,header.selection.childIds,cursor),signal);
+          const period=header.selection.period;
+          if (period && (Date.parse(page.from)<Date.parse(period.from) || Date.parse(page.to)>Date.parse(period.to)))
+            fail('mixed_conversation_outside_period');
+          const items=page.items.slice().reverse().map(item=>mixedTranscriptRowSchema.parse(item));
+          for (const {message} of items) {
+            if (message.roomId!==pin.id || message.version!==expected) fail('export_scope_changed');
+            expected--;
+          }
+          if (page.nextCursor && (!items.length || page.nextCursor===cursor)
+            || !page.nextCursor && expected!==1) fail('export_scope_changed');
+          total+=items.length;
+          yield {path:path('data'),mediaType:'application/json',content:Buffer.from(JSON.stringify({section:'mixed_chat',childId:null,scopeVersion,items}))};
+          cursor=page.nextCursor;
+        } while (cursor);
+      }
+      coverage.push({section:'mixed_chat',childId:null,scopeVersion,items:total,complete:true});
+    }
     if (notificationPreferences) {
       for await (const page of pages('notification_preferences')) {
         if (!page.complete || page.items.length !== 1 || preferences) fail('export_scope_changed');
@@ -255,6 +287,7 @@ export async function writePersonalHandoverPackage(input: {
       `建立時間：${header.createdAt}`, ...(header.selection.period ? [`所選期間：${header.selection.period.from} 至 ${header.selection.period.to}（含首尾）`] : []),
       '', '此包只包含已選模組。來源確認與內容正確性須分開理解；匯入不重播執行授權或舊投遞。', '',
       ...(accountHead ? [accountAvatarSummary(accountHead, header.selection.period)] : []),
+      ...(pins ? [`本人完整多孩對話：${pins.length} 段；每段涉及的孩子已全數選入。保存當時的留言、正式回覆與來源位置。`] : []),
       ...(preferences ? [`通知偏好：版本 ${preferences.version}；由本人明確包括當前設定${header.selection.period ? '，不按所選期間篩選' : ''}。`] : []),
       ...(inventory?.lines(new Map(children.map(raw => { const child = raw as {id:string;displayName:string}; return [child.id, child.displayName]; }))) ?? []), '',
       '| 資料區段 | 孩子／帳戶 | 項數 |', '|---|---|---:|', ...coverage.map(row => `| ${row.section} | ${coverageScope(row)} | ${row.items} |`), ''].join('\n');

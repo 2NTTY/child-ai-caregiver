@@ -95,6 +95,7 @@ function contentReader<Method>(port: ContentReader<Method> | undefined, selectio
 }
 type Photos = ReturnType<typeof createFirestorePhotoStore>;
 export function createFirestoreAccountExport(options: FirestoreAuthorityOptions & {
+  mixedTranscriptPage?: import('./handover-export.ts').HandoverExportSource['mixedTranscriptPage'];
   photos: ContentReader<Photos['content']> & Partial<Pick<Photos, 'readMetadata'>>;
   voices?: ContentReader<FirestoreVoiceStore['content']> & Pick<FirestoreVoiceStore, 'readMetadata'>;
   files?: ContentReader<FirestoreChatFilesStore['content']> & Pick<FirestoreChatFilesStore, 'readMetadata'>;
@@ -130,7 +131,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
       || input.cursor && !input.scopeVersion) domainReject('invalid_export_scope', 400);
     const read = <T>(use: (binding: FirestoreAuthorityTransaction, scopeVersion: string, actor: FirestoreAuthorityTransaction) => Promise<T>) => {
       if (!classRequest) return authority.runTransaction(owner, input.childId ?? null, b => use(b, version(b), b));
-      const module = section === 'manifest' || section === 'children' ? classRequest.selection.modules[0]
+      const module = section === 'manifest' || section === 'children' ? classRequest.selection.modules[0] ?? (classRequest.selection.mixedRooms ? 'tasks' : undefined)
         : classRequest.selection.modules.find(m => (HANDOVER_SECTIONS[m] as readonly string[]).includes(section));
       if (!module) domainReject('invalid_export_scope', 400);
       return authority.runTransaction(owner, null, actor => withClassExportChild(sharing, actor, classRequest,
@@ -151,7 +152,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
         const offset = previous ? classRequest.selection.childIds.indexOf(previous.after) + 1 : 0;
         if (previous && !offset) domainReject('invalid_export_cursor', 400);
         const ids = classRequest.selection.childIds.slice(offset, offset + 10);
-        items = await Promise.all(ids.map(id => withClassExportChild(sharing, actor, classRequest, id, classRequest.selection.modules[0],
+        items = await Promise.all(ids.map(id => withClassExportChild(sharing, actor, classRequest, id, classRequest.selection.modules[0] ?? 'tasks',
           async (access, basis) => {
             if (basis !== scopeVersion) domainReject('export_scope_changed');
             const child = await access.binding.readChild(id);
@@ -452,9 +453,9 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
     && options.files?.forSharedSpace && options.transcripts?.readForSharedExport && options.avatars?.forSharedSpace);
   const classModules = classHandoverModuleSchema.options.filter(module =>
     (module !== 'growth' || !!options.growth) && (module !== 'attachments' || sharedMedia));
-  return { page: page.bind(null, null), accountAvatarAvailable: !!options.avatars, notificationPreferencesAvailable: true, classModules, forClass(request: HandoverClassExportCommand) {
+  return { page: page.bind(null, null), mixedTranscriptPage:options.mixedTranscriptPage, accountAvatarAvailable: !!options.avatars, notificationPreferencesAvailable: true, classModules, forClass(request: HandoverClassExportCommand) {
     const command = domainParse(handoverClassExportCommandSchema, request);
     if (!command.selection.modules.every(module => classModules.includes(module))) domainReject('package_class_source_unavailable', 503);
-    return { page: page.bind(null, command) };
+    return { page: page.bind(null, command),mixedTranscriptPage:options.mixedTranscriptPage };
   }, messages: createFirestoreNotificationMessages(options).page };
 }

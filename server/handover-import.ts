@@ -11,11 +11,12 @@ import { avatarStateSchema, avatarTargetSchema, avatarAssetSchema } from '../src
 import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
 import { concernTransferSchema } from './firestore-concerns.ts';
 import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
-import { datedParent, handoverPeriodMatch, supportsHandoverPeriod } from './handover-period.ts';
+import { datedParent, handoverPeriodMatch, supportsHandoverPeriod, withinHandoverPeriod } from './handover-period.ts';
 import { readDatedConcernHead, validDatedConcernEvent } from './handover-concern-period.ts';
 import { attachmentSections, type AttachmentSection, DatedPackageMedia, isAttachmentHead, isAttachmentSupplement } from './handover-attachment-period.ts';
 import { DatedDocumentPeriodIndex, isDatedDocumentSection } from './handover-document-period-index.ts';
 import { HandoverDocumentChoices } from './handover-document-choices.ts';
+import { mixedTranscriptRowSchema, type MixedRoomPin } from '../src/shared/mixed-chat-transfer.ts';
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/u), uuid = z.uuid();
 const selectionSchema = z.object({ childIds: handoverSelectionSchema.shape.childIds.min(1), modules: handoverSelectionSchema.shape.modules.min(1) }).strict()
@@ -82,6 +83,8 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
   const limits = handoverLimits(input.limits), archive = await openHandoverArchive(input);
   const { manifest, manifestSha256, integrity } = archive;
   const pages: PageIndex[] = [], children: { id: string; displayName: string }[] = [];
+  const mixedRooms = new Map<string, { pin: MixedRoomPin; nextVersion: number; locations: Map<number, Set<number>> }>();
+  const mixedMessageIds = new Set<string>();
   const attachments = new Map<string, { childId: string | null; mimeType: string; bytes: number }>();
   let accountHead: z.infer<typeof avatarTransferSchema> | null = null;
   let accountImage: z.infer<typeof attachmentContentSchemas.child_avatar> | null = null;
@@ -123,8 +126,12 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
     finally { bytes.fill(0); }
   }
   try {
+    for (const pin of manifest.selection.mixedRooms ?? []) {
+      mixedRooms.set(pin.id, { pin, nextVersion: pin.version, locations: new Map<number, Set<number>>() });
+    }
     if (!supportsHandoverPeriod(manifest.selection)) fail('package_period_not_connected');
     const required = new Set([key('children', null)]);
+    if (mixedRooms.size) required.add(key('mixed_chat', null));
     if (manifest.selection.notificationPreferences) required.add(key('notification_preferences', null));
     if (manifest.selection.accountAvatar) {
       required.add(key('self_avatar', null));
@@ -149,6 +156,17 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
       if (count > expected.get(pageKey)!.items) fail('invalid_package_coverage');
       seen.set(pageKey, count);
       for (const [rowIndex, row] of page.items.entries()) {
+        if (page.section === 'mixed_chat') {
+          const transcript = parse(mixedTranscriptRowSchema, row, 'invalid_package_mixed_transcript');
+          const room = mixedRooms.get(transcript.message.roomId);
+          if (!room || transcript.message.version !== room.nextVersion || mixedMessageIds.has(transcript.message.id))
+            fail('invalid_package_mixed_transcript');
+          if (manifest.selection.period && !withinHandoverPeriod(transcript.message.createdAt, manifest.selection.period)) fail('invalid_package_period');
+          mixedMessageIds.add(transcript.message.id); room.nextVersion--;
+          const rows = room.locations.get(pages.length) ?? new Set<number>();
+          rows.add(rowIndex); room.locations.set(pages.length, rows);
+          continue;
+        }
         if (page.section === 'notification_preferences') {
           const preferences = parse(handoverNotificationPreferencesSchema, row, 'invalid_package_notification_preferences');
           if (notificationPreferences || preferences.version !== manifest.selection.notificationPreferences?.version)
@@ -234,6 +252,8 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
       pages.push({ path: entry.path, section: page.section, childId: page.childId, items: page.items.length });
     }
     if (childIds.size || [...expected].some(([id, coverage]) => !seen.has(id) || seen.get(id) !== coverage.items)) fail('invalid_package_coverage');
+    if ([...mixedRooms.values()].some(room => room.nextVersion !== 1)) fail('invalid_package_mixed_transcript');
+    mixedMessageIds.clear();
     if (manifest.selection.notificationPreferences && !notificationPreferences) fail('invalid_package_notification_preferences');
     if (manifest.selection.accountAvatar && (!accountHead || Boolean(accountHead.asset) !== Boolean(accountImage)
       || accountImage && (accountImage.version !== accountHead.version || canonicalJson(accountImage.asset) !== canonicalJson(accountHead.asset))))
@@ -257,7 +277,7 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
       })) fail('package_scope_unavailable');
       const selectionHash = createHash('sha256').update(JSON.stringify({ childIds: [...selection.childIds].sort(), modules: [...selection.modules].sort(),
         ...(sections === undefined ? {} : { sections }) })).digest('hex');
-      const allows = (page: PageIndex) => page.section === 'children' ? sections === undefined : selection.childIds.includes(page.childId!)
+      const allows = (page: PageIndex) => page.section === 'mixed_chat' ? false : page.section === 'children' ? sections === undefined : selection.childIds.includes(page.childId!)
         && selection.modules.includes(moduleBySection.get(page.section)!) && (sections === undefined || sections.includes(page.section));
       return { selection, selectionHash, allows };
     }
@@ -282,6 +302,36 @@ export async function openHandoverImport(input: Parameters<typeof openHandoverAr
     }
     return {
       manifest: structuredClone(manifest), manifestSha256, integrity, children: structuredClone(children), close: archive.close,
+      async readMixedTranscriptPage(request: { roomId: string; childIds: string[]; acknowledgedManifestSha256?: string; cursor?: HandoverImportCursor | null; limit?: number }) {
+        const roomId = parse(uuid, request.roomId, 'invalid_package_selection');
+        const selected = parse(handoverSelectionSchema.shape.childIds.min(1), request.childIds, 'invalid_package_selection');
+        if (new Set(selected).size !== selected.length) fail('invalid_package_selection');
+        const room = mixedRooms.get(roomId);
+        if (!room || selected.some(id => !manifest.selection.childIds.includes(id))
+          || room.pin.childIds.some(id => !selected.includes(id))) fail('package_scope_unavailable');
+        if (integrity !== 'trusted' && request.acknowledgedManifestSha256 !== manifestSha256) fail('package_trust_acknowledgement_required');
+        const selectionHash = createHash('sha256').update(JSON.stringify({ section: 'mixed_chat', roomId, version: room.pin.version,
+          childIds: [...selected].sort() })).digest('hex');
+        const limit = parse(z.number().int().min(1).max(100), request.limit ?? 50, 'invalid_package_limit');
+        const cursor = request.cursor ? parse(cursorSchema, request.cursor, 'invalid_package_cursor') : null;
+        if (cursor && (cursor.manifestSha256 !== manifestSha256 || cursor.selectionHash !== selectionHash
+          || !room.locations.get(cursor.pageIndex)?.has(cursor.rowIndex))) fail('invalid_package_cursor');
+        const rows: HandoverImportRow[] = [];
+        for (const [pageIndex, indices] of room.locations) {
+          if (pageIndex < (cursor?.pageIndex ?? 0)) continue;
+          const index = pages[pageIndex], page = await read(index.path);
+          if (page.section !== 'mixed_chat' || page.childId !== null) fail('invalid_package_scope');
+          for (const rowIndex of indices) {
+            if (pageIndex === cursor?.pageIndex && rowIndex < cursor.rowIndex) continue;
+            if (rows.length === limit) return { rows, nextCursor: { manifestSha256, selectionHash, pageIndex, rowIndex } };
+            const transcript = parse(mixedTranscriptRowSchema, page.items[rowIndex], 'invalid_package_mixed_transcript');
+            if (transcript.message.roomId !== roomId || transcript.message.version > room.pin.version) fail('invalid_package_mixed_transcript');
+            rows.push({ section: 'mixed_chat', childId: null, value: transcript, source: { ...manifest.source,
+              packageId: manifest.packageId, packageVersion: manifest.packageVersion, manifestSha256, path: index.path, rowIndex } });
+          }
+        }
+        return { rows, nextCursor: null };
+      },
       readNotificationPreferences(acknowledgedManifestSha256: string) {
         if (!notificationPreferences || manifest.purpose !== 'backup' || acknowledgedManifestSha256 !== manifestSha256) fail('package_scope_unavailable');
         return structuredClone(notificationPreferences);

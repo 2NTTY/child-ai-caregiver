@@ -22,7 +22,7 @@ const object = (value: unknown): Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 
 export const supportsHandoverPeriod = (selection: Selection) => !selection.period || supportsHandoverPeriodModules(selection.modules)
-  || !!(selection.accountAvatar || selection.notificationPreferences) && selection.modules.length === 0;
+  || !!(selection.accountAvatar || selection.notificationPreferences || selection.mixedRooms) && selection.modules.length === 0;
 export type HandoverPeriod = NonNullable<Selection['period']>;
 export function withinHandoverPeriod(at: string, period: HandoverPeriod) {
   const time = Date.parse(at);

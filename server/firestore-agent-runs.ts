@@ -18,6 +18,7 @@ import { readFirestoreBackgroundClaim, firestoreBackgroundReference } from './fi
 import { summaryFastBindingSchema, summaryManifestHash, summaryLineageKeyForTarget, parseSummaryBackgroundBasis, type SummaryFastBinding } from './private-summary-work.ts';
 import { readPrivateSummaryEntryGate, summaryFastPayloadHash } from './firestore-private-summary-cutover.ts';
 import { mixedRunScopeSchema } from './mixed-chat-records.ts';
+import type { MixedRoomPin, MixedTransferScope, MixedTranscriptPage, MixedTranscriptRow } from '../src/shared/mixed-chat-transfer.ts';
 import type { SummaryInput } from '../src/shared/memory.ts';
 
 const uuid = z.uuid(), time = z.iso.datetime({ offset: true }), decimal = z.string().regex(/^(0|[1-9][0-9]{0,18})$/u);
@@ -399,6 +400,27 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
         if (cancel && run.state === 'running') run={...run,state:'stopped',stopReason:'cancelled'};
         if (run.state !== original.state) write(b,run);
         return {...(run.result ?? empty(run)),status:run.state,stopReason:run.stopReason};
+      });
+    },
+    async mixedTranscriptPage(userId:string,pin:MixedRoomPin,scope:MixedTransferScope,childIds:string[],cursor:string|null):Promise<MixedTranscriptPage> {
+      return authority.runTransaction(userId,null,async b=>{
+        const page=await options.chat.mixed.exportPageIn(b,pin,scope,new Set(childIds),cursor);
+        const items=await Promise.all(page.messages.map(async message=>{
+          const original=await originalReplyRun(b,message.id);
+          const run=original && expired(original);
+          if (run && (run.mixedChat?.roomId!==pin.id || run.sourceMessageId!==message.id)) domainReject('agent_claim_binding',409);
+          let reply:MixedTranscriptRow['reply'];
+          if (!run) reply={status:'not_started'};
+          else if (run.state!=='completed') reply={status:run.state};
+          else {
+            if (run.result?.status!=='completed') domainReject('agent_claim_binding',409);
+            reply={status:'completed',text:run.result.text,citations:run.result.citations.map(
+              ({sourceId,versionId,chunkId,title,url,section,pageStart,pageEnd})=>({sourceId,versionId,chunkId,title,url,section,
+                ...(pageStart===undefined?{}:{pageStart}),...(pageEnd===undefined?{}:{pageEnd})}))};
+          }
+          return {message,reply};
+        }));
+        return {items,nextCursor:page.nextCursor,from:page.room.createdAt,to:page.room.updatedAt};
       });
     },
     async finishMixed(userId:string,roomId:string,messageId:string,raw:ProductAgentResult) {
