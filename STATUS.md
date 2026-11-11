@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **11 月 11 日，多孩與班級助手。** 原站 Web、API 及 worker 已發布至 `p4-group-2cc1145d`。個人從「更多 → 本人多孩對話」進入，老師沿班級名冊進入。一次真 Gemini 合成流程完成兩名學生的待辦查詢、整批準備、確認及原收據讀回。站外健康、私人路由與 Web 指紋均已核實。獨立對話副本匯入及設備驗收尚待完成，Android 待批量更新。[發布記錄](artifacts/verification/P4_GROUP_DELIVERY_20261111.json)
+- **11 月 11 日，Web 示範交接。** 原站 Web、API 及 worker 已發布至 `p4-group-83afe271`。個人從「更多 → 本人多孩對話」進入，老師沿班級名冊進入。助手可查所選孩子的照護記錄及待辦，也能準備一批待辦供一次確認；統一匯入頁可收取完整對話副本。兩條真 Gemini 流程使用隔離合成資料。跨孩記憶／文件召回仍待開發，Android 待批量交付。[照護查詢](artifacts/verification/P4_SELECTED_CARE_VERTEX_20261111.json)／[原站交付](artifacts/verification/P4_SELECTED_CARE_DELIVERY_20261111.json)
 
 - **11 月 11 日，公共知識匯入。** 管理 API（#526）及 Web 後台（#527）已隨原站發布，可按 ZIP 指紋查回、分頁查看逐項收據、停止或恢復。正式欄位索引配置已套用；原 ZIP 仍由現有匯入指令執行。[知識維護入口](docs/P2_KNOWLEDGE.md#公共知識版本的批量移轉)
 
