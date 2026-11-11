@@ -118,7 +118,8 @@ export function createProductAgent(options: {
   voices?: Pick<import("./firestore-voice.ts").FirestoreVoiceStore, "agentAudio" | "authorizeAudio">;
   workContinuationAuthority?: FirestoreWorkContinuationStore;
   mixed?:{runs:Pick<ReturnType<typeof createFirestoreAgentRuns>,'claimMixed'|'authorizeMixed'|'mixedInput'|'mixedResult'|'finishMixed'>;
-    online:Pick<FirestoreOnlineStore,'readTaskContext'>};
+    online:Pick<FirestoreOnlineStore,'readTaskContext'>;
+    batches:Pick<ReturnType<typeof import('./firestore-mixed-task-batches.ts').createMixedTaskBatches>,'propose'>};
   documents?: import("./family-document-store.ts").FamilyDocumentStore;
   concerns?: Pick<import("./concern-store.ts").ConcernStore, "list" | "get">;
   sources?: import("./shared-input-store.ts").SharedInputStore;
@@ -157,6 +158,7 @@ export function createProductAgent(options: {
           tools:run=>{
             tools=createProductAgentTools({run,authorize,store:options.store,memory:options.memory,tasks:options.tasks,knowledge:options.knowledge,
               trustedUserMessage:input.messages.at(-1)!.text,
+              prepareMixedTasks:action=>mixed.batches.propose(userId,roomId,messageId,claim.runId,action),
               mixedTasks:async ({from,childId,cursor})=>{
                 if (childId && !input.room.childIds.includes(childId)) throw new AgentStopped('unauthorized');
                 const ids=childId ? [childId] : input.room.childIds.slice(from,from+scopeTaskChildrenPerRead);

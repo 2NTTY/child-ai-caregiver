@@ -1,4 +1,5 @@
 import { agentChatFileReadSchema, type ChatFileAgentReader } from './chat-file-agent.ts';
+import { mixedBatchActionSchema, type MixedBatchAction, type MixedTaskBatch } from '../src/shared/mixed-task-batch.ts';
 import { photoLinkInputSchema, photoMessageReferenceSchema } from '../src/shared/photos.ts';
 import { officialHelpIdSchema, type OfficialHelpId } from '../src/shared/agent-feedback.ts';
 import { z } from "zod";
@@ -102,6 +103,7 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 }
 
 export function createProductAgentTools(options: {
+  prepareMixedTasks?:(action:MixedBatchAction)=>Promise<MixedTaskBatch>;
   mixedTasks?: (input:{from:number; childId?:string; cursor?:{afterId:string;basis:string}}) =>
     Promise<AssistantTaskContextPage & {nextFrom:number|null}>;
   photos?: Pick<import('./firestore-photos.ts').FirestorePhotoStore, 'get' | 'list' | 'agentImage' | 'authorizeImage'>;
@@ -135,6 +137,7 @@ export function createProductAgentTools(options: {
   let groundingLoaded = false;
   let selectedSources: ChatDeliverySource[] = [];
   const taskPages=new Map<string,ChatDeliverySource>();
+  let proposedBatch:MixedTaskBatch|null=null;
   let selectedMemoryFacts: MemoryFact[] = [];
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;
@@ -509,6 +512,14 @@ export function createProductAgentTools(options: {
     }),
   });
   let contactReference:string|null=null;
+  if (options.prepareMixedTasks) {
+    const prepare=options.prepareMixedTasks;
+    tools.push({name:'prepare_selected_tasks',description:'家長或老師要求替所選孩子建立、改期、取消或完成多項待辦時，準備一份整批確認。建立時缺省涵蓋這段對話的所有孩子，也可指定子集；修改時使用 read_selected_tasks 讀到的原任務 ID 和版本。工具只列出待確認內容，使用者確認後才實行。',
+      parameters:z.strictObject({action:mixedBatchActionSchema}),authorize:permitted,execute:args=>guard(async()=>{
+        proposedBatch=await prepare(mixedBatchActionSchema.parse(args.action));
+        return {batchId:proposedBatch.id,targetCount:proposedBatch.items.length,state:proposedBatch.state,confirmationPrepared:true};
+      })});
+  }
   if (options.mixedTasks) {
     const cursorSchema=assistantTaskContextRequestSchema.shape.targets.element.shape.cursor;
     const parameters=z.strictObject({from:z.int().min(0).default(0),childId:z.uuid().optional(),cursor:cursorSchema});
@@ -548,7 +559,7 @@ export function createProductAgentTools(options: {
      }},
   );
   return {
-    tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
+    tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
       : options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "read_knowledge_context", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
       : tools.filter(tool => (options.includeTaskProposals!==false || !["propose_task","propose_task_change"].includes(tool.name))
         && (options.includeContact!==false || !["read_contact_options","contact_caregiver"].includes(tool.name))),
@@ -560,6 +571,10 @@ export function createProductAgentTools(options: {
       if (answer.kind === "no_action") {
         if (!options.background || contactReference || !await authorize()) throw new AgentStopped("unauthorized");
         return { outcome: "no_action", text: "", citations: [], retrievalMode: "not_used" };
+      }
+      if (proposedBatch && answer.kind==='operation' && answer.paragraphs.every(p=>!p.citationIds.length)) {
+        serverReceiptText='已列出 '+proposedBatch.items.length+' 項待辦變更，請核對對象及內容後一次確認。';
+        return {text:serverReceiptText,citations:[],privateSourceCitations:[],retrievalMode:'not_used'};
       }
       const ids = [...new Set(answer.paragraphs.flatMap(p => p.citationIds))];
       const citations = ids.filter(id=>evidence.has(id)).map(id => evidence.get(id)!);
