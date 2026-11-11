@@ -138,7 +138,8 @@ export class AgentGatewayModel extends BaseLlm {
       config: { systemInstruction: input.system
         + "\n\nThis role shares the original run budget. The remaining model count includes this call; it is a ceiling, not a target. "
         + "Complete only this role's output contract, without inventing tools or relaxing evidence checks to finish.\nServer role budget:\n"
-        + JSON.stringify({ limits: this.options.budget.limits, budget: planning }) },
+        + JSON.stringify({ limits: { ...this.options.budget.limits,
+          outputTokens: agentGenerationConfig(this.options.config, undefined)!.maxOutputTokens }, budget: planning }) },
       toolsDict: {},
       liveConnectConfig: {},
     };
