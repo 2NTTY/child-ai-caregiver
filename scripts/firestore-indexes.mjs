@@ -9,10 +9,13 @@ const canonical = value => JSON.stringify(sort(value));
 function sort(value) { return Array.isArray(value) ? value.map(sort) : value && typeof value === 'object'
   ? Object.fromEntries(Object.keys(value).sort().map(key => [key, sort(value[key])])) : value; }
 function shape(index) {
-  // REST appends an omitted document-id field with the final field's direction (ASC for arrays).
-  // Preserve explicit direction: ascending page indexes cannot satisfy descending head queries.
-  const fields = index.fields.at(-1)?.fieldPath === '__name__' ? index.fields
-    : [...index.fields, { fieldPath: '__name__', order: index.fields.at(-1)?.order ?? 'ASCENDING' }];
+  const fields = [...index.fields];
+  if (!fields.some(field => field.fieldPath === '__name__')) {
+    const last = fields.at(-1);
+    const documentKey = { fieldPath: '__name__', order: last?.order ?? 'ASCENDING' };
+    // Firestore returns the document key before the final vector field, and last for scalar indexes.
+    fields.splice(last?.vectorConfig ? fields.length - 1 : fields.length, 0, documentKey);
+  }
   return canonical({ queryScope: index.queryScope, fields });
 }
 const sessionIndexes = ['ASCENDING', 'DESCENDING'].map(order => canonical({
