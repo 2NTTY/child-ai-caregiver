@@ -5,6 +5,7 @@ import { officialHelpIdSchema, type OfficialHelpId } from '../src/shared/agent-f
 import { z } from "zod";
 import { assistantTaskContextRequestSchema, type AssistantTaskContextPage } from '../src/shared/assistant-task-context.ts';
 import { selectedCareFiltersSchema, selectedCareCursorSchema, type SelectedCarePage, type SelectedCareRequest } from '../src/shared/assistant-care-context.ts';
+import { careRecordCitationId, selectedCareRecordCitations } from '../src/shared/assistant-care-citation.ts';
 import { summaryQuery } from "../src/shared/care-summary.ts";
 import type { MemoryContext, MemoryFact, SummaryInput } from "../src/shared/memory.ts";
 import { readAgentWorkSchema } from "../src/shared/agent-work.ts";
@@ -561,13 +562,15 @@ export function createProductAgentTools(options: {
         const input=parameters.parse(args);
         function describe(child:SelectedCarePage,from:number) {
           const sources:ChatDeliverySource[]=[];
-          function evidence(value:unknown) {
-            const text=JSON.stringify(value), hash=chatDeliveryContentHash(text), citationId='care:'+hash;
-            sources.push({citationId,version:hash,contentHash:hash,classification:'private',...chatDeliveryReviewSourceExcerpt(text)});
+          function evidence(value:unknown, record?:SelectedCarePage['records'][number]) {
+            const text=JSON.stringify(value), hash=chatDeliveryContentHash(text);
+            const citationId=record ? careRecordCitationId(from,record.id,record.version) : 'care:'+hash;
+            sources.push({citationId,version:record ? String(record.version) : hash,contentHash:hash,
+              classification:'private',...chatDeliveryReviewSourceExcerpt(text)});
             return citationId;
           }
           const scope={childId:child.childId,name:child.childName};
-          const records=child.records.map(record=>({...record,citationId:evidence({...scope,...record})}));
+          const records=child.records.map(record=>({...record,citationId:evidence({...scope,...record},record)}));
           const coverage={...scope,filters:input.filters,matchesOnPage:records.length,scanned:child.scanned,undatedMatches:child.undatedMatches,
             continued:!!input.cursor,hasMore:child.nextCursor!==null};
           return {item:{...child,from,records,coverageCitationId:evidence(coverage)},sources};
@@ -669,8 +672,19 @@ export function createProductAgentTools(options: {
         ? (citations.length ? citations.map(({ chunk }) => ({ text: reviewedText.get(chunk.chunkId)!, citationIds: [chunk.chunkId] }))
           : [{ text: "暫時未有可引用的補充說明。請查看關注卡片的適用依據及來源。", citationIds: [] }])
         : answer.paragraphs;
-      const rendered = paragraphs.map(paragraph => paragraph.text + (paragraph.citationIds.length
-        ? " " + paragraph.citationIds.map(id => selectedEvidence.has(id) ? (id.startsWith('care:') ? "[照護記錄]" : "[待辦資料]") : privateSources?.evidence.has(id)?"[私人來源 "+(privateSourceCitations.findIndex(item=>item.citationId===id)+1)+"]":"[" + (citations.findIndex(item=>item.chunk.chunkId===id)+1) + "]").join("") : "")).join("\n\n");
+      const careReferences=selectedCareRecordCitations(selectedSources);
+      function citationLabel(id:string) {
+        const index=careReferences.findIndex(reference=>reference.citationId===id);
+        if (index!==-1) return `[照護記錄 ${index+1}]`;
+        if (selectedEvidence.has(id)) return id.startsWith('care:') ? '[查詢範圍]' : '[待辦資料]';
+        if (privateSources?.evidence.has(id)) return `[私人來源 ${privateSourceCitations.findIndex(item=>item.citationId===id)+1}]`;
+        return `[${citations.findIndex(item=>item.chunk.chunkId===id)+1}]`;
+      }
+      const rendered = paragraphs.map(paragraph => {
+        // Only labels appended from reviewed IDs should become interactive care links.
+        const text=careReferences.length ? paragraph.text.replace(/\[照護記錄 (\d+)\]/gu,'［照護記錄 $1］') : paragraph.text;
+        return paragraph.citationIds.length ? text+' '+paragraph.citationIds.map(citationLabel).join('') : text;
+      }).join('\n\n');
       return { text: rendered, citations: citations.map(item => item.chunk), privateSourceCitations, retrievalMode: mode };
     },
     deliveryDraft(): ChatDeliveryDraft | null {
