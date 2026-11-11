@@ -54,6 +54,17 @@ test('a non-directional final field defaults to ascending document-id ordering',
   assert.notEqual(shape(index(fields)), shape(index([...fields, field('__name__', 'DESCENDING')])));
 });
 
+test('a vector index matches the Firestore response with the document key before the vector', () => {
+  const prefix = [field('versionId'), field('chunkId')];
+  const vector = { fieldPath: 'embedding', vectorConfig: { dimension: 1024, flat: {} } };
+  const manifest = index([...prefix, vector]);
+  const rest = index([...prefix, field('__name__'), vector]);
+  assert.equal(shape(manifest), shape(rest));
+  assert.notEqual(shape(manifest), shape(index([...prefix, field('__name__', 'DESCENDING'), vector])));
+  const differentVector = { ...vector, vectorConfig: { dimension: 768, flat: {} } };
+  assert.notEqual(shape(manifest), shape(index([...prefix, field('__name__'), differentVector])));
+});
+
 test('comparator preserves query scope and field order while ignoring unrelated server metadata', () => {
   const value = index([field('workspaceTag'), field('childTag')]);
   assert.equal(shape(value), shape({ ...value, name: 'synthetic/index', state: 'READY' }));
