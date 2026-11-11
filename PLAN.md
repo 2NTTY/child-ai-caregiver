@@ -66,7 +66,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **本輪 Agent 收據閱讀修復：**[AGENT-F01](#agent-f01-receipt-read) 已由 [PR #503](https://github.com/2NTTY/child-ai-caregiver/pull/503) 正常合併至 `4a9f6bd9`；精確 head 的兩次必要離線 CI 已成功。formal48 及原完整流程／設備缺口維持未驗，未部署。
 
-**本輪指定摘要修復：**接續已合併 #410 的剩餘問題，整合覆核 #447，見 [REQ005-SUMMARY01](#req005-summary01)。單一候選已完成本地程式驗收，durable 摘要未啟用、未部署，正式啟用仍有前置；不改下列 P4 交付與未驗狀態。
+**本輪指定摘要修復：**#447 已合併入 master（commit a162e65e），見 [REQ005-SUMMARY01](#req005-summary01)。單一候選已完成本地程式驗收，durable 摘要未啟用、未部署，正式啟用仍有前置；不改下列 P4 交付與未驗狀態。
+
+**單輪壓縮底層基準：**依 `REQUIREMENTS_BACKLOG.md` §4.2 實作單輪對話即時上下文壓縮庫基準（In-Run Context Compaction），見 [REQ005-COMPACTION01](#req005-compaction01)。本包為底層 opt-in 庫代碼，預設未啟用（0 production callers）；本地 11 項定向測試及 6 項安全防護變異測試全部通過，TypeScript 零診斷。
 
 **匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 的原生 runtime 指紋在本機與 EAS 不一致，本次未產出 APK。下次需要批量安裝時，先核對同一建置封包與依賴位置，再建置、驗簽及覆蓋安裝。[原建置紀錄](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)
 
@@ -158,6 +160,25 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **型別狀態：**最新 f0149b 同源候選沿原 `tsconfig.server.json` 的 server／shared／test 全 include 完成 native TypeScript 檢查，exit 0、零診斷；未縮 include／strict。正式命令及 CI 只對 tsc 明確設定 3 GiB heap。先前資源限額、OOM、型別診斷與手工 fixture 失敗均保留，沒有改寫成通過。
 - **正式啟用阻塞：**尚無可信正式累積 work-grant 政策數值，亦無可證舊 writer 從 inventory 上界捕獲之前至今持續被 fenced 的實際 authority reader；`installed:true` 或 `control.paused` 不能代證舊 binary 已停止。inventory 目前僅保守未啟用結構，舊身份或完整映射缺失仍為 unmapped。正式 durable 入口 fail closed；從未啟用且沒有 retained durable 歷史的 scope 可維持原短 fast，不以 policy 缺失回退已啟用 scope。
 - **恢復／未驗／收尾：**restore 新 epoch 維持 `restore_suspended`，保留原 grant、usage 及 reservation，不授 resume、transfer 或新空帳；R0／R2 仍 blocked。各階段本地驗收、最新完整型別與獨立 review 已完成；精確 PR head 必要 CI 仍須通過，才可依正常分支保護合併。正式政策、舊 writer fencing、雲端索引 READY、真 Firestore／模型、設備與正式啟用另有前置；本包沒有 GCP 或產品部署操作，不稱用戶問題已上線修復或 REQ-005 全案完成。
+
+<a id="req005-compaction01"></a>
+### REQ005-COMPACTION01：REQ-005 §4.2 單輪對話上下文即時壓縮基準（庫代碼已驗收，未啟用）
+
+- **基線／來源：**依循 `docs/REQUIREMENTS_BACKLOG.md` §4.2 原生 context compaction 規範；分支為 `codex/req005-inrun-compaction`。
+- **目標與邊界：**實作單輪對話運行期間的上下文即時壓縮（In-run transient context compaction）基礎庫能力。本包為底層 baseline，預設未啟用（0 production callers），不改變既有生產對話路徑，亦不取代 Firestore 跨會話記憶（REQ-005 §4.1）。
+- **核心不變量（Core Invariants）：**
+  1. **純瞬態（Transient In-Run Only）：**壓縮摘要僅於單次 Agent run 記憶體事件流中生效，絕不持久化至 Firestore 或改寫持久 session 歷史。
+  2. **工具調用原子性（Tool-Call Atomicity）：**基於 `@google/adk` 之 `TokenBasedContextCompactor`，以事件原子性計算保留起點，嚴禁切斷 `FunctionCall` 與對應 `FunctionResponse`。
+  3. **受控 Gateway 計量與雙階段取消（Gateway Accounting & Two-Phase Cancellation）：**若模型已封裝於 `AgentGatewayModel` 則避免重複扣額，由 Gateway 統一管理准入；串流發起前及接收 chunk 迭代時嚴格檢查 `signal.throwIfAborted()`，標準取消錯誤（`AbortError`）不吞沒。
+  4. **防外推提示詞（Anti-Extrapolation Prompt）：**採用標準提示詞，明令「嚴禁外推推論、不可補充未提及事實、不可宣稱用戶同意」。
+  5. **單調時間戳與 ADK 相容（Monotonic Timestamp Ordering）：**合成壓縮事件時間戳維持單調遞增，確保 `@google/adk` 內部事件過濾機制不丟失保留事件。
+- **實作架構：**
+  - `server/context-compactor.ts`：導出 `createRunContextCompactor`、`createManagedCompactionModel`、`DEFAULT_COMPACTION_PROMPT`、`InRunCompactionConfig`。
+  - `server/agent-runtime.ts`：在 `AgentRunInput` 擴充可選 `contextCompactors` 與 `contextCompaction` 宣告式配置。
+- **驗收條件與證明：**
+  - **定向單元測試：**`tests/agent-context-compaction.test.ts` 11/11 項全部通過（覆蓋門檻觸發、未超限旁路、工具呼叫原子保全、防外推提示詞、token 預算准入、串流前取消中斷、串流中取消中斷、取消錯誤不被吞沒、時間戳單調性、Runtime 宣告式裝配、Gateway 避免雙重扣額）。
+  - **安全防護變異測試（Mutation Testing）：**`scripts/verify-compaction-mutations.mjs` 6/6 項變異攔截全數通過（C1: 略過預算准入、C2: 略過串流前取消檢查、C3: 略過串流中取消檢查、C4: 吞沒取消錯誤、C5: 削弱防外推提示詞、C6: 運行時未自動裝配 compactor）。
+  - **型別檢查：**`npx tsc --project tsconfig.server.json --noEmit` 與 `npx tsc --noEmit` 雙通過，exit code 0，零診斷。
 
 <a id="agent-review-repair01"></a>
 ### AGENT-REVIEW-REPAIR01：D 的六項 Agent PR 修復與最新需求對齊（候選，未驗收完成）
