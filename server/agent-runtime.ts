@@ -447,7 +447,8 @@ export function createAgentRuntime(options: {
               return `${currentPrompt.text}\n\nServer runtime metadata:\n${JSON.stringify({ runId, scope: projectedScope, trigger: input.trigger,
                 now: new Date().toISOString(), timeZone: "Asia/Hong_Kong", locale: "zh-HK", packVersion: currentPrompt.packVersion,
                 recipeId: currentPrompt.recipeId, capabilities: finishing ? visible.filter(name => terminalToolNames.has(name)) : visible,
-                ...(capabilitySelection && !finishing ? { capabilityCatalog: capabilitySelection.metadata(ids) } : {}), limits: budget.limits,
+                ...(capabilitySelection && !finishing ? { capabilityCatalog: capabilitySelection.metadata(ids) } : {}),
+                limits: { ...budget.limits, outputTokens: agentGenerationConfig(selected.config, undefined)!.maxOutputTokens },
                 budget: projected })}`;
             };
             if (privateSummaryEnabled) {

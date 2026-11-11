@@ -22,7 +22,11 @@ jobs:
        github.head_ref == 'codex/req005-interactive-budget' ||
        github.head_ref == 'codex/req005-projection-consistency' ||
        github.head_ref == 'codex/req005-turn-topology' ||
-       github.head_ref == 'codex/req005-multipart-progression')
+       github.head_ref == 'codex/req005-multipart-progression' ||
+       github.head_ref == 'codex/req005-output-ceiling' ||
+       github.head_ref == 'codex/req005-personal-key-policy' ||
+       github.head_ref == 'codex/req005-timeout-lease-alignment' ||
+       github.head_ref == 'codex/req005-cursor-pagination')
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:

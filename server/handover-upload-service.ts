@@ -17,7 +17,7 @@ export function createHandoverUploadService(options: FirestoreDomainOptions & {
   trustedKeys?: Parameters<typeof openHandoverImport>[0]['trustedKeys'];
 }) {
   const uploads = createFirestoreHandoverUploads(options), clock = options.serverClock ?? Date.now;
-  async function receive(owner: string, id: string, source: AsyncIterable<Uint8Array>, signal: AbortSignal, accountBackup = true) {
+  async function receive(owner: string, id: string, source: AsyncIterable<Uint8Array>, signal: AbortSignal, accountBackup = true, notificationPreferencesBackup = true) {
     const upload = await uploads.claim(owner, id); if (!upload) return uploads.get(owner, id);
     const deadline = AbortSignal.any([signal, AbortSignal.timeout(300_000)]);
     let staged: Awaited<ReturnType<typeof receiveHandoverUpload>> | undefined, artifact: HandoverObjectDescriptor | undefined;
@@ -26,6 +26,7 @@ export function createHandoverUploadService(options: FirestoreDomainOptions & {
         spoolRoot: options.spoolRoot, trustedKeys: options.trustedKeys });
       const reader = staged.reader;
       if (reader.manifest.selection.accountAvatar && !accountBackup) domainReject('unsupported_package_format', 409);
+      if (reader.manifest.selection.notificationPreferences && !notificationPreferencesBackup) domainReject('unsupported_package_format', 409);
       const { entries: _entries, coverage: _coverage, ...header } = reader.manifest;
       const preview = { header: handoverHeaderSchema.parse(header), manifestSha256: reader.manifestSha256,
         integrity: reader.integrity, children: reader.children,

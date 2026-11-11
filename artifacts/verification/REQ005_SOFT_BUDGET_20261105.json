@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "receiptVersion": "1.0.0",
+  "package": "REQ005-SOFTBUDGET01",
+  "requirement": "REQUIREMENTS_BACKLOG.md §3.1 Centralized Resource Policy & 0.25 Soft Budget Planning Signals",
+  "branch": "codex/req005-soft-budget",
+  "recordedAt": "2026-11-06T00:30:00+08:00",
+  "status": "VERIFIED_OFFLINE_CI_PASS_HOLD_MERGE",
+  "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+  "baseTree": "29c803a957b38f7b22e4bde508245e047eaaabcf",
+  "candidateHead": "fc5d5f7bbf0c839b40e71a842ab3ee8ad4528c0e",
+  "candidateTree": "5e5c1abc38060d83541a7788a897dcf832e4cb9a",
+  "remoteCi": {
+    "workflow": "Soft budget offline verification",
+    "runId": "42042529809",
+    "jobId": "127296771198",
+    "status": "success",
+    "conclusion": "pass",
+    "duration": "1m20s",
+    "exactHead": "fc5d5f7bbf0c839b40e71a842ab3ee8ad4528c0e"
+  },
+  "environment": {
+    "node": "v24.16.0",
+    "os": "win32-x64",
+    "ciNodeTarget": "v24.22.1",
+    "mergeBase": "2abe7aed60b192b253414f6464e3fd070cc377e7"
+  },
+  "invariantsVerified": [
+    "DEFAULT_SOFT_BUDGET_RATIO is centralized at 0.25 (1/4) in src/shared/agent-run-limits.ts as approved engineering default under REQ-005 §3.1",
+    "SOFT_BUDGET_RATIO_RANGE enforces legal bounds between 0.05 and 1.0 with 0.25 default",
+    "softBudget is derived against selected limits without creating a duplicate quota",
+    "softRemaining and softExceeded are exposed as advisory planning signals in planningSnapshot",
+    "Exceeding soft budget never halts execution or throws AgentStopped; hard limits remain sole barrier"
+  ],
+  "policyNotice": "softBudgetRatio=0.25 is an explicit policy default established by REQ-005 §3.1, serving as advisory planning guidance derived against hard limits without altering existing quota boundaries.",
+  "files": [
+    {
+      "path": "src/shared/agent-run-limits.ts",
+      "gitBlob": "7bf26cef5e17f3597fdef865f6cf39685aad772c",
+      "sha256": "2f9b6246ded1c1015184b14daae57f48712929c7c79950a62826a850780a0fe4"
+    },
+    {
+      "path": "server/agent-budget.ts",
+      "gitBlob": "075f2af140e46dd0d4e308eb7ae1f95457f2055b",
+      "sha256": "bc930ae7f625879b188a17af79683615612b0dbe2b7ec474812c7bb6e9e6e957"
+    },
+    {
+      "path": "tests/agent-budget.test.ts",
+      "gitBlob": "7036b22ec3dc265a73f900b2e8417b776c561bbb",
+      "sha256": "cd79de2935d69b57ca1d9c358327a3d267fccdb0d42589f3d2c0bb1c6d6ee8e5"
+    },
+    {
+      "path": "scripts/verify-soft-budget-mutations.mjs",
+      "gitBlob": "400a64c4e9dc74828f706ff4642393b3370f677a",
+      "sha256": "db81fd103ea01b499838b7be9d322846fbc44431bd66545d6bd7936ccb2d5af8"
+    },
+    {
+      "path": "scripts/ci/verify-soft-budget-offline.sh",
+      "gitBlob": "1333c71e84544bee7acc72ad8017c0a2d86a049c",
+      "sha256": "0d501e67e25010e0e30fb3ead7e86b0b9bda81f454857f01446156b684829e47"
+    },
+    {
+      "path": ".github/workflows/soft-budget-offline.yml",
+      "gitBlob": "46b1f7c02a052e6316728aecb300d00063112f59",
+      "sha256": "8b63490cb1e664782644c6ca392a798659318298fd392af3a146ddbb5bc120e1"
+    },
+    {
+      "path": "WORKLOG.md",
+      "sha256": "f654b12e37fa6358854a1f595c1938a77f8a3841bbf7a4378eb49c29da3d6d56"
+    }
+  ],
+  "redThenGreen": {
+    "baseline": {
+      "commit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+      "tree": "29c803a957b38f7b22e4bde508245e047eaaabcf",
+      "unitTests": "5/5 passed (soft budget tests absent on base)",
+      "mutationGuards": "0/5 present (feature absent on base)"
+    },
+    "candidate": {
+      "unitTests": "9/9 passed (0 fail, 0 skip, 0 todo)",
+      "mutationGuards": "5/5 caught (S1-S5 fail-on-mutation green, exit code 0)"
+    }
+  },
+  "retainedFailures": [
+    {
+      "check": "scripts/ci/verify-soft-budget-offline.sh on Windows host",
+      "reason": "Linux unshare / PARENT_NETNS network namespace preflight is strictly targeted for GitHub Actions Ubuntu runners and skipped on Windows workstations"
+    }
+  ],
+  "limitations": [
+    "Advisory planning signal only (exceeding soft budget never halts execution or throws AgentStopped)",
+    "Strictly HOLD merge pending Owner 2NTTY independent review",
+    "Does not unclamp 1024 output token ceiling (deferred to PR 7)",
+    "Does not unclamp min(personal, admin) provider key policy (deferred to PR 8)",
+    "Collaborator PR untouched"
+  ]
+}

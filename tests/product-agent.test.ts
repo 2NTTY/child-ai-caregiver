@@ -7,6 +7,45 @@ import { readAiConfig } from "../server/ai-config.ts";
 import { AGENT_CONFIRMATION_PENDING_TEXT } from "../server/agent-work-tool-descriptions.ts";
 import type { ProductAgentResult, AgentProposal } from "../src/shared/product-agent.ts";
 
+test("product reply accepts 301-second and maximum run claims without extending their absolute deadlines", async () => {
+  for (const durationMs of [301000, 900000]) {
+    const userId = "synthetic-user", childId = "1ebcb39d-a2db-4b8c-a432-7ffcb3de5808";
+    const runId = "d4a1b662-d13d-476b-bf52-40a28aa1a1a7", messageId = "7de5a0e8-e106-4485-b7d2-3b572741da39";
+    const scope = { userId, childId, workspaceId: "synthetic-workspace", authorizationVersion: "1", dataVersion: "epoch:1" };
+    const deadlineAtMs = Date.now() + durationMs;
+    let saved: ProductAgentResult | null = null, admittedDeadline: number | undefined;
+    const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
+      usage: { reserve: async () => true, record: async () => {} },
+      admission: { acquire: async input => {
+        admittedDeadline = input.deadlineAtMs;
+        return { authorize: async () => true, release: async () => {} };
+      } },
+      provider: { generate: async () => ({ content: { role: "model", parts: [{ functionCall: {
+        id: "answer-call", name: "present_answer", args: { kind: "operation",
+          paragraphs: [{ text: "未有執行其他操作。", citationIds: [] }] },
+      } }] }, finishReason: FinishReason.STOP }) } });
+    const service = createProductAgent({ runtime,
+      store: {
+        claim: async () => ({ runId, scope, created: true, sourceMessageId: messageId, state: "running", expiresAt: new Date(deadlineAtMs).toISOString() }),
+        authorize: async () => true,
+        finish: async (_scope: unknown, result: ProductAgentResult) => { saved = result; return true; },
+        get: async () => saved,
+      },
+      memory: { context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false,
+        facts: [], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [],
+        truncated: { facts: false, topics: false, messages: false } }) },
+      chat: { listForUser: async () => ({ messages: [{ id: messageId, role: "user", text: "請確認操作狀態。" }] }) },
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
+      knowledge: { createRun: () => ({ revalidateCitations: async () => true }) },
+    } as unknown as Parameters<typeof createProductAgent>[0]);
+    const result = await service.reply(userId, childId, messageId, async () => true);
+    assert.equal(result?.status, "completed", JSON.stringify(result));
+    assert.equal(result.text, "未有執行其他操作。");
+    assert.equal(admittedDeadline, deadlineAtMs);
+    assert.deepEqual(result.counts, { modelCalls: 1, toolCalls: 1, queryEmbeddings: 0 });
+  }
+});
+
 test("product reply uses native tools, keeps proposals unconfirmed, validates display and reuses the persisted run", async () => {
   const runId = "d4a1b662-d13d-476b-bf52-40a28aa1a1a7", childId = "1ebcb39d-a2db-4b8c-a432-7ffcb3de5808";
   const messageId = "7de5a0e8-e106-4485-b7d2-3b572741da39", userId = "synthetic-user";

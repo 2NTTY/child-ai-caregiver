@@ -24,7 +24,7 @@ export const BACKGROUND_KNOWLEDGE_DEFAULT_BUDGET = Object.freeze({
 export const BACKGROUND_KNOWLEDGE_RESERVED_UNITS = 2;
 
 /** Exclusive lease TTL for one operation fingerprint (ms). */
-export const BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS = 120_000;
+export const BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS = 360_000;
 
 export interface BackgroundKnowledgeMaintenanceConfig {
   enabled: boolean;

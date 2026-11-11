@@ -53,10 +53,10 @@ export function createSharedInputStore(pool:Pool,cipher:StorageCipher) {
   const versions=async(client:PoolClient,space:string)=>(await client.query<{access_version:number;storage_epoch:string;change_seq:string}>(
     "SELECT access_version,storage_epoch,change_seq::text FROM workspaces WHERE id=$1",[space])).rows[0];
   const service={
-    async list(userId:string,childId:string) {
+    async list(userId:string,childId:string,_options?:{limit?:number;cursor?:string|null}) {
       return access(userId,childId,false,async(client,role)=>{
         const rows=(await client.query<Row>("SELECT * FROM shared_inputs WHERE child_id=$1 AND owner_user_id=$2 ORDER BY created_at DESC,id LIMIT 50",[childId,userId])).rows;
-        return {inputs:rows.map(row=>decode(row,role)),sources:publicInputSources.map(({id,url,publisher})=>({id,url,publisher})),canCreate:role!=="viewer"};
+        return {inputs:rows.map(row=>decode(row,role)),sources:publicInputSources.map(({id,url,publisher})=>({id,url,publisher})),canCreate:role!=="viewer",hasMore:false,nextCursor:null as string|null};
       });
     },
     async get(userId:string,childId:string,id:string) {

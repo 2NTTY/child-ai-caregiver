@@ -2,7 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } fr
 import { AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useProduction } from '../../production/ProductionProvider';
-import { importErrorText, originalComparisonResolution, originalComparisonItemKey, legacyOriginalModules, accountAvatarComparisonResolution, hasOriginalChildAvatar } from '../../production/HandoverImportOwner';
+import { importErrorText, originalComparisonResolution, originalComparisonItemKey, legacyOriginalModules, accountAvatarComparisonResolution, hasOriginalAttachments } from '../../production/HandoverImportOwner';
+import type { HandoverImportState } from '../../production/HandoverImportOwner';
+import type { NotificationPreferences } from '../../../../src/shared/family';
 import { useProductionSharing } from '../../production/useProductionSharing';
 import { handoverClassScope, handoverClassDestination, handoverClassDestinations, handoverClassEnrolmentDestination,
   handoverClassFeatures, handoverClassFeatureModules,
@@ -15,6 +17,7 @@ import { dateTimeParts, hongKongTimeZone } from '../date-time';
 import { FormDialog } from '../FormDialog';
 import { AppButton, AppSelect, AppTextField } from '../ui';
 import { HandoverImportResults } from './HandoverImportResults';
+import { handoverGrowthTopicLabels } from './HandoverImportHistory';
 import { chineseFont, colors, readingType, spacing } from '../../theme';
 
 type Section = HandoverImportCommand['targets'][number]['sections'][number];
@@ -30,7 +33,9 @@ const memoryResourceLabels: Record<(typeof originalMemorySectionSchema.options)[
 const comparisonResourceLabel = (section: OriginalBackupComparison['items'][number]['resourceSection']) => {
   const memory = originalMemorySectionSchema.safeParse(section);
   return memory.success ? memoryResourceLabels[memory.data] : section === 'documents' ? '文件'
-    : section === 'visit_preparation' ? '到診準備' : section === 'child_avatar' ? '孩子頭像' : '';
+    : section === 'visit_preparation' ? '到診準備' : section === 'child_avatar' ? '孩子頭像'
+      : section === 'photos' ? '照片' : section === 'voices' ? '錄音' : section === 'files' ? '檔案'
+        : section === 'growth_attention' ? '成長事項' : section === 'growth_topics' ? '成長主題設定' : '';
 };
 const states: Record<HandoverImportView['state'], string> = {
   queued: '已排隊', running: '正在匯入', completed: '已完成', cancelled: '已取消', failed: '未能完成', interrupted: '還原後已中斷',
@@ -45,14 +50,21 @@ const avatarComparisonStates = { empty_backup: '備份沒有圖片，不能還�
   missing: '目前沒有本人頭像。', different: '備份與目前圖片不同。', deleted: '目前本人頭像已刪除。' };
 const avatarOutcomes = { created: '已恢復', updated: '已更新', skipped: '已略過', conflict: '有衝突，沒有還原' };
 const avatarReasons = { empty_backup: '備份沒有圖片', unchanged: '與備份相同', version_conflict: '目前版本已改變', decision_changed: '目前狀態已改變，請重新比較' };
+const growthBlockedLabels: Record<NonNullable<NonNullable<OriginalBackupComparison['items'][number]['growth']>['blocked']>, string> = {
+  original_unavailable: '未能核實原有項目，保留目前資料。', growth_terminal_state: '這項成長事項已有處理結果，會保留目前狀態。',
+  growth_topic_disabled: '主題目前已停用，不能由備份重新啟用。', growth_link_changed: '原事項或待辦連結已改變，保留目前資料。',
+  growth_source_changed: '目前適用資料或來源已失效，不能還原這項建議。', growth_snooze_changed: '暫緩安排已改變或到期，保留目前安排。',
+};
 const noAvatarSnapshot = () => null;
 const noAvatarSubscription = () => () => {};
 export function comparisonFields(module: HandoverImportModule, fields: string[], resourceSection?: OriginalBackupComparison['items'][number]['resourceSection']) {
   const moduleNames: Partial<Record<HandoverImportModule,Record<string,string>>> = {
-    care:{text:'記錄內容',details:'時間／數量',source:'資料來源'},profile:{data:'孩子概況'},attachments:{asset:'頭像圖片'},
+    care:{text:'記錄內容',details:'時間／數量',source:'資料來源'},profile:{data:'孩子概況'},attachments:{asset:resourceSection === 'child_avatar' ? '頭像圖片' : '原附件'},
     concerns:{title:'關注標題',status:'關注狀態',events:'觀察時間線',selectedEvents:'所選期間觀察'},
     memory:{title:'交代標題',text:'交代內容',memoryKey:'交代分類',provenance:'來源類別',sourceMessageId:'來源訊息'},
     tasks:{title:'待辦名稱',details:'待辦內容',occurrence:'時間／狀態',kind:'類別',assigneeUserId:'負責人'},
+    growth:{title:'事項名稱',kind:'建議種類',whyNow:'建議原因',advice:'照護建議',limits:'適用限制',basis:'適用依據',evidence:'依據資料',source:'資料來源',
+      state:'處理狀態',snoozeUntil:'暫緩時間',previousId:'前項連結',newReason:'新近況',taskId:'待辦連結',lastAction:'最近行動',actorUserId:'原操作人',note:'補充內容',disabled:'主題停用設定'},
     sources:{sourceLabel:'來源名稱',sourceUrl:'來源連結',sourceDateText:'來源日期',sourceNotes:'來源備註',text:'來源原文',
       management:'用途與摘錄設定',kind:'來源類別',fetchState:'抓取狀態',extraction:'提取狀態',recordId:'已連結照護記錄',
       confirmationKind:'確認用途',retrievedAt:'讀取時間'},
@@ -69,6 +81,9 @@ export function comparisonFields(module: HandoverImportModule, fields: string[],
   return [...new Set(fields.map(field => Object.hasOwn(names,field) ? names[field] : '其他欄位'))].join('、');
 }
 const dateText = (value: string) => new Date(value).toLocaleString('zh-HK', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+function describePreferences(value: NotificationPreferences) {
+  return `${value.timeZone}，安靜時段 ${value.quietStart}–${value.quietEnd}，${value.allowAppointmentDuringQuiet ? '期間照常提醒預約' : '期間暫緩預約提醒'}`;
+}
 const foreground = () => Platform.OS === 'web'
   ? typeof document !== 'undefined' && document.visibilityState === 'visible' : AppState.currentState === 'active';
 
@@ -77,7 +92,7 @@ export function HandoverImportControls() {
   const { owner, userId, identityKey, recordsState, account, online } = useProduction();
   const controller = owner.handoverImportOwner;
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
-  const originalLabels = { ...labels, attachments: '孩子頭像', memory: state.originalMemoryResourcesEnabled ? '記憶與交代' : '私人交代' };
+  const originalLabels = { ...labels, attachments: state.originalAttachmentResourcesEnabled ? '照片、錄音、檔案與孩子頭像' : '孩子頭像', memory: state.originalMemoryResourcesEnabled ? '記憶與交代' : '私人交代' };
   const classFeatures = handoverClassFeatures(state);
   const shared = useSyncExternalStore(owner.sharedChild.subscribe, owner.sharedChild.getSnapshot, owner.sharedChild.getSnapshot);
   const avatarLane = owner.avatarOwner?.self;
@@ -85,6 +100,8 @@ export function HandoverImportControls() {
     avatarLane?.getSnapshot ?? noAvatarSnapshot, avatarLane?.getSnapshot ?? noAvatarSnapshot);
   const [open, setOpen] = useState(false), [page, setPage] = useState(0);
   const [choices, setChoices] = useState<Record<string, Choice>>({}), [accepted, setAccepted] = useState(false);
+  const [chosenAvatar, chooseAvatar] = useState<HandoverImportState['accountAvatarComparison']>(null);
+  const [chosenPreferences, choosePreferences] = useState<HandoverImportState['preferencesComparison']>(null);
   const [rosterQuery, setRosterQuery] = useState('');
   const [comparisonChild, setComparisonChild] = useState(''), [comparisonModule, setComparisonModule] = useState<OriginalBackupComparisonQuery['module']>(originalBackupModuleSchema.options[0]);
   const trigger = useRef<View>(null);
@@ -98,6 +115,8 @@ export function HandoverImportControls() {
   const needsCapabilities = current && (!!(open && preview) || state.items.some(batch => batch.targets.some(target => target.target.spaceId !== null)));
   useLayoutEffect(() => { setOpen(false); setChoices({}); setPage(0); setAccepted(false); }, [identityKey]);
   useLayoutEffect(() => { setChoices({}); setPage(0); setAccepted(false); }, [upload?.id, preview?.manifestSha256]);
+  useLayoutEffect(() => { chooseAvatar(null); }, [state.accountAvatarComparison]);
+  useLayoutEffect(() => { choosePreferences(null); }, [state.preferencesComparison]);
   useLayoutEffect(() => { setComparisonChild(''); setComparisonModule(originalBackupModuleSchema.options[0]); controller.clearComparison(); }, [controller, identityKey, upload?.id, preview?.manifestSha256]);
   useLayoutEffect(() => { controller.clearAccountAvatarComparison?.(); }, [controller, avatarSnapshot?.key, avatarSnapshot?.avatar?.version]);
   useLayoutEffect(() => { setRosterQuery(classes.state.rosterQuery); }, [classes.state.selected?.id]);
@@ -199,7 +218,7 @@ export function HandoverImportControls() {
     ? preview.children.filter(child => recordsState.children.some(local => local.id === child.id && (local.accessRole === 'owner' || local.accessRole === undefined))) : [];
   const originalModules = state.originalModules ?? legacyOriginalModules;
   const supportedComparisonModules = originalModules.filter(module => available.includes(module));
-  const comparisonModules = supportedComparisonModules.filter(module => module !== 'attachments' || hasOriginalChildAvatar(preview, comparisonChild));
+  const comparisonModules = supportedComparisonModules.filter(module => module !== 'attachments' || hasOriginalAttachments(preview, comparisonChild, state.originalAttachmentResourcesEnabled));
   const comparison = state.comparison?.query.uploadId === upload?.id && state.comparison?.query.childId === comparisonChild
     && state.comparison?.query.module === comparisonModule ? state.comparison : null;
   const comparisonSelected = comparison?.selected ?? [];
@@ -209,6 +228,13 @@ export function HandoverImportControls() {
     && state.accountAvatarComparison?.query.expectedUploadVersion === upload?.version
     && state.accountAvatarComparison?.manifestSha256 === preview?.manifestSha256 ? state.accountAvatarComparison : null;
   const avatarResolution = avatarComparison?.value ? accountAvatarComparisonResolution(avatarComparison.value) : null;
+  const canComparePreferences = !!state.preferencesRestoreEnabled && controller.canCompareAccountPart('notificationPreferences');
+  const preferencesComparison = canComparePreferences && state.preferencesComparison?.query.uploadId === upload?.id
+    && state.preferencesComparison?.query.expectedUploadVersion === upload?.version
+    && state.preferencesComparison?.manifestSha256 === preview?.manifestSha256 ? state.preferencesComparison : null;
+  const mixedAccount = canCompareAvatar && canComparePreferences;
+  const restoreAvatar = !!avatarResolution && chosenAvatar === avatarComparison;
+  const restorePreferences = preferencesComparison?.value?.state === 'different' && chosenPreferences === preferencesComparison;
   const comparisonOverwrite = comparison?.items.filter(item => originalComparisonResolution(item) === 'replace_current') ?? [];
   const comparisonRestore = comparison?.items.filter(item => originalComparisonResolution(item) === 'restore_deleted') ?? [];
   const selectedOverwrite = comparisonOverwrite.filter(item => comparisonSelected.includes(originalComparisonItemKey(item)));
@@ -342,7 +368,7 @@ export function HandoverImportControls() {
           : state.summary.value?.modules === null ? <Text style={styles.body}>此舊批次未有分模組統計，請參閱原總進度及逐項結果。</Text>
           : <><Text style={styles.body}>只計已提交的業務項目；修訂、附件內容及轉錄不重複計數。中止或未完成批次只顯示已提交部分。</Text>
             {state.summary.value?.modules.map(item => <Text key={item.module} style={styles.body}>{labels[item.module]}：建立 {item.created} · 更新 {item.updated} · 略過 {item.skipped} · 衝突 {item.conflict}</Text>)}
-            {state.summary.value?.modules.length === 0 ? <Text style={styles.body}>{state.summary.value.accountAvatar
+            {state.summary.value?.modules.length === 0 ? <Text style={styles.body}>{state.summary.value.accountAvatar || state.summary.value.notificationPreferences
               ? '此批次沒有孩子模組項目。' : '尚未有已提交的業務項目。'}</Text> : null}</>}
         {state.summary.status === 'ready' && state.summary.value?.accountAvatar ? <View style={styles.group}>
           {state.summary.value.accountAvatar.result ? <>
@@ -351,6 +377,10 @@ export function HandoverImportControls() {
             <Text style={styles.body}>備份版本 {state.summary.value.accountAvatar.result.backupVersion} · 核對版本 {state.summary.value.accountAvatar.result.localVersion}</Text>
           </> : <Text style={styles.body}>本人頭像：尚未有已提交的還原結果，不代表已還原。</Text>}
         </View> : null}
+        {state.summary.status === 'ready' && state.summary.value?.notificationPreferences ? <Text style={styles.body}>通知偏好：{
+          state.summary.value.notificationPreferences.result
+            ? { updated: '已還原', skipped: '與目前設定相同，已略過', conflict: '設定已改變，已保留目前版本' }[state.summary.value.notificationPreferences.result.outcome]
+            : '等待處理'}</Text> : null}
       </View> : null}
       {state.enrolmentResults?.batchId === row.id ? <View style={styles.group}>
         <Text style={styles.title}>逐名入班結果</Text>
@@ -395,13 +425,36 @@ export function HandoverImportControls() {
                     {avatarResolution ? <>
                       <Text style={styles.body}>{avatarResolution === 'restore_deleted' ? '會恢復已刪除的本人頭像，原刪除紀錄保留。'
                         : '會以備份的整張圖片加入或覆蓋目前本人頭像。'}提交後仍須查看批次結果；衝突或未處理不算完成。</Text>
-                      <AppButton label={avatarResolution === 'restore_deleted' ? '恢復已刪除的本人頭像' : '以備份還原本人頭像'} variant="secondary" disabled={writeLocked}
-                        onPress={() => { void controller.restoreAccountAvatar(avatarComparison); }} />
+                      {mixedAccount ? <AppCheckbox label="還原本人頭像" checked={restoreAvatar} disabled={writeLocked}
+                        onChange={checked => chooseAvatar(checked ? avatarComparison : null)} />
+                        : <AppButton label={avatarResolution === 'restore_deleted' ? '恢復已刪除的本人頭像' : '以備份還原本人頭像'} variant="secondary" disabled={writeLocked}
+                          onPress={() => { void controller.restoreAccountAvatar(avatarComparison); }} />}
                     </> : null}
                   </>}
               </View> : null}
             </View> : null}
-            {preview.header.purpose === 'backup' ? <View style={styles.group}>
+            {canComparePreferences ? <View style={styles.group}>
+              <Text style={styles.title}>本人通知偏好</Text>
+              <AppButton label="比較通知偏好" variant="secondary" disabled={writeLocked} onPress={() => { void controller.compareNotificationPreferences(); }} />
+              {preferencesComparison ? <View style={styles.group} accessibilityLiveRegion="polite">
+                {preferencesComparison.error ? <Text style={styles.body}>{preferencesComparison.error}</Text> : !preferencesComparison.value
+                  ? <Text style={styles.body}>正在讀取備份及目前設定。</Text> : <>
+                    <Text style={styles.body}>備份：{describePreferences(preferencesComparison.value.backup)}</Text>
+                    {preferencesComparison.value.state === 'unchanged' ? <Text style={styles.body}>目前設定與備份相同。</Text> : <>
+                      <Text style={styles.body}>目前：{describePreferences(preferencesComparison.value.current)}</Text>
+                      {mixedAccount ? <AppCheckbox label="還原通知偏好" checked={!!restorePreferences} disabled={writeLocked}
+                        onChange={checked => choosePreferences(checked ? preferencesComparison : null)} />
+                        : <AppButton label="以備份還原通知偏好" disabled={writeLocked}
+                          onPress={() => { void controller.restoreAccountParts({ preferences: preferencesComparison }); }} />}
+                    </>}
+                  </>}
+              </View> : null}
+            </View> : null}
+            {mixedAccount ? <AppButton label="還原已選帳戶資料" disabled={writeLocked || !restoreAvatar && !restorePreferences}
+              onPress={() => { void controller.restoreAccountParts({ ...(restoreAvatar ? { avatar: chosenAvatar } : {}),
+                ...(restorePreferences ? { preferences: chosenPreferences } : {}) }); }} /> : null}
+            {!preview.children.length && !canCompareAvatar && !canComparePreferences ? <Text style={styles.body}>此包只含帳戶資料，請用匯出時的帳戶開啟並核對服務是否支援還原。</Text> : null}
+            {preview.header.purpose === 'backup' && preview.children.length > 0 ? <View style={styles.group}>
               <Text style={styles.title}>比較原有資料</Text>
               <Text style={styles.body}>{originalModules.length ? `比較此帳戶原孩子已開放的${originalModules.map(module => originalLabels[module]).join('、')}。`
                 : '此服務目前未開放原有資料比較。'}每次只讀一頁狀態，比較本身沒有還原或改寫任何資料；勾選後可另行提交原項還原，Server 會核實本人備份證明及目前版本。</Text>
@@ -411,6 +464,10 @@ export function HandoverImportControls() {
               {comparisonModule === 'memory' && comparisonModules.includes('memory') ? <Text style={styles.body}>{state.originalMemoryResourcesEnabled
                 ? '可比較及還原私人交代、記憶事實和待答主題；原資料來源、確認者及確認時間會保留，候選事實仍須確認，已結束主題不會重新開啟。只有核實原刪除紀錄的已刪項目才可恢復，恢復時建立新項並保留備份來源；再次比較會連回已恢復的項目。摘要尚未開放原件還原。'
                 : '只比較及還原私人交代；其他記憶、議題及摘要尚未開放原件還原。可選目前交代，或有刪除紀錄的已刪項目。恢復已刪交代會建立新項並保留來源；再次比較會連回已恢復的項目。'}</Text> : null}
+              {comparisonModule === 'attachments' && comparisonModules.includes('attachments') ? <Text style={styles.body}>{state.originalAttachmentResourcesEnabled
+                ? '可比較照片、錄音、檔案及孩子頭像。照片、錄音與檔案只可恢復已核實刪除的原件；恢復時建立新項，保留原刪除紀錄及備份來源。已保存的語音轉錄會一併保留，不會重新轉錄。'
+                : '此服務只開放孩子頭像原件還原。'}</Text> : null}
+              {comparisonModule === 'growth' && comparisonModules.includes('growth') ? <Text style={styles.body}>可比較成長事項與主題停用設定，只還原已核實的同一原件及目前版本。已有處理結果的事項、停用設定及已失效的來源或連結會保留目前狀態；舊接受請求、待辦建立及通知不會重播。</Text> : null}
               {comparisonChildren.length && supportedComparisonModules.length ? <>
                 <AppSelect label="比較原有資料的孩子" value={comparisonChild} disabled={writeLocked}
                   options={[{value:'',label:'請選擇原孩子'},...comparisonChildren.map(child => ({value:child.id,label:child.displayName}))]}
@@ -418,7 +475,7 @@ export function HandoverImportControls() {
                 {comparisonModules.length ? <AppSelect label="比較資料類別" value={comparisonModules.includes(comparisonModule) ? comparisonModule : ''} disabled={writeLocked}
                   options={comparisonModules.map(module => ({value:module,label:originalLabels[module]}))}
                   onChange={value => {const parsed=originalBackupModuleSchema.safeParse(value);if (parsed.success) {controller.clearComparison();setComparisonModule(parsed.data);}}} />
-                  : <Text style={styles.body}>{comparisonChild ? '此孩子的備份沒有可比較的孩子頭像或已開放資料。' : '請先選擇要比較的原孩子。'}</Text>}
+                  : <Text style={styles.body}>{comparisonChild ? `此孩子的備份沒有可比較的${originalLabels.attachments}或已開放資料。` : '請先選擇要比較的原孩子。'}</Text>}
                 <AppButton label="比較原有資料" variant="secondary" disabled={writeLocked || !comparisonChildren.some(child => child.id === comparisonChild) || !comparisonModules.includes(comparisonModule)}
                   onPress={() => {void controller.compareOriginal(comparisonChild,comparisonModule);}} />
                 {comparison ? <View style={styles.group} accessibilityLiveRegion="polite">
@@ -426,11 +483,15 @@ export function HandoverImportControls() {
                     <Text style={styles.body}>{originalLabels[comparison.query.module]} · 已讀 {comparison.items.length} 項{comparison.nextCursor ? '，尚有下一頁。' : '，此類別比較已讀完。'}</Text>
                     {!comparison.items.length ? <Text style={styles.body}>此類別沒有可比較的項目。</Text> : null}
                     {comparison.query.module === 'attachments' && !comparisonOverwrite.length && !comparisonRestore.length
-                      ? <Text style={styles.body}>沒有可還原的孩子頭像；備份沒有圖片、與目前相同或未能核實的項目會保留目前資料。</Text> : null}
+                      ? <Text style={styles.body}>沒有可還原的{originalLabels.attachments}；與目前相同或未能核實的項目會保留目前資料。</Text> : null}
                     {comparison.query.module === 'memory' && !comparisonOverwrite.length && !comparisonRestore.length
                       ? <Text style={styles.body}>沒有可還原的{originalLabels.memory}；與備份相同或未能核實的項目會保留目前資料。</Text> : null}
                     {comparison.items.map(item => <View key={originalComparisonItemKey(item)} style={styles.item}>
                       <Text selectable style={styles.body}>{comparisonResourceLabel(item.resourceSection) ? `${comparisonResourceLabel(item.resourceSection)} · ` : ''}{item.id} · {comparisonStates[item.state]}</Text>
+                      {comparison.query.module === 'growth' && item.growth ? <>
+                        <Text style={styles.body}>主題：{handoverGrowthTopicLabels[item.growth.topicId]} · {item.resourceSection === 'growth_attention' ? '事項建立於' : '主題設定更新於'}：{new Date(item.growth.at).toLocaleString('zh-HK', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: hongKongTimeZone })}</Text>
+                        {item.growth.blocked ? <Text style={styles.body}>{growthBlockedLabels[item.growth.blocked]}</Text> : null}
+                      </> : null}
                       {comparison.query.module === 'concerns' && item.targetId && item.id !== item.targetId ? <Text selectable style={styles.body}>原關注：{item.targetId}</Text> : null}
                       <Text style={styles.body}>備份版本 {item.backupVersion} · 目前版本 {item.localVersion ?? '未能確定'}</Text>
                       {item.changedFields.length ? <Text style={styles.body}>有變更的欄位：{comparisonFields(comparison.query.module,item.changedFields,item.resourceSection)}</Text> : null}
@@ -455,7 +516,7 @@ export function HandoverImportControls() {
                 </View> : null}
               </> : <Text style={styles.body}>此包未有目前帳戶可比較的原孩子或資料類別；仍可在下方選擇匯入副本。</Text>}
             </View> : null}
-            <Text style={styles.title}>匯入獨立副本</Text>
+            {preview.children.length > 0 ? <><Text style={styles.title}>匯入獨立副本</Text>
             <Text style={styles.body}>可匯入孩子資料、照護記錄、待辦、記憶、私人來源、文件與準備單、附件、私人聊天歷史、持續關注及成長整理。附件包含可讀的照片、錄音、檔案、孩子頭像及原有語音轉錄；其他已開放模組包含各自歷史。持續關注及成長整理可匯入本人孩子，或目前服務已開放且具有相應模組寫入權的班員。</Text>
             <Text style={styles.body}>請逐位指定接收對象，不會按名字自動配對。預設保留接收對象目前的修改及刪除。</Text>
             <Text style={styles.body}>可選目前開啟的家庭共享孩子，或在下方選班級和學生。</Text>
@@ -520,6 +581,7 @@ export function HandoverImportControls() {
             </View>
             <AppButton label="開始匯入" disabled={writeLocked || !canCreate} loading={state.busy === 'write' && pending?.kind === 'create'}
               onPress={() => { void create(); }} />
+            </> : null}
           </>}
           <AppButton label="讀取最新上載狀態" variant="quiet" disabled={writeLocked} onPress={() => { void controller.openUpload(upload.id); }} />
           {upload.state !== 'cancelled' && upload.state !== 'expired' ? <>

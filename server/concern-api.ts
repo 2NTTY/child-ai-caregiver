@@ -19,7 +19,10 @@ export async function handleConcernRequest(request: Request, userId: string | nu
   try {
     const childId = match[1].toLowerCase(), id = match[2]?.toLowerCase();
     if (request.method === "GET" && !id) {
-      const page = await store.list(userId, childId);
+      const url = new URL(request.url), limitParam = url.searchParams.get("limit"), cursor = url.searchParams.get("cursor");
+      const limit = limitParam !== null ? Number.parseInt(limitParam, 10) : undefined;
+      const options = { ...(Number.isInteger(limit) && (limit as number) > 0 ? { limit } : {}), ...(cursor ? { cursor } : {}) };
+      const page = await store.list(userId, childId, Object.keys(options).length > 0 ? options : undefined);
       return page && await isCurrentUser(userId) ? jsonResponse({ page }) : apiError("not_found", "沒有可讀取的資料。", 404);
     }
     if (request.method !== "POST") return apiError("method_not_allowed", "不支援此操作。", 405);

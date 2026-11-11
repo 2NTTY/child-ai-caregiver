@@ -32,7 +32,8 @@ export type GrowthConcern = {
   followUp?: { id: string; at: string; state: "pending" | "queued" | "completed" | "stopped" | "unknown" | "cancelled"; runId: string | null } | null;
   measurement?: {label: string; points: {id: string; at: string; value: string; unit: string; sourceRecordId: string}[]};
 };
-export type GrowthConcernProjection = {state: "ready" | "loading" | "error" | "unavailable"; items: GrowthConcern[]; label: string};
+export type GrowthConcernProjection = {state: "ready" | "loading" | "error" | "unavailable"; items: GrowthConcern[]; label: string;
+  hasMore?: boolean; nextCursor?: string | null; pageError?: string};
 // Optional read-only archive projection. Generation and export need their own formal ports.
 // Source records remain owned by their existing domains; an archive is not a confirmed fact.
 export type GrowthArchiveSource = {
@@ -90,6 +91,7 @@ export type GrowthViewModel = {
   lastConcernChange?: GrowthConcernChange | null;
 };
 export type GrowthActions = {
+  loadMoreConcerns?(): void;
   discardLocalDraft?(key: string): void;
   refresh():void;markDirty(key:string):void;askDiscard():void;discardDrafts():void;setOriginalConsent(value:boolean):void;retryOriginal():void;
   decide(item:GrowthAttention,input:GrowthDecision):void;updateTopic(topic:GrowthTopic,input:GrowthTopicDecision):void;

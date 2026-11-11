@@ -6,6 +6,7 @@ import { HandoverOwner } from '../src/production/HandoverOwner.ts';
 import * as handoverOwner from '../src/production/HandoverOwner.ts';
 import * as classExport from '../src/production/handover-class-export.ts';
 import * as handover from '../../src/shared/handover.ts';
+import * as family from '../../src/shared/family.ts';
 import { createHandoverApi } from '../../src/client/handover-api.ts';
 
 test('account avatar backup uses the observed own version with no children and clears consent across sources', async () => {
@@ -14,7 +15,7 @@ test('account avatar backup uses the observed own version with no children and c
   const api = createHandoverApi('https://example.test', async (url, init) => {
     requests.push(init);
     assert.equal(new Headers(init.headers).get('x-handover-account-backup'), '1');
-    if (url.endsWith('/capabilities')) return Response.json({ classModules: ['care'], ...(advertised ? { accountAvatarBackup: true } : {}) });
+    if (url.endsWith('/capabilities')) return Response.json({ classModules: ['care'], notificationPreferencesBackup: true, ...(advertised ? { accountAvatarBackup: true } : {}) });
     const command = JSON.parse(init.body); commands.push(command);
     return Response.json({ id: command.opId, version: 1, purpose: command.purpose, selection: command.selection, state: 'queued',
       createdAt: '2026-11-05T00:00:00Z', expiresAt: '2026-11-06T00:00:00Z', bytes: null, error: null });
@@ -24,21 +25,25 @@ test('account avatar backup uses the observed own version with no children and c
   assert.equal(controller.getSnapshot().accountAvatarBackup, true);
   const avatar = { key: 'owner:1', avatar: { target: { kind: 'self' }, version: 3, asset: { id: 'self-image' }, updatedAt: '2026-10-01T00:00:00Z' }, busy: false, unknown: false };
   const lane = { subscribe() {}, getSnapshot: () => avatar };
-  const production = { owner: { handoverOwner: controller, avatarOwner: { self: lane } }, userId: 'owner', identityKey: 'owner:1',
+  const production = { owner: { handoverOwner: controller, avatarOwner: { self: lane }, getSnapshot: () => ({ identityKey: 'owner:1', sessionGeneration: 1 }) }, userId: 'owner', identityKey: 'owner:1',
     scopeKey: 'scope:1', online: true, recordsState: { children: [] }, account: { gate: 'ready', deletion: { phase: 'idle' } } };
+  const preferences = { scopeKey: JSON.stringify(['owner:1', 1]), preferences: handover.handoverNotificationPreferencesSchema.parse(family.DEFAULT_NOTIFICATION_PREFERENCES),
+    fresh: true, online: true, busy: false, original: null, refresh() {} };
   const require = createRequire(import.meta.url), ts = require('typescript');
   let instance = { cursor: 0, slots: [] };
   const jsx = (type, props, key) => ({ type, props, key });
   const hooks = { useState(initial) { const index = instance.cursor++; if (!(index in instance.slots)) instance.slots[index] = initial;
     return [instance.slots[index], next => { instance.slots[index] = typeof next === 'function' ? next(instance.slots[index]) : next; }]; },
+    useRef(initial) { const index = instance.cursor++; if (!(index in instance.slots)) instance.slots[index] = { current: initial }; return instance.slots[index]; },
     useEffect() {}, useLayoutEffect() {}, useSyncExternalStore: (_subscribe, get) => get() };
   const resolve = name => name === 'react' ? hooks : name === 'react/jsx-runtime' ? { jsx, jsxs: jsx }
     : name === 'react-native' ? { View: 'View', StyleSheet: { create: value => value }, Platform: { OS: 'web' }, AppState: { currentState: 'active' } }
     : name === 'react-native-paper' ? { Text: 'Text' } : name.endsWith('/ProductionProvider') ? { useProduction: () => production }
+    : name.endsWith('/SettingsDomains') ? { useProductionSettingsDomains: () => ({ preferences }) }
     : name.endsWith('/HandoverOwner') ? handoverOwner
     : name.endsWith('/useProductionSharing') ? { useProductionSharing: () => ({ controller: {}, state: { identityKey: null, selected: null,
       shares: { items: [] }, spaces: { items: [] }, teacherClasses: { items: [] } } }) }
-    : name.endsWith('/handover-class-export') ? classExport : name.endsWith('/handover') ? handover
+    : name.endsWith('/handover-class-export') ? classExport : name.endsWith('/handover') ? handover : name.endsWith('/family') ? family
     : name.endsWith('/file-export') ? { useFileExportAvailable: () => true } : name.endsWith('/date-time') ? { hongKongTimeZone: 'Asia/Hong_Kong' }
     : name.endsWith('/theme') ? { colors: {}, readingType: {}, spacing: {} } : name === 'luxon' ? require(name)
     : new Proxy({}, { get: (_target, key) => String(key) });
@@ -73,5 +78,15 @@ test('account avatar backup uses the observed own version with no children and c
   assert.deepEqual(commands[0].selection.childIds, []); assert.deepEqual(commands[0].selection.modules, []);
   assert.deepEqual(commands[0].selection.accountAvatar, { version: 4 }); assert.equal(commands[0].purpose, 'backup');
   assert.equal(commands[0].source, undefined); render(); assert.match(text(instance.tree), /本人頭像/);
+  control('選擇要匯出的資料').props.onPress(); render(); control('本人備份').props.onPress(); render();
+  assert.equal(control('通知偏好').props.disabled, false); assert.equal(control('建立資料包').props.disabled, true);
+  control('通知偏好').props.onChange(true); render();
+  assert.match(text(instance.tree), /目前通知偏好.*版本 0/);
+  assert.equal(control('本人頭像').props.checked, false); assert.equal(control('建立資料包').props.disabled, false);
+  control('建立資料包').props.onPress(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(commands.length, 2);
+  assert.deepEqual(commands[1].selection, { childIds: [], modules: [], period: null, notificationPreferences: { version: 0 } });
+  assert.equal(commands[1].purpose, 'backup'); assert.equal(commands[1].source, undefined);
+  assert.ok(requests.some(request => new Headers(request.headers).get('x-handover-account-features')?.includes('notification-preferences')));
   assert.ok(requests.length >= 3);
 });

@@ -25,7 +25,7 @@ export class ConcernApiError extends Error {
 }
 export const requiresFreshConcernConfirmation = (error: ConcernApiError) => error.status >= 400 && error.status < 500;
 export interface ConcernsApi {
-  getPage(childId: string, signal: AbortSignal, userId: string): Promise<ConcernPage>;
+  getPage(childId: string, signal: AbortSignal, userId: string, options?: { limit?: number; cursor?: string | null }): Promise<ConcernPage>;
   change(childId: string, id: string, input: ConcernChange, signal: AbortSignal, userId: string): Promise<Concern>;
   create(childId: string, input: ConcernValues, signal: AbortSignal, userId: string): Promise<Concern>;
 }
@@ -38,7 +38,8 @@ const itemSchema = z.object({ id: uuid, childId: uuid, title: z.string().min(1).
   status: z.enum(["following", "closed"]), version, createdAt: timestamp, updatedAt: timestamp, archivedAt: timestamp.nullable(),
   statusBeforeArchive: z.literal("following").optional(), attentionIds: z.array(uuid).max(200), events: z.array(eventSchema).max(CONCERN_STORED_EVENT_LIMIT), historyComplete: z.literal(true),
   followUp: z.object({ id: uuid, at: timestamp, state: z.enum(["pending", "queued", "completed", "stopped", "unknown", "cancelled"]), runId: uuid.nullable() }).strict().nullable() }).strict();
-const pageSchema = z.object({ authorityVersion: z.string().min(1).max(100), items: z.array(itemSchema).max(200), canManage: z.boolean() }).strict();
+const pageSchema = z.object({ authorityVersion: z.string().min(1).max(100), items: z.array(itemSchema).max(200), canManage: z.boolean(),
+  hasMore: z.boolean().optional(), nextCursor: z.string().nullable().optional() }).strict();
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 const unique = (values: string[]) => new Set(values).size === values.length;
 function checkedItem(value: unknown, childId: string, id?: string, status = 0): Concern {
@@ -115,11 +116,19 @@ export function createConcernsApi(baseUrl = "", fetcher: typeof fetch = fetch, s
     }
   }
   return {
-    async getPage(childId, signal, userId) {
+    async getPage(childId, signal, userId, options) {
       scope(childId, userId);
       try {
         let status = 0;
-        const value = await request(path(childId), signal, userId, undefined, value => { status = value; }), parsed = pageSchema.safeParse(object(value) ? value.page : null);
+        let requestPath = path(childId);
+        if (options) {
+          const params = new URLSearchParams();
+          if (typeof options.limit === "number") params.set("limit", String(options.limit));
+          if (typeof options.cursor === "string") params.set("cursor", options.cursor);
+          const q = params.toString();
+          if (q) requestPath += "?" + q;
+        }
+        const value = await request(requestPath, signal, userId, undefined, value => { status = value; }), parsed = pageSchema.safeParse(object(value) ? value.page : null);
         if (!parsed.success) throw new ConcernApiError(0, null, { category: "schema", status, code: null });
         if (!unique(parsed.data.items.map(item => item.id))) throw new ConcernApiError(0, null, { category: "duplicates", status, code: null });
         for (const item of parsed.data.items) checkedItem(item, childId, undefined, status);

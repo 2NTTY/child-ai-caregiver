@@ -1,4 +1,5 @@
 import { GROWTH_KNOWLEDGE_NOTICES } from "../../../../src/shared/growth";
+import { GrowthConcernPagination } from "./GrowthConcernPagination";
 import { useContainerWidth } from "../useContainerWidth";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { ReadStateNotice } from "../ReadStateNotice";
@@ -98,12 +99,13 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPre
                   onConfirm={() => actions.archiveConcern(concern.id, concern.version, page.authorityVersion)} /> : null}
               </GrowthConcernActions>
               {concern ? <GrowthConcernTimeline concern={concern} page={page} onRecord={onRecord} onTask={onTask} />
-                : page.concerns?.state === "ready" && model.load !== "error" ? model.online ? <EmptyListCard title="暫無持續關注" detail="可以先與助手討論想留意的成長近況。" testID="growth-concerns-empty" /> : null : <View style={s.archiveEmpty} testID="growth-concerns-unavailable">
+                : page.concerns?.state === "ready" && model.load !== "error" ? model.online ? <EmptyListCard title={page.concerns.hasMore ? "已載入內容沒有持續關注" : "暫無持續關注"} detail={page.concerns.hasMore ? "請載入更多關注繼續查看。" : "可以先與助手討論想留意的成長近況。"} testID="growth-concerns-empty" /> : null : <View style={s.archiveEmpty} testID="growth-concerns-unavailable">
                   <Text accessibilityRole="header" style={s.concernTitle}>{model.load === "error" || page.concerns?.state === "error" ? "關注歷程未能讀取" : page.concerns?.state === "loading" ? "正在讀取關注歷程" : "關注歷程尚未接通"}</Text>
                 </View>}
             </BackgroundSurface>
           </View>
         </> : !showLoading && model.access !== "lost" && model.load !== "error" ? <BackgroundSurface padded style={s.archiveEmpty}><Text style={s.body}>目前未能取得關注資料。</Text></BackgroundSurface> : null}
+        <GrowthConcernPagination model={model} actions={actions} />
         {previewTools}
         </> : null}
       </AppTabPanel>

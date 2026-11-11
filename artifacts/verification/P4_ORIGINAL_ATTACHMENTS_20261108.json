@@ -1,0 +1,42 @@
+{
+  "package": "P4-HANDOVER01 original photos, recordings and files",
+  "pullRequests": { "server": 515, "sharedForm": 516 },
+  "masterAfterForm": "75f266f00c1e0736c3affa5810dd5843aaeed22e",
+  "release": {
+    "tag": "p4-attachments-02e6c785",
+    "base": "2be8595117edb08e9b55b657d5ceffc5f0bdbd06",
+    "tree": "02e6c785ebb089a0a5e8491fbd100f2fc9e2d680",
+    "serverCommit": "6fc691fb565332638c9ce3bfaf84631fc4d42060",
+    "formCommit": "c9a99ceb7aae750ef79ab2b7baca985b3c78def2",
+    "integration": "Applied the two feature changes to the observed production base. The restore codec uses the new authenticated retired-epoch check alongside the production decoder; unrelated private-summary code from master is excluded.",
+    "apiArchiveSha256": "db212a77327fdac707234e5b82d6bc6f5faa992dad2b18b401549ca6591797ef",
+    "webArchiveSha256": "c28e8d311856317889fa81eea6a2c0369018bfb40e94e0561d68044175432668",
+    "apiWorkerImage": "sha256:4a2eafbd316e57db8d7f701ba4b1ae58b80a6788600c8b767e79dfa53e3b8add",
+    "webImage": "sha256:15e89b41b10dc46bf42534b287770b0d8386494e436b2cfec9403f038c27ea10",
+    "liveComposeSha256": "8c7f8c8b516f192ea06c47425617934f6e8ae7f3a17f3c1c0818fc3069abec61",
+    "observedHongKong": "2026-11-08T22:49+08:00",
+    "activityBeforeSwitch": {
+      "activeAgentLeases": 0, "activeTaskOutbox": 0, "unknownTaskOutbox": 0,
+      "activeBackground": 0, "sendingBackground": 0, "unknownBackground": 1, "unresolvedBackground": 0
+    },
+    "public": {
+      "health": "200, storage=firestore",
+      "unauthenticatedImportCapabilities": 401,
+      "adminHtmlSha256": "a5fe9b79b17b3de25e01c6023a4e02c7f8e8a33f528b94539e9c4a384a1d4db8",
+      "bundle": "/_expo/static/js/web/index-8066e80802c2149f0e6afbed0025bc59.js",
+      "bundleSha256": "75a3282788252b94f433b9a39e11436197d0af5f52506c740e66c524abe90c3c"
+    },
+    "vm": {
+      "name": "yuban-p1", "zone": "asia-east2-a", "state": "RUNNING",
+      "lastStart": "2026-11-08T14:33:11Z", "automaticStop": "2026-12-08T14:32:58.484Z"
+    },
+    "rollback": "Previous images and Compose configuration retained. After compatible workers begin writing, keep the compatible readers and restore Web independently."
+  },
+  "evidence": [
+    "tests/handover-original-attachments.test.ts plus tests/handover-attachment-pipeline.test.ts passed on the merged server change; server TypeScript passed.",
+    "Signed synthetic backup through native domain services, upload, import worker, comparison and readback covered valid bytes, skip, refusal without completed deletion proof, restored identity, transcript, replay and recovery graph. Original attachment test also passed on the selective release tree.",
+    "The client/owner regression first failed on the missing feature token. tests/handover-import-owner.test.ts then passed 12/12; frontend TypeScript passed. Includes downgrade, mixed sections with overlapping IDs and mapped version-pinned commands.",
+    "The selected production tree produced the Web export with the original public Firebase config. The images passed offline import/contract checks, API/worker signing mount checks and service health. Public HTML and JS hashes matched from outside the VM."
+  ],
+  "limits": "No real user restore, full cloud disaster recovery, model call, notification or new APK. Android uses the shared code when a compatible update is delivered. Complete account backup and the other P4 gates remain open."
+}

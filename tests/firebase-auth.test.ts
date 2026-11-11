@@ -12,6 +12,8 @@ import { createFirebaseAuthPort, FirebaseAuthError, FIREBASE_SESSION_LIFETIME_MS
 import { DeviceSessionError, FirestoreDeviceSessions } from "../server/firestore-device-sessions.ts";
 import { createStorageCipher } from "../server/storage-crypto.ts";
 import { serialFirestoreFixture } from "./helpers/firestore-session-memory.ts";
+import { createFirestoreAuthority } from "../server/firestore-authority.ts";
+import { createHash, randomUUID } from "node:crypto";
 
 const PUBLIC_ORIGIN = "https://synthetic.example.test";
 const nativeError = (code: string) => Object.assign(new Error("Synthetic native failure"), { code });
@@ -69,6 +71,7 @@ function fixture() {
     },
   };
   const sessions = {
+    assertActiveIn: ledger.assertActiveIn.bind(ledger),
     async issue(input: Parameters<typeof ledger.issue>[0]) {
       if (issueUnavailable) throw new DeviceSessionError(503, "device_sessions_unavailable"); await ledger.issue(input);
     },
@@ -85,6 +88,8 @@ function fixture() {
     async assertSessionAdmission(uid: string, currentIdentity?: { email: string; emailVerified: boolean }) {
       const error = lifecycleFailures.get("assertSessionAdmission"); if (error) throw error; admissionChecks.push(uid);
       admissionIdentities.push({ userId: uid, currentIdentity: currentIdentity ? { ...currentIdentity } : null });
+      return { password: 'password', 'google.com': createHash('sha256').update('private-google-id').digest('hex'),
+        'apple.com': createHash('sha256').update('private-apple-id').digest('hex') };
     },
   };
   const options = { auth: admin, sessions, lifecycle, publicOrigin: PUBLIC_ORIGIN, serverClock: () => now };
@@ -98,7 +103,7 @@ function fixture() {
   const get = (cookie?: string) => port.handler(new Request(PUBLIC_ORIGIN + "/api/auth/get-session",
     { headers: cookie ? { Cookie: cookie } : {} }));
   const exchange = (value = firstToken, cookie?: string, expected?: string) => post("/api/auth/session", { idToken: value }, cookie, expected);
-  return { port, options, users, cookies, idTokens, firstToken, token, userId, secondUserId, admissions, admissionChecks, admissionIdentities, calls, failures,
+  return { port, options, database: firestore.database, users, cookies, idTokens, firstToken, token, userId, secondUserId, admissions, admissionChecks, admissionIdentities, calls, failures,
     lifecycleFailures, records: firestore.records, post, get, exchange, now: () => now, setNow: (value: number) => { now = value; },
     failIssue: (value = true) => { issueUnavailable = value; }, failLedger: (value = true) => { ledgerUnavailable = value; } };
 }
@@ -114,6 +119,7 @@ test("provider methods use current Firebase identity and the same revocable devi
     { providerId: 'google.com', uid: 'duplicate' },
   ] as UserRecord['providerData'] });
   f.idTokens.get(f.firstToken)!.firebase.sign_in_provider = 'google.com';
+  f.idTokens.get(f.firstToken)!.firebase.identities['google.com'] = ['private-google-id'];
   const cookie = cookieOf(await f.exchange());
   const read = (expected = f.userId, credential = cookie) => f.port.handler(new Request(PUBLIC_ORIGIN + '/api/auth/providers', {
     headers: { Cookie: credential, 'x-expected-user-id': expected },
@@ -124,9 +130,42 @@ test("provider methods use current Firebase identity and the same revocable devi
   assert.deepEqual(await methods.json(), { userId: f.userId, providers: ['google.com', 'apple.com'], currentProvider: 'google.com' });
   assert.equal((await read(f.secondUserId)).status, 409);
   Object.assign(f.users.get(f.userId)!, { providerData: [{ providerId: 'apple.com', uid: 'private-apple-id' }] as UserRecord['providerData'] });
-  assert.deepEqual(await (await read()).json(), { userId: f.userId, providers: ['apple.com'], currentProvider: null });
+  assert.equal((await read()).status, 401);
   await f.post('/api/auth/sign-out', {}, cookie, f.userId);
   assert.equal((await read()).status, 401);
+});
+
+test("Apple relay admission through Web and native exchange requires a fresh verified original session and explicit provider consent", async () => {
+  const f = fixture(), user = f.users.get(f.userId)!;
+  const authority = createFirestoreAuthority({ database: f.database, cipher: createStorageCipher(Buffer.alloc(32, 86)),
+    projectId: 'synthetic-server-project', namespace: 'firebase_relay_invite', serverClock: f.now });
+  await authority.initializeControl({ enabled: true, generation: randomUUID() });
+  await authority.issueInvitation({ email: user.email!, expiresAt: new Date(f.now() + 86_400_000).toISOString(), operationId: randomUUID() });
+  const api = createFirebaseAuthPort({ ...f.options, lifecycle: authority });
+  function exchange(token: string, original?: string, link = false, native = false) {
+    return api.handler(new Request(PUBLIC_ORIGIN + (native ? '/api/auth/native-session' : '/api/auth/session'), { method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-expected-user-id': f.userId, ...(native ? {} : { Origin: PUBLIC_ORIGIN }),
+        ...(original ? native ? { Authorization: 'Bearer ' + original } : { Cookie: original } : {}) },
+      body: JSON.stringify({ idToken: token, ...(link ? { linkProvider: 'apple.com' } : {}) }) }));
+  }
+  const passwordCookie = cookieOf(await exchange(f.firstToken));
+  const apple = { providerId: 'apple.com', uid: 'synthetic-apple-sub', email: 'opaque@privaterelay.appleid.com' };
+  Object.assign(user, { providerData: [{ providerId: 'password', uid: user.email }, apple] });
+  const providerToken = f.token(f.userId, undefined, true);
+  Object.assign(f.idTokens.get(providerToken)!.firebase, { sign_in_provider: 'apple.com', identities: { 'apple.com': [apple.uid] } });
+  await responseCode(await exchange(providerToken), 403, 'auth_account_link_required');
+  await responseCode(await exchange(providerToken, undefined, true), 401, 'recent_reauthentication_required');
+  await responseCode(await exchange(providerToken, passwordCookie, true), 403, 'email_not_verified');
+  const verified = await exchange(f.token(f.userId, undefined, true), undefined, false, true);
+  assert.equal(verified.status, 200);
+  const credential = (await verified.json()).credential;
+  const merelyListed = f.token(f.userId, undefined, true);
+  f.idTokens.get(merelyListed)!.firebase.identities['apple.com'] = [apple.uid];
+  await responseCode(await exchange(merelyListed, credential, true, true), 403, 'auth_provider_proof_required');
+  assert.equal((await exchange(providerToken, credential, true, true)).status, 200);
+  const fresh = await exchange(providerToken);
+  assert.equal(fresh.status, 200);
+  assert.equal((await fresh.json()).user.id, f.userId);
 });
 async function responseCode(response: Response, status: number, code: string) {
   assert.equal(response.status, status); assert.deepEqual(await response.json(), { code });

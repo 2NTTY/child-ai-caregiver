@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import type { AvatarPolicy } from '../src/shared/avatars.ts';
 import type { ImportProvenance } from '../src/shared/import-provenance.ts';
 import type { SharedSelection } from '../src/shared/sharing.ts';
+import { isOriginalAttachment } from '../src/shared/handover-imports.ts';
 import { avatarTransferSchema, fileTransferSchema, photoTransferSchema, voiceTransferSchema,
   type AttachmentSection, type HandoverAttachmentContent, type HandoverImportRow } from './handover-import.ts';
 import { domainParse, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
@@ -88,7 +89,7 @@ export function createHandoverAttachments(ports: HandoverAttachmentPorts = {}) {
       const id = firestoreBackgroundReference({ id: firestoreDomainHash(['handover-asset',
         b.scope.ownerUserId, b.scope.workspaceId, b.scope.childId, stage.batchId, stage.operationId]) });
       const section = row.section, userId = b.actorUserId, childId = b.scope.childId;
-      if (restoreOriginal && (section !== 'child_avatar' || selection || b.sharedAccess || row.childId !== childId
+      if (restoreOriginal && (section !== 'child_avatar' && !isOriginalAttachment(section) || selection || b.sharedAccess || row.childId !== childId
         || row.source.accountId !== userId || b.scope.ownerUserId !== userId)) domainReject('invalid_import_target', 403);
       const finish = (value: { version: number }, prepared: { changeSeq: string | null; commit(): void }) => ({
         kind: 'publication' as const, resource: { id: section === 'child_avatar' ? childId : id, version: value.version }, ...prepared,

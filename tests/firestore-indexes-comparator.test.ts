@@ -12,6 +12,14 @@ const shape = runInNewContext(source.slice(start, end) + '\nshape;');
 const field = (fieldPath: string, order = 'ASCENDING') => ({ fieldPath, order });
 const index = (fields: Array<{ fieldPath: string; order?: string; arrayConfig?: string }>) => ({ queryScope: 'COLLECTION', fields });
 
+test('growth report duplicate queries have the complete scoped ordered index', () => {
+  const config = JSON.parse(readFileSync(new URL('../deploy/firebase/firestore.indexes.json', import.meta.url), 'utf8'));
+  const fields = ['workspaceTag', 'epochTag', 'userTag', 'childTag', 'status', 'kind'].map(name => field(name));
+  fields.push(field('createdAt', 'DESCENDING'), field('documentId', 'DESCENDING'));
+  assert.ok(config.indexes.some((entry: { collectionGroup: string }) => entry.collectionGroup === 'yuban_authority_documents'
+    && shape(entry) === shape(index(fields))), 'Growth report duplicate scan needs a deployable composite index');
+});
+
 test('explicit document-id direction distinguishes bounded ascending pages from descending heads', () => {
   for (const scope of [['workspaceTag', 'epochTag', 'userTag', 'childTag'], ['workspaceTag', 'userTag', 'childTag']]) {
     const fields = scope.map(name => field(name));
