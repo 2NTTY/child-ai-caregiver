@@ -3,6 +3,7 @@ import { AGENT_RUN_LIMITS } from '../shared/agent-run-limits.ts';
 import { resolveApiBaseUrl } from '../config/api-base-url.ts';
 import { mixedChatCreateSchema, mixedChatAppendSchema, mixedChatRoomSchema, mixedChatMessageSchema } from '../shared/mixed-chat.ts';
 import { productAgentResultSchema } from '../shared/product-agent-result.ts';
+import { mixedTaskBatchSchema, mixedBatchControlSchema, mixedBatchAdvanceSchema } from '../shared/mixed-task-batch.ts';
 
 export class MixedChatApiError extends Error {
   readonly status: number; readonly code: string;
@@ -14,6 +15,7 @@ const cursorSchema = z.string().min(1).max(8192).nullable();
 const roomPage = z.strictObject({ rooms: z.array(mixedChatRoomSchema).max(3), nextCursor: cursorSchema });
 const detailReply = z.strictObject({ room: mixedChatRoomSchema, messages: z.array(mixedChatMessageSchema).max(16), nextCursor: cursorSchema });
 const resultReply = z.strictObject({ result: productAgentResultSchema.nullable() });
+const batchReply = z.strictObject({ batch: mixedTaskBatchSchema.nullable() });
 function checked<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value); if (!result.success) throw new MixedChatApiError(0, 'mixed_chat_response_invalid'); return result.data;
 }
@@ -76,6 +78,21 @@ export function createMixedChatApi(baseUrl = '', fetcher: typeof fetch = fetch) 
     async reply(roomId: string, messageId: string, method: 'GET' | 'POST' | 'DELETE', userId: string, signal: AbortSignal) {
       const timeout = method === 'POST' ? (AGENT_RUN_LIMITS.deadlineSeconds.max + 30) * 1000 : undefined;
       return checked(resultReply, await request('/' + identifier(roomId) + '/messages/' + identifier(messageId) + '/reply', method, userId, signal, undefined, timeout)).result;
+    },
+    async batch(roomId: string, messageId: string, userId: string, signal: AbortSignal) {
+      return checked(batchReply, await request('/' + identifier(roomId) + '/messages/' + identifier(messageId) + '/task-batch', 'GET', userId, signal)).batch;
+    },
+    async controlBatch(roomId: string, messageId: string, input: z.infer<typeof mixedBatchControlSchema>, userId: string, signal: AbortSignal) {
+      const body = checked(mixedBatchControlSchema, input);
+      const batch = checked(batchReply, await request('/' + identifier(roomId) + '/messages/' + identifier(messageId) + '/task-batch', 'POST', userId, signal, body)).batch;
+      if (!batch || batch.digest !== body.digest) throw new MixedChatApiError(0, 'mixed_chat_response_invalid');
+      return batch;
+    },
+    async advanceBatch(roomId: string, messageId: string, input: z.infer<typeof mixedBatchAdvanceSchema>, userId: string, signal: AbortSignal) {
+      const body = checked(mixedBatchAdvanceSchema, input);
+      const batch = checked(batchReply, await request('/' + identifier(roomId) + '/messages/' + identifier(messageId) + '/task-batch/advance', 'POST', userId, signal, body)).batch;
+      if (!batch || batch.digest !== body.digest) throw new MixedChatApiError(0, 'mixed_chat_response_invalid');
+      return batch;
     },
   };
 }

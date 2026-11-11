@@ -4,6 +4,117 @@ import { randomUUID } from 'node:crypto';
 import { createMixedChatApi } from '../../../src/client/mixed-chat-api.ts';
 import { MixedChatController } from './MixedChatController.ts';
 
+test('mixed task batches confirm once, recover original bounded progress and stop without applying stale results', async () => {
+  const childIds = Array.from({ length: 12 }, () => randomUUID()), roomId = randomUUID(), messageId = randomUUID(), runId = randomUUID();
+  const at = '2026-11-11T12:00:00.000Z', digest = 'c'.repeat(64);
+  const room = { id: roomId, version: 2, scope: { kind: 'personal' }, childIds, createdAt: at, updatedAt: at };
+  const message = { id: messageId, roomId, version: 2, role: 'user', text: 'Prepare a task for these children', createdAt: at };
+  let result = { runId, status: 'completed', stopReason: null, text: 'A preview is ready', citations: [], retrievalMode: 'not_used',
+    tools: [], counts: { modelCalls: 1, toolCalls: 1, queryEmbeddings: 0 }, proposals: [], provenance: null };
+  let batch = { id: randomUUID(), runId, digest, state: 'awaiting_confirmation',
+    action: { kind: 'create', title: 'Pack water', details: 'For the trip', type: 'ordinary', dueAt: '2028-03-01T10:00:00+08:00', timeZone: 'Asia/Hong_Kong' },
+    items: childIds.map((childId, index) => ({ childId, childName: `Child ${index + 1}`, taskId: null, title: 'Pack water', expectedVersion: null,
+      operationId: randomUUID(), status: 'pending', version: null, reason: null })) };
+  let reads = 0, lost = true, hold = false, release;
+  const controls = [], segments = [];
+  const api = createMixedChatApi('https://example.test', async (input, init) => {
+    const path = new URL(input).pathname;
+    assert.equal(new Headers(init.headers).get('x-expected-user-id'), 'parent');
+    assert.equal(init.credentials, 'include'); assert.equal(init.cache, 'no-store');
+    if (path.endsWith('/task-batch/advance')) {
+      const body = JSON.parse(init.body); segments.push(body); assert.equal(body.digest, digest);
+      const items = batch.items.map((item, index) => index >= body.position && index < body.position + 5 && item.status === 'pending'
+        ? { ...item, status: 'completed', taskId: randomUUID(), version: 1 } : item);
+      batch = { ...batch, items, state: items.some(item => item.status === 'pending') ? 'running' : 'completed' };
+      if (lost) { lost = false; throw Error('lost original segment reply'); }
+      const saved = structuredClone(batch);
+      if (hold) return new Promise(resolve => { release = () => resolve(Response.json({ batch: saved })); });
+      return Response.json({ batch });
+    }
+    if (path.endsWith('/task-batch')) {
+      if (init.method === 'GET') { reads++; return Response.json({ batch }); }
+      const body = JSON.parse(init.body); controls.push(body); assert.equal(body.digest, digest);
+      batch = { ...batch, state: body.action === 'confirm' ? 'running' : 'cancelled',
+        items: batch.items.map(item => body.action === 'cancel' && item.status === 'pending' ? { ...item, status: 'cancelled', reason: 'batch_cancelled' } : item) };
+      return Response.json({ batch });
+    }
+    if (path.endsWith('/reply')) return Response.json({ result });
+    return Response.json({ room, messages: [message], nextCursor: null });
+  });
+  const owner = new MixedChatController(api);
+  owner.syncContext('parent', 'parent:session1', true, { kind: 'personal' }, 'owned-children');
+  await owner.openRoom(roomId);
+  assert.equal(reads, 0, 'Ordinary multi-child conversations do not query task batches');
+  assert.equal(typeof owner.readBatch, 'function', 'The shared conversation needs original batch recovery');
+  result = { ...result, tools: [{ name: 'prepare_selected_tasks', status: 'succeeded', reference: batch.id }] };
+  await owner.readReply(messageId);
+  assert.equal(reads, 1); assert.equal(owner.getSnapshot().batches[messageId].state, 'awaiting_confirmation');
+  await owner.confirmBatch(messageId, digest);
+  assert.deepEqual(controls, [{ action: 'confirm', digest }]);
+  assert.deepEqual(segments, [{ position: 0, digest }]);
+  assert.equal(owner.getSnapshot().pending.kind, 'batch');
+  await owner.continueBatch(messageId, digest);
+  assert.equal(segments.length, 1, 'An unknown segment cannot be blindly resent');
+  await owner.checkOriginal();
+  assert.equal(owner.getSnapshot().batches[messageId].items.filter(item => item.status === 'completed').length, 5);
+  hold = true; const continuing = owner.continueBatch(messageId, digest); await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(segments.at(-1), { position: 5, digest });
+  await owner.cancelBatch(messageId, digest);
+  release(); await continuing;
+  assert.equal(owner.getSnapshot().batches[messageId].state, 'cancelled');
+  assert.equal(owner.getSnapshot().batches[messageId].items.filter(item => item.status === 'completed').length, 10);
+  assert.equal(owner.getSnapshot().batches[messageId].items.filter(item => item.status === 'cancelled').length, 2);
+  await owner.openRoom(roomId);
+  assert.equal(owner.getSnapshot().batches[messageId].state, 'cancelled', 'Reopening finds the same original batch and its real receipts');
+  owner.syncContext('different-parent', 'different-parent:session1', true, { kind: 'personal' }, 'other-children');
+  assert.deepEqual(owner.getSnapshot().batches, {}); assert.equal(owner.getSnapshot().pending, null);
+  owner.dispose();
+});
+
+test('personal multi-child conversations need no class, retain original writes and stay isolated from class and identity changes', async () => {
+  const childIds = [randomUUID(), randomUUID()], roomId = randomUUID(), classId = randomUUID();
+  const at = '2026-11-11T12:00:00.000Z';
+  const personal = { id: roomId, version: 1, scope: { kind: 'personal' }, childIds, createdAt: at, updatedAt: at };
+  const classroom = { ...personal, id: randomUUID(), scope: { kind: 'class', spaceId: classId } };
+  const bodies = []; let lost = true, hold = false, release;
+  const api = createMixedChatApi('https://example.test', async (input, init) => {
+    const url = new URL(input);
+    assert.equal(new Headers(init.headers).get('x-expected-user-id'), 'parent');
+    if (init.method === 'POST') {
+      const body = JSON.parse(init.body); bodies.push(body);
+      assert.deepEqual(body.scope, { kind: 'personal' }); assert.deepEqual(body.childIds, childIds);
+      if (lost) { lost = false; throw Error('lost original personal create'); }
+      return Response.json({ room: personal });
+    }
+    if (url.pathname.endsWith(roomId)) {
+      const reply = { room: personal, messages: [], nextCursor: null };
+      if (hold) return new Promise(resolve => { release = () => resolve(Response.json(reply)); });
+      return Response.json(reply);
+    }
+    return Response.json({ rooms: [classroom, personal], nextCursor: null });
+  });
+  const owner = new MixedChatController(api);
+  owner.syncContext('parent', 'parent:session1', true, { kind: 'personal' }, 'owned-children');
+  await owner.loadRooms();
+  assert.deepEqual(owner.getSnapshot().rooms.map(room => room.id), [roomId], 'Personal account queries exclude class rooms');
+  await owner.create(childIds); await owner.create(childIds);
+  assert.equal(bodies.length, 1); assert.equal(owner.getSnapshot().pending.kind, 'create');
+  await owner.checkOriginal(); assert.deepEqual(bodies[1], bodies[0]);
+  assert.equal(owner.getSnapshot().room.id, roomId);
+  hold = true; const stale = owner.openRoom(roomId); await new Promise(resolve => setImmediate(resolve));
+  const scope = { kind: 'class', spaceId: classId, spaceVersion: 1, teacherSpaceVersion: null };
+  owner.syncContext('parent', 'parent:session1', true, scope, 'class-roster'); release(); await stale;
+  assert.equal(owner.getSnapshot().room, null); assert.deepEqual(owner.getSnapshot().messages, []);
+  await owner.loadRooms();
+  assert.deepEqual(owner.getSnapshot().rooms.map(room => room.id), [classroom.id], 'Class queries exclude personal rooms');
+  owner.syncContext('parent', 'parent:session1', true, { kind: 'personal' }, 'owned-children');
+  const staleIdentity = owner.openRoom(roomId); await new Promise(resolve => setImmediate(resolve));
+  owner.syncContext('another-parent', 'another-parent:session1', true, { kind: 'personal' }, 'other-children'); release(); await staleIdentity;
+  assert.equal(owner.getSnapshot().room, null); assert.deepEqual(owner.getSnapshot().rooms, []);
+  assert.deepEqual(owner.getSnapshot().results, {}); assert.equal(owner.getSnapshot().pending, null);
+  owner.dispose();
+});
+
 test('mixed conversations recover original writes, read and stop only original runs, and discard stale identity or class replies', async () => {
   const spaceId = randomUUID(), childId = randomUUID(), roomId = randomUUID(), messageId = randomUUID();
   const at = '2026-11-11T12:00:00.000Z';

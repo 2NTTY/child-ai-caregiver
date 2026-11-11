@@ -1,14 +1,15 @@
 import type { AppIconName } from "../AppIcon";
 import type { HomeDestination } from "../../view-model";
 
-export type AppPath = "/" | `/${HomeDestination}` | "/more" | "/history";
+export type AppPath = "/" | `/${HomeDestination}` | "/more" | "/history" | "/settings?section=children";
 export type NavigationItem = { href: AppPath; label: string; short: string; icon: AppIconName };
-type NavigationKey = "home" | HomeDestination | "more" | "history";
+type NavigationKey = "home" | HomeDestination | "more" | "history" | "personalConversations";
 
 // Shared presentation metadata; destination owners keep navigation and permissions.
 export const navigationItems = {
   home: { href: "/", label: "今日", short: "今日", icon: "home-outline" },
   chat: { href: "/chat", label: "助手", short: "助手", icon: "message-text-outline" },
+  personalConversations: { href: "/settings?section=children", label: "本人多孩對話", short: "本人多孩對話", icon: "message-text-outline" },
   care: { href: "/care", label: "核對", short: "核對", icon: "notebook-outline" },
   photos: { href: "/photos", label: "附件回看", short: "附件", icon: "paperclip" },
   sources: { href: "/sources", label: "私人來源", short: "來源", icon: "link-variant" },
@@ -48,6 +49,7 @@ export const moreNavigationGroups = [
     { key: "profile", detail: "查看及更正孩子的基本資料" },
   ] },
   { title: "助手與家庭", detail: "對話背景、家庭協作與聯絡安排", items: [
+    { key: "personalConversations", detail: "選取本人的多個孩子，與助手一起討論" },
     { key: "memory", detail: "查閱對話脈絡、記憶及來源" },
     { key: "family", detail: "查看家庭成員、角色與分工" },
     { key: "contact", detail: "管理聯絡渠道及授權範圍" },
