@@ -29,7 +29,7 @@ test("runtime metadata uses the resolved run output limit and keeps the gateway 
     } };
     const runtime = createAgentRuntime({ config: defaults, usage,
       provider: { generate: async () => { throw Error("Unresolved provider must not run"); } },
-      resolve: async () => ({ config: selectedConfig, provider, authorize: async () => true,
+      resolve: async () => ({ config: selectedConfig, provider, runLimits: undefined, authorize: async () => true,
         usage: { ...usage, getForUser: async () => { throw Error("Unused usage read"); } },
         model: { generate: async () => { throw Error("Unused model"); } },
         embeddings: { embed: async () => { throw Error("Unused embedding"); } } }),
