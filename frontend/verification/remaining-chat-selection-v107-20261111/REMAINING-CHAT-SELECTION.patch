@@ -1,0 +1,46 @@
+--- a/experiments/workbench-compare/app.mjs
++++ b/experiments/workbench-compare/app.mjs
+@@ -8,13 +8,12 @@
+ const caseForRoute=route=>catalog.routeSupport[route]?.caseKey??'ready';
+ const INITIAL_SURFACES=Object.freeze({tasks:Object.freeze(['tasks-reading-panel']),care:Object.freeze(['care-page-scroll','care-review-tabs-bar']),settings:Object.freeze(['account-settings']),growth:Object.freeze(['growth-scroll','growth-tabs-toolbar']),chat:Object.freeze(['chat-top-toolbar','chat-reading-panel'])});
+ const initialSurfaceIds=(route,version)=>route==='chat'&&!CHAT_CHOICE_VARIANTS.includes(version?.id)?null:INITIAL_SURFACES[route];
+-const chatChoiceLabel=CHAT_CHOICE_VARIANTS.map(id=>catalog.versions.find(version=>version.id===id).label.split(' · ')[0]).join('／');
+ for(const side of sides){
+  const select=get(side+'-version');for(const version of catalog.versions)select.add(new Option(version.label,version.id));select.value=catalog.defaults[side];
+  for(const part of TASK_PARTS)get(side+'-part').add(new Option(part.label,part.id));
+ }
+ for(const [id,label] of Object.entries(PAGE_LABELS)){
+- const option=new Option(label+(catalog.routeSupport[id]?.status==='unavailable'?'（尚未適配）':id==='photos'?'（暫不可挑選）':id==='chat'?`（${chatChoiceLabel} 可挑選）`:''),id);
++ const option=new Option(label+(catalog.routeSupport[id]?.status==='unavailable'?'（尚未適配）':id==='photos'?'（暫不可挑選）':id==='chat'?'（可挑選整頁設計）':''),id);
+  option.disabled=catalog.routeSupport[id]?.status==='unavailable';get('route').add(option);
+ }
+ get('route').value='tasks';get('width').value=window.innerWidth<=700?'390':'1440';
+@@ -61,7 +60,7 @@
+    }
+    if(session.pickArmed && (pageKey(actualRoute)!==session.initialRoute || pageKey(marker.route)!==session.initialRoute))lockPick(session,'頁面與開啟目標不同',`開啟目標：${PAGE_LABELS[session.initialRoute]}；目前頁面：${pageName(actualRoute)}；標記頁面：${pageName(marker.route)}。`);
+   }
+-  // Existing page witnesses include only admitted Harbour/Care Chat. Only the
++  // Existing page witnesses include only explicitly admitted Chat designs. Only the
+   // initial page is armed; subsequent cross-page visits remain permanently locked.
+   const initialPage=observation && session.pickArmed && session.pickDocumentId===marker.documentId && !session.pickLocked && pageKey(observation.route)===session.initialRoute && marker.sequence===session.acceptedSequence && (!initialSurfaceIds(session.initialRoute,session.version)||surfaceReady);
+   rendered=!!initialPage && !!root?.childElementCount && !!text && !/something went wrong|application error|uncaught error|minified react error|對照環境未能安全啟動|SOURCE_UNAVAILABLE/i.test(text) && !/^(?:正在載入[.…。]*|loading[.…。]*)$/i.test(text);
+--- a/experiments/workbench-compare/design-choices.mjs
++++ b/experiments/workbench-compare/design-choices.mjs
+@@ -4,7 +4,7 @@
+ // Fingerprint of the retained catalog, not an adapter/composition acceptance receipt.
+ export const CATALOG_SHA256='c42b5657bb29b029f761c239a21573bc4a07ff03249316195be858f58d7b19e1';
+ // Initial display-only preference scope, not full Chat or model acceptance.
+-export const CHAT_CHOICE_VARIANTS=Object.freeze(['harbour','care']);
++export const CHAT_CHOICE_VARIANTS=Object.freeze(['original','harbour','care','journal','uiux-upgrade']);
+ export const TASK_PARTS=Object.freeze([
+  Object.freeze({id:'header-actions',label:'頁首與操作'}),
+  Object.freeze({id:'filters',label:'分類、搜尋與範圍'}),
+@@ -29,7 +29,7 @@
+  if(!Object.hasOwn(PAGE_LABELS,route) || !paths.includes(actualPath) || !pinned.routes[route] || catalog.routeSupport[route]?.status!=='source-contract-bound-runtime-unverified')return null;
+  const selectedCase=catalog.cases[catalog.routeSupport[route]?.caseKey??'ready'];
+  if(!routeAvailability(observation,actualRoute,selectedCase.routes).available)return null;
+- // Keep Photos and the three unadmitted Chat designs view-only.
++ // Keep Photos view-only and Chat limited to the explicitly admitted pinned designs.
+  if(route==='photos' || (route==='chat' && !CHAT_CHOICE_VARIANTS.includes(pinned.id)))return null;
+  const part=partId==='page'?{id:'page',label:'整個頁面'}:route==='tasks'?TASK_PARTS.find(part=>part.id===partId):null;
+  if(!part)return null;

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
+ <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+ <title>育伴港 · 設計比較與挑選</title><link rel="stylesheet" href="./style.css"><script type="module" src="./app.mjs"></script>
+</head>
+<body>
+<header class="page-header">
+ <div class="heading-row"><div><p class="eyebrow">育伴港 / 設計比較</p><h1>看看不同設計，選你喜歡的。</h1></div><a id="choice-link" href="#choices">我的選擇（0）</a></div>
+ <p class="intro">選兩個版本比較，切換頁面，再留下想沿用的設計。</p>
+ <p class="warning">只使用合成示例，請勿輸入真實家庭資料。</p>
+ <form id="controls">
+  <label>A 版本<select id="left-version"></select></label><label>B 版本<select id="right-version"></select></label><label>頁面<select id="route"></select></label>
+  <button type="button" id="apply" class="primary">開啟比較</button><button type="button" id="swap">左右交換</button>
+ </form>
+ <p id="status" class="quiet" role="status" aria-live="polite">正在準備比較。</p>
+ <div class="view-row"><div class="view-switch" role="group" aria-label="顯示哪一側"><button type="button" id="view-pair" aria-pressed="true">並排比較</button><button type="button" id="view-left" aria-pressed="false" aria-controls="left-panel">看 A</button><button type="button" id="view-right" aria-pressed="false" aria-controls="right-panel">看 B</button></div><span id="view-note" class="quiet">兩側可各自瀏覽不同頁面。</span></div>
+ <details class="secondary-details"><summary>顯示設定、來源限制與舊版入口</summary>
+  <div class="technical-controls"><label>CSS 視口<select id="width"><option value="1440">1440</option><option value="1024">1024</option><option value="390">390</option><option value="320">320</option></select></label><label>顯示尺寸<select id="mode"><option value="fit">縮放至畫面內</option><option value="native">原尺寸，可水平捲動</option></select></label></div>
+  <p>比較頁使用歷史版本畫面，並非已驗證的組合候選。選整頁代表喜歡這個頁面的設計，不表示完整 Original、全局主題或全站功能已驗收。待辦可另選頁首與操作、分類搜尋範圍、日期分組事項列或月曆布局；不會自動轉成 H 宿主的模組候選。</p>
+  <p>照片頁仍有 error9 驗收問題，助手頁也未有可用畫面驗收，兩頁暫不可加入選擇。其他頁的來源標記只核對版本與路由，不是完整渲染、無障礙或原生守衛通過的證明。</p>
+  <p>全站唯讀合成對照。一般頁面使用固定「小晴」ready 案例；登入頁使用 signedout 案例。兩側各持獨立副本，固定日期為 2026-10-25、時區為 Asia/Hong_Kong；跨版本相同資料的完整呈現仍未驗證。情境：<span id="case">ready 合成案例。</span></p>
+  <p>對話只可讀取既有 18 條純文字歷史，不可傳訊或調用模型。照片頁為空相簿，不開啟相簿、相機或上傳。設定頁只讀停用模型、未設密鑰及未連接通知的合成狀態，保存、探測、登出、刪除及匯出不會成功。登入頁只供查看版面、切換模式及空欄驗證；請勿輸入真實電郵或密碼。登入、註冊、重設密碼、驗證電郵、OAuth 及通行密鑰均不可執行。</p>
+  <p>在畫面內切換頁面後，這側仍可瀏覽，但暫不可挑選，返回原頁也不會恢復。若要選新頁面的設計，請在上方選好頁面，再按「開啟比較」。</p>
+  <p>重新開啟比較前會確認丟棄兩側的本地合成操作狀態；已選設計清單會保留。清單只留在這個分頁，重新整理或關閉後不保留。未提供同步捲動。</p>
+  <nav aria-label="既有預覽入口"><a href="/experiments/">各方案獨立預覽</a><a href="/experiments/workbench-trial/" target="_blank" rel="noopener noreferrer">另開舊版待辦組合試用</a></nav>
+ </details>
+</header>
+<main id="panels">
+ <section id="left-panel" class="comparison-panel" aria-labelledby="left-title">
+  <div class="panel-heading"><h2 id="left-title">A</h2><button type="button" id="left-pick" class="primary" disabled>選這個頁面設計</button></div>
+  <p id="left-route" class="page-name">正在載入</p><p id="left-pick-note" class="quiet">核對畫面後即可選擇。</p>
+  <details id="left-parts" class="part-details" hidden><summary>只選其中一部分</summary><div class="part-controls"><label>待辦頁面部分<select id="left-part"></select></label><button type="button" id="left-part-pick" disabled>加入這部分</button></div></details>
+  <div class="viewport"><p id="left-unavailable" class="unavailable" role="status" tabindex="-1">正在核對來源與路由，對照暫不可操作。</p><iframe inert tabindex="-1" aria-hidden="true" title="A 歷史版本對照" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer" allow="camera 'none'; microphone 'none'; geolocation 'none'; clipboard-write 'none'; payment 'none'"></iframe></div>
+  <details class="source-details"><summary>畫面來源</summary><p id="left-source" class="source"></p><p id="left-viewport" class="quiet"></p></details>
+ </section>
+ <section id="right-panel" class="comparison-panel" aria-labelledby="right-title">
+  <div class="panel-heading"><h2 id="right-title">B</h2><button type="button" id="right-pick" class="primary" disabled>選這個頁面設計</button></div>
+  <p id="right-route" class="page-name">正在載入</p><p id="right-pick-note" class="quiet">核對畫面後即可選擇。</p>
+  <details id="right-parts" class="part-details" hidden><summary>只選其中一部分</summary><div class="part-controls"><label>待辦頁面部分<select id="right-part"></select></label><button type="button" id="right-part-pick" disabled>加入這部分</button></div></details>
+  <div class="viewport"><p id="right-unavailable" class="unavailable" role="status" tabindex="-1">正在核對來源與路由，對照暫不可操作。</p><iframe inert tabindex="-1" aria-hidden="true" title="B 歷史版本對照" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer" allow="camera 'none'; microphone 'none'; geolocation 'none'; clipboard-write 'none'; payment 'none'"></iframe></div>
+  <details class="source-details"><summary>畫面來源</summary><p id="right-source" class="source"></p><p id="right-viewport" class="quiet"></p></details>
+ </section>
+</main>
+<section id="choices" class="choices" aria-labelledby="choices-title">
+ <div class="heading-row"><h2 id="choices-title">我的選擇 <span id="choice-count">0</span></h2><button type="button" id="copy-choices" class="primary" disabled>複製選擇清單</button></div>
+ <p>貼回對話後，dot 會按這份選擇沿用設計。網頁不會自動同步。</p>
+ <p id="choice-empty" class="empty">還沒有選擇。看到喜歡的畫面，按「選這個頁面設計」。</p><ol id="choice-list"></ol>
+ <p id="choice-status" class="quiet" role="status" aria-live="polite"></p>
+ <div id="copy-fallback" hidden><label for="copy-text">未能自動複製，請選取以下文字，複製後貼回對話。</label><textarea id="copy-text" readonly rows="10" spellcheck="false"></textarea></div>
+ <p class="quiet">只記錄方案、頁面與部分的設計來源，不包含合成案例內容。重新整理或關閉分頁後不保留。</p>
+</section>
+</body></html>

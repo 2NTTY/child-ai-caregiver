@@ -1,0 +1,331 @@
+{
+  "version": 107,
+  "sitesSource": "c86d128384d3ebbd36a30c83d062858a96ebfbd9",
+  "deploymentStatus": "succeeded",
+  "deploymentVerified": true,
+  "actualQaStatus": "PARTIAL_BLOCKED",
+  "fullVersionAccepted": false,
+  "entryUrl": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/experiments/workbench-compare/",
+  "access": {
+    "audience": "public",
+    "revision": 2,
+    "completePolicyUnchanged": true
+  },
+  "product": {
+    "files": 504,
+    "changedFiles": 2,
+    "unchangedFiles": 502,
+    "canonicalSha256": "60c4f508cf34ce04b1fd87c4bb748d67f821b4bf820da8af3a608c146ac536a4",
+    "fullPublishedCheckoutMatchesCandidate": true,
+    "productRebuilt": false,
+    "sourceCommitBoundByNativeSavedVersion": true
+  },
+  "archiveProvenance": {
+    "localArchiveMemberHashesVerified": 505,
+    "memberComposition": "504 reviewed product files plus unchanged hosting configuration",
+    "localArchiveUnchangedThroughSave": true,
+    "localGzipSha256": "b121083540a8956bcf09dd9eb4c34ff15734c9b93fcebed327eae1e3bb81dd78",
+    "localDecompressedTarSha256": "3623a52db33e2868a830e59e5039df65ed8480e42c083fa5c8130cc7912a772c",
+    "nativeArchiveReportedFiles": 505,
+    "nativeArchiveReportedContentHash": "sha256:4337658172e28900c6f67fab67441056bd403ef6c1ba3730192ce07a8c619b34",
+    "nativeArchiveContentHashSemantics": "UNDETERMINED; not established as raw-tar or member-list serialization",
+    "localTarAndNativeReportedHashEqual": false,
+    "nativeStoredArchiveDownloadedMemberComparison": false,
+    "freshPublishedHttpBodyHashing": false,
+    "interpretation": "Source commit binding, local archive membership, unchanged upload input and succeeded deployment are distinct evidence. No corruption or normalization cause is inferred."
+  },
+  "controlledTests": {
+    "fullSuiteCases": 191,
+    "fullSuitePassed": 191,
+    "fullSuiteFailed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "originalCasesPreserved": 149,
+    "unchangedCurrentCases": 143,
+    "updatedCurrentCases": 3,
+    "retargetedTrueV106HistoricalCases": 3,
+    "newCases": 42,
+    "fullSuiteIncluded": false,
+    "archiveSubsetCases": 42,
+    "archiveSubset": [
+      "checks/remaining-chat-selection.test.mjs"
+    ],
+    "archiveReplayExecuted": false,
+    "archiveReplayRequiresFullDist": true,
+    "publisherReranFullSuite": false,
+    "subsetPassedWithinRetainedFinal191CaseRun": true,
+    "caseAccountingNote": "143 unchanged current-suite cases does not mean each case executes only current product code; pre-existing historical controls retain their scope. It is not 149 untouched current tests.",
+    "negativeControl": "The included shared true-v106 case uses the exact old app AND old resolver with original dependencies; six shared support files equal v106. Broader-suite v105 controls retain their own app/resolver but are not part of this 42-case subset.",
+    "retainedHistory": {
+      "red001": {
+        "cases": 42,
+        "expectedAssertionFailures": 37,
+        "passingControls": 5,
+        "harnessErrors": 0,
+        "product": "genuine v106 app and resolver"
+      },
+      "regression001": {
+        "cases": 191,
+        "passed": 188,
+        "failed": 3,
+        "cause": "Three new changed-document cases mixed a writable test port with a real read-only observation getter; TypeErrors, not product failures."
+      },
+      "harnessCorrection": {
+        "kind": "Approved test setup only, using the established host.load controlled port",
+        "allAssertionsPreserved": true,
+        "productBytesUnchanged": true,
+        "exactBeforeFileAndPatchIncluded": true
+      },
+      "red002": {
+        "cases": 3,
+        "expectedAssertionFailures": 3,
+        "passingControls": 0,
+        "harnessErrors": 0,
+        "failurePoint": "Initial eligibility on genuine v106 app and resolver"
+      },
+      "regression002": {
+        "cases": 191,
+        "passed": 191,
+        "failed": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "rawLogsIncluded": false
+    },
+    "limits": "Real host/resolver/session/frame-entry/boundary over controlled DOM geometry, history, clipboard and transport ports. No React, browser engine, actual Back/BFCache, pasted clipboard or accessibility proof. The source-pin case reads actual main/payload bytes; replay requires the exact full504 dist."
+  },
+  "independentSourceReview": {
+    "critical": 0,
+    "important": 0,
+    "minor": 0,
+    "verdict": "Exact candidate ready for publication and required bounded actual QA; review did not claim that QA had passed."
+  },
+  "actualBrowser": {
+    "status": "PARTIAL_BLOCKED",
+    "fullVersionAccepted": false,
+    "original": {
+      "initialWaitingDisabled": "PASS",
+      "actualSixRecentSyntheticDomMessages": "PASS",
+      "distinctLayoutScreenshot": "PASS_viewport_only",
+      "emptyNativeTextareaAndDisabledSend": "PASS",
+      "fixedReadyGateAndWitnesses": "PASS",
+      "exactWholePageReceipt": "PASS"
+    },
+    "journal": {
+      "initialWaitingDisabled": "PASS",
+      "actualSixRecentSyntheticDomMessages": "PASS",
+      "distinctLayoutScreenshot": "PASS_viewport_only",
+      "emptyNativeTextareaAndDisabledSend": "PASS",
+      "fixedReadyGateAndWitnesses": "PASS",
+      "exactWholePageReceipt": "PASS"
+    },
+    "uiux-upgrade": {
+      "initialWaitingDisabled": "PASS",
+      "actualSixRecentSyntheticDomMessages": "PASS_DOM_snapshot",
+      "initialChatComposerEmptyAndSendDisabled": "OBSERVED_DOM_snapshot_not_additional_nativeTextarea_evaluation",
+      "visiblePickEligible": "PASS",
+      "currentSourceMainDiagnostics": "PASS_DOM_snapshot",
+      "fixedReadyGateAndWitnesses": "FAILED_TO_OBSERVE_runtime_timeout",
+      "initialScreenshot": "NOT_REACHED_after_evaluation_failure",
+      "exactWholePageReceipt": "NOT_RUN_after_blocker"
+    },
+    "originalAndJournalReadiness": {
+      "eachReadyGateCount": 1,
+      "startupState": "ready",
+      "startupData": "ready",
+      "ariaBusy": false,
+      "witnesses": [
+        "chat-top-toolbar",
+        "chat-reading-panel"
+      ],
+      "eachWitnessCount": 1,
+      "eachWitnessWithinGate": true,
+      "nonzeroRectanglesAndNoHiddenAncestors": true,
+      "dimensionsCSSPixels": {
+        "original": {
+          "chat-top-toolbar": [
+            1137.609375,
+            72.796875
+          ],
+          "chat-reading-panel": [
+            1137.609375,
+            689.859375
+          ]
+        },
+        "journal": {
+          "chat-top-toolbar": [
+            1088,
+            92
+          ],
+          "chat-reading-panel": [
+            1088,
+            654
+          ]
+        }
+      },
+      "nativeTextareaValue": "",
+      "sendDisabled": true,
+      "screenshotScope": "Distinct layouts and currently visible conversation tail; six messages counted in each DOM, not asserted simultaneously visible.",
+      "geometryLimit": "Rectangle and ancestor checks are not independent viewport-intersection proof."
+    },
+    "wholePageReceipts": {
+      "status": "PARTIAL_2_OF_3",
+      "captured": 2,
+      "required": 3,
+      "syntheticQAExamplesNotUserPreferences": true,
+      "exactCapturedReceipts": [
+        {
+          "variantId": "original",
+          "sourceReference": "historical-site-baseline-80284456",
+          "main": "_expo/static/js/web/index-bd76e37195c959192eab162f36438f50.js",
+          "mainSha256": "786f8608718d34dc7b005a9f1c088febd195bd98712ac682a7930a1f4e8a3a27",
+          "payloadPath": "experiments/workbench-compare/payload/original/chat.js",
+          "payloadSha256": "6c0eaaba758586b12d4025c1147b82df1be3080202d1cca955afc6d2f5417711",
+          "route": "chat",
+          "actualPath": "/chat",
+          "partId": "page",
+          "catalogSha256": "c42b5657bb29b029f761c239a21573bc4a07ff03249316195be858f58d7b19e1"
+        },
+        {
+          "variantId": "journal",
+          "sourceReference": "72a00c860118e254e05249b471efb2a676aaaa42",
+          "main": "_expo/static/js/web/index-cee3b614aec68037e34d895c245d460d.js",
+          "mainSha256": "1f6c4f943595bed72b8fc8e4b1944000ca7b9120d40babeb034f09eb4ac5e875",
+          "payloadPath": "experiments/workbench-compare/payload/journal/chat.js",
+          "payloadSha256": "e7f3048d9ef0cdc31cc6da283dc01dba073a23c229ecae1446c8b79797bbb564",
+          "route": "chat",
+          "actualPath": "/chat",
+          "partId": "page",
+          "catalogSha256": "c42b5657bb29b029f761c239a21573bc4a07ff03249316195be858f58d7b19e1"
+        }
+      ],
+      "fourth": "NOT_RUN_AFTER_BLOCKER",
+      "noMessageDraftQueryOrCaseContent": true,
+      "clipboardExportAttempted": false
+    },
+    "requiredNewLifecycle": {
+      "status": "NOT_RUN_AFTER_BLOCKER",
+      "notRun": [
+        "Normal newly admitted-side navigation to another page",
+        "Actual browser Back",
+        "Sticky return lock and other-side validity",
+        "Open then Cancel preservation",
+        "Explicit confirmed fresh Open epoch/readiness and receipt persistence"
+      ],
+      "newFourthComparisonOpenIsNotLifecycleAcceptance": true
+    },
+    "clipboardPaste": {
+      "status": "NOT_RERUN",
+      "reason": "No ordinary host-only paste destination was available. No copy-only status, injected destination, old-version evidence or Chat composer was substituted."
+    },
+    "blocker": {
+      "firstAction": "Read-only Fourth ready-gate/fixed-witness geometry evaluation",
+      "firstError": "Runtime.evaluate timed out after 3000 ms",
+      "subsequentErrors": [
+        "DOMSnapshot.captureSnapshot timed out",
+        "Page.getLayoutMetrics timed out"
+      ],
+      "fourthWitnessResultReturned": false,
+      "screenshotAfterFailedEvaluation": "NOT_REACHED; separate screenshot attempt also timed out",
+      "cause": "UNDETERMINED",
+      "offlineInspectorComparison": "Same evaluator body except insignificant single-parameter arrow parentheses; successful wrapper inspected two frames and failed wrapper one. Parent-element walks terminate. No identifiable source-level inspector bug explains the timeout.",
+      "remoteBrowserResourceTelemetryAvailable": false,
+      "productFailureReactError9OomOrResourceKillAssigned": false,
+      "reloadOrReopenAfterFailure": false,
+      "productChangedAfterFailure": false,
+      "rollback": false
+    },
+    "hiddenIdentityObjectsRead": false,
+    "freshHttpBodyHashesObserved": false,
+    "duplicatePickAndPostloadPendingSelectorMutation": "NOT_RERUN in browser; controlled-test coverage only",
+    "otherPagesAccepted": false
+  },
+  "historicalEvidenceAtOriginalScope": {
+    "harbourAndCare": {
+      "version": 106,
+      "scope": "Earlier bounded actual waiting/readiness/two receipts/navigation/Back/Cancel/fresh Open acceptance. Not rerun as v107 actual acceptance."
+    },
+    "fourthPreliminaryDisplay": {
+      "version": 106,
+      "scope": "Earlier initial display/ready-witness premise only; selection remained denied with the known bootstrap lock. Not new v107 witness or receipt acceptance."
+    },
+    "originalAndJournalOlderDisplay": {
+      "scope": "Earlier local Home-to-Chat SPA displays reconciled to matching renderer/canonical-fixture bytes, with wrapper differences; not current direct-entry admission or lifecycle proof."
+    }
+  },
+  "scope": {
+    "newlyAdmittedChatVariants": [
+      "original",
+      "journal",
+      "uiux-upgrade"
+    ],
+    "currentCodeChatAllowlist": [
+      "original",
+      "harbour",
+      "care",
+      "journal",
+      "uiux-upgrade"
+    ],
+    "allowlistIsSourceFactNotAllFiveCurrentBrowserPass": true,
+    "admittedPart": "page",
+    "allPhotosSelectionDenied": true,
+    "nonpageChatAndUnknownSourcesDenied": true,
+    "nativeCompositionAdmission": false,
+    "fullChatAcceptance": false
+  },
+  "notAcceptedOrNotRun": [
+    "Fourth ready-witness geometry and third receipt; required new actual lifecycle.",
+    "Fresh host-only Chat clipboard paste.",
+    "Full 18-message pagination/history, proposal or content workflows.",
+    "Typing, send/model/backend, media/attachments, real-family data or formal production data.",
+    "Other pages and separate Summary work.",
+    "Photos/error9 cause or repair, clock repair.",
+    "Native composition or adapter acceptance.",
+    "Full mobile, keyboard/accessibility, gestures, zoom, cross-browser or sustained stability.",
+    "GCP/production readiness, full-product CI or repository merge acceptance."
+  ],
+  "cleanup": {
+    "blankAttempt": "TIMEOUT; page URL remained unchanged",
+    "normalOwnedTabCloseSucceeded": true,
+    "absenceConfirmedByFreshInventory": true,
+    "preexistingUnownedTabUntouched": true,
+    "completionSummaryAccepted": true,
+    "publisherNodeRunsSequentialNormallyReaped": true,
+    "nodeAndBrowserOwnershipReleased": true,
+    "sampledResourceLimitsNotHardAggregateBounds": true,
+    "remoteBrowserResourceTelemetry": false
+  },
+  "executionIncidents": {
+    "initialSelector": "Exact-label lookup failed before changing selection; observed DOM selector used without reload.",
+    "openClicks": "Two single Open clicks timed out at existing native confirmation dialogs; each current dialog inspected and accepted once, without repeating the click.",
+    "cleanupInventory": "A local inventory expression failed after close; fresh inventory confirmed owned tab absent.",
+    "localPreparation": "One wrong relative copy path failed before Node/remote action; an offline comparison delimiter assertion was corrected. Neither is a product or browser rerun."
+  },
+  "evidenceSha256": {
+    "candidateManifest": "07479e6d744f21633609a941fa501a2a857d475f3bd85e8e0df0fbc2291291c3",
+    "candidateResult": "0b0d3c9de514e6436aa762e7f792b49034bd03b34be149c7f3dbb688b5603bcc",
+    "testChanges": "eea864ef1c7f0a5a6c0ab6e20c90f748e192e516525e408cd6f5bbbaf917faf1",
+    "caseAccounting": "600112bebbff26e1839e70d7969ad820a23637bc69b9ce020df6a6507dd29807",
+    "finalControlledTAP": "d022d436a5114513c4a3b98b960f14eb29ad5ea9a82743bdb843c546593d7eb9",
+    "independentSourceReview": "fd8239ac93284b97051d9a1668f2a8c66613383dea66604ab2c162fa4cac76ce",
+    "independentSourceReviewResult": "399f3780bef8a803061cf8b017f81cce75996dfdb3d09ad9cb74d2d9fc650a3c",
+    "reviewDisposition": "8616d2f7b1d188d07bbca2f9d179cb410ea7cdbce7c1af451e1c6696cf2f3b40",
+    "publicationReport": "cc70759f3d4dc65917699f6472f1df1b459b68a3f5c1c73260eb48331d6b4a2f",
+    "publicationResult": "49fb79489385a91e99005ab3780383c6a945a6377f97314c006ecbe0101f59d3",
+    "publicationSeal": "0494a9b76cd91b36eff4736cef29a965439bb5a3c2efd3e296507fa1a762d604",
+    "publicationSafeSummary": "5503ec3a43fe1c89314f7e974601a5cc6c0f70e00df0753f2649506b22797423",
+    "archiveProvenance": "7e1d55fa9c0b70b8e3850487a4a266531ac795fd3afc21529f820af9ebfd0e28",
+    "sourcePackagingCheck": "332b0625949f0d36cdd3e00aab4cde43c503198713baf1d07f7bd89f50d1b63b",
+    "independentNativeReadback": "6a7e4e38e8f8d44cf9079ec4f8ed5f7708f80c208da9ee7148df2949bd90d97b",
+    "actualOriginalJournalWitnesses": "a64632558576cc931232b04787290052fff1eb3d842eef344d907f3284177793",
+    "receiptCheck": "729d9c9fa2fa28eedb79d31628752a4eef41c36dd540e61d26d0ddadd109712f",
+    "offlineInspectorComparison": "a897b8c7d0528e8a4e117bab5a98161e0621e5d98f6acc910be30b131aea5143"
+  },
+  "archivePreparation": {
+    "nodeBrowserServerOrNetworkExecuted": false,
+    "archiveReplayExecuted": false,
+    "remoteWrites": false,
+    "stagingCopiedExactly": true
+  },
+  "notIncluded": "Raw browser/service records, screenshots, private file/service identifiers or download URLs, credentials, local absolute paths, deployment package, internal coordination and unrelated Summary evidence."
+}

@@ -1,0 +1,45 @@
+{
+  "baseVersion": 106,
+  "baseSitesSource": "f769e6129a4b1778a5f05389246459d9013e3c32",
+  "publishedVersion": 107,
+  "publishedSitesSource": "c86d128384d3ebbd36a30c83d062858a96ebfbd9",
+  "baseCanonicalSha256": "b067e2c88b7e07e3f16c9b7ace1e454f4c3e8f22e8551ef7fcae0a043eab3403",
+  "canonicalSha256": "60c4f508cf34ce04b1fd87c4bb748d67f821b4bf820da8af3a608c146ac536a4",
+  "deploymentVerified": true,
+  "actualQaStatus": "PARTIAL_BLOCKED",
+  "fullVersionAccepted": false,
+  "baseArchive": {
+    "commit": "433e6504e1fd0627f7493b89bee30585eb72890d",
+    "path": "frontend/verification/chat-selection-v106-20261110",
+    "url": "https://github.com/2NTTY/child-ai-caregiver/tree/433e6504e1fd0627f7493b89bee30585eb72890d/frontend/verification/chat-selection-v106-20261110"
+  },
+  "changed": [
+    {
+      "path": "experiments/workbench-compare/app.mjs",
+      "before": {
+        "bytes": 18861,
+        "sha256": "1770be06b25dba9617ac9a7807174fbd411db0fc403eca3d0bdc9e31b0cfecd8"
+      },
+      "after": {
+        "bytes": 18724,
+        "sha256": "fa353db53a963bf7da4d51282ac789165f07253e30bf32ed45ec5742b67c008f"
+      }
+    },
+    {
+      "path": "experiments/workbench-compare/design-choices.mjs",
+      "before": {
+        "bytes": 4308,
+        "sha256": "38fefabc06d3026b47113a7ba9fee2ca038e0e42c74e74091842ec42f6e90e4e"
+      },
+      "after": {
+        "bytes": 4365,
+        "sha256": "5a89bf25d1cf620b73aa9821520cdceee94c30fd3c31e9b6662e0fb493297020"
+      }
+    }
+  ],
+  "unchangedProductFiles": 502,
+  "addedProductFiles": [],
+  "deletedProductFiles": [],
+  "patchSha256": "210966a647f614ed33b0eb6a85638e3886fd5bb636e06c4977576e0a243a153c",
+  "changeScope": "Add only original, journal and uiux-upgrade to the existing frozen harbour/care list shared by Chat readiness and whole-page design-preference resolution; concise whole-page UI label and obsolete comments. Existing loaded-source, readiness, witness, lifecycle and export guards unchanged. No renderer, fixture, catalog, transport, boundary, clock, access or native-composition change."
+}
