@@ -6,6 +6,7 @@ import { createFirestoreAuthority, FirestoreAuthorityError, type FirestoreAuthor
 import { FirestoreDomainData, FirestoreDomainError, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { mixedRecordId, validMixedRecord, mixedRoomRecordSchema, mixedMessageRecordSchema, type MixedRoomRecord, type MixedMessageRecord } from './mixed-chat-records.ts';
+import type { MixedRoomPin, MixedTransferScope } from '../src/shared/mixed-chat-transfer.ts';
 
 type Binding = FirestoreAuthorityTransaction;
 type Selection = Pick<MixedChatRoom, 'scope'|'childIds'>;
@@ -77,8 +78,34 @@ export function createFirestoreMixedChat(options:FirestoreDomainOptions) {
   function readMessageIn(b:Binding,room:MixedRoomRecord,id:string) {
     return b.transaction.get(messageRef(id)).then(row=>openMessage(b,row,id,room));
   }
+  async function exportRoomIn(b:Binding,pin:MixedRoomPin,scope:MixedTransferScope,selected:ReadonlySet<string>) {
+    if (b.sharedAccess || b.scope.ownerUserId !== b.actorUserId || pin.childIds.some(id=>!selected.has(id)))
+      domainReject('invalid_export_scope',403);
+    const room=await readRoom(b,pin.id);
+    if (room.scope.kind !== scope.kind || scope.kind==='class' && (room.scope.kind!=='class' || scope.spaceId!==room.scope.spaceId)
+      || room.childIds.length!==pin.childIds.length || !room.childIds.every(id=>pin.childIds.includes(id)))
+      domainReject('invalid_export_scope',403);
+    if (room.version !== pin.version) domainReject('export_scope_changed');
+    return room;
+  }
+  async function messagePageIn(b:Binding,room:MixedRoomRecord,cursor:string|null) {
+    if (cursor) domainParse(z.uuid(),cursor);
+    const messages:MixedChatMessage[]=[];
+    let id=cursor ?? room.latestMessageId;
+    let version=cursor ? null : room.version;
+    while (id && messages.length<messagePageSize) {
+      const message=await readMessageIn(b,room,id);
+      if (version!==null && version!==message.version) domainReject('mixed_chat_binding',500);
+      messages.push(publicMessage(message)); id=message.previousMessageId; version=message.version-1;
+    }
+    return {room:publicRoom(room),messages:messages.reverse(),nextCursor:id};
+  }
 
   return {
+    exportRoomIn,
+    async exportPageIn(b:Binding,pin:MixedRoomPin,scope:MixedTransferScope,selected:ReadonlySet<string>,cursor:string|null) {
+      return messagePageIn(b,await exportRoomIn(b,pin,scope,selected),cursor);
+    },
     async batchIn(b:Binding,roomId:string,messageId:string) {
       const room=openRoom(b,await b.transaction.get(roomRef(roomId)),roomId);
       const {basis}=await authorizeRoom(b,room), message=await readMessageIn(b,room,messageId);
@@ -146,18 +173,7 @@ export function createFirestoreMixedChat(options:FirestoreDomainOptions) {
       });
     },
     async detail(userId:string,roomId:string,cursor:string|null) {
-      if (cursor) domainParse(z.uuid(),cursor);
-      return authority.runTransaction(userId,null,async b=>{
-        const room=await readRoom(b,roomId), messages:MixedChatMessage[]=[];
-        let id=cursor ?? room.latestMessageId;
-        let version=cursor ? null : room.version;
-        while (id && messages.length < messagePageSize) {
-          const message=openMessage(b,await b.transaction.get(messageRef(id)),id,room);
-          if (version !== null && version !== message.version) domainReject('mixed_chat_binding',500);
-          messages.push(publicMessage(message)); id=message.previousMessageId; version=message.version-1;
-        }
-        return {room:publicRoom(room),messages:messages.reverse(),nextCursor:id};
-      });
+      return authority.runTransaction(userId,null,async b=>messagePageIn(b,await readRoom(b,roomId),cursor));
     },
     async list(userId:string,cursor:string|null) {
       if (cursor) domainParse(z.string().regex(/^[a-f0-9]{64}$/u),cursor);

@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { randomUUID } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomUUID } from 'node:crypto';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { writePersonalHandoverPackage } from '../server/handover-export.ts';
+import { openHandoverImport } from '../server/handover-import.ts';
 import { serialFirestoreFixture } from './helpers/firestore-session-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
@@ -128,9 +133,41 @@ test('mixed messages are account-private, idempotent and lose disclosure when cl
   for (const name of ['兄','弟']) personal.push((await authority.createChild({userId:actor,displayName:name,operationId:randomUUID()})).child.id);
   const both=await (await call('',{operationId:randomUUID(),scope:{kind:'personal'},childIds:personal})).json();
   assert.equal((await call('/'+both.room.id+'/messages',{...input,operationId:randomUUID()})).status,201);
-  const exporter=createFirestoreAccountExport({...options,photos:{async content(){throw Error('unexpected photo');}}});
+  const exporter=createFirestoreAccountExport({...options,mixedTranscriptPage:product.runs.mixedTranscriptPage,photos:{async content(){throw Error('unexpected photo');}}});
   assert.deepEqual((await createFirestoreChatStore(options).listForUser(actor,personal[0])).messages,[]);
   assert.deepEqual((await exporter.page(actor,{section:'chat', childId:personal[0]})).items,[]);
+  const groupPin={id:room.id,version:later.version,childIds};
+  const classScope={kind:'class',spaceId:classroom.id};
+  const transcript=()=>product.runs.mixedTranscriptPage(actor,groupPin,classScope,childIds,null);
+  const page=await transcript();
+  assert.equal(page.items.find(item=>item.message.id===question.id).reply.text,answer.text);
+  assert.equal(page.items.find(item=>item.message.id===later.id).reply.status,'stopped');
+  assert.ok(!JSON.stringify(page).includes(answer.runId));
+  await assert.rejects(product.runs.mixedTranscriptPage(actor,groupPin,classScope,[childIds[0]],null));
+  await assert.rejects(product.runs.mixedTranscriptPage(actor,groupPin,{kind:'personal'},childIds,null));
+  const directory=await mkdtemp(join(tmpdir(),'mixed-chat-transfer-'));
+  try {
+    const keys=generateKeyPairSync('ed25519');
+    const keyId=createHash('sha256').update(keys.publicKey.export({type:'spki',format:'der'})).digest('hex');
+    const selection={childIds,modules:[],period:null,mixedRooms:[groupPin]};
+    const packageId=randomUUID(), serverId='https://source.example.test';
+    const archive=await writePersonalHandoverPackage({directory,exporter:exporter.forClass({opId:packageId,
+      purpose:'handover',source:classScope,selection}),ownerUserId:actor,sourceAccountId:'space:'+classroom.id,
+      serverId,packageId,createdAt:new Date().toISOString(),purpose:'handover',selection,signingKey:keys.privateKey});
+    const reader=await openHandoverImport({path:archive.path,trustedKeys:new Map([[keyId,{key:keys.publicKey,serverId}]])});
+    try {
+      assert.equal(reader.integrity,'trusted'); assert.equal(reader.manifest.version,4);
+      assert.equal(reader.manifest.mixedAuthorAccountId,actor);
+      assert.equal(reader.manifest.coverage.find(row=>row.section==='mixed_chat').items,3);
+      await assert.rejects(reader.readMixedTranscriptPage({roomId:room.id,childIds:[childIds[0]]}));
+      const first=await reader.readMixedTranscriptPage({roomId:room.id,childIds,limit:1});
+      assert.equal(first.rows[0].value.message.id,later.id);
+      const second=await reader.readMixedTranscriptPage({roomId:room.id,childIds,cursor:first.nextCursor});
+      assert.equal(second.rows[0].value.reply.text,answer.text);
+      assert.equal(second.nextCursor,null);
+      assert.ok(!JSON.stringify(second.rows).includes(answer.runId));
+    } finally { await reader.close(); }
+  } finally { await rm(directory,{recursive:true,force:true}); }
   actor='owner';
   assert.deepEqual((await (await call('')).json()).rooms,[]);
   assert.equal((await call(path)).status,404);
@@ -142,6 +179,7 @@ test('mixed messages are account-private, idempotent and lose disclosure when cl
   assert.ok(!(await revoked.text()).includes(input.text));
   assert.deepEqual((await (await call('')).json()).rooms.map(r=>r.id),[both.room.id]);
   assert.equal((await call(path+'/messages',input)).status,403);
+  await assert.rejects(transcript());
   assert.equal((await call(replyPath)).status,403);
   assert.equal(await runs.authorizeMixed(actor,room.id,message.id,claimed.runId),false);
 });

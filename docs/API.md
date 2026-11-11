@@ -1352,3 +1352,7 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 - 照片／錄音／一般檔案沿現有 bytes、格式、大小、hash、暫存與原送出服務；不新增 HTTP 上載接口、模型呼叫或預覽解析服務。原始 URI 不加入聊天文字、URL 參數或日誌。
 - 收件箱最多持有 20 項；超量明示，不能截斷後回報全部接受。用戶逐項加入／捨棄輸入，不因此要求逐條批准 Agent 業務操作。
 - 新 Android intent filter 需要新 binary，OTA 不代替；Web 平台 adapter 為空實作，不宣稱網站已有 OS 分享接收。iOS 標準 extension 及 HANDOVER01 資料包匯入仍待接線，不把一般檔案傳送算成資料包導入。
+
+### 完整混合對話的文檔包
+客戶端於 x-handover-account-features 加入 mixed-conversations 後，沿原 packages/capabilities 查 mixedConversations。建立交接包／備份可於 selection.mixedRooms 選入對話 ID、版本及該對話全部 childIds。若只想帶走完整對話，modules 可留空。班級來源只可包括操作者在該班的私人對話。指定期間時整段對話的原始留言必須落在所選期間內。
+這類 ZIP 使用格式 v4。manifest 另外標明對話發起帳戶，mixed_chat 位於帳戶層。每則留言保留原訊息版本、時間及當時的回覆狀態；已完成回覆包含正文及可追溯的公開引用。接收端讀取須選齊該段涉及的孩子。資料包不帶會話、run、工具、確認權或可執行的工作。舊格式沿原解析方式。

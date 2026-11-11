@@ -36,7 +36,7 @@ export const handoverClassExportCommandSchema = z.object({
   selection: handoverSelectionSchema.safeExtend({
     accountAvatar: z.never().optional(),
     notificationPreferences: z.never().optional(),
-    modules: z.array(classHandoverModuleSchema).min(1).max(classHandoverModuleSchema.options.length),
+    modules: z.array(classHandoverModuleSchema).max(classHandoverModuleSchema.options.length),
   }), documentReview: documentReviewSchema.optional(),
 }).strict().refine(matchingReview);
 export type HandoverClassExportCommand = z.infer<typeof handoverClassExportCommandSchema>;
