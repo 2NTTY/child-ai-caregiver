@@ -1,4 +1,10 @@
-# Selection Workbench
+# Selection workbench
+
+## Nine-reference source preview 05 · 2026-11-11
+
+[Page reference 05](versions/page-reference05-20261111/README.md) adds H-03 Tilde, TK03 Errands and S-02 TokenHub directly over the reviewed 03 baseline. [Index source](versions/page-reference05-20261111/index.html). Home, Settings and Tasks each have two references; Chat, Care and Memory each have one. PC02 and the private 04 package are excluded. Original candidate bytes, existing six sections, source notices, historical versions and user selections stay unchanged.
+
+The three added anchors, standalone entries, original static displays and browser Back passed bounded desktop checks at 1180 × 757, DPR 1. H-03 search or external navigation was not used. Source/version limits are retained. This is an independent GitHub source-preview branch package, not a Sites deployment, selected frontend, mobile/interactive acceptance or a PR merge. Preserved leaf author-time local-only/browser-pending text is historical; current scope is recorded in the 05 index and provenance.
 
 ## Six-page integration candidate · 2026-11-11
 
