@@ -5,7 +5,7 @@ import { AgentStopped } from "./agent-budget.ts";
 import type { AgentBudget } from "./agent-budget.ts";
 
 // Server-owned protocol correction, never a new chat message or operation authorization.
-export const PRESENTATION_REPAIR_MESSAGE = "伺服器正在補齊本次運行的展示收尾。請只調用一次 present_answer，根據已有上下文、工具結果及有效引用回覆。不得調用其他工具、重做操作，或把被拒絕及未確定的操作說成成功。已保存候選仍未確認；未完成的事項如實說明，缺資料時只作必要補問。不得捏造引用或添加無依據的照護建議。這是展示修正，不是新的操作授權。";
+export const PRESENTATION_REPAIR_MESSAGE = "伺服器正在補齊本次運行的展示收尾。請只調用一次 present_answer，根據已有上下文、工具結果及有效引用回覆；保持文字簡潔清晰，勿重複或輸出多餘換行。不得調用其他工具、重做操作，或把被拒絕及未確定的操作說成成功。已保存候選仍未確認；未完成的事項如實說明，缺資料時只作必要補問；如沒有適用官方片段而需說明限制或拒答非育兒問題，請用 kind=\"clarification\" 與 citationIds=[]。不得捏造引用或添加無依據的照護建議。這是展示修正，不是新的操作授權。";
 
 interface PresentationRepair {
   budget: AgentBudget;

@@ -1,5 +1,10 @@
 # Prompt Pack 變更紀錄
 
+## 0.1.58 · 2026-11-11
+
+- product-tools 0.1.24 & knowledge-answering 0.1.4：明確普通操作工具（如 `save_ordinary_record` 屬 `care_records` 等）須先經 `load_capabilities` 載入；日常進食／體溫觀察（含 `note`）按政策先記錄再回報；明確區分固定求助卡（如 `emergency-hk-v1`、`medical-consult-hk-v1`）與知識庫 `chunkId`，全無相關片段時勿硬塞無關 `chunkId`、重複重搜或跳過 `present_answer`，改用 `kind="clarification"` 或固定緊急句引導；無關主題勿硬插過敏紀錄。
+- chat-delivery-review 0.1.3：支援經 `verifiedOperations` 核對的已保存普通操作及單一待確認候選段落（含 `mixed` 混合回覆），並允許無照護指令的純超出範圍拒答或知識庫限制說明通過語義審核。
+
 ## 0.1.56 · 2026-10-21
 
 - memory-maintenance 0.1.8：明確陳述長期個人事實（如過敏）須先 propose_fact（保留 BB 等原稱呼）再 request_confirmation，不可只 present_answer 覆述；提問讀回則用 read_memory_facts。
