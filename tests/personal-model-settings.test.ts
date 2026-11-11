@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { ApiError } from '@google/genai';
+import { PersonalProviderError } from '../server/personal-provider-error.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
@@ -149,7 +149,9 @@ test('Google personal adapters use the chosen protocol, bounded catalog and no p
   assert.equal(catalog.models[1].capabilities.tools, false, 'Do not invent capability evidence for a new model');
   status = 429; response = { error: { code: 429, message: 'Synthetic quota failure', status: 'RESOURCE_EXHAUSTED' } };
   assert.equal((await gemini.inspect(signal)).reason, 'quota_exceeded');
-  await assert.rejects(gemini.agent.generate({ model: 'gemini-2.5-flash', contents: [{ role: 'user', parts: [{ text: 'Hello' }] }], config: {}, liveConnectConfig: {}, toolsDict: {} }, signal), error => error instanceof ApiError && error.status === 429);
+  await assert.rejects(gemini.agent.generate({ model: 'gemini-2.5-flash', contents: [{ role: 'user', parts: [{ text: 'Hello' }] }], config: {}, liveConnectConfig: {}, toolsDict: {} }, signal),
+    error => error instanceof PersonalProviderError && error.diagnostic.httpStatus === 429
+      && error.diagnostic.reason === 'model_provider_rate_limit' && error.diagnostic.stage === 'generation');
   status = 400; response = { error: { code: 400, message: 'API key not valid. Synthetic only.', status: 'INVALID_ARGUMENT' } };
   await assert.rejects(gemini.agent.generate({ model: 'gemini-2.5-flash', contents: [{ role: 'user', parts: [{ text: 'Hello' }] }], config: {}, liveConnectConfig: {}, toolsDict: {} }, signal), { reason: 'model_key_invalid' });
 });
