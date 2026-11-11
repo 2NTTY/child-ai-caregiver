@@ -4,6 +4,7 @@ import { handleFirebaseChatFileRequest, type FirebaseChatFileApiPort } from './f
 import { handleFirebaseVoiceRequest, type FirebaseVoiceApiPort } from './firebase-voice-api.ts';
 import { requestOriginAllowed } from "./request-auth-transport.ts";
 import { z } from 'zod';
+import { assistantTaskContextRequestSchema } from '../src/shared/assistant-task-context.ts';
 import { handleAdminRequest } from './admin-api.ts';
 import type { FirestoreAdmin } from './firestore-admin.ts';
 import { accountAcknowledgementSchema } from "../src/shared/account-service.ts";
@@ -208,6 +209,18 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         await authority.acknowledge({ userId, operationId: parsed.data.operationId, policyVersion: parsed.data.policyVersion });
         // Return the existing complete status shape. A failed read is an unknown outcome, never false success.
         return json(await accountStatus(userId));
+      }
+      if (path === '/api/assistant/task-context') {
+        if (request.method !== 'POST') throw new RequestError('method_not_allowed', 405);
+        if (!requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
+        if (!userId) throw new RequestError('unauthorized', 401);
+        const expected = request.headers.get('x-expected-user-id');
+        if (expected !== userId) throw new RequestError(expected ? 'identity_changed' : 'account_precondition_required', expected ? 409 : 428);
+        if (!online) throw new RequestError('task_context_unavailable', 503);
+        const page = await online.readTaskContext(userId, domainParse(assistantTaskContextRequestSchema, await readJson(request)));
+        if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError('identity_changed', 409);
+        return json(page);
       }
       if (path === '/api/shared-spaces' || path.startsWith('/api/shared-spaces/')) {
         if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);

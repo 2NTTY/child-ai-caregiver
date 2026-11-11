@@ -111,7 +111,7 @@ F07 的資料及 SQL 退出證據已交付；F08 原站使用 Firestore，額外
 
 #### 文檔包索引與相容回退
 
-以營運憑證執行 `node scripts/firestore-indexes.mjs --inspect-fields`，會對照原命名資料庫的複合索引及欄位設定，只列出未齊項目。另獲准套用後，`--approved-apply` 增量建立缺少的複合索引及設定欄位，`--approved-fields` 只設定欄位。等索引就緒再開放對應查詢。新資料包含班級來源工作時，回退版本也須能讀取及清理這些工作。
+先以 `node scripts/firestore-indexes.mjs --check-manifest` 離線核對部署工具可接受整份索引定義。以營運憑證執行 `--inspect-fields` 才會對照原命名資料庫的複合索引及欄位設定，列出未齊項目。另獲准套用後，`--approved-apply` 增量建立缺少的複合索引及設定欄位，`--approved-fields` 只設定欄位。等索引就緒再開放對應查詢。新資料包含班級來源工作時，回退版本也須能讀取及清理這些工作。
 
 #### 文檔包簽章及換匙
 

@@ -202,7 +202,7 @@ test("Firebase domain dispatch preserves session fencing, original routes and ex
   let changeIdentity = false;
   const unavailable = async () => { throw new Error("Unexpected store call"); };
   const online: FirestoreOnlineStore = {
-    spaces: unavailable, context: unavailable, submit: unavailable, lookup: unavailable, changes: unavailable,
+    spaces: unavailable, context: unavailable, submit: unavailable, lookup: unavailable, changes: unavailable, readTaskContext: unavailable,
     readImportTask: unavailable, prepareImportedTask: unavailable, sharedChanges: unavailable, prepareTask: unavailable,
     children: { async list(userId: string, cursor: string | null = null) {
       reads.push({ userId, cursor }); if (changeIdentity) f.setUser("other-user");
@@ -397,7 +397,7 @@ function photoFixture() {
       if (changedAfterUpload) f.setUser('other-user'); return { ...photo, state: 'ready', version: 2 }; },
   };
   const unavailable = async () => { throw new Error('Unexpected store call'); };
-  const online: FirestoreOnlineStore = { spaces: unavailable, context: unavailable, lookup: unavailable, changes: unavailable,
+  const online: FirestoreOnlineStore = { spaces: unavailable, context: unavailable, lookup: unavailable, changes: unavailable, readTaskContext: unavailable,
     readImportTask: unavailable, prepareImportedTask: unavailable, sharedChanges: unavailable, prepareTask: unavailable,
     children: { list: unavailable }, tasks: { list: unavailable, get: unavailable, history: unavailable },
     async submit(userId, submission) { assert.equal(userId, USER_ID); submissions.push(submission);
