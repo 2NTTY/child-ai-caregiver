@@ -245,7 +245,7 @@ test('original child avatar form limits attachment restoration to covered child 
   assert.equal(writes[0].accountAvatar, undefined, 'child restoration does not select the account avatar');
   await controller.openUpload(uploadId); state = 'unchanged';
   await controller.compareOriginal(childId, 'attachments'); again();
-  assert.match(text(view.tree), /沒有可還原的孩子頭像/);
+  assert.match(text(view.tree), /沒有可還原的\s*孩子頭像/);
   assert.equal(control(view, '恢復此已刪項目'), undefined); assert.equal(control(view, '以備份覆蓋此項'), undefined);
   control(view, 'Covered child').props.onChange(true); again();
   assert.ok(control(view, '附件'), 'the independent-copy attachment selection keeps its original label and scope');
