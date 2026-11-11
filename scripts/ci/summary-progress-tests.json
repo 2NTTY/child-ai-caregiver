@@ -348,6 +348,10 @@
     "cases": 1
   },
   {
+    "path": "tests/personal-model-settings.test.ts",
+    "cases": 3
+  },
+  {
     "path": "tests/ai-config.test.ts",
     "cases": 11
   },

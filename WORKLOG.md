@@ -4917,3 +4917,96 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
   - PR 7 本地所有候選測試全綠，正式由 NOT READY 晉升為 **READY to open PR for Owner review**。
   - 純本地分支，零 git push，零 GitHub PR。全部 HOLD merge，等待 Owner 2NTTY 統籌合併。
 
+<a id="log-20261107-personal-key-policy"></a>
+## 2026-11-07｜REQ-005 PR 8 個人自備 Key 政策解耦（resolvePersonalModelLimits 解除鉗位）
+
+- Recorded At：2026-11-07 07:15 UTC；Work Date：2026-11-07。
+- Step / Package：REQ005-PR8 (Audit A03 / Gap 3)。
+- Branch：`codex/req005-personal-key-policy`（基線：`2abe7aed60b192b253414f6464e3fd070cc377e7`）。
+- Author / Committer：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`。
+- Executor：AI Agent (Antigravity)。
+- AI Assistance：Full code modification, invariant script execution, and verification receipt authoring under explicit user direction.
+- Human Verification：Awaiting user review and Grok read-only audit review.
+- Goal / Actual Work：修復 `server/personal-model-policy.ts` 解析器中個人自備 Key 與平台政策強行鉗位之缺陷（Audit A03）。在個人模式下消除 `!settings.limitPolicyVersion` 陷阱與 `Math.min(personal, admin)` 鉗位，完全採納用戶配置之呼叫次數、檢索次數與進階調度限制；在平台模式下嚴格維持平台政策原語義，杜絕殘留個人偏好意外縮小平台配額。
+- Invariants & Changes：
+  - `server/personal-model-policy.ts`：
+    - `settings.mode === 'personal'`：直接採納用戶配置之 `maxModelCalls`、`maxQueryEmbeddings` 以及選填之進階調度限制（`maxToolCalls`、`maxRunSeconds`、`modelRequestSeconds`、`maxModelRetries`），缺省欄位回退至 platform policy，`cappedByAdministrator` 保持為空陣列。
+    - `settings.mode !== 'personal'`（平台模式）：直接回傳 `policy.<field>`，完全忽略殘留個人設定，確保平台配額不受殘留數值污染，`cappedByAdministrator` 保持為空陣列。
+  - `tests/personal-model-settings.test.ts`：
+    - 驗證個人模式搭配 `limitPolicyVersion: 2` 時，`maxModelCalls: 8` 完整保留。
+    - 驗證平台模式下若存在殘留 `maxModelCalls: 8` 或殘留低偏好 `maxModelCalls: 2`，均嚴格解析為平台政策上限 4，且 `cappedByAdministrator` 為空。
+    - 驗證 `routing.resolve` 於個人模式下之 `selected.runLimits.modelCalls` 忠實採用用戶指定之 12。
+- Verification & Test Manifest：
+  - `tests/personal-model-settings.test.ts`：2/2 PASS。
+  - `scripts/verify-personal-key-policy-mutations.mjs`：5/5 不變量與防護驗證全數通過（含 M1 陷阱消除、個人進階預設回退、平台模式高/低偏好防護、全域每日配額隔離）。
+  - 型別診斷：`node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit` 與 `tsc --noEmit` 雙雙 0 診斷、exit 0。
+  - 驗收憑證：[REQ005_PERSONAL_KEY_POLICY_20261107.json](artifacts/verification/REQ005_PERSONAL_KEY_POLICY_20261107.json)（嚴格依據 git-blob LF 計算 SHA-256）。
+- Retained Failures：無。
+- Limitations & Boundaries：
+  - 本 PR 聚焦於 `resolvePersonalModelLimits` 解析器層級之解耦。
+  - 互動執行根期限在 `firestore-agent-runs.ts` 入口處由 `readInteractiveRunSeconds(tx)` 持續讀取平台政策，端到端之多租戶 admission 快照遷移留待後續工作，非本 PR 範圍。
+  - 嚴格維持純本地分支，未 push、未開 GitHub PR。
+
+### 2026-11-07 Round 2 審核跟進修正 (Audit A01 / Gap 1)
+
+- Recorded At：2026-11-07 08:50 UTC；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `9452fec4470959237d75b58e1b1ca59a3d17f34b`，保留 reflog 歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `.github/workflows/summary-progress-offline.yml`：在 `github.head_ref` 白名單加入 `codex/req005-personal-key-policy`。
+  2. `scripts/verify-personal-key-policy-mutations.mjs`：修正終端輸出及註釋，將「Mutation」字眼改為「Invariant Check」，如實陳述為不變量與防回歸驗證。
+  3. 收據與文件：更新收據檔案清單（補入 `summary-progress-offline.yml`），補全可重現命令與環境。
+- Verification：
+  - `tests/personal-model-settings.test.ts`：2/2 PASS
+  - `scripts/verify-personal-key-policy-mutations.mjs`：5/5 Invariant Checks PASS (含平台模式殘留過濾驗證)
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 核心平台回歸已解，維持 resolver-only 邊界。
+  - Admission 快照遷移（`readInteractiveRunSeconds(tx)`）留待後續 PR，不虛報端到端期限已完全解鉗。
+  - 純本地分支，零 git push，零 GitHub PR。
+
+### 2026-11-07 Round 3 審核跟進修正 (Audit A01 / Gap 1)
+
+- Recorded At：2026-11-07 09:00 UTC；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `23b8f054c84a95fcec4457864e91a2f4cd983614`，保留歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `scripts/ci/summary-progress-tests.json`：將 `tests/personal-model-settings.test.ts`（2 案）正式加入 CI manifest，補齊 PR 8 專屬單元測試之離線 CI 契約覆蓋。
+  2. `scripts/verify-personal-key-policy-mutations.mjs`：徹底清除殘留之 `Mutation M1` 與 `prove mutation detection` 註釋，全面改為 Invariant Check 說法。
+  3. 收據與文件：更新收據檔案清單（補入 `summary-progress-tests.json`），客觀校準記錄時間。
+- Verification：
+  - `tests/personal-model-settings.test.ts`：2/2 PASS (TAP check 2 通過)
+  - `scripts/verify-personal-key-policy-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tests/ci/summary-progress-contract.test.mjs`：6/6 PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 維持 resolver-only 解耦，admission snapshot 遷移留待後續 PR。
+  - 純本地分支，零 git push，零 GitHub PR。
+
+### 2026-11-07 歷史記錄客觀校準與 CI Guard 接線 (Audit A01 / Gap 1)
+
+- Recorded At：2026-11-07 09:48 UTC (17:48 HKT)；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `425d21390a9b60e51aee17e3868692f7d41148f3`，保留歷史，不使用 amend。
+- Actual Work / Changes：
+  1. `scripts/ci/verify-summary-progress-offline.sh`：新增 `stage=package-invariant-guard`，將 `scripts/verify-personal-key-policy-mutations.mjs` 正式納入離線 CI 執行管線，於沙盒中驗證不變量守衛。
+  2. 具體數值反例記錄：當管理員政策為 `maxRunSeconds = 60s`，而個人偏好設定為 `maxRunSeconds = 180s` 時，由於目前 admission transaction（`readInteractiveRunSeconds(tx)`）仍讀取政策快照，故端到端有效運行期限仍被約束為較早之 60s。此項為已披露之邊界，端到端個人期限解耦明確留待後續 admission 遷移 PR。
+  3. 歷史時間戳記客觀說明：前次提交（`425d2139`）生成時間為 16:57:16 HKT，模板預填為 17:00 HKT（09:00 UTC）；依 append-only 規範，在此客觀記錄提交實際發生順序，保留原始日誌歷史。
+- Verification：
+  - `bash -n scripts/ci/verify-summary-progress-offline.sh`：exit 0
+  - `tests/personal-model-settings.test.ts`：2/2 PASS (TAP check 2 通過)
+  - `scripts/verify-personal-key-policy-mutations.mjs`：5/5 Invariant Checks PASS
+  - `tests/ci/summary-progress-contract.test.mjs`：6/6 PASS
+  - `tsc --project tsconfig.server.json --noEmit` & `tsc --noEmit`：雙 0 診斷、exit 0
+- Scope & Boundaries：
+  - 維持 NOT READY / HOLD merge 狀態，等待 Owner 統籌合併。純本地分支，零 git push，零 GitHub PR。
+
+### 2026-11-07 歷史預填時間客觀校準說明 (Audit Trail Timestamp Calibration)
+
+- Recorded At：2026-11-07T10:05:30.828Z；Work Date：2026-11-07。
+- Head / Tree：Forward commit following tip `192398e5dfa20f8b8276ddc7ce813a66e66c196a`，保留歷史，不使用 amend。
+- 歷史時間客觀聲明：
+  本工作日誌此前各段落中出現之 Recorded At 欄位（例如 08:50 UTC、09:00 UTC、09:48 UTC 等），係編輯起草時依規劃時程預填之模板標籤時間，而非底層 Git Commit 物件實際寫入時間戳（例如 Commit `192398e5` 實際寫入時間為 17:39:04 HKT，即 09:39:04 UTC）。
+  依據本專案嚴格之 append-only 審計規範，歷史既有段落完整保留不作 amend 或刪改；特在此追加真實即時時間戳記（2026-11-07T10:05:30.828Z）以澄清時序，確認此前所有時間標籤均屬規劃模板時間。
+- PR 8 個人端到端期限邊界確認：
+  確認反例：當管理員政策為 `maxRunSeconds = 60s`，而個人偏好設定為 `maxRunSeconds = 180s` 時，由於目前 admission transaction（`readInteractiveRunSeconds(tx)`）仍讀取政策快照，故端到端有效運行期限仍被約束為較早之 60s。此項為已披露之未完成範圍，端到端個人期限解耦明確留待後續 admission 遷移 PR。
+- Scope & Boundaries：
+  - 本包判定維持 **NOT READY to open PR / HOLD merge**，等待 Owner 決定範圍、工程值及交付次序。
+  - 純本地分支，零 git push，零 GitHub PR。
