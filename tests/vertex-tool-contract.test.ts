@@ -56,7 +56,8 @@ test("Vertex schema inspection rejects unsupported fields throughout nested decl
 test("all Server capabilities serialize only documented Vertex schema fields", async context => {
   const budget = new AgentBudget();
   try {
-    const tools = createProductAgentTools({ includeDocuments: true, run: { scope: {}, runId: "synthetic", budget },
+    const tools = createProductAgentTools({ includeDocuments: true, run: { scope: {}, runId: "synthetic", budget, images: {} },
+      photos: {}, readChatFile: async () => { throw new Error("declaration check"); },
       memory: {}, tasks: {}, store: {}, knowledge: { createRun: () => ({}) }, authorize: async () => false,
       actions: {}, summary: {}, contact: {}, concerns: {}, sources: {}, documents: {}, growth: {},
     } as unknown as Parameters<typeof createProductAgentTools>[0]).tools;
@@ -130,10 +131,14 @@ test("mixed task reads and batch proposals expose supported Vertex declarations 
   try {
     const { tools } = createProductAgentTools({ run: { scope: {}, runId: "mixed", budget }, memory: {}, tasks: {}, store: {},
       knowledge: { createRun: () => ({}) }, authorize: async () => false, mixedTasks: async () => ({children: [], nextFrom: null}),
+      mixedCare: async () => ({children:[],nextFrom:null}),
       prepareMixedTasks: () => { throw Error("This test must never execute a proposal"); },
     } as never);
     const proposal = tools.find(tool => tool.name === "prepare_selected_tasks")!;
     assert.ok(proposal && tools.some(tool => tool.name === "read_selected_tasks"));
+    const care = tools.find(tool => tool.name === "search_selected_care")!;
+    assert.ok(care.parameters.safeParse({filters:{kind:"feeding",eventDate:"2026-11-08"}}).success);
+    assert.equal(care.parameters.safeParse({filters:{},childId:id}).success,false);
     assert.deepEqual(tools.flatMap(tool => contractIssues(native(tool)._getDeclaration()!.parameters, tool.name)), []);
     const target = { childId: id, taskId: id, expectedVersion: 1 };
     const complete = { kind: "complete", note: "", targets: [target] };
@@ -179,7 +184,7 @@ test("the real product-interactive Runner request keeps its system configuration
     context: sourceContext,
     messages: messages.map((text, index) => ({ role: index === 1 ? "model" : "user", text })), authorize: async () => true,
     toolCatalog: PRODUCT_AGENT_TOOL_CATALOG,
-    tools: run => { productTools = createProductAgentTools({ includeDocuments: true, run,
+    tools: run => { productTools = createProductAgentTools({ includeDocuments: true, run, photos: {}, readChatFile: async () => { throw new Error("declaration check"); },
       memory: {}, tasks: {}, store: {}, knowledge: { createRun: () => ({}) }, authorize: async () => true,
       actions: {}, summary: {}, contact: {}, concerns: {}, sources: {}, documents: {}, growth: {},
     } as unknown as Parameters<typeof createProductAgentTools>[0]); return productTools.tools; },

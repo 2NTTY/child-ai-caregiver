@@ -119,6 +119,7 @@ export function createProductAgent(options: {
   workContinuationAuthority?: FirestoreWorkContinuationStore;
   mixed?:{runs:Pick<ReturnType<typeof createFirestoreAgentRuns>,'claimMixed'|'authorizeMixed'|'mixedInput'|'mixedResult'|'finishMixed'>;
     online:Pick<FirestoreOnlineStore,'readTaskContext'>;
+    care?:Pick<import('./firestore-care.ts').FirestoreCareStore,'readSelectedCare'>;
     batches:Pick<ReturnType<typeof import('./firestore-mixed-task-batches.ts').createMixedTaskBatches>,'propose'>};
   documents?: import("./family-document-store.ts").FamilyDocumentStore;
   concerns?: Pick<import("./concern-store.ts").ConcernStore, "list" | "get">;
@@ -153,11 +154,20 @@ export function createProductAgent(options: {
           trigger:{kind:'interactive',reference:messageId},recipeId:'product-interactive',authorize,signal:cancellation.signal,
           availableInputs:['run','scope','conversation','context','evidence','capabilities'],
           context:{currentMessageId:messageId,selectedChildren:input.room.childIds.length,recentConversationCoverage:recent.coverage,
-            instructionPolicy:'這是發起者的私人多孩對話。按本次選定範圍讀待辦，依名冊區分同名孩子。引用 read_selected_tasks 給的 citationId 並交由 present_answer 核對。只有已讀頁屬證據。公共問題可搜尋官方資料。'},
+            instructionPolicy:'這是發起者的私人多孩對話。按問題查所選孩子的照護記錄或待辦，以孩子 ID 區分同名者。用讀取工具回傳的 citationId 引用所讀原資料；時間、單位或涵蓋範圍未明時保留原有精度。公共問題可搜尋官方資料。'},
           messages:recent.messages.map(({role,text})=>({role,text})),
           tools:run=>{
             tools=createProductAgentTools({run,authorize,store:options.store,memory:options.memory,tasks:options.tasks,knowledge:options.knowledge,
               trustedUserMessage:input.messages.at(-1)!.text,
+              ...(mixed.care ? {mixedCare:async ({from,filters,cursor,limit,singleChild})=>{
+                // A small group fits a single tool turn while keeping decrypted records bounded.
+                const ids=input.room.childIds.slice(from,from+(cursor || singleChild ? 1 : 2));
+                const children=await Promise.all(ids.map(id=>mixed.care!.readSelectedCare(userId,{
+                  scope:input.taskScope,childId:id,filters,limit,...(cursor?{cursor}:{})
+                })));
+                if (!await authorize()) throw new AgentStopped('unauthorized');
+                return {children,nextFrom:!cursor && from+ids.length<input.room.childIds.length ? from+ids.length : null};
+              }} : {}),
               prepareMixedTasks:action=>mixed.batches.propose(userId,roomId,messageId,claim.runId,action),
               mixedTasks:async ({from,childId,cursor})=>{
                 if (childId && !input.room.childIds.includes(childId)) throw new AgentStopped('unauthorized');

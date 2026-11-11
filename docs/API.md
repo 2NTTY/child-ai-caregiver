@@ -1284,7 +1284,8 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 - 混合聊天屬發起帳戶，讀取／搜尋按目前子範圍授權；單孩匯出無法可靠分離時明示，完整混合對話須有權並明確選入全部範圍，不藉匯出擴權。
 - CLASS02 的待辦查詢使用 `POST /api/assistant/task-context`。請求帶目前身份，以及 `{scope,targets:[{childId,cursor?}]}`。個人範圍由本人孩子取材；班級範圍須提供名冊的 spaceId、spaceVersion 及 teacherSpaceVersion（獨立班級為 null）。每次最多五個指定孩子，各回姓名、最多八項待辦的 ID／版本／標題／到期／狀態，以及各自的 nextCursor。客戶端按名冊分頁選取更多孩子。每頁重新核權，已變動的續讀範圍回 409。查詢不保存聊天、不生成模型回覆、不建立或完成待辦。
 - `POST /api/account/mixed-chats` 接受 `{operationId,scope,childIds}`，scope 與 task-context 相同；每段對話固定選定 1–100 個孩子及原班級成員身份。班級名冊可繼續分頁。`POST /api/account/mixed-chats/:id/messages` 接受 `{operationId,expectedVersion,text}`，回傳已保存留言；重送原請求查回同一則。`GET /api/account/mixed-chats`、`GET /api/account/mixed-chats/:id` 均支援 `cursor`。目錄每頁檢查三段對話，只顯示仍可讀的項目，正文每頁最多 16 則，按時間正序回傳，nextCursor 指向更早的訊息。清單與內容只供發起帳戶，當前所選孩子及班級待辦模組須逐一核權。單孩匯出不含混合留言。
-- `/api/account/mixed-chats/:id/messages/:messageId/reply` 支援 POST 啟動原留言的助手、GET 查回、DELETE 取消，回傳 `{result: ProductAgentResult | null}`。已取得運行的留言只查回原結果。正式 ADK 使用已授權的選取、分頁待辦和官方資料工具。每次讀最多五名所選孩子，來源經既有審核流程交付。
+- `/api/account/mixed-chats/:id/messages/:messageId/reply` 支援 POST 啟動原留言的助手、GET 查回、DELETE 取消，回傳 `{result: ProductAgentResult | null}`。已取得運行的留言只查回原結果。正式 ADK 從該對話已選範圍讀取待辦、照護記錄及官方知識。待辦每次最多五名孩子。
+- `search_selected_care` 首次只需傳篩選條件。Server 依對話固定順序選取最多兩名孩子，逐一核對目前照護資料權限。每名最多掃 25 筆，交回 1–3 筆，保留來源版本、原話節錄、單位及精度。`eventDate` 依各記錄的事件時區判斷曆日，日期未知的相關記錄分開計數。下一組使用 `nextFrom`；同一孩子續頁使用返回的 `from`、原條件及 `nextCursor`。引用綁定本次實際讀到的私人證據。
 - 同則留言的 `/task-batch` 以 GET 讀取本人可見清單，POST 接受 `{action: "confirm" | "cancel", digest}`。確認時逐一核對原對象、版本及授權。POST `/task-batch/advance` 接受原 `{position, digest}`，每次最多五項；重送同一位置沿用逐項收據。所有接口回傳 `{batch}`，尚無草案時 GET 回傳 null。完成、略過、衝突、失敗、取消及待辦分列於 items。跨世代還原關閉未結批次，保留原收據。
 - 匯入各狀態均提供有界紀錄查回：操作者／時間、包與版本／內容識別、完整性結果、目標／選擇、來源鏈、操作／批次及逐項資源／版本／原因、接續結果。格式錯誤無包 ID 時記未知與原因，亦非無紀錄失敗。
 - 保存、業務結果、收據、change cursor 及 outbox 沿同一 Firestore 交易邊界；大包使用可恢復的有界批次，不承諾整包單交易。部分成功不當全成功；模型／通知等外部呼叫在交易外。
@@ -1354,8 +1355,6 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 - 新 Android intent filter 需要新 binary，OTA 不代替；Web 平台 adapter 為空實作，不宣稱網站已有 OS 分享接收。iOS 標準 extension 及 HANDOVER01 資料包匯入仍待接線，不把一般檔案傳送算成資料包導入。
 
 ### 完整混合對話的文檔包
-
-同一多孩助手的照護記錄讀取使用既有記錄服務。每頁固定一名所選孩子，班級須有目前的 care 模組存取權。每次最多掃 25 筆、交回 3 筆符合條件的記錄。日期篩選依事件時間，日期未知的相關記錄分開計數；原話節錄保留版本、單位與精度。續頁綁定孩子、條件與目前授權。
 
 收件端在現有 `package-imports/capabilities` 請求帶 `x-handover-mixed-import: 1`，取得 `mixedConversationImport` 後才開放選取。沿原 POST 傳 `mixedRoomIds` 和全部對應的 `targets`。只複製對話的孩子可用 `sections: []`；每個來源孩子須對應不同目標，並全部位於本人或同一班級。簽章及未附證明的確認沿原匯入契約。
 

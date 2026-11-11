@@ -1,0 +1,19 @@
+{
+  "scope": "Formal private class chat HTTP handler, production Agent and review pipeline, real Vertex Gemini, two synthetic class records in isolated Firestore transaction fixture.",
+  "model": "gemini-3.1-flash-lite",
+  "before": "The model invented child UUIDs on a first read even though the authenticated conversation already held both children. The rejected requests produced no answer.",
+  "change": "The application binds the selected children. The tool accepts filters and server-returned positions. Event dates follow each original record's time zone. Records and scan coverage provide separate review sources.",
+  "after": {
+    "question": "我想對一對，2026 年 11 月 8 號小明同小玲各飲咗幾多奶？如果係大約數就照寫，講返根據邊條記錄。",
+    "arguments": {"filters":{"eventDate":"2026-11-08","kind":"feeding"}},
+    "tools": ["search_selected_care", "present_answer"],
+    "answer": "根據 2026 年 11 月 8 日的餵哺記錄，小明飲了 90 毫升奶。 [照護記錄]\n\n小玲當日大約飲了 120 毫升奶。 [照護記錄]",
+    "status": "completed",
+    "deliveryReview": "pass",
+    "getReturnedOriginalRun": true,
+    "providerRequests": 3,
+    "reportedPromptTokens": 28036,
+    "reportedCandidateTokens": 346
+  },
+  "limits": "One representative query. No real family records, live UI, notifications or Android build. Deployment is recorded separately."
+}
