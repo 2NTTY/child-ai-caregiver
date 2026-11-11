@@ -99,7 +99,7 @@ export function createRunContextCompactor(options: ContextCompactorOptions): Bas
   });
 
   return {
-    shouldCompact(context: InvocationContext): boolean {
+    shouldCompact(context: InvocationContext) {
       return baseCompactor.shouldCompact(context);
     },
 
