@@ -19,7 +19,8 @@ test('account preference capabilities and comparison use negotiated transport ac
   const api = createHandoverApi('https://example.test', async (input, init) => {
     calls++; assert.ok(init); const path = new URL(String(input)).pathname, headers = new Headers(init.headers);
     assert.equal(init.credentials, 'include'); assert.equal(init.cache, 'no-store'); assert.equal(headers.get('x-expected-user-id'), 'owner');
-    assert.equal(headers.get('x-handover-account-backup'), '1'); assert.equal(headers.get('x-handover-account-features'), 'notification-preferences');
+    assert.equal(headers.get('x-handover-account-backup'), '1');
+    assert.deepEqual(headers.get('x-handover-account-features')?.split(','), ['notification-preferences', 'mixed-conversations']);
     if (path === '/api/account/packages/capabilities') return Response.json({ classModules: [], ...(modern ? { notificationPreferencesBackup: true } : {}) });
     if (path === '/api/account/package-imports/capabilities') return Response.json({ classEnrolment: false, ...(modern ? { notificationPreferencesRestore: true } : {}) });
     if (path.endsWith('/content')) {

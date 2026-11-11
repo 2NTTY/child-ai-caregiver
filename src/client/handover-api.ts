@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { resolveApiBaseUrl } from '../config/api-base-url.ts';
-import { accountPreferencesFeature } from '../shared/handover.ts';
+import { accountPreferencesFeature, mixedConversationFeature } from '../shared/handover.ts';
 import { handoverCancelCommandSchema, handoverExportCommandSchema, handoverExportPageSchema, handoverExportViewSchema,
   handoverPreviewQuerySchema, handoverPreviewPageSchema,
   handoverClassExportCommandSchema, classHandoverModuleSchema, type HandoverClassExportCommand,
@@ -39,7 +39,7 @@ type RequestOptions = { collection?: 'packages' | 'package-uploads' | 'package-i
 
 export interface HandoverApi {
   setIdentity(userId: string | null): void;
-  exportCapabilities(userId: string, signal: AbortSignal): Promise<{ classModules: HandoverClassExportCommand['selection']['modules']; accountAvatarBackup?: true; notificationPreferencesBackup?: true }>;
+  exportCapabilities(userId: string, signal: AbortSignal): Promise<{ classModules: HandoverClassExportCommand['selection']['modules']; accountAvatarBackup?: true; notificationPreferencesBackup?: true; mixedConversations?: boolean }>;
   createClass(userId: string, command: HandoverClassExportCommand, signal: AbortSignal): Promise<HandoverExportView>;
   preview(userId: string, query: HandoverPreviewQuery, signal: AbortSignal): Promise<HandoverPreviewPage>;
   create(userId: string, command: HandoverExportCommand, signal: AbortSignal): Promise<HandoverExportView>;
@@ -111,7 +111,7 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
       const pending = (async () => {
         if (!isCurrent()) throw failure();
         response = await fetcher(api + '/' + (options.collection ?? 'packages') + path, { method: body === undefined ? 'GET' : 'POST', credentials: 'include', cache: 'no-store',
-          headers: { Accept: accept, 'x-expected-user-id': userId, 'x-handover-account-backup': '1', 'x-handover-account-features': accountPreferencesFeature, ...(options.classDocumentReview ? { 'x-handover-class-document-review': '1' } : {}),
+          headers: { Accept: accept, 'x-expected-user-id': userId, 'x-handover-account-backup': '1', 'x-handover-account-features': [accountPreferencesFeature, mixedConversationFeature].join(','), ...(options.classDocumentReview ? { 'x-handover-class-document-review': '1' } : {}),
             ...(options.originalModules ? { 'x-handover-original-modules': '1', 'x-handover-original-features': 'concerns,private-instructions,memory-resources,attachment-resources,growth', 'x-handover-class-features': 'concerns,growth' } : {}),
             ...(body === undefined ? {} : { 'Content-Type': options.rawBody ? 'application/zip' : 'application/json' }) },
           ...(body === undefined ? {} : { body: options.rawBody ? body as BodyInit : JSON.stringify(body) }), signal: controller.signal });
@@ -158,7 +158,7 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
     setIdentity,
     exportCapabilities: (userId, signal) => json(userId, '/capabilities', signal,
       z.object({ classModules: z.array(z.string().min(1).max(80)).max(100)
-        .transform(modules => classHandoverModuleSchema.options.filter(module => modules.includes(module))), accountAvatarBackup: z.literal(true).optional(), notificationPreferencesBackup: z.literal(true).optional() }), undefined, undefined, { classDocumentReview: true }),
+        .transform(modules => classHandoverModuleSchema.options.filter(module => modules.includes(module))), accountAvatarBackup: z.literal(true).optional(), notificationPreferencesBackup: z.literal(true).optional(), mixedConversations: z.boolean().optional() }), undefined, undefined, { classDocumentReview: true }),
     async createClass(userId, input, signal) {
       const parsed = handoverClassExportCommandSchema.safeParse(input); if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
       return json(userId, '', signal, handoverExportViewSchema, parsed.data, result => result.id === parsed.data.opId);
