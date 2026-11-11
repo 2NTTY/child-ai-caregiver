@@ -9,7 +9,7 @@
   },
   {
     "path": "tests/agent-model-gateway.test.ts",
-    "cases": 16
+    "cases": 18
   },
   {
     "path": "tests/firestore-summary-batches.test.ts",
@@ -346,5 +346,13 @@
   {
     "path": "tests/private-instruction-erasure.test.ts",
     "cases": 1
+  },
+  {
+    "path": "tests/ai-config.test.ts",
+    "cases": 11
+  },
+  {
+    "path": "tests/gemini-key-provider.test.ts",
+    "cases": 4
   }
 ]

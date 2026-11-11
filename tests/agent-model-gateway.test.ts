@@ -74,7 +74,7 @@ test("request config cannot override the server level, enable thoughts, raise ou
   const original = { ...request.config, thinkingConfig: { ...request.config.thinkingConfig } };
   const provider = createVertexAgentProvider(config);
   await provider.generate(request, controller.signal);
-  assert.deepEqual(requests[0]!.config, { ...request.config, candidateCount: 1, maxOutputTokens: AGENT_LIMITS.outputTokens,
+  assert.deepEqual(requests[0]!.config, { ...request.config, candidateCount: 1, maxOutputTokens: 4096,
     thinkingConfig: { thinkingLevel: genai.ThinkingLevel.LOW }, abortSignal: controller.signal });
   assert.equal(Object.hasOwn(requests[0]!.config!.thinkingConfig!, "includeThoughts"), false);
   assert.deepEqual(request.config, original);
@@ -355,4 +355,18 @@ test("durable admission refreshes the shared count before checking the review re
     assert.equal(budget.remainingModelCalls, 1);
     assert.equal(durable.snapshot.attempts.length, 0);
   } finally { budget.close(); }
+});
+
+test("gateway unclamps output tokens up to 16384 when configured in environment", async () => {
+  const { config, request, controller } = setup();
+  const selected = readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: config.project, AI_MAX_OUTPUT_TOKENS: "16384" });
+  await createVertexAgentProvider(selected).generate(request, controller.signal);
+  assert.equal(requests.at(-1)!.config!.maxOutputTokens, 16384);
+});
+
+test("gateway clamps output tokens strictly to interactive ceiling of 16384 when exceeding limit", async () => {
+  const { config, request, controller } = setup();
+  const selected = { ...config, maxOutputTokens: 20000 };
+  await createVertexAgentProvider(selected).generate(request, controller.signal);
+  assert.equal(requests.at(-1)!.config!.maxOutputTokens, 16384);
 });

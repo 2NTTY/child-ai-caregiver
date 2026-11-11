@@ -2,10 +2,10 @@ import { createHash } from "node:crypto";
 import type { ModelProviderStopReason } from "../src/shared/agent-stop-message.ts";
 import { canonical } from "./firestore-session-codec.ts";
 import { RootBudgetError, type BudgetAttempt, type DurableRootBudget, type RootBudgetContext, type RootBudgetSnapshot } from "./durable-root-budget.ts";
-import { AGENT_RUN_LIMITS, DEFAULT_SOFT_BUDGET_RATIO, SOFT_BUDGET_RATIO_RANGE } from '../src/shared/agent-run-limits.ts';
+import { AGENT_RUN_LIMITS, AGENT_OUTPUT_LIMITS, DEFAULT_SOFT_BUDGET_RATIO, SOFT_BUDGET_RATIO_RANGE } from '../src/shared/agent-run-limits.ts';
 import { PERSONAL_RUN_LIMITS } from "../src/shared/model-settings.ts";
 
-export { DEFAULT_SOFT_BUDGET_RATIO, SOFT_BUDGET_RATIO_RANGE };
+export { AGENT_OUTPUT_LIMITS, DEFAULT_SOFT_BUDGET_RATIO, SOFT_BUDGET_RATIO_RANGE };
 
 export const AGENT_LIMITS = Object.freeze({ modelCalls: 4, toolCalls: AGENT_RUN_LIMITS.toolCalls.default, queryEmbeddings: 2,
   deadlineMs: AGENT_RUN_LIMITS.deadlineSeconds.default * 1000, outputTokens: 1024, inputCharacters: 32000 });

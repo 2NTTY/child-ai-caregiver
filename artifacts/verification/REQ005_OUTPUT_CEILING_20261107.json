@@ -1,0 +1,144 @@
+{
+  "receiptVersion": "2026-11-07.v7",
+  "package": "REQ005-PR7",
+  "title": "Unclamp interactive agent output token ceiling (REQ-005 §4)",
+  "branch": "codex/req005-output-ceiling",
+  "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+  "parentTip": "e3e86dcf560f3c30b6ba742e3efa1232bc061182",
+  "author": "CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>",
+  "executor": "AI Assistant (local execution)",
+  "timestampUtc": "2026-11-07T14:01:08.209Z",
+  "environment": {
+    "nodeVersion": "v24.16.0",
+    "os": "win32",
+    "shell": "powershell",
+    "tscVersion": "6.0.3"
+  },
+  "commandsExecuted": [
+    "node --experimental-test-module-mocks --test tests/agent-model-gateway.test.ts",
+    "node --experimental-test-module-mocks --test tests/ai-config.test.ts",
+    "node --experimental-test-module-mocks --test tests/gemini-key-provider.test.ts",
+    "node scripts/verify-output-ceiling-mutations.mjs",
+    "node scripts/ci/summary-progress-contract.mjs list scripts/ci/summary-progress-tests.json",
+    "node --test tests/ci/summary-progress-contract.test.mjs",
+    "node node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit",
+    "node node_modules/typescript/bin/tsc --noEmit"
+  ],
+  "status": "LOCAL_VERIFIED",
+  "remotePushed": false,
+  "pullRequestOpened": false,
+  "testSummary": {
+    "agent-model-gateway.test.ts": {
+      "total": 18,
+      "passed": 18,
+      "failed": 0
+    },
+    "ai-config.test.ts": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "gemini-key-provider.test.ts": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0
+    },
+    "verify-output-ceiling-mutations.mjs": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0
+    },
+    "summary-progress-contract.test.mjs": {
+      "total": 6,
+      "passed": 6,
+      "failed": 0
+    }
+  },
+  "typeCheck": {
+    "tsconfigServer": "PASS (0 diagnostics, exit 0)",
+    "tsconfigRoot": "PASS (0 diagnostics, exit 0)"
+  },
+  "retainedFailures": [],
+  "knownLimitations": [
+    "Interactive agent output unclamp verified up to 16384 tokens; background pipeline unclamp (32768) deferred to subsequent PRs",
+    "Direct Gemini provider error contract normalized to PersonalProviderError; shared gateway handles bounded retry and status-only telemetry",
+    "Local branch only; zero remote writes; strictly zero GitHub PR"
+  ],
+  "files": {
+    ".github/workflows/summary-progress-offline.yml": {
+      "sha256": "3f127bb396c7c1044e4c57f55bfaac09c4394b3039100e14cd21002cf20288ef",
+      "gitBlob": "16b68e5babc627331150ddddbd031b9545cca329",
+      "bytes": 5219
+    },
+    "WORKLOG.md": {
+      "sha256": "d2faf7a7bb1223c4b7415c363dcaa02e868621c89f5d2f4883948b1d77a6426d",
+      "gitBlob": "0550c161f39c13565bd1489a8993a05b5fb4ed66",
+      "bytes": 772839
+    },
+    "scripts/ci/summary-progress-tests.json": {
+      "sha256": "3c4c564c3b0ed813766605dc93d6865b148a248aae1e1288f68d27fddd9f34c3",
+      "gitBlob": "26970dcc64d7cc9696a6b8f059d64733fb464a55",
+      "bytes": 7250
+    },
+    "scripts/ci/verify-summary-progress-offline.sh": {
+      "sha256": "f30288a41f27260837e9f69f46b5bda8f5267b2ede0c13795cda385f202a869d",
+      "gitBlob": "fcce900ddc249ac8a061c9a955e0824085758dbe",
+      "bytes": 4017
+    },
+    "scripts/verify-output-ceiling-mutations.mjs": {
+      "sha256": "7f365673e2c8be7da9c11be4db9cb2f47218e1c6676249eeaf0fc88f5cba23d3",
+      "gitBlob": "a187be10bf772535f4e083b19e6488e6cfeb2a68",
+      "bytes": 6311
+    },
+    "server/agent-budget.ts": {
+      "sha256": "ac0849303da8db31bdc45fd266de1321f623731c5ceafbe70ed18f255291c4d7",
+      "gitBlob": "531872a2720a2ed34673d873d1c035124140ef24",
+      "bytes": 15766
+    },
+    "server/agent-model-gateway.ts": {
+      "sha256": "584cb565d624ec1cd738ece797906258b649784b8e92a640b7f2cad445ab3bcd",
+      "gitBlob": "ea2ae1380961f651d0daee4eb9652f957d8ef538",
+      "bytes": 24779
+    },
+    "server/ai-config.ts": {
+      "sha256": "09da77710962b1fea7c0f6fd5b37e774c67771120e35796be49d6aa5481df796",
+      "gitBlob": "22896d595432635e8109e93bab56ed3ace08c1be",
+      "bytes": 5679
+    },
+    "server/firestore-admin.ts": {
+      "sha256": "a7839249bd5271d4493d792860b7a27d386057f6b23cd07fab24a410426d57d1",
+      "gitBlob": "88100c4ee148778c5327a3bdeff9197a672e8f26",
+      "bytes": 8143
+    },
+    "server/gemini-key-provider.ts": {
+      "sha256": "77deb13113ea2fdacf028455df483841ff09b8be0fc615807a2a52fc001aba21",
+      "gitBlob": "113b4966f2e74bda1d76db6046b6b51dbc743c66",
+      "bytes": 10919
+    },
+    "server/openai-compatible-provider.ts": {
+      "sha256": "36705cccb2a5dcc9c431d9b9a9ab2d390396542287bdf967f7b4c9c399887f83",
+      "gitBlob": "3bda3d3219fa8a394967f0962f4ac550df5c1548",
+      "bytes": 9242
+    },
+    "src/shared/agent-run-limits.ts": {
+      "sha256": "a2795ee4cc5c846074122503b402f456d25fb4159e708bb6dd1d9930c660173f",
+      "gitBlob": "fc6e07f1e37ac4482248666ece32e3c08b6b70a3",
+      "bytes": 855
+    },
+    "tests/agent-model-gateway.test.ts": {
+      "sha256": "7bc3c5ada26631f13dda0bd0deee96d5e81ff2a201b4ac61996ea738ebec4b30",
+      "gitBlob": "452c27eef733a3f038b79d9f6a88d13c1df7084a",
+      "bytes": 22891
+    },
+    "tests/ai-config.test.ts": {
+      "sha256": "7a266458ff41a889b6da633745f7b01ea49fc81811bf1ccd7c594779e008c338",
+      "gitBlob": "3d16e99d1db291be34d4cf6656ba3affd7e445f1",
+      "bytes": 8165
+    },
+    "tests/gemini-key-provider.test.ts": {
+      "sha256": "6faa58afac4e7e9c7c300e18fef0ab97bccf5db40bdef38fb1395e628bed0c4e",
+      "gitBlob": "e9d1b90c623943aed1396e46a3bd0a810afb73ba",
+      "bytes": 12384
+    }
+  }
+}
