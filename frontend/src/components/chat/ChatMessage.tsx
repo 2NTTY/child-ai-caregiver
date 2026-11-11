@@ -23,16 +23,17 @@ export function ChatProgressIndicator() {
   </View>;
 }
 
-export function ChatMessage({ message, children, header, footer, testID, embedded = false, onStop, onCheck, onLocateSource, onOpenSource, degraded, phaseLabel }: {
+export function ChatMessage({ message, children, header, footer, testID, embedded = false, onStop, onCheck, onLocateSource, onOpenSource, degraded, phaseLabel, careCitationCount, onOpenCareCitation }: {
   message: ChatMessageView; children?: ReactNode; header?: ReactNode; footer?: ReactNode; testID?: string; embedded?: boolean;
   onStop?: () => void; onCheck?: () => void; onLocateSource?: LocateAnswerSource; onOpenSource?: (id: string) => void; degraded?: boolean; phaseLabel?: string;
+  careCitationCount?: number; onOpenCareCitation?: (ordinal: number) => void;
 }) {
   const [processOpen, setProcessOpen] = useState(false);
   const assistant = message.role === "assistant", active = message.phase === "thinking" || message.phase === "streaming";
   const attention = message.phase === "failed" || message.phase === "unknown";
   const activities = message.activities ?? [];
-  const body = children ?? (message.text ? message.sources !== undefined
-    ? <CitationText style={styles.body}>{message.text}</CitationText>
+  const body = children ?? (message.text ? message.sources !== undefined || onOpenCareCitation
+    ? <CitationText style={styles.body} careCitationCount={careCitationCount} onOpenCareCitation={onOpenCareCitation}>{message.text}</CitationText>
     : <Text selectable style={styles.body}>{message.text}</Text> : null);
   return <View testID={testID ?? "chat-message"} nativeID={`chat-message-${message.id}`} style={[styles.row, !assistant && styles.userRow]}>
     <View style={[styles.content, assistant ? styles.assistant : styles.user, embedded && styles.embedded]}>

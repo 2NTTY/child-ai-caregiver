@@ -108,6 +108,15 @@ test("AnswerSources shows the degraded warning and empty-source honesty copy", (
   assert.ok(!degradedText.includes("官方指引")); // no fabricated source panel when empty
 });
 
+test("private-only replies omit the knowledge panel while searched replies retain its results", () => {
+  const { publicAnswerSources } = load("frontend/src/agent-view-model.ts", {});
+  assert.equal(publicAnswerSources({ retrievalMode: "not_used", citations: [] }), undefined);
+  assert.deepEqual(publicAnswerSources({ retrievalMode: "keyword_degraded", citations: [] }), []);
+  assert.deepEqual(publicAnswerSources({ retrievalMode: "vector_keyword", citations: [] }), []);
+  const citations = [{ id: "published-source" }];
+  assert.equal(publicAnswerSources({ retrievalMode: "not_used", citations }), citations);
+});
+
 test("AnswerSources panel uses product source labels when citations exist", () => {
   const { AnswerSources } = load("frontend/src/components/chat/AnswerSources.tsx", chatUiOverrides());
   const { CHAT_SOURCE_COPY, CHAT_CLASSIFICATION_LABELS } = load("frontend/src/components/chat/chat-copy.ts", chatUiOverrides());
@@ -149,4 +158,22 @@ test("OfficialHelpCards renders published emergency and medical copy without inv
   assert.ok(text.includes(OFFICIAL_HELP["emergency-hk-v1"].text.slice(0, 8)));
   // dedupe: title appears once for emergency
   assert.equal([...text.matchAll(new RegExp(OFFICIAL_HELP["emergency-hk-v1"].title, "g"))].length, 1);
+});
+
+test("CitationText links only numbered care markers within the explicitly reviewed count and retains public sources", () => {
+  const overrides = chatUiOverrides(), opened: number[] = [];
+  overrides.react.useContext = () => ({ sources: [{ id: "public", title: "Official source" }], locate() {} });
+  const { CitationText } = load("frontend/src/components/chat/AnswerSources.tsx", overrides);
+  const allNodes = (value: any): any[] => !value || typeof value !== "object" ? [] : Array.isArray(value)
+    ? value.flatMap(allNodes) : [value, ...allNodes(value.props?.children)];
+  const children = "原文[照護記錄 1]、[照護記錄 2]；舊[照護記錄]；超出[照護記錄 3]；官方[1]。";
+  const tree = CitationText({ children, careCitationCount: 2, onOpenCareCitation: (ordinal: number) => opened.push(ordinal) });
+  const care = allNodes(tree).filter(node => node.props?.markerText);
+  assert.deepEqual(care.map(node => node.props.markerText), ["[照護記錄 1]", "[照護記錄 2]"]);
+  care[0].props.onPress(); assert.deepEqual(opened, [1]);
+  assert.match(collectText(tree), /\[照護記錄\].*\[照護記錄 3\]/);
+  assert.ok(allNodes(tree).some(node => node.props?.source?.id === "public"));
+  const archive = CitationText({ children });
+  assert.equal(allNodes(archive).some(node => node.props?.markerText), false, "Archive and ordinary text receive no care-link authority");
+  assert.match(collectText(archive), /\[照護記錄 1\]/);
 });

@@ -3,6 +3,7 @@ import test from 'node:test';
 import { randomUUID } from 'node:crypto';
 import { createMixedChatApi } from '../../../src/client/mixed-chat-api.ts';
 import { MixedChatController } from './MixedChatController.ts';
+import { careRecordCitationId } from '../../../src/shared/assistant-care-citation.ts';
 
 test('mixed task batches confirm once, recover original bounded progress and stop without applying stale results', async () => {
   const childIds = Array.from({ length: 12 }, () => randomUUID()), roomId = randomUUID(), messageId = randomUUID(), runId = randomUUID();
@@ -68,6 +69,66 @@ test('mixed task batches confirm once, recover original bounded progress and sto
   assert.equal(owner.getSnapshot().batches[messageId].state, 'cancelled', 'Reopening finds the same original batch and its real receipts');
   owner.syncContext('different-parent', 'different-parent:session1', true, { kind: 'personal' }, 'other-children');
   assert.deepEqual(owner.getSnapshot().batches, {}); assert.equal(owner.getSnapshot().pending, null);
+  owner.dispose();
+});
+
+test('mixed care citations reauthorize exact reviewed records and clear originals on close, room and identity changes', async () => {
+  const roomId=randomUUID(),messageId=randomUUID(),recordId=randomUUID(),otherRecord=randomUUID(),childIds=[randomUUID(),randomUUID()];
+  const at='2026-11-12T00:00:00.000Z',runId=randomUUID(),hash='a'.repeat(64),requests=[];
+  const room={id:roomId,version:2,scope:{kind:'personal'},childIds,createdAt:at,updatedAt:at};
+  const message={id:messageId,roomId,version:2,role:'user',text:'Compare care records',createdAt:at};
+  const citation={citationId:careRecordCitationId(0,recordId,2),recordId,version:2,childId:childIds[0],childName:'First child',
+    text:'Exact private care original',source:'Parent entry',eventTimeLabel:null};
+  let review={draftHash:hash,sourceVersions:[{citationId:careRecordCitationId(1,otherRecord,3),version:'3',contentHash:hash},
+      {citationId:'care:'+hash,version:hash,contentHash:hash},{citationId:citation.citationId,version:'2',contentHash:hash}],
+    scope:{userId:'parent',workspaceId:roomId,childId:roomId,authorizationVersion:'a',dataVersion:'d'},visibility:'private',decision:'pass',
+    model:'test',promptVersion:'1',policyVersion:'test'};
+  let result={runId,status:'completed',stopReason:null,text:'See [照護記錄 1].',citations:[],retrievalMode:'not_used',tools:[],
+    counts:{modelCalls:1,toolCalls:0,queryEmbeddings:0},proposals:[],provenance:null,deliveryReview:review};
+  let status=200,mismatch=null,hold=false,release,signal,archived=false;
+  const api=createMixedChatApi('https://example.test',async (input,init)=>{
+    const path=new URL(input).pathname;requests.push([init.method,path]);
+    assert.equal(init.method,'GET','Opening a care source never starts a model or writes');
+    assert.equal(new Headers(init.headers).get('x-expected-user-id'),'parent');
+    assert.equal(init.credentials,'include');assert.equal(init.cache,'no-store');
+    if(path.includes('/care-citations/')){
+      assert.equal(path,`/api/account/mixed-chats/${roomId}/messages/${messageId}/care-citations/1`);
+      signal=init.signal;
+      const response=status===200?Response.json({citation:{...citation,...mismatch}}):Response.json({error:{code:'unavailable'}},{status});
+      return hold?new Promise(resolve=>{release=()=>resolve(response);}):response;
+    }
+    if(path.endsWith('/reply'))return Response.json({result});
+    return Response.json({room,messages:[message],nextCursor:null,...(archived?{archivedReplies:[{messageId,reply:{status:'completed',text:'[照護記錄 1]',citations:[]}}]}:{})});
+  });
+  const owner=new MixedChatController(api);owner.syncContext('parent','parent:1',true,{kind:'personal'},'children');
+  await owner.openRoom(roomId);assert.equal(typeof owner.readCareCitation,'function');
+  const careReads=()=>requests.filter(([,path])=>path.includes('/care-citations/')).length;
+  for(const ordinal of [0,3,1.5])await owner.readCareCitation(messageId,ordinal);
+  assert.equal(careReads(),0,'Coverage and invalid ordinals do not become record links');
+  await owner.readCareCitation(messageId,1);assert.deepEqual(owner.getSnapshot().careCitation.citation,citation);
+  owner.closeCareCitation();assert.equal(owner.getSnapshot().careCitation,null);
+  await owner.readCareCitation(messageId,1);assert.equal(careReads(),2,'Every reopen reauthorizes instead of reusing plaintext');
+  for(const changed of [{childId:childIds[1]},{recordId:otherRecord},{version:3},{citationId:'wrong'}]){
+    mismatch=changed;await owner.readCareCitation(messageId,1);
+    assert.equal(owner.getSnapshot().careCitation.citation,null,'A response cannot move the reference to another record or child');
+    assert.ok(owner.getSnapshot().careCitation.error);
+  }
+  mismatch=null;
+  for(const denied of [409,403,404]){status=denied;await owner.readCareCitation(messageId,1);assert.equal(owner.getSnapshot().careCitation.citation,null);
+    assert.match(owner.getSnapshot().careCitation.error,denied===409?/來源已更改/:/無法查看/);}
+  status=200;hold=true;let late=owner.readCareCitation(messageId,1);await new Promise(resolve=>setImmediate(resolve));
+  owner.closeCareCitation();assert.equal(signal.aborted,true);release();await late;assert.equal(owner.getSnapshot().careCitation,null);
+  late=owner.readCareCitation(messageId,1);await new Promise(resolve=>setImmediate(resolve));
+  await owner.openRoom(roomId);release();await late;assert.equal(owner.getSnapshot().careCitation,null);
+  late=owner.readCareCitation(messageId,1);await new Promise(resolve=>setImmediate(resolve));
+  owner.syncContext('other','other:1',true,{kind:'personal'},'other');release();await late;assert.equal(owner.getSnapshot().careCitation,null);
+  hold=false;owner.syncContext('parent','parent:2',true,{kind:'personal'},'children');
+  for(const changes of [{status:'running'},{status:'stopped'},{deliveryReview:{...review,decision:'insufficient_evidence'}},{deliveryReview:undefined}]){
+    const original=result;result={...result,...changes};await owner.openRoom(roomId);const before=careReads();
+    await owner.readCareCitation(messageId,1);assert.equal(careReads(),before,'Only a passed local completed result exposes a source');result=original;
+  }
+  archived=true;await owner.openRoom(roomId);const beforeArchive=careReads();await owner.readCareCitation(messageId,1);
+  assert.equal(careReads(),beforeArchive,'An archived marker never points to a local source');
   owner.dispose();
 });
 

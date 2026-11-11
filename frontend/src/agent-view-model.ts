@@ -22,6 +22,11 @@ export interface AgentRunView {
   proposals: AgentProposalView[]; citations: AgentCitationView[];
   privateSourceCitations?:import("../../src/shared/product-agent.ts").PrivateSourceCitation[];
 }
+/** Undefined hides the knowledge panel; an empty list shows the result of a knowledge search. */
+export function publicAnswerSources(run: Pick<AgentRunView, "retrievalMode" | "citations">) {
+  if (!run.citations.length && run.retrievalMode === "not_used") return undefined;
+  return run.citations;
+}
 export interface AgentPendingDecision {
   runId: string; proposalId: string;
   input: { expectedVersion: number; decision: AgentDecisionKind; confirmShared: boolean };

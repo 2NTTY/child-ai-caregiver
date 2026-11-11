@@ -3,11 +3,11 @@ import { Text } from "react-native-paper";
 import { chineseFont, colors } from "../../theme";
 import type { Ref } from "react";
 
-export function CitationMarker({ number, label, onPress, ref }: { number: number; label: string; onPress(): void; ref?: Ref<View> }) {
+export function CitationMarker({ number, label, onPress, ref, markerText }: { number: number; label: string; onPress(): void; ref?: Ref<View>; markerText?: string }) {
   const { fontScale } = useWindowDimensions();
-  return <View style={[styles.slot, { width: (23 + String(number).length * 6) * fontScale, height: 16 * fontScale }]}>
+  return <View style={[styles.slot, { width: (markerText ? markerText.length * 11 : 23 + String(number).length * 6) * fontScale, height: 16 * fontScale }]}>
     <Pressable ref={ref} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} onPress={onPress} style={styles.marker}>
-      <Text style={styles.text}>【{number}】</Text>
+      <Text style={styles.text}>{markerText ?? `【${number}】`}</Text>
     </Pressable>
   </View>;
 }
