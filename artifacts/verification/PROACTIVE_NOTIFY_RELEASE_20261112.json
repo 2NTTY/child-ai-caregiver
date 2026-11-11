@@ -1,0 +1,58 @@
+{
+  "dateHongKong": "2026-11-12",
+  "commit": "d464982f5d96d37484059b0b036b2406ac3919cc",
+  "sourcePullRequests": [551, 552, 553],
+  "service": {
+    "tag": "p4-notify-d464982f",
+    "previous": "p4-group-2f442c36",
+    "apiWorkerDeltaSha256": "00e465c27f692e02dcb38a8d8646b88574bbeead1af703c2e3eb561d5881c576",
+    "webArchiveSha256": "049072b11cef5f7a8aba3a38e136c496ecc818e2006c210174997e81b18cc58e",
+    "probes": {
+      "readOnlyCandidate": "passed",
+      "apiAndWorker": "healthy",
+      "publicApiHealthHttp": 200,
+      "unauthenticatedAdminDemoHttp": 401,
+      "publicAdminHtmlSha256": "5d6e379e15e89d4e941fcdc11b4a9c52c070d768071b07c8c088e35ec1a86b8c",
+      "shippedJavaScriptMatchesLocalExport": true
+    },
+    "firestore": {
+      "readyNewComposites": ["native_push_deliveries: scope and chat creation cursor", "work_watches: scope and enabled flag"],
+      "excludedFromDefaultIndexing": ["proactive_state:*"]
+    },
+    "recovery": "Retain compatible API and worker after new data has been written. The previous Web image and saved configuration remain available for a UI rollback."
+  },
+  "android": {
+    "buildId": "cd0e42da-918e-41a2-a0ef-a4a6563a7b4c",
+    "applicationId": "org.yuyoufang.app",
+    "versionCode": 6,
+    "profile": "preview",
+    "runtime": "a682961caee9a918563ec71e5373417a986d8a24",
+    "artifactStatus": "finished_signature_verified",
+    "completedAt": "2026-11-11T18:44:58.996Z",
+    "bytes": 120541280,
+    "sha256": "35d4aa8c66817d6a37175fd44eb9fbe8e94edd9a97f903471e77b12b98faf458",
+    "v2SignerSha256": "6153ebdd00cbadc004506cc468e2aab5f5430320a90c8bd00df336e0853aa8a0",
+    "sameSignerAsPreviousApk": true,
+    "download": "https://expo.dev/artifacts/eas/GNAP3ybSxSQZhMwMN36eFhMEgAvz3zE44ikNtOG89gQ.apk"
+  },
+  "backendFollowup": {
+    "pullRequest": 561,
+    "commit": "90ecde37a91051180d7af3f32c92763b73de78e3",
+    "tag": "p4-notify-backend-90ecde37",
+    "apiWorkerDeltaSha256": "91034547d0098efe1deaff953e0e128e3b9916c8bd3a041ee4a47f7cb071bcaf",
+    "apiWorkerDeltaBytes": 47526,
+    "apiAndWorker": "healthy",
+    "publicHealthHttp": 200,
+    "unauthenticatedAdminDemoHttp": 401,
+    "webImageUnchanged": true,
+    "deviceNotificationSentByDeployment": false
+  },
+  "physicalDemo": {
+    "operatorBinding": "Configured for the designated test account and one of its owned children",
+    "deviceConsent": "Post-release read-only check: the bound account has native push enabled; zero active Android devices, zero devices opted in to chat notifications.",
+    "demoSent": false,
+    "receiptOnHandset": "pending",
+    "openExactMessageAndReply": "pending",
+    "sameReplyOnWeb": "pending"
+  }
+}

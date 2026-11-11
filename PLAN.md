@@ -67,7 +67,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 | NOTIFY-02 | 待辦到點、每日巡查及助手約下次查看；開啟後可查資料、聯絡及安排跟進 | 期限獨立喚醒；完成後停止；無線索零模型呼叫；同事件只處理一次 |
 | NOTIFY-03 | 公共事件增量、家庭相關性、已看及重要未讀最多一次補提 | 一份公告對兩組家庭篩選；一次真 Agent；重播、已讀、失效及無動作結果 |
 
-示範按鈕調用正式聯絡工具與台帳，只作用於已綁定示範帳號。本機已從管理操作走通主聊天和隔離收件箱；真 Gemini 巡查已用既有工作預算完成一次 `no_action` 並重開讀回。原站交付及「手機關閉 → 實收 → 點開回覆 → Web 讀回」另列驗收。[REQ-010](docs/REQUIREMENTS_BACKLOG.md#req-010) · [本機證據](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json)
+三種喚醒及一鍵示範已接入原站。一次真 Gemini 巡查按家長約定讀取原文、通過獨立審核並寫入主聊天；同一工作重播只查回原結果。另一次巡查選擇安靜結束。剩餘 AC-PROACTIVE-01 實機步驟：在已簽署的 Android 版本 6 開啟聊天通知，關閉 App、保持 Web 開啟，觸發一次示範，點通知回到同一訊息並回覆，再從 Web 讀回。REQ-001 搜索排在此後。[REQ-010](docs/REQUIREMENTS_BACKLOG.md#req-010) · [本機證據](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json) · [發布及 APK](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
 
 <a id="agent-search-first"></a>
 **主動通知交付後做 REQ-001 的官方來源搜索。** 按[需求文件的 A–D 次序](docs/REQUIREMENTS_BACKLOG.md#2-跨包的首交付切片與依賴)，先核對一條查詢需要的來源版本、引用、權限、用量及原 run 恢復（A），再用現有核准來源走通一條 Web 查詢（B）。家長應看到真實進度、得到符合適用條件的回答，能從引用打開支持說法的原文。證據不足時說明缺口，斷線後可查回同一次結果。此流程待驗。
