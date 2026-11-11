@@ -1,0 +1,56 @@
+{
+  "id": "H-01",
+  "page": "首頁",
+  "version": "v1",
+  "title": "Nextcloud Dashboard 原作完整畫面",
+  "status": "static-source-display-browser-reviewed-not-selected",
+  "implementedFrontend": false,
+  "published": false,
+  "source": {
+    "page": "https://docs.nextcloud.com/server/stable/user_manual/en/webinterface.html#the-dashboard",
+    "image": "https://docs.nextcloud.com/server/stable/user_manual/_images/webinterface_dashboard.png",
+    "commit": "06deaf49cdf432aea66fa63336fe69bfb1d25d27",
+    "commitDate": "2026-05-05T17:44:49Z",
+    "immutableImage": "https://raw.githubusercontent.com/nextcloud/documentation/06deaf49cdf432aea66fa63336fe69bfb1d25d27/user_manual/images/webinterface_dashboard.png",
+    "attribution": "Nextcloud Documentation / Nextcloud contributors; screenshot commit author Anna Larch (miaulalala)",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+    "licenseStatement": "https://github.com/nextcloud/documentation/blob/06deaf49cdf432aea66fa63336fe69bfb1d25d27/README.rst#license",
+    "imageReleaseBasis": "Commit message identifies these screenshots as NC 33; current manual title is NC 35, not evidence of image runtime version.",
+    "sha256": "e165f15881d9b2d61697a27144b5edf4a4fbe624324c4918076d1e7912c48c34",
+    "bytes": 148703,
+    "width": 1440,
+    "height": 900,
+    "visuallyInspected": true,
+    "inspectionMethod": "Independent original-image viewing and managed-preview Chromium desktop render"
+  },
+  "entry": "index.html",
+  "thumbnail": "reference/webinterface_dashboard.png",
+  "changesFromOriginal": [
+    "Original PNG unchanged byte for byte.",
+    "Added external comparison frame with H-01, attribution and static-display scope.",
+    "Viewer scales original aspect ratio on narrow screens; this does not reproduce source responsive behavior."
+  ],
+  "notClaimed": [
+    "interactive reconstruction",
+    "hidden/menu/pressed states",
+    "mobile source layout",
+    "keyboard or screen-reader acceptance",
+    "production integration",
+    "user selected design"
+  ],
+  "dataBoundary": "Official publicly documented demonstration image only; no project family data, model, backend or GCP.",
+  "verification": {
+    "date": "2026-11-11",
+    "staticChecks": "12/12",
+    "browserStaticRender": true,
+    "viewport": {
+      "width": 1180,
+      "height": 757,
+      "devicePixelRatio": 1
+    },
+    "interactive": false,
+    "mobile": false,
+    "screenReader": false
+  }
+}

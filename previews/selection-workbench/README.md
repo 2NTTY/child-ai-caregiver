@@ -1,5 +1,13 @@
 # Selection Workbench
 
+## Page-reference integration candidate · 2026-11-11
+
+[Page reference 01](versions/page-reference01-20261111/README.md) adds a passive, numbered index for the existing H-01 home, PC01 assistant-chat and C-01 care-record references. [Index source](versions/page-reference01-20261111/index.html). Each page currently has one reference, not multiple alternatives for that page. Source images, original candidate files, attribution and licenses are preserved byte for byte.
+
+This is a **GitHub source-preview candidate**, not a deployed Site or a selected product design. The new index and all three candidate entry links passed bounded Chromium desktop static-render checks (1180 × 757, DPR 1) on 2026-11-11. Mobile, keyboard, original interactive UX and screen-reader checks are NOT RUN. The existing candidates retain their prior, explicitly bounded desktop evidence. No selection writes, automatic mixing, real frontend implementation, Site deployment or master merge are included.
+
+The existing versions below and their historical status text are preserved. Their older component-level candidates are not silently relabeled as source-faithful full-page designs.
+
 The selection workbench (選配工作台) contains isolated, synthetic UI candidates for comparison.
 
 ## Version entry · preview33 candidate · 2026-11-06

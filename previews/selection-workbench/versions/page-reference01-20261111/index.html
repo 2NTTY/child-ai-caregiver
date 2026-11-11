@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; script-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>選配工作台 · 逐頁原作參考 01</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;background:#fff;color:#202428;font:16px/1.65 system-ui,sans-serif}
+    header,main,footer{max-width:1440px;margin:auto;padding:24px}
+    h1{font-size:28px;line-height:1.35;margin:0 0 12px}
+    h2{font-size:24px;line-height:1.4;margin:0 0 8px}
+    p{margin:8px 0}
+    a{color:#005a8b;overflow-wrap:anywhere}
+    a:focus-visible{outline:3px solid #005a8b;outline-offset:4px}
+    nav{display:flex;gap:12px 24px;flex-wrap:wrap;margin-top:20px}
+    section{margin:0 0 48px;padding-top:24px;border-top:1px solid #ccd2d8;scroll-margin-top:16px}
+    figure{margin:20px 0}
+    img{display:block;width:100%;height:auto}
+    figcaption{margin-top:8px;font-size:14px}
+    .scope{padding:16px;border:1px solid #ccd2d8;background:#f6f7f8}
+    .meta{font-size:14px;color:#4c5560}
+    .links{display:flex;flex-wrap:wrap;gap:8px 20px}
+    footer{border-top:1px solid #ccd2d8;font-size:14px}
+    @media(max-width:600px){header,main,footer{padding:20px 16px}h1{font-size:24px}}
+  </style>
+</head>
+<body>
+  <header>
+    <p class="meta">選配工作台 · page-reference01 · 2026-11-11</p>
+    <h1>先看整頁原作，再告訴我編號</h1>
+    <p>按「首頁」、「助手對話」及「照顧記錄」分頁展示，保留原來源，不把不同頁面的零件混成新設計。</p>
+    <div class="scope">
+      <p>目前每類只有 1 份參考，尚未形成同一頁的多方案對照。本輪是靜態頁面畫面，不是完整可操作 UX，也不是育伴港真正前端。</p>
+      <p>比較後可在對話告訴小蘭頁面及編號，例如「首頁 H-01」。未收到你的選號前，不製作真正前端、不自動拼接、不替換原版。這一頁不會保存或改動任何選擇。</p>
+      <p>下方原圖均完整保留；可開原尺寸查看細節。手機只縮放桌面原圖，不代表原作手機版。</p>
+    </div>
+    <nav aria-label="跳至頁面參考">
+      <a href="#home">首頁 · H-01</a>
+      <a href="#chat">助手對話 · PC01</a>
+      <a href="#care">照顧記錄 · C-01</a>
+    </nav>
+  </header>
+  <main>
+    <section id="home" aria-labelledby="home-title">
+      <h2 id="home-title">首頁 · H-01</h2>
+      <p>Nextcloud Dashboard · 原作完整桌面畫面</p>
+      <p class="meta">H-01 v1 · 原圖逐 byte 保留 · NC 33 截圖 · 未入選</p>
+      <figure>
+        <a href="candidates/H-01/reference/webinterface_dashboard.png" aria-label="開啟 H-01 原尺寸圖片">
+          <img src="candidates/H-01/reference/webinterface_dashboard.png" width="1440" height="900" alt="H-01：Nextcloud Dashboard 原作，藍色背景、上方導覽、問候及收藏檔案、活動、卡片、筆記四欄。">
+        </a>
+        <figcaption>Nextcloud Documentation / Nextcloud contributors；截圖提交者 Anna Larch（miaulalala）。CC BY 3.0。原圖未裁切、換色或翻譯。</figcaption>
+      </figure>
+      <div class="links">
+        <a href="candidates/H-01/index.html">開啟 H-01 完整展示與來源說明</a>
+        <a href="https://docs.nextcloud.com/server/stable/user_manual/en/webinterface.html#the-dashboard">官方參考頁</a>
+        <a href="candidates/H-01/reference/license-copying.txt">隨附授權</a>
+      </div>
+    </section>
+    <section id="chat" aria-labelledby="chat-title">
+      <h2 id="chat-title">助手對話 · PC01</h2>
+      <p>assistant-ui · Weather in Tokyo 原作示例</p>
+      <p class="meta">PC01 v1.0.1 · 下圖是未修改的原作；另保留已核對的 HTML/CSS 靜態重建 · 未入選</p>
+      <figure>
+        <a href="candidates/PC01/reference/generative-ui-light.pinned.png" aria-label="開啟 PC01 原尺寸圖片">
+          <img src="candidates/PC01/reference/generative-ui-light.pinned.png" width="2280" height="1580" alt="PC01：assistant-ui 的完整桌面對話示例，天氣提問、工具狀態、東京天氣卡、文字回覆、操作圖示及底部輸入框。">
+        </a>
+        <figcaption>assistant-ui / AgentbaseAI Inc.，Copyright (c) 2026。MIT。重建版採系統字體及重畫圖示，不是逐像素一致，亦不會真正發送訊息。</figcaption>
+      </figure>
+      <div class="links">
+        <a href="candidates/PC01/candidate/index.html">開啟 PC01 靜態重建與差異說明</a>
+        <a href="https://github.com/assistant-ui/assistant-ui/blob/3e04e44f33f8313356305f0b01e2321133228632/README.md">固定版本官方參考</a>
+        <a href="candidates/PC01/reference/LICENSE">隨附授權</a>
+      </div>
+    </section>
+    <section id="care" aria-labelledby="care-title">
+      <h2 id="care-title">照顧記錄 · C-01</h2>
+      <p>Baby Buddy Timeline · 原作桌面視窗</p>
+      <p class="meta">C-01 v1.0.0 · 原圖逐 byte 保留 · 2022-01-30 文件截圖，App 版本未標明 · 未入選</p>
+      <figure>
+        <a href="candidates/C-01/reference/timeline.png" aria-label="開啟 C-01 原尺寸圖片">
+          <img src="candidates/C-01/reference/timeline.png" width="3360" height="1824" alt="C-01：Baby Buddy 深色 Timeline 原作，左側示範檔案及嬰兒剪影，右側交錯排列筆記、餵食、尿片和睡醒記錄；底部下一筆記錄在原圖已截斷。">
+        </a>
+        <figcaption>Baby Buddy's Contributors；圖片提交者 Christopher C. Wells（cdubz）。BSD-2-Clause。這是完整原始視窗，不是整段可捲動時間線，也不代表 2026 年現行介面。</figcaption>
+      </figure>
+      <div class="links">
+        <a href="candidates/C-01/index.html">開啟 C-01 完整展示與來源說明</a>
+        <a href="https://docs.baby-buddy.net/user-guide/getting-started/#timeline">官方參考頁</a>
+        <a href="candidates/C-01/reference/LICENSE">隨附授權</a>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <p>原版、歷次工作台及既有選擇保留。此入口只整理三份已有參考；不表示原作者背書。</p>
+    <p>本次整合入口及三份獨立展示已於 2026-11-11 完成 Chromium 桌面靜態畫面與入口導覽核對；手機、原作互動、鍵盤與讀屏未驗，未發布網站。</p>
+    <p><a href="README.md">版本與驗證範圍</a> · <a href="provenance.json">固定來源清單</a> · <a href="https://github.com/2NTTY/child-ai-caregiver/tree/4c4011d7713b41beb98f521cc2393853ed9b3a3a/previews/selection-workbench">保留的歷次工作台</a></p>
+  </footer>
+</body>
+</html>
