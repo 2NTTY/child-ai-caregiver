@@ -18,6 +18,11 @@ import { openRecoveryEnvelope } from '../server/firestore-recovery-envelope.ts';
 import { FIREBASE_BACKUP_COLLECTION_SUFFIXES } from '../server/firestore-backup.ts';
 import { resolvePersonalModelLimits } from '../server/personal-model-policy.ts';
 import { platformPolicySchema } from '../src/shared/admin.ts';
+import { createFirestoreAdmin } from '../server/firestore-admin.ts';
+import { createFirestoreChatStore } from '../server/firestore-chat.ts';
+import { createFirestoreCareStore } from '../server/firestore-care.ts';
+import { createFirestoreMemoryStore } from '../server/firestore-memory.ts';
+import { createFirestoreAgentRuns } from '../server/firestore-agent-runs.ts';
 
 const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-personal' });
 const key = 'synthetic-personal-key-not-a-credential';
@@ -147,4 +152,42 @@ test('Google personal adapters use the chosen protocol, bounded catalog and no p
   await assert.rejects(gemini.agent.generate({ model: 'gemini-2.5-flash', contents: [{ role: 'user', parts: [{ text: 'Hello' }] }], config: {}, liveConnectConfig: {}, toolsDict: {} }, signal), error => error instanceof ApiError && error.status === 429);
   status = 400; response = { error: { code: 400, message: 'API key not valid. Synthetic only.', status: 'INVALID_ARGUMENT' } };
   await assert.rejects(gemini.agent.generate({ model: 'gemini-2.5-flash', contents: [{ role: 'user', parts: [{ text: 'Hello' }] }], config: {}, liveConnectConfig: {}, toolsDict: {} }, signal), { reason: 'model_key_invalid' });
+});
+
+test('personal run claims use the owner deadline instead of the platform cap and retain the original claim', async () => {
+  const fake = firestoreDomainFixture(), options = { database: fake.database, cipher: createStorageCipher(Buffer.alloc(32, 51)),
+    projectId: 'synthetic-personal-claim', namespace: 'personal_claim' };
+  const authority = createFirestoreAuthority(options), userId = 'owner';
+  await authority.initializeControl({ generation: randomUUID(), enabled: true });
+  await authority.issueInvitation({ email: 'owner@example.test', operationId: randomUUID(), expiresAt: new Date(Date.now() + 60000).toISOString() });
+  await authority.admitIdentity({ userId, email: 'owner@example.test', emailVerified: true });
+  await authority.acknowledge({ userId, operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  const { child } = await authority.createChild({ userId, displayName: '合成孩子', operationId: randomUUID() });
+  const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: options.projectId });
+  const admin = createFirestoreAdmin(options, config), policy = await admin.readPolicy();
+  const { version, updatedAt: _updatedAt, ...values } = policy;
+  await admin.submit('synthetic-admin', { kind: 'policy', opId: randomUUID(), expectedVersion: version, values: { ...values, maxRunSeconds: 60 } });
+  const routing = createFirestoreModelRouting(options, config), chat = createFirestoreChatStore(options), care = createFirestoreCareStore(options);
+  const memory = createFirestoreMemoryStore({ ...options, chat, care });
+  const runs = createFirestoreAgentRuns({ ...options, chat, memory, readInteractiveRunSeconds: routing.readInteractiveRunSeconds,
+    serverClock: () => Date.parse('2026-11-11T12:00:00.000Z') });
+  const first = await chat.createUserMessageForUser(userId, child.id, '平台期限。');
+  const platform = await runs.claim(userId, child.id, { kind: 'interactive', reference: first!.id }, 'product-interactive');
+  assert.equal(platform.expiresAt, '2026-11-11T12:01:00.000Z');
+  const settings = await routing.settings.get(userId);
+  const command = { opId: randomUUID(), expectedVersion: settings.version, mode: 'personal' as const,
+    provider: 'gemini' as const, model: settings.model, apiKey: 'synthetic-personal-key-not-a-credential', consent: true,
+    dailyLimit: settings.dailyLimit, maxModelCalls: settings.maxModelCalls, maxQueryEmbeddings: settings.maxQueryEmbeddings,
+    backgroundEnabled: false, maxRunSeconds: 180 };
+  const saved = await routing.settings.save(userId, command);
+  const second = await chat.createUserMessageForUser(userId, child.id, '本人期限。');
+  const trigger = { kind: 'interactive' as const, reference: second!.id };
+  const personal = await runs.claim(userId, child.id, trigger, 'product-interactive');
+  assert.equal(personal.expiresAt, '2026-11-11T12:03:00.000Z');
+  assert.equal((await routing.resolve(userId, 'interactive')).runLimits.deadlineMs, 180000);
+  await routing.settings.save(userId, { ...command, opId: randomUUID(), expectedVersion: saved.version, maxRunSeconds: 120 });
+  const original = await runs.claim(userId, child.id, trigger, 'product-interactive');
+  assert.equal(original.created, false);
+  assert.equal(original.runId, personal.runId);
+  assert.equal(original.expiresAt, personal.expiresAt);
 });

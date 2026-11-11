@@ -349,6 +349,6 @@
   },
   {
     "path": "tests/personal-model-settings.test.ts",
-    "cases": 2
+    "cases": 3
   }
 ]
