@@ -273,6 +273,12 @@ export function createProductAgent(options: {
           // A requested observation is staged with the reviewed worker result, never written by a partial tool call.
           return available.map(tool => tool.name !== 'present_answer' ? tool : { ...tool,
             description: tool.description + ' 若有具體事情值得稍後再查看，可另帶 nextCheck，填有根據的未來時間 at 和原因 reason。家長回覆或事情改變後重新判斷。',
+            parameterErrorHints: () => [
+              { path: "paragraphs", reason: "invalid_parameters",
+                expected: 'Use paragraphs:[{text,citationIds:[]}]; a mixed answer requires a kind per paragraph. Cite the chunkId actually read for each care suggestion.' },
+              { path: "kind", reason: "background_presentation",
+                expected: 'To stay quiet submit {"kind":"no_action","paragraphs":[]}. For a question use kind=clarification and a paragraph with text and citationIds. A daily observation may also include nextCheck with a future ISO datetime at and a reason.' },
+            ],
             parameters: agentBackgroundAnswerSchema.safeExtend({ nextCheck: proactiveNextCheckSchema.optional() }),
             async execute(args, ctx) {
               const { nextCheck: requested, ...answer } = args;
