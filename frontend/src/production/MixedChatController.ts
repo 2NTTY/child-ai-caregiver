@@ -1,23 +1,27 @@
 import { MixedChatApiError, type MixedChatApi } from '../../../src/client/mixed-chat-api.ts';
 import type { MixedChatRoom, MixedChatMessage } from '../../../src/shared/mixed-chat.ts';
 import type { ProductAgentResult } from '../../../src/shared/product-agent.ts';
+import type { MixedTaskBatch } from '../../../src/shared/mixed-task-batch.ts';
 
 type CreateInput = Parameters<MixedChatApi['create']>[0];
 type AppendInput = Parameters<MixedChatApi['append']>[1];
-type Scope = Extract<CreateInput['scope'], { kind: 'class' }>;
+type Scope = CreateInput['scope'];
 type Pending = { contextKey: string | null; checked: boolean } & (
   { kind: 'create'; input: CreateInput } | { kind: 'append'; roomId: string; input: AppendInput }
-  | { kind: 'reply'; roomId: string; messageId: string; method: 'POST' | 'DELETE' });
+  | { kind: 'reply'; roomId: string; messageId: string; method: 'POST' | 'DELETE' }
+  | { kind: 'batch'; roomId: string; messageId: string; digest: string; action: 'confirm' | 'cancel' | 'advance'; position?: number });
+type BatchPending = Extract<Pending, { kind: 'batch' }>;
 export interface MixedChatState {
   userId: string | null; identityKey: string | null; contextKey: string | null; online: boolean;
   rooms: MixedChatRoom[]; roomsLoaded: boolean; nextRoomCursor: string | null;
   room: MixedChatRoom | null; messages: MixedChatMessage[]; nextMessageCursor: string | null;
   results: Record<string, ProductAgentResult | null>; resultErrors: string[];
+  batches: Record<string, MixedTaskBatch | null>; batchErrors: string[];
   draft: string; busy: 'read' | 'write' | 'reply' | null; pending: Pending | null; notice: string | null;
 }
 const initial = (): MixedChatState => ({ userId: null, identityKey: null, contextKey: null, online: false,
   rooms: [], roomsLoaded: false, nextRoomCursor: null, room: null, messages: [], nextMessageCursor: null,
-  results: {}, resultErrors: [], draft: '', busy: null, pending: null, notice: null });
+  results: {}, resultErrors: [], batches: {}, batchErrors: [], draft: '', busy: null, pending: null, notice: null });
 type Ticket = { sequence: number; userId: string; controller: AbortController };
 
 /** One account's private conversations. Server authorization and saved run results remain authoritative. */
@@ -48,7 +52,8 @@ export class MixedChatController {
     }
   }
   private begin(busy: MixedChatState['busy'], interruptReply = false): Ticket | null {
-    if (!this.state.userId || !this.state.identityKey || !this.scope || !this.state.online || this.state.busy && !(interruptReply && this.state.busy === 'reply')) return null;
+    if (!this.state.userId || !this.state.identityKey || !this.scope || !this.state.online || this.state.busy && !(interruptReply
+      && (this.state.busy === 'reply' || this.state.busy === 'write' && this.state.pending?.kind === 'batch'))) return null;
     if (interruptReply) this.active?.abort();
     const controller = new AbortController(); this.active = controller;
     const ticket = { sequence: ++this.sequence, userId: this.state.userId, controller };
@@ -56,11 +61,15 @@ export class MixedChatController {
   }
   private current(ticket: Ticket) { return ticket.sequence === this.sequence && this.state.userId === ticket.userId && !ticket.controller.signal.aborted; }
   private finish(ticket: Ticket) { if (this.current(ticket)) { this.active = null; this.update({ busy: null }); } }
-  private inScope(room: MixedChatRoom) { return this.scope && room.scope.kind === 'class' && room.scope.spaceId === this.scope.spaceId; }
+  private inScope(room: MixedChatRoom) {
+    return this.scope?.kind === 'personal' ? room.scope.kind === 'personal'
+      : this.scope?.kind === 'class' && room.scope.kind === 'class' && room.scope.spaceId === this.scope.spaceId;
+  }
   private failure(error: unknown, write = false) {
     if (error instanceof MixedChatApiError && [401, 403, 404, 409].includes(error.status)) {
-      this.update({ room: null, messages: [], results: {}, resultErrors: [], rooms: [], roomsLoaded: false, pending: null, draft: '',
-        notice: '對話、班級或權限已改變，請重新讀取名冊及本人對話。' });
+      this.update({ room: null, messages: [], results: {}, resultErrors: [], batches: {}, batchErrors: [], rooms: [], roomsLoaded: false, pending: null, draft: '',
+        notice: this.scope?.kind === 'personal' ? '對話、孩子或權限已改變，請重新讀取本人的孩子及對話。'
+          : '對話、班級或權限已改變，請重新讀取名冊及本人對話。' });
       this.scopeChanged();
     } else if (write) {
       const rejected = error instanceof MixedChatApiError && error.status >= 400 && error.status < 500;
@@ -84,7 +93,7 @@ export class MixedChatController {
   async openRoom(roomId: string, more = false) {
     if (this.state.pending || more && (this.state.room?.id !== roomId || !this.state.nextMessageCursor)) return;
     const ticket = this.begin('read'); if (!ticket) return;
-    if (!more) this.update({ room: null, messages: [], results: {}, resultErrors: [], draft: '', nextMessageCursor: null });
+    if (!more) this.update({ room: null, messages: [], results: {}, resultErrors: [], batches: {}, batchErrors: [], draft: '', nextMessageCursor: null });
     try {
       const page = await this.api.detail(roomId, ticket.userId, ticket.controller.signal, more ? this.state.nextMessageCursor! : undefined);
       if (!this.current(ticket)) return;
@@ -96,6 +105,7 @@ export class MixedChatController {
           const result = await this.api.reply(roomId, message.id, 'GET', ticket.userId, ticket.controller.signal);
           if (this.current(ticket) && this.state.room?.id === roomId) this.update({ results: { ...this.state.results, [message.id]: result },
             resultErrors: this.state.resultErrors.filter(id => id !== message.id) });
+          if (this.current(ticket) && this.batchHint(message.id)) await this.readBatchIn(ticket, roomId, message.id);
         } catch (error) {
           if (!this.current(ticket)) return;
           if (error instanceof MixedChatApiError && [401, 403, 404, 409].includes(error.status)) this.failure(error);
@@ -126,7 +136,7 @@ export class MixedChatController {
     try {
       if (pending.kind === 'create') {
         const room = await this.api.create(pending.input, ticket.userId, ticket.controller.signal);
-        if (this.current(ticket)) this.update({ pending: null, ...(pending.contextKey === this.state.contextKey ? { room, messages: [], results: {}, resultErrors: [], draft: '', nextMessageCursor: null,
+        if (this.current(ticket)) this.update({ pending: null, ...(pending.contextKey === this.state.contextKey ? { room, messages: [], results: {}, resultErrors: [], batches: {}, batchErrors: [], draft: '', nextMessageCursor: null,
           rooms: [room, ...this.state.rooms.filter(value => value.id !== room.id)] } : {}) });
         if (this.current(ticket)) return room.id;
       } else if (pending.kind === 'append') {
@@ -139,7 +149,7 @@ export class MixedChatController {
             return message.id;
           }
         }
-      } else {
+      } else if (pending.kind === 'reply') {
         const result = await this.api.reply(pending.roomId, pending.messageId, pending.method, ticket.userId, ticket.controller.signal);
         if (this.current(ticket)) {
           const settled = result !== null && (pending.method === 'POST' || result.status !== 'running');
@@ -147,6 +157,7 @@ export class MixedChatController {
           if (pending.contextKey === this.state.contextKey && this.state.room?.id === pending.roomId)
             this.update({ results: { ...this.state.results, [pending.messageId]: result }, resultErrors: this.state.resultErrors.filter(id => id !== pending.messageId),
               notice: settled ? null : '原回覆或停止結果尚未確認，請先查核原回覆。' });
+          if (this.batchHint(pending.messageId)) await this.readBatchIn(ticket, pending.roomId, pending.messageId);
         }
       }
     } catch (error) { if (this.current(ticket)) this.failure(error, true); } finally { this.finish(ticket); }
@@ -177,17 +188,111 @@ export class MixedChatController {
         notice: result ? !settled ? '原運行仍在處理，尚未確認停止；可繼續停止同一原運行。'
           : this.state.room?.id === roomId ? null : '原運行已查回，可從本人對話重新開啟。'
           : '尚未找到原助手運行；如要接續，只會使用這則原留言。' });
+      if (this.current(ticket) && this.batchHint(messageId)) await this.readBatchIn(ticket, roomId, messageId);
     } catch (error) { if (this.current(ticket)) this.failure(error); } finally { this.finish(ticket); }
   }
   async checkOriginal() {
     const pending = this.state.pending; if (!pending) return;
-    if (pending.kind === 'reply') {
+    if (pending.kind === 'batch') await this.readBatch(pending.messageId);
+    else if (pending.kind === 'reply') {
       await this.readReply(pending.messageId);
     } else {
       const id = await this.write(pending);
       if (pending.kind === 'create' && id && this.state.room?.id === id) await this.openRoom(id);
     }
   }
-  async retryOriginal() { const pending = this.state.pending; if (pending?.kind === 'reply' && pending.checked) await this.write(pending); }
+  async retryOriginal() {
+    const pending = this.state.pending;
+    if (pending?.kind === 'reply' && pending.checked) await this.write(pending);
+    else if (pending?.kind === 'batch' && pending.checked) await this.writeBatch(pending);
+  }
+  private batchHint(messageId: string) {
+    return this.state.results[messageId]?.tools.some(tool => tool.name === 'prepare_selected_tasks')
+      || Object.hasOwn(this.state.batches, messageId)
+      || this.state.pending?.kind === 'batch' && this.state.pending.messageId === messageId;
+  }
+  private acceptBatch(roomId: string, messageId: string, batch: MixedTaskBatch | null) {
+    if (this.state.room?.id !== roomId) return;
+    const run = this.state.results[messageId];
+    if (batch && (run && batch.runId !== run.runId || batch.items.some(item => !this.state.room!.childIds.includes(item.childId))
+      || new Set(batch.items.map(item => item.operationId)).size !== batch.items.length)) throw new MixedChatApiError(0, 'mixed_chat_response_invalid');
+    this.update({ batches: { ...this.state.batches, [messageId]: batch }, batchErrors: this.state.batchErrors.filter(id => id !== messageId) });
+  }
+  private async readBatchIn(ticket: Ticket, roomId: string, messageId: string) {
+    try {
+      const batch = await this.api.batch(roomId, messageId, ticket.userId, ticket.controller.signal);
+      if (this.current(ticket)) this.acceptBatch(roomId, messageId, batch);
+      return batch;
+    } catch (error) {
+      if (this.current(ticket)) {
+        if (error instanceof MixedChatApiError && [401, 403, 404, 409].includes(error.status)) this.failure(error);
+        else this.update({ batchErrors: [...new Set([...this.state.batchErrors, messageId])], notice: '未能查回原待辦批次，請重新讀取；未重新送出操作。' });
+      }
+      return undefined;
+    }
+  }
+  async readBatch(messageId: string) {
+    if (!this.batchHint(messageId)) return;
+    const pending = this.state.pending;
+    if (pending && !(pending.kind === 'batch' && pending.messageId === messageId)) return;
+    const roomId = pending?.kind === 'batch' ? pending.roomId : this.state.room?.id; if (!roomId) return;
+    const ticket = this.begin('read'); if (!ticket) return;
+    try {
+      const batch = await this.readBatchIn(ticket, roomId, messageId);
+      if (!this.current(ticket) || batch === undefined) return;
+      if (pending?.kind === 'batch') {
+        const needsOriginal = !batch || batch.digest === pending.digest && (pending.action === 'cancel' && ['running', 'awaiting_confirmation'].includes(batch.state)
+          || pending.action === 'confirm' && batch.state === 'awaiting_confirmation');
+        this.update({ pending: needsOriginal ? { ...pending, checked: true } : null });
+      }
+    } catch { /* The original request and the last verified batch stay available for recovery. */ }
+    finally { this.finish(ticket); }
+  }
+  async confirmBatch(messageId: string, digest: string) {
+    const batch = this.state.batches[messageId];
+    if (this.state.pending || !this.state.room || !batch || batch.digest !== digest || batch.state !== 'awaiting_confirmation'
+      || this.state.results[messageId]?.status !== 'completed') return;
+    await this.writeBatch({ kind: 'batch', roomId: this.state.room.id, messageId, digest, action: 'confirm', contextKey: this.state.contextKey, checked: false });
+  }
+  async continueBatch(messageId: string, digest: string) {
+    const batch = this.state.batches[messageId];
+    if (this.state.pending || !this.state.room || !batch || batch.digest !== digest || batch.state !== 'running') return;
+    await this.writeBatch({ kind: 'batch', roomId: this.state.room.id, messageId, digest, action: 'advance',
+      position: batch.items.findIndex(item => item.status === 'pending'), contextKey: this.state.contextKey, checked: false });
+  }
+  async cancelBatch(messageId: string, digest: string) {
+    const batch = this.state.batches[messageId], pending = this.state.pending;
+    if (!this.state.room || !batch || batch.digest !== digest || !['running', 'awaiting_confirmation'].includes(batch.state)
+      || pending && !(pending.kind === 'batch' && pending.roomId === this.state.room.id && pending.messageId === messageId)) return;
+    await this.writeBatch({ kind: 'batch', roomId: this.state.room.id, messageId, digest, action: 'cancel', contextKey: this.state.contextKey, checked: false }, true);
+  }
+  private async writeBatch(original: BatchPending, interrupt = false) {
+    const ticket = this.begin('write', interrupt); if (!ticket) return;
+    let pending = original;
+    this.update({ pending });
+    try {
+      let batch = pending.action === 'advance'
+        ? await this.api.advanceBatch(pending.roomId, pending.messageId, { digest: pending.digest, position: pending.position! }, ticket.userId, ticket.controller.signal)
+        : await this.api.controlBatch(pending.roomId, pending.messageId, { digest: pending.digest, action: pending.action }, ticket.userId, ticket.controller.signal);
+      while (this.current(ticket)) {
+        this.acceptBatch(pending.roomId, pending.messageId, batch);
+        if (pending.action === 'cancel' || batch.state !== 'running') {
+          const stopping = pending.action === 'cancel' && ['running', 'awaiting_confirmation'].includes(batch.state);
+          this.update({ pending: stopping ? pending : null, ...(stopping ? { notice: '原批次仍未確認停止，請查回原批次。' } : {}) }); return;
+        }
+        const position = batch.items.findIndex(item => item.status === 'pending');
+        if (position < 0 || pending.action === 'advance' && position <= pending.position!) throw new MixedChatApiError(0, 'mixed_chat_response_invalid');
+        pending = { ...pending, action: 'advance', position, checked: false };
+        this.update({ pending });
+        batch = await this.api.advanceBatch(pending.roomId, pending.messageId, { digest: pending.digest, position }, ticket.userId, ticket.controller.signal);
+      }
+    } catch (error) {
+      if (this.current(ticket)) {
+        if (error instanceof MixedChatApiError && error.status === 409)
+          this.update({ notice: '原批次資料已改變，請查回原批次，再核對逐項結果。' });
+        else this.failure(error, true);
+      }
+    } finally { this.finish(ticket); }
+  }
   dispose() { this.active?.abort(); this.sequence++; this.listeners.clear(); }
 }

@@ -4,6 +4,8 @@
 
 INT 正式接線現行位置以 [共用 owner 清單](../docs/P2_UI_HANDOFF.md#production-owners) 為準；`frontend/` 已成正式入口，[啟動／部署及尚未支援項](../docs/PRODUCTION_FRONTEND.md) 另列。下方設計回調與較早缺口不能覆蓋已接通的正式契約。
 
+個人多孩對話可從「更多 → 本人多孩對話」進入，班級對話沿名冊進入。兩者共用 `MixedChatConversation`、`MixedChatController` 及正式 transport；批次結果按原訊息和 digest 查回。前端不從按鈕點擊推斷任何待辦已完成。
+
 <a id="reading-order"></a>
 ## 接線前先讀
 
