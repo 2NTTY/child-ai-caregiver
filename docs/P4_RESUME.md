@@ -6,7 +6,9 @@ P4 暫停於 Web 示範可用階段。[開啟原站](https://ex-machina.eu.org)�
 
 ## 下次從哪開始
 
-若回來是為了**改善助手示範**，直接從下表④開始。在自己的分支按[本地 Agent 指引](AGENT_LOCAL.md)執行 `npm run agent:local`，用兩個合成孩子、一條現有工具答不了的示範問題，定位欠的是記憶、文件、檢索排序，還是原文閱讀。照護與待辦查詢已有兩條真 Gemini 證據可作對照。[照護查詢與審核](../artifacts/verification/P4_SELECTED_CARE_VERTEX_20261111.json) · [待辦查詢與批次](../artifacts/verification/P4_GROUP_TASK_VERTEX_20261111.json)
+**先讀屆時指定的 Agent 需求文件。** 截至本次暫停，尚未按該文件評估架構。用需求中的示範問題對照下表④及現有工具，定出需要復用或更改的接口後，再開跨孩記憶、文件召回或新的工具編排。多孩照護查詢、原文點讀及待辦批次可直接沿用；待辦批次已有部分衝突、重建服務後從原位置接續及讀回原收據的合成證據。[照護查詢與審核](../artifacts/verification/P4_SELECTED_CARE_VERTEX_20261111.json) · [待辦查詢與批次](../artifacts/verification/P4_GROUP_TASK_VERTEX_20261111.json) · [批次恢復案例](../tests/mixed-task-batch.test.mjs)
+
+**公共知識維護另有一個操作缺口。** 現有 CLI 可送入 ZIP，Web 後台可查收據、停止及恢復；從 Web 選檔送入的入口只完成唯讀盤點。若決定接這個入口，先看[現有匯入操作](../scripts/knowledge-transfer-operations.mjs)。公共語料維運和私人多孩資料查詢分開承接。[本地 Agent 啟動方法](AGENT_LOCAL.md)
 
 若回來是為了**完成 P4 產品**，可以先接①的共享附件上傳。家庭選擇、原件讀取及部分刪除都已具備，可用同一名成員完成上傳、讓同家庭另一成員讀回，再撤權核對。這一段可獨立進行。之後按②、③、⑤補其餘功能及交付。下表各列均保留未完成狀態。
 
@@ -20,6 +22,6 @@ P4 暫停於 Web 示範可用階段。[開啟原站](https://ex-machina.eu.org)�
 
 ## 恢復工作前只核對三件事
 
-1. 核對最新 master、未合併 PR 和所選列的接線，保留其他人的修改。B 接共用前端／手機，C 接後端；提交時按本機協作文件核對身份。
+1. 核對最新 master、未合併 PR 和所選列的接線，保留其他人的修改；提交時按本機協作文件核對身份。
 2. 對照上方最後交付的版本與實測界線；若追查照護查詢本身，另看[上一版發布](../artifacts/verification/P4_SELECTED_CARE_DELIVERY_20261111.json)。原站 VM 自動關機期限最後記錄為 **2026-12-08 22:32 香港時間**，重新發布前核對實際主機狀態。
 3. 只補所選差異的必要驗收；合成、真模型、原站、真機分開記。P3 的四 Agent 聯合驗收／iOS TestFlight 及 P5 的自選 Server／搬遷沿原包追蹤。
