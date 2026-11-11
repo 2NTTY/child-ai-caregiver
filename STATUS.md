@@ -4,6 +4,8 @@
 
 ## 目前與接手
 
+- **11 月 11 日，公共知識匯入。** 管理 API（#526）及 Web 後台（#527）已合併，可按 ZIP 指紋查回、分頁查看逐項收據、停止或恢復。原 ZIP 仍由現有匯入指令執行。正式單欄索引和原站發布待核。[知識維護入口](docs/P2_KNOWLEDGE.md#公共知識版本的批量移轉)
+
 - **11 月 9 日，S12-W02 iOS 系統分享。** 收件已接共用草稿及 ZIP 匯入。Expo 工程生成、App Group 配置、同名附件隔離及切換帳戶期間的遲到分享已用本機流程核對。Swift 編譯、簽署及 iPhone 系統分享待驗。[交付條件](docs/PRODUCTION_FRONTEND.md#ios-共用入口與-testflight-配置)
 
 - **11 月 9 日，P4-AUTH01。** Server 已以受邀帳戶核對 Apple 私密轉寄身份的明確連結，涵蓋 Web／原生 session 與裝置撤銷。只驗了合成身份，正式 Google／Apple 配置、共用表單接續和真人登入待辦。[契約](docs/API.md#p4-auth-providers)

@@ -22,12 +22,10 @@ const metadataFields = new Set([
   'photos:scopeTag', 'knowledge_versions:versionId', 'knowledge_observations:lastSuccessfulCheckAt', 'knowledge_checks:checkedAt',
   'work_watches:enabled', 'erasures:state', 'content_erasures:stage', 'context_versions:summaryPending', 'voice_assets:cleanupState',
   'chat_file_assets:cleanupState', 'avatar_cleanup:complete', 'handover_exports:cleaned', 'handover_uploads:cleaned',
-  'handover_import_batches:growthImportScopes', 'knowledge_index_batches:sort',
+  'handover_import_batches:growthImportScopes', 'knowledge_index_batches:sort', 'knowledge_transfers:transferDigest',
 ].map(field => 'yuban_authority_' + field));
 try {
-  if (!['--inspect', '--inspect-fields', '--approved-apply', '--approved-fields'].includes(mode) || !process.env.GOOGLE_APPLICATION_CREDENTIALS) throw Error('explicit_mode_and_credentials_required');
-  const client = await new GoogleAuth({ keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-    scopes: ['https://www.googleapis.com/auth/cloud-platform'] }).getClient();
+  if (!['--check-manifest', '--inspect', '--inspect-fields', '--approved-apply', '--approved-fields'].includes(mode)) throw Error('explicit_mode_and_credentials_required');
   const desired = JSON.parse(await readFile(new URL('../deploy/firebase/firestore.indexes.json', import.meta.url), 'utf8'));
   for (const entry of desired.fieldOverrides) {
     if (!/^yuban_authority(?:_[a-z_]+)?$/u.test(entry.collectionGroup)
@@ -35,11 +33,25 @@ try {
       || !Array.isArray(entry.indexes)
       || entry.indexes.length && !metadataFields.has(entry.collectionGroup + ':' + entry.fieldPath)) throw Error('field_exemption_scope');
   }
+  for (const entry of desired.indexes) {
+    if (!/^yuban_authority_[a-z_]+$/u.test(entry.collectionGroup) && !sessionIndexes.includes(canonical(entry))) throw Error('index_collection_scope');
+  }
+  if (mode === '--check-manifest') {
+    console.info(JSON.stringify({ mode, indexes: desired.indexes.length, fieldOverrides: desired.fieldOverrides.length }));
+  } else await reconcile(desired);
+} catch (error) {
+  console.error(JSON.stringify({ state: 'stopped', code: error?.code ?? error?.response?.status ?? null,
+    reason: error?.constructor === Error && /^[a-z_]+$/u.test(error.message) ? error.message : null })); process.exitCode = 1;
+}
+
+async function reconcile(desired) {
+  if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) throw Error('explicit_mode_and_credentials_required');
+  const client = await new GoogleAuth({ keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+    scopes: ['https://www.googleapis.com/auth/cloud-platform'] }).getClient();
   const current = (await client.request({ url: base + '/collectionGroups/-/indexes', retry: false })).data;
   if (current.nextPageToken || (current.indexes?.length ?? 0) > 200) throw Error('index_listing_bound');
   const missing = [], building = [];
   for (const entry of desired.indexes) {
-    if (!/^yuban_authority_[a-z_]+$/u.test(entry.collectionGroup) && !sessionIndexes.includes(canonical(entry))) throw Error('index_collection_scope');
     const found = current.indexes?.find(value => value.name.includes('/collectionGroups/' + entry.collectionGroup + '/') && shape(value) === shape(entry));
     if (!found) missing.push(entry); else if (found.state !== 'READY') building.push({ collection: entry.collectionGroup, state: found.state });
   }
@@ -69,7 +81,4 @@ try {
       console.info(JSON.stringify({ configuredCollection: entry.collectionGroup, field: entry.fieldPath, accepted: Boolean(operation.name) }));
     }
   }
-} catch (error) {
-  console.error(JSON.stringify({ state: 'stopped', code: error?.code ?? error?.response?.status ?? null,
-    reason: error?.constructor === Error && /^[a-z_]+$/u.test(error.message) ? error.message : null })); process.exitCode = 1;
 }

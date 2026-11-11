@@ -1,4 +1,6 @@
 import type { NativeRequestContext } from './native-push-context.ts';
+import type { DocumentSnapshot } from '@google-cloud/firestore';
+import { assistantTaskContextRequestSchema, scopeTasksPerChild, type AssistantTaskContextRequest, type AssistantTaskContextPage } from '../src/shared/assistant-task-context.ts';
 import type { SharedChangesQuery, SharedChangesPage } from '../src/shared/sharing.ts';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -43,6 +45,7 @@ export interface FirestoreTasksQuery {
   history(userId: string, childId: string, taskId: string, beforeVersion?: number | null): Promise<TaskHistory | null>;
 }
 export interface FirestoreOnlineStore {
+  readTaskContext(userId: string, input: AssistantTaskContextRequest): Promise<AssistantTaskContextPage>;
   readImportTask(binding: FirestoreAuthorityTransaction, childId: string, taskId: string): Promise<CareTask | null>;
   prepareImportedTask(binding: FirestoreAuthorityTransaction, childId: string, operationId: string,
     row: HandoverImportRow, integrity: HandoverIntegrity, target?: { id: string; expectedVersion: number }): Promise<{ task: CareTask; changeSeq: string; commit(): void }>;
@@ -93,13 +96,26 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
   async function requireChild(binding: FirestoreAuthorityTransaction, childId: string): Promise<Child> {
     const child = await binding.readChild(childId); if (!child) domainReject('not_found', 404); return child;
   }
-  async function readTask(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, id: string) {
-    const snapshot = await binding.transaction.get(data.ref('tasks', 'task', id));
-    if (!snapshot.exists) return null;
+  function openTask(scope: WorkRecoveryScope, id: string, snapshot: DocumentSnapshot) {
     matchesTags(snapshot.data(), scope);
     const task = data.open('task', id, scope, firestoreTaskStorageSchema, snapshot);
-    if (task.id !== id || !validTaskAttribution(task, scope) || task.version !== snapshot.get('recordVersion')) domainReject('task_binding', 500);
+    if (snapshot.ref.path !== data.ref('tasks', 'task', id).path || task.id !== id || task.childId !== scope.childId
+      || !validTaskAttribution(task, scope) || task.version !== snapshot.get('recordVersion')) domainReject('task_binding', 500);
     return task;
+  }
+  async function readTask(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, id: string) {
+    const snapshot = await binding.transaction.get(data.ref('tasks', 'task', id));
+    return snapshot.exists ? openTask(scope, id, snapshot) : null;
+  }
+  async function readTaskPage(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, after: string | null, limit: number) {
+    const tags = data.tags(scope);
+    let query = data.collection('tasks').where('workspaceTag', '==', tags.workspaceTag).where('epochTag', '==', tags.epochTag)
+      .where('childTag', '==', tags.childTag).where('userTag', '==', tags.userTag).orderBy('taskId', 'asc').limit(limit + 1);
+    if (after) query = query.startAfter(after);
+    const rows = await binding.transaction.get(query);
+    const items = rows.docs.slice(0, limit).map(row => firestoreTaskSchema.parse(openTask(scope,
+      domainParse(uuid, row.get('taskId'), 'invalid_document', 500), row)));
+    return { items, nextAfterId: rows.size > limit ? items.at(-1)!.id : null };
   }
   async function readOutbox(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, task: CareTask) {
     const id = firestoreReminderOutboxId(task.id, task.version), ref = data.ref('task_outbox', 'task-reminder-outbox', id);
@@ -238,18 +254,9 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
     async list(userId, childId, afterId = null) {
       domainParse(uuid, childId); if (afterId !== null) domainParse(uuid, afterId);
       return access(userId, childId, async binding => {
-        const tags = data.tags(binding.scope);
-        let query = data.collection('tasks').where('workspaceTag', '==', tags.workspaceTag).where('epochTag', '==', tags.epochTag)
-          .where('childTag', '==', tags.childTag).where('userTag', '==', tags.userTag).orderBy('taskId', 'asc').limit(51);
-        if (afterId) query = query.startAfter(afterId);
-        const rows = await binding.transaction.get(query), items: CareTask[] = [];
-        for (const row of rows.docs.slice(0, 50)) {
-          const id = domainParse(uuid, row.get('taskId'), 'invalid_document', 500);
-          const task = await readTask(binding, binding.scope, id);
-          if (!task) domainReject('projection_binding', 500); items.push(firestoreTaskSchema.parse(task));
-        }
+        const { items, nextAfterId } = await readTaskPage(binding, binding.scope, afterId, 50);
         const assignee = binding.sharedAccess?.classMember?.userId ?? binding.scope.ownerUserId;
-        return { items, eligibleAssignees: [{ userId: assignee, name: binding.actorUserId === assignee ? '本人' : '資料擁有人' }], nextAfterId: rows.docs.length > 50 ? items.at(-1)!.id : null,
+        return { items, eligibleAssignees: [{ userId: assignee, name: binding.actorUserId === assignee ? '本人' : '資料擁有人' }], nextAfterId,
           ...await reminderView(binding, items.map(item => item.id)) };
       });
     },
@@ -291,6 +298,33 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
   const tasks = taskView();
   return {
     children, tasks, prepareTask,
+    async readTaskContext(userId, raw) {
+      const { scope, targets } = domainParse(assistantTaskContextRequestSchema, raw);
+      return authority.runTransaction(userId, null, async actor => {
+        const children: AssistantTaskContextPage['children'] = [];
+        for (const { childId, cursor } of targets) {
+          async function read(binding: FirestoreAuthorityTransaction) {
+            const child = await requireChild(binding, childId);
+            const storage = scopeFor(binding, childId);
+            const basis = firestoreDomainHash(['assistant-task-page:1', userId, storage, actor.authorizationVersion,
+              binding.authorizationVersion, binding.changeSeq, binding.sharedAccess?.basis ?? null]);
+            if (cursor && cursor.basis !== basis) domainReject('cursor_changed');
+            const page = await readTaskPage(binding, storage, cursor?.afterId ?? null, scopeTasksPerChild);
+            return { childId, childName: child.displayName, tasks: page.items.map(({ id, version, title, occurrence }) =>
+              ({ id, version, title, dueAt: occurrence.dueAt, state: occurrence.state })),
+              nextCursor: page.nextAfterId ? { afterId: page.nextAfterId, basis } : null };
+          }
+          if (scope.kind === 'personal') children.push(await read(actor));
+          else children.push(await sharing.inResourceTransaction(actor, { spaceId: scope.spaceId, childId, module: 'tasks', mode: 'read' }, access => {
+            if (!access.binding.sharedAccess?.classMember) domainReject('class_required', 403);
+            if (access.basis.spaceVersion !== scope.spaceVersion || (access.basis.teacherSpaceVersion ?? null) !== scope.teacherSpaceVersion)
+              domainReject('sharing_scope_changed');
+            return read(access.binding);
+          }));
+        }
+        return { children };
+      });
+    },
     async readImportTask(binding, childId, taskId) {
       domainParse(uuid, taskId); await requireChild(binding, childId);
       const value = await readTask(binding, scopeFor(binding, childId), taskId);
