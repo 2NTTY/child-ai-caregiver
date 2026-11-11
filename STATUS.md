@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-**下一項是 [REQ-001 官方來源搜索](PLAN.md#agent-search-first)，首條 Web 查詢待驗。** P4 暫停於 11 月 11 日 23:11（香港）的原站版本 `p4-group-2f442c36`。新多孩回覆可點讀通過審核的照護原文，Android 待批量交付。五組餘項及恢復位置見[接手清單](docs/P4_RESUME.md)。[原站發布證據](artifacts/verification/P4_CARE_CITATION_DELIVERY_20261111.json)
+**11 月 12 日開始[主動助手、手機通知與一鍵示範](PLAN.md#proactive-notifications)。其後的 [REQ-001 官方來源搜索](PLAN.md#agent-search-first)仍待驗。** P4 暫停於 11 月 11 日 23:11（香港）的原站版本 `p4-group-2f442c36`。新多孩回覆可點讀通過審核的照護原文，Android 待批量交付。五組餘項及恢復位置見[接手清單](docs/P4_RESUME.md)。[原站發布證據](artifacts/verification/P4_CARE_CITATION_DELIVERY_20261111.json)
 
 - **11 月 11 日，Web 示範交接。** 原站 Web、API 及 worker 已發布至 `p4-group-83afe271`。個人從「更多 → 本人多孩對話」進入，老師沿班級名冊進入。助手可查所選孩子的照護記錄及待辦，也能準備一批待辦供一次確認；統一匯入頁可收取完整對話副本。兩條真 Gemini 流程使用隔離合成資料。跨孩記憶／文件召回仍待開發，Android 待批量交付。[照護查詢](artifacts/verification/P4_SELECTED_CARE_VERTEX_20261111.json)／[原站交付](artifacts/verification/P4_SELECTED_CARE_DELIVERY_20261111.json)
 

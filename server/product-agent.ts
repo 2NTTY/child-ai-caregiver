@@ -9,6 +9,7 @@ import type { AgentRuntimePort } from "./agent-runtime.ts";
 import { createProductAgentTools, createDueWorkContinuationTools } from "./product-agent-tools.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import type { AgentPresentation, ProductAgentResult } from "../src/shared/product-agent.ts";
+import { agentBackgroundAnswerSchema, proactiveNextCheckSchema } from "../src/shared/product-agent.ts";
 import { CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT, type ChatDeliveryReviewBinding } from "../src/shared/chat-delivery-review.ts";
 import { DATA_COMPOSE_REVIEW_INCOMPLETE_TEXT } from "../src/shared/data-compose.ts";
 import { AgentStopped } from "./agent-budget.ts";
@@ -237,7 +238,10 @@ export function createProductAgent(options: {
     },
     async background(input: { userId: string; childId: string; reference: string; context: Record<string, unknown>; authorize: () => Promise<boolean>; signal?: AbortSignal }): Promise<ProductAgentResult | null> {
       if (!await input.authorize()) return null;
-      const privateContinuation = input.context.eventType === "work_continuation";
+      const revisit = input.context.eventType === 'proactive_revisit';
+      const daily = input.context.eventType === "proactive_daily" || revisit;
+      let nextCheck: ProductAgentResult['nextCheck'];
+      const privateContinuation = daily || input.context.eventType === "work_continuation";
       const recipeId = privateContinuation ? "product-work-followup" : "product-background";
       const claim = await options.store.claim(input.userId, input.childId, { kind: "worker", reference: input.reference }, recipeId);
       if (!claim) return null;
@@ -251,7 +255,8 @@ export function createProductAgent(options: {
         trigger: { kind: "worker", reference: input.reference }, recipeId,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"], context: input.context,
         ...(privateContinuation ? { toolCatalog: WORK_CONTINUATION_TOOL_CATALOG } : {}),
-        messages: [{ role: "user", text: privateContinuation ? "這是本人目前孩子的持久工作接續。只按 context 提供的相關變更／到期原因，讀取本人獲授權的資料，核對現況並作一次有用的站內回饋或必要補問。工作原話及背景結果不代表新的同意；不能執行修改、確認、共享或外發。涉及照護建議仍須查目前適用的官方來源。不重複催辦、不把模型推測當成已知事實。" : "這是 Server 核准的背景事件（context.eventType 或事件資料）。按需要讀取家庭共享資料，提供站內說明。若是成長關注，只解釋 Server 已核對的規則、適用性和來源；不創造醫療规则或把未知當未做。不自動改任務或披露私人資料。若是到期任務，按需要用 read_contact_options 及 contact_caregiver 在目前預授權內入列；缺授權只作站內說明。" }],
+        messages: [{ role: "user", text: daily ? "家長已開啟主動助手。按本次線索讀取目前孩子所需的資料；僅值得家長現在知道或回答時才提交主聊天文字。最近沒有記錄，不代表沒有做過。有獨立提醒、已完成或沒有實質變化的事保持安靜，用 no_action 結束。公共消息先核原機構現行公告及適用範圍，不代家長建立待辦。"
+          : privateContinuation ? "這是本人目前孩子的持久工作接續。只按 context 提供的相關變更／到期原因，讀取本人獲授權的資料，核對現況並作一次有用回饋或必要補問。工作原話及背景結果不代表新的同意；不能執行修改、確認或共享。涉及照護建議仍須查目前適用的官方來源。不重複催辦、不把模型推測當成已知事實。" : "這是 Server 核准的背景事件（context.eventType 或事件資料）。按需要讀取家庭共享資料，提供站內說明。若是成長關注，只解釋 Server 已核對的規則、適用性和來源；不創造醫療规则或把未知當未做。不自動改任務或披露私人資料。若是到期任務，按需要用 read_contact_options 及 contact_caregiver 在目前預授權內入列；缺授權只作站內說明。" }],
         tools: run => {
           tools = createProductAgentTools({ ...options,
             contact: privateContinuation || input.context.eventType === "concern_followup" ? undefined : options.contact,
@@ -263,12 +268,32 @@ export function createProductAgent(options: {
             "read_private_instructions", "read_work", "read_background_result", "search_history", "read_history", "read_memory_facts",
             "read_family_documents", "read_family_document_content", "list_family_document_versions", "read_care_summary",
             "read_concerns", "list_private_sources", "read_private_source"]);
-          return privateContinuation ? tools.tools.filter(tool => readable.has(tool.name)) : tools.tools;
+          const available = privateContinuation ? tools.tools.filter(tool => readable.has(tool.name)) : tools.tools;
+          if (!daily || revisit) return available;
+          // A requested observation is staged with the reviewed worker result, never written by a partial tool call.
+          return available.map(tool => tool.name !== 'present_answer' ? tool : { ...tool,
+            description: tool.description + ' 若有具體事情值得稍後再查看，可另帶 nextCheck，填有根據的未來時間 at 和原因 reason。家長回覆或事情改變後重新判斷。',
+            parameters: agentBackgroundAnswerSchema.safeExtend({ nextCheck: proactiveNextCheckSchema.optional() }),
+            async execute(args, ctx) {
+              const { nextCheck: requested, ...answer } = args;
+              const wanted = requested === undefined ? undefined : proactiveNextCheckSchema.parse(requested);
+              if (wanted && Date.parse(wanted.at) <= Date.now()) return { status: 'rejected' as const, data: { code: 'next_check_in_past' } };
+              const result = await tool.execute(answer, ctx);
+              if (result.status === 'succeeded') nextCheck = wanted;
+              return result;
+            },
+          });
         },
         authorize, signal: input.signal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
         finalize: async (runResult, runContext) => {
           rendered.value = await tools!.presentation();
-          return acceptReviewedDelivery(tools!, rendered, review, runResult, runContext);
+          const surface = tools!;
+          if (!nextCheck) return acceptReviewedDelivery(surface, rendered, review, runResult, runContext);
+          return acceptReviewedDelivery({ ...surface, replaceDeliveryAnswer(answer) {
+            // Repair replaces the draft which proposed this observation.
+            nextCheck = undefined;
+            return surface.replaceDeliveryAnswer(answer);
+          } }, rendered, review, runResult, runContext);
         },
       });
       if(result.status==="stopped" && !privateContinuation && options.contact && await input.authorize()){
@@ -278,6 +303,7 @@ export function createProductAgent(options: {
       const presentation = result.status === "completed" ? rendered.value : null;
       const retained = retainedSourcesForStoppedReview(result.status, result.stopReason ?? null, rendered.value);
       const value = withDeliveryReview({ runId: result.runId, provenance: result.provenance ?? null, status: result.status, stopReason: result.stopReason ?? null,
+        ...(daily && result.status==='completed' && nextCheck ? {nextCheck} : {}),
         ...(presentation?.outcome ? { outcome: presentation.outcome } : {}),
         text: presentation?.text ?? (result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : unfinishedDeliveryText(result.stopReason)),
         citations: presentation?.citations ?? retained?.citations ?? [],

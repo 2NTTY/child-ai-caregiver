@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { agentProposalSchema, privateSourceCitationSchema } from './product-agent.ts';
+import { agentProposalSchema, privateSourceCitationSchema, proactiveNextCheckSchema } from './product-agent.ts';
 import { chatDeliveryReviewBindingSchema } from './chat-delivery-review.ts';
 
 const uuid = z.uuid(), identifier = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/u);
@@ -40,6 +40,7 @@ export const productAgentResultSchema = z.object({
   provenance: z.object({ packVersion: z.string(), recipeId: z.string(), model: z.string() }).nullable(),
   runId: uuid, status: z.enum(['running', 'completed', 'stopped', 'unknown']), stopReason: z.string().nullable(),
   outcome: z.literal('no_action').optional(),
+  nextCheck: proactiveNextCheckSchema.optional(),
   text: z.string(), citations: z.array(agentCitationSchema), retrievalMode: z.enum(['vector_keyword', 'keyword_degraded', 'not_used']),
   privateSourceCitations: z.array(privateSourceCitationSchema).max(6).optional(),
   tools: z.array(z.object({ name: z.string().min(1), status: z.enum(['succeeded', 'rejected', 'conflict', 'failed', 'unknown']), reference: z.string().optional() })),

@@ -6,6 +6,8 @@ P4 暫停於 Web 示範可用階段。[開啟原站](https://ex-machina.eu.org)�
 
 ## 下次從哪開始
 
+2026-11-12 起先做[主動助手及手機示範](../PLAN.md#proactive-notifications)。其後的搜索示範按下列步驟，五組 P4 餘項維持暫停。
+
 **先從 Web 試一條家長自然會問的問題**，例如「我個 BB 差唔多半歲，點知佢準備好開始食固體？」選現有核准來源涵蓋的問題，按[需求文件 v0.11.0 的 A、B](REQUIREMENTS_BACKLOG.md#2-跨包的首交付切片與依賴)核對同一次回答：查到哪段原文、是否適用、點開引用能否讀到同版依據，以及畫面能否顯示真實進度、斷線後查回結果。用第一處具體缺口決定要修哪個接點。此示例供下次實作驗收。
 
 **現有公共查詢從兩個工具接起。** `search_knowledge` 搜尋已發布的官方資料，`read_knowledge_context` 按命中片段續讀同版原文。先沿用 Firestore 向量與關鍵詞混合檢索、來源版本及片段身份；依實際缺口調整查詢、續讀或引用呈現。[檢索契約](P2_KNOWLEDGE.md#firestore-maintenance) · [工具說明](../server/agent-knowledge-tool-descriptions.ts) · [本地 Agent 啟動](AGENT_LOCAL.md)

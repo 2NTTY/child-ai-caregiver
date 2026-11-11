@@ -57,8 +57,10 @@ export const agentBackgroundAnswerSchema = z.object({
   kind: z.enum([...answerKind.options, "mixed", "no_action"]),
   paragraphs: z.array(answerParagraph).max(6),
 }).strict().refine(value => value.kind === "no_action" ? value.paragraphs.length === 0
-  : agentAnswerSchema.safeParse(value).success, "No-action is empty; other answers require valid paragraphs");
+  : agentAnswerSchema.safeParse({ kind: value.kind, paragraphs: value.paragraphs }).success,
+  "No-action is empty; other answers require valid paragraphs");
 export type AgentAnswer = z.infer<typeof agentAnswerSchema>;
+export const proactiveNextCheckSchema = z.object({at:z.iso.datetime({offset:true}),reason:text(240)}).strict();
 export const privateSourceCitationSchema=z.object({citationId:z.string().max(80),inputId:z.uuid(),version:z.number().int().min(1),
   label:z.string().max(200),excerpt:z.string().max(6000),sha256:z.string().regex(/^[a-f0-9]{64}$/u),
   nature:z.enum(["unspecified","external_material","claimed_official","personal_observation"])}).strict();
@@ -72,6 +74,7 @@ export interface AgentPresentation {
   retrievalMode: "vector_keyword" | "keyword_degraded" | "not_used";
 }
 export interface ProductAgentResult extends AgentPresentation {
+  nextCheck?:z.infer<typeof proactiveNextCheckSchema>;
   runId: string;
   provenance: { packVersion: string; recipeId: string; model: string } | null;
   status: "running" | "completed" | "stopped" | "unknown";
