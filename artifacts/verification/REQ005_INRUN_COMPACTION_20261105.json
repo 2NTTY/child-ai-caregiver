@@ -1,0 +1,177 @@
+{
+  "$schema": "verification-record-v1",
+  "package": "REQ005-COMPACTION01",
+  "requirement": "REQUIREMENTS_BACKLOG.md §4.2 In-Run Context Compaction Baseline",
+  "branch": "codex/req005-inrun-compaction",
+  "pullRequest": 508,
+  "recordedAt": "2026-11-06T00:41:00+08:00",
+  "status": "EXACT_HEAD_REMOTE_CI_PASSED_HOLD_MERGE",
+  "baseCommit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+  "baseTree": "29c803a957b38f7b22e4bde508245e047eaaabcf",
+  "exactHead": "93a5ade216718cf8a5f87d66b996552d040737f6",
+  "candidateTree": "e93b33fc02f788e0f9c929a2657f68d596bf2cae",
+  "tipHead": "6c46d6639848afddb79043dc4a71bcc1ae113aa4",
+  "tipTree": "5d96b472318ade2decefe263bd103fb103a77832",
+  "headPins": {
+    "featureBaseline": {
+      "commit": "93a5ade216718cf8a5f87d66b996552d040737f6",
+      "tree": "e93b33fc02f788e0f9c929a2657f68d596bf2cae",
+      "ciRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/42045529284",
+      "ciStatus": "SUCCESS"
+    },
+    "intermediateTip": {
+      "commit": "f22cca3a2c78ab3ddfe72c596e0f5469e2cbe5d2",
+      "tree": "2d5b971a46828ad27833dde4043afd37d0ec8d96",
+      "ciRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/42047141594",
+      "ciStatus": "SUCCESS"
+    },
+    "documentationTip": {
+      "commit": "6c46d6639848afddb79043dc4a71bcc1ae113aa4",
+      "tree": "5d96b472318ade2decefe263bd103fb103a77832",
+      "ciRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/42065483445",
+      "ciStatus": "SUCCESS"
+    }
+  },
+  "priorPushedHead": "da192121173331fe0b1b064b36962fc2208ee52b",
+  "rebasedPriorHead": "e2aa90b6be51ef734ad8dc00efac679fd25f2ee4",
+  "environment": {
+    "node": "v24.16.0",
+    "os": "win32-x64",
+    "mergeBase": "2abe7aed60b192b253414f6464e3fd070cc377e7"
+  },
+  "trackedFiles": [
+    {
+      "path": "server/context-compactor.ts",
+      "blob": "0f5343e7a07639dba669b646a61324a0a6b2b0bb",
+      "sha256": "1430f113d6e3034b935786be2a80dee42c7a43d87c53c7441c1d75b5768863e6"
+    },
+    {
+      "path": "tests/agent-context-compaction.test.ts",
+      "blob": "3f453a916c9b48d4d8e48aea1b5f11672df7d3f3",
+      "sha256": "b9b13f73b669fb9c6a74d8d098d28c58cf038a2071147921f2950b2e14c972ae"
+    },
+    {
+      "path": "scripts/verify-compaction-mutations.mjs",
+      "blob": "8d725892a7ab05a2473cbd197023040162e28009",
+      "sha256": "0a68efa39dc8187c1d3cc0be8b49c649ce706baa997a18d6f948fd5b2810f00b"
+    },
+    {
+      "path": "server/agent-runtime.ts",
+      "blob": "f4582f0768ea83935f58124a5b4c416b0a868723",
+      "sha256": "d1e598907bf6077977ff8ba407698819c0750330c7f763d6527ff0608c72d79f"
+    },
+    {
+      "path": ".github/workflows/compaction-offline.yml",
+      "blob": "eabfba7d67b8b35fc424416a5f114fb15d92f49b",
+      "sha256": "5d1915c4eba6935b1b626a361fbdf700f317ca6c2e3054ba3f9721026b34e22b"
+    },
+    {
+      "path": "scripts/ci/verify-compaction-offline.sh",
+      "blob": "085ad9994151accae97e057dbd890bf7677abfe9",
+      "sha256": "19e7f1e210a032d56d5dc70f8733f758c613abc0fee3d3cd26ae2b5b3e063f72"
+    }
+  ],
+  "remoteCI": {
+    "workflow": ".github/workflows/compaction-offline.yml",
+    "pullRequest": 508,
+    "featureHead": "93a5ade216718cf8a5f87d66b996552d040737f6",
+    "featureSuccessRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/42045529284",
+    "intermediateHead": "f22cca3a2c78ab3ddfe72c596e0f5469e2cbe5d2",
+    "intermediateSuccessRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/42047141594",
+    "tipHead": "6c46d6639848afddb79043dc4a71bcc1ae113aa4",
+    "tipSuccessRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/42065483445",
+    "retainedFailureRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/42043029937",
+    "status": "SUCCESS"
+  },
+  "redThenGreen": {
+    "baseline": {
+      "commit": "2abe7aed60b192b253414f6464e3fd070cc377e7",
+      "tree": "29c803a957b38f7b22e4bde508245e047eaaabcf",
+      "compactionTests": "0/11 present (feature absent on base)",
+      "mutationGuards": "0/6 present (feature absent on base)"
+    },
+    "candidate": {
+      "featureHead": "93a5ade216718cf8a5f87d66b996552d040737f6",
+      "featureTree": "e93b33fc02f788e0f9c929a2657f68d596bf2cae",
+      "tipHead": "6c46d6639848afddb79043dc4a71bcc1ae113aa4",
+      "tipTree": "5d96b472318ade2decefe263bd103fb103a77832",
+      "unitTests": "11/11 passed (0 fail, 0 skip, 0 todo)",
+      "mutationGuards": "6/6 caught (C1-C6 fail-on-mutation green, exit code 0)",
+      "remoteCI": "Exact-head runs 42045529284 (feature), 42047141594 (intermediate) and 42065483445 (documentation tip) passed (compaction-offline)"
+    }
+  },
+  "verification": {
+    "unitTests": {
+      "command": "node --test tests/agent-context-compaction.test.ts",
+      "total": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0
+    },
+    "contractCheck": {
+      "command": "node --test --test-reporter=tap tests/agent-context-compaction.test.ts | node scripts/ci/summary-progress-contract.mjs check <tap> 11",
+      "cases": 11,
+      "status": "PASS"
+    },
+    "mutationGuards": {
+      "command": "node scripts/verify-compaction-mutations.mjs",
+      "total": 6,
+      "guards": {
+        "C1": "PASSED (budget admission debit omitted -> caught)",
+        "C2": "PASSED (pre-stream cancellation check omitted -> caught)",
+        "C3": "PASSED (mid-stream chunk cancellation check omitted -> caught)",
+        "C4": "PASSED (AbortError swallowed into fallback -> caught)",
+        "C5": "PASSED (prompt anti-extrapolation invariant removed -> caught)",
+        "C6": "PASSED (runtime auto-wiring omitted -> caught)"
+      },
+      "exitCode": 0
+    },
+    "typeCheck": {
+      "commands": [
+        "npx tsc --noEmit",
+        "npx tsc --project tsconfig.server.json --noEmit"
+      ],
+      "rootDiagnostics": 0,
+      "featureFileDiagnostics": 0,
+      "serverNotes": "tests/agent-context-compaction.test.ts has 0 diagnostics; server config contains pre-existing ambient firebase-admin diagnostics also present on origin/master",
+      "exitCode": 0
+    }
+  },
+  "invariantsVerified": {
+    "transientInRunOnly": "Compactor only modifies in-memory session.events; zero Firestore or persistent session writers",
+    "toolCallAtomicity": "ADK calculateRetainStartIndex preserves FunctionCall and FunctionResponse paired; verified endTime=100 and intact activeEvents",
+    "gatewaySingleAdmission": "AgentGatewayModel handles own admission in generateContentAsync; managed compaction proxy avoids double debit",
+    "twoPhaseCancellation": "Pre-stream and mid-stream chunk loop enforce signal.throwIfAborted(); AbortError rethrown without fallback absorption",
+    "antiExtrapolationPrompt": "DEFAULT_COMPACTION_PROMPT pinned to concise English specification forbidding hallucination and non-consensual inference",
+    "monotonicTimestamps": "Synthetic compaction events and retained successors enforce strictly increasing timestamp ordering",
+    "engineeringThresholdPolicy": "DEFAULT_IN_RUN_COMPACTION_TOKEN_THRESHOLD (16000) and DEFAULT_IN_RUN_COMPACTION_EVENT_RETENTION (4) designated as engineering starting suggestions pending centralized policy approval under REQ-005 §3 / §4.2"
+  },
+  "scopeNotice": "Opt-in library baseline for §4.2. Default 0 callers in production routes.",
+  "limitations": [
+    "Opt-in library baseline only (0 production callers in main routes)",
+    "No live GCP Vertex / Gemini cloud calls made during offline tests",
+    "No persistent Firestore memory writer (by design for §4.2 ephemeral compaction)",
+    "PR #508 reopened and verified (CI 42045529284, 42047141594 & 42065483445); strict HOLD merge maintained pending explicit Owner 2NTTY code review",
+    "Token threshold 16000 and retention size 4 are unmeasured engineering starting suggestions, not approved permanent policy"
+  ],
+  "notRun": [
+    "Production mobile simulator and Expo iOS/Android binary verification",
+    "Multi-agent end-to-end conversation workflow live runs",
+    "Cloud Firestore index verification (unneeded for in-run memory compaction)"
+  ],
+  "retainedFailures": [
+    {
+      "check": "GitHub Actions compaction-offline run 42043029937 on exact head aa9bca61",
+      "reason": "tsc in server typecheck exceeded --max-old-space-size=2048 with exit code 134 (V8 heap OOM); resolved on 93a5ade2 by removing the 2048 MiB cap in verify-compaction-offline.sh, allowing tsc to complete successfully under default heap allocation in run 42045529284"
+    },
+    {
+      "check": "scripts/ci/verify-compaction-offline.sh on Windows host",
+      "reason": "Preflight Linux unshare/PARENT_NETNS network isolation is designed strictly for GitHub Actions Ubuntu runners and fails on Windows developer workstations"
+    },
+    {
+      "check": "ambient node_modules/firebase-admin diagnostics",
+      "reason": "Missing declaration files in local developer workstation environment; identically present on origin/master"
+    }
+  ]
+}

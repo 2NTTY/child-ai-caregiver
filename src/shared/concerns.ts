@@ -33,4 +33,4 @@ export interface Concern {
   attentionIds: string[]; events: ConcernEvent[]; historyComplete: boolean;
   followUp: { id: string; at: string; state: "pending" | "queued" | "completed" | "stopped" | "unknown" | "cancelled"; runId: string | null } | null;
 }
-export interface ConcernPage { authorityVersion: string; items: Concern[]; canManage: boolean }
+export interface ConcernPage { authorityVersion: string; items: Concern[]; canManage: boolean; hasMore?: boolean; nextCursor?: string | null; }

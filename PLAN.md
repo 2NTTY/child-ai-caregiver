@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**本輪 REQ-005 全量收束校準（候選提案）：**[REQ005-CLOSEOUT01](#req005-closeout01) 提供 REQ-005 §9 收束核對清單與驗收邊界矩陣（[PR #514](https://github.com/2NTTY/child-ai-caregiver/pull/514)），依據 `AGENTS.md#document-updates` 治理規範，忠實還原官方 26 項驗收場景原文與單位（含逐項真實測試檔名、候選 SHA 與精確邊界）、10 套件交付血統、5 大階段狀態校準及 11 項未決清單完整整併入本檔節點，並自 git 移除獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md`。未執行真模型調用，全量 PR 處於嚴格 HOLD merge 等待 Owner 審批。
+**REQ-005 驗收對照：**26 項場景、分支證據及 11 項待決事項見[收束紀錄](#req005-closeout01)。原候選的離線驗證與 11 月 11 日整合修正分別列出；真模型驗收與正式發布仍待核對。
 
 **本輪成長依據閱讀修復：**[GR-F01](#gr-f01-profile-evidence-read) 已完成最小 client／閱讀文案候選、四整檔 33 案及完整 frontend／root 型別；server 原完整型別兩次程序失敗，仍為 NOT_PASSED。待整包獨立 review 與精確 head 必要 CI，未合併、未部署。
 
@@ -68,11 +68,13 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **本輪 Agent 收據閱讀修復：**[AGENT-F01](#agent-f01-receipt-read) 已由 [PR #503](https://github.com/2NTTY/child-ai-caregiver/pull/503) 正常合併至 `4a9f6bd9`；精確 head 的兩次必要離線 CI 已成功。formal48 及原完整流程／設備缺口維持未驗，未部署。
 
-**本輪指定摘要修復：**接續已合併 #410 的剩餘問題，整合覆核 #447，見 [REQ005-SUMMARY01](#req005-summary01)。單一候選已完成本地程式驗收，durable 摘要未啟用、未部署，正式啟用仍有前置；不改下列 P4 交付與未驗狀態。
+**本輪指定摘要修復：**#447 已合併入 master（commit a162e65e），見 [REQ005-SUMMARY01](#req005-summary01)。單一候選已完成本地程式驗收，durable 摘要未啟用、未部署，正式啟用仍有前置；不改下列 P4 交付與未驗狀態。
+
+**單輪壓縮：**ADK 壓縮沿用原生門檻，時間或隔離範圍可能遮蔽未壓縮歷史時延後。本功能預設關閉。[實作與驗證](#req005-compaction01)
 
 **匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 的原生 runtime 指紋在本機與 EAS 不一致，本次未產出 APK。下次需要批量安裝時，先核對同一建置封包與依賴位置，再建置、驗簽及覆蓋安裝。[原建置紀錄](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)
 
-**當前入口（2026-11-05）為 [P4-HANDOVER01](#p4-handover01)。** 原站 API／worker／Web `2be85951` 已可比較及還原本人記憶事實、待答主題與私人交代，沿原服務保留來源有效性、候選身份、主題終態及刪除後的新 ID 對應。下一步接照片、錄音與一般檔案的本人原件還原，再補其餘帳戶備份缺口。原生大型包與分享留待批量建置和設備驗收，D 接點等對應接口穩定。[本批證據](artifacts/verification/P4_ORIGINAL_MEMORY_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)／[其他進度](STATUS.md)
+**當前入口（2026-11-08）為 [P4-HANDOVER01](#p4-handover01)。** 原站已接本人記憶、照片、錄音、檔案及帳戶通知偏好的差異還原。沒有孩子亦可單選通知偏好，或與本人頭像同批還原。下一步補其餘本人原件的覆蓋範圍，包括成長整理與私人聊天。Android 共用表單待批量發布，原生大型包與分享待設備驗收。D 的接點等相關接口穩定。[帳戶偏好發布](artifacts/verification/P4_ACCOUNT_PREFERENCES_20261108.json)／[附件發布](artifacts/verification/P4_ORIGINAL_ATTACHMENTS_20261108.json)／[記憶還原](artifacts/verification/P4_ORIGINAL_MEMORY_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)
 
 測試階段持續交付後端與 Web。Android 共用改動累積後，在實際需要安裝或驗證原生功能時集中建置 APK；個別功能包可先完成共用接線，交付紀錄另列尚未在手機驗收的部分。
 
@@ -162,13 +164,13 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **恢復／未驗／收尾：**restore 新 epoch 維持 `restore_suspended`，保留原 grant、usage 及 reservation，不授 resume、transfer 或新空帳；R0／R2 仍 blocked。各階段本地驗收、最新完整型別與獨立 review 已完成；精確 PR head 必要 CI 仍須通過，才可依正常分支保護合併。正式政策、舊 writer fencing、雲端索引 READY、真 Firestore／模型、設備與正式啟用另有前置；本包沒有 GCP 或產品部署操作，不稱用戶問題已上線修復或 REQ-005 全案完成。
 
 <a id="req005-closeout01"></a>
-### REQ005-CLOSEOUT01：REQ-005 全量收束核對與驗收校準（候選提案，HOLD merge）
+### REQ005-CLOSEOUT01：REQ-005 驗收對照及整合紀錄
 
 - **基線／來源：** 候選分支 `codex/req005-closeout-validation` 接 master `2abe7aed60b192b253414f6464e3fd070cc377e7`，對應 [PR #514](https://github.com/2NTTY/child-ai-caregiver/pull/514)。
 - **文件治理落實規範聲明（`AGENTS.md#document-updates`）：** 依據專案「不增非必要獨立審計文件，以 `PLAN.md#active` 與 `STATUS.md` 為單一權威入口」之規範，本節完整納入 REQ-005 §9 全鏈收束核對清單、實施階段校準、官方 26 項驗收場景實測矩陣（忠實還原 REQUIREMENTS_BACKLOG.md 原文與單位）與 11 項官方未決清單；獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除（`git rm`）。
-- **合併政策：** **嚴格 HOLD merge**（僅由專案負責人 2NTTY 統一審核合併）。
+- **11 月 11 日整合：**專案負責人已授權按原分支修正及合併。下列表格保留 11 月 8 日各候選 SHA 的證據與當日狀態。整合時另修正了模型看見的輸出上限（#510）、本人出資 run 的持久期限（#511）、301 至 900 秒的執行期限（#512）、關注與私人來源的前端續頁及所需索引（#513），以及 ADK 同時間事件和跨範圍摘要（#508）。逐項上線、真模型品質及可調軟預算仍需分別核對。
 
-#### 1. REQ-005 解耦交付套件全鏈映射與交付血統 (Decoupled PR Map & Lineage)
+#### 1. 11 月 8 日候選版本與證據
 
 為貫徹專案「零污染、高內聚、單一目的」之審查規範，REQ-005 完整工作已解耦拆分為獨立、低風險且具備明確斷言邊界之 Pull Request。各套件之真實對應關係、範圍與最新交付狀態如下：
 
@@ -178,7 +180,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 | **PR 2** | `codex/req005-projection-consistency` | #409 | §4.1 | 3k 投影視窗與 6k 儲存一致性，連續後綴保全與容量省略標記（基線） | 既有基線 | ✅ Merged |
 | **PR 3** | `codex/req005-turn-topology` | #409 | §4.1 | 對話拓撲感知回讀，遍歷 `inReplyTo` 父子樹，回報 partial turn（基線） | 既有基線 | ✅ Merged |
 | **PR 4** | `codex/req005-multipart-progression` | #447 | §4.1 | 單筆長訊息分段推展（5k 片段），水位依序推進不跳漏；7,000 emoji 長訊息前進性基線保證 | 既有基線 | ✅ Merged |
-| **PR 5** | `codex/req005-context-compaction` | [#508](https://github.com/2NTTY/child-ai-caregiver/pull/508) | §4.1, §4.2 | 整合 ADK JS `TokenBasedContextCompactor` 執行期成對原子壓縮與容錯回退（選擇性暫態 in-run compaction，0 個生產調用者，不替代跨 session 持久記憶；實施於 `server/context-compactor.ts`，測試於 `tests/agent-context-compaction.test.ts`） | `REQ005_INRUN_COMPACTION_20261105.json` | 🚀 OPEN (head `1f744a65`) |
+| **PR 5** | `codex/req005-inrun-compaction` | [#508](https://github.com/2NTTY/child-ai-caregiver/pull/508) | §4.1, §4.2 | 整合 ADK JS `TokenBasedContextCompactor` 執行期成對原子壓縮與容錯回退（選擇性暫態 in-run compaction，0 個生產調用者，不替代跨 session 持久記憶；實施於 `server/context-compactor.ts`，測試於 `tests/agent-context-compaction.test.ts`） | `REQ005_INRUN_COMPACTION_20261105.json` | 🚀 OPEN (head `1f744a65`) |
 | **PR 6** | `codex/req005-soft-budget` | [#507](https://github.com/2NTTY/child-ai-caregiver/pull/507) | §1, §3.1 | 集中軟預算推導（`softBudgetRatio = 0.25`），次數與字元軟邊界告警，用量不歸零（實施於 `server/agent-budget.ts`, `src/shared/agent-run-limits.ts`，測試於 `tests/agent-budget.test.ts`） | `REQ005_SOFT_BUDGET_20261105.json` | 🚀 OPEN (head `4442cef0`) |
 | **PR 7** | `codex/req005-output-ceiling` | [#510](https://github.com/2NTTY/child-ai-caregiver/pull/510) | §1, §5 | 輸出上限放寬至 4096 / 16384；Gemini 429 / 403 錯誤契約標準化為 PersonalProviderError，retryAfter 支援（修改 agent-budget, agent-model-gateway, ai-config, firestore-admin, gemini-key-provider, openai-compatible-provider, agent-run-limits；測試於 `tests/agent-model-gateway.test.ts`, `tests/ai-config.test.ts`） | `REQ005_OUTPUT_CEILING_20261107.json` | 🚀 OPEN (head `eea9f5d7`, CI PASS) |
 | **PR 8** | `codex/req005-personal-key-policy` | [#511](https://github.com/2NTTY/child-ai-caregiver/pull/511) | §2, §7 | 個人模型政策解析（`server/personal-model-policy.ts`）、Vertex ADC 降級備援、個人 Key 不被平台 admin 壓低與 `tests/personal-model-settings.test.ts` 邊界測試（非摘要進度追蹤或排程用量） | `REQ005_PERSONAL_KEY_POLICY_20261107.json` | 🚀 OPEN (head `0d790544`, CI PASS) |
@@ -280,7 +282,26 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **文件目的地整併**：依據 `AGENTS.md#document-updates`，專案以 `PLAN.md#active` 及 `STATUS.md` 為權威資訊入口。先前之獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除，其內容已完整整併至本節。
 - **單一作者署名**：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`。
 - **嚴格正向提交**：無 `git commit --amend`，維護 append-only 歷史完整性。
-- **嚴格 HOLD Merge**：所有 PR 處於開啟狀態等待審批，僅由專案負責人 2NTTY 裁決合併。
+- **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。
+
+<a id="req005-compaction01"></a>
+### REQ005-COMPACTION01：REQ-005 §4.2 單輪對話上下文即時壓縮基準（庫代碼已驗收，未啟用）
+
+- **基線／來源：**依循 `docs/REQUIREMENTS_BACKLOG.md` §4.2 原生 context compaction 規範；分支為 `codex/req005-inrun-compaction`。
+- **目標與邊界：**實作單輪對話運行期間的上下文即時壓縮（In-run transient context compaction）基礎庫能力。本包為底層 baseline，預設未啟用（0 production callers），不改變既有生產對話路徑，亦不取代 Firestore 跨會話記憶（REQ-005 §4.1）。
+- **核心不變量（Core Invariants）：**
+  1. **純瞬態（Transient In-Run Only）：**壓縮摘要僅於單次 Agent run 記憶體事件流中生效，絕不持久化至 Firestore 或改寫持久 session 歷史。
+  2. **工具調用原子性（Tool-Call Atomicity）：**基於 `@google/adk` 之 `TokenBasedContextCompactor`，以事件原子性計算保留起點，嚴禁切斷 `FunctionCall` 與對應 `FunctionResponse`。
+  3. **受控 Gateway 計量與雙階段取消（Gateway Accounting & Two-Phase Cancellation）：**若模型已封裝於 `AgentGatewayModel` 則避免重複扣額，由 Gateway 統一管理准入；串流發起前及接收 chunk 迭代時嚴格檢查 `signal.throwIfAborted()`，標準取消錯誤（`AbortError`）不吞沒。
+  4. **防外推提示詞（Anti-Extrapolation Prompt）：**採用標準提示詞，明令「嚴禁外推推論、不可補充未提及事實、不可宣稱用戶同意」。
+  5. ADK 決定切分位置後，若時間邊界會遮蔽保留事件，或全域摘要會替代同一 session 中其他隔離範圍的歷史，本輪延後壓縮。原事件和時間戳保持原值。
+- **實作架構：**
+  - `server/context-compactor.ts`：導出 `createRunContextCompactor`、`createManagedCompactionModel`、`DEFAULT_COMPACTION_PROMPT`、`InRunCompactionConfig`。
+  - `server/agent-runtime.ts`：在 `AgentRunInput` 擴充可選 `contextCompactors` 與 `contextCompaction` 宣告式配置。
+- **驗收條件與證明：**
+  - `tests/agent-context-compaction.test.ts` 原候選通過 11 項。整合版的 12 項涵蓋門檻、可見範圍、同時間事件、工具配對、取消及預算。
+  - **安全防護變異測試（Mutation Testing）：**`scripts/verify-compaction-mutations.mjs` 6/6 項變異攔截全數通過（C1: 略過預算准入、C2: 略過串流前取消檢查、C3: 略過串流中取消檢查、C4: 吞沒取消錯誤、C5: 削弱防外推提示詞、C6: 運行時未自動裝配 compactor）。
+  - **型別檢查：**`npx tsc --project tsconfig.server.json --noEmit` 與 `npx tsc --noEmit` 雙通過，exit code 0，零診斷。
 
 <a id="agent-review-repair01"></a>
 ### AGENT-REVIEW-REPAIR01：D 的六項 Agent PR 修復與最新需求對齊（候選，未驗收完成）
@@ -888,6 +909,8 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 
 **AUTH01 原生接點（已實作、未開放）：**復用 Google Sign-In 16.1.5、Apple Authentication 2.5.1 及既有 expo-crypto；原生 credential 回同一 Firebase session／同 UID linking 流程。Google 清本機選擇，Apple 使用每次 nonce／state，沒有第二份登入權威。共用 production owner、平台配置、原生 adapter、iOS plugin introspection 及 Android Hermes 匯出已有[證據](artifacts/verification/P4_AUTH_NATIVE_20261027.json)，未跑付費 build／真 provider／真機。新增原生套件須新 binary，舊 runtime 不推 OTA。下一段仍是 Firebase 自動連結／電郵准入配置、Apple 原邀請地址接續及真正配置；只在其完成後開放登入方式。
 
+**AUTH01 邀請與同 UID 連結。** Server 交易核對已批准的原方式、原收件地址驗證、原裝置 session 及目標 provider 身份；Web／原生共用交換契約。11 月 8 日唯讀核對原站仍使用電郵密碼，Google／Apple 均未配置。開放前須接回共用表單的明確連結與中斷恢復，並驗供應商登入及 relay 郵件。[接口與待驗](docs/API.md#p4-auth-providers)
+
 <a id="p4-family"></a>
 **P4-FAMILY 父包（進行中）：**由 FAMILY-A／B 承接原家庭 UI／API、成員邀請、owner／caregiver／viewer 及跨域共享；不以隱藏入口當完成。先共用契約，再開家庭／班級入口，P3 本人功能不以此為前置。
 
@@ -925,7 +948,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 | 共享授權 | 擴充現有 Firestore 權威服務；操作者、資料儲存身份、共享範圍及管理員分清。舊個人 ID／密文及客戶端相容，不全庫搬移／重新加密；交易保留版本、收據、變更及 outbox |
 | 身份 | Web 沿 Firebase provider／連結；原生 Google 用 `@react-native-google-signin/google-signin`、Apple 用 `@invertase/react-native-apple-authentication` 取得憑證，再沿既有 Firebase／session 接線；不另建身份服務 |
 | 文檔包 | 授權領域匯出＋版本 manifest／結構資料／來源／附件／摘要；Server 用 `yazl`／`yauzl` 有界逐項寫讀、Node 標準簽章／hash；既有 JSZip 用途保持，不把恢復 envelope 直接披露 |
-| 系統分享 | Android 優先既有 Expo Sharing；iOS 使用標準 Share Extension／`expo-share-extension`，先核 SDK 57 相容，不能以官方實驗性接口存在當成交付。接回既有草稿／附件及統一匯入 |
+| 系統分享 | Android 沿用 Expo Sharing。iOS 採 Apple 標準 Share Extension，沿已裝 Expo Sharing 產生 target 及權限，共用聊天草稿、附件及統一匯入入口。套件取捨見[技術採用紀錄](docs/TECH_REUSE.md) |
 | 助手與工作 | 既有 ADK／業務工具／持久工作台帳；固定目標及逐項收據，共用 run 預算，不另造教師 Agent、隊列或通用平台 |
 
 新依賴只補具體缺口，選維護活躍、廣泛使用、相容目前版本的穩定版並鎖定；不連帶升級整套框架。採用依據與實際相容結果留 TECH_REUSE，不以文件核查冒充實測。共享權限、遷移及高耦合修改由主模型處理；規範文件／提示詞親寫，簡單中等實作及唯讀核查按 AGENTS 分給 Sol／Luna，不使用 Astra 子代理。前端／手機與後端按本機協作文件切換實際交付帳號，單作者提交。
@@ -950,7 +973,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 - 前置 S12-W01／S12-W04 的草稿／附件及受影響平台 adapter，不等所有 P3。
 - 保留系統分享及其餘既定平台接點、來源／確認／權限與失敗處理，接回現有草稿／附件，不另建業務副本。
 - Android 首包沿 Expo Sharing 原生 `getSharedPayloads`／config plugin 及 Router intent 接點；不用會自動解析網址的 resolver。文字／網址保留原文，照片／音訊／其他檔案沿現有本機副本與大小／格式檢查；只把用戶選中的項目加入目前個人孩子草稿，每則一份附件規則保持。登入、孩子切換、已有草稿、取消與遲到讀取要有明確狀態，不自動上載或觸發 Agent。
-- 新原生配置、API 接線與真機接收分開記錄；iOS 不啟用 Expo 的非標準主 App 喚起 extension，仍按既定標準 Share Extension 方案接續。HANDOVER01 完成後資料包接統一匯入入口，首包不把一般檔案上載宣稱為資料匯入。
+- iOS 分享在來源 App 內保存至裝置，返回來源。使用者開啟育有方後選擇加入聊天草稿或把 ZIP 交給既有匯入入口。本機已生成 Xcode 工程並檢查收件、帳戶切換及清理。Swift 編譯、兩個 target 的簽署與 iPhone 系統分享仍待驗。
 - Android 收到第二份資料包時，可從分享頁返回目前的匯入工作，離頁取消或切換身份會保留原來的防護。畫面按已安裝版本顯示匯入上限。#482 已合併，隨下次需要使用的 APK 批量交付，實機待驗。iOS 套件已核對到專案生成，尚欠原生編譯及收件接線。[套件核對](docs/TECH_REUSE.md#s12-sharing-reuse)
 - **2026-10-28 Android 首包：**本機接線、定向檢查及 Android JS 匯出完成，未建置／發布新版 APK。獨立 review 的原附件離頁保護、孩子 A→B→A 遲到讀取，以及 SDK 文字檔案解析均已修正；沿固定 Expo Sharing 加標準版本補丁，不重寫原生模組。必要失敗、型別限制及真機待驗見[證據](artifacts/verification/P4_ANDROID_SHARE_INPUT_20261028.json)。後續只補新 binary／外部 App 分享接收，不重驗既有附件保存；其餘 P4 可繼續。
 

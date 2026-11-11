@@ -1,6 +1,20 @@
 {
   "indexes": [
     {
+      "collectionGroup": "yuban_authority_documents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "workspaceTag", "order": "ASCENDING" },
+        { "fieldPath": "epochTag", "order": "ASCENDING" },
+        { "fieldPath": "userTag", "order": "ASCENDING" },
+        { "fieldPath": "childTag", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "kind", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" },
+        { "fieldPath": "documentId", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "yuban_authority_handover_uploads",
       "queryScope": "COLLECTION",
       "fields": [

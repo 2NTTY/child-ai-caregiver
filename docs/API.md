@@ -1258,11 +1258,14 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 - 私人交代手動恢復沿既有「恢復已刪項目」。比較只在已驗證的獨立刪除紀錄存在時提供選項；本人明確選取後建立新本地 ID，原 ID 繼續失效。後續比較使用同一份原件還原對應關係，保留新項的目前版本。選取已恢復的新目標時，提交該目標 ID、版本與 `useRestoredTarget: true`，Server 再核對來源及對應關係。同名或同主題的其他交代不當作恢復目標，衝突逐項列出。合成簽署包已核對恢復、防重、衝突、偽造目標拒絕及還原紀錄；正式帳戶與設備操作另按交付紀錄追蹤。
 - 記憶事實／主題原件還原已接通原站與共用表單。新客戶端以 `x-handover-original-features: memory-resources` 協商 `originalMemoryResources: true`，再在 memory 比較傳 `includeMemoryResources: true`；合併分頁包含私人交代、`memory_facts` 與 `memory_topics`，續讀游標綁定同一選項。沒有此選項的舊客戶端仍只取得私人交代。明確還原保留來源識別、原確認者／時間與候選身份；來源仍在本人資料中的事實繼續核對其當前有效性。已刪事實／主題以同領域 tombstone 證明原項，另建新 ID，後續沿映射核對目標版本。已回答／結束主題不能以舊備份改回待答／稍後再問。其餘衝突、收據及目前權限沿原匯入服務。
 - 持續關注的原件還原由客戶端另送 `x-handover-original-features: concerns` 並查能力清單。每頁最多比較兩條關注，比對已選觀察的身份與來源。完整備份可明確覆蓋同一關注，舊修訂仍可追溯。期間備份以包內條目 ID 選取，以實際關注 ID 及已見版本提交，只補該期間缺少的觀察，保留目前標題、狀態、跟進及其他時段。兩種還原均不重播舊工作。原件不可核實或要還原的連結已失效時，保留現況並列出結果。實際上線版本見 [PLAN](../PLAN.md#active)。
+- 本人備份的 `attachments` 比較沿用同一入口。新客戶端在 `x-handover-original-features` 加入 `attachment-resources`，收到 `originalAttachmentResources: true` 才傳 `includeAttachmentResources: true`；舊端可繼續比較孩子頭像。照片、錄音與一般檔案返回各自 section、資源 ID、目前目標 ID／版本，續讀游標綁定同一選項。同版原檔略過；清理結束且有對應刪除憑證時，家長可明確選取恢復。缺檔或刪除尚未結清會列為不可用。已建立的替代目標沿 `useRestoredTarget` 核對來源映射。包內已有的轉錄須跟隨已恢復的同一錄音，以獨立項目記入批次結果。
 - 若所選孩子的附件範圍涵蓋 `child_avatar`，可比較並明確還原其頭像。備份及目標必須是同一帳戶的同一孩子，`resourceSection` 為 `child_avatar`。保存原 JPEG 和該圖片在備份中的來源，帳戶頭像各自獨立。沒有備份圖片時保留現圖；刪除尚未完成時不提供還原。照片、錄音及一般檔案仍可匯入副本。
 - 私人來源已接原件還原。選取模組 `sources`，以 `private_sources`、來源 ID、本地目標 ID 及已見版本提交所選項目。比較列出可還原的不同欄位名稱。只有實際存在刪除紀錄時才可選擇恢復，成功後原紀錄保留。已連結照護記錄、處理尚未結清及官方來源 ID／URL 已不符目錄時，均保留目前資料並記下逐項衝突。還原收藏的官方來源沿用目前目錄身份；外來副本仍是私人參考。模型摘錄授權及擷取工作不隨還原重建。
-- 本人備份可單選「本人頭像」，也可與孩子模組一起匯出。選取綁定本人當時看見的頭像版本。帳戶資料頁的 `childId` 為 `null`，不需先建立孩子。選期時列出圖片更新日期，明確勾選才會帶完整 JPEG。只有包含 `selection.accountAvatar` 的本人備份使用格式 v2。舊有孩子包沿用 v1。客戶端以 `x-handover-account-backup: 1` 商議此能力。
+- 本人備份可單選本人頭像、通知偏好，或一併選取孩子模組。帳戶資料頁的 `childId` 為 `null`。頭像綁定選取時所見版本；選期時列出圖片更新日期，勾選會帶完整 JPEG。孩子包沿用 v1，選取本人頭像時用 v2；包含通知偏好的本人備份用 v3。頭像能力沿用 `x-handover-account-backup: 1`。
+- 客戶端以 `x-handover-account-features: notification-preferences` 核對匯出能力 `notificationPreferencesBackup` 及還原能力 `notificationPreferencesRestore`。匯出傳 `selection.notificationPreferences.version`，包含當前時區、安靜時段和預約提醒例外；版本 0 只代表原服務預設值。憑證、渠道授權和投遞紀錄不隨此選項匯出。
+- `POST /api/account/package-imports/compare-notification-preferences` 以 `uploadId`、`expectedUploadVersion` 核對原帳戶備份，回傳包摘要、備份與目前設定及兩者版本。若有差異，使用者可選取還原，沿原匯入批次提交 `notificationPreferences.expectedVersion`，亦可同批選取本人頭像。若實際提交前已改版，保留目前設定；否則相同值略過，有差異才建立新版。結果可從批次摘要的 `notificationPreferences.result` 查回。
 - `POST /api/account/package-imports/compare-account-avatar` 接受上載 ID 和版本。驗證屬於本站及目前帳戶後，回傳包摘要、備份版本、本地版本及比較結果。使用者明確選取後沿原匯入接口提交 `accountAvatar.expectedVersion` 與 `replace_current` 或 `restore_deleted`，保留原操作收據。相同圖片按內容雜湊略過。空備份保留現有圖片。批次摘要的 `accountAvatar.result` 記錄建立、更新、略過或衝突。還原寫入新的本地物件及版本，保留原規格化 JPEG 位元和既有刪除紀錄。
-- 帳戶原件只能在已驗證的本站本人備份內還原。由登入身份決定本人目標，透過既有頭像服務核對目前版本；明確選取才建立新操作。較新的替換／移除預設保留，並發修改記衝突。未勾選、未曾備份、原本沒有圖片及移除過的狀態要分清；空值不自動刪除現有圖片。沿用頭像儲存、清理及刪除紀錄。匯出／匯入不改登入身份、邀請、裝置、付費憑證或執行授權。舊包與舊客戶端須可繼續讀取原支援的項目，新範圍只向支援的客戶端提供。
+- 帳戶原件只能在已驗證的本站本人備份內還原。本人頭像由登入身份決定目標，透過既有頭像服務核對目前版本；明確選取才建立新操作。較新的替換／移除預設保留，並發修改記衝突。未勾選、未曾備份、原本沒有圖片及移除過的狀態要分清；空值不自動刪除現有圖片。沿用頭像儲存、清理及刪除紀錄。匯出／匯入不改登入身份、邀請、裝置、付費憑證或執行授權。舊包與舊客戶端須可繼續讀取原支援的項目，新範圍只向支援的客戶端提供。
 - 差異摘要分開可補回的項目、內容衝突及已刪項目。用戶可整批覆蓋所見衝突或明確恢復已刪項；按已固定的資源 ID、版本及範圍提交。摘要後再有修改便保留該項並回報衝突。保留新操作、來源及既有刪除紀錄，不重播來源執行工作。
 - `GET /api/account/package-imports/:id/summary` 回傳 batchId、state、processedItems、totalItems 及 modules。按目前身份與目標範圍核權。已選模組各有一列 module、created、updated、skipped、conflict；舊批次無可靠分項數字時 modules 為 null。分模組摘要取自每筆已提交的業務結果。修訂、附件內容及轉錄補充仍有逐項紀錄，不另外計為待辦、文件或附件。中止只計已提交部分。舊批次無分項統計時顯示已有總進度及明細。
 
@@ -1318,7 +1321,11 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 <a id="p4-auth-providers"></a>
 ### P4-AUTH01：同 UID 登入方式（實作中，尚未部署）
 
-`GET /api/auth/providers` 沿現有 Cookie／原生 session，並要求 `x-expected-user-id` 與目前身份相同；只返回 `{userId, providers, currentProvider}`。providers 由 Admin SDK 的目前 providerData 投影為 password／google.com／apple.com，currentProvider 取已驗 session claims；不回第三方身份、token、電郵或 provider 原始資料，不由前端聲稱連結狀態。回應沿私人 no-store。
+`GET /api/auth/providers` 沿現有 Cookie／原生 session，並要求 `x-expected-user-id` 與目前身份相同。回應 `{userId, providers, currentProvider}` 只列當前 Firebase 身份與產品已批准方式的交集。已撤銷的裝置或已解除連結的第三方身份無法用原憑據讀取。回應沿私人 no-store。
+
+在 `POST /api/auth/session` 或 `/api/auth/native-session`，普通登入沿用 `{idToken}`。親自確認連結時才送 `{idToken, linkProvider}`。舊 session 必須已驗證原收件地址，且以已批准的原身份在五分鐘內重新驗證。新 token 須由指定 provider 實際登入，UID 需相同，第三方身份須與 Admin SDK 現值相符。設定連結及核對原裝置撤銷在同一 Firestore 交易內完成。單憑 Firebase 自動連結或電郵相同無法取得產品 session。
+
+若 Firebase 已連結而產品端回應中斷，先查回本人登入方式。若仍缺，使用者可重新驗證原方式，再以已連結的目標 provider 驗證本人及重送同一關係。同一 provider／身份重送只沿用原批准。客戶端須支援這個接續流程後才開放快捷登入。
 
 共用 Firebase client 增加 provider 登入、本人登入方式讀取、以原方式重新驗證，以及先核對原 UID 後連結新 provider。身份 token 仍只經原 `/api/auth/session` 或 `/api/auth/native-session` 交換；沒有新增業務憑據格式。原密碼重新驗證字串保持相容，provider-only 使用 `{provider}`。連結先以原方式重新驗證，暫存 SDK 身份最多兩分鐘，再由另一個明確同意手勢呼叫原生 linking，避免連續 popup 被阻擋。SDK 成功但交換結果未知時先讀回目前方法，不自動重做連結；這個公開讀回須等待原 SDK 操作及取消清理完成，不能用未定局的舊列表解除 unknown。內部重新驗證的唯讀核對不等待自身 queue。取消／切換身份拒絕遲到交換，清理暫存 provider 身份；不推定已取消 provider 端已完成的連結。
 

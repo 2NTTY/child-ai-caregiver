@@ -7,6 +7,12 @@ import {AppButton} from '../components/ui';
 import {usePreviewNavigation} from '../preview/PreviewNavigationGuard';
 import {colors,spacing} from '../theme';
 import type {ProductionOwner} from './ProductionOwner';
+import {confirmedUserId} from './scope';
+
+function accountBinding(owner:ProductionOwner,state:ReturnType<ProductionOwner['getSnapshot']>){
+  const userId=confirmedUserId(state.records);
+  return state.identityKey&&userId?JSON.stringify([owner.apiBaseUrl,userId]):null;
+}
 
 type IncomingShareContextValue={inbox:IncomingShareInbox;snapshot:IncomingShareSnapshot};
 const IncomingShareContext=createContext<IncomingShareContextValue|null>(null);
@@ -20,18 +26,20 @@ export function useIncomingShare(){
 export function IncomingShareProvider({owner,children}:{owner:ProductionOwner;children:ReactNode}){
   const [{platform,inbox}]=useState(()=>{
     const platform=createIncomingSharePlatform(),inbox=createIncomingShareInbox(platform);
-    const state=owner.getSnapshot();inbox.observeIdentity(state.identityKey);inbox.observeScope(state.scopeKey??null);
+    const state=owner.getSnapshot();inbox.observeIdentity(state.identityKey,accountBinding(owner,state));inbox.observeScope(state.scopeKey??null);
     return{platform,inbox};
   });
   const snapshot=useSyncExternalStore(inbox.subscribe,inbox.getSnapshot,inbox.getSnapshot);
   const router=useRouter(),pathname=usePathname(),leave=usePreviewNavigation();
   useLayoutEffect(()=>{
-    const observe=()=>{const state=owner.getSnapshot();inbox.observeIdentity(state.identityKey);inbox.observeScope(state.scopeKey??null);};
+    let identity=owner.getSnapshot().identityKey;
+    const observe=()=>{const state=owner.getSnapshot();inbox.observeIdentity(state.identityKey,accountBinding(owner,state));inbox.observeScope(state.scopeKey??null);
+      if(identity!==state.identityKey){identity=state.identityKey;inbox.receive();}};
     const unsubscribe=owner.subscribe(observe);observe();
     return unsubscribe;
   },[owner,inbox]);
   useEffect(()=>{
-    const receive=()=>{const state=owner.getSnapshot();inbox.observeIdentity(state.identityKey);inbox.observeScope(state.scopeKey??null);inbox.receive();};
+    const receive=()=>{const state=owner.getSnapshot();inbox.observeIdentity(state.identityKey,accountBinding(owner,state));inbox.observeScope(state.scopeKey??null);inbox.receive();};
     const unsubscribe=platform.subscribe(receive);
     receive();
     return()=>{unsubscribe();inbox.clear();};

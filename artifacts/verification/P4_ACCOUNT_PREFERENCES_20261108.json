@@ -1,0 +1,36 @@
+{
+  "package": "P4-HANDOVER01 account notification preferences",
+  "pullRequests": { "server": 518, "sharedForm": 519 },
+  "masterAfterForm": "6f0918d34b4fb8a9093270e3b7341d425e715e42",
+  "release": {
+    "tag": "p4-preferences-b9ed1746",
+    "previousTag": "p4-attachments-02e6c785",
+    "previousTree": "02e6c785ebb089a0a5e8491fbd100f2fc9e2d680",
+    "tree": "b9ed1746e9fe1af987f5d2ffb6962d08b67930fe",
+    "apiArchiveSha256": "90594ef935eafb12729f40c4bdbfcd6bf9d6e3b7b39a41ea26caef94051011da",
+    "webArchiveSha256": "4cffbd9612876890f9ef7eeec0b4d5da6f6d60e639ba4140a53c5ac3c5b967ec",
+    "apiWorkerImage": "sha256:c82b166fa187eedcebccb2e00ed85dc1e4f2a80dcf8709a490f4f8df66a41f83",
+    "webImage": "sha256:00816ad1b6313a0feb60e1dad391dbf367c89ce92f47f4108032fea4e616f942",
+    "liveComposeSha256": "8c0987f5cf8895d334aea5a56e30de4a836b5a7dff82568c0d2fea93bcd4abbc",
+    "observedHongKong": "2026-11-08T23:20+08:00",
+    "activityBeforeSwitch": { "activeAgentLeases": 0, "activeTaskOutbox": 0, "unknownTaskOutbox": 0, "activeBackground": 0, "sendingBackground": 0, "unknownBackground": 1, "unresolvedBackground": 0 },
+    "public": {
+      "health": "200, storage=firestore",
+      "unauthenticatedImportCapabilities": 401,
+      "adminHtmlSha256": "075c6b6c8bab1bb93243b32b6266e664338115c94c1952b67059e5c5b87badd5",
+      "bundle": "/_expo/static/js/web/index-64e7645faea39271670cec263cf50b03.js",
+      "bundleSha256": "fda2e989cb36e7ac1a109b7829fc03ba3db8c6fca2f2285ce37653f1e827551f"
+    },
+    "rollback": "Previous images and Compose files retained. Once a v3 archive or preference restore batch has been created, retain compatible API and worker readers and roll the Web back independently."
+  },
+  "verification": [
+    "On Node 24.22.1, handover-account-preferences and handover-notification-preferences-archive passed 4/4. Existing package upload HTTP scenario passed after allowing its loopback server. Server TypeScript passed.",
+    "Signed export from a childless account, ordinary readback, stale version, duplicate operation and delivery, cross-account refusal and mixed account items passed. The round trip also passed against the actual selective release tree.",
+    "Client and both owners passed 19/19. Four selected shared form checks passed, including the default preference selection, avatar restoration, date range and document review. Frontend TypeScript passed.",
+    "The release tree exported 42 Web routes. Offline candidate checks verified API and worker imports, account import schema and signing mounts. External HTTP checks matched the HTML and JavaScript digests. Legacy SQL container remained exited."
+  ],
+  "notVerified": [
+    "No live account restore, mobile binary, notification or model call. Complete account restore coverage and full cloud disaster recovery are open.",
+    "Two existing period UI tests remain red: original private instruction form gates memory capability and submits only existing instruction identities with original-operation recovery; original child avatar form limits attachment restoration to covered child heads and submits the observed child version."
+  ]
+}

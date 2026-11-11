@@ -158,7 +158,7 @@ const domainEnvelopeSchema = z.object({ format: z.literal('yuban-firestore-domai
   ciphertext: z.string().min(1), recovery: z.unknown() }).strict();
 // messageSentAt is untrusted query metadata; operation restores rebuild it from authenticated content.
 const privateMetadata = new Set(['workState', 'completionWakeState', 'opId', 'batchId', 'growthImportScopes', 'section', 'outcome', 'targetId', 'targetVersion', 'entryId', 'managerTag', 'memberTag', 'sourceUserTag', 'active', 'spaceId', 'messageSentAt', 'targetTag', 'actorTag', 'uploadId', 'pending', 'complete', 'nextAttemptAt', 'summaryPending', 'cleanupState', 'cleanupAt', 'retryAt', 'updatedAt', 'workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey', 'stage',
-  'historyId', 'module', 'currentBatch', 'lastMessageSortKey', 'teacherSpaceId', 'taskId', 'taskVersion', 'occurrenceId', 'documentId', 'status', 'autoRefresh', 'snapshotId', 'snapshotVersion', 'assetId', 'scopeTag',
+  'historyId', 'module', 'currentBatch', 'lastMessageSortKey', 'teacherSpaceId', 'taskId', 'taskVersion', 'occurrenceId', 'documentId', 'status', 'autoRefresh', 'kind', 'snapshotId', 'snapshotVersion', 'assetId', 'scopeTag',
   'live', 'state', 'importPending', 'cleaned', 'dueAt', 'leaseUntil', 'dispatchId', 'dispatchRouting', 'entityId', 'entityVersion', 'historyFloor', 'messageId', 'visibility', 'validUntil', 'runId', 'triggerKind', 'workId', 'confirmationId', 'askingRunId', 'askMessageId', 'expiresAt', 'proposalId', 'authorizationVersion', 'receiptId', 'noteId', 'concernId', 'timelineId', 'eventId', 'sequence', 'attentionId', 'id', 'dispatch', 'route', 'enabled', 'nextCheckAt', 'operationId', 'bindingId', 'deliveryId', 'challengeId', 'unresolved', 'requestId', 'attemptIds']);
 
 /** Pure authenticated record conversion. No reads, writes, permissions, journal replay or object transfer occur here. */
@@ -391,6 +391,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     for (const [name, value] of Object.entries(raw)) {
       if (['format', 'version', 'recordVersion', 'ciphertext', 'recovery'].includes(name)) core[name] = value;
       else if (collection === namespace || !privateMetadata.has(name)
+        && !(name === 'retiredStorageEpoch' && ['photos', 'chat_file_assets', 'voice_assets'].some(suffix => collection === namespace + '_' + suffix))
         && !(name === 'sort' && collection === namespace + '_knowledge_index_batches')) reject('restore_record_invalid');
     }
     const family = collection === namespace ? 'authority' : 'domain';
@@ -410,6 +411,8 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       const context = { ...opened.context, kind }, value = parse<FirestoreRestoreValue>(domainSchemas[kind].schema, opened.value);
       domainBinding(context, value); result = { path: record.path, context, value };
       if (isAvatarRestoreKind(kind)) assertAvatarRestoreBinding(data, context, value, raw);
+      if (raw.retiredStorageEpoch !== undefined)
+        requireBinding(raw.retiredStorageEpoch === context.scope.storageEpoch && object(value).state === 'deleted');
       if (isPrivateSummaryRestoreKind(kind)) privateSummaryRestoreMetadata(data, context, value, raw);
       // Earlier snapshots lack this query projection; the authenticated document remains authoritative.
       if (kind === 'family-document' && raw.autoRefresh !== undefined)
@@ -459,7 +462,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     if (context.family === 'domain' && context.kind === 'photo' && parse(photos.photo, decoded.value).state === 'deleted') {
       const row = parse(photos.photo, decoded.value), original = originalEnvelopes.get(decoded);
       if (!original) reject('restore_cleanup_origin_missing');
-      return {oldPath:decoded.path,path:decoded.path,data:{assetId:row.id,scopeTag:photoTag(context.scope),
+      return {oldPath:decoded.path,path:decoded.path,data:{assetId:row.id,scopeTag:photoTag(context.scope),retiredStorageEpoch:row.scope.storageEpoch,
         sortKey:row.createdAt+'/'+row.id,live:false,...original}};
     }
     if (context.family === 'domain' && context.kind === 'voice-asset' && parse(firestoreVoiceRowSchema, decoded.value).deletion) {
@@ -467,6 +470,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       // Cleanup addresses remain bound to their original immutable object and scope.
       return { oldPath: decoded.path, path: decoded.path, data: { ...data.tags(row.scope),
         scopeTag: firestoreDomainHash(['voice-scope', row.scope]), assetId: row.id, state: row.state,
+        ...(row.state === 'deleted' ? { retiredStorageEpoch: row.scope.storageEpoch } : {}),
         createdAt: row.createdAt, updatedAt: row.updatedAt, messageId: row.messageId,
         cleanupState: row.deletion!.cleanup, cleanupAt: row.deletion!.nextCheckAt,
         ...data.seal('voice-asset',row.id,row.scope,firestoreVoiceRowSchema,row,row.version) } };
@@ -476,6 +480,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       // Cleanup addresses remain bound to their original immutable object and scope.
       return { oldPath: decoded.path, path: decoded.path, data: { ...data.tags(row.scope),
         scopeTag: firestoreDomainHash(['chat-file-scope', row.scope]), assetId: row.id, state: row.state,
+        ...(row.state === 'deleted' ? { retiredStorageEpoch: row.scope.storageEpoch } : {}),
         createdAt: row.createdAt, updatedAt: row.updatedAt, messageId: row.messageId,
         cleanupState: row.deletion!.cleanup, cleanupAt: row.deletion!.nextCheckAt,
         ...data.seal('chat-file-asset',row.id,row.scope,firestoreChatFileRowSchema,row,row.version) } };
@@ -556,7 +561,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
           state: row.state === 'leased' ? 'unknown' : row.state });
         return { oldPath: decoded.path, path: pathFor({ ...context, scope }), data: sealFirestoreReminderOutbox(data, scope, rebound) };
       }
-      case 'family-document': { const row = parse(documents.metadata, value); Object.assign(metadata, { documentId: row.id, status: row.status, createdAt: row.createdAt, autoRefresh: row.autoRefresh }); break; }
+      case 'family-document': { const row = parse(documents.metadata, value); Object.assign(metadata, { documentId: row.id, status: row.status, createdAt: row.createdAt, autoRefresh: row.autoRefresh, kind: row.request.kind }); break; }
       case 'document-operation': value = { ...parse(documents.operation, value), storageEpoch: scope.storageEpoch }; break;
       case 'document-snapshot': { const row = parse(snapshots.manifest, value); Object.assign(metadata, { documentId: row.documentId, snapshotId: row.snapshotId, snapshotVersion: documentSnapshotIndexVersion(row) }); break; }
       case 'document-snapshot-chunk': for (const name of Object.keys(metadata)) delete metadata[name]; break;

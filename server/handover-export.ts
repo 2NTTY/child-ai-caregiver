@@ -2,7 +2,7 @@ import type { KeyObject } from 'node:crypto';
 import { createHash } from 'node:crypto';
 import type { AccountExportPage } from '../src/shared/account-service.ts';
 import type { HandoverClassExportCommand } from '../src/shared/handover-jobs.ts';
-import { HANDOVER_SECTIONS, handoverHeaderSchema, validHandoverDocumentPins, type HandoverHeader, type HandoverDocumentChoice, type HandoverCoverage } from '../src/shared/handover.ts';
+import { HANDOVER_SECTIONS, handoverHeaderSchema, handoverNotificationPreferencesSchema, validHandoverDocumentPins, type HandoverHeader, type HandoverDocumentChoice, type HandoverCoverage } from '../src/shared/handover.ts';
 import { HandoverArchiveError, writeHandoverArchive, waitForHandoverStep, handoverLimits, type HandoverEntryInput, type HandoverLimits } from './handover-archive.ts';
 import { avatarTransferSchema } from './handover-import.ts';
 import { canonicalJson } from './online-routing.ts';
@@ -18,6 +18,7 @@ type PageQuery = { section: string; childId?: string; scopeVersion?: string; cur
 export interface PackagePageOptions { includeSummaryPeriod?: boolean; documentFilter?: PackageDocumentFilter; documentPreviewPeriod?: HandoverHeader['selection']['period'] }
 export interface HandoverExportSource {
   accountAvatarAvailable?: boolean;
+  notificationPreferencesAvailable?: boolean;
   page(userId: string, query: PageQuery, packageMedia?: PackageMediaFilter, options?: PackagePageOptions): Promise<AccountExportPage>;
   classModules?: HandoverClassExportCommand['selection']['modules'];
   forClass?(request: HandoverClassExportCommand): HandoverExportSource;
@@ -52,11 +53,12 @@ export async function writePersonalHandoverPackage(input: {
   const signal = AbortSignal.any([AbortSignal.timeout(limits.maxDurationMs), ...(input.signal ? [input.signal] : [])]);
   const choices = input.documentChoices ?? [];
   const accountAvatar = input.selection.accountAvatar;
-  if (accountAvatar && (input.purpose !== 'backup' || input.sourceAccountId !== undefined && input.sourceAccountId !== input.ownerUserId)) fail('invalid_package_scope');
+  const notificationPreferences = input.selection.notificationPreferences;
+  if ((accountAvatar || notificationPreferences) && (input.purpose !== 'backup' || input.sourceAccountId !== undefined && input.sourceAccountId !== input.ownerUserId)) fail('invalid_package_scope');
   if (!validHandoverDocumentPins(input.selection, choices)) fail('invalid_package_scope');
   const exceptions = input.selection.period ? choices.filter(pin => pin.include).map(({include: _include, ...pin}) => pin) : [];
   const overrides = new HandoverDocumentChoices(choices.filter(pin => !input.selection.period || pin.section !== 'documents'), 'export_scope_changed');
-  const header = handoverHeaderSchema.parse({ format: 'yuyoufang-data', version: accountAvatar ? 2 : 1, packageId: input.packageId, packageVersion: 1,
+  const header = handoverHeaderSchema.parse({ format: 'yuyoufang-data', version: notificationPreferences ? 3 : accountAvatar ? 2 : 1, packageId: input.packageId, packageVersion: 1,
     ...(exceptions.length ? { periodExceptions: exceptions } : {}),
     createdAt: input.createdAt, purpose: input.purpose, source: { serverId: input.serverId, accountId: input.sourceAccountId ?? input.ownerUserId }, selection: input.selection });
   if (!supportsHandoverPeriod(header.selection)) fail('package_period_not_connected');
@@ -66,6 +68,7 @@ export async function writePersonalHandoverPackage(input: {
   if (input.expectedScopeVersion && input.expectedScopeVersion !== scopeVersion) fail('export_scope_changed');
   const avatars = new Map<string, { version: number; asset: unknown; fingerprint: string }>();
   let accountHead: AvatarTransfer | null = null;
+  let preferences: ReturnType<typeof handoverNotificationPreferencesSchema.parse> | null = null;
   const inventory = header.selection.modules.some(module => module === 'documents' || module === 'attachments')
     ? new HandoverDocumentInventory(header, limits.maxEntries) : null;
   const datedMedia = header.selection.modules.includes('attachments') && (header.selection.period || choices.some(pin => isAttachmentHead(pin.section))) ? new DatedPackageMedia() : null;
@@ -96,6 +99,19 @@ export async function writePersonalHandoverPackage(input: {
     if (wanted.size) fail('package_scope_unavailable');
     coverage.push({ section: 'children', childId: null, scopeVersion, items: children.length, complete: true });
     yield { path: path('data'), mediaType: 'application/json', content: Buffer.from(JSON.stringify({ section: 'children', childId: null, scopeVersion, items: children })) };
+    if (notificationPreferences) {
+      for await (const page of pages('notification_preferences')) {
+        if (!page.complete || page.items.length !== 1 || preferences) fail('export_scope_changed');
+        const parsed = handoverNotificationPreferencesSchema.safeParse(page.items[0]);
+        if (!parsed.success || parsed.data.version !== notificationPreferences.version) fail('export_scope_changed');
+        preferences = parsed.data;
+      }
+      if (!preferences) fail('export_scope_changed');
+      coverage.push({ section: 'notification_preferences', childId: null, scopeVersion, items: 1, complete: true });
+      yield { path: path('data'), mediaType: 'application/json', content: Buffer.from(JSON.stringify({
+        section: 'notification_preferences', childId: null, scopeVersion, items: [preferences],
+      })) };
+    }
     if (accountAvatar) {
       for await (const page of pages('self_avatar')) {
         if (!page.complete || page.items.length !== 1) fail('export_scope_changed');
@@ -227,6 +243,11 @@ export async function writePersonalHandoverPackage(input: {
       if (current.scopeVersion !== scopeVersion || current.section !== 'self_avatar' || current.items.length !== 1 || !current.complete
         || current.nextCursor !== null || canonicalJson(current.items[0]) !== canonicalJson(accountHead)) fail('export_scope_changed');
     }
+    if (preferences) {
+      const current = await waitForHandoverStep(input.exporter.page(input.ownerUserId, { section: 'notification_preferences', scopeVersion }), signal);
+      if (current.scopeVersion !== scopeVersion || current.section !== 'notification_preferences' || current.items.length !== 1 || !current.complete
+        || current.nextCursor !== null || canonicalJson(current.items[0]) !== canonicalJson(preferences)) fail('export_scope_changed');
+    }
     // Recheck the same authority/version after the last attachment IO before signing the result.
     const final = await waitForHandoverStep(input.exporter.page(input.ownerUserId, { section: 'manifest', scopeVersion }), signal);
     if (final.scopeVersion !== scopeVersion) fail('export_scope_changed');
@@ -234,6 +255,7 @@ export async function writePersonalHandoverPackage(input: {
       `建立時間：${header.createdAt}`, ...(header.selection.period ? [`所選期間：${header.selection.period.from} 至 ${header.selection.period.to}（含首尾）`] : []),
       '', '此包只包含已選模組。來源確認與內容正確性須分開理解；匯入不重播執行授權或舊投遞。', '',
       ...(accountHead ? [accountAvatarSummary(accountHead, header.selection.period)] : []),
+      ...(preferences ? [`通知偏好：版本 ${preferences.version}；由本人明確包括當前設定${header.selection.period ? '，不按所選期間篩選' : ''}。`] : []),
       ...(inventory?.lines(new Map(children.map(raw => { const child = raw as {id:string;displayName:string}; return [child.id, child.displayName]; }))) ?? []), '',
       '| 資料區段 | 孩子／帳戶 | 項數 |', '|---|---|---:|', ...coverage.map(row => `| ${row.section} | ${coverageScope(row)} | ${row.items} |`), ''].join('\n');
     yield { path: 'summary.md', mediaType: 'text/markdown', content: Buffer.from(summary) };

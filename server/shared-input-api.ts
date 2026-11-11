@@ -16,7 +16,12 @@ export async function handleSharedInputRequest(request:Request,userId:string|nul
   try{
     let result:unknown=null;
     if(request.method==="GET"){
-      if(!id)result=await store.list(userId,childId);
+      if(!id){
+        const url=new URL(request.url), limitParam=url.searchParams.get("limit"), cursor=url.searchParams.get("cursor");
+        const limit=limitParam!==null?Number.parseInt(limitParam,10):undefined;
+        const options={...(Number.isInteger(limit)&&(limit as number)>0?{limit}:{}),...(cursor?{cursor}:{})};
+        result=await store.list(userId,childId,Object.keys(options).length>0?options:undefined);
+      }
       else if(!action){const input=await store.get(userId,childId,id);if(input)result={input};}
       else if(action==="history")result=await store.managementHistory(userId,childId,id);
     }else if(request.method==="POST"){

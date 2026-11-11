@@ -11,6 +11,7 @@ import { validSourceIntakeProposal, validSourceIntakeText, type SourceIntake } f
 import { useDomainEnvironment, useDomainWriteGuard, forSharedModule } from "./useDomainEnvironment";
 import { useProduction } from "./ProductionProvider";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
+import { appendCursorItems, cursorBoundary } from "./cursor-page";
 
 type PendingSource = ({ kind: "create"; input: SharedInputCreate } | { kind: "confirm"; basis: SharedInput; input: SharedInputConfirmation } | { kind: "manage"; basis: SharedInput; input: SourceManagementChange } | { kind: "delete"; basis: SharedInput })
   & { checked: boolean; confirmed: boolean };
@@ -35,6 +36,7 @@ export function usePhotoInputSources() {
   const production = useProduction(), productionRef = useRef(production); productionRef.current = production;
   const api = useMemo(() => createSharedInputApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const [state, setState] = useState(() => ({
+    hasMore: false, nextCursor: null as string | null, pageError: "",
     inputs: [] as SharedInput[], sources: [] as PublicInputSource[], canCreate: false, load: "loading" as SourcesViewModel["load"], lost: false, resourceUnavailable: false,
     selected: null as SharedInput | null, latest: null as SharedInput | null, busy: false, operation: noOperation(), notice: "",
     pending: null as PendingSource | null, direct: null as DirectSource | null,
@@ -69,7 +71,7 @@ export function usePhotoInputSources() {
     update({ managementDraft: managementDraft(input, intention), managementHistory: emptyHistory(), intakeStage: input.management ? "saved" : "awaiting_read" });
   }
   function deny(error: SharedInputApiError) {
-    api.resetOnline(); clearEditor(); update({ inputs: [], sources: [], pending: null, canCreate: false, lost: true, load: "error", operation: noOperation(), notice: "登入或孩子權限已改變，私人原文、候選及草稿已清除。" });
+    api.resetOnline(); clearEditor(); update({ inputs: [], sources: [], hasMore: false, nextCursor: null, pageError: "", pending: null, canCreate: false, lost: true, load: "error", operation: noOperation(), notice: "登入或孩子權限已改變，私人原文、候選及草稿已清除。" });
     envRef.current.accessError(error.status === 404 ? { status: 403, code: "access_denied" } : { status: error.status, code: error.onlineCode });
   }
   async function readResource<T>(id: string, signal: AbortSignal, action: () => Promise<T>): Promise<T | null> {
@@ -85,7 +87,7 @@ export function usePhotoInputSources() {
       const e = envRef.current;
       const page = await api.inputs(e.childId!, signal, e.userId!);
       if (!current() || signal.aborted) return null;
-      update({ inputs: page.inputs.filter(input => input.id !== id), sources: page.sources, canCreate: page.canCreate, load: "ready" });
+      update({ inputs: page.inputs.filter(input => input.id !== id), sources: page.sources, canCreate: page.canCreate, ...cursorBoundary(page), pageError: "", load: "ready" });
       if (pending) {
         update({ pending: { ...pending, checked: pending.confirmed } });
         op(pending.kind, pending.confirmed ? "confirmed_unavailable" : "unknown", "原操作仍按同一收據查核；所選來源已刪除或目前不可讀，不會另行提交。", pending.confirmed);
@@ -173,7 +175,7 @@ export function usePhotoInputSources() {
     }
     const page = await e.queryClient.fetchQuery({ queryKey: ["production", e.scopeKey, "shared-inputs"], queryFn: () => api.inputs(e.childId!, signal, e.userId!), staleTime: 0, retry: false });
     if (!current()) return;
-    update({ inputs: page.inputs, sources: page.sources, canCreate: page.canCreate });
+    update({ inputs: page.inputs, sources: page.sources, canCreate: page.canCreate, ...cursorBoundary(page), pageError: "" });
     const basis = ref.current.selected, unresolved = ref.current.pending;
     if (basis && !ref.current.direct && !(unresolved?.confirmed && unresolved.kind === "delete")) {
       const next = await readResource(basis.id, signal, () => api.input(e.childId!, basis.id, signal, e.userId!)); if (!current() || !next) return;
@@ -213,6 +215,7 @@ export function usePhotoInputSources() {
   const formLocked = state.busy || !!state.pending || !!state.latest || state.operation.state === "conflict" || !editable() || !!selected && !managed || !!state.direct && !directManual;
   const canConfirm = isFresh && managed && !state.managementDraft?.dirty && selected?.management?.enabled !== false && !selected?.recordId && !!selected?.text.trim() && directManual;
   const model: SourcesViewModel = {
+    hasMore: state.hasMore, nextCursor: state.nextCursor, pageError: state.pageError,
     intake: { mode: "production", intention: state.intention, selected: state.managementDraft ? intakeProjection(state.managementDraft, state.intakeStage) : null },
     managementDraft: state.managementDraft, managementHistory: state.managementHistory,
     scopeKey: env.scopeKey, childName: env.childName, accountName: "你", online: env.online, access: state.lost ? "lost" : editable() ? "editable" : "read_only",
@@ -238,6 +241,22 @@ export function usePhotoInputSources() {
     }, kind);
   }
   const actions: SourcesActions = {
+    loadMore() {
+      const cursor = ref.current.nextCursor, e = envRef.current;
+      if (e.scopeKey !== env.scopeKey || !canRead() || !ref.current.hasMore || !cursor) return;
+      void run(async signal => {
+        try {
+          const page = await e.queryClient.fetchQuery({ queryKey: ["production", e.scopeKey, "shared-inputs", cursor],
+            queryFn: () => api.inputs(e.childId!, signal, e.userId!, { limit: 50, cursor }), staleTime: 0, retry: false });
+          if (!current() || signal.aborted || envRef.current.scopeKey !== e.scopeKey) return;
+          update({ inputs: appendCursorItems(ref.current.inputs, page.inputs), ...cursorBoundary(page, cursor), pageError: "" });
+        } catch (error) {
+          if (!current() || signal.aborted || envRef.current.scopeKey !== e.scopeKey) return;
+          if (error instanceof SharedInputApiError && ([401, 403, 404].includes(error.status) || error.onlineCode === "session_changed")) throw error;
+          update({ pageError: "未能載入更多來源，已載入內容保留。請重試。" });
+        }
+      });
+    },
     discardDraft(kind) {
       const value = ref.current;
       if (!current() || value.pending || value.direct || value.operation.state === "saving") return;

@@ -31,6 +31,7 @@ export type SourcePersonalContent = Extract<SourceCreate, { kind: "personal_sour
 export type SourceManagementDraft = { management: SourceManagement; modelPermission: boolean; modelExcerpt: string; reason: string; content: SourcePersonalContent | null; dirty: boolean };
 export type SourceManagementHistory = { load: "idle" | "loading" | "ready" | "error"; revisions: readonly SourceManagementRevision[]; hasMore: boolean };
 export type SourcesViewModel = {
+  hasMore?: boolean; nextCursor?: string | null; pageError?: string;
   // Intake is a display draft; only the management adapter constructs a wire request.
   intake?: SourceIntakeView; intakeByInputId?: Readonly<Record<string, SourceIntake>>;
   managementDraft?: SourceManagementDraft | null; managementHistory?: SourceManagementHistory;
@@ -45,6 +46,7 @@ export type SourcesViewModel = {
   busy: boolean; fresh: boolean; formLocked: boolean; canChoose: boolean; canFetch: boolean; canExtract: boolean; canConfirm: boolean; canDelete: boolean;
 };
 export type SourcesActions = {
+  loadMore?(): void;
   intake?: SourceIntakeActions;
   management?: {
     edit(patch: Partial<SourceManagement>): void; setModelPermission(value: boolean): void; setModelExcerpt(value: string): void; setReason(value: string): void;

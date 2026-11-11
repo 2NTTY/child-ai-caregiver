@@ -42,6 +42,7 @@ function AccountProviderControls() {
       <AppDialog.Content>
         <View style={styles.group}>
           <Text style={styles.body}>先以目前已連結方式驗證本人，再親自確認將所選方式連結至同一帳戶。</Text>
+          {target === 'apple.com' ? <Text style={styles.body}>如使用「隱藏我的電郵」，確認後會將所選 Apple 身份連結至你已驗證的受邀帳戶。</Text> : null}
           {target && methods?.providers.includes(target) ? <Text style={styles.body}>已確認連結至本人帳戶。</Text>
             : account.providerLinkNeedsCheck ? <Text style={styles.body}>結果尚未確認。請關閉此處，重新讀取登入方式後再繼續。</Text>
             : account.busy === "provider-link" ? <Text style={styles.body}>正在核對本人連結結果，請完成身份視窗的操作。</Text>

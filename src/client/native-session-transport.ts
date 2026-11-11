@@ -1,3 +1,4 @@
+import { sessionExchangeErrorCode, type SocialAuthProvider } from '../shared/auth-providers.ts';
 /** Only credentials live in this port; business data and operation outcomes stay on the Server. */
 export interface NativeCredentialStore {
   read(): Promise<string | null>;
@@ -5,7 +6,7 @@ export interface NativeCredentialStore {
   remove(): Promise<void>;
 }
 export interface NativeSessionExchange {
-  exchange(idToken: string, expectedUserId: string, signal: AbortSignal): Promise<void>;
+  exchange(idToken: string, expectedUserId: string, signal: AbortSignal, linkProvider?: SocialAuthProvider): Promise<void>;
 }
 interface Credential { credential: string; expiresAtMs: number }
 const prefix = "yuban-native-v1.";
@@ -68,16 +69,16 @@ export function createNativeSessionTransport(options: { apiBaseUrl: string; stor
   return {
     fetcher: send as typeof fetch,
     clear,
-    async exchange(idToken: string, expectedUserId: string, signal: AbortSignal) {
+    async exchange(idToken: string, expectedUserId: string, signal: AbortSignal, linkProvider?: SocialAuthProvider) {
       if (signal.aborted) throw unavailable();
       // A newly authenticated session invalidates responses started with the previous credential.
       const ticket = ++generation;
       const response = await send(base.origin + "/api/auth/native-session", { method: "POST", signal,
-        headers: { "Content-Type": "application/json", "x-expected-user-id": expectedUserId }, body: JSON.stringify({ idToken }) });
+        headers: { "Content-Type": "application/json", "x-expected-user-id": expectedUserId }, body: JSON.stringify({ idToken, linkProvider }) });
       if (!response.ok) {
         // The caller maps only fixed error codes; never expose response prose or tokens.
         let code: string | null = null;
-        try { const body = await response.json(); if (["invitation_required", "EMAIL_NOT_VERIFIED"].includes(body?.code)) code = body.code; } catch { /* No response disclosure. */ }
+        try { code = sessionExchangeErrorCode((await response.json())?.code); } catch { /* No response disclosure. */ }
         throw Object.assign(unavailable(), { status: response.status, code });
       }
       const value: unknown = await response.json();

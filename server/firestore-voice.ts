@@ -69,6 +69,7 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
   }
   function envelope(row: FirestoreVoiceRow) {
     return { ...data.tags(row.scope), scopeTag: scopeTag(row.scope), assetId: row.id, state: row.state,
+      ...(row.state === 'deleted' ? { retiredStorageEpoch: row.scope.storageEpoch } : {}),
       createdAt: row.createdAt, updatedAt: row.updatedAt, messageId: row.messageId, cleanupState: row.deletion?.cleanup ?? (row.messageId === null && !(row.importedFrom && row.state === 'ready') ? 'unlinked' : null), cleanupAt: row.deletion?.nextCheckAt ?? null,
       ...data.seal("voice-asset", row.id, row.scope, firestoreVoiceRowSchema, row, row.version) };
   }

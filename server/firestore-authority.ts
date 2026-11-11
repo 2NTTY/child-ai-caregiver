@@ -16,6 +16,7 @@ import { workRecoveryAad, workRecoveryDocumentId, workRecoverySchemas as schemas
 import { prepareFirestoreBackgroundWork } from './firestore-background-work.ts';
 import { assertNoManagedSharedSpaces, SHARING_SCOPE, sharedSpaceSchema, sharingMetadata } from './firestore-sharing-records.ts';
 import type { SharedAccessBasis } from '../src/shared/sharing.ts';
+import { accountAuthProviderSchema, type AccountAuthProvider, type SocialAuthProvider } from '../src/shared/auth-providers.ts';
 
 const FORMAT = 'yuban-work-recovery', MAX_BYTES = 192 * 1024;
 const NIL = '00000000-0000-0000-0000-000000000000';
@@ -23,7 +24,19 @@ const bounded = (max: number) => z.string().min(1).max(max).refine(value => valu
 const userIdSchema = bounded(256), uuid = z.uuid(), datetime = z.iso.datetime({ offset: true });
 const decimal = schemas.workspace.shape.accessVersion;
 const authorityScopeSchema = workRecoveryScopeSchema.extend({ authorizationVersion: decimal }).strict();
-const identitySchema = z.object({ userId: userIdSchema, email: z.email().max(320),
+const providerGrantsSchema = z.partialRecord(accountAuthProviderSchema, bounded(256));
+export type ProviderGrants = z.infer<typeof providerGrantsSchema>;
+export interface ProviderIdentity { provider: AccountAuthProvider; subject: string }
+export interface ProviderAdmission {
+  method: ProviderIdentity;
+  verifiedInvitationAddress?: boolean;
+  link?: { original: ProviderIdentity; target: { provider: SocialAuthProvider; subject: string };
+    assertOriginalSession(tx: Transaction): Promise<void> };
+}
+const passwordIdentity = { provider: 'password', subject: 'password' } as const;
+// Before social login was introduced all product identities used email/password.
+const legacyGrants = { password: passwordIdentity.subject };
+const identitySchema = z.object({ userId: userIdSchema, email: z.email().max(320), providerGrants: providerGrantsSchema.optional(),
   state: z.enum(['active', 'revoked', 'deleting', 'deleted']) }).strict();
 const ownerSchema = z.object({ userId: userIdSchema, workspaceId: uuid, workspaceCreatedAt: datetime.optional() }).strict();
 const invitationSchema = z.object({ email: z.email().max(320), expiresAt: datetime,
@@ -549,7 +562,7 @@ export class FirestoreAuthority {
       if (invitation.email !== address || invitation.state !== 'issued' || invitation.consumedBy !== null || Date.parse(invitation.expiresAt) <= this.now()) fail('invitation_unavailable', 403);
     }, { readOnly: true });
   }
-  async admitIdentity(raw: { userId: string; email: string; emailVerified: boolean }): Promise<FirestoreIdentityAdmission> {
+  async admitIdentity(raw: { userId: string; email: string; emailVerified: boolean }, proof: ProviderAdmission = { method: passwordIdentity }): Promise<FirestoreIdentityAdmission> {
     const input = parse(z.object({ userId: userIdSchema, email: z.email().max(320), emailVerified: z.boolean() }).strict(), { ...raw, email: email(raw.email) });
     const workspaceId = randomUUID(), storageEpoch = randomUUID(), scope = ownerScope(input.userId);
     return this.options.database.runTransaction(async tx => {
@@ -561,16 +574,33 @@ export class FirestoreAuthority {
         if (!accountSnapshot.exists || !identitySnapshot.exists || !ownerSnapshot.exists) fail('invalid_document', 500);
         const current = await this.account(tx, input.userId, false);
         if (current.identity.email !== input.email) fail('identity_email_changed', 403);
+        let grants: ProviderGrants = current.identity.providerGrants ?? legacyGrants;
+        if (proof.link) {
+          const { original, target } = proof.link;
+          if (!input.emailVerified) fail('email_not_verified', 403);
+          if (proof.method.provider !== target.provider || proof.method.subject !== target.subject) fail('auth_account_link_required', 403);
+          if (grants[original.provider] !== original.subject) fail('auth_account_link_required', 403);
+          await proof.link.assertOriginalSession(tx);
+          if (grants[target.provider] !== undefined && grants[target.provider] !== target.subject) fail('auth_credential_in_use', 403);
+          grants = { ...grants, [target.provider]: target.subject };
+        }
+        if (grants[proof.method.provider] !== proof.method.subject) fail('auth_account_link_required', 403);
+        if (proof.link && current.identity.providerGrants?.[proof.link.target.provider] !== proof.link.target.subject)
+          this.write(tx, 'authority-identity', input.userId, scope, { ...current.identity, providerGrants: grants });
         if (current.account.emailVerified !== input.emailVerified)
           this.write(tx, 'account', input.userId, scope, { ...current.account, emailVerified: input.emailVerified });
         return { userId: input.userId, workspaceId: current.workspace.id, storageEpoch: current.workspace.storageEpoch, emailVerified: input.emailVerified };
       }
+      if (proof.link) fail('auth_account_link_required', 403);
+      if (proof.method.provider !== 'password' && (!input.emailVerified || !proof.verifiedInvitationAddress))
+        fail('email_not_verified', 403);
       const invitation = await this.read(tx, 'authority-invitation', input.email, scope, invitationSchema);
       if (invitation.email !== input.email || invitation.state !== 'issued' || invitation.consumedBy !== null || Date.parse(invitation.expiresAt) <= this.now()) fail('invitation_unavailable', 403);
       if ((await tx.get(this.ref('workspace', workspaceId))).exists) fail('identity_conflict');
       this.write(tx, 'account', input.userId, scope, { userId: input.userId, status: 'active', admitted: true,
         invitationLive: true, emailVerified: input.emailVerified, acknowledgementVersion: null }, true);
-      this.write(tx, 'authority-identity', input.userId, scope, { userId: input.userId, email: input.email, state: 'active' }, true);
+      this.write(tx, 'authority-identity', input.userId, scope, { userId: input.userId, email: input.email, state: 'active',
+        ...(proof.method.provider === 'password' ? {} : { providerGrants: { [proof.method.provider]: proof.method.subject } }) }, true);
       this.write(tx, 'authority-owner', input.userId, scope, { userId: input.userId, workspaceId, workspaceCreatedAt: new Date(this.now()).toISOString() }, true);
       this.write(tx, 'workspace', workspaceId, ownerScope(input.userId, workspaceId, storageEpoch),
         { id: workspaceId, ownerUserId: input.userId, storageEpoch, accessVersion: '1', changeSeq: '0', status: 'active' }, true);
@@ -578,18 +608,21 @@ export class FirestoreAuthority {
       return { userId: input.userId, workspaceId, storageEpoch, emailVerified: input.emailVerified };
     });
   }
-  async assertSessionAdmission(userId: string, currentIdentity?: { email: string; emailVerified: boolean }): Promise<void> {
+  async assertSessionAdmission(userId: string, currentIdentity?: { email: string; emailVerified: boolean }, method?: ProviderIdentity): Promise<ProviderGrants> {
     parse(userIdSchema, userId);
     const identity = currentIdentity === undefined ? null
       : parse(z.object({ email: z.string(), emailVerified: z.boolean() }).strict(), currentIdentity);
     if (identity) identity.email = email(identity.email);
-    await this.options.database.runTransaction(async tx => {
+    return this.options.database.runTransaction(async tx => {
       const current = await this.account(tx, userId, false);
+      const grants: ProviderGrants = current.identity.providerGrants ?? legacyGrants;
+      if (method && grants[method.provider] !== method.subject) fail('auth_account_link_required', 403);
       if (identity) {
         if (current.identity.email !== identity.email) fail('identity_email_changed', 403);
         if (current.account.emailVerified !== identity.emailVerified)
           this.write(tx, 'account', userId, ownerScope(userId), { ...current.account, emailVerified: identity.emailVerified });
       }
+      return grants;
     }, identity ? undefined : { readOnly: true });
   }
   async accountStatus(userId: string | null): Promise<FirestoreAuthorityAccountStatus> {

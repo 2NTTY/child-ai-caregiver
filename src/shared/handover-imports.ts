@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { importProvenanceSchema } from './import-provenance.ts';
+import { notificationPreferencesSchema } from './family.ts';
+import { growthTopicSchema } from './growth.ts';
 
 const uuid = z.uuid(), hash = z.string().regex(/^[a-f0-9]{64}$/u);
 const count = z.number().int().nonnegative().max(2147483646);
@@ -28,11 +30,27 @@ export const handoverImportResolutionSchema = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('replace_current'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
   z.object({ mode: z.literal('restore_deleted'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
 ]);
-export const originalBackupModuleSchema = z.enum(['care', 'profile', 'tasks', 'sources', 'documents', 'attachments', 'concerns', 'memory']);
+export const originalBackupModuleSchema = z.enum(['care', 'profile', 'tasks', 'sources', 'documents', 'attachments', 'concerns', 'memory', 'growth']);
+export const originalGrowthSectionSchema = z.enum(['growth_attention', 'growth_topics']);
+export const originalGrowthBlockReasonSchema = z.enum(['original_unavailable', 'growth_terminal_state', 'growth_topic_disabled',
+  'growth_link_changed', 'growth_source_changed', 'growth_snooze_changed']);
 export const originalMemorySectionSchema = z.enum(['instructions', 'memory_facts', 'memory_topics']);
+export const originalAttachmentSectionSchema = z.enum(['files', 'voices', 'photos']);
+export function isOriginalAttachment(section: string): section is z.infer<typeof originalAttachmentSectionSchema> {
+  return section === 'files' || section === 'voices' || section === 'photos';
+}
 export const selfAvatarRestoreSchema = z.object({ expectedVersion: resourceVersion,
   mode: z.enum(['replace_current', 'restore_deleted']) }).strict();
-export const selfAvatarComparisonQuerySchema = z.object({ uploadId: uuid, expectedUploadVersion: count.positive() }).strict();
+export const accountBackupComparisonQuerySchema = z.object({ uploadId: uuid, expectedUploadVersion: count.positive() }).strict();
+export const selfAvatarComparisonQuerySchema = accountBackupComparisonQuerySchema;
+export const accountPreferencesRestoreSchema = z.object({ expectedVersion: resourceVersion }).strict();
+export const accountPreferencesComparisonSchema = z.object({ uploadId: uuid, manifestSha256: hash,
+  backupVersion: resourceVersion, localVersion: resourceVersion, state: z.enum(['unchanged', 'different']),
+  backup: notificationPreferencesSchema, current: notificationPreferencesSchema,
+}).strict().refine(value => value.backup.version === value.backupVersion && value.current.version === value.localVersion);
+export const accountPreferencesResultSchema = z.object({ outcome: z.enum(['updated', 'conflict', 'skipped']),
+  reason: z.enum(['unchanged', 'version_conflict']).nullable(), backupVersion: resourceVersion, localVersion: resourceVersion,
+}).strict().refine(value => value.reason === (value.outcome === 'updated' ? null : value.outcome === 'conflict' ? 'version_conflict' : 'unchanged'));
 export const selfAvatarComparisonSchema = z.object({ uploadId: uuid, manifestSha256: hash,
   backupVersion: resourceVersion, localVersion: resourceVersion,
   state: z.enum(['empty_backup', 'unchanged', 'missing', 'different', 'deleted']) }).strict();
@@ -43,37 +61,46 @@ export const handoverImportCommandSchema = z.object({ opId: uuid, uploadId: uuid
   expectedUploadVersion: count.positive(), acceptedManifestSha256: hash.nullable(),
   resolutionOnly: z.boolean().optional(), restoreOriginal: z.literal(true).optional(),
   accountAvatar: selfAvatarRestoreSchema.optional(),
+  notificationPreferences: accountPreferencesRestoreSchema.optional(),
   targets: z.array(requestedTargetSchema).max(100),
   resolutions: z.array(z.object({ sourceChildId: uuid, section: handoverImportResourceSectionSchema,
     resourceId: uuid, useRestoredTarget: z.literal(true).optional(), resolution: handoverImportResolutionSchema }).strict()).max(10000),
-}).strict().refine(value => (value.targets.length > 0 || !!value.accountAvatar)
-  && (!value.accountAvatar || value.restoreOriginal === true && value.resolutionOnly === true)
+}).strict().refine(value => (value.targets.length > 0 || !!value.accountAvatar || !!value.notificationPreferences)
+  && (!(value.accountAvatar || value.notificationPreferences) || value.restoreOriginal === true && value.resolutionOnly === true)
   && new Set(value.targets.map(row => row.sourceChildId)).size === value.targets.length
   && new Set(value.resolutions.map(row => JSON.stringify([row.sourceChildId, row.section, row.resourceId]))).size === value.resolutions.length
   && value.resolutions.every(row => value.targets.some(target => target.sourceChildId === row.sourceChildId && target.sections.includes(handoverImportModuleOf(row.section))))
-    && value.resolutions.every(row => !row.useRestoredTarget || value.restoreOriginal && originalMemorySectionSchema.safeParse(row.section).success
+    && value.resolutions.every(row => !row.useRestoredTarget || value.restoreOriginal && (originalMemorySectionSchema.safeParse(row.section).success || isOriginalAttachment(row.section))
     && row.resolution.mode !== 'preserve' && row.resolution.targetId !== row.resourceId)
   && (!value.restoreOriginal || value.resolutionOnly && value.acceptedManifestSha256 !== null
     && value.resolutions.every(row => handoverImportModuleOf(row.section) !== 'memory'
       || originalMemorySectionSchema.safeParse(row.section).success && row.resolution.mode !== 'preserve' && row.resolution.expectedVersion > 0
         && (row.resolution.targetId === row.resourceId || row.useRestoredTarget === true))
     && value.resolutions.every(row => handoverImportModuleOf(row.section) !== 'attachments'
-      || row.section === 'child_avatar' && row.resourceId === row.sourceChildId && row.resolution.mode !== 'preserve' && row.resolution.targetId === row.sourceChildId)
+      || row.section === 'child_avatar' && row.resourceId === row.sourceChildId && row.resolution.mode !== 'preserve' && row.resolution.targetId === row.sourceChildId
+      || isOriginalAttachment(row.section) && row.resolution.mode !== 'preserve' && row.resolution.expectedVersion > 0
+        && (row.resolution.targetId === row.resourceId || row.useRestoredTarget === true))
+    && value.resolutions.every(row => handoverImportModuleOf(row.section) !== 'growth'
+      || row.resolution.mode === 'replace_current' && row.resolution.targetId === row.resourceId && row.resolution.expectedVersion > 0)
     && value.targets.every(row =>
     'childId' in row.target && row.target.spaceId === null && row.sourceChildId === row.target.childId
     && row.sections.every(module => originalBackupModuleSchema.safeParse(module).success)))
-  && (!value.resolutionOnly || (value.resolutions.length > 0 || !!value.accountAvatar) && value.resolutions.every(row => row.resolution.mode !== 'preserve')
+  && (!value.resolutionOnly || (value.resolutions.length > 0 || !!value.accountAvatar || !!value.notificationPreferences) && value.resolutions.every(row => row.resolution.mode !== 'preserve')
     && value.targets.every(row => !('createInClassId' in row.target))));
 export const originalBackupComparisonQuerySchema = z.object({ uploadId: uuid, expectedUploadVersion: count.positive(), childId: uuid,
   module: originalBackupModuleSchema, includeRestoreTarget: z.literal(true).optional(), includeMemoryResources: z.literal(true).optional(),
-  cursor: z.string().min(1).max(16000).optional() }).strict().refine(query => !query.includeMemoryResources || query.module === 'memory');
+  includeAttachmentResources: z.literal(true).optional(), cursor: z.string().min(1).max(16000).optional() }).strict()
+  .refine(query => (!query.includeMemoryResources || query.module === 'memory') && (!query.includeAttachmentResources || query.module === 'attachments'));
 export const originalBackupComparisonSchema = z.object({ uploadId: uuid, manifestSha256: hash, childId: uuid, module: originalBackupModuleSchema,
-  items: z.array(z.object({ id: uuid, targetId: uuid.optional(), resourceSection: z.enum(['documents', 'visit_preparation', 'child_avatar', ...originalMemorySectionSchema.options]).optional(), backupVersion: resourceVersion, localVersion: resourceVersion.nullable(),
+  items: z.array(z.object({ id: uuid, targetId: uuid.optional(), resourceSection: z.enum(['documents', 'visit_preparation', 'child_avatar', ...originalAttachmentSectionSchema.options, ...originalMemorySectionSchema.options, ...originalGrowthSectionSchema.options]).optional(), backupVersion: resourceVersion, localVersion: resourceVersion.nullable(),
     state: z.enum(['unchanged', 'local_newer', 'backup_newer', 'different', 'deleted', 'unavailable']),
+    growth: z.object({ topicId: growthTopicSchema, at: z.iso.datetime({ offset: true }), blocked: originalGrowthBlockReasonSchema.nullable() }).strict().optional(),
     changedFields: z.array(z.string().min(1).max(80)).max(64) }).strict()).max(20), nextCursor: z.string().max(16000).nullable() }).strict().refine(page => page.items.every(item =>
+    (page.module === 'growth' ? !!item.growth && (!item.growth.blocked || item.state === 'unavailable') : item.growth === undefined) && (
   page.module === 'documents' ? item.resourceSection === 'documents' || item.resourceSection === 'visit_preparation'
-    : page.module === 'attachments' ? item.resourceSection === 'child_avatar'
-    : page.module === 'memory' ? originalMemorySectionSchema.safeParse(item.resourceSection).success : item.resourceSection === undefined));
+    : page.module === 'attachments' ? item.resourceSection === 'child_avatar' || !!item.resourceSection && isOriginalAttachment(item.resourceSection)
+    : page.module === 'growth' ? originalGrowthSectionSchema.safeParse(item.resourceSection).success
+    : page.module === 'memory' ? originalMemorySectionSchema.safeParse(item.resourceSection).success : item.resourceSection === undefined)));
 export type OriginalBackupComparison = z.infer<typeof originalBackupComparisonSchema>;
 export type OriginalBackupComparisonQuery = z.infer<typeof originalBackupComparisonQuerySchema>;
 
@@ -94,6 +121,7 @@ export const handoverImportModuleOutcomeSchema = z.object({ module: handoverImpo
 export const handoverImportSummarySchema = z.object({ batchId: uuid, state: handoverImportViewSchema.shape.state,
   processedItems: count, totalItems: count,
   accountAvatar: z.object({ result: selfAvatarRestoreResultSchema.nullable() }).strict().optional(),
+  notificationPreferences: z.object({ result: accountPreferencesResultSchema.nullable() }).strict().optional(),
   modules: z.array(handoverImportModuleOutcomeSchema).max(10).nullable(),
 }).strict();
 export type HandoverImportSummary = z.infer<typeof handoverImportSummarySchema>;

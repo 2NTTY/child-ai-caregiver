@@ -158,7 +158,8 @@ export class AccountServiceOwner {
     try {
       await this.identity.prepareProviderLink(ticket.userId, proof, ticket.controller.signal);
       if (this.current(ticket)) this.update({ providerLinkExpiresAtMs: Date.now() + 120_000, notice: "本人身份已驗證。請核對目標登入方式，再親自確認連結。" });
-    } catch { if (this.current(ticket)) this.update({ notice: "未能重新驗證本人身份，尚未要求連結。請核對所選方式及連線。" }); }
+    } catch (error) { if (this.current(ticket)) this.update({ notice: error instanceof ClientApiError && error.onlineCode === "email_not_verified"
+      ? "請先完成受邀電郵的驗證，再連結新的登入方式。" : "未能重新驗證本人身份，尚未要求連結。請核對所選方式及連線。" }); }
     finally { this.finish(ticket); }
   }
   cancelProviderLink = () => {
@@ -184,7 +185,10 @@ export class AccountServiceOwner {
       const methods = await this.readAuthenticationMethods(ticket);
       if (!methods?.providers.includes(provider)) throw new Error("Provider link not confirmed");
       if (this.current(ticket)) this.update({ notice: "登入方式已連結，已重新讀取本人帳戶。" });
-    } catch { if (this.current(ticket)) this.update({ providerLinkNeedsCheck: true, notice: "連結結果未能確認。請先重新讀取本人登入方式，不要重送連結。" }); }
+    } catch (error) { if (this.current(ticket)) this.update({ providerLinkNeedsCheck: true,
+      notice: error instanceof ClientApiError && error.onlineCode === 'auth_credential_in_use'
+        ? "所選身份已連結至另一帳戶。請先重新讀取登入方式，再選擇正確的身份。"
+        : "請先重新讀取本人登入方式。如仍未連結，可再次確認；系統會重新驗證已選的身份。" }); }
     finally { this.finish(ticket); }
   }
   async acknowledge() {

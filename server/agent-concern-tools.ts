@@ -26,18 +26,19 @@ export function createAgentConcernTools(concerns:Pick<ConcernStore, "list" | "ge
   };
   const tools:AgentTool[]=[{
     name:"read_concerns",description:"讀取這名孩子的共享持續關注。concernId=null 按 searchText（或 null）列最多 20 項，hasMore 表示未讀齊；指定 ID 讀有界完整事件及 historyComplete。關注不是診斷，與成長候選、任務及私人記憶分開。",
-    parameters:z.object({concernId:z.uuid().nullable(),searchText:z.string().max(100).nullable()}).strict(),authorize,
+    parameters:z.object({concernId:z.uuid().nullable().optional(),searchText:z.string().max(100).nullable().optional(),cursor:z.string().nullable().optional()}).strict(),authorize,
     execute:args=>guarded(async()=>{
-      const page=await concerns.list(scope.userId,scope.childId);
-      if(!page)throw new FamilyError(404,"not_found");
       if(!args.concernId) {
-        const query=(args.searchText as string|null)?.trim().toLocaleLowerCase("zh-HK");
-        const items=page.items.filter(item=>!query||(item.title+" "+item.reason).toLocaleLowerCase("zh-HK").includes(query));
-        return {authorityVersion:page.authorityVersion,hasMore:items.length>20,items:items.slice(0,20).map(({id,title,version,status,followUp})=>({id,title,version,status,followUp}))};
+        const query=(args.searchText as string|null|undefined)?.trim().toLocaleLowerCase("zh-HK");
+        const page=await concerns.list(scope.userId,scope.childId,{limit:20,cursor:(args.cursor as string|null|undefined)??undefined});
+        if(!page)throw new FamilyError(404,"not_found");
+        const items=query?page.items.filter(item=>(item.title+" "+item.reason).toLocaleLowerCase("zh-HK").includes(query)):page.items;
+        return {authorityVersion:page.authorityVersion,hasMore:Boolean(page.hasMore),nextCursor:page.nextCursor??null,items:items.map(({id,title,version,status,followUp})=>({id,title,version,status,followUp}))};
       }
-      const item=page.items.find(value=>value.id===args.concernId);
+      const item=await concerns.get(scope.userId,scope.childId,args.concernId as string);
       if(!item)throw new FamilyError(404,"not_found");
-      return {authorityVersion:page.authorityVersion,concern:concernAgentContext(item)};
+      const page=await concerns.list(scope.userId,scope.childId,{limit:1});
+      return {authorityVersion:page?.authorityVersion??`${scope.dataVersion}:${scope.authorizationVersion}`,concern:concernAgentContext(item)};
     }),
   }];
   if(!background)tools.push(

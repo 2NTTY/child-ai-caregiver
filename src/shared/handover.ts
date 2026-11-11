@@ -1,5 +1,13 @@
 import { z } from 'zod';
 import { avatarStateSchema } from './avatars.ts';
+import { DEFAULT_NOTIFICATION_PREFERENCES, notificationPreferencesSchema } from './family.ts';
+
+export const handoverNotificationPreferencesSchema = notificationPreferencesSchema.refine(value =>
+  value.quietStart !== value.quietEnd && (value.version > 0 ||
+    (Object.keys(DEFAULT_NOTIFICATION_PREFERENCES) as (keyof typeof value)[]).every(key => value[key] === DEFAULT_NOTIFICATION_PREFERENCES[key])));
+export const accountPreferencesFeature = 'notification-preferences';
+export const supportsAccountPreferencePackage = (headers: Headers) =>
+  (headers.get('x-handover-account-features') ?? '').split(',').some(feature => feature.trim() === accountPreferencesFeature);
 
 /** This format carries product data, never live execution or credential state. */
 export const HANDOVER_MODULES = ['profile', 'care', 'chat', 'memory', 'tasks', 'documents', 'attachments', 'sources', 'concerns', 'growth'] as const;
@@ -45,17 +53,19 @@ export const handoverPathSchema = z.string().max(200).regex(/^(?:summary\.md|(?:
 export const handoverSelectionSchema = z.object({
   childIds: z.array(z.uuid()).max(10000), modules: z.array(z.enum(HANDOVER_MODULES)).max(HANDOVER_MODULES.length),
   accountAvatar: z.object({ version: avatarStateSchema.shape.version }).strict().optional(),
+  notificationPreferences: notificationPreferencesSchema.pick({ version: true }).optional(),
   period: z.object({ from: z.iso.datetime({ offset: true }), to: z.iso.datetime({ offset: true }) }).strict().nullable(),
-}).strict().refine(value => (value.childIds.length > 0 ? value.modules.length > 0 : !!value.accountAvatar && value.modules.length === 0)
+}).strict().refine(value => (value.childIds.length > 0 ? value.modules.length > 0 : (!!value.accountAvatar || !!value.notificationPreferences) && value.modules.length === 0)
   && new Set(value.childIds).size === value.childIds.length && new Set(value.modules).size === value.modules.length
   && (!value.period || Date.parse(value.period.from) <= Date.parse(value.period.to)));
 export const handoverHeaderSchema = z.object({
-  format: z.literal('yuyoufang-data'), version: z.union([z.literal(1), z.literal(2)]), packageId: z.uuid(), packageVersion: z.number().int().positive(),
+  format: z.literal('yuyoufang-data'), version: z.union([z.literal(1), z.literal(2), z.literal(3)]), packageId: z.uuid(), packageVersion: z.number().int().positive(),
   createdAt: z.iso.datetime({ offset: true }), purpose: z.enum(['handover', 'backup']),
   source: z.object({ serverId: text(256), accountId: text(256) }).strict(), selection: handoverSelectionSchema,
   // The recipient sees only the specific included exceptions, never the sender's excluded entries.
   periodExceptions: z.array(handoverDocumentPinSchema).min(1).max(1000).optional(),
-}).strict().refine(value => value.selection.accountAvatar ? value.purpose === 'backup' && value.version === 2 : value.version === 1);
+}).strict().refine(value => value.selection.notificationPreferences ? value.purpose === 'backup' && value.version === 3 :
+  value.selection.accountAvatar ? value.purpose === 'backup' && value.version === 2 : value.version === 1);
 export const handoverCoverageSchema = z.object({ section: text(80), childId: z.uuid().nullable(), scopeVersion: hash,
   items: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER), complete: z.literal(true) }).strict();
 export const handoverEntrySchema = z.object({ path: handoverPathSchema, bytes: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),

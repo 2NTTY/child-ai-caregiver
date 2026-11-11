@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { readGrowthPages } from "./growth-read";
+import { appendCursorItems, cursorBoundary } from "./cursor-page";
 import { createGrowthApi, GrowthApiError, requiresFreshGrowthConfirmation } from "../../../src/client/growth-api";
 import { createConcernsApi, ConcernApiError, requiresFreshConcernConfirmation } from "../../../src/client/concerns-api";
 import { concernChangeSchema, concernValuesSchema, type Concern, type ConcernPage } from "../../../src/shared/concerns";
@@ -35,7 +36,7 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
     const value: GrowthPage = growth ?? { authorityVersion: concerns!.authorityVersion, items: [], topics: [], historyHasMore: false,
       notices: ['成長建議未加入此共享範圍。'], eligibleAssignees: [], canManage: false };
     return { ...value, canManage: growth && concerns ? value.canManage : false,
-      concerns: concerns ? { state: "ready", items: concerns.items, label: "持續關注及已載入的跟進記錄。" }
+      concerns: concerns ? { state: "ready", items: concerns.items, ...cursorBoundary(concerns), label: "持續關注及已載入的跟進記錄。" }
         : { state: "unavailable", items: [], label: "持續關注未加入此共享範圍。" },
       archive: { scopeKey: env.scopeKey, childId: env.childId!, authorityVersion: value.authorityVersion, state: "unavailable", snapshot: null,
         label: "年度／季度成長檔案及報告尚未接通。" },
@@ -150,6 +151,25 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
     page: visible, busy, locked, pending: runtime.lost ? null : pending, originalConsent, operation, notice,
     dirty: !runtime.lost && dirty, discardAsked, epoch, resetCounts, refreshPending, missingTargets, lastConcernChange: runtime.lost ? null : lastConcernChange,
   }, actions: {
+    loadMoreConcerns() {
+      const basis = page, cursor = basis?.concerns?.nextCursor;
+      if (inFlight.current || busy || dirty || original.current || !env.online || !runtime.live() || !env.allows('concerns') || !basis?.concerns?.hasMore || !cursor) return;
+      inFlight.current = true; setBusy(true);
+      void runtime.request(async (signal, current) => {
+        try {
+          const next = await runtime.read(["concerns", cursor], nextSignal => concernsApi.getPage(env.childId!, nextSignal, env.userId!, { limit: 50, cursor }), signal);
+          if (!current()) return;
+          if (next.authorityVersion !== basis.authorityVersion) throw new Error('page_authority_changed');
+          const boundary = cursorBoundary(next, cursor);
+          setPage(before => before === basis && before.concerns ? { ...before, concerns: { ...before.concerns,
+            items: appendCursorItems(before.concerns.items, next.items), ...boundary, pageError: undefined } } : before);
+        } catch (error) {
+          if (!current() || clearAccess(error)) return;
+          setPage(before => before === basis && before.concerns ? { ...before, concerns: { ...before.concerns,
+            pageError: "未能載入更多關注，已載入內容保留。請重試；權限基準改變時請重新讀取。" } } : before);
+        } finally { if (current()) { inFlight.current = false; setBusy(false); } }
+      });
+    },
     refresh() { refresh(); }, markDirty(key) { if (!locked) setDirtyKeys(before => before.includes(key) ? before : [...before, key]); },
     discardLocalDraft(key) {
       if (!runtime.live() || original.current && `${original.current.attempt.kind}:${original.current.attempt.id}` === key) return;
