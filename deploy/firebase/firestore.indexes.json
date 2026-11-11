@@ -2978,6 +2978,18 @@
       ]
     },
     {
+      "collectionGroup": "yuban_authority_work_watches",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "workspaceTag", "order": "ASCENDING" },
+        { "fieldPath": "epochTag", "order": "ASCENDING" },
+        { "fieldPath": "userTag", "order": "ASCENDING" },
+        { "fieldPath": "childTag", "order": "ASCENDING" },
+        { "fieldPath": "enabled", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "yuban_authority_work_events",
       "queryScope": "COLLECTION",
       "fields": [

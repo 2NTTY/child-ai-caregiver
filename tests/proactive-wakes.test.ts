@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import type { Query } from '@google-cloud/firestore';
+import { FieldPath, type Query } from '@google-cloud/firestore';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
@@ -20,7 +20,7 @@ import { createFirestoreMemoryStore } from '../server/firestore-memory.ts';
 import { createFirestorePrivateInstructions } from '../server/firestore-private-instructions.ts';
 import { createFirestoreConcernStore } from '../server/firestore-concerns.ts';
 import { emptyCareDetails } from '../src/shared/care.ts';
-import { createFirestoreWorkFollowUp } from '../server/firestore-work-followup.ts';
+import { createFirestoreWorkFollowUp, firestoreWorkWatchSchema } from '../server/firestore-work-followup.ts';
 import type { AgentWork, AgentWorkValues } from '../src/shared/agent-work.ts';
 
 const START = Date.parse('2026-11-12T04:00:00.000Z');
@@ -138,19 +138,30 @@ test('daily input names only readable changes in its retained revision window an
   assert.equal(await f.input(job),null,'A later resource cannot leak into the original batch');
 });
 
-test('dedicated coverage excludes only the exact resources and sources while independent cues proceed', async t => {
+test('incomplete coverage defers work-eligible cues without evaluating them while certain independent cues proceed', async t => {
   t.mock.timers.enable({ apis: ['Date'], now: START });
   const owned=randomUUID(), independent=randomUUID(), coveredEvent=candidate();
   const other={...candidate(),assessmentId:'e'.repeat(64),eventId:'independent-event',evidence:{...candidate().evidence,sourceId:'independent-source'}};
+  let complete=false;
   const f=await fixture([coveredEvent,other],{coverage:async(_b,request)=>({
-    resources:request.resources.filter(row=>row.id===owned),knowledgeSourceIds:['synthetic-source'],complete:false,
+    resources:request.resources.filter(row=>row.id===owned),knowledgeSourceIds:['synthetic-source'],complete,
   })});
   await f.changeResource({domain:'private_note',id:owned}); await f.changeResource({domain:'care_record',id:independent});
+  await f.changeResource({domain:'profile',id:f.childId});
   t.mock.timers.setTime(Date.parse(f.firstDay.dueAt)); await f.daily();
-  const input=(await f.input((await f.jobs('proactive-assessment'))[0]!))!;
-  assert.deepEqual(input.householdChanges.map(row=>row.id),[independent]);
-  assert.deepEqual(input.events.map(row=>row.eventId),['independent-event']);
+  const original=(await f.jobs('proactive-assessment'))[0]!,input=(await f.input(original))!;
+  assert.deepEqual(input.householdChanges.map(row=>row.id),[f.childId]);
+  assert.deepEqual(input.events,[]);
   assert.equal(input.householdChangesComplete,false,'Unchecked watches are distinguished from a complete negative lookup');
+  const pendingDay=(await f.jobs('proactive-day'))[1]!;t.mock.timers.setTime(Date.parse(pendingDay.dueAt));await f.daily(pendingDay);
+  assert.equal((await f.jobs('proactive-assessment')).length,1,'An independent locator already reserved by the pending original run is not dispatched twice');
+  await f.settle(original,result({outcome:'no_action',text:''}));
+  assert.equal((await f.own(b=>f.wakes.read(b))).lastRevision,1,'The deferred resource revision has not been acknowledged as assessed');
+  const tomorrow=(await f.jobs('proactive-day'))[2]!;t.mock.timers.setTime(Date.parse(tomorrow.dueAt));await f.daily(tomorrow);
+  assert.equal((await f.jobs('proactive-assessment')).length,1,'The already assessed independent profile is not repeated while the resource waits');
+  complete=true;const retryDay=(await f.jobs('proactive-day'))[3]!;t.mock.timers.setTime(Date.parse(retryDay.dueAt));await f.daily(retryDay);
+  const retry=(await f.jobs('proactive-assessment')).find(job=>job.id!==original.id)!,resumed=(await f.input(retry))!;
+  assert.deepEqual(resumed.householdChanges.map(row=>row.id),[independent]);assert.deepEqual(resumed.events.map(row=>row.eventId),['independent-event']);
   const all=await fixture([coveredEvent],{coverage:async(_b,request)=>({resources:request.resources,knowledgeSourceIds:request.knowledgeSourceIds,complete:true})});
   await all.changeResource({domain:'private_note',id:owned});
   t.mock.timers.setTime(Date.parse(all.firstDay.dueAt)); await all.daily();
@@ -213,6 +224,51 @@ test('real work coverage respects current work versions, resource ownership and 
   await f.own(async b=>{const {id:_id,childId:_childId,version:_version,createdAt:_createdAt,updatedAt:_updatedAt,...next}=work as AgentWork;
     const prepared=await b.prepareWork({operationId:randomUUID(),workId:work.id,expectedVersion:1,values:next});prepared.commit();});
   coverage=await f.own(b=>continuation.coverage(b,request));assert.deepEqual(coverage.resources.map(row=>row.id),[second],'A stale watch cannot suppress the newer canonical work or unrelated cues');
+});
+
+test('the eleventh watch is checked for both matching and unrelated cues and only the forty-watch overflow is unknown',async t=>{
+  t.mock.timers.enable({apis:['Date'],now:START});const f=await fixture();let captures=0;
+  const continuation=createFirestoreWorkFollowUp({...f.options,
+    resource:async(_b,ref)=>{captures++;return{...ref,status:'current',available:true,terminal:false};},
+    knowledge:async(_b,ids)=>ids.map(sourceId=>({sourceId,versionId:randomUUID(),hash:'a'.repeat(64),available:true,assessment:null})),
+    runs:()=>{throw Error('Coverage must not run a model');},
+  });
+  const entries=new Map<string,{resourceId:string;sourceId:string}>();
+  const create=async(index:number)=>{
+    const resourceId=randomUUID(),sourceId='synthetic-source-'+index;
+    const work=await f.own(async b=>{const prepared=await b.prepareWork({operationId:randomUUID(),workId:null,expectedVersion:0,
+      values:{goal:'Synthetic bounded followup',focus:'',questions:[],sourceMessageIds:[],resources:[{kind:'private_note',id:resourceId,version:1}],
+        pending:[],status:'active',followUp:{reason:'Synthetic source watch',dueAt:null,watchResources:true,knowledgeSourceIds:[sourceId]}}});
+      prepared.commit();return prepared.value;});
+    await f.own(async b=>{const prepared=await continuation.prepare(b,work);prepared.commit();});entries.set(work.id,{resourceId,sourceId});
+  };
+  for(let index=0;index<11;index++)await create(index);
+  const ordered=await f.own(async b=>{let query:Query=f.data.collection('work_watches');
+    for(const [key,value]of Object.entries(f.data.tags(b.scope)))query=query.where(key,'==',value);
+    return b.transaction.get(query.orderBy(FieldPath.documentId()).limit(41));});
+  const last=entries.get(ordered.docs[10]!.get('workId'))!;captures=0;
+  const matched=await f.own(b=>continuation.coverage(b,{resources:[{kind:'private_note',id:last.resourceId}],knowledgeSourceIds:[last.sourceId]}));
+  assert.equal(matched.complete,true);assert.deepEqual(matched.resources,[{kind:'private_note',id:last.resourceId}]);
+  assert.deepEqual(matched.knowledgeSourceIds,[last.sourceId]);assert.equal(captures,1,'Only the matching eleventh watch captures current resources');
+  captures=0;
+  const unmatched=await f.own(b=>continuation.coverage(b,{resources:[{kind:'private_note',id:randomUUID()}],knowledgeSourceIds:['unrelated-source']}));
+  assert.deepEqual(unmatched,{resources:[],knowledgeSourceIds:[],complete:true});assert.equal(captures,0,'Eleven unrelated watches provide complete negative evidence without resource captures');
+  for(let index=11;index<41;index++)await create(index);
+  captures=0;const overflow=await f.own(b=>continuation.coverage(b,{resources:[{kind:'private_note',id:randomUUID()}],knowledgeSourceIds:['unrelated-source']}));
+  assert.equal(overflow.complete,false);assert.equal(captures,0,'A real forty-one-watch scope is explicitly unknown beyond its bounded metadata budget');
+  await f.own(async b=>{
+    let query:Query=f.data.collection('work_watches');for(const [key,value]of Object.entries(f.data.tags(b.scope)))query=query.where(key,'==',value);
+    const rows=await b.transaction.get(query.limit(41));
+    for(const row of rows.docs){
+      const id=row.get('workId'),value=f.data.open('work-watch',id,b.scope,firestoreWorkWatchSchema,row);
+      if(entries.get(id)!.resourceId===last.resourceId)continue;
+      b.transaction.set(row.ref,{...f.data.tags(b.scope),workId:id,enabled:false,nextCheckAt:value.nextCheckAt,
+        ...f.data.seal('work-watch',id,b.scope,firestoreWorkWatchSchema,{...value,enabled:false})});
+    }
+  });
+  captures=0;const afterHistory=await f.own(b=>continuation.coverage(b,{resources:[{kind:'private_note',id:last.resourceId}],knowledgeSourceIds:[last.sourceId]}));
+  assert.equal(afterHistory.complete,true);assert.deepEqual(afterHistory.resources,[{kind:'private_note',id:last.resourceId}]);
+  assert.equal(captures,1,'Forty disabled historical watches do not consume the active-watch budget');
 });
 
 test('public no-action and unknown outcomes keep their original checkpoint after a lost acknowledgement', async t => {

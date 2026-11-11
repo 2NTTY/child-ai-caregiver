@@ -16,7 +16,8 @@ const revision = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const digest = z.string().regex(/^[a-f0-9]{64}$/u);
 const policyView = z.object({enabled:z.boolean(),timeZone:taskTimeZoneSchema,version:revision}).strict();
 const commandSchema = policyView.omit({version:true}).extend({expectedVersion:revision,opId:z.uuid()}).strict();
-const scan = z.object({jobId:digest,revision,sinceRevision:revision.optional(),events:z.array(digest).max(8),householdChanged:z.boolean()}).strict();
+const scan = z.object({jobId:digest,revision,sinceRevision:revision.optional(),events:z.array(digest).max(8),
+  householdIds:z.array(digest).max(8).optional(),householdChanged:z.boolean()}).strict();
 const cueAuthority = {policyVersion:revision,generation:z.uuid(),authorizationVersion:z.string().min(1).max(128)};
 export const proactiveCueSchema = scan.extend({...cueAuthority,basis:digest,userTurn:z.uuid().nullable(),state:z.enum(['pending','settled'])}).strict();
 export const proactiveReservationSchema = z.object({id:digest,jobId:digest,...cueAuthority}).strict();
@@ -62,22 +63,27 @@ export function createProactiveWakes(options: FirestoreDomainOptions, chat: Fire
   const view = (policy:z.infer<typeof proactivePolicySchema>) => ({enabled:policy.enabled,timeZone:policy.timeZone,version:policy.version});
   const workResource = (change: HouseholdChange): Pick<WorkResource, 'kind' | 'id'> | null =>
     change.domain === 'profile' || change.domain === 'memory_topic' ? null : { kind: change.domain, id: change.id };
+  const householdAssessmentId = (change: HouseholdChange) => firestoreDomainHash(['household-change',change.revision,change.domain,change.id]);
   async function excludeWorkCoverage(b: Binding, readable: HouseholdChange[], candidates: ProactivePublicResult['candidates']) {
     const resources = readable.map(workResource).filter((value): value is NonNullable<typeof value> => value !== null);
     const sources = [...new Set(candidates.map(row => row.evidence.sourceId))];
     const coverage = resources.length || sources.length ? await adapters.coverage?.(b, { resources, knowledgeSourceIds: sources }) : undefined;
     const covered = new Set(coverage?.resources.map(value => value.kind + ':' + value.id) ?? []);
     const coveredSources = new Set(coverage?.knowledgeSourceIds ?? []);
-    return { changes: readable.filter(change => !covered.has(change.domain + ':' + change.id)),
-      candidates: candidates.filter(row => !coveredSources.has(row.evidence.sourceId)),
-      complete: !resources.length && !sources.length || coverage?.complete === true };
+    const complete = !resources.length && !sources.length || coverage?.complete === true;
+    return { changes: readable.filter(change => !covered.has(change.domain + ':' + change.id) && (complete || !workResource(change))),
+      deferred: readable.filter(change=>!complete && workResource(change) && !covered.has(change.domain+':'+change.id)),
+      candidates: candidates.filter(row => complete && !coveredSources.has(row.evidence.sourceId)), complete };
   }
   async function householdBatch(b: Binding, context: Awaited<ReturnType<typeof readContextBasis>>, since: number, through: number,
     candidates: ProactivePublicResult['candidates']) {
     const selected = selectHouseholdChanges(context, since, through), readable: HouseholdChange[] = [];
     for (const change of selected.changes) if (await adapters.readHouseholdChange?.(b, change)) readable.push(change);
     const filtered = await excludeWorkCoverage(b,readable,candidates);
-    return { ...filtered, logComplete: selected.complete,
+    const unassessed: HouseholdChange[]=[];
+    for(const change of filtered.changes)if(!await assessment(b,householdAssessmentId(change)))unassessed.push(change);
+    return { ...filtered,changes:unassessed,coverageComplete:filtered.complete,
+      deferred:adapters.readHouseholdChange?filtered.deferred:selected.changes,logComplete: selected.complete,
       complete: filtered.complete && selected.complete && (!selected.changes.length || !!adapters.readHouseholdChange) };
   }
   async function schedule(b:Binding,version:number,zone:string,now:string) {
@@ -121,6 +127,12 @@ export function createProactiveWakes(options: FirestoreDomainOptions, chat: Fire
     if(row.exists) {
       const value=data.open('proactive-cue',address,b.scope,proactiveCueSchema,row);
       if(value.jobId!==id)domainReject('proactive_binding',500);
+      if(value.state==='pending' && !job){
+        const pending=await b.transaction.get(data.ref('background_work','background-work',id));
+        if(!pending.exists)return null;
+        const original=data.open('background-work',id,b.scope,firestoreBackgroundWorkSchema,pending);
+        if(['completed','stopped','failed'].includes(original.state))return null;
+      }
       return {value,legacy:false};
     }
     // A pre-upgrade scan keeps its original job and authority while acquiring a durable cue.
@@ -170,7 +182,17 @@ export function createProactiveWakes(options: FirestoreDomainOptions, chat: Fire
         && owner.value.revision===context.proactiveRevision && owner.value.userTurn===(context.value.lastUserMessageId??null))continue;
       events.push(row.assessmentId);
     }
-    const householdChanged = household.changes.length > 0 || !household.logComplete && context.proactiveRevision!==current.lastRevision;
+    const householdIds:string[]=[];
+    for(const change of household.changes){
+      const id=householdAssessmentId(change),held=await getReservation(id),owner=held?await getCue(held.jobId):null;
+      if(held && owner && currentAuthority(b,current,held) && currentAuthority(b,current,owner.value)
+        && owner.value.state==='pending' && owner.value.householdIds?.includes(id)
+        && owner.value.revision===context.proactiveRevision && owner.value.userTurn===(context.value.lastUserMessageId??null))continue;
+      householdIds.push(id);
+    }
+    const householdChanged = householdIds.length > 0 || !household.logComplete && household.coverageComplete && context.proactiveRevision!==current.lastRevision;
+    const acknowledged = !household.logComplete && !household.coverageComplete ? current.lastRevision
+      : household.deferred.length ? Math.min(context.proactiveRevision,...household.deferred.map(change=>change.revision-1)) : context.proactiveRevision;
     const basis=firestoreDomainHash([job.id,context.proactiveRevision,events]);
     const candidate = householdChanged || events.length ? await prepareFirestoreBackgroundWork(data,b.transaction,{kind:'proactive-assessment',scope:b.scope,
       generation:b.generation,authorizationVersion:b.authorizationVersion,resourceId:b.scope.childId,
@@ -180,14 +202,14 @@ export function createProactiveWakes(options: FirestoreDomainOptions, chat: Fire
     for(const held of legacyReservations)if(!candidate || !events.includes(held.id))
       save(b,'proactive-reservation',key(b,held.id),proactiveReservationSchema,held);
     if (candidate) {
-      const selected={jobId:candidate.id,revision:context.proactiveRevision,sinceRevision:current.lastRevision,householdChanged,events};
+      const selected={jobId:candidate.id,revision:context.proactiveRevision,sinceRevision:current.lastRevision,householdIds,householdChanged,events};
       save(b,'proactive-cue',key(b,candidate.id),proactiveCueSchema,{...selected,basis,policyVersion:current.version,
         generation:b.generation,authorizationVersion:b.authorizationVersion,userTurn:context.value.lastUserMessageId??null,state:'pending'});
-      for(const id of events)save(b,'proactive-reservation',key(b,id),proactiveReservationSchema,{id,jobId:candidate.id,
+      for(const id of [...events,...householdIds])save(b,'proactive-reservation',key(b,id),proactiveReservationSchema,{id,jobId:candidate.id,
         policyVersion:current.version,generation:b.generation,authorizationVersion:b.authorizationVersion});
-      save(b,'proactive-policy',key(b),proactivePolicySchema,{...current,lastRevision:context.proactiveRevision,scan:selected});
-    } else if (current.lastRevision !== context.proactiveRevision)
-      save(b,'proactive-policy',key(b),proactivePolicySchema,{...current,lastRevision:context.proactiveRevision});
+      save(b,'proactive-policy',key(b),proactivePolicySchema,{...current,lastRevision:acknowledged,scan:selected});
+    } else if (current.lastRevision !== acknowledged)
+      save(b,'proactive-policy',key(b),proactivePolicySchema,{...current,lastRevision:acknowledged});
     tomorrow.commit(); candidate?.commit(); return {state:'completed' as const};
   }
   async function input(b:Binding,job:Job) {
@@ -204,7 +226,7 @@ export function createProactiveWakes(options: FirestoreDomainOptions, chat: Fire
     if (!selected || selected.jobId!==job.id || context.proactiveRevision!==selected.revision) return null;
     if(stored && (!currentAuthority(b,policy,stored.value) || stored.value.state!=='pending' || stored.value.basis!==job.basis
       || stored.value.userTurn!==(context.value.lastUserMessageId??null)))return null;
-    if(stored && !stored.legacy)for(const id of stored.value.events) {
+    if(stored && !stored.legacy)for(const id of [...stored.value.events,...stored.value.householdIds??[]]) {
       const held=await reservation(b,id);
       if(!held || held.jobId!==job.id || !currentAuthority(b,policy,held))return null;
     }
@@ -225,6 +247,7 @@ export function createProactiveWakes(options: FirestoreDomainOptions, chat: Fire
     const revisited = revisit ? await excludeWorkCoverage(b,revisitedChanges,events) : null;
     const household = revisit ? { ...revisited!, complete: revisited!.complete && (revisit.householdChangesComplete ?? true), logComplete: true }
       : await householdBatch(b,context,stored!.value.sinceRevision ?? stored!.value.revision,selected.revision,events);
+    if(!revisit && stored!.value.householdIds)household.changes=household.changes.filter(change=>stored!.value.householdIds!.includes(householdAssessmentId(change)));
     if (household.candidates.length !== events.length) return null;
     if(revisit?.householdChanges?.length && !household.changes.length && !events.length)return null;
     if (!revisit && selected.householdChanged && stored!.value.sinceRevision !== undefined && household.logComplete
@@ -254,6 +277,11 @@ export function createProactiveWakes(options: FirestoreDomainOptions, chat: Fire
       events:(next.kind==='important'?important:publicContact?[]:selected.events).map(row=>row.assessmentId),
       ...(next.kind==='observation'?{householdChanges:selected.householdChanges,householdChangesComplete:selected.householdChangesComplete}:{})}:null;
     const previousAssessments = selected.revisit ? await Promise.all(selected.events.map(row=>assessment(b,row.assessmentId))) : [];
+    if(!selected.revisit)for(const change of selected.householdChanges){
+      const id=householdAssessmentId(change);
+      save(b,'proactive-assessment',key(b,id),proactiveAssessmentSchema,{id,opId,
+        outcome:contact?'contact':complete?'no_action':'unknown',contactedAt:contact?at:null,repeated:false});
+    }
     for (const [index,row] of selected.events.entries()) {
       if (!selected.revisit) save(b,'proactive-assessment',key(b,row.assessmentId),proactiveAssessmentSchema,
         {id:row.assessmentId,opId,outcome:contact?'contact':complete?'no_action':'unknown',contactedAt:contact?at:null,repeated:false});

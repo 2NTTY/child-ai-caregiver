@@ -1068,6 +1068,18 @@ ADK 事件只保存本次音訊身份 metadata；模型 adapter 在每次已授�
 配對備份 manifest 的 `voices` 為向後相容可選欄位；錄音密文使用獨立、固定 generation 的備份物件，保留與 manifest 相同的 14 天期限，原生熱備份讀回沿相同獨立刪除屏障。還原先重放 voice-delete／孩子／帳戶刪除，遮蔽轉錄；清理 tombstone 保留原物件範圍，活躍內容才轉換儲存世代。未結清上傳、轉錄 unknown 不被當成成功或重做許可；真原生備份還原仍按既有待驗門檻處理。
 
 
+### 主動助手與聊天通知
+
+| 接口 | 契約 |
+|---|---|
+| `GET / POST /api/children/:childId/proactive-settings` | 讀取或保存本人對該孩子的授權與 IANA 時區。首次預設關閉。保存帶 `opId`、`expectedVersion`、`enabled` 及 `timeZone`。 |
+| `GET / POST /api/native-push/chat-presence` | 僅目前 Android 裝置會話可操作自己的聊天推送偏好及前景狀態。前景狀態綁定孩子對話且會到期。Web 同時在線不會抑制手機推送。 |
+| `GET /api/children/:childId/chat/messages/:messageId` | 通知開啟時，用目前身份查原訊息。主動訊息與普通回答沿同一孩子的主聊天讀回。 |
+| `POST /api/children/:childId/chat/messages/:messageId/seen` | 客戶端確認該主動訊息已在前景可見。重播同一回報保持原查看紀錄。 |
+| `GET / POST /api/admin/proactive-demo` | 查詢示範是否已配置；管理員近期重新驗證後可用 `{opId}` 向部署綁定對象示範，同一操作返回原訊息。用 `GET /api/admin/proactive-demo/:opId` 查訊息及各裝置的實際投遞結果。 |
+
+主聊天聯絡將訊息、收據與待派送工作一併提交。待辦到期可從原待辦收據建立訊息。巡查與助手約定的查看，沿同一背景工作及當前授權決定聯絡或安靜結束。已提交的訊息、渠道接受、真機實收、家長已看及事項完成是不同結果。[示範操作](AGENT_LOCAL.md#一鍵示範主動通知)
+
 ### Android FCM 提示接點
 
 Android 使用原生 FCM token，與 Web Push 訂閱分開。Server 設定掌管 project／application ID；端點或模型不能指定另一發送專案。`ANDROID_PUSH_ENABLED` 預設關閉；固定 app 為 `org.yuyoufang.app`。
