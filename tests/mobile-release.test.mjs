@@ -11,6 +11,9 @@ test('release plan preserves shared delivery, runtime compatibility and scoped r
     gitCommitHash: 'source', runtime: { version: 'runtime' }, fingerprint: { hash: 'runtime' } };
   const baseline = verifyBuild(build, config, 'preview');
   const shared = classifyChanges(['frontend/src/screens/AssistantScreen.tsx', 'server/tasks.ts']);
+  assert.deepEqual(classifyChanges(['frontend/plugins/ios-share/ShareIntoViewController.swift']), {
+    web: false, android: false, ios: true, server: false, nativeInputs: true, review: [],
+  });
   assert.deepEqual([shared.web, shared.android, shared.ios, shared.server], [true, true, true, true]);
   assert.equal(decideRelease(shared, 'runtime', baseline), 'update');
   assert.equal(decideRelease(shared, 'new-runtime', baseline), 'build');
