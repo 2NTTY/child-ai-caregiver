@@ -37,7 +37,9 @@ function publicSettings(value: Saved | null): ModelSettings {
     maxQueryEmbeddings: value?.maxQueryEmbeddings ?? PERSONAL_RUN_LIMITS.queryEmbeddings.default, ...advanced(value), updatedAt: value?.updatedAt ?? null };
 }
 /** Secrets stay within the server resolver; responses, receipts and change metadata contain no key. */
-export function createFirestoreModelSettings(options: FirestoreDomainOptions): ModelSettingsStore {
+export function createFirestoreModelSettings(options: FirestoreDomainOptions): ModelSettingsStore & {
+  readIn(binding: Pick<FirestoreAuthorityTransaction, 'scope' | 'transaction'>): Promise<ModelSettings>;
+} {
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
   const ref = (id: string) => data.ref('model_settings', 'model-settings', id);
   const operationIdFor = (userId: string, opId: string) => JSON.stringify([userId, opId]);
@@ -46,7 +48,7 @@ export function createFirestoreModelSettings(options: FirestoreDomainOptions): M
     const id = operationIdFor(binding.scope.ownerUserId, opId), row = await binding.transaction.get(operationRef(id));
     return row.exists ? data.open('model-settings-operation', id, binding.scope, firestoreModelSettingsOperationRecoverySchema, row) : null;
   }
-  async function read(binding: FirestoreAuthorityTransaction): Promise<Saved | null> {
+  async function read(binding: Pick<FirestoreAuthorityTransaction, 'scope' | 'transaction'>): Promise<Saved | null> {
     const id = binding.scope.ownerUserId, row = await binding.transaction.get(ref(id));
     if (!row.exists) return null;
     const value = data.open('model-settings', id, binding.scope, savedSchema, row);
@@ -55,6 +57,7 @@ export function createFirestoreModelSettings(options: FirestoreDomainOptions): M
     return value;
   }
   return {
+    readIn: async binding => publicSettings(await read(binding)),
     get: userId => authority.runTransaction(userId, null, async binding => publicSettings(await read(binding))),
     resolve: userId => authority.runTransaction(userId, null, async binding => {
       const saved = await read(binding); return { settings: publicSettings(saved), apiKey: saved?.apiKey ?? null,

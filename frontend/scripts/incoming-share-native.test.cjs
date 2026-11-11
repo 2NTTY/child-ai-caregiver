@@ -10,6 +10,7 @@ test('Android incoming sharing keeps native config, local media ownership and st
   const savedEnv = configKeys.map(key => [key, process.env[key]]);
   for (const key of configKeys) delete process.env[key];
   try {
+    process.env.EAS_BUILD_PLATFORM = 'android';
     const { default: configure } = await import('../app.config.js');
     const original = JSON.parse(fs.readFileSync(path.join(root, 'frontend/app.json'), 'utf8')).expo;
     const configured = configure({ config: original });
@@ -45,7 +46,12 @@ test('Android incoming sharing keeps native config, local media ownership and st
     delete() { assert.fail('Never delete an incoming source'); }
   }
   const owned = (kind, file, mimeType, fileName) => { const value = { kind, fileName, mimeType, bytes: file.size, localUri: 'file:///owned/' + kind, dispose() { this.released = true; } }; routes.push(value); return value; };
+  const iosItem = { localShareId: 'receipt:0', shareType: 'image', value: 'receipt:0' };
+  const iosMailbox = { read: () => [iosItem], clear() {}, acknowledge() {}, discard() {},
+    file(payload) { assert.equal(payload, iosItem); return new File('file:///photo.png'); } };
   const mocks = {
+    './ios-share-mailbox': { createIosShareMailbox: () => iosMailbox },
+    'expo-modules-core': { requireNativeModule: () => ({}) },
     'react-native': { Platform: { get OS() { return platformOS; } }, AppState: { addEventListener(_name, listener) { appListener = listener; return { remove() { removed++; } }; } }, Linking: { addEventListener(_name, listener) { urlListener = listener; return { remove() { removed++; } }; } } },
     'expo-sharing': { getSharedPayloads: () => raw, clearSharedPayloads: () => { cleared++; raw = []; }, getResolvedSharedPayloadsAsync() { assert.fail('No remote resolving'); }, useIncomingShare() { assert.fail('No auto-resolving hook'); } },
     'expo-file-system': { File },
@@ -84,6 +90,10 @@ test('Android incoming sharing keeps native config, local media ownership and st
   for (const value of ['https://example.test/image.jpg', 'file://remote.example/image.jpg', 'file:///data/user/0/org.yuyoufang.app/files/private.txt', 'file:///data/user/0/org.yuyoufang.app/cache/private.txt', 'data:image/png;base64,AAA', 'ftp://example.test/a']) await assert.rejects(native.prepare({ shareType: 'image', value }));
   await assert.rejects(native.prepare({ shareType: 'url', value: 'https://example.test/shared' })); assert.equal(opened.length, previousOpens);
   platformOS = 'ios'; assert.deepEqual(native.read(), []); native.clear(); assert.equal(cleared, 1); await assert.rejects(native.prepare({ shareType: 'image', value: 'file:///photo.png' }));
+  const ios = load('frontend/src/platform/incoming-share.native.ts').createIncomingSharePlatform();
+  assert.deepEqual(ios.read(1,'account'), [iosItem]);
+  assert.equal(ios.acknowledge, iosMailbox.acknowledge); assert.equal(ios.discard, iosMailbox.discard);
+  assert.equal((await ios.prepare(iosItem)).mimeType, 'image/png');
   const base = load('frontend/src/platform/incoming-share.ts').createIncomingSharePlatform(); assert.deepEqual(base.read(), []); await assert.rejects(base.prepare({ shareType: 'image', value: 'file:///photo.png' }));
   const redirect = load('frontend/app/+native-intent.ts').redirectSystemPath;
   for (const value of ['yuyoufang://expo-sharing', 'org.yuyoufang.app://expo-sharing']) assert.equal(redirect({ path: value, initial: true }), '/share');

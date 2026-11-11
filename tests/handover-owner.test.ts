@@ -39,3 +39,45 @@ test('package owner resumes the original request and clears late results on iden
   await assert.rejects(new Response(boundedPackageStream(read([[1, 2, 3, 4]]), 3, () => true)).arrayBuffer(), /package_download_invalid/);
   await assert.rejects(new Response(boundedPackageStream(read([[1]]), 1, () => false)).arrayBuffer(), /session_changed/);
 });
+
+test('account preference exports require negotiated current scope and bind document review to its selected version', async () => {
+  const writes: any[] = [];
+  let support = true, resolvePreview: ((value: any) => void) | undefined;
+  const api = { setIdentity() {}, async exportCapabilities() { return { classModules: [], ...(support ? { notificationPreferencesBackup: true } : {}) }; },
+    async create(_user: string, command: any) {
+      writes.push(command); return { ...command, id: command.opId, version: 1, state: 'queued', createdAt: '2026-11-08T00:00:00Z',
+        expiresAt: '2026-11-09T00:00:00Z', bytes: null, error: null };
+    }, preview() { return new Promise(resolve => { resolvePreview = resolve; }); },
+  } as unknown as HandoverApi;
+  const owner = new HandoverOwner(api); owner.syncContext('owner', 'identity-a', true);
+  const selection = { childIds: [], modules: [], period: null, notificationPreferences: { version: 0 } };
+  const basis = { identityKey: 'identity-a', scopeKey: 'preferences-a', version: 0 };
+  owner.syncNotificationPreferencesBasis(basis);
+  await owner.create(selection, 'backup', undefined, undefined, basis); assert.equal(writes.length, 0);
+  await owner.readExportCapabilities();
+  await owner.create(selection, 'handover', undefined, undefined, basis); assert.equal(writes.length, 0);
+  await owner.create(selection, 'backup', undefined, undefined, { ...basis, scopeKey: 'old-scope' }); assert.equal(writes.length, 0);
+  await owner.create(selection, 'backup', undefined, undefined, basis);
+  assert.equal(writes.length, 1); assert.deepEqual(writes[0].selection.notificationPreferences, { version: 0 });
+  const documentSelection = { ...selection, childIds: ['00000000-0000-4000-8000-000000000001'], modules: ['documents'] as 'documents'[] };
+  owner.setReviewSelection(documentSelection, 'review-a');
+  assert.deepEqual(owner.getSnapshot().review?.selection.notificationPreferences, { version: 0 });
+  const reading = owner.loadReview();
+  owner.syncNotificationPreferencesBasis({ ...basis, version: 1 });
+  resolvePreview!({ section: 'documents', childId: documentSelection.childIds[0], items: [], scopeVersion: 'a'.repeat(64), nextCursor: null });
+  await reading;
+  assert.equal(owner.getSnapshot().review, null, 'Changed preference scope/version discards late document review');
+  await owner.create(selection, 'backup', undefined, undefined, basis); assert.equal(writes.length, 1);
+  owner.syncNotificationPreferencesBasis(basis); owner.setReviewSelection(documentSelection, 'review-a');
+  api.preview = async () => ({ items: [], scopeVersion: 'a'.repeat(64), nextCursor: null });
+  await owner.loadReview();
+  const review = owner.documentReview(documentSelection);
+  await owner.create(documentSelection, 'backup', review, undefined, basis, 'old-review'); assert.equal(writes.length, 1);
+  await owner.create(documentSelection, 'backup', review, undefined, basis, 'review-a');
+  assert.equal(writes.length, 2); assert.deepEqual(writes[1].selection.notificationPreferences, { version: 0 });
+  support = false; await owner.readExportCapabilities();
+  assert.equal(owner.getSnapshot().review, null);
+  await owner.create(selection, 'backup', undefined, undefined, basis); assert.equal(writes.length, 2);
+  owner.syncContext('owner', 'identity-b', true);
+  assert.equal(owner.getSnapshot().notificationPreferencesBackup, false);
+});

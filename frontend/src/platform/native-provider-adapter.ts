@@ -21,6 +21,7 @@ export interface NativeProviderPorts {
     appleCredential(idToken: string, rawNonce: string): AuthCredential;
     signIn(credential: AuthCredential): Promise<FirebaseIdentityUser>;
     link(user: FirebaseIdentityUser, credential: AuthCredential): Promise<FirebaseIdentityUser>;
+    reauthenticate(user: FirebaseIdentityUser, credential: AuthCredential): Promise<FirebaseIdentityUser>;
   };
 }
 const failure = (code: string) => Object.assign(new Error("Native authentication could not be confirmed"), { code });
@@ -88,5 +89,6 @@ export function createNativeProviderAdapter(config: NativeProviderConfig, ports:
     providers,
     signIn: async provider => ports.firebase.signIn(await credential(provider)),
     link: async (user, provider) => ports.firebase.link(user, await credential(provider)),
+    reauthenticate: async (user, provider) => ports.firebase.reauthenticate(user, await credential(provider)),
   };
 }

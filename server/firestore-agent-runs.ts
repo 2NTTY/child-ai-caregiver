@@ -61,7 +61,7 @@ export interface FirestoreAgentRunOptions extends FirestoreDomainOptions {
   chat: FirestoreChatStore;
   memory: FirestoreMemoryStore;
   serverClock?: () => number;
-  readInteractiveRunSeconds?: (tx: import("@google-cloud/firestore").Transaction) => Promise<number>;
+  readInteractiveRunSeconds?: (tx: import("@google-cloud/firestore").Transaction, scope: Binding['scope']) => Promise<number>;
   /** Only the authenticated worker composition supplies this canonical lease/resource gate. */
   authorizeWorker?: (binding: Binding, reference: string, recipeId: string) => Promise<boolean>;
 }
@@ -314,7 +314,7 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
       && firestoreDomainHash(fastIdentity(old.summaryFast!)) !== firestoreDomainHash(fastIdentity(summaryFast)))) domainReject('summary_fast_binding');
     // Existing claims keep their original absolute deadline; a retry never extends it.
     const seconds = old ? null : trigger.kind === "interactive"
-      ? await options.readInteractiveRunSeconds?.(b.transaction) ?? AGENT_RUN_LIMITS.deadlineSeconds.default : 90;
+      ? await options.readInteractiveRunSeconds?.(b.transaction, b.scope) ?? AGENT_RUN_LIMITS.deadlineSeconds.default : 90;
     if (seconds !== null && (!Number.isSafeInteger(seconds) || seconds < AGENT_RUN_LIMITS.deadlineSeconds.min || seconds > AGENT_RUN_LIMITS.deadlineSeconds.max)) domainReject("invalid_run_deadline");
     const at = now();
     const run: FirestoreAgentRun = old ? expired(old) : {

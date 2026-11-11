@@ -101,7 +101,7 @@ test("AI configuration enforces integer ranges without leaking values", () => {
     AI_MAX_ATTEMPTS: ["0", "3"],
     AI_TIMEOUT_MS: ["999", "300001"],
     AI_MAX_INPUT_CHARACTERS: ["0", "20001"],
-    AI_MAX_OUTPUT_TOKENS: ["0", "4097"],
+    AI_MAX_OUTPUT_TOKENS: ["0", "16385"],
   };
   for (const [key, values] of Object.entries(invalid)) {
     for (const value of [...values, "1.5", "1e3", "01", " 1", "1\n", "https://private.example/secret"]) {
@@ -172,4 +172,10 @@ test("ai configuration accepts aligned timeout up to 300000 ms", () => {
   assert.equal(readAiConfig({ AI_TIMEOUT_MS: "180000" }).timeoutMs, 180000);
   assert.equal(readAiConfig({ AI_TIMEOUT_MS: "300000" }).timeoutMs, 300000);
   assert.throws(() => readAiConfig({ AI_TIMEOUT_MS: "300001" }), /Invalid AI_TIMEOUT_MS/);
+});
+
+test("ai configuration accepts unclamped output token ceilings up to 16384", () => {
+  assert.equal(readAiConfig({ AI_MAX_OUTPUT_TOKENS: "16384" }).maxOutputTokens, 16384);
+  assert.equal(readAiConfig({ AI_MAX_OUTPUT_TOKENS: "4096" }).maxOutputTokens, 4096);
+  assert.equal(readAiConfig({ AI_MAX_OUTPUT_TOKENS: "1024" }).maxOutputTokens, 1024);
 });

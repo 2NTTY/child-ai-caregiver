@@ -2,7 +2,7 @@ import type { LlmRequest, LlmResponse } from '@google/adk';
 import { FinishReason, type Content, type Part } from '@google/genai';
 import { z } from 'zod';
 import type { AiConfig } from './ai-config.ts';
-import { AGENT_LIMITS } from './agent-budget.ts';
+import { AGENT_LIMITS, AGENT_OUTPUT_LIMITS } from './agent-budget.ts';
 import type { AgentModelProvider } from './agent-model-gateway.ts';
 import type { ModelProvider } from './model-gateway.ts';
 import { postPersonalModel, type PersonalModelTransport } from './personal-model-transport.ts';
@@ -125,7 +125,7 @@ export function createCompatibleProviders(config: AiConfig, apiKey: string, base
     const boundedSignal = AbortSignal.any([signal, AbortSignal.timeout(config.timeoutMs)]);
     try {
       return compatibleResponse(await transport(baseUrl, apiKey,
-        compatibleRequest(request, config.model, Math.min(maxOutputTokens, config.maxOutputTokens, AGENT_LIMITS.outputTokens)), boundedSignal));
+        compatibleRequest(request, config.model, Math.min(maxOutputTokens, config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive)), boundedSignal));
     } catch (error) {
       if (!signal.aborted && boundedSignal.aborted) throw providerConfigurationError('model_http_408');
       throw error;

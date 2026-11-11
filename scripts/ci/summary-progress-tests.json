@@ -9,7 +9,7 @@
   },
   {
     "path": "tests/agent-model-gateway.test.ts",
-    "cases": 16
+    "cases": 18
   },
   {
     "path": "tests/firestore-summary-batches.test.ts",
@@ -348,11 +348,19 @@
     "cases": 1
   },
   {
+    "path": "tests/personal-model-settings.test.ts",
+    "cases": 3
+  },
+  {
     "path": "tests/ai-config.test.ts",
-    "cases": 11
+    "cases": 12
   },
   {
     "path": "tests/firestore-background-recovery.test.ts",
     "cases": 1
+  },
+  {
+    "path": "tests/gemini-key-provider.test.ts",
+    "cases": 4
   }
 ]

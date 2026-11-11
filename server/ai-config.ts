@@ -1,4 +1,4 @@
-import { AGENT_INTERACTIVE_INPUT } from "./agent-budget.ts";
+import { AGENT_INTERACTIVE_INPUT, AGENT_OUTPUT_LIMITS } from "./agent-budget.ts";
 
 import { resolveModelThinkingLevel } from "./model-thinking.ts";
 import type { AgentThinkingLevel } from "./model-thinking.ts";
@@ -105,7 +105,7 @@ export function readAiConfig(env: Record<string, string | undefined>): AiConfig 
     agentMaxInputCharacters: readInteger(env.AI_AGENT_MAX_INPUT_CHARACTERS, "AI_AGENT_MAX_INPUT_CHARACTERS",
       AGENT_INTERACTIVE_INPUT.default, AGENT_INTERACTIVE_INPUT.min, AGENT_INTERACTIVE_INPUT.max),
     agentThinkingLevel: resolveModelThinkingLevel(model, env.AI_AGENT_THINKING_LEVEL),
-    maxOutputTokens: readInteger(env.AI_MAX_OUTPUT_TOKENS, "AI_MAX_OUTPUT_TOKENS", 1024, 1, 4096),
+    maxOutputTokens: readInteger(env.AI_MAX_OUTPUT_TOKENS, "AI_MAX_OUTPUT_TOKENS", 1024, 1, AGENT_OUTPUT_LIMITS.maxInteractive),
     chatDeliveryReviewModelCalls: readChatDeliveryReviewModelCalls(env.AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS),
     backgroundKnowledgeMaintenanceEnabled,
     backgroundKnowledgeLiveFetch,

@@ -1,13 +1,14 @@
-import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { DateTime } from 'luxon';
 import { useProduction } from '../../production/ProductionProvider';
-import { handoverErrorText, handoverReviewSections } from '../../production/HandoverOwner';
+import { handoverErrorText, handoverReviewSections, type NotificationPreferencesExportBasis } from '../../production/HandoverOwner';
+import { useProductionSettingsDomains } from '../../production/SettingsDomains';
 import { useProductionSharing } from '../../production/useProductionSharing';
 import { classExportScope, classExportPupils, classExportModules, type ClassExportPupil, type ClassExportModule } from '../../production/handover-class-export';
 import { HandoverApiError } from '../../../../src/client/handover-api';
-import { HANDOVER_MODULES, supportsHandoverPeriodModules } from '../../../../src/shared/handover';
+import { HANDOVER_MODULES, supportsHandoverPeriodModules, handoverNotificationPreferencesSchema } from '../../../../src/shared/handover';
 import type { HandoverExportCommand, HandoverExportView, HandoverPreviewItem } from '../../../../src/shared/handover-jobs';
 import { exportPackage, useFileExportAvailable } from '../../platform/file-export';
 import { AppCheckbox } from '../AppCheckbox';
@@ -31,16 +32,24 @@ const reasonLabels: Record<HandoverPreviewItem['reason'], string> = { all: '全�
 const noAvatar = { key: null, avatar: null, busy: false, unknown: false };
 const noAvatarSnapshot = () => noAvatar;
 const noAvatarSubscription = () => () => {};
+const preferenceBasis = (domain: ReturnType<typeof useProductionSettingsDomains>['preferences'], identityKey: string | null, scopeKey: string): NotificationPreferencesExportBasis | null => {
+  if (!identityKey || domain.scopeKey !== scopeKey || !domain.online || !domain.fresh || domain.busy || domain.original) return null;
+  const value = handoverNotificationPreferencesSchema.safeParse(domain.preferences);
+  return value.success ? { identityKey, scopeKey, version: value.data.version } : null;
+};
 
 /** One shared account-level entry; the controller owns requests, the Server owns contents and authority. */
 export function HandoverControls() {
   const { owner, userId, identityKey, scopeKey, recordsState, account, online } = useProduction();
   const controller = owner.handoverOwner;
+  const { preferences } = useProductionSettingsDomains();
+  const preferencesRef = useRef(preferences); preferencesRef.current = preferences;
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   const avatarLane = owner.avatarOwner?.self;
   const avatarState = useSyncExternalStore(avatarLane?.subscribe ?? noAvatarSubscription,
     avatarLane?.getSnapshot ?? noAvatarSnapshot, avatarLane?.getSnapshot ?? noAvatarSnapshot);
   const [selectedAvatar, setSelectedAvatar] = useState<{ identityKey: string; version: number } | null>(null);
+  const [selectedPreferences, setSelectedPreferences] = useState<NotificationPreferencesExportBasis | null>(null);
   const [open, setOpen] = useState(false), [purpose, setPurpose] = useState<HandoverExportCommand['purpose']>('handover');
   const [children, setChildren] = useState<string[]>([]), [modules, setModules] = useState<(typeof HANDOVER_MODULES)[number][]>([]);
   const [periodEnabled, setPeriodEnabled] = useState(false), [fromDay, setFromDay] = useState(''), [toDay, setToDay] = useState('');
@@ -50,6 +59,12 @@ export function HandoverControls() {
   const current = !!identityKey && state.identityKey === identityKey && state.userId === userId && account.gate === 'ready';
   const selfAvatar = avatarState.key === identityKey && avatarState.avatar?.target.kind === 'self' ? avatarState.avatar : null;
   const canChooseAvatar = sourceMode === 'personal' && purpose === 'backup' && state.accountAvatarBackup;
+  const canChoosePreferences = sourceMode === 'personal' && purpose === 'backup' && state.notificationPreferencesBackup;
+  const preferencesScope = JSON.stringify([identityKey, owner.getSnapshot().sessionGeneration]);
+  const livePreferencesBasis = current ? preferenceBasis(preferences, identityKey, preferencesScope) : null;
+  const preferencesSelected = !!(canChoosePreferences && livePreferencesBasis && selectedPreferences
+    && selectedPreferences.identityKey === livePreferencesBasis.identityKey && selectedPreferences.scopeKey === livePreferencesBasis.scopeKey
+    && selectedPreferences.version === livePreferencesBasis.version);
   const avatarSelected = !!(canChooseAvatar && selfAvatar?.asset && !avatarState.busy && !avatarState.unknown
     && selectedAvatar?.identityKey === identityKey && selectedAvatar.version === selfAvatar.version);
   const locked = !current || !online || !!state.busy || account.deletion.phase !== 'idle';
@@ -75,8 +90,14 @@ export function HandoverControls() {
     }
   }, [sourceMode, classScope, classes.state.shares.items, classes.state.busy, classModules.join(',')]);
   useEffect(() => { if (open && current && online) void controller.readExportCapabilities(); }, [controller, open, current, identityKey, online]);
-  useLayoutEffect(() => { setOpen(false); setChildren([]); setModules([]); setSelectedAvatar(null); setPeriodEnabled(false); setFromDay(''); setToDay(''); }, [identityKey]);
+  useLayoutEffect(() => { setOpen(false); setChildren([]); setModules([]); setSelectedAvatar(null); setSelectedPreferences(null); setPeriodEnabled(false); setFromDay(''); setToDay(''); }, [identityKey]);
   useLayoutEffect(() => { setSelectedAvatar(null); }, [selfAvatar?.version, avatarState.key, canChooseAvatar]);
+  useLayoutEffect(() => {
+    controller.syncNotificationPreferencesBasis(livePreferencesBasis);
+    setSelectedPreferences(before => before && canChoosePreferences && livePreferencesBasis
+      && before.identityKey === livePreferencesBasis.identityKey && before.scopeKey === livePreferencesBasis.scopeKey
+      && before.version === livePreferencesBasis.version ? before : null);
+  }, [controller, canChoosePreferences, livePreferencesBasis?.identityKey, livePreferencesBasis?.scopeKey, livePreferencesBasis?.version]);
   useEffect(() => { if (current && online) void controller.load(); }, [controller, identityKey, current, online]);
   const waitingId = current ? state.items.find(item => item.state === 'queued' || item.state === 'building')?.id : undefined;
   useEffect(() => {
@@ -93,19 +114,21 @@ export function HandoverControls() {
   const from = DateTime.fromISO(fromDay, { zone: hongKongTimeZone }), to = DateTime.fromISO(toDay, { zone: hongKongTimeZone });
   const validFrom = /^\d{4}-\d{2}-\d{2}$/.test(fromDay) && from.isValid, validTo = /^\d{4}-\d{2}-\d{2}$/.test(toDay) && to.isValid;
   const ordered = validFrom && validTo && from.toMillis() <= to.toMillis();
-  const periodSupported = modules.length ? supportsHandoverPeriodModules(modules) : avatarSelected;
+  const periodSupported = modules.length ? supportsHandoverPeriodModules(modules) : avatarSelected || preferencesSelected;
   const period = periodEnabled && ordered ? { from: from.startOf('day').toUTC().toISO()!, to: to.endOf('day').toUTC().toISO()! } : null;
   const selection = { childIds: sourceMode === 'class' ? chosenPupils.map(pupil => pupil.childId) : children, modules, period,
-    ...(avatarSelected ? { accountAvatar: { version: selfAvatar!.version } } : {}) };
+    ...(avatarSelected ? { accountAvatar: { version: selfAvatar!.version } } : {}),
+    ...(preferencesSelected ? { notificationPreferences: { version: selectedPreferences!.version } } : {}) };
   const validChildren = sourceMode === 'class' ? !!classScope && !classLocked && classes.state.userId === userId
     && !!pupils.length && chosenPupils.length === pupils.length && modules.every(module => classModules.includes(module as ClassExportModule))
     : !!children.length && children.every(id => selectable.some(child => child.id === id));
-  const validSelection = (validChildren && !!modules.length || avatarSelected && !children.length && !modules.length)
+  const validSelection = (validChildren && !!modules.length || (avatarSelected || preferencesSelected) && !children.length && !modules.length)
     && (!periodEnabled || periodSupported && ordered);
   const needsReview = handoverReviewSections(selection).length > 0;
   const reviewSource = sourceMode === 'class' && classes.state.selected ? { kind: 'class' as const, spaceId: classes.state.selected.id } : undefined;
   const reviewBasis = sourceMode === 'class' ? JSON.stringify([identityKey, classScope, chosenPupils.map(pupil => [pupil.childId, pupil.basis])])
-    : JSON.stringify([identityKey, scopeKey, selectable.map(child => [child.id, child.workspaceId, child.accessRole])]);
+    : JSON.stringify([identityKey, scopeKey, selectable.map(child => [child.id, child.workspaceId, child.accessRole]),
+      ...(preferencesSelected ? [selectedPreferences!.scopeKey, selectedPreferences!.version] : [])]);
   const reviewKey = open && current && validSelection && needsReview ? JSON.stringify({ selection, source: reviewSource }) : null;
   useEffect(() => {
     controller.setReviewSelection(reviewKey ? selection : null, reviewBasis, reviewSource);
@@ -120,7 +143,7 @@ export function HandoverControls() {
     <Text style={styles.body}>選擇孩子及資料，以 ZIP 保存結構化內容、附件與閱讀摘要。檔案保留 24 小時，可稍後回來下載。</Text>
     <Text style={styles.body}>預設匯出全部期間；可指定開始及結束日期，並在建立前逐份選擇文件及附件。班級只可交接目前可讀的指定資料；整個帳戶備份仍待接通。</Text>
     <AppButton label="選擇要匯出的資料" variant="secondary" disabled={locked || !!pending}
-      onPress={() => { setChildren([]); setPupils([]); setModules([]); setSelectedAvatar(null); setSourceMode('personal'); setPurpose('handover'); setPeriodEnabled(false); setFromDay(''); setToDay(''); setOpen(true); }} />
+      onPress={() => { setChildren([]); setPupils([]); setModules([]); setSelectedAvatar(null); setSelectedPreferences(null); setSourceMode('personal'); setPurpose('handover'); setPeriodEnabled(false); setFromDay(''); setToDay(''); setOpen(true); }} />
     {!selectable.length ? <Text style={styles.body}>未有可匯出的本人孩子資料。</Text> : null}
     {pending ? <View style={styles.group}>
       <Text style={styles.body}>{pending.checked ? '原狀態已查回，可繼續同一次請求。' : '提交結果尚未確認，請先查回原請求。'}</Text>
@@ -133,7 +156,8 @@ export function HandoverControls() {
     {state.items.map(row => <View key={row.id} style={styles.item}>
       <Text style={styles.title}>{row.purpose === 'backup' ? '本人備份' : '交接資料'} · {stateLabels[row.state]}</Text>
       <Text style={styles.body}>{dateText(row.createdAt)} · {row.selection.childIds.length} 位孩子 · {[...row.selection.modules.map(module => moduleLabels[module]),
-        ...('accountAvatar' in row.selection && row.selection.accountAvatar ? ['本人頭像'] : [])].join('、')}</Text>
+        ...('accountAvatar' in row.selection && row.selection.accountAvatar ? ['本人頭像'] : []),
+        ...('notificationPreferences' in row.selection && row.selection.notificationPreferences ? ['通知偏好'] : [])].join('、')}</Text>
       {row.selection.period ? <Text style={styles.body}>指定日期（香港時間）：{DateTime.fromISO(row.selection.period.from).setZone(hongKongTimeZone).toISODate()} 至 {DateTime.fromISO(row.selection.period.to).setZone(hongKongTimeZone).toISODate()}</Text> : null}
       {row.state === 'ready' ? <Text style={styles.body}>{row.bytes === null ? '' : `${(row.bytes / 1024 / 1024).toFixed(1)} MiB · `}至 {dateText(row.expiresAt)}</Text> : null}
       {row.error ? <Text style={styles.body}>{handoverErrorText(new HandoverApiError(409, row.error))}</Text> : null}
@@ -150,14 +174,27 @@ export function HandoverControls() {
       <View style={styles.group}>
         <Text style={styles.body}>只包含勾選範圍。私人聊天、記憶及來源如需交給別人，請按需要選取；交出後對方保留獨立副本。</Text>
         {state.classModules?.length || sourceMode === 'class' ? <View style={styles.actions}>
-          <AppButton label="本人孩子" variant={sourceMode === 'personal' ? 'primary' : 'quiet'} disabled={locked} onPress={() => { setSourceMode('personal'); setPupils([]); setModules([]); setSelectedAvatar(null); }} />
+          <AppButton label="本人孩子" variant={sourceMode === 'personal' ? 'primary' : 'quiet'} disabled={locked} onPress={() => { setSourceMode('personal'); setPupils([]); setModules([]); setSelectedAvatar(null); setSelectedPreferences(null); }} />
           <AppButton label="班級學生" variant={sourceMode === 'class' ? 'primary' : 'quiet'} disabled={locked || !state.classModules?.length}
-            onPress={() => { setSourceMode('class'); setChildren([]); setModules([]); setSelectedAvatar(null); setPurpose('handover'); }} />
+            onPress={() => { setSourceMode('class'); setChildren([]); setModules([]); setSelectedAvatar(null); setSelectedPreferences(null); setPurpose('handover'); }} />
         </View> : null}
         <View style={styles.actions}>
-          <AppButton label="用作交接" variant={purpose === 'handover' ? 'primary' : 'quiet'} disabled={locked} onPress={() => { setSelectedAvatar(null); setPurpose('handover'); }} />
-          {sourceMode === 'personal' ? <AppButton label="本人備份" variant={purpose === 'backup' ? 'primary' : 'quiet'} disabled={locked} onPress={() => { setSelectedAvatar(null); setPurpose('backup'); }} /> : null}
+          <AppButton label="用作交接" variant={purpose === 'handover' ? 'primary' : 'quiet'} disabled={locked} onPress={() => { setSelectedAvatar(null); setSelectedPreferences(null); setPurpose('handover'); }} />
+          {sourceMode === 'personal' ? <AppButton label="本人備份" variant={purpose === 'backup' ? 'primary' : 'quiet'} disabled={locked} onPress={() => { setSelectedAvatar(null); setSelectedPreferences(null); setPurpose('backup'); }} /> : null}
         </View>
+        {canChoosePreferences ? <View style={styles.group}>
+          <AppCheckbox label="通知偏好" checked={preferencesSelected} disabled={locked || !livePreferencesBasis}
+            onChange={checked => {
+              const live = owner.getSnapshot();
+              setSelectedPreferences(checked && live.identityKey === identityKey
+                ? preferenceBasis(preferencesRef.current, identityKey, JSON.stringify([identityKey, live.sessionGeneration])) : null);
+            }} />
+          <Text style={styles.body}>{livePreferencesBasis ? `目前通知偏好 · 版本 ${livePreferencesBasis.version}；可單獨備份，或連同所選孩子及本人頭像加入。`
+            : '通知偏好尚未核對；請先查清原保存結果，再重新讀取目前偏好。'}</Text>
+          {!livePreferencesBasis ? <AppButton label="重新讀取通知偏好" variant="quiet" disabled={locked || !preferences.online || preferences.busy}
+            onPress={preferences.refresh} /> : null}
+          {preferencesSelected && periodEnabled ? <Text style={styles.body}>已明確包括當前通知設定，不按指定日期篩選。</Text> : null}
+        </View> : null}
         {canChooseAvatar ? <View style={styles.group}>
           <AppCheckbox label="本人頭像" checked={avatarSelected} disabled={locked || !selfAvatar?.asset || avatarState.busy || avatarState.unknown}
             onChange={checked => {
@@ -240,13 +277,20 @@ export function HandoverControls() {
             if (selection.accountAvatar && (!selectedAvatar || liveAvatar?.key !== selectedAvatar.identityKey
               || liveAvatar.avatar?.target.kind !== 'self' || !liveAvatar.avatar.asset || liveAvatar.avatar.version !== selectedAvatar.version
               || liveAvatar.busy || liveAvatar.unknown)) return;
+            if (selection.notificationPreferences) {
+              const live = owner.getSnapshot();
+              const basis = preferenceBasis(preferencesRef.current, live.identityKey, JSON.stringify([live.identityKey, live.sessionGeneration]));
+              if (!basis || !selectedPreferences || basis.identityKey !== selectedPreferences.identityKey
+                || basis.scopeKey !== selectedPreferences.scopeKey || basis.version !== selectedPreferences.version) return;
+              controller.syncNotificationPreferencesBasis(basis);
+            }
             if (sourceMode === 'class') {
               const live = classExportPupils(classes.controller.getSnapshot(), teachers.controller.getSnapshot(), pupils);
               if (pupils.some(pupil => !live.some(row => row.childId === pupil.childId && row.basis === pupil.basis))) return;
               void controller.createClass({ childIds: selection.childIds, period: selection.period,
                 modules: modules.filter((module): module is ClassExportModule => classModules.includes(module as ClassExportModule)) }, classes.state.selected!.id, reviewBasis);
             } else void controller.create(selection, purpose, needsReview ? controller.documentReview(selection) : undefined,
-              selection.accountAvatar ? selectedAvatar! : undefined);
+              selection.accountAvatar ? selectedAvatar! : undefined, selection.notificationPreferences ? selectedPreferences! : undefined, reviewBasis);
             setOpen(false); }} />
       </View>
     </FormDialog>

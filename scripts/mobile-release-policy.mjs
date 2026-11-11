@@ -5,6 +5,9 @@ export function classifyChanges(paths) {
     if (/^(docs\/|artifacts\/|tests\/|licenses\/|\.agents\/)|\.(md|test\.[cm]?[jt]sx?)$/.test(path)) continue;
     if (/^(server\/|prompts\/|knowledge\/|deploy\/)/.test(path)) { result.server = true; continue; }
     if (/^(frontend\/scripts\/|frontend\/verification\/|scripts\/)/.test(path)) continue;
+    if (path.startsWith('frontend/plugins/ios-share/') || path === 'frontend/plugins/with-ios-share-inbox.cjs') {
+      result.ios = result.nativeInputs = true; continue;
+    }
     if (/^(frontend\/)?(android|ios)\//.test(path)) {
       result[/^(frontend\/)?ios\//.test(path) ? 'ios' : 'android'] = result.nativeInputs = true; continue;
     }

@@ -8,7 +8,7 @@ import { personalModelCatalog } from './personal-model-catalog.ts';
 import { resolvePersonalModelLimits } from './personal-model-policy.ts';
 import { createFirestoreModelSettings } from './firestore-model-settings.ts';
 import { FirestoreAiUsage } from './firestore-ai-usage.ts';
-import { createFirestoreAuthority } from './firestore-authority.ts';
+import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createVertexAgentProvider } from './agent-model-gateway.ts';
 import { createVertexEmbeddingProvider } from './vertex-embedding.ts';
@@ -44,7 +44,11 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
   }
   return {
     settings,
-    async readInteractiveRunSeconds(tx: import("@google-cloud/firestore").Transaction) { return (await policy.readPolicyIn(tx)).maxRunSeconds; },
+    async readInteractiveRunSeconds(tx: import("@google-cloud/firestore").Transaction, scope: FirestoreAuthorityTransaction['scope']) {
+      const current = await policy.readPolicyIn(tx);
+      const state = await settings.readIn({ transaction: tx, scope: { ...scope, childId: '00000000-0000-0000-0000-000000000000' } });
+      return resolvePersonalModelLimits(state, current).maxRunSeconds;
+    },
     async view(userId: string): Promise<ModelSettingsView> {
       const state = await settings.get(userId), current = await policy.readPolicy();
       return { settings: state, enabled: config.enabled, platformAvailable: config.enabled && current.enabled && Boolean(config.project),

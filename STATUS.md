@@ -4,6 +4,14 @@
 
 ## 目前與接手
 
+- **11 月 9 日，S12-W02 iOS 系統分享。** 收件已接共用草稿及 ZIP 匯入。Expo 工程生成、App Group 配置、同名附件隔離及切換帳戶期間的遲到分享已用本機流程核對。Swift 編譯、簽署及 iPhone 系統分享待驗。[交付條件](docs/PRODUCTION_FRONTEND.md#ios-共用入口與-testflight-配置)
+
+- **11 月 9 日，P4-AUTH01。** Server 已以受邀帳戶核對 Apple 私密轉寄身份的明確連結，涵蓋 Web／原生 session 與裝置撤銷。只驗了合成身份，正式 Google／Apple 配置、共用表單接續和真人登入待辦。[契約](docs/API.md#p4-auth-providers)
+
+- **11 月 8 日 23:20（香港）** 原站 Web、API 及 worker 已發布通知偏好備份及還原。可比較安靜時段、時區與預約例外，再選擇是否還原。簽署包往返、拒絕跨帳戶、競態及防重已用合成資料驗證；站外核實健康、登入保護及 Web 指紋。Android 等批量發布。[交付與未驗項](artifacts/verification/P4_ACCOUNT_PREFERENCES_20261108.json)
+
+- **11 月 8 日 22:49（香港）** 原站 Web、API、worker 已發布附件原件還原。發布內容以現網 `2be85951` 配合 #515／#516 固定為 `02e6c785`，合成資料已核實相同原件略過、已刪原件明確恢復及既有轉錄讀回。正式帳戶／設備操作、完整災難恢復及其餘本人備份仍待驗或待接。原 VM 已啟動，自動關機期限為 **12 月 8 日 22:32:58（香港）**。[發布證據](artifacts/verification/P4_ORIGINAL_ATTACHMENTS_20261108.json)
+
 - **GR-F01 成長依據閱讀相容（2026-11-05 UTC）：**基線 `f453226f` 的候選只補合法 profile evidence 0 及閱讀提示，不把 0 當已驗孩子檔案版本。四整檔 33/33、完整 frontend／root 型別已通過；server 原完整型別分別 V8 OOM／原因未證的 SIGKILL，仍 NOT_PASSED。共享 care 的既有 RED 保留，整包獨立 review／精確 head 必要 CI 及正式矩陣待驗，未合併、未部署。見 [GR-F01 範圍與 gate](PLAN.md#gr-f01-profile-evidence-read)。
 
 - **HC-F01 首頁照片拒絕恢復（2026-11-05 13:00:09 UTC）：**[PR #505](https://github.com/2NTTY/child-ai-caregiver/pull/505) 已正常合併至 `f453226f`；精確 head 的兩次必要離線 CI 各完整 8/8、零 skip、原完整 frontend noEmit 及 fresh locked install／offline wrapper 成功。未部署；接納後 guard 取消仍 opening、formal41 與原完整 owner／設備缺口維持未驗。見 [HC-F01 最新交付與限制](PLAN.md#hc-f01-home-photo-admission)。

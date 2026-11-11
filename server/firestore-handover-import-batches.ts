@@ -23,6 +23,8 @@ import { avatarBinding } from './avatar-data.ts';
 import { avatarPublicState } from './avatar-policy.ts';
 import { createFirestoreAvatarData } from './firestore-avatar-data.ts';
 import { selfAvatarDifference } from './handover-original-backup.ts';
+import { createNotificationPreferencesData, sameNotificationPreferences } from './firestore-notification-preferences.ts';
+import type { NotificationPreferences } from '../src/shared/family.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
 const controlSchema = z.object({ opId: z.uuid(), expectedVersion: z.number().int().positive().max(2147483646) }).strict();
@@ -38,6 +40,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), sharing = createFirestoreSharingStore(options);
   const items = createFirestoreHandoverImportItems(options), clock = options.serverClock ?? Date.now;
   const avatarData = createFirestoreAvatarData(options);
+  const preferences = createNotificationPreferencesData(data);
   const at = () => new Date(clock()).toISOString();
   const ref = (owner: string, id: string) => data.ref('handover_import_batches', 'handover-import-batch', importBatchId(owner, id));
   async function read(b: Binding, id: string, existing?: DocumentSnapshot) {
@@ -180,7 +183,7 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
       });
     },
     get(owner: string, id: string) { return authority.runTransaction(owner, null, b => read(b, id)); },
-    summary(owner: string, id: string, includeAccount = false) {
+    summary(owner: string, id: string, includeAccount = false, includePreferences = false) {
       return authority.runTransaction(owner, null, async b => {
         const job = await read(b, id);
         for (const [i, selected] of job.request.targets.entries()) {
@@ -197,7 +200,8 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
         }
         return handoverImportSummarySchema.parse({ batchId: job.id, state: job.state, processedItems: job.position,
           totalItems: job.request.totalItems, modules: importModuleCounts(job),
-          ...(includeAccount && job.request.accountAvatar ? { accountAvatar: { result: job.accountAvatarResult ?? null } } : {}) });
+          ...(includeAccount && job.request.accountAvatar ? { accountAvatar: { result: job.accountAvatarResult ?? null } } : {}),
+          ...(includePreferences && job.request.notificationPreferences ? { notificationPreferences: { result: job.notificationPreferencesResult ?? null } } : {}) });
       });
     },
     async replayControl(owner: string, id: string, raw: unknown, action: 'cancel' | 'resume') {
@@ -215,6 +219,35 @@ export function createFirestoreHandoverImportBatches(options: FirestoreDomainOpt
         const next: Batch = { ...job, state: 'running', version: job.version + 1, updatedAt: at(),
           claim: { workId: work.id, token: work.lease!.token, until: work.lease!.until } };
         const save = prepareSave(b, next); assertCurrentLease(); save(); return next;
+      });
+    },
+    async applyNotificationPreferences(work: FirestoreBackgroundWork, backup: NotificationPreferences, signal: AbortSignal) {
+      return authority.runTransaction(work.scope.ownerUserId, null, async b => {
+        const job = await read(b, work.resourceId), selected = job.request.notificationPreferences;
+        if (!selected || !job.request.restoreOriginal || job.request.source.accountId !== b.actorUserId) domainReject('invalid_package_scope', 403);
+        const lease = await held(b, work, job), source = await options.sourceGuard?.(b, job.request);
+        if (job.state !== 'running' || job.claim?.token !== work.lease?.token || job.claim?.workId !== work.id) domainReject('import_batch_stopped');
+        if (job.notificationPreferencesResult) return job;
+        if (job.position !== Number(!!job.request.accountAvatar)) domainReject('import_cursor_changed');
+        const current = await preferences.read(b);
+        const versions = { backupVersion: backup.version, localVersion: current.version };
+        let result: NonNullable<Batch['notificationPreferencesResult']>;
+        let write: (() => void) | undefined;
+        if (current.version !== selected.expectedVersion) result = { ...versions, outcome: 'conflict', reason: 'version_conflict' };
+        else if (sameNotificationPreferences(backup, current)) result = { ...versions, outcome: 'skipped', reason: 'unchanged' };
+        else {
+          const { version: _version, ...values } = backup;
+          const operation = firestoreDomainUuid(['restore-notification-preferences', b.actorUserId, job.id]);
+          const plan = await preferences.prepare(b, operation, { ...values, expectedVersion: current.version }, current);
+          result = { ...versions, localVersion: plan.preferences.version, outcome: 'updated', reason: null };
+          write = plan.commit;
+        }
+        const position = job.position + 1, complete = position === job.request.totalItems;
+        const next: Batch = { ...job, version: job.version + 1, updatedAt: at(), position, notificationPreferencesResult: result,
+          counts: { ...job.counts, [result.outcome]: job.counts[result.outcome] + 1 }, state: complete ? 'completed' : 'running',
+          claim: complete ? null : job.claim, cursor: complete ? null : JSON.stringify({ target: 0, phase: 'current', page: null }) };
+        const save = prepareSave(b, next);
+        signal.throwIfAborted(); lease(); source?.(); write?.(); save(); return next;
       });
     },
     async applySelfAvatar(work: FirestoreBackgroundWork, backup: { head: Pick<AvatarState, 'version' | 'target' | 'asset'>; content: Buffer | null }, signal: AbortSignal) {

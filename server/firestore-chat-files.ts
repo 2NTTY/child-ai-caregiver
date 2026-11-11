@@ -67,6 +67,7 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
   }
   function envelope(row: FirestoreChatFileRow) {
     return { ...data.tags(row.scope), scopeTag: scopeTag(row.scope), assetId: row.id, state: row.state,
+      ...(row.state === 'deleted' ? { retiredStorageEpoch: row.scope.storageEpoch } : {}),
       createdAt: row.createdAt, updatedAt: row.updatedAt, messageId: row.messageId, cleanupState: row.deletion?.cleanup ?? (row.messageId === null && !(row.importedFrom && row.state === 'ready') ? 'unlinked' : null), cleanupAt: row.deletion?.nextCheckAt ?? null,
       ...data.seal("chat-file-asset", row.id, row.scope, firestoreChatFileRowSchema, row, row.version) };
   }

@@ -3,6 +3,9 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+
+**P4-AUTH01 邀請與登入恢復（待後端合併後交付）。** Web／手機共用受邀電郵註冊、原身份驗證及 Apple 連結。Firebase 已連結而產品仍待確認時，重新讀取本人登入方式，再由本人確認及驗證已連結的 provider。只在明確連結的交換帶目標。正式 Google／Apple 登入、轉寄郵件及實機仍待驗。[後端准入](https://github.com/2NTTY/child-ai-caregiver/pull/524)
+
 ## TASK-F01：版本衝突的保草稿重新載入入口（2026-11-05，候選待交付）
 
 基線 `180c8c16`，分支 `codex/task-reload-affordance-20261105`。補回 `conflict/reload` 既有重讀入口，TasksView 表單內外在讀取中一致停用；沿用 owner 防重及原 operation 恢復規則，不新增寫入或自動 rebase。只修入口缺漏，未證實永久卡死。
