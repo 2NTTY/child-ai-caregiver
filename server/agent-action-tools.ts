@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { CareRecord } from "../src/shared/care.ts";
+import type { AgentPrivateNote } from "../src/shared/agent-actions.ts";
 import { agentDirectActionSchema, agentActionToolNames } from "../src/shared/agent-actions.ts";
 import type { AgentTool, AgentRunContext } from "./agent-runtime.ts";
 import type { AgentActionsStore } from "./agent-actions-store.ts";
@@ -9,8 +11,12 @@ import { groundedRecordTime } from "./agent-record-time.ts";
 
 export type AgentActionReaders = Pick<AgentActionsStore, "records" | "notes" | "notesByKeys" | "recordById" | "noteById">;
 
+type ExactHouseholdItem = AgentPrivateNote | CareRecord;
+export type RegisterHouseholdRead = (kind: "note" | "record", item: ExactHouseholdItem,
+  reread: () => Promise<ExactHouseholdItem | null>) => string;
+
 export function createAgentActionReadTools(actions: AgentActionReaders, run: AgentRunContext,
-  authorize: () => Promise<boolean>): AgentTool[] {
+  authorize: () => Promise<boolean>, register?: RegisterHouseholdRead): AgentTool[] {
   const { userId, childId } = run.scope;
   return [
     { name: "read_care_records", description: "搜尋目前孩子的已保存照護記錄及原版本；query 可為空。更正前以結果核對 id、version、authorUserId及種類，不猜是哪一筆。moreAvailable=true 時請縮窄查詢，不宣稱已讀完。記錄是家庭共享資料，confirmationBasis 區分預授權陳述與逐項確認。",
@@ -22,7 +28,8 @@ export function createAgentActionReadTools(actions: AgentActionReaders, run: Age
           const record = await actions.recordById(userId, childId, args.id as string);
           if (record && JSON.stringify(record).length > Math.min(6000, run.budget.toolResponseCharacters - 900))
             return { status: "rejected", data: { code: "response_limit" } };
-          return { status: "succeeded", data: { records: record ? [record] : [], moreAvailable: false, lookup: "exact_id" } };
+          const citationId = record && register?.("record", record, () => actions.recordById!(userId, childId, record.id));
+          return { status: "succeeded", data: { records: record ? [record] : [], ...(citationId ? { citationId } : {}), moreAvailable: false, lookup: "exact_id" } };
         }
         const page = await actions.records(userId, childId, (args.query ?? "") as string);
         if (!page) throw new AgentStopped("unauthorized");
@@ -40,7 +47,8 @@ export function createAgentActionReadTools(actions: AgentActionReaders, run: Age
           const note = await actions.noteById(userId, childId, args.id as string);
           if (note && JSON.stringify(note).length > Math.min(6000, run.budget.toolResponseCharacters - 900))
             return { status: "rejected", data: { code: "response_limit" } };
-          return { status: "succeeded", data: { items: note ? [note] : [], nextAfterId: null, incomplete: false, lookup: "exact_id" } };
+          const citationId = note && register?.("note", note, () => actions.noteById!(userId, childId, note.id));
+          return { status: "succeeded", data: { items: note ? [note] : [], ...(citationId ? { citationId } : {}), nextAfterId: null, incomplete: false, lookup: "exact_id" } };
         }
         if (args.memoryKeys) {
           if (!actions.notesByKeys) return { status: "failed", data: { code: "memory_lookup_unavailable" } };

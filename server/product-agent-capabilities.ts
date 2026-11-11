@@ -43,7 +43,7 @@ export const WORK_CONTINUATION_TOOL_CATALOG = {
   coreToolNames: ["read_context", "search_knowledge", "read_knowledge_context", "present_answer", "read_work", "read_background_result"],
   loader: PRODUCT_AGENT_TOOL_CATALOG.loader,
   groups: [
-    { id: "records", description: "按 householdChanges 的 id 讀原文：private_note 用 read_private_instructions，care_record 用 read_care_records。可查本人已約定要問甚麼及照護記錄，只讀。", toolNames: ["read_care_records", "read_private_instructions"], promptModuleIds: [] },
+    { id: "records", description: "按 householdChanges 的 id 讀原文：private_note 用 read_private_instructions，care_record 用 read_care_records。引用此筆交代或記錄時，把回傳的 citationId 放在相應段落。", toolNames: ["read_care_records", "read_private_instructions"], promptModuleIds: [] },
     { id: "history", description: "搜尋本人可見歷史並分段讀取原訊息，歷史不代表新的同意。", toolNames: ["search_history", "read_history"], promptModuleIds: [] },
     { id: "memory", description: "讀取本人可見的事實及有效狀態，核對既有工作所依據的資料。", toolNames: ["read_memory_facts"], promptModuleIds: [] },
     { id: "documents", description: "讀取本人可見的準備單／報告、版本及照護摘要；長文按固定版本續讀，不修改或生成文件。", toolNames: ["read_family_documents", "read_family_document_content", "list_family_document_versions", "read_care_summary"], promptModuleIds: [] },

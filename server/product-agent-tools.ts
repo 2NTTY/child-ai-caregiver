@@ -28,7 +28,7 @@ import type { TaskStore } from "./tasks.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import { FamilyError } from "./family-access.ts";
 import { FirestoreDomainError } from './firestore-domain-data.ts';
-import { createAgentActionReadTools, createAgentActionTools, type AgentActionReaders } from "./agent-action-tools.ts";
+import { createAgentActionReadTools, createAgentActionTools, type AgentActionReaders, type RegisterHouseholdRead } from "./agent-action-tools.ts";
 import { createAgentSourceTools } from "./agent-source-tools.ts";
 import { createAgentDocumentTools } from "./agent-document-tools.ts";
 import { createDataComposeTools } from "./data-compose.ts";
@@ -142,6 +142,21 @@ export function createProductAgentTools(options: {
   let groundingLoaded = false;
   let selectedSources: ChatDeliverySource[] = [];
   const selectedEvidence=new Map<string,ChatDeliverySource>();
+  const householdEvidence = new Map<string, { label: string; isCurrent: () => Promise<boolean> }>();
+  const registerHouseholdRead: RegisterHouseholdRead = (kind, item, reread) => {
+    const citationId = `household-${kind}:${item.id}:${item.version}`;
+    const sourceText = (value: typeof item) => JSON.stringify('title' in value
+      ? { title: value.title, text: value.text, provenance: value.provenance }
+      : { text: value.text, details: value.details, source: value.source, confirmationBasis: value.confirmationBasis });
+    const original = sourceText(item);
+    selectedEvidence.set(citationId, { citationId, version: String(item.version), contentHash: chatDeliveryContentHash(original),
+      classification: 'private', ...chatDeliveryReviewSourceExcerpt(original) });
+    householdEvidence.set(citationId, { label: kind === 'note' ? '[本人交代]' : '[照護記錄]', async isCurrent() {
+      const currentItem = await reread();
+      return !!currentItem && currentItem.id === item.id && currentItem.version === item.version && sourceText(currentItem) === original;
+    } });
+    return citationId;
+  };
   let proposedBatch:MixedTaskBatch|null=null;
   let selectedMemoryFacts: MemoryFact[] = [];
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
@@ -227,9 +242,11 @@ export function createProductAgentTools(options: {
     try { return { status: "succeeded", data: { result: await operation() } }; }
     catch (error) {
       if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
+      if (error instanceof FamilyError && error.code === "invalid_citation" && options.actionReaders) return { status: "rejected", data: { code: error.code,
+        message: "引用本人交代或照護記錄時，以 records 按 id 讀回原項，使用該工具回傳的 citationId。公共建議引用 search_knowledge 的 chunkId。" } };
       if (error instanceof FamilyError && error.code === "invalid_citation") return { status: "rejected", data: { code: error.code, nextAction: "search_knowledge", citationField: "chunks[].chunkId", message: "引用只能取本次 search_knowledge 結果的原始 chunkId；背景來源 metadata 不是已登記引用。不要猜測、拼接或重送同一無效 ID。" } };
       if (error instanceof FamilyError && error.code === "use_citation_ids") return { status: "rejected", data: { code: error.code, nextAction: "Remove URLs from paragraph text. Put exact retrieved chunkId values in citationIds; the UI renders source links." } };
-      if (error instanceof FamilyError && error.code === "citation_required") return { status: "rejected", data: { code: error.code, nextAction: "Use the already available search_knowledge tool if relevant evidence is missing and the remaining budget allows retrieval, presentation and review. Each caregiving or safety paragraph needs supporting official citationIds; private_reference needs a retrieved private-source citation or a Server-loaded photo or current voice original. Otherwise state the evidence limitation without unsupported advice. Report operation receipts separately; do not invent citations or relabel advice to bypass checks." } };
+      if (error instanceof FamilyError && error.code === "citation_required") return { status: "rejected", data: { code: error.code, nextAction: "For each caregiving or safety paragraph cite a supporting official chunkId from search_knowledge. For private_reference use the retrieved private citationId, including an exact household read when available, or a Server-loaded photo or current voice original. Otherwise state the evidence limitation without unsupported advice. Report operation receipts separately; do not invent citations or relabel advice to bypass checks." } };
       if (error instanceof FamilyError && error.code === "propose_fact_required") return { status: "rejected", data: { code: error.code, nextAction: "load_capabilities memory if needed, then propose_fact with content that keeps the user's child nickname (e.g. BB), then request_confirmation. Do not only present_answer a restatement of a durable personal fact such as an allergy or lasting preference (likes/dislikes)." } };
       if (error instanceof FamilyError && error.code === "memory_read_not_propose") return { status: "rejected", data: { code: error.code, nextAction: "This turn is a question/read-back (嗎？／？／有冇／係咪 etc.). load_capabilities memory if needed, read_memory_facts, then present_answer from confirmed memory. Do not propose_fact a new candidate." } };
       if (error instanceof FamilyError || error instanceof FirestoreDomainError) return { status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected", data: { code: error.code } };
@@ -498,7 +515,7 @@ export function createProductAgentTools(options: {
   if (options.actions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(options.actions, run, permitted)
     .filter(tool=>!options.ordinaryToolNames || options.ordinaryToolNames.includes(tool.name)));
   else if (options.actionReaders && options.visibility !== "family") tools.splice(tools.length - 1, 0,
-    ...createAgentActionReadTools(options.actionReaders, run, permitted));
+    ...createAgentActionReadTools(options.actionReaders, run, permitted, registerHouseholdRead));
   if(privateSources)tools.splice(tools.length-1,0,...privateSources.tools);
   if(options.documents && options.includeDocuments && options.visibility!=="family") {
     tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,store,run,permitted));
@@ -633,6 +650,10 @@ export function createProductAgentTools(options: {
         return {text:serverReceiptText,citations:[],privateSourceCitations:[],retrievalMode:'not_used'};
       }
       const ids = [...new Set(answer.paragraphs.flatMap(p => p.citationIds))];
+      for (const id of ids) {
+        const household = householdEvidence.get(id);
+        if (household && !await household.isCurrent()) throw new AgentStopped("delivery_review_incomplete");
+      }
       const citations = ids.filter(id=>evidence.has(id)).map(id => evidence.get(id)!);
       const privateSourceCitations=ids.filter(id=>privateSources?.evidence.has(id)).map(id=>privateSources!.evidence.get(id)!);
       for(const citation of privateSourceCitations)if(!await privateSources!.revalidate(citation))throw new AgentStopped("invalid_response");
@@ -677,6 +698,8 @@ export function createProductAgentTools(options: {
         : answer.paragraphs;
       const careReferences=selectedCareRecordCitations(selectedSources);
       function citationLabel(id:string) {
+        const household = householdEvidence.get(id);
+        if (household) return household.label;
         const index=careReferences.findIndex(reference=>reference.citationId===id);
         if (index!==-1) return `[照護記錄 ${index+1}]`;
         if (selectedEvidence.has(id)) return id.startsWith('care:') ? '[查詢範圍]' : '[待辦資料]';
