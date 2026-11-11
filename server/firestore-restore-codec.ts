@@ -392,7 +392,8 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       if (['format', 'version', 'recordVersion', 'ciphertext', 'recovery'].includes(name)) core[name] = value;
       else if (collection === namespace || !privateMetadata.has(name)
         && !(name === 'retiredStorageEpoch' && ['photos', 'chat_file_assets', 'voice_assets'].some(suffix => collection === namespace + '_' + suffix))
-        && !(name === 'sort' && collection === namespace + '_knowledge_index_batches')) reject('restore_record_invalid');
+        && !(name === 'sort' && collection === namespace + '_knowledge_index_batches')
+        && !(name === 'transferDigest' && collection === namespace + '_knowledge_transfers')) reject('restore_record_invalid');
     }
     const family = collection === namespace ? 'authority' : 'domain';
     const envelope = family === 'authority' ? parse(authorityEnvelopeSchema, core) : parse(domainEnvelopeSchema, core);
@@ -410,6 +411,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       if (!key(domainSchemas, kind)) reject('unsupported_restore_domain');
       const context = { ...opened.context, kind }, value = parse<FirestoreRestoreValue>(domainSchemas[kind].schema, opened.value);
       domainBinding(context, value); result = { path: record.path, context, value };
+      if (raw.transferDigest !== undefined) requireBinding(kind === 'knowledge-transfer-batch' && raw.transferDigest === context.id);
       if (isAvatarRestoreKind(kind)) assertAvatarRestoreBinding(data, context, value, raw);
       if (raw.retiredStorageEpoch !== undefined)
         requireBinding(raw.retiredStorageEpoch === context.scope.storageEpoch && object(value).state === 'deleted');

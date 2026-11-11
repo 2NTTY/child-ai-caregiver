@@ -5844,3 +5844,9 @@ API／worker healthy 後開放 Web，外部 HTTPS 讀回健康狀態、權限拒
 ### 下一步 (Next Action)
 - 提交前向 commit，push 至遠端分支 `codex/req005-closeout-validation`。
 - 更新 PR #514 描述（校準真實 40 碼 HEAD commit SHA、CI run 及收據 feature label），核實 exact-head CI SUCCESS。
+
+### S10-W03 · Web 查回及控制公共知識匯入（2026-11-11）
+
+同一批次可從 CLI 或管理 API 讀取與控制。後台按指紋分頁，已提交版本與進度在同一交易讀回。舊批次可直接按指紋定位，隔離還原以已驗證內容重建查詢欄位。
+
+合成 API 驗證由缺少入口的 404 修至通過，涵蓋 21 個可列批次、舊指紋、兩頁收據、管理權、同源檢查與衝突版本。還原測例亦抓到新查詢欄位被舊解碼器拒絕的問題，修正後舊格式可還原、錯誤指紋會被拒絕。Web 實機、正式索引與原站發布另核對。

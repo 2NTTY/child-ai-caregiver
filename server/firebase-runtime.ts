@@ -13,6 +13,7 @@ import { parseSummaryBackgroundBasis } from './private-summary-work.ts';
 import { createFirestoreAdmin } from './firestore-admin.ts';
 import { readAdminUid } from './admin-api.ts';
 import { createKnowledgeIndexBatches } from './firestore-knowledge-index-batches.ts';
+import { createKnowledgeTransfers } from './firestore-knowledge-transfers.ts';
 import { applicationDefault, deleteApp, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { createHash, randomUUID } from 'node:crypto';
@@ -204,7 +205,8 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const photoAgent = createPhotoAgent(photos, product.runtime);
     const configuredAdminUid = localAdminUid ?? readAdminUid(env);
     const knowledgeIndexes = knowledge ? createKnowledgeIndexBatches(domain, knowledge, tx => authority.readControl(tx), configuredAdminUid) : undefined;
-    const admin = createFirestoreAdmin(domain, aiConfig, knowledgeRefresh, knowledgeIndexes);
+    const knowledgeTransfers = knowledge ? createKnowledgeTransfers(domain, tx => authority.readControl(tx)) : undefined;
+    const admin = createFirestoreAdmin(domain, aiConfig, knowledgeRefresh, knowledgeIndexes, knowledgeTransfers);
     const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: composition.worker ? null : configuredAdminUid, authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;

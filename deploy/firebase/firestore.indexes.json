@@ -4567,6 +4567,11 @@
       "indexes": []
     },
     {
+      "collectionGroup": "yuban_authority_knowledge_transfers",
+      "fieldPath": "transferDigest",
+      "indexes": [{ "order": "ASCENDING", "queryScope": "COLLECTION" }]
+    },
+    {
       "collectionGroup": "yuban_authority_knowledge_index_batches",
       "fieldPath": "*",
       "indexes": []
