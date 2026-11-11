@@ -1355,6 +1355,8 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 
 ### 完整混合對話的文檔包
 
+同一多孩助手的照護記錄讀取使用既有記錄服務。每頁固定一名所選孩子，班級須有目前的 care 模組存取權。每次最多掃 25 筆、交回 3 筆符合條件的記錄。日期篩選依事件時間，日期未知的相關記錄分開計數；原話節錄保留版本、單位與精度。續頁綁定孩子、條件與目前授權。
+
 收件端在現有 `package-imports/capabilities` 請求帶 `x-handover-mixed-import: 1`，取得 `mixedConversationImport` 後才開放選取。沿原 POST 傳 `mixedRoomIds` 和全部對應的 `targets`。只複製對話的孩子可用 `sections: []`；每個來源孩子須對應不同目標，並全部位於本人或同一班級。簽章及未附證明的確認沿原匯入契約。
 
 房間及每則原訊息各留一筆收據。`GET /api/account/package-imports/:id/mixed-items?offset=0` 使用相同 header，每頁最多 16 筆，依 `nextOffset` 接續。來源不同或收件人已在同一位置續寫時保留本地內容，記錄衝突。混合對話 detail 使用相同 header 時按頁回傳 `archivedReplies`；原本正在處理的回覆只供歷史查閱，新問題使用當地新留言及新 run。

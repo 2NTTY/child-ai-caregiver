@@ -9,7 +9,7 @@ import { careValuesSchema, profileDataSchema, careCreateSchema, careReviseSchema
   deleteCareSchema, profileSaveSchema } from './care-validation.ts';
 import { validateCreateTextRecord } from '../src/shared/inputs.ts';
 import { createFirestoreAuthority, sharedSourceOperationId, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
-import { FirestoreDomainData, domainParse, domainReject, type FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { FirestoreOnlineMutation } from './firestore-online.ts';
 import { prepareContextChange } from './firestore-context-basis.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
@@ -19,6 +19,7 @@ import { importProvenanceSchema, type ImportProvenance } from '../src/shared/imp
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
 import type { HandoverImportRow } from './handover-import.ts';
 import { importConfirmationActor, makeImportProvenance } from './handover-provenance.ts';
+import { selectedCareRequestSchema, type SelectedCareRequest, type SelectedCarePage } from '../src/shared/assistant-care-context.ts';
 
 const uuid = z.uuid(), version = z.number().int().min(0).max(2147483646), time = z.iso.datetime({ offset: true });
 const user = z.string().min(1).max(256);
@@ -38,6 +39,7 @@ const pathPattern = /^\/api\/children\/([0-9a-f-]{36})\/(records|care(?:\/([0-9a
 type Binding = FirestoreAuthorityTransaction;
 type Prepared<T> = { value: T; changeSeq: string; commit(): void };
 export interface FirestoreCareStore extends CareStore {
+  readSelectedCare(userId: string, raw: SelectedCareRequest): Promise<SelectedCarePage>;
   readImportRecordState(binding: Binding, id: string): Promise<{ value: CareRecord | null; version: number }>;
   prepareImportedRecord(binding: Binding, operationId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     target?: { id: string; expectedVersion: number }): Promise<Prepared<CareRecord>>;
@@ -249,6 +251,67 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
     if (rows.size > 2000) domainReject('summary_scope_too_large');
     return { profile, records: rows.docs.map(row => open(binding, 'care-record', row.get('entityId'), firestoreCareSchema, row)) };
   }
+  function matchesCare(value: CareRecord, filters: { query?: string; kind?: CareRecord['details']['kind'] }) {
+    const search = filters.query?.toLocaleLowerCase('zh-HK') ?? '';
+    const haystack = [value.text, value.source, value.details.eventTime.rawText, value.details.quantity?.rawValue, value.details.quantity?.unit]
+      .join('\n').toLocaleLowerCase('zh-HK');
+    return (!filters.kind || value.details.kind === filters.kind) && haystack.includes(search);
+  }
+  async function readSearchPage(binding: Binding, childId: string, cursor: { createdAt: string; id: string } | undefined,
+    scanLimit: number, resultLimit: number, matches: (value: CareRecord) => boolean) {
+    let query = scoped(binding, 'care_records').where('live', '==', true)
+      .orderBy('createdAt', 'desc').orderBy('entityId', 'desc').limit(scanLimit + 1);
+    if (cursor) query = query.startAfter(cursor.createdAt, cursor.id);
+    const rows = await binding.transaction.get(query), records: CareRecord[] = [];
+    let scanned = 0;
+    for (const row of rows.docs.slice(0, scanLimit)) {
+      scanned++;
+      const value = open(binding, 'care-record', row.get('entityId'), firestoreCareSchema, row);
+      if (value.childId !== childId || value.version !== row.get('recordVersion')) domainReject('care_binding', 500);
+      if (matches(value)) records.push(value);
+      if (records.length === resultLimit) break;
+    }
+    const last = rows.docs[scanned - 1];
+    return { records, scanned, next: scanned < rows.size && last
+      ? { createdAt: last.get('createdAt') as string, id: last.get('entityId') as string } : null };
+  }
+  async function readSelectedCare(userId: string, raw: SelectedCareRequest): Promise<SelectedCarePage> {
+    const input = domainParse(selectedCareRequestSchema, raw), { scope, childId, filters, cursor } = input;
+    return authority.runTransaction(userId, scope.kind === 'personal' ? childId : null, async actor => {
+      async function read(binding: Binding): Promise<SelectedCarePage> {
+        requireModule(binding, 'care');
+        const child = await binding.readChild(childId);
+        if (!child) domainReject('not_found', 404);
+        const basis = firestoreDomainHash(['assistant-care-page:1', userId, actor.scope, scope, binding.scope, childId, filters,
+          actor.authorizationVersion, actor.childAccessVersion, actor.changeSeq, binding.authorizationVersion,
+          binding.childAccessVersion, binding.changeSeq, binding.sharedAccess?.basis ?? null, binding.sharedAccess?.classMember ?? null]);
+        if (cursor && cursor.basis !== basis) domainReject('cursor_changed');
+        let undatedMatches = 0;
+        const page = await readSearchPage(binding, childId, cursor, 25, 3, value => {
+          if (!matchesCare(value, filters)) return false;
+          const at = value.details.eventTime.at;
+          if (at === null) undatedMatches++;
+          if (!filters.eventFrom && !filters.eventTo) return true;
+          if (at === null) return false;
+          const eventAt = Date.parse(at);
+          return (!filters.eventFrom || eventAt >= Date.parse(filters.eventFrom))
+            && (!filters.eventTo || eventAt <= Date.parse(filters.eventTo));
+        });
+        return { childId, childName: child.displayName, scanned: page.scanned, undatedMatches,
+          records: page.records.map(({ id, version, text, details, createdAt }) => {
+            const points = [...text];
+            return { id, version, text: points.slice(0, 350).join(''), textComplete: points.length <= 350, details, createdAt };
+          }), nextCursor: page.next ? { ...page.next, basis } : null };
+      }
+      if (scope.kind === 'personal') return read(actor);
+      return sharing.inResourceTransaction(actor, { spaceId: scope.spaceId, childId, module: 'care', mode: 'read' }, access => {
+        if (!access.binding.sharedAccess?.classMember) domainReject('class_required', 403);
+        if (access.basis.spaceVersion !== scope.spaceVersion || (access.basis.teacherSpaceVersion ?? null) !== scope.teacherSpaceVersion)
+          domainReject('sharing_scope_changed');
+        return read(access.binding);
+      });
+    });
+  }
   function view(spaceId?: string): FirestoreCareStore {
     if (spaceId !== undefined) domainParse(uuid, spaceId);
     const read = <T>(userId: string, childId: string, module: 'care' | 'profile', use: (b: Binding) => Promise<T>) =>
@@ -259,6 +322,7 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
       return direct(userId, childId, fn);
     };
   const store: FirestoreCareStore = {
+    readSelectedCare,
     async readImportRecordState(binding, id) {
       const value = await readRecord(binding, id);
       if (value) return { value, version: value.version };
@@ -308,22 +372,9 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
       const input = domainParse(careSearchSchema, raw);
       return read(userId, childId, 'care', async binding => {
         if (input.cursor?.changeSeq !== undefined && input.cursor.changeSeq !== binding.changeSeq) domainReject('cursor_stale');
-        let query = scoped(binding, 'care_records').where('live', '==', true)
-          .orderBy('createdAt', 'desc').orderBy('entityId', 'desc').limit(201);
-        if (input.cursor) query = query.startAfter(input.cursor.createdAt, input.cursor.id);
-        const rows = await binding.transaction.get(query), records: CareRecord[] = [], search = input.query?.toLocaleLowerCase('zh-HK') ?? '';
-        let scanned = 0;
-        for (const row of rows.docs.slice(0, 200)) {
-          scanned++;
-          const value = open(binding, 'care-record', row.get('entityId'), firestoreCareSchema, row);
-          if (value.childId !== childId || value.version !== row.get('recordVersion')) domainReject('care_binding', 500);
-          const haystack = [value.text, value.source, value.details.eventTime.rawText, value.details.quantity?.rawValue, value.details.quantity?.unit].join('\n').toLocaleLowerCase('zh-HK');
-          if ((!input.kind || value.details.kind === input.kind) && haystack.includes(search)) records.push(value);
-          if (records.length === 50) break;
-        }
-        const last = rows.docs[scanned - 1];
-        return { records, scanned, limit: 50, nextCursor: scanned < rows.size && last
-          ? { createdAt: last.get('createdAt'), id: last.get('entityId'), changeSeq: binding.changeSeq } : null };
+        const page = await readSearchPage(binding, childId, input.cursor, 200, 50, value => matchesCare(value, input));
+        return { records: page.records, scanned: page.scanned, limit: 50,
+          nextCursor: page.next ? { ...page.next, changeSeq: binding.changeSeq } : null };
       });
     },
     get: (userId, childId, id) => read(userId, childId, 'care', binding => readRecord(binding, id)),
