@@ -19,7 +19,7 @@ import { useProduction } from "../production/ProductionProvider";
 import { AgentConversation } from "../production/AgentConversation";
 import { ChatPhotoMessage } from "../production/ChatPhotoMessage";
 import { usePreviewLeaveGuard, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
-import { proposalExpired } from "../agent-view-model";
+import { proposalExpired, publicAnswerSources } from "../agent-view-model";
 import { colors, mobileLayout } from "../theme";
 import type { ChatReplyPhase } from "../chat-view-model";
 
@@ -152,7 +152,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
         const pendingReply = message.role === "user" && message.authorUserId === chat.userId && chat.messages.slice(-chat.limit).some(item => item.id === message.id)
           && !chat.messages.some(item => item.role === "model" && item.inReplyTo === message.id);
         return <ChatMessage message={{ id: message.id, role: message.role === "model" ? "assistant" : "user", text: message.text,
-          phase: run ? runPhases[run.status] : undefined, sources: sourcesMatch ? run.citations : undefined }}
+          phase: run ? runPhases[run.status] : undefined, sources: sourcesMatch ? publicAnswerSources(run) : undefined }}
           phaseLabel={run?.status === "running" ? "運行仍在處理" : undefined} onLocateSource={locateSource}
           onOpenSource={run ? id => openAgentSource(run.id, id) : undefined}
           header={<>
