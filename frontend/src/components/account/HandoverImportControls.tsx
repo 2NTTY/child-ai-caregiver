@@ -17,6 +17,7 @@ import { dateTimeParts, hongKongTimeZone } from '../date-time';
 import { FormDialog } from '../FormDialog';
 import { AppButton, AppSelect, AppTextField } from '../ui';
 import { HandoverImportResults } from './HandoverImportResults';
+import { handoverGrowthTopicLabels } from './HandoverImportHistory';
 import { chineseFont, colors, readingType, spacing } from '../../theme';
 
 type Section = HandoverImportCommand['targets'][number]['sections'][number];
@@ -33,7 +34,8 @@ const comparisonResourceLabel = (section: OriginalBackupComparison['items'][numb
   const memory = originalMemorySectionSchema.safeParse(section);
   return memory.success ? memoryResourceLabels[memory.data] : section === 'documents' ? '文件'
     : section === 'visit_preparation' ? '到診準備' : section === 'child_avatar' ? '孩子頭像'
-      : section === 'photos' ? '照片' : section === 'voices' ? '錄音' : section === 'files' ? '檔案' : '';
+      : section === 'photos' ? '照片' : section === 'voices' ? '錄音' : section === 'files' ? '檔案'
+        : section === 'growth_attention' ? '成長事項' : section === 'growth_topics' ? '成長主題設定' : '';
 };
 const states: Record<HandoverImportView['state'], string> = {
   queued: '已排隊', running: '正在匯入', completed: '已完成', cancelled: '已取消', failed: '未能完成', interrupted: '還原後已中斷',
@@ -48,6 +50,11 @@ const avatarComparisonStates = { empty_backup: '備份沒有圖片，不能還�
   missing: '目前沒有本人頭像。', different: '備份與目前圖片不同。', deleted: '目前本人頭像已刪除。' };
 const avatarOutcomes = { created: '已恢復', updated: '已更新', skipped: '已略過', conflict: '有衝突，沒有還原' };
 const avatarReasons = { empty_backup: '備份沒有圖片', unchanged: '與備份相同', version_conflict: '目前版本已改變', decision_changed: '目前狀態已改變，請重新比較' };
+const growthBlockedLabels: Record<NonNullable<NonNullable<OriginalBackupComparison['items'][number]['growth']>['blocked']>, string> = {
+  original_unavailable: '未能核實原有項目，保留目前資料。', growth_terminal_state: '這項成長事項已有處理結果，會保留目前狀態。',
+  growth_topic_disabled: '主題目前已停用，不能由備份重新啟用。', growth_link_changed: '原事項或待辦連結已改變，保留目前資料。',
+  growth_source_changed: '目前適用資料或來源已失效，不能還原這項建議。', growth_snooze_changed: '暫緩安排已改變或到期，保留目前安排。',
+};
 const noAvatarSnapshot = () => null;
 const noAvatarSubscription = () => () => {};
 export function comparisonFields(module: HandoverImportModule, fields: string[], resourceSection?: OriginalBackupComparison['items'][number]['resourceSection']) {
@@ -56,6 +63,8 @@ export function comparisonFields(module: HandoverImportModule, fields: string[],
     concerns:{title:'關注標題',status:'關注狀態',events:'觀察時間線',selectedEvents:'所選期間觀察'},
     memory:{title:'交代標題',text:'交代內容',memoryKey:'交代分類',provenance:'來源類別',sourceMessageId:'來源訊息'},
     tasks:{title:'待辦名稱',details:'待辦內容',occurrence:'時間／狀態',kind:'類別',assigneeUserId:'負責人'},
+    growth:{title:'事項名稱',kind:'建議種類',whyNow:'建議原因',advice:'照護建議',limits:'適用限制',basis:'適用依據',evidence:'依據資料',source:'資料來源',
+      state:'處理狀態',snoozeUntil:'暫緩時間',previousId:'前項連結',newReason:'新近況',taskId:'待辦連結',lastAction:'最近行動',actorUserId:'原操作人',note:'補充內容',disabled:'主題停用設定'},
     sources:{sourceLabel:'來源名稱',sourceUrl:'來源連結',sourceDateText:'來源日期',sourceNotes:'來源備註',text:'來源原文',
       management:'用途與摘錄設定',kind:'來源類別',fetchState:'抓取狀態',extraction:'提取狀態',recordId:'已連結照護記錄',
       confirmationKind:'確認用途',retrievedAt:'讀取時間'},
@@ -458,6 +467,7 @@ export function HandoverImportControls() {
               {comparisonModule === 'attachments' && comparisonModules.includes('attachments') ? <Text style={styles.body}>{state.originalAttachmentResourcesEnabled
                 ? '可比較照片、錄音、檔案及孩子頭像。照片、錄音與檔案只可恢復已核實刪除的原件；恢復時建立新項，保留原刪除紀錄及備份來源。已保存的語音轉錄會一併保留，不會重新轉錄。'
                 : '此服務只開放孩子頭像原件還原。'}</Text> : null}
+              {comparisonModule === 'growth' && comparisonModules.includes('growth') ? <Text style={styles.body}>可比較成長事項與主題停用設定，只還原已核實的同一原件及目前版本。已有處理結果的事項、停用設定及已失效的來源或連結會保留目前狀態；舊接受請求、待辦建立及通知不會重播。</Text> : null}
               {comparisonChildren.length && supportedComparisonModules.length ? <>
                 <AppSelect label="比較原有資料的孩子" value={comparisonChild} disabled={writeLocked}
                   options={[{value:'',label:'請選擇原孩子'},...comparisonChildren.map(child => ({value:child.id,label:child.displayName}))]}
@@ -478,6 +488,10 @@ export function HandoverImportControls() {
                       ? <Text style={styles.body}>沒有可還原的{originalLabels.memory}；與備份相同或未能核實的項目會保留目前資料。</Text> : null}
                     {comparison.items.map(item => <View key={originalComparisonItemKey(item)} style={styles.item}>
                       <Text selectable style={styles.body}>{comparisonResourceLabel(item.resourceSection) ? `${comparisonResourceLabel(item.resourceSection)} · ` : ''}{item.id} · {comparisonStates[item.state]}</Text>
+                      {comparison.query.module === 'growth' && item.growth ? <>
+                        <Text style={styles.body}>主題：{handoverGrowthTopicLabels[item.growth.topicId]} · {item.resourceSection === 'growth_attention' ? '事項建立於' : '主題設定更新於'}：{new Date(item.growth.at).toLocaleString('zh-HK', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: hongKongTimeZone })}</Text>
+                        {item.growth.blocked ? <Text style={styles.body}>{growthBlockedLabels[item.growth.blocked]}</Text> : null}
+                      </> : null}
                       {comparison.query.module === 'concerns' && item.targetId && item.id !== item.targetId ? <Text selectable style={styles.body}>原關注：{item.targetId}</Text> : null}
                       <Text style={styles.body}>備份版本 {item.backupVersion} · 目前版本 {item.localVersion ?? '未能確定'}</Text>
                       {item.changedFields.length ? <Text style={styles.body}>有變更的欄位：{comparisonFields(comparison.query.module,item.changedFields,item.resourceSection)}</Text> : null}

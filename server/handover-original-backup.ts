@@ -4,7 +4,7 @@ import type { CareTask } from '../src/shared/tasks.ts';
 import { readImportMapping } from './handover-import-records.ts';
 import { canonicalJson } from './online-routing.ts';
 import { accountBackupComparisonQuerySchema, accountPreferencesComparisonSchema, originalBackupComparisonQuerySchema, originalBackupComparisonSchema,
-  originalMemorySectionSchema, originalAttachmentSectionSchema, isOriginalAttachment, selfAvatarComparisonSchema,
+  originalMemorySectionSchema, originalAttachmentSectionSchema, originalGrowthSectionSchema, isOriginalAttachment, selfAvatarComparisonSchema,
   type OriginalBackupComparison } from '../src/shared/handover-imports.ts';
 import { readOriginalAttachment } from './handover-original-attachments.ts';
 import { createNotificationPreferencesData, sameNotificationPreferences } from './firestore-notification-preferences.ts';
@@ -15,6 +15,8 @@ import { createFirestoreAvatarData } from './firestore-avatar-data.ts';
 import { createFirestoreAuthority } from './firestore-authority.ts';
 import { createFirestoreCareStore, firestoreCareSchema, firestoreProfileSchema } from './firestore-care.ts';
 import { createFirestoreConcernStore, concernTransferSchema } from './firestore-concerns.ts';
+import { createFirestoreGrowthStore } from './firestore-growth.ts';
+import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
 import { createFirestorePrivateInstructions, firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
 import { createFirestoreMemoryStore, firestoreFactSchema, firestoreTopicSchema } from './firestore-memory.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
@@ -100,7 +102,7 @@ function comparisonValues(row: CareRecord | ChildProfile | CareTask | z.infer<ty
     management: management ? { ...management, modelExcerpt: null } : null };
 }
 
-export function createOriginalBackupComparison(options: FirestoreDomainOptions & { uploads: Uploads; originalBackup?: OriginalBackupIssuer }) {
+export function createOriginalBackupComparison(options: FirestoreDomainOptions & { uploads: Uploads; originalBackup?: OriginalBackupIssuer; knowledge?: FirestoreKnowledgeStore }) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), care = createFirestoreCareStore(options), online = createFirestoreOnlineStore(options);
   const sources = createFirestoreSharedInputStore(options);
   const documents = createFirestoreFamilyDocumentStore(options), preparations = createFirestoreCareSummary(options, care);
@@ -108,6 +110,7 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
   const concerns = createFirestoreConcernStore(options);
   const instructions = createFirestorePrivateInstructions(data);
   const memory = createFirestoreMemoryStore({ ...options, care, chat: createFirestoreChatStore(options) });
+  const growth = createFirestoreGrowthStore({ ...options, care, memory, online });
   return async function compare(owner: string, raw: unknown, signal: AbortSignal): Promise<OriginalBackupComparison> {
     const input = domainParse(originalBackupComparisonQuerySchema, raw);
     if (!options.originalBackup) domainReject('package_original_unavailable', 503);
@@ -130,7 +133,7 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
       const page = await reader.readPage({ selection: { childIds: [input.childId], modules: [input.module] },
         sections: input.includeMemoryResources ? [...originalMemorySectionSchema.options]
           : input.includeAttachmentResources ? ['child_avatar', ...originalAttachmentSectionSchema.options]
-          : section === 'documents' ? ['documents', 'visit_preparation'] : [section], acknowledgedManifestSha256: reader.manifestSha256,
+          : section === 'growth' ? originalGrowthSectionSchema.options : section === 'documents' ? ['documents', 'visit_preparation'] : [section], acknowledgedManifestSha256: reader.manifestSha256,
         cursor: cursor?.page, limit: section === 'documents' ? 3 : section === 'concerns' ? 2 : 20 });
       // Package reads are ordered and outside Firestore's retryable transaction callback.
       const concernEvents: Awaited<ReturnType<typeof reader.readConcernEvents>>[] = [];
@@ -146,6 +149,15 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
         const items: OriginalBackupComparison['items'] = [];
         for (const [rowIndex, row] of page.rows.entries()) {
           if (row.childId !== input.childId) domainReject('invalid_package_scope', 400);
+          if (section === 'growth') {
+            const checked = await growth.inspectOriginal(binding, row);
+            const state = checked.reason ? 'unavailable' : !checked.changedFields.length ? 'unchanged'
+              : checked.localVersion! > checked.backupVersion ? 'local_newer' : checked.localVersion! < checked.backupVersion ? 'backup_newer' : 'different';
+            items.push({ id: checked.id, resourceSection: checked.section, backupVersion: checked.backupVersion, localVersion: checked.localVersion,
+              ...(input.includeRestoreTarget && checked.localVersion !== null ? { targetId: checked.id } : {}),
+              growth: { topicId: checked.topicId, at: checked.at, blocked: checked.reason }, state, changedFields: checked.changedFields });
+            continue;
+          }
           if (input.includeAttachmentResources && isOriginalAttachment(row.section)) {
             const kind = row.section;
             const backup = kind === 'photos' ? photoTransferSchema.parse(row.value)

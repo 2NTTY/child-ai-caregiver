@@ -1,6 +1,6 @@
 import { HandoverApiError, originalComparisonItemKey, type HandoverApi, type ClassImportEnrolments, type HandoverSourceHistoryQuery, type HandoverSourceHistoryPage,
   type SelfAvatarComparison, type SelfAvatarComparisonQuery, type AccountPreferencesComparison } from '../../../src/client/handover-api.ts';
-import { handoverImportCommandSchema, handoverImportModuleOf, originalBackupModuleSchema, originalMemorySectionSchema, isOriginalAttachment, type HandoverImportModule, type HandoverImportResourceSection, type HandoverImportCommand, type HandoverImportView,
+import { handoverImportCommandSchema, handoverImportModuleOf, originalBackupModuleSchema, originalMemorySectionSchema, originalGrowthSectionSchema, originalBackupComparisonSchema, isOriginalAttachment, type HandoverImportModule, type HandoverImportResourceSection, type HandoverImportCommand, type HandoverImportView,
   type HandoverImportResult, type HandoverImportResultQuery } from '../../../src/shared/handover-imports.ts';
 import type { HandoverImportSummary, OriginalBackupComparison, OriginalBackupComparisonQuery } from '../../../src/shared/handover-imports.ts';
 import { handoverUploadCommandSchema, HANDOVER_UPLOAD_MAX_BYTES, type HandoverUploadCommand, type HandoverUploadView, type HandoverUploadListItem } from '../../../src/shared/handover-uploads.ts';
@@ -17,6 +17,7 @@ export function originalRestoreResourceSection(module: HandoverImportModule,
   if (module === 'documents') return item?.resourceSection === 'documents' || item?.resourceSection === 'visit_preparation' ? item.resourceSection : null;
   if (module === 'attachments') return item?.resourceSection === 'child_avatar' || item?.resourceSection && isOriginalAttachment(item.resourceSection) ? item.resourceSection : null;
   if (module === 'memory') { const parsed = originalMemorySectionSchema.safeParse(item?.resourceSection); return parsed.success ? parsed.data : null; }
+  if (module === 'growth') { const parsed = originalGrowthSectionSchema.safeParse(item?.resourceSection); return parsed.success ? parsed.data : null; }
   if (module === 'sources') return 'private_sources';
   return module === 'care' || module === 'profile' || module === 'tasks' || module === 'concerns' ? module : null;
 }
@@ -26,6 +27,9 @@ export const hasOriginalAttachments = (preview: HandoverUploadView['preview'], c
   hasOriginalChildAvatar(preview, childId) || includeResources && !!preview?.coverage.some(row => row.childId === childId && isOriginalAttachment(row.section) && row.items > 0);
 export function originalComparisonResolution(item: OriginalBackupComparison['items'][number]) {
   if (!item.targetId || item.localVersion === null) return null;
+  if (originalGrowthSectionSchema.safeParse(item.resourceSection).success) return item.growth && item.growth.blocked === null
+    && item.targetId === item.id && Number.isSafeInteger(item.localVersion) && item.localVersion > 0 && item.localVersion < 2147483647
+    && ['local_newer', 'different', 'backup_newer'].includes(item.state) ? 'replace_current' as const : null;
   if (isOriginalAttachment(item.resourceSection ?? '')) return item.localVersion > 0 && item.state === 'deleted' ? 'restore_deleted' as const : null;
   if (originalMemorySectionSchema.safeParse(item.resourceSection).success && item.localVersion < 1) return null;
   return item.state === 'deleted' ? 'restore_deleted' as const
@@ -370,6 +374,8 @@ export class HandoverImportOwner {
       const page = await this.api.compareOriginal(t.userId,{...query,...(more ? {cursor:previous!.nextCursor!} : {})},t.controller.signal);
       if (!this.current(t) || this.comparisonTicket !== t || this.state.upload?.id !== upload.id || this.state.upload.version !== upload.version) return;
       if (page.childId !== childId || page.module !== module || page.uploadId !== upload.id || page.manifestSha256 !== preview.manifestSha256
+        || module === 'growth' && (!originalBackupComparisonSchema.safeParse(page).success
+          || page.items.some(item => item.targetId !== undefined && item.targetId !== item.id))
         || module === 'attachments' && page.items.some(item => item.resourceSection === 'child_avatar' ? item.id !== childId || item.targetId !== childId
           : !query.includeAttachmentResources || !isOriginalAttachment(item.resourceSection ?? ''))
         || module === 'memory' && page.items.some(item => !originalMemorySectionSchema.safeParse(item.resourceSection).success

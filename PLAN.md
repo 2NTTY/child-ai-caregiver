@@ -804,7 +804,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 | 共享授權 | 擴充現有 Firestore 權威服務；操作者、資料儲存身份、共享範圍及管理員分清。舊個人 ID／密文及客戶端相容，不全庫搬移／重新加密；交易保留版本、收據、變更及 outbox |
 | 身份 | Web 沿 Firebase provider／連結；原生 Google 用 `@react-native-google-signin/google-signin`、Apple 用 `@invertase/react-native-apple-authentication` 取得憑證，再沿既有 Firebase／session 接線；不另建身份服務 |
 | 文檔包 | 授權領域匯出＋版本 manifest／結構資料／來源／附件／摘要；Server 用 `yazl`／`yauzl` 有界逐項寫讀、Node 標準簽章／hash；既有 JSZip 用途保持，不把恢復 envelope 直接披露 |
-| 系統分享 | Android 優先既有 Expo Sharing；iOS 使用標準 Share Extension／`expo-share-extension`，先核 SDK 57 相容，不能以官方實驗性接口存在當成交付。接回既有草稿／附件及統一匯入 |
+| 系統分享 | Android 沿用 Expo Sharing。iOS 採 Apple 標準 Share Extension，沿已裝 Expo Sharing 產生 target 及權限，共用聊天草稿、附件及統一匯入入口。套件取捨見[技術採用紀錄](docs/TECH_REUSE.md) |
 | 助手與工作 | 既有 ADK／業務工具／持久工作台帳；固定目標及逐項收據，共用 run 預算，不另造教師 Agent、隊列或通用平台 |
 
 新依賴只補具體缺口，選維護活躍、廣泛使用、相容目前版本的穩定版並鎖定；不連帶升級整套框架。採用依據與實際相容結果留 TECH_REUSE，不以文件核查冒充實測。共享權限、遷移及高耦合修改由主模型處理；規範文件／提示詞親寫，簡單中等實作及唯讀核查按 AGENTS 分給 Sol／Luna，不使用 Astra 子代理。前端／手機與後端按本機協作文件切換實際交付帳號，單作者提交。
@@ -829,7 +829,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 - 前置 S12-W01／S12-W04 的草稿／附件及受影響平台 adapter，不等所有 P3。
 - 保留系統分享及其餘既定平台接點、來源／確認／權限與失敗處理，接回現有草稿／附件，不另建業務副本。
 - Android 首包沿 Expo Sharing 原生 `getSharedPayloads`／config plugin 及 Router intent 接點；不用會自動解析網址的 resolver。文字／網址保留原文，照片／音訊／其他檔案沿現有本機副本與大小／格式檢查；只把用戶選中的項目加入目前個人孩子草稿，每則一份附件規則保持。登入、孩子切換、已有草稿、取消與遲到讀取要有明確狀態，不自動上載或觸發 Agent。
-- 新原生配置、API 接線與真機接收分開記錄；iOS 不啟用 Expo 的非標準主 App 喚起 extension，仍按既定標準 Share Extension 方案接續。HANDOVER01 完成後資料包接統一匯入入口，首包不把一般檔案上載宣稱為資料匯入。
+- iOS 分享在來源 App 內保存至裝置，返回來源。使用者開啟育有方後選擇加入聊天草稿或把 ZIP 交給既有匯入入口。本機已生成 Xcode 工程並檢查收件、帳戶切換及清理。Swift 編譯、兩個 target 的簽署與 iPhone 系統分享仍待驗。
 - Android 收到第二份資料包時，可從分享頁返回目前的匯入工作，離頁取消或切換身份會保留原來的防護。畫面按已安裝版本顯示匯入上限。#482 已合併，隨下次需要使用的 APK 批量交付，實機待驗。iOS 套件已核對到專案生成，尚欠原生編譯及收件接線。[套件核對](docs/TECH_REUSE.md#s12-sharing-reuse)
 - **2026-10-28 Android 首包：**本機接線、定向檢查及 Android JS 匯出完成，未建置／發布新版 APK。獨立 review 的原附件離頁保護、孩子 A→B→A 遲到讀取，以及 SDK 文字檔案解析均已修正；沿固定 Expo Sharing 加標準版本補丁，不重寫原生模組。必要失敗、型別限制及真機待驗見[證據](artifacts/verification/P4_ANDROID_SHARE_INPUT_20261028.json)。後續只補新 binary／外部 App 分享接收，不重驗既有附件保存；其餘 P4 可繼續。
 

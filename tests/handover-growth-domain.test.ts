@@ -88,6 +88,16 @@ test('growth import preserves source outcomes and topic suppression without repl
   assert.equal(await connected.backgroundInput(job), null, 'old work must recheck the current content');
   const goodAgain = structuredClone(activeRow); (goodAgain.value.item as any).id = randomUUID();
   const live = await saveActive(goodAgain); assert.equal(live.item.state, 'proposed');
+  const ownRow: HandoverImportRow = { ...row, childId, source: { ...row.source, accountId: 'recipient' },
+    value: { ...live, item: { ...live.item, note: 'Earlier note on this active item' } } };
+  const expected = { id: live.item.id, expectedVersion: live.item.version };
+  await assert.rejects(authority.runTransaction('recipient', childId, b => growth.prepareOriginal(b, randomUUID(), ownRow, 'trusted', expected)),
+    (error: any) => error.code === 'growth_source_changed', 'Unavailable evidence cannot restore an active item');
+  await authority.runTransaction('recipient', childId, async b => {
+    const prepared = await connected.prepareOriginal(b, randomUUID(), ownRow, 'trusted', expected); assert.ok(prepared); prepared.commit();
+  });
+  const restoredActive = await authority.runTransaction('recipient', childId, b => connected.readImportAttention(b, live.item.id));
+  assert.equal(restoredActive?.item.state, 'proposed'); assert.equal(restoredActive?.item.note, 'Earlier note on this active item');
   const topic: HandoverImportRow = { ...row, section: 'growth_topics', value: { topicId: 'solid_food', version: 4, disabled: true, actor: 'source-author', at,
     request: { authorityVersion: 'foreign-authority', expectedVersion: 3, confirm: true, action: 'set_enabled', enabled: false } } };
   await authority.runTransaction('recipient', childId, async b => {

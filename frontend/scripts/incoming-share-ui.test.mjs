@@ -35,13 +35,35 @@ test('shared ZIP copy follows package capability while ordinary chat attachments
   h.unmount();
 });
 
+test('iOS share screen offers ZIP import without a child and invokes it only after an explicit choice',async()=>{
+  const mocks={},h=harness(mocks);mocksFor(h,mocks);
+  const calls=[],routes=[],target={current:()=>true};
+  mocks['react-native']={View:'View',StyleSheet:{create:x=>x},Platform:{OS:'ios'}};
+  mocks['../platform/package-import']={PACKAGE_IMPORT_MAX_BYTES:256*1024*1024};
+  mocks['../production/incoming-share-target']={createProductionShareTarget:()=>null};
+  mocks['../production/incoming-share-package-target']={createProductionPackageShareTarget:()=>target,createProductionPackageResumeTarget:()=>null};
+  mocks['../production/IncomingShareProvider']={useIncomingShare:()=>({inbox:{async takePackage(id,selected){calls.push([id,selected]);return true;}},
+    snapshot:{items:[{id:1,payload:{shareType:'file',value:'file:///owned/backup.zip',localShareId:'receipt'}}],busyId:null,error:null}})};
+  mocks['../preview/PreviewNavigationGuard']={usePreviewLeaveGuard(){},usePreviewNavigation:()=>action=>action()};
+  mocks['../components/PageFrame']={PageFrame:'PageFrame'};mocks['../components/ChildPicker']={ChildPicker:'Picker'};
+  mocks['expo-router']={useRouter:()=>({push(path){routes.push(path);}})};
+  h.production({owner:{},identityKey:'owner',selectedChildId:null,recordsState:{children:[]},model:{children:[]},sharedChild:{target:null},actions:{},agentAttachments:[]});
+  const Screen=h.load('src/screens/shareScreen.tsx').default;h.render(h.jsx(Screen,{}));
+  const buttons=h.hosts().filter(node=>node.type==='Button');
+  assert.equal(buttons.find(node=>node.props.label==='加入目前聊天草稿').props.disabled,true);
+  const choice=buttons.find(node=>node.props.label==='作為資料包匯入');assert.ok(choice);assert.equal(choice.props.disabled,false);
+  assert.deepEqual(calls,[]);await choice.props.onPress();assert.deepEqual(calls,[[1,target]]);assert.deepEqual(routes,['/settings?section=account']);
+  h.unmount();
+});
+
 test('incoming provider preserves anonymous input for sign-in and synchronously clears an earlier account',()=>{
   const mocks={},h=harness(mocks);mocksFor(h,mocks);
   let identity=null,notifyPlatform,context;
   const observers=new Set(),pushes=[];
   let raw=[{shareType:'text',value:'PRIVATE_INCOMING_BODY'}];
   const platform={read:()=>raw,clear(){raw=[];},subscribe(fn){notifyPlatform=fn;return()=>{notifyPlatform=null;};},prepare(){assert.fail('No automatic attachment prepare');}};
-  const owner={getSnapshot:()=>({identityKey:identity}),subscribe(fn){observers.add(fn);return()=>observers.delete(fn);}};
+  const records={auth:'signedOut',busy:null,user:null};
+  const owner={apiBaseUrl:'https://example.test',getSnapshot:()=>({identityKey:identity,records}),subscribe(fn){observers.add(fn);return()=>observers.delete(fn);}};
   mocks['../platform/incoming-share']={createIncomingSharePlatform:()=>platform};
   mocks['react-native']={View:'View',StyleSheet:{create:x=>x}};
   mocks['expo-router']={useRouter:()=>({push:value=>pushes.push(value)}),usePathname:()=>'/chat'};
@@ -51,13 +73,42 @@ test('incoming provider preserves anonymous input for sign-in and synchronously 
   h.render(h.jsx(IncomingShareProvider,{owner,children:h.jsx(Child,{})}));
   assert.equal(context.snapshot.items.length,1);assert.equal(pushes.length,0);
   assert.doesNotMatch(JSON.stringify(h.hosts()),/PRIVATE_INCOMING_BODY/);
-  const change=next=>{identity=next;for(const fn of observers)fn();};
+  const change=next=>{identity=next;records.auth=next?'signedIn':'signedOut';records.user=next?{id:next}:null;for(const fn of observers)fn();};
   change('actor-a');assert.equal(context.inbox.getSnapshot().items.length,1);
   change('actor-b');assert.equal(context.inbox.getSnapshot().items.length,0,'Clear happens inside owner notification, before the next render');
   raw=[{shareType:'image',value:'content://private/attachment'}];notifyPlatform();h.render();assert.equal(context.snapshot.items.length,1);
   assert.doesNotMatch(JSON.stringify(h.hosts()),/content:\/\//);
   change(null);assert.equal(context.inbox.getSnapshot().items.length,0);h.render();
   h.unmount();assert.equal(observers.size,0);assert.equal(notifyPlatform,null);
+});
+
+test('durable provider binding survives cold launch generations and segregates accounts and servers',()=>{
+  const payload={shareType:'text',value:'Pending own share',localShareId:'durable'};
+  let binding=null,clears=0;
+  const reads=[],acks=[];
+  const platform={read(_remaining,identity){reads.push(identity);return binding===null||binding===identity?[payload]:[];},
+    acknowledge(_payloads,identity){acks.push(identity);binding=identity;},clear(){clears++;binding='purged';},subscribe:()=>()=>{},prepare(){assert.fail('No automatic preparation');}};
+  function launch(apiBaseUrl,userId,generation){
+    const mocks={},h=harness(mocks);mocksFor(h,mocks);let context;
+    const records={auth:'signedIn',busy:null,user:{id:userId}},observers=new Set();
+    let identityKey=JSON.stringify([apiBaseUrl,userId,generation]);
+    const owner={apiBaseUrl,getSnapshot:()=>({identityKey,records}),subscribe(fn){observers.add(fn);return()=>observers.delete(fn);}};
+    mocks['../platform/incoming-share']={createIncomingSharePlatform:()=>platform};
+    mocks['react-native']={View:'View',StyleSheet:{create:x=>x}};
+    mocks['expo-router']={useRouter:()=>({push(){}}),usePathname:()=>'/share'};
+    mocks['../preview/PreviewNavigationGuard']={usePreviewNavigation:()=>action=>action()};
+    const {IncomingShareProvider,useIncomingShare}=h.load('src/production/IncomingShareProvider.tsx');
+    function Child(){context=useIncomingShare();return null;}
+    h.render(h.jsx(IncomingShareProvider,{owner,children:h.jsx(Child,{})}));
+    return{h,context,signOut(){identityKey=null;records.auth='signedOut';records.user=null;for(const fn of observers)fn();}};
+  }
+  const stable=JSON.stringify(['https://one.test','parent']);
+  const first=launch('https://one.test','parent',7);assert.equal(first.context.inbox.getSnapshot().items.length,1);first.h.unmount();
+  const reopened=launch('https://one.test','parent',1);assert.equal(reopened.context.inbox.getSnapshot().items.length,1);reopened.h.unmount();
+  assert.deepEqual(reads,[stable,stable]);assert.deepEqual(acks,[stable,stable]);assert.equal(clears,0);
+  const otherServer=launch('https://two.test','parent',1);assert.equal(otherServer.context.inbox.getSnapshot().items.length,0);otherServer.h.unmount();
+  const otherUser=launch('https://one.test','other',1);assert.equal(otherUser.context.inbox.getSnapshot().items.length,0);
+  otherUser.signOut();assert.equal(clears,1);assert.equal(otherUser.context.inbox.getSnapshot().items.length,0);otherUser.h.unmount();
 });
 
 test('share screen shows local text and media types, personal children, and only accepts an explicit item',async()=>{
@@ -95,7 +146,7 @@ test('incoming provider rejects late preparation after switching away and back t
   const observers=new Set();
   let raw=[{shareType:'file',value:'content://documents/file'}];
   const platform={read:()=>raw,clear(){raw=[];},subscribe:()=>()=>{},prepare:()=>new Promise(r=>{resolve=r;})};
-  const owner={getSnapshot:()=>({identityKey:'actor',scopeKey:scope}),subscribe(fn){observers.add(fn);return()=>observers.delete(fn);}};
+  const owner={apiBaseUrl:'https://example.test',getSnapshot:()=>({identityKey:'actor',scopeKey:scope,records:{auth:'signedIn',busy:null,user:{id:'actor'}}}),subscribe(fn){observers.add(fn);return()=>observers.delete(fn);}};
   mocks['../platform/incoming-share']={createIncomingSharePlatform:()=>platform};
   mocks['react-native']={View:'View',StyleSheet:{create:x=>x}};
   mocks['expo-router']={useRouter:()=>({push(){}}),usePathname:()=>'/share'};

@@ -4,6 +4,8 @@
 
 ## 目前與接手
 
+- **11 月 9 日，S12-W02 iOS 系統分享。** 收件已接共用草稿及 ZIP 匯入。Expo 工程生成、App Group 配置、同名附件隔離及切換帳戶期間的遲到分享已用本機流程核對。Swift 編譯、簽署及 iPhone 系統分享待驗。[交付條件](docs/PRODUCTION_FRONTEND.md#ios-共用入口與-testflight-配置)
+
 - **11 月 9 日，P4-AUTH01。** Server 已以受邀帳戶核對 Apple 私密轉寄身份的明確連結，涵蓋 Web／原生 session 與裝置撤銷。只驗了合成身份，正式 Google／Apple 配置、共用表單接續和真人登入待辦。[契約](docs/API.md#p4-auth-providers)
 
 - **11 月 8 日 23:20（香港）** 原站 Web、API 及 worker 已發布通知偏好備份及還原。可比較安靜時段、時區與預約例外，再選擇是否還原。簽署包往返、拒絕跨帳戶、競態及防重已用合成資料驗證；站外核實健康、登入保護及 Web 指紋。Android 等批量發布。[交付與未驗項](artifacts/verification/P4_ACCOUNT_PREFERENCES_20261108.json)
