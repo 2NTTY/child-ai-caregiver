@@ -3,6 +3,7 @@ import { workRecoveryScopeSchema } from './firestore-work-continuation-recovery.
 import { handoverImportResolutionSchema } from './handover-import-records.ts';
 import { firestoreDomainHash } from './firestore-domain-data.ts';
 import { classImportChildId } from './firestore-sharing-records.ts';
+import { mixedImportSelectionSchema } from './handover-mixed-selection.ts';
 import { accountPreferencesRestoreSchema, accountPreferencesResultSchema, selfAvatarRestoreSchema, selfAvatarRestoreResultSchema } from '../src/shared/handover-imports.ts';
 import { handoverImportSectionSchema, handoverImportTargetSchema, handoverImportResourceSectionSchema, handoverImportModuleOf, handoverImportModuleOutcomeSchema, originalBackupModuleSchema } from '../src/shared/handover-imports.ts';
 
@@ -14,6 +15,7 @@ export const classImportSourceHash = (source: { serverId: string; accountId: str
   firestoreDomainHash([source.serverId, source.accountId, sourceChildId]);
 export const importBatchRequestSchema = z.object({ opId: uuid, uploadId: uuid,
   uploadVersion: count.min(1).optional(), inputFingerprint: hash.optional(),
+  mixed: mixedImportSelectionSchema.optional(),
   resolutionOnly: z.boolean().optional(), restoreOriginal: z.literal(true).optional(),
   accountAvatar: selfAvatarRestoreSchema.optional(),
   notificationPreferences: accountPreferencesRestoreSchema.optional(),
@@ -24,6 +26,11 @@ export const importBatchRequestSchema = z.object({ opId: uuid, uploadId: uuid,
   resolutions: z.array(z.object({ sourceChildId: uuid, section: handoverImportResourceSectionSchema, resourceId: uuid,
     useRestoredTarget: z.literal(true).optional(), resolution: handoverImportResolutionSchema }).strict()).max(10000),
 }).strict().refine(value => (value.targets.length > 0 || !!value.accountAvatar || !!value.notificationPreferences)
+  && (value.mixed ? !value.resolutionOnly && !value.restoreOriginal
+    && new Set(value.mixed.rooms.map(room => room.id)).size === value.mixed.rooms.length
+    && value.mixed.rooms.every(room => room.childIds.every(id => value.targets.some(target => target.sourceChildId === id)))
+    && value.targets.every(target => target.sections.length || value.mixed!.rooms.some(room => room.childIds.includes(target.sourceChildId)))
+    : value.targets.every(target => target.sections.length > 0))
   && (!(value.accountAvatar || value.notificationPreferences) || value.restoreOriginal === true && value.resolutionOnly === true)
   && new Set(value.targets.map(row => row.sourceChildId)).size === value.targets.length
   && new Set(value.resolutions.map(row => JSON.stringify([row.sourceChildId, row.section, row.resourceId]))).size === value.resolutions.length
@@ -47,6 +54,7 @@ export const importBatchSchema = z.object({ id: uuid, version: count.min(1), sco
   accountAvatarResult: selfAvatarRestoreResultSchema.optional(),
   notificationPreferencesResult: accountPreferencesResultSchema.optional(),
   position: count, cursor: z.string().min(1).max(16384).nullable(), counts: importBatchCountsSchema,
+  mixedConflictRoom: uuid.optional(),
   moduleCounts: z.array(handoverImportModuleOutcomeSchema).max(10).nullable().optional(),
   enrolments: z.array(z.object({ sourceChildId: uuid, outcome: z.enum(['created', 'skipped']), at: time }).strict()).max(100).optional(),
   failedEnrolment: z.object({ sourceChildId: uuid, error: z.string().min(1).max(100) }).strict().optional(),
@@ -67,7 +75,7 @@ export const importBatchMetadata = (job: HandoverImportBatch) => ({ createdAt: j
   ...(growthImportScopes(job).length ? { growthImportScopes: growthImportScopes(job), batchId: job.id } : {}) });
 export const importBatchControlMetadata = (event: HandoverImportBatchControl) => ({ batchId: event.batchId, createdAt: event.at });
 export function initialImportModuleCounts(request: HandoverImportBatchRequest) {
-  return handoverImportSectionSchema.options.filter(module => request.targets.some(target => target.sections.includes(module)))
+  return handoverImportSectionSchema.options.filter(module => module === 'chat' && request.mixed || request.targets.some(target => target.sections.includes(module)))
     .map(module => ({ module, created: 0, updated: 0, skipped: 0, conflict: 0 }));
 }
 export function importModuleCounts(job: HandoverImportBatch) {

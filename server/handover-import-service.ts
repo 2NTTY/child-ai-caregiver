@@ -15,6 +15,7 @@ import { createFirestoreHandoverImportItems } from './firestore-handover-import-
 import { attachmentSupplementModules, isHandoverAttachment, type HandoverAttachmentPorts } from './firestore-handover-attachments.ts';
 import { growthImportSourceRow } from './firestore-growth.ts';
 import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
+import { selectMixedImports, mixedImportStep } from './handover-mixed-selection.ts';
 
 type Uploads = ReturnType<typeof createHandoverUploadService>;
 type Opened = Awaited<ReturnType<Uploads['open']>>;
@@ -89,7 +90,10 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       const spaceId = row.target.createInClassId;
       return { ...row, target: { spaceId, childId: classImportChildId(spaceId, classImportSourceHash(reader.manifest.source, row.sourceChildId)) } };
     });
+    const mixed = selectMixedImports(reader.manifest, command, targets);
+    if (mixed) totalItems += mixed.rooms.reduce((sum, room) => sum + room.version, 0);
     const request: HandoverImportBatchRequest = { opId: command.opId, uploadId: command.uploadId,
+      ...(mixed ? { mixed } : {}),
       uploadVersion: job.version, inputFingerprint: firestoreDomainHash(command),
       ...(selectedTranscriptItems ? { selectedTranscriptItems } : {}),
       ...(command.resolutionOnly === undefined ? {} : { resolutionOnly: command.resolutionOnly }),
@@ -102,6 +106,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     return { request, preflightError };
   }
   const commandFor = (job: HandoverImportBatch): HandoverImportCommand => ({ opId: job.id, uploadId: job.request.uploadId,
+    ...(job.request.mixed ? { mixedRoomIds: job.request.mixed.rooms.map(room => room.id) } : {}),
     expectedUploadVersion: job.request.uploadVersion!, acceptedManifestSha256: job.request.acceptedManifestSha256,
     ...(job.request.resolutionOnly === undefined ? {} : { resolutionOnly: job.request.resolutionOnly }),
     ...(job.request.restoreOriginal ? { restoreOriginal: true } : {}),
@@ -126,6 +131,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     if (raw) { try { cursor = cursorSchema.parse(JSON.parse(raw)); } catch { domainReject('invalid_package_cursor', 400); } }
     while (cursor.target < job.request.targets.length) {
       const target = job.request.targets[cursor.target], start = JSON.stringify(cursor);
+      if (!target.sections.length) { cursor = {target:cursor.target+1, phase:'current', page:null}; continue; }
       const selected = job.request.resolutionOnly ? job.request.resolutions.filter(row => row.sourceChildId === target.sourceChildId) : null;
       if (selected?.length === 0) { cursor = { target: cursor.target + 1, phase: 'current', page: null }; continue; }
       // Existing in-flight cursors keep their old reader selection. New batches always establish parents first.
@@ -229,6 +235,19 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
           return { state: 'deferred' as const, nextAt: new Date(Date.now() + 1000).toISOString() };
         }
       }
+      for (let step=mixedImportStep(job.request.mixed,job.position);step;step=mixedImportStep(job.request.mixed,job.position)) {
+        if (processed>=maxItems || Date.now()>=until) {
+          if (!processed) domainReject('package_import_read_timeout');
+          return {state:'deferred' as const,nextAt:new Date(Date.now()+1000).toISOString()};
+        }
+        operationSignal.throwIfAborted();
+        const transcript=step.version===1 ? null : (await opened.reader.readMixedTranscriptVersion({roomId:step.room.id,
+          childIds:job.request.targets.map(row=>row.sourceChildId),version:step.version,
+          acknowledgedManifestSha256:job.request.acceptedManifestSha256??undefined})).value;
+        job=await batches.applyMixed(work,job.position,transcript,operationSignal);
+        if (job.state==='completed') return {state:'completed' as const};
+        processed++;
+      }
       let current = await locate(opened, job, job.cursor);
       while (current && processed < maxItems && Date.now() < until) {
         signal.throwIfAborted();
@@ -278,6 +297,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
         return { sourceChildId, target, outcome: job.enrolments?.[i]?.outcome ?? (error ? 'failed' : 'pending'), error };
       }) };
     },
+    mixedResults:batches.mixedResults,
     async results(owner: string, id: string, raw: unknown) {
       const input = domainParse(handoverImportResultQuerySchema, raw), job = await batches.get(owner, id);
       const index = job.request.targets.findIndex(target => target.sourceChildId === input.sourceChildId && target.sections.includes(input.module));
