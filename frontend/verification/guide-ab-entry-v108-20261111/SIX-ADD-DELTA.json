@@ -1,0 +1,39 @@
+{
+  "baselineFileCount": 504,
+  "candidateFileCount": 510,
+  "addedBytes": 11687,
+  "added": [
+    {
+      "path": "experiments/guide-reading-gd01/app.mjs",
+      "bytes": 1709,
+      "sha256": "31f61f5e5f5549668747add28c946d2d581ba288a356ecba2ca8a0025e764645"
+    },
+    {
+      "path": "experiments/guide-reading-gd01/guide-data.mjs",
+      "bytes": 2381,
+      "sha256": "7913254a8828dd5b97309e5a75dd5c47cbb6f24b269e200cc294b2ec52276e6a"
+    },
+    {
+      "path": "experiments/guide-reading-gd01/guide-state.mjs",
+      "bytes": 1009,
+      "sha256": "53dd4cf26482cee72610a932ededdf53b12439ff0814e588649138febb86fd2d"
+    },
+    {
+      "path": "experiments/guide-reading-gd01/guide-view.mjs",
+      "bytes": 1520,
+      "sha256": "5d155e02dcab46a9600fb34d12e059c0335551171c91f09ecaa1a453c32b508b"
+    },
+    {
+      "path": "experiments/guide-reading-gd01/guide.css",
+      "bytes": 3010,
+      "sha256": "34e358eca7c81999ac41e5a3d49bd2b90416ba031719b3f64d6ffc75685639d3"
+    },
+    {
+      "path": "experiments/guide-reading-gd01/index.html",
+      "bytes": 2058,
+      "sha256": "28ca1f707157ca1329d009cbd5982a5f0e2108c06eb4f022377958d8acd346be"
+    }
+  ],
+  "modified": [],
+  "deleted": []
+}

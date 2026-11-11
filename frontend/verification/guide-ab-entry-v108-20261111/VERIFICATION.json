@@ -1,0 +1,133 @@
+{
+  "version": 108,
+  "sitesSource": "5de2d2a20fdfbf249b1099c970f97c53b35f4645",
+  "publication": "SUCCEEDED",
+  "fullVersionAccepted": false,
+  "wholeSiteAcceptance": "NOT_GRANTED",
+  "guideEntry": {
+    "gateA": {
+      "status": "PASS",
+      "scope": "Official source checkout and local package member identity",
+      "sourceFiles": 510,
+      "sourceBytes": 135535215,
+      "added": 6,
+      "addedBytes": 11687,
+      "modified": 0,
+      "deleted": 0,
+      "packagedRegularMembers": 511,
+      "isLiveHttpBodyIdentity": false
+    },
+    "gateB": {
+      "status": "PASS",
+      "scope": "One bounded desktop load/switch/state smoke at the new destination",
+      "navigation": {
+        "requestedUrl": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/experiments/guide-reading-gd01/index.html",
+        "observedFinalUrl": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/experiments/guide-reading-gd01/",
+        "redirectObserved": true,
+        "redirectHttpStatusObserved": false,
+        "smokeCompletedOnObservedFinalUrl": true,
+        "directSlashNavigationTested": false,
+        "reloadTested": false,
+        "ownedTabsUsed": 1
+      },
+      "observations": [
+        "Initial A: styled side directory beside the reading card; step 1 selected; title 先跟助手說 and persistent synthetic/non-execution notice.",
+        "Select step 2: current-step label and reading title 查看及接續結果 observed; heading received focus.",
+        "Switch to B: B selected and A unselected; three cards visibly above reading; step 2 and its reading title retained.",
+        "Return to A: A selected and B unselected; side directory visibly restored; step 2 and its reading title retained."
+      ],
+      "visualEvidence": {
+        "images": 3,
+        "format": "JPEG",
+        "imagePixels": [
+          1165,
+          747
+        ],
+        "scope": "Desktop viewport screenshots only; not full-page capture",
+        "cssViewportIndependentlyMeasured": false,
+        "devicePixelRatioMeasured": false,
+        "imagesIncludedInPublicArchive": false
+      },
+      "consoleSample": {
+        "limit": 50,
+        "returned": 8,
+        "extensionErrors": 8,
+        "candidateOriginErrorsObserved": 0,
+        "notFullAudit": true
+      },
+      "cleanup": {
+        "ownedTabClosed": true,
+        "ownedTabAbsentFromFollowupInventory": true,
+        "unownedTabsOperated": false,
+        "localHelpersExitedNormally": true
+      }
+    }
+  },
+  "sourceReview": {
+    "status": "ACCEPTED_FOR_PUBLICATION",
+    "criticalFindings": 0,
+    "importantFindings": 0,
+    "minorFindings": 0,
+    "scope": "Exact source identity, isolated dependency closure and bounded source/static review; not runtime acceptance"
+  },
+  "historicalReuse": {
+    "date": "2026-11-07",
+    "unchangedFiles": 6,
+    "unchangedBytes": 11687,
+    "retainedSourceCopiesMatched": 4,
+    "sealedEvidencePacketsIntegrityChecked": 10,
+    "newRuntimeReplay": false,
+    "historicalInteractionMatrixRerun": false,
+    "suite191Rerun": false,
+    "scope": [
+      "Original desktop A/B presentation and steps 1, 2 and 3.",
+      "Only observed synthetic chat/care/settings intent, return, selected status transitions and repeated-action/state behavior.",
+      "Only specifically exercised Enter/Tab/focus paths and the recorded earlier nested-route observations.",
+      "Original exact-content and pure reducer/render tests retain only their original source/pure-function scope."
+    ],
+    "qualifications": [
+      "Byte identity preserves earlier artifacts; it is not a new browser replay or independent authentication of historical tool transcripts.",
+      "Historical screenshot extensions did not match their JPEG format; existing timing and tool-provenance qualifications remain.",
+      "Earlier observations are not a general lifecycle, storage or back/forward-cache guarantee."
+    ]
+  },
+  "inheritedUnresolved": {
+    "Chat": "PARTIAL_BLOCKED",
+    "Fourth": "Witness timeout, missing receipt and lifecycle gaps unchanged",
+    "Summary": "UNVERIFIED",
+    "SummaryDetail": "Existing gate gaps unchanged",
+    "Photos": "UNVERIFIED",
+    "PhotosDetail": "Existing error9 unresolved; no cause assigned"
+  },
+  "notVerified": [
+    "Whole site/version",
+    "Runtime acceptance of the original 504 files and previously published paths",
+    "Current workbench Guide first display/pick",
+    "Production GuideScreen",
+    "Mobile/narrow display, touch and gestures",
+    "AT speech and full keyboard traversal",
+    "Full scroll and contrast coverage",
+    "Lifecycle and back/forward cache",
+    "Comprehensive console, network, storage, cache, MIME, headers or runtime CSP enforcement",
+    "Real backend, models, accounts or family data"
+  ],
+  "packagingIncident": {
+    "initialFailure": "A local archive validator incorrectly rejected a normal directory entry because it initially required every entry to be a regular file.",
+    "sequence": "The nonzero checker exit was not gated before save, so the version was saved before the corrected check. It was not yet deployed.",
+    "remedy": "The corrected validator accepted only expected parent directories and checked all 511 regular members, safe membership and exact source bytes. Deployment occurred only after that check passed.",
+    "productOrArchiveBytesChangedForRemedy": false,
+    "prevention": "Stop the workflow on a nonzero validation exit before save or deploy."
+  },
+  "provenanceLimits": {
+    "liveHttpResponseBodiesHashed": false,
+    "nativeStoredArchiveDownloadedAndCompared": false,
+    "nativeContentHashEquatedWithRawTarSha256": false,
+    "nativeContentHashSemantics": "Undocumented",
+    "beforeSaveCompressedArchiveDigestCaptured": false,
+    "beforeAfterSaveDigestStabilityClaimed": false,
+    "postSaveLocalCompressedArchiveSha256": "658a67df3551fac7fc85f7c1176baaf56980a108026c39c85ff93ffb538d2213",
+    "postSaveLocalCompressedArchiveBytes": 35386882,
+    "postSaveLocalRawTarSha256": "0952797f04f8acbe15ca0bb9337d285c7c17f22b0a2751076b8c90b42cef2aaa",
+    "meaning": "Post-save local digests and local member identity only; no inference about native archive serialization or live HTTP bodies."
+  }
+}

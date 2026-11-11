@@ -1,0 +1,49 @@
+{
+  "version": 108,
+  "sitesSource": "5de2d2a20fdfbf249b1099c970f97c53b35f4645",
+  "deploymentVerified": true,
+  "deploymentStatus": "succeeded",
+  "liveRoot": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+  "guideEntryUrl": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/experiments/guide-reading-gd01/",
+  "publicAccessScope": {
+    "access": "public",
+    "unchanged": true,
+    "policyRevision": 2
+  },
+  "publishedDist": {
+    "files": 510,
+    "bytes": 135535215,
+    "canonicalSha256": "4247734441586ff42b0ee8230210be9e1047eafdf3c37732dad21e6e81a6d166",
+    "manifest": "FULL-MANIFEST.json",
+    "canonicalAlgorithm": "UTF-8 path + NUL + sha256 + LF in listed path-component order"
+  },
+  "baseline": {
+    "version": 107,
+    "sourceCommit": "c86d128384d3ebbd36a30c83d062858a96ebfbd9",
+    "files": 504,
+    "bytes": 135523528,
+    "canonicalSha256": "60c4f508cf34ce04b1fd87c4bb748d67f821b4bf820da8af3a608c146ac536a4"
+  },
+  "delta": {
+    "added": 6,
+    "addedBytes": 11687,
+    "modified": 0,
+    "deleted": 0,
+    "manifest": "SIX-ADD-DELTA.json",
+    "sourceRoot": "source"
+  },
+  "packagedSource": {
+    "regularFileMembers": 511,
+    "directoryEntries": 103,
+    "content": "510 public product files and one unchanged hosting manifest",
+    "hostingSha256": "549f3efc195a91897cf37536a232f5ea858aba0e6fe64bded9387ab366aeaa6e",
+    "hostingByteExact": true,
+    "memberVerification": "All local packaged source members matched the official source and full manifest before deployment"
+  },
+  "historicalSourceReference": {
+    "repository": "2NTTY/child-ai-caregiver",
+    "commit": "8dc4b3ad3666e0aa9805d5630d3189559bddd65e",
+    "meaning": "Historical GD01 source archive reference; not a live deployment"
+  },
+  "archiveContents": "Only the six unchanged GD01 sources, safe metadata, manifests and a bounded Python byte checker; not the full product dist"
+}
