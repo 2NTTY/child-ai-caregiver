@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useSyncExternalStore } from "react
 import { createSharingApi } from "../../../src/client/sharing-api.ts";
 import type { ProductionOwner } from "./ProductionOwner";
 import { useProduction } from "./ProductionProvider";
-import { SharingController, type SharingMode, type SharingState } from "./SharingController.ts";
+import { SharingController, emptyClassTasks, type SharingMode, type SharingState } from "./SharingController.ts";
 
 type Entry = { controller: SharingController; bind(): void };
 const controllers = new WeakMap<ProductionOwner, Partial<Record<SharingMode, Entry>>>();
@@ -29,6 +29,7 @@ export function useProductionSharing(mode: SharingMode = "family", enabled = tru
   const expected = auth === "signedIn" && account.gate === "ready" && identityKey ? identityKey + ":sharing:" + mode + ":" + sessionGeneration : null;
   const state: SharingState = current.identityKey === expected && current.userId === userId ? current : {
     ...current, identityKey: null, userId: null, online, loaded: false, busy: null, spaces: { items: [], nextCursor: null }, selected: null, rosterQuery: "", rosterLoaded: false,
+    classTasks: emptyClassTasks(),
     teacherSpaces: { items: [], nextCursor: null }, teacherClasses: { items: [], nextCursor: null }, teacherClassesLoaded: false,
     members: { items: [], nextCursor: null }, shares: { items: [], nextCursor: null }, invitations: { items: [], nextCursor: null },
     pending: null, invitationToken: null, receipt: null, cleanupReceipts: [], notice: null,
