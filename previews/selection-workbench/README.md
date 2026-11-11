@@ -1,5 +1,29 @@
 # Selection Workbench
 
+## Reviewed source backup: page-reference12 / HIS02 and SRC02 · 2026-11-11
+
+[Version 12](versions/page-reference12-20261111/README.md) · [Version 12 index source](versions/page-reference12-20261111/index.html) · [Preserved version 11](versions/page-reference11-20261111/README.md)
+
+This independent branch adds the exact reviewed 193-file reference12 public snapshot over remote reference11 commit `f3dd8f2de7c3d8e200b60f491229d8e94be96e13`. Every earlier version and candidate, source notice and user choice remains preserved. No PR, master merge, force push, Sites publication or hosted deployment is included.
+
+Version 12 adds HIS02 (Mailflow Activity Log) and SRC02 (Hermes Memories): 23 references across 13 categories, with 21 original images and the same two explicit native links. History and Knowledge Memory List now each have two references. General business progress, general learning profile and general productivity profile remain single-option categories. Neither addition is a child/family page; SRC02 is not citation/bibliography management. Nothing is selected or implemented as the product frontend.
+
+Independent static/source/diff review passed. Fresh pre-backup checks pass 7/7 focused tests and 218/218 author checksums after a private evidence-label correction. All 193 public files, totaling 7,111,479 bytes, match the static review, desktop review freeze and exact-copy carrier. All 182 earlier candidate files, 21 old sections, shared CSS/CSP, previous metadata, version history and selections are unchanged. Only eight new candidate files and three existing top-level public files differ from reference11. Each new candidate contains only its original image, complete MIT, manifest and source/rights explanation.
+
+Source boundaries remain explicit:
+- HIS02: `mojoaar/icloud-mailflow`, commit `fb0b8119e8f48e8a48699ec0dca9d2c0d87c7a6a`, version 0.12.2. The original 2880 × 1800 WebP and full MIT notice remain exact. The pinned demo/capture source supports authored fixtures; visible rows match those fixtures. It is a complete supplied viewport with ten complete rows and part of the next, not a full scrolling page or list endpoint. Actual capture time/build and comprehensive font/brand rights are not independently established.
+- SRC02: `3L0935/hermes-lancedb-memory-suite`, commit `fcd52b855fba022194a40615e1f935d5d52675da`. The original 1400 × 875 PNG and full MIT notice remain exact. The source's synthetic-fixture statement is attributed to its publisher, not overstated as an independently recreated data-generation chain. The supplied viewport has 18 rows and 1/1 pagination, with original text truncation retained. Repository MIT/documentation reuse is not a separate negotiated media licence or complete third-party/font/trademark clearance.
+
+A separate bounded desktop review passed both new anchors, complete original-image display, captions, local original-file entry and Browser Back at 1180 × 757 CSS pixels, DPR 1. Each index image displayed at 1117 × 698.125 with an 8 px caption gap and no horizontal overflow. Each native viewer fitted the original viewport to 1180 × 737. Back restored the correct section and visible focused entry, not pixel-exact scroll restoration: SRC02 differed by 86 CSS px; HIS02 by 110 CSS px. The final 21-image decode check is not a repeat visual review of all old sections. No phone/narrow-screen, keyboard, screen-reader, touch, 1:1 zoom, source-app, full-site or full-product pass is claimed.
+
+Earlier restrictions and findings are retained. **LG02 must still only be served locally**, with no login or data entry. GitHub source backup is not website hosting and does not waive that restriction. GD02's native PNG overflow at the earlier 400 × 606 desktop-zoom check and exact390 × 844 unverified state remain. Cozy and PC02 exclusions remain. No real family data, account, source application/generator, model or GCP operation is included.
+
+The version snapshot is preserved exactly as reviewed. Its local-draft, pending, NOT_RUN and not-uploaded fields describe the author's earlier packaging stage, not the later bounded reviews or this backup. This additive cover records later results without rewriting that history. Only the reviewed public snapshot and this root README are included; private raw evidence, logs, review files, source credentials/configuration and internal paths are excluded. A private HIS02 tree-label correction did not change public bytes. The previous root README follows byte-for-byte unchanged.
+
+---
+
+# Selection Workbench
+
 ## Reviewed source backup: page-reference11 / PP01 · 2026-11-11
 
 [Version 11](versions/page-reference11-20261111/README.md) · [Version 11 index source](versions/page-reference11-20261111/index.html)

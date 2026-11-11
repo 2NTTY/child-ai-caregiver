@@ -1,0 +1,45 @@
+{
+  "referenceId": "SRC02",
+  "title": "知識記憶列表（非學術引文／書目管理）",
+  "sourceProduct": "Hermes LanceDB Memory Suite / LanceDB Memory Explorer",
+  "repository": "https://github.com/3L0935/hermes-lancedb-memory-suite",
+  "sourceCommit": "fcd52b855fba022194a40615e1f935d5d52675da",
+  "sourceTree": "f0d8d0b6879e990c1a0204b4c6e6aae1ccdc0f34",
+  "sourceImagePath": "docs/screenshots/02-memories.png",
+  "image": {
+    "path": "original/02-memories.png",
+    "bytes": 328030,
+    "sha256": "1040fe7841fa2017033de2440f051501b96163a1d291c9a1f43e2436564f9335",
+    "gitBlob": "beeff6b48a5d992e825afdb58121780b631c503e"
+  },
+  "imageDimensions": [
+    1400,
+    875
+  ],
+  "originalImageModified": false,
+  "isAcademicCitationManager": false,
+  "isChildcarePage": false,
+  "captureTime": "unknown; fixed commit date is not capture proof",
+  "captureBuild": "unknown",
+  "syntheticDataEvidence": {
+    "strength": "publisher_statement",
+    "declaration": "> The screenshots below come from `docs/screenshots/`, captured against a **synthetic\n> fixture** of 18 invented memories. No screenshot contains data from a real database.",
+    "fixedSource": "https://github.com/3L0935/hermes-lancedb-memory-suite/blob/fcd52b855fba022194a40615e1f935d5d52675da/README.md",
+    "fixtureCount": 18,
+    "independentlyReconstructedDataProvenance": false
+  },
+  "visibleScope": "Complete original supplied viewport including header, sidebar, Memories filters,18 rows and 1/1 pagination; source row text is ellipsized, not every record in full.",
+  "license": {
+    "spdx": "MIT",
+    "copyright": "Copyright (c) 2026 3L0935",
+    "localFile": "LICENSE.txt",
+    "scope": "Root software-and-associated-documentation notice; screenshot tracked in same README; no separate negotiated image grant or comprehensive third-party/font/trademark audit."
+  },
+  "fixedSourceIdentityReview": "Independent fixed commit/tree review established exact PNG,MIT and README bytes; current integration rechecks the preserved local identities without new network requests.",
+  "priorStandaloneBrowserAcceptance": "PASS_BOUNDED_DESKTOP_DISPLAY_ONLY; original draft had no local original-image entry, so click/Back was not tested.",
+  "currentIntegrationBrowserAcceptance": "NOT_RUN",
+  "selected": false,
+  "localOnly": true,
+  "implementedFrontend": false,
+  "publicPayloadBoundary": "Only original PNG, exact MIT, this manifest and source/rights explanation. No author wrapper, source program, full source README, internal tests/logs or raw tool records."
+}

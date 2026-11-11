@@ -1,0 +1,29 @@
+LG02: original CoreUI Login v5.2.0 reference, isolated local display only.
+
+CoreUI Free Bootstrap Admin Template v5.2.0:
+Copyright (c) 2025 creativeLabs Lukasz Holeczek. MIT.
+Source commit: 2d15de5eecd14e04f24aba367c3e96d2ab7c1a6b.
+Official source: https://github.com/coreui/coreui-free-bootstrap-admin-template
+
+CoreUI 5.3.0 CSS / JS: Copyright (c) 2025 creativeLabs Lukasz Holeczek. MIT.
+CoreUI Icons Free 3.0.1 SVG: CoreUI, CC BY 4.0.
+Icons source: https://github.com/coreui/coreui-icons/tree/v3.0.1
+Icons license: https://creativecommons.org/licenses/by/4.0/
+The SVG sprite and rendered user/lock symbols are unmodified. No endorsement implied.
+Simplebar 6.3.0: Jonathan Nicol / Adrien Denat. MIT.
+Popper 2.11.8 (bundled in CoreUI JS): Federico Zivolo. MIT.
+color-modes.js: Copyright (c) 2025 creativeLabs Lukasz Holeczek. CC BY 3.0.
+Full original license texts and source notices accompany this file under licenses/.
+All original notices in HTML, CSS and JS are retained.
+
+MODIFICATIONS: Only two nonvisual head meta tags plus an explanatory comment:
+1. Content-Security-Policy: blocks every script, network connection, form submission,
+   frame, worker, object, media, manifest and font request. Allows only same-origin
+   CSS/images and embedded data images / inline SVG styling.
+2. Referrer: no-referrer.
+No layout, content, colors, sizes, CSS, SVG, icons, fonts, visible body, input or
+button markup is changed. No live authentication, server API or model is connected.
+Original inert buttons remain inert. Fields start empty. Do not enter real data.
+The theme/storage scripts are present only for provenance and cannot execute.
+This is the original CSS default light appearance, without automatic dark-mode switching.
+This folder must only be served locally. It is not a production auth UI.

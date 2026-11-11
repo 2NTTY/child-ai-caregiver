@@ -1,0 +1,57 @@
+{
+  "referenceId": "HIS02",
+  "title": "活動歷史（完整頁視口，非整頁長圖／育兒頁）",
+  "sourceProduct": "iCloud Mailflow / Activity Log",
+  "repository": "https://github.com/mojoaar/icloud-mailflow",
+  "sourceCommit": "fb0b8119e8f48e8a48699ec0dca9d2c0d87c7a6a",
+  "sourceVersion": "0.12.2",
+  "sourceImagePath": "docs/screenshots/activity.webp",
+  "image": {
+    "path": "original/activity.webp",
+    "bytes": 132744,
+    "sha256": "20d9602f6d14383388bc170971e5154d5303a8522902d0b708117bcd7fa44ccb",
+    "gitBlob": "7ac71f1a3e40fe13b057de819b1c0e514ff275c1"
+  },
+  "imageDimensions": [
+    2880,
+    1800
+  ],
+  "documentedCaptureViewport": [
+    1440,
+    900
+  ],
+  "documentedDeviceScaleFactor": 2,
+  "originalImageModified": false,
+  "fullScrollPage": false,
+  "isChildcarePage": false,
+  "visibleCompleteRows": 10,
+  "visiblePartialRows": 1,
+  "captureTime": "unknown;2026-09-21 commit time is not proven exact capture time",
+  "syntheticDataEvidence": {
+    "strength": "pinned_demo_driver_sql_fixture_and_visible_row_correspondence",
+    "authoredActivityRows": 35,
+    "visibleRowsChecked": 11,
+    "sourceFiles": [
+      "https://github.com/mojoaar/icloud-mailflow/blob/fb0b8119e8f48e8a48699ec0dca9d2c0d87c7a6a/README.md",
+      "https://github.com/mojoaar/icloud-mailflow/blob/fb0b8119e8f48e8a48699ec0dca9d2c0d87c7a6a/scripts/screenshots.sh",
+      "https://github.com/mojoaar/icloud-mailflow/blob/fb0b8119e8f48e8a48699ec0dca9d2c0d87c7a6a/scripts/screenshots.mjs",
+      "https://github.com/mojoaar/icloud-mailflow/blob/fb0b8119e8f48e8a48699ec0dca9d2c0d87c7a6a/scripts/demo.sh"
+    ],
+    "sourceProgramsExecuted": false,
+    "note": "Names/addresses are authored fixture strings, not retrieved mail. Real service domains may appear; these are not contactable recipients."
+  },
+  "visibleScope": "Full original page viewport retains navigation,Activity Log controls,search/filter row and table; ten complete rows plus partial next row. No page footer,pagination or list end; not a long screenshot.",
+  "license": {
+    "spdx": "MIT",
+    "copyright": "Copyright (c) 2026 Morten Johansen",
+    "localFile": "LICENSE.txt",
+    "scope": "Root software-and-associated-documentation notice,tracked README screenshot. No image exception found in the bounded review; no Apple/iCloud endorsement,brand adoption or complete third-party/font clearance."
+  },
+  "fixedSourceIdentityReview": "Independent fixed commit/blob,VERSION,MIT and SQL capture chain review; current integration uses only exact verified original WebP/MIT,not the author wrapper undergoing a documentation-path repair.",
+  "priorStandaloneBrowserAcceptance": "PASS_BOUNDED_DESKTOP_DISPLAY_ORIGINAL_ENTRY_AND_BACK; not narrow/mobile or1:1zoom.",
+  "currentIntegrationBrowserAcceptance": "NOT_RUN",
+  "selected": false,
+  "localOnly": true,
+  "implementedFrontend": false,
+  "publicPayloadBoundary": "Only original WebP,exact MIT,this manifest and source/rights explanation. No author wrapper,internal test documents,source-evidence bundle,scripts or raw tool records."
+}
