@@ -6018,3 +6018,7 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 ### 2026-11-13　B-P1 第四輪審核細節收尾（codex/search-query-minimization）
 
 依第四輪審核第 3／5 節建議完成三項細節收尾：1）將房室與劑量排除規則改用 `/iu` 全大小寫比對（`Rm 2 of BLOCK 3`、`fLaT A`、`uNiT 3` 攔截；`Rm 2 OF cough`、`Unit 2 MONTHS`、`Apt 2 WEEKS`、`Unit 2 VACCINE schedule`、`Unit 2 MCG`、`Unit 2 DOSES` 放行）；2）將 `公路` lookbehind 收窄為 `高速公路`／`快速公路`，補攔 `住喺青山公路` 等香港公路地址；3）於 `CALLING_NON_NAME_PREFIXES` 補入 `鼻敏感`/`哮喘`/`腸胃炎`/`手足口`/`中耳炎`/`過敏`/`開燈`/`開窗`/`疫苗`/`加固`/`打針`/`飲茶`。全部新測試已寫入 [search-query-minimization 測試](tests/search-query-minimization.test.ts)（維持 9 檔共 73 例離線 guard 測試與兩份 `tsc --noEmit` 全過；分支維持本地未 push、未開 PR）。
+
+### 2026-11-13　B-P1 第五輪審核建議收尾（codex/search-query-minimization）
+
+依第五輪審核第 3 節建議完成收尾：1）收斂 `公路` lookbehind 為 `(?<!高速公|快速公|高速|快速|大|馬)路`，同時放行「高速公路」與「高速路」（`住喺高速路附近`、`住喺快速路附近` 放行，`住喺青山公路`、`住喺青山路` 仍攔截）；2）於 `CALLING_NON_NAME_PREFIXES` 補入 `水痘`/`麻疹`/`腮腺炎`/`結膜炎`/`熱痱`/`尿布疹`/`支氣管炎`/`口腔潰瘍`/`鼻鼾`/`流汗`/`大人` 11 個多字口語病徵詞，放行相應照護查詢（`BB叫陳小明`、`BB叫黃大文` 仍攔截）；3）單元測試補齊 `BB叫打針`、`BB叫飲茶`、`住喺高速路附近`、`住喺快速路附近` 及全部 11 個新病徵斷言。維持 9 檔共 73 例離線 guard 測試與兩份 `tsc --noEmit` 全過；分支維持本地未 push、未開 PR。
