@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **主動通知已改為保存後即派送。** 11 月 12 日 10:30（香港），原站 API、worker 及 Web 已發布 `954ee312`，管理頁會自動讀回投遞結果。Android 版本 6 的收件、點入回覆及跨端讀回已驗。新原生版本待以一則通知核對狀態列圖示、卡片頭像、正式訊息預覽及派送耗時。[發布及 APK](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json) · [本機真 Agent 紀錄](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json)
+- **主動通知已改為保存後即派送。** 原站 API、worker 及 Web 使用 `954ee312`。11 月 12 日 11:07（香港）已核對 Android 版本 8 的 APK 與版本 6 簽署相同，包內已包含狀態列及通知卡圖示。版本 6 的收件、點入回覆及跨端讀回已驗。版本 8 待以一則示範核對手機上的兩個圖示、訊息預覽及派送耗時。[下載版本 8](https://expo.dev/artifacts/eas/0lyEuTPX6sSSFTROuYXISbp3ACRBukESbAshFte_lJs.apk) · [發布及驗簽紀錄](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json) · [本機真 Agent 紀錄](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json)
 
 **11 月 12 日開始[主動助手、手機通知與一鍵示範](PLAN.md#proactive-notifications)。其後的 [REQ-001 官方來源搜索](PLAN.md#agent-search-first)仍待驗。** P4 暫停於 11 月 11 日 23:11（香港）的原站版本 `p4-group-2f442c36`。新多孩回覆可點讀通過審核的照護原文，Android 待批量交付。五組餘項及恢復位置見[接手清單](docs/P4_RESUME.md)。[原站發布證據](artifacts/verification/P4_CARE_CITATION_DELIVERY_20261111.json)
 

@@ -101,6 +101,19 @@
     "publicAdminHtmlSha256": "517893af06dba0688742f1e3d9b1f9d7b4557341fa7c1991818cbf3a40ec00c6",
     "androidRuntime": "f5c61d6a5e93b4253cbac75f15a5179fbcf101c5",
     "localAndroidVerification": "Expo prebuild resources and AAPT2, notification payload and tap parsing, JS/Hermes export, matching archive inventory and existing signing fingerprint",
+    "androidBuild": {
+      "id": "9d555a1a-3d74-4334-9da1-2f4a031c29f6",
+      "versionCode": 8,
+      "profile": "preview",
+      "completedAt": "2026-11-12T03:05:53.688Z",
+      "download": "https://expo.dev/artifacts/eas/0lyEuTPX6sSSFTROuYXISbp3ACRBukESbAshFte_lJs.apk",
+      "bytes": 120563316,
+      "sha256": "f89e454df48bb0568989f8c09f8289583a1a3774d6b3930677ef8069b6b342d7",
+      "v2SignerSha256": "6153ebdd00cbadc004506cc468e2aab5f5430320a90c8bd00df336e0853aa8a0",
+      "verifiedBinary": "Android build-tools verified the v2 signature matches version 6, the package is org.yuyoufang.app, and the installed runtime matches the release fingerprint. Firebase and Expo small-icon metadata resolve to notification_icon; Expo large-icon metadata resolves to yuyoufang_notification_large_icon.",
+      "submittedBuilds": 1,
+      "version7": "Reserved by EAS before a local Windows Git path-length error prevented upload. No cloud build was created for that attempt."
+    },
     "handsetVerification": "Pending one notification on the new Android runtime with message previews enabled. No post-release latency sample at publication."
   }
 }
