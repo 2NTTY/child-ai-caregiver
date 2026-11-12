@@ -5986,3 +5986,5 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 手動流程首次發布 `da3b9bac`，無產品變更的手動檢查另有 `skipped` 收據。11 月 13 日的 `db83fe08` 候選通過建置；提交前 master 已前進，發布器拒絕切站，站外仍是舊版。團隊合併完成後沿正式入口發布 `66a51db5`，三個服務版本一致，站外核對通過，兩個回退候選仍可查，同一張告警已自動關閉。[被取代的候選](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43272669471) · [新版本與收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43274416541)
 
 針對候選過時，現在會在下載及傳送映像前核對一次 master，切站前再核對一次。提前測試時，GitHub 沒有為本倉庫正式流程或只記時間的對照流程建立排程 run，故無 runner 或 VM 失敗日誌。清走臨時排程後只保留香港每日 04:17；首輪驗收憑 `event=schedule` 的正式發布收據。若逾期，接手人由[排程補觸發](docs/DEPLOYMENT.md#每日事件缺席時補觸發)開始。
+
+香港 06:17 過後，當天仍沒有原生排程事件。操作員補檢時，CLI 同步請求回 HTTP 500；核實原時段沒有 run，再以官方非同步介面取得當天的 [master 補檢收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43319222038)。06:22:53 站上三個服務仍是 `66a51db5`，結果為 `skipped`，沒有建置或切站。獨立補觸發可辨識同一日期已完成的操作員補檢；這筆是 `workflow_dispatch`，原生排程仍待驗。

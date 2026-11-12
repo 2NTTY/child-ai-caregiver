@@ -54,6 +54,18 @@ class MissingSchedule(unittest.TestCase):
             self.run_check()
         self.result.assert_called_once_with("2026-11-12", "rejected", None)
 
+    def test_operator_recovery_counts_for_its_slot_but_not_as_a_native_timer(self):
+        github = GitHub()
+        workflow = {"id": 123, "path": ".github/workflows/site-release.yml", "state": "active"}
+        recovered = {"status": "completed", "event": "workflow_dispatch", "head_branch": "master",
+                     "display_title": "Daily website catch-up 2026-11-12", "workflow_id": 123,
+                     "head_repository": {"id": REPO_ID}, "created_at": "2026-11-12T22:22:06Z"}
+        for title, state in ((recovered["display_title"], "already-dispatched"),
+                             ("Daily website catch-up 2026-11-11", "absent")):
+            github.request = Mock(side_effect=(workflow, {"workflow_runs": []},
+                                               {"total_count": 1, "workflow_runs": [dict(recovered, display_title=title)]}))
+            self.assertEqual(github.timer_state(instant("2026-11-12T20:17:00")), state)
+
     def test_queries_real_workflow_provenance_and_dispatches_only_fixed_master(self):
         github = GitHub()
         workflow = {"id": 123, "path": ".github/workflows/site-release.yml", "state": "active"}
