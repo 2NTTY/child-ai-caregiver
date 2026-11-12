@@ -42,10 +42,15 @@ export const historyReadSchema = z.object({
   kind: z.enum(['message', 'imported_message']).optional().describe('Echo imported_message for an imported search hit; omission reads only local messages.'),
   contentVersion: z.string().regex(/^[a-f0-9]{64}$/u).optional().describe("Echo the returned contentVersion when continuing imported history or a voice message; changed source versions or deleted transcripts invalidate continuation."),
 }).strict();
-export const memoryFactReadSchema = z.object({ factId: z.uuid().nullable(), afterId: z.uuid().nullable(), keys: z.array(text(100)).min(1).max(4).optional() }).strict()
-  .refine(value => (!value.factId || value.afterId === null) && (!value.keys || (value.factId === null && value.afterId === null)));
+export const memoryFactReadSchema = z.object({
+  factId: z.uuid().nullable().optional().describe("Exact fact UUID to read one item; omit to list all facts."),
+  afterId: z.uuid().nullable().optional().describe("Pagination cursor from nextAfterId; omit for first page."),
+  keys: z.array(text(100)).max(4).optional().describe("ONLY pass exact non-empty keys already observed from read_context or a prior read_memory_facts({}) result; NEVER guess or invent key strings. Omit this field (pass {}) to list all confirmed facts and their true keys."),
+}).strict()
+  .refine(value => ((value.factId ?? null) === null || (value.afterId ?? null) === null)
+    && (!value.keys?.length || ((value.factId ?? null) === null && (value.afterId ?? null) === null)));
 export const requestAgentConfirmationSchema = z.object({
-  runId: z.uuid(), proposalId: z.uuid(), expectedVersion: version, workId: z.uuid().nullable(),
+  runId: z.uuid(), proposalId: z.uuid(), expectedVersion: version, workId: z.uuid().nullable().optional(),
 }).strict();
 export type AgentWorkValues = z.infer<typeof agentWorkValuesSchema>;
 export type SaveAgentWork = z.infer<typeof saveAgentWorkSchema>;

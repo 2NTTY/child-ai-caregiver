@@ -11,7 +11,7 @@ import type { FirestoreAuthorityTransaction as Binding } from './firestore-autho
 import type { FirestoreAgentRuns, FirestoreAgentRun } from './firestore-agent-runs.ts';
 import type { FirestoreChatStore } from './firestore-chat.ts';
 import type { FirestoreMemoryStore } from './firestore-memory.ts';
-import { preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from './memory-policy.ts';
+import { normalizedFactKey, preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from './memory-policy.ts';
 import type { FirestoreOnlineStore } from './firestore-online.ts';
 
 const uuid = z.uuid(), time = z.iso.datetime({ offset: true });
@@ -96,6 +96,7 @@ export function createFirestoreAgentProposals(options: {
     }
     if (value.kind === 'memory_fact') {
       await source(b, run, value.sourceMessageId ?? run.sourceMessageId!);
+      if (await memory.hasConfirmedFactKey?.(b, value.intendedVisibility, value.key)) domainReject('fact_key_conflict');
       return { label: null, visibility: value.intendedVisibility, sourceBasis: null };
     }
     if (value.kind === 'memory_fact_revise' || value.kind === 'memory_fact_deactivate') {
@@ -191,6 +192,12 @@ export function createFirestoreAgentProposals(options: {
           const same = firestoreDomainHash(item.proposal.value) === fingerprint;
           if (item.callId === callId && !same) domainReject('operation_conflict');
           if (same) return visible(item);
+          if (proposalValue.kind === 'memory_fact' && item.proposal.value.kind === 'memory_fact'
+            && item.proposal.status === 'pending'
+            && item.proposal.value.intendedVisibility === proposalValue.intendedVisibility
+            && normalizedFactKey(item.proposal.value.key) === normalizedFactKey(proposalValue.key)) {
+            domainReject('fact_key_conflict');
+          }
         }
         if (previous.length >= 8) domainReject('agent_proposal_limit');
         const checked = await target(b, run, proposalValue), createdAt = new Date(now()).toISOString();

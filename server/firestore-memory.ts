@@ -101,6 +101,8 @@ export interface FirestoreMemoryStore extends MemoryStore, SummarySourceReader {
   readExportRevision(binding: Binding, kind: Kind, row: DocumentSnapshot): Promise<MemoryFact | MemoryTopic | null>;
   /** Current confirmed family facts by their existing uniqueness keys; no private corpus scan. */
   readFamilyFacts(binding: Binding, keys: readonly string[]): Promise<MemoryFact[]>;
+  /** Check whether an active applicable confirmed fact already owns this uniqueness key. */
+  hasConfirmedFactKey(binding: Binding, visibility: 'private' | 'family', key: string): Promise<boolean>;
   prepareFactChange(binding: Binding, action: 'revise' | 'deactivate', id: string, raw: unknown, operationId: string): Promise<Prepared<MemoryFact>>;
   /** Server-confirmed proposal only; never exposed as a model-supplied confirmation flag. */
   prepareConfirmedFact(binding: Binding, raw: unknown, confirmShared: boolean, operationId: string): Promise<Prepared<MemoryFact>>;
@@ -1080,6 +1082,14 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     },
     readFact: async (binding, id) => {
       const fact = await read(binding, 'facts', id); return fact ? factResult(binding, fact as MemoryFact) : null;
+    },
+    hasConfirmedFactKey: async (binding, vis, rawKey) => {
+      const key = JSON.stringify([binding.scope.ownerUserId, binding.scope.childId, 'facts', vis, normalizedFactKey(rawKey)]);
+      const row = await binding.transaction.get(data.ref('memory_keys', 'memory-key', key));
+      if (!row.exists) return false;
+      const otherId = open(binding, 'memory-key', key, keySchema, row).id;
+      const other = await read(binding, 'facts', otherId);
+      return Boolean(other && factIsApplicable(await factResult(binding, other as MemoryFact)));
     },
     readTopic: async (binding, id) => {
       const value = await read(binding, 'topics', id); return value ? topicResult(value as MemoryTopic) : null;

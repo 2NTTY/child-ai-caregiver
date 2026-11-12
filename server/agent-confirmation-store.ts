@@ -78,7 +78,7 @@ export function createAgentConfirmationStore(pool: Pool, cipher: StorageCipher, 
       });
     },
     async requestConfirmation(agentScope: AgentScope, askingRunId: string, raw: z.infer<typeof requestAgentConfirmationSchema>): Promise<AgentConfirmation | null> {
-      const input = requestAgentConfirmationSchema.parse(raw), { userId, childId } = agentScope;
+      const rawInput = requestAgentConfirmationSchema.parse(raw), input = { ...rawInput, workId: rawInput.workId ?? null }, { userId, childId } = agentScope;
       return access(userId, childId, async (client, workspaceId) => {
         const run = (await client.query<{ authorization_version: string; data_version: string }>(`SELECT authorization_version::text,data_version FROM agent_runs
           WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 AND trigger_kind='interactive' AND state='running' AND expires_at>clock_timestamp() FOR UPDATE`,
