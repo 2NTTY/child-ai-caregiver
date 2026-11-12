@@ -3,8 +3,8 @@ on:
   schedule:
     # UTC; 04:17 the following day in Hong Kong.
     - cron: '17 20 * * *'
-    # Temporary acceptance run on November 12 at 23:44 HKT.
-    - cron: '44 15 12 11 *'
+    # Temporary acceptance slots on November 12 UTC; remove after the first receipt.
+    - cron: '24,44 16 12 11 *'
   workflow_dispatch:
     inputs:
       operation:
