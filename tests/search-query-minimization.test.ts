@@ -95,6 +95,8 @@ test("blocks exact numeric and Chinese/punctuated birth dates while allowing age
     "4歲半兒童手眼協調及專注力評估 新界",
     "6-12 months solid food introduction",
     "BB持續發燒3日 37.3度",
+    "BB 37.5 38.5 39 度 發燒",
+    "2024-2025 疫苗",
     "2025年香港嬰幼兒流感疫苗接種建議",
     "BB 每日飲奶 180ml 5次 持續2星期",
   ];
@@ -127,6 +129,24 @@ test("blocks Hong Kong street, estate-block and flat addresses while retaining c
     "大埔區 兒童體能智力測驗中心評估",
     "香港 急症室 幼兒高燒抽筋處理",
     "新界區 育嬰室 及 母乳講座",
+    "住喺沙田區 6個月BB打針",
+    "住在香港 疫苗",
+    "家住新界 BB 疫苗",
+    "屋企住沙田區 健康院",
+    "Block feeding breastfeeding",
+    "Room temperature formula milk",
+    "Floor time play baby",
+    "Unit dose paracetamol infant",
+    "Tower of blocks toddler milestone",
+    "flat head syndrome baby",
+    "Flat head 扁頭症",
+    "Flat feet toddler",
+    "Room 1",
+    "Block 3 playground",
+    "3樓",
+    "1樓 兒科 門診",
+    "屯門醫院兒科病房 5樓",
+    "大城市BB上落樓梯",
   ];
   for (const query of allowedDistrictAndFacilityQueries) {
     assert.equal(findExternalQueryPrivacyViolation(query), null, `Unexpected address block for: ${query}`);
@@ -136,14 +156,19 @@ test("blocks Hong Kong street, estate-block and flat addresses while retaining c
 test("blocks explicit names, contacts, raw transcripts and loaded household child names without false-positive blocking generic BB or ingredients", async t => {
   const blockedIdentityQueries = [
     "姓名：陳大文 6個月嬰兒發燒",
+    "身份證：A123456(7) 兒童福利",
+    "病歷號：987654 BB覆診",
     "我個仔叫陳小明 持續發燒3日",
     "BB叫張保仔 加固食物",
+    "BB 叫張保仔 加固食物",
     "陳先生 6個月BB睡覺問題",
     "Mrs Chan 6 months solid food",
     "parent@example.com 6個月發燒",
     "https://private.example.com/record/123 濕疹",
     "WhatsApp: +852 9123 4567 BB嘔奶",
     "Telegram @parent_private 濕疹處理",
+    "Line ID: chan123 BB濕疹",
+    "IG: @chan_parent 嬰兒飲奶",
     "家長：我個BB發燒點算\n助手：請提供更多資料",
   ];
   for (const query of blockedIdentityQueries) {
@@ -154,9 +179,38 @@ test("blocks explicit names, contacts, raw transcripts and loaded household chil
     );
   }
 
-  for (const query of ["陳皮煲湯 嬰兒飲食", "6個月大BB 輕微濕疹護理 香港"]) {
-    assert.equal(findExternalQueryPrivacyViolation(query, ["BB", "寶寶"]), null, `Unexpected rejection for: ${query}`);
+  const allowedCareAndColloquialQueries = [
+    "陳皮煲湯 嬰兒飲食",
+    "6個月大BB 輕微濕疹護理 香港",
+    "BB叫唔停點算",
+    "BB 叫唔停",
+    "寶寶叫媽媽",
+    "BB叫媽媽係幾多個月",
+    "孩子叫唔醒 發燒",
+    "寶寶叫唔停 夜晚",
+    "我個仔叫極都唔應",
+    "我叫咗白車",
+    "孩子叫痛 肚痛",
+    "BB叫痛",
+    "護照 BB 坐飛機 幾多個月",
+    "身份證 BB 幾時申請",
+    "聯絡人 學校",
+    "BB姓名 改名",
+    "Line: 嬰兒",
+    "IG: 衞生署",
+    "line 1234 疫苗",
+    "Signal 1234",
+    "@ 嬰兒",
+    "媽媽：BB發燒點算",
+    "家長: 6個月BB發燒",
+    "爸爸: 點樣沖奶",
+    "planning BB annual check",
+    "BB 喺 Annex 跌親",
+  ];
+  for (const query of allowedCareAndColloquialQueries) {
+    assert.equal(findExternalQueryPrivacyViolation(query, ["BB", "寶寶", "Ann"]), null, `Unexpected rejection for: ${query}`);
   }
+  assert.equal(findExternalQueryPrivacyViolation("Ann 6個月發燒", ["Ann"]), "personal_name_or_transcript");
 
   // Known non-generic child names loaded during the run via selected-care/summary tools must also be blocked if echoed.
   const budget = createTestBudget(t);
@@ -361,7 +415,7 @@ test("runtime enforces external query minimization and retries with clean terms 
   assert.equal(memoryFacts[0]!.content, "BB 對花生過敏");
 });
 
-test("enforces the same outbound boundary directly on createKnowledgeRetriever and under family/ephemeral visibility", async t => {
+test("enforces the same outbound boundary directly on createKnowledgeRetriever and under family visibility", async t => {
   const budget = createTestBudget(t);
   let embedCalls = 0;
   let storeCalls = 0;
@@ -388,7 +442,7 @@ test("enforces the same outbound boundary directly on createKnowledgeRetriever a
   assert.equal(storeCalls, 0);
   assert.equal(budget.counts.queryEmbeddings, 0);
 
-  // Shared / ephemeral visibility (`visibility: "family"` without private profile leakage) enforces the exact same outbound guard.
+  // Shared family visibility (`visibility: "family"` without private profile leakage) enforces the exact same outbound guard.
   const familyTools = createProductAgentTools({
     run: { scope, runId, budget },
     visibility: "family",

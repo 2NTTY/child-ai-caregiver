@@ -33,14 +33,13 @@ TEST_FILES=(
   tests/knowledge-a04.test.ts
   tests/knowledge-runtime.test.ts
   tests/product-agent-execution-contract.test.ts
-  tests/product-agent.test.ts
   tests/agent-prompt.test.ts
   tests/agent-prompt-wiring.test.ts
   tests/vertex-tool-contract.test.ts
   tests/agent-runtime.test.ts
   tests/agent-runtime-contract.test.ts
 )
-TEST_CASES=(5 4 6 4 6 3 4 6 20 17)
+TEST_CASES=(5 4 6 8 3 4 6 20 17)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" tsconfig.json tsconfig.server.json \
   server/knowledge-query-minimization.ts server/product-agent-tools.ts \

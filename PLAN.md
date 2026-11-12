@@ -81,7 +81,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="agent-search-first"></a>
 **主動通知交付後做 REQ-001 的官方來源搜索。** 按[需求文件的 A–D 次序](docs/REQUIREMENTS_BACKLOG.md#2-跨包的首交付切片與依賴)，先核對一條查詢需要的來源版本、引用、權限、用量及原 run 恢復（A），再用現有核准來源走通一條 Web 查詢（B）。家長應看到真實進度、得到符合適用條件的回答，能從引用打開支持說法的原文。證據不足時說明缺口，斷線後可查回同一次結果。此流程待驗。
 
-- **B-P1 外部檢索 Query 最小化（`codex/search-query-minimization`，基線 `origin/master` `d464982f`，本地已提交、未 push／未開 PR）：** 新增 [query 最小化守衛](server/knowledge-query-minimization.ts) 並同時接於 [`search_knowledge`](server/product-agent-tools.ts) 與 [`createKnowledgeRetriever`](server/knowledge-retriever.ts) 外呼入口（先於 cache、embedding 扣額或候選查詢前攔截 `public_query_required`），搭配工具重試引導與描述更新；僅檢查確定性規律及本次工具載入的非泛稱兒童姓名，**不宣稱匿名化、不增開分類 LLM**。未標籤獨立人名仍依賴模型依指引去識別；目前僅離線合成測試及 TypeScript 核對，尚未經真 Gemini／部署實測。[離線驗證 workflow](.github/workflows/search-query-minimization-offline.yml) · [驗證腳本](scripts/ci/verify-search-query-minimization-offline.sh)
+- **B-P1 外部檢索 Query 最小化（`codex/search-query-minimization`，基線 `origin/master` `255082b3`）：** 新增 [query 最小化守衛](server/knowledge-query-minimization.ts) 並同時接於 [`search_knowledge`](server/product-agent-tools.ts) 與 [`createKnowledgeRetriever`](server/knowledge-retriever.ts) 外呼入口（先於 cache、embedding 扣額或候選查詢前攔截 `public_query_required`），搭配工具重試引導與描述更新；僅檢查確定性規律（排除常見粵語照顧動詞／醫院樓層／粗粒度地區及英文照護詞誤報）及本次三個資料讀取工具載入的非泛稱兒童姓名，**不宣稱匿名化、不增開分類 LLM**。未標籤獨立人名仍依賴模型依指引去識別；目前僅離線合成測試及 TypeScript 核對，尚未經真 Gemini／部署實測。[離線驗證 workflow](.github/workflows/search-query-minimization-offline.yml) · [驗證腳本](scripts/ci/verify-search-query-minimization-offline.sh)
 
 **P4 已於 11 月 18 日恢復。** REQ-001 搜索示範保留以上入口，P4 第④組沿用現有檢索與引用接點。時效及即時來源後續按 C 擴展，完整背景同步、整本 PDF 處理及來源庫管理按 D 接續。P4 公共知識批量維運和其餘四組欠項保留原驗收門檻；恢復位置及證據見[接手清單](docs/P4_RESUME.md)。
 
