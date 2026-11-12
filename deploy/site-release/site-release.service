@@ -1,0 +1,11 @@
+[Unit]
+Description=Apply a verified Yuyoufang website release
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/bin/python3 /usr/local/lib/yuyoufang-site-release/host.py poll
+TimeoutStartSec=20min

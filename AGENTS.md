@@ -5,6 +5,7 @@
 
 - 根 AGENTS 是共通基底；子域有衝突時採較深層指示，使用者當次明確指示優先。[Codex 載入](https://learn.chatgpt.com/docs/agent-configuration/agents-md)沿根至工作目錄；從根處理子域時先讀該域 AGENTS，不因此擴大修改範圍。
 - 先讀 [STATUS](STATUS.md)；前端接 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)，Server／Agent／正式整合／根文件維護接 [PLAN#active](PLAN.md#active)，再按包讀必要契約、交接及 Skill。
+- 日常網站發布、查版或 GCP 維運直接從[部署手冊](docs/DEPLOYMENT.md)操作。
 - 開工、整合及交付前核對 master、相關 PR／head 和本機差異；分清已合併、未合併、dirty 與實際部署，不修改其他 checkout。
 - 先局部定位並復用結論，只為具體缺口擴讀。歷史由 [_archive 索引](_archive/README.md)按主題查指定文件／LOG；WORKLOG 只讀相關項及必要尾部，不掃全量歷史。OPEN_SOURCE_REUSE 是歷史研究，現行採用看 DECISIONS／TECH_REUSE。
 
@@ -18,7 +19,7 @@
 | 真 Agent | 按[本地指南](docs/AGENT_LOCAL.md)配置本人憑證，再執行 `npm run agent:local` |
 | 僅前端 | `npm run web`；不啟動 API，完整登入用上述同源入口 |
 | 單檔檢查 | `node --experimental-test-module-mocks --test tests/<檔名>.test.ts` |
-| Web 建置／正式部署 | `npm run build:web`／[Firestore 部署指引](docs/PRODUCTION_FRONTEND.md#firestore-deployment) |
+| 原站發布／查版／回退／GCP 維運 | `npm run deploy:site -- status`；先看[部署手冊](docs/DEPLOYMENT.md) |
 
 檢查按改動選取，不預設跑整批 `npm test`。
 
