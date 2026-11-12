@@ -1,0 +1,10 @@
+{
+  "provenance": "First Last and same-day birth_date derived from the pinned upstream ChildTestCase.test_child_create synthetic test; not screenshot or family data",
+  "as_of": "2017-10-28T00:00:00+00:00",
+  "timezone": "UTC",
+  "language_code": "en-us",
+  "child": {"name": "First Last", "slug": "first-last", "birth_date": "2017-10-28"},
+  "user": {"name": "caregiver", "is_staff": false},
+  "timers": [],
+  "permissions": {"view_child": true, "change_child": true, "delete_child": true, "view_note": true, "view_timer": true, "add_timer": true, "view_diaperchange": true, "add_diaperchange": true, "view_feeding": true, "add_feeding": true, "view_sleep": true, "add_sleep": true, "view_tummytime": true, "add_tummytime": true}
+}

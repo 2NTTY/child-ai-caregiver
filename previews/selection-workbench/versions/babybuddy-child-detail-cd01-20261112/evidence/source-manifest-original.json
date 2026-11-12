@@ -1,0 +1,132 @@
+{
+  "commit": "f02f28b7f96f8bb1b9a0212a377c327ce33e7699",
+  "repository": "babybuddy/babybuddy",
+  "files": [
+    {
+      "path": "LICENSE",
+      "git_blob": "352afb93dd4c8e6627b162c341ca590ce7c4773b",
+      "sha256": "2e74203a15b0bac428d2b5962f3289df30c92a8a782f04a5e13cfa9d17cf6b17",
+      "bytes": 1330
+    },
+    {
+      "path": "README.md",
+      "git_blob": "f7d2c39458f87991803122473400dcfe5892a954",
+      "sha256": "cfa58061625ce7fa7ded4a8513c13499fe960a6a7ba3529a51c1d05c65259ae7",
+      "bytes": 1991
+    },
+    {
+      "path": "babybuddy/static_src/scss/_functions.scss",
+      "git_blob": "0e8e00e6d51ac312159c600b8e877881f97fa60e",
+      "sha256": "209ee9acfcabcdcd439b3d5ab87eabc66082bbe9287494ef9e3c752fe89859e6",
+      "bytes": 101
+    },
+    {
+      "path": "babybuddy/static_src/scss/_global.scss",
+      "git_blob": "bdf3e949ee1a3585945942d513a67210f97575ed",
+      "sha256": "95d1a23fcab2d298eb8b8cdea32039e5082c1755ab5367977bc9ee9a832cb239",
+      "bytes": 215
+    },
+    {
+      "path": "babybuddy/static_src/scss/_mixins.scss",
+      "git_blob": "b0d9583b7fd7fe7c96312c93dd4bff56efe6bb32",
+      "sha256": "d1167ce1db15b0848766faf4bac611a7783d558e28a2f5e617f4471dfed01382",
+      "bytes": 95
+    },
+    {
+      "path": "babybuddy/static_src/scss/_variables.scss",
+      "git_blob": "7d8f080a5774275c60ab09bdfe4e825b7eecc82f",
+      "sha256": "87902043abbfa0a72337f2aa3d77b55e80ed621343048b210dfa1d7049ffddd7",
+      "bytes": 144
+    },
+    {
+      "path": "babybuddy/static_src/scss/babybuddy.scss",
+      "git_blob": "ad35508e54898ab9f1473a23606a7cc1838daedb",
+      "sha256": "12ec83c7fcd903f16340cd955bca3fb996d6b345cf7930eb02a4483cc90e10fe",
+      "bytes": 178
+    },
+    {
+      "path": "babybuddy/static_src/scss/themes/blueorange.scss",
+      "git_blob": "1db6cb4116db7cee128dbf901a8a29cc38f69d96",
+      "sha256": "8f4c10e42656196a2ff0897eaaa5c1e65cf1f8b432f90aa632bd986df8706d81",
+      "bytes": 3116
+    },
+    {
+      "path": "babybuddy/templates/babybuddy/base.html",
+      "git_blob": "4757b9ef103553dde22f2a357edf13246363eff6",
+      "sha256": "03420ab8cdb5a543d55cc3a09cbf6ab45b55b172d3f1e93015d1263c7608da89",
+      "bytes": 1511
+    },
+    {
+      "path": "babybuddy/templates/babybuddy/nav-dropdown.html",
+      "git_blob": "eb8aa97be43a8b328a7eeffe27b4aa07a5f9d336",
+      "sha256": "25fc5a469f482b14303ee9966add0e1e4a08df4363429b7930c77d7b29929c04",
+      "bytes": 8313
+    },
+    {
+      "path": "babybuddy/templates/babybuddy/page.html",
+      "git_blob": "e71222b2bac71eeed7694eef4368833b5764a68e",
+      "sha256": "a50db3b485546b921fa6d7bce5ce6cec70138533fb9e31e68409c5b92145be64",
+      "bytes": 372
+    },
+    {
+      "path": "core/static_src/scss/icons.scss",
+      "git_blob": "56fe89c4dd676c2d63a2811f0c791e0520a2717d",
+      "sha256": "8e8bcca619e2e6c82274576459cfcdb1170337bae2a9e9023714a34882960049",
+      "bytes": 1132
+    },
+    {
+      "path": "core/static_src/scss/timers.scss",
+      "git_blob": "e2976a153e2d831ca682726f169313b8af95e3fd",
+      "sha256": "b6f9df3ace83e106fbe4eb684b846a566d4b3874c546ead0d9f3081d28bf5e23",
+      "bytes": 264
+    },
+    {
+      "path": "core/templates/core/child_detail.html",
+      "git_blob": "58e31585e1627a0cb83c7dc5a2b8828605328eb4",
+      "sha256": "bd1fa78de1bcb39b402922bb9b794c3889d153d340ed3d9498e89afb7d92b159",
+      "bytes": 2685
+    },
+    {
+      "path": "core/templates/core/timer_nav.html",
+      "git_blob": "2237f844f0428ebc1192516e760a4cd29c015886",
+      "sha256": "b5d6a42b281a48aa4db5907e729ce0dc824140b6b17e4a71eff67402ef627258",
+      "bytes": 1394
+    },
+    {
+      "path": "dashboard/static_src/scss/cards.scss",
+      "git_blob": "f15e3ca27060133b5ab1b3b283199fc1106d5f2d",
+      "sha256": "f2ad70be21a699bcc8b6437ee6f3c8004797401d19799436291b5a89bad4b512",
+      "bytes": 83
+    },
+    {
+      "path": "gulpfile.js/config.js",
+      "git_blob": "ae946c7f53690de2654686cd986cfe2dece4a3e4",
+      "sha256": "0592e5c9a90487abae1b4484690fc4a373fbc106abc3b017f734a59bf573468c",
+      "bytes": 1761
+    },
+    {
+      "path": "package-lock.json",
+      "git_blob": "5c0623cdb90e795e07c249793fa076c1e5cf9068",
+      "sha256": "5360ea5f7a94e140605c252996ab593e277a60ae9844e41ca88973c53fa9592b",
+      "bytes": 283870
+    },
+    {
+      "path": "package.json",
+      "git_blob": "a14ec6b234e75e1aa2e1fd0d52be1b164bfa7408",
+      "sha256": "2d53c957e9f26b49e8b771f57cb3c7d456d9ddfbecdc022375a2f455cbf964d5",
+      "bytes": 1168
+    },
+    {
+      "path": "Pipfile.lock",
+      "git_blob": "77fed2c4a4cd644ef24267de75c6db6a25475fec",
+      "sha256": "051430c5542d14b2fa64c1a36b107418b9658ab3cc450436844fc7dc30979735",
+      "bytes": 3049
+    },
+    {
+      "path": "core/tests/tests_models.py",
+      "git_blob": "489578405b9180b9404c01ee9cd46bc618cbf31a",
+      "sha256": "59a14291c6f1f20743900791210b31a6fa953691fc148f3c4b669095a4b5956f",
+      "bytes": 6184
+    }
+  ]
+}

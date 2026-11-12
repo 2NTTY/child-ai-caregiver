@@ -1,0 +1,377 @@
+{
+  "scope": "Exact backup file allowlist excluding FILES.json itself, whose blob is checked through the remote Git tree",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 4881,
+      "sha256": "521e5063f8ffbd5a9a0093b12cd6f430949b804a06896f9a1281e02de8400539",
+      "gitBlob": "3c95e225122fc80f9eb846c9e51016c6dd3065d5"
+    },
+    {
+      "path": "evidence/dependencies.json",
+      "bytes": 1471,
+      "sha256": "25c0b9671150edfd6cbab4a74ca7018b79cdbd2ec736b32ae5505d823898528c",
+      "gitBlob": "dc916f35860691376cfe6f75f6bd74ee29cf6b1e"
+    },
+    {
+      "path": "evidence/fetch-LICENSE.json",
+      "bytes": 1596,
+      "sha256": "cb2adf3a48d726029526c56310b309eaa4b7c6ae8e66bbb2557a83bc7f80e24e",
+      "gitBlob": "02a09724f12c59683e73d8772121c6a2d891fa63"
+    },
+    {
+      "path": "evidence/fetch-core-templates-core-child_detail.html.json",
+      "bytes": 3113,
+      "sha256": "cd240f4c11e6f839b9923ffa411f00d81b9e154e6f015d846ae1896379b6702d",
+      "gitBlob": "84f009babdc2ac35a8711bc73d79124896de0579"
+    },
+    {
+      "path": "evidence/fetch-core-tests-tests_models.py.json",
+      "bytes": 6632,
+      "sha256": "317cf7811d86a2166e8f59f31eab0f4f6b8cc5d116f6b1c650b783bc5b602ace",
+      "gitBlob": "c8facd97456482d90c917764d6f47e615c163d1a"
+    },
+    {
+      "path": "evidence/reused-assets.json",
+      "bytes": 1905,
+      "sha256": "34bd15542ed18d5b73d9c8182cbf330714ed66b7744a11f7dbab8d39989530bb",
+      "gitBlob": "1b46206ac71c34ee241850d44597ac27b95feee9"
+    },
+    {
+      "path": "evidence/source-manifest-original.json",
+      "bytes": 4889,
+      "sha256": "f8e71e4ff82c7e1ff285cd9856806fcaa576828317561fb9c8083a71d3f79d17",
+      "gitBlob": "87f6c76ac1c22699becdde3af009a103d108018d"
+    },
+    {
+      "path": "evidence/source-manifest.json",
+      "bytes": 5116,
+      "sha256": "023c0844b6cd60fec1ea18bd17201b0867d13d91c81eb296fe5954c263b24de7",
+      "gitBlob": "c8ed25be5d97e9923df100051e8422e3a33a01c2"
+    },
+    {
+      "path": "public/README.md",
+      "bytes": 3393,
+      "sha256": "3401471de7c042466119c355ba2de3e3ee1b48324f71e4fa58ee45595511ed86",
+      "gitBlob": "d32d1419c129d99d386c349f2cb7fcf2a70cb834"
+    },
+    {
+      "path": "public/SHA256SUMS",
+      "bytes": 2116,
+      "sha256": "63460e4aed3c64a9c13aefdb9db6365d21b262b372f27d683e66dc0f7446431f",
+      "gitBlob": "52d35f646e12f56b34b469ab90419eb03312e955"
+    },
+    {
+      "path": "public/assets/bootstrap.min.js",
+      "bytes": 50522,
+      "sha256": "26a07553f4f32222a4b63fb0c0661733dd20fe942e8eec18a8f18bf300278dc1",
+      "gitBlob": "07220720dadc90ea3e782279cea97282d484d537"
+    },
+    {
+      "path": "public/assets/css/app.css",
+      "bytes": 179651,
+      "sha256": "6c60421853fb4eb5db270a0bc0204e024d7412eede814402a27cf4b65b5049e8",
+      "gitBlob": "ab2ce89a2ab8e8d5e937eabc5e2294a7d9c75ba7"
+    },
+    {
+      "path": "public/assets/fonts/FontAwesome.otf",
+      "bytes": 134808,
+      "sha256": "444dd4366615ffc4a16d012b2fa90137065d3ccb410fa6fd5e4ddd7b5e4ffcd5",
+      "gitBlob": "401ec0f36e4f73b8efa40bd6f604fe80d286db70"
+    },
+    {
+      "path": "public/assets/fonts/fontawesome-webfont.eot",
+      "bytes": 165742,
+      "sha256": "7bfcab6db99d5cfbf1705ca0536ddc78585432cc5fa41bbd7ad0f009033b2979",
+      "gitBlob": "e9f60ca953f93e35eab4108bd414bc02ddcf3928"
+    },
+    {
+      "path": "public/assets/fonts/fontawesome-webfont.svg",
+      "bytes": 444379,
+      "sha256": "ad6157926c1622ba4e1d03d478f1541368524bfc46f51e42fe0d945f7ef323e4",
+      "gitBlob": "855c845e538b65548118279537a04eab2ec6ef0d"
+    },
+    {
+      "path": "public/assets/fonts/fontawesome-webfont.ttf",
+      "bytes": 165548,
+      "sha256": "aa58f33f239a0fb02f5c7a6c45c043d7a9ac9a093335806694ecd6d4edc0d6a8",
+      "gitBlob": "35acda2fa1196aad98c2adf4378a7611dd713aa3"
+    },
+    {
+      "path": "public/assets/fonts/fontawesome-webfont.woff",
+      "bytes": 98024,
+      "sha256": "ba0c59deb5450f5cb41b3f93609ee2d0d995415877ddfa223e8a8a7533474f07",
+      "gitBlob": "400014a4b06eee3d0c0d54402a47ab2601b2862b"
+    },
+    {
+      "path": "public/assets/fonts/fontawesome-webfont.woff2",
+      "bytes": 77160,
+      "sha256": "2adefcbc041e7d18fcf2d417879dc5a09997aa64d675b7a3c4b6ce33da13f3fe",
+      "gitBlob": "4d13fc60404b91e398a37200c4a77b645cfd9586"
+    },
+    {
+      "path": "public/assets/jquery.min.js",
+      "bytes": 86659,
+      "sha256": "87083882cc6015984eb0411a99d3981817f5dc5c90ba24f0940420c5548d82de",
+      "gitBlob": "644d35e274fd64ddaf6d12af813e820c424176a9"
+    },
+    {
+      "path": "public/assets/popper.min.js",
+      "bytes": 19197,
+      "sha256": "625b022a42ed5d9c39911e42050f4fd9834ea039af978b7716f7800ade95eb55",
+      "gitBlob": "c1d69d992efd35aa6008c0c0edf90f8dd6863ce0"
+    },
+    {
+      "path": "public/assets/readonly.js",
+      "bytes": 788,
+      "sha256": "21423a76948f456f384da0f8e25cf29fdb370cdd532c6bb4882ff4af27aa964f",
+      "gitBlob": "87dc4b3cc1cf2a2058d74d0c0e8f982cee3d1373"
+    },
+    {
+      "path": "public/child-detail.html",
+      "bytes": 13990,
+      "sha256": "11c4357acaef427c590ccc63c2a33682b7ed1ef01a8a7f8f390759b4af7c59a0",
+      "gitBlob": "2316687b170110b4b65c2bf93ff7e93c58912667"
+    },
+    {
+      "path": "public/fixture.json",
+      "bytes": 733,
+      "sha256": "926608259f0c4ea7701eceb1577e030390c923bb71b1ae887062c110480eb698",
+      "gitBlob": "0f47bb0951791ad6960620412a1a2c1577824ff5"
+    },
+    {
+      "path": "public/index.html",
+      "bytes": 13990,
+      "sha256": "11c4357acaef427c590ccc63c2a33682b7ed1ef01a8a7f8f390759b4af7c59a0",
+      "gitBlob": "2316687b170110b4b65c2bf93ff7e93c58912667"
+    },
+    {
+      "path": "public/licenses/BabyBuddy-BSD-2-Clause.txt",
+      "bytes": 1330,
+      "sha256": "2e74203a15b0bac428d2b5962f3289df30c92a8a782f04a5e13cfa9d17cf6b17",
+      "gitBlob": "352afb93dd4c8e6627b162c341ca590ce7c4773b"
+    },
+    {
+      "path": "public/licenses/Bootstrap-MIT.txt",
+      "bytes": 1131,
+      "sha256": "7efd8eff0e03c9b8b31fd2750d66268135deda2d0c9d46627f5e7cbe79caf907",
+      "gitBlob": "1381cb2be454bdc4dc23a9e8be7e653a0a85c69f"
+    },
+    {
+      "path": "public/licenses/FontAwesome-OFL-1.1.txt",
+      "bytes": 4153,
+      "sha256": "8a85438807bd59ba56cac1a1c02fcd343e1ea1a3166871794a3585e3eefe2c98",
+      "gitBlob": "a1c19148914cea6c1db006c3e4ec6f8d71007b2f"
+    },
+    {
+      "path": "public/licenses/FontAwesome-code-MIT.txt",
+      "bytes": 1170,
+      "sha256": "f8840addffcbdb59edcaeb1e304bf177c62800cce61e04cc3b7f45cbb62ea1db",
+      "gitBlob": "1a076486eb487d5dbc0ebda9af3843f9ae6a26ff"
+    },
+    {
+      "path": "public/licenses/FontAwesome-license.txt",
+      "bytes": 5316,
+      "sha256": "610427fe917f2b51ef69b5bfa9a7bfe3fcba59b1ccaf86a500a47e5fa1da322b",
+      "gitBlob": "3e1c1cfc1f45b50c981c0ffbf79394226e74a293"
+    },
+    {
+      "path": "public/licenses/Popper-MIT.txt",
+      "bytes": 1262,
+      "sha256": "1cdd462524c0af5c66fc3fe8d0a494e2a7af53b8fd4dc2b6e1f645c67177b8ba",
+      "gitBlob": "fb421d9e5bd1a3e12abd119cdc13dc72d0145eba"
+    },
+    {
+      "path": "public/licenses/jQuery-MIT.txt",
+      "bytes": 1605,
+      "sha256": "2b3ed8ba424423a50b023e728530d94bc385cfc7c328ad65a3dfee9c7c0531c5",
+      "gitBlob": "e4e5e00ef0a465471f0c453f0d39055e4f222134"
+    },
+    {
+      "path": "public/manifest.json",
+      "bytes": 3461,
+      "sha256": "587b2a2aa667d57da8c1776c2ad0ffcdb463b1369a175b6ab1c303930bb05e1d",
+      "gitBlob": "cfb4b342506f23281313faa8c236091865030ba4"
+    },
+    {
+      "path": "review/SOURCE-REVIEW-SUMMARY.md",
+      "bytes": 3123,
+      "sha256": "d6571c573b24349830baa67b6bae26165dac7eec5a8dab0119d79582f7ce2e38",
+      "gitBlob": "32890777441e77d7a2aeea994b370b1142fb712e"
+    },
+    {
+      "path": "review/browser/PUBLIC-FREEZE.json",
+      "bytes": 2364,
+      "sha256": "cc4c5ba08d8cbe883a2526edd13b4a6b6bcda88ae95083b5b672f9b66bcbd644",
+      "gitBlob": "07c77141e35633cae0879ce2590c3b5ade51ccda"
+    },
+    {
+      "path": "review/browser/REVIEW.md",
+      "bytes": 3169,
+      "sha256": "8e5c8ba232e2fdd19c6462d3db826ecd3f2f0e413ba9bbd7c5f7c1b80df62052",
+      "gitBlob": "4af290bbe4266d155f28e8005c79c337cfa82cde"
+    },
+    {
+      "path": "review/browser/child-detail-desktop.jpg",
+      "bytes": 23279,
+      "sha256": "383fdf23b65a4858d8b74c19ac8dd3c7c1ded3ff9307df1edc190ff1c1203a25",
+      "gitBlob": "20fd4012107fcaa53765d0f386ff12d2a524070b"
+    },
+    {
+      "path": "review/browser/final-readonly.jpg",
+      "bytes": 23410,
+      "sha256": "fd9b1223018c7483fb82b323cdb336413072d9d24b1cd65c49ae107538eb7d1c",
+      "gitBlob": "3cff153103174a3e8b53da1500f19c5e9562b7cd"
+    },
+    {
+      "path": "review/browser/reports-expanded.jpg",
+      "bytes": 29016,
+      "sha256": "0c45a86d69bc6f96fe527607de4acc1b189003b30f9bcce138937b03c750c479",
+      "gitBlob": "1e898dcd43b69942c8f23b9cf930805d514fdf02"
+    },
+    {
+      "path": "tests/test_readonly.cjs",
+      "bytes": 1800,
+      "sha256": "cddf597e179b80f0d25aeaa42a86003eedf737b5b72223c6d7ce1877ebc41540",
+      "gitBlob": "e746093d14c32968de371251f4a36e84ddf5729e"
+    },
+    {
+      "path": "tests/test_static.py",
+      "bytes": 6694,
+      "sha256": "3bb706c03786d881d07261e9e6a649032b0e5e6963601b2d2faa03863e1eeafb",
+      "gitBlob": "b050fdb090ea86a9cbbf4bdd28badb52144a87e7"
+    },
+    {
+      "path": "tools/fixture_tags.py",
+      "bytes": 853,
+      "sha256": "7ac0942a46ed7ebd87db6995fa3f815f1ae3d8510003bc2576b3ba6b0d1cc670",
+      "gitBlob": "7617b66ba120129bc2513e0754721a302d66d1c4"
+    },
+    {
+      "path": "tools/render.py",
+      "bytes": 3700,
+      "sha256": "d4b8c36e3c936c1248201b8c1f79bbc96fa383dfd0bdf82be99b7eacdb173b25",
+      "gitBlob": "db4ecc8b81cc69937af53c0abddf45aeb90cd0fd"
+    },
+    {
+      "path": "upstream/LICENSE",
+      "bytes": 1330,
+      "sha256": "2e74203a15b0bac428d2b5962f3289df30c92a8a782f04a5e13cfa9d17cf6b17",
+      "gitBlob": "352afb93dd4c8e6627b162c341ca590ce7c4773b"
+    },
+    {
+      "path": "upstream/Pipfile.lock",
+      "bytes": 3049,
+      "sha256": "051430c5542d14b2fa64c1a36b107418b9658ab3cc450436844fc7dc30979735",
+      "gitBlob": "77fed2c4a4cd644ef24267de75c6db6a25475fec"
+    },
+    {
+      "path": "upstream/babybuddy/static_src/scss/_functions.scss",
+      "bytes": 101,
+      "sha256": "209ee9acfcabcdcd439b3d5ab87eabc66082bbe9287494ef9e3c752fe89859e6",
+      "gitBlob": "0e8e00e6d51ac312159c600b8e877881f97fa60e"
+    },
+    {
+      "path": "upstream/babybuddy/static_src/scss/_global.scss",
+      "bytes": 215,
+      "sha256": "95d1a23fcab2d298eb8b8cdea32039e5082c1755ab5367977bc9ee9a832cb239",
+      "gitBlob": "bdf3e949ee1a3585945942d513a67210f97575ed"
+    },
+    {
+      "path": "upstream/babybuddy/static_src/scss/_mixins.scss",
+      "bytes": 95,
+      "sha256": "d1167ce1db15b0848766faf4bac611a7783d558e28a2f5e617f4471dfed01382",
+      "gitBlob": "b0d9583b7fd7fe7c96312c93dd4bff56efe6bb32"
+    },
+    {
+      "path": "upstream/babybuddy/static_src/scss/_variables.scss",
+      "bytes": 144,
+      "sha256": "87902043abbfa0a72337f2aa3d77b55e80ed621343048b210dfa1d7049ffddd7",
+      "gitBlob": "7d8f080a5774275c60ab09bdfe4e825b7eecc82f"
+    },
+    {
+      "path": "upstream/babybuddy/static_src/scss/babybuddy.scss",
+      "bytes": 178,
+      "sha256": "12ec83c7fcd903f16340cd955bca3fb996d6b345cf7930eb02a4483cc90e10fe",
+      "gitBlob": "ad35508e54898ab9f1473a23606a7cc1838daedb"
+    },
+    {
+      "path": "upstream/babybuddy/static_src/scss/themes/blueorange.scss",
+      "bytes": 3116,
+      "sha256": "8f4c10e42656196a2ff0897eaaa5c1e65cf1f8b432f90aa632bd986df8706d81",
+      "gitBlob": "1db6cb4116db7cee128dbf901a8a29cc38f69d96"
+    },
+    {
+      "path": "upstream/babybuddy/templates/babybuddy/base.html",
+      "bytes": 1511,
+      "sha256": "03420ab8cdb5a543d55cc3a09cbf6ab45b55b172d3f1e93015d1263c7608da89",
+      "gitBlob": "4757b9ef103553dde22f2a357edf13246363eff6"
+    },
+    {
+      "path": "upstream/babybuddy/templates/babybuddy/nav-dropdown.html",
+      "bytes": 8313,
+      "sha256": "25fc5a469f482b14303ee9966add0e1e4a08df4363429b7930c77d7b29929c04",
+      "gitBlob": "eb8aa97be43a8b328a7eeffe27b4aa07a5f9d336"
+    },
+    {
+      "path": "upstream/babybuddy/templates/babybuddy/page.html",
+      "bytes": 372,
+      "sha256": "a50db3b485546b921fa6d7bce5ce6cec70138533fb9e31e68409c5b92145be64",
+      "gitBlob": "e71222b2bac71eeed7694eef4368833b5764a68e"
+    },
+    {
+      "path": "upstream/core/static_src/scss/icons.scss",
+      "bytes": 1132,
+      "sha256": "8e8bcca619e2e6c82274576459cfcdb1170337bae2a9e9023714a34882960049",
+      "gitBlob": "56fe89c4dd676c2d63a2811f0c791e0520a2717d"
+    },
+    {
+      "path": "upstream/core/static_src/scss/timers.scss",
+      "bytes": 264,
+      "sha256": "b6f9df3ace83e106fbe4eb684b846a566d4b3874c546ead0d9f3081d28bf5e23",
+      "gitBlob": "e2976a153e2d831ca682726f169313b8af95e3fd"
+    },
+    {
+      "path": "upstream/core/templates/core/child_detail.html",
+      "bytes": 2685,
+      "sha256": "bd1fa78de1bcb39b402922bb9b794c3889d153d340ed3d9498e89afb7d92b159",
+      "gitBlob": "58e31585e1627a0cb83c7dc5a2b8828605328eb4"
+    },
+    {
+      "path": "upstream/core/templates/core/timer_nav.html",
+      "bytes": 1394,
+      "sha256": "b5d6a42b281a48aa4db5907e729ce0dc824140b6b17e4a71eff67402ef627258",
+      "gitBlob": "2237f844f0428ebc1192516e760a4cd29c015886"
+    },
+    {
+      "path": "upstream/core/tests/tests_models.py",
+      "bytes": 6184,
+      "sha256": "59a14291c6f1f20743900791210b31a6fa953691fc148f3c4b669095a4b5956f",
+      "gitBlob": "489578405b9180b9404c01ee9cd46bc618cbf31a"
+    },
+    {
+      "path": "upstream/dashboard/static_src/scss/cards.scss",
+      "bytes": 83,
+      "sha256": "f2ad70be21a699bcc8b6437ee6f3c8004797401d19799436291b5a89bad4b512",
+      "gitBlob": "f15e3ca27060133b5ab1b3b283199fc1106d5f2d"
+    },
+    {
+      "path": "upstream/gulpfile.js/config.js",
+      "bytes": 1761,
+      "sha256": "0592e5c9a90487abae1b4484690fc4a373fbc106abc3b017f734a59bf573468c",
+      "gitBlob": "ae946c7f53690de2654686cd986cfe2dece4a3e4"
+    },
+    {
+      "path": "upstream/package-lock.json",
+      "bytes": 283870,
+      "sha256": "5360ea5f7a94e140605c252996ab593e277a60ae9844e41ca88973c53fa9592b",
+      "gitBlob": "5c0623cdb90e795e07c249793fa076c1e5cf9068"
+    },
+    {
+      "path": "upstream/package.json",
+      "bytes": 1168,
+      "sha256": "2d53c957e9f26b49e8b771f57cb3c7d456d9ddfbecdc022375a2f455cbf964d5",
+      "gitBlob": "a14ec6b234e75e1aa2e1fd0d52be1b164bfa7408"
+    }
+  ]
+}

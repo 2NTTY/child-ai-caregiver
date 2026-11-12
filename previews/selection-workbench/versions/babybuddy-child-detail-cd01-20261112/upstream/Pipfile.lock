@@ -1,0 +1,138 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "8ecb16e5e548134a5bdee9b54f0f792890b2e92ebc47d219b9dfef3ea7b9dcfb"
+        },
+        "requires": {},
+        "sources": [
+            {
+                "url": "https://pypi.python.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "certifi": {
+            "version": "==2017.7.27.1"
+        },
+        "chardet": {
+            "version": "==3.0.4"
+        },
+        "decorator": {
+            "version": "==4.1.2"
+        },
+        "dj-database-url": {
+            "version": "==0.4.2"
+        },
+        "django": {
+            "version": "==1.11.6"
+        },
+        "django-filter": {
+            "version": "==1.1.0"
+        },
+        "django-widget-tweaks": {
+            "version": "==1.4.1"
+        },
+        "djangorestframework": {
+            "version": "==3.7.1"
+        },
+        "faker": {
+            "version": "==0.8.6"
+        },
+        "gunicorn": {
+            "version": "==19.7.1"
+        },
+        "idna": {
+            "version": "==2.6"
+        },
+        "ipython-genutils": {
+            "version": "==0.2.0"
+        },
+        "jsonschema": {
+            "version": "==2.6.0"
+        },
+        "jupyter-core": {
+            "version": "==4.3.0"
+        },
+        "nbformat": {
+            "version": "==4.4.0"
+        },
+        "numpy": {
+            "version": "==1.13.3"
+        },
+        "pandas": {
+            "version": "==0.20.3"
+        },
+        "plotly": {
+            "version": "==2.1.0"
+        },
+        "psycopg2": {
+            "version": "==2.7.3.1"
+        },
+        "python-dateutil": {
+            "version": "==2.6.1"
+        },
+        "pytz": {
+            "version": "==2017.2"
+        },
+        "requests": {
+            "version": "==2.18.4"
+        },
+        "six": {
+            "version": "==1.11.0"
+        },
+        "text-unidecode": {
+            "version": "==1.0"
+        },
+        "traitlets": {
+            "version": "==4.3.2"
+        },
+        "urllib3": {
+            "version": "==1.22"
+        },
+        "whitenoise": {
+            "version": "==3.3.1"
+        }
+    },
+    "develop": {
+        "certifi": {
+            "version": "==2017.7.27.1"
+        },
+        "chardet": {
+            "version": "==3.0.4"
+        },
+        "coverage": {
+            "version": "==4.4.1"
+        },
+        "coveralls": {
+            "version": "==1.2.0"
+        },
+        "docopt": {
+            "version": "==0.6.2"
+        },
+        "flake8": {
+            "version": "==3.5.0"
+        },
+        "idna": {
+            "version": "==2.6"
+        },
+        "ipaddress": {
+            "version": "==1.0.18"
+        },
+        "mccabe": {
+            "version": "==0.6.1"
+        },
+        "pycodestyle": {
+            "version": "==2.3.1"
+        },
+        "pyflakes": {
+            "version": "==1.6.0"
+        },
+        "requests": {
+            "version": "==2.18.4"
+        },
+        "urllib3": {
+            "version": "==1.22"
+        }
+    }
+}

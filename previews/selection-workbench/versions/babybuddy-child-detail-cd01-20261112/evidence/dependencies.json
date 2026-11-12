@@ -1,0 +1,38 @@
+[
+  {
+    "name": "bootstrap",
+    "version": "4.0.0-beta.2",
+    "resolved": "https://registry.npmjs.org/bootstrap/-/bootstrap-4.0.0-beta.2.tgz",
+    "integrity": "sha512-DzGtdTlKbrMoGMpz0LigKSqJ+MgtFKxA791PU/q062OlRG0HybNZcTLH7rpDAmLS66Y3esN9yzKHLLbqa5UR3w==",
+    "tarball_sha256": "c03c826536131f0510589ade866a9ce294208160f3402be17c39ae713708f4ac",
+    "bytes": 795022,
+    "integrity_verified": true
+  },
+  {
+    "name": "font-awesome",
+    "version": "4.7.0",
+    "resolved": "https://registry.npmjs.org/font-awesome/-/font-awesome-4.7.0.tgz",
+    "integrity": "sha1-j6jPBBGhoxr9B7BtKQK7n8gVoTM=",
+    "tarball_sha256": "92042b715919e17499ded134884b0318fd88041efac9b0f3204069df52222a61",
+    "bytes": 671527,
+    "integrity_verified": true
+  },
+  {
+    "name": "jquery",
+    "version": "3.2.1",
+    "resolved": "https://registry.npmjs.org/jquery/-/jquery-3.2.1.tgz",
+    "integrity": "sha1-XE2d5lKvbNCncBVKYxu6ErAVx4c=",
+    "tarball_sha256": "577170f0c936e943a2dfc11a6ece0fe733fc7cf16f204dcd5f3e47392ecd82c5",
+    "bytes": 410821,
+    "integrity_verified": true
+  },
+  {
+    "name": "popper.js",
+    "version": "1.12.5",
+    "resolved": "https://registry.npmjs.org/popper.js/-/popper.js-1.12.5.tgz",
+    "integrity": "sha512-6R2eXIy1xYukMNutoD+y/Gj0IpjEQhivyZonm5Vz0Fp8jdc7kvheKCvpM/t+PxqKb7VbLVnvPVEdTyslEb7f6w==",
+    "tarball_sha256": "ece2fe5569aab0eafc5b5c007b82a0423c56d5bd12399e0a99aeb3ce24beed71",
+    "bytes": 416503,
+    "integrity_verified": true
+  }
+]

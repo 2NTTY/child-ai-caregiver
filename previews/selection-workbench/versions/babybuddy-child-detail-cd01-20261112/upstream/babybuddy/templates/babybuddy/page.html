@@ -1,0 +1,12 @@
+{% extends 'babybuddy/nav-dropdown.html' %}
+{% load static timers %}
+
+{% block page %}
+    <div id="view-{{ request.resolver_match.view_name }}" class="container-fluid">
+        <div class="row justify-content-md-center">
+            <div class="col-lg-12 mb-4">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

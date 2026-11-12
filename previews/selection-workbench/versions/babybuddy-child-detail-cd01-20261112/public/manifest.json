@@ -1,0 +1,43 @@
+{
+  "candidate_id": "CD-01 (draft only; parent may renumber)",
+  "title": "孩子基本資料 / Baby Buddy Child Detail",
+  "source_repository": "babybuddy/babybuddy",
+  "source_commit": "f02f28b7f96f8bb1b9a0212a377c327ce33e7699",
+  "source_commit_date": "2017-10-28T03:20:52Z",
+  "source_app_version": "0.1.0",
+  "source_template": "core/templates/core/child_detail.html",
+  "source_template_blob": "58e31585e1627a0cb83c7dc5a2b8828605328eb4",
+  "synthetic_fixture_source": "core/tests/tests_models.py: ChildTestCase.test_child_create",
+  "synthetic_fixture_blob": "489578405b9180b9404c01ee9cd46bc618cbf31a",
+  "source_license": "BSD-2-Clause",
+  "license_blob": "352afb93dd4c8e6627b162c341ca590ce7c4773b",
+  "copyright": "Copyright (c) 2017, Baby Buddy's Contributors",
+  "entry": "child-detail.html",
+  "presentation": "Original full template hierarchy rendered locally with deterministic upstream-test-derived synthetic data; no redesign or health record",
+  "browser_verified": false,
+  "published": false,
+  "selected": false,
+  "implemented_frontend": false,
+  "fixed_clock": "2017-10-28T00:00:00+00:00",
+  "language": "en-us",
+  "timezone": "UTC",
+  "visible_fields": ["First Last", "Born Oct. 28, 2017", "Age 0 minutes"],
+  "source_actions": ["Dashboard", "Reports dropdown with five report links", "Edit", "Delete"],
+  "dependencies": {"bootstrap": "4.0.0-beta.2", "font-awesome": "4.7.0", "jquery": "3.2.1", "popper.js": "1.12.5"},
+  "environment_differences": [
+    "Django template engine 5.2.8 under Python 3.12.14, rather than pinned app Django 1.11.6; no historical server/models/database run.",
+    "Same-commit CSS from C-03 reused unchanged; built with libsass 0.23.0 instead of original gulp/node-sass. Original theme/Bootstrap/Font Awesome mappings are retained; report timeline and vendor date-picker CSS are not included.",
+    "Same-commit source templates remain byte-exact in upstream. In-memory transformations replace static paths and remove unused favicons/PWA assets.",
+    "Fixed UTC midnight evaluates the test's timezone.localdate() to 2017-10-28; same-day date yields the source timesince text 0 minutes, not an invented day/month-age label.",
+    "Synthetic caregiver non-staff user, ordinary source permissions enabled, no active timers. All rendered permission choices are declared in fixture.json.",
+    "Every route href is removed, route identity retained in data-preview-route, aria-disabled/tabindex/title added; links cannot navigate even without JS. Dropdown href hashes also removed; keyboard activation adapter preserves the local dropdown trigger.",
+    "Original app/API/refresh JS omitted. Only local source-version Bootstrap dropdown/collapse vendor behavior and non-persistence safety adapter are loaded.",
+    "CSP denies connections, forms and frames. Source-native incorrect Timer actions label and icon-only controls are deliberately retained, not redesigned."
+  ],
+  "limits": [
+    "No browser, desktop/mobile visual inspection, dropdown/collapse execution, keyboard/screen-reader acceptance or cross-browser checks performed.",
+    "No original screenshot of this Child Detail page was asserted or copied; the historical screenshot used for C-03 is a different Dashboard page.",
+    "Historical vendor assets are for this isolated reference only, not production dependencies.",
+    "No backend, real family data, photo, external service, model call, saved state, upload, publication, PR or merge."
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "name": "babybuddy",
+  "description": "A buddy for babies! Helps caregivers track sleep, feedings, diaper changes, and tummy time to learn about and predict baby's needs without all the guess work.",
+  "version": "0.1.0",
+  "license": "BSD-2-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cdubz/babybuddy.git"
+  },
+  "keywords": [
+    "baby",
+    "infant",
+    "newborn",
+    "baby tracking",
+    "baby buddy",
+    "python",
+    "django",
+    "web",
+    "self-host"
+  ],
+  "dependencies": {
+    "bootstrap": "^4.0.0-beta.2",
+    "font-awesome": "^4.7.0",
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.1",
+    "gulp-csso": "^3.0.0",
+    "gulp-sass": "^3.1.0",
+    "gulp-sass-glob": "^1.0.8",
+    "gulp-sass-lint": "^1.3.4",
+    "gulp-spawn": "^0.4.0",
+    "gulp-uglify": "^3.0.0",
+    "jquery": "^3.2.1",
+    "moment": "^2.19.1",
+    "plotly.js": "^1.31.1",
+    "popper.js": "^1.12.5",
+    "pump": "^1.0.2",
+    "require-dir": "^0.3.2",
+    "run-sequence": "^2.2.0",
+    "tempusdominus-bootstrap-4": "^5.0.0-alpha9",
+    "visibilityjs": "^1.2.5"
+  },
+  "scripts": {
+    "heroku-postbuild": "npm rebuild node-sass && gulp build"
+  }
+}
