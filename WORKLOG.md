@@ -6010,3 +6010,7 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 ### 2026-11-12　B-P1 第二輪審核補正（codex/search-query-minimization）
 
 依第二輪審核意見完成三項必改及建議收斂：1）移走 `住喺／屋企住／家住／住在` 規則尾部裸 `\d+` 與裸 `號／樓`，改僅於具體屋苑、街道路名或數字／字母座室樓單位配對時攔截，放行 `住喺沙田6個月BB打針`、`住喺沙田區6個月BB打針`、`BB喺屋企住3日`、`屋企住咗2星期隔離`、`住在1歲`、`住在2樓 醫院`、`住喺1號風球` 等已測反例（同時補擋 `12樓C`／`12樓C座`／`C座12樓`，並放行 `Apt 2 months`／`Unit 2 vaccine schedule`）；2）統一 `叫做／名叫／叫` 與 `個名／名字` 共用非姓名動詞與疑問詞排除清單，放行 `我叫做啲咩好`、`我名叫咩名好`、`BB名叫唔出嚟`、`BB叫做乜好`、`BB叫幾聲 發燒`；3）移除「叫＋姓名」後方必須帶空白或標點限制，補攔 `我個仔叫陳小明持續發燒3日`、`BB叫張保仔發燒`、`BB叫張保仔加固食物`、`6個月BB叫張保仔發燒`，並於 `Line／IG／Signal` 冒號後補攔含底線或數字之 handle（`IG: mother_hk`、`Signal: hello_user`，保留 `Line: 嬰兒` 與 `First line: infant fever`；無底線／數字之純英文字如 `Line: chanbb` 及中文名如 `WhatsApp：陳大文` 仍歸入已知文字規則限制）。以上反例均已寫入 [search-query-minimization 測試](tests/search-query-minimization.test.ts)（維持 9 檔共 73 例離線 guard 測試及兩份 `tsc --noEmit` 全過；真模型、臨時聊天獨立 mock 及線上部署仍未跑）。
+
+### 2026-11-12　B-P1 第三輪審核建議收斂並 rebase 至 7b7d7e98（codex/search-query-minimization）
+
+依第三輪審核並重整至最新 `origin/master`（`7b7d7e98`）：1）於 `CALLING_NON_NAME_PREFIXES` 補入常見多字病徵、飲食與照顧動作詞（如 `發燒`/`咳嗽`/`嘔吐`/`黃疸`/`肺炎`/`感冒`/`開飯`/`喝奶`/`奶粉`/`陳皮`/`退燒`），避免誤傷 `BB叫陳小明` / `BB叫黃大文` 等姓氏同時放行相關口語查詢；2）收斂 `住喺` 規則以避免 `唔知道`、`高速公路`、`屋企喺花園附近`、`中環街市` 誤報，並補齊 `麗港城`／`海怡半島` 一致性及 `Rm 2 of cough` 非房室語境放行（同時維持 `Rm 2 of Block 3` 攔截）；3）重寫 `Line／IG／Signal` handle 查驗 regex 以消除長字串重複 `_` 之多項式回溯。新反例已納入 [search-query-minimization 測試](tests/search-query-minimization.test.ts)（維持 9 檔共 73 例離線 guard 測試與兩份 `tsc --noEmit` 全過）。

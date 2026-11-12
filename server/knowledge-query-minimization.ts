@@ -38,7 +38,7 @@ const GENERIC_CARE_TERMS = new Set([
 const URL_OR_EMAIL_PATTERN =
   /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|(?<!\S)@[A-Za-z0-9_.-]{2,}|\bhttps?:\/\/|\bwww\.[A-Za-z0-9.-]+\.[A-Za-z]{2,}/iu;
 const MESSAGING_HANDLE_PATTERN =
-  /\b(?:(?:whatsapp|wechat|telegram)\s*(?:[:：=]\s*[@+\w.-]{2,}|\+?\d{6,})|(?:line|ig|instagram|signal)\s*(?:(?:id|帳號|賬號|戶口|handle)\s*[:：=]?\s*[@A-Za-z0-9_.-]{2,}|[:：=]\s*(?:@[A-Za-z0-9_.-]{2,}|\+?\d{6,}|(?=[A-Za-z0-9_.-]*[A-Za-z])(?:[A-Za-z0-9_.-]*_[A-Za-z0-9_.-]*|[A-Za-z0-9_.-]*\d[A-Za-z0-9_.-]*|[A-Za-z0-9_]+\.[A-Za-z0-9_]+))))/iu;
+  /\b(?:(?:whatsapp|wechat|telegram)\s*(?:[:：=]\s*[@+\w.-]{2,}|\+?\d{6,})|(?:line|ig|instagram|signal)\s*(?:(?:id|帳號|賬號|戶口|handle)\s*[:：=]?\s*[@A-Za-z0-9_.-]{2,}|[:：=]\s*(?:@[A-Za-z0-9_.-]{2,}|\+?\d{6,}|(?=[^\sA-Za-z]*[A-Za-z])(?=(?:[A-Za-z.-]*[_\d]|[A-Za-z0-9_]+\.[A-Za-z0-9_]))[A-Za-z0-9_.-]{3,})))/iu;
 const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f-]{27}/iu;
 const GUIDELINE_YEAR_RANGE_PATTERN = /\b(?:19|20)\d{2}\s*[-–]\s*(?:19|20)\d{2}\b/gu;
 const PHONE_OR_ID_DIGIT_RUN_PATTERN = /(?<!\d)(?:\d{8,}|\d{4}[ -]\d{4})(?!\d)/u;
@@ -55,21 +55,21 @@ const FULL_BIRTH_DATE_PATTERNS: readonly RegExp[] = [
 const STREET_OR_ADDRESS_PATTERNS: readonly RegExp[] = [
   /(?:地址|住址|居住地址|通訊地址)\s*[:：=]\s*\S+/iu,
   // Coarse regions like "住喺沙田區6個月BB打針" / "BB喺屋企住3日" stay allowed; block only concrete estate/street/unit targets.
-  /(?:屋企住|屋企喺|家住|住喺|住在)\s*[^\s，,。]{0,12}(?:邨|新邨|屋苑|居屋|花園|豪庭|山莊|太古城|第一城|康城|名城|新都城|[\u4e00-\u9fff]{2,}樓(?!(?:梯|上|下|層))|閣(?!(?:樓|下))|(?:大街|大道|大馬路|[\u4e00-\u9fff]{2,}(?:街|(?<!不知)道(?!路)|(?<!道)路|巷|里))|(?<![A-Za-z])(?:\d+|[A-Za-z])\s*(?:座|棟|幢|室|號室|單位)|(?:村|街|道|路|巷|里)\s*\d+\s*號)/iu,
+  /(?:屋企住|屋企喺|家住|住喺|住在)\s*[^\s，,。]{0,12}(?:[\u4e00-\u9fff]{2,}(?:邨|新邨|屋苑|居屋|(?<!公園|遊樂|社區)花園|豪庭|山莊)|太古城|第一城|康城|名城|新都城|麗港城|海怡半島|愉景灣|[\u4e00-\u9fff]{2,}樓(?!(?:梯|上|下|層))|閣(?!(?:樓|下))|[\u4e00-\u9fff]{2,}(?:大街|大道|大馬路)|[\u4e00-\u9fff]{2,}(?:街(?!(?:市|邊|上|頭|道))|(?<!不知|唔知)道(?!路|德)|(?<!高速|快速|公|大|馬)路|巷|里)|(?<![A-Za-z])(?:\d+|[A-Za-z])\s*(?:座|棟|幢|室|號室|單位)|(?:村|街|道|路|巷|里)\s*\d+\s*號)/iu,
   // Estate + building block names while excluding generic "城市/樓梯" phrasing and keeping civic districts like "沙田區".
-  /(?:[\u4e00-\u9fff]{1,10}(?:邨|新邨|屋苑|居屋|花園|豪庭|山莊)|(?:太古|沙田第一|第一|日出康|康|皇|名|新都|愉景|海怡|麗港)城)\s*[\u4e00-\u9fff0-9A-Za-z]{1,10}(?:樓(?!(?:梯|上|下|層))|閣|座|苑|臺|軒|期)/u,
+  /(?:[\u4e00-\u9fff]{1,10}(?:邨|新邨|屋苑|居屋|花園|豪庭|山莊)|海怡半島|(?:太古|沙田第一|第一|日出康|康|皇|名|新都|愉景|海怡|麗港)城)\s*[\u4e00-\u9fff0-9A-Za-z]{1,10}(?:樓(?!(?:梯|上|下|層))|閣|座|苑|臺|軒|期)/u,
   /[\u4e00-\u9fffA-Za-z]{2,14}(?:大街|大道|大馬路|街|道|路|巷|里)\s*\d+\s*(?:[A-Za-z]?號|no\.?)/iu,
   /\b\d{1,5}\s+[A-Za-z][A-Za-z0-9'\s-]{1,25}\s+(?:Street|St|Road|Rd|Avenue|Ave|Lane|Drive|Dr|Court|Ct|Terrace)\b/iu,
   // Floor + flat/unit or block + floor/unit markers; avoids blocking generic clinic floors like "3樓", "Room 1", "Block 3 playground", or "急症室".
   /(?:\d+\s*(?:\/F|樓)|地下|G\/F)\s*(?:[A-HJ-Z]\d*\s*(?:座|室|號室|單位)|(?:\d+[A-Za-z]?)\s*(?:室|號室|單位))|(?:\d+\s*(?:\/F|樓)|地下|G\/F)[A-H](?![A-Za-z])/iu,
   /(?<![A-Za-z])(?:[A-Za-z]|\d+|[一二三四五六七八九十]+)\s*(?:座|棟|幢)\s*(?:\d+\s*(?:樓|層)|(?:\d+[A-Za-z]?|[A-Za-z])\s*(?:室|單位))/u,
   /(?<![\u4e00-\u9fffA-Za-z0-9])(?:\d{3,4}|[A-H]\d{0,2})\s*(?:號室|室|單位)/u,
-  /\b(?:[Ff]lat|FLAT|[Rr]m|RM|[Uu]nit|UNIT|[Aa]pt|APT)\s*[#:]?\s*(?:\d+[A-Za-z]?|[A-Z])(?![A-Za-z])(?!\s*(?:months?|weeks?|days?|years?|hrs?|hours?|ml|mg|mcg|iu|drops?|doses?|vaccine))/u,
+  /\b(?:[Ff]lat|FLAT|[Rr]m|RM|[Uu]nit|UNIT|[Aa]pt|APT)\s*[#:]?\s*(?:\d+[A-Za-z]?|[A-Z])(?![A-Za-z])(?!\s*(?:months?|weeks?|days?|years?|hrs?|hours?|ml|mg|mcg|iu|drops?|doses?|vaccine|of\s+(?!block\b|blk\b|tower\b|flat\b|unit\b|phase\b)))/u,
   /\b\d{1,3}\s*\/\s*F\s*,\s*(?:Block|Blk|Tower)\s*[A-Za-z0-9]+\b|\b(?:Block|Blk|Tower)\s*[A-Za-z0-9]+\s*,\s*\d{1,3}\s*\/\s*F\b/iu,
 ];
 
 const CALLING_NON_NAME_PREFIXES =
-  "唔|咗|左|了|到|極|痛|醒|停|喊|哭|聲|叫|爸|媽|爹|娘|母|父|爺|嫲|公|婆|哥|姐|妹|弟|姨|叔|姑|舅|白車|救護車|救命|醫生|護|老師|工人|人|大聲|細聲|沙啞|埋|出|好|做|得|著|返|起|咩|乜|啲|什|甚|邊|怎|點|你|佢|大家|咪|幾|一聲|兩聲|三聲|BB|bb|寶寶|嬰兒|小朋友|孩子|肚|頭";
+  "唔|咗|左|了|到|極|痛|醒|停|喊|哭|聲|叫|爸|媽|爹|娘|母|父|爺|嫲|公|婆|哥|姐|妹|弟|姨|叔|姑|舅|白車|救護車|救命|醫生|護|老師|工人|人|大聲|細聲|沙啞|埋|出|好|做|得|著|返|起|咩|乜|啲|什|甚|邊|怎|點|你|佢|大家|咪|幾|一聲|兩聲|三聲|BB|bb|寶寶|嬰兒|小朋友|孩子|肚|頭|發燒|發熱|發冷|發炎|發脾氣|發作|咳|咳嗽|嘔|嘔吐|黃疸|肺炎|感冒|退燒|氣喘|腹瀉|肚瀉|便秘|抽筋|出牙|濕疹|皮疹|流鼻血|流鼻水|鼻塞|開飯|食飯|吃飯|飲奶|喝奶|奶粉|飲水|喝水|餵奶|陳皮|陳醋|陳年|眼瞓|瞓覺|返學|放學";
 const CALLED_NAME_TARGET =
   `(?!(?:${CALLING_NON_NAME_PREFIXES}))(?:[A-Z][a-z]{1,20}(?:\\s+[A-Z][a-z]{1,20})?(?![A-Za-z])|[\\u4e00-\\u9fff]{2,})`;
 const CALLED_NAME_PATTERN = new RegExp(
