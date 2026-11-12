@@ -501,7 +501,7 @@ migration 011 啟用 `memory` 類無正文變更及收據刪除；私人候選�
 <a id="p2-web-push-http"></a>
 ## P2 本人 Web Push 渠道
 
-S13-W05 [共享契約](../src/shared/web-push.ts) 只管理本人訂閱及明確一般測試；不授予聯絡其他照顧者的權限。全部讀寫要求登入及相符的 x-expected-user-id；POST 只透過 [S07 收據](#online-http) command 白名單，直接 POST 回 428。私人 preferences 變更只向本人可見。
+S13-W05 [共享契約](../src/shared/web-push.ts) 管理本人的瀏覽器訂閱。讀寫要求登入及相符的 x-expected-user-id。訂閱、撤銷及一般測試透過 [S07 收據](#online-http) 提交。私人 preferences 變更只向本人可見。
 
 | 路徑 | 輸入／回應 |
 |---|---|
@@ -509,6 +509,11 @@ S13-W05 [共享契約](../src/shared/web-push.ts) 只管理本人訂閱及明確
 | POST /api/web-push/subscriptions | PushRegistrationInput：subscription（endpoint、keys、expirationTime）及 label；回 { binding }；相同本人端點及 key 冪等，不接管他人綁定 |
 | POST /api/web-push/subscriptions/:id/revoke | expectedVersion；回 { binding }，清除 hash／密文並停止尚未開始投遞 |
 | POST /api/web-push/subscriptions/:id/test | expectedVersion、confirmImmediate:true；回 { delivery }，同交易保存 queued 與 job，不在收據交易外發 |
+| GET /api/web-push?v=2 | 本人狀態，包括 Apple Web Push。舊版維持原有 provider 集合 |
+| GET／POST /api/web-push/chat-presence | 以 Web 裝置會話及 bindingId 讀取或更新這次安裝的預覽、通知及當前聊天。寫入核對綁定與 presence 版本，設定變更另核瀏覽器持有的訂閱 |
+| GET／POST /api/web-push/open | 核對通知定位、當前身份及原訊息權限後，回傳孩子及訊息 ID。登入自然到期後，可再次登入並以同一訂閱接續。已撤銷的來源會話不能接續 |
+
+聊天投遞與正式訊息在同一交易登記。Web Push v2 的加密 payload 攜帶通用提示或已同意的短預覽。私人預覽不寫入通知歷史。點擊只執行重新授權的讀取。
 
 配額、provider、加密配置及限制見[操作說明](P2_WEB_PUSH.md)。版本／綁定／額度／worker 不符為 409，不自動更新版本；他人／不存在資源為 404，schema 無效 400。S13-W07 才將核准照護任務交渠道，不能把 test 入口當成 Agent 任意外發工具。accepted 不等於送達、已讀或完成；unknown 不重發，已在途請求不能保證撤回。
 

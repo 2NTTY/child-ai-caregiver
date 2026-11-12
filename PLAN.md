@@ -56,6 +56,11 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
+<a id="iphone-pwa"></a>
+### iPhone 主畫面試用版
+
+2026-11-12 原站 API、worker 及 Web 已發布 `29941f92`。iOS 16.4 或以上可從 Safari 加入主畫面。每次安裝可選通用通知或短預覽；點按後由 Server 重新核權並定位已保存的原訊息。原站安裝資產、服務健康及登入保護已核對。下一步用一部 iPhone 核對安裝／重開、關閉鎖屏實收、點入回覆、停用及媒體。原生 TestFlight 另行追蹤。[試用步驟](docs/IPHONE_PWA.md) · [發布證據](artifacts/verification/IPHONE_PWA_20261112.json)
+
 <a id="proactive-notifications"></a>
 ### 主動助手、手機通知與一鍵示範
 

@@ -5930,3 +5930,7 @@ Android 版本 6 在系統允許通知後，換了登入的同一部手機仍無
 同日 11:05（香港）完成版本 8 的 Android preview 建置。版本號 7 已預留，本機 Git 複製因暫存路徑過長而中止，當時 Expo 查無該提交的建置。縮短路徑後只建立一個雲端工作。已下載成品，以 Android build-tools 核對套件、同簽署覆蓋安裝條件、runtime 及兩個圖示的資源指向。[APK 與驗簽紀錄](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
 
 香港時間 11:11 的示範在入隊後 0.973 秒開始交送，再過 1.135 秒收據記下 FCM 接受。本人確認 Android 版本 8 的狀態列小圖示、通知卡頭像和正式訊息預覽均顯示正常。手機到達時刻沒有獨立時間戳。沿用版本 6 已驗的點入回覆及 Web 讀回，完成本包驗收。[原站收據與手機結果](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
+
+## 2026-11-12　iPhone 主畫面試用版
+
+後端 #570、共用 Web #571 已合併，原站 API、worker 及 Web 已發布 `29941f92`。使用既有 VAPID 與通知台帳；正式 Firestore 聊天通知歷史索引已就緒。由公開網址核對了首頁、manifest、圖示、worker 與 JS 的內容指紋及類型，以及服務健康和私有路由的登入要求。本機合成檢查涵蓋裝置同意、預覽、前景抑制、防重、撤權及點入原聊天。發布檢查沒有觸發實際通知。iPhone 的主畫面安裝、鎖屏收件與回覆、停用和媒體均待真機。 [試用步驟](docs/IPHONE_PWA.md) · [驗證紀錄](artifacts/verification/IPHONE_PWA_20261112.json)
