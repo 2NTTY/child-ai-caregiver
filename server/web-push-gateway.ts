@@ -5,15 +5,17 @@ import { isIP } from "node:net";
 import { readFile, stat } from "node:fs/promises";
 import webPush from "web-push";
 import { z } from "zod";
-import { webPushContent, pushSubscriptionInput, type PushPayload, type WebPushSubscription } from "../src/shared/web-push.ts";
+import { webPushContent, pushSubscriptionInput, pushPayloadSchema, type WebPushSubscription } from "../src/shared/web-push.ts";
 import type { PushSendResult, VapidConfig, WebPushGateway } from "./web-push-types.ts";
 
 const hosts = new Map([["fcm.googleapis.com", "fcm"], ["updates.push.services.mozilla.com", "mozilla"]] as const);
 const invalid = () => new Error("web_push_input_invalid");
-export function pushProvider(endpoint: string): "fcm" | "mozilla" {
+export function pushProvider(endpoint: string): "fcm" | "mozilla" | "apple" {
   if (!endpoint || endpoint.length > 2048 || /[\s\\\u0000-\u001f\u007f-\uffff]/u.test(endpoint)) throw invalid();
   const url = new URL(endpoint);
-  const provider = hosts.get(url.hostname as "fcm.googleapis.com");
+  // Apple documents *.push.apple.com: enforce a DNS-label boundary, never a loose suffix.
+  const apple = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+push\.apple\.com$/u.test(url.hostname);
+  const provider = apple ? "apple" : hosts.get(url.hostname as "fcm.googleapis.com");
   if (!provider || url.protocol !== "https:" || url.port || url.username || url.password || url.hash
     || url.pathname === "/" || url.href !== endpoint) throw invalid();
   return provider;
@@ -72,11 +74,22 @@ export function providerResult(status: number): PushSendResult {
 }
 const stopped = (reason: PushSendResult["reason"]): PushSendResult => ({ status: "stopped", reason, providerStatus: null });
 const unknown = (): PushSendResult => ({ status: "unknown", reason: "transport_unknown", providerStatus: null });
+const graphemes = new Intl.Segmenter("zh-HK", { granularity: "grapheme" });
+function previewExcerpt(text: string): string {
+  const clean = text.replace(/[\s\p{Cc}\u202a-\u202e\u2066-\u2069]+/gu, " ").trim();
+  let result = "", count = 0, size = 0;
+  for (const { segment } of graphemes.segment(clean)) {
+    size += Buffer.byteLength(segment);
+    if (count >= 80 || size > 480) return result ? result.trimEnd() + "…" : "";
+    result += segment; count++;
+  }
+  return result;
+}
 export function createWebPushGateway(config: VapidConfig | null): WebPushGateway {
   if (config) checkedVapid(config);
   return {
     publicKey: config?.publicKey ?? null,
-    async send(input, payload: PushPayload, outerSignal, stillAuthorized) {
+    async send(input, rawPayload, outerSignal, stillAuthorized, getPreviewText) {
       if (!config) return stopped("configuration_unavailable");
       const controller = new AbortController(), signal = controller.signal;
       const abort = () => controller.abort();
@@ -85,6 +98,9 @@ export function createWebPushGateway(config: VapidConfig | null): WebPushGateway
       const deadline = setTimeout(abort, 15000).unref();
       try {
         let subscription: WebPushSubscription;
+        const parsed = pushPayloadSchema.safeParse(rawPayload);
+        if (!parsed.success) return stopped("request_invalid");
+        const payload = parsed.data;
         try { subscription = checkedSubscription(input); } catch { return stopped("request_invalid"); }
         if (signal.aborted) return stopped("worker_interrupted");
         const url = new URL(subscription.endpoint);
@@ -104,10 +120,17 @@ export function createWebPushGateway(config: VapidConfig | null): WebPushGateway
           if (!await bounded(stillAuthorized())) return stopped("revoked");
         } catch { return stopped(signal.aborted ? "worker_interrupted" : "request_invalid"); }
         if (signal.aborted) return stopped("worker_interrupted");
-        const content = { ...webPushContent[payload.kind === "care" ? "care" : "test"] };
+        const content = { ...webPushContent[payload.kind === "chat" ? "chat" : payload.kind === "care" ? "care" : "test"] };
+        let wireContent = content;
         let details: ReturnType<typeof webPush.generateRequestDetails>;
         try {
-          details = webPush.generateRequestDetails(subscription, JSON.stringify({ ...payload, content }), {
+          // The callback reads the authorization refresh above. Previews never enter receipt metadata.
+          if (payload.v === 2 && getPreviewText) {
+            const text = getPreviewText(), preview = typeof text === "string" ? previewExcerpt(text) : "";
+            if (preview) wireContent = { ...content, contentVersion: "web-push-chat-preview-v1", body: preview };
+          }
+          if (signal.aborted) return stopped("worker_interrupted");
+          details = webPush.generateRequestDetails(subscription, JSON.stringify({ ...payload, content: wireContent }), {
             TTL: 300, urgency: "normal", contentEncoding: "aes128gcm",
             vapidDetails: config,
           });
@@ -122,7 +145,7 @@ export function createWebPushGateway(config: VapidConfig | null): WebPushGateway
             const status = response.statusCode;
             // HTTP status is sufficient evidence. Do not accumulate arbitrary provider bodies.
             const result = status ? providerResult(status) : unknown();
-            finish(result.status === 'accepted' && sentAt
+            finish(result.status === 'accepted' && sentAt && wireContent === content
               ? { ...result, message: { ...content, channel: 'web_push', sentAt } } : result);
             response.on("error", () => {});
             response.destroy();

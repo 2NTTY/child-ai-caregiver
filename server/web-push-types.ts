@@ -16,5 +16,5 @@ export interface PushSendResult {
 export interface WebPushGateway {
   publicKey: string | null;
   send(subscription: WebPushSubscription, payload: PushPayload, signal: AbortSignal,
-    stillAuthorized: () => Promise<boolean>): Promise<PushSendResult>;
+    stillAuthorized: () => Promise<boolean>, getPreviewText?: () => string | null | undefined): Promise<PushSendResult>;
 }

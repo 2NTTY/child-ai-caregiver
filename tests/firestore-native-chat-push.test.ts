@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { createECDH, randomUUID } from 'node:crypto';
 import type { Query } from '@google-cloud/firestore';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { FirestoreDeviceSessions } from '../server/firestore-device-sessions.ts';
+import { createFirestoreWebPush } from '../server/firestore-web-push.ts';
 import { createFirestoreNativePush } from '../server/firestore-native-push.ts';
 import { createNativePushGateway, type NativePushGateway } from '../server/native-push-gateway.ts';
 import { parseNativePushData } from '../src/shared/native-push.ts';
@@ -415,4 +416,65 @@ test('a task completed after queueing is suppressed at dispatch and immediately 
     assert.equal((await f.statuses(contact!.deliveryIds))[0]!.reason, 'task_unavailable');
     assert.equal((await chat.listForUser(f.userId, f.childId))!.messages.length, 1);
   }
+});
+
+test('Home Screen push delivers one saved message, rechecks its tap and honours device opt-out', async t => {
+  t.mock.method(Date, 'now', () => Date.parse('2026-11-12T04:00:00Z'));
+  const f = await fixture();
+  const point = createECDH('prime256v1').generateKeys().toString('base64url');
+  const subscription = {endpoint:'https://web.push.apple.com/test-installation', expirationTime:null,
+    keys:{p256dh:point, auth:Buffer.alloc(16,4).toString('base64url')}};
+  const sends: Array<{ref:any; text?:string|null}> = [];
+  const push = createFirestoreWebPush({...f.options, sessions:f.sessions, enabled:true,
+    currentAuth:async () => ({disabled:false,emailVerified:true}), gateway:{publicKey:'test-public',
+      async send(_sub, ref, _signal, authorized, preview) {
+        assert.ok(await authorized()); sends.push({ref,text:preview?.()});
+        return {status:'accepted',reason:null,providerStatus:201};
+      }}});
+  const chat = createFirestoreChatStore({...f.options,notifications:push});
+  const online = createFirestoreOnlineStore({...f.options,mutations:[push.mutation]});
+  const path='/api/web-push/subscriptions', payload={subscription,label:'Home Screen'};
+  const operation={...await online.context(f.userId,{path,payload}),deviceId:randomUUID(),opId:randomUUID()};
+  const binding=(await online.submit(f.userId,{path,payload,operation})).result as any;
+  const bindingId=binding.binding.id, session=f.keys[0]!;
+  assert.equal((await push.status(f.userId)).bindings.length,0);
+  assert.equal((await push.status(f.userId,true)).bindings[0]?.provider,'apple');
+  const state={childId:null,bindingId,expectedBindingVersion:1,expectedPresenceVersion:0,chatNotificationsEnabled:true,chatPreviewEnabled:true};
+  await assert.rejects(push.setChatPresence(f.userId,session,state));
+  const origin='https://pwa.example.test';
+  const handler=createFirebaseRequestHandler({authority:f.authority,push,publicOrigin:origin,mailConfigured:false,
+    auth:{getSession:async()=>({user:{id:f.userId}}),handler:async()=>new Response(null,{status:404}),
+      webSessionProof:async(headers:Headers)=>headers.get('cookie')==='test=installation' ? session : null} as unknown as FirebaseAuthPort});
+  const headers={'x-expected-user-id':f.userId,cookie:'test=installation','content-type':'application/json',origin};
+  const write=(requestOrigin:string)=>handler(new Request(origin+'/api/web-push/chat-presence',{method:'POST',
+    headers:{...headers,origin:requestOrigin},body:JSON.stringify({...state,subscription})}));
+  assert.equal((await write('https://other.example.test')).status,403);
+  const enabled=await write(origin); assert.equal(enabled.status,200);
+  const consent=await enabled.json();
+  const opId=randomUUID();
+  const publish=()=>f.authority.runTransaction(f.userId,f.childId,b=>chat.contactParent(b,{opId,origin:'demo',text:'A saved demonstration.'}));
+  const original=await publish(); assert.equal(original.deliveryIds.length,1);
+  assert.deepEqual((await publish()).deliveryIds,original.deliveryIds);
+  const job=await f.jobFor(original.deliveryIds[0]!);
+  await push.process(job,new AbortController().signal); await push.process(job,new AbortController().signal);
+  assert.equal(sends.length,1); assert.equal(sends[0]!.text,'A saved demonstration.');
+  const ref={v:1,kind:'care',bindingId,bindingVersion:1,deliveryId:job.resourceId};
+  const openUrl=origin+'/api/web-push/open?reference='+encodeURIComponent(JSON.stringify(ref));
+  assert.equal((await handler(new Request(openUrl))).status,401);
+  const opened=await handler(new Request(openUrl,{headers}));
+  assert.equal(opened.status,200); assert.match(opened.headers.get('cache-control') ?? '',/no-store/);
+  assert.deepEqual(await opened.json(),{kind:'chat',childId:f.childId,messageId:original.messageId});
+  assert.deepEqual(await push.authorizeChatOpen(f.userId,session,ref),{kind:'chat',childId:f.childId,messageId:original.messageId});
+  await assert.rejects(push.authorizeChatOpen(f.userId,f.keys[1]!,ref),{code:'installation_proof_required'});
+  assert.deepEqual(await push.authorizeChatOpen(f.userId,f.keys[1]!,ref,subscription),{kind:'chat',childId:f.childId,messageId:original.messageId});
+  await assert.rejects(push.authorizeChatOpen(f.userId,f.keys[1]!,ref,{...subscription,endpoint:'https://web.push.apple.com/other'}));
+  const freshSession=f.keys[1]!;
+  await f.sessions.revokeThis(session);
+  await assert.rejects(push.authorizeChatOpen(f.userId,freshSession,ref,subscription),{code:'not_found'});
+  const rebound=await push.setChatPresence(f.userId,freshSession,{...state,subscription,expectedPresenceVersion:consent.presenceVersion});
+  await assert.rejects(push.authorizeChatOpen(f.userId,freshSession,ref,subscription),{code:'not_found'});
+  await push.setChatPresence(f.userId,freshSession,{...state,subscription,expectedPresenceVersion:rebound.presenceVersion,chatNotificationsEnabled:false,chatPreviewEnabled:false});
+  await assert.rejects(push.authorizeChatOpen(f.userId,session,ref));
+  const next=await f.authority.runTransaction(f.userId,f.childId,b=>chat.contactParent(b,{opId:randomUUID(),origin:'demo',text:'No push.'}));
+  assert.deepEqual(next.deliveryIds,[]);
 });

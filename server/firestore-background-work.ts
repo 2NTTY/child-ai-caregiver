@@ -222,7 +222,7 @@ export function createFirestoreBackgroundQueue(options: BackgroundQueueOptions) 
     });
     // Foreground/quiet deferrals keep the original work and schedule its next revision at dueAt.
     // A failed dispatch leaves that same durable pending work for the existing minute scan.
-    if (settled.state === 'pending' && claimed.job.kind === 'native-push') await dispatchOne(request.id).catch(() => {});
+    if (settled.state === 'pending' && (claimed.job.kind === 'native-push' || claimed.job.kind === 'push')) await dispatchOne(request.id).catch(() => {});
     return settled;
   }
   return { dispatch, dispatchOne, process };

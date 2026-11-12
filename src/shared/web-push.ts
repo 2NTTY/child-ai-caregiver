@@ -14,7 +14,7 @@ export const pushVersionInput = z.object({ expectedVersion: z.number().int().min
 export const pushTestInput = pushVersionInput.extend({ confirmImmediate: z.literal(true) }).strict();
 export const pushBindingSchema = z.object({
   id: uuid, version: z.number().int().positive(), status: z.enum(["active", "revoked", "expired"]),
-  provider: z.enum(["fcm", "mozilla"]), label: z.string().max(80),
+  provider: z.enum(["fcm", "mozilla", "apple"]), label: z.string().max(80),
   endpointHash: z.string().regex(/^[a-f0-9]{64}$/).nullable(), vapidPublicKey: z.string(),
   expiresAt: instant.nullable(), createdAt: instant, updatedAt: instant,
 }).strict();
@@ -29,7 +29,7 @@ export const pushDeliverySchema = z.object({
 export type PushDelivery = z.infer<typeof pushDeliverySchema>;
 export const webPushStatusSchema = z.object({
   userId: z.string().min(1).max(128), available: z.boolean(), workerEnabled: z.boolean(),
-  publicKey: z.string().nullable(), supportedProviders: z.array(z.enum(["fcm", "mozilla"])),
+  publicKey: z.string().nullable(), supportedProviders: z.array(z.enum(["fcm", "mozilla", "apple"])),
   bindings: z.array(pushBindingSchema).max(20), deliveries: z.array(pushDeliverySchema).max(20),
   testsRemaining: z.number().int().min(0).max(3), nextTestAt: instant.nullable(),
 }).strict();
@@ -37,7 +37,13 @@ export type WebPushStatus = z.infer<typeof webPushStatusSchema>;
 export const webPushContent = Object.freeze({
   test: { contentVersion: 'web-push-generic-v1', title: '育有方通知測試', body: '這是你剛才要求的測試通知，不代表照護事項已完成。' },
   care: { contentVersion: 'web-push-generic-v1', title: '育有方照護提示', body: '你有獲授權的照護事項提示，請開啟育有方查看。收到提示不代表事項已完成。' },
+  chat: { contentVersion: 'web-push-chat-v1', title: '育有方有新訊息', body: '你有新的聊天訊息，請開啟育有方查看。' },
 });
 /** Fixed, non-sensitive wake-up reference. Never include family/chat text or a navigation URL. */
-export interface PushPayload { v: 1; kind?: "test" | "care"; bindingId: string; bindingVersion: number; deliveryId: string }
+const pushReference = { bindingId: uuid, bindingVersion: z.number().int().positive().max(Number.MAX_SAFE_INTEGER), deliveryId: uuid };
+export const pushPayloadSchema = z.discriminatedUnion("v", [
+  z.object({ v: z.literal(1), kind: z.enum(["test", "care"]).optional(), ...pushReference }).strict(),
+  z.object({ v: z.literal(2), kind: z.literal("chat"), ...pushReference }).strict(),
+]);
+export type PushPayload = z.infer<typeof pushPayloadSchema>;
 export interface PushBrowserBinding { userId: string; id: string; version: number }
