@@ -193,7 +193,7 @@ export function restoreOperationRecord(data: FirestoreDomainData, context: Fires
     case 'push-delivery': {
       const v = firestorePushDeliverySchema.parse(raw); check(id === v.delivery.id);
       const delivery = target ? { ...v.delivery, status: v.delivery.status === 'queued' ? 'stopped' as const : v.delivery.status === 'sending' ? 'unknown' as const : v.delivery.status } : v.delivery;
-      value = { ...v, delivery }; Object.assign(metadata, { ...messageSortMetadata(v.message ? [v.message] : []), deliveryId: id, createdAt: delivery.createdAt, bindingId: delivery.bindingId, status: delivery.status }); break;
+      value = { ...v, delivery }; Object.assign(metadata, { ...messageSortMetadata(v.message ? [v.message] : []), deliveryId: id, ...(v.chatTarget ? {chatCreatedAt:delivery.createdAt} : {createdAt:delivery.createdAt}), bindingId: delivery.bindingId, status: delivery.status }); break;
     }
     case 'push-endpoint': { const v = firestorePushEndpointRecoverySchema.parse(raw); check(v.endpointHash === id && v.ownerUserId === scope.ownerUserId); break; }
     case 'telegram-binding': {

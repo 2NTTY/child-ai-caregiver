@@ -59,6 +59,7 @@ import { FirestoreDomainData } from './firestore-domain-data.ts';
 import { createFirestoreBackgroundDispatcher, readFirestoreBackgroundClaim } from './firestore-background-work.ts';
 import { createFirebaseBackgroundDelivery } from './firebase-task-delivery.ts';
 import { readFirebaseWorkerConfig } from './firebase-worker-config.ts';
+import { combineChatNotificationChannels } from './firestore-chat-notification-queue.ts';
 import { createFirestoreWebPush } from './firestore-web-push.ts';
 import { createWebPushGateway, readWebPushConfig } from './web-push-gateway.ts';
 import { createFirestoreTelegram } from './firestore-telegram.ts';
@@ -156,10 +157,12 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const pushConfig = await readWebPushConfig(env), pushGateway = localDelivery?.pushGateway ?? createWebPushGateway(pushConfig);
     const telegramConfig = localDelivery?.telegramConfig ?? await readTelegramConfig(env);
     const telegramGateway = localDelivery?.telegramGateway ?? createTelegramGateway(telegramConfig);
-    const push = createFirestoreWebPush({ ...domain, gateway: pushGateway, enabled: !!localDelivery || !!pushConfig, currentAuth });
+    const push = createFirestoreWebPush({ ...domain, gateway: pushGateway, enabled: !!localDelivery || !!pushConfig, currentAuth,
+      sessions, dispatchChatWork:chatDispatcher?.dispatchOne });
+    const chatNotifications = combineChatNotificationChannels(nativePush,push);
     const telegram = createFirestoreTelegram({ ...domain, config: telegramConfig, gateway: telegramGateway, currentAuth,
       ...(localDelivery ? { startUrl: localDelivery.telegramStartUrl } : {}) });
-    const chat = createFirestoreChatStore({ ...domain, voice: voices, files, photos, notifications: nativePush }), care = createFirestoreCareStore(domain);
+    const chat = createFirestoreChatStore({ ...domain, voice: voices, files, photos, notifications: chatNotifications }), care = createFirestoreCareStore(domain);
     const sources = createFirestoreSharedInputStore(domain), concerns = createFirestoreConcernStore(domain);
     const memory = createFirestoreMemoryStore({ ...domain, chat, care });
     const proactiveData = new FirestoreDomainData(domain);
@@ -179,7 +182,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const growth = createFirestoreGrowthStore({ ...domain, memory, care, online, knowledge });
     const taskEvents = createFirestoreTaskAgentEvents(domain);
     let product: Awaited<ReturnType<typeof createFirestoreProductAgent>>;
-    const proactive = createProactiveWakes(domain, chat, proactiveEvents.readCandidates, nativePush, {
+    const proactive = createProactiveWakes(domain, chat, proactiveEvents.readCandidates, chatNotifications, {
       coverage: (binding, candidates) => product.continuation.coverage(binding, candidates),
       async readHouseholdChange(binding, change) {
         if (change.domain === 'profile') {
@@ -253,7 +256,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const knowledgeTransfers = knowledge ? createKnowledgeTransfers(domain, tx => authority.readControl(tx)) : undefined;
     const admin = createFirestoreAdmin(domain, aiConfig, knowledgeRefresh, knowledgeIndexes, knowledgeTransfers);
     const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: composition.worker && !composition.local ? null : configuredAdminUid, authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },
-      proactiveDemo: createProactiveDemo(env,authority,chat,nativePush), proactiveSettings:(uid,child,command) => authority.runTransaction(uid,child,
+      proactiveDemo: createProactiveDemo(env,authority,chat,chatNotifications), proactiveSettings:(uid,child,command) => authority.runTransaction(uid,child,
         async b => command === undefined ? proactive.view(await proactive.read(b)) : proactive.configure(b,command)),
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;
