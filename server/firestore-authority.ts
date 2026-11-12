@@ -77,6 +77,8 @@ export interface FirestoreAuthorityTransaction {
   readonly generation: string;
   readonly identityEmail: string;
   readonly workspaceCreatedAt: string | null;
+  /** Best-effort outbox dispatch only after this SDK transaction attempt commits. */
+  afterCommit?(dispatch: () => Promise<unknown>): void;
   readChild(childId: string): Promise<Child | null>;
   prepareChange(operationId: string, kind: OnlineChange['kind'], deleted: boolean, childId?: string): Promise<FirestoreAuthorityPreparedChange>;
   prepareChildCreation(raw: { operationId: string; displayName: string }): Promise<FirestoreAuthorityPreparedChild>;
@@ -345,7 +347,9 @@ export class FirestoreAuthority {
     parse(userIdSchema, userId); if (childId !== null) parse(uuid, childId);
     if (typeof operation !== 'function') fail('invalid_input', 400);
     const childCandidateId = childId === null ? randomUUID() : null;
-    return this.options.database.runTransaction(async tx => {
+    let committedDispatches: (() => Promise<unknown>)[] = [];
+    const result = await this.options.database.runTransaction(async tx => {
+      const dispatches: (() => Promise<unknown>)[] = [];
       let active = true, prepared = false, committed = false;
       const assertActive = () => { if (!active) fail('transaction_closed'); };
       const reserve = () => { assertActive(); if (prepared) fail('transaction_change_conflict'); prepared = true; };
@@ -358,6 +362,7 @@ export class FirestoreAuthority {
         if (childId !== null) await this.canonicalChild(tx, scope);
         const binding: FirestoreAuthorityTransaction = Object.freeze({ transaction: tx, scope, actorUserId: userId,
           authorizationVersion: workspace.accessVersion, childAccessVersion: workspace.childAccessVersion ?? '0', changeSeq: workspace.changeSeq, generation: control.generation, identityEmail: identity.email, workspaceCreatedAt: owner.workspaceCreatedAt ?? null,
+          afterCommit: (dispatch: () => Promise<unknown>) => { assertActive(); dispatches.push(dispatch); },
           readChild: async (requestedChildId: string) => {
             assertActive(); parse(uuid, requestedChildId);
             const childScope = ownerScope(userId, workspace.id, workspace.storageEpoch, requestedChildId);
@@ -432,9 +437,15 @@ export class FirestoreAuthority {
             } };
           },
         });
-        return await operation(binding);
+        const value = await operation(binding);
+        committedDispatches = dispatches;
+        return value;
       } finally { active = false; }
     });
+    // A failed acknowledgement keeps the durable outbox for the scheduled scan. Dispatch errors
+    // must not turn a committed message/receipt into a failed or replayed business operation.
+    await Promise.allSettled(committedDispatches.map(dispatch => Promise.resolve().then(dispatch)));
+    return result;
   }
   /** Internal domain port. The sharing store verifies the grant in this same actor transaction first. */
   async withSharedSource<T>(actor: FirestoreAuthorityTransaction, source: WorkRecoveryScope,

@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { CareRecord } from "../src/shared/care.ts";
+import type { AgentPrivateNote } from "../src/shared/agent-actions.ts";
 import { agentDirectActionSchema, agentActionToolNames } from "../src/shared/agent-actions.ts";
 import type { AgentTool, AgentRunContext } from "./agent-runtime.ts";
 import type { AgentActionsStore } from "./agent-actions-store.ts";
@@ -7,23 +9,47 @@ import { FirestoreDomainError } from './firestore-domain-data.ts';
 import { AgentStopped } from "./agent-budget.ts";
 import { groundedRecordTime } from "./agent-record-time.ts";
 
-export function createAgentActionTools(actions: AgentActionsStore, run: AgentRunContext,
-  authorize: () => Promise<boolean>): AgentTool[] {
+export type AgentActionReaders = Pick<AgentActionsStore, "records" | "notes" | "notesByKeys" | "recordById" | "noteById">;
+
+type ExactHouseholdItem = AgentPrivateNote | CareRecord;
+export type RegisterHouseholdRead = (kind: "note" | "record", item: ExactHouseholdItem,
+  reread: () => Promise<ExactHouseholdItem | null>) => string;
+
+export function createAgentActionReadTools(actions: AgentActionReaders, run: AgentRunContext,
+  authorize: () => Promise<boolean>, register?: RegisterHouseholdRead): AgentTool[] {
   const { userId, childId } = run.scope;
   return [
     { name: "read_care_records", description: "搜尋目前孩子的已保存照護記錄及原版本；query 可為空。更正前以結果核對 id、version、authorUserId及種類，不猜是哪一筆。moreAvailable=true 時請縮窄查詢，不宣稱已讀完。記錄是家庭共享資料，confirmationBasis 區分預授權陳述與逐項確認。",
-      parameters: z.object({ query: z.string().max(200) }), authorize,
+      parameters: z.object({ query: z.string().max(200).optional(), id: z.uuid().optional().describe("已知的 care_record id，可直接讀取該筆。") }), authorize,
       execute: async args => {
-        const page = await actions.records(userId, childId, args.query as string);
+        if (args.id) {
+          if (args.query) return { status: "rejected", data: { code: "invalid_input" } };
+          if (!actions.recordById) return { status: "failed", data: { code: "record_lookup_unavailable" } };
+          const record = await actions.recordById(userId, childId, args.id as string);
+          if (record && JSON.stringify(record).length > Math.min(6000, run.budget.toolResponseCharacters - 900))
+            return { status: "rejected", data: { code: "response_limit" } };
+          const citationId = record && register?.("record", record, () => actions.recordById!(userId, childId, record.id));
+          return { status: "succeeded", data: { records: record ? [record] : [], ...(citationId ? { citationId } : {}), moreAvailable: false, lookup: "exact_id" } };
+        }
+        const page = await actions.records(userId, childId, (args.query ?? "") as string);
         if (!page) throw new AgentStopped("unauthorized");
         const records = []; let size = 0;
         for (const item of page.records) { const length = JSON.stringify(item).length; if (size + length > 6000) break; records.push(item); size += length; }
         return { status: "succeeded", data: { records, moreAvailable: records.length < page.records.length || page.nextCursor !== null } };
       } },
     { name: "read_private_instructions",
-      description: "已知主題鍵時用 memoryKeys 直接讀原項（query 空、afterId=null）；未命中只代表該鍵，舊無鍵資料及同義可用 query 有界搜尋。按主題搜尋本人預授權保存的普通交代，query 可為空；這些是使用者陳述，不是已確認健康事實。只有本人可讀，不得用於家庭背景通知或披露給其他人。按 nextAfterId 續讀，不宣稱已讀未提供內容。",
-      parameters: z.object({ query: z.string().max(200), afterId: z.uuid().nullable(), memoryKeys: z.array(z.string().min(1).max(100)).min(1).max(4).optional() }), authorize,
+      description: "已知 private_note 的 id 時直接讀該筆；已知主題鍵時用 memoryKeys 查原項。也可用 query 搜尋並按 nextAfterId 續讀。交代是使用者陳述，只供該家長的私人主聊天和已授權巡查使用。不可在共享家庭背景或向其他人披露。",
+      parameters: z.object({ query: z.string().max(200).optional(), afterId: z.uuid().nullish(), id: z.uuid().optional(), memoryKeys: z.array(z.string().min(1).max(100)).min(1).max(4).optional() }), authorize,
       execute: async args => {
+        if (args.id) {
+          if (args.query || args.afterId || args.memoryKeys) return { status: "rejected", data: { code: "invalid_input" } };
+          if (!actions.noteById) return { status: "failed", data: { code: "note_lookup_unavailable" } };
+          const note = await actions.noteById(userId, childId, args.id as string);
+          if (note && JSON.stringify(note).length > Math.min(6000, run.budget.toolResponseCharacters - 900))
+            return { status: "rejected", data: { code: "response_limit" } };
+          const citationId = note && register?.("note", note, () => actions.noteById!(userId, childId, note.id));
+          return { status: "succeeded", data: { items: note ? [note] : [], ...(citationId ? { citationId } : {}), nextAfterId: null, incomplete: false, lookup: "exact_id" } };
+        }
         if (args.memoryKeys) {
           if (!actions.notesByKeys) return { status: "failed", data: { code: "memory_lookup_unavailable" } };
           if (args.afterId || args.query) return { status: "rejected", data: { code: "invalid_input" } };
@@ -32,7 +58,7 @@ export function createAgentActionTools(actions: AgentActionsStore, run: AgentRun
             return { status: "rejected", data: { code: "response_limit", nextAction: "縮窄主題鍵再讀，不把未回傳內容當作不存在。" } };
           return { status: "succeeded", data: { ...result, lookup: "exact_current_keys", nextAfterId: null } };
         }
-        const page = await actions.notes(userId, childId, args.query as string, args.afterId as string | undefined ?? undefined);
+        const page = await actions.notes(userId, childId, (args.query ?? "") as string, args.afterId as string | undefined ?? undefined);
         if (!page) throw new AgentStopped("unauthorized");
         const items = []; let size = 0;
         for (const note of page.items) {
@@ -44,6 +70,13 @@ export function createAgentActionTools(actions: AgentActionsStore, run: AgentRun
           nextAfterId: items.length < page.items.length ? items.at(-1)?.id ?? null : page.nextAfterId,
           incomplete: items.length < page.items.length || page.nextAfterId !== null } };
       } },
+  ];
+}
+
+export function createAgentActionTools(actions: AgentActionsStore, run: AgentRunContext,
+  authorize: () => Promise<boolean>): AgentTool[] {
+  return [
+    ...createAgentActionReadTools(actions, run, authorize),
     ...agentDirectActionSchema.options.map(schema => {
       const { kind, ...shape } = schema.shape;
       const actionKind = kind.value;

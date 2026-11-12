@@ -98,6 +98,7 @@ function RuntimeNotices({ model }: { model: SharedModel }) {
 function ChannelReviewPanel({ model, actions, production }: { model: SharedModel; actions: SharedActions; production: boolean }) {
   const replacingChallenge = model.review?.kind === "begin" && "challenge" in model && model.challenge !== null;
   const native = "platform" in model && (model.platform === "android" || model.platform === "ios");
+  const webChatEnable = "webChatNotifications" in model && model.webChatNotifications && model.review?.kind === "enable";
   return <>
     {model.conflict ? <View style={styles.review}>
       <Text accessibilityRole="header" style={styles.title}>渠道狀態已有更新</Text>
@@ -110,11 +111,19 @@ function ChannelReviewPanel({ model, actions, production }: { model: SharedModel
       <Text style={styles.meta}>核對版本：{model.review.expectedVersion === null ? "新登記／綁定，未有既有版本" : model.review.expectedVersion}</Text>
       <Text style={styles.body}>{replacingChallenge
         ? "服務接受重新開始後，會立即令目前的 Telegram 連結及候選帳號失效，並建立新的 10 分鐘連結；舊候選與勾選須重新核對。每小時最多 6 次開始，達限時請稍後重讀。"
-        : native && model.review.kind === "enable" ? "只登記本人的這個裝置。系統通知權限及裝置訂閱不代表已授權所有任務提醒或主動聯絡。" : reviewScope[model.review.kind]}</Text>
+        : webChatEnable ? "在這個主畫面 App 接收助手聊天通知。請先選擇顯示內容，確認後才會請求系統通知權限。"
+          : native && model.review.kind === "enable" ? "只登記本人的這個裝置。系統通知權限及裝置訂閱不代表已授權所有任務提醒或主動聯絡。" : reviewScope[model.review.kind]}</Text>
+      {webChatEnable && "setChatNotificationMode" in actions ? <View style={styles.stack}>
+        <AppCheckbox label="一般提示，不顯示聊天內容" checked={model.review.chatNotificationMode === "generic"} disabled={model.locked || model.conflict}
+          onChange={checked => { if (checked) actions.setChatNotificationMode?.("generic"); }} />
+        <AppCheckbox label="顯示聊天內容預覽" checked={model.review.chatNotificationMode === "preview"} disabled={model.locked || model.conflict}
+          onChange={checked => { if (checked) actions.setChatNotificationMode?.("preview"); }} />
+        <Text style={styles.meta}>內容預覽可能在鎖定畫面顯示聊天文字；實際顯示亦受 iPhone 通知設定影響。之後可在此更改或停用。</Text>
+      </View> : null}
       <AppCheckbox label={replacingChallenge ? "我明白舊連結及候選帳號會失效，並同意重新開始" : native && model.review.kind === "enable" ? "我同意登記本人的這個裝置" : reviewLabels[model.review.kind]} checked={model.review.confirmed}
         disabled={model.locked || model.conflict} onChange={actions.confirmReview} />
       <View style={styles.actions}>
-        <AppButton label={production ? "確認這項渠道操作" : "模擬確認這項渠道操作"} disabled={!model.online || model.locked || model.conflict || !model.review.confirmed} onPress={actions.submit} />
+        <AppButton label={production ? "確認這項渠道操作" : "模擬確認這項渠道操作"} disabled={!model.online || model.locked || model.conflict || !model.review.confirmed || !!webChatEnable && !model.review.chatNotificationMode} onPress={actions.submit} />
         <AppButton label="取消渠道操作" variant="quiet" disabled={model.locked} onPress={actions.cancel} />
       </View>
     </View> : null}
@@ -198,14 +207,22 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
       <View style={styles.entry}>
         <AppStatusBadge label={`通知權限：${permissionLabels[model.permission]}`} tone={model.permission === "granted" ? "success" : model.permission === "denied" ? "warning" : "neutral"} />
         <Text style={styles.body}>{guidance}</Text>
+        {model.needsHomeScreen ? <Text style={styles.body}>請在 iPhone 的 Safari 開啟育有方，按分享，再選「加入主畫面」。從主畫面圖示開啟及登入後，回來選擇一般提示或內容預覽並啟用通知。</Text> : null}
         {!model.browserSupported && model.permission !== "unsupported" ? <Text style={styles.warning}>此設備未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。</Text> : null}
       </View>
       <BrowserEnableForm platform={model.platform} form={form} disabled={!canEnable} stageEnable={actions.stageEnable} production={production} />
-      {native && sourceActions.setChatNotificationsEnabled ? <View style={styles.entry}>
-        <AppCheckbox label="在此手機接收助手聊天通知" checked={model.chatNotificationsEnabled === true}
+      {(native || model.webChatNotifications) && sourceActions.setChatNotificationsEnabled ? <View style={styles.entry}>
+        <AppCheckbox label={native ? "在此手機接收助手聊天通知" : "在此主畫面 App 接收助手聊天通知"} checked={model.chatNotificationsEnabled === true}
           disabled={actionBlocked || model.chatNotificationsBusy || model.chatNotificationsEnabled == null || !model.currentBindingId}
           onChange={sourceActions.setChatNotificationsEnabled} />
-        <Text style={styles.meta}>{model.chatNotificationsEnabled == null ? "聊天通知設定尚未核對，請重新讀取。" : "只影響此手機；正在前台查看該孩子的主聊天時，暫停此手機的聊天通知。"}</Text>
+        <Text style={styles.meta}>{model.chatNotificationsEnabled == null ? "聊天通知設定尚未核對，請重新讀取。" : native ? "只影響此手機；正在前台查看該孩子的主聊天時，暫停此手機的聊天通知。" : "只影響這個主畫面 App；正在前台查看該孩子的主聊天時，暫停此 App 的聊天通知。桌面網頁不會令手機通知暫停。"}</Text>
+        {model.platform === "android" ? <Text style={styles.meta}>開啟聊天通知時會同時開啟內容預覽；你可取消預覽，改收一般提示。</Text> : null}
+        {(model.platform === "android" || model.webChatNotifications) && model.chatNotificationsEnabled === true && sourceActions.setChatPreviewEnabled ? <>
+          <AppCheckbox label="在通知顯示聊天內容預覽" checked={model.chatPreviewEnabled === true}
+            disabled={actionBlocked || model.chatNotificationsBusy || model.chatPreviewEnabled == null || !model.currentBindingId}
+            onChange={sourceActions.setChatPreviewEnabled} />
+          <Text style={styles.meta}>開啟後，通知可能顯示聊天內容；實際顯示仍受手機的通知及鎖定畫面設定影響。關閉後只顯示一般提示。</Text>
+        </> : null}
       </View> : null}
       <ChannelReviewPanel model={model} actions={actions} production={production} />
       <View style={[styles.stack, styles.group]}>

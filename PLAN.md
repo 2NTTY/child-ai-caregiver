@@ -9,7 +9,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 ## 閱讀次序
 
 1. 先讀 [STATUS](STATUS.md) 與[當前工作](#active)，再只讀對應包。
-2. 當前先做[主動通知](#proactive-notifications)，再做 [Agent 需求的首個搜索流程](#agent-search-first)。恢復 P4 時從[接手清單](docs/P4_RESUME.md)選包，再按 [P4 原有依賴](#p4-execution)接續。[P3](#phase-3)餘項沿原包追蹤。
+2. [主動通知](#proactive-notifications)已交付，當前入口為 [REQ-001 的首個 Web 搜索流程](#agent-search-first)。恢復 P4 時從[接手清單](docs/P4_RESUME.md)選包，再按 [P4 原有依賴](#p4-execution)接續。[P3](#phase-3)餘項沿原包追蹤。
 3. 舊包只透過[歷史索引](_archive/README.md#plan-p1-p2-20261018)按需查閱；日常不讀 P1／P2 歷史正文。
 4. 工作狀態與最低驗收規則仍見[狀態](#states)、[證據層級](#verification)及[按包驗收](#p2-deferred-acceptance)。
 
@@ -56,6 +56,11 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
+<a id="iphone-pwa"></a>
+### iPhone 主畫面試用版
+
+2026-11-12 原站 API、worker 及 Web 已發布 `29941f92`。iOS 16.4 或以上可從 Safari 加入主畫面。每次安裝可選通用通知或短預覽；點按後由 Server 重新核權並定位已保存的原訊息。原站安裝資產、服務健康及登入保護已核對。試用者已回報 iPhone 主畫面安裝、鎖屏收件、點入回覆及 Web 讀回的示範成功。外觀、重開、停用及媒體仍待核對。原生 TestFlight 另行追蹤。[試用步驟](docs/IPHONE_PWA.md) · [發布證據](artifacts/verification/IPHONE_PWA_20261112.json)
+
 <a id="proactive-notifications"></a>
 ### 主動助手、手機通知與一鍵示範
 
@@ -67,7 +72,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 | NOTIFY-02 | 待辦到點、每日巡查及助手約下次查看；開啟後可查資料、聯絡及安排跟進 | 期限獨立喚醒；完成後停止；無線索零模型呼叫；同事件只處理一次 |
 | NOTIFY-03 | 公共事件增量、家庭相關性、已看及重要未讀最多一次補提 | 一份公告對兩組家庭篩選；一次真 Agent；重播、已讀、失效及無動作結果 |
 
-示範按鈕調用正式聯絡工具與台帳，只作用於已綁定示範帳號。本機已從管理操作走通主聊天和隔離收件箱；真 Gemini 巡查已用既有工作預算完成一次 `no_action` 並重開讀回。原站交付及「手機關閉 → 實收 → 點開回覆 → Web 讀回」另列驗收。[REQ-010](docs/REQUIREMENTS_BACKLOG.md#req-010) · [本機證據](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json)
+三種喚醒及一鍵示範已接入原站。隔離環境的真 Gemini 已分別完成按約定主動聯絡及安靜結束。Android 版本 6 已由本人確認關閉 App 後收到示範、點入回覆，同一回覆可在 Web 讀回。原站 `954ee312` 在保存後直接派送，每分鐘排程負責補查未派送工作。Android 版本 8 的實機示範已確認狀態列圖示、助手頭像及該則正式訊息的正文預覽。這一筆入隊後 0.973 秒開始交送，2.108 秒時收據記下 FCM 接受。NOTIFY-01～03 已交付；下一包接 REQ-001 搜索。[REQ-010](docs/REQUIREMENTS_BACKLOG.md#req-010) · [本機證據](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json) · [發布及 APK](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
 
 <a id="agent-search-first"></a>
 **主動通知交付後做 REQ-001 的官方來源搜索。** 按[需求文件的 A–D 次序](docs/REQUIREMENTS_BACKLOG.md#2-跨包的首交付切片與依賴)，先核對一條查詢需要的來源版本、引用、權限、用量及原 run 恢復（A），再用現有核准來源走通一條 Web 查詢（B）。家長應看到真實進度、得到符合適用條件的回答，能從引用打開支持說法的原文。證據不足時說明缺口，斷線後可查回同一次結果。此流程待驗。

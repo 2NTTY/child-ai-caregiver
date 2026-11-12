@@ -84,3 +84,21 @@ test('contact ready hides refresh, but failed, conflict, dirty-deferred and orig
   }
   assert.equal(calls.length, 4);
 });
+
+test('Android chat preview is explicit for the current handset and hidden on other platforms or disabled chat', () => {
+  const h = channel('push', { platform: 'android', currentBindingId: 'phone', chatNotificationsEnabled: true, chatPreviewEnabled: false });
+  const calls = [], actions = { setChatNotificationsEnabled: value => calls.push(['chat', value]), setChatPreviewEnabled: value => calls.push(['preview', value]) };
+  const render = () => channels.WebPushSettingsCard({ model: h.model, actions, scopeKey: 'synthetic', confirmedOperation: null, production: true });
+  const preview = () => nodes(render()).find(node => node.type === 'AppCheckbox' && node.props.label === '在通知顯示聊天內容預覽');
+  assert.equal(preview().props.checked, false); assert.equal(!!preview().props.disabled, false);
+  preview().props.onChange(true); assert.deepEqual(calls, [['preview', true]]);
+  assert.match(JSON.stringify(render()), /鎖定畫面設定/);
+  h.model.chatPreviewEnabled = true; preview().props.onChange(false); assert.deepEqual(calls.at(-1), ['preview', false]);
+  for (const patch of [{ online: false }, { locked: true }, { chatNotificationsBusy: true }, { currentBindingId: null }]) {
+    Object.assign(h.model, { online: true, locked: false, chatNotificationsBusy: false, currentBindingId: 'phone' }, patch);
+    assert.equal(!!preview().props.disabled, true);
+  }
+  Object.assign(h.model, { currentBindingId: 'phone', chatNotificationsEnabled: false }); assert.equal(preview(), undefined);
+  h.model.chatNotificationsEnabled = true;
+  for (const platform of ['ios', 'web']) { h.model.platform = platform; assert.equal(preview(), undefined); }
+});

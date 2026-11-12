@@ -3,7 +3,7 @@ import { emptyIndex, indexTargetLimit, adminIndexVersionPageSchema, adminIndexBa
   type AdminIndexState, type AdminIndexBatch, type AdminIndexPending } from './admin-knowledge-index.ts';
 import { adminTransferDigestSchema, adminTransferListSchema, adminTransferDetailSchema, adminTransferReplySchema } from '../../../src/shared/admin-knowledge-transfer.ts';
 import { emptyTransfers, type AdminTransferState, type AdminTransferBatch, type AdminTransferPending } from './admin-knowledge-transfer.ts';
-import { adminDemoConfigSchema, adminDemoReceiptSchema, emptyDemo, demoSettled, browserDemoStorage, storedDemoPending, demoPendingKey,
+import { adminDemoConfigSchema, adminDemoReceiptSchema, emptyDemo, demoSettled, demoAwaitingDelivery, browserDemoStorage, storedDemoPending, demoPendingKey,
   type AdminDemoState, type AdminDemoStorage } from './admin-proactive-demo.ts';
 export class AdminApiError extends Error {
   readonly status: number; readonly code: string;
@@ -33,6 +33,7 @@ export class AdminOwner {
   private transferSelection = 0;
   private baseUrl: string; private fetcher: typeof fetch;
   private demoStorage: AdminDemoStorage | null;
+  private demoPollRequest: AbortController | null = null;
   constructor(baseUrl: string, fetcher: typeof fetch = fetch, demoStorage = browserDemoStorage()) { const base = baseUrl.replace(/\/$/, ''); this.baseUrl = base.endsWith('/api') ? base : base + '/api'; this.fetcher = fetcher; this.demoStorage = demoStorage; }
   getSnapshot = () => this.state;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
@@ -51,7 +52,7 @@ export class AdminOwner {
     this.update({});
   }
   dispose() { this.generation++; this.controllers.forEach(c => c.abort()); this.controllers.clear(); this.listeners.clear(); }
-  private async request<T>(path: string, body?: unknown): Promise<T> {
+  private async request<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
     const userId = this.state.userId, generation = this.generation, controller = new AbortController();
     if (!userId) throw new AdminApiError(401, 'unauthorized');
     this.controllers.add(controller);
@@ -59,7 +60,7 @@ export class AdminOwner {
       // Native browser fetch must not receive AdminOwner as its Window receiver.
       const fetcher = this.fetcher;
       const response = await fetcher(this.baseUrl.replace(/\/$/, '') + path, { method: body === undefined ? 'GET' : 'POST',
-        credentials: 'include', cache: 'no-store', signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]),
+        credentials: 'include', cache: 'no-store', signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000), ...(signal ? [signal] : [])]),
         headers: { 'x-expected-user-id': userId, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
       const value = await response.json();
@@ -152,10 +153,14 @@ export class AdminOwner {
     const receipt = adminDemoReceiptSchema.parse(value);
     if (receipt.opId !== opId) throw new Error('Invalid demo receipt binding');
     const settled = demoSettled(receipt);
+    const notice = settled ? '已取得示範收據；請查看逐項交送狀態。'
+      : demoAwaitingDelivery(receipt) ? '通知仍在交送。留在此頁會自動查回，你也可以手動查看原收據。'
+      : '交送結果仍待核對，可查回原示範收據。';
     this.updateDemo({ receipt, pending: settled ? null : opId,
-      notice: settled ? '已取得示範收據；請查看逐項交送狀態。' : '交送仍待核對；原操作 ID 已保留，請查回最新狀態。' });
+      notice });
   }
   private async sendDemoOperation(opId: string) {
+    this.demoPollRequest?.abort();
     const generation = this.generation;
     this.updateDemo({ busy: true, pending: opId, receipt: null, notice: null });
     try {
@@ -171,6 +176,7 @@ export class AdminOwner {
   async recoverDemo() {
     const demo = this.state.demo, opId = demo.pending ?? demo.receipt?.opId;
     if (this.state.access !== 'allowed' || demo.busy || !opId) return;
+    this.demoPollRequest?.abort();
     const generation = this.generation;
     this.updateDemo({ busy: true, notice: null });
     try {
@@ -179,6 +185,31 @@ export class AdminOwner {
     } catch (error) {
       if (this.indexCurrent(generation) && !this.indexAccessError(error)) this.updateDemo({ notice: '未能查回原操作收據；目前資料及原操作 ID 保留，請核對連線後再查回。' });
     } finally { if (generation === this.generation) this.updateDemo({ busy: false }); }
+  }
+  watchDemoReceipt(opId: string) {
+    const generation = this.generation, delays = [3000, 7000, 15000, 30000, 60000];
+    let stopped = false, attempt = 0, timer: ReturnType<typeof setTimeout> | undefined, request: AbortController | null = null;
+    const current = () => !stopped && generation === this.generation && this.state.access === 'allowed'
+      && this.state.demo.receipt?.opId === opId && demoAwaitingDelivery(this.state.demo.receipt);
+    const schedule = () => { if (current() && attempt < delays.length) timer = setTimeout(() => { void poll(); }, delays[attempt++]); };
+    const poll = async () => {
+      if (!current()) return;
+      if (this.state.demo.busy) { schedule(); return; }
+      request = new AbortController(); this.demoPollRequest = request;
+      try {
+        const value = await this.request<unknown>('/admin/proactive-demo/' + encodeURIComponent(opId), undefined, request.signal);
+        if (current() && !request.signal.aborted && !this.state.demo.busy) this.acceptDemoReceipt(value, opId);
+      } catch (error) {
+        if (current() && !request.signal.aborted) this.indexAccessError(error);
+      } finally {
+        if (this.demoPollRequest === request) this.demoPollRequest = null;
+        request = null; schedule();
+      }
+    };
+    const stop = () => { stopped = true; clearTimeout(timer); request?.abort(); };
+    const deadline = setTimeout(stop, 120000);
+    schedule();
+    return () => { stop(); clearTimeout(deadline); };
   }
   private updateIndex(change: Partial<AdminIndexState>) { this.update({ index: { ...this.state.index, ...change } }); }
   private indexCurrent(generation: number) { return generation === this.generation && ['allowed', 'loading'].includes(this.state.access); }

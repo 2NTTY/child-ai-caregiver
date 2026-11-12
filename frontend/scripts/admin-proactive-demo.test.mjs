@@ -8,6 +8,14 @@ import { pushDeliverySchema } from '../../src/shared/web-push.ts';
 const deliveryId = '11111111-1111-4111-8111-111111111111';
 const receipt = (opId, status = 'accepted', reason = null) => ({ opId, messageId: 'demo-message', text: '合成示範訊息',
   deliveries: [{ id: deliveryId, status, reason }] });
+test('demo receipts retain an optional known Web or native channel while preserving old receipts', () => {
+  const old = receipt(deliveryId);
+  assert.equal(adminDemoReceiptSchema.parse(old).deliveries[0].channel, undefined);
+  for (const channel of ['web_push', 'native_push']) {
+    assert.equal(adminDemoReceiptSchema.parse({ ...old, deliveries: [{ ...old.deliveries[0], channel }] }).deliveries[0].channel, channel);
+  }
+  assert.equal(adminDemoReceiptSchema.safeParse({ ...old, deliveries: [{ ...old.deliveries[0], channel: 'arbitrary' }] }).success, false);
+});
 test('demo receipts accept only known chat deferral and unavailability reasons', () => {
   for (const reason of ['foreground_chat', 'chat_consent_disabled', 'quiet_hours', 'message_unavailable', 'proactive_disabled', 'task_unavailable']) {
     assert.equal(adminDemoReceiptSchema.safeParse(receipt(deliveryId, 'stopped', reason)).success, true);
@@ -97,10 +105,10 @@ test('actual demo panel wires original-ID recovery and shows honest delivery and
   const render = () => h.render(h.jsx(AdminProactiveDemo, { admin, state, online: true, writeLocked: false }));
   const button = label => h.hosts().find(node => node.type === 'Button' && node.props.label === label);
   const texts = () => JSON.stringify(h.hosts().filter(node => node.type === 'Text').map(node => node.props.children));
-  render(); button('一鍵示範主動訊息').props.onPress(); assert.deepEqual(actions, ['send']);
+  render(); button('立即示範主動通知').props.onPress(); assert.deepEqual(actions, ['send']);
   const opId = '33333333-3333-4333-8333-333333333333';
   state = { ...state, pending: opId, receipt: receipt(opId, 'stopped', 'local_preview_not_sent') }; render();
-  assert.equal(button('一鍵示範主動訊息').props.disabled, true);
+  assert.equal(button('立即示範主動通知').props.disabled, true);
   button('查回原示範收據及狀態').props.onPress(); button('以原 ID 重送示範操作').props.onPress();
   assert.deepEqual(actions, ['send', 'recover', 'retry']);
   assert.match(texts(), /僅本機預覽，未發送/); assert.match(texts(), /不代表真實裝置已收到/);
@@ -139,4 +147,94 @@ test('pending demo identity survives reload only for its admin UID and API deplo
 test('native and Web shared delivery statuses and reasons all have explicit Chinese labels', () => {
   for (const status of pushDeliverySchema.shape.status.options) assert.notEqual(demoDeliveryLabel(status), '未識別狀態，待核對', status);
   for (const reason of pushDeliverySchema.shape.reason.unwrap().options) assert.notEqual(demoReasonLabel(reason), reason, reason);
+});
+
+test('visible demo polls only the original queued receipt with bounded GET backoff and stops on unknown', async t => {
+  let status = 'queued', opId;
+  const { owner, calls } = await setup((path, options) => {
+    if (path.endsWith('/proactive-demo') && options.method === 'GET') return Response.json({ enabled: true });
+    if (options.method === 'POST') opId = JSON.parse(options.body).opId;
+    else assert.ok(path.endsWith('/' + opId));
+    return Response.json(receipt(opId, status));
+  });
+  await owner.loadDemo(); await owner.sendDemo();
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const settle = () => new Promise(setImmediate), before = calls.length;
+  const stop = owner.watchDemoReceipt(opId);
+  t.mock.timers.tick(2999); await settle(); assert.equal(calls.length, before);
+  t.mock.timers.tick(1); await settle(); assert.equal(calls.length, before + 1);
+  assert.equal(owner.getSnapshot().demo.busy, false);
+  status = 'sending'; t.mock.timers.tick(7000); await settle();
+  status = 'unknown'; t.mock.timers.tick(15000); await settle();
+  t.mock.timers.tick(120000); await settle(); assert.equal(calls.length, before + 3);
+  assert.equal(owner.getSnapshot().demo.receipt.deliveries[0].status, 'unknown');
+  assert.equal(owner.getSnapshot().demo.pending, opId);
+  assert.equal(calls.filter(call => call.options.method === 'POST').length, 1);
+  stop(); owner.dispose();
+});
+
+test('demo polling is bounded and hide, offline or session cleanup cancels scheduled and late reads', async t => {
+  let opId, finish, delayed = false;
+  const { owner, calls } = await setup((path, options) => {
+    if (path.endsWith('/proactive-demo') && options.method === 'GET') return Response.json({ enabled: true });
+    if (options.method === 'POST') opId = JSON.parse(options.body).opId;
+    if (delayed) return new Promise(resolve => { finish = () => resolve(Response.json(receipt(opId, 'accepted'))); });
+    return Response.json(receipt(opId, 'queued'));
+  });
+  await owner.loadDemo(); await owner.sendDemo();
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const settle = () => new Promise(setImmediate), before = calls.length;
+  let stop = owner.watchDemoReceipt(opId);
+  for (const delay of [3000, 7000, 15000, 30000, 60000, 120000]) { t.mock.timers.tick(delay); await settle(); }
+  assert.equal(calls.length, before + 5); stop();
+  delayed = true; stop = owner.watchDemoReceipt(opId);
+  t.mock.timers.tick(3000); await settle();
+  const active = calls.at(-1); stop(); assert.equal(active.options.signal.aborted, true);
+  finish(); await settle(); assert.equal(owner.getSnapshot().demo.receipt.deliveries[0].status, 'queued');
+  t.mock.timers.tick(120000); await settle(); assert.equal(calls.length, before + 6);
+  stop = owner.watchDemoReceipt(opId); owner.setUser('admin-b');
+  t.mock.timers.tick(120000); await settle(); assert.equal(calls.length, before + 6);
+  stop(); owner.dispose();
+});
+
+test('demo panel polling survives busy renders and cleans up on hidden tab, route, offline and unmount', t => {
+  const previousDocument = globalThis.document, browserDocument = new EventTarget();
+  browserDocument.visibilityState = 'visible'; globalThis.document = browserDocument;
+  t.after(() => { if (previousDocument === undefined) delete globalThis.document; else globalThis.document = previousDocument; });
+  const h = harness({ '../ui': { AppButton: 'Button', SectionHeader: 'Header' } }), actions = [];
+  const { AdminProactiveDemo } = h.load('src/components/admin/AdminProactiveDemo.tsx');
+  const opId = deliveryId, admin = { watchDemoReceipt(id) { actions.push(['start', id]); return () => actions.push(['stop', id]); } };
+  let state = { ...emptyDemo(), status: 'ready', pending: opId, receipt: receipt(opId, 'queued') }, online = true, visible = true;
+  const render = () => h.render(h.jsx(AdminProactiveDemo, { admin, state, online, visible, writeLocked: false }));
+  render(); state = { ...state, busy: true }; render(); state = { ...state, busy: false, receipt: receipt(opId, 'sending') }; render();
+  assert.deepEqual(actions, [['start', opId]], 'Busy and fresh queued/sending snapshots cannot restart the backoff');
+  online = false; render(); online = true; render();
+  state = { ...state, receipt: receipt(opId, 'unknown') }; render();
+  assert.deepEqual(actions.map(action => action[0]), ['start', 'stop', 'start', 'stop']);
+  state = { ...state, receipt: receipt(opId, 'queued') }; render();
+  browserDocument.visibilityState = 'hidden'; browserDocument.dispatchEvent(new Event('visibilitychange'));
+  browserDocument.visibilityState = 'visible'; browserDocument.dispatchEvent(new Event('visibilitychange'));
+  visible = false; render(); visible = true; render(); h.unmount();
+  assert.deepEqual(actions.map(action => action[0]), Array(5).fill(['start', 'stop']).flat());
+  browserDocument.dispatchEvent(new Event('visibilitychange')); assert.equal(actions.length, 10, 'Unmount removes the visibility listener');
+});
+
+test('manual receipt lookup takes precedence over a late automatic GET without another POST', async t => {
+  let opId, finish, reads = 0;
+  const { owner, calls } = await setup((path, options) => {
+    if (path.endsWith('/proactive-demo') && options.method === 'GET') return Response.json({ enabled: true });
+    if (options.method === 'POST') { opId = JSON.parse(options.body).opId; return Response.json(receipt(opId, 'queued')); }
+    if (++reads === 1) return new Promise(resolve => { finish = () => resolve(Response.json(receipt(opId, 'sending'))); });
+    return Response.json(receipt(opId, 'accepted'));
+  });
+  await owner.loadDemo(); await owner.sendDemo();
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const stop = owner.watchDemoReceipt(opId), settle = () => new Promise(setImmediate);
+  t.mock.timers.tick(3000); await settle(); const automatic = calls.at(-1);
+  await owner.recoverDemo(); assert.equal(automatic.options.signal.aborted, true);
+  finish(); await settle(); t.mock.timers.tick(120000); await settle();
+  assert.equal(owner.getSnapshot().demo.receipt.deliveries[0].status, 'accepted');
+  assert.equal(owner.getSnapshot().demo.pending, null); assert.equal(reads, 2);
+  assert.equal(calls.filter(call => call.options.method === 'POST').length, 1);
+  stop(); owner.dispose();
 });

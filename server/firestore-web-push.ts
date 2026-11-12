@@ -1,3 +1,8 @@
+import { nativeChatPresenceInputSchema, nativePushReferenceSchema } from '../src/shared/native-push.ts';
+import { DeviceSessionError, type FirestoreDeviceSessions, type DeviceSessionKey } from './firestore-device-sessions.ts';
+import { chatStateSchema, chatTargetSchema, chatReasonSchema, presenceLifetimeMs, createChatNotificationPolicy } from './firestore-chat-notification-policy.ts';
+import { createChatNotificationQueue } from './firestore-chat-notification-queue.ts';
+import { pushSubscriptionInput } from '../src/shared/web-push.ts';
 import { randomUUID, createHash } from 'node:crypto';
 import type { Query, DocumentSnapshot } from '@google-cloud/firestore';
 import { z } from 'zod';
@@ -13,9 +18,11 @@ import type { WebPushGateway, PushSendResult } from './web-push-types.ts';
 import { checkedSubscription, pushProvider } from './web-push-gateway.ts';
 
 const uuid = z.uuid(), NIL = '00000000-0000-0000-0000-000000000000';
-export const firestorePushBindingSchema = z.object({ binding: pushBindingSchema, input: pushRegistrationInput.nullable() }).strict();
+export const firestorePushBindingSchema = z.object({ binding: pushBindingSchema, input: pushRegistrationInput.nullable(),
+  sessionHash: z.string().regex(/^[a-f0-9]{64}$/u).optional(), chat: chatStateSchema.optional() }).strict();
 export const firestorePushDeliverySchema = z.object({ delivery: pushDeliverySchema, bindingVersion: z.number().int().positive(),
-  generation: uuid, authorizationVersion: z.string(), attempt: uuid.nullable(), message: notificationMessageContentSchema.optional() }).strict();
+  generation: uuid, authorizationVersion: z.string(), attempt: uuid.nullable(), chatTarget: chatTargetSchema.optional(), chatReason: chatReasonSchema.nullable().optional(),
+  chatSession: z.string().regex(/^[a-f0-9]{64}$/u).optional(), message: notificationMessageContentSchema.optional() }).strict();
 const endpointSchema = z.object({ ownerUserId: z.string().min(1).max(256), bindingId: uuid, endpointHash: z.string().length(64) }).strict();
 export const firestorePushEndpointRecoverySchema = endpointSchema;
 type SavedBinding = z.infer<typeof firestorePushBindingSchema>;
@@ -25,6 +32,8 @@ const pathPattern = /^\/api\/web-push\/subscriptions(?:\/([0-9a-f-]{36})\/(revok
 /** Existing VAPID/provider transport with Firestore receipts. No browser or model sends directly. */
 export function createFirestoreWebPush(options: FirestoreDomainOptions & {
   gateway: WebPushGateway; enabled: boolean;
+  sessions?: Pick<FirestoreDeviceSessions,'assertActiveIn'|'canResumeIn'>;
+  dispatchChatWork?: (id: string) => Promise<unknown>;
   currentAuth(userId: string): Promise<{ disabled: boolean; emailVerified: boolean }>;
 }) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
@@ -46,9 +55,103 @@ export function createFirestoreWebPush(options: FirestoreDomainOptions & {
     createdAt: saved.binding.createdAt, status: saved.binding.status,
     ...data.seal('push-binding', saved.binding.id, b.scope, firestorePushBindingSchema, saved, saved.binding.version) });
   const deliveryEnvelope = (b: Pick<Binding, 'scope'>, saved: SavedDelivery) => ({ ...data.tags(b.scope), deliveryId: saved.delivery.id,
-    createdAt: saved.delivery.createdAt, bindingId: saved.delivery.bindingId, status: saved.delivery.status,
+     ...(saved.chatTarget ? {chatCreatedAt:saved.delivery.createdAt} : {createdAt:saved.delivery.createdAt}), bindingId: saved.delivery.bindingId, status: saved.delivery.status,
     ...messageSortMetadata(saved.message ? [saved.message] : []),
     ...data.seal('push-delivery', saved.delivery.id, b.scope, firestorePushDeliverySchema, saved) });
+  const {chatMessageAvailable, chatEligibility} = createChatNotificationPolicy(data);
+  const validSubscription = (s: SavedBinding) => available() && s.binding.status === 'active' && s.input
+    && s.binding.vapidPublicKey === options.gateway.publicKey && (!s.binding.expiresAt || Date.parse(s.binding.expiresAt) > Date.now());
+
+  async function sessionActive(b: Binding, s: SavedBinding) {
+    if (!s.sessionHash || !options.sessions) return false;
+    try {
+      await options.sessions.assertActiveIn(b.transaction,{userId:b.actorUserId,sessionHash:s.sessionHash});
+      return true;
+    } catch (err) {
+      if (err instanceof DeviceSessionError && err.status === 401) return false;
+      throw err;
+    }
+  }
+  function requireSession(b: Binding, session: DeviceSessionKey) {
+    if (session.userId !== b.actorUserId || !options.sessions) domainReject('unauthorized',401);
+    return options.sessions.assertActiveIn(b.transaction,session);
+  }
+  function presenceView(saved: SavedBinding, session: DeviceSessionKey) {
+    const ours = saved.sessionHash === session.sessionHash;
+    return {bindingId:saved.binding.id, presenceVersion:saved.chat?.presenceVersion ?? 0,
+      chatNotificationsEnabled:ours && saved.chat?.notificationsEnabled === true,
+      chatPreviewEnabled:ours && saved.chat?.previewEnabled === true, expiresAt:ours ? saved.chat?.expiresAt ?? null : null};
+  }
+  async function readChatPresence(userId: string, session: DeviceSessionKey, id: string) {
+    return authority.runTransaction(userId,null,async b => {
+      await requireSession(b,session);
+      const saved = await binding(b,id);
+      if (!validSubscription(saved)) domainReject('subscription_unavailable');
+      return presenceView(saved,session);
+    });
+  }
+  function hasProof(saved: SavedBinding, input: unknown) {
+    const proof = pushSubscriptionInput.safeParse(input);
+    return !!saved.input && proof.success && firestoreDomainHash(saved.input.subscription) === firestoreDomainHash(proof.data);
+  }
+  const presenceInput = nativeChatPresenceInputSchema.extend({bindingId:uuid, expectedBindingVersion:z.number().int().positive(),
+    expectedPresenceVersion:z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER-1), subscription:pushSubscriptionInput.optional()});
+  async function setChatPresence(userId: string, session: DeviceSessionKey, raw: unknown) {
+    const input = domainParse(presenceInput,raw);
+    return authority.runTransaction(userId,null,async b => {
+      await requireSession(b,session);
+      const saved = await binding(b,input.bindingId);
+      if (!validSubscription(saved) || saved.binding.version !== input.expectedBindingVersion) domainReject('subscription_changed');
+      const version = saved.chat?.presenceVersion ?? 0, sameSession = saved.sessionHash === session.sessionHash;
+      if (version !== input.expectedPresenceVersion) domainReject('presence_changed');
+      if ((!sameSession || input.chatNotificationsEnabled !== undefined || input.chatPreviewEnabled !== undefined) && !hasProof(saved,input.subscription))
+        domainReject('installation_proof_required',409);
+      if (!sameSession && (input.chatNotificationsEnabled !== true || input.chatPreviewEnabled === undefined))
+        domainReject('installation_consent_required',409);
+      if (input.childId && !await b.readChild(input.childId)) domainReject('not_found',404);
+      const enabled = input.chatNotificationsEnabled ?? saved.chat?.notificationsEnabled ?? false;
+      if (input.chatPreviewEnabled && !enabled) domainReject('invalid_input',400);
+      const previewEnabled = enabled && (input.chatPreviewEnabled ?? saved.chat?.previewEnabled ?? false);
+      const preferenceChanged = !sameSession || enabled !== !!saved.chat?.notificationsEnabled || previewEnabled !== !!saved.chat?.previewEnabled;
+      const change = preferenceChanged ? await b.prepareChange(randomUUID(),'preferences',false) : null;
+      saved.sessionHash = session.sessionHash;
+      saved.chat = {notificationsEnabled:enabled, previewEnabled, brandedCard:true, presenceVersion:version+1,
+        childId:enabled ? input.childId : null, expiresAt:enabled && input.childId ? new Date(Date.now()+presenceLifetimeMs).toISOString() : null};
+      change?.commit();
+      b.transaction.set(data.ref('push_bindings','push-binding',saved.binding.id),bindingEnvelope(b,saved));
+      return presenceView(saved,session);
+    });
+  }
+  const queue = createChatNotificationQueue(data, {
+    kind:'push', bindings:'push_bindings', identity:'web-chat-delivery', deliveries:'push_deliveries', record:'push-delivery',
+    dispatch:options.dispatchChatWork,
+    async recipient(b,id) {
+      const s = await binding(b,id);
+      return validSubscription(s) && s.chat?.notificationsEnabled && await sessionActive(b,s)
+        ? {...s.binding, sessionHash:s.sessionHash} : null;
+    },
+    read:(b,row,id)=>decode(b,row,'push-delivery',id,firestorePushDeliverySchema), envelope:deliveryEnvelope,
+  });
+  async function authorizeChatOpen(userId: string, session: DeviceSessionKey, raw: unknown, proof?:unknown) {
+    const ref = domainParse(nativePushReferenceSchema,raw);
+    return authority.runTransaction(userId,null,async b => {
+      await requireSession(b,session);
+      const subscribed = await binding(b,ref.bindingId);
+      if (ref.kind !== 'care' || !validSubscription(subscribed) || !subscribed.chat?.notificationsEnabled
+        || subscribed.binding.version !== ref.bindingVersion || !subscribed.sessionHash) domainReject('not_found',404);
+      const row = await b.transaction.get(data.ref('push_deliveries','push-delivery',ref.deliveryId));
+      const saved = decode(b,row,'push-delivery',ref.deliveryId,firestorePushDeliverySchema);
+      if (!saved.chatTarget || saved.delivery.id !== ref.deliveryId || saved.delivery.bindingId !== ref.bindingId || saved.bindingVersion !== ref.bindingVersion
+        || saved.generation !== b.generation || saved.authorizationVersion !== b.authorizationVersion || !['sending','unknown','accepted'].includes(saved.delivery.status)
+        || !saved.chatSession || !await options.sessions!.canResumeIn(b.transaction,{userId,sessionHash:saved.chatSession})) domainReject('not_found',404);
+      if (session.sessionHash !== saved.chatSession || session.sessionHash !== subscribed.sessionHash) {
+        if (proof === undefined) domainReject('installation_proof_required',409);
+        if (!hasProof(subscribed,proof)) domainReject('not_found',404);
+      }
+      if (!await chatMessageAvailable(b,saved.chatTarget)) domainReject('not_found',404);
+      return {kind:'chat' as const,...saved.chatTarget};
+    });
+  }
   async function recent(b: Binding) {
     const rows = await b.transaction.get(query(b, 'push_deliveries').where('createdAt', '>', new Date(Date.now() - 86400_000).toISOString())
       .orderBy('createdAt', 'desc').orderBy('deliveryId', 'desc').limit(4));
@@ -126,17 +229,17 @@ export function createFirestoreWebPush(options: FirestoreDomainOptions & {
         result: 'binding' in prepared ? { binding: prepared.binding } : { delivery: prepared.delivery }, commit() { change.commit(); prepared.commit(); } };
     },
   };
-  async function status(userId: string): Promise<WebPushStatus> {
+  async function status(userId: string, includeApple = false): Promise<WebPushStatus> {
     return authority.runTransaction(userId, null, async b => {
       const rows = await b.transaction.get(query(b, 'push_bindings').orderBy('createdAt', 'desc').orderBy('bindingId', 'desc').limit(20));
-      const bindings = rows.docs.map(row => decode(b, row, 'push-binding', row.get('bindingId'), firestorePushBindingSchema).binding);
+      const bindings = rows.docs.map(row => decode(b, row, 'push-binding', row.get('bindingId'), firestorePushBindingSchema).binding).filter(binding => includeApple || binding.provider !== 'apple');
       bindings.sort((a, x) => Number(x.status === 'active') - Number(a.status === 'active'));
       const messages = await b.transaction.get(query(b, 'push_deliveries').orderBy('createdAt', 'desc').orderBy('deliveryId', 'desc').limit(20));
       const deliveries = messages.docs.map(row => decode(b, row, 'push-delivery', row.get('deliveryId'), firestorePushDeliverySchema).delivery);
       const used = await recent(b), next = Math.max(0, ...used.map(item => Date.parse(item.createdAt) + 60_000),
         used.length >= 3 ? Math.min(...used.map(item => Date.parse(item.createdAt))) + 86400_000 : 0);
       return { userId, available: available(), workerEnabled: (await authority.readControl(b.transaction)).enabled,
-        publicKey: options.gateway.publicKey, supportedProviders: ['fcm', 'mozilla'], bindings, deliveries,
+        publicKey: options.gateway.publicKey, supportedProviders: includeApple ? ['fcm','mozilla','apple'] : ['fcm','mozilla'], bindings, deliveries,
         testsRemaining: Math.max(0, 3 - used.length), nextTestAt: next > Date.now() ? new Date(next).toISOString() : null };
     });
   }
@@ -154,36 +257,56 @@ export function createFirestoreWebPush(options: FirestoreDomainOptions & {
         b.transaction.set(ref, deliveryEnvelope(b, saved)); return { terminal: 'unknown' as const };
       }
       const subscription = await binding(b, value.bindingId), control = await authority.readControl(b.transaction);
-      const reason: PushDelivery['reason'] = !control.enabled ? 'worker_paused' : !options.gateway.publicKey ? 'configuration_unavailable'
+      const reason: PushDelivery['reason'] = saved.chatTarget && (saved.chatSession !== subscription.sessionHash || !await sessionActive(b,subscription)) ? 'revoked' : !control.enabled ? 'worker_paused' : !options.gateway.publicKey ? 'configuration_unavailable'
         : subscription.binding.status !== 'active' || subscription.binding.version !== saved.bindingVersion || subscription.binding.vapidPublicKey !== options.gateway.publicKey
           || !subscription.input ? 'revoked' : subscription.binding.expiresAt && Date.parse(subscription.binding.expiresAt) <= Date.now() ? 'subscription_expired' : null;
       if (reason) { saved.delivery = { ...value, status: 'stopped', reason, finishedAt: new Date().toISOString() }; b.transaction.set(ref, deliveryEnvelope(b, saved)); return null; }
+      if (saved.chatTarget) {
+        const chat = await chatEligibility(b,saved,subscription);
+        saved.chatReason = chat.reason;
+        if (chat.nextAt) { b.transaction.set(ref,deliveryEnvelope(b,saved)); return {deferred:chat.nextAt}; }
+        if (chat.reason) {
+          saved.delivery = {...value,status:'stopped',reason:'revoked',finishedAt:new Date().toISOString()};
+          b.transaction.set(ref,deliveryEnvelope(b,saved)); return null;
+        }
+      }
       saved.attempt = randomUUID(); saved.delivery = { ...value, status: 'sending', attemptedAt: new Date().toISOString() };
       b.transaction.set(ref, deliveryEnvelope(b, saved)); return { saved, subscription: subscription.input!.subscription };
     });
     if (!original) return { state: 'stopped' as const };
+    if ('deferred' in original && original.deferred) return {state:'deferred' as const,nextAt:original.deferred};
     if (original.terminal) return { state: original.terminal };
+    if (!original.saved || !original.subscription) domainReject('push_binding',500);
+    const {saved:claimed,subscription:targetSubscription} = original;
+    const authorization = {chat:null as Awaited<ReturnType<typeof chatEligibility>> | null};
     const authorized = async () => {
+      authorization.chat = null;
       if (signal.aborted) return false;
       const identity = await options.currentAuth(scope.ownerUserId); if (identity.disabled || !identity.emailVerified) return false;
       try { return await authority.runTransaction(scope.ownerUserId, null, async b => {
         const current = decode(b, await b.transaction.get(data.ref('push_deliveries', 'push-delivery', id)), 'push-delivery', id, firestorePushDeliverySchema);
-        const subscribed = (await binding(b, current.delivery.bindingId)).binding;
-        return b.generation === job.generation && b.authorizationVersion === job.authorizationVersion && (await authority.readControl(b.transaction)).enabled
-          && current.delivery.status === 'sending' && current.attempt === original.saved.attempt && subscribed.status === 'active'
+        const registration = await binding(b,current.delivery.bindingId), subscribed = registration.binding;
+        const active = b.generation === job.generation && b.authorizationVersion === job.authorizationVersion && (await authority.readControl(b.transaction)).enabled
+          && current.delivery.status === 'sending' && current.attempt === claimed.attempt && subscribed.status === 'active'
           && subscribed.version === current.bindingVersion && subscribed.vapidPublicKey === options.gateway.publicKey
           && (!subscribed.expiresAt || Date.parse(subscribed.expiresAt) > Date.now());
+        if (!active || !current.chatTarget) return active;
+        if (registration.sessionHash !== current.chatSession || !await sessionActive(b,registration)) return false;
+        authorization.chat = await chatEligibility(b,current,registration);
+        return !authorization.chat.reason;
       }); } catch (error) { if (error && typeof error === 'object' && 'status' in error && [403, 404, 409].includes(Number(error.status))) return false; throw error; }
     };
     let result: PushSendResult;
-    try { result = await options.gateway.send(original.subscription, { v: 1, bindingId: original.saved.delivery.bindingId,
-      bindingVersion: original.saved.bindingVersion, deliveryId: id }, signal, authorized); }
+    try { result = await options.gateway.send(targetSubscription, {
+      ...(claimed.chatTarget ? {v:2 as const,kind:'chat' as const} : {v:1 as const}),
+      bindingId: claimed.delivery.bindingId,bindingVersion: claimed.bindingVersion,deliveryId:id
+    },signal,authorized,() => authorization.chat?.previewText); }
     catch { result = { status: 'unknown', reason: 'transport_unknown', providerStatus: null }; }
     // Persist actual provider evidence even if the account was revoked while the request was in flight.
     await options.database.runTransaction(async tx => {
       const b = { scope }, ref = data.ref('push_deliveries', 'push-delivery', id), row = await tx.get(ref); if (!row.exists) return;
       const saved = decode(b, row, 'push-delivery', id, firestorePushDeliverySchema);
-      if (saved.attempt !== original.saved.attempt || saved.delivery.status !== 'sending') return;
+      if (saved.attempt !== claimed.attempt || saved.delivery.status !== 'sending') return;
       const bindingRef = data.ref('push_bindings', 'push-binding', saved.delivery.bindingId), subscriptionRow = await tx.get(bindingRef);
       const subscribed = subscriptionRow.exists ? decode(b, subscriptionRow, 'push-binding', saved.delivery.bindingId, firestorePushBindingSchema) : null;
       const expiring = result.reason === 'subscription_expired' && subscribed?.binding.status === 'active' && subscribed.binding.version === saved.bindingVersion;
@@ -191,6 +314,14 @@ export function createFirestoreWebPush(options: FirestoreDomainOptions & {
       const pointerRow = pointer ? await tx.get(pointer) : null;
       const change = await authority.prepareReceiptChange(tx, scope, randomUUID(), 'preferences');
       change?.commit();
+      if (saved.chatTarget && result.status === 'stopped' && authorization.chat?.reason) {
+        saved.chatReason = authorization.chat.reason;
+        if (authorization.chat.nextAt) {
+          saved.attempt = null;
+          saved.delivery = {...saved.delivery,status:'queued',reason:null,attemptedAt:null,finishedAt:null};
+          tx.set(ref,deliveryEnvelope(b,saved)); return;
+        }
+      }
       const { message: capturedMessage, ...deliveryResult } = result;
       const message = options.messageHistoryEnabled === true ? acceptedMessage({ ...deliveryResult, message: capturedMessage }, 'web_push') : undefined;
       if (message) saved.message = message;
@@ -201,9 +332,10 @@ export function createFirestoreWebPush(options: FirestoreDomainOptions & {
           endpointHash: null, label: '已失效的訂閱', updatedAt: new Date().toISOString() }; tx.set(bindingRef, bindingEnvelope(b, subscribed));
       }
     });
+    if (result.status === 'stopped' && authorization.chat?.nextAt) return {state:'deferred' as const,nextAt:authorization.chat.nextAt};
     return { state: result.status === 'unknown' ? 'unknown' as const : 'completed' as const };
   }
-  return { status, mutation, process,
+  return { status, mutation, process, ...queue, readChatPresence, setChatPresence, authorizeChatOpen,
     async prepareInvalidation(b: Pick<Binding, 'scope' | 'transaction'>, id: string, version: number) {
       const ref = data.ref('push_bindings', 'push-binding', id), row = await b.transaction.get(ref);
       if (!row.exists) return { commit() {} };

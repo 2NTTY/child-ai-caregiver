@@ -306,6 +306,11 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
     return result;
   }
   return { handler, getSession, fromNodeHeaders,
+    async webSessionProof(headers) {
+      if (headers.has("authorization")) return null;
+      const current = await readSession(headers);
+      return current ? { userId: current.session.user.id, sessionHash: current.sessionHash } : null;
+    },
     async nativeSessionProof(headers) {
       if (!headers.has("authorization")) return null;
       const current = await readSession(headers);

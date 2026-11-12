@@ -1,5 +1,7 @@
 # P2 Web Push 操作與驗收
 
+本頁記錄 P2 首版與當時的驗收。現行 Firestore 版本亦支援 Apple Web Push；聊天通知可按安裝選擇預覽，點按後重新核權並開啟原訊息。[現行 API](API.md#p2-web-push-http) · [iPhone 主畫面試用](IPHONE_PWA.md)
+
 S13-W05 提供本人訂閱、撤銷、固定一般測試及投遞狀態；照護任務聯絡／預授權／fallback 仍在 S13-W07。前置 S06-W02／S13-W04 已合併，不依賴 S10-W02。[UI 對接](P2_UI_HANDOFF.md)／[HTTP](API.md#p2-web-push-http)。
 
 ## 配置與保護
