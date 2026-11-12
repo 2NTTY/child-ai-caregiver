@@ -47,16 +47,23 @@ function summarizeRun(run) {
 
 const attemptTime = (run) => Date.parse(run.run_started_at || run.created_at || run.updated_at) || 0;
 
-function dailyStatus(runs, status, now) {
-  const lastAttempt = summarizeRun(runs.find((run) => run.event === 'schedule'));
-  const candidates = [lastAttempt?.startedAt, status?.lastScheduledAt].filter((value) => Number.isFinite(Date.parse(value)));
-  const lastScheduledAt = candidates.sort((a, b) => Date.parse(b) - Date.parse(a))[0] || null;
-  if (!lastScheduledAt) return { state: 'never-scheduled', lastScheduledAt: null, lastAttempt,
-    overdue: null, nextExpectedBy: null, message: 'No scheduled attempt has been observed yet; daily monitoring is unverified.' };
-  const nextExpectedBy = new Date(Date.parse(lastScheduledAt) + 26 * 60 * 60 * 1000).toISOString();
-  const overdue = +now > Date.parse(nextExpectedBy);
-  return { state: overdue ? 'overdue' : 'current', lastScheduledAt, lastAttempt, overdue, nextExpectedBy,
-    message: 'Daily cadence uses a 24-hour interval plus 2 hours of scheduling grace; inspect lastAttempt for failures.' };
+function dailyStatus(runs, status, now, workflow) {
+  const latest = runs.filter(run => run.event === 'schedule')
+    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
+  const lastAttempt = summarizeRun(latest);
+  const lastScheduledAt = lastAttempt?.createdAt ?? status?.lastScheduledAt ?? null;
+  const baseline = Date.parse(lastScheduledAt ?? workflow?.created_at);
+  const evidence = { lastScheduledAt, lastAttempt, expectedAt: null, nextExpectedBy: null, overdue: null };
+  if (workflow?.state && workflow.state !== 'active') return { ...evidence, state: 'disabled', message: workflow.state };
+  if (!Number.isFinite(baseline)) return { ...evidence, state: 'never-scheduled', message: 'No workflow registration or scheduled event has been observed.' };
+  const slot = new Date(baseline);
+  slot.setUTCHours(20, 17, 0, 0);
+  if (+slot <= baseline) slot.setUTCDate(slot.getUTCDate() + 1);
+  const deadline = new Date(+slot + 2 * 60 * 60 * 1000);
+  const overdue = +now > +deadline;
+  const state = overdue ? 'overdue' : lastScheduledAt ? 'current' : 'awaiting-first';
+  return { ...evidence, state, overdue, expectedAt: slot.toISOString(), nextExpectedBy: deadline.toISOString(),
+    message: 'The daily 20:17 UTC slot has two hours of grace. Only a new scheduled event counts.' };
 }
 
 export async function readRemoteStatus({ exec = runCommand, now = new Date() } = {}) {
@@ -78,7 +85,7 @@ export async function readRemoteStatus({ exec = runCommand, now = new Date() } =
   const runs = pages.flatMap((page) => page.workflow_runs).filter((run) => trustedRun(run, workflow, repository))
     .sort((a, b) => attemptTime(b) - attemptTime(a) || b.id - a.id);
   result.latestAttempt = summarizeRun(runs[0]);
-  result.daily = dailyStatus(runs, null, now);
+  result.daily = dailyStatus(runs, null, now, workflow);
   for (const run of runs) {
     if (run.status !== 'completed' || run.conclusion !== 'success') continue;
     const artifactPages = await api(exec, `repos/${REPOSITORY}/actions/runs/${run.id}/artifacts?per_page=100`, true);
@@ -98,7 +105,7 @@ export async function readRemoteStatus({ exec = runCommand, now = new Date() } =
       const file = await lstat(path);
       if (!file.isFile() || file.isSymbolicLink() || file.size > 1024 * 1024) throw new Error('Invalid status.json artifact file.');
       result.status = validateStatus(JSON.parse(await readFile(path, 'utf8')));
-      result.daily = dailyStatus(runs, result.status, now);
+      result.daily = dailyStatus(runs, result.status, now, workflow);
       result.provenance = { runId: run.id, runUrl: run.html_url, sha: run.head_sha, artifactId: artifact.id,
         observedAt: result.status.observedAt, completedAt: run.updated_at };
       result.bootstrapPending = false;
