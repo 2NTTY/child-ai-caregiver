@@ -1,0 +1,15 @@
+{
+  "candidate": "design-choice-alias-fix01-20261112",
+  "sourceFileCount": 601,
+  "candidateMainSha256": "6631c82a994b522c5d56dc842d23ce9264f0acbb65f0cf03e9f92e8a169d833f",
+  "changedDesignChoicesSha256": "839a4fd52b1cd5cfeeb74da2d8a9b08b37ee358efe1d1da3f952f2fbae19b6dc",
+  "baseDesignChoicesSha256": "59a8add6d94c503ba2f00422a28334836187ad8f929f649f0d4dd9104dd9018e",
+  "v109SourceCommit": "2e9c44f7e5cb46a092063d6ff420bd50271a1ecc",
+  "baseAlignedSourceManifestSha256": "e60f3d64c9ac0e9bde5c36fd11d8333512d136eefca9b8a05b0a421fd6a509b4",
+  "originalCandidateInventorySha256": "5dc9979577cf934ec78ffbb0c2298d06ee685bada1c4080c0a8409d8fe479a2a",
+  "publicSafeSourceManifestSha256": "1cd89321e6ebd1322dea0121f5c39f0cc5e7c0b4c55e839518d46811f35801bc",
+  "changedProductFiles": [
+    "dist/experiments/workbench-compare/design-choices.mjs"
+  ],
+  "publication": false
+}

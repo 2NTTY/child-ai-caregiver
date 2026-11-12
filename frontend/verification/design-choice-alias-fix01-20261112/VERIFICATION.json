@@ -1,0 +1,62 @@
+{
+  "red": {
+    "tests": 32,
+    "pass": 25,
+    "expectedAliasFailures": 7
+  },
+  "green": {
+    "tests": 32,
+    "pass": 32,
+    "fail": 0,
+    "skipped": 0
+  },
+  "static": {
+    "catalogPins": 216,
+    "parserPayloadScripts": 20,
+    "syntax": "pass"
+  },
+  "independentReview": {
+    "status": "NO_BLOCKING_FINDING",
+    "canonicalOutputsUnchanged": 90,
+    "aliasDedupeChecks": 590,
+    "exactObservationMismatchRejections": 590,
+    "distinctIdentities": 100,
+    "hostIntegrationTest": "pass",
+    "fullSuiteRerunByReviewer": false
+  },
+  "browserSmoke": {
+    "localOnlyRouteCarrier": true,
+    "summaryRouteStubBytes": 127,
+    "sideA": "/summary?tab=archive",
+    "sideB": "/summary/?previewScenario=ready",
+    "countAfterA": 1,
+    "countAfterB": 1,
+    "duplicateMessageObserved": true,
+    "firstProvenanceRetained": true,
+    "originalLiveChoicesUnmodified": true,
+    "newTestTabClosed": true,
+    "previewStopped": true
+  },
+  "limitations": [
+    "Controlled JSDOM geometry is not visual acceptance",
+    "Public clean route and HTTP headers not verified",
+    "No full app build/typecheck/export or whole-site acceptance",
+    "No migration of existing live lists or old exports",
+    "Raw evidence retained privately and not included"
+  ],
+  "publicSafeCopyTests": {
+    "tests": 32,
+    "pass": 32,
+    "fail": 0
+  },
+  "publicSafeScan": {
+    "regularFilesBeforeFilesIndex": 609,
+    "textFilesScanned": 492,
+    "maxFileBytes": 6276460,
+    "privatePathIndicators": 0,
+    "boundedCredentialIndicators": 0,
+    "sourceMapsAndRawEvidence": 0,
+    "newContent": "single reviewed identity change, regression tests and structured receipts only",
+    "scope": "bounded scan plus exact previously public-safe source comparison, not a complete security audit"
+  }
+}
