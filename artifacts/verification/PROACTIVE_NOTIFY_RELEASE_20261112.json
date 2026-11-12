@@ -81,5 +81,26 @@
     "queueToAttemptMs": [26378, 119387],
     "attemptToAcceptedReceiptMs": [1034, 1025],
     "timingScope": "Two existing demo receipts, ordered by creation time. Only the first had a seen receipt at inspection. No handset arrival timestamps."
+  },
+  "dispatchAndPreview": {
+    "sourcePullRequests": [566, 567],
+    "commit": "954ee312d58d7215f14d3f8238ff311a76a1aa1a",
+    "tag": "p4-notify-speed-preview-954ee312",
+    "observedAtUtc": "2026-11-12T02:30:53Z",
+    "slowerOriginalJobUtc": {
+      "queued": "2026-11-12T01:59:06.173Z",
+      "compensationWakeUnavailable": "2026-11-12T02:00:11.613Z",
+      "deliveryStarted": "2026-11-12T02:01:05.560Z",
+      "channelAcceptedRecorded": "2026-11-12T02:01:06.585Z"
+    },
+    "apiAndWorker": "healthy; immediate Cloud Tasks dispatch configured on API and worker; minute compensation retained",
+    "apiDeltaSha256": "e3121584e4e82823b36ce665fa971e54367ba4713530b7153f3178be9352657d",
+    "webArchiveSha256": "c97ae8663579b14b2cd37b9285678705ad7da8aa0daedec0f1606f7d52d1a358",
+    "publicHealthHttp": 200,
+    "unauthenticatedAdminDemoHttp": 401,
+    "publicAdminHtmlSha256": "517893af06dba0688742f1e3d9b1f9d7b4557341fa7c1991818cbf3a40ec00c6",
+    "androidRuntime": "f5c61d6a5e93b4253cbac75f15a5179fbcf101c5",
+    "localAndroidVerification": "Expo prebuild resources and AAPT2, notification payload and tap parsing, JS/Hermes export, matching archive inventory and existing signing fingerprint",
+    "handsetVerification": "Pending one notification on the new Android runtime with message previews enabled. No post-release latency sample at publication."
   }
 }

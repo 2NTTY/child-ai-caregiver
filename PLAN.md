@@ -67,7 +67,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 | NOTIFY-02 | 待辦到點、每日巡查及助手約下次查看；開啟後可查資料、聯絡及安排跟進 | 期限獨立喚醒；完成後停止；無線索零模型呼叫；同事件只處理一次 |
 | NOTIFY-03 | 公共事件增量、家庭相關性、已看及重要未讀最多一次補提 | 一份公告對兩組家庭篩選；一次真 Agent；重播、已讀、失效及無動作結果 |
 
-三種喚醒及一鍵示範已接入原站。隔離環境的真 Gemini 已分別完成按約定主動聯絡及安靜結束。Android 版本 6 已由本人確認關閉 App 後收到示範、點入回覆，同一回覆可在 Web 讀回。接着縮短入隊至交送的等待，為 Android 狀態列及通知卡接入育有方圖示，讓已選擇預覽的手機顯示該則正式訊息的摘要片段。原有收件驗收沿用，新顯示以一則通知核對。其後接 REQ-001 搜索。[REQ-010](docs/REQUIREMENTS_BACKLOG.md#req-010) · [本機證據](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json) · [發布及 APK](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
+三種喚醒及一鍵示範已接入原站。隔離環境的真 Gemini 已分別完成按約定主動聯絡及安靜結束。Android 版本 6 已由本人確認關閉 App 後收到示範、點入回覆，同一回覆可在 Web 讀回。原站 `954ee312` 在保存後直接派送，每分鐘排程負責補查未派送工作。下一步用含品牌圖示的新版 APK 開啟「在通知顯示聊天內容預覽」，觸發一則示範，核對狀態列、通知卡頭像、正文片段及該筆收據耗時。之後接 REQ-001 搜索。[REQ-010](docs/REQUIREMENTS_BACKLOG.md#req-010) · [本機證據](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json) · [發布及 APK](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
 
 <a id="agent-search-first"></a>
 **主動通知交付後做 REQ-001 的官方來源搜索。** 按[需求文件的 A–D 次序](docs/REQUIREMENTS_BACKLOG.md#2-跨包的首交付切片與依賴)，先核對一條查詢需要的來源版本、引用、權限、用量及原 run 恢復（A），再用現有核准來源走通一條 Web 查詢（B）。家長應看到真實進度、得到符合適用條件的回答，能從引用打開支持說法的原文。證據不足時說明缺口，斷線後可查回同一次結果。此流程待驗。
