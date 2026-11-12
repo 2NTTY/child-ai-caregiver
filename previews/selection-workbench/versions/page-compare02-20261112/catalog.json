@@ -1,0 +1,1137 @@
+{
+  "version": "page-compare02-20261112",
+  "referenceVersion": "page-reference12-20261111",
+  "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1",
+  "selected": false,
+  "published": false,
+  "implementedFrontend": false,
+  "browserReview": "NOT_RUN",
+  "groups": [
+    {
+      "id": "home",
+      "label": "首頁",
+      "imageIds": [
+        "H-01"
+      ],
+      "missingNativeIds": [
+        "H-03"
+      ],
+      "comparisonKind": "single-or-incomplete"
+    },
+    {
+      "id": "chat",
+      "label": "助手對話",
+      "imageIds": [
+        "PC01",
+        "PC03"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "same-page-type-reference"
+    },
+    {
+      "id": "care-timeline",
+      "label": "全照顧時間線 · C-01",
+      "imageIds": [
+        "C-01"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "related-reference-single"
+    },
+    {
+      "id": "care-rhythm",
+      "label": "睡眠／哭聲節律 · C-02",
+      "imageIds": [
+        "C-02"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "related-reference-single"
+    },
+    {
+      "id": "settings-appearance",
+      "label": "個人外觀設定 · S-01",
+      "imageIds": [
+        "S-01"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "related-reference-single"
+    },
+    {
+      "id": "settings-admin",
+      "label": "管理員系統設定 · S-02",
+      "imageIds": [
+        "S-02"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "related-reference-single"
+    },
+    {
+      "id": "memory",
+      "label": "記憶與參考",
+      "imageIds": [
+        "MR-01",
+        "MR-02"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "same-page-type-reference"
+    },
+    {
+      "id": "tasks-today",
+      "label": "手機 Today 待辦 · TK02",
+      "imageIds": [
+        "TK02"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "related-reference-single"
+    },
+    {
+      "id": "tasks-shopping",
+      "label": "桌面 Shopping List · TK03",
+      "imageIds": [
+        "TK03"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "related-reference-single"
+    },
+    {
+      "id": "login",
+      "label": "登入",
+      "imageIds": [
+        "LG01"
+      ],
+      "missingNativeIds": [
+        "LG02"
+      ],
+      "comparisonKind": "single-or-incomplete"
+    },
+    {
+      "id": "business",
+      "label": "一般業務概覽（非育兒成長）",
+      "imageIds": [
+        "GR01"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "single-or-incomplete"
+    },
+    {
+      "id": "history",
+      "label": "活動歷史",
+      "imageIds": [
+        "HIS01",
+        "HIS02"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "same-page-type-reference"
+    },
+    {
+      "id": "guide",
+      "label": "閱讀指南",
+      "imageIds": [
+        "GD01",
+        "GD02"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "same-page-type-reference"
+    },
+    {
+      "id": "learning",
+      "label": "一般學習檔案（非兒童資料）",
+      "imageIds": [
+        "PF01"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "single-or-incomplete"
+    },
+    {
+      "id": "productivity",
+      "label": "一般生產力檔案（非兒童／學習頁）",
+      "imageIds": [
+        "PP01"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "single-or-incomplete"
+    },
+    {
+      "id": "knowledge",
+      "label": "知識記憶列表（非引文管理）",
+      "imageIds": [
+        "SRC01",
+        "SRC02"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "same-page-type-reference"
+    },
+    {
+      "id": "detail-review",
+      "label": "OCR 詳情審閱 · SD01-01",
+      "imageIds": [
+        "SD01"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "single-source-reference"
+    },
+    {
+      "id": "baby-dashboard",
+      "label": "孩子概況 Dashboard · C-03-01",
+      "imageIds": [],
+      "nativeIds": [
+        "C-03"
+      ],
+      "missingNativeIds": [],
+      "comparisonKind": "single-source-reference"
+    }
+  ],
+  "images": [
+    {
+      "id": "H-01",
+      "path": "candidates/H-01/reference/webinterface_dashboard.png",
+      "sha256": "e165f15881d9b2d61697a27144b5edf4a4fbe624324c4918076d1e7912c48c34",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1"
+    },
+    {
+      "id": "PC01",
+      "path": "candidates/PC01/reference/generative-ui-light.pinned.png",
+      "sha256": "5eec1d863f074a18cb19776b5db85833dc9a734b0519a2e5eb6576b445087efd",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1"
+    },
+    {
+      "id": "PC03",
+      "path": "candidates/PC03/PC03-original.png",
+      "sha256": "999b863af70f68c27558171c3890a87c951938cb7272bf040271debd17a974c6",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1"
+    },
+    {
+      "id": "C-01",
+      "path": "candidates/C-01/reference/timeline.png",
+      "sha256": "870b66867370bf25b849b2d8d1a47b4fb70163563a501f42c4e6d051d726fcb5",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1",
+      "pagePurpose": "全照顧時間線",
+      "device": "desktop",
+      "difference": "桌面全照顧事件時間線；C-02 是睡眠／哭聲節律，不是同頁。"
+    },
+    {
+      "id": "C-02",
+      "path": "candidates/C-02/original/rhythm.jpg",
+      "sha256": "f654656721d56561d4dc4e32840da3c62825cee2fdc9a6237f31e199dc0ff872",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1",
+      "pagePurpose": "睡眠／哭聲節律",
+      "device": "desktop",
+      "difference": "桌面睡眠／哭聲節律；C-01 是全照顧時間線，不是同頁。"
+    },
+    {
+      "id": "S-01",
+      "path": "candidates/S-01/reference/forms-light.png",
+      "sha256": "15450ff7b8d5904d6c801acc6d7f2e33e267dcdc8ea2e101f9a18ffc65b3b3cd",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1",
+      "pagePurpose": "個人外觀",
+      "device": "desktop",
+      "difference": "桌面個人外觀設定；S-02 是管理員系統設定，不是同頁或同角色。"
+    },
+    {
+      "id": "S-02",
+      "path": "candidates/S-02/assets/settings-en.png",
+      "sha256": "a9d2be60227f37c6c0364e730b751b66c9a3923f9804bebde341d05e0441ba14",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1",
+      "pagePurpose": "管理員系統",
+      "device": "desktop",
+      "difference": "桌面管理員系統設定；S-01 是個人外觀設定，不是同頁或同角色。"
+    },
+    {
+      "id": "MR-01",
+      "path": "candidates/MR-01/reference/trilium-app.png",
+      "sha256": "52250f81e9c2beab2b393fabb1ab1583fe5e22e3bfbff76ef154c93fa5154c6a",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1"
+    },
+    {
+      "id": "MR-02",
+      "path": "candidates/MR-02/reference/silverbullet-markdown-basics-preview.png",
+      "sha256": "622e6e6749444759f8ddc81781530dde2a1460a0ae98a716c07d9478e17830cd",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1"
+    },
+    {
+      "id": "TK02",
+      "path": "candidates/TK02/reference/task-list-light.png",
+      "sha256": "e545d2bd5f527b3fb9ce0d6e3b7d7c3bade00b2f013209a31c3beb6c81377609",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1",
+      "pagePurpose": "Today 待辦",
+      "device": "mobile",
+      "difference": "手機 Today 待辦；TK03 是桌面 Shopping List，裝置與用途不同，不是同頁。"
+    },
+    {
+      "id": "TK03",
+      "path": "candidates/TK03/assets/errands-original.png",
+      "sha256": "e965a4888408fc2e8b50baba8ce88ab74f995472597a7071b30e78c762a1bf4f",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1",
+      "pagePurpose": "Shopping List",
+      "device": "desktop",
+      "difference": "桌面 Shopping List；TK02 是手機 Today 待辦，裝置與用途不同，不是同頁。"
+    },
+    {
+      "id": "LG01",
+      "path": "candidates/LG01/LG01-original.png",
+      "sha256": "90a19ffdb4692d790ebe9229eb361891f423b4ddca58f9d1140e2d7f32eb1ec3",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1"
+    },
+    {
+      "id": "GR01",
+      "path": "candidates/GR01/original/dashboard-light.png",
+      "sha256": "f49387cbf151cad0fda73868da2b0d8bc34f4e531200dc34cf7c749771c5cb0f",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1"
+    },
+    {
+      "id": "HIS01",
+      "path": "candidates/HIS01/assets/nextcloud-activity-original.png",
+      "sha256": "4cceded73d2f8930bb9a4254b276dc0e7c7fad2300abe615cd2be6f099348d97",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1"
+    },
+    {
+      "id": "HIS02",
+      "path": "candidates/HIS02/original/activity.webp",
+      "sha256": "20d9602f6d14383388bc170971e5154d5303a8522902d0b708117bcd7fa44ccb",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1"
+    },
+    {
+      "id": "GD01",
+      "path": "candidates/GD01/GD01-original.png",
+      "sha256": "7ce4dfa28ab3dbb6f6d97d1691d1708791a213fc4afd517bede51c971475dc00",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1"
+    },
+    {
+      "id": "GD02",
+      "path": "candidates/GD02/GD02-original.png",
+      "sha256": "28cff1426196ff2a7814ad4fed2d4396e37350a25a847208a3ba3023af7db144",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1"
+    },
+    {
+      "id": "PF01",
+      "path": "candidates/PF01/original/bright-profile-09.png",
+      "sha256": "bd23c71d663416e69370002bc8cc297dc8b4e654b82cbd4c6ce70becf3e211f2",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1"
+    },
+    {
+      "id": "PP01",
+      "path": "candidates/PP01/original/noted-profile-09.png",
+      "sha256": "eaa2a7972b8ac5a73d8df62a007ea293e03cd5fb7f85748da27a066f37d1a898",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1"
+    },
+    {
+      "id": "SRC01",
+      "path": "candidates/SRC01/original/SRC01-superlocalmemory-v2-memories.png",
+      "sha256": "418dac98a6d4bf71130f69b7f38738afad52353c47548112a01658a09da354d4",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1"
+    },
+    {
+      "id": "SRC02",
+      "path": "candidates/SRC02/original/02-memories.png",
+      "sha256": "1040fe7841fa2017033de2440f051501b96163a1d291c9a1f43e2436564f9335",
+      "referenceVersion": "page-reference12-20261111",
+      "referenceCommit": "aef3f5165d7e4d59aed63b92c614b5b006d4e5c1"
+    },
+    {
+      "id": "SD01",
+      "displayNumber": "SD01-01",
+      "path": "candidates/SD01/original/detail-review.jpg",
+      "sha256": "b446524daec2b6f8cdb738625c2c90bcf396e3eb4f2272cd075c85270045da08",
+      "candidateVersion": "SD01-rebuild02-20261112",
+      "sourceCommit": "4d834d3ef34072db89f84cb8f3d0fd4ec72a2a69",
+      "backupCommit": "bf7e129d9474ed2dc76fe8179bf1e6160f485d28",
+      "backupBranch": "dot/workbench-detail-review-sd01-rebuild02-20261112",
+      "pagePurpose": "OCR 共識結果與圖片證據詳情審閱",
+      "device": "desktop",
+      "captureBuild": null,
+      "captureTime": null,
+      "isChildcarePage": false,
+      "fullScrollPage": false
+    }
+  ],
+  "notIncludedNative": [
+    "H-03",
+    "LG02"
+  ],
+  "copiedFiles": [
+    {
+      "path": "candidates/H-01/README.md",
+      "bytes": 2296,
+      "sha256": "ff8fcafb47aa1ab2f05ba7cdbbe849cc9ff5dacecfbdcacb6adbe6f4a6102cef"
+    },
+    {
+      "path": "candidates/H-01/candidate.json",
+      "bytes": 2489,
+      "sha256": "9446ec093402029f949d795d428bb0541f24dfc53dca325943bc7405bc210b6f"
+    },
+    {
+      "path": "candidates/H-01/reference/license-copying.txt",
+      "bytes": 19466,
+      "sha256": "5138a74ac20f2965d97b2a9c35219ca74e24f4a93618b33f0e36e4b3c7873197"
+    },
+    {
+      "path": "candidates/H-01/reference/webinterface_dashboard.png",
+      "bytes": 148703,
+      "sha256": "e165f15881d9b2d61697a27144b5edf4a4fbe624324c4918076d1e7912c48c34"
+    },
+    {
+      "path": "candidates/PC01/README.md",
+      "bytes": 2545,
+      "sha256": "f5f7670cb7b19f1ae0dfc0dc94c16cf90f2adbeeea4da1675673a1fb6f43498b"
+    },
+    {
+      "path": "candidates/PC01/candidate.json",
+      "bytes": 973,
+      "sha256": "a01a5eb7467aa4d69c3a7eb1ae94f5b667eaf9abf329e296259a1024b2eb03d6"
+    },
+    {
+      "path": "candidates/PC01/reference/LICENSE",
+      "bytes": 1073,
+      "sha256": "eafb05991a572efa34097474b31fef45b14a8879ed1d1a8fd77de62e6fa7d275"
+    },
+    {
+      "path": "candidates/PC01/reference/generative-ui-light.pinned.png",
+      "bytes": 147373,
+      "sha256": "5eec1d863f074a18cb19776b5db85833dc9a734b0519a2e5eb6576b445087efd"
+    },
+    {
+      "path": "candidates/PC03/LICENSE.upstream-MIT.txt",
+      "bytes": 1083,
+      "sha256": "78959736257d8971c3999e603f7a9b6c30099844dad1a1edd4ad5a98b6ec3a74"
+    },
+    {
+      "path": "candidates/PC03/PC03-original.png",
+      "bytes": 158338,
+      "sha256": "999b863af70f68c27558171c3890a87c951938cb7272bf040271debd17a974c6"
+    },
+    {
+      "path": "candidates/PC03/provenance.json",
+      "bytes": 3672,
+      "sha256": "8610017c68d70e9f2bd84aa61999117a32a12df653ec28544eb19eb4fe512c2d"
+    },
+    {
+      "path": "candidates/C-01/README.md",
+      "bytes": 3337,
+      "sha256": "974f41600625e176050923376f779482f0b474a998c54d03edbb770fe9c9787b"
+    },
+    {
+      "path": "candidates/C-01/candidate.json",
+      "bytes": 3497,
+      "sha256": "b81d9cb2385fc6be7b889163715f8a9362a46171b25821f94e48831e1bffbbf2"
+    },
+    {
+      "path": "candidates/C-01/reference/LICENSE",
+      "bytes": 1337,
+      "sha256": "f0dcf391cb221791dc0063601968b21b4fa94964051cae11ed16e4ff5f73f182"
+    },
+    {
+      "path": "candidates/C-01/reference/timeline.png",
+      "bytes": 78367,
+      "sha256": "870b66867370bf25b849b2d8d1a47b4fb70163563a501f42c4e6d051d726fcb5"
+    },
+    {
+      "path": "candidates/C-02/README.txt",
+      "bytes": 1186,
+      "sha256": "4dbc3b6b09ef70c61b46cae143e3aa99efe24b7adeed57af7de4a6a9386fe7b6"
+    },
+    {
+      "path": "candidates/C-02/evidence/LICENSE.txt",
+      "bytes": 1077,
+      "sha256": "fc404477be3f0c40cd664069d0c5ffced3eb1b9874c7fddcc2ef273c5142b9d1"
+    },
+    {
+      "path": "candidates/C-02/evidence/provenance.json",
+      "bytes": 1387,
+      "sha256": "55cef9bd6e8ea908fdc62ae8468c7340994e9fe7467332f074b2f156a5040923"
+    },
+    {
+      "path": "candidates/C-02/evidence/upstream-README.txt",
+      "bytes": 6650,
+      "sha256": "9fcfaa57e3b994c19c5d95369295f8744abab7533a1b9215f032e6a034d06a98"
+    },
+    {
+      "path": "candidates/C-02/original/rhythm.jpg",
+      "bytes": 60037,
+      "sha256": "f654656721d56561d4dc4e32840da3c62825cee2fdc9a6237f31e199dc0ff872"
+    },
+    {
+      "path": "candidates/S-01/README.md",
+      "bytes": 4124,
+      "sha256": "d26edc6b4eaebf1bf2652642fdfaf5f2928591d66f54261aa977e0b7a1793b62"
+    },
+    {
+      "path": "candidates/S-01/candidate.json",
+      "bytes": 3173,
+      "sha256": "2325bca33033c7a9378fdc6a02284d75fac08fa5616bee336e43b931b2688864"
+    },
+    {
+      "path": "candidates/S-01/reference/LICENSE.md",
+      "bytes": 1063,
+      "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+    },
+    {
+      "path": "candidates/S-01/reference/forms-light.png",
+      "bytes": 29685,
+      "sha256": "15450ff7b8d5904d6c801acc6d7f2e33e267dcdc8ea2e101f9a18ffc65b3b3cd"
+    },
+    {
+      "path": "candidates/S-02/assets/settings-en.png",
+      "bytes": 383033,
+      "sha256": "a9d2be60227f37c6c0364e730b751b66c9a3923f9804bebde341d05e0441ba14"
+    },
+    {
+      "path": "candidates/S-02/notices/LICENSE-Lucide-1.17.0.txt",
+      "bytes": 3208,
+      "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
+    },
+    {
+      "path": "candidates/S-02/notices/LICENSE-Next-16.2.9.txt",
+      "bytes": 1079,
+      "sha256": "ee765244e2d59f5234d474f62e0766fa0c8b99af967fdd4c0cb8dcb0c76ea224"
+    },
+    {
+      "path": "candidates/S-02/notices/LICENSE-TokenHub-Apache-2.0.txt",
+      "bytes": 10248,
+      "sha256": "da21ef1c27c43354055432e2ee6dc804efcb08da774da190598150fca0a75d8f"
+    },
+    {
+      "path": "candidates/MR-01/README.md",
+      "bytes": 4856,
+      "sha256": "201e8d9cddbe907daf605b6e7944dc0fbb6b973385af3caf7a817c2c86183637"
+    },
+    {
+      "path": "candidates/MR-01/candidate.json",
+      "bytes": 2683,
+      "sha256": "7de5e328786264052f4ed09dff93d894caf4838644aab723b2a8c509363ea5b0"
+    },
+    {
+      "path": "candidates/MR-01/reference/LICENSE",
+      "bytes": 34520,
+      "sha256": "76a97c878c9c7a8321bb395c2b44d3fe2f8d81314d219b20138ed0e2dddd5182"
+    },
+    {
+      "path": "candidates/MR-01/reference/source-README.md",
+      "bytes": 16254,
+      "sha256": "087906667d44cbca6a47a4e198713c7b068c1766c8fe9a80daa9b4e7480eae95"
+    },
+    {
+      "path": "candidates/MR-01/reference/trilium-app.png",
+      "bytes": 196432,
+      "sha256": "52250f81e9c2beab2b393fabb1ab1583fe5e22e3bfbff76ef154c93fa5154c6a"
+    },
+    {
+      "path": "candidates/MR-02/README.md",
+      "bytes": 4811,
+      "sha256": "0a301e332bcd9771dc8cbe16e879f80d1a84e40e3912687b460a73c88bff9131"
+    },
+    {
+      "path": "candidates/MR-02/candidate.json",
+      "bytes": 3094,
+      "sha256": "97168af9c0cb1c5e16ba810c5e95aec231bd677a0239d93d97c457a507fac38b"
+    },
+    {
+      "path": "candidates/MR-02/reference/LICENSE.md",
+      "bytes": 1050,
+      "sha256": "ccf525a3b5c9ac8d843e118932036e6517d4d603f9ff3e474522b632c3996c65"
+    },
+    {
+      "path": "candidates/MR-02/reference/silverbullet-markdown-basics-preview.png",
+      "bytes": 80630,
+      "sha256": "622e6e6749444759f8ddc81781530dde2a1460a0ae98a716c07d9478e17830cd"
+    },
+    {
+      "path": "candidates/MR-02/reference/source-tutorial.md",
+      "bytes": 6968,
+      "sha256": "90ff29cdf17019d83fc802b15e9720826fc8084620de0b27d785b6a48e0e9474"
+    },
+    {
+      "path": "candidates/TK02/README.md",
+      "bytes": 3066,
+      "sha256": "f6b7da85fc497777eea7f7d509dc0598910f60465b187c11c51d94e35bf0c1c9"
+    },
+    {
+      "path": "candidates/TK02/candidate.json",
+      "bytes": 3375,
+      "sha256": "79b52f61caab48b91d9de7a7a4a18ec174680941b1b3eb71039b37be7f17b475"
+    },
+    {
+      "path": "candidates/TK02/reference/LICENSE",
+      "bytes": 1072,
+      "sha256": "2e279de19632b5694d24b0ac06fd5b837ec487bf821302d9ce195379850a5fcb"
+    },
+    {
+      "path": "candidates/TK02/reference/task-list-light.png",
+      "bytes": 260561,
+      "sha256": "e545d2bd5f527b3fb9ce0d6e3b7d7c3bade00b2f013209a31c3beb6c81377609"
+    },
+    {
+      "path": "candidates/TK03/LICENSE-Errands.txt",
+      "bytes": 1093,
+      "sha256": "6a13dd0186cd67d3533ead401ea891f7864388eb72f9d4b5bc76ade8adb040a0"
+    },
+    {
+      "path": "candidates/TK03/assets/errands-original.png",
+      "bytes": 65091,
+      "sha256": "e965a4888408fc2e8b50baba8ce88ab74f995472597a7071b30e78c762a1bf4f"
+    },
+    {
+      "path": "candidates/TK03/manifest.json",
+      "bytes": 2083,
+      "sha256": "30f791db30ab03ad4699af9e47f0f84bd6200a721313ef11561c4b07e0849140"
+    },
+    {
+      "path": "candidates/LG01/LG01-original.png",
+      "bytes": 4568,
+      "sha256": "90a19ffdb4692d790ebe9229eb361891f423b4ddca58f9d1140e2d7f32eb1ec3"
+    },
+    {
+      "path": "candidates/LG01/LICENSE.upstream-MIT.txt",
+      "bytes": 1131,
+      "sha256": "5b30317c9c35bb6f05101c501de866cc6852ab9b655dcf5941733f6644c3ebd0"
+    },
+    {
+      "path": "candidates/LG01/provenance.json",
+      "bytes": 5719,
+      "sha256": "b8f039419b9723caef9cc47e25dad73a814f240b32773ba6c859cfc058c8444d"
+    },
+    {
+      "path": "candidates/GR01/LICENSE.md",
+      "bytes": 1063,
+      "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+    },
+    {
+      "path": "candidates/GR01/README.md",
+      "bytes": 2731,
+      "sha256": "2ab4b0bee8f238ab6d32a5caa6c9c858ae131a500ad689499b7a3f6c52f228ef"
+    },
+    {
+      "path": "candidates/GR01/manifest.json",
+      "bytes": 4302,
+      "sha256": "8e0fdcc0cc963ec15d4d75c9ee8442c885006b49889f3e169683aa414e3a6ebd"
+    },
+    {
+      "path": "candidates/GR01/original/dashboard-light.png",
+      "bytes": 208758,
+      "sha256": "f49387cbf151cad0fda73868da2b0d8bc34f4e531200dc34cf7c749771c5cb0f"
+    },
+    {
+      "path": "candidates/HIS01/LICENSE-CC-BY-3.0.txt",
+      "bytes": 19466,
+      "sha256": "5138a74ac20f2965d97b2a9c35219ca74e24f4a93618b33f0e36e4b3c7873197"
+    },
+    {
+      "path": "candidates/HIS01/assets/nextcloud-activity-original.png",
+      "bytes": 204670,
+      "sha256": "4cceded73d2f8930bb9a4254b276dc0e7c7fad2300abe615cd2be6f099348d97"
+    },
+    {
+      "path": "candidates/HIS01/evidence/EVIDENCE.md",
+      "bytes": 5270,
+      "sha256": "d3f4caa8d0ddbc8bd46cf08eb4353d4a21efdc6c2f0fb12e1d2e1b95b5f9f8d6"
+    },
+    {
+      "path": "candidates/HIS01/evidence/README.rst",
+      "bytes": 6212,
+      "sha256": "83e923211592956db34d774883c9232d08f7d34fa90d078757c190b00572b5e3"
+    },
+    {
+      "path": "candidates/HIS01/evidence/activity.rst",
+      "bytes": 4397,
+      "sha256": "51a0899228eaae3d12a591eac0c97cb4d68617a6ad424f1f22a3acbc15ef95a1"
+    },
+    {
+      "path": "candidates/HIS01/manifest.json",
+      "bytes": 2322,
+      "sha256": "21f0e91730384daf31abb40b1e8687384734e1d907a163724cb8ee2418b574e6"
+    },
+    {
+      "path": "candidates/HIS01/validation.txt",
+      "bytes": 672,
+      "sha256": "1f47f4839ac16590650a840eba11ab136ed91851eaa5055c0d919f988704dea6"
+    },
+    {
+      "path": "candidates/HIS02/LICENSE.txt",
+      "bytes": 1072,
+      "sha256": "08fa5746e0c8b0c2c6d8fc35750d26adb7873bb14c9ffe5b9f82faaebaea6cc1"
+    },
+    {
+      "path": "candidates/HIS02/SOURCE-AND-RIGHTS.txt",
+      "bytes": 2457,
+      "sha256": "523277a59d8c2da016d53ad4a2e3f6889dbdf26979ef89a3b5fd4109aef8dba5"
+    },
+    {
+      "path": "candidates/HIS02/manifest.json",
+      "bytes": 3061,
+      "sha256": "d1af38fca715cb0d39e86faa284322a57825942be57f47f29de398ec3fbbc787"
+    },
+    {
+      "path": "candidates/HIS02/original/activity.webp",
+      "bytes": 132744,
+      "sha256": "20d9602f6d14383388bc170971e5154d5303a8522902d0b708117bcd7fa44ccb"
+    },
+    {
+      "path": "candidates/GD01/ATTRIBUTION.txt",
+      "bytes": 1319,
+      "sha256": "72cc3dc164657f7ab51745841f98afc0f96c051d8a83cd11bcb4f00d57842f11"
+    },
+    {
+      "path": "candidates/GD01/GD01-original.png",
+      "bytes": 164882,
+      "sha256": "7ce4dfa28ab3dbb6f6d97d1691d1708791a213fc4afd517bede51c971475dc00"
+    },
+    {
+      "path": "candidates/GD01/licenses/Content-CC-BY-4.0.txt",
+      "bytes": 550,
+      "sha256": "cde6f3731021d7526e13b6bc91f2192968f9ab322ec3a854a2f0d563cac08fd5"
+    },
+    {
+      "path": "candidates/GD01/licenses/Hugo-Book-MIT.txt",
+      "bytes": 1077,
+      "sha256": "450c3f8358cc7b0fd3465e59a79ed8c7eed68eeff189bd002843e40c394d6be3"
+    },
+    {
+      "path": "candidates/GD01/licenses/Material-Symbols-Apache-2.0.txt",
+      "bytes": 11357,
+      "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+    },
+    {
+      "path": "candidates/GD01/manifest.json",
+      "bytes": 1145,
+      "sha256": "f71df40f4fcf45ca931c633c4cf7f06d487977f62c16e8969a4661a83b3a6644"
+    },
+    {
+      "path": "candidates/GD02/ATTRIBUTION.txt",
+      "bytes": 2812,
+      "sha256": "829d2adb03ac1edc30855201631aa0163a6946f52f9fb195a3c4f2060b292b95"
+    },
+    {
+      "path": "candidates/GD02/GD02-original.png",
+      "bytes": 311057,
+      "sha256": "28cff1426196ff2a7814ad4fed2d4396e37350a25a847208a3ba3023af7db144"
+    },
+    {
+      "path": "candidates/GD02/evidence/2019-theme.toml",
+      "bytes": 384,
+      "sha256": "e8825c9e91491edb29dbf09b97a64d200557d16773c92998c76dd718aa82c300"
+    },
+    {
+      "path": "candidates/GD02/evidence/2026-Docsy-README.md",
+      "bytes": 2020,
+      "sha256": "e220fd55080415b6d5a41368a484d430fadb003ebd2a04e5beb87e7219e9fe97"
+    },
+    {
+      "path": "candidates/GD02/licenses/Bootstrap-pinned-MIT.txt",
+      "bytes": 1131,
+      "sha256": "7bdab4494c73e3d7271a70d395947a9eb2a68f08d98740fc2308843e319298f9"
+    },
+    {
+      "path": "candidates/GD02/licenses/Docsy-2019-Apache-2.0.txt",
+      "bytes": 11357,
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    {
+      "path": "candidates/GD02/licenses/Docsy-2019-userguide-Apache-2.0.txt",
+      "bytes": 11357,
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    {
+      "path": "candidates/GD02/licenses/Docsy-2026-documentation-CC-BY-4.0.txt",
+      "bytes": 18719,
+      "sha256": "6f9997b6f85f473f853aeef19b5f16504dd228ba99cee70e5a19211df947a2b3"
+    },
+    {
+      "path": "candidates/GD02/licenses/Font-Awesome-pinned-LICENSE.txt",
+      "bytes": 1548,
+      "sha256": "e779748dfe75e84f974df3c7bc07f842011a100159158b0f1f49b2f2a5a515cb"
+    },
+    {
+      "path": "candidates/GD02/manifest.json",
+      "bytes": 6983,
+      "sha256": "090ff9f7c5ea5d2deeb3e92f1da6d5e2b6f2ad6c59bce56affac836930250975"
+    },
+    {
+      "path": "candidates/PF01/LICENSE.upstream-MIT.txt",
+      "bytes": 1079,
+      "sha256": "7388643d084ab4354abe7c79bd1568f28a5d27938a032c092ceccd4d66d1446d"
+    },
+    {
+      "path": "candidates/PF01/SOURCE-AND-RIGHTS.txt",
+      "bytes": 1652,
+      "sha256": "0c7523a19e4c2daf0ee96b512af51ca9135159e0278afd2efa629cc62cca179b"
+    },
+    {
+      "path": "candidates/PF01/evidence/README.upstream.md",
+      "bytes": 6025,
+      "sha256": "69e16ec05200448381c41e8325b8147a35a2f8d72de4cad5b8bb1845792d9e08"
+    },
+    {
+      "path": "candidates/PF01/manifest.json",
+      "bytes": 5760,
+      "sha256": "1a2558f01169bbde70e609738b9607a9f5b402a11aaf20b9087853ca2398a85a"
+    },
+    {
+      "path": "candidates/PF01/original/bright-profile-09.png",
+      "bytes": 92127,
+      "sha256": "bd23c71d663416e69370002bc8cc297dc8b4e654b82cbd4c6ce70becf3e211f2"
+    },
+    {
+      "path": "candidates/PP01/LICENSE.upstream-MIT.txt",
+      "bytes": 1079,
+      "sha256": "7388643d084ab4354abe7c79bd1568f28a5d27938a032c092ceccd4d66d1446d"
+    },
+    {
+      "path": "candidates/PP01/SOURCE-AND-RIGHTS.txt",
+      "bytes": 2569,
+      "sha256": "232569e88cfd95c3d6e094cb024cda1a4a4e80e7c1f60e727660bb1f0c676ceb"
+    },
+    {
+      "path": "candidates/PP01/evidence/README.upstream.md",
+      "bytes": 6025,
+      "sha256": "69e16ec05200448381c41e8325b8147a35a2f8d72de4cad5b8bb1845792d9e08"
+    },
+    {
+      "path": "candidates/PP01/evidence/screen-metadata.json",
+      "bytes": 880,
+      "sha256": "1a3a042ef0e3820d71db5d94cb363dc2909ef508a6caedac4ee6e66bf64ac13a"
+    },
+    {
+      "path": "candidates/PP01/evidence/synthetic-evidence.json",
+      "bytes": 4891,
+      "sha256": "2134e303b2f6ce6af1ad3bec09c383cbc6d1989f90f1f796307f0b9d4fb64a4b"
+    },
+    {
+      "path": "candidates/PP01/manifest.json",
+      "bytes": 4367,
+      "sha256": "f55f0200488302abda4d3f526556ff84e522051f66bf5529b7eae2c539b8d19a"
+    },
+    {
+      "path": "candidates/PP01/original/noted-profile-09.png",
+      "bytes": 95238,
+      "sha256": "eaa2a7972b8ac5a73d8df62a007ea293e03cd5fb7f85748da27a066f37d1a898"
+    },
+    {
+      "path": "candidates/SRC01/ATTRIBUTION.txt",
+      "bytes": 984,
+      "sha256": "d0c0d6917dde10db3c0dc95318136b14a5195c632a7f0a968cc15d0c9e90f1fc"
+    },
+    {
+      "path": "candidates/SRC01/README.zh-TW.md",
+      "bytes": 2682,
+      "sha256": "b7d08181e74e67d1457207d7b7ceabdb2e05a2cf2f7d83773a96a8e263858f34"
+    },
+    {
+      "path": "candidates/SRC01/evidence/ATTRIBUTION.upstream.md",
+      "bytes": 4634,
+      "sha256": "b7cf3512408c9afedb17931c5d22487412e1f2720d080be2710c72285179e846"
+    },
+    {
+      "path": "candidates/SRC01/evidence/AUTHORS.upstream.md",
+      "bytes": 410,
+      "sha256": "7bd83113d51266e617d344271db2c3c67109bfc4c6bd03dcdb7778fdc77f9d61"
+    },
+    {
+      "path": "candidates/SRC01/evidence/NOTICE.upstream.txt",
+      "bytes": 2310,
+      "sha256": "a6361e5bcfc670d61f94292ce2bc9afb01c88bb4d0246f3998f6a3bec97033b7"
+    },
+    {
+      "path": "candidates/SRC01/evidence/screenshot-README.upstream.md",
+      "bytes": 6551,
+      "sha256": "2792fb3bf6398a6dd85752310a172571ed162fd947d75af31e5f2c449b6c765b"
+    },
+    {
+      "path": "candidates/SRC01/licenses/AGPL-3.0.upstream.txt",
+      "bytes": 34565,
+      "sha256": "aa2e4c2fc89b699a208a5baa2339df3124b4a545cb5ad09f31877c5b4cb412d3"
+    },
+    {
+      "path": "candidates/SRC01/manifest.json",
+      "bytes": 4057,
+      "sha256": "1ac76c4b0314d53a7706c62d17f9c353936ec4f4a1b5424942013b9f7eaca710"
+    },
+    {
+      "path": "candidates/SRC01/original/SRC01-superlocalmemory-v2-memories.png",
+      "bytes": 221340,
+      "sha256": "418dac98a6d4bf71130f69b7f38738afad52353c47548112a01658a09da354d4"
+    },
+    {
+      "path": "candidates/SRC02/LICENSE.txt",
+      "bytes": 1062,
+      "sha256": "248d19bd23384dbf5ccfab91f86bbbdf915040da40794647170ffff55ea78df5"
+    },
+    {
+      "path": "candidates/SRC02/SOURCE-AND-RIGHTS.txt",
+      "bytes": 2009,
+      "sha256": "5ef0e6fe52b02cac052816f96acb3d4751573c5edb904b60ba4b46a056c374b5"
+    },
+    {
+      "path": "candidates/SRC02/manifest.json",
+      "bytes": 2545,
+      "sha256": "2aa21ff2d90b281873c9c6ed9d873280bc4edbf1e40fbcebf251ca614de86b99"
+    },
+    {
+      "path": "candidates/SRC02/original/02-memories.png",
+      "bytes": 328030,
+      "sha256": "1040fe7841fa2017033de2440f051501b96163a1d291c9a1f43e2436564f9335"
+    }
+  ],
+  "limits": [
+    "22 unchanged images,18 groups,1 standalone native C-03 entry;5 retained same-page-type pairs,not functional equivalence.",
+    "SD01 and C-03 are new separate singletons,not new same-function pairs.",
+    "Historical exact public-backup readbacks bind all27 added files;no fresh remote check or new publication.",
+    "Index CSP and CSS exactly preserved;index passive,no embedded native document.",
+    "C-03 retains its own historical scripts/CSP and complete24-file source display;not image-only execution scope for the whole package.",
+    "H-03,LG02,and other private-only/unavailable candidates have no new payload or local links.",
+    "Source-stage QA is not integration browser acceptance;this version browser/mobile/Back/accessibility NOT_RUN."
+  ],
+  "candidateStatuses": {
+    "CL01": {
+      "ordinaryViewportMonthCycle": "PASS_BOUNDED_1180x757_NOV_DEC_NOV",
+      "fullPageAftermath": "IMMEDIATE_GEOMETRY_ANOMALY",
+      "rootCause": "UNKNOWN",
+      "confirmedProductDefect": false,
+      "fullVisualAcceptance": false,
+      "delayedSample": "NOT_RUN",
+      "sourceSummarySha256": "1ae3efbdc78a2e82151acd4b2d7ec469c379a7f986c8045ceb38baefcf36c1ed"
+    },
+    "S04": {
+      "sourceBrowserReview": "PASS_BOUNDED_DESKTOP",
+      "included": false,
+      "localLink": null,
+      "reason": "private_only_not_added_to_public_candidate_payload"
+    },
+    "TL01": {
+      "sourceBrowserReview": "PASS_BOUNDED_DESKTOP",
+      "included": false,
+      "localLink": null,
+      "reason": "private_only_not_added_to_public_candidate_payload"
+    }
+  },
+  "basedOn": "page-compare01-fix01-20261112",
+  "newSameFunctionPairs": 0,
+  "addedFiles": [
+    {
+      "path": "candidates/SD01/original/detail-review.jpg",
+      "bytes": 111293,
+      "sha256": "b446524daec2b6f8cdb738625c2c90bcf396e3eb4f2272cd075c85270045da08",
+      "backupCommit": "bf7e129d9474ed2dc76fe8179bf1e6160f485d28",
+      "backupPath": "previews/selection-workbench/versions/sd01-rebuild02-20261112/original/detail-review.jpg"
+    },
+    {
+      "path": "candidates/SD01/LICENSE.txt",
+      "bytes": 1072,
+      "sha256": "79ba5fda245da9b6875da12a94befb0d07fb9328de510f6a322fa1b74df01abc",
+      "backupCommit": "bf7e129d9474ed2dc76fe8179bf1e6160f485d28",
+      "backupPath": "previews/selection-workbench/versions/sd01-rebuild02-20261112/LICENSE.txt"
+    },
+    {
+      "path": "candidates/SD01/SOURCE-AND-RIGHTS.txt",
+      "bytes": 2860,
+      "sha256": "2882a44f16d1ec30b7cc0a1ca603b70c2ba8822461ebaa2511ffabac4d0e9652",
+      "backupCommit": "bf7e129d9474ed2dc76fe8179bf1e6160f485d28",
+      "backupPath": "previews/selection-workbench/versions/sd01-rebuild02-20261112/SOURCE-AND-RIGHTS.txt"
+    },
+    {
+      "path": "candidates/C-03/README.md",
+      "bytes": 1497,
+      "sha256": "5aa9efe108fa1f7a0765878141c78e3c8a6cccbc3079ff07aa700db903315156",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/README.md"
+    },
+    {
+      "path": "candidates/C-03/SHA256SUMS",
+      "bytes": 2159,
+      "sha256": "79c0fdad970a379664d32d28fe8886e3b4683887969a99e66553eda57275fe7b",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/SHA256SUMS"
+    },
+    {
+      "path": "candidates/C-03/assets/bootstrap.min.js",
+      "bytes": 50522,
+      "sha256": "26a07553f4f32222a4b63fb0c0661733dd20fe942e8eec18a8f18bf300278dc1",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/assets/bootstrap.min.js"
+    },
+    {
+      "path": "candidates/C-03/assets/css/app.css",
+      "bytes": 179651,
+      "sha256": "6c60421853fb4eb5db270a0bc0204e024d7412eede814402a27cf4b65b5049e8",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/assets/css/app.css"
+    },
+    {
+      "path": "candidates/C-03/assets/fonts/FontAwesome.otf",
+      "bytes": 134808,
+      "sha256": "444dd4366615ffc4a16d012b2fa90137065d3ccb410fa6fd5e4ddd7b5e4ffcd5",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/assets/fonts/FontAwesome.otf"
+    },
+    {
+      "path": "candidates/C-03/assets/fonts/fontawesome-webfont.eot",
+      "bytes": 165742,
+      "sha256": "7bfcab6db99d5cfbf1705ca0536ddc78585432cc5fa41bbd7ad0f009033b2979",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/assets/fonts/fontawesome-webfont.eot"
+    },
+    {
+      "path": "candidates/C-03/assets/fonts/fontawesome-webfont.svg",
+      "bytes": 444379,
+      "sha256": "ad6157926c1622ba4e1d03d478f1541368524bfc46f51e42fe0d945f7ef323e4",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/assets/fonts/fontawesome-webfont.svg"
+    },
+    {
+      "path": "candidates/C-03/assets/fonts/fontawesome-webfont.ttf",
+      "bytes": 165548,
+      "sha256": "aa58f33f239a0fb02f5c7a6c45c043d7a9ac9a093335806694ecd6d4edc0d6a8",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/assets/fonts/fontawesome-webfont.ttf"
+    },
+    {
+      "path": "candidates/C-03/assets/fonts/fontawesome-webfont.woff",
+      "bytes": 98024,
+      "sha256": "ba0c59deb5450f5cb41b3f93609ee2d0d995415877ddfa223e8a8a7533474f07",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/assets/fonts/fontawesome-webfont.woff"
+    },
+    {
+      "path": "candidates/C-03/assets/fonts/fontawesome-webfont.woff2",
+      "bytes": 77160,
+      "sha256": "2adefcbc041e7d18fcf2d417879dc5a09997aa64d675b7a3c4b6ce33da13f3fe",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/assets/fonts/fontawesome-webfont.woff2"
+    },
+    {
+      "path": "candidates/C-03/assets/jquery.min.js",
+      "bytes": 86659,
+      "sha256": "87083882cc6015984eb0411a99d3981817f5dc5c90ba24f0940420c5548d82de",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/assets/jquery.min.js"
+    },
+    {
+      "path": "candidates/C-03/assets/popper.min.js",
+      "bytes": 19197,
+      "sha256": "625b022a42ed5d9c39911e42050f4fd9834ea039af978b7716f7800ade95eb55",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/assets/popper.min.js"
+    },
+    {
+      "path": "candidates/C-03/assets/readonly.js",
+      "bytes": 208,
+      "sha256": "05954bb9ddd5925ce1254513f814152afa9f842c2b7b670df8a71eb7d15745e3",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/assets/readonly.js"
+    },
+    {
+      "path": "candidates/C-03/dashboard.html",
+      "bytes": 20709,
+      "sha256": "354976ce997132352f816ab7cb3f3c14834a7cd957c2bcea7ee73df5cb1c7548",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/dashboard.html"
+    },
+    {
+      "path": "candidates/C-03/fixture.json",
+      "bytes": 1239,
+      "sha256": "eea725ccc44a6b9e207b7053764013861ffbe1ef846765ee8bfb3851104c24df",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/fixture.json"
+    },
+    {
+      "path": "candidates/C-03/index.html",
+      "bytes": 2166,
+      "sha256": "03c1f0c9c6128b1fa7ba6bbc4f7c06a049f1a3d4f159362a9d9a8c8f71504a91",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/index.html"
+    },
+    {
+      "path": "candidates/C-03/licenses/BabyBuddy-BSD-2-Clause.txt",
+      "bytes": 1330,
+      "sha256": "2e74203a15b0bac428d2b5962f3289df30c92a8a782f04a5e13cfa9d17cf6b17",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/licenses/BabyBuddy-BSD-2-Clause.txt"
+    },
+    {
+      "path": "candidates/C-03/licenses/Bootstrap-MIT.txt",
+      "bytes": 1131,
+      "sha256": "7efd8eff0e03c9b8b31fd2750d66268135deda2d0c9d46627f5e7cbe79caf907",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/licenses/Bootstrap-MIT.txt"
+    },
+    {
+      "path": "candidates/C-03/licenses/FontAwesome-OFL-1.1.txt",
+      "bytes": 4153,
+      "sha256": "8a85438807bd59ba56cac1a1c02fcd343e1ea1a3166871794a3585e3eefe2c98",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/licenses/FontAwesome-OFL-1.1.txt"
+    },
+    {
+      "path": "candidates/C-03/licenses/FontAwesome-code-MIT.txt",
+      "bytes": 1170,
+      "sha256": "f8840addffcbdb59edcaeb1e304bf177c62800cce61e04cc3b7f45cbb62ea1db",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/licenses/FontAwesome-code-MIT.txt"
+    },
+    {
+      "path": "candidates/C-03/licenses/FontAwesome-license.txt",
+      "bytes": 5316,
+      "sha256": "610427fe917f2b51ef69b5bfa9a7bfe3fcba59b1ccaf86a500a47e5fa1da322b",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/licenses/FontAwesome-license.txt"
+    },
+    {
+      "path": "candidates/C-03/licenses/Popper-MIT.txt",
+      "bytes": 1262,
+      "sha256": "1cdd462524c0af5c66fc3fe8d0a494e2a7af53b8fd4dc2b6e1f645c67177b8ba",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/licenses/Popper-MIT.txt"
+    },
+    {
+      "path": "candidates/C-03/licenses/jQuery-MIT.txt",
+      "bytes": 1605,
+      "sha256": "2b3ed8ba424423a50b023e728530d94bc385cfc7c328ad65a3dfee9c7c0531c5",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/licenses/jQuery-MIT.txt"
+    },
+    {
+      "path": "candidates/C-03/manifest.json",
+      "bytes": 3077,
+      "sha256": "3d5911583b75de4411b091985565d2e68b78b2f9f551cc0195f30e039f2010d8",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupPath": "previews/selection-workbench/versions/babybuddy-c03-20261111/manifest.json"
+    }
+  ],
+  "nativeEntries": [
+    {
+      "id": "C-03",
+      "displayNumber": "C-03-01",
+      "path": "candidates/C-03/dashboard.html",
+      "sha256": "354976ce997132352f816ab7cb3f3c14834a7cd957c2bcea7ee73df5cb1c7548",
+      "candidateVersion": "babybuddy-c03-20261111",
+      "sourceVersion": "0.1.0",
+      "sourceCommit": "f02f28b7f96f8bb1b9a0212a377c327ce33e7699",
+      "backupCommit": "59a16b8edf6c9d5d257b01885a6dd9860d73fd90",
+      "backupBranch": "dot/workbench-babybuddy-c03-20261111",
+      "presentation": "standalone-native-source-reference",
+      "pagePurpose": "孩子概況 Dashboard 九卡",
+      "publicFiles": 24,
+      "sourceBrowserReview": "PASS_BOUNDED_DESKTOP_SEPARATE_CANDIDATE",
+      "integrationBrowserReview": "NOT_RUN",
+      "originalScriptsRetained": true,
+      "embedded": false
+    }
+  ]
+}

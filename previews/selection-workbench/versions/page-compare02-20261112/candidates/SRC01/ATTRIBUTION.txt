@@ -1,0 +1,19 @@
+SRC01 — SuperLocalMemory V2 / Memories
+
+SuperLocalMemory V2
+Copyright © 2026 Varun Pratap Bhardwaj
+Licensed under GNU Affero General Public License v3.0 or later
+
+Creator: Varun Pratap Bhardwaj
+Repository: https://github.com/qualixar/superlocalmemory
+
+Official original screenshot, unchanged.
+This package is an independent local design-reference collection, not a new
+SuperLocalMemory interface or an endorsement by its author.
+The complete upstream AGPL text is in licenses/AGPL-3.0.upstream.txt.
+The exact screenshot-set attribution is retained in evidence/screenshot-README.upstream.md.
+Additional repository notices are retained verbatim in evidence/NOTICE.upstream.txt,
+evidence/ATTRIBUTION.upstream.md and evidence/AUTHORS.upstream.md.
+
+Pinned source commit: c1669e9456cb01dda3d0d04bca3bfacca07ecbe9
+Original screenshot: https://raw.githubusercontent.com/qualixar/superlocalmemory/c1669e9456cb01dda3d0d04bca3bfacca07ecbe9/assets/screenshots/dashboard/dashboard-memories.png

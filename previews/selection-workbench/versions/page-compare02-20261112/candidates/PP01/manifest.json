@@ -1,0 +1,92 @@
+{
+  "referenceId": "PP01",
+  "title": "一般生產力檔案（非兒童／學習頁）",
+  "sourceProduct": "Flowscope / Noted",
+  "screenId": "noted-profile-09",
+  "repository": "https://github.com/0050piyush/flowscope",
+  "sourceTree": "72d2a0b637d28b9a87740ae6dab6c0710a01fd87",
+  "sourceCategory": "Productivity",
+  "sourcePlatformLabel": "Android; retained source metadata, not device certification",
+  "image": {
+    "path": "original/noted-profile-09.png",
+    "bytes": 95238,
+    "sha256": "eaa2a7972b8ac5a73d8df62a007ea293e03cd5fb7f85748da27a066f37d1a898",
+    "gitBlob": "fe8c267c77d47531ad9f99ef99214e81b19c8b7c"
+  },
+  "imageDimensions": [
+    780,
+    1688
+  ],
+  "sourceRendererViewport": [
+    390,
+    844
+  ],
+  "sourceRendererDeviceScaleFactor": 2,
+  "imageUnchanged": true,
+  "cropped": false,
+  "redrawn": false,
+  "translated": false,
+  "reencoded": false,
+  "selected": false,
+  "implementedFrontend": false,
+  "isChildDetailsPage": false,
+  "isLearningProfile": false,
+  "isParentingPage": false,
+  "captureTime": "unknown; metadata created=2026-10-15 is a seed-data field, not capture proof",
+  "captureBuild": "unknown; source renderer specifies 390×844 deviceScaleFactor 2, not a fresh rerun or real Android-device test",
+  "licensing": {
+    "screenAndData": "CC0 1.0 according to fixed upstream README declaration",
+    "code": "MIT; full notice retained",
+    "copyright": "Copyright (c) 2026 Flowscope contributors",
+    "rightsBoundary": "Generator declares hand-drawn feather-style inline icons; original PNG only, no extracted vector assets. Inter is rasterized; no font binary or independently verified capture font file/version. Publisher statement is not an exhaustive third-party/trademark rights audit."
+  },
+  "syntheticEvidence": "evidence/synthetic-evidence.json",
+  "sourceMetadata": "evidence/screen-metadata.json",
+  "sourceIdentities": [
+    {
+      "path": "site/assets/screens/noted-profile-09.png",
+      "bytes": 95238,
+      "sha256": "eaa2a7972b8ac5a73d8df62a007ea293e03cd5fb7f85748da27a066f37d1a898",
+      "gitBlob": "fe8c267c77d47531ad9f99ef99214e81b19c8b7c",
+      "fixedSourceUrl": "https://github.com/0050piyush/flowscope/blob/72d2a0b637d28b9a87740ae6dab6c0710a01fd87/site/assets/screens/noted-profile-09.png",
+      "localInputName": "noted-profile-09.png"
+    },
+    {
+      "path": "README.md",
+      "bytes": 6025,
+      "sha256": "69e16ec05200448381c41e8325b8147a35a2f8d72de4cad5b8bb1845792d9e08",
+      "gitBlob": "3b86ce9b22702ffe9bcaccf38388ffb9bc080009",
+      "fixedSourceUrl": "https://github.com/0050piyush/flowscope/blob/72d2a0b637d28b9a87740ae6dab6c0710a01fd87/README.md",
+      "localInputName": "flowscope-README.md"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 1079,
+      "sha256": "7388643d084ab4354abe7c79bd1568f28a5d27938a032c092ceccd4d66d1446d",
+      "gitBlob": "b995cf144cbba7f51af51e2c969a80604326991c",
+      "fixedSourceUrl": "https://github.com/0050piyush/flowscope/blob/72d2a0b637d28b9a87740ae6dab6c0710a01fd87/LICENSE",
+      "localInputName": "flowscope-LICENSE"
+    },
+    {
+      "path": "scripts/gen-screens-b.js",
+      "bytes": 193168,
+      "sha256": "8dc41746231ed1eeb05c4a9aa3c46f24199e343258c87e761000fcc68098c8b1",
+      "gitBlob": "3664e26cdc246cf244ad2d797b90a76b09d04605",
+      "fixedSourceUrl": "https://github.com/0050piyush/flowscope/blob/72d2a0b637d28b9a87740ae6dab6c0710a01fd87/scripts/gen-screens-b.js",
+      "localInputName": "flowscope-gen-screens-b.js"
+    },
+    {
+      "path": "data/screens.json",
+      "bytes": 136892,
+      "sha256": "1ae09137cd17aa42e93a2a12ab048247452040b8064948b63b95f60c7fb870e6",
+      "gitBlob": "01ba750ecd5514e83a9249f0282c49f492300a21",
+      "fixedSourceUrl": "https://github.com/0050piyush/flowscope/blob/72d2a0b637d28b9a87740ae6dab6c0710a01fd87/data/screens.json",
+      "localInputName": "flowscope-screens.json"
+    }
+  ],
+  "scope": "Local passive original-image display only; original image viewed directly and fixed local evidence checked. No browser, source generator, build, tsc/export, models, network, upload, remote write, PR, merge or publication.",
+  "independentAcceptance": "NOT_RUN",
+  "browserAcceptance": "NOT_RUN",
+  "priorPF01AcceptanceReusedForNoted": false,
+  "baselineGaps": "Does not add a second learning-profile candidate or remove the four existing single-candidate category gaps."
+}

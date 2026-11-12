@@ -1,0 +1,29 @@
+{
+  "reference_id": "C-02",
+  "title": "Baby Monitor for Home Assistant / Rhythm",
+  "upstream_repository": "victoriano/home-assistant-baby-monitor",
+  "source_commit": "9a3b9a864a635b7735fd55109d401e7ecb140c18",
+  "source_commit_date": "2026-07-12T08:30:41Z",
+  "source_commit_message": "Add product screenshots to README",
+  "upstream_asset_path": "docs/screenshots/rhythm.jpg",
+  "local_asset_path": "original/rhythm.jpg",
+  "width": 1280,
+  "height": 720,
+  "bytes": 60037,
+  "sha256": "f654656721d56561d4dc4e32840da3c62825cee2fdc9a6237f31e199dc0ff872",
+  "git_blob_sha1": "7bc9379d573f62f14284e8c143911f396bb1c723",
+  "license": "MIT",
+  "copyright": "Copyright (c) 2026 Victoriano Izquierdo",
+  "license_evidence": "evidence/LICENSE.txt",
+  "synthetic_evidence_file": "evidence/upstream-README.txt",
+  "synthetic_evidence_lines": [
+    29,
+    30
+  ],
+  "synthetic_evidence_statement": "Screenshots use synthetic demo data. No real child, camera, or Home Assistant credentials are included.",
+  "limitation_zh": "完整應用頁面視窗，並非完整捲動頁。畫面底部仍有事件行未完整顯示。",
+  "alterations": "None. Original image bytes preserved.",
+  "inspection": "Original image pixels directly viewed; no browser used.",
+  "publication": "None. Local offline package only.",
+  "wrapper_network_behavior": "No external resources, links, scripts or forms."
+}

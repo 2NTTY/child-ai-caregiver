@@ -1,0 +1,98 @@
+{
+  "candidate_id": "LG01",
+  "title": "Bootstrap v5.1.3 — complete sign-in page reference",
+  "artifact_type": "unmodified_official_preview_image_reference",
+  "prepared_at_utc": "2026-11-11T11:32:24.596707+00:00",
+  "source": {
+    "repository": "https://github.com/twbs/bootstrap",
+    "tag": "v5.1.3",
+    "commit": "1a6fdfae6be09b09eaced8f0e442ca6f7680a61e",
+    "path": "site/static/docs/5.1/assets/img/examples/sign-in@2x.png",
+    "url": "https://github.com/twbs/bootstrap/blob/1a6fdfae6be09b09eaced8f0e442ca6f7680a61e/site/static/docs/5.1/assets/img/examples/sign-in@2x.png",
+    "raw_url": "https://raw.githubusercontent.com/twbs/bootstrap/1a6fdfae6be09b09eaced8f0e442ca6f7680a61e/site/static/docs/5.1/assets/img/examples/sign-in@2x.png",
+    "official_demo_url": "https://getbootstrap.com/docs/5.1/examples/sign-in/"
+  },
+  "image": {
+    "local_filename": "LG01-original.png",
+    "width": 960,
+    "height": 600,
+    "bytes": 4568,
+    "git_blob_sha1": "477335984d853dca8f1d1b99d9ea3e7e62d11363",
+    "sha256": "90a19ffdb4692d790ebe9229eb361891f423b4ddca58f9d1140e2d7f32eb1ec3",
+    "modified": false,
+    "cropped": false,
+    "reencoded": false,
+    "visual_inspection": "Official PNG directly viewed before packaging; no browser operated."
+  },
+  "status": {
+    "local_only": true,
+    "implemented": false,
+    "published": false,
+    "browser_tested": false,
+    "runtime_tested": false,
+    "model_called": false,
+    "automatic_external_resources": false
+  },
+  "licenses": {
+    "image_documentation_license": "CC BY 3.0",
+    "image_license_basis": "Official documentation footer distinguishes code MIT and docs CC BY 3.0; screenshot is an official documentation preview asset, with no per-file license header.",
+    "cc_by_3_url": "https://creativecommons.org/licenses/by/3.0/",
+    "cc_by_3_legalcode_url": "https://creativecommons.org/licenses/by/3.0/legalcode",
+    "attribution": "Bootstrap Sign-in example preview, Bootstrap team and contributors, v5.1.3. Documentation asset attribution: CC BY 3.0. Original PNG unchanged.",
+    "changes": "No changes to the PNG; new factual wrapper and provenance only.",
+    "code_license": "MIT",
+    "code_license_file": "LICENSE.upstream-MIT.txt",
+    "code_license_url": "https://github.com/twbs/bootstrap/blob/1a6fdfae6be09b09eaced8f0e442ca6f7680a61e/LICENSE",
+    "copyright": [
+      "Copyright (c) 2011-2021 Twitter, Inc.",
+      "Copyright (c) 2011-2021 The Bootstrap Authors"
+    ],
+    "docs_license_evidence_url": "https://github.com/twbs/bootstrap/blob/1a6fdfae6be09b09eaced8f0e442ca6f7680a61e/site/layouts/partials/footer.html",
+    "brand_rules_url": "https://getbootstrap.com/docs/5.1/about/brand/",
+    "brand_rules_pinned_url": "https://github.com/twbs/bootstrap/blob/1a6fdfae6be09b09eaced8f0e442ca6f7680a61e/site/content/docs/5.1/about/brand.md"
+  },
+  "verification_limits": [
+    "官方預覽縮圖是 960 × 600 PNG；不能將縮圖像素當作實際 CSS 尺寸。",
+    "圖片僅作完整頁面構圖與層級對照；登入、欄位、勾選框及按鈕不可操作。",
+    "這不是育伴港登入功能實作，也不是正式驗收結果。",
+    "未啟動瀏覽器、未執行上游程式、未發布、未呼叫模型。",
+    "保留官方圖中的 Bootstrap 標誌，只作來源識別，不表示合作或背書；不得當作自有產品品牌或改畫標誌。",
+    "官方文件聲明 code MIT、docs CC BY 3.0；本包按文件素材 CC BY 3.0 提供圖片署名，未宣稱標誌具有一般商標使用授權。",
+    "固定 commit 證明此圖片存在於該版本；未驗證該圖片確由該 commit 的程式生成。",
+    "圖片中沒有真人、家庭照片或個人帳號內容；程式檢視只發現 Bootstrap 自有標誌，沒有第三方照片。",
+    "HTML 只以等比例縮放顯示原圖，不重新編碼、裁切、翻譯、覆蓋、換色或改動圖片。"
+  ],
+  "upstream_evidence": [
+    {
+      "path": "LICENSE.upstream-MIT.txt",
+      "source_path": "LICENSE",
+      "source_url": "https://github.com/twbs/bootstrap/blob/1a6fdfae6be09b09eaced8f0e442ca6f7680a61e/LICENSE",
+      "git_blob_sha1": "72dda234edaa4d2b0e9e2c5420d8685e920ec3e5"
+    },
+    {
+      "path": "upstream-evidence/docs-footer.source.txt",
+      "source_path": "site/layouts/partials/footer.html",
+      "source_url": "https://github.com/twbs/bootstrap/blob/1a6fdfae6be09b09eaced8f0e442ca6f7680a61e/site/layouts/partials/footer.html",
+      "git_blob_sha1": "e3d0f13e41d984be108179e2015d10073a2b8980"
+    },
+    {
+      "path": "upstream-evidence/sign-in-template.source.txt",
+      "source_path": "site/content/docs/5.1/examples/sign-in/index.html",
+      "source_url": "https://github.com/twbs/bootstrap/blob/1a6fdfae6be09b09eaced8f0e442ca6f7680a61e/site/content/docs/5.1/examples/sign-in/index.html",
+      "git_blob_sha1": "fb885ba414379f5118afa48a543dd6b380cb6e85"
+    },
+    {
+      "path": "upstream-evidence/signin-css.source.txt",
+      "source_path": "site/content/docs/5.1/examples/sign-in/signin.css",
+      "source_url": "https://github.com/twbs/bootstrap/blob/1a6fdfae6be09b09eaced8f0e442ca6f7680a61e/site/content/docs/5.1/examples/sign-in/signin.css",
+      "git_blob_sha1": "4732d1fb974daf2d496aa1bc8044083690d1dc1f"
+    },
+    {
+      "path": "upstream-evidence/brand-guidelines.source.txt",
+      "source_path": "site/content/docs/5.1/about/brand.md",
+      "source_url": "https://github.com/twbs/bootstrap/blob/1a6fdfae6be09b09eaced8f0e442ca6f7680a61e/site/content/docs/5.1/about/brand.md",
+      "git_blob_sha1": "80c613526e2db66bc861de86acb3ff0df12ac8a6"
+    }
+  ],
+  "packaging_note": "Only a new source-comparison wrapper and sidecars. No application or page design was recreated."
+}

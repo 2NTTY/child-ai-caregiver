@@ -1,0 +1,47 @@
+{
+  "sourcePin": "72d2a0b637d28b9a87740ae6dab6c0710a01fd87",
+  "sourcePinKind": "cached non-truncated Git tree; release and capture build unproven",
+  "generatorPath": "scripts/gen-screens-b.js",
+  "generatorGitBlob": "3664e26cdc246cf244ad2d797b90a76b09d04605",
+  "generatorSourceUrl": "https://github.com/0050piyush/flowscope/blob/72d2a0b637d28b9a87740ae6dab6c0710a01fd87/scripts/gen-screens-b.js",
+  "publisherStatement": "Every screen in the library is an original fictional design created for Flowscope — no real app's copyrighted UI is reproduced.",
+  "publisherStatementPath": "README.upstream.md",
+  "excerpts": [
+    {
+      "firstLine": 886,
+      "lastLine": 909,
+      "text": "function bNotedProfile(t){\n  const body = `\n  ${statusBar('Android', t)}\n  ${appBarAndroid(t,{title:'Profile', actions:[{icon:'edit'}]})}\n  <div class=\"scroll\"><div class=\"pad center\">\n    ${avatar('JW',t.primary,88,30)}\n    <div class=\"t22 w800 mt12\">Jonas Weber</div>\n    <div class=\"t14 muted\">Product designer · Bremen</div>\n    <div class=\"mt16\"><span class=\"tag\">Free plan</span> <span class=\"tag green ml8\">12-day streak</span></div>\n    <div class=\"stat3 mt16\" style=\"text-align:center\">\n      <div><div class=\"t20 w800\">128</div><div class=\"t12 muted\">Tasks</div></div>\n      <div><div class=\"t20 w800\">96</div><div class=\"t12 muted\">Done</div></div>\n      <div><div class=\"t20 w800\">75%</div><div class=\"t12 muted\">Rate</div></div>\n    </div>\n  </div>\n  <div class=\"pad mt16\"><div class=\"li-group\">\n    ${listItem(t,{icon:'check', title:'My tasks', sub:'6 due today', iconBg:t.primarySoft, badge:'6'})}\n    ${listItem(t,{icon:'users', title:'Shared with me', sub:'3 projects', iconBg:'#F0FDF4', iconColor:'#10B981'})}\n    ${listItem(t,{icon:'bookmark', title:'Pinned', sub:'8 items', iconBg:'#FEF3C7', iconColor:'#D97706'})}\n    ${listItem(t,{icon:'sliders', title:'Settings', sub:'', iconBg:t.surface, iconColor:t.muted})}\n  </div></div></div>\n  ${bottomNav(t,[{id:'home',icon:'home',label:'Today'},{id:'cal',icon:'cal',label:'Calendar'},{id:'search',icon:'search',label:'Search'},{id:'chat',icon:'chat',label:'Chat'},{id:'me',icon:'user',label:'Profile'}],'me')}`;\n  return { body };\n}"
+    },
+    {
+      "firstLine": 481,
+      "lastLine": 505,
+      "text": "async function renderScreen(def){\n  const t = THEMES[def.app];\n  await ensureBrowser();\n  pageErrors = [];\n  const { body } = def.build(t);\n  await page.setViewport({ width:390, height:844, deviceScaleFactor:2 });\n  await page.setContent(pageHTML(t, body), { waitUntil:'domcontentloaded' });\n  await page.evaluate(() => Promise.race([\n    (document.fonts ? document.fonts.ready : Promise.resolve()),\n    new Promise(r=>setTimeout(r,1500)),\n  ])).catch(()=>{});\n  await new Promise(r=>setTimeout(r,150));\n  const text = await page.evaluate(() => {\n    const clone = document.querySelector('.phone').cloneNode(true);\n    clone.querySelectorAll('.sb,.homebar,.gesturebar,.notch,.camdot').forEach(e=>e.remove());\n    const walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT);\n    const parts = [];\n    while(walker.nextNode()){\n      const t = walker.currentNode.nodeValue.replace(/\\s+/g,' ').trim();\n      if(t) parts.push(t);\n    }\n    return parts.join(' ');\n  });\n  const out = path.join(OUT, def.id + '.png');\n  await page.screenshot({ path: out });"
+    },
+    {
+      "firstLine": 1038,
+      "lastLine": 1038,
+      "text": "  { id:'noted-profile-09', app:'noted', app_name:'Noted', title:'Profile', pattern:'Profile', platform:'Android', category:'Productivity', elements:['Avatar','Button','List Item','Badge'], build:bNotedProfile, colors:['#FFFFFF','#F1F5F9','#4F46E5','#0F172A','#10B981'] },"
+    }
+  ],
+  "matchedVisibleData": [
+    "JW initials avatar; no portrait photo",
+    "Jonas Weber",
+    "Product designer · Bremen",
+    "Free plan",
+    "12-day streak",
+    "128 Tasks",
+    "96 Done",
+    "75% Rate",
+    "6 due today",
+    "3 projects",
+    "8 items"
+  ],
+  "originalImageVisuallyInspected": true,
+  "visibleBoundary": "Full supplied 780×1688 PNG from status bar to gesture bar; all four list rows and bottom navigation visible. Not a proven longer scrolling document or interactive app.",
+  "generatorExecuted": false,
+  "sourceAppOpened": false,
+  "realFamilyDataUsed": false,
+  "captureTime": "unknown; metadata created=2026-10-15 is a seed-data field, not capture proof",
+  "captureBuild": "unknown; source renderer specifies 390×844 deviceScaleFactor 2, not a fresh rerun or real Android-device test",
+  "thirdPartyBoundary": "Generator declares hand-drawn feather-style inline icons; original PNG only, no extracted vector assets. Inter is rasterized; no font binary or independently verified capture font file/version. Publisher statement is not an exhaustive third-party/trademark rights audit."
+}
