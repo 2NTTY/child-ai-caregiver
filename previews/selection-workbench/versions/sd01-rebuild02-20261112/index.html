@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>SD01 · OCR Consensus 詳情審閱參考</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #172e2b; background: #f7f7f3; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { width: min(1504px, 100%); margin: 0 auto; padding: 24px clamp(16px, 3vw, 32px) 40px; }
+    h1 { margin: 8px 0 12px; font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.25; }
+    p, li { line-height: 1.7; }
+    .eyebrow { margin: 0; color: #395b54; font-weight: 700; }
+    .notice { padding: 12px 16px; background: #eef3ef; border: 1px solid #c2d0c9; border-radius: 10px; }
+    nav { display: flex; flex-wrap: wrap; gap: 12px 20px; margin: 20px 0; }
+    a { color: #165b50; text-underline-offset: .2em; overflow-wrap: anywhere; }
+    a:focus-visible { outline: 3px solid #a9551f; outline-offset: 4px; }
+    figure { margin: 24px 0; }
+    img { display: block; width: 100%; max-width: 100%; height: auto; border: 1px solid #c9d5ce; }
+    figcaption { margin-top: 12px; line-height: 1.6; }
+    code { overflow-wrap: anywhere; }
+    .details { padding-top: 8px; border-top: 1px solid #c9d5ce; }
+  </style>
+</head>
+<body>
+<main id="top">
+  <p class="eyebrow">選配工作台 · SD01 · 詳情／證據審閱參考</p>
+  <h1>OCR Consensus 詳情審閱</h1>
+  <p>單張官方文檔截圖，供比較資料與證據並列的頁面佈局。這是一般 OCR 業務審閱頁，不是育兒頁，也不是已實作的育伴港功能。</p>
+  <p class="notice">新獨立版本 <strong>SD01-rebuild02-20261112</strong>。非原失落候選的恢復，不沿用舊版驗收。本版未執行 browser 驗收，尚未選用或發布。</p>
+  <nav aria-label="參考資料">
+    <a href="original/detail-review.jpg">開啟完整原圖（1440×900）</a>
+    <a href="#source">來源與使用範圍</a>
+    <a href="LICENSE.txt">完整 MIT 授權</a>
+    <a href="SOURCE-AND-RIGHTS.txt">來源及權利說明</a>
+    <a href="manifest.json">版本資料</a>
+  </nav>
+  <figure>
+    <img src="original/detail-review.jpg" width="1440" height="900" alt="OCR Consensus 官方詳情審閱文檔截圖：頂部導航與虛構數據標示；左側共識結果、基本欄位及兩筆企業明細，右側手機形圖片證據，底部五項 OCR 方法級詳情。">
+    <figcaption>完整 1440×900 原始 JPG，未裁切、重畫或重新編碼。圖中的導航、狀態與操作只是圖片內容，非可操作的產品 UI，也不是本次執行或拍攝的畫面。這是完整圖檔，不代表整頁長圖或所有產品功能。</figcaption>
+  </figure>
+  <section id="source" class="details" aria-labelledby="source-heading">
+    <h2 id="source-heading">來源與使用範圍</h2>
+    <ul>
+      <li>官方來源：<a href="https://github.com/godtroop-github/ocr_consensus/blob/4d834d3ef34072db89f84cb8f3d0fd4ec72a2a69/docs/assets/detail-review.jpg">godtroop-github/ocr_consensus · detail-review.jpg</a>。</li>
+      <li>來源固定 commit：<code>4d834d3ef34072db89f84cb8f3d0fd4ec72a2a69</code>。此值識別檔案所在的倉庫版本；截圖實際 capture build 未知，擷取時間亦未知。</li>
+      <li><a href="https://github.com/godtroop-github/ocr_consensus/blob/4d834d3ef34072db89f84cb8f3d0fd4ec72a2a69/README.md">同 commit README</a> 的作者聲明：截圖以虛構示範資料呈現，不含真實個人資料、公司名稱、識別碼、部署主機或客戶資訊。這是已核文字聲明，不是本輪獨立重建資料生成鏈。</li>
+      <li>來源根目錄 MIT 涵蓋軟體及隨附文檔，完整版權與授權通知一併保留。品牌只作來源識別，不代表合作、背書或全面第三方權利清查。</li>
+      <li>本輪只驗證來源、檔案與被動封套靜態結構。原圖入口、返回、普通桌面／手機與鍵盤／讀屏表現仍待本版獨立實測，不能由 CSS 或靜態測試推定通過。</li>
+    </ul>
+    <p><a href="#top">回到頁首</a></p>
+  </section>
+</main>
+</body>
+</html>

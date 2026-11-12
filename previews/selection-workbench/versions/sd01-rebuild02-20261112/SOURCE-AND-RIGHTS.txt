@@ -1,0 +1,31 @@
+SD01-rebuild02-20261112 · OCR Consensus 詳情審閱文檔截圖
+
+此為新獨立候選封套，不是原失落 SD01 封套的恢復，不繼承任何舊 browser 驗收。
+
+官方倉庫：https://github.com/godtroop-github/ocr_consensus
+固定 commit：4d834d3ef34072db89f84cb8f3d0fd4ec72a2a69
+已核 tree：24345fc01242723701afeb3f96264ae7d045affc
+原檔：docs/assets/detail-review.jpg
+固定來源：https://github.com/godtroop-github/ocr_consensus/blob/4d834d3ef34072db89f84cb8f3d0fd4ec72a2a69/docs/assets/detail-review.jpg
+Git blob：415c3b77dbdbff3d9b4f103f54042a3b3c68394e
+SHA-256：b446524daec2b6f8cdb738625c2c90bcf396e3eb4f2272cd075c85270045da08
+大小：111293 bytes；JPEG；1440×900。
+
+保持完整原始圖檔，不裁切、重畫、翻譯、加蓋、調色或重新編碼。HTML 僅按容器等比例縮放展示，不修改圖檔。這是文檔截圖，不是本輪執行或擷取的產品 UI，不是完整可用前端，不代表整頁長圖或所有產品功能。
+來源 commit 識別倉庫資產版本，不證明截圖擷取 build；capture build 及 capture time 均未知。
+
+同固定 commit README.md 的完整聲明原文：
+The screenshots in this README are rendered with fictitious demonstration data. They do not contain real personal data, real company names, real identifiers, deployment hosts, or customer information.
+
+README 同時把 Detail review page 連結至 docs/assets/detail-review.jpg，並稱截圖使用 real product layout with synthetic demonstration records。
+此為作者聲明。已核來源文字與可見演示環境標示，未執行生成器、未獨立重建 fixture 生成鏈，不以此宣稱每個字段的真偽或準確性皆獲獨立證實。圖片內容不作真實聯絡對象、身分資料或操作指令。
+README：https://github.com/godtroop-github/ocr_consensus/blob/4d834d3ef34072db89f84cb8f3d0fd4ec72a2a69/README.md
+README Git blob：fa629c00fdfdf5f240f83f1da7cbef26753da3d4
+
+授權依據：同固定 commit 根目錄 LICENSE，MIT License，Copyright (c) 2026 godtroop-github。
+原文允許 this software and associated documentation files 的使用及再分發，要求保留 copyright notice 和 permission notice。完整 1072-byte 原文以 LICENSE.txt 一併提供，未改寫。
+LICENSE：https://github.com/godtroop-github/ocr_consensus/blob/4d834d3ef34072db89f84cb8f3d0fd4ec72a2a69/LICENSE
+LICENSE Git blob：cfd850cf23b1fe81a3875dce22c6252c70d89fd5
+此依據不是另行取得的圖片專用協議，也不是全面第三方權利清查。品牌名稱只作來源識別，不聲稱合作或背書。
+
+驗證分界：本版僅來源核對、直接觀看原圖與必要靜態驗證；browser、普通桌面／手機入口與返回、鍵盤／讀屏、tsc／export 均未執行。未啟動來源 app、OCR 或模型，未使用真實家庭資料，未發布、PR 或合併。
