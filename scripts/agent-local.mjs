@@ -4,28 +4,30 @@ import { access, mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/pr
 import { createServer } from 'node:net';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { M03_INITIAL_WATCH_IDS } from '../src/shared/background-knowledge-maintenance.ts';
 import { localAgentAiEnvironment } from '../server/local-agent-config.ts';
 import { readLocalAgentModel } from '../server/local-agent-model.ts';
+import { LOCAL_OFFICIAL_SEED_IDS } from './local-knowledge-assessments.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const directory = join(root, '.cache', 'agent-local'), statePath = join(directory, 'state.json');
 const args = new Set(process.argv.slice(2));
+const prepareAll = args.has('--prepare-knowledge=all'), prepareKnowledge = args.has('--prepare-knowledge') || prepareAll;
 const inspectionArgs = [...args].filter(arg => arg === '--inspect-knowledge' || /^--inspect-knowledge=[a-f0-9]{64}$/u.test(arg));
 const inspection = inspectionArgs.length === 1;
 if (inspectionArgs.length > 1) throw Error('Choose one knowledge work to inspect');
-if ([...args].some(arg => !['--reset', '--confirm-local-reset', '--no-web', '--no-model', '--no-watch', '--prepare-knowledge',
+if ([...args].some(arg => !['--reset', '--confirm-local-reset', '--no-web', '--no-model', '--no-watch', '--prepare-knowledge', '--prepare-knowledge=all',
   '--maintain-knowledge', '--live-source', '--new-knowledge-work', '--knowledge-watch=fhs-solid-food', '--knowledge-watch=fhs-feeding-booklet-en', '--demo-notifications', '--help'].includes(arg)
   && !inspectionArgs.includes(arg))) throw Error('Unknown local Agent option');
-if (inspection && ['--reset', '--prepare-knowledge', '--maintain-knowledge'].some(arg => args.has(arg)))
+if (args.has('--prepare-knowledge') && prepareAll) throw Error('Choose one knowledge preparation mode');
+if (inspection && ['--reset', '--prepare-knowledge', '--prepare-knowledge=all', '--maintain-knowledge'].some(arg => args.has(arg)))
   throw Error('Knowledge inspection cannot reset data, prepare or start maintenance');
 if (!args.has('--maintain-knowledge') && [...args].some(arg => arg === '--live-source' || arg === '--new-knowledge-work' || arg.startsWith('--knowledge-watch=')))
   throw Error('Knowledge work options require --maintain-knowledge');
-if (args.has('--maintain-knowledge') && args.has('--prepare-knowledge')) throw Error('Choose preparation or maintenance, not both');
-if (args.has('--demo-notifications') && (!args.has('--no-model') || inspection || args.has('--maintain-knowledge') || args.has('--prepare-knowledge') || args.has('--reset')))
+if (args.has('--maintain-knowledge') && prepareKnowledge) throw Error('Choose preparation or maintenance, not both');
+if (args.has('--demo-notifications') && (!args.has('--no-model') || inspection || args.has('--maintain-knowledge') || prepareKnowledge || args.has('--reset')))
   throw Error('Local notification demo requires --no-model and cannot inspect, reset or run knowledge work');
 if (args.has('--help')) {
-  console.log('agent:local [--no-web] [--no-model] [--no-watch]\nSet GEMINI_API_KEY or LOCAL_AGENT_CONFIG (protected JSON). ADC: LOCAL_MODEL_PROVIDER=vertex-adc, LOCAL_MODEL_PROJECT.\nFirst knowledge preparation: --prepare-knowledge (at most one paid embedding; later starts reuse it).\nIndependent maintenance: --maintain-knowledge [--knowledge-watch=fhs-solid-food|fhs-feeding-booklet-en] [--live-source] [--new-knowledge-work]. Default: curated fixture; original work ID reused.\nInspect saved work without a model or credentials: --inspect-knowledge[=<operation-fingerprint>].\nReset only this worktree: --reset --confirm-local-reset');
+  console.log('agent:local [--no-web] [--no-model] [--no-watch]\nSet GEMINI_API_KEY or LOCAL_AGENT_CONFIG (protected JSON). ADC: LOCAL_MODEL_PROVIDER=vertex-adc, LOCAL_MODEL_PROJECT.\nFirst knowledge preparation: --prepare-knowledge (one source) or --prepare-knowledge=all (all 5 curated official sources; later starts reuse saved vectors).\nIndependent maintenance: --maintain-knowledge [--knowledge-watch=fhs-solid-food|fhs-feeding-booklet-en] [--live-source] [--new-knowledge-work]. Default: curated fixture; original work ID reused.\nInspect saved work without a model or credentials: --inspect-knowledge[=<operation-fingerprint>].\nReset only this worktree: --reset --confirm-local-reset');
   console.log('Local notification demo: --no-model --demo-notifications (fixed emulator account/child, synthetic Android inbox binding; never externally sent).');
   process.exit(0);
 }
@@ -79,7 +81,7 @@ const model = {
 };
 if (!['gemini', 'vertex', 'vertex-adc', 'openai-compatible'].includes(model.provider)) throw Error('Unsupported local model provider');
 const enabled = !inspection && !args.has('--no-model');
-if (!enabled && (args.has('--prepare-knowledge') || args.has('--maintain-knowledge'))) throw Error('Knowledge preparation/maintenance requires your explicit model credentials');
+if (!enabled && (prepareKnowledge || args.has('--maintain-knowledge'))) throw Error('Knowledge preparation/maintenance requires your explicit model credentials');
 if (enabled && (model.provider === 'vertex-adc' ? !model.project : !model.apiKey)) throw Error('Set the selected provider credential in LOCAL_AGENT_CONFIG; use --no-model only for data/UI development');
 if (enabled && model.provider === 'vertex-adc' && model.adcPath && !await exists(model.adcPath))
   throw Error('The explicitly configured ADC file does not exist. Fix adcPath / GOOGLE_APPLICATION_CREDENTIALS; no model call was made.');
@@ -101,7 +103,7 @@ const emulatorHost = offset => '127.0.0.1:' + (basePort + offset);
 const env = { ...baseEnv, NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', HOST: '127.0.0.1', PORT: String(basePort),
   SERVER_ORIGIN: origin, WEB_ORIGIN: origin, GCP_PROJECT_ID: saved.projectId, GCLOUD_PROJECT: saved.projectId,
   FIREBASE_DATABASE_ID: '(default)', FIREBASE_NAMESPACE: 'local_agent',
-  FIREBASE_KNOWLEDGE_SOURCE_IDS: M03_INITIAL_WATCH_IDS.join(','),
+  FIREBASE_KNOWLEDGE_SOURCE_IDS: process.env.FIREBASE_KNOWLEDGE_SOURCE_IDS ?? LOCAL_OFFICIAL_SEED_IDS.join(','),
   FIRESTORE_EMULATOR_HOST: emulatorHost(2), FIREBASE_AUTH_EMULATOR_HOST: emulatorHost(3),
   FIREBASE_STORAGE_EMULATOR_HOST: emulatorHost(4), STORAGE_EMULATOR_HOST: 'http://' + emulatorHost(4),
   FIREBASE_PHOTO_BUCKET: saved.projectId + '-private', FIREBASE_ERASURE_BUCKET: saved.projectId + '-journal',
@@ -118,6 +120,7 @@ const env = { ...baseEnv, NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', 
   ...(model.embeddingProvider !== undefined ? { LOCAL_MODEL_EMBEDDING_PROVIDER: model.embeddingProvider } : {}),
   ...(model.embeddingProject !== undefined ? { LOCAL_MODEL_EMBEDDING_PROJECT: model.embeddingProject } : {}),
   ...(model.embeddingLocation !== undefined ? { LOCAL_MODEL_EMBEDDING_LOCATION: model.embeddingLocation } : {}),
+  ...(prepareAll ? { LOCAL_KNOWLEDGE_PREPARE_ALL: 'true' } : {}),
   ...(inspection ? { LOCAL_KNOWLEDGE_INSPECT_OPERATION: inspectionArgs[0].split('=')[1] ?? '' } : {}),
   ...(args.has('--maintain-knowledge') ? {
     LOCAL_KNOWLEDGE_WATCH: [...args].find(arg => arg.startsWith('--knowledge-watch='))?.split('=')[1] ?? 'fhs-solid-food',
@@ -126,7 +129,7 @@ const env = { ...baseEnv, NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', 
 };
 if (model.provider === 'vertex-adc' && model.adcPath) env.GOOGLE_APPLICATION_CREDENTIALS = resolve(model.adcPath);
 const localModel = readLocalAgentModel(env);
-if ((args.has('--prepare-knowledge') || args.has('--maintain-knowledge')) && !localModel.embeddingConfigured)
+if ((prepareKnowledge || args.has('--maintain-knowledge')) && !localModel.embeddingConfigured)
   throw Error('Knowledge work needs a compatible embedding credential; configure a Gemini or explicit Vertex embedding key. No platform fallback.');
 const publicEnv = { ...baseEnv, NODE_ENV: 'development', EXPO_PUBLIC_AUTH_PROVIDER: 'firebase',
   EXPO_PUBLIC_FIREBASE_PROJECT_ID: saved.projectId, EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: '127.0.0.1',
@@ -225,8 +228,10 @@ try {
     });
     console.log('Maintenance result: ' + join(directory, 'maintenance-result.json') + '\nRestart normally to inspect the same local knowledge in chat.');
     await stop();
-  } else if (args.has('--prepare-knowledge')) {
-    console.log('Preparing one reviewed local source; at most one embedding using your configured credential.');
+  } else if (prepareKnowledge) {
+    console.log(prepareAll
+      ? 'Preparing all 5 reviewed official local sources; missing chunk embeddings use your configured credential.'
+      : 'Preparing one reviewed local source; at most one embedding using your configured credential.');
     await new Promise((done, reject) => {
       const child = start('knowledge', [join(root, 'scripts', 'agent-local-knowledge.mjs')], env, root, true);
       child.once('exit', code => code === 0 ? done() : reject(Error('Knowledge preparation stopped; inspect the tail of ' + join(directory, 'knowledge.log'))));
@@ -262,3 +267,4 @@ try {
     + '\nNo production data or external notifications. Ctrl+C saves the emulator snapshot.');
   }
 } catch (error) { console.error(error.message); await stop(1); }
+
