@@ -6014,3 +6014,7 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 ### 2026-11-12　B-P1 第三輪審核建議收斂並 rebase 至 7b7d7e98（codex/search-query-minimization）
 
 依第三輪審核並重整至最新 `origin/master`（`7b7d7e98`）：1）於 `CALLING_NON_NAME_PREFIXES` 補入常見多字病徵、飲食與照顧動作詞（如 `發燒`/`咳嗽`/`嘔吐`/`黃疸`/`肺炎`/`感冒`/`開飯`/`喝奶`/`奶粉`/`陳皮`/`退燒`），避免誤傷 `BB叫陳小明` / `BB叫黃大文` 等姓氏同時放行相關口語查詢；2）收斂 `住喺` 規則以避免 `唔知道`、`高速公路`、`屋企喺花園附近`、`中環街市` 誤報，並補齊 `麗港城`／`海怡半島` 一致性及 `Rm 2 of cough` 非房室語境放行（同時維持 `Rm 2 of Block 3` 攔截）；3）重寫 `Line／IG／Signal` handle 查驗 regex 以消除長字串重複 `_` 之多項式回溯。新反例已納入 [search-query-minimization 測試](tests/search-query-minimization.test.ts)（維持 9 檔共 73 例離線 guard 測試與兩份 `tsc --noEmit` 全過）。
+
+### 2026-11-13　B-P1 第四輪審核細節收尾（codex/search-query-minimization）
+
+依第四輪審核第 3／5 節建議完成三項細節收尾：1）將房室與劑量排除規則改用 `/iu` 全大小寫比對（`Rm 2 of BLOCK 3`、`fLaT A`、`uNiT 3` 攔截；`Rm 2 OF cough`、`Unit 2 MONTHS`、`Apt 2 WEEKS`、`Unit 2 VACCINE schedule`、`Unit 2 MCG`、`Unit 2 DOSES` 放行）；2）將 `公路` lookbehind 收窄為 `高速公路`／`快速公路`，補攔 `住喺青山公路` 等香港公路地址；3）於 `CALLING_NON_NAME_PREFIXES` 補入 `鼻敏感`/`哮喘`/`腸胃炎`/`手足口`/`中耳炎`/`過敏`/`開燈`/`開窗`/`疫苗`/`加固`/`打針`/`飲茶`。全部新測試已寫入 [search-query-minimization 測試](tests/search-query-minimization.test.ts)（維持 9 檔共 73 例離線 guard 測試與兩份 `tsc --noEmit` 全過；分支維持本地未 push、未開 PR）。
