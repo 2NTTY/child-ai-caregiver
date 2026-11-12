@@ -95,7 +95,9 @@ test('mutations only dispatch fixed master workflow and validate operation and r
   const calls = [];
   const exec = async (...args) => { calls.push(args); return ''; };
   await dispatch('rollback', 'site-20261112', { exec });
-  assert.deepEqual(calls[0].slice(0, 2), ['gh', ['workflow', 'run', 'site-release.yml', '--repo', repository.full_name, '--ref', 'master', '-f', 'operation=rollback', '-f', 'release_id=site-20261112']]);
+  assert.deepEqual(calls[0].slice(0, 2), ['gh', ['api', '--method', 'POST', '-H', 'X-GitHub-Api-Version: 2022-11-28',
+    `repos/${repository.full_name}/actions/workflows/site-release.yml/dispatches`, '-f', 'ref=master',
+    '-f', 'inputs[operation]=rollback', '-f', 'inputs[release_id]=site-20261112']]);
   await assert.rejects(dispatch('delete', null, { exec }), /Unsupported/);
   await assert.rejects(dispatch('rollback', null, { exec }), /release ID/);
   await assert.rejects(dispatch('run', 'bad\nvalue', { exec }), /release ID/);

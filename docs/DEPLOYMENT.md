@@ -26,6 +26,18 @@
 3. **啟用及恢復。** 有營運權限的帳號執行 `bash deploy/site-release/install-watchdog.sh install`。腳本註冊香港 Cloud Run Job、06:27 的 Scheduler 和兩個專用身份。喚醒身份只可執行該 Job；Job 只讀該 secret、讀取及新增發布 bucket 內 `receipts/watchdog-*` 的紀錄。日常狀態／暫停／恢復以相同腳本的 `status`、`pause`、`resume` 操作。更新或輪換時再以相同入口指定新 digest 或 secret 版號。[排程執行 Cloud Run Job](https://docs.cloud.google.com/run/docs/execute/jobs-on-schedule)
 4. **查回同一操作。** 超過寬限時間、工作流啟用、當日沒有原生事件且沒正在執行時，才登記 UTC 日期並送一次。全站日程開關和原站暫停仍由正式 workflow 核對。以 `gcloud storage cat gs://ai-caregivers-for-children-site-release/receipts/watchdog-YYYY-MM-DD-result.json` 查結果。只有原 claim 或結果為 `unknown` 時，先在 GitHub 查該日期的 catch-up run；清除 claim 會破壞防重。初次試讀可執行 `python deploy/site-release/watchdog.py`，只有 `--apply` 能觸發。
 
+等候擁有人登記期間，可先設定映像 digest 並執行 `bash deploy/site-release/install-watchdog.sh prepare`。同一個 Job 和 Scheduler 會開始唯讀查核，`status` 顯示 `observe`，結果在該 Job 的 Cloud Logging。發現漏排會記為 `would-dispatch`；已補做會記為 `already-dispatched`。登記完成後以步驟 3 啟用實際發送，狀態應為 `dispatch`。
+
+首次登記可直接開啟[已填好權限的 GitHub 官方表單](https://github.com/settings/apps/new?name=2ntty-yuyoufang-site-timer&url=https%3A%2F%2Fgithub.com%2F2NTTY%2Fchild-ai-caregiver&public=false&webhook_active=false&actions=write)。在 Install App 選「Only select repositories」及本倉庫。記下設定頁的 App ID、安裝頁網址末段的 installation ID。營運者用以下命令直接匯入下載的 PEM，將回傳的數字版本用於步驟 3。
+
+```sh
+# 首次且 secret 尚未存在時建立香港儲存位置
+gcloud secrets create site-timer-github-app --project=ai-caregivers-for-children --replication-policy=user-managed --locations=asia-east2
+gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-children --data-file="/path/to/downloaded-private-key.pem"
+```
+
+若 GitHub CLI 顯示 HTTP 500，先按原時段、分支及工作流查有沒有 run。`deploy:site` 使用官方非同步 dispatch 介面，接受後從 `status` 查最終收據。同日已有人補做的 run 亦會阻止再次補觸發。
+
 此備援會增加一項 Scheduler、一個每日短暫執行的 Cloud Run Job、映像及一個 secret。Scheduler 標價每項每月 US$0.10，免費項數按帳單帳戶共用；Job、登錄、映像和 secret 按實際使用計費。觸發後沿原建置及發布成本。[Scheduler 計費](https://cloud.google.com/scheduler/pricing) · [Cloud Run 計費](https://cloud.google.com/run/pricing)
 
 ## 一次發布怎樣查證

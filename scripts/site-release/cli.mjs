@@ -146,8 +146,10 @@ export async function dispatch(operation, releaseId, { exec = runCommand } = {})
   if (!['run', 'pause', 'resume', 'rollback'].includes(operation)) throw new Error('Unsupported site release operation.');
   if (releaseId != null && !/^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/.test(releaseId)) throw new Error('Invalid release ID.');
   if (operation === 'rollback' && !releaseId) throw new Error('Rollback requires a release ID from status.rollbackCandidates.');
-  const args = ['workflow', 'run', WORKFLOW, '--repo', REPOSITORY, '--ref', 'master', '-f', `operation=${operation}`];
-  if (releaseId) args.push('-f', `release_id=${releaseId}`);
+  // Accept the dispatch asynchronously. A receipt is read through status, even if the CLI disconnects.
+  const args = ['api', '--method', 'POST', '-H', 'X-GitHub-Api-Version: 2022-11-28',
+    `repos/${REPOSITORY}/actions/workflows/${WORKFLOW}/dispatches`, '-f', 'ref=master', '-f', `inputs[operation]=${operation}`];
+  if (releaseId) args.push('-f', `inputs[release_id]=${releaseId}`);
   await exec('gh', args);
   return { dispatched: true, repository: REPOSITORY, workflow: WORKFLOW_PATH, ref: 'master', operation,
     releaseId: releaseId || null, message: 'Workflow dispatch accepted. Use status to inspect the latest attempt and observed result.' };

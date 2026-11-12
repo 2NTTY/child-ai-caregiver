@@ -94,9 +94,18 @@ class GitHub:
                 raise ValueError("Unexpected timer provenance")
             if parse_time(run["created_at"]) >= slot:
                 return "scheduled"
-        recent = self.request(base + "branch=master&per_page=10")["workflow_runs"]
+        page = self.request(base + "branch=master&per_page=20")
+        recent = page["workflow_runs"]
         if any(run["status"] != "completed" for run in recent):
             return "in-progress"
+        title = "Daily website catch-up " + slot.date().isoformat()
+        for run in recent:
+            if (run["display_title"] == title and run["event"] == "workflow_dispatch"
+                    and run["workflow_id"] == workflow["id"] and run["head_branch"] == "master"
+                    and run["head_repository"]["id"] == REPO_ID and parse_time(run["created_at"]) >= slot):
+                return "already-dispatched"
+        if page["total_count"] > len(recent) and (not recent or parse_time(recent[-1]["created_at"]) >= slot):
+            return "history-incomplete"
         return "absent"
 
     def prepare_token(self):
@@ -135,7 +144,9 @@ def write_once(day, result=False, state="claimed", run_id=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--apply", action="store_true", help="Allow one workflow dispatch if due")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--apply", action="store_true", help="Allow one workflow dispatch if due")
+    mode.add_argument("--observe", action="store_true", help="Report the due slot without credentials or writes")
     args = parser.parse_args()
     result = check(now(), GitHub(), write_once, lambda d, s, r: write_once(d, True, s, r), args.apply)
     print(json.dumps(result))
