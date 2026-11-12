@@ -3,8 +3,9 @@ on:
   schedule:
     # UTC; 04:17 the following day in Hong Kong.
     - cron: '17 20 * * *'
-    # Temporary acceptance slots on November 12 UTC; remove after the first receipt.
-    - cron: '24,44 16 12 11 *'
+    # Temporary control, using the same recurring UTC slots as github.com/cli/cli.
+    # Only runs 4 and 5 can exercise this extra trigger; remove after the first receipt.
+    - cron: '9,39 * * * *'
   workflow_dispatch:
     inputs:
       operation:
@@ -22,7 +23,10 @@ concurrency:
   cancel-in-progress: false
 jobs:
   check:
-    if: github.repository == '2NTTY/child-ai-caregiver' && github.ref == 'refs/heads/master' && (github.event_name != 'schedule' || vars.SITE_DAILY_ENABLED == 'true')
+    if: >-
+      github.repository == '2NTTY/child-ai-caregiver' && github.ref == 'refs/heads/master' &&
+      (github.event_name != 'schedule' || vars.SITE_DAILY_ENABLED == 'true') &&
+      (github.event.schedule != '9,39 * * * *' || github.run_number <= 5)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: site-observe
@@ -35,6 +39,11 @@ jobs:
       web: ${{ steps.plan.outputs.web }}
       backend: ${{ steps.plan.outputs.backend }}
     steps:
+      - name: Record GitHub timer
+        if: github.event_name == 'schedule'
+        env:
+          MATCHED_CRON: ${{ github.event.schedule }}
+        run: printf 'GitHub timer (UTC) %s\n' "$MATCHED_CRON" | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
