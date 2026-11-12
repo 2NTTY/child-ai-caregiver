@@ -163,15 +163,16 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (request.method !== 'POST' || !channel?.config || !telegramWebhookAuthorized(request.headers.get('x-telegram-bot-api-secret-token'), channel.config)) return errorResponse('forbidden', 403);
         return uncached(await handleTelegramWebhook(request, channel.store, channel.gateway, channel.config.botId, options.contact));
       }
-      if (path === '/api/native-push/chat-presence' && options.nativePush) {
+      if ((path === '/api/native-push/chat-presence' || path === '/api/native-push/v2/chat-presence') && options.nativePush) {
         if (request.method !== 'GET' && request.method !== 'POST') throw new RequestError('method_not_allowed', 405);
         if (request.method === 'POST' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
         const session = await auth.nativeSessionProof?.(request.headers);
         if (!session) throw new RequestError('unauthorized', 401);
         const expected = request.headers.get('x-expected-user-id');
         if (expected !== session.userId) throw new RequestError(expected ? 'session_changed' : 'account_precondition_required', expected ? 409 : 428);
-        const result = request.method === 'GET' ? await options.nativePush.readChatPresence(session.userId, session)
-          : await options.nativePush.setChatPresence(session.userId, session, await readJson(request));
+        const withPreview = path === '/api/native-push/v2/chat-presence';
+        const result = request.method === 'GET' ? await options.nativePush.readChatPresence(session.userId, session, withPreview)
+          : await options.nativePush.setChatPresence(session.userId, session, await readJson(request), withPreview);
         const current = await auth.nativeSessionProof?.(request.headers);
         if (current?.userId !== session.userId || current.sessionHash !== session.sessionHash) throw new RequestError('session_changed', 409);
         return json(result);
