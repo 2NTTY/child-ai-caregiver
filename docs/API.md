@@ -1074,6 +1074,7 @@ ADK 事件只保存本次音訊身份 metadata；模型 adapter 在每次已授�
 |---|---|
 | `GET / POST /api/children/:childId/proactive-settings` | 讀取或保存本人對該孩子的授權與 IANA 時區。首次預設關閉。保存帶 `opId`、`expectedVersion`、`enabled` 及 `timeZone`。 |
 | `GET / POST /api/native-push/chat-presence` | 僅目前 Android 裝置會話可操作自己的聊天推送偏好及前景狀態。前景狀態綁定孩子對話且會到期。Web 同時在線不會抑制手機推送。 |
+| `GET / POST /api/native-push/v2/chat-presence` | 同一裝置、版本及前景狀態；增設 `chatPreviewEnabled`。新版在開啟聊天通知時可一併開啟預覽。舊設定沿用通用提示，可隨時按裝置更改。 |
 | `GET /api/children/:childId/chat/messages/:messageId` | 通知開啟時，用目前身份查原訊息。主動訊息與普通回答沿同一孩子的主聊天讀回。 |
 | `POST /api/children/:childId/chat/messages/:messageId/seen` | 客戶端確認該主動訊息已在前景可見。重播同一回報保持原查看紀錄。 |
 | `GET / POST /api/admin/proactive-demo` | 查詢示範是否已配置；管理員近期重新驗證後可用 `{opId}` 向部署綁定對象示範，同一操作返回原訊息。用 `GET /api/admin/proactive-demo/:opId` 查訊息及各裝置的實際投遞結果。 |
@@ -1084,7 +1085,7 @@ ADK 事件只保存本次音訊身份 metadata；模型 adapter 在每次已授�
 
 Android 使用原生 FCM token，與 Web Push 訂閱分開。Server 設定掌管 project／application ID；端點或模型不能指定另一發送專案。`ANDROID_PUSH_ENABLED` 預設關閉；固定 app 為 `org.yuyoufang.app`。
 
-通知正文由 Server 固定，沒有孩子、私人聊天、任務正文或任意 URL。資料僅帶 `v`、`kind`、`bindingId`、`bindingVersion` 及 `deliveryId`；點擊仍須按當前登入身份向 Server 核對原投遞與資源，不能依 payload 改孩子、確認或完成事項。取得系統通知權限／token 不代表已授予照護聯絡權限。
+渠道測試及一般照護投遞使用固定文字。啟用聊天預覽的裝置可在通知卡閱讀正式訊息開首，派送前核對原訊息、當前授權及該機偏好。預覽直接取自已保存文字，摺疊空白，最多 80 個字素並設位元組上限。裝置關閉預覽時顯示通用提示。點擊資料只帶 `v`、`kind`、`bindingId`、`bindingVersion` 及 `deliveryId`，須用目前裝置會話核對原投遞與資源。私訊預覽只隨該機通知傳送，帳戶級投遞歷史不另存副本。鎖定畫面的可見內容依 Android 裝置設定。
 
 OAuth 取得憑據與訊息 POST 分開；每次有授權的投遞只送一次 POST，發送前重查資格。只有 HTTP 200 與正確專案的 message name 才記渠道接受；連線中斷／成功回應不完整為 unknown，不重發。只有 FCM 明確 `UNREGISTERED` 才使 token 失效，普通 400／404 不直接當 token 過期。接受不等於裝置顯示、家長收到或照護完成。
 
