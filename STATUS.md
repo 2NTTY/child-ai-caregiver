@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **主動通知已上原站。** Web `fd338c50` 已修正管理示範卡重複顯示；示範綁定一個帳號及一個孩子。API 及 worker `38c7fb55` 已通過健康檢查。Android 版本 6 實機重新登記成功，原站已確認一部有效手機開啟聊天通知，舊登記已撤銷。手機關閉 App 收件、點通知回覆及 Web 讀回仍待核對。真 Gemini 已在隔離環境分別完成按約定主動聯絡及安靜結束。[發布及 APK](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json) · [本機紀錄](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json)
+- **主動通知已上原站。** 本人確認 Web `fd338c50` 的示範卡只有一張；Android 版本 6 在 App 關閉時收到通知、點入回覆，Web 讀到同一回覆。既有兩筆正式示範收據記錄入隊至開始交送約 26 秒及 119 秒，交送開始至記下渠道接受均約 1 秒。下一步接通提交後即派送、Android 雙圖示及按裝置選用的正文預覽。[發布及 APK](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json) · [本機真 Agent 紀錄](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json)
 
 **11 月 12 日開始[主動助手、手機通知與一鍵示範](PLAN.md#proactive-notifications)。其後的 [REQ-001 官方來源搜索](PLAN.md#agent-search-first)仍待驗。** P4 暫停於 11 月 11 日 23:11（香港）的原站版本 `p4-group-2f442c36`。新多孩回覆可點讀通過審核的照護原文，Android 待批量交付。五組餘項及恢復位置見[接手清單](docs/P4_RESUME.md)。[原站發布證據](artifacts/verification/P4_CARE_CITATION_DELIVERY_20261111.json)
 

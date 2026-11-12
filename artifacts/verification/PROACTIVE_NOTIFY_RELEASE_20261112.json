@@ -74,9 +74,12 @@
   "physicalDemo": {
     "operatorBinding": "Configured for the designated test account and one of its owned children",
     "deviceConsent": "Confirmed after the operator enabled chat notifications: exactly one active Android binding with a token, a valid session and chat opt-in. The prior binding is revoked.",
-    "demoSent": false,
-    "receiptOnHandset": "pending",
-    "openExactMessageAndReply": "pending",
-    "sameReplyOnWeb": "pending"
+    "demoSent": true,
+    "receiptOnHandset": "Operator confirmed on Android version 6",
+    "openExactMessageAndReply": "Operator confirmed opening the notification and replying",
+    "sameReplyOnWeb": "Operator confirmed the reply on Web and a single demo card",
+    "queueToAttemptMs": [26378, 119387],
+    "attemptToAcceptedReceiptMs": [1034, 1025],
+    "timingScope": "Two existing demo receipts, ordered by creation time. Only the first had a seen receipt at inspection. No handset arrival timestamps."
   }
 }
