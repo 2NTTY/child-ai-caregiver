@@ -1,9 +1,17 @@
 # Prompt Pack 變更紀錄
 
+## 0.1.59 · 2026-11-13
+
+- 合併已確認記憶來源與 verifiedOperations 交付審核規則；保留核心記憶工具、自動準備確認、普通操作能力載入及固定求助卡／官方引用的區分。
+- knowledge-answering 0.1.5、product-tools 0.1.25、chat-delivery-review 0.1.4 避免兩條分支同版本不同內容；不擴大寫入、分享或確認權限。
+
 ## 0.1.58 · 2026-11-11
 
 - product-tools 0.1.24 & memory-maintenance 0.1.9：將 read_memory_facts、propose_fact、propose_fact_revision 及 propose_fact_deactivation 納為核心工具；未見過確切鍵名時不帶 keys 呼 read_memory_facts({})（切勿猜 key）；明確陳述長期事實 propose_fact／更正／停用返回 confirmationPrepared=true 後直接以 kind=operation、citationIds=[] 呼 present_answer 結束，毋須再呼 request_confirmation；純提問勿呼 propose_fact。
 - knowledge-answering 0.1.4 & chat-delivery-review 0.1.3：只在記憶與當前問題主題相關時呈現個人記憶，避免無關主題硬插過敏紀錄；兼答個人記憶與官方指引時用 kind=mixed，並明確 `memory-fact:*` 摘錄在審核與 Repair 回合與官方片段同屬有效來源依據。
+
+- product-tools 0.1.24 & knowledge-answering 0.1.4：明確普通操作工具（如 `save_ordinary_record` 屬 `care_records` 等）須先經 `load_capabilities` 載入；日常進食／體溫觀察（含 `note`）按政策先記錄再回報；明確區分固定求助卡（如 `emergency-hk-v1`、`medical-consult-hk-v1`）與知識庫 `chunkId`，全無相關片段時勿硬塞無關 `chunkId`、重複重搜或跳過 `present_answer`，改用 `kind="clarification"` 或固定緊急句引導；無關主題勿硬插過敏紀錄。
+- chat-delivery-review 0.1.3：支援經 `verifiedOperations` 核對的已保存普通操作及單一待確認候選段落（含 `mixed` 混合回覆），並允許無照護指令的純超出範圍拒答或知識庫限制說明通過語義審核。
 
 ## 0.1.56 · 2026-10-21
 

@@ -321,6 +321,11 @@ for (const change of ['dismissed', 'policy_changed', 'source_removed', 'work_cha
       runId: claim.runId, proposalId: candidate.id, expectedVersion: 1, workId: work?.id ?? null,
     });
     assert.deepEqual(await h.confirmations.confirmationQuestions('parent', h.childId, claim.runId), [confirmation!.question]);
+    const binding = { proposalRunId: claim.runId, proposalId: candidate.id, proposalVersion: 1 };
+    assert.deepEqual(await h.confirmations.confirmationQuestions('parent', h.childId, claim.runId, binding), [confirmation!.question]);
+    for (const mismatch of [{ proposalId: randomUUID() }, { proposalRunId: randomUUID() }, { proposalVersion: 2 }]) {
+      assert.deepEqual(await h.confirmations.confirmationQuestions('parent', h.childId, claim.runId, { ...binding, ...mismatch }), []);
+    }
     if (change === 'dismissed') await h.proposals.decide('parent', h.childId, claim.runId, candidate.id, { expectedVersion: 1, decision: 'dismiss', confirmShared: false });
     if (change === 'policy_changed') policy++;
     if (change === 'source_removed') await h.runs.authority.runTransaction('parent', h.childId, async b => {
@@ -382,6 +387,11 @@ test("SQL confirmation questions revalidate the current pending proposal without
   const pool = { query, connect: async () => ({ query, release() {} }) } as unknown as Pool;
   const store = createAgentConfirmationStore(pool, cipher, async () => { assert.fail('Question lookup must not decide a proposal'); });
   assert.deepEqual(await store.confirmationQuestions(userId, childId, runId), ['請確認合成記憶']);
+  const binding = { proposalRunId: runId, proposalId, proposalVersion: 1 };
+  assert.deepEqual(await store.confirmationQuestions(userId, childId, runId, binding), ['請確認合成記憶']);
+  for (const mismatch of [{ proposalId: randomUUID() }, { proposalRunId: randomUUID() }, { proposalVersion: 2 }]) {
+    assert.deepEqual(await store.confirmationQuestions(userId, childId, runId, { ...binding, ...mismatch }), []);
+  }
   proposalState = 'dismissed';
   assert.deepEqual(await store.confirmationQuestions(userId, childId, runId), []);
 });

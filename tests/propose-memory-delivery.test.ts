@@ -554,7 +554,7 @@ test("a temporary clause does not authorize short expiry for a different fact", 
   const seen: unknown[] = [];
   const surface = tools({ trustedUserMessage: "BB 暫時不吃雞蛋；BB 對牛奶過敏。",
     propose: async (...args) => { seen.push((args[3] as { validUntil: string | null }).validUntil); return {
-      id: "00000000-0000-4000-8000-000000000001", runId, childId: scope.childId, version: 1, status: "pending",
+      id: "00000000-0000-4000-8000-000000000001", runId, childId: scope.childId, version: 1, status: "pending", value: args[3],
     }; } });
   const result = await surface.tools.find(tool => tool.name === "propose_fact")!.execute({
     key: "milk-allergy", content: "BB 對牛奶過敏", intendedVisibility: "private",
@@ -601,7 +601,7 @@ for (const content of ['BB 不吃雞蛋，只限今晚', 'BB 不吃雞蛋']) {
     const seen: unknown[] = [];
     const surface = tools({ trustedUserMessage: 'BB 不吃雞蛋，只限今晚',
       propose: async (...args) => { seen.push((args[3] as { validUntil: string | null }).validUntil); return {
-        id: '00000000-0000-4000-8000-000000000001', runId, childId: scope.childId, version: 1, status: 'pending',
+        id: '00000000-0000-4000-8000-000000000001', runId, childId: scope.childId, version: 1, status: 'pending', value: args[3],
       }; } });
     const result = await surface.tools.find(tool => tool.name === 'propose_fact')!.execute({
       key: 'egg-tonight', content, intendedVisibility: 'private', validUntil: until,
