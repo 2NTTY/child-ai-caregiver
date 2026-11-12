@@ -1,0 +1,7 @@
+FROM python:3.12-slim-bookworm
+WORKDIR /app
+RUN pip install --no-cache-dir "PyJWT==2.15.1" "cryptography==50.0.2"
+COPY protocol.py store.py watchdog.py ./
+USER 65532:65532
+ENTRYPOINT ["python", "-B", "watchdog.py"]
+CMD ["--apply"]

@@ -17,6 +17,17 @@
 
 即使從未觸發，`daily.expectedAt` 亦會列出 workflow 建立後首個正式日程。`nextExpectedBy` 是香港 06:17 的監察期限；逾期仍無新排程會顯示 `overdue`。排查時用 `gh run list --workflow site-release.yml --branch master --event schedule` 查 GitHub 是否已建立 run。有 run 才查其 job；手動發布或重跑舊 run 不會刷新排程時間。
 
+### 每日事件缺席時補觸發
+
+先用 `npm run deploy:site -- status` 查原事件及收據。若已建立 run 而檢查失敗，應修該次錯誤。若每日 04:17 的事件一直缺席，營運者可啟用香港 06:27 的獨立 Cloud Scheduler 作業。它在 VM 停機時亦能喚醒同一個 GitHub workflow，由原發布流程查 VM 狀態。GitHub 會把補觸發記作 `workflow_dispatch`，名稱帶 UTC 日程日期；原生排程驗收只計 `schedule`。
+
+1. **先核實身份。** 本人帳號建立私人 GitHub App，僅授予 Actions 寫入及預設 metadata 讀取，只安裝在 `2NTTY/child-ai-caregiver`。GitHub 的 Actions 寫入授權以倉庫為單位。把 App 私鑰直接存入香港 Secret Manager 的 `site-timer-github-app`，記下數字版號、App ID 和 installation ID。GitHub App 只在真的需要補觸發時換取限定本倉庫的短期 token。其他營運者復用 secret 版號即可。[GitHub 安裝 token](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-an-installation-access-token-for-a-github-app)
+2. **建立獨立映像。** 在根目錄以 `docker build -f deploy/site-release/Dockerfile.watchdog -t asia-east2-docker.pkg.dev/ai-caregivers-for-children/site-release/site-watchdog:版本 deploy/site-release` 建置並推送該標籤。將推送回傳的完整 `映像名稱@sha256:摘要` 放入 `SITE_TIMER_IMAGE`。另外設定 `SITE_GITHUB_APP_ID`、`SITE_GITHUB_INSTALLATION_ID`、`SITE_TIMER_KEY_VERSION`。
+3. **啟用及恢復。** 有營運權限的帳號執行 `bash deploy/site-release/install-watchdog.sh install`。腳本註冊香港 Cloud Run Job、06:27 的 Scheduler 和兩個專用身份。喚醒身份只可執行該 Job；Job 只讀該 secret、讀取及新增發布 bucket 內 `receipts/watchdog-*` 的紀錄。日常狀態／暫停／恢復以相同腳本的 `status`、`pause`、`resume` 操作。更新或輪換時再以相同入口指定新 digest 或 secret 版號。[排程執行 Cloud Run Job](https://docs.cloud.google.com/run/docs/execute/jobs-on-schedule)
+4. **查回同一操作。** 超過寬限時間、工作流啟用、當日沒有原生事件且沒正在執行時，才登記 UTC 日期並送一次。全站日程開關和原站暫停仍由正式 workflow 核對。以 `gcloud storage cat gs://ai-caregivers-for-children-site-release/receipts/watchdog-YYYY-MM-DD-result.json` 查結果。只有原 claim 或結果為 `unknown` 時，先在 GitHub 查該日期的 catch-up run；清除 claim 會破壞防重。初次試讀可執行 `python deploy/site-release/watchdog.py`，只有 `--apply` 能觸發。
+
+此備援會增加一項 Scheduler、一個每日短暫執行的 Cloud Run Job、映像及一個 secret。Scheduler 標價每項每月 US$0.10，免費項數按帳單帳戶共用；Job、登錄、映像和 secret 按實際使用計費。觸發後沿原建置及發布成本。[Scheduler 計費](https://cloud.google.com/scheduler/pricing) · [Cloud Run 計費](https://cloud.google.com/run/pricing)
+
 ## 一次發布怎樣查證
 
 1. GitHub 比較每個已發布服務的 SHA 與本次固定 SHA。純文件、原生專屬修改及相同目標只記檢查。遇到 Compose／部署前置時先顯示路徑。營運者核對並實際完成前置後，用 `gh variable set SITE_REVIEWED_PREREQUISITES --body <完整 master SHA>` 指定該版。接收器本身有獨立版本指紋。
