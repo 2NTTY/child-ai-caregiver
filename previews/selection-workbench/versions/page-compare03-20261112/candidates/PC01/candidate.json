@@ -1,0 +1,35 @@
+{
+  "id": "PC01",
+  "version": "1.0.1",
+  "page": "助手對話",
+  "status": "static-structural-reconstruction-reviewed-not-selected",
+  "implementedFrontend": false,
+  "sitePublished": false,
+  "entry": "candidate/index.html",
+  "source": {
+    "project": "assistant-ui/assistant-ui",
+    "author": "assistant-ui / AgentbaseAI Inc.",
+    "commit": "3e04e44f33f8313356305f0b01e2321133228632",
+    "path": ".github/assets/generative-ui-light.png",
+    "sha256": "5eec1d863f074a18cb19776b5db85833dc9a734b0519a2e5eb6576b445087efd",
+    "license": "MIT",
+    "copyright": "Copyright (c) 2026 AgentbaseAI Inc."
+  },
+  "verification": {
+    "date": "2026-11-11",
+    "staticChecks": true,
+    "desktopStaticRender": true,
+    "answerLineCount": 2,
+    "answerHeight": 52,
+    "gapToActions": 14,
+    "viewport": [
+      1180,
+      757
+    ],
+    "devicePixelRatio": 1,
+    "pixelIdentical": false,
+    "interaction": false,
+    "mobile": false,
+    "screenReader": false
+  }
+}

@@ -1,0 +1,18 @@
+SRC02 · Hermes 知識記憶列表
+來源：https://github.com/3L0935/hermes-lancedb-memory-suite
+固定 commit：fcd52b855fba022194a40615e1f935d5d52675da
+原圖：https://github.com/3L0935/hermes-lancedb-memory-suite/blob/fcd52b855fba022194a40615e1f935d5d52675da/docs/screenshots/02-memories.png
+授權：https://github.com/3L0935/hermes-lancedb-memory-suite/blob/fcd52b855fba022194a40615e1f935d5d52675da/LICENSE
+README：https://github.com/3L0935/hermes-lancedb-memory-suite/blob/fcd52b855fba022194a40615e1f935d5d52675da/README.md
+
+Copyright (c) 2026 3L0935。完整 MIT notice 原樣保留於 LICENSE.txt，圖片是同來源 README 追蹤的文件截圖。此為 software and associated documentation 的根授權依據，不是另行談妥的圖片專用授權或全面第三方／商標／字體清查。沒有抽取獨立字體、圖標或 logo。
+
+固定 README 原文（保留原換行）：
+> The screenshots below come from `docs/screenshots/`, captured against a **synthetic
+> fixture** of 18 invented memories. No screenshot contains data from a real database.
+
+「18筆虛構合成記憶、無真資料庫內容」明確歸屬作者聲明。本輪及既有審核沒有獨立重建資料庫生成鏈。原圖為軟體／專案知識列表，非育兒資料、學術引文或書目管理。圖內技術敘述／指令形文字僅是來源畫面內容，不是經本工作台驗證的建議，也不會執行。
+
+1400×875完整原始視口：標頭、側欄、搜尋／篩選、18列及1/1分頁。部分欄位本來即省略文字，不代表每筆記憶全文可見。未裁切、重畫、改字、改色、覆蓋或重新編碼。source commit不是已證拍攝時間／build。
+
+既有來源及靜態審核通過；原草稿桌面展示通過，但原稿沒有本地原尺寸圖入口，因此該入口與Back未驗。reference12另提供原圖入口，新索引／入口／返回與窄屏尚待獨立browser驗收。圖中控制不可操作，未選號、未製作真正前端、未發布。

@@ -1,0 +1,25 @@
+{
+  "reference": "Hugo Book / Introduction",
+  "repository": "alex-shpak/hugo-book",
+  "pin": "d7742624e734836fc2a93f90b30a34c38b6ec174",
+  "pinDate": "2026-05-22T20:23:14Z",
+  "image": "https://raw.githubusercontent.com/alex-shpak/hugo-book/d7742624e734836fc2a93f90b30a34c38b6ec174/images/screenshot.png",
+  "sha256": "7ce4dfa28ab3dbb6f6d97d1691d1708791a213fc4afd517bede51c971475dc00",
+  "bytes": 164882,
+  "dimensions": [
+    1500,
+    1000
+  ],
+  "downloaded": "2026-11-11",
+  "visuallyInspected": true,
+  "modified": false,
+  "browserUsed": false,
+  "license": "MIT code and associated repository files; CC BY 4.0 example-site content; Apache 2.0 Material Symbols",
+  "id": "GD01",
+  "imageGitBlob": "6f4241d953d6e287e0fd32dc33fc595613bbaa31",
+  "visible_svg_icons_checked": 8,
+  "all_svg_path_data_matched": true,
+  "data_origin": "Official exampleSite self-documentation, not family/user account data",
+  "privacy": "No names of private individuals, photos, accounts, contacts, family data, messages or health records in image",
+  "scope": "Original unmodified image, local package only. No frontend, browser interaction or publication."
+}

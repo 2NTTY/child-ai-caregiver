@@ -1,0 +1,87 @@
+{
+  "id": "S-01",
+  "page": "設定",
+  "version": "v1.0.0",
+  "title": "shadcn/ui Settings / Appearance 原作完整畫面",
+  "status": "desktop-static-source-display-verified",
+  "selected": false,
+  "implementedFrontend": false,
+  "published": false,
+  "source": {
+    "author": "shadcn",
+    "copyright": "Copyright (c) 2023 shadcn",
+    "page": "https://v3.shadcn.com/examples/forms/appearance",
+    "repository": "https://github.com/shadcn-ui/ui",
+    "commit": "4ccff13f9c68cd12bca289faa8d513b3f748ea37",
+    "commitDate": "2023-05-19T18:56:49Z",
+    "commitTitle": "feat: react-hook-form (#377)",
+    "imagePath": "apps/www/public/examples/forms-light.png",
+    "immutableImage": "https://raw.githubusercontent.com/shadcn-ui/ui/4ccff13f9c68cd12bca289faa8d513b3f748ea37/apps/www/public/examples/forms-light.png",
+    "license": "MIT",
+    "licenseUrl": "https://github.com/shadcn-ui/ui/blob/4ccff13f9c68cd12bca289faa8d513b3f748ea37/LICENSE.md",
+    "licenseLocalCopy": "reference/LICENSE.md",
+    "sha256": "15450ff7b8d5904d6c801acc6d7f2e33e267dcdc8ea2e101f9a18ffc65b3b3cd",
+    "gitBlob": "15d76120dccefbb695af757ae7cc2af2bab0585f",
+    "bytes": 29685,
+    "width": 1280,
+    "height": 791,
+    "visuallyInspected": true,
+    "inspectionMethod": "Direct local image viewing; no browser used",
+    "versionCaveat": "2023 image introduction commit; official v3 site is a separate mutable reference, not a claim of latest application UI."
+  },
+  "entry": "index.html",
+  "thumbnail": "reference/forms-light.png",
+  "changesFromOriginal": [
+    "Original PNG unchanged byte for byte.",
+    "Added external Chinese comparison frame, identifier, attribution, caveats and source links.",
+    "Narrow viewer scales the complete PNG at its original aspect ratio; it does not reconstruct mobile layout."
+  ],
+  "notClaimed": [
+    "HTML/CSS reconstruction of the original page",
+    "Complete settings section or other tabs",
+    "Interactive UI",
+    "Hidden, pressed or expanded states",
+    "Current 2026 UI",
+    "Mobile source layout",
+    "Production integration",
+    "User selection",
+    "Mobile, keyboard, screen-reader, interactive or full product acceptance"
+  ],
+  "dataBoundary": "Official public synthetic demonstration image only. No family data, model, backend, GCP, account or persistence.",
+  "verification": {
+    "date": "2026-11-11",
+    "sourceImage": "DIRECTLY_VIEWED",
+    "staticPackageChecks": "PASS_7_OF_7",
+    "browser": "PASS_DESKTOP_STATIC_ONLY",
+    "http": "PASS_ISOLATED_LOCAL_PREVIEW",
+    "mobile": "NOT_RUN",
+    "keyboard": "NOT_RUN",
+    "screenReader": "NOT_RUN",
+    "interactive": "NOT_RUN",
+    "tsc": "NOT_RUN",
+    "export": "NOT_RUN",
+    "projectSuite": "NOT_RUN",
+    "viewport": {
+      "width": 1180,
+      "height": 757,
+      "dpr": 1
+    }
+  },
+  "duplicateCheck": {
+    "bounded": true,
+    "existingPageCandidates": [
+      "H-01",
+      "PC01",
+      "C-01"
+    ],
+    "existingSettingsModules": [
+      "SN01",
+      "NP01",
+      "MP01",
+      "model-settings-readonly-focus-fix01"
+    ],
+    "catalogGitBlob": "84c21f747af58a07098d93489bb0865ed65d6d85",
+    "exactSourceMatches": 0
+  },
+  "sitePublished": false
+}

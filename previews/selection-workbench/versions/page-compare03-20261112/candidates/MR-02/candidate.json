@@ -1,0 +1,57 @@
+{
+  "id": "MR-02",
+  "page": "記憶與參考",
+  "version": "1.0.0",
+  "createdAt": "2026-11-11",
+  "kind": "unmodified-source-image-page-reference",
+  "selected": false,
+  "implementedFrontend": false,
+  "sitePublished": false,
+  "browserVerified": false,
+  "mobileVerified": false,
+  "interactiveUXVerified": false,
+  "keyboardVerified": false,
+  "screenReaderVerified": false,
+  "httpVerified": false,
+  "integrated": false,
+  "sourceImageDirectlyViewed": true,
+  "source": {
+    "repository": "silverbulletmd/silverbullet",
+    "commit": "237ef6a24d57272acc70c9959fea13ac401c0c80",
+    "path": "docs/Screenshots/markdown-basics-preview.png",
+    "imageCommit": "a8fe718f35e05f57dc7e7cd56611d5077be9ffda",
+    "imageCommitDate": "2026-11-03T13:36:05Z",
+    "imageGitBlob": "e58b28dba09ad58d51f882f8ce8cad4fa7cabd67",
+    "imageSha256": "622e6e6749444759f8ddc81781530dde2a1460a0ae98a716c07d9478e17830cd",
+    "imageBytes": 80630,
+    "imageWidth": 1960,
+    "imageHeight": 1120,
+    "license": "MIT",
+    "copyright": "Copyright 2022, Zef Hemel",
+    "licenseBasis": "Pinned root LICENSE.md covers software and associated documentation; screenshot is an in-tree documentation asset used by the corresponding tutorial. No separately obtained screenshot permission or path-specific license override found.",
+    "appVersion": null,
+    "sourceUrl": "https://github.com/silverbulletmd/silverbullet/blob/237ef6a24d57272acc70c9959fea13ac401c0c80/docs/Guide/My%20First%20Markdown%20Page.md",
+    "imageUrl": "https://github.com/silverbulletmd/silverbullet/blob/237ef6a24d57272acc70c9959fea13ac401c0c80/docs/Screenshots/markdown-basics-preview.png",
+    "sourceCodeUrl": "https://github.com/silverbulletmd/silverbullet/tree/237ef6a24d57272acc70c9959fea13ac401c0c80"
+  },
+  "sampleContent": {
+    "classification": "upstream-published instructional sample",
+    "evidencePath": "reference/source-tutorial.md",
+    "evidenceGitBlob": "63e78546d2b092cc13982decdcf26eb925224ec2",
+    "evidence": "The tutorial instructs readers to create Photo Walk and supplies the exact text displayed in the screenshot.",
+    "personNameFictionalConfirmed": null,
+    "privateAccountAccessed": false,
+    "userFamilyChildDataAdded": false
+  },
+  "differences": {
+    "imageBytesChanged": false,
+    "changes": ["External candidate numbering, provenance and scope labels only", "Proportional display scaling only"],
+    "notInferred": ["Offscreen content", "Mobile layout", "Collection sidebar", "Interactive states", "Current app version", "Fictional identity of sample person"]
+  },
+  "publication": {
+    "status": "not-published",
+    "licenseConditions": "Retain full MIT license and copyright with the documentation image, pinned provenance, no-warranty and non-endorsement notices. Any later code/dependency/font reuse needs scoped review.",
+    "readyForUnconditionalPublicRelease": false
+  },
+  "dataBoundary": "Upstream instructional screenshot only. No user, family or child data, real model calls, GCP or backend wiring. No changes to MR-01, original frontend, integrated workbench or user selections."
+}

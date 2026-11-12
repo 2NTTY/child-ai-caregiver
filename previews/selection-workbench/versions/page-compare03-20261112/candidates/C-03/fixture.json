@@ -1,0 +1,71 @@
+{
+  "provenance": "New deterministic synthetic data, not transcribed from upstream screenshots",
+  "as_of": "2026-11-11T20:00:00+00:00",
+  "child_name": "Jamie Chen",
+  "user_name": "caregiver",
+  "feeding": {
+    "ended": "2026-11-11T18:45:00+00:00",
+    "type": "formula",
+    "method": "bottle",
+    "amount_oz": 4
+  },
+  "sleep": {
+    "ended": "2026-11-11T17:10:00+00:00",
+    "minutes": 50,
+    "day_minutes": 625,
+    "entries": 7,
+    "naps": 3,
+    "nap_minutes": 155
+  },
+  "last_diaper": {
+    "time": "2026-11-11T16:25:00+00:00",
+    "attributes": [
+      "wet"
+    ]
+  },
+  "diaper_days": [
+    {
+      "wet": 5,
+      "solid": 3
+    },
+    {
+      "wet": 6,
+      "solid": 2
+    },
+    {
+      "wet": 4,
+      "solid": 3
+    },
+    {
+      "wet": 5,
+      "solid": 2
+    },
+    {
+      "wet": 6,
+      "solid": 3
+    },
+    {
+      "wet": 4,
+      "solid": 2
+    }
+  ],
+  "tummy_time": [
+    {
+      "minutes": 5,
+      "ended": "2026-11-11T18:25:00+00:00"
+    },
+    {
+      "minutes": 8,
+      "ended": "2026-11-11T15:05:00+00:00"
+    },
+    {
+      "minutes": 6,
+      "ended": "2026-11-11T10:15:00+00:00"
+    }
+  ],
+  "timer": {
+    "id": 1,
+    "label": "Evening sleep",
+    "started": "2026-11-11T19:40:00+00:00"
+  }
+}
