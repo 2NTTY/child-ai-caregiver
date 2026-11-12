@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { dispatch, main, readRemoteStatus, trustedRun } from './cli.mjs';
+import { dispatch, main, readRemoteStatus, remotePlan, trustedRun } from './cli.mjs';
 
 const repository = { id: 42, full_name: '2NTTY/child-ai-caregiver' };
 const workflow = { id: 9, path: '.github/workflows/site-release.yml' };
@@ -12,6 +12,19 @@ const run = (id, conclusion = 'success') => ({ id, workflow_id: 9, head_branch: 
   created_at: '2026-11-12T00:00:00Z', updated_at: '2026-11-12T00:01:00Z' });
 const state = { observedAt: '2026-11-12T00:01:00Z', lastScheduledAt: null, vm: { status: 'RUNNING', terminationTime: null }, paused: false,
   services: { web: null, api: null, worker: null }, rollbackCandidates: [], lastResult: 'success', releaseId: null };
+
+test('planning an already deployed master needs only the GitHub head lookup', async () => {
+  const service = { sha, digest: 'sha256:'+'1'.repeat(64) };
+  const snapshot = { status: { ...state, services:{web:service,api:service,worker:service} } };
+  const reads = [];
+  const view = await remotePlan(snapshot, { exec:async (cmd,args) => {
+    reads.push([cmd,...args]);
+    assert.deepEqual([cmd,...args], ['gh','api','repos/2NTTY/child-ai-caregiver/commits/master']);
+    return JSON.stringify({sha});
+  } });
+  assert.equal(reads.length,1);
+  assert.deepEqual([view.plan.web,view.plan.backend],[false,false]);
+});
 
 function fakeRunner({ runs = [run(2, 'failure'), run(1)], noWorkflow = false, transportError = false, malformed = false } = {}) {
   const calls = [];

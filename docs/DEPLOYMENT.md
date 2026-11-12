@@ -11,7 +11,9 @@
 | 回退 | `npm run deploy:site -- rollback` 列出相容候選。確認 ID 與適用服務後，`npm run deploy:site -- rollback RELEASE_ID` 會暫停自動發布並核對目前基線。 |
 | 排程逾期 | 查看 [Production website](https://github.com/2NTTY/child-ai-caregiver/actions/workflows/site-release.yml) 是否已啟用及倉庫變數 `SITE_DAILY_ENABLED`。必要時手動 run；日程可能延遲，公開倉庫長期無活動時 GitHub 可停用排程。 |
 
-日程為香港 **04:17**（UTC 20:17）。GitHub 故障／VM 期限警報共用一張由 Actions 管理的 [Issue](https://github.com/2NTTY/child-ai-caregiver/issues?q=is%3Aissue+%22Site+release+failure+or+VM+termination+deadline%22)，可訂閱其 GitHub 通知。VM 提前 7 天及 1 天提醒。母分支、手動重跑及 fork 均須符合受保護 `master`、倉庫 ID 與固定工作流身份才會獲雲端憑證。
+日程為香港 **04:17**（UTC 20:17）。GitHub 故障／VM 期限警報共用一張由 Actions 管理的 [Issue](https://github.com/2NTTY/child-ai-caregiver/issues/575)，可訂閱其 GitHub 通知。VM 提前 7 天及 1 天提醒。GCP 只接受此倉庫、受保護 master、指定工作流與 environment 的短期身份。
+
+首次接管已在 [2026-11-12 手動工作流](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43240224906) 驗證。原站已有接收器、GitHub 環境與 WIF。下次接手從上表的 `status` 開始。
 
 ## 一次發布怎樣查證
 

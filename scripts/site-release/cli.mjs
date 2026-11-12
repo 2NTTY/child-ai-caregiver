@@ -113,6 +113,10 @@ export async function remotePlan(snapshot, { exec = runCommand } = {}) {
   const master = await api(exec, `repos/${REPOSITORY}/commits/master`);
   if (!SHA.test(master.sha)) throw new Error('GitHub did not return an immutable master SHA.');
   if (!snapshot.status) return { targetSha: master.sha, plan: null, message: `${snapshot.message} Run the workflow to inspect and bootstrap the existing site before planning.` };
+  const services = Object.values(validateStatus(snapshot.status).services);
+  if (services.every(service => service?.sha === master.sha)) {
+    return { targetSha: master.sha, plan: buildPlan(snapshot.status, master.sha, {}) };
+  }
   const directory = await mkdtemp(join(tmpdir(), 'site-plan-'));
   try {
     // GitHub comparisons cap their file list. Fetch immutable trees into an isolated
