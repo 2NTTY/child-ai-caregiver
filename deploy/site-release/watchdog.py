@@ -22,12 +22,15 @@ class DispatchRejected(RuntimeError):
     pass
 
 
-def check(at, github, claim, save_result, execute=False):
+def check(at, github, claim, save_result, execute=False, acceptance_slot=None):
     slot = at.replace(hour=20, minute=17, second=0, microsecond=0)
     if slot > at:
         slot -= timedelta(days=1)
     day = slot.date().isoformat()
-    if not slot + timedelta(hours=2) <= at < slot + timedelta(hours=4):
+    if acceptance_slot and acceptance_slot + timedelta(minutes=3) <= at < acceptance_slot + timedelta(minutes=30):
+        slot = acceptance_slot
+        day = slot.strftime("%Y-%m-%dT%H-%MZ")
+    elif not slot + timedelta(hours=2) <= at < slot + timedelta(hours=4):
         return {"state": "outside-window", "slot": day}
     observed = github.timer_state(slot)
     if observed != "absent":
@@ -98,7 +101,8 @@ class GitHub:
         recent = page["workflow_runs"]
         if any(run["status"] != "completed" for run in recent):
             return "in-progress"
-        title = "Daily website catch-up " + slot.date().isoformat()
+        identifier = slot.date().isoformat() if (slot.hour, slot.minute) == (20, 17) else slot.strftime("%Y-%m-%dT%H-%MZ")
+        title = "Daily website catch-up " + identifier
         for run in recent:
             if (run["display_title"] == title and run["event"] == "workflow_dispatch"
                     and run["workflow_id"] == workflow["id"] and run["head_branch"] == "master"
@@ -148,5 +152,7 @@ if __name__ == "__main__":
     mode.add_argument("--apply", action="store_true", help="Allow one workflow dispatch if due")
     mode.add_argument("--observe", action="store_true", help="Report the due slot without credentials or writes")
     args = parser.parse_args()
-    result = check(now(), GitHub(), write_once, lambda d, s, r: write_once(d, True, s, r), args.apply)
+    acceptance = os.environ.get("SITE_TIMER_ACCEPTANCE_UTC")
+    result = check(now(), GitHub(), write_once, lambda d, s, r: write_once(d, True, s, r), args.apply,
+                   parse_time(acceptance) if acceptance else None)
     print(json.dumps(result))
