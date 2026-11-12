@@ -28,6 +28,7 @@ export interface PushSettingsModel extends ChannelSettingsBase {
   currentBindingId: string | null; bindings: PushBindingView[];
   deliveries: PushDeliveryView[]; testsRemaining: number; nextTestAt: string | null;
   chatNotificationsEnabled?: boolean | null;
+  chatPreviewEnabled?: boolean | null;
   chatNotificationsBusy?: boolean;
 }
 interface ChannelReviewActions {
@@ -37,6 +38,7 @@ interface ChannelReviewActions {
 export interface PushSettingsActions extends ChannelReviewActions {
   stageEnable(label: string): void; stageRevoke(id: string): void; stageTest(id: string): void;
   setChatNotificationsEnabled?(enabled: boolean): void;
+  setChatPreviewEnabled?(enabled: boolean): void;
 }
 export interface TelegramBindingView {
   id: string; version: number; label: string; chatIdHint: string;

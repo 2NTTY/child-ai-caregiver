@@ -26,6 +26,7 @@ export function storedDemoPending(storage: AdminDemoStorage | null, baseUrl: str
 // Only known settled outcomes release the operation; future statuses remain recoverable.
 export const demoSettled = (receipt: AdminDemoReceipt) => receipt.deliveries.every(item =>
   ['accepted', 'rejected', 'stopped'].includes(item.status));
+export const demoAwaitingDelivery = (receipt: AdminDemoReceipt | null) => !!receipt?.deliveries.some(item => ['queued', 'sending'].includes(item.status));
 export const demoDeliveryLabel = (status: string) => ({
   queued: '已排隊，尚未確認交送', sending: '正在交送', unknown: '結果未知', accepted: '推播服務已接受',
   rejected: '推播服務已拒絕', stopped: '交送已停止',

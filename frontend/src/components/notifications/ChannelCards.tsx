@@ -206,6 +206,13 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
           disabled={actionBlocked || model.chatNotificationsBusy || model.chatNotificationsEnabled == null || !model.currentBindingId}
           onChange={sourceActions.setChatNotificationsEnabled} />
         <Text style={styles.meta}>{model.chatNotificationsEnabled == null ? "聊天通知設定尚未核對，請重新讀取。" : "只影響此手機；正在前台查看該孩子的主聊天時，暫停此手機的聊天通知。"}</Text>
+        {model.platform === "android" ? <Text style={styles.meta}>開啟聊天通知時會同時開啟內容預覽；你可取消預覽，改收一般提示。</Text> : null}
+        {model.platform === "android" && model.chatNotificationsEnabled === true && sourceActions.setChatPreviewEnabled ? <>
+          <AppCheckbox label="在通知顯示聊天內容預覽" checked={model.chatPreviewEnabled === true}
+            disabled={actionBlocked || model.chatNotificationsBusy || model.chatPreviewEnabled == null || !model.currentBindingId}
+            onChange={sourceActions.setChatPreviewEnabled} />
+          <Text style={styles.meta}>開啟後，通知可能顯示聊天內容；實際顯示仍受手機的通知及鎖定畫面設定影響。關閉後只顯示一般提示。</Text>
+        </> : null}
       </View> : null}
       <ChannelReviewPanel model={model} actions={actions} production={production} />
       <View style={[styles.stack, styles.group]}>
