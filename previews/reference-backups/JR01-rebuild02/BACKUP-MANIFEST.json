@@ -1,0 +1,18 @@
+{
+  "artifact_revision": "JR01-rebuild02",
+  "repository_path": "previews/reference-backups/JR01-rebuild02",
+  "source_commit": "bcc0513567c2fba7c935bd61886ce998a2bf1fab",
+  "source_release": "1.13.0",
+  "archive_file": "jr01-rebuild02-public-safe-backup.tar.gz",
+  "archive_bytes": 1412932,
+  "archive_sha256": "40db6d1fe2c83eebdd9198e3eb809e79d4aef024450e194c55c8dbbc89493aff",
+  "archive_git_blob_sha": "3f1332bff173cd12b1bb015f9db26e533c293e00",
+  "package_files": 205,
+  "reviewed_public_payload_files": 69,
+  "original_archive_recovered": false,
+  "branch_only": true,
+  "site_published": false,
+  "pr_created": false,
+  "merged": false,
+  "private_raw_included": false
+}

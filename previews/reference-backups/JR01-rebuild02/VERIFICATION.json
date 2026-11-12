@@ -1,0 +1,98 @@
+{
+  "artifact_revision": "JR01-rebuild02",
+  "source_repository": "mbentancour/babytracker",
+  "source_commit": "bcc0513567c2fba7c935bd61886ce998a2bf1fab",
+  "source_release": "1.13.0",
+  "original_archive_lost": true,
+  "new_rebuild_not_original_archive": true,
+  "verification_date_utc": "2026-11-11",
+  "automated_checks": {
+    "pinned_source_git_blobs": {
+      "passed": 99,
+      "total": 99
+    },
+    "pinned_font_git_blobs": {
+      "passed": 7,
+      "total": 7
+    },
+    "node_harness": {
+      "passed": 6,
+      "total": 6
+    },
+    "node_harness_America_Los_Angeles": {
+      "passed": 6,
+      "total": 6
+    },
+    "static": {
+      "passed": 5,
+      "total": 5
+    },
+    "jsdom_bounded_app": {
+      "passed": 1,
+      "total": 1
+    },
+    "upstream_unit_suite": {
+      "files": 16,
+      "passed": 192,
+      "total": 192
+    },
+    "production_build": {
+      "passed": true,
+      "modules": 667,
+      "vite": "8.3.0",
+      "react": "19.3.0",
+      "recharts": "3.10.1"
+    }
+  },
+  "bounded_browser_checks": {
+    "public_payload_files_exact": 69,
+    "desktop_journal_navigation": true,
+    "emma_three_notes": true,
+    "liam_two_notes": true,
+    "empty_milestones_medications_preserved": true,
+    "return_to_overview_and_repeat": true,
+    "repeat_text_header_main_box_equal": true,
+    "fonts_loaded_DMSans_JetBrainsMono": true,
+    "horizontal_overflow_observed": false,
+    "complete_capture": {
+      "file": "verification/JOURNAL-REBUILD02-COMPLETE.jpg",
+      "bytes": 49764,
+      "sha256": "bda0df393219a91fd4dd3031ad32e3bb59e28f3db3f15631df03f1555fe01237",
+      "dimensions": [
+        1837,
+        1183
+      ],
+      "reported_capture_viewport_css": [
+        1475,
+        946
+      ],
+      "reported_device_pixel_ratio": 0.800000011920929
+    },
+    "console_observation": "Browser-extension metadata errors were observed; this is not a clean-console claim."
+  },
+  "not_verified": [
+    "mobile responsive acceptance",
+    "screen-reader/keyboard/accessibility audit",
+    "full interaction and form submission workflows",
+    "actual browser network-egress proof",
+    "real backend/model/account/device integration",
+    "upstream Journal.png pixel/version fidelity"
+  ],
+  "actions_not_performed": [
+    "PR",
+    "merge",
+    "force push",
+    "site publication"
+  ],
+  "private_material_excluded": [
+    "raw browser observations",
+    "hosting and extension metadata",
+    "absolute private workspace paths",
+    "original internal archive",
+    "internal reports and plans",
+    "credentials",
+    "node_modules",
+    "package cache"
+  ],
+  "current_repo_backup_state": "prepared locally; no remote write performed"
+}
