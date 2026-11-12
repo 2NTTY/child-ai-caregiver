@@ -157,6 +157,7 @@ test("blocks Hong Kong street, estate-block and flat addresses while retaining c
     "住喺1號風球",
     "住喺唔知道點算",
     "住喺高速公路附近",
+    "住喺快速公路附近",
     "屋企喺花園附近有冇母嬰健康院",
     "住喺花園",
     "住喺中環街市",
