@@ -1,20 +1,24 @@
 name: Production website
+run-name: ${{ inputs.operation == 'catchup' && format('Daily website catch-up {0}', inputs.slot) || 'Production website' }}
 on:
   schedule:
     # UTC; 04:17 the following day in Hong Kong.
     - cron: '17 20 * * *'
     # Temporary control, using the same recurring UTC slots as github.com/cli/cli.
-    # Only runs 4 and 5 can exercise this extra trigger; remove after the first receipt.
+    # Admit up to two native timer events before the first regular daily slot.
     - cron: '9,39 * * * *'
   workflow_dispatch:
     inputs:
       operation:
         description: Website operation
         type: choice
-        options: [run, pause, resume, rollback]
+        options: [run, pause, resume, rollback, catchup]
         default: run
       release_id:
         description: Compatible release ID (rollback only)
+        type: string
+      slot:
+        description: UTC slot date (overdue scheduler only)
         type: string
 permissions:
   contents: read
@@ -22,11 +26,28 @@ concurrency:
   group: production-website
   cancel-in-progress: false
 jobs:
+  timer-control:
+    if: github.event_name == 'schedule' && github.event.schedule == '9,39 * * * *'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    timeout-minutes: 2
+    outputs:
+      admit: ${{ steps.limit.outputs.admit }}
+    steps:
+      - id: limit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          count=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/site-release.yml/runs?event=schedule&branch=master&per_page=1" --jq .total_count)
+          [[ "$count" =~ ^[0-9]+$ ]]
+          if (( count <= 2 )) && [[ $(date -u +%FT%TZ) < '2026-11-12T20:17:00Z' ]]; then echo 'admit=true' >> "$GITHUB_OUTPUT"; fi
   check:
+    needs: timer-control
     if: >-
-      github.repository == '2NTTY/child-ai-caregiver' && github.ref == 'refs/heads/master' &&
-      (github.event_name != 'schedule' || vars.SITE_DAILY_ENABLED == 'true') &&
-      (github.event.schedule != '9,39 * * * *' || github.run_number <= 5)
+      !cancelled() && github.repository == '2NTTY/child-ai-caregiver' && github.ref == 'refs/heads/master' &&
+      ((github.event_name != 'schedule' && inputs.operation != 'catchup') || vars.SITE_DAILY_ENABLED == 'true') &&
+      (needs.timer-control.result == 'skipped' || needs.timer-control.outputs.admit == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: site-observe
@@ -60,7 +81,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           SITE_ACCESS_TOKEN: ${{ steps.identity.outputs.access_token }}
-          OPERATION: ${{ inputs.operation || 'run' }}
+          OPERATION: ${{ inputs.operation == 'catchup' && 'run' || inputs.operation || 'run' }}
           ROLLBACK_ID: ${{ inputs.release_id }}
           REVIEWED_HOST_PREREQUISITES: ${{ vars.SITE_REVIEWED_PREREQUISITES }}
       - name: Check required Firestore indexes
