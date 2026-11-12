@@ -78,7 +78,7 @@ export function createAgentConfirmationStore(pool: Pool, cipher: StorageCipher, 
       });
     },
     async requestConfirmation(agentScope: AgentScope, askingRunId: string, raw: z.infer<typeof requestAgentConfirmationSchema>): Promise<AgentConfirmation | null> {
-      const input = requestAgentConfirmationSchema.parse(raw), { userId, childId } = agentScope;
+      const rawInput = requestAgentConfirmationSchema.parse(raw), input = { ...rawInput, workId: rawInput.workId ?? null }, { userId, childId } = agentScope;
       return access(userId, childId, async (client, workspaceId) => {
         const run = (await client.query<{ authorization_version: string; data_version: string }>(`SELECT authorization_version::text,data_version FROM agent_runs
           WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 AND trigger_kind='interactive' AND state='running' AND expires_at>clock_timestamp() FOR UPDATE`,
@@ -124,13 +124,16 @@ export function createAgentConfirmationStore(pool: Pool, cipher: StorageCipher, 
         return { id, proposalRunId: input.runId, proposalId: input.proposalId, proposalVersion: input.expectedVersion, expiresAt, question };
       });
     },
-    async confirmationQuestions(userId: string, childId: string, runId: string) {
+    async confirmationQuestions(userId: string, childId: string, runId: string,
+      binding?: Pick<AgentConfirmation, "proposalRunId" | "proposalId" | "proposalVersion">) {
       return access(userId, childId, async (client, workspaceId) => {
         const current = await scope(client, workspaceId, userId, childId);
         const rows = (await client.query<Row>("SELECT * FROM agent_confirmations WHERE owner_user_id=$1 AND child_id=$2 AND asking_run_id=$3 AND state IN ('waiting','asked') AND expires_at>clock_timestamp() ORDER BY created_at,id LIMIT 9", [userId, childId, runId])).rows;
         if (rows.length > 8) throw conflict("confirmation_limit");
         const questions: string[] = [];
         for (const row of rows) {
+          if (binding && (row.proposal_run_id !== binding.proposalRunId || row.proposal_id !== binding.proposalId
+            || row.proposal_version !== binding.proposalVersion)) continue;
           if (!['waiting', 'asked'].includes(row.state) || row.expires_at.getTime() <= Date.now()
             || String(row.authorization_version) !== current.access_version || row.storage_epoch !== current.storage_epoch
             || row.policy_version !== current.policyVersion) continue;

@@ -73,7 +73,8 @@ export function createFirestoreAgentConfirmations(options: {
       });
     },
     async requestConfirmation(scope: AgentScope, askingRunId: string, raw: z.infer<typeof requestAgentConfirmationSchema>) {
-      const input = domainParse(requestAgentConfirmationSchema, raw);
+      const rawInput = domainParse(requestAgentConfirmationSchema, raw);
+      const input = { ...rawInput, workId: rawInput.workId ?? null };
       return authority.runTransaction(scope.userId, scope.childId, async b => {
         await runs.requireLive(b, scope, askingRunId);
         const target = await proposals.read(b, input.runId, input.proposalId), p = proposals.visible(target), run = await runs.read(b, input.runId);
@@ -102,7 +103,8 @@ export function createFirestoreAgentConfirmations(options: {
         write(b, saved, true); b.transaction.create(slotRef, marker); return publicValue(saved);
       });
     },
-    async confirmationQuestions(userId: string, childId: string, runId: string) {
+    async confirmationQuestions(userId: string, childId: string, runId: string,
+      binding?: Pick<AgentConfirmation, "proposalRunId" | "proposalId" | "proposalVersion">) {
       return authority.runTransaction(userId, childId, async b => {
         const asking = await runs.read(b, runId), current = runs.current(b);
         if (!runs.matches(b, current, asking, false)) return [];
@@ -111,6 +113,8 @@ export function createFirestoreAgentConfirmations(options: {
         const policyVersion = await options.policyVersion(b), questions: string[] = [];
         for (const row of rows.docs) {
           const saved = decode(b, row);
+          if (binding && (saved.proposalRunId !== binding.proposalRunId || saved.proposalId !== binding.proposalId
+            || saved.proposalVersion !== binding.proposalVersion)) continue;
           if (!['waiting', 'asked'].includes(saved.state) || Date.parse(saved.expiresAt) <= now()
             || saved.authorizationVersion !== b.authorizationVersion || saved.policyVersion !== policyVersion) continue;
           if (saved.workId) {

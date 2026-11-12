@@ -58,10 +58,9 @@ test("product reply uses native tools, keeps proposals unconfirmed, validates di
     provider: { generate: async request => {
       const index = calls++;
       if (index > 0) assert.ok(request.contents.some(content => content.parts?.some(part => part.functionResponse)));
-      const functionCall = index === 0 ? { id: "load-memory", name: "load_capabilities", args: { capabilities: ["memory"] } }
-        : index === 1 ? { id: "candidate-call", name: "propose_fact", args: {
+      const functionCall = index === 0 ? { id: "candidate-call", name: "propose_fact", args: {
         key: "preferred_contact", content: "只在站內查看", intendedVisibility: "private", validUntil: null } }
-        : index === 2 ? { id: "answer-call", name: "present_answer", args: { kind: "operation",
+        : index === 1 ? { id: "answer-call", name: "present_answer", args: { kind: "operation",
           paragraphs: [{ text: "已保存私人候選，尚待你確認。", citationIds: [] }] } } : null;
       return { content: { role: "model", parts: functionCall ? [{ functionCall }] : [{ text: "Unvalidated model closing text must not be displayed." }] },
         finishReason: FinishReason.STOP };
@@ -97,10 +96,10 @@ test("product reply uses native tools, keeps proposals unconfirmed, validates di
   assert.equal(first.proposals[0].status, "pending");
   assert.equal(first.proposals[0].result, null);
   assert.equal(first.provenance?.recipeId, "product-interactive");
-  assert.deepEqual(first.counts, { modelCalls: 3, toolCalls: 3, queryEmbeddings: 0 });
+  assert.deepEqual(first.counts, { modelCalls: 2, toolCalls: 2, queryEmbeddings: 0 });
   assert.equal(writes, 1);
   assert.deepEqual(await service.reply(userId, childId, messageId, async () => true), first);
-  assert.equal(calls, 3); assert.equal(writes, 1);
+  assert.equal(calls, 2); assert.equal(writes, 1);
 });
 
 for (const validCitation of [true, false]) test(`terminal product presentation revalidates citations on the last model step, valid=${validCitation}`, async () => {

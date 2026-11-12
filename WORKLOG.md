@@ -5939,6 +5939,38 @@ Android 版本 6 在系統允許通知後，換了登入的同一部手機仍無
 
 從原 VM 三個運行容器核對來源為 `29941f92`，建立了獨立香港發布資源及兩個限 master 的 GitHub 環境。乾淨候選建置及離線恢復檢查已完成；其中一次中斷測試發現收據原因會被覆蓋，修正後接收器 12 項定向檢查通過。手動正式發布及首個每日排程另以實際收據為準。[部署手冊](docs/DEPLOYMENT.md)
 
+## 2026-11-12　PR #559 記憶候選整合修復
+
+以 `989f84060f0d02ec17d3b07f3ed893e55c9dfcb0` 正常合入 master `5a41f99798328c53ef40720abadb659f86a3ae59`，保留家庭紀錄精確引用、交付前重驗、只讀工具與本 PR 的記憶候選提示。引用判定原本可讓「並不是 BB 對花生過敏」透過整段 literal shortcut 配對肯定事實；移除該捷徑，統一沿既有逐句極性規則，加入否定與正向對照回歸，不改獨立語義審核。
+
+隔離 checkout、Node 24.22.1／npm 11.9.0，依根 lockfile 安裝（略過安裝腳本，未做前端建置）。記憶候選、產品執行契約、確認預算、交付審核及產品 Agent 五檔 87/87；prompt 兩檔 7/7，均無 skip。首次沿用舊依賴因缺少 yazl 而未能載入記憶測試，已改隔離安裝後補驗。server tsc 首次以預設 heap 執行因 V8 約 2GB OOM 中止（exit 134），不能稱型別通過。未接真模型／Firebase，未部署或合併 master，獨立 review 與 PR #560 交互整合仍待辦。
+
+同輪補驗：確認可用記憶體約 5.37GB 後，只重試一次 `node --max-old-space-size=4096 node_modules/typescript/bin/tsc --project tsconfig.server.json --noEmit`，exit 0。保留前次 OOM 紀錄；此結果只涵蓋 server 型別，未驗其他型別專案。Git HTTPS push 因缺少可用登入身份中止；且本機協作署名文件尚未取得，提交／推送先停，待核實正確作者身份及獨立 review。
+
+第二輪獨立審查找到 literal 捷徑移除後的冒號回歸：段落拆句包含冒號、事實拆句卻不包含，令 `BB 午睡時間：下午兩點` 等完全相同內容不能對應。已統一不以冒號拆句，保留標籤與 `14:00` 時間，同時沿既有逐句極性校驗。新增三個精確對應、各自否定及標籤前綴案例，先證實回歸失敗再修正；五檔定向測試 88/88、零 skip。沿用第一輪的 7 項 prompt 與 server 型別結果：此次只改既有字串拆分正則及測試，沒有型別／prompt 變更；未稱全站或真模型通過。本人其後明確特批本批 dot 使用 2NTTY 帳戶，插件已核實該身份；原不合規本地提交不作遠端父提交，待獨立 review 後從原 PR 與已核 master 父提交建立正常整合提交。
+
+第三輪對齊 master `59618928da8662f919b7e2481f7a9019b7880669`：保留其新增發布與 Firebase 初始化修正，WORKLOG 原文完整保留後再追加本 PR 記錄。相同五檔定向測試重新執行 88/88 PASS、零 skip；新 master 與本 PR 程式路徑無重疊，必要範圍不擴成全量測試。前輪已通過的極性／冒號獨立審查維持，第三輪差異再交獨審；尚未合併或部署。
+
+## 2026-11-12　PR #560 確認證據綁定修復（待提交）
+
+以 PR head `24cccce7e984013c7f50485c8324decea36a406c` 正常合入 master `5a41f99798328c53ef40720abadb659f86a3ae59`，解開 citation recovery 衝突，保留本人交代／照護記錄的精確 citation、交付前重驗，以及固定求助卡與官方 chunk 的區分。未合併至 master、未發布。
+
+獨立審查重現同輪新候選 A 與另一候選 B 的唯一確認問題被錯配。依 SPEC REQ-5-11-03／REQ-INT-04，交付證據改以 Server 保存的 proposal run、ID、版本精確讀回確認問題；SQL／Firestore 均沿用原權限、政策、來源、工作及候選存續重驗，不以單一問題數量推斷身分。新增匹配、不匹配 ID／run／版本及已撤銷情境；修正 master 三項記憶測試 mock 缺少真實 proposal value 的契約落差，沒有削弱斷言。
+
+必要離線證據：SQL 綁定回歸修前失敗；memory + verified-ops 初次 31/31 通過；其餘六檔初次 110/113（3 項 mock 契約失敗），補齊後 propose-memory-delivery 35/35 通過；強化後 verified-ops 2/2 通過（內含五種混合確認情境）。涵蓋確認 budget、家庭精確記錄、review、文件及重試；沒有呼叫真模型／家庭資料。獨立審查核對 runtime 修復未發現新增問題。未聲稱全站或所有 PR 無 bug。提交身份文件未取得前保留本地候選，遠端 head 未更動。
+
+Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出 134；核資源後以 `NODE_OPTIONS=--max-old-space-size=4096 node_modules/.bin/tsc --project tsconfig.server.json` 有上限重試一次，退出 0。`git diff --cached --check` 通過。八個受影響測試檔的適用終版結果合計 144 項通過，沿用未改部分先前通過結果；不是全庫測試宣稱。
+
+用戶其後特批本批 PR 使用 2NTTY 帳號；官方 GitHub 插件讀回登入身份為 2NTTY。保留未 force、未合併 master、未發布界線，僅準備正常更新既有 PR 分支。
+
+恢復中止的 GitHub create_tree 後，未取得遠端物件 SHA，亦從未呼叫 commit/ref 更新。重新讀回 PR head 仍為 `24cccce7`，以新 master `59618928da8662f919b7e2481f7a9019b7880669` 重建獨立候選；保留新 master 的發布及通知修復，WORKLOG 保留完整最新原文再追加本段。
+
+## 2026-11-13　PR #560 對齊已合併記憶修復
+
+以 master `db83fe082c21233cf6f0279dc14378bba5676ea8` 正常合入 #560 head `917b9a1f107881fbab0874516fe404d2cc10d1e0`，保留 #559 記憶關聯、全答案來源讀回、自動確認計數，以及 #560 已驗操作追蹤、精確 proposal 綁定、家庭引用及官方求助恢復。三份 prompt 合併兩側規則並升 pack 0.1.59；未發布、未合併至 master。
+
+本輪必要離線驗證：記憶 ergonomics、verified operations、memory 及三份 prompt 契約測試 47/47；確認 budget、家庭精確記錄與記憶交付回歸 65/65；Server／測試 TypeScript 以 4 GB heap 檢查退出 0。首輪環境缺 yazl／yauzl，未當產品失敗或通過；在獨立測試依賴目錄按 package.json 精確版本補齊後重驗，未修改共享依賴或 lockfile。獨立審查確認兩側邊界及版本一致，無新增阻擋缺陷；不代表真模型、全站或所有情境已驗。
+
 ### 2026-11-12　PR #557 本地知識評語版本綁定
 
 - 目標／需求：依 SPEC AC-KF-01，實質內容變更必須重新核對，不能沿用另一版本的已批准評語。
