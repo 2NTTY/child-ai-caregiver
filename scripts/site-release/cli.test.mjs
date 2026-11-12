@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { dispatch, main, readRemoteStatus, remotePlan, trustedRun } from './cli.mjs';
 
 const repository = { id: 42, full_name: '2NTTY/child-ai-caregiver' };
-const workflow = { id: 9, path: '.github/workflows/site-release.yml' };
+const workflow = { id: 9, path: '.github/workflows/site-release.yml', state: 'active', created_at: '2026-11-12T14:37:00Z' };
 const sha = 'a'.repeat(40);
 const run = (id, conclusion = 'success') => ({ id, workflow_id: 9, head_branch: 'master', path: workflow.path, head_sha: sha,
   head_repository: repository, event: 'workflow_dispatch', conclusion, status: 'completed', html_url: `https://github.com/2NTTY/child-ai-caregiver/actions/runs/${id}`,
@@ -114,7 +114,30 @@ test('daily status reports the latest scheduled failure and a missed next daily 
   const fresh = await readRemoteStatus({ exec: fakeRunner({ runs: [scheduled, run(1)] }).exec, now: new Date('2026-11-12T01:00:00Z') });
   assert.equal(fresh.daily.state, 'current'); assert.equal(fresh.daily.lastAttempt.conclusion, 'failure');
   assert.equal(fresh.daily.lastScheduledAt, scheduled.created_at);
-  const old = await readRemoteStatus({ exec: fakeRunner({ runs: [scheduled, run(1)] }).exec, now: new Date('2026-11-13T02:00:01Z') });
+  const old = await readRemoteStatus({ exec: fakeRunner({ runs: [scheduled, run(1)] }).exec, now: new Date('2026-11-12T22:17:01Z') });
   assert.equal(old.daily.state, 'overdue'); assert.equal(old.daily.overdue, true);
-  assert.equal(old.daily.nextExpectedBy, '2026-11-13T02:00:00.000Z');
+  assert.equal(old.daily.nextExpectedBy, '2026-11-12T22:17:00.000Z');
+});
+
+test('the first daily slot can become overdue even if manual runs keep succeeding', async () => {
+  const check = (time) => readRemoteStatus({ exec: fakeRunner().exec, now: new Date(time) });
+  const first = await check('2026-11-12T16:55:00Z');
+  assert.equal(first.daily.state, 'awaiting-first');
+  assert.equal(first.daily.expectedAt, '2026-11-12T20:17:00.000Z');
+  assert.equal(first.daily.overdue, false);
+  const late = await check('2026-11-12T22:17:01Z');
+  assert.equal(late.daily.state, 'overdue');
+  assert.equal(late.daily.lastScheduledAt, null);
+});
+
+test('a rerun of an older scheduled event cannot hide a missed day', async () => {
+  const older = { ...run(3, 'failure'), event: 'schedule', created_at: '2026-11-10T20:22:00Z',
+    run_started_at: '2026-11-13T03:00:00Z', run_attempt: 2 };
+  const latest = { ...run(2, 'failure'), event: 'schedule', created_at: '2026-11-11T20:23:00Z' };
+  const snapshot = await readRemoteStatus({ exec: fakeRunner({ runs: [older, latest, run(1)] }).exec,
+    now: new Date('2026-11-13T03:01:00Z') });
+  assert.equal(snapshot.latestAttempt.id, 3);
+  assert.equal(snapshot.daily.lastAttempt.id, 2);
+  assert.equal(snapshot.daily.lastScheduledAt, latest.created_at);
+  assert.equal(snapshot.daily.overdue, true);
 });

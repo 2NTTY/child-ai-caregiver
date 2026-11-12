@@ -41,7 +41,6 @@ def run_id():
     return result
 
 def last_schedule():
-    if os.environ["GITHUB_EVENT_NAME"]=="schedule": return stamp()
     url="https://api.github.com/repos/"+REPOSITORY+"/actions/workflows/site-release.yml/runs?event=schedule&branch=master&per_page=1"
     runs=api(url,{"Authorization":"Bearer "+os.environ["GH_TOKEN"]})["workflow_runs"]
     return runs[0]["created_at"] if runs else None

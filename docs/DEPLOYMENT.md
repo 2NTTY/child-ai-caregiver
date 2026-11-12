@@ -15,6 +15,8 @@
 
 首次接管已在 [2026-11-12 手動工作流](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43240224906) 驗證。原站已有接收器、GitHub 環境與 WIF。下次接手從上表的 `status` 開始。
 
+即使從未觸發，`daily.expectedAt` 亦會列出 workflow 建立後首個正式日程。`nextExpectedBy` 是香港 06:17 的監察期限；逾期仍無新排程會顯示 `overdue`。排查時用 `gh run list --workflow site-release.yml --branch master --event schedule` 查 GitHub 是否已建立 run。有 run 才查其 job；手動發布或重跑舊 run 不會刷新排程時間。
+
 ## 一次發布怎樣查證
 
 1. GitHub 比較每個已發布服務的 SHA 與本次固定 SHA。純文件、原生專屬修改及相同目標只記檢查。遇到 Compose／部署前置時先顯示路徑。營運者核對並實際完成前置後，用 `gh variable set SITE_REVIEWED_PREREQUISITES --body <完整 master SHA>` 指定該版。接收器本身有獨立版本指紋。
