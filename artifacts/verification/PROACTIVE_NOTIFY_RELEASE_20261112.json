@@ -114,6 +114,19 @@
       "submittedBuilds": 1,
       "version7": "Reserved by EAS before a local Windows Git path-length error prevented upload. No cloud build was created for that attempt."
     },
-    "handsetVerification": "Pending one notification on the new Android runtime with message previews enabled. No post-release latency sample at publication."
+    "firstPostReleaseDemoReceipt": {
+      "queuedAt": "2026-11-12T03:11:36.161Z",
+      "attemptedAt": "2026-11-12T03:11:37.134Z",
+      "channelAcceptedRecordedAt": "2026-11-12T03:11:38.269Z",
+      "queueToAttemptMs": 973,
+      "attemptToAcceptedReceiptMs": 1135,
+      "queueToAcceptedReceiptMs": 2108
+    },
+    "handsetVerification": {
+      "versionCode": 8,
+      "appClosedDemo": "Tester confirmed both the status-bar icon and notification-card avatar displayed, and the visible preview began with the expected saved demo message.",
+      "handsetArrivalTimestamp": null,
+      "scope": "Display observed by the tester. Timing above is from enqueue through the server receipt of FCM acceptance."
+    }
   }
 }

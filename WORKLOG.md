@@ -5928,3 +5928,5 @@ Android 版本 6 在系統允許通知後，換了登入的同一部手機仍無
 香港時間 10:30 發布 `954ee312` 的 API、worker 及 Web。舊版較慢那筆在 09:59:06 入隊，10:00 的排程回報服務暫時不可用，10:01:05 才開始交送。新版在交易成功後直接安排同一項工作，保留原排程補送。已核原站服務健康、管理頁雜湊及示範入口登入要求。Android 雙圖示已通過原生資源編譯，裝置選用預覽後採用該則正式訊息的節錄。兩個圖示的真機顯示及新版派送耗時仍待同一則示範核對。[發布證據](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
 
 同日 11:05（香港）完成版本 8 的 Android preview 建置。版本號 7 已預留，本機 Git 複製因暫存路徑過長而中止，當時 Expo 查無該提交的建置。縮短路徑後只建立一個雲端工作。已下載成品，以 Android build-tools 核對套件、同簽署覆蓋安裝條件、runtime 及兩個圖示的資源指向。[APK 與驗簽紀錄](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
+
+香港時間 11:11 的示範在入隊後 0.973 秒開始交送，再過 1.135 秒收據記下 FCM 接受。本人確認 Android 版本 8 的狀態列小圖示、通知卡頭像和正式訊息預覽均顯示正常。手機到達時刻沒有獨立時間戳。沿用版本 6 已驗的點入回覆及 Web 讀回，完成本包驗收。[原站收據與手機結果](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
