@@ -5980,3 +5980,9 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 - 驗證：隔離精確來源副本、Node v24.22.1、Zod 4.5.4；`node --experimental-test-module-mocks --test tests/local-knowledge-seed-assessments.test.ts`。先加測試時 1/3 通過，兩項因未拒絕內容／適用條件變更而失敗；修後 3/3 通過、零 skip，並驗 fetchedAt 刷新仍可沿用同版評語。獨立覆核通過。
 - 限制：未跑全量或新一輪完整型別檢查；未抓取實時官方網站、呼叫模型／embedding、寫入資料庫或發布站點。不以版本完整性保證臨床內容正確；沒有合併 PR。
 - 狀態／下一步：本次只修已重現缺陷，不改產品包狀態；正常更新原 PR 分支後讀回精確 head，遠端 CI 另核。
+
+## 2026-11-13　原站計時器及發布收據
+
+手動流程首次發布 `da3b9bac`，無產品變更的手動檢查另有 `skipped` 收據。11 月 13 日的 `db83fe08` 候選通過建置；提交前 master 已前進，發布器拒絕切站，站外仍是舊版。團隊合併完成後沿正式入口發布 `66a51db5`，三個服務版本一致，站外核對通過，兩個回退候選仍可查，同一張告警已自動關閉。[被取代的候選](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43272669471) · [新版本與收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43274416541)
+
+針對候選過時，現在會在下載及傳送映像前核對一次 master，切站前再核對一次。提前測試時，GitHub 沒有為本倉庫正式流程或只記時間的對照流程建立排程 run，故無 runner 或 VM 失敗日誌。清走臨時排程後只保留香港每日 04:17；首輪驗收憑 `event=schedule` 的正式發布收據。若逾期，接手人由[排程補觸發](docs/DEPLOYMENT.md#每日事件缺席時補觸發)開始。

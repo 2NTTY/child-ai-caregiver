@@ -4,9 +4,6 @@ on:
   schedule:
     # UTC; 04:17 the following day in Hong Kong.
     - cron: '17 20 * * *'
-    # Temporary control, using the same recurring UTC slots as github.com/cli/cli.
-    # Admit up to two native timer events before the first regular daily slot.
-    - cron: '9,39 * * * *'
   workflow_dispatch:
     inputs:
       operation:
@@ -26,28 +23,10 @@ concurrency:
   group: production-website
   cancel-in-progress: false
 jobs:
-  timer-control:
-    if: github.event_name == 'schedule' && github.event.schedule == '9,39 * * * *'
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-    timeout-minutes: 2
-    outputs:
-      admit: ${{ steps.limit.outputs.admit }}
-    steps:
-      - id: limit
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          count=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/site-release.yml/runs?event=schedule&branch=master&per_page=1" --jq .total_count)
-          [[ "$count" =~ ^[0-9]+$ ]]
-          if (( count <= 2 )) && [[ $(date -u +%FT%TZ) < '2026-11-12T20:17:00Z' ]]; then echo 'admit=true' >> "$GITHUB_OUTPUT"; fi
   check:
-    needs: timer-control
     if: >-
-      !cancelled() && github.repository == '2NTTY/child-ai-caregiver' && github.ref == 'refs/heads/master' &&
-      ((github.event_name != 'schedule' && inputs.operation != 'catchup') || vars.SITE_DAILY_ENABLED == 'true') &&
-      (needs.timer-control.result == 'skipped' || needs.timer-control.outputs.admit == 'true')
+      github.repository == '2NTTY/child-ai-caregiver' && github.ref == 'refs/heads/master' &&
+      ((github.event_name != 'schedule' && inputs.operation != 'catchup') || vars.SITE_DAILY_ENABLED == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: site-observe
@@ -148,6 +127,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+      - name: Reject superseded build before transferring images
+        if: env.DECISION == 'run'
+        run: python3 deploy/site-release/controller.py current-master
+        env:
+          GH_TOKEN: ${{ github.token }}
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: site-preflight-${{ github.run_attempt }}
