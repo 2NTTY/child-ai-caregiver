@@ -5,6 +5,7 @@ import { usePathname } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { PageFrame } from "../components/PageFrame";
+import { InstallGuide } from "../components/InstallGuide";
 import { ManualFormDialog } from "../components/FormDialog";
 import { AppButton, AppTextField } from "../components/ui";
 import { AppIcon } from "../components/AppIcon";
@@ -132,6 +133,7 @@ export default function GuideScreen() {
       </View>
     </View>
 
+    <InstallGuide />
   </PageFrame>;
 }
 

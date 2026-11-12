@@ -2,9 +2,11 @@ import { useEffect, useRef } from "react";
 import { createNativePushApi, type NativePushTarget } from "../../../src/client/native-push-api.ts";
 import { listenNativePush, clearNativePushOpen, nativePushSupported } from "../platform/native-push";
 import type { ProductionOwner } from "./ProductionOwner";
+import { useWebPushNavigation } from "./useWebPushNavigation";
 /** Reauthorize a fixed reference; presentation never interprets a notification as an action. */
 export function useNativePushNavigation(owner: ProductionOwner, identityKey: string | null, userId: string | null,
   navigate: (target: NativePushTarget) => void, notice: (message: string) => void) {
+  useWebPushNavigation(owner, identityKey, userId, owner.getSnapshot().records.online, navigate, notice);
   const callbacks = useRef({ navigate, notice }); callbacks.current = { navigate, notice };
   const generation = owner.getSnapshot().sessionGeneration;
   useEffect(() => {
