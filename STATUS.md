@@ -2,7 +2,7 @@
 
 只作根 PLAN 的短現況投影；工作包、前置、未驗與完成門檻見 [PLAN 當前入口](PLAN.md#active)。
 
-**原站交付**由 A 負責。11 月 12 日手動工作流已從 master 發布 `da3b9bac`，站外指紋、API 與 VM 收據相符，三個服務可一起回退到 `29941f92`。每日香港 04:17 的排程已啟用，首個排程另看 `npm run deploy:site -- status` 的 daily 與收據。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43240224906) · [部署與恢復](docs/DEPLOYMENT.md)
+**原站交付**由 A 負責。11 月 13 日香港時間，Web、API、worker 均已發布 `66a51db5`，站外核對通過，收據列出兩個回退候選。每日香港 04:17 的原生排程已啟用；用 `npm run deploy:site -- status` 查首輪期限、最近一次真排程及正式收據。逾期補觸發工具已備妥，雲端啟用狀態須按手冊另查。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43274416541) · [部署與恢復](docs/DEPLOYMENT.md)
 
 ## 目前與接手
 

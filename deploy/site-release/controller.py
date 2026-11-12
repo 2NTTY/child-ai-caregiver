@@ -40,6 +40,11 @@ def run_id():
     if not RUN.fullmatch(result): raise ValueError("Invalid GitHub run identity")
     return result
 
+def require_current_master():
+    head=api("https://api.github.com/repos/"+REPOSITORY+"/git/ref/heads/master",{"Authorization":"Bearer "+os.environ["GH_TOKEN"]})
+    if head["object"]["sha"]!=os.environ["GITHUB_SHA"]:
+        raise ValueError("Master advanced; run against current master")
+
 def last_schedule():
     url="https://api.github.com/repos/"+REPOSITORY+"/actions/workflows/site-release.yml/runs?event=schedule&branch=master&per_page=1"
     runs=api(url,{"Authorization":"Bearer "+os.environ["GH_TOKEN"]})["workflow_runs"]
@@ -115,8 +120,7 @@ def publish():
     if client.read_version("status/live.json")["value"]["services"]!=state["services"]:
         raise ValueError("Live baseline changed since preflight")
     # Reject superseded workflows, including manual reruns of old commits.
-    head=api("https://api.github.com/repos/"+REPOSITORY+"/git/ref/heads/master",{"Authorization":"Bearer "+os.environ["GH_TOKEN"]})
-    if head["object"]["sha"]!=os.environ["GITHUB_SHA"]: raise ValueError("Master advanced; run against current master")
+    require_current_master()
     images=readfile("digests.json") if operation=="run" else {}
     for kind in ["backend","web"]:
         if (kind in images)!=(operation=="run" and os.environ[kind.upper()]=="true"):
@@ -178,4 +182,4 @@ def report():
 if __name__=="__main__":
     if os.environ.get("GITHUB_REPOSITORY")!=REPOSITORY or os.environ.get("GITHUB_REF")!="refs/heads/master":
         sys.exit("Production workflow requires the official master ref")
-    {"plan":plan,"publish":publish,"report":report}[sys.argv[1]]()
+    {"plan":plan,"current-master":require_current_master,"publish":publish,"report":report}[sys.argv[1]]()
