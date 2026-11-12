@@ -10,7 +10,20 @@ export async function releaseCheck(desired, { shape, canonical, token = process.
   if (typeof token !== 'string' || !/^[A-Za-z0-9._~+/=-]{1,16384}$/u.test(token)) throw error('site_access_token_required');
   const deadline = Date.now() + 120_000;
   const report = { mode: '--release-check', state: 'ready', indexes: desired.indexes.length, fieldOverrides: desired.fieldOverrides.length,
-    pages: 0, missing: 0, pending: 0, failed: 0, fieldProblems: 0 };
+    pages: 0, missing: 0, pending: 0, failed: 0, fieldProblems: 0, problems: [], omittedProblems: 0 };
+  function problem(expected, status, kind = 'index') {
+    if (report.problems.length >= 25) { report.omittedProblems++; return; }
+    // Diagnostics contain checked-in schema only, never remote resource bodies.
+    report.problems.push(kind === 'index'
+      ? { kind, collectionGroup: expected.collectionGroup, queryScope: expected.queryScope, fields: expected.fields, status }
+      : { kind, collectionGroup: expected.collectionGroup, fieldPath: expected.fieldPath, indexes: expected.indexes, status });
+  }
+  function unreadyState(indexes) {
+    for (const state of ['NEEDS_REPAIR', 'CREATING', 'STATE_UNSPECIFIED']) {
+      if (indexes.some(index => index.state === state)) return state;
+    }
+    return 'UNKNOWN';
+  }
   async function get(url, allowMissing = false) {
     const remaining = deadline - Date.now();
     if (remaining <= 0) throw error('firestore_check_deadline');
@@ -47,7 +60,8 @@ export async function releaseCheck(desired, { shape, canonical, token = process.
   do {
     if (report.pages >= 100) throw error('firestore_pagination_bound');
     const url = new URL(base + '/collectionGroups/-/indexes');
-    url.searchParams.set('pageSize', '100');
+    // This endpoint currently rejects nonzero pageSize. Let the service choose
+    // the page size and follow any opaque nextPageToken without modification.
     if (pageToken) url.searchParams.set('pageToken', pageToken);
     const page = await get(url);
     report.pages++;
@@ -63,10 +77,11 @@ export async function releaseCheck(desired, { shape, canonical, token = process.
     for (const expected of desired.indexes) {
       const prefix = resource + '/collectionGroups/' + expected.collectionGroup + '/indexes/';
       const matches = current.filter(actual => typeof actual.name === 'string' && actual.name.startsWith(prefix) && shape(actual) === shape(expected));
-      if (!matches.length) report.missing++;
+      if (!matches.length) { report.missing++; problem(expected, 'MISSING'); }
       else if (!matches.some(actual => actual.state === 'READY')) {
         if (matches.some(actual => actual.state === 'NEEDS_REPAIR')) report.failed++;
         else report.pending++;
+        problem(expected, unreadyState(matches));
       }
     }
   } catch {
@@ -82,15 +97,22 @@ export async function releaseCheck(desired, { shape, canonical, token = process.
         const expected = desired.fieldOverrides[nextField++];
         const field = await get(base + '/collectionGroups/' + encodeURIComponent(expected.collectionGroup) + '/fields/' + encodeURIComponent(expected.fieldPath) + '?fields=name,indexConfig', true);
         const config = field?.indexConfig;
-        if (!config || config.usesAncestorConfig === true || config.reverting === true) { report.fieldProblems++; continue; }
+        if (!config || config.usesAncestorConfig === true || config.reverting === true) {
+          report.fieldProblems++;
+          problem(expected, !field ? 'MISSING' : !config ? 'MISSING_CONFIGURATION' : config.reverting === true ? 'REVERTING' : 'INHERITED', 'fieldOverride');
+          continue;
+        }
         if (config.indexes !== undefined && !Array.isArray(config.indexes)) throw error('firestore_response_invalid');
         const actual = (config.indexes ?? []).map(index => {
           if (!Array.isArray(index.fields)) throw error('firestore_response_invalid');
           const indexed = index.fields.find(value => value.fieldPath === expected.fieldPath);
           return { queryScope: index.queryScope, ...(indexed?.order ? { order: indexed.order } : {}), ...(indexed?.arrayConfig ? { arrayConfig: indexed.arrayConfig } : {}) };
         });
-        if (canonical(actual.map(canonical).sort()) !== canonical(expected.indexes.map(canonical).sort())
-          || (config.indexes ?? []).some(index => index.state !== 'READY')) report.fieldProblems++;
+        const mismatched = canonical(actual.map(canonical).sort()) !== canonical(expected.indexes.map(canonical).sort());
+        if (mismatched || (config.indexes ?? []).some(index => index.state !== 'READY')) {
+          report.fieldProblems++;
+          problem(expected, mismatched ? 'MISMATCH' : unreadyState(config.indexes ?? []), 'fieldOverride');
+        }
       }
     } catch (cause) {
       stopped = true;
