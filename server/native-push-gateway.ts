@@ -11,7 +11,7 @@ export const apnsInvalidationTimestampSchema = z.number().int().nonnegative().ma
 export interface NativePushSender {
   readonly available: boolean;
   send(token: string, reference: NativePushReference, signal: AbortSignal,
-    stillAuthorized: () => Promise<boolean>): Promise<NativePushSendResult>;
+    stillAuthorized: () => Promise<boolean>, readChatCard?: () => string | null | undefined): Promise<NativePushSendResult>;
 }
 export const apnsBindingSchema = z.object({
   topic: z.string().min(3).max(255).regex(/^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/u),
@@ -37,6 +37,18 @@ export function readNativePushConfig(env: Record<string, string | undefined>): N
 }
 const stopped = (reason: PushSendResult["reason"]): PushSendResult => ({ status: "stopped", reason, providerStatus: null });
 const unknown = (): PushSendResult => ({ status: "unknown", reason: "transport_unknown", providerStatus: null });
+const graphemes = new Intl.Segmenter("zh-HK", { granularity: "grapheme" });
+function chatExcerpt(text: string): string {
+  const clean = text.replace(/[\s\p{Cc}\u202a-\u202e\u2066-\u2069]+/gu, " ").trim();
+  let result = "", count = 0, bytes = 0;
+  for (const { segment } of graphemes.segment(clean)) {
+    bytes += Buffer.byteLength(segment);
+    if (count >= 80 || bytes > 480) return result ? result.trimEnd() + "…" : "";
+    result += segment;
+    count++;
+  }
+  return result;
+}
 async function readBoundedJson(response: Response, signal: AbortSignal): Promise<unknown> {
   const reader = response.body?.getReader(); if (!reader) throw new Error("native_push_response_invalid");
   let size = 0; const parts: Uint8Array[] = [];
@@ -65,7 +77,7 @@ export function createNativePushGateway(config: NativePushConfig | null, ports: 
   const deadlineMs = ports.deadlineMs ?? 15000;
   if (!Number.isInteger(deadlineMs) || deadlineMs < 1 || deadlineMs > 15000) throw new Error("native_push_config_invalid");
   return { available: !!config,
-    async send(rawToken, rawReference, outerSignal, stillAuthorized) {
+    async send(rawToken, rawReference, outerSignal, stillAuthorized, readChatCard) {
       if (!config) return stopped("configuration_unavailable");
       const token = nativePushTokenSchema.safeParse(rawToken), reference = nativePushReferenceSchema.safeParse(rawReference);
       if (!token.success || !reference.success) return stopped("request_invalid");
@@ -89,11 +101,16 @@ export function createNativePushGateway(config: NativePushConfig | null, ports: 
         // Recheck after authentication and immediately before the only external effect.
         if (!await bounded(stillAuthorized)) return stopped("revoked");
         if (signal.aborted) return stopped("worker_interrupted");
-        const r = reference.data, content = { ...nativePushContent[r.kind] };
-        const message = { token: token.data, notification: content,
-          data: { v: "1", kind: r.kind, bindingId: r.bindingId, bindingVersion: String(r.bindingVersion), deliveryId: r.deliveryId },
-          android: { restricted_package_name: ANDROID_PUSH_PACKAGE, priority: "normal", ttl: "300s",
-            notification: { channel_id: ANDROID_PUSH_CHANNEL, tag: r.deliveryId } } };
+        const r = reference.data, content = nativePushContent[r.kind];
+        const tap = { v: "1", kind: r.kind, bindingId: r.bindingId, bindingVersion: String(r.bindingVersion), deliveryId: r.deliveryId };
+        const chatText = r.kind === "care" ? readChatCard?.() : undefined;
+        const android = { restricted_package_name: ANDROID_PUSH_PACKAGE, ttl: "300s" };
+        // The installed Expo native presenter uses the packaged avatar, including on a cold start.
+        const message = chatText === undefined
+          ? { token: token.data, notification: content, data: tap, android: { ...android, priority: "normal",
+              notification: { channel_id: ANDROID_PUSH_CHANNEL, tag: r.deliveryId } } }
+          : { token: token.data, data: { title: "育有方助手", message: chatExcerpt(chatText ?? "") || content.body,
+              channelId: ANDROID_PUSH_CHANNEL, tag: r.deliveryId, body: JSON.stringify(tap) }, android: { ...android, priority: "high" } };
         const sentAt = new Date().toISOString();
         issued = true;
         const response = await bounded(() => transport(`https://fcm.googleapis.com/v1/projects/${config.projectId}/messages:send`, {
@@ -105,7 +122,9 @@ export function createNativePushGateway(config: NativePushConfig | null, ports: 
           return value && typeof value === "object" && "name" in value && typeof value.name === "string"
             && value.name.startsWith(`projects/${config.projectId}/messages/`) && value.name.length < 512
             && value.name.length > `projects/${config.projectId}/messages/`.length
-            ? { status: "accepted", reason: null, providerStatus: 200, message: { ...content, channel: "native_push", contentVersion: "native-push-generic-v1", sentAt } } : unknown();
+            ? { status: "accepted", reason: null, providerStatus: 200,
+                // A private excerpt stays with the original child chat, outside account-wide notification history.
+                ...(chatText === undefined ? { message: { ...content, channel: "native_push" as const, contentVersion: "native-push-generic-v1", sentAt } } : {}) } : unknown();
         }
         let expired = false;
         if (response.status === 404 || response.status === 400) {

@@ -7,6 +7,8 @@ import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { FirestoreDeviceSessions } from '../server/firestore-device-sessions.ts';
 import { createFirestoreNativePush } from '../server/firestore-native-push.ts';
+import { createNativePushGateway, type NativePushGateway } from '../server/native-push-gateway.ts';
+import { parseNativePushData } from '../src/shared/native-push.ts';
 import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
 import { FirestoreDomainData } from '../server/firestore-domain-data.ts';
 import { firestoreChatMessageSchema } from '../server/chat-message-schema.ts';
@@ -28,7 +30,7 @@ import { createFirestoreTaskWorker, firestoreTaskNotificationOutboxSchema, type 
 import type { CareTask } from '../src/shared/tasks.ts';
 import { createProactiveWakes } from '../server/firestore-proactive-wakes.ts';
 
-async function fixture(fake: Pick<ReturnType<typeof firestoreDomainFixture>, 'database' | 'records'> = firestoreDomainFixture()) {
+async function fixture(fake: Pick<ReturnType<typeof firestoreDomainFixture>, 'database' | 'records'> = firestoreDomainFixture(), gateway?: NativePushGateway) {
   const options = { database: fake.database, cipher: createStorageCipher(Buffer.alloc(32, 86)),
     projectId: 'synthetic-chat-push', namespace: 'chat_push_case' };
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), userId = 'parent';
@@ -44,7 +46,7 @@ async function fixture(fake: Pick<ReturnType<typeof firestoreDomainFixture>, 'da
   const calls: { token: string; reference: any }[] = [];
   let beforeAuthorization: () => Promise<void> = async () => {};
   const store = createFirestoreNativePush({ ...options, sessions, currentAuth: async () => ({ disabled: false, emailVerified: true }),
-    gateway: { available: true, send: async (token, reference, _signal, authorized) => {
+    gateway: gateway ?? { available: true, send: async (token, reference, _signal, authorized) => {
       await beforeAuthorization();
       if (!await authorized()) return { status: 'stopped', reason: 'revoked', providerStatus: null };
       calls.push({ token, reference }); return { status: 'accepted', reason: null, providerStatus: 200 };
@@ -111,6 +113,30 @@ test('chat delivery requires explicit device consent and atomically reuses bound
   nativePushStatusSchema.parse(await f.store.status(f.userId, f.keys[0]));
   nativePushStatusV2Schema.parse(await f.store.status(f.userId, f.keys[0], 2));
   assert.ok(!JSON.stringify([...f.records.values()]).includes('Private synthetic message'));
+});
+
+test('only an opted-in handset receives the saved chat excerpt with its original tap target', async t => {
+  t.mock.method(Date, 'now', () => Date.parse('2026-11-12T04:00:00Z'));
+  const messages: Array<{data: Record<string,string>; notification?: {body: string}}> = [];
+  const gateway = createNativePushGateway({projectId:'synthetic-push'}, {accessToken: async () => 'synthetic', fetch: async (_url, init) => {
+    messages.push(JSON.parse(String(init?.body)).message);
+    return Response.json({name:'projects/synthetic-push/messages/example'});
+  }});
+  const f = await fixture(undefined, gateway);
+  await f.presence(0, null, true);
+  await f.presence(1, null, true);
+  const preference = await f.store.readChatPresence(f.userId, f.keys[0]!, true);
+  await f.store.setChatPresence(f.userId, f.keys[0]!, {childId:null, expectedPresenceVersion:preference.presenceVersion, chatPreviewEnabled:true}, true);
+  const prepared = await f.prepare();
+  for (const id of prepared.ids) await f.store.process(await f.jobFor(id), new AbortController().signal);
+  const preview = messages.find(message => message.data.message);
+  assert.equal(preview?.data.message, 'Private synthetic message');
+  assert.equal(preview?.notification, undefined);
+  const tap = parseNativePushData(JSON.parse(preview!.data.body!));
+  assert.ok(tap);
+  assert.deepEqual(await f.store.authorizeOpen(f.userId, f.keys[0]!, tap), {screen:'chat', childId:f.childId, messageId:prepared.messageId});
+  assert.ok(messages.find(message => message.notification)?.notification?.body.includes('請開啟育有方'));
+  assert.equal(messages.length, 2);
 });
 
 test('fresh foreground lease suppresses only its own device and stale CAS cannot reactivate it', async t => {
@@ -222,7 +248,7 @@ test('native presence and chat-open routes require expected identity and recheck
         proofs++; return !native ? null : switchAtFinal && proofs % 2 === 0 ? f.keys[1] : f.keys[0];
       } } as unknown as FirebaseAuthPort });
   const headers = { authorization: 'Bearer yuban-native-v1.synthetic', 'x-expected-user-id': f.userId, 'content-type': 'application/json' };
-  const call = (method = 'GET', body?: unknown, extra: Record<string, string> = {}) => handler(new Request(origin + '/api/native-push/chat-presence', {
+  const call = (method = 'GET', body?: unknown, extra: Record<string, string> = {}, version = 1) => handler(new Request(origin + (version === 2 ? '/api/native-push/v2/chat-presence' : '/api/native-push/chat-presence'), {
     method, headers: { ...headers, ...extra }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) }));
   assert.equal((await call()).status, 200);
   assert.equal((await call('GET', undefined, { 'x-expected-user-id': 'other' })).status, 409);
@@ -230,6 +256,11 @@ test('native presence and chat-open routes require expected identity and recheck
   assert.equal((await call('POST', { childId: null, expectedPresenceVersion: 0, chatNotificationsEnabled: true }, { origin: 'https://evil.test' })).status, 403);
   const enabled = await call('POST', { childId: null, expectedPresenceVersion: 0, chatNotificationsEnabled: true });
   assert.equal(enabled.status, 200); const value = await enabled.json(); assert.equal(value.chatNotificationsEnabled, true);
+  assert.equal('chatPreviewEnabled' in value, false);
+  const pref = {childId: null, expectedPresenceVersion: value.presenceVersion, chatPreviewEnabled: true};
+  assert.equal((await call('POST', pref)).status, 400);
+  assert.equal((await (await call('GET', undefined, {}, 2)).json()).chatPreviewEnabled, false);
+  assert.equal((await (await call('POST', pref, {}, 2)).json()).chatPreviewEnabled, true);
   assert.equal((await call('POST', { childId: f.childId, expectedPresenceVersion: 0 })).status, 409);
   const prepared = await f.prepare(); await f.store.process(await f.jobFor(prepared.ids[0]!), new AbortController().signal);
   const url = origin + '/api/native-push/open?reference=' + encodeURIComponent(JSON.stringify(f.calls[0]!.reference));
