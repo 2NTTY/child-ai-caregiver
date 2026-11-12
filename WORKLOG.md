@@ -5990,3 +5990,5 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 香港 06:17 過後，當天仍沒有原生排程事件。操作員補檢時，CLI 同步請求回 HTTP 500；核實原時段沒有 run，再以官方非同步介面取得當天的 [master 補檢收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43319222038)。06:22:53 站上三個服務仍是 `66a51db5`，結果為 `skipped`，沒有建置或切站。獨立補觸發可辨識同一日期已完成的操作員補檢；這筆是 `workflow_dispatch`，原生排程仍待驗。
 
 香港 `site-overdue-dispatch` 已啟用唯一的 06:27 排程。11 月 13 日 06:36 手動喚醒該 Scheduler，Cloud Run execution `site-overdue-dispatch-pqsss` 成功，06:37:04 寫下 `already-dispatched`，對應 UTC 日程日期 `2026-11-12`。Job 使用無憑證的 `observe` 模式，映像 digest 為 `sha256:fec6a618ca5a692188e4dc3a39b0886732eb7dd526d8aa62cecaa5caea22ee0f`。香港 Secret Manager 已建空白位置；待 GitHub App 安裝、存入版本並執行 `install` 後才可自動補發。
+
+香港 07:22，限定 `2NTTY/child-ai-caregiver` 的 GitHub App 已接通。核對安裝的 Actions 寫入、metadata 讀取，以及短期 token 實際可讀的唯一倉庫和正式工作流後，已撤銷驗證用 token。沿同一映像掛載 secret 版 1，Cloud Run 已回報 `dispatch`。手動喚醒原 Scheduler 的 execution `site-overdue-dispatch-kjplz` 完成，07:22:50 辨認當天已有結果，記為 `already-dispatched`。原有補檢與這筆手動核對分開追蹤，保留首次日程自動觸發的驗收。

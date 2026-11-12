@@ -30,7 +30,12 @@
 
 現有 Job 升級到 `dispatch` 可直接取回已驗映像，跳過重建。執行 `export SITE_TIMER_IMAGE="$(gcloud run jobs describe site-overdue-dispatch --project=ai-caregivers-for-children --region=asia-east2 --format='value(spec.template.spec.template.spec.containers[0].image)')"`，設定上述三個身份／版號變數，再執行 `install`。新身份剛建立時若 Scheduler 回 `NOT_FOUND`，先查同名 Job、喚醒身份及 Scheduler；確認排程尚未建立而身份可讀後，沿用同一命令接續。
 
-首次登記可直接開啟[已填好權限的 GitHub 官方表單](https://github.com/settings/apps/new?name=2ntty-yuyoufang-site-timer&url=https%3A%2F%2Fgithub.com%2F2NTTY%2Fchild-ai-caregiver&public=false&webhook_active=false&actions=write)。在 Install App 選「Only select repositories」及本倉庫。記下設定頁的 App ID、安裝頁網址末段的 installation ID。營運者用以下命令直接匯入下載的 PEM，將回傳的數字版本用於步驟 3。
+現行安裝使用專用 App `5736451`、installation `181413568` 及香港 secret `site-timer-github-app`。接手時可用 `gcloud run jobs describe site-overdue-dispatch --project=ai-caregivers-for-children --region=asia-east2 --format='value(metadata.labels.wake_mode,spec.template.spec.template.spec.volumes[0].secret.items[0].key)'` 查實際模式和密鑰版號。日常發布沿用現有安裝。
+
+首次登記或重建才需要以下步驟。
+
+1. 用擁有人帳號開啟[已填好權限的官方表單](https://github.com/settings/apps/new?name=2ntty-yuyoufang-site-timer&url=https%3A%2F%2Fgithub.com%2F2NTTY%2Fchild-ai-caregiver&public=false&webhook_active=false&actions=write)。建立後選 **Install App → 2NTTY → Install → Only select repositories**，選 `child-ai-caregiver` 並按 **Install**。記下 App ID 和安裝頁網址末段的 installation ID。[GitHub 安裝說明](https://docs.github.com/en/apps/using-github-apps/installing-your-own-github-app)
+2. 回到 [GitHub Apps 設定](https://github.com/settings/apps)，點該 App 旁的 **Edit → Credentials → Key pairs → New key**。把下載的 PEM 直接交給以下命令，使用回傳的版本號完成啟用。[GitHub 私鑰說明](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps)
 
 ```sh
 # 首次且 secret 尚未存在時建立香港儲存位置
