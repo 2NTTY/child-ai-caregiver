@@ -2,7 +2,7 @@
 
 只作根 PLAN 的短現況投影；工作包、前置、未驗與完成門檻見 [PLAN 當前入口](PLAN.md#active)。
 
-**原站交付**由 A 負責。執行 `npm run deploy:site -- status` 可查看發布收據及下次停機期限。首次接管前會顯示 `bootstrapPending`；正式手動發布和首個排程結果分別驗收。[部署與恢復](docs/DEPLOYMENT.md)
+**原站交付**由 A 負責。11 月 12 日手動工作流已從 master 發布 `da3b9bac`，站外指紋、API 與 VM 收據相符，三個服務可一起回退到 `29941f92`。每日香港 04:17 的排程已啟用，首個排程另看 `npm run deploy:site -- status` 的 daily 與收據。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43240224906) · [部署與恢復](docs/DEPLOYMENT.md)
 
 ## 目前與接手
 
