@@ -10,7 +10,7 @@
 | 2026-11-12 交付狀態 | 證據或待驗項目 |
 |---|---|
 | 原站已發布 | 版本 `29941f92`。首頁、安裝清單、三個圖示、Service Worker 及 Web 程式均已從公開網址核對內容指紋與檔案類型。 |
-| iPhone 實機已驗 | 尚未取得實機結果。 |
-| 仍待驗 | 主畫面圖示、獨立視窗、登入與重開；關閉鎖屏實收、點入原訊息、回覆與停用；拍照、選相、錄音試聽及選檔。 |
+| iPhone 實機已驗 | 試用者按上述主畫面安裝與示範步驟回報成功：鎖屏收件、點入原聊天並回覆，Web 可讀回。未另提供 iOS 版本、預覽選項或渠道收據。 |
+| 仍待驗 | 品牌圖示與獨立視窗外觀、重開後保留登入、停用後的訂閱設定；拍照、選相、錄音試聽、選檔及一張照片送出後在 Web 讀回。 |
 
 開發時可用 Expo Web 核對共用畫面。手機安裝、鎖屏通知和點擊跳轉需要用真正的 iPhone 主畫面版驗收。[Apple Web Push](https://developer.apple.com/documentation/usernotifications/sending-web-push-notifications-in-web-apps-and-browsers) · [Expo PWA](https://docs.expo.dev/guides/progressive-web-apps/)

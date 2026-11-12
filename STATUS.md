@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **iPhone 主畫面版已開放試用。** 11 月 12 日原站 API、worker 及 Web 已更新至 `29941f92`。原站已核對安裝資產、健康及登入保護。下一項是用一部 iOS 16.4 或以上的 iPhone 核對安裝、鎖屏收件與點入原訊息回覆、停用及媒體。[試用說明](docs/IPHONE_PWA.md) · [發布紀錄](artifacts/verification/IPHONE_PWA_20261112.json)
+- **iPhone 主畫面版已開放試用。** 11 月 12 日原站 API、worker 及 Web 已更新至 `29941f92`。原站已核對安裝資產、健康及登入保護。試用者已回報 iPhone 主畫面安裝、鎖屏收件、點入原訊息回覆及 Web 讀回成功。外觀、重開、停用及媒體仍待核對。[試用說明](docs/IPHONE_PWA.md) · [發布紀錄](artifacts/verification/IPHONE_PWA_20261112.json)
 
 - **主動通知已改為保存後即派送。** 原站 API、worker 及 Web 使用 `954ee312`。11 月 12 日 11:07（香港）已核對 Android 版本 8 的 APK 與版本 6 簽署相同，包內已包含狀態列及通知卡圖示。版本 6 的收件、點入回覆及跨端讀回已驗。版本 8 的兩個圖示與原訊息預覽已在手機確認。11:11 的示範於入隊後 0.973 秒開始交送，至記下 FCM 接受共 2.108 秒。[下載版本 8](https://expo.dev/artifacts/eas/0lyEuTPX6sSSFTROuYXISbp3ACRBukESbAshFte_lJs.apk) · [發布及驗簽紀錄](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json) · [本機真 Agent 紀錄](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json)
 

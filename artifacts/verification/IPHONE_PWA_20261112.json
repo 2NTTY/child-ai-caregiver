@@ -34,10 +34,13 @@
     "Photo draft decoding and cancellation with browser substitutes"
   ],
   "physicalIPhone": {
-    "status": "pending",
+    "status": "partially_verified",
+    "userReported": "The tester reported success for the instructed Home Screen installation and locked-screen demo: notification, open original chat, reply and read back on Web.",
+    "iosVersion": null,
+    "chosenPreviewMode": null,
+    "deliveryReceiptId": null,
     "remaining": [
-      "Safari installation, branded Home Screen launch, login and relaunch",
-      "Closed app and locked screen receipt, preview mode, open original message and reply visible on Web",
+      "Branded icon and standalone appearance, session persistence on relaunch",
       "Disable chat delivery for the installation and verify the saved preference",
       "Camera, photo library, recording and playback, file picker and one photo sent and read back on Web"
     ]
