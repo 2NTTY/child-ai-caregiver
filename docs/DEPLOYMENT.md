@@ -28,6 +28,8 @@
 
 等候擁有人登記期間，可先設定映像 digest 並執行 `bash deploy/site-release/install-watchdog.sh prepare`。同一個 Job 和 Scheduler 會開始唯讀查核，`status` 顯示 `observe`，結果在該 Job 的 Cloud Logging。發現漏排會記為 `would-dispatch`；已補做會記為 `already-dispatched`。登記完成後以步驟 3 啟用實際發送，狀態應為 `dispatch`。
 
+現有 Job 升級到 `dispatch` 可直接取回已驗映像，跳過重建。執行 `export SITE_TIMER_IMAGE="$(gcloud run jobs describe site-overdue-dispatch --project=ai-caregivers-for-children --region=asia-east2 --format='value(spec.template.spec.template.spec.containers[0].image)')"`，設定上述三個身份／版號變數，再執行 `install`。新身份剛建立時若 Scheduler 回 `NOT_FOUND`，先查同名 Job、喚醒身份及 Scheduler；確認排程尚未建立而身份可讀後，沿用同一命令接續。
+
 首次登記可直接開啟[已填好權限的 GitHub 官方表單](https://github.com/settings/apps/new?name=2ntty-yuyoufang-site-timer&url=https%3A%2F%2Fgithub.com%2F2NTTY%2Fchild-ai-caregiver&public=false&webhook_active=false&actions=write)。在 Install App 選「Only select repositories」及本倉庫。記下設定頁的 App ID、安裝頁網址末段的 installation ID。營運者用以下命令直接匯入下載的 PEM，將回傳的數字版本用於步驟 3。
 
 ```sh

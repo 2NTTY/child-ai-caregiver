@@ -5988,3 +5988,5 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 針對候選過時，現在會在下載及傳送映像前核對一次 master，切站前再核對一次。提前測試時，GitHub 沒有為本倉庫正式流程或只記時間的對照流程建立排程 run，故無 runner 或 VM 失敗日誌。清走臨時排程後只保留香港每日 04:17；首輪驗收憑 `event=schedule` 的正式發布收據。若逾期，接手人由[排程補觸發](docs/DEPLOYMENT.md#每日事件缺席時補觸發)開始。
 
 香港 06:17 過後，當天仍沒有原生排程事件。操作員補檢時，CLI 同步請求回 HTTP 500；核實原時段沒有 run，再以官方非同步介面取得當天的 [master 補檢收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43319222038)。06:22:53 站上三個服務仍是 `66a51db5`，結果為 `skipped`，沒有建置或切站。獨立補觸發可辨識同一日期已完成的操作員補檢；這筆是 `workflow_dispatch`，原生排程仍待驗。
+
+香港 `site-overdue-dispatch` 已啟用唯一的 06:27 排程。11 月 13 日 06:36 手動喚醒該 Scheduler，Cloud Run execution `site-overdue-dispatch-pqsss` 成功，06:37:04 寫下 `already-dispatched`，對應 UTC 日程日期 `2026-11-12`。Job 使用無憑證的 `observe` 模式，映像 digest 為 `sha256:fec6a618ca5a692188e4dc3a39b0886732eb7dd526d8aa62cecaa5caea22ee0f`。香港 Secret Manager 已建空白位置；待 GitHub App 安裝、存入版本並執行 `install` 後才可自動補發。
