@@ -250,7 +250,8 @@ test("ordinary action policy, verified operation receipts, mixed pending revisio
   }
 
   // Scenario C: mixed pending memory proposal + official guidance passes delivery review with verifiedOperations & official source.
-  {
+  for (const confirmationState of ["matching", "other_proposal", "other_run", "other_version", "revoked"] as const) {
+    const exactBindings: unknown[] = [];
     const factProposalId = randomUUID();
     let step = 0, saved: ProductAgentResult | null = null, seenReview: { draftHash: string; verifiedOperations?: Array<{ kind: string; tool: string }>; sources?: unknown[] } | null = null;
     const runtime = createAgentRuntime({
@@ -262,9 +263,11 @@ test("ordinary action policy, verified operation receipts, mixed pending revisio
           const userText = request.contents.flatMap(c => c.parts ?? []).map(p => p.text ?? "").join("\n");
           if (userText.includes("chat-delivery-review")) {
             seenReview = JSON.parse(userText.slice(userText.indexOf("{")));
-            assert.equal(seenReview!.verifiedOperations?.length, 1);
-            assert.equal(seenReview!.verifiedOperations![0].kind, "pending_confirmation");
-            assert.equal(seenReview!.verifiedOperations![0].tool, "propose_fact");
+            assert.equal(seenReview!.verifiedOperations?.length ?? 0, confirmationState === "matching" ? 1 : 0, confirmationState);
+            if (confirmationState === "matching") {
+              assert.equal(seenReview!.verifiedOperations![0].kind, "pending_confirmation");
+              assert.equal(seenReview!.verifiedOperations![0].tool, "propose_fact");
+            }
             assert.equal(seenReview!.sources?.length, 1);
             return { finishReason: FinishReason.STOP, content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: seenReview!.draftHash, decision: "pass", issues: [] }) }] } };
           }
@@ -299,7 +302,19 @@ test("ordinary action policy, verified operation receipts, mixed pending revisio
           id: factProposalId, runId, childId, version: 1, status: "pending", createdAt: "2026-11-11T00:00:00Z", expiresAt: "2099-01-01T00:00:00Z", value, targetLabel: null, result: null,
         }),
         requestConfirmation: async () => ({ id: "conf-1", proposalRunId: runId, proposalId: factProposalId, proposalVersion: 1, expiresAt: "2099-01-01T00:00:00Z", question: "是否確認記錄過敏資料？" }),
-        confirmationQuestions: async () => ["是否確認記錄過敏資料？"],
+        confirmationQuestions: async (_user: string, _child: string, _run: string, binding?: unknown) => {
+          const liveBinding = {
+            proposalRunId: confirmationState === "other_run" ? "older-run" : runId,
+            proposalId: confirmationState === "other_proposal" ? "older-proposal-B" : factProposalId,
+            proposalVersion: confirmationState === "other_version" ? 2 : 1,
+          };
+          if (binding) {
+            exactBindings.push(binding);
+            assert.deepEqual(binding, { proposalRunId: runId, proposalId: factProposalId, proposalVersion: 1 });
+            if (JSON.stringify(binding) !== JSON.stringify(liveBinding)) return [];
+          }
+          return confirmationState === "revoked" ? [] : ["是否確認記錄過敏資料？"];
+        },
         finish: async (_s: unknown, result: ProductAgentResult) => { saved = result; return true; },
         get: async () => saved,
       } as never,
@@ -311,6 +326,7 @@ test("ordinary action policy, verified operation receipts, mixed pending revisio
       knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [officialChunk] }), revalidateCitations: async () => true }) } as never,
     });
     const result = await service.reply(scope.userId, childId, messageId, async () => true);
+    assert.ok(exactBindings.length > 0, "Delivery evidence must request an exact run/proposal/version binding");
     assert.equal(result?.status, "completed");
     assert.equal(result?.deliveryReview?.decision, "pass");
     assert.match(result!.text, /待確認候選/);

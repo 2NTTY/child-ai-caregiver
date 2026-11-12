@@ -90,6 +90,8 @@ export function createFirestoreAgentActions(options: {
   return {
     readPolicy, readNote, readReceipts,
     records: (u, c, query) => care.search(u, c, { query }),
+    recordById: (userId, childId, id) => authority.runTransaction(userId, childId, b => care.readRecord(b, id)),
+    noteById: (userId, childId, id) => authority.runTransaction(userId, childId, b => readNote(b, id)),
     policy: (u, c) => authority.runTransaction(u, c, readPolicy),
     async savePolicy(userId: string, childId: string, raw: AgentPolicyUpdate) {
       const input = domainParse(agentPolicyUpdateSchema, raw);

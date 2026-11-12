@@ -30,7 +30,7 @@ import type { TaskStore } from "./tasks.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import { FamilyError } from "./family-access.ts";
 import { FirestoreDomainError } from './firestore-domain-data.ts';
-import { createAgentActionTools } from "./agent-action-tools.ts";
+import { createAgentActionReadTools, createAgentActionTools, type AgentActionReaders, type RegisterHouseholdRead } from "./agent-action-tools.ts";
 import { createAgentSourceTools } from "./agent-source-tools.ts";
 import { createAgentDocumentTools } from "./agent-document-tools.ts";
 import { createDataComposeTools } from "./data-compose.ts";
@@ -122,6 +122,7 @@ export function createProductAgentTools(options: {
   concerns?: Pick<import("./concern-store.ts").ConcernStore, "list" | "get">;
   sources?: import("./shared-input-store.ts").SharedInputStore;
   actions?: import("./agent-actions-store.ts").AgentActionsStore;
+  actionReaders?: AgentActionReaders;
   summary?:Pick<import("./care-summary-store.ts").CareSummaryStore, "get">;
   contact?:Pick<import("./contact-store.ts").ContactStore, 'options' | 'request'>;
   growth?: Pick<import("./growth-store.ts").GrowthStore, "list">;
@@ -140,11 +141,26 @@ export function createProductAgentTools(options: {
   let groundingLoaded = false;
   let selectedSources: ChatDeliverySource[] = [];
   const selectedEvidence=new Map<string,ChatDeliverySource>();
+  const householdEvidence = new Map<string, { label: string; isCurrent: () => Promise<boolean> }>();
+  const registerHouseholdRead: RegisterHouseholdRead = (kind, item, reread) => {
+    const citationId = `household-${kind}:${item.id}:${item.version}`;
+    const sourceText = (value: typeof item) => JSON.stringify('title' in value
+      ? { title: value.title, text: value.text, provenance: value.provenance }
+      : { text: value.text, details: value.details, source: value.source, confirmationBasis: value.confirmationBasis });
+    const original = sourceText(item);
+    selectedEvidence.set(citationId, { citationId, version: String(item.version), contentHash: chatDeliveryContentHash(original),
+      classification: 'private', ...chatDeliveryReviewSourceExcerpt(original) });
+    householdEvidence.set(citationId, { label: kind === 'note' ? '[本人交代]' : '[照護記錄]', async isCurrent() {
+      const currentItem = await reread();
+      return !!currentItem && currentItem.id === item.id && currentItem.version === item.version && sourceText(currentItem) === original;
+    } });
+    return citationId;
+  };
   let proposedBatch:MixedTaskBatch|null=null;
   let selectedMemoryFacts: MemoryFact[] = [];
   let selectedVerifiedOperations: ChatDeliveryVerifiedOperation[] = [];
   const executedActions = new Map<string, { recordKind?: string; summary?: string; eventTime?: string }>();
-  const recordedProposals = new Map<string, { proposalId: string; toolName: string; summary: string }>();
+  const recordedProposals = new Map<string, { proposalId: string; proposalRunId: string; proposalVersion: number; toolName: string; summary: string }>();
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;
   let serverReceiptText: string | null = null;
@@ -182,7 +198,7 @@ export function createProductAgentTools(options: {
           const proposal = await target.propose(...args);
           if (proposal?.status === "pending") {
             const info = summarizeProposal(proposal.value);
-            recordedProposals.set(proposal.id, { proposalId: proposal.id, ...info });
+            recordedProposals.set(proposal.id, { proposalId: proposal.id, proposalRunId: proposal.runId, proposalVersion: proposal.version, ...info });
           }
           return proposal;
         };
@@ -223,10 +239,13 @@ export function createProductAgentTools(options: {
       }
     }
     if (includePending && recordedProposals.size === 1 && typeof store.confirmationQuestions === "function") {
-      const questions = await store.confirmationQuestions(scope.userId, scope.childId, runId);
+      const [entry] = recordedProposals.values();
+      // Revalidate this exact proposal, never bind an unrelated run-level question by count.
+      const questions = await store.confirmationQuestions(scope.userId, scope.childId, runId, {
+        proposalRunId: entry.proposalRunId, proposalId: entry.proposalId, proposalVersion: entry.proposalVersion,
+      });
       if (!await authorize() || !questions) throw new AgentStopped("unauthorized");
       if (questions.length === 1 && questions[0]?.trim()) {
-        const [entry] = recordedProposals.values();
         verified.push({
           kind: "pending_confirmation",
           id: entry.proposalId,
@@ -322,8 +341,8 @@ export function createProductAgentTools(options: {
       const hasOfficialEvidence = Array.from(evidence.values()).some(item => item.chunk.classification === "official_guidance");
       if (error instanceof FamilyError && error.code === "invalid_citation") return { status: "rejected", data: { code: error.code,
         nextAction: !hasOfficialEvidence && selectedOfficialHelp.size > 0
-          ? "不要將 emergency-hk-v1 或 medical-consult-hk-v1 等固定求助卡 ID 放進 citationIds（citationIds 只接受本次 search_knowledge 回傳的 chunkId UUID）。若無適用官方片段，請用 kind=\"operation\" 與 citationIds=[]（緊急危險請直接輸出「請先使用畫面上的緊急求助入口。」）。"
-          : "search_knowledge", citationField: "chunks[].chunkId", message: "引用只能取本次 search_knowledge 結果的原始 chunkId；固定卡 ID 與背景來源 metadata 不是已登記引用。不要猜測、拼接或重送同一無效 ID。" } };
+          ? "不要將 emergency-hk-v1 或 medical-consult-hk-v1 等固定求助卡 ID 放進 citationIds（官方引用只接受本次 search_knowledge 回傳的 chunkId UUID）。若無適用官方片段，請用 kind=\"operation\" 與 citationIds=[]（緊急危險請直接輸出「請先使用畫面上的緊急求助入口。」）。"
+          : options.actionReaders ? "引用本人交代或照護記錄時，以 records 按 id 讀回原項，使用該工具回傳的 citationId。公共建議引用 search_knowledge 的 chunkId。" : "search_knowledge", citationField: "chunks[].chunkId", message: "官方引用只能取本次 search_knowledge 結果的原始 chunkId；私人及家庭記錄須使用對應讀取工具回傳的 citationId；固定卡 ID 與背景來源 metadata 不是已登記引用。不要猜測、拼接或重送同一無效 ID。" } };
       if (error instanceof FamilyError && error.code === "use_citation_ids") return { status: "rejected", data: { code: error.code, nextAction: "Remove URLs from paragraph text. Put exact retrieved chunkId values in citationIds; the UI renders source links." } };
       if (error instanceof FamilyError && error.code === "citation_required") return { status: "rejected", data: { code: error.code,
         nextAction: !hasOfficialEvidence && selectedOfficialHelp.has("emergency-hk-v1")
@@ -332,7 +351,7 @@ export function createProductAgentTools(options: {
             ? "medical-consult-hk-v1 是畫面固定就醫卡 ID，不能填入 citationIds。如無適用的 search_knowledge 官方 chunkId，請勿使用 safety_help／caregiving 輸出未引用照護或用藥建議；可改用 kind=\"operation\"／\"clarification\" 引導家長使用畫面上的就醫求助入口或補充基本資料。"
             : hasOfficialEvidence
               ? "你已經透過 search_knowledge 取得官方 chunkId，毋須再對同一主題重複搜尋。請立即修正 present_answer 的段落標記與 citationIds：(1) 純粹重述孩子已確認個人記憶（如過敏、忌口、作息）的段落請單獨使用 kind=\"record_restatement\"、citationIds=[]，不加入未引用的指導語句；(2) 所有 kind=\"caregiving\" 或 \"safety_help\" 段落自己都必須在該段 citationIds 填入真正相關且支持該段說法的已檢索官方 chunkId，絕不可硬塞無關主題（例如用餵食片段支持體溫或視力問題）；(3) 若問題某部分未見於現有片段，切勿斷言「官方指引沒有某列表」或編造照護／醫療建議；全無相關片段時請改用 kind=\"clarification\"、citationIds=[] 簡潔說明現有資料限制及提醒如有不適應諮詢醫護人員（或用 show_official_help）。"
-              : "Use the already available search_knowledge tool if relevant evidence is missing and the remaining budget allows retrieval, presentation and review. Each caregiving or safety paragraph needs supporting official citationIds; private_reference needs a retrieved private-source citation or a Server-loaded photo or current voice original. Pure confirmed-fact restatements use record_restatement with citationIds=[]; urgent danger without official chunks uses operation with citationIds=[]. Otherwise state the evidence limitation without unsupported advice. Report operation receipts separately; do not invent citations or relabel advice to bypass checks." } };
+              : "Use the already available search_knowledge tool if relevant evidence is missing and the remaining budget allows retrieval, presentation and review. Each caregiving or safety paragraph needs supporting official citationIds; private_reference needs a retrieved private-source citation, including an exact household read when available, or a Server-loaded photo or current voice original. Pure confirmed-fact restatements use record_restatement with citationIds=[]; urgent danger without official chunks uses operation with citationIds=[]. Otherwise state the evidence limitation without unsupported advice. Report operation receipts separately; do not invent citations or relabel advice to bypass checks." } };
       if (error instanceof FamilyError && error.code === "propose_fact_required") return { status: "rejected", data: { code: error.code, nextAction: "load_capabilities memory if needed, then propose_fact with content that keeps the user's child nickname (e.g. BB), then request_confirmation. Do not only present_answer a restatement of a durable personal fact such as an allergy or lasting preference (likes/dislikes)." } };
       if (error instanceof FamilyError && error.code === "memory_read_not_propose") return { status: "rejected", data: { code: error.code, nextAction: "This turn is a question/read-back (嗎？／？／有冇／係咪 etc.). load_capabilities memory if needed, read_memory_facts, then present_answer from confirmed memory. Do not propose_fact a new candidate." } };
       if (error instanceof FamilyError || error instanceof FirestoreDomainError) return { status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected", data: { code: error.code } };
@@ -624,6 +643,8 @@ export function createProductAgentTools(options: {
   if (options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentWorkTools(trackedStore, memory, run, permitted, noteConfirmedMemoryFacts));
   if (trackedActions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(trackedActions, run, permitted)
     .filter(tool=>!options.ordinaryToolNames || options.ordinaryToolNames.includes(tool.name)));
+  else if (options.actionReaders && options.visibility !== "family") tools.splice(tools.length - 1, 0,
+    ...createAgentActionReadTools(options.actionReaders, run, permitted, registerHouseholdRead));
   if(privateSources)tools.splice(tools.length-1,0,...privateSources.tools);
   if(options.documents && options.includeDocuments && options.visibility!=="family") {
     tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,trackedStore,run,permitted));
@@ -758,6 +779,10 @@ export function createProductAgentTools(options: {
         return {text:serverReceiptText,citations:[],privateSourceCitations:[],retrievalMode:'not_used'};
       }
       const ids = [...new Set(answer.paragraphs.flatMap(p => p.citationIds))];
+      for (const id of ids) {
+        const household = householdEvidence.get(id);
+        if (household && !await household.isCurrent()) throw new AgentStopped("delivery_review_incomplete");
+      }
       const citations = ids.filter(id=>evidence.has(id)).map(id => evidence.get(id)!);
       const privateSourceCitations=ids.filter(id=>privateSources?.evidence.has(id)).map(id=>privateSources!.evidence.get(id)!);
       for(const citation of privateSourceCitations)if(!await privateSources!.revalidate(citation))throw new AgentStopped("invalid_response");
@@ -805,6 +830,8 @@ export function createProductAgentTools(options: {
         : answer.paragraphs;
       const careReferences=selectedCareRecordCitations(selectedSources);
       function citationLabel(id:string) {
+        const household = householdEvidence.get(id);
+        if (household) return household.label;
         const index=careReferences.findIndex(reference=>reference.citationId===id);
         if (index!==-1) return `[照護記錄 ${index+1}]`;
         if (selectedEvidence.has(id)) return id.startsWith('care:') ? '[查詢範圍]' : '[待辦資料]';

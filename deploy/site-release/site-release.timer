@@ -1,0 +1,11 @@
+[Unit]
+Description=Check the private website release channel
+
+[Timer]
+OnBootSec=45s
+OnUnitInactiveSec=75s
+AccuracySec=10s
+Unit=site-release.service
+
+[Install]
+WantedBy=timers.target

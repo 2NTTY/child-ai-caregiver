@@ -9,7 +9,7 @@ const origin = z.enum(['demo', 'daily', 'followup', 'task']);
 const contactSchema = z.object({ opId: z.uuid(), origin, text: messageText.refine(s => s.trim().length > 0), runId: z.uuid().optional() }).strict();
 type Contact = z.infer<typeof contactSchema>;
 export const proactiveReceiptSchema = z.object({ proactive: z.literal(true), opId: z.uuid(), origin, messageId: z.uuid(),
-  requestHash: z.string().regex(/^[0-9a-f]{64}$/u), deliveryIds: z.array(z.uuid()).max(5), seenAt: z.iso.datetime().nullable() }).strict();
+  requestHash: z.string().regex(/^[0-9a-f]{64}$/u), deliveryIds: z.array(z.uuid()).max(10), seenAt: z.iso.datetime().nullable() }).strict();
 export function proactiveMessageId(owner: string, child: string, source: Contact['origin'], opId: string) {
   return firestoreDomainUuid(['contact-parent', owner, child, source, opId]);
 }

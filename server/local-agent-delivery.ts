@@ -1,6 +1,7 @@
 import { createECDH, createHmac } from 'node:crypto';
 import { z } from 'zod';
 import { apnsPushTokenSchema, nativePushReferenceSchema, nativePushTokenSchema } from '../src/shared/native-push.ts';
+import { pushPayloadSchema } from '../src/shared/web-push.ts';
 import { assertLocalAgentEnvironment } from './local-agent-config.ts';
 import { checkedSubscription } from './web-push-gateway.ts';
 import type { FirestoreDomainOptions } from './firestore-domain-data.ts';
@@ -17,9 +18,9 @@ export interface LocalDeliveryAdapters {
 }
 const messageSchema = z.strictObject({
   id: z.string().regex(/^[a-f0-9]{64}$/u), createdAt: z.iso.datetime(),
-  channel: z.enum(['web_push', 'native_push', 'telegram']), kind: z.enum(['test', 'care']),
+  channel: z.enum(['web_push', 'native_push', 'telegram']), kind: z.enum(['test', 'care', 'chat']),
   delivery: z.literal('local-only-not-sent'), targetTag: z.string().regex(/^[a-f0-9]{64}$/u),
-  reference: nativePushReferenceSchema.nullable(),
+  reference: z.union([nativePushReferenceSchema, pushPayloadSchema]).nullable(),
 });
 type Message = z.infer<typeof messageSchema>;
 type LocalStopReason = 'local_preview_not_sent' | 'revoked' | 'worker_interrupted' | 'request_invalid';
@@ -61,12 +62,12 @@ export function createLocalAgentDelivery(options: FirestoreDomainOptions, env: R
       publicKey,
       async send(input, payload, signal, authorized) {
         let subscription: ReturnType<typeof checkedSubscription>;
-        let reference: z.infer<typeof nativePushReferenceSchema>;
+        let reference: z.infer<typeof pushPayloadSchema>;
         try {
           subscription = checkedSubscription(input);
-          reference = nativePushReferenceSchema.parse({ ...payload, kind: payload.kind ?? 'test' });
+          reference = pushPayloadSchema.parse({ ...payload, kind: payload.kind ?? 'test' });
         } catch { return stopped('request_invalid'); }
-        return capture('web_push', reference.kind, subscription.endpoint, reference.deliveryId, reference, signal, authorized);
+        return capture('web_push', reference.kind ?? 'test', subscription.endpoint, reference.deliveryId, reference, signal, authorized);
       },
     },
     nativePushGateway: {
@@ -114,7 +115,7 @@ export function createLocalAgentDelivery(options: FirestoreDomainOptions, env: R
         if (saved.id !== row.id || saved.createdAt !== row.get('createdAt') || saved.channel !== row.get('channel'))
           throw Error('Local inbox binding mismatch');
         return { ...saved, label: '本地預覽，未實際發送',
-          purpose: saved.kind === 'test' ? '一般渠道測試' : '照護提示（實際事項須從原資源核對）' };
+          purpose: saved.kind === 'test' ? '一般渠道測試' : saved.kind === 'chat' ? '聊天通知（原訊息須從對話核對）' : '照護提示（實際事項須從原資源核對）' };
       });
       return { deliveries, deliveryTruncated: page.size > 20 };
     },

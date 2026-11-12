@@ -131,12 +131,15 @@ export interface BackgroundQueueOptions extends FirestoreDomainOptions {
   execute(job: FirestoreBackgroundWork, signal: AbortSignal): Promise<{ state: 'completed' | 'stopped' | 'unknown' | 'deferred'; nextAt?: string }>;
   signal?: AbortSignal;
 }
-/** Product-only outbox. Handlers recheck canonical resources and recover original effects before executing. */
-export function createFirestoreBackgroundQueue(options: BackgroundQueueOptions) {
-  const data = new FirestoreDomainData(options), database = options.database;
+function saveJob(data: FirestoreDomainData, tx: Transaction, job: FirestoreBackgroundWork) {
+  tx.set(ref(data, job.id), seal(data, { ...job, version: job.version + 1 }));
+}
+/** Shared by a post-commit wake and the scheduled outbox scan. */
+export function createFirestoreBackgroundDispatcher(options: Omit<BackgroundQueueOptions, 'execute' | 'signal'>, data = new FirestoreDomainData(options)) {
+  const database = options.database;
   const delivery = (job: FirestoreBackgroundWork): FirestoreBackgroundDelivery => ({ kind: 'product-work', id: job.id,
     generation: job.generation, dispatchRevision: job.dispatchRevision, scheduledAt: job.dueAt });
-  const save = (tx: Transaction, job: FirestoreBackgroundWork) => tx.set(ref(data, job.id), seal(data, { ...job, version: job.version + 1 }));
+  const save = (tx: Transaction, job: FirestoreBackgroundWork) => saveJob(data, tx, job);
   async function claimDispatch(id: string) {
     const token = randomUUID();
     return database.runTransaction(async tx => {
@@ -176,6 +179,14 @@ export function createFirestoreBackgroundQueue(options: BackgroundQueueOptions) 
     for (const row of [...rows.docs, ...uncertain.docs]) { const job = open(data, row)!; const result = await dispatchOne(job.id); if (result === 'confirmed') confirmed++; else if (result !== 'skipped') unresolved++; }
     return { scanned: rows.size + uncertain.size, confirmed, unresolved };
   }
+  return { dispatch, dispatchOne };
+}
+
+/** Handlers recheck canonical resources and recover original effects before executing. */
+export function createFirestoreBackgroundQueue(options: BackgroundQueueOptions) {
+  const data = new FirestoreDomainData(options), database = options.database;
+  const { dispatch, dispatchOne } = createFirestoreBackgroundDispatcher(options, data);
+  const save = (tx: Transaction, job: FirestoreBackgroundWork) => saveJob(data, tx, job);
   async function process(raw: FirestoreBackgroundDelivery) {
     const request = domainParse(firestoreBackgroundDeliverySchema, raw), token = randomUUID();
     const claimed = await database.runTransaction(async tx => {
@@ -198,7 +209,7 @@ export function createFirestoreBackgroundQueue(options: BackgroundQueueOptions) 
       const status = error && typeof error === 'object' && 'status' in error ? error.status : null;
       outcome = { state: status === 403 || status === 404 || status === 409 ? 'stopped' : 'unknown' };
     }
-    return database.runTransaction(async tx => {
+    const settled = await database.runTransaction(async tx => {
       const control = await options.readControl(tx), job = open(data, await tx.get(ref(data, request.id)));
       if (!job || job.lease?.token !== token) return { state: 'stopped' as const };
       const current = control.enabled && control.generation === job.generation && Date.parse(job.lease.until) > Date.now();
@@ -209,6 +220,10 @@ export function createFirestoreBackgroundQueue(options: BackgroundQueueOptions) 
         dispatch: 'pending' as const, dispatchProbes: 0, probeAfter: null, dispatchLease: null } : {}) });
       return { state };
     });
+    // Foreground/quiet deferrals keep the original work and schedule its next revision at dueAt.
+    // A failed dispatch leaves that same durable pending work for the existing minute scan.
+    if (settled.state === 'pending' && (claimed.job.kind === 'native-push' || claimed.job.kind === 'push')) await dispatchOne(request.id).catch(() => {});
+    return settled;
   }
-  return { dispatch, process };
+  return { dispatch, dispatchOne, process };
 }

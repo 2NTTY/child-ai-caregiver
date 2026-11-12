@@ -1,0 +1,48 @@
+{
+  "observedOn": "2026-11-12",
+  "site": "https://ex-machina.eu.org",
+  "runtimeCommit": "29941f9223809429c023cb11378fcfbbacdc331d",
+  "pullRequests": { "backend": 570, "web": 571 },
+  "production": {
+    "services": ["api", "worker", "web"],
+    "firestoreWebChatDeliveryIndex": "READY",
+    "vapid": "existing configuration verified on API and worker",
+    "matchedPublicArtifacts": [
+      "/index.html",
+      "/manifest.webmanifest",
+      "/icons/apple-touch-icon.png",
+      "/icons/icon-192.png",
+      "/icons/icon-512.png",
+      "/push-sw.js",
+      "/_expo/static/js/web/index-2f8deb309485050a92588bcda72c4cff.js"
+    ],
+    "responseChecks": {
+      "/api/health": 200,
+      "/api/admin/proactive-demo": 401,
+      "/api/web-push": 401,
+      "/api/web-push/chat-presence": 401,
+      "/api/web-push/open": 401
+    },
+    "publicProbes": "read-only; artifact hashes and MIME types matched; no notification triggered",
+    "fallbackUsed": false,
+    "androidBinaryBuilt": false
+  },
+  "localChecks": [
+    "Server and frontend TypeScript checks, production Expo Web export and install asset verification",
+    "Synthetic notification queue, duplicate delivery, foreground suppression, per-device consent, opt-out and revoked sessions",
+    "Web Push endpoint validation, payload privacy, legacy payload compatibility, service-worker click and login continuation",
+    "Photo draft decoding and cancellation with browser substitutes"
+  ],
+  "physicalIPhone": {
+    "status": "partially_verified",
+    "userReported": "The tester reported success for the instructed Home Screen installation and locked-screen demo: notification, open original chat, reply and read back on Web.",
+    "iosVersion": null,
+    "chosenPreviewMode": null,
+    "deliveryReceiptId": null,
+    "remaining": [
+      "Branded icon and standalone appearance, session persistence on relaunch",
+      "Disable chat delivery for the installation and verify the saved preference",
+      "Camera, photo library, recording and playback, file picker and one photo sent and read back on Web"
+    ]
+  }
+}

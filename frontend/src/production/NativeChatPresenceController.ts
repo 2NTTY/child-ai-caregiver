@@ -28,13 +28,18 @@ export class NativeChatPresenceController {
       this.value = next; return next;
     });
   }
-  private async write(enabled?: boolean) {
+  private async write(enabled?: boolean, bindingId?: string, preview?: boolean) {
     if (!this.value) this.value = await this.api.chatPresence(this.abort.signal, this.userId);
     if (!this.live()) throw new NativePushApiError(409, "session_changed");
+    if (bindingId !== undefined && this.value.bindingId !== bindingId) throw new NativePushApiError(409, "binding_changed");
+    if (preview !== undefined && enabled !== true && !this.value.chatNotificationsEnabled) throw new NativePushApiError(409, "chat_consent_disabled");
     try {
       const next = await this.api.updateChatPresence({ childId: this.childId, expectedPresenceVersion: this.value.presenceVersion,
-        ...(enabled === undefined ? {} : { chatNotificationsEnabled: enabled }) }, this.abort.signal, this.userId);
+        ...(bindingId === undefined ? {} : { bindingId }),
+        ...(enabled === undefined ? {} : { chatNotificationsEnabled: enabled }),
+        ...(preview === undefined ? {} : { chatPreviewEnabled: preview }) }, this.abort.signal, this.userId);
       if (!this.live()) throw new NativePushApiError(409, "session_changed");
+      if (bindingId !== undefined && next.bindingId !== bindingId) throw new NativePushApiError(409, "binding_changed");
       this.value = next; return next;
     } catch (error) {
       // Unknown writes and CAS conflicts are read back, never blindly replayed.
@@ -44,7 +49,8 @@ export class NativeChatPresenceController {
       throw error;
     }
   }
-  setEnabled(enabled: boolean) { return this.serialize(() => this.write(enabled)); }
+  setEnabled(enabled: boolean, bindingId?: string, preview?: boolean) { return this.serialize(() => this.write(enabled, bindingId, preview)); }
+  setPreviewEnabled(enabled: boolean, bindingId: string) { return this.serialize(() => this.write(undefined, bindingId, enabled)); }
   foreground(childId: string | null) {
     this.childId = childId; const revision = ++this.revision;
     return this.serialize(() => revision === this.revision ? this.write() : Promise.resolve(this.value));
@@ -59,7 +65,7 @@ export function nativeChatPresenceFor(owner: PresenceOwner, identity: string, us
   const previous = controllers.get(owner);
   if (previous?.identity === identity && previous.generation === generation) return previous.controller;
   previous?.controller.dispose();
-  const controller = new NativeChatPresenceController(createNativePushApi(owner.apiBaseUrl, owner.fetcher), userId,
+  const controller = new NativeChatPresenceController(createNativePushApi(owner.apiBaseUrl, owner.fetcher, { chatPresenceVersion: 2 }), userId,
     () => owner.getSnapshot().identityKey === identity && owner.getSnapshot().sessionGeneration === generation);
   controllers.set(owner, { identity, generation, controller }); return controller;
 }

@@ -8,9 +8,9 @@ import {firestorePushDeliverySchema} from './firestore-web-push.ts';
 import {firestoreTelegramDeliverySchema} from './firestore-telegram.ts';
 import {firestoreContactRequestSchema} from './firestore-contact.ts';
 
-const definitions=[['push_deliveries','push-delivery','deliveryId','createdAt'],['telegram_deliveries','telegram-delivery','deliveryId','createdAt'],['contact_requests','contact-request','requestId','createdAt'],['native_push_deliveries','native-push-delivery','deliveryId','createdAt'],['native_push_deliveries','native-push-delivery','deliveryId','chatCreatedAt']] as const;
+const definitions=[['push_deliveries','push-delivery','deliveryId','createdAt'],['telegram_deliveries','telegram-delivery','deliveryId','createdAt'],['contact_requests','contact-request','requestId','createdAt'],['native_push_deliveries','native-push-delivery','deliveryId','createdAt'],['native_push_deliveries','native-push-delivery','deliveryId','chatCreatedAt'],['push_deliveries','push-delivery','deliveryId','chatCreatedAt']] as const;
 const position=z.object({at:z.iso.datetime({offset:true}),id:z.uuid()}).strict();
-const cursorSchema=z.array(z.object({after:position.nullable(),done:z.boolean()}).strict()).min(3).max(5);
+const cursorSchema=z.array(z.object({after:position.nullable(),done:z.boolean()}).strict()).min(3).max(6);
 /** Bounded merge by original request creation. A request alone is never delivery evidence. */
 export async function readNotificationHistory(options:FirestoreDomainOptions,b:FirestoreAuthorityTransaction,raw?:string){
   const data=new FirestoreDomainData(options),tags=data.tags(b.scope);
@@ -45,9 +45,9 @@ export async function readNotificationHistory(options:FirestoreDomainOptions,b:F
       ||Object.entries(data.tags(context.scope)).some(([key,v])=>row.get(key)!==v))domainReject('delivery_binding',500);
     if(selected!==2){
       if(context.scope.childId!==b.scope.childId)domainReject('delivery_binding',500);
-      const delivery=selected===0?firestorePushDeliverySchema.parse(value).delivery:selected>=3?firestoreNativeDeliverySchema.parse(value).delivery:firestoreTelegramDeliverySchema.parse(value).delivery;
+      const delivery=kind==='push-delivery'?firestorePushDeliverySchema.parse(value).delivery:selected>=3?firestoreNativeDeliverySchema.parse(value).delivery:firestoreTelegramDeliverySchema.parse(value).delivery;
       if(delivery.id!==next.id||delivery.createdAt!==next.at)domainReject('delivery_binding',500);
-      if(!seen.has(delivery.id)){seen.add(delivery.id);items.push({id:delivery.id,channel:selected===0?'push':selected>=3?'native_push':'telegram',status:delivery.status,
+      if(!seen.has(delivery.id)){seen.add(delivery.id);items.push({id:delivery.id,channel:kind==='push-delivery'?'push':kind==='native-push-delivery'?'native_push':'telegram',status:delivery.status,
         created_at:delivery.createdAt,attempted_at:delivery.attemptedAt,finished_at:delivery.finishedAt,
         acknowledged_at:'acknowledgedAt' in delivery?delivery.acknowledgedAt:null});}
     }else{

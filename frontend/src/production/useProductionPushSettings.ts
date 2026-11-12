@@ -1,15 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createWebPushApi } from "../../../src/client/web-push-api.ts";
 import type { PushRegistrationInput, WebPushStatus } from "../../../src/shared/web-push.ts";
-import { activatePushBrowser, ownedBrowserBinding, pushBrowserSupported, pushPermission, requestPushPermission, subscribePushBrowser, suspendPushBrowser, unsubscribePushBrowser } from "../../../src/client/push-browser.ts";
+import { activatePushBrowser, browserPushSubscription, checkPushBrowserUser, ownedBrowserBinding, pushBrowserSupported, pushHomeScreen, pushNeedsHomeScreen, pushPermission, requestPushPermission, setPushBrowserChatPreference, subscribePushBrowser, suspendPushBrowser, unsubscribePushBrowser } from "../../../src/client/push-browser.ts";
 import type { ChannelReview, PushSettingsActions, PushSettingsModel } from "../channel-view-model";
 import { pushTestAllowed } from "../channel-view-model";
 import { useDomainWriteGuard } from "./useDomainEnvironment";
 import { settingsAccessError, settingsFailure, settingsRead, useSettingsRefresh, useSettingsRequests, type SettingsEnvironment } from "./SettingsDomainSupport";
+import { webChatPresenceFor } from "./WebChatPresenceController";
+import type { NativeChatPresence } from "../../../src/shared/native-push.ts";
 type PushReview = Omit<ChannelReview, "kind"> & { kind: "enable" | "revoke" | "test" } & { id: string | null };
-type OriginalPush = { review: PushReview; input: PushRegistrationInput | null; confirmed: boolean; reviewed: boolean; consent: boolean };
+type OriginalPush = { review: PushReview; input: PushRegistrationInput | null; epoch?: string; confirmed: boolean; reviewed: boolean; consent: boolean };
 export function useProductionPushSettings(env: SettingsEnvironment) {
-  const api = useMemo(() => createWebPushApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]), requests = useSettingsRequests(env, true);
+  const api = useMemo(() => createWebPushApi(env.apiBaseUrl, env.owner.fetcher, { version: 2 }), [env.apiBaseUrl, env.owner.fetcher]), requests = useSettingsRequests(env, true);
+  const chatGeneration = env.owner.getSnapshot().sessionGeneration, homeScreen = pushHomeScreen();
+  const presence = useMemo(() => env.identityKey && env.userId && homeScreen ? webChatPresenceFor(env.owner, env.identityKey, env.userId) : null,
+    [env.owner, env.identityKey, env.userId, chatGeneration, homeScreen]);
+  const [chat, setChat] = useState<NativeChatPresence | null>(null), [chatBusy, setChatBusy] = useState(false);
+  const chatWriting = useRef(false);
+  const currentChatIdentity = () => env.currentIdentity() && env.owner.getSnapshot().sessionGeneration === chatGeneration;
   const [status, setStatus] = useState<WebPushStatus | null>(null), [bindingId, setBindingId] = useState<string | null>(null);
   const [permission, setPermission] = useState(pushPermission), [readState, setReadState] = useState<PushSettingsModel["readState"]>("loading");
   const [review, setReview] = useState<PushReview | null>(null), [original, setOriginal] = useState<OriginalPush | null>(null), [notice, setNotice] = useState("");
@@ -18,18 +26,31 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
   currentStatus.current = status; currentReview.current = review; currentBinding.current = bindingId;
   const retain = (entry: OriginalPush | null) => { pending.current = entry; setOriginal(entry ? { ...entry } : null); };
   const read = async (signal: AbortSignal, current: () => boolean) => {
-    const epoch = await suspendPushBrowser();
     const next = await settingsRead(env, "web-push", true, () => api.status(signal, env.userId!));
     if (!current()) return null;
     const binding = await ownedBrowserBinding(next);
     if (!current()) return null;
-    if (epoch && binding) await activatePushBrowser(epoch, { userId: env.userId!, id: binding.id, version: binding.version });
-    if (!current()) { await suspendPushBrowser(); return null; }
+    if (binding) {
+      const epoch = await checkPushBrowserUser(env.userId!, current);
+      if (!current()) return null;
+      if (epoch) await activatePushBrowser(epoch, { userId: env.userId!, id: binding.id, version: binding.version }, current);
+      if (!current()) return null;
+    }
+    presence?.bind(binding);
+    let preference: NativeChatPresence | null = null;
+    if (binding && presence) { try { preference = await presence.read(); } catch { /* Channel state remains independently readable. */ } }
+    if (!current()) return null;
+    if (binding && preference) {
+      await setPushBrowserChatPreference({ userId: env.userId!, id: binding.id, version: binding.version },
+        preference.chatNotificationsEnabled ? preference.chatPreviewEnabled ? "preview" : "generic" : "off", true, current);
+      if (!current()) return null;
+    }
+    setChat(preference);
     setStatus(next); setBindingId(binding?.id ?? null); setPermission(pushPermission()); setReadState("ready"); return next;
   };
   const failed = (error: unknown, entry?: OriginalPush) => {
     setPermission(pushPermission()); setReview(null);
-    if (settingsAccessError(env, error, true)) { api.resetOnline(); retain(null); setStatus(null); setBindingId(null); setReadState(settingsFailure(error).status === 403 ? "failed" : "session_changed"); setNotice("本人通知設定不可讀取或修改；內容已清除，請重新讀取。"); void suspendPushBrowser().catch(() => {}); return; }
+    if (settingsAccessError(env, error, true)) { api.resetOnline(); retain(null); setStatus(null); setBindingId(null); setChat(null); setReadState(settingsFailure(error).status === 403 ? "failed" : "session_changed"); setNotice("本人通知設定不可讀取或修改；內容已清除，請重新讀取。"); void suspendPushBrowser(currentChatIdentity).catch(() => {}); return; }
     const failure = settingsFailure(error);
     if (entry && failure.confirmed) entry.confirmed = true;
     if (entry && (entry.confirmed || api.hasPendingOnline() || failure.status === 0 || failure.status >= 500)) {
@@ -61,6 +82,7 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
     if (retry ? !entry.reviewed || !entry.consent || entry.confirmed || !api.hasPendingOnline() : !staged.confirmed || pending.current || api.hasPendingOnline()) return;
     const binding = actual.bindings.find(item => item.id === staged.id);
     if (!retry && staged.kind === "enable" && (!actual.available || !actual.publicKey || !pushBrowserSupported() || pushPermission() === "denied")) return;
+    if (!retry && staged.kind === "enable" && (pushNeedsHomeScreen() || homeScreen && !staged.chatNotificationMode)) return;
     if (!retry && staged.kind !== "enable" && (!binding || binding.version !== staged.expectedVersion)) return;
     if (!retry && staged.kind === "test" && (!binding || !actual.workerEnabled || actual.testsRemaining < 1 || actual.nextTestAt && Date.parse(actual.nextTestAt) > Date.now())) return;
     const request = requests.start(true, retry); if (!request) return;
@@ -74,14 +96,25 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
         if (!retry) {
           if (await permissionRequest !== "granted") { retain(null); throw new Error("Browser consent unavailable"); }
           if (!request.current()) return;
-          const browser = await subscribePushBrowser(actual.publicKey!, currentBinding.current !== null);
-          if (!request.current()) { await suspendPushBrowser(); return; }
-          entry.input = { subscription: browser.subscription, label: staged.targetLabel }; retain(entry);
+          const browser = await subscribePushBrowser(actual.publicKey!, currentBinding.current !== null, request.current);
+          if (!request.current()) return;
+          entry.input = { subscription: browser.subscription, label: staged.targetLabel }; entry.epoch = browser.epoch; retain(entry);
         }
         if (!entry.input) return;
         submitted = true; result = await api.register(entry.input, request.signal, env.userId);
+        entry.confirmed = true;
+        if (!request.current()) return;
+        if (entry.epoch) await activatePushBrowser(entry.epoch, { userId: env.userId, id: result.id, version: result.version }, request.current);
+        if (!request.current()) return;
+        if (presence && entry.review.chatNotificationMode) {
+          presence.bind(result);
+          const preference = await presence.setEnabled(true, entry.review.chatNotificationMode === "preview", entry.input.subscription);
+          if (!request.current()) return;
+          await setPushBrowserChatPreference({ userId: env.userId, id: result.id, version: result.version },
+            preference.chatNotificationsEnabled ? preference.chatPreviewEnabled ? "preview" : "generic" : "off", false, request.current, entry.epoch);
+        }
       } else if (staged.kind === "revoke") {
-        if (!retry && staged.id === currentBinding.current) { await unsubscribePushBrowser(); setBindingId(null); }
+        if (!retry && staged.id === currentBinding.current) { await unsubscribePushBrowser(request.current); if (request.current()) setBindingId(null); }
         if (!request.current()) return;
         submitted = true; result = await api.revoke(staged.id!, staged.expectedVersion!, request.signal, env.userId);
       } else { submitted = true; result = await api.test(staged.id!, staged.expectedVersion!, request.signal, env.userId); }
@@ -92,20 +125,51 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
     } catch (error) { if (request.current()) { if (!submitted && !api.hasPendingOnline()) retain(null); failed(error, submitted && pending.current === entry ? entry : undefined); } }
     finally { request.finish(!!pending.current); }
   };
-  const stage = (next: PushReview) => { if (!requests.busy && env.online && readState === "ready" && !pending.current && !!env.canStartWrite()) { setReview(next); setSavedReference(null); setConflict(false); } };
+  const updateChatPreference = (enabled: boolean, previewOnly = false) => {
+    const binding = currentStatus.current?.bindings.find(item => item.id === currentBinding.current && item.status === "active");
+    if (!presence || !binding || chat?.bindingId !== binding.id || !currentChatIdentity() || !env.online || readState !== "ready"
+      || chatWriting.current || requests.busy || pending.current || currentReview.current || conflict || !env.canStartWrite()) return;
+    chatWriting.current = true; setChatBusy(true);
+    void (async () => {
+      const browserBinding = { userId: env.userId!, id: binding.id, version: binding.version };
+      let epoch = await checkPushBrowserUser(env.userId!, currentChatIdentity);
+      if (!epoch || !currentChatIdentity()) return;
+      if (!enabled) epoch = await setPushBrowserChatPreference(browserBinding, previewOnly ? "generic" : "off", true, currentChatIdentity, epoch) ?? epoch;
+      if (!currentChatIdentity()) return;
+      const subscription = await browserPushSubscription();
+      if (!subscription) throw new Error("Browser subscription unavailable");
+      if (!currentChatIdentity()) return;
+      const next = previewOnly ? await presence.setPreviewEnabled(enabled, subscription)
+        : await presence.setEnabled(enabled, enabled ? chat.chatPreviewEnabled ?? false : undefined, subscription);
+      if (currentChatIdentity() && currentBinding.current === binding.id) {
+        await setPushBrowserChatPreference(browserBinding, next.chatNotificationsEnabled ? next.chatPreviewEnabled ? "preview" : "generic" : "off", false, currentChatIdentity, epoch);
+        if (currentChatIdentity()) { setChat(next); setNotice("此主畫面 App 的助手聊天通知設定已保存。"); }
+      }
+    })().catch(async () => {
+      let next: NativeChatPresence | null = null;
+      try { next = await presence.read(); } catch { /* Unknown writes require an explicit reread. */ }
+      if (currentChatIdentity() && currentBinding.current === binding.id) { setChat(next); setNotice("聊天通知設定未能確認，已重新核對；本機保留較嚴格的顯示設定，請查看目前選項後再選擇。"); }
+    }).finally(() => { if (currentChatIdentity()) { chatWriting.current = false; setChatBusy(false); } });
+  };
+  const stage = (next: PushReview) => { if (!requests.busy && !chatWriting.current && env.online && readState === "ready" && !pending.current && !!env.canStartWrite()) { setReview(next); setSavedReference(null); setConflict(false); } };
   const actions: PushSettingsActions = { refresh: () => { void refresh(); },
-    stageEnable(label) { if (label.trim() && label.trim().length <= 80) stage({ kind: "enable", id: null, targetLabel: label.trim(), expectedVersion: null, confirmed: false }); },
+    ...(homeScreen ? { setChatNotificationsEnabled: (enabled: boolean) => updateChatPreference(enabled), setChatPreviewEnabled: (enabled: boolean) => updateChatPreference(enabled, true),
+      setChatNotificationMode(mode: "generic" | "preview") { setReview(value => value?.kind === "enable" ? { ...value, chatNotificationMode: mode, confirmed: false } : value); } } : {}),
+    stageEnable(label) { if (label.trim() && label.trim().length <= 80) stage({ kind: "enable", id: null, targetLabel: label.trim(), expectedVersion: null, confirmed: false, ...(homeScreen ? { chatNotificationMode: null } : {}) }); },
     stageRevoke(id) { const item = status?.bindings.find(binding => binding.id === id); if (item && item.status !== "revoked") stage({ kind: "revoke", id, targetLabel: item.label, expectedVersion: item.version, confirmed: false }); },
     stageTest(id) { const item = status?.bindings.find(binding => binding.id === id); if (item && pushTestAllowed({ available: status!.available, workerEnabled: status!.workerEnabled, testsRemaining: status!.testsRemaining, nextTestAt: status!.nextTestAt }, { ...item, providerLabel: item.provider })) stage({ kind: "test", id, targetLabel: item.label, expectedVersion: item.version, confirmed: false }); },
     confirmReview(value) { setReview(current => current ? { ...current, confirmed: value } : null); }, submit: () => { void submit(); },
     cancel() { if (!requests.busy && !pending.current) setReview(null); }, useLatest() { if (!pending.current) void refresh(); } };
-  useEffect(() => () => { api.resetOnline(); pending.current = null; void suspendPushBrowser().catch(() => {}); }, [api]);
+  useEffect(() => () => { api.resetOnline(); pending.current = null; }, [api]);
+  useEffect(() => { setChat(null); setChatBusy(false); chatWriting.current = false; }, [presence]);
   useEffect(() => { if (!env.online) { setReview(current => current ? { ...current, confirmed: false } : null); if (pending.current) { pending.current.reviewed = false; pending.current.consent = false; retain(pending.current); } } }, [env.online]);
-  useSettingsRefresh(env, actions.refresh, !requests.busy && !original && !review, true);
-  useDomainWriteGuard(!!review, !!original || requests.writing, "account");
+  useSettingsRefresh(env, actions.refresh, !requests.busy && !chatBusy && !original && !review, true);
+  useDomainWriteGuard(!!review, !!original || requests.writing || chatBusy, "account");
   const visible = env.currentIdentity() ? status : null;
-  const model: PushSettingsModel = { online: env.online, readState: env.currentIdentity() ? readState : "session_changed", locked: requests.busy || !!original,
-    conflict, notice, workerEnabled: visible?.workerEnabled ?? false, review, available: visible?.available ?? false, browserSupported: pushBrowserSupported(), permission,
+  const model: PushSettingsModel = { platform: "web", online: env.online, readState: env.currentIdentity() ? readState : "session_changed", locked: requests.busy || chatBusy || !!original,
+    webChatNotifications: homeScreen, needsHomeScreen: pushNeedsHomeScreen(), chatNotificationsEnabled: visible && chat?.bindingId === bindingId ? chat.chatNotificationsEnabled : null,
+    chatPreviewEnabled: visible && chat?.bindingId === bindingId ? chat.chatPreviewEnabled ?? false : null, chatNotificationsBusy: chatBusy,
+    conflict, notice, workerEnabled: visible?.workerEnabled ?? false, review, available: visible?.available ?? false, browserSupported: pushBrowserSupported() && !pushNeedsHomeScreen(), permission,
     currentBindingId: visible ? bindingId : null, bindings: visible?.bindings.map(item => ({ ...item, providerLabel: item.provider })) ?? [],
     deliveries: visible?.deliveries.map(item => ({ ...item, label: visible.bindings.find(binding => binding.id === item.bindingId)?.label ?? "本人訂閱", reasonLabel: item.reason })) ?? [],
     testsRemaining: visible?.testsRemaining ?? 0, nextTestAt: visible?.nextTestAt ?? null };

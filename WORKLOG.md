@@ -5912,3 +5912,43 @@ Web／手機共用對話頁按固定範圍列出所有孩子，沿既有資料�
 ### 2026-11-12　主動助手與手機通知
 
 隔離環境由 Web 管理 API 建立一則主聊天訊息，沿原操作查回同一收據，合成 Android 收件箱只得一項。第一次真模型巡查在呈現參數被拒後耗盡該次預算。補清可讀的家庭變動位置與呈現參數後，第二次沿正式 worker 用兩次生成完成 `no_action`，重啟後讀回同一 run。裝置前景過期、每日巡查與專項工作重疊、普通公告的補提邊界另有針對性檢查。手機實收與跨端回覆單獨驗收。[實際紀錄](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json)
+
+同日原站發布 `p4-notify-d464982f`。兩個複合索引及私人狀態欄位排除均已生效。已核 API／worker 健康、Web 資產雜湊、未登入的管理示範請求回 401。示範對象已配置，發布過程沒有代發通知或變更裝置同意。Android 使用同一提交建立 preview 版本 6。 [發布及實機進度](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
+
+以「家長已約好再問」驗巡查時，發現背景 Agent 無法按 ID 讀回交代。補上讀取後，下一個真 run 讀到了原文，但提交的第一段缺少可用引用，後續草稿亦未通過獨立審核。#561 將精確讀取得到的原文及版本交給審核，正式顯示前再核對。針對性檢查涵蓋原項仍有效，以及審核中內容改動或刪除。Android 版本 6 已用 `apksigner` 核對簽署與前版一致。[本機驗證](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json) · [APK 及交付紀錄](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
+
+修正後用一項新的已到時間交代走同一正式 worker。真 Gemini 讀原項，以該次引用交獨立審核，審核通過後保存一則主聊天訊息及一張待派送收據；重播同一工作不再生成。共四次模型呼叫、三次工具、零 embedding，實際外發為零。已將 `90ecde37` 的 API 及 worker 發布到原站，健康檢查回 200、未登入的示範入口回 401。實機收件及跨端回覆保留待驗。
+
+Android 版本 6 在系統允許通知後，換了登入的同一部手機仍無法登記。原站只讀核對發現舊登記連著已失效的登入。本機沿正式 API 重現 503，原因是一次重新登記在同一筆 Firestore 交易重複建立相同的變更序號。#562 修正後，原測試涵蓋滿五部時替換舊登記、舊登入撤銷及新登入獨立選擇聊天通知。原站以 `38c7fb55` 更新 API／worker，兩者健康，公開健康端點回 200。示範通知尚未發送。[交付紀錄](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
+
+原站隨後核實示範帳號有一部有效手機開啟聊天通知，舊登記已撤銷。Web 管理頁的示範卡和知識交接卡用了相同 React key。以已發布程式的 key 在離線 Edge 重演，五次畫面更新後示範按鈕增至三個；#563 修正後每次均只得一個。只發布 Web `fd338c50`，對外管理頁及 JavaScript 的雜湊與發布包相符。[實測及發布紀錄](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
+
+本人確認一次版本 6 的實機收件、點入回覆及 Web 讀回。唯讀核對同時段兩筆示範工作：均只執行一次、無失敗或延期版本；分別等 26.378 秒、119.387 秒才開始交送。兩筆從開始交送至正式收據記下 FCM 接受均約 1 秒。已追加縮短取件等待、品牌圖示及獨立選用正文預覽的驗收條件。[原站收據](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
+
+香港時間 10:30 發布 `954ee312` 的 API、worker 及 Web。舊版較慢那筆在 09:59:06 入隊，10:00 的排程回報服務暫時不可用，10:01:05 才開始交送。新版在交易成功後直接安排同一項工作，保留原排程補送。已核原站服務健康、管理頁雜湊及示範入口登入要求。Android 雙圖示已通過原生資源編譯，裝置選用預覽後採用該則正式訊息的節錄。兩個圖示的真機顯示及新版派送耗時仍待同一則示範核對。[發布證據](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
+
+同日 11:05（香港）完成版本 8 的 Android preview 建置。版本號 7 已預留，本機 Git 複製因暫存路徑過長而中止，當時 Expo 查無該提交的建置。縮短路徑後只建立一個雲端工作。已下載成品，以 Android build-tools 核對套件、同簽署覆蓋安裝條件、runtime 及兩個圖示的資源指向。[APK 與驗簽紀錄](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
+
+香港時間 11:11 的示範在入隊後 0.973 秒開始交送，再過 1.135 秒收據記下 FCM 接受。本人確認 Android 版本 8 的狀態列小圖示、通知卡頭像和正式訊息預覽均顯示正常。手機到達時刻沒有獨立時間戳。沿用版本 6 已驗的點入回覆及 Web 讀回，完成本包驗收。[原站收據與手機結果](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
+
+## 2026-11-12　iPhone 主畫面試用版
+
+後端 #570、共用 Web #571 已合併，原站 API、worker 及 Web 已發布 `29941f92`。使用既有 VAPID 與通知台帳；正式 Firestore 聊天通知歷史索引已就緒。由公開網址核對了首頁、manifest、圖示、worker 與 JS 的內容指紋及類型，以及服務健康和私有路由的登入要求。本機合成檢查涵蓋裝置同意、預覽、前景抑制、防重、撤權及點入原聊天。發布檢查沒有觸發實際通知。iPhone 的主畫面安裝、鎖屏收件與回覆、停用和媒體均待真機。 [試用步驟](docs/IPHONE_PWA.md) · [驗證紀錄](artifacts/verification/IPHONE_PWA_20261112.json)
+
+## 2026-11-12　每日原站部署接管
+
+從原 VM 三個運行容器核對來源為 `29941f92`，建立了獨立香港發布資源及兩個限 master 的 GitHub 環境。乾淨候選建置及離線恢復檢查已完成；其中一次中斷測試發現收據原因會被覆蓋，修正後接收器 12 項定向檢查通過。手動正式發布及首個每日排程另以實際收據為準。[部署手冊](docs/DEPLOYMENT.md)
+
+## 2026-11-12　PR #560 確認證據綁定修復（待提交）
+
+以 PR head `24cccce7e984013c7f50485c8324decea36a406c` 正常合入 master `5a41f99798328c53ef40720abadb659f86a3ae59`，解開 citation recovery 衝突，保留本人交代／照護記錄的精確 citation、交付前重驗，以及固定求助卡與官方 chunk 的區分。未合併至 master、未發布。
+
+獨立審查重現同輪新候選 A 與另一候選 B 的唯一確認問題被錯配。依 SPEC REQ-5-11-03／REQ-INT-04，交付證據改以 Server 保存的 proposal run、ID、版本精確讀回確認問題；SQL／Firestore 均沿用原權限、政策、來源、工作及候選存續重驗，不以單一問題數量推斷身分。新增匹配、不匹配 ID／run／版本及已撤銷情境；修正 master 三項記憶測試 mock 缺少真實 proposal value 的契約落差，沒有削弱斷言。
+
+必要離線證據：SQL 綁定回歸修前失敗；memory + verified-ops 初次 31/31 通過；其餘六檔初次 110/113（3 項 mock 契約失敗），補齊後 propose-memory-delivery 35/35 通過；強化後 verified-ops 2/2 通過（內含五種混合確認情境）。涵蓋確認 budget、家庭精確記錄、review、文件及重試；沒有呼叫真模型／家庭資料。獨立審查核對 runtime 修復未發現新增問題。未聲稱全站或所有 PR 無 bug。提交身份文件未取得前保留本地候選，遠端 head 未更動。
+
+Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出 134；核資源後以 `NODE_OPTIONS=--max-old-space-size=4096 node_modules/.bin/tsc --project tsconfig.server.json` 有上限重試一次，退出 0。`git diff --cached --check` 通過。八個受影響測試檔的適用終版結果合計 144 項通過，沿用未改部分先前通過結果；不是全庫測試宣稱。
+
+用戶其後特批本批 PR 使用 2NTTY 帳號；官方 GitHub 插件讀回登入身份為 2NTTY。保留未 force、未合併 master、未發布界線，僅準備正常更新既有 PR 分支。
+
+恢復中止的 GitHub create_tree 後，未取得遠端物件 SHA，亦從未呼叫 commit/ref 更新。重新讀回 PR head 仍為 `24cccce7`，以新 master `59618928da8662f919b7e2481f7a9019b7880669` 重建獨立候選；保留新 master 的發布及通知修復，WORKLOG 保留完整最新原文再追加本段。

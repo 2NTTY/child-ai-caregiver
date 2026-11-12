@@ -29,7 +29,7 @@ test('native push uses the formal API, original receipts, device authority and r
     await authority.admitIdentity({ userId, email, emailVerified: true });
     await authority.acknowledge({ userId, operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
   }
-  const sessions = new FirestoreDeviceSessions({ ...options, namespace: 'native_push_sessions' });
+  const sessions = new FirestoreDeviceSessions({ ...options, namespace: 'native_push_sessions', serverClock: () => Date.now() });
   const keys = { parent: { userId: 'parent', sessionHash: 'a'.repeat(64) }, other: { userId: 'other', sessionHash: 'b'.repeat(64) } };
   for (const key of Object.values(keys)) await sessions.issue({ ...key, expiresAtMs: Date.now() + 86400_000, authTimeSeconds: Math.floor(Date.now()/1000) });
   let sends = 0, deliveryOutcome: 'accepted' | 'unknown' = 'accepted', user: keyof typeof keys = 'parent', native = true;
@@ -89,10 +89,31 @@ test('native push uses the formal API, original receipts, device authority and r
   await sessions.revokeThis(keys.parent);
   assert.equal((await store.process(stoppedJob, signal)).state, 'stopped'); assert.equal(sends, 2);
   await assert.rejects(api.open({ v: 1, kind: 'test', bindingId: first.id, bindingVersion: first.version, deliveryId: firstDelivery.id }, signal, user));
+  // After signing back in on the same installation, registration replaces the retired session's token binding.
+  for (const suffix of ['d', 'e', 'f', '0']) {
+    keys.parent = { userId: 'parent', sessionHash: suffix.repeat(64) };
+    await sessions.issue({ ...keys.parent, expiresAtMs: Date.now() + 86400_000, authTimeSeconds: Math.floor(Date.now()/1000) });
+    await api.register({ token: token + suffix, label: 'Additional device ' + suffix }, signal, user);
+  }
+  keys.parent = { userId: 'parent', sessionHash: 'c'.repeat(64) };
+  await sessions.issue({ ...keys.parent, expiresAtMs: Date.now() + 86400_000, authTimeSeconds: Math.floor(Date.now()/1000) });
+  await assert.rejects(api.register({ token: token+'sixth', label: 'Sixth device' }, signal, user), e => (e as any).status === 409);
+  const beforeRenewal = await authority.runTransaction(user, null, b => Promise.resolve(b.changeSeq));
+  const renewed = await api.register({ token: token+'rotation', label: 'My Android' }, signal, user);
+  assert.notEqual(renewed.id, first.id);
+  const afterRenewal = await authority.runTransaction(user, null, b => Promise.resolve(b.changeSeq));
+  assert.equal(BigInt(afterRenewal), BigInt(beforeRenewal) + 1n);
+  const readBack = await api.status(signal, user);
+  assert.equal(readBack.currentBindingId, renewed.id);
+  assert.equal(readBack.bindings.filter(row => row.status === 'active').length, 5);
+  assert.equal(readBack.bindings.find(row => row.id === first.id)?.status, 'revoked');
+  assert.equal((await api.chatPresence(signal, user)).chatNotificationsEnabled, false);
+  assert.equal((await api.updateChatPresence({ childId: null, expectedPresenceVersion: 0, chatNotificationsEnabled: true }, signal, user)).chatNotificationsEnabled, true);
+  await sessions.revokeThis(keys.parent);
   // The same physical token can move only after the previous session loses authority.
   user = 'other'; const replacement = await api.register({ token: token+'rotation', label: 'Other Android' }, signal, user);
   assert.notEqual(replacement.id, first.id);
-  assert.equal((await store.status('parent')).bindings[0].status, 'revoked');
+  assert.equal((await store.status('parent')).bindings.find(row => row.id === renewed.id)?.status, 'revoked');
   const exported = await createFirestoreAccountExport({ ...options, photos: { content: async () => { throw new Error('unused'); } } as any }).page(user, { section: 'native_push_bindings' });
   assert.ok(!JSON.stringify(exported).includes(token)); assert.ok(!JSON.stringify(exported).includes(keys.other.sessionHash));
   await authority.runTransaction(user, null, async b => {

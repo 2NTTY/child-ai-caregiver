@@ -2,15 +2,27 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import type { AdminOwner } from '../../production/AdminOwner';
-import { demoDeliveryLabel, demoReasonLabel, type AdminDemoState } from '../../production/admin-proactive-demo';
+import { demoAwaitingDelivery, demoDeliveryLabel, demoReasonLabel, type AdminDemoState } from '../../production/admin-proactive-demo';
 import { AppButton, SectionHeader } from '../ui';
 import { colors, spacing } from '../../theme';
 
-export function AdminProactiveDemo({ admin, state, online, writeLocked }: {
-  admin: AdminOwner; state: AdminDemoState; online: boolean; writeLocked: boolean;
+export function AdminProactiveDemo({ admin, state, online, writeLocked, visible = true }: {
+  admin: AdminOwner; state: AdminDemoState; online: boolean; writeLocked: boolean; visible?: boolean;
 }) {
   useEffect(() => { if (online && state.status === 'unread') void admin.loadDemo(); }, [admin, online, state.status]);
   const opId = state.pending ?? state.receipt?.opId;
+  const awaitingDelivery = demoAwaitingDelivery(state.receipt);
+  useEffect(() => {
+    if (!online || !visible || !opId || !awaitingDelivery) return;
+    let stop: (() => void) | undefined;
+    const sync = () => {
+      stop?.(); stop = undefined;
+      if (typeof document === 'undefined' || document.visibilityState !== 'hidden') stop = admin.watchDemoReceipt(opId);
+    };
+    sync();
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', sync);
+    return () => { stop?.(); if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', sync); };
+  }, [admin, online, visible, opId, awaitingDelivery]);
   return <View style={styles.card}>
     <SectionHeader title="主動訊息示範" subtitle="向部署預先綁定的示範帳戶及孩子建立訊息，並查看通知交送收據。" />
     <Text style={styles.note}>本頁不能選擇收件帳戶。交送服務的回覆不代表真實裝置已收到或已閱讀；請在示範帳戶及裝置另行核對。</Text>
@@ -35,6 +47,7 @@ export function AdminProactiveDemo({ admin, state, online, writeLocked }: {
       <Text>交送收據 {state.receipt.deliveries.length} 項</Text>
       {!state.receipt.deliveries.length ? <Text>沒有通知交送項目，可能沒有已綁定的通知裝置；請在示範帳戶核對聊天訊息。</Text> : null}
       {state.receipt.deliveries.map(item => <View key={item.id} style={styles.row}>
+        {item.channel ? <Text>渠道：{item.channel === 'web_push' ? '瀏覽器／主畫面 App' : '原生 App'}</Text> : null}
         <Text>{demoDeliveryLabel(item.status)}（{item.status}）</Text>
         <Text selectable style={styles.note}>交送 ID：{item.id}</Text>
         {item.reason ? <Text selectable style={styles.note}>原因：{demoReasonLabel(item.reason)}（{item.reason}）</Text> : null}
