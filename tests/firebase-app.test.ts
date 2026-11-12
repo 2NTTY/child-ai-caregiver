@@ -96,6 +96,35 @@ test("foundation handler is inert and health reports only the process stage with
   assert.throws(() => createFirebaseRequestHandler({ ...f.options, publicOrigin: PUBLIC_ORIGIN + "/" }), /invalid_firebase_app_configuration/);
 });
 
+test("version returns the supplied release revision without auth or database access", async t => {
+  const previous = process.env.SITE_REVISION;
+  t.after(() => { if (previous === undefined) delete process.env.SITE_REVISION; else process.env.SITE_REVISION = previous; });
+  const revision = "0123456789abcdef0123456789abcdef01234567";
+  process.env.SITE_REVISION = revision;
+  const f = fixture();
+  f.failAuth(new Error("Authentication must not be called"));
+  f.failStatus(new Error("Database must not be called"));
+  const response = await f.get("/api/version");
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { revision });
+  privateResponse(response);
+  assert.equal(f.sessionHeaders.length + f.statusUserIds.length, 0);
+});
+
+test("version is unavailable for legacy or malformed release identities while health stays compatible", async t => {
+  const previous = process.env.SITE_REVISION;
+  t.after(() => { if (previous === undefined) delete process.env.SITE_REVISION; else process.env.SITE_REVISION = previous; });
+  for (const revision of [undefined, "", "short", "g".repeat(40), "a".repeat(40) + "\n"]) {
+    if (revision === undefined) delete process.env.SITE_REVISION; else process.env.SITE_REVISION = revision;
+    const f = fixture();
+    const response = await f.get("/api/version");
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { revision: null });
+    privateResponse(response);
+    assert.equal((await f.get("/healthz")).status, 200);
+  }
+});
+
 test("all auth paths delegate the original Web Request and preserve native cookies while enforcing private responses without CORS permission", async () => {
   const f = fixture();
   for (const [path, method] of [["/api/auth/get-session", "GET"], ["/api/auth/session", "POST"], ["/api/auth/sign-out", "POST"]]) {

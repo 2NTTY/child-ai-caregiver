@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { FirestoreDomainData, domainParse, domainReject, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import type { AgentRunAdmission } from './agent-runtime.ts';
+import { assertLocalAgentEnvironment } from './local-agent-config.ts';
 
 const uuid = z.uuid(), userId = z.string().min(1).max(256), millis = z.number().int().nonnegative();
 const leaseSchema = z.object({ runId: uuid, userId, token: uuid, deadlineAtMs: millis, expiresAtMs: millis }).strict();
@@ -54,4 +55,15 @@ export function createFirestoreAgentAdmission(options: FirestoreDomainOptions & 
       };
     },
   };
+}
+
+/** Single-process local development recovery only; never invoke from multi-instance cloud servers. */
+export async function clearLocalFirestoreAgentAdmission(options: FirestoreDomainOptions, env: Record<string, string | undefined>): Promise<void> {
+  assertLocalAgentEnvironment(env);
+  const data = new FirestoreDomainData(options), ref = data.ref('agent_admission', 'agent-admission', 'active');
+  await options.database.runTransaction(async tx => {
+    const row = await tx.get(ref);
+    if (!row.exists) return;
+    tx.set(ref, data.seal('agent-admission', 'active', scope, schema, { leases: [] }));
+  });
 }

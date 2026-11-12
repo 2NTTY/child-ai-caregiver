@@ -9,13 +9,20 @@ RUN npm install --global npm@11.8.0 --no-audit --no-fund \
 
 FROM deps AS web-build
 
+ARG SITE_REVISION
+ENV SITE_REVISION=${SITE_REVISION}
+
 # Firebase Web SDK identifiers are public; never pass Admin credentials as build args.
 ARG EXPO_PUBLIC_AUTH_PROVIDER
+ARG EXPO_PUBLIC_AUTH_PROVIDERS
+ARG EXPO_PUBLIC_ACCOUNT_LEGACY_TRIAL
 ARG EXPO_PUBLIC_FIREBASE_API_KEY
 ARG EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
 ARG EXPO_PUBLIC_FIREBASE_PROJECT_ID
 ARG EXPO_PUBLIC_FIREBASE_APP_ID
 ENV EXPO_PUBLIC_AUTH_PROVIDER=${EXPO_PUBLIC_AUTH_PROVIDER} \
+    EXPO_PUBLIC_AUTH_PROVIDERS=${EXPO_PUBLIC_AUTH_PROVIDERS} \
+    EXPO_PUBLIC_ACCOUNT_LEGACY_TRIAL=${EXPO_PUBLIC_ACCOUNT_LEGACY_TRIAL} \
     EXPO_PUBLIC_FIREBASE_API_KEY=${EXPO_PUBLIC_FIREBASE_API_KEY} \
     EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=${EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN} \
     EXPO_PUBLIC_FIREBASE_PROJECT_ID=${EXPO_PUBLIC_FIREBASE_PROJECT_ID} \
@@ -29,20 +36,27 @@ ENV CI=1 \
     EXPO_NO_TELEMETRY=1 \
     EXPO_PUBLIC_API_BASE_URL=/api
 
-COPY frontend/app.json frontend/tsconfig.json frontend/index.js ./frontend/
+COPY frontend/app.json frontend/app.config.js frontend/tsconfig.json frontend/index.js ./frontend/
 COPY frontend/app ./frontend/app
 COPY frontend/assets ./frontend/assets
 COPY frontend/src ./frontend/src
+COPY frontend/public ./frontend/public
+COPY frontend/plugins ./frontend/plugins
 COPY src/client ./src/client
 COPY src/config ./src/config
 COPY src/shared ./src/shared
 COPY public ./public
 COPY licenses ./licenses
 COPY THIRD_PARTY_NOTICES.md ./THIRD_PARTY_NOTICES.md
-COPY scripts/prepare-web-output.mjs ./scripts/prepare-web-output.mjs
+COPY scripts/prepare-web-output.mjs scripts/verify-web-install-output.mjs scripts/write-site-version.mjs ./scripts/
 RUN npm run build:web
 
 FROM node:24.19.0-bookworm-slim AS server-runtime
+
+ARG SITE_REVISION
+ENV SITE_REVISION=${SITE_REVISION}
+LABEL org.opencontainers.image.revision=${SITE_REVISION}
+RUN node -e 'if (process.env.SITE_REVISION && !/^[0-9a-f]{40}$/i.test(process.env.SITE_REVISION)) throw new Error("invalid_site_revision")'
 
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
@@ -73,6 +87,8 @@ ENTRYPOINT ["node"]
 CMD ["scripts/firebase-recovery.mjs"]
 
 FROM caddy:2.11.4-alpine AS web
+ARG SITE_REVISION
+LABEL org.opencontainers.image.revision=${SITE_REVISION}
 COPY --from=web-build /app/frontend/dist /srv
 ARG CADDY_CONFIG=deploy/p1/Caddyfile.firestore
 COPY ${CADDY_CONFIG} /etc/caddy/Caddyfile

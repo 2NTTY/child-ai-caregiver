@@ -4,6 +4,7 @@ import { access, mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/pr
 import { createServer } from 'node:net';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { localAgentAiEnvironment } from '../server/local-agent-config.ts';
 import { readLocalAgentModel } from '../server/local-agent-model.ts';
 import { LOCAL_OFFICIAL_SEED_IDS } from './local-knowledge-assessments.ts';
 
@@ -111,7 +112,9 @@ const env = { ...baseEnv, NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', 
   WEB_PUSH_ENABLED: 'false', ANDROID_PUSH_ENABLED: 'false', TELEGRAM_ENABLED: 'false',
   YUBAN_FIREBASE_STORAGE_KEY: saved.storageKey, LOCAL_AGENT_STATE_FILE: statePath, LOCAL_WEB_PORT: String(basePort + 1),
   LOCAL_MODEL_PROVIDER: model.provider, LOCAL_MODEL_PROJECT: model.project ?? '', VERTEX_LOCATION: model.location,
-  GEMINI_MODEL: model.model, AI_ENABLED: String(enabled), ...(model.apiKey ? { LOCAL_MODEL_API_KEY: model.apiKey } : {}),
+  GEMINI_MODEL: model.model, AI_ENABLED: String(enabled),
+  ...localAgentAiEnvironment(process.env, configured),
+  ...(model.apiKey ? { LOCAL_MODEL_API_KEY: model.apiKey } : {}),
   ...(model.baseUrl !== undefined ? { LOCAL_MODEL_BASE_URL: model.baseUrl } : {}),
   ...(model.embeddingApiKey !== undefined ? { LOCAL_MODEL_EMBEDDING_API_KEY: model.embeddingApiKey } : {}),
   ...(model.embeddingProvider !== undefined ? { LOCAL_MODEL_EMBEDDING_PROVIDER: model.embeddingProvider } : {}),
@@ -184,7 +187,7 @@ function kill(child) {
   else child.kill('SIGTERM');
 }
 async function stop(code = 0) {
-  if (stopping) return; stopping = true; clearInterval(checkpoint); process.stdin.pause();
+  if (stopping) return; stopping = true; clearInterval(checkpoint); process.stdin.pause(); process.stdin.unref?.();
   for (const child of children.slice(1)) kill(child);
   if (emulatorsReady) try { await save(); } catch (error) { console.error('Checkpoint failed; previous export retained. ' + error.message); code = 1; }
   for (const child of children) kill(child);
@@ -258,7 +261,10 @@ try {
   start('api', [...watch, join(root, 'server', 'local-agent-main.ts')], env);
   console.log('Local Agent: ' + origin + '\nAccount: ' + saved.email + '\nLocal password/data: ' + statePath
     + '\nProvider: ' + model.provider + '; model: ' + model.model + '; AI enabled: ' + enabled
+    + '; daily limits (bootstrap): ' + localModel.modelConfig.dailyUserAttempts + '/' + localModel.modelConfig.dailyGlobalAttempts
+    + '; maxOutputTokens: ' + localModel.modelConfig.maxOutputTokens
     + '\nLocal quotas and usage: ' + origin + '/admin (separate from production; restarting does not reset usage).'
     + '\nNo production data or external notifications. Ctrl+C saves the emulator snapshot.');
   }
 } catch (error) { console.error(error.message); await stop(1); }
+

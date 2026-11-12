@@ -37,6 +37,7 @@
     "firebase:control": "node --env-file-if-exists=.env scripts/firebase-control.mjs",
     "firebase:recovery": "node --env-file-if-exists=.env scripts/firebase-recovery.mjs",
     "mobile:prepare": "node frontend/tooling/normalize-fingerprint-paths.cjs",
+    "deploy:site": "node scripts/site-release/cli.mjs",
     "mobile:release": "node scripts/mobile-release.mjs"
   },
   "dependencies": {

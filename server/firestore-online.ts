@@ -443,10 +443,12 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
           .where('userTag', '==', tags.userTag).where('sortKey', '>', data.sortKey(cursor)).where('sortKey', '<=', data.sortKey(binding.changeSeq))
           .orderBy('sortKey', 'asc').limit(101);
         const rows = await binding.transaction.get(query), changes: OnlineChanges['changes'] = [];
-        let expected = BigInt(cursor) + 1n;
+        let lastSequence = BigInt(cursor);
         for (const row of rows.docs.slice(0, 100)) {
           const sequence = BigInt(row.get('sortKey')).toString(), childId = domainParse(uuid.nullable(), row.get('childId'), 'invalid_document', 500);
-          if (BigInt(sequence) !== expected++) domainReject('change_projection_not_ready', 503);
+          const seqValue = BigInt(sequence);
+          if (seqValue <= lastSequence || seqValue > BigInt(binding.changeSeq)) domainReject('projection_binding', 500);
+          lastSequence = seqValue;
           const scope = scopeFor(binding, childId ?? NIL), id = JSON.stringify([workspaceId, epoch, sequence]);
           matchesTags(row.data(), scope);
           const change = data.open('change-projection', id, scope, firestoreChangeSchema, row);
@@ -455,7 +457,6 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
           changes.push(change);
         }
         const hasMore = rows.docs.length > 100;
-        if (!hasMore && expected - 1n !== BigInt(binding.changeSeq)) domainReject('change_projection_not_ready', 503);
         return { workspaceId, storageEpoch: epoch, accessVersion, changes, hasMore,
           cursor: hasMore ? changes.at(-1)!.changeSeq : binding.changeSeq };
       });
