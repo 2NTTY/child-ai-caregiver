@@ -6,7 +6,8 @@ const demoReasonSchema = z.union([pushDeliverySchema.shape.reason,
   z.enum(['foreground_chat', 'awaiting_presence', 'chat_consent_disabled', 'quiet_hours', 'message_unavailable', 'proactive_disabled', 'task_unavailable'])]);
 export const adminDemoReceiptSchema = z.object({
   opId: z.uuid(), messageId: z.string().min(1), text: z.string(),
-  deliveries: z.array(z.object({ id: pushDeliverySchema.shape.id, status: pushDeliverySchema.shape.status, reason: demoReasonSchema })),
+  deliveries: z.array(z.object({ id: pushDeliverySchema.shape.id, status: pushDeliverySchema.shape.status, reason: demoReasonSchema,
+    channel: z.enum(['web_push', 'native_push']).optional() })),
 });
 export type AdminDemoReceipt = z.infer<typeof adminDemoReceiptSchema>;
 export interface AdminDemoState {

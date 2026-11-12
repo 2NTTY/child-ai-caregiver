@@ -47,6 +47,7 @@ export function AdminProactiveDemo({ admin, state, online, writeLocked, visible 
       <Text>交送收據 {state.receipt.deliveries.length} 項</Text>
       {!state.receipt.deliveries.length ? <Text>沒有通知交送項目，可能沒有已綁定的通知裝置；請在示範帳戶核對聊天訊息。</Text> : null}
       {state.receipt.deliveries.map(item => <View key={item.id} style={styles.row}>
+        {item.channel ? <Text>渠道：{item.channel === 'web_push' ? '瀏覽器／主畫面 App' : '原生 App'}</Text> : null}
         <Text>{demoDeliveryLabel(item.status)}（{item.status}）</Text>
         <Text selectable style={styles.note}>交送 ID：{item.id}</Text>
         {item.reason ? <Text selectable style={styles.note}>原因：{demoReasonLabel(item.reason)}（{item.reason}）</Text> : null}

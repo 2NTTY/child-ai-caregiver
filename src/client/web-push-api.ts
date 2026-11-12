@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { OnlineReceipt } from "../shared/online.ts";
+import { nativeChatPresenceSchema, nativePushReferenceSchema, type NativeChatPresence, type NativePushReference } from "../shared/native-push.ts";
 import { pushBindingSchema, pushDeliverySchema, webPushStatusSchema, type PushBinding, type PushDelivery, type PushRegistrationInput, type WebPushStatus } from "../shared/web-push.ts";
+import type { WebPushSubscription } from "../shared/web-push.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
 export class WebPushApiError extends Error {
@@ -17,6 +19,9 @@ export class WebPushApiError extends Error {
 }
 
 export interface WebPushApi {
+  chatPresence(bindingId: string, signal: AbortSignal, userId: string): Promise<NativeChatPresence>;
+  updateChatPresence(input: WebChatPresenceUpdate, signal: AbortSignal, userId: string): Promise<NativeChatPresence>;
+  open(reference: NativePushReference, signal: AbortSignal, userId: string, subscription?: WebPushSubscription): Promise<WebPushChatTarget>;
   status(signal: AbortSignal, userId: string): Promise<WebPushStatus>;
   register(input: PushRegistrationInput, signal: AbortSignal, userId: string): Promise<PushBinding>;
   revoke(id: string, expectedVersion: number, signal: AbortSignal, userId: string): Promise<PushBinding>;
@@ -25,10 +30,13 @@ export interface WebPushApi {
   resetOnline(): void;
   hasPendingOnline(): boolean;
 }
+export type WebPushChatTarget = { kind: "chat"; childId: string; messageId: string };
+export type WebChatPresenceUpdate = { bindingId: string; expectedBindingVersion: number; expectedPresenceVersion: number;
+  childId: string | null; chatNotificationsEnabled?: boolean; chatPreviewEnabled?: boolean; subscription?: WebPushSubscription };
 
 const bindingResultSchema = z.object({ binding: pushBindingSchema }).strict();
 const deliveryResultSchema = z.object({ delivery: pushDeliverySchema }).strict();
-const statusErrorSchema = z.object({ error: z.object({ code: z.enum(["session_changed", "account_precondition_required"]) }) });
+const statusErrorSchema = z.object({ error: z.object({ code: z.enum(["session_changed", "account_precondition_required", "installation_proof_required"]) }) });
 type BindingTarget = { kind: "binding"; bindingId?: string };
 type DeliveryTarget = { kind: "delivery"; bindingId: string };
 type Target = BindingTarget | DeliveryTarget;
@@ -46,7 +54,7 @@ function checkedResult(value: unknown, target: Target, confirmed: boolean): Push
   return parsed.data.delivery;
 }
 
-export function createWebPushApi(baseUrl: string, fetcher: typeof fetch = fetch): WebPushApi {
+export function createWebPushApi(baseUrl: string, fetcher: typeof fetch = fetch, options?: { version: 2 }): WebPushApi {
   const base = baseUrl.replace(/\/$/u, "");
   const apiUrl = base.endsWith("/api") ? base : base + "/api";
   const online = createOnlineTransport(apiUrl, fetcher);
@@ -112,12 +120,42 @@ export function createWebPushApi(baseUrl: string, fetcher: typeof fetch = fetch)
   }
   const bindingPath = (id: string) => "/web-push/subscriptions/" + encodeURIComponent(id);
 
+  async function checkedResponse(response: Response): Promise<unknown> {
+    if (response.ok) return response.json();
+    let code: string | null = null;
+    try { const parsed = statusErrorSchema.safeParse(await response.json()); if (parsed.success) code = parsed.data.error.code; } catch { /* Response bodies remain private. */ }
+    throw new WebPushApiError(response.status, code);
+  }
+
+  async function presenceResult(response: Response, bindingId: string) {
+    const parsed = nativeChatPresenceSchema.safeParse(await checkedResponse(response));
+    if (!parsed.success || parsed.data.bindingId !== bindingId) throw new WebPushApiError();
+    return parsed.data;
+  }
+
   return {
+    chatPresence: (bindingId, signal, userId) => call(signal, userId, async innerSignal => presenceResult(await fetcher(apiUrl + "/web-push/chat-presence?bindingId=" + encodeURIComponent(bindingId), {
+      method: "GET", credentials: "include", cache: "no-store", signal: innerSignal,
+      headers: { Accept: "application/json", "x-expected-user-id": userId },
+    }), bindingId)),
+    updateChatPresence: (input, signal, userId) => call(signal, userId, async innerSignal => presenceResult(await fetcher(apiUrl + "/web-push/chat-presence", {
+      method: "POST", credentials: "include", cache: "no-store", signal: innerSignal,
+      headers: { Accept: "application/json", "Content-Type": "application/json", "x-expected-user-id": userId }, body: JSON.stringify(input),
+    }), input.bindingId)),
+    open: (reference, signal, userId, subscription) => call(signal, userId, async innerSignal => {
+      nativePushReferenceSchema.parse(reference);
+      const response = await fetcher(apiUrl + "/web-push/open" + (subscription ? "" : "?reference=" + encodeURIComponent(JSON.stringify(reference))), {
+        method: subscription ? "POST" : "GET", credentials: "include", cache: "no-store", signal: innerSignal,
+        headers: { Accept: "application/json", "x-expected-user-id": userId, ...(subscription ? { "Content-Type": "application/json" } : {}) },
+        ...(subscription ? { body: JSON.stringify({ reference, subscription }) } : {}),
+      });
+      return z.object({ kind: z.literal("chat"), childId: z.uuid(), messageId: z.uuid() }).strict().parse(await checkedResponse(response));
+    }),
     resetOnline,
     hasPendingOnline: () => online.hasPending(),
     async status(signal, userId) {
       return await call(signal, userId, async innerSignal => {
-        const response = await fetcher(apiUrl + "/web-push", {
+        const response = await fetcher(apiUrl + "/web-push" + (options?.version === 2 ? "?v=2" : ""), {
           method: "GET", credentials: "include", cache: "no-store", signal: innerSignal,
           headers: { Accept: "application/json", "x-expected-user-id": userId },
         });

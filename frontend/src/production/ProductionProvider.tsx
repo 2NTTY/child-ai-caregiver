@@ -1,5 +1,7 @@
 import { useNativePushNavigation } from "./useNativePushNavigation";
 import { useNativeChatPresence } from "./useNativeChatPresence";
+import { useWebChatPresence } from "./useWebChatPresence";
+import { suspendPushBrowser } from "../../../src/client/push-browser.ts";
 import { useProductionActivity } from "./useProductionActivity";
 import { createProductionTransport } from "./production-transport";
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
@@ -47,6 +49,8 @@ function useProductionValue(owner: ProductionOwner) {
   current.current = { scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey, pathname };
   const previousPath = useRef(pathname);
   useNativeChatPresence(owner, snapshot.account.gate === "ready" ? snapshot.identityKey : null, snapshot.records.user?.id ?? null,
+    pathname === "/chat" && !snapshot.sharedChild.target && snapshot.scopeKey ? snapshot.chat.selectedChildId : null, snapshot.records.online);
+  useWebChatPresence(owner, snapshot.account.gate === "ready" ? snapshot.identityKey : null, snapshot.records.user?.id ?? null,
     pathname === "/chat" && !snapshot.sharedChild.target && snapshot.scopeKey ? snapshot.chat.selectedChildId : null, snapshot.records.online);
   useEffect(() => {
     const pending=owner.voiceOwner.getSnapshot();
@@ -105,8 +109,13 @@ function useProductionValue(owner: ProductionOwner) {
     const currentDraft = owner.draftOwner.getSnapshot();
     if (!discardConfirmed && (owner.chatController.hasUnsavedInput() || currentDraft.attachments.length)) { setLogoutConfirmation(true); return; }
     setLogoutConfirmation(false);
+    if (Platform.OS === "web") {
+      const currentSession = () => owner.getSnapshot().identityKey === snapshot.identityKey && owner.getSnapshot().sessionGeneration === snapshot.sessionGeneration;
+      await suspendPushBrowser(currentSession).catch(() => {});
+      if (!currentSession()) return;
+    }
     await owner.controller.signOut(discardConfirmed);
-  }, [owner, snapshot.identityKey]);
+  }, [owner, snapshot.identityKey, snapshot.sessionGeneration]);
   const currentScope = () => !!snapshot.scopeKey && current.current.scopeKey === snapshot.scopeKey && owner.getSnapshot().scopeKey === snapshot.scopeKey;
   const openAgentDraft = (focusText = false) => {
     if (!currentScope() || snapshot.sharedChild.target) return;

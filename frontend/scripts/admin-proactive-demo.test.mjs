@@ -8,6 +8,14 @@ import { pushDeliverySchema } from '../../src/shared/web-push.ts';
 const deliveryId = '11111111-1111-4111-8111-111111111111';
 const receipt = (opId, status = 'accepted', reason = null) => ({ opId, messageId: 'demo-message', text: '合成示範訊息',
   deliveries: [{ id: deliveryId, status, reason }] });
+test('demo receipts retain an optional known Web or native channel while preserving old receipts', () => {
+  const old = receipt(deliveryId);
+  assert.equal(adminDemoReceiptSchema.parse(old).deliveries[0].channel, undefined);
+  for (const channel of ['web_push', 'native_push']) {
+    assert.equal(adminDemoReceiptSchema.parse({ ...old, deliveries: [{ ...old.deliveries[0], channel }] }).deliveries[0].channel, channel);
+  }
+  assert.equal(adminDemoReceiptSchema.safeParse({ ...old, deliveries: [{ ...old.deliveries[0], channel: 'arbitrary' }] }).success, false);
+});
 test('demo receipts accept only known chat deferral and unavailability reasons', () => {
   for (const reason of ['foreground_chat', 'chat_consent_disabled', 'quiet_hours', 'message_unavailable', 'proactive_disabled', 'task_unavailable']) {
     assert.equal(adminDemoReceiptSchema.safeParse(receipt(deliveryId, 'stopped', reason)).success, true);
