@@ -6,6 +6,7 @@ import { createLocalAgentBuckets } from './local-agent-storage.ts';
 import { createLocalAgentWorker } from './local-agent-worker.ts';
 import { createLocalAgentDelivery } from './local-agent-delivery.ts';
 import { openFirebaseRuntime } from './firebase-runtime.ts';
+import { clearLocalFirestoreAgentAdmission } from './firestore-agent-admission.ts';
 import { createFirebaseNodeHandler } from './firebase-http.ts';
 import { readLocalAgentModel } from './local-agent-model.ts';
 import { FirestoreAuthorityError } from './firestore-authority.ts';
@@ -40,6 +41,8 @@ catch (error) {
 }
 const invitation = await runtime.database.runTransaction(tx => runtime.authority.readAdminInvitation(tx, state.email), { readOnly: true });
 if (!invitation) await runtime.authority.issueInvitation({ email: state.email, ...state.invitation });
+// Singleton local runtime owns this emulator: drop any leases orphaned by a prior abrupt exit or --watch restart.
+await clearLocalFirestoreAgentAdmission({ database: runtime.database, cipher: runtime.cipher, projectId: config.projectId, namespace: config.namespace }, process.env);
 const git = (args: string[]) => { try { return execFileSync('git', args, { encoding: 'utf8', windowsHide: true }).trim(); } catch { return 'unknown'; } };
 const manifest = JSON.parse(await readFile(new URL('../prompts/manifest.json', import.meta.url), 'utf8'));
 const status = { mode: 'local-development', project: config.projectId, branch: git(['branch', '--show-current']), sha: git(['rev-parse', '--short', 'HEAD']),
