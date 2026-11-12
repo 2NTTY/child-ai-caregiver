@@ -1,0 +1,54 @@
+{
+  "originalSourceCommit": "2e9c44f7e5cb46a092063d6ff420bd50271a1ecc",
+  "originalAlignedArchiveSha256": "5c478b9e780b946e3c4cacff68785f9fe0a4c227b1cf3eb2368d8fb270b93de8",
+  "frozenDeploymentCandidateArchiveSha256": "5ac1170ca6cdc3f01110ab458b38f2d41a5aa22e543771eec7d4a6031ae7ae41",
+  "sourceFiles": 601,
+  "unchangedSourceFiles": 597,
+  "exactDeploymentFiles": 575,
+  "changedFiles": [
+    {
+      "path": "source/verification/extension-baseline.json",
+      "changedJsonFields": [
+        "source"
+      ],
+      "originalSha256": "68b9a3770f5a2d912fa884642382a7aa4feec2ef7e797ebac948cfdf5f497f75",
+      "publicSafeSha256": "1b70e71b49ea1f623263be8ba5b0d9bdfe53f9c3f384208a413032b67e8a0fba",
+      "reason": "Private local input location omitted; historical non-runtime receipt only. All other bytes retained."
+    },
+    {
+      "path": "source/verification/preparation-receipt.json",
+      "changedJsonFields": [
+        "preparedDirectory",
+        "inputCandidates.care.path",
+        "inputCandidates.harbour.path",
+        "inputCandidates.journal.path"
+      ],
+      "originalSha256": "64e037027b69171f74682826133ac40af4c6d91faa60633df974debd46bbb027",
+      "publicSafeSha256": "1512e67b48613436209873c57cfce136b6c3e7b9e1340ac601912f71ca70aa26",
+      "reason": "Private local input location omitted; historical non-runtime receipt only. All other bytes retained."
+    },
+    {
+      "path": "source/verification/adapter-manifest.json",
+      "changedJsonFields": [
+        "sourceArtifacts.care.path",
+        "sourceArtifacts.harbour.path",
+        "sourceArtifacts.journal.path"
+      ],
+      "originalSha256": "481b0c379db28a2cefd3d7c6436abbf530c064779665bbdc940cc123b8fb6d4a",
+      "publicSafeSha256": "df1fb600c24d07a4a92c9fd38878037b267954b0436499754a7aec374bcde05e",
+      "reason": "Private local input location omitted; historical non-runtime receipt only. All other bytes retained."
+    },
+    {
+      "path": "source/verification/final-candidates.json",
+      "changedJsonFields": [
+        "inputs.care.path",
+        "inputs.harbour.path",
+        "inputs.journal.path"
+      ],
+      "originalSha256": "7383e3faf3c48782a3e7cb9f2c74b22d1d4ff9c3a7474a536e3779c2797c6392",
+      "publicSafeSha256": "00fcfdaf6db390882d829798c6d464d6f0f05b0fc663edeca56a88ceb5737496",
+      "reason": "Private local input location omitted; historical non-runtime receipt only. All other bytes retained."
+    }
+  ],
+  "originalPrivateRawEvidenceIncluded": false
+}

@@ -1,0 +1,33 @@
+{
+  "sourceAlignment": "PASS: 543 original Sites Git blobs verified; 601-file composition; 575 deployment files byte-exact to sealed Care candidate",
+  "publicSafeTransport": "PASS: 597 unchanged files; 4 exact declared non-runtime JSON transformations; 11 private local paths removed",
+  "sourceIntegrityNegativeCases": [
+    "missing-deployment rejected",
+    "extra-path rejected",
+    "changed-deployment rejected",
+    "changed-source-metadata rejected"
+  ],
+  "carriedBoundedBrowserEvidence": [
+    "Standalone Care normal entry, Tasks filter, first row detail, Close, return focus and basic completed/pending/home navigation",
+    "Care -> explicit Original -> optionless reload remains Original -> explicit Care",
+    "First-row keyboard Enter -> detail -> keyboard Close -> original-row focus -> one Tab advances to second row"
+  ],
+  "newBrowserRun": false,
+  "sourceAndBrowserEvidenceScope": "Prior bounded browser deployment inputs equal this transport. No current all-variant or full-site acceptance.",
+  "notVerified": [
+    "native composition source re-pinning",
+    "formal clean-route equivalence",
+    "whole-site/all-variant full acceptance",
+    "complete mobile/a11y or race coverage"
+  ],
+  "historicalMetadata": "Source README/COMPARISON and historical validators retain earlier snapshot40 / 74 or 270-file scope. They are provenance, not current whole-tree acceptance entry points. Native Care source metadata intentionally remains historical 520d4c88.",
+  "secretScan": "No private-key or bounded credential-prefix indicators after classification. Original substring sk- hits were task-header source-reference labels, not secrets. This is a bounded scan, not a complete security audit.",
+  "data": "Synthetic fixtures only; no real family data or model/backend use in this work.",
+  "remoteActionsExcluded": [
+    "PR",
+    "merge",
+    "force update",
+    "Site publish",
+    "GCP"
+  ]
+}

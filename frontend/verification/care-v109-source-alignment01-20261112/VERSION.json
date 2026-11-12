@@ -1,0 +1,12 @@
+{
+  "artifact": "Care v109 source alignment public-safe backup 01",
+  "kind": "Synthetic preview source transport, not a deployment",
+  "sitesBaselineCommit": "2e9c44f7e5cb46a092063d6ff420bd50271a1ecc",
+  "sitesBaselineTree": "ff0517352c4a3933ef079993ab7de23cdfb4a6cb",
+  "careMainSha256": "6631c82a994b522c5d56dc842d23ce9264f0acbb65f0cf03e9f92e8a169d833f",
+  "summaryAppSha256": "37ef2c1a95797b3822e68fcbfa23d2999b26a062aabe5dd485e9555f983b8329",
+  "sourceCopyNotExactOriginal": true,
+  "sourceTransformation": "4 historical metadata files, 11 private input-path values omitted; all 575 deployment files and other 22 historical files byte-exact",
+  "sourceCount": 601,
+  "deployed": false
+}
