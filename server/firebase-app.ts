@@ -147,6 +147,8 @@ async function readJson(request: Request, limit = MAX_BODY_BYTES): Promise<unkno
 /** Explicitly assembled Firebase routes; unconnected domains remain unavailable. */
 export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOptions): FirebaseRequestHandler {
   const { authority, auth, publicOrigin, mailConfigured, online, documents, photos, library } = options;
+  const configuredRevision = process.env.SITE_REVISION;
+  const revision = configuredRevision && /^[0-9a-f]{40}$/i.test(configuredRevision) ? configuredRevision : null;
   let origin: URL;
   try { origin = new URL(publicOrigin); } catch { throw new Error("invalid_firebase_app_configuration"); }
   if (origin.origin !== publicOrigin || !["https:", "http:"].includes(origin.protocol) || origin.username || origin.password
@@ -158,20 +160,55 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
   return async request => {
     try {
       const path = new URL(request.url).pathname;
+      if (path === "/api/version") {
+        if (request.method !== "GET") throw new RequestError("method_not_allowed", 405);
+        return json({ revision }, revision === null ? 503 : 200);
+      }
       if (path === '/api/telegram/webhook') {
         const channel = options.telegram;
         if (request.method !== 'POST' || !channel?.config || !telegramWebhookAuthorized(request.headers.get('x-telegram-bot-api-secret-token'), channel.config)) return errorResponse('forbidden', 403);
         return uncached(await handleTelegramWebhook(request, channel.store, channel.gateway, channel.config.botId, options.contact));
       }
-      if (path === '/api/native-push/chat-presence' && options.nativePush) {
+      if ((path === '/api/web-push/chat-presence' || path === '/api/web-push/open') && options.push) {
+        if (!['GET','POST'].includes(request.method)) throw new RequestError('method_not_allowed',405);
+        const post = request.method === 'POST';
+        if (post && !requestOriginAllowed(request.headers,publicOrigin)) throw new RequestError('origin_rejected',403);
+        const session = await auth.webSessionProof?.(request.headers);
+        if (!session) throw new RequestError('unauthorized',401);
+        const expected = request.headers.get('x-expected-user-id');
+        if (expected !== session.userId) throw new RequestError(expected ? 'session_changed' : 'account_precondition_required',expected ? 409 : 428);
+        const query = new URL(request.url).searchParams;
+        let result;
+        if (path.endsWith('/open')) {
+          let reference:unknown, proof:unknown;
+          if (post) {
+            const body = await readJson(request);
+            if (!body || typeof body !== 'object' || !('reference' in body) || !('subscription' in body)) throw new RequestError('invalid_input',400);
+            reference=body.reference; proof=body.subscription;
+          } else {
+            const raw = query.get('reference');
+            if (!raw || raw.length>1024) throw new RequestError('invalid_input',400);
+            try { reference=JSON.parse(raw); } catch { throw new RequestError('invalid_input',400); }
+          }
+          result=await options.push.authorizeChatOpen(session.userId,session,reference,proof);
+        } else {
+          result=post ? await options.push.setChatPresence(session.userId,session,await readJson(request))
+            : await options.push.readChatPresence(session.userId,session,query.get('bindingId') ?? '');
+        }
+        const current=await auth.webSessionProof?.(request.headers);
+        if(current?.userId!==session.userId || current.sessionHash!==session.sessionHash) throw new RequestError('session_changed',409);
+        return json(result);
+      }
+      if ((path === '/api/native-push/chat-presence' || path === '/api/native-push/v2/chat-presence') && options.nativePush) {
         if (request.method !== 'GET' && request.method !== 'POST') throw new RequestError('method_not_allowed', 405);
         if (request.method === 'POST' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
         const session = await auth.nativeSessionProof?.(request.headers);
         if (!session) throw new RequestError('unauthorized', 401);
         const expected = request.headers.get('x-expected-user-id');
         if (expected !== session.userId) throw new RequestError(expected ? 'session_changed' : 'account_precondition_required', expected ? 409 : 428);
-        const result = request.method === 'GET' ? await options.nativePush.readChatPresence(session.userId, session)
-          : await options.nativePush.setChatPresence(session.userId, session, await readJson(request));
+        const withPreview = path === '/api/native-push/v2/chat-presence';
+        const result = request.method === 'GET' ? await options.nativePush.readChatPresence(session.userId, session, withPreview)
+          : await options.nativePush.setChatPresence(session.userId, session, await readJson(request), withPreview);
         const current = await auth.nativeSessionProof?.(request.headers);
         if (current?.userId !== session.userId || current.sessionHash !== session.sessionHash) throw new RequestError('session_changed', 409);
         return json(result);
@@ -197,7 +234,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (!userId) throw new RequestError('unauthorized', 401);
         const expected = request.headers.get('x-expected-user-id');
         if (!expected || expected !== userId) throw new RequestError(expected ? 'session_changed' : 'account_precondition_required', expected ? 409 : 428);
-        const result = path.startsWith('/api/native-push') ? await options.nativePush!.status(userId, await auth.nativeSessionProof?.(request.headers) ?? null, path.endsWith('/v2') ? 2 : 1) : path === '/api/web-push' ? await options.push!.status(userId) : await options.telegram!.store.status(userId);
+        const result = path.startsWith('/api/native-push') ? await options.nativePush!.status(userId, await auth.nativeSessionProof?.(request.headers) ?? null, path.endsWith('/v2') ? 2 : 1) : path === '/api/web-push' ? await options.push!.status(userId, new URL(request.url).searchParams.get('v') === '2') : await options.telegram!.store.status(userId);
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError('identity_changed', 409);
         return json(result);
       }

@@ -166,16 +166,15 @@ function memoryFactClauseReferencedByParagraph(factClause: string, clauses: stri
 
 /**
  * Check whether an answer paragraph genuinely restates a confirmed memory fact.
- * Keeps literal matches fast, tolerates harmless child-name / HK wording paraphrases,
+ * Applies the same clause checks to literal and child-name / HK wording paraphrases,
  * and rejects opposite-polarity clauses so unsupported denials cannot pass as grounded.
  */
 export function memoryFactReferencedByParagraph(factContent: string, paragraphText: string): boolean {
   const literal = normalizedMemoryFactText(factContent);
   const literalParagraph = normalizedMemoryFactText(paragraphText);
   if (!literal || !literalParagraph) return false;
-  if (literalParagraph.includes(literal)) return true;
 
-  const clauses = paragraphText.normalize("NFKC").split(/[。！？!?;；，,：:\n]+/u).map(part => part.trim()).filter(Boolean);
+  const clauses = paragraphText.normalize("NFKC").split(/[。！？!?;；，,\n]+/u).map(part => part.trim()).filter(Boolean);
   if (memoryFactClauseReferencedByParagraph(factContent, clauses)) return true;
 
   const subFacts = factContent.normalize("NFKC").split(/[。！？!?;；，,\n]+/u).map(part => part.trim()).filter(Boolean);

@@ -67,6 +67,155 @@ test("a daily assessment can stay quiet and persist one future observation with 
   assert.equal(calls, 1);
 });
 
+test("daily records capability reads exact household locators without exposing writes", async () => {
+  const noteId = "66666666-6666-4666-8666-666666666666", recordId = "77777777-7777-4777-8777-777777777777";
+  const at = "2026-11-11T17:00:00.000Z";
+  const note = { id: noteId, childId, version: 1, title: "Synthetic due observation",
+    text: "Synthetic parent asked to check the missing water bottle after returning home.", sourceMessageId: reference,
+    createdAt: at, updatedAt: at, provenance: "user_statement" as const };
+  const record = { id: recordId, childId, version: 1, authorUserId: userId, createdAt: at, confirmedBy: userId,
+    confirmedAt: at, reason: "Synthetic parent statement", text: "Synthetic parent returned home.", source: "Synthetic parent",
+    confirmationBasis: "preauthorized_user_statement" as const,
+    details: { kind: "note" as const, quantity: null,
+      eventTime: { rawText: at, at, timeZone: "Asia/Hong_Kong", precision: "exact" as const } } };
+  const exactReads: string[] = [], providerErrors: string[] = [];
+  const writeNames = ["save_ordinary_record", "revise_ordinary_record", "save_private_instruction", "revise_private_instruction",
+    "create_ordinary_reminder", "change_ordinary_reminder", "save_work", "request_confirmation", "contact_caregiver"];
+  let calls = 0;
+  const f = fixture(async request => {
+    try {
+      const step = calls++;
+      for (const name of writeNames) assert.equal(Object.hasOwn(request.toolsDict, name), false, `Daily run exposed ${name}`);
+      if (step === 0) {
+        assert.equal(Object.hasOwn(request.toolsDict, "read_private_instructions"), false);
+        assert.equal(Object.hasOwn(request.toolsDict, "read_care_records"), false);
+        return call("load_capabilities", { capabilities: ["records"] }, "load-daily-records");
+      }
+      if (step === 1) {
+        assert.ok(Object.hasOwn(request.toolsDict, "read_private_instructions"), "The loaded daily records capability must expose the canonical private-note reader");
+        assert.ok(Object.hasOwn(request.toolsDict, "read_care_records"), "The loaded daily records capability must expose the canonical care-record reader");
+      }
+      const responses = request.contents.flatMap(content => content.parts ?? []).flatMap(part => part.functionResponse ? [part.functionResponse] : []);
+      if (step === 1) return call("read_private_instructions", { id: noteId, query: "", afterId: null }, "read-exact-note");
+      const noteResponse = responses.find(response => response.name === "read_private_instructions")?.response;
+      assert.equal(noteResponse?.status, "succeeded");
+      assert.deepEqual((noteResponse?.data as { items?: unknown } | undefined)?.items, [note], "The model must receive the original exact note, including its source");
+      if (step === 2) return call("read_care_records", { id: recordId, query: "" }, "read-exact-record");
+      const recordResponse = responses.find(response => response.name === "read_care_records")?.response;
+      assert.equal(recordResponse?.status, "succeeded");
+      assert.deepEqual((recordResponse?.data as { records?: unknown } | undefined)?.records, [record], "The model must receive the original exact care record");
+      assert.equal(step, 3, "The scripted daily assessment must terminate after the two exact reads");
+      return call("present_answer", { kind: "no_action", paragraphs: [] }, "daily-locators-read");
+    } catch (error) { providerErrors.push((error as Error).message); throw error; }
+  });
+  f.options.actions = {
+    noteById: async (owner: string, child: string, id: string) => {
+      assert.deepEqual([owner, child, id], [userId, childId, noteId]); exactReads.push("note"); return note;
+    },
+    recordById: async (owner: string, child: string, id: string) => {
+      assert.deepEqual([owner, child, id], [userId, childId, recordId]); exactReads.push("record"); return record;
+    },
+    notes: async () => { assert.fail("An exact private-note locator must not fall back to a search page"); },
+    records: async () => { assert.fail("An exact care-record locator must not fall back to a search page"); },
+    execute: async () => { assert.fail("A read-only daily assessment must never execute an action"); },
+  } as unknown as NonNullable<typeof f.options.actions>;
+  const result = await f.service().background({ userId, childId, reference, context: { eventType: "proactive_daily",
+    householdChanged: true, householdChangesComplete: true,
+    householdChanges: [{ revision: 1, domain: "private_note", id: noteId }, { revision: 2, domain: "care_record", id: recordId }] },
+    authorize: async () => true });
+  assert.deepEqual(providerErrors, [], "The standard daily capability loader must expose both original resource readers");
+  assert.equal(result?.status, "completed", JSON.stringify(result));
+  assert.deepEqual(exactReads, ["note", "record"]);
+  assert.deepEqual(result.tools.map(({ name, status }) => ({ name, status })), [
+    { name: "load_capabilities", status: "succeeded" }, { name: "read_private_instructions", status: "succeeded" },
+    { name: "read_care_records", status: "succeeded" }, { name: "present_answer", status: "succeeded" },
+  ]);
+  assert.equal(calls, 4);
+});
+
+for (const sourceState of ["unchanged", "changed", "deleted"] as const) test(`private continuation exact-note citations reach independent review (${sourceState} source)`, async () => {
+  const noteId = "88888888-8888-4888-8888-888888888888";
+  const at = "2026-11-11T17:00:00.000Z";
+  const note = { id: noteId, childId, version: 7, title: "Synthetic parent observation",
+    text: "合成家長交代：回家後請問水樽找到了沒有。", sourceMessageId: reference,
+    createdAt: at, updatedAt: at, provenance: "user_statement" as const };
+  let currentNote: typeof note | null = note;
+  const draftText = `你曾交代：「${note.text}」`;
+  let generationCalls = 0, reviews = 0, reads = 0;
+  let citationId: string | undefined;
+  const providerErrors: string[] = [];
+  const f = fixture(async request => {
+    try {
+      const text = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? "").join("\n");
+      if (text.includes("chat-delivery-review")) {
+        reviews++;
+        assert.equal(reviews, 1, "The original supported draft needs one independent review");
+        const body = JSON.parse(text.slice(text.indexOf("{"))) as { draftHash: string; visibility: string;
+          paragraphs: { text: string; citationIds: string[] }[];
+          sources: { citationId: string; version: string; classification: string; excerpt: string; excerptComplete: boolean }[] };
+        assert.equal(body.visibility, "private");
+        assert.deepEqual(body.paragraphs.map(({ text, citationIds }) => ({ text, citationIds })), [{ text: draftText, citationIds: [citationId] }]);
+        const original = body.sources.find(source => source.citationId === citationId);
+        assert.ok(original, "The independent reviewer must receive the exact-note original, not only the generator's restatement");
+        assert.equal(original.version, String(note.version));
+        assert.equal(original.classification, "private");
+        assert.ok(original.excerpt.includes(note.text), "Reviewer source evidence must contain the original private-note text");
+        assert.equal(original.excerptComplete, true);
+        // Change the authoritative item after review read it, before a pass can be committed.
+        if (sourceState === "changed") currentNote = { ...note, version: note.version + 1,
+          text: "合成家長已改口：水樽已找到，不用再問。", updatedAt: "2026-11-11T17:01:00.000Z" };
+        if (sourceState === "deleted") currentNote = null;
+        return { content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: body.draftHash,
+          decision: "pass", issues: [] }) }] }, finishReason: FinishReason.STOP };
+      }
+      for (const name of ["save_private_instruction", "revise_private_instruction", "save_work", "request_confirmation", "contact_caregiver"])
+        assert.equal(Object.hasOwn(request.toolsDict, name), false, `Private continuation exposed ${name}`);
+      const step = generationCalls++;
+      if (step === 0) return call("load_capabilities", { capabilities: ["records"] }, "load-note-evidence");
+      if (step === 1) return call("read_private_instructions", { id: noteId }, "read-note-evidence");
+      assert.equal(step, 2, "The continuation must present the exact read without extra generation or fabricated sources");
+      const response = request.contents.flatMap(content => content.parts ?? [])
+        .find(part => part.functionResponse?.name === "read_private_instructions")?.functionResponse?.response;
+      assert.equal(response?.status, "succeeded");
+      const data = response?.data as { items?: unknown; citationId?: string } | undefined;
+      assert.deepEqual(data?.items, [note]);
+      citationId = data?.citationId;
+      assert.equal(typeof citationId, "string", "Exact private-note reads must return data.citationId");
+      assert.ok(citationId!.length > 0);
+      return call("present_answer", { kind: "private_reference", paragraphs: [{ text: draftText, citationIds: [citationId] }] }, "present-note-evidence");
+    } catch (error) { providerErrors.push((error as Error).message); throw error; }
+  }, 6);
+  f.options.actions = {
+    noteById: async (owner: string, child: string, id: string) => {
+      assert.deepEqual([owner, child, id], [userId, childId, noteId]); reads++; return currentNote;
+    },
+    notes: async () => { assert.fail("An exact note citation must not substitute search results"); },
+    execute: async () => { assert.fail("Private source verification must never execute a write"); },
+  } as unknown as NonNullable<typeof f.options.actions>;
+  const input = { userId, childId, reference, context: { eventType: "work_continuation",
+    householdChanges: [{ revision: 1, domain: "private_note", id: noteId }] }, authorize: async () => true };
+  const result = await f.service().background(input);
+  assert.deepEqual(providerErrors, [], "Private-note evidence must survive the real capability and independent-review path");
+  assert.ok(result);
+  assert.equal(generationCalls, 3);
+  assert.equal(reviews, 1, "A private-reference label must never bypass independent review");
+  assert.ok(reads >= 2, "Final delivery must reread the authoritative note instead of trusting run-local evidence");
+  if (sourceState === "unchanged") {
+    assert.equal(result.status, "completed", JSON.stringify(result));
+    assert.ok(result.text.includes(draftText));
+    assert.ok(result.deliveryReview);
+    assert.equal(result.deliveryReview?.decision, "pass");
+    assert.ok(result.deliveryReview.sourceVersions.some(source => source.citationId === citationId && source.version === String(note.version)));
+  } else {
+    assert.notEqual(result.status, "completed", "A changed or deleted original cannot receive formal delivery");
+    assert.notEqual(result.deliveryReview?.decision, "pass");
+    assert.ok(!result.text.includes(draftText), "The stale private-note draft must not escape through an unfinished result");
+  }
+  assert.deepEqual(await f.service().background(input), result);
+  assert.equal(generationCalls, 3, "Replaying the original run must not regenerate a stale-source answer");
+  assert.equal(reviews, 1);
+});
+
 test("a reviewed daily repair withdraws the original observation and replays only the repaired result", async () => {
   const nextCheck = { at: new Date(Date.now() + 86_400_000).toISOString(), reason: "Synthetic observation proposed by the original draft" };
   const chunk: KnowledgeEvidence = { chunkId: '44444444-4444-4444-8444-444444444444', classification: 'official_guidance',

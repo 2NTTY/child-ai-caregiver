@@ -501,7 +501,7 @@ migration 011 啟用 `memory` 類無正文變更及收據刪除；私人候選�
 <a id="p2-web-push-http"></a>
 ## P2 本人 Web Push 渠道
 
-S13-W05 [共享契約](../src/shared/web-push.ts) 只管理本人訂閱及明確一般測試；不授予聯絡其他照顧者的權限。全部讀寫要求登入及相符的 x-expected-user-id；POST 只透過 [S07 收據](#online-http) command 白名單，直接 POST 回 428。私人 preferences 變更只向本人可見。
+S13-W05 [共享契約](../src/shared/web-push.ts) 管理本人的瀏覽器訂閱。讀寫要求登入及相符的 x-expected-user-id。訂閱、撤銷及一般測試透過 [S07 收據](#online-http) 提交。私人 preferences 變更只向本人可見。
 
 | 路徑 | 輸入／回應 |
 |---|---|
@@ -509,6 +509,11 @@ S13-W05 [共享契約](../src/shared/web-push.ts) 只管理本人訂閱及明確
 | POST /api/web-push/subscriptions | PushRegistrationInput：subscription（endpoint、keys、expirationTime）及 label；回 { binding }；相同本人端點及 key 冪等，不接管他人綁定 |
 | POST /api/web-push/subscriptions/:id/revoke | expectedVersion；回 { binding }，清除 hash／密文並停止尚未開始投遞 |
 | POST /api/web-push/subscriptions/:id/test | expectedVersion、confirmImmediate:true；回 { delivery }，同交易保存 queued 與 job，不在收據交易外發 |
+| GET /api/web-push?v=2 | 本人狀態，包括 Apple Web Push。舊版維持原有 provider 集合 |
+| GET／POST /api/web-push/chat-presence | 以 Web 裝置會話及 bindingId 讀取或更新這次安裝的預覽、通知及當前聊天。寫入核對綁定與 presence 版本，設定變更另核瀏覽器持有的訂閱 |
+| GET／POST /api/web-push/open | 核對通知定位、當前身份及原訊息權限後，回傳孩子及訊息 ID。登入自然到期後，可再次登入並以同一訂閱接續。已撤銷的來源會話不能接續 |
+
+聊天投遞與正式訊息在同一交易登記。Web Push v2 的加密 payload 攜帶通用提示或已同意的短預覽。私人預覽不寫入通知歷史。點擊只執行重新授權的讀取。
 
 配額、provider、加密配置及限制見[操作說明](P2_WEB_PUSH.md)。版本／綁定／額度／worker 不符為 409，不自動更新版本；他人／不存在資源為 404，schema 無效 400。S13-W07 才將核准照護任務交渠道，不能把 test 入口當成 Agent 任意外發工具。accepted 不等於送達、已讀或完成；unknown 不重發，已在途請求不能保證撤回。
 
@@ -1074,6 +1079,7 @@ ADK 事件只保存本次音訊身份 metadata；模型 adapter 在每次已授�
 |---|---|
 | `GET / POST /api/children/:childId/proactive-settings` | 讀取或保存本人對該孩子的授權與 IANA 時區。首次預設關閉。保存帶 `opId`、`expectedVersion`、`enabled` 及 `timeZone`。 |
 | `GET / POST /api/native-push/chat-presence` | 僅目前 Android 裝置會話可操作自己的聊天推送偏好及前景狀態。前景狀態綁定孩子對話且會到期。Web 同時在線不會抑制手機推送。 |
+| `GET / POST /api/native-push/v2/chat-presence` | 同一裝置、版本及前景狀態；增設 `chatPreviewEnabled`。新版在開啟聊天通知時可一併開啟預覽。舊設定沿用通用提示，可隨時按裝置更改。 |
 | `GET /api/children/:childId/chat/messages/:messageId` | 通知開啟時，用目前身份查原訊息。主動訊息與普通回答沿同一孩子的主聊天讀回。 |
 | `POST /api/children/:childId/chat/messages/:messageId/seen` | 客戶端確認該主動訊息已在前景可見。重播同一回報保持原查看紀錄。 |
 | `GET / POST /api/admin/proactive-demo` | 查詢示範是否已配置；管理員近期重新驗證後可用 `{opId}` 向部署綁定對象示範，同一操作返回原訊息。用 `GET /api/admin/proactive-demo/:opId` 查訊息及各裝置的實際投遞結果。 |
@@ -1084,7 +1090,7 @@ ADK 事件只保存本次音訊身份 metadata；模型 adapter 在每次已授�
 
 Android 使用原生 FCM token，與 Web Push 訂閱分開。Server 設定掌管 project／application ID；端點或模型不能指定另一發送專案。`ANDROID_PUSH_ENABLED` 預設關閉；固定 app 為 `org.yuyoufang.app`。
 
-通知正文由 Server 固定，沒有孩子、私人聊天、任務正文或任意 URL。資料僅帶 `v`、`kind`、`bindingId`、`bindingVersion` 及 `deliveryId`；點擊仍須按當前登入身份向 Server 核對原投遞與資源，不能依 payload 改孩子、確認或完成事項。取得系統通知權限／token 不代表已授予照護聯絡權限。
+渠道測試及一般照護投遞使用固定文字。啟用聊天預覽的裝置可在通知卡閱讀正式訊息開首，派送前核對原訊息、當前授權及該機偏好。預覽直接取自已保存文字，摺疊空白，最多 80 個字素並設位元組上限。裝置關閉預覽時顯示通用提示。點擊資料只帶 `v`、`kind`、`bindingId`、`bindingVersion` 及 `deliveryId`，須用目前裝置會話核對原投遞與資源。私訊預覽只隨該機通知傳送，帳戶級投遞歷史不另存副本。鎖定畫面的可見內容依 Android 裝置設定。
 
 OAuth 取得憑據與訊息 POST 分開；每次有授權的投遞只送一次 POST，發送前重查資格。只有 HTTP 200 與正確專案的 message name 才記渠道接受；連線中斷／成功回應不完整為 unknown，不重發。只有 FCM 明確 `UNREGISTERED` 才使 token 失效，普通 400／404 不直接當 token 過期。接受不等於裝置顯示、家長收到或照護完成。
 

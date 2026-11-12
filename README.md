@@ -4,7 +4,7 @@ An AI parenting companion for adult caregivers of children aged **0–10 in Hong
 
 **[Web service](https://ex-machina.eu.org)** · **[Current status](STATUS.md)** · **[Local development](docs/AGENT_LOCAL.md)** · **[Product specification](SPEC.md)**
 
-The hosted service is invitation-based. Check the [dated deployment observation](STATUS.md#deployment) for the last observed runtime, availability and VM stop setting; this repository is not automatically deployed when a PR merges. Use synthetic data for development and acceptance.
+The hosted service is invitation-based. For the running version, VM expiry, daily master release, or rollback, start with the [website deployment runbook](docs/DEPLOYMENT.md). From a clean checkout run `npm run deploy:site -- status`. Use synthetic data for development and acceptance.
 
 ## Product overview
 

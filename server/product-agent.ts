@@ -261,6 +261,7 @@ export function createProductAgent(options: {
           tools = createProductAgentTools({ ...options,
             contact: privateContinuation || input.context.eventType === "concern_followup" ? undefined : options.contact,
             actions: privateContinuation ? undefined : options.actions,
+            actionReaders: privateContinuation ? options.actions : undefined,
             includeDocuments: privateContinuation, background: true, run, authorize, visibility: privateContinuation ? "private" : "family",
             reviewedGrowthPresentation: input.context.eventType === "growth_attention" });
           // Trusted event purpose selects a read-only scope; user wording never selects capabilities.

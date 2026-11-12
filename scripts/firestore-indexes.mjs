@@ -1,5 +1,4 @@
 import { readFile } from 'node:fs/promises';
-import { GoogleAuth } from 'google-auth-library';
 
 // Additive operator entry: leaves every unmanaged index, TTL and other database setting intact.
 // Inspect first; applying index definitions is a separately authorized cloud mutation.
@@ -29,7 +28,7 @@ const metadataFields = new Set([
   'mixed_rooms:userTag',
 ].map(field => 'yuban_authority_' + field));
 try {
-  if (!['--check-manifest', '--inspect', '--inspect-fields', '--approved-apply', '--approved-fields'].includes(mode)) throw Error('explicit_mode_and_credentials_required');
+  if (!['--check-manifest', '--release-check', '--inspect', '--inspect-fields', '--approved-apply', '--approved-fields'].includes(mode)) throw Error('explicit_mode_and_credentials_required');
   const desired = JSON.parse(await readFile(new URL('../deploy/firebase/firestore.indexes.json', import.meta.url), 'utf8'));
   for (const entry of desired.fieldOverrides) {
     if (!/^yuban_authority(?:_[a-z_]+)?$/u.test(entry.collectionGroup)
@@ -42,6 +41,11 @@ try {
   }
   if (mode === '--check-manifest') {
     console.info(JSON.stringify({ mode, indexes: desired.indexes.length, fieldOverrides: desired.fieldOverrides.length }));
+  } else if (mode === '--release-check') {
+    const { releaseCheck } = await import('./firestore-release-check.mjs');
+    const report = await releaseCheck(desired, { shape, canonical });
+    console.info(JSON.stringify(report));
+    if (report.state !== 'ready') throw Error('firestore_indexes_not_ready');
   } else await reconcile(desired);
 } catch (error) {
   console.error(JSON.stringify({ state: 'stopped', code: error?.code ?? error?.response?.status ?? null,
@@ -50,6 +54,7 @@ try {
 
 async function reconcile(desired) {
   if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) throw Error('explicit_mode_and_credentials_required');
+  const { GoogleAuth } = await import('google-auth-library');
   const client = await new GoogleAuth({ keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
     scopes: ['https://www.googleapis.com/auth/cloud-platform'] }).getClient();
   const current = (await client.request({ url: base + '/collectionGroups/-/indexes', retry: false })).data;

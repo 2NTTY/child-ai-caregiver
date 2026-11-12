@@ -46,7 +46,15 @@
       [
         "expo-notifications",
         {
+          "icon": "./assets/brand/notification-small.png",
+          "color": "#272343",
           "defaultChannel": "yuyoufang-reminders"
+        }
+      ],
+      [
+        "./plugins/with-android-notification-large-icon.cjs",
+        {
+          "largeIcon": "./assets/brand/app-icon-ios.png"
         }
       ],
       [

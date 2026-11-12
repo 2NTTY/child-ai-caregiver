@@ -1,6 +1,27 @@
 import type { PushBinding, PushBrowserBinding, WebPushStatus, WebPushSubscription } from "../shared/web-push.ts";
+import { nativePushReferenceSchema, type NativePushReference } from "../shared/native-push.ts";
 
 const CHANNEL = "yuban-push-v1";
+let workerUpdate: Promise<void> | null = null;
+export function pushHomeScreen(): boolean {
+  return typeof window !== "undefined" && (window.matchMedia?.("(display-mode: standalone)").matches === true
+    || (navigator as Navigator & { standalone?: boolean }).standalone === true);
+}
+export function pushNeedsHomeScreen(): boolean {
+  return typeof navigator !== "undefined" && (/iPad|iPhone|iPod/u.test(navigator.userAgent)
+    || navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) && !pushHomeScreen();
+}
+export function parseWebPushOpen(url: string): NativePushReference | null {
+  try {
+    const value = new URL(url), keys = ["pushBinding", "pushVersion", "pushDelivery"];
+    if (value.pathname !== "/" || keys.some(key => value.searchParams.getAll(key).length !== 1)) return null;
+    const version = value.searchParams.get("pushVersion");
+    if (!version || !/^[1-9]\d*$/u.test(version)) return null;
+    const parsed = nativePushReferenceSchema.safeParse({ v: 1, kind: "care", bindingId: value.searchParams.get("pushBinding"),
+      bindingVersion: Number(version), deliveryId: value.searchParams.get("pushDelivery") });
+    return parsed.success ? parsed.data : null;
+  } catch { return null; }
+}
 export function pushBrowserSupported(): boolean {
   return typeof window !== "undefined" && window.isSecureContext && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 }
@@ -13,7 +34,7 @@ async function registration(create = false): Promise<ServiceWorkerRegistration |
   const current = create ? await navigator.serviceWorker.register("/push-sw.js", { scope: "/", updateViaCache: "none" })
     : await navigator.serviceWorker.getRegistration("/");
   if (!current) return null;
-  if (current.active) return current;
+  if (current.active && !current.installing && !current.waiting) return current;
   const worker = current.installing ?? current.waiting;
   if (!worker) throw failure();
   await new Promise<void>((resolve, reject) => {
@@ -33,12 +54,31 @@ async function message(reg: ServiceWorkerRegistration, body: Record<string, unkn
     reg.active!.postMessage({ channel: CHANNEL, ...body }, [channel.port2]);
   });
 }
-export async function suspendPushBrowser(): Promise<string | null> {
+export async function suspendPushBrowser(current: () => boolean = () => true): Promise<string | null> {
   const reg = await registration();
-  if (!reg) return null;
+  if (!reg || !current()) return null;
   const result = await message(reg, { type: "suspend" });
   if (!result.ok || !result.epoch) throw failure();
   return result.epoch;
+}
+export async function checkPushBrowserUser(userId: string, current: () => boolean = () => true): Promise<string | null> {
+  let reg = await registration();
+  if (!reg || !current()) return null;
+  // Upgrade an existing installation once per page without touching consent or its subscription.
+  workerUpdate ??= registration(true).then(() => undefined).catch(error => { workerUpdate = null; throw error; });
+  await workerUpdate;
+  reg = await registration();
+  if (!reg || !current()) return null;
+  const result = await message(reg, { type: "check-user", userId });
+  if (!result.ok) throw failure();
+  return current() ? result.epoch ?? null : null;
+}
+export async function browserPushSubscription(): Promise<WebPushSubscription | null> {
+  const reg = await registration(), subscription = await reg?.pushManager.getSubscription();
+  if (!subscription) return null;
+  const json = subscription.toJSON();
+  if (!json.endpoint || !json.keys?.auth || !json.keys.p256dh) throw failure();
+  return { endpoint: json.endpoint, expirationTime: json.expirationTime ?? null, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth } };
 }
 async function hash(value: string) {
   return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))))
@@ -53,36 +93,51 @@ export async function ownedBrowserBinding(status: WebPushStatus): Promise<PushBi
   return status.bindings.find(binding => binding.status === "active" && binding.endpointHash === endpointHash
     && binding.vapidPublicKey === status.publicKey && (!binding.expiresAt || Date.parse(binding.expiresAt) > Date.now())) ?? null;
 }
-export async function activatePushBrowser(epoch: string, binding: PushBrowserBinding): Promise<void> {
+export async function activatePushBrowser(epoch: string, binding: PushBrowserBinding, current: () => boolean = () => true): Promise<void> {
   const reg = await registration();
+  if (!current()) return;
   if (!reg || !(await message(reg, { type: "activate", epoch, binding })).ok) throw failure();
+}
+export type PushChatMode = "off" | "generic" | "preview";
+export async function setPushBrowserChatPreference(binding: PushBrowserBinding, mode: PushChatMode, restrictOnly = false,
+  current: () => boolean = () => true, epoch?: string): Promise<string | null> {
+  const reg = await registration();
+  if (!current()) return null;
+  if (!reg) throw failure();
+  const result = await message(reg, { type: "chat-preference", binding, mode, restrictOnly, ...(epoch ? { epoch } : {}) });
+  if (!result.ok) throw failure();
+  return result.epoch ?? null;
 }
 /** Call immediately from a user gesture, before any asynchronous work. */
 export function requestPushPermission(): Promise<NotificationPermission> {
   if (!pushBrowserSupported()) return Promise.reject(failure());
   return Notification.permission === "default" ? Notification.requestPermission() : Promise.resolve(Notification.permission);
 }
-export async function subscribePushBrowser(publicKey: string, preserveExisting: boolean): Promise<{ subscription: WebPushSubscription; epoch: string }> {
+export async function subscribePushBrowser(publicKey: string, preserveExisting: boolean, current: () => boolean = () => true): Promise<{ subscription: WebPushSubscription; epoch: string }> {
   if (pushPermission() !== "granted") throw failure();
   const reg = await registration(true);
-  if (!reg) throw failure();
+  if (!reg || !current()) throw failure();
   const state = await message(reg, { type: "suspend" });
-  if (!state.ok || !state.epoch) throw failure();
+  if (!state.ok || !state.epoch || !current()) throw failure();
   let subscription = await reg.pushManager.getSubscription();
+  if (!current()) throw failure();
   if (subscription && !preserveExisting) {
     if (!await subscription.unsubscribe()) throw failure();
     subscription = null;
   }
   const key = Uint8Array.from(atob(publicKey.replace(/-/g, "+").replace(/_/g, "/")), value => value.charCodeAt(0));
+  if (!current()) throw failure();
   subscription ??= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
   const json = subscription.toJSON();
   if (!json.endpoint || !json.keys?.auth || !json.keys.p256dh) throw failure();
   return { epoch: state.epoch, subscription: { endpoint: json.endpoint, expirationTime: json.expirationTime ?? null,
     keys: { p256dh: json.keys.p256dh, auth: json.keys.auth } } };
 }
-export async function unsubscribePushBrowser(): Promise<void> {
-  await suspendPushBrowser();
+export async function unsubscribePushBrowser(current: () => boolean = () => true): Promise<void> {
+  await suspendPushBrowser(current);
   const reg = await registration();
+  if (!current()) return;
   const subscription = await reg?.pushManager.getSubscription();
+  if (!current()) return;
   if (subscription && !await subscription.unsubscribe()) throw failure();
 }

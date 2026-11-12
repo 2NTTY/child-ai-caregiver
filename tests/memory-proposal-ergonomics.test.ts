@@ -649,3 +649,19 @@ test("core memory proposal tools are exposed directly and missing keys guide ful
     b3.close();
   }
 });
+
+test("literal memory matches obey the same clause polarity check as paraphrases", () => {
+  assert.equal(memoryFactReferencedByParagraph("BB 對花生過敏", "並不是 BB 對花生過敏。"), false);
+  assert.equal(memoryFactReferencedByParagraph("BB 對花生過敏", "不是 BB 對花生過敏，而是媽媽。"), false);
+  assert.equal(memoryFactReferencedByParagraph("BB 對花生過敏", "BB 對花生過敏，媽媽沒有過敏。"), true);
+  assert.equal(memoryFactReferencedByParagraph("BB 對花生並不過敏", "BB 對花生並不過敏。"), true);
+});
+
+test("memory reference matching preserves labels and time colons without bypassing polarity", () => {
+  for (const fact of ["BB 午睡時間：下午兩點", "BB 喜歡的顏色：藍色", "BB 午睡時間 14:00"]) {
+    assert.equal(memoryFactReferencedByParagraph(fact, fact), true, fact);
+    assert.equal(memoryFactReferencedByParagraph(fact, `並不是${fact}。`), false, fact);
+  }
+  assert.equal(memoryFactReferencedByParagraph("BB 對花生過敏", "已確認記憶：BB 對花生過敏。"), true);
+  assert.equal(memoryFactReferencedByParagraph("BB 對花生過敏", "並不是：BB 對花生過敏。"), false);
+});

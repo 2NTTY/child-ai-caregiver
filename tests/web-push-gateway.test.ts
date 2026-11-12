@@ -59,10 +59,15 @@ test("web push gateway public boundaries with mocked DNS and HTTPS", async conte
   await context.test("accepts only canonical public HTTPS provider endpoints", () => {
     assert.equal(pushProvider(subscription.endpoint), "fcm");
     assert.equal(pushProvider("https://updates.push.services.mozilla.com/wpush/v2/synthetic-token"), "mozilla");
+    assert.equal(pushProvider("https://web.push.apple.com/synthetic-token"), "apple");
+    assert.equal(pushProvider("https://region.web.push.apple.com/synthetic-token"), "apple");
     for (const endpoint of ["http://fcm.googleapis.com/token", "https://localhost/token", "https://127.0.0.1/token",
       "https://fcm.googleapis.com.evil.test/token", "https://fcm.googleapis.com:443/token", "https://user@fcm.googleapis.com/token",
       "https://fcm.googleapis.com/token#fragment", "https://FCM.googleapis.com/token", "https://fcm.googleapis.com/",
-      subscription.endpoint + "\n", "https://fcm.googleapis.com\\token"]) assert.throws(() => pushProvider(endpoint), endpoint);
+      subscription.endpoint + "\n", "https://fcm.googleapis.com\\token", "https://push.apple.com/token",
+      "https://evilpush.apple.com/token", "https://web.push.apple.com.evil.test/token",
+      "https://web.push.apple.com./token", "https://web.push.apple.com:443/token"])
+      assert.throws(() => pushProvider(endpoint), endpoint);
   });
 
   await context.test("requires canonical subscription keys, a valid P256 point and unexpired bounds", () => {
@@ -109,6 +114,39 @@ test("web push gateway public boundaries with mocked DNS and HTTPS", async conte
   const gateway = createWebPushGateway(config);
   const send = (authorize = async () => true, input = subscription, signal = new AbortController().signal) =>
     gateway.send(input, payload, signal, authorize);
+  await context.test("Apple chat encrypts only the refreshed bounded preview and omits private receipt content", async () => {
+    const chat = { ...payload, v: 2, kind: "chat" } as const;
+    const input = { ...subscription, endpoint: "https://web.push.apple.com/synthetic-token" };
+    let preview = "STALE", reads = 0;
+    const result = await gateway.send(input, chat, new AbortController().signal, async () => {
+      preview = "  PRIVATE\n refreshed\u0000 " + "家".repeat(100); return true;
+    }, () => { reads++; return preview; });
+    assert.equal(result.status, "accepted"); assert.equal(reads, 1);
+    const ecdh = createECDH('prime256v1'); ecdh.setPrivateKey(Buffer.alloc(32, 2));
+    const sent = JSON.parse(createRequire(import.meta.url)('http_ece').decrypt(requests.at(-1)!.body,
+      { version: 'aes128gcm', privateKey: ecdh, authSecret: input.keys.auth }).toString());
+    assert.equal(sent.v, 2); assert.equal(sent.kind, "chat");
+    assert.equal(sent.content.contentVersion, "web-push-chat-preview-v1");
+    assert.match(sent.content.body, /^PRIVATE refreshed 家+…$/u);
+    assert.ok(Array.from(new Intl.Segmenter("zh-HK", { granularity: "grapheme" }).segment(sent.content.body)).length <= 81);
+    assert.equal(JSON.stringify(result).includes("PRIVATE"), false);
+    assert.equal(result.message, undefined);
+    assert.equal(requests.at(-1)!.url.hostname, "web.push.apple.com");
+    const count = requests.length;
+    assert.equal((await gateway.send(input, chat, new AbortController().signal, async () => false,
+      () => { throw Error("must not read revoked preview"); })).reason, "revoked");
+    assert.equal(requests.length, count);
+    assert.equal((await gateway.send(input, { ...chat, kind: "care" } as any, new AbortController().signal,
+      async () => true)).reason, "request_invalid");
+    const genericResult = await gateway.send(input, chat, new AbortController().signal, async () => true, () => " \n\u0000 ");
+    const generic = JSON.parse(createRequire(import.meta.url)('http_ece').decrypt(requests.at(-1)!.body,
+      { version: 'aes128gcm', privateKey: ecdh, authSecret: input.keys.auth }).toString());
+    assert.equal(generic.content.contentVersion, "web-push-chat-v1");
+    assert.equal(generic.content.body, genericResult.message?.body);
+    await gateway.send(subscription, payload, new AbortController().signal, async () => true,
+      () => { throw Error("v1 must never read a chat preview"); });
+    assert.equal(requests.at(-1)!.url.hostname, "fcm.googleapis.com");
+  });
   await context.test("disabled, invalid, interrupted and revoked sends stop before an HTTPS request", async () => {
     const count = requests.length, lookups = dnsCalls.length;
     assert.deepEqual(await createWebPushGateway(null).send(subscription, payload, new AbortController().signal, async () => true),

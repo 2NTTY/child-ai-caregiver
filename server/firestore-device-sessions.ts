@@ -164,6 +164,14 @@ export class FirestoreDeviceSessions implements DeviceSessionsPort {
     if (!control.exists || !session.exists) throw new DeviceSessionError(401, "session_invalid");
     this.#active(this.#control(control, key), this.#session(session, key), this.#now());
   }
+  /** A newly authenticated installation can follow an older notification after natural expiry only. */
+  async canResumeIn(transaction: Transaction, input: DeviceSessionKey): Promise<boolean> {
+    const key = this.#key(input), paths = this.#paths(key);
+    const [control, session] = await transaction.getAll(paths.control, paths.session);
+    if (!control.exists || !session.exists) return false;
+    const old = this.#session(session, key);
+    return !old.revoked && old.generation === this.#control(control, key).generation;
+  }
   async assertActive(input: DeviceSessionKey): Promise<void> {
     const key = this.#key(input), paths = this.#paths(key), now = this.#now();
     await this.#transaction(() => this.#database.runTransaction(async transaction => {

@@ -68,7 +68,7 @@ test("iOS v2 preserves a lost reply's original receipt while Android keeps stric
   await assert.rejects(strictV1.status(signal, "parent"), NativePushApiError);
 });
 
-function nativeAdapter(os: "ios" | "android") {
+function nativeAdapter(os: "ios" | "android", initialData: unknown = data) {
   let permission: any = { granted: false, canAskAgain: true, ...(os === "ios" ? { ios: { status: 0 } } : {}) };
   let token: any = { type: os, data: os === "ios" ? "AB".repeat(32) : "synthetic-fcm-token-for-android" };
   let handler: any, tokenListener: any, responseListener: any, removed = 0, tokenReads = 0, prompts = 0, cleared = 0;
@@ -83,7 +83,7 @@ function nativeAdapter(os: "ios" | "android") {
     async getDevicePushTokenAsync() { tokenReads++; calls.push("token"); return token; },
     addPushTokenListener(value: any) { tokenListener = value; return { remove() { removed++; } }; },
     addNotificationResponseReceivedListener(value: any) { responseListener = value; return { remove() { removed++; } }; },
-    getLastNotificationResponse() { return { actionIdentifier: "default", notification: { request: { content: { data } } } }; },
+    getLastNotificationResponse() { return { actionIdentifier: "default", notification: { request: { content: { data: initialData } } } }; },
     clearLastNotificationResponse() { cleared++; },
   };
   const source = readFileSync(new URL("../frontend/src/platform/native-push.native.ts", import.meta.url), "utf8");
@@ -145,5 +145,26 @@ test("native permission, token rotation and fixed notification callbacks follow 
       await assert.rejects(api.requestNativePushToken(), /native_push_token_invalid/);
       assert.equal(device.counts().prompts, 1);
     }
+  }
+});
+
+test("Expo 57 JSON body mapping preserves preview cold and foreground taps alongside legacy generic data", async () => {
+  const source = readFileSync(new URL("../node_modules/expo-notifications/src/utils/mapNotificationResponse.ts", import.meta.url), "utf8");
+  const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+  const module = { exports: {} as any };
+  new Function("module", "exports", code)(module, module.exports);
+  const wire = { title: "育有方有新的提示", message: "Synthetic preview", channelId: "yuyoufang-reminders", tag: delivery.id, body: JSON.stringify(data) };
+  const content = module.exports.mapNotificationContent({ title: wire.title, body: wire.message, dataString: wire.body });
+  assert.deepEqual(content.data, data);
+  assert.equal(push.parseNativePushData(wire), null, "Presentation fields must stay outside the strict reference");
+  for (const mappedData of [content.data, data]) {
+    const device = nativeAdapter("android", mappedData), opened: push.NativePushReference[] = [];
+    const stop = device.api.listenNativePush({ tokenChanged() {}, opened: (value: push.NativePushReference) => opened.push(value) });
+    await Promise.resolve();
+    assert.deepEqual(opened, [reference], "Cold response retains the existing authorized open contract");
+    assert.equal((await device.handler.handleNotification({ request: { content: { data: mappedData } } })).shouldShowBanner, true);
+    device.respond({ actionIdentifier: "default", notification: { request: { content: { data: mappedData } } } });
+    assert.equal(opened.length, 1, "Cold and live responses for one delivery do not open twice");
+    stop();
   }
 });

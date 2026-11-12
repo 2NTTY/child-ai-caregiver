@@ -372,5 +372,7 @@ export function createAgentActionsStore(pool: Pool, cipher: StorageCipher, sched
   return api;
 }
 export type AgentActionsStore = ReturnType<typeof createAgentActionsStore> & {
+  recordById?(userId: string, childId: string, id: string): Promise<import("../src/shared/care.ts").CareRecord | null>;
+  noteById?(userId: string, childId: string, id: string): Promise<AgentPrivateNote | null>;
   notesByKeys?(userId: string, childId: string, keys: string[]): Promise<{ items: AgentPrivateNote[]; missingKeys: string[]; legacyUnkeyedNotSearched: true }>;
 };

@@ -56,7 +56,10 @@ import { createSharedInputService } from './shared-input-service.ts';
 import { createFirestoreGrowthStore } from "./firestore-growth.ts";
 import { createFirestoreConcernStore } from "./firestore-concerns.ts";
 import { FirestoreDomainData } from './firestore-domain-data.ts';
-import { readFirestoreBackgroundClaim } from './firestore-background-work.ts';
+import { createFirestoreBackgroundDispatcher, readFirestoreBackgroundClaim } from './firestore-background-work.ts';
+import { createFirebaseBackgroundDelivery } from './firebase-task-delivery.ts';
+import { readFirebaseWorkerConfig } from './firebase-worker-config.ts';
+import { combineChatNotificationChannels } from './firestore-chat-notification-queue.ts';
 import { createFirestoreWebPush } from './firestore-web-push.ts';
 import { createWebPushGateway, readWebPushConfig } from './web-push-gateway.ts';
 import { createFirestoreTelegram } from './firestore-telegram.ts';
@@ -96,6 +99,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
   if (avatarConfig.writesEnabled && !AVATAR_LIFECYCLE_RELEASE_READY) throw new Error('Avatar lifecycle release gate is not satisfied');
   const persistence = await openFirebasePersistence(env);
   let app: ReturnType<typeof initializeApp> | undefined, avatarCodec: AvatarCodec | undefined;
+  let nativeChatDelivery: ReturnType<typeof createFirebaseBackgroundDelivery> | undefined;
   try {
     const { config, database, cipher, authority } = persistence;
     app = initializeApp({ projectId: config.projectId, ...(composition.local ? {} : { credential: applicationDefault() }) }, 'yuban-' + randomUUID());
@@ -139,14 +143,26 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const apnsConfig = localDelivery ? null : await readApnsPushConfig(env);
     const nativePushGateway = localDelivery?.nativePushGateway ?? { ...createNativePushGateway(readNativePushConfig(env)),
       ...(apnsConfig ? { apns: createApnsPushGateway(apnsConfig) } : {}) };
-    const nativePush = createFirestoreNativePush({ ...domain, gateway: nativePushGateway, sessions, currentAuth });
+    // Use the same deterministic Tasks identity and dispatch lease as the minute scanner.
+    // Local composition retains its loopback transport and never initializes a cloud Tasks client.
+    if (!composition.local && config.taskWorkerEnabled && env.FIREBASE_TASKS_QUEUE && env.FIREBASE_TASKS_REGION
+      && env.FIREBASE_TASK_WORKER_ORIGIN && env.FIREBASE_TASK_OIDC_AUDIENCE && env.FIREBASE_TASK_DISPATCH_SERVICE_ACCOUNT_EMAIL) {
+      const worker = readFirebaseWorkerConfig(env);
+      nativeChatDelivery = createFirebaseBackgroundDelivery({ ...worker, workerUrl: worker.workerOrigin + '/internal/product-work' });
+    }
+    const chatDispatcher = nativeChatDelivery && createFirestoreBackgroundDispatcher({ ...domain, enabled: config.taskWorkerEnabled,
+      readControl: tx => authority.readControl(tx), transport: nativeChatDelivery });
+    const nativePush = createFirestoreNativePush({ ...domain, gateway: nativePushGateway, sessions, currentAuth,
+      dispatchChatWork: chatDispatcher?.dispatchOne });
     const pushConfig = await readWebPushConfig(env), pushGateway = localDelivery?.pushGateway ?? createWebPushGateway(pushConfig);
     const telegramConfig = localDelivery?.telegramConfig ?? await readTelegramConfig(env);
     const telegramGateway = localDelivery?.telegramGateway ?? createTelegramGateway(telegramConfig);
-    const push = createFirestoreWebPush({ ...domain, gateway: pushGateway, enabled: !!localDelivery || !!pushConfig, currentAuth });
+    const push = createFirestoreWebPush({ ...domain, gateway: pushGateway, enabled: !!localDelivery || !!pushConfig, currentAuth,
+      sessions, dispatchChatWork:chatDispatcher?.dispatchOne });
+    const chatNotifications = combineChatNotificationChannels(nativePush,push);
     const telegram = createFirestoreTelegram({ ...domain, config: telegramConfig, gateway: telegramGateway, currentAuth,
       ...(localDelivery ? { startUrl: localDelivery.telegramStartUrl } : {}) });
-    const chat = createFirestoreChatStore({ ...domain, voice: voices, files, photos, notifications: nativePush }), care = createFirestoreCareStore(domain);
+    const chat = createFirestoreChatStore({ ...domain, voice: voices, files, photos, notifications: chatNotifications }), care = createFirestoreCareStore(domain);
     const sources = createFirestoreSharedInputStore(domain), concerns = createFirestoreConcernStore(domain);
     const memory = createFirestoreMemoryStore({ ...domain, chat, care });
     const proactiveData = new FirestoreDomainData(domain);
@@ -166,7 +182,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const growth = createFirestoreGrowthStore({ ...domain, memory, care, online, knowledge });
     const taskEvents = createFirestoreTaskAgentEvents(domain);
     let product: Awaited<ReturnType<typeof createFirestoreProductAgent>>;
-    const proactive = createProactiveWakes(domain, chat, proactiveEvents.readCandidates, nativePush, {
+    const proactive = createProactiveWakes(domain, chat, proactiveEvents.readCandidates, chatNotifications, {
       coverage: (binding, candidates) => product.continuation.coverage(binding, candidates),
       async readHouseholdChange(binding, change) {
         if (change.domain === 'profile') {
@@ -240,15 +256,19 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const knowledgeTransfers = knowledge ? createKnowledgeTransfers(domain, tx => authority.readControl(tx)) : undefined;
     const admin = createFirestoreAdmin(domain, aiConfig, knowledgeRefresh, knowledgeIndexes, knowledgeTransfers);
     const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: composition.worker && !composition.local ? null : configuredAdminUid, authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },
-      proactiveDemo: createProactiveDemo(env,authority,chat,nativePush), proactiveSettings:(uid,child,command) => authority.runTransaction(uid,child,
+      proactiveDemo: createProactiveDemo(env,authority,chat,chatNotifications), proactiveSettings:(uid,child,command) => authority.runTransaction(uid,child,
         async b => command === undefined ? proactive.view(await proactive.read(b)) : proactive.configure(b,command)),
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;
     let closing: Promise<void> | undefined;
     return { proactive,proactiveEvents,...persistence, admin, knowledgeIndexes, configuredAdminUid, sessions, auth, nativeAuth, currentAuth, reminders, online, documents, photos, avatars, avatarObjects, avatarCleanup, voices, voiceObjects, files, fileObjects, objects, journal, erasures, erasureCleanup, exporter, handover, handoverUploads, handoverImports, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, nativePush, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
-      close() { return closing ??= (async () => { try { await avatarCodec?.close(); await deleteApp(ownedApp); } finally { await persistence.close(); } })(); } };
+      close() { return closing ??= (async () => {
+        try { await nativeChatDelivery?.close(); }
+        finally { try { await avatarCodec?.close(); await deleteApp(ownedApp); } finally { await persistence.close(); } }
+      })(); } };
   } catch (error) {
-    try { await avatarCodec?.close(); if (app) await deleteApp(app); } finally { await persistence.close(); }
+    try { await nativeChatDelivery?.close(); }
+    finally { try { await avatarCodec?.close(); if (app) await deleteApp(app); } finally { await persistence.close(); } }
     throw error;
   }
 }
