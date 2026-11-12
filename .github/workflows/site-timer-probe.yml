@@ -1,0 +1,17 @@
+name: Temporary repository timer probe
+on:
+  schedule:
+    - cron: '9,39 * * * *'
+permissions: {}
+jobs:
+  timestamp:
+    if: github.run_number == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Record scheduler receipt
+        env:
+          MATCHED_CRON: ${{ github.event.schedule }}
+        run: |
+          printf 'GitHub timer (UTC) %s, run %s, commit %s\n' "$MATCHED_CRON" "$GITHUB_RUN_ID" "$GITHUB_SHA"
+          date -u
