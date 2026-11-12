@@ -5912,3 +5912,13 @@ Web／手機共用對話頁按固定範圍列出所有孩子，沿既有資料�
 ### 2026-11-12　主動助手與手機通知
 
 隔離環境由 Web 管理 API 建立一則主聊天訊息，沿原操作查回同一收據，合成 Android 收件箱只得一項。第一次真模型巡查在呈現參數被拒後耗盡該次預算。補清可讀的家庭變動位置與呈現參數後，第二次沿正式 worker 用兩次生成完成 `no_action`，重啟後讀回同一 run。裝置前景過期、每日巡查與專項工作重疊、普通公告的補提邊界另有針對性檢查。手機實收與跨端回覆單獨驗收。[實際紀錄](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json)
+
+### 2026-11-12　PR #557 本地知識評語版本綁定
+
+- 目標／需求：依 SPEC AC-KF-01，實質內容變更必須重新核對，不能沿用另一版本的已批准評語。
+- 執行／AI 協助：dot 修復及定向驗證，另一處理單元獨立 review；使用者本批特批使用 2NTTY GitHub 身份。沒有人工產品驗收。
+- 變更：在 `scripts/local-knowledge-assessments.ts` 為四個新增模板固定已核對的 sourceVersionHash；不匹配即拒絕建立批准評語。原有單來源 manifest 路徑不變。
+- 基線：PR #557 `973f476bae350e71863a64bcc534f1fd61cd5c08`；只改上述實作、`tests/local-knowledge-seed-assessments.test.ts` 及本記錄。
+- 驗證：隔離精確來源副本、Node v24.22.1、Zod 4.5.4；`node --experimental-test-module-mocks --test tests/local-knowledge-seed-assessments.test.ts`。先加測試時 1/3 通過，兩項因未拒絕內容／適用條件變更而失敗；修後 3/3 通過、零 skip，並驗 fetchedAt 刷新仍可沿用同版評語。獨立覆核通過。
+- 限制：未跑全量或新一輪完整型別檢查；未抓取實時官方網站、呼叫模型／embedding、寫入資料庫或發布站點。不以版本完整性保證臨床內容正確；沒有合併 PR。
+- 狀態／下一步：本次只修已重現缺陷，不改產品包狀態；正常更新原 PR 分支後讀回精確 head，遠端 CI 另核。

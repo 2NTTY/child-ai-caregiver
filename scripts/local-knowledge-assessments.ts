@@ -11,6 +11,7 @@ export const LOCAL_OFFICIAL_SEED_IDS = [
 ] as const;
 
 type SeedReviewTemplate = {
+  reviewedVersionHash: string;
   chunkNotes: Record<string, string>;
   checks: KnowledgeReviewAssessment['checks'];
   questions: KnowledgeReviewAssessment['questions'];
@@ -20,6 +21,7 @@ type SeedReviewTemplate = {
 
 const SEED_REVIEW_TEMPLATES: Record<string, SeedReviewTemplate> = {
   'fhs-toddler-development': {
+    reviewedVersionHash: '91365018235f8e28d39d5cce6f191cdd927b0da61a16e85be9b2f0b647974479',
     chunkNotes: {
       'play-and-language': '匯入衞生署一至兩歲兒童發展官方指引，保留每個孩子發展速度不同及透過日常互動遊戲促進語言理解與表達的重點。',
     },
@@ -43,6 +45,7 @@ const SEED_REVIEW_TEMPLATES: Record<string, SeedReviewTemplate> = {
     growthRuleReason: '與 growth-rules 中 toddler_play（12–24 個月）成長主題規則對齊；只供檢索參考，不自動寫入個人檔案。',
   },
   'fhs-preschool-development': {
+    reviewedVersionHash: '31aa8a4ec2afbdfe16425601de23b7193ca5a30d2773966b9e98eef5c50b9243',
     chunkNotes: {
       'persistent-concerns': '匯入衞生署三至六歲學前兒童發展官方指引，保留多項問題持續出現時及早諮詢母嬰健康院、老師或醫護的建議。',
     },
@@ -66,6 +69,7 @@ const SEED_REVIEW_TEMPLATES: Record<string, SeedReviewTemplate> = {
     growthRuleReason: '與 growth-rules 中 preschool_development（36–72 個月）成長主題規則對齊，不觸發自動提醒或寫入。',
   },
   'fhs-child-vision': {
+    reviewedVersionHash: 'a6432201467e9ace706af530150446fdd2d51694be9e1a6fabb756c5f772027e',
     chunkNotes: {
       'preschool-screening': '匯入學前兒童（4–5 歲）視力普查服務官方指引，保留服務對象年齡（未滿六歲學前兒童）與篩查安排。',
       'school-eye-care': '匯入學童護眼與視力異常轉介官方指引，保留閱讀距離、光線、休息及有疑問請教醫生或視光師之原則。',
@@ -95,6 +99,7 @@ const SEED_REVIEW_TEMPLATES: Record<string, SeedReviewTemplate> = {
     growthRuleReason: '與 growth-rules 中 school_vision（72–120 個月）對齊，並保留 48–72 個月學前篩查邊界。',
   },
   'fhs-feeding-booklet-en': {
+    reviewedVersionHash: 'e14d3a06106b4e8ebb28b02a740db717d67b746bb57b179e52f1e3fe7e18fd98',
     chunkNotes: {
       'introducing-solids-page-3': '匯入衞生署英文嬰幼兒加固小冊子第 3 頁原文，保留約六個月後鐵質需求上升、單一食物嘗試及不加糖鹽等官方原則。',
     },
@@ -140,6 +145,10 @@ export function buildLocalOfficialSeedAssessment(
   }
   const template = SEED_REVIEW_TEMPLATES[source.sourceId];
   if (!template) throw Error(`Missing local review assessment template for ${source.sourceId}`);
+  // These assessments apply only to the frozen editions whose meaning was reviewed.
+  if (sourceVersionHash(source) !== template.reviewedVersionHash) {
+    throw Error(`Local source ${source.sourceId} changed; a new meaning review is required`);
+  }
   const assessment: KnowledgeReviewAssessment = {
     comparedVersionId: null,
     comparedHash: null,
@@ -159,3 +168,4 @@ export function buildLocalOfficialSeedAssessment(
   };
   return validateKnowledgeAssessment(assessment, source, null);
 }
+

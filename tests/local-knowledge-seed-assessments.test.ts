@@ -18,3 +18,25 @@ test("local official seed assessments validate all five DH sources cleanly", asy
     assert.equal(validated.changes.length, source.chunks.length);
   }
 });
+
+test("local review templates reject changed source content instead of approving a new edition", async () => {
+  const rawSources = JSON.parse(await readFile(new URL("../knowledge/hk-official-seed.json", import.meta.url), "utf8"));
+  for (const raw of rawSources.slice(1)) {
+    const changed = parseKnowledgeSource(raw);
+    changed.chunks[0].text += " Unreviewed change.";
+    assert.throws(() => buildLocalOfficialSeedAssessment(changed), /new meaning review is required/, changed.sourceId);
+  }
+});
+
+test("local review templates reject changed applicability but allow a refreshed fetch timestamp", async () => {
+  const rawSources = JSON.parse(await readFile(new URL("../knowledge/hk-official-seed.json", import.meta.url), "utf8"));
+  for (const raw of rawSources.slice(1)) {
+    const changed = parseKnowledgeSource(raw);
+    changed.chunks[0].applicability.conditions.push("Unreviewed condition");
+    assert.throws(() => buildLocalOfficialSeedAssessment(changed), /new meaning review is required/, changed.sourceId);
+    const refreshed = parseKnowledgeSource(raw);
+    refreshed.fetchedAt = "2026-11-11T00:00:00.000Z";
+    assert.equal(buildLocalOfficialSeedAssessment(refreshed).decision, "approve");
+  }
+});
+
