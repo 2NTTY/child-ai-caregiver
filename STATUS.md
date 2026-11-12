@@ -2,6 +2,8 @@
 
 只作根 PLAN 的短現況投影；工作包、前置、未驗與完成門檻見 [PLAN 當前入口](PLAN.md#active)。
 
+**原站交付**由 A 負責。執行 `npm run deploy:site -- status` 可查看發布收據及下次停機期限。首次接管前會顯示 `bootstrapPending`；正式手動發布和首個排程結果分別驗收。[部署與恢復](docs/DEPLOYMENT.md)
+
 ## 目前與接手
 
 - **iPhone 主畫面版已開放試用。** 11 月 12 日原站 API、worker 及 Web 已更新至 `29941f92`。原站已核對安裝資產、健康及登入保護。試用者已回報 iPhone 主畫面安裝、鎖屏收件、點入原訊息回覆及 Web 讀回成功。外觀、重開、停用及媒體仍待核對。[試用說明](docs/IPHONE_PWA.md) · [發布紀錄](artifacts/verification/IPHONE_PWA_20261112.json)

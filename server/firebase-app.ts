@@ -147,6 +147,8 @@ async function readJson(request: Request, limit = MAX_BODY_BYTES): Promise<unkno
 /** Explicitly assembled Firebase routes; unconnected domains remain unavailable. */
 export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOptions): FirebaseRequestHandler {
   const { authority, auth, publicOrigin, mailConfigured, online, documents, photos, library } = options;
+  const configuredRevision = process.env.SITE_REVISION;
+  const revision = configuredRevision && /^[0-9a-f]{40}$/i.test(configuredRevision) ? configuredRevision : null;
   let origin: URL;
   try { origin = new URL(publicOrigin); } catch { throw new Error("invalid_firebase_app_configuration"); }
   if (origin.origin !== publicOrigin || !["https:", "http:"].includes(origin.protocol) || origin.username || origin.password
@@ -158,6 +160,10 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
   return async request => {
     try {
       const path = new URL(request.url).pathname;
+      if (path === "/api/version") {
+        if (request.method !== "GET") throw new RequestError("method_not_allowed", 405);
+        return json({ revision }, revision === null ? 503 : 200);
+      }
       if (path === '/api/telegram/webhook') {
         const channel = options.telegram;
         if (request.method !== 'POST' || !channel?.config || !telegramWebhookAuthorized(request.headers.get('x-telegram-bot-api-secret-token'), channel.config)) return errorResponse('forbidden', 403);
