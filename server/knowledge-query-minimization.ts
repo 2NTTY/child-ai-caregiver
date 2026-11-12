@@ -64,7 +64,7 @@ const STREET_OR_ADDRESS_PATTERNS: readonly RegExp[] = [
   /(?:\d+\s*(?:\/F|樓)|地下|G\/F)\s*(?:[A-HJ-Z]\d*\s*(?:座|室|號室|單位)|(?:\d+[A-Za-z]?)\s*(?:室|號室|單位))|(?:\d+\s*(?:\/F|樓)|地下|G\/F)[A-H](?![A-Za-z])/iu,
   /(?<![A-Za-z])(?:[A-Za-z]|\d+|[一二三四五六七八九十]+)\s*(?:座|棟|幢)\s*(?:\d+\s*(?:樓|層)|(?:\d+[A-Za-z]?|[A-Za-z])\s*(?:室|單位))/u,
   /(?<![\u4e00-\u9fffA-Za-z0-9])(?:\d{3,4}|[A-H]\d{0,2})\s*(?:號室|室|單位)/u,
-  /\b(?:[Ff]lat|FLAT|[Rr]m|RM|[Uu]nit|UNIT|[Aa]pt|APT)\s*[#:]?\s*(?:\d+[A-Za-z]?|[A-Z])(?![A-Za-z])(?!\s*(?:months?|weeks?|days?|years?|hrs?|hours?|ml|mg|mcg|iu|drops?|doses?|vaccine|of\s+(?!block\b|blk\b|tower\b|flat\b|unit\b|phase\b)))/u,
+  /\b(?:[Ff]lat|FLAT|[Rr]m|RM|[Uu]nit|UNIT|[Aa]pt|APT)\s*[#:]?\s*(?:\d+[A-Za-z]?|[A-Z])(?![A-Za-z])(?!\s*(?:[Mm]onths?|[Ww]eeks?|[Dd]ays?|[Yy]ears?|[Hh]rs?|[Hh]ours?|[Mm][Ll]|[Mm][Gg]|[Mm]cg|IU|iu|[Dd]rops?|[Dd]oses?|[Vv]accine|of\s+(?!(?:[Bb]lock|[Bb]lk|[Tt]ower|[Ff]lat|[Uu]nit|[Pp]hase)\b)))/u,
   /\b\d{1,3}\s*\/\s*F\s*,\s*(?:Block|Blk|Tower)\s*[A-Za-z0-9]+\b|\b(?:Block|Blk|Tower)\s*[A-Za-z0-9]+\s*,\s*\d{1,3}\s*\/\s*F\b/iu,
 ];
 
