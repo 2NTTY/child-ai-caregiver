@@ -21,7 +21,7 @@ import { AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS } from "./agent-knowledge-tool-descri
 import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped } from "./agent-budget.ts";
-import { factIsApplicable, looksLikeDurableMemoryFactStatement, normalizedMemoryFactText, preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from "./memory-policy.ts";
+import { factIsApplicable, looksLikeDurableMemoryFactStatement, memoryFactReferencedByParagraph, preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from "./memory-policy.ts";
 import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
@@ -35,7 +35,7 @@ import { createAgentSourceTools } from "./agent-source-tools.ts";
 import { createAgentDocumentTools } from "./agent-document-tools.ts";
 import { createDataComposeTools } from "./data-compose.ts";
 import { createAgentConcernTools } from "./agent-concern-tools.ts";
-import { createAgentWorkTools } from "./agent-work-tools.ts";
+import { createAgentWorkTools, prepareProposalConfirmation } from "./agent-work-tools.ts";
 import { AGENT_CONFIRMATION_PENDING_TEXT } from "./agent-work-tool-descriptions.ts";
 
 function validateAnswerText(answer: { paragraphs: AgentAnswer["paragraphs"] }) {
@@ -282,11 +282,8 @@ export function createProductAgentTools(options: {
       if (source) sources.push(source);
     }
     if (isMemoryRestatementAnswer(value) || memoryGrounding.size > 0) {
-      const paragraphs = value.paragraphs.map(paragraph => normalizedMemoryFactText(paragraph.text));
       for (const { fact, source } of memoryGrounding.values()) {
-        const content = normalizedMemoryFactText(fact.content);
-        // Literal coverage is conservative: unrelated facts must not make an unsupported answer pass.
-        if (usableMemoryFact(fact) && content && paragraphs.some(paragraph => paragraph.includes(content))) {
+        if (usableMemoryFact(fact) && value.paragraphs.some(paragraph => memoryFactReferencedByParagraph(fact.content, paragraph.text))) {
           sources.push(source); facts.push(fact);
         }
       }
@@ -352,8 +349,10 @@ export function createProductAgentTools(options: {
             : hasOfficialEvidence
               ? "你已經透過 search_knowledge 取得官方 chunkId，毋須再對同一主題重複搜尋。請立即修正 present_answer 的段落標記與 citationIds：(1) 純粹重述孩子已確認個人記憶（如過敏、忌口、作息）的段落請單獨使用 kind=\"record_restatement\"、citationIds=[]，不加入未引用的指導語句；(2) 所有 kind=\"caregiving\" 或 \"safety_help\" 段落自己都必須在該段 citationIds 填入真正相關且支持該段說法的已檢索官方 chunkId，絕不可硬塞無關主題（例如用餵食片段支持體溫或視力問題）；(3) 若問題某部分未見於現有片段，切勿斷言「官方指引沒有某列表」或編造照護／醫療建議；全無相關片段時請改用 kind=\"clarification\"、citationIds=[] 簡潔說明現有資料限制及提醒如有不適應諮詢醫護人員（或用 show_official_help）。"
               : "Use the already available search_knowledge tool if relevant evidence is missing and the remaining budget allows retrieval, presentation and review. Each caregiving or safety paragraph needs supporting official citationIds; private_reference needs a retrieved private-source citation, including an exact household read when available, or a Server-loaded photo or current voice original. Pure confirmed-fact restatements use record_restatement with citationIds=[]; urgent danger without official chunks uses operation with citationIds=[]. Otherwise state the evidence limitation without unsupported advice. Report operation receipts separately; do not invent citations or relabel advice to bypass checks." } };
-      if (error instanceof FamilyError && error.code === "propose_fact_required") return { status: "rejected", data: { code: error.code, nextAction: "load_capabilities memory if needed, then propose_fact with content that keeps the user's child nickname (e.g. BB), then request_confirmation. Do not only present_answer a restatement of a durable personal fact such as an allergy or lasting preference (likes/dislikes)." } };
-      if (error instanceof FamilyError && error.code === "memory_read_not_propose") return { status: "rejected", data: { code: error.code, nextAction: "This turn is a question/read-back (嗎？／？／有冇／係咪 etc.). load_capabilities memory if needed, read_memory_facts, then present_answer from confirmed memory. Do not propose_fact a new candidate." } };
+      if (error instanceof FamilyError && error.code === "propose_fact_required") return { status: "rejected", data: { code: error.code, nextAction: "propose_fact and propose_fact_revision are already available directly (no load_capabilities needed). Call propose_fact with content that keeps the user's child nickname (e.g. BB) and a distinct specific key (or propose_fact_revision if updating an existing key). When propose_fact returns confirmationPrepared=true, call present_answer directly (using kind=\"operation\", citationIds=[], stating only that a pending confirmation candidate is prepared and not yet saved) without calling request_confirmation." } };
+      if (error instanceof FamilyError && error.code === "memory_read_not_propose") return { status: "rejected", data: { code: error.code, nextAction: "This turn is a question/read-back (嗎？／？／有冇／係咪／原則／禁忌 etc.), NOT a request to save a new memory fact. Do NOT call propose_fact again. Read confirmed facts with read_memory_facts({}) (omit keys) or official guidance with search_knowledge if needed, then present_answer cleanly (keeping budget for delivery review)." } };
+      if (error instanceof FamilyError && error.code === "memory_fact_source_mismatch") return { status: "rejected", data: { code: error.code, nextAction: "Do not include trailing questions or unrelated clauses inside propose_fact.content, and do not propose unrequested facts from past messages. Keep only the explicitly requested durable fact from the allowed user statement, or skip proposing and answer the user's question." } };
+      if ((error instanceof FamilyError || error instanceof FirestoreDomainError) && error.code === "fact_key_conflict") return { status: "conflict", data: { code: error.code, nextAction: "已有相同 key 的有效確認事實或本輪重複候選，直接建立會在確認時衝突。請先用 read_memory_facts 查明現有事實 ID 與版本：若是更正同一事實請用 propose_fact_revision；若是另一獨立新事實請改用具體不重複的新 key（例如 allergy-egg、nap-schedule）再 propose_fact。" } };
       if (error instanceof FamilyError || error instanceof FirestoreDomainError) return { status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected", data: { code: error.code } };
       throw error;
     }
@@ -538,7 +537,7 @@ export function createProductAgentTools(options: {
         const proposal = await trackedStore.propose(scope, runId, context.callId, { kind: "task_change", taskId: args.taskId as string, change });
         if (!proposal) throw new AgentStopped("unauthorized"); return proposal;
       }) },
-    { name: "propose_fact", description: "從已讀的本人原訊息提出長期記憶候選；舊原話帶 sourceMessageId，省略時指本次訊息；預設 private。content 須保留來源原訊息的孩子稱呼用詞（例如 BB），不可擅自改寫成寶寶等近義說法。intendedVisibility=family 仍只是私人候選，需本人另行明示分享確認，不可把推斷當已確認事實。",
+    { name: "propose_fact", description: "只當目前使用者原訊息明確要求記住或陳述新的長期個人事實（例如對某食物過敏、長期偏好）才可呼叫；純提問（如「有咩過敏」「幾點瞓覺」「想試加固原則」）或未經要求不得呼叫，亦不可把舊對話未處理句自行補記。舊原話帶 sourceMessageId，省略時指本次訊息；預設 private。為每項獨立事實選用具體不重複的 key（例如 allergy-peanut、nap-schedule）；若 read_context／read_memory_facts 已有同鍵有效事實且屬更新，改用 propose_fact_revision。content 須保留來源原訊息的孩子稱呼用詞（例如 BB），不可擅自改寫成寶寶等近義說法。intendedVisibility=family 仍只是私人候選，需本人另行明示分享確認。若結果含 confirmationPrepared=true（且本輪無其他問題須回答），事實仍未正式寫入：請直接調用 present_answer，使用 kind=\"operation\"、citationIds=[]，只簡潔說明「已準備待確認記憶候選，尚未正式保存，請核對並確認。」（Server 會自動附上確認項目），切勿用 record_restatement，亦切勿寫「已經記低／已保存」或於確認前提前覆述未確認 BB 內容；毋須再呼叫 request_confirmation。",
       parameters: z.object({ key: shortText(100), content: shortText(2000), intendedVisibility: z.enum(["private", "family"]),
         validUntil: z.iso.datetime({ offset: true }).nullable(), sourceMessageId: z.uuid().optional() }), authorize: permitted,
       execute: (args, context) => guard(async () => {
@@ -553,15 +552,7 @@ export function createProductAgentTools(options: {
           content, intendedVisibility: args.intendedVisibility as "private" | "family", validUntil, ...(args.sourceMessageId ? { sourceMessageId: args.sourceMessageId as string } : {}) });
         if (!proposal) throw new AgentStopped("unauthorized");
         pendingMemoryProposalCount += 1;
-        // Bind the confirmation question immediately (same as propose_family_document_change) so
-        // chat delivery can append the full receipt even when the model skips request_confirmation.
-        if (proposal.status === "pending" && store.requestConfirmation) {
-          const confirmation = await store.requestConfirmation(scope, runId, { runId: proposal.runId, proposalId: proposal.id,
-            expectedVersion: proposal.version, workId: null });
-          if (!confirmation) throw new AgentStopped("unauthorized");
-          return { ...proposal, confirmationPrepared: true };
-        }
-        return proposal;
+        return prepareProposalConfirmation(store, run, proposal);
       }) },
     { name: "stage_private_summary", description: "只整理 read_context.privateSummaryInput 指定 IDs 對應的全部原訊息；summaryMode=isolated_batch 時只摘要該批，不複製舊摘要或其他工具的資料，保留原話的陳述／推測身份；舊 cumulative 模式才合併舊摘要。原文從同次 uncoveredConversation 讀取，不可補入未提供訊息。保留不確定性、來源及更正；moreUncovered=true 不表示已讀後續內容。這是私人衍生摘要，不是已確認事實；Server 在運行結束核對完整批次、來源與版本。未取得該批次全部原文時不可調用。",
       parameters: z.object({ text: shortText(6000) }), authorize: permitted,
@@ -586,9 +577,8 @@ export function createProductAgentTools(options: {
           && !parsed.paragraphs.some(item => item.citationIds.length)) {
           throw new FamilyError(400, "propose_fact_required");
         }
-        // Memory paragraphs need their own evidence even beside official knowledge citations.
-        if (!options.background && !options.mixedTasks && parsed.kind !== "no_action"
-          && isMemoryRestatementAnswer(parsed as AgentAnswer)) {
+        // Always hydrate confirmed memory before delivery so caregiving/mixed answers mentioning personal facts stay grounded alongside official sources.
+        if (!options.background && !options.mixedTasks && parsed.kind !== "no_action") {
           await ensureConfirmedMemoryGrounding();
         }
         if (!options.background && !options.mixedTasks && parsed.kind !== "no_action" && executedActions.size > 0) {
@@ -640,7 +630,7 @@ export function createProductAgentTools(options: {
       return result;
     }),
   });
-  if (options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentWorkTools(trackedStore, memory, run, permitted, noteConfirmedMemoryFacts));
+  if (options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentWorkTools(trackedStore, memory, run, permitted, noteConfirmedMemoryFacts, () => { pendingMemoryProposalCount += 1; }));
   if (trackedActions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(trackedActions, run, permitted)
     .filter(tool=>!options.ordinaryToolNames || options.ordinaryToolNames.includes(tool.name)));
   else if (options.actionReaders && options.visibility !== "family") tools.splice(tools.length - 1, 0,

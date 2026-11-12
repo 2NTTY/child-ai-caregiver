@@ -1302,14 +1302,13 @@ for (const questionCount of [0, 2]) test(`a successful memory candidate cannot r
   let calls = 0, writes = 0;
   const result = await product({ calls: 0, async generate() {
     calls++;
-    if (calls === 1) return model([{ functionCall: { id: 'load-memory', name: 'load_capabilities', args: { capabilities: ['memory'] } } }]);
-    if (calls === 2) return model([{ functionCall: { id: 'propose', name: 'propose_fact', args: {
+    if (calls === 1) return model([{ functionCall: { id: 'propose', name: 'propose_fact', args: {
       key: 'egg-allergy', content: 'BB 對雞蛋過敏', intendedVisibility: 'private', validUntil: null,
     } } }]);
-    if (calls === 3) return model([{ functionCall: { id: 'answer', name: 'present_answer', args: {
+    if (calls === 2) return model([{ functionCall: { id: 'answer', name: 'present_answer', args: {
       kind: 'operation', paragraphs: [{ text: '已保存；可以立即分享。', citationIds: [] }],
     } } }]);
-    assert.equal(calls, 4);
+    assert.equal(calls, 3);
     return model([{ text: 'not a valid independent review' }]);
   } }, { userText: '請記住：BB 對雞蛋過敏', store: {
     propose: async (_scope: unknown, _run: string, _call: string, value: unknown) => {
@@ -1319,7 +1318,7 @@ for (const questionCount of [0, 2]) test(`a successful memory candidate cannot r
     confirmationQuestions: async () => Array.from({ length: questionCount }, () => '確認記住雞蛋過敏？'),
   } });
   assert.equal(writes, 1);
-  assert.equal(calls, 4);
+  assert.equal(calls, 3);
   assert.equal(result?.status, 'stopped', JSON.stringify(result));
   assert.equal(result.stopReason, 'delivery_review_incomplete');
   assert.notEqual(result.text, AGENT_CONFIRMATION_PENDING_TEXT);

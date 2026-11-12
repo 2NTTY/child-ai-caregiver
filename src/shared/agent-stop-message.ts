@@ -43,7 +43,7 @@ const stopReasons: Record<string, string> = {
   ...modelProviderReasons,
   cancelled: "已取消", deadline: "處理時間已到上限", model_limit: "這次處理的 AI 調用次數已達上限", tool_limit: "工具調用次數已到上限",
   embedding_limit: "知識查詢次數已到上限", input_limit: "輸入長度已到上限", unauthorized: "存取權已改變",
-  quota_exceeded: "今日 AI 用量已達上限", unavailable: "服務暫時未能使用", invalid_response: "未能確認 AI 回覆",
+  quota_exceeded: "今日 AI 用量已達上限", busy: "AI 正忙碌，這次未開始處理，也沒有排隊", unavailable: "服務暫時未能使用", invalid_response: "未能確認 AI 回覆",
   delivery_review_incomplete: "尚未通過獨立核對，未成為正式回覆",
   delivery_review_rejected: "獨立核對未接納這次整理，未成為正式回覆",
   delivery_review_no_sources: "缺少可核對的來源依據，未成為正式回覆",
@@ -59,6 +59,7 @@ export function agentStopMessage(reason: string | null): string | null {
 
 /** Optional expandable hint under the stop label. Product copy only; no provider or private text. */
 const stopDetailHints: Partial<Record<string, string>> = {
+  busy: "這次要求因系統或目前帳號正忙碌而未開始處理，也沒有排隊。請確認沒有其他回覆仍在進行後，改以新訊息重新提出要求。",
   delivery_review_incomplete: "獨立核對未能完成。未通過核對的內容不會成為正式回覆；可稍後重試或改寫問題。",
   delivery_review_rejected: "獨立核對未接納這次整理。可改用更具體的問題，或核對來源後再開新訊息再問。",
   delivery_review_no_sources: "正式照護／知識回覆需要可核對的來源摘錄。目前沒有足夠依據；可換官方／知識問題，或稍後再試。",
