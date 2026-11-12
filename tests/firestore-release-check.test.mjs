@@ -47,6 +47,45 @@ test('release readiness follows every index page and checks explicit field overr
   assert.equal(stub.requests.length, 4);
 });
 
+test('index listing omits unsupported pageSize and follows only the returned page token', async () => {
+  const requests = [];
+  const fetchImpl = async input => {
+    const url = new URL(input);
+    requests.push(url);
+    if (url.searchParams.has('pageSize')) return Response.json({ error: { message: 'Invalid page size. Only 0 is supported.' } }, { status: 400 });
+    if (requests.length === 1) return Response.json({ indexes: [currentIndex(scalar)], nextPageToken: 'opaque+/=token' });
+    assert.equal(url.searchParams.get('pageToken'), 'opaque+/=token');
+    return Response.json({ indexes: [currentIndex(vector)] });
+  };
+  const report = await releaseCheck({ indexes: [scalar, vector], fieldOverrides: [] }, { shape, canonical, token: 'test-token', fetchImpl });
+  assert.equal(report.state, 'ready');
+  assert.equal(report.pages, 2);
+  assert.equal(requests[0].search, '');
+  assert.equal(requests[1].searchParams.size, 1);
+});
+
+test('not-ready diagnostics identify exact manifest fields and safe build states', async () => {
+  const stub = fake([{ value: { indexes: [currentIndex(vector, 'NEEDS_REPAIR')] } }, { value: field(exclusion) },
+    { value: { indexConfig: { indexes: [{ queryScope: 'COLLECTION', fields: [{ fieldPath: 'scopeTag', order: 'ASCENDING' }], state: 'CREATING', privateBody: 'must-not-appear' }] } } }]);
+  const report = await stub.check();
+  assert.deepEqual(report.problems, [
+    { kind: 'index', collectionGroup: 'yuban_authority_documents', queryScope: 'COLLECTION', fields: scalar.fields, status: 'MISSING' },
+    { kind: 'index', collectionGroup: 'yuban_authority_knowledge_chunks', queryScope: 'COLLECTION', fields: vector.fields, status: 'NEEDS_REPAIR' },
+    { kind: 'fieldOverride', collectionGroup: 'yuban_authority_documents', fieldPath: 'scopeTag', indexes: override.indexes, status: 'CREATING' },
+  ]);
+  assert.equal(report.omittedProblems, 0);
+  assert.doesNotMatch(JSON.stringify(report), /must-not-appear|test-token/u);
+});
+
+test('not-ready diagnostics cap entries while keeping complete failure counts', async () => {
+  const indexes = Array.from({ length: 30 }, (_, i) => ({ ...scalar, collectionGroup: 'yuban_authority_missing_' + i }));
+  const stub = fake([{ value: {} }]);
+  const report = await stub.check({ indexes, fieldOverrides: [] });
+  assert.equal(report.missing, 30);
+  assert.equal(report.problems.length, 25);
+  assert.equal(report.omittedProblems, 5);
+});
+
 test('missing, creating and repair-required indexes block release with distinct counts', async () => {
   for (const [indexes, expected] of [
     [[], { missing: 2, pending: 0, failed: 0 }],
