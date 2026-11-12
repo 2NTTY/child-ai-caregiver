@@ -56,3 +56,42 @@ test("CAS conflict re-reads without replaying preference and a changed session r
   await assert.rejects(queued, NativePushApiError); assert.equal(writes, 1);
   controller.dispose();
 });
+
+test("updated presence client opts into v2 without changing legacy registration routes", async () => {
+  const calls: { url: string; init?: RequestInit }[] = [];
+  const api = createNativePushApi("https://synthetic.invalid", async (url, init) => {
+    calls.push({ url: String(url), init });
+    return Response.json({ ...presence, chatPreviewEnabled: true });
+  }, { chatPresenceVersion: 2 });
+  const signal = new AbortController().signal;
+  assert.equal((await api.chatPresence(signal, "parent")).chatPreviewEnabled, true);
+  await api.updateChatPresence({ childId: null, bindingId, expectedPresenceVersion: 1, chatPreviewEnabled: false }, signal, "parent");
+  assert.deepEqual(calls.map(call => call.url), Array(2).fill("https://synthetic.invalid/api/native-push/v2/chat-presence"));
+  assert.equal(JSON.parse(String(calls[1].init?.body)).chatPreviewEnabled, false);
+});
+
+test("explicit chat enable can include preview while existing phones change preview using the same bound CAS stream", async () => {
+  let state: NativeChatPresence = { ...presence, chatNotificationsEnabled: false, chatPreviewEnabled: false };
+  const writes: any[] = [];
+  const controller = new NativeChatPresenceController({
+    async chatPresence() { return state; },
+    async updateChatPresence(input) {
+      assert.equal(input.expectedPresenceVersion, state.presenceVersion); writes.push(input);
+      state = { ...state, ...input, presenceVersion: state.presenceVersion + 1 }; return state;
+    },
+  }, "parent", () => true);
+  await controller.setEnabled(true, bindingId, true);
+  await controller.setPreviewEnabled(false, bindingId);
+  await controller.foreground(childId);
+  assert.deepEqual(writes.map(({ chatNotificationsEnabled, chatPreviewEnabled, bindingId }) => ({ chatNotificationsEnabled, chatPreviewEnabled, bindingId })), [
+    { chatNotificationsEnabled: true, chatPreviewEnabled: true, bindingId },
+    { chatNotificationsEnabled: undefined, chatPreviewEnabled: false, bindingId },
+    { chatNotificationsEnabled: undefined, chatPreviewEnabled: undefined, bindingId: undefined },
+  ]);
+  await assert.rejects(controller.setPreviewEnabled(true, childId), NativePushApiError);
+  assert.equal(writes.length, 3, "A different current binding cannot receive this preference");
+  await controller.setEnabled(false, bindingId);
+  await assert.rejects(controller.setPreviewEnabled(true, bindingId), NativePushApiError);
+  assert.equal(writes.length, 4, "Preview consent requires chat notifications to remain enabled");
+  controller.dispose();
+});

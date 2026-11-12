@@ -18,15 +18,17 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
   const [review, setReview] = useState<PushReview | null>(null), [original, setOriginal] = useState<OriginalPush | null>(null), [notice, setNotice] = useState("");
   const [conflict, setConflict] = useState(false), [savedReference, setSavedReference] = useState<string | null>(null);
   const [chatNotificationsEnabled, setChatEnabled] = useState<boolean | null>(null), [chatNotificationsBusy, setChatBusy] = useState(false);
+  const [chatPreviewEnabled, setChatPreview] = useState<boolean | null>(null), [chatBindingId, setChatBindingId] = useState<string | null>(null);
+  const chatWriting = useRef(false);
   const chatGeneration = env.owner.getSnapshot().sessionGeneration;
   const currentChatIdentity = () => env.currentIdentity() && env.owner.getSnapshot().sessionGeneration === chatGeneration;
   const presence = useMemo(() => env.identityKey && env.userId ? nativeChatPresenceFor(env.owner, env.identityKey, env.userId) : null,
     [env.owner, env.identityKey, env.userId, chatGeneration]);
-  useEffect(() => { setChatEnabled(null); setChatBusy(false); }, [presence]);
+  useEffect(() => { setChatEnabled(null); setChatPreview(null); setChatBindingId(null); setChatBusy(false); chatWriting.current = false; }, [presence]);
   const readChatPreference = async () => {
     if (!presence) return;
-    try { const next = await presence.read(); if (currentChatIdentity()) setChatEnabled(next.chatNotificationsEnabled); }
-    catch { if (currentChatIdentity()) setChatEnabled(null); }
+    try { const next = await presence.read(); if (currentChatIdentity()) { setChatEnabled(next.chatNotificationsEnabled); setChatPreview(next.chatPreviewEnabled ?? false); setChatBindingId(next.bindingId); } }
+    catch { if (currentChatIdentity()) { setChatEnabled(null); setChatPreview(null); setChatBindingId(null); } }
   };
   const pending = useRef<OriginalPush | null>(null), currentStatus = useRef(status), currentReview = useRef(review), currentBinding = useRef(bindingId);
   currentStatus.current = status; currentReview.current = review; currentBinding.current = bindingId;
@@ -113,18 +115,28 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
     } catch (error) { if (request.current()) { if (!submitted && !api.hasPendingOnline()) retain(null); failed(error, submitted && pending.current === entry ? entry : undefined); } }
     finally { request.finish(!!pending.current); }
   };
-  const stage = (next: PushReview) => { if (!requests.busy && env.online && readState === "ready" && !pending.current && !!env.canStartWrite()) { setReview(next); setSavedReference(null); setConflict(false); } };
-  const actions: PushSettingsActions = { refresh: () => { void refresh(); },
-    setChatNotificationsEnabled(enabled) {
-      if (!presence || !currentChatIdentity() || !env.online || chatNotificationsBusy || requests.busy || !env.canStartWrite()) return;
-      setChatBusy(true);
-      void presence.setEnabled(enabled).then(next => {
-        if (currentChatIdentity()) { setChatEnabled(next.chatNotificationsEnabled); setNotice("此手機的助手聊天通知設定已保存。"); }
+  const updateChatPreference = (enabled: boolean, previewOnly = false) => {
+      const actual = currentStatus.current, binding = actual ? currentActive(actual) : null;
+      if (!presence || !binding || binding.id !== chatBindingId || !currentChatIdentity() || !env.online || readState !== "ready"
+        || chatWriting.current || requests.busy || pending.current || currentReview.current || conflict || chatNotificationsEnabled === null
+        || previewOnly && (platform !== "android" || !chatNotificationsEnabled) || !env.canStartWrite()) return;
+      chatWriting.current = true; setChatBusy(true);
+      const write = previewOnly ? presence.setPreviewEnabled(enabled, binding.id)
+        : presence.setEnabled(enabled, binding.id, platform === "android" && enabled ? true : undefined);
+      void write.then(next => {
+        if (currentChatIdentity() && currentBinding.current === binding.id && next.bindingId === binding.id) {
+          setChatEnabled(next.chatNotificationsEnabled); setChatPreview(next.chatPreviewEnabled ?? false); setChatBindingId(next.bindingId);
+          setNotice("此手機的助手聊天通知設定已保存。");
+        }
       }).catch(async () => {
         await readChatPreference();
         if (currentChatIdentity()) setNotice("聊天通知設定未能確認，已重新核對；請查看目前選項後再選擇。");
-      }).finally(() => { if (currentChatIdentity()) setChatBusy(false); });
-    },
+      }).finally(() => { if (currentChatIdentity()) { chatWriting.current = false; setChatBusy(false); } });
+  };
+  const stage = (next: PushReview) => { if (!requests.busy && !chatWriting.current && env.online && readState === "ready" && !pending.current && !!env.canStartWrite()) { setReview(next); setSavedReference(null); setConflict(false); } };
+  const actions: PushSettingsActions = { refresh: () => { if (!chatWriting.current) void refresh(); },
+    setChatNotificationsEnabled: enabled => updateChatPreference(enabled),
+    ...(platform === "android" ? { setChatPreviewEnabled: (enabled: boolean) => updateChatPreference(enabled, true) } : {}),
     stageEnable(label) { if (label.trim() && label.trim().length <= 80) stage({ kind: "enable", id: null, targetLabel: label.trim(), expectedVersion: null, confirmed: false }); },
     stageRevoke(id) { const item = status?.bindings.find(binding => binding.id === id); if (item && item.status !== "revoked") stage({ kind: "revoke", id, targetLabel: item.label, expectedVersion: item.version, confirmed: false }); },
     stageTest(id) { const item = status?.bindings.find(binding => binding.id === id); if (status && item && pushTestAllowed(status, bindingView(status, item))) stage({ kind: "test", id, targetLabel: item.label, expectedVersion: item.version, confirmed: false }); },
@@ -134,16 +146,17 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
   useEffect(() => { if (!env.online) { setReview(current => current ? { ...current, confirmed: false } : null); if (pending.current) { pending.current.reviewed = false; pending.current.consent = false; retain(pending.current); } } }, [env.online]);
   const rotation = useRef<(token: string) => void>(() => {});
   rotation.current = token => {
-    if (env.currentIdentity() && env.online && !requests.busy && !pending.current && !currentReview.current && currentStatus.current?.currentBindingId)
+    if (env.currentIdentity() && env.online && !requests.busy && !chatWriting.current && !pending.current && !currentReview.current && currentStatus.current?.currentBindingId)
       void submit(false, token);
     else setNotice("裝置通知識別已更新，請在可連線時重新讀取並啟用此裝置通知。");
   };
   useEffect(() => listenNativePush({ tokenChanged: token => rotation.current(token), opened() {} }), [api]);
-  useSettingsRefresh(env, actions.refresh, !requests.busy && !original && !review, true);
-  useDomainWriteGuard(!!review, !!original || requests.writing, "account");
+  useSettingsRefresh(env, actions.refresh, !requests.busy && !chatNotificationsBusy && !original && !review, true);
+  useDomainWriteGuard(!!review, !!original || requests.writing || chatNotificationsBusy, "account");
   const visible = env.currentIdentity() ? status : null;
-  const model: PushSettingsModel = { platform: platform ?? "android", online: env.online, readState: env.currentIdentity() ? readState : "session_changed", locked: requests.busy || !!original,
-    chatNotificationsEnabled: env.currentIdentity() ? chatNotificationsEnabled : null, chatNotificationsBusy,
+  const chatBound = !!visible?.currentBindingId && chatBindingId === visible.currentBindingId && !!currentActive(visible);
+  const model: PushSettingsModel = { platform: platform ?? "android", online: env.online, readState: env.currentIdentity() ? readState : "session_changed", locked: requests.busy || chatNotificationsBusy || !!original,
+    chatNotificationsEnabled: chatBound ? chatNotificationsEnabled : null, chatPreviewEnabled: chatBound ? chatPreviewEnabled : null, chatNotificationsBusy,
     conflict, notice, workerEnabled: visible?.workerEnabled ?? false, review, available: visible ? platformAvailable(visible) : false, browserSupported: nativePushSupported(), permission,
     currentBindingId: visible ? bindingId : null, bindings: visible?.bindings.map(item => bindingView(visible, item)) ?? [],
     deliveries: visible?.deliveries.map(item => ({ ...item, label: visible.bindings.find(binding => binding.id === item.bindingId)?.label ?? "本人訂閱", reasonLabel: item.reason })) ?? [],
