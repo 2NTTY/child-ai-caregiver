@@ -41,6 +41,16 @@ class MissingSchedule(unittest.TestCase):
         self.assertEqual(self.run_check()["state"], "already-claimed")
         self.github.dispatch.assert_called_once_with("2026-11-12")
 
+    def test_early_acceptance_does_not_reuse_or_replace_regular_slot(self):
+        slot = instant("2026-11-12T23:38:00")
+        at = instant("2026-11-12T23:42:00")
+        self.github.dispatch.return_value = 7
+        self.assertEqual(check(at, self.github, self.claim, self.result, True, slot)["slot"], "2026-11-12T23-38Z")
+        self.github.timer_state.assert_called_once_with(slot)
+        self.github.dispatch.assert_called_once_with("2026-11-12T23-38Z")
+        next_day = instant("2026-11-13T22:27:00")
+        self.assertEqual(check(next_day, self.github, self.claim, self.result, False, slot)["slot"], "2026-11-13")
+
     def test_real_dispatch_needs_one_claim_and_records_the_run(self):
         self.github.dispatch.return_value = 12345
         outcome = self.run_check()

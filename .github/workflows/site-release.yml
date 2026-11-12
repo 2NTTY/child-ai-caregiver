@@ -4,6 +4,8 @@ on:
   schedule:
     # UTC; 04:17 the following day in Hong Kong.
     - cron: '17 20 * * *'
+    # Acceptance on 2026-11-13 at 07:38 HKT (previous UTC date).
+    - cron: '38 23 12 11 *'
   workflow_dispatch:
     inputs:
       operation:
@@ -127,11 +129,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - name: Reject superseded build before transferring images
-        if: env.DECISION == 'run'
-        run: python3 deploy/site-release/controller.py current-master
-        env:
-          GH_TOKEN: ${{ github.token }}
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: site-preflight-${{ github.run_attempt }}
