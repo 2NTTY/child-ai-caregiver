@@ -5,9 +5,12 @@ const MAX_RESULTS = 6;
 const QUESTION_PHRASES = /請問|想知道|想知|點樣|點算|點解|有冇|有無|係咪|是否|如何|怎樣|甚麼|什麼|乜嘢|可唔可以|可以|應該|幾時|邊度|洗唔洗|使唔使|要唔要|會唔會|好唔好/gu;
 const QUESTION_PARTICLES = /[嗎呢呀啊嘛啦吧㗎嘅]/gu;
 const LATIN_FILLERS = new Set(["a", "an", "the", "is", "are", "what", "how", "can", "should", "please"]);
+/** Generic caregiver subject terms and generic colloquial verbs ignored on question queries so unrelated topics never false-match via a shared seed keyword (e.g. "BB食嘢"). */
+const QUESTION_LATIN_FILLERS = new Set(["bb", "baby", "babies"]);
+const QUESTION_HAN_FILLERS = new Set(["食嘢"]);
 /** Colloquial Cantonese parenting query terms mapped to official guidance bigrams on question queries only. */
 const COLLOQUIAL_QUERY_EXPANSIONS: ReadonlyArray<readonly [RegExp, readonly string[]]> = [
-  [/開糊|糊仔|副食品?|輔食|食嘢/u, ["加固", "固體食物", "米糊"]],
+  [/開糊|糊仔|副食品?|輔食/u, ["加固", "固體食物", "米糊"]],
   [/半歲/u, ["六個月"]],
   [/嘔奶|回奶|吐奶|溢奶/u, ["嘔奶", "吐奶", "溢奶"]],
   [/發熱|滾熱|發高燒|高燒/u, ["發燒"]],
@@ -31,10 +34,13 @@ export function knowledgeIndexTokens(text: string, question = false): Set<string
   for (const match of normalized.matchAll(/[\p{Script=Han}]+|[a-z0-9]+/gu)) {
     const word = match[0];
     if (/^[a-z0-9]+$/u.test(word)) {
-      if (word.length > 1 && !LATIN_FILLERS.has(word)) result.add(word);
+      if (word.length > 1 && !LATIN_FILLERS.has(word) && (!question || !QUESTION_LATIN_FILLERS.has(word))) result.add(word);
       continue;
     }
-    for (let index = 0; index + 1 < word.length; index++) result.add(word.slice(index, index + 2));
+    for (let index = 0; index + 1 < word.length; index++) {
+      const bigram = word.slice(index, index + 2);
+      if (!question || !QUESTION_HAN_FILLERS.has(bigram)) result.add(bigram);
+    }
   }
   if (question) {
     for (const [pattern, synonyms] of COLLOQUIAL_QUERY_EXPANSIONS) {

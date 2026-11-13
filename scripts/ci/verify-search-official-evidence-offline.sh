@@ -33,6 +33,9 @@ TEST_FILES=(
   tests/knowledge-ranking.test.ts
   tests/knowledge-a04.test.ts
   tests/knowledge-runtime.test.ts
+  tests/firestore-knowledge.test.ts
+  tests/local-knowledge-seed-assessments.test.ts
+  tests/chat-delivery-review.test.ts
   tests/product-agent-execution-contract.test.ts
   tests/agent-prompt.test.ts
   tests/agent-prompt-wiring.test.ts
@@ -40,12 +43,14 @@ TEST_FILES=(
   tests/agent-runtime.test.ts
   tests/agent-runtime-contract.test.ts
 )
-TEST_CASES=(5 8 4 6 8 3 4 6 20 17)
+TEST_CASES=(5 11 4 6 9 3 44 8 3 4 6 20 17)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" tsconfig.json tsconfig.server.json \
-  server/knowledge-ranking.ts server/knowledge-store.ts \
+  server/knowledge-ranking.ts server/knowledge-store.ts server/firestore-knowledge.ts \
   server/knowledge-retriever.ts server/knowledge-query-context.ts \
-  server/chat-delivery-review.ts server/product-agent-tools.ts; do
+  server/chat-delivery-review.ts server/product-agent-tools.ts \
+  scripts/local-knowledge-assessments.ts tests/helpers/firestore-domain-memory.ts \
+  knowledge/hk-official-seed.json knowledge/local-development-seed.json; do
   test -f "$source" && test ! -L "$source"
   git ls-files --error-unmatch -- "$source" >/dev/null
 done

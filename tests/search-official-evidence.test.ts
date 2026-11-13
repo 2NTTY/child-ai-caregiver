@@ -1,17 +1,20 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { FieldValue, VectorValue, type Firestore, type VectorQueryOptions } from "@google-cloud/firestore";
 import { FinishReason } from "@google/genai";
 import type { Pool } from "pg";
 import { AgentBudget, AgentStopped } from "../server/agent-budget.ts";
 import { readAiConfig } from "../server/ai-config.ts";
 import { createEmbeddingGateway } from "../server/embedding-gateway.ts";
 import type { EmbeddingActor, EmbeddingUsage } from "../server/embedding-gateway.ts";
-import { parseKnowledgeFilter, parseKnowledgeSource } from "../server/knowledge-inputs.ts";
+import { createFirestoreKnowledgeStore, type FirestoreKnowledgeEmbedding } from "../server/firestore-knowledge.ts";
+import { embeddingDocument, parseKnowledgeFilter, parseKnowledgeSource } from "../server/knowledge-inputs.ts";
 import { baseAgentKnowledgeFilter, profileKnowledgeAge, resolveKnowledgeQueryContext } from "../server/knowledge-query-context.ts";
 import { rankKnowledge } from "../server/knowledge-ranking.ts";
 import { accumulateKnowledgeRead } from "../server/knowledge-read-coverage.ts";
 import { createKnowledgeRetriever } from "../server/knowledge-retriever.ts";
+import type { KnowledgeReviewAssessment } from "../server/knowledge-review-assessment.ts";
 import { createKnowledgeStore } from "../server/knowledge-store.ts";
 import { createProductAgentTools } from "../server/product-agent-tools.ts";
 import { createProductAgent } from "../server/product-agent.ts";
@@ -27,7 +30,9 @@ import {
 } from "../server/chat-delivery-review.ts";
 import { CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT } from "../src/shared/chat-delivery-review.ts";
 import { agentStopDetailHint, agentStopMessage } from "../src/shared/agent-stop-message.ts";
-import type { KnowledgeCandidate, KnowledgeFilter, KnowledgeSourceInput } from "../src/shared/knowledge.ts";
+import { KNOWLEDGE_EMBEDDING, type KnowledgeCandidate, type KnowledgeFilter, type KnowledgeSourceInput } from "../src/shared/knowledge.ts";
+import { LOCAL_OFFICIAL_SEED_IDS, buildLocalOfficialSeedAssessment } from "../scripts/local-knowledge-assessments.ts";
+import { firestoreDomainFixture } from "./helpers/firestore-domain-memory.ts";
 import type { MemoryContext } from "../src/shared/memory.ts";
 import type { ProductAgentResult } from "../src/shared/product-agent.ts";
 import { productAgentResultSchema } from "../src/shared/product-agent-result.ts";
@@ -42,6 +47,14 @@ const chunkVomitId = "44444444-5555-4666-8777-888888888888";
 const chunkSolidId = "55555555-6666-4777-8888-999999999999";
 const scope = { userId, childId, workspaceId: "workspace-hk", authorizationVersion: "1", dataVersion: "epoch:1" };
 const vector = [1, ...Array<number>(1023).fill(0)];
+const visionVector = [0, 1, ...Array<number>(1022).fill(0)];
+const unrelatedTopicVector = [0, 0, 1, ...Array<number>(1021).fill(0)];
+
+function topicVectorForText(text: string): number[] {
+  if (/視力|護眼|驗眼|vision/i.test(text)) return visionVector;
+  if (/發熱|發燒|打針|肚瀉|紅屁股|唔肯食|唔開胃/u.test(text)) return unrelatedTopicVector;
+  return vector;
+}
 
 const queryActor: EmbeddingActor = {
   kind: "query_embedding", actorId: userId, operationId: runId,
@@ -61,14 +74,114 @@ function fakeUsage(): EmbeddingUsage {
   };
 }
 
-function fakeEmbeddingGateway() {
+function fakeEmbeddingGateway(useTopicVectors = false) {
   return createEmbeddingGateway({
     config,
     usage: fakeUsage(),
     provider: {
-      embed: async () => ({ values: vector, inputTokens: 4, billableCharacters: 16 }),
+      embed: async request => ({
+        values: useTopicVectors ? topicVectorForText(request.text) : vector,
+        inputTokens: 4,
+        billableCharacters: 16,
+      }),
     },
   });
+}
+
+async function loadCuratedSeedSources(): Promise<KnowledgeSourceInput[]> {
+  const rawSeed = JSON.parse(await readFile(new URL("../knowledge/hk-official-seed.json", import.meta.url), "utf8")) as unknown[];
+  return rawSeed.map(item => parseKnowledgeSource(item));
+}
+
+async function loadLocalDevelopmentManifest(): Promise<{ sourceId?: string; versionHash?: string; assessment?: unknown }> {
+  return JSON.parse(await readFile(new URL("../knowledge/local-development-seed.json", import.meta.url), "utf8")) as {
+    sourceId?: string;
+    versionHash?: string;
+    assessment?: unknown;
+  };
+}
+
+function createInMemoryFirestoreKnowledgeStore(sourceIds: readonly string[]) {
+  const fake = firestoreDomainFixture();
+  const encode = (value: any): any => value instanceof VectorValue
+    ? { syntheticVector: value.toArray() }
+    : Array.isArray(value)
+      ? value.map(encode)
+      : value && typeof value === "object"
+        ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k, encode(v)]))
+        : value;
+  const decode = (value: any): any => value && typeof value === "object" && Object.keys(value).length === 1 && Array.isArray(value.syntheticVector)
+    ? FieldValue.vector(value.syntheticVector)
+    : Array.isArray(value)
+      ? value.map(decode)
+      : value && typeof value === "object"
+        ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k, decode(v)]))
+        : value;
+  const snapshot = (snap: any) => ({ ...snap, data: () => decode(snap.data()), get: (k: string) => decode(snap.get(k)) });
+  const wrapQuery = (query: any): any => ({
+    ...query,
+    where: (...args: any[]) => wrapQuery(query.where(...args)),
+    findNearest: (options: VectorQueryOptions) => ({
+      async get() {
+        const qVec = options.queryVector instanceof VectorValue ? options.queryVector.toArray() : options.queryVector;
+        const docs = [...fake.records.entries()]
+          .filter(([path]) => path.startsWith(query.path + "/"))
+          .map(([path, raw]) => ({ path, row: decode(raw) }))
+          .filter(({ row }) => query.filters.every(([k, op, v]: [string, string, any]) => (op === "==" ? row[k] === v : op === "in" && v.includes(row[k]))))
+          .map(({ path, row }) => {
+            const stored = row.embedding.toArray() as number[];
+            const dot = stored.reduce((sum, val, idx) => sum + val * qVec[idx]!, 0);
+            const norm = (arr: number[]) => Math.sqrt(arr.reduce((sum, val) => sum + val * val, 0));
+            const distance = 1 - Math.max(-1, Math.min(1, dot / (norm(stored) * norm(qVec))));
+            return { id: path.split("/").at(-1), row: { ...row, [options.distanceResultField as string]: distance }, distance };
+          })
+          .filter(item => item.distance <= options.distanceThreshold!)
+          .sort((a, b) => a.distance - b.distance || a.id!.localeCompare(b.id!))
+          .slice(0, options.limit)
+          .map(item => ({ id: item.id, data: () => item.row }));
+        return { docs };
+      },
+    }),
+  });
+  const database = {
+    collection: (path: string) => wrapQuery(fake.database.collection(path)),
+    runTransaction: (op: (tx: any) => Promise<any>) => fake.database.runTransaction(tx => op({
+      get: async (target: any) => snapshot(await tx.get(target)),
+      getAll: async (...targets: any[]) => (await tx.getAll(...targets)).map(snapshot),
+      create: (ref: any, val: unknown) => tx.create(ref, encode(val)),
+      set: (ref: any, val: unknown) => tx.set(ref, encode(val)),
+      delete: (ref: any) => tx.delete(ref),
+    })),
+  } as unknown as Firestore;
+
+  const store = createFirestoreKnowledgeStore({
+    database,
+    projectId: "synthetic-knowledge-project",
+    namespace: "synthetic_knowledge",
+    sourceIds: [...sourceIds],
+  });
+
+  async function publishSource(
+    document: KnowledgeSourceInput,
+    assessment: KnowledgeReviewAssessment,
+    valuesForChunk: (chunkKey: string) => number[],
+  ) {
+    const imported = await store.importSource(document);
+    for (let page = 0; page < 16; page++) {
+      if ((await store.prepareSearch(imported.versionId, imported.hash)).complete) break;
+    }
+    await store.review(imported.versionId, imported.hash, "synthetic-operator", assessment);
+    const vectors: FirestoreKnowledgeEmbedding[] = document.chunks.map(ch => ({
+      chunkKey: ch.key,
+      inputHash: embeddingDocument(document.title, ch.section, ch.text).hash,
+      ...KNOWLEDGE_EMBEDDING,
+      values: valuesForChunk(ch.key),
+    }));
+    await store.publish(imported.versionId, imported.hash, vectors);
+    return imported;
+  }
+
+  return { store, publishSource };
 }
 
 function emptyMemoryContext(): MemoryContext {
@@ -115,9 +228,8 @@ function mockChunk(id: string, overrides: Partial<KnowledgeCandidate> = {}): Kno
 }
 
 test("colloquial parenting queries map to official guidance with structured citations (REQ-001 §7 Line 1)", async (t) => {
-  // Part A: Real rankKnowledge lexical matching against curated HK official seed chunks & symptom chunks
-  const rawSeed = JSON.parse(await readFile(new URL("../knowledge/hk-official-seed.json", import.meta.url), "utf8")) as unknown[];
-  const parsedSeed = rawSeed.map(item => parseKnowledgeSource(item));
+  // Part A: Real rankKnowledge lexical matching against curated HK official seed chunks & explicit seed-scope negative checks
+  const parsedSeed = await loadCuratedSeedSources();
   const seedCandidates: KnowledgeCandidate[] = parsedSeed.flatMap((src, sIdx) =>
     src.chunks.map((ch, cIdx) => mockChunk(`55555555-6666-4777-8888-${String(sIdx * 10 + cIdx).padStart(12, "0")}`, {
       distance: null,
@@ -153,18 +265,44 @@ test("colloquial parenting queries map to official guidance with structured cita
   assert.equal(rankedVision[0].key, "preschool-screening");
   assert.equal(rankedVision[0].sourceId, "fhs-child-vision");
 
-  // Colloquial symptom queries ("嘔奶" -> "吐奶/溢奶", "發熱/睇醫生" -> "發燒/求醫") rank the matching official chunk first
+  // Honest negative regression checks against real hk-official-seed.json:
+  // Appetite refusal ("唔肯食嘢"/"唔開胃") and uncovered topics (fever, vaccines, diarrhea, diaper rash) must NOT false-match fhs-solid-food
+  for (const uncoveredOrRefusalQuery of [
+    "BB唔肯食嘢點算？",
+    "BB食嘢唔開胃",
+    "今晚BB唔肯食嘢，係咪生病？",
+    "BB發燒點算",
+    "BB發熱點算？",
+    "BB幾時打針",
+    "BB喺邊度打針？",
+    "BB肚瀉點算？",
+    "BB紅屁股點算？",
+  ]) {
+    assert.deepEqual(
+      rankKnowledge(uncoveredOrRefusalQuery, seedCandidates),
+      [],
+      `Expected empty seed match for uncovered/refusal query: ${uncoveredOrRefusalQuery}`,
+    );
+  }
+  assert.ok(
+    !rankKnowledge("BB發熱幾多度要睇醫生？", seedCandidates).some(item => item.sourceId === "fhs-solid-food"),
+    "Fever query containing BB/醫生 must not false-match fhs-solid-food",
+  );
+
+  // Synthetic symptom-chunk ranking check ("嘔奶" -> "吐奶/溢奶", "發熱/睇醫生" -> "發燒/求醫");
+  // note that hk-official-seed.json currently covers feeding/development/vision only and omits fever/vomiting seeds
   const chunkFever = mockChunk(chunkFeverId, {
     distance: null,
     key: "fever-care",
-    title: "衛生署家庭健康服務 - 嬰幼兒發燒護理",
+    title: "Synthetic 官方參考 - 嬰幼兒發燒護理",
     keywords: ["發燒", "體溫", "求醫"],
-    text: "衛生署指引：初生至三個月以下嬰兒肛溫達攝氏38度或以上，必須立即求醫。較大嬰兒若發燒持續不退、精神萎靡或抽搐，應前往急症室求診。",
+    text: "Synthetic fever guidance: 三個月以下嬰兒肛溫達攝氏38度或以上，必須立即求醫。",
     sourceExcerpt: "三個月以下嬰兒發燒達38度需立即求醫。",
   });
   const chunkVomit = mockChunk(chunkVomitId, {
     distance: null,
     key: "spitting-up",
+    title: "Synthetic 官方參考 - 嬰兒吐奶護理",
   });
   assert.equal(rankKnowledge("BB成日嘔奶點算？", [chunkFever, chunkVomit])[0]?.chunkId, chunkVomitId);
   assert.equal(rankKnowledge("BB發熱幾多度要睇醫生？", [chunkVomit, chunkFever])[0]?.chunkId, chunkFeverId);
@@ -323,127 +461,68 @@ test("age and region applicability mismatches block unapplicable advice from for
     profile: { childId, version: 4, data: { age: { kind: "approximate", rawValue: "6", unit: "years", asOf: "2026-10-08" }, region: "Hong Kong" } },
   } as unknown as MemoryContext;
   assert.equal(profileKnowledgeAge(approxSixYearContext, now).precision, "approximate");
-  assert.equal(baseAgentKnowledgeFilter(approxSixYearContext, now).ageMatch, "overlap");
-  assert.equal(baseAgentKnowledgeFilter(approxSixYearContext, now).region, "HK");
+  const approxSixYearFilter = baseAgentKnowledgeFilter(approxSixYearContext, now);
+  assert.equal(approxSixYearFilter.ageMatch, "overlap");
+  assert.equal(approxSixYearFilter.region, "HK");
 
-  // Part B: Real createKnowledgeStore(pool).candidates SQL parameter binding & applicability predicate evaluation
-  const preschoolVisionId = "66666666-7777-4888-8999-000000000001";
-  const schoolVisionId = "66666666-7777-4888-8999-000000000002";
-  const ukFeverId = "66666666-7777-4888-8999-000000000003";
+  // Part B: Real production runtime store (createFirestoreKnowledgeStore) with all 5 curated HK seeds + synthetic UK source
+  // Exercises real server/firestore-knowledge.ts applies(), eligibility, lexical buckets, FindNearest vectors, and revalidation
+  const seedSources = await loadCuratedSeedSources();
+  const ukVisionSource: KnowledgeSourceInput = {
+    sourceId: "synthetic-uk-vision",
+    url: "https://www.fhs.gov.hk/synthetic-uk-vision-control",
+    title: "Synthetic UK Infant Vision Check",
+    publisher: "Synthetic Non-HK Regional Control",
+    classification: "official_guidance",
+    sourcePublishedAt: null,
+    sourceUpdatedAt: null,
+    fetchedAt: "2026-01-01T00:00:00Z",
+    termsUrl: "https://www.fhs.gov.hk/english/notice/notice.html",
+    chunks: [{
+      key: "uk-infant-vision",
+      section: "UK Infant Eye Screening",
+      sourceExcerpt: "Synthetic UK infant eye check excerpt.",
+      originalText: "Synthetic UK infant eye check original guidance body for UK families.",
+      text: "Synthetic UK infant eye check guidance: 視力檢查與護眼及發燒評估適用於英國地區 0-12 個月。",
+      keywords: ["視力檢查", "驗眼", "護眼", "發燒"],
+      applicability: { region: "UK", ageBasis: "actual", minAgeMonths: 0, maxAgeMonths: 12, topics: ["vision"], conditions: [] },
+    }],
+  };
+  const ukVisionAssessment: KnowledgeReviewAssessment = {
+    comparedVersionId: null,
+    comparedHash: null,
+    observationHash: null,
+    changes: [{
+      key: "uk-infant-vision",
+      oldQuote: null,
+      newQuote: "Synthetic UK infant eye check excerpt.",
+      meaning: "new",
+      explanation: "Synthetic UK control source for cross-region blocking test",
+    }],
+    checks: { age: "Reviewed", numbersAndUnits: "Reviewed", timing: "Reviewed", conditions: "Reviewed", exceptions: "Reviewed", prohibitions: "Reviewed", withdrawal: "Reviewed" },
+    questions: [{ query: "Synthetic UK check", expectedKeys: ["uk-infant-vision"], reason: "Region control check" }],
+    growthRuleImpact: "none",
+    growthRuleReason: "Synthetic UK control source",
+    decision: "approve",
+  };
 
-  const chunkPreschoolVision = mockChunk(preschoolVisionId, {
-    key: "preschool-screening",
-    text: "家庭健康服務的學前視力普查面向四至五歲孩子（48至未滿72個月）。",
-    keywords: ["視力普查", "驗眼"],
-    applicability: { region: "HK", ageBasis: "actual", minAgeMonths: 48, maxAgeMonths: 72, maxAgeMonthsExclusive: true, topics: ["vision"], conditions: [] },
-  });
-  const chunkSchoolVision = mockChunk(schoolVisionId, {
-    key: "school-eye-care",
-    text: "學童護眼：6歲至10歲小學生閱讀時應保持30厘米距離及充足光線。",
-    keywords: ["護眼", "視力檢查"],
-    applicability: { region: "HK", ageBasis: "actual", minAgeMonths: 72, maxAgeMonths: 120, topics: ["vision"], conditions: [] },
-  });
-  const chunkUkInfant = mockChunk(ukFeverId, {
-    key: "uk-infant-vision",
-    text: "NHS UK infant eye check guideline.",
-    keywords: ["視力檢查", "驗眼"],
-    applicability: { region: "UK", ageBasis: "actual", minAgeMonths: 0, maxAgeMonths: 12, topics: ["vision"], conditions: [] },
-  });
+  const fsEnv = createInMemoryFirestoreKnowledgeStore([...LOCAL_OFFICIAL_SEED_IDS, ukVisionSource.sourceId]);
+  const localManifest = await loadLocalDevelopmentManifest();
+  for (const src of seedSources) {
+    await fsEnv.publishSource(src, buildLocalOfficialSeedAssessment(src, localManifest), () => (src.sourceId === "fhs-child-vision" ? visionVector : vector));
+  }
+  await fsEnv.publishSource(ukVisionSource, ukVisionAssessment, () => visionVector);
 
-  const allDbChunks = [chunkPreschoolVision, chunkSchoolVision, chunkUkInfant];
-  const recordedSql: Array<{ sql: string; values: unknown[] }> = [];
-  const fakePool = {
-    connect: async () => ({
-      release() {},
-      query: async (sql: string, values: unknown[] = []) => {
-        recordedSql.push({ sql, values });
-        if (!sql.includes("WITH eligible")) return { rows: [], rowCount: 0 };
-        const classification = values[4] as string;
-        const region = values[5] as string;
-        const ageBasis = values[6] as string | null;
-        const minMonths = values[7] as number | null;
-        const maxMonths = values[8] as number | null;
-        const ageMatch = values[11] as "contained" | "overlap" | "unknown";
-        const chunkIds = values[12] as string[] | null;
+  const gateway = fakeEmbeddingGateway(true);
+  const firestoreRetriever = createKnowledgeRetriever(fsEnv.store, gateway);
+  const newFsRun = () => {
+    const runBudget = new AgentBudget();
+    t.after(() => runBudget.close());
+    return { budget: runBudget, run: firestoreRetriever.createRun({ actor: queryActor, budget: runBudget, authorize: async () => true }) };
+  };
+  const { run: sixYearRun } = newFsRun();
 
-        const matching = allDbChunks.filter(item => {
-          if (item.classification !== classification) return false;
-          if (item.applicability.region !== region) return false;
-          if (chunkIds && !chunkIds.includes(item.chunkId)) return false;
-          const app = item.applicability;
-          if (app.ageBasis !== "any" && ageMatch !== "unknown") {
-            if (!ageBasis || app.ageBasis !== ageBasis || minMonths === null || maxMonths === null) return false;
-            const lowBound = ageMatch === "overlap" ? maxMonths : minMonths;
-            const highBound = ageMatch === "overlap" ? minMonths : maxMonths;
-            if ((app.minAgeMonths ?? 0) > lowBound) return false;
-            if (app.maxAgeMonthsExclusive ? (app.maxAgeMonths ?? 0) <= highBound : (app.maxAgeMonths ?? 0) < highBound) return false;
-          }
-          return true;
-        });
-
-        return {
-          rows: matching.map(item => ({
-            id: item.chunkId,
-            source_id: item.sourceId,
-            version_id: item.versionId,
-            version_hash: item.versionHash,
-            content_hash: item.contentHash,
-            source_document: {
-              sourceId: item.sourceId,
-              url: item.url,
-              title: item.title,
-              publisher: item.publisher,
-              classification: item.classification,
-              sourcePublishedAt: item.sourcePublishedAt,
-              sourceUpdatedAt: item.sourceUpdatedAt,
-              sourceDateText: item.sourceDateText,
-              validUntil: item.validUntil,
-              fetchedAt: item.fetchedAt,
-              termsUrl: "https://www.fhs.gov.hk/terms",
-              chunks: [item],
-            } satisfies KnowledgeSourceInput,
-            document: item,
-            checked_at: new Date(item.checkedAt),
-            last_successful_check_at: null,
-            usage_scope: "public_noncommercial" as const,
-            distance: 0.1,
-            rank_score: "0.03",
-          })),
-          rowCount: matching.length,
-        };
-      },
-    }),
-  } as unknown as Pool;
-
-  const pgStore = createKnowledgeStore(fakePool);
-  const gateway = fakeEmbeddingGateway();
-  const retriever = createKnowledgeRetriever(pgStore, gateway);
-  const budget = new AgentBudget();
-  t.after(() => budget.close());
-  const run = retriever.createRun({ actor: queryActor, budget, authorize: async () => true });
-
-  // 1) 6-month-old HK infant searching vision/eye care: 48-72m, 72-120m, and UK 0-12m are all excluded by KnowledgeStore
-  const infantVisionResult = await run.search("視力檢查與護眼", resolvedSixMonth.filter);
-  assert.equal(infantVisionResult.chunks.length, 0);
-  const eligibleQuery = recordedSql.find(entry => entry.sql.includes("WITH eligible"))!;
-  assert.equal(eligibleQuery.values[4], "official_guidance");
-  assert.equal(eligibleQuery.values[5], "HK");
-  assert.equal(eligibleQuery.values[6], "actual");
-  assert.equal(eligibleQuery.values[7], 6);
-  assert.equal(eligibleQuery.values[8], 6);
-  assert.equal(eligibleQuery.values[11], "contained");
-
-  // Revalidating older-child or foreign-region chunks under the 6-month HK filter fails
-  assert.equal(await run.revalidateCitations(
-    [{ chunkId: schoolVisionId, versionId: chunkSchoolVision.versionId, contentHash: chunkSchoolVision.contentHash }],
-    resolvedSixMonth.filter,
-  ), false);
-  assert.equal(await run.revalidateCitations(
-    [{ chunkId: ukFeverId, versionId: chunkUkInfant.versionId, contentHash: chunkUkInfant.contentHash }],
-    resolvedSixMonth.filter,
-  ), false);
-
-  // 2) At exactly 72 months (6 years old) in HK, preschool-screening (48-72m exclusive) is excluded while school-eye-care (72-120m) matches
+  // Fetch published citations via valid region/age filters to verify out-of-scope citation revalidation fails
   const sixYearFilter = parseKnowledgeFilter({
     region: "HK",
     classification: "official_guidance",
@@ -451,18 +530,96 @@ test("age and region applicability mismatches block unapplicable advice from for
     ageMatch: "contained",
     topics: [],
   });
-  const sixYearResult = await run.search("視力檢查與護眼", sixYearFilter);
-  assert.deepEqual(sixYearResult.chunks.map(item => item.chunkId), [schoolVisionId]);
-  assert.equal(sixYearResult.chunks[0]?.applicabilityStatus, "applicable");
+  const sixYearResult = await sixYearRun.search("視力檢查與護眼", sixYearFilter);
+  assert.equal(sixYearResult.chunks[0]?.key, "school-eye-care", "At 72 months HK, school-eye-care (72-120m) must rank first");
+  assert.equal(sixYearResult.chunks.some(ch => ch.key === "preschool-screening"), false, "preschool-screening (maxAgeMonths=72 exclusive) must be excluded at 72 months");
+  assert.equal(sixYearResult.chunks.some(ch => ch.applicability.region !== "HK"), false, "Foreign-region chunks must be excluded under HK filter");
+  assert.ok(sixYearResult.chunks.every(ch => ch.applicabilityStatus === "applicable"));
 
-  // Part C: When age/region applicability filters out all candidates, unapplicable care advice cannot be delivered
+  const [preschoolVisionCandidate] = await fsEnv.store.candidates(
+    parseKnowledgeFilter({ region: "HK", classification: "official_guidance", age: { basis: "actual", minMonths: 60, maxMonths: 60 }, ageMatch: "contained", topics: ["vision"] }),
+    visionVector,
+  );
+  assert.equal(preschoolVisionCandidate?.key, "preschool-screening");
+
+  const [ukCandidate] = await fsEnv.store.candidates(
+    parseKnowledgeFilter({ region: "UK", classification: "official_guidance", age: { basis: "actual", minMonths: 6, maxMonths: 6 }, ageMatch: "contained", topics: ["vision"] }),
+    visionVector,
+  );
+  assert.ok(ukCandidate, "UK synthetic chunk should exist under UK 6-month filter");
+
+  // 1) 6-month HK infant searching vision OR fever+doctor: real Firestore applies() excludes 48-72m, 72-120m, and UK (even when vector cosine distance is 0.0)
+  const { run: infantRun } = newFsRun();
+  const infantVisionResult = await infantRun.search("視力檢查與護眼", resolvedSixMonth.filter);
+  assert.equal(infantVisionResult.chunks.length, 0);
+  const infantFeverDoctorResult = await infantRun.search("BB發熱幾多度要睇醫生？", resolvedSixMonth.filter);
+  assert.equal(infantFeverDoctorResult.chunks.length, 0);
+
+  // Positive control at 6 months HK: solids guidance (0-12m HK) retrieves cleanly
+  const { run: infantSolidRun } = newFsRun();
+  const infantSolidResult = await infantSolidRun.search("半歲BB點樣開糊？", resolvedSixMonth.filter);
+  assert.equal(infantSolidResult.chunks[0]?.key, "starting-solids");
+  assert.equal(infantSolidResult.chunks[0]?.applicabilityStatus, "applicable");
+
+  // Revalidating older-child, maxAgeMonthsExclusive boundary, or foreign-region real published chunks fails while starting-solids passes
+  assert.equal(await infantSolidRun.revalidateCitations(
+    [{ chunkId: sixYearResult.chunks[0]!.chunkId, versionId: sixYearResult.chunks[0]!.versionId, contentHash: sixYearResult.chunks[0]!.contentHash }],
+    resolvedSixMonth.filter,
+  ), false);
+  assert.equal(await sixYearRun.revalidateCitations(
+    [{ chunkId: preschoolVisionCandidate.chunkId, versionId: preschoolVisionCandidate.versionId, contentHash: preschoolVisionCandidate.contentHash }],
+    sixYearFilter,
+  ), false);
+  assert.equal(await infantSolidRun.revalidateCitations(
+    [{ chunkId: ukCandidate.chunkId, versionId: ukCandidate.versionId, contentHash: ukCandidate.contentHash }],
+    resolvedSixMonth.filter,
+  ), false);
+  assert.equal(await infantSolidRun.revalidateCitations(
+    [{ chunkId: infantSolidResult.chunks[0]!.chunkId, versionId: infantSolidResult.chunks[0]!.versionId, contentHash: infantSolidResult.chunks[0]!.contentHash }],
+    resolvedSixMonth.filter,
+  ), true);
+
+  // Approximate age overlap yields conditional applicability while still enforcing region=HK
+  const { run: approxRun } = newFsRun();
+  const approxVisionResult = await approxRun.search("視力檢查與護眼", approxSixYearFilter);
+  assert.ok(approxVisionResult.chunks.length >= 1);
+  assert.ok(approxVisionResult.chunks.every(item => item.applicabilityStatus === "conditional" && item.applicability.region === "HK"));
+
+  // Part B2: Secondary verification of Postgres createKnowledgeStore(pool) SQL query predicates & parameter bindings
+  // (SQL migrations are retired in this repo via scripts/sql-retired.mjs; Postgres SQL execution itself is not run offline)
+  const recordedSql: Array<{ sql: string; values: unknown[] }> = [];
+  const fakePool = {
+    connect: async () => ({
+      release() {},
+      query: async (sql: string, values: unknown[] = []) => {
+        recordedSql.push({ sql, values });
+        return { rows: [], rowCount: 0 };
+      },
+    }),
+  } as unknown as Pool;
+  const pgStore = createKnowledgeStore(fakePool);
+  await pgStore.candidates(resolvedSixMonth.filter, vector, { query: "視力檢查與護眼" });
+  const eligibleQuery = recordedSql.find(entry => entry.sql.includes("WITH eligible"))!;
+  assert.ok(eligibleQuery.sql.includes("v.document->>'classification' = $5"));
+  assert.ok(eligibleQuery.sql.includes("c.document->'applicability'->>'region' = $6"));
+  assert.ok(eligibleQuery.sql.includes("maxAgeMonthsExclusive"));
+  assert.ok(eligibleQuery.sql.includes("CASE WHEN $12='overlap'"));
+  assert.equal(eligibleQuery.values[4], "official_guidance");
+  assert.equal(eligibleQuery.values[5], "HK");
+  assert.equal(eligibleQuery.values[6], "actual");
+  assert.equal(eligibleQuery.values[7], 6);
+  assert.equal(eligibleQuery.values[8], 6);
+  assert.equal(eligibleQuery.values[11], "contained");
+
+  // Part C: When real Firestore applicability filters out all candidates, unapplicable care advice cannot be delivered
+  const { budget } = newFsRun();
   const tools = createProductAgentTools({
     authorize: async () => true,
     run: { scope, budget, runId, authorize: async () => true },
     memory: { context: async () => confirmedSixMonthContext } as any,
     tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) } as any,
     store: { authorize: async () => true } as any,
-    knowledge: retriever,
+    knowledge: firestoreRetriever,
   });
   const searchTool = tools.tools.find(tool => tool.name === "search_knowledge")!;
   const presentTool = tools.tools.find(tool => tool.name === "present_answer")!;
@@ -513,8 +670,8 @@ test("long documents, tables and exception conditions maintain end-to-end tracea
   const anchorChunkId = "77777777-8888-4999-8aaa-111111111111";
   const neighborChunkId = "77777777-8888-4999-8aaa-222222222222";
 
-  // Build an originalText > 1200 chars where the critical contraindication/exception table is past char 1000 (beyond the 800-char default excerpt cap)
-  const tableHeaderAndDosage = "衛生署幼兒退燒指引 表格一：撲熱息痛（Paracetamol）按體重計算劑量標準。"
+  // Synthetic multi-chunk Paracetamol table fixture (>1200 chars) where the critical contraindication/exception table starts past char 800
+  const tableHeaderAndDosage = "Synthetic 官方參考 幼兒退燒指引 表格一：撲熱息痛（Paracetamol）按體重計算劑量標準。"
     + "一般建議按幼兒體重每公斤每次服用 10 至 15 毫克，每隔四至六小時一次，二十四小時內不可超過四次。"
     + "請使用附設量杯或針筒準確量度毫升數，切勿使用普通家用湯匙以免劑量過高。".repeat(26);
   const tableExceptions = "【表格二：重要禁忌與例外情況】患有葡萄糖六磷酸去氫酵素缺乏症（蠶豆症 G6PD）或肝腎功能異常之幼兒，必須先經醫生處方評估；切勿給16歲以下兒童服用阿士匹靈（Aspirin），以免誘發雷氏綜合症（Reye's syndrome）。";
@@ -647,6 +804,79 @@ test("long documents, tables and exception conditions maintain end-to-end tracea
   assert.equal(reviewed.review?.decision, "pass");
   assert.equal(chatDeliveryReviewSourceExcerpt(longOriginalText).excerptComplete, true);
   assert.equal(accumulateKnowledgeRead(undefined, firstSegmentChunk!).readCoverage?.complete, false);
+
+  // Also verify paginated originalText reconstruction on a real >1000-char curated HK official seed chunk
+  // (fhs-child-vision/preschool-screening contains inclusion/exclusion criteria & medical-seeking exception past char 800)
+  const seedSourcesForLongRead = await loadCuratedSeedSources();
+  const preschoolSeed = seedSourcesForLongRead.find(src => src.sourceId === "fhs-child-vision")!;
+  const preschoolChunkInput = preschoolSeed.chunks.find(ch => ch.key === "preschool-screening")!;
+  const preschoolOriginalText = preschoolChunkInput.originalText ?? "";
+  assert.ok(preschoolOriginalText.length > 1000, `Expected real preschool-screening originalText > 1000 chars, got ${preschoolOriginalText.length}`);
+  const realSeedLongChunk = mockChunk("77777777-8888-4999-8aaa-333333333333", {
+    key: preschoolChunkInput.key,
+    sourceId: preschoolSeed.sourceId,
+    title: preschoolSeed.title,
+    url: preschoolSeed.url,
+    publisher: preschoolSeed.publisher,
+    section: preschoolChunkInput.section,
+    sourceExcerpt: preschoolChunkInput.sourceExcerpt,
+    originalText: preschoolOriginalText,
+    text: preschoolChunkInput.text,
+    keywords: preschoolChunkInput.keywords,
+    applicability: preschoolChunkInput.applicability,
+  });
+  const realLongRetriever = createKnowledgeRetriever({
+    candidates: async (_filter: KnowledgeFilter, _vec: readonly number[] | null, opts?: { chunkIds?: string[]; afterKey?: string | null }) => {
+      if (opts?.chunkIds) return opts.chunkIds.includes(realSeedLongChunk.chunkId) ? [realSeedLongChunk] : [];
+      if (opts?.afterKey) return [];
+      return [realSeedLongChunk];
+    },
+  }, gateway);
+  const realLongBudget = new AgentBudget();
+  t.after(() => realLongBudget.close());
+  const realLongTools = createProductAgentTools({
+    authorize: async () => true,
+    run: { scope, budget: realLongBudget, runId, authorize: async () => true },
+    memory: { context: async () => emptyMemoryContext() } as any,
+    tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) } as any,
+    store: { authorize: async () => true } as any,
+    knowledge: realLongRetriever,
+  });
+  await realLongTools.tools.find(tool => tool.name === "search_knowledge")!.execute(
+    { query: "四歲視力普查包括咩項目", classification: "official_guidance" },
+    { callId: "call-search-real-long", queryEmbeddingAttemptKey: "attempt-real-long-1" } as any,
+  );
+  realLongBudget.prepareToolResponseBudget(realLongBudget.limits.inputCharacters - 4096 - 2600, 0, 0);
+  const realReadCtxTool = realLongTools.tools.find(tool => tool.name === "read_knowledge_context")!;
+  let realCursor: import("../src/shared/knowledge.ts").KnowledgeContextCursor | null = null;
+  let realAnchorPages = 0;
+  for (let step = 0; step < 20; step++) {
+    const pageRes = await realReadCtxTool.execute(
+      { anchorChunkId: realSeedLongChunk.chunkId, cursor: realCursor },
+      { callId: `call-read-real-${step + 1}` } as any,
+    );
+    assert.equal(pageRes.status, "succeeded");
+    const page = (pageRes.data as { result: import("../src/shared/knowledge.ts").KnowledgeContextResult }).result;
+    if (page.chunks.some(ch => ch.chunkId === realSeedLongChunk.chunkId)) realAnchorPages++;
+    realCursor = page.nextCursor;
+    if (!realCursor) break;
+  }
+  assert.equal(realCursor, null, "Paginated read of real seed chunk must reach EOF");
+  assert.ok(realAnchorPages >= 2, `Expected >=2 paginated reads on real preschool-screening originalText, got ${realAnchorPages}`);
+  const realPresentRes = await realLongTools.tools.find(tool => tool.name === "present_answer")!.execute({
+    kind: "caregiving",
+    paragraphs: [{
+      text: "學前兒童視力普查涵蓋四至五歲孩子，但不包括色覺檢查或近視度數評估；發現眼睛異常應盡快求醫。",
+      citationIds: [realSeedLongChunk.chunkId],
+    }],
+  }, { callId: "call-present-real-long" } as any);
+  assert.equal(realPresentRes.status, "succeeded");
+  const realSeedDraftSource = realLongTools.deliveryDraft()!.sources.find(s => s.citationId === realSeedLongChunk.chunkId)!;
+  assert.equal(realSeedDraftSource.excerptComplete, true);
+  assert.equal(realSeedDraftSource.excerpt.length, preschoolOriginalText.length);
+  assert.ok(realSeedDraftSource.excerpt.includes("不包括"));
+  assert.ok(realSeedDraftSource.excerpt.includes("若孩子現已佩戴眼鏡"));
+  assert.ok(realSeedDraftSource.excerpt.includes("請盡快到家庭或眼科醫生求診"));
 });
 
 test("insufficient evidence cleanly stops with delivery_review_no_sources while retaining sources without hallucinated text (REQ-001 §7 Line 6)", async (t) => {
@@ -788,9 +1018,13 @@ test("insufficient evidence cleanly stops with delivery_review_no_sources while 
 });
 
 test("pure clarifying questions deliver cleanly while uncited care claims wrapped in questions are held to review (REQ-001 §7 Lines 1, 6)", async (t) => {
-  // Part A: Pure Cantonese & Mandarin clarifying questions skip semantic review and need no sources
+  // Part A: Pure Cantonese & Mandarin clarifying questions (including leading time adverbs like "目前BB幾多個月大？") skip semantic review
   for (const pureClarifyText of [
     "請問BB目前幾多個月大？發燒持續咗幾多日？",
+    "目前BB幾多個月大？",
+    "請問目前BB幾多個月大？",
+    "持續咗幾多日？",
+    "BB而家幾大？",
     "BB而家幾多個月？體溫幾多度？",
     "小朋友幾多歲？有冇發燒？",
     "寶寶幾個月大？症狀持續了多久？",
@@ -864,6 +1098,8 @@ test("pure clarifying questions deliver cleanly while uncited care claims wrappe
 
   // Part B: Disguised care advice or medication claims wrapped in questions fail closed
   for (const disguisedText of [
+    "目前BB幾多個月大？可以食退燒藥水嗎？",
+    "撲熱息痛持續咗幾多日？",
     "BB發燒可以食撲熱息痛退燒藥水，你要唔要而家試下餵？",
     "請問BB幾多個月大？建議先餵退燒藥水？",
     "BB未滿四個月可以試下食米糊嗎？",
@@ -885,6 +1121,17 @@ test("pure clarifying questions deliver cleanly while uncited care claims wrappe
       ...disguisedDraft,
       paragraphs: [{ text: clarifyText, citationIds: [] }],
     }));
+  }
+
+  // Visible baseline keyword-boundary check (R1 §3):
+  // Widening BOUNDED_CLARIFICATION still strictly rejects medication/dosage duration phrases as pure clarifying questions.
+  // Pre-existing CARE_DOMAIN_PATTERN/MEDICAL_CLAIM_PATTERN does not match bare "食藥"/"10ml", left unchanged for Owner review.
+  for (const boundaryText of [
+    "食藥持續咗幾多日？",
+    "藥要食幾多個月？",
+    "每次餵 10ml，持續咗幾多日？",
+  ]) {
+    assert.equal(isPureClarifyingQuestion(boundaryText), false, `Widened BOUNDED_CLARIFICATION must keep rejecting ${boundaryText}`);
   }
 
   // Part C: Bounded revise -> repair -> rereview loop (S4) repairs an incomplete official summary on the same root budget
