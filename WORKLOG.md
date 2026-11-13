@@ -6045,3 +6045,11 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 ## 2026-11-18 家庭附件庫直接上傳
 
 P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授權及原操作收據。使用同一個合成家庭走正式 HTTP，核對照顧者保存、唯讀成員讀回原件、舊草稿隔離、途中撤權及原操作重試。照片和錄音只補各自的上傳接點。資料來自記憶體 Firestore 與合成物件服務；正式交付及設備證據見接手清單。
+
+### 2026-11-13　B-P2 官方原文檢索、適用核對與結構化引用（codex/search-official-evidence，本地未開 PR）
+
+在基線 `origin/master`（`da113bd9`）建立本地分支 `codex/search-official-evidence`（未 push／未開 PR），依切片 B 總則及 [REQ-001 §7](docs/REQUIREMENTS_BACKLOG.md#7-建議驗收清單) 落實官方指引檢索與引用契約：
+1）新增 [search-official-evidence 測試](tests/search-official-evidence.test.ts)（5/5，涵蓋 REQ-001 §7 第 1、2、5、6 行）：口語問題（發燒、嘔奶）到官方指引映射與段落級 `citationIds` 結構化驗證、年齡及地區適用性不匹配時嚴格阻斷不適用資料交付、長手冊多段切分與表格例外（G6PD／阿士匹靈禁忌）在 `readContext` / 4000 字元累計中完整傳遞至獨立審核員、證據不足時如實走既有 `delivery_review_no_sources` 阻斷與來源保留而不編造內容、以及純澄清提問免審與問號包裝照護建議仍受嚴格審查；
+2）沿用既有結構化引用（段落級 `citationIds` 與結果級 `citations`），不另起 Markdown 引用機制；
+3）新增 [離線驗證腳本](scripts/ci/verify-search-official-evidence-offline.sh) 與 [CI workflow](.github/workflows/search-official-evidence-offline.yml)，9 個測試檔共 73 例離線 guard 測試全數通過（含知識、執行契約、prompt、Vertex 及 runtime 測試），配合兩份 `tsc --noEmit` 全數通過。
+本階段尚無真 Gemini 模型評測或線上部署（未 push／未開 PR）。
