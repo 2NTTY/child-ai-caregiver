@@ -2,7 +2,7 @@ import type { ChatFileMessageReference } from '../shared/chat-files.ts';
 import type { VoiceMessageReference } from '../shared/voice.ts';
 import type { PhotoMessageReference } from '../shared/photos.ts';
 import { normalizeChatInput } from "./chat-input.ts";
-import type { AgentProgress, OfficialHelpId } from '../shared/agent-feedback.ts';
+import { mergeAgentProgressSources, type AgentProgress, type AgentProgressSource, type OfficialHelpId } from '../shared/agent-feedback.ts';
 import { agentStopMessage } from "../shared/agent-stop-message.ts";
 import type { ChatReplyState, ChatMessage } from "../shared/chat.ts";
 import { ChatApiError, type ChatApi, type ChatUsage } from "./chat-api.ts";
@@ -41,7 +41,7 @@ export interface ChatState {
   remoteReply?: ChatReplyState | null;
   replyingMessageId: string | null;
   replyError: string | null;
-  feedback?: (AgentProgress & { cards: OfficialHelpId[] }) | null;
+  feedback?: (AgentProgress & { cards: OfficialHelpId[]; sources: AgentProgressSource[] }) | null;
 }
 
 interface RequestScope {
@@ -477,8 +477,10 @@ export class ChatController {
       if (!await this.verifyIdentity(scope)) return;
       const reply = await this.api.requestReply(childId, messageId, scope.controller.signal, scope.userId, event => {
         if (!this.current(scope) || event.messageId !== messageId || this.state.replyingMessageId !== messageId) return;
-        const previous = this.state.feedback?.messageId === messageId ? this.state.feedback.cards : [];
-        this.update({ feedback: { ...event, cards: [...new Set([...previous, ...(event.card ? [event.card] : [])])] } });
+        const previous = this.state.feedback?.messageId === messageId ? this.state.feedback : null;
+        const cards = [...new Set([...(previous?.cards ?? []), ...(event.card ? [event.card] : [])])];
+        const sources = mergeAgentProgressSources(previous?.sources ?? [], event.sources);
+        this.update({ feedback: { ...event, cards, sources } });
       });
       if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
       const messages = this.state.messages.some(item => item.id === reply.id)

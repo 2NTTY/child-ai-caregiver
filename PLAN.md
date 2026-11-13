@@ -308,6 +308,14 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 - **文件目的地整併**：依據 `AGENTS.md#document-updates`，專案以 `PLAN.md#active` 及 `STATUS.md` 為權威資訊入口。先前之獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除，其內容已完整整併至本節。
 - **單一作者署名**：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`。
+
+### Slice B（B-P3）：檢索中官方來源卡片即時串流與對話預覽 (`codex/search-source-progress`)
+
+- **對應需求**：REQ-002 §§5.1–5.2 (`:456-470`)、§7.2 (`:519`)。
+- **核心設計與邊界**：
+  - 擴充 `agentProgressSchema`（`.strict()`），支援最多 6 張已過濾之官方來源預覽卡（`chunkId`、`title`、`sourceOrg`、`url`、`stage: "found" | "read"`），嚴格遵守 `server/agent-feedback-stream.ts` 既有 48 事件與 256KB 串流預算，且絕不夾帶未審核草稿文字或虛構優先權重。
+  - 於 `search_knowledge` 及 `read_knowledge_context` 完成時即時透過 SSE 發布 `found`／`read` 階段來源預覽，並於 `src/client/chat-controller.ts` 進行單調匯聚（`read` 不被遲到的 `found` 降級），在 `frontend/src/screens/chatScreen.tsx` 回覆生成期間（`chat.busy === "reply"`）渲染 `ProgressSourceCards`。
+- **驗收限制聲明**：本分支僅於本地進行離線單元測試與型別檢查，未執行真實 Gemini/Vertex 調用、未連接真實資料庫或進行遠端推送。
 - **嚴格正向提交**：無 `git commit --amend`，維護 append-only 歷史完整性。
 - **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。
 
