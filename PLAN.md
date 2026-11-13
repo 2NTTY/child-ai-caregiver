@@ -308,6 +308,15 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 - **文件目的地整併**：依據 `AGENTS.md#document-updates`，專案以 `PLAN.md#active` 及 `STATUS.md` 為權威資訊入口。先前之獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除，其內容已完整整併至本節。
 - **單一作者署名**：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`。
+
+### Slice B（B-P5）：不依賴 AI 回合的固定官方求助入口候選 (`codex/search-help-entry`) — 本地 HOLD 待 Owner (`2NTTY`) 確認 UI 設計
+
+- **對應需求**：REQ-001 §4.3 (`:178-184`)。
+- **核心設計與治理邊界（Owner Pending 聲明）**：
+  - 依據 `REQ-001 §4.3:184`（「建議位置與觸發方式，待定」），對話頁固定官方求助入口之位置與觸發互動屬於**待 Owner (`2NTTY`) 拍板之設計提案（Pending Design Proposal）**，本分支嚴格保留於本地作為設計候選，在 Owner 明確核准前**絕不推送或合併至 `master`**。
+  - 於 `src/shared/agent-feedback.ts` 新增確定性規則匹配函式 `matchOfficialHelpForText`，可在不呼叫 AI 模型、即使 AI 服務完全停用或失敗的情況下，根據最新使用者訊息或輸入框草稿即時識別緊急醫療（`999`）與用藥安全（衛生署家庭健康服務）求助需求。
+  - 於 `frontend/src/screens/chatScreen.tsx` 提供非阻斷式「官方求助及熱線」固定收合入口，開啟後直接渲染既有已核准之 `OfficialHelpCards`（不新增未經核准的外部電話或網址）。
+- **驗收限制聲明**：本分支為待 Owner (`2NTTY`) 審批之本地設計候選（LOCAL HOLD），僅執行本地離線測試與型別檢查，未執行真實模型調用、未連接真實資料庫，且未執行遠端推送。
 - **嚴格正向提交**：無 `git commit --amend`，維護 append-only 歷史完整性。
 - **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。
 

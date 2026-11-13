@@ -2,7 +2,12 @@ import { BackgroundSurface, useCustomBackground } from "../components/appearance
 import { ChatFileMessage } from '../production/ChatFileMessage';
 import { VoiceMessage } from '../production/VoiceMessage';
 import { OfficialHelpCards } from '../components/chat/OfficialHelpCards';
-import { AGENT_PROGRESS_LABELS } from '../../../src/shared/agent-feedback';
+import {
+  AGENT_PROGRESS_LABELS,
+  ALL_OFFICIAL_HELP_IDS,
+  matchOfficialHelpForText,
+  OFFICIAL_HELP_ENTRY_COPY,
+} from '../../../src/shared/agent-feedback';
 import { agentStopMessage } from '../../../src/shared/agent-stop-message';
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
@@ -59,7 +64,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   const scrollRef = useRef<NativeScrollView | null>(null), timelineRef = useRef<ChatTimelineControls | null>(null);
   const [followRequest, setFollowRequest] = useState<string>();
   const detailsTrigger = useRef<View | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(false), [privacyOpen, setPrivacyOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false), [privacyOpen, setPrivacyOpen] = useState(false), [helpOpen, setHelpOpen] = useState(false);
   const foreground = useChatForeground(), [visibleIds, setVisibleIds] = useState<string[]>([]);
   useChatExposure(foreground && pathname === "/chat" && !notificationMessageId && !detailsOpen && !privacyOpen, visibleIds);
   const previous = useRef({ ids: new Set(chat.messages.map(item => item.id)), busy: chat.busy });
@@ -95,6 +100,17 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
     navigate(() => router.push("/settings?section=assistant"), "workspace");
   }
   const replyRunning = chat.busy === "reply" || chat.remoteReply?.status === "running";
+  const latestUnrepliedUserMessage = [...chat.messages].reverse().find(item => item.role === "user");
+  const latestUserPending = !!latestUnrepliedUserMessage
+    && !chat.messages.some(item => item.role === "model" && item.inReplyTo === latestUnrepliedUserMessage.id);
+  const autoHelpIds = matchOfficialHelpForText(`${chatDraft}\n${latestUserPending ? latestUnrepliedUserMessage!.text : ""}`);
+  const activeHelpIds = [
+    ...new Set([
+      ...(helpOpen ? ALL_OFFICIAL_HELP_IDS : []),
+      ...autoHelpIds,
+      ...(chat.busy === "reply" && chat.feedback?.cards ? chat.feedback.cards : []),
+    ]),
+  ];
   const progressLabel = chat.busy === "save" ? "正在保存…"
     : chat.busy === "reply" ? (chat.feedback ? AGENT_PROGRESS_LABELS[chat.feedback.phase] : "已保存，正在等候回覆…")
       : chat.remoteReply?.status === "running" ? "原回覆仍在處理，毋須重新發送。" : null;
@@ -110,12 +126,13 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
     {voiceUpload.unknown?<AppButton label="查核原錄音上傳" disabled={voiceUpload.busy||!chat.online} onPress={checkVoiceUpload}/>:null}
     {chat.available === false ? <Text style={styles.meta}>AI 暫未開放，已保存訊息可稍後再要求回覆。</Text> : null}
     {!chat.online ? <Text accessibilityRole="alert" style={styles.warning}>{chat.messages.length ? "目前離線，所示聊天是上次讀取的快照；草稿仍保留。" : "目前離線，草稿仍保留。"}</Text> : null}
+    {autoHelpIds.length ? <Text testID="chat-official-help-urgent-notice" accessibilityRole="alert" style={styles.warning}>{OFFICIAL_HELP_ENTRY_COPY.urgentNotice}</Text> : null}
+    {activeHelpIds.length ? <OfficialHelpCards ids={activeHelpIds} /> : null}
     {progressLabel ? <View testID="chat-operation-status" style={styles.progressRow}>
       <View style={styles.progressCopy}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.progressLabel}>{progressLabel}</Text></View>
       {replyRunning ? <AppButton label="停止回覆" variant="quiet" density="compact" loading={chat.cancelling}
         disabled={chat.cancelling || !chat.online} onPress={() => { void chatController.cancelReply(); }} /> : null}
     </View> : null}
-    {chat.busy === "reply" && chat.feedback?.cards.length ? <OfficialHelpCards ids={chat.feedback.cards} /> : null}
     {chat.error ? <Text accessibilityRole="alert" style={styles.error}>{chat.error}</Text> : null}
     {draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim()) ? <Text accessibilityRole="alert" style={styles.warning}>{draft.notice}</Text> : null}
     {chat.replyError && (!(draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim())) || chat.replyError !== draft?.notice) ? <Text accessibilityRole="alert" style={styles.error}>{chat.replyError}</Text> : null}
@@ -144,6 +161,8 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
     <BackgroundSurface frosted testID="chat-top-toolbar" style={[styles.toolbar, compact && styles.compactColumn, externalActivity && styles.externalToolbar]}>
       <Text testID="chat-screen-reader-heading" accessibilityRole="header" style={styles.screenReaderTitle}>助手</Text>
       <View style={styles.toolbarActions}>
+        <ChatAction label={autoHelpIds.length ? OFFICIAL_HELP_ENTRY_COPY.highlightedButtonLabel : OFFICIAL_HELP_ENTRY_COPY.buttonLabel}
+          accessibilityLabel={OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel} onPress={() => setHelpOpen(value => !value)} compact={compact} />
         <ChatAction label={agentModel.pendingDecision ? "活動 · 待查核" : needsDecision ? "活動 · 待確認" : pendingReadLabel ? `活動 · ${pendingReadLabel}` : "活動"}
           accessibilityLabel={agentModel.pendingDecision ? "對話詳情與活動，原決定待查核" : needsDecision ? "對話詳情與活動，有事項待確認" : pendingReadLabel ? `對話詳情與活動，待確認事項${pendingReadLabel}` : "對話詳情與活動"} onPress={() => setDetailsOpen(true)} compact={compact} disabled={!child} />
       </View>
