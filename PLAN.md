@@ -58,7 +58,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 ### 每日原站部署（主責 A）
 
-已交付。每日香港 04:17 固定本次受保護 master 的 SHA，06:27 由 GCP 查漏。原 VM 按已驗證候選核對基線、切換及回寫收據。正式發布、首個 GitHub 原生日程及 GCP 自動補檢均已取得收據。版本、證據、操作及回退見[部署手冊](docs/DEPLOYMENT.md)。
+每日香港 04:17 由 GCP 觸發 GitHub 檢查受保護 master 的固定 SHA。原 VM 接收通過必要檢查的候選；各服務版本相同或只有文件等改動時，工作流記為 `skipped`。歷史發布、操作及回退見[部署手冊](docs/DEPLOYMENT.md)。
 
 <a id="iphone-pwa"></a>
 ### iPhone 主畫面試用版

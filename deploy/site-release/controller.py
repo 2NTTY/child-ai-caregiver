@@ -1,6 +1,7 @@
 """GitHub-side release control. No SSH credentials or production application data."""
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -41,9 +42,14 @@ def run_id():
     return result
 
 def last_schedule():
-    url="https://api.github.com/repos/"+REPOSITORY+"/actions/workflows/site-release.yml/runs?event=schedule&branch=master&per_page=1"
+    url=("https://api.github.com/repos/"+REPOSITORY+"/actions/workflows/site-release.yml/runs"
+         "?event=workflow_dispatch&actor=2ntty-yuyoufang-site-timer%5Bbot%5D&branch=master&per_page=10")
     runs=api(url,{"Authorization":"Bearer "+os.environ["GH_TOKEN"]})["workflow_runs"]
-    return runs[0]["created_at"] if runs else None
+    for run in runs:
+        title = run["display_title"]
+        if run["actor"]["login"] == "2ntty-yuyoufang-site-timer[bot]" and re.fullmatch(r"Daily website check \d{4}-\d{2}-\d{2}", title):
+            return run["created_at"]
+    return None
 
 def observe():
     client=Client(BUCKET)

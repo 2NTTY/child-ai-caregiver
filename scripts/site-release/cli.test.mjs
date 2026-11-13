@@ -112,8 +112,9 @@ test('rollback without an ID lists read-only candidates without dispatching', as
 });
 
 test('daily status reports the latest scheduled failure and a missed next daily attempt', async () => {
-  const scheduled = { ...run(2, 'failure'), event: 'schedule' };
-  const fresh = await readRemoteStatus({ exec: fakeRunner({ runs: [scheduled, run(1)] }).exec, now: new Date('2026-11-12T01:00:00Z') });
+  const scheduled = { ...run(2, 'failure'), actor: {login:'2ntty-yuyoufang-site-timer[bot]'}, display_title:'Daily website check 2026-11-11' };
+  const manual = { ...scheduled, id:3, actor:{login:'2NTTY'}, created_at:'2026-11-12T00:30:00Z' };
+  const fresh = await readRemoteStatus({ exec: fakeRunner({ runs: [manual, scheduled, run(1)] }).exec, now: new Date('2026-11-12T01:00:00Z') });
   assert.equal(fresh.daily.state, 'current'); assert.equal(fresh.daily.lastAttempt.conclusion, 'failure');
   assert.equal(fresh.daily.lastScheduledAt, scheduled.created_at);
   const old = await readRemoteStatus({ exec: fakeRunner({ runs: [scheduled, run(1)] }).exec, now: new Date('2026-11-12T22:17:01Z') });

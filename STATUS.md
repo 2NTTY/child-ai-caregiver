@@ -2,7 +2,7 @@
 
 只作根 PLAN 的短現況投影；工作包、前置、未驗與完成門檻見 [PLAN 當前入口](PLAN.md#active)。
 
-**原站每日部署已驗收，由 A 負責。** 11 月 13 日香港 07:42 的 GCP 測試時段自動補檢，09:04 收到 GitHub 原定 04:17 的原生事件。兩次對 `c802f907` 都取得 `skipped`，Web、API、worker 維持已發布的 `66a51db5`。常規時間為香港每日 04:17，06:27 補檢。[GCP 收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43331068601) · [原生排程收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43342076107) · [部署與恢復](docs/DEPLOYMENT.md)
+**原站部署（A）** 每日香港 04:17 由 GCP 直接呼叫 GitHub 檢查受保護 master。網站按各服務已發布版本判斷是否建置，版本、觸發收據及回退候選從[部署手冊](docs/DEPLOYMENT.md)的 `status` 查閱。原 GitHub 排程於 11 月 13 日延遲 4 小時 47 分；同日 GCP 已實測能喚醒工作流。[原生排程紀錄](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43342076107) · [原 GCP 補檢紀錄](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43331068601)
 
 ## 目前與接手
 
