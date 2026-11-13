@@ -4,8 +4,6 @@ on:
   schedule:
     # UTC; 04:17 the following day in Hong Kong.
     - cron: '17 20 * * *'
-    # Acceptance on 2026-11-13 at 07:38 HKT (previous UTC date).
-    - cron: '38 23 12 11 *'
   workflow_dispatch:
     inputs:
       operation:
