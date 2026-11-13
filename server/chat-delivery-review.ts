@@ -150,7 +150,7 @@ function joinedDraftText(draft: ChatDeliveryDraft): string {
  * Only bounded information requests are exempt. A question mark or an absent
  * advisory keyword is not proof that a sentence contains no assertion.
  */
-const BOUNDED_CLARIFICATION = /^(?:(?:(?:寶寶|孩子|小朋友|嬰兒|幼兒|BB)\s*)?(?:幾個月大|幾歲|多大|有沒有發燒|有冇發燒|體溫幾多度|體溫多少度|症狀持續了多久|症狀持續咗幾耐)|請(?:補充|提供|告訴我)(?:年齡|月齡|體溫|開始時間|持續時間)|how old is (?:your |the )?(?:baby|child)|does (?:your |the )?(?:baby|child) have a fever)$/iu;
+const BOUNDED_CLARIFICATION = /^(?:(?:(?:寶寶|孩子|小朋友|嬰兒|幼兒|BB)\s*)?(?:(?:目前|而家|現時)\s*)?(?:幾多?個月(?:大)?|幾多?歲|多大|幾大|有沒有發燒|有冇發燒|體溫幾多度|體溫多少度|(?:症狀|發燒|情況)?持續(?:了|咗)(?:多久|幾耐|幾多日|幾天))|請(?:補充|提供|告訴我)(?:年齡|月齡|體溫|開始時間|持續時間)|how old is (?:your |the )?(?:baby|child)|does (?:your |the )?(?:baby|child) have a fever)$/iu;
 
 export function isPureClarifyingQuestion(text: string): boolean {
   const trimmed = text.trim();

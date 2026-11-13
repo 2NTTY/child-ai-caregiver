@@ -6048,8 +6048,9 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 
 ### 2026-11-13　B-P2 官方原文檢索、適用核對與結構化引用（codex/search-official-evidence，本地未開 PR）
 
-在基線 `origin/master`（`da113bd9`）建立本地分支 `codex/search-official-evidence`（未 push／未開 PR），依切片 B 總則及 [REQ-001 §7](docs/REQUIREMENTS_BACKLOG.md#7-建議驗收清單) 落實官方指引檢索與引用契約：
-1）新增 [search-official-evidence 測試](tests/search-official-evidence.test.ts)（5/5，涵蓋 REQ-001 §7 第 1、2、5、6 行）：口語問題（發燒、嘔奶）到官方指引映射與段落級 `citationIds` 結構化驗證、年齡及地區適用性不匹配時嚴格阻斷不適用資料交付、長手冊多段切分與表格例外（G6PD／阿士匹靈禁忌）在 `readContext` / 4000 字元累計中完整傳遞至獨立審核員、證據不足時如實走既有 `delivery_review_no_sources` 阻斷與來源保留而不編造內容、以及純澄清提問免審與問號包裝照護建議仍受嚴格審查；
-2）沿用既有結構化引用（段落級 `citationIds` 與結果級 `citations`），不另起 Markdown 引用機制；
-3）新增 [離線驗證腳本](scripts/ci/verify-search-official-evidence-offline.sh) 與 [CI workflow](.github/workflows/search-official-evidence-offline.yml)，9 個測試檔共 73 例離線 guard 測試全數通過（含知識、執行契約、prompt、Vertex 及 runtime 測試），配合兩份 `tsc --noEmit` 全數通過。
+在基線 `origin/master`（`da113bd9`）建立本地分支 `codex/search-official-evidence`（未 push／未開 PR），依切片 B 總則及 [REQ-001 §7](docs/REQUIREMENTS_BACKLOG.md#7-建議驗收清單) 落實官方指引檢索與引用契約，並經自審修補生產缺口與端到端測試：
+1）於 [knowledge-ranking.ts](server/knowledge-ranking.ts) 補齊提問查詢（`question=true`）之粵語口語育兒同義詞擴展（如 `開糊／糊仔／副食品／輔食 → 加固／固體食物／米糊`、`半歲 → 六個月`、`嘔奶／回奶 ↔ 吐奶／溢奶`、`發熱／睇醫生／睇急症 → 發燒／求醫／求診／急症`、`睇嘢／瞇眼／捽眼 → 視力／驗眼／眼睛`、`行路／講嘢 → 走路／發展／語言`），保留文件索引（`question=false`）與既有種子版本雜湊不變；
+2）於 [chat-delivery-review.ts](server/chat-delivery-review.ts) 擴充 `BOUNDED_CLARIFICATION`，支援粵語純補問句式（如 `請問BB目前幾多個月大？發燒持續咗幾多日？`、`BB而家幾多個月？`），避免純澄清提問誤觸 `draftLooksLikeSubstantiveCareAdvice` 而遭 `delivery_review_no_sources` 阻斷，同時維持問號包裝照護建議（如 `BB發燒可以食撲熱息痛退燒藥水，你要唔要而家試下餵？`）一律強制審核與來源檢查；
+3）強化 [search-official-evidence 測試](tests/search-official-evidence.test.ts)（5/5，涵蓋 REQ-001 §7 第 1、2、5、6 行）：以真實 `hk-official-seed.json` 驗證 `rankKnowledge` 口語檢索及 `createProductAgent` 端到端結構化 `citationIds`／`citations` 交付（並驗證裸 Markdown URL 觸發 `use_citation_ids` 拒收）、以真實 `resolveKnowledgeQueryContext` 與 `createKnowledgeStore` 驗證年齡／地區適用性過濾及不適用建議阻斷、以多頁 `read_knowledge_context` 與 `accumulateKnowledgeRead` 驗證超 800 字長文表格例外（G6PD／阿士匹靈禁忌）完整送達獨立審核員、驗證 `delivery_review_no_sources` 阻斷與 `retainedSourcesForStoppedReview` 保留已核來源且抹除未審草稿正文、以及驗證粵語純補問免審交付與 `revise` 單次有界修復重審；
+4）新增可执行 [離線驗證腳本](scripts/ci/verify-search-official-evidence-offline.sh)（`100755`）與 [CI workflow](.github/workflows/search-official-evidence-offline.yml)，10 個測試檔共 81 例離線 guard 測試全數通過，配合兩份 `tsc --noEmit` 全數通過。
 本階段尚無真 Gemini 模型評測或線上部署（未 push／未開 PR）。

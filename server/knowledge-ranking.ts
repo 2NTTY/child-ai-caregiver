@@ -2,17 +2,31 @@ import type { KnowledgeCandidate, KnowledgeEvidence } from "../src/shared/knowle
 
 const RRF_K = 60;
 const MAX_RESULTS = 6;
-const QUESTION_PHRASES = /請問|想知道|想知|點樣|點算|點解|有冇|有無|係咪|是否|如何|怎樣|甚麼|什麼|乜嘢|可唔可以|可以|應該/gu;
+const QUESTION_PHRASES = /請問|想知道|想知|點樣|點算|點解|有冇|有無|係咪|是否|如何|怎樣|甚麼|什麼|乜嘢|可唔可以|可以|應該|幾時|邊度|洗唔洗|使唔使|要唔要|會唔會|好唔好/gu;
 const QUESTION_PARTICLES = /[嗎呢呀啊嘛啦吧㗎嘅]/gu;
 const LATIN_FILLERS = new Set(["a", "an", "the", "is", "are", "what", "how", "can", "should", "please"]);
+/** Colloquial Cantonese parenting query terms mapped to official guidance bigrams on question queries only. */
+const COLLOQUIAL_QUERY_EXPANSIONS: ReadonlyArray<readonly [RegExp, readonly string[]]> = [
+  [/開糊|糊仔|副食品?|輔食|食嘢/u, ["加固", "固體食物", "米糊"]],
+  [/半歲/u, ["六個月"]],
+  [/嘔奶|回奶|吐奶|溢奶/u, ["嘔奶", "吐奶", "溢奶"]],
+  [/發熱|滾熱|發高燒|高燒/u, ["發燒"]],
+  [/睇醫生|睇急症|去急症/u, ["求醫", "求診", "急症"]],
+  [/睇嘢|瞇眼|捽眼|斜視|弱視/u, ["視力", "驗眼", "眼睛"]],
+  [/行路|學行|未識行/u, ["走路", "發展"]],
+  [/講嘢|學講|未識講|說話/u, ["語言", "講嘢"]],
+  [/肚痾|肚瀉|屙水/u, ["腹瀉"]],
+  [/紅屁股|尿片疹/u, ["尿布疹"]],
+  [/打針/u, ["疫苗", "接種"]],
+];
 
 function compareId(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
 }
 
 export function knowledgeIndexTokens(text: string, question = false): Set<string> {
-  let normalized = text.normalize("NFKC").toLowerCase();
-  if (question) normalized = normalized.replace(QUESTION_PHRASES, " ").replace(QUESTION_PARTICLES, "");
+  const rawNormalized = text.normalize("NFKC").toLowerCase();
+  const normalized = question ? rawNormalized.replace(QUESTION_PHRASES, " ").replace(QUESTION_PARTICLES, "") : rawNormalized;
   const result = new Set<string>();
   for (const match of normalized.matchAll(/[\p{Script=Han}]+|[a-z0-9]+/gu)) {
     const word = match[0];
@@ -21,6 +35,14 @@ export function knowledgeIndexTokens(text: string, question = false): Set<string
       continue;
     }
     for (let index = 0; index + 1 < word.length; index++) result.add(word.slice(index, index + 2));
+  }
+  if (question) {
+    for (const [pattern, synonyms] of COLLOQUIAL_QUERY_EXPANSIONS) {
+      if (!pattern.test(rawNormalized)) continue;
+      for (const synonym of synonyms) {
+        for (let index = 0; index + 1 < synonym.length; index++) result.add(synonym.slice(index, index + 2));
+      }
+    }
   }
   return result;
 }

@@ -30,6 +30,7 @@ GUARD=frontend/scripts/family-cleanup-network-guard.mjs
 CONTRACT=scripts/ci/summary-progress-contract.mjs
 TEST_FILES=(
   tests/search-official-evidence.test.ts
+  tests/knowledge-ranking.test.ts
   tests/knowledge-a04.test.ts
   tests/knowledge-runtime.test.ts
   tests/product-agent-execution-contract.test.ts
@@ -39,9 +40,10 @@ TEST_FILES=(
   tests/agent-runtime.test.ts
   tests/agent-runtime-contract.test.ts
 )
-TEST_CASES=(5 4 6 8 3 4 6 20 17)
+TEST_CASES=(5 8 4 6 8 3 4 6 20 17)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" tsconfig.json tsconfig.server.json \
+  server/knowledge-ranking.ts server/knowledge-store.ts \
   server/knowledge-retriever.ts server/knowledge-query-context.ts \
   server/chat-delivery-review.ts server/product-agent-tools.ts; do
   test -f "$source" && test ! -L "$source"
