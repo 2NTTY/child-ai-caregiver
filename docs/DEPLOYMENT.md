@@ -6,20 +6,20 @@
 |---|---|
 | 查現況或故障 | `npm run deploy:site -- status` 顯示最後一次可信收據、其觀察時間、三個服務 SHA／digest、VM 期限、最近嘗試及每日排程時間。失敗嘗試可從 `latestAttempt.summaryUrl` 查失敗步驟。首次尚無收據顯示 `bootstrapPending`。 |
 | 預覽 | `npm run deploy:site -- plan` 比較實際部署的三個版本及遠端 master，列出受影響服務和需人工核對的配置。 |
-| 發布 | `npm run deploy:site -- run`。由同一工作流重新讀 master，使用 `status` 查原 run。 |
+| 發布 | `npm run deploy:site -- run`。工作流在開始時固定受保護 master 的 SHA。用 `status` 查原 run。 |
 | 暫停／恢復 | `npm run deploy:site -- pause` 或 `resume`。等操作收據，再進行維護；恢復後可手動 run 或等下次排程。 |
 | 回退 | `npm run deploy:site -- rollback` 列出相容候選。確認 ID 與適用服務後，`npm run deploy:site -- rollback RELEASE_ID` 會暫停自動發布並核對目前基線。 |
 | 排程逾期 | 查看 [Production website](https://github.com/2NTTY/child-ai-caregiver/actions/workflows/site-release.yml) 是否已啟用及倉庫變數 `SITE_DAILY_ENABLED`。必要時手動 run；日程可能延遲，公開倉庫長期無活動時 GitHub 可停用排程。 |
 
 日程為香港 **04:17**（UTC 20:17）。GitHub 故障／VM 期限警報共用一張由 Actions 管理的 [Issue](https://github.com/2NTTY/child-ai-caregiver/issues/575)，可訂閱其 GitHub 通知。VM 提前 7 天及 1 天提醒。GCP 只接受此倉庫、受保護 master、指定工作流與 environment 的短期身份。
 
-首次接管已在 [2026-11-12 手動工作流](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43240224906) 驗證。原站已有接收器、GitHub 環境與 WIF。下次接手從上表的 `status` 開始。
+原站已有接收器、GitHub 環境與 WIF。日常接手從上表的 `status` 開始。2026-11-13 的 04:17 GitHub 日程在香港 09:04 建立；獨立排程於提前測試的 07:42 已補檢。兩筆收據都記錄 `skipped`。上一次有產品變更時，三個服務均有實際發布收據。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43274416541) · [GitHub 原生日程](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43342076107) · [GCP 自動補檢](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43331068601)
 
 即使從未觸發，`daily.expectedAt` 亦會列出 workflow 建立後首個正式日程。`nextExpectedBy` 是香港 06:17 的監察期限；逾期仍無新排程會顯示 `overdue`。排查時用 `gh run list --workflow site-release.yml --branch master --event schedule` 查 GitHub 是否已建立 run。有 run 才查其 job；手動發布或重跑舊 run 不會刷新排程時間。
 
 ### 每日事件缺席時補觸發
 
-先用 `npm run deploy:site -- status` 查原事件及收據。若已建立 run 而檢查失敗，應修該次錯誤。若每日 04:17 的事件一直缺席，營運者可啟用香港 06:27 的獨立 Cloud Scheduler 作業。它在 VM 停機時亦能喚醒同一個 GitHub workflow，由原發布流程查 VM 狀態。GitHub 會把補觸發記作 `workflow_dispatch`，名稱帶 UTC 日程日期；原生排程驗收只計 `schedule`。
+先用 `npm run deploy:site -- status` 查原事件及收據。若已建立 run 而檢查失敗，應修該次錯誤。另有已啟用的 Cloud Scheduler 每天香港 06:27 查漏；VM 停機時亦能喚醒同一工作流檢查 VM。GitHub 的補檢記錄為 `workflow_dispatch`，名稱為 `Daily website catch-up` 加上 UTC 日程日期。若原生事件稍後到達，它會再次比對線上版本；相同內容只留下 `skipped` 收據。
 
 1. **先核實身份。** 本人帳號建立私人 GitHub App，僅授予 Actions 寫入及預設 metadata 讀取，只安裝在 `2NTTY/child-ai-caregiver`。GitHub 的 Actions 寫入授權以倉庫為單位。把 App 私鑰直接存入香港 Secret Manager 的 `site-timer-github-app`，記下數字版號、App ID 和 installation ID。GitHub App 只在真的需要補觸發時換取限定本倉庫的短期 token。其他營運者復用 secret 版號即可。[GitHub 安裝 token](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-an-installation-access-token-for-a-github-app)
 2. **建立獨立映像。** 在根目錄以 `docker build -f deploy/site-release/Dockerfile.watchdog -t asia-east2-docker.pkg.dev/ai-caregivers-for-children/site-release/site-watchdog:版本 deploy/site-release` 建置並推送該標籤。將推送回傳的完整 `映像名稱@sha256:摘要` 放入 `SITE_TIMER_IMAGE`。另外設定 `SITE_GITHUB_APP_ID`、`SITE_GITHUB_INSTALLATION_ID`、`SITE_TIMER_KEY_VERSION`。
@@ -49,7 +49,7 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 
 ## 一次發布怎樣查證
 
-1. GitHub 比較每個已發布服務的 SHA 與本次固定 SHA。純文件、原生專屬修改及相同目標只記檢查。遇到 Compose／部署前置時先顯示路徑。營運者核對並實際完成前置後，用 `gh variable set SITE_REVIEWED_PREREQUISITES --body <完整 master SHA>` 指定該版。接收器本身有獨立版本指紋。
+1. 預檢把事件的完整 SHA 寫入收據。建置、映像和發布清單沿用這個 SHA；期間再合併的提交留給下一次檢查。每個已發布服務的版本都須是目標的祖先或與目標相同，切站時再核對線上基線，以免舊 run 把服務降版。純文件、原生專屬修改及相同目標只記檢查。遇到 Compose／部署前置時先顯示路徑。營運者完成前置後，用 `gh variable set SITE_REVIEWED_PREREQUISITES --body <完整 master SHA>` 指定該版。接收器本身有獨立版本指紋。
 2. 獨立建置 job 在乾淨 checkout 執行對應型別、離線檢查與候選啟動。Web 校驗 PWA、公開登入配置及 `/site-version.json`。後端變更須確認 Firestore 所需索引已 READY。任何前置失敗均可在工作流的相應步驟查看。
 3. 發布 job 使用 GitHub OIDC 換取短期 GCP 身份，把原候選映像放入香港 Artifact Registry，再以 GCS generation 條件提交清單。VM 上的 systemd timer 讀取清單，核對期限、原基線、暫停、磁碟與在途工作。單一 Compose 專案依次切換 API／worker 和 Web。發布不修改資料庫、備份、通知偏好或 VM 停止期限。
 4. GitHub 從站外比對首頁 hash、API 健康、API／Web 的版本及 VM 容器收據。查原操作用 `gh run view RUN_ID --log-failed` 和 `gh run download RUN_ID -n site-status`。工作流等待逾時後先查該次 `r<RUN_ID>-<ATTEMPT>` 的收據。被取消的排隊 workflow 以 GitHub run 紀錄為準。
