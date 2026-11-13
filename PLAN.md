@@ -308,6 +308,14 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 - **文件目的地整併**：依據 `AGENTS.md#document-updates`，專案以 `PLAN.md#active` 及 `STATUS.md` 為權威資訊入口。先前之獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除，其內容已完整整併至本節。
 - **單一作者署名**：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`。
+
+### Slice B（B-P6）：純寒暄／道謝短回合路徑與冗餘記憶讀取收斂 (`codex/search-short-path-gaps`)
+
+- **對應需求**：REQ-002 §3.3 (`:381-388`)、§7.2 (`:506`)、REQ-005 §9 #5、REQ-008 §9 (`:1437`)。
+- **核心設計與邊界**：
+  - 於 `server/chat-delivery-review.ts` 擴充整句有界寒暄／禮貌回覆白名單（涵蓋粵語、國語及英語之 `早晨`、`早唞`、`謝謝`、`多謝`、`多謝晒`、`唔該`、`唔該晒`、`不用謝`、`唔使客氣`、`拜拜`、`再見`、`thank you`、`thanks`、`you're welcome`、`good night`、`bye` 等），並補強 `OPERATION_CLAIM_PATTERN`，確保任何夾帶照護建議、用藥、原始證據或操作宣告（如「多謝，已經幫你刪除所有記錄。」）之混合句一律失敗關閉（fail-closed）進入審核。
+  - 於 `server/product-agent-tools.ts` 及 `server/product-agent.ts` 在確認本輪使用者輸入與 `present_answer` 輸出皆為純寒暄／禮貌回覆時，略過冗餘的 `initialConversationSummary` 預讀與 `ensureConfirmedMemoryGrounding` 記憶分頁展開，同時完整保留 `present_answer` 終端工具契約與權限重驗。
+- **驗收限制聲明**：本分支僅於本地進行離線單元測試與型別檢查，未執行真實 Gemini/Vertex 調用、未連接真實資料庫或進行遠端推送。
 - **嚴格正向提交**：無 `git commit --amend`，維護 append-only 歷史完整性。
 - **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。
 

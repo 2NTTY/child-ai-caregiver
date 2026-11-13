@@ -13,7 +13,7 @@ import { agentBackgroundAnswerSchema, proactiveNextCheckSchema } from "../src/sh
 import { CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT, type ChatDeliveryReviewBinding } from "../src/shared/chat-delivery-review.ts";
 import { DATA_COMPOSE_REVIEW_INCOMPLETE_TEXT } from "../src/shared/data-compose.ts";
 import { AgentStopped } from "./agent-budget.ts";
-import { enforceChatDeliveryReview, type ChatDeliverySurface } from "./chat-delivery-review.ts";
+import { enforceChatDeliveryReview, isPureGreetingOrSmallTalk, type ChatDeliverySurface } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentRunResult } from "./agent-runtime.ts";
 import { agentActionToolNames } from "../src/shared/agent-actions.ts";
 import { AGENT_CONFIRMATION_PENDING_TEXT, AGENT_CONFIRMATION_SAVED_TEXT } from "./agent-work-tool-descriptions.ts";
@@ -355,6 +355,9 @@ export function createProductAgent(options: {
       const rendered: { value: AgentPresentation | null } = { value: null };
       const review: { value: ChatDeliveryReviewBinding | null; text: string | null } = { value: null, text: null };
       let confirmationPendingFallbackUsed = false;
+      const currentUserMessage = page.messages[index]!;
+      const pureGreetingTurn = !currentUserMessage.voice && !currentUserMessage.photo && !currentUserMessage.file
+        && !confirmationResult && isPureGreetingOrSmallTalk(currentUserMessage.text);
       const result = await options.runtime.run({
         onDiagnostic: event => {
           if (event.phase === "model_start") publish("model");
@@ -364,7 +367,7 @@ export function createProductAgent(options: {
         scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt), deadlineMs: Math.max(1, Math.min(AGENT_RUN_LIMITS.deadlineSeconds.max * 1000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId,
         contextCompaction: compactionConfig,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
-        ...(options.memory.initialConversationSummary ? { readConversationSummary: async () => {
+        ...(!pureGreetingTurn && options.memory.initialConversationSummary ? { readConversationSummary: async () => {
           if (!await authorize()) throw new AgentStopped("unauthorized");
           const current = await options.memory.initialConversationSummary!(userId, childId);
           if (!await authorize()) throw new AgentStopped("unauthorized");

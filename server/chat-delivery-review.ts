@@ -137,7 +137,7 @@ const CARE_ADVISORY_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?
 // caught by the blanket fallback. They never grant authority or clear a task obligation.
 const MEDICAL_CLAIM_PATTERN = /用藥|藥丸|阿士匹靈|撲熱息痛|布洛芬|麻疹|傷口|癒合|aspirin|ibuprofen|paracetamol|measles|wound|heal(?:ed|ing)/iu;
 const ORIGINAL_EVIDENCE_CLAIM_PATTERN = /(?:照片|相片|圖片|影像|錄音|錄影).{0,40}(?:顯示|證明|同意|確認)|(?:photo|image|recording|audio).{0,60}(?:shows?|proves?|proof|consent|agreed)/iu;
-const OPERATION_CLAIM_PATTERN = /已(?:經)?(?:完成|保存|儲存|刪除|修改|更新|發送|送出|安排|記住)|(?:已|經已).{0,12}(?:存好|改好)|(?:already|successfully|I have|I've).{0,30}(?:saved|deleted|updated|sent|scheduled|changed)|(?:saved|deleted|updated|sent|scheduled).{0,20}(?:successfully|already)/iu;
+const OPERATION_CLAIM_PATTERN = /(?:已(?:經)?|經已).{0,12}(?:完成|保存|儲存|刪除|修改|更新|發送|送出|安排|記住|存好|改好)|(?:already|successfully|I have|I've).{0,30}(?:saved|deleted|updated|sent|scheduled|changed)|(?:saved|deleted|updated|sent|scheduled).{0,20}(?:successfully|already)/iu;
 
 function joinedDraftText(draft: ChatDeliveryDraft): string {
   return draft.paragraphs.map(paragraph => paragraph.text).join("\n").trim();
@@ -172,12 +172,18 @@ export function isPureClarifyingQuestion(text: string): boolean {
  * A greeting substring never grants a skip for mixed advice or operation claims.
  * Care-domain or advisory wording never skips (defense in depth; not the sole gate).
  */
-const PURE_GREETING_UTTERANCE = /^(?:(?:你好|您好|哈囉|哈啰|嗨|早安|午安|晚安|早上好|下午好|晚上好)(?:[\s，,。.!！？?]*(?:有什麼可以幫你|有什么可以帮你|需要什麼協助|需要什么协助|點樣幫到你|怎样帮到你)[？?]?)?|(?:hi|hello|hey|good\s+(?:morning|afternoon|evening))(?:[\s,]*(?:how\s+can\s+i\s+help(?:\s+you)?|what\s+can\s+i\s+(?:do|help)(?:\s+for\s+you)?)[?]?)?)[\s。.!！？?]*$/iu;
+const PURE_GREETING_UTTERANCE = /^(?:(?:你好|您好|哈囉|哈啰|嗨|早晨|早唞|早安|午安|晚安|早上好|下午好|晚上好|謝謝(?:你|您)?|多謝(?:晒|你|您)?|唔該(?:晒|你)?|感謝(?:你|您)?|不用謝|不用客氣|不客氣|唔使客氣|唔洗客氣|拜拜|再見|下次見)(?:[\s，,。.!！？?]*(?:有什麼可以幫你|有什么可以帮你|有咩可以幫(?:到)?你|需要什麼協助|需要什么协助|點樣幫到你|怎样帮到你|有需要隨時(?:搵我|再問|查詢)|歡迎隨時(?:查詢|再問))[？?。!]?)?|(?:hi|hello|hey|good\s+(?:morning|afternoon|evening|night)|thank\s+you(?:\s+so\s+much|\s+very\s+much)?|thanks(?:\s+a\s+lot)?|you(?:'re|\s+are)\s+welcome|bye(?:\s*-\s*bye|bye)?|goodbye)(?:[\s,.!]*(?:how\s+can\s+i\s+help(?:\s+you)?|what\s+can\s+i\s+(?:do|help)(?:\s+for\s+you)?|feel\s+free\s+to\s+ask(?:\s+anytime)?)[?.!]?)?)[\s。.!！？?]*$/iu;
 
 export function isPureGreetingOrSmallTalk(text: string): boolean {
   const trimmed = text.trim();
   if (!trimmed || trimmed.length > 80) return false;
-  if (CARE_DOMAIN_PATTERN.test(trimmed) || CARE_ADVISORY_PATTERN.test(trimmed)) return false;
+  if (
+    CARE_DOMAIN_PATTERN.test(trimmed)
+    || CARE_ADVISORY_PATTERN.test(trimmed)
+    || MEDICAL_CLAIM_PATTERN.test(trimmed)
+    || OPERATION_CLAIM_PATTERN.test(trimmed)
+    || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(trimmed)
+  ) return false;
   return PURE_GREETING_UTTERANCE.test(trimmed);
 }
 

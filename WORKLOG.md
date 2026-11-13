@@ -6045,3 +6045,19 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 ## 2026-11-18 家庭附件庫直接上傳
 
 P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授權及原操作收據。使用同一個合成家庭走正式 HTTP，核對照顧者保存、唯讀成員讀回原件、舊草稿隔離、途中撤權及原操作重試。照片和錄音只補各自的上傳接點。資料來自記憶體 Firestore 與合成物件服務；正式交付及設備證據見接手清單。
+
+## 2026-11-14　Slice B（B-P6）純寒暄／道謝短回合路徑與冗餘記憶讀取收斂 (`codex/search-short-path-gaps`)
+
+- Recorded At：2026-11-14（Asia/Hong_Kong）
+- Work Date：2026-11-14
+- Step / Package：Slice B / B-P6（REQ-002 §3.3、§7.2、REQ-005 §9 #5、REQ-008 §9）
+- Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理協助本地實作與離線驗證，未推送遠端）
+- Goal：補齊粵語／國語／英語純寒暄與道謝短回合的無冗餘審核路徑，避免在純禮貌互動時執行無關的歷史摘要預讀與記憶分頁，並確保混合宣稱嚴格失敗關閉。
+- Actual Work：
+  - 更新 `server/chat-delivery-review.ts` 的 `PURE_GREETING_UTTERANCE` 與 `OPERATION_CLAIM_PATTERN`，支援「早晨」、「唔該晒」、「謝謝」、「多謝晒」、「早唞」、「拜拜」、「Thank you」、「Good night」等整句寒暄與道謝，並阻擋含「已經幫你刪除」等操作主張的混合句子。
+  - 更新 `server/product-agent-tools.ts` 與 `server/product-agent.ts`，當輸入與輸出均為純寒暄／道謝且無引用時，略過 `initialConversationSummary` 與 `ensureConfirmedMemoryGrounding()`。
+  - 新增 `tests/search-short-path-gaps.test.ts`、`scripts/ci/verify-search-short-path-gaps-offline.sh` 與 `.github/workflows/search-short-path-gaps-offline.yml`。
+- Verification：
+  - `node --experimental-test-module-mocks --test tests/search-short-path-gaps.test.ts tests/chat-delivery-review.test.ts tests/agent-feedback.test.ts`（51/51 通過，0 失敗，0 略過）。
+  - `./node_modules/.bin/tsc -p tsconfig.server.json --noEmit` 與 `./node_modules/.bin/tsc -p tsconfig.json --noEmit` 均退出 0。
+- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
