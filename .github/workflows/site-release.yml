@@ -1,21 +1,18 @@
 name: Production website
-run-name: ${{ inputs.operation == 'catchup' && format('Daily website catch-up {0}', inputs.slot) || 'Production website' }}
+run-name: ${{ inputs.operation == 'daily' && format('Daily website check {0}', inputs.slot) || 'Production website' }}
 on:
-  schedule:
-    # UTC; 04:17 the following day in Hong Kong.
-    - cron: '17 20 * * *'
   workflow_dispatch:
     inputs:
       operation:
         description: Website operation
         type: choice
-        options: [run, pause, resume, rollback, catchup]
+        options: [run, pause, resume, rollback, daily]
         default: run
       release_id:
         description: Compatible release ID (rollback only)
         type: string
       slot:
-        description: UTC slot date (overdue scheduler only)
+        description: UTC slot date (GCP daily timer)
         type: string
 permissions:
   contents: read
@@ -26,7 +23,7 @@ jobs:
   check:
     if: >-
       github.repository == '2NTTY/child-ai-caregiver' && github.ref == 'refs/heads/master' &&
-      ((github.event_name != 'schedule' && inputs.operation != 'catchup') || vars.SITE_DAILY_ENABLED == 'true')
+      (inputs.operation != 'daily' || (vars.SITE_DAILY_ENABLED == 'true' && github.actor == '2ntty-yuyoufang-site-timer[bot]'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: site-observe
@@ -39,11 +36,6 @@ jobs:
       web: ${{ steps.plan.outputs.web }}
       backend: ${{ steps.plan.outputs.backend }}
     steps:
-      - name: Record GitHub timer
-        if: github.event_name == 'schedule'
-        env:
-          MATCHED_CRON: ${{ github.event.schedule }}
-        run: printf 'GitHub timer (UTC) %s\n' "$MATCHED_CRON" | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
@@ -60,7 +52,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           SITE_ACCESS_TOKEN: ${{ steps.identity.outputs.access_token }}
-          OPERATION: ${{ inputs.operation == 'catchup' && 'run' || inputs.operation || 'run' }}
+          OPERATION: ${{ inputs.operation == 'daily' && 'run' || inputs.operation || 'run' }}
           ROLLBACK_ID: ${{ inputs.release_id }}
           REVIEWED_HOST_PREREQUISITES: ${{ vars.SITE_REVIEWED_PREREQUISITES }}
       - name: Check required Firestore indexes

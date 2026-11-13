@@ -5994,3 +5994,5 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 香港 07:22，限定 `2NTTY/child-ai-caregiver` 的 GitHub App 已接通。核對安裝的 Actions 寫入、metadata 讀取，以及短期 token 實際可讀的唯一倉庫和正式工作流後，已撤銷驗證用 token。沿同一映像掛載 secret 版 1，Cloud Run 已回報 `dispatch`。手動喚醒原 Scheduler 的 execution `site-overdue-dispatch-kjplz` 完成，07:22:50 辨認當天已有結果，記為 `already-dispatched`。原有補檢與這筆手動核對分開追蹤，保留首次日程自動觸發的驗收。
 
 11 月 13 日（香港），07:42:00 Cloud Scheduler 自動啟動 `site-overdue-dispatch-2rs8p`，專用 GitHub App 於 07:42:13 建立補檢。09:04:28 GitHub 建立原生 run，日誌列出 `MATCHED_CRON: 17 20 * * *`，對應 04:17 的正式時段。兩個 site-status 收據均為 `skipped`，來源為 `c802f907`，三個服務仍在 `66a51db5`。已移除提前測試的 GitHub 時段和 Job 時間覆寫，恢復 GCP 香港每日 06:27。#588 起，建置期間新合併的提交留待下次檢查，發布沿用預檢收據的 SHA。[GCP 自動補檢](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43331068601) · [GitHub 原生日程](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43342076107)
+
+同日把每日主時鐘移交現有 GCP Cloud Scheduler。舊 run 於香港 09:04:28 建立及開始，09:05:35 完成；倉庫未取得 GitHub 內部延遲的具體原因。新流程在 04:17 直接送出固定 master 檢查，GCS 的每日 claim 抵禦重複喚醒。已用受控時鐘驗證 04:17 的第一秒可送出及重投遞只生效一次；操作員狀態辨認專用 App 的執行紀錄。

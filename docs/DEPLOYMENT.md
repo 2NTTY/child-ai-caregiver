@@ -9,24 +9,25 @@
 | 發布 | `npm run deploy:site -- run`。工作流在開始時固定受保護 master 的 SHA。用 `status` 查原 run。 |
 | 暫停／恢復 | `npm run deploy:site -- pause` 或 `resume`。等操作收據，再進行維護；恢復後可手動 run 或等下次排程。 |
 | 回退 | `npm run deploy:site -- rollback` 列出相容候選。確認 ID 與適用服務後，`npm run deploy:site -- rollback RELEASE_ID` 會暫停自動發布並核對目前基線。 |
-| 排程逾期 | 查看 [Production website](https://github.com/2NTTY/child-ai-caregiver/actions/workflows/site-release.yml) 是否已啟用及倉庫變數 `SITE_DAILY_ENABLED`。必要時手動 run；日程可能延遲，公開倉庫長期無活動時 GitHub 可停用排程。 |
+| 排程逾期 | 先查 `daily.lastAttempt`。若沒有本日的 run，執行 `bash deploy/site-release/install-watchdog.sh status` 查 GCP 排程，再按下節查當日觸發收據。 |
 
-日程為香港 **04:17**（UTC 20:17）。GitHub 故障／VM 期限警報共用一張由 Actions 管理的 [Issue](https://github.com/2NTTY/child-ai-caregiver/issues/575)，可訂閱其 GitHub 通知。VM 提前 7 天及 1 天提醒。GCP 只接受此倉庫、受保護 master、指定工作流與 environment 的短期身份。
+每天香港 **04:17**（UTC 前一天 20:17），GCP Cloud Scheduler 喚醒既有 Cloud Run Job。它以專用 GitHub App 請同一個發布工作流檢查受保護 `master`。只有影響網站的變更才會建置和發布。GitHub 工作流故障及 VM 期限警報沿用同一張 [Issue](https://github.com/2NTTY/child-ai-caregiver/issues/575)，VM 提前 7 天及 1 天提醒。
 
 原站已有接收器、GitHub 環境與 WIF。日常接手從上表的 `status` 開始。2026-11-13 的 04:17 GitHub 日程在香港 09:04 建立；獨立排程於提前測試的 07:42 已補檢。兩筆收據都記錄 `skipped`。上一次有產品變更時，三個服務均有實際發布收據。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43274416541) · [GitHub 原生日程](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43342076107) · [GCP 自動補檢](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43331068601)
 
-即使從未觸發，`daily.expectedAt` 亦會列出 workflow 建立後首個正式日程。`nextExpectedBy` 是香港 06:17 的監察期限；逾期仍無新排程會顯示 `overdue`。排查時用 `gh run list --workflow site-release.yml --branch master --event schedule` 查 GitHub 是否已建立 run。有 run 才查其 job；手動發布或重跑舊 run 不會刷新排程時間。
+`daily.expectedAt` 顯示預期日程，`nextExpectedBy` 是查漏期限（香港 06:17）。這兩小時只用於狀態警示。`daily.lastAttempt` 認領專用 App 的 `Daily website check YYYY-MM-DD`，亦保留切換前的原生排程歷史；手動發布或重跑舊 run 不會刷新日程。
 
-### 每日事件缺席時補觸發
+<a id="每日事件缺席時補觸發"></a>
+### GCP 每日觸發與故障查回
 
-先用 `npm run deploy:site -- status` 查原事件及收據。若已建立 run 而檢查失敗，應修該次錯誤。另有已啟用的 Cloud Scheduler 每天香港 06:27 查漏；VM 停機時亦能喚醒同一工作流檢查 VM。GitHub 的補檢記錄為 `workflow_dispatch`，名稱為 `Daily website catch-up` 加上 UTC 日程日期。若原生事件稍後到達，它會再次比對線上版本；相同內容只留下 `skipped` 收據。
+GitHub 的正式工作流只使用 `workflow_dispatch`。GCP 每天直接觸發一次，操作員仍可用 `deploy:site -- run`。若已有當日 run，先查該 run 的結果；若未建立，查看 Scheduler 的 `lastAttemptTime`、同時段的 Cloud Run execution 和下列收據。VM 停機亦可執行這項檢查。
 
 1. **先核實身份。** 本人帳號建立私人 GitHub App，僅授予 Actions 寫入及預設 metadata 讀取，只安裝在 `2NTTY/child-ai-caregiver`。GitHub 的 Actions 寫入授權以倉庫為單位。把 App 私鑰直接存入香港 Secret Manager 的 `site-timer-github-app`，記下數字版號、App ID 和 installation ID。GitHub App 只在真的需要補觸發時換取限定本倉庫的短期 token。其他營運者復用 secret 版號即可。[GitHub 安裝 token](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-an-installation-access-token-for-a-github-app)
 2. **建立獨立映像。** 在根目錄以 `docker build -f deploy/site-release/Dockerfile.watchdog -t asia-east2-docker.pkg.dev/ai-caregivers-for-children/site-release/site-watchdog:版本 deploy/site-release` 建置並推送該標籤。將推送回傳的完整 `映像名稱@sha256:摘要` 放入 `SITE_TIMER_IMAGE`。另外設定 `SITE_GITHUB_APP_ID`、`SITE_GITHUB_INSTALLATION_ID`、`SITE_TIMER_KEY_VERSION`。
-3. **啟用及恢復。** 有營運權限的帳號執行 `bash deploy/site-release/install-watchdog.sh install`。腳本註冊香港 Cloud Run Job、06:27 的 Scheduler 和兩個專用身份。喚醒身份只可執行該 Job；Job 只讀該 secret、讀取及新增發布 bucket 內 `receipts/watchdog-*` 的紀錄。日常狀態／暫停／恢復以相同腳本的 `status`、`pause`、`resume` 操作。更新或輪換時再以相同入口指定新 digest 或 secret 版號。[排程執行 Cloud Run Job](https://docs.cloud.google.com/run/docs/execute/jobs-on-schedule)
-4. **查回同一操作。** 超過寬限時間、工作流啟用、當日沒有原生事件且沒正在執行時，才登記 UTC 日期並送一次。全站日程開關和原站暫停仍由正式 workflow 核對。以 `gcloud storage cat gs://ai-caregivers-for-children-site-release/receipts/watchdog-YYYY-MM-DD-result.json` 查結果。只有原 claim 或結果為 `unknown` 時，先在 GitHub 查該日期的 catch-up run；清除 claim 會破壞防重。初次試讀可執行 `python deploy/site-release/watchdog.py`，只有 `--apply` 能觸發。
+3. **啟用及恢復。** 有營運權限的帳號執行 `bash deploy/site-release/install-watchdog.sh install`。腳本註冊香港 Cloud Run Job、04:17 的 Scheduler 和兩個專用身份。喚醒身份只可執行該 Job；Job 只讀該 secret、讀取及新增發布 bucket 內 `receipts/watchdog-*` 的紀錄。日常狀態／暫停／恢復以相同腳本的 `status`、`pause`、`resume` 操作。更新或輪換時再以相同入口指定新 digest 或 secret 版號。[排程執行 Cloud Run Job](https://docs.cloud.google.com/run/docs/execute/jobs-on-schedule)
+4. **查回同一操作。** GCP 用 UTC 日程日期作收據鍵，在發送前以 GCS 條件寫入取得唯一執行權。同一時段再次投遞只會讀回已有紀錄。在 `gcloud storage cat gs://ai-caregivers-for-children-site-release/receipts/watchdog-YYYY-MM-DD-result.json` 查 GitHub 是否已接受；若只有 claim 或結果為 `unknown`，先查 GitHub 上同日的 `Daily website check`。保留原 claim。若確定當日未執行，可使用手動發布入口。
 
-等候擁有人登記期間，可先設定映像 digest 並執行 `bash deploy/site-release/install-watchdog.sh prepare`。同一個 Job 和 Scheduler 會開始唯讀查核，`status` 顯示 `observe`，結果在該 Job 的 Cloud Logging。發現漏排會記為 `would-dispatch`；已補做會記為 `already-dispatched`。登記完成後以步驟 3 啟用實際發送，狀態應為 `dispatch`。
+首次登記期間可用 `bash deploy/site-release/install-watchdog.sh prepare` 建立唯讀模式。`status` 顯示 `observe` 時，到點只在 Cloud Logging 記錄 `would-dispatch`。完成 GitHub App 登記再按步驟 3 切換至 `dispatch`。
 
 現有 Job 升級到 `dispatch` 可直接取回已驗映像，跳過重建。執行 `export SITE_TIMER_IMAGE="$(gcloud run jobs describe site-overdue-dispatch --project=ai-caregivers-for-children --region=asia-east2 --format='value(spec.template.spec.template.spec.containers[0].image)')"`，設定上述三個身份／版號變數，再執行 `install`。新身份剛建立時若 Scheduler 回 `NOT_FOUND`，先查同名 Job、喚醒身份及 Scheduler；確認排程尚未建立而身份可讀後，沿用同一命令接續。
 
@@ -43,9 +44,9 @@ gcloud secrets create site-timer-github-app --project=ai-caregivers-for-children
 gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-children --data-file="/path/to/downloaded-private-key.pem"
 ```
 
-若 GitHub CLI 顯示 HTTP 500，先按原時段、分支及工作流查有沒有 run。`deploy:site` 使用官方非同步 dispatch 介面，接受後從 `status` 查最終收據。同日已有人補做的 run 亦會阻止再次補觸發。
+若 GitHub API 回 HTTP 500，先按原時段、分支及工作流查有沒有 run。`deploy:site` 使用非同步 dispatch 介面，接受後從 `status` 查最終收據。
 
-此備援會增加一項 Scheduler、一個每日短暫執行的 Cloud Run Job、映像及一個 secret。Scheduler 標價每項每月 US$0.10，免費項數按帳單帳戶共用；Job、登錄、映像和 secret 按實際使用計費。觸發後沿原建置及發布成本。[Scheduler 計費](https://cloud.google.com/scheduler/pricing) · [Cloud Run 計費](https://cloud.google.com/run/pricing)
+沿用既有 Scheduler、每日短暫執行的 Cloud Run Job、映像和 secret。移動觸發時間毋須增加計時器或常駐服務。用量按原服務計費。[Scheduler 計費](https://cloud.google.com/scheduler/pricing) · [Cloud Run 計費](https://cloud.google.com/run/pricing)
 
 ## 一次發布怎樣查證
 
@@ -69,7 +70,7 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 2. `bash deploy/site-release/bootstrap-cloud.sh preflight` 核對專案、API、VM 的附加身份／OAuth scope 及已存在的 WIF 信任。首次建立或修復缺少的授權用 `bash deploy/site-release/bootstrap-cloud.sh apply --authorize ai-caregivers-for-children:site-release:bucket-registry-wif-scoped-iam`。操作所需 GCP 權限限於此專案的 IAM 自訂角色與綁定、WIF、SA、香港 bucket／映像庫及讀取 VM。日常 CI 不持有這些管理權。
 3. 設定公開 Firebase Web SDK 欄位 `EXPO_PUBLIC_FIREBASE_{API_KEY,AUTH_DOMAIN,PROJECT_ID,APP_ID}`，來源是 Firebase Console → 專案設定 → 現有 Web App → SDK configuration。從目前開放的登入方式設定 `EXPO_PUBLIC_AUTH_PROVIDERS`（保留既有清單，可為空），`EXPO_PUBLIC_ACCOUNT_LEGACY_TRIAL=false`。執行 `node scripts/site-release/configure-github.mjs init`。工具限制兩個 GitHub Environments 只可用 master；瀏覽器用 key 設為 GitHub secret，其餘為 repo variables。模型、服務帳戶、家庭資料與私鑰留在現有受保護配置。
 4. `bash scripts/site-release/install-receiver.sh` 只上傳當前遠端 master 的接收器，經 IAP 核對封包 hash；首次記錄實際運行的映像、配置與首頁指紋。若 OS Login 使用不同名稱，在同一命令前設 `SITE_SSH_USER`。新安裝或接收器版本有變才需執行。網站的日常部署無需 SSH。
-5. 手動 `npm run deploy:site -- run`，核對 `status` 的 `lastResult=deployed`、服務版本、收據及候選。然後 `node scripts/site-release/configure-github.mjs enable-schedule`。只有第一個真正的 schedule 留下 `skipped` 或 `deployed` 才完成排程驗收。
+5. 手動 `npm run deploy:site -- run`，核對 `status` 的 `lastResult=deployed`、三個服務版本及回退候選。首次啟用再執行 `node scripts/site-release/configure-github.mjs enable-schedule`，按上節核對 GCP 的時間與 `dispatch` 模式。自動檢查的完成證據為專用 App 對應日程的 `skipped` 或 `deployed` 收據。
 
 | 身份 | 資源與限制 |
 |---|---|

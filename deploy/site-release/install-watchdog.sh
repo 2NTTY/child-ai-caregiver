@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Operator-only setup for the independent overdue timer. No application data access.
+# Operator-only setup for the primary daily website timer. No application data access.
 set -euo pipefail
 project=ai-caregivers-for-children
 region=asia-east2
@@ -67,6 +67,6 @@ if gcloud scheduler jobs describe "$job" --location="$region" --project="$projec
   verb=update
   header_flag=--update-headers
 fi
-gcloud scheduler jobs "$verb" http "$job" --project="$project" --location="$region" --schedule='27 6 * * *' --time-zone=Asia/Hong_Kong \
+gcloud scheduler jobs "$verb" http "$job" --project="$project" --location="$region" --schedule='17 4 * * *' --time-zone=Asia/Hong_Kong \
   --uri="https://run.googleapis.com/v2/projects/$project/locations/$region/jobs/$job:run" --http-method=POST \
   "$header_flag=Content-Type=application/json" --message-body='{}' --oauth-service-account-email="$wake" --max-retry-attempts=0 --quiet

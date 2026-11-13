@@ -48,7 +48,10 @@ function summarizeRun(run) {
 const attemptTime = (run) => Date.parse(run.run_started_at || run.created_at || run.updated_at) || 0;
 
 function dailyStatus(runs, status, now, workflow) {
-  const latest = runs.filter(run => run.event === 'schedule')
+  // Keep historic native events visible across the cutover. Manual checks do not advance the clock.
+  const latest = runs.filter(run => run.event === 'schedule' || (run.event === 'workflow_dispatch'
+    && run.actor?.login === '2ntty-yuyoufang-site-timer[bot]'
+    && /^Daily website check \d{4}-\d{2}-\d{2}$/.test(run.display_title)))
     .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
   const lastAttempt = summarizeRun(latest);
   const lastScheduledAt = lastAttempt?.createdAt ?? status?.lastScheduledAt ?? null;
@@ -63,7 +66,7 @@ function dailyStatus(runs, status, now, workflow) {
   const overdue = +now > +deadline;
   const state = overdue ? 'overdue' : lastScheduledAt ? 'current' : 'awaiting-first';
   return { ...evidence, state, overdue, expectedAt: slot.toISOString(), nextExpectedBy: deadline.toISOString(),
-    message: 'The daily 20:17 UTC slot has two hours of grace. Only a new scheduled event counts.' };
+    message: 'GCP dispatches at 04:17 Hong Kong time (20:17 UTC). Status allows two hours before flagging a missing run.' };
 }
 
 export async function readRemoteStatus({ exec = runCommand, now = new Date() } = {}) {

@@ -1,4 +1,4 @@
-"""Recover one missed Hong Kong daily slot through the existing master workflow."""
+"""Trigger one protected-master website check for each Hong Kong daily slot."""
 import argparse
 import json
 import os
@@ -7,7 +7,6 @@ import time
 from datetime import timedelta
 from pathlib import Path
 from urllib.error import HTTPError
-from urllib.parse import urlencode
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from protocol import BUCKET, now, parse_time
@@ -30,11 +29,8 @@ def check(at, github, claim, save_result, execute=False, acceptance_slot=None):
     if acceptance_slot and acceptance_slot + timedelta(minutes=3) <= at < acceptance_slot + timedelta(minutes=30):
         slot = acceptance_slot
         day = slot.strftime("%Y-%m-%dT%H-%MZ")
-    elif not slot + timedelta(hours=2) <= at < slot + timedelta(hours=4):
+    elif at >= slot + timedelta(hours=4):
         return {"state": "outside-window", "slot": day}
-    observed = github.timer_state(slot)
-    if observed != "absent":
-        return {"state": observed, "slot": day}
     if not execute:
         return {"state": "would-dispatch", "slot": day}
     github.prepare_token()
@@ -83,35 +79,6 @@ class GitHub:
             raise ValueError("Unexpected response size")
         return json.loads(raw) if raw else {}
 
-    def timer_state(self, slot):
-        workflow = self.request(PATH)
-        if workflow["path"] != ".github/workflows/" + WORKFLOW:
-            raise ValueError("Unexpected workflow path")
-        if workflow["state"] != "active":
-            return "inactive"
-        base = PATH + "/runs?"
-        latest = self.request(base + urlencode({"event": "schedule", "branch": "master", "per_page": 1}))
-        for run in latest["workflow_runs"]:
-            if (run["workflow_id"] != workflow["id"] or run["head_repository"]["id"] != REPO_ID
-                    or run["event"] != "schedule" or run["head_branch"] != "master"):
-                raise ValueError("Unexpected timer provenance")
-            if parse_time(run["created_at"]) >= slot:
-                return "scheduled"
-        page = self.request(base + "branch=master&per_page=20")
-        recent = page["workflow_runs"]
-        if any(run["status"] != "completed" for run in recent):
-            return "in-progress"
-        identifier = slot.date().isoformat() if (slot.hour, slot.minute) == (20, 17) else slot.strftime("%Y-%m-%dT%H-%MZ")
-        title = "Daily website catch-up " + identifier
-        for run in recent:
-            if (run["display_title"] == title and run["event"] == "workflow_dispatch"
-                    and run["workflow_id"] == workflow["id"] and run["head_branch"] == "master"
-                    and run["head_repository"]["id"] == REPO_ID and parse_time(run["created_at"]) >= slot):
-                return "already-dispatched"
-        if page["total_count"] > len(recent) and (not recent or parse_time(recent[-1]["created_at"]) >= slot):
-            return "history-incomplete"
-        return "absent"
-
     def prepare_token(self):
         import jwt
         ts = int(time.time())
@@ -126,7 +93,7 @@ class GitHub:
         self.token = token["token"]
 
     def dispatch(self, day):
-        response = self.request(PATH + "/dispatches", {"ref": "master", "inputs": {"operation": "catchup", "slot": day}}, self.token)
+        response = self.request(PATH + "/dispatches", {"ref": "master", "inputs": {"operation": "daily", "slot": day}}, self.token)
         return response.get("workflow_run_id")
 
 
