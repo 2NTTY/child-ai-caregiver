@@ -2,7 +2,7 @@ import type { ChatFileMessageReference } from '../shared/chat-files.ts';
 import type { VoiceMessageReference } from '../shared/voice.ts';
 import type { PhotoMessageReference } from '../shared/photos.ts';
 import { normalizeChatInput } from "./chat-input.ts";
-import type { AgentProgress, OfficialHelpId } from '../shared/agent-feedback.ts';
+import { reconcileAgentProgress, type AgentProgress, type OfficialHelpId } from '../shared/agent-feedback.ts';
 import { agentStopMessage } from "../shared/agent-stop-message.ts";
 import type { ChatReplyState, ChatMessage } from "../shared/chat.ts";
 import { ChatApiError, type ChatApi, type ChatUsage } from "./chat-api.ts";
@@ -341,7 +341,26 @@ export class ChatController {
         nextCursor: retainOlder ? this.state.nextCursor : page.nextCursor ?? null, limit: page.limit, loadedAt: new Date().toISOString() });
       const latestUser = [...page.messages].reverse().find(item => item.role === "user");
       if (latestUser && !page.messages.some(item => item.inReplyTo === latestUser.id)) {
-        try { await this.readOriginal(scope, latestUser.id); }
+        try {
+          const original = await this.readOriginal(scope, latestUser.id);
+          if (!this.current(scope)) return;
+          if (original?.status === "completed") {
+            const refreshed = await this.api.listMessages(childId, scope.controller.signal);
+            if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
+            if (refreshed.messages.some(item => item.role === "model" && item.inReplyTo === latestUser.id)) {
+              const refreshedIds = new Set(refreshed.messages.map(item => item.id));
+              const keepOlder = this.state.messages.length > refreshed.limit && this.state.messages.some(item => refreshedIds.has(item.id));
+              this.update({
+                messages: keepOlder ? [...this.state.messages.filter(item => !refreshedIds.has(item.id)), ...refreshed.messages] : refreshed.messages,
+                nextCursor: keepOlder ? this.state.nextCursor : refreshed.nextCursor ?? null,
+                limit: refreshed.limit,
+                loadedAt: new Date().toISOString(),
+                remoteReply: null,
+                replyError: null,
+              });
+            }
+          }
+        }
         catch (error) {
           if (sessionError(error) || childAccessDenied(error)) throw error;
           if (this.current(scope)) this.update({ replyError: "原訊息已保存，暫時未能查核處理狀態；請稍後重新讀取。" });
@@ -389,6 +408,15 @@ export class ChatController {
     if (!scope.childId || !this.api.getOriginalReply) return null;
     const result = await this.api.getOriginalReply(scope.childId, messageId, scope.controller.signal, scope.userId);
     if (!this.current(scope)) return null;
+    const alreadyReplied = this.state.messages.some(item => item.role === "model" && item.inReplyTo === messageId);
+    if (alreadyReplied) {
+      this.update({
+        remoteReply: null,
+        replyError: null,
+        messages: result ? this.state.messages.map(item => item.id === messageId ? { ...item, agentRunId: result.runId } : item) : this.state.messages,
+      });
+      return result;
+    }
     this.update({ remoteReply: result, replyError: result?.status === "running" ? null
       : result ? result.status === "completed" ? "原運行已完成，正在核對已保存的回覆。"
         : result.status === "stopped" && result.stopReason === "busy" ? CHAT_REPLY_ERROR_COPY.ai_capacity_busy
@@ -472,18 +500,19 @@ export class ChatController {
 
   private async performReply(scope: RequestScope, messageId: string): Promise<void> {
     const childId = scope.childId!;
-    let capacityBusyReply: ChatReplyState | null = null;
+    let settledRemoteReply: ChatReplyState | null = null;
     try {
       if (!await this.verifyIdentity(scope)) return;
       const reply = await this.api.requestReply(childId, messageId, scope.controller.signal, scope.userId, event => {
         if (!this.current(scope) || event.messageId !== messageId || this.state.replyingMessageId !== messageId) return;
-        const previous = this.state.feedback?.messageId === messageId ? this.state.feedback.cards : [];
-        this.update({ feedback: { ...event, cards: [...new Set([...previous, ...(event.card ? [event.card] : [])])] } });
+        const previous = this.state.feedback?.messageId === messageId ? this.state.feedback : null;
+        const next = reconcileAgentProgress(previous, event);
+        if (next !== previous) this.update({ feedback: next });
       });
       if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
       const messages = this.state.messages.some(item => item.id === reply.id)
         ? this.state.messages : [...this.state.messages, reply];
-      this.update({ messages, replyError: null });
+      this.update({ messages, replyError: null, remoteReply: null });
       if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
         this.updateDraft(childId, { text: "", voice: undefined, file: undefined, photo: undefined, phase: "draft", savedUserMessageId: null,
           notice: "聊天已保存，AI 已回覆。", knownIds: [] });
@@ -496,7 +525,18 @@ export class ChatController {
       }
       if (childAccessDenied(error)) { this.forgetChild(childId); return; }
       let notice = replyErrorMessage(error);
-      const runId = this.state.feedback?.messageId === messageId ? this.state.feedback.runId : null;
+      let runId = this.state.feedback?.messageId === messageId ? this.state.feedback.runId : null;
+      if (!runId && this.api.getOriginalReply && error instanceof ChatApiError && (error.status === 0 || error.status >= 500)) {
+        try {
+          const discovered = await this.api.getOriginalReply(childId, messageId, scope.controller.signal, scope.userId);
+          if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
+          if (discovered) runId = discovered.runId;
+        } catch (discoveryError) {
+          if (!this.current(scope)) return;
+          if (sessionError(discoveryError)) { this.invalidateIdentity(); return; }
+          if (childAccessDenied(discoveryError)) { this.forgetChild(childId); return; }
+        }
+      }
       if (runId && this.api.getReplyState && error instanceof ChatApiError && (error.status === 0 || error.status >= 500)) {
         try {
           const original = await this.api.getReplyState(childId, runId, scope.controller.signal, scope.userId);
@@ -505,10 +545,20 @@ export class ChatController {
           if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
           const saved = page.messages.find(item => item.role === 'model' && item.inReplyTo === messageId);
           if (saved) {
-            this.update({ messages: [...this.state.messages.filter(item => item.id !== saved.id), saved], replyError: null });
+            this.update({
+              messages: [...this.state.messages.filter(item => item.id !== saved.id).map(item => item.id === messageId ? { ...item, agentRunId: runId } : item), saved],
+              replyError: null,
+              remoteReply: null,
+            });
             if (this.state.drafts[childId]?.savedUserMessageId === messageId) this.updateDraft(childId, { text: '', voice: undefined, file: undefined, photo: undefined, phase: 'draft', savedUserMessageId: null, notice: '已查回原回覆，沒有重新執行。', knownIds: [] });
             return;
           }
+          if (original === 'running') {
+            settledRemoteReply = { messageId, runId, status: 'running', stopReason: null };
+          }
+          this.update({
+            messages: this.state.messages.map(item => item.id === messageId ? { ...item, agentRunId: runId } : item),
+          });
           notice = original === 'running' ? '連線中斷；原運行仍在處理。請稍後重新讀取，沒有重新執行。' : '已核對原運行，聊天回覆尚未讀到。請重新讀取原結果，沒有重新執行。';
         } catch (recoveryError) {
           if (!this.current(scope)) return;
@@ -518,7 +568,7 @@ export class ChatController {
       }
       const capacityBusy = error instanceof ChatApiError && error.code === "ai_capacity_busy";
       const busyRunId = capacityBusy && this.state.feedback?.messageId === messageId ? this.state.feedback.runId : "";
-      if (capacityBusy) capacityBusyReply = { messageId, runId: busyRunId, status: "stopped", stopReason: "busy" };
+      if (capacityBusy) settledRemoteReply = { messageId, runId: busyRunId, status: "stopped", stopReason: "busy" };
       this.update({ replyError: notice,
         ...(busyRunId ? { messages: this.state.messages.map(item => item.id === messageId ? { ...item, agentRunId: busyRunId } : item) } : {}) });
       if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
@@ -532,7 +582,7 @@ export class ChatController {
         if (this.state.drafts[childId]?.phase === "replying") {
           this.updateDraft(childId, { phase: "reply_failed", notice: "暫未能確認回覆，原文已保存。請重新讀取聊天後再試。" });
         }
-        this.update({ busy: null, replyingMessageId: null, feedback: null, remoteReply: capacityBusyReply });
+        this.update({ busy: null, replyingMessageId: null, feedback: null, remoteReply: settledRemoteReply });
         void this.refreshMetadata();
       }
     }

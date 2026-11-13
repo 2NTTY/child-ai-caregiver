@@ -308,6 +308,15 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 - **文件目的地整併**：依據 `AGENTS.md#document-updates`，專案以 `PLAN.md#active` 及 `STATUS.md` 為權威資訊入口。先前之獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除，其內容已完整整併至本節。
 - **單一作者署名**：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`。
+
+### Slice B（B-P4）：SSE 進度收斂、同機重連原執行狀態恢復與訊息同步 (`codex/search-run-recovery`)
+
+- **對應需求**：REQ-001 §4.2 (`:169-176`)、REQ-002 §4.3 (`:440-445`)、§7.2 (`:517-518`)。
+- **核心設計與邊界**：
+  - 於 `src/shared/agent-feedback.ts` 新增 `reconcileAgentProgress`，確保重複或亂序到達的 SSE 進度事件單調收斂（階段不倒退、官方求助卡與來源預覽不重複、不降級）。
+  - 於 `src/client/chat-controller.ts` 處理同機 SSE 串流中斷但原回覆仍在背景執行（`getOriginalReply().status === "running"`）之情境，保留 `remoteReply: { status: "running", messageId }` 供 `refreshOriginalReply()` 無縫接續，不重開新執行；當 `readOriginal` 發現 `status === "completed"` 時立即同步刷新 `listMessages` 清單。
+  - 於 `frontend/src/screens/chatScreen.tsx` 確保當正式回覆訊息已存在於訊息列表時，不再殘留「處理中」橫幅。
+- **驗收限制聲明**：本分支僅於本地進行離線單元測試與型別檢查，未執行真實 Gemini/Vertex 調用、未連接真實資料庫或進行遠端推送。
 - **嚴格正向提交**：無 `git commit --amend`，維護 append-only 歷史完整性。
 - **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。
 

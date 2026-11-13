@@ -5996,3 +5996,20 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 11 月 13 日（香港），07:42:00 Cloud Scheduler 自動啟動 `site-overdue-dispatch-2rs8p`，專用 GitHub App 於 07:42:13 建立補檢。09:04:28 GitHub 建立原生 run，日誌列出 `MATCHED_CRON: 17 20 * * *`，對應 04:17 的正式時段。兩個 site-status 收據均為 `skipped`，來源為 `c802f907`，三個服務仍在 `66a51db5`。已移除提前測試的 GitHub 時段和 Job 時間覆寫，恢復 GCP 香港每日 06:27。#588 起，建置期間新合併的提交留待下次檢查，發布沿用預檢收據的 SHA。[GCP 自動補檢](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43331068601) · [GitHub 原生日程](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43342076107)
 
 同日把每日主時鐘移交現有 GCP Cloud Scheduler。舊 run 於香港 09:04:28 建立及開始，09:05:35 完成；倉庫未取得 GitHub 內部延遲的具體原因。新流程在 04:17 直接送出固定 master 檢查，GCS 的每日 claim 抵禦重複喚醒。已用受控時鐘驗證 04:17 的第一秒可送出及重投遞只生效一次；操作員狀態辨認專用 App 的執行紀錄。
+
+## 2026-11-14　Slice B（B-P4）SSE 進度收斂、同機重連原執行狀態恢復與訊息同步 (`codex/search-run-recovery`)
+
+- Recorded At：2026-11-14（Asia/Hong_Kong）
+- Work Date：2026-11-14
+- Step / Package：Slice B / B-P4（REQ-001 §4.2、REQ-002 §4.3、§7.2）
+- Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理協助本地實作與離線驗證，未推送遠端）
+- Goal：消除 SSE 重試／亂序造成的重複進度閃爍，支援同機網路閃斷後沿原背景 run 恢復狀態，並在背景回覆完成時即時更新訊息列表。
+- Actual Work：
+  - 於 `src/shared/agent-feedback.ts` 實作 `reconcileAgentProgress`，確保同 `runId`/`messageId` 的進度階段單調前進且求助卡去重。
+  - 於 `src/client/chat-controller.ts` 強化 `requestReply` 的串流中斷降級檢查（若 `getOriginalReply` 回報 `status === "running"` 則保留 `remoteReply` 狀態供 `refreshOriginalReply` 接手），並於 `readOriginal` 偵測到 `completed` 時立即刷新 `listMessages`。
+  - 於 `frontend/src/screens/chatScreen.tsx` 避免在對應回覆訊息已送達時繼續顯示執行中狀態橫幅。
+  - 新增 `tests/chat-run-recovery.test.ts`、`scripts/ci/verify-search-run-recovery-offline.sh` 與 `.github/workflows/search-run-recovery-offline.yml`。
+- Verification：
+  - `node --experimental-test-module-mocks --test tests/chat-run-recovery.test.ts tests/agent-feedback.test.ts`（8/8 通過，0 失敗，0 略過）。
+  - `./node_modules/.bin/tsc -p tsconfig.server.json --noEmit` 與 `./node_modules/.bin/tsc -p tsconfig.json --noEmit` 均退出 0。
+- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
