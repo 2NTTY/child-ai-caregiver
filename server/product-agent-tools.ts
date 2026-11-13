@@ -500,6 +500,7 @@ export function createProductAgentTools(options: {
         }
         if (JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) throw new FamilyError(400, "knowledge_context_input_limit");
         for (const chunk of result.chunks) evidence.set(chunk.chunkId, { chunk, filter });
+        if (result.chunks.length > 0) deliveryReview.require("review");
         return result;
       }) },
     { name: "read_knowledge_context", effect: "read", description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.read_knowledge_context,
@@ -513,6 +514,7 @@ export function createProductAgentTools(options: {
         for (const chunk of result.chunks) {
           evidence.set(chunk.chunkId, { chunk: accumulateKnowledgeRead(evidence.get(chunk.chunkId)?.chunk, chunk), filter: anchor.filter });
         }
+        if (result.chunks.length > 0) deliveryReview.require("review");
         return result;
       }) },
     { name: "propose_task", description: "保存待本人明確確認的家庭任務候選，尚未建立任務或通知任何人。對象只可取 read_context 的 eligibleAssignees，時間不清楚先補問。",
@@ -618,6 +620,7 @@ export function createProductAgentTools(options: {
           run.images!.add({ image, authorize: () => options.photos!.authorizeImage(scope.userId, scope.childId, reference) });
         }
         if (!await permitted()) throw new AgentStopped('unauthorized');
+        deliveryReview.require("review");
         return { photo: reference, originalProvided: true, visibility: 'private', sourceKind: 'user_attachment' };
       }) });
   if (options.readChatFile && !options.background && options.visibility !== "family") tools.splice(tools.length - 1, 0, {

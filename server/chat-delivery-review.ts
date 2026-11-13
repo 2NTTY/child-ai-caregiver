@@ -131,13 +131,13 @@ export const SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS = new Set<string>([
 ]);
 
 /** Care-domain and advisory markers. Used only to force review, never to grant a skip. */
-const CARE_DOMAIN_PATTERN = /新生兒|嬰兒|寶寶|幼兒|BB\b|月齡|個月大|個月以下|月以下|加鹽|餵食|餵奶|服藥|劑量|體溫|發燒|疫苗|母乳|配方奶|照護建議|治療|就醫|症狀|危及生命|蜂蜜|蜜糖|止咳|退燒|腹瀉|固體食物|加固|營養|藥物|抗生素|newborns?|infants?|babies|baby\b|toddlers?|fever|vaccine|dosage|medication|breast\s*milk|formula\s*milk|honey|cough|diarrh(?:oa|ea)|solid foods?|nutrition|antibiotics?/iu;
-const CARE_ADVISORY_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?|不要給|不可給|可以每天|唔好畀|唔可以畀|唔好食|唔可以食|每日(?:都)?(?:要|可以)|趴低|瞓覺時|should(?:\s+not)?|must(?:\s+not)?|recommend(?:ed|s)?|don'?t\s+give|do\s+not\s+give|avoid\s+giving|try\s+(?:to\s+)?giv(?:e|ing)|would\s+you\s+(?:try|give|put)|giv(?:e|ing)\s+(?:\w+\s+){0,3}(?:baby|infant|child|newborn|孩子|BB)|put\s+(?:your\s+)?(?:child|baby|infant).{0,40}(?:sleep|stomach)|you\s+can\s+give|every\s+day|on\s+their\s+stomach/iu;
+const CARE_DOMAIN_PATTERN = /新生兒|嬰兒|寶寶|幼兒|BB\b|月齡|個月大|個月以下|月以下|加鹽|餵食|餵奶|餵藥|食藥|吃藥|服藥|藥水|劑量|毫升|毫克|\b\d+(?:\.\d+)?\s*(?:ml|mg|毫升|毫克)\b|體溫|發燒|疫苗|母乳|配方奶|照護建議|治療|就醫|症狀|危及生命|蜂蜜|蜜糖|止咳|退燒|腹瀉|固體食物|加固|營養|藥物|抗生素|newborns?|infants?|babies|baby\b|toddlers?|fever|vaccine|dosage|medication|syrup|breast\s*milk|formula\s*milk|honey|cough|diarrh(?:oa|ea)|solid foods?|nutrition|antibiotics?/iu;
+const CARE_ADVISORY_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?|不要給|不可給|可以每天|唔好畀|唔可以畀|唔好食|唔可以食|每日(?:都)?(?:要|可以)|每次(?:餵|食|吃|服)?|藥(?:要|可以|洗唔洗)?(?:食|服|餵)|(?:食|服|餵)藥|趴低|瞓覺時|\b\d+(?:\.\d+)?\s*(?:ml|mg|毫升|毫克)\b|should(?:\s+not)?|must(?:\s+not)?|recommend(?:ed|s)?|don'?t\s+give|do\s+not\s+give|avoid\s+giving|try\s+(?:to\s+)?giv(?:e|ing)|would\s+you\s+(?:try|give|put)|giv(?:e|ing)\s+(?:\w+\s+){0,3}(?:baby|infant|child|newborn|孩子|BB)|put\s+(?:your\s+)?(?:child|baby|infant).{0,40}(?:sleep|stomach)|you\s+can\s+give|every\s+day|on\s+their\s+stomach/iu;
 // Positive backstops for existing medical/original-evidence/receipt cases formerly
 // caught by the blanket fallback. They never grant authority or clear a task obligation.
-const MEDICAL_CLAIM_PATTERN = /用藥|藥丸|阿士匹靈|撲熱息痛|布洛芬|麻疹|傷口|癒合|aspirin|ibuprofen|paracetamol|measles|wound|heal(?:ed|ing)/iu;
+const MEDICAL_CLAIM_PATTERN = /用藥|藥丸|藥水|餵藥|食藥|吃藥|服藥|劑量|\b\d+(?:\.\d+)?\s*(?:ml|mg|毫升|毫克)\b|阿士匹靈|撲熱息痛|布洛芬|麻疹|傷口|癒合|aspirin|ibuprofen|paracetamol|measles|wound|heal(?:ed|ing)/iu;
 const ORIGINAL_EVIDENCE_CLAIM_PATTERN = /(?:照片|相片|圖片|影像|錄音|錄影).{0,40}(?:顯示|證明|同意|確認)|(?:photo|image|recording|audio).{0,60}(?:shows?|proves?|proof|consent|agreed)/iu;
-const OPERATION_CLAIM_PATTERN = /已(?:經)?(?:完成|保存|儲存|刪除|修改|更新|發送|送出|安排|記住)|(?:已|經已).{0,12}(?:存好|改好)|(?:already|successfully|I have|I've).{0,30}(?:saved|deleted|updated|sent|scheduled|changed)|(?:saved|deleted|updated|sent|scheduled).{0,20}(?:successfully|already)/iu;
+const OPERATION_CLAIM_PATTERN = /(?:已(?:經)?|經已).{0,12}(?:完成|保存|儲存|刪除|修改|更新|發送|送出|安排|記住|存好|改好)|(?:already|successfully|I have|I've).{0,30}(?:saved|deleted|updated|sent|scheduled|changed)|(?:saved|deleted|updated|sent|scheduled).{0,20}(?:successfully|already)/iu;
 
 function joinedDraftText(draft: ChatDeliveryDraft): string {
   return draft.paragraphs.map(paragraph => paragraph.text).join("\n").trim();

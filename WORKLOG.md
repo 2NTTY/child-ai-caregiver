@@ -6045,3 +6045,19 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 ## 2026-11-18 家庭附件庫直接上傳
 
 P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授權及原操作收據。使用同一個合成家庭走正式 HTTP，核對照顧者保存、唯讀成員讀回原件、舊草稿隔離、途中撤權及原操作重試。照片和錄音只補各自的上傳接點。資料來自記憶體 Firestore 與合成物件服務；正式交付及設備證據見接手清單。
+
+## 2026-11-14　Slice B（B-P7）語義審核邊界防繞過與回合中審核義務預算收斂 (`codex/search-review-boundaries`)
+
+- Recorded At：2026-11-14（Asia/Hong_Kong）
+- Work Date：2026-11-14
+- Step / Package：Slice B / B-P7（REQ-008 §3.2、§9）
+- Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理協助本地實作與離線驗證，未推送遠端）
+- Goal：加固交付審核對表面問句改寫（用藥、劑量、操作主張）的失敗關閉邊界，並確保回合中因檢索證據而產生的審核義務在同一根預算（root `AgentBudget`）內完成預留或以 `delivery_review_budget` 安全停止。
+- Actual Work：
+  - 更新 `server/chat-delivery-review.ts`，將 `餵藥`、`食藥`、`吃藥`、`藥水`、`毫升`、`毫克`、數值劑量（`ml`/`mg`）及間隔操作宣告納入審核觸發條件。
+  - 更新 `server/product-agent-tools.ts`（`search_knowledge`、`read_knowledge_context`、`read_chat_photo`）、`server/agent-source-tools.ts`（`read_private_source`）與 `server/product-agent.ts`，在回合中取得證據時立即啟用 `deliveryReview.require("review")`，並在剩餘根預算不足以同時覆蓋 `present_answer` 與 `delivery_review` 時以 `delivery_review_budget` 安全收斂。
+  - 新增 `tests/search-review-boundaries.test.ts`、`scripts/ci/verify-search-review-boundaries-offline.sh` 與 `.github/workflows/search-review-boundaries-offline.yml`。
+- Verification：
+  - `node --experimental-test-module-mocks --test tests/search-review-boundaries.test.ts tests/chat-delivery-review.test.ts tests/agent-budget.test.ts`（56/56 通過，0 失敗，0 略過）。
+  - `./node_modules/.bin/tsc -p tsconfig.server.json --noEmit` 與 `./node_modules/.bin/tsc -p tsconfig.json --noEmit` 均退出 0。
+- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。

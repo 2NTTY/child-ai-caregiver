@@ -1,0 +1,38 @@
+name: Search Review Boundaries Offline Verification
+
+on:
+  push:
+    branches:
+      - codex/search-review-boundaries
+  pull_request:
+    paths:
+      - "server/chat-delivery-review.ts"
+      - "server/product-agent-tools.ts"
+      - "server/agent-source-tools.ts"
+      - "server/product-agent.ts"
+      - "tests/search-review-boundaries.test.ts"
+      - "scripts/ci/verify-search-review-boundaries-offline.sh"
+      - ".github/workflows/search-review-boundaries-offline.yml"
+
+jobs:
+  verify-offline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run B-P7 offline verification
+        run: bash scripts/ci/verify-search-review-boundaries-offline.sh

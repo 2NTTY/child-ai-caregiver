@@ -308,6 +308,14 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 - **文件目的地整併**：依據 `AGENTS.md#document-updates`，專案以 `PLAN.md#active` 及 `STATUS.md` 為權威資訊入口。先前之獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除，其內容已完整整併至本節。
 - **單一作者署名**：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`。
+
+### Slice B（B-P7）：語義審核邊界防繞過與回合中審核義務預算收斂 (`codex/search-review-boundaries`)
+
+- **對應需求**：REQ-008 §3.2 (`:1349-1358`)、§9 (`:1445-1448`)。
+- **核心設計與邊界**：
+  - 於 `server/chat-delivery-review.ts` 補強 `CARE_DOMAIN_PATTERN`、`CARE_ADVISORY_PATTERN`、`MEDICAL_CLAIM_PATTERN` 及 `OPERATION_CLAIM_PATTERN`，封堵將用藥、劑量（如 `ml`、`mg`、`毫升`、`毫克`、`食藥`、`餵藥`、`藥水`）或操作主張包裝成問句／禮貌句之表面改寫繞過路徑，確保一律失敗關閉進入語義審核，同時維持真正有界澄清問句（如詢問年齡、是否發燒）的免審核短パス。
+  - 於 `server/product-agent-tools.ts`、`server/agent-source-tools.ts` 及 `server/product-agent.ts` 落實回合中審核義務（mid-turn review obligation）於同一根預算（root `AgentBudget`）之動態保留：當回合起初未被標記為必審，但在執行 `search_knowledge`、`read_knowledge_context`、`read_private_source` 或 `read_chat_photo` 取得證據後，立即呼叫 `deliveryReview.require("review")`；若剩餘模型呼叫額度足夠（至少 2 次），第 3 次呼叫自動鎖定為 `present_answer` 以預留第 4 次呼叫予 `delivery_review`；若剩餘額度不足以同時完成回答與獨立審核（僅剩 1 次），則拒絕未受審核的終端輸出並以 `delivery_review_budget`（`CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT`）安全收斂，絕不開立第二個執行回合或突破 4 次模型呼叫上限。
+- **驗收限制聲明**：本分支僅於本地進行離線單元測試與型別檢查，未執行真實 Gemini/Vertex 調用、未連接真實資料庫或進行遠端推送。
 - **嚴格正向提交**：無 `git commit --amend`，維護 append-only 歷史完整性。
 - **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。
 
