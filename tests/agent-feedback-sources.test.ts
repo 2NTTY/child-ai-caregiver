@@ -2,14 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { createServer } from 'node:http';
 import { FinishReason } from '@google/genai';
 import {
   AGENT_PROGRESS_LABELS,
+  AGENT_PROGRESS_MAX_SOURCES,
   AGENT_PROGRESS_SOURCE_DISCLAIMER,
   AGENT_PROGRESS_SOURCE_STAGE_LABELS,
   agentProgressSchema,
   agentProgressSourceSchema,
+  formatProgressSourceDateText,
   mergeAgentProgressSources,
   toAgentProgressSource,
   type AgentProgress,
@@ -20,7 +21,6 @@ import { createProductAgentTools } from '../server/product-agent-tools.ts';
 import { AgentBudget } from '../server/agent-budget.ts';
 import { ChatController } from '../src/client/chat-controller.ts';
 import { createChatApi } from '../src/client/chat-api.ts';
-import { createFirebaseNodeHandler } from '../server/firebase-http.ts';
 import { handleChatRequest } from '../server/chat-api.ts';
 import { handleProductAgentRequest } from '../server/product-agent-api.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
@@ -135,11 +135,32 @@ test('agentProgressSchema strictly validates progressive source cards and reject
   assert.ok(internalSource);
   assert.equal(internalSource.url, null, 'internal_noncommercial sources must not expose external URLs');
 
+  const httpSource = toAgentProgressSource({ ...sampleChunk, url: 'http://www.fhs.gov.hk/insecure.html' }, 'found');
+  assert.ok(httpSource);
+  assert.equal(httpSource.url, null, 'non-HTTPS http:// URLs must be normalized to null');
+  assert.equal(
+    agentProgressSourceSchema.safeParse({ ...foundSource, url: 'http://www.fhs.gov.hk/insecure.html' }).success,
+    false,
+    'non-HTTPS URLs must be rejected by strict schema',
+  );
+
+  const undatedSource = toAgentProgressSource({
+    ...sampleChunk,
+    fetchedAt: undefined,
+    sourceUpdatedAt: undefined,
+    sourcePublishedAt: undefined,
+    sourceDateText: undefined,
+  }, 'found');
+  assert.ok(undatedSource);
+  assert.equal(undatedSource.fetchedAt, null, 'missing dates must not fabricate a 1970-01-01 fetchedAt timestamp');
+  assert.equal(undatedSource.sourceUpdatedAt, null);
+  assert.equal(formatProgressSourceDateText(undatedSource), null);
+
   const partialStub = toAgentProgressSource({ chunkId: 'stub-only' }, 'found');
   assert.equal(partialStub, null, 'partial test stubs without title/publisher safely return null');
 });
 
-test('mergeAgentProgressSources deduplicates by chunkId and promotes found stage to read without regressing', () => {
+test('mergeAgentProgressSources deduplicates by chunkId, preserves read metadata against late found, and caps at 6 keeping read sources', () => {
   const found = toAgentProgressSource(sampleChunk, 'found')!;
   const read = toAgentProgressSource(
     { ...sampleChunk, sourceExcerpt: '已讀取更完整上下文段落。', applicabilityStatus: 'conditional' },
@@ -163,11 +184,28 @@ test('mergeAgentProgressSources deduplicates by chunkId and promotes found stage
   assert.equal(step2[0]?.chunkId, sampleChunk.chunkId);
   assert.equal(step2[0]?.stage, 'read');
   assert.equal(step2[0]?.applicabilityStatus, 'conditional');
+  assert.equal(step2[0]?.excerpt, '已讀取更完整上下文段落。');
   assert.equal(step2[1]?.chunkId, second.chunkId);
   assert.equal(step2[1]?.stage, 'found');
 
   const step3 = mergeAgentProgressSources(step2, [found]);
   assert.equal(step3[0]?.stage, 'read', 'read stage must never regress back to found');
+  assert.equal(step3[0]?.excerpt, '已讀取更完整上下文段落。', 'late found payload must not overwrite read excerpt');
+  assert.equal(step3[0]?.applicabilityStatus, 'conditional', 'late found payload must not overwrite read applicability');
+
+  const excessFound = Array.from({ length: 7 }, (_, i) => toAgentProgressSource({
+    ...sampleChunk,
+    chunkId: `44444444-4444-4444-8444-00000000000${i}`,
+    title: `來源 ${i}`,
+  }, 'found')!);
+  const lateRead = toAgentProgressSource({
+    ...sampleChunk,
+    chunkId: '55555555-5555-4555-8555-555555555555',
+    title: '精讀官方來源',
+  }, 'read')!;
+  const capped = mergeAgentProgressSources(excessFound, [lateRead]);
+  assert.equal(capped.length, AGENT_PROGRESS_MAX_SOURCES);
+  assert.equal(capped[0]?.chunkId, lateRead.chunkId, 'read cards must be prioritized ahead of excess found cards within 6-card cap');
 });
 
 test('createProductAgentTools emits found and read source progress events and respects SSE stream limits', async () => {
@@ -350,27 +388,20 @@ test('formal HTTP SSE streams progressive source cards and official help before 
     });
   };
 
-  let origin = '';
-  const server = createServer((req, res) => {
-    void createFirebaseNodeHandler({
-      publicOrigin: origin,
-      auth: {
-        fromNodeHeaders(headers) {
-          const value = new Headers();
-          for (const [key, item] of Object.entries(headers)) if (typeof item === 'string') value.set(key, item);
-          return value;
-        },
-      },
-      handler: request => {
-        if (new URL(request.url).pathname.endsWith('/messages')) return handleChatRequest(request, 'owner', chat);
-        return handleProductAgentRequest(request, 'owner', { agent: product.agent, store: product.store, chat, isCurrentUser: async () => true });
-      },
-    })(req, res);
-  });
-  await new Promise<void>(r => server.listen(0, '127.0.0.1', r));
-  origin = 'http://127.0.0.1:' + (server.address() as { port: number }).port;
-  const api = createChatApi(origin, async () => ({ id: 'owner', name: 'Owner', email: 'owner@example.test' }), (input, init) =>
-    fetch(input, { ...init, headers: { ...init?.headers, origin } }));
+  const origin = 'https://synthetic.local';
+  const inMemoryFetch: typeof fetch = async (input, init) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    const headers = new Headers(init?.headers);
+    if (!headers.has('origin')) headers.set('origin', origin);
+    const request = new Request(url, {
+      method: init?.method ?? 'GET',
+      headers,
+      body: init?.body,
+    });
+    if (new URL(request.url).pathname.endsWith('/messages')) return handleChatRequest(request, 'owner', chat);
+    return handleProductAgentRequest(request, 'owner', { agent: product.agent, store: product.store, chat, isCurrentUser: async () => true });
+  };
+  const api = createChatApi(origin, async () => ({ id: 'owner', name: 'Owner', email: 'owner@example.test' }), inMemoryFetch);
 
   const controller = new ChatController({
     ...api,
@@ -420,8 +451,6 @@ test('formal HTTP SSE streams progressive source cards and official help before 
   } finally {
     gate.resolve();
     controller.dispose();
-    server.closeAllConnections();
-    await new Promise<void>(r => server.close(() => r()));
   }
 });
 
@@ -433,5 +462,7 @@ test('chatScreen and OfficialHelpCards wire progressive source cards with explic
   assert.match(cardsCode, /testID="chat-progress-sources"/);
   assert.match(cardsCode, /AGENT_PROGRESS_SOURCE_DISCLAIMER/);
   assert.match(cardsCode, /AGENT_PROGRESS_SOURCE_STAGE_LABELS/);
+  assert.match(cardsCode, /formatProgressSourceDateText/);
+  assert.match(cardsCode, /dateText \? <Text/);
   assert.equal(AGENT_PROGRESS_LABELS.reviewing, '正在獨立核對回覆');
 });

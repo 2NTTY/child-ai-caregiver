@@ -313,9 +313,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 - **對應需求**：REQ-002 §§5.1–5.2 (`:456-470`)、§7.2 (`:519`)。
 - **核心設計與邊界**：
-  - 擴充 `agentProgressSchema`（`.strict()`），支援最多 6 張已過濾之官方來源預覽卡（`chunkId`、`title`、`sourceOrg`、`url`、`stage: "found" | "read"`），嚴格遵守 `server/agent-feedback-stream.ts` 既有 48 事件與 256KB 串流預算，且絕不夾帶未審核草稿文字或虛構優先權重。
-  - 於 `search_knowledge` 及 `read_knowledge_context` 完成時即時透過 SSE 發布 `found`／`read` 階段來源預覽，並於 `src/client/chat-controller.ts` 進行單調匯聚（`read` 不被遲到的 `found` 降級），在 `frontend/src/screens/chatScreen.tsx` 回覆生成期間（`chat.busy === "reply"`）渲染 `ProgressSourceCards`。
-- **驗收限制聲明**：本分支僅於本地進行離線單元測試與型別檢查，未執行真實 Gemini/Vertex 調用、未連接真實資料庫或進行遠端推送。
+  - 擴充 `agentProgressSchema`（`.strict()`），支援最多 `AGENT_PROGRESS_MAX_SOURCES = 6` 張已過濾之官方來源預覽卡（`chunkId`、`sourceId`、`title`、`section`、`publisher`、僅限 `https://` 且 `internal_noncommercial` 置 `null` 之 `url`、`excerpt`、`fetchedAt` 可為 `null`、`sourceUpdatedAt`、`sourceDateText`、`stage: "found" | "read"`、`applicabilityStatus`），嚴格遵守 `server/agent-feedback-stream.ts` 既有 48 事件與 256KB 串流預算，且絕不夾帶未審核草稿文字或虛構優先權重；`applicable` 僅標示「已找到官方來源片段（尚待獨立核對回覆）」，缺日期時不偽造 `1970-01-01` 且介面不顯示日期列。
+  - 於 `search_knowledge` 及 `read_knowledge_context` 完成時即時透過 SSE 發布 `found`／`read` 階段來源預覽，並於 `src/shared/agent-feedback.ts` 的 `mergeAgentProgressSources` 透過 `src/client/chat-controller.ts` 進行單調匯聚（遲到的 `found` 絕不覆寫已 `read` 之 `stage`、`excerpt` 或 `applicabilityStatus`；超過 6 筆時優先保留 `read` 卡片），在 `frontend/src/screens/chatScreen.tsx` 回覆生成期間（`chat.busy === "reply"`）渲染 `ProgressSourceCards`。
+- **驗收限制聲明**：本分支僅於本地進行離線單元測試與型別檢查，未執行真實 Gemini/Vertex 調用、未連接真實資料庫或進行遠端推送；`tests/agent-feedback-sources.test.ts` 已改用 in-memory injected `fetch` 驗證完整 SSE 串流（相容 `family-cleanup-network-guard.mjs` 與 `unshare --net`），既有 `tests/agent-feedback.test.ts` 因第 58 行含 `127.0.0.1` loopback listener，僅於無 socket 阻擋之本機環境單獨複驗（4/4 通過）。
 - **嚴格正向提交**：無 `git commit --amend`，維護 append-only 歷史完整性。
 - **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。
 

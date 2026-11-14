@@ -6009,6 +6009,14 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
   - 更新 `src/client/chat-controller.ts`、`frontend/src/components/chat/OfficialHelpCards.tsx` 與 `frontend/src/screens/chatScreen.tsx`，在 `chat.busy === "reply"` 期間顯示 `ProgressSourceCards`。
   - 新增 `tests/agent-feedback-sources.test.ts`、`scripts/ci/verify-search-source-progress-offline.sh` 與 `.github/workflows/search-source-progress-offline.yml`。
 - Verification：
-  - `node --experimental-test-module-mocks --test tests/agent-feedback-sources.test.ts tests/agent-feedback.test.ts`（9/9 通過，0 失敗，0 略過）。
-  - `./node_modules/.bin/tsc -p tsconfig.server.json --noEmit` 與 `./node_modules/.bin/tsc -p tsconfig.json --noEmit` 均退出 0。
-- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
+  - `node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-concurrency=1 tests/agent-feedback-sources.test.ts tests/chat-delivery-review.test.ts tests/product-agent-execution-contract.test.ts tests/chat-web-sources-copy.test.ts`（4 個完整測試檔共 **64/64** 通過：5 + 44 + 8 + 7，0 失敗，0 略過，`blockedAttempts: 0`）。
+  - 既有上游 `tests/agent-feedback.test.ts`（第 58 行開啟 `127.0.0.1` loopback HTTP server，無法於 `unshare --net` 或 socket guard 下執行）另外於本機無 socket 阻擋執行 `node --experimental-test-module-mocks --test tests/agent-feedback.test.ts`：**4/4** 通過。
+  - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
+- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`）；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL／Firestore、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
+
+### 2026-11-14　B-P3 R1 審核修復補充
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復：
+1）`B-P3-1`：`mergeAgentProgressSources` 現保證遲到的 `found` 不會以較舊／局部 `excerpt`、`title`、`section`、`publisher` 或 `applicabilityStatus` 覆寫已 `read` 條目（僅補全缺失 metadata），超過 `AGENT_PROGRESS_MAX_SOURCES = 6` 時優先保留 `read` 卡片並統一截斷於 6 筆（對齊後端、schema 與 UI）。
+2）`B-P3-2`：`toAgentProgressSource` 的 `fetchedAt` 改為 `nullable()`，缺日期時維持 `null` 而不偽造 `1970-01-01`；`OfficialHelpCards.tsx` 改用 `formatProgressSourceDateText` 且無日期時省略 `更新／檢查：` 列；`url` 嚴格限制僅允許 `https://`（非 HTTPS 置 `null` 且 schema 拒絕）。
+3）測試與 CI 對齊：`tests/agent-feedback-sources.test.ts` 改用 in-memory injected `fetch` 驗證完整 `createChatApi` → `handleChatRequest`/`handleProductAgentRequest` SSE 串流（無 loopback port、`blockedAttempts: 0`），並於 CI workflow 與 `scripts/ci/verify-search-source-progress-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 及 `summary-progress-contract.mjs` 驗證契約；`PLAN.md` 同步更正欄位名稱（`publisher`）與實測數字（64 離線 + 4 loopback）。

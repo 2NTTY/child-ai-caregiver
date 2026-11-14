@@ -12,15 +12,17 @@ export const OFFICIAL_HELP = {
     sources: [{ title: '衞生署藥物辦公室：安全用藥', url: 'https://www.drugoffice.gov.hk/eps/do/tc/consumer/news_informations/knowledge_on_medicines/handling_medicines_safety.html' }] },
 } as const;
 
+export const AGENT_PROGRESS_MAX_SOURCES = 6;
+
 export const agentProgressSourceSchema = z.object({
   chunkId: z.string().min(1).max(120),
   sourceId: z.string().min(1).max(120),
   title: z.string().min(1).max(200),
   section: z.string().min(1).max(200),
   publisher: z.string().min(1).max(120),
-  url: z.string().url().max(500).nullable(),
+  url: z.string().url().max(500).refine(value => /^https:\/\//iu.test(value), { message: 'Only https:// URLs are permitted' }).nullable(),
   excerpt: z.string().min(1).max(400),
-  fetchedAt: z.string().min(1).max(64),
+  fetchedAt: z.string().min(1).max(64).nullable(),
   sourceUpdatedAt: z.string().min(1).max(64).nullable(),
   sourceDateText: z.string().min(1).max(120).nullable().optional(),
   stage: z.enum(['found', 'read']),
@@ -31,7 +33,7 @@ export type AgentProgressSource = z.infer<typeof agentProgressSourceSchema>;
 export const agentProgressSchema = z.object({ runId: z.uuid(), messageId: z.uuid(),
   phase: z.enum(['started', 'model', 'reading', 'searching', 'working', 'tool_finished', 'reviewing', 'help']),
   card: officialHelpIdSchema.optional(),
-  sources: z.array(agentProgressSourceSchema).max(6).optional(),
+  sources: z.array(agentProgressSourceSchema).max(AGENT_PROGRESS_MAX_SOURCES).optional(),
 }).strict().refine(event =>
   (event.phase === 'help') === (event.card !== undefined)
   && (event.sources === undefined || (
@@ -67,9 +69,9 @@ export function toAgentProgressSource(
     title: chunk.title.trim().slice(0, 200),
     section: typeof chunk.section === 'string' && chunk.section.trim() ? chunk.section.trim().slice(0, 200) : chunk.title.trim().slice(0, 200),
     publisher: chunk.publisher.trim().slice(0, 120),
-    url: chunk.usageScope === 'internal_noncommercial' ? null : (typeof chunk.url === 'string' && /^https?:\/\//iu.test(chunk.url) ? chunk.url : null),
+    url: chunk.usageScope === 'internal_noncommercial' ? null : (typeof chunk.url === 'string' && /^https:\/\//iu.test(chunk.url.trim()) ? chunk.url.trim() : null),
     excerpt: rawExcerpt.slice(0, 320),
-    fetchedAt: typeof chunk.fetchedAt === 'string' && chunk.fetchedAt.trim() ? chunk.fetchedAt.trim() : new Date(0).toISOString(),
+    fetchedAt: typeof chunk.fetchedAt === 'string' && chunk.fetchedAt.trim() ? chunk.fetchedAt.trim() : null,
     sourceUpdatedAt: typeof chunk.sourceUpdatedAt === 'string' && chunk.sourceUpdatedAt.trim() ? chunk.sourceUpdatedAt.trim()
       : typeof chunk.sourcePublishedAt === 'string' && chunk.sourcePublishedAt.trim() ? chunk.sourcePublishedAt.trim() : null,
     ...(typeof chunk.sourceDateText === 'string' && chunk.sourceDateText.trim() ? { sourceDateText: chunk.sourceDateText.trim().slice(0, 120) } : {}),
@@ -77,6 +79,12 @@ export function toAgentProgressSource(
     ...(chunk.applicabilityStatus ? { applicabilityStatus: chunk.applicabilityStatus } : {}),
   });
   return parsed.success ? parsed.data : null;
+}
+
+export function formatProgressSourceDateText(
+  source: Pick<AgentProgressSource, 'sourceDateText' | 'sourceUpdatedAt' | 'fetchedAt'>,
+): string | null {
+  return source.sourceDateText ?? source.sourceUpdatedAt ?? source.fetchedAt ?? null;
 }
 
 export function mergeAgentProgressSources(
@@ -89,15 +97,34 @@ export function mergeAgentProgressSources(
     const existing = byChunk.get(source.chunkId);
     if (!existing) {
       byChunk.set(source.chunkId, source);
+      continue;
+    }
+    if (existing.stage === 'read' && source.stage === 'found') {
+      byChunk.set(source.chunkId, {
+        ...existing,
+        url: existing.url ?? source.url,
+        fetchedAt: existing.fetchedAt ?? source.fetchedAt,
+        sourceUpdatedAt: existing.sourceUpdatedAt ?? source.sourceUpdatedAt,
+        sourceDateText: existing.sourceDateText ?? source.sourceDateText,
+        applicabilityStatus: existing.applicabilityStatus ?? source.applicabilityStatus,
+      });
     } else {
       byChunk.set(source.chunkId, {
         ...existing,
         ...source,
+        url: source.url ?? existing.url,
+        fetchedAt: source.fetchedAt ?? existing.fetchedAt,
+        sourceUpdatedAt: source.sourceUpdatedAt ?? existing.sourceUpdatedAt,
+        sourceDateText: source.sourceDateText ?? existing.sourceDateText,
         stage: existing.stage === 'read' || source.stage === 'read' ? 'read' : 'found',
       });
     }
   }
-  return [...byChunk.values()].slice(0, 12);
+  const merged = [...byChunk.values()];
+  if (merged.length <= AGENT_PROGRESS_MAX_SOURCES) return merged;
+  const readItems = merged.filter(item => item.stage === 'read');
+  const foundItems = merged.filter(item => item.stage !== 'read');
+  return [...readItems, ...foundItems].slice(0, AGENT_PROGRESS_MAX_SOURCES);
 }
 
 export function officialHelpFromTools(tools: readonly { name: string; status: string; reference?: string }[]): OfficialHelpId[] {

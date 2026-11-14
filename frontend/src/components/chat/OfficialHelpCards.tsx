@@ -5,6 +5,7 @@ import {
   AGENT_PROGRESS_SOURCE_DISCLAIMER,
   AGENT_PROGRESS_SOURCE_STAGE_LABELS,
   OFFICIAL_HELP,
+  formatProgressSourceDateText,
   type AgentProgressSource,
   type OfficialHelpId,
 } from '../../../../src/shared/agent-feedback';
@@ -41,12 +42,12 @@ export function ProgressSourceCards({
     <Text variant="labelSmall">{AGENT_PROGRESS_SOURCE_DISCLAIMER}</Text>
     {reviewing ? <Text testID="chat-progress-sources-reviewing" variant="labelSmall">{AGENT_PROGRESS_LABELS.reviewing}</Text> : null}
     {sources.map(source => {
-      const dateText = source.sourceDateText ?? source.sourceUpdatedAt ?? source.fetchedAt;
+      const dateText = formatProgressSourceDateText(source);
       return <View key={source.chunkId} testID="chat-progress-source-card" accessibilityLabel={`${source.publisher}：${source.title}`}>
         <Text variant="labelSmall">{AGENT_PROGRESS_SOURCE_STAGE_LABELS[source.stage]}{source.applicabilityStatus ? ` · ${APPLICABILITY_NOTES[source.applicabilityStatus]}` : ''}</Text>
         <Text variant="titleSmall">{source.publisher} · {source.title}</Text>
         {source.section && source.section !== source.title ? <Text variant="bodySmall">{source.section}</Text> : null}
-        <Text variant="bodySmall">更新／檢查：{dateText}</Text>
+        {dateText ? <Text variant="bodySmall">更新／檢查：{dateText}</Text> : null}
         <Text selectable>{source.excerpt}</Text>
         {source.url ? <AppButton variant="quiet" density="compact" label="開啟官方來源"
           onPress={() => { void Linking.openURL(source.url!).catch(() => {}); }} /> : null}
