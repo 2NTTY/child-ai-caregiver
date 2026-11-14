@@ -45,7 +45,7 @@ git diff --exit-code HEAD
 
 stage=growth-cursor-tests
 for source in "${TEST_FILES[@]}"; do
-  "$NODE_BIN" --max-old-space-size=384 --import "./$GUARD" --experimental-transform-types --test --test-timeout=30000 \
+  "$NODE_BIN" --max-old-space-size=384 --import "./$GUARD" --experimental-test-module-mocks --experimental-transform-types --test --test-timeout=30000 \
     --test-concurrency=1 "$source"
 done
 
