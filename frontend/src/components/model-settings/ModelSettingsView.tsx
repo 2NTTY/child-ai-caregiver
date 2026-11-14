@@ -17,7 +17,10 @@ import { StatusAnnouncement } from "../StatusAnnouncement";
 import { personalLimits, type ModelMode, type ModelSettings, type ModelSettingsActions, type ModelSettingsUsage, type ModelSettingsViewModel } from "../../model-settings-view-model";
 import { chineseFont, colors, readingType, spacing, workspaceType } from "../../theme";
 import { MotionFeedback, MotionReveal } from "../../motion";
-import { modelCatalogSelection, modelCommandFromDraft, modelEmbeddingRouteChanged, modelSettingsDraft, modelSettingsSchema, removeModelKeyCommand, modelLimitFields, type ModelSettingsDraft } from "./model-settings-form";
+import {
+  formatEffectiveLimitSourcesLine, formatEffectiveSoftBudgetLine, modelCatalogSelection, modelCommandFromDraft,
+  modelEmbeddingRouteChanged, modelSettingsDraft, modelSettingsSchema, removeModelKeyCommand, modelLimitFields, type ModelSettingsDraft,
+} from "./model-settings-form";
 
 const modelReasonText = (reason: string) => ({ invalid_key: "密鑰無效或沒有存取權限。", region_unavailable: "供應商不支援目前服務地區。",
   model_unavailable: "這份憑證目前不能存取所選模型。", quota_exceeded: "供應商配額或速率已達上限。", timeout: "供應商查核逾時。",
@@ -287,10 +290,12 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
           <Text style={styles.meta}>全站個人服務安全上限：{snapshot.personalGlobalLimit} 次；個人上限只在個人模式生效。</Text>
           <Text style={styles.meta}>每日 UTC 00:00（香港 08:00）重置。生成及查詢向量的嘗試均計次；此處用量不代表供應商的完整帳單。</Text>
           {snapshot.effective ? <View style={styles.group}>
-            <Text style={styles.body}>目前生效上限</Text>
+            <Text style={styles.body}>目前生效上限（政策版本 v{snapshot.effective.policyVersion}）</Text>
             <Text style={styles.meta}>每日本人 {snapshot.effective.dailyLimit}／共用 {snapshot.effective.dailyGlobalLimit} 次</Text>
             <Text style={styles.meta}>每輪生成 {snapshot.effective.maxModelCalls}／工具 {snapshot.effective.maxToolCalls}／查詢向量 {snapshot.effective.maxQueryEmbeddings} 次</Text>
             <Text style={styles.meta}>整輪 {snapshot.effective.maxRunSeconds} 秒 · 單次模型 {snapshot.effective.modelRequestSeconds} 秒 · 最多額外重試 {snapshot.effective.maxModelRetries} 次</Text>
+            <Text style={styles.meta}>{formatEffectiveSoftBudgetLine(snapshot.effective)}</Text>
+            {formatEffectiveLimitSourcesLine(snapshot.effective) ? <Text style={styles.meta}>{formatEffectiveLimitSourcesLine(snapshot.effective)}</Text> : null}
             <Text style={styles.meta}>{snapshot.effective.cappedByAdministrator.length ? "部分個人設定高於管理員保護上限，實際按上述較低值執行。" : "目前設定未被較低的管理員上限調低。"} 一般修改於新運行生效；保存不會清零用量。</Text>
           </View> : <Text style={styles.meta}>目前連接的服務尚未提供實際生效上限；如需確認，請聯絡服務管理員。</Text>}
           <Text style={styles.meta}>{snapshot.agentInputCharacters === undefined ? "互動上下文上限未提供" : `互動上下文上限：${snapshot.agentInputCharacters} 字元`}</Text>

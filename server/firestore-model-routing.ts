@@ -114,7 +114,8 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       return { config: selectedConfig, provider: providers.agent, settingsVersion: String(state.version) + ":policy:" + current.version, billingSource: source,
         dailyUsage: usage[source], authorize,
         runLimits: { modelCalls: limits.maxModelCalls, queryEmbeddings: limits.maxQueryEmbeddings,
-          toolCalls: limits.maxToolCalls, deadlineMs: limits.maxRunSeconds * 1000 },
+          toolCalls: limits.maxToolCalls, deadlineMs: limits.maxRunSeconds * 1000,
+          softBudgetRatio: limits.softBudgetRatio ?? current.softBudgetRatio },
         embeddings: { embed: (...args: Parameters<typeof gateway.embed>) => {
           const [input, actor, signal, resourceAccess, durable] = args;
           if (!durable) throw new AgentStopped('unavailable');

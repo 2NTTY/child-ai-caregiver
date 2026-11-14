@@ -5,8 +5,9 @@ import { Switch, Text } from 'react-native-paper';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AGENT_RUN_LIMITS } from '../../../src/shared/agent-run-limits';
+import { AGENT_RUN_LIMITS, DEFAULT_SOFT_BUDGET_RATIO, deriveSoftBudgetTargets } from '../../../src/shared/agent-run-limits';
 import { platformPolicyValuesSchema, type AdminCommand, type AdminInvitation, type AdminReceipt } from '../../../src/shared/admin';
+import { parseAdminSoftBudgetRatioInput } from '../components/model-settings/model-settings-form';
 import { PageFrame } from '../components/PageFrame';
 import { AppButton, AppTextField, SectionHeader } from '../components/ui';
 import { AppCheckbox } from '../components/AppCheckbox';
@@ -55,12 +56,13 @@ export default function AdminScreen() {
   const [search, setSearch] = useState(''), [localNotice, setLocalNotice] = useState<string | null>(null);
   const [indexDetails, setIndexDetails] = useState<string | null>(null);
   const [reauthBusy, setReauthBusy] = useState(false), [revoke, setRevoke] = useState<AdminInvitation | null>(null);
+  const [softRatioText, setSoftRatioText] = useState(String(DEFAULT_SOFT_BUDGET_RATIO));
   const currentUser = useRef(userId); currentUser.current = userId;
   const credentialRequest = useRef<AbortController | null>(null);
   const policyForm = useForm<Values>({ resolver: zodResolver(platformPolicyValuesSchema), mode: 'onSubmit', reValidateMode: 'onChange' });
   const invitationForm = useForm<z.infer<typeof inviteForm>>({ resolver: zodResolver(inviteForm), defaultValues: { email: '', days: 7 } });
   useEffect(() => {
-    setReauthBusy(false); setSearch(''); setLocalNotice(null); setRevoke(null); setIndexDetails(null); policyForm.reset(); invitationForm.reset({ email: '', days: 7 });
+    setReauthBusy(false); setSearch(''); setLocalNotice(null); setRevoke(null); setIndexDetails(null); setSoftRatioText(String(DEFAULT_SOFT_BUDGET_RATIO)); policyForm.reset(); invitationForm.reset({ email: '', days: 7 });
     if (userId && auth === 'signedIn') { admin.setUser(userId); void admin.checkAccess(); } else admin.setUser(null);
     return () => { credentialRequest.current?.abort(); };
   }, [admin, userId, auth]);
@@ -70,7 +72,13 @@ export default function AdminScreen() {
     const key = userId + ':' + (state.receipt?.opId ?? 'initial');
     if (!state.busy && loadedReceipt.current !== key) { loadedReceipt.current = key; void admin.load(day); }
   }, [visible, userId, state.busy, state.receipt?.opId]);
-  useEffect(() => { if (visible && state.overview) { const { version, updatedAt, ...values } = state.overview.policy; policyForm.reset(values); } }, [visible, state.overview?.policy.version]);
+  useEffect(() => {
+    if (visible && state.overview) {
+      const { version, updatedAt, ...values } = state.overview.policy;
+      policyForm.reset(values);
+      setSoftRatioText(String(values.softBudgetRatio ?? DEFAULT_SOFT_BUDGET_RATIO));
+    }
+  }, [visible, state.overview?.policy.version]);
   const locked = !online || state.busy || !!state.pending || reauthBusy || state.index.busy || !!state.index.pending;
   const indexWriteLocked = locked || state.index.versions.status === 'loading' || state.index.batches.status === 'loading';
   const submit = (command: AdminCommand) => { setLocalNotice(null); void admin.submit(command); };
@@ -139,6 +147,18 @@ export default function AdminScreen() {
             <AppTextField label={`${label}（${key === 'maxRunSeconds' ? AGENT_RUN_LIMITS.deadlineSeconds.min : key === 'modelRequestSeconds' ? AGENT_RUN_LIMITS.modelRequestSeconds.min : key === 'maxModelRetries' ? 0 : 1}–${max}）`} value={field.value === undefined ? '' : String(field.value)} onChangeText={value => field.onChange(value === '' ? NaN : Number(value))} keyboardType="number-pad" disabled={locked} error={!!fieldState.error} />
             {fieldState.error ? <Text>請填允許範圍內的整數。</Text> : null}
           </View>} />)}
+          <Controller control={policyForm.control} name="softBudgetRatio" render={({ field, fieldState }) => <View>
+            <AppTextField label="軟預算目標比例（0.05–1.0，預設 0.25）" value={softRatioText} onChangeText={value => { setSoftRatioText(value); field.onChange(parseAdminSoftBudgetRatioInput(value)); }} keyboardType="decimal-pad" disabled={locked} error={!!fieldState.error} />
+            {fieldState.error ? <Text>請填 0.05 至 1.0 之間的數值，例如 0.25。</Text> : null}
+          </View>} />
+          {(() => {
+            const softTargets = deriveSoftBudgetTargets({
+              modelCalls: state.overview.policy.maxModelCalls,
+              toolCalls: state.overview.policy.maxToolCalls,
+              queryEmbeddings: state.overview.policy.maxQueryEmbeddings,
+            }, state.overview.policy.softBudgetRatio);
+            return <Text style={styles.note}>目前軟預算比例：{Math.round(softTargets.softBudgetRatio * 100)}%（軟目標：生成 {softTargets.modelCalls}／工具 {softTargets.toolCalls}／查詢向量 {softTargets.queryEmbeddings} 次，向下取整）。</Text>;
+          })()}
           <Text style={styles.note}>目前每輪：{state.overview.toolCalls} 次工具、{state.overview.deadlineMs / 1000} 秒。固定輸出容量：每次最多 {state.overview.outputTokens} tokens；互動文字最多 {state.overview.inputCharacters} 字元。</Text>
           <Text>每天按模型生成及查詢 embedding 嘗試計數，不是聊天句數。香港時間早上 8 時換日；調高限額可能增加費用。這不是 GCP 帳單或硬性停費保證。</Text>
           <Text style={styles.note}>重試只處理模型暫時性錯誤，沿同一運行計入生成及每日額度；不重做已完成操作。單次等待仍受整輪剩餘時間限制；照片、轉錄及背景工作亦受原工作期限限制。</Text>

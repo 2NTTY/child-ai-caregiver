@@ -2,10 +2,31 @@ import { createHash } from "node:crypto";
 import type { ModelProviderStopReason } from "../src/shared/agent-stop-message.ts";
 import { canonical } from "./firestore-session-codec.ts";
 import { RootBudgetError, type BudgetAttempt, type DurableRootBudget, type RootBudgetContext, type RootBudgetSnapshot } from "./durable-root-budget.ts";
-import { AGENT_RUN_LIMITS, AGENT_OUTPUT_LIMITS, DEFAULT_SOFT_BUDGET_RATIO, SOFT_BUDGET_RATIO_RANGE } from '../src/shared/agent-run-limits.ts';
+import {
+  AGENT_RUN_LIMITS,
+  AGENT_OUTPUT_LIMITS,
+  DEFAULT_SOFT_BUDGET_RATIO,
+  SOFT_BUDGET_RATIO_RANGE,
+  ROLE_SOFT_BUDGET_PROFILES,
+  deriveSoftBudgetTargets,
+  resolveRoleSoftBudgetRatio,
+  roundBudgetAllowance,
+  roundConsumptionReserve,
+  type AgentSoftBudgetProfileRole,
+} from '../src/shared/agent-run-limits.ts';
 import { PERSONAL_RUN_LIMITS } from "../src/shared/model-settings.ts";
 
-export { AGENT_OUTPUT_LIMITS, DEFAULT_SOFT_BUDGET_RATIO, SOFT_BUDGET_RATIO_RANGE };
+export {
+  AGENT_OUTPUT_LIMITS,
+  DEFAULT_SOFT_BUDGET_RATIO,
+  SOFT_BUDGET_RATIO_RANGE,
+  ROLE_SOFT_BUDGET_PROFILES,
+  deriveSoftBudgetTargets,
+  resolveRoleSoftBudgetRatio,
+  roundBudgetAllowance,
+  roundConsumptionReserve,
+  type AgentSoftBudgetProfileRole,
+};
 
 export const AGENT_LIMITS = Object.freeze({ modelCalls: 4, toolCalls: AGENT_RUN_LIMITS.toolCalls.default, queryEmbeddings: 2,
   deadlineMs: AGENT_RUN_LIMITS.deadlineSeconds.default * 1000, outputTokens: 1024, inputCharacters: 32000 });
@@ -88,6 +109,7 @@ export class AgentBudget {
   private configured = false;
   hasPersonalLimits(): boolean { return this.configured; }
   private softRatio: number = DEFAULT_SOFT_BUDGET_RATIO;
+  private hasExplicitSoftRatio = false;
   get softBudgetRatio(): number { return this.softRatio; }
   private inputConfigured = false;
   private responseCharacters: number | null = null;
@@ -125,7 +147,7 @@ export class AgentBudget {
     if (!attemptKey.startsWith('embedding:')) throw new AgentStopped('unavailable');
     return { adapter: durable.dailyUsage, context: durable.context, attemptKey, revalidate: () => this.checkDurable() };
   }
-  get remainingModelCalls() { return this.selectedLimits.modelCalls - this.used.modelCalls; }
+  get remainingModelCalls() { return Math.max(0, this.selectedLimits.modelCalls - this.used.modelCalls); }
   private applySnapshot(snapshot: RootBudgetSnapshot) {
     const context = this.durableBudget!.context;
     if (snapshot.generation !== context.generation || snapshot.deadlineAtMs !== context.binding.deadlineAtMs
@@ -178,24 +200,36 @@ export class AgentBudget {
    * present/finish cannot spend the reserved delivery-review model call. Soft metadata
    * alone is not enough (see Slice B4 vs B2).
    */
-  planningSnapshot(hasTerminalTool: boolean, options?: { reserveDeliveryReview?: AgentReviewReserve; softBudgetRatio?: number }) {
+  planningSnapshot(
+    hasTerminalTool: boolean,
+    options?: {
+      reserveDeliveryReview?: AgentReviewReserve;
+      softBudgetRatio?: number;
+      role?: AgentSoftBudgetProfileRole;
+      profileOverrides?: Partial<Record<AgentSoftBudgetProfileRole, number>>;
+    },
+  ) {
     this.check();
     const reviewReserve = hasReviewReserve(options?.reserveDeliveryReview) ? 1 : 0;
     // Hard finish reserve includes the review call when active (not soft guidance only).
     const hardFinishReserve = 1 + reviewReserve;
     const remaining = {
       modelCallsIncludingThisCall: this.remainingModelCalls,
-      toolCalls: this.selectedLimits.toolCalls - this.used.toolCalls,
-      queryEmbeddings: this.selectedLimits.queryEmbeddings - this.used.queryEmbeddings,
+      toolCalls: Math.max(0, this.selectedLimits.toolCalls - this.used.toolCalls),
+      queryEmbeddings: Math.max(0, this.selectedLimits.queryEmbeddings - this.used.queryEmbeddings),
       timeMs: Math.max(0, this.expiresAt - Date.now()),
     };
-    const effectiveSoftRatio = typeof options?.softBudgetRatio === "number" && Number.isFinite(options.softBudgetRatio)
-      ? Math.max(SOFT_BUDGET_RATIO_RANGE.min, Math.min(SOFT_BUDGET_RATIO_RANGE.max, options.softBudgetRatio))
-      : this.softRatio;
+    const effectiveSoftRatio = resolveRoleSoftBudgetRatio({
+      role: options?.role,
+      policyRatio: this.hasExplicitSoftRatio ? this.softRatio : undefined,
+      profileOverrides: options?.profileOverrides,
+      runOverride: options?.softBudgetRatio,
+    });
+    const derivedSoftTargets = deriveSoftBudgetTargets(this.selectedLimits, effectiveSoftRatio);
     const softBudget = {
-      modelCalls: Math.max(1, Math.floor(this.selectedLimits.modelCalls * effectiveSoftRatio)),
-      toolCalls: Math.max(1, Math.floor(this.selectedLimits.toolCalls * effectiveSoftRatio)),
-      queryEmbeddings: Math.max(1, Math.floor(this.selectedLimits.queryEmbeddings * effectiveSoftRatio)),
+      modelCalls: derivedSoftTargets.modelCalls,
+      toolCalls: derivedSoftTargets.toolCalls,
+      queryEmbeddings: derivedSoftTargets.queryEmbeddings,
     };
     const softRemaining = {
       modelCalls: Math.max(0, softBudget.modelCalls - this.used.modelCalls),
@@ -268,6 +302,7 @@ export class AgentBudget {
     this.selectedLimits = { ...this.selectedLimits, ...frozen };
     if (frozen.softBudgetRatio !== undefined) {
       this.softRatio = frozen.softBudgetRatio;
+      this.hasExplicitSoftRatio = true;
     }
     if (limits.deadlineMs !== undefined) {
       this.expiresAt = Math.min(this.expiresAt, this.startedAt + limits.deadlineMs);
@@ -275,6 +310,60 @@ export class AgentBudget {
       this.timer = setTimeout(() => this.controller.abort(new AgentStopped("deadline")), Math.max(0, this.expiresAt - Date.now()));
     }
     this.configured = true;
+  }
+  /**
+   * Apply an in-flight policy update at a safe barrier without resetting consumed counters.
+   * Disabling AI aborts further execution immediately; limit changes can only tighten or adjust soft guidance.
+   */
+  applyPolicyTransition(transition: {
+    enabled: boolean;
+    maxModelCalls?: number;
+    maxToolCalls?: number;
+    maxQueryEmbeddings?: number;
+    softBudgetRatio?: number;
+    deadlineMs?: number;
+  }): { stopped: boolean; reason?: "unavailable" | "model_limit" | "tool_limit" | "embedding_limit" | "deadline"; countersPreserved: true } {
+    if (!transition.enabled) {
+      if (!this.signal.aborted) this.controller.abort(new AgentStopped("unavailable"));
+      return { stopped: true, reason: "unavailable", countersPreserved: true };
+    }
+    const nextLimits = { ...this.selectedLimits };
+    if (typeof transition.maxModelCalls === "number" && Number.isFinite(transition.maxModelCalls)) {
+      nextLimits.modelCalls = Math.min(
+        nextLimits.modelCalls,
+        roundBudgetAllowance(transition.maxModelCalls, AGENT_RUN_LIMITS.modelCalls.min),
+      );
+    }
+    if (typeof transition.maxToolCalls === "number" && Number.isFinite(transition.maxToolCalls)) {
+      nextLimits.toolCalls = Math.min(
+        nextLimits.toolCalls,
+        roundBudgetAllowance(transition.maxToolCalls, AGENT_RUN_LIMITS.toolCalls.min),
+      );
+    }
+    if (typeof transition.maxQueryEmbeddings === "number" && Number.isFinite(transition.maxQueryEmbeddings)) {
+      nextLimits.queryEmbeddings = Math.min(
+        nextLimits.queryEmbeddings,
+        roundBudgetAllowance(transition.maxQueryEmbeddings, AGENT_RUN_LIMITS.queryEmbeddings.min),
+      );
+    }
+    this.selectedLimits = nextLimits;
+    if (typeof transition.softBudgetRatio === "number" && Number.isFinite(transition.softBudgetRatio)) {
+      this.softRatio = resolveRoleSoftBudgetRatio({ policyRatio: transition.softBudgetRatio });
+      this.hasExplicitSoftRatio = true;
+    }
+    if (typeof transition.deadlineMs === "number" && Number.isFinite(transition.deadlineMs)) {
+      const nextDeadline = this.startedAt + Math.max(0, Math.floor(transition.deadlineMs));
+      if (nextDeadline < this.expiresAt) {
+        this.expiresAt = nextDeadline;
+        clearTimeout(this.timer);
+        if (this.expiresAt <= Date.now()) {
+          if (!this.signal.aborted) this.controller.abort(new AgentStopped("deadline"));
+          return { stopped: true, reason: "deadline", countersPreserved: true };
+        }
+        this.timer = setTimeout(() => this.controller.abort(new AgentStopped("deadline")), Math.max(0, this.expiresAt - Date.now()));
+      }
+    }
+    return { stopped: this.signal.aborted, countersPreserved: true };
   }
   take(kind: keyof AgentBudget["counts"], amount = 1) {
     this.check();

@@ -67,6 +67,19 @@ export interface ModelSettingsCommand extends PersonalAdvancedLimits, PersonalEm
   model?: string;
 }
 export interface ModelSettingsOperation { opId: string; settings: ModelSettings }
+export type PolicyLimitSource = "personal" | "administrator" | "system_default";
+
+export interface EffectiveModelLimitSources {
+  dailyLimit: PolicyLimitSource;
+  maxModelCalls: PolicyLimitSource;
+  maxQueryEmbeddings: PolicyLimitSource;
+  maxToolCalls: PolicyLimitSource;
+  maxRunSeconds: PolicyLimitSource;
+  modelRequestSeconds: PolicyLimitSource;
+  maxModelRetries: PolicyLimitSource;
+  softBudgetRatio: PolicyLimitSource;
+}
+
 export interface EffectiveModelLimits {
   policyVersion: number;
   dailyLimit: number;
@@ -78,6 +91,9 @@ export interface EffectiveModelLimits {
   modelRequestSeconds: number;
   maxModelRetries: number;
   cappedByAdministrator: string[];
+  softBudgetRatio?: number;
+  softTargets?: { modelCalls: number; toolCalls: number; queryEmbeddings: number };
+  limitSources?: EffectiveModelLimitSources;
 }
 export interface ModelSettingsUsage {
   billingSource?: ModelBillingSource;

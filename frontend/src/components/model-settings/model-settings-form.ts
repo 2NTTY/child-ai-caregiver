@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { personalLimits, type ModelSettings, type ModelSettingsCommand } from "../../model-settings-view-model.ts";
-import type { EffectiveModelLimits, PersonalModelCatalog, PersonalModelProvider } from "../../../../src/shared/model-settings.ts";
+import { DEFAULT_SOFT_BUDGET_RATIO, deriveSoftBudgetTargets } from "../../../../src/shared/agent-run-limits.ts";
+import type { EffectiveModelLimits, PersonalModelCatalog, PersonalModelProvider, PolicyLimitSource } from "../../../../src/shared/model-settings.ts";
 import { personalBaseUrlSchema, personalEmbeddingShape, personalModelIdSchema, personalProviderSchema } from "../../../../src/shared/model-settings-schema.ts";
 
 /** Only project the server's selected-provider catalog; never substitute a model. */
@@ -100,4 +101,33 @@ export function modelCommandFromDraft(draft: ModelSettingsDraft, settings: Model
 export function removeModelKeyCommand(settings: ModelSettings): ModelSettingsCommand {
   return { expectedVersion: settings.version, mode: "disabled", removeKey: true, backgroundEnabled: false, consent: false,
     dailyLimit: settings.dailyLimit, maxModelCalls: settings.maxModelCalls, maxQueryEmbeddings: settings.maxQueryEmbeddings };
+}
+
+export function formatPolicyLimitSourceLabel(source?: PolicyLimitSource): string {
+  if (source === "personal") return "個人設定";
+  if (source === "administrator") return "管理員政策";
+  return "系統預設";
+}
+
+export function formatEffectiveSoftBudgetLine(effective: EffectiveModelLimits): string {
+  const ratio = effective.softBudgetRatio ?? DEFAULT_SOFT_BUDGET_RATIO;
+  const targets = effective.softTargets ?? deriveSoftBudgetTargets({
+    modelCalls: effective.maxModelCalls,
+    toolCalls: effective.maxToolCalls,
+    queryEmbeddings: effective.maxQueryEmbeddings,
+  }, ratio);
+  return `軟預算目標（${Math.round(ratio * 100)}%，向下取整）：生成 ${targets.modelCalls}／工具 ${targets.toolCalls}／查詢向量 ${targets.queryEmbeddings} 次`;
+}
+
+export function formatEffectiveLimitSourcesLine(effective: EffectiveModelLimits): string | null {
+  if (!effective.limitSources) return null;
+  const s = effective.limitSources;
+  return `規則來源：生成${formatPolicyLimitSourceLabel(s.maxModelCalls)} · 工具${formatPolicyLimitSourceLabel(s.maxToolCalls)} · 期限${formatPolicyLimitSourceLabel(s.maxRunSeconds)} · 軟比例${formatPolicyLimitSourceLabel(s.softBudgetRatio)}`;
+}
+
+export function parseAdminSoftBudgetRatioInput(raw: string): number {
+  const trimmed = raw.trim();
+  if (!/^\d+(?:\.\d+)?$/u.test(trimmed)) return Number.NaN;
+  const value = Number(trimmed);
+  return Number.isFinite(value) ? value : Number.NaN;
 }

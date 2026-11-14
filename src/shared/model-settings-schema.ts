@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { PERSONAL_DAILY_LIMIT, PERSONAL_RUN_LIMITS } from './model-settings.ts';
+import { SOFT_BUDGET_RATIO_RANGE } from './agent-run-limits.ts';
 
 const bounded = (range: { min: number; max: number }) => z.number().int().min(range.min).max(range.max);
 export const personalProviderSchema = z.enum(['gemini', 'vertex', 'openai-compatible']);
@@ -33,12 +34,29 @@ export const publicModelSettingsSchema = z.object({
   updatedAt: z.iso.datetime({ offset: true }).nullable(),
 }).strict();
 export const modelSettingsOperationSchema = z.object({ opId: z.uuid(), settings: publicModelSettingsSchema }).strict();
+const policyLimitSourceSchema = z.enum(['personal', 'administrator', 'system_default']);
 export const effectiveModelLimitsSchema = z.object({
   policyVersion: z.number().int().nonnegative(), dailyLimit: z.number().int().positive(), dailyGlobalLimit: z.number().int().positive(),
   maxModelCalls: bounded(PERSONAL_RUN_LIMITS.modelCalls), maxQueryEmbeddings: bounded(PERSONAL_RUN_LIMITS.queryEmbeddings),
   maxToolCalls: bounded(PERSONAL_RUN_LIMITS.toolCalls), maxRunSeconds: bounded(PERSONAL_RUN_LIMITS.deadlineSeconds),
   modelRequestSeconds: bounded(PERSONAL_RUN_LIMITS.modelRequestSeconds), maxModelRetries: bounded(PERSONAL_RUN_LIMITS.modelRetries),
   cappedByAdministrator: z.array(z.enum(['maxModelCalls', 'maxQueryEmbeddings', 'maxToolCalls', 'maxRunSeconds', 'modelRequestSeconds', 'maxModelRetries'])).max(6),
+  softBudgetRatio: z.number().finite().min(SOFT_BUDGET_RATIO_RANGE.min).max(SOFT_BUDGET_RATIO_RANGE.max).optional(),
+  softTargets: z.object({
+    modelCalls: z.number().int().positive(),
+    toolCalls: z.number().int().positive(),
+    queryEmbeddings: z.number().int().positive(),
+  }).strict().optional(),
+  limitSources: z.object({
+    dailyLimit: policyLimitSourceSchema,
+    maxModelCalls: policyLimitSourceSchema,
+    maxQueryEmbeddings: policyLimitSourceSchema,
+    maxToolCalls: policyLimitSourceSchema,
+    maxRunSeconds: policyLimitSourceSchema,
+    modelRequestSeconds: policyLimitSourceSchema,
+    maxModelRetries: policyLimitSourceSchema,
+    softBudgetRatio: policyLimitSourceSchema,
+  }).strict().optional(),
 }).strict();
 export const modelCheckReasonSchema = z.enum(['invalid_key', 'region_unavailable', 'model_unavailable', 'quota_exceeded', 'timeout', 'unavailable', 'metadata_unsupported']);
 export const personalModelCatalogSchema = z.object({
