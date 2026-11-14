@@ -295,6 +295,52 @@ test("growth loadMoreHistory and loadMoreConcerns paginate, deduplicate, and enf
     const hosts2 = renderCandidates(f.get().model, f.get().actions);
     assert.equal(hosts2.some(n => n.type === "AppButton" && n.props.label === "載入較早建議"), false);
 
+    // Dirty drafts block loadMoreHistory without dispatching extra pagination fetches.
+    const callsBeforeDirty = f.historyRequests.length;
+    await f.act(a => a.markDirty("item:active-1"));
+    assert.equal(f.get().model.dirty, true);
+    await f.act(a => a.loadMoreHistory());
+    assert.equal(f.historyRequests.length, callsBeforeDirty, "Dirty state must suppress background history pagination");
+
+    // Authority revocation resets loaded history cleanly and marks access lost.
+    await f.act(a => a.discardDrafts());
+    assert.equal(f.get().model.dirty, false);
+    const revoking = growthFixture({
+      getGrowthPage: async cursor => {
+        if (!cursor) {
+          return {
+            authorityVersion: "auth-rev",
+            items: p1,
+            historyHasMore: true,
+            historyNextCursor: "cur-rev-1",
+            topics: [],
+            notices: [],
+            eligibleAssignees: [],
+            canManage: false,
+          };
+        }
+        throw new SyntheticApiError(403, "module_not_shared");
+      },
+      getConcernPage: async () => ({
+        authorityVersion: "auth-rev",
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        canManage: false,
+      }),
+    });
+    try {
+      await revoking.start();
+      assert.equal(revoking.get().model.access, "read_only");
+      assert.equal(revoking.get().model.page.canManage, false);
+      await revoking.act(a => a.loadMoreHistory());
+      assert.equal(revoking.get().model.access, "lost");
+      assert.equal(revoking.get().model.page, null);
+      assert.equal(revoking.get().model.historyLoadError, "");
+    } finally {
+      revoking.close();
+    }
+
     // Concerns cursor pagination also works cleanly.
     await f.act(a => a.loadMoreConcerns());
     assert.deepEqual(f.get().model.page.concerns.items.map(i => i.id), ["con-1", "con-2"]);

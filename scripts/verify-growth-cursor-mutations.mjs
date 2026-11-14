@@ -69,11 +69,11 @@ runMutationCase(
 );
 
 runMutationCase(
-  "G3: dropping options forwarding in server/firestore-growth.ts ignores historyCursor in Firestore store",
+  "G3: dropping cursor forwarding in server/firestore-growth.ts ignores historyCursor in Firestore store",
   "server/firestore-growth.ts",
   src => src.replace(
-    `selectGrowthHistoryWindow(records, value => value.item, value => active(value.item), options)`,
-    `selectGrowthHistoryWindow(records, value => value.item, value => active(value.item))`,
+    `const records = await readPageRecords(b, cursor)`,
+    `const records = await readPageRecords(b, null)`,
   ),
   ["tests/growth-history-cursor.test.ts"],
 );

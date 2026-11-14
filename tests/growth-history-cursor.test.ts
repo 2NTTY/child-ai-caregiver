@@ -20,6 +20,7 @@ import {
 } from "../server/firestore-growth.ts";
 import { createFirestoreMemoryStore } from "../server/firestore-memory.ts";
 import { createFirestoreOnlineStore } from "../server/firestore-online.ts";
+import { createFirestoreSharingStore } from "../server/firestore-sharing.ts";
 import { createStorageCipher } from "../server/storage-crypto.ts";
 import { serialFirestoreFixture } from "./helpers/firestore-session-memory.ts";
 
@@ -27,9 +28,11 @@ function makeGrowthItem(options: {
   id?: string;
   childId: string;
   state: GrowthAttention["state"];
+  createdAt?: string;
   updatedAt: string;
   title?: string;
 }): GrowthAttention {
+  const createdAt = options.createdAt ?? options.updatedAt;
   return {
     id: options.id ?? randomUUID(),
     childId: options.childId,
@@ -55,7 +58,7 @@ function makeGrowthItem(options: {
       excerpt: "Synthetic excerpt",
     },
     sourceAvailable: true,
-    createdAt: options.updatedAt,
+    createdAt,
     updatedAt: options.updatedAt,
     snoozeUntil: options.state === "snoozed" ? "2027-01-01T00:00:00.000Z" : null,
     previousId: null,
@@ -135,7 +138,7 @@ test("selectGrowthHistoryWindow paginates history cleanly without repeating acti
 
   assert.equal(decodeGrowthHistoryCursor(""), null);
   assert.equal(decodeGrowthHistoryCursor("not*valid!"), null);
-  assert.equal(decodeGrowthHistoryCursor(Buffer.from(JSON.stringify({ v: 1, id: "not-uuid", updatedAt: "2026-09-01T00:00:00Z" })).toString("base64url")), null);
+  assert.equal(decodeGrowthHistoryCursor(Buffer.from(JSON.stringify({ v: 1, id: "not-uuid", createdAt: "2026-09-01T00:00:00Z" })).toString("base64url")), null);
   assert.throws(() => selectGrowthHistoryWindow(allRecords, r => r.item, r => ["proposed", "snoozed"].includes(r.item.state), { historyCursor: "bad-cursor" }), RangeError);
   assert.ok(encodeGrowthHistoryCursor(active[0]).length <= 256);
 });
@@ -268,5 +271,162 @@ test("createFirestoreGrowthStore paginates private and shared history across cur
   await assert.rejects(
     () => growth.list("owner", childId, { historyCursor: "bad!!!" }),
     (err: { code?: string; status?: number }) => err.code === "invalid_input" && err.status === 400,
+  );
+});
+
+test("selectGrowthHistoryWindow preserves same-timestamp tie-breaking and createdAt order across deleted or updated anchors", () => {
+  const childId = randomUUID();
+  const sameTime = "2026-09-01T00:00:00.000Z";
+  const sameTsItems = [
+    makeGrowthItem({ id: "00000000-0000-4000-8000-000000000001", childId, state: "dismissed", createdAt: sameTime, updatedAt: sameTime }),
+    makeGrowthItem({ id: "00000000-0000-4000-8000-000000000002", childId, state: "dismissed", createdAt: sameTime, updatedAt: sameTime }),
+    makeGrowthItem({ id: "00000000-0000-4000-8000-000000000003", childId, state: "dismissed", createdAt: sameTime, updatedAt: sameTime }),
+  ].map(item => ({ item }));
+
+  const page1 = selectGrowthHistoryWindow(sameTsItems, r => r.item, () => false, { pageSize: 1 });
+  assert.deepEqual(page1.selected.map(r => r.item.id), ["00000000-0000-4000-8000-000000000003"]);
+  assert.equal(page1.historyHasMore, true);
+  assert.ok(page1.historyNextCursor);
+
+  const withoutAnchor = sameTsItems.filter(r => r.item.id !== "00000000-0000-4000-8000-000000000003");
+  const page2 = selectGrowthHistoryWindow(withoutAnchor, r => r.item, () => false, { historyCursor: page1.historyNextCursor, pageSize: 1 });
+  assert.deepEqual(page2.selected.map(r => r.item.id), ["00000000-0000-4000-8000-000000000002"]);
+  assert.equal(page2.historyHasMore, true);
+
+  const page3 = selectGrowthHistoryWindow(withoutAnchor, r => r.item, () => false, { historyCursor: page2.historyNextCursor, pageSize: 1 });
+  assert.deepEqual(page3.selected.map(r => r.item.id), ["00000000-0000-4000-8000-000000000001"]);
+  assert.equal(page3.historyHasMore, false);
+
+  // An item created earlier but updated later than the anchor must remain visible on Page 2 even when the anchor is deleted.
+  const earlierCreatedLaterUpdated = makeGrowthItem({
+    id: "00000000-0000-4000-8000-000000000010",
+    childId,
+    state: "dismissed",
+    createdAt: "2026-09-01T00:00:00.000Z",
+    updatedAt: "2026-09-05T00:00:00.000Z",
+  });
+  const newerCreatedEarlierUpdated = makeGrowthItem({
+    id: "00000000-0000-4000-8000-000000000020",
+    childId,
+    state: "dismissed",
+    createdAt: "2026-09-02T00:00:00.000Z",
+    updatedAt: "2026-09-03T00:00:00.000Z",
+  });
+  const mixed = [earlierCreatedLaterUpdated, newerCreatedEarlierUpdated].map(item => ({ item }));
+  const firstMixed = selectGrowthHistoryWindow(mixed, r => r.item, () => false, { pageSize: 1 });
+  assert.deepEqual(firstMixed.selected.map(r => r.item.id), [newerCreatedEarlierUpdated.id]);
+  const secondMixedAfterDelete = selectGrowthHistoryWindow([{ item: earlierCreatedLaterUpdated }], r => r.item, () => false, {
+    historyCursor: firstMixed.historyNextCursor,
+    pageSize: 1,
+  });
+  assert.deepEqual(secondMixedAfterDelete.selected.map(r => r.item.id), [earlierCreatedLaterUpdated.id]);
+  assert.equal(secondMixedAfterDelete.historyHasMore, false);
+});
+
+test("createFirestoreGrowthStore handles >500 history records, shared-space pagination, and revocation fail-closed", async () => {
+  const fixture = serialFirestoreFixture();
+  const options = {
+    database: fixture.database,
+    cipher: createStorageCipher(Buffer.alloc(32, 43)),
+    projectId: "synthetic-growth-501",
+    namespace: "unit_growth_501",
+  };
+  const authority = createFirestoreAuthority(options);
+  const sharing = createFirestoreSharingStore(options);
+  const data = new FirestoreDomainData(options);
+  await authority.initializeControl({ enabled: true, generation: randomUUID() });
+  for (const userId of ["owner", "viewer"]) {
+    await authority.issueInvitation({ email: `${userId}@example.test`, operationId: randomUUID(), expiresAt: new Date(Date.now() + 3_600_000).toISOString() });
+    await authority.admitIdentity({ userId, email: `${userId}@example.test`, emailVerified: true });
+    await authority.acknowledge({ userId, operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  }
+  const childId = (await authority.createChild({ userId: "owner", operationId: randomUUID(), displayName: "Synthetic Child" })).child.id;
+  const care = createFirestoreCareStore(options);
+  const chat = createFirestoreChatStore(options);
+  const memory = createFirestoreMemoryStore({ ...options, care, chat });
+  const growth = createFirestoreGrowthStore({ ...options, care, memory, online: createFirestoreOnlineStore(options) });
+
+  const baseMs = Date.parse("2026-07-01T00:00:00.000Z");
+  const oldestActive = makeGrowthItem({
+    childId,
+    state: "proposed",
+    createdAt: new Date(baseMs - 1_000).toISOString(),
+    updatedAt: new Date(baseMs + 999_000).toISOString(),
+    title: "Oldest Active Item",
+  });
+  oldestActive.taskId = randomUUID();
+  oldestActive.basis.values = { "growth.solid_food": "not_started" };
+  oldestActive.evidence.facts = [{ id: randomUUID(), version: 1 }];
+
+  const history505 = Array.from({ length: 505 }, (_, i) =>
+    makeGrowthItem({
+      childId,
+      state: i % 2 === 0 ? "dismissed" : "accepted",
+      createdAt: new Date(baseMs + i * 1_000).toISOString(),
+      updatedAt: new Date(baseMs + i * 1_000).toISOString(),
+    }),
+  );
+
+  await authority.runTransaction("owner", childId, async b => {
+    for (const item of [...history505, oldestActive]) {
+      const saved = { item, lastRequest: null };
+      b.transaction.set(data.ref("growth_attention", "growth-attention", item.id), {
+        ...data.tags(b.scope),
+        attentionId: item.id,
+        createdAt: item.createdAt,
+        entityVersion: item.version,
+        ...data.seal("growth-attention", item.id, b.scope, firestoreGrowthSchema, saved, item.version),
+      });
+    }
+  });
+
+  const allSeenHistoryIds: string[] = [];
+  const firstPage = await growth.list("owner", childId);
+  assert.equal(firstPage.items[0]?.id, oldestActive.id);
+  assert.equal(firstPage.items.length, 31);
+  assert.equal(firstPage.historyHasMore, true);
+  assert.ok(firstPage.historyNextCursor);
+  allSeenHistoryIds.push(...firstPage.items.slice(1).map(i => i.id));
+
+  let cursor: string | null = firstPage.historyNextCursor;
+  while (cursor) {
+    const nextPage = await growth.list("owner", childId, { historyCursor: cursor });
+    assert.equal(nextPage.items.some(i => i.id === oldestActive.id), false);
+    allSeenHistoryIds.push(...nextPage.items.map(i => i.id));
+    cursor = nextPage.historyHasMore ? (nextPage.historyNextCursor ?? null) : null;
+  }
+  assert.equal(allSeenHistoryIds.length, 505);
+  assert.equal(new Set(allSeenHistoryIds).size, 505);
+
+  // Shared reader paginates via forSharedSpace with withheld unshared references and stops after revocation.
+  let space = await sharing.create("owner", { operationId: randomUUID(), kind: "family", name: "Synthetic Family" });
+  const invite = await sharing.invite("owner", {
+    operationId: randomUUID(),
+    spaceId: space.id,
+    expectedVersion: space.version,
+    email: "viewer@example.test",
+    role: "viewer",
+    expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+  });
+  space = await sharing.acceptInvitation("viewer", { operationId: randomUUID(), token: invite.token });
+  space = await sharing.share("owner", { operationId: randomUUID(), spaceId: space.id, expectedVersion: space.version, childId, modules: ["growth"] });
+
+  const shared = growth.forSharedSpace(space.id);
+  const sharedPage1 = await shared.list("viewer", childId);
+  assert.equal(sharedPage1.canManage, false);
+  assert.equal(sharedPage1.items.length, 31);
+  assert.equal(sharedPage1.items[0]?.taskId, null);
+  assert.deepEqual(sharedPage1.items[0]?.evidence.facts, []);
+  assert.ok(sharedPage1.historyNextCursor);
+
+  const sharedPage2 = await shared.list("viewer", childId, { historyCursor: sharedPage1.historyNextCursor });
+  assert.equal(sharedPage2.canManage, false);
+  assert.equal(sharedPage2.items.length, 30);
+  assert.equal(sharedPage2.items.some(i => sharedPage1.items.some(p => p.id === i.id)), false);
+
+  await sharing.leave("viewer", { spaceId: space.id, expectedVersion: space.version, operationId: randomUUID() });
+  await assert.rejects(
+    () => shared.list("viewer", childId, { historyCursor: sharedPage2.historyNextCursor }),
+    (err: { status?: number }) => err.status === 403 || err.status === 404,
   );
 });

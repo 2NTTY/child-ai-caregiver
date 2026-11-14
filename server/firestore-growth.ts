@@ -11,7 +11,7 @@ import type { FirestoreCareStore } from './firestore-care.ts';
 import type { FirestoreOnlineStore } from './firestore-online.ts';
 import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
 import { growthImportPending } from './firestore-growth-import-guard.ts';
-import { GROWTH_RULES, GROWTH_CATALOG_REVISION, growthProposals, growthInputs, growthBasisChanged, nextGrowthCheck, decodeGrowthHistoryCursor, selectGrowthHistoryWindow } from './growth-rules.ts';
+import { GROWTH_RULES, GROWTH_CATALOG_REVISION, GROWTH_HISTORY_PAGE_SIZE, growthProposals, growthInputs, growthBasisChanged, nextGrowthCheck, decodeGrowthHistoryCursor, selectGrowthHistoryWindow, type GrowthHistoryCursor } from './growth-rules.ts';
 import { agentKnowledgeFilter } from './product-agent-tools.ts';
 import { parseKnowledgeFilter } from './knowledge-inputs.ts';
 import { profileIsApplicable } from './memory-policy.ts';
@@ -86,8 +86,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
   function query(b: Binding, suffix: string): Query {
     let q: Query = data.collection(suffix); for (const [key, value] of Object.entries(data.tags(b.scope))) q = q.where(key, '==', value); return q;
   }
-  async function readImportAttention(b: Binding, id: string) {
-    assertClassImportAccess(b, 'growth', 'read');
+  async function readAttention(b: Binding, id: string): Promise<Saved | null> {
     domainParse(uuid, id);
     const snap = await b.transaction.get(data.ref('growth_attention', 'growth-attention', id));
     if (!snap.exists || Object.entries(data.tags(b.scope)).some(([key, value]) => snap.get(key) !== value)) return null;
@@ -95,6 +94,10 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     if (saved.item.id !== id || snap.get('attentionId') !== id || saved.item.childId !== b.scope.childId
       || saved.item.version !== snap.get('recordVersion') || saved.item.createdAt !== snap.get('createdAt')) domainReject('growth_binding', 500);
     return saved;
+  }
+  async function readImportAttention(b: Binding, id: string) {
+    assertClassImportAccess(b, 'growth', 'read');
+    return readAttention(b, id);
   }
   async function readTopicSlot(b: Binding, topicId: GrowthTopicId) {
     domainParse(growthTopicSchema, topicId);
@@ -177,11 +180,44 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     b.transaction.create(data.ref('growth_revisions', 'growth-revision', id),
       { ...tags, ...data.seal('growth-revision', id, b.scope, firestoreGrowthSchema, saved, item.version) });
   }
-  async function page(b: Binding, options?: { historyCursor?: string | null }): Promise<GrowthPage> {
-    const records = await all(b), loaded = await load(b), states = await topics(b);
-    if (options?.historyCursor !== undefined && options.historyCursor !== null && !decodeGrowthHistoryCursor(options.historyCursor)) {
-      domainReject('invalid_input', 400);
+  async function readPageRecords(b: Binding, cursor: GrowthHistoryCursor | null, pageSize = GROWTH_HISTORY_PAGE_SIZE): Promise<Saved[]> {
+    const batchSize = cursor ? Math.min(100, Math.max(pageSize + 10, 40)) : 100;
+    const collected: Saved[] = [];
+    let historyCount = 0;
+    let batchAfter: [string, string] | null = cursor ? [cursor.createdAt, cursor.id] : null;
+    while (true) {
+      let q = query(b, 'growth_attention')
+        .orderBy('createdAt', 'desc')
+        .orderBy('attentionId', 'desc')
+        .limit(batchSize);
+      if (batchAfter) q = q.startAfter(batchAfter[0], batchAfter[1]);
+      const rows = await b.transaction.get(q);
+      if (!rows.size) break;
+      for (const row of rows.docs) {
+        const saved = data.open('growth-attention', row.get('attentionId'), b.scope, firestoreGrowthSchema, row);
+        if (saved.item.id !== row.get('attentionId') || saved.item.childId !== b.scope.childId
+          || saved.item.version !== row.get('recordVersion') || saved.item.createdAt !== row.get('createdAt')) domainReject('growth_binding', 500);
+        if (active(saved.item)) {
+          if (!cursor) collected.push(saved);
+        } else if (historyCount < pageSize + 1) {
+          collected.push(saved);
+          historyCount++;
+        }
+      }
+      if (cursor && historyCount >= pageSize + 1) break;
+      if (rows.size < batchSize) break;
+      const tail = rows.docs.at(-1)!;
+      batchAfter = [tail.get('createdAt') as string, tail.get('attentionId') as string];
     }
+    return collected;
+  }
+  async function page(b: Binding, options?: { historyCursor?: string | null }): Promise<GrowthPage> {
+    let cursor: GrowthHistoryCursor | null = null;
+    if (options?.historyCursor !== undefined && options.historyCursor !== null) {
+      cursor = decodeGrowthHistoryCursor(options.historyCursor);
+      if (!cursor) domainReject('invalid_input', 400);
+    }
+    const records = await readPageRecords(b, cursor), loaded = await load(b), states = await topics(b);
     const windowed = selectGrowthHistoryWindow(records, value => value.item, value => active(value.item), options);
     const items: GrowthAttention[] = []; for (const saved of windowed.selected) items.push(await visible(b, saved.item, loaded, !!saved.importedFrom));
     const mayReadInputs = !b.sharedAccess || !!b.sharedAccess.modules?.includes('memory');
@@ -362,7 +398,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     decide: (u: string, c: string, id: string, raw: GrowthAction) => authority.runTransaction(u, c, async b => {
       domainParse(uuid, id); const input = domainParse(growthActionSchema, raw);
       if (input.authorityVersion !== currentAuthority(b)) domainReject('growth_changed');
-      const saved = (await all(b)).find(value => value.item.id === id); if (!saved) domainReject('not_found', 404);
+      const saved = await readAttention(b, id); if (!saved) domainReject('not_found', 404);
       const current = saved.item, loaded = await load(b);
       if (current.version === input.expectedVersion + 1 && current.actorUserId === u && same(saved.lastRequest, input)) return visible(b, current, loaded, !!saved.importedFrom);
       const disabled = (await topics(b)).find(topic => topic.topicId === current.topicId)?.disabled;

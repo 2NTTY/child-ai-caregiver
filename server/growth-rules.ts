@@ -100,14 +100,29 @@ export const GROWTH_HISTORY_PAGE_SIZE = 30;
 export interface GrowthHistoryCursor {
   v: 1;
   id: string;
-  updatedAt: string;
+  createdAt: string;
 }
 
 const GROWTH_CURSOR_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 const GROWTH_CURSOR_RAW_RE = /^[A-Za-z0-9_-]+$/u;
 
-export function encodeGrowthHistoryCursor(item: { id: string; updatedAt: string }): string {
-  return Buffer.from(JSON.stringify({ v: 1, id: item.id, updatedAt: item.updatedAt }), "utf8").toString("base64url");
+function growthHistoryKeyAt(item: { createdAt?: string; updatedAt?: string }): string {
+  return item.createdAt ?? item.updatedAt ?? "";
+}
+
+function compareGrowthHistoryDesc(
+  a: { id: string; createdAt?: string; updatedAt?: string },
+  b: { id: string; createdAt?: string; updatedAt?: string },
+): number {
+  const aMs = Date.parse(growthHistoryKeyAt(a));
+  const bMs = Date.parse(growthHistoryKeyAt(b));
+  if (bMs !== aMs) return bMs - aMs;
+  if (a.id === b.id) return 0;
+  return a.id > b.id ? -1 : 1;
+}
+
+export function encodeGrowthHistoryCursor(item: { id: string; createdAt?: string; updatedAt?: string }): string {
+  return Buffer.from(JSON.stringify({ v: 1, id: item.id, createdAt: growthHistoryKeyAt(item) }), "utf8").toString("base64url");
 }
 
 export function decodeGrowthHistoryCursor(raw: string): GrowthHistoryCursor | null {
@@ -120,14 +135,14 @@ export function decodeGrowthHistoryCursor(raw: string): GrowthHistoryCursor | nu
       candidate.v !== 1
       || typeof candidate.id !== "string"
       || !GROWTH_CURSOR_UUID_RE.test(candidate.id)
-      || typeof candidate.updatedAt !== "string"
-      || !candidate.updatedAt
-      || candidate.updatedAt.length > 80
-      || !Number.isFinite(Date.parse(candidate.updatedAt))
+      || typeof candidate.createdAt !== "string"
+      || !candidate.createdAt
+      || candidate.createdAt.length > 80
+      || !Number.isFinite(Date.parse(candidate.createdAt))
     ) {
       return null;
     }
-    return { v: 1, id: candidate.id, updatedAt: candidate.updatedAt };
+    return { v: 1, id: candidate.id, createdAt: candidate.createdAt };
   } catch {
     return null;
   }
@@ -135,7 +150,7 @@ export function decodeGrowthHistoryCursor(raw: string): GrowthHistoryCursor | nu
 
 export function selectGrowthHistoryWindow<T>(
   records: readonly T[],
-  getItem: (record: T) => { id: string; updatedAt: string },
+  getItem: (record: T) => { id: string; createdAt?: string; updatedAt?: string },
   isActive: (record: T) => boolean,
   options?: { historyCursor?: string | null; pageSize?: number },
 ): {
@@ -145,7 +160,9 @@ export function selectGrowthHistoryWindow<T>(
 } {
   const pageSize = Math.max(1, Math.min(100, options?.pageSize ?? GROWTH_HISTORY_PAGE_SIZE));
   const active = records.filter(isActive);
-  const history = records.filter(record => !isActive(record)).reverse();
+  const history = records
+    .filter(record => !isActive(record))
+    .sort((a, b) => compareGrowthHistoryDesc(getItem(a), getItem(b)));
   const rawCursor = options?.historyCursor ?? null;
   if (rawCursor === null) {
     const slice = history.slice(0, pageSize);
@@ -161,16 +178,18 @@ export function selectGrowthHistoryWindow<T>(
   if (!cursor) {
     throw new RangeError("invalid_growth_history_cursor");
   }
+  const cursorMs = Date.parse(cursor.createdAt);
   const exactIndex = history.findIndex(record => {
     const item = getItem(record);
-    return item.id === cursor.id && item.updatedAt === cursor.updatedAt;
+    return item.id === cursor.id && growthHistoryKeyAt(item) === cursor.createdAt;
   });
   const remaining = exactIndex >= 0
     ? history.slice(exactIndex + 1)
-    : (() => {
-        const cursorMs = Date.parse(cursor.updatedAt);
-        return history.filter(record => Date.parse(getItem(record).updatedAt) < cursorMs);
-      })();
+    : history.filter(record => {
+        const item = getItem(record);
+        const itemMs = Date.parse(growthHistoryKeyAt(item));
+        return itemMs < cursorMs || (itemMs === cursorMs && item.id < cursor.id);
+      });
   const slice = remaining.slice(0, pageSize);
   const historyHasMore = remaining.length > pageSize;
   const last = slice.at(-1);
