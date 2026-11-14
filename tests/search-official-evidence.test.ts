@@ -248,7 +248,7 @@ test("colloquial parenting queries map to official guidance with structured cita
   );
 
   // Colloquial Cantonese queries in keyword_degraded mode (distance = null) map to the right official FHS seed chunks
-  for (const colloquialSolidQuery of ["BB幾時可以食糊仔？", "半歲BB點樣開糊？", "幾多個月開始食副食品？"]) {
+  for (const colloquialSolidQuery of ["BB幾時可以食糊仔？", "半歲BB點樣開糊？", "幾多個月開始食副食品？", "BB幾時可以食嘢？"]) {
     const ranked = rankKnowledge(colloquialSolidQuery, seedCandidates);
     assert.ok(ranked.length >= 1, `Expected official match for ${colloquialSolidQuery}`);
     assert.equal(ranked[0].key, "starting-solids", `Top match for ${colloquialSolidQuery} should be starting-solids`);
@@ -266,15 +266,18 @@ test("colloquial parenting queries map to official guidance with structured cita
   assert.equal(rankedVision[0].sourceId, "fhs-child-vision");
 
   // Honest negative regression checks against real hk-official-seed.json:
-  // Appetite refusal ("唔肯食嘢"/"唔開胃") and uncovered topics (fever, vaccines, diarrhea, diaper rash) must NOT false-match fhs-solid-food
+  // Appetite refusal ("唔肯食嘢"/"唔開胃"), bare "BB食嘢", off-topic speech ("BB講嘢粗口"), and uncovered topics
+  // (fever, spitting up + "正常", vaccines, diarrhea, diaper rash) must return [] without false-matching existing seeds
   for (const uncoveredOrRefusalQuery of [
     "BB唔肯食嘢點算？",
     "BB食嘢唔開胃",
     "今晚BB唔肯食嘢，係咪生病？",
-    "BB幾時可以食嘢？",
     "BB食嘢",
     "BB發燒點算",
     "BB發熱點算？",
+    "BB發熱幾多度要睇醫生？",
+    "BB回奶係咪正常？",
+    "BB講嘢粗口",
     "BB幾時打針",
     "BB喺邊度打針？",
     "BB肚瀉點算？",
@@ -283,20 +286,11 @@ test("colloquial parenting queries map to official guidance with structured cita
     assert.deepEqual(
       rankKnowledge(uncoveredOrRefusalQuery, seedCandidates),
       [],
-      `Expected empty seed match for uncovered/refusal/narrowed-generic query: ${uncoveredOrRefusalQuery}`,
+      `Expected empty seed match for uncovered/refusal/off-topic query: ${uncoveredOrRefusalQuery}`,
     );
   }
-  assert.ok(
-    !rankKnowledge("BB發熱幾多度要睇醫生？", seedCandidates).some(item => item.sourceId === "fhs-solid-food"),
-    "Fever query containing BB/醫生 must not false-match fhs-solid-food",
-  );
-  // Document current unfiltered shared-common-word hits ("正常" -> school-eye-care, "講嘢" -> play-and-language) pending Owner seeding/word-narrowing decision
-  assert.deepEqual(
-    rankKnowledge("BB回奶係咪正常？", seedCandidates).map(item => `${item.sourceId}/${item.key}`),
-    ["fhs-child-vision/school-eye-care"],
-  );
 
-  // Synthetic symptom-chunk ranking check ("嘔奶" -> "吐奶/溢奶", "發熱/睇醫生" -> "發燒/求醫");
+  // Synthetic symptom-chunk ranking check ("嘔奶/回奶" -> "吐奶/溢奶", "發熱/睇醫生" -> "發燒/求醫");
   // note that hk-official-seed.json currently covers feeding/development/vision only and omits fever/vomiting seeds
   const chunkFever = mockChunk(chunkFeverId, {
     distance: null,
@@ -312,6 +306,7 @@ test("colloquial parenting queries map to official guidance with structured cita
     title: "Synthetic 官方參考 - 嬰兒吐奶護理",
   });
   assert.equal(rankKnowledge("BB成日嘔奶點算？", [chunkFever, chunkVomit])[0]?.chunkId, chunkVomitId);
+  assert.equal(rankKnowledge("BB回奶係咪正常？", [chunkFever, chunkVomit])[0]?.chunkId, chunkVomitId);
   assert.equal(rankKnowledge("BB發熱幾多度要睇醫生？", [chunkVomit, chunkFever])[0]?.chunkId, chunkFeverId);
 
   // Part B: End-to-end createProductAgent interactive turn enforcing structured citationIds/citations and rejecting Markdown URLs (F3)
@@ -1107,10 +1102,13 @@ test("pure clarifying questions deliver cleanly while uncited care claims wrappe
   assert.deepEqual(clarifyResult.counts, { modelCalls: 1, toolCalls: 1, queryEmbeddings: 0 });
   assert.equal(clarifyResult.deliveryReview, undefined);
 
-  // Part B: Disguised care advice or medication claims wrapped in questions fail closed
+  // Part B: Disguised care advice or medication/dosage claims wrapped in questions fail closed and force delivery review
   for (const disguisedText of [
     "目前BB幾多個月大？可以食退燒藥水嗎？",
     "撲熱息痛持續咗幾多日？",
+    "食藥持續咗幾多日？",
+    "藥要食幾多個月？",
+    "每次餵 10ml，持續咗幾多日？",
     "BB發燒可以食撲熱息痛退燒藥水，你要唔要而家試下餵？",
     "請問BB幾多個月大？建議先餵退燒藥水？",
     "BB未滿四個月可以試下食米糊嗎？",
@@ -1125,24 +1123,13 @@ test("pure clarifying questions deliver cleanly while uncited care claims wrappe
       sources: [],
       scope,
     };
-    assert.equal(draftLooksLikeSubstantiveCareAdvice(disguisedDraft), true);
-    assert.equal(requiresChatDeliveryReview(disguisedDraft), true);
-    assert.equal(chatDeliveryPassNeedsSources(disguisedDraft), true);
+    assert.equal(draftLooksLikeSubstantiveCareAdvice(disguisedDraft), true, `Must classify as substantive care/medication: ${disguisedText}`);
+    assert.equal(requiresChatDeliveryReview(disguisedDraft), true, `Must require delivery review: ${disguisedText}`);
+    assert.equal(chatDeliveryPassNeedsSources(disguisedDraft), true, `Must require sources: ${disguisedText}`);
     assert.notEqual(chatDeliveryDraftHash(disguisedDraft), chatDeliveryDraftHash({
       ...disguisedDraft,
       paragraphs: [{ text: clarifyText, citationIds: [] }],
     }));
-  }
-
-  // Visible baseline keyword-boundary check (R1 §3):
-  // Widening BOUNDED_CLARIFICATION still strictly rejects medication/dosage duration phrases as pure clarifying questions.
-  // Pre-existing CARE_DOMAIN_PATTERN/MEDICAL_CLAIM_PATTERN does not match bare "食藥"/"10ml", left unchanged for Owner review.
-  for (const boundaryText of [
-    "食藥持續咗幾多日？",
-    "藥要食幾多個月？",
-    "每次餵 10ml，持續咗幾多日？",
-  ]) {
-    assert.equal(isPureClarifyingQuestion(boundaryText), false, `Widened BOUNDED_CLARIFICATION must keep rejecting ${boundaryText}`);
   }
 
   // Part C: Bounded revise -> repair -> rereview loop (S4) repairs an incomplete official summary on the same root budget

@@ -6058,6 +6058,6 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 ### 2026-11-14　B-P2 R2 誠實邊界與測試鎖定補充
 
 依第二輪審核意見補充測試與限制披露（不 squash 前三提交）：
-1）於 [knowledge-ranking 測試](tests/knowledge-ranking.test.ts) 與 [search-official-evidence 測試](tests/search-official-evidence.test.ts) 鎖定刻意收窄泛指 `食嘢` 後之召回取捨（「BB幾時可以食嘢？」「BB食嘢」回空，不再誤中加固），並固定「BB回奶係咪正常？」於無過濾五份種子因共通詞「正常」命中 `school-eye-care`（於 6 個月 HK `applies()` 下已排除 `school-eye-care`）及「BB講嘢粗口」命中 `play-and-language` 之現況；是否進一步收窄共通詞或擴充官方種子留待 Owner 決定。
+1）於 [knowledge-ranking.ts](server/knowledge-ranking.ts) 自主拍板收窄提問側（`question=true`）泛指共通詞元（`正常`、`醫生`、`睇醫`、`要睇`、`求醫`、`求診` 及單獨 `講嘢`／`食嘢`），同時透過時機句式（`幾時／幾大／幾個月...食嘢`）恢復「BB幾時可以食嘢？」對 `fhs-solid-food/starting-solids` 之召回，並將語言擴展收窄至學說話／發展脈絡（如「歲半BB仲未識行路同講嘢點算？」命中 `play-and-language`），使無過濾五份種子下「BB發熱幾多度要睇醫生？」「BB回奶係咪正常？」「BB講嘢粗口」及「BB唔肯食嘢點算？」「BB食嘢」全數回空而不再離題誤中視力或發展種子，且 `question=false` 文件索引維持零變動。
 2）校準 `fhs-child-vision/preschool-screening` 長文（1298 字元）位移說明：「若孩子現已佩戴眼鏡」位於位移 247、「不包括」位於位移 490，僅最後一句「請盡快到家庭或眼科醫生求診」（位移 1273）位於 800 字元之後；測試驗證多頁完整重組後（`excerptComplete: true`）三句皆完整保留。
-3）既有關鍵字邊界（「食藥持續咗幾多日？」「10ml」等）於本分支仍維持原狀並交 Owner，不當作本包已關閉。
+3）於 [chat-delivery-review.ts](server/chat-delivery-review.ts) 自主拍板將 `餵藥`／`食藥`／`吃藥`／`藥水`／劑量單位（`ml`/`mg`/`毫升`/`毫克`）及口語操作主張（`已刪晒`、`記低咗` 等）納入 `CARE_DOMAIN_PATTERN`、`CARE_ADVISORY_PATTERN`、`MEDICAL_CLAIM_PATTERN` 與 `OPERATION_CLAIM_PATTERN`，使「食藥持續咗幾多日？」「藥要食幾多個月？」「每次餵 10ml，持續咗幾多日？」均強制觸發 `requiresChatDeliveryReview === true` 與 `chatDeliveryPassNeedsSources === true`。

@@ -7,17 +7,17 @@ const QUESTION_PARTICLES = /[嗎呢呀啊嘛啦吧㗎嘅]/gu;
 const LATIN_FILLERS = new Set(["a", "an", "the", "is", "are", "what", "how", "can", "should", "please"]);
 /** Generic caregiver subject terms and generic colloquial verbs ignored on question queries so unrelated topics never false-match via a shared seed keyword (e.g. "BB食嘢"). */
 const QUESTION_LATIN_FILLERS = new Set(["bb", "baby", "babies"]);
-const QUESTION_HAN_FILLERS = new Set(["食嘢"]);
+const QUESTION_HAN_FILLERS = new Set(["食嘢", "講嘢", "正常", "醫生", "睇醫", "要睇", "求醫", "求診"]);
 /** Colloquial Cantonese parenting query terms mapped to official guidance bigrams on question queries only. */
 const COLLOQUIAL_QUERY_EXPANSIONS: ReadonlyArray<readonly [RegExp, readonly string[]]> = [
-  [/開糊|糊仔|副食品?|輔食/u, ["加固", "固體食物", "米糊"]],
+  [/開糊|糊仔|副食品?|輔食|(?:幾時|幾大|幾多?個月).{0,6}(?:可以|開始|先可以)?食嘢/u, ["加固", "固體食物", "米糊"]],
   [/半歲/u, ["六個月"]],
   [/嘔奶|回奶|吐奶|溢奶/u, ["嘔奶", "吐奶", "溢奶"]],
   [/發熱|滾熱|發高燒|高燒/u, ["發燒"]],
-  [/睇醫生|睇急症|去急症/u, ["求醫", "求診", "急症"]],
+  [/睇急症|去急症/u, ["急症"]],
   [/睇嘢|瞇眼|捽眼|斜視|弱視/u, ["視力", "驗眼", "眼睛"]],
   [/行路|學行|未識行/u, ["走路", "發展"]],
-  [/講嘢|學講|未識講|說話/u, ["語言", "講嘢"]],
+  [/(?:學|識|未識|唔識|幾時|開始|遲|慢|教|引導).{0,6}(?:講嘢|說話)|(?:講嘢|說話)(?:發展|遲緩|慢)/u, ["語言", "講嘢", "說話"]],
   [/肚痾|肚瀉|屙水/u, ["腹瀉"]],
   [/紅屁股|尿片疹/u, ["尿布疹"]],
   [/打針/u, ["疫苗", "接種"]],
