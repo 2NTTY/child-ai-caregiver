@@ -1,0 +1,21 @@
+HIS02 · iCloud Mailflow Activity Log
+來源：https://github.com/mojoaar/icloud-mailflow
+固定 commit：fb0b8119e8f48e8a48699ec0dca9d2c0d87c7a6a
+來源版本：0.12.2（同commit VERSION），不是後續版本／目前HEAD認證。
+原圖：https://github.com/mojoaar/icloud-mailflow/blob/fb0b8119e8f48e8a48699ec0dca9d2c0d87c7a6a/docs/screenshots/activity.webp
+完整授權：https://github.com/mojoaar/icloud-mailflow/blob/fb0b8119e8f48e8a48699ec0dca9d2c0d87c7a6a/LICENSE
+
+Copyright (c) 2026 Morten Johansen。完整MIT permission／copyright／disclaimer原樣保留於LICENSE.txt。原圖為專案追蹤的README文件截圖；有界來源檢查未見圖片專用排除條款。不表示Apple／iCloud背書、品牌採用或全面第三方／字體清查。
+
+這是完整頁「視口」，不是整頁長圖，不是育兒頁。2880×1800原始WebP不裁切／重繪／改字／換色／重新編碼。原框架與約10完整列、部分第11列保留；內容向下延續，不含頁尾／分頁／列表終點。原擷取宣告1440×900@2x，不是本輪重新擷取、真機或手機驗收。
+
+SQL合成資料來源鏈：
+README說明demo資料庫供截圖；scripts/screenshots.sh先執行demo.sh再以-data=./demo啟動；scripts/screenshots.mjs選取/activity並寫activity.webp；同固定demo.sh建立35筆活動fixture。既有獨立審查已核11筆畫面完整／部分記錄與固定fixture相符。本輪不執行腳本、不連帳戶，也不收發郵件。
+https://github.com/mojoaar/icloud-mailflow/blob/fb0b8119e8f48e8a48699ec0dca9d2c0d87c7a6a/README.md
+https://github.com/mojoaar/icloud-mailflow/blob/fb0b8119e8f48e8a48699ec0dca9d2c0d87c7a6a/scripts/screenshots.sh
+https://github.com/mojoaar/icloud-mailflow/blob/fb0b8119e8f48e8a48699ec0dca9d2c0d87c7a6a/scripts/screenshots.mjs
+https://github.com/mojoaar/icloud-mailflow/blob/fb0b8119e8f48e8a48699ec0dca9d2c0d87c7a6a/scripts/demo.sh
+
+姓名／地址是作者fixture字串；部分網域屬真服務，不能作可聯絡對象。未使用真實家庭資料、照片、訊息或模型。
+
+既有獨立原圖桌面展示、原圖入口／Back通過；本版新增整合位置與入口未做browser驗收，不能直接沿用為reference12通過。原作者封套的內部路徑修補不影響本輪兩份原始素材；該封套、內部驗證、腳本、調查全文均不加入本展示包。圖中刪除／篩選等控制不可操作，未選號、未做真正前端、未發布。
