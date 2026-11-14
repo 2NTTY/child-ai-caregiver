@@ -35,7 +35,7 @@ TEST_FILES=(
   tests/chat-stop-feedback.test.ts
   tests/agent-work-continuation-recovery.test.ts
 )
-TEST_CASES=(4 7 1 2 3)
+TEST_CASES=(6 7 1 2 3)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \

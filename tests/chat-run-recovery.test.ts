@@ -2,10 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { reconcileAgentProgress, type AgentProgress } from '../src/shared/agent-feedback.ts';
+import { FinishReason } from '@google/genai';
+import { readAiConfig } from '../server/ai-config.ts';
+import { createAgentRuntime } from '../server/agent-runtime.ts';
+import { createEmbeddingGateway } from '../server/embedding-gateway.ts';
+import { createKnowledgeRetriever } from '../server/knowledge-retriever.ts';
+import { createProductAgent } from '../server/product-agent.ts';
+import { agentProgressSchema, reconcileAgentProgress, type AgentProgress } from '../src/shared/agent-feedback.ts';
 import { ChatController } from '../src/client/chat-controller.ts';
 import { ChatApiError, type ChatApi } from '../src/client/chat-api.ts';
 import type { ChatMessage, ChatReplyState } from '../src/shared/chat.ts';
+import type { ProductAgentResult } from '../src/shared/product-agent.ts';
 
 test('reconcileAgentProgress deduplicates frames, blocks mismatched runIds, and prevents reviewing/active phase regression', () => {
   const runId = randomUUID();
@@ -236,4 +243,176 @@ test('chatScreen suppresses stale running indicators when a model reply message 
   assert.match(screenCode, /remoteReplyStillRunning/);
   assert.match(screenCode, /effectiveRunStatus/);
   assert.match(screenCode, /run\?\.status === "running" && \(message\.role === "model" \|\| hasModelReply\) \? "completed" : run\?\.status/);
+});
+
+test('reconcileAgentProgress advances causally across multi-round tool calls and rejects stale or mismatched frames (R2 F1)', () => {
+  const runId = randomUUID();
+  const wrongRunId = randomUUID();
+  const messageId = randomUUID();
+
+  assert.equal(agentProgressSchema.safeParse({ runId, messageId, phase: 'started', sequence: 1 }).success, true);
+  assert.equal(agentProgressSchema.safeParse({ runId, messageId, phase: 'started', sequence: 0 }).success, false);
+
+  const s1 = reconcileAgentProgress(null, { runId, messageId, phase: 'started', sequence: 1 });
+  const s2 = reconcileAgentProgress(s1, { runId, messageId, phase: 'model', sequence: 2 });
+  const s3 = reconcileAgentProgress(s2, { runId, messageId, phase: 'searching', sequence: 3 });
+  const s4 = reconcileAgentProgress(s3, { runId, messageId, phase: 'tool_finished', sequence: 4 });
+  assert.equal(s4.phase, 'tool_finished');
+
+  // Round-2 retry on the same runId must advance past tool_finished rather than freezing at rank 3.
+  const s5 = reconcileAgentProgress(s4, { runId, messageId, phase: 'model', sequence: 5 });
+  assert.equal(s5.phase, 'model');
+  assert.equal(s5.sequence, 5);
+
+  // Stale lower-sequence tool_finished or searching must not regress round-2 model phase.
+  assert.equal(reconcileAgentProgress(s5, { runId, messageId, phase: 'tool_finished', sequence: 4 }), s5);
+  assert.equal(reconcileAgentProgress(s5, { runId, messageId, phase: 'searching', sequence: 3 }), s5);
+  assert.equal(reconcileAgentProgress(s5, { runId, messageId, phase: 'model', sequence: 5 }), s5);
+
+  const s6 = reconcileAgentProgress(s5, { runId, messageId, phase: 'reading', sequence: 6 });
+  assert.equal(s6.phase, 'reading');
+
+  // Help card arriving during an active phase keeps active phase while accumulating cards and advancing sequence.
+  const s7Help = reconcileAgentProgress(s6, {
+    runId,
+    messageId,
+    phase: 'help',
+    card: 'medical-consult-hk-v1',
+    sequence: 7,
+  });
+  assert.equal(s7Help.phase, 'reading');
+  assert.equal(s7Help.sequence, 7);
+  assert.deepEqual(s7Help.cards, ['medical-consult-hk-v1']);
+
+  const s8 = reconcileAgentProgress(s7Help, { runId, messageId, phase: 'tool_finished', sequence: 8 });
+  const s9 = reconcileAgentProgress(s8, { runId, messageId, phase: 'reviewing', sequence: 9 });
+  assert.equal(s9.phase, 'reviewing');
+  assert.equal(s9.sequence, 9);
+
+  // Wrong runId and out-of-order lower-sequence frames never mutate reviewing state.
+  assert.equal(reconcileAgentProgress(s9, { runId: wrongRunId, messageId, phase: 'started', sequence: 99 }), s9);
+  assert.equal(reconcileAgentProgress(s9, { runId, messageId, phase: 'tool_finished', sequence: 8 }), s9);
+});
+
+test('createProductAgent emits monotonically sequenced multi-round progress events that reconcile through reviewing', async () => {
+  const userId = 'owner-progress-1';
+  const childId = randomUUID();
+  const messageId = randomUUID();
+  const runId = randomUUID();
+  const chunkId = randomUUID();
+  const versionId = randomUUID();
+  const scope = { userId, childId, workspaceId: 'workspace-hk', authorizationVersion: '1', dataVersion: 'epoch:1' };
+  const chunk = {
+    chunkId,
+    sourceId: 'fhs-solid-food',
+    versionId,
+    versionHash: 'vh-1',
+    contentHash: 'ch-1',
+    key: 'starting-solids',
+    url: 'https://www.fhs.gov.hk/tc_chi/health_info/child/30039.html',
+    title: '嬰幼兒飲食－引進固體食物過渡期',
+    publisher: '衞生署家庭健康服務',
+    section: '約六個月大開始',
+    classification: 'official_guidance' as const,
+    sourceExcerpt: '約六個月時可開始加入固體食物。',
+    originalText: '約六個月時可開始加入固體食物。',
+    text: '衞生署指引指出，孩子約六個月時應開始加入固體食物。',
+    keywords: ['加固', '固體食物'],
+    applicability: { region: 'HK', ageBasis: 'actual' as const, minAgeMonths: 0, maxAgeMonths: 12, topics: ['feeding'], conditions: [] },
+    sourcePublishedAt: null,
+    sourceUpdatedAt: null,
+    fetchedAt: '2026-01-01T00:00:00Z',
+    checkedAt: '2026-01-01T00:00:00Z',
+    reviewState: 'reviewed' as const,
+    distance: 0.05,
+  };
+  const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project', AI_DAILY_USER_ATTEMPTS: '10', AI_DAILY_GLOBAL_ATTEMPTS: '50' });
+  const gateway = createEmbeddingGateway({
+    config,
+    usage: { reserve: async () => true, record: async () => {} },
+    provider: { embed: async () => ({ values: [1, ...Array<number>(1023).fill(0)], inputTokens: 4, billableCharacters: 12 }) },
+  });
+  const retriever = createKnowledgeRetriever({ candidates: async () => [chunk] }, gateway);
+
+  let step = 0;
+  let savedResult: ProductAgentResult | null = null;
+  const runtime = createAgentRuntime({
+    config,
+    usage: { reserve: async () => true, record: async () => {} },
+    provider: {
+      generate: async request => {
+        const promptText = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? '').join('\n');
+        if (promptText.includes('chat-delivery-review')) {
+          const payload = JSON.parse(promptText.slice(promptText.indexOf('{'))) as { draftHash: string };
+          return {
+            content: { role: 'model', parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: 'pass', issues: [] }) }] },
+            finishReason: FinishReason.STOP,
+          };
+        }
+        const current = step++;
+        if (current >= 3) {
+          return { content: { role: 'model', parts: [{ text: 'done' }] }, finishReason: FinishReason.STOP };
+        }
+        const functionCall = current === 0
+          ? { id: 'c1', name: 'search_knowledge', args: { query: 'BB幾時加固', classification: 'official_guidance' } }
+          : current === 1
+            ? { id: 'c2', name: 'read_context', args: {} }
+            : { id: 'c3', name: 'present_answer', args: { kind: 'caregiving', paragraphs: [{ text: '約六個月時可開始加入固體食物。', citationIds: [chunkId] }] } };
+        return { content: { role: 'model', parts: [{ functionCall }] }, finishReason: FinishReason.STOP };
+      },
+    },
+  });
+
+  const agent = createProductAgent({
+    runtime,
+    store: {
+      claim: async () => ({ runId, scope, created: true, sourceMessageId: messageId, state: 'running', expiresAt: new Date(Date.now() + 90000).toISOString() }),
+      authorize: async () => true,
+      finish: async (_scope: unknown, result: ProductAgentResult) => { savedResult = result; return true; },
+      get: async () => savedResult,
+    } as any,
+    memory: {
+      context: async () => ({
+        scope: { ...scope, visibility: 'private' as const },
+        retrievalPolicy: { maxFacts: 20, maxNotes: 10 },
+        profileApplicable: true,
+        profile: { childId, version: 1, data: { age: { kind: 'months', exactMonths: 6, asOf: '2026-11-10' }, region: 'HK' } },
+        facts: [],
+        notes: [],
+        pendingFacts: [],
+        summary: null,
+        truncated: { facts: false, notes: false, messages: false },
+      }),
+      listConfirmedFacts: async () => [],
+    } as any,
+    chat: { listForUser: async () => ({ messages: [{ id: messageId, role: 'user', text: 'BB幾時可以食固體食物？' }] }) } as any,
+    tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) } as any,
+    knowledge: retriever,
+  });
+
+  const events: AgentProgress[] = [];
+  const result = await agent.reply(userId, childId, messageId, async () => true, undefined, event => {
+    events.push(agentProgressSchema.parse(event));
+  });
+  assert.equal(result?.status, 'completed', `Unexpected stopReason=${result?.stopReason} text=${result?.text} phases=${events.map(e => e.phase).join(',')}`);
+  assert.ok(events.length >= 10);
+  for (let i = 0; i < events.length; i++) {
+    assert.equal(events[i]!.sequence, i + 1, 'Progress event sequence must increment monotonically from 1');
+  }
+  const firstToolEndIndex = events.findIndex(e => e.phase === 'tool_finished');
+  assert.ok(firstToolEndIndex > 0);
+  assert.ok(events.slice(firstToolEndIndex + 1).some(e => e.phase === 'reading'), 'Round-2 reading must emit after first tool_finished');
+
+  let reconciled: ReturnType<typeof reconcileAgentProgress> | null = null;
+  const reconciledPhases: string[] = [];
+  for (const event of events) {
+    reconciled = reconcileAgentProgress(reconciled, event);
+    reconciledPhases.push(reconciled.phase);
+  }
+  assert.equal(reconciledPhases.slice(firstToolEndIndex + 1).includes('reading'), true, 'Reconciled state must advance to reading after first tool_finished');
+  assert.equal(reconciled?.phase, 'reviewing');
+
+  // Replaying an earlier tool_finished event out of order never regresses reviewing.
+  const stale = reconcileAgentProgress(reconciled, events[firstToolEndIndex]!);
+  assert.equal(stale, reconciled);
 });

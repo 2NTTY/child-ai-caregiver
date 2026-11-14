@@ -12,6 +12,7 @@ export const OFFICIAL_HELP = {
 } as const;
 export const agentProgressSchema = z.object({ runId: z.uuid(), messageId: z.uuid(),
   phase: z.enum(['started', 'model', 'reading', 'searching', 'working', 'tool_finished', 'reviewing', 'help']),
+  sequence: z.number().int().positive().optional(),
   card: officialHelpIdSchema.optional(),
 }).strict().refine(event => (event.phase === 'help') === (event.card !== undefined));
 export type AgentProgress = z.infer<typeof agentProgressSchema>;
@@ -34,8 +35,9 @@ const AGENT_PROGRESS_PHASE_RANK: Record<AgentProgress['phase'], number> = {
 
 /**
  * Converges duplicate or out-of-order SSE progress events for a single message run.
- * Ignores mismatched runIds, never regresses reviewing/tool_finished/active phases back to stale phases,
- * and returns the existing snapshot reference when nothing changed.
+ * Orders causally by sequence when present (so round-2 model/tool phases advance past tool_finished),
+ * keeps active phase while accumulating help cards, blocks mismatched runIds, and preserves
+ * monotonic phase-rank fallback for unsequenced events.
  */
 export function reconcileAgentProgress(
   previous: ReconciledAgentProgress | null | undefined,
@@ -51,15 +53,46 @@ export function reconcileAgentProgress(
     return previous;
   }
   const cards = [...new Set([...previous.cards, ...(incoming.card ? [incoming.card] : [])])];
-  const phase = AGENT_PROGRESS_PHASE_RANK[incoming.phase] < AGENT_PROGRESS_PHASE_RANK[previous.phase]
-    ? previous.phase
-    : incoming.phase;
+  const sameCards = cards.length === previous.cards.length
+    && cards.every((card, index) => card === previous.cards[index]);
+  let phase: AgentProgress['phase'];
+  let sequence: number | undefined;
+  if (incoming.sequence !== undefined && previous.sequence !== undefined) {
+    if (incoming.sequence < previous.sequence) {
+      if (sameCards) return previous;
+      phase = previous.phase;
+      sequence = previous.sequence;
+    } else if (incoming.sequence === previous.sequence) {
+      sequence = previous.sequence;
+      if (incoming.phase === 'help' && previous.phase !== 'started') {
+        phase = previous.phase;
+      } else {
+        phase = AGENT_PROGRESS_PHASE_RANK[incoming.phase] < AGENT_PROGRESS_PHASE_RANK[previous.phase]
+          ? previous.phase
+          : incoming.phase;
+      }
+    } else {
+      sequence = incoming.sequence;
+      phase = incoming.phase === 'help' && previous.phase !== 'started'
+        ? previous.phase
+        : incoming.phase;
+    }
+  } else {
+    sequence = incoming.sequence ?? previous.sequence;
+    if (incoming.phase === 'help' && previous.phase !== 'started') {
+      phase = previous.phase;
+    } else {
+      phase = AGENT_PROGRESS_PHASE_RANK[incoming.phase] < AGENT_PROGRESS_PHASE_RANK[previous.phase]
+        ? previous.phase
+        : incoming.phase;
+    }
+  }
   const resolvedCard = phase === 'help' ? (incoming.card ?? previous.card) : undefined;
   if (
     phase === previous.phase
+    && sequence === previous.sequence
     && resolvedCard === previous.card
-    && cards.length === previous.cards.length
-    && cards.every((card, index) => card === previous.cards[index])
+    && sameCards
   ) {
     return previous;
   }
@@ -67,6 +100,7 @@ export function reconcileAgentProgress(
     runId: incoming.runId,
     messageId: incoming.messageId,
     phase,
+    ...(sequence !== undefined ? { sequence } : {}),
     ...(resolvedCard ? { card: resolvedCard } : {}),
     cards,
   };
