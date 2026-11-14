@@ -1201,3 +1201,172 @@ test("pure clarifying questions deliver cleanly while uncited care claims wrappe
   assert.equal(repairedOutcome.review?.decision, "pass");
   assert.equal(repairedOutcome.presentation.text, `${repairedParagraphText} [1]`);
 });
+
+test("post-illness timing, bare Cantonese operation claims, and Chinese-numeral doses fail closed end-to-end (R3 F1-F3)", async (t) => {
+  // Part A: Real Firestore knowledge store + retriever with 5 curated HK seeds must not retrieve starting-solids for post-illness/refusal timing
+  const seedSources = await loadCuratedSeedSources();
+  const fsEnv = createInMemoryFirestoreKnowledgeStore([...LOCAL_OFFICIAL_SEED_IDS]);
+  const localManifest = await loadLocalDevelopmentManifest();
+  for (const src of seedSources) {
+    await fsEnv.publishSource(src, buildLocalOfficialSeedAssessment(src, localManifest), () => vector);
+  }
+  const gateway = createEmbeddingGateway({
+    config,
+    usage: fakeUsage(),
+    provider: {
+      embed: async request => ({
+        values: /嘔|吐|瀉|痾|發燒|發熱|唔肯食/u.test(request.text) ? unrelatedTopicVector : vector,
+        inputTokens: 4,
+        billableCharacters: 16,
+      }),
+    },
+  });
+  const retriever = createKnowledgeRetriever(fsEnv.store, gateway);
+  const hkFilter = parseKnowledgeFilter({
+    region: "HK",
+    classification: "official_guidance",
+    age: { basis: "actual", minMonths: 6, maxMonths: 6 },
+    topics: [],
+  });
+  for (const query of ["BB幾時嘔完可以食嘢？", "BB幾個月唔肯食嘢點算？", "BB肚瀉幾時先可以食嘢？"]) {
+    const budget = new AgentBudget();
+    t.after(() => budget.close());
+    const res = await retriever.createRun({ actor: queryActor, budget, authorize: async () => true }).search(query, hkFilter);
+    assert.deepEqual(res.chunks, [], `Firestore retriever must not false-match starting-solids for: ${query}`);
+  }
+  const legitimateBudget = new AgentBudget();
+  t.after(() => legitimateBudget.close());
+  const legitimateRes = await retriever.createRun({ actor: queryActor, budget: legitimateBudget, authorize: async () => true }).search("BB幾時可以食嘢？", hkFilter);
+  assert.equal(legitimateRes.chunks[0]?.key, "starting-solids");
+
+  // Part B: Real createAgentRuntime + createProductAgent fail closed on bare Cantonese operation claims without verified receipts
+  for (const draftClaim of ["改咗提醒時間。", "刪咗所有紀錄。", "唔該，改咗啦。"]) {
+    const draft = {
+      kind: "clarification" as const,
+      visibility: "private" as const,
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text: draftClaim, citationIds: [] }],
+      sources: [],
+      scope,
+    };
+    assert.equal(requiresChatDeliveryReview(draft), true, `Must require review for bare operation claim: ${draftClaim}`);
+
+    let modelTurn = 0;
+    let reviewCalls = 0;
+    let savedResult: ProductAgentResult | null = null;
+    const runtime = createAgentRuntime({
+      config,
+      usage: { reserve: async () => true, record: async () => {} },
+      provider: {
+        generate: async request => {
+          const promptText = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? "").join("\n");
+          if (promptText.includes("chat-delivery-review")) {
+            reviewCalls++;
+            const payload = JSON.parse(promptText.slice(promptText.indexOf("{"))) as {
+              draftHash: string;
+              verifiedOperations?: unknown[];
+            };
+            assert.deepEqual(payload.verifiedOperations ?? [], []);
+            return {
+              content: {
+                role: "model",
+                parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "insufficient_evidence", issues: [{ paragraph: 0, reason: "unverified operation claim" }] }) }],
+              },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          modelTurn++;
+          const functionCall = {
+            id: `present-op-${modelTurn}`,
+            name: "present_answer",
+            args: { kind: "clarification", paragraphs: [{ text: draftClaim, citationIds: [] }] },
+          };
+          return { content: { role: "model", parts: [{ functionCall }] }, finishReason: FinishReason.STOP };
+        },
+      },
+    });
+    const agent = createProductAgent({
+      runtime,
+      store: {
+        claim: async () => ({ runId, scope, created: true, sourceMessageId: messageId, state: "running", expiresAt: new Date(Date.now() + 90000).toISOString() }),
+        authorize: async () => true,
+        finish: async (_scope: unknown, result: ProductAgentResult) => { savedResult = result; return true; },
+        get: async () => savedResult,
+      } as any,
+      memory: { context: async () => emptyMemoryContext() } as any,
+      chat: { listForUser: async () => ({ messages: [{ id: messageId, role: "user", text: "幫我更新提醒時間。" }] }) } as any,
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) } as any,
+      knowledge: retriever,
+    });
+    const result = await agent.reply(userId, childId, messageId, async () => true);
+    assert.ok(result);
+    assert.equal(reviewCalls, 1, `Unverified operation claim must invoke delivery review: ${draftClaim}`);
+    assert.equal(result.status, "stopped");
+    assert.equal(result.text.includes("改咗") || result.text.includes("刪咗"), false);
+  }
+
+  // Part C: Real createAgentRuntime + createProductAgent fail closed on Chinese-numeral/unit dosing disguised as clarification
+  const emptyRetriever = createKnowledgeRetriever({ candidates: async () => [] }, fakeEmbeddingGateway());
+  for (const [userMsg, dosingText] of [
+    ["隻藥應該點食？", "每次半粒。"],
+    ["隻藥應該點食？", "每次一粒。"],
+    ["退燒藥粉食幾多？", "每次半包。"],
+    ["隻藥應該點食？", "半粒。"],
+  ] as const) {
+    const draft = {
+      userRequest: userMsg,
+      kind: "clarification" as const,
+      visibility: "private" as const,
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text: dosingText, citationIds: [] }],
+      sources: [],
+      scope,
+    };
+    assert.equal(isPureClarifyingQuestion(dosingText), false);
+    assert.equal(draftLooksLikeSubstantiveCareAdvice(draft), true, `Must classify dosing fragment as substantive care: ${dosingText}`);
+    assert.equal(requiresChatDeliveryReview(draft), true, `Must require review for dosing fragment: ${dosingText}`);
+    assert.equal(chatDeliveryPassNeedsSources(draft), true, `Must require sources for dosing fragment: ${dosingText}`);
+
+    let step = 0;
+    let savedResult: ProductAgentResult | null = null;
+    const runtime = createAgentRuntime({
+      config,
+      usage: { reserve: async () => true, record: async () => {} },
+      provider: {
+        generate: async request => {
+          const promptText = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? "").join("\n");
+          if (promptText.includes("chat-delivery-review")) {
+            const payload = JSON.parse(promptText.slice(promptText.indexOf("{"))) as { draftHash: string };
+            return {
+              content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "pass", issues: [] }) }] },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          const current = step++;
+          const functionCall = current === 0
+            ? { id: "search-dosing-empty", name: "search_knowledge", args: { query: userMsg, classification: "official_guidance" } }
+            : { id: "present-dosing", name: "present_answer", args: { kind: "clarification", paragraphs: [{ text: dosingText, citationIds: [] }] } };
+          return { content: { role: "model", parts: [{ functionCall }] }, finishReason: FinishReason.STOP };
+        },
+      },
+    });
+    const agent = createProductAgent({
+      runtime,
+      store: {
+        claim: async () => ({ runId, scope, created: true, sourceMessageId: messageId, state: "running", expiresAt: new Date(Date.now() + 90000).toISOString() }),
+        authorize: async () => true,
+        finish: async (_scope: unknown, result: ProductAgentResult) => { savedResult = result; return true; },
+        get: async () => savedResult,
+      } as any,
+      memory: { context: async () => emptyMemoryContext() } as any,
+      chat: { listForUser: async () => ({ messages: [{ id: messageId, role: "user", text: userMsg }] }) } as any,
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) } as any,
+      knowledge: emptyRetriever,
+    });
+    const result = await agent.reply(userId, childId, messageId, async () => true);
+    assert.ok(result);
+    assert.equal(result.status, "stopped");
+    assert.equal(result.stopReason, "delivery_review_no_sources");
+    assert.equal(result.text.includes("半粒") || result.text.includes("一粒") || result.text.includes("半包"), false);
+  }
+});

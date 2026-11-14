@@ -2,7 +2,7 @@ import type { KnowledgeCandidate, KnowledgeEvidence } from "../src/shared/knowle
 
 const RRF_K = 60;
 const MAX_RESULTS = 6;
-const QUESTION_PHRASES = /請問|想知道|想知|點樣|點算|點解|有冇|有無|係咪|是否|如何|怎樣|甚麼|什麼|乜嘢|可唔可以|可以|應該|幾時|邊度|洗唔洗|使唔使|要唔要|會唔會|好唔好/gu;
+const QUESTION_PHRASES = /請問|想知道|想知|點樣|點算|點解|有冇|有無|係咪|是否|如何|怎樣|甚麼|什麼|乜嘢|可唔可以|可以|應該|(?<!頭|這|呢|近|首|前|上|下)幾多?個月大?|幾時|邊度|洗唔洗|使唔使|要唔要|會唔會|好唔好/gu;
 const QUESTION_PARTICLES = /[嗎呢呀啊嘛啦吧㗎嘅]/gu;
 const LATIN_FILLERS = new Set(["a", "an", "the", "is", "are", "what", "how", "can", "should", "please"]);
 /** Generic caregiver subject terms and generic colloquial verbs ignored on question queries so unrelated topics never false-match via a shared seed keyword (e.g. "BB食嘢"). */
@@ -10,7 +10,7 @@ const QUESTION_LATIN_FILLERS = new Set(["bb", "baby", "babies"]);
 const QUESTION_HAN_FILLERS = new Set(["食嘢", "講嘢", "正常", "醫生", "睇醫", "要睇", "求醫", "求診"]);
 /** Colloquial Cantonese parenting query terms mapped to official guidance bigrams on question queries only. */
 const COLLOQUIAL_QUERY_EXPANSIONS: ReadonlyArray<readonly [RegExp, readonly string[]]> = [
-  [/開糊|糊仔|副食品?|輔食|(?:幾時|幾大|幾多?個月).{0,6}(?:可以|開始|先可以)?食嘢/u, ["加固", "固體食物", "米糊"]],
+  [/開糊|糊仔|副食品?|輔食|^(?!.*(?:嘔|吐|瀉|痾|肚痛|發燒|發熱|生病|病|咳|傷風|感冒|唔適|不適|唔肯|唔想|唔願|不肯|不想|厭奶|拒食|食藥|餵藥|服藥|藥物|藥水|打針|疫苗)).*(?:幾時|幾大|幾多?個月(?:大)?)[\s,]*(?:BB|寶寶|嬰兒|幼兒|孩子|小朋友|佢)?[\s]*(?:先至?|才)?(?:可以(?:開始)?|先可以|開始|適合|適宜)食(?:嘢|固體食物)/u, ["加固", "固體食物", "米糊"]],
   [/半歲/u, ["六個月"]],
   [/嘔奶|回奶|吐奶|溢奶/u, ["嘔奶", "吐奶", "溢奶"]],
   [/發熱|滾熱|發高燒|高燒/u, ["發燒"]],

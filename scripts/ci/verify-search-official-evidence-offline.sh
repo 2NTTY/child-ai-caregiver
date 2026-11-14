@@ -43,7 +43,7 @@ TEST_FILES=(
   tests/agent-runtime.test.ts
   tests/agent-runtime-contract.test.ts
 )
-TEST_CASES=(5 11 4 6 9 3 44 8 3 4 6 20 17)
+TEST_CASES=(6 12 4 6 9 3 44 8 3 4 6 20 17)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" tsconfig.json tsconfig.server.json \
   server/knowledge-ranking.ts server/knowledge-store.ts server/firestore-knowledge.ts \

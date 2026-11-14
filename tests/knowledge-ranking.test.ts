@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { knowledgeIndexTokens, rankKnowledge } from "../server/knowledge-ranking.ts";
+import { knowledgeIndexTokens, knowledgeTokens, rankKnowledge } from "../server/knowledge-ranking.ts";
 import type { KnowledgeCandidate } from "../src/shared/knowledge.ts";
 
 function candidate(chunkId: string, distance: number | null, changes: Partial<KnowledgeCandidate> = {}): KnowledgeCandidate {
@@ -186,4 +186,41 @@ test("appetite refusal and missing official seed topics do not false-match start
     rankKnowledge("BB半歲開糊要食啲咩？", realSeedCandidates)[0]?.chunkId,
     "fhs-solid-food/starting-solids",
   );
+});
+
+test("post-illness and feeding-refusal timing queries do not false-expand into starting-solids", () => {
+  for (const query of [
+    "BB幾時嘔完可以食嘢？",
+    "BB幾個月唔肯食嘢點算？",
+    "BB嘔完幾時可以食嘢？",
+    "BB發燒幾時可以食嘢？",
+    "BB肚瀉幾時先可以食嘢？",
+  ]) {
+    const tokens = [...knowledgeTokens(query, true)];
+    assert.equal(tokens.includes("加固"), false, `Unexpected 加固 expansion for: ${query}`);
+    assert.equal(tokens.includes("固體"), false, `Unexpected 固體 expansion for: ${query}`);
+    assert.equal(tokens.includes("米糊"), false, `Unexpected 米糊 expansion for: ${query}`);
+    assert.deepEqual(
+      rankKnowledge(query, [
+        candidate("fhs-solid-food/starting-solids", null, {
+          key: "starting-solids",
+          title: "引進固體食物",
+          section: "約六個月大時開始",
+          sourceExcerpt: "未足四個月大的寶寶不應吃奶以外的食物。",
+          text: "大約在寶寶六個月大時可開始加入米糊及固體食物。",
+          keywords: ["加固", "固體食物", "米糊", "六個月"],
+        }),
+      ]).map(item => item.chunkId),
+      [],
+      `Expected no starting-solids match for post-illness/refusal query: ${query}`,
+    );
+  }
+  for (const timingQuery of [
+    "BB幾時可以食嘢？",
+    "BB幾多個月先可以食嘢？",
+    "BB幾大開始食固體食物？",
+  ]) {
+    const tokens = [...knowledgeTokens(timingQuery, true)];
+    assert.equal(tokens.includes("加固"), true, `Expected 加固 expansion for: ${timingQuery}`);
+  }
 });
