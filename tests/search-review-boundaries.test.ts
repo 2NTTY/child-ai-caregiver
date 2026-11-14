@@ -3,6 +3,7 @@ import test from "node:test";
 import type { LlmRequest } from "@google/adk";
 import { FinishReason } from "@google/genai";
 import {
+  chatDeliveryPassNeedsSources,
   draftLooksLikeSubstantiveCareAdvice,
   isPureClarifyingQuestion,
   requiresChatDeliveryReview,
@@ -381,4 +382,161 @@ test("REQ-008 §3.2: mid-turn review obligation when remaining root budget canno
   assert.equal(result?.status, "stopped");
   assert.equal(result?.stopReason, "delivery_review_budget");
   assert.equal(result?.text, CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT);
+});
+
+test("bare Cantonese operation claims and Chinese-numeral or unit dosing fail closed through real ProductAgent (R2 F4-F5)", async () => {
+  for (const opClaim of ["改咗提醒時間。", "刪咗所有紀錄。", "唔該，改咗啦。"]) {
+    const draft = makeDraft(opClaim, "clarification");
+    assert.equal(requiresChatDeliveryReview(draft), true, `Must require review for bare operation claim: ${opClaim}`);
+
+    let step = 0;
+    let reviewCalls = 0;
+    let saved: ProductAgentResult | null = null;
+    const messageId = "88888888-8888-4888-8888-888888888811";
+    const runId = "99999999-9999-4999-8999-999999999911";
+    const runtime = createAgentRuntime({
+      config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project", AI_DAILY_USER_ATTEMPTS: "10", AI_DAILY_GLOBAL_ATTEMPTS: "50" }),
+      usage: { reserve: async () => true, record: async () => {} },
+      provider: {
+        generate: async request => {
+          const promptText = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? "").join("\n");
+          if (promptText.includes("chat-delivery-review")) {
+            reviewCalls++;
+            const payload = JSON.parse(promptText.slice(promptText.indexOf("{"))) as { draftHash: string; verifiedOperations?: unknown[] };
+            assert.deepEqual(payload.verifiedOperations ?? [], []);
+            return {
+              content: {
+                role: "model",
+                parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "insufficient_evidence", issues: [{ paragraph: 0, reason: "unverified operation claim" }] }) }],
+              },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          step++;
+          return {
+            content: {
+              role: "model",
+              parts: [{ functionCall: { id: `op-${step}`, name: "present_answer", args: { kind: "clarification", paragraphs: [{ text: opClaim, citationIds: [] }] } } }],
+            },
+            finishReason: FinishReason.STOP,
+          };
+        },
+      },
+    });
+    const service = createProductAgent({
+      runtime,
+      store: {
+        claim: async () => ({ runId, scope, created: true, state: "running", expiresAt: new Date(Date.now() + 90000).toISOString() }),
+        authorize: async () => true,
+        finish: async (_s: unknown, result: ProductAgentResult) => { saved = result; return true; },
+        get: async () => saved,
+      },
+      memory: {
+        initialConversationSummary: async () => null,
+        context: async () => ({
+          profile: { childId: scope.childId, version: 0, data: null },
+          profileApplicable: false,
+          facts: [],
+          topics: [],
+          summary: null,
+          recentMessages: [],
+          conflictingKeys: [],
+          unavailableFactKeys: [],
+          truncated: { facts: false, topics: false, messages: false },
+        }),
+        facts: async () => ({ items: [], nextAfterId: null }),
+      },
+      chat: { listForUser: async () => ({ messages: [{ id: messageId, role: "user", text: "幫我更改提醒時間" }] }) },
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
+      knowledge: {
+        createRun: () => ({
+          search: async () => ({ mode: "vector_keyword", chunks: [] }),
+          revalidateCitations: async () => true,
+        }),
+      },
+    } as unknown as Parameters<typeof createProductAgent>[0]);
+
+    const result = await service.reply(scope.userId, scope.childId, messageId, async () => true);
+    assert.equal(reviewCalls, 1, `Unverified operation claim must enter delivery review: ${opClaim}`);
+    assert.equal(result?.status, "stopped");
+    assert.equal(result?.text.includes("改咗") || result?.text.includes("刪咗"), false);
+  }
+
+  for (const [userMsg, dosingText] of [
+    ["隻藥應該點食？", "每次 10 ml。"],
+    ["隻藥應該點食？", "每次半粒。"],
+    ["隻藥應該點食？", "每次一粒。"],
+    ["退燒藥粉食幾多？", "每次半包。"],
+    ["隻藥應該點食？", "半粒。"],
+  ] as const) {
+    const draft: ChatDeliveryDraft = { ...makeDraft(dosingText, "clarification"), userRequest: userMsg };
+    assert.equal(isPureClarifyingQuestion(dosingText), false);
+    assert.equal(draftLooksLikeSubstantiveCareAdvice(draft), true, dosingText);
+    assert.equal(requiresChatDeliveryReview(draft), true, dosingText);
+    assert.equal(chatDeliveryPassNeedsSources(draft), true, dosingText);
+
+    let step = 0;
+    let saved: ProductAgentResult | null = null;
+    const messageId = "88888888-8888-4888-8888-888888888812";
+    const runId = "99999999-9999-4999-8999-999999999912";
+    const runtime = createAgentRuntime({
+      config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project", AI_DAILY_USER_ATTEMPTS: "10", AI_DAILY_GLOBAL_ATTEMPTS: "50" }),
+      usage: { reserve: async () => true, record: async () => {} },
+      provider: {
+        generate: async request => {
+          const promptText = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? "").join("\n");
+          if (promptText.includes("chat-delivery-review")) {
+            const payload = JSON.parse(promptText.slice(promptText.indexOf("{"))) as { draftHash: string };
+            return {
+              content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "pass", issues: [] }) }] },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          const current = step++;
+          const functionCall = current === 0
+            ? { id: "search-empty", name: "search_knowledge", args: { query: userMsg, classification: "official_guidance" } }
+            : { id: "present-dose", name: "present_answer", args: { kind: "clarification", paragraphs: [{ text: dosingText, citationIds: [] }] } };
+          return { content: { role: "model", parts: [{ functionCall }] }, finishReason: FinishReason.STOP };
+        },
+      },
+    });
+    const service = createProductAgent({
+      runtime,
+      store: {
+        claim: async () => ({ runId, scope, created: true, state: "running", expiresAt: new Date(Date.now() + 90000).toISOString() }),
+        authorize: async () => true,
+        finish: async (_s: unknown, result: ProductAgentResult) => { saved = result; return true; },
+        get: async () => saved,
+      },
+      memory: {
+        initialConversationSummary: async () => null,
+        context: async () => ({
+          profile: { childId: scope.childId, version: 0, data: null },
+          profileApplicable: false,
+          facts: [],
+          topics: [],
+          summary: null,
+          recentMessages: [],
+          conflictingKeys: [],
+          unavailableFactKeys: [],
+          truncated: { facts: false, topics: false, messages: false },
+        }),
+        facts: async () => ({ items: [], nextAfterId: null }),
+      },
+      chat: { listForUser: async () => ({ messages: [{ id: messageId, role: "user", text: userMsg }] }) },
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
+      knowledge: {
+        createRun: () => ({
+          search: async () => ({ mode: "vector_keyword", chunks: [] }),
+          revalidateCitations: async () => true,
+        }),
+      },
+    } as unknown as Parameters<typeof createProductAgent>[0]);
+
+    const result = await service.reply(scope.userId, scope.childId, messageId, async () => true);
+    assert.equal(result?.status, "stopped");
+    assert.equal(result?.stopReason, "delivery_review_no_sources");
+    assert.equal(result?.text, CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT);
+    assert.equal(result?.text.includes("10 ml") || result?.text.includes("半粒") || result?.text.includes("一粒") || result?.text.includes("半包"), false);
+  }
 });
