@@ -6005,10 +6005,18 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 - Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理協助本地實作與離線驗證，未推送遠端）
 - Goal：實作不依賴 AI 模型或回合成功之對話頁固定官方求助入口候選，並明確記錄 `REQ-001 §4.3:184` 待 Owner (`2NTTY`) 拍板之治理狀態。
 - Actual Work：
-  - 於 `src/shared/agent-feedback.ts` 新增 `matchOfficialHelpForText`，以純前端確定性規則識別緊急症狀（如呼吸困難、抽搐、昏迷、高燒不退）及用藥劑量查詢，對應回傳已核准之 `emergency_care_999` 與 `medication_safety_fhs` 卡片 ID。
-  - 於 `frontend/src/screens/chatScreen.tsx` 新增非阻斷式「官方求助及熱線」固定收合按鈕與面板，即使 `chat.error` 發生或尚未送出訊息亦可隨時展開查閱 `OfficialHelpCards`。
+  - 於 `src/shared/agent-feedback.ts` 新增 `matchOfficialHelpForText`，以純共用確定性規則識別緊急症狀（呼吸困難、抽搐、昏迷、高燒不退、`(?<!\d)999(?!\d)` 等）及用藥劑量查詢，對應回傳已核准之 `emergency-hk-v1` 與 `medical-consult-hk-v1` 卡片 ID。
+  - 於 `frontend/src/screens/chatScreen.tsx` 新增非阻斷式「官方求助入口」固定收合按鈕與獨立 `officialHelpPanel`（抽離 `child` 條件並置於 `timelineFooter`），即使 `!child`、`chat.error` 發生或尚未送出訊息亦可隨時展開查閱 `OfficialHelpCards`。
   - 新增 `tests/official-help-entry.test.ts`、`scripts/ci/verify-search-help-entry-offline.sh` 與 `.github/workflows/search-help-entry-offline.yml`。
 - Verification：
-  - `node --experimental-test-module-mocks --test tests/official-help-entry.test.ts tests/agent-feedback.test.ts`（6/6 通過，0 失敗，0 略過）。
-  - `./node_modules/.bin/tsc -p tsconfig.server.json --noEmit` 與 `./node_modules/.bin/tsc -p tsconfig.json --noEmit` 均退出 0。
-- Limitations / Blockers：依 `REQ-001 §4.3:184`，入口位置與自動展開觸發條件屬待 Owner (`2NTTY`) 決定之設計事項，本分支嚴格保持 LOCAL HOLD；僅完成本地離線測試與靜態型別驗證，未執行真實模型、資料庫、雲端 CI 或 Android 實機驗收，未執行 `git push` 或建立 PR。
+  - `node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-concurrency=1 tests/official-help-entry.test.ts tests/chat-web-sources-copy.test.ts tests/chat-delivery-review.test.ts`（3 個完整測試檔共 **53/53** 通過：2 + 7 + 44，0 失敗，0 略過，`blockedAttempts: 0`）。
+  - 既有上游 `tests/agent-feedback.test.ts`（第 58 行開啟 `127.0.0.1` loopback HTTP server）另外於本機無 socket 阻擋執行 `node --experimental-test-module-mocks --test tests/agent-feedback.test.ts`：**4/4** 通過。
+  - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
+- Limitations / Blockers：依 `REQ-001 §4.3:184`，入口位置與自動展開觸發條件屬待 Owner (`2NTTY`) 決定之設計事項，本分支嚴格保持 LOCAL HOLD；僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`），未執行真實模型、資料庫、雲端 CI 或 Android 實機驗收，未執行 `git push` 或建立 PR。
+
+### 2026-11-14　B-P5 R1 審核修復補充
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復（維持 `LOCAL HOLD`）：
+1）將 `URGENT_EMERGENCY_HELP_PATTERN` 的 `999` 改為 `(?<!\d)999(?!\d)`，鎖定 `"1999年出世"` 不誤觸發且 `"999"`／`"打999"` 正常命中 `'emergency-hk-v1'`。
+2）於 [chatScreen.tsx](frontend/src/screens/chatScreen.tsx) 將 `officialHelpPanel` 移出 `{child ? ... : null}` 並掛載至 `timelineFooter`，確保未選擇孩子（`!child`）時點擊工具列求助按鈕仍可顯示官方求助卡片。
+3）修正文件卡片 ID 筆誤（為 `'emergency-hk-v1'` 與 `'medical-consult-hk-v1'`，非 `emergency_care_999`／`medication_safety_fhs`），並將 CI workflow 與 `scripts/ci/verify-search-help-entry-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 及 `summary-progress-contract.mjs` 驗證契約。

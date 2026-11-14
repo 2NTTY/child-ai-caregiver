@@ -114,6 +114,10 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   const progressLabel = chat.busy === "save" ? "正在保存…"
     : chat.busy === "reply" ? (chat.feedback ? AGENT_PROGRESS_LABELS[chat.feedback.phase] : "已保存，正在等候回覆…")
       : chat.remoteReply?.status === "running" ? "原回覆仍在處理，毋須重新發送。" : null;
+  const officialHelpPanel = (autoHelpIds.length || activeHelpIds.length) ? <BackgroundSurface testID="chat-official-help-panel" style={styles.feedback}>
+    {autoHelpIds.length ? <Text testID="chat-official-help-urgent-notice" accessibilityRole="alert" style={styles.warning}>{OFFICIAL_HELP_ENTRY_COPY.urgentNotice}</Text> : null}
+    {activeHelpIds.length ? <OfficialHelpCards ids={activeHelpIds} /> : null}
+  </BackgroundSurface> : null;
   const feedback = child ? <BackgroundSurface style={styles.feedback}>
     {photoUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在保存照片…</Text>:null}
     {photoUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{photoUpload.notice}</Text>:null}
@@ -126,8 +130,6 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
     {voiceUpload.unknown?<AppButton label="查核原錄音上傳" disabled={voiceUpload.busy||!chat.online} onPress={checkVoiceUpload}/>:null}
     {chat.available === false ? <Text style={styles.meta}>AI 暫未開放，已保存訊息可稍後再要求回覆。</Text> : null}
     {!chat.online ? <Text accessibilityRole="alert" style={styles.warning}>{chat.messages.length ? "目前離線，所示聊天是上次讀取的快照；草稿仍保留。" : "目前離線，草稿仍保留。"}</Text> : null}
-    {autoHelpIds.length ? <Text testID="chat-official-help-urgent-notice" accessibilityRole="alert" style={styles.warning}>{OFFICIAL_HELP_ENTRY_COPY.urgentNotice}</Text> : null}
-    {activeHelpIds.length ? <OfficialHelpCards ids={activeHelpIds} /> : null}
     {progressLabel ? <View testID="chat-operation-status" style={styles.progressRow}>
       <View style={styles.progressCopy}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.progressLabel}>{progressLabel}</Text></View>
       {replyRunning ? <AppButton label="停止回覆" variant="quiet" density="compact" loading={chat.cancelling}
@@ -150,6 +152,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
       <ChatAction label="前往查核" onPress={openSettings} compact={compact} /></View> : null}
 
   </BackgroundSurface> : null;
+  const timelineFooter = (officialHelpPanel || feedback) ? <View style={styles.feedback}>{officialHelpPanel}{feedback}</View> : null;
   const confirmedEmptyChat = !!child && chat.selectedChildId === child.id && !chat.messages.length && !!chat.loadedAt
     && !chat.loadingOlder && !chat.nextCursor && !chat.error;
   const empty = !child ? <SectionCard><Text style={styles.body}>先選擇孩子。</Text><AppButton label="重新讀取子女檔案" onPress={actions.refresh} /></SectionCard>
@@ -172,7 +175,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
       onVisibleItems={ids => setVisibleIds(previous => previous.join(",") === ids.join(",") ? previous : ids)}
       history={{ cursor: child ? chat.nextCursor : null, loading: chat.loadingOlder,
         enabled: !!child && !busy && !chat.loading && chat.online, load: () => chatController.loadOlderMessages() }}
-      footer={feedback} scrollRef={scrollRef} controlsRef={timelineRef} followRequest={followRequest} newReplyId={newReplyId} renderItem={message => {
+      footer={timelineFooter} scrollRef={scrollRef} controlsRef={timelineRef} followRequest={followRequest} newReplyId={newReplyId} renderItem={message => {
         const run = message.agentRunId ? agentRuns[message.agentRunId] : undefined;
         const sourcesMatch = run?.text === message.text || !!run?.text && !!run.stopReasonLabel
           && (run.status === "stopped" || run.status === "unknown")

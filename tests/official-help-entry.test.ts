@@ -15,6 +15,8 @@ test('matchOfficialHelpForText deterministically identifies emergency and medica
     '高燒不退而且叫唔醒、意識不清',
     'Baby is having a seizure and difficulty breathing',
     '懷疑誤服清潔劑，係咪即刻打 999 去急症室？',
+    '打999',
+    '999',
   ]) {
     const matched = matchOfficialHelpForText(text);
     assert.ok(matched.includes('emergency-hk-v1'), `must match emergency-hk-v1 for: ${text}`);
@@ -37,6 +39,7 @@ test('matchOfficialHelpForText deterministically identifies emergency and medica
     '',
     '   ',
     '你好！',
+    '1999年出世',
     '今日下晝飲咗 120ml 奶同埋換咗兩次片',
     '請問六個月大加固食咩蔬果好？',
   ]) {
@@ -53,6 +56,9 @@ test('OFFICIAL_HELP and chatScreen provide an always-available, non-agent-depend
   const screenCode = await readFile(new URL('../frontend/src/screens/chatScreen.tsx', import.meta.url), 'utf8');
   assert.match(screenCode, /matchOfficialHelpForText/);
   assert.match(screenCode, /OFFICIAL_HELP_ENTRY_COPY\.highlightedButtonLabel/);
+  assert.match(screenCode, /testID="chat-official-help-panel"/);
   assert.match(screenCode, /testID="chat-official-help-urgent-notice"/);
   assert.match(screenCode, /activeHelpIds\.length \? <OfficialHelpCards ids=\{activeHelpIds\} \/> : null/);
+  assert.match(screenCode, /timelineFooter = \(officialHelpPanel \|\| feedback\)/);
+  assert.match(screenCode, /footer=\{timelineFooter\}/);
 });
