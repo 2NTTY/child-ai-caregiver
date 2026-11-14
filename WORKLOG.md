@@ -6065,6 +6065,6 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 ### 2026-11-14　B-P7 R1 審核修復補充
 
 依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復：
-1）補強 `OPERATION_CLAIM_PATTERN` 覆蓋「已刪晒」、「記低咗」、「改咗」、「幫你...」，與 B-P6 保持跨分支一致性並於 [search-review-boundaries 測試](tests/search-review-boundaries.test.ts) 補測。
+1）補強 `OPERATION_CLAIM_PATTERN` 覆蓋「已刪晒」、「記低咗」、「改咗」、「幫你...」，收窄 `每次(?:餵|食|吃|服|\s*\d)` 避免無關語境誤判，並對齊 `BOUNDED_CLARIFICATION` 前置時間副詞與粵語句式（與 B-P2、B-P6 保持跨分支一致性）及於 [search-review-boundaries 測試](tests/search-review-boundaries.test.ts) 補測。
 2）修正 `PLAN.md` 誤植（`短パス` → `短路徑`），並明確釐清 `deliveryReview.require("review")` 之黏性義務、root budget Call 3/Call 4 鎖定與 `REQ-008 §3.2` 有界澄清短路徑之關係。
 3）對齊 [CI workflow](.github/workflows/search-review-boundaries-offline.yml) 與 [verify-search-review-boundaries-offline.sh](scripts/ci/verify-search-review-boundaries-offline.sh) 至 B-P2 安全離線範本（`pull_request` / `permissions: contents: read` / pinned SHAs / `--ignore-scripts` / `unshare --net` + `setpriv` / `summary-progress-contract.mjs` / `patch-package` / 三份 `tsconfig` 檢查，移除未經授權之 `push` 觸發與 bare `npm ci`）。
