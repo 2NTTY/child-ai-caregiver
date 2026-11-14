@@ -1,0 +1,35 @@
+name: cross-domain-snapshots-offline
+
+on:
+  pull_request:
+    branches:
+      - master
+      - main
+      - codex/req005-cross-domain-snapshots
+    paths:
+      - server/cross-domain-snapshot.ts
+      - server/family-document-reports.ts
+      - server/family-document-report-core.ts
+      - server/firestore-family-document-snapshots.ts
+      - server/firestore-account-export.ts
+      - server/firestore-voice-transcripts.ts
+      - tests/cross-domain-snapshots.test.ts
+      - scripts/verify-cross-domain-snapshot-mutations.mjs
+      - scripts/ci/verify-cross-domain-snapshots-offline.sh
+      - .github/workflows/cross-domain-snapshots-offline.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-cross-domain-snapshots-offline:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: bash scripts/ci/verify-cross-domain-snapshots-offline.sh
