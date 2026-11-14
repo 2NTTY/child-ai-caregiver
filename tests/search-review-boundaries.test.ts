@@ -95,6 +95,14 @@ test("REQ-008 §3.2 / §9: surface-rewritten medication, dosage, and operation c
     requiresChatDeliveryReview(makeDraft("多謝，已經幫你刪除所有記錄。", "clarification")),
     true,
   );
+  assert.equal(
+    requiresChatDeliveryReview(makeDraft("多謝，已刪晒所有記錄。", "clarification")),
+    true,
+  );
+  assert.equal(
+    requiresChatDeliveryReview(makeDraft("唔該，記低咗啦。", "clarification")),
+    true,
+  );
 
   const boundedClarification = "請問BB幾個月大？有沒有發燒？";
   assert.equal(isPureClarifyingQuestion(boundedClarification), true);

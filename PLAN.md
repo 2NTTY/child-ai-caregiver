@@ -313,8 +313,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 - **對應需求**：REQ-008 §3.2 (`:1349-1358`)、§9 (`:1445-1448`)。
 - **核心設計與邊界**：
-  - 於 `server/chat-delivery-review.ts` 補強 `CARE_DOMAIN_PATTERN`、`CARE_ADVISORY_PATTERN`、`MEDICAL_CLAIM_PATTERN` 及 `OPERATION_CLAIM_PATTERN`，封堵將用藥、劑量（如 `ml`、`mg`、`毫升`、`毫克`、`食藥`、`餵藥`、`藥水`）或操作主張包裝成問句／禮貌句之表面改寫繞過路徑，確保一律失敗關閉進入語義審核，同時維持真正有界澄清問句（如詢問年齡、是否發燒）的免審核短パス。
-  - 於 `server/product-agent-tools.ts`、`server/agent-source-tools.ts` 及 `server/product-agent.ts` 落實回合中審核義務（mid-turn review obligation）於同一根預算（root `AgentBudget`）之動態保留：當回合起初未被標記為必審，但在執行 `search_knowledge`、`read_knowledge_context`、`read_private_source` 或 `read_chat_photo` 取得證據後，立即呼叫 `deliveryReview.require("review")`；若剩餘模型呼叫額度足夠（至少 2 次），第 3 次呼叫自動鎖定為 `present_answer` 以預留第 4 次呼叫予 `delivery_review`；若剩餘額度不足以同時完成回答與獨立審核（僅剩 1 次），則拒絕未受審核的終端輸出並以 `delivery_review_budget`（`CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT`）安全收斂，絕不開立第二個執行回合或突破 4 次模型呼叫上限。
+  - 於 `server/chat-delivery-review.ts` 補強 `CARE_DOMAIN_PATTERN`、`CARE_ADVISORY_PATTERN`、`MEDICAL_CLAIM_PATTERN` 及 `OPERATION_CLAIM_PATTERN`（涵蓋粵語口語「已刪晒」、「記低咗」、「改咗」、「幫你...」及用藥劑量改寫問句），封堵將用藥、劑量（如 `ml`、`mg`、`毫升`、`毫克`、`食藥`、`餵藥`、`藥水`）或操作主張包裝成問句／禮貌句之表面改寫繞過路徑，確保一律失敗關閉進入語義審核，同時維持真正有界澄清問句（如詢問年齡、是否發燒）的免審核短路徑。
+  - 於 `server/product-agent-tools.ts`、`server/agent-source-tools.ts` 及 `server/product-agent.ts` 落實回合中審核義務（mid-turn review obligation）於同一根預算（root `AgentBudget`）之動態保留：當回合起初未被標記為必審，但在執行 `search_knowledge`、`read_knowledge_context`、`read_private_source` 或 `read_chat_photo` 取得證據後，立即呼叫 `deliveryReview.require("review")` 將 `obligation.required` 設為具黏性之義務；若剩餘模型呼叫額度足夠（至少 2 次），`reserveDeliveryReview` 自動將第 3 次呼叫鎖定為 `present_answer` 以預留第 4 次呼叫予 `delivery_review`（依 `REQ-008 §3.2`，只有無引用且屬嚴格有界 `isPureClarifyingQuestion` 或 `isPureGreetingOrSmallTalk` 之澄清／寒暄輸出方免耗用審核呼叫，任何實質照護回答或普通未引用陳述皆會進入第 4 次獨立審核）；若剩餘額度不足以同時完成回答與獨立審核（僅剩 1 次），則拒絕未受審核的終端輸出並以 `delivery_review_budget`（`CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT`）安全收斂，絕不開立第二個執行回合或突破 4 次模型呼叫上限。
 - **驗收限制聲明**：本分支僅於本地進行離線單元測試與型別檢查，未執行真實 Gemini/Vertex 調用、未連接真實資料庫或進行遠端推送。
 - **嚴格正向提交**：無 `git commit --amend`，維護 append-only 歷史完整性。
 - **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。

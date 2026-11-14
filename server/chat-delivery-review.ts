@@ -137,7 +137,7 @@ const CARE_ADVISORY_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?
 // caught by the blanket fallback. They never grant authority or clear a task obligation.
 const MEDICAL_CLAIM_PATTERN = /用藥|藥丸|藥水|餵藥|食藥|吃藥|服藥|劑量|\b\d+(?:\.\d+)?\s*(?:ml|mg|毫升|毫克)\b|阿士匹靈|撲熱息痛|布洛芬|麻疹|傷口|癒合|aspirin|ibuprofen|paracetamol|measles|wound|heal(?:ed|ing)/iu;
 const ORIGINAL_EVIDENCE_CLAIM_PATTERN = /(?:照片|相片|圖片|影像|錄音|錄影).{0,40}(?:顯示|證明|同意|確認)|(?:photo|image|recording|audio).{0,60}(?:shows?|proves?|proof|consent|agreed)/iu;
-const OPERATION_CLAIM_PATTERN = /(?:已(?:經)?|經已).{0,12}(?:完成|保存|儲存|刪除|修改|更新|發送|送出|安排|記住|存好|改好)|(?:already|successfully|I have|I've).{0,30}(?:saved|deleted|updated|sent|scheduled|changed)|(?:saved|deleted|updated|sent|scheduled).{0,20}(?:successfully|already)/iu;
+const OPERATION_CLAIM_PATTERN = /(?:已(?:經)?|經已|幫(?:你|您)).{0,12}(?:完成|保存|儲存|刪(?:除|晒|咗)|修改|改好|改咗|更新|發送|送出|安排|記住|記低|存好)|(?:保存|儲存|刪(?:除|晒)|修改|改好|更新|發送|送出|記住|記低)咗|(?:already|successfully|I have|I've).{0,30}(?:saved|deleted|updated|sent|scheduled|changed)|(?:saved|deleted|updated|sent|scheduled).{0,20}(?:successfully|already)/iu;
 
 function joinedDraftText(draft: ChatDeliveryDraft): string {
   return draft.paragraphs.map(paragraph => paragraph.text).join("\n").trim();
