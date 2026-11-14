@@ -24,10 +24,10 @@ export function OfficialHelpCards({ ids }: { ids: readonly OfficialHelpId[] }) {
 }
 
 const APPLICABILITY_NOTES: Record<NonNullable<AgentProgressSource['applicabilityStatus']>, string> = {
-  applicable: '已找到官方來源片段（尚待獨立核對回覆）',
   conditional: '需視乎條件適用（尚待獨立核對回覆）',
   requires_clarification: '需補充孩子資料以確定適用性（尚待獨立核對回覆）',
 };
+const DEFAULT_UNREVIEWED_NOTE = '已找到官方來源片段（尚待獨立核對回覆）';
 
 /** Progressive retrieved official source cards before final answer delivery; never contains draft answer text. */
 export function ProgressSourceCards({
@@ -44,7 +44,7 @@ export function ProgressSourceCards({
     {sources.map(source => {
       const dateText = formatProgressSourceDateText(source);
       return <View key={source.chunkId} testID="chat-progress-source-card" accessibilityLabel={`${source.publisher}：${source.title}`}>
-        <Text variant="labelSmall">{AGENT_PROGRESS_SOURCE_STAGE_LABELS[source.stage]}{source.applicabilityStatus ? ` · ${APPLICABILITY_NOTES[source.applicabilityStatus]}` : ''}</Text>
+        <Text variant="labelSmall">{AGENT_PROGRESS_SOURCE_STAGE_LABELS[source.stage]} · {source.applicabilityStatus ? APPLICABILITY_NOTES[source.applicabilityStatus] : DEFAULT_UNREVIEWED_NOTE}</Text>
         <Text variant="titleSmall">{source.publisher} · {source.title}</Text>
         {source.section && source.section !== source.title ? <Text variant="bodySmall">{source.section}</Text> : null}
         {dateText ? <Text variant="bodySmall">更新／檢查：{dateText}</Text> : null}

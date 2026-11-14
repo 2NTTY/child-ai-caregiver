@@ -6018,5 +6018,5 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 
 依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復：
 1）`B-P3-1`：`mergeAgentProgressSources` 現保證遲到的 `found` 不會以較舊／局部 `excerpt`、`title`、`section`、`publisher` 或 `applicabilityStatus` 覆寫已 `read` 條目（僅補全缺失 metadata），超過 `AGENT_PROGRESS_MAX_SOURCES = 6` 時優先保留 `read` 卡片並統一截斷於 6 筆（對齊後端、schema 與 UI）。
-2）`B-P3-2`：`toAgentProgressSource` 的 `fetchedAt` 改為 `nullable()`，缺日期時維持 `null` 而不偽造 `1970-01-01`；`OfficialHelpCards.tsx` 改用 `formatProgressSourceDateText` 且無日期時省略 `更新／檢查：` 列；`url` 嚴格限制僅允許 `https://`（非 HTTPS 置 `null` 且 schema 拒絕）。
+2）`B-P3-2`：`toAgentProgressSource` 的 `fetchedAt` 改為 `nullable()`，缺日期時維持 `null` 而不偽造 `1970-01-01`；`OfficialHelpCards.tsx` 改用 `formatProgressSourceDateText` 且無日期時省略 `更新／檢查：` 列；`url` 嚴格限制僅允許 `https://`（非 HTTPS 置 `null` 且 schema 拒絕）；同時自主拍板將未審核進度來源之 `applicabilityStatus` 嚴格限制為警示性質的 `'conditional' | 'requires_clarification'`，不在獨立審核完成前於進度事件傳遞 `'applicable'`。
 3）測試與 CI 對齊：`tests/agent-feedback-sources.test.ts` 改用 in-memory injected `fetch` 驗證完整 `createChatApi` → `handleChatRequest`/`handleProductAgentRequest` SSE 串流（無 loopback port、`blockedAttempts: 0`），並於 CI workflow 與 `scripts/ci/verify-search-source-progress-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 及 `summary-progress-contract.mjs` 驗證契約；`PLAN.md` 同步更正欄位名稱（`publisher`）與實測數字（64 離線 + 4 loopback）。

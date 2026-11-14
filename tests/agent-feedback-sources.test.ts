@@ -82,6 +82,12 @@ test('agentProgressSchema strictly validates progressive source cards and reject
   assert.equal(foundSource.stage, 'found');
   assert.equal(foundSource.publisher, '衛生署家庭健康服務');
   assert.equal(foundSource.sourceDateText, '2026年9月修訂');
+  assert.equal(foundSource.applicabilityStatus, undefined, 'pre-review progress source must not emit applicable status before delivery review');
+  assert.equal(
+    agentProgressSourceSchema.safeParse({ ...foundSource, applicabilityStatus: 'applicable' }).success,
+    false,
+    'unreviewed applicable status must be rejected by strict progress source schema',
+  );
   assert.equal(AGENT_PROGRESS_SOURCE_STAGE_LABELS.found, '已找到官方來源');
   assert.equal(AGENT_PROGRESS_SOURCE_STAGE_LABELS.read, '已讀取官方來源上下文');
   assert.match(AGENT_PROGRESS_SOURCE_DISCLAIMER, /尚未完成適用性與獨立安全核對/);

@@ -26,7 +26,7 @@ export const agentProgressSourceSchema = z.object({
   sourceUpdatedAt: z.string().min(1).max(64).nullable(),
   sourceDateText: z.string().min(1).max(120).nullable().optional(),
   stage: z.enum(['found', 'read']),
-  applicabilityStatus: z.enum(['applicable', 'conditional', 'requires_clarification']).optional(),
+  applicabilityStatus: z.enum(['conditional', 'requires_clarification']).optional(),
 }).strict();
 export type AgentProgressSource = z.infer<typeof agentProgressSourceSchema>;
 
@@ -76,7 +76,9 @@ export function toAgentProgressSource(
       : typeof chunk.sourcePublishedAt === 'string' && chunk.sourcePublishedAt.trim() ? chunk.sourcePublishedAt.trim() : null,
     ...(typeof chunk.sourceDateText === 'string' && chunk.sourceDateText.trim() ? { sourceDateText: chunk.sourceDateText.trim().slice(0, 120) } : {}),
     stage,
-    ...(chunk.applicabilityStatus ? { applicabilityStatus: chunk.applicabilityStatus } : {}),
+    ...(chunk.applicabilityStatus === 'conditional' || chunk.applicabilityStatus === 'requires_clarification'
+      ? { applicabilityStatus: chunk.applicabilityStatus }
+      : {}),
   });
   return parsed.success ? parsed.data : null;
 }
