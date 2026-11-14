@@ -42,6 +42,7 @@ import { firebasePhotoObjectDescriptorSchema, type FirebasePhotoObjectDescriptor
 import { firebaseErasureIntentHash } from './firebase-erasure-journal.ts';
 import { knowledgeHash, knowledgeChunkInputSchema, internalKnowledgeSource } from './knowledge-inputs.ts';
 import { knowledgeReviewHash } from './knowledge-review-assessment.ts';
+import { AGENT_HIGH_WATERMARK_SCOPE, agentHighWatermarkDocSchema } from './agent-high-watermark.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
 const uuid = z.uuid(), positive = z.number().int().positive().max(2147483647);
@@ -85,6 +86,7 @@ const domainSchemas = {
   'task-notification-outbox': { suffix: 'notification_outbox', schema: firestoreTaskNotificationOutboxSchema },
   'task-dispatch-scan': { suffix: 'task_dispatches', schema: firestoreTaskDispatchScanSchema },
   'task-dispatch-observation': { suffix: 'task_dispatches', schema: firestoreTaskDispatchObservationSchema },
+  'agent-high-watermark': { suffix: 'agent_metrics', schema: agentHighWatermarkDocSchema },
 } as const;
 const knowledgeSchemas = { 'knowledge-source': knowledge.source, 'knowledge-version': knowledge.version, 'knowledge-chunk': knowledge.chunk,
   'knowledge-lexical': knowledge.lexical, 'knowledge-vector': knowledge.vector, 'knowledge-watch': knowledgeRefresh.watch,
@@ -249,7 +251,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     const { kind, id, scope, recordVersion } = context;
     requireBinding(context.envelopeVersion === 1 && recordVersion !== undefined);
     parse(workRecoveryScopeSchema, scope);
-    if (!['photo-global-quota', 'task-dispatch-scan', 'platform-policy', 'admin-invitation', 'admin-receipt'].includes(kind)) requireBinding(scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
+    if (!['photo-global-quota', 'task-dispatch-scan', 'platform-policy', 'admin-invitation', 'admin-receipt', 'agent-high-watermark'].includes(kind)) requireBinding(scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
     const versionMatches = (value: number) => requireBinding(recordVersion === value);
     const taskRecipient = (userId: string) => userId === scope.ownerUserId
       || scope.ownerUserId === 'space:' + scope.workspaceId && !userId.startsWith('space:');
@@ -324,6 +326,12 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     else if (kind === 'task-notification-outbox') { const row = parse(firestoreTaskNotificationOutboxSchema, raw); requireBinding(row.id === id && row.reminderId === id && taskRecipient(row.recipientUserId) && scope.childId !== NIL); versionMatches(row.taskVersion); }
     else if (kind === 'task-dispatch-scan') { const row = parse(firestoreTaskDispatchScanSchema, raw); requireBinding(id === 'current' && sameScope(scope, FIRESTORE_TASK_DISPATCH_SCOPE)); versionMatches(row.revision); }
     else if (kind === 'task-dispatch-observation') { const row = parse(firestoreTaskDispatchObservationSchema, raw); requireBinding(row.taskName === id && scope.childId !== NIL); }
+    else if (kind === 'agent-high-watermark') {
+      const row = parse(agentHighWatermarkDocSchema, raw);
+      requireBinding(sameScope(scope, AGENT_HIGH_WATERMARK_SCOPE) && id.length >= 1 && id.length <= 64
+        && row.samples.every(sample => sample.runCategory === id));
+      versionMatches(1);
+    }
   }
   function knowledgeBinding(kind: FirestoreRestoreKnowledgeKind, id: string, raw: FirestoreRestoreValue): void {
     if (kind === 'knowledge-source') {
@@ -632,6 +640,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       case 'photo-operation': value = { ...parse(photos.operation, value), scope }; for (const name of Object.keys(metadata)) delete metadata[name]; metadata.scopeTag = photoTag(scope); break;
       case 'photo-child-quota': id = photoTag(scope); for (const name of Object.keys(metadata)) delete metadata[name]; metadata.scopeTag = id; break;
       case 'photo-global-quota': for (const name of Object.keys(metadata)) delete metadata[name]; break;
+      case 'agent-high-watermark': for (const name of Object.keys(metadata)) delete metadata[name]; break;
       case 'task-reminder': { const row = parse(firestoreTaskReminderSchema, value); Object.assign(metadata, { taskId: row.taskId, occurrenceId: row.occurrenceId }); break; }
       case 'task-notification-outbox': { const row = parse(firestoreTaskNotificationOutboxSchema, value); value = { ...row, state: row.state === 'leased' ? 'unknown' : row.state }; metadata.state = row.state === 'leased' ? 'unknown' : row.state; break; }
       case 'task-dispatch-scan': { const row = parse(firestoreTaskDispatchScanSchema, value); recordVersion = nextVersion(row.revision); value = { revision: recordVersion, cursor: null, lease: null }; break; }

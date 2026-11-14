@@ -35,6 +35,9 @@ TEST_FILES=(
   tests/model-settings-client.test.ts
   tests/model-settings-v3.test.ts
   frontend/scripts/model-settings-form.test.mjs
+  tests/firestore-voice.test.ts
+  tests/firestore-restore-codec.test.ts
+  tests/firestore-restore.test.ts
 )
 
 for source in "${TEST_FILES[@]}" "$GUARD" scripts/verify-soft-budget-mutations.mjs scripts/verify-policy-rounding-mutations.mjs tsconfig.json tsconfig.server.json frontend/tsconfig.json; do

@@ -31,6 +31,8 @@ import { createFirestoreOnlineStore } from "../server/firestore-online.ts";
 import { createFirestoreProductAgent } from "../server/firestore-product-agent.ts";
 import { readAiConfig } from "../server/ai-config.ts";
 import { SERVICE_POLICY_VERSION } from "../src/shared/account-service.ts";
+import { createFirestoreRestoreCodec } from "../server/firestore-restore-codec.ts";
+import { FIREBASE_BACKUP_COLLECTION_SUFFIXES } from "../server/firestore-backup.ts";
 
 test("centralized rounding contract rounds allowances down (floor) and reserves up (ceil)", () => {
   assert.equal(roundBudgetAllowance(64 * 0.25), 16);
@@ -607,4 +609,17 @@ test("createFirestoreProductAgent persists HighWatermarkMonitor samples across r
   assert.equal(alerts.length, 1);
   assert.equal(alerts[0]?.triggered, true);
   assert.equal(alerts[0]?.consecutiveHighStreak, 3);
+  assert.ok(FIREBASE_BACKUP_COLLECTION_SUFFIXES.includes("_agent_metrics"));
+  const metricRecord = [...f.records.entries()].find(([path]) => path.startsWith("hwm_prod_agent_metrics/"));
+  assert.ok(metricRecord);
+  const codec = createFirestoreRestoreCodec(options);
+  const decodedMetric = codec.decode({ path: metricRecord[0], data: metricRecord[1] });
+  assert.equal(decodedMetric.context.kind, "agent-high-watermark");
+  const transformedMetric = codec.transform(decodedMetric, {
+    generation: randomUUID(),
+    newEpochByWorkspace: new Map(),
+    photoDescriptors: new Map(),
+  });
+  assert.equal(transformedMetric.path, metricRecord[0]);
+  assert.equal(codec.decode(transformedMetric).context.kind, "agent-high-watermark");
 });

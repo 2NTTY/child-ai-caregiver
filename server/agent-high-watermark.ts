@@ -1,4 +1,25 @@
+import { z } from "zod";
 import { AGENT_HIGH_WATERMARK_DEFAULTS, roundConsumptionReserve } from "../src/shared/agent-run-limits.ts";
+
+export const AGENT_HIGH_WATERMARK_SCOPE = Object.freeze({
+  ownerUserId: "system:agent-high-watermark",
+  workspaceId: "00000000-0000-0000-0000-000000000000",
+  childId: "00000000-0000-0000-0000-000000000000",
+  storageEpoch: "00000000-0000-0000-0000-000000000000",
+});
+
+export const agentHighWatermarkDocSchema = z.object({
+  samples: z.array(z.object({
+    runCategory: z.string().min(1).max(64),
+    usedModelCalls: z.number().int().nonnegative(),
+    hardModelCalls: z.number().int().positive(),
+    usedToolCalls: z.number().int().nonnegative().optional(),
+    hardToolCalls: z.number().int().positive().optional(),
+    usedQueryEmbeddings: z.number().int().nonnegative().optional(),
+    hardQueryEmbeddings: z.number().int().positive().optional(),
+    repeatedCallSignature: z.string().min(1).max(200).optional(),
+  }).strict()).max(100),
+}).strict();
 
 export interface HighWatermarkSample {
   runCategory: string;

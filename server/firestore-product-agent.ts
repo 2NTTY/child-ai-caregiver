@@ -1,5 +1,9 @@
-import { createHighWatermarkMonitor, type HighWatermarkAlert } from './agent-high-watermark.ts';
-import { z } from 'zod';
+import {
+  AGENT_HIGH_WATERMARK_SCOPE,
+  agentHighWatermarkDocSchema,
+  createHighWatermarkMonitor,
+  type HighWatermarkAlert,
+} from './agent-high-watermark.ts';
 import { createChatFileAgentReader } from './chat-file-agent.ts';
 import { createMixedTaskBatches } from './firestore-mixed-task-batches.ts';
 import { createFirestoreVoiceTranscripts } from './firestore-voice-transcripts.ts';
@@ -89,32 +93,14 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const nativeSessionService = new FirestoreSessionService({ ...options, namespace: options.namespace + '_adk' });
   const rootBudget = new FirestoreRootBudget({ ...options, namespace: options.namespace + '_root_budget' });
   const admission = createFirestoreAgentAdmission(options);
-  const hwmScope = {
-    ownerUserId: 'system:agent-high-watermark',
-    workspaceId: '00000000-0000-0000-0000-000000000000',
-    childId: '00000000-0000-0000-0000-000000000000',
-    storageEpoch: '00000000-0000-0000-0000-000000000000',
-  };
   const hwmData = new FirestoreDomainData(options);
-  const hwmDocSchema = z.object({
-    samples: z.array(z.object({
-      runCategory: z.string().min(1).max(64),
-      usedModelCalls: z.number().int().nonnegative(),
-      hardModelCalls: z.number().int().positive(),
-      usedToolCalls: z.number().int().nonnegative().optional(),
-      hardToolCalls: z.number().int().positive().optional(),
-      usedQueryEmbeddings: z.number().int().nonnegative().optional(),
-      hardQueryEmbeddings: z.number().int().positive().optional(),
-      repeatedCallSignature: z.string().min(1).max(200).optional(),
-    }).strict()).max(100),
-  }).strict();
   const highWatermarkMonitor = createHighWatermarkMonitor({
     async loadWindow(category) {
       try {
         return await options.database.runTransaction(async tx => {
           const row = await tx.get(hwmData.ref('agent_metrics', 'agent-high-watermark', category));
           if (!row.exists) return [];
-          return hwmData.open('agent-high-watermark', category, hwmScope, hwmDocSchema, row).samples;
+          return hwmData.open('agent-high-watermark', category, AGENT_HIGH_WATERMARK_SCOPE, agentHighWatermarkDocSchema, row).samples;
         }, { readOnly: true });
       } catch {
         return [];
@@ -124,7 +110,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
       try {
         await options.database.runTransaction(async tx => {
           const ref = hwmData.ref('agent_metrics', 'agent-high-watermark', category);
-          tx.set(ref, hwmData.seal('agent-high-watermark', category, hwmScope, hwmDocSchema, { samples: [...samples] }));
+          tx.set(ref, hwmData.seal('agent-high-watermark', category, AGENT_HIGH_WATERMARK_SCOPE, agentHighWatermarkDocSchema, { samples: [...samples] }));
         });
       } catch {
         // Durable metrics persistence failures must not fail product runs.
