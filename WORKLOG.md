@@ -6014,9 +6014,15 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
   - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
 - Limitations / Blockers：依 `REQ-001 §4.3:184`，入口位置與自動展開觸發條件屬待 Owner (`2NTTY`) 決定之設計事項，本分支嚴格保持 LOCAL HOLD；僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`），未執行真實模型、資料庫、雲端 CI 或 Android 實機驗收，未執行 `git push` 或建立 PR。
 
-### 2026-11-14　B-P5 R1 審核修復與設計定案補充
+### 2026-11-14　B-P5 R1 審核修復補充（保持候選狀態）
 
-依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復並自主拍板定案 UI 位置與觸發條件：
-1）將 `URGENT_EMERGENCY_HELP_PATTERN` 的 `999` 改為 `(?<!\d)999(?!\d)`，並將 `抽筋` 收窄為 `(?<!好|笑到)抽筋(?!運動)`，鎖定 `"1999年出世"`、`"對你好抽筋運動"`、`"笑到抽筋"` 不誤觸發，同時確保 `"999"`、`"打999"`、`"BB發燒全身抽筋點算？"` 正常命中 `'emergency-hk-v1'`。
-2）自主拍板定案 `REQ-001 §4.3:184` 之位置與觸發設計：於 [chatScreen.tsx](frontend/src/screens/chatScreen.tsx) 採用頂欄常駐切換按鈕（`official-help-entry-button`）配搭 `timelineFooter` 獨立面板（`officialHelpPanel`，抽離 `{child ? ... : null}`），確保未選擇孩子（`!child`）時仍可隨時手動展開或由 `chatDraft`／最新未回覆訊息確定性主動浮現官方求助卡片。
-3）修正文件卡片 ID 筆誤（為 `'emergency-hk-v1'` 與 `'medical-consult-hk-v1'`，非 `emergency_care_999`／`medication_safety_fhs`），並將 CI workflow 與 `scripts/ci/verify-search-help-entry-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 及 `summary-progress-contract.mjs` 驗證契約。
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復並維持候選定位：
+1）於 `src/shared/agent-feedback.ts` 調整確定性規則 `matchOfficialHelpForText`，加入 `(?<!\d)999(?!\d)` 與抽筋／笑到抽筋語境邊界，並保留於 Owner (`2NTTY`) 審批前之候選驗證。
+2）於 [chatScreen.tsx](frontend/src/screens/chatScreen.tsx) 提供頂欄切換按鈕（`official-help-entry-button`）配搭 `timelineFooter` 獨立面板（`officialHelpPanel`）作為 `REQ-001 §4.3:184` 之候選 UI 方案，待 Owner (`2NTTY`) 最終拍板，不作未經批核之定案宣稱。
+3）修正文件卡片 ID 筆誤（`'emergency-hk-v1'` 與 `'medical-consult-hk-v1'`），並將 CI workflow 與 `scripts/ci/verify-search-help-entry-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 及 `summary-progress-contract.mjs` 驗證契約。
+
+### 2026-11-15　B-P5 R2 審核修復（`matchOfficialHelpForText` 邊界與 LOCAL HOLD 治理回正）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R2.md`（F2–F3）進行 forward-only 修復：
+1）**F2 急症規則修復**：`matchOfficialHelpForText` 先行執行 `NFKC` 正規化，解決全形 `打９９９` 漏報；移除過度抑制真急症的 `(?<!好)` 前置排除（確保 `BB隻腳好抽筋`、`BB剛好抽筋`、`BB啱啱好抽筋` 穩定命中 `'emergency-hk-v1'`，同時維持 `笑到抽筋`／`搞笑到抽筋` 玩笑慣用語排除）；收緊 `999` 邊界護欄，防止 `+852 999 12345`／`電話 999 12345` 誤觸發緊急提示。
+2）**F3 治理回正**：明確撤回未獲 Owner (`2NTTY`) 批准收據之「自主拍板／定案」措辭，恢復標示 `REQ-001 §4.3:184` UI 位置與觸發規則僅屬 **LOCAL HOLD 候選設計**，待 Owner (`2NTTY`) 決定後方可進入定案及開 PR 流程。

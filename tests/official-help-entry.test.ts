@@ -24,6 +24,23 @@ test('matchOfficialHelpForText deterministically identifies emergency and medica
   }
 
   for (const text of [
+    '急症，BB高燒不退',
+    'BB抽搐點算好',
+    'BB發燒全身抽筋點算？',
+    'BB隻腳好抽筋',
+    'BB剛好抽筋',
+    'BB啱啱好抽筋',
+    '呼吸困難抖唔到氣',
+    '999',
+    '打999',
+    '打９９９',
+    'My baby has difficulty breathing, should I call 999?',
+  ]) {
+    const matched = matchOfficialHelpForText(text);
+    assert.ok(matched.includes('emergency-hk-v1'), `must match emergency-hk-v1 for: ${text}`);
+  }
+
+  for (const text of [
     '請問退燒藥水幾多 ml 先啱？',
     '醫生開咗撲熱息痛同抗生素，點樣餵藥？',
     '想問母嬰健康院同埋安全用藥劑量問題',
@@ -41,8 +58,12 @@ test('matchOfficialHelpForText deterministically identifies emergency and medica
     '   ',
     '你好！',
     '1999年出世',
-    '對你好抽筋運動',
+    '+852 999 12345',
+    '852-999-1234',
+    '電話 999 12345',
+    '舒緩拉筋運動',
     '個故仔好好笑，笑到抽筋',
+    '搞笑到抽筋',
     '今日下晝飲咗 120ml 奶同埋換咗兩次片',
     '請問六個月大加固食咩蔬果好？',
   ]) {

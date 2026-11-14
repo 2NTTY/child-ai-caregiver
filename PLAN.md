@@ -309,14 +309,14 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **文件目的地整併**：依據 `AGENTS.md#document-updates`，專案以 `PLAN.md#active` 及 `STATUS.md` 為權威資訊入口。先前之獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除，其內容已完整整併至本節。
 - **單一作者署名**：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`。
 
-### Slice B（B-P5）：不依賴 AI 回合的固定官方求助入口 (`codex/search-help-entry`)
+### Slice B（B-P5）：不依賴 AI 回合的固定官方求助入口候選 (`codex/search-help-entry` — LOCAL HOLD)
 
 - **對應需求**：REQ-001 §4.3 (`:178-184`)。
-- **核心設計與拍板定案**：
-  - 針對 `REQ-001 §4.3:184` 之入口位置與主動浮現時機，已自主拍板定案為「頂欄常駐切換按鈕 + 時間軸底部（`timelineFooter`）主動／手動雙模式面板」：
-    1. **位置定案**：於 `chat-top-toolbar` 放置常駐「官方求助入口」按鈕（`testID="official-help-entry-button"`），並將 `officialHelpPanel` 抽離 `{child ? ... : null}` 掛載於 `timelineFooter`，確保無論已選或未選孩子（`!child`）、發生錯誤或離線，皆可於時間軸底部查看 `OfficialHelpCards`（`emergency-hk-v1`、`medical-consult-hk-v1`）。
-    2. **主動浮現與觸發定案**：於 `src/shared/agent-feedback.ts` 以純確定性規則 `matchOfficialHelpForText` 檢查輸入框草稿（`chatDraft`）與最新未獲回覆之用戶訊息（`latestPendingUserMessageText`），命中時毋須點擊或等待 AI 即時於 `timelineFooter` 浮現緊急提示與對應求助卡；同時以 `(?<!\d)999(?!\d)` 與 `(?<!好|笑到)抽筋(?!運動)` 排除「1999年出世」「對你好抽筋運動」等非醫療語境誤報，保留「BB抽筋」「發燒抽筋」「999」等真急症觸發。
-- **驗收限制聲明**：本分支保持於本地（未執行 `git push` 或建立 PR），已完成本地離線測試（53/53 PASS）與三份型別檢查，未執行真實模型調用或連接真實資料庫；既有上游 `tests/agent-feedback.test.ts` 第 58 行含 `127.0.0.1` loopback HTTP listener，於無 socket 阻擋之本機環境單獨複驗（4/4 通過）。
+- **治理狀態（LOCAL HOLD）**：依 `REQ-001 §4.3:184`，入口UI位置與自動展開觸發時機須由 Owner (`2NTTY`) 決定並批核；**在未取得 Owner 明確批准收據前，本分支所有 UI 與觸發規則僅屬「候選設計（Candidate）」，嚴禁自行宣稱拍板定案，並維持 LOCAL HOLD 不可推送或開 PR**。
+- **候選實作摘要**：
+  1. **候選位置**：於 `chat-top-toolbar` 放置常駐「官方求助入口」切換按鈕（`testID="official-help-entry-button"`），並將 `officialHelpPanel` 抽離 `{child ? ... : null}` 掛載於 `timelineFooter`，確保無論已選或未選孩子（`!child`）、發生錯誤或離線，皆可於時間軸底部查看 `OfficialHelpCards`（`emergency-hk-v1`、`medical-consult-hk-v1`）。
+  2. **候選觸發規則**：於 `src/shared/agent-feedback.ts` 以確定性規則 `matchOfficialHelpForText` 先作 `NFKC` 正規化再比對輸入框草稿與最新未獲回覆用戶訊息：涵蓋全形 `打９９９`、真急症句（含 `BB隻腳好抽筋`、`BB剛好抽筋`、`BB啱啱好抽筋`），同時以電話號碼邊界護欄排除 `+852 999 12345`／`1999年出世`，並僅排除明確玩笑慣用語（`笑到抽筋`、`搞笑到抽筋`）。
+- **驗收限制聲明**：本分支保持於本地 HOLD（未執行 `git push` 或建立 PR），已完成本地離線測試與三份型別檢查，未執行真實模型調用、真實資料庫或 Owner UI 審批；既有上游 `tests/agent-feedback.test.ts` 第 58 行含 `127.0.0.1` loopback HTTP listener，於無 socket 阻擋之本機環境單獨複驗（4/4 通過）。
 - **嚴格正向提交**：無 `git commit --amend`，維護 append-only 歷史完整性。
 - **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。
 
