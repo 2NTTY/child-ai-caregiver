@@ -131,13 +131,20 @@ export const SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS = new Set<string>([
 ]);
 
 /** Care-domain and advisory markers. Used only to force review, never to grant a skip. */
-const CARE_DOMAIN_PATTERN = /新生兒|嬰兒|寶寶|幼兒|BB\b|月齡|個月大|個月以下|月以下|加鹽|餵食|餵奶|服藥|劑量|體溫|發燒|疫苗|母乳|配方奶|照護建議|治療|就醫|症狀|危及生命|蜂蜜|蜜糖|止咳|退燒|腹瀉|固體食物|加固|營養|藥物|抗生素|newborns?|infants?|babies|baby\b|toddlers?|fever|vaccine|dosage|medication|breast\s*milk|formula\s*milk|honey|cough|diarrh(?:oa|ea)|solid foods?|nutrition|antibiotics?/iu;
-const CARE_ADVISORY_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?|不要給|不可給|可以每天|唔好畀|唔可以畀|唔好食|唔可以食|每日(?:都)?(?:要|可以)|趴低|瞓覺時|should(?:\s+not)?|must(?:\s+not)?|recommend(?:ed|s)?|don'?t\s+give|do\s+not\s+give|avoid\s+giving|try\s+(?:to\s+)?giv(?:e|ing)|would\s+you\s+(?:try|give|put)|giv(?:e|ing)\s+(?:\w+\s+){0,3}(?:baby|infant|child|newborn|孩子|BB)|put\s+(?:your\s+)?(?:child|baby|infant).{0,40}(?:sleep|stomach)|you\s+can\s+give|every\s+day|on\s+their\s+stomach/iu;
+const CARE_DOMAIN_PATTERN = /新生兒|嬰兒|寶寶|幼兒|BB\b|月齡|個月大|個月以下|月以下|加鹽|餵食|餵奶|餵藥|食藥|吃藥|服藥|藥水|劑量|毫升|毫克|\b\d+(?:\.\d+)?\s*(?:ml|mg|毫升|毫克)\b|體溫|發燒|疫苗|母乳|配方奶|照護建議|治療|就醫|症狀|危及生命|蜂蜜|蜜糖|止咳|退燒|腹瀉|固體食物|加固|營養|藥物|抗生素|newborns?|infants?|babies|baby\b|toddlers?|fever|vaccine|dosage|medication|syrup|breast\s*milk|formula\s*milk|honey|cough|diarrh(?:oa|ea)|solid foods?|nutrition|antibiotics?/iu;
+const CARE_ADVISORY_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?|不要給|不可給|可以每天|唔好畀|唔可以畀|唔好食|唔可以食|每日(?:都)?(?:要|可以)|每日\s*[\d一二三四五六七八九十兩]+\s*次|每\s*[\d一二三四五六七八九十兩]+\s*(?:小時|個?鐘)\s*(?:[\d一二三四五六七八九十兩半]|餵|食|吃|服)|每次(?:\s*(?:餵|食|吃|服|飲|用|塗|搽|滴|吸|\d|半(?:\s*(?:粒|片|包|滴|茶?匙|湯?匙|藥匙|顆|丸|支|劑|份|毫升|毫克|ml|mg))?)|[\s約]*[一二三四五六七八九十兩幾]+\s*(?:粒|片|包|滴|茶?匙|湯?匙|藥匙|顆|丸|支|劑|份|次|毫升|毫克|ml|mg))|藥(?:要|可以|洗唔洗)?(?:食|服|餵)|(?:食|服|餵)藥|趴低|瞓覺時|\b\d+(?:\.\d+)?\s*(?:ml|mg|毫升|毫克)\b|should(?:\s+not)?|must(?:\s+not)?|recommend(?:ed|s)?|don'?t\s+give|do\s+not\s+give|avoid\s+giving|try\s+(?:to\s+)?giv(?:e|ing)|would\s+you\s+(?:try|give|put)|giv(?:e|ing)\s+(?:\w+\s+){0,3}(?:baby|infant|child|newborn|孩子|BB)|put\s+(?:your\s+)?(?:child|baby|infant).{0,40}(?:sleep|stomach)|you\s+can\s+give|every\s+day|on\s+their\s+stomach/iu;
 // Positive backstops for existing medical/original-evidence/receipt cases formerly
 // caught by the blanket fallback. They never grant authority or clear a task obligation.
-const MEDICAL_CLAIM_PATTERN = /用藥|藥丸|阿士匹靈|撲熱息痛|布洛芬|麻疹|傷口|癒合|aspirin|ibuprofen|paracetamol|measles|wound|heal(?:ed|ing)/iu;
+const MEDICAL_CLAIM_PATTERN = /用藥|藥丸|藥水|餵藥|食藥|吃藥|服藥|劑量|\b\d+(?:\.\d+)?\s*(?:ml|mg|毫升|毫克)\b|每次(?:\s*(?:\d|半|[一二三四五六七八九十兩幾]+)\s*(?:粒|片|包|滴|茶?匙|湯?匙|藥匙|顆|丸|支|劑|份|毫升|毫克|ml|mg))|阿士匹靈|撲熱息痛|布洛芬|麻疹|傷口|癒合|aspirin|ibuprofen|paracetamol|measles|wound|heal(?:ed|ing)/iu;
 const ORIGINAL_EVIDENCE_CLAIM_PATTERN = /(?:照片|相片|圖片|影像|錄音|錄影).{0,40}(?:顯示|證明|同意|確認)|(?:photo|image|recording|audio).{0,60}(?:shows?|proves?|proof|consent|agreed)/iu;
-const OPERATION_CLAIM_PATTERN = /(?:已(?:經)?|經已|幫(?:你|您)).{0,12}(?:完成|保存|儲存|刪(?:除|晒|咗)|修改|改好|改咗|更新|發送|送出|安排|記住|記低|存好)|(?:保存|儲存|刪(?:除|晒)|修改|改好|更新|發送|送出|記住|記低)咗|(?:already|successfully|I have|I've).{0,30}(?:saved|deleted|updated|sent|scheduled|changed)|(?:saved|deleted|updated|sent|scheduled).{0,20}(?:successfully|already)/iu;
+const OPERATION_CLAIM_PATTERN = /(?:已(?:經)?|經已|幫(?:你|您)).{0,12}(?:完成|保存|儲存|刪(?:除|晒|咗)?|修改|更改|改好|改咗?|更新|發送|送出|安排|記(?:住|低|錄|咗)?|紀錄|存好|清除|清空|取消|移除|重設|設定|標記)|(?:保存|儲存|存好|刪(?:除|晒)?|修改|更改|改好|改|更新|發送|送出|安排|記(?:住|低|錄)?|紀錄|取消|移除|清除|清空|重設|復原|設定|設好|標記|完成)(?:咗|了)|刪晒|(?:already|successfully|I have|I've).{0,30}(?:saved|deleted|updated|sent|scheduled|changed)|(?:saved|deleted|updated|sent|scheduled).{0,20}(?:successfully|already)/iu;
+const USER_DOSING_REQUEST_PATTERN = /(?:點(?:樣)?(?:食|餵|服|用)|食幾多|餵幾多|服幾多|飲幾多|用幾多|劑量|幾多\s*(?:ml|mg|毫升|毫克|粒|片|包|滴|匙)|藥(?:物|水|丸|粉)?|退燒藥|抗生素|撲熱息痛|布洛芬|阿士匹靈|dosage|dose|medication|how\s+much.{0,20}(?:give|take|medicine))/iu;
+const DRAFT_DOSING_FRAGMENT_PATTERN = /(?:每次|每日|每天|每\s*[\d一二三四五六七八九十兩半]+\s*(?:小時|個?鐘|次)|[\d一二三四五六七八九十兩半]+(?:\.\d+)?\s*(?:粒|片|包|滴|茶?匙|湯?匙|藥匙|顆|丸|支|劑|份|次|ml|mg|毫升|毫克))/iu;
+
+function draftMatchesUserDosingContext(draft: ChatDeliveryDraft, text: string): boolean {
+  return Boolean(draft.userRequest && USER_DOSING_REQUEST_PATTERN.test(draft.userRequest)
+    && DRAFT_DOSING_FRAGMENT_PATTERN.test(text));
+}
 
 function joinedDraftText(draft: ChatDeliveryDraft): string {
   return draft.paragraphs.map(paragraph => paragraph.text).join("\n").trim();
@@ -192,7 +199,7 @@ export function draftLooksLikeSubstantiveCareAdvice(draft: ChatDeliveryDraft): b
   if (!text) return false;
   // Pure clarifies may mention domain child words without being advice.
   if (isPureClarifyingQuestion(text)) return false;
-  return CARE_DOMAIN_PATTERN.test(text) || CARE_ADVISORY_PATTERN.test(text) || MEDICAL_CLAIM_PATTERN.test(text);
+  return CARE_DOMAIN_PATTERN.test(text) || CARE_ADVISORY_PATTERN.test(text) || MEDICAL_CLAIM_PATTERN.test(text) || draftMatchesUserDosingContext(draft, text);
 }
 
 /**
@@ -204,7 +211,7 @@ export function draftLooksLikeDirectiveCareAdvice(draft: ChatDeliveryDraft): boo
   const text = joinedDraftText(draft);
   if (!text) return false;
   if (isPureClarifyingQuestion(text)) return false;
-  return CARE_ADVISORY_PATTERN.test(text);
+  return CARE_ADVISORY_PATTERN.test(text) || draftMatchesUserDosingContext(draft, text);
 }
 
 const SCOPE_REFUSAL_OR_LIMITATION_PATTERN = /(?:超出|不屬(?:於)?|並非|不是|未能(?:提供|回答|協助|處理|判定)|無法(?:回答|提供|協助|處理|評估|判斷)|暫無(?:相關|涵蓋|足夠)|暫未(?:涵蓋|提供|收錄)|沒有(?:相關|適用|足夠|涵蓋)|不提供|不協助|僅限|只協助|只處理|只提供|outside|out of scope|cannot (?:answer|assist|help|advise)|not covered|unable to)/iu;

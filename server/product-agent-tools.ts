@@ -360,6 +360,7 @@ export function createProductAgentTools(options: {
   const permitted = async () => authorize();
   function acceptPresentedAnswer(parsed: AgentAnswer) {
     const candidateDraft: ChatDeliveryDraft = {
+      ...(options.trustedUserMessage !== undefined ? { userRequest: options.trustedUserMessage } : {}),
       kind: parsed.kind,
       visibility: options.visibility === "family" ? "family" : "private",
       serverSubstitutedSourceText: false,
