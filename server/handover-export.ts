@@ -6,6 +6,7 @@ import type { HandoverClassExportCommand } from '../src/shared/handover-jobs.ts'
 import { HANDOVER_SECTIONS, handoverHeaderSchema, handoverNotificationPreferencesSchema, validHandoverDocumentPins, type HandoverHeader, type HandoverDocumentChoice, type HandoverCoverage } from '../src/shared/handover.ts';
 import { HandoverArchiveError, writeHandoverArchive, waitForHandoverStep, handoverLimits, type HandoverEntryInput, type HandoverLimits } from './handover-archive.ts';
 import { avatarTransferSchema } from './handover-import.ts';
+import { advanceResumableExportBatch, type ExportBatchStage, type ResumableExportState } from './cross-domain-snapshot.ts';
 import { canonicalJson } from './online-routing.ts';
 import { datedParent, handoverPeriodMatch, supportsHandoverPeriod } from './handover-period.ts';
 import { datedConcernPages } from './handover-concern-period.ts';
@@ -78,19 +79,62 @@ export async function writePersonalHandoverPackage(input: {
   const datedMedia = header.selection.modules.includes('attachments') && (header.selection.period || choices.some(pin => isAttachmentHead(pin.section))) ? new DatedPackageMedia() : null;
   let ordinal = 0, pageCount = 0;
   const path = (kind: 'data' | 'attachments') => `${kind}/${String(++ordinal).padStart(8, '0')}.${kind === 'data' ? 'json' : 'bin'}`;
+function sectionExportStage(section: string): ExportBatchStage {
+  if (section === 'care' || section === 'care_history' || section === 'records' || section.startsWith('memory_') || section === 'instructions' || section === 'summary_history' || section.startsWith('chat')) return 'care_records';
+  if (section === 'tasks' || section === 'task_history' || section.startsWith('visit_preparation') || section.startsWith('document')) return 'tasks';
+  if (section.startsWith('growth')) return 'growth';
+  if (section.startsWith('concern')) return 'concerns';
+  if (section.startsWith('voice') || section.startsWith('photo') || section.startsWith('file')) return 'voice';
+  return 'profile';
+}
+
   async function* pages(section: string, childId?: string, documentFilter?: PackageDocumentFilter) {
     let cursor: string | undefined;
     const mediaFilter: PackageMediaFilter | undefined = datedMedia && childId && (isAttachmentHead(section) || isAttachmentSupplement(section))
       ? (kind, id) => datedMedia.permitsBytes(childId, kind, id) : undefined;
+    const exportStage = sectionExportStage(section);
+    let pageOffset = 0;
+    let batchState: ResumableExportState = {
+      scopeVersion,
+      stage: exportStage,
+      afterId: null,
+      done: false,
+      items: [],
+      expectedStages: [exportStage],
+    };
     do {
       signal.throwIfAborted(); if (++pageCount > 10000) fail('package_size_exceeded');
       const page = await waitForHandoverStep(input.exporter.page(input.ownerUserId, { section, ...(childId ? { childId } : {}), scopeVersion, ...(cursor ? { cursor } : {}) }, mediaFilter,
         { includeSummaryPeriod: section === 'summary_history' && Boolean(header.selection.period), documentFilter }), signal);
       if (page.scopeVersion !== scopeVersion || page.section !== section || page.complete !== (page.nextCursor === null)
         || page.nextCursor && page.nextCursor === cursor) fail('export_scope_changed');
+      const isHistorySection = section.includes('history') || section.includes('version');
+      const batchItems = page.items.map((raw, index) => {
+        const record = raw && typeof raw === 'object' ? raw as Record<string, unknown> : null;
+        const rawId = typeof record?.id === 'string' && record.id.length > 0 ? record.id : `anon-${pageOffset + index}`;
+        const rawVersion = typeof record?.version === 'number' || typeof record?.version === 'string' ? `:v${record.version}` : '';
+        const itemId = isHistorySection ? `${section}:${rawId}${rawVersion}:${pageOffset + index}` : `${section}:${rawId}`;
+        return {
+          id: itemId,
+          stage: exportStage,
+          payloadHash: createHash('sha256').update(canonicalJson(raw)).digest('hex'),
+        };
+      });
+      pageOffset += page.items.length;
+      const advanced = advanceResumableExportBatch(batchState, {
+        scopeVersion: page.scopeVersion,
+        stage: exportStage,
+        items: batchItems,
+        nextAfterId: page.nextCursor,
+        nextStage: null,
+        hasMore: Boolean(page.nextCursor),
+      });
+      if (advanced.status === 'invalidated') fail('export_scope_changed');
+      batchState = advanced.state;
       yield page;
       cursor = page.nextCursor ?? undefined;
     } while (cursor);
+    if (!batchState.done) fail('export_scope_changed');
   }
   async function* entries(): AsyncGenerator<HandoverEntryInput> {
     const children: unknown[] = [], wanted = new Set(header.selection.childIds);

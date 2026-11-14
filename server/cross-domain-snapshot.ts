@@ -75,10 +75,32 @@ export function evaluateCrossDomainSnapshot(
   currentAuthorityVersion: string,
   entries: readonly CrossDomainSnapshotEntry[],
 ): CrossDomainSnapshotEvaluation {
+  if (!watermark.authorityVersion || typeof currentAuthorityVersion !== "string") {
+    return {
+      status: "stale",
+      reason: "authority_changed",
+      watermark,
+      entriesByDomain: null,
+      counts: null,
+      excludedPostWatermarkCount: 0,
+      truncatedDomains: [],
+    };
+  }
   if (currentAuthorityVersion !== watermark.authorityVersion) {
     return {
       status: "stale",
       reason: "authority_changed",
+      watermark,
+      entriesByDomain: null,
+      counts: null,
+      excludedPostWatermarkCount: 0,
+      truncatedDomains: [],
+    };
+  }
+  if (!Number.isFinite(watermark.snapshotAtMs) || watermark.snapshotAtMs < 0) {
+    return {
+      status: "stale",
+      reason: "concurrent_mutation_in_window",
       watermark,
       entriesByDomain: null,
       counts: null,
@@ -97,6 +119,23 @@ export function evaluateCrossDomainSnapshot(
   let excludedPostWatermarkCount = 0;
 
   for (const entry of entries) {
+    if (
+      !Number.isFinite(entry.createdAtMs) ||
+      entry.createdAtMs < 0 ||
+      !Number.isFinite(entry.updatedAtMs) ||
+      entry.updatedAtMs < 0 ||
+      entry.updatedAtMs < entry.createdAtMs
+    ) {
+      return {
+        status: "stale",
+        reason: "concurrent_mutation_in_window",
+        watermark,
+        entriesByDomain: null,
+        counts: null,
+        excludedPostWatermarkCount,
+        truncatedDomains: [],
+      };
+    }
     if (entry.createdAtMs > watermark.snapshotAtMs) {
       excludedPostWatermarkCount += 1;
       continue;
@@ -183,6 +222,7 @@ export function accumulateEncryptedStatisticsFailClosed(
   const totalsByKind: Record<string, number> = {};
   let scannedCount = 0;
 
+  const seenRecords = new Map<string, string>();
   for (const envelope of envelopes) {
     scannedCount += 1;
     if (envelope.plaintextLeak !== undefined) {
@@ -195,6 +235,7 @@ export function accumulateEncryptedStatisticsFailClosed(
         unreadableRecordIds: [envelope.recordId],
       };
     }
+    const recordKey = `${envelope.domain}:${envelope.recordId}`;
     if (!envelope.ciphertext || !envelope.ciphertextSha256) {
       return {
         status: "invalidated",
@@ -216,13 +257,35 @@ export function accumulateEncryptedStatisticsFailClosed(
         unreadableRecordIds: [envelope.recordId],
       };
     }
+    const priorDigest = seenRecords.get(recordKey);
+    if (priorDigest !== undefined) {
+      if (priorDigest !== envelope.ciphertextSha256) {
+        return {
+          status: "invalidated",
+          reason: "integrity_mismatch",
+          partialCountsSuppressed: true,
+          totalsByKind: null,
+          scannedCount,
+          unreadableRecordIds: [envelope.recordId],
+        };
+      }
+      scannedCount -= 1;
+      continue;
+    }
+    seenRecords.set(recordKey, envelope.ciphertextSha256);
     let metric: DecryptedMetric | null = null;
     try {
       metric = decrypt(envelope);
     } catch {
       metric = null;
     }
-    if (!metric || !Number.isFinite(metric.value) || metric.value < 0) {
+    if (
+      !metric ||
+      typeof metric.kind !== "string" ||
+      metric.kind.length === 0 ||
+      !Number.isSafeInteger(metric.value) ||
+      metric.value < 0
+    ) {
       return {
         status: "invalidated",
         reason: "decrypt_failed",
@@ -232,7 +295,18 @@ export function accumulateEncryptedStatisticsFailClosed(
         unreadableRecordIds: [envelope.recordId],
       };
     }
-    totalsByKind[metric.kind] = (totalsByKind[metric.kind] ?? 0) + metric.value;
+    const nextTotal = (totalsByKind[metric.kind] ?? 0) + metric.value;
+    if (!Number.isSafeInteger(nextTotal)) {
+      return {
+        status: "invalidated",
+        reason: "decrypt_failed",
+        partialCountsSuppressed: true,
+        totalsByKind: null,
+        scannedCount,
+        unreadableRecordIds: [envelope.recordId],
+      };
+    }
+    totalsByKind[metric.kind] = nextTotal;
   }
 
   return {
@@ -268,6 +342,7 @@ export interface ResumableExportState {
   readonly afterId: string | null;
   readonly done: boolean;
   readonly items: readonly ExportBatchItem[];
+  readonly expectedStages?: readonly ExportBatchStage[];
 }
 
 export interface ResumableExportPage {
@@ -287,7 +362,12 @@ export type ResumableExportAdvance =
     }
   | {
       status: "invalidated";
-      reason: "export_scope_changed" | "stage_regression";
+      reason:
+        | "export_scope_changed"
+        | "stage_regression"
+        | "stage_skipped"
+        | "item_hash_conflict"
+        | "incomplete_export_stages";
       state: ResumableExportState;
     };
 
@@ -298,33 +378,99 @@ export function advanceResumableExportBatch(
   state: ResumableExportState,
   page: ResumableExportPage,
 ): ResumableExportAdvance {
+  const stageOrder = state.expectedStages ?? EXPORT_STAGE_ORDER;
+  if (
+    stageOrder.length === 0 ||
+    !stageOrder.every((stage, idx) => {
+      const orderIdx = EXPORT_STAGE_ORDER.indexOf(stage);
+      return orderIdx >= 0 && (idx === 0 || orderIdx > EXPORT_STAGE_ORDER.indexOf(stageOrder[idx - 1]!));
+    })
+  ) {
+    return { status: "invalidated", reason: "stage_regression", state };
+  }
+  if (state.done) {
+    return { status: "invalidated", reason: "incomplete_export_stages", state };
+  }
   if (page.scopeVersion !== state.scopeVersion) {
     return { status: "invalidated", reason: "export_scope_changed", state };
   }
-  const currentIdx = EXPORT_STAGE_ORDER.indexOf(state.stage);
-  const incomingIdx = EXPORT_STAGE_ORDER.indexOf(page.stage);
-  if (incomingIdx < currentIdx) {
+  const currentIdx = stageOrder.indexOf(state.stage);
+  const incomingIdx = stageOrder.indexOf(page.stage);
+  if (currentIdx < 0 || incomingIdx < 0 || incomingIdx < currentIdx) {
     return { status: "invalidated", reason: "stage_regression", state };
   }
+  if (incomingIdx > currentIdx) {
+    return { status: "invalidated", reason: "stage_skipped", state };
+  }
+  if (
+    (page.hasMore && (page.nextAfterId === null || (page.nextStage !== null && page.nextStage !== page.stage))) ||
+    (!page.hasMore && page.nextAfterId !== null)
+  ) {
+    return { status: "invalidated", reason: "incomplete_export_stages", state };
+  }
 
-  const seen = new Set(state.items.map(item => `${item.stage}:${item.id}`));
+  const seenHashes = new Map(state.items.map(item => [`${item.stage}:${item.id}`, item.payloadHash]));
   const merged = [...state.items];
   for (const item of page.items) {
+    if (item.stage !== page.stage) {
+      const itemIdx = stageOrder.indexOf(item.stage);
+      return {
+        status: "invalidated",
+        reason: itemIdx >= 0 && itemIdx > currentIdx ? "stage_skipped" : "stage_regression",
+        state,
+      };
+    }
+    if (!item.id || typeof item.payloadHash !== "string" || item.payloadHash.trim().length === 0) {
+      return { status: "invalidated", reason: "item_hash_conflict", state };
+    }
     const key = `${item.stage}:${item.id}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      merged.push(item);
+    const existingHash = seenHashes.get(key);
+    if (existingHash !== undefined) {
+      if (existingHash !== item.payloadHash) {
+        return { status: "invalidated", reason: "item_hash_conflict", state };
+      }
+      continue;
+    }
+    seenHashes.set(key, item.payloadHash);
+    merged.push(item);
+  }
+
+  let nextStage: ExportBatchStage;
+  let done = false;
+  if (page.hasMore) {
+    nextStage = page.stage;
+  } else {
+    const expectedNextStage = currentIdx + 1 < stageOrder.length ? stageOrder[currentIdx + 1]! : null;
+    if (expectedNextStage !== null) {
+      if (page.nextStage === null) {
+        return { status: "invalidated", reason: "incomplete_export_stages", state };
+      }
+      if (page.nextStage !== expectedNextStage) {
+        const nextIdx = stageOrder.indexOf(page.nextStage);
+        return {
+          status: "invalidated",
+          reason: nextIdx >= 0 && nextIdx < currentIdx ? "stage_regression" : "stage_skipped",
+          state,
+        };
+      }
+      nextStage = expectedNextStage;
+      done = false;
+    } else {
+      if (page.nextStage !== null) {
+        return { status: "invalidated", reason: "stage_regression", state };
+      }
+      nextStage = page.stage;
+      done = true;
     }
   }
 
-  const nextStage = page.nextStage ?? page.stage;
-  const done = !page.hasMore && page.nextAfterId === null;
   const nextState: ResumableExportState = {
     scopeVersion: state.scopeVersion,
     stage: nextStage,
     afterId: page.nextAfterId,
     done,
     items: merged,
+    ...(state.expectedStages ? { expectedStages: state.expectedStages } : {}),
   };
   return { status: done ? "done" : "ready", reason: null, state: nextState };
 }
@@ -371,6 +517,14 @@ export function reconcileVoiceTranscriptRevision(
   completedJob: VoiceTranscriptJobResult,
 ): VoiceRevisionReconciliation {
   const currentBasis = computeVoiceRevisionBasis(currentVoice);
+  if (!currentVoice.voiceId || !currentVoice.sha256 || !Number.isInteger(currentVoice.version) || currentVoice.version < 0) {
+    return {
+      accepted: false,
+      reason: "voice_revision_superseded",
+      basis: currentBasis,
+      text: null,
+    };
+  }
   if (completedJob.voiceId !== currentVoice.voiceId || completedJob.basis !== currentBasis) {
     return {
       accepted: false,
@@ -379,9 +533,23 @@ export function reconcileVoiceTranscriptRevision(
       text: null,
     };
   }
+  if (!Number.isFinite(currentVoice.durationMs) || currentVoice.durationMs < 0) {
+    return {
+      accepted: false,
+      reason: "invalid_voice_timestamps",
+      basis: currentBasis,
+      text: null,
+    };
+  }
   let prevEnd = 0;
   for (const seg of completedJob.segments) {
-    if (seg.startMs < prevEnd || seg.endMs < seg.startMs || seg.endMs > currentVoice.durationMs) {
+    if (
+      !Number.isFinite(seg.startMs) ||
+      !Number.isFinite(seg.endMs) ||
+      seg.startMs < prevEnd ||
+      seg.endMs < seg.startMs ||
+      seg.endMs > currentVoice.durationMs
+    ) {
       return {
         accepted: false,
         reason: "invalid_voice_timestamps",

@@ -88,3 +88,39 @@ runMutationCase(
     `if (false)`,
   ),
 );
+
+runMutationCase(
+  "S5: dropping NaN timestamp fail-closed guard lets invalid entries bypass watermark barrier",
+  "server/cross-domain-snapshot.ts",
+  src => src.replace(
+    `!Number.isFinite(entry.updatedAtMs) ||`,
+    `false && !Number.isFinite(entry.updatedAtMs) ||`,
+  ),
+);
+
+runMutationCase(
+  "S6: skipping duplicate item hash conflict check in advanceResumableExportBatch splices mismatched rows",
+  "server/cross-domain-snapshot.ts",
+  src => src.replace(
+    `if (existingHash !== item.payloadHash)`,
+    `if (false && existingHash !== item.payloadHash)`,
+  ),
+);
+
+runMutationCase(
+  "S7: bypassing evaluateCrossDomainSnapshot in completeReportSnapshot emits report despite authority drift",
+  "server/family-document-report-core.ts",
+  src => src.replace(
+    `if (verification.status !== "consistent") throw new FamilyError(409, "source_changed");`,
+    `if (false && verification.status !== "consistent") throw new FamilyError(409, "source_changed");`,
+  ),
+);
+
+runMutationCase(
+  "S8: bypassing reconcileVoiceTranscriptRevision in firestore-voice-transcripts allows NaN segments",
+  "server/firestore-voice-transcripts.ts",
+  src => src.replace(
+    `if(!checked.accepted)domainReject(checked.reason,`,
+    `if(false&&!checked.accepted)domainReject(checked.reason,`,
+  ),
+);
