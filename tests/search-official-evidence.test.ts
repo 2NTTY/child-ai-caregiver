@@ -271,6 +271,8 @@ test("colloquial parenting queries map to official guidance with structured cita
     "BB唔肯食嘢點算？",
     "BB食嘢唔開胃",
     "今晚BB唔肯食嘢，係咪生病？",
+    "BB幾時可以食嘢？",
+    "BB食嘢",
     "BB發燒點算",
     "BB發熱點算？",
     "BB幾時打針",
@@ -281,12 +283,17 @@ test("colloquial parenting queries map to official guidance with structured cita
     assert.deepEqual(
       rankKnowledge(uncoveredOrRefusalQuery, seedCandidates),
       [],
-      `Expected empty seed match for uncovered/refusal query: ${uncoveredOrRefusalQuery}`,
+      `Expected empty seed match for uncovered/refusal/narrowed-generic query: ${uncoveredOrRefusalQuery}`,
     );
   }
   assert.ok(
     !rankKnowledge("BB發熱幾多度要睇醫生？", seedCandidates).some(item => item.sourceId === "fhs-solid-food"),
     "Fever query containing BB/醫生 must not false-match fhs-solid-food",
+  );
+  // Document current unfiltered shared-common-word hits ("正常" -> school-eye-care, "講嘢" -> play-and-language) pending Owner seeding/word-narrowing decision
+  assert.deepEqual(
+    rankKnowledge("BB回奶係咪正常？", seedCandidates).map(item => `${item.sourceId}/${item.key}`),
+    ["fhs-child-vision/school-eye-care"],
   );
 
   // Synthetic symptom-chunk ranking check ("嘔奶" -> "吐奶/溢奶", "發熱/睇醫生" -> "發燒/求醫");
@@ -554,6 +561,9 @@ test("age and region applicability mismatches block unapplicable advice from for
   assert.equal(infantVisionResult.chunks.length, 0);
   const infantFeverDoctorResult = await infantRun.search("BB發熱幾多度要睇醫生？", resolvedSixMonth.filter);
   assert.equal(infantFeverDoctorResult.chunks.length, 0);
+  const { run: infantSpitUpRun } = newFsRun();
+  const infantSpitUpNormalResult = await infantSpitUpRun.search("BB回奶係咪正常？", resolvedSixMonth.filter);
+  assert.equal(infantSpitUpNormalResult.chunks.some(ch => ch.key === "school-eye-care"), false, "6m applies() excludes school-eye-care even when '正常' matches");
 
   // Positive control at 6 months HK: solids guidance (0-12m HK) retrieves cleanly
   const { run: infantSolidRun } = newFsRun();
@@ -877,6 +887,7 @@ test("long documents, tables and exception conditions maintain end-to-end tracea
   assert.ok(realSeedDraftSource.excerpt.includes("不包括"));
   assert.ok(realSeedDraftSource.excerpt.includes("若孩子現已佩戴眼鏡"));
   assert.ok(realSeedDraftSource.excerpt.includes("請盡快到家庭或眼科醫生求診"));
+  assert.ok(preschoolOriginalText.indexOf("請盡快到家庭或眼科醫生求診") >= 800, "Final eye-doctor clause lies past char 800");
 });
 
 test("insufficient evidence cleanly stops with delivery_review_no_sources while retaining sources without hallucinated text (REQ-001 §7 Line 6)", async (t) => {

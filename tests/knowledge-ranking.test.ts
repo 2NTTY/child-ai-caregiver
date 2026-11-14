@@ -157,6 +157,8 @@ test("appetite refusal and missing official seed topics do not false-match start
     "BB唔肯食嘢點算？",
     "BB食嘢唔開胃",
     "今晚BB唔肯食嘢，係咪生病？",
+    "BB幾時可以食嘢？",
+    "BB食嘢",
     "BB發燒點算",
     "BB發熱點算？",
     "BB幾時打針",
@@ -167,12 +169,22 @@ test("appetite refusal and missing official seed topics do not false-match start
     assert.deepEqual(
       rankKnowledge(query, realSeedCandidates).map(item => item.chunkId),
       [],
-      `Expected no official seed match for missing/refusal query: ${query}`,
+      `Expected no official seed match for missing/refusal/narrowed-generic query: ${query}`,
     );
   }
   assert.ok(
     !rankKnowledge("BB發熱幾多度要睇醫生？", realSeedCandidates).some(item => item.sourceId === "fhs-solid-food"),
     "Fever + see-doctor query must never false-match fhs-solid-food",
+  );
+  // Document current 5-seed shared-word behavior on unfiltered queries (pending Owner decision on generic common words / additional seeds):
+  // - "BB回奶係咪正常？" matches school-eye-care via shared generic bigram "正常" (never fhs-solid-food)
+  // - "BB講嘢粗口" matches play-and-language via shared bigram "講嘢"
+  const spitUpNormalUnfiltered = rankKnowledge("BB回奶係咪正常？", realSeedCandidates);
+  assert.ok(!spitUpNormalUnfiltered.some(item => item.sourceId === "fhs-solid-food"));
+  assert.deepEqual(spitUpNormalUnfiltered.map(item => item.chunkId), ["fhs-child-vision/school-eye-care"]);
+  assert.deepEqual(
+    rankKnowledge("BB講嘢粗口", realSeedCandidates).map(item => item.chunkId),
+    ["fhs-toddler-development/play-and-language"],
   );
   assert.equal(
     rankKnowledge("BB半歲開糊要食啲咩？", realSeedCandidates)[0]?.chunkId,

@@ -6054,3 +6054,10 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 3）強化 [search-official-evidence 測試](tests/search-official-evidence.test.ts)（5/5）與 [knowledge-ranking 測試](tests/knowledge-ranking.test.ts)（11/11）：以真實 `hk-official-seed.json` 補齊厭食與缺題負向測試；第 2 行改以生產執行時期採用的 `createFirestoreKnowledgeStore`（配合記憶體 `firestoreDomainFixture` 發布五份真實 HK 種子及 synthetic UK 對照）實測 `applies()` 年齡／地區／`maxAgeMonthsExclusive`／`overlap` 過濾與 `revalidateCitations`，並於廢止遷移的 `createKnowledgeStore(pool)` 僅補充實際 SQL 條件字串與參數綁定斷言（註：未於本地啟動真實 PostgreSQL）；第 5 行兼測真實 `fhs-child-vision/preschool-screening`（>1290 字元）分頁累積與 synthetic 撲熱息痛／G6PD／阿士匹靈長文表格；第 6 行驗證 `delivery_review_no_sources` 阻斷與來源保留；
 4）更新可執行 [離線驗證腳本](scripts/ci/verify-search-official-evidence-offline.sh)（`100755`）與 [CI workflow](.github/workflows/search-official-evidence-offline.yml)，涵蓋 13 個測試檔共 140 例離線 guard 測試及兩份 `tsc --noEmit`。
 本階段仍無真 Gemini／Vertex 模型評測、無真實 Postgres SQL 執行、亦無 hosted GitHub Actions 驗證，B-P2 及切片 B 整體驗收尚待後續補全（未 push／未開 PR）。
+
+### 2026-11-14　B-P2 R2 誠實邊界與測試鎖定補充
+
+依第二輪審核意見補充測試與限制披露（不 squash 前三提交）：
+1）於 [knowledge-ranking 測試](tests/knowledge-ranking.test.ts) 與 [search-official-evidence 測試](tests/search-official-evidence.test.ts) 鎖定刻意收窄泛指 `食嘢` 後之召回取捨（「BB幾時可以食嘢？」「BB食嘢」回空，不再誤中加固），並固定「BB回奶係咪正常？」於無過濾五份種子因共通詞「正常」命中 `school-eye-care`（於 6 個月 HK `applies()` 下已排除 `school-eye-care`）及「BB講嘢粗口」命中 `play-and-language` 之現況；是否進一步收窄共通詞或擴充官方種子留待 Owner 決定。
+2）校準 `fhs-child-vision/preschool-screening` 長文（1298 字元）位移說明：「若孩子現已佩戴眼鏡」位於位移 247、「不包括」位於位移 490，僅最後一句「請盡快到家庭或眼科醫生求診」（位移 1273）位於 800 字元之後；測試驗證多頁完整重組後（`excerptComplete: true`）三句皆完整保留。
+3）既有關鍵字邊界（「食藥持續咗幾多日？」「10ml」等）於本分支仍維持原狀並交 Owner，不當作本包已關閉。
