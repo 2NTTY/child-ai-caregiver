@@ -689,6 +689,25 @@ export function createAgentRuntime(options: {
             await storageGate();
             return value;
           };
+          let lastRuntimeEventTimestamp = 0;
+          const normalizeEventTimestamp = (request: AppendEventRequest): AppendEventRequest => {
+            if (request.event.partial || isCompactedEvent(request.event)) return request;
+            let prev = lastRuntimeEventTimestamp;
+            for (const item of request.session.events) {
+              if (!isCompactedEvent(item) && Number.isFinite(item.timestamp) && item.timestamp > prev) {
+                prev = item.timestamp;
+              }
+            }
+            const raw = request.event.timestamp;
+            const timestamp = Number.isFinite(raw) ? Math.max(raw, prev + 1) : prev + 1;
+            lastRuntimeEventTimestamp = timestamp;
+            if (timestamp === raw) return request;
+            if (Object.isExtensible(request.event)) {
+              request.event.timestamp = timestamp;
+              return request;
+            }
+            return { ...request, event: createEvent({ ...request.event, timestamp }) };
+          };
           // Guard only the public storage boundary; preserve ADK's original Session/Event objects.
           const sessionService = nativeSessionService ? new class extends BaseSessionService {
             createSession(request: CreateSessionRequest) { return storageWait(() => nativeSessionService.createSession(request), session => {
@@ -698,9 +717,16 @@ export function createAgentRuntime(options: {
             }); }
             getSession(request: GetSessionRequest) { return storageWait(() => nativeSessionService.getSession(request)); }
             listSessions(request: ListSessionsRequest) { return storageWait(() => nativeSessionService.listSessions(request)); }
-            appendEvent(request: AppendEventRequest) { return storageWait(() => nativeSessionService.appendEvent(request)); }
+            appendEvent(request: AppendEventRequest) {
+              const normalized = normalizeEventTimestamp(request);
+              return storageWait(() => nativeSessionService.appendEvent(normalized));
+            }
             deleteSession(request: DeleteSessionRequest) { return storageWait(() => nativeSessionService.deleteSession(request)); }
-          }() : new InMemorySessionService();
+          }() : new class extends InMemorySessionService {
+            override appendEvent(request: AppendEventRequest) {
+              return super.appendEvent(normalizeEventTimestamp(request));
+            }
+          }();
           const appName = "yuban_hk";
           try {
             const session = await sessionService.createSession({ appName, userId: scope.userId, sessionId: runId });

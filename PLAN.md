@@ -97,7 +97,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **本輪指定摘要修復：**#447 已合併入 master（commit a162e65e），見 [REQ005-SUMMARY01](#req005-summary01)。單一候選已完成本地程式驗收，durable 摘要未啟用、未部署，正式啟用仍有前置；不改下列 P4 交付與未驗狀態。
 
-**單輪壓縮：**ADK 壓縮沿用原生門檻，時間或隔離範圍可能遮蔽未壓縮歷史時延後。本功能預設關閉。[實作與驗證](#req005-compaction01)
+**單輪壓縮：**ADK 壓縮沿用原生門檻，時間或隔離範圍可能遮蔽未壓縮歷史時延後；runtime `appendEvent` 保證事件時間戳嚴格遞增，避免同毫秒／ADK pre-LLM timestamp 導致壓縮卡滯。單輪瞬態壓縮已於 `createProductAgent` 預設啟用；`#447` 持久跨輪摘要仍預設關閉／未啟用。[實作與驗證](#req005-compaction01)
 
 **匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 的原生 runtime 指紋在本機與 EAS 不一致，本次未產出 APK。下次需要批量安裝時，先核對同一建置封包與依賴位置，再建置、驗簽及覆蓋安裝。[原建置紀錄](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)
 
@@ -312,10 +312,10 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。
 
 <a id="req005-compaction01"></a>
-### REQ005-COMPACTION01：REQ-005 §4.2 單輪對話上下文即時壓縮基準（庫代碼已驗收，未啟用）
+### REQ005-COMPACTION01：REQ-005 §4.2 單輪對話上下文即時壓縮整合（瞬態預設啟用；#447 持久摘要仍未啟用）
 
-- **基線／來源：**依循 `docs/REQUIREMENTS_BACKLOG.md` §4.2 原生 context compaction 規範；分支為 `codex/req005-inrun-compaction`。
-- **目標與邊界：**實作單輪對話運行期間的上下文即時壓縮（In-run transient context compaction）基礎庫能力。本包為底層 baseline，預設未啟用（0 production callers），不改變既有生產對話路徑，亦不取代 Firestore 跨會話記憶（REQ-005 §4.1）。
+- **基線／來源：**依循 `docs/REQUIREMENTS_BACKLOG.md` §4.2 原生 context compaction 規範；整合分支為 `codex/req005-compaction-integration`（承接 `codex/req005-inrun-compaction`）。
+- **目標與邊界：**實作單輪對話運行期間的上下文即時壓縮（In-run transient context compaction），並於 `createProductAgent` 預設啟用 `contextCompaction`（不改變既有持久 Firestore 跨會話記憶與 `#447` 未啟用狀態，REQ-005 §4.1 另案處理）。runtime `sessionService.appendEvent` 統一維持事件時間戳嚴格單調遞增，修復 ADK 2.1.0 pre-LLM timestamp 重用導致同毫秒事件誤觸延後的問題；直接呼叫 `createRunContextCompactor` 時仍保留原有時間邊界延後保護。
 - **核心不變量（Core Invariants）：**
   1. **純瞬態（Transient In-Run Only）：**壓縮摘要僅於單次 Agent run 記憶體事件流中生效，絕不持久化至 Firestore 或改寫持久 session 歷史。
   2. **工具調用原子性（Tool-Call Atomicity）：**基於 `@google/adk` 之 `TokenBasedContextCompactor`，以事件原子性計算保留起點，嚴禁切斷 `FunctionCall` 與對應 `FunctionResponse`。

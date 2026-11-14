@@ -621,3 +621,62 @@ test("post-compaction modelAttemptKey skips system compacted events even when in
   assert.equal(result.text, "Completed after compacted system event");
   assert.equal(step, 2);
 });
+
+test("sub-millisecond burst turns without artificial delays still compact deterministically in Runner", async () => {
+  for (let iteration = 0; iteration < 5; iteration++) {
+    let calls = 0;
+    const runtime = createAgentRuntime({
+      config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project", AI_AGENT_MAX_INPUT_CHARACTERS: "32000" }),
+      usage: { reserve: async () => true, record: async () => {} },
+      provider: {
+        generate: async request => {
+          calls++;
+          const hasTools = toolCount(request) > 0;
+          if (calls === 1) {
+            assert.equal(hasTools, true);
+            return {
+              content: { role: "model", parts: [{ functionCall: { id: `burst-${iteration}-1`, name: "fast_tool", args: {} } }] },
+              finishReason: FinishReason.STOP,
+              usageMetadata: { promptTokenCount: 240, totalTokenCount: 260, cachedContentTokenCount: 0 },
+            };
+          }
+          if (calls === 2) {
+            assert.equal(hasTools, false, "Zero-delay burst turn must compact without timestamp tie deferral");
+            return {
+              content: { role: "model", parts: [{ text: "BURST_COMPACT_SUMMARY" }] },
+              finishReason: FinishReason.STOP,
+              usageMetadata: { promptTokenCount: 30, totalTokenCount: 40, cachedContentTokenCount: 0 },
+            };
+          }
+          assert.equal(calls, 3);
+          assert.equal(hasTools, true);
+          assert.ok(JSON.stringify(request.contents).includes("BURST_COMPACT_SUMMARY"));
+          return {
+            content: { role: "model", parts: [{ text: "Burst completed after compaction" }] },
+            finishReason: FinishReason.STOP,
+            usageMetadata: { promptTokenCount: 40, totalTokenCount: 50, cachedContentTokenCount: 0 },
+          };
+        },
+      },
+    });
+
+    const result = await runtime.run({
+      scope: { userId: `burst-user-${iteration}`, workspaceId: "ws", childId: "child", authorizationVersion: "1", dataVersion: "1" },
+      recipeId: "p1-chat",
+      trigger: { kind: "interactive", reference: `burst-msg-${iteration}` },
+      authorize: async () => true,
+      contextCompaction: { tokenThreshold: 80, eventRetentionSize: 1 },
+      messages: [{ role: "user", text: "Sub-ms burst check" }],
+      tools: [{
+        name: "fast_tool",
+        description: "Immediate synchronous resolution tool",
+        parameters: z.object({}),
+        authorize: async () => true,
+        execute: async () => ({ status: "succeeded", data: { immediate: true } }),
+      }],
+    });
+    assert.equal(result.status, "completed", JSON.stringify(result));
+    assert.equal(result.text, "Burst completed after compaction");
+    assert.equal(calls, 3);
+  }
+});
