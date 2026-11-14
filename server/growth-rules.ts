@@ -94,3 +94,89 @@ export function growthProposals(context: MemoryContext, sources: KnowledgeEviden
   }
   return { proposals, notices };
 }
+
+export const GROWTH_HISTORY_PAGE_SIZE = 30;
+
+export interface GrowthHistoryCursor {
+  v: 1;
+  id: string;
+  updatedAt: string;
+}
+
+const GROWTH_CURSOR_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+const GROWTH_CURSOR_RAW_RE = /^[A-Za-z0-9_-]+$/u;
+
+export function encodeGrowthHistoryCursor(item: { id: string; updatedAt: string }): string {
+  return Buffer.from(JSON.stringify({ v: 1, id: item.id, updatedAt: item.updatedAt }), "utf8").toString("base64url");
+}
+
+export function decodeGrowthHistoryCursor(raw: string): GrowthHistoryCursor | null {
+  if (!raw || raw.length > 256 || !GROWTH_CURSOR_RAW_RE.test(raw)) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(raw, "base64url").toString("utf8")) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    const candidate = parsed as Record<string, unknown>;
+    if (
+      candidate.v !== 1
+      || typeof candidate.id !== "string"
+      || !GROWTH_CURSOR_UUID_RE.test(candidate.id)
+      || typeof candidate.updatedAt !== "string"
+      || !candidate.updatedAt
+      || candidate.updatedAt.length > 80
+      || !Number.isFinite(Date.parse(candidate.updatedAt))
+    ) {
+      return null;
+    }
+    return { v: 1, id: candidate.id, updatedAt: candidate.updatedAt };
+  } catch {
+    return null;
+  }
+}
+
+export function selectGrowthHistoryWindow<T>(
+  records: readonly T[],
+  getItem: (record: T) => { id: string; updatedAt: string },
+  isActive: (record: T) => boolean,
+  options?: { historyCursor?: string | null; pageSize?: number },
+): {
+  selected: T[];
+  historyHasMore: boolean;
+  historyNextCursor: string | null;
+} {
+  const pageSize = Math.max(1, Math.min(100, options?.pageSize ?? GROWTH_HISTORY_PAGE_SIZE));
+  const active = records.filter(isActive);
+  const history = records.filter(record => !isActive(record)).reverse();
+  const rawCursor = options?.historyCursor ?? null;
+  if (rawCursor === null) {
+    const slice = history.slice(0, pageSize);
+    const historyHasMore = history.length > pageSize;
+    const last = slice.at(-1);
+    return {
+      selected: [...active, ...slice],
+      historyHasMore,
+      historyNextCursor: historyHasMore && last ? encodeGrowthHistoryCursor(getItem(last)) : null,
+    };
+  }
+  const cursor = decodeGrowthHistoryCursor(rawCursor);
+  if (!cursor) {
+    throw new RangeError("invalid_growth_history_cursor");
+  }
+  const exactIndex = history.findIndex(record => {
+    const item = getItem(record);
+    return item.id === cursor.id && item.updatedAt === cursor.updatedAt;
+  });
+  const remaining = exactIndex >= 0
+    ? history.slice(exactIndex + 1)
+    : (() => {
+        const cursorMs = Date.parse(cursor.updatedAt);
+        return history.filter(record => Date.parse(getItem(record).updatedAt) < cursorMs);
+      })();
+  const slice = remaining.slice(0, pageSize);
+  const historyHasMore = remaining.length > pageSize;
+  const last = slice.at(-1);
+  return {
+    selected: slice,
+    historyHasMore,
+    historyNextCursor: historyHasMore && last ? encodeGrowthHistoryCursor(getItem(last)) : null,
+  };
+}

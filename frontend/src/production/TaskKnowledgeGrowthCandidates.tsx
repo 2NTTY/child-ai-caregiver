@@ -31,6 +31,10 @@ export function TaskKnowledgeGrowthCandidates({ model, actions, onTask }: { mode
         <AppButton label="查看來源與核對候選" variant="secondary" density="compact" disabled={model.busy} onPress={() => setSelectedId(item.id)} />
       </View>) : null}
       {page.historyHasMore ? <Text style={s.meta}>仍有較早建議未載入。</Text> : null}
+      {page.historyHasMore && page.historyNextCursor && typeof actions.loadMoreHistory === "function"
+        ? <AppButton label={model.loadingMoreHistory ? "正在載入較早建議…" : "載入較早建議"} variant="secondary" density="compact" disabled={model.busy || model.loadingMoreHistory || !model.online} onPress={() => actions.loadMoreHistory?.()} />
+        : null}
+      {model.historyLoadError ? <Text accessibilityRole="alert" style={s.warning}>{model.historyLoadError}</Text> : null}
     </SectionCard> : null}
     <AppDialog visible={!!selected} accessibilityLabel="核對成長候選" onDismiss={() => navigate(() => { setSelectedId(null); })}>
       <AppDialog.Title>{selected?.title ?? "核對成長候選"}</AppDialog.Title>

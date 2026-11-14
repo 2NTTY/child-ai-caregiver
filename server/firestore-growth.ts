@@ -11,7 +11,7 @@ import type { FirestoreCareStore } from './firestore-care.ts';
 import type { FirestoreOnlineStore } from './firestore-online.ts';
 import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
 import { growthImportPending } from './firestore-growth-import-guard.ts';
-import { GROWTH_RULES, GROWTH_CATALOG_REVISION, growthProposals, growthInputs, growthBasisChanged, nextGrowthCheck } from './growth-rules.ts';
+import { GROWTH_RULES, GROWTH_CATALOG_REVISION, growthProposals, growthInputs, growthBasisChanged, nextGrowthCheck, decodeGrowthHistoryCursor, selectGrowthHistoryWindow } from './growth-rules.ts';
 import { agentKnowledgeFilter } from './product-agent-tools.ts';
 import { parseKnowledgeFilter } from './knowledge-inputs.ts';
 import { profileIsApplicable } from './memory-policy.ts';
@@ -177,12 +177,15 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     b.transaction.create(data.ref('growth_revisions', 'growth-revision', id),
       { ...tags, ...data.seal('growth-revision', id, b.scope, firestoreGrowthSchema, saved, item.version) });
   }
-  async function page(b: Binding): Promise<GrowthPage> {
+  async function page(b: Binding, options?: { historyCursor?: string | null }): Promise<GrowthPage> {
     const records = await all(b), loaded = await load(b), states = await topics(b);
-    const history = records.filter(value => !active(value.item)).reverse(), selected = [...records.filter(value => active(value.item)), ...history.slice(0, 30)];
-    const items: GrowthAttention[] = []; for (const saved of selected) items.push(await visible(b, saved.item, loaded, !!saved.importedFrom));
+    if (options?.historyCursor !== undefined && options.historyCursor !== null && !decodeGrowthHistoryCursor(options.historyCursor)) {
+      domainReject('invalid_input', 400);
+    }
+    const windowed = selectGrowthHistoryWindow(records, value => value.item, value => active(value.item), options);
+    const items: GrowthAttention[] = []; for (const saved of windowed.selected) items.push(await visible(b, saved.item, loaded, !!saved.importedFrom));
     const mayReadInputs = !b.sharedAccess || !!b.sharedAccess.modules?.includes('memory');
-    return { authorityVersion: currentAuthority(b), items, historyHasMore: history.length > 30, canManage: !b.sharedAccess,
+    return { authorityVersion: currentAuthority(b), items, historyHasMore: windowed.historyHasMore, historyNextCursor: windowed.historyNextCursor, canManage: !b.sharedAccess,
       eligibleAssignees: b.sharedAccess ? [] : [{ userId: b.scope.ownerUserId, name: '本人' }],
       notices: b.sharedAccess ? ['這是已共享的成長內容；共享修改仍未開放。',
         ...(!mayReadInputs ? ['即時近況未加入共享範圍。'] : []),
@@ -351,11 +354,11 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
       domainParse(uuid, spaceId);
       const unavailable = async (): Promise<never> => domainReject('shared_domain_read_only', 409);
       return {
-        list: (u: string, c: string) => sharing.withResource(u, { spaceId, childId:c, module:'growth', mode:'read' }, access => page(access.binding)),
+        list: (u: string, c: string, options?: { historyCursor?: string | null }) => sharing.withResource(u, { spaceId, childId:c, module:'growth', mode:'read' }, access => page(access.binding, options)),
         decide: unavailable, topic: unavailable,
       };
     },
-    list: (u: string, c: string) => authority.runTransaction(u, c, page),
+    list: (u: string, c: string, options?: { historyCursor?: string | null }) => authority.runTransaction(u, c, b => page(b, options)),
     decide: (u: string, c: string, id: string, raw: GrowthAction) => authority.runTransaction(u, c, async b => {
       domainParse(uuid, id); const input = domainParse(growthActionSchema, raw);
       if (input.authorityVersion !== currentAuthority(b)) domainReject('growth_changed');

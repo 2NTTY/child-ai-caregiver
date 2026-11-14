@@ -29,7 +29,7 @@ export class GrowthApiError extends Error {
 export const requiresFreshGrowthConfirmation = (error: GrowthApiError): boolean => error.status >= 400 && error.status < 500;
 
 export interface GrowthApi {
-  getPage(childId: string, signal: AbortSignal, userId: string): Promise<GrowthPage>;
+  getPage(childId: string, signal: AbortSignal, userId: string, options?: { historyCursor?: string | null }): Promise<GrowthPage>;
   decideAttention(childId: string, itemId: string, input: GrowthAction, signal: AbortSignal, userId: string): Promise<GrowthAttention>;
   updateTopic(childId: string, topicId: GrowthTopicId, input: GrowthTopicAction, signal: AbortSignal, userId: string): Promise<GrowthPage>;
 }
@@ -56,6 +56,7 @@ const inputSchema = z.object({ key: z.string().max(80), label: z.string(),
   choices: z.array(z.object({ value: z.string().max(80), label: z.string() })), value: z.string().nullable(), conflict: z.boolean(), factRefs: z.array(z.object({ id: uuid, version })).max(200) });
 const pageSchema = z.object({
   authorityVersion: z.string().min(1).max(100), items: z.array(itemSchema), historyHasMore: z.boolean(),
+  historyNextCursor: z.string().min(1).max(256).nullable().optional(),
   topics: z.array(z.object({ id: growthTopicSchema, title: z.string(), version, disabled: z.boolean(), inputs: z.array(inputSchema) })),
   notices: z.array(z.string()), eligibleAssignees: z.array(z.object({ userId: identifier, name: z.string() })), canManage: z.boolean(),
 });
@@ -137,11 +138,13 @@ export function createGrowthApi(baseUrl = "", fetcher: typeof fetch = fetch, sel
     if (error instanceof GrowthApiError) attempt.reconfirm = requiresFreshGrowthConfirmation(error);
   }
   return {
-    async getPage(childId, signal, userId) {
+    async getPage(childId, signal, userId, options) {
       checkScope(childId, userId);
       let status = 0;
-      const page = checkedPage(await request(path(childId), signal, userId, undefined, value => { status = value; }), childId, status);
-      if (pending && pending.childId === childId && pending.userId === userId) {
+      const historyCursor = typeof options?.historyCursor === "string" ? options.historyCursor.trim() : null;
+      const suffix = historyCursor ? `?historyCursor=${encodeURIComponent(historyCursor)}` : "";
+      const page = checkedPage(await request(path(childId) + suffix, signal, userId, undefined, value => { status = value; }), childId, status);
+      if (!historyCursor && pending && pending.childId === childId && pending.userId === userId) {
         if (pending.reconfirm) pending = null;
         else pending.reviewed = pending.kind === "item"
           ? page.items.some(item => item.id === pending!.targetId)

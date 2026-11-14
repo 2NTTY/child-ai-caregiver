@@ -1,0 +1,39 @@
+name: growth-cursor-offline
+
+on:
+  pull_request:
+    branches:
+      - master
+      - main
+      - codex/req005-growth-cursor-ui
+    paths:
+      - src/shared/growth.ts
+      - src/client/growth-api.ts
+      - server/growth-api.ts
+      - server/growth-rules.ts
+      - server/growth-store.ts
+      - server/firestore-growth.ts
+      - frontend/src/growth-view-model.ts
+      - frontend/src/production/task-knowledge-growth.ts
+      - frontend/src/production/TaskKnowledgeGrowthCandidates.tsx
+      - tests/growth-history-cursor.test.ts
+      - frontend/scripts/growth-pagination-controller.test.mjs
+      - scripts/verify-growth-cursor-mutations.mjs
+      - scripts/ci/verify-growth-cursor-offline.sh
+      - .github/workflows/growth-cursor-offline.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-growth-cursor-offline:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: bash scripts/ci/verify-growth-cursor-offline.sh

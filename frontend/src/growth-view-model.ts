@@ -72,7 +72,7 @@ export type GrowthArchiveProjection = {
   // Several partial period views may refer to one snapshot; period labels do not prove coverage.
   periods?: GrowthArchivePeriod[]; history?: GrowthArchiveSnapshot[];
 };
-export type GrowthPage = { archive?: GrowthArchiveProjection; concerns?: GrowthConcernProjection; authorityVersion:string;items:GrowthAttention[];historyHasMore:boolean;topics:GrowthTopic[];notices:string[];eligibleAssignees:TaskAssigneeView[];canManage:boolean };
+export type GrowthPage = { archive?: GrowthArchiveProjection; concerns?: GrowthConcernProjection; authorityVersion:string;items:GrowthAttention[];historyHasMore:boolean;historyNextCursor?:string|null;topics:GrowthTopic[];notices:string[];eligibleAssignees:TaskAssigneeView[];canManage:boolean };
 type Basis = {authorityVersion:string;expectedVersion:number;confirm:true};
 export type GrowthDecision = Basis & ({action:"accept";task:{kind:"none"}|{kind:"create";values:TaskValues}|{kind:"existing";id:string;expectedVersion:number}}|{action:"snooze";until:string}|{action:"dismiss";note:string});
 export type GrowthTopicDecision = Basis & ({action:"set_enabled";enabled:boolean}|{action:"confirm_context";expectedFacts:GrowthFactRef[];values:Record<string,string>;confirmShared:true});
@@ -89,9 +89,12 @@ export type GrowthViewModel = {
   operation:"none"|"saving"|"saved"|"failed"|"unknown"|"conflict";notice:string;
   dirty:boolean;discardAsked:boolean;epoch:number;resetCounts:Record<string,number>;refreshPending:boolean;missingTargets:readonly string[];
   lastConcernChange?: GrowthConcernChange | null;
+  loadingMoreHistory?: boolean;
+  historyLoadError?: string;
 };
 export type GrowthActions = {
   loadMoreConcerns?(): void;
+  loadMoreHistory?(): void;
   discardLocalDraft?(key: string): void;
   refresh():void;markDirty(key:string):void;askDiscard():void;discardDrafts():void;setOriginalConsent(value:boolean):void;retryOriginal():void;
   decide(item:GrowthAttention,input:GrowthDecision):void;updateTopic(topic:GrowthTopic,input:GrowthTopicDecision):void;
