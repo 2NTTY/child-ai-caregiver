@@ -313,10 +313,10 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 - **對應需求**：REQ-001 §4.2 (`:169-176`)、REQ-002 §4.3 (`:440-445`)、§7.2 (`:517-518`)。
 - **核心設計與邊界**：
-  - 於 `src/shared/agent-feedback.ts` 新增 `reconcileAgentProgress`，確保重複或亂序到達的 SSE 進度事件單調收斂（階段不倒退、官方求助卡與來源預覽不重複、不降級）。
+  - 於 `src/shared/agent-feedback.ts` 新增 `reconcileAgentProgress`（以 `AGENT_PROGRESS_PHASE_RANK` 定義單調階序：`started(0) < model/help(1) < working/searching/reading(2) < tool_finished(3) < reviewing(4)`），確保重複或亂序到達的 SSE 進度事件單調收斂（遲到的 `started`/`model`/`searching`/`reading` 不會使 `tool_finished` 或 `reviewing` 倒退；`help` 階段保留 `card` 並匯聚 `cards`，高階階段收到 `help` 時僅累積卡片而不降級階段）。
   - 於 `src/client/chat-controller.ts` 處理同機 SSE 串流中斷但原回覆仍在背景執行（`getOriginalReply().status === "running"`）之情境，保留 `remoteReply: { status: "running", messageId }` 供 `refreshOriginalReply()` 無縫接續，不重開新執行；當 `readOriginal` 發現 `status === "completed"` 時立即同步刷新 `listMessages` 清單。
   - 於 `frontend/src/screens/chatScreen.tsx` 確保當正式回覆訊息已存在於訊息列表時，不再殘留「處理中」橫幅。
-- **驗收限制聲明**：本分支僅於本地進行離線單元測試與型別檢查，未執行真實 Gemini/Vertex 調用、未連接真實資料庫或進行遠端推送。
+- **驗收限制聲明**：本分支僅於本地進行離線單元測試與型別檢查，未執行真實 Gemini/Vertex 調用、未連接真實資料庫或進行遠端推送；既有上游 `tests/agent-feedback.test.ts` 第 58 行含 `127.0.0.1` loopback HTTP listener，僅於無 socket 阻擋之本機環境單獨複驗（4/4 通過）。
 - **嚴格正向提交**：無 `git commit --amend`，維護 append-only 歷史完整性。
 - **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。
 

@@ -21,9 +21,20 @@ export const AGENT_PROGRESS_LABELS: Record<AgentProgress['phase'], string> = {
 };
 export type ReconciledAgentProgress = AgentProgress & { cards: OfficialHelpId[] };
 
+const AGENT_PROGRESS_PHASE_RANK: Record<AgentProgress['phase'], number> = {
+  started: 0,
+  model: 1,
+  help: 1,
+  working: 2,
+  searching: 2,
+  reading: 2,
+  tool_finished: 3,
+  reviewing: 4,
+};
+
 /**
  * Converges duplicate or out-of-order SSE progress events for a single message run.
- * Ignores mismatched runIds, never regresses reviewing/active phases back to stale phases,
+ * Ignores mismatched runIds, never regresses reviewing/tool_finished/active phases back to stale phases,
  * and returns the existing snapshot reference when nothing changed.
  */
 export function reconcileAgentProgress(
@@ -40,23 +51,23 @@ export function reconcileAgentProgress(
     return previous;
   }
   const cards = [...new Set([...previous.cards, ...(incoming.card ? [incoming.card] : [])])];
-  let phase = incoming.phase;
-  if (previous.phase === 'reviewing' && incoming.phase !== 'reviewing') {
-    phase = 'reviewing';
-  } else if (previous.phase !== 'started' && incoming.phase === 'started') {
-    phase = previous.phase;
-  }
+  const phase = AGENT_PROGRESS_PHASE_RANK[incoming.phase] < AGENT_PROGRESS_PHASE_RANK[previous.phase]
+    ? previous.phase
+    : incoming.phase;
+  const resolvedCard = phase === 'help' ? (incoming.card ?? previous.card) : undefined;
   if (
     phase === previous.phase
+    && resolvedCard === previous.card
     && cards.length === previous.cards.length
     && cards.every((card, index) => card === previous.cards[index])
   ) {
     return previous;
   }
   return {
-    ...incoming,
+    runId: incoming.runId,
+    messageId: incoming.messageId,
     phase,
-    ...(phase === 'help' && incoming.card ? { card: incoming.card } : {}),
+    ...(resolvedCard ? { card: resolvedCard } : {}),
     cards,
   };
 }

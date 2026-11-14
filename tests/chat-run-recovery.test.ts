@@ -25,10 +25,22 @@ test('reconcileAgentProgress deduplicates frames, blocks mismatched runIds, and 
   const lateStarted = reconcileAgentProgress(s2, { runId, messageId, phase: 'started' });
   assert.equal(lateStarted, s2, 'late started frame must not regress searching back to started');
 
+  const lateModel = reconcileAgentProgress(s2, { runId, messageId, phase: 'model' });
+  assert.equal(lateModel, s2, 'late model frame must not regress active searching phase');
+
   const wrongRun = reconcileAgentProgress(s2, { runId: otherRunId, messageId, phase: 'reviewing' });
   assert.equal(wrongRun, s2, 'progress frame from a mismatched runId must be ignored');
 
-  const s3 = reconcileAgentProgress(s2, { runId, messageId, phase: 'reviewing' });
+  const toolEnd = reconcileAgentProgress(s2, { runId, messageId, phase: 'tool_finished' });
+  assert.equal(toolEnd.phase, 'tool_finished');
+
+  const lateSearchingAfterToolEnd = reconcileAgentProgress(toolEnd, { runId, messageId, phase: 'searching' });
+  assert.equal(lateSearchingAfterToolEnd, toolEnd, 'late searching frame must not regress tool_finished');
+
+  const lateModelAfterToolEnd = reconcileAgentProgress(toolEnd, { runId, messageId, phase: 'model' });
+  assert.equal(lateModelAfterToolEnd, toolEnd, 'late model frame must not regress tool_finished');
+
+  const s3 = reconcileAgentProgress(toolEnd, { runId, messageId, phase: 'reviewing' });
   assert.equal(s3.phase, 'reviewing');
 
   const lateToolEnd = reconcileAgentProgress(s3, { runId, messageId, phase: 'tool_finished' });

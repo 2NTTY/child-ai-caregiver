@@ -6010,6 +6010,13 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
   - 於 `frontend/src/screens/chatScreen.tsx` 避免在對應回覆訊息已送達時繼續顯示執行中狀態橫幅。
   - 新增 `tests/chat-run-recovery.test.ts`、`scripts/ci/verify-search-run-recovery-offline.sh` 與 `.github/workflows/search-run-recovery-offline.yml`。
 - Verification：
-  - `node --experimental-test-module-mocks --test tests/chat-run-recovery.test.ts tests/agent-feedback.test.ts`（8/8 通過，0 失敗，0 略過）。
-  - `./node_modules/.bin/tsc -p tsconfig.server.json --noEmit` 與 `./node_modules/.bin/tsc -p tsconfig.json --noEmit` 均退出 0。
-- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
+  - `node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-concurrency=1 tests/chat-run-recovery.test.ts tests/chat-web-sources-copy.test.ts tests/chat-busy-stop-feedback.test.ts tests/chat-stop-feedback.test.ts tests/agent-work-continuation-recovery.test.ts`（5 個完整測試檔共 **17/17** 通過：4 + 7 + 1 + 2 + 3，0 失敗，0 略過，`blockedAttempts: 0`）。
+  - 既有上游 `tests/agent-feedback.test.ts`（第 58 行開啟 `127.0.0.1` loopback HTTP server）另外於本機無 socket 阻擋執行 `node --experimental-test-module-mocks --test tests/agent-feedback.test.ts`：**4/4** 通過。
+  - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
+- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`）；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL／Firestore、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
+
+### 2026-11-14　B-P4 R1 審核修復補充
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` (`B-P4-1`) 進行 forward-only 修復：
+1）將 `reconcileAgentProgress` 的階段保護由特例（僅保護 `reviewing` 與 `started`）升級為完整單調階序 `AGENT_PROGRESS_PHASE_RANK`（`started: 0, model: 1, help: 1, working: 2, searching: 2, reading: 2, tool_finished: 3, reviewing: 4`），確保遲到 `searching`/`reading`/`working`/`model`/`started` 絕不覆寫 `tool_finished` 或高階階段，同時維持 `help` 卡片累積與 `card` schema 一致性。
+2）於 [chat-run-recovery 測試](tests/chat-run-recovery.test.ts) 增補 `tool_finished` 拒退回 `searching`/`model` 與 `searching` 拒退回 `model` 斷言；將 CI workflow 與 `scripts/ci/verify-search-run-recovery-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 與 `summary-progress-contract.mjs` 驗證契約。
