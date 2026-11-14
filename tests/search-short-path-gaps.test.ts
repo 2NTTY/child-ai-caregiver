@@ -75,6 +75,8 @@ test('mixed utterances starting with a greeting or thanks still fail closed into
     '謝謝，可以每日餵退燒藥水嗎？',
     '唔該，未滿一歲唔好食蜜糖。',
     '多謝，已經幫你刪除所有記錄。',
+    '多謝，已刪晒所有記錄。',
+    '唔該，記低咗啦。',
     '早晨，照片顯示傷口已經癒合。',
     'Thank you, you can give ibuprofen every day.',
     'Good morning, already deleted the records.',

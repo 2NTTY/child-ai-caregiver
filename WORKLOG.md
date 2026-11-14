@@ -6054,10 +6054,17 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 - Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理協助本地實作與離線驗證，未推送遠端）
 - Goal：補齊粵語／國語／英語純寒暄與道謝短回合的無冗餘審核路徑，避免在純禮貌互動時執行無關的歷史摘要預讀與記憶分頁，並確保混合宣稱嚴格失敗關閉。
 - Actual Work：
-  - 更新 `server/chat-delivery-review.ts` 的 `PURE_GREETING_UTTERANCE` 與 `OPERATION_CLAIM_PATTERN`，支援「早晨」、「唔該晒」、「謝謝」、「多謝晒」、「早唞」、「拜拜」、「Thank you」、「Good night」等整句寒暄與道謝，並阻擋含「已經幫你刪除」等操作主張的混合句子。
+  - 更新 `server/chat-delivery-review.ts` 的 `PURE_GREETING_UTTERANCE` 與 `OPERATION_CLAIM_PATTERN`（涵蓋標準書面及「已刪晒」、「記低咗」、「改咗」、「幫你...」等粵語口語操作宣告），支援「早晨」、「唔該晒」、「謝謝」、「多謝晒」、「早唞」、「拜拜」、「Thank you」、「Good night」等整句寒暄與道謝，並阻擋任何夾帶操作主張之混合句子。
   - 更新 `server/product-agent-tools.ts` 與 `server/product-agent.ts`，當輸入與輸出均為純寒暄／道謝且無引用時，略過 `initialConversationSummary` 與 `ensureConfirmedMemoryGrounding()`。
   - 新增 `tests/search-short-path-gaps.test.ts`、`scripts/ci/verify-search-short-path-gaps-offline.sh` 與 `.github/workflows/search-short-path-gaps-offline.yml`。
 - Verification：
-  - `node --experimental-test-module-mocks --test tests/search-short-path-gaps.test.ts tests/chat-delivery-review.test.ts tests/agent-feedback.test.ts`（51/51 通過，0 失敗，0 略過）。
-  - `./node_modules/.bin/tsc -p tsconfig.server.json --noEmit` 與 `./node_modules/.bin/tsc -p tsconfig.json --noEmit` 均退出 0。
-- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
+  - `node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-concurrency=1 tests/search-short-path-gaps.test.ts tests/chat-delivery-review.test.ts tests/product-agent-execution-contract.test.ts`（3 個完整測試檔共 **55/55** 通過：3 + 44 + 8，0 失敗，0 略過，`blockedAttempts: 0`）。
+  - 既有上游 `tests/agent-feedback.test.ts`（第 58 行開啟 `127.0.0.1` loopback HTTP server）另外於本機無 socket 阻擋執行 `node --experimental-test-module-mocks --test tests/agent-feedback.test.ts`：**4/4** 通過。
+  - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
+- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`）；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL／Firestore、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
+
+### 2026-11-14　B-P6 R1 審核修復補充
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復：
+1）擴充 `OPERATION_CLAIM_PATTERN` 覆蓋「已刪晒」、「記低咗」、「改咗」、「幫你...」等粵語口語操作宣稱，並於 [search-short-path-gaps 測試](tests/search-short-path-gaps.test.ts) 新增「多謝，已刪晒所有記錄。」與「唔該，記低咗啦。」失敗關閉斷言。
+2）將 CI workflow 與 `scripts/ci/verify-search-short-path-gaps-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 及 `summary-progress-contract.mjs` 驗證契約。
