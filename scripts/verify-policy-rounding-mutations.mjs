@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 
 const LIMITS_PATH = "src/shared/agent-run-limits.ts";
 const BUDGET_PATH = "server/agent-budget.ts";
@@ -75,10 +75,20 @@ try {
     console.log(`Testing [${m.id}]: ${m.name}...`);
     m.mutate();
     try {
-      execSync("node --test tests/agent-policy-rounding-alerts.test.ts", {
-        stdio: "pipe",
-        encoding: "utf8",
-      });
+      execFileSync(
+        process.execPath,
+        [
+          "--import",
+          "./frontend/scripts/family-cleanup-network-guard.mjs",
+          "--experimental-transform-types",
+          "--test",
+          "tests/agent-policy-rounding-alerts.test.ts",
+        ],
+        {
+          stdio: "pipe",
+          encoding: "utf8",
+        },
+      );
       console.error(`  FAIL: Mutation ${m.id} was NOT caught!`);
       passedAll = false;
     } catch (err) {
