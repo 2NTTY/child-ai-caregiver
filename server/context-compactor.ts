@@ -37,6 +37,7 @@ export interface ContextCompactorOptions extends InRunCompactionConfig {
   model: BaseLlm;
   budget?: { admitModel: () => Promise<void>; counts?: { modelCalls: number } };
   signal?: AbortSignal;
+  onBeforeRequest?: (request: LlmRequest, compactionAttemptIndex: number) => void;
 }
 
 /**
@@ -46,9 +47,11 @@ export interface ContextCompactorOptions extends InRunCompactionConfig {
 export function createManagedCompactionModel(
   baseModel: BaseLlm,
   budget?: { admitModel: () => Promise<void> },
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  onBeforeRequest?: (request: LlmRequest, compactionAttemptIndex: number) => void
 ): BaseLlm {
   const isGatewayModel = baseModel instanceof AgentGatewayModel;
+  let sequence = 0;
   return new Proxy(baseModel, {
     get(target, prop, receiver) {
       if (prop === "generateContentAsync") {
@@ -56,6 +59,9 @@ export function createManagedCompactionModel(
           signal?.throwIfAborted();
           if (!isGatewayModel && budget && typeof budget.admitModel === "function") {
             await budget.admitModel();
+          }
+          if (onBeforeRequest) {
+            onBeforeRequest(request, ++sequence);
           }
           const generator = target.generateContentAsync(request, stream);
           for await (const chunk of generator) {
@@ -86,7 +92,7 @@ export function createRunContextCompactor(options: ContextCompactorOptions): Bas
     throw new Error("Invalid context compaction limits");
   }
 
-  const managedModel = createManagedCompactionModel(options.model, options.budget, options.signal);
+  const managedModel = createManagedCompactionModel(options.model, options.budget, options.signal, options.onBeforeRequest);
   const summarizer = new LlmSummarizer({
     llm: managedModel,
     prompt: DEFAULT_COMPACTION_PROMPT

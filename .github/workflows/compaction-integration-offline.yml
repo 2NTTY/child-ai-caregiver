@@ -1,0 +1,34 @@
+name: compaction-integration-offline
+
+on:
+  pull_request:
+    branches:
+      - master
+      - main
+      - codex/req005-compaction-integration
+    paths:
+      - server/agent-runtime.ts
+      - server/context-compactor.ts
+      - server/product-agent.ts
+      - tests/agent-compaction-integration.test.ts
+      - tests/agent-context-compaction.test.ts
+      - scripts/verify-compaction-mutations.mjs
+      - scripts/verify-compaction-integration-mutations.mjs
+      - scripts/ci/verify-compaction-integration-offline.sh
+      - .github/workflows/compaction-integration-offline.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-compaction-integration-offline:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: bash scripts/ci/verify-compaction-integration-offline.sh
