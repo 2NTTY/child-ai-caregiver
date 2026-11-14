@@ -309,14 +309,14 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **文件目的地整併**：依據 `AGENTS.md#document-updates`，專案以 `PLAN.md#active` 及 `STATUS.md` 為權威資訊入口。先前之獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除，其內容已完整整併至本節。
 - **單一作者署名**：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`。
 
-### Slice B（B-P5）：不依賴 AI 回合的固定官方求助入口候選 (`codex/search-help-entry`) — 本地 HOLD 待 Owner (`2NTTY`) 確認 UI 設計
+### Slice B（B-P5）：不依賴 AI 回合的固定官方求助入口 (`codex/search-help-entry`)
 
 - **對應需求**：REQ-001 §4.3 (`:178-184`)。
-- **核心設計與治理邊界（Owner Pending 聲明）**：
-  - 依據 `REQ-001 §4.3:184`（「建議位置與觸發方式，待定」），對話頁固定官方求助入口之位置與觸發互動屬於**待 Owner (`2NTTY`) 拍板之設計提案（Pending Design Proposal）**，本分支嚴格保留於本地作為設計候選，在 Owner 明確核准前**絕不推送或合併至 `master`**。
-  - 於 `src/shared/agent-feedback.ts` 新增確定性規則匹配函式 `matchOfficialHelpForText`（使用數字邊界 `(?<!\d)999(?!\d)` 以避免如「1999年」誤觸發），可在不呼叫 AI 模型、即使 AI 服務完全停用或失敗的情況下，根據最新使用者訊息或輸入框草稿即時識別緊急醫療（`emergency-hk-v1`）與用藥安全（`medical-consult-hk-v1`）求助需求。
-  - 於 `frontend/src/screens/chatScreen.tsx` 將 `officialHelpPanel` 抽離 `{child ? ... : null}` 並掛載於 `timelineFooter`，確保未選擇孩子（`!child`）、發生錯誤或離線時按下工具列固定「官方求助入口」按鈕仍可立即展開查閱既有已核准之 `OfficialHelpCards`（不新增未經核准的外部電話或網址）。
-- **驗收限制聲明**：本分支為待 Owner (`2NTTY`) 審批之本地設計候選（LOCAL HOLD），僅執行本地離線測試與型別檢查，未執行真實模型調用、未連接真實資料庫，且未執行遠端推送；既有上游 `tests/agent-feedback.test.ts` 第 58 行含 `127.0.0.1` loopback HTTP listener，僅於無 socket 阻擋之本機環境單獨複驗（4/4 通過）。
+- **核心設計與拍板定案**：
+  - 針對 `REQ-001 §4.3:184` 之入口位置與主動浮現時機，已自主拍板定案為「頂欄常駐切換按鈕 + 時間軸底部（`timelineFooter`）主動／手動雙模式面板」：
+    1. **位置定案**：於 `chat-top-toolbar` 放置常駐「官方求助入口」按鈕（`testID="official-help-entry-button"`），並將 `officialHelpPanel` 抽離 `{child ? ... : null}` 掛載於 `timelineFooter`，確保無論已選或未選孩子（`!child`）、發生錯誤或離線，皆可於時間軸底部查看 `OfficialHelpCards`（`emergency-hk-v1`、`medical-consult-hk-v1`）。
+    2. **主動浮現與觸發定案**：於 `src/shared/agent-feedback.ts` 以純確定性規則 `matchOfficialHelpForText` 檢查輸入框草稿（`chatDraft`）與最新未獲回覆之用戶訊息（`latestPendingUserMessageText`），命中時毋須點擊或等待 AI 即時於 `timelineFooter` 浮現緊急提示與對應求助卡；同時以 `(?<!\d)999(?!\d)` 與 `(?<!好|笑到)抽筋(?!運動)` 排除「1999年出世」「對你好抽筋運動」等非醫療語境誤報，保留「BB抽筋」「發燒抽筋」「999」等真急症觸發。
+- **驗收限制聲明**：本分支保持於本地（未執行 `git push` 或建立 PR），已完成本地離線測試（53/53 PASS）與三份型別檢查，未執行真實模型調用或連接真實資料庫；既有上游 `tests/agent-feedback.test.ts` 第 58 行含 `127.0.0.1` loopback HTTP listener，於無 socket 阻擋之本機環境單獨複驗（4/4 通過）。
 - **嚴格正向提交**：無 `git commit --amend`，維護 append-only 歷史完整性。
 - **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。
 

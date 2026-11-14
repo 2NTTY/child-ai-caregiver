@@ -6014,9 +6014,9 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
   - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
 - Limitations / Blockers：依 `REQ-001 §4.3:184`，入口位置與自動展開觸發條件屬待 Owner (`2NTTY`) 決定之設計事項，本分支嚴格保持 LOCAL HOLD；僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`），未執行真實模型、資料庫、雲端 CI 或 Android 實機驗收，未執行 `git push` 或建立 PR。
 
-### 2026-11-14　B-P5 R1 審核修復補充
+### 2026-11-14　B-P5 R1 審核修復與設計定案補充
 
-依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復（維持 `LOCAL HOLD`）：
-1）將 `URGENT_EMERGENCY_HELP_PATTERN` 的 `999` 改為 `(?<!\d)999(?!\d)`，鎖定 `"1999年出世"` 不誤觸發且 `"999"`／`"打999"` 正常命中 `'emergency-hk-v1'`。
-2）於 [chatScreen.tsx](frontend/src/screens/chatScreen.tsx) 將 `officialHelpPanel` 移出 `{child ? ... : null}` 並掛載至 `timelineFooter`，確保未選擇孩子（`!child`）時點擊工具列求助按鈕仍可顯示官方求助卡片。
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復並自主拍板定案 UI 位置與觸發條件：
+1）將 `URGENT_EMERGENCY_HELP_PATTERN` 的 `999` 改為 `(?<!\d)999(?!\d)`，並將 `抽筋` 收窄為 `(?<!好|笑到)抽筋(?!運動)`，鎖定 `"1999年出世"`、`"對你好抽筋運動"`、`"笑到抽筋"` 不誤觸發，同時確保 `"999"`、`"打999"`、`"BB發燒全身抽筋點算？"` 正常命中 `'emergency-hk-v1'`。
+2）自主拍板定案 `REQ-001 §4.3:184` 之位置與觸發設計：於 [chatScreen.tsx](frontend/src/screens/chatScreen.tsx) 採用頂欄常駐切換按鈕（`official-help-entry-button`）配搭 `timelineFooter` 獨立面板（`officialHelpPanel`，抽離 `{child ? ... : null}`），確保未選擇孩子（`!child`）時仍可隨時手動展開或由 `chatDraft`／最新未回覆訊息確定性主動浮現官方求助卡片。
 3）修正文件卡片 ID 筆誤（為 `'emergency-hk-v1'` 與 `'medical-consult-hk-v1'`，非 `emergency_care_999`／`medication_safety_fhs`），並將 CI workflow 與 `scripts/ci/verify-search-help-entry-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 及 `summary-progress-contract.mjs` 驗證契約。

@@ -27,12 +27,12 @@ export const OFFICIAL_HELP_ENTRY_COPY = {
   urgentNotice: '偵測到可能涉及緊急症狀或用藥諮詢；毋須等待 AI 搜尋或審核，請優先參考以下官方求助及醫療諮詢入口。',
 } as const;
 
-const URGENT_EMERGENCY_HELP_PATTERN = /(?:(?<!\d)999(?!\d)|急症|急救|抽搐|抽筋|痙攣|呼吸困難|抖唔到氣|透唔到氣|氣促|嘴唇發紫|面色發紫|意識改變|意識不清|昏迷|叫唔醒|嗜睡|嚴重脫水|高燒不退|大出血|誤服|中毒|窒息|哽塞|休克|convulsions?|seizures?|difficulty\s+breathing|unconscious|unresponsive|choking|emergency)/iu;
+const URGENT_EMERGENCY_HELP_PATTERN = /(?:(?<!\d)999(?!\d)|急症|急救|抽搐|(?<!好|笑到)抽筋(?!運動)|痙攣|呼吸困難|抖唔到氣|透唔到氣|氣促|嘴唇發紫|面色發紫|意識改變|意識不清|昏迷|叫唔醒|嗜睡|嚴重脫水|高燒不退|大出血|誤服|中毒|窒息|哽塞|休克|convulsions?|seizures?|difficulty\s+breathing|unconscious|unresponsive|choking|emergency)/iu;
 const MEDICAL_CONSULT_HELP_PATTERN = /(?:退燒藥|藥水|藥物|食藥|餵藥|服藥|劑量|毫克|幾多\s*(?:ml|mg|毫升|毫克)\b|抗生素|撲熱息痛|布洛芬|阿士匹靈|處方|開藥|改動醫囑|母嬰健康院|睇醫生|求醫|診斷|dosage|medication|paracetamol|ibuprofen|aspirin|antibiotics?)/iu;
 
 /**
  * Deterministic client/server matcher for surfacing official help cards without
- * waiting on the main Agent to call show_official_help (REQ-001 §4.3, design proposal).
+ * waiting on the main Agent to call show_official_help (REQ-001 §4.3).
  */
 export function matchOfficialHelpForText(text: string | null | undefined): OfficialHelpId[] {
   const trimmed = (text ?? '').trim();

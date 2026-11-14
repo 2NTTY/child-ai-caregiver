@@ -11,6 +11,7 @@ import {
 test('matchOfficialHelpForText deterministically identifies emergency and medical-consult cues without model tool calls', () => {
   for (const text of [
     'BB突然抽搐同埋嘴唇發紫點算？',
+    'BB發燒全身抽筋點算？',
     '小朋友呼吸困難抖唔到氣！',
     '高燒不退而且叫唔醒、意識不清',
     'Baby is having a seizure and difficulty breathing',
@@ -40,6 +41,8 @@ test('matchOfficialHelpForText deterministically identifies emergency and medica
     '   ',
     '你好！',
     '1999年出世',
+    '對你好抽筋運動',
+    '個故仔好好笑，笑到抽筋',
     '今日下晝飲咗 120ml 奶同埋換咗兩次片',
     '請問六個月大加固食咩蔬果好？',
   ]) {
