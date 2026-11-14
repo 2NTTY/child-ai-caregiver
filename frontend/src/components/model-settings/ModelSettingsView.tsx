@@ -262,7 +262,12 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
               <Controller control={control} name={name} render={({ field }) => <AppTextField accessibilityLabel={label} label={label} keyboardType="number-pad" inputMode="numeric"
                 nativeID={fieldId(name)} aria-invalid={!!errors[name]} aria-describedby={`${fieldId(name)}-message`} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} ref={field.ref} disabled={locked || !available} error={!!errors[name]} />} />
               <FormFieldMessage id={`${fieldId(name)}-message`} error={errors[name]?.message} help={`${range.min}–${range.max} ${unit} · 整數`} />
-            </View>)}</View>
+            </View>)}
+            <View style={styles.limitField}>
+              <Controller control={control} name="softBudgetRatioText" render={({ field }) => <AppTextField accessibilityLabel="個人軟預算比例" label="個人軟預算比例（可選，0.05–1.0）" keyboardType="decimal-pad" inputMode="decimal"
+                placeholder="留空沿用管理員政策" nativeID={fieldId("softBudgetRatioText")} aria-invalid={!!errors.softBudgetRatioText} aria-describedby={`${fieldId("softBudgetRatioText")}-message`} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} ref={field.ref} disabled={locked || !available} error={!!errors.softBudgetRatioText} />} />
+              <FormFieldMessage id={`${fieldId("softBudgetRatioText")}-message`} error={errors.softBudgetRatioText?.message} help="0.05–1.0 小數；留空則沿用管理員軟預算比例。" />
+            </View></View>
             <Text style={styles.meta}>保存後按本人設定及管理員共用保護計算。模型按需要使用預算，不必用盡；重試亦計入原運行及每日次數。</Text>
           </View> : <Text style={styles.meta}>{mode === "platform" ? "平台模型及限額由管理員統一設定，實際值見「用量與安全上限」。" : "保存停用後不會自行切回平台；已有密鑰會保留，刪除須另行確認。"}</Text>}
           <View style={[styles.actions, styles.group]}><AppButton label="保存模型設定" disabled={!canSave} loading={model.busy === "save"} onPress={() => void submit()} />

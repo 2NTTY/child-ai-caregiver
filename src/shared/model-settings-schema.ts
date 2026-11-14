@@ -19,6 +19,7 @@ export const personalBaseUrlSchema = z.string().max(512).superRefine((value, ctx
   } catch { ctx.addIssue({ code: 'custom', message: '請輸入公開 HTTPS API 地址，不含帳密、查詢參數或其他連接埠。' }); }
 }).transform(value => value.replace(/\/+$/u, ''));
 export const personalAdvancedShape = {
+  softBudgetRatio: z.number().finite().min(SOFT_BUDGET_RATIO_RANGE.min).max(SOFT_BUDGET_RATIO_RANGE.max).optional(),
   maxToolCalls: bounded(PERSONAL_RUN_LIMITS.toolCalls).optional(),
   maxRunSeconds: bounded(PERSONAL_RUN_LIMITS.deadlineSeconds).optional(),
   modelRequestSeconds: bounded(PERSONAL_RUN_LIMITS.modelRequestSeconds).optional(),

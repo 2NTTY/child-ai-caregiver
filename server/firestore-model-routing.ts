@@ -109,10 +109,29 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
         : platformProviders ? platformProviders(selectedConfig) : { agent: createVertexAgentProvider(selectedConfig), model: createVertexProvider(selectedConfig), embedding: createVertexEmbeddingProvider(selectedConfig) };
       const source = personal ? 'personal' as const : 'platform' as const;
       const authorize = async () => enabled && (personal || (await policy.readPolicy()).enabled) && await allowed(userId) && await settings.isCurrent(userId, state.version);
+      let activePolicyVersion = current.version;
+      const readPolicyTransition = async () => {
+        if (!enabled) return { enabled: false as const };
+        const latest = await policy.readPolicy();
+        if (!personal && !latest.enabled) return { enabled: false as const };
+        if (latest.version === activePolicyVersion) return null;
+        activePolicyVersion = latest.version;
+        const nextLimits = resolvePersonalModelLimits(state, latest);
+        return {
+          enabled: true as const,
+          maxModelCalls: nextLimits.maxModelCalls,
+          maxToolCalls: nextLimits.maxToolCalls,
+          maxQueryEmbeddings: nextLimits.maxQueryEmbeddings,
+          deadlineMs: nextLimits.maxRunSeconds * 1000,
+          softBudgetRatio: nextLimits.softBudgetRatio,
+          ...(latest.roleSoftBudgetRatios ? { roleSoftBudgetRatios: latest.roleSoftBudgetRatios } : {}),
+        };
+      };
       const gateway = createEmbeddingGateway({ config: selectedConfig, provider: enabled ? providers.embedding : undefined,
         usage: requireDurableUsage, billingSource: source });
       return { config: selectedConfig, provider: providers.agent, settingsVersion: String(state.version) + ":policy:" + current.version, billingSource: source,
-        dailyUsage: usage[source], authorize,
+        dailyUsage: usage[source], authorize, readPolicyTransition,
+        ...(current.roleSoftBudgetRatios ? { roleSoftBudgetRatios: current.roleSoftBudgetRatios } : {}),
         runLimits: { modelCalls: limits.maxModelCalls, queryEmbeddings: limits.maxQueryEmbeddings,
           toolCalls: limits.maxToolCalls, deadlineMs: limits.maxRunSeconds * 1000,
           softBudgetRatio: limits.softBudgetRatio ?? current.softBudgetRatio },

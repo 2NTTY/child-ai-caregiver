@@ -1,10 +1,21 @@
 import type { PlatformPolicy } from '../src/shared/admin.ts';
-import type { EffectiveModelLimits, ModelSettings } from '../src/shared/model-settings.ts';
+import type { EffectiveModelLimits, ModelSettings, PolicyLimitSource } from '../src/shared/model-settings.ts';
 import { DEFAULT_SOFT_BUDGET_RATIO, clampSoftBudgetRatio, deriveSoftBudgetTargets } from '../src/shared/agent-run-limits.ts';
 
 /** One resolver for settings display, interactive roles, media and background work. */
 export function resolvePersonalModelLimits(settings: ModelSettings, policy: PlatformPolicy): EffectiveModelLimits {
-  const softBudgetRatio = clampSoftBudgetRatio(policy.softBudgetRatio ?? DEFAULT_SOFT_BUDGET_RATIO);
+  const rawPersonalSoftRatio = settings.mode === 'personal' && settings.softBudgetRatio !== undefined
+    ? settings.softBudgetRatio
+    : undefined;
+  const softBudgetRatio = clampSoftBudgetRatio(
+    rawPersonalSoftRatio ?? policy.softBudgetRatio ?? DEFAULT_SOFT_BUDGET_RATIO,
+  );
+  const softBudgetSource: PolicyLimitSource =
+    rawPersonalSoftRatio !== undefined
+      ? 'personal'
+      : policy.softBudgetRatio !== undefined
+        ? 'administrator'
+        : 'system_default';
   if (settings.mode === 'personal') {
     const maxToolCalls = settings.maxToolCalls ?? policy.maxToolCalls;
     const maxRunSeconds = settings.maxRunSeconds ?? policy.maxRunSeconds;
@@ -40,7 +51,7 @@ export function resolvePersonalModelLimits(settings: ModelSettings, policy: Plat
         maxRunSeconds: settings.maxRunSeconds !== undefined ? 'personal' : 'administrator',
         modelRequestSeconds: settings.modelRequestSeconds !== undefined ? 'personal' : 'administrator',
         maxModelRetries: settings.maxModelRetries !== undefined ? 'personal' : 'administrator',
-        softBudgetRatio: policy.softBudgetRatio !== undefined ? 'administrator' : 'system_default',
+        softBudgetRatio: softBudgetSource,
       },
     };
   }

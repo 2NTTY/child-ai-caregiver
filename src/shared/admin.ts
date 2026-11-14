@@ -19,6 +19,12 @@ export const platformPolicyValuesSchema = z.object({
   maxToolCalls: tools.optional(), maxRunSeconds: seconds.optional(),
   modelRequestSeconds: requestSeconds.optional(), maxModelRetries: retries.optional(),
   softBudgetRatio: softRatio.optional(),
+  roleSoftBudgetRatios: z.object({
+    interactive: softRatio.optional(),
+    background: softRatio.optional(),
+    reviewer: softRatio.optional(),
+    retriever: softRatio.optional(),
+  }).strict().optional(),
 }).strict();
 // Missing fields in stored policies/receipts retain their historical effective values.
 // New installations supply the current defaults explicitly in the Server bootstrap.

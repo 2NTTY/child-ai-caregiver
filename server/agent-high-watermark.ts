@@ -117,3 +117,77 @@ export function evaluateSustainedHighWatermark(
     recommendedAction,
   };
 }
+
+export type AgentRunUtilizationSample = HighWatermarkSample;
+export type HighWatermarkAlert = HighWatermarkEvaluation;
+
+export interface HighWatermarkMonitorOptions {
+  windowSize?: number;
+  highWatermarkRatio?: number;
+  thresholdRatio?: number;
+  minHighRuns?: number;
+  consecutiveHighRuns?: number;
+  consecutiveHighStreak?: number;
+  repeatedSignatureStreak?: number;
+  loadWindow?: (runCategory: string) => Promise<readonly AgentRunUtilizationSample[]> | readonly AgentRunUtilizationSample[];
+  persistWindow?: (runCategory: string, samples: readonly AgentRunUtilizationSample[]) => Promise<void> | void;
+}
+
+export interface HighWatermarkMonitor {
+  recordSample(sample: AgentRunUtilizationSample): Promise<HighWatermarkAlert>;
+  evaluateCategory(runCategory: string): Promise<HighWatermarkAlert>;
+}
+
+/**
+ * Stateful sliding-window monitor backed by optional durable load/persist hooks.
+ * Serializes updates per category so concurrent runs retain bounded window integrity.
+ */
+export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions = {}): HighWatermarkMonitor {
+  const windowSize = options.windowSize ?? AGENT_HIGH_WATERMARK_DEFAULTS.windowSize;
+  const cachedByCategory = new Map<string, AgentRunUtilizationSample[]>();
+  const pendingByCategory = new Map<string, Promise<unknown>>();
+
+  const thresholdRatio = options.thresholdRatio ?? options.highWatermarkRatio;
+  const consecutiveHighStreak = options.consecutiveHighStreak ?? options.consecutiveHighRuns;
+  const evalOptions: HighWatermarkPolicyOptions = {
+    windowSize,
+    ...(thresholdRatio !== undefined ? { thresholdRatio } : {}),
+    ...(options.minHighRuns !== undefined ? { minHighRuns: options.minHighRuns } : {}),
+    ...(consecutiveHighStreak !== undefined ? { consecutiveHighStreak } : {}),
+    ...(options.repeatedSignatureStreak !== undefined ? { repeatedSignatureStreak: options.repeatedSignatureStreak } : {}),
+  };
+
+  async function ensureLoaded(runCategory: string): Promise<AgentRunUtilizationSample[]> {
+    const existing = cachedByCategory.get(runCategory);
+    if (existing) return existing;
+    const loaded = options.loadWindow ? await options.loadWindow(runCategory) : [];
+    const bounded = [...loaded].filter(s => s.runCategory === runCategory).slice(-windowSize);
+    cachedByCategory.set(runCategory, bounded);
+    return bounded;
+  }
+
+  function serialize<T>(runCategory: string, task: () => Promise<T>): Promise<T> {
+    const previous = pendingByCategory.get(runCategory) ?? Promise.resolve();
+    const next = previous.catch(() => undefined).then(task);
+    pendingByCategory.set(runCategory, next);
+    return next;
+  }
+
+  return {
+    recordSample(sample) {
+      return serialize(sample.runCategory, async () => {
+        const samples = await ensureLoaded(sample.runCategory);
+        const updated = [...samples, sample].slice(-windowSize);
+        cachedByCategory.set(sample.runCategory, updated);
+        if (options.persistWindow) await options.persistWindow(sample.runCategory, updated);
+        return evaluateSustainedHighWatermark(updated, sample.runCategory, evalOptions);
+      });
+    },
+    evaluateCategory(runCategory) {
+      return serialize(runCategory, async () => {
+        const samples = await ensureLoaded(runCategory);
+        return evaluateSustainedHighWatermark(samples, runCategory, evalOptions);
+      });
+    },
+  };
+}

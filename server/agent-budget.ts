@@ -103,6 +103,16 @@ export interface AgentDurableBudget {
   runLimits?: AgentRunLimits;
 }
 
+export type AgentPolicyTransition = {
+  enabled?: boolean;
+  maxModelCalls?: number;
+  maxToolCalls?: number;
+  maxQueryEmbeddings?: number;
+  deadlineMs?: number;
+  softBudgetRatio?: number;
+  roleSoftBudgetRatios?: Partial<Record<AgentSoftBudgetProfileRole, number>>;
+};
+
 export class AgentBudget {
   readonly signal: AbortSignal;
   private readonly used = { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 };
@@ -110,6 +120,7 @@ export class AgentBudget {
   hasPersonalLimits(): boolean { return this.configured; }
   private softRatio: number = DEFAULT_SOFT_BUDGET_RATIO;
   private hasExplicitSoftRatio = false;
+  private roleProfileOverrides: Partial<Record<AgentSoftBudgetProfileRole, number>> | undefined;
   get softBudgetRatio(): number { return this.softRatio; }
   private inputConfigured = false;
   private responseCharacters: number | null = null;
@@ -153,7 +164,8 @@ export class AgentBudget {
     if (snapshot.generation !== context.generation || snapshot.deadlineAtMs !== context.binding.deadlineAtMs
       || canonical(snapshot.limits) !== canonical(context.binding.limits)) throw new AgentStopped("unavailable");
     for (const key of ["modelCalls", "toolCalls", "queryEmbeddings"] as const) {
-      if (!Number.isSafeInteger(snapshot.used[key]) || snapshot.used[key] < 0 || snapshot.used[key] > this.selectedLimits[key]) throw new AgentStopped("unavailable");
+      const ceiling = Math.max(this.selectedLimits[key], context.binding.limits[key]);
+      if (!Number.isSafeInteger(snapshot.used[key]) || snapshot.used[key] < 0 || snapshot.used[key] > ceiling) throw new AgentStopped("unavailable");
       // Parallel callbacks may acknowledge older snapshots after a newer one.
       this.used[key] = Math.max(this.used[key], snapshot.used[key]);
     }
@@ -184,6 +196,14 @@ export class AgentBudget {
     this.check();
     if (!this.durableBudget || !attempt.key) throw new AgentStopped("unavailable");
     const { adapter, context } = this.durableBudget;
+    const tightenedKey = attempt.kind === "tool_batch" ? "toolCalls" : attempt.kind === "embedding" ? "queryEmbeddings" : null;
+    if (tightenedKey) {
+      const amount = attempt.kind === "tool_batch" ? attempt.units : 1;
+      if (this.selectedLimits[tightenedKey] < context.binding.limits[tightenedKey]
+        && this.used[tightenedKey] + amount > this.selectedLimits[tightenedKey]) {
+        throw new AgentStopped(tightenedKey === "toolCalls" ? "tool_limit" : "embedding_limit");
+      }
+    }
     try {
       const admission = await this.wait(() => adapter.reserve(context, attempt));
       this.applySnapshot(admission.snapshot);
@@ -222,7 +242,7 @@ export class AgentBudget {
     const effectiveSoftRatio = resolveRoleSoftBudgetRatio({
       role: options?.role,
       policyRatio: this.hasExplicitSoftRatio ? this.softRatio : undefined,
-      profileOverrides: options?.profileOverrides,
+      profileOverrides: options?.profileOverrides ?? this.roleProfileOverrides,
       runOverride: options?.softBudgetRatio,
     });
     const derivedSoftTargets = deriveSoftBudgetTargets(this.selectedLimits, effectiveSoftRatio);
@@ -315,15 +335,12 @@ export class AgentBudget {
    * Apply an in-flight policy update at a safe barrier without resetting consumed counters.
    * Disabling AI aborts further execution immediately; limit changes can only tighten or adjust soft guidance.
    */
-  applyPolicyTransition(transition: {
-    enabled: boolean;
-    maxModelCalls?: number;
-    maxToolCalls?: number;
-    maxQueryEmbeddings?: number;
-    softBudgetRatio?: number;
-    deadlineMs?: number;
-  }): { stopped: boolean; reason?: "unavailable" | "model_limit" | "tool_limit" | "embedding_limit" | "deadline"; countersPreserved: true } {
-    if (!transition.enabled) {
+  applyPolicyTransition(transition: AgentPolicyTransition): {
+    stopped: boolean;
+    reason?: "unavailable" | "model_limit" | "tool_limit" | "embedding_limit" | "deadline";
+    countersPreserved: true;
+  } {
+    if (transition.enabled === false) {
       if (!this.signal.aborted) this.controller.abort(new AgentStopped("unavailable"));
       return { stopped: true, reason: "unavailable", countersPreserved: true };
     }
@@ -347,6 +364,9 @@ export class AgentBudget {
       );
     }
     this.selectedLimits = nextLimits;
+    if (transition.roleSoftBudgetRatios !== undefined) {
+      this.roleProfileOverrides = transition.roleSoftBudgetRatios;
+    }
     if (typeof transition.softBudgetRatio === "number" && Number.isFinite(transition.softBudgetRatio)) {
       this.softRatio = resolveRoleSoftBudgetRatio({ policyRatio: transition.softBudgetRatio });
       this.hasExplicitSoftRatio = true;

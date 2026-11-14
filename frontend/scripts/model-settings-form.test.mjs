@@ -154,3 +154,26 @@ test("effective policy summary formats soft targets, per-dimension policy source
   assert.equal(Number.isNaN(parseAdminSoftBudgetRatioInput("0.5abc")), true);
   assert.equal(Number.isNaN(parseAdminSoftBudgetRatioInput("")), true);
 });
+
+test("personal softBudgetRatio draft hydrates, validates 0.05..1.0, and emits conditionally in commands", () => {
+  const withRatioDraft = modelSettingsDraft({ ...settings, softBudgetRatio: 0.35 });
+  assert.equal(withRatioDraft.softBudgetRatioText, "0.35");
+
+  const defaultDraft = { ...modelSettingsDraft(settings), consent: true };
+  assert.equal(defaultDraft.softBudgetRatioText, "");
+  assert.equal(modelSettingsSchema(true).safeParse(defaultDraft).success, true);
+  assert.equal("softBudgetRatio" in modelCommandFromDraft(defaultDraft, settings), false);
+
+  for (const valid of ["0.05", "0.35", "1"]) {
+    assert.equal(modelSettingsSchema(true).safeParse({ ...defaultDraft, softBudgetRatioText: valid }).success, true);
+  }
+  for (const invalid of ["0.04", "1.05", "0.3abc", "NaN"]) {
+    assert.equal(modelSettingsSchema(true).safeParse({ ...defaultDraft, softBudgetRatioText: invalid }).success, false);
+  }
+
+  const personalCmd = modelCommandFromDraft({ ...defaultDraft, softBudgetRatioText: "0.35" }, settings);
+  assert.equal(personalCmd.softBudgetRatio, 0.35);
+
+  const platformCmd = modelCommandFromDraft({ ...defaultDraft, mode: "platform", softBudgetRatioText: "0.35" }, settings);
+  assert.equal("softBudgetRatio" in platformCmd, false);
+});

@@ -113,7 +113,7 @@ export function createModelSettingsApi(baseUrl = "", fetcher: typeof fetch = fet
         ...(command.removeKey === undefined ? {} : { removeKey: command.removeKey }),
         ...(command.embeddingApiKey === undefined ? {} : { embeddingApiKey: command.embeddingApiKey }),
         ...(command.removeEmbeddingKey === undefined ? {} : { removeEmbeddingKey: command.removeEmbeddingKey }),
-        ...Object.fromEntries((['provider', 'model', 'baseUrl', 'embeddingProvider', 'embeddingProject', 'embeddingLocation', 'maxToolCalls', 'maxRunSeconds', 'modelRequestSeconds', 'maxModelRetries'] as const)
+        ...Object.fromEntries((['provider', 'model', 'baseUrl', 'embeddingProvider', 'embeddingProject', 'embeddingLocation', 'maxToolCalls', 'maxRunSeconds', 'modelRequestSeconds', 'maxModelRetries', 'softBudgetRatio'] as const)
           .filter(key => command[key] !== undefined).map(key => [key, command[key]])),
       });
       return request("", body, signal, userId).then(value => {

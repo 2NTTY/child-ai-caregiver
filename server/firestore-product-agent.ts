@@ -1,3 +1,5 @@
+import { createHighWatermarkMonitor, type HighWatermarkAlert } from './agent-high-watermark.ts';
+import { z } from 'zod';
 import { createChatFileAgentReader } from './chat-file-agent.ts';
 import { createMixedTaskBatches } from './firestore-mixed-task-batches.ts';
 import { createFirestoreVoiceTranscripts } from './firestore-voice-transcripts.ts';
@@ -38,7 +40,7 @@ import { createAgentRuntime, type AgentRunResult } from './agent-runtime.ts';
 import { claimedRunAssembly } from './agent-run-assembly.ts';
 import { createProductAgent } from './product-agent.ts';
 import { createKnowledgeRetriever } from './knowledge-retriever.ts';
-import { AgentStopped } from './agent-budget.ts';
+import { AgentStopped, type AgentPolicyTransition, type AgentSoftBudgetProfileRole } from './agent-budget.ts';
 import { domainReject } from './firestore-domain-data.ts';
 import type { AgentModelProvider } from './agent-model-gateway.ts';
 import type { FamilyDocumentStore } from './family-document-store.ts';
@@ -66,6 +68,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   platformProvider?: AgentModelProvider;
   /** Trusted local credential adapter; all normal routing, budgets and business services still apply. */
   platformProviders?: import('./firestore-model-routing.ts').PlatformProviderFactory;
+  onHighWatermarkAlert?: (alert: HighWatermarkAlert) => void | Promise<void>;
   /** Trusted work policy only. Existing per-dispatch limits never supply missing cumulative grants. */
   summaryWorkPolicy?: SummaryWorkPolicyPort;
   diagnostics?: (event: AgentDiagnostic) => void | Promise<void>;
@@ -86,11 +89,61 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const nativeSessionService = new FirestoreSessionService({ ...options, namespace: options.namespace + '_adk' });
   const rootBudget = new FirestoreRootBudget({ ...options, namespace: options.namespace + '_root_budget' });
   const admission = createFirestoreAgentAdmission(options);
+  const hwmScope = {
+    ownerUserId: 'system:agent-high-watermark',
+    workspaceId: '00000000-0000-0000-0000-000000000000',
+    childId: '00000000-0000-0000-0000-000000000000',
+    storageEpoch: '00000000-0000-0000-0000-000000000000',
+  };
+  const hwmData = new FirestoreDomainData(options);
+  const hwmDocSchema = z.object({
+    samples: z.array(z.object({
+      runCategory: z.string().min(1).max(64),
+      usedModelCalls: z.number().int().nonnegative(),
+      hardModelCalls: z.number().int().positive(),
+      usedToolCalls: z.number().int().nonnegative().optional(),
+      hardToolCalls: z.number().int().positive().optional(),
+      usedQueryEmbeddings: z.number().int().nonnegative().optional(),
+      hardQueryEmbeddings: z.number().int().positive().optional(),
+      repeatedCallSignature: z.string().min(1).max(200).optional(),
+    }).strict()).max(100),
+  }).strict();
+  const highWatermarkMonitor = createHighWatermarkMonitor({
+    async loadWindow(category) {
+      try {
+        return await options.database.runTransaction(async tx => {
+          const row = await tx.get(hwmData.ref('agent_metrics', 'agent-high-watermark', category));
+          if (!row.exists) return [];
+          return hwmData.open('agent-high-watermark', category, hwmScope, hwmDocSchema, row).samples;
+        }, { readOnly: true });
+      } catch {
+        return [];
+      }
+    },
+    async persistWindow(category, samples) {
+      try {
+        await options.database.runTransaction(async tx => {
+          const ref = hwmData.ref('agent_metrics', 'agent-high-watermark', category);
+          tx.set(ref, hwmData.seal('agent-high-watermark', category, hwmScope, hwmDocSchema, { samples: [...samples] }));
+        });
+      } catch {
+        // Durable metrics persistence failures must not fail product runs.
+      }
+    },
+  });
   const runtime: ReturnType<typeof createAgentRuntime> = {
     async run(input): Promise<AgentRunResult> {
       let instance: ReturnType<typeof createAgentRuntime>, authorize: () => Promise<boolean>;
+      let policySync: {
+        readPolicyTransition?: () => Promise<AgentPolicyTransition | null>;
+        roleSoftBudgetRatios?: Partial<Record<AgentSoftBudgetProfileRole, number>>;
+      } = {};
       try {
         const selected = await routing.resolve(input.scope.userId, input.trigger.kind);
+        policySync = {
+          readPolicyTransition: selected.readPolicyTransition,
+          roleSoftBudgetRatios: selected.roleSoftBudgetRatios,
+        };
         const limits = ['memory-refresh', 'voice-transcription'].includes(input.recipeId) ? { ...selected.runLimits, modelCalls: Math.min(1, selected.runLimits.modelCalls) } : selected.runLimits;
         const provider = selected.billingSource === 'platform' ? options.platformProvider ?? selected.provider : selected.provider;
         // Selection is immutable within this root. Changing settings invalidates its authorization.
@@ -100,6 +153,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
             billingSource: selected.billingSource, runLimits: limits } }, undefined, true, true, true);
         instance = createAgentRuntime({ config: selected.config, usage: requireDurableUsage, provider,
           chatDeliveryReviewModelCalls: selected.config.chatDeliveryReviewModelCalls,
+          highWatermarkMonitor, onHighWatermarkAlert: options.onHighWatermarkAlert,
           nativeSessionService, bindDurableRun: durable.bindDurableRun, boundRunLimits: limits,          admission, embeddings: selected.embeddings, diagnostics: event => {
             // The observer builds a fixed metadata allowlist; no arguments, content or errors are logged.
             if (event.phase === 'tool_rejection' || event.phase === 'model_error' || event.phase === 'tool_error')
@@ -111,7 +165,12 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
         return { runId: input.runId!, status: 'stopped', stopReason: error instanceof AgentStopped ? error.reason : 'unavailable',
           text: null, tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 } };
       }
-      return instance.run({ ...input, authorize });
+      return instance.run({
+        readPolicyTransition: policySync.readPolicyTransition,
+        roleSoftBudgetRatios: policySync.roleSoftBudgetRatios,
+        ...input,
+        authorize,
+      });
     },
   };
   const knowledge = createKnowledgeRetriever(options.knowledge ?? { async candidates() { domainReject('knowledge_not_ready', 503); } },

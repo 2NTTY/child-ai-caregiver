@@ -12,7 +12,7 @@ import { nativeModelThinkingLevel } from "./model-thinking.ts";
 import type { AiUsageStore, AttemptOutcome, TokenUsage } from "./ai-usage.ts";
 import { decodePhoto } from "./photo-files.ts";
 import { AGENT_LIMITS, AGENT_OUTPUT_LIMITS, AGENT_TOOL_RESPONSE_RESERVE, AgentBudget, AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
-import type { AgentModelPurpose, AgentReviewReserve } from "./agent-budget.ts";
+import type { AgentModelPurpose, AgentReviewReserve, AgentSoftBudgetProfileRole } from "./agent-budget.ts";
 import { logVertexFailure } from "./vertex-diagnostics.ts";
 import { modelProviderStopReason } from "../src/shared/agent-stop-message.ts";
 import { PersonalProviderError } from './personal-provider-error.ts';
@@ -104,6 +104,8 @@ export class AgentGatewayModel extends BaseLlm {
   private readonly options: {
     config: AiConfig; provider: AgentModelProvider; usage: Pick<AiUsageStore, "reserve" | "record">;
     budget: AgentBudget; userId: string; childId: string; authorize: () => Promise<boolean>;
+    syncPolicy?: () => Promise<void>;
+    roleProfileOverrides?: Partial<Record<AgentSoftBudgetProfileRole, number>>;
     reserveDeliveryReview?: AgentReviewReserve;
     purpose?: AgentModelPurpose;
     onProviderStart?: () => void;
@@ -121,6 +123,10 @@ export class AgentGatewayModel extends BaseLlm {
   };
   constructor(options: AgentGatewayModel["options"]) { super({ model: options.config.model }); this.options = options; }
   async connect(): Promise<never> { throw new AgentStopped("unavailable"); }
+  private async checkAuthorizeAndPolicy(): Promise<void> {
+    if (!await this.options.budget.wait(this.options.authorize)) throw new AgentStopped("unauthorized");
+    if (this.options.syncPolicy) await this.options.budget.wait(this.options.syncPolicy);
+  }
   /** Shared gateway path for a tool-free Server call. Counts one root model call and grants no tools. */
   async completeText(input: { system: string; user: string; attemptKey: string; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference>;
     purpose?: AgentModelPurpose; onProviderStart?: () => void }): Promise<string> {
@@ -132,7 +138,15 @@ export class AgentGatewayModel extends BaseLlm {
       if (Object.entries(audio.metadata).some(([key, value]) => input.voice![key as keyof VoiceMessageReference] !== value))
         throw new AgentStopped('unauthorized');
     }
-    const planning = this.options.budget.planningSnapshot(false, { reserveDeliveryReview: this.options.reserveDeliveryReview });
+    const roleOverride: AgentSoftBudgetProfileRole | undefined =
+      input.purpose === "delivery_review" || input.purpose === "delivery_repair" || input.purpose === "compose_review"
+        ? "reviewer"
+        : undefined;
+    const planning = this.options.budget.planningSnapshot(false, {
+      reserveDeliveryReview: this.options.reserveDeliveryReview,
+      ...(roleOverride ? { role: roleOverride } : {}),
+      ...(this.options.roleProfileOverrides ? { profileOverrides: this.options.roleProfileOverrides } : {}),
+    });
     const request: LlmRequest = {
       contents: [{ role: "user", parts: [{ text: input.user }, ...(audio ? [{ text: agentAudioMarker(audio) }] : [])] }],
       config: { systemInstruction: input.system
@@ -144,8 +158,9 @@ export class AgentGatewayModel extends BaseLlm {
       liveConnectConfig: {},
     };
     // Share accounting and authority, never the generator's summary or tool context.
-    const { config, provider, usage, budget, userId, childId, authorize, durableDailyUsage } = this.options;
+    const { config, provider, usage, budget, userId, childId, authorize, durableDailyUsage, syncPolicy, roleProfileOverrides } = this.options;
     const reviewer = new AgentGatewayModel({ config, provider, usage, budget, userId, childId, authorize,
+      syncPolicy, roleProfileOverrides,
       durableDailyUsage, audio, modelAttemptKey: () => input.attemptKey,
       reserveDeliveryReview: this.options.reserveDeliveryReview, purpose: input.purpose, onProviderStart: input.onProviderStart,
       ...(input.imageIds?.length ? { images: () => {
@@ -179,7 +194,7 @@ export class AgentGatewayModel extends BaseLlm {
     if (daily && (!budget.durable || daily.context.binding.ownerId !== userId || daily.context.binding.childId !== childId))
       throw new AgentStopped("unavailable");
     if (!config.enabled) throw new AgentStopped("unavailable");
-    if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+    await this.checkAuthorizeAndPolicy();
     // Binary media has its own bounded allowance; all text, schemas and opaque protocol metadata remain counted.
     let requestCharacters = requestSize(request);
     if (requestCharacters > budget.limits.inputCharacters) {
@@ -217,7 +232,7 @@ export class AgentGatewayModel extends BaseLlm {
     const initial = this.options.readConversationSummary
       ? await budget.wait(this.options.readConversationSummary)
       : !this.providerCalled ? this.options.initialConversationSummary : undefined;
-    if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+    await this.checkAuthorizeAndPolicy();
     const fits = (context: LlmRequest['contents'][number]) =>
       requestSize({ ...base, contents: [...base.contents, context] })
         + AGENT_TOOL_RESPONSE_RESERVE <= budget.limits.inputCharacters;
@@ -271,7 +286,7 @@ export class AgentGatewayModel extends BaseLlm {
       let response: LlmResponse | undefined;
       try {
         if (includesSummary) {
-          if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+          await this.checkAuthorizeAndPolicy();
           if (Date.now() >= validUntil) {
             if (budget.durable) throw new AgentStopped("unavailable");
             outgoing = omittedSummary();
@@ -281,7 +296,7 @@ export class AgentGatewayModel extends BaseLlm {
           await budget.checkDurable();
           if (includesSummary && Date.now() >= validUntil) throw new AgentStopped("unavailable");
         }
-        if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+        await this.checkAuthorizeAndPolicy();
         if (this.options.privateSummaryAdmission && !await budget.wait(() => this.options.privateSummaryAdmission!.revalidate()))
           throw new AgentStopped('unauthorized');
         response = await budget.wait(() => {
@@ -301,7 +316,7 @@ export class AgentGatewayModel extends BaseLlm {
         if (response.finishReason === 'MAX_TOKENS') throw new AgentStopped('model_output_limit');
         if (response.errorCode || response.interrupted || response.partial || response.finishReason !== "STOP"
           || response.content?.role !== "model" || !response.content.parts?.length) throw new AgentStopped("invalid_response");
-        if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+        await this.checkAuthorizeAndPolicy();
         // ADK normally assigns missing call IDs after the gateway returns. Fix those
         // same native IDs before charging this private batch so persisted evidence
         // and its original complete fingerprint cannot disagree after a crash.
@@ -357,7 +372,7 @@ export class AgentGatewayModel extends BaseLlm {
       if (retryDelay !== undefined) {
         await budget.wait(() => delay(retryDelay, undefined, { signal: budget.signal }));
         budget.check();
-        if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+        await this.checkAuthorizeAndPolicy();
         continue;
       }
       budget.check();

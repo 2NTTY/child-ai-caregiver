@@ -57,12 +57,15 @@ export default function AdminScreen() {
   const [indexDetails, setIndexDetails] = useState<string | null>(null);
   const [reauthBusy, setReauthBusy] = useState(false), [revoke, setRevoke] = useState<AdminInvitation | null>(null);
   const [softRatioText, setSoftRatioText] = useState(String(DEFAULT_SOFT_BUDGET_RATIO));
+  const [roleRatioTexts, setRoleRatioTexts] = useState<Record<'interactive' | 'background' | 'reviewer' | 'retriever', string>>({
+    interactive: '', background: '', reviewer: '', retriever: '',
+  });
   const currentUser = useRef(userId); currentUser.current = userId;
   const credentialRequest = useRef<AbortController | null>(null);
   const policyForm = useForm<Values>({ resolver: zodResolver(platformPolicyValuesSchema), mode: 'onSubmit', reValidateMode: 'onChange' });
   const invitationForm = useForm<z.infer<typeof inviteForm>>({ resolver: zodResolver(inviteForm), defaultValues: { email: '', days: 7 } });
   useEffect(() => {
-    setReauthBusy(false); setSearch(''); setLocalNotice(null); setRevoke(null); setIndexDetails(null); setSoftRatioText(String(DEFAULT_SOFT_BUDGET_RATIO)); policyForm.reset(); invitationForm.reset({ email: '', days: 7 });
+    setReauthBusy(false); setSearch(''); setLocalNotice(null); setRevoke(null); setIndexDetails(null); setSoftRatioText(String(DEFAULT_SOFT_BUDGET_RATIO)); setRoleRatioTexts({ interactive: '', background: '', reviewer: '', retriever: '' }); policyForm.reset(); invitationForm.reset({ email: '', days: 7 });
     if (userId && auth === 'signedIn') { admin.setUser(userId); void admin.checkAccess(); } else admin.setUser(null);
     return () => { credentialRequest.current?.abort(); };
   }, [admin, userId, auth]);
@@ -77,6 +80,13 @@ export default function AdminScreen() {
       const { version, updatedAt, ...values } = state.overview.policy;
       policyForm.reset(values);
       setSoftRatioText(String(values.softBudgetRatio ?? DEFAULT_SOFT_BUDGET_RATIO));
+      const rr = values.roleSoftBudgetRatios ?? {};
+      setRoleRatioTexts({
+        interactive: rr.interactive === undefined ? '' : String(rr.interactive),
+        background: rr.background === undefined ? '' : String(rr.background),
+        reviewer: rr.reviewer === undefined ? '' : String(rr.reviewer),
+        retriever: rr.retriever === undefined ? '' : String(rr.retriever),
+      });
     }
   }, [visible, state.overview?.policy.version]);
   const locked = !online || state.busy || !!state.pending || reauthBusy || state.index.busy || !!state.index.pending;
@@ -151,6 +161,20 @@ export default function AdminScreen() {
             <AppTextField label="軟預算目標比例（0.05–1.0，預設 0.25）" value={softRatioText} onChangeText={value => { setSoftRatioText(value); field.onChange(parseAdminSoftBudgetRatioInput(value)); }} keyboardType="decimal-pad" disabled={locked} error={!!fieldState.error} />
             {fieldState.error ? <Text>請填 0.05 至 1.0 之間的數值，例如 0.25。</Text> : null}
           </View>} />
+          {([
+            ['interactive', '互動對話軟預算覆寫（可選，0.05–1.0）'],
+            ['background', '背景工作軟預算覆寫（可選，0.05–1.0）'],
+            ['reviewer', '獨立核對員軟預算覆寫（可選，0.05–1.0）'],
+            ['retriever', '檢索角色軟預算覆寫（可選，0.05–1.0）'],
+          ] as const).map(([roleKey, roleLabel]) => <Controller key={roleKey} control={policyForm.control} name={`roleSoftBudgetRatios.${roleKey}`} render={({ field, fieldState }) => <View>
+            <AppTextField label={roleLabel} value={roleRatioTexts[roleKey]} onChangeText={value => {
+              const nextTexts = { ...roleRatioTexts, [roleKey]: value };
+              setRoleRatioTexts(nextTexts);
+              const trimmed = value.trim();
+              field.onChange(trimmed === '' ? undefined : parseAdminSoftBudgetRatioInput(trimmed));
+            }} keyboardType="decimal-pad" disabled={locked} error={!!fieldState.error} />
+            {fieldState.error ? <Text>請填 0.05 至 1.0 之間的小數，或留空沿用角色預設。</Text> : null}
+          </View>} />)}
           {(() => {
             const softTargets = deriveSoftBudgetTargets({
               modelCalls: state.overview.policy.maxModelCalls,

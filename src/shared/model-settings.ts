@@ -30,6 +30,7 @@ export interface PersonalAdvancedLimits {
   maxRunSeconds?: number;
   modelRequestSeconds?: number;
   maxModelRetries?: number;
+  softBudgetRatio?: number;
 }
 
 /** Secret-free account settings; never return the key, its hash or a decryptable envelope. */
