@@ -28,10 +28,10 @@ export const OFFICIAL_HELP_ENTRY_COPY = {
   medicalConsultNotice: '偵測到可能涉及用藥或醫療諮詢；可先參考以下安全用藥及醫療諮詢官方入口，對話仍可繼續。',
 } as const;
 
-const URGENT_EMERGENCY_HELP_PATTERN = /(?:(?<!\d)(?<!\+\d{1,4}[\s-]+)(?<!\d{3,4}[\s-]+)999(?!\d|[\s-]+\d{4,}|-\d{3,})|急症|急救|抽搐|痙攣|呼吸困難|抖唔到氣|透唔到氣|氣促|嘴唇發紫|面色發紫|面青|失去意識|失意識|失去知覺|失知覺|意識改變|意識不清|昏迷|昏厥|昏倒|暈倒|暈過去|叫唔醒|嗜睡|(?:無|冇|毫無|無晒|冇晒)反應|不省人事|人事不省|軟弱無力|嚴重脫水|高燒不退|大出血|誤服|中毒|窒息|哽塞|休克|convulsions?|seizures?|difficulty\s+breathing|unconscious(?:ness)?|unresponsive|choking|emergency)/iu;
+const URGENT_EMERGENCY_HELP_PATTERN = /(?:(?<!\d)(?<!\+\d{1,4}[\s-]+)(?<!\d{3,4}[\s-]+)999(?!\d|[\s-]+\d{4,}|-\d{3,})|急症|急救|抽搐|痙攣|呼吸困難|抖唔到氣|透唔到氣|氣促|嘴唇發紫|面色發紫|面青|(?:失去|喪失|全無|毫無|無晒|冇晒)(?:意識|知覺|反應|神志)|(?:意識|知覺|反應|神志)(?:喪失|全無|毫無|不清|模糊|改變|消失)|失意識|失知覺|昏迷|昏厥|昏倒|暈倒|暈過去|叫唔醒|嗜睡|(?:無|冇|毫無|無晒|冇晒)反應|不省人事|人事不省|軟弱無力|嚴重脫水|高燒不退|大出血|誤服|中毒|窒息|哽塞|休克|convulsions?|seizures?|difficulty\s+breathing|unconscious(?:ness)?|unresponsive|choking|emergency)/iu;
 const NON_URGENT_CRAMP_EXERCISE_PATTERN = /(?:預防|舒緩|放鬆|伸展|改善|減少|防止|肌肉)抽筋(?:嘅|的)?運動|對你好抽筋運動/iu;
 const LAUGHING_IDIOM_CRAMP_PATTERN = /(?:好好?笑|搞笑|笑死|笑)到(?:我|個人|肚|腹)?(?:抽筋|暈(?:低|倒)?)/iu;
-const COMPANION_DISTRESS_OR_SYMPTOM_PATTERN = /發燒|發熱|高燒|體溫|雙眼|反白|翻白|僵硬|硬直|抽搐|痙攣|失去意識|失意識|失去知覺|暈倒|昏倒|叫唔醒|神志|昏迷|昏厥|(?:無|冇|毫無|無晒|冇晒)反應|不省人事|人事不省|無神|唔郁|不動|軟晒|無力|發軟|呼吸|面青|發紫|發白|血色|嘴唇|咬舌|口吐|白沫|嘔|發抖|全身|手腳|點算|點好|點處理|睇醫生|急症|好痛|劇痛|唔停|不停|一直|突然|急救|怎麼辦|如何處理/iu;
+const COMPANION_DISTRESS_OR_SYMPTOM_PATTERN = /發燒|發熱|高燒|體溫|雙眼|反白|翻白|僵硬|硬直|抽搐|痙攣|(?:失去|喪失|全無|毫無|無晒|冇晒)(?:意識|知覺|反應|神志)|(?:意識|知覺|反應|神志)(?:喪失|全無|毫無|不清|模糊|改變|消失)|失意識|知覺|暈倒|昏倒|叫唔醒|昏迷|昏厥|(?:無|冇|毫無|無晒|冇晒)反應|不省人事|人事不省|無神|唔郁|不動|軟晒|無力|發軟|呼吸|面青|發紫|發白|血色|嘴唇|咬舌|口吐|白沫|嘔|發抖|全身|手腳|點算|點好|點處理|睇醫生|急症|好痛|劇痛|唔停|不停|一直|突然|急救|怎麼辦|如何處理/iu;
 
 function hasUrgentConvulsionCue(normalized: string): boolean {
   if (!/抽筋|暈低/u.test(normalized)) return false;

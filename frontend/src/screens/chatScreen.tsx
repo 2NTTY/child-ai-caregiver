@@ -123,14 +123,24 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
       && ["saving", "saved_unreplied", "save_unknown", "checked", "reply_failed"].includes(draft.phase))
     || (childScopedChat && !!chat.replyError)
   );
-  const autoHelpIds = matchOfficialHelpForText(`${chatDraft}\n${latestTurnIncomplete && latestUserMessage ? latestUserMessage.text : ""}`);
+  const serverHelpIds = childScopedChat
+    && scopedFeedback?.cards?.length
+    && (chat.busy === "reply" || latestTurnIncomplete)
+    && (!latestUserMessage || scopedFeedback.messageId === latestUserMessage.id)
+    ? scopedFeedback.cards
+    : [];
+  const autoHelpIds = [
+    ...new Set([
+      ...matchOfficialHelpForText(`${chatDraft}\n${latestTurnIncomplete && latestUserMessage ? latestUserMessage.text : ""}`),
+      ...serverHelpIds,
+    ]),
+  ];
   const hasEmergencyHelp = autoHelpIds.includes("emergency-hk-v1");
   const hasMedicalConsultHelp = !hasEmergencyHelp && autoHelpIds.includes("medical-consult-hk-v1");
   const activeHelpIds = [
     ...new Set([
       ...(helpOpen ? ALL_OFFICIAL_HELP_IDS : []),
       ...autoHelpIds,
-      ...(childScopedChat && chat.busy === "reply" && scopedFeedback?.cards ? scopedFeedback.cards : []),
     ]),
   ];
   const progressLabel = chat.busy === "save" ? "正在保存…"

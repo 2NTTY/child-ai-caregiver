@@ -353,6 +353,13 @@ export class ChatController {
         this.updateDraft(childId, { text: "", voice: undefined, file: undefined, photo: undefined, phase: "draft", savedUserMessageId: null,
           notice: "已在聊天記錄找到 AI 回覆。", knownIds: [] });
       }
+      if (this.state.feedback) {
+        const fbId = this.state.feedback.messageId;
+        const hasCompletedReply = page.messages.some(item =>
+          item.role === "model" && item.inReplyTo === fbId && !/^這次回覆未完成/u.test(item.text));
+        const superseded = Boolean(latestUser && latestUser.id !== fbId);
+        if (hasCompletedReply || superseded) this.update({ feedback: null });
+      }
       if (draft?.phase === "save_unknown" || draft?.phase === "checked") {
         if (this.api.reconcilePending) {
           this.updateDraft(childId, { phase: "checked", candidateMessageId: null,
@@ -473,6 +480,7 @@ export class ChatController {
   private async performReply(scope: RequestScope, messageId: string): Promise<void> {
     const childId = scope.childId!;
     let capacityBusyReply: ChatReplyState | null = null;
+    let replyCompleted = false;
     try {
       if (!await this.verifyIdentity(scope)) return;
       const reply = await this.api.requestReply(childId, messageId, scope.controller.signal, scope.userId, event => {
@@ -481,6 +489,7 @@ export class ChatController {
         this.update({ feedback: { ...event, cards: [...new Set([...previous, ...(event.card ? [event.card] : [])])] } });
       });
       if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
+      replyCompleted = true;
       const messages = this.state.messages.some(item => item.id === reply.id)
         ? this.state.messages : [...this.state.messages, reply];
       this.update({ messages, replyError: null });
@@ -505,6 +514,7 @@ export class ChatController {
           if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
           const saved = page.messages.find(item => item.role === 'model' && item.inReplyTo === messageId);
           if (saved) {
+            replyCompleted = true;
             this.update({ messages: [...this.state.messages.filter(item => item.id !== saved.id), saved], replyError: null });
             if (this.state.drafts[childId]?.savedUserMessageId === messageId) this.updateDraft(childId, { text: '', voice: undefined, file: undefined, photo: undefined, phase: 'draft', savedUserMessageId: null, notice: '已查回原回覆，沒有重新執行。', knownIds: [] });
             return;
@@ -532,7 +542,12 @@ export class ChatController {
         if (this.state.drafts[childId]?.phase === "replying") {
           this.updateDraft(childId, { phase: "reply_failed", notice: "暫未能確認回覆，原文已保存。請重新讀取聊天後再試。" });
         }
-        this.update({ busy: null, replyingMessageId: null, feedback: null, remoteReply: capacityBusyReply });
+        const retainFeedback = !replyCompleted
+          && this.state.feedback?.messageId === messageId
+          && this.state.feedback.cards.length > 0
+          ? this.state.feedback
+          : null;
+        this.update({ busy: null, replyingMessageId: null, feedback: retainFeedback, remoteReply: capacityBusyReply });
         void this.refreshMetadata();
       }
     }

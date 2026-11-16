@@ -6045,3 +6045,10 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 1）**版面與入口定案（`frontend/src/screens/chatScreen.tsx`、`docs/REQUIREMENTS_BACKLOG.md` §4.3、`PLAN.md`）**：保留 `chat-top-toolbar` 常駐切換按鈕；將 `officialHelpPanel` 自可捲動 `ChatTimeline`（`timelineFooter`）移至 `<AgentComposer>` 正上方之非捲動有界容器 `chat-official-help-dock`（附 `ScrollView` 及依視窗與 `fontScale` 計算之有界 `maxHeight`），避免長面板於小螢幕遮擋輸入框。
 2）**回合狀態、跨孩子隔離與急症分級（`chatScreen.tsx`、`src/shared/agent-feedback.ts`）**：最新用戶訊息於回覆未到達、執行中或 `stopped`／`failed`／`reply_failed`／`replyError`／「這次回覆未完成」後仍保留求助面板；以 `child && chat.selectedChildId === child.id` 及 `${scopeKey}:${child?.id}` 隔離並即時重設 `helpOpen` 與訊息／回饋；優先識別 `失去意識`／`失知覺`／`暈倒`／`無晒反應` 高於玩笑慣用語；一般用藥詢問僅顯示 `medical-consult-hk-v1` 及 `chat-official-help-consult-notice` 而不升級急症警告。
 3）於 `tests/official-help-entry.test.ts`（3→4 cases）新增定案位置、中止／失敗回合保留、跨孩子切換隔離、急症／用藥分流與 360x640／`fontScale=2` 有界 dock TSX 測試並更新 `scripts/ci/verify-search-help-entry-offline.sh` `TEST_CASES`。
+
+### 2026-11-17　B-P5 R6 審查 H1／H2 技術修復與行動端證據口徑校準（維持技術 LOCAL HOLD）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R6.md` 完成本地 forward-only 修復並**繼續維持技術 LOCAL HOLD**（未 push／未開 PR）：
+1）**H1 雙向意識／反應喪失詞組（`src/shared/agent-feedback.ts`）**：將 `(?:失去|喪失|全無|毫無|無晒|冇晒)(?:意識|知覺|反應|神志)` 與 `(?:意識|知覺|反應|神志)(?:喪失|全無|毫無|不清|模糊|改變|消失)` 同列於 `URGENT_EMERGENCY_HELP_PATTERN` 及 `COMPANION_DISTRESS_OR_SYMPTOM_PATTERN`，確保「BB笑到抽筋，之後意識喪失」「笑到暈低，跟住知覺喪失」「笑到抽筋，反應全無」穩定回傳 `['emergency-hk-v1']` 而不受玩笑慣用語排除。
+2）**H2 Server SSE `help` 卡於失敗／中止回合保留與完成後清除（`src/client/chat-controller.ts`、`frontend/src/screens/chatScreen.tsx`）**：`ChatController.performReply` 在回覆未完成前失敗／中止時若當前 `feedback` 屬於該 `messageId` 且含 `cards`，於 `finally` 設 `busy: null` 時保留 `feedback` 而不清空，並於 `reloadMessages` 讀到已完成 `model` 回覆或切換至新訊息／孩子後清除；`chatScreen.tsx` 使 `autoHelpIds` 與 `hasEmergencyHelp` 同時匯入未完成回合之 `scopedFeedback.cards`，即使在無關鍵字的通用用戶提問（如「幫我睇下呢張相應該點處理？」）且 `busy === null` 後仍續顯緊急求助面板與警訊。
+3）**測試與文件校準**：於 `tests/official-help-entry.test.ts`（4 cases）新增 `ChatController` SSE `help` → 503／`stopped` 保留 → `reloadMessages` 完成回覆清除之實測，並將 `PLAN.md` 行動端測試描述精確校準為「結構有界（`maxHeight`）及 `AgentComposer` 仍 render」而非實機 DOM 幾何／鍵盤 E2E；真機鍵盤與放大字體實測前繼續維持技術 **LOCAL HOLD**。

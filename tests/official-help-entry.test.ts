@@ -11,6 +11,8 @@ import {
   OFFICIAL_HELP,
   OFFICIAL_HELP_ENTRY_COPY,
 } from '../src/shared/agent-feedback.ts';
+import { ChatApiError, type ChatApi } from '../src/client/chat-api.ts';
+import { ChatController } from '../src/client/chat-controller.ts';
 
 const root = path.resolve(import.meta.dirname, '..');
 const require = createRequire(import.meta.url);
@@ -352,10 +354,13 @@ test('ChatPage real render surfaces official help on toolbar toggle and urgent d
   }
 });
 
-test('B-P5 decided dock placement, turn-state retention, cross-child isolation, unconsciousness priority, and mobile viewport non-occlusion', () => {
+test('B-P5 decided dock placement, turn-state retention, cross-child isolation, unconsciousness priority, and mobile viewport non-occlusion', async () => {
   // 1. Unconsciousness cues prioritize over joke idioms; ordinary medication queries stay in medical-consult-hk-v1 without emergency escalation.
   assert.deepEqual(matchOfficialHelpForText('笑到暈低，之後失去意識'), ['emergency-hk-v1']);
   assert.deepEqual(matchOfficialHelpForText('BB笑到抽筋，之後冇晒反應'), ['emergency-hk-v1']);
+  assert.deepEqual(matchOfficialHelpForText('BB笑到抽筋，之後意識喪失'), ['emergency-hk-v1']);
+  assert.deepEqual(matchOfficialHelpForText('笑到暈低，跟住知覺喪失'), ['emergency-hk-v1']);
+  assert.deepEqual(matchOfficialHelpForText('笑到抽筋，反應全無'), ['emergency-hk-v1']);
   assert.deepEqual(matchOfficialHelpForText('退燒藥每次食 5ml？'), ['medical-consult-hk-v1']);
   assert.deepEqual(matchOfficialHelpForText('Administer thirteen drops'), ['medical-consult-hk-v1']);
   assert.deepEqual(matchOfficialHelpForText('Take one tablet at bedtime.'), ['medical-consult-hk-v1']);
@@ -549,4 +554,64 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
   const flatDockStyle = Object.assign({}, ...(Array.isArray(dockNode.props?.style) ? dockNode.props.style : [dockNode.props?.style]).filter(Boolean));
   assert.ok(typeof flatDockStyle.maxHeight === 'number' && flatDockStyle.maxHeight > 0 && flatDockStyle.maxHeight <= 240, 'Dock maxHeight must stay bounded on compact mobile viewport');
   assert.ok(nodes.some(n => n.type === 'AgentComposer'), 'AgentComposer must remain rendered below dock under mobile zoomed fontScale');
+
+  // Case F (H1 + H2): 'BB笑到抽筋，之後意識喪失' in stopped turn AND Server SSE help card retained when busy=null after reply failure.
+  currentMessages = [
+    { id: 'u3', role: 'user', text: 'BB笑到抽筋，之後意識喪失' },
+    { id: 'm3', role: 'model', inReplyTo: 'u3', text: '這次回覆未完成：已停止。', agentRunId: 'run-stopped-3' },
+  ];
+  currentRuns = { 'run-stopped-3': { status: 'stopped', stopReasonLabel: '已停止' } };
+  nodes = collectNodes(rerender());
+  assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), 'H1: 意識喪失 in stopped turn must surface urgent notice');
+
+  // H2 UI: Generic user text without keywords, busy=null, but retained feedback.cards=['emergency-hk-v1'] from Server SSE.
+  currentMessages = [{ id: 'u4', role: 'user', text: '幫我睇下呢張相應該點處理？' }];
+  currentRuns = {};
+  currentFeedback = { runId: 'run-sse-1', messageId: 'u4', phase: 'help', card: 'emergency-hk-v1', cards: ['emergency-hk-v1'] };
+  currentDrafts = { 'child-1': { phase: 'reply_failed', savedUserMessageId: 'u4', notice: '回覆失敗' } };
+  nodes = collectNodes(rerender());
+  assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-panel'), 'H2 UI: retained Server SSE help card must render panel even when busy=null');
+  assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), 'H2 UI: retained Server SSE emergency card must render urgent notice when busy=null');
+
+  // H2 Controller + UI E2E: ChatController.requestReply emits SSE help card, then fails -> feedback.cards is retained when busy=null, then cleared after completed reply reloads.
+  let storedMessages: any[] = [{ id: 'u-sse', childId: 'child-1', authorUserId: 'parent-1', role: 'user', text: '幫我睇下呢張相應該點處理？', createdAt: '2026-11-16T00:00:00.000Z' }];
+  const mockApi: ChatApi = {
+    getSession: async () => ({ id: 'parent-1', email: 'p@example.com' } as any),
+    getStatus: async () => true,
+    getUsage: async () => ({ remaining: 10, limit: 20, scope: 'user' }) as any,
+    listMessages: async () => ({ childId: 'child-1', messages: storedMessages, nextCursor: null, limit: 20 }),
+    saveMessage: async () => { throw new Error('unused'); },
+    getOriginalReply: async () => null,
+    requestReply: async (_c, messageId, _sig, _u, onProgress) => {
+      onProgress?.({ runId: 'run-sse-ctrl', messageId, phase: 'help', card: 'emergency-hk-v1' });
+      throw new ChatApiError(503, undefined, 'ai_unavailable');
+    },
+    getReplyState: async () => 'stopped',
+    cancelReply: async () => false,
+  };
+  const controller = new ChatController(mockApi, true);
+  controller.syncContext('parent-1', true, 'child-1');
+  await new Promise<void>(resolve => setTimeout(resolve, 0));
+  await controller.requestReply('u-sse');
+  const failedSnap = controller.getSnapshot();
+  assert.equal(failedSnap.busy, null, 'H2 Controller: busy must return to null after failed reply');
+  assert.deepEqual(failedSnap.feedback?.cards, ['emergency-hk-v1'], 'H2 Controller: SSE help card must be retained in feedback after failed/stopped reply');
+
+  // Feed real controller snapshot into ChatPage
+  currentMessages = failedSnap.messages;
+  currentFeedback = failedSnap.feedback;
+  currentDrafts = failedSnap.drafts;
+  currentReplyError = failedSnap.replyError;
+  nodes = collectNodes(rerender());
+  assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-panel'), 'H2 Controller->UI: retained SSE help card renders panel');
+  assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), 'H2 Controller->UI: retained SSE emergency card renders urgent notice');
+
+  // Once a completed model reply is loaded via reloadMessages(), retained feedback is cleared.
+  storedMessages = [
+    ...storedMessages,
+    { id: 'm-sse-done', childId: 'child-1', authorUserId: null, role: 'model', inReplyTo: 'u-sse', text: '已完成回覆。', createdAt: '2026-11-16T00:01:00.000Z' },
+  ];
+  await controller.reloadMessages();
+  assert.equal(controller.getSnapshot().feedback, null, 'H2 Controller: reloadMessages clears retained feedback once completed reply exists');
+  controller.dispose();
 });
