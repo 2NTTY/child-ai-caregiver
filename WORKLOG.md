@@ -6076,3 +6076,9 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 2）新增獨立劑量形態 `DOSE_AMOUNT_SOURCE`（時段／頻率或動詞或分數／醫療單位＋數量）併入 `CARE_ADVISORY_PATTERN` 與 `MEDICAL_CLAIM_PATTERN`，不再依賴用戶問題出現「藥」字（涵蓋「BB發燒點算？」→「每次四分之一粒。」「每晚半粒，連續三日。」「四分一粒。」「每4小時四分之一粒。」）；
 3）於 [search-short-path-gaps 測試](tests/search-short-path-gaps.test.ts) 新增 R4 真 `ProductAgent` + runtime 回歸（4→5 cases），保留純寒暄／有界補問／向用戶反問免審對照，並同步更新 [CI 腳本](scripts/ci/verify-search-short-path-gaps-offline.sh)。
 本輪仍屬離線實證，無真 Gemini／Vertex、無真機畫面 E2E、無 hosted Actions 收據，且未 push／開 PR。
+
+### 2026-11-16　B-P6 R4 審核整改（結尾問號防繞過與完整劑量形態同步）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R4.md` F2–F3 與 `SLICE_B_BP2_IMPLEMENTATION_AUDIT_R5.md` F2–F3 於本地 forward-only 新提交修復（未 push／未開 PR）：
+1）**F2–F3 [chat-delivery-review.ts](server/chat-delivery-review.ts)**：保留本分支固有 `BOUNDED_CLARIFICATION` 與 `PURE_GREETING_UTTERANCE` 邊界，同步導入 `isPureOperationClarifyingQuestion`（移除結尾 `?`/`？` 寬鬆豁免，攔截「提醒時間現為晚上八點。仲有其他事？」等混合斷言直交）及擴充 `DOSE_AMOUNT_SOURCE`（覆蓋英文拼寫數量、`小匙`/`大匙`/`微克` 與療程表述「每餐一小匙，連續三日。」／「Take one tablet at bedtime.」）。
+2）於 [search-short-path-gaps.test.ts](tests/search-short-path-gaps.test.ts)（5/5）補齊 F2–F3 端到端回歸與純反問免審對照。

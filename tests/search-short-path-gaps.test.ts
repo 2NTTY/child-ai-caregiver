@@ -487,4 +487,30 @@ test('R4: unverified completion wording and ungrounded dose amounts never become
   ] as const) {
     assert.equal(needsReview(draftOf(userMsg, text) as any), false, `Control must stay exempt: ${text}`);
   }
+
+  // R5 F2-F3: statement + follow-up question, English spelled-out doses, and Chinese 小匙 must fail closed.
+  for (const [userMsg, claim] of [
+    ['幫我更改提醒時間', '提醒時間現為晚上八點。仲有其他事？'],
+    ['刪除所有紀錄', '所有紀錄已經一筆不留。仲有其他事？'],
+    ['幫我更改提醒時間', '提醒時間現為晚上八點，仲有其他事？'],
+  ] as const) {
+    assert.equal(needsReview(draftOf(userMsg, claim) as any), true, `R5 F2 must require review: ${claim}`);
+    const { result, reviewCalls } = await presentOnly(userMsg, claim);
+    assert.equal(reviewCalls, 1, `R5 F2 must reach review: ${claim}`);
+    assert.equal(result.status, 'stopped');
+    assert.equal(result.text.includes('晚上八點') || result.text.includes('一筆不留'), false);
+  }
+  for (const [userMsg, dose] of [
+    ['BB發燒點算？', 'Take one tablet at bedtime.'],
+    ['BB發燒點算？', '每餐一小匙，連續三日。'],
+    ['BB發燒點算？', 'Give two teaspoons once daily.'],
+  ] as const) {
+    const bare = { kind: 'clarification', visibility: 'private', serverSubstitutedSourceText: false, paragraphs: [{ text: dose, citationIds: [] }], scope: r4Scope };
+    assert.equal(looksLikeCare(bare as any), true, `R5 F3 care advice: ${dose}`);
+    assert.equal(needsReview(bare as any), true, `R5 F3 bare review: ${dose}`);
+    assert.equal(needsReview(draftOf(userMsg, dose) as any), true, `R5 F3 review: ${dose}`);
+    const { result } = await presentOnly(userMsg, dose);
+    assert.equal(result.status, 'stopped');
+    assert.equal(result.text.includes('tablet') || result.text.includes('小匙') || result.text.includes('teaspoon'), false);
+  }
 });
