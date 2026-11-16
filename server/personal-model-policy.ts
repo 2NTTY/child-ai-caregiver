@@ -98,7 +98,7 @@ export function resolvePersonalModelLimits(
       maxRunSeconds: 'administrator',
       modelRequestSeconds: 'administrator',
       maxModelRetries: 'administrator',
-      softBudgetRatio: policy.softBudgetRatio !== undefined ? 'administrator' : 'system_default',
+      softBudgetRatio: softBudgetSource,
     },
   };
 }

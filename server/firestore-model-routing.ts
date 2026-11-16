@@ -124,7 +124,7 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
           maxQueryEmbeddings: nextLimits.maxQueryEmbeddings,
           deadlineMs: nextLimits.maxRunSeconds * 1000,
           softBudgetRatio: nextLimits.softBudgetRatio,
-          ...(latest.roleSoftBudgetRatios ? { roleSoftBudgetRatios: latest.roleSoftBudgetRatios } : {}),
+          roleSoftBudgetRatios: latest.roleSoftBudgetRatios ?? {},
         };
       };
       const gateway = createEmbeddingGateway({ config: selectedConfig, provider: enabled ? providers.embedding : undefined,

@@ -1087,3 +1087,148 @@ test("A03: multi-instance HighWatermarkMonitor and Firestore persistence merge a
   assert.equal(errorsB.length, 1, "Telemetry failure must invoke observable persistence error handler");
   assert.equal(workerB.highWatermarkMonitor.persistenceStatus("interactive").status, "degraded");
 });
+
+test("A04: mid-run admin roleSoftBudgetRatios update (clear & lower) immediately updates next provider systemInstruction metadata", async () => {
+  for (const mode of ["clear", "lower"] as const) {
+    const f = firestoreDomainFixture();
+    function wrapQuery(raw: any): any {
+      return new Proxy(raw, {
+        get(target, key) {
+          if (key === "get") return () => f.database.runTransaction(tx => tx.get(target));
+          const val = target[key];
+          return typeof val === "function"
+            ? (...args: any[]) => {
+                const res = val(...args);
+                return res?.query ? wrapQuery(res) : res?.path ? { ...res, id: res.path.split("/").at(-1) } : res;
+              }
+            : val;
+        },
+      });
+    }
+    const database = { ...f.database, collection: (p: string) => wrapQuery(f.database.collection(p)) } as Firestore;
+    const options = {
+      database,
+      cipher: createStorageCipher(Buffer.alloc(32, 74)),
+      projectId: "synthetic-a04",
+      namespace: `a04_${mode}`,
+    };
+    const authority = createFirestoreAuthority(options);
+    await authority.initializeControl({ generation: randomUUID(), enabled: true });
+    await authority.issueInvitation({ email: "owner@example.test", expiresAt: new Date(Date.now() + 60_000).toISOString(), operationId: randomUUID() });
+    await authority.admitIdentity({ userId: "owner", email: "owner@example.test", emailVerified: true });
+    await authority.acknowledge({ userId: "owner", operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+    const { child } = await authority.createChild({ userId: "owner", displayName: "測試寶寶", operationId: randomUUID() });
+
+    const config = readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: options.projectId });
+    const admin = createFirestoreAdmin(options, config);
+    const v1 = await admin.readPolicy();
+    await admin.submit("admin-1", {
+      opId: randomUUID(),
+      kind: "policy",
+      expectedVersion: v1.version,
+      values: {
+        enabled: true,
+        model: v1.model,
+        dailyUserAttempts: v1.dailyUserAttempts,
+        dailyGlobalAttempts: v1.dailyGlobalAttempts,
+        personalDailyGlobalAttempts: v1.personalDailyGlobalAttempts,
+        maxModelCalls: 6,
+        maxQueryEmbeddings: 4,
+        maxToolCalls: 8,
+        maxRunSeconds: 180,
+        modelRequestSeconds: 45,
+        maxModelRetries: 1,
+        softBudgetRatio: 0.4,
+        roleSoftBudgetRatios: { interactive: 0.8 },
+      },
+    });
+
+    const observedSoftRatios: number[] = [];
+    let callNum = 0;
+    const provider = () => ({
+      generate: async (request: any) => {
+        const sys = String(request.config?.systemInstruction ?? "");
+        const metaRaw = sys.split("Server runtime metadata:\n")[1];
+        if (metaRaw) observedSoftRatios.push(JSON.parse(metaRaw).budget.softBudgetRatio);
+        callNum++;
+        if (callNum === 1) {
+          return {
+            content: { role: "model", parts: [{ functionCall: { id: "step-1", name: "read_step", args: { tag: "first" } } }] },
+            finishReason: FinishReason.STOP,
+          };
+        }
+        return {
+          content: { role: "model", parts: [{ text: "更新後收到。" }] },
+          finishReason: FinishReason.STOP,
+        };
+      },
+    });
+    const routing = createFirestoreModelRouting(options, config, () => ({
+      agent: provider(),
+      model: { generate: async () => ({ text: "ok", usage: { inputTokens: 1, outputTokens: 1, cachedTokens: 0 } }) },
+      embedding: { embed: async () => ({ values: [1], inputTokens: 1, billableCharacters: 1 }) },
+    }));
+    const runtime = createAgentRuntime({
+      config,
+      usage: { reserve: async () => true, record: async () => {} },
+      provider: provider(),
+      resolve: async (uid, kind) => {
+        const resolved = await routing.resolve(uid, kind);
+        return {
+          ...resolved,
+          usage: { reserve: async () => true, record: async () => {} },
+        } as any;
+      },
+    });
+
+    const stepTool: AgentTool = {
+      name: "read_step",
+      description: "Synthetic read tool",
+      parameters: z.object({ tag: z.string() }).strict(),
+      authorize: async () => true,
+      async execute() {
+        const current = await admin.readPolicy();
+        await admin.submit("admin-1", {
+          opId: randomUUID(),
+          kind: "policy",
+          expectedVersion: current.version,
+          values: {
+            enabled: true,
+            model: current.model,
+            dailyUserAttempts: current.dailyUserAttempts,
+            dailyGlobalAttempts: current.dailyGlobalAttempts,
+            personalDailyGlobalAttempts: current.personalDailyGlobalAttempts,
+            maxModelCalls: 6,
+            maxQueryEmbeddings: 4,
+            maxToolCalls: 8,
+            maxRunSeconds: 180,
+            modelRequestSeconds: 45,
+            maxModelRetries: 1,
+            softBudgetRatio: 0.4,
+            roleSoftBudgetRatios: mode === "clear" ? {} : { interactive: 0.05 },
+          },
+        });
+        return { status: "succeeded", data: { updated: true } };
+      },
+    };
+
+    const res = await runtime.run({
+      runId: randomUUID(),
+      scope: { userId: "owner", workspaceId: child.workspaceId, childId: child.id, authorizationVersion: "1", dataVersion: "1" },
+      trigger: { kind: "interactive", reference: randomUUID() },
+      recipeId: "p1-chat",
+      messages: [{ role: "user", text: "Check mid-run update" }],
+      tools: [stepTool],
+      authorize: async () => true,
+    });
+    assert.equal(res.status, "completed", JSON.stringify(res));
+    const expectedNext = mode === "clear" ? 0.4 : 0.05;
+    assert.deepEqual(
+      observedSoftRatios,
+      [0.8, expectedNext],
+      `Mode ${mode}: next request metadata must immediately reflect updated policy (expected [0.8, ${expectedNext}])`,
+    );
+    const updatedView = await routing.view("owner");
+    assert.equal(updatedView.effective?.softBudgetRatio, expectedNext);
+  }
+});

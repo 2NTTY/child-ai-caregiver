@@ -38,6 +38,7 @@ TEST_FILES=(
   tests/firestore-voice.test.ts
   tests/firestore-restore-codec.test.ts
   tests/firestore-restore.test.ts
+  tests/firestore-backup.test.ts
 )
 
 for source in "${TEST_FILES[@]}" "$GUARD" scripts/verify-soft-budget-mutations.mjs scripts/verify-policy-rounding-mutations.mjs tsconfig.json tsconfig.server.json frontend/tsconfig.json; do

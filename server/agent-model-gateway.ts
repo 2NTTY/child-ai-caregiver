@@ -104,7 +104,8 @@ export class AgentGatewayModel extends BaseLlm {
   private readonly options: {
     config: AiConfig; provider: AgentModelProvider; usage: Pick<AiUsageStore, "reserve" | "record">;
     budget: AgentBudget; userId: string; childId: string; authorize: () => Promise<boolean>;
-    syncPolicy?: () => Promise<void>;
+    syncPolicy?: () => Promise<boolean | void>;
+    refreshPolicyConfig?: (request: LlmRequest) => Promise<LlmRequest["config"] | undefined>;
     roleProfileOverrides?: Partial<Record<AgentSoftBudgetProfileRole, number>>;
     reserveDeliveryReview?: AgentReviewReserve;
     purpose?: AgentModelPurpose;
@@ -123,13 +124,23 @@ export class AgentGatewayModel extends BaseLlm {
   };
   constructor(options: AgentGatewayModel["options"]) { super({ model: options.config.model }); this.options = options; }
   async connect(): Promise<never> { throw new AgentStopped("unavailable"); }
-  private async checkAuthorizeAndPolicy(): Promise<void> {
+  private async checkAuthorizeAndPolicy(): Promise<boolean> {
     if (!await this.options.budget.wait(this.options.authorize)) throw new AgentStopped("unauthorized");
-    if (this.options.syncPolicy) await this.options.budget.wait(this.options.syncPolicy);
+    if (this.options.syncPolicy) return Boolean(await this.options.budget.wait(this.options.syncPolicy));
+    return false;
+  }
+  private async syncRequestPolicy(request: LlmRequest): Promise<LlmRequest> {
+    const changed = await this.checkAuthorizeAndPolicy();
+    if (changed && this.options.refreshPolicyConfig) {
+      const nextConfig = await this.options.budget.wait(() => this.options.refreshPolicyConfig!(request));
+      if (nextConfig) return { ...request, config: nextConfig };
+    }
+    return request;
   }
   /** Shared gateway path for a tool-free Server call. Counts one root model call and grants no tools. */
   async completeText(input: { system: string; user: string; attemptKey: string; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference>;
     purpose?: AgentModelPurpose; onProviderStart?: () => void }): Promise<string> {
+    await this.checkAuthorizeAndPolicy();
     let audio: AgentAudioInput | undefined;
     if (input.voice) {
       if (!this.options.voice || !this.options.reloadAudio
@@ -194,7 +205,7 @@ export class AgentGatewayModel extends BaseLlm {
     if (daily && (!budget.durable || daily.context.binding.ownerId !== userId || daily.context.binding.childId !== childId))
       throw new AgentStopped("unavailable");
     if (!config.enabled) throw new AgentStopped("unavailable");
-    await this.checkAuthorizeAndPolicy();
+    request = await this.syncRequestPolicy(request);
     // Binary media has its own bounded allowance; all text, schemas and opaque protocol metadata remain counted.
     let requestCharacters = requestSize(request);
     if (requestCharacters > budget.limits.inputCharacters) {
@@ -228,11 +239,12 @@ export class AgentGatewayModel extends BaseLlm {
       requestCharacters = requestSize(base);
       if (requestCharacters > budget.limits.inputCharacters) throw new AgentStopped('input_limit');
     }
-    let outgoing = base;
     const initial = this.options.readConversationSummary
       ? await budget.wait(this.options.readConversationSummary)
       : !this.providerCalled ? this.options.initialConversationSummary : undefined;
-    await this.checkAuthorizeAndPolicy();
+    base = await this.syncRequestPolicy(base);
+    request = base;
+    let outgoing = base;
     const fits = (context: LlmRequest['contents'][number]) =>
       requestSize({ ...base, contents: [...base.contents, context] })
         + AGENT_TOOL_RESPONSE_RESERVE <= budget.limits.inputCharacters;

@@ -340,9 +340,9 @@ export function createAgentRuntime(options: {
           }
           const readTransition = input.readPolicyTransition
             ?? ("readPolicyTransition" in selected ? (selected as { readPolicyTransition?: () => Promise<AgentPolicyTransition | null> }).readPolicyTransition : undefined);
-          const syncPolicy = readTransition ? async () => {
+          const syncPolicy = readTransition ? async (): Promise<boolean> => {
             const transition = await readTransition();
-            if (!transition) return;
+            if (!transition) return false;
             if (transition.roleSoftBudgetRatios !== undefined) {
               for (const roleKey of Object.keys(activeRoleProfiles) as AgentSoftBudgetProfileRole[]) {
                 delete activeRoleProfiles[roleKey];
@@ -353,6 +353,7 @@ export function createAgentRuntime(options: {
             if (applied.stopped) {
               throw new AgentStopped(applied.reason === "deadline" ? "deadline" : "unavailable");
             }
+            return true;
           } : undefined;
           let lastToolSignature = "";
           let consecutiveToolRepeats = 0;
@@ -499,6 +500,7 @@ export function createAgentRuntime(options: {
             } }));
           let continuationInstructions: { phase: 'work' | 'finish'; text: string }[] = [];
           const renderInstruction = async (ids: readonly string[] = capabilitySelection?.loadedIds() ?? []) => {
+            if (syncPolicy) await budget.wait(syncPolicy);
             const currentPrompt = await budget.wait(() => getPrompt(ids));
             budget.check();
             const planning = budget.planningSnapshot(terminalToolNames.size > 0, {
@@ -542,6 +544,36 @@ export function createAgentRuntime(options: {
           const modelAnchors = new WeakMap<LlmRequest, string>();
           const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames, audio, images: ids => images.inputs(ids),
             ...(syncPolicy ? { syncPolicy } : {}),
+            refreshPolicyConfig: async request => {
+              const previous = currentInstruction;
+              const next = await renderInstruction();
+              currentInstruction = next;
+              const sys = projectSystemInstruction(request.config?.systemInstruction, previous, next);
+              let config = { ...request.config, systemInstruction: sys };
+              if (terminalToolNames.size && request.config?.tools && request.toolsDict) {
+                const finishingNow = budget.planningSnapshot(true, {
+                  reserveDeliveryReview,
+                  role: runRole,
+                  ...(activeRoleProfiles ? { profileOverrides: activeRoleProfiles } : {}),
+                }).phase === "finish";
+                if (finishingNow && !request.config.toolConfig?.functionCallingConfig?.allowedFunctionNames?.length) {
+                  const declarations = request.config.tools.flatMap(tool =>
+                    "functionDeclarations" in tool ? tool.functionDeclarations ?? [] : [])
+                    .filter(declaration => declaration.name && terminalToolNames.has(declaration.name));
+                  const names = declarations.map(declaration => declaration.name!);
+                  if (names.length && names.every(name => Object.hasOwn(request.toolsDict, name))) {
+                    config = {
+                      ...config,
+                      tools: [{ functionDeclarations: declarations }],
+                      toolConfig: { functionCallingConfig: { mode: FunctionCallingConfigMode.ANY, allowedFunctionNames: names } },
+                    };
+                    request.toolsDict = Object.fromEntries(names.map(name => [name, request.toolsDict[name]!]));
+                    request.allowedTools = names;
+                  }
+                }
+              }
+              return config;
+            },
             roleProfileOverrides: activeRoleProfiles,
             ...(privateSummaryEnabled ? { privateSummaryAdmission: input.privateSummaryAdmission } : {}),
             reserveDeliveryReview,
