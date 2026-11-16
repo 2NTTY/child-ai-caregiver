@@ -499,11 +499,12 @@ export function createAgentRuntime(options: {
               }
             } }));
           let continuationInstructions: { phase: 'work' | 'finish'; text: string }[] = [];
-          const renderInstruction = async (ids: readonly string[] = capabilitySelection?.loadedIds() ?? []) => {
+          const renderInstruction = async (ids: readonly string[] = capabilitySelection?.loadedIds() ?? [], modelCallAlreadyReserved = false) => {
             if (syncPolicy) await budget.wait(syncPolicy);
             const currentPrompt = await budget.wait(() => getPrompt(ids));
             budget.check();
             const planning = budget.planningSnapshot(terminalToolNames.size > 0, {
+              modelCallAlreadyReserved,
         reserveDeliveryReview,
         role: runRole,
         ...(activeRoleProfiles ? { profileOverrides: activeRoleProfiles } : {}),
@@ -541,17 +542,19 @@ export function createAgentRuntime(options: {
             return instruction(planning);
           };
           let currentInstruction = "";
+          // Provider-only policy renders must not change ADK's native instruction anchor.
+          const providerInstructions = new WeakMap<NonNullable<LlmRequest["config"]>, string>();
           const modelAnchors = new WeakMap<LlmRequest, string>();
           const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames, audio, images: ids => images.inputs(ids),
             ...(syncPolicy ? { syncPolicy } : {}),
-            refreshPolicyConfig: async request => {
-              const previous = currentInstruction;
-              const next = await renderInstruction();
-              currentInstruction = next;
+            refreshPolicyConfig: async (request, modelCallAlreadyReserved = false) => {
+              const previous = request.config ? providerInstructions.get(request.config) ?? currentInstruction : currentInstruction;
+              const next = await renderInstruction(undefined, modelCallAlreadyReserved);
               const sys = projectSystemInstruction(request.config?.systemInstruction, previous, next);
               let config = { ...request.config, systemInstruction: sys };
               if (terminalToolNames.size && request.config?.tools && request.toolsDict) {
                 const finishingNow = budget.planningSnapshot(true, {
+                  modelCallAlreadyReserved,
                   reserveDeliveryReview,
                   role: runRole,
                   ...(activeRoleProfiles ? { profileOverrides: activeRoleProfiles } : {}),
@@ -572,6 +575,7 @@ export function createAgentRuntime(options: {
                   }
                 }
               }
+              providerInstructions.set(config, next);
               return config;
             },
             roleProfileOverrides: activeRoleProfiles,
@@ -604,7 +608,7 @@ export function createAgentRuntime(options: {
               });
               if (!added) throw new AgentStopped("input_limit");
               return { ...request.config, tools: projectedTools,
-                systemInstruction: projectSystemInstruction(request.config?.systemInstruction, currentInstruction, await renderInstruction(ids)) };
+                systemInstruction: projectSystemInstruction(request.config?.systemInstruction, request.config ? providerInstructions.get(request.config) ?? currentInstruction : currentInstruction, await renderInstruction(ids)) };
             } : undefined });
           runContext.completeText = request => model.completeText(request);
           const runtimeTools = capabilitySelection ? [new AgentCapabilityToolset(tools, () => {

@@ -30,6 +30,7 @@ GUARD=frontend/scripts/family-cleanup-network-guard.mjs
 TEST_FILES=(
   tests/agent-budget.test.ts
   tests/agent-policy-rounding-alerts.test.ts
+  tests/agent-policy-preparation.test.ts
   tests/personal-model-settings.test.ts
   tests/admin-web.test.ts
   tests/model-settings-client.test.ts

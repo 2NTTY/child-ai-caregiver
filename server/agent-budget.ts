@@ -194,6 +194,7 @@ export class AgentBudget {
     try { this.applySnapshot(await this.wait(() => adapter.read(context))); }
     catch (error) { throw this.durableFailure(error); }
   }
+  private readonly preparingModels = new WeakMap<BudgetAttempt, string | undefined>();
   async admit(attempt: BudgetAttempt) {
     const admission = this.durableAdmission.then(async () => {
       this.check();
@@ -229,6 +230,7 @@ export class AgentBudget {
         const reserved = await this.wait(() => adapter.reserve(context, attempt));
         this.applySnapshot(reserved.snapshot);
         if (reserved.decision !== "execute") throw new AgentStopped("unavailable");
+        if (attempt.kind === "model") this.preparingModels.set(attempt, reserved.preparationToken);
       } catch (error) {
         // A lost acknowledgement can have committed. Read counters only, never retry execution.
         try { this.applySnapshot(await this.wait(() => adapter.read(context))); } catch { /* Keep the original refusal. */ }
@@ -247,6 +249,7 @@ export class AgentBudget {
   planningSnapshot(
     hasTerminalTool: boolean,
     options?: {
+      modelCallAlreadyReserved?: boolean;
       reserveDeliveryReview?: AgentReviewReserve;
       softBudgetRatio?: number;
       role?: AgentSoftBudgetProfileRole;
@@ -254,11 +257,12 @@ export class AgentBudget {
     },
   ) {
     this.check();
+    const usedBeforeThisCall = { ...this.used, modelCalls: Math.max(0, this.used.modelCalls - (options?.modelCallAlreadyReserved ? 1 : 0)) };
     const reviewReserve = hasReviewReserve(options?.reserveDeliveryReview) ? 1 : 0;
     // Hard finish reserve includes the review call when active (not soft guidance only).
     const hardFinishReserve = 1 + reviewReserve;
     const remaining = {
-      modelCallsIncludingThisCall: this.remainingModelCalls,
+      modelCallsIncludingThisCall: Math.max(0, this.selectedLimits.modelCalls - usedBeforeThisCall.modelCalls),
       toolCalls: Math.max(0, this.selectedLimits.toolCalls - this.used.toolCalls),
       queryEmbeddings: Math.max(0, this.selectedLimits.queryEmbeddings - this.used.queryEmbeddings),
       timeMs: Math.max(0, this.expiresAt - Date.now()),
@@ -279,20 +283,20 @@ export class AgentBudget {
       queryEmbeddings: derivedSoftTargets.queryEmbeddings,
     };
     const softRemaining = {
-      modelCalls: Math.max(0, softBudget.modelCalls - this.used.modelCalls),
+      modelCalls: Math.max(0, softBudget.modelCalls - usedBeforeThisCall.modelCalls),
       toolCalls: Math.max(0, softBudget.toolCalls - this.used.toolCalls),
       queryEmbeddings: Math.max(0, softBudget.queryEmbeddings - this.used.queryEmbeddings),
     };
     const softExceeded = {
-      modelCalls: this.used.modelCalls >= softBudget.modelCalls,
+      modelCalls: usedBeforeThisCall.modelCalls >= softBudget.modelCalls,
       toolCalls: this.used.toolCalls >= softBudget.toolCalls,
       queryEmbeddings: this.used.queryEmbeddings >= softBudget.queryEmbeddings,
-      any: this.used.modelCalls >= softBudget.modelCalls ||
+      any: usedBeforeThisCall.modelCalls >= softBudget.modelCalls ||
            this.used.toolCalls >= softBudget.toolCalls ||
            this.used.queryEmbeddings >= softBudget.queryEmbeddings,
     };
     return {
-      usedBeforeThisCall: this.counts,
+      usedBeforeThisCall,
       remaining,
       softBudgetRatio: effectiveSoftRatio,
       softBudget,
@@ -323,8 +327,31 @@ export class AgentBudget {
     this.modelAdmission = admission.then(() => {}, () => {});
     return admission;
   }
+  async prepareModelDispatch(attempt: BudgetAttempt, expectedFingerprint: string, nextFingerprint: string) {
+    this.check();
+    const preparationToken = this.preparingModels.get(attempt);
+    if (attempt.kind !== 'model' || !preparationToken || !this.durableBudget?.adapter.prepareModelDispatch)
+      throw new AgentStopped('unavailable');
+    const { adapter, context } = this.durableBudget;
+    try {
+      const snapshot = await this.wait(() => adapter.prepareModelDispatch!(context, attempt, expectedFingerprint, nextFingerprint, preparationToken));
+      this.applySnapshot(snapshot);
+      if (!snapshot.attempts.some(value => value.key === attempt.key && value.fingerprint === attempt.fingerprint
+        && value.preparedFingerprint === nextFingerprint)) throw new AgentStopped('unavailable');
+    } catch (error) { throw this.durableFailure(error, 'model'); }
+  }
+  beginModelDispatch(attempt: BudgetAttempt) {
+    this.check();
+    if (!this.preparingModels.delete(attempt)) throw new AgentStopped('unavailable');
+  }
   get counts() { return { ...this.used }; }
   get limits() { return { ...this.selectedLimits }; }
+  /** Policy identity excludes usage; refreshed payloads receive their own preparation binding. */
+  get policyFingerprint(): string {
+    return agentBudgetFingerprint({ limits: this.selectedLimits, softRatio: this.softRatio,
+      explicitSoftRatio: this.hasExplicitSoftRatio, personalSoftOverride: this.personalSoftOverride,
+      roleProfiles: this.roleProfileOverrides ?? {}, deadlineAtMs: this.expiresAt });
+  }
   /** Only Server configuration selects the interactive input ceiling; workers keep the base limit. */
   configureInputCharacters(value: number) {
     if (this.inputConfigured || Object.values(this.used).some(count => count !== 0)
@@ -409,6 +436,14 @@ export class AgentBudget {
           return { stopped: true, reason: "deadline", countersPreserved: true };
         }
         this.timer = setTimeout(() => this.controller.abort(new AgentStopped("deadline")), Math.max(0, this.expiresAt - Date.now()));
+      }
+    }
+    // A policy can tighten while this call awaits its quota receipt. Already
+    // consumed reservations stay consumed, but cannot authorize a now-over-hard dispatch.
+    for (const [kind, reason] of [["modelCalls", "model_limit"], ["toolCalls", "tool_limit"], ["queryEmbeddings", "embedding_limit"]] as const) {
+      if (this.used[kind] > this.selectedLimits[kind]) {
+        if (!this.signal.aborted) this.controller.abort(new AgentStopped(reason));
+        return { stopped: true, reason, countersPreserved: true };
       }
     }
     return { stopped: this.signal.aborted, countersPreserved: true };
