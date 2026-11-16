@@ -6032,3 +6032,12 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 ### 2026-11-17　PR-E（`codex/req005-acceptance-closeout`）同步關聯 `B-P5` 新本地提交 `07ddddd4`
 
 - 同步 `PLAN.md` 關聯 `B-P5` (`codex/search-help-entry`) 引用至 `07ddddd43c85a60c1dc39a0c76c4889d4a420299`（納入 H1 雙向意識／反應喪失詞組與 H2 `ChatController`／`chatScreen.tsx` 失敗／中止保留 Server SSE `help` 卡修復，並校準行動端測試口徑為「結構有界（`maxHeight`）及 `AgentComposer` 仍 render」），維持技術 **LOCAL HOLD**；PR-A～PR-E 其餘程式不變，全部維持 `NOT_PUSHED`。
+
+
+### 2026-11-17　REQ005 PR-E：校準 A04 修復及 C03 真正可接續容量的當前收束紀錄
+
+- 保留截至 `0959837a` 的全部歷史與已定案 B-P5 設計；只修當前 PLAN 及追加本條。A 以 `50ecd8c3068e3a53f1161f75dc48e12fabad1476` 為準：`411cdf9` 修準入／重試透明更新、`9f33e3d` 對齊原變異目標、`50ecd8c` 補持久 reviewer；當輪 canonical **12 檔 81/81＋S1–S5／P1–P4＋server／root／frontend 三組 tsc 全 PASS**，新增準備期間再變政策、撤權、hard 降至已用量以下、lost reply、root／daily owner／CAS 與完整實際 payload 指紋校驗，不以停止取代良性更新。
+- C03 引用由舊 `2672553d`／40 cases／100 頁總牆改為既有 `b3aba8d7`／**41/41＋三組 tsc PASS**：200 筆 keyset 頁、100 頁只是每次派送預算，原加密 growth_checks 保存 authority／basis／cursor，回 `deferred/nextAt` 由正式 queue 重排冷啟接續；精確 20,000 筆亦可能需要下一派送確認 EOF，不假稱單次完成。保留真正變更數／撤權與 mutation fences，未改 C 的程式或提交。
+- B `55cfaa0f` **54/54**、D `c65624a6` **18/18** 及各三組 tsc 同輪重跑通過。原作者 `a7dbb06b` 加 A04 首次修復的實際整合 `7616ee55` **215/215**、摘要 **102/102**、壓縮 10 次 **60/60**、三組 tsc、growth import **1/1** 與 coupling **13/13** 通過；最終補齊兩項 reviewer 的 A 及本 E 文件後，另按最終整合 HEAD 重跑並交付 manifest，不把本條的舊 HEAD 收據當新版本收據。
+- PLAN 凍結程式輸入明列 `2239ea37`／tree `dbcc5e6c293cb3c438f6833ac112953a81da2795`，最終含本文件的 HEAD／tree 見外附本地 manifest；不修改舊 frozen artifacts 或原報告的歷史 bytes。原 R6 的「A–D 程式碼與 aed10603 逐位元一致」不適用 C：實際 `firestore-growth.ts`／growth-history-cursor 測試已有 b3aba8d7 差異。
+- PR-E 本身仍只包含 8 項合成場景（獨立 gate 6 檔共 36 cases）；官方 26 項矩陣維持 offline subset／partial／not run，不寫全案驗收完成。真模型、Firestore／Storage、索引 READY、Actions、實機／視覺、外部告警、帳單與多實例壓測未跑，`#447` 持久摘要未啟用。可供 review 不等於 Owner `2NTTY` 已合併或獲准啟用；沒有推送／開 PR／部署或修改 SliceB。
