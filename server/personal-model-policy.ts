@@ -1,19 +1,32 @@
 import type { PlatformPolicy } from '../src/shared/admin.ts';
 import type { EffectiveModelLimits, ModelSettings, PolicyLimitSource } from '../src/shared/model-settings.ts';
-import { DEFAULT_SOFT_BUDGET_RATIO, clampSoftBudgetRatio, deriveSoftBudgetTargets } from '../src/shared/agent-run-limits.ts';
+import { DEFAULT_SOFT_BUDGET_RATIO, clampSoftBudgetRatio, deriveSoftBudgetTargets, resolveRoleSoftBudgetRatio, type AgentSoftBudgetProfileRole } from '../src/shared/agent-run-limits.ts';
 
 /** One resolver for settings display, interactive roles, media and background work. */
-export function resolvePersonalModelLimits(settings: ModelSettings, policy: PlatformPolicy): EffectiveModelLimits {
+export function resolvePersonalModelLimits(
+  settings: ModelSettings,
+  policy: PlatformPolicy,
+  options?: { role?: AgentSoftBudgetProfileRole; applyAdminRoleOverride?: boolean },
+): EffectiveModelLimits {
   const rawPersonalSoftRatio = settings.mode === 'personal' && settings.softBudgetRatio !== undefined
     ? settings.softBudgetRatio
     : undefined;
-  const softBudgetRatio = clampSoftBudgetRatio(
-    rawPersonalSoftRatio ?? policy.softBudgetRatio ?? DEFAULT_SOFT_BUDGET_RATIO,
-  );
+  const resolvedRole = options?.role ?? 'interactive';
+  const profileOverrides = policy.roleSoftBudgetRatios as Partial<Record<AgentSoftBudgetProfileRole, number>> | undefined;
+  const adminRoleOverride = options?.applyAdminRoleOverride ? profileOverrides?.[resolvedRole] : undefined;
+  const softBudgetRatio = rawPersonalSoftRatio !== undefined
+    ? clampSoftBudgetRatio(rawPersonalSoftRatio)
+    : options?.applyAdminRoleOverride
+      ? resolveRoleSoftBudgetRatio({
+          role: resolvedRole,
+          policyRatio: policy.softBudgetRatio,
+          profileOverrides,
+        })
+      : clampSoftBudgetRatio(policy.softBudgetRatio ?? DEFAULT_SOFT_BUDGET_RATIO);
   const softBudgetSource: PolicyLimitSource =
     rawPersonalSoftRatio !== undefined
       ? 'personal'
-      : policy.softBudgetRatio !== undefined
+      : adminRoleOverride !== undefined || policy.softBudgetRatio !== undefined
         ? 'administrator'
         : 'system_default';
   if (settings.mode === 'personal') {

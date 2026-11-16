@@ -120,6 +120,7 @@ export class AgentBudget {
   hasPersonalLimits(): boolean { return this.configured; }
   private softRatio: number = DEFAULT_SOFT_BUDGET_RATIO;
   private hasExplicitSoftRatio = false;
+  private personalSoftOverride = false;
   private roleProfileOverrides: Partial<Record<AgentSoftBudgetProfileRole, number>> | undefined;
   get softBudgetRatio(): number { return this.softRatio; }
   private inputConfigured = false;
@@ -129,6 +130,7 @@ export class AgentBudget {
   private readonly startedAt = Date.now();
   get deadlineAtMs(): number { return this.expiresAt; }
   private durableBudget?: AgentDurableBudget;
+  private durableAdmission: Promise<void> = Promise.resolve();
   private modelAdmission: Promise<void> = Promise.resolve();
   private readonly controller = new AbortController();
   private timer: ReturnType<typeof setTimeout>;
@@ -193,26 +195,48 @@ export class AgentBudget {
     catch (error) { throw this.durableFailure(error); }
   }
   async admit(attempt: BudgetAttempt) {
-    this.check();
-    if (!this.durableBudget || !attempt.key) throw new AgentStopped("unavailable");
-    const { adapter, context } = this.durableBudget;
-    const tightenedKey = attempt.kind === "tool_batch" ? "toolCalls" : attempt.kind === "embedding" ? "queryEmbeddings" : null;
-    if (tightenedKey) {
-      const amount = attempt.kind === "tool_batch" ? attempt.units : 1;
-      if (this.selectedLimits[tightenedKey] < context.binding.limits[tightenedKey]
-        && this.used[tightenedKey] + amount > this.selectedLimits[tightenedKey]) {
-        throw new AgentStopped(tightenedKey === "toolCalls" ? "tool_limit" : "embedding_limit");
+    const admission = this.durableAdmission.then(async () => {
+      this.check();
+      if (!this.durableBudget || !attempt.key) throw new AgentStopped("unavailable");
+      const { adapter, context } = this.durableBudget;
+      let preflight: RootBudgetSnapshot;
+      try {
+        preflight = await this.wait(() => adapter.read(context));
+        this.applySnapshot(preflight);
+      } catch (error) {
+        throw this.durableFailure(error, attempt.kind);
       }
-    }
-    try {
-      const admission = await this.wait(() => adapter.reserve(context, attempt));
-      this.applySnapshot(admission.snapshot);
-      if (admission.decision !== "execute") throw new AgentStopped("unavailable");
-    } catch (error) {
-      // A lost acknowledgement can have committed. Read counters only, never retry execution.
-      try { this.applySnapshot(await this.wait(() => adapter.read(context))); } catch { /* Keep the original refusal. */ }
-      throw this.durableFailure(error, attempt.kind);
-    }
+      const alreadyReserved = preflight.attempts.some(
+        existing => existing.key === attempt.key
+          && existing.kind === attempt.kind
+          && existing.fingerprint === attempt.fingerprint
+          && (attempt.kind !== "tool_batch" || existing.kind === "tool_batch" && existing.units === attempt.units),
+      );
+      const tightenedKey = attempt.kind === "model" ? "modelCalls"
+        : attempt.kind === "tool_batch" ? "toolCalls"
+        : attempt.kind === "embedding" ? "queryEmbeddings" : null;
+      if (!alreadyReserved && tightenedKey) {
+        const amount = attempt.kind === "tool_batch" ? attempt.units : 1;
+        if (this.used[tightenedKey] + amount > this.selectedLimits[tightenedKey]) {
+          throw new AgentStopped(
+            tightenedKey === "modelCalls" ? "model_limit"
+              : tightenedKey === "toolCalls" ? "tool_limit"
+              : "embedding_limit",
+          );
+        }
+      }
+      try {
+        const reserved = await this.wait(() => adapter.reserve(context, attempt));
+        this.applySnapshot(reserved.snapshot);
+        if (reserved.decision !== "execute") throw new AgentStopped("unavailable");
+      } catch (error) {
+        // A lost acknowledgement can have committed. Read counters only, never retry execution.
+        try { this.applySnapshot(await this.wait(() => adapter.read(context))); } catch { /* Keep the original refusal. */ }
+        throw this.durableFailure(error, attempt.kind);
+      }
+    });
+    this.durableAdmission = admission.then(() => {}, () => {});
+    return admission;
   }
   /**
    * Request-local guidance; includes the upcoming generation, before its reservation.
@@ -239,12 +263,15 @@ export class AgentBudget {
       queryEmbeddings: Math.max(0, this.selectedLimits.queryEmbeddings - this.used.queryEmbeddings),
       timeMs: Math.max(0, this.expiresAt - Date.now()),
     };
-    const effectiveSoftRatio = resolveRoleSoftBudgetRatio({
-      role: options?.role,
-      policyRatio: this.hasExplicitSoftRatio ? this.softRatio : undefined,
-      profileOverrides: options?.profileOverrides ?? this.roleProfileOverrides,
-      runOverride: options?.softBudgetRatio,
-    });
+    const effectiveSoftRatio = options?.softBudgetRatio !== undefined
+      ? resolveRoleSoftBudgetRatio({ runOverride: options.softBudgetRatio })
+      : this.personalSoftOverride && this.hasExplicitSoftRatio
+        ? this.softRatio
+        : resolveRoleSoftBudgetRatio({
+            role: options?.role,
+            policyRatio: this.hasExplicitSoftRatio ? this.softRatio : undefined,
+            profileOverrides: options?.profileOverrides ?? this.roleProfileOverrides,
+          });
     const derivedSoftTargets = deriveSoftBudgetTargets(this.selectedLimits, effectiveSoftRatio);
     const softBudget = {
       modelCalls: derivedSoftTargets.modelCalls,
@@ -316,13 +343,14 @@ export class AgentBudget {
     if (this.responseCharacters !== null) this.responseCharacters = Math.max(0, this.responseCharacters - characters);
   }
   /** Server-resolved personal settings or an explicitly fixed trusted profile; never model/request args. */
-  configurePersonal(limits: AgentRunLimits) {
+  configurePersonal(limits: AgentRunLimits, options?: { softBudgetSource?: "personal" | "administrator" | "system_default" }) {
     if (this.configured || Object.values(this.used).some(count => count !== 0)) throw new Error("Agent limits already selected");
     const frozen = freezeAgentRunLimits(limits);
     this.selectedLimits = { ...this.selectedLimits, ...frozen };
     if (frozen.softBudgetRatio !== undefined) {
       this.softRatio = frozen.softBudgetRatio;
       this.hasExplicitSoftRatio = true;
+      this.personalSoftOverride = options?.softBudgetSource === "personal";
     }
     if (limits.deadlineMs !== undefined) {
       this.expiresAt = Math.min(this.expiresAt, this.startedAt + limits.deadlineMs);

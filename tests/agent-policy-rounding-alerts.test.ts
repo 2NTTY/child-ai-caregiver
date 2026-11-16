@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { Firestore } from "@google-cloud/firestore";
 import { FinishReason } from "@google/genai";
 import { z } from "zod";
@@ -12,7 +12,11 @@ import {
   roundBudgetAllowance,
   roundConsumptionReserve,
 } from "../src/shared/agent-run-limits.ts";
-import { AgentBudget } from "../server/agent-budget.ts";
+import { AgentBudget, AgentStopped, agentBudgetFingerprint } from "../server/agent-budget.ts";
+import { FirestoreRootBudget } from "../server/firestore-root-budget.ts";
+import { createEmbeddingGateway } from "../server/embedding-gateway.ts";
+import { createKnowledgeRetriever } from "../server/knowledge-retriever.ts";
+import { parseKnowledgeFilter } from "../server/knowledge-inputs.ts";
 import { createAgentRuntime, type AgentTool } from "../server/agent-runtime.ts";
 import { createHighWatermarkMonitor, evaluateSustainedHighWatermark, type HighWatermarkAlert } from "../server/agent-high-watermark.ts";
 import { resolvePersonalModelLimits } from "../server/personal-model-policy.ts";
@@ -622,4 +626,464 @@ test("createFirestoreProductAgent persists HighWatermarkMonitor samples across r
   });
   assert.equal(transformedMetric.path, metricRecord[0]);
   assert.equal(codec.decode(transformedMetric).context.kind, "agent-high-watermark");
+});
+
+test("A01: concurrent query-embedding admission enforces tightened hard limit without duplicate dispatch or counter reset", async (t) => {
+  const f = firestoreDomainFixture();
+  const cipher = createStorageCipher(Buffer.alloc(32, 71));
+  const now = Date.now();
+  const rootBudget = new FirestoreRootBudget({
+    database: f.database,
+    cipher,
+    projectId: "synthetic-a01",
+    namespace: "a01_root",
+    serverClock: () => now,
+  });
+  const rootRunId = randomUUID();
+  const context = {
+    generation: 1,
+    binding: {
+      rootRunId,
+      ownerId: "owner",
+      workspaceId: randomUUID(),
+      childId: randomUUID(),
+      authorizationVersion: "1",
+      storageEpoch: "epoch:1",
+      trigger: { kind: "interactive", reference: randomUUID() },
+      workflowVersion: "wf:1",
+      promptPackVersion: "0.1.39",
+      settingsVersion: "1",
+      billingVersion: "platform:v1",
+      limits: { modelCalls: 4, toolCalls: 8, queryEmbeddings: 2 },
+      deadlineAtMs: now + 300_000,
+    },
+  };
+
+  const budget = new AgentBudget(undefined, 120_000, context.binding.deadlineAtMs);
+  t.after(() => budget.close());
+  budget.configurePersonal({ modelCalls: 4, toolCalls: 8, queryEmbeddings: 2 });
+  await budget.initializeDurable({ adapter: rootBudget, context });
+
+  const applied = budget.applyPolicyTransition({ enabled: true, maxQueryEmbeddings: 1 });
+  assert.equal(applied.stopped, false);
+  assert.equal(budget.limits.queryEmbeddings, 1);
+
+  let dispatches = 0;
+  const gateway = createEmbeddingGateway({
+    config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-a01" }),
+    usage: { reserve: async () => true, record: async () => {} },
+    provider: {
+      embed: async () => {
+        dispatches += 1;
+        await new Promise(resolve => setTimeout(resolve, 15));
+        return { values: [1, ...Array<number>(1023).fill(0)], inputTokens: 3, billableCharacters: 12 };
+      },
+    },
+  });
+  const retriever = createKnowledgeRetriever({ candidates: async () => [] }, gateway);
+  const run = retriever.createRun({
+    actor: { kind: "query_embedding", actorId: "owner", operationId: rootRunId },
+    budget,
+    authorize: async () => true,
+  });
+  const hkFilter = parseKnowledgeFilter({
+    region: "HK",
+    classification: "official_guidance",
+    age: { basis: "actual", minMonths: 6, maxMonths: 6 },
+    topics: [],
+  });
+
+  const k1 = `embedding:${createHash("sha256").update("q1").digest("hex")}`;
+  const k2 = `embedding:${createHash("sha256").update("q2").digest("hex")}`;
+  const results = await Promise.allSettled([
+    run.search("BB加固米糊", hkFilter, k1),
+    run.search("BB幾時食固體食物", hkFilter, k2),
+  ]);
+
+  const fulfilled = results.filter(r => r.status === "fulfilled");
+  const rejected = results.filter(r => r.status === "rejected");
+  assert.equal(fulfilled.length, 1, `Only one concurrent query may proceed after hard tightened to 1; results=${JSON.stringify(results.map(r => r.status === "rejected" ? String(r.reason) : "ok"))}`);
+  assert.equal(rejected.length, 1, "Second concurrent query must be rejected by tightened hard");
+  assert.equal((rejected[0] as PromiseRejectedResult).reason instanceof AgentStopped, true);
+  assert.equal(((rejected[0] as PromiseRejectedResult).reason as AgentStopped).reason, "embedding_limit");
+  assert.equal(dispatches, 1, "Provider embedding must dispatch at most once");
+  assert.equal(budget.counts.queryEmbeddings, 1);
+
+  // Post-tighten reread and duplicate attempt key replay never grant a second dispatch.
+  const persisted = await rootBudget.read(context);
+  assert.equal(persisted.used.queryEmbeddings, 1);
+  assert.equal(persisted.attempts.length, 1);
+  const committed = persisted.attempts[0]!;
+  await assert.rejects(
+    budget.admit({ key: committed.key, fingerprint: committed.fingerprint, kind: "embedding", units: 1 }),
+    err => err instanceof AgentStopped && err.reason === "unavailable",
+  );
+  const k3 = `embedding:${agentBudgetFingerprint("q3")}`;
+  await assert.rejects(
+    run.search("BB每日飲奶幾多", hkFilter, k3),
+    err => err instanceof AgentStopped && err.reason === "embedding_limit",
+  );
+  assert.equal(dispatches, 1);
+});
+
+test("A02: settings effective softBudgetRatio matches runtime execution in both personal (0.35) and platform (interactive=0.30) modes", async () => {
+  const f = firestoreDomainFixture();
+  function wrapQuery(raw: any): any {
+    return new Proxy(raw, {
+      get(target, key) {
+        if (key === "get") return () => f.database.runTransaction(tx => tx.get(target));
+        const val = target[key];
+        return typeof val === "function"
+          ? (...args: any[]) => {
+              const res = val(...args);
+              return res?.query ? wrapQuery(res) : res?.path ? { ...res, id: res.path.split("/").at(-1) } : res;
+            }
+          : val;
+      },
+    });
+  }
+  const database = { ...f.database, collection: (p: string) => wrapQuery(f.database.collection(p)) } as Firestore;
+  const options = {
+    database,
+    cipher: createStorageCipher(Buffer.alloc(32, 72)),
+    projectId: "synthetic-a02",
+    namespace: "a02_effective",
+  };
+  const authority = createFirestoreAuthority(options);
+  await authority.initializeControl({ generation: randomUUID(), enabled: true });
+  await authority.issueInvitation({ email: "owner@example.test", expiresAt: new Date(Date.now() + 60_000).toISOString(), operationId: randomUUID() });
+  await authority.admitIdentity({ userId: "owner", email: "owner@example.test", emailVerified: true });
+  await authority.acknowledge({ userId: "owner", operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  const { child } = await authority.createChild({ userId: "owner", displayName: "測試寶寶", operationId: randomUUID() });
+
+  const config = readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: options.projectId });
+  const admin = createFirestoreAdmin(options, config);
+  const initial = await admin.readPolicy();
+  await admin.submit("admin-1", {
+    opId: randomUUID(),
+    kind: "policy",
+    expectedVersion: initial.version,
+    values: {
+      enabled: true,
+      model: initial.model,
+      dailyUserAttempts: initial.dailyUserAttempts,
+      dailyGlobalAttempts: initial.dailyGlobalAttempts,
+      personalDailyGlobalAttempts: initial.personalDailyGlobalAttempts,
+      maxModelCalls: 8,
+      maxQueryEmbeddings: 4,
+      maxToolCalls: 16,
+      maxRunSeconds: 180,
+      modelRequestSeconds: 45,
+      maxModelRetries: 1,
+      softBudgetRatio: 0.4,
+      roleSoftBudgetRatios: { interactive: 0.3, background: 0.5, reviewer: 0.2, retriever: 0.6 },
+    },
+  });
+
+  const observedRuntimeSoftRatios: number[] = [];
+  let seq = 0;
+  const recordPromptRatio = (request: any) => {
+    const sys = String(request.config?.systemInstruction ?? "");
+    const metaRaw = sys.split("Server runtime metadata:\n")[1];
+    if (metaRaw) observedRuntimeSoftRatios.push(JSON.parse(metaRaw).budget.softBudgetRatio);
+  };
+  const captureAgentProvider = () => ({
+    generate: async (request: any) => {
+      recordPromptRatio(request);
+      return {
+        content: {
+          role: "model",
+          parts: [{
+            functionCall: {
+              id: `a02-${++seq}`,
+              name: "present_answer",
+              args: { kind: "clarification", paragraphs: [{ text: "寶寶幾個月大？", citationIds: [] }] },
+            },
+          }],
+        },
+        finishReason: FinishReason.STOP,
+      };
+    },
+  });
+  const captureModelProvider = () => ({
+    generate: async () => ({
+      text: JSON.stringify({ kind: "clarification", paragraphs: [{ text: "寶寶幾個月大？", citationIds: [] }] }),
+      usage: { inputTokens: 1, outputTokens: 1, cachedTokens: 0 },
+    }),
+  });
+  const routing = createFirestoreModelRouting(options, config, () => ({
+    agent: captureAgentProvider(),
+    model: captureModelProvider(),
+    embedding: { embed: async () => ({ values: [1], inputTokens: 1, billableCharacters: 1 }) },
+  }));
+
+  const chat = createFirestoreChatStore(options);
+  const care = createFirestoreCareStore(options);
+  const memory = createFirestoreMemoryStore({ ...options, chat, care });
+  const online = createFirestoreOnlineStore({ ...options, mutations: [chat.mutation, care.mutation, memory.mutation] });
+  const product = await createFirestoreProductAgent({
+    ...options,
+    chat,
+    care,
+    memory,
+    online,
+    config,
+    platformProviders: () => ({
+      agent: captureAgentProvider(),
+      model: captureModelProvider(),
+      embedding: { embed: async () => ({ values: [1], inputTokens: 1, billableCharacters: 1 }) },
+    }),
+  });
+
+  const runRuntimeTurn = async (text: string) => {
+    const msg = await chat.createUserMessageForUser("owner", child.id, text);
+    assert.ok(msg);
+    const runRes = await product.agent.reply("owner", child.id, msg.id, async () => true);
+    assert.equal(runRes?.status, "completed", JSON.stringify(runRes));
+  };
+
+  // Platform mode: view effective (0.30 from interactive role override) matches runtime (0.30).
+  const platformView = await routing.view("owner");
+  assert.equal(platformView.effective?.softBudgetRatio, 0.3);
+  assert.equal(platformView.effective?.limitSources?.softBudgetRatio, "administrator");
+  await runRuntimeTurn("平台模式檢查");
+  assert.equal(observedRuntimeSoftRatios.at(-1), platformView.effective?.softBudgetRatio);
+
+  // Personal mode with explicit 0.35: view effective (0.35, source="personal") matches runtime (0.35),
+  // never silently overridden by admin interactive=0.30.
+  await routing.settings.save("owner", {
+    opId: randomUUID(),
+    expectedVersion: 0,
+    mode: "personal",
+    provider: "gemini",
+    model: PERSONAL_MODEL,
+    apiKey: "synthetic-personal-key",
+    backgroundEnabled: false,
+    dailyLimit: 50,
+    maxModelCalls: 8,
+    maxQueryEmbeddings: 4,
+    softBudgetRatio: 0.35,
+    consent: true,
+  });
+  const personalView = await routing.view("owner");
+  assert.equal(personalView.effective?.softBudgetRatio, 0.35);
+  assert.equal(personalView.effective?.limitSources?.softBudgetRatio, "personal");
+
+  const captureTextProvider = () => ({
+    generate: async (request: any) => {
+      const sys = String(request.config?.systemInstruction ?? "");
+      const metaRaw = sys.split("Server runtime metadata:\n")[1];
+      if (metaRaw) observedRuntimeSoftRatios.push(JSON.parse(metaRaw).budget.softBudgetRatio);
+      return { content: { role: "model", parts: [{ text: "收到。" }] }, finishReason: FinishReason.STOP };
+    },
+  });
+  const directRuntime = createAgentRuntime({
+    config,
+    usage: { reserve: async () => true, record: async () => {} },
+    provider: captureTextProvider(),
+    resolve: async (uid, kind) => {
+      const resolved = await routing.resolve(uid, kind);
+      return {
+        ...resolved,
+        provider: captureTextProvider(),
+        authorize: async () => true,
+        usage: { reserve: async () => true, record: async () => {} },
+      } as any;
+    },
+  });
+  const pMsg = await chat.createUserMessageForUser("owner", child.id, "個人模式 0.35 檢查");
+  assert.ok(pMsg);
+  const pRes = await directRuntime.run({
+    runId: randomUUID(),
+    scope: { userId: "owner", workspaceId: child.workspaceId, childId: child.id, authorizationVersion: "1", dataVersion: "1" },
+    trigger: { kind: "interactive", reference: pMsg.id },
+    recipeId: "p1-chat",
+    messages: [{ role: "user", text: "個人模式 0.35 檢查" }],
+    tools: [],
+    authorize: async () => true,
+  });
+  assert.equal(pRes.status, "completed", JSON.stringify(pRes));
+  assert.equal(observedRuntimeSoftRatios.at(-1), 0.35, "Personal explicit softBudgetRatio must match view effective (0.35)");
+
+  // Updating personal ratio to 0.60 immediately updates both view effective and runtime without code change.
+  await routing.settings.save("owner", {
+    opId: randomUUID(),
+    expectedVersion: personalView.settings.version,
+    mode: "personal",
+    provider: "gemini",
+    model: PERSONAL_MODEL,
+    apiKey: "synthetic-personal-key",
+    backgroundEnabled: false,
+    dailyLimit: 50,
+    maxModelCalls: 8,
+    maxQueryEmbeddings: 4,
+    softBudgetRatio: 0.6,
+    consent: true,
+  });
+  const updatedPersonalView = await routing.view("owner");
+  assert.equal(updatedPersonalView.effective?.softBudgetRatio, 0.6);
+  const pRes2 = await directRuntime.run({
+    runId: randomUUID(),
+    scope: { userId: "owner", workspaceId: child.workspaceId, childId: child.id, authorizationVersion: "1", dataVersion: "1" },
+    trigger: { kind: "interactive", reference: randomUUID() },
+    recipeId: "p1-chat",
+    messages: [{ role: "user", text: "個人模式 0.60 更新檢查" }],
+    tools: [],
+    authorize: async () => true,
+  });
+  assert.equal(pRes2.status, "completed", JSON.stringify(pRes2));
+  assert.equal(observedRuntimeSoftRatios.at(-1), 0.6);
+});
+
+test("A03: multi-instance HighWatermarkMonitor and Firestore persistence merge atomically and report degraded errors safely", async () => {
+  // 1. Two independent monitor instances sharing a durable load/persist window do not overwrite each other.
+  let sharedStored: any[] = [];
+  const loadWindow = async () => structuredClone(sharedStored);
+  const persistWindow = async (_cat: string, samples: readonly any[]) => { sharedStored = structuredClone([...samples]); };
+  const monitorA = createHighWatermarkMonitor({ windowSize: 20, minHighRuns: 5, loadWindow, persistWindow });
+  const monitorB = createHighWatermarkMonitor({ windowSize: 20, minHighRuns: 5, loadWindow, persistWindow });
+
+  const highSample = (id: string) => ({ sampleId: id, runCategory: "interactive", usedModelCalls: 7, hardModelCalls: 8 });
+  const lowSample = (id: string) => ({ sampleId: id, runCategory: "interactive", usedModelCalls: 1, hardModelCalls: 8 });
+
+  await monitorA.recordSample(highSample("a-1"));
+  await monitorA.recordSample(highSample("a-2"));
+  await monitorA.recordSample(lowSample("a-3"));
+  await monitorB.recordSample(highSample("b-1"));
+  await monitorB.recordSample(highSample("b-2"));
+  await monitorB.recordSample(lowSample("b-3"));
+  const finalAlert = await monitorA.recordSample(highSample("a-4"));
+
+  assert.equal(sharedStored.length, 7, "All 7 alternating samples must be preserved");
+  assert.equal(finalAlert.windowCount, 7);
+  assert.equal(finalAlert.highWatermarkCount, 5);
+  assert.equal(finalAlert.triggered, true);
+  assert.equal(finalAlert.persisted, true);
+
+  // Duplicate sampleId replay is idempotent.
+  const deduped = await monitorB.recordSample(highSample("a-4"));
+  assert.equal(sharedStored.length, 7);
+  assert.equal(deduped.windowCount, 7);
+
+  // 2. Two independent createFirestoreProductAgent instances sharing one Firestore DB accumulate without clobbering.
+  const f = firestoreDomainFixture();
+  function wrapQuery(raw: any): any {
+    return new Proxy(raw, {
+      get(target, key) {
+        if (key === "get") return () => f.database.runTransaction(tx => tx.get(target));
+        const val = target[key];
+        return typeof val === "function"
+          ? (...args: any[]) => {
+              const res = val(...args);
+              return res?.query ? wrapQuery(res) : res?.path ? { ...res, id: res.path.split("/").at(-1) } : res;
+            }
+          : val;
+      },
+    });
+  }
+  let injectMetricsFailure = false;
+  const baseDb = { ...f.database, collection: (p: string) => wrapQuery(f.database.collection(p)) } as Firestore;
+  const database: Firestore = {
+    ...baseDb,
+    runTransaction: async (fn: any, opts?: any) => {
+      return await baseDb.runTransaction(async tx => {
+        const proxyTx = {
+          get: (ref: any) => tx.get(ref),
+          getAll: (...refs: any[]) => tx.getAll(...refs),
+          create: (ref: any, data: any) => tx.create(ref, data),
+          set: (ref: any, data: any) => {
+            if (injectMetricsFailure && String(ref?.path ?? "").includes("_agent_metrics")) {
+              throw new Error("Simulated metrics write failure");
+            }
+            return tx.set(ref, data);
+          },
+          update: (ref: any, data: any) => tx.update(ref, data),
+          delete: (ref: any) => tx.delete(ref),
+        };
+        return await fn(proxyTx);
+      }, opts);
+    },
+  } as Firestore;
+  const options = {
+    database,
+    cipher: createStorageCipher(Buffer.alloc(32, 73)),
+    projectId: "synthetic-a03",
+    namespace: "a03_hwm",
+  };
+  const authority = createFirestoreAuthority(options);
+  await authority.initializeControl({ generation: randomUUID(), enabled: true });
+  await authority.issueInvitation({ email: "owner@example.test", expiresAt: new Date(Date.now() + 60_000).toISOString(), operationId: randomUUID() });
+  await authority.admitIdentity({ userId: "owner", email: "owner@example.test", emailVerified: true });
+  await authority.acknowledge({ userId: "owner", operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  const { child } = await authority.createChild({ userId: "owner", displayName: "測試寶寶", operationId: randomUUID() });
+
+  const chat = createFirestoreChatStore(options);
+  const care = createFirestoreCareStore(options);
+  const memory = createFirestoreMemoryStore({ ...options, chat, care });
+  const online = createFirestoreOnlineStore({ ...options, mutations: [chat.mutation, care.mutation, memory.mutation] });
+  const config = readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: options.projectId });
+  const admin = createFirestoreAdmin(options, config);
+  const p = await admin.readPolicy();
+  await admin.submit("admin-1", {
+    opId: randomUUID(),
+    kind: "policy",
+    expectedVersion: p.version,
+    values: {
+      enabled: true,
+      model: p.model,
+      dailyUserAttempts: p.dailyUserAttempts,
+      dailyGlobalAttempts: p.dailyGlobalAttempts,
+      personalDailyGlobalAttempts: p.personalDailyGlobalAttempts,
+      maxModelCalls: 1,
+      maxQueryEmbeddings: 1,
+    },
+  });
+
+  const makeWorkerAgent = async (alerts: HighWatermarkAlert[], errors: unknown[]) => {
+    let seq = 0;
+    return createFirestoreProductAgent({
+      ...options,
+      chat,
+      care,
+      memory,
+      online,
+      config,
+      onHighWatermarkAlert: a => { alerts.push(a); },
+      onHighWatermarkPersistenceError: e => { errors.push(e); },
+      platformProvider: {
+        generate: async () => ({
+          content: { role: "model", parts: [{ functionCall: { id: `pa-${++seq}`, name: "present_answer", args: { kind: "clarification", paragraphs: [{ text: "寶寶幾個月大？", citationIds: [] }] } } }] },
+          finishReason: FinishReason.STOP,
+        }),
+      },
+    });
+  };
+
+  const alertsA: HighWatermarkAlert[] = [], errorsA: unknown[] = [];
+  const alertsB: HighWatermarkAlert[] = [], errorsB: unknown[] = [];
+  const workerA = await makeWorkerAgent(alertsA, errorsA);
+  const workerB = await makeWorkerAgent(alertsB, errorsB);
+
+  const m1 = await chat.createUserMessageForUser("owner", child.id, "R1");
+  const m2 = await chat.createUserMessageForUser("owner", child.id, "R2");
+  const m3 = await chat.createUserMessageForUser("owner", child.id, "R3");
+  const r1 = await workerA.agent.reply("owner", child.id, m1!.id, async () => true);
+  assert.equal(r1?.status, "completed", JSON.stringify(r1));
+  const r2 = await workerB.agent.reply("owner", child.id, m2!.id, async () => true);
+  assert.equal(r2?.status, "completed", JSON.stringify(r2));
+  const r3 = await workerA.agent.reply("owner", child.id, m3!.id, async () => true);
+  assert.equal(r3?.status, "completed", JSON.stringify(r3));
+
+  assert.equal(alertsA.at(-1)?.triggered, true);
+  assert.equal(alertsA.at(-1)?.windowCount, 3);
+  assert.equal(alertsA.at(-1)?.consecutiveHighStreak, 3);
+  assert.equal(workerA.highWatermarkMonitor.persistenceStatus("interactive").status, "persisted");
+
+  // 3. Metrics persistence error stays observable without failing product run.
+  injectMetricsFailure = true;
+  const m4 = await chat.createUserMessageForUser("owner", child.id, "R4");
+  const r4 = await workerB.agent.reply("owner", child.id, m4!.id, async () => true);
+  assert.equal(r4?.status, "completed", "Telemetry persistence error must not fail the product run");
+  assert.equal(errorsB.length, 1, "Telemetry failure must invoke observable persistence error handler");
+  assert.equal(workerB.highWatermarkMonitor.persistenceStatus("interactive").status, "degraded");
 });

@@ -199,6 +199,7 @@ export interface AgentRunInput {
   /** Trusted Server role and policy overrides for planning soft-budget ratio selection. */
   budgetRole?: AgentSoftBudgetProfileRole;
   roleSoftBudgetRatios?: Partial<Record<AgentSoftBudgetProfileRole, number>>;
+  softBudgetSource?: "personal" | "administrator" | "system_default";
   /** Live policy transition checker evaluated at pre-model and tool barriers. */
   readPolicyTransition?: () => Promise<AgentPolicyTransition | null>;
   highWatermarkMonitor?: HighWatermarkMonitor;
@@ -270,6 +271,7 @@ export function createAgentRuntime(options: {
   bindDurableRun?: AgentDurableRunBinder;
   /** Fixed trusted constructor snapshot selected before binding; no per-request override. */
   boundRunLimits?: AgentRunLimits;
+  softBudgetSource?: "personal" | "administrator" | "system_default";
   /** Shared durable gate in Firestore composition; local state is only a legacy SQL fallback. */
   admission?: AgentRunAdmission;
   /**
@@ -318,9 +320,13 @@ export function createAgentRuntime(options: {
           const selected = fixedOptions.resolve ? await fixedOptions.resolve(scope.userId, input.trigger.kind) : fixedOptions;
           budget.configureInputCharacters(input.trigger.kind === "interactive"
             ? selected.config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default : AGENT_LIMITS.inputCharacters);
-          if ("runLimits" in selected && selected.runLimits) budget.configurePersonal(selected.runLimits);
-          if (boundRunLimits) budget.configurePersonal(boundRunLimits);
-          if (durable?.runLimits) budget.configurePersonal(durable.runLimits);
+          const resolvedSoftSource = input.softBudgetSource
+            ?? ("softBudgetSource" in selected ? (selected as { softBudgetSource?: "personal" | "administrator" | "system_default" }).softBudgetSource : undefined)
+            ?? fixedOptions.softBudgetSource;
+          const personalConfigOpts = resolvedSoftSource ? { softBudgetSource: resolvedSoftSource } : undefined;
+          if ("runLimits" in selected && selected.runLimits) budget.configurePersonal(selected.runLimits, personalConfigOpts);
+          if (boundRunLimits) budget.configurePersonal(boundRunLimits, personalConfigOpts);
+          if (durable?.runLimits) budget.configurePersonal(durable.runLimits, personalConfigOpts);
           // Do not override a settings snapshot. Six calls are only for an unbound run.
           if (fixedOptions.chatDeliveryReviewModelCalls === 6 && !budget.hasPersonalLimits()) {
             budget.configurePersonal({ modelCalls: 6, queryEmbeddings: budget.limits.queryEmbeddings });
@@ -892,6 +898,7 @@ export function createAgentRuntime(options: {
           const runCategory = input.trigger.kind === "worker" ? "background" : "interactive";
           try {
             const evaluated = await monitor.recordSample({
+              sampleId: runId,
               runCategory,
               usedModelCalls: result.counts.modelCalls,
               hardModelCalls: budget.limits.modelCalls,

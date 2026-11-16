@@ -53,7 +53,7 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       const state = await settings.get(userId), current = await policy.readPolicy();
       return { settings: state, enabled: config.enabled, platformAvailable: config.enabled && current.enabled && Boolean(config.project),
         personalAvailable: config.enabled, personalGlobalLimit: current.personalDailyGlobalAttempts, agentInputCharacters: config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default,
-        effective: resolvePersonalModelLimits(state, current),
+        effective: resolvePersonalModelLimits(state, current, { role: 'interactive', applyAdminRoleOverride: true }),
         usage: { platform: await usage.platform.getForUser(userId), personal: await usage.personal.getForUser(userId) } };
     },
     async currentUsage(userId: string) {
@@ -131,10 +131,11 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
         usage: requireDurableUsage, billingSource: source });
       return { config: selectedConfig, provider: providers.agent, settingsVersion: String(state.version) + ":policy:" + current.version, billingSource: source,
         dailyUsage: usage[source], authorize, readPolicyTransition,
+        softBudgetSource: limits.limitSources?.softBudgetRatio,
         ...(current.roleSoftBudgetRatios ? { roleSoftBudgetRatios: current.roleSoftBudgetRatios } : {}),
         runLimits: { modelCalls: limits.maxModelCalls, queryEmbeddings: limits.maxQueryEmbeddings,
           toolCalls: limits.maxToolCalls, deadlineMs: limits.maxRunSeconds * 1000,
-          softBudgetRatio: limits.softBudgetRatio ?? current.softBudgetRatio },
+          softBudgetRatio: limits.softBudgetRatio },
         embeddings: { embed: (...args: Parameters<typeof gateway.embed>) => {
           const [input, actor, signal, resourceAccess, durable] = args;
           if (!durable) throw new AgentStopped('unavailable');

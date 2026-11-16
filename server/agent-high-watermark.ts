@@ -10,6 +10,7 @@ export const AGENT_HIGH_WATERMARK_SCOPE = Object.freeze({
 
 export const agentHighWatermarkDocSchema = z.object({
   samples: z.array(z.object({
+    sampleId: z.string().min(1).max(128).optional(),
     runCategory: z.string().min(1).max(64),
     usedModelCalls: z.number().int().nonnegative(),
     hardModelCalls: z.number().int().positive(),
@@ -22,6 +23,7 @@ export const agentHighWatermarkDocSchema = z.object({
 }).strict();
 
 export interface HighWatermarkSample {
+  sampleId?: string;
   runCategory: string;
   usedModelCalls: number;
   hardModelCalls: number;
@@ -30,6 +32,20 @@ export interface HighWatermarkSample {
   usedQueryEmbeddings?: number;
   hardQueryEmbeddings?: number;
   repeatedCallSignature?: string;
+}
+
+/** Atomically append/deduplicate a utilization sample within the bounded category sliding window. */
+export function mergeHighWatermarkSamples(
+  existing: readonly HighWatermarkSample[],
+  incoming: HighWatermarkSample,
+  windowSize: number = AGENT_HIGH_WATERMARK_DEFAULTS.windowSize,
+): HighWatermarkSample[] {
+  const bound = Math.max(1, Math.floor(windowSize));
+  const sameCategory = existing.filter(sample => sample.runCategory === incoming.runCategory);
+  if (incoming.sampleId && sameCategory.some(sample => sample.sampleId === incoming.sampleId)) {
+    return sameCategory.slice(-bound);
+  }
+  return [...sameCategory, incoming].slice(-bound);
 }
 
 export interface HighWatermarkPolicyOptions {
@@ -56,6 +72,8 @@ export interface HighWatermarkEvaluation {
   loopDetected: boolean;
   triggeredDimensions: ("modelCalls" | "toolCalls" | "queryEmbeddings")[];
   recommendedAction: HighWatermarkRecommendedAction;
+  persisted?: boolean;
+  persistenceDegraded?: boolean;
 }
 
 function isDimensionHigh(used: number | undefined, hard: number | undefined, ratio: number): boolean {
@@ -142,6 +160,19 @@ export function evaluateSustainedHighWatermark(
 export type AgentRunUtilizationSample = HighWatermarkSample;
 export type HighWatermarkAlert = HighWatermarkEvaluation;
 
+export interface HighWatermarkPersistenceErrorInfo {
+  category: string;
+  stage: "load" | "persist";
+  error: unknown;
+}
+
+export interface HighWatermarkPersistenceStatus {
+  status: "idle" | "persisted" | "degraded";
+  lastFailureStage?: "load" | "persist";
+  lastFailureMessage?: string;
+  failureCount: number;
+}
+
 export interface HighWatermarkMonitorOptions {
   windowSize?: number;
   highWatermarkRatio?: number;
@@ -152,21 +183,25 @@ export interface HighWatermarkMonitorOptions {
   repeatedSignatureStreak?: number;
   loadWindow?: (runCategory: string) => Promise<readonly AgentRunUtilizationSample[]> | readonly AgentRunUtilizationSample[];
   persistWindow?: (runCategory: string, samples: readonly AgentRunUtilizationSample[]) => Promise<void> | void;
+  appendDurableSample?: (sample: AgentRunUtilizationSample, windowSize: number) => Promise<readonly AgentRunUtilizationSample[]>;
+  onPersistenceError?: (info: HighWatermarkPersistenceErrorInfo) => Promise<void> | void;
 }
 
 export interface HighWatermarkMonitor {
   recordSample(sample: AgentRunUtilizationSample): Promise<HighWatermarkAlert>;
   evaluateCategory(runCategory: string): Promise<HighWatermarkAlert>;
+  persistenceStatus(runCategory: string): HighWatermarkPersistenceStatus;
 }
 
 /**
- * Stateful sliding-window monitor backed by optional durable load/persist hooks.
- * Serializes updates per category so concurrent runs retain bounded window integrity.
+ * Stateful sliding-window monitor backed by durable transactional append or shared load/persist hooks.
+ * Serializes updates per category so concurrent or alternating instances never clobber prior samples.
  */
 export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions = {}): HighWatermarkMonitor {
   const windowSize = options.windowSize ?? AGENT_HIGH_WATERMARK_DEFAULTS.windowSize;
   const cachedByCategory = new Map<string, AgentRunUtilizationSample[]>();
   const pendingByCategory = new Map<string, Promise<unknown>>();
+  const statusByCategory = new Map<string, HighWatermarkPersistenceStatus>();
 
   const thresholdRatio = options.thresholdRatio ?? options.highWatermarkRatio;
   const consecutiveHighStreak = options.consecutiveHighStreak ?? options.consecutiveHighRuns;
@@ -178,13 +213,42 @@ export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions 
     ...(options.repeatedSignatureStreak !== undefined ? { repeatedSignatureStreak: options.repeatedSignatureStreak } : {}),
   };
 
-  async function ensureLoaded(runCategory: string): Promise<AgentRunUtilizationSample[]> {
-    const existing = cachedByCategory.get(runCategory);
-    if (existing) return existing;
-    const loaded = options.loadWindow ? await options.loadWindow(runCategory) : [];
-    const bounded = [...loaded].filter(s => s.runCategory === runCategory).slice(-windowSize);
-    cachedByCategory.set(runCategory, bounded);
-    return bounded;
+  function getStatus(runCategory: string): HighWatermarkPersistenceStatus {
+    return statusByCategory.get(runCategory) ?? { status: "idle", failureCount: 0 };
+  }
+
+  function markPersisted(runCategory: string) {
+    const prev = getStatus(runCategory);
+    statusByCategory.set(runCategory, { ...prev, status: "persisted" });
+  }
+
+  async function recordPersistenceFailure(stage: "load" | "persist", runCategory: string, error: unknown) {
+    const prev = getStatus(runCategory);
+    const message = error instanceof Error ? error.message : String(error);
+    statusByCategory.set(runCategory, {
+      status: "degraded",
+      lastFailureStage: stage,
+      lastFailureMessage: message,
+      failureCount: prev.failureCount + 1,
+    });
+    if (options.onPersistenceError) {
+      try { await options.onPersistenceError({ category: runCategory, stage, error }); } catch { /* Observer error stays isolated. */ }
+    }
+  }
+
+  async function readFreshWindow(runCategory: string): Promise<{ samples: AgentRunUtilizationSample[]; loadFailed: boolean }> {
+    if (!options.loadWindow) {
+      return { samples: [...(cachedByCategory.get(runCategory) ?? [])], loadFailed: false };
+    }
+    try {
+      const loaded = await options.loadWindow(runCategory);
+      const bounded = [...loaded].filter(s => s.runCategory === runCategory).slice(-windowSize);
+      cachedByCategory.set(runCategory, bounded);
+      return { samples: bounded, loadFailed: false };
+    } catch (error) {
+      await recordPersistenceFailure("load", runCategory, error);
+      return { samples: [...(cachedByCategory.get(runCategory) ?? [])], loadFailed: true };
+    }
   }
 
   function serialize<T>(runCategory: string, task: () => Promise<T>): Promise<T> {
@@ -197,18 +261,54 @@ export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions 
   return {
     recordSample(sample) {
       return serialize(sample.runCategory, async () => {
-        const samples = await ensureLoaded(sample.runCategory);
-        const updated = [...samples, sample].slice(-windowSize);
-        cachedByCategory.set(sample.runCategory, updated);
-        if (options.persistWindow) await options.persistWindow(sample.runCategory, updated);
-        return evaluateSustainedHighWatermark(updated, sample.runCategory, evalOptions);
+        let updated: AgentRunUtilizationSample[];
+        let loadFailed = false;
+        let persistFailed = false;
+        if (options.appendDurableSample) {
+          try {
+            const committed = await options.appendDurableSample(sample, windowSize);
+            updated = [...committed].filter(s => s.runCategory === sample.runCategory).slice(-windowSize);
+            cachedByCategory.set(sample.runCategory, updated);
+            markPersisted(sample.runCategory);
+          } catch (error) {
+            persistFailed = true;
+            await recordPersistenceFailure("persist", sample.runCategory, error);
+            updated = mergeHighWatermarkSamples(cachedByCategory.get(sample.runCategory) ?? [], sample, windowSize);
+            cachedByCategory.set(sample.runCategory, updated);
+          }
+        } else {
+          const read = await readFreshWindow(sample.runCategory);
+          loadFailed = read.loadFailed;
+          updated = mergeHighWatermarkSamples(read.samples, sample, windowSize);
+          cachedByCategory.set(sample.runCategory, updated);
+          if (options.persistWindow) {
+            try {
+              await options.persistWindow(sample.runCategory, updated);
+              if (!loadFailed) markPersisted(sample.runCategory);
+            } catch (error) {
+              persistFailed = true;
+              await recordPersistenceFailure("persist", sample.runCategory, error);
+            }
+          } else if (!loadFailed) {
+            markPersisted(sample.runCategory);
+          }
+        }
+        const evaluation = evaluateSustainedHighWatermark(updated, sample.runCategory, evalOptions);
+        const persisted = !loadFailed && !persistFailed;
+        return { ...evaluation, persisted, persistenceDegraded: !persisted };
       });
     },
     evaluateCategory(runCategory) {
       return serialize(runCategory, async () => {
-        const samples = await ensureLoaded(runCategory);
-        return evaluateSustainedHighWatermark(samples, runCategory, evalOptions);
+        const read = await readFreshWindow(runCategory);
+        const evaluation = evaluateSustainedHighWatermark(read.samples, runCategory, evalOptions);
+        const status = getStatus(runCategory);
+        const degraded = read.loadFailed || status.status === "degraded";
+        return { ...evaluation, persisted: !degraded, persistenceDegraded: degraded };
       });
+    },
+    persistenceStatus(runCategory) {
+      return { ...getStatus(runCategory) };
     },
   };
 }
