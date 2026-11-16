@@ -6106,3 +6106,11 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 2）**N2 移除純前綴豁免、覆蓋 `nil-by-mouth` 及兩階段私人來源核對**：移除 `NON_DIRECTIVE_RECORD_REPORT_PATTERN`，補齊禁飲食／禁食指令正則，並於草稿早期與最終階段同時核對私人來源真實支持關係，防止無關家庭紀錄為臨床指令背書，同時保留 `SPEC.md:301-304` 分離。
 3）**N3 Server 未截斷動作結果與逐項結構化收據綁定**：移除 `product-agent-tools.ts` 300 字截斷並傳遞完整動作／結構化時間與數量欄位，對 `(對象, 份量, 單位, 時間)` 作 1 對 1 配對，封堵單筆／多筆收據互換、重複項超報、解析不清與 `quantityGrounding=removed`。
 4）於 `tests/search-review-boundaries.test.ts`（6→9 cases）增補 N1–N3 正反成對真實運行與閘門測試，同步 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES`，並跑過 5 檔 guarded manifest（87／87）＋ verified-ops／photo／voice（4／4）＋ 三配置 `tsc --noEmit`。
+
+### 2026-11-17　B-P7 R8 邊界修復（N1-R formula 語境分離、N2-R 私人來源逐子句核對、N3-R ISO 完整日期對位）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R8.md`（N1-R／N2-R／N3-R）同步修復至 `server/chat-delivery-review.ts`（與 `B-P2` 一致）：
+1）**N1-R**：移除 `USER_CARE_HEALTH_CONTEXT_PATTERN` 裸詞 `formula`、`treat` 與無主詞 `cool down`，改以明確嬰兒配方奶／護理語境觸發，同時保留 `obligation?.required ?? false` 黏性義務。
+2）**N2-R**：移除 `memoryFactReferencedByParagraph` 提前返回，改對段落每個原子子句核對極性、主體及完整詞項／數字。
+3）**N3-R**：於 `parseTimeAnchorInfo` 與 `timeAnchorMatches` 保存並比對 `epochMs` 及解析後本地年月日與個別 `eventTimeZone`。
+4）於 `tests/search-review-boundaries.test.ts`（9→10 cases）新增 `N1-R / N2-R / N3-R` 成對實測，並更新 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES`。

@@ -1538,3 +1538,241 @@ test("N3: Server-verified operations avoid 300-char truncation and bind item-lev
     );
   }
 });
+
+test("N1-R / N2-R / N3-R: polysemous formula exclusion, per-clause private support, and full ISO calendar-date correspondence", async () => {
+  const userId = scope.userId;
+  const childId = scope.childId;
+  const allergyFact = {
+    id: "aaaaaaaa-1111-4000-8000-000000000091",
+    childId,
+    key: "allergy-milk-r9",
+    content: "BB對牛奶蛋白過敏",
+    source: { kind: "manual" as const, description: "家長確認" },
+    validUntil: null,
+    visibility: "private" as const,
+    intendedVisibility: "private" as const,
+    status: "confirmed" as const,
+    version: 1,
+    createdBy: userId,
+    confirmedBy: userId,
+    confirmedAt: "2026-10-18T00:00:00.000Z",
+    reason: "已確認",
+    applicable: true,
+    sourceState: "current" as const,
+  };
+  const sleepFact = {
+    ...allergyFact,
+    id: "aaaaaaaa-1111-4000-8000-000000000092",
+    key: "sleep-nap-r9",
+    content: "BB平時下晝 2 點會瞓晏晝覺",
+  };
+
+  async function runDeliveryFlow(opts: {
+    userMsg: string;
+    answerKind: "clarification" | "record_restatement" | "operation";
+    answerText: string;
+    facts?: (typeof allergyFact)[];
+    records?: Array<{ text: string; eventTime: string; at?: string }>;
+  }) {
+    let calls = 0;
+    let reviews = 0;
+    let saved: ProductAgentResult | null = null;
+    const msgId = "dddddddd-1111-4000-8000-000000000091";
+    const localRunId = "eeeeeeee-1111-4000-8000-000000000091";
+    const receipts = (opts.records ?? []).map((_, idx) => ({
+      id: `30000000-0000-4000-8000-00000000000${idx + 1}`,
+      runId: localRunId,
+      kind: "save_record" as const,
+      resource: { kind: "care_record" as const, id: `40000000-0000-4000-8000-00000000000${idx + 1}`, version: 1 },
+      state: "saved" as const,
+      notification: "not_authorized" as const,
+      channels: [] as const,
+      createdAt: "2026-11-17T00:00:00Z",
+    }));
+    const persisted = (opts.records ?? []).map((rec, idx) => ({
+      id: receipts[idx]!.resource.id,
+      childId,
+      version: 1,
+      authorUserId: userId,
+      createdAt: "2026-11-17T00:00:00Z",
+      confirmedBy: userId,
+      confirmedAt: "2026-11-17T00:00:00Z",
+      reason: "user statement",
+      text: rec.text,
+      source: "user statement",
+      confirmationBasis: "preauthorized_user_statement" as const,
+      details: {
+        kind: "feeding" as const,
+        quantity: null,
+        eventTime: { rawText: rec.eventTime, at: rec.at ?? null, timeZone: "Asia/Hong_Kong" as const, precision: (rec.at ? "exact" : "approximate") as "exact" | "approximate" },
+      },
+    }));
+    const runtime = createAgentRuntime({
+      config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
+      usage: { reserve: async () => true, record: async () => {} },
+      provider: {
+        generate: async request => {
+          calls++;
+          const promptText = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? "").join("\n");
+          if (promptText.includes("chat-delivery-review")) {
+            reviews++;
+            const payload = JSON.parse(promptText.slice(promptText.indexOf("{"))) as { draftHash: string };
+            return {
+              content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "pass", issues: [] }) }] },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          if (opts.records?.length && calls === 1) {
+            return {
+              content: { role: "model", parts: [{ functionCall: { id: "lc-r", name: "load_capabilities", args: { capabilities: ["care_records"] } } }] },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          if (opts.records?.length && calls === 2) {
+            return {
+              content: {
+                role: "model",
+                parts: opts.records.map((rec, idx) => ({
+                  functionCall: {
+                    id: `save-r-${idx}`,
+                    name: "save_ordinary_record",
+                    args: {
+                      sourceQuote: opts.userMsg,
+                      expectedPolicyVersion: 1,
+                      text: rec.text,
+                      details: {
+                        kind: "feeding",
+                        quantity: null,
+                        eventTime: { rawText: rec.eventTime, at: rec.at ?? null, timeZone: "Asia/Hong_Kong", precision: rec.at ? "exact" : "approximate" },
+                      },
+                    },
+                  },
+                })),
+              },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          return {
+            content: { role: "model", parts: [{ functionCall: { id: "pres-r", name: "present_answer", args: { kind: opts.answerKind, paragraphs: [{ text: opts.answerText, citationIds: [] }] } } }] },
+            finishReason: FinishReason.STOP,
+          };
+        },
+      },
+    });
+    let execCount = 0;
+    const service = createProductAgent({
+      runtime,
+      store: {
+        claim: async () => ({ runId: localRunId, scope, created: true, sourceMessageId: msgId, state: "running", expiresAt: new Date(Date.now() + 90_000).toISOString() }),
+        authorize: async () => true,
+        finish: async (_s: unknown, result: ProductAgentResult) => { saved = result; return true; },
+        get: async () => saved,
+      } as any,
+      ...(opts.records?.length ? {
+        actions: {
+          policy: async () => ({ version: 1, effective: true, recordKinds: ["feeding"], allowPrivateNotes: false, allowSelfTasks: false, allowRecordCorrections: false, reminderConsentVersion: null, reminderBindings: [] }),
+          records: async () => ({ records: [], limit: 20, scanned: 0, nextCursor: null }),
+          notes: async () => ({ items: [], nextAfterId: null }),
+          execute: async () => receipts[execCount++]!,
+          receipts: async () => receipts.slice(0, execCount),
+          recordById: async (_u: string, _c: string, id: string) => persisted.find(p => p.id === id) ?? null,
+        } as any,
+      } : {}),
+      memory: {
+        getFact: async (_u: string, _c: string, id: string) => (opts.facts ?? []).find(f => f.id === id) ?? null,
+        context: async () => ({
+          profile: { childId, version: 0, data: null },
+          profileApplicable: false,
+          facts: opts.facts ?? [],
+          topics: [],
+          summary: null,
+          recentMessages: opts.records?.length ? [{ id: msgId, childId, role: "user", text: opts.userMsg }] : [],
+          conflictingKeys: [],
+          unavailableFactKeys: [],
+          truncated: { facts: false, topics: false, messages: false },
+        }),
+      } as any,
+      chat: { listForUser: async () => ({ messages: [{ id: msgId, childId, role: "user", text: opts.userMsg }] }) } as any,
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) } as any,
+      knowledge: { createRun: () => ({ revalidateCitations: async () => true }) } as any,
+    });
+    const result = await service.reply(userId, childId, msgId, async () => true);
+    assert.ok(result);
+    return { result, calls, reviews };
+  }
+
+  for (const benign of ["How should I handle this spreadsheet formula?", "How should I handle this spreadsheet equation?", "How should I handle this Halloween treat?"]) {
+    const out = await runDeliveryFlow({ userMsg: benign, answerKind: "clarification", answerText: "Which spreadsheet cell would you like to edit?" });
+    assert.equal(out.result.status, "completed", benign);
+    assert.equal(out.calls, 1, benign);
+    assert.equal(out.reviews, 0, benign);
+  }
+  for (const infantQuery of ["How should I handle preparing infant formula?", "How should I handle formula milk storage?"]) {
+    const out = await runDeliveryFlow({ userMsg: infantQuery, answerKind: "operation", answerText: "Keep it on the counter for a day." });
+    assert.equal(out.reviews, 1, infantQuery);
+    assert.equal(out.result.status, "stopped", infantQuery);
+    assert.equal(out.result.stopReason, "delivery_review_no_sources", infantQuery);
+  }
+
+  for (const badPrivateText of [
+    "家庭紀錄顯示寶寶對牛奶蛋白過敏，但寶寶並無牛奶蛋白過敏。",
+    "家庭紀錄顯示寶寶對牛奶蛋白過敏，亦對雞蛋過敏。",
+    "家庭紀錄顯示寶寶對牛奶蛋白過敏但寶寶並無牛奶蛋白過敏。",
+    "家庭紀錄顯示寶寶對牛奶蛋白及雞蛋過敏。",
+    "家庭紀錄顯示寶寶並無牛奶蛋白過敏。",
+  ]) {
+    const out = await runDeliveryFlow({
+      userMsg: "BB發燒點算，仲有對牛奶蛋白過敏紀錄嗎？",
+      answerKind: "record_restatement",
+      answerText: badPrivateText,
+      facts: [allergyFact],
+    });
+    assert.equal(out.result.status, "stopped", badPrivateText);
+    assert.equal(out.result.stopReason, "delivery_review_no_sources", badPrivateText);
+    assert.equal(out.result.text.includes("牛奶蛋白"), false, badPrivateText);
+  }
+  const goodSingle = await runDeliveryFlow({
+    userMsg: "BB發燒點算，仲有對牛奶蛋白過敏紀錄嗎？",
+    answerKind: "record_restatement",
+    answerText: "家庭紀錄顯示寶寶對牛奶蛋白過敏。",
+    facts: [allergyFact],
+  });
+  assert.equal(goodSingle.result.status, "completed");
+  assert.equal(goodSingle.result.deliveryReview?.decision, "pass");
+  const goodMultiFact = await runDeliveryFlow({
+    userMsg: "BB發燒點算，仲有對牛奶蛋白過敏同作息紀錄嗎？",
+    answerKind: "record_restatement",
+    answerText: "家庭紀錄顯示寶寶對牛奶蛋白過敏，平時下午 2 點會睡午覺。",
+    facts: [allergyFact, sleepFact],
+  });
+  assert.equal(goodMultiFact.result.status, "completed");
+
+  for (const wrongDateClaim of [
+    "已記低2026-11-18T08:00:00+08:00 飲120ml奶。",
+    "已記低2026-11-18 08:00 飲120ml奶。",
+    "已記低2026-11-17T08:00:00Z 飲120ml奶。",
+  ]) {
+    const out = await runDeliveryFlow({
+      userMsg: "記低2026-11-17T08:00:00+08:00 飲120ml奶。",
+      answerKind: "record_restatement",
+      answerText: wrongDateClaim,
+      records: [{ text: "2026-11-17T08:00:00+08:00 飲120ml奶。", eventTime: "2026-11-17T08:00:00+08:00", at: "2026-11-17T00:00:00Z" }],
+    });
+    assert.equal(out.reviews, 1, wrongDateClaim);
+    assert.equal(out.result.status, "stopped", wrongDateClaim);
+    assert.ok(["delivery_review_rejected", "delivery_review_no_sources"].includes(out.result.stopReason ?? ""), wrongDateClaim);
+  }
+  for (const exactDateClaim of [
+    "已記低2026-11-17T08:00:00+08:00 飲120ml奶。",
+    "已記低2026-11-17T00:00:00Z 飲120ml奶。",
+  ]) {
+    const out = await runDeliveryFlow({
+      userMsg: "記低2026-11-17T08:00:00+08:00 飲120ml奶。",
+      answerKind: "record_restatement",
+      answerText: exactDateClaim,
+      records: [{ text: "2026-11-17T08:00:00+08:00 飲120ml奶。", eventTime: "2026-11-17T08:00:00+08:00", at: "2026-11-17T00:00:00Z" }],
+    });
+    assert.equal(out.result.status, "completed", exactDateClaim);
+    assert.equal(out.result.deliveryReview?.decision, "pass", exactDateClaim);
+  }
+});
