@@ -195,6 +195,10 @@ test("post-illness and feeding-refusal timing queries do not false-expand into s
     "BB嘔完幾時可以食嘢？",
     "BB發燒幾時可以食嘢？",
     "BB肚瀉幾時先可以食嘢？",
+    "BB屙水完幾時可以食嘢？",
+    "BB腸胃炎之後幾時可以食嘢？",
+    "BB做完手術幾時可以食嘢？",
+    "BB長濕疹幾時可以食嘢？",
   ]) {
     const tokens = [...knowledgeTokens(query, true)];
     assert.equal(tokens.includes("加固"), false, `Unexpected 加固 expansion for: ${query}`);
@@ -219,6 +223,10 @@ test("post-illness and feeding-refusal timing queries do not false-expand into s
     "BB幾時可以食嘢？",
     "BB幾多個月先可以食嘢？",
     "BB幾大開始食固體食物？",
+    "半歲BB幾時可以食嘢？",
+    "請問BB幾時可以開始食嘢呢？",
+    "BB幾時先可以開始食嘢？",
+    "寶寶幾多個月先可以食固體食物？",
   ]) {
     const tokens = [...knowledgeTokens(timingQuery, true)];
     assert.equal(tokens.includes("加固"), true, `Expected 加固 expansion for: ${timingQuery}`);

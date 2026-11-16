@@ -6061,3 +6061,12 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 1）於 [knowledge-ranking.ts](server/knowledge-ranking.ts) 自主拍板收窄提問側（`question=true`）泛指共通詞元（`正常`、`醫生`、`睇醫`、`要睇`、`求醫`、`求診` 及單獨 `講嘢`／`食嘢`），同時透過時機句式（`幾時／幾大／幾個月...食嘢`）恢復「BB幾時可以食嘢？」對 `fhs-solid-food/starting-solids` 之召回，並將語言擴展收窄至學說話／發展脈絡（如「歲半BB仲未識行路同講嘢點算？」命中 `play-and-language`），使無過濾五份種子下「BB發熱幾多度要睇醫生？」「BB回奶係咪正常？」「BB講嘢粗口」及「BB唔肯食嘢點算？」「BB食嘢」全數回空而不再離題誤中視力或發展種子，且 `question=false` 文件索引維持零變動。
 2）校準 `fhs-child-vision/preschool-screening` 長文（1298 字元）位移說明：「若孩子現已佩戴眼鏡」位於位移 247、「不包括」位於位移 490，僅最後一句「請盡快到家庭或眼科醫生求診」（位移 1273）位於 800 字元之後；測試驗證多頁完整重組後（`excerptComplete: true`）三句皆完整保留。
 3）於 [chat-delivery-review.ts](server/chat-delivery-review.ts) 自主拍板將 `餵藥`／`食藥`／`吃藥`／`藥水`／劑量單位（`ml`/`mg`/`毫升`/`毫克`）及口語操作主張（`已刪晒`、`記低咗` 等）納入 `CARE_DOMAIN_PATTERN`、`CARE_ADVISORY_PATTERN`、`MEDICAL_CLAIM_PATTERN` 與 `OPERATION_CLAIM_PATTERN`，使「食藥持續咗幾多日？」「藥要食幾多個月？」「每次餵 10ml，持續咗幾多日？」均強制觸發 `requiresChatDeliveryReview === true` 與 `chatDeliveryPassNeedsSources === true`。
+
+### 2026-11-16　B-P2 R4 審核整改（結構性修正，不再逐字補詞）
+
+依 `SLICE_B_BP2_IMPLEMENTATION_AUDIT_R4.md` F1–F3，於本地 forward-only 新提交處理；R3 歷史條目維持原文，不改寫舊正文。本輪不 push、不開 PR。
+1）F1 [knowledge-ranking.ts](server/knowledge-ranking.ts)：「幾時可以食嘢」類加固擴展改為**正向意圖錨定**，只接受單純的「（請問）（月齡）（主語）幾時／幾大／幾個月…可以（開始）食嘢／固體食物」問句；任何額外子句（嘔、屙水、腸胃炎、手術、濕疹或其他未列字詞）都會令錨點失效而不擴展，因此不再倚賴不斷補充症狀字典。保留「BB幾時可以食嘢？」「半歲BB幾時可以食嘢？」「請問BB幾時可以開始食嘢呢？」之官方召回。
+2）F2 [chat-delivery-review.ts](server/chat-delivery-review.ts)：`OPERATION_CLAIM_PATTERN` 完成詞尾由 `咗|了` 擴至 `好|妥|完|晒|曬|咗|左|了|喇|啦|嘞|囉|成功`；另新增**綁定用戶操作請求的結構性規則**：用戶要求更改／刪除／取消／設定／記錄等，而草稿無任何 Server 已驗收據（`verifiedOperations`）且並非向用戶發問時，無論模型用甚麼完成語態都必須進入 delivery review，不再靠 kind 自標或關鍵字免審。
+3）F3：新增獨立劑量形態 `DOSE_AMOUNT_SOURCE`（頻率／時段＋數量＋單位，或餵／食／服＋數量＋單位；數量含阿拉伯數字、`1/4`、`½`、`半`、`四分之一` 及中文數詞），併入 `CARE_ADVISORY_PATTERN` 與 `MEDICAL_CLAIM_PATTERN`，**不再要求用戶先講出藥字**，「BB發燒點算？」→「每次四分之一粒。」「每晚半粒，連續三日。」同樣受審。
+4）新增 [search-official-evidence 測試](tests/search-official-evidence.test.ts) R4 案例（6→7）：以「所有 query 一律 embedding 不可用」之真 Firestore keyword_degraded 路徑（非按症狀字面選假向量）驗證屙水／腸胃炎／手術／濕疹不借加固背書；真 `createAgentRuntime`＋`createProductAgent` 驗證改好喇／清空晒／搞掂喇／已經轉做七點及四種劑量寫法不得直交；並以寒暄、有界補問及向用戶反問作免審對照。[knowledge-ranking 測試](tests/knowledge-ranking.test.ts) 同步擴充負向／正向清單。已確認新斷言於舊來源會失敗、新來源通過。CI manifest `search-official-evidence` 由 6 更新為 7 例。
+本輪仍屬離線 deterministic 實證，無真 Gemini／Vertex、無正式 Firestore、無真機畫面 E2E，亦無 hosted Actions 收據。

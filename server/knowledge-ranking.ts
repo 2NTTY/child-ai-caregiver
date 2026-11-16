@@ -10,7 +10,9 @@ const QUESTION_LATIN_FILLERS = new Set(["bb", "baby", "babies"]);
 const QUESTION_HAN_FILLERS = new Set(["食嘢", "講嘢", "正常", "醫生", "睇醫", "要睇", "求醫", "求診"]);
 /** Colloquial Cantonese parenting query terms mapped to official guidance bigrams on question queries only. */
 const COLLOQUIAL_QUERY_EXPANSIONS: ReadonlyArray<readonly [RegExp, readonly string[]]> = [
-  [/開糊|糊仔|副食品?|輔食|^(?!.*(?:嘔|吐|瀉|痾|肚痛|發燒|發熱|生病|病|咳|傷風|感冒|唔適|不適|唔肯|唔想|唔願|不肯|不想|厭奶|拒食|食藥|餵藥|服藥|藥物|藥水|打針|疫苗)).*(?:幾時|幾大|幾多?個月(?:大)?)[\s,]*(?:BB|寶寶|嬰兒|幼兒|孩子|小朋友|佢)?[\s]*(?:先至?|才)?(?:可以(?:開始)?|先可以|開始|適合|適宜)食(?:嘢|固體食物)/u, ["加固", "固體食物", "米糊"]],
+  // Positive-intent anchor: only a bare "when can baby start solids" question may borrow starting-solids guidance.
+  // Any extra clause (illness, refusal, medication, other symptoms) breaks the anchor, so correctness never depends on a symptom dictionary.
+  [/開糊|糊仔|副食品?|輔食|^\s*(?:請問\s*[，,]?\s*)?(?:(?:半歲|歲半|[\d一二三四五六七八九十]+\s*(?:個月|歲))大?\s*)?(?:BB|寶寶|嬰兒|幼兒|孩子|小朋友|佢)?\s*(?:幾時|幾大|幾多?個月(?:大)?)[\s,]*(?:BB|寶寶|嬰兒|幼兒|孩子|小朋友|佢)?\s*(?:先至?|才)?(?:(?:可以|先可以|適合|適宜)\s*(?:開始)?|開始)食(?:嘢|固體食物)[呢呀啊嘅㗎嗎]*[\s？?。.!！]*$/iu, ["加固", "固體食物", "米糊"]],
   [/半歲/u, ["六個月"]],
   [/嘔奶|回奶|吐奶|溢奶/u, ["嘔奶", "吐奶", "溢奶"]],
   [/發熱|滾熱|發高燒|高燒/u, ["發燒"]],

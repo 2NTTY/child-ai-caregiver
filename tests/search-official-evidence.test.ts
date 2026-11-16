@@ -1370,3 +1370,167 @@ test("post-illness timing, bare Cantonese operation claims, and Chinese-numeral 
     assert.equal(result.text.includes("半粒") || result.text.includes("一粒") || result.text.includes("半包"), false);
   }
 });
+
+test("R4: illness synonyms never borrow starting-solids, and unverified completion or dose wording is never plain text (F1-F3)", async (t) => {
+  // F1: embedding is uniformly unavailable for every query, so keyword_degraded retrieval is the only path
+  // (no symptom-aware fake vectors). Only the bare "when can baby start solids" question may retrieve starting-solids.
+  const seedSources = await loadCuratedSeedSources();
+  const fsEnv = createInMemoryFirestoreKnowledgeStore([...LOCAL_OFFICIAL_SEED_IDS]);
+  const localManifest = await loadLocalDevelopmentManifest();
+  for (const src of seedSources) {
+    await fsEnv.publishSource(src, buildLocalOfficialSeedAssessment(src, localManifest), () => vector);
+  }
+  const degradedGateway = createEmbeddingGateway({
+    config,
+    usage: fakeUsage(),
+    provider: { embed: async () => { throw new Error("Synthetic embedding provider unavailable"); } },
+  });
+  const degradedRetriever = createKnowledgeRetriever(fsEnv.store, degradedGateway);
+  const hkFilter = parseKnowledgeFilter({
+    region: "HK",
+    classification: "official_guidance",
+    age: { basis: "actual", minMonths: 6, maxMonths: 6 },
+    topics: [],
+  });
+  for (const query of [
+    "BB幾時嘔完可以食嘢？",
+    "BB幾個月唔肯食嘢？",
+    "BB肚瀉幾時先可以食嘢？",
+    "BB屙水完幾時可以食嘢？",
+    "BB腸胃炎之後幾時可以食嘢？",
+    "BB做完手術幾時可以食嘢？",
+    "BB長濕疹幾時可以食嘢？",
+  ]) {
+    const budget = new AgentBudget();
+    t.after(() => budget.close());
+    const res = await degradedRetriever.createRun({ actor: queryActor, budget, authorize: async () => true }).search(query, hkFilter);
+    assert.equal(res.mode, "keyword_degraded", `Control must stay in keyword_degraded mode: ${query}`);
+    assert.deepEqual(res.chunks, [], `Illness/other-clause timing must not borrow starting-solids: ${query}`);
+  }
+  for (const query of ["BB幾時可以食嘢？", "半歲BB幾時可以食嘢？", "請問BB幾時可以開始食嘢呢？"]) {
+    const budget = new AgentBudget();
+    t.after(() => budget.close());
+    const res = await degradedRetriever.createRun({ actor: queryActor, budget, authorize: async () => true }).search(query, hkFilter);
+    assert.equal(res.mode, "keyword_degraded");
+    assert.equal(res.chunks[0]?.key, "starting-solids", `Bare solids-timing question must keep official recall: ${query}`);
+  }
+
+  // F2/F3: real runtime + product agent. The model only calls present_answer; no operation tool ever writes a receipt.
+  async function presentOnly(userMsg: string, draftText: string, kind: "clarification" | "caregiving" = "clarification") {
+    let reviewCalls = 0;
+    let savedResult: ProductAgentResult | null = null;
+    const runtime = createAgentRuntime({
+      config,
+      usage: { reserve: async () => true, record: async () => {} },
+      provider: {
+        generate: async request => {
+          const promptText = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? "").join("\n");
+          if (promptText.includes("chat-delivery-review")) {
+            reviewCalls++;
+            const payload = JSON.parse(promptText.slice(promptText.indexOf("{"))) as { draftHash: string; verifiedOperations?: unknown[] };
+            assert.deepEqual(payload.verifiedOperations ?? [], []);
+            return {
+              content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "insufficient_evidence", issues: [{ paragraph: 0, reason: "unverified claim" }] }) }] },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          const functionCall = { id: "present-r4", name: "present_answer", args: { kind, paragraphs: [{ text: draftText, citationIds: [] }] } };
+          return { content: { role: "model", parts: [{ functionCall }] }, finishReason: FinishReason.STOP };
+        },
+      },
+    });
+    const agent = createProductAgent({
+      runtime,
+      store: {
+        claim: async () => ({ runId, scope, created: true, sourceMessageId: messageId, state: "running", expiresAt: new Date(Date.now() + 90000).toISOString() }),
+        authorize: async () => true,
+        finish: async (_scope: unknown, result: ProductAgentResult) => { savedResult = result; return true; },
+        get: async () => savedResult,
+      } as any,
+      memory: { context: async () => emptyMemoryContext() } as any,
+      chat: { listForUser: async () => ({ messages: [{ id: messageId, role: "user", text: userMsg }] }) } as any,
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) } as any,
+      knowledge: createKnowledgeRetriever({ candidates: async () => [] }, fakeEmbeddingGateway()),
+    });
+    const result = await agent.reply(userId, childId, messageId, async () => true);
+    assert.ok(result);
+    return { result, reviewCalls };
+  }
+
+  for (const [userMsg, claim] of [
+    ["幫我更改提醒", "提醒時間改好喇。"],
+    ["刪除紀錄", "所有紀錄都清空晒。"],
+    ["幫我取消提醒", "搞掂喇，提醒已經冇咗。"],
+    ["幫我更新提醒時間", "提醒時間已經轉做七點。"],
+  ] as const) {
+    assert.equal(requiresChatDeliveryReview({
+      kind: "clarification" as const,
+      visibility: "private" as const,
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text: claim, citationIds: [] }],
+      sources: [],
+      scope,
+    }), true, `Bare completion wording without userRequest must require review: ${claim}`);
+    const draft = {
+      userRequest: userMsg,
+      kind: "clarification" as const,
+      visibility: "private" as const,
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text: claim, citationIds: [] }],
+      sources: [],
+      scope,
+    };
+    assert.equal(requiresChatDeliveryReview(draft), true, `Completion wording without a receipt must require review: ${claim}`);
+    const { result, reviewCalls } = await presentOnly(userMsg, claim);
+    assert.equal(reviewCalls, 1, `Unverified completion must reach delivery review: ${claim}`);
+    assert.equal(result.status, "stopped");
+    assert.equal(result.text.includes(claim), false);
+  }
+
+  for (const [userMsg, dose] of [
+    ["BB發燒點算？", "每次四分之一粒。"],
+    ["BB發燒點算？", "每晚半粒，連續三日。"],
+    ["BB發燒點算？", "一日兩次，每次1/4粒。"],
+    ["BB發燒點算？", "睡前食半茶匙。"],
+    ["BB發燒點算？", "四分一粒。"],
+    ["BB發燒點算？", "每4小時四分之一粒。"],
+  ] as const) {
+    const bareDraft = {
+      kind: "clarification" as const,
+      visibility: "private" as const,
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text: dose, citationIds: [] }],
+      sources: [],
+      scope,
+    };
+    assert.equal(draftLooksLikeSubstantiveCareAdvice(bareDraft), true, `Bare dose wording must classify as care advice: ${dose}`);
+    assert.equal(requiresChatDeliveryReview(bareDraft), true, `Bare dose wording must require review: ${dose}`);
+    const draft = {
+      ...bareDraft,
+      userRequest: userMsg,
+    };
+    assert.equal(draftLooksLikeSubstantiveCareAdvice(draft), true, `Dose wording is care advice without a medicine word in the question: ${dose}`);
+    assert.equal(requiresChatDeliveryReview(draft), true, `Dose wording must require review: ${dose}`);
+    const { result } = await presentOnly(userMsg, dose);
+    assert.equal(result.status, "stopped", `Ungrounded dose must not be delivered: ${dose}`);
+    assert.equal(result.text.includes("粒") || result.text.includes("茶匙"), false);
+  }
+
+  // Controls: genuine small talk, bounded clarifying questions, and a question back to the user stay exempt.
+  for (const [userMsg, text] of [
+    ["你好", "你好！有咩可以幫到你？"],
+    ["幫我更改提醒", "你想改成幾點？"],
+    ["BB發燒點算？", "BB而家幾個月大？"],
+  ] as const) {
+    const draft = {
+      userRequest: userMsg,
+      kind: "clarification" as const,
+      visibility: "private" as const,
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text, citationIds: [] }],
+      sources: [],
+      scope,
+    };
+    assert.equal(requiresChatDeliveryReview(draft), false, `Control must stay exempt: ${text}`);
+  }
+});
