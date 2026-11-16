@@ -11,7 +11,7 @@ import type { FirestoreCareStore } from './firestore-care.ts';
 import type { FirestoreOnlineStore } from './firestore-online.ts';
 import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
 import { growthImportPending } from './firestore-growth-import-guard.ts';
-import { GROWTH_RULES, GROWTH_CATALOG_REVISION, GROWTH_HISTORY_PAGE_SIZE, growthProposals, growthInputs, growthBasisChanged, nextGrowthCheck, decodeGrowthHistoryCursor, selectGrowthHistoryWindow, type GrowthHistoryCursor } from './growth-rules.ts';
+import { GROWTH_RULES, GROWTH_CATALOG_REVISION, GROWTH_HISTORY_PAGE_SIZE, canonicalGrowthTimestamp, compareGrowthHistoryDesc, growthProposals, growthInputs, growthBasisChanged, nextGrowthCheck, decodeGrowthHistoryCursor, selectGrowthHistoryWindow, type GrowthHistoryCursor } from './growth-rules.ts';
 import { agentKnowledgeFilter } from './product-agent-tools.ts';
 import { parseKnowledgeFilter } from './knowledge-inputs.ts';
 import { profileIsApplicable } from './memory-policy.ts';
@@ -115,7 +115,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
       if (saved.item.id !== row.get('attentionId') || saved.item.childId !== b.scope.childId || saved.item.version !== row.get('recordVersion')
         || saved.item.createdAt !== row.get('createdAt')) domainReject('growth_binding', 500);
       return saved;
-    });
+    }).sort((a, x) => compareGrowthHistoryDesc(x.item, a.item));
   }
   async function topics(b: Binding): Promise<Topic[]> {
     const result: Topic[] = [];
@@ -173,18 +173,28 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
       facts: facts.map(({ id, version }) => ({ id, version })) } };
   }
   function write(b: Binding, saved: Saved) {
-    domainParse(firestoreGrowthSchema, saved); const item = saved.item, id = JSON.stringify([item.id, item.version]);
+    domainParse(firestoreGrowthSchema, saved);
+    const normalized: Saved = {
+      ...saved,
+      item: { ...saved.item, createdAt: canonicalGrowthTimestamp(saved.item.createdAt) },
+    };
+    const item = normalized.item, id = JSON.stringify([item.id, item.version]);
     const tags = { ...data.tags(b.scope), attentionId: item.id, createdAt: item.createdAt, entityVersion: item.version };
     b.transaction.set(data.ref('growth_attention', 'growth-attention', item.id),
-      { ...tags, ...data.seal('growth-attention', item.id, b.scope, firestoreGrowthSchema, saved, item.version) });
+      { ...tags, ...data.seal('growth-attention', item.id, b.scope, firestoreGrowthSchema, normalized, item.version) });
     b.transaction.create(data.ref('growth_revisions', 'growth-revision', id),
-      { ...tags, ...data.seal('growth-revision', id, b.scope, firestoreGrowthSchema, saved, item.version) });
+      { ...tags, ...data.seal('growth-revision', id, b.scope, firestoreGrowthSchema, normalized, item.version) });
   }
   async function readPageRecords(b: Binding, cursor: GrowthHistoryCursor | null, pageSize = GROWTH_HISTORY_PAGE_SIZE): Promise<Saved[]> {
     const batchSize = cursor ? Math.min(100, Math.max(pageSize + 10, 40)) : 100;
-    const collected: Saved[] = [];
-    let historyCount = 0;
-    let batchAfter: [string, string] | null = cursor ? [cursor.createdAt, cursor.id] : null;
+    const activeRecords: Saved[] = [];
+    let historyRecords: Saved[] = [];
+    const cursorMs = cursor ? Date.parse(cursor.createdAt) : null;
+    // Legacy/imported records may hold ISO offsets (-23:59..+23:59) or non-canonical precision;
+    // start above cursorMs + 25h in Firestore lexical order so no instant <= cursorMs is skipped.
+    let batchAfter: [string, string] | null = cursorMs !== null
+      ? [new Date(cursorMs + 25 * 3600_000).toISOString(), '\uffff']
+      : null;
     while (true) {
       let q = query(b, 'growth_attention')
         .orderBy('createdAt', 'desc')
@@ -198,18 +208,29 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
         if (saved.item.id !== row.get('attentionId') || saved.item.childId !== b.scope.childId
           || saved.item.version !== row.get('recordVersion') || saved.item.createdAt !== row.get('createdAt')) domainReject('growth_binding', 500);
         if (active(saved.item)) {
-          if (!cursor) collected.push(saved);
-        } else if (historyCount < pageSize + 1) {
-          collected.push(saved);
-          historyCount++;
+          if (!cursor) activeRecords.push(saved);
+        } else {
+          const itemMs = Date.parse(saved.item.createdAt);
+          if (cursorMs === null || itemMs < cursorMs || (itemMs === cursorMs && saved.item.id < cursor!.id)) {
+            historyRecords.push(saved);
+          }
         }
       }
-      if (cursor && historyCount >= pageSize + 1) break;
+      if (historyRecords.length > pageSize + 1) {
+        historyRecords.sort((x, y) => compareGrowthHistoryDesc(x.item, y.item));
+        historyRecords = historyRecords.slice(0, pageSize + 1);
+      }
       if (rows.size < batchSize) break;
       const tail = rows.docs.at(-1)!;
-      batchAfter = [tail.get('createdAt') as string, tail.get('attentionId') as string];
+      const tailCreatedAt = tail.get('createdAt') as string;
+      const tailMs = Date.parse(tailCreatedAt);
+      if (cursor !== null && historyRecords.length >= pageSize + 1) {
+        const cutoffMs = Date.parse(historyRecords[pageSize]!.item.createdAt);
+        if (Number.isFinite(tailMs) && Number.isFinite(cutoffMs) && tailMs < cutoffMs - 48 * 3600_000) break;
+      }
+      batchAfter = [tailCreatedAt, tail.get('attentionId') as string];
     }
-    return collected;
+    return [...activeRecords, ...historyRecords];
   }
   async function page(b: Binding, options?: { historyCursor?: string | null }): Promise<GrowthPage> {
     let cursor: GrowthHistoryCursor | null = null;
@@ -260,6 +281,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     const previous = mapped?.previousId ? records.find(saved => saved.item.id === mapped.previousId) : undefined;
     if (mapped?.previousId && (!source.item.previousId || !previous || previous.item.topicId !== source.item.topicId)) domainReject('growth_changed');
     const item: GrowthAttention = { ...source.item, id: current?.item.id ?? randomUUID(), childId: b.scope.childId,
+      createdAt: canonicalGrowthTimestamp(source.item.createdAt),
       version: (current?.item.version ?? 0) + 1, updatedAt: now, sourceAvailable: supported,
       evidence: supported && next ? next.evidence : { profileVersion: 0, facts: [] },
       source: supported && next ? next.source : source.item.source,
@@ -327,7 +349,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     let reason: Reason | null = null;
     let linkedState: GrowthAttention['taskState'] = null;
     if (!live) reason = 'original_unavailable';
-    else if (live.topicId !== item.topicId || live.createdAt !== item.createdAt) reason = 'original_unavailable';
+    else if (live.topicId !== item.topicId || (live.createdAt !== item.createdAt && Date.parse(live.createdAt) !== Date.parse(item.createdAt))) reason = 'original_unavailable';
     else if (!active(live) && live.state !== item.state) reason = 'growth_terminal_state';
     else if (live.previousId !== item.previousId || live.taskId && live.taskId !== item.taskId) reason = 'growth_link_changed';
     else if (changedFields.length) {

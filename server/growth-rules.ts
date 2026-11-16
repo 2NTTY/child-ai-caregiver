@@ -106,11 +106,17 @@ export interface GrowthHistoryCursor {
 const GROWTH_CURSOR_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 const GROWTH_CURSOR_RAW_RE = /^[A-Za-z0-9_-]+$/u;
 
-function growthHistoryKeyAt(item: { createdAt?: string; updatedAt?: string }): string {
-  return item.createdAt ?? item.updatedAt ?? "";
+/** Normalizes valid ISO-8601 offset timestamps to canonical UTC lexical order matching chronological instant order. */
+export function canonicalGrowthTimestamp(value: string): string {
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? new Date(ms).toISOString() : value;
 }
 
-function compareGrowthHistoryDesc(
+function growthHistoryKeyAt(item: { createdAt?: string; updatedAt?: string }): string {
+  return canonicalGrowthTimestamp(item.createdAt ?? item.updatedAt ?? "");
+}
+
+export function compareGrowthHistoryDesc(
   a: { id: string; createdAt?: string; updatedAt?: string },
   b: { id: string; createdAt?: string; updatedAt?: string },
 ): number {
@@ -142,7 +148,7 @@ export function decodeGrowthHistoryCursor(raw: string): GrowthHistoryCursor | nu
     ) {
       return null;
     }
-    return { v: 1, id: candidate.id, createdAt: candidate.createdAt };
+    return { v: 1, id: candidate.id, createdAt: canonicalGrowthTimestamp(candidate.createdAt) };
   } catch {
     return null;
   }

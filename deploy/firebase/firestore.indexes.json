@@ -2374,6 +2374,36 @@
       ]
     },
     {
+      "collectionGroup": "yuban_authority_growth_attention",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "attentionId",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "yuban_authority_push_bindings",
       "queryScope": "COLLECTION",
       "fields": [

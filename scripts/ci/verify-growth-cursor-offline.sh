@@ -32,6 +32,7 @@ TEST_FILES=(
   tests/growth-age-gate.test.ts
   tests/growth-policy.test.ts
   tests/growth-read-boundary.test.ts
+  tests/firestore-indexes-comparator.test.ts
   frontend/scripts/growth-concern-actions.test.mjs
   frontend/scripts/growth-pagination-controller.test.mjs
   frontend/scripts/shared-photo-pages.test.mjs

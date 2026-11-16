@@ -4,6 +4,7 @@ import test from "node:test";
 import { createGrowthApi, GrowthApiError } from "../src/client/growth-api.ts";
 import { SERVICE_POLICY_VERSION } from "../src/shared/account-service.ts";
 import type { GrowthAttention, GrowthPage } from "../src/shared/growth.ts";
+import type { HandoverIntegrity } from "../src/shared/handover.ts";
 import { handleGrowthRequest } from "../server/growth-api.ts";
 import {
   decodeGrowthHistoryCursor,
@@ -429,4 +430,140 @@ test("createFirestoreGrowthStore handles >500 history records, shared-space pagi
     () => shared.list("viewer", childId, { historyCursor: sharedPage2.historyNextCursor }),
     (err: { status?: number }) => err.status === 403 || err.status === 404,
   );
+});
+
+test("createFirestoreGrowthStore and selectGrowthHistoryWindow preserve complete order across mixed ISO offsets and precisions", async () => {
+  // C01 regression: mixed timezone offsets and variable subsecond precisions must not lose records across cursor pages.
+  const childId = randomUUID();
+  const unitMixed = [
+    makeGrowthItem({ id: "00000000-0000-4000-8000-000000000101", childId, state: "dismissed", createdAt: "2026-08-01T12:00:00+08:00", updatedAt: "2026-08-01T12:00:00+08:00" }),
+    makeGrowthItem({ id: "00000000-0000-4000-8000-000000000102", childId, state: "dismissed", createdAt: "2026-08-01T04:00:00.000Z", updatedAt: "2026-08-01T04:00:00.000Z" }),
+    makeGrowthItem({ id: "00000000-0000-4000-8000-000000000103", childId, state: "dismissed", createdAt: "2026-08-01T03:00:00.5-05:00", updatedAt: "2026-08-01T03:00:00.5-05:00" }),
+    makeGrowthItem({ id: "00000000-0000-4000-8000-000000000104", childId, state: "dismissed", createdAt: "2026-08-01T08:00:00Z", updatedAt: "2026-08-01T08:00:00Z" }),
+  ].map(item => ({ item }));
+
+  const u1 = selectGrowthHistoryWindow(unitMixed, r => r.item, () => false, { pageSize: 2 });
+  assert.deepEqual(u1.selected.map(r => r.item.id), [
+    "00000000-0000-4000-8000-000000000103",
+    "00000000-0000-4000-8000-000000000104",
+  ]);
+  const u2 = selectGrowthHistoryWindow(unitMixed, r => r.item, () => false, { historyCursor: u1.historyNextCursor, pageSize: 2 });
+  assert.deepEqual(u2.selected.map(r => r.item.id), [
+    "00000000-0000-4000-8000-000000000102",
+    "00000000-0000-4000-8000-000000000101",
+  ]);
+  assert.equal(u2.historyHasMore, false);
+
+  const fixture = serialFirestoreFixture();
+  const options = {
+    database: fixture.database,
+    cipher: createStorageCipher(Buffer.alloc(32, 44)),
+    projectId: "synthetic-growth-offset",
+    namespace: "unit_growth_offset",
+  };
+  const authority = createFirestoreAuthority(options);
+  const data = new FirestoreDomainData(options);
+  await authority.initializeControl({ enabled: true, generation: randomUUID() });
+  await authority.issueInvitation({ email: "owner@example.test", operationId: randomUUID(), expiresAt: new Date(Date.now() + 3_600_000).toISOString() });
+  await authority.admitIdentity({ userId: "owner", email: "owner@example.test", emailVerified: true });
+  await authority.acknowledge({ userId: "owner", operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  const dbChildId = (await authority.createChild({ userId: "owner", operationId: randomUUID(), displayName: "Offset Child" })).child.id;
+  const care = createFirestoreCareStore(options);
+  const chat = createFirestoreChatStore(options);
+  const memory = createFirestoreMemoryStore({ ...options, care, chat });
+  const growth = createFirestoreGrowthStore({ ...options, care, memory, online: createFirestoreOnlineStore(options) });
+
+  const activeItem = makeGrowthItem({
+    childId: dbChildId,
+    state: "proposed",
+    createdAt: "2026-07-01T00:00:00+08:00",
+    updatedAt: "2026-08-02T00:00:00Z",
+    title: "Offset Active",
+  });
+  // Direct seed of legacy un-normalized +08:00 (04:00Z) and .000Z (08:00Z), plus mixed subsecond precisions and -05:00.
+  const hkPlus8Items = Array.from({ length: 20 }, () =>
+    makeGrowthItem({
+      childId: dbChildId,
+      state: "dismissed",
+      createdAt: "2026-08-01T12:00:00+08:00",
+      updatedAt: "2026-08-01T12:00:00+08:00",
+    }),
+  );
+  const utcItems = Array.from({ length: 20 }, () =>
+    makeGrowthItem({
+      childId: dbChildId,
+      state: "accepted",
+      createdAt: "2026-08-01T08:00:00.000Z",
+      updatedAt: "2026-08-01T08:00:00.000Z",
+    }),
+  );
+  const extraVariantItems = [
+    makeGrowthItem({ childId: dbChildId, state: "dismissed", createdAt: "2026-08-01T08:00:00Z", updatedAt: "2026-08-01T08:00:00Z" }),
+    makeGrowthItem({ childId: dbChildId, state: "dismissed", createdAt: "2026-08-01T03:00:00.25-05:00", updatedAt: "2026-08-01T03:00:00.25-05:00" }),
+  ];
+  const allSeeded = [...hkPlus8Items, ...utcItems, ...extraVariantItems, activeItem];
+
+  await authority.runTransaction("owner", dbChildId, async b => {
+    for (const item of allSeeded) {
+      const saved = { item, lastRequest: null };
+      b.transaction.set(data.ref("growth_attention", "growth-attention", item.id), {
+        ...data.tags(b.scope),
+        attentionId: item.id,
+        createdAt: item.createdAt,
+        entityVersion: item.version,
+        ...data.seal("growth-attention", item.id, b.scope, firestoreGrowthSchema, saved, item.version),
+      });
+    }
+  });
+
+  const collectedIds: string[] = [];
+  const p1 = await growth.list("owner", dbChildId);
+  assert.equal(p1.items[0]?.id, activeItem.id);
+  assert.equal(p1.items.length, 31);
+  assert.equal(p1.historyHasMore, true);
+  collectedIds.push(...p1.items.map(i => i.id));
+
+  let cursor: string | null = p1.historyNextCursor ?? null;
+  while (cursor) {
+    const next = await growth.list("owner", dbChildId, { historyCursor: cursor });
+    assert.equal(next.items.some(i => i.id === activeItem.id), false);
+    collectedIds.push(...next.items.map(i => i.id));
+    cursor = next.historyHasMore ? (next.historyNextCursor ?? null) : null;
+  }
+
+  assert.equal(collectedIds.length, 43);
+  assert.equal(new Set(collectedIds).size, 43);
+
+  // Import normalization keeps cursor ordering consistent while remaining inspectable.
+  const importedAt = "2026-08-01T12:00:00+08:00";
+  const importedSourceItem = makeGrowthItem({
+    childId: randomUUID(),
+    state: "dismissed",
+    createdAt: importedAt,
+    updatedAt: importedAt,
+  });
+  const importedRes = await authority.runTransaction("owner", dbChildId, async b => {
+    const prep = await growth.prepareImportedAttention(
+      b,
+      randomUUID(),
+      {
+        section: "growth_attention",
+        childId: importedSourceItem.childId,
+        value: { item: importedSourceItem, lastRequest: null },
+        source: {
+          serverId: "https://source.invalid",
+          accountId: "source-owner",
+          packageId: randomUUID(),
+          packageVersion: 1,
+          manifestSha256: "c".repeat(64),
+          path: "data/00000001.json",
+          rowIndex: 0,
+        },
+      },
+      "trusted" satisfies HandoverIntegrity,
+    );
+    prep.commit();
+    return prep.value.item;
+  });
+  assert.equal(importedRes.createdAt, new Date(Date.parse(importedAt)).toISOString());
 });
