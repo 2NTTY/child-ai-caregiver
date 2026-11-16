@@ -6032,3 +6032,9 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 1）**F1 急症抽筋修復**：於 `src/shared/agent-feedback.ts` 移除過度寬泛之情緒前綴排除（`開心到`／`激動到`），改為 `hasUrgentConvulsionCue`：凡「抽筋」伴隨任何身體症狀／求助線索（`發燒`、`雙眼`、`反白`、`僵硬`、`昏迷`、`點算` 等）一律 fail-closed 命中 `'emergency-hk-v1'`，僅於無任何危急語境時排除明確純玩笑慣用語（如 `笑到抽筋`）及運動字句（如 `對你好抽筋運動`）。
 2）**真 UI 觸發實測**：於 `tests/official-help-entry.test.ts`（2→3 cases）以 CommonJS TSX 真實展開並狀態重繪 `frontend/src/screens/chatScreen.tsx`（`ChatPage` + `OfficialHelpCards`），實測在無選擇孩子（`!child`）時按下頂欄「官方求助入口」可打開與收合 `chat-official-help-panel`，並驗證草稿輸入「BB激動到抽筋，雙眼反白」可自動浮現求助面板與緊急警告，而純玩笑「個故仔好好笑，笑到抽筋」則保持隱藏。
 3）**F4 append-only 治理更正**：本條向前還原 `242c4465` 原存之 2026-11-14 舊正文（不改寫歷史事實）並保留 2026-11-15 之撤回定案記錄；現行設計及 `PLAN.md` 繼續維持 `LOCAL HOLD` 候選狀態，等待 Owner (`2NTTY`) 對 `REQ-001 §4.3:184` 作最終決定。未推送遠端亦未開 PR。
+
+### 2026-11-16　B-P5 R4 審核整改（抽筋後無反應急症偵測，維持 LOCAL HOLD）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R4.md` F1 於本地 forward-only 新提交修復並維持 **LOCAL HOLD**（未 push／未開 PR）：
+1）**F1 [agent-feedback.ts](src/shared/agent-feedback.ts)**：擴充 `URGENT_EMERGENCY_HELP_PATTERN` 與 `COMPANION_DISTRESS_OR_SYMPTOM_PATTERN`，納入 `(?:無|冇|毫無|無晒|冇晒)反應|無神|不省人事|人事不省|面青|昏厥|軟弱無力` 與 `無力|發軟|唔郁|不動|軟晒|發抖`，使「BB笑到抽筋，之後冇晒反應」「BB笑到抽筋，之後無反應」穩定 fail-closed 命中 `'emergency-hk-v1'` 而不再被玩笑慣用語排除吞沒，同時維持純玩笑「個故仔好好笑，笑到抽筋」回傳 `[]`。
+2）於 [official-help-entry.test.ts](tests/official-help-entry.test.ts)（3/3）擴充 unit 斷言與 `ChatPage` TSX 重繪實測，驗證在 `!child` 時輸入「BB笑到抽筋，之後冇晒反應」自動打開 `chat-official-help-panel`。設計候選仍待 Owner（`2NTTY`）依 `REQ-001 §4.3:184` 最終拍板，維持 LOCAL HOLD。

@@ -121,6 +121,9 @@ test('matchOfficialHelpForText deterministically identifies emergency and medica
     'BB激動到抽筋，雙眼反白',
     'BB開心到抽筋，成身僵硬',
     'BB笑到抽筋，雙眼反白',
+    'BB笑到抽筋，之後冇晒反應',
+    'BB笑到抽筋，之後無反應',
+    'BB笑到抽筋，成個人軟晒唔郁',
     'BB激動到抽筋',
     'BB開心到抽筋',
     '呼吸困難抖唔到氣',
@@ -330,4 +333,19 @@ test('ChatPage real render surfaces official help on toolbar toggle and urgent d
   );
   assert.equal(collectText(urgentBtn), OFFICIAL_HELP_ENTRY_COPY.highlightedButtonLabel);
   assert.ok(collectText(urgentPanel).includes(OFFICIAL_HELP['emergency-hk-v1'].title));
+
+  // 3) Laugh-idiom prefix followed by unresponsiveness ("BB笑到抽筋，之後冇晒反應") must also auto-surface emergency help!
+  for (const urgentPostLaugh of ['BB笑到抽筋，之後冇晒反應', 'BB笑到抽筋，之後無反應']) {
+    currentDraft = urgentPostLaugh;
+    tree = runnerRef.render();
+    nodes = collectNodes(tree);
+    assert.ok(
+      nodes.some(n => n.props?.testID === 'chat-official-help-panel'),
+      `Laugh idiom + unresponsiveness must auto-surface help panel: ${urgentPostLaugh}`,
+    );
+    assert.ok(
+      nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'),
+      `Laugh idiom + unresponsiveness must auto-surface urgent notice: ${urgentPostLaugh}`,
+    );
+  }
 });
