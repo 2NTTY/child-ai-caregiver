@@ -195,6 +195,7 @@ export class AgentGatewayModel extends BaseLlm {
     }
   }
   private async *generateBounded(request: LlmRequest): AsyncGenerator<LlmResponse, void> {
+    const anchorRequest = request;
     const { config, provider, usage, budget, userId, childId, authorize } = this.options;
     const images = this.options.images?.() ?? [];
     // Include the same generation config the native provider adds, even before quota admission.
@@ -243,7 +244,6 @@ export class AgentGatewayModel extends BaseLlm {
       ? await budget.wait(this.options.readConversationSummary)
       : !this.providerCalled ? this.options.initialConversationSummary : undefined;
     base = await this.syncRequestPolicy(base);
-    request = base;
     let outgoing = base;
     const fits = (context: LlmRequest['contents'][number]) =>
       requestSize({ ...base, contents: [...base.contents, context] })
@@ -259,7 +259,7 @@ export class AgentGatewayModel extends BaseLlm {
     };
     if (initial && !includesSummary) outgoing = omittedSummary();
     // Keep the exact provider payload fixed after durable admission, including the revalidated summary.
-    const originalModelKey = budget.durable ? this.options.modelAttemptKey?.(request) : undefined;
+    const originalModelKey = budget.durable ? this.options.modelAttemptKey?.(anchorRequest) : undefined;
     const retries = config.agentMaxRetries ?? 0;
     if (!Number.isSafeInteger(retries) || retries < 0 || retries > AGENT_RUN_LIMITS.modelRetries.max) throw new AgentStopped("unavailable");
     for (let retry = 0; ; retry++) {
