@@ -6024,3 +6024,7 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
   - **PR-C（`codex/req005-growth-cursor-ui`，`2672553dadbc64edcc3ba8e6edd3510c725e0fae`）**：修復 R3 C03（`all(b)` 改為 `.orderBy('createdAt').orderBy('attentionId').limit(200)` 分頁迴圈設 `maxPages = 100` fail-closed，並移除 `prepareImportedAttention()` 與 `evaluate()` 之 `>= 500` 阻斷同時保留 `removed.length > 4`／`changes.length > 16` 與撤銷檢查）；離線 gate **8 檔 40/40**、G1–G5 與 3x `tsc` 全過（無 cursor 首頁仍屬有界掃描且雲端索引 `READY` 未驗）。
   - **PR-D（`codex/req005-cross-domain-snapshots`，`c65624a6ad33fd73a7d321a5ada10302b70ace2a`）**：修復 R3 D03（`exportItemIdentity()` 移除 `task_history` 可變 `:at:` 時間戳以對齊 `[task.id, task.version]` 主鍵）；離線 gate **7 檔 18/18**、S1–S8 與 3x `tsc` 全過。
   - **PR-E（`codex/req005-acceptance-closeout`）**：同步更新 `PLAN.md` 與本 `WORKLOG.md`，校準 `B-P5` `LOCAL HOLD` SHA 為 `76cfbff9c1a0efbb35dfb3b81b0a78027cd1933d`；更正 R3 §5.1 所指出之文件措辭邊界（並註記 R2 A02 原實證為 `view 0.35 / runtime 0.30`），其餘基線 7 檔既有失敗／略過（`tests/firestore-backup.test.ts` 已由 PR-A 修復納入 CI）維持如實揭露。
+
+## 2026-11-16　關聯 B-P5 設計定案同步校準（維持技術 LOCAL HOLD，暫不推送／不開 PR）
+
+- **PR-E（`codex/req005-acceptance-closeout`）**：同步更新 `PLAN.md` 關聯 `B-P5`（`codex/search-help-entry`）紀錄至新本地提交 `e502c5fadc489c6a7fbf8074ebb86a1f2a5bdcc2`，註明 `REQ-001 §4.3:184` 之介面位置與觸發規則已由團隊拍板定案（不再以「等 Owner 批准」為前置阻塞），並因行動端實機鍵盤／放大字體遮擋驗收未執行而維持技術 **LOCAL HOLD**；其餘 PR-A～PR-D 程式碼維持不變，所有分支仍處於 `NOT_PUSHED`。

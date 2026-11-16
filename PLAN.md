@@ -223,7 +223,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 | **PR-B** | `codex/req005-compaction-integration` | §4.2；場景 #22, #24, #25, #26（離線子集） | 將免工具 `compactionModel` 與 `compactionAnchors` 接通 `agent-runtime.ts` 與 `product-agent.ts`（僅單輪瞬態 `contextCompaction` 預設啟用，16k threshold／retention=4 仍屬工程起始值，`#447` 持久跨輪摘要仍維持關閉／未啟用而 legacy 摘要通路依 `firestore-private-summary-cutover.ts` 保留）、`appendEvent` 嚴格單調毫秒邊界（`previous + 1` ms）防誤延後、`modelAttemptKey` 過濾 system compacted event、`initialConversationSummary` 隔離與 `reserveDeliveryReview` 保留；強化離線 CI（離線 5 檔 54/54、10 次穩定複測 60/60 與 C1–C6／I1–I4 變異測試；真 Gemini 模型效率與 `#447` durable 啟用未執行） | Local candidate (`55cfaa0fc843db708d2c7fe9f3cfe2f478774cce`, NOT_PUSHED) |
 | **PR-C** | `codex/req005-growth-cursor-ui` | §8；場景 #13, #18（離線子集） | 對齊 `(createdAt, id)` Keyset Cursor 排序元組（`canonicalGrowthTimestamp` 固定寬度 UTC `.sssZ` + `selectGrowthHistoryWindow`）、`firestore-growth.ts` `readPageRecords`（`.orderBy('createdAt','desc').orderBy('attentionId','desc').startAfter(...)` 兼容既有未正規化 offset 舊資料 ±48h 緩衝及首頁真實時間序保留，繞過 cursor 請求之 500 筆掃描限制）與 `all(b)` 改為 `.orderBy('createdAt').orderBy('attentionId').limit(200)` 分頁迴圈（設 `maxPages = 100` fail-closed，並移除 `prepareImportedAttention()` 與 `evaluate()` 之 `>= 500` 阻斷同時保留 `removed.length > 4`／`changes.length > 16` 與撤銷檢查）、`deploy/firebase/firestore.indexes.json` 新增 `yuban_authority_growth_attention` 降序複合索引，貫穿 `?historyCursor=`（無效 400）及前端 `TaskKnowledgeGrowthCandidates`／`usePhotoInputSources loadMore`；修補 CI `--experimental-test-module-mocks` 參數並強化離線 CI 與 G1–G5 變異測試（離線 8 檔 40/40；無 cursor 首頁仍屬有界全掃、實體 Cloud Firestore 索引建置／壓測與真機／瀏覽器 UI 未跑） | Local candidate (`2672553dadbc64edcc3ba8e6edd3510c725e0fae`, NOT_PUSHED) |
 | **PR-D** | `codex/req005-cross-domain-snapshots` | §8；未決 #9；場景 #14, #15, #18（離線子集） | `server/cross-domain-snapshot.ts` 接入正式服務：`firestore-voice-transcripts.ts`（`reconcileVoiceTranscriptRevision` 與 `NaN`/超時範圍阻斷）、`family-document-report-core.ts`（`accumulateEncryptedStatisticsFailClosed` 自構 JSON payload 雜湊去重／授權漂移阻斷與 `Number.isSafeInteger` 溢位保護；不取代原始 sealed-envelope 解密或 live watermark 實測）與 `handover-export.ts`（按 section 建立單次 `ResumableExportState`、`exportItemIdentity` 擷取結構與 provenance/版本鍵，移除 `pageOffset+index`/`anon-*` 及 `task_history` 可變 `:at:` 時間戳以對齊 `[task.id, task.version]` 主鍵，`pages` 依同一去重決定過濾重複項目以對齊 ZIP entries 與 `coverage`、拒同版本跨頁內容衝突；修正 `tests/handover-export.test.ts` 三處重複版號合成 fixture）；強化離線 CI 與 S1–S8（離線 7 檔 18/18；實體 Firestore／Storage／真模型未跑） | Local candidate (`c65624a6ad33fd73a7d321a5ada10302b70ace2a`, NOT_PUSHED) |
-| **PR-E** | `codex/req005-acceptance-closeout` | §9；場景 #2, #5, #8, #9, #10, #17, #21, #23（基線離線子集與文件校準） | 新增 `tests/req005-acceptance-scenarios.test.ts` 覆蓋 8 項可離線驗證之合成場景（基於 `b48ba880` 基線單獨執行，未含 A–D），更新本收束紀錄退回預先關項並嚴格區分「離線已驗子集／未整合／未執行 live／待 Owner 決策」，強化離線 CI 與明確註記關聯 Slice B `B-P5` (`codex/search-help-entry`, `76cfbff9`) 維持 `LOCAL HOLD` 待 Owner (`2NTTY`) 定奪 | 本分支交付 (`codex/req005-acceptance-closeout`, NOT_PUSHED) |
+| **PR-E** | `codex/req005-acceptance-closeout` | §9；場景 #2, #5, #8, #9, #10, #17, #21, #23（基線離線子集與文件校準） | 新增 `tests/req005-acceptance-scenarios.test.ts` 覆蓋 8 項可離線驗證之合成場景（基於 `b48ba880` 基線單獨執行，未含 A–D），更新本收束紀錄退回預先關項並嚴格區分「離線已驗子集／未整合／未執行 live／技術 HOLD」，強化離線 CI 與明確註記關聯 Slice B `B-P5` (`codex/search-help-entry`, `e502c5fa`) 已就 `REQ-001 §4.3:184` 定案設計位置與觸發規則、因實機鍵盤／放大字體驗收未完而維持技術 `LOCAL HOLD` | 本分支交付 (`codex/req005-acceptance-closeout`, NOT_PUSHED) |
 
 #### 2. REQ-005 §9 官方實施階段（Stages 0 - 4）交付狀態校準
 
@@ -273,7 +273,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 > [!NOTE]
 > **補充時間線不變式與跨切片關聯保留說明：**
 > 1. 單一關注事件歷史硬上限（`CONCERN_EVENT_LIMIT = 200`，第 201 筆新增拋出 400 `concern_history_requires_review`，歸檔操作豁免允許）經 PR 10 (`codex/req005-cursor-pagination`, commit `20b08990`, `tests/firestore-cursor-pagination.test.ts` test 3 與 `scripts/verify-cursor-pagination-mutations.mjs`) 驗證有效。此防線為單項時間線安全邊界，不取代官方 26 項驗收場景。
-> 2. 關聯 Slice B 包 **`B-P5` (`codex/search-help-entry`, `76cfbff9c1a0efbb35dfb3b81b0a78027cd1933d`) 維持 `LOCAL HOLD`**，仍待 Owner (`2NTTY`) 對 `REQ-001 §4.3:184` 之最終介面／觸發拍板，不在本 REQ-005 補完包擅自解除。
+> 2. 關聯 Slice B 包 **`B-P5` (`codex/search-help-entry`, `e502c5fadc489c6a7fbf8074ebb86a1f2a5bdcc2`) 已完成團隊設計定案（取消等待 Owner 批准前置），因行動裝置實機鍵盤／放大字體／視覺遮擋驗收尚未執行而維持技術 `LOCAL HOLD`**，不在本 REQ-005 補完包擅自解除或推送。
 
 #### 4. REQ-005 官方未決與需進一步釐清清單（11 項待決事項）
 
@@ -313,7 +313,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 3. **保存成功不代表進上下文（Saved != Projected）**：
    - 記憶與摘要儲存至資料庫後，前端初始投影視窗依然維持安全截斷與省略標註（`headBatchOmittedForCapacity`），確保模型永遠獲得一致且未受污染的水位資訊。
 4. **本輪驗收限制聲明**：
-   - 本 PR-E 僅於 `origin/master` (`b48ba880`) 基線執行自身 6 檔離線合成測試並校準 PR-A～PR-D 獨立分支紀錄（另於獨立合併工作樹覆核跨包整合測試與 `handover-concern-snapshot`）；**未執行真實 Gemini API 調用、實體 Cloud Firestore／PostgreSQL 壓測、GCP 帳單配額接線、外部維護者告警接收端、多實例崩潰重啟壓測或託管 GitHub Actions**；`#447` 持久跨輪摘要仍維持未啟用／未部署，且關聯 Slice B `B-P5` (`codex/search-help-entry`, `76cfbff9`) 維持 **LOCAL HOLD** 待 Owner (`2NTTY`) 定奪。
+   - 本 PR-E 僅於 `origin/master` (`b48ba880`) 基線執行自身 6 檔離線合成測試並校準 PR-A～PR-D 獨立分支紀錄（另於獨立合併工作樹覆核跨包整合測試與 `handover-concern-snapshot`）；**未執行真實 Gemini API 調用、實體 Cloud Firestore／PostgreSQL 壓測、GCP 帳單配額接線、外部維護者告警接收端、多實例崩潰重啟壓測或託管 GitHub Actions**；`#447` 持久跨輪摘要仍維持未啟用／未部署，且關聯 Slice B `B-P5` (`codex/search-help-entry`, `e502c5fa`) 已完成設計定案但因實機與行動裝置驗收未完維持技術 **LOCAL HOLD**。
 
 #### 6. 治理規範確認與 Owner 審批指引 (Governance & Owner Approval Path)
 
