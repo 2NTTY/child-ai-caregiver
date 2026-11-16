@@ -10,6 +10,7 @@ import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestoreCareStore } from '../server/firestore-care.ts';
 import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
 import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
+import { firestoreTaskRevisionSchema } from '../server/firestore-domain-data.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { writePersonalHandoverPackage } from '../server/handover-export.ts';
 import { openHandoverArchive, writeHandoverArchive } from '../server/handover-archive.ts';
@@ -558,5 +559,81 @@ test('resumable export deduplicates identical multi-page heads in ZIP entries an
       }),
       { code: 'export_scope_changed' },
     );
+
+    // 4. D03: task_history revision identity is (task.id, task.version), never mutable `at`:
+    // identical (id, v1, at) deduplicates, changed `at` or changed content rejects export_scope_changed,
+    // while genuine v1 + v2 revisions are both retained.
+    const taskId = randomUUID();
+    const tAt1 = '2026-11-05T01:00:00.000Z';
+    const tAt2 = '2026-11-05T02:00:00.000Z';
+    const makeTaskRev = (version: number, at: string, title: string) => firestoreTaskRevisionSchema.parse({
+      at,
+      action: 'create',
+      basisVersion: 1,
+      note: '',
+      actorUserId: 'owner',
+      task: {
+        id: taskId, childId, version, title, details: '', kind: 'ordinary',
+        assigneeUserId: 'owner', createdBy: 'owner', createdAt: now, updatedAt: now,
+        occurrence: { id: randomUUID(), dueAt: now, timeZone: 'Asia/Hong_Kong', state: 'scheduled', terminalBasisVersion: null },
+      },
+    });
+    const rev1 = makeTaskRev(1, tAt1, 'Task v1');
+    const rev2 = makeTaskRev(2, tAt2, 'Task v2');
+
+    const exporterTaskDedup = {
+      async page(_owner: string, query: { section: string; cursor?: string }) {
+        if (query.section === 'children') {
+          return { section: 'children', scopeVersion, complete: true, nextCursor: null, notices: [], items: [{ id: childId, displayName: 'Child' }] };
+        }
+        if (query.section === 'task_history') {
+          if (!query.cursor) return { section: 'task_history', scopeVersion, complete: false, nextCursor: 'th2', notices: [], items: [rev1] };
+          return { section: 'task_history', scopeVersion, complete: true, nextCursor: null, notices: [], items: [rev1, rev2] };
+        }
+        return { section: query.section, scopeVersion, complete: true, nextCursor: null, notices: [], items: [] };
+      },
+    };
+    const taskDedupArchive = await writePersonalHandoverPackage({
+      directory, exporter: exporterTaskDedup, ownerUserId: 'owner', serverId: 'https://example.test',
+      packageId: randomUUID(), createdAt: now, purpose: 'handover',
+      selection: { childIds: [childId], modules: ['tasks'], period: null },
+    });
+    const taskOpened = await openHandoverImport({ path: taskDedupArchive.path });
+    try {
+      assert.equal(taskOpened.manifest.coverage.find(c => c.section === 'task_history')?.items, 2);
+      const rows = (await taskOpened.readPage({
+        selection: { childIds: [childId], modules: ['tasks'] },
+        acknowledgedManifestSha256: taskOpened.manifestSha256,
+        limit: 100,
+      })).rows.filter(r => r.section === 'task_history');
+      assert.deepEqual(rows.map((r: any) => r.value.task.version), [1, 2]);
+    } finally { await taskOpened.close(); }
+
+    for (const mutatedPage2 of [
+      makeTaskRev(1, tAt2, 'Task v1'),
+      makeTaskRev(1, tAt2, 'Tampered Task v1'),
+    ]) {
+      await assert.rejects(
+        writePersonalHandoverPackage({
+          directory,
+          exporter: {
+            async page(_owner: string, query: { section: string; cursor?: string }) {
+              if (query.section === 'children') {
+                return { section: 'children', scopeVersion, complete: true, nextCursor: null, notices: [], items: [{ id: childId, displayName: 'Child' }] };
+              }
+              if (query.section === 'task_history') {
+                if (!query.cursor) return { section: 'task_history', scopeVersion, complete: false, nextCursor: 'th2', notices: [], items: [rev1] };
+                return { section: 'task_history', scopeVersion, complete: true, nextCursor: null, notices: [], items: [mutatedPage2] };
+              }
+              return { section: query.section, scopeVersion, complete: true, nextCursor: null, notices: [], items: [] };
+            },
+          },
+          ownerUserId: 'owner', serverId: 'https://example.test',
+          packageId: randomUUID(), createdAt: now, purpose: 'handover',
+          selection: { childIds: [childId], modules: ['tasks'], period: null },
+        }),
+        { code: 'export_scope_changed' },
+      );
+    }
   } finally { await rm(directory, { recursive: true, force: true }); }
 });

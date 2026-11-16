@@ -154,8 +154,7 @@ function exportItemIdentity(section: string, childId: string | undefined, raw: u
   if (!baseId) baseId = `anon:${payloadHash}`;
 
   const ver = isHistorySection ? versionTag(entity) : '';
-  const atSuffix = innerTask && stringField(record, 'at') ? `:at:${stringField(record, 'at')}` : '';
-  return `${section}:${baseId}${ver}${atSuffix}`;
+  return `${section}:${baseId}${ver}`;
 }
 
   async function* pages(section: string, childId?: string, documentFilter?: PackageDocumentFilter) {

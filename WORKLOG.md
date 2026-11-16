@@ -6006,3 +6006,10 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
     - `pages` 在 `advanceResumableExportBatch` 驗證通過後，依同一去重集合（跨頁 `seenBeforePage` 與頁內 `seenInCurrentPage`）過濾重複項目再 yield，確保 ZIP 實際輸出項目與 manifest `coverage` 完全一致。
   - `tests/handover-export.test.ts`：修正既有測試三處同一 `(id, version)` 不同內容的合成 fixture 重號（lines 56、59、148/161 改為合法不同版本號 `v1`/`v2` 與 head `v3`），並新增跨頁重複 head 去重、多版本 history 保留、以及 `memory_fact_history` 與無頂層 `id` 之 `growth_topic_history` 同版本跨頁內容衝突拒絕（`export_scope_changed`）測試（共 8 cases）；先確認新測試在修復前 `69629509` 失敗（`3 !== 2`），修復後全部通過。
 - 限制（依 R2 §4.2 校準）：`pages` 仍按每個 section 獨立建立 `ResumableExportState`（非跨重啟全局 manifest），且 `family-document-report-core.ts` 之 payload hash 檢查不取代原始 sealed-envelope 解密／live watermark／撤權或 Hosted Actions 驗證。
+
+## 2026-11-16　REQ-005 PR-D R3 審核整改（D03 task_history 移除可變 at 時間戳以對齊主鍵）
+
+- **目標／需求**：修復審計 R3 指出的 **D03**（`server/handover-export.ts` `exportItemIdentity()` 對 `task_history` 附加 `:at:${stringField(record, 'at')}`，使同 `[task.id, task.version]` 在兩頁帶不同 `at` 時間戳時繞過去重與跨頁內容衝突檢查）。
+- **變更**：
+  - [handover-export.ts](server/handover-export.ts)：移除 `exportItemIdentity()` 中 `task_history` 之 `:at:...` 後綴，改為單純對齊 Firestore `[task.id, task.version]`（或對應 provenance/payloadHash）主鍵。
+  - [handover-export.test.ts](tests/handover-export.test.ts)：新增 D03 回歸測試（7→8 cases），先驗證舊碼於跨頁相同 `(task.id, version)`、不同 `at` 與不同內容時漏判，修復後失敗關閉拋出 `export_scope_changed`（8/8 通過）。
