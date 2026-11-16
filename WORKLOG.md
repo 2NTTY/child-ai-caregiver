@@ -6038,3 +6038,10 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R4.md` F1 於本地 forward-only 新提交修復並維持 **LOCAL HOLD**（未 push／未開 PR）：
 1）**F1 [agent-feedback.ts](src/shared/agent-feedback.ts)**：擴充 `URGENT_EMERGENCY_HELP_PATTERN` 與 `COMPANION_DISTRESS_OR_SYMPTOM_PATTERN`，納入 `(?:無|冇|毫無|無晒|冇晒)反應|無神|不省人事|人事不省|面青|昏厥|軟弱無力` 與 `無力|發軟|唔郁|不動|軟晒|發抖`，使「BB笑到抽筋，之後冇晒反應」「BB笑到抽筋，之後無反應」穩定 fail-closed 命中 `'emergency-hk-v1'` 而不再被玩笑慣用語排除吞沒，同時維持純玩笑「個故仔好好笑，笑到抽筋」回傳 `[]`。
 2）於 [official-help-entry.test.ts](tests/official-help-entry.test.ts)（3/3）擴充 unit 斷言與 `ChatPage` TSX 重繪實測，驗證在 `!child` 時輸入「BB笑到抽筋，之後冇晒反應」自動打開 `chat-official-help-panel`。設計候選仍待 Owner（`2NTTY`）依 `REQ-001 §4.3:184` 最終拍板，維持 LOCAL HOLD。
+
+### 2026-11-16　B-P5 設計定案紀錄與技術修正（頂欄＋Composer 上方有界 dock、回合保留、跨孩子隔離與急症分級；維持技術 LOCAL HOLD）
+
+依團隊設計定案並對照最新審核意見完成本地 forward-only 修正（移除「等 Owner UI 批准」之前置阻塞，因行動端鍵盤／放大字體與實機 DOM 驗收仍待進行，**繼續維持技術 LOCAL HOLD，暫不 push／不開 PR**）：
+1）**版面與入口定案（`frontend/src/screens/chatScreen.tsx`、`docs/REQUIREMENTS_BACKLOG.md` §4.3、`PLAN.md`）**：保留 `chat-top-toolbar` 常駐切換按鈕；將 `officialHelpPanel` 自可捲動 `ChatTimeline`（`timelineFooter`）移至 `<AgentComposer>` 正上方之非捲動有界容器 `chat-official-help-dock`（附 `ScrollView` 及依視窗與 `fontScale` 計算之有界 `maxHeight`），避免長面板於小螢幕遮擋輸入框。
+2）**回合狀態、跨孩子隔離與急症分級（`chatScreen.tsx`、`src/shared/agent-feedback.ts`）**：最新用戶訊息於回覆未到達、執行中或 `stopped`／`failed`／`reply_failed`／`replyError`／「這次回覆未完成」後仍保留求助面板；以 `child && chat.selectedChildId === child.id` 及 `${scopeKey}:${child?.id}` 隔離並即時重設 `helpOpen` 與訊息／回饋；優先識別 `失去意識`／`失知覺`／`暈倒`／`無晒反應` 高於玩笑慣用語；一般用藥詢問僅顯示 `medical-consult-hk-v1` 及 `chat-official-help-consult-notice` 而不升級急症警告。
+3）於 `tests/official-help-entry.test.ts`（3→4 cases）新增定案位置、中止／失敗回合保留、跨孩子切換隔離、急症／用藥分流與 360x640／`fontScale=2` 有界 dock TSX 測試並更新 `scripts/ci/verify-search-help-entry-offline.sh` `TEST_CASES`。

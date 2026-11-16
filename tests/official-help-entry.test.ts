@@ -179,7 +179,8 @@ test('OFFICIAL_HELP copy and chatScreen structure expose fixed help cards outsid
   assert.match(screenCode, /matchOfficialHelpForText/);
   assert.match(screenCode, /testID="chat-official-help-panel"/);
   assert.match(screenCode, /testID="chat-official-help-urgent-notice"/);
-  assert.match(screenCode, /timelineFooter = \(officialHelpPanel \|\| feedback\)/);
+  assert.match(screenCode, /testID="chat-official-help-dock"/);
+  assert.match(screenCode, /timelineFooter = feedback \?/);
 });
 
 test('ChatPage real render surfaces official help on toolbar toggle and urgent draft without selected child or agent run', () => {
@@ -260,6 +261,7 @@ test('ChatPage real render surfaces official help on toolbar toggle and urgent d
     'react-native': {
       Platform: { OS: 'web' },
       Pressable: 'Pressable',
+      ScrollView: 'ScrollView',
       StyleSheet: { create: (v: unknown) => v },
       View: 'View',
       useWindowDimensions: () => ({ width: 1024, height: 800, fontScale: 1 }),
@@ -348,4 +350,203 @@ test('ChatPage real render surfaces official help on toolbar toggle and urgent d
       `Laugh idiom + unresponsiveness must auto-surface urgent notice: ${urgentPostLaugh}`,
     );
   }
+});
+
+test('B-P5 decided dock placement, turn-state retention, cross-child isolation, unconsciousness priority, and mobile viewport non-occlusion', () => {
+  // 1. Unconsciousness cues prioritize over joke idioms; ordinary medication queries stay in medical-consult-hk-v1 without emergency escalation.
+  assert.deepEqual(matchOfficialHelpForText('笑到暈低，之後失去意識'), ['emergency-hk-v1']);
+  assert.deepEqual(matchOfficialHelpForText('BB笑到抽筋，之後冇晒反應'), ['emergency-hk-v1']);
+  assert.deepEqual(matchOfficialHelpForText('退燒藥每次食 5ml？'), ['medical-consult-hk-v1']);
+  assert.deepEqual(matchOfficialHelpForText('Administer thirteen drops'), ['medical-consult-hk-v1']);
+  assert.deepEqual(matchOfficialHelpForText('Take one tablet at bedtime.'), ['medical-consult-hk-v1']);
+
+  const jsxNode = (type: unknown, props: unknown) => ({ type, props });
+  const children = [{ id: 'child-1', name: 'A' }, { id: 'child-2', name: 'B' }];
+  let selectedChildId: string | null = 'child-1';
+  let scopeKey: string | null = 'scope-child-1';
+  let chatSelectedChildId: string | null = 'child-1';
+  let currentDraft = '';
+  let currentMessages: any[] = [];
+  let currentDrafts: Record<string, any> = {};
+  let currentReplyError: string | null = null;
+  let currentFeedback: any = null;
+  let currentRuns: Record<string, any> = {};
+  let viewport = { width: 1024, height: 800, fontScale: 1 };
+  let runnerRef: any = null;
+  const effectDeps: Array<{ deps?: unknown[]; clean?: boolean }> = [];
+  let effectIdx = 0;
+
+  const placeholder: Record<string, unknown> = {};
+  const productionState = () => ({
+    model: { children, selectedChildId },
+    actions: { refresh() {}, open() {} },
+    scopeKey,
+    chatState: {
+      busy: null,
+      loading: false,
+      online: true,
+      loadedAt: '2026-11-16T00:00:00.000Z',
+      selectedChildId: chatSelectedChildId,
+      messages: currentMessages,
+      drafts: currentDrafts,
+      remoteReply: null,
+      feedback: currentFeedback,
+      error: null,
+      replyError: currentReplyError,
+      cancelNotice: null,
+      available: true,
+      loadingOlder: false,
+      nextCursor: null,
+      limit: 20,
+      userId: 'parent-1',
+    },
+    chatController: { loadOlderMessages: async () => {}, cancelReply: async () => {}, reloadMessages: async () => {} },
+    chatDraft: currentDraft,
+    setChatDraft(next: string) { currentDraft = next; },
+    agentAttachments: [],
+    composerFocusRequest: 0,
+    sendChat: async () => {},
+    requestChatReply: async () => {},
+    agentRuns: currentRuns,
+    agentModel: { readState: 'ready', run: null, pendingDecision: null },
+    voiceUpload: {},
+    fileUpload: {},
+    photoUpload: {},
+    agentPending: { state: 'idle', entries: [] },
+    authorization: { pending: false },
+    chatWritesAllowed: true,
+    readAgentPending() {},
+  });
+
+  const overrides: Record<string, any> = {
+    react: {
+      createContext: () => ({ Provider: 'Provider' }),
+      useContext: () => null,
+      useId: () => 'id-2',
+      useState: (init: any) => runnerRef.hooks.useState(init),
+      useRef: (init: any) => runnerRef.hooks.useRef(init),
+      useLayoutEffect: () => runnerRef.hooks.useLayoutEffect(),
+      useEffect: (fn: () => void, deps?: unknown[]) => {
+        const idx = effectIdx++;
+        const prev = effectDeps[idx];
+        const changed = !prev || !deps || deps.length !== (prev.deps?.length ?? 0)
+          || deps.some((v, i) => !Object.is(v, prev.deps?.[i]));
+        effectDeps[idx] = { deps };
+        if (changed) fn();
+      },
+      Fragment: 'Fragment',
+    },
+    'react/jsx-runtime': { jsx: jsxNode, jsxs: jsxNode, Fragment: 'Fragment' },
+    'expo-router': {
+      useLocalSearchParams: () => ({}),
+      usePathname: () => '/chat',
+      useRouter: () => ({ push() {} }),
+    },
+    'react-native': {
+      Platform: { OS: 'web' },
+      Pressable: 'Pressable',
+      ScrollView: 'ScrollView',
+      StyleSheet: { create: (v: unknown) => v },
+      View: 'View',
+      useWindowDimensions: () => viewport,
+      Linking: { openURL: async () => {} },
+    },
+    'react-native-paper': { Text: 'Text', ActivityIndicator: 'ActivityIndicator' },
+    '../components/appearance/BackgroundSurface': { BackgroundSurface: 'BackgroundSurface', useCustomBackground: () => false },
+    '../production/ChatFileMessage': { ChatFileMessage: 'ChatFileMessage' },
+    '../production/VoiceMessage': { VoiceMessage: 'VoiceMessage' },
+    '../components/ui': { AppButton: 'AppButton', SectionCard: 'SectionCard' },
+    '../ui': { AppButton: 'AppButton', SectionCard: 'SectionCard' },
+    '../../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
+    '../components/AppDialog': { AppDialog: Object.assign('AppDialog', { Title: 'DialogTitle', Content: 'DialogContent', Actions: 'DialogActions' }) },
+    '../components/StatusAnnouncement': { StatusAnnouncement: 'StatusAnnouncement' },
+    '../components/agent/AgentComposer': { AgentComposer: 'AgentComposer' },
+    '../components/chat/ChatMessage': { ChatMessage: 'ChatMessage', ChatProgressIndicator: 'ChatProgressIndicator' },
+    '../components/chat/ChatTimeline': { ChatTimeline: 'ChatTimeline' },
+    '../components/chat/locateCitationSource': { locateCitationSource() {} },
+    '../components/chat/chat-presentation': { chatColors: placeholder, chatFont: 'synthetic', chatLayout: { maxWidth: 720, wideInset: 16, compactInset: 8 }, chatType: { body: {}, meta: {}, tool: {} } },
+    '../production/ProductionProvider': { useProduction: productionState },
+    '../production/AgentConversation': { AgentConversation: 'AgentConversation' },
+    '../production/ChatPhotoMessage': { ChatPhotoMessage: 'ChatPhotoMessage' },
+    '../production/NotificationChatTarget': { NotificationChatTarget: 'NotificationChatTarget' },
+    '../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
+    '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => (fn: () => void) => fn() },
+    '../agent-view-model': { proposalExpired: () => false, publicAnswerSources: () => undefined },
+    '../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
+  };
+  const ChatPage = loadModule('frontend/src/screens/chatScreen.tsx', overrides).default;
+  const rerender = () => {
+    effectIdx = 0;
+    return runnerRef.render();
+  };
+
+  // Case A: Stopped / failed AI reply must retain urgent help panel instead of dropping it just because a model message has inReplyTo.
+  currentMessages = [
+    { id: 'u1', role: 'user', text: 'BB發燒抽筋冇反應' },
+    { id: 'm1', role: 'model', inReplyTo: 'u1', text: '這次回覆未完成：已停止。', agentRunId: 'run-stopped-1' },
+  ];
+  currentRuns = { 'run-stopped-1': { status: 'stopped', stopReasonLabel: '已停止' } };
+  currentDrafts = { 'child-1': { phase: 'reply_failed', savedUserMessageId: 'u1', notice: '回覆失敗' } };
+  currentReplyError = '回覆未能完成';
+  runnerRef = renderWithHooks(() => jsxNode(ChatPage, {}));
+  let nodes = collectNodes(rerender());
+  assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-panel'), 'Stopped/failed turn must retain official help panel');
+  assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), 'Stopped/failed emergency turn must retain urgent notice');
+
+  // Case B: Decided dock placement (outside ChatTimeline footer, directly above AgentComposer inside chat-reading-panel).
+  const timeline = nodes.find(n => n.type === 'ChatTimeline');
+  assert.ok(timeline, 'ChatTimeline must render');
+  const footerNodes = collectNodes(timeline.props?.footer);
+  assert.equal(footerNodes.some(n => n.props?.testID === 'chat-official-help-panel'), false, 'officialHelpPanel must not live inside scrollable ChatTimeline footer');
+  const readingPanel = nodes.find(n => n.props?.testID === 'chat-reading-panel');
+  assert.ok(readingPanel, 'chat-reading-panel must render');
+  const directDockOrChildren = collectNodes(readingPanel);
+  const helpIdx = directDockOrChildren.findIndex(n => n.props?.testID === 'chat-official-help-panel');
+  const timelineIdx = directDockOrChildren.findIndex(n => n.type === 'ChatTimeline');
+  const composerIdx = directDockOrChildren.findIndex(n => n.type === 'AgentComposer');
+  assert.ok(timelineIdx >= 0 && helpIdx > timelineIdx && composerIdx > helpIdx, 'chat-official-help-panel must sit after ChatTimeline and above AgentComposer');
+
+  // Case C: Routine medication draft surfaces medical-consult-hk-v1 WITHOUT urgent emergency notice.
+  currentMessages = [];
+  currentRuns = {};
+  currentDrafts = {};
+  currentReplyError = null;
+  currentDraft = '退燒藥每次食 5ml？';
+  nodes = collectNodes(rerender());
+  const helpPanel = nodes.find(n => n.props?.testID === 'chat-official-help-panel');
+  assert.ok(helpPanel, 'Medication query should show official help panel');
+  assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-consult-notice'), 'Medication query must show non-urgent medical consult notice');
+  assert.ok(collectText(helpPanel).includes(OFFICIAL_HELP['medical-consult-hk-v1'].title), 'Medication query must show medical-consult card');
+  assert.equal(collectText(helpPanel).includes(OFFICIAL_HELP['emergency-hk-v1'].title), false, 'Ordinary medication query must NOT escalate to emergency card');
+  assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), false, 'Ordinary medication query must NOT show urgent emergency alert');
+
+  // Case D: Cross-child mismatch must NOT leak previous child's messages/feedback, and switching child/scope resets manual helpOpen.
+  currentDraft = '';
+  const toggleBtn = nodes.find(n => n.props?.accessibilityLabel === OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel);
+  assert.ok(toggleBtn);
+  toggleBtn.props.onPress();
+  nodes = collectNodes(rerender());
+  assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-panel'), 'Manual toggle opens help panel for child-1');
+
+  selectedChildId = 'child-2';
+  scopeKey = 'scope-child-2';
+  chatSelectedChildId = 'child-1'; // stale chatState from child-1!
+  currentMessages = [{ id: 'u-old', role: 'user', text: 'BB發燒抽筋冇反應' }];
+  currentFeedback = { cards: ['emergency-hk-v1'] };
+  nodes = collectNodes(rerender());
+  assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-panel'), false, 'Child switch must reset manual helpOpen and must not leak child-1 messages or feedback');
+
+  // Case E: Mobile narrow + zoomed fontScale dock stays height-bounded while AgentComposer remains unobstructed.
+  viewport = { width: 360, height: 640, fontScale: 2 };
+  selectedChildId = 'child-1';
+  scopeKey = 'scope-child-1';
+  chatSelectedChildId = 'child-1';
+  currentFeedback = null;
+  currentMessages = [{ id: 'u2', role: 'user', text: 'BB失去意識點算' }];
+  nodes = collectNodes(rerender());
+  const dockNode = nodes.find(n => n.props?.testID === 'chat-official-help-dock');
+  assert.ok(dockNode, 'Mobile help dock must render bounded container chat-official-help-dock');
+  const flatDockStyle = Object.assign({}, ...(Array.isArray(dockNode.props?.style) ? dockNode.props.style : [dockNode.props?.style]).filter(Boolean));
+  assert.ok(typeof flatDockStyle.maxHeight === 'number' && flatDockStyle.maxHeight > 0 && flatDockStyle.maxHeight <= 240, 'Dock maxHeight must stay bounded on compact mobile viewport');
+  assert.ok(nodes.some(n => n.type === 'AgentComposer'), 'AgentComposer must remain rendered below dock under mobile zoomed fontScale');
 });

@@ -312,11 +312,11 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 ### Slice B（B-P5）：不依賴 AI 回合的固定官方求助入口候選 (`codex/search-help-entry` — LOCAL HOLD)
 
 - **對應需求**：REQ-001 §4.3 (`:178-184`)。
-- **治理狀態（LOCAL HOLD）**：依 `REQ-001 §4.3:184`，入口UI位置與自動展開觸發時機須由 Owner (`2NTTY`) 決定並批核；**在未取得 Owner 明確批准收據前，本分支所有 UI 與觸發規則僅屬「候選設計（Candidate）」，嚴禁自行宣稱拍板定案，並維持 LOCAL HOLD 不可推送或開 PR**。
-- **候選實作摘要**：
-  1. **候選位置**：於 `chat-top-toolbar` 放置常駐「官方求助入口」切換按鈕（`accessibilityLabel={OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel}`），並將 `officialHelpPanel` 抽離 `{child ? ... : null}` 掛載於 `timelineFooter`，確保無論已選或未選孩子（`!child`）、發生錯誤或離線，皆可於時間軸底部查看 `OfficialHelpCards`（`emergency-hk-v1`、`medical-consult-hk-v1`）。
-  2. **候選觸發規則**：於 `src/shared/agent-feedback.ts` 以確定性規則 `matchOfficialHelpForText` 先作 `NFKC` 正規化再比對輸入框草稿與最新未獲回覆用戶訊息：涵蓋全形 `打９９９`、真急症句及伴隨危險徵象、失去反應或情緒敘述之抽筋（含 `BB笑到抽筋，之後冇晒反應`、`BB笑到抽筋，之後無反應`、`BB激動到抽筋，雙眼反白`、`BB開心到抽筋，成身僵硬`、`BB隻腳好抽筋`），同時以電話號碼邊界護欄排除 `+852 999 12345`／`1999年出世`，並僅於無危急線索時排除明確純玩笑（`個故仔好好笑，笑到抽筋`、`搞笑到抽筋`）或非急症運動句（`抽筋運動`）。
-- **驗收限制聲明**：本分支保持於本地 HOLD（未執行 `git push` 或建立 PR），已完成本地離線測試與三份型別檢查（另補 `ChatPage` 離線重繪切換與「BB笑到抽筋，之後冇晒反應」／「BB激動到抽筋，雙眼反白」緊急草稿自動展開測試，仍未執行實機瀏覽器／手機 DOM 與螢幕閱讀器 E2E），未執行真實模型調用、真實資料庫或 Owner UI 審批；既有上游 `tests/agent-feedback.test.ts` 第 58 行含 `127.0.0.1` loopback HTTP listener，於無 socket 阻擋之本機環境單獨複驗（4/4 通過）。
+- **治理狀態（設計已定案／維持技術 LOCAL HOLD）**：依 `REQ-001 §4.3:184`，團隊已於 2026-11-16 明確決定並拍板入口位置與觸發方式（取消「等待 Owner UI 批准」之前置阻塞，並保留歷史紀錄）；然而行動裝置實機鍵盤／放大字體／螢幕閱讀器與真機 DOM E2E 驗收尚未完成，因此**仍維持技術 LOCAL HOLD，不等於可合併或 ready candidate，暫不 `git push` 或建立 PR**。
+- **定案設計與技術實作摘要**：
+  1. **入口位置與非遮擋版面**：於 `chat-top-toolbar` 保留常駐「官方求助入口」切換按鈕（`accessibilityLabel={OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel}`），並將 `officialHelpPanel` 自可捲動 `ChatTimeline`（`timelineFooter`）移出，固定掛載於 `<AgentComposer>` 正上方之有界非捲動區域 `chat-official-help-dock`（附 `ScrollView` 及依 `viewportHeight` / `compact` / `fontScale` 計算之有界 `maxHeight`），無論是否已選孩子（`!child`）、發生錯誤或離線皆不與輸入框互相遮擋。
+  2. **觸發與狀態隔離規則**：於 `src/shared/agent-feedback.ts`（`NFKC` 正規化 `matchOfficialHelpForText`）優先識別 `失去意識`／`失知覺`／`暈倒`／`無晒反應` 等急症線索並高於純玩笑排除，一般用藥問題（如 `退燒藥每次食 5ml？`、`Administer thirteen drops`）則僅命中 `medical-consult-hk-v1` 並顯示溫和用藥提示 `chat-official-help-consult-notice` 而不誤升為急症警告；`chatScreen.tsx` 以 `child && chat.selectedChildId === child.id` 及 `${scopeKey}:${child?.id}` 隔離並即時重設 `helpOpen` 與訊息／回饋狀態，且當最新用戶提問仍在處理或因 `stopped`／`failed`／`reply_failed`／`replyError`／`這次回覆未完成` 未成功完成回覆時保留顯示求助面板。
+- **驗收限制聲明**：本分支保持於本地技術 **LOCAL HOLD**（未執行 `git push` 或建立 PR），已完成本機離線測試（含停機／失敗回合保留、跨孩子切換隔離、用藥不誤升急症及 360x640 / `fontScale=2` 有界 dock TSX 測試）與三份型別檢查；**仍未執行真實手機／瀏覽器鍵盤彈出與放大字體視覺遮擋 E2E、螢幕閱讀器實測、真實 Gemini 調用或 hosted GitHub Actions**；既有上游 `tests/agent-feedback.test.ts` 第 58 行含 `127.0.0.1` loopback HTTP listener，於無 socket 阻擋之本機環境單獨複驗（4/4 通過）。
 - **嚴格正向提交**：無 `git commit --amend`，維護 append-only 歷史完整性。
 - **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。
 
