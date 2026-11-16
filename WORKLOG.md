@@ -6090,3 +6090,11 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 2）**收據對應校驗（`verifiedOperationsCorrespond`）同步進 `isPureVerifiedOperationSummary`、`draftClaimsUnverifiedOperation` 與 `acceptLivePass`**：核對收據狀態（不可拿 `pending_confirmation`／`failed` 當已完成）、動作家族與目標對象／數值。
 3）**任意英文複合數詞＋零數字停水／禁食／醫療指令擴充與 `SPEC.md:301-304` 分離**：涵蓋 `Administer thirteen drops`、`Administer two thousand drops`、「退燒前停止飲水」、「嘔吐後禁止進食」、「Withhold fluids」等指令並維持已具來源家庭紀錄回述、對應操作確認與純拒答免被迫附官方引用。
 4）於 `tests/search-review-boundaries.test.ts`（5→6 cases）新增結構性回歸並同步 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES`。
+
+### 2026-11-17　B-P7 結構性深化整改（內嵌前提問句、代名詞物理降溫／趴睡指令、全欄位收據核對）
+
+依外部審核 `SLICE_B_BP2_IMPLEMENTATION_AUDIT_R7.md` 及 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R6.md` 同步結構性整改至 `server/chat-delivery-review.ts`（與 `B-P2` 一致，保留尾閘 `obligation?.required ?? false`）並於本地 forward-only 提交（未 push／未開 PR）：
+1）**F1 內嵌從屬狀態前提問句**：攔截含 `now that`、`since`、`既然` 及括號現況前提之操作問句，並保留純參數選擇問句免誤判。
+2）**F2 任務錨定照護與代名詞物理降溫／趴睡指令**：擴充 `CLINICAL_CARE_DIRECTIVE_PATTERN` 及 `draftHasTaskAnchoredCareObligation`，同時維持 `SPEC.md:301-304` 三類無需公共官方引用之回覆。
+3）**F3 全數值／全時段／全對象收據對應**：收據比對改為全量數值、時間錨點（如 `今朝 8 點` vs `今晚 9 點`）及連接詞拆解後每個目標片段皆須命中已執行收據。
+4）於 `tests/search-review-boundaries.test.ts` 增補 R7 F1–F3 斷言並完成離線全套測試與三份 `tsc --noEmit`。

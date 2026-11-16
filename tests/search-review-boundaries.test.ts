@@ -877,4 +877,123 @@ test("structural review boundaries: state-claim+followup, receipt correspondence
     ...matchingDraft,
     userRequest: "BB發燒點算，同幫我記低飲配方奶 120ml",
   }), false);
+
+  for (const [userMsg, premiseQuestion] of [
+    ["Change my reminder time", "Which reminder do you want to change now that the milk reminder is set to 20:00?"],
+    ["Change my reminder time", "Since the 8pm reminder has been updated, which one should I edit next?"],
+    ["幫我更改提醒時間", "既然八點嘅飲奶提醒已經設好，你想改邊一項？"],
+    ["幫我更改提醒時間", "想改邊一項（目前飲奶提醒為晚上八點）？"],
+  ] as const) {
+    const bare: ChatDeliveryDraft = {
+      kind: "clarification",
+      visibility: "private",
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text: premiseQuestion, citationIds: [] }],
+      sources: [],
+      scope,
+    };
+    assert.equal(requiresChatDeliveryReview(bare), true, `Bare embedded-premise question must require review: ${premiseQuestion}`);
+    assert.equal(requiresChatDeliveryReview({ ...bare, userRequest: userMsg }), true, `Embedded-premise question must require review: ${premiseQuestion}`);
+  }
+  for (const [userMsg, pureChoice] of [
+    ["Change my reminder time", "Which reminder would you like to change?"],
+    ["Change my reminder time", "Do you want to change it to 8pm or 9pm?"],
+  ] as const) {
+    assert.equal(requiresChatDeliveryReview({
+      userRequest: userMsg,
+      kind: "clarification",
+      visibility: "private",
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text: pureChoice, citationIds: [] }],
+      sources: [],
+      scope,
+    }), false, `Pure parameter question must stay exempt: ${pureChoice}`);
+  }
+
+  for (const text of [
+    "Apply rubbing alcohol to the skin to cool them.",
+    "Let them sleep face down.",
+    "Put a cold towel on their forehead and sponge them with lukewarm water.",
+    "幫佢用火酒抹身降溫。",
+    "畀佢趴喺度瞓覺會舒服啲。",
+  ]) {
+    const draft: ChatDeliveryDraft = {
+      userRequest: "BB發燒點算？",
+      kind: "clarification",
+      visibility: "private",
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text, citationIds: [] }],
+      sources: [],
+      scope,
+    };
+    assert.equal(draftLooksLikeDirectiveCareAdvice(draft), true, `R7 F2 directive care must match: ${text}`);
+    assert.equal(draftLooksLikeSubstantiveCareAdvice(draft), true, `R7 F2 substantive care must match: ${text}`);
+    assert.equal(requiresChatDeliveryReview(draft), true, `R7 F2 must require review: ${text}`);
+    assert.equal(chatDeliveryPassNeedsSources(draft), true, `R7 F2 uncited directive care must require sources: ${text}`);
+  }
+
+  const wrongTimeRecordDraft: ChatDeliveryDraft = {
+    userRequest: "今朝 8 點張保仔食咗 120ml 配方奶，加咗 2 茶匙純米糊，食完精神好好，幫我記低佢。",
+    kind: "record_restatement",
+    visibility: "private",
+    serverSubstitutedSourceText: false,
+    verifiedOperations: [{
+      kind: "action_receipt",
+      id: "r-time-1",
+      tool: "save_ordinary_record",
+      state: "saved",
+      recordKind: "feeding",
+      summary: "今朝 8 點飲咗 120ml 配方奶，加咗 2 茶匙純米糊，食完精神好好。",
+      eventTime: "今朝 8 點",
+    }],
+    paragraphs: [{ text: "已記低張保仔今晚 9 點飲咗 120ml 配方奶及 2 茶匙純米糊，精神好好。", citationIds: [] }],
+    sources: [],
+    scope,
+  };
+  assert.equal(isPureVerifiedOperationSummary(wrongTimeRecordDraft), false);
+  assert.equal(chatDeliveryPassNeedsSources(wrongTimeRecordDraft), true);
+
+  const extraTargetReminderDraft: ChatDeliveryDraft = {
+    userRequest: "幫我設定買牛奶同買雞蛋提醒",
+    kind: "operation",
+    visibility: "private",
+    serverSubstitutedSourceText: false,
+    verifiedOperations: [{
+      kind: "action_receipt",
+      id: "r-milk-only",
+      tool: "create_ordinary_reminder",
+      state: "saved",
+      summary: "買牛奶 (2026-11-17T08:00:00+08:00)",
+    }],
+    paragraphs: [{ text: "已設定買牛奶同買雞蛋提醒。", citationIds: [] }],
+    sources: [],
+    scope,
+  };
+  assert.equal(isPureVerifiedOperationSummary(extraTargetReminderDraft), false);
+  for (const badDraft of [wrongTimeRecordDraft, extraTargetReminderDraft]) {
+    const budget = new AgentBudget();
+    t.after(() => budget.close());
+    await assert.rejects(
+      enforceChatDeliveryReview({
+        presentation: { text: badDraft.paragraphs[0]!.text, citations: [], privateSourceCitations: [], retrievalMode: "not_used" },
+        tools: {
+          presentation: async () => ({ text: badDraft.paragraphs[0]!.text, citations: [], privateSourceCitations: [], retrievalMode: "not_used" }),
+          deliveryDraft: () => badDraft,
+          replaceDeliveryAnswer: () => {},
+        },
+        context: {
+          runId: testRunId,
+          scope,
+          budget,
+          deliveryReview: createChatDeliveryReviewObligation(true),
+          completeText: async ({ user }: { user: string }) => {
+            const parsed = JSON.parse(user.slice(user.indexOf("{"))) as { draftHash: string };
+            return JSON.stringify({ draftHash: parsed.draftHash, decision: "pass", issues: [] });
+          },
+        } as any,
+        provenance: { packVersion: "test-v1", model: "gemini-2.5-flash" },
+      }),
+      (err: unknown) => err instanceof AgentStopped && ["delivery_review_rejected", "delivery_review_no_sources"].includes(err.reason),
+    );
+  }
 });
