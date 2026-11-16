@@ -5996,3 +5996,13 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 11 月 13 日（香港），07:42:00 Cloud Scheduler 自動啟動 `site-overdue-dispatch-2rs8p`，專用 GitHub App 於 07:42:13 建立補檢。09:04:28 GitHub 建立原生 run，日誌列出 `MATCHED_CRON: 17 20 * * *`，對應 04:17 的正式時段。兩個 site-status 收據均為 `skipped`，來源為 `c802f907`，三個服務仍在 `66a51db5`。已移除提前測試的 GitHub 時段和 Job 時間覆寫，恢復 GCP 香港每日 06:27。#588 起，建置期間新合併的提交留待下次檢查，發布沿用預檢收據的 SHA。[GCP 自動補檢](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43331068601) · [GitHub 原生日程](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43342076107)
 
 同日把每日主時鐘移交現有 GCP Cloud Scheduler。舊 run 於香港 09:04:28 建立及開始，09:05:35 完成；倉庫未取得 GitHub 內部延遲的具體原因。新流程在 04:17 直接送出固定 master 檢查，GCS 的每日 claim 抵禦重複喚醒。已用受控時鐘驗證 04:17 的第一秒可送出及重投遞只生效一次；操作員狀態辨認專用 App 的執行紀錄。
+
+## 2026-11-16　REQ-005 PR-D 匯出 ZIP 去重對齊與穩定 revision 身份防衝突（R2 D01–D02）
+
+- 目標／需求：修復審計 R2 指出的 D01（`handover-export.ts` 只更新 `advanceResumableExportBatch` 狀態卻直接 yield 原始 `page`，使 ZIP JSON entries 與 `coverage` 仍出現重複項目）及 D02（history item identity 摻入 `pageOffset + index` 與位置 `anon-*`，繞過跨頁同 `(section, id, version)` 內容衝突檢查）。
+- 變更：
+  - `server/handover-export.ts`：
+    - 新增 `exportItemIdentity(section, childId, raw, payloadHash)`，按結構與 `handover-provenance.ts` 來源／版本語義擷取穩定識別鍵（`id`、growth `item.id`、task `task.id`、`yuyoufang-source-revision:1` provenance 複合鍵、`documentId+snapshotId`、`inputId`、`topicId`、媒體 ID、`target`、`childId`、singleton 或最後以 canonical `payloadHash` 作非位置 fallback），history/version 區段加上版本標籤，移除 `pageOffset + index` 與位置 `anon-*`。
+    - `pages` 在 `advanceResumableExportBatch` 驗證通過後，依同一去重集合（跨頁 `seenBeforePage` 與頁內 `seenInCurrentPage`）過濾重複項目再 yield，確保 ZIP 實際輸出項目與 manifest `coverage` 完全一致。
+  - `tests/handover-export.test.ts`：修正既有測試三處同一 `(id, version)` 不同內容的合成 fixture 重號（lines 56、59、148/161 改為合法不同版本號 `v1`/`v2` 與 head `v3`），並新增跨頁重複 head 去重、多版本 history 保留、以及 `memory_fact_history` 與無頂層 `id` 之 `growth_topic_history` 同版本跨頁內容衝突拒絕（`export_scope_changed`）測試（共 8 cases）；先確認新測試在修復前 `69629509` 失敗（`3 !== 2`），修復後全部通過。
+- 限制（依 R2 §4.2 校準）：`pages` 仍按每個 section 獨立建立 `ResumableExportState`（非跨重啟全局 manifest），且 `family-document-report-core.ts` 之 payload hash 檢查不取代原始 sealed-envelope 解密／live watermark／撤權或 Hosted Actions 驗證。

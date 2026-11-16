@@ -88,12 +88,81 @@ function sectionExportStage(section: string): ExportBatchStage {
   return 'profile';
 }
 
+function stringField(record: Record<string, unknown> | null, key: string): string | null {
+  const value = record?.[key];
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function versionTag(record: Record<string, unknown> | null): string {
+  if (!record) return '';
+  for (const key of ['version', 'snapshotVersion', 'entityVersion'] as const) {
+    const value = record[key];
+    if (typeof value === 'number' || typeof value === 'string') return `:v${value}`;
+  }
+  return '';
+}
+
+function exportItemIdentity(section: string, childId: string | undefined, raw: unknown, payloadHash: string): string {
+  const record = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : null;
+  if (!record) return `${section}:scalar:${payloadHash}`;
+  const isHistorySection = section.includes('history') || section.includes('version');
+
+  if (record.format === 'yuyoufang-source-revision:1') {
+    const resource = record.resource && typeof record.resource === 'object' ? record.resource as Record<string, unknown> : null;
+    const evidence = record.evidence && typeof record.evidence === 'object' ? record.evidence as Record<string, unknown> : null;
+    const prov = evidence?.source && typeof evidence.source === 'object' ? evidence.source as Record<string, unknown> : null;
+    const currentProv = prov?.current && typeof prov.current === 'object' ? prov.current as Record<string, unknown> : null;
+    const src = currentProv?.source && typeof currentProv.source === 'object' ? currentProv.source as Record<string, unknown> : null;
+    const resId = stringField(resource, 'id') ?? stringField(src, 'resourceId') ?? childId ?? 'unknown';
+    const resVer = versionTag(resource) || (typeof src?.resourceVersion === 'number' ? `:v${src.resourceVersion}` : '');
+    const pkgId = stringField(currentProv, 'packageId') ?? '';
+    const manifestSha = stringField(currentProv, 'manifestSha256') ?? '';
+    const importedAt = stringField(currentProv, 'importedAt') ?? '';
+    return `${section}:source-rev:${resId}${resVer}:${pkgId}:${manifestSha}:${stringField(src, 'section') ?? ''}:${importedAt}`;
+  }
+
+  const innerGrowth = record.item && typeof record.item === 'object' && !Array.isArray(record.item)
+    ? record.item as Record<string, unknown>
+    : null;
+  const innerTask = record.task && typeof record.task === 'object' && !Array.isArray(record.task)
+    ? record.task as Record<string, unknown>
+    : null;
+  const entity = innerGrowth ?? innerTask ?? record;
+
+  let baseId =
+    stringField(entity, 'id')
+    ?? (stringField(entity, 'documentId') && stringField(entity, 'snapshotId')
+      ? `doc:${stringField(entity, 'documentId')}:snap:${stringField(entity, 'snapshotId')}`
+      : null)
+    ?? (stringField(entity, 'inputId') ? `input:${stringField(entity, 'inputId')}` : null)
+    ?? (stringField(entity, 'topicId') ? `topic:${stringField(entity, 'topicId')}` : null)
+    ?? (stringField(entity, 'photoId') ? `photo:${stringField(entity, 'photoId')}` : null)
+    ?? (stringField(entity, 'voiceId') ? `voice:${stringField(entity, 'voiceId')}` : null)
+    ?? (stringField(entity, 'fileId') ? `file:${stringField(entity, 'fileId')}` : null);
+
+  if (!baseId && entity.target && typeof entity.target === 'object') {
+    const target = entity.target as Record<string, unknown>;
+    const kind = stringField(target, 'kind');
+    if (kind) baseId = `target:${kind}:${stringField(target, 'childId') ?? childId ?? 'self'}`;
+  }
+  if (!baseId && stringField(entity, 'childId')) {
+    baseId = `child:${stringField(entity, 'childId')}`;
+  }
+  if (!baseId && (section === 'manifest' || section === 'account' || section === 'notification_preferences')) {
+    baseId = `singleton:${childId ?? 'owner'}`;
+  }
+  if (!baseId) baseId = `anon:${payloadHash}`;
+
+  const ver = isHistorySection ? versionTag(entity) : '';
+  const atSuffix = innerTask && stringField(record, 'at') ? `:at:${stringField(record, 'at')}` : '';
+  return `${section}:${baseId}${ver}${atSuffix}`;
+}
+
   async function* pages(section: string, childId?: string, documentFilter?: PackageDocumentFilter) {
     let cursor: string | undefined;
     const mediaFilter: PackageMediaFilter | undefined = datedMedia && childId && (isAttachmentHead(section) || isAttachmentSupplement(section))
       ? (kind, id) => datedMedia.permitsBytes(childId, kind, id) : undefined;
     const exportStage = sectionExportStage(section);
-    let pageOffset = 0;
     let batchState: ResumableExportState = {
       scopeVersion,
       stage: exportStage,
@@ -108,19 +177,15 @@ function sectionExportStage(section: string): ExportBatchStage {
         { includeSummaryPeriod: section === 'summary_history' && Boolean(header.selection.period), documentFilter }), signal);
       if (page.scopeVersion !== scopeVersion || page.section !== section || page.complete !== (page.nextCursor === null)
         || page.nextCursor && page.nextCursor === cursor) fail('export_scope_changed');
-      const isHistorySection = section.includes('history') || section.includes('version');
-      const batchItems = page.items.map((raw, index) => {
-        const record = raw && typeof raw === 'object' ? raw as Record<string, unknown> : null;
-        const rawId = typeof record?.id === 'string' && record.id.length > 0 ? record.id : `anon-${pageOffset + index}`;
-        const rawVersion = typeof record?.version === 'number' || typeof record?.version === 'string' ? `:v${record.version}` : '';
-        const itemId = isHistorySection ? `${section}:${rawId}${rawVersion}:${pageOffset + index}` : `${section}:${rawId}`;
+      const seenBeforePage = new Set(batchState.items.map(entry => `${entry.stage}:${entry.id}`));
+      const batchItems = page.items.map(raw => {
+        const payloadHash = createHash('sha256').update(canonicalJson(raw)).digest('hex');
         return {
-          id: itemId,
+          id: exportItemIdentity(section, childId, raw, payloadHash),
           stage: exportStage,
-          payloadHash: createHash('sha256').update(canonicalJson(raw)).digest('hex'),
+          payloadHash,
         };
       });
-      pageOffset += page.items.length;
       const advanced = advanceResumableExportBatch(batchState, {
         scopeVersion: page.scopeVersion,
         stage: exportStage,
@@ -130,8 +195,17 @@ function sectionExportStage(section: string): ExportBatchStage {
         hasMore: Boolean(page.nextCursor),
       });
       if (advanced.status === 'invalidated') fail('export_scope_changed');
+      const seenInCurrentPage = new Set<string>();
+      const uniqueItems: unknown[] = [];
+      for (let i = 0; i < page.items.length; i++) {
+        const entry = batchItems[i]!;
+        const key = `${entry.stage}:${entry.id}`;
+        if (seenBeforePage.has(key) || seenInCurrentPage.has(key)) continue;
+        seenInCurrentPage.add(key);
+        uniqueItems.push(page.items[i]);
+      }
       batchState = advanced.state;
-      yield page;
+      yield uniqueItems.length === page.items.length ? page : { ...page, items: uniqueItems };
       cursor = page.nextCursor ?? undefined;
     } while (cursor);
     if (!batchState.done) fail('export_scope_changed');
