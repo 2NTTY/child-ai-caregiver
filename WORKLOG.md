@@ -6020,3 +6020,5 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 - 準備期間只對當次模型預留作純 metadata 投影，沒有重設共享 used 計數；政策降至已用 hard ceiling 以下即中止，等於 ceiling 的合法最後一呼叫仍保留。
 - `tests/agent-policy-preparation.test.ts` 新增 15 項正式 runtime／實際 Firestore adapters 配合記憶體交易替身的離線回歸：`.05`／`.23`／清除覆蓋、503 重試、root／daily 準備期間再改政策、撤權、lost acknowledgement、hard ceiling 在第二次準入後降至 1、owner／CAS／跨 child／model 與派送 permit 防重。原始透明完成斷言保留；舊手寫 wrapper 僅補代理新增 adapter 方法。
 - 當輪 Linux `unshare --net`＋無權限 `setpriv`、network guard：新 15 項及原 policy／root／daily 合計 **56/56、0 skip**；原 `.05`／`.17`／`.23` 準入／重試／撤權反例 **10/10**。完整五包 gates、整合與型別收據於交付時另外核對，不以本條先行冒稱。未推送、開 PR、部署、啟用 `#447` 或呼叫真模型／正式資料庫。
+
+- **同日 Gate 後續校準：**首次 canonical PR-A gate 的 79 項測試通過，隨後 S3 source-injection pattern 因新純 metadata view 改名而未匹配，故該次 gate 為 **FAIL**，不是 PASS。僅將既有 S3／S4 變異目標對齊 `usedBeforeThisCall.modelCalls`；保留漏扣已用量／關閉 exceeded 的相同破壞與失敗斷言，再以新 HEAD 完整重跑 gate。
