@@ -5,6 +5,7 @@ import { OfficialHelpCards } from '../components/chat/OfficialHelpCards';
 import {
   AGENT_PROGRESS_LABELS,
   ALL_OFFICIAL_HELP_IDS,
+  isIncompleteModelReplyText,
   matchOfficialHelpForText,
   OFFICIAL_HELP_ENTRY_COPY,
 } from '../../../src/shared/agent-feedback';
@@ -117,8 +118,10 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
       return run?.status === "running"
         || run?.status === "stopped"
         || run?.status === "unknown"
-        || /^這次回覆未完成/u.test(item.text);
+        || isIncompleteModelReplyText(item.text);
     })
+    || (chat.remoteReply?.messageId === latestUserMessage.id
+      && (chat.remoteReply.status === "running" || chat.remoteReply.status === "stopped" || chat.remoteReply.status === "unknown"))
     || (draft?.savedUserMessageId === latestUserMessage.id
       && ["saving", "saved_unreplied", "save_unknown", "checked", "reply_failed"].includes(draft.phase))
     || (childScopedChat && !!chat.replyError)

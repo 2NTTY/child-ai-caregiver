@@ -615,3 +615,232 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
   assert.equal(controller.getSnapshot().feedback, null, 'H2 Controller: reloadMessages clears retained feedback once completed reply exists');
   controller.dispose();
 });
+
+test('H2-R: resolved stopped/unknown replies and catch-recovered unfinished saves preserve Server SSE help cards while genuine completion, new turns, and child switches clear them', async () => {
+  const { handleProductAgentRequest } = await import('../server/product-agent-api.ts');
+  const { createChatApi } = await import('../src/client/chat-api.ts');
+
+  const jsxNode = (type: unknown, props: unknown) => ({ type, props });
+  const children = [{ id: 'child-1', name: 'A' }, { id: 'child-2', name: 'B' }];
+  let selectedChildId: string | null = 'child-1';
+  let scopeKey: string | null = 'scope-child-1';
+  let snapshotRef: ReturnType<ChatController['getSnapshot']> | null = null;
+  let currentDraft = '';
+  let runnerRef: ReturnType<typeof renderWithHooks>;
+  const effectDeps: Array<{ deps?: unknown[] }> = [];
+  let effectIdx = 0;
+
+  const placeholder: Record<string, unknown> = {};
+  const productionState = () => ({
+    model: { children, selectedChildId },
+    actions: { refresh() {}, open() {} },
+    scopeKey,
+    chatState: snapshotRef,
+    chatController: { loadOlderMessages: async () => {}, cancelReply: async () => {}, reloadMessages: async () => {} },
+    chatDraft: currentDraft,
+    setChatDraft(next: string) { currentDraft = next; },
+    agentAttachments: [],
+    composerFocusRequest: 0,
+    sendChat: async () => {},
+    requestChatReply: async () => {},
+    agentRuns: {},
+    agentModel: { readState: 'ready', run: null, pendingDecision: null },
+    voiceUpload: {},
+    fileUpload: {},
+    photoUpload: {},
+    agentPending: { state: 'idle', entries: [] },
+    authorization: { pending: false },
+    chatWritesAllowed: true,
+    readAgentPending() {},
+  });
+
+  const overrides: Record<string, any> = {
+    react: {
+      createContext: () => ({ Provider: 'Provider' }),
+      useContext: () => null,
+      useId: () => 'id-h2r',
+      useState: (init: any) => runnerRef.hooks.useState(init),
+      useRef: (init: any) => runnerRef.hooks.useRef(init),
+      useLayoutEffect: () => runnerRef.hooks.useLayoutEffect(),
+      useEffect: (fn: () => void, deps?: unknown[]) => {
+        const idx = effectIdx++;
+        const prev = effectDeps[idx];
+        const changed = !prev || !deps || deps.length !== (prev.deps?.length ?? 0)
+          || deps.some((v, i) => !Object.is(v, prev.deps?.[i]));
+        effectDeps[idx] = { deps };
+        if (changed) fn();
+      },
+      Fragment: 'Fragment',
+    },
+    'react/jsx-runtime': { jsx: jsxNode, jsxs: jsxNode, Fragment: 'Fragment' },
+    'expo-router': { useLocalSearchParams: () => ({}), usePathname: () => '/chat', useRouter: () => ({ push() {} }) },
+    'react-native': {
+      Platform: { OS: 'web' }, Pressable: 'Pressable', ScrollView: 'ScrollView',
+      StyleSheet: { create: (v: unknown) => v }, View: 'View',
+      useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }), Linking: { openURL: async () => {} },
+    },
+    'react-native-paper': { Text: 'Text', ActivityIndicator: 'ActivityIndicator' },
+    '../components/appearance/BackgroundSurface': { BackgroundSurface: 'BackgroundSurface', useCustomBackground: () => false },
+    '../production/ChatFileMessage': { ChatFileMessage: 'ChatFileMessage' },
+    '../production/VoiceMessage': { VoiceMessage: 'VoiceMessage' },
+    '../components/ui': { AppButton: 'AppButton', SectionCard: 'SectionCard' },
+    '../ui': { AppButton: 'AppButton', SectionCard: 'SectionCard' },
+    '../../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
+    '../components/AppDialog': { AppDialog: Object.assign('AppDialog', { Title: 'DialogTitle', Content: 'DialogContent', Actions: 'DialogActions' }) },
+    '../components/StatusAnnouncement': { StatusAnnouncement: 'StatusAnnouncement' },
+    '../components/agent/AgentComposer': { AgentComposer: 'AgentComposer' },
+    '../components/chat/ChatMessage': { ChatMessage: 'ChatMessage', ChatProgressIndicator: 'ChatProgressIndicator' },
+    '../components/chat/ChatTimeline': { ChatTimeline: 'ChatTimeline' },
+    '../components/chat/locateCitationSource': { locateCitationSource() {} },
+    '../components/chat/chat-presentation': { chatColors: placeholder, chatFont: 'synthetic', chatLayout: { maxWidth: 720, wideInset: 16, compactInset: 8 }, chatType: { body: {}, meta: {}, tool: {} } },
+    '../production/ProductionProvider': { useProduction: productionState },
+    '../production/AgentConversation': { AgentConversation: 'AgentConversation' },
+    '../production/ChatPhotoMessage': { ChatPhotoMessage: 'ChatPhotoMessage' },
+    '../production/NotificationChatTarget': { NotificationChatTarget: 'NotificationChatTarget' },
+    '../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
+    '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => (fn: () => void) => fn() },
+    '../agent-view-model': { proposalExpired: () => false, publicAnswerSources: () => undefined },
+    '../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
+  };
+  const ChatPage = loadModule('frontend/src/screens/chatScreen.tsx', overrides).default;
+  const renderFreshUi = (snap: ReturnType<ChatController['getSnapshot']>, child: string = 'child-1') => {
+    selectedChildId = child;
+    scopeKey = `scope-${child}`;
+    snapshotRef = snap;
+    effectDeps.length = 0;
+    effectIdx = 0;
+    runnerRef = renderWithHooks(() => jsxNode(ChatPage, {}));
+    const nodes = collectNodes(runnerRef.render());
+    return {
+      panel: nodes.some(n => n.props?.testID === 'chat-official-help-panel'),
+      urgent: nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'),
+    };
+  };
+
+  // 1) Real handleProductAgentRequest SSE stream -> createChatApi -> ChatController -> fresh ChatPage for both stopped & unknown (even with stopReason: null).
+  const sseChild = '11111111-1111-4111-8111-111111111111';
+  const sseRunId = '22222222-2222-4222-8222-222222222222';
+  for (const scenario of [
+    { name: 'SSE resolved stopped', status: 'stopped' as const, stopReason: 'delivery_review_incomplete', text: '' },
+    { name: 'SSE resolved unknown with null stopReason', status: 'unknown' as const, stopReason: null, text: '' },
+  ]) {
+    const msgId = scenario.status === 'stopped' ? '33333333-3333-4333-8333-333333333331' : '33333333-3333-4333-8333-333333333332';
+    const userMsg = { id: msgId, childId: sseChild, authorUserId: 'parent-1', role: 'user' as const, text: '幫我睇下呢張相應該點處理？', createdAt: '2026-11-17T00:00:00.000Z', inReplyTo: null };
+    const messages: any[] = [userMsg];
+    let recordedReplyState: any = null;
+    const options = {
+      isCurrentUser: async () => true,
+      agent: {
+        reply: async (_u: string, _c: string, _m: string, _ok: unknown, _s: unknown, publish?: (e: any) => void) => {
+          publish?.({ runId: sseRunId, messageId: msgId, phase: 'help', card: 'emergency-hk-v1' });
+          recordedReplyState = { messageId: msgId, runId: sseRunId, status: scenario.status, stopReason: scenario.stopReason };
+          return { runId: sseRunId, status: scenario.status, stopReason: scenario.stopReason, text: scenario.text, proposals: [], tools: [], counts: { modelCalls: 1, toolCalls: 0, queryEmbeddings: 0 } };
+        },
+      },
+      store: {
+        replyState: async () => recordedReplyState,
+        confirmationQuestions: async () => [],
+        bindConfirmationQuestion: async () => {},
+        get: async () => ({ runId: sseRunId, status: scenario.status, stopReason: scenario.stopReason }),
+      },
+      chat: {
+        listForUser: async () => ({ messages, limit: 100 }),
+        createModelMessageForUser: async (_u: string, cid: string, inReplyTo: string, text: string) => {
+          const saved = { id: '44444444-4444-4444-8444-444444444444', childId: cid, authorUserId: null, role: 'model' as const, inReplyTo, text, createdAt: '2026-11-17T00:00:01.000Z' };
+          messages.push(saved);
+          return saved;
+        },
+      },
+    } as any;
+    const chatApi = createChatApi(
+      'https://synthetic.invalid',
+      async () => ({ id: 'parent-1', email: 'p@example.test', name: 'Parent' }),
+      async (input, init) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        const headers = new Headers(init?.headers as HeadersInit | undefined);
+        if (url.endsWith('/messages')) return new Response(JSON.stringify({ messages, limit: 100 }), { status: 200, headers: { 'content-type': 'application/json' } });
+        if (url.endsWith('/ai/status')) return new Response(JSON.stringify({ available: true }), { status: 200, headers: { 'content-type': 'application/json' } });
+        if (url.endsWith('/ai/usage')) return new Response(JSON.stringify({ day: '2026-11-17', attempts: 0, inputTokens: 0, outputTokens: 0, cachedTokens: 0, unknownUsageAttempts: 0 }), { status: 200, headers: { 'content-type': 'application/json' } });
+        return handleProductAgentRequest(new Request(url, { method: init?.method ?? 'GET', headers, body: init?.body }), 'parent-1', options);
+      },
+    );
+    const ctrl = new ChatController(chatApi, true);
+    ctrl.syncContext('parent-1', true, sseChild);
+    await new Promise(r => setTimeout(r, 15));
+    await ctrl.requestReply(msgId);
+    const snap = ctrl.getSnapshot();
+    assert.deepEqual(snap.feedback?.cards, ['emergency-hk-v1'], `${scenario.name}: Controller must retain SSE emergency card`);
+    selectedChildId = sseChild;
+    snapshotRef = snap;
+    children.splice(0, children.length, { id: sseChild, name: 'SSE Child' }, { id: 'child-2', name: 'B' });
+    const ui = renderFreshUi(snap, sseChild);
+    assert.deepEqual(ui, { panel: true, urgent: true }, `${scenario.name}: default-closed ChatPage must show emergency panel & urgent notice`);
+    ctrl.dispose();
+  }
+  children.splice(0, children.length, { id: 'child-1', name: 'A' }, { id: 'child-2', name: 'B' });
+
+  // 2) Paired controls with unprefixed text where status comes from getOriginalReply/getReplyState, catch-recovered unfinished save, genuine completed, new turn, and child switch.
+  for (const mode of ['resolved_unknown', 'catch_recovered_stopped', 'completed'] as const) {
+    const msgs: any[] = [{ id: 'u-ctrl', childId: 'child-1', authorUserId: 'parent-1', role: 'user', text: '幫我睇下呢張相應該點處理？', createdAt: '2026-11-17T00:00:00.000Z', inReplyTo: null }];
+    const runStatus = mode === 'completed' ? 'completed' : mode === 'resolved_unknown' ? 'unknown' : 'stopped';
+    let replyStarted = false;
+    const api: ChatApi = {
+      getSession: async () => ({ id: 'parent-1', email: 'p@example.test', name: 'Parent' } as any),
+      getStatus: async () => true,
+      getUsage: async () => ({ day: '2026-11-17', attempts: 0, inputTokens: 0, outputTokens: 0, cachedTokens: 0, unknownUsageAttempts: 0 }),
+      listMessages: async cid => ({ messages: msgs.filter(m => m.childId === cid), limit: 100 }),
+      saveMessage: async (cid, text) => {
+        const next = { id: 'u-new-turn', childId: cid, authorUserId: 'parent-1', role: 'user', text, createdAt: '2026-11-17T00:05:00.000Z', inReplyTo: null };
+        msgs.push(next);
+        return next as any;
+      },
+      getOriginalReply: async (_c, mid) => replyStarted && mid === 'u-ctrl' ? { messageId: 'u-ctrl', runId: 'run-ctrl', status: runStatus, stopReason: null } : null,
+      getReplyState: async () => runStatus,
+      requestReply: async (_c, mid, _sig, _u, onProgress) => {
+        if (mid === 'u-new-turn') {
+          const ok = { id: 'm-new', childId: 'child-1', authorUserId: null, role: 'model', inReplyTo: mid, text: '收到，有需要隨時再講。', createdAt: '2026-11-17T00:05:01.000Z' };
+          msgs.push(ok);
+          return ok as any;
+        }
+        replyStarted = true;
+        onProgress?.({ runId: 'run-ctrl', messageId: mid, phase: 'help', card: 'emergency-hk-v1' });
+        const replyMsg = {
+          id: 'm-ctrl', childId: 'child-1', authorUserId: null, role: 'model', inReplyTo: mid,
+          text: mode === 'catch_recovered_stopped' ? '這次回覆未完成：已停止。' : '初步觀察已完成整理。',
+          agentRunId: 'run-ctrl', createdAt: '2026-11-17T00:00:02.000Z',
+        };
+        msgs.push(replyMsg);
+        if (mode === 'catch_recovered_stopped') throw new ChatApiError(503, 'ai_unavailable');
+        return replyMsg as any;
+      },
+    };
+    const ctrl = new ChatController(api, true);
+    ctrl.syncContext('parent-1', true, 'child-1');
+    await new Promise(r => setTimeout(r, 15));
+    await ctrl.requestReply('u-ctrl');
+    const snap = ctrl.getSnapshot();
+    if (mode === 'completed') {
+      assert.equal(snap.feedback, null, 'completed reply must clear SSE feedback');
+      assert.deepEqual(renderFreshUi(snap, 'child-1'), { panel: false, urgent: false }, 'completed control closes panel');
+    } else {
+      assert.deepEqual(snap.feedback?.cards, ['emergency-hk-v1'], `${mode} must keep SSE help card`);
+      assert.deepEqual(renderFreshUi(snap, 'child-1'), { panel: true, urgent: true }, `${mode} keeps emergency UI visible`);
+
+      // Child switch clears feedback inside ChatController and ChatPage must never leak child-1 feedback to child-2.
+      const beforeChildSwitch = ctrl.getSnapshot();
+      assert.deepEqual(renderFreshUi(beforeChildSwitch, 'child-2'), { panel: false, urgent: false }, `${mode}: child-2 must never see child-1 feedback`);
+      ctrl.syncContext('parent-1', true, 'child-2');
+      await new Promise(r => setTimeout(r, 10));
+      assert.equal(ctrl.getSnapshot().feedback, null, `${mode}: syncContext child switch must clear feedback`);
+      ctrl.syncContext('parent-1', true, 'child-1');
+      await new Promise(r => setTimeout(r, 10));
+
+      // Sending a new non-urgent user turn supersedes and clears previous feedback cleanly.
+      ctrl.setText('今日飲咗120ml奶');
+      await ctrl.send();
+      assert.equal(ctrl.getSnapshot().feedback, null, `${mode}: new turn must clear superseded feedback`);
+      assert.deepEqual(renderFreshUi(ctrl.getSnapshot(), 'child-1'), { panel: false, urgent: false }, `${mode}: new turn closes panel`);
+    }
+    ctrl.dispose();
+  }
+});

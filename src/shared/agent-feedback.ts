@@ -60,3 +60,8 @@ export function officialHelpFromTools(tools: readonly { name: string; status: st
   return [...new Set(tools.filter(tool => tool.name === 'show_official_help' && tool.status === 'succeeded')
     .flatMap(tool => { const id = officialHelpIdSchema.safeParse(tool.reference); return id.success ? [id.data] : []; }))];
 }
+
+export const INCOMPLETE_MODEL_REPLY_TEXT_PATTERN = /^(?:這次回覆未完成(?:：|$)|這次 Agent 運行中斷|Agent 暫未能完成回覆|Agent 未完成文字回覆)/u;
+export function isIncompleteModelReplyText(text: string | null | undefined): boolean {
+  return Boolean(text && INCOMPLETE_MODEL_REPLY_TEXT_PATTERN.test(text));
+}

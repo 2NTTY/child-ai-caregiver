@@ -2,7 +2,7 @@ import type { ChatFileMessageReference } from '../shared/chat-files.ts';
 import type { VoiceMessageReference } from '../shared/voice.ts';
 import type { PhotoMessageReference } from '../shared/photos.ts';
 import { normalizeChatInput } from "./chat-input.ts";
-import type { AgentProgress, OfficialHelpId } from '../shared/agent-feedback.ts';
+import { isIncompleteModelReplyText, type AgentProgress, type OfficialHelpId } from '../shared/agent-feedback.ts';
 import { agentStopMessage } from "../shared/agent-stop-message.ts";
 import type { ChatReplyState, ChatMessage } from "../shared/chat.ts";
 import { ChatApiError, type ChatApi, type ChatUsage } from "./chat-api.ts";
@@ -355,8 +355,30 @@ export class ChatController {
       }
       if (this.state.feedback) {
         const fbId = this.state.feedback.messageId;
-        const hasCompletedReply = page.messages.some(item =>
-          item.role === "model" && item.inReplyTo === fbId && !/^這次回覆未完成/u.test(item.text));
+        const matchingReply = page.messages.find(item => item.role === "model" && item.inReplyTo === fbId);
+        let hasCompletedReply = Boolean(matchingReply && !isIncompleteModelReplyText(matchingReply.text));
+        if (hasCompletedReply && this.state.feedback.cards.length > 0 && matchingReply) {
+          if (this.state.remoteReply?.messageId === fbId && this.state.remoteReply.status !== "completed") {
+            hasCompletedReply = false;
+          } else {
+            try {
+              if (this.api.getOriginalReply) {
+                const orig = await this.api.getOriginalReply(childId, fbId, scope.controller.signal, scope.userId);
+                if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
+                if (orig && orig.status !== "completed") hasCompletedReply = false;
+              }
+              if (hasCompletedReply && matchingReply.agentRunId && this.api.getReplyState) {
+                const runStatus = await this.api.getReplyState(childId, matchingReply.agentRunId, scope.controller.signal, scope.userId);
+                if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
+                if (runStatus !== "completed") hasCompletedReply = false;
+              }
+            } catch (stateError) {
+              if (!this.current(scope)) return;
+              if (sessionError(stateError) || childAccessDenied(stateError)) throw stateError;
+              hasCompletedReply = false;
+            }
+          }
+        }
         const superseded = Boolean(latestUser && latestUser.id !== fbId);
         if (hasCompletedReply || superseded) this.update({ feedback: null });
       }
@@ -477,25 +499,102 @@ export class ChatController {
     }
   }
 
+  private async verifyResolvedReplyCompleted(
+    scope: RequestScope,
+    childId: string,
+    messageId: string,
+    reply: ChatMessage,
+    activeRunId: string | null,
+    hintedRunStatus?: "running" | "completed" | "stopped" | "unknown",
+  ): Promise<{ aborted: boolean; completed: boolean; runId: string | null; remoteReply: ChatReplyState | null }> {
+    const runId = reply.agentRunId ?? activeRunId ?? (this.state.feedback?.messageId === messageId ? this.state.feedback.runId : null);
+    if (isIncompleteModelReplyText(reply.text)) {
+      const status = /中斷|未知/u.test(reply.text) ? "unknown" : "stopped";
+      return { aborted: false, completed: false, runId, remoteReply: runId ? { messageId, runId, status, stopReason: null } : null };
+    }
+    if (hintedRunStatus !== undefined) {
+      const completed = hintedRunStatus === "completed";
+      return {
+        aborted: false,
+        completed,
+        runId,
+        remoteReply: !completed && runId ? { messageId, runId, status: hintedRunStatus, stopReason: null } : null,
+      };
+    }
+    const hasPendingHelpCards = this.state.feedback?.messageId === messageId && this.state.feedback.cards.length > 0;
+    if (hasPendingHelpCards) {
+      try {
+        if (this.api.getOriginalReply) {
+          const orig = await this.api.getOriginalReply(childId, messageId, scope.controller.signal, scope.userId);
+          if (!this.current(scope) || !await this.verifyIdentity(scope)) {
+            return { aborted: true, completed: false, runId, remoteReply: null };
+          }
+          if (orig) {
+            return {
+              aborted: false,
+              completed: orig.status === "completed",
+              runId: orig.runId,
+              remoteReply: orig.status === "completed" ? null : orig,
+            };
+          }
+        }
+        if (runId && this.api.getReplyState) {
+          const runStatus = await this.api.getReplyState(childId, runId, scope.controller.signal, scope.userId);
+          if (!this.current(scope) || !await this.verifyIdentity(scope)) {
+            return { aborted: true, completed: false, runId, remoteReply: null };
+          }
+          return {
+            aborted: false,
+            completed: runStatus === "completed",
+            runId,
+            remoteReply: runStatus === "completed" ? null : { messageId, runId, status: runStatus, stopReason: null },
+          };
+        }
+      } catch (stateError) {
+        if (!this.current(scope)) return { aborted: true, completed: false, runId, remoteReply: null };
+        if (sessionError(stateError)) { this.invalidateIdentity(); return { aborted: true, completed: false, runId, remoteReply: null }; }
+        if (childAccessDenied(stateError)) { this.forgetChild(childId); return { aborted: true, completed: false, runId, remoteReply: null }; }
+        // Fail closed when completion cannot be proven so emergency help cards stay visible.
+        return { aborted: false, completed: false, runId, remoteReply: runId ? { messageId, runId, status: "unknown", stopReason: null } : null };
+      }
+    }
+    return { aborted: false, completed: true, runId, remoteReply: null };
+  }
+
   private async performReply(scope: RequestScope, messageId: string): Promise<void> {
     const childId = scope.childId!;
-    let capacityBusyReply: ChatReplyState | null = null;
+    let settledRemoteReply: ChatReplyState | null = null;
     let replyCompleted = false;
+    let activeRunId: string | null = null;
     try {
       if (!await this.verifyIdentity(scope)) return;
       const reply = await this.api.requestReply(childId, messageId, scope.controller.signal, scope.userId, event => {
         if (!this.current(scope) || event.messageId !== messageId || this.state.replyingMessageId !== messageId) return;
+        activeRunId = event.runId;
         const previous = this.state.feedback?.messageId === messageId ? this.state.feedback.cards : [];
         this.update({ feedback: { ...event, cards: [...new Set([...previous, ...(event.card ? [event.card] : [])])] } });
       });
       if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
-      replyCompleted = true;
-      const messages = this.state.messages.some(item => item.id === reply.id)
-        ? this.state.messages : [...this.state.messages, reply];
-      this.update({ messages, replyError: null });
+      const outcome = await this.verifyResolvedReplyCompleted(scope, childId, messageId, reply, activeRunId);
+      if (outcome.aborted || !this.current(scope)) return;
+      replyCompleted = outcome.completed;
+      settledRemoteReply = outcome.remoteReply;
+      const normalizedReply = outcome.runId && !reply.agentRunId ? { ...reply, agentRunId: outcome.runId } : reply;
+      const messages = this.state.messages.some(item => item.id === normalizedReply.id)
+        ? this.state.messages.map(item => item.id === normalizedReply.id ? normalizedReply : item)
+        : [...this.state.messages, normalizedReply];
+      this.update({
+        messages: outcome.runId
+          ? messages.map(item => item.id === messageId && !item.agentRunId ? { ...item, agentRunId: outcome.runId! } : item)
+          : messages,
+        replyError: outcome.completed ? null : "這次回覆未完成，沒有清除官方求助提示；請先查看提示或核對原結果。",
+      });
       if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
-        this.updateDraft(childId, { text: "", voice: undefined, file: undefined, photo: undefined, phase: "draft", savedUserMessageId: null,
-          notice: "聊天已保存，AI 已回覆。", knownIds: [] });
+        this.updateDraft(childId, {
+          text: "", voice: undefined, file: undefined, photo: undefined, phase: "draft", savedUserMessageId: null,
+          notice: outcome.completed ? "聊天已保存，AI 已回覆。" : "聊天已保存，但這次回覆未完成。",
+          knownIds: [],
+        });
       }
     } catch (error) {
       if (!this.current(scope)) return;
@@ -514,9 +613,15 @@ export class ChatController {
           if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
           const saved = page.messages.find(item => item.role === 'model' && item.inReplyTo === messageId);
           if (saved) {
-            replyCompleted = true;
-            this.update({ messages: [...this.state.messages.filter(item => item.id !== saved.id), saved], replyError: null });
-            if (this.state.drafts[childId]?.savedUserMessageId === messageId) this.updateDraft(childId, { text: '', voice: undefined, file: undefined, photo: undefined, phase: 'draft', savedUserMessageId: null, notice: '已查回原回覆，沒有重新執行。', knownIds: [] });
+            const outcome = await this.verifyResolvedReplyCompleted(scope, childId, messageId, saved, runId, original);
+            if (outcome.aborted || !this.current(scope)) return;
+            replyCompleted = outcome.completed;
+            settledRemoteReply = outcome.remoteReply;
+            this.update({
+              messages: [...this.state.messages.filter(item => item.id !== saved.id).map(item => item.id === messageId && !item.agentRunId ? { ...item, agentRunId: runId } : item), saved],
+              replyError: outcome.completed ? null : "這次回覆未完成，沒有清除官方求助提示；請先查看提示或核對原結果。",
+            });
+            if (this.state.drafts[childId]?.savedUserMessageId === messageId) this.updateDraft(childId, { text: '', voice: undefined, file: undefined, photo: undefined, phase: 'draft', savedUserMessageId: null, notice: outcome.completed ? '已查回原回覆，沒有重新執行。' : '已查回原運行結果，但這次回覆未完成。', knownIds: [] });
             return;
           }
           notice = original === 'running' ? '連線中斷；原運行仍在處理。請稍後重新讀取，沒有重新執行。' : '已核對原運行，聊天回覆尚未讀到。請重新讀取原結果，沒有重新執行。';
@@ -528,7 +633,7 @@ export class ChatController {
       }
       const capacityBusy = error instanceof ChatApiError && error.code === "ai_capacity_busy";
       const busyRunId = capacityBusy && this.state.feedback?.messageId === messageId ? this.state.feedback.runId : "";
-      if (capacityBusy) capacityBusyReply = { messageId, runId: busyRunId, status: "stopped", stopReason: "busy" };
+      if (capacityBusy) settledRemoteReply = { messageId, runId: busyRunId, status: "stopped", stopReason: "busy" };
       this.update({ replyError: notice,
         ...(busyRunId ? { messages: this.state.messages.map(item => item.id === messageId ? { ...item, agentRunId: busyRunId } : item) } : {}) });
       if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
@@ -547,7 +652,7 @@ export class ChatController {
           && this.state.feedback.cards.length > 0
           ? this.state.feedback
           : null;
-        this.update({ busy: null, replyingMessageId: null, feedback: retainFeedback, remoteReply: capacityBusyReply });
+        this.update({ busy: null, replyingMessageId: null, feedback: retainFeedback, remoteReply: settledRemoteReply });
         void this.refreshMetadata();
       }
     }
