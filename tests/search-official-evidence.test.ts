@@ -1991,3 +1991,551 @@ test("structural review boundaries: state-claim+followup, receipt correspondence
     );
   }
 });
+
+test("N1: word-bounded health terms avoid Will/ill false positives while preserving real health obligations and sticky review", async () => {
+  async function runSingleTurn(userMsg: string, draftText: string, kind: "clarification" | "operation" = "clarification") {
+    let calls = 0;
+    let reviews = 0;
+    let saved: ProductAgentResult | null = null;
+    const msgId = "aaaaaaaa-0000-4000-8000-000000000011";
+    const localRunId = "bbbbbbbb-0000-4000-8000-000000000011";
+    const runtime = createAgentRuntime({
+      config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
+      usage: { reserve: async () => true, record: async () => {} },
+      provider: {
+        generate: async request => {
+          calls++;
+          const promptText = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? "").join("\n");
+          if (promptText.includes("chat-delivery-review")) {
+            reviews++;
+            const payload = JSON.parse(promptText.slice(promptText.indexOf("{"))) as { draftHash: string };
+            return {
+              content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "pass", issues: [] }) }] },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          return {
+            content: { role: "model", parts: [{ functionCall: { id: `call-n1-${calls}`, name: "present_answer", args: { kind, paragraphs: [{ text: draftText, citationIds: [] }] } } }] },
+            finishReason: FinishReason.STOP,
+          };
+        },
+      },
+    });
+    const service = createProductAgent({
+      runtime,
+      store: {
+        claim: async () => ({ runId: localRunId, scope, created: true, sourceMessageId: msgId, state: "running", expiresAt: new Date(Date.now() + 90_000).toISOString() }),
+        authorize: async () => true,
+        finish: async (_s: unknown, result: ProductAgentResult) => { saved = result; return true; },
+        get: async () => saved,
+      } as any,
+      memory: { context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false, facts: [], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [], truncated: { facts: false, topics: false, messages: false } }) } as any,
+      chat: { listForUser: async () => ({ messages: [{ id: msgId, role: "user", text: userMsg }] }) } as any,
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) } as any,
+      knowledge: { createRun: () => ({ revalidateCitations: async () => true }) } as any,
+    });
+    const result = await service.reply(userId, childId, msgId, async () => true);
+    assert.ok(result);
+    return { result, calls, reviews };
+  }
+
+  for (const benignQuery of [
+    "Will you help organise my notes?",
+    "Help organise my notes.",
+    "What should I do with my notes?",
+    "How should I handle this reminder?",
+  ]) {
+    const { result, calls, reviews } = await runSingleTurn(benignQuery, "Which note would you like to edit?");
+    assert.equal(result.status, "completed", benignQuery);
+    assert.equal(calls, 1, benignQuery);
+    assert.equal(reviews, 0, benignQuery);
+    assert.equal(result.text, "Which note would you like to edit?", benignQuery);
+  }
+
+  for (const [careQuery, draftText] of [
+    ["My baby is ill, what should I do?", "Rest in a quiet room today."],
+    ["My child is sick, what should I do?", "Try half a teaspoon of syrup."],
+    ["BB病咗點算？", "Keep them warm with one blanket today."],
+  ] as const) {
+    const { result, reviews } = await runSingleTurn(careQuery, draftText, "operation");
+    assert.equal(reviews, 1, careQuery);
+    assert.equal(result.status, "stopped", careQuery);
+    assert.equal(result.stopReason, "delivery_review_no_sources", careQuery);
+    assert.equal(result.text.includes(draftText), false, careQuery);
+  }
+
+  // Existing sticky obligation in a run cannot be cleared by later neutral text.
+  const budget = new AgentBudget();
+  try {
+    const obligation = createChatDeliveryReviewObligation();
+    assert.equal(requiresChatDeliveryReview({
+      userRequest: "My child is ill.",
+      kind: "caregiving",
+      visibility: "private",
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text: "Give ibuprofen.", citationIds: [] }],
+      sources: [],
+      scope,
+    }, obligation), true);
+    assert.equal(requiresChatDeliveryReview({
+      userRequest: "Will you help organise my notes?",
+      kind: "clarification",
+      visibility: "private",
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text: "Which note would you like to edit?", citationIds: [] }],
+      sources: [],
+      scope,
+    }, obligation), true);
+    assert.equal(obligation.required, true);
+  } finally {
+    budget.close();
+  }
+});
+
+test("N2: prefix-only claims fail closed across early and resolved stages; unrelated private sources cannot back clinical directives while real private facts still pass", async t => {
+  const allergyFact = {
+    id: "aaaaaaaa-1111-4000-8000-000000000021",
+    childId,
+    key: "allergy-milk",
+    content: "BB 對牛奶蛋白過敏",
+    source: { kind: "manual" as const, description: "家長確認" },
+    validUntil: null,
+    visibility: "private" as const,
+    intendedVisibility: "private" as const,
+    status: "confirmed" as const,
+    version: 1,
+    createdBy: userId,
+    confirmedBy: userId,
+    confirmedAt: "2026-10-18T00:00:00.000Z",
+    reason: "已確認",
+    applicable: true,
+    sourceState: "current" as const,
+  };
+  const privateInputId = "aaaaaaaa-2222-4000-8000-000000000022";
+
+  async function runPrivateScenario(opts: {
+    userMsg: string;
+    answerText: string;
+    answerKind?: "record_restatement" | "private_reference" | "clarification";
+    citePrivateSource?: boolean;
+    privateExcerpt?: string;
+    facts?: (typeof allergyFact)[];
+  }) {
+    let calls = 0;
+    let reviews = 0;
+    let saved: ProductAgentResult | null = null;
+    const msgId = "cccccccc-0000-4000-8000-000000000021";
+    const localRunId = "dddddddd-0000-4000-8000-000000000021";
+    const runtime = createAgentRuntime({
+      config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
+      usage: { reserve: async () => true, record: async () => {} },
+      provider: {
+        generate: async request => {
+          calls++;
+          const promptText = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? "").join("\n");
+          if (promptText.includes("chat-delivery-review")) {
+            reviews++;
+            const payload = JSON.parse(promptText.slice(promptText.indexOf("{"))) as { draftHash: string };
+            return {
+              content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "pass", issues: [] }) }] },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          if (opts.citePrivateSource && calls === 1) {
+            return {
+              content: { role: "model", parts: [{ functionCall: { id: "load-priv", name: "load_capabilities", args: { capabilities: ["private_sources"] } } }] },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          if (opts.citePrivateSource && calls === 2) {
+            return {
+              content: { role: "model", parts: [{ functionCall: { id: "read-priv", name: "read_private_source", args: { inputId: privateInputId, expectedVersion: 1 } } }] },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          const cid = opts.citePrivateSource ? [`private:${privateInputId}:1`] : [];
+          return {
+            content: {
+              role: "model",
+              parts: [{
+                functionCall: {
+                  id: "ans-n2",
+                  name: "present_answer",
+                  args: { kind: opts.answerKind ?? "record_restatement", paragraphs: [{ text: opts.answerText, citationIds: cid }] },
+                },
+              }],
+            },
+            finishReason: FinishReason.STOP,
+          };
+        },
+      },
+    });
+    const privateItem = {
+      id: privateInputId,
+      version: 1,
+      sourceLabel: "Family Note",
+      fetchState: "ready",
+      text: opts.privateExcerpt ?? "BB 對雞蛋過敏",
+      sha256: "e".repeat(64),
+      management: {
+        purpose: "personal_reference",
+        nature: "parent_note",
+        timeScope: "ongoing",
+        validityText: "有效",
+        enabled: true,
+        modelExcerpt: opts.privateExcerpt ?? "BB 對雞蛋過敏",
+      },
+    };
+    const service = createProductAgent({
+      runtime,
+      store: {
+        claim: async () => ({ runId: localRunId, scope, created: true, sourceMessageId: msgId, state: "running", expiresAt: new Date(Date.now() + 90_000).toISOString() }),
+        authorize: async () => true,
+        finish: async (_s: unknown, result: ProductAgentResult) => { saved = result; return true; },
+        get: async () => saved,
+      } as any,
+      memory: {
+        getFact: async (_u: string, _c: string, id: string) => (opts.facts ?? []).find(f => f.id === id) ?? null,
+        context: async () => ({
+          profile: { childId, version: 0, data: null },
+          profileApplicable: false,
+          facts: opts.facts ?? [],
+          topics: [],
+          summary: null,
+          recentMessages: [],
+          conflictingKeys: [],
+          unavailableFactKeys: [],
+          truncated: { facts: false, topics: false, messages: false },
+        }),
+      } as any,
+      chat: { listForUser: async () => ({ messages: [{ id: msgId, role: "user", text: opts.userMsg }] }) } as any,
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) } as any,
+      knowledge: { createRun: () => ({ revalidateCitations: async () => true }) } as any,
+      ...(opts.citePrivateSource ? {
+        sources: {
+          list: async () => ({ inputs: [privateItem], hasMore: false, nextCursor: null }),
+          get: async () => privateItem,
+        },
+      } : {}),
+    } as any);
+    const result = await service.reply(userId, childId, msgId, async () => true);
+    assert.ok(result);
+    return { result, reviews };
+  }
+
+  // Negative Stage 1 (sources: []): prefixed and unprefixed nil-by-mouth directives must stop.
+  for (const directive of [
+    "Family records show: Maintain nil-by-mouth overnight.",
+    "Maintain nil-by-mouth overnight.",
+    "家庭紀錄顯示：應整晚禁飲食。",
+  ]) {
+    const { result } = await runPrivateScenario({ userMsg: "BB發燒點算？", answerText: directive });
+    assert.equal(result.status, "stopped", directive);
+    assert.equal(result.stopReason, "delivery_review_no_sources", directive);
+    assert.equal(result.text, CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT, directive);
+  }
+
+  // Negative Stage 2 (sources: [private]): unrelated private memory/source OR parent note containing directive text cannot pass.
+  for (const [label, excerpt] of [
+    ["unrelated private excerpt", "BB 對雞蛋過敏"],
+    ["private excerpt repeating clinical directive", "Maintain nil-by-mouth overnight."],
+  ] as const) {
+    const { result } = await runPrivateScenario({
+      userMsg: "BB發燒點算？",
+      answerText: "Family records show: Maintain nil-by-mouth overnight.",
+      answerKind: "private_reference",
+      citePrivateSource: true,
+      privateExcerpt: excerpt,
+    });
+    assert.equal(result.status, "stopped", label);
+    assert.equal(result.stopReason, "delivery_review_no_sources", label);
+  }
+
+  // Non-regex statement with unrelated private source under care obligation must also fail closed at Stage 2.
+  const unrelatedResolvedDraft = {
+    userRequest: "BB發燒點算？",
+    kind: "record_restatement" as const,
+    visibility: "private" as const,
+    serverSubstitutedSourceText: false,
+    paragraphs: [{ text: "家庭紀錄顯示今日只需多蓋被不用再量體溫。", citationIds: ["mem-unrelated"] }],
+    sources: [{
+      citationId: "mem-unrelated",
+      version: "1",
+      contentHash: "f".repeat(64),
+      classification: "private" as const,
+      excerpt: "BB 對雞蛋過敏",
+      excerptComplete: true,
+    }],
+    scope,
+  };
+  const stageObl = createChatDeliveryReviewObligation();
+  assert.equal(requiresChatDeliveryReview({ ...unrelatedResolvedDraft, sources: [] }, stageObl), true);
+  assert.equal(stageObl.evidenceRequired, true);
+  assert.equal(chatDeliveryPassNeedsSources(unrelatedResolvedDraft, stageObl), true);
+
+  // Positive Controls (SPEC.md:301-304): real matching confirmed memory & bounded clarification deliver cleanly.
+  const validPrivate = await runPrivateScenario({
+    userMsg: "BB發燒點算，仲有對牛奶蛋白過敏紀錄嗎？",
+    answerText: "家庭紀錄顯示寶寶對牛奶蛋白過敏。",
+    facts: [allergyFact],
+  });
+  assert.equal(validPrivate.result.status, "completed");
+  assert.equal(validPrivate.result.deliveryReview?.decision, "pass");
+  assert.equal(validPrivate.result.text, "家庭紀錄顯示寶寶對牛奶蛋白過敏。");
+  assert.equal(validPrivate.reviews, 1);
+
+  const validClarify = await runPrivateScenario({
+    userMsg: "BB發燒點算？",
+    answerText: "寶寶幾個月大？",
+    answerKind: "clarification",
+  });
+  assert.equal(validClarify.result.status, "completed");
+  assert.equal(validClarify.reviews, 0);
+});
+
+test("N3: Server-verified operations avoid 300-char truncation and bind item-level quantities, units, subjects, and times across single/multi/duplicate receipts", async t => {
+  async function runRecordRuntime(opts: {
+    userMsg: string;
+    records: Array<{ text: string; eventTime: string; at?: string }>;
+    claimText: string;
+  }) {
+    let calls = 0;
+    let reviews = 0;
+    let seenOps: Array<{ summary?: string; recordKind?: string; eventTime?: string }> = [];
+    let saved: ProductAgentResult | null = null;
+    const msgId = "eeeeeeee-0000-4000-8000-000000000031";
+    const localRunId = "ffffffff-0000-4000-8000-000000000031";
+    const receipts = opts.records.map((_, idx) => ({
+      id: `10000000-0000-4000-8000-00000000000${idx + 1}`,
+      runId: localRunId,
+      kind: "save_record" as const,
+      resource: { kind: "care_record" as const, id: `20000000-0000-4000-8000-00000000000${idx + 1}`, version: 1 },
+      state: "saved" as const,
+      notification: "not_authorized" as const,
+      channels: [] as const,
+      createdAt: "2026-11-17T00:00:00Z",
+    }));
+    const persisted = opts.records.map((rec, idx) => ({
+      id: receipts[idx]!.resource.id,
+      childId,
+      version: 1,
+      authorUserId: userId,
+      createdAt: "2026-11-17T00:00:00Z",
+      confirmedBy: userId,
+      confirmedAt: "2026-11-17T00:00:00Z",
+      reason: "user statement",
+      text: rec.text,
+      source: "user statement",
+      confirmationBasis: "preauthorized_user_statement" as const,
+      details: {
+        kind: "feeding" as const,
+        quantity: null,
+        eventTime: { rawText: rec.eventTime, at: rec.at ?? null, timeZone: "Asia/Hong_Kong" as const, precision: (rec.at ? "exact" : "approximate") as "exact" | "approximate" },
+      },
+    }));
+    const runtime = createAgentRuntime({
+      config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
+      usage: { reserve: async () => true, record: async () => {} },
+      provider: {
+        generate: async request => {
+          calls++;
+          const promptText = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? "").join("\n");
+          if (promptText.includes("chat-delivery-review")) {
+            reviews++;
+            const payload = JSON.parse(promptText.slice(promptText.indexOf("{"))) as { draftHash: string; verifiedOperations?: typeof seenOps };
+            seenOps = payload.verifiedOperations ?? [];
+            return {
+              content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "pass", issues: [] }) }] },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          if (calls === 1) {
+            return {
+              content: { role: "model", parts: [{ functionCall: { id: "lc-n3", name: "load_capabilities", args: { capabilities: ["care_records"] } } }] },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          if (calls === 2) {
+            return {
+              content: {
+                role: "model",
+                parts: opts.records.map((rec, execIdx) => ({
+                  functionCall: {
+                    id: `save-n3-${execIdx}`,
+                    name: "save_ordinary_record",
+                    args: {
+                      sourceQuote: opts.userMsg,
+                      expectedPolicyVersion: 1,
+                      text: rec.text,
+                      details: {
+                        kind: "feeding",
+                        quantity: null,
+                        eventTime: { rawText: rec.eventTime, at: rec.at ?? null, timeZone: "Asia/Hong_Kong", precision: rec.at ? "exact" : "approximate" },
+                      },
+                    },
+                  },
+                })),
+              },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          return {
+            content: { role: "model", parts: [{ functionCall: { id: "pres-n3", name: "present_answer", args: { kind: "record_restatement", paragraphs: [{ text: opts.claimText, citationIds: [] }] } } }] },
+            finishReason: FinishReason.STOP,
+          };
+        },
+      },
+    });
+    let execCount = 0;
+    const service = createProductAgent({
+      runtime,
+      store: {
+        claim: async () => ({ runId: localRunId, scope, created: true, sourceMessageId: msgId, state: "running", expiresAt: new Date(Date.now() + 90_000).toISOString() }),
+        authorize: async () => true,
+        finish: async (_s: unknown, result: ProductAgentResult) => { saved = result; return true; },
+        get: async () => saved,
+      } as any,
+      actions: {
+        policy: async () => ({ version: 1, effective: true, recordKinds: ["feeding"], allowPrivateNotes: false, allowSelfTasks: false, allowRecordCorrections: false, reminderConsentVersion: null, reminderBindings: [] }),
+        records: async () => ({ records: [], limit: 20, scanned: 0, nextCursor: null }),
+        notes: async () => ({ items: [], nextAfterId: null }),
+        execute: async () => receipts[execCount++]!,
+        receipts: async () => receipts.slice(0, execCount),
+        recordById: async (_u: string, _c: string, id: string) => persisted.find(p => p.id === id) ?? null,
+      } as any,
+      memory: { context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false, facts: [], topics: [], summary: null, recentMessages: [{ id: msgId, childId, role: "user", text: opts.userMsg }], conflictingKeys: [], unavailableFactKeys: [], truncated: { facts: false, topics: false, messages: false } }) } as any,
+      chat: { listForUser: async () => ({ messages: [{ id: msgId, childId, role: "user", text: opts.userMsg }] }) } as any,
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) } as any,
+      knowledge: { createRun: () => ({ revalidateCitations: async () => true }) } as any,
+    });
+    const result = await service.reply(userId, childId, msgId, async () => true);
+    assert.ok(result);
+    return { result, reviews, seenOps };
+  }
+
+  // 1. Exact R1 counterexample: swapped 120ml配方奶 / 240ml水 MUST stop even on reviewer pass.
+  const swappedSingle = await runRecordRuntime({
+    userMsg: "今朝 8 點飲 120ml 配方奶，加 240ml 水，幫我記低。",
+    records: [{ text: "今朝 8 點飲 120ml 配方奶，加 240ml 水。", eventTime: "今朝 8 點" }],
+    claimText: "已記低今朝 8 點飲 240ml 配方奶及 120ml 水。",
+  });
+  assert.equal(swappedSingle.reviews, 1);
+  assert.equal(swappedSingle.result.status, "stopped");
+  assert.ok(["delivery_review_rejected", "delivery_review_no_sources"].includes(swappedSingle.result.stopReason ?? ""));
+  assert.equal(swappedSingle.result.text.includes("240ml 配方奶"), false);
+  assert.equal(swappedSingle.result.text.includes("120ml 水"), false);
+
+  // 2. Long (>300 chars) Server-verified record must not truncate tail quantities; accurate claim passes while swapped stops.
+  const longPrefix = `${"家長備註晨間照顧流程紀錄文字說明，".repeat(20)}`;
+  assert.ok(longPrefix.length > 300);
+  const longTailText = `${longPrefix}今朝 8 點飲 120ml 配方奶，加 240ml 水。`;
+  const longPass = await runRecordRuntime({
+    userMsg: longTailText,
+    records: [{ text: longTailText, eventTime: "今朝 8 點" }],
+    claimText: "已記低今朝 8 點飲 120ml 配方奶及 240ml 水。",
+  });
+  assert.ok((longPass.seenOps[0]?.summary?.length ?? 0) > 300, "Server receipt summary must not truncate at 300 chars");
+  assert.equal(longPass.result.status, "completed");
+  assert.equal(longPass.result.deliveryReview?.decision, "pass");
+
+  const longSwapped = await runRecordRuntime({
+    userMsg: longTailText,
+    records: [{ text: longTailText, eventTime: "今朝 8 點" }],
+    claimText: "已記低今朝 8 點飲 240ml 配方奶及 120ml 水。",
+  });
+  assert.equal(longSwapped.result.status, "stopped");
+  assert.ok(["delivery_review_rejected", "delivery_review_no_sources"].includes(longSwapped.result.stopReason ?? ""));
+
+  // 3. Multi-receipt shared time: faithful claim passes; swapped quantities fail closed.
+  const multiPass = await runRecordRuntime({
+    userMsg: "今朝 8 點飲 120ml 配方奶，同飲 240ml 水，分兩筆幫我記低。",
+    records: [
+      { text: "今朝 8 點飲 120ml 配方奶。", eventTime: "今朝 8 點" },
+      { text: "今朝 8 點飲 240ml 水。", eventTime: "今朝 8 點" },
+    ],
+    claimText: "已記低今朝 8 點飲 120ml 配方奶及 240ml 水。",
+  });
+  assert.equal(multiPass.result.status, "completed");
+  assert.equal(multiPass.result.deliveryReview?.decision, "pass");
+
+  const multiSwapped = await runRecordRuntime({
+    userMsg: "今朝 8 點飲 120ml 配方奶，同飲 240ml 水，分兩筆幫我記低。",
+    records: [
+      { text: "今朝 8 點飲 120ml 配方奶。", eventTime: "今朝 8 點" },
+      { text: "今朝 8 點飲 240ml 水。", eventTime: "今朝 8 點" },
+    ],
+    claimText: "已記低今朝 8 點飲 240ml 配方奶及 120ml 水。",
+  });
+  assert.equal(multiSwapped.result.status, "stopped");
+
+  // 4. Duplicate items: two receipts allow duplicate claims; single receipt blocks duplicated claims.
+  const dupPass = await runRecordRuntime({
+    userMsg: "今朝 8 點飲 120ml 配方奶，下午 2 點又飲 120ml 配方奶。",
+    records: [
+      { text: "今朝 8 點飲 120ml 配方奶。", eventTime: "今朝 8 點" },
+      { text: "下午 2 點飲 120ml 配方奶。", eventTime: "下午 2 點" },
+    ],
+    claimText: "已記低今朝 8 點飲 120ml 配方奶，及下午 2 點飲 120ml 配方奶。",
+  });
+  assert.equal(dupPass.result.status, "completed");
+
+  const dupOverclaimDraft = {
+    kind: "record_restatement" as const,
+    visibility: "private" as const,
+    serverSubstitutedSourceText: false,
+    verifiedOperations: [{ kind: "action_receipt" as const, id: "dup-1", tool: "save_ordinary_record", state: "saved", recordKind: "feeding", summary: "今朝 8 點飲 120ml 配方奶。", eventTime: "今朝 8 點" }],
+    paragraphs: [{ text: "已記低今朝 8 點飲 120ml 配方奶，另外仲飲 120ml 配方奶。", citationIds: [] }],
+    sources: [],
+    scope,
+  };
+  assert.equal(isPureVerifiedOperationSummary(dupOverclaimDraft), false);
+
+  // 5. Swapped reminder times, ambiguous grouped quantities, and Server-removed quantity fail closed.
+  for (const badDraft of [
+    {
+      ...dupOverclaimDraft,
+      kind: "operation" as const,
+      verifiedOperations: [
+        { kind: "action_receipt" as const, id: "t1", tool: "create_ordinary_reminder", state: "saved", summary: "買牛奶 (2026-11-17T08:00:00+08:00)", dueAt: "2026-11-17T08:00:00+08:00" },
+        { kind: "action_receipt" as const, id: "t2", tool: "create_ordinary_reminder", state: "saved", summary: "買雞蛋 (2026-11-17T21:00:00+08:00)", dueAt: "2026-11-17T21:00:00+08:00" },
+      ],
+      paragraphs: [{ text: "已設定今晚 9 點買牛奶及今朝 8 點買雞蛋提醒。", citationIds: [] }],
+    },
+    {
+      ...dupOverclaimDraft,
+      verifiedOperations: [{ kind: "action_receipt" as const, id: "amb-1", tool: "save_ordinary_record", state: "saved", recordKind: "feeding", summary: "今朝 8 點飲 120ml 配方奶，加 240ml 水。", eventTime: "今朝 8 點" }],
+      paragraphs: [{ text: "已記低今朝 8 點飲 120ml 同 240ml 配方奶及水。", citationIds: [] }],
+    },
+    {
+      ...dupOverclaimDraft,
+      verifiedOperations: [{ kind: "action_receipt" as const, id: "rem-1", tool: "save_ordinary_record", state: "saved", recordKind: "feeding", summary: "飲 120ml 配方奶。", quantity: null, quantityGroundingStatus: "removed" as const }],
+      paragraphs: [{ text: "已記低飲 120ml 配方奶。", citationIds: [] }],
+    },
+  ]) {
+    assert.equal(isPureVerifiedOperationSummary(badDraft), false, badDraft.paragraphs[0]!.text);
+    const budget = new AgentBudget();
+    t.after(() => budget.close());
+    await assert.rejects(
+      enforceChatDeliveryReview({
+        presentation: { text: badDraft.paragraphs[0]!.text, citations: [], privateSourceCitations: [], retrievalMode: "not_used" },
+        tools: {
+          presentation: async () => ({ text: badDraft.paragraphs[0]!.text, citations: [], privateSourceCitations: [], retrievalMode: "not_used" }),
+          deliveryDraft: () => badDraft,
+          replaceDeliveryAnswer: () => {},
+        },
+        context: {
+          runId,
+          scope,
+          budget,
+          deliveryReview: createChatDeliveryReviewObligation(true),
+          completeText: async ({ user }: { user: string }) => {
+            const parsed = JSON.parse(user.slice(user.indexOf("{"))) as { draftHash: string };
+            return JSON.stringify({ draftHash: parsed.draftHash, decision: "pass", issues: [] });
+          },
+        } as any,
+        provenance: { packVersion: "test-v1", model: "gemini-2.5-flash" },
+      }),
+      (err: unknown) => err instanceof AgentStopped && ["delivery_review_rejected", "delivery_review_no_sources"].includes(err.reason),
+    );
+  }
+});
