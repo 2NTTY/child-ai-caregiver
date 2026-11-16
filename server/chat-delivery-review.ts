@@ -9,6 +9,7 @@ import {
 import { AgentStopped } from "./agent-budget.ts";
 import type { AgentRunContext, AgentScope } from "./agent-runtime.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
+import { memoryFactReferencedByParagraph } from "./memory-policy.ts";
 
 /**
  * P3-M01 budget tradeoff.
@@ -44,9 +45,16 @@ export interface ChatDeliveryVerifiedOperation {
   tool: string;
   state: string;
   notification?: string;
+  resource?: { kind: "care_record" | "private_note" | "task"; id: string; version: number };
   recordKind?: string;
   summary?: string;
+  actionDetailText?: string;
   eventTime?: string;
+  eventAt?: string;
+  dueAt?: string;
+  eventTimeZone?: string;
+  quantity?: { rawValue: string; unit: string; precision: "exact" | "approximate" } | null;
+  quantityGroundingStatus?: "source_supported" | "removed" | "absent" | "unchanged";
   confirmationQuestion?: string;
 }
 export interface ChatDeliveryDraft {
@@ -138,17 +146,30 @@ const CARE_ADVISORY_BASE_PATTERN = /應立即|應該|必須|建議(?:你|您|家
 const MEDICAL_CLAIM_BASE_PATTERN = /用藥|藥丸|藥水|餵藥|食藥|吃藥|服藥|劑量|\b\d+(?:\.\d+)?\s*(?:ml|mg|毫升|毫克)\b|每次(?:\s*(?:\d|半|[一二三四五六七八九十兩幾]+)\s*(?:粒|片|包|滴|茶?匙|湯?匙|藥匙|顆|丸|支|劑|份|毫升|毫克|ml|mg))|阿士匹靈|撲熱息痛|布洛芬|麻疹|傷口|癒合|aspirin|ibuprofen|paracetamol|measles|wound|heal(?:ed|ing)/iu;
 const ORIGINAL_EVIDENCE_CLAIM_PATTERN = /(?:照片|相片|圖片|影像|錄音|錄影).{0,40}(?:顯示|證明|同意|確認)|(?:photo|image|recording|audio).{0,60}(?:shows?|proves?|proof|consent|agreed)/iu;
 const OPERATION_CLAIM_PATTERN = /(?:已(?:經)?|經已|幫(?:你|您)).{0,12}(?:完成|保存|儲存|刪(?:除|晒|咗)?|修改|更改|改好|改返|改咗?|換(?:成|做|好)?|轉(?:成|做|好)?|更新|發送|送出|安排|記(?:住|低|錄|咗)?|紀錄|存好|清除|清空|取消|移除|重設|設定|設置|標記|處理|辦妥|弄好|搞掂)|(?:保存|儲存|存好|刪(?:除|晒)?|修改|更改|改好|改|換(?:成|做|好)|轉(?:成|做|好)|更新|發送|送出|安排|記(?:住|低|錄)?|紀錄|取消|移除|清除|清空|重設|復原|設定|設好|標記|完成|處理|辦妥|弄|搞掂)(?:好|妥|完|晒|曬|咗|左|了|喇|啦|嘞|囉|成功)|(?<!未|唔|沒有|沒|無)(?:搞掂|辦妥|處理好|已經OK|現為|目前為|現已|已變成|已轉為|已經一筆不留|一筆不留|全部清空|全數刪除)|刪晒|(?:already|successfully|I have|I've|I\b|we have|we've).{0,30}(?:saved|deleted|updated|sent|scheduled|changed|cleared|removed|reset|completed|set\b)|(?:saved|deleted|updated|sent|scheduled|cleared|removed|reset|completed)\b.{0,20}(?:successfully|already)|\ball\s+(?:done|set|saved|deleted|updated|cleared)\b|\b(?:has|have|is|are)\s+now\s+(?:saved|deleted|updated|changed|cleared|removed|gone|set\s+to)|\bno\s+longer\s+(?:exist|exists|there)\b/iu;
-const USER_DOSING_REQUEST_PATTERN = /(?:點(?:樣)?(?:食|餵|服|用)|食幾多|餵幾多|服幾多|飲幾多|用幾多|劑量|幾多\s*(?:ml|mg|mcg|ug|毫升|毫克|微克|粒|片|包|滴|匙)|藥(?:物|水|丸|粉)?|退燒藥|抗生素|撲熱息痛|布洛芬|阿士匹靈|dosage|dose|medication|how\s+much.{0,20}(?:give|take|medicine))/iu;
-const USER_CARE_REQUEST_PATTERN = /(?:發燒|發熱|高燒|體溫|發冷|發抖|抽筋|痙攣|嘔|吐|瀉|屙|咳|喘|疹|敏感|過敏|紅腫|發炎|流鼻血|受傷|燙傷|跌傷|撞傷|誤服|中毒|唔肯食|唔舒服|病|痛|點算|點處理|點做好|怎麼辦|如何處理|fever|temperature|vomit|diarrh(?:oa|ea)|cough|rash|seizure|convulsion|sick|ill|burn|injury|what\s+(?:should\s+i|to)\s+do|how\s+(?:to|should\s+i)\s+(?:treat|handle|cool|care|help))/iu;
+const USER_DOSING_REQUEST_PATTERN = /(?:點(?:樣)?(?:食|餵|服|用)|食幾多|餵幾多|服幾多|飲幾多|用幾多|劑量|幾多\s*(?:ml|mg|mcg|ug|毫升|毫克|微克|粒|片|包|滴|匙)|藥(?:物|水|丸|粉)?|退燒藥|抗生素|撲熱息痛|布洛芬|阿士匹靈|\b(?:dosage|dose|medication|medicine)\b|\bhow\s+much.{0,20}\b(?:give|take|medicine|dosage|ml|mg)\b)/iu;
+const USER_CARE_HEALTH_TERM_PATTERN = new RegExp([
+  // Keep CJK terms separate from ASCII \b so word boundaries apply only to English tokens.
+  String.raw`發燒|發熱|高燒|體溫|發冷|發抖|抽筋|痙攣|嘔|吐|瀉|屙|咳|喘|疹|敏感|過敏|紅腫|發炎|流鼻血|受傷|燙傷|跌傷|撞傷|誤服|中毒|唔肯食|唔飲奶|唔舒服|生病|病(?:咗|左|了)?|痛|退燒|用藥|服藥|食藥|吃藥|餵藥|急救|中暑|脫水|黃疸|濕疹|禁食|禁飲|禁飲食`,
+  String.raw`\b(?:fever|fevers|feverish|temperatures?|vomit(?:ing|ed|s)?|diarrh(?:oa|ea)|cough(?:ing|s)?|rash(?:es)?|seizures?|convulsions?|sick|ill|illness(?:es)?|unwell|burns?|burned|injur(?:y|ies|ed)|poison(?:ing|ed)?|bleed(?:ing)?|chok(?:e|ing)|allerg(?:y|ies|ic)|dehydrat(?:ed|ion)|jaundice|eczema|colic|constipat(?:ed|ion)|symptoms?|pain|aspirin|ibuprofen|paracetamol|tylenol|antibiotics?)\b`,
+  String.raw`\bwon'?t\s+(?:eat|drink|feed)\b|\bnot\s+(?:eating|drinking|feeding)\b`,
+].join("|"), "iu");
+const USER_CARE_HEALTH_CONTEXT_PATTERN = /(?:餵奶|飲奶|吃奶|食奶|母乳|配方奶|固體食物|加固|蜂蜜|蜜糖|止咳|退燒|趴睡|俯睡|體溫|健康|飲食|睡眠|\b(?:breast\s*milk|formula|solid\s+foods?|honey|feeding|hydration|liquids?|fluids?|sleep(?:ing)?\s+(?:position|on\s+stomach)|treat(?:ment)?|cool(?:ing)?\s+(?:down|fever)|health|medical|illness|symptoms?)\b)/iu;
+const USER_GENERIC_CARE_HELP_PATTERN = /(?:點算|點處理|點做好|怎麼辦|如何處理|\bwhat\s+(?:should|can)\s+i\s+do\b|\bwhat\s+to\s+do\b|\bhow\s+(?:to|should\s+i)\s+(?:treat|handle|cool|care(?:\s+for)?|help)\b)/iu;
 const DRAFT_DOSING_FRAGMENT_PATTERN = /(?:每次|每日|每天|每晚|每餐|早晚|睡前|每\s*[\d一二三四五六七八九十兩半]+\s*(?:小時|個?鐘|次)|[\d一二三四五六七八九十兩半]+(?:\.\d+)?\s*(?:粒|片|包|滴|茶?匙|小?匙|大?匙|平?匙|湯?匙|藥匙|匙羹|顆|丸|支|劑|份|次|ml|mg|mcg|ug|毫升|毫克|微克|克))/iu;
-const NON_DIRECTIVE_RECORD_REPORT_PATTERN = /^(?:已確認記憶[：:]|家庭紀錄(?:顯示)?[：:]?|根據(?:家庭)?紀錄[，,：:]|memory\s+record[：:]|family\s+record(?:s)?\s+show)/iu;
+
+function userRequestHasCareContext(userRequest: string): boolean {
+  if (USER_DOSING_REQUEST_PATTERN.test(userRequest) || USER_CARE_HEALTH_TERM_PATTERN.test(userRequest)) {
+    return true;
+  }
+  return USER_GENERIC_CARE_HELP_PATTERN.test(userRequest) && USER_CARE_HEALTH_CONTEXT_PATTERN.test(userRequest);
+}
 
 function draftMatchesUserDosingContext(draft: ChatDeliveryDraft, text: string): boolean {
   if (!draft.userRequest) return false;
   if (USER_DOSING_REQUEST_PATTERN.test(draft.userRequest) && DRAFT_DOSING_FRAGMENT_PATTERN.test(text)) {
     return true;
   }
-  return USER_CARE_REQUEST_PATTERN.test(draft.userRequest) && draftHasTaskAnchoredCareObligation(draft, text);
+  return userRequestHasCareContext(draft.userRequest) && draftHasTaskAnchoredCareObligation(draft, text);
 }
 
 // Concrete dose amounts (timing/frequency + quantity + unit, give/take verb + quantity + unit, or bare medicinal/fractional
@@ -175,17 +196,18 @@ const DOSE_AMOUNT_SOURCE = [
 ].join("|");
 const CLINICAL_CARE_DIRECTIVE_PATTERN = new RegExp([
   String.raw`(?:停止|暫停|禁止|切勿|勿|不可|不要|唔好|唔可以|唔准|不准|戒|忌)\s*(?:飲水|喝水|補水|飲奶|喝奶|餵奶|進食|飲食|食嘢|吃東西|餵食|服藥|食藥|吃藥|用藥|飲|喝|食|吃|服|餵)`,
-  String.raw`(?:禁食|禁飲|禁水|停食|停水|停奶|停飲|停餵|戒口|戒奶)`,
+  String.raw`(?:禁食|禁飲|禁水|禁飲食|禁飲禁食|禁止飲食|禁止進食及飲水|保持禁食|保持禁飲|保持禁飲食|整晚禁食|通宵禁食|通宵禁飲食|停食|停水|停奶|停飲|停餵|戒口|戒奶)`,
   String.raw`(?:退燒|發燒|發熱|嘔吐|腹瀉|屙嘔|肚瀉|咳嗽|抽搐|出疹|生病|病發|病後|病前|服藥|食藥)(?:前|後|時|期間)?\s*(?:都)?(?:應該?|必須|需要|只可|只能|宜|忌|勿|不可|不要|唔好|切勿|停止|暫停|禁止|先)?\s*(?:停|禁|戒|避|減|加|補|飲|喝|食|吃|餵|服|敷|降溫|散熱|洗|吹)`,
   String.raw`(?:火酒|酒精|冰水|溫水|冷水|凍毛巾|冰袋|退熱貼|被子|厚被).{0,16}(?:抹身?|擦身?|敷|塗|搽|沖涼?|洗|降溫|散熱|蓋|捂)`,
   String.raw`(?:用|以|拎).{0,12}(?:抹身|敷額|散熱|降溫|沖涼)`,
   String.raw`(?:畀|俾|讓|叫|幫|替|給)(?:佢|他|她|BB|寶寶|嬰兒|幼兒|孩子|小朋友).{0,14}(?:趴(?:喺度|低|著|睡)?|俯睡|側睡|仰睡|抹身|降溫|散熱|蓋被|捂汗|會舒服)`,
   String.raw`(?:趴喺度|趴低|俯睡).{0,12}(?:瞓覺?|睡覺?|休息)`,
-  String.raw`\b(?:administer|withhold|discontinue|suspend|restrict|prohibit|forbid)\b.{0,45}\b(?:drops?|doses?|tablets?|pills?|capsules?|syrup|medication|medicine|drugs?|fluids?|liquids?|water|milk|formula|food|feeding|feeds?|solids?|antibiotics?)\b`,
+  String.raw`\b(?:administer|withhold|discontinue|suspend|restrict|prohibit|forbid)\b.{0,45}\b(?:drops?|doses?|tablets?|pills?|capsules?|syrup|medication|medicine|drugs?|oral\s+intake|all\s+intake|drinks?|fluids?|liquids?|water|hydration|milk|formula|food|feeding|feeds?|solids?|antibiotics?)\b`,
   String.raw`\b(?:apply|rub|sponge|wipe|cool|bathe|compress|wrap|cover|dress)\b.{0,50}\b(?:skin|forehead|body|alcohol|water|towel|cloth|fever|blanket|layers?|them|him|her|baby|child|infant|toddler)\b`,
   String.raw`\b(?:let|put|have|make|lay|place)\s+(?:them|him|her|the\s+(?:baby|child|infant|toddler)|your\s+(?:baby|child|infant|toddler))\s+(?:to\s+)?(?:sleep|lie|rest)\b.{0,35}\b(?:face\s+down|on\s+their\s+(?:stomach|tummy|belly|side|back)|prone)\b`,
   String.raw`\b(?:sleep|lie)\s+face\s+down\b|\brubbing\s+alcohol\b`,
-  String.raw`\b(?:stop|avoid|refrain\s+from|keep\s+nil\s+by\s+mouth|\bnpo\b|fast)\b.{0,45}\b(?:drinking|eating|feeding|feeds?|fluids?|liquids?|water|milk|formula|food|solids?|breast\s*milk|medication|medicine|fever)\b`,
+  String.raw`\bnil[\s-]+by[\s-]+mouth\b|\bnpo\b|\b(?:maintain|keep|remain|stay)\s+(?:fasting|nil[\s-]+by[\s-]+mouth)\b|\b(?:must|should|keep|maintain|remain|stay)\s+fast(?:ing)?(?:\s+(?:overnight|until\b))?\b`,
+  String.raw`\b(?:stop|avoid|refrain\s+from|keep\s+nil\s+by\s+mouth|no|without|deny|skip|omit|halt|fast)\b.{0,45}\b(?:drinking|eating|feeding|feeds?|drinks?|fluids?|liquids?|water|hydration|oral\s+intake|milk|formula|food|solids?|breast\s*milk|medication|medicine|fever)\b`,
   String.raw`\b(?:until|before|after)\b.{0,30}\b(?:fever|vomiting|diarrh(?:oa|ea)|symptoms?)\b.{0,30}\b(?:subsides?|stops?|ends?|resolves?|drinking|eating|fluids?|water|food|milk|feeding)\b`,
 ].join("|"), "iu");
 const CARE_ADVISORY_PATTERN = new RegExp(`${CARE_ADVISORY_BASE_PATTERN.source}|${DOSE_AMOUNT_SOURCE}|${CLINICAL_CARE_DIRECTIVE_PATTERN.source}`, "iu");
@@ -272,13 +294,37 @@ function receiptMatchesDomain(op: ChatDeliveryVerifiedOperation, text: string): 
 const GENERIC_OPERATION_TOKEN_STOPWORDS = new Set([
   "幫你", "為你", "已經", "已為", "記低", "記錄", "紀錄", "保存", "儲存", "設定", "建立", "更新", "更改", "修改",
   "刪除", "取消", "清空", "清除", "移除", "提醒", "待辦", "日程", "所有", "全部", "舊紀錄", "寶寶", "孩子",
-  "待確認", "候選", "提案", "目前", "尚未", "正式", "核對", "確認", "過敏資料", "好嗎", "張保仔", "食完",
+  "待確認", "候選", "提案", "目前", "尚未", "正式", "核對", "確認", "過敏資料", "好嗎", "張保仔", "食完", "時間", "操作",
   "saved", "deleted", "updated", "created", "reminder", "task", "record", "all", "your", "the", "and", "for",
 ]);
-const TIME_ANCHOR_PATTERN = /(?:今朝|今晚|今日|今天|今早|今午|今夜|聽日|明日|明天|尋日|昨日|昨天|早上|朝早|上午|中午|下午|下晝|晚上|夜晚|凌晨|半夜|清晨|傍晚|睡前|\b(?:morning|afternoon|evening|tonight|tomorrow|yesterday|midnight|noon)\b|\d{1,2}\s*(?:點|時)(?:\s*\d{1,2}\s*分|半)?|\d{1,2}:\d{2}|\b\d{1,2}\s*(?:am|pm)\b)/giu;
+const SINGLE_CHAR_OPERATION_STOPWORDS = new Set([
+  "的", "嘅", "係", "是", "在", "喺", "於", "有", "無", "冇", "沒", "了", "咗", "左", "著", "過", "呢", "個", "啲",
+  "和", "與", "及", "同", "或", "跟", "把", "將", "被", "讓", "給", "畀", "比", "向", "從", "到", "去", "來", "為",
+  "幫", "替", "他", "她", "它", "佢", "我", "你", "您", "喝", "飲", "吃", "食", "服", "餵", "加", "約", "已", "經",
+  "正", "都", "就", "也", "還", "仲", "再", "又", "另", "更", "很", "好", "完", "記", "低", "存", "留", "請", "後",
+]);
+const ISO_TIMESTAMP_PATTERN = /\b\d{4}-\d{2}-\d{2}t\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:z|[+-]\d{2}:?\d{2})?\b/giu;
+const DATE_ANCHOR_PATTERN = /\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b|\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*[日號]|\d{1,2}\s*月\s*\d{1,2}\s*[日號]/giu;
+const TIME_ANCHOR_PATTERN = /(?:(?:今朝|今晚|今日|今天|今早|今午|今夜|聽日|明日|明天|尋日|昨日|昨天)\s*)?(?:(?:早上|朝早|上午|中午|下午|下晝|晚上|夜晚|凌晨|半夜|清晨|傍晚|睡前)\s*)?(?:\d{1,2}\s*(?:點|時)(?:\s*(?:\d{1,2}\s*分|半))?|\d{1,2}:\d{2}(?:\s*(?:am|pm))?|\b\d{1,2}\s*(?:am|pm)\b)|(?:今朝|今晚|今日|今天|今早|今午|今夜|聽日|明日|明天|尋日|昨日|昨天|早上|朝早|上午|中午|下午|下晝|晚上|夜晚|凌晨|半夜|清晨|傍晚|睡前|\b(?:morning|afternoon|evening|tonight|tomorrow|yesterday|midnight|noon)\b)/giu;
+const DISJUNCTIVE_AMBIGUITY_PATTERN = /(?:\d+(?:\.\d+)?\s*(?:ml|mls|mg|mgs|mcg|ug|cc|iu|oz|g|毫升|毫克|微克|克|茶?匙|湯?匙|小?匙|大?匙|粒|片)\s*(?:或|定係?|還是|\bor\b)\s*\d+|\b(?:either|between)\b.{0,20}\b\d)/iu;
 
-function normalizeTimeAnchor(anchor: string): string {
-  return anchor.replace(/\s+/g, "").toLowerCase().replace(/^0(?=\d:)/, "");
+const CN_SMALL_NUM: Record<string, string> = {
+  半: "0.5", 一: "1", 二: "2", 兩: "2", 两: "2", 三: "3", 四: "4", 五: "5",
+  六: "6", 七: "7", 八: "8", 九: "9", 十: "10",
+};
+const OP_UNIT_SOURCE = String.raw`(?:ml|mls|mg|mgs|mcg|ug|cc|iu|oz|ounces?|grams?|g|tbsps?|tablespoons?|tsps?|teaspoons?|tablets?|pills?|capsules?|drops?|sachets?|packets?|pouches?|bottles?|cups?|bowls?|scoops?|毫升|毫克|微克|公克|克|安士|盎司|茶?匙|湯?匙|小?匙|大?匙|平?匙|藥匙|匙羹|粒|片|包|滴|支|瓶|罐|杯|碗|盒|顆|丸|劑|份|次|條|塊)`;
+const OP_QUANTITY_PATTERN = new RegExp(
+  String.raw`(?:(\d+(?:\.\d+)?)\s*(${OP_UNIT_SOURCE})(?![a-z])|([半一二兩两三四五六七八九十])\s*(粒|片|包|滴|茶?匙|湯?匙|小?匙|大?匙|平?匙|藥匙|匙羹|支|瓶|罐|杯|碗|盒|份|次|條|塊))`,
+  "giu",
+);
+
+interface ParsedTimeAnchor {
+  rawNormalized: string;
+  dayTag: "today" | "tomorrow" | "yesterday" | null;
+  periodTag: "am" | "noon" | "pm" | null;
+  hour24: number | null;
+  hour12: number | null;
+  minute: number | null;
 }
 
 function normalizeNumberToken(token: string): string {
@@ -286,45 +332,364 @@ function normalizeNumberToken(token: string): string {
   return Number.isFinite(num) ? String(num) : token;
 }
 
-function extractTargetTokens(value: string): { numbers: string[]; timeAnchors: string[]; terms: string[] } {
-  const numbers = (value.match(/\d+(?:\.\d+)?/g) ?? []).map(normalizeNumberToken);
-  const timeAnchors = [...new Set((value.match(TIME_ANCHOR_PATTERN) ?? []).map(normalizeTimeAnchor))];
-  const terms: string[] = [];
-  const stripped = value
-    .replace(/已(?:經|為你|幫你)?|為你|幫你|飲咗|喝咗|食咗|吃咗|服咗|飲了|喝了|食了|吃了|服了|加咗|準備好|更新|過敏資料|待確認|候選|提案|目前|尚未|正式|核對|確認|記低|記錄|紀錄|保存|儲存|設定|建立|更改|修改|刪除|取消|清空|清除|移除|所有|全部|寶寶|孩子|張保仔|待辦|提醒|日程|BB|[飲喝食吃]|\b(?:already|have|has|been|your|the|for)\b/giu, " ");
-  const segments = stripped.split(/(?:\s+(?:and|plus|with|as\s+well\s+as)\s+|同(?!(?:時|樣|一))|以及|仲有|及|和|與|、|,|，)+/iu);
-  for (const segment of segments) {
-    for (const seg of segment.match(/[\u4e00-\u9fff]{2,}/g) ?? []) {
-      if (seg.length === 2) {
-        if (!GENERIC_OPERATION_TOKEN_STOPWORDS.has(seg)) terms.push(seg);
-      } else {
-        for (let i = 0; i <= seg.length - 2; i++) {
-          const gram = seg.slice(i, i + 2);
-          if (!GENERIC_OPERATION_TOKEN_STOPWORDS.has(gram)) terms.push(gram);
+function canonicalOperationUnit(rawUnit: string): string {
+  const u = rawUnit.trim().toLowerCase();
+  if (u === "毫升" || u === "cc" || u === "mls" || u === "ml") return "ml";
+  if (u === "毫克" || u === "mgs" || u === "mg") return "mg";
+  if (u === "微克" || u === "ug" || u === "mcg") return "mcg";
+  if (u === "克" || u === "公克" || u === "grams" || u === "gram" || u === "g") return "g";
+  if (u === "茶匙" || u === "tsp" || u === "tsps" || u === "teaspoon" || u === "teaspoons") return "tsp";
+  if (u === "湯匙" || u === "tbsp" || u === "tbsps" || u === "tablespoon" || u === "tablespoons") return "tbsp";
+  if (u === "oz" || u === "ounces" || u === "ounce" || u === "安士" || u === "盎司") return "oz";
+  if (u === "粒" || u === "顆" || u === "tablet" || u === "tablets" || u === "pill" || u === "pills") return "粒";
+  if (u === "次" || u === "times" || u === "time") return "次";
+  return u.replace(/s$/i, "");
+}
+
+function normalizeTimeAnchor(anchor: string): string {
+  return anchor.replace(/\s+/g, "").toLowerCase().replace(/^0(?=\d:)/, "");
+}
+
+function parseTimeAnchorInfo(raw: string, timeZone = "Asia/Hong_Kong"): ParsedTimeAnchor {
+  const isoMatch = raw.match(/^\d{4}-\d{2}-\d{2}t(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?(z|[+-]\d{2}:?\d{2})?$/i);
+  if (isoMatch) {
+    let hour = Number(isoMatch[1]);
+    let minute = Number(isoMatch[2]);
+    if (isoMatch[3]) {
+      const parsedMs = Date.parse(raw);
+      if (Number.isFinite(parsedMs)) {
+        try {
+          const parts = new Intl.DateTimeFormat("en-US", {
+            timeZone: timeZone || "Asia/Hong_Kong",
+            hour12: false,
+            hour: "2-digit",
+            minute: "2-digit",
+          }).formatToParts(new Date(parsedMs));
+          const hh = Number(parts.find(p => p.type === "hour")?.value);
+          const mm = Number(parts.find(p => p.type === "minute")?.value);
+          if (Number.isFinite(hh) && Number.isFinite(mm)) {
+            hour = hh === 24 ? 0 : hh;
+            minute = mm;
+          }
+        } catch {
+          // Keep literal ISO clock fields if timezone formatting fails.
         }
       }
     }
-    for (const word of segment.toLowerCase().match(/[a-z0-9]{2,}/g) ?? []) {
-      if (!GENERIC_OPERATION_TOKEN_STOPWORDS.has(word)) terms.push(word);
+    const periodTag: ParsedTimeAnchor["periodTag"] = hour === 12 ? "noon" : hour < 12 ? "am" : "pm";
+    return {
+      rawNormalized: `${hour}:${String(minute).padStart(2, "0")}`,
+      dayTag: null,
+      periodTag,
+      hour24: hour,
+      hour12: hour % 12,
+      minute,
+    };
+  }
+
+  const normalized = normalizeTimeAnchor(raw);
+  const dayTag: ParsedTimeAnchor["dayTag"] =
+    /(?:今朝|今晚|今日|今天|今早|今午|今夜|\btonight\b|\btoday\b)/i.test(normalized) ? "today"
+    : /(?:聽日|明日|明天|\btomorrow\b)/i.test(normalized) ? "tomorrow"
+    : /(?:尋日|昨日|昨天|\byesterday\b)/i.test(normalized) ? "yesterday"
+    : null;
+  const periodTag: ParsedTimeAnchor["periodTag"] =
+    /(?:今朝|今早|早上|朝早|上午|凌晨|清晨|morning|am)/i.test(normalized) ? "am"
+    : /(?:中午|noon)/i.test(normalized) ? "noon"
+    : /(?:今晚|今夜|今午|下午|下晝|晚上|夜晚|半夜|傍晚|睡前|afternoon|evening|tonight|pm)/i.test(normalized) ? "pm"
+    : null;
+
+  let hour24: number | null = null;
+  let hour12: number | null = null;
+  let minute: number | null = null;
+  const clockMatch = normalized.match(/(\d{1,2})(?::(\d{2})|[點時](?:(\d{1,2})分|(半))?|(am|pm))/i);
+  if (clockMatch) {
+    const rawHour = Number(clockMatch[1]);
+    const rawMin = clockMatch[4] ? 30 : clockMatch[2] ? Number(clockMatch[2]) : clockMatch[3] ? Number(clockMatch[3]) : 0;
+    if (rawHour >= 0 && rawHour <= 23 && rawMin >= 0 && rawMin <= 59) {
+      minute = rawMin;
+      hour12 = rawHour % 12;
+      if (rawHour >= 13 || rawHour === 0) {
+        hour24 = rawHour;
+      } else if (periodTag === "am") {
+        hour24 = rawHour === 12 ? 0 : rawHour;
+      } else if (periodTag === "pm" || periodTag === "noon") {
+        hour24 = rawHour === 12 ? 12 : rawHour + 12;
+      }
     }
   }
-  return { numbers: [...new Set(numbers)], timeAnchors, terms: [...new Set(terms)] };
+  return { rawNormalized: normalized, dayTag, periodTag, hour24, hour12, minute };
 }
 
-function receiptMatchesClaimTarget(op: ChatDeliveryVerifiedOperation, text: string): boolean {
-  const summaryParts = [op.summary, op.eventTime].filter(Boolean).join(" ").trim();
-  if (!summaryParts) return true;
-  const claim = extractTargetTokens(text);
-  const receipt = extractTargetTokens(summaryParts);
-  if (claim.numbers.length > 0 && !claim.numbers.every(num => receipt.numbers.includes(num))) {
-    return false;
+function timeAnchorMatches(claimRaw: string, receiptRaw: string, timeZone?: string): boolean {
+  const claim = parseTimeAnchorInfo(claimRaw, timeZone);
+  const receipt = parseTimeAnchorInfo(receiptRaw, timeZone);
+  if (claim.rawNormalized === receipt.rawNormalized) return true;
+  if (claim.dayTag && receipt.dayTag && claim.dayTag !== receipt.dayTag) return false;
+  if (claim.periodTag && receipt.periodTag && claim.periodTag !== receipt.periodTag) return false;
+  if (claim.hour24 !== null && receipt.hour24 !== null) {
+    return claim.hour24 === receipt.hour24 && claim.minute === receipt.minute;
   }
-  if (claim.timeAnchors.length > 0 && !claim.timeAnchors.every(anchor => receipt.timeAnchors.includes(anchor))) {
-    return false;
+  if (claim.hour12 !== null && receipt.hour12 !== null) {
+    return claim.hour12 === receipt.hour12 && claim.minute === receipt.minute;
+  }
+  return false;
+}
+
+interface StructuredOperationItem {
+  quantity: { value: string; unit: string } | null;
+  timeAnchors: string[];
+  terms: string[];
+  rawClauseNormalized: string;
+}
+
+interface ParsedOperationData {
+  ambiguous: boolean;
+  items: StructuredOperationItem[];
+  allTimeAnchors: string[];
+  allStandaloneNumbers: string[];
+  hasContent: boolean;
+}
+
+function extractSegmentTerms(strippedWithoutQtyOrTime: string): { terms: string[]; rawClauseNormalized: string } {
+  const cleaned = strippedWithoutQtyOrTime
+    .replace(/已(?:經|為你|幫你)?|為你|幫你|飲咗|喝咗|食咗|吃咗|服咗|飲了|喝了|食了|吃了|服了|加咗|準備好|更新|過敏資料|待確認|候選|提案|目前|尚未|正式|核對|確認|記低|記錄|紀錄|保存|儲存|設定|建立|更改|修改|刪除|取消|清空|清除|移除|所有|全部|寶寶|孩子|張保仔|待辦|提醒|日程|BB|[飲喝食吃]|\b(?:already|have|has|been|your|the|for)\b/giu, " ");
+  const rawClauseNormalized = cleaned.replace(/[\s，,。！!？?;；：:"'「」『』（）()]+/gu, "").toLowerCase();
+  const terms: string[] = [];
+  for (const seg of cleaned.match(/[\u4e00-\u9fff]{2,}/g) ?? []) {
+    if (seg.length === 2) {
+      if (!GENERIC_OPERATION_TOKEN_STOPWORDS.has(seg)) terms.push(seg);
+    } else {
+      for (let i = 0; i <= seg.length - 2; i++) {
+        const gram = seg.slice(i, i + 2);
+        if (!GENERIC_OPERATION_TOKEN_STOPWORDS.has(gram)) terms.push(gram);
+      }
+    }
+  }
+  // Preserve 1-char CJK item nouns (e.g. 水, 奶, 粥, 蛋) that multi-char 2-grams drop.
+  const withoutMultiCharCjk = cleaned.replace(/[\u4e00-\u9fff]{2,}/g, " ");
+  for (const ch of withoutMultiCharCjk.match(/[\u4e00-\u9fff]/g) ?? []) {
+    if (!SINGLE_CHAR_OPERATION_STOPWORDS.has(ch)) terms.push(ch);
+  }
+  for (const word of cleaned.toLowerCase().match(/[a-z0-9]{2,}/g) ?? []) {
+    if (!GENERIC_OPERATION_TOKEN_STOPWORDS.has(word)) terms.push(word);
+  }
+  return { terms: [...new Set(terms)], rawClauseNormalized };
+}
+
+function stripTimeMarkersFromText(text: string): { textWithoutTimes: string; explicitTimes: string[] } {
+  const explicitTimes: string[] = [];
+  let masked = text.replace(ISO_TIMESTAMP_PATTERN, match => { explicitTimes.push(match); return " "; });
+  masked = masked.replace(DATE_ANCHOR_PATTERN, match => { explicitTimes.push(match); return " "; });
+  masked = masked.replace(TIME_ANCHOR_PATTERN, match => { explicitTimes.push(match); return " "; });
+  return { textWithoutTimes: masked, explicitTimes: [...new Set(explicitTimes)] };
+}
+
+function parseStructuredOperationData(
+  texts: string[],
+  defaultTimes: string[],
+  fallbackQuantity?: ChatDeliveryVerifiedOperation["quantity"],
+): ParsedOperationData {
+  const combinedText = texts.filter(Boolean).join(" ").trim();
+  const cleanedDefaults = defaultTimes.filter(Boolean);
+  if (!combinedText && cleanedDefaults.length === 0) {
+    return { ambiguous: false, items: [], allTimeAnchors: [], allStandaloneNumbers: [], hasContent: false };
+  }
+  if (DISJUNCTIVE_AMBIGUITY_PATTERN.test(combinedText)) {
+    return { ambiguous: true, items: [], allTimeAnchors: [], allStandaloneNumbers: [], hasContent: true };
+  }
+
+  const items: StructuredOperationItem[] = [];
+  const allTimeAnchors = new Set<string>(cleanedDefaults);
+  const allStandaloneNumbers = new Set<string>();
+  let ambiguous = false;
+
+  for (const block of texts) {
+    if (!block.trim()) continue;
+    const majorSentences = block.split(/[。！!；;\n]+/u).map(s => s.trim()).filter(Boolean);
+    for (const sentence of majorSentences) {
+      let inheritedTimes = [...cleanedDefaults];
+      const subSegments = sentence
+        .split(/(?:[，,、（）()]+|\s+(?:and|plus|with|as\s+well\s+as)\s+|(?:以及|仲有|還有|加上|加咗|加了|與|和)|同(?!(?:時|樣|一|學|意))|及(?!(?:時|早)))+/iu)
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      for (const seg of subSegments) {
+        const { textWithoutTimes, explicitTimes } = stripTimeMarkersFromText(seg);
+        if (explicitTimes.length > 0) {
+          for (const t of explicitTimes) allTimeAnchors.add(t);
+          inheritedTimes = explicitTimes;
+        }
+        const effectiveTimes = explicitTimes.length > 0 ? explicitTimes : inheritedTimes;
+
+        const quantities: { value: string; unit: string }[] = [];
+        const withoutQuantities = textWithoutTimes.replace(OP_QUANTITY_PATTERN, (_full, numVal, numUnit, cnVal, cnUnit) => {
+          const val = numVal ? normalizeNumberToken(numVal) : CN_SMALL_NUM[cnVal] ?? cnVal;
+          const unit = canonicalOperationUnit(numUnit ?? cnUnit);
+          quantities.push({ value: val, unit });
+          allStandaloneNumbers.add(val);
+          return " ";
+        });
+        for (const num of withoutQuantities.match(/\d+(?:\.\d+)?/g) ?? []) {
+          allStandaloneNumbers.add(normalizeNumberToken(num));
+        }
+
+        const { terms, rawClauseNormalized } = extractSegmentTerms(withoutQuantities);
+        if (quantities.length > 1) {
+          ambiguous = true;
+        }
+        if (quantities.length === 1) {
+          items.push({ quantity: quantities[0]!, timeAnchors: effectiveTimes, terms, rawClauseNormalized });
+        } else if (quantities.length === 0 && (terms.length > 0 || explicitTimes.length > 0)) {
+          items.push({ quantity: null, timeAnchors: effectiveTimes, terms, rawClauseNormalized });
+        }
+      }
+    }
+  }
+
+  const quantifiedItems = items.filter(item => item.quantity !== null);
+  if (quantifiedItems.length >= 2 && quantifiedItems.some(item => item.terms.length === 0)) {
+    ambiguous = true;
+  }
+
+  if (fallbackQuantity && quantifiedItems.length === 0) {
+    const fallbackVal = normalizeNumberToken(fallbackQuantity.rawValue);
+    const fallbackUnit = canonicalOperationUnit(fallbackQuantity.unit);
+    allStandaloneNumbers.add(fallbackVal);
+    if (items.length === 1 && items[0]!.quantity === null) {
+      items[0]!.quantity = { value: fallbackVal, unit: fallbackUnit };
+    } else if (items.length === 0) {
+      items.push({ quantity: { value: fallbackVal, unit: fallbackUnit }, timeAnchors: cleanedDefaults, terms: [], rawClauseNormalized: "" });
+    }
+  }
+
+  return {
+    ambiguous,
+    items,
+    allTimeAnchors: [...allTimeAnchors],
+    allStandaloneNumbers: [...allStandaloneNumbers],
+    hasContent: Boolean(combinedText || cleanedDefaults.length || fallbackQuantity),
+  };
+}
+
+interface VerifiedReceiptSlot {
+  item: StructuredOperationItem;
+  opFullNormalized: string;
+  opTimeAnchors: string[];
+  timeZone?: string;
+}
+
+function claimItemMatchesSlot(claim: StructuredOperationItem, slot: VerifiedReceiptSlot): boolean {
+  if (claim.quantity !== null) {
+    if (!slot.item.quantity) return false;
+    if (claim.quantity.value !== slot.item.quantity.value || claim.quantity.unit !== slot.item.quantity.unit) return false;
+  }
+  if (claim.timeAnchors.length > 0) {
+    const slotTimes = slot.item.timeAnchors.length > 0 ? slot.item.timeAnchors : slot.opTimeAnchors;
+    if (!slotTimes.length || !claim.timeAnchors.every(ct => slotTimes.some(rt => timeAnchorMatches(ct, rt, slot.timeZone)))) {
+      return false;
+    }
   }
   if (claim.terms.length === 0) return true;
-  const normalizedSummary = summaryParts.toLowerCase();
-  return claim.terms.every(term => normalizedSummary.includes(term.toLowerCase()));
+  const targetHaystack = slot.item.rawClauseNormalized || slot.opFullNormalized;
+  return claim.terms.every(term => slot.item.terms.includes(term) || targetHaystack.includes(term.toLowerCase()));
+}
+
+function canAssignAllQuantifiedItems(
+  claimQuantified: StructuredOperationItem[],
+  receiptQuantified: VerifiedReceiptSlot[],
+  index = 0,
+  used = new Set<number>(),
+): boolean {
+  if (index >= claimQuantified.length) return true;
+  const claim = claimQuantified[index]!;
+  for (let i = 0; i < receiptQuantified.length; i++) {
+    if (used.has(i)) continue;
+    if (!claimItemMatchesSlot(claim, receiptQuantified[i]!)) continue;
+    used.add(i);
+    if (canAssignAllQuantifiedItems(claimQuantified, receiptQuantified, index + 1, used)) return true;
+    used.delete(i);
+  }
+  return false;
+}
+
+function opVerificationTexts(op: ChatDeliveryVerifiedOperation): { texts: string[]; defaultTimes: string[] } {
+  const texts: string[] = [];
+  if (op.summary) texts.push(op.summary);
+  if (op.actionDetailText && (!op.summary || !op.summary.includes(op.actionDetailText))) {
+    texts.push(op.actionDetailText);
+  }
+  const defaultTimes = [op.eventTime, op.eventAt, op.dueAt].filter((t): t is string => Boolean(t));
+  return { texts, defaultTimes };
+}
+
+function matchOperationClaimToReceipts(ops: ChatDeliveryVerifiedOperation[], opText: string): { matched: boolean; quantifiedCount: number } {
+  const claim = parseStructuredOperationData([opText], []);
+  if (claim.ambiguous) return { matched: false, quantifiedCount: 0 };
+
+  const slots: VerifiedReceiptSlot[] = [];
+  const allReceiptTimes: string[] = [];
+  const allReceiptNumbers = new Set<string>();
+  const allReceiptZones: (string | undefined)[] = [];
+  let hasAnySummary = false;
+
+  for (const op of ops) {
+    const { texts, defaultTimes } = opVerificationTexts(op);
+    const parsedOp = parseStructuredOperationData(texts, defaultTimes, op.quantity ?? undefined);
+    if (parsedOp.ambiguous && (claim.items.some(i => i.quantity !== null) || claim.items.length > 1)) {
+      return { matched: false, quantifiedCount: 0 };
+    }
+    if (parsedOp.hasContent) hasAnySummary = true;
+    for (const t of parsedOp.allTimeAnchors) allReceiptTimes.push(t);
+    for (const n of parsedOp.allStandaloneNumbers) allReceiptNumbers.add(n);
+    allReceiptZones.push(op.eventTimeZone);
+    const opFullNormalized = texts.join(" ").replace(/[\s，,。！!？?;；：:"'「」『』（）()]+/gu, "").toLowerCase();
+    for (const item of parsedOp.items) {
+      slots.push({
+        item,
+        opFullNormalized,
+        opTimeAnchors: parsedOp.allTimeAnchors,
+        timeZone: op.eventTimeZone,
+      });
+    }
+  }
+
+  const claimQuantified = claim.items.filter(item => item.quantity !== null);
+  const claimTerms = claim.items.flatMap(item => item.terms);
+  if (!hasAnySummary) {
+    const hasSpecifics = claimQuantified.length > 0 || claim.allStandaloneNumbers.length > 0
+      || claim.allTimeAnchors.length > 0 || claimTerms.length > 0;
+    return { matched: !hasSpecifics, quantifiedCount: claimQuantified.length };
+  }
+
+  if (ops.some(op => op.quantityGroundingStatus === "removed") && claimQuantified.length > 0) {
+    return { matched: false, quantifiedCount: claimQuantified.length };
+  }
+
+  if (claim.allStandaloneNumbers.length > 0 && !claim.allStandaloneNumbers.every(num => allReceiptNumbers.has(num))) {
+    return { matched: false, quantifiedCount: claimQuantified.length };
+  }
+
+  if (claim.allTimeAnchors.length > 0 && !claim.allTimeAnchors.every(ct =>
+    allReceiptTimes.some((rt, idx) => timeAnchorMatches(ct, rt, allReceiptZones[0] ?? "Asia/Hong_Kong"))
+  )) {
+    return { matched: false, quantifiedCount: claimQuantified.length };
+  }
+
+  const receiptQuantified = slots.filter(slot => slot.item.quantity !== null);
+  if (claimQuantified.length > 0) {
+    if (receiptQuantified.length < claimQuantified.length) return { matched: false, quantifiedCount: claimQuantified.length };
+    if (!canAssignAllQuantifiedItems(claimQuantified, receiptQuantified)) return { matched: false, quantifiedCount: claimQuantified.length };
+  }
+
+  const claimNonQuantified = claim.items.filter(item => item.quantity === null && (item.terms.length > 0 || item.timeAnchors.length > 0));
+  for (const item of claimNonQuantified) {
+    if (!slots.some(slot => claimItemMatchesSlot(item, slot))) {
+      return { matched: false, quantifiedCount: claimQuantified.length };
+    }
+  }
+
+  return { matched: true, quantifiedCount: claimQuantified.length };
 }
 
 function verifiedOperationsCorrespond(draft: ChatDeliveryDraft, text: string): boolean {
@@ -358,10 +723,7 @@ function verifiedOperationsCorrespond(draft: ChatDeliveryDraft, text: string): b
     return receiptMatchesDomain(op, opText);
   });
   if (matchingOps.length === 0) return false;
-  if (matchingOps.some(op => receiptMatchesClaimTarget(op, opText))) return true;
-  const unionSummary = matchingOps.flatMap(op => [op.summary, op.eventTime]).filter(Boolean).join(" ").trim();
-  if (!unionSummary || matchingOps.some(op => ![op.summary, op.eventTime].filter(Boolean).length)) return false;
-  return receiptMatchesClaimTarget({ ...matchingOps[0]!, summary: unionSummary, eventTime: undefined }, opText);
+  return matchOperationClaimToReceipts(matchingOps, opText).matched;
 }
 
 function draftClaimsUnverifiedOperation(draft: ChatDeliveryDraft, text: string): boolean {
@@ -450,16 +812,120 @@ const SCOPE_REFUSAL_OR_LIMITATION_PATTERN = /(?:超出|不屬(?:於)?|並非|不
 const UNSAFE_REFUSAL_TOPIC_PATTERN = /趴低|趴喺度|趴睡|俯睡|瞓覺|加鹽|蜜糖|蜂蜜|服藥|食藥|劑量|退燒藥|抗生素|火酒|酒精抹|抹身降溫|put\s+(?:your\s+)?(?:child|baby|infant).{0,40}(?:sleep|stomach)|sleep\s+face\s+down|rubbing\s+alcohol|honey|salt|dosage|medication|ibuprofen|paracetamol|aspirin/iu;
 const UNSAFE_OPERATION_CLAIM_PATTERN = /趴低|趴喺度|趴睡|俯睡|sleep\s+face\s+down|put\s+(?:your\s+)?(?:child|baby|infant).{0,40}stomach/iu;
 
+const PRIVATE_BOILERPLATE_STRIP_PATTERN = /(?:已確認記憶[：:]?|家庭紀錄(?:顯示)?[：:]?|根據(?:家庭|私人)?紀錄[，,：:]?|私人(?:來源|紀錄|交代)(?:顯示)?[：:]?|你曾交代[：:]?|memory\s+record[：:]?|family\s+records?(?:\s+show)?[：:]?|according\s+to\s+family\s+records?[，,：:]?|BB\b|寶寶|嬰兒|幼兒|孩子|小朋友|\b(?:the|this|my|your)\b|\b(?:baby|infant|child|toddler|according|shows?|records?|notes?)\b)/giu;
+const PRIVATE_NEGATION_PATTERN = /(?:並不|並無|不是|非|不會|不再|未有|沒有|無|冇|唔(?:會|好|係|喜歡|鍾意|愛吃|爱吃)?|不要|別|勿|\bnot\b|\bnever\b|\bno\s+(?:allergy|allergies|longer)\b)/iu;
+const PRIVATE_EN_STOPWORDS = new Set([
+  "the", "and", "for", "that", "with", "this", "are", "was", "were", "has", "have", "had", "been", "from", "into",
+  "show", "shows", "record", "records", "family", "memory", "note", "notes", "baby", "child", "infant", "toddler",
+]);
+
+function readablePrivateSourceText(source: ChatDeliverySource): string {
+  const raw = source.excerpt.trim();
+  if (raw.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const details = parsed.details && typeof parsed.details === "object" ? parsed.details as Record<string, unknown> : null;
+      const eventTime = details?.eventTime && typeof details.eventTime === "object"
+        ? (details.eventTime as Record<string, unknown>).rawText : undefined;
+      const parts = [parsed.title, parsed.text, eventTime].filter((v): v is string => typeof v === "string" && v.trim().length > 0);
+      if (parts.length > 0) return parts.join("\n");
+    } catch {
+      // Treat malformed JSON excerpt as literal string.
+    }
+  }
+  return raw;
+}
+
+function normalizePrivateBody(text: string): string {
+  return text.normalize("NFKC")
+    .replace(PRIVATE_BOILERPLATE_STRIP_PATTERN, " ")
+    .replace(/[\s，,。！!？?;；：:"'「」『』（）()]+/gu, "")
+    .toLowerCase();
+}
+
+function privateSourceSupportsParagraph(source: ChatDeliverySource, paragraphText: string): boolean {
+  if (source.classification !== "private" || !source.excerpt.trim()) return false;
+  if (source.citationId.startsWith("tasks:") || source.citationId.startsWith("care:")) {
+    return !CARE_ADVISORY_PATTERN.test(paragraphText) && !MEDICAL_CLAIM_PATTERN.test(paragraphText);
+  }
+  const sourceText = readablePrivateSourceText(source);
+  if (!sourceText) return false;
+  if (memoryFactReferencedByParagraph(sourceText, paragraphText)) return true;
+
+  const strippedClaim = paragraphText.normalize("NFKC").replace(PRIVATE_BOILERPLATE_STRIP_PATTERN, " ");
+  const strippedSource = sourceText.normalize("NFKC").replace(PRIVATE_BOILERPLATE_STRIP_PATTERN, " ");
+  if (PRIVATE_NEGATION_PATTERN.test(strippedClaim) !== PRIVATE_NEGATION_PATTERN.test(strippedSource)) {
+    return false;
+  }
+
+  const normalizedClaim = normalizePrivateBody(paragraphText);
+  const normalizedSource = normalizePrivateBody(sourceText);
+  if (!normalizedClaim || !normalizedSource) return false;
+  if (normalizedClaim.length >= 4 && normalizedSource.includes(normalizedClaim)) return true;
+
+  const claimTerms: string[] = [];
+  for (const seg of strippedClaim.match(/[\u4e00-\u9fff]{2,}/g) ?? []) {
+    if (seg.length === 2) claimTerms.push(seg.toLowerCase());
+    else for (let i = 0; i <= seg.length - 2; i++) claimTerms.push(seg.slice(i, i + 2).toLowerCase());
+  }
+  for (const word of strippedClaim.toLowerCase().match(/[a-z0-9]{3,}/g) ?? []) {
+    if (!PRIVATE_EN_STOPWORDS.has(word)) claimTerms.push(word);
+  }
+  return claimTerms.length > 0 && claimTerms.every(term => normalizedSource.includes(term));
+}
+
+function privateSourcesSupportDraft(draft: ChatDeliveryDraft): boolean {
+  const privateSources = draft.sources.filter(source => source.classification === "private");
+  if (privateSources.length === 0) return false;
+  const sourceById = new Map(privateSources.map(source => [source.citationId, source]));
+  const recordParagraphs = draft.paragraphs.filter(paragraph => {
+    const kind = paragraph.kind ?? draft.kind;
+    return kind === "record_restatement" || kind === "private_reference";
+  });
+  const targets = recordParagraphs.length > 0 ? recordParagraphs : draft.paragraphs;
+  return targets.every(paragraph => {
+    const text = paragraph.text.trim();
+    if (!text) return true;
+    const citedPublic = paragraph.citationIds.some(id => draft.sources.some(s => s.citationId === id && s.classification !== "private"));
+    if (citedPublic) return true;
+    const candidates = paragraph.citationIds.length > 0
+      ? paragraph.citationIds.map(id => sourceById.get(id)).filter((s): s is ChatDeliverySource => Boolean(s))
+      : privateSources;
+    if (candidates.length === 0) return false;
+    return candidates.some(source => privateSourceSupportsParagraph(source, text));
+  });
+}
+
+function draftHasClinicalOrDirectiveCareClaim(draft: ChatDeliveryDraft): boolean {
+  if (isPureVerifiedOperationSummary(draft)) return false;
+  const text = joinedDraftText(draft);
+  if (!text || isPureClarifyingQuestion(text)) return false;
+  if (CARE_ADVISORY_PATTERN.test(text)) return true;
+  const kinds = draft.paragraphs.map(paragraph => paragraph.kind ?? draft.kind);
+  // Observable descriptions of Server-bound photos/audio (e.g. "照片顯示傷口已經癒合？") are verified
+  // against the media original itself unless they cross into advisory/directive care wording.
+  if (kinds.every(kind => kind === "private_reference") && Boolean(draft.images?.length || draft.voice)) {
+    return false;
+  }
+  return MEDICAL_CLAIM_PATTERN.test(text);
+}
+
 function draftHasTaskAnchoredCareObligation(draft: ChatDeliveryDraft, text: string): boolean {
   if (isPureClarifyingQuestion(text) || isPureGreetingOrSmallTalk(text)
     || isPureScopeRefusalOrLimitation(draft) || isPureVerifiedOperationSummary(draft)) {
     return false;
   }
+  if (CARE_ADVISORY_PATTERN.test(text) || MEDICAL_CLAIM_PATTERN.test(text)) {
+    return true;
+  }
   const kinds = draft.paragraphs.map(paragraph => paragraph.kind ?? draft.kind);
-  const nonDirectiveRecord = !CARE_ADVISORY_PATTERN.test(text)
-    && (NON_DIRECTIVE_RECORD_REPORT_PATTERN.test(text)
-      || (draft.sources.length > 0 && kinds.every(k => k === "record_restatement" || k === "private_reference")));
-  return !nonDirectiveRecord;
+  if (!kinds.length || !kinds.every(k => k === "record_restatement" || k === "private_reference")) {
+    return true;
+  }
+  if (draft.sources.some(source => source.classification !== "private")) {
+    return false;
+  }
+  return !privateSourcesSupportDraft(draft);
 }
 
 /** Pure out-of-scope refusal or knowledge-limitation statement containing no advice or operation claims. */
@@ -476,18 +942,16 @@ export function isPureScopeRefusalOrLimitation(draft: ChatDeliveryDraft): boolea
   return SCOPE_REFUSAL_OR_LIMITATION_PATTERN.test(text);
 }
 
-const VERIFIED_SUMMARY_BLOCKED_ADVICE_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?|不要|不可|唔好|唔可以|唔准|不准|藥|劑量?|粒|片|丸|滴|蜜糖|蜂蜜|止咳|退燒|抗生素|趴低|瞓覺時|停止|暫停|禁止|切勿|禁食|禁飲|停食|停水|should(?:\s+not)?|must(?:\s+not)?|recommend(?:ed|s)?|don'?t|do\s+not|avoid|medication|medicine|drugs?|tablet|pill|capsule|drops?|syrup|administer|withhold|discontinue|stop|forbid|prohibit|aspirin|ibuprofen|paracetamol|honey|measles|wound/iu;
+const VERIFIED_SUMMARY_BLOCKED_ADVICE_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?|不要|不可|唔好|唔可以|唔准|不准|藥|劑量?|粒|片|丸|滴|蜜糖|蜂蜜|止咳|退燒|抗生素|趴低|瞓覺時|停止|暫停|禁止|切勿|禁食|禁飲|禁飲食|禁飲禁食|停食|停水|should(?:\s+not)?|must(?:\s+not)?|recommend(?:ed|s)?|don'?t|do\s+not|avoid|medication|medicine|drugs?|tablet|pill|capsule|drops?|syrup|administer|withhold|discontinue|stop|forbid|prohibit|nil[\s-]+by[\s-]+mouth|\bnpo\b|fasting|aspirin|ibuprofen|paracetamol|honey|measles|wound/iu;
 
 function recordReceiptRestatesAllQuantities(draft: ChatDeliveryDraft, text: string): boolean {
   if (VERIFIED_SUMMARY_BLOCKED_ADVICE_PATTERN.test(text) || CLINICAL_CARE_DIRECTIVE_PATTERN.test(text)) return false;
-  const executedRecordSummaries = (draft.verifiedOperations ?? [])
+  const executedRecordOps = (draft.verifiedOperations ?? [])
     .filter(op => op.kind === "action_receipt" && !NON_EXECUTED_RECEIPT_STATE.test(op.state)
-      && /^(?:save|revise)_ordinary_record$/i.test(op.tool) && Boolean(op.summary))
-    .map(op => op.summary!);
-  if (!executedRecordSummaries.length) return false;
-  const joinedSummary = executedRecordSummaries.join("\n").toLowerCase();
-  const amounts = text.match(/\d+(?:\.\d+)?\s*(?:ml|mg|mcg|ug|cc|iu|毫升|毫克|克|茶?匙|湯?匙|小?匙|大?匙)/giu) ?? [];
-  return amounts.length > 0 && amounts.every(item => joinedSummary.includes(item.replace(/\s+/g, "").toLowerCase()) || joinedSummary.includes(item.toLowerCase()));
+      && /^(?:save|revise)_ordinary_record$/i.test(op.tool));
+  if (!executedRecordOps.length) return false;
+  const result = matchOperationClaimToReceipts(executedRecordOps, text);
+  return result.matched && result.quantifiedCount > 0;
 }
 
 /** Citation-free summary backed by verified Server receipts/pending slots from this run, with zero advice claims. */
@@ -510,8 +974,25 @@ export function chatDeliveryPassNeedsSources(draft: ChatDeliveryDraft, obligatio
   const cited = new Set(draft.paragraphs.flatMap(paragraph => paragraph.citationIds));
   if (obligation?.citationRequired && !draft.sources.some(source => cited.has(source.citationId)
     && (!obligation.officialEvidenceRequired || source.classification === "official_guidance"))) return true;
+
+  // Clinical/directive/medical advice cannot be backed solely by private records or parent notes.
+  if (draftHasClinicalOrDirectiveCareClaim(draft)) {
+    const hasOfficial = draft.sources.some(source => source.classification === "official_guidance"
+      && (cited.size === 0 || cited.has(source.citationId)));
+    if (!hasOfficial) return true;
+  }
+
   if (obligation?.evidenceRequired && draft.sources.length === 0) return true;
-  if (draft.sources.length > 0) return false;
+
+  const hasPublicSource = draft.sources.some(source => source.classification !== "private");
+  if (draft.sources.length > 0) {
+    if (!hasPublicSource && !isPureScopeRefusalOrLimitation(draft) && !isPureVerifiedOperationSummary(draft)
+      && (obligation?.evidenceRequired || cited.size > 0 || (draft.userRequest !== undefined && userRequestHasCareContext(draft.userRequest)))) {
+      return !privateSourcesSupportDraft(draft);
+    }
+    return false;
+  }
+
   const kinds = draft.paragraphs.map(paragraph => paragraph.kind ?? draft.kind);
   if (kinds.some(kind => kind === "caregiving" || kind === "safety_help")) return true;
   if (kinds.includes("private_reference")) return !(draft.images?.length || draft.voice);
@@ -530,7 +1011,10 @@ export function requiresChatDeliveryReview(draft: ChatDeliveryDraft, obligation?
   const requireReview = (reason: Parameters<ChatDeliveryReviewObligation["require"]>[0] = "review") => { obligation?.require(reason); return true; };
   const kinds = draft.paragraphs.map(paragraph => paragraph.kind ?? draft.kind);
   const official = kinds.some(kind => kind === "caregiving" || kind === "safety_help");
-  if (draft.paragraphs.some(paragraph => paragraph.citationIds.length > 0)) return requireReview(official ? "official_citation" : "citation");
+  const clinical = draftHasClinicalOrDirectiveCareClaim(draft);
+  if (draft.paragraphs.some(paragraph => paragraph.citationIds.length > 0)) {
+    return requireReview(official || clinical ? "official_citation" : "citation");
+  }
   const text = joinedDraftText(draft);
   if (SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS.has(text)) return false;
   // Model-written receipt-like wording is not proof of a saved operation.
