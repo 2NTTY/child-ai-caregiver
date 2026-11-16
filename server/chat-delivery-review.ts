@@ -137,13 +137,18 @@ const CARE_ADVISORY_BASE_PATTERN = /應立即|應該|必須|建議(?:你|您|家
 // caught by the blanket fallback. They never grant authority or clear a task obligation.
 const MEDICAL_CLAIM_BASE_PATTERN = /用藥|藥丸|藥水|餵藥|食藥|吃藥|服藥|劑量|\b\d+(?:\.\d+)?\s*(?:ml|mg|毫升|毫克)\b|每次(?:\s*(?:\d|半|[一二三四五六七八九十兩幾]+)\s*(?:粒|片|包|滴|茶?匙|湯?匙|藥匙|顆|丸|支|劑|份|毫升|毫克|ml|mg))|阿士匹靈|撲熱息痛|布洛芬|麻疹|傷口|癒合|aspirin|ibuprofen|paracetamol|measles|wound|heal(?:ed|ing)/iu;
 const ORIGINAL_EVIDENCE_CLAIM_PATTERN = /(?:照片|相片|圖片|影像|錄音|錄影).{0,40}(?:顯示|證明|同意|確認)|(?:photo|image|recording|audio).{0,60}(?:shows?|proves?|proof|consent|agreed)/iu;
-const OPERATION_CLAIM_PATTERN = /(?:已(?:經)?|經已|幫(?:你|您)).{0,12}(?:完成|保存|儲存|刪(?:除|晒|咗)?|修改|更改|改好|改返|改咗?|換(?:成|做|好)?|轉(?:成|做|好)?|更新|發送|送出|安排|記(?:住|低|錄|咗)?|紀錄|存好|清除|清空|取消|移除|重設|設定|設置|標記|處理|辦妥|弄好|搞掂)|(?:保存|儲存|存好|刪(?:除|晒)?|修改|更改|改好|改|換(?:成|做|好)|轉(?:成|做|好)|更新|發送|送出|安排|記(?:住|低|錄)?|紀錄|取消|移除|清除|清空|重設|復原|設定|設好|標記|完成|處理|辦妥|弄|搞掂)(?:好|妥|完|晒|曬|咗|左|了|喇|啦|嘞|囉|成功)|(?<!未|唔|沒有|沒|無)(?:搞掂|辦妥|處理好|已經OK|現為|目前為|現已|已變成|已轉為|已經一筆不留|一筆不留|全部清空|全數刪除)|刪晒|(?:already|successfully|I have|I've).{0,30}(?:saved|deleted|updated|sent|scheduled|changed|cleared|removed|reset|completed)|(?:saved|deleted|updated|sent|scheduled|cleared|removed|reset|completed)\b.{0,20}(?:successfully|already)|\ball\s+(?:done|set|saved|deleted|updated|cleared)\b|\b(?:has|have|is|are)\s+now\s+(?:saved|deleted|updated|changed|cleared|removed|gone|set\s+to)|\bno\s+longer\s+(?:exist|exists|there)\b/iu;
+const OPERATION_CLAIM_PATTERN = /(?:已(?:經)?|經已|幫(?:你|您)).{0,12}(?:完成|保存|儲存|刪(?:除|晒|咗)?|修改|更改|改好|改返|改咗?|換(?:成|做|好)?|轉(?:成|做|好)?|更新|發送|送出|安排|記(?:住|低|錄|咗)?|紀錄|存好|清除|清空|取消|移除|重設|設定|設置|標記|處理|辦妥|弄好|搞掂)|(?:保存|儲存|存好|刪(?:除|晒)?|修改|更改|改好|改|換(?:成|做|好)|轉(?:成|做|好)|更新|發送|送出|安排|記(?:住|低|錄)?|紀錄|取消|移除|清除|清空|重設|復原|設定|設好|標記|完成|處理|辦妥|弄|搞掂)(?:好|妥|完|晒|曬|咗|左|了|喇|啦|嘞|囉|成功)|(?<!未|唔|沒有|沒|無)(?:搞掂|辦妥|處理好|已經OK|現為|目前為|現已|已變成|已轉為|已經一筆不留|一筆不留|全部清空|全數刪除)|刪晒|(?:already|successfully|I have|I've|I\b|we have|we've).{0,30}(?:saved|deleted|updated|sent|scheduled|changed|cleared|removed|reset|completed|set\b)|(?:saved|deleted|updated|sent|scheduled|cleared|removed|reset|completed)\b.{0,20}(?:successfully|already)|\ball\s+(?:done|set|saved|deleted|updated|cleared)\b|\b(?:has|have|is|are)\s+now\s+(?:saved|deleted|updated|changed|cleared|removed|gone|set\s+to)|\bno\s+longer\s+(?:exist|exists|there)\b/iu;
 const USER_DOSING_REQUEST_PATTERN = /(?:點(?:樣)?(?:食|餵|服|用)|食幾多|餵幾多|服幾多|飲幾多|用幾多|劑量|幾多\s*(?:ml|mg|mcg|ug|毫升|毫克|微克|粒|片|包|滴|匙)|藥(?:物|水|丸|粉)?|退燒藥|抗生素|撲熱息痛|布洛芬|阿士匹靈|dosage|dose|medication|how\s+much.{0,20}(?:give|take|medicine))/iu;
+const USER_CARE_REQUEST_PATTERN = /(?:發燒|發熱|高燒|體溫|發冷|發抖|抽筋|痙攣|嘔|吐|瀉|屙|咳|喘|疹|敏感|過敏|紅腫|發炎|流鼻血|受傷|燙傷|跌傷|撞傷|誤服|中毒|唔肯食|唔舒服|病|痛|點算|點處理|點做好|怎麼辦|如何處理|fever|temperature|vomit|diarrh(?:oa|ea)|cough|rash|seizure|convulsion|sick|ill|burn|injury|what\s+(?:should\s+i|to)\s+do|how\s+(?:to|should\s+i)\s+(?:treat|handle|cool|care|help))/iu;
 const DRAFT_DOSING_FRAGMENT_PATTERN = /(?:每次|每日|每天|每晚|每餐|早晚|睡前|每\s*[\d一二三四五六七八九十兩半]+\s*(?:小時|個?鐘|次)|[\d一二三四五六七八九十兩半]+(?:\.\d+)?\s*(?:粒|片|包|滴|茶?匙|小?匙|大?匙|平?匙|湯?匙|藥匙|匙羹|顆|丸|支|劑|份|次|ml|mg|mcg|ug|毫升|毫克|微克|克))/iu;
+const NON_DIRECTIVE_RECORD_REPORT_PATTERN = /^(?:已確認記憶[：:]|家庭紀錄(?:顯示)?[：:]?|根據(?:家庭)?紀錄[，,：:]|memory\s+record[：:]|family\s+record(?:s)?\s+show)/iu;
 
 function draftMatchesUserDosingContext(draft: ChatDeliveryDraft, text: string): boolean {
-  return Boolean(draft.userRequest && USER_DOSING_REQUEST_PATTERN.test(draft.userRequest)
-    && DRAFT_DOSING_FRAGMENT_PATTERN.test(text));
+  if (!draft.userRequest) return false;
+  if (USER_DOSING_REQUEST_PATTERN.test(draft.userRequest) && DRAFT_DOSING_FRAGMENT_PATTERN.test(text)) {
+    return true;
+  }
+  return USER_CARE_REQUEST_PATTERN.test(draft.userRequest) && draftHasTaskAnchoredCareObligation(draft, text);
 }
 
 // Concrete dose amounts (timing/frequency + quantity + unit, give/take verb + quantity + unit, or bare medicinal/fractional
@@ -172,7 +177,14 @@ const CLINICAL_CARE_DIRECTIVE_PATTERN = new RegExp([
   String.raw`(?:停止|暫停|禁止|切勿|勿|不可|不要|唔好|唔可以|唔准|不准|戒|忌)\s*(?:飲水|喝水|補水|飲奶|喝奶|餵奶|進食|飲食|食嘢|吃東西|餵食|服藥|食藥|吃藥|用藥|飲|喝|食|吃|服|餵)`,
   String.raw`(?:禁食|禁飲|禁水|停食|停水|停奶|停飲|停餵|戒口|戒奶)`,
   String.raw`(?:退燒|發燒|發熱|嘔吐|腹瀉|屙嘔|肚瀉|咳嗽|抽搐|出疹|生病|病發|病後|病前|服藥|食藥)(?:前|後|時|期間)?\s*(?:都)?(?:應該?|必須|需要|只可|只能|宜|忌|勿|不可|不要|唔好|切勿|停止|暫停|禁止|先)?\s*(?:停|禁|戒|避|減|加|補|飲|喝|食|吃|餵|服|敷|降溫|散熱|洗|吹)`,
+  String.raw`(?:火酒|酒精|冰水|溫水|冷水|凍毛巾|冰袋|退熱貼|被子|厚被).{0,16}(?:抹身?|擦身?|敷|塗|搽|沖涼?|洗|降溫|散熱|蓋|捂)`,
+  String.raw`(?:用|以|拎).{0,12}(?:抹身|敷額|散熱|降溫|沖涼)`,
+  String.raw`(?:畀|俾|讓|叫|幫|替|給)(?:佢|他|她|BB|寶寶|嬰兒|幼兒|孩子|小朋友).{0,14}(?:趴(?:喺度|低|著|睡)?|俯睡|側睡|仰睡|抹身|降溫|散熱|蓋被|捂汗|會舒服)`,
+  String.raw`(?:趴喺度|趴低|俯睡).{0,12}(?:瞓覺?|睡覺?|休息)`,
   String.raw`\b(?:administer|withhold|discontinue|suspend|restrict|prohibit|forbid)\b.{0,45}\b(?:drops?|doses?|tablets?|pills?|capsules?|syrup|medication|medicine|drugs?|fluids?|liquids?|water|milk|formula|food|feeding|feeds?|solids?|antibiotics?)\b`,
+  String.raw`\b(?:apply|rub|sponge|wipe|cool|bathe|compress|wrap|cover|dress)\b.{0,50}\b(?:skin|forehead|body|alcohol|water|towel|cloth|fever|blanket|layers?|them|him|her|baby|child|infant|toddler)\b`,
+  String.raw`\b(?:let|put|have|make|lay|place)\s+(?:them|him|her|the\s+(?:baby|child|infant|toddler)|your\s+(?:baby|child|infant|toddler))\s+(?:to\s+)?(?:sleep|lie|rest)\b.{0,35}\b(?:face\s+down|on\s+their\s+(?:stomach|tummy|belly|side|back)|prone)\b`,
+  String.raw`\b(?:sleep|lie)\s+face\s+down\b|\brubbing\s+alcohol\b`,
   String.raw`\b(?:stop|avoid|refrain\s+from|keep\s+nil\s+by\s+mouth|\bnpo\b|fast)\b.{0,45}\b(?:drinking|eating|feeding|feeds?|fluids?|liquids?|water|milk|formula|food|solids?|breast\s*milk|medication|medicine|fever)\b`,
   String.raw`\b(?:until|before|after)\b.{0,30}\b(?:fever|vomiting|diarrh(?:oa|ea)|symptoms?)\b.{0,30}\b(?:subsides?|stops?|ends?|resolves?|drinking|eating|fluids?|water|food|milk|feeding)\b`,
 ].join("|"), "iu");
@@ -183,36 +195,39 @@ const MEDICAL_CLAIM_PATTERN = new RegExp(`${MEDICAL_CLAIM_BASE_PATTERN.source}|$
 // sentence/state assertion (even followed by a trailing question like "仲有其他事？") is never exempt without receipts.
 const USER_OPERATION_REQUEST_PATTERN = /更改|修改|改(?:返|好|過|成|做)|幫我改|刪(?:除|走|咗)?|清(?:空|除|走)|取消|移除|重設|設定|設置|新增|加(?:入|返)|記(?:低|住|錄)|儲存|保存|更新|安排|提醒我|發送|送出|標記|\b(?:update|delete|remove|cancel|save|schedule|change|reset|edit)\b/iu;
 const OPERATION_QUESTION_SOFTENER = /(?:好嗎|對嗎|可以嗎|嗎|係咪|是不是|ok(?:ay)?)[？?]\s*$/iu;
-const OPERATION_STATE_ASSERTION = /(?:現為|目前為|現時為|現已|而家係|依家係|家陣係|現在是|目前是|現在為|而家為|仍為|依然係|仍是|仲係|已變成|已轉為|一筆不留|不存在|無任何|is\s+(?:now|currently)|has\s+been\s+(?:saved|deleted|updated|changed|cleared|removed|cancelled|reset)|are\s+(?:now|currently|gone))/iu;
+const OPERATION_STATE_ASSERTION = /(?:現為|目前為|現時為|現已|而家係|依家係|家陣係|現在是|目前是|現在為|而家為|仍為|依然係|仍是|仲係|已變成|已轉為|一筆不留|不存在|無任何|已經?(?:設好|改好|更新|保存|儲存|刪除|取消|清空|處理好)|(?:目前|現時|現在|而家|依家).{0,18}(?:為|係|是)\s*(?:[\d一二三四五六七八九十兩零〇]+|晚上|早上|凌晨|下午|上午)|\b(?:now\s+that|since|after|once|given\s+that)\b.{0,60}\b(?:is|are|was|were|has\s+been|have\s+been)\s+(?:now\s+|currently\s+|already\s+)?(?:set|scheduled|updated|changed|saved|deleted|cleared|removed|cancelled|reset)\b|\b(?:is|are|was|were)\s+(?:now\s+|currently\s+|already\s+)?(?:set|scheduled|updated|changed|saved|deleted|cleared|removed)\s+(?:to|for|at)\b|\bis\s+(?:now|currently)\b|\bhas\s+been\s+(?:saved|deleted|updated|changed|cleared|removed|cancelled|reset)\b|\bare\s+(?:now|currently|gone)\b)/iu;
+const SUBORDINATE_PREMISE_CONNECTOR = /(?:既然|由於|因為|\b(?:now\s+that|since|after|once|given\s+that)\b)/iu;
 const OPERATION_PARAM_INTERROGATIVE = /幾多?|幾點|幾時|咩|哪|邊|多少|什麼|甚麼|如何|點|是否要|定係?|還是|想(?:改|刪|設|記|加|取消)|要(?:改|用|設|選)|what|which|when|who|whose|where|\bor\b|\bwhether\b|how\s+(?:much|many)/iu;
 const PURE_POLITE_OPENER = /^(?:你好|您好|哈囉|嗨|請問|麻煩你?|唔該|好(?:的)?|明白|收到|了解|ok(?:ay)?|sure|please|got\s+it)$/iu;
 const MUTABLE_ENTITY_PATTERN = /(?:提醒(?:時間)?|日程|紀錄|記錄|待辦|備忘|事項|設定|資料|通知|任務|事件|狀態|行程|清單|項目|\b(?:reminder|schedule|record|task|todo|note|setting|status|time|alarm|event|entry|list)s?\b)/iu;
-const MUTABLE_STATE_COPULA_OR_ACTION = /(?:現為|目前為|現時為|現已|而家係|依家係|家陣係|現在是|目前是|現在為|而家為|仍為|依然係|仍是|仲係|改為|設為|設成|調為|轉為|定為|列為|保留為|維持係|變成|成為|\b(?:is\s+now|are\s+now|remains?|set\s+to|scheduled\s+for|updated\s+to|changed\s+to|deleted|cleared|removed|saved)\b|\b(?:is|are)\s+(?:now|at|set|gone|empty|deleted|cleared|updated)\b|(?<!未|唔|沒有|沒|無|無法|未能|不能)(?:清空|清走|刪除|取消|移除|完成|處理好)|(?<![分歸劃稱視認成作以\w])(?:係|為|是)\s*(?:[\d一二三四五六七八九十兩零〇]+(?:點|時|分|個|筆|項|條)|晚上|早上|凌晨|下午|上午))/iu;
+const MUTABLE_STATE_COPULA_OR_ACTION = /(?:現為|目前為|現時為|現已|而家係|依家係|家陣係|現在是|目前是|現在為|而家為|仍為|依然係|仍是|仲係|改為|設為|設成|調為|轉為|定為|列為|保留為|維持係|變成|成為|設好|改好|\b(?:is\s+now|are\s+now|remains?|set\s+to|scheduled\s+for|updated\s+to|changed\s+to|deleted|cleared|removed|saved)\b|\b(?:is|are|was|were)\s+(?:now|at|set|gone|empty|deleted|cleared|updated)\b|(?<!未|唔|沒有|沒|無|無法|未能|不能)(?:清空|清走|刪除|取消|移除|完成|處理好)|(?<![分歸劃稱視認成作以\w])(?:係|為|是)\s*(?:[\d一二三四五六七八九十兩零〇]+(?:點|時|分|個|筆|項|條)|晚上|早上|凌晨|下午|上午))/iu;
+const MUTABLE_STATE_PREMISE_COPULA = /(?:現為|目前為|現時為|現已|而家係|依家係|家陣係|現在是|目前是|現在為|而家為|仍為|依然係|仍是|仲係|設為|改為|設好|改好|變成|成為|\b(?:is|are|was|were)\s+(?:now\s+|currently\s+|already\s+)?(?:at|set\s+to|scheduled\s+for|updated\s+to|changed\s+to|gone|empty|deleted|cleared|updated|saved|removed)\b|\b(?:has|have)\s+been\s+(?:saved|deleted|updated|changed|cleared|removed|cancelled|reset)\b|(?<![分歸劃稱視認成作以\w])(?:係|為|是)\s*(?:[\d一二三四五六七八九十兩零〇]+(?:點|時|分|個|筆|項|條)|晚上|早上|凌晨|下午|上午))/iu;
 const CLAUSE_QUESTION_INTENT = /(?:^(?:請問)?(?:你?想|你?要|是否|會唔會|係咪|定|which|what|when|where|who|how|do\s+you|would\s+you)|幾點|幾時|幾多|哪[一每個項筆條]?|邊[一每個項筆條]?|什麼|甚麼|咩|定係?|還是|\bor\b|\bwhether\b)/iu;
 
 function splitOperationClauses(text: string): string[] {
-  return text.split(/[。！!；;，,\n]+/u).map(part => part.trim()).filter(Boolean);
+  return text.split(/[。！!；;，,（）()\n]+/u).map(part => part.trim()).filter(Boolean);
 }
 
 function clauseIsResultOrStateAssertion(clause: string): boolean {
   if (!clause || PURE_POLITE_OPENER.test(clause)) return false;
-  if (OPERATION_CLAIM_PATTERN.test(clause)) return true;
-  if (/[？?]\s*$/u.test(clause) && CLAUSE_QUESTION_INTENT.test(clause) && !OPERATION_STATE_ASSERTION.test(clause)) {
+  if (OPERATION_CLAIM_PATTERN.test(clause) || OPERATION_STATE_ASSERTION.test(clause)) return true;
+  if (MUTABLE_ENTITY_PATTERN.test(clause) && MUTABLE_STATE_PREMISE_COPULA.test(clause)) return true;
+  if (/[？?]\s*$/u.test(clause) && CLAUSE_QUESTION_INTENT.test(clause)) {
     return false;
   }
-  if (OPERATION_STATE_ASSERTION.test(clause)) return true;
   return MUTABLE_ENTITY_PATTERN.test(clause) && MUTABLE_STATE_COPULA_OR_ACTION.test(clause);
 }
 
 function hasOperationOrStateAssertion(text: string): boolean {
   if (!text) return false;
-  if (OPERATION_CLAIM_PATTERN.test(text)) return true;
+  if (OPERATION_CLAIM_PATTERN.test(text) || OPERATION_STATE_ASSERTION.test(text)) return true;
   return splitOperationClauses(text).some(clauseIsResultOrStateAssertion);
 }
 
 function isPureOperationClarifyingQuestion(text: string): boolean {
   const trimmed = text.trim();
-  if (!trimmed || !/[？?]\s*$/u.test(trimmed) || OPERATION_QUESTION_SOFTENER.test(trimmed)) return false;
+  if (!trimmed || trimmed.length > 120 || !/[？?]\s*$/u.test(trimmed) || OPERATION_QUESTION_SOFTENER.test(trimmed)) return false;
+  if (SUBORDINATE_PREMISE_CONNECTOR.test(trimmed) || /[（(].*[）)]/u.test(trimmed)) return false;
   if (hasOperationOrStateAssertion(trimmed)) return false;
   const sentences = trimmed.split(/[。！!；;\n]+/u).map(part => part.trim()).filter(Boolean);
   if (sentences.length === 0 || sentences.some(part => !/[？?]\s*$/u.test(part))) return false;
@@ -255,31 +270,45 @@ function receiptMatchesDomain(op: ChatDeliveryVerifiedOperation, text: string): 
 }
 
 const GENERIC_OPERATION_TOKEN_STOPWORDS = new Set([
-  "幫你", "為你", "已經", "已為", "為你", "幫你", "已經", "記低", "記錄", "紀錄", "保存", "儲存", "設定",
-  "建立", "更新", "更改", "修改", "刪除", "取消", "清空", "清除", "移除", "提醒", "待辦", "日程", "所有",
-  "全部", "舊紀錄", "寶寶", "孩子", "待確認", "候選", "提案", "目前", "尚未", "正式", "核對", "確認",
-  "過敏資料", "好嗎", "張保仔", "saved", "deleted", "updated", "created", "reminder", "task", "record", "all", "your",
+  "幫你", "為你", "已經", "已為", "記低", "記錄", "紀錄", "保存", "儲存", "設定", "建立", "更新", "更改", "修改",
+  "刪除", "取消", "清空", "清除", "移除", "提醒", "待辦", "日程", "所有", "全部", "舊紀錄", "寶寶", "孩子",
+  "待確認", "候選", "提案", "目前", "尚未", "正式", "核對", "確認", "過敏資料", "好嗎", "張保仔", "食完",
+  "saved", "deleted", "updated", "created", "reminder", "task", "record", "all", "your", "the", "and", "for",
 ]);
+const TIME_ANCHOR_PATTERN = /(?:今朝|今晚|今日|今天|今早|今午|今夜|聽日|明日|明天|尋日|昨日|昨天|早上|朝早|上午|中午|下午|下晝|晚上|夜晚|凌晨|半夜|清晨|傍晚|睡前|\b(?:morning|afternoon|evening|tonight|tomorrow|yesterday|midnight|noon)\b|\d{1,2}\s*(?:點|時)(?:\s*\d{1,2}\s*分|半)?|\d{1,2}:\d{2}|\b\d{1,2}\s*(?:am|pm)\b)/giu;
 
-function extractTargetTokens(value: string): { numbers: string[]; terms: string[] } {
-  const numbers = (value.match(/\d+(?:\.\d+)?/g) ?? []);
+function normalizeTimeAnchor(anchor: string): string {
+  return anchor.replace(/\s+/g, "").toLowerCase().replace(/^0(?=\d:)/, "");
+}
+
+function normalizeNumberToken(token: string): string {
+  const num = Number(token);
+  return Number.isFinite(num) ? String(num) : token;
+}
+
+function extractTargetTokens(value: string): { numbers: string[]; timeAnchors: string[]; terms: string[] } {
+  const numbers = (value.match(/\d+(?:\.\d+)?/g) ?? []).map(normalizeNumberToken);
+  const timeAnchors = [...new Set((value.match(TIME_ANCHOR_PATTERN) ?? []).map(normalizeTimeAnchor))];
   const terms: string[] = [];
   const stripped = value
-    .replace(/已(?:經|為你|幫你)?|為你|幫你|準備好|更新|過敏資料|待確認|候選|提案|目前|尚未|正式|核對|確認|記低|記錄|紀錄|保存|儲存|設定|建立|更改|修改|刪除|取消|清空|清除|移除|所有|全部|寶寶|孩子|張保仔|待辦|提醒|日程|BB/giu, " ");
-  for (const seg of stripped.match(/[\u4e00-\u9fff]{2,}/g) ?? []) {
-    if (seg.length === 2) {
-      if (!GENERIC_OPERATION_TOKEN_STOPWORDS.has(seg)) terms.push(seg);
-    } else {
-      for (let i = 0; i <= seg.length - 2; i++) {
-        const gram = seg.slice(i, i + 2);
-        if (!GENERIC_OPERATION_TOKEN_STOPWORDS.has(gram)) terms.push(gram);
+    .replace(/已(?:經|為你|幫你)?|為你|幫你|飲咗|喝咗|食咗|吃咗|服咗|飲了|喝了|食了|吃了|服了|加咗|準備好|更新|過敏資料|待確認|候選|提案|目前|尚未|正式|核對|確認|記低|記錄|紀錄|保存|儲存|設定|建立|更改|修改|刪除|取消|清空|清除|移除|所有|全部|寶寶|孩子|張保仔|待辦|提醒|日程|BB|[飲喝食吃]|\b(?:already|have|has|been|your|the|for)\b/giu, " ");
+  const segments = stripped.split(/(?:\s+(?:and|plus|with|as\s+well\s+as)\s+|同(?!(?:時|樣|一))|以及|仲有|及|和|與|、|,|，)+/iu);
+  for (const segment of segments) {
+    for (const seg of segment.match(/[\u4e00-\u9fff]{2,}/g) ?? []) {
+      if (seg.length === 2) {
+        if (!GENERIC_OPERATION_TOKEN_STOPWORDS.has(seg)) terms.push(seg);
+      } else {
+        for (let i = 0; i <= seg.length - 2; i++) {
+          const gram = seg.slice(i, i + 2);
+          if (!GENERIC_OPERATION_TOKEN_STOPWORDS.has(gram)) terms.push(gram);
+        }
       }
     }
+    for (const word of segment.toLowerCase().match(/[a-z0-9]{2,}/g) ?? []) {
+      if (!GENERIC_OPERATION_TOKEN_STOPWORDS.has(word)) terms.push(word);
+    }
   }
-  for (const word of stripped.toLowerCase().match(/[a-z0-9]{2,}/g) ?? []) {
-    if (!GENERIC_OPERATION_TOKEN_STOPWORDS.has(word)) terms.push(word);
-  }
-  return { numbers, terms: [...new Set(terms)] };
+  return { numbers: [...new Set(numbers)], timeAnchors, terms: [...new Set(terms)] };
 }
 
 function receiptMatchesClaimTarget(op: ChatDeliveryVerifiedOperation, text: string): boolean {
@@ -287,13 +316,15 @@ function receiptMatchesClaimTarget(op: ChatDeliveryVerifiedOperation, text: stri
   if (!summaryParts) return true;
   const claim = extractTargetTokens(text);
   const receipt = extractTargetTokens(summaryParts);
-  if (claim.numbers.length > 0 && receipt.numbers.length > 0) {
-    if (!claim.numbers.some(num => receipt.numbers.includes(num))) return false;
+  if (claim.numbers.length > 0 && !claim.numbers.every(num => receipt.numbers.includes(num))) {
+    return false;
+  }
+  if (claim.timeAnchors.length > 0 && !claim.timeAnchors.every(anchor => receipt.timeAnchors.includes(anchor))) {
+    return false;
   }
   if (claim.terms.length === 0) return true;
   const normalizedSummary = summaryParts.toLowerCase();
-  if (claim.terms.some(term => normalizedSummary.includes(term.toLowerCase()))) return true;
-  return receipt.terms.some(term => text.toLowerCase().includes(term.toLowerCase()));
+  return claim.terms.every(term => normalizedSummary.includes(term.toLowerCase()));
 }
 
 function verifiedOperationsCorrespond(draft: ChatDeliveryDraft, text: string): boolean {
@@ -319,14 +350,18 @@ function verifiedOperationsCorrespond(draft: ChatDeliveryDraft, text: string): b
       : OPERATION_CLAIM_PATTERN.test(opText)
         ? "save"
         : null;
-  return candidateOps.some(op => {
+  const matchingOps = candidateOps.filter(op => {
     const family = receiptActionFamily(op);
     if (expectedFamily === "delete" && family !== "delete") return false;
     if (expectedFamily === "update" && family !== "update") return false;
     if (expectedFamily === "save" && family !== "save" && family !== "update") return false;
-    if (!receiptMatchesDomain(op, opText)) return false;
-    return receiptMatchesClaimTarget(op, opText);
+    return receiptMatchesDomain(op, opText);
   });
+  if (matchingOps.length === 0) return false;
+  if (matchingOps.some(op => receiptMatchesClaimTarget(op, opText))) return true;
+  const unionSummary = matchingOps.flatMap(op => [op.summary, op.eventTime]).filter(Boolean).join(" ").trim();
+  if (!unionSummary || matchingOps.some(op => ![op.summary, op.eventTime].filter(Boolean).length)) return false;
+  return receiptMatchesClaimTarget({ ...matchingOps[0]!, summary: unionSummary, eventTime: undefined }, opText);
 }
 
 function draftClaimsUnverifiedOperation(draft: ChatDeliveryDraft, text: string): boolean {
@@ -360,7 +395,7 @@ function joinedDraftText(draft: ChatDeliveryDraft): string {
  * Only bounded information requests are exempt. A question mark or an absent
  * advisory keyword is not proof that a sentence contains no assertion.
  */
-const BOUNDED_CLARIFICATION = /^(?:(?:(?:寶寶|孩子|小朋友|嬰兒|幼兒|BB)\s*)?(?:幾個月大|幾歲|多大|有沒有發燒|有冇發燒|體溫幾多度|體溫多少度|症狀持續了多久|症狀持續咗幾耐)|請(?:補充|提供|告訴我)(?:年齡|月齡|體溫|開始時間|持續時間)|how old is (?:your |the )?(?:baby|child)|does (?:your |the )?(?:baby|child) have a fever)$/iu;
+const BOUNDED_CLARIFICATION = /^(?:(?:(?:目前|而家|現時)\s*)?(?:(?:寶寶|孩子|小朋友|嬰兒|幼兒|BB)\s*)?(?:(?:目前|而家|現時)\s*)?(?:幾多?個月(?:大)?|幾多?歲|多大|幾大|有沒有發燒|有冇發燒|體溫幾多度|體溫多少度|(?:症狀|發燒|情況)?持續(?:了|咗)(?:多久|幾耐|幾多日|幾天))|請(?:補充|提供|告訴我)(?:年齡|月齡|體溫|開始時間|持續時間)|how old is (?:your |the )?(?:baby|child)|does (?:your |the )?(?:baby|child) have a fever)$/iu;
 
 export function isPureClarifyingQuestion(text: string): boolean {
   const trimmed = text.trim();
@@ -418,8 +453,20 @@ export function draftLooksLikeDirectiveCareAdvice(draft: ChatDeliveryDraft): boo
 }
 
 const SCOPE_REFUSAL_OR_LIMITATION_PATTERN = /(?:超出|不屬(?:於)?|並非|不是|未能(?:提供|回答|協助|處理|判定)|無法(?:回答|提供|協助|處理|評估|判斷)|暫無(?:相關|涵蓋|足夠)|暫未(?:涵蓋|提供|收錄)|沒有(?:相關|適用|足夠|涵蓋)|不提供|不協助|僅限|只協助|只處理|只提供|outside|out of scope|cannot (?:answer|assist|help|advise)|not covered|unable to)/iu;
-const UNSAFE_REFUSAL_TOPIC_PATTERN = /趴低|瞓覺|加鹽|蜜糖|蜂蜜|服藥|食藥|劑量|退燒藥|抗生素|put\s+(?:your\s+)?(?:child|baby|infant).{0,40}(?:sleep|stomach)|honey|salt|dosage|medication|ibuprofen|paracetamol|aspirin/iu;
-const UNSAFE_OPERATION_CLAIM_PATTERN = /趴低|put\s+(?:your\s+)?(?:child|baby|infant).{0,40}stomach/iu;
+const UNSAFE_REFUSAL_TOPIC_PATTERN = /趴低|趴喺度|趴睡|俯睡|瞓覺|加鹽|蜜糖|蜂蜜|服藥|食藥|劑量|退燒藥|抗生素|火酒|酒精抹|抹身降溫|put\s+(?:your\s+)?(?:child|baby|infant).{0,40}(?:sleep|stomach)|sleep\s+face\s+down|rubbing\s+alcohol|honey|salt|dosage|medication|ibuprofen|paracetamol|aspirin/iu;
+const UNSAFE_OPERATION_CLAIM_PATTERN = /趴低|趴喺度|趴睡|俯睡|sleep\s+face\s+down|put\s+(?:your\s+)?(?:child|baby|infant).{0,40}stomach/iu;
+
+function draftHasTaskAnchoredCareObligation(draft: ChatDeliveryDraft, text: string): boolean {
+  if (isPureClarifyingQuestion(text) || isPureGreetingOrSmallTalk(text)
+    || isPureScopeRefusalOrLimitation(draft) || isPureVerifiedOperationSummary(draft)) {
+    return false;
+  }
+  const kinds = draft.paragraphs.map(paragraph => paragraph.kind ?? draft.kind);
+  const nonDirectiveRecord = !CARE_ADVISORY_PATTERN.test(text)
+    && (NON_DIRECTIVE_RECORD_REPORT_PATTERN.test(text)
+      || (draft.sources.length > 0 && kinds.every(k => k === "record_restatement" || k === "private_reference")));
+  return !nonDirectiveRecord;
+}
 
 /** Pure out-of-scope refusal or knowledge-limitation statement containing no advice or operation claims. */
 export function isPureScopeRefusalOrLimitation(draft: ChatDeliveryDraft): boolean {
