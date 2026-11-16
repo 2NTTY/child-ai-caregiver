@@ -148,47 +148,205 @@ function draftMatchesUserDosingContext(draft: ChatDeliveryDraft, text: string): 
 
 // Concrete dose amounts (timing/frequency + quantity + unit, give/take verb + quantity + unit, or bare medicinal/fractional
 // quantities + unit in Chinese or spelled-out English) are care instructions on their own.
-const DOSE_QUANTITY = String.raw`(?:\d+(?:\.\d+)?\s*\/\s*\d+|\d+(?:\.\d+)?|[¼½¾]|半|[\d一二三四五六七八九十百兩两]+\s*分之?\s*[\d一二三四五六七八九十兩两]+|[一二三四五六七八九十百兩两幾]+)`;
-const DOSE_FRACTION_OR_HALF = String.raw`(?:\d+(?:\.\d+)?\s*\/\s*\d+|[¼½¾]|半|[\d一二三四五六七八九十百兩两]+\s*分之?\s*[\d一二三四五六七八九十兩两]+)`;
+const DOSE_QUANTITY = String.raw`(?:\d+(?:\.\d+)?\s*\/\s*\d+|\d+(?:\.\d+)?|[¼½¾]|半|[\d一二三四五六七八九十百千萬億兩两零〇]+\s*分之?\s*[\d一二三四五六七八九十百千萬億兩两零〇]+|[一二三四五六七八九十百千萬億兩两零〇幾]+)`;
+const DOSE_FRACTION_OR_HALF = String.raw`(?:\d+(?:\.\d+)?\s*\/\s*\d+|[¼½¾]|半|[\d一二三四五六七八九十百千萬億兩两零〇]+\s*分之?\s*[\d一二三四五六七八九十百千萬億兩两零〇]+)`;
 const DOSE_UNIT = String.raw`(?:粒|片|包|滴|茶?匙|小?匙|大?匙|平?匙|湯?匙|藥匙|匙羹|勺|顆|丸|支|劑|管|噴|吸|貼|枚|微克|毫克|毫升|公克|克|cc|ml|mg|mcg|ug|iu)`;
 const MED_ONLY_UNIT = String.raw`(?:粒|片|顆|丸|劑|藥匙|微克|毫克|毫升|公克|小?匙|大?匙|茶?匙|湯?匙|匙羹|cc|ml|mg|mcg|ug|iu)`;
-const EN_DOSE_QUANTITY = String.raw`(?:half\s+a|a\s+half|a\s+quarter|one\s+half|one\s+quarter|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|an?|\d+(?:\.\d+)?|\d+\s*\/\s*\d+)`;
-const EN_DOSE_UNIT = String.raw`(?:tablets?|pills?|capsules?|tsps?|teaspoons?|tbsps?|tablespoons?|spoonfuls?|drops?|sachets?|packets?|pouches?|puffs?|sprays?|ml|mg|mcg|ug|cc|iu|grams?)`;
+const EN_NUMBER_WORD = String.raw`(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion)`;
+const EN_COMPOUND_NUMBER = String.raw`${EN_NUMBER_WORD}(?:[\s-]+(?:and[\s-]+)?${EN_NUMBER_WORD})*`;
+const EN_DOSE_QUANTITY = String.raw`(?:half\s+a|a\s+half|a\s+quarter|one\s+half|one\s+quarter|${EN_COMPOUND_NUMBER}|an?|\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?)`;
+const EN_DOSE_UNIT = String.raw`(?:tablets?|pills?|capsules?|tsps?|teaspoons?|tbsps?|tablespoons?|spoonfuls?|drops?|sachets?|packets?|pouches?|puffs?|sprays?|suppositor(?:y|ies)|syringes?|ml|mg|mcg|ug|cc|iu|grams?)`;
 const DOSE_AMOUNT_SOURCE = [
-  String.raw`(?:每(?:次|餐|晚|日|天|朝|早|隔?\s*${DOSE_QUANTITY}\s*(?:小時|個?鐘))|一日|一天|日[\d一二三四五六七八九十兩]+次|早晚|睡前|臨睡前|飯前|飯後|餐前|餐後)\s*(?:各|都)?\s*(?:餵|食|吃|服|飲|用|畀|給|塗|搽|滴|吸)?\s*(?:約|大約|大概)?\s*${DOSE_QUANTITY}\s*${DOSE_UNIT}`,
+  String.raw`(?:每(?:次|餐|晚|日|天|朝|早|隔?\s*${DOSE_QUANTITY}\s*(?:小時|個?鐘))|一日|一天|日[\d一二三四五六七八九十百千萬億兩两]+次|早晚|睡前|臨睡前|飯前|飯後|餐前|餐後)\s*(?:各|都)?\s*(?:餵|食|吃|服|飲|用|畀|給|塗|搽|滴|吸)?\s*(?:約|大約|大概)?\s*${DOSE_QUANTITY}\s*${DOSE_UNIT}`,
   String.raw`(?:餵|食|吃|服|飲|畀|給)\s*(?:約|大約|大概)?\s*${DOSE_QUANTITY}\s*${DOSE_UNIT}`,
   String.raw`${DOSE_FRACTION_OR_HALF}\s*${DOSE_UNIT}`,
-  String.raw`(?:\d+(?:\.\d+)?|[一二三四五六七八九十百兩两]+)\s*${MED_ONLY_UNIT}`,
-  String.raw`(?:一日|一天|每日|每天)\s*[\d一二三四五六七八九十兩]+\s*次`,
-  String.raw`(?:連續|連服|連飲|連食)\s*[\d一二三四五六七八九十兩幾]+\s*(?:日|天|週|周|星期|次)`,
+  String.raw`(?:\d+(?:\.\d+)?|[一二三四五六七八九十百千萬億兩两零〇]+)\s*${MED_ONLY_UNIT}`,
+  String.raw`(?:一日|一天|每日|每天)\s*[\d一二三四五六七八九十百千萬億兩两]+\s*次`,
+  String.raw`(?:連續|連服|連飲|連食)\s*[\d一二三四五六七八九十百千萬億兩两幾]+\s*(?:日|天|週|周|星期|次)`,
   String.raw`\b${EN_DOSE_QUANTITY}\s+${EN_DOSE_UNIT}\b`,
-  String.raw`\b(?:once|twice|three\s+times|four\s+times)\s+(?:a\s+day|daily|per\s+day)\b`,
-  String.raw`\bevery\s+(?:\d+|one|two|three|four|six|eight|twelve)\s+hours?\b`,
-  String.raw`\b(?:at\s+bedtime|before\s+bed|after\s+meals?|before\s+meals?|per\s+meal)\b.{0,30}\b(?:${EN_DOSE_UNIT}|for\s+(?:\d+|one|two|three|four|five|six|seven|ten|fourteen)\s+days?)\b`,
+  String.raw`\b(?:once|twice|${EN_COMPOUND_NUMBER}\s+times)\s+(?:a\s+day|daily|per\s+day)\b`,
+  String.raw`\bevery\s+(?:\d+|${EN_COMPOUND_NUMBER})\s+hours?\b`,
+  String.raw`\b(?:at\s+bedtime|before\s+bed|after\s+meals?|before\s+meals?|per\s+meal)\b.{0,30}\b(?:${EN_DOSE_UNIT}|for\s+(?:\d+|${EN_COMPOUND_NUMBER})\s+days?)\b`,
 ].join("|");
-const CARE_ADVISORY_PATTERN = new RegExp(`${CARE_ADVISORY_BASE_PATTERN.source}|${DOSE_AMOUNT_SOURCE}`, "iu");
-const MEDICAL_CLAIM_PATTERN = new RegExp(`${MEDICAL_CLAIM_BASE_PATTERN.source}|${DOSE_AMOUNT_SOURCE}`, "iu");
+const CLINICAL_CARE_DIRECTIVE_PATTERN = new RegExp([
+  String.raw`(?:停止|暫停|禁止|切勿|勿|不可|不要|唔好|唔可以|唔准|不准|戒|忌)\s*(?:飲水|喝水|補水|飲奶|喝奶|餵奶|進食|飲食|食嘢|吃東西|餵食|服藥|食藥|吃藥|用藥|飲|喝|食|吃|服|餵)`,
+  String.raw`(?:禁食|禁飲|禁水|停食|停水|停奶|停飲|停餵|戒口|戒奶)`,
+  String.raw`(?:退燒|發燒|發熱|嘔吐|腹瀉|屙嘔|肚瀉|咳嗽|抽搐|出疹|生病|病發|病後|病前|服藥|食藥)(?:前|後|時|期間)?\s*(?:都)?(?:應該?|必須|需要|只可|只能|宜|忌|勿|不可|不要|唔好|切勿|停止|暫停|禁止|先)?\s*(?:停|禁|戒|避|減|加|補|飲|喝|食|吃|餵|服|敷|降溫|散熱|洗|吹)`,
+  String.raw`\b(?:administer|withhold|discontinue|suspend|restrict|prohibit|forbid)\b.{0,45}\b(?:drops?|doses?|tablets?|pills?|capsules?|syrup|medication|medicine|drugs?|fluids?|liquids?|water|milk|formula|food|feeding|feeds?|solids?|antibiotics?)\b`,
+  String.raw`\b(?:stop|avoid|refrain\s+from|keep\s+nil\s+by\s+mouth|\bnpo\b|fast)\b.{0,45}\b(?:drinking|eating|feeding|feeds?|fluids?|liquids?|water|milk|formula|food|solids?|breast\s*milk|medication|medicine|fever)\b`,
+  String.raw`\b(?:until|before|after)\b.{0,30}\b(?:fever|vomiting|diarrh(?:oa|ea)|symptoms?)\b.{0,30}\b(?:subsides?|stops?|ends?|resolves?|drinking|eating|fluids?|water|food|milk|feeding)\b`,
+].join("|"), "iu");
+const CARE_ADVISORY_PATTERN = new RegExp(`${CARE_ADVISORY_BASE_PATTERN.source}|${DOSE_AMOUNT_SOURCE}|${CLINICAL_CARE_DIRECTIVE_PATTERN.source}`, "iu");
+const MEDICAL_CLAIM_PATTERN = new RegExp(`${MEDICAL_CLAIM_BASE_PATTERN.source}|${DOSE_AMOUNT_SOURCE}|${CLINICAL_CARE_DIRECTIVE_PATTERN.source}`, "iu");
 
 // A user who asked the agent to change something expects a Server receipt. Any answer that contains a declarative
 // sentence/state assertion (even followed by a trailing question like "仲有其他事？") is never exempt without receipts.
 const USER_OPERATION_REQUEST_PATTERN = /更改|修改|改(?:返|好|過|成|做)|幫我改|刪(?:除|走|咗)?|清(?:空|除|走)|取消|移除|重設|設定|設置|新增|加(?:入|返)|記(?:低|住|錄)|儲存|保存|更新|安排|提醒我|發送|送出|標記|\b(?:update|delete|remove|cancel|save|schedule|change|reset|edit)\b/iu;
 const OPERATION_QUESTION_SOFTENER = /(?:好嗎|對嗎|可以嗎|嗎|係咪|是不是|ok(?:ay)?)[？?]\s*$/iu;
-const OPERATION_STATE_ASSERTION = /(?:現為|目前為|現時為|已經|已變成|已轉為|一筆不留|不存在|無任何|is\s+now|has\s+been|are\s+(?:now|gone))/iu;
-const OPERATION_PARAM_INTERROGATIVE = /幾|咩|哪|邊|多少|什麼|甚麼|如何|點|是否要|想(?:改|刪|設|記|加|取消)|what|which|when|who|whose|where|how\s+(?:much|many)/iu;
+const OPERATION_STATE_ASSERTION = /(?:現為|目前為|現時為|現已|而家係|依家係|家陣係|現在是|目前是|現在為|而家為|仍為|依然係|仍是|仲係|已變成|已轉為|一筆不留|不存在|無任何|is\s+(?:now|currently)|has\s+been\s+(?:saved|deleted|updated|changed|cleared|removed|cancelled|reset)|are\s+(?:now|currently|gone))/iu;
+const OPERATION_PARAM_INTERROGATIVE = /幾多?|幾點|幾時|咩|哪|邊|多少|什麼|甚麼|如何|點|是否要|定係?|還是|想(?:改|刪|設|記|加|取消)|要(?:改|用|設|選)|what|which|when|who|whose|where|\bor\b|\bwhether\b|how\s+(?:much|many)/iu;
+const PURE_POLITE_OPENER = /^(?:你好|您好|哈囉|嗨|請問|麻煩你?|唔該|好(?:的)?|明白|收到|了解|ok(?:ay)?|sure|please|got\s+it)$/iu;
+const MUTABLE_ENTITY_PATTERN = /(?:提醒(?:時間)?|日程|紀錄|記錄|待辦|備忘|事項|設定|資料|通知|任務|事件|狀態|行程|清單|項目|\b(?:reminder|schedule|record|task|todo|note|setting|status|time|alarm|event|entry|list)s?\b)/iu;
+const MUTABLE_STATE_COPULA_OR_ACTION = /(?:現為|目前為|現時為|現已|而家係|依家係|家陣係|現在是|目前是|現在為|而家為|仍為|依然係|仍是|仲係|改為|設為|設成|調為|轉為|定為|列為|保留為|維持係|變成|成為|\b(?:is\s+now|are\s+now|remains?|set\s+to|scheduled\s+for|updated\s+to|changed\s+to|deleted|cleared|removed|saved)\b|\b(?:is|are)\s+(?:now|at|set|gone|empty|deleted|cleared|updated)\b|(?<!未|唔|沒有|沒|無|無法|未能|不能)(?:清空|清走|刪除|取消|移除|完成|處理好)|(?<![分歸劃稱視認成作以\w])(?:係|為|是)\s*(?:[\d一二三四五六七八九十兩零〇]+(?:點|時|分|個|筆|項|條)|晚上|早上|凌晨|下午|上午))/iu;
+const CLAUSE_QUESTION_INTENT = /(?:^(?:請問)?(?:你?想|你?要|是否|會唔會|係咪|定|which|what|when|where|who|how|do\s+you|would\s+you)|幾點|幾時|幾多|哪[一每個項筆條]?|邊[一每個項筆條]?|什麼|甚麼|咩|定係?|還是|\bor\b|\bwhether\b)/iu;
+
+function splitOperationClauses(text: string): string[] {
+  return text.split(/[。！!；;，,\n]+/u).map(part => part.trim()).filter(Boolean);
+}
+
+function clauseIsResultOrStateAssertion(clause: string): boolean {
+  if (!clause || PURE_POLITE_OPENER.test(clause)) return false;
+  if (OPERATION_CLAIM_PATTERN.test(clause)) return true;
+  if (/[？?]\s*$/u.test(clause) && CLAUSE_QUESTION_INTENT.test(clause) && !OPERATION_STATE_ASSERTION.test(clause)) {
+    return false;
+  }
+  if (OPERATION_STATE_ASSERTION.test(clause)) return true;
+  return MUTABLE_ENTITY_PATTERN.test(clause) && MUTABLE_STATE_COPULA_OR_ACTION.test(clause);
+}
+
+function hasOperationOrStateAssertion(text: string): boolean {
+  if (!text) return false;
+  if (OPERATION_CLAIM_PATTERN.test(text)) return true;
+  return splitOperationClauses(text).some(clauseIsResultOrStateAssertion);
+}
 
 function isPureOperationClarifyingQuestion(text: string): boolean {
   const trimmed = text.trim();
   if (!trimmed || !/[？?]\s*$/u.test(trimmed) || OPERATION_QUESTION_SOFTENER.test(trimmed)) return false;
-  if (OPERATION_CLAIM_PATTERN.test(trimmed) || OPERATION_STATE_ASSERTION.test(trimmed)) return false;
+  if (hasOperationOrStateAssertion(trimmed)) return false;
   const sentences = trimmed.split(/[。！!；;\n]+/u).map(part => part.trim()).filter(Boolean);
   if (sentences.length === 0 || sentences.some(part => !/[？?]\s*$/u.test(part))) return false;
+  const nonOpenerClauses = splitOperationClauses(trimmed).filter(part => !PURE_POLITE_OPENER.test(part));
+  if (nonOpenerClauses.length === 0) return false;
+  if (nonOpenerClauses.some(part => !/[？?]\s*$/u.test(part) && !CLAUSE_QUESTION_INTENT.test(part))) return false;
   return OPERATION_PARAM_INTERROGATIVE.test(trimmed);
 }
 
+const PENDING_OPERATION_DISCLAIMER = /(?:未正式|尚未(?:正式)?(?:保存|建立|執行|生效|送出|寫入|刪除|修改|取消)|等待確認|待確認|待核對|確認後才會|pending\s+confirmation|not\s+yet\s+(?:saved|created|deleted|updated|executed)|awaiting\s+confirmation)/iu;
+const NON_EXECUTED_RECEIPT_STATE = /^(?:pending|pending_confirmation|failed|error|rejected|cancell?ed|blocked|queued|aborted|unverified|skipped)$/i;
+const DELETE_OPERATION_CLAIM = /刪(?:除|走|咗|晒)?|清(?:空|除|走)|移除|取消|一筆不留|不存在|無任何|冇咗|\b(?:deleted?|removed?|cleared?|cancell?ed?|erased?|wiped?)\b/iu;
+const UPDATE_OPERATION_CLAIM = /更改|修改|改(?:好|返|成|做|咗|為)|重設|調整|轉(?:成|做|好|為)|復原|\b(?:updated?|changed?|revised?|rescheduled?|modified?|reset)\b/iu;
+const REMINDER_DOMAIN_CLAIM = /提醒|待辦|日程|鬧鐘|\b(?:reminder|task|todo|schedule|alarm)s?\b/iu;
+const RECORD_DOMAIN_CLAIM = /紀錄|記錄|餵奶|飲奶|配方奶|母乳|飲水|喝水|體溫|換片|\b(?:feeding|sleep|diaper|record)s?\b/iu;
+const NOTE_DOMAIN_CLAIM = /私人筆記|私人交代|交代事項|備忘|\b(?:private_?instruction|note|instruction)s?\b/iu;
+
+function receiptActionFamily(op: ChatDeliveryVerifiedOperation): "save" | "update" | "delete" | "other" {
+  const tool = op.tool.toLowerCase();
+  const summary = (op.summary ?? "").toLowerCase();
+  if (/^(?:delete|remove|clear|cancel)_/.test(tool) || tool.includes("deactivation")) return "delete";
+  if (tool.includes("change_ordinary_reminder") || tool.includes("change_self_task") || tool.includes("task_change")) {
+    if (/^\s*cancel\s*:/i.test(summary)) return "delete";
+    return "update";
+  }
+  if (/^(?:revise|update|edit|change|reschedule)_/.test(tool) || tool.includes("revision") || tool.includes("_change")) return "update";
+  if (/^(?:save|create|add|record)_/.test(tool) || tool.startsWith("propose_")) return "save";
+  return "other";
+}
+
+function receiptMatchesDomain(op: ChatDeliveryVerifiedOperation, text: string): boolean {
+  const tool = op.tool.toLowerCase();
+  const opText = `${tool} ${op.recordKind ?? ""} ${op.summary ?? ""}`.toLowerCase();
+  if (REMINDER_DOMAIN_CLAIM.test(text) && !/(?:reminder|task|todo|schedule|alarm)/.test(opText)) return false;
+  if (NOTE_DOMAIN_CLAIM.test(text) && !/(?:instruction|note)/.test(opText)) return false;
+  if (RECORD_DOMAIN_CLAIM.test(text) && /(?:create_ordinary_reminder|change_ordinary_reminder|propose_task)/.test(tool) && !/紀錄|記錄|record/.test(op.summary ?? "")) {
+    return false;
+  }
+  return true;
+}
+
+const GENERIC_OPERATION_TOKEN_STOPWORDS = new Set([
+  "幫你", "為你", "已經", "已為", "為你", "幫你", "已經", "記低", "記錄", "紀錄", "保存", "儲存", "設定",
+  "建立", "更新", "更改", "修改", "刪除", "取消", "清空", "清除", "移除", "提醒", "待辦", "日程", "所有",
+  "全部", "舊紀錄", "寶寶", "孩子", "待確認", "候選", "提案", "目前", "尚未", "正式", "核對", "確認",
+  "過敏資料", "好嗎", "張保仔", "saved", "deleted", "updated", "created", "reminder", "task", "record", "all", "your",
+]);
+
+function extractTargetTokens(value: string): { numbers: string[]; terms: string[] } {
+  const numbers = (value.match(/\d+(?:\.\d+)?/g) ?? []);
+  const terms: string[] = [];
+  const stripped = value
+    .replace(/已(?:經|為你|幫你)?|為你|幫你|準備好|更新|過敏資料|待確認|候選|提案|目前|尚未|正式|核對|確認|記低|記錄|紀錄|保存|儲存|設定|建立|更改|修改|刪除|取消|清空|清除|移除|所有|全部|寶寶|孩子|張保仔|待辦|提醒|日程|BB/giu, " ");
+  for (const seg of stripped.match(/[\u4e00-\u9fff]{2,}/g) ?? []) {
+    if (seg.length === 2) {
+      if (!GENERIC_OPERATION_TOKEN_STOPWORDS.has(seg)) terms.push(seg);
+    } else {
+      for (let i = 0; i <= seg.length - 2; i++) {
+        const gram = seg.slice(i, i + 2);
+        if (!GENERIC_OPERATION_TOKEN_STOPWORDS.has(gram)) terms.push(gram);
+      }
+    }
+  }
+  for (const word of stripped.toLowerCase().match(/[a-z0-9]{2,}/g) ?? []) {
+    if (!GENERIC_OPERATION_TOKEN_STOPWORDS.has(word)) terms.push(word);
+  }
+  return { numbers, terms: [...new Set(terms)] };
+}
+
+function receiptMatchesClaimTarget(op: ChatDeliveryVerifiedOperation, text: string): boolean {
+  const summaryParts = [op.summary, op.eventTime].filter(Boolean).join(" ").trim();
+  if (!summaryParts) return true;
+  const claim = extractTargetTokens(text);
+  const receipt = extractTargetTokens(summaryParts);
+  if (claim.numbers.length > 0 && receipt.numbers.length > 0) {
+    if (!claim.numbers.some(num => receipt.numbers.includes(num))) return false;
+  }
+  if (claim.terms.length === 0) return true;
+  const normalizedSummary = summaryParts.toLowerCase();
+  if (claim.terms.some(term => normalizedSummary.includes(term.toLowerCase()))) return true;
+  return receipt.terms.some(term => text.toLowerCase().includes(term.toLowerCase()));
+}
+
+function verifiedOperationsCorrespond(draft: ChatDeliveryDraft, text: string): boolean {
+  const ops = draft.verifiedOperations ?? [];
+  if (ops.length === 0) return false;
+  const opText = draft.paragraphs
+    .filter(p => (p.kind ?? draft.kind) !== "caregiving" && (p.kind ?? draft.kind) !== "safety_help")
+    .map(p => p.text)
+    .join("\n")
+    .trim() || text;
+  const claimsAnyOp = hasOperationOrStateAssertion(opText);
+  const isPendingNotice = PENDING_OPERATION_DISCLAIMER.test(opText)
+    && !/(?:已正式保存|已經刪除|已經取消|已經清空|一筆不留|已經完成)/iu.test(opText);
+  const candidateOps = isPendingNotice
+    ? ops.filter(op => op.kind === "pending_confirmation" && /^(?:pending|pending_confirmation)$/i.test(op.state))
+    : ops.filter(op => op.kind === "action_receipt" && !NON_EXECUTED_RECEIPT_STATE.test(op.state));
+  if (candidateOps.length === 0) return false;
+  if (!claimsAnyOp) return true;
+  const expectedFamily: "delete" | "update" | "save" | null = DELETE_OPERATION_CLAIM.test(opText)
+    ? "delete"
+    : (!isPendingNotice && UPDATE_OPERATION_CLAIM.test(opText))
+      ? "update"
+      : OPERATION_CLAIM_PATTERN.test(opText)
+        ? "save"
+        : null;
+  return candidateOps.some(op => {
+    const family = receiptActionFamily(op);
+    if (expectedFamily === "delete" && family !== "delete") return false;
+    if (expectedFamily === "update" && family !== "update") return false;
+    if (expectedFamily === "save" && family !== "save" && family !== "update") return false;
+    if (!receiptMatchesDomain(op, opText)) return false;
+    return receiptMatchesClaimTarget(op, opText);
+  });
+}
+
 function draftClaimsUnverifiedOperation(draft: ChatDeliveryDraft, text: string): boolean {
-  if (draft.verifiedOperations?.length) return false;
+  if (draft.serverSubstitutedReceiptText) return false;
+  if (draft.verifiedOperations?.length) {
+    return !verifiedOperationsCorrespond(draft, text);
+  }
   if (isPureOperationClarifyingQuestion(text)) return false;
+  if (hasOperationOrStateAssertion(text)) return true;
   return Boolean(draft.userRequest && USER_OPERATION_REQUEST_PATTERN.test(draft.userRequest));
+}
+
+function hasLiveUnverifiedOperationClaim(draft: ChatDeliveryDraft, text: string): boolean {
+  if (draft.serverSubstitutedReceiptText) return false;
+  if (draft.verifiedOperations?.length) return !verifiedOperationsCorrespond(draft, text);
+  if (PENDING_OPERATION_DISCLAIMER.test(text)
+    && !/(?:已正式保存|已經刪除|已經取消|已經清空|一筆不留|已經完成)/iu.test(text)) {
+    return false;
+  }
+  return hasOperationOrStateAssertion(text);
 }
 
 function joinedDraftText(draft: ChatDeliveryDraft): string {
@@ -211,7 +369,7 @@ export function isPureClarifyingQuestion(text: string): boolean {
   // Multiple bounded questions are safe only if every complete clause matches.
   const segments = trimmed.split(/(?<=[？?])(?:\s+|\n+)*/u).map(part => part.trim()).filter(Boolean);
   if (segments.length < 1 || segments.some(part => !/[？?]$/u.test(part))) return false;
-  if (CARE_ADVISORY_PATTERN.test(trimmed)) return false;
+  if (CARE_ADVISORY_PATTERN.test(trimmed) || MEDICAL_CLAIM_PATTERN.test(trimmed) || hasOperationOrStateAssertion(trimmed)) return false;
   for (const segment of segments) {
     const body = segment.replace(/[？?]+$/u, "").trim().replace(/^請問\s*[，,]?\s*/u, "");
     if (!BOUNDED_CLARIFICATION.test(body)) return false;
@@ -272,9 +430,23 @@ export function isPureScopeRefusalOrLimitation(draft: ChatDeliveryDraft): boolea
   const text = joinedDraftText(draft);
   if (!text || text.length > 400) return false;
   if (CARE_ADVISORY_PATTERN.test(text) || MEDICAL_CLAIM_PATTERN.test(text)
-    || OPERATION_CLAIM_PATTERN.test(text) || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(text)
+    || hasOperationOrStateAssertion(text) || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(text)
     || UNSAFE_REFUSAL_TOPIC_PATTERN.test(text)) return false;
   return SCOPE_REFUSAL_OR_LIMITATION_PATTERN.test(text);
+}
+
+const VERIFIED_SUMMARY_BLOCKED_ADVICE_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?|不要|不可|唔好|唔可以|唔准|不准|藥|劑量?|粒|片|丸|滴|蜜糖|蜂蜜|止咳|退燒|抗生素|趴低|瞓覺時|停止|暫停|禁止|切勿|禁食|禁飲|停食|停水|should(?:\s+not)?|must(?:\s+not)?|recommend(?:ed|s)?|don'?t|do\s+not|avoid|medication|medicine|drugs?|tablet|pill|capsule|drops?|syrup|administer|withhold|discontinue|stop|forbid|prohibit|aspirin|ibuprofen|paracetamol|honey|measles|wound/iu;
+
+function recordReceiptRestatesAllQuantities(draft: ChatDeliveryDraft, text: string): boolean {
+  if (VERIFIED_SUMMARY_BLOCKED_ADVICE_PATTERN.test(text) || CLINICAL_CARE_DIRECTIVE_PATTERN.test(text)) return false;
+  const executedRecordSummaries = (draft.verifiedOperations ?? [])
+    .filter(op => op.kind === "action_receipt" && !NON_EXECUTED_RECEIPT_STATE.test(op.state)
+      && /^(?:save|revise)_ordinary_record$/i.test(op.tool) && Boolean(op.summary))
+    .map(op => op.summary!);
+  if (!executedRecordSummaries.length) return false;
+  const joinedSummary = executedRecordSummaries.join("\n").toLowerCase();
+  const amounts = text.match(/\d+(?:\.\d+)?\s*(?:ml|mg|mcg|ug|cc|iu|毫升|毫克|克|茶?匙|湯?匙|小?匙|大?匙)/giu) ?? [];
+  return amounts.length > 0 && amounts.every(item => joinedSummary.includes(item.replace(/\s+/g, "").toLowerCase()) || joinedSummary.includes(item.toLowerCase()));
 }
 
 /** Citation-free summary backed by verified Server receipts/pending slots from this run, with zero advice claims. */
@@ -285,8 +457,11 @@ export function isPureVerifiedOperationSummary(draft: ChatDeliveryDraft): boolea
   if (draft.paragraphs.some(paragraph => paragraph.citationIds.length > 0)) return false;
   const text = joinedDraftText(draft);
   if (!text) return false;
-  if (CARE_ADVISORY_PATTERN.test(text) || MEDICAL_CLAIM_PATTERN.test(text)
-    || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(text) || UNSAFE_OPERATION_CLAIM_PATTERN.test(text)) return false;
+  if (ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(text) || UNSAFE_OPERATION_CLAIM_PATTERN.test(text)) return false;
+  if (!verifiedOperationsCorrespond(draft, text)) return false;
+  if (CARE_ADVISORY_PATTERN.test(text) || MEDICAL_CLAIM_PATTERN.test(text)) {
+    return recordReceiptRestatesAllQuantities(draft, text);
+  }
   return true;
 }
 
@@ -327,7 +502,7 @@ export function requiresChatDeliveryReview(draft: ChatDeliveryDraft, obligation?
   }
   if (kinds.includes("private_reference") || draftLooksLikeSubstantiveCareAdvice(draft))
     return requireReview(chatDeliveryPassNeedsSources({ ...draft, sources: [] }) ? "evidence" : "review");
-  if (draft.images?.length || draft.voice || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(text) || OPERATION_CLAIM_PATTERN.test(text) || draftClaimsUnverifiedOperation(draft, text)) return requireReview();
+  if (draft.images?.length || draft.voice || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(text) || hasOperationOrStateAssertion(text) || draftClaimsUnverifiedOperation(draft, text)) return requireReview();
   // Safe exceptions above can deliver, but ordinary rewrites cannot erase the task or its evidence requirement.
   return obligation?.required ?? false;
 }
@@ -467,6 +642,7 @@ export async function enforceChatDeliveryReview(input: {
   ) => {
     if (judgedOutcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_rejected");
     if (chatDeliveryPassNeedsSources(judged, obligation)) throw new AgentStopped("delivery_review_no_sources");
+    if (hasLiveUnverifiedOperationClaim(judged, joinedDraftText(judged))) throw new AgentStopped("delivery_review_rejected");
     // Re-check live source retract / version change before binding a pass or keeping the wording.
     let livePresentation: AgentPresentation | null = null;
     try {
@@ -482,6 +658,7 @@ export async function enforceChatDeliveryReview(input: {
     const review = bindingFor(liveDraft, liveHash, input.provenance!.model, prompt.packVersion);
     if (!chatDeliveryReviewAllows(review, liveDraft, prompt.packVersion, repairContext)) throw new AgentStopped("delivery_review_incomplete");
     if (chatDeliveryPassNeedsSources(liveDraft, obligation)) throw new AgentStopped("delivery_review_no_sources");
+    if (hasLiveUnverifiedOperationClaim(liveDraft, joinedDraftText(liveDraft))) throw new AgentStopped("delivery_review_rejected");
     // Prefer the freshly revalidated presentation; fall back only if identical draft stayed put.
     return { presentation: livePresentation, review };
   };

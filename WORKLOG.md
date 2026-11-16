@@ -6082,3 +6082,11 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R4.md` F2–F3 與 `SLICE_B_BP2_IMPLEMENTATION_AUDIT_R5.md` F2–F3 於本地 forward-only 新提交修復（未 push／未開 PR）：
 1）**F2–F3 [chat-delivery-review.ts](server/chat-delivery-review.ts)**：保留本分支固有 `BOUNDED_CLARIFICATION` 與 `PURE_GREETING_UTTERANCE` 邊界，同步導入 `isPureOperationClarifyingQuestion`（移除結尾 `?`/`？` 寬鬆豁免，攔截「提醒時間現為晚上八點。仲有其他事？」等混合斷言直交）及擴充 `DOSE_AMOUNT_SOURCE`（覆蓋英文拼寫數量、`小匙`/`大匙`/`微克` 與療程表述「每餐一小匙，連續三日。」／「Take one tablet at bedtime.」）。
 2）於 [search-short-path-gaps.test.ts](tests/search-short-path-gaps.test.ts)（5/5）補齊 F2–F3 端到端回歸與純反問免審對照。
+
+### 2026-11-16　B-P6 結構性交付審核與收據對應整改（同步 B-P2／B-P7；保留短路徑模板）
+
+依審查意見於本地 forward-only 新提交修復（未 push／未開 PR；保留本分支 `BOUNDED_CLARIFICATION` 與 `PURE_GREETING_UTTERANCE`）：
+1）**`server/chat-delivery-review.ts` 保留尾閘 `return obligation?.required ?? false`**：拆解「結果／狀態聲稱＋追問」（含逗號與句號及裸草稿，如「提醒時間而家係八點，想改邊一項？」）與合理參數選擇反問（「你想改成八點定九點？」），強制前者進審而後者免誤傷。
+2）**收據對應校驗（`verifiedOperationsCorrespond`）同步進 `isPureVerifiedOperationSummary`、`draftClaimsUnverifiedOperation` 與 `acceptLivePass`**：嚴格核對狀態（執行完成 vs `pending_confirmation`／`failed`）、動作家族（保存／修改／刪除）與目標對象／數值，阻斷錯配或未完成收據放行。
+3）**任意英文複合數詞＋零數字停水／禁食／醫療指令擴充與 `SPEC.md:301-304` 分離**：涵蓋 `Administer thirteen drops`、`Administer two thousand drops`、「退燒前停止飲水」、「嘔吐後禁止進食」、「Withhold fluids」等指令並維持家庭紀錄回述、對應操作確認與純拒答免被迫附官方引用。
+4）於 `tests/search-short-path-gaps.test.ts`（5→6 cases）新增結構性回歸並同步 `scripts/ci/verify-search-short-path-gaps-offline.sh` `TEST_CASES`。

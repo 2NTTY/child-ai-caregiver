@@ -1,11 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { FinishReason } from '@google/genai';
+import { AgentBudget, AgentStopped } from '../server/agent-budget.ts';
 import {
   chatDeliveryPassNeedsSources,
+  chatDeliveryReviewSourceExcerpt,
+  createChatDeliveryReviewObligation,
+  draftLooksLikeDirectiveCareAdvice,
   draftLooksLikeSubstantiveCareAdvice,
+  enforceChatDeliveryReview,
   isPureClarifyingQuestion,
   isPureGreetingOrSmallTalk,
+  isPureScopeRefusalOrLimitation,
+  isPureVerifiedOperationSummary,
   requiresChatDeliveryReview,
   type ChatDeliveryDraft,
 } from '../server/chat-delivery-review.ts';
@@ -513,4 +520,177 @@ test('R4: unverified completion wording and ungrounded dose amounts never become
     assert.equal(result.status, 'stopped');
     assert.equal(result.text.includes('tablet') || result.text.includes('小匙') || result.text.includes('teaspoon'), false);
   }
+});
+
+test('structural review boundaries: state-claim+followup, receipt correspondence, arbitrary numerals/zero-number directives, and SPEC:301-304 separation', async t => {
+  const testRunId = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+  for (const [userMsg, text] of [
+    ['幫我更改提醒時間', '提醒時間而家係八點，想改邊一項？'],
+    ['幫我更改提醒時間', '提醒時間而家係八點。想改邊一項？'],
+    ['清空舊紀錄', '目前已清空舊紀錄，仲想做乜？'],
+  ] as const) {
+    const bareDraft: ChatDeliveryDraft = {
+      kind: 'clarification',
+      visibility: 'private',
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text, citationIds: [] }],
+      sources: [],
+      scope,
+    };
+    assert.equal(requiresChatDeliveryReview(bareDraft), true, `Bare result/state+question must require review: ${text}`);
+    assert.equal(requiresChatDeliveryReview({ ...bareDraft, userRequest: userMsg }), true, `Result/state+question must require review: ${text}`);
+  }
+  for (const [userMsg, choice] of [
+    ['幫我更改提醒時間', '你想改成八點定九點？'],
+    ['幫我更改提醒時間', '請問，你想改成八點定九點？'],
+    ['刪除所有紀錄', '請問你想刪除哪一項提醒？'],
+  ] as const) {
+    assert.equal(requiresChatDeliveryReview({
+      userRequest: userMsg,
+      kind: 'clarification',
+      visibility: 'private',
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text: choice, citationIds: [] }],
+      sources: [],
+      scope,
+    }), false, `Legitimate parameter choice must stay exempt: ${choice}`);
+  }
+
+  const mismatchedCases = [
+    {
+      name: 'pending_confirmation claiming executed create',
+      text: '已幫你建立買牛奶提醒。',
+      ops: [{ kind: 'pending_confirmation' as const, id: 'p1', tool: 'propose_task', state: 'pending_confirmation', summary: '買牛奶 (2026-11-17T09:00:00Z)' }],
+    },
+    {
+      name: 'failed action_receipt claiming completed cancel',
+      text: '已經取消買牛奶提醒。',
+      ops: [{ kind: 'action_receipt' as const, id: 'r1', tool: 'change_ordinary_reminder', state: 'failed', summary: 'cancel: 買牛奶' }],
+    },
+    {
+      name: 'private note save receipt claiming task deletion',
+      text: '已刪除買蛋待辦。',
+      ops: [{ kind: 'action_receipt' as const, id: 'r2', tool: 'save_private_instruction', state: 'saved', summary: '準備手冊: 帶健康手冊' }],
+    },
+    {
+      name: 'create_ordinary_reminder receipt claiming cleared records',
+      text: '已清空所有舊紀錄。',
+      ops: [{ kind: 'action_receipt' as const, id: 'r3', tool: 'create_ordinary_reminder', state: 'saved', summary: '喝奶提醒 (2026-11-17T08:00:00+08:00)' }],
+    },
+    {
+      name: 'save_ordinary_record water receipt claiming feeding 240ml',
+      text: '已幫你記錄餵奶 240ml。',
+      ops: [{ kind: 'action_receipt' as const, id: 'r4', tool: 'save_ordinary_record', state: 'saved', recordKind: 'feeding', summary: '喝水 100ml' }],
+    },
+    {
+      name: 'create_ordinary_reminder milk receipt claiming eggs reminder',
+      text: '已幫你設定買蛋提醒。',
+      ops: [{ kind: 'action_receipt' as const, id: 'r5', tool: 'create_ordinary_reminder', state: 'saved', summary: '買牛奶' }],
+    },
+  ];
+  for (const item of mismatchedCases) {
+    const draft: ChatDeliveryDraft = {
+      kind: 'operation',
+      visibility: 'private',
+      serverSubstitutedSourceText: false,
+      verifiedOperations: item.ops,
+      paragraphs: [{ text: item.text, citationIds: [] }],
+      sources: [],
+      scope,
+    };
+    assert.equal(isPureVerifiedOperationSummary(draft), false, `${item.name}: mismatched receipt must not qualify as verified summary`);
+    assert.equal(requiresChatDeliveryReview(draft), true, `${item.name}: mismatched receipt must require review`);
+    const budget = new AgentBudget();
+    t.after(() => budget.close());
+    await assert.rejects(
+      enforceChatDeliveryReview({
+        presentation: { text: item.text, citations: [], privateSourceCitations: [], retrievalMode: 'not_used' },
+        tools: {
+          presentation: async () => ({ text: item.text, citations: [], privateSourceCitations: [], retrievalMode: 'not_used' }),
+          deliveryDraft: () => draft,
+          replaceDeliveryAnswer: () => {},
+        },
+        context: {
+          runId: testRunId,
+          scope,
+          budget,
+          deliveryReview: createChatDeliveryReviewObligation(true),
+          completeText: async ({ user }: { user: string }) => {
+            const parsed = JSON.parse(user.slice(user.indexOf('{'))) as { draftHash: string };
+            return JSON.stringify({ draftHash: parsed.draftHash, decision: 'pass', issues: [] });
+          },
+        } as any,
+        provenance: { packVersion: 'test-v1', model: 'gemini-2.5-flash' },
+      }),
+      (err: unknown) => err instanceof AgentStopped && ['delivery_review_rejected', 'delivery_review_no_sources'].includes(err.reason),
+      `${item.name}: acceptLivePass must reject mismatched operation claim even on pass`,
+    );
+  }
+  const matchingDraft: ChatDeliveryDraft = {
+    kind: 'operation',
+    visibility: 'private',
+    serverSubstitutedSourceText: false,
+    verifiedOperations: [{ kind: 'action_receipt', id: 'ok-1', tool: 'save_ordinary_record', state: 'saved', recordKind: 'feeding', summary: '配方奶 120ml' }],
+    paragraphs: [{ text: '已為你記錄寶寶飲配方奶 120ml。', citationIds: [] }],
+    sources: [],
+    scope,
+  };
+  assert.equal(isPureVerifiedOperationSummary(matchingDraft), true);
+  assert.equal(chatDeliveryPassNeedsSources(matchingDraft), false);
+
+  for (const text of [
+    'Administer thirteen drops.',
+    'Administer two thousand drops.',
+    'Give twenty-five tablets daily.',
+    '退燒前停止飲水。',
+    '發熱前停止飲水。',
+    '嘔吐後禁止進食。',
+    'Stop drinking water until fever subsides.',
+    'Withhold fluids after vomiting.',
+  ]) {
+    const draft: ChatDeliveryDraft = {
+      userRequest: 'BB發燒點算？',
+      kind: 'clarification',
+      visibility: 'private',
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text, citationIds: [] }],
+      sources: [],
+      scope,
+    };
+    assert.equal(draftLooksLikeDirectiveCareAdvice(draft), true, `Directive care must match: ${text}`);
+    assert.equal(draftLooksLikeSubstantiveCareAdvice(draft), true, `Substantive care must match: ${text}`);
+    assert.equal(requiresChatDeliveryReview(draft), true, `Directive care must require review: ${text}`);
+    assert.equal(chatDeliveryPassNeedsSources(draft), true, `Uncited directive care must require sources: ${text}`);
+    assert.equal(isPureScopeRefusalOrLimitation(draft), false, `Directive care is never scope refusal: ${text}`);
+  }
+
+  assert.equal(chatDeliveryPassNeedsSources({
+    userRequest: 'BB發燒點算，仲有對牛奶粉過敏紀錄嗎？',
+    kind: 'record_restatement',
+    visibility: 'private',
+    serverSubstitutedSourceText: false,
+    paragraphs: [{ text: '家庭紀錄顯示寶寶對牛奶蛋白過敏。', citationIds: ['mem-1'] }],
+    sources: [{
+      citationId: 'mem-1',
+      version: '1',
+      contentHash: chatDeliveryReviewSourceExcerpt('家庭紀錄顯示寶寶對牛奶蛋白過敏。').excerpt,
+      classification: 'private',
+      excerpt: '家庭紀錄顯示寶寶對牛奶蛋白過敏。',
+      excerptComplete: true,
+    }],
+    scope,
+  }), false);
+  assert.equal(chatDeliveryPassNeedsSources({
+    userRequest: 'BB發燒點算？',
+    kind: 'clarification',
+    visibility: 'private',
+    serverSubstitutedSourceText: false,
+    paragraphs: [{ text: '這類醫療診斷問題超出本系統協助範圍，無法提供解答。', citationIds: [] }],
+    sources: [],
+    scope,
+  }), false);
+  assert.equal(chatDeliveryPassNeedsSources({
+    ...matchingDraft,
+    userRequest: 'BB發燒點算，同幫我記低飲配方奶 120ml',
+  }), false);
 });
