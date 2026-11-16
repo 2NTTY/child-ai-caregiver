@@ -14,10 +14,11 @@ import {
 import { createFirestoreAuthority } from "../server/firestore-authority.ts";
 import { createFirestoreCareStore } from "../server/firestore-care.ts";
 import { createFirestoreChatStore } from "../server/firestore-chat.ts";
-import { FirestoreDomainData } from "../server/firestore-domain-data.ts";
+import { FirestoreDomainData, firestoreDomainHash } from "../server/firestore-domain-data.ts";
 import {
   createFirestoreGrowthStore,
   firestoreGrowthSchema,
+  firestoreGrowthRecoverySchema,
 } from "../server/firestore-growth.ts";
 import { firestoreBackgroundWorkSchema } from "../server/firestore-background-work.ts";
 import { createFirestoreMemoryStore } from "../server/firestore-memory.ts";
@@ -671,4 +672,119 @@ test("C03: growth evaluate, topic management, and import remain operational beyo
   // 3. Stale generation / authorizationVersion stops cleanly (revocation preserved).
   const staleRes = await growth.evaluate({ ...capturedJob!, authorizationVersion: "999" });
   assert.equal(staleRes.state, "stopped");
+});
+
+
+test("C03 evaluation resumes across 20000 and above without truncated success or stale authority", { timeout: 180_000 }, async () => {
+  const fixture = serialFirestoreFixture();
+  const options = {
+    database: fixture.database,
+    cipher: createStorageCipher(Buffer.alloc(32, 42)),
+    projectId: "synthetic-growth-cursor",
+    namespace: "unit_growth_cursor",
+  };
+  const authority = createFirestoreAuthority(options);
+  const data = new FirestoreDomainData(options);
+  await authority.initializeControl({ enabled: true, generation: randomUUID() });
+  await authority.issueInvitation({ email: "owner@example.test", operationId: randomUUID(), expiresAt: new Date(Date.now() + 3_600_000).toISOString() });
+  await authority.admitIdentity({ userId: "owner", email: "owner@example.test", emailVerified: true });
+  await authority.acknowledge({ userId: "owner", operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  const childId = (await authority.createChild({ userId: "owner", operationId: randomUUID(), displayName: "Synthetic Child" })).child.id;
+  const care = createFirestoreCareStore(options);
+  const chat = createFirestoreChatStore(options);
+  const memory = createFirestoreMemoryStore({ ...options, care, chat });
+  const growth = createFirestoreGrowthStore({ ...options, care, memory, online: createFirestoreOnlineStore(options) });
+
+
+  let queries = 0;
+  const visited = new Set<string>();
+  const runTransaction = fixture.database.runTransaction.bind(fixture.database);
+  (fixture.database as any).runTransaction = (callback: any, transactionOptions: any) => runTransaction((transaction: any) =>
+    callback({ ...transaction, get: async (target: any) => {
+      const result = await transaction.get(target);
+      if (target.query && target.path === data.collection("growth_attention").path) {
+        queries++;
+        assert.equal(target.cap, 200, "each history read remains a bounded keyset page");
+        for (const row of result.docs) visited.add(row.id);
+      }
+      return result;
+    } }), transactionOptions);
+  const makeStore = () => createFirestoreGrowthStore({ ...options, care, memory, online: createFirestoreOnlineStore(options) });
+  let job: any;
+  const rows = Array.from({ length: 20_000 }, (_, index) => makeGrowthItem({ childId, state: index === 0 || index === 19_999 ? "proposed" : "dismissed",
+    updatedAt: new Date(Date.parse("2026-08-01T00:00:00.000Z") + index * 1_000).toISOString() }));
+  async function seed(items: GrowthAttention[], changed = false) {
+    await authority.runTransaction("owner", childId, async binding => {
+      const change = changed ? await binding.prepareChange(randomUUID(), "growth", false) : null;
+      for (const item of items) binding.transaction.set(data.ref("growth_attention", "growth-attention", item.id), {
+        ...data.tags(binding.scope), attentionId: item.id, createdAt: item.createdAt, entityVersion: item.version,
+        ...data.seal("growth-attention", item.id, binding.scope, firestoreGrowthSchema, { item, lastRequest: null }, item.version),
+      });
+      change?.commit();
+      const at = new Date().toISOString();
+      job = firestoreBackgroundWorkSchema.parse({ kind: "child-change", scope: binding.scope, resourceId: childId,
+        basis: "synthetic-scope-basis", generation: binding.generation, authorizationVersion: binding.authorizationVersion,
+        id: "a".repeat(64), version: 1, createdAt: at, dueAt: at, dispatchRevision: 1, state: "pending", failures: 0,
+        attempts: 0, dispatch: "pending", dispatchLease: null, lease: null });
+    });
+  }
+  async function evaluate() {
+    queries = 0;
+    const result = await makeStore().evaluate(job);
+    assert.ok(queries <= 100, "a dispatch must not silently remove the work budget");
+    return result;
+  }
+  for (let offset = 0; offset < rows.length; offset += 200) await seed(rows.slice(offset, offset + 200));
+  async function readRow(id: string) {
+    return authority.runTransaction("owner", childId, async binding =>
+      data.open("growth-attention", id, binding.scope, firestoreGrowthSchema,
+        await binding.transaction.get(data.ref("growth_attention", "growth-attention", id))).item);
+  }
+  const first = await evaluate();
+  assert.equal(first.state, "deferred", "a full final page is not proof of EOF");
+  const checkId = childId;
+  const checkpoint = await authority.runTransaction("owner", childId, async binding => {
+    const snapshot = await binding.transaction.get(data.ref("growth_checks", "growth-check", checkId));
+    const raw = snapshot.data()!;
+    assert.equal(raw.evaluation, undefined, "progress belongs only in the encrypted record");
+    return data.open("growth-check", checkId, binding.scope, firestoreGrowthRecoverySchema, snapshot);
+  });
+  assert.ok(checkpoint.evaluation);
+  assert.equal((await readRow(rows[0]!.id)).state, "proposed", "deferred scans never publish partial attention changes");
+  assert.ok(JSON.stringify(checkpoint).length < 32_000, "checkpoint memory must not grow with history length");
+  assert.equal((await evaluate()).state, "completed", "a new store instance resumes the exact 20000 boundary");
+  assert.equal(visited.size, 20_000);
+  for (const row of [rows[0]!, rows[19_999]!]) {
+    const changed = await readRow(row.id);
+    assert.equal(changed.state, "inapplicable", "cold resume retains both prefix and final-page decisions");
+    assert.equal(changed.version, 2);
+  }
+
+  const tail = makeGrowthItem({ childId, state: "proposed", updatedAt: "2026-09-01T00:00:00.000Z" });
+  await seed([tail], true);
+  assert.equal((await evaluate()).state, "deferred", "20001 rows may not be reported as a truncated completion");
+  assert.equal((await evaluate()).state, "completed", "20001 also completes by cold continuation, not a larger fixed ceiling");
+  assert.equal((await readRow(tail.id)).state, "inapplicable");
+  const prefix = makeGrowthItem({ childId, state: "proposed", updatedAt: "2026-07-01T00:00:00.000Z" });
+  await seed([prefix], true);
+  assert.equal((await evaluate()).state, "deferred");
+  // A legitimate write before the cursor invalidates the saved scan, not just its last page.
+  await seed([{ ...prefix, version: 2, updatedAt: new Date().toISOString() }], true);
+  assert.equal((await evaluate()).state, "deferred", "a changed journal must restart the full prefix");
+  const oldGeneration = randomUUID();
+  assert.equal((await makeStore().evaluate({ ...job, generation: oldGeneration })).state, "stopped", "old-epoch progress cannot grant authority");
+  // A valid encrypted checkpoint retained from a different generation is not a capability to resume.
+  await authority.runTransaction("owner", childId, async binding => {
+    const ref = data.ref("growth_checks", "growth-check", childId);
+    const check = data.open("growth-check", childId, binding.scope, firestoreGrowthRecoverySchema, await binding.transaction.get(ref));
+    assert.ok(check.evaluation);
+    check.evaluation.authority = firestoreDomainHash([binding.scope, oldGeneration, binding.authorizationVersion, binding.childAccessVersion]);
+    binding.transaction.set(ref, { ...data.tags(binding.scope), ...data.seal("growth-check", childId, binding.scope, firestoreGrowthRecoverySchema, check) });
+  });
+  visited.clear();
+  assert.equal((await evaluate()).state, "deferred");
+  assert.equal((await evaluate()).state, "completed");
+  assert.equal((await readRow(prefix.id)).state, "inapplicable", "the restarted prefix contributes its current business decision");
+  assert.equal((await readRow(prefix.id)).version, 3);
+  assert.equal(visited.size, 20_002, "the resumed scan must include every current row, including a late prefix insertion");
 });

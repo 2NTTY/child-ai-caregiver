@@ -6013,3 +6013,41 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 - **變更**：
   - [firestore-growth.ts](server/firestore-growth.ts)：將 `all(b)` 改為 `.orderBy('createdAt').orderBy('attentionId').limit(200)` 分頁迴圈（設 `maxPages = 100` 上限並在達頁限時 fail-closed 拋出 `growth_history_requires_review`，避免靜默截斷）並以 `compareGrowthHistoryDesc` 按真實時間排序；同步移除 `prepareImportedAttention()` 與 `evaluate()` 之 `>= 500` 阻斷，保留單輪 `removed.length > 4`、`changes.length > 16` 與授權撤銷檢查。
   - [growth-history-cursor.test.ts](tests/growth-history-cursor.test.ts)：新增 C03 回歸測試（6→7 cases），先確認舊碼於第 7 案（506 筆歷史下執行 `evaluate()`、`setTopicEnabled()`、匯入及撤銷失敗關閉）失敗，修復後 `growth-history-cursor.test.ts`（7/7）與 `handover-growth-import.test.ts`（1/1）及 3x `tsc` 全數通過。
+
+
+<a id="log-20261116-req005-c03-resume"></a>
+## LOG-20261116-REQ005-C03-RESUME
+
+- Recorded At：2026-11-16 22:09 HKT
+- Work Date：2026-11-16（HKT）
+- Step / Package：REQ-005／C03；只修正 growth 全史累積及固定 20,000 拒絕。
+- Executor：Grok Bot 協助；Git 單一署名沿用 CheungHiuTung-2526。
+- Goal：以有界分頁／可續跑處理取代固定總量牆，不提高新業務總額或截斷報成功。
+- AI Assistance：定位、局部實作、測試及離線 fixture 核對。
+- Human Verification：未進行產品或人工驗收。
+
+### Actual Work
+- 共用全史陣列改為 scoped keyset visitor，每頁仍為既有 200 筆；evaluate 保留既有 100 頁作每次 dispatch 工作預算，未到 EOF 則以原 deferred 協定接續，不再作總容量拒絕。
+- 沿用 encrypted growth_checks 保存四個規則的有界 reducer／cursor，不增平行 store 或明文正文索引。scope／generation／權限、changeSeq 或輸入 basis 改變即重掃；只在真正 EOF 原子發表 attention 改動。
+- 以 bounded reference 重讀版本；保留既有 16 changes／4 topic changes 安全 guard。舊 check record 可讀；cold store 可續跑。跨 dispatch 成熟的 snooze 先重評，不漏當已完成。
+
+### Changes
+- server/firestore-growth.ts；tests/growth-history-cursor.test.ts 加入 20,000、20,001、20,002、cold resume、prefix mutation、舊 generation／加密 checkpoint 綁定及無局部發表回歸。
+
+### Verification
+- Requirement / Acceptance：REQ-005 §8／§9：取消小型總量牆、有界記憶體、完整才報完成、授權與版本一致。
+- Method：無網 network namespace＋setpriv／network guard；真實 Firestore store 方法配合成序列 transaction fixture。
+- Environment / Revision：以原 2672553d 為基底的隔離本機工作樹；未連接正式 Firestore。
+- Result：修正前 20,000 案因 growth_history_requires_review 失敗；修正後完整檔曾為 8 pass／0 fail／0 skip。最終加強 20,001 完成及 prefix revision 後，以原 gate 的 Node options 重跑指定大型回歸 1 pass／0 fail／0 skip；server tsc 通過。完整 gate 尚待此 commit 後執行。
+- Evidence：外部交付 REQ005_A04_C03_FIX_VERIFICATION.md 及離線收據；大型回歸另驗 checkpoint 小於 32KB、deferred 時不發表 attention 變更，以及每個 dispatch 最多 100 queries。
+
+### Limitations / Blockers
+- 最初大型測試曾錯用 initializeControl 重設既存控制而遭 control_conflict；已修 fixture，改驗有效舊 generation job／加密 checkpoint，不改控制機制或放寬來源／計數斷言。
+- 同步 topic／import／task 授權檢查改為流式，仍可能按需掃描全史；沒有真 Firestore 吞吐、費用或交易期限量測。新工作依原 worker deferred 接點，未宣稱已跑 hosted queue。
+- 不宣稱全 REQ-005 完成／可啟用；A／B／D／E 的治理與 live gate 仍保留。
+
+### Plan Update
+- 只有 C03 修正候選，未擴大產品或發布範圍。
+
+### Next Action
+- 跑 C 原完整離線 gate，與 A04 forward-only 合併至原始整合候選再驗證；不 push。

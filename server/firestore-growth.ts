@@ -41,7 +41,19 @@ const itemSchema: z.ZodType<GrowthAttention> = z.object({ id: uuid, childId: uui
 export const firestoreGrowthSchema = z.object({ item: itemSchema, lastRequest: growthActionSchema.nullable(), importedFrom: importProvenanceSchema.optional() }).strict();
 export const firestoreGrowthTopicSchema = z.object({ topicId: growthTopicSchema, version, disabled: z.boolean(), actor: text(256),
   at: time, request: growthTopicActionSchema.nullable(), importedFrom: importProvenanceSchema.optional() }).strict();
-const checkSchema = z.object({ childId: uuid, catalog: text(100), at: time, nextAt: time.nullable(), basis: hash }).strict();
+const historyRefSchema = z.object({ id: uuid, version, createdAt: time }).strict();
+// Existing sixteen-change guard bounds references; full attention content is never checkpointed.
+const evaluationSchema = z.object({ authority: hash, changeSeq: text(100), basis: hash, at: time,
+  after: z.tuple([time, uuid]).nullable(), invalid: z.array(historyRefSchema).max(16),
+  groups: z.array(z.object({ topicId: growthTopicSchema, latest: historyRefSchema.nullable(), related: historyRefSchema.nullable(),
+    hasBasis: z.boolean(), closed: z.boolean(), activeCount: z.number().int().nonnegative(),
+    active: z.array(historyRefSchema).max(16), due: z.array(historyRefSchema).max(16), future: time.nullable(),
+  }).strict()).length(GROWTH_RULES.length),
+}).strict().refine(value => new Set(value.groups.map(group => group.topicId)).size === GROWTH_RULES.length);
+const checkSchema = z.object({ childId: uuid, catalog: text(100), at: time, nextAt: time.nullable(), basis: hash,
+  evaluation: evaluationSchema.optional() }).strict();
+type HistoryRef = z.infer<typeof historyRefSchema>;
+type Evaluation = z.infer<typeof evaluationSchema>;
 type Saved = z.infer<typeof firestoreGrowthSchema>;
 type Topic = z.infer<typeof firestoreGrowthTopicSchema>;
 const same = (a: unknown, b: unknown) => firestoreDomainHash(a) === firestoreDomainHash(b);
@@ -107,28 +119,25 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     if (saved.topicId !== topicId || saved.version !== snap.get('recordVersion')) domainReject('growth_binding', 500);
     return saved;
   }
-  async function all(b: Binding): Promise<Saved[]> {
-    const collected: Saved[] = [];
-    let after: [string, string] | null = null;
+  /** Bounded pages, not a business-history quota. Visitors never retain the collection. */
+  async function visitHistory(b: Binding, visit: (saved: Saved) => void | boolean | Promise<void | boolean>,
+    options: { after?: [string, string] | null; pageBudget?: number } = {}) {
+    let after = options.after ?? null;
     const batchSize = 200;
-    const maxPages = 100;
-    for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
+    for (let page = 0; page < (options.pageBudget ?? Infinity); page++) {
       let q = query(b, 'growth_attention').orderBy('createdAt').orderBy('attentionId').limit(batchSize);
-      if (after) q = q.startAfter(after[0], after[1]);
+      if (after) q = q.startAfter(...after);
       const rows = await b.transaction.get(q);
-      if (!rows.size) break;
       for (const row of rows.docs) {
         const saved = data.open('growth-attention', row.get('attentionId'), b.scope, firestoreGrowthSchema, row);
         if (saved.item.id !== row.get('attentionId') || saved.item.childId !== b.scope.childId || saved.item.version !== row.get('recordVersion')
           || saved.item.createdAt !== row.get('createdAt')) domainReject('growth_binding', 500);
-        collected.push(saved);
+        after = [saved.item.createdAt, saved.item.id];
+        if (await visit(saved) === false) return { complete: true, after };
       }
-      if (rows.size < batchSize) break;
-      if (pageIndex === maxPages - 1) domainReject('growth_history_requires_review', 400);
-      const tail = rows.docs.at(-1)!;
-      after = [tail.get('createdAt') as string, tail.get('attentionId') as string];
+      if (rows.size < batchSize) return { complete: true, after };
     }
-    return collected.sort((a, x) => compareGrowthHistoryDesc(x.item, a.item));
+    return { complete: false, after };
   }
   async function topics(b: Binding): Promise<Topic[]> {
     const result: Topic[] = [];
@@ -270,11 +279,14 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
   async function backgroundInputIn(b: Binding, job: FirestoreBackgroundWork) {
     if (job.kind !== 'growth' || !same(job.scope, b.scope) || job.generation !== b.generation || job.authorizationVersion !== b.authorizationVersion) return null;
     if (await growthImportPending(data, b)) return null;
-    const records = await all(b), saved = records.find(value => value.item.id === job.resourceId);
-    if (!saved || saved.item.state !== 'proposed' || firestoreDomainHash(saved.item.basis) !== job.basis
-      || records.some(other => other.item.id !== saved.item.id && other.item.topicId === saved.item.topicId
-        && ['accepted', 'dismissed'].includes(other.item.state) && same(other.item.basis, saved.item.basis))
-      || (await topics(b)).some(value => value.topicId === saved.item.topicId && value.disabled)) return null;
+    const saved = await readAttention(b, job.resourceId);
+    if (!saved || saved.item.state !== 'proposed' || firestoreDomainHash(saved.item.basis) !== job.basis) return null;
+    let closed = false;
+    await visitHistory(b, other => {
+      if (other.item.id !== saved.item.id && other.item.topicId === saved.item.topicId
+        && ['accepted', 'dismissed'].includes(other.item.state) && same(other.item.basis, saved.item.basis)) { closed = true; return false; }
+    });
+    if (closed || (await topics(b)).some(value => value.topicId === saved.item.topicId && value.disabled)) return null;
     const item = await visible(b, saved.item, await load(b), !!saved.importedFrom); return item.sourceAvailable ? item : null;
   }
   async function prepareImportedAttention(b: Binding, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
@@ -283,14 +295,14 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     domainParse(uuid, opId);
     if (row.section !== 'growth_attention') domainReject('invalid_package_scope', 400);
     const sourceRow = growthImportSourceRow(row), source = domainParse(firestoreGrowthSchema, row.value, 'invalid_package_growth');
-    const records = await all(b), current = expected ? records.find(saved => saved.item.id === expected.id) : undefined;
+    const current = expected ? await readAttention(b, expected.id) : null;
     if (expected && (!current || current.item.version !== expected.expectedVersion || current.item.version >= 2147483647)) domainReject('growth_changed');
     const loaded = await load(b), settings = await topics(b), next = loaded.proposals.find(item => item.topicId === source.item.topicId);
     const supported = importedSupported(source.item, next), now = new Date().toISOString();
     const origin = makeImportProvenance(sourceRow, integrity, b.actorUserId, now); origin.current.sourceHash = firestoreDomainHash(row.value);
     const linked = mapped?.taskId ? await task(b, mapped.taskId) : null;
     if (mapped?.taskId && (!source.item.taskId || !linked || linked.version !== mapped.taskVersion)) domainReject('growth_changed');
-    const previous = mapped?.previousId ? records.find(saved => saved.item.id === mapped.previousId) : undefined;
+    const previous = mapped?.previousId ? await readAttention(b, mapped.previousId) : null;
     if (mapped?.previousId && (!source.item.previousId || !previous || previous.item.topicId !== source.item.topicId)) domainReject('growth_changed');
     const item: GrowthAttention = { ...source.item, id: current?.item.id ?? randomUUID(), childId: b.scope.childId,
       createdAt: canonicalGrowthTimestamp(source.item.createdAt),
@@ -298,8 +310,11 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
       evidence: supported && next ? next.evidence : { profileVersion: 0, facts: [] },
       source: supported && next ? next.source : source.item.source,
       taskId: linked?.id ?? null, taskState: linked?.occurrence.state ?? null, previousId: previous?.item.id ?? null };
-    const duplicateBasis = records.some(saved => saved.item.id !== item.id && saved.item.topicId === item.topicId
-      && saved.item.state !== 'inapplicable' && same(saved.item.basis, item.basis));
+    let duplicateBasis = false;
+    await visitHistory(b, saved => {
+      if (saved.item.id !== item.id && saved.item.topicId === item.topicId
+        && saved.item.state !== 'inapplicable' && same(saved.item.basis, item.basis)) { duplicateBasis = true; return false; }
+    });
     if (active(item) && (!supported || settings.some(topic => topic.topicId === item.topicId && topic.disabled) || duplicateBasis)) {
       item.state = 'inapplicable'; item.snoozeUntil = null; item.lastAction = 'imported_context_unavailable';
     } else if (item.state === 'snoozed' && (!item.snoozeUntil || Date.parse(item.snoozeUntil) <= Date.now())) {
@@ -322,8 +337,11 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     const sourceRow = growthImportSourceRow(row), source = domainParse(firestoreGrowthTopicSchema, row.value, 'invalid_package_growth');
     const current = (await topics(b)).find(topic => topic.topicId === source.topicId), currentVersion = current?.version ?? 1;
     if (currentVersion >= 2147483647 || expected && currentVersion !== expected.expectedVersion || !expected && current) domainReject('growth_changed');
-    const records = await all(b), removed = source.disabled ? records.filter(saved => saved.item.topicId === source.topicId && active(saved.item)) : [];
-    if (removed.length > 4) domainReject('growth_history_requires_review', 400);
+    const removed: Saved[] = [];
+    if (source.disabled) await visitHistory(b, saved => {
+      if (saved.item.topicId === source.topicId && active(saved.item)) removed.push(saved);
+      if (removed.length > 4) domainReject('growth_history_requires_review', 400);
+    });
     const now = new Date().toISOString(), origin = makeImportProvenance(sourceRow, integrity, b.actorUserId, now);
     origin.current.sourceHash = firestoreDomainHash(row.value);
     const value: Topic = { ...source, version: currentVersion + 1, at: now, request: null, importedFrom: origin };
@@ -467,7 +485,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
         const previous = (await topics(b)).find(topic => topic.topicId === topicId), currentVersion = previous?.version ?? 1;
         if (previous && currentVersion === input.expectedVersion + 1 && previous.actor === u && same(previous.request, input)) return;
         if (currentVersion !== input.expectedVersion) domainReject('growth_changed');
-        const loaded = await load(b), rule = GROWTH_RULES.find(value => value.id === topicId)!, records = await all(b);
+        const loaded = await load(b), rule = GROWTH_RULES.find(value => value.id === topicId)!;
         const commits: (() => void)[] = [];
         // Compound context confirmation has one change sequence and one transaction, not multiple partial fact writes.
         const nested: Binding = { ...b, prepareChange: async () => ({ changeSeq: (BigInt(b.changeSeq) + 1n).toString(), commit() {} }) };
@@ -490,8 +508,11 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
         }
         const now = new Date().toISOString(), disabled = input.action === 'set_enabled' ? !input.enabled : previous?.disabled ?? false;
         const next: Topic = { ...(previous?.importedFrom ? { importedFrom: previous.importedFrom } : {}), topicId, version: currentVersion + 1, disabled, actor: u, at: now, request: input };
-        const removed = disabled ? records.filter(saved => saved.item.topicId === topicId && active(saved.item)) : [];
-        if (removed.length > 4) domainReject('growth_history_requires_review', 400);
+        const removed: Saved[] = [];
+        if (disabled) await visitHistory(b, saved => {
+          if (saved.item.topicId === topicId && active(saved.item)) removed.push(saved);
+          if (removed.length > 4) domainReject('growth_history_requires_review', 400);
+        });
         const wake = await childWake(b, 'topic:' + topicId + ':' + next.version), context = await prepareContextChange(data, b);
         const change = await b.prepareChange(randomUUID(), commits.length ? 'memory' : 'growth', false);
         const id = JSON.stringify([c, topicId]), revisionId = JSON.stringify([c, topicId, next.version]);
@@ -508,25 +529,95 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
       return authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async b => {
         if (!same(job.scope, b.scope) || job.generation !== b.generation || job.authorizationVersion !== b.authorizationVersion) return { state: 'stopped' as const };
         if (await growthImportPending(data, b)) return { state: 'deferred' as const, nextAt: new Date(Date.now() + 30_000).toISOString() };
-        const loaded = await load(b), history = await all(b), settings = await topics(b), now = new Date(), at = now.toISOString();
-        const changes: Saved[] = [], jobs: Awaited<ReturnType<typeof prepareFirestoreBackgroundWork>>[] = [];
-        const checks = [nextGrowthCheck(loaded.context, now), ...loaded.sources.map(source => source.validUntil ?? null)];
-        for (const rule of GROWTH_RULES) {
-          const saved = history.filter(value => value.item.topicId === rule.id), latest = saved.at(-1);
-          const next = settings.find(value => value.topicId === rule.id)?.disabled ? undefined : loaded.proposals.find(value => value.topicId === rule.id);
-          for (const previous of saved.filter(value => active(value.item))) {
-            if (!next || !same(previous.item.basis, next.basis) || previous.importedFrom && !importedSupported(previous.item, next)
-              || saved.some(other => other.item.id !== previous.item.id && ['accepted', 'dismissed'].includes(other.item.state) && same(other.item.basis, previous.item.basis))) changes.push({ ...previous, item: { ...previous.item, version: previous.item.version + 1,
-              state: 'inapplicable', updatedAt: at, lastAction: 'basis_unavailable', actorUserId: null, note: '適用條件或已核對來源已改變。' }, lastRequest: null });
-            else if (previous.item.state === 'snoozed' && previous.item.snoozeUntil) {
-              if (Date.parse(previous.item.snoozeUntil) <= now.getTime()) changes.push({ ...previous, item: { ...previous.item, version: previous.item.version + 1,
-                state: 'proposed', snoozeUntil: null, updatedAt: at, lastAction: 'snooze_due', actorUserId: null }, lastRequest: null });
-              else checks.push(previous.item.snoozeUntil);
-            }
+        const loaded = await load(b), settings = await topics(b), scanAt = new Date().toISOString();
+        const checkRef = data.ref('growth_checks', 'growth-check', b.scope.childId), checkSnapshot = await b.transaction.get(checkRef);
+        const previousCheck = checkSnapshot.exists ? data.open('growth-check', b.scope.childId, b.scope, checkSchema, checkSnapshot) : null;
+        if (previousCheck && previousCheck.childId !== b.scope.childId) domainReject('growth_binding', 500);
+        const authorityKey = firestoreDomainHash([b.scope, b.generation, b.authorizationVersion, b.childAccessVersion]);
+        const inputBasis = firestoreDomainHash([GROWTH_CATALOG_REVISION, loaded.context.profile, loaded.context.facts,
+          loaded.proposals.map(value => [value.topicId, value.basis]),
+          loaded.sources.map(source => [source.chunkId, source.contentHash, source.validUntil ?? null]), settings]);
+        const savedProgress = previousCheck?.evaluation;
+        const progress: Evaluation = savedProgress && savedProgress.authority === authorityKey
+          && savedProgress.changeSeq === b.changeSeq && savedProgress.basis === inputBasis ? savedProgress : {
+            authority: authorityKey, changeSeq: b.changeSeq, basis: inputBasis, at: scanAt, after: null, invalid: [],
+            groups: GROWTH_RULES.map(rule => ({ topicId: rule.id, latest: null, related: null, hasBasis: false,
+              closed: false, activeCount: 0, active: [], due: [], future: null })),
+          };
+        const proposal = (topicId: GrowthTopicId) => settings.some(value => value.topicId === topicId && value.disabled)
+          ? undefined : loaded.proposals.find(value => value.topicId === topicId);
+        const reference = (item: GrowthAttention): HistoryRef => ({ id: item.id, version: item.version, createdAt: item.createdAt });
+        const retainChange = (refs: HistoryRef[], item: GrowthAttention) => {
+          refs.push(reference(item));
+          if (refs.length > 16) domainReject('growth_history_requires_review', 400);
+        };
+        const scanned = await visitHistory(b, saved => {
+          const item = saved.item, group = progress.groups.find(value => value.topicId === item.topicId)!;
+          const next = proposal(item.topicId), matches = !!next && same(item.basis, next.basis);
+          if (!group.latest || compareGrowthHistoryDesc(item, group.latest) < 0) group.latest = reference(item);
+          if (next && item.taskId && item.basis.stage === next.basis.stage
+            && (!group.related || compareGrowthHistoryDesc(item, group.related) < 0)) group.related = reference(item);
+          if (matches) {
+            group.hasBasis = true;
+            if (['accepted', 'dismissed'].includes(item.state)) group.closed = true;
           }
-          if (!next || saved.some(value => same(value.item.basis, next.basis)) || latest && !growthBasisChanged(latest.item.basis, next.basis)) continue;
-          const related = saved.toReversed().find(value => value.item.taskId && value.item.basis.stage === next.basis.stage)?.item.taskId;
-          const linked = await task(b, related ?? null), reasons: string[] = [];
+          if (!active(item)) return;
+          if (!matches || saved.importedFrom && !importedSupported(item, next)) { retainChange(progress.invalid, item); return; }
+          group.activeCount++;
+          if (group.active.length < 16) group.active.push(reference(item));
+          if (item.state === 'snoozed' && item.snoozeUntil) {
+            if (Date.parse(item.snoozeUntil) <= Date.parse(progress.at)) retainChange(group.due, item);
+            else if (!group.future || Date.parse(item.snoozeUntil) < Date.parse(group.future)) group.future = item.snoozeUntil;
+          }
+        }, { after: progress.after, pageBudget: 100 });
+        const basis = firestoreDomainHash([loaded.context.profile, loaded.context.facts, loaded.sources.map(source => [source.chunkId, source.contentHash])]);
+        if (!scanned.complete) {
+          progress.after = scanned.after;
+          const nextAt = new Date(Date.now() + 30_000).toISOString();
+          const check = { childId: b.scope.childId, catalog: GROWTH_CATALOG_REVISION, at: previousCheck?.at ?? progress.at,
+            nextAt, basis: previousCheck?.basis ?? basis, evaluation: progress };
+          b.transaction.set(checkRef, { ...data.tags(b.scope), ...data.seal('growth-check', b.scope.childId, b.scope, checkSchema, check) });
+          return { state: 'deferred' as const, nextAt };
+        }
+        // A snooze that matured between dispatches must be reclassified, not silently missed at EOF.
+        if (progress.groups.some(group => !group.closed && group.future && Date.parse(group.future) <= Date.now())) {
+          const nextAt = new Date(Date.now() + 30_000).toISOString();
+          b.transaction.set(checkRef, { ...data.tags(b.scope), ...data.seal('growth-check', b.scope.childId, b.scope, checkSchema,
+            { childId: b.scope.childId, catalog: GROWTH_CATALOG_REVISION, at: previousCheck?.at ?? progress.at, nextAt, basis }) });
+          return { state: 'deferred' as const, nextAt };
+        }
+        const now = new Date(), at = now.toISOString(), changes: Saved[] = [];
+        const jobs: Awaited<ReturnType<typeof prepareFirestoreBackgroundWork>>[] = [];
+        const checks = [nextGrowthCheck(loaded.context, now), ...loaded.sources.map(source => source.validUntil ?? null)];
+        const readReference = async (ref: HistoryRef) => {
+          const saved = await readAttention(b, ref.id);
+          if (!saved || saved.item.version !== ref.version || saved.item.createdAt !== ref.createdAt) domainReject('growth_changed');
+          return saved;
+        };
+        const invalidate = async (ref: HistoryRef) => {
+          const previous = await readReference(ref);
+          changes.push({ ...previous, item: { ...previous.item, version: previous.item.version + 1,
+            state: 'inapplicable', updatedAt: at, lastAction: 'basis_unavailable', actorUserId: null,
+            note: '適用條件或已核對來源已改變。' }, lastRequest: null });
+        };
+        for (const ref of progress.invalid) await invalidate(ref);
+        for (const rule of GROWTH_RULES) {
+          const group = progress.groups.find(value => value.topicId === rule.id)!, next = proposal(rule.id);
+          if (group.closed) {
+            if (group.activeCount > 16) domainReject('growth_history_requires_review', 400);
+            for (const ref of group.active) await invalidate(ref);
+          } else {
+            for (const ref of group.due) {
+              const previous = await readReference(ref);
+              changes.push({ ...previous, item: { ...previous.item, version: previous.item.version + 1, state: 'proposed',
+                snoozeUntil: null, updatedAt: at, lastAction: 'snooze_due', actorUserId: null }, lastRequest: null });
+            }
+            if (group.future) checks.push(group.future);
+          }
+          const latest = group.latest ? await readReference(group.latest) : null;
+          if (!next || group.hasBasis || latest && !growthBasisChanged(latest.item.basis, next.basis)) continue;
+          const related = group.related ? await readReference(group.related) : null;
+          const linked = await task(b, related?.item.taskId ?? null), reasons: string[] = [];
           if (latest) {
             if (latest.item.basis.stage !== next.basis.stage) reasons.push('孩子已進入此規則的新適用階段');
             if (latest.item.basis.ruleRevision !== next.basis.ruleRevision || latest.item.basis.sourceHash !== next.basis.sourceHash) reasons.push('官方依據或規則已重新核對並實質更新');
@@ -543,13 +634,11 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
         if (changes.length > 16) domainReject('growth_history_requires_review', 400);
         const nextAt = checks.filter((value): value is string => !!value && Date.parse(value) > now.getTime()).sort((a, x) => Date.parse(a) - Date.parse(x))[0] ?? null;
         if (nextAt) jobs.push(await childWake(b, 'due:' + nextAt + ':' + GROWTH_CATALOG_REVISION, nextAt));
-        const check = { childId: b.scope.childId, catalog: GROWTH_CATALOG_REVISION, at, nextAt,
-          basis: firestoreDomainHash([loaded.context.profile, loaded.context.facts, loaded.sources.map(source => [source.chunkId, source.contentHash])]) };
+        const check = { childId: b.scope.childId, catalog: GROWTH_CATALOG_REVISION, at, nextAt, basis };
         const change = changes.length ? await b.prepareChange(randomUUID(), 'growth', false) : null;
         const context = changes.length ? await prepareContextChange(data, b) : null;
         change?.commit(); context?.(); for (const saved of changes) write(b, saved); for (const job of jobs) job.commit();
-        b.transaction.set(data.ref('growth_checks', 'growth-check', b.scope.childId), { ...data.tags(b.scope),
-          ...data.seal('growth-check', b.scope.childId, b.scope, checkSchema, check) });
+        b.transaction.set(checkRef, { ...data.tags(b.scope), ...data.seal('growth-check', b.scope.childId, b.scope, checkSchema, check) });
         return { state: 'completed' as const };
       });
     },
@@ -559,11 +648,16 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     }),
     authorizeBackground: async (b: Binding, job: FirestoreBackgroundWork) => !!await backgroundInputIn(b, job),
     async taskAllowedIn(b: Binding, taskId: string) {
-        const linked = (await all(b)).filter(value => value.item.taskId === taskId); if (!linked.length) return true;
-        const loaded = await load(b), settings = await topics(b);
-        for (const { item, importedFrom } of linked) if (settings.some(value => value.topicId === item.topicId && value.disabled)
-          || ['dismissed', 'snoozed', 'inapplicable'].includes(item.state) || !(await visible(b, item, loaded, !!importedFrom)).sourceAvailable) return false;
-        return true;
+        let loaded: Awaited<ReturnType<typeof load>> | undefined, settings: Topic[] | undefined, allowed = true;
+        await visitHistory(b, async ({ item, importedFrom }) => {
+          if (item.taskId !== taskId) return;
+          loaded ??= await load(b); settings ??= await topics(b);
+          if (settings.some(value => value.topicId === item.topicId && value.disabled)
+            || ['dismissed', 'snoozed', 'inapplicable'].includes(item.state) || !(await visible(b, item, loaded, !!importedFrom)).sourceAvailable) {
+            allowed = false; return false;
+          }
+        });
+        return allowed;
     },
     async taskAllowed(u: string, c: string, taskId: string): Promise<boolean> {
       return authority.runTransaction(u, c, b => store.taskAllowedIn(b, taskId));
