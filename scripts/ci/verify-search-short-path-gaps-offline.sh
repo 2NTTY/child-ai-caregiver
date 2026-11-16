@@ -33,7 +33,7 @@ TEST_FILES=(
   tests/chat-delivery-review.test.ts
   tests/product-agent-execution-contract.test.ts
 )
-TEST_CASES=(4 44 8)
+TEST_CASES=(5 44 8)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \

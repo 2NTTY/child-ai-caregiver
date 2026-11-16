@@ -6068,3 +6068,11 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復：
 1）擴充 `OPERATION_CLAIM_PATTERN` 覆蓋「已刪晒」、「記低咗」、「改咗」、「幫你...」等粵語口語操作宣稱，並於 [search-short-path-gaps 測試](tests/search-short-path-gaps.test.ts) 新增「多謝，已刪晒所有記錄。」與「唔該，記低咗啦。」失敗關閉斷言。
 2）將 CI workflow 與 `scripts/ci/verify-search-short-path-gaps-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 及 `summary-progress-contract.mjs` 驗證契約。
+
+### 2026-11-16　B-P6 R3 審核整改（結構性封堵完成語態與非問藥劑量）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R3.md` F2–F3，於本地 forward-only 新提交處理（R1／R2 歷史條目維持原文）：
+1）同步更新 [chat-delivery-review.ts](server/chat-delivery-review.ts)：擴充 `OPERATION_CLAIM_PATTERN` 完成態詞尾（`好|妥|完|晒|曬|咗|左|了|喇|啦|嘞|囉|成功`）及動詞，並新增綁定 `userRequest` 的 `draftClaimsUnverifiedOperation`，無 verified receipt 時不因模型自標 `kind` 而直交；
+2）新增獨立劑量形態 `DOSE_AMOUNT_SOURCE`（時段／頻率或動詞或分數／醫療單位＋數量）併入 `CARE_ADVISORY_PATTERN` 與 `MEDICAL_CLAIM_PATTERN`，不再依賴用戶問題出現「藥」字（涵蓋「BB發燒點算？」→「每次四分之一粒。」「每晚半粒，連續三日。」「四分一粒。」「每4小時四分之一粒。」）；
+3）於 [search-short-path-gaps 測試](tests/search-short-path-gaps.test.ts) 新增 R4 真 `ProductAgent` + runtime 回歸（4→5 cases），保留純寒暄／有界補問／向用戶反問免審對照，並同步更新 [CI 腳本](scripts/ci/verify-search-short-path-gaps-offline.sh)。
+本輪仍屬離線實證，無真 Gemini／Vertex、無真機畫面 E2E、無 hosted Actions 收據，且未 push／開 PR。

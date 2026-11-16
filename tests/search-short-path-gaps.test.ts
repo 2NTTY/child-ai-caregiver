@@ -356,3 +356,135 @@ test('bare Cantonese operation claims and short-path numeric or Chinese-numeral 
     assert.equal(result?.text.includes('10 ml') || result?.text.includes('半粒') || result?.text.includes('一粒') || result?.text.includes('半包'), false);
   }
 });
+
+test('R4: unverified completion wording and ungrounded dose amounts never become plain text (F2-F3)', async () => {
+  const { requiresChatDeliveryReview: needsReview, draftLooksLikeSubstantiveCareAdvice: looksLikeCare } = await import('../server/chat-delivery-review.ts');
+  const { createAgentRuntime: makeRuntime } = await import('../server/agent-runtime.ts');
+  const { createProductAgent: makeAgent } = await import('../server/product-agent.ts');
+  const { readAiConfig: readConfig } = await import('../server/ai-config.ts');
+  const { FinishReason: Finish } = await import('@google/genai');
+  const r4Scope = { userId: 'synthetic-user', workspaceId: 'synthetic-workspace', childId: '1ebcb39d-a2db-4b8c-a432-7ffcb3de5808', authorizationVersion: '1', dataVersion: 'epoch:1' };
+  const messageId = '66666666-6666-4666-8666-6666666666a4';
+  const runId = '77777777-7777-4777-8777-7777777777a4';
+
+  async function presentOnly(userMsg: string, draftText: string) {
+    let reviewCalls = 0;
+    let saved: any = null;
+    const runtime = makeRuntime({
+      config: readConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project', AI_DAILY_USER_ATTEMPTS: '10', AI_DAILY_GLOBAL_ATTEMPTS: '50' }),
+      usage: { reserve: async () => true, record: async () => {} },
+      provider: {
+        generate: async (request: any) => {
+          const promptText = request.contents.flatMap((content: any) => content.parts ?? []).map((part: any) => part.text ?? '').join('\n');
+          if (promptText.includes('chat-delivery-review')) {
+            reviewCalls++;
+            const payload = JSON.parse(promptText.slice(promptText.indexOf('{'))) as { draftHash: string; verifiedOperations?: unknown[] };
+            assert.deepEqual(payload.verifiedOperations ?? [], []);
+            return {
+              content: { role: 'model', parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: 'insufficient_evidence', issues: [{ paragraph: 0, reason: 'unverified claim' }] }) }] },
+              finishReason: Finish.STOP,
+            };
+          }
+          return {
+            content: { role: 'model', parts: [{ functionCall: { id: 'present-r4', name: 'present_answer', args: { kind: 'clarification', paragraphs: [{ text: draftText, citationIds: [] }] } } }] },
+            finishReason: Finish.STOP,
+          };
+        },
+      },
+    } as any);
+    const service = makeAgent({
+      runtime,
+      store: {
+        claim: async () => ({ runId, scope: r4Scope, created: true, state: 'running', expiresAt: new Date(Date.now() + 90000).toISOString() }),
+        authorize: async () => true,
+        finish: async (_s: unknown, result: unknown) => { saved = result; return true; },
+        get: async () => saved,
+      },
+      memory: {
+        initialConversationSummary: async () => null,
+        context: async () => ({
+          profile: { childId: r4Scope.childId, version: 0, data: null },
+          profileApplicable: false,
+          facts: [],
+          topics: [],
+          summary: null,
+          recentMessages: [],
+          conflictingKeys: [],
+          unavailableFactKeys: [],
+          truncated: { facts: false, topics: false, messages: false },
+        }),
+        facts: async () => ({ items: [], nextAfterId: null }),
+      },
+      chat: { listForUser: async () => ({ messages: [{ id: messageId, role: 'user', text: userMsg }] }) },
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
+      knowledge: { createRun: () => ({ search: async () => ({ mode: 'vector_keyword', chunks: [] }), revalidateCitations: async () => true }) },
+    } as any);
+    const result = await service.reply(r4Scope.userId, r4Scope.childId, messageId, async () => true);
+    assert.ok(result);
+    return { result, reviewCalls };
+  }
+
+  const draftOf = (userRequest: string, text: string) => ({
+    userRequest,
+    kind: 'clarification' as const,
+    visibility: 'private' as const,
+    serverSubstitutedSourceText: false,
+    paragraphs: [{ text, citationIds: [] as string[] }],
+    sources: [],
+    scope: r4Scope,
+  });
+
+  for (const [userMsg, claim] of [
+    ['幫我更改提醒', '提醒時間改好喇。'],
+    ['刪除紀錄', '所有紀錄都清空晒。'],
+    ['幫我取消提醒', '搞掂喇，提醒已經冇咗。'],
+    ['幫我更新提醒時間', '提醒時間已經轉做七點。'],
+  ] as const) {
+    assert.equal(needsReview({
+      kind: 'clarification',
+      visibility: 'private',
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text: claim, citationIds: [] }],
+      sources: [],
+      scope: r4Scope,
+    } as any), true, `Bare completion wording without userRequest must require review: ${claim}`);
+    assert.equal(needsReview(draftOf(userMsg, claim) as any), true, `Completion wording without a receipt must require review: ${claim}`);
+    const { result, reviewCalls } = await presentOnly(userMsg, claim);
+    assert.equal(reviewCalls, 1, `Unverified completion must reach delivery review: ${claim}`);
+    assert.equal(result.status, 'stopped');
+    assert.equal(result.text.includes(claim), false);
+  }
+
+  for (const [userMsg, dose] of [
+    ['BB發燒點算？', '每次四分之一粒。'],
+    ['BB發燒點算？', '每晚半粒，連續三日。'],
+    ['BB發燒點算？', '一日兩次，每次1/4粒。'],
+    ['BB發燒點算？', '睡前食半茶匙。'],
+    ['BB發燒點算？', '四分一粒。'],
+    ['BB發燒點算？', '每4小時四分之一粒。'],
+  ] as const) {
+    const bareDraft = {
+      kind: 'clarification' as const,
+      visibility: 'private' as const,
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text: dose, citationIds: [] as string[] }],
+      sources: [],
+      scope: r4Scope,
+    };
+    assert.equal(looksLikeCare(bareDraft as any), true, `Bare dose wording must classify as care advice: ${dose}`);
+    assert.equal(needsReview(bareDraft as any), true, `Bare dose wording must require review: ${dose}`);
+    assert.equal(looksLikeCare(draftOf(userMsg, dose) as any), true, `Dose wording is care advice without a medicine word in the question: ${dose}`);
+    assert.equal(needsReview(draftOf(userMsg, dose) as any), true, `Dose wording must require review: ${dose}`);
+    const { result } = await presentOnly(userMsg, dose);
+    assert.equal(result.status, 'stopped', `Ungrounded dose must not be delivered: ${dose}`);
+    assert.equal(result.text.includes('粒') || result.text.includes('茶匙'), false);
+  }
+
+  for (const [userMsg, text] of [
+    ['你好', '你好！有咩可以幫到你？'],
+    ['幫我更改提醒', '你想改成幾點？'],
+    ['BB發燒點算？', 'BB幾個月大？'],
+  ] as const) {
+    assert.equal(needsReview(draftOf(userMsg, text) as any), false, `Control must stay exempt: ${text}`);
+  }
+});
