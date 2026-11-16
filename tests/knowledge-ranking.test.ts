@@ -224,6 +224,7 @@ test("post-illness and feeding-refusal timing queries do not false-expand into s
     "BB幾多個月先可以食嘢？",
     "BB幾大開始食固體食物？",
     "半歲BB幾時可以食嘢？",
+    "六個月BB幾時可以食嘢？",
     "請問BB幾時可以開始食嘢呢？",
     "BB幾時先可以開始食嘢？",
     "寶寶幾多個月先可以食固體食物？",
@@ -231,4 +232,42 @@ test("post-illness and feeding-refusal timing queries do not false-expand into s
     const tokens = [...knowledgeTokens(timingQuery, true)];
     assert.equal(tokens.includes("加固"), true, `Expected 加固 expansion for: ${timingQuery}`);
   }
+});
+
+test("age modifiers alone never pull starting-solids for post-illness queries while corpus index tokens stay invariant (R5 F1)", () => {
+  const solidsCandidate = candidate("fhs-solid-food/starting-solids", null, {
+    key: "starting-solids",
+    title: "引進固體食物",
+    section: "約六個月大時開始",
+    sourceExcerpt: "未足四個月大的寶寶不應吃奶以外的食物。",
+    text: "到了六個月大後，單靠吃母乳已不能滿足寶寶的營養需要。",
+    keywords: ["加固", "固體食物", "米糊", "六個月"],
+  });
+  const solidsEnCandidate = candidate("fhs-feeding-booklet-en/introducing-solids-page-3", null, {
+    key: "introducing-solids-page-3",
+    title: "Healthy Eating for 6 to 24 month old children (1) — Getting Started",
+    section: "PDF p.3 — Introduce solid foods at around 6 months",
+    sourceExcerpt: "After 6 months, babies have a higher demand for iron;",
+    text: "約六個月開始加入固體食物。",
+    keywords: ["固體食物", "六個月", "solid foods"],
+  });
+  for (const query of [
+    "半歲BB屙水完幾時可以食嘢？",
+    "六個月BB腸胃炎之後幾時可以食嘢？",
+    "3個月BB嘔完幾時可以食嘢？",
+    "半歲BB發燒點算？",
+    "6 month old baby diarrhea when can eat?",
+  ]) {
+    assert.deepEqual(
+      rankKnowledge(query, [solidsCandidate, solidsEnCandidate]).map(item => item.chunkId),
+      [],
+      `Age tokens must not false-match starting-solids for: ${query}`,
+    );
+  }
+  for (const timingQuery of ["半歲BB幾時可以食嘢？", "六個月BB幾時可以開始食嘢？", "半歲食開糊仔未？"]) {
+    const ranked = rankKnowledge(timingQuery, [solidsCandidate, solidsEnCandidate]);
+    assert.equal(ranked.length, 2, `Legitimate timing query must still recall solids: ${timingQuery}`);
+  }
+  assert.ok(knowledgeIndexTokens("到了六個月大後開始加固", false).has("六個"));
+  assert.ok(knowledgeIndexTokens("到了六個月大後開始加固", false).has("個月"));
 });

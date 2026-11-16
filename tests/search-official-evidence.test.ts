@@ -1534,3 +1534,156 @@ test("R4: illness synonyms never borrow starting-solids, and unverified completi
     assert.equal(requiresChatDeliveryReview(draft), false, `Control must stay exempt: ${text}`);
   }
 });
+
+test("R5: age-bearing post-illness queries, statement+follow-up claims, and English/Chinese spoon doses fail closed (F1-F3)", async (t) => {
+  // F1: Real Firestore keyword_degraded retrieval with all 5 curated seeds must not recall solids just from age bigrams.
+  const seedSources = await loadCuratedSeedSources();
+  const fsEnv = createInMemoryFirestoreKnowledgeStore([...LOCAL_OFFICIAL_SEED_IDS]);
+  const localManifest = await loadLocalDevelopmentManifest();
+  for (const src of seedSources) {
+    await fsEnv.publishSource(src, buildLocalOfficialSeedAssessment(src, localManifest), () => vector);
+  }
+  const degradedGateway = createEmbeddingGateway({
+    config,
+    usage: fakeUsage(),
+    provider: { embed: async () => { throw new Error("Synthetic embedding provider unavailable"); } },
+  });
+  const degradedRetriever = createKnowledgeRetriever(fsEnv.store, degradedGateway);
+  const hkFilter = parseKnowledgeFilter({
+    region: "HK",
+    classification: "official_guidance",
+    age: { basis: "actual", minMonths: 6, maxMonths: 6 },
+    topics: [],
+  });
+  for (const query of [
+    "半歲BB屙水完幾時可以食嘢？",
+    "六個月BB腸胃炎之後幾時可以食嘢？",
+    "半歲BB發燒之後幾時先可以食嘢？",
+  ]) {
+    const budget = new AgentBudget();
+    t.after(() => budget.close());
+    const res = await degradedRetriever.createRun({ actor: queryActor, budget, authorize: async () => true }).search(query, hkFilter);
+    assert.equal(res.mode, "keyword_degraded");
+    assert.deepEqual(res.chunks, [], `Age-bearing post-illness timing must not recall solids: ${query}`);
+  }
+  for (const query of ["半歲BB幾時可以食嘢？", "六個月BB幾時可以開始食嘢？"]) {
+    const budget = new AgentBudget();
+    t.after(() => budget.close());
+    const res = await degradedRetriever.createRun({ actor: queryActor, budget, authorize: async () => true }).search(query, hkFilter);
+    assert.equal(res.mode, "keyword_degraded");
+    assert.ok(
+      res.chunks.some(c => c.key === "starting-solids" || c.key === "introducing-solids-page-3"),
+      `Legitimate age-bearing solids timing must still recall solids: ${query}`,
+    );
+  }
+
+  // F2/F3: Real runtime + ProductAgent end-to-end.
+  async function presentOnly(userMsg: string, draftText: string) {
+    let reviewCalls = 0;
+    let savedResult: ProductAgentResult | null = null;
+    const runtime = createAgentRuntime({
+      config,
+      usage: { reserve: async () => true, record: async () => {} },
+      provider: {
+        generate: async request => {
+          const promptText = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? "").join("\n");
+          if (promptText.includes("chat-delivery-review")) {
+            reviewCalls++;
+            const payload = JSON.parse(promptText.slice(promptText.indexOf("{"))) as { draftHash: string; verifiedOperations?: unknown[] };
+            assert.deepEqual(payload.verifiedOperations ?? [], []);
+            return {
+              content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "insufficient_evidence", issues: [{ paragraph: 0, reason: "unverified claim" }] }) }] },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          return {
+            content: { role: "model", parts: [{ functionCall: { id: "present-r5", name: "present_answer", args: { kind: "clarification", paragraphs: [{ text: draftText, citationIds: [] }] } } }] },
+            finishReason: FinishReason.STOP,
+          };
+        },
+      },
+    });
+    const agent = createProductAgent({
+      runtime,
+      store: {
+        claim: async () => ({ runId, scope, created: true, sourceMessageId: messageId, state: "running", expiresAt: new Date(Date.now() + 90000).toISOString() }),
+        authorize: async () => true,
+        finish: async (_scope: unknown, result: ProductAgentResult) => { savedResult = result; return true; },
+        get: async () => savedResult,
+      } as any,
+      memory: { context: async () => emptyMemoryContext() } as any,
+      chat: { listForUser: async () => ({ messages: [{ id: messageId, role: "user", text: userMsg }] }) } as any,
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) } as any,
+      knowledge: createKnowledgeRetriever({ candidates: async () => [] }, fakeEmbeddingGateway()),
+    });
+    const result = await agent.reply(userId, childId, messageId, async () => true);
+    assert.ok(result);
+    return { result, reviewCalls };
+  }
+
+  for (const [userMsg, claim] of [
+    ["幫我更改提醒時間", "提醒時間現為晚上八點。仲有其他事？"],
+    ["刪除所有紀錄", "所有紀錄已經一筆不留。仲有其他事？"],
+    ["幫我更改提醒時間", "提醒時間現為晚上八點，仲有其他事？"],
+    ["幫我安排日程", "提醒時間現為晚上八點。"],
+  ] as const) {
+    const bareDraft = {
+      kind: "clarification" as const,
+      visibility: "private" as const,
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text: claim, citationIds: [] }],
+      sources: [],
+      scope,
+    };
+    assert.equal(requiresChatDeliveryReview(bareDraft), true, `Bare state-result claim must require review: ${claim}`);
+    const draft = { ...bareDraft, userRequest: userMsg };
+    assert.equal(requiresChatDeliveryReview(draft), true, `Statement + follow-up question must require review: ${claim}`);
+    const { result, reviewCalls } = await presentOnly(userMsg, claim);
+    assert.equal(reviewCalls, 1, `Unverified statement + question must reach delivery review: ${claim}`);
+    assert.equal(result.status, "stopped");
+    assert.equal(result.text.includes("晚上八點") || result.text.includes("一筆不留"), false);
+  }
+
+  for (const [userMsg, dose] of [
+    ["BB發燒點算？", "Take one tablet at bedtime."],
+    ["BB發燒點算？", "每餐一小匙，連續三日。"],
+    ["BB發燒點算？", "Give two teaspoons once daily."],
+    ["BB發燒點算？", "一日兩次，每次兩大匙。"],
+    ["BB發燒點算？", "每次50微克。"],
+  ] as const) {
+    const bareDraft = {
+      kind: "clarification" as const,
+      visibility: "private" as const,
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text: dose, citationIds: [] }],
+      sources: [],
+      scope,
+    };
+    assert.equal(draftLooksLikeSubstantiveCareAdvice(bareDraft), true, `Bare dose wording must classify as care advice: ${dose}`);
+    assert.equal(requiresChatDeliveryReview(bareDraft), true, `Bare dose wording must require review: ${dose}`);
+    const draft = { ...bareDraft, userRequest: userMsg };
+    assert.equal(draftLooksLikeSubstantiveCareAdvice(draft), true, `Dose wording must classify as care advice: ${dose}`);
+    assert.equal(requiresChatDeliveryReview(draft), true, `Dose wording must require review: ${dose}`);
+    const { result } = await presentOnly(userMsg, dose);
+    assert.equal(result.status, "stopped", `Ungrounded dose must not be delivered: ${dose}`);
+    assert.equal(result.text.includes("tablet") || result.text.includes("小匙") || result.text.includes("teaspoon") || result.text.includes("微克"), false);
+  }
+
+  for (const [userMsg, text] of [
+    ["你好", "你好！有咩可以幫到你？"],
+    ["幫我更改提醒時間", "你想改成幾點？"],
+    ["刪除所有紀錄", "請問你想刪除哪一項？"],
+    ["BB發燒點算？", "BB而家幾個月大？"],
+    ["BB發燒點算？", "請問，BB有沒有發燒？"],
+  ] as const) {
+    assert.equal(requiresChatDeliveryReview({
+      userRequest: userMsg,
+      kind: "clarification",
+      visibility: "private",
+      serverSubstitutedSourceText: false,
+      paragraphs: [{ text, citationIds: [] }],
+      sources: [],
+      scope,
+    }), false, `Pure control must stay exempt: ${userMsg} -> ${text}`);
+  }
+});

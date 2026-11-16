@@ -137,9 +137,9 @@ const CARE_ADVISORY_BASE_PATTERN = /應立即|應該|必須|建議(?:你|您|家
 // caught by the blanket fallback. They never grant authority or clear a task obligation.
 const MEDICAL_CLAIM_BASE_PATTERN = /用藥|藥丸|藥水|餵藥|食藥|吃藥|服藥|劑量|\b\d+(?:\.\d+)?\s*(?:ml|mg|毫升|毫克)\b|每次(?:\s*(?:\d|半|[一二三四五六七八九十兩幾]+)\s*(?:粒|片|包|滴|茶?匙|湯?匙|藥匙|顆|丸|支|劑|份|毫升|毫克|ml|mg))|阿士匹靈|撲熱息痛|布洛芬|麻疹|傷口|癒合|aspirin|ibuprofen|paracetamol|measles|wound|heal(?:ed|ing)/iu;
 const ORIGINAL_EVIDENCE_CLAIM_PATTERN = /(?:照片|相片|圖片|影像|錄音|錄影).{0,40}(?:顯示|證明|同意|確認)|(?:photo|image|recording|audio).{0,60}(?:shows?|proves?|proof|consent|agreed)/iu;
-const OPERATION_CLAIM_PATTERN = /(?:已(?:經)?|經已|幫(?:你|您)).{0,12}(?:完成|保存|儲存|刪(?:除|晒|咗)?|修改|更改|改好|改返|改咗?|換(?:成|做|好)?|轉(?:成|做|好)?|更新|發送|送出|安排|記(?:住|低|錄|咗)?|紀錄|存好|清除|清空|取消|移除|重設|設定|設置|標記|處理|辦妥|弄好|搞掂)|(?:保存|儲存|存好|刪(?:除|晒)?|修改|更改|改好|改|換(?:成|做|好)|轉(?:成|做|好)|更新|發送|送出|安排|記(?:住|低|錄)?|紀錄|取消|移除|清除|清空|重設|復原|設定|設好|標記|完成|處理|辦妥|弄|搞掂)(?:好|妥|完|晒|曬|咗|左|了|喇|啦|嘞|囉|成功)|(?<!未|唔|沒有|沒|無)(?:搞掂|辦妥|處理好|已經OK)|刪晒|(?:already|successfully|I have|I've).{0,30}(?:saved|deleted|updated|sent|scheduled|changed|cleared|removed|reset|completed)|(?:saved|deleted|updated|sent|scheduled|cleared|removed|reset|completed)\b.{0,20}(?:successfully|already)|\ball\s+(?:done|set|saved|deleted|updated|cleared)\b/iu;
-const USER_DOSING_REQUEST_PATTERN = /(?:點(?:樣)?(?:食|餵|服|用)|食幾多|餵幾多|服幾多|飲幾多|用幾多|劑量|幾多\s*(?:ml|mg|毫升|毫克|粒|片|包|滴|匙)|藥(?:物|水|丸|粉)?|退燒藥|抗生素|撲熱息痛|布洛芬|阿士匹靈|dosage|dose|medication|how\s+much.{0,20}(?:give|take|medicine))/iu;
-const DRAFT_DOSING_FRAGMENT_PATTERN = /(?:每次|每日|每天|每晚|早晚|睡前|每\s*[\d一二三四五六七八九十兩半]+\s*(?:小時|個?鐘|次)|[\d一二三四五六七八九十兩半]+(?:\.\d+)?\s*(?:粒|片|包|滴|茶?匙|湯?匙|藥匙|顆|丸|支|劑|份|次|ml|mg|毫升|毫克))/iu;
+const OPERATION_CLAIM_PATTERN = /(?:已(?:經)?|經已|幫(?:你|您)).{0,12}(?:完成|保存|儲存|刪(?:除|晒|咗)?|修改|更改|改好|改返|改咗?|換(?:成|做|好)?|轉(?:成|做|好)?|更新|發送|送出|安排|記(?:住|低|錄|咗)?|紀錄|存好|清除|清空|取消|移除|重設|設定|設置|標記|處理|辦妥|弄好|搞掂)|(?:保存|儲存|存好|刪(?:除|晒)?|修改|更改|改好|改|換(?:成|做|好)|轉(?:成|做|好)|更新|發送|送出|安排|記(?:住|低|錄)?|紀錄|取消|移除|清除|清空|重設|復原|設定|設好|標記|完成|處理|辦妥|弄|搞掂)(?:好|妥|完|晒|曬|咗|左|了|喇|啦|嘞|囉|成功)|(?<!未|唔|沒有|沒|無)(?:搞掂|辦妥|處理好|已經OK|現為|目前為|現已|已變成|已轉為|已經一筆不留|一筆不留|全部清空|全數刪除)|刪晒|(?:already|successfully|I have|I've).{0,30}(?:saved|deleted|updated|sent|scheduled|changed|cleared|removed|reset|completed)|(?:saved|deleted|updated|sent|scheduled|cleared|removed|reset|completed)\b.{0,20}(?:successfully|already)|\ball\s+(?:done|set|saved|deleted|updated|cleared)\b|\b(?:has|have|is|are)\s+now\s+(?:saved|deleted|updated|changed|cleared|removed|gone|set\s+to)|\bno\s+longer\s+(?:exist|exists|there)\b/iu;
+const USER_DOSING_REQUEST_PATTERN = /(?:點(?:樣)?(?:食|餵|服|用)|食幾多|餵幾多|服幾多|飲幾多|用幾多|劑量|幾多\s*(?:ml|mg|mcg|ug|毫升|毫克|微克|粒|片|包|滴|匙)|藥(?:物|水|丸|粉)?|退燒藥|抗生素|撲熱息痛|布洛芬|阿士匹靈|dosage|dose|medication|how\s+much.{0,20}(?:give|take|medicine))/iu;
+const DRAFT_DOSING_FRAGMENT_PATTERN = /(?:每次|每日|每天|每晚|每餐|早晚|睡前|每\s*[\d一二三四五六七八九十兩半]+\s*(?:小時|個?鐘|次)|[\d一二三四五六七八九十兩半]+(?:\.\d+)?\s*(?:粒|片|包|滴|茶?匙|小?匙|大?匙|平?匙|湯?匙|藥匙|匙羹|顆|丸|支|劑|份|次|ml|mg|mcg|ug|毫升|毫克|微克|克))/iu;
 
 function draftMatchesUserDosingContext(draft: ChatDeliveryDraft, text: string): boolean {
   return Boolean(draft.userRequest && USER_DOSING_REQUEST_PATTERN.test(draft.userRequest)
@@ -147,28 +147,47 @@ function draftMatchesUserDosingContext(draft: ChatDeliveryDraft, text: string): 
 }
 
 // Concrete dose amounts (timing/frequency + quantity + unit, give/take verb + quantity + unit, or bare medicinal/fractional
-// quantities + unit) are care instructions on their own. They never depend on the user having said a medicine word.
+// quantities + unit in Chinese or spelled-out English) are care instructions on their own.
 const DOSE_QUANTITY = String.raw`(?:\d+(?:\.\d+)?\s*\/\s*\d+|\d+(?:\.\d+)?|[¼½¾]|半|[\d一二三四五六七八九十百兩两]+\s*分之?\s*[\d一二三四五六七八九十兩两]+|[一二三四五六七八九十百兩两幾]+)`;
 const DOSE_FRACTION_OR_HALF = String.raw`(?:\d+(?:\.\d+)?\s*\/\s*\d+|[¼½¾]|半|[\d一二三四五六七八九十百兩两]+\s*分之?\s*[\d一二三四五六七八九十兩两]+)`;
-const DOSE_UNIT = String.raw`(?:粒|片|包|滴|茶?匙|湯?匙|藥匙|匙羹|顆|丸|支|劑|毫升|毫克|cc|ml|mg)`;
-const MED_ONLY_UNIT = String.raw`(?:粒|片|顆|丸|劑|藥匙|cc|ml|mg|毫升|毫克)`;
+const DOSE_UNIT = String.raw`(?:粒|片|包|滴|茶?匙|小?匙|大?匙|平?匙|湯?匙|藥匙|匙羹|勺|顆|丸|支|劑|管|噴|吸|貼|枚|微克|毫克|毫升|公克|克|cc|ml|mg|mcg|ug|iu)`;
+const MED_ONLY_UNIT = String.raw`(?:粒|片|顆|丸|劑|藥匙|微克|毫克|毫升|公克|小?匙|大?匙|茶?匙|湯?匙|匙羹|cc|ml|mg|mcg|ug|iu)`;
+const EN_DOSE_QUANTITY = String.raw`(?:half\s+a|a\s+half|a\s+quarter|one\s+half|one\s+quarter|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|an?|\d+(?:\.\d+)?|\d+\s*\/\s*\d+)`;
+const EN_DOSE_UNIT = String.raw`(?:tablets?|pills?|capsules?|tsps?|teaspoons?|tbsps?|tablespoons?|spoonfuls?|drops?|sachets?|packets?|pouches?|puffs?|sprays?|ml|mg|mcg|ug|cc|iu|grams?)`;
 const DOSE_AMOUNT_SOURCE = [
-  String.raw`(?:每(?:次|晚|日|天|朝|早|餐|隔?\s*${DOSE_QUANTITY}\s*(?:小時|個?鐘))|一日|一天|日[\d一二三四五六七八九十兩]+次|早晚|睡前|臨睡前|飯前|飯後|餐前|餐後)\s*(?:各|都)?\s*(?:餵|食|吃|服|飲|用|畀|給|塗|搽|滴|吸)?\s*(?:約|大約|大概)?\s*${DOSE_QUANTITY}\s*${DOSE_UNIT}`,
+  String.raw`(?:每(?:次|餐|晚|日|天|朝|早|隔?\s*${DOSE_QUANTITY}\s*(?:小時|個?鐘))|一日|一天|日[\d一二三四五六七八九十兩]+次|早晚|睡前|臨睡前|飯前|飯後|餐前|餐後)\s*(?:各|都)?\s*(?:餵|食|吃|服|飲|用|畀|給|塗|搽|滴|吸)?\s*(?:約|大約|大概)?\s*${DOSE_QUANTITY}\s*${DOSE_UNIT}`,
   String.raw`(?:餵|食|吃|服|飲|畀|給)\s*(?:約|大約|大概)?\s*${DOSE_QUANTITY}\s*${DOSE_UNIT}`,
   String.raw`${DOSE_FRACTION_OR_HALF}\s*${DOSE_UNIT}`,
   String.raw`(?:\d+(?:\.\d+)?|[一二三四五六七八九十百兩两]+)\s*${MED_ONLY_UNIT}`,
-  String.raw`\b(?:half\s+a|\d+(?:\.\d+)?|\d+\s*\/\s*\d+)\s*(?:tablet|pill|capsule|tsp|teaspoon|tbsp|tablespoon|drop|sachet|ml|mg)s?\b`,
+  String.raw`(?:一日|一天|每日|每天)\s*[\d一二三四五六七八九十兩]+\s*次`,
+  String.raw`(?:連續|連服|連飲|連食)\s*[\d一二三四五六七八九十兩幾]+\s*(?:日|天|週|周|星期|次)`,
+  String.raw`\b${EN_DOSE_QUANTITY}\s+${EN_DOSE_UNIT}\b`,
+  String.raw`\b(?:once|twice|three\s+times|four\s+times)\s+(?:a\s+day|daily|per\s+day)\b`,
+  String.raw`\bevery\s+(?:\d+|one|two|three|four|six|eight|twelve)\s+hours?\b`,
+  String.raw`\b(?:at\s+bedtime|before\s+bed|after\s+meals?|before\s+meals?|per\s+meal)\b.{0,30}\b(?:${EN_DOSE_UNIT}|for\s+(?:\d+|one|two|three|four|five|six|seven|ten|fourteen)\s+days?)\b`,
 ].join("|");
 const CARE_ADVISORY_PATTERN = new RegExp(`${CARE_ADVISORY_BASE_PATTERN.source}|${DOSE_AMOUNT_SOURCE}`, "iu");
 const MEDICAL_CLAIM_PATTERN = new RegExp(`${MEDICAL_CLAIM_BASE_PATTERN.source}|${DOSE_AMOUNT_SOURCE}`, "iu");
 
-// A user who asked the agent to change something expects a Server receipt. A non-question answer without verified
-// operations is never plain text, whatever completion wording the model chooses (改好喇／清空晒／搞掂…).
+// A user who asked the agent to change something expects a Server receipt. Any answer that contains a declarative
+// sentence/state assertion (even followed by a trailing question like "仲有其他事？") is never exempt without receipts.
 const USER_OPERATION_REQUEST_PATTERN = /更改|修改|改(?:返|好|過|成|做)|幫我改|刪(?:除|走|咗)?|清(?:空|除|走)|取消|移除|重設|設定|設置|新增|加(?:入|返)|記(?:低|住|錄)|儲存|保存|更新|安排|提醒我|發送|送出|標記|\b(?:update|delete|remove|cancel|save|schedule|change|reset|edit)\b/iu;
+const OPERATION_QUESTION_SOFTENER = /(?:好嗎|對嗎|可以嗎|嗎|係咪|是不是|ok(?:ay)?)[？?]\s*$/iu;
+const OPERATION_STATE_ASSERTION = /(?:現為|目前為|現時為|已經|已變成|已轉為|一筆不留|不存在|無任何|is\s+now|has\s+been|are\s+(?:now|gone))/iu;
+const OPERATION_PARAM_INTERROGATIVE = /幾|咩|哪|邊|多少|什麼|甚麼|如何|點|是否要|想(?:改|刪|設|記|加|取消)|what|which|when|who|whose|where|how\s+(?:much|many)/iu;
+
+function isPureOperationClarifyingQuestion(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || !/[？?]\s*$/u.test(trimmed) || OPERATION_QUESTION_SOFTENER.test(trimmed)) return false;
+  if (OPERATION_CLAIM_PATTERN.test(trimmed) || OPERATION_STATE_ASSERTION.test(trimmed)) return false;
+  const sentences = trimmed.split(/[。！!；;\n]+/u).map(part => part.trim()).filter(Boolean);
+  if (sentences.length === 0 || sentences.some(part => !/[？?]\s*$/u.test(part))) return false;
+  return OPERATION_PARAM_INTERROGATIVE.test(trimmed);
+}
 
 function draftClaimsUnverifiedOperation(draft: ChatDeliveryDraft, text: string): boolean {
   if (draft.verifiedOperations?.length) return false;
-  if (/[？?]\s*$/u.test(text) && !/(?:好嗎|對嗎|可以嗎|嗎|ok(?:ay)?)[？?]\s*$/iu.test(text)) return false;
+  if (isPureOperationClarifyingQuestion(text)) return false;
   return Boolean(draft.userRequest && USER_OPERATION_REQUEST_PATTERN.test(draft.userRequest));
 }
 

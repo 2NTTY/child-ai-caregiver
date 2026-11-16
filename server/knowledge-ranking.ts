@@ -8,12 +8,13 @@ const LATIN_FILLERS = new Set(["a", "an", "the", "is", "are", "what", "how", "ca
 /** Generic caregiver subject terms and generic colloquial verbs ignored on question queries so unrelated topics never false-match via a shared seed keyword (e.g. "BB食嘢"). */
 const QUESTION_LATIN_FILLERS = new Set(["bb", "baby", "babies"]);
 const QUESTION_HAN_FILLERS = new Set(["食嘢", "講嘢", "正常", "醫生", "睇醫", "要睇", "求醫", "求診"]);
+/** Age modifiers are applicability filter criteria, never standalone topic evidence on question queries. */
+const QUESTION_AGE_MODIFIERS = /(?:半歲|歲半|足月|滿月|[\d一二三四五六七八九十百兩]+(?:\s*(?:個?月(?:大|以下|以上|未滿)?|歲(?:半|大|以下|以上)?|週大?|周大?|天大?))|\b\d+(?:\s*-\s*|\s+)(?:months?|mos?|yrs?|years?|weeks?|wks?|days?)(?:\s+old)?\b)/giu;
 /** Colloquial Cantonese parenting query terms mapped to official guidance bigrams on question queries only. */
 const COLLOQUIAL_QUERY_EXPANSIONS: ReadonlyArray<readonly [RegExp, readonly string[]]> = [
   // Positive-intent anchor: only a bare "when can baby start solids" question may borrow starting-solids guidance.
   // Any extra clause (illness, refusal, medication, other symptoms) breaks the anchor, so correctness never depends on a symptom dictionary.
   [/開糊|糊仔|副食品?|輔食|^\s*(?:請問\s*[，,]?\s*)?(?:(?:半歲|歲半|[\d一二三四五六七八九十]+\s*(?:個月|歲))大?\s*)?(?:BB|寶寶|嬰兒|幼兒|孩子|小朋友|佢)?\s*(?:幾時|幾大|幾多?個月(?:大)?)[\s,]*(?:BB|寶寶|嬰兒|幼兒|孩子|小朋友|佢)?\s*(?:先至?|才)?(?:(?:可以|先可以|適合|適宜)\s*(?:開始)?|開始)食(?:嘢|固體食物)[呢呀啊嘅㗎嗎]*[\s？?。.!！]*$/iu, ["加固", "固體食物", "米糊"]],
-  [/半歲/u, ["六個月"]],
   [/嘔奶|回奶|吐奶|溢奶/u, ["嘔奶", "吐奶", "溢奶"]],
   [/發熱|滾熱|發高燒|高燒/u, ["發燒"]],
   [/睇急症|去急症/u, ["急症"]],
@@ -29,9 +30,7 @@ function compareId(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
 }
 
-export function knowledgeIndexTokens(text: string, question = false): Set<string> {
-  const rawNormalized = text.normalize("NFKC").toLowerCase();
-  const normalized = question ? rawNormalized.replace(QUESTION_PHRASES, " ").replace(QUESTION_PARTICLES, "") : rawNormalized;
+function extractTokenUnits(normalized: string, question: boolean): Set<string> {
   const result = new Set<string>();
   for (const match of normalized.matchAll(/[\p{Script=Han}]+|[a-z0-9]+/gu)) {
     const word = match[0];
@@ -44,6 +43,15 @@ export function knowledgeIndexTokens(text: string, question = false): Set<string
       if (!question || !QUESTION_HAN_FILLERS.has(bigram)) result.add(bigram);
     }
   }
+  return result;
+}
+
+export function knowledgeIndexTokens(text: string, question = false): Set<string> {
+  const rawNormalized = text.normalize("NFKC").toLowerCase();
+  const normalized = question
+    ? rawNormalized.replace(QUESTION_AGE_MODIFIERS, " ").replace(QUESTION_PHRASES, " ").replace(QUESTION_PARTICLES, "")
+    : rawNormalized;
+  const result = extractTokenUnits(normalized, question);
   if (question) {
     for (const [pattern, synonyms] of COLLOQUIAL_QUERY_EXPANSIONS) {
       if (!pattern.test(rawNormalized)) continue;
@@ -51,6 +59,19 @@ export function knowledgeIndexTokens(text: string, question = false): Set<string
         for (let index = 0; index + 1 < synonym.length; index++) result.add(synonym.slice(index, index + 2));
       }
     }
+  }
+  return result;
+}
+
+function questionAgeTokens(text: string): Set<string> {
+  const rawNormalized = text.normalize("NFKC").toLowerCase();
+  const result = new Set<string>();
+  for (const match of rawNormalized.matchAll(QUESTION_AGE_MODIFIERS)) {
+    for (const token of extractTokenUnits(match[0], false)) result.add(token);
+  }
+  if (/半歲/u.test(rawNormalized)) {
+    result.add("六個");
+    result.add("個月");
   }
   return result;
 }
@@ -107,13 +128,19 @@ export function rankKnowledge(
   if (candidates.length && candidates.every(candidate => candidate.rankScore !== undefined)) return candidates
     .slice(0, limit).map(({ distance: _distance, rankScore: _rankScore, ...item }) => item);
   const queryTokens = knowledgeTokens(query, true);
+  const ageTokens = questionAgeTokens(query);
   if (queryTokens.size === 0) return [];
   const items = [...unique.values()];
   const vectorRank = items
     .filter(candidate => candidate.distance !== null && candidate.distance <= maxDistance)
     .sort((left, right) => left.distance! - right.distance! || compareId(left.chunkId, right.chunkId));
+  // Require substantive topic match (queryTokens > 0) before age-modifier tokens can boost specificity.
   const keywordRank = items
-    .map(candidate => ({ candidate, score: keywordScore(queryTokens, candidate) }))
+    .map(candidate => {
+      const topicScore = keywordScore(queryTokens, candidate);
+      const ageBoost = topicScore > 0 && ageTokens.size > 0 ? keywordScore(ageTokens, candidate) : 0;
+      return { candidate, score: topicScore > 0 ? topicScore + ageBoost : 0 };
+    })
     .filter(item => item.score > 0)
     .sort((left, right) => right.score - left.score || compareId(left.candidate.chunkId, right.candidate.chunkId));
 

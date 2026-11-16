@@ -6070,3 +6070,10 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 3）F3：新增獨立劑量形態 `DOSE_AMOUNT_SOURCE`（頻率／時段＋數量＋單位，或餵／食／服＋數量＋單位；數量含阿拉伯數字、`1/4`、`½`、`半`、`四分之一` 及中文數詞），併入 `CARE_ADVISORY_PATTERN` 與 `MEDICAL_CLAIM_PATTERN`，**不再要求用戶先講出藥字**，「BB發燒點算？」→「每次四分之一粒。」「每晚半粒，連續三日。」同樣受審。
 4）新增 [search-official-evidence 測試](tests/search-official-evidence.test.ts) R4 案例（6→7）：以「所有 query 一律 embedding 不可用」之真 Firestore keyword_degraded 路徑（非按症狀字面選假向量）驗證屙水／腸胃炎／手術／濕疹不借加固背書；真 `createAgentRuntime`＋`createProductAgent` 驗證改好喇／清空晒／搞掂喇／已經轉做七點及四種劑量寫法不得直交；並以寒暄、有界補問及向用戶反問作免審對照。[knowledge-ranking 測試](tests/knowledge-ranking.test.ts) 同步擴充負向／正向清單。已確認新斷言於舊來源會失敗、新來源通過。CI manifest `search-official-evidence` 由 6 更新為 7 例。
 本輪仍屬離線 deterministic 實證，無真 Gemini／Vertex、無正式 Firestore、無真機畫面 E2E，亦無 hosted Actions 收據。
+
+### 2026-11-16　B-P2 R5 審核整改（年齡詞元分層門檻、結尾問號防繞過與完整劑量形態）
+
+依 `SLICE_B_BP2_IMPLEMENTATION_AUDIT_R5.md` F1–F3 於本地 forward-only 新提交修復（未 push／未開 PR）：
+1）**F1 [knowledge-ranking.ts](server/knowledge-ranking.ts)**：分離 `topicTokens`（提問側去除 `QUESTION_AGE_MODIFIERS`，亦移除 `半歲` 擴展）與 `questionAgeTokens`（僅於 `topicScore > 0` 時加計年齡專指性分數），確保「半歲BB屙水完幾時可以食嘢？」「六個月BB腸胃炎之後幾時可以食嘢？」在 keyword degraded／低向量情境下不再被年齡詞拉中 `starting-solids`，同時維持年齡加主題專指排序（如「四歲小朋友睇嘢成日瞇眼去邊度驗眼？」命中 `preschool-screening`）與文件索引（`question=false`）零變動。
+2）**F2 [chat-delivery-review.ts](server/chat-delivery-review.ts)**：移除 `draftClaimsUnverifiedOperation` 對草稿結尾 `?`/`？` 之寬鬆豁免，改為結構性 `isPureOperationClarifyingQuestion`（句首禮貌詞與狀態斷言檢查，加上逐句動詞參數疑問詞＋問號檢查），攔截「提醒時間現為晚上八點。仲有其他事？」／「所有紀錄已經一筆不留。仲有其他事？」及逗號變體無 `verifiedOperations` 直交，並保留純參數反問（如「你想改成幾點？」）免審。
+3）**F3 [chat-delivery-review.ts](server/chat-delivery-review.ts)**：擴充 `DOSE_AMOUNT_SOURCE` 涵蓋英文拼寫數字、醫藥單位（`微克`/`公克`/`mcg`/`ug`/`iu`/`小匙`/`大匙`/`平匙`）及「每餐一小匙，連續三日」／「Take one tablet at bedtime.」等劑量＋頻率／療程組合，於非問藥查詢（「BB發燒點算？」）與裸草稿同樣強制觸發審核；同步擴充 `tests/knowledge-ranking.test.ts`（12→13）與 `tests/search-official-evidence.test.ts`（7→8）並更新 `scripts/ci/verify-search-official-evidence-offline.sh` `TEST_CASES`。
