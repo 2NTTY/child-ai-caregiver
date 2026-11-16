@@ -6076,3 +6076,9 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 2）新增獨立劑量形態 `DOSE_AMOUNT_SOURCE` 併入 `CARE_ADVISORY_PATTERN` 與 `MEDICAL_CLAIM_PATTERN`，涵蓋分數／半粒／每晚／每幾小時／茶匙等具體劑量表達而無須依賴用戶問題出現「藥」字；
 3）於 [search-review-boundaries 測試](tests/search-review-boundaries.test.ts) 新增 R4 真 `ProductAgent` + runtime 回歸（4→5 cases）與純寒暄／反問對照，並同步更新 [CI 腳本](scripts/ci/verify-search-review-boundaries-offline.sh)。
 本輪仍屬離線實證，無真 Gemini／Vertex、無真機畫面 E2E、無 hosted Actions 收據，且未 push／開 PR。
+
+### 2026-11-16　B-P7 R4 審核整改（結尾問號防繞過與完整劑量形態同步）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R4.md` F2–F3 與 `SLICE_B_BP2_IMPLEMENTATION_AUDIT_R5.md` F2–F3 於本地 forward-only 新提交修復（未 push／未開 PR）：
+1）**F2–F3 [chat-delivery-review.ts](server/chat-delivery-review.ts)**：導入 `isPureOperationClarifyingQuestion`（移除結尾 `?`/`？` 寬鬆豁免）並擴充 `DOSE_AMOUNT_SOURCE`（涵蓋英文拼寫數量、`小匙`/`大匙`/`微克` 與「每餐一小匙，連續三日。」／「Take one tablet at bedtime.」）。
+2）於 [search-review-boundaries.test.ts](tests/search-review-boundaries.test.ts)（5/5）補齊 F2–F3 端到端回歸與純反問免審對照。
