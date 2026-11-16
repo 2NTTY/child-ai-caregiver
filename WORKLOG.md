@@ -6028,3 +6028,7 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 ## 2026-11-16　關聯 B-P5 設計定案同步校準（維持技術 LOCAL HOLD，暫不推送／不開 PR）
 
 - **PR-E（`codex/req005-acceptance-closeout`）**：同步更新 `PLAN.md` 關聯 `B-P5`（`codex/search-help-entry`）紀錄至新本地提交 `e502c5fadc489c6a7fbf8074ebb86a1f2a5bdcc2`，註明 `REQ-001 §4.3:184` 之介面位置與觸發規則已由團隊拍板定案（不再以「等 Owner 批准」為前置阻塞），並因行動端實機鍵盤／放大字體遮擋驗收未執行而維持技術 **LOCAL HOLD**；其餘 PR-A～PR-D 程式碼維持不變，所有分支仍處於 `NOT_PUSHED`。
+
+### 2026-11-17　PR-E（`codex/req005-acceptance-closeout`）同步關聯 `B-P5` 新本地提交 `07ddddd4`
+
+- 同步 `PLAN.md` 關聯 `B-P5` (`codex/search-help-entry`) 引用至 `07ddddd43c85a60c1dc39a0c76c4889d4a420299`（納入 H1 雙向意識／反應喪失詞組與 H2 `ChatController`／`chatScreen.tsx` 失敗／中止保留 Server SSE `help` 卡修復，並校準行動端測試口徑為「結構有界（`maxHeight`）及 `AgentComposer` 仍 render」），維持技術 **LOCAL HOLD**；PR-A～PR-E 其餘程式不變，全部維持 `NOT_PUSHED`。
