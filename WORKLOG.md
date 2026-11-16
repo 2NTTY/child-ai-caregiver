@@ -6082,3 +6082,11 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R4.md` F2–F3 與 `SLICE_B_BP2_IMPLEMENTATION_AUDIT_R5.md` F2–F3 於本地 forward-only 新提交修復（未 push／未開 PR）：
 1）**F2–F3 [chat-delivery-review.ts](server/chat-delivery-review.ts)**：導入 `isPureOperationClarifyingQuestion`（移除結尾 `?`/`？` 寬鬆豁免）並擴充 `DOSE_AMOUNT_SOURCE`（涵蓋英文拼寫數量、`小匙`/`大匙`/`微克` 與「每餐一小匙，連續三日。」／「Take one tablet at bedtime.」）。
 2）於 [search-review-boundaries.test.ts](tests/search-review-boundaries.test.ts)（5/5）補齊 F2–F3 端到端回歸與純反問免審對照。
+
+### 2026-11-16　B-P7 結構性交付審核與收據對應整改（同步 B-P2／B-P6）
+
+依審查意見於本地 forward-only 新提交修復（未 push／未開 PR）：
+1）**`server/chat-delivery-review.ts` 保留尾閘 `return obligation?.required ?? false`**：以子句層級識別「結果／狀態聲稱＋追問」（如「提醒時間而家係八點，想改邊一項？」及裸草稿），同時保留合理參數選擇（「你想改成八點定九點？」）與普通說明（「這個清單分為三個部分。」）豁免。
+2）**收據對應校驗（`verifiedOperationsCorrespond`）同步進 `isPureVerifiedOperationSummary`、`draftClaimsUnverifiedOperation` 與 `acceptLivePass`**：核對收據狀態（不可拿 `pending_confirmation`／`failed` 當已完成）、動作家族與目標對象／數值。
+3）**任意英文複合數詞＋零數字停水／禁食／醫療指令擴充與 `SPEC.md:301-304` 分離**：涵蓋 `Administer thirteen drops`、`Administer two thousand drops`、「退燒前停止飲水」、「嘔吐後禁止進食」、「Withhold fluids」等指令並維持已具來源家庭紀錄回述、對應操作確認與純拒答免被迫附官方引用。
+4）於 `tests/search-review-boundaries.test.ts`（5→6 cases）新增結構性回歸並同步 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES`。
