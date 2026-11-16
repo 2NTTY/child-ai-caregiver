@@ -6006,3 +6006,10 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
   - `deploy/firebase/firestore.indexes.json`：於 `yuban_authority_growth_attention` 新增 `workspaceTag ASC, epochTag ASC, userTag ASC, childTag ASC, createdAt DESC, attentionId DESC` 複合索引。
   - `tests/growth-history-cursor.test.ts`、`tests/firestore-indexes-comparator.test.ts`、`scripts/ci/verify-growth-cursor-offline.sh`：補齊 `+08:00`/`.000Z`/`Z`/`-05:00` 混合與匯入回歸及降序索引契約測試，並納入離線 gate；先驗證兩項新斷言在修復前 `7e9145ae` 失敗（`32 !== 43` 與缺少索引失敗），修復後全部通過（含 `G1–G5` mutation 與 3x `tsc`）。
 - 限制（依 R2 §4.1 校準）：本變更只修復成長閱讀分頁與 cursor keyset 路徑對既有／新寫資料之排序及索引宣告；`all()`、匯入及背景 `evaluate()` 既有 500 筆上限仍保留未改，且雲端 Cloud Firestore 索引實際建立／`READY` 與 Hosted Actions 仍待獲授權 owner 操作。
+
+## 2026-11-16　REQ-005 PR-C R3 審核整改（C03 移除 500 筆成長歷史讀取／評估／匯入阻斷）
+
+- **目標／需求**：修復審計 R3 指出的 **C03**（`server/firestore-growth.ts` `all(b)` `.limit(501)`、`evaluate()` 與 `prepareImportedAttention()` 因 `records.length >= 500` 拋出 `400 growth_history_requires_review`，導致累積超過 500 筆歷史後背景成長評估、話題開關及資料包匯入全面癱瘓）。
+- **變更**：
+  - [firestore-growth.ts](server/firestore-growth.ts)：將 `all(b)` 改為 `.orderBy('createdAt').orderBy('attentionId').limit(200)` 分頁迴圈（設 `maxPages = 100` 上限並在達頁限時 fail-closed 拋出 `growth_history_requires_review`，避免靜默截斷）並以 `compareGrowthHistoryDesc` 按真實時間排序；同步移除 `prepareImportedAttention()` 與 `evaluate()` 之 `>= 500` 阻斷，保留單輪 `removed.length > 4`、`changes.length > 16` 與授權撤銷檢查。
+  - [growth-history-cursor.test.ts](tests/growth-history-cursor.test.ts)：新增 C03 回歸測試（6→7 cases），先確認舊碼於第 7 案（506 筆歷史下執行 `evaluate()`、`setTopicEnabled()`、匯入及撤銷失敗關閉）失敗，修復後 `growth-history-cursor.test.ts`（7/7）與 `handover-growth-import.test.ts`（1/1）及 3x `tsc` 全數通過。

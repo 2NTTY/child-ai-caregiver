@@ -108,14 +108,27 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     return saved;
   }
   async function all(b: Binding): Promise<Saved[]> {
-    const rows = await b.transaction.get(query(b, 'growth_attention').orderBy('createdAt').orderBy('attentionId').limit(501));
-    if (rows.size > 500) domainReject('growth_history_requires_review', 400);
-    return rows.docs.map(row => {
-      const saved = data.open('growth-attention', row.get('attentionId'), b.scope, firestoreGrowthSchema, row);
-      if (saved.item.id !== row.get('attentionId') || saved.item.childId !== b.scope.childId || saved.item.version !== row.get('recordVersion')
-        || saved.item.createdAt !== row.get('createdAt')) domainReject('growth_binding', 500);
-      return saved;
-    }).sort((a, x) => compareGrowthHistoryDesc(x.item, a.item));
+    const collected: Saved[] = [];
+    let after: [string, string] | null = null;
+    const batchSize = 200;
+    const maxPages = 100;
+    for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
+      let q = query(b, 'growth_attention').orderBy('createdAt').orderBy('attentionId').limit(batchSize);
+      if (after) q = q.startAfter(after[0], after[1]);
+      const rows = await b.transaction.get(q);
+      if (!rows.size) break;
+      for (const row of rows.docs) {
+        const saved = data.open('growth-attention', row.get('attentionId'), b.scope, firestoreGrowthSchema, row);
+        if (saved.item.id !== row.get('attentionId') || saved.item.childId !== b.scope.childId || saved.item.version !== row.get('recordVersion')
+          || saved.item.createdAt !== row.get('createdAt')) domainReject('growth_binding', 500);
+        collected.push(saved);
+      }
+      if (rows.size < batchSize) break;
+      if (pageIndex === maxPages - 1) domainReject('growth_history_requires_review', 400);
+      const tail = rows.docs.at(-1)!;
+      after = [tail.get('createdAt') as string, tail.get('attentionId') as string];
+    }
+    return collected.sort((a, x) => compareGrowthHistoryDesc(x.item, a.item));
   }
   async function topics(b: Binding): Promise<Topic[]> {
     const result: Topic[] = [];
@@ -272,7 +285,6 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     const sourceRow = growthImportSourceRow(row), source = domainParse(firestoreGrowthSchema, row.value, 'invalid_package_growth');
     const records = await all(b), current = expected ? records.find(saved => saved.item.id === expected.id) : undefined;
     if (expected && (!current || current.item.version !== expected.expectedVersion || current.item.version >= 2147483647)) domainReject('growth_changed');
-    if (!current && records.length >= 500) domainReject('growth_history_requires_review', 400);
     const loaded = await load(b), settings = await topics(b), next = loaded.proposals.find(item => item.topicId === source.item.topicId);
     const supported = importedSupported(source.item, next), now = new Date().toISOString();
     const origin = makeImportProvenance(sourceRow, integrity, b.actorUserId, now); origin.current.sourceHash = firestoreDomainHash(row.value);
@@ -513,7 +525,6 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
             }
           }
           if (!next || saved.some(value => same(value.item.basis, next.basis)) || latest && !growthBasisChanged(latest.item.basis, next.basis)) continue;
-          if (history.length + changes.filter(value => value.item.version === 1).length >= 500) domainReject('growth_history_requires_review', 400);
           const related = saved.toReversed().find(value => value.item.taskId && value.item.basis.stage === next.basis.stage)?.item.taskId;
           const linked = await task(b, related ?? null), reasons: string[] = [];
           if (latest) {

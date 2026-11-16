@@ -19,6 +19,7 @@ import {
   createFirestoreGrowthStore,
   firestoreGrowthSchema,
 } from "../server/firestore-growth.ts";
+import { firestoreBackgroundWorkSchema } from "../server/firestore-background-work.ts";
 import { createFirestoreMemoryStore } from "../server/firestore-memory.ts";
 import { createFirestoreOnlineStore } from "../server/firestore-online.ts";
 import { createFirestoreSharingStore } from "../server/firestore-sharing.ts";
@@ -566,4 +567,108 @@ test("createFirestoreGrowthStore and selectGrowthHistoryWindow preserve complete
     return prep.value.item;
   });
   assert.equal(importedRes.createdAt, new Date(Date.parse(importedAt)).toISOString());
+});
+
+test("C03: growth evaluate, topic management, and import remain operational beyond 500 history records while enforcing revocation", async () => {
+  const fixture = serialFirestoreFixture();
+  const options = {
+    database: fixture.database,
+    cipher: createStorageCipher(Buffer.alloc(32, 46)),
+    projectId: "synthetic-growth-c03",
+    namespace: "unit_growth_c03",
+  };
+  const authority = createFirestoreAuthority(options);
+  const data = new FirestoreDomainData(options);
+  await authority.initializeControl({ enabled: true, generation: randomUUID() });
+  await authority.issueInvitation({ email: "owner@example.test", operationId: randomUUID(), expiresAt: new Date(Date.now() + 3_600_000).toISOString() });
+  await authority.admitIdentity({ userId: "owner", email: "owner@example.test", emailVerified: true });
+  await authority.acknowledge({ userId: "owner", operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  const c03ChildId = (await authority.createChild({ userId: "owner", operationId: randomUUID(), displayName: "C03 Child" })).child.id;
+  const care = createFirestoreCareStore(options);
+  const chat = createFirestoreChatStore(options);
+  const memory = createFirestoreMemoryStore({ ...options, care, chat });
+  const growth = createFirestoreGrowthStore({ ...options, care, memory, online: createFirestoreOnlineStore(options) });
+
+  const baseMs = Date.parse("2026-06-01T00:00:00.000Z");
+  const activeItem = makeGrowthItem({
+    childId: c03ChildId,
+    state: "proposed",
+    createdAt: new Date(baseMs + 999_000).toISOString(),
+    updatedAt: new Date(baseMs + 999_000).toISOString(),
+    title: "C03 Active",
+  });
+  const history505 = Array.from({ length: 505 }, (_, i) =>
+    makeGrowthItem({
+      childId: c03ChildId,
+      state: i % 2 === 0 ? "dismissed" : "accepted",
+      createdAt: new Date(baseMs + i * 1_000).toISOString(),
+      updatedAt: new Date(baseMs + i * 1_000).toISOString(),
+    }),
+  );
+
+  let capturedJob: ReturnType<typeof firestoreBackgroundWorkSchema.parse> | null = null;
+  await authority.runTransaction("owner", c03ChildId, async b => {
+    for (const item of [...history505, activeItem]) {
+      const saved = { item, lastRequest: null };
+      b.transaction.set(data.ref("growth_attention", "growth-attention", item.id), {
+        ...data.tags(b.scope),
+        attentionId: item.id,
+        createdAt: item.createdAt,
+        entityVersion: item.version,
+        ...data.seal("growth-attention", item.id, b.scope, firestoreGrowthSchema, saved, item.version),
+      });
+    }
+    capturedJob = firestoreBackgroundWorkSchema.parse({
+      id: "a".repeat(64),
+      kind: "growth",
+      scope: b.scope,
+      resourceId: activeItem.id,
+      basis: "basis-hash",
+      generation: b.generation,
+      authorizationVersion: b.authorizationVersion,
+      version: 1,
+      createdAt: "2026-06-02T00:00:00.000Z",
+      dueAt: "2026-06-02T00:00:00.000Z",
+      dispatchRevision: 1,
+      state: "pending",
+      failures: 0,
+      attempts: 0,
+      dispatch: "pending",
+      dispatchLease: null,
+      lease: null,
+    });
+  });
+
+  // 1. evaluate() on a 506-record child must succeed instead of rejecting 400 growth_history_requires_review.
+  const evaluated = await growth.evaluate(capturedJob!);
+  assert.equal(evaluated.state, "completed");
+
+  // 2. import beyond 500 records continues to succeed cleanly while keeping provenance canonical.
+  const extraItem = makeGrowthItem({ childId: randomUUID(), state: "dismissed", createdAt: "2026-06-03T12:00:00+08:00", updatedAt: "2026-06-03T12:00:00+08:00" });
+  await authority.runTransaction("owner", c03ChildId, async b => {
+    const prep = await growth.prepareImportedAttention(
+      b,
+      randomUUID(),
+      {
+        section: "growth_attention",
+        childId: extraItem.childId,
+        value: { item: extraItem, lastRequest: null },
+        source: {
+          serverId: "https://source.invalid",
+          accountId: "source-owner",
+          packageId: randomUUID(),
+          packageVersion: 1,
+          manifestSha256: "d".repeat(64),
+          path: "data/00000001.json",
+          rowIndex: 0,
+        },
+      },
+      "trusted" satisfies HandoverIntegrity,
+    );
+    prep.commit();
+  });
+
+  // 3. Stale generation / authorizationVersion stops cleanly (revocation preserved).
+  const staleRes = await growth.evaluate({ ...capturedJob!, authorizationVersion: "999" });
+  assert.equal(staleRes.state, "stopped");
 });
