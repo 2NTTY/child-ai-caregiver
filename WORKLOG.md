@@ -6098,3 +6098,11 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 2）**F2 任務錨定照護與代名詞物理降溫／趴睡指令**：擴充 `CLINICAL_CARE_DIRECTIVE_PATTERN` 及 `draftHasTaskAnchoredCareObligation`，同時維持 `SPEC.md:301-304` 三類無需公共官方引用之回覆。
 3）**F3 全數值／全時段／全對象收據對應**：收據比對改為全量數值、時間錨點（如 `今朝 8 點` vs `今晚 9 點`）及連接詞拆解後每個目標片段皆須命中已執行收據。
 4）於 `tests/search-short-path-gaps.test.ts` 增補 R7 F1–F3 斷言並完成離線全套測試與三份 `tsc --noEmit`。
+
+### 2026-11-17　B-P6 依審計 R1 與共識邊界同步 N1–N3 結構性修復
+
+依外部審核 `SLICE_B_BP2_BP6_BP7_IMPLEMENTATION_AUDIT_20261117_R1.md` 及審核員補充邊界同步修復至 `server/chat-delivery-review.ts`（保留 `B-P6` 擴充純問候／純澄清邊界）與 `server/product-agent-tools.ts`（未 push／未開 PR）：
+1）**N1 英文健康詞界與普通求助語境**：為獨立英文健康詞加上 `\b...\b`（修正 `Will` 誤中 `ill`，不將中英文一齊包 `\b`），普通求助句要求健康／育兒護理語境，同時維持既有照護語境與黏性義務。
+2）**N2 移除純前綴豁免、覆蓋 `nil-by-mouth` 及兩階段私人來源核對**：移除 `NON_DIRECTIVE_RECORD_REPORT_PATTERN`，補齊禁飲食／禁食指令正則，並確保草稿（`sources: []`）與最終階段均不得以私人來源或無關家庭紀錄替臨床指令或未證實說法背書，同時維持 `SPEC.md:301-304` 分離。
+3）**N3 Server 未截斷動作結果與逐項結構化收據綁定**：移除 `product-agent-tools.ts` 300 字截斷並傳遞完整動作／結構化時間與數量欄位，於 `chat-delivery-review.ts` 對 `(對象, 份量, 單位, 時間)` 作 1 對 1 配對，對數值／時段互換、重複項超報、模糊分組與 `quantityGrounding=removed` 一律 fail-closed。
+4）於 `tests/search-short-path-gaps.test.ts`（6→9 cases）增補 N1–N3 正反成對真實運行與閘門測試，同步 `scripts/ci/verify-search-short-path-gaps-offline.sh` `TEST_CASES`，並跑過 3 檔 guarded manifest（61／61）＋ verified-ops／photo／voice（4／4）＋ 三配置 `tsc --noEmit`。
