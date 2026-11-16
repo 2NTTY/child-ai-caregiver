@@ -6022,3 +6022,5 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 - 當輪 Linux `unshare --net`＋無權限 `setpriv`、network guard：新 15 項及原 policy／root／daily 合計 **56/56、0 skip**；原 `.05`／`.17`／`.23` 準入／重試／撤權反例 **10/10**。完整五包 gates、整合與型別收據於交付時另外核對，不以本條先行冒稱。未推送、開 PR、部署、啟用 `#447` 或呼叫真模型／正式資料庫。
 
 - **同日 Gate 後續校準：**首次 canonical PR-A gate 的 79 項測試通過，隨後 S3 source-injection pattern 因新純 metadata view 改名而未匹配，故該次 gate 為 **FAIL**，不是 PASS。僅將既有 S3／S4 變異目標對齊 `usedBeforeThisCall.modelCalls`；保留漏扣已用量／關閉 exceeded 的相同破壞與失敗斷言，再以新 HEAD 完整重跑 gate。
+
+- **同日 reviewer 與變異補證：**以同一正式 runtime 的 `finalize.completeText` 補兩項持久 reviewer 準入／503 重試案例，interactive 維持 `.8` 而 reviewer 改 `.23`，確認不是錯用互動角色覆蓋；新回歸檔 **17/17、0 skip**。在另一可丟棄樹實際注入 9 個缺陷（不重繪、假 daily 綁定、root／daily owner、root／daily CAS、略過再核、hard 降額及錯扣本次預留），9/9 均由目標斷言捕獲，未把載入／語法錯誤或未選中的 skipped cases 當捕獲。原 `9f33e3d` canonical gate **79/79＋S1–S5／P1–P4＋三組 tsc PASS**；本次新增兩項後再按新 HEAD 重跑，不把舊 HEAD 收據冒稱新版本。

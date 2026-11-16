@@ -20,7 +20,7 @@ import type { AgentModelProvider } from '../server/agent-model-gateway.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { firestoreUsageFixture } from './helpers/firestore-ai-usage.ts';
 
-type Boundary = 'admission' | 'retry' | 'root-refresh' | 'daily-refresh' | 'revoke' | 'revoke-refresh' | 'root-lost-reply' | 'daily-lost-reply' | 'retry-tighten';
+type Boundary = 'admission' | 'retry' | 'root-refresh' | 'daily-refresh' | 'revoke' | 'revoke-refresh' | 'root-lost-reply' | 'daily-lost-reply' | 'retry-tighten' | 'reviewer' | 'reviewer-retry';
 async function runtimeBoundary(mode: Boundary, ratio: number | undefined) {
   const f = firestoreDomainFixture();
   const options = { database: f.database, cipher: createStorageCipher(Buffer.alloc(32, 31)),
@@ -38,7 +38,7 @@ async function runtimeBoundary(mode: Boundary, ratio: number | undefined) {
       enabled, model: p.model, dailyUserAttempts: p.dailyUserAttempts, dailyGlobalAttempts: p.dailyGlobalAttempts,
       personalDailyGlobalAttempts: p.personalDailyGlobalAttempts, maxModelCalls, maxQueryEmbeddings: 3,
       maxToolCalls: 16, maxRunSeconds: 180, modelRequestSeconds: 45, maxModelRetries: 1, softBudgetRatio: 0.4,
-      roleSoftBudgetRatios: next === undefined ? {} : { interactive: next },
+      roleSoftBudgetRatios: next === undefined ? {} : { interactive: mode.startsWith('reviewer') ? 0.8 : next, reviewer: next },
     } });
   }
   await change(0.8);
@@ -66,7 +66,8 @@ async function runtimeBoundary(mode: Boundary, ratio: number | undefined) {
       requests.push(structuredClone(request));
       const admitted = await daily.reserve(request);
       reservations++;
-      if (reservations === 1 && mode !== 'retry' && mode !== 'retry-tighten') await change(ratio, mode !== 'revoke');
+      if (reservations === 1 && mode !== 'retry' && mode !== 'retry-tighten' && !mode.startsWith('reviewer')) await change(ratio, mode !== 'revoke');
+      if (reservations === 2 && mode === 'reviewer') await change(ratio);
       if (reservations === 2 && mode === 'retry-tighten') await change(ratio, true, 1);
       return admitted;
     },
@@ -86,9 +87,11 @@ async function runtimeBoundary(mode: Boundary, ratio: number | undefined) {
     workflowVersion: 'synthetic-workflow', promptPackVersion: prompt.packVersion, settingsVersion: 'fixed-settings',
     billingVersion: 'fixed-platform', limits: { modelCalls: 6, toolCalls: 16, queryEmbeddings: 3 }, deadlineAtMs: Date.now() + 90_000 } };
   const provider: AgentModelProvider = { async generate(request) {
-    const metadata = JSON.parse(String(request.config?.systemInstruction).split('Server runtime metadata:\n')[1]!.split('\n')[0]!);
+    const instruction = String(request.config?.systemInstruction);
+    const metadata = JSON.parse(instruction.includes('Server runtime metadata:\n') ? instruction.split('Server runtime metadata:\n')[1]!.split('\n')[0]! : instruction.split('Server role budget:\n')[1]!);
     ratios.push(metadata.budget.softBudgetRatio); beforeCounts.push(metadata.budget.usedBeforeThisCall.modelCalls);
     sent.push(agentBudgetFingerprint({ model: selected.config.model, contents: request.contents, config: request.config }));
+    if (mode === 'reviewer-retry' && sent.length === 2) { await change(ratio); throw new ApiError({ status: 503, message: 'Synthetic reviewer retry' }); }
     if ((mode === 'retry' || mode === 'retry-tighten') && sent.length === 1) { if (mode === 'retry') await change(ratio); throw new ApiError({ status: 503, message: 'Synthetic policy-change retry' }); }
     return { content: { role: 'model', parts: [{ text: 'Synthetic completed answer' }] }, finishReason: FinishReason.STOP };
   } };
@@ -97,7 +100,9 @@ async function runtimeBoundary(mode: Boundary, ratio: number | undefined) {
     durableBudget: { adapter: rootAdapter, context, dailyUsage: dailyAdapter, runLimits: selected.runLimits } });
   const result = await runtime.run({ runId, scope: { userId: 'owner', childId: 'child', workspaceId: 'workspace', authorizationVersion: '1', dataVersion: '1' },
     recipeId: 'p1-chat', trigger: { kind: 'interactive', reference }, messages: [{ role: 'user', text: 'Synthetic policy preparation boundary' }], tools: [],
-    authorize: selected.authorize, roleSoftBudgetRatios: selected.roleSoftBudgetRatios, readPolicyTransition: selected.readPolicyTransition });
+    authorize: selected.authorize, roleSoftBudgetRatios: selected.roleSoftBudgetRatios, readPolicyTransition: selected.readPolicyTransition,
+    ...(mode.startsWith('reviewer') ? { finalize: async (_result: unknown, context: Parameters<NonNullable<import('../server/agent-runtime.ts').AgentRunInput['finalize']>>[1]) => context.completeText!({ system: 'Synthetic reviewer contract', user: 'Review synthetic answer', attemptKey: 'synthetic-reviewer', purpose: 'delivery_review' as const }) } : {}),
+  });
   const ledger = await root.read(context), usage = await daily.getForUser('owner');
   assert.deepEqual(ledger.used, result.counts);
   assert.equal(usage.attempts, reservations);
@@ -112,9 +117,9 @@ async function runtimeBoundary(mode: Boundary, ratio: number | undefined) {
   } else {
     assert.equal(result.status, 'completed', JSON.stringify(result));
     const view = await routing.view('owner');
-    assert.equal(ratios.at(-1), view.effective!.softBudgetRatio);
-    assert.deepEqual(beforeCounts, mode === 'retry' ? [0, 1] : [0]);
-    assert.equal(sent.length, mode === 'retry' ? 2 : 1);
+    assert.equal(ratios.at(-1), mode.startsWith('reviewer') ? ratio : view.effective!.softBudgetRatio);
+    assert.deepEqual(beforeCounts, mode === 'reviewer-retry' ? [0, 1, 2] : mode === 'retry' || mode === 'reviewer' ? [0, 1] : [0]);
+    assert.equal(sent.length, mode === 'reviewer-retry' ? 3 : mode === 'retry' || mode === 'reviewer' ? 2 : 1);
     for (let i = 0; i < sent.length; i++) {
       const original = requests[i]!, saved = ledger.attempts.find(a => a.key === original.attemptKey)!;
       assert.equal(saved.fingerprint, original.requestFingerprint, 'Original intent fingerprint is immutable');
@@ -128,7 +133,7 @@ for (const ratio of [0.05, 0.23, undefined]) {
   test(`admission transparently refreshes current role ratio ${ratio ?? 'cleared'}`, () => runtimeBoundary('admission', ratio));
   test(`technical retry transparently refreshes current role ratio ${ratio ?? 'cleared'}`, () => runtimeBoundary('retry', ratio));
 }
-for (const mode of ['root-refresh', 'daily-refresh', 'revoke', 'revoke-refresh', 'root-lost-reply', 'daily-lost-reply', 'retry-tighten'] as const)
+for (const mode of ['root-refresh', 'daily-refresh', 'revoke', 'revoke-refresh', 'root-lost-reply', 'daily-lost-reply', 'retry-tighten', 'reviewer', 'reviewer-retry'] as const)
   test(`mutable-policy preparation boundary: ${mode}`, () => runtimeBoundary(mode, 0.23));
 
 function ledgerFixture() {
