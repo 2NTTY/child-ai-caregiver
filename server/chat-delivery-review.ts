@@ -9,7 +9,6 @@ import {
 import { AgentStopped } from "./agent-budget.ts";
 import type { AgentRunContext, AgentScope } from "./agent-runtime.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
-import { memoryFactReferencedByParagraph } from "./memory-policy.ts";
 
 /**
  * P3-M01 budget tradeoff.
@@ -153,7 +152,7 @@ const USER_CARE_HEALTH_TERM_PATTERN = new RegExp([
   String.raw`\b(?:fever|fevers|feverish|temperatures?|vomit(?:ing|ed|s)?|diarrh(?:oa|ea)|cough(?:ing|s)?|rash(?:es)?|seizures?|convulsions?|sick|ill|illness(?:es)?|unwell|burns?|burned|injur(?:y|ies|ed)|poison(?:ing|ed)?|bleed(?:ing)?|chok(?:e|ing)|allerg(?:y|ies|ic)|dehydrat(?:ed|ion)|jaundice|eczema|colic|constipat(?:ed|ion)|symptoms?|pain|aspirin|ibuprofen|paracetamol|tylenol|antibiotics?)\b`,
   String.raw`\bwon'?t\s+(?:eat|drink|feed)\b|\bnot\s+(?:eating|drinking|feeding)\b`,
 ].join("|"), "iu");
-const USER_CARE_HEALTH_CONTEXT_PATTERN = /(?:餵奶|飲奶|吃奶|食奶|母乳|配方奶|固體食物|加固|蜂蜜|蜜糖|止咳|退燒|趴睡|俯睡|體溫|健康|飲食|睡眠|\b(?:breast\s*milk|formula|solid\s+foods?|honey|feeding|hydration|liquids?|fluids?|sleep(?:ing)?\s+(?:position|on\s+stomach)|treat(?:ment)?|cool(?:ing)?\s+(?:down|fever)|health|medical|illness|symptoms?)\b)/iu;
+const USER_CARE_HEALTH_CONTEXT_PATTERN = /(?:餵奶|飲奶|吃奶|食奶|母乳|配方奶|固體食物|加固|蜂蜜|蜜糖|止咳|退燒|趴睡|俯睡|體溫|健康|飲食|睡眠|\b(?:breast\s*milk|(?:infant|baby|newborn|toddler|milk|powdered|ready[- ]to[- ]feed)\s+formula|formula\s+(?:milk|feeds?|feedings?|bottles?|prep(?:aration)?)|solid\s+foods?|honey|feeding|hydration|liquids?|fluids?|sleep(?:ing)?\s+(?:position|on\s+stomach)|treatments?|cool(?:ing)?\s+(?:down\s+(?:a|an|the|my|your)\s*(?:baby|infant|newborn|child|toddler)|(?:a\s+|the\s+)?fever)|health|medical|illness|symptoms?)\b|\bformula\b.{0,24}\b(?:baby|infant|newborn|toddler|child|feeds?|feedings?|bottles?|scoops?|ounces?|oz|ml|warm(?:ing)?)\b)/iu;
 const USER_GENERIC_CARE_HELP_PATTERN = /(?:點算|點處理|點做好|怎麼辦|如何處理|\bwhat\s+(?:should|can)\s+i\s+do\b|\bwhat\s+to\s+do\b|\bhow\s+(?:to|should\s+i)\s+(?:treat|handle|cool|care(?:\s+for)?|help)\b)/iu;
 const DRAFT_DOSING_FRAGMENT_PATTERN = /(?:每次|每日|每天|每晚|每餐|早晚|睡前|每\s*[\d一二三四五六七八九十兩半]+\s*(?:小時|個?鐘|次)|[\d一二三四五六七八九十兩半]+(?:\.\d+)?\s*(?:粒|片|包|滴|茶?匙|小?匙|大?匙|平?匙|湯?匙|藥匙|匙羹|顆|丸|支|劑|份|次|ml|mg|mcg|ug|毫升|毫克|微克|克))/iu;
 
@@ -320,11 +319,47 @@ const OP_QUANTITY_PATTERN = new RegExp(
 
 interface ParsedTimeAnchor {
   rawNormalized: string;
+  epochMs: number | null;
+  year: number | null;
+  month: number | null;
+  day: number | null;
   dayTag: "today" | "tomorrow" | "yesterday" | null;
   periodTag: "am" | "noon" | "pm" | null;
   hour24: number | null;
   hour12: number | null;
   minute: number | null;
+}
+
+function formatZonedDateTimeParts(epochMs: number, timeZone: string): {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+} | null {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: timeZone || "Asia/Hong_Kong",
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).formatToParts(new Date(epochMs));
+    const read = (type: string) => Number(parts.find(p => p.type === type)?.value);
+    const year = read("year");
+    const month = read("month");
+    const day = read("day");
+    const rawHour = read("hour");
+    const minute = read("minute");
+    if ([year, month, day, rawHour, minute].every(Number.isFinite)) {
+      return { year, month, day, hour: rawHour === 24 ? 0 : rawHour, minute };
+    }
+  } catch {
+    // Fall back to literal ISO fields if timezone formatting fails.
+  }
+  return null;
 }
 
 function normalizeNumberToken(token: string): string {
@@ -351,34 +386,31 @@ function normalizeTimeAnchor(anchor: string): string {
 }
 
 function parseTimeAnchorInfo(raw: string, timeZone = "Asia/Hong_Kong"): ParsedTimeAnchor {
-  const isoMatch = raw.match(/^\d{4}-\d{2}-\d{2}t(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?(z|[+-]\d{2}:?\d{2})?$/i);
+  const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})t(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?(z|[+-]\d{2}:?\d{2})?$/i);
   if (isoMatch) {
-    let hour = Number(isoMatch[1]);
-    let minute = Number(isoMatch[2]);
-    if (isoMatch[3]) {
+    let year = Number(isoMatch[1]);
+    let month = Number(isoMatch[2]);
+    let day = Number(isoMatch[3]);
+    let hour = Number(isoMatch[4]);
+    let minute = Number(isoMatch[5]);
+    let epochMs: number | null = null;
+    if (isoMatch[6]) {
       const parsedMs = Date.parse(raw);
       if (Number.isFinite(parsedMs)) {
-        try {
-          const parts = new Intl.DateTimeFormat("en-US", {
-            timeZone: timeZone || "Asia/Hong_Kong",
-            hour12: false,
-            hour: "2-digit",
-            minute: "2-digit",
-          }).formatToParts(new Date(parsedMs));
-          const hh = Number(parts.find(p => p.type === "hour")?.value);
-          const mm = Number(parts.find(p => p.type === "minute")?.value);
-          if (Number.isFinite(hh) && Number.isFinite(mm)) {
-            hour = hh === 24 ? 0 : hh;
-            minute = mm;
-          }
-        } catch {
-          // Keep literal ISO clock fields if timezone formatting fails.
+        epochMs = parsedMs;
+        const zoned = formatZonedDateTimeParts(parsedMs, timeZone);
+        if (zoned) {
+          ({ year, month, day, hour, minute } = zoned);
         }
       }
     }
     const periodTag: ParsedTimeAnchor["periodTag"] = hour === 12 ? "noon" : hour < 12 ? "am" : "pm";
     return {
-      rawNormalized: `${hour}:${String(minute).padStart(2, "0")}`,
+      rawNormalized: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}t${hour}:${String(minute).padStart(2, "0")}`,
+      epochMs,
+      year,
+      month,
+      day,
       dayTag: null,
       periodTag,
       hour24: hour,
@@ -388,6 +420,20 @@ function parseTimeAnchorInfo(raw: string, timeZone = "Asia/Hong_Kong"): ParsedTi
   }
 
   const normalized = normalizeTimeAnchor(raw);
+  let year: number | null = null;
+  let month: number | null = null;
+  let day: number | null = null;
+  const fullDateMatch = normalized.match(/^(\d{4})[-/年](\d{1,2})[-/月](\d{1,2})[日號]?$/);
+  const mdDateMatch = !fullDateMatch ? normalized.match(/^(\d{1,2})月(\d{1,2})[日號]$/) : null;
+  if (fullDateMatch) {
+    year = Number(fullDateMatch[1]);
+    month = Number(fullDateMatch[2]);
+    day = Number(fullDateMatch[3]);
+  } else if (mdDateMatch) {
+    month = Number(mdDateMatch[1]);
+    day = Number(mdDateMatch[2]);
+  }
+
   const dayTag: ParsedTimeAnchor["dayTag"] =
     /(?:今朝|今晚|今日|今天|今早|今午|今夜|\btonight\b|\btoday\b)/i.test(normalized) ? "today"
     : /(?:聽日|明日|明天|\btomorrow\b)/i.test(normalized) ? "tomorrow"
@@ -402,7 +448,9 @@ function parseTimeAnchorInfo(raw: string, timeZone = "Asia/Hong_Kong"): ParsedTi
   let hour24: number | null = null;
   let hour12: number | null = null;
   let minute: number | null = null;
-  const clockMatch = normalized.match(/(\d{1,2})(?::(\d{2})|[點時](?:(\d{1,2})分|(半))?|(am|pm))/i);
+  const clockMatch = month === null && day === null
+    ? normalized.match(/(\d{1,2})(?::(\d{2})|[點時](?:(\d{1,2})分|(半))?|(am|pm))/i)
+    : null;
   if (clockMatch) {
     const rawHour = Number(clockMatch[1]);
     const rawMin = clockMatch[4] ? 30 : clockMatch[2] ? Number(clockMatch[2]) : clockMatch[3] ? Number(clockMatch[3]) : 0;
@@ -418,15 +466,26 @@ function parseTimeAnchorInfo(raw: string, timeZone = "Asia/Hong_Kong"): ParsedTi
       }
     }
   }
-  return { rawNormalized: normalized, dayTag, periodTag, hour24, hour12, minute };
+  return { rawNormalized: normalized, epochMs: null, year, month, day, dayTag, periodTag, hour24, hour12, minute };
 }
 
 function timeAnchorMatches(claimRaw: string, receiptRaw: string, timeZone?: string): boolean {
   const claim = parseTimeAnchorInfo(claimRaw, timeZone);
   const receipt = parseTimeAnchorInfo(receiptRaw, timeZone);
+  if (claim.epochMs !== null && receipt.epochMs !== null) {
+    return claim.epochMs === receipt.epochMs;
+  }
+  if (claim.month !== null && claim.day !== null) {
+    if (receipt.month === null || receipt.day === null) return false;
+    if (claim.month !== receipt.month || claim.day !== receipt.day) return false;
+    if (claim.year !== null && receipt.year !== null && claim.year !== receipt.year) return false;
+  }
   if (claim.rawNormalized === receipt.rawNormalized) return true;
   if (claim.dayTag && receipt.dayTag && claim.dayTag !== receipt.dayTag) return false;
   if (claim.periodTag && receipt.periodTag && claim.periodTag !== receipt.periodTag) return false;
+  if (claim.hour24 === null && claim.hour12 === null && receipt.hour24 !== null) {
+    return claim.month !== null && claim.day !== null;
+  }
   if (claim.hour24 !== null && receipt.hour24 !== null) {
     return claim.hour24 === receipt.hour24 && claim.minute === receipt.minute;
   }
@@ -628,9 +687,8 @@ function matchOperationClaimToReceipts(ops: ChatDeliveryVerifiedOperation[], opT
   if (claim.ambiguous) return { matched: false, quantifiedCount: 0 };
 
   const slots: VerifiedReceiptSlot[] = [];
-  const allReceiptTimes: string[] = [];
+  const allReceiptTimes: Array<{ anchor: string; timeZone?: string }> = [];
   const allReceiptNumbers = new Set<string>();
-  const allReceiptZones: (string | undefined)[] = [];
   let hasAnySummary = false;
 
   for (const op of ops) {
@@ -640,9 +698,8 @@ function matchOperationClaimToReceipts(ops: ChatDeliveryVerifiedOperation[], opT
       return { matched: false, quantifiedCount: 0 };
     }
     if (parsedOp.hasContent) hasAnySummary = true;
-    for (const t of parsedOp.allTimeAnchors) allReceiptTimes.push(t);
+    for (const t of parsedOp.allTimeAnchors) allReceiptTimes.push({ anchor: t, timeZone: op.eventTimeZone });
     for (const n of parsedOp.allStandaloneNumbers) allReceiptNumbers.add(n);
-    allReceiptZones.push(op.eventTimeZone);
     const opFullNormalized = texts.join(" ").replace(/[\s，,。！!？?;；：:"'「」『』（）()]+/gu, "").toLowerCase();
     for (const item of parsedOp.items) {
       slots.push({
@@ -671,7 +728,7 @@ function matchOperationClaimToReceipts(ops: ChatDeliveryVerifiedOperation[], opT
   }
 
   if (claim.allTimeAnchors.length > 0 && !claim.allTimeAnchors.every(ct =>
-    allReceiptTimes.some((rt, idx) => timeAnchorMatches(ct, rt, allReceiptZones[0] ?? "Asia/Hong_Kong"))
+    allReceiptTimes.some(rt => timeAnchorMatches(ct, rt.anchor, rt.timeZone ?? "Asia/Hong_Kong"))
   )) {
     return { matched: false, quantifiedCount: claimQuantified.length };
   }
@@ -812,11 +869,20 @@ const SCOPE_REFUSAL_OR_LIMITATION_PATTERN = /(?:超出|不屬(?:於)?|並非|不
 const UNSAFE_REFUSAL_TOPIC_PATTERN = /趴低|趴喺度|趴睡|俯睡|瞓覺|加鹽|蜜糖|蜂蜜|服藥|食藥|劑量|退燒藥|抗生素|火酒|酒精抹|抹身降溫|put\s+(?:your\s+)?(?:child|baby|infant).{0,40}(?:sleep|stomach)|sleep\s+face\s+down|rubbing\s+alcohol|honey|salt|dosage|medication|ibuprofen|paracetamol|aspirin/iu;
 const UNSAFE_OPERATION_CLAIM_PATTERN = /趴低|趴喺度|趴睡|俯睡|sleep\s+face\s+down|put\s+(?:your\s+)?(?:child|baby|infant).{0,40}stomach/iu;
 
-const PRIVATE_BOILERPLATE_STRIP_PATTERN = /(?:已確認記憶[：:]?|家庭紀錄(?:顯示)?[：:]?|根據(?:家庭|私人)?紀錄[，,：:]?|私人(?:來源|紀錄|交代)(?:顯示)?[：:]?|你曾交代[：:]?|memory\s+record[：:]?|family\s+records?(?:\s+show)?[：:]?|according\s+to\s+family\s+records?[，,：:]?|BB\b|寶寶|嬰兒|幼兒|孩子|小朋友|\b(?:the|this|my|your)\b|\b(?:baby|infant|child|toddler|according|shows?|records?|notes?)\b)/giu;
+const PRIVATE_ATTRIBUTION_STRIP_PATTERN = /(?:已確認(?:的)?記憶(?:如下|顯示)?[：:,，]?|家庭紀錄(?:如下|顯示)?[：:,，]?|根據(?:上述|已確認|家庭|私人)?(?:紀錄|記錄|記憶|資料)(?:顯示)?[：:,，]?|私人(?:來源|紀錄|記錄|交代)(?:顯示)?[：:,，]?|你曾交代[：:,，]?|目前有以下已確認的(?:過敏)?(?:紀錄|記錄)[：:,，]?|memory\s+records?(?:\s+show)?[：:,，]?|family\s+records?(?:\s+show)?[：:,，]?|according\s+to\s+(?:the\s+)?(?:family|memory)\s+records?[：:,，]?|\b(?:the|this|my|your)\b|\b(?:according|to|shows?|records?|notes?|memory|family)\b)/giu;
+const PRIVATE_CHILD_SUBJECT_SYNONYM = /\bBB\b|寶寶|嬰兒|婴儿|幼兒|幼儿|孩子|小朋友|\b(?:baby|infant|child|toddler)\b/giu;
+const PRIVATE_OTHER_SUBJECT_PATTERN = /(?:媽媽|媽咪|爸爸|爹地|父親|母親|家長|祖父|祖母|公公|婆婆|外公|外婆|外傭|姐姐|工人|陪月|老師|醫生|護士|別人|其他人|他人|我自己|我本人|\b(?:mother|mom|mum|father|dad|parent|grandma|grandpa|teacher|doctor|nurse)\b)/iu;
+const PRIVATE_CLAUSE_CONNECTOR_LEAD = /^(?:但是?|不過|然而|但係|並且|同時|另外|還有|仲有|亦(?!(?:然))|而(?!(?:家))|\b(?:and|but|however|although|whereas|while|moreover|furthermore|additionally|also)\b)[\s，,:：]*/iu;
 const PRIVATE_NEGATION_PATTERN = /(?:並不|並無|不是|非|不會|不再|未有|沒有|無|冇|唔(?:會|好|係|喜歡|鍾意|愛吃|爱吃)?|不要|別|勿|\bnot\b|\bnever\b|\bno\s+(?:allergy|allergies|longer)\b)/iu;
 const PRIVATE_EN_STOPWORDS = new Set([
   "the", "and", "for", "that", "with", "this", "are", "was", "were", "has", "have", "had", "been", "from", "into",
   "show", "shows", "record", "records", "family", "memory", "note", "notes", "baby", "child", "infant", "toddler",
+  "also", "but", "however", "although", "whereas", "while", "moreover",
+]);
+const PRIVATE_1CHAR_STOPWORDS = new Set([
+  "的", "嘅", "係", "是", "在", "喺", "於", "有", "無", "冇", "沒", "了", "咗", "左", "著", "過",
+  "對", "不", "並", "亦", "而", "但", "和", "與", "及", "同", "或", "跟", "把", "將", "會", "要",
+  "多", "少", "都", "就", "也", "還", "仲", "再", "又", "更", "很", "好", "得", "地", "着",
 ]);
 
 function readablePrivateSourceText(source: ChatDeliverySource): string {
@@ -836,42 +902,116 @@ function readablePrivateSourceText(source: ChatDeliverySource): string {
   return raw;
 }
 
-function normalizePrivateBody(text: string): string {
-  return text.normalize("NFKC")
-    .replace(PRIVATE_BOILERPLATE_STRIP_PATTERN, " ")
-    .replace(/[\s，,。！!？?;；：:"'「」『』（）()]+/gu, "")
-    .toLowerCase();
+function canonicalPrivateClauseBody(text: string): string {
+  let body = text.normalize("NFKC").trim();
+  for (let i = 0; i < 3; i++) {
+    body = body
+      .replace(PRIVATE_CLAUSE_CONNECTOR_LEAD, " ")
+      .replace(PRIVATE_ATTRIBUTION_STRIP_PATTERN, " ")
+      .trim();
+  }
+  return body
+    .replace(PRIVATE_CHILD_SUBJECT_SYNONYM, "bb")
+    .replace(/同埋|以及|跟|與|和|及|同(?!(?:時|樣|類|等|居|住|學|意))/gu, "、")
+    .replace(/鍾意|鐘意|喜愛/gu, "喜歡")
+    .replace(/下晝/gu, "下午")
+    .replace(/瞓晏晝覺|訓晏晝覺/gu, "睡午覺")
+    .replace(/(平時|每日|每晚|早上|上午|下午)[會喺在]+(?=\d|上午|下午|早|晚|午)/gu, "$1")
+    .replace(/(?:會?[喺在])(?=\d|上午|下午)/gu, "")
+    .replace(/會(?=睡午覺)/gu, "")
+    .replace(/半(?:個)?(?:鐘頭?|小時)/gu, "30分鐘")
+    .replace(/有((?:嚴重)?過敏)/gu, "$1")
+    .replace(/兩(?=\s*(?:點|時|次|歲|個))/gu, "2");
 }
 
-function privateSourceSupportsParagraph(source: ChatDeliverySource, paragraphText: string): boolean {
-  if (source.classification !== "private" || !source.excerpt.trim()) return false;
-  if (source.citationId.startsWith("tasks:") || source.citationId.startsWith("care:")) {
-    return !CARE_ADVISORY_PATTERN.test(paragraphText) && !MEDICAL_CLAIM_PATTERN.test(paragraphText);
-  }
-  const sourceText = readablePrivateSourceText(source);
-  if (!sourceText) return false;
-  if (memoryFactReferencedByParagraph(sourceText, paragraphText)) return true;
+function compactPrivateClauseBody(canonical: string): string {
+  return canonical.replace(/[\s，,。！!？?;；：:"'「」『』（）()、]+/gu, "").toLowerCase();
+}
 
-  const strippedClaim = paragraphText.normalize("NFKC").replace(PRIVATE_BOILERPLATE_STRIP_PATTERN, " ");
-  const strippedSource = sourceText.normalize("NFKC").replace(PRIVATE_BOILERPLATE_STRIP_PATTERN, " ");
-  if (PRIVATE_NEGATION_PATTERN.test(strippedClaim) !== PRIVATE_NEGATION_PATTERN.test(strippedSource)) {
+function splitPrivateAssertionClauses(text: string): string[] {
+  const nfkc = text.normalize("NFKC");
+  const rough = nfkc.split(/[。！？!?;；，,\n]+/u);
+  const clauses: string[] = [];
+  for (const part of rough) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const subParts = trimmed.split(/(?=(?:但是?|不過|然而|但係|亦(?=(?:對|有|係|是|無|冇|不|會|要|應|可|喜歡|鍾意))|而且|並且|同時|另外|還有|仲有))|\s+(?=(?:but|however|although|whereas|while|and\s+also|also)\b)/iu);
+    for (const sub of subParts) {
+      const cleaned = sub.trim();
+      if (cleaned) clauses.push(cleaned);
+    }
+  }
+  return clauses;
+}
+
+function privateSourceClauseSupportsClaimClause(sourceClause: string, claimClause: string): boolean {
+  const cleanClaimForPol = claimClause.normalize("NFKC").replace(PRIVATE_ATTRIBUTION_STRIP_PATTERN, " ");
+  const cleanSourceForPol = sourceClause.normalize("NFKC").replace(PRIVATE_ATTRIBUTION_STRIP_PATTERN, " ");
+  if (PRIVATE_NEGATION_PATTERN.test(cleanClaimForPol) !== PRIVATE_NEGATION_PATTERN.test(cleanSourceForPol)) {
+    return false;
+  }
+  if (PRIVATE_OTHER_SUBJECT_PATTERN.test(cleanClaimForPol) !== PRIVATE_OTHER_SUBJECT_PATTERN.test(cleanSourceForPol)) {
     return false;
   }
 
-  const normalizedClaim = normalizePrivateBody(paragraphText);
-  const normalizedSource = normalizePrivateBody(sourceText);
-  if (!normalizedClaim || !normalizedSource) return false;
-  if (normalizedClaim.length >= 4 && normalizedSource.includes(normalizedClaim)) return true;
+  const canonicalClaim = canonicalPrivateClauseBody(claimClause);
+  const canonicalSource = canonicalPrivateClauseBody(sourceClause);
+  const compactClaim = compactPrivateClauseBody(canonicalClaim);
+  const compactSource = compactPrivateClauseBody(canonicalSource);
+  if (!compactClaim || !compactSource) return false;
+  if (compactClaim.length >= 4 && compactSource.includes(compactClaim)) return true;
 
   const claimTerms: string[] = [];
-  for (const seg of strippedClaim.match(/[\u4e00-\u9fff]{2,}/g) ?? []) {
+  for (const seg of canonicalClaim.match(/[\u4e00-\u9fff]{2,}/g) ?? []) {
     if (seg.length === 2) claimTerms.push(seg.toLowerCase());
     else for (let i = 0; i <= seg.length - 2; i++) claimTerms.push(seg.slice(i, i + 2).toLowerCase());
   }
-  for (const word of strippedClaim.toLowerCase().match(/[a-z0-9]{3,}/g) ?? []) {
-    if (!PRIVATE_EN_STOPWORDS.has(word)) claimTerms.push(word);
+  const withoutMultiCjk = canonicalClaim.replace(/[\u4e00-\u9fff]{2,}/g, " ");
+  for (const ch of withoutMultiCjk.match(/[\u4e00-\u9fff]/g) ?? []) {
+    if (!PRIVATE_1CHAR_STOPWORDS.has(ch)) claimTerms.push(ch);
   }
-  return claimTerms.length > 0 && claimTerms.every(term => normalizedSource.includes(term));
+  for (const word of canonicalClaim.toLowerCase().match(/[a-z0-9]+/g) ?? []) {
+    if (word === "bb") continue;
+    if (/^\d+$/.test(word) || (!PRIVATE_EN_STOPWORDS.has(word) && word.length >= 3)) {
+      claimTerms.push(word);
+    }
+  }
+  return claimTerms.length > 0 && claimTerms.every(term => compactSource.includes(term));
+}
+
+function privateClauseSupportedBySources(
+  candidates: readonly ChatDeliverySource[],
+  claimClause: string,
+): { supported: boolean; isEmptyBoilerplate: boolean } {
+  const canonicalClaim = canonicalPrivateClauseBody(claimClause);
+  const compactClaim = compactPrivateClauseBody(canonicalClaim);
+  const cleanForPol = claimClause.normalize("NFKC").replace(PRIVATE_ATTRIBUTION_STRIP_PATTERN, " ");
+  if (!compactClaim && !PRIVATE_NEGATION_PATTERN.test(cleanForPol) && !PRIVATE_OTHER_SUBJECT_PATTERN.test(cleanForPol)) {
+    return { supported: true, isEmptyBoilerplate: true };
+  }
+  const supported = candidates.some(source => {
+    if (source.classification !== "private" || !source.excerpt.trim()) return false;
+    if (source.citationId.startsWith("tasks:") || source.citationId.startsWith("care:")) {
+      return !CARE_ADVISORY_PATTERN.test(claimClause) && !MEDICAL_CLAIM_PATTERN.test(claimClause);
+    }
+    const sourceText = readablePrivateSourceText(source);
+    if (!sourceText) return false;
+    return splitPrivateAssertionClauses(sourceText).some(srcClause => privateSourceClauseSupportsClaimClause(srcClause, claimClause));
+  });
+  return { supported, isEmptyBoilerplate: false };
+}
+
+function privateSourcesSupportParagraph(candidates: readonly ChatDeliverySource[], paragraphText: string): boolean {
+  if (candidates.length === 0) return false;
+  const clauses = splitPrivateAssertionClauses(paragraphText);
+  if (clauses.length === 0) return false;
+  let substantiveSupported = 0;
+  for (const clause of clauses) {
+    const res = privateClauseSupportedBySources(candidates, clause);
+    if (!res.supported) return false;
+    if (!res.isEmptyBoilerplate) substantiveSupported += 1;
+  }
+  return substantiveSupported > 0;
 }
 
 function privateSourcesSupportDraft(draft: ChatDeliveryDraft): boolean {
@@ -891,8 +1031,7 @@ function privateSourcesSupportDraft(draft: ChatDeliveryDraft): boolean {
     const candidates = paragraph.citationIds.length > 0
       ? paragraph.citationIds.map(id => sourceById.get(id)).filter((s): s is ChatDeliverySource => Boolean(s))
       : privateSources;
-    if (candidates.length === 0) return false;
-    return candidates.some(source => privateSourceSupportsParagraph(source, text));
+    return privateSourcesSupportParagraph(candidates, text);
   });
 }
 
