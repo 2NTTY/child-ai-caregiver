@@ -664,6 +664,8 @@ provider 為 gemini、vertex 或 openai-compatible；更換供應商或相容 AP
 <a id="int-family-documents"></a>
 ## INT：家庭文件及同版 PDF
 
+在原有文件 PDF 的 POST 路徑附上 `?view=content`，沿相同身份、範圍、文件版本、用途及附加內容選項，取得 `{ preview }`。Web 與原生顯示的標題、段落、勾選狀態及附加來源均由 [PDF 共用投影](../src/shared/document-export-view.ts) 產生。未選入的來源及修訂欄位為 `null`。來源或授權在處理期間改變時沿原錯誤回應。預設回傳同版 PDF。
+
 `/api/children/:childId/documents` 是多份準備文件及成長報告的唯一業務入口，與舊單份 VisitPreparation 分開。每次重查本人、目前家庭角色、孩子及 authorityVersion；owner／caregiver 可整理，viewer 唯讀。GET 清單／單項不呼叫模型或自動建立文件。POST 建立及 `/:id/actions` 帶原 opId；refresh／archive／restore／check_item／check_items 帶 expectedVersion。網絡未知只重查／重送相同原操作，不換 opId 或版本猜成功。
 
 `check_items` 接受同文件最多 128 個不重複的 `{sectionId,itemId,checked}`，全部項目、目前來源、權限及版本在同一交易核對；任一不合法便不修改。成功只建立一個文件版本及原操作收據，回傳權威文件；保留舊 `check_item` 相容。共用 owner 可先顯示未保存勾選、停手約三秒合併最後狀態，或在同孩子離頁時立即背景送出；不是 Server 暫存資料庫。保存中可繼續勾選，成功後以回傳版本整理下一批；衝突／unknown 停止自動提交，保留意圖並沿原收據恢復。身份切換、登出及撤權仍沿現有隔離規則，未保存值不當成已保存正文或匯出依據。
