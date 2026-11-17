@@ -75,11 +75,14 @@ export function createSelectedMaterials(options:FirestoreDomainOptions & {chat:F
           if (!page) domainReject('not_found',404);
           values = page.items.map(fromDocument); after = page.nextCursor ?? null;
         }
+        const phrase = q.query.toLowerCase();
+        const terms = [...new Set([phrase, ...phrase.split(/\s+/u)])];
         const items = values.flatMap(value => {
           if (!value) return [];
-          const match = value.text.toLowerCase().indexOf(q.query.toLowerCase());
-          if (match < 0 && !value.title.toLowerCase().includes(q.query.toLowerCase())) return [];
-          const offset = Math.max(0,match-80);
+          const body = value.text.toLowerCase();
+          const match = terms.map(term => body.indexOf(term)).find(position => position >= 0);
+          if (match === undefined && !terms.some(term => value.title.toLowerCase().includes(term))) return [];
+          const offset = Math.max(0,(match ?? 0)-80);
           const text = value.text.slice(offset,offset+300);
           return [{childId,childName,kind:q.kind,id:value.id,version:value.version,title:value.title,source:value.source,
             text,offset,complete:offset === 0 && text.length === value.text.length,
