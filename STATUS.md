@@ -1,5 +1,8 @@
 # STATUS
 
+**2026-11-18 P4 交付。** Web、API、worker 的[正式收據 `r44189921005-2`](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44189921005/attempts/2) 均指向 `9463f452`。第一次嘗試在切換前因 VM 餘量不足而停止；清理五份退役 Web 壓縮包後以原 SHA 完成。本人私聊原件還原、管理後台 ZIP／分組重建、多孩記憶與文件點讀、報告預覽已上線。[驗收對照與剩餘項](docs/P4_RESUME.md#p4-acceptance) · [香港隔離恢復](artifacts/verification/P4_CENTRAL_RECOVERY_20261118.json) · [知識重建實測](artifacts/verification/P4_KNOWLEDGE_REBUILD_20261118.json)。
+
+
 只作根 PLAN 的短現況投影；工作包、前置、未驗與完成門檻見 [PLAN 當前入口](PLAN.md#active)。
 
 **原站部署（A）** 每日香港 04:17 由 GCP 直接呼叫 GitHub 檢查受保護 master。網站按各服務已發布版本判斷是否建置，版本、觸發收據及回退候選從[部署手冊](docs/DEPLOYMENT.md)的 `status` 查閱。原 GitHub 排程於 11 月 13 日延遲 4 小時 47 分；同日 GCP 已實測能喚醒工作流。[原生排程紀錄](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43342076107) · [原 GCP 補檢紀錄](https://github.com/2NTTY/child-ai-caregiver/actions/runs/43331068601)
