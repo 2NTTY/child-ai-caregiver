@@ -956,10 +956,14 @@ function privateSourceClauseSupportsClaimClause(sourceClause: string, claimClaus
 
   const canonicalClaim = canonicalPrivateClauseBody(claimClause);
   const canonicalSource = canonicalPrivateClauseBody(sourceClause);
+  const canonicalSourceLower = canonicalSource.toLowerCase();
   const compactClaim = compactPrivateClauseBody(canonicalClaim);
   const compactSource = compactPrivateClauseBody(canonicalSource);
   if (!compactClaim || !compactSource) return false;
-  if (compactClaim.length >= 4 && compactSource.includes(compactClaim)) return true;
+  const sourceNumbers = new Set(canonicalSource.match(/\d+(?:\.\d+)?/g) ?? []);
+  const claimNumbers = canonicalClaim.match(/\d+(?:\.\d+)?/g) ?? [];
+  if (claimNumbers.some(num => !sourceNumbers.has(num))) return false;
+  if (compactClaim.length >= 4 && !/\d/u.test(compactClaim) && compactSource.includes(compactClaim)) return true;
 
   const claimTerms: string[] = [];
   for (const seg of canonicalClaim.match(/[\u4e00-\u9fff]{2,}/g) ?? []) {
@@ -970,13 +974,17 @@ function privateSourceClauseSupportsClaimClause(sourceClause: string, claimClaus
   for (const ch of withoutMultiCjk.match(/[\u4e00-\u9fff]/g) ?? []) {
     if (!PRIVATE_1CHAR_STOPWORDS.has(ch)) claimTerms.push(ch);
   }
-  for (const word of canonicalClaim.toLowerCase().match(/[a-z0-9]+/g) ?? []) {
+  const asciiWords: string[] = [];
+  for (const word of canonicalClaim.toLowerCase().replace(/\d+(?:\.\d+)?/g, " ").match(/[a-z]+/g) ?? []) {
     if (word === "bb") continue;
-    if (/^\d+$/.test(word) || (!PRIVATE_EN_STOPWORDS.has(word) && word.length >= 3)) {
-      claimTerms.push(word);
+    if (!PRIVATE_EN_STOPWORDS.has(word) && word.length >= 3) {
+      asciiWords.push(word);
     }
   }
-  return claimTerms.length > 0 && claimTerms.every(term => compactSource.includes(term));
+  const hasAnyEvidenceToken = claimTerms.length > 0 || asciiWords.length > 0 || claimNumbers.length > 0;
+  return hasAnyEvidenceToken
+    && claimTerms.every(term => compactSource.includes(term))
+    && asciiWords.every(word => new RegExp(`(?<![a-z0-9])${word}(?![a-z0-9])`, "u").test(canonicalSourceLower));
 }
 
 function privateClauseSupportedBySources(
@@ -1001,12 +1009,30 @@ function privateClauseSupportedBySources(
   return { supported, isEmptyBoilerplate: false };
 }
 
-function privateSourcesSupportParagraph(candidates: readonly ChatDeliverySource[], paragraphText: string): boolean {
+function privateSourcesSupportParagraph(
+  candidates: readonly ChatDeliverySource[],
+  paragraphText: string,
+  allowMetaClauses = false,
+): boolean {
   if (candidates.length === 0) return false;
   const clauses = splitPrivateAssertionClauses(paragraphText);
   if (clauses.length === 0) return false;
+  const textDisallowsMeta = CARE_ADVISORY_PATTERN.test(paragraphText)
+    || MEDICAL_CLAIM_PATTERN.test(paragraphText)
+    || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(paragraphText)
+    || UNSAFE_OPERATION_CLAIM_PATTERN.test(paragraphText);
   let substantiveSupported = 0;
   for (const clause of clauses) {
+    if (allowMetaClauses && isPureStructuralFramingClause(clause)) continue;
+    if (
+      allowMetaClauses && !textDisallowsMeta
+      && (
+        isPurePendingConfirmationClause(clause)
+        || (!UNSAFE_REFUSAL_TOPIC_PATTERN.test(paragraphText) && isPureScopeRefusalClause(clause))
+      )
+    ) {
+      continue;
+    }
     const res = privateClauseSupportedBySources(candidates, clause);
     if (!res.supported) return false;
     if (!res.isEmptyBoilerplate) substantiveSupported += 1;
@@ -1020,32 +1046,94 @@ function isPurePrivateAttributionHeader(text: string): boolean {
   return !compact && !PRIVATE_NEGATION_PATTERN.test(cleanForPol) && !PRIVATE_OTHER_SUBJECT_PATTERN.test(cleanForPol);
 }
 
-const PRIVATE_FACTUAL_CLAIM_WITHOUT_REFUSAL_PATTERN = /(?:(?:寶寶|BB|嬰兒|幼兒|孩子|小朋友|媽媽|媽咪|爸爸|爹地|\b(?:baby|infant|child|toddler)\b).{0,24}(?:過敏|敏感|喜歡|鍾意|飲過|喝過|食過|吃過|曾|出現|發燒|腹瀉|allergic|allergy|allergies|likes?|has|had)|(?:家庭紀錄|已確認記憶|family\s+records?|memory\s+records?))/iu;
 const PRIVATE_ALLERGY_CLAIM_PATTERN = /(?:過敏|敏感|allerg(?:y|ic|ies)|家庭紀錄|已確認記憶)/iu;
+const EXECUTED_PENDING_LIE_PATTERN = /(?:已正式保存|已經保存|已經儲存|已經刪除|已經取消|已經清空|已經設定|已經修改|已經更新|一筆不留|已經完成|\b(?:has|have)\s+been\s+(?:saved|deleted|updated|changed|cleared|removed|cancelled|reset)\b|\balready\s+(?:saved|deleted|updated|changed|cleared)\b)/iu;
+const CLAUSE_SPECIFIC_FACT_SIGNAL_PATTERN = /(?:\d|(?<![\u4e00-\u9fff])(?:一|二|兩|两|三|四|五|六|七|八|九|十)\s*(?:分鐘|小時|個?鐘|天|日|週|周|個月|歲|次|項|條|個|件|筆|ml|mg|mcg|ug|cc|克)|\bBB\b|寶寶|孩子|小朋友|小孩|孩童|嬰兒|幼兒|兒子|女兒|個仔|個女|阿B|佢|(?<![\u4e00-\u9fff])(?:他|她)(?![人們])|媽媽|媽咪|爸爸|爹地|母親|父親|\b(?:my|your|the)\s+(?:baby|child|infant|toddler|kid|son|daughter|mom|mother|dad|father)\b|[:：()（）])/iu;
+const CLAUSE_EMBEDDED_FACT_DISQUALIFIER_PATTERN = /(?:午睡|睡覺|瞓覺|喝奶|飲奶|吃奶|食奶|在家|在學校|學校|幼稚園|屋企|醫院|診所|公園|托兒所|喜歡|鍾意|曾|通常|每日|每天|每晚|早上|上午|下午|晚上|過敏|敏感|allerg(?:y|ic|ies)|nap|sleep|school|home|usually)/iu;
+const CLAUSE_INTERNAL_REASON_OR_CONTRAST_PATTERN = /(?:但是?|不過|然而|但係|因為|由於|既然|其實|只是|只係|\b(?:because|since|but|however|whereas)\b)/iu;
+
+const ASSISTANT_SCOPE_CAPABILITY_CLAUSE = /^(?:(?:抱歉|不好意思)[，,]?\s*)?(?:我|本系統|本助手)(?:目前)?(?:主要|只|僅)(?:協助|支援|處理|提供|回答|解答)(?:香港)?(?:嬰幼兒及兒童|兒童|幼兒|育兒|日常)?(?:日常)?(?:照護|護理|育兒)?(?:相關)?(?:問題|查詢|範疇|範圍)$/iu;
+const PURE_SCOPE_REFUSAL_CLAUSE = /^(?:(?:抱歉|不好意思|sorry)[，,]?\s*)?(?:(?:我|本系統|本助手|系統|助手)?(?:目前|現時|暫時|暫)?(?:無法|未能|不能|難以|無法代為|不|不予|恕不)(?:回答|回應|解答|提供|協助|處理|評估|判斷|確認|查閱|找到)[^，,。！？!?;；：:()（）]{0,24}|(?:這類|此類|該類|相關|有關|上述|這些|該)?[^，,。！？!?;；：:()（）]{0,18}(?:超出(?:本系統|本助手|系統|助手|目前|協助|支援|服務)?(?:協助|支援|服務)?範圍|不屬(?:於)?(?:本系統|本助手|系統|助手|協助|支援|服務)?(?:範圍|範疇))|(?:目前|現時|暫時)?(?:暫無|暫未(?:涵蓋|提供|收錄)|沒有(?:相關|適用|足夠|其他|更多|進一步)|缺乏|缺少)[^，,。！？!?;；：:()（）]{0,20}(?:資料|資訊|紀錄|記錄|內容|根據|依據|解答|答案|覆蓋|涵蓋)?|(?:這方面的|目前)?(?:資料|資訊|依據)(?:有限|不足)|(?:this\s+(?:topic|question|request|query)\s+is\s+)?(?:out\s+of\s+scope|outside\s+(?:my|the\s+system'?s)\s+scope)|(?:i\s+am\s+|i'm\s+|we\s+are\s+)?(?:unable\s+to|cannot)\s+(?:answer|assist|help|advise|provide)(?:\s+[^,.;!?()]{1,40})?|(?:no\s+(?:other|further|additional)\s+(?:information|data|records?)(?:\s+(?:is|are)\s+available)?|not\s+covered))$/iu;
+
+const PURE_PENDING_CONFIRMATION_CLAUSE = /^(?:(?:(?:目前|現時|現在|這項|此項|該項?|以上|上述|該等|相關|有關|這份|此)?(?:更新|更改|修改|更正|新增|建立|刪除|取消|紀錄|記錄|資料|內容|候選|提案|操作|設定|提醒)?(?:仍|目前|暫時)?(?:尚未|未)(?:正式)?(?:保存|儲存|建立|執行|生效|送出|寫入|刪除|修改|更新|取消)|(?:目前|現時|仍)?(?:等待|等候|有待)(?:你|您|家長)?(?:確認|核對(?:及|並)?確認)|待確認|待核對|(?:需|須)?確認後才(?:會)?(?:正式)?(?:保存|儲存|生效|更新|建立|執行))|已(?:經)?(?:為(?:你|您))?準備(?:好)?(?:(?:更新|更改|修改|更正|新增|刪除)(?:過敏資料|過敏紀錄|過敏記錄|記憶資料|記憶紀錄|記憶記錄|日常紀錄|日常記錄|照護紀錄|照護記錄|資料|紀錄|記錄|設定|提醒)(?:的|之))?待確認(?:記憶|過敏|更正|更新|操作)*候選|請(?:你|您|家長)?(?:先)?(?:查看|檢視|核對|確認)(?:(?:及|並|與|再|後)(?:核對|確認))?|(?:(?:this|the)\s+)?(?:pending\s+)?(?:update|change|draft|proposal|candidate|record)?\s*(?:is\s+)?(?:still\s+)?(?:not\s+yet\s+(?:saved|stored|created|deleted|updated|executed)|pending\s+confirmation|awaiting\s+confirmation)|please\s+(?:review|check)\s+(?:and\s+)?confirm)$/iu;
+
+const PURE_STRUCTURAL_FRAMING_CLAUSE = /^(?:(?:以上|以下|上述|下列)(?:僅)?(?:是|為|係)?(?:目前|現時|當前)?(?:為(?:你|您)|幫(?:你|您))?(?:已)?(?:整理|彙整|匯總|彙總|總結|歸納|列出|列舉|摘要)(?:後|好|完|出|出來)?(?:的|之)?(?:全部|所有|主要|相關)?(?:內容|資訊|資料|重點|項目|摘要|結果|紀錄|記錄|清單|部分)(?:如下)?|(?:以上|以下|上述)(?:是|為|係)?(?:已)?(?:確認(?:過|的)?|整理(?:好|後)?(?:的)?)(?:內容|摘要|重點|結果)(?:的整理)?|(?:the\s+)?(?:above|below)\s+(?:is|are)\s+(?:the\s+)?(?:organized|compiled|summarized|structured)?\s*(?:content|summary|details|information|items|notes|records)|here\s+(?:is|are)\s+(?:the\s+)?(?:organized|compiled|structured)?\s*(?:summary|content|overview))$/iu;
+
+function normalizeCleanMetaClause(rawClause: string): string {
+  return rawClause.normalize("NFKC").trim().replace(/[。！!？?;；，,]+$/u, "").trim();
+}
+
+function isPureScopeRefusalClause(rawClause: string): boolean {
+  const body = normalizeCleanMetaClause(rawClause).replace(PRIVATE_CLAUSE_CONNECTOR_LEAD, "").trim();
+  if (!body || /[:：()（）\d]/u.test(body)) return false;
+  if (CLAUSE_INTERNAL_REASON_OR_CONTRAST_PATTERN.test(body)) return false;
+  if (CARE_ADVISORY_PATTERN.test(body) || MEDICAL_CLAIM_PATTERN.test(body)
+    || hasOperationOrStateAssertion(body) || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(body)
+    || UNSAFE_REFUSAL_TOPIC_PATTERN.test(body)) {
+    return false;
+  }
+  if (ASSISTANT_SCOPE_CAPABILITY_CLAUSE.test(body)) return true;
+  if (CLAUSE_SPECIFIC_FACT_SIGNAL_PATTERN.test(body) || CLAUSE_EMBEDDED_FACT_DISQUALIFIER_PATTERN.test(body)) {
+    return false;
+  }
+  return PURE_SCOPE_REFUSAL_CLAUSE.test(body);
+}
+
+function isPurePendingConfirmationClause(rawClause: string): boolean {
+  const body = normalizeCleanMetaClause(rawClause).replace(PRIVATE_CLAUSE_CONNECTOR_LEAD, "").trim();
+  if (!body || EXECUTED_PENDING_LIE_PATTERN.test(body)) return false;
+  if (CARE_ADVISORY_PATTERN.test(body) || MEDICAL_CLAIM_PATTERN.test(body)
+    || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(body) || UNSAFE_OPERATION_CLAIM_PATTERN.test(body)
+    || CLAUSE_SPECIFIC_FACT_SIGNAL_PATTERN.test(body) || CLAUSE_INTERNAL_REASON_OR_CONTRAST_PATTERN.test(body)) {
+    return false;
+  }
+  return PURE_PENDING_CONFIRMATION_CLAUSE.test(body);
+}
+
+function isPureStructuralFramingClause(rawClause: string): boolean {
+  const body = normalizeCleanMetaClause(rawClause);
+  if (!body || /[:：()（）]/u.test(body)) return false;
+  if (CARE_DOMAIN_PATTERN.test(body) || CARE_ADVISORY_PATTERN.test(body) || MEDICAL_CLAIM_PATTERN.test(body)
+    || OPERATION_CLAIM_PATTERN.test(body) || hasOperationOrStateAssertion(body)
+    || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(body) || SCOPE_REFUSAL_OR_LIMITATION_PATTERN.test(body)
+    || PENDING_OPERATION_DISCLAIMER.test(body) || EXECUTED_PENDING_LIE_PATTERN.test(body)
+    || CLAUSE_SPECIFIC_FACT_SIGNAL_PATTERN.test(body) || CLAUSE_EMBEDDED_FACT_DISQUALIFIER_PATTERN.test(body)
+    || CLAUSE_INTERNAL_REASON_OR_CONTRAST_PATTERN.test(body)) {
+    return false;
+  }
+  return PURE_STRUCTURAL_FRAMING_CLAUSE.test(body);
+}
+
+function isPureStructuralFramingText(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.length > 160 || /[：:()（）]/u.test(trimmed)) return false;
+  const clauses = splitPrivateAssertionClauses(trimmed);
+  return clauses.length > 0 && clauses.every(clause => isPureStructuralFramingClause(clause));
+}
 
 function isPureScopeRefusalOrLimitationText(text: string): boolean {
   const trimmed = text.trim();
-  if (!trimmed || trimmed.length > 400) return false;
+  if (!trimmed || trimmed.length > 400 || /[：:()（）]/u.test(trimmed)) return false;
   if (CARE_ADVISORY_PATTERN.test(trimmed) || MEDICAL_CLAIM_PATTERN.test(trimmed)
     || hasOperationOrStateAssertion(trimmed) || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(trimmed)
     || UNSAFE_REFUSAL_TOPIC_PATTERN.test(trimmed)
-    || PRIVATE_FACTUAL_CLAIM_WITHOUT_REFUSAL_PATTERN.test(trimmed)) return false;
-  const sentences = trimmed.split(/[。！？!?;；\n]+/u).map(part => part.trim()).filter(Boolean);
-  if (sentences.length === 0) return false;
-  return sentences.every(sentence => SCOPE_REFUSAL_OR_LIMITATION_PATTERN.test(sentence));
+    || PRIVATE_ALLERGY_CLAIM_PATTERN.test(trimmed)) return false;
+  const clauses = splitPrivateAssertionClauses(trimmed);
+  if (clauses.length === 0) return false;
+  return clauses.some(clause => SCOPE_REFUSAL_OR_LIMITATION_PATTERN.test(clause))
+    && clauses.every(clause => isPureScopeRefusalClause(clause));
 }
 
 function isPurePendingConfirmationDisclaimer(text: string): boolean {
-  if (!PENDING_OPERATION_DISCLAIMER.test(text)) return false;
-  if (/(?:已正式保存|已經保存|已經儲存|已經刪除|已經取消|已經清空|已經設定|已經修改|已經更新|一筆不留|已經完成|\b(?:has|have)\s+been\s+(?:saved|deleted|updated|changed|cleared|removed|cancelled|reset)\b|\balready\s+(?:saved|deleted|updated|changed|cleared)\b)/iu.test(text)) {
+  const trimmed = text.trim();
+  if (!trimmed || /[：:()（）]/u.test(trimmed) || !PENDING_OPERATION_DISCLAIMER.test(trimmed)) return false;
+  if (EXECUTED_PENDING_LIE_PATTERN.test(trimmed)) return false;
+  if (CARE_ADVISORY_PATTERN.test(trimmed) || MEDICAL_CLAIM_PATTERN.test(trimmed)
+    || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(trimmed) || UNSAFE_OPERATION_CLAIM_PATTERN.test(trimmed)) {
     return false;
   }
-  if (CARE_ADVISORY_PATTERN.test(text) || MEDICAL_CLAIM_PATTERN.test(text)
-    || PRIVATE_FACTUAL_CLAIM_WITHOUT_REFUSAL_PATTERN.test(text)) {
-    return false;
-  }
-  const sentences = text.split(/[。！？!?;；\n]+/u).map(part => part.trim()).filter(Boolean);
-  return sentences.length > 0 && sentences.every(sentence => PENDING_OPERATION_DISCLAIMER.test(sentence));
+  const clauses = splitPrivateAssertionClauses(trimmed);
+  return clauses.length > 0 && clauses.every(clause => isPurePendingConfirmationClause(clause));
 }
 
 function paragraphVerifiedByOperations(
@@ -1084,7 +1172,7 @@ function paragraphIsExemptWithoutCitation(
   return false;
 }
 
-type ParagraphSupportStatus = "empty" | "exempt" | "header" | "backed" | "missing";
+type ParagraphSupportStatus = "empty" | "exempt" | "header" | "structural" | "backed" | "missing";
 
 function classifyParagraphPrivateSupport(
   draft: ChatDeliveryDraft,
@@ -1102,12 +1190,13 @@ function classifyParagraphPrivateSupport(
     return "exempt";
   }
   if (citedPrivateIds.length > 0) {
-    return privateSourcesSupportParagraph(citedPrivateIds.map(id => sourceById.get(id)!), text) ? "backed" : "missing";
+    return privateSourcesSupportParagraph(citedPrivateIds.map(id => sourceById.get(id)!), text, true) ? "backed" : "missing";
   }
   if (paragraph.citationIds.length > 0) return "missing";
   if (paragraphIsExemptWithoutCitation(draft, paragraph)) return "exempt";
   if (allowAttributionHeader && isPurePrivateAttributionHeader(text)) return "header";
-  return privateSourcesSupportParagraph(privateSources, text) ? "backed" : "missing";
+  if (isPureStructuralFramingText(text)) return "structural";
+  return privateSourcesSupportParagraph(privateSources, text, true) ? "backed" : "missing";
 }
 
 function privateSourcesSupportDraft(draft: ChatDeliveryDraft): boolean {

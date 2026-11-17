@@ -6115,3 +6115,10 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 依 `SLICE_B_BP2_BP7_NEW_BOUNDARY_TESTS_20261117_R1.md`（BND-1）於本地 forward-only 新提交修復（未 push／未開 PR）：
 1）**BND-1 [chat-delivery-review.ts](server/chat-delivery-review.ts)**：移除 `privateSourcesSupportDraft` 先依 `kind === "record_restatement" || kind === "private_reference"` 篩選 `targets` 之分支，抽出共用 `classifyParagraphPrivateSupport`、`paragraphIsExemptWithoutCitation` 及 `isPureScopeRefusalOrLimitationText`，對所有段落依實際內容逐段核對私人來源支持（涵蓋混合公共來源、拒答夾帶兒童過敏陳述與僅待確認提示段落），徹底封堵同稿異段標籤夾帶假過敏，並保留忠實多段紀錄、純澄清問句及 `SPEC.md:301-304`／已驗證操作摘要。
 2）於 `tests/search-official-evidence.test.ts`（13→14 cases）新增 `BND-1` 真 `createProductAgent` 成對正反實測，並更新 `scripts/ci/verify-search-official-evidence-offline.sh` `TEST_CASES=(14 13 ...)`。
+
+### 2026-11-18　B-P2 實作覆核 R1 修復（N18-1 純拒答／待確認整句錨定驗證與精確數字分詞、N18-2 純結構句豁免）
+
+依 `SLICE_B_BP2_BP6_BP7_IMPLEMENTATION_AUDIT_20261118_R1.md`（N18-1／N18-2）於本地 forward-only 新提交修復（未 push／未開 PR）：
+1）**N18-1 [chat-delivery-review.ts](server/chat-delivery-review.ts)**：淘汰只靠句末標點切分及有限過敏黑名單比對整句之寫法，改將 `isPureScopeRefusalOrLimitationText` 與 `isPurePendingConfirmationDisclaimer` 經 `splitPrivateAssertionClauses` 逐子句套用整句錨定（`^...$`）檢查（`isPureScopeRefusalClause`／`isPurePendingConfirmationClause`），徹底阻擋逗號或連接詞（如 `尚未正式保存，但BB每日午睡20分鐘`、`無法提供其他資料，但BB每日午睡20分鐘`、`尚未正式保存，但BB通常在學校午睡`）與單子句／括號／冒號夾帶未獲支持之私人事實；同時修復 `privateSourceClauseSupportsClaimClause` 對數字子字串誤判（如 `"120"` 以 `.includes("20")` 錯認 `"20"`），強制精確數字 token 及英文字詞邊界核對。
+2）**N18-2 [chat-delivery-review.ts](server/chat-delivery-review.ts)**：新增嚴格無兒童實體、無數字及無實質斷言之純結構句檢查 `isPureStructuralFramingClause`／`isPureStructuralFramingText`（於 `classifyParagraphPrivateSupport` 回傳 `"structural"`），使搭配有據私人紀錄或已引用官方依據之「以上是整理後的內容。」得以順利交付，而無實質支持之獨立「以上是整理後的內容。」仍於 `evidenceRequired` 時 fail-closed，混雜 `以上是整理後的內容，但BB每日午睡20分鐘。` 或含數量詞之結構句亦遭攔截。
+3）於 `tests/search-official-evidence.test.ts`（14→15 cases）新增 `N18-1 & N18-2` 真 `createProductAgent` 成對正反實測，並更新 `scripts/ci/verify-search-official-evidence-offline.sh` `TEST_CASES=(15 13 ...)`。
