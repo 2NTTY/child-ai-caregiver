@@ -27,7 +27,7 @@ export function TaskDetail({ model, actions, hideCloseAction = false }: { model:
     {compactHeader ? close : null}
   </View>
     <StatusAnnouncement key={task.id} eventKey={task.occurrence.state} message={task.occurrence.state === "needs_review" ? "完成與取消出現相反操作，終態仍待覆核，已停止催辦。" : task.occurrence.state === "completed" || task.occurrence.state === "cancelled" ? "這項事項已結束。" : "事項待處理。"} />
-    <TaskSnapshot task={task} assignees={model.eligibleAssignees} showTitle={false} compact announceEligibility motion={{scopeKey: `${model.child.id}:${model.access}:${task.id}`, triggerKey: ["saving", "saved"].includes(model.operation.state) ? model.operation.reference : null, eligible: model.operation.state === "saved" && !model.reading && !model.draft}} />
+    <TaskSnapshot task={task} assignees={model.eligibleAssignees} rosterState={model.classAssignees} showTitle={false} compact announceEligibility motion={{scopeKey: `${model.child.id}:${model.access}:${task.id}`, triggerKey: ["saving", "saved"].includes(model.operation.state) ? model.operation.reference : null, eligible: model.operation.state === "saved" && !model.reading && !model.draft}} />
     {task.occurrence.state === "needs_review" ? <Text style={styles.warning}>完成與取消出現相反操作，終態仍待覆核，已停止催辦。請明確選擇完成或取消，並填寫原因。</Text> : null}
     {model.access === "editable" && task.occurrence.state === "scheduled" ? <View style={styles.actions}>
       <AppButton label="改期／轉派" variant="secondary" disabled={!writable} onPress={() => actions.startChange(task.id, "reschedule")} />
@@ -50,7 +50,7 @@ export function TaskDetail({ model, actions, hideCloseAction = false }: { model:
         <Text style={styles.label}>版本 {revision.task.version} · {taskActionLabels[revision.action]}</Text>
         <Text style={styles.meta}>操作人：{taskAssigneeLabel(revision.actorUserId, model.eligibleAssignees)}；原基準版本 {revision.basisVersion}</Text>
         <Text style={styles.meta}>記錄時間：{taskDisplayTime(revision.at, revision.task.occurrence.timeZone)}</Text>
-        <TaskSnapshot task={revision.task} assignees={model.eligibleAssignees} />
+        <TaskSnapshot task={revision.task} assignees={model.eligibleAssignees} rosterState={model.classAssignees} />
         <Text style={styles.reading}>原因／備註：{revision.note || "沒有備註"}</Text>
       </View>)}
       {model.hasMoreHistory ? <AppButton label="載入較早記錄" variant="secondary" disabled={!model.online || locked} onPress={actions.loadOlderHistory} /> : <Text style={styles.meta}>已展示目前已載入的全部版本。</Text>}

@@ -13,6 +13,8 @@ export const nativePushReferenceSchema = z.object({
   v: z.literal(1), kind: z.enum(["test", "care"]), bindingId: z.uuid(),
   bindingVersion: z.number().int().positive(), deliveryId: z.uuid(),
 }).strict();
+export const classTaskPushTargetSchema = z.object({ kind: z.literal("class_task"), spaceId: z.uuid(), childId: z.uuid(), taskId: z.uuid() }).strict();
+export type ClassTaskPushTarget = z.infer<typeof classTaskPushTargetSchema>;
 export type NativePushReference = z.infer<typeof nativePushReferenceSchema>;
 export const nativeChatDestinationSchema = z.object({ screen: z.literal("chat"), childId: z.uuid(), messageId: z.uuid() }).strict();
 export type NativeChatDestination = z.infer<typeof nativeChatDestinationSchema>;
