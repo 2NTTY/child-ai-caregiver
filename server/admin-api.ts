@@ -2,6 +2,7 @@ import type { FirebaseAuthPort } from './firebase-auth.ts';
 import type { FirestoreAdmin } from './firestore-admin.ts';
 import { domainParse, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
 import { adminTransferControlSchema, adminTransferDigestSchema } from '../src/shared/admin-knowledge-transfer.ts';
+import { archiveContentPath } from './admin-knowledge-archive.ts';
 import { adminTransferView } from './knowledge-transfer-records.ts';
 import { FirestoreKnowledgeError } from './firestore-knowledge.ts';
 
@@ -33,17 +34,26 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
   const batchPath = /^\/api\/admin\/knowledge-index-batches\/([a-f0-9-]+)(?:\/(stop|resume))?$/.exec(url.pathname);
   const transfersBase = '/api/admin/knowledge-transfers';
   const transferPath = /^\/api\/admin\/knowledge-transfers\/([a-f0-9]{64})(?:\/(stop|resume))?$/u.exec(url.pathname);
+  const archivePath = archiveContentPath.exec(url.pathname);
   const demoPath = '/api/admin/proactive-demo';
-  if (request.method === 'POST' && (url.pathname === demoPath || url.pathname === '/api/admin/operations' || url.pathname === batchBase || batchPath?.[2] || transferPath?.[2])) {
+  if (request.method === 'POST' && (url.pathname === demoPath || url.pathname === '/api/admin/operations' || url.pathname === batchBase || batchPath?.[2] || transferPath?.[2] || archivePath)) {
     if (request.headers.get('origin') !== options.publicOrigin) domainReject('origin_rejected', 403);
     if ((await auth.assertRecentReauthentication(request.headers)).user.id !== userId) domainReject('identity_changed', 409);
-    const input = await options.readJson(request);
+    const input = archivePath ? undefined : await options.readJson(request);
     if (url.pathname === '/api/admin/operations') result = await admin.submit(userId, input);
     else if ([...url.searchParams].length) domainReject('invalid_input', 400);
     else if (url.pathname === demoPath) {
       if (!options.proactiveDemo) domainReject('demo_not_configured',409);
       result = await options.proactiveDemo.publish(input);
-    } else if (transferPath) {
+    } else if (archivePath) {
+      if (!admin.receiveArchive) domainReject('knowledge_transfers_unavailable',503);
+      const operator = 'web-' + firestoreDomainHash(['knowledge-transfer-operator',userId]);
+      const batch = await admin.receiveArchive(request,archivePath[1],operator,async () => {
+        if ((await auth.getSession({headers:request.headers}))?.user.id !== userId) domainReject('identity_changed',409);
+      });
+      result = {batch:adminTransferView(batch)};
+    }
+    else if (transferPath) {
       const { expectedRevision } = domainParse(adminTransferControlSchema, input);
       const operator = 'web-' + firestoreDomainHash(['knowledge-transfer-operator', userId]);
       const batch = await transferRequest(() => admin.knowledgeTransfers().control(transferPath[1], transferPath[2] as 'stop' | 'resume', expectedRevision, operator));
