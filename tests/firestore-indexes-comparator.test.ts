@@ -79,3 +79,13 @@ test('comparator preserves query scope and field order while ignoring unrelated 
   assert.notEqual(shape(value), shape({ ...value, queryScope: 'COLLECTION_GROUP' }));
   assert.notEqual(shape(value), shape(index([...value.fields].reverse())));
 });
+
+test('growth reading index and bounded migration have complete scoped composites', () => {
+  const config = JSON.parse(readFileSync(new URL('../deploy/firebase/firestore.indexes.json', import.meta.url), 'utf8'));
+  const scope = ['workspaceTag', 'epochTag', 'userTag', 'childTag'].map(name => field(name));
+  for (const fields of [
+    [...scope, field('readingBucket'), field('readingCreatedAt', 'DESCENDING'), field('attentionId', 'DESCENDING')],
+    [...scope, field('createdAt'), field('attentionId')],
+  ]) assert.ok(config.indexes.some((entry: { collectionGroup: string }) => entry.collectionGroup === 'yuban_authority_growth_attention'
+    && shape(entry) === shape(index(fields))), 'Both indexed reads and migration need deployable composites');
+});

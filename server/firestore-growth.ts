@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { growthActionSchema, growthTopicActionSchema, growthTopicSchema, GROWTH_KNOWLEDGE_NOTICES,
   type GrowthAction, type GrowthAttention, type GrowthPage, type GrowthTopicAction, type GrowthTopicId } from '../src/shared/growth.ts';
 import type { MemoryContext } from '../src/shared/memory.ts';
-import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreDomainUuid, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreDomainUuid, firestoreTaskSchema, firestoreChangeSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreAuthority, resourceAuthorityVersion, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import type { FirestoreMemoryStore } from './firestore-memory.ts';
 import type { FirestoreCareStore } from './firestore-care.ts';
@@ -52,6 +52,11 @@ const evaluationSchema = z.object({ authority: hash, changeSeq: text(100), basis
 }).strict().refine(value => new Set(value.groups.map(group => group.topicId)).size === GROWTH_RULES.length);
 const checkSchema = z.object({ childId: uuid, catalog: text(100), at: time, nextAt: time.nullable(), basis: hash,
   evaluation: evaluationSchema.optional() }).strict();
+// Random partition labels are mapped only in the encrypted, scope-bound marker.
+// Labels still reveal grouping/access patterns to a database reader; they are not anonymisation.
+export const firestoreGrowthReadingIndexSchema = z.object({ childId: uuid, authority: hash, changeSeq: text(100),
+  activeToken: uuid, historyToken: uuid, after: z.tuple([time, uuid]).nullable(), ready: z.boolean() }).strict();
+type ReadingIndex = z.infer<typeof firestoreGrowthReadingIndexSchema>;
 type HistoryRef = z.infer<typeof historyRefSchema>;
 type Evaluation = z.infer<typeof evaluationSchema>;
 type Saved = z.infer<typeof firestoreGrowthSchema>;
@@ -97,6 +102,110 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
   }
   function query(b: Binding, suffix: string): Query {
     let q: Query = data.collection(suffix); for (const [key, value] of Object.entries(data.tags(b.scope))) q = q.where(key, '==', value); return q;
+  }
+  const readingIndexes = new WeakMap<Binding, ReadingIndex>();
+  const readingJournalAdvanced = new WeakSet<Binding>();
+  const readingAuthority = (b: Binding) => firestoreDomainHash([b.scope, b.generation]);
+  async function readingJournalUnchanged(b: Binding, old: ReadingIndex): Promise<boolean> {
+    if (!/^\d+$/u.test(old.changeSeq) || BigInt(old.changeSeq) > BigInt(b.changeSeq)) return false;
+    if (old.changeSeq === b.changeSeq) return true;
+    // Bounded, contiguous verification: absent/pruned journal entries are NOT proof of no changes.
+    // Legacy compound growth writers can journal as tasks/memory, so those remain conservative.
+    if (BigInt(b.changeSeq) - BigInt(old.changeSeq) > 200n) return false;
+    const tags = data.tags(b.scope);
+    const q = data.collection('changes').where('workspaceTag', '==', tags.workspaceTag)
+      .where('epochTag', '==', tags.epochTag).where('userTag', '==', tags.userTag)
+      .where('sortKey', '>', data.sortKey(old.changeSeq)).where('sortKey', '<=', data.sortKey(b.changeSeq))
+      .orderBy('sortKey', 'asc').limit(200);
+    const rows = await b.transaction.get(q);
+    let next = BigInt(old.changeSeq);
+    for (const row of rows.docs) {
+      next += 1n;
+      if (row.get('sortKey') !== data.sortKey(next.toString())) return false;
+      const childId = domainParse(uuid.nullable(), row.get('childId'), 'invalid_document', 500);
+      const scope = { ...b.scope, childId: childId ?? '00000000-0000-0000-0000-000000000000' };
+      const id = JSON.stringify([scope.workspaceId, scope.storageEpoch, next.toString()]);
+      if (Object.entries(data.tags(scope)).some(([key, value]) => row.get(key) !== value)) domainReject('projection_binding', 500);
+      const change = data.open('change-projection', id, scope, firestoreChangeSchema, row);
+      if (change.childId !== childId || change.changeSeq !== next.toString()) domainReject('projection_binding', 500);
+      if ((childId === b.scope.childId || childId === null) && ['growth', 'tasks', 'memory', 'children'].includes(change.kind)) return false;
+    }
+    return next === BigInt(b.changeSeq);
+  }
+  async function prepareReadingIndex(b: Binding): Promise<ReadingIndex> {
+    const cached = readingIndexes.get(b); if (cached) return cached;
+    const ref = data.ref('growth_checks', 'growth-reading-index', b.scope.childId);
+    const snap = await b.transaction.get(ref);
+    const old = snap.exists ? data.open('growth-reading-index', b.scope.childId, b.scope, firestoreGrowthReadingIndexSchema, snap) : null;
+    if (old && old.childId !== b.scope.childId) domainReject('growth_binding', 500);
+    // An old writer, restore, or unaccounted mutation may have omitted index metadata.
+    // Never treat an earlier scan as complete in that case.
+    const value: ReadingIndex = old && old.authority === readingAuthority(b) && await readingJournalUnchanged(b, old) ? { ...old, changeSeq: b.changeSeq } : {
+      childId: b.scope.childId, authority: readingAuthority(b), changeSeq: b.changeSeq,
+      activeToken: randomUUID(), historyToken: randomUUID(), after: null, ready: false,
+    };
+    if (old && value.activeToken === old.activeToken && value.changeSeq !== old.changeSeq) readingJournalAdvanced.add(b);
+    readingIndexes.set(b, value); return value;
+  }
+  function saveReadingIndex(b: Binding, value: ReadingIndex) {
+    b.transaction.set(data.ref('growth_checks', 'growth-reading-index', b.scope.childId), {
+      ...data.tags(b.scope), ...data.seal('growth-reading-index', b.scope.childId, b.scope, firestoreGrowthReadingIndexSchema, value),
+    });
+  }
+  function readingMetadata(index: ReadingIndex, item: GrowthAttention) {
+    return { readingBucket: active(item) ? index.activeToken : index.historyToken,
+      readingCreatedAt: canonicalGrowthTimestamp(item.createdAt) };
+  }
+  function openReadingRow(b: Binding, row: any): Saved {
+    const saved = data.open('growth-attention', row.get('attentionId'), b.scope, firestoreGrowthSchema, row);
+    if (saved.item.id !== row.get('attentionId') || saved.item.childId !== b.scope.childId
+      || saved.item.version !== row.get('recordVersion') || saved.item.createdAt !== row.get('createdAt')) domainReject('growth_binding', 500);
+    return saved;
+  }
+  async function indexedPageRecords(b: Binding, index: ReadingIndex, cursor: GrowthHistoryCursor | null, pageSize: number): Promise<Saved[]> {
+    const result: Saved[] = [];
+    const readBucket = async (token: string, isActive: boolean) => {
+      let after: [string, string] | null = !isActive && cursor ? [canonicalGrowthTimestamp(cursor.createdAt), cursor.id] : null;
+      while (true) {
+        const limit = isActive ? 100 : pageSize + 1;
+        let q = query(b, 'growth_attention').where('readingBucket', '==', token)
+          .orderBy('readingCreatedAt', 'desc').orderBy('attentionId', 'desc').limit(limit);
+        if (after) q = q.startAfter(...after);
+        const rows = await b.transaction.get(q);
+        for (const row of rows.docs) {
+          const saved = openReadingRow(b, row), metadata = readingMetadata(index, saved.item);
+          if (metadata.readingBucket !== row.get('readingBucket') || metadata.readingCreatedAt !== row.get('readingCreatedAt')
+            || active(saved.item) !== isActive) domainReject('growth_binding', 500);
+          result.push(saved);
+        }
+        if (!isActive || rows.size < limit) break;
+        const tail = rows.docs.at(-1)!; after = [tail.get('readingCreatedAt'), tail.get('attentionId')];
+      }
+    };
+    if (!cursor) await readBucket(index.activeToken, true);
+    await readBucket(index.historyToken, false);
+    return result;
+  }
+  async function advanceReadingIndex(u: string, c: string, expected?: FirestoreBackgroundWork) {
+    return authority.runTransaction(u, c, async b => {
+      if (expected && (!same(expected.scope, b.scope) || expected.generation !== b.generation || expected.authorizationVersion !== b.authorizationVersion)) return { state: 'stopped' as const };
+      const index = await prepareReadingIndex(b);
+      if (index.ready) {
+        if (readingJournalAdvanced.has(b)) saveReadingIndex(b, index);
+        return { state: 'completed' as const };
+      }
+      // Each committed page is recoverable. Never rewrite source ciphertext, versions, or timestamps.
+      let q = query(b, 'growth_attention').orderBy('createdAt').orderBy('attentionId').limit(200);
+      if (index.after) q = q.startAfter(...index.after);
+      const rows = await b.transaction.get(q);
+      const updates = rows.docs.map(row => ({ row, saved: openReadingRow(b, row) }));
+      const tail = updates.at(-1)?.saved.item;
+      if (tail) index.after = [tail.createdAt, tail.id];
+      index.ready = rows.size < 200;
+      for (const { row, saved } of updates) b.transaction.update(row.ref, readingMetadata(index, saved.item));
+      saveReadingIndex(b, index);
+      return index.ready ? { state: 'completed' as const } : { state: 'deferred' as const, nextAt: new Date(Date.now() + 30_000).toISOString() };
+    });
   }
   async function readAttention(b: Binding, id: string): Promise<Saved | null> {
     domainParse(uuid, id);
@@ -201,13 +310,22 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
       item: { ...saved.item, createdAt: canonicalGrowthTimestamp(saved.item.createdAt) },
     };
     const item = normalized.item, id = JSON.stringify([item.id, item.version]);
-    const tags = { ...data.tags(b.scope), attentionId: item.id, createdAt: item.createdAt, entityVersion: item.version };
+    const index = readingIndexes.get(b);
+    if (!index) domainReject('growth_index_not_prepared', 500);
+    const tags = { ...data.tags(b.scope), attentionId: item.id, createdAt: item.createdAt, entityVersion: item.version,
+      ...readingMetadata(index, item) };
+    // All existing mutation paths commit one owner journal change in this transaction.
+    // A mismatch on the following read safely discards the index instead of trusting a stale view.
+    index.changeSeq = (BigInt(b.changeSeq) + 1n).toString();
+    saveReadingIndex(b, index);
     b.transaction.set(data.ref('growth_attention', 'growth-attention', item.id),
       { ...tags, ...data.seal('growth-attention', item.id, b.scope, firestoreGrowthSchema, normalized, item.version) });
     b.transaction.create(data.ref('growth_revisions', 'growth-revision', id),
       { ...tags, ...data.seal('growth-revision', id, b.scope, firestoreGrowthSchema, normalized, item.version) });
   }
   async function readPageRecords(b: Binding, cursor: GrowthHistoryCursor | null, pageSize = GROWTH_HISTORY_PAGE_SIZE): Promise<Saved[]> {
+    const index = await prepareReadingIndex(b);
+    if (index.ready) return indexedPageRecords(b, index, cursor, pageSize);
     const batchSize = cursor ? Math.min(100, Math.max(pageSize + 10, 40)) : 100;
     const activeRecords: Saved[] = [];
     let historyRecords: Saved[] = [];
@@ -264,6 +382,14 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     const windowed = selectGrowthHistoryWindow(records, value => value.item, value => active(value.item), options);
     const items: GrowthAttention[] = []; for (const saved of windowed.selected) items.push(await visible(b, saved.item, loaded, !!saved.importedFrom));
     const mayReadInputs = !b.sharedAccess || !!b.sharedAccess.modules?.includes('memory');
+    const reading = await prepareReadingIndex(b);
+    if (!b.sharedAccess && !reading.ready) {
+      // Serve the complete legacy view during construction, then continue derived indexing off the request path.
+      const wake = await prepareFirestoreBackgroundWork(data, b.transaction, { kind: 'child-change', scope: b.scope,
+        resourceId: b.scope.childId, basis: 'growth-reading-index:' + firestoreDomainHash([reading.activeToken, reading.historyToken]),
+        generation: b.generation, authorizationVersion: b.authorizationVersion }, new Date().toISOString());
+      saveReadingIndex(b, reading); wake.commit();
+    } else if (!b.sharedAccess && readingJournalAdvanced.has(b)) saveReadingIndex(b, reading);
     return { authorityVersion: currentAuthority(b), items, historyHasMore: windowed.historyHasMore, historyNextCursor: windowed.historyNextCursor, canManage: !b.sharedAccess,
       eligibleAssignees: b.sharedAccess ? [] : [{ userId: b.scope.ownerUserId, name: '本人' }],
       notices: b.sharedAccess ? ['這是已共享的成長內容；共享修改仍未開放。',
@@ -291,6 +417,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
   }
   async function prepareImportedAttention(b: Binding, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     expected?: { id: string; expectedVersion: number }, mapped?: { taskId?: string; taskVersion?: number; previousId?: string }) {
+    await prepareReadingIndex(b);
     assertClassImportAccess(b, 'growth', 'write');
     domainParse(uuid, opId);
     if (row.section !== 'growth_attention') domainReject('invalid_package_scope', 400);
@@ -331,6 +458,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
   }
   async function prepareImportedTopic(b: Binding, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     expected?: { expectedVersion: number }, restoreOriginal = false) {
+    await prepareReadingIndex(b);
     assertClassImportAccess(b, 'growth', 'write');
     domainParse(uuid, opId);
     if (row.section !== 'growth_topics') domainReject('invalid_package_scope', 400);
@@ -404,6 +532,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
   }
   async function prepareOriginal(b: Binding, opId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     expected: { id: string; expectedVersion: number }) {
+    await prepareReadingIndex(b);
     const checked = await inspectOriginal(b, row);
     if (checked.reason) domainReject(checked.reason);
     if (checked.id !== expected.id || checked.localVersion !== expected.expectedVersion || expected.expectedVersion >= 2147483647)
@@ -423,7 +552,8 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
       commit() { change.commit(); context(); write(b, saved); } };
   }
   const store = {
-    inspectOriginal, prepareOriginal, readImportAttention,
+    inspectOriginal, prepareOriginal, readImportAttention, advanceReadingIndex,
+    advanceReadingIndexJob: (job: FirestoreBackgroundWork) => advanceReadingIndex(job.scope.ownerUserId, job.scope.childId, job),
     readImportTopic(b: Binding, topicId: GrowthTopicId) {
       assertClassImportAccess(b, 'growth', 'read'); return readTopicSlot(b, topicId);
     },
@@ -448,6 +578,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     },
     list: (u: string, c: string, options?: { historyCursor?: string | null }) => authority.runTransaction(u, c, b => page(b, options)),
     decide: (u: string, c: string, id: string, raw: GrowthAction) => authority.runTransaction(u, c, async b => {
+      await prepareReadingIndex(b);
       domainParse(uuid, id); const input = domainParse(growthActionSchema, raw);
       if (input.authorityVersion !== currentAuthority(b)) domainReject('growth_changed');
       const saved = await readAttention(b, id); if (!saved) domainReject('not_found', 404);
@@ -481,6 +612,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     async topic(u: string, c: string, rawTopic: GrowthTopicId, raw: GrowthTopicAction) {
       const topicId = domainParse(growthTopicSchema, rawTopic), input = domainParse(growthTopicActionSchema, raw);
       await authority.runTransaction(u, c, async b => {
+        await prepareReadingIndex(b);
         if (currentAuthority(b) !== input.authorityVersion) domainReject('growth_changed');
         const previous = (await topics(b)).find(topic => topic.topicId === topicId), currentVersion = previous?.version ?? 1;
         if (previous && currentVersion === input.expectedVersion + 1 && previous.actor === u && same(previous.request, input)) return;
@@ -529,6 +661,7 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
       return authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async b => {
         if (!same(job.scope, b.scope) || job.generation !== b.generation || job.authorizationVersion !== b.authorizationVersion) return { state: 'stopped' as const };
         if (await growthImportPending(data, b)) return { state: 'deferred' as const, nextAt: new Date(Date.now() + 30_000).toISOString() };
+        await prepareReadingIndex(b);
         const loaded = await load(b), settings = await topics(b), scanAt = new Date().toISOString();
         const checkRef = data.ref('growth_checks', 'growth-check', b.scope.childId), checkSnapshot = await b.transaction.get(checkRef);
         const previousCheck = checkSnapshot.exists ? data.open('growth-check', b.scope.childId, b.scope, checkSchema, checkSnapshot) : null;

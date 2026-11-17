@@ -19,6 +19,7 @@ import {
   createFirestoreGrowthStore,
   firestoreGrowthSchema,
   firestoreGrowthRecoverySchema,
+  firestoreGrowthReadingIndexSchema,
 } from "../server/firestore-growth.ts";
 import { firestoreBackgroundWorkSchema } from "../server/firestore-background-work.ts";
 import { createFirestoreMemoryStore } from "../server/firestore-memory.ts";
@@ -787,4 +788,153 @@ test("C03 evaluation resumes across 20000 and above without truncated success or
   assert.equal((await readRow(prefix.id)).state, "inapplicable", "the restarted prefix contributes its current business decision");
   assert.equal((await readRow(prefix.id)).version, 3);
   assert.equal(visited.size, 20_002, "the resumed scan must include every current row, including a late prefix insertion");
+});
+
+
+test("C04 reading index resumes safely and keeps cold first-page reads independent of closed history", async () => {
+  const fixture = serialFirestoreFixture();
+  const options = { database: fixture.database, cipher: createStorageCipher(Buffer.alloc(32, 39)),
+    projectId: "synthetic-growth-reading-index", namespace: "unit_growth_reading_index" };
+  const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
+  await authority.initializeControl({ enabled: true, generation: randomUUID() });
+  await authority.issueInvitation({ email: "owner@example.test", operationId: randomUUID(), expiresAt: new Date(Date.now() + 3_600_000).toISOString() });
+  await authority.admitIdentity({ userId: "owner", email: "owner@example.test", emailVerified: true });
+  await authority.acknowledge({ userId: "owner", operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  const childId = (await authority.createChild({ userId: "owner", operationId: randomUUID(), displayName: "Synthetic" })).child.id;
+  const care = createFirestoreCareStore(options), chat = createFirestoreChatStore(options);
+  const memory = createFirestoreMemoryStore({ ...options, care, chat });
+  const makeStore = () => createFirestoreGrowthStore({ ...options, care, memory, online: createFirestoreOnlineStore(options) });
+  const oldActive = makeGrowthItem({ childId, state: "proposed", updatedAt: "2020-01-01T00:00:00+08:00" });
+  const rows = [oldActive, ...Array.from({ length: 620 }, (_, i) => makeGrowthItem({ childId, state: "dismissed",
+    updatedAt: new Date(Date.parse("2026-08-01T00:00:00.000Z") + i * 86_400_000).toISOString() }))];
+  rows.push(makeGrowthItem({ childId, state: "accepted", updatedAt: "2028-08-01T12:00:00+08:00" }));
+  const originalCiphertexts = new Map<string, string>();
+  await authority.runTransaction("owner", childId, async b => {
+    for (const item of rows) {
+      const ref = data.ref("growth_attention", "growth-attention", item.id);
+      const envelope = data.seal("growth-attention", item.id, b.scope, firestoreGrowthSchema, { item, lastRequest: null }, item.version);
+      originalCiphertexts.set(ref.path, envelope.ciphertext);
+      b.transaction.set(ref, { ...data.tags(b.scope), attentionId: item.id, createdAt: item.createdAt, entityVersion: item.version, ...envelope });
+    }
+  });
+  assert.equal(typeof (makeStore() as any).advanceReadingIndex, "function", "a recoverable bounded index builder is required");
+  let reads = 0;
+  const originalTransaction = fixture.database.runTransaction.bind(fixture.database);
+  (fixture.database as any).runTransaction = (callback: any, opts: any) => originalTransaction((tx: any) => callback({ ...tx,
+    get: async (q: any) => { const result = await tx.get(q); if (q.query && q.path === data.collection("growth_attention").path) reads += result.size; return result; },
+  }), opts);
+  const measuringTransaction = fixture.database.runTransaction;
+  const beforeInterruptedPage = structuredClone([...fixture.records]);
+  (fixture.database as any).runTransaction = (callback: any, opts: any) => originalTransaction(async (tx: any) => {
+    await callback(tx); throw new Error("synthetic transaction interruption");
+  }, opts);
+  await assert.rejects(makeStore().advanceReadingIndex("owner", childId), /synthetic transaction interruption/);
+  assert.deepEqual([...fixture.records], beforeInterruptedPage, "failed migration page commits neither metadata nor progress");
+  (fixture.database as any).runTransaction = measuringTransaction;
+  let result = await (makeStore() as any).advanceReadingIndex("owner", childId);
+  assert.equal(result.state, "deferred");
+  assert.ok(reads <= 200, "one migration dispatch has bounded reads");
+  // Unrelated traffic must not starve a resumable index by resetting its prefix.
+  await authority.runTransaction("owner", childId, async b => { (await b.prepareChange(randomUUID(), "chat", false)).commit(); });
+  reads = 0;
+  assert.equal((await makeStore().advanceReadingIndex("owner", childId)).state, "deferred");
+  assert.ok(reads <= 200);
+  // Incomplete construction must not masquerade as a complete first page.
+  assert.ok((await makeStore().list("owner", childId)).items.some(item => item.id === oldActive.id));
+  let dispatches = 1;
+  while (result.state === "deferred") {
+    reads = 0;
+    result = await (makeStore() as any).advanceReadingIndex("owner", childId);
+    assert.ok(reads <= 200);
+    assert.ok(++dispatches < 10);
+  }
+  assert.equal(dispatches, 3, "chat during migration preserves the completed 200-row prefix");
+  for (const [path, ciphertext] of originalCiphertexts) assert.equal(fixture.records.get(path).ciphertext, ciphertext, "indexing does not rewrite original ciphertext");
+  reads = 0;
+  const first = await makeStore().list("owner", childId);
+  assert.ok(first.items.some(item => item.id === oldActive.id), "ancient active records remain visible");
+  assert.equal(first.items.length, 31);
+  assert.ok(reads <= 32, "cold process reads only active items plus 31 closed rows");
+  assert.equal(first.historyHasMore, true);
+  const allHistory = first.items.filter(item => item.id !== oldActive.id).map(item => item.id);
+  let cursor = first.historyNextCursor;
+  while (cursor) {
+    const next = await makeStore().list("owner", childId, { historyCursor: cursor });
+    allHistory.push(...next.items.map(item => item.id)); cursor = next.historyNextCursor;
+  }
+  assert.equal(allHistory.length, rows.length - 1);
+  assert.equal(new Set(allHistory).size, rows.length - 1);
+  // A normal indexed writer keeps the ready marker and canonical ordering in the same transaction.
+  const imported = makeGrowthItem({ childId: randomUUID(), state: "dismissed", updatedAt: "2029-01-01T12:00:00+08:00" });
+  await authority.runTransaction("owner", childId, async b => {
+    const prepared = await makeStore().prepareImportedAttention(b, randomUUID(), {
+      section: "growth_attention", childId: imported.childId, value: { item: imported, lastRequest: null },
+      source: { serverId: "https://source.invalid", accountId: "source-owner", packageId: randomUUID(), packageVersion: 1,
+        manifestSha256: "a".repeat(64), path: "data/00000001.json", rowIndex: 0 },
+    }, "trusted");
+    prepared.commit();
+  });
+  reads = 0;
+  const afterWrite = await makeStore().list("owner", childId);
+  assert.ok(reads <= 32, "a supported mutation does not force a full homepage scan");
+  assert.ok(afterWrite.items.some(item => item.createdAt === "2029-01-01T04:00:00.000Z"));
+  await authority.runTransaction("owner", childId, async b => { (await b.prepareChange(randomUUID(), "chat", false)).commit(); });
+  const otherChild = (await authority.createChild({ userId: "owner", operationId: randomUUID(), displayName: "Other synthetic" })).child.id;
+  await authority.runTransaction("owner", otherChild, async b => { (await b.prepareChange(randomUUID(), "growth", false)).commit(); });
+  reads = 0;
+  await makeStore().list("owner", childId);
+  assert.ok(reads <= 32, "chat and other children do not reset a ready index");
+  // An older writer cannot silently insert behind the completed index.
+  const legacyActive = makeGrowthItem({ childId, state: "proposed", updatedAt: "2019-01-01T00:00:00Z" });
+  await authority.runTransaction("owner", childId, async b => {
+    const change = await b.prepareChange(randomUUID(), "growth", false);
+    change.commit();
+    b.transaction.set(data.ref("growth_attention", "growth-attention", legacyActive.id), {
+      ...data.tags(b.scope), attentionId: legacyActive.id, createdAt: legacyActive.createdAt, entityVersion: 1,
+      ...data.seal("growth-attention", legacyActive.id, b.scope, firestoreGrowthSchema, { item: legacyActive, lastRequest: null }, 1),
+    });
+  });
+  assert.ok((await makeStore().list("owner", childId)).items.some(item => item.id === legacyActive.id));
+  reads = 0;
+  assert.equal((await makeStore().advanceReadingIndex("owner", childId)).state, "deferred");
+  assert.ok(reads <= 200, "an unaccounted mutation restarts the bounded scan");
+  // Replacing the process during migration must not skip the old prefix.
+  while ((await makeStore().advanceReadingIndex("owner", childId)).state === "deferred") {}
+  reads = 0;
+  const rebuilt = await makeStore().list("owner", childId);
+  assert.ok(rebuilt.items.some(item => item.id === legacyActive.id));
+  assert.ok(rebuilt.items.some(item => item.id === oldActive.id));
+  assert.ok(reads <= 33);
+  // Pruned/missing journal entries cannot be interpreted as proof of no changes.
+  await authority.runTransaction("owner", childId, async b => {
+    const change = await b.prepareChange(randomUUID(), "chat", false); change.commit();
+    b.transaction.delete(data.ref("changes", "change-projection", JSON.stringify([b.scope.workspaceId, b.scope.storageEpoch, change.changeSeq])));
+  });
+  reads = 0;
+  await makeStore().list("owner", childId);
+  assert.ok(reads > 200, "a journal gap fails closed to the complete legacy reader");
+  while ((await makeStore().advanceReadingIndex("owner", childId)).state === "deferred") {}
+  // Legacy compound accept operations can write growth under a tasks journal entry.
+  const legacyTaskActive = makeGrowthItem({ childId, state: "proposed", updatedAt: "2018-01-01T00:00:00Z" });
+  await authority.runTransaction("owner", childId, async b => {
+    const change = await b.prepareChange(randomUUID(), "tasks", false); change.commit();
+    b.transaction.set(data.ref("growth_attention", "growth-attention", legacyTaskActive.id), {
+      ...data.tags(b.scope), attentionId: legacyTaskActive.id, createdAt: legacyTaskActive.createdAt, entityVersion: 1,
+      ...data.seal("growth-attention", legacyTaskActive.id, b.scope, firestoreGrowthSchema, { item: legacyTaskActive, lastRequest: null }, 1),
+    });
+  });
+  reads = 0;
+  assert.ok((await makeStore().list("owner", childId)).items.some(item => item.id === legacyTaskActive.id));
+  assert.ok(reads > 200, "unindexed legacy tasks/growth mutation invalidates ready");
+  while ((await makeStore().advanceReadingIndex("owner", childId)).state === "deferred") {}
+  // A copied encrypted marker from another scope is not an index capability.
+  const markerRef = data.ref("growth_checks", "growth-reading-index", childId);
+  const savedMarker = fixture.records.get(markerRef.path);
+  await authority.runTransaction("owner", childId, async b => {
+    const marker = data.open("growth-reading-index", childId, b.scope, firestoreGrowthReadingIndexSchema, await b.transaction.get(markerRef));
+    const wrongScope = { ...b.scope, childId: otherChild };
+    b.transaction.set(markerRef, { ...data.tags(wrongScope), ...data.seal("growth-reading-index", childId, wrongScope, firestoreGrowthReadingIndexSchema, marker) });
+  });
+  await assert.rejects(makeStore().list("owner", childId));
+  fixture.records.set(markerRef.path, savedMarker);
 });

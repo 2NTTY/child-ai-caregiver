@@ -3,7 +3,7 @@ import { firestoreSharedInputSchema, firestoreSharedInputPartSchema, firestoreSo
   firestoreSharedInputTombstoneSchema } from './firestore-shared-inputs.ts';
 import { firestoreConcernSchema, firestoreConcernRecoverySchemas } from './firestore-concerns.ts';
 import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
-import { firestoreGrowthSchema, firestoreGrowthTopicSchema, firestoreGrowthRecoverySchema } from './firestore-growth.ts';
+import { firestoreGrowthSchema, firestoreGrowthTopicSchema, firestoreGrowthRecoverySchema, firestoreGrowthReadingIndexSchema } from './firestore-growth.ts';
 import type { FirestoreRecoveryContext } from './firestore-recovery-envelope.ts';
 
 export const materialRestoreSchemas = {
@@ -20,6 +20,7 @@ export const materialRestoreSchemas = {
   'growth-revision': { suffix: 'growth_revisions', schema: firestoreGrowthSchema },
   'growth-topic': { suffix: 'growth_topics', schema: firestoreGrowthTopicSchema },
   'growth-topic-revision': { suffix: 'growth_topic_revisions', schema: firestoreGrowthTopicSchema },
+  'growth-reading-index': { suffix: 'growth_checks', schema: firestoreGrowthReadingIndexSchema },
   'growth-check': { suffix: 'growth_checks', schema: firestoreGrowthRecoverySchema },
 } as const;
 export type MaterialRestoreKind = keyof typeof materialRestoreSchemas;
@@ -78,6 +79,10 @@ export function materialRestoreMetadata(context: FirestoreRecoveryContext & { ki
       && origin.source.authorUserId === row.actor && origin.source.growthTopic === row.topicId && origin.importedBy === scope.ownerUserId));
     if (kind === 'growth-topic') check(id === key); else equal(id, [scope.childId, row.topicId, row.version]);
     return {};
+  }
+  if (kind === 'growth-reading-index') {
+    const row = firestoreGrowthReadingIndexSchema.parse(raw); check(id === row.childId && id === scope.childId && recordVersion === 1);
+    return {}; // Its authority hash binds the old scope/epoch/generation; restored state cannot activate the index.
   }
   const row = firestoreGrowthRecoverySchema.parse(raw); check(id === row.childId && id === scope.childId && recordVersion === 1);
   return {}; // Current context/basis is re-evaluated before further growth actions.

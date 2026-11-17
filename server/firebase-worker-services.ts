@@ -128,6 +128,7 @@ export function createFirebaseWorkerServices(runtime: Awaited<ReturnType<typeof 
         if (job.kind === 'telegram') return runtime.telegram.process(job, signal);
         if (job.kind === 'contact') return runtime.contact.process(job, signal);
         if (job.kind === 'child-change') {
+          if (job.basis.startsWith('growth-reading-index:')) return runtime.growth.advanceReadingIndexJob(job);
           const evaluated = await runtime.growth.evaluate(job);
           return evaluated.state === 'deferred' ? evaluated : maintenance.childChange(job);
         }
