@@ -9,7 +9,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 ## 閱讀次序
 
 1. 先讀 [STATUS](STATUS.md) 與[當前工作](#active)，再只讀對應包。
-2. [主動通知](#proactive-notifications)已交付，本輪目標為整個 P4。先接家庭附件庫直接上傳，讓另一名獲授權成員讀回原件。其餘五包、正式交付及待驗項從[P4 接手清單](docs/P4_RESUME.md)接續。[P3](#phase-3)餘項沿原包追蹤。
+2. [主動通知](#proactive-notifications)已交付，本輪目標為整個 P4。家庭附件庫直接上傳已合併。班級待辦由老師在每部裝置啟用一次，接收指派給自己的到期事項。其餘五包、正式交付及待驗項從[P4 接手清單](docs/P4_RESUME.md)接續。[P3](#phase-3)餘項沿原包追蹤。
 3. 舊包只透過[歷史索引](_archive/README.md#plan-p1-p2-20261018)按需查閱；日常不讀 P1／P2 歷史正文。
 4. 工作狀態與最低驗收規則仍見[狀態](#states)、[證據層級](#verification)及[按包驗收](#p2-deferred-acceptance)。
 
