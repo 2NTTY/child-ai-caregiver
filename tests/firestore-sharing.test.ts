@@ -1102,22 +1102,15 @@ test('a caregiver saves a family library original without chat and a revoked upl
     const headers = new Headers(init?.headers); headers.set('origin', origin);
     return handler(new Request(url, { ...init, headers }));
   };
-  const signal = new AbortController().signal;
-  async function post(route: string, body: unknown) {
-    const result = await fetcher(origin + '/api/children/' + childId + '/' + route + '?spaceId=' + spaceId, {
-      method: 'POST', headers: { 'content-type': 'application/json', 'x-expected-user-id': actor,
-        'x-library-access-basis': JSON.stringify(selection.expectedBasis) }, body: JSON.stringify(body),
-    });
-    const value = await result.json(); assert.ok(result.ok, value.error?.code); return value;
-  }
+  const signal = new AbortController().signal, client = createChatFileApi(fetcher, origin, undefined, selection);
   const input = { opId: randomUUID(), fileName: 'shared.txt', mimeType: 'text/plain', bytes: bytes.length, sha256 };
   await assert.rejects(reader.reserve('viewer', childId, input), code('read_only'));
-  const { file: reserved } = await post('files', input);
+  const reserved = await client.reserve(childId, input, signal, actor);
   assert.deepEqual((await reader.list('viewer', childId)).items, []);
-  const { file: saved } = await post('files/' + reserved.id + '/content', { expectedVersion: reserved.version, base64: bytes.toString('base64') });
+  const saved = await client.upload(reserved, bytes.toString('base64'), signal, actor);
   assert.equal(saved.messageId, null);
-  assert.equal((await post('files', input)).file.id, reserved.id);
-  assert.equal((await post('files/' + reserved.id + '/resolve', {})).file.state, 'ready');
+  assert.equal((await client.reserve(childId, input, signal, actor)).id, reserved.id);
+  assert.equal((await client.resolve(childId, reserved.id, signal, actor)).state, 'ready');
   actor = 'viewer';
   const readClient = createChatFileApi(fetcher, origin, async value => hash(value), { spaceId });
   const listed = await readClient.list(childId, {}, signal, actor);
@@ -1125,18 +1118,15 @@ test('a caregiver saves a family library original without chat and a revoked upl
   assert.deepEqual(Buffer.from((await readClient.content(listed.items[0]!, signal, actor)).bytes), bytes);
   assert.equal(writes, 1);
   actor = 'carer';
-  const photoId = randomUUID();
-  const photoMeta = { opId: photoId, source: 'library', fileName: 'original.png', mimeType: 'image/png', bytes: png.length, sha256: hash(png) };
-  assert.equal((await post('photos', photoMeta)).photo.id, photoId);
-  const interrupted = await fetcher(origin + '/api/children/' + childId + '/photos/' + photoId + '/content?spaceId=' + spaceId, {
-    method: 'POST', headers: { 'content-type': 'application/json', 'x-expected-user-id': actor, 'x-library-access-basis': JSON.stringify(basis) },
-    body: JSON.stringify({ base64: png.toString('base64') }),
-  });
-  assert.equal(interrupted.status, 503);
-  const recovered = (await post('photos/' + photoId + '/resolve', {})).photo;
+  const photoApi = createPhotoApi(origin, fetcher, undefined, selection), photoId = randomUUID();
+  const photoMeta = { source: 'library', fileName: 'original.png', mimeType: 'image/png' as const, bytes: png.length, sha256: hash(png) };
+  const photo = await photoApi.reserveLibrary(childId, photoId, photoMeta, signal, actor);
+  await assert.rejects(photoApi.upload(photo, png.toString('base64'), signal, actor), (e: unknown) => e instanceof PhotoApiError && e.status === 503);
+  const recovered = await photoApi.resolveLibrary(childId, photoId, signal, actor);
   assert.equal(recovered.id, photoId); assert.equal(recovered.state, 'ready'); assert.equal(photoWrites, 1);
-  const { voice: clip } = await post('voices', { ...input, opId: randomUUID(), mimeType: 'audio/wav', fileName: 'original.wav' });
-  assert.equal((await post('voices/' + clip.id + '/content', { expectedVersion: clip.version, base64: bytes.toString('base64') })).voice.state, 'ready');
+  const voiceApi = createVoiceApi(fetcher, origin, undefined, selection);
+  const clip = await voiceApi.reserve(childId, { ...input, opId: randomUUID(), mimeType: 'audio/wav', fileName: 'original.wav' }, signal, actor);
+  assert.equal((await voiceApi.upload(clip, bytes.toString('base64'), signal, actor)).state, 'ready');
   assert.equal((await voices.forSharedSpace({ spaceId }).list('viewer', childId)).items[0]?.id, clip.id);
   const next = await writer.reserve('carer', childId, { ...input, opId: randomUUID() });
   afterWrite = () => changeModules(['care']);
