@@ -88,3 +88,9 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 - **成本基線。** 原 VM、磁碟、流量、Firestore、備份及附件費照現況。每日約 30 次 GitHub 檢查／月，只有產品變更才建置；此公開倉庫使用標準 hosted runner。VM 每約 75 秒讀取小型清單，並每約 15 分鐘更新健康快照；每月約 3.5 萬次喚醒，實際 Storage 讀取取決於物件是否存在。交付映像依壓縮層佔用及保留時間計費；營運者定期核對 Artifact Registry 容量及保留需求，GitHub 候選封包保留一天。免費額度與同帳戶其他工作共用，實際帳單取決於區域、網絡、版數和計費帳戶。 [GitHub Actions](https://docs.github.com/en/billing/concepts/product-billing/github-actions) · [Artifact Registry](https://cloud.google.com/artifact-registry/pricing) · [Cloud Storage](https://cloud.google.com/storage/pricing)
 
 相較 VM 自行拉 GitHub 並建置，此流程把建置 CPU／磁碟用量留在 GitHub，VM 只取已驗映像。Cloud Scheduler 亦可按時喚醒服務，但仍須安排建置、版本及收據；現有分支保護和 Actions 已提供其入口。此部署流程保留原 Compose 與 Firebase 資料配置。
+
+### 公共知識 ZIP 暫存
+
+正式 Firestore 映像把 `/var/tmp/yuban-knowledge` 宣告為容器專用的可寫暫存卷，目錄由 node 帳號獨佔。原 VM 與 Compose 可直接使用該映像，原本 32 MiB 的 `/tmp` 繼續供其他功能使用。Linux 打開檔案後隨即解除檔名，程序被停止也會釋放 ZIP 的空間。草稿、進度和收據在 Firestore，暫存卷毋須備份。
+
+單個公共知識包上限是 512 MiB，實際容量取決於 Docker 主機剩餘磁碟。收到 `knowledge_archive_scratch_full` 時，可用 `docker compose exec api sh -c 'df -h /var/tmp/yuban-knowledge; id; test -w /var/tmp/yuban-knowledge'` 核對容量與寫入身份。按原指紋查回批次，再選同一 ZIP 接續。正式 Linux 映像的掛載可在部署時以同一命令核對。

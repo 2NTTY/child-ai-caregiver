@@ -51,6 +51,44 @@ test('a checked ZIP resumes on its second public edition and a changed source ha
     finally { await archive.close(); }
   }
   assert.equal((await step()).next, 1);
+  const { createFirestoreAdmin } = await import('../server/firestore-admin.ts');
+  const { readAiConfig } = await import('../server/ai-config.ts');
+  const { handleAdminRequest } = await import('../server/admin-api.ts');
+  const actor = 'test-admin', origin = 'https://localhost', zip = await readFile(file);
+  const { createKnowledgeArchiveReceiver } = await import('../server/admin-knowledge-archive.ts');
+  const admin = createFirestoreAdmin(options, readAiConfig({AI_ENABLED:'false'}), undefined, undefined, ledger, createKnowledgeArchiveReceiver(ledger,store,directory));
+  const post = (digest,bytes,uid = actor) => handleAdminRequest(new Request(origin + '/api/admin/knowledge-transfers/' + digest + '/content', {
+    method:'POST', headers:{origin,'content-type':'application/zip','x-expected-user-id':uid,'x-archive-bytes':String(bytes.length)}, body:bytes
+  }), {publicOrigin:origin,adminUid:actor,admin,auth:{getSession:async()=>({user:{id:uid}}),assertRecentReauthentication:async()=>({user:{id:uid}})},
+    readJson(){ throw Error('ZIP must stay streamed'); }});
+  await assert.rejects(post(saved.sha256,zip,'other'),{code:'forbidden'});
+  await assert.rejects(post('e'.repeat(64),zip),{code:'knowledge_archive_integrity_failed'});
+  assert.equal(await ledger.get('e'.repeat(64)),null);
+  const { createFirebaseNodeHandler } = await import('../server/firebase-http.ts');
+  const { IncomingMessage } = await import('node:http');
+  const { Socket } = await import('node:net');
+  const { EventEmitter } = await import('node:events');
+  const auth = {fromNodeHeaders:raw=>new Headers(raw),getSession:async()=>({user:{id:actor}}),assertRecentReauthentication:async()=>({user:{id:actor}})};
+  const http = createFirebaseNodeHandler({publicOrigin:origin,auth,handler:async request => {
+    try { return await handleAdminRequest(request,{publicOrigin:origin,adminUid:actor,admin,auth,readJson(){throw Error('expected streaming ingress');}}); }
+    catch (error) {return Response.json({error:{code:error.code}},{status:error.status??500});}
+  }});
+  async function send(digest,body) {
+    const request = new IncomingMessage(new Socket());
+    request.method='POST'; request.url='/api/admin/knowledge-transfers/'+digest+'/content';
+    request.headers={origin,'x-expected-user-id':actor,'content-type':'application/zip','x-archive-bytes':String(body.length),'content-length':String(body.length)};
+    request.push(body); request.push(null);
+    const response = Object.assign(new EventEmitter(),{statusCode:200,setHeader(){},end(bytes){this.bytes=bytes;}});
+    await http(request,response);
+    return new Response(response.bytes,{status:response.statusCode});
+  }
+  // Even an invalid ZIP above the normal JSON limit must reach the archive verifier as a stream.
+  const invalid = await send('e'.repeat(64),Buffer.alloc(70000));
+  assert.equal(invalid.status,400); assert.equal((await invalid.json()).error.code,'knowledge_archive_integrity_failed');
+  const draft = await send(saved.sha256,zip);
+  assert.equal(draft.status,200);
+  assert.equal((await draft.json()).batch.state,'completed');
+  assert.equal((await (await post(saved.sha256,zip)).json()).batch.revision,3);
   assert.equal((await step()).state, 'completed');
   assert.equal((await step()).revision, 3);
   assert.equal((await ledger.results(saved.sha256, 0, 2)).length, 2);

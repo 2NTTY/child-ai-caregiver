@@ -7,6 +7,7 @@ import { gitDiffs, SHA, validateStatus } from './plan.mjs';
 // Reviewed offline tests only: injected authority/storage/browser fixtures, mocked
 // DNS/HTTPS, or local file/config parsing. Never infer safety from a test filename.
 const rules = [
+  { paths: /^(?:server\/admin-knowledge-archive\.ts|scripts\/knowledge-transfer-(?:operations|zip)\.mjs|tests\/knowledge-transfer-flow\.test\.mjs)$/, tests: ['tests/knowledge-transfer-flow.test.mjs'] },
   { paths: /^(?:server\/firebase-app\.ts|tests\/firebase-app\.test\.ts)$/, tests: ['tests/firebase-app.test.ts'] },
   { paths: /^(?:server\/firebase-http\.ts|tests\/firebase-http\.test\.ts)$/, tests: ['tests/firebase-http.test.ts'] },
   { paths: /^(?:server\/firebase-config\.ts|tests\/firebase-config\.test\.ts)$/, tests: ['tests/firebase-config.test.ts'] },

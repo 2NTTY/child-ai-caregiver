@@ -17,7 +17,8 @@ import type { createKnowledgeTransfers } from './firestore-knowledge-transfers.t
 /** Control-plane data only. No family records, keys, or arbitrary Firestore access. */
 export function createFirestoreAdmin(options: FirestoreDomainOptions, config: AiConfig,
   knowledge?: Pick<ReturnType<typeof createFirestoreKnowledgeRefresh>, 'adminStatus'>, indexBatches?: KnowledgeIndexBatches,
-  transfers?: Pick<ReturnType<typeof createKnowledgeTransfers>, 'list' | 'page' | 'control'>) {
+  transfers?: Pick<ReturnType<typeof createKnowledgeTransfers>, 'list' | 'page' | 'control'>,
+  receiveArchive?: ReturnType<typeof import('./admin-knowledge-archive.ts').createKnowledgeArchiveReceiver>) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
   const policyRef = data.ref('admin_policy', 'platform-policy', 'current');
   const defaults = domainParse(platformPolicySchema, { enabled: config.enabled, model: config.model,
@@ -40,7 +41,7 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions, config: Ai
       if (saved.actorId !== actorId) domainReject('forbidden', 403); return saved;
     }, { readOnly: true });
   }
-  return { readPolicy, readPolicyIn,
+  return { readPolicy, readPolicyIn, receiveArchive,
     knowledgeTransfers() { return transfers ?? domainReject('knowledge_transfers_unavailable', 503); },
     knowledgeIndexes() { return indexBatches ?? domainReject('knowledge_indexes_unavailable', 503); },
     knowledgeStatus(cursor: string | null = null) {
