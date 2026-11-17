@@ -108,5 +108,17 @@ test('class reminders use the assignee account and stop after membership changes
   assert.equal(obsoleteRow.get('state'),'cancelled');
   await command('manager',`/api/children/${childId}/tasks/${second.id}/change`,{confirm:true,expectedVersion:second.version,action:'complete',note:''});
   assert.equal((await online.tasks.forSharedSpace!(classroom.id).get('manager',childId,second.id))?.occurrence.state,'completed');
+  const team=await sharing.create('manager',{kind:'teachers',name:'Team',operationId:randomUUID()});
+  const classVersion=async()=> (await sharing.spaceView('manager',classroom.id)).version;
+  const teamVersion=async()=> (await sharing.spaceView('manager',team.id)).version;
+  const attach=async()=> sharing.attachClass('manager',{spaceId:classroom.id,expectedVersion:await classVersion(),
+    teacherSpaceId:team.id,expectedTeacherVersion:await teamVersion(),operationId:randomUUID()});
+  await attach();
+  const oldAssignment=await sharing.withResource('manager',selection,async a=>a.binding.sharedAccess!.classMember!);
+  await sharing.detachClass('manager',{spaceId:classroom.id,expectedVersion:await classVersion(),
+    expectedTeacherVersion:await teamVersion(),targetUserId:'manager',operationId:randomUUID()});
+  await attach();
+  assert.equal(await options.database.runTransaction(tx=>sharing.classTaskAssigneeStillEligible(tx,oldAssignment)),false,
+    'reattaching the class to the same team cannot reactivate an old assignment');
   assert.ok(authCalls.length>0);
 });

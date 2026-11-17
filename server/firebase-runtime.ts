@@ -167,6 +167,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const memory = createFirestoreMemoryStore({ ...domain, chat, care });
     const proactiveData = new FirestoreDomainData(domain);
     const reminders = createFirestoreTaskWorker({ ...domain, enabled: config.taskWorkerEnabled, currentAuth,
+      prepareClassTaskDeliveries: chatNotifications.prepareClassTaskDeliveries,
       async prepareParentContact(b,{opId,text}) {
         if (!(await readProactivePolicy(proactiveData,b)).enabled) return null;
         return chat.prepareParentContact(b,{opId,text,origin:'task'});
