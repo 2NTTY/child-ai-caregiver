@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { waitForTelemetry, TELEMETRY_SAMPLE_TIMEOUT_MS } from "./agent-telemetry-wait.ts";
+import { boundedTelemetryCallback, TELEMETRY_SAMPLE_TIMEOUT_MS } from "./agent-telemetry-wait.ts";
 import { nativeSettlementWindow, NativeSettlementTimeout, NATIVE_SESSION_CLEANUP_TIMEOUT_MS } from "./agent-native-settlement.ts";
 export { NATIVE_SESSION_CLEANUP_TIMEOUT_MS } from "./agent-native-settlement.ts";
 import { BaseSessionService, FunctionTool, InMemorySessionService, LlmAgent, Runner, StreamingMode, createEvent, setLogger } from "@google/adk";
@@ -934,7 +934,7 @@ export function createAgentRuntime(options: {
         if (monitor) {
           const runCategory = input.trigger.kind === "worker" ? "background" : "interactive";
           try {
-            const evaluated = await waitForTelemetry(() => monitor.recordSample({
+            const evaluated = await boundedTelemetryCallback(() => monitor.recordSample({
               sampleId: runId,
               runCategory,
               usedModelCalls: result.counts.modelCalls,
@@ -949,7 +949,7 @@ export function createAgentRuntime(options: {
               ? { ...evaluated, triggered: true, loopDetected: true, recommendedAction: "stop_loop_early" as const }
               : evaluated;
             if (effectiveAlert.triggered && alertHandler) {
-              await waitForTelemetry(() => alertHandler(effectiveAlert));
+              await boundedTelemetryCallback(() => alertHandler(effectiveAlert));
             }
           } catch {
             // Telemetry persistence failure must not break or override the business outcome.

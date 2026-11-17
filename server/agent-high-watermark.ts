@@ -194,6 +194,25 @@ export interface HighWatermarkMonitor {
   persistenceStatus(runCategory: string): HighWatermarkPersistenceStatus;
 }
 
+// Process-wide bulkheads for best-effort telemetry only. A timeout does not
+// cancel I/O: slots remain occupied until the original operation actually settles.
+// Overload drops telemetry rather than growing transaction or category queues.
+const MAX_TELEMETRY_IO = 16;
+const MAX_TELEMETRY_TASKS = 32;
+const activeTelemetryIO = new Set<Promise<unknown>>();
+let admittedTelemetryTasks = 0;
+
+function boundedTelemetryIO<T>(operation: () => T | PromiseLike<T>): Promise<T> {
+  if (activeTelemetryIO.size >= MAX_TELEMETRY_IO) {
+    return Promise.reject(new Error("Telemetry I/O capacity exhausted by unsettled operations"));
+  }
+  const pending = Promise.resolve().then(operation);
+  activeTelemetryIO.add(pending);
+  const release = () => { activeTelemetryIO.delete(pending); };
+  void pending.then(release, release);
+  return waitForTelemetry(() => pending);
+}
+
 /**
  * Stateful sliding-window monitor backed by durable transactional append or shared load/persist hooks.
  * Serializes updates per category so concurrent or alternating instances never clobber prior samples.
@@ -236,7 +255,7 @@ export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions 
       failureCount: prev.failureCount + 1,
     });
     if (options.onPersistenceError) {
-      try { await waitForTelemetry(() => options.onPersistenceError!({ category: runCategory, stage, error })); } catch { /* Observer error stays isolated. */ }
+      try { await boundedTelemetryIO(() => options.onPersistenceError!({ category: runCategory, stage, error })); } catch { /* Observer error stays isolated. */ }
     }
   }
 
@@ -245,7 +264,7 @@ export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions 
       return { samples: [...(cachedByCategory.get(runCategory) ?? [])], loadFailed: false };
     }
     try {
-      const loaded = await waitForTelemetry(() => options.loadWindow!(runCategory));
+      const loaded = await boundedTelemetryIO(() => options.loadWindow!(runCategory));
       const bounded = [...loaded].filter(s => s.runCategory === runCategory).slice(-windowSize);
       cachedByCategory.set(runCategory, bounded);
       return { samples: bounded, loadFailed: false };
@@ -256,9 +275,22 @@ export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions 
   }
 
   function serialize<T>(runCategory: string, task: () => Promise<T>): Promise<T> {
+    if (admittedTelemetryTasks >= MAX_TELEMETRY_TASKS) {
+      const error = new Error("Telemetry task capacity exhausted");
+      const previous = getStatus(runCategory);
+      statusByCategory.set(runCategory, { status: "degraded", lastFailureStage: "persist",
+        lastFailureMessage: error.message, failureCount: previous.failureCount + 1 });
+      return Promise.reject(error);
+    }
+    admittedTelemetryTasks++;
     const previous = pendingByCategory.get(runCategory) ?? Promise.resolve();
     const next = previous.catch(() => undefined).then(task);
     pendingByCategory.set(runCategory, next);
+    const release = () => {
+      admittedTelemetryTasks--;
+      if (pendingByCategory.get(runCategory) === next) pendingByCategory.delete(runCategory);
+    };
+    void next.then(release, release);
     return next;
   }
 
@@ -270,7 +302,7 @@ export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions 
         let persistFailed = false;
         if (options.appendDurableSample) {
           try {
-            const committed = await waitForTelemetry(() => options.appendDurableSample!(sample, windowSize));
+            const committed = await boundedTelemetryIO(() => options.appendDurableSample!(sample, windowSize));
             updated = [...committed].filter(s => s.runCategory === sample.runCategory).slice(-windowSize);
             cachedByCategory.set(sample.runCategory, updated);
             markPersisted(sample.runCategory);
@@ -290,9 +322,14 @@ export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions 
               if (pendingLegacyWrites.has(sample.runCategory)) {
                 throw new Error("Previous telemetry window write is still unsettled");
               }
+              if (activeTelemetryIO.size >= MAX_TELEMETRY_IO) {
+                throw new Error("Telemetry I/O capacity exhausted by unsettled operations");
+              }
               const write = Promise.resolve().then(() => options.persistWindow!(sample.runCategory, updated));
+              activeTelemetryIO.add(write);
               pendingLegacyWrites.set(sample.runCategory, write);
               const release = () => {
+                activeTelemetryIO.delete(write);
                 if (pendingLegacyWrites.get(sample.runCategory) === write) pendingLegacyWrites.delete(sample.runCategory);
               };
               // Observe both outcomes even after the waiting deadline; do not retry an uncertain write.
