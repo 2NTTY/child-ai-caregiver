@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { boundedTelemetryCallback, TELEMETRY_SAMPLE_TIMEOUT_MS } from "./agent-telemetry-wait.ts";
 import { nativeSettlementWindow, NativeSettlementTimeout, NATIVE_SESSION_CLEANUP_TIMEOUT_MS } from "./agent-native-settlement.ts";
 export { NATIVE_SESSION_CLEANUP_TIMEOUT_MS } from "./agent-native-settlement.ts";
-import { BaseSessionService, FunctionTool, InMemorySessionService, LlmAgent, Runner, StreamingMode, createEvent, setLogger } from "@google/adk";
+import { BaseSessionService, FunctionTool, InMemorySessionService, LlmAgent, Runner, StreamingMode, createEvent, isCompactedEvent, setLogger } from "@google/adk";
 import type { AppendEventRequest, CreateSessionRequest, DeleteSessionRequest, GetSessionRequest, ListSessionsRequest, LlmRequest, Context, Event, Session } from "@google/adk";
 import { z } from "zod";
 import { FunctionCallingConfigMode } from "@google/genai";
@@ -71,8 +71,8 @@ function modelAttemptKey(context: Context, scope: Readonly<AgentScope>, runId: s
   if (original.length !== 1 || !context.userContent
     || agentBudgetFingerprint(original[0].content) !== agentBudgetFingerprint(context.userContent)) throw new AgentStopped("unavailable");
   uniqueEvent(context, original[0]);
-  const dialogue = events.slice(events.indexOf(original[0]) + 1).filter(event => event.content?.parts?.some(part =>
-    part.functionCall || part.functionResponse || !part.thought && typeof part.text === "string" && part.text.trim()));
+  const dialogue = events.slice(events.indexOf(original[0]) + 1).filter(event => !(isCompactedEvent(event) && event.author === "system")
+    && event.content?.parts?.some(part => part.functionCall || part.functionResponse || !part.thought && typeof part.text === "string" && part.text.trim()));
   if (!dialogue.length) return "model:" + agentBudgetFingerprint([runId, trigger, "first-model"]);
   const predecessor = dialogue.at(-1)!;
   if (predecessor.author !== context.agentName || !predecessor.content?.parts?.some(part => part.functionResponse
@@ -616,15 +616,40 @@ export function createAgentRuntime(options: {
             budget.check(); return capabilitySelection.visibleToolNames();
           })] : tools;
           const agentName = "yuban_agent";
+          const compactionAnchors = new WeakMap<LlmRequest, string>();
+          const compactionModel = !input.contextCompactors?.length && input.contextCompaction && !privateSummaryEnabled
+            ? new AgentGatewayModel({
+                ...selected,
+                budget,
+                userId: scope.userId,
+                childId: scope.childId,
+                authorize,
+                ...(syncPolicy ? { syncPolicy } : {}),
+                reserveDeliveryReview,
+                ...(durable ? { modelAttemptKey: (request: LlmRequest) => compactionAnchors.get(request) } : {}),
+                ...(durable?.dailyUsage ? { durableDailyUsage: { adapter: durable.dailyUsage, context: durable.context } } : {}),
+              })
+            : null;
+          const durableTrigger = durable?.context.binding.trigger;
           const effectiveCompactors = input.contextCompactors?.length
             ? input.contextCompactors
-            : input.contextCompaction
+            : compactionModel
               ? [createRunContextCompactor({
-                  model,
+                  model: compactionModel,
                   budget,
                   signal: budget.signal,
                   tokenThreshold: typeof input.contextCompaction === "object" ? input.contextCompaction.tokenThreshold : undefined,
                   eventRetentionSize: typeof input.contextCompaction === "object" ? input.contextCompaction.eventRetentionSize : undefined,
+                  ...(durableTrigger
+                    ? {
+                        onBeforeRequest: (request, compactionAttemptIndex) => {
+                          compactionAnchors.set(
+                            request,
+                            "compaction:" + agentBudgetFingerprint([runId, durableTrigger, "compaction", compactionAttemptIndex]),
+                          );
+                        },
+                      }
+                    : {}),
                 })]
               : [];
           const agentConfig: ConstructorParameters<typeof LlmAgent>[0] = { name: agentName, model,
@@ -756,7 +781,7 @@ export function createAgentRuntime(options: {
           };
           const agent = input.presentationRepair ? new PresentationRepairAgent(agentConfig, { budget, authorize,
             accepted: () => result.tools.some(tool => tool.name === "present_answer" && tool.status === "succeeded"),
-            stopped: () => Boolean(model.failure || toolFailure || requestFailure),
+            stopped: () => Boolean(model.failure || compactionModel?.failure || toolFailure || requestFailure),
           }) : new LlmAgent(agentConfig);
           const nativeSessionService = fixedOptions.nativeSessionService;
           let sessionCreated = false;
@@ -773,6 +798,25 @@ export function createAgentRuntime(options: {
             await storageGate();
             return value;
           };
+          let lastRuntimeEventTimestamp = 0;
+          const normalizeEventTimestamp = (request: AppendEventRequest): AppendEventRequest => {
+            if (request.event.partial || isCompactedEvent(request.event)) return request;
+            let prev = lastRuntimeEventTimestamp;
+            for (const item of request.session.events) {
+              if (!isCompactedEvent(item) && Number.isFinite(item.timestamp) && item.timestamp > prev) {
+                prev = item.timestamp;
+              }
+            }
+            const raw = request.event.timestamp;
+            const timestamp = Number.isFinite(raw) ? Math.max(raw, prev + 1) : prev + 1;
+            lastRuntimeEventTimestamp = timestamp;
+            if (timestamp === raw) return request;
+            if (Object.isExtensible(request.event)) {
+              request.event.timestamp = timestamp;
+              return request;
+            }
+            return { ...request, event: createEvent({ ...request.event, timestamp }) };
+          };
           // Guard only the public storage boundary; preserve ADK's original Session/Event objects.
           const sessionService = nativeSessionService ? new class extends BaseSessionService {
             createSession(request: CreateSessionRequest) { return storageWait(() => nativeSessionService.createSession(request), session => {
@@ -782,9 +826,16 @@ export function createAgentRuntime(options: {
             }); }
             getSession(request: GetSessionRequest) { return storageWait(() => nativeSessionService.getSession(request)); }
             listSessions(request: ListSessionsRequest) { return storageWait(() => nativeSessionService.listSessions(request)); }
-            appendEvent(request: AppendEventRequest) { return storageWait(() => nativeSessionService.appendEvent(request)); }
+            appendEvent(request: AppendEventRequest) {
+              const normalized = normalizeEventTimestamp(request);
+              return storageWait(() => nativeSessionService.appendEvent(normalized));
+            }
             deleteSession(request: DeleteSessionRequest) { return storageWait(() => nativeSessionService.deleteSession(request)); }
-          }() : new InMemorySessionService();
+          }() : new class extends InMemorySessionService {
+            override appendEvent(request: AppendEventRequest) {
+              return super.appendEvent(normalizeEventTimestamp(request));
+            }
+          }();
           const appName = "yuban_hk";
           try {
             const session = await sessionService.createSession({ appName, userId: scope.userId, sessionId: runId });
@@ -810,7 +861,7 @@ export function createAgentRuntime(options: {
                   confirmedFrameworkModelLimit = !model.failure && event.errorCode === "UNKNOWN_ERROR"
                     && event.errorMessage === `Max number of llm calls limit of ${runnerModelLimit} exceeded`
                     && budget.counts.modelCalls === budget.limits.modelCalls;
-                  throw model.failure ?? requestFailure ?? (agent instanceof PresentationRepairAgent ? agent.failure : undefined) ?? new AgentStopped(budget.counts.modelCalls >= budget.limits.modelCalls ? "model_limit" : "unavailable");
+                  throw model.failure ?? compactionModel?.failure ?? requestFailure ?? (agent instanceof PresentationRepairAgent ? agent.failure : undefined) ?? new AgentStopped(budget.counts.modelCalls >= budget.limits.modelCalls ? "model_limit" : "unavailable");
                 }
                 if (event.content?.role === "model" && !event.content.parts?.some(part => part.functionCall)) {
                   const text = event.content.parts?.filter(part => !part.thought && typeof part.text === "string").map(part => part.text).join("");
@@ -820,7 +871,7 @@ export function createAgentRuntime(options: {
             } catch (error) {
               // An inferred error event at the call count alone is not a confirmed model limit.
               const modelLimit = error instanceof AgentStopped
-                ? error.reason === "model_limit" && (confirmedFrameworkModelLimit || model.failure?.reason === "model_limit")
+                ? error.reason === "model_limit" && (confirmedFrameworkModelLimit || model.failure?.reason === "model_limit" || compactionModel?.failure?.reason === "model_limit")
                 : error instanceof Error && /LlmCallsLimit/u.test(error.name);
               if (!input.finalizeOnModelLimit || !input.finalize || !modelLimit || toolFailure
                 || result.tools.some(tool => tool.status !== "succeeded")) throw error;
