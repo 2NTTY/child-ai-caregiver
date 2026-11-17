@@ -46,6 +46,7 @@ export interface TasksViewModel {
   detailRead?: { id: string; state: "loading" | "ready" | "error" } | null;
   scheduleContext: { asOf: string; timeZone: string };
   items: TaskView[]; eligibleAssignees: TaskAssigneeView[]; selected: TaskView | null;
+  classAssignees?: "loading" | "more" | "ready" | "error";
   hasMoreTasks: boolean; loadingMoreTasks: boolean;
   workerEnabled?: boolean; work: TaskWorkView[]; reminders: TaskReminderView[];
   history: TaskRevisionView[]; historyOpen: boolean; hasMoreHistory: boolean;
@@ -58,6 +59,7 @@ export interface TasksActions {
   reviewDraft(values: TaskFormValues): void; editDraft(): void; submitReviewed(): void;
   useLatestVersion(): void; showHistory(): void; loadOlderHistory(): void;
   loadMoreTasks(): void;
+  loadMoreAssignees?(): void;
 }
 export const taskStateLabels: Record<TaskState, string> = {
   scheduled: "待處理", completed: "已完成", cancelled: "已取消", needs_review: "待覆核 · 已停催",

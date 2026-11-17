@@ -111,10 +111,12 @@ function ChannelReviewPanel({ model, actions, production }: { model: SharedModel
       <Text style={styles.meta}>核對版本：{model.review.expectedVersion === null ? "新登記／綁定，未有既有版本" : model.review.expectedVersion}</Text>
       <Text style={styles.body}>{replacingChallenge
         ? "服務接受重新開始後，會立即令目前的 Telegram 連結及候選帳號失效，並建立新的 10 分鐘連結；舊候選與勾選須重新核對。每小時最多 6 次開始，達限時請稍後重讀。"
-        : webChatEnable ? "在這個主畫面 App 接收助手聊天通知。請先選擇顯示內容，確認後才會請求系統通知權限。"
+        : webChatEnable ? "請選擇這個主畫面 App 要接收的通知。確認後會請求系統通知權限，之後可分別調整聊天和班級提醒。"
           : native && model.review.kind === "enable" ? "只登記本人的這個裝置。系統通知權限及裝置訂閱不代表已授權所有任務提醒或主動聯絡。" : reviewScope[model.review.kind]}</Text>
       {webChatEnable && "setChatNotificationMode" in actions ? <View style={styles.stack}>
-        <AppCheckbox label="一般提示，不顯示聊天內容" checked={model.review.chatNotificationMode === "generic"} disabled={model.locked || model.conflict}
+        <AppCheckbox label="接收指派給我的班級待辦" checked={model.review.chatNotificationMode === "class-tasks"} disabled={model.locked || model.conflict}
+          onChange={checked => { if (checked) actions.setChatNotificationMode?.("class-tasks"); }} />
+        <AppCheckbox label="聊天通知，只顯示一般提示" checked={model.review.chatNotificationMode === "generic"} disabled={model.locked || model.conflict}
           onChange={checked => { if (checked) actions.setChatNotificationMode?.("generic"); }} />
         <AppCheckbox label="顯示聊天內容預覽" checked={model.review.chatNotificationMode === "preview"} disabled={model.locked || model.conflict}
           onChange={checked => { if (checked) actions.setChatNotificationMode?.("preview"); }} />
@@ -223,6 +225,11 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
             onChange={sourceActions.setChatPreviewEnabled} />
           <Text style={styles.meta}>開啟後，通知可能顯示聊天內容；實際顯示仍受手機的通知及鎖定畫面設定影響。關閉後只顯示一般提示。</Text>
         </> : null}
+      </View> : null}
+      {sourceActions.setClassTasksEnabled && typeof model.classTaskNotificationsEnabled === "boolean" ? <View style={styles.entry}>
+        <AppCheckbox label="在此裝置接收指派給我的班級待辦" checked={model.classTaskNotificationsEnabled}
+          disabled={actionBlocked || model.chatNotificationsBusy || !model.currentBindingId} onChange={sourceActions.setClassTasksEnabled} />
+        <Text style={styles.meta}>待辦到期時顯示一般提示。點開可查看班級及事項。</Text>
       </View> : null}
       <ChannelReviewPanel model={model} actions={actions} production={production} />
       <View style={[styles.stack, styles.group]}>
