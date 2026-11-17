@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { documentExportViewSchema } from "../shared/document-export-view.ts";
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
 import { sharedSelectionSchema, type SharedSelection } from "../shared/sharing.ts";
 import { documentChangeSchema, documentExportSchema, documentPeriodSchema, documentRequestSchema, documentContentQuerySchema, documentListQuerySchema, reportCoverageSchema, reportProgressSchema,
@@ -183,6 +184,16 @@ export function createFamilyDocumentsApi(baseUrl = "", fetcher: typeof fetch = f
       scope(childId, userId); const parsed = documentChangeSchema.safeParse(raw);
       if (!uuid.safeParse(id).success || !parsed.success) throw new FamilyDocumentApiError(400, "invalid_input");
       return write("change", childId, id, userId, parsed.data, signal);
+    },
+    async previewExport(childId: string, id: string, raw: DocumentExport, signal: AbortSignal, userId: string) {
+      scope(childId, userId);
+      const input = documentExportSchema.safeParse(raw);
+      if (!uuid.safeParse(id).success || !input.success) throw new FamilyDocumentApiError(400, "invalid_input");
+      const value = await request(path(childId) + "/" + encodeURIComponent(id) + "/pdf?view=content", signal, userId, JSON.stringify(input.data));
+      const preview = documentExportViewSchema.safeParse(object(value) ? value.preview : null);
+      if (!preview.success || preview.data.snapshotId !== input.data.snapshotId || preview.data.snapshotVersion !== input.data.snapshotVersion
+        || (preview.data.sources !== null) !== input.data.includeSources || (preview.data.changes !== null) !== input.data.includeRevision) throw new FamilyDocumentApiError();
+      return preview.data;
     },
     async exportPdf(childId: string, id: string, raw: DocumentExport, signal: AbortSignal, userId: string): Promise<Blob> {
       scope(childId, userId); const parsed = documentExportSchema.safeParse(raw);

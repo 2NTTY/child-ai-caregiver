@@ -84,7 +84,7 @@ export function SummaryScreen() {
           {tab === "archive" ? growth ? <>
             <GrowthArchive key={growth.scopeKey} model={growth.model} wide={layout.width >= 880} scrollRef={scrollRef} active
               onRecord={id => guarded(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))}
-              onExportReport={fileExportAvailable ? documents?.exportReport : undefined} exportBusy={documents?.exportBusy}
+              onPreviewReport={documents?.previewReport} onExportReport={fileExportAvailable ? documents?.exportReport : undefined} exportBusy={documents?.exportBusy}
               footerActions={<AppButton label="前往原始記錄" variant="secondary" density="compact" onPress={() => guarded(() => router.push("/care"))} />} />
             <FamilyReportControls scopeKey={growth.scopeKey} online={growth.model.online} onRefresh={growth.actions.refresh} />
           </> : <ReadStateNotice state="loading" scopeKey={scopeKey} message="正在讀取成長檔案…" /> : null}
