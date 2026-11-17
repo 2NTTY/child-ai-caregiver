@@ -2,7 +2,7 @@ import { HANDOVER_UPLOAD_MAX_BYTES } from '../../../src/shared/handover-uploads'
 import type { SelectedPackage } from '../production/HandoverImportOwner';
 import { packageHash } from './package-import-hash';
 export const PACKAGE_IMPORT_MAX_BYTES = HANDOVER_UPLOAD_MAX_BYTES;
-export async function pickImportPackage(signal: AbortSignal): Promise<SelectedPackage | null> {
+export async function pickImportPackage(signal: AbortSignal, maximum = PACKAGE_IMPORT_MAX_BYTES): Promise<SelectedPackage | null> {
   signal.throwIfAborted();
   const file = await new Promise<File | null>((resolve, reject) => {
     const input = document.createElement('input'); input.type = 'file'; input.accept = '.zip,application/zip';
@@ -14,7 +14,7 @@ export async function pickImportPackage(signal: AbortSignal): Promise<SelectedPa
     signal.addEventListener('abort', abort, { once: true }); input.click();
   });
   if (!file) return null;
-  if (!/\.zip$/iu.test(file.name) || file.size < 1 || file.size > PACKAGE_IMPORT_MAX_BYTES) throw new Error('invalid_package_file');
+  if (!/\.zip$/iu.test(file.name) || file.size < 1 || file.size > maximum) throw new Error('invalid_package_file');
   const sha256 = await packageHash(file.stream(), file.size, signal);
   return { filename: file.name, bytes: file.size, sha256, body: file, release() {} };
 }

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
-import { adminTransferDigestSchema } from '../../../../src/shared/admin-knowledge-transfer';
+import { pickImportPackage } from '../../platform/package-import';
+import { adminTransferDigestSchema, publicArchiveMaxBytes } from '../../../../src/shared/admin-knowledge-transfer';
 import type { AdminOwner } from '../../production/AdminOwner';
 import type { AdminTransferState } from '../../production/admin-knowledge-transfer';
 import { AppButton, AppTextField, SectionHeader } from '../ui';
@@ -31,6 +32,10 @@ export function AdminKnowledgeTransfers({ admin, state, online, writeLocked }: {
       </View> : null}
       <AppTextField label="完整 ZIP SHA-256 指紋（64 位小寫）" value={fingerprint} onChangeText={setFingerprint}
         autoCapitalize="none" autoCorrect={false} />
+      <Text style={styles.note}>匯入時，請貼上交付者提供的 ZIP 指紋，再選取本機檔案。中斷後可用同一份 ZIP 接續。</Text>
+      <AppButton label={state.uploading ? '正在處理所選 ZIP' : '選擇公共知識 ZIP 並匯入'} variant="secondary"
+        disabled={writeLocked || !online || !!state.uploading || state.busy || !adminTransferDigestSchema.safeParse(fingerprint).success}
+        onPress={() => { void admin.uploadTransfer(fingerprint,signal => pickImportPackage(signal,publicArchiveMaxBytes)); }} />
       <AppButton label="按完整指紋查找匯入批次" variant="secondary"
         disabled={!online || !adminTransferDigestSchema.safeParse(fingerprint).success}
         onPress={() => { void admin.loadTransfer(fingerprint); }} />
