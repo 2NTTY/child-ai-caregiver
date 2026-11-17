@@ -39,7 +39,7 @@ import { validateSourceHistory, sourceHistoryVisible } from './handover-source-h
 import type { PackageMediaFilter } from './handover-attachment-period.ts';
 import { firestoreGrowthSchema, firestoreGrowthTopicSchema, type createFirestoreGrowthStore } from './firestore-growth.ts';
 import { createFirestoreConcernStore, firestoreConcernSchema, sharedConcernHead, sharedConcernEvent } from './firestore-concerns.ts';
-import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
+import { firestoreConcernEventViewSchema } from './firestore-document-sources.ts';
 import { handoverIdentityLinks } from './handover-provenance.ts';
 import type { SharedSelection } from '../src/shared/sharing.ts';
 import { sharedMessageAttachmentVisible } from './firestore-attachment-access.ts';
@@ -284,8 +284,10 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             const current = await concerns.head(binding, head.id);
             if (current && current.version >= head.version) items.push({ ...sharedConcernHead(head, classRequest.selection.modules),
               importedFrom: handoverIdentityLinks(head.importedFrom) });
+          } else if (!classRequest && section === 'concern_events') {
+            items.push(firestoreConcernEventViewSchema.parse(value));
           } else if (classRequest && section === 'concern_events') {
-            const event = firestoreDocumentConcernEventSchema.parse(value);
+            const event = firestoreConcernEventViewSchema.parse(value);
             if (context.id !== event.id || event.id !== row.get('eventId') || event.childId !== binding.scope.childId
               || event.sequence !== row.get('sequence')) domainReject('export_scope_changed');
             const current = await concerns.head(binding, event.concernId);

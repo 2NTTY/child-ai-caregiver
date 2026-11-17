@@ -387,9 +387,15 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (!userId) throw new RequestError('unauthorized', 401);
         const isCurrentUser = async (expected: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expected;
         const url = new URL(request.url), spaceId = url.searchParams.get('spaceId');
-        if ([...url.searchParams.keys()].some(key => key !== 'spaceId') || url.searchParams.getAll('spaceId').length > 1
+        const allowed = request.method === 'GET' ? ['spaceId', 'limit', 'cursor'] : ['spaceId'];
+        const limit = url.searchParams.get('limit');
+        if ([...url.searchParams.keys()].some(key => !allowed.includes(key) || url.searchParams.getAll(key).length !== 1)
+          || limit !== null && !/^(?:[1-9]|[1-9][0-9]|100)$/u.test(limit)
           || spaceId !== null && !z.uuid().safeParse(spaceId).success) throw new RequestError('invalid_input', 400);
-        const concerns = spaceId ? options.concerns.forSharedSpace(spaceId) : options.concerns;
+        const concerns = spaceId ? options.concerns.forSharedSpace(spaceId, {
+          sharedActions: request.headers.get('x-concern-features') === 'shared-actions',
+          authorityVersion: request.headers.get('x-concern-authority') ?? undefined,
+        }) : options.concerns;
         const response = await handleConcernRequest(request, userId, concerns, isCurrentUser);
         if (!await isCurrentUser(userId)) throw new RequestError('identity_changed', 409);
         return uncached(response);
