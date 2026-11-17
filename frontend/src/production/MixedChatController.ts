@@ -1,3 +1,4 @@
+import { selectedMaterialCitations, type MaterialCitationPage } from '../../../src/shared/assistant-material-citation.ts';
 import { MixedChatApiError, type MixedChatApi } from '../../../src/client/mixed-chat-api.ts';
 import type { MixedChatRoom, MixedChatMessage } from '../../../src/shared/mixed-chat.ts';
 import type { ProductAgentResult } from '../../../src/shared/product-agent.ts';
@@ -8,6 +9,11 @@ import { selectedCareRecordCitations, type SelectedCareCitation } from '../../..
 export function mixedCareRecordCitations(result: ProductAgentResult | null | undefined) {
   return result?.status === 'completed' && result.deliveryReview?.decision === 'pass'
     ? selectedCareRecordCitations(result.deliveryReview.sourceVersions) : [];
+}
+
+export function mixedMaterialReferences(result:ProductAgentResult | null | undefined) {
+  return result?.status === 'completed' && result.deliveryReview?.decision === 'pass' && result.deliveryReview.visibility === 'private'
+    ? selectedMaterialCitations(result.deliveryReview.sourceVersions) : [];
 }
 
 type CreateInput = Parameters<MixedChatApi['create']>[0];
@@ -24,7 +30,7 @@ export interface MixedChatState {
   room: MixedChatRoom | null; messages: MixedChatMessage[]; nextMessageCursor: string | null;
   results: Record<string, ProductAgentResult | null>; resultErrors: string[];
   archivedReplies: Record<string, MixedTranscriptRow['reply']>;
-  careCitation: { messageId: string; ordinal: number; loading: boolean; citation: SelectedCareCitation | null; error: string | null } | null;
+  careCitation: { messageId: string; ordinal: number; group: 'care'|'material'; offset?:number; loading: boolean; citation: SelectedCareCitation | MaterialCitationPage | null; error: string | null } | null;
   batches: Record<string, MixedTaskBatch | null>; batchErrors: string[];
   draft: string; busy: 'read' | 'write' | 'reply' | null; pending: Pending | null; notice: string | null;
 }
@@ -95,13 +101,21 @@ export class MixedChatController {
     this.careController?.abort(); this.careController = null; this.careSequence++;
     if (this.state.careCitation) this.update({ careCitation: null });
   };
-  async readCareCitation(messageId: string, ordinal: number) {
+  readCareCitation(messageId:string,ordinal:number) { return this.openCitation('care',messageId,ordinal); }
+  readMaterialCitation(messageId:string,ordinal:number,offset?:number) { return this.openCitation('material',messageId,ordinal,offset); }
+
+  private async openCitation(group:'care'|'material',messageId:string,ordinal:number,offset?:number) {
     const { room, userId, identityKey, contextKey, online } = this.state;
     const result = this.state.results[messageId];
     if (!room || !userId || !identityKey || !online || this.state.busy || this.state.pending || Object.hasOwn(this.state.archivedReplies, messageId)
       || !this.state.messages.some(message => message.id === messageId) || !Number.isSafeInteger(ordinal) || ordinal < 1) return;
-    const reference = mixedCareRecordCitations(result)[ordinal - 1];
-    const childId = reference && room.childIds[reference.childIndex];
+    const locate = (value:typeof result) => {
+      if (group === 'material') return mixedMaterialReferences(value)[ordinal-1];
+      const record=mixedCareRecordCitations(value)[ordinal-1];
+      return record && {id:record.recordId,from:record.childIndex,version:record.version,citationId:record.citationId,offset:0,kind:'care'};
+    };
+    const reference=locate(result);
+    const childId = reference && room.childIds[reference.from];
     if (!reference || !childId) return;
     this.closeCareCitation();
     const controller = new AbortController(), sequence = ++this.careSequence, runId = result!.runId;
@@ -109,23 +123,28 @@ export class MixedChatController {
     const current = () => sequence === this.careSequence && !controller.signal.aborted && this.state.userId === userId
       && this.state.identityKey === identityKey && this.state.contextKey === contextKey && this.state.room?.id === room.id
       && this.state.results[messageId]?.runId === runId;
-    this.update({ careCitation: { messageId, ordinal, loading: true, citation: null, error: null } });
+    this.update({ careCitation: { messageId, ordinal, group, offset, loading: true, citation: null, error: null } });
     try {
-      const citation = await this.api.careCitation(room.id, messageId, ordinal, userId, controller.signal);
+      const citation = group === 'material'
+        ? await this.api.materialCitation(room.id,messageId,ordinal,userId,controller.signal,offset)
+        : await this.api.careCitation(room.id,messageId,ordinal,userId,controller.signal);
       if (!current()) return;
-      const liveReference = mixedCareRecordCitations(this.state.results[messageId])[ordinal - 1];
-      if (citation.citationId !== reference.citationId || citation.recordId !== reference.recordId || citation.version !== reference.version
-        || citation.childId !== childId || this.state.room?.childIds[reference.childIndex] !== childId
+      const liveReference = locate(this.state.results[messageId]);
+      const exact = 'recordId' in citation ? citation.recordId === reference.id
+        : citation.id === reference.id && citation.kind === reference.kind && citation.offset === (offset ?? reference.offset)
+          && (citation.nextOffset === null || citation.text.length > 0 && citation.nextOffset === citation.offset + citation.text.length);
+      if (citation.citationId !== reference.citationId || !exact || citation.version !== reference.version
+        || citation.childId !== childId || this.state.room?.childIds[reference.from] !== childId
         || liveReference?.citationId !== reference.citationId || liveReference.version !== reference.version)
         throw new MixedChatApiError(0, 'mixed_chat_response_invalid');
-      this.update({ careCitation: { messageId, ordinal, loading: false, citation, error: null } });
+      this.update({ careCitation: { messageId, ordinal, group, offset, loading: false, citation, error: null } });
     } catch (error) {
       if (!current()) return;
       if (error instanceof MixedChatApiError && error.status === 401) { this.failure(error); return; }
       const message = error instanceof MixedChatApiError && error.status === 409 ? '來源已更改，未能顯示這筆原文；請重新查閱。'
-        : error instanceof MixedChatApiError && [403, 404].includes(error.status) ? '目前已無法查看這筆照護記錄。'
-          : '未能讀取照護原文，請重試。';
-      this.update({ careCitation: { messageId, ordinal, loading: false, citation: null, error: message } });
+        : error instanceof MixedChatApiError && [403, 404].includes(error.status) ? '目前已無法查看這筆原文。'
+          : '未能讀取原文，請重試。';
+      this.update({ careCitation: { messageId, ordinal, group, offset, loading: false, citation: null, error: message } });
     } finally { if (this.careController === controller) this.careController = null; }
   }
   setDraft = (draft: string) => { if (!this.state.busy && !this.state.pending) this.update({ draft }); };
