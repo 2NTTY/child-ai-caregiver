@@ -844,3 +844,129 @@ test('H2-R: resolved stopped/unknown replies and catch-recovered unfinished save
     ctrl.dispose();
   }
 });
+
+test('BND-2: non-emergency medicine queries show consult notice only while mixed real danger still surfaces emergency alert', () => {
+  for (const benignMedicineQuery of [
+    'Can I book a non-emergency medicine review?',
+    'Can I book a non emergency medicine review?',
+    'This is not an emergency medicine question.',
+    'There is no emergency, just asking about paracetamol dosage.',
+    '想預約非急症覆診順便問退燒藥水劑量。',
+  ]) {
+    assert.deepEqual(
+      matchOfficialHelpForText(benignMedicineQuery),
+      ['medical-consult-hk-v1'],
+      `Non-emergency medicine query must not trigger emergency-hk-v1: ${benignMedicineQuery}`,
+    );
+  }
+
+  for (const mixedUrgentQuery of [
+    'A non-emergency medicine question, but BB is unresponsive.',
+    'Can I book a non-emergency medicine review, or is it an emergency if BB is choking?',
+    'Not an emergency dosage check earlier, now BB is having difficulty breathing.',
+    '非急症覆診查詢，但 BB 而家叫唔醒！',
+  ]) {
+    const matched = matchOfficialHelpForText(mixedUrgentQuery);
+    assert.ok(matched.includes('emergency-hk-v1'), `Mixed genuine danger must keep emergency-hk-v1: ${mixedUrgentQuery}`);
+  }
+
+  // Exercise the actual default-closed ChatPage TSX render for both negative and positive controls.
+  const jsxNode = (type: unknown, props: unknown) => ({ type, props });
+  let currentDraft = '';
+  let runnerRef: ReturnType<typeof renderWithHooks>;
+  const placeholder: Record<string, unknown> = {};
+  const productionState = () => ({
+    model: { children: [{ id: 'child-1', name: 'A' }], selectedChildId: 'child-1' },
+    actions: { refresh() {}, open() {} },
+    scopeKey: 'scope-child-1',
+    chatState: {
+      busy: null,
+      loading: false,
+      online: true,
+      loadedAt: '2026-11-17T00:00:00.000Z',
+      selectedChildId: 'child-1',
+      messages: [],
+      drafts: {},
+      remoteReply: null,
+      feedback: null,
+      error: null,
+      replyError: null,
+      cancelNotice: null,
+      available: true,
+      loadingOlder: false,
+      nextCursor: null,
+      limit: 20,
+      userId: 'parent-1',
+    },
+    chatController: { loadOlderMessages: async () => {}, cancelReply: async () => {}, reloadMessages: async () => {} },
+    chatDraft: currentDraft,
+    setChatDraft(next: string) { currentDraft = next; },
+    agentAttachments: [],
+    composerFocusRequest: 0,
+    sendChat: async () => {},
+    requestChatReply: async () => {},
+    agentRuns: {},
+    agentModel: { readState: 'ready', run: null, pendingDecision: null },
+    voiceUpload: {},
+    fileUpload: {},
+    photoUpload: {},
+    agentPending: { state: 'idle', entries: [] },
+    authorization: { pending: false },
+    chatWritesAllowed: true,
+    readAgentPending() {},
+  });
+  const ChatPage = loadModule('frontend/src/screens/chatScreen.tsx', {
+    react: {
+      createContext: () => ({ Provider: 'Provider' }),
+      useContext: () => null,
+      useId: () => 'id-bnd2',
+      useState: (init: any) => runnerRef.hooks.useState(init),
+      useRef: (init: any) => runnerRef.hooks.useRef(init),
+      useLayoutEffect: () => runnerRef.hooks.useLayoutEffect(),
+      useEffect() {},
+      Fragment: 'Fragment',
+    },
+    'react/jsx-runtime': { jsx: jsxNode, jsxs: jsxNode, Fragment: 'Fragment' },
+    'expo-router': { useLocalSearchParams: () => ({}), usePathname: () => '/chat', useRouter: () => ({ push() {} }) },
+    'react-native': {
+      Platform: { OS: 'web' }, Pressable: 'Pressable', ScrollView: 'ScrollView',
+      StyleSheet: { create: (v: unknown) => v }, View: 'View',
+      useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }), Linking: { openURL: async () => {} },
+    },
+    'react-native-paper': { Text: 'Text', ActivityIndicator: 'ActivityIndicator' },
+    '../components/appearance/BackgroundSurface': { BackgroundSurface: 'BackgroundSurface', useCustomBackground: () => false },
+    '../production/ChatFileMessage': { ChatFileMessage: 'ChatFileMessage' },
+    '../production/VoiceMessage': { VoiceMessage: 'VoiceMessage' },
+    '../components/ui': { AppButton: 'AppButton', SectionCard: 'SectionCard' },
+    '../ui': { AppButton: 'AppButton', SectionCard: 'SectionCard' },
+    '../../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
+    '../components/AppDialog': { AppDialog: Object.assign('AppDialog', { Title: 'DialogTitle', Content: 'DialogContent', Actions: 'DialogActions' }) },
+    '../components/StatusAnnouncement': { StatusAnnouncement: 'StatusAnnouncement' },
+    '../components/agent/AgentComposer': { AgentComposer: 'AgentComposer' },
+    '../components/chat/ChatMessage': { ChatMessage: 'ChatMessage', ChatProgressIndicator: 'ChatProgressIndicator' },
+    '../components/chat/ChatTimeline': { ChatTimeline: 'ChatTimeline' },
+    '../components/chat/locateCitationSource': { locateCitationSource() {} },
+    '../components/chat/chat-presentation': { chatColors: placeholder, chatFont: 'synthetic', chatLayout: { maxWidth: 720, wideInset: 16, compactInset: 8 }, chatType: { body: {}, meta: {}, tool: {} } },
+    '../production/ProductionProvider': { useProduction: productionState },
+    '../production/AgentConversation': { AgentConversation: 'AgentConversation' },
+    '../production/ChatPhotoMessage': { ChatPhotoMessage: 'ChatPhotoMessage' },
+    '../production/NotificationChatTarget': { NotificationChatTarget: 'NotificationChatTarget' },
+    '../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
+    '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => (fn: () => void) => fn() },
+    '../agent-view-model': { proposalExpired: () => false, publicAnswerSources: () => undefined },
+    '../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
+  }).default;
+
+  const inspectUi = (draftText: string) => {
+    currentDraft = draftText;
+    runnerRef = renderWithHooks(() => jsxNode(ChatPage, {}));
+    const nodes = collectNodes(runnerRef.render());
+    return {
+      urgent: nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'),
+      consult: nodes.some(n => n.props?.testID === 'chat-official-help-consult-notice'),
+    };
+  };
+
+  assert.deepEqual(inspectUi('Can I book a non-emergency medicine review?'), { urgent: false, consult: true });
+  assert.deepEqual(inspectUi('A non-emergency medicine question, but BB is unresponsive.'), { urgent: true, consult: false });
+});
