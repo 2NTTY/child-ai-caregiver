@@ -1,6 +1,6 @@
 import { attachmentReadSelection } from './firestore-attachment-access.ts';
 import { z } from 'zod';
-import { PHOTO_LIMITS } from '../src/shared/photos.ts';
+import { PHOTO_LIMITS, photoMetadataSchema } from '../src/shared/photos.ts';
 import type { FirestorePhotoCursor, FirestorePhotoStore } from './firestore-photos.ts';
 import { FirestoreDomainError, domainParse, domainReject } from './firestore-domain-data.ts';
 import type { PhotoAgent } from './photo-agent.ts';
@@ -40,9 +40,9 @@ export async function handleFirebasePhotoRequest(request: Request, userId: strin
   const expected = request.headers.get('x-expected-user-id');
   if (!expected) domainReject('account_precondition_required', 428);
   if (expected !== userId) domainReject('session_changed', 409);
-  const url = new URL(request.url), match = /^\/api\/children\/([^/]+)\/photos(?:\/([^/]+)(?:\/(content|extract|confirm|delete))?)?$/u.exec(url.pathname);
+  const url = new URL(request.url), match = /^\/api\/children\/([^/]+)\/photos(?:\/([^/]+)(?:\/(content|extract|confirm|delete|resolve))?)?$/u.exec(url.pathname);
   if (!match || !z.uuid().safeParse(match[1]).success || match[2] && !z.uuid().safeParse(match[2]).success) domainReject('not_found', 404);
-  const selection = attachmentReadSelection(request, url);
+  const selection = attachmentReadSelection(request, url, false, !match[2] || ['content','resolve'].includes(match[3] ?? ''));
   const reads = selection ? photos.forSharedSpace?.(selection) : photos;
   if (!reads) domainReject('shared_attachment_unavailable', 503);
   const childId = match[1].toLowerCase(), id = match[2]?.toLowerCase(), action = match[3];
@@ -63,18 +63,26 @@ export async function handleFirebasePhotoRequest(request: Request, userId: strin
     const content = await reads.content(userId, childId, id);
     response = new Response(new Uint8Array(content.bytes), { headers: { 'Content-Type': content.mimeType, 'Cache-Control': 'private, no-store',
       'X-Content-Type-Options': 'nosniff', 'Content-Disposition': 'inline; filename=photo', 'Content-Security-Policy': "default-src 'none'; sandbox" } });
+  } else if (request.method === 'POST' && id && action === 'resolve' && selection && 'reconcile' in reads && typeof reads.reconcile === 'function') {
+    domainParse(z.object({}).strict(), await uploadJson(request));
+    if (!await isCurrentUser(userId)) domainReject('identity_changed', 409);
+    response = Response.json({ photo: await reads.reconcile(userId, childId, id) });
   } else if (request.method === 'POST' && id && action === 'extract') {
     if (!agent) domainReject('firebase_domain_not_ready', 503);
     const input = domainParse(z.object({ expectedVersion: z.number().int().positive(), confirmModel: z.literal(true) }).strict(), await uploadJson(request));
     response = Response.json({ photo: await agent.extract(userId, childId, id, input.expectedVersion, request.signal, () => isCurrentUser(userId)) });
   } else if (request.method === 'POST' && action === 'confirm') domainReject('operation_required', 428);
-  else if (request.method === 'POST' && (!id || action === 'delete')) domainReject('operation_required', 428);
+  else if (request.method === 'POST' && !id && selection && 'reserve' in reads && typeof reads.reserve === 'function') {
+    const { opId, ...metadata } = domainParse(photoMetadataSchema.extend({ opId: z.uuid() }), await uploadJson(request));
+    if (!await isCurrentUser(userId)) domainReject('identity_changed', 409);
+    response = Response.json({ photo: await reads.reserve(userId, childId, opId, metadata) }, { status: 201 });
+  } else if (request.method === 'POST' && (!id || action === 'delete')) domainReject('operation_required', 428);
   else if (request.method === 'POST' && id && action === 'content') {
     const input = domainParse(uploadSchema, await uploadJson(request));
     const bytes = Buffer.from(input.base64, 'base64');
     if (!bytes.length || bytes.length > PHOTO_LIMITS.bytes || bytes.toString('base64') !== input.base64) domainReject('invalid_photo', 400);
     if (!await isCurrentUser(userId)) domainReject('identity_changed', 409);
-    response = Response.json({ photo: await photos.upload(userId, childId, id, input.base64) });
+    response = Response.json({ photo: await reads.upload(userId, childId, id, input.base64) });
   } else domainReject('method_not_allowed', 405);
   if (!await isCurrentUser(userId)) domainReject('identity_changed', 409);
   return response;

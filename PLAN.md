@@ -9,7 +9,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 ## 閱讀次序
 
 1. 先讀 [STATUS](STATUS.md) 與[當前工作](#active)，再只讀對應包。
-2. [主動通知](#proactive-notifications)已交付，當前入口為 [REQ-001 的首個 Web 搜索流程](#agent-search-first)。恢復 P4 時從[接手清單](docs/P4_RESUME.md)選包，再按 [P4 原有依賴](#p4-execution)接續。[P3](#phase-3)餘項沿原包追蹤。
+2. [主動通知](#proactive-notifications)已交付，本輪目標為整個 P4。先接家庭附件庫直接上傳，讓另一名獲授權成員讀回原件。其餘五包、正式交付及待驗項從[P4 接手清單](docs/P4_RESUME.md)接續。[P3](#phase-3)餘項沿原包追蹤。
 3. 舊包只透過[歷史索引](_archive/README.md#plan-p1-p2-20261018)按需查閱；日常不讀 P1／P2 歷史正文。
 4. 工作狀態與最低驗收規則仍見[狀態](#states)、[證據層級](#verification)及[按包驗收](#p2-deferred-acceptance)。
 
@@ -81,7 +81,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="agent-search-first"></a>
 **主動通知交付後做 REQ-001 的官方來源搜索。** 按[需求文件的 A–D 次序](docs/REQUIREMENTS_BACKLOG.md#2-跨包的首交付切片與依賴)，先核對一條查詢需要的來源版本、引用、權限、用量及原 run 恢復（A），再用現有核准來源走通一條 Web 查詢（B）。家長應看到真實進度、得到符合適用條件的回答，能從引用打開支持說法的原文。證據不足時說明缺口，斷線後可查回同一次結果。此流程待驗。
 
-**P4 暫停於 Web 示範交付。** 優先沿用現有檢索與引用接點，只有上述查詢遇到具體阻塞才接回對應的 P4 工作。時效及即時來源後續按 C 擴展，完整背景同步、整本 PDF 處理及來源庫管理按 D 接續。P4 公共知識批量維運和其餘四組欠項保留原驗收門檻；恢復位置及證據見[接手清單](docs/P4_RESUME.md)。
+**P4 已於 11 月 18 日恢復。** REQ-001 搜索示範保留以上入口，P4 第④組沿用現有檢索與引用接點。時效及即時來源後續按 C 擴展，完整背景同步、整本 PDF 處理及來源庫管理按 D 接續。P4 公共知識批量維運和其餘四組欠項保留原驗收門檻；恢復位置及證據見[接手清單](docs/P4_RESUME.md)。
 
 **REQ-005 驗收對照：**26 項場景、分支證據及 11 項待決事項見[收束紀錄](#req005-closeout01)。原候選的離線驗證與 11 月 11 日整合修正分別列出；真模型驗收與正式發布仍待核對。
 
@@ -101,7 +101,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 的原生 runtime 指紋在本機與 EAS 不一致，本次未產出 APK。下次需要批量安裝時，先核對同一建置封包與依賴位置，再建置、驗簽及覆蓋安裝。[原建置紀錄](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)
 
-**當前入口（2026-11-08）為 [P4-HANDOVER01](#p4-handover01)。** 原站已接本人記憶、照片、錄音、檔案及帳戶通知偏好的差異還原。沒有孩子亦可單選通知偏好，或與本人頭像同批還原。下一步補其餘本人原件的覆蓋範圍，包括成長整理與私人聊天。Android 共用表單待批量發布，原生大型包與分享待設備驗收。D 的接點等相關接口穩定。[帳戶偏好發布](artifacts/verification/P4_ACCOUNT_PREFERENCES_20261108.json)／[附件發布](artifacts/verification/P4_ORIGINAL_ATTACHMENTS_20261108.json)／[記憶還原](artifacts/verification/P4_ORIGINAL_MEMORY_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)
+**11 月 8 日的 [P4-HANDOVER01](#p4-handover01) 交付基線。** 原站已接本人記憶、照片、錄音、檔案及帳戶通知偏好的差異還原。沒有孩子亦可單選通知偏好，或與本人頭像同批還原。下一步補其餘本人原件的覆蓋範圍，包括成長整理與私人聊天。Android 共用表單待批量發布，原生大型包與分享待設備驗收。D 的接點等相關接口穩定。[帳戶偏好發布](artifacts/verification/P4_ACCOUNT_PREFERENCES_20261108.json)／[附件發布](artifacts/verification/P4_ORIGINAL_ATTACHMENTS_20261108.json)／[記憶還原](artifacts/verification/P4_ORIGINAL_MEMORY_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)
 
 測試階段持續交付後端與 Web。Android 共用改動累積後，在實際需要安裝或驗證原生功能時集中建置 APK；個別功能包可先完成共用接線，交付紀錄另列尚未在手機驗收的部分。
 

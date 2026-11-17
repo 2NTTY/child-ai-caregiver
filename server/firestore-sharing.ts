@@ -10,6 +10,7 @@ import { SHARING_SCOPE, sharedSpaceSchema, sharedMembershipSchema, resourceShare
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { sharingCommandSchema, sharingOperationSchema, sharedSpaceViewSchema, sharedChildViewSchema, classRosterQuerySchema, type SharingCommand, type SharingOperation,
   type SharedSpaceView, type SharedMemberView, type SharedGrantView, type SharedInviteView, type SharedPage } from '../src/shared/sharing-control.ts';
+import type { ClassTaskAssignment } from './shared-write-attribution.ts';
 import { sharingUserTag } from './firestore-sharing-records.ts';
 import type { FirestoreErasureStore } from './firestore-erasure.ts';
 
@@ -72,6 +73,10 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions &
     if (value.spaceId !== spaceId || value.userId !== userId) domainReject('sharing_binding', 500);
     if(s.kind==='class'&&(value.spaceGeneration??null)!==(s.directMembershipGeneration??null))domainReject('space_access_denied',403);
     return value;
+  }
+  function classTaskAssignment(spaceId: string, membership: Member) {
+    return Object.freeze({ spaceId, userId: membership.userId, membershipId: membership.membershipId,
+      membershipScopeId: membership.teacherSpace?.id ?? spaceId });
   }
   function manager(s: Space, m: Member) {
     if ((m.teacherSpace?.managerUserId??s.managerUserId) !== m.userId || m.role !== 'owner') domainReject('space_manager_required', 403);
@@ -149,8 +154,7 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions &
     if (input.expectedBasis && firestoreDomainHash(input.expectedBasis) !== firestoreDomainHash(basis)) domainReject('sharing_scope_changed');
     return authority.withSharedSource(b, grant.source, { spaceId: s.id, basis: Object.freeze(basis), role: m.role, module: input.module,
       modules: Object.freeze([...grant.modules]), mode: input.mode,
-      ...(s.kind === 'class' ? { classMember: Object.freeze({ userId, spaceId:s.id, membershipId:m.membershipId,
-        membershipScopeId:m.teacherSpace?.id ?? s.id }) } : {}) }, binding =>
+      ...(s.kind === 'class' ? { classMember: classTaskAssignment(s.id, m) } : {}) }, binding =>
       use(Object.freeze({ transaction: b.transaction, actorUserId: userId, scope: binding.scope, binding,
         role: m.role, module: input.module, includePrivate: false as const, basis: Object.freeze(basis) })));
   }
@@ -246,6 +250,30 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions &
   }
   const api = {
     inResourceTransaction,
+    async classTaskAssigneeStillEligible(tx: Transaction, assignment: ClassTaskAssignment) {
+      try {
+        const current = await member(tx, assignment.spaceId, assignment.userId);
+        return current.role !== 'viewer' && current.membershipId === assignment.membershipId
+          && (current.teacherSpace?.id ?? assignment.spaceId) === assignment.membershipScopeId;
+      } catch (error) {
+        if (error && typeof error === 'object' && 'code' in error
+          && (error.code === 'space_access_denied' || error.code === 'space_inactive')) return false;
+        throw error;
+      }
+    },
+    async classTaskAssignee(binding: FirestoreAuthorityTransaction, userId: string) {
+      const access = binding.sharedAccess;
+      if (!access?.classMember || access.module !== 'tasks' || access.mode !== 'write' || access.role === 'viewer')
+        domainReject('read_only', 403);
+      if (userId === binding.actorUserId) return access.classMember;
+      const membership = await member(binding.transaction, access.spaceId, userId).catch((error: unknown) => {
+        if (error && typeof error === 'object' && 'code' in error && error.code === 'space_access_denied')
+          domainReject('assignee_not_eligible', 400);
+        throw error;
+      });
+      if (membership.role === 'viewer') domainReject('assignee_not_eligible', 400);
+      return classTaskAssignment(access.spaceId, membership);
+    },
     async plannedClassImportScope(b: FirestoreAuthorityTransaction, classId: string, childId: string) {
       await writableClass(b, classId);
       return authority.classRosterScope(b, classId, childId);

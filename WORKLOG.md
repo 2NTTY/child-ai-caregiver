@@ -5997,6 +5997,10 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 
 同日把每日主時鐘移交現有 GCP Cloud Scheduler。舊 run 於香港 09:04:28 建立及開始，09:05:35 完成；倉庫未取得 GitHub 內部延遲的具體原因。新流程在 04:17 直接送出固定 master 檢查，GCS 的每日 claim 抵禦重複喚醒。已用受控時鐘驗證 04:17 的第一秒可送出及重投遞只生效一次；操作員狀態辨認專用 App 的執行紀錄。
 
+## 2026-11-18 家庭附件庫直接上傳
+
+P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授權及原操作收據。使用同一個合成家庭走正式 HTTP，核對照顧者保存、唯讀成員讀回原件、舊草稿隔離、途中撤權及原操作重試。照片和錄音只補各自的上傳接點。資料來自記憶體 Firestore 與合成物件服務；正式交付及設備證據見接手清單。
+
 ## 2026-11-14　Slice B（B-P3）檢索中官方來源卡片即時串流與對話預覽 (`codex/search-source-progress`)
 
 - Recorded At：2026-11-14（Asia/Hong_Kong）
@@ -6025,3 +6029,7 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 
 - **更正說明**：依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R8.md`（D1）與 `AGENTS.md:125` 嚴格 append-only 規範，以 forward-only 方式恢復 `2b29f39` 既有紀錄（`2026-11-14　B-P3 R1 審核修復補充` 第 2 點原句），並於此另起獨立紀錄補述同一決策，不重寫歷史。
 - **補充決策紀錄（`applicabilityStatus`）**：未經獨立交付審核之即時進度來源（`AgentProgressSource`），其 `applicabilityStatus` 嚴格限制為警示性質之 `'conditional' | 'requires_clarification'`，不在獨立審核完成前於進度事件傳遞 `'applicable'`。
+
+### 2026-11-18　B-P3 正向合併最新 origin/master（cd1193b2）並開立 PR
+
+- **Merge 動作**：將 `origin/master`（`cd1193b2`，含 `#596`–`#598`）正向無改歷史合併至 `codex/search-source-progress`，僅按嚴格 append-only 次序解開 `WORKLOG.md` 尾段衝突（保留 `#596` 與 B-P3 所有歷史紀錄）並觸發 GitHub PR（HOLD MERGE，等待獨立審核與 Hosted CI）。

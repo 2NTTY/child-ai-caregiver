@@ -167,19 +167,25 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
   async function prepareTask(binding: FirestoreAuthorityTransaction, childId: string, oldId: string | undefined, raw: unknown, operationId: string,
     imported?: { state: CareTask['occurrence']['state']; provenance: NonNullable<CareTask['importedFrom']>; expectedVersion?: number }) {
     domainParse(uuid, operationId); if (oldId) domainParse(uuid, oldId);
-    const userId = binding.sharedAccess?.classMember?.userId ?? binding.scope.ownerUserId, actorUserId = binding.actorUserId,
+    const actorUserId = binding.actorUserId,
       candidateId = randomUUID(), occurrenceId = randomUUID(), at = new Date().toISOString();
     domainParse(uuid, childId); await requireChild(binding, childId);
     const scope = scopeFor(binding, childId);
     const input = oldId && !imported ? domainParse(taskChangeSchema, raw) : domainParse(taskCreateSchema, raw);
     const old = oldId ? await readTask(binding, scope, oldId) : null;
     if (oldId && !old) domainReject('not_found', 404);
+    const assignee = 'values' in input ? input.values.assigneeUserId
+      : input.action === 'reschedule' ? input.assigneeUserId : undefined;
+    let classAssignment = old?.classAssignment;
+    if (assignee !== undefined) {
+      if (binding.sharedAccess?.classMember) classAssignment = await sharing.classTaskAssignee(binding, assignee);
+      else if (assignee !== binding.scope.ownerUserId) domainReject('assignee_not_eligible', 400);
+    }
     let task: CareTask, revision: TaskRevision;
     if (old && imported) {
       const expectedVersion = domainParse(z.number().int().positive().max(2147483646), imported.expectedVersion);
       if (old.version !== expectedVersion) domainReject('version_conflict');
       const create = domainParse(taskCreateSchema, input);
-      if (create.values.assigneeUserId !== userId) domainReject('assignee_not_eligible', 400);
       const { dueAt, timeZone, ...values } = create.values;
       // Keep the local occurrence and its delivery evidence. Source revisions cannot replay a reminder.
       task = { ...old, ...values, version: old.version + 1, updatedAt: at, importedFrom: imported.provenance,
@@ -187,12 +193,10 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
       revision = { task, action: 'import', actorUserId, basisVersion: expectedVersion, note: '', at };
     } else if (old) {
       const change = domainParse(taskChangeSchema, input);
-      if (change.action === 'reschedule' && change.assigneeUserId !== userId) domainReject('assignee_not_eligible', 400);
       task = changeTask(old, change, at);
       revision = { task, action: change.action, actorUserId, basisVersion: change.expectedVersion, note: change.note, at };
     } else {
       const create = domainParse(taskCreateSchema, input);
-      if (create.values.assigneeUserId !== userId) domainReject('assignee_not_eligible', 400);
       const { dueAt, timeZone, ...values } = create.values;
       task = { ...values, id: candidateId, childId, version: 1, createdBy: actorUserId, createdAt: at, updatedAt: at,
         ...(imported ? { importedFrom: imported.provenance } : {}),
@@ -228,8 +232,6 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
     const invalidateDocuments = await prepareContextChange(data, binding, { proactive: false });
     const createdViaShare = old ? old.createdViaShare : sharedWriteAttribution(binding, task.id, 1);
     const changedViaShare = sharedWriteAttribution(binding, task.id, task.version);
-    const classAssignment = !old || imported || 'action' in input && input.action === 'reschedule'
-      ? binding.sharedAccess?.classMember : old.classAssignment;
     const storedTask = firestoreTaskStorageSchema.parse({ ...task, ...(createdViaShare ? { createdViaShare } : {}),
       ...(classAssignment ? { classAssignment } : {}) });
     const storedRevision = { ...revision, task: storedTask, ...(changedViaShare ? { changedViaShare } : {}) };
@@ -257,7 +259,8 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
       return access(userId, childId, async binding => {
         const { items, nextAfterId } = await readTaskPage(binding, binding.scope, afterId, 50);
         const assignee = binding.sharedAccess?.classMember?.userId ?? binding.scope.ownerUserId;
-        return { items, eligibleAssignees: [{ userId: assignee, name: binding.actorUserId === assignee ? '本人' : '資料擁有人' }], nextAfterId,
+        return { items, ...(binding.sharedAccess?.classMember ? { classAssigneeSpaceId: binding.sharedAccess.spaceId } : {}),
+          eligibleAssignees: [{ userId: assignee, name: binding.actorUserId === assignee ? '本人' : '資料擁有人' }], nextAfterId,
           ...await reminderView(binding, items.map(item => item.id)) };
       });
     },
