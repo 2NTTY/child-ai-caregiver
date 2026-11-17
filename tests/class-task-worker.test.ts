@@ -20,7 +20,7 @@ test('class reminders use the assignee account and stop after membership changes
     projectId:'demo-class-reminder', namespace:'class_reminder', serverClock:()=>at };
   const authority=createFirestoreAuthority(options), sharing=createFirestoreSharingStore(options), data=new FirestoreDomainData(options);
   const generation=randomUUID(); await authority.initializeControl({generation,enabled:true});
-  for(const userId of ['manager','teacher']) {
+  for(const userId of ['manager','teacher','observer']) {
     await authority.issueInvitation({email:userId+'@example.test',expiresAt:'2026-11-28T00:00:00Z',operationId:randomUUID()});
     await authority.admitIdentity({userId,email:userId+'@example.test',emailVerified:true});
     await authority.acknowledge({userId,policyVersion:SERVICE_POLICY_VERSION,operationId:randomUUID()});
@@ -37,6 +37,9 @@ test('class reminders use the assignee account and stop after membership changes
   const invitation=await sharing.invite('manager',{spaceId:classroom.id,expectedVersion:classroom.version,
     email:'teacher@example.test',role:'caregiver',expiresAt:'2026-11-28T00:00:00Z',operationId:randomUUID()});
   classroom=await sharing.acceptInvitation('teacher',{token:invitation.token,operationId:randomUUID()});
+  const observer=await sharing.invite('manager',{spaceId:classroom.id,expectedVersion:classroom.version,
+    email:'observer@example.test',role:'viewer',expiresAt:'2026-11-28T00:00:00Z',operationId:randomUUID()});
+  classroom=await sharing.acceptInvitation('observer',{token:observer.token,operationId:randomUUID()});
   const selection={spaceId:classroom.id,childId,module:'tasks' as const,mode:'read' as const};
   const page=await online.tasks.forSharedSpace!(classroom.id).list('teacher',childId);
   assert.deepEqual(page.eligibleAssignees,[{userId:'teacher',name:'本人'}]);
@@ -46,12 +49,17 @@ test('class reminders use the assignee account and stop after membership changes
       workspaceId:context.workspaceId,storageEpoch:context.storageEpoch,deviceId:randomUUID(),opId:randomUUID()}};
     const receipt=await online.submit(userId,submission); assert.deepEqual(await online.submit(userId,submission),receipt); return receipt;
   }
-  async function createTask(){return (await command('teacher',`/api/children/${childId}/tasks`,{confirm:true,values:{
-    title:'Class appointment',details:'',kind:'appointment',assigneeUserId:'teacher',dueAt:'2026-10-28T03:00:00Z',timeZone:'Asia/Hong_Kong'}})).result as {task:CareTask};}
+  async function createTask(actor='teacher', assignee='teacher'){return (await command(actor,`/api/children/${childId}/tasks`,{confirm:true,values:{
+    title:'Class appointment',details:'',kind:'appointment',assigneeUserId:assignee,dueAt:'2026-10-28T03:00:00Z',timeZone:'Asia/Hong_Kong'}})).result as {task:CareTask};}
   async function jobFor(task:CareTask):Promise<FirestoreTaskDelivery>{return sharing.withResource('teacher',selection,async access=>({kind:'task-reminder',
     scope:{...access.scope},taskId:task.id,taskVersion:task.version,occurrenceId:task.occurrence.id,scheduledAt:task.occurrence.dueAt,
     authorizationVersion:access.binding.authorizationVersion,generation}));}
-  const first=(await createTask()).task, job=await jobFor(first);
+  assert.equal(page.classAssigneeSpaceId,classroom.id);
+  for (const ineligible of ['absent','observer','space:'+classroom.id])
+    await assert.rejects(createTask('manager',ineligible), {code:'assignee_not_eligible',status:400});
+  const first=(await createTask('manager')).task, job=await jobFor(first);
+  assert.equal(first.createdBy,'manager');
+  assert.equal(first.assigneeUserId,'teacher');
   assert.equal('classAssignment' in first,false,'internal membership proof stays out of the public task');
   assert.deepEqual(await worker.dispatchTransaction(job,'enqueue',async binding=>({actor:binding.actorUserId,owner:binding.scope.ownerUserId})),
     {state:'ready',value:{actor:'teacher',owner:'space:'+classroom.id}});
@@ -82,7 +90,7 @@ test('class reminders use the assignee account and stop after membership changes
   (tampered.find(row=>row.context.kind==='task-notification-outbox')!.value as {recipientUserId:string}).recipientUserId='manager';
   assert.throws(()=>assertFirestoreRestoreContent(tampered),'restore cannot redirect another member\'s reminder');
   assert.equal((await online.tasks.forSharedSpace!(classroom.id).list('manager',childId)).reminders?.length,1);
-  const second=(await createTask()).task, secondJob=await jobFor(second), claim=await later.claim(secondJob);
+  const second=(await createTask('manager')).task, secondJob=await jobFor(second), claim=await later.claim(secondJob);
   assert.equal(claim.state,'claimed');
   await sharing.leave('teacher',{spaceId:classroom.id,expectedVersion:classroom.version,operationId:randomUUID()});
   if(claim.state==='claimed') await assert.rejects(later.complete(secondJob,claim.lease));
@@ -92,6 +100,12 @@ test('class reminders use the assignee account and stop after membership changes
     email:'teacher@example.test',role:'caregiver',expiresAt:'2026-11-28T00:00:00Z',operationId:randomUUID()});
   await sharing.acceptInvitation('teacher',{token:rejoin.token,operationId:randomUUID()});
   if(claim.state==='claimed') await assert.rejects(later.complete(secondJob,claim.lease),(error:unknown)=>(error as {code?:string}).code==='task_assignee_changed');
+  // A revoked assignment must leave the scheduler's due queue even after the teacher rejoins.
+  const retired=await later.dispatchTransaction(secondJob,'enqueue',async()=>assert.fail('revoked work must never enqueue'));
+  assert.equal(retired.state,'stopped');
+  const obsoleteRow=await options.database.runTransaction(tx=>tx.get(data.ref('task_outbox','task-reminder-outbox',
+    firestoreReminderOutboxId(second.id,second.version))));
+  assert.equal(obsoleteRow.get('state'),'cancelled');
   await command('manager',`/api/children/${childId}/tasks/${second.id}/change`,{confirm:true,expectedVersion:second.version,action:'complete',note:''});
   assert.equal((await online.tasks.forSharedSpace!(classroom.id).get('manager',childId,second.id))?.occurrence.state,'completed');
   assert.ok(authCalls.length>0);

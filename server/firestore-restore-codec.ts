@@ -589,7 +589,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
         value = { ...row, scope, descriptor, objectScope: descriptor || !row.upload ? scope : row.objectScope,
           upload: row.upload ? {...row.upload,unknown:true} : null };
         Object.assign(metadata,{scopeTag:firestoreDomainHash(['voice-scope',scope]),assetId:row.id,state:row.state,
-          createdAt:row.createdAt,updatedAt:row.updatedAt,messageId:row.messageId,cleanupState:row.messageId===null&&!(row.importedFrom&&row.state==='ready')?'unlinked':null,cleanupAt:null}); break;
+          createdAt:row.createdAt,updatedAt:row.updatedAt,messageId:row.messageId,cleanupState:row.messageId===null&&!((row.importedFrom||row.libraryOrigin)&&row.state==='ready')?'unlinked':null,cleanupAt:null}); break;
       }
       case 'chat-file-asset': {
         const row = parse(firestoreChatFileRowSchema, value); let descriptor = row.descriptor;
@@ -604,7 +604,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
         value = { ...row, scope, descriptor, objectScope: descriptor || !row.upload ? scope : row.objectScope,
           upload: row.upload ? {...row.upload,unknown:true} : null };
         Object.assign(metadata,{scopeTag:firestoreDomainHash(['chat-file-scope',scope]),assetId:row.id,state:row.state,
-          createdAt:row.createdAt,updatedAt:row.updatedAt,messageId:row.messageId,cleanupState:row.messageId===null&&!(row.importedFrom&&row.state==='ready')?'unlinked':null,cleanupAt:null}); break;
+          createdAt:row.createdAt,updatedAt:row.updatedAt,messageId:row.messageId,cleanupState:row.messageId===null&&!((row.importedFrom||row.libraryOrigin)&&row.state==='ready')?'unlinked':null,cleanupAt:null}); break;
       }
       case 'voice-transcript': {
         const row = parse(firestoreVoiceTranscriptSchema,value), interrupted = row.value.state === 'running';
@@ -635,7 +635,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
         if (descriptor) delete (value as {objectScope?:unknown}).objectScope;
         for (const name of Object.keys(metadata)) delete metadata[name];
         Object.assign(metadata, { assetId: row.id, scopeTag: photoTag(scope), sortKey: row.createdAt + '/' + row.id,
-          live: row.state === 'reserved' || row.state === 'ready', importPending: !!row.importStage && row.state === 'reserved' }); break;
+          live: row.state === 'reserved' || row.state === 'ready', importPending: !!(row.importStage || row.libraryOrigin) && row.state === 'reserved' }); break;
       }
       case 'photo-operation': value = { ...parse(photos.operation, value), scope }; for (const name of Object.keys(metadata)) delete metadata[name]; metadata.scopeTag = photoTag(scope); break;
       case 'photo-child-quota': id = photoTag(scope); for (const name of Object.keys(metadata)) delete metadata[name]; metadata.scopeTag = id; break;

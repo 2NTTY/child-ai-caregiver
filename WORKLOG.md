@@ -6024,3 +6024,7 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 - **同日 Gate 後續校準：**首次 canonical PR-A gate 的 79 項測試通過，隨後 S3 source-injection pattern 因新純 metadata view 改名而未匹配，故該次 gate 為 **FAIL**，不是 PASS。僅將既有 S3／S4 變異目標對齊 `usedBeforeThisCall.modelCalls`；保留漏扣已用量／關閉 exceeded 的相同破壞與失敗斷言，再以新 HEAD 完整重跑 gate。
 
 - **同日 reviewer 與變異補證：**以同一正式 runtime 的 `finalize.completeText` 補兩項持久 reviewer 準入／503 重試案例，interactive 維持 `.8` 而 reviewer 改 `.23`，確認不是錯用互動角色覆蓋；新回歸檔 **17/17、0 skip**。在另一可丟棄樹實際注入 9 個缺陷（不重繪、假 daily 綁定、root／daily owner、root／daily CAS、略過再核、hard 降額及錯扣本次預留），9/9 均由目標斷言捕獲，未把載入／語法錯誤或未選中的 skipped cases 當捕獲。原 `9f33e3d` canonical gate **79/79＋S1–S5／P1–P4＋三組 tsc PASS**；本次新增兩項後再按新 HEAD 重跑，不把舊 HEAD 收據冒稱新版本。
+
+## 2026-11-18 家庭附件庫直接上傳
+
+P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授權及原操作收據。使用同一個合成家庭走正式 HTTP，核對照顧者保存、唯讀成員讀回原件、舊草稿隔離、途中撤權及原操作重試。照片和錄音只補各自的上傳接點。資料來自記憶體 Firestore 與合成物件服務；正式交付及設備證據見接手清單。
