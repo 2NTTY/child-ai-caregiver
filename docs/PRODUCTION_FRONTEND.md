@@ -286,6 +286,8 @@ Server `ANDROID_PUSH_ENABLED` 預設關閉；準備同一 GCP project 的 FCM HT
 
 Web 環境檔只讀 `EXPO_PUBLIC_*`；工具在獨立程序先清走原生配置，避免公開 Firebase key 混用。原生執行才讀指定 EAS environment，不輸出其內容。`--plan` 不使用會上傳 fingerprint 的 `eas fingerprint:generate`，而用 `expo-updates` 本機 resolver。iOS runtime 不要求 Android descriptor，也不能拿 Android build 的 runtime 作基線。
 
+若原 APK 與候選的 runtime 不同，先以相同本機設定計算原 SHA。兩個本機版本相同時，可在 EAS 以兩個已存在的 hash 唯讀查回已發行指紋，比對 external file 的名稱及摘要。Android 的 `google-services.json` 須使用原建置配對的專案公開描述檔。Firebase 重新下載的副本可能有不同位元組。指紋一致後再執行相容 OTA；描述檔及 preview 環境檔留在工程外。
+
 兩端匯出均須合併 `frontend/eas.json` 的 base及選定profile環境，包含正式身份供應商與 API 地址，並設定 `EAS_BUILD_PROFILE`／`EAS_BUILD_PLATFORM`。`mobile:release` 已執行；單獨 `eas env:pull` 不含全部 profile 值。已有產物若用 `--skip-bundler`，仍核對同一配置，不能只憑 runtime 相容發布。
 
 ### iOS 首次及後續交付
