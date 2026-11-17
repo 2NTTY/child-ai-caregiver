@@ -31,4 +31,4 @@ jobs:
             -target arm64-apple-ios16.4 -sdk "$sdk" -parse-as-library -emit-object \
             frontend/plugins/ios-share/ShareIntoViewController.swift \
             -o "$RUNNER_TEMP/ShareIntoViewController.o"
-          xcrun lipo -verify_arch arm64 "$RUNNER_TEMP/ShareIntoViewController.o"
+          xcrun lipo "$RUNNER_TEMP/ShareIntoViewController.o" -verify_arch arm64
