@@ -2,6 +2,7 @@ import { adminKnowledgeStatusSchema, type AdminKnowledgeStatus, type AdminComman
 import { emptyIndex, indexTargetLimit, adminIndexVersionPageSchema, adminIndexBatchPageSchema, adminIndexBatchReplySchema,
   type AdminIndexState, type AdminIndexBatch, type AdminIndexPending } from './admin-knowledge-index.ts';
 import { adminTransferDigestSchema, adminTransferListSchema, adminTransferDetailSchema, adminTransferReplySchema } from '../../../src/shared/admin-knowledge-transfer.ts';
+import type { SelectedPackage } from './HandoverImportOwner.ts';
 import { emptyTransfers, type AdminTransferState, type AdminTransferBatch, type AdminTransferPending } from './admin-knowledge-transfer.ts';
 import { adminDemoConfigSchema, adminDemoReceiptSchema, emptyDemo, demoSettled, demoAwaitingDelivery, browserDemoStorage, storedDemoPending, demoPendingKey,
   type AdminDemoState, type AdminDemoStorage } from './admin-proactive-demo.ts';
@@ -24,6 +25,10 @@ export function adminError(error: unknown) {
     version_conflict: '設定已被更新；請重新讀取並核對後再保存。', invitation_consumed: '這個邀請已被使用，不能從邀請入口停用帳號。',
     invitation_closed: '這個資格已關閉，不能重新發出。', invitation_expiry_invalid: '有效期須在未來九十天內。',
     forbidden: '此帳號沒有網站管理權限。', unauthorized: '請先重新登入。', identity_changed: '登入帳戶已改變，請重新讀取。',
+    knowledge_archive_integrity_failed:'檔案與原包指紋或清單不符，請核對交付的 ZIP。',
+    invalid_knowledge_archive:'這不是可讀的公共知識 ZIP。', knowledge_archive_size_exceeded:'此知識包超過匯入上限。',
+    knowledge_archive_length_mismatch:'收到的檔案長度不完整。', knowledge_archive_scratch_full:'伺服器暫存空間不足，請查看部署手冊的知識包暫存目錄。',
+    knowledge_transfer_edition_invalid:'包內有版本格式錯誤，請查看批次的失敗項目。',knowledge_transfer_binding_invalid:'來源與版本識別不符，請查看原批次。',
     invalid_input: '請核對欄位格式及允許範圍。' } as Record<string, string>)[code] ?? '暫時未能完成，請核對連線後再讀取。';
 }
 /** One identity-scoped owner shared by entry and page. No family data or durable browser business store. */
@@ -52,20 +57,20 @@ export class AdminOwner {
     this.update({});
   }
   dispose() { this.generation++; this.controllers.forEach(c => c.abort()); this.controllers.clear(); this.listeners.clear(); }
-  private async request<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+  private async request<T>(path: string, body?: unknown, signal?: AbortSignal, archive?:SelectedPackage): Promise<T> {
     const userId = this.state.userId, generation = this.generation, controller = new AbortController();
     if (!userId) throw new AdminApiError(401, 'unauthorized');
     this.controllers.add(controller);
     try {
       // Native browser fetch must not receive AdminOwner as its Window receiver.
       const fetcher = this.fetcher;
-      const response = await fetcher(this.baseUrl.replace(/\/$/, '') + path, { method: body === undefined ? 'GET' : 'POST',
-        credentials: 'include', cache: 'no-store', signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000), ...(signal ? [signal] : [])]),
-        headers: { 'x-expected-user-id': userId, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
-        ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+      const response = await fetcher(this.baseUrl.replace(/\/$/, '') + path, { method: body === undefined && !archive ? 'GET' : 'POST',
+        credentials: 'include', cache: 'no-store', signal: AbortSignal.any([controller.signal, AbortSignal.timeout(archive ? 310000 : 20000), ...(signal ? [signal] : [])]),
+        headers: { 'x-expected-user-id': userId, ...(archive ? {'Content-Type':'application/zip','x-archive-bytes':String(archive.bytes)} : body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+        ...(archive ? {body:archive.body} : body === undefined ? {} : { body: JSON.stringify(body) }) });
       const value = await response.json();
       if (generation !== this.generation || userId !== this.state.userId) throw new AdminApiError(409, 'identity_changed');
-      if (!response.ok) throw new AdminApiError(response.status, value?.error?.code ?? 'unavailable'); return value as T;
+      if (!response.ok) throw new AdminApiError(response.status, value?.error?.code ?? value?.code ?? 'unavailable'); return value as T;
     } finally { this.controllers.delete(controller); }
   }
   async checkAccess() {
@@ -374,6 +379,36 @@ export class AdminOwner {
       if (!this.indexCurrent(generation) || this.indexAccessError(error) || selection !== this.transferSelection) return;
       this.updateTransfers({ detail: {
         ...this.state.transfers.detail, status: 'error', notice: error instanceof AdminApiError && error.status === 404 ? '未查到此指紋的匯入批次。' : adminError(error) } });
+    }
+  }
+  async uploadTransfer(digest:string, pick:(signal:AbortSignal) => Promise<SelectedPackage | null>) {
+    const view = this.state.transfers;
+    if (this.state.access !== 'allowed' || !view.open || view.uploading || view.pending || view.busy
+      || !adminTransferDigestSchema.safeParse(digest).success) return;
+    const generation = this.generation, selection = this.transferSelection, controller = new AbortController();
+    this.controllers.add(controller);
+    this.updateTransfers({uploading:digest,notice:null});
+    let file:SelectedPackage | null = null, submitted = false;
+    try {
+      file = await pick(controller.signal);
+      if (!file || !this.indexCurrent(generation)) return;
+      if (file.sha256 !== digest) { this.updateTransfers({notice:'所選 ZIP 與輸入指紋不符。'}); return; }
+      submitted = true;
+      this.updateTransfers({notice:'正在上載公共知識 ZIP，可按指紋查看已入庫的版本。'});
+      const result = adminTransferReplySchema.parse(await this.request<unknown>('/admin/knowledge-transfers/' + digest + '/content',undefined,controller.signal,file));
+      if (!this.indexCurrent(generation)) return;
+      if (result.batch.id !== digest) throw Error('archive_response_invalid');
+      this.updateTransfers({batches:this.withTransferBatch(result.batch),notice:`公共知識包已入庫 ${result.batch.next}／${result.batch.total} 項。`});
+      if (selection === this.transferSelection && this.state.transfers.open) await this.loadTransfer(digest);
+    } catch (error) {
+      if (!this.indexCurrent(generation) || this.indexAccessError(error)) return;
+      const known = error instanceof AdminApiError && (error.status < 500 || error.code === 'knowledge_archive_scratch_full');
+      const notice = submitted ? known ? adminError(error) : '交送中斷，請依原批次收據核對進度。' : '未能選取或讀取此 ZIP。';
+      this.updateTransfers({notice});
+      if (submitted && selection === this.transferSelection && this.state.transfers.open) await this.loadTransfer(digest);
+    } finally {
+      file?.release(); this.controllers.delete(controller);
+      if (generation === this.generation) this.updateTransfers({uploading:null});
     }
   }
   async controlTransfer(kind: 'stop' | 'resume') {
