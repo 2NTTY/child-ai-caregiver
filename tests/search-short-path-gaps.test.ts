@@ -1592,3 +1592,191 @@ test('N1-R / N2-R / N3-R: polysemous formula exclusion, per-clause private suppo
     assert.equal(out.result.deliveryReview?.decision, 'pass', exactDateClaim);
   }
 });
+
+test('BND-1: mixed-kind private drafts validate every paragraph by content without trusting sibling record or clarification labels', async () => {
+  const userId = scope.userId;
+  const childId = scope.childId;
+  const allergyFact = {
+    id: 'aaaaaaaa-1111-4000-8000-000000000191',
+    childId,
+    key: 'allergy-milk-bnd1',
+    content: 'BB 對牛奶蛋白過敏',
+    source: { kind: 'manual' as const, description: '家長確認' },
+    validUntil: null,
+    visibility: 'private' as const,
+    intendedVisibility: 'private' as const,
+    status: 'confirmed' as const,
+    version: 1,
+    createdBy: userId,
+    confirmedBy: userId,
+    confirmedAt: '2026-10-18T00:00:00.000Z',
+    reason: '已確認',
+    applicable: true,
+    sourceState: 'current' as const,
+  };
+  const officialChunk = {
+    chunkId: '00000000-0000-4000-8000-000000000411',
+    versionId: '00000000-0000-4000-8000-000000000412',
+    sourceId: 'fhs-solid-food',
+    title: '嬰幼兒飲食－引進固體食物過渡期',
+    classification: 'official_guidance' as const,
+    text: '嬰兒約六個月大時可開始嘗試固體食物。',
+  };
+
+  async function runMixedParagraphFlow(opts: {
+    userMsg: string;
+    answerKind: 'record_restatement' | 'clarification' | 'mixed';
+    paragraphs: Array<{ kind: 'record_restatement' | 'clarification' | 'caregiving'; text: string; citationIds: string[] }>;
+    facts?: (typeof allergyFact)[];
+    searchOfficial?: boolean;
+  }) {
+    let calls = 0;
+    let reviews = 0;
+    let saved: ProductAgentResult | null = null;
+    const msgId = 'dddddddd-1111-4000-8000-000000000191';
+    const localRunId = 'eeeeeeee-1111-4000-8000-000000000191';
+    const runtime = createAgentRuntime({
+      config: readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project' }),
+      usage: { reserve: async () => true, record: async () => {} },
+      provider: {
+        generate: async request => {
+          calls++;
+          const promptText = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? '').join('\n');
+          if (promptText.includes('chat-delivery-review')) {
+            reviews++;
+            const payload = JSON.parse(promptText.slice(promptText.indexOf('{'))) as { draftHash: string };
+            return {
+              content: { role: 'model', parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: 'pass', issues: [] }) }] },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          if (opts.searchOfficial && calls === 1) {
+            return {
+              content: { role: 'model', parts: [{ functionCall: { id: 'k-bnd1', name: 'search_knowledge', args: { query: '六個月固體食物', classification: 'official_guidance' } } }] },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          return {
+            content: { role: 'model', parts: [{ functionCall: { id: 'pres-bnd1', name: 'present_answer', args: { kind: opts.answerKind, paragraphs: opts.paragraphs } } }] },
+            finishReason: FinishReason.STOP,
+          };
+        },
+      },
+    });
+    const service = createProductAgent({
+      runtime,
+      store: {
+        claim: async () => ({ runId: localRunId, scope, created: true, sourceMessageId: msgId, state: 'running', expiresAt: new Date(Date.now() + 90_000).toISOString() }),
+        authorize: async () => true,
+        finish: async (_s: unknown, result: ProductAgentResult) => { saved = result; return true; },
+        get: async () => saved,
+      } as any,
+      memory: {
+        getFact: async (_u: string, _c: string, id: string) => (opts.facts ?? []).find(f => f.id === id) ?? null,
+        context: async () => ({
+          profile: { childId, version: 0, data: null },
+          profileApplicable: false,
+          facts: opts.facts ?? [],
+          topics: [],
+          summary: null,
+          recentMessages: [],
+          conflictingKeys: [],
+          unavailableFactKeys: [],
+          truncated: { facts: false, topics: false, messages: false },
+        }),
+      } as any,
+      chat: { listForUser: async () => ({ messages: [{ id: msgId, childId, role: 'user', text: opts.userMsg }] }) } as any,
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) } as any,
+      knowledge: {
+        createRun: () => ({
+          search: async () => ({ mode: 'vector_keyword', chunks: opts.searchOfficial ? [officialChunk] : [] }),
+          revalidateCitations: async () => true,
+        }),
+      } as any,
+    });
+    const result = await service.reply(userId, childId, msgId, async () => true);
+    assert.ok(result);
+    return { result, reviews };
+  }
+
+  for (const neg of [
+    {
+      name: 'BND-1 record_restatement + spoofed clarification allergy',
+      answerKind: 'record_restatement' as const,
+      facts: [allergyFact],
+      searchOfficial: false,
+      paragraphs: [
+        { kind: 'record_restatement' as const, text: '家庭紀錄顯示寶寶對牛奶蛋白過敏。', citationIds: [] },
+        { kind: 'clarification' as const, text: '寶寶對腰果過敏。', citationIds: [] },
+      ],
+    },
+    {
+      name: 'BND-1 top-level clarification + record_restatement + spoofed clarification',
+      answerKind: 'clarification' as const,
+      facts: [allergyFact],
+      searchOfficial: false,
+      paragraphs: [
+        { kind: 'record_restatement' as const, text: '家庭紀錄顯示寶寶對牛奶蛋白過敏。', citationIds: [] },
+        { kind: 'clarification' as const, text: '寶寶對腰果過敏。', citationIds: [] },
+      ],
+    },
+    {
+      name: 'BND-1 official citation + uncited spoofed allergy paragraph',
+      answerKind: 'mixed' as const,
+      facts: [allergyFact],
+      searchOfficial: true,
+      paragraphs: [
+        { kind: 'caregiving' as const, text: '嬰兒約六個月大時可開始嘗試固體食物。', citationIds: [officialChunk.chunkId] },
+        { kind: 'clarification' as const, text: '寶寶對腰果過敏。', citationIds: [] },
+      ],
+    },
+    {
+      name: 'BND-1 scope-refusal smuggling fake private allergy',
+      answerKind: 'record_restatement' as const,
+      facts: [allergyFact],
+      searchOfficial: false,
+      paragraphs: [
+        { kind: 'record_restatement' as const, text: '家庭紀錄顯示寶寶對牛奶蛋白過敏。', citationIds: [] },
+        { kind: 'clarification' as const, text: '這類問題超出範圍，無法提供解答。但寶寶對腰果過敏。', citationIds: [] },
+      ],
+    },
+  ]) {
+    const out = await runMixedParagraphFlow({
+      userMsg: 'BB最近情況點樣，幫我查返已確認家庭紀錄？',
+      answerKind: neg.answerKind,
+      paragraphs: neg.paragraphs,
+      facts: neg.facts,
+      searchOfficial: neg.searchOfficial,
+    });
+    assert.equal(out.reviews, 1, neg.name);
+    assert.equal(out.result.status, 'stopped', neg.name);
+    assert.equal(out.result.stopReason, 'delivery_review_no_sources', neg.name);
+    assert.equal(out.result.text.includes('腰果'), false, neg.name);
+  }
+
+  for (const pos of [
+    {
+      name: 'BND-1 positive supported two-paragraph record',
+      paragraphs: [
+        { kind: 'record_restatement' as const, text: '家庭紀錄顯示寶寶對牛奶蛋白過敏。', citationIds: [] },
+        { kind: 'record_restatement' as const, text: '家庭紀錄顯示寶寶對牛奶蛋白過敏。', citationIds: [] },
+      ],
+    },
+    {
+      name: 'BND-1 positive record + genuine bounded clarification',
+      paragraphs: [
+        { kind: 'record_restatement' as const, text: '家庭紀錄顯示寶寶對牛奶蛋白過敏。', citationIds: [] },
+        { kind: 'clarification' as const, text: '寶寶幾個月大？', citationIds: [] },
+      ],
+    },
+  ]) {
+    const out = await runMixedParagraphFlow({
+      userMsg: 'BB最近情況點樣，幫我查返已確認家庭紀錄？',
+      answerKind: 'record_restatement',
+      paragraphs: pos.paragraphs,
+      facts: [allergyFact],
+    });
+    assert.equal(out.result.status, 'completed', pos.name);
+    assert.equal(out.result.deliveryReview?.decision, 'pass', pos.name);
+  }
+});
