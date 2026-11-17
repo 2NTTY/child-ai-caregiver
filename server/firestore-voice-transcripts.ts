@@ -1,6 +1,7 @@
 import { sharedAttachmentReads } from './firestore-attachment-access.ts';
 import type { SharedSelection } from '../src/shared/sharing.ts';
 import { randomUUID } from 'node:crypto';
+import { computeVoiceRevisionBasis, reconcileVoiceTranscriptRevision } from './cross-domain-snapshot.ts';
 import { z } from 'zod';
 import { voiceTranscriptSchema, voiceTranscriptDraftSchema, storedVoiceTranscriptSchema, importedVoiceTranscriptSchema, voiceTranscriptTransferSchema, sharedAttachmentVoiceTranscriptTransferSchema, type VoiceTranscriptDraft } from '../src/shared/voice-transcript.ts';
 import { handoverIdentityLinks } from './handover-provenance.ts';
@@ -19,7 +20,7 @@ const attemptSchema = z.object({ runId: z.uuid(), reference: z.uuid(), expiresAt
 export const firestoreVoiceTranscriptSchema = z.object({ scope: workRecoveryScopeSchema, value: storedVoiceTranscriptSchema,
   attempt: attemptSchema.nullable(), modelAttempted: z.boolean(), quotaDeferrals: z.number().int().min(0).max(7) }).strict();
 const ref = (data: FirestoreDomainData, id: string) => data.ref('voice_transcripts','voice-transcript',id);
-const basis = (source: VoiceMessageReference) => source.version + ':' + source.sha256;
+const basis = computeVoiceRevisionBasis;
 function seal(data: FirestoreDomainData, row: z.infer<typeof firestoreVoiceTranscriptSchema>) {
   return { ...data.tags(row.scope), assetId: row.value.voice.id, state: row.value.state, retryAt: row.value.retryAt,
     ...data.seal('voice-transcript',row.value.voice.id,row.scope,firestoreVoiceTranscriptSchema,row,row.value.version) };
@@ -98,7 +99,14 @@ export function createFirestoreVoiceTranscripts(options: FirestoreDomainOptions 
       const row=await jobBinding(b,job);if(row.value.state!=='running'||row.attempt?.runId!==claim.runId)domainReject('voice_transcript_changed');
       const timely=row.attempt&&Date.now()<Date.parse(row.attempt.expiresAt);
       const content=timely&&result.status==='completed'&&draft?domainParse(voiceTranscriptDraftSchema,draft):null;
-      if(content){let end=0;for(const part of content.segments)if(part.startMs!==null){if(part.startMs<end||part.endMs! > row.value.voice.durationMs)domainReject('invalid_voice_timestamps',400);end=part.endMs!;}}
+      if(content){
+        const checked=reconcileVoiceTranscriptRevision(
+          {voiceId:row.value.voice.id,version:row.value.voice.version,sha256:row.value.voice.sha256,durationMs:row.value.voice.durationMs},
+          {voiceId:row.value.voice.id,basis:job.basis,text:content.segments.map(part=>part.text).join('\n'),
+            segments:content.segments.filter(part=>part.startMs!==null).map(part=>({startMs:part.startMs!,endMs:part.endMs??Number.NaN,text:part.text}))}
+        );
+        if(!checked.accepted)domainReject(checked.reason,checked.reason==='invalid_voice_timestamps'?400:409);
+      }
       // One permitted generation: quota rejection proves no provider call in this run. Other uncertain outcomes never retry.
       const quota=result.stopReason==='quota_exceeded'&&row.quotaDeferrals<7;
       const nextAt=quota?new Date(Math.floor(Date.now()/86400000)*86400000+86400000+60000).toISOString():null;

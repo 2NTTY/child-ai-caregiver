@@ -6005,6 +6005,16 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 3）**A03（多實例 HighWatermark 原子追加與可觀測持久失敗）**：[agent-high-watermark.ts](server/agent-high-watermark.ts) 新增 `sampleId`（由 runtime 傳入 `runId`）、`mergeHighWatermarkSamples`、`appendDurableSample`、`onPersistenceError` 與 `persistenceStatus`；`loadWindow`／`persistWindow` 改為每次重讀合併而不倚賴陳舊快取；[firestore-product-agent.ts](server/firestore-product-agent.ts) 改以單筆 Firestore transaction read-merge-trim-write（保持 `recordVersion = 1` 相容 restore codec），持久化失敗記錄為可觀測 `degraded` 狀態且不中斷產品 run。
 4）於 [agent-policy-rounding-alerts 測試](tests/agent-policy-rounding-alerts.test.ts) 新增 A01–A03 實證測試（9→12 cases），已確認三項於 `67ac1c91` 舊碼皆失敗、修復後全數通過；`tests/firestore-backup.test.ts` 相對於 `origin/master` 基線仍維持既存尾項差異揭露（基線漏 `_proactive_state`，PR-A 新增 `_agent_metrics` 供備份清單納入）。
 
+## 2026-11-16　REQ-005 PR-D 匯出 ZIP 去重對齊與穩定 revision 身份防衝突（R2 D01–D02）
+
+- 目標／需求：修復審計 R2 指出的 D01（`handover-export.ts` 只更新 `advanceResumableExportBatch` 狀態卻直接 yield 原始 `page`，使 ZIP JSON entries 與 `coverage` 仍出現重複項目）及 D02（history item identity 摻入 `pageOffset + index` 與位置 `anon-*`，繞過跨頁同 `(section, id, version)` 內容衝突檢查）。
+- 變更：
+  - `server/handover-export.ts`：
+    - 新增 `exportItemIdentity(section, childId, raw, payloadHash)`，按結構與 `handover-provenance.ts` 來源／版本語義擷取穩定識別鍵（`id`、growth `item.id`、task `task.id`、`yuyoufang-source-revision:1` provenance 複合鍵、`documentId+snapshotId`、`inputId`、`topicId`、媒體 ID、`target`、`childId`、singleton 或最後以 canonical `payloadHash` 作非位置 fallback），history/version 區段加上版本標籤，移除 `pageOffset + index` 與位置 `anon-*`。
+    - `pages` 在 `advanceResumableExportBatch` 驗證通過後，依同一去重集合（跨頁 `seenBeforePage` 與頁內 `seenInCurrentPage`）過濾重複項目再 yield，確保 ZIP 實際輸出項目與 manifest `coverage` 完全一致。
+  - `tests/handover-export.test.ts`：修正既有測試三處同一 `(id, version)` 不同內容的合成 fixture 重號（lines 56、59、148/161 改為合法不同版本號 `v1`/`v2` 與 head `v3`），並新增跨頁重複 head 去重、多版本 history 保留、以及 `memory_fact_history` 與無頂層 `id` 之 `growth_topic_history` 同版本跨頁內容衝突拒絕（`export_scope_changed`）測試（共 8 cases）；先確認新測試在修復前 `69629509` 失敗（`3 !== 2`），修復後全部通過。
+- 限制（依 R2 §4.2 校準）：`pages` 仍按每個 section 獨立建立 `ResumableExportState`（非跨重啟全局 manifest），且 `family-document-report-core.ts` 之 payload hash 檢查不取代原始 sealed-envelope 解密／live watermark／撤權或 Hosted Actions 驗證。
+
 ### 2026-11-16　REQ-005 PR-A R3 審核整改（A04 在途角色軟預算清除／調低即時更新 provider 指令、備份清單測試同步）
 
 依 `REQ005_COMPLETION_SPLIT_IMPLEMENTATION_AUDIT_R3.md`（A04）與備份清單測試審查於本地 forward-only 新提交修復（未 push、未開 PR）：
@@ -6012,6 +6022,13 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 2）**`tests/firestore-backup.test.ts` 與 CI 門檻**：補齊 `_proactive_state` 與 `_agent_metrics` 至混用備份集合尾項預期（`['_mixed_rooms', '_mixed_messages', '_proactive_state', '_agent_metrics']`），並納入 [verify-policy-rounding-offline.sh](scripts/ci/verify-policy-rounding-offline.sh)（11 檔）；新增 A04 測試（12→13 cases），先確認舊碼於第 13 案取得過期 `[0.8, 0.8]` 失敗，修復後精準取得 `[0.8, 0.4]` 與 `[0.8, 0.05]`（13/13 通過）。
 3）**在途請求身分參照保護**：於 [agent-model-gateway.ts](server/agent-model-gateway.ts) `generateBounded` 入口保存原始 `anchorRequest` 參照並用於查詢 `modelAttemptKey`（避免 `syncRequestPolicy`、`audio` 或 `images` 建立淺拷貝時失落 `modelAnchors` `WeakMap` 鍵值而導致 durable 語音回合回傳 `unavailable`），`tests/firestore-voice.test.ts` 通過。
 
+
+## 2026-11-16　REQ-005 PR-D R3 審核整改（D03 task_history 移除可變 at 時間戳以對齊主鍵）
+
+- **目標／需求**：修復審計 R3 指出的 **D03**（`server/handover-export.ts` `exportItemIdentity()` 對 `task_history` 附加 `:at:${stringField(record, 'at')}`，使同 `[task.id, task.version]` 在兩頁帶不同 `at` 時間戳時繞過去重與跨頁內容衝突檢查）。
+- **變更**：
+  - [handover-export.ts](server/handover-export.ts)：移除 `exportItemIdentity()` 中 `task_history` 之 `:at:...` 後綴，改為單純對齊 Firestore `[task.id, task.version]`（或對應 provenance/payloadHash）主鍵。
+  - [handover-export.test.ts](tests/handover-export.test.ts)：新增 D03 回歸測試（7→8 cases），先驗證舊碼於跨頁相同 `(task.id, version)`、不同 `at` 與不同內容時漏判，修復後失敗關閉拋出 `export_scope_changed`（8/8 通過）。
 
 ### 2026-11-17　REQ005 PR-A：A04 準入及重試後動態政策指引修復
 

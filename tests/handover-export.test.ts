@@ -10,6 +10,7 @@ import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestoreCareStore } from '../server/firestore-care.ts';
 import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
 import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
+import { firestoreTaskRevisionSchema } from '../server/firestore-domain-data.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { writePersonalHandoverPackage } from '../server/handover-export.ts';
 import { openHandoverArchive, writeHandoverArchive } from '../server/handover-archive.ts';
@@ -53,10 +54,10 @@ test('dated memory ZIP uses content dates, bounded summary evidence and selected
   const rows: Record<string, unknown[]> = {
     instructions: [selectedInstruction, instruction(before, 'SECRET_OLD_INSTRUCTION')],
     memory_facts: [selectedFact, legacyFact, excludedFact, fact(after, 'SECRET_LATER_FACT', after)],
-    memory_fact_history: [selectedFactRevision, { ...selectedFact, version: 1, contentUpdatedAt: before },
+    memory_fact_history: [selectedFactRevision, { ...selectedFact, version: 2, contentUpdatedAt: before },
       { ...excludedFact, version: 1, contentUpdatedAt: period.to, content: 'SECRET_ORPHAN_FACT_REVISION' }],
     memory_topics: [selectedTopic, excludedTopic],
-    memory_topic_history: [selectedTopicRevision, { ...selectedTopic, version: 1, updatedAt: after },
+    memory_topic_history: [selectedTopicRevision, { ...selectedTopic, version: 2, updatedAt: after },
       { ...excludedTopic, version: 1, updatedAt: period.from, note: 'SECRET_ORPHAN_TOPIC_REVISION' }],
     summary_history: [selectedSummary, summary(period.from, 'SECRET_CROSSING_BEFORE', { from: before, to: period.to }),
       summary(period.to, 'SECRET_CROSSING_AFTER', { from: period.from, to: after }),
@@ -144,24 +145,24 @@ test('dated profile, source and growth exports retain domain dates and only sele
   const selectedWrapper = retainedProfile(period.from, after, 'Retained original confirmation');
   const excludedWrapper = retainedProfile(before, period.from, 'SECRET_OLD_EVIDENCE_RECENT_IMPORT');
   const source = (id: string, createdAt: string, sourceDateText: string) => ({ id, childId, version: 3, createdAt, sourceDateText });
-  const sourceHistory = (inputId: string, changedAt: string, reason: string) => ({ inputId, childId, version: 2, changedAt, reason });
-  const attention = (id: string, updatedAt: string, note: string) => ({ item: { id, childId, version: 3, createdAt: before, updatedAt, note } });
+  const sourceHistory = (inputId: string, changedAt: string, reason: string, version = 2) => ({ inputId, childId, version, changedAt, reason });
+  const attention = (id: string, updatedAt: string, note: string, version = 3) => ({ item: { id, childId, version, createdAt: before, updatedAt, note } });
   const topic = (topicId: string, at: string, version = 3) => ({ topicId, version, at, disabled: false, actor: 'source-parent', request: null });
   const selectedProfile = profile(childId, period.from, 3, 'Selected profile');
   const nativeProfileHistory = profile(childId, period.to, 2, 'Selected native confirmation');
   const selectedSource = source(sourceId, period.from, 'Published 1999-01-01; this text is not the intake date');
   const selectedSourceHistory = sourceHistory(sourceId, period.to, 'Selected source management');
   const selectedAttention = attention(attentionId, period.to, 'Selected attention');
-  const selectedGrowthHistory = attention(attentionId, period.from, 'Selected attention history');
+  const selectedGrowthHistory = attention(attentionId, period.from, 'Selected attention history', 2);
   const selectedTopic = topic('solid_food', period.from), selectedTopicHistory = topic('solid_food', period.to, 2);
   const rows: Record<string, Record<string, unknown[]>> = {
     [childId]: {
       profile: [selectedProfile], profile_history: [nativeProfileHistory, selectedWrapper, excludedWrapper],
       private_sources: [selectedSource, source(excludedSource, before, '2026-11-01')],
-      private_source_history: [selectedSourceHistory, sourceHistory(sourceId, after, 'SECRET_LATER_SOURCE_HISTORY'),
+      private_source_history: [selectedSourceHistory, sourceHistory(sourceId, after, 'SECRET_LATER_SOURCE_HISTORY', 1),
         sourceHistory(excludedSource, period.from, 'SECRET_ORPHAN_SOURCE_HISTORY')],
       growth_attention: [selectedAttention, attention(excludedAttention, before, 'SECRET_OLD_ATTENTION')],
-      growth_history: [selectedGrowthHistory, attention(attentionId, after, 'SECRET_LATER_ATTENTION_HISTORY'),
+      growth_history: [selectedGrowthHistory, attention(attentionId, after, 'SECRET_LATER_ATTENTION_HISTORY', 1),
         attention(excludedAttention, period.from, 'SECRET_ORPHAN_ATTENTION_HISTORY')],
       growth_topics: [selectedTopic, topic('toddler_play', before)],
       growth_topic_history: [selectedTopicHistory, topic('solid_food', after, 1), topic('toddler_play', period.to, 2)],
@@ -451,4 +452,188 @@ test('account avatar backup writer pins normalized self images without reading a
     queries.length=0;await writePersonalHandoverPackage({...input,packageId:randomUUID(),selection:{childIds:[childId],modules:['care'],period:null}});
     assert.equal(queries.includes('self_avatar'),false);assert.equal(queries.includes('self_avatar_content'),false);
   }finally{await rm(directory,{recursive:true,force:true});}
+});
+
+test('resumable export deduplicates identical multi-page heads in ZIP entries and coverage while rejecting cross-page revision hash conflicts', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'handover-export-dedup-conflict-'));
+  const childId = randomUUID(), scopeVersion = 'b'.repeat(64);
+  const now = '2026-11-05T00:00:00.000Z';
+  const factId = randomUUID(), secondFactId = randomUUID(), historyId = randomUUID();
+  const makeFact = (id: string, version: number, content: string) => ({
+    id, childId, version, key: id, content,
+    source: { kind: 'manual', description: 'Synthetic fact' }, validUntil: null,
+    visibility: 'private', intendedVisibility: 'private', status: 'confirmed',
+    createdBy: 'owner', confirmedBy: 'owner', confirmedAt: now, reason: '',
+    applicable: true, sourceState: 'current', createdAt: now, contentUpdatedAt: now,
+  });
+  try {
+    // 1. D01 + multi-version history: identical re-sent head on page 2 deduplicates actual ZIP entries and coverage,
+    // while legitimate v1 and v2 on separate history pages are both preserved.
+    const dupFact = makeFact(factId, 1, 'Fact A');
+    const secondFact = makeFact(secondFactId, 1, 'Fact B');
+    const histV1 = makeFact(historyId, 1, 'History v1');
+    const histV2 = makeFact(historyId, 2, 'History v2');
+    const exporterDedup = {
+      async page(_owner: string, query: { section: string; cursor?: string }) {
+        if (query.section === 'children') {
+          return { section: 'children', scopeVersion, complete: true, nextCursor: null, notices: [], items: [{ id: childId, displayName: 'Child' }] };
+        }
+        if (query.section === 'memory_facts') {
+          if (!query.cursor) return { section: 'memory_facts', scopeVersion, complete: false, nextCursor: 'p2', notices: [], items: [dupFact] };
+          return { section: 'memory_facts', scopeVersion, complete: true, nextCursor: null, notices: [], items: [dupFact, secondFact] };
+        }
+        if (query.section === 'memory_fact_history') {
+          if (!query.cursor) return { section: 'memory_fact_history', scopeVersion, complete: false, nextCursor: 'h2', notices: [], items: [histV1] };
+          return { section: 'memory_fact_history', scopeVersion, complete: true, nextCursor: null, notices: [], items: [histV1, histV2] };
+        }
+        return { section: query.section, scopeVersion, complete: true, nextCursor: null, notices: [], items: [] };
+      },
+    };
+    const written = await writePersonalHandoverPackage({
+      directory, exporter: exporterDedup, ownerUserId: 'owner', serverId: 'https://example.test',
+      packageId: randomUUID(), createdAt: now, purpose: 'handover',
+      selection: { childIds: [childId], modules: ['memory'], period: null },
+    });
+    const opened = await openHandoverImport({ path: written.path });
+    try {
+      assert.equal(opened.manifest.coverage.find(c => c.section === 'memory_facts')?.items, 2);
+      assert.equal(opened.manifest.coverage.find(c => c.section === 'memory_fact_history')?.items, 2);
+      const imported = await opened.readPage({
+        selection: { childIds: [childId], modules: ['memory'] },
+        acknowledgedManifestSha256: opened.manifestSha256,
+        limit: 100,
+      });
+      assert.deepEqual(
+        imported.rows.filter(r => r.section === 'memory_facts').map((r: any) => r.value.id),
+        [factId, secondFactId],
+      );
+      assert.deepEqual(
+        imported.rows.filter(r => r.section === 'memory_fact_history').map((r: any) => [r.value.id, r.value.version]),
+        [[historyId, 1], [historyId, 2]],
+      );
+    } finally { await opened.close(); }
+
+    // 2. D02: same (section, id, version=1) on page 2 with altered content must fail closed (export_scope_changed).
+    const exporterConflict = {
+      async page(_owner: string, query: { section: string; cursor?: string }) {
+        if (query.section === 'children') {
+          return { section: 'children', scopeVersion, complete: true, nextCursor: null, notices: [], items: [{ id: childId, displayName: 'Child' }] };
+        }
+        if (query.section === 'memory_fact_history') {
+          if (!query.cursor) return { section: 'memory_fact_history', scopeVersion, complete: false, nextCursor: 'h2', notices: [], items: [makeFact(historyId, 1, 'Original v1')] };
+          return { section: 'memory_fact_history', scopeVersion, complete: true, nextCursor: null, notices: [], items: [makeFact(historyId, 1, 'Tampered v1')] };
+        }
+        return { section: query.section, scopeVersion, complete: true, nextCursor: null, notices: [], items: [] };
+      },
+    };
+    await assert.rejects(
+      writePersonalHandoverPackage({
+        directory, exporter: exporterConflict, ownerUserId: 'owner', serverId: 'https://example.test',
+        packageId: randomUUID(), createdAt: now, purpose: 'handover',
+        selection: { childIds: [childId], modules: ['memory'], period: null },
+      }),
+      { code: 'export_scope_changed' },
+    );
+
+    // 3. D02 (without top-level `id`): growth_topic_history uses topicId+version instead of page offset,
+    // so cross-page conflicting v1 fails closed while v1+v2 passes with duplicate v1 deduplicated.
+    const exporterTopicConflict = {
+      async page(_owner: string, query: { section: string; cursor?: string }) {
+        if (query.section === 'children') {
+          return { section: 'children', scopeVersion, complete: true, nextCursor: null, notices: [], items: [{ id: childId, displayName: 'Child' }] };
+        }
+        if (query.section === 'growth_topic_history') {
+          if (!query.cursor) {
+            return { section: 'growth_topic_history', scopeVersion, complete: false, nextCursor: 't2', notices: [], items: [{ topicId: 'solid_food', version: 1, at: now, disabled: false, actor: 'owner', request: null }] };
+          }
+          return { section: 'growth_topic_history', scopeVersion, complete: true, nextCursor: null, notices: [], items: [{ topicId: 'solid_food', version: 1, at: now, disabled: true, actor: 'owner', request: null }] };
+        }
+        return { section: query.section, scopeVersion, complete: true, nextCursor: null, notices: [], items: [] };
+      },
+    };
+    await assert.rejects(
+      writePersonalHandoverPackage({
+        directory, exporter: exporterTopicConflict, ownerUserId: 'owner', serverId: 'https://example.test',
+        packageId: randomUUID(), createdAt: now, purpose: 'handover',
+        selection: { childIds: [childId], modules: ['growth'], period: null },
+      }),
+      { code: 'export_scope_changed' },
+    );
+
+    // 4. D03: task_history revision identity is (task.id, task.version), never mutable `at`:
+    // identical (id, v1, at) deduplicates, changed `at` or changed content rejects export_scope_changed,
+    // while genuine v1 + v2 revisions are both retained.
+    const taskId = randomUUID();
+    const tAt1 = '2026-11-05T01:00:00.000Z';
+    const tAt2 = '2026-11-05T02:00:00.000Z';
+    const makeTaskRev = (version: number, at: string, title: string) => firestoreTaskRevisionSchema.parse({
+      at,
+      action: 'create',
+      basisVersion: 1,
+      note: '',
+      actorUserId: 'owner',
+      task: {
+        id: taskId, childId, version, title, details: '', kind: 'ordinary',
+        assigneeUserId: 'owner', createdBy: 'owner', createdAt: now, updatedAt: now,
+        occurrence: { id: randomUUID(), dueAt: now, timeZone: 'Asia/Hong_Kong', state: 'scheduled', terminalBasisVersion: null },
+      },
+    });
+    const rev1 = makeTaskRev(1, tAt1, 'Task v1');
+    const rev2 = makeTaskRev(2, tAt2, 'Task v2');
+
+    const exporterTaskDedup = {
+      async page(_owner: string, query: { section: string; cursor?: string }) {
+        if (query.section === 'children') {
+          return { section: 'children', scopeVersion, complete: true, nextCursor: null, notices: [], items: [{ id: childId, displayName: 'Child' }] };
+        }
+        if (query.section === 'task_history') {
+          if (!query.cursor) return { section: 'task_history', scopeVersion, complete: false, nextCursor: 'th2', notices: [], items: [rev1] };
+          return { section: 'task_history', scopeVersion, complete: true, nextCursor: null, notices: [], items: [rev1, rev2] };
+        }
+        return { section: query.section, scopeVersion, complete: true, nextCursor: null, notices: [], items: [] };
+      },
+    };
+    const taskDedupArchive = await writePersonalHandoverPackage({
+      directory, exporter: exporterTaskDedup, ownerUserId: 'owner', serverId: 'https://example.test',
+      packageId: randomUUID(), createdAt: now, purpose: 'handover',
+      selection: { childIds: [childId], modules: ['tasks'], period: null },
+    });
+    const taskOpened = await openHandoverImport({ path: taskDedupArchive.path });
+    try {
+      assert.equal(taskOpened.manifest.coverage.find(c => c.section === 'task_history')?.items, 2);
+      const rows = (await taskOpened.readPage({
+        selection: { childIds: [childId], modules: ['tasks'] },
+        acknowledgedManifestSha256: taskOpened.manifestSha256,
+        limit: 100,
+      })).rows.filter(r => r.section === 'task_history');
+      assert.deepEqual(rows.map((r: any) => r.value.task.version), [1, 2]);
+    } finally { await taskOpened.close(); }
+
+    for (const mutatedPage2 of [
+      makeTaskRev(1, tAt2, 'Task v1'),
+      makeTaskRev(1, tAt2, 'Tampered Task v1'),
+    ]) {
+      await assert.rejects(
+        writePersonalHandoverPackage({
+          directory,
+          exporter: {
+            async page(_owner: string, query: { section: string; cursor?: string }) {
+              if (query.section === 'children') {
+                return { section: 'children', scopeVersion, complete: true, nextCursor: null, notices: [], items: [{ id: childId, displayName: 'Child' }] };
+              }
+              if (query.section === 'task_history') {
+                if (!query.cursor) return { section: 'task_history', scopeVersion, complete: false, nextCursor: 'th2', notices: [], items: [rev1] };
+                return { section: 'task_history', scopeVersion, complete: true, nextCursor: null, notices: [], items: [mutatedPage2] };
+              }
+              return { section: query.section, scopeVersion, complete: true, nextCursor: null, notices: [], items: [] };
+            },
+          },
+          ownerUserId: 'owner', serverId: 'https://example.test',
+          packageId: randomUUID(), createdAt: now, purpose: 'handover',
+          selection: { childIds: [childId], modules: ['tasks'], period: null },
+        }),
+        { code: 'export_scope_changed' },
+      );
+    }
+  } finally { await rm(directory, { recursive: true, force: true }); }
 });
