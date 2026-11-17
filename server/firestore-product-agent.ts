@@ -1,3 +1,11 @@
+import {
+  AGENT_HIGH_WATERMARK_SCOPE,
+  agentHighWatermarkDocSchema,
+  createHighWatermarkMonitor,
+  mergeHighWatermarkSamples,
+  type HighWatermarkAlert,
+  type HighWatermarkPersistenceErrorInfo,
+} from './agent-high-watermark.ts';
 import { createChatFileAgentReader } from './chat-file-agent.ts';
 import { createMixedTaskBatches } from './firestore-mixed-task-batches.ts';
 import { createFirestoreVoiceTranscripts } from './firestore-voice-transcripts.ts';
@@ -38,7 +46,7 @@ import { createAgentRuntime, type AgentRunResult } from './agent-runtime.ts';
 import { claimedRunAssembly } from './agent-run-assembly.ts';
 import { createProductAgent } from './product-agent.ts';
 import { createKnowledgeRetriever } from './knowledge-retriever.ts';
-import { AgentStopped } from './agent-budget.ts';
+import { AgentStopped, type AgentPolicyTransition, type AgentSoftBudgetProfileRole } from './agent-budget.ts';
 import { domainReject } from './firestore-domain-data.ts';
 import type { AgentModelProvider } from './agent-model-gateway.ts';
 import type { FamilyDocumentStore } from './family-document-store.ts';
@@ -66,6 +74,8 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   platformProvider?: AgentModelProvider;
   /** Trusted local credential adapter; all normal routing, budgets and business services still apply. */
   platformProviders?: import('./firestore-model-routing.ts').PlatformProviderFactory;
+  onHighWatermarkAlert?: (alert: HighWatermarkAlert) => void | Promise<void>;
+  onHighWatermarkPersistenceError?: (info: HighWatermarkPersistenceErrorInfo) => void | Promise<void>;
   /** Trusted work policy only. Existing per-dispatch limits never supply missing cumulative grants. */
   summaryWorkPolicy?: SummaryWorkPolicyPort;
   diagnostics?: (event: AgentDiagnostic) => void | Promise<void>;
@@ -86,11 +96,47 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const nativeSessionService = new FirestoreSessionService({ ...options, namespace: options.namespace + '_adk' });
   const rootBudget = new FirestoreRootBudget({ ...options, namespace: options.namespace + '_root_budget' });
   const admission = createFirestoreAgentAdmission(options);
+  const hwmData = new FirestoreDomainData(options);
+  const highWatermarkMonitor = createHighWatermarkMonitor({
+    async loadWindow(category) {
+      return await options.database.runTransaction(async tx => {
+        const row = await tx.get(hwmData.ref('agent_metrics', 'agent-high-watermark', category));
+        if (!row.exists) return [];
+        return hwmData.open('agent-high-watermark', category, AGENT_HIGH_WATERMARK_SCOPE, agentHighWatermarkDocSchema, row).samples;
+      }, { readOnly: true });
+    },
+    async appendDurableSample(sample, windowSize) {
+      return await options.database.runTransaction(async tx => {
+        const ref = hwmData.ref('agent_metrics', 'agent-high-watermark', sample.runCategory);
+        const row = await tx.get(ref);
+        const existing = row.exists
+          ? hwmData.open('agent-high-watermark', sample.runCategory, AGENT_HIGH_WATERMARK_SCOPE, agentHighWatermarkDocSchema, row).samples
+          : [];
+        const updated = mergeHighWatermarkSamples(existing, sample, windowSize);
+        tx.set(ref, hwmData.seal('agent-high-watermark', sample.runCategory, AGENT_HIGH_WATERMARK_SCOPE, agentHighWatermarkDocSchema, { samples: updated }));
+        return updated;
+      });
+    },
+    async onPersistenceError(info) {
+      console.warn(JSON.stringify({ event: 'agent_high_watermark_persistence_error', category: info.category, stage: info.stage }));
+      await options.onHighWatermarkPersistenceError?.(info);
+    },
+  });
   const runtime: ReturnType<typeof createAgentRuntime> = {
     async run(input): Promise<AgentRunResult> {
       let instance: ReturnType<typeof createAgentRuntime>, authorize: () => Promise<boolean>;
+      let policySync: {
+        readPolicyTransition?: () => Promise<AgentPolicyTransition | null>;
+        roleSoftBudgetRatios?: Partial<Record<AgentSoftBudgetProfileRole, number>>;
+        softBudgetSource?: 'personal' | 'administrator' | 'system_default';
+      } = {};
       try {
         const selected = await routing.resolve(input.scope.userId, input.trigger.kind);
+        policySync = {
+          readPolicyTransition: selected.readPolicyTransition,
+          roleSoftBudgetRatios: selected.roleSoftBudgetRatios,
+          softBudgetSource: selected.softBudgetSource,
+        };
         const limits = ['memory-refresh', 'voice-transcription'].includes(input.recipeId) ? { ...selected.runLimits, modelCalls: Math.min(1, selected.runLimits.modelCalls) } : selected.runLimits;
         const provider = selected.billingSource === 'platform' ? options.platformProvider ?? selected.provider : selected.provider;
         // Selection is immutable within this root. Changing settings invalidates its authorization.
@@ -100,7 +146,9 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
             billingSource: selected.billingSource, runLimits: limits } }, undefined, true, true, true);
         instance = createAgentRuntime({ config: selected.config, usage: requireDurableUsage, provider,
           chatDeliveryReviewModelCalls: selected.config.chatDeliveryReviewModelCalls,
-          nativeSessionService, bindDurableRun: durable.bindDurableRun, boundRunLimits: limits,          admission, embeddings: selected.embeddings, diagnostics: event => {
+          highWatermarkMonitor, onHighWatermarkAlert: options.onHighWatermarkAlert,
+          softBudgetSource: policySync.softBudgetSource,
+          nativeSessionService, bindDurableRun: durable.bindDurableRun, boundRunLimits: limits, admission, embeddings: selected.embeddings, diagnostics: event => {
             // The observer builds a fixed metadata allowlist; no arguments, content or errors are logged.
             if (event.phase === 'tool_rejection' || event.phase === 'model_error' || event.phase === 'tool_error')
               console.warn(JSON.stringify({ event: 'agent_diagnostic', ...event }));
@@ -111,7 +159,13 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
         return { runId: input.runId!, status: 'stopped', stopReason: error instanceof AgentStopped ? error.reason : 'unavailable',
           text: null, tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 } };
       }
-      return instance.run({ ...input, authorize });
+      return instance.run({
+        readPolicyTransition: policySync.readPolicyTransition,
+        roleSoftBudgetRatios: policySync.roleSoftBudgetRatios,
+        softBudgetSource: policySync.softBudgetSource,
+        ...input,
+        authorize,
+      });
     },
   };
   const knowledge = createKnowledgeRetriever(options.knowledge ?? { async candidates() { domainReject('knowledge_not_ready', 503); } },
@@ -273,5 +327,5 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
       async b => (await summaryWork.readEntryGate(b)).kind !== 'blocked') });
   const summarySessions = { prepareContentErasure: nativeSessionService.prepareContentErasure.bind(nativeSessionService) };
   return { ...services, routing, runtime, agent, mixedTaskBatches, voiceTranscripts, transcribeVoice, summaryWork, maintainSummaryPart, summarySessions,
-    maintainSummary, summaryScan };
+    maintainSummary, summaryScan, highWatermarkMonitor };
 }

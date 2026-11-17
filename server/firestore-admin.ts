@@ -24,6 +24,7 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions, config: Ai
     dailyUserAttempts: config.dailyUserAttempts, dailyGlobalAttempts: config.dailyGlobalAttempts,
     personalDailyGlobalAttempts: config.personalDailyGlobalAttempts ?? 1000,
     maxRunSeconds: AGENT_RUN_LIMITS.deadlineSeconds.default, modelRequestSeconds: AGENT_RUN_LIMITS.modelRequestSeconds.default, maxModelRetries: AGENT_RUN_LIMITS.modelRetries.default,
+    softBudgetRatio: 0.25,
     maxModelCalls: PLATFORM_AGENT_RUN_LIMITS.modelCalls, maxQueryEmbeddings: PLATFORM_AGENT_RUN_LIMITS.queryEmbeddings, version: 0, updatedAt: null }, 'admin_configuration', 500);
   const readPolicyIn = async (tx: import('@google-cloud/firestore').Transaction) => {
     const row = await tx.get(policyRef);

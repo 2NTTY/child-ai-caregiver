@@ -1221,9 +1221,11 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 
 **CLASS01 解散接線（已實作及合成核對，未部署）：**班級沿既有 `dissolve` 指令及確認，附屬班級另帶 `expectedTeacherVersion`，核目前有效管理員及兩邊版本。交易關閉班級及其 workspace，保存原操作與持久清理請求；回 `exit.cleanupState=pending`，不能解讀為實體資料已全部刪除。既有背景工作先寫入並核實獨立 `class-delete` 日誌，再分頁清理班級資料、修訂及附件；原 `GET operations/:operationId` 回目前 `pending／completed`。清理不刪個人登入／裝置會話或別人的私人原件；已刪班級的舊收據只留身份與效果，不能重做或讀回正文。家庭／教師空間原回應不增加清理欄位。未設清理服務的組裝仍拒絕班級解散，不能假成功。
 
-**班級待辦背景身份（接線中，未部署）：**沿既有 `assigneeUserId` 及共用待辦表單；目前單人指派入口在班級回傳操作者「本人」，不把 `space:<classId>` 當負責人。建立／改期核目前可寫成員；他人仍可按班級權限完成／取消同一事項，這不改變負責人。worker 由已保存任務取得真帳號，領取／完成／派送前沿同一共享服務重核目前成員與指派關係；退出後重新加入不復活舊指派授權。偏好使用負責人的目前安靜時段。原生成員證據不進公開 DTO；既有個人／家庭契約不變。
+**班級待辦背景身份（接線中，未部署）：**沿既有 `assigneeUserId` 及共用待辦表單；班級清單回傳 `classAssigneeSpaceId`，沿既有分頁成員接口選擇本人或另一位 owner／caregiver。建立及改期在同一交易讀取負責人的有效會籍，保留原操作者；他人仍可按班級權限完成／取消同一事項，這不改變負責人。worker 由已保存任務取得真帳號，領取／完成／派送前沿同一共享服務重核目前成員與指派關係；退出後重新加入不復活舊指派授權。排程遇到已失效的會籍，會在交易內核實原任務版本及目前會籍，將舊提醒移出待派送佇列。偏好使用負責人的目前安靜時段。原生成員證據不進公開 DTO；既有個人／家庭契約不變。
 
-本段只交付確定性到期核對、提醒及待投遞意圖，沒有以提醒收據宣稱渠道接受；班級 Agent、外部投遞與其他成員選擇仍須接續，相關 D 接口未接前不建立注定以虛構帳號失敗的 Agent 工作，也不借管理員 key。舊班級待辦若仍以儲存身份作負責人，保留可讀，須經正常改期明確指定目前本人才能執行，不自動搬移授權。
+班級手機提醒按裝置訂閱。本人在已登記裝置選擇接收後，往後指派給本人的班級待辦到期即可送往該機。每包裝置沿用自己的會話、偏好與安靜時段；撤權、改期、完成或關閉便停止待送通知。手機鎖屏只顯示通用提示，開啟後再核對老師與目標班級和待辦。每部裝置各有一筆投遞收據。舊班級待辦若以儲存身份為負責人，須明確改期及指派給目前合資格成員。班級 Agent 仍由相關工作包承接。
+
+已支援的客戶端以 `x-push-features: class-tasks` 協商現有裝置 presence 接口的選填欄位 `classTaskNotificationsEnabled`。Web 更新設定需提供原訂閱證明；手機設定綁定原生會話。聊天通知和班級待辦開關各自生效。
 
 以上讀寫均核已登入身份及 `x-expected-user-id`，寫入沿既有 Web 同源／原生 transport；回應前再核身份並 `no-store`。家庭管理不依賴已選孩子，退出頁面不丟失同一身份的未知操作；切身份後清理本機草稿、token 與遲到結果。共享原件選擇不自動切換私人聊天或擴大目前頁面的資料範圍。
 
@@ -1235,11 +1237,11 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 
 文件選擇沿相同 `spaceId`，保留既有 documents 路由、`opId`、版本及 `authorityVersion`；共享 authorityVersion 同時綁空間／成員／分享 basis。documents 授權已保存快照及其中摘錄，並非所有原始來源的讀權。共享新增 JSON 可帶 `expectedBasis`，共用頁面將選擇時 basis 與原 opId 固定保存並送到交易核對；填表期間範圍變更回 `sharing_scope_changed`，不採新範圍取材。舊不帶 basis 呼叫保持相容，更新／PDF 仍用原 authorityVersion。建立／刷新以已共享來源模組取材，未知或未選資料不補造；固定版讀取及 PDF 仍核引用的目前有效性。未選來源模組的內部核對只可復用已保存且仍相符的摘錄，不把未披露新版提供給 patch／刷新重新綁定。共享背景整理須保留原操作者及取材授權，不切成 owner 身份擴大取材。
 
-附件讀取沿既有 photos／voices／files 的 GET 路徑，明確以單一 `spaceId` 選擇 attachments 模組；同源身份及預期用戶 header 照常核對。不接受用戶指定資料擁有人。檔案／錄音清單只含已連結訊息且 ready 的項目；照片只回已完成上傳的原檔。共享 DTO 帶 `sharedSpaceId`，file／voice／轉錄的私人 `messageId` 為 null；轉錄儲存仍保留原始訊息綁定。照片標示 shared，canManage 依目前角色表示可刪除；隱去私人抽取草稿、run ID 及原記錄關聯。附件共享不授予讀取來源聊天。
+附件讀取沿既有 photos／voices／files 的 GET 路徑，明確以單一 `spaceId` 選擇 attachments 模組；同源身份及預期用戶 header 照常核對。不接受用戶指定資料擁有人。檔案／錄音清單列出已連結訊息或直接在附件庫保存的 ready 原件；選取 includeImported 時也包含已發布的匯入原件。照片只回已完成上傳的原檔。共享 DTO 帶 `sharedSpaceId`，file／voice／轉錄的私人 `messageId` 為 null；轉錄儲存仍保留原始訊息綁定。照片標示 shared，canManage 依目前角色表示可刪除；隱去私人抽取草稿、run ID 及原記錄關聯。附件共享不授予讀取來源聊天。
 
 共用附件頁面已接這些 client；媒體元件在共享模式須顯式取得共享 API，並核空間、孩子、ID、版本、hash 及 null 訊息綁定，不能退回原 owner 的私人 API。共享上載／提取／聊天重用未接時不提供可執行入口。文件／錄音刪除回覆遺失後，先以 `GET /api/online/operations/:opId` 核對同一操作及路徑；confirmed 的受理收據不當日誌完成。已有受理證據才接續原刪除端點；unconfirmed 由使用者明確重試原 opId，無新 ID 或自動循環。恢復原操作不被自己的頁面 pending 鎖擋住，仍重核目前身份／權限；清單刷新不清掉待查操作。
 
-共享游標及原檔讀取前後同時綁操作者、來源、孩子、儲存世代及共享 basis；撤權、換模組或撤權後重新授權均不能承接舊讀取。Cloud Storage 原物件及應用層加密保持，無額外副本或公開 URL。三種共用 client 的第四個可選參數接 `SharedSelection`，Web／Android 沿同一 transport；舊未選空間的 DTO／游標仍可讀。文件／錄音可沿原 `/delete?spaceId=…` POST，仍帶原 `expectedVersion`／`opId`；Server 核當前 write 角色及已提交原件，viewer／未連結草稿不得刪除。受理收據只含原件 ID／action／accepted，歸操作者，不代表 journal 已完成；只有 journal 核實後才回 `deleted:true`，物件清理狀態另列。原操作重試不換 ID，不同操作者不能認領他人的刪除。共享日誌使用操作者＋原 opId 的穩定來源操作 ID，避免不同成員在來源 owner 的日誌空間撞鍵；對外及收據仍保留原 opId。共享照片刪除沿既有 online context／submit，帶 `sharing.spaceId`／`expectedBasis`、`expectedVersion`／`confirmDelete` 及原 `opId`。當前角色／版本、來源配額及已綁定的照片記錄一併核對；受理後建立原清理工作，日誌未核實時查回仍為 unconfirmed，不能顯示刪除成功。完成後沿舊 `{deleted:true,cleanupPending:true}` 結果；其他共享 POST／online 附件寫入仍回 `shared_attachment_write_unavailable`，不靜默改成本人操作。新增、Agent 重用及家庭畫面由 FAMILY-A／B 接續。共享照片分頁可有空中間頁，但游標必須前進且查詢有界。
+共享游標及原檔讀取前後同時綁操作者、來源、孩子、儲存世代及共享 basis；撤權、換模組或撤權後重新授權均不能承接舊讀取。Cloud Storage 原物件及應用層加密保持，無額外副本或公開 URL。三種共用 client 的第四個可選參數接 `SharedSelection`，Web／Android 沿同一 transport；舊未選空間的 DTO／游標仍可讀。文件／錄音可沿原 `/delete?spaceId=…` POST，仍帶原 `expectedVersion`／`opId`；Server 核當前 write 角色及已提交原件，viewer／未連結草稿不得刪除。受理收據只含原件 ID／action／accepted，歸操作者，不代表 journal 已完成；只有 journal 核實後才回 `deleted:true`，物件清理狀態另列。原操作重試不換 ID，不同操作者不能認領他人的刪除。共享日誌使用操作者＋原 opId 的穩定來源操作 ID，避免不同成員在來源 owner 的日誌空間撞鍵；對外及收據仍保留原 opId。共享照片刪除沿既有 online context／submit，帶 `sharing.spaceId`／`expectedBasis`、`expectedVersion`／`confirmDelete` 及原 `opId`。當前角色／版本、來源配額及已綁定的照片記錄一併核對；受理後建立原清理工作，日誌未核實時查回仍為 unconfirmed，不能顯示刪除成功。完成後沿舊 `{deleted:true,cleanupPending:true}` 結果；家庭附件庫可直接提交原件。沿 photos／voices／files 的集合 POST 預留，帶 `opId`、`?spaceId` 及 `X-Library-Access-Basis`（所選孩子 basis 的 JSON）；對原 ID 的 `POST content` 上載、`POST resolve` 查回沿用同一選擇。owner／caregiver 可提交，viewer 可讀取 ready 原件。Server 在預留與保存時重新核對授權，把實際提交人與原資料歸屬分開記錄；過期預留沿既有清理。此流程不產生聊天或模型工作。共享照片分頁可有空中間頁，但游標必須前進且查詢有界。
 
 同一交易核對操作者及來源，保留原資源 ID／儲存位置，作者／確認者記實際操作者；原擁有人收到領域變更，操作者收到不含別人私人資料的共享變更。收據仍屬操作者，保存來源內容指標；重試及查回沿目前共享權限／刪除屏障讀取，撤權後保留成功身份而遮蔽結果。共享交易不可讀寫來源擁有人的私人工作、聊天或帳戶設定。家庭入口及其餘模組未接通前，不宣稱整包完成。
 

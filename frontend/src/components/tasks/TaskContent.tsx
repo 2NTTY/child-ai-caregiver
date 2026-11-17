@@ -20,19 +20,19 @@ function TaskMetadata({ icon, label, value }: { icon: AppIconName; label: string
     <AppIcon name={icon} size={14} /><Text style={styles.meta}>{value}</Text>
   </View>;
 }
-export function TaskSnapshot({ task, assignees, showTitle = true, announceEligibility = false, compact = false, motion }: { task: TaskView; assignees: TaskAssigneeView[]; showTitle?: boolean; announceEligibility?: boolean; compact?: boolean; motion?: {scopeKey: string; triggerKey: string | number | null; eligible: boolean} }) {
-  const eligible = assignees.some(item => item.userId === task.assigneeUserId);
+export function TaskSnapshot({ task, assignees, rosterState, showTitle = true, announceEligibility = false, compact = false, motion }: { task: TaskView; assignees: TaskAssigneeView[]; rosterState?: TasksViewModel["classAssignees"]; showTitle?: boolean; announceEligibility?: boolean; compact?: boolean; motion?: {scopeKey: string; triggerKey: string | number | null; eligible: boolean} }) {
+  const missing = (!rosterState || rosterState === "ready") && !assignees.some(item => item.userId === task.assigneeUserId);
   const due = DateTime.fromISO(task.occurrence.dueAt, { setZone: true }).setZone(task.occurrence.timeZone);
   const dueLabel = due.isValid ? due.toFormat("yyyy年M月d日 HH:mm") : "時間待核對";
   const arrangement = {assignee: taskAssigneeLabel(task.assigneeUserId, assignees), dueAt: dueLabel};
   const status = <View style={styles.statusLine}><TaskMetadata icon={task.kind === "ordinary" ? "clipboard-check-outline" : "calendar-clock-outline"} label="種類" value={task.kind === "ordinary" ? "待辦事項" : "預約"} />{!compact ? <Text style={styles.meta}>版本 {task.version}</Text> : null}<AppStatusBadge label={taskStateLabels[task.occurrence.state]} tone={task.occurrence.state === "needs_review" ? "warning" : task.occurrence.state === "completed" ? "success" : task.occurrence.state === "cancelled" ? "neutral" : "info"} /></View>;
-  const eligibilityWarning = !eligible ? <Text style={styles.warning}>{task.occurrence.state === "scheduled" ? "原負責人已不具執行資格，請重新指派；不能視為仍可聯絡。" : "這是歷史指派，不代表現時有權執行或可聯絡。"}</Text> : null;
+  const eligibilityWarning = missing ? <Text style={styles.warning}>{task.occurrence.state === "scheduled" ? "原負責人已不具執行資格，請重新指派；不能視為仍可聯絡。" : "這是歷史指派，不代表現時有權執行或可聯絡。"}</Text> : null;
   const arrangementContent = (shown: typeof arrangement) => <>
     <TaskMetadata icon="account-outline" label="負責人" value={shown.assignee} />
     <TaskMetadata icon="calendar-clock-outline" label={task.kind === "appointment" ? "預約時間" : "預定完成"} value={`${task.kind === "appointment" ? "預約" : "預定完成"} ${shown.dueAt}`} />
   </>;
   return <View style={styles.stack}>
-    {announceEligibility ? <StatusAnnouncement key={task.id} eventKey={`${eligible}:${task.occurrence.state}`} message={!eligible && task.occurrence.state === "scheduled" ? "原負責人已不具執行資格，請重新指派；不能視為仍可聯絡。" : ""} urgent={!eligible && task.occurrence.state === "scheduled"} /> : null}
+    {announceEligibility ? <StatusAnnouncement key={task.id} eventKey={`${missing}:${task.occurrence.state}`} message={missing && task.occurrence.state === "scheduled" ? "原負責人已不具執行資格，請重新指派；不能視為仍可聯絡。" : ""} urgent={missing && task.occurrence.state === "scheduled"} /> : null}
     {showTitle ? <Text style={styles.title}>{task.title}</Text> : null}
     {task.details ? <Text style={styles.reading}>{task.details}</Text> : null}
     <View style={styles.related}>

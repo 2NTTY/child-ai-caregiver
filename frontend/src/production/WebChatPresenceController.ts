@@ -38,7 +38,7 @@ export class WebChatPresenceController {
     this.value = value; return value;
   }
   read() { return this.serialize(() => this.load()); }
-  private async write(enabled?: boolean, preview?: boolean, subscription?: WebPushSubscription) {
+  private async write(enabled?: boolean, preview?: boolean, subscription?: WebPushSubscription, classTasks?: boolean) {
     const binding = this.binding, revision = this.bindingRevision;
     if (!binding) throw new WebPushApiError(409);
     const value = this.value ?? await this.load();
@@ -48,6 +48,7 @@ export class WebChatPresenceController {
       const next = await this.api.updateChatPresence({ bindingId: binding.id, expectedBindingVersion: binding.version,
         expectedPresenceVersion: value.presenceVersion, childId: this.childId,
         ...(enabled === undefined ? {} : { chatNotificationsEnabled: enabled }),
+        ...(classTasks === undefined ? {} : { classTaskNotificationsEnabled: classTasks }),
         ...(preview === undefined ? {} : { chatPreviewEnabled: preview }), ...(subscription ? { subscription } : {}) }, this.abort.signal, this.userId);
       if (!this.live() || revision !== this.bindingRevision || next.bindingId !== binding.id) throw new WebPushApiError(409, "session_changed");
       this.value = next; return next;
@@ -60,6 +61,7 @@ export class WebChatPresenceController {
   setEnabled(enabled: boolean, preview: boolean | undefined, subscription: WebPushSubscription) {
     return this.serialize(() => this.write(enabled, preview, subscription));
   }
+  setClassTasksEnabled(enabled: boolean, subscription: WebPushSubscription) { return this.serialize(() => this.write(undefined, undefined, subscription, enabled)); }
   setPreviewEnabled(enabled: boolean, subscription: WebPushSubscription) { return this.serialize(() => this.write(undefined, enabled, subscription)); }
   foreground(childId: string | null) {
     this.childId = childId; const revision = ++this.revision;

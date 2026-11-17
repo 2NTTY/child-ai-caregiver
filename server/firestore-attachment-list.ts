@@ -23,7 +23,7 @@ const same = (a: unknown, b: unknown) => firestoreDomainHash(a) === firestoreDom
 const changed = (): never => domainReject('attachment_scope_changed', 409);
 
 /** Only the two existing private media stores use this bounded metadata reader. No object or model calls. */
-export function createPrivateAttachmentList<Row extends { id: string; createdAt: string; state: string; messageId: string | null; importedFrom?: unknown }, Item>(options: {
+export function createPrivateAttachmentList<Row extends { id: string; createdAt: string; state: string; messageId: string | null; importedFrom?: unknown; libraryOrigin?: unknown }, Item>(options: {
   data: FirestoreDomainData; authority: Pick<FirestoreAuthority, 'runTransaction'>; source: Source;
   policy?: AttachmentListPolicy; scopeTag(scope: WorkRecoveryScope): string;
   open(snapshot: DocumentSnapshot, scope: WorkRecoveryScope, id: string): Row; view(row: Row, binding: FirestoreAuthorityTransaction): Item;
@@ -68,7 +68,7 @@ export function createPrivateAttachmentList<Row extends { id: string; createdAt:
         if (row.state !== 'ready' || doc.get('state') !== row.state || doc.get('createdAt') !== row.createdAt || doc.get('assetId') !== row.id)
           domainReject('attachment_list_integrity', 503);
         scanned++; after = { createdAt: row.createdAt, id: row.id };
-        if (row.messageId !== null || queryInput.includeImported && row.importedFrom) items.push(options.view(row, b));
+        if (row.messageId !== null || row.libraryOrigin || queryInput.includeImported && row.importedFrom) items.push(options.view(row, b));
       }
       const complete = snapshot.docs.length <= scanned;
       const nextCursor = complete ? null : encode({ version: 1, sourceVersion: SOURCE_VERSION, source, sort: SORT,

@@ -1,5 +1,5 @@
 /// <reference lib="es2024.string" />
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import type { DocumentSnapshot, Firestore, Transaction } from '@google-cloud/firestore';
 import { z } from 'zod';
 import type { StorageCipher } from './storage-crypto.ts';
@@ -24,7 +24,8 @@ const recordSchema = z.union([
     inputTokens: integer.nullable(), billableCharacters: integer.nullable(), durationMs: integer }).strict(),
 ]);
 const attemptSchema = z.object({ request: requestSchema, billingSource: sourceSchema, day: daySchema,
-  reservedAtMs: integer, record: recordSchema.nullable() }).strict().refine(value => value.record === null
+  reservedAtMs: integer, record: recordSchema.nullable(), preparedFingerprint: fingerprint.optional(), preparationTokenHash: fingerprint.optional() }).strict()
+  .refine(value => value.preparedFingerprint === undefined || (value.request.kind ?? 'model') === 'model').refine(value => value.record === null
     || (value.request.kind ?? 'model') === (value.record.kind ?? 'model'));
 const counterSchema = z.object({ attempts: integer, inputTokens: integer, outputTokens: integer, cachedTokens: integer, known: integer }).strict();
 export const firestoreUsageRecoverySchemas = { attempt: attemptSchema, counter: counterSchema };
@@ -37,7 +38,7 @@ function parse<T>(schema: z.ZodType<T>, value: unknown, code: string): T {
   const result = schema.safeParse(value); if (!result.success) reject(code); return result.data;
 }
 function receipt(state: SavedAttempt): DurableAiUsageReceipt {
-  return { ...(state.request.kind ? { kind: state.request.kind } : {}), day: state.day, reservedAtMs: state.reservedAtMs, record: state.record ? { ...state.record } : null };
+  return { ...(state.request.kind ? { kind: state.request.kind } : {}), day: state.day, reservedAtMs: state.reservedAtMs, ...(state.preparedFingerprint ? { preparedFingerprint: state.preparedFingerprint } : {}), record: state.record ? { ...state.record } : null };
 }
 /** Compare legacy model representations without changing saved payloads or ciphertext. */
 function comparable<T extends { kind?: 'model' | 'embedding' }>(value: T) {
@@ -143,10 +144,30 @@ export class FirestoreAiUsage implements DurableAiUsage {
       if (this.#now() >= request.deadlineAtMs) reject('deadline_exceeded');
       if (global.attempts >= request.globalLimit || user.attempts >= request.userLimit) return { decision: 'quota_exceeded' };
       global.attempts++; user.attempts++;
-      const state: SavedAttempt = { request, billingSource: this.#source, day, reservedAtMs: now, record: null };
+      const preparationToken = (request.kind ?? 'model') === 'model' ? randomBytes(32).toString('hex') : undefined;
+      const state: SavedAttempt = { request, billingSource: this.#source, day, reservedAtMs: now, record: null,
+        ...(preparationToken ? { preparationTokenHash: createHash('sha256').update(preparationToken).digest('hex') } : {}) };
       transaction.create(attemptRef, this.#seal(attemptId, state));
       transaction.set(globalRef, this.#seal(globalId, global)); transaction.set(userRef, this.#seal(userId, user));
-      return { decision: 'execute', receipt: receipt(state) };
+      return { decision: 'execute', receipt: receipt(state), ...(preparationToken ? { preparationToken } : {}) };
+    });
+  }
+  async prepareModelDispatch(input: DurableAiUsageRequest, expected: string, next: string, preparationToken: string): Promise<DurableAiUsageReceipt> {
+    const request = parse(requestSchema, input, 'invalid_request'),
+      expectedFingerprint = parse(fingerprint, expected, 'invalid_fingerprint'), nextFingerprint = parse(fingerprint, next, 'invalid_fingerprint');
+    if ((request.kind ?? 'model') !== 'model') reject('invalid_request');
+    const token = parse(fingerprint, preparationToken, 'invalid_preparation_token');
+    const id = this.#attemptId(request), ref = this.#ref(id);
+    return this.#database.runTransaction(async transaction => {
+      const snapshot = await transaction.get(ref);
+      if (!snapshot.exists) reject('attempt_not_found');
+      const state = this.#attempt(id, snapshot, request);
+      if (state.record) reject('record_conflict');
+      if (state.preparationTokenHash !== createHash('sha256').update(token).digest('hex')) reject('preparation_owner_conflict');
+      if (this.#now() >= request.deadlineAtMs) reject('deadline_exceeded');
+      if ((state.preparedFingerprint ?? state.request.requestFingerprint) !== expectedFingerprint) reject('preparation_conflict');
+      state.preparedFingerprint = nextFingerprint;
+      transaction.set(ref, this.#seal(id, state)); return receipt(state);
     });
   }
   /** Same original billing/request check, with no nested transaction, reservation or accounting write. */
