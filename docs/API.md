@@ -970,6 +970,7 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 | POST `/api/admin/knowledge-transfers/{digest}/stop` 或 `/resume` | 提交 `{expectedRevision}`，與 CLI 共用台帳的版本核對，回 `{batch}`。恢復使原包可接續寫入；匯入執行者仍需取得相同 ZIP，結果不明時按指紋查回。 |
 | GET `/api/admin/knowledge-status?cursor=`（S10 已發布） | 管理員按需讀取現行來源目錄的註冊／停用／定義變更狀態，以及實際檢查紀錄。每頁最多 20 筆，依檢查時間與工作 ID 倒序續讀。失敗原因、最近嘗試與最近成功分開顯示。這項查詢不觸發來源抓取或發布。 |
 | GET `/api/admin/knowledge-versions?cursor=` | 管理員按頁查看允許來源的版本 ID、hash、核准狀態及索引就緒情況，每頁最多 20 筆。 |
+| POST `/api/admin/knowledge-index-groups`、GET `/:id`、POST `/:id/stop`／`resume` | 建立 51–400 個固定版本的重建組。根 ID 等於建立 opId；查回各子批次 ID、狀態與結果計數。整組控制帶原 opId 和依序排列的各批控制版本；版本衝突整組維持原狀。 |
 | GET／POST `/api/admin/knowledge-index-batches` | GET 分頁讀取批次；POST 帶原 `opId` 及最多 50 個選定版本的 ID／hash，建立同 ID 的關鍵詞索引重建批次。 |
 | GET `/api/admin/knowledge-index-batches/{id}`；POST 同路徑的 `/stop`、`/resume` | 每個目標顯示已完成範圍及實際失敗原因。控制操作帶原 `opId` 及 `expectedControlVersion`，逾時依原資料查回或重送。控制版本只隨人工操作遞增。 |
 | POST `/api/admin/operations` | `src/shared/admin.ts` 的 policy／invite／revoke 聯合契約，必帶原 opId；policy 帶 expectedVersion |
