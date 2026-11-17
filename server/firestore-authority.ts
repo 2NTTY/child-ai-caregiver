@@ -68,7 +68,7 @@ export interface FirestoreAuthorityPreparedChild extends FirestoreAuthorityPrepa
 export interface FirestoreAuthorityTransaction {
   readonly transaction: Transaction;
   readonly actorUserId: string;
-  readonly sharedAccess?: Readonly<{ spaceId: string; basis: Readonly<SharedAccessBasis>; module: string; modules?: readonly string[]; role: 'owner' | 'caregiver' | 'viewer'; mode: 'read' | 'write';
+  readonly sharedAccess?: Readonly<{ spaceId: string; membershipId?: string; basis: Readonly<SharedAccessBasis>; module: string; modules?: readonly string[]; role: 'owner' | 'caregiver' | 'viewer'; mode: 'read' | 'write';
     classMember?: Readonly<import('./shared-write-attribution.ts').ClassTaskAssignment> }>;
   readonly scope: Readonly<WorkRecoveryScope>;
   readonly authorizationVersion: string;
@@ -472,7 +472,7 @@ export class FirestoreAuthority {
         if (access.mode !== 'write' || access.role === 'viewer') fail('read_only', 403);
         // Attachments and concerns use existing feed kinds; the grant still fences the operation's module.
         const allowedKind = access.module === 'attachments' ? kind === 'chat' || kind === 'care'
-          : access.module === 'concerns' ? !!access.classMember && kind === 'growth' : kind === access.module;
+          : access.module === 'concerns' ? kind === 'growth' : kind === access.module;
         if (!allowedKind || childId !== undefined && childId !== source.childId) fail('shared_module_scope', 403);
         if (prepared) fail('transaction_change_conflict'); prepared = true;
         if (actor.actorUserId === source.ownerUserId) return actor.prepareChange(operationId, kind, deleted, source.childId);
