@@ -475,6 +475,41 @@ export function advanceResumableExportBatch(
   return { status: done ? "done" : "ready", reason: null, state: nextState };
 }
 
+/** In-process streaming cursor. The hash index is retained once (O(unique items));
+ * unlike the serializable immutable checkpoint API above, advancing never copies
+ * all preceding items. This is not a durable cross-process checkpoint.
+ */
+export function createStreamingExportSession(initial: Omit<ResumableExportState, "items">) {
+  let state: ResumableExportState = { ...initial, items: [] };
+  const seenHashes = new Map<string, string>();
+  return {
+    advance(page: ResumableExportPage): ResumableExportAdvance & { acceptedIndices: number[] } {
+      // Reuse all stage, authority, cursor and page-local conflict validation.
+      const advanced = advanceResumableExportBatch(state, page);
+      if (advanced.status === "invalidated") return { ...advanced, acceptedIndices: [] };
+      const pending = new Map<string, string>();
+      const acceptedIndices: number[] = [];
+      for (let i = 0; i < page.items.length; i++) {
+        const item = page.items[i]!;
+        const key = `${item.stage}:${item.id}`;
+        const existingHash = pending.get(key) ?? seenHashes.get(key);
+        if (existingHash !== undefined) {
+          if (existingHash !== item.payloadHash) {
+            return { status: "invalidated", reason: "item_hash_conflict", state, acceptedIndices: [] };
+          }
+          continue;
+        }
+        pending.set(key, item.payloadHash);
+        acceptedIndices.push(i);
+      }
+      // Do not poison the dedup index if any item or cursor validation failed.
+      for (const [key, hash] of pending) seenHashes.set(key, hash);
+      state = { ...advanced.state, items: [] };
+      return { ...advanced, state, acceptedIndices };
+    },
+  };
+}
+
 export interface VoiceRevisionRef {
   readonly voiceId: string;
   readonly version: number;

@@ -6,7 +6,7 @@ import type { HandoverClassExportCommand } from '../src/shared/handover-jobs.ts'
 import { HANDOVER_SECTIONS, handoverHeaderSchema, handoverNotificationPreferencesSchema, validHandoverDocumentPins, type HandoverHeader, type HandoverDocumentChoice, type HandoverCoverage } from '../src/shared/handover.ts';
 import { HandoverArchiveError, writeHandoverArchive, waitForHandoverStep, handoverLimits, type HandoverEntryInput, type HandoverLimits } from './handover-archive.ts';
 import { avatarTransferSchema } from './handover-import.ts';
-import { advanceResumableExportBatch, type ExportBatchStage, type ResumableExportState } from './cross-domain-snapshot.ts';
+import { createStreamingExportSession, type ExportBatchStage } from './cross-domain-snapshot.ts';
 import { canonicalJson } from './online-routing.ts';
 import { datedParent, handoverPeriodMatch, supportsHandoverPeriod } from './handover-period.ts';
 import { datedConcernPages } from './handover-concern-period.ts';
@@ -162,21 +162,20 @@ function exportItemIdentity(section: string, childId: string | undefined, raw: u
     const mediaFilter: PackageMediaFilter | undefined = datedMedia && childId && (isAttachmentHead(section) || isAttachmentSupplement(section))
       ? (kind, id) => datedMedia.permitsBytes(childId, kind, id) : undefined;
     const exportStage = sectionExportStage(section);
-    let batchState: ResumableExportState = {
+    const batchSession = createStreamingExportSession({
       scopeVersion,
       stage: exportStage,
       afterId: null,
       done: false,
-      items: [],
       expectedStages: [exportStage],
-    };
+    });
+    let batchDone = false;
     do {
       signal.throwIfAborted(); if (++pageCount > 10000) fail('package_size_exceeded');
       const page = await waitForHandoverStep(input.exporter.page(input.ownerUserId, { section, ...(childId ? { childId } : {}), scopeVersion, ...(cursor ? { cursor } : {}) }, mediaFilter,
         { includeSummaryPeriod: section === 'summary_history' && Boolean(header.selection.period), documentFilter }), signal);
       if (page.scopeVersion !== scopeVersion || page.section !== section || page.complete !== (page.nextCursor === null)
         || page.nextCursor && page.nextCursor === cursor) fail('export_scope_changed');
-      const seenBeforePage = new Set(batchState.items.map(entry => `${entry.stage}:${entry.id}`));
       const batchItems = page.items.map(raw => {
         const payloadHash = createHash('sha256').update(canonicalJson(raw)).digest('hex');
         return {
@@ -185,7 +184,7 @@ function exportItemIdentity(section: string, childId: string | undefined, raw: u
           payloadHash,
         };
       });
-      const advanced = advanceResumableExportBatch(batchState, {
+      const advanced = batchSession.advance({
         scopeVersion: page.scopeVersion,
         stage: exportStage,
         items: batchItems,
@@ -194,20 +193,12 @@ function exportItemIdentity(section: string, childId: string | undefined, raw: u
         hasMore: Boolean(page.nextCursor),
       });
       if (advanced.status === 'invalidated') fail('export_scope_changed');
-      const seenInCurrentPage = new Set<string>();
-      const uniqueItems: unknown[] = [];
-      for (let i = 0; i < page.items.length; i++) {
-        const entry = batchItems[i]!;
-        const key = `${entry.stage}:${entry.id}`;
-        if (seenBeforePage.has(key) || seenInCurrentPage.has(key)) continue;
-        seenInCurrentPage.add(key);
-        uniqueItems.push(page.items[i]);
-      }
-      batchState = advanced.state;
+      const uniqueItems = advanced.acceptedIndices.map(index => page.items[index]);
+      batchDone = advanced.state.done;
       yield uniqueItems.length === page.items.length ? page : { ...page, items: uniqueItems };
       cursor = page.nextCursor ?? undefined;
     } while (cursor);
-    if (!batchState.done) fail('export_scope_changed');
+    if (!batchDone) fail('export_scope_changed');
   }
   async function* entries(): AsyncGenerator<HandoverEntryInput> {
     const children: unknown[] = [], wanted = new Set(header.selection.childIds);
