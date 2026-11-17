@@ -5997,6 +5997,34 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 
 同日把每日主時鐘移交現有 GCP Cloud Scheduler。舊 run 於香港 09:04:28 建立及開始，09:05:35 完成；倉庫未取得 GitHub 內部延遲的具體原因。新流程在 04:17 直接送出固定 master 檢查，GCS 的每日 claim 抵禦重複喚醒。已用受控時鐘驗證 04:17 的第一秒可送出及重投遞只生效一次；操作員狀態辨認專用 App 的執行紀錄。
 
+### 2026-11-16　REQ-005 PR-A R2 審核整改（A01 並行收緊鎖、A02 個人與平台有效比例對齊、A03 原子水位持久化）
+
+依 `REQ005_COMPLETION_SPLIT_IMPLEMENTATION_AUDIT_R2.md`（A01–A03）於本地 forward-only 新提交修復（未 push、未開 PR）：
+1）**A01（收緊 query embedding hard 後並行派發屏障）**：於 [agent-budget.ts](server/agent-budget.ts) 新增 `durableAdmission` 序列鎖，令 `admit()` 先重讀最新 `RootBudgetSnapshot`、核對是否為已承諾之重試（`alreadyReserved`），僅於未承諾且不超過收緊後 `selectedLimits` 時才呼叫 `adapter.reserve`；兩個不同並行 query 競爭已降至 1 之上限時只有 1 次派發、第 2 次明確以 `embedding_limit` 停止且重試／重讀不再另領額度或清零計數。
+2）**A02（個人／平台設定有效軟預算比例與 runtime 一致性）**：[personal-model-policy.ts](server/personal-model-policy.ts) 與 [firestore-model-routing.ts](server/firestore-model-routing.ts) 在平台／留空模式解析與 `view()` 顯示套用同一角色計算，並將 `softBudgetSource` 經 [firestore-product-agent.ts](server/firestore-product-agent.ts) 與 [agent-runtime.ts](server/agent-runtime.ts) 傳入 `AgentBudget.configurePersonal`；個人明確設定 `softBudgetRatio`（如 0.35）時，不再被管理員 `roleSoftBudgetRatios.interactive`（0.30）暗中壓低。
+3）**A03（多實例 HighWatermark 原子追加與可觀測持久失敗）**：[agent-high-watermark.ts](server/agent-high-watermark.ts) 新增 `sampleId`（由 runtime 傳入 `runId`）、`mergeHighWatermarkSamples`、`appendDurableSample`、`onPersistenceError` 與 `persistenceStatus`；`loadWindow`／`persistWindow` 改為每次重讀合併而不倚賴陳舊快取；[firestore-product-agent.ts](server/firestore-product-agent.ts) 改以單筆 Firestore transaction read-merge-trim-write（保持 `recordVersion = 1` 相容 restore codec），持久化失敗記錄為可觀測 `degraded` 狀態且不中斷產品 run。
+4）於 [agent-policy-rounding-alerts 測試](tests/agent-policy-rounding-alerts.test.ts) 新增 A01–A03 實證測試（9→12 cases），已確認三項於 `67ac1c91` 舊碼皆失敗、修復後全數通過；`tests/firestore-backup.test.ts` 相對於 `origin/master` 基線仍維持既存尾項差異揭露（基線漏 `_proactive_state`，PR-A 新增 `_agent_metrics` 供備份清單納入）。
+
+### 2026-11-16　REQ-005 PR-A R3 審核整改（A04 在途角色軟預算清除／調低即時更新 provider 指令、備份清單測試同步）
+
+依 `REQ005_COMPLETION_SPLIT_IMPLEMENTATION_AUDIT_R3.md`（A04）與備份清單測試審查於本地 forward-only 新提交修復（未 push、未開 PR）：
+1）**A04（在途 admin `roleSoftBudgetRatios` 清除與調低即時同步至下一 provider 呼叫 `systemInstruction`）**：於 [firestore-model-routing.ts](server/firestore-model-routing.ts) 顯式傳遞 `roleSoftBudgetRatios: latest.roleSoftBudgetRatios ?? {}` 使清空管理員角色覆蓋不致保留舊 map；於 [agent-runtime.ts](server/agent-runtime.ts) 將 `syncPolicy` 提前在 `renderInstruction` 開頭等待執行，並新增 `refreshPolicyConfig` callback（同步更新 `systemInstruction` 與 finish 階段工具遮罩）傳入 [agent-model-gateway.ts](server/agent-model-gateway.ts)；於 `AgentGatewayModel.syncRequestPolicy` 與 `completeText`（補上 `checkAuthorizeAndPolicy()`）確保每次主回合與 reviewer 呼叫均先載入最新政策並更新送出 `outgoing` `systemInstruction` 的 `budget.softBudgetRatio`；同步修正 [personal-model-policy.ts](server/personal-model-policy.ts) 平台模式 `limitSources.softBudgetRatio` 來源判斷。
+2）**`tests/firestore-backup.test.ts` 與 CI 門檻**：補齊 `_proactive_state` 與 `_agent_metrics` 至混用備份集合尾項預期（`['_mixed_rooms', '_mixed_messages', '_proactive_state', '_agent_metrics']`），並納入 [verify-policy-rounding-offline.sh](scripts/ci/verify-policy-rounding-offline.sh)（11 檔）；新增 A04 測試（12→13 cases），先確認舊碼於第 13 案取得過期 `[0.8, 0.8]` 失敗，修復後精準取得 `[0.8, 0.4]` 與 `[0.8, 0.05]`（13/13 通過）。
+3）**在途請求身分參照保護**：於 [agent-model-gateway.ts](server/agent-model-gateway.ts) `generateBounded` 入口保存原始 `anchorRequest` 參照並用於查詢 `modelAttemptKey`（避免 `syncRequestPolicy`、`audio` 或 `images` 建立淺拷貝時失落 `modelAnchors` `WeakMap` 鍵值而導致 durable 語音回合回傳 `unavailable`），`tests/firestore-voice.test.ts` 通過。
+
+
+### 2026-11-17　REQ005 PR-A：A04 準入及重試後動態政策指引修復
+
+- 基於 `4b412a24` 正向修復；保留原 root／attempt／完整初始 request fingerprint、日用量及 unknown 保留語義。良性角色 soft ratio 更新不再以停止／unavailable 代替完成；首次 provider-only render 與重試按有效政策同步，獨立 config WeakMap 不改寫 ADK 原生 instruction anchor。
+- 原有 root／daily 加密帳本增設可選 `preparedFingerprint`：唯一新準入 execute 持有人以不對 read／lookup 暴露的 preparation permit 作 CAS，綁定實際更新後完整 payload；不改原 request、不加一次呼叫、不退款、不另建持久儲存。派送前再次核權限／政策，有新更新則重新準備；permit 在本程序開始派送時消耗，冷讀／複本／lost reply 不得重播。摘要 terminal verifier 同時核 root／daily 的實際準備指紋。
+- 準備期間只對當次模型預留作純 metadata 投影，沒有重設共享 used 計數；政策降至已用 hard ceiling 以下即中止，等於 ceiling 的合法最後一呼叫仍保留。
+- `tests/agent-policy-preparation.test.ts` 新增 15 項正式 runtime／實際 Firestore adapters 配合記憶體交易替身的離線回歸：`.05`／`.23`／清除覆蓋、503 重試、root／daily 準備期間再改政策、撤權、lost acknowledgement、hard ceiling 在第二次準入後降至 1、owner／CAS／跨 child／model 與派送 permit 防重。原始透明完成斷言保留；舊手寫 wrapper 僅補代理新增 adapter 方法。
+- 當輪 Linux `unshare --net`＋無權限 `setpriv`、network guard：新 15 項及原 policy／root／daily 合計 **56/56、0 skip**；原 `.05`／`.17`／`.23` 準入／重試／撤權反例 **10/10**。完整五包 gates、整合與型別收據於交付時另外核對，不以本條先行冒稱。未推送、開 PR、部署、啟用 `#447` 或呼叫真模型／正式資料庫。
+
+- **同日 Gate 後續校準：**首次 canonical PR-A gate 的 79 項測試通過，隨後 S3 source-injection pattern 因新純 metadata view 改名而未匹配，故該次 gate 為 **FAIL**，不是 PASS。僅將既有 S3／S4 變異目標對齊 `usedBeforeThisCall.modelCalls`；保留漏扣已用量／關閉 exceeded 的相同破壞與失敗斷言，再以新 HEAD 完整重跑 gate。
+
+- **同日 reviewer 與變異補證：**以同一正式 runtime 的 `finalize.completeText` 補兩項持久 reviewer 準入／503 重試案例，interactive 維持 `.8` 而 reviewer 改 `.23`，確認不是錯用互動角色覆蓋；新回歸檔 **17/17、0 skip**。在另一可丟棄樹實際注入 9 個缺陷（不重繪、假 daily 綁定、root／daily owner、root／daily CAS、略過再核、hard 降額及錯扣本次預留），9/9 均由目標斷言捕獲，未把載入／語法錯誤或未選中的 skipped cases 當捕獲。原 `9f33e3d` canonical gate **79/79＋S1–S5／P1–P4＋三組 tsc PASS**；本次新增兩項後再按新 HEAD 重跑，不把舊 HEAD 收據冒稱新版本。
+
 ## 2026-11-18 家庭附件庫直接上傳
 
 P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授權及原操作收據。使用同一個合成家庭走正式 HTTP，核對照顧者保存、唯讀成員讀回原件、舊草稿隔離、途中撤權及原操作重試。照片和錄音只補各自的上傳接點。資料來自記憶體 Firestore 與合成物件服務；正式交付及設備證據見接手清單。

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { boundedTelemetryCallback, TELEMETRY_SAMPLE_TIMEOUT_MS } from "./agent-telemetry-wait.ts";
 import { nativeSettlementWindow, NativeSettlementTimeout, NATIVE_SESSION_CLEANUP_TIMEOUT_MS } from "./agent-native-settlement.ts";
 export { NATIVE_SESSION_CLEANUP_TIMEOUT_MS } from "./agent-native-settlement.ts";
 import { BaseSessionService, FunctionTool, InMemorySessionService, LlmAgent, Runner, StreamingMode, createEvent, setLogger } from "@google/adk";
@@ -8,7 +9,9 @@ import { FunctionCallingConfigMode } from "@google/genai";
 import type { AiConfig } from "./ai-config.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
 import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, AgentBudget, AgentStopped, agentBudgetFingerprint, freezeAgentRunLimits } from "./agent-budget.ts";
-import type { AgentStopReason, AgentDurableBudget, AgentRunLimits, AgentModelPurpose } from "./agent-budget.ts";
+import { AGENT_HIGH_WATERMARK_DEFAULTS } from "../src/shared/agent-run-limits.ts";
+import type { AgentStopReason, AgentDurableBudget, AgentRunLimits, AgentModelPurpose, AgentSoftBudgetProfileRole, AgentPolicyTransition } from "./agent-budget.ts";
+import type { HighWatermarkMonitor, HighWatermarkAlert } from "./agent-high-watermark.ts";
 import { checkedAgentAudio, agentAudioMarker, type AgentAudioInput } from './agent-audio.ts';
 import { voiceMessageReferenceSchema, type VoiceMessageReference } from '../src/shared/voice.ts';
 import { createAgentImages, type AgentImages, type AuthorizedAgentImage } from './agent-images.ts';
@@ -194,6 +197,14 @@ export interface AgentRunInput {
   /** Load one original through the authorized store within the same deadline, never from HTTP parts. */
   loadAudio?: (signal: AbortSignal) => Promise<AgentAudioInput>;
   tools: AgentTool[] | ((context: AgentRunContext) => AgentTool[]);
+  /** Trusted Server role and policy overrides for planning soft-budget ratio selection. */
+  budgetRole?: AgentSoftBudgetProfileRole;
+  roleSoftBudgetRatios?: Partial<Record<AgentSoftBudgetProfileRole, number>>;
+  softBudgetSource?: "personal" | "administrator" | "system_default";
+  /** Live policy transition checker evaluated at pre-model and tool barriers. */
+  readPolicyTransition?: () => Promise<AgentPolicyTransition | null>;
+  highWatermarkMonitor?: HighWatermarkMonitor;
+  onHighWatermarkAlert?: (alert: HighWatermarkAlert) => void | Promise<void>;
   /** Trusted Server catalog; omitted runs retain their fixed tool scope. */
   toolCatalog?: AgentToolCatalog;
   authorize: () => Promise<boolean>;
@@ -251,6 +262,8 @@ export function createAgentRuntime(options: {
   embeddings?: import('./embedding-gateway.ts').EmbeddingGateway;
   resolve?: import("./model-routing.ts").ModelRouting["resolve"];
   diagnostics?: (event: AgentDiagnostic) => void | Promise<void>;
+  highWatermarkMonitor?: HighWatermarkMonitor;
+  onHighWatermarkAlert?: (alert: HighWatermarkAlert) => void | Promise<void>;
   /** Trusted, preconfigured native storage. Single-run create-only; the caller owns its client. */
   nativeSessionService?: NativeAgentSessionService;
   /** Isolated fixed-config assembly only; version/epoch provenance remains the trusted caller's responsibility. */
@@ -259,6 +272,7 @@ export function createAgentRuntime(options: {
   bindDurableRun?: AgentDurableRunBinder;
   /** Fixed trusted constructor snapshot selected before binding; no per-request override. */
   boundRunLimits?: AgentRunLimits;
+  softBudgetSource?: "personal" | "administrator" | "system_default";
   /** Shared durable gate in Firestore composition; local state is only a legacy SQL fallback. */
   admission?: AgentRunAdmission;
   /**
@@ -299,19 +313,51 @@ export function createAgentRuntime(options: {
       let committedSummaryEffect = false;
       let frozenSummaryCounts: RootBudgetLimits | undefined;
       let authorize = input.authorize;
+      let repeatedLoopSignature: string | undefined;
+      let loopStopped = false;
       try {
         await budget.wait(async () => {
           if (!await input.authorize()) throw new AgentStopped("unauthorized");
           const selected = fixedOptions.resolve ? await fixedOptions.resolve(scope.userId, input.trigger.kind) : fixedOptions;
           budget.configureInputCharacters(input.trigger.kind === "interactive"
             ? selected.config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default : AGENT_LIMITS.inputCharacters);
-          if ("runLimits" in selected && selected.runLimits) budget.configurePersonal(selected.runLimits);
-          if (boundRunLimits) budget.configurePersonal(boundRunLimits);
-          if (durable?.runLimits) budget.configurePersonal(durable.runLimits);
+          const resolvedSoftSource = input.softBudgetSource
+            ?? ("softBudgetSource" in selected ? (selected as { softBudgetSource?: "personal" | "administrator" | "system_default" }).softBudgetSource : undefined)
+            ?? fixedOptions.softBudgetSource;
+          const personalConfigOpts = resolvedSoftSource ? { softBudgetSource: resolvedSoftSource } : undefined;
+          if ("runLimits" in selected && selected.runLimits) budget.configurePersonal(selected.runLimits, personalConfigOpts);
+          if (boundRunLimits) budget.configurePersonal(boundRunLimits, personalConfigOpts);
+          if (durable?.runLimits) budget.configurePersonal(durable.runLimits, personalConfigOpts);
           // Do not override a settings snapshot. Six calls are only for an unbound run.
           if (fixedOptions.chatDeliveryReviewModelCalls === 6 && !budget.hasPersonalLimits()) {
             budget.configurePersonal({ modelCalls: 6, queryEmbeddings: budget.limits.queryEmbeddings });
           }
+          const runRole: AgentSoftBudgetProfileRole = input.budgetRole ?? (input.trigger.kind === "worker" ? "background" : "interactive");
+          const initialRoleProfiles = input.roleSoftBudgetRatios
+            ?? ("roleSoftBudgetRatios" in selected ? (selected as { roleSoftBudgetRatios?: Partial<Record<AgentSoftBudgetProfileRole, number>> }).roleSoftBudgetRatios : undefined);
+          const activeRoleProfiles: Partial<Record<AgentSoftBudgetProfileRole, number>> = { ...(initialRoleProfiles ?? {}) };
+          if (initialRoleProfiles) {
+            budget.applyPolicyTransition({ enabled: true, roleSoftBudgetRatios: initialRoleProfiles });
+          }
+          const readTransition = input.readPolicyTransition
+            ?? ("readPolicyTransition" in selected ? (selected as { readPolicyTransition?: () => Promise<AgentPolicyTransition | null> }).readPolicyTransition : undefined);
+          const syncPolicy = readTransition ? async (): Promise<boolean> => {
+            const transition = await readTransition();
+            if (!transition) return false;
+            if (transition.roleSoftBudgetRatios !== undefined) {
+              for (const roleKey of Object.keys(activeRoleProfiles) as AgentSoftBudgetProfileRole[]) {
+                delete activeRoleProfiles[roleKey];
+              }
+              Object.assign(activeRoleProfiles, transition.roleSoftBudgetRatios);
+            }
+            const applied = budget.applyPolicyTransition(transition);
+            if (applied.stopped) {
+              throw new AgentStopped(applied.reason === "deadline" ? "deadline" : "unavailable");
+            }
+            return true;
+          } : undefined;
+          let lastToolSignature = "";
+          let consecutiveToolRepeats = 0;
           if ("authorize" in selected) authorize = async () => await input.authorize() && await selected.authorize();
           budget.check();
           if (!selected.config.enabled || !await authorize()) throw new AgentStopped("unavailable");
@@ -407,9 +453,26 @@ export function createAgentRuntime(options: {
             await budget.initializeDurable(durable);
             if (budget.remainingModelCalls === 0) throw new AgentStopped("model_limit");
           }
+          if (syncPolicy) await budget.wait(syncPolicy);
           const tools = configuredTools.map(tool => new FunctionTool({ name: tool.name, description: tool.description,
             parameters: tool.parameters.strict(), execute: async (args, context) => {
               budget.check();
+              if (syncPolicy) await budget.wait(syncPolicy);
+              const callSignature = `${tool.name}:${agentBudgetFingerprint(args ?? {})}`;
+              if (callSignature === lastToolSignature) {
+                consecutiveToolRepeats += 1;
+              } else {
+                lastToolSignature = callSignature;
+                consecutiveToolRepeats = 1;
+              }
+              if (consecutiveToolRepeats >= AGENT_HIGH_WATERMARK_DEFAULTS.repeatedSignatureStreak) {
+                repeatedLoopSignature = callSignature;
+                loopStopped = true;
+                observer.recordToolRejection(tool.name, "execution", { status: "rejected", data: { code: "unknown" } });
+                const loopError = new AgentStopped("tool_limit");
+                toolFailure = loopError;
+                throw loopError;
+              }
               const embeddingKey = budget.durable && tool.name === "search_knowledge"
                 ? queryEmbeddingAttemptKey(context, scope, runId, tool.name, args) : undefined;
               const callId = context?.functionCallId ?? "";
@@ -437,10 +500,16 @@ export function createAgentRuntime(options: {
               }
             } }));
           let continuationInstructions: { phase: 'work' | 'finish'; text: string }[] = [];
-          const renderInstruction = async (ids: readonly string[] = capabilitySelection?.loadedIds() ?? []) => {
+          const renderInstruction = async (ids: readonly string[] = capabilitySelection?.loadedIds() ?? [], modelCallAlreadyReserved = false) => {
+            if (syncPolicy) await budget.wait(syncPolicy);
             const currentPrompt = await budget.wait(() => getPrompt(ids));
             budget.check();
-            const planning = budget.planningSnapshot(terminalToolNames.size > 0, { reserveDeliveryReview });
+            const planning = budget.planningSnapshot(terminalToolNames.size > 0, {
+              modelCallAlreadyReserved,
+        reserveDeliveryReview,
+        role: runRole,
+        ...(activeRoleProfiles ? { profileOverrides: activeRoleProfiles } : {}),
+      });
             const visible = capabilitySelection ? [...capabilitySelection.visibleToolNames(ids)] : tools.map(tool => tool.name);
             const instruction = (projected: typeof planning, projectedScope: Readonly<AgentScope> = scope) => {
               const finishing = terminalToolNames.size > 0 && projected.phase === 'finish';
@@ -474,8 +543,43 @@ export function createAgentRuntime(options: {
             return instruction(planning);
           };
           let currentInstruction = "";
+          // Provider-only policy renders must not change ADK's native instruction anchor.
+          const providerInstructions = new WeakMap<NonNullable<LlmRequest["config"]>, string>();
           const modelAnchors = new WeakMap<LlmRequest, string>();
           const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames, audio, images: ids => images.inputs(ids),
+            ...(syncPolicy ? { syncPolicy } : {}),
+            refreshPolicyConfig: async (request, modelCallAlreadyReserved = false) => {
+              const previous = request.config ? providerInstructions.get(request.config) ?? currentInstruction : currentInstruction;
+              const next = await renderInstruction(undefined, modelCallAlreadyReserved);
+              const sys = projectSystemInstruction(request.config?.systemInstruction, previous, next);
+              let config = { ...request.config, systemInstruction: sys };
+              if (terminalToolNames.size && request.config?.tools && request.toolsDict) {
+                const finishingNow = budget.planningSnapshot(true, {
+                  modelCallAlreadyReserved,
+                  reserveDeliveryReview,
+                  role: runRole,
+                  ...(activeRoleProfiles ? { profileOverrides: activeRoleProfiles } : {}),
+                }).phase === "finish";
+                if (finishingNow && !request.config.toolConfig?.functionCallingConfig?.allowedFunctionNames?.length) {
+                  const declarations = request.config.tools.flatMap(tool =>
+                    "functionDeclarations" in tool ? tool.functionDeclarations ?? [] : [])
+                    .filter(declaration => declaration.name && terminalToolNames.has(declaration.name));
+                  const names = declarations.map(declaration => declaration.name!);
+                  if (names.length && names.every(name => Object.hasOwn(request.toolsDict, name))) {
+                    config = {
+                      ...config,
+                      tools: [{ functionDeclarations: declarations }],
+                      toolConfig: { functionCallingConfig: { mode: FunctionCallingConfigMode.ANY, allowedFunctionNames: names } },
+                    };
+                    request.toolsDict = Object.fromEntries(names.map(name => [name, request.toolsDict[name]!]));
+                    request.allowedTools = names;
+                  }
+                }
+              }
+              providerInstructions.set(config, next);
+              return config;
+            },
+            roleProfileOverrides: activeRoleProfiles,
             ...(privateSummaryEnabled ? { privateSummaryAdmission: input.privateSummaryAdmission } : {}),
             reserveDeliveryReview,
             voice, ...(voice ? { reloadAudio: async () => checkedAgentAudio(await budget.wait(() => input.loadAudio!(budget.signal))) } : {}),
@@ -505,7 +609,7 @@ export function createAgentRuntime(options: {
               });
               if (!added) throw new AgentStopped("input_limit");
               return { ...request.config, tools: projectedTools,
-                systemInstruction: projectSystemInstruction(request.config?.systemInstruction, currentInstruction, await renderInstruction(ids)) };
+                systemInstruction: projectSystemInstruction(request.config?.systemInstruction, request.config ? providerInstructions.get(request.config) ?? currentInstruction : currentInstruction, await renderInstruction(ids)) };
             } : undefined });
           runContext.completeText = request => model.completeText(request);
           const runtimeTools = capabilitySelection ? [new AgentCapabilityToolset(tools, () => {
@@ -553,7 +657,11 @@ export function createAgentRuntime(options: {
               };
               // Per-attempt admission remains in the gateway. Keep the native pre-lock
               // configuration so a future work request is never inferred from a smaller finish request.
-              if (terminalToolNames.size && budget.planningSnapshot(true, { reserveDeliveryReview }).phase === "finish") {
+              if (terminalToolNames.size && budget.planningSnapshot(true, {
+      reserveDeliveryReview,
+      role: runRole,
+      ...(activeRoleProfiles ? { profileOverrides: activeRoleProfiles } : {}),
+    }).phase === "finish") {
                 request.config = finishConfig(originalNativeConfig);
                 const names = request.config.toolConfig!.functionCallingConfig!.allowedFunctionNames!;
                 request.toolsDict = Object.fromEntries(names.map(name => [name, request.toolsDict[name]!]));
@@ -821,6 +929,32 @@ export function createAgentRuntime(options: {
         if (acquired) activeUsers.delete(scope.userId);
         if (lease.current) { try { await lease.current.release(); } catch { /* The fixed expiry still bounds capacity after unknown cleanup. */ } }
         result.counts = frozenSummaryCounts ?? budget.counts;
+        const monitor = input.highWatermarkMonitor ?? fixedOptions.highWatermarkMonitor;
+        const alertHandler = input.onHighWatermarkAlert ?? fixedOptions.onHighWatermarkAlert;
+        if (monitor) {
+          const runCategory = input.trigger.kind === "worker" ? "background" : "interactive";
+          try {
+            const evaluated = await boundedTelemetryCallback(() => monitor.recordSample({
+              sampleId: runId,
+              runCategory,
+              usedModelCalls: result.counts.modelCalls,
+              hardModelCalls: budget.limits.modelCalls,
+              usedToolCalls: result.counts.toolCalls,
+              hardToolCalls: budget.limits.toolCalls,
+              usedQueryEmbeddings: result.counts.queryEmbeddings,
+              hardQueryEmbeddings: budget.limits.queryEmbeddings,
+              ...(repeatedLoopSignature ? { repeatedCallSignature: repeatedLoopSignature } : {}),
+            }), TELEMETRY_SAMPLE_TIMEOUT_MS);
+            const effectiveAlert = loopStopped && !evaluated.loopDetected
+              ? { ...evaluated, triggered: true, loopDetected: true, recommendedAction: "stop_loop_early" as const }
+              : evaluated;
+            if (effectiveAlert.triggered && alertHandler) {
+              await boundedTelemetryCallback(() => alertHandler(effectiveAlert));
+            }
+          } catch {
+            // Telemetry persistence failure must not break or override the business outcome.
+          }
+        }
       }
       // Only verified tool progress survives a failed final generation; never execute result text.
       return structuredClone(result);
