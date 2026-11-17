@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { waitForTelemetry, TELEMETRY_SAMPLE_TIMEOUT_MS } from "./agent-telemetry-wait.ts";
 import { nativeSettlementWindow, NativeSettlementTimeout, NATIVE_SESSION_CLEANUP_TIMEOUT_MS } from "./agent-native-settlement.ts";
 export { NATIVE_SESSION_CLEANUP_TIMEOUT_MS } from "./agent-native-settlement.ts";
 import { BaseSessionService, FunctionTool, InMemorySessionService, LlmAgent, Runner, StreamingMode, createEvent, setLogger } from "@google/adk";
@@ -933,7 +934,7 @@ export function createAgentRuntime(options: {
         if (monitor) {
           const runCategory = input.trigger.kind === "worker" ? "background" : "interactive";
           try {
-            const evaluated = await monitor.recordSample({
+            const evaluated = await waitForTelemetry(() => monitor.recordSample({
               sampleId: runId,
               runCategory,
               usedModelCalls: result.counts.modelCalls,
@@ -943,12 +944,12 @@ export function createAgentRuntime(options: {
               usedQueryEmbeddings: result.counts.queryEmbeddings,
               hardQueryEmbeddings: budget.limits.queryEmbeddings,
               ...(repeatedLoopSignature ? { repeatedCallSignature: repeatedLoopSignature } : {}),
-            });
+            }), TELEMETRY_SAMPLE_TIMEOUT_MS);
             const effectiveAlert = loopStopped && !evaluated.loopDetected
               ? { ...evaluated, triggered: true, loopDetected: true, recommendedAction: "stop_loop_early" as const }
               : evaluated;
             if (effectiveAlert.triggered && alertHandler) {
-              await alertHandler(effectiveAlert);
+              await waitForTelemetry(() => alertHandler(effectiveAlert));
             }
           } catch {
             // Telemetry persistence failure must not break or override the business outcome.

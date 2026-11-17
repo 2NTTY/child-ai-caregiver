@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { waitForTelemetry } from "./agent-telemetry-wait.ts";
 import { AGENT_HIGH_WATERMARK_DEFAULTS, roundConsumptionReserve } from "../src/shared/agent-run-limits.ts";
 
 export const AGENT_HIGH_WATERMARK_SCOPE = Object.freeze({
@@ -201,6 +202,9 @@ export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions 
   const windowSize = options.windowSize ?? AGENT_HIGH_WATERMARK_DEFAULTS.windowSize;
   const cachedByCategory = new Map<string, AgentRunUtilizationSample[]>();
   const pendingByCategory = new Map<string, Promise<unknown>>();
+  // Legacy hooks replace a whole window. A waiting timeout cannot cancel that write;
+  // keep its fence until actual settlement so a late replacement cannot clobber a successor.
+  const pendingLegacyWrites = new Map<string, Promise<void>>();
   const statusByCategory = new Map<string, HighWatermarkPersistenceStatus>();
 
   const thresholdRatio = options.thresholdRatio ?? options.highWatermarkRatio;
@@ -232,7 +236,7 @@ export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions 
       failureCount: prev.failureCount + 1,
     });
     if (options.onPersistenceError) {
-      try { await options.onPersistenceError({ category: runCategory, stage, error }); } catch { /* Observer error stays isolated. */ }
+      try { await waitForTelemetry(() => options.onPersistenceError!({ category: runCategory, stage, error })); } catch { /* Observer error stays isolated. */ }
     }
   }
 
@@ -241,7 +245,7 @@ export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions 
       return { samples: [...(cachedByCategory.get(runCategory) ?? [])], loadFailed: false };
     }
     try {
-      const loaded = await options.loadWindow(runCategory);
+      const loaded = await waitForTelemetry(() => options.loadWindow!(runCategory));
       const bounded = [...loaded].filter(s => s.runCategory === runCategory).slice(-windowSize);
       cachedByCategory.set(runCategory, bounded);
       return { samples: bounded, loadFailed: false };
@@ -266,7 +270,7 @@ export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions 
         let persistFailed = false;
         if (options.appendDurableSample) {
           try {
-            const committed = await options.appendDurableSample(sample, windowSize);
+            const committed = await waitForTelemetry(() => options.appendDurableSample!(sample, windowSize));
             updated = [...committed].filter(s => s.runCategory === sample.runCategory).slice(-windowSize);
             cachedByCategory.set(sample.runCategory, updated);
             markPersisted(sample.runCategory);
@@ -283,7 +287,17 @@ export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions 
           cachedByCategory.set(sample.runCategory, updated);
           if (options.persistWindow) {
             try {
-              await options.persistWindow(sample.runCategory, updated);
+              if (pendingLegacyWrites.has(sample.runCategory)) {
+                throw new Error("Previous telemetry window write is still unsettled");
+              }
+              const write = Promise.resolve().then(() => options.persistWindow!(sample.runCategory, updated));
+              pendingLegacyWrites.set(sample.runCategory, write);
+              const release = () => {
+                if (pendingLegacyWrites.get(sample.runCategory) === write) pendingLegacyWrites.delete(sample.runCategory);
+              };
+              // Observe both outcomes even after the waiting deadline; do not retry an uncertain write.
+              void write.then(release, release);
+              await waitForTelemetry(() => write);
               if (!loadFailed) markPersisted(sample.runCategory);
             } catch (error) {
               persistFailed = true;
