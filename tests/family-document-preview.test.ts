@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { handleFamilyDocumentRequest } from '../server/family-document-api.ts';
 import type { DocumentSnapshot, DocumentExport } from '../src/shared/family-documents.ts';
+import { createFamilyDocumentsApi } from '../src/client/family-documents-api.ts';
 import type { FamilyDocumentStore } from '../server/family-document-store.ts';
 
 test('report preview uses the exact authorized PDF snapshot, options and second authority read', async () => {
@@ -29,6 +30,12 @@ test('report preview uses the exact authorized PDF snapshot, options and second 
   const full = (await (await request({ ...input, includeSources: true, includeRevision: true })).json()).preview;
   assert.deepEqual(full.changes, snapshot.changes); assert.equal(full.sources[0].text, snapshot.sources[0].text);
   assert.match(full.sources[0].label, /版本 2/);
+  const client = createFamilyDocumentsApi('https://example.invalid', async (url, init) => {
+    assert.equal(init?.credentials, 'include');
+    return handleFamilyDocumentRequest(new Request(url, init), 'admin', store, async () => true);
+  });
+  const fromClient = await client.previewExport(child, doc, input, new AbortController().signal, 'admin');
+  assert.deepEqual(fromClient, preview);
   invalidate = true;
   assert.equal((await request(input)).status, 409);
   invalidate = false;

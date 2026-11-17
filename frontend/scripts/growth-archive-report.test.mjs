@@ -397,3 +397,26 @@ test('standard report follows current authoritative content rather than storing 
   changed.access = 'lost';
   assert.deepEqual(standardGrowthReportSections(changed, previous), []);
 });
+
+test('Web and Android preview the selected report without opening a file or retaining previously selected source text', async () => {
+  for (const platform of ['web', 'android']) {
+    const p = props({...model(), online: true}, {platform});
+    const calls = [];
+    p.onPreviewReport = async (request, current) => {
+      calls.push(request);
+      assert.ok(current());
+      return {state:'ready', message:'已讀取', preview:{snapshotId:request.snapshotId, snapshotVersion:request.snapshotVersion,
+        title:'合成報告', subtitle:'就診溝通', metadata:'資料日期', coverageNote:'期間資料', summary:'摘要',
+        sections:[{title:'觀察', items:['所選版本的段落']}], changes:null, sources:[{label:'來源版本 1',text:'合成原始依據'}]}};
+    };
+    const h = harness(p); let tree = h.render();
+    button(tree, '導出報告').props.onPress(); tree = h.render();
+    await button(tree, '預覽匯出內容').props.onPress(); tree = h.render();
+    assert.equal(calls[0].snapshotVersion, 2); assert.ok(calls[0].includeSources);
+    assert.match(text(byId(tree, 'growth-export-content-preview')), /所選版本的段落/);
+    assert.match(text(tree), /合成原始依據/);
+    control(tree, '照護交接版').props.onPress(); tree = h.render();
+    assert.equal(byId(tree, 'growth-export-content-preview'), undefined);
+    assert.doesNotMatch(text(tree), /合成原始依據/);
+  }
+});
