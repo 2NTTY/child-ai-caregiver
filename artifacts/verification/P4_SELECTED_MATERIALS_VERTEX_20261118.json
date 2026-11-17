@@ -30,5 +30,21 @@
   "limits": [
     "One memory question. The document branch, stale version and revoked sharing have scripted checks.",
     "Originals were opened using the production HTTP handler locally. Live family sessions and physical-device taps remain pending. No notifications or production family data."
-  ]
+  ],
+  "productionDelivery": {
+    "verifiedAtHongKong": "2026-11-18T07:49:28+08:00",
+    "receipt": "r44201248461-1",
+    "result": "deployed",
+    "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44201248461",
+    "apiWorkerWebRevision": "b17fa999717156d5f53ca98a52f026d8b1d958ab",
+    "apiAndWorkerDigest": "sha256:3602a4479808586cdef273834f9a5a74741f9dee4a0067c5c76a07ccc746a6c4",
+    "webDigest": "sha256:6728293b62ba62f767824fc79f5ebb4f372e22dd0e01bc6dc75caa60f4bc260a",
+    "publicChecks": {
+      "/api/health": "ok",
+      "/api/version": "matches apiWorkerWebRevision",
+      "/site-version.json": "matches apiWorkerWebRevision",
+      "/THIRD_PARTY_NOTICES.md": "matches Git blob 8857b781e9291c5b9f1193396790811190cdbc70",
+      "/licenses/manifest.json": "matches Git blob c8eec975822dbd98f866fbb91851f1c26a8bf152"
+    }
+  }
 }

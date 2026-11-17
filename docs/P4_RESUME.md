@@ -6,7 +6,7 @@ P4 已於 11 月 18 日恢復，目標涵蓋 S16 驗收與 S17 交付。[開啟�
 
 ## 下次從哪開始
 
-Web、API、worker 已有正式收據，Android 第 8 版亦已收到相容的 preview OTA 發布。Expo 以該版 APK 的 runtime 和通道回傳更新 `01a1ebc6`。裝置是否已下載，要在裝置上確認。[Android 交付收據](../artifacts/verification/P4_ANDROID_DELIVERY_20261118.json)
+香港原站 Web、API、worker 在 11 月 18 日 07:49 同步到 `b17fa999`。[原站收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44201248461)。新版多孩對話以所選孩子的工具查詢，一條真 Gemini 問題經審核後，兩段記憶均由原文接口讀回正確孩子及版本。[實測](../artifacts/verification/P4_SELECTED_MATERIALS_VERTEX_20261118.json)。Android 第 8 版已有相容的 preview OTA。Expo 以該版 APK 的 runtime 和通道回傳更新 `01a1ebc6`。裝置是否已下載，要在裝置上確認。[Android 交付收據](../artifacts/verification/P4_ANDROID_DELIVERY_20261118.json)
 
 **下一次驗收用同一組測試資料。** 先備兩個有權使用的測試帳號、一部 Android 和一份無私人資料的文件；下面只補真人步驟。每項記錄結果、原操作或資源識別及平台即可。
 
@@ -15,7 +15,7 @@ Web、API、worker 已有正式收據，Android 第 8 版亦已收到相容的 p
 3. 從「更多 → 本人多孩對話」查所選孩子的一份記憶或文件，點「孩子資料 N」核對孩子及版本。用同一份測試文件在 Android 從外部 App 分享到草稿；ZIP 選匯入入口。再從一份已生成報告開「預覽匯出內容」和系統 PDF 分享面板。
 4. Google／Apple 正式配置就緒後，以既有測試帳號連結並重新驗證，記錄同一 UID；Apple 隱藏電郵另核原邀請接續。原生分享接收器已以 Xcode 16.4、iPhoneOS 18.5 SDK、最低目標 iOS 16.4 編譯成 arm64 物件。帶 App Group 的簽署 App 和 iPhone 系統收件仍待驗。[iPhone SDK 編譯收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44198716579/job/134446904604)。另一位組員可從乾淨 checkout 依 [README](../README.md) 啟動共用前端，按[部署手冊](DEPLOYMENT.md)的 `status` 對回原站版本，再從本頁執行一條未驗流程。把版本、結果及收據補入下方 S16／S17 對照。
 
-**原站已發布第④組、私人聊天還原及報告預覽。** 香港原站 Web、API、worker 同為 `9463f452`，對外兩個版本端點一致，API／worker 均可寫公共 ZIP 暫存目錄。[正式收據 r44189921005-2](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44189921005/attempts/2)。 公共 ZIP 的[上傳接口 #612](https://github.com/2NTTY/child-ai-caregiver/pull/612)與[Web 選檔 #613](https://github.com/2NTTY/child-ai-caregiver/pull/613)已合併。多孩對話的[記憶與文件查詢 #614](https://github.com/2NTTY/child-ai-caregiver/pull/614)沿正式工具及審核契約，依所選孩子返回有效事實及當前文件；點「孩子資料 N」可查回當時版本。已核合成資料、來源更改及班級撤權，[共用結果點讀 #615](https://github.com/2NTTY/child-ai-caregiver/pull/615) 已隨同版發布；真人操作仍待驗。下次修改多孩工具後，如需重現同題，可設定本機 ADC 及 `P4_VERTEX_PROJECT`，手動執行 `node scripts/verify-selected-materials-vertex.mjs --live`。只有模型請求會離開本機；兩個所選孩子、一個未選孩子及聊天資料都在隔離測試庫。
+**原站已發布第④組、私人聊天還原及報告預覽。** 該批首次發布時 Web、API、worker 同為 `9463f452`，對外兩個版本端點一致，API／worker 均可寫公共 ZIP 暫存目錄。[正式收據 r44189921005-2](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44189921005/attempts/2)。 公共 ZIP 的[上傳接口 #612](https://github.com/2NTTY/child-ai-caregiver/pull/612)與[Web 選檔 #613](https://github.com/2NTTY/child-ai-caregiver/pull/613)已合併。多孩對話的[記憶與文件查詢 #614](https://github.com/2NTTY/child-ai-caregiver/pull/614)沿正式工具及審核契約，依所選孩子返回有效事實及當前文件；點「孩子資料 N」可查回當時版本。已核合成資料、來源更改及班級撤權，[共用結果點讀 #615](https://github.com/2NTTY/child-ai-caregiver/pull/615) 已隨同版發布；真人操作仍待驗。下次修改多孩工具後，如需重現同題，可設定本機 ADC 及 `P4_VERTEX_PROJECT`，手動執行 `node scripts/verify-selected-materials-vertex.mjs --live`。只有模型請求會離開本機；兩個所選孩子、一個未選孩子及聊天資料都在隔離測試庫。
 
 **本人備份與還原。** 本人私人聊天還原已合併[後端 #610](https://github.com/2NTTY/child-ai-caregiver/pull/610)及[共用介面 #611](https://github.com/2NTTY/child-ai-caregiver/pull/611)。 從 [本人原件比較與還原](../server/handover-original-backup.ts) 接續。新本人備份保存訊息在原對話的位置。已用簽署包核對缺少的訊息回到原處、保留後來的訊息、找回原附件、把保留中的訊息重連到明確恢復的照片，以及相同批次重播；已隨 `9463f452` 發布，真人跨端操作待核。
 

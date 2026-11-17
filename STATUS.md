@@ -1,5 +1,8 @@
 # STATUS
 
+**2026-11-18 07:49 香港**　P4 多孩查詢修正已發布。Web、API、worker 均為 `b17fa999`，站外版本與收據一致，網站健康。原版 APK 透過同一 API 使用這項修正。兩名所選孩子的記憶、真 Gemini 審核及引用原件已用隔離資料驗證，真機點讀仍待核。[原站收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44201248461) · [接手清單](docs/P4_RESUME.md#下次從哪開始)
+
+
 **2026-11-18 Android 交付。** 第 8 版 APK 可透過原 preview 通道取得 P4 共用畫面。已核對 EAS 發布及該版裝置設定所取得的更新 ID。外部 App 分享、指定老師的班級待辦實收及跨帳號操作仍待實機。[發布證據](artifacts/verification/P4_ANDROID_DELIVERY_20261118.json) · [真人驗收入口](docs/P4_RESUME.md#下次從哪開始)
 
 
