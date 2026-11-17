@@ -6,7 +6,9 @@ P4 已於 11 月 18 日恢復，目標涵蓋 S16 驗收與 S17 交付。[開啟�
 
 ## 下次從哪開始
 
-**目前接第④組公共知識 ZIP，其後補所選孩子的記憶及文件查詢。** 本人私人聊天還原已合併[後端 #610](https://github.com/2NTTY/child-ai-caregiver/pull/610)及[共用介面 #611](https://github.com/2NTTY/child-ai-caregiver/pull/611)。 從 [本人原件比較與還原](../server/handover-original-backup.ts) 接續。新本人備份保存訊息在原對話的位置。已用簽署包核對缺少的訊息回到原處、保留後來的訊息、找回原附件、把保留中的訊息重連到明確恢復的照片，以及相同批次重播；正式發布及跨端操作待核。
+**第④組目前接大量公共語料的重建與維運。** 公共 ZIP 的[上傳接口 #612](https://github.com/2NTTY/child-ai-caregiver/pull/612)與[Web 選檔 #613](https://github.com/2NTTY/child-ai-caregiver/pull/613)已合併。多孩對話的[記憶與文件查詢 #614](https://github.com/2NTTY/child-ai-caregiver/pull/614)沿正式工具及審核契約，依所選孩子返回有效事實及當前文件；點「孩子資料 N」可查回當時版本。已核合成資料、來源更改及班級撤權，正式發布與真人使用仍需收據。
+
+**本人備份與還原。** 本人私人聊天還原已合併[後端 #610](https://github.com/2NTTY/child-ai-caregiver/pull/610)及[共用介面 #611](https://github.com/2NTTY/child-ai-caregiver/pull/611)。 從 [本人原件比較與還原](../server/handover-original-backup.ts) 接續。新本人備份保存訊息在原對話的位置。已用簽署包核對缺少的訊息回到原處、保留後來的訊息、找回原附件、把保留中的訊息重連到明確恢復的照片，以及相同批次重播；正式發布及跨端操作待核。
 
 **共享持續關注已合併。** 家庭及班級的可寫成員從原頁安排跟進，到點時由既有工作台帳在該關注留下一則事件。指定老師收手機提醒請用班級待辦。已有後端定向證據涵蓋跨成員讀取、原操作重播、撤權和連結範圍；[後端 #604](https://github.com/2NTTY/child-ai-caregiver/pull/604) 及[共用畫面 #605](https://github.com/2NTTY/child-ai-caregiver/pull/605) 已合併，共用前端已核分域權限及失聯後原操作；本次 API、worker 和 Web 的[發布收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44167678924)為 `r44167678924-1`、版本 `f2d347cd`。
 
@@ -27,7 +29,7 @@ P4 已於 11 月 18 日恢復，目標涵蓋 S16 驗收與 S17 交付。[開啟�
 | ① 家庭與班級 | 沿[共享授權](../server/firestore-sharing.ts)、[家庭 owner](../frontend/src/production/useProductionFamily.ts) 補剩餘模組寫入、背景工作撤權及班級通知的閉環驗收。 | 記錄、待辦、記憶、文件已有分域接線。[附件讀取／刪除](../artifacts/verification/P4_SHARED_ATTACHMENT_PAGES_20261027.json)。正式成員的跨端效果仍須核對。 |
 | ② 本人備份與交接 | 從[本人原件差異與還原](../server/handover-original-backup.ts)及[匯入 owner](../frontend/src/production/HandoverImportOwner.ts)核對本人私聊原件還原；用一份簽署包走完整帳戶差異、衝突及刪除後明確恢復。 | 成長還原、附件原件及通知偏好已有局部成果；整段混合對話收件是獨立副本。[附件證據](../artifacts/verification/P4_ORIGINAL_ATTACHMENTS_20261108.json) · [通知偏好](../artifacts/verification/P4_ACCOUNT_PREFERENCES_20261108.json)。 |
 | ③ 快捷登入與系統分享 | 沿[登入契約](API.md#p4-auth-providers)補正式 Google／Apple 配置、真人連結及重新驗證；沿[系統分享](../PLAN.md#s12-w02)批量交付 Android，Apple 團隊就緒後再簽署及用 iPhone 收件。 | 身份連結已有合成驗證；iOS 已生成工程及驗本機收件。仍欠正式 provider／設備結果。APK 留到需要使用時集中建置。 |
-| ④ 助手查詢與公共知識 | 公共語料的日常大量匯入、重建及效能排在家庭附件及交接之後。現有 [CLI](../scripts/knowledge-transfer-operations.mjs) 可匯入 ZIP，[Web 後台](../frontend/src/components/admin/AdminKnowledgeTransfers.tsx)可查收據、停止及恢復，Web 選檔沿相同台帳接續，已核本機 HTTP 上傳、斷線查回與指紋不符拒絕；原站與大批量維運證據待核。私人跨孩記憶／文件召回另從[正式工具](../server/product-agent-tools.ts)的 `search_selected_care` 接續，逐孩核對權限及出處。 | [公共 ZIP 維運](P2_KNOWLEDGE.md#公共知識版本的批量移轉)。私人多孩已有[照護查詢與審核](../artifacts/verification/P4_SELECTED_CARE_VERTEX_20261111.json)、[待辦查詢與批次](../artifacts/verification/P4_GROUP_TASK_VERTEX_20261111.json)及[部分衝突與恢復](../tests/mixed-task-batch.test.mjs)證據。 |
+| ④ 助手查詢與公共知識 | 公共語料的日常大量匯入、重建及效能排在家庭附件及交接之後。現有 [CLI](../scripts/knowledge-transfer-operations.mjs) 可匯入 ZIP，[Web 後台](../frontend/src/components/admin/AdminKnowledgeTransfers.tsx)可查收據、停止及恢復，Web 選檔沿相同台帳接續，已核本機 HTTP 上傳、斷線查回與指紋不符拒絕；原站與大批量維運證據待核。私人跨孩記憶／文件使用同一套[正式工具](../server/product-agent-tools.ts)的 `search_selected_materials`；照護記錄沿 `search_selected_care`。 | [公共 ZIP 維運](P2_KNOWLEDGE.md#公共知識版本的批量移轉)。私人多孩已有[照護查詢與審核](../artifacts/verification/P4_SELECTED_CARE_VERTEX_20261111.json)、[待辦查詢與批次](../artifacts/verification/P4_GROUP_TASK_VERTEX_20261111.json)及[部分衝突與恢復](../tests/mixed-task-batch.test.mjs)證據。 |
 | ⑤ 報告、可靠性與交付 | 從[報告](../PLAN.md#s14-w02)補原生分享與雙端預覽，再按[跨端可靠性](../PLAN.md#s07-w02-p4)、[集中服務災難恢復](../PLAN.md#s15-w02-p4)處理附件中斷、撤權、[隔離還原](../server/firebase-restore-apply.ts)、刪除重放及保留新寫入的回退。 | [趨勢及同版資料](../artifacts/verification/P4_SOURCE_ERASURE_REPORT_TRENDS_20261105.json)已有發布證據。正式還原與跨端證據齊後，才結算 [S16 驗收](../PLAN.md#s16-w04-p4)及 [S17 交付](../PLAN.md#s17-w04-p4)。 |
 
 ## 恢復工作前只核對三件事
