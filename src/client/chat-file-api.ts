@@ -16,14 +16,15 @@ export function createChatFileApi(fetcher: typeof fetch, origin = '', hash: type
   const matchesSelection = (file: ChatFileAttachment) => sharing
     ? file.sharedSpaceId === sharing.spaceId && file.messageId === null
     : file.sharedSpaceId === undefined;
-  const writable = () => { if (sharing) throw new ChatFileApiError(403, 'shared_attachment_write_unavailable'); };
+  const writable = () => { if (sharing && !sharing.expectedBasis) throw new ChatFileApiError(403, 'shared_attachment_write_unavailable'); };
   async function request(url: string, userId: string, signal: AbortSignal, payload?: unknown, sharedDelete = false) {
     if (payload !== undefined && !sharedDelete) writable();
     if (sharing) url += (url.includes('?') ? '&' : '?') + new URLSearchParams({ spaceId: sharing.spaceId });
     if (!userId || signal.aborted) throw new ChatFileApiError(0, 'identity_changed');
     let response: Response;
     try { response = await fetcher(url, { method: payload === undefined ? 'GET' : 'POST', credentials: 'include', cache: 'no-store', signal,
-      headers: { 'x-expected-user-id': userId, ...(payload === undefined ? {} : { 'content-type': 'application/json' }) },
+      headers: { 'x-expected-user-id': userId,
+        ...(sharing?.expectedBasis && payload !== undefined && !sharedDelete ? { 'x-library-access-basis': JSON.stringify(sharing.expectedBasis) } : {}), ...(payload === undefined ? {} : { 'content-type': 'application/json' }) },
       ...(payload === undefined ? {} : { body: JSON.stringify(payload) }) }); }
     catch { throw new ChatFileApiError(0, 'file_operation_unknown'); }
     if (signal.aborted) throw new ChatFileApiError(0, 'identity_changed');

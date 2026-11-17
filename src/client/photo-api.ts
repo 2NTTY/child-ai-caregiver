@@ -20,6 +20,11 @@ export class PhotoApiError extends Error {
 
 export type PhotoWriteResult = { photo: PhotoAttachment; recordId?: string } | { deleted: true; cleanupPending: true } | null;
 export type PhotoReconciliation = { state: "confirmed"; result: PhotoWriteResult } | { state: "unconfirmed" } | null;
+interface LibraryPhotoApi {
+  reserveLibrary(childId: string, opId: string, metadata: PhotoMetadata, signal: AbortSignal, userId: string): Promise<PhotoAttachment>;
+  resolveLibrary(childId: string, opId: string, signal: AbortSignal, userId: string): Promise<PhotoAttachment>;
+}
+
 export interface PhotoApi {
   photos(childId: string, signal: AbortSignal, userId: string): Promise<{ photos: PhotoAttachment[]; canCreate: boolean }>;
   photo(childId: string, photoId: string, signal: AbortSignal, userId: string): Promise<PhotoAttachment>;
@@ -103,7 +108,7 @@ function checkedWrite(value: unknown, target: Target): PhotoWriteResult {
   return { photo };
 }
 
-export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hashBytes = sha256Bytes, selection?: SharedSelection): PhotoApi {
+export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hashBytes = sha256Bytes, selection?: SharedSelection): PhotoApi & LibraryPhotoApi {
   const sharing = selection === undefined ? undefined : sharedSelectionSchema.parse(selection);
   const base = baseUrl.replace(/\/$/u, "");
   const apiUrl = base.endsWith("/api") ? base : base + "/api";
@@ -140,11 +145,12 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hash
     }
   }
   async function response(path: string, signal: AbortSignal, userId: string, body?: unknown): Promise<Response> {
-    if (body !== undefined) writable();
-    else if (sharing) path += (path.includes("?") ? "&" : "?") + new URLSearchParams({ spaceId: sharing.spaceId });
+    if (body !== undefined && sharing && !sharing.expectedBasis) writable();
+    if (sharing) path += (path.includes("?") ? "&" : "?") + new URLSearchParams({ spaceId: sharing.spaceId });
     const result = await fetcher(apiUrl + path, {
       method: body === undefined ? "GET" : "POST", credentials: "include", cache: "no-store", signal,
       headers: { Accept: "application/json", "x-expected-user-id": userId,
+        ...(body !== undefined && sharing?.expectedBasis ? { "x-library-access-basis": JSON.stringify(sharing.expectedBasis) } : {}),
         ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
@@ -261,11 +267,24 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hash
       if (!parsed.success || !parsed.data.source.trim()) throw new PhotoApiError(400, "invalid_input");
       return mutate(collection(childId), parsed.data, { kind: "reserve", childId, userId, metadata: parsed.data }, signal);
     },
+    async reserveLibrary(childId, opId, metadata, signal, userId) {
+      if (!sharing?.expectedBasis) throw new PhotoApiError(428, "sharing_precondition_required");
+      identity(childId, userId, opId);
+      const value = await request(collection(childId), signal, userId, { ...photoMetadataSchema.parse(metadata), opId });
+      return checkedPhoto(value, childId, userId, opId, false, sharing);
+    },
+    async resolveLibrary(childId, opId, signal, userId) {
+      if (!sharing?.expectedBasis) throw new PhotoApiError(428, "sharing_precondition_required");
+      identity(childId, userId, opId);
+      const value = await request(entity(childId, opId) + "/resolve", signal, userId, {});
+      return checkedPhoto(value, childId, userId, opId, false, sharing);
+    },
     async upload(photo, base64, signal, userId) {
-      writable();
+      if (sharing && !sharing.expectedBasis) writable();
+      if (!matchesSelection(photo, sharing)) throw new PhotoApiError(409, "scope_changed");
       identity(photo.childId, userId, photo.id);
       const value = await request(entity(photo.childId, photo.id) + "/content", signal, userId, { base64 });
-      const next = checkedPhoto(value, photo.childId, userId, photo.id);
+      const next = checkedPhoto(value, photo.childId, userId, photo.id, false, sharing);
       if (next.state !== "ready" || !sameMetadata(photo, next)) throw new PhotoApiError();
       return next;
     },

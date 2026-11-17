@@ -102,7 +102,7 @@ export function createFirestoreTaskWorker(options: FirestoreTaskWorkerOptions): 
     if (value.id !== taskId || !validTaskAttribution(value, binding.scope) || value.version !== snapshot.get('recordVersion')) domainReject('task_binding', 500);
     return firestoreTaskSchema.parse(value);
   }
-  async function outbox(binding: FirestoreAuthorityTransaction, taskId: string, taskVersion: number) {
+  async function outbox(binding: Pick<FirestoreAuthorityTransaction, 'transaction' | 'scope'>, taskId: string, taskVersion: number) {
     const id = firestoreReminderOutboxId(taskId, taskVersion), ref = data.ref('task_outbox', 'task-reminder-outbox', id);
     const snapshot = await binding.transaction.get(ref);
     if (!snapshot.exists) return null;
@@ -315,7 +315,16 @@ export function createFirestoreTaskWorker(options: FirestoreTaskWorkerOptions): 
         if (!currentTask(current, work)) return result('stopped');
         if (work.dueAt !== job.scheduledAt || Date.parse(work.dueAt) > at || Date.parse(current!.occurrence.dueAt) > at) return result('not_due');
         return { state: 'ready' as const, value: await visit(binding, work) };
-      });
+      }, mode === 'enqueue' ? async transaction => {
+        const row = await outbox({transaction, scope: job.scope}, job.taskId, job.taskVersion);
+        if (!row) return result('stopped');
+        jobMatches(job, row.value);
+        if (row.value.state === 'unknown') return result('unknown');
+        if (row.value.dueAt === job.scheduledAt && (row.value.state === 'pending' || row.value.state === 'leased')) {
+          transaction.set(row.ref, sealOutbox(job.scope, { ...row.value, state: 'cancelled', lease: null }));
+        }
+        return result('stopped');
+      } : undefined);
     },
     async view(binding, taskIds) {
       domainParse(z.array(uuid).max(50).refine(ids => new Set(ids).size === ids.length), taskIds);

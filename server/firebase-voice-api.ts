@@ -33,7 +33,7 @@ export async function handleFirebaseVoiceRequest(request: Request, userId: strin
   if (expected !== userId) domainReject('session_changed', 409);
   const url = new URL(request.url), match = /^\/api\/children\/([^/]+)\/voices(?:\/([^/]+)(?:\/(content|resolve|delete|transcript))?)?$/u.exec(url.pathname);
   if (!match || !z.uuid().safeParse(match[1]).success || match[2] && !z.uuid().safeParse(match[2]).success) domainReject('not_found', 404);
-  const selection = attachmentReadSelection(request, url, true);
+  const selection = attachmentReadSelection(request, url, true, !match[2] || ['content', 'resolve'].includes(match[3] ?? ''));
   const reads = selection ? voice.forSharedSpace?.(selection) : voice;
   if (!reads) domainReject('shared_attachment_unavailable', 503);
   const listing = request.method === 'GET' && !match[2];
@@ -47,7 +47,7 @@ export async function handleFirebaseVoiceRequest(request: Request, userId: strin
     response = Response.json(await reads.list(userId, childId, listQuery));
   } else if (request.method === 'POST' && !id) {
     const input = domainParse(voiceReservationSchema, await json(request)); await active();
-    response = Response.json({ voice: await voice.reserve(userId, childId, input) }, { status: 201 });
+    response = Response.json({ voice: await reads.reserve(userId, childId, input) }, { status: 201 });
   } else if (request.method === 'GET' && id && !action) response = Response.json({ voice: await reads.get(userId, childId, id) });
   else if (request.method === 'GET' && id && action === 'transcript') {
     const transcripts = selection ? voice.transcripts?.forSharedSpace?.(selection) : voice.transcripts;
@@ -62,10 +62,10 @@ export async function handleFirebaseVoiceRequest(request: Request, userId: strin
     } else response = Response.json({ transcript });
   } else if (request.method === 'POST' && id && action === 'content') {
     const input = domainParse(uploadSchema, await json(request, VOICE_UPLOAD_BODY_BYTES)); await active();
-    response = Response.json({ voice: await voice.upload(userId, childId, id, input.expectedVersion, input.base64, request.signal) });
+    response = Response.json({ voice: await reads.upload(userId, childId, id, input.expectedVersion, input.base64, request.signal) });
   } else if (request.method === 'POST' && id && action === 'resolve') {
     domainParse(z.object({}).strict(), await json(request)); await active();
-    response = Response.json({ voice: await voice.reconcile(userId, childId, id) });
+    response = Response.json({ voice: await reads.reconcile(userId, childId, id) });
   } else if (request.method === 'POST' && id && action === 'delete') {
     const input = domainParse(z.object({ expectedVersion: version, opId: z.uuid() }).strict(), await json(request)); await active();
     response = Response.json(await reads.delete(userId, childId, id, input.expectedVersion, input.opId));

@@ -9,7 +9,8 @@ export function createFirestoreTaskExecution(options: FirestoreTaskWorkerOptions
   currentAuth: (userId:string)=>Promise<string>) {
   const data=new FirestoreDomainData(options), authority=createFirestoreAuthority(options), sharing=createFirestoreSharingStore(options);
   return async function execute<T>(job:FirestoreTaskDelivery,
-    visit:(binding:FirestoreAuthorityTransaction,recipient:FirestoreAuthorityTransaction)=>Promise<T>):Promise<T> {
+    visit:(binding:FirestoreAuthorityTransaction,recipient:FirestoreAuthorityTransaction)=>Promise<T>,
+    onObsoleteAssignment?: (tx: FirestoreAuthorityTransaction['transaction']) => Promise<T>):Promise<T> {
     if(!job.scope.ownerUserId.startsWith('space:')) {
       const email=await currentAuth(job.scope.ownerUserId);
       return authority.runTransaction(job.scope.ownerUserId,job.scope.childId,async b=>{
@@ -30,14 +31,26 @@ export function createFirestoreTaskExecution(options: FirestoreTaskWorkerOptions
     };
     const assignment=await options.database.runTransaction(read,{readOnly:true});
     const email=await currentAuth(assignment.userId);
-    return authority.runTransaction(assignment.userId,null,recipient=>{
-      if(recipient.identityEmail!==email)domainReject('task_auth_denied',403);
-      return sharing.inResourceTransaction(recipient,{spaceId:job.scope.workspaceId,childId:job.scope.childId,module:'tasks',mode:'write'},async access=>{
-        const current=await read(access.transaction);
-        if(firestoreDomainHash(current)!==firestoreDomainHash(assignment)
-          ||firestoreDomainHash(current)!==firestoreDomainHash(access.binding.sharedAccess?.classMember))domainReject('task_assignee_changed',403);
-        return visit(access.binding,recipient);
+    try {
+      return await authority.runTransaction(assignment.userId,null,recipient=>{
+        if(recipient.identityEmail!==email)domainReject('task_auth_denied',403);
+        return sharing.inResourceTransaction(recipient,{spaceId:job.scope.workspaceId,childId:job.scope.childId,module:'tasks',mode:'write'},async access=>{
+          const current=await read(access.transaction);
+          if(firestoreDomainHash(current)!==firestoreDomainHash(assignment)
+            ||firestoreDomainHash(current)!==firestoreDomainHash(access.binding.sharedAccess?.classMember))domainReject('task_assignee_changed',403);
+          return visit(access.binding,recipient);
+        });
       });
-    });
+    } catch (error) {
+      if (!onObsoleteAssignment || !error || typeof error !== 'object' || !('code' in error)
+        || !['space_access_denied','space_inactive','read_only','task_assignee_changed'].includes(String(error.code))) throw error;
+      return options.database.runTransaction(async tx => {
+        const control = await authority.readControl(tx);
+        if (!control.enabled || control.generation !== job.generation) throw error;
+        const current = await read(tx);
+        if (await sharing.classTaskAssigneeStillEligible(tx, current)) throw error;
+        return onObsoleteAssignment(tx);
+      });
+    }
   };
 }
