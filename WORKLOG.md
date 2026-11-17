@@ -6109,3 +6109,9 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 2）**N2-R [chat-delivery-review.ts](server/chat-delivery-review.ts)**：移除 `privateSourceSupportsParagraph` 先呼叫 `memoryFactReferencedByParagraph` 即整段放行之提前返回，改為逐句拆解（涵蓋標點與無逗號連接詞，如「但寶寶並無…」「亦對…」「及…」），要求段落內每句實質陳述皆於候選私人來源中具有一致極性（`PRIVATE_NEGATION_PATTERN`）、一致主體（禁止以「媽媽…」頂替「寶寶…」）及完整規範化詞項／數字支持，徹底攔截「真事實夾帶否定矛盾或額外未授權過敏原」，同時保留忠實單句、多條確認事實組合及純歸因前綴。
 3）**N3-R [chat-delivery-review.ts](server/chat-delivery-review.ts)**：為 `parseTimeAnchorInfo` 與 `timeAnchorMatches` 補齊 ISO 時間點（`epochMs`）及解析後本地日曆年月日（`Asia/Hong_Kong` 或該筆收據 `eventTimeZone`），並支援明確年月日文字（如 `2026-11-18`），擋住同鐘點跨日（`2026-11-18T08:00:00+08:00` vs `2026-11-17T08:00:00+08:00`）或錯時區 offset（`+08:00` vs `Z`）確認，同時保留同一時間點合法 offset（`2026-11-17T00:00:00Z` == `2026-11-17T08:00:00+08:00`）。
 4）於 `tests/search-official-evidence.test.ts`（12→13 cases）新增 `N1-R / N2-R / N3-R` 成對正反實測，並更新 `scripts/ci/verify-search-official-evidence-offline.sh` `TEST_CASES`。
+
+### 2026-11-17　B-P2 新增邊界測試 R1 修復（BND-1 跨段假私人事實逐段內容核對）
+
+依 `SLICE_B_BP2_BP7_NEW_BOUNDARY_TESTS_20261117_R1.md`（BND-1）於本地 forward-only 新提交修復（未 push／未開 PR）：
+1）**BND-1 [chat-delivery-review.ts](server/chat-delivery-review.ts)**：移除 `privateSourcesSupportDraft` 先依 `kind === "record_restatement" || kind === "private_reference"` 篩選 `targets` 之分支，抽出共用 `classifyParagraphPrivateSupport`、`paragraphIsExemptWithoutCitation` 及 `isPureScopeRefusalOrLimitationText`，對所有段落依實際內容逐段核對私人來源支持（涵蓋混合公共來源、拒答夾帶兒童過敏陳述與僅待確認提示段落），徹底封堵同稿異段標籤夾帶假過敏，並保留忠實多段紀錄、純澄清問句及 `SPEC.md:301-304`／已驗證操作摘要。
+2）於 `tests/search-official-evidence.test.ts`（13→14 cases）新增 `BND-1` 真 `createProductAgent` 成對正反實測，並更新 `scripts/ci/verify-search-official-evidence-offline.sh` `TEST_CASES=(14 13 ...)`。

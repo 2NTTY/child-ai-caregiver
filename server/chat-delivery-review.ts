@@ -1014,25 +1014,121 @@ function privateSourcesSupportParagraph(candidates: readonly ChatDeliverySource[
   return substantiveSupported > 0;
 }
 
+function isPurePrivateAttributionHeader(text: string): boolean {
+  const cleanForPol = text.normalize("NFKC").replace(PRIVATE_ATTRIBUTION_STRIP_PATTERN, " ");
+  const compact = compactPrivateClauseBody(canonicalPrivateClauseBody(text));
+  return !compact && !PRIVATE_NEGATION_PATTERN.test(cleanForPol) && !PRIVATE_OTHER_SUBJECT_PATTERN.test(cleanForPol);
+}
+
+const PRIVATE_FACTUAL_CLAIM_WITHOUT_REFUSAL_PATTERN = /(?:(?:寶寶|BB|嬰兒|幼兒|孩子|小朋友|媽媽|媽咪|爸爸|爹地|\b(?:baby|infant|child|toddler)\b).{0,24}(?:過敏|敏感|喜歡|鍾意|飲過|喝過|食過|吃過|曾|出現|發燒|腹瀉|allergic|allergy|allergies|likes?|has|had)|(?:家庭紀錄|已確認記憶|family\s+records?|memory\s+records?))/iu;
+const PRIVATE_ALLERGY_CLAIM_PATTERN = /(?:過敏|敏感|allerg(?:y|ic|ies)|家庭紀錄|已確認記憶)/iu;
+
+function isPureScopeRefusalOrLimitationText(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.length > 400) return false;
+  if (CARE_ADVISORY_PATTERN.test(trimmed) || MEDICAL_CLAIM_PATTERN.test(trimmed)
+    || hasOperationOrStateAssertion(trimmed) || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(trimmed)
+    || UNSAFE_REFUSAL_TOPIC_PATTERN.test(trimmed)
+    || PRIVATE_FACTUAL_CLAIM_WITHOUT_REFUSAL_PATTERN.test(trimmed)) return false;
+  const sentences = trimmed.split(/[。！？!?;；\n]+/u).map(part => part.trim()).filter(Boolean);
+  if (sentences.length === 0) return false;
+  return sentences.every(sentence => SCOPE_REFUSAL_OR_LIMITATION_PATTERN.test(sentence));
+}
+
+function isPurePendingConfirmationDisclaimer(text: string): boolean {
+  if (!PENDING_OPERATION_DISCLAIMER.test(text)) return false;
+  if (/(?:已正式保存|已經保存|已經儲存|已經刪除|已經取消|已經清空|已經設定|已經修改|已經更新|一筆不留|已經完成|\b(?:has|have)\s+been\s+(?:saved|deleted|updated|changed|cleared|removed|cancelled|reset)\b|\balready\s+(?:saved|deleted|updated|changed|cleared)\b)/iu.test(text)) {
+    return false;
+  }
+  if (CARE_ADVISORY_PATTERN.test(text) || MEDICAL_CLAIM_PATTERN.test(text)
+    || PRIVATE_FACTUAL_CLAIM_WITHOUT_REFUSAL_PATTERN.test(text)) {
+    return false;
+  }
+  const sentences = text.split(/[。！？!?;；\n]+/u).map(part => part.trim()).filter(Boolean);
+  return sentences.length > 0 && sentences.every(sentence => PENDING_OPERATION_DISCLAIMER.test(sentence));
+}
+
+function paragraphVerifiedByOperations(
+  draft: ChatDeliveryDraft,
+  paragraph: ChatDeliveryDraft["paragraphs"][number],
+): boolean {
+  if (!draft.verifiedOperations?.length || paragraph.citationIds.length > 0) return false;
+  const text = paragraph.text.trim();
+  if (!text) return false;
+  const claimsOp = hasOperationOrStateAssertion(text);
+  if (!claimsOp && !isPurePendingConfirmationDisclaimer(text)) return false;
+  return isPureVerifiedOperationSummary({
+    ...draft,
+    kind: "operation",
+    paragraphs: [{ kind: "operation", text, citationIds: [] }],
+  });
+}
+
+function paragraphIsExemptWithoutCitation(
+  draft: ChatDeliveryDraft,
+  paragraph: ChatDeliveryDraft["paragraphs"][number],
+): boolean {
+  if (paragraph.citationIds.length > 0) return false;
+  const text = paragraph.text.trim();
+  if (!text) return true;
+  if (SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS.has(text)) return true;
+  if (isPureGreetingOrSmallTalk(text) || isPureClarifyingQuestion(text)) return true;
+  if (isPureScopeRefusalOrLimitationText(text) || isPurePendingConfirmationDisclaimer(text)) return true;
+  if (paragraphVerifiedByOperations(draft, paragraph)) return true;
+  const kind = paragraph.kind ?? draft.kind;
+  if (kind === "private_reference" && Boolean(draft.images?.length || draft.voice)
+    && !CARE_ADVISORY_PATTERN.test(text) && !MEDICAL_CLAIM_PATTERN.test(text)
+    && !PRIVATE_ALLERGY_CLAIM_PATTERN.test(text)) {
+    return true;
+  }
+  return false;
+}
+
+type ParagraphSupportStatus = "empty" | "exempt" | "header" | "backed" | "missing";
+
+function classifyParagraphPrivateSupport(
+  draft: ChatDeliveryDraft,
+  paragraph: ChatDeliveryDraft["paragraphs"][number],
+  privateSources: readonly ChatDeliverySource[],
+  sourceById: ReadonlyMap<string, ChatDeliverySource>,
+  publicSourceIds: ReadonlySet<string>,
+  allowAttributionHeader: boolean,
+): ParagraphSupportStatus {
+  const text = paragraph.text.trim();
+  if (!text) return "empty";
+  const citesPublic = paragraph.citationIds.some(id => publicSourceIds.has(id));
+  const citedPrivateIds = paragraph.citationIds.filter(id => sourceById.has(id));
+  if (citesPublic && citedPrivateIds.length === 0 && !paragraph.citationIds.some(id => !publicSourceIds.has(id))) {
+    return "exempt";
+  }
+  if (citedPrivateIds.length > 0) {
+    return privateSourcesSupportParagraph(citedPrivateIds.map(id => sourceById.get(id)!), text) ? "backed" : "missing";
+  }
+  if (paragraph.citationIds.length > 0) return "missing";
+  if (paragraphIsExemptWithoutCitation(draft, paragraph)) return "exempt";
+  if (allowAttributionHeader && isPurePrivateAttributionHeader(text)) return "header";
+  return privateSourcesSupportParagraph(privateSources, text) ? "backed" : "missing";
+}
+
 function privateSourcesSupportDraft(draft: ChatDeliveryDraft): boolean {
+  if (draft.paragraphs.length === 0) return false;
   const privateSources = draft.sources.filter(source => source.classification === "private");
   if (privateSources.length === 0) return false;
   const sourceById = new Map(privateSources.map(source => [source.citationId, source]));
-  const recordParagraphs = draft.paragraphs.filter(paragraph => {
-    const kind = paragraph.kind ?? draft.kind;
-    return kind === "record_restatement" || kind === "private_reference";
-  });
-  const targets = recordParagraphs.length > 0 ? recordParagraphs : draft.paragraphs;
-  return targets.every(paragraph => {
-    const text = paragraph.text.trim();
-    if (!text) return true;
-    const citedPublic = paragraph.citationIds.some(id => draft.sources.some(s => s.citationId === id && s.classification !== "private"));
-    if (citedPublic) return true;
-    const candidates = paragraph.citationIds.length > 0
-      ? paragraph.citationIds.map(id => sourceById.get(id)).filter((s): s is ChatDeliverySource => Boolean(s))
-      : privateSources;
-    return privateSourcesSupportParagraph(candidates, text);
-  });
+  const publicSourceIds = new Set(
+    draft.sources.filter(source => source.classification !== "private").map(source => source.citationId),
+  );
+  // Inspect every paragraph by content; a sibling record paragraph or kind:"clarification"
+  // label must never exclude ungrounded claims in other paragraphs.
+  let backedCount = 0;
+  let exemptCount = 0;
+  for (const paragraph of draft.paragraphs) {
+    const status = classifyParagraphPrivateSupport(draft, paragraph, privateSources, sourceById, publicSourceIds, true);
+    if (status === "missing") return false;
+    if (status === "backed") backedCount += 1;
+    else if (status === "exempt") exemptCount += 1;
+  }
+  return backedCount > 0 || exemptCount > 0;
 }
 
 function draftHasClinicalOrDirectiveCareClaim(draft: ChatDeliveryDraft): boolean {
@@ -1073,12 +1169,7 @@ export function isPureScopeRefusalOrLimitation(draft: ChatDeliveryDraft): boolea
   if (!kinds.length || kinds.some(kind => kind !== "clarification")) return false;
   if (draft.paragraphs.some(paragraph => paragraph.citationIds.length > 0)) return false;
   if (draft.images?.length || draft.voice) return false;
-  const text = joinedDraftText(draft);
-  if (!text || text.length > 400) return false;
-  if (CARE_ADVISORY_PATTERN.test(text) || MEDICAL_CLAIM_PATTERN.test(text)
-    || hasOperationOrStateAssertion(text) || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(text)
-    || UNSAFE_REFUSAL_TOPIC_PATTERN.test(text)) return false;
-  return SCOPE_REFUSAL_OR_LIMITATION_PATTERN.test(text);
+  return isPureScopeRefusalOrLimitationText(joinedDraftText(draft));
 }
 
 const VERIFIED_SUMMARY_BLOCKED_ADVICE_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?|不要|不可|唔好|唔可以|唔准|不准|藥|劑量?|粒|片|丸|滴|蜜糖|蜂蜜|止咳|退燒|抗生素|趴低|瞓覺時|停止|暫停|禁止|切勿|禁食|禁飲|禁飲食|禁飲禁食|停食|停水|should(?:\s+not)?|must(?:\s+not)?|recommend(?:ed|s)?|don'?t|do\s+not|avoid|medication|medicine|drugs?|tablet|pill|capsule|drops?|syrup|administer|withhold|discontinue|stop|forbid|prohibit|nil[\s-]+by[\s-]+mouth|\bnpo\b|fasting|aspirin|ibuprofen|paracetamol|honey|measles|wound/iu;
@@ -1123,16 +1214,27 @@ export function chatDeliveryPassNeedsSources(draft: ChatDeliveryDraft, obligatio
 
   if (obligation?.evidenceRequired && draft.sources.length === 0) return true;
 
-  const hasPublicSource = draft.sources.some(source => source.classification !== "private");
+  const publicSourceIds = new Set(
+    draft.sources.filter(source => source.classification !== "private").map(source => source.citationId),
+  );
+  const hasPublicSource = publicSourceIds.size > 0;
+  const kinds = draft.paragraphs.map(paragraph => paragraph.kind ?? draft.kind);
   if (draft.sources.length > 0) {
     if (!hasPublicSource && !isPureScopeRefusalOrLimitation(draft) && !isPureVerifiedOperationSummary(draft)
-      && (obligation?.evidenceRequired || cited.size > 0 || (draft.userRequest !== undefined && userRequestHasCareContext(draft.userRequest)))) {
+      && (obligation?.evidenceRequired || cited.size > 0 || draft.userRequest !== undefined
+        || (draft.paragraphs.length > 1 && (draftLooksLikeSubstantiveCareAdvice(draft) || kinds.includes("record_restatement") || kinds.includes("private_reference"))))) {
       return !privateSourcesSupportDraft(draft);
+    }
+    if (hasPublicSource && !isPureScopeRefusalOrLimitation(draft) && !isPureVerifiedOperationSummary(draft)) {
+      const privateSources = draft.sources.filter(source => source.classification === "private");
+      const privateById = new Map(privateSources.map(source => [source.citationId, source]));
+      if (draft.paragraphs.length === 1 && cited.size === 0 && privateSources.length === 0) return false;
+      return draft.paragraphs.some(paragraph =>
+        classifyParagraphPrivateSupport(draft, paragraph, privateSources, privateById, publicSourceIds, false) === "missing");
     }
     return false;
   }
 
-  const kinds = draft.paragraphs.map(paragraph => paragraph.kind ?? draft.kind);
   if (kinds.some(kind => kind === "caregiving" || kind === "safety_help")) return true;
   if (kinds.includes("private_reference")) return !(draft.images?.length || draft.voice);
   if (isPureScopeRefusalOrLimitation(draft) || isPureVerifiedOperationSummary(draft)) return false;
