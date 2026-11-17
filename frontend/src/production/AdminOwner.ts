@@ -1,6 +1,7 @@
 import { adminKnowledgeStatusSchema, type AdminKnowledgeStatus, type AdminCommand, type AdminInvitation, type AdminOverview, type AdminPage, type AdminReceipt, type AdminUsage } from '../../../src/shared/admin.ts';
-import { emptyIndex, indexTargetLimit, adminIndexVersionPageSchema, adminIndexBatchPageSchema, adminIndexBatchReplySchema,
+import { emptyIndex, indexTargetLimit, indexGroupTargetLimit, indexGroupReplySchema, matchesGroupTargets, adminIndexVersionPageSchema, adminIndexBatchPageSchema, adminIndexBatchReplySchema,
   type AdminIndexState, type AdminIndexBatch, type AdminIndexPending } from './admin-knowledge-index.ts';
+import { indexGroupViewSchema } from '../../../src/shared/admin-knowledge-index.ts';
 import { adminTransferDigestSchema, adminTransferListSchema, adminTransferDetailSchema, adminTransferReplySchema } from '../../../src/shared/admin-knowledge-transfer.ts';
 import type { SelectedPackage } from './HandoverImportOwner.ts';
 import { emptyTransfers, type AdminTransferState, type AdminTransferBatch, type AdminTransferPending } from './admin-knowledge-transfer.ts';
@@ -264,8 +265,17 @@ export class AdminOwner {
     const index = this.state.index, item = index.versions.items.find(value => value.id === id);
     if (this.state.access !== 'allowed' || index.busy || index.pending || !item || item.state !== 'reviewed') return;
     const targets = index.selected.filter(value => value.versionId !== id);
-    if (selected && targets.length >= indexTargetLimit) { this.updateIndex({ notice: `每批最多選擇 ${indexTargetLimit} 個已審核版本。` }); return; }
+    if (selected && targets.length >= indexGroupTargetLimit) { this.updateIndex({ notice: `每次最多選擇 ${indexGroupTargetLimit} 個已審核版本。` }); return; }
     this.updateIndex({ selected: selected ? [...targets, { versionId: id, versionHash: item.hash }] : targets, notice: null });
+  }
+  selectLoadedIndexVersions() {
+    if (!this.canSendIndex()) return;
+    const selected = new Map(this.state.index.selected.map(target => [target.versionId, target]));
+    for (const version of this.state.index.versions.items) {
+      if (selected.size >= indexGroupTargetLimit) break;
+      if (version.state === 'reviewed') selected.set(version.id, { versionId: version.id, versionHash: version.hash });
+    }
+    this.updateIndex({ selected: [...selected.values()], notice: null });
   }
   private canSendIndex(retry = false) {
     const index = this.state.index;
@@ -275,16 +285,24 @@ export class AdminOwner {
   async createIndexBatch() {
     if (!this.canSendIndex()) return;
     const targets = this.state.index.selected;
-    if (!targets.length || targets.length > indexTargetLimit || !targets.every(target => this.state.index.versions.items.some(item =>
+    if (!targets.length || targets.length > indexGroupTargetLimit || !targets.every(target => this.state.index.versions.items.some(item =>
       item.id === target.versionId && item.hash === target.versionHash && item.state === 'reviewed'))) return;
     const opId = crypto.randomUUID();
-    await this.sendIndex({ kind: 'create', batchId: opId, payload: { opId, targets: structuredClone(targets) } });
+    const command = { kind: 'create' as const, batchId: opId, payload: { opId, targets: structuredClone(targets) } };
+    await this.sendIndex(targets.length > indexTargetLimit ? { ...command, group: true } : command);
   }
   async controlIndexBatch(id: string, kind: 'stop' | 'resume') {
     if (!this.canSendIndex()) return;
     const batch = this.state.index.batches.items.find(item => item.id === id);
     if (!batch || kind === 'stop' && batch.state !== 'running' || kind === 'resume' && !['paused', 'interrupted'].includes(batch.state)) return;
     await this.sendIndex({ kind, batchId: id, payload: { opId: crypto.randomUUID(), expectedControlVersion: batch.controlVersion } });
+  }
+  async controlIndexGroup(kind: 'stop' | 'resume') {
+    const group = this.state.index.group;
+    if (!this.canSendIndex() || !group || !group.parts.some(part => kind === 'stop'
+      ? part.state === 'running' : part.state === 'paused' || part.state === 'interrupted')) return;
+    await this.sendIndex({ group: true, kind, batchId: group.id,
+      payload: { opId: crypto.randomUUID(), versions: group.parts.map(part => part.controlVersion) } });
   }
   private withIndexBatch(batch: AdminIndexBatch) {
     return { ...this.state.index.batches, items: [batch, ...this.state.index.batches.items.filter(item => item.id !== batch.id)] };
@@ -293,8 +311,18 @@ export class AdminOwner {
     const generation = this.generation;
     this.updateIndex({ busy: true, pending: command, notice: null });
     try {
-      const path = '/admin/knowledge-index-batches' + (command.kind === 'create' ? '' : '/' + encodeURIComponent(command.batchId) + '/' + command.kind);
-      const { batch } = adminIndexBatchReplySchema.parse(await this.request<unknown>(path, command.payload));
+      const base = 'group' in command ? '/admin/knowledge-index-groups' : '/admin/knowledge-index-batches';
+      const path = base + (command.kind === 'create' ? '' : '/' + encodeURIComponent(command.batchId) + '/' + command.kind);
+      const response = await this.request<unknown>(path, command.payload);
+      if ('group' in command) {
+        const { group } = indexGroupReplySchema.parse(response);
+        if (!group || group.id !== command.batchId || (command.kind === 'create' && !await matchesGroupTargets(group, command.payload.targets)))
+          throw new Error('Invalid index group binding');
+        if (this.indexCurrent(generation)) this.updateIndex({ group, pending: null, notice: '已確認整組操作。',
+          ...(command.kind === 'create' ? { selected: [] } : {}) });
+        return;
+      }
+      const { batch } = adminIndexBatchReplySchema.parse(response);
       if (!this.indexCurrent(generation)) return;
       if (!batch || batch.id !== command.batchId) throw new Error('Invalid index batch reply');
       if (command.kind === 'create' && (batch.targets.length !== command.payload.targets.length || !command.payload.targets.every(target =>
@@ -309,10 +337,29 @@ export class AdminOwner {
         : '索引操作結果未知；先查回批次，再明確重送同一操作。原操作 ID、版本 hash 及控制版本已保留。' });
     } finally { if (generation === this.generation) this.updateIndex({ busy: false }); }
   }
+  async refreshIndexGroup(id: string) {
+    const index = this.state.index;
+    if (!this.canSendIndex(true) || (index.pending && (!('group' in index.pending) || index.pending.batchId !== id))) return;
+    if (!indexGroupViewSchema.shape.id.safeParse(id).success) { this.updateIndex({ notice: '請填入有效的重建組編號。' }); return; }
+    const generation = this.generation;
+    this.updateIndex({ busy: true, notice: null });
+    try {
+      const { group } = indexGroupReplySchema.parse(await this.request<unknown>('/admin/knowledge-index-groups/' + encodeURIComponent(id)));
+      const pending = index.pending;
+      if (group && group.id !== id) throw new Error('Invalid index group identity');
+      const created = group && pending?.kind === 'create' && await matchesGroupTargets(group, pending.payload.targets);
+      if (group && pending?.kind === 'create' && !created) throw new Error('Invalid index group target digest');
+      if (!this.indexCurrent(generation)) return;
+      this.updateIndex({ group, ...(created ? { pending: null, selected: [] } : {}),
+        notice: created ? '已查回原重建組。' : pending ? '原操作仍待確認，可沿原編號重送。' : group ? '已讀回整組進度。' : '未查到這個重建組。' });
+    } catch (error) {
+      if (this.indexCurrent(generation) && !this.indexAccessError(error)) this.updateIndex({ notice: adminError(error) });
+    } finally { if (generation === this.generation) this.updateIndex({ busy: false }); }
+  }
   async refreshIndexBatch(id: string) {
     const index = this.state.index;
     if (this.state.access !== 'allowed' || !index.open || index.busy || index.batches.status === 'loading'
-      || !index.batches.items.some(batch => batch.id === id) && index.pending?.batchId !== id) return;
+      || !index.batches.items.some(batch => batch.id === id) && !index.group?.parts.some(part => part.id === id) && index.pending?.batchId !== id) return;
     const generation = this.generation;
     this.updateIndex({ busy: true, notice: null });
     try {
@@ -325,7 +372,7 @@ export class AdminOwner {
     } catch (error) { if (this.indexCurrent(generation) && !this.indexAccessError(error)) this.updateIndex({ notice: adminError(error) }); }
     finally { if (generation === this.generation) this.updateIndex({ busy: false }); }
   }
-  recoverIndexOperation = async () => { const pending = this.state.index.pending; if (pending) await this.refreshIndexBatch(pending.batchId); };
+  recoverIndexOperation = async () => { const pending = this.state.index.pending; if (pending) await ('group' in pending ? this.refreshIndexGroup(pending.batchId) : this.refreshIndexBatch(pending.batchId)); };
   retryIndexOperation = async () => { const pending = this.state.index.pending; if (pending && this.canSendIndex(true)) await this.sendIndex(pending); };
   private updateTransfers(change: Partial<AdminTransferState>) { this.update({ transfers: { ...this.state.transfers, ...change } }); }
   private withTransferBatch(batch: AdminTransferBatch) {
