@@ -1352,7 +1352,7 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 
 
 <a id="p4-auth-providers"></a>
-### P4-AUTH01：同 UID 登入方式（實作中，尚未部署）
+### P4-AUTH01：同 UID 登入方式（應用接線已發布，供應商待啟用）
 
 `GET /api/auth/providers` 沿現有 Cookie／原生 session，並要求 `x-expected-user-id` 與目前身份相同。回應 `{userId, providers, currentProvider}` 只列當前 Firebase 身份與產品已批准方式的交集。已撤銷的裝置或已解除連結的第三方身份無法用原憑據讀取。回應沿私人 no-store。
 
@@ -1362,22 +1362,22 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 
 共用 Firebase client 增加 provider 登入、本人登入方式讀取、以原方式重新驗證，以及先核對原 UID 後連結新 provider。身份 token 仍只經原 `/api/auth/session` 或 `/api/auth/native-session` 交換；沒有新增業務憑據格式。原密碼重新驗證字串保持相容，provider-only 使用 `{provider}`。連結先以原方式重新驗證，暫存 SDK 身份最多兩分鐘，再由另一個明確同意手勢呼叫原生 linking，避免連續 popup 被阻擋。SDK 成功但交換結果未知時先讀回目前方法，不自動重做連結；這個公開讀回須等待原 SDK 操作及取消清理完成，不能用未定局的舊列表解除 unknown。內部重新驗證的唯讀核對不等待自身 queue。取消／切換身份拒絕遲到交換，清理暫存 provider 身份；不推定已取消 provider 端已完成的連結。
 
-註冊 blocking handler 僅接受 Firebase 驗證的 password／google.com／apple.com beforeCreate 事件，第三方必須有已驗證電郵，仍讀取原邀請資格，正式准入交易才消耗。Apple relay 地址不匹配原邀請時不猜地址或改 UID；另由原邀請地址驗證後連結同 UID 的接續流程承接（尚待實作）。平台 adapter 只列實際配置的方式；原生 Google／Apple SDK、供應商配置、隱藏電郵及真人流程未完成不得宣稱已支援。
+註冊 blocking handler 僅接受 Firebase 驗證的 password／google.com／apple.com beforeCreate 事件，第三方必須有已驗證電郵，仍讀取原邀請資格，正式准入交易才消耗。Apple relay 地址不匹配原邀請時不猜地址或改 UID；以原邀請電郵完成驗證及准入，再從同一帳戶重新驗證原方式並明確連結 Apple。Web 與原生 session 交換已有[合成驗證](../tests/firebase-auth.test.ts)。正式供應商尚待配置，隱藏電郵的真人驗收仍待完成。
 
 正式啟用須另核 Firebase 目前的同電郵帳號設定：官方 Google provider 在部分情況會自動連結，而 allowDuplicateEmails 會改變 profile／email 回傳。不能以空按鈕配置以外的假設當成已符合明確連結，也不直接變更現有 UID／電郵准入規則；限制及來源見 [TECH_REUSE](TECH_REUSE.md#p4-auth-providers)。
 
 **AUTH01 原生 provider adapter（已實作、未開放）：**Google／Apple 原生 SDK 只取得供應商 credential，再交 Firebase JS 的 `signInWithCredential`／`linkWithCredential`；業務登入仍經同一 session exchange。平台 adapter 不自建 session、不自行寫 Firebase 用戶 email 或合併 UID。Google 要求實際 Web OAuth client ID，iOS 另需 iOS client ID／URL scheme；Apple 每次產生新 nonce／state，供應商回覆及 Firebase credential 驗證後才回中央流程。缺平台配置不暴露可用方式；新原生依賴須新 binary，不能強推舊 runtime OTA。仍不啟用雲端 provider；自動連結與邀請 gate 沿上文。
 
 <a id="p4-system-share-input"></a>
-## S12-W02：系統分享進入共用草稿（Android 已接線，待新 binary）
+## S12-W02：系統分享進入共用草稿（Android 已交付，外部 App 收件待實機）
 
 外部系統分享是未提交輸入，不是 Agent 指令、上載授權或匯入結果。Android 復用 Expo Sharing 的原始 payload 與 Router intent；網址只作原文，不在接收時抓取或解析。`/share` 在登入後顯示待處理項目，選定個人孩子後才加入既有草稿。已有文字追加而不覆寫；每則一份附件沿既有規則，已有附件時保留兩邊輸入並說明，不能靜默取代。
 
-- 接收清單只在設備程序記憶體中保留；未送出資料不跨端同步。重啟後來源可能須重新分享，不能宣稱已保存至 Server。
+- Android 接收清單只在設備程序記憶體中保留；未送出資料不跨端同步。重啟後來源可能須重新分享，不能宣稱已保存至 Server。
 - 帳號變更清除原清單與原生 intent；未登入接收可待首次登入後選擇目標。讀取期間切換孩子／撤權，遲到的本機副本必須釋放，不加入新範圍。
 - 照片／錄音／一般檔案沿現有 bytes、格式、大小、hash、暫存與原送出服務；不新增 HTTP 上載接口、模型呼叫或預覽解析服務。原始 URI 不加入聊天文字、URL 參數或日誌。
 - 收件箱最多持有 20 項；超量明示，不能截斷後回報全部接受。用戶逐項加入／捨棄輸入，不因此要求逐條批准 Agent 業務操作。
-- 新 Android intent filter 需要新 binary，OTA 不代替；Web 平台 adapter 為空實作，不宣稱網站已有 OS 分享接收。iOS 標準 extension 及 HANDOVER01 資料包匯入仍待接線，不把一般檔案傳送算成資料包導入。
+- Android 第 8 版已包含分享 intent filter；[相容 OTA](../artifacts/verification/P4_ANDROID_DELIVERY_20261118.json)已發布。Web 維持站內選檔。原生收到 ZIP 可選既有匯入資料入口；iOS extension 先把一批分享保存在本機 App Group，使用者返回來源 App 後可自行開啟育有方處理。iPhone 真機收件及 Android 外部 App 到草稿／ZIP 的驗收見[接手清單](P4_RESUME.md#下次從哪開始)。
 
 ### 完整混合對話的文檔包
 

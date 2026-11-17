@@ -1,0 +1,35 @@
+{
+  "dateHongKong": "2026-11-18",
+  "channel": "preview",
+  "platform": "android",
+  "applicationId": "org.yuyoufang.app",
+  "projectId": "8c63b9fc-b823-4b40-ba36-375ce43fa578",
+  "webAndServer": {
+    "source": "9463f45294a5a64e22c2c705059604af6f07c382",
+    "receipt": "r44189921005-2",
+    "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44189921005/attempts/2"
+  },
+  "existingBinary": {
+    "versionCode": 8,
+    "easBuildId": "9d555a1a-3d74-4334-9da1-2f4a031c29f6",
+    "apkSha256": "f89e454df48bb0568989f8c09f8289583a1a3774d6b3930677ef8069b6b342d7",
+    "apkBytes": 120563316,
+    "manifestCheck": "MainActivity accepts android.intent.action.SEND and SEND_MULTIPLE with */* (Google AAPT2)."
+  },
+  "update": {
+    "source": "5044b226636a172a324657e65c9e2226f3280194",
+    "runtimeVersion": "f5c61d6a5e93b4253cbac75f15a5179fbcf101c5",
+    "groupId": "64bef820-70df-4cff-a818-0c0f312154a2",
+    "id": "01a1ebc6-8fb9-7f9b-8d0f-e627a0764029",
+    "url": "https://expo.dev/accounts/2ntty/projects/yuyoufang/updates/64bef820-70df-4cff-a818-0c0f312154a2",
+    "publishedAt": "2026-11-17T23:10:21.113Z"
+  },
+  "verified": [
+    "EAS update:view returned this Android update, runtime, branch and commit.",
+    "An EAS Updates manifest request using the v8 runtime, android platform and preview channel returned this update ID."
+  ],
+  "pending": [
+    "Installation of this OTA on a physical device and external share into chat draft or ZIP import",
+    "Native PDF share sheet and receipt of a class task notification on the assigned teacher device"
+  ]
+}
