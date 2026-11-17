@@ -6114,3 +6114,9 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 2）**N2-R**：移除 `memoryFactReferencedByParagraph` 提前返回，改對段落每個原子子句核對極性、主體及完整詞項／數字。
 3）**N3-R**：於 `parseTimeAnchorInfo` 與 `timeAnchorMatches` 保存並比對 `epochMs` 及解析後本地年月日與個別 `eventTimeZone`。
 4）於 `tests/search-review-boundaries.test.ts`（9→10 cases）新增 `N1-R / N2-R / N3-R` 成對實測，並更新 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES`。
+
+### 2026-11-17　B-P7 新增邊界測試 R1 修復（BND-1 跨段假私人事實逐段內容核對）
+
+依 `SLICE_B_BP2_BP7_NEW_BOUNDARY_TESTS_20261117_R1.md`（BND-1）同步修復至 `server/chat-delivery-review.ts`（與 `B-P2` 一致）：
+1）**BND-1**：移除 `privateSourcesSupportDraft` 依 `record_restatement`/`private_reference` 標籤篩選段落而漏檢 `clarification` 段落的漏洞，抽出 `classifyParagraphPrivateSupport`、`paragraphIsExemptWithoutCitation` 及收緊後之 `isPureScopeRefusalOrLimitationText`，攔截跨段／混合引用／拒答夾帶未獲支持之私人過敏說法並保留正例及 `obligation?.required ?? false` 黏性義務。
+2）於 `tests/search-review-boundaries.test.ts`（10→11 cases）新增 `BND-1` 真 `createProductAgent` 成對正反實測，並更新 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES=(11 17 44 9 8)`。
