@@ -1,3 +1,4 @@
+import type { ClassReminderTarget } from './firestore-class-task-notification.ts';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { CareTask, TaskReminder, TaskWorkState } from '../src/shared/tasks.ts';
@@ -30,6 +31,8 @@ export interface FirestoreTaskWorkerOptions extends FirestoreDomainOptions {
   enabled: boolean;
   currentAuth(userId: string): Promise<FirestoreTaskCurrentAuth>;
   serverClock?: () => number;
+  prepareClassTaskDeliveries?(recipient: FirestoreAuthorityTransaction, target: ClassReminderTarget):
+    Promise<{ids:string[]; commit():void}>;
   /** Null keeps the existing authorized reminder route. A prepared contact owns the transaction's one change. */
   prepareParentContact?(binding: FirestoreAuthorityTransaction, input: {
     opId: string; task: CareTask; reminder: TaskReminder; text: string;
@@ -243,12 +246,16 @@ export function createFirestoreTaskWorker(options: FirestoreTaskWorkerOptions): 
           && binding.actorUserId === binding.scope.ownerUserId && current!.assigneeUserId === binding.scope.ownerUserId
           ? await options.prepareParentContact?.(binding, { opId: receipt!.id, task: current!, reminder: receipt!,
             text: `你安排的待辦「${current!.title}」已到時間。請查看待辦及更新進度；這則提示不代表事項已完成。` }) ?? null : null;
+        const classDevices = phase === 'initial' && binding.sharedAccess?.classMember
+          ? await options.prepareClassTaskDeliveries?.(recipient, {spaceId:binding.sharedAccess.spaceId, childId:binding.scope.childId,
+            taskId:work.taskId, occurrenceId:work.occurrenceId, taskVersion:work.taskVersion, reminderId:receipt!.id}) : undefined;
         const chatContact = !!contact || previouslyContacted;
         const prepared = contact ? null : await binding.prepareChange(changeId, 'tasks', false);
         const background = phase && !chatContact && !binding.sharedAccess?.classMember ? await prepareFirestoreBackgroundWork(data, binding.transaction, { kind: 'task-agent', scope: binding.scope,
           resourceId: work.taskId, basis: receipt!.id, generation: binding.generation, authorizationVersion: binding.authorizationVersion }, instant) : null;
         const workEnvelope = sealOutbox(binding.scope, changed);
-        const batchValue = phase && !batch ? { id: batchId, recipientUserId: recipient.actorUserId, category, key, state: 'open' as const, createdAt: instant } : null;
+        const sealClassBatch = category === 'ordinary' && !!classDevices?.ids.length;
+        const batchValue = phase && (!batch || sealClassBatch) ? { id: batchId, recipientUserId: recipient.actorUserId, category, key, state: sealClassBatch ? 'sealed' as const : 'open' as const, createdAt: batch?.createdAt ?? instant } : null;
         const batchEnvelope = batchValue ? { ...data.tags(recipientScope), ...data.seal('task-reminder-batch', batchId, recipientScope, firestoreTaskReminderBatchSchema, batchValue) } : null;
         const notification = phase ? { id: receipt!.id, reminderId: receipt!.id, taskId: work.taskId, occurrenceId: work.occurrenceId,
           taskVersion: work.taskVersion, recipientUserId: recipient.actorUserId, createdAt: instant,
@@ -258,8 +265,8 @@ export function createFirestoreTaskWorker(options: FirestoreTaskWorkerOptions): 
         const notificationEnvelope = notification ? { ...data.tags(binding.scope), state: notification.state,
           ...data.seal('task-notification-outbox', notification.id, binding.scope, firestoreTaskNotificationOutboxSchema, notification, work.taskVersion) } : null;
         if (Date.parse(lease.until) <= now()) return result('stale');
-        prepared?.commit(); contact?.commit(); background?.commit(); binding.transaction.set(row.ref, workEnvelope);
-        if (batchEnvelope) binding.transaction.create(batchRef, batchEnvelope);
+        prepared?.commit(); contact?.commit(); classDevices?.commit(); background?.commit(); binding.transaction.set(row.ref, workEnvelope);
+        if (batchEnvelope) binding.transaction.set(batchRef, batchEnvelope);
         if (reminderEnvelope) binding.transaction.create(data.ref('task_reminders', 'task-reminder', receipt!.id), reminderEnvelope);
         if (notificationEnvelope) binding.transaction.create(data.ref('notification_outbox', 'task-notification-outbox', notification!.id), notificationEnvelope);
         return result(state === 'pending' ? 'deferred' : state, receipt, nextAt);

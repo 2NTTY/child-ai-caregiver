@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { modelCatalogSelection, modelSettingsDraft, modelSettingsSchema, modelCommandFromDraft, modelEmbeddingRouteChanged, removeModelKeyCommand } from "../src/components/model-settings/model-settings-form.ts";
+import {
+  formatEffectiveLimitSourcesLine, formatEffectiveSoftBudgetLine, formatPolicyLimitSourceLabel,
+  modelCatalogSelection, modelSettingsDraft, modelSettingsSchema, modelCommandFromDraft, modelEmbeddingRouteChanged,
+  parseAdminSoftBudgetRatioInput, removeModelKeyCommand,
+} from "../src/components/model-settings/model-settings-form.ts";
 const settings = { version: 7, mode: "personal", provider: "gemini", model: "gemini-3.1-flash-lite", keyConfigured: true, backgroundEnabled: true,
   dailyLimit: 100, maxModelCalls: 4, maxQueryEmbeddings: 2, updatedAt: null };
 test("provider changes use only its server catalog without silently selecting another model", () => {
@@ -129,4 +133,47 @@ test("removal always disables AI without a key body or implicit platform fallbac
   const command = removeModelKeyCommand(settings);
   assert.equal(command.mode, "disabled"); assert.equal(command.removeKey, true); assert.equal(command.backgroundEnabled, false);
   assert.equal(command.consent, false); assert.equal("apiKey" in command, false); assert.equal("opId" in command, false); assert.equal(command.expectedVersion, 7);
+});
+test("effective policy summary formats soft targets, per-dimension policy sources, and admin softBudgetRatio input", () => {
+  assert.equal(formatPolicyLimitSourceLabel("personal"), "個人設定");
+  assert.equal(formatPolicyLimitSourceLabel("administrator"), "管理員政策");
+  assert.equal(formatPolicyLimitSourceLabel("system_default"), "系統預設");
+  const effective = {
+    policyVersion: 3, dailyLimit: 100, dailyGlobalLimit: 1000, maxModelCalls: 8, maxQueryEmbeddings: 4,
+    maxToolCalls: 64, maxRunSeconds: 300, modelRequestSeconds: 90, maxModelRetries: 2, cappedByAdministrator: [],
+    softBudgetRatio: 0.25, softTargets: { modelCalls: 2, toolCalls: 16, queryEmbeddings: 1 },
+    limitSources: {
+      dailyLimit: "personal", maxModelCalls: "personal", maxQueryEmbeddings: "personal",
+      maxToolCalls: "administrator", maxRunSeconds: "administrator", modelRequestSeconds: "administrator",
+      maxModelRetries: "administrator", softBudgetRatio: "administrator",
+    },
+  };
+  assert.equal(formatEffectiveSoftBudgetLine(effective), "軟預算目標（25%，向下取整）：生成 2／工具 16／查詢向量 1 次");
+  assert.equal(formatEffectiveLimitSourcesLine(effective), "規則來源：生成個人設定 · 工具管理員政策 · 期限管理員政策 · 軟比例管理員政策");
+  assert.equal(parseAdminSoftBudgetRatioInput(" 0.5 "), 0.5);
+  assert.equal(Number.isNaN(parseAdminSoftBudgetRatioInput("0.5abc")), true);
+  assert.equal(Number.isNaN(parseAdminSoftBudgetRatioInput("")), true);
+});
+
+test("personal softBudgetRatio draft hydrates, validates 0.05..1.0, and emits conditionally in commands", () => {
+  const withRatioDraft = modelSettingsDraft({ ...settings, softBudgetRatio: 0.35 });
+  assert.equal(withRatioDraft.softBudgetRatioText, "0.35");
+
+  const defaultDraft = { ...modelSettingsDraft(settings), consent: true };
+  assert.equal(defaultDraft.softBudgetRatioText, "");
+  assert.equal(modelSettingsSchema(true).safeParse(defaultDraft).success, true);
+  assert.equal("softBudgetRatio" in modelCommandFromDraft(defaultDraft, settings), false);
+
+  for (const valid of ["0.05", "0.35", "1"]) {
+    assert.equal(modelSettingsSchema(true).safeParse({ ...defaultDraft, softBudgetRatioText: valid }).success, true);
+  }
+  for (const invalid of ["0.04", "1.05", "0.3abc", "NaN"]) {
+    assert.equal(modelSettingsSchema(true).safeParse({ ...defaultDraft, softBudgetRatioText: invalid }).success, false);
+  }
+
+  const personalCmd = modelCommandFromDraft({ ...defaultDraft, softBudgetRatioText: "0.35" }, settings);
+  assert.equal(personalCmd.softBudgetRatio, 0.35);
+
+  const platformCmd = modelCommandFromDraft({ ...defaultDraft, mode: "platform", softBudgetRatioText: "0.35" }, settings);
+  assert.equal("softBudgetRatio" in platformCmd, false);
 });

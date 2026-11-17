@@ -28,7 +28,7 @@ export class NativeChatPresenceController {
       this.value = next; return next;
     });
   }
-  private async write(enabled?: boolean, bindingId?: string, preview?: boolean) {
+  private async write(enabled?: boolean, bindingId?: string, preview?: boolean, classTasks?: boolean) {
     if (!this.value) this.value = await this.api.chatPresence(this.abort.signal, this.userId);
     if (!this.live()) throw new NativePushApiError(409, "session_changed");
     if (bindingId !== undefined && this.value.bindingId !== bindingId) throw new NativePushApiError(409, "binding_changed");
@@ -37,6 +37,7 @@ export class NativeChatPresenceController {
       const next = await this.api.updateChatPresence({ childId: this.childId, expectedPresenceVersion: this.value.presenceVersion,
         ...(bindingId === undefined ? {} : { bindingId }),
         ...(enabled === undefined ? {} : { chatNotificationsEnabled: enabled }),
+        ...(classTasks === undefined ? {} : { classTaskNotificationsEnabled: classTasks }),
         ...(preview === undefined ? {} : { chatPreviewEnabled: preview }) }, this.abort.signal, this.userId);
       if (!this.live()) throw new NativePushApiError(409, "session_changed");
       if (bindingId !== undefined && next.bindingId !== bindingId) throw new NativePushApiError(409, "binding_changed");
@@ -50,6 +51,7 @@ export class NativeChatPresenceController {
     }
   }
   setEnabled(enabled: boolean, bindingId?: string, preview?: boolean) { return this.serialize(() => this.write(enabled, bindingId, preview)); }
+  setClassTasksEnabled(enabled: boolean, bindingId: string) { return this.serialize(() => this.write(undefined, bindingId, undefined, enabled)); }
   setPreviewEnabled(enabled: boolean, bindingId: string) { return this.serialize(() => this.write(undefined, bindingId, enabled)); }
   foreground(childId: string | null) {
     this.childId = childId; const revision = ++this.revision;

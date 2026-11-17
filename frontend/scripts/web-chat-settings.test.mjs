@@ -7,12 +7,14 @@ test('Home Screen settings require explicit content selection before permission 
   const calls = [], binding = { id: 'installation', version: 2, status: 'active', provider: 'apple', label: 'My iPhone' };
   const subscription = { endpoint: 'https://web.push.apple.com/synthetic' };
   let current = true, generation = 1, preference = { bindingId: binding.id, presenceVersion: 0, chatNotificationsEnabled: false, chatPreviewEnabled: false };
+  let classEnabled = false;
   let installed = false, failPreference = false, localMode = 'off';
   const modes = ['off', 'generic', 'preview'];
   const status = { available: true, publicKey: 'synthetic', workerEnabled: true, bindings: [], deliveries: [], testsRemaining: 3, nextTestAt: null };
   const api = { async status() { calls.push('read'); return status; }, resetOnline() {}, hasPendingOnline: () => false,
     async register() { calls.push('register'); installed = true; status.bindings = [binding]; return binding; } };
   const presence = { bind() {}, read: async () => preference,
+    async setClassTasksEnabled(enabled, actual) { assert.equal(actual,subscription); preference={...preference,classTaskNotificationsEnabled:enabled}; return preference; },
     async setEnabled(enabled, preview, actual) { calls.push(['consent', enabled, preview, actual]); if (failPreference) throw new Error('Synthetic unknown write'); preference = { ...preference, chatNotificationsEnabled: enabled, chatPreviewEnabled: preview ?? preference.chatPreviewEnabled }; return preference; },
     async setPreviewEnabled(preview, actual) { calls.push(['preview', preview, actual]); preference = { ...preference, chatPreviewEnabled: preview }; return preference; } };
   const requests = { busy: false, writing: false, start: () => ({ signal: new AbortController().signal, current: () => current, finish() {} }) };
@@ -24,6 +26,7 @@ test('Home Screen settings require explicit content selection before permission 
       subscribePushBrowser: async () => { calls.push('subscribe'); return { subscription, epoch: 'epoch' }; },
       checkPushBrowserUser: async () => 'epoch',
       setPushBrowserChatPreference: async (_binding, mode, restrictOnly) => { localMode = restrictOnly ? modes[Math.min(modes.indexOf(localMode), modes.indexOf(mode))] : mode; return 'epoch'; },
+      setPushBrowserClassTaskPreference: async (_binding, enabled) => { classEnabled=enabled; return 'epoch'; },
       activatePushBrowser: async () => calls.push('activate'), suspendPushBrowser: async () => calls.push('suspend') },
     './WebChatPresenceController': { webChatPresenceFor: () => presence },
     './useDomainEnvironment': { useDomainWriteGuard() {} },
@@ -47,6 +50,9 @@ test('Home Screen settings require explicit content selection before permission 
   assert.equal(result.model.chatNotificationsEnabled, true); assert.equal(result.model.chatPreviewEnabled, false);
   result.actions.setChatPreviewEnabled(true); await settle(); assert.equal(result.model.chatPreviewEnabled, true);
   result.actions.setChatNotificationsEnabled(false); await settle(); assert.equal(result.model.chatNotificationsEnabled, false);
+  result.actions.setClassTasksEnabled(true); await settle(); assert.equal(classEnabled,true);
+  assert.equal(result.model.chatNotificationsEnabled,false); assert.equal(localMode,'off');
+  result.actions.setClassTasksEnabled(false); await settle(); assert.equal(classEnabled,false);
   result.actions.setChatNotificationsEnabled(true); await settle(); assert.equal(localMode, 'preview');
   failPreference = true; result.actions.setChatNotificationsEnabled(false); await settle(); assert.equal(localMode, 'off');
   result.actions.refresh(); await settle();

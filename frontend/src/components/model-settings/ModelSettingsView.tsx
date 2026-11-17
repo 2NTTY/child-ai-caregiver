@@ -17,7 +17,10 @@ import { StatusAnnouncement } from "../StatusAnnouncement";
 import { personalLimits, type ModelMode, type ModelSettings, type ModelSettingsActions, type ModelSettingsUsage, type ModelSettingsViewModel } from "../../model-settings-view-model";
 import { chineseFont, colors, readingType, spacing, workspaceType } from "../../theme";
 import { MotionFeedback, MotionReveal } from "../../motion";
-import { modelCatalogSelection, modelCommandFromDraft, modelEmbeddingRouteChanged, modelSettingsDraft, modelSettingsSchema, removeModelKeyCommand, modelLimitFields, type ModelSettingsDraft } from "./model-settings-form";
+import {
+  formatEffectiveLimitSourcesLine, formatEffectiveSoftBudgetLine, modelCatalogSelection, modelCommandFromDraft,
+  modelEmbeddingRouteChanged, modelSettingsDraft, modelSettingsSchema, removeModelKeyCommand, modelLimitFields, type ModelSettingsDraft,
+} from "./model-settings-form";
 
 const modelReasonText = (reason: string) => ({ invalid_key: "密鑰無效或沒有存取權限。", region_unavailable: "供應商不支援目前服務地區。",
   model_unavailable: "這份憑證目前不能存取所選模型。", quota_exceeded: "供應商配額或速率已達上限。", timeout: "供應商查核逾時。",
@@ -259,7 +262,12 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
               <Controller control={control} name={name} render={({ field }) => <AppTextField accessibilityLabel={label} label={label} keyboardType="number-pad" inputMode="numeric"
                 nativeID={fieldId(name)} aria-invalid={!!errors[name]} aria-describedby={`${fieldId(name)}-message`} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} ref={field.ref} disabled={locked || !available} error={!!errors[name]} />} />
               <FormFieldMessage id={`${fieldId(name)}-message`} error={errors[name]?.message} help={`${range.min}–${range.max} ${unit} · 整數`} />
-            </View>)}</View>
+            </View>)}
+            <View style={styles.limitField}>
+              <Controller control={control} name="softBudgetRatioText" render={({ field }) => <AppTextField accessibilityLabel="個人軟預算比例" label="個人軟預算比例（可選，0.05–1.0）" keyboardType="decimal-pad" inputMode="decimal"
+                placeholder="留空沿用管理員政策" nativeID={fieldId("softBudgetRatioText")} aria-invalid={!!errors.softBudgetRatioText} aria-describedby={`${fieldId("softBudgetRatioText")}-message`} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} ref={field.ref} disabled={locked || !available} error={!!errors.softBudgetRatioText} />} />
+              <FormFieldMessage id={`${fieldId("softBudgetRatioText")}-message`} error={errors.softBudgetRatioText?.message} help="0.05–1.0 小數；留空則沿用管理員軟預算比例。" />
+            </View></View>
             <Text style={styles.meta}>保存後按本人設定及管理員共用保護計算。模型按需要使用預算，不必用盡；重試亦計入原運行及每日次數。</Text>
           </View> : <Text style={styles.meta}>{mode === "platform" ? "平台模型及限額由管理員統一設定，實際值見「用量與安全上限」。" : "保存停用後不會自行切回平台；已有密鑰會保留，刪除須另行確認。"}</Text>}
           <View style={[styles.actions, styles.group]}><AppButton label="保存模型設定" disabled={!canSave} loading={model.busy === "save"} onPress={() => void submit()} />
@@ -287,10 +295,12 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
           <Text style={styles.meta}>全站個人服務安全上限：{snapshot.personalGlobalLimit} 次；個人上限只在個人模式生效。</Text>
           <Text style={styles.meta}>每日 UTC 00:00（香港 08:00）重置。生成及查詢向量的嘗試均計次；此處用量不代表供應商的完整帳單。</Text>
           {snapshot.effective ? <View style={styles.group}>
-            <Text style={styles.body}>目前生效上限</Text>
+            <Text style={styles.body}>目前生效上限（政策版本 v{snapshot.effective.policyVersion}）</Text>
             <Text style={styles.meta}>每日本人 {snapshot.effective.dailyLimit}／共用 {snapshot.effective.dailyGlobalLimit} 次</Text>
             <Text style={styles.meta}>每輪生成 {snapshot.effective.maxModelCalls}／工具 {snapshot.effective.maxToolCalls}／查詢向量 {snapshot.effective.maxQueryEmbeddings} 次</Text>
             <Text style={styles.meta}>整輪 {snapshot.effective.maxRunSeconds} 秒 · 單次模型 {snapshot.effective.modelRequestSeconds} 秒 · 最多額外重試 {snapshot.effective.maxModelRetries} 次</Text>
+            <Text style={styles.meta}>{formatEffectiveSoftBudgetLine(snapshot.effective)}</Text>
+            {formatEffectiveLimitSourcesLine(snapshot.effective) ? <Text style={styles.meta}>{formatEffectiveLimitSourcesLine(snapshot.effective)}</Text> : null}
             <Text style={styles.meta}>{snapshot.effective.cappedByAdministrator.length ? "部分個人設定高於管理員保護上限，實際按上述較低值執行。" : "目前設定未被較低的管理員上限調低。"} 一般修改於新運行生效；保存不會清零用量。</Text>
           </View> : <Text style={styles.meta}>目前連接的服務尚未提供實際生效上限；如需確認，請聯絡服務管理員。</Text>}
           <Text style={styles.meta}>{snapshot.agentInputCharacters === undefined ? "互動上下文上限未提供" : `互動上下文上限：${snapshot.agentInputCharacters} 字元`}</Text>

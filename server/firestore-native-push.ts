@@ -1,3 +1,4 @@
+import { createClassReminderPolicy, classDeviceTargetSchema } from './firestore-class-task-notification.ts';
 import { createChatNotificationQueue } from './firestore-chat-notification-queue.ts';
 import { randomUUID, createHash } from 'node:crypto';
 import type { Query, DocumentSnapshot } from '@google-cloud/firestore';
@@ -20,11 +21,11 @@ import { chatStateSchema, chatTargetSchema, presenceLifetimeMs, chatReasonSchema
 const uuid = z.uuid(), NIL = '00000000-0000-0000-0000-000000000000';
 export const firestoreNativeBindingSchema = z.object({ binding: nativePushBindingSchema,
   token: z.string().min(20).max(4096).nullable(), tokenHash: z.string().length(64).nullable(), sessionHash: z.string().length(64),
-  apns: apnsBindingSchema.optional(), chat: chatStateSchema.optional(),
+  apns: apnsBindingSchema.optional(), chat: chatStateSchema.optional(), classTaskConsent: uuid.optional(),
 }).strict();
 export const firestoreNativeDeliverySchema = z.object({ delivery: pushDeliverySchema, bindingVersion: z.number().int().positive(),
   generation: uuid, authorizationVersion: z.string(), attempt: uuid.nullable(), message: notificationMessageContentSchema.optional(),
-  platform: z.literal('ios').optional(), chatTarget: chatTargetSchema.optional(), chatReason: chatReasonSchema.nullable().optional() }).strict();
+  platform: z.literal('ios').optional(), chatTarget: chatTargetSchema.optional(), classTaskTarget: classDeviceTargetSchema.optional(), chatReason: chatReasonSchema.nullable().optional() }).strict();
 export const firestoreNativePointerSchema = z.object({ scope: workRecoveryScopeSchema, bindingId: uuid, tokenHash: z.string().length(64) }).strict();
 type SavedBinding = z.infer<typeof firestoreNativeBindingSchema>;
 type SavedDelivery = z.infer<typeof firestoreNativeDeliverySchema>;
@@ -43,6 +44,7 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
 }) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
   const {chatMessageAvailable, chatEligibility} = createChatNotificationPolicy(data);
+  const classEligibility = createClassReminderPolicy(options,data);
   function query(b: Pick<Binding, 'scope'>, suffix: string): Query {
     let q: Query = data.collection(suffix); for (const [key, value] of Object.entries(data.tags(b.scope))) q = q.where(key, '==', value); return q;
   }
@@ -60,7 +62,7 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
     createdAt: saved.binding.createdAt, status: saved.binding.status, sessionTag: saved.sessionHash,
     ...data.seal('native-push-binding', saved.binding.id, b.scope, firestoreNativeBindingSchema, saved, saved.binding.version) });
   const deliveryEnvelope = (b: Pick<Binding, 'scope'>, saved: SavedDelivery) => ({ ...data.tags(b.scope), deliveryId: saved.delivery.id,
-    bindingId: saved.delivery.bindingId, ...(saved.chatTarget ? { chatCreatedAt: saved.delivery.createdAt } : { createdAt: saved.delivery.createdAt }), status: saved.delivery.status,
+    bindingId: saved.delivery.bindingId, ...(saved.classTaskTarget || saved.chatTarget ? { chatCreatedAt: saved.delivery.createdAt } : { createdAt: saved.delivery.createdAt }), status: saved.delivery.status,
     ...messageSortMetadata(saved.message ? [saved.message] : []),
     ...data.seal('native-push-delivery', saved.delivery.id, b.scope, firestoreNativeDeliverySchema, saved) });
   async function pointer(b: Pick<Binding, 'transaction'>, hash: string) {
@@ -93,20 +95,22 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
     if (saved.sessionHash !== session.sessionHash) domainReject('push_binding', 500);
     return saved.apns ? null : saved;
   }
-  function presenceView(saved: SavedBinding | null, withPreview: boolean): NativeChatPresence {
+  function presenceView(saved: SavedBinding | null, withPreview: boolean, classTasks: boolean): NativeChatPresence {
     return { bindingId: saved?.binding.id ?? null, presenceVersion: saved?.chat?.presenceVersion ?? 0,
       chatNotificationsEnabled: saved?.chat?.notificationsEnabled === true, expiresAt: saved?.chat?.expiresAt ?? null,
+      ...(classTasks ? { classTaskNotificationsEnabled: !!saved?.classTaskConsent } : {}),
       ...(withPreview ? { chatPreviewEnabled: saved?.chat?.previewEnabled === true } : {}) };
   }
-  async function readChatPresence(userId: string, session: DeviceSessionKey, withPreview = false) {
-    return authority.runTransaction(userId, null, async b => presenceView(await sessionBinding(b, session), withPreview));
+  async function readChatPresence(userId: string, session: DeviceSessionKey, withPreview = false, classTasks = false) {
+    return authority.runTransaction(userId, null, async b => presenceView(await sessionBinding(b, session), withPreview, classTasks));
   }
-  async function setChatPresence(userId: string, session: DeviceSessionKey, raw: unknown, withPreview = false) {
+  async function setChatPresence(userId: string, session: DeviceSessionKey, raw: unknown, withPreview = false, classTasks = false) {
     const input = domainParse(nativeChatPresenceInputSchema, raw);
-    if (!withPreview && input.chatPreviewEnabled !== undefined) domainReject('invalid_input', 400);
+    if (!withPreview && input.chatPreviewEnabled !== undefined || !classTasks && input.classTaskNotificationsEnabled !== undefined) domainReject('invalid_input', 400);
     return authority.runTransaction(userId, null, async b => {
       const saved = await sessionBinding(b, session, input.bindingId);
       if (!saved) domainReject('subscription_unavailable');
+      if (saved.apns && input.classTaskNotificationsEnabled) domainReject('channel_unavailable',409);
       if (input.expectedBindingVersion !== undefined && input.expectedBindingVersion !== saved.binding.version) domainReject('subscription_changed');
       const current = saved.chat?.presenceVersion ?? 0;
       // An old foreground heartbeat must not overwrite a newer background clear or consent change.
@@ -116,22 +120,29 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
       const notificationsEnabled = input.chatNotificationsEnabled ?? saved.chat?.notificationsEnabled ?? false;
       if (input.chatPreviewEnabled && !notificationsEnabled) domainReject('invalid_input', 400);
       const previewEnabled = notificationsEnabled && (input.chatPreviewEnabled ?? saved.chat?.previewEnabled ?? false);
-      const change = notificationsEnabled !== (saved.chat?.notificationsEnabled ?? false) || previewEnabled !== (saved.chat?.previewEnabled ?? false)
+      const classConsentChanged = input.classTaskNotificationsEnabled !== undefined && input.classTaskNotificationsEnabled !== !!saved.classTaskConsent;
+      if (classConsentChanged) {
+        if (input.classTaskNotificationsEnabled) saved.classTaskConsent = randomUUID();
+        else delete saved.classTaskConsent;
+      }
+      const change = classConsentChanged || notificationsEnabled !== (saved.chat?.notificationsEnabled ?? false) || previewEnabled !== (saved.chat?.previewEnabled ?? false)
         ? await b.prepareChange(randomUUID(), 'preferences', false) : null;
       saved.chat = { notificationsEnabled, ...(previewEnabled ? {previewEnabled: true} : {}),
         ...(withPreview || saved.chat?.brandedCard ? {brandedCard: true as const} : {}), presenceVersion: current + 1, childId: input.childId,
         expiresAt: input.childId === null ? null : new Date(Date.now() + presenceLifetimeMs).toISOString() };
       change?.commit();
       b.transaction.set(data.ref('native_push_bindings', 'native-push-binding', saved.binding.id), bindingEnvelope(b, saved));
-      return presenceView(saved, withPreview);
+      return presenceView(saved, withPreview, classTasks);
     });
   }
-  const {prepareChatDeliveries, readChatDeliveryStatuses} = createChatNotificationQueue(data, {
+  const {prepareChatDeliveries, prepareClassTaskDeliveries, readChatDeliveryStatuses} = createChatNotificationQueue(data, {
     kind: 'native-push', bindings: 'native_push_bindings', identity: 'native-chat-delivery',
     deliveries: 'native_push_deliveries', record: 'native-push-delivery', dispatch: options.dispatchChatWork,
-    async recipient(b, id) {
+    async recipient(b, id, purpose) {
       const saved = await binding(b, id);
-      return !saved.apns && saved.token && saved.chat?.notificationsEnabled && await sessionActiveIn(b, saved) ? saved.binding : null;
+      const enabled = purpose==='chat' ? saved.chat?.notificationsEnabled : !!saved.classTaskConsent;
+      return !saved.apns && saved.token && enabled && await sessionActiveIn(b,saved)
+        ? {...saved.binding,classTaskConsent:saved.classTaskConsent} : null;
     },
     read: (b,row,id) => decode(b,row,'native-push-delivery',id,firestoreNativeDeliverySchema), envelope: deliveryEnvelope,
   });
@@ -298,7 +309,7 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
         saved.delivery = { ...value, status: 'stopped', reason, finishedAt: new Date().toISOString() };
         b.transaction.set(ref, deliveryEnvelope(b, saved)); return null;
       }
-      const chat = await chatEligibility(b, saved, subscribed);
+      const chat = saved.classTaskTarget ? await classEligibility(b,saved.classTaskTarget,subscribed.classTaskConsent) : await chatEligibility(b, saved, subscribed);
       if (chat.reason) {
         saved.chatReason = chat.reason;
         if (chat.nextAt) {
@@ -328,13 +339,13 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
           && subscribed.binding.version === current.bindingVersion && subscribed.tokenHash === original.subscribed.tokenHash
           && subscribed.binding.tokenRevision === original.subscribed.binding.tokenRevision && await sessionActiveIn(b, subscribed);
         if (!active) return false;
-        authorization.chat = await chatEligibility(b, current, subscribed);
+        authorization.chat = current.classTaskTarget ? await classEligibility(b,current.classTaskTarget,subscribed.classTaskConsent) : await chatEligibility(b, current, subscribed);
         return !authorization.chat.reason;
       }); } catch (error) { if (error && typeof error === 'object' && 'status' in error && [401, 403, 404, 409].includes(Number(error.status))) return false; throw error; }
     };
     let result: NativePushSendResult;
     try { result = await authorized() ? await nativePushSender(options.gateway, original.subscribed.apns).send(original.subscribed.token!, {
-      v: 1, kind: original.saved.chatTarget ? 'care' : 'test', bindingId: original.saved.delivery.bindingId,
+      v: 1, kind: original.saved.chatTarget || original.saved.classTaskTarget ? 'care' : 'test', bindingId: original.saved.delivery.bindingId,
       bindingVersion: original.saved.bindingVersion, deliveryId: id }, signal, authorized, () => authorization.chat?.previewText)
       : { status: 'stopped', reason: 'revoked', providerStatus: null }; }
     catch { result = { status: 'unknown', reason: 'transport_unknown', providerStatus: null }; }
@@ -349,7 +360,7 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
           tokenHash: original.subscribed.tokenHash!, tokenRevision: original.subscribed.binding.tokenRevision, apnsInvalidatedAt: result.apnsInvalidatedAt }) : null;
       const change = await authority.prepareReceiptChange(tx, scope, randomUUID(), 'preferences');
       change?.commit(); expired?.commit();
-      if (saved.chatTarget && result.status === 'stopped' && authorization.chat?.reason) {
+      if ((saved.chatTarget || saved.classTaskTarget) && result.status === 'stopped' && authorization.chat?.reason) {
         saved.chatReason = authorization.chat.reason;
         if (authorization.chat.nextAt) {
           saved.attempt = null;
@@ -377,6 +388,12 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
         const saved = decode(b, row, 'native-push-delivery', reference.deliveryId, firestoreNativeDeliverySchema);
         if (saved.delivery.bindingId !== reference.bindingId || saved.bindingVersion !== reference.bindingVersion
           || !['accepted', 'unknown', 'sending'].includes(saved.delivery.status)) domainReject('not_found', 404);
+        if (saved.classTaskTarget) {
+          if (reference.kind !== 'care' || saved.generation !== b.generation || saved.authorizationVersion !== b.authorizationVersion
+            || (await classEligibility(b,saved.classTaskTarget,subscribed.classTaskConsent,'open')).reason) domainReject('not_found',404);
+          const {spaceId,childId,taskId} = saved.classTaskTarget;
+          return {screen:'class_task' as const,spaceId,childId,taskId};
+        }
         if (saved.chatTarget) {
           if (reference.kind !== 'care' || saved.generation !== b.generation || saved.authorizationVersion !== b.authorizationVersion
             || !await chatMessageAvailable(b, saved.chatTarget)) domainReject('not_found', 404);
@@ -388,6 +405,6 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
     });
   }
   return { status, mutation, process, authorizeOpen, readBinding: binding, prepareInvalidation, sessionActiveIn,
-    prepareChatDeliveries, readChatDeliveryStatuses, setChatPresence, readChatPresence };
+    prepareChatDeliveries, prepareClassTaskDeliveries, readChatDeliveryStatuses, setChatPresence, readChatPresence };
 }
 export type FirestoreNativePush = ReturnType<typeof createFirestoreNativePush>;

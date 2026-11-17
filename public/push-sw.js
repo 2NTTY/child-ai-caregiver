@@ -29,10 +29,10 @@ function state(change) {
 async function closeNotifications() {
   for (const item of await self.registration.getNotifications()) item.close();
 }
-async function closeChatNotifications(binding) {
+async function closeDeliveryNotifications(binding, kind) {
   for (const item of await self.registration.getNotifications()) {
     const data = item.data;
-    if (data?.v === 2 && data.kind === "chat" && data.bindingId === binding.id && data.bindingVersion === binding.version) item.close();
+    if (data?.v === 2 && data.kind === kind && data.bindingId === binding.id && data.bindingVersion === binding.version) item.close();
   }
 }
 const chatModes = { off: 0, generic: 1, preview: 2 };
@@ -55,25 +55,27 @@ self.addEventListener("message", event => {
         });
         if (changed) await closeNotifications();
         port.postMessage({ ok: true, epoch: current.epoch });
-      } else if (message.type === "chat-preference") {
+      } else if (message.type === "chat-preference" || message.type === "class-task-preference") {
+        const kind = message.type === "class-task-preference" ? "class_task" : "chat";
+        const field = kind === "class_task" ? "classTaskMode" : "chatMode";
         const binding = message.binding, mode = message.mode;
         if (!binding || !uuid.test(binding.id) || !Number.isSafeInteger(binding.version) || binding.version < 1
           || typeof binding.userId !== "string" || !binding.userId.length || binding.userId.length > 128
-          || !["off", "generic", "preview"].includes(mode)
+          || !(kind === "class_task" ? ["off", "generic"] : ["off", "generic", "preview"]).includes(mode)
           || message.restrictOnly !== undefined && typeof message.restrictOnly !== "boolean"
           || message.epoch !== undefined && !uuid.test(message.epoch)) throw new Error();
         let accepted = false, appliedMode;
         const current = await state(previous => {
           if (!sameBinding(previous.active, binding) || message.epoch !== undefined && message.epoch !== previous.epoch) return previous;
           accepted = true;
-          const oldMode = previous.active.chatMode;
+          const oldMode = previous.active[field];
           // An initial verified read may set a mode; routine reads cannot undo a local restriction.
           appliedMode = message.restrictOnly && oldMode !== undefined && chatModes[mode] > chatModes[oldMode] ? oldMode : mode;
           const tightened = message.restrictOnly && oldMode !== undefined && chatModes[appliedMode] < chatModes[oldMode];
           return { ...previous, epoch: tightened ? crypto.randomUUID() : previous.epoch,
-            active: { ...previous.active, chatMode: appliedMode } };
+            active: { ...previous.active, [field]: appliedMode } };
         });
-        if (accepted && appliedMode !== "preview") await closeChatNotifications(binding);
+        if (accepted && (kind === "chat" ? appliedMode !== "preview" : appliedMode === "off")) await closeDeliveryNotifications(binding, kind);
         port.postMessage({ ok: accepted, epoch: current.epoch });
       } else if (message.type === "suspend") {
         const current = await state(previous => ({ epoch: crypto.randomUUID(), active: null, seen: previous.seen }));
@@ -101,15 +103,16 @@ self.addEventListener("push", event => {
     let payload;
     try { payload = event.data.json(); } catch { return; }
     const chat = payload?.v === 2 && payload.kind === "chat";
-    if ((!chat && payload?.v !== 1) || !uuid.test(payload.bindingId) || !uuid.test(payload.deliveryId)
+    const classTask = payload?.v === 2 && payload.kind === "class_task";
+    if ((!chat && !classTask && payload?.v !== 1) || !uuid.test(payload.bindingId) || !uuid.test(payload.deliveryId)
       || !Number.isSafeInteger(payload.bindingVersion) || payload.bindingVersion < 1) return;
-    if (!chat && payload.kind !== undefined && !["test", "care"].includes(payload.kind)) return;
+    if (!classTask && !chat && payload.kind !== undefined && !["test", "care"].includes(payload.kind)) return;
     const current = await state();
     if (!current.active || current.active.id !== payload.bindingId || current.active.version !== payload.bindingVersion
       || current.seen.includes(payload.deliveryId)) return;
     const chatMode = current.active.chatMode ?? "off";
-    if (chat && chatMode === "off") return;
-    const care = payload.kind === "care", content = payload.content;
+    if (chat && chatMode === "off" || classTask && current.active.classTaskMode !== "generic") return;
+    const care = classTask || payload.kind === "care", content = payload.content;
     // New sends carry their exact generic content. Legacy reference-only payloads keep their old display.
     const genericTitle = chat ? '育有方有新訊息' : care ? '育有方照護提示' : '育有方通知測試';
     const genericBody = chat ? '你有新的聊天訊息，請開啟育有方查看。' : care ? '你有獲授權的照護事項提示，請開啟育有方查看。收到提示不代表事項已完成。' : '這是你剛才要求的測試通知，不代表照護事項已完成。';
@@ -122,7 +125,7 @@ self.addEventListener("push", event => {
       body: chat && chatMode !== "preview" ? genericBody : content ? content.body : genericBody,
       tag: (chat ? "yuban-chat-" : care ? "yuban-care-" : "yuban-test-") + payload.deliveryId,
       data: { bindingId: payload.bindingId, bindingVersion: payload.bindingVersion,
-        ...(chat ? { v: 2, kind: "chat", deliveryId: payload.deliveryId } : {}) },
+        ...(chat || classTask ? { v: 2, kind: payload.kind, deliveryId: payload.deliveryId } : {}) },
     });
   });
 });
@@ -142,20 +145,22 @@ self.addEventListener("notificationclick", event => {
     if (!current.active || data?.bindingId !== current.active.id || data?.bindingVersion !== current.active.version) return;
     // Never accept a destination URL from a notification or bypass the page's normal login.
     const root = new URL("/", self.location.origin), chat = data.v === 2 && data.kind === "chat";
-    if (chat) {
-      if (!current.active.chatMode || current.active.chatMode === "off") return;
+    const classTask = data.v === 2 && data.kind === "class_task";
+    const linked = chat || classTask;
+    if (linked) {
+      if (chat && (!current.active.chatMode || current.active.chatMode === "off") || classTask && current.active.classTaskMode !== "generic") return;
       if (!uuid.test(data.bindingId) || !uuid.test(data.deliveryId) || !Number.isSafeInteger(data.bindingVersion) || data.bindingVersion < 1) return;
       root.searchParams.set("pushBinding", data.bindingId);
       root.searchParams.set("pushVersion", String(data.bindingVersion));
       root.searchParams.set("pushDelivery", data.deliveryId);
     }
     const existing = (await self.clients.matchAll({ type: "window", includeUncontrolled: true })).find(client => {
-      try { const url = new URL(client.url); return chat ? url.origin === root.origin : url.href === root.href; } catch { return false; }
+      try { const url = new URL(client.url); return linked ? url.origin === root.origin : url.href === root.href; } catch { return false; }
     });
     if (existing) {
       // WebKit gates focus on a short user gesture; navigation may wait on the network.
       await existing.focus();
-      if (chat) {
+      if (linked) {
         try {
           const navigated = await existing.navigate(root.href);
           if (navigated === null) { await self.clients.openWindow(root.href); return; }
