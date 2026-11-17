@@ -1,0 +1,34 @@
+name: Compile iOS share receiver
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - frontend/plugins/ios-share/ShareIntoViewController.swift
+      - frontend/plugins/with-ios-share-inbox.cjs
+      - .github/workflows/ios-share-receiver-offline.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile:
+    runs-on: macos-15
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Compile the extension for iPhone
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          sdk="$(xcrun --sdk iphoneos --show-sdk-path)"
+          # Match the Expo Sharing extension target and Swift language version.
+          xcrun --sdk iphoneos swiftc -swift-version 5 -application-extension \
+            -target arm64-apple-ios16.4 -sdk "$sdk" -parse-as-library -emit-object \
+            frontend/plugins/ios-share/ShareIntoViewController.swift \
+            -o "$RUNNER_TEMP/ShareIntoViewController.o"
+          xcrun lipo -verify_arch arm64 "$RUNNER_TEMP/ShareIntoViewController.o"
