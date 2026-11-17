@@ -1,3 +1,5 @@
+import { createSelectedMaterials } from './firestore-selected-materials.ts';
+import { selectedMaterialCitations } from '../src/shared/assistant-material-citation.ts';
 import { summaryRunBindingSchema, summaryEffectReceiptSchema, privateSummaryWorkSchema, summaryPartBackgroundIdentity, summarySourceRevisionSchema, privateSummaryAttemptSchema, summaryAttemptId, summaryRetirementId, summaryLineageRecordSchema, summaryGrantRecordSchema, summaryLineageKey, type SummaryRunBinding, type SummaryEffectReceipt } from './private-summary-work.ts';
 import { randomUUID } from 'node:crypto';
 import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
@@ -360,8 +362,23 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
       } else if (old.state !== run.state) write(b, run);
     } };
   }
+  const materials=createSelectedMaterials(options);
+  async function reviewedMixedReply(b:Binding,roomId:string,messageId:string) {
+    const source=await options.chat.mixed.sourceIn(b,roomId,messageId).catch(error=>{
+      if (error instanceof FirestoreDomainError && error.code==='imported_message_read_only') domainReject('not_found',404);
+      throw error;
+    });
+    const run=await originalReplyRun(b,messageId), review=run?.result?.deliveryReview;
+    if (!run || run.state!=='completed' || run.result?.status!=='completed' || !review
+      || review.decision!=='pass' || review.visibility!=='private' || run.mixedChat?.roomId!==roomId
+      || run.sourceMessageId!==messageId || firestoreDomainHash([run.mixedChat.scope,run.mixedChat.childIds])
+        !==firestoreDomainHash([source.room.scope,source.room.childIds])
+      || firestoreDomainHash(review.scope)!==firestoreDomainHash({userId:run.ownerUserId,workspaceId:run.workspaceId,
+        childId:run.childId,authorizationVersion:run.authorizationVersion,dataVersion:run.dataVersion})) domainReject('not_found',404);
+    return {source,review};
+  }
   return {
-    authority, data, current, matches, read, requireLive, advance, write, originalReplyRun, originalRun, prepareClaim, prepareFastProbeClaim, prepareSummaryClaim, prepareSummaryCoveredClaim, prepareSummaryAdministrativeCoverage, prepareSummaryFinish, requireSummaryReady, projectClaim,
+    materials, authority, data, current, matches, read, requireLive, advance, write, originalReplyRun, originalRun, prepareClaim, prepareFastProbeClaim, prepareSummaryClaim, prepareSummaryCoveredClaim, prepareSummaryAdministrativeCoverage, prepareSummaryFinish, requireSummaryReady, projectClaim,
     async claimMixed(userId:string,roomId:string,messageId:string) {
       const candidateRunId=randomUUID();
       return authority.runTransaction(userId,null,async b=>{
@@ -408,24 +425,24 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
         return {...(run.result ?? empty(run)),status:run.state,stopReason:run.stopReason};
       });
     },
+    async mixedMaterialCitation(userId:string,roomId:string,messageId:string,ordinal:number,offset?:number) {
+      domainParse(z.int().min(1).max(12),ordinal);
+      return authority.runTransaction(userId,null,async binding=>{
+        const {source,review}=await reviewedMixedReply(binding,roomId,messageId);
+        const ref=selectedMaterialCitations(review.sourceVersions)[ordinal-1];
+        if (!ref) domainReject('not_found',404);
+        const {citationId,...locator}=ref;
+        return materials.readIn(binding,source,messageId,locator,offset);
+      });
+    },
     async mixedCareCitation(userId:string,roomId:string,messageId:string,ordinal:number):Promise<SelectedCareCitation> {
       domainParse(z.int().min(1).max(6),ordinal);
       if (!options.care) domainReject('care_citation_unavailable',503);
       const care=options.care;
       return authority.runTransaction(userId,null,async b=>{
-        const source=await options.chat.mixed.sourceIn(b,roomId,messageId).catch(error=>{
-          if (error instanceof FirestoreDomainError && error.code==='imported_message_read_only') domainReject('not_found',404);
-          throw error;
-        });
-        const run=await originalReplyRun(b,messageId), review=run?.result?.deliveryReview;
-        if (!run || run.state!=='completed' || run.result?.status!=='completed' || !review
-          || review.decision!=='pass' || review.visibility!=='private' || run.mixedChat?.roomId!==roomId
-          || run.sourceMessageId!==messageId || firestoreDomainHash([run.mixedChat.scope,run.mixedChat.childIds])
-            !==firestoreDomainHash([source.room.scope,source.room.childIds])
-          || firestoreDomainHash(review.scope)!==firestoreDomainHash({userId:run.ownerUserId,workspaceId:run.workspaceId,
-            childId:run.childId,authorizationVersion:run.authorizationVersion,dataVersion:run.dataVersion})) domainReject('not_found',404);
+        const {source,review}=await reviewedMixedReply(b,roomId,messageId);
         const citation=selectedCareRecordCitations(review.sourceVersions)[ordinal-1];
-        const childId=citation && run.mixedChat.childIds[citation.childIndex];
+        const childId=citation && source.room.childIds[citation.childIndex];
         if (!citation || !childId) domainReject('not_found',404);
         async function readCitation(binding:Binding):Promise<SelectedCareCitation> {
           const child=await binding.readChild(childId);

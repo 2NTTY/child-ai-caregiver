@@ -120,6 +120,7 @@ export function createProductAgent(options: {
   workContinuationAuthority?: FirestoreWorkContinuationStore;
   mixed?:{runs:Pick<ReturnType<typeof createFirestoreAgentRuns>,'claimMixed'|'authorizeMixed'|'mixedInput'|'mixedResult'|'finishMixed'>;
     online:Pick<FirestoreOnlineStore,'readTaskContext'>;
+    materials?:import('./firestore-selected-materials.ts').SelectedMaterials;
     care?:Pick<import('./firestore-care.ts').FirestoreCareStore,'readSelectedCare'>;
     batches:Pick<ReturnType<typeof import('./firestore-mixed-task-batches.ts').createMixedTaskBatches>,'propose'>};
   documents?: import("./family-document-store.ts").FamilyDocumentStore;
@@ -158,11 +159,15 @@ export function createProductAgent(options: {
           contextCompaction: compactionConfig,
           availableInputs:['run','scope','conversation','context','evidence','capabilities'],
           context:{currentMessageId:messageId,selectedChildren:input.room.childIds.length,recentConversationCoverage:recent.coverage,
-            instructionPolicy:'這是發起者的私人多孩對話。按問題查所選孩子的照護記錄或待辦，以孩子 ID 區分同名者。用讀取工具回傳的 citationId 引用所讀原資料；時間、單位或涵蓋範圍未明時保留原有精度。公共問題可搜尋官方資料。'},
+            instructionPolicy:'這是發起者的私人多孩對話。按問題查所選孩子的照護記錄、待辦、有效記憶或文件，以孩子 ID 區分同名者。用讀取工具回傳的 citationId 引用所讀原資料；時間、單位或涵蓋範圍未明時保留原有精度。公共問題可搜尋官方資料。'},
           messages:recent.messages.map(({role,text})=>({role,text})),
           tools:run=>{
             tools=createProductAgentTools({run,authorize,store:options.store,memory:options.memory,tasks:options.tasks,knowledge:options.knowledge,
               trustedUserMessage:input.messages.at(-1)!.text,
+              ...(mixed.materials ? {mixedMaterials:{
+                search:(query,limit)=>mixed.materials!.search(userId,roomId,messageId,query,limit),
+                read:ref=>mixed.materials!.read(userId,roomId,messageId,ref),
+              }} : {}),
               ...(mixed.care ? {mixedCare:async ({from,filters,cursor,limit,singleChild})=>{
                 // A small group fits a single tool turn while keeping decrypted records bounded.
                 const ids=input.room.childIds.slice(from,from+(cursor || singleChild ? 1 : 2));

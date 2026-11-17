@@ -55,6 +55,8 @@ const fingerprint = (value: unknown) => createHash('sha256').update(canonicalJso
 export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptions & {
   /** Internal Agent transaction only. Never supplied by an HTTP request. */
   transaction?: FirestoreAuthorityTransaction;
+  /** Current-only readers validate the live snapshot without loading old bodies. */
+  currentOnlyReads?: boolean;
   deferCommit?: (commit: () => void) => void;
   sharing?: SharedSelection;
   maintenanceActorId?: string;
@@ -177,7 +179,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
     return item;
   }
   async function result(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, row: Metadata, loaded: FamilyDocumentSources) {
-    const values = await bodies(binding, scope, row); await supplement(binding, scope, loaded, [...(values.current ? [values.current] : []), ...values.history]);
+    const values = await bodies(binding, scope, options.currentOnlyReads ? { ...row, historyIds: [] } : row); await supplement(binding, scope, loaded, [...(values.current ? [values.current] : []), ...values.history]);
     return safe(row, loaded, values);
   }
   async function prior(binding: FirestoreAuthorityTransaction, opId: string) {
