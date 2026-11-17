@@ -155,11 +155,10 @@ export function createProductAgent(options: {
         const review:{value:ChatDeliveryReviewBinding|null;text:string|null}={value:null,text:null};
         const result=await options.runtime.run({
           scope:claim.scope,runId:claim.runId,claimedRun:claim,deadlineAtMs:Date.parse(claim.expiresAt),
-          trigger:{kind:'interactive',reference:messageId},recipeId:'product-interactive',authorize,signal:cancellation.signal,
+          trigger:{kind:'interactive',reference:messageId},recipeId:'product-interactive',promptRecipeId:'product-selected-children',authorize,signal:cancellation.signal,
           contextCompaction: compactionConfig,
-          availableInputs:['run','scope','conversation','context','evidence','capabilities'],
-          context:{currentMessageId:messageId,selectedChildren:input.room.childIds.length,recentConversationCoverage:recent.coverage,
-            instructionPolicy:'這是發起者的私人多孩對話。按問題查所選孩子的照護記錄、待辦、有效記憶或文件，以孩子 ID 區分同名者。用讀取工具回傳的 citationId 引用所讀原資料；時間、單位或涵蓋範圍未明時保留原有精度。公共問題可搜尋官方資料。'},
+          availableInputs:['run','scope','conversation','context','evidence','capabilities','selectedChildren'],
+          context:{currentMessageId:messageId,selectedChildren:input.room.childIds.length,recentConversationCoverage:recent.coverage},
           messages:recent.messages.map(({role,text})=>({role,text})),
           tools:run=>{
             tools=createProductAgentTools({run,authorize,store:options.store,memory:options.memory,tasks:options.tasks,knowledge:options.knowledge,

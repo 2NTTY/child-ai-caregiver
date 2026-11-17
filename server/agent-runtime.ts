@@ -191,6 +191,8 @@ export interface AgentRunInput {
   scope: AgentScope;
   trigger: { kind: "interactive" | "worker"; reference: string };
   recipeId: string;
+  /** The mixed-chat route uses its own tool instructions under the existing durable chat claim. */
+  promptRecipeId?: "product-selected-children";
   messages: { role: "user" | "model"; text: string }[];
   /** One server-authorized original; no client URLs or arbitrary content parts. */
   image?: { mimeType: "image/jpeg" | "image/png"; data: string };
@@ -421,7 +423,7 @@ export function createAgentRuntime(options: {
             const key = JSON.stringify(ids);
             let pending = promptCache.get(key);
             if (!pending) {
-              pending = loadAgentPrompt(input.recipeId, "tool_cycle",
+              pending = loadAgentPrompt(input.promptRecipeId ?? input.recipeId, "tool_cycle",
                 input.availableInputs ?? ["run", "scope", "conversation", "capabilities"], capabilitySelection?.moduleIds(ids));
               promptCache.set(key, pending);
             }

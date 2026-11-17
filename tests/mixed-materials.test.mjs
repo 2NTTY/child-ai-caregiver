@@ -42,6 +42,10 @@ test('mixed conversation reads only selected facts and documents, binds reviewed
   const q={kind:'memory',from:room.childIds.indexOf(first.id),query:'橙色'};
   const page=await materials.search(uid,room.id,message.id,q);
   assert.deepEqual(page.items.map(x=>[x.id,x.childId,x.title]),[[original.id,first.id,'偏好']]);
+  const keywords=await materials.search(uid,room.id,message.id,{...q,query:'橙色 圖案'});
+  assert.deepEqual(keywords.items,page.items,'A second descriptive search word must not hide the matching source.');
+  assert.deepEqual((await materials.search(uid,room.id,message.id,{...q,query:'偏好 顏色'})).items,page.items);
+  assert.deepEqual((await materials.search(uid,room.id,message.id,{...q,query:'車票 單據'})).items,[]);
   const found=page.items[0], ref={kind:q.kind,from:q.from,id:found.id,version:found.version};
   assert.equal((await materials.read(uid,room.id,message.id,ref)).text,'喜歡橙色');
   await assert.rejects(materials.read(uid,room.id,message.id,{...ref,id:hidden.id}));

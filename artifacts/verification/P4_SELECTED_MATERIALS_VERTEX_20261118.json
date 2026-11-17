@@ -1,0 +1,34 @@
+{
+  "dateHongKong": "2026-11-18",
+  "scope": "P4-CLASS02. Production mixed-chat HTTP handler, Agent, read tools, Gemini delivery review and original citation route; isolated Firestore transaction fixture. Two selected fictional children and one unselected child.",
+  "model": "gemini-3.1-flash-lite",
+  "promptPack": "0.1.60",
+  "recipe": "product-selected-children",
+  "question": "聽日去旅行，怕執錯水樽。幫我睇返記低咗小松同小禾嘅水樽各自貼咗咩圖案？",
+  "findings": [
+    "Original recipe: the model selected unavailable single-child read_memory_facts. The run stopped at invalid_tool before any source was read.",
+    "Scoped recipe alone: the model selected the appropriate read tool, but an exact substring search for 水樽 圖案 missed the existing 水樽 facts. An early probe imposed its own five-call ceiling and provider retries included HTTP 429; that attempt did not verify delivery. A subsequent run using the original product budget also missed the facts."
+  ],
+  "verified": {
+    "state": "completed",
+    "review": "pass",
+    "providerRequests": 4,
+    "reportedPromptTokens": 32931,
+    "reportedCandidateTokens": 288,
+    "tools": [
+      "search_selected_materials",
+      "search_selected_materials",
+      "present_answer"
+    ],
+    "query": "水樽 圖案",
+    "answer": "根據記錄，小松的水樽貼了月亮貼紙，而小禾的水樽則貼了星星貼紙。祝你們聽日旅途愉快！ [孩子資料 1][孩子資料 2]",
+    "citedSources": 2,
+    "bothOriginalIdsAndRevisionsMatched": true,
+    "unselectedChildOmitted": true,
+    "sameRunRecoveredViaGet": true
+  },
+  "limits": [
+    "One memory question. The document branch, stale version and revoked sharing have scripted checks.",
+    "Originals were opened using the production HTTP handler locally. Live family sessions and physical-device taps remain pending. No notifications or production family data."
+  ]
+}
