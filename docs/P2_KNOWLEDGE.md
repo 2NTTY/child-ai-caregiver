@@ -52,6 +52,8 @@ Web 管理員可在「公共知識 ZIP 匯入台帳」貼上交付者提供的 S
 
 超過 50 個已審核版本的關鍵詞重建可分成一組，一次最多 400 個。每 50 個沿用一個背景批次，整組目標、工作及原操作收據一起提交。關閉後台後 worker 繼續。用首批編號查回整組，再查各批的逐版本結果。整組停止或恢復沿當前控制版本一次提交，已完成及失敗的項目保留原狀。換版後要重建新內容，另選新版本及 hash。
 
+本機可用官方 Firestore Emulator 重現整條重建流程。啟動 loopback emulator（專案 `demo-p4-knowledge`），在同一終端設定 `FIRESTORE_EMULATOR_HOST=127.0.0.1:實際端口`，執行 `node scripts/verify-knowledge-rebuild-emulator.mjs`。腳本在新 namespace 載入倉庫官方種子及既有審核，按原定時間處理工作，最後從管理清單核對版本、索引就緒及發布狀態。工作完成後關閉本次臨時 emulator 即可。[11 月 18 日的規模、耗時及實測範圍](../artifacts/verification/P4_KNOWLEDGE_REBUILD_20261118.json)。
+
 Web 管理後台的公共知識匯入區與 `archive-status` 讀取同一台帳。可翻看每批已提交的來源、版本及失敗位置，或貼上 ZIP 的完整 SHA-256 查回未列出的舊批次。按「停止」後，舊執行者不能再提交。恢復後以原檔及指紋執行 `archive-import`，從上次已保存的位置接續。版本的內容核准與發布沿上表另行操作。
 
 ## 檢索契約與限制

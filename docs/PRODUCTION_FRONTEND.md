@@ -324,6 +324,15 @@ Web 環境檔只讀 `EXPO_PUBLIC_*`；工具在獨立程序先清走原生配置
 
 首次新 avatar schema／journal 寫入後，不可回退至不認識它們的舊 reader／worker；關寫入仍需保留相容清理、匯出、備份與恢復接點。marker partial-staging 的本機合成 PASS 不是原生 restore 全完成；資料與 codec/license細節見[資料契約](DATA_MODEL.md#avatars)及[決策](DECISIONS.md#avatar-codec-decision)。
 
+### 核對附件還原與備份後新寫入
+
+按 [11 月 18 日香港隔離演練](../artifacts/verification/P4_CENTRAL_RECOVERY_20261118.json) 的次序核對。以空白還原庫、配對物件 bucket 及合成資料操作；保留原資料庫作唯一可恢復寫入的來源。
+
+1. 暫停來源並等待排空，固定 snapshotTime、backupId 及保留期限。使用原生匯出配對附件。保留期限須在實際寫入時仍有 14 至 15 天，例如開始時取 14 天半，同一次操作重試沿用相同值。
+2. 在備份後保存一項新資料、刪除一個已有原件，然後再次暫停來源。將原快照匯入空白目標，沿原 restoreId 套用並查回相同 checkpoint。
+3. 保持目標暫停。核對保留原件的新儲存世代和位元組、已刪原件的 tombstone 和目標物件缺席。刪除標記可保有清理描述，原件能否下載與舊物件是否完成清理要分開核對。
+4. 若目標缺少備份後新寫入，恢復原來源的寫入世代並查回新資料。只有讀回、收據及唯一寫入者均已核實，才記錄回退成功。需要改以目標作主庫時，須另核差異與切換條件。
+
 ### 放棄未啟用的隔離頭像還原
 
 只供還原操作員，不能對原站或已啟用 target 執行。先停止該 target 的還原程序，確認它未掛 API／worker／流量；保留原備份與來源。沿同一 `FIREBASE_RESTORE_DATABASE_ID` 及受保護 key：
