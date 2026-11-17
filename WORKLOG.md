@@ -6120,3 +6120,10 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 依 `SLICE_B_BP2_BP7_NEW_BOUNDARY_TESTS_20261117_R1.md`（BND-1）同步修復至 `server/chat-delivery-review.ts`（保留 `B-P6` 擴充純問候邊界）：
 1）**BND-1**：移除 `privateSourcesSupportDraft` 依 `record_restatement`/`private_reference` 標籤篩選段落而漏檢 `clarification` 段落的漏洞，抽出 `classifyParagraphPrivateSupport`、`paragraphIsExemptWithoutCitation` 及收緊後之 `isPureScopeRefusalOrLimitationText`，攔截跨段／混合引用／拒答夾帶未獲支持之私人過敏說法並保留正例與純補問。
 2）於 `tests/search-short-path-gaps.test.ts`（10→11 cases）新增 `BND-1` 真 `createProductAgent` 成對正反實測，並更新 `scripts/ci/verify-search-short-path-gaps-offline.sh` `TEST_CASES=(11 44 8)`。
+
+### 2026-11-18　B-P6 實作覆核 R1 修復（N18-1 純拒答／待確認整句錨定驗證與精確數字分詞、N18-2 純結構句豁免）
+
+依 `SLICE_B_BP2_BP6_BP7_IMPLEMENTATION_AUDIT_20261118_R1.md`（N18-1／N18-2）同步修復至 `server/chat-delivery-review.ts`（保留 `B-P6` 擴充純問候邊界）：
+1）**N18-1**：改以 `splitPrivateAssertionClauses` 逐子句套用整句錨定（`isPureScopeRefusalClause`／`isPurePendingConfirmationClause`），並於 `privateSourceClauseSupportsClaimClause` 強制精確數字 token（修復 `"120"` 以 `.includes("20")` 錯認 `"20"`）與英文字詞邊界，徹底封堵逗號、連接詞及單子句夾帶未授權私人事實（如 `BB每日午睡20分鐘`、`BB通常在學校午睡`）。
+2）**N18-2**：新增無兒童實體與無數量之純結構句檢查 `isPureStructuralFramingClause`／`isPureStructuralFramingText`（於 `classifyParagraphPrivateSupport` 回傳 `"structural"`），恢復搭配有據紀錄或官方引用的「以上是整理後的內容。」正常交付，同時維持獨立無支持結構句或夾帶數量詞之阻斷。
+3）於 `tests/search-short-path-gaps.test.ts`（11→12 cases）新增 `N18-1 & N18-2` 真 `createProductAgent` 成對正反實測，並更新 `scripts/ci/verify-search-short-path-gaps-offline.sh` `TEST_CASES=(12 44 8)`。
