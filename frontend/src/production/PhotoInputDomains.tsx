@@ -1,3 +1,4 @@
+import { FamilyLibraryUpload } from './FamilyLibraryUpload';
 import { readBlobBytes } from "../../../src/client/blob-bytes";
 import { photoPreview, photoSha256 } from "../platform/photo-bytes";
 import { copyPhotoOriginal } from "./photo-original";
@@ -470,6 +471,8 @@ export function ProductionPhotosWorkspace({ onCare, capturePreferred = false }: 
     onCare={!sharedScope || sharedChild.view?.modules.includes('care') ? onCare : undefined}
     onChat={sharedScope ? undefined : () => actions.open("chat")}
     onChatPhoto={sharedScope ? undefined : photo => attachSavedPhoto({id:photo.id,version:photo.version,fileName:photo.fileName,mimeType:photo.mimeType,bytes:photo.bytes,sha256:photo.sha256,source:photo.source})}
+    renderLibraryUpload={sharedChild.view && sharedChild.view.role !== 'viewer' && sharedChild.view.modules.includes('attachments')
+      ? tab => <FamilyLibraryUpload key={domain.scopeKey} tab={tab} spaceName={sharedChild.view!.spaceName} onSaved={domain.actions.refresh} /> : undefined}
     attachments={attachments} capturePreferred={!sharedScope && capturePreferred} scopeKey={domain.scopeKey} /> : null;
 }
 export function ProductionSourcesWorkspace({ onPhotos, onRecord }: { onPhotos: () => void; onRecord: (id: string) => void }) {

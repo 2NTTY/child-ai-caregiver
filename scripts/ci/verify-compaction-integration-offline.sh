@@ -29,6 +29,8 @@ test "$("$NODE_BIN" --version)" = "v24.22.1"
 GUARD=frontend/scripts/family-cleanup-network-guard.mjs
 TEST_FILES=(
   tests/agent-compaction-integration.test.ts
+  tests/agent-compaction-policy-barrier.test.ts
+  tests/agent-compaction-durable-policy.test.ts
   tests/agent-context-compaction.test.ts
   tests/agent-durable-budget.test.ts
   tests/agent-durable-ai-usage.test.ts

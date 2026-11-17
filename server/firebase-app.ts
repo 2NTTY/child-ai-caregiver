@@ -192,8 +192,9 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
           }
           result=await options.push.authorizeChatOpen(session.userId,session,reference,proof);
         } else {
-          result=post ? await options.push.setChatPresence(session.userId,session,await readJson(request))
-            : await options.push.readChatPresence(session.userId,session,query.get('bindingId') ?? '');
+          const classTasks = request.headers.get('x-push-features') === 'class-tasks';
+          result=post ? await options.push.setChatPresence(session.userId,session,await readJson(request),classTasks)
+            : await options.push.readChatPresence(session.userId,session,query.get('bindingId') ?? '',classTasks);
         }
         const current=await auth.webSessionProof?.(request.headers);
         if(current?.userId!==session.userId || current.sessionHash!==session.sessionHash) throw new RequestError('session_changed',409);
@@ -207,8 +208,9 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const expected = request.headers.get('x-expected-user-id');
         if (expected !== session.userId) throw new RequestError(expected ? 'session_changed' : 'account_precondition_required', expected ? 409 : 428);
         const withPreview = path === '/api/native-push/v2/chat-presence';
-        const result = request.method === 'GET' ? await options.nativePush.readChatPresence(session.userId, session, withPreview)
-          : await options.nativePush.setChatPresence(session.userId, session, await readJson(request), withPreview);
+        const classTasks = request.headers.get('x-push-features') === 'class-tasks';
+        const result = request.method === 'GET' ? await options.nativePush.readChatPresence(session.userId, session, withPreview, classTasks)
+          : await options.nativePush.setChatPresence(session.userId, session, await readJson(request), withPreview, classTasks);
         const current = await auth.nativeSessionProof?.(request.headers);
         if (current?.userId !== session.userId || current.sessionHash !== session.sessionHash) throw new RequestError('session_changed', 409);
         return json(result);
@@ -221,7 +223,9 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (!raw || raw.length > 1024) throw new RequestError('invalid_input', 400);
         let value; try { value = JSON.parse(raw); } catch { throw new RequestError('invalid_input', 400); }
         const ref = await options.nativePush.authorizeOpen(session.userId, session, value);
-        const result = 'screen' in ref ? { kind: 'chat', childId: ref.childId, messageId: ref.messageId }
+        const result = 'screen' in ref ? (ref.screen === 'class_task'
+          ? {kind:'class_task',spaceId:ref.spaceId,childId:ref.childId,taskId:ref.taskId}
+          : {kind:'chat',childId:ref.childId,messageId:ref.messageId})
           : ref.kind === 'test' ? { kind: 'test', childId: null, taskId: null } : await options.contact?.resolveNativeOpen(session.userId, ref);
         if (!result) throw new RequestError('not_found', 404);
         // Recheck after lookup; a tap never marks receipt or completes a task.

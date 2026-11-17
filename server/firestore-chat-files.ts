@@ -1,5 +1,5 @@
 import { sharedWriteAttributionSchema, sharedWriteAttribution, validSharedAttribution } from './shared-write-attribution.ts';
-import { sharedAttachmentReads, attachmentReadFence, withSharedAttachmentWrite, sharedMessageAttachmentVisible } from './firestore-attachment-access.ts';
+import { libraryOrigin, libraryOriginSchema, requireLibraryBasis, checkLibraryOrigin, type AttachmentUploadAccess, sharedAttachmentReads, attachmentReadFence, withSharedAttachmentWrite, sharedMessageAttachmentVisible } from './firestore-attachment-access.ts';
 import type { SharedSelection } from '../src/shared/sharing.ts';
 import type { FirestoreAuthority } from './firestore-authority.ts';
 import { createPrivateAttachmentList } from './firestore-attachment-list.ts';
@@ -16,7 +16,7 @@ import { workRecoveryScopeSchema, type WorkRecoveryScope } from "./firestore-wor
 import { chatFileObjectDescriptorSchema, type ChatFileObjects, type ChatFileObjectDescriptor } from "./firebase-chat-file-objects.ts";
 import { decodeChatFileBase64, ChatFileError } from "./chat-file-bytes.ts";
 import { importProvenanceSchema, type ImportProvenance } from '../src/shared/import-provenance.ts';
-import { attachmentImportStageSchema, checkedAttachmentImportStage, type AttachmentImportStage, type AttachmentImportAccess } from './handover-attachment-stage.ts';
+import { attachmentImportStageSchema, checkedAttachmentImportStage, type AttachmentImportStage } from './handover-attachment-stage.ts';
 
 const uuid = z.uuid(), at = z.iso.datetime({ offset: true });
 const uploadSchema = z.object({ token: uuid, startedAt: at, unknown: z.boolean() }).strict();
@@ -27,7 +27,7 @@ export const firestoreChatFileRowSchema = z.object({
   metadata: chatFileReservationSchema.omit({ opId: true }).nullable(),
   state: z.enum(["reserved", "ready", "deleting", "deleted"]), upload: uploadSchema.nullable(),
   descriptor: chatFileObjectDescriptorSchema.nullable(), messageId: uuid.nullable(),
-  importStage: attachmentImportStageSchema.optional(), importedFrom: importProvenanceSchema.optional(),
+  libraryOrigin: libraryOriginSchema.optional(), importStage: attachmentImportStageSchema.optional(), importedFrom: importProvenanceSchema.optional(),
   deletion: z.object({ intent: firebaseErasureIntentSchema, proof: firebaseErasureDescriptorSchema.nullable(), expectedVersion: z.number().int().positive(),
     actorUserId: z.string().min(1).max(256).optional(), actorOperationId: uuid.optional(), attribution: sharedWriteAttributionSchema.optional(),
     integrity: chatFileReservationSchema.pick({ bytes: true, sha256: true, mimeType: true }),
@@ -36,6 +36,7 @@ export const firestoreChatFileRowSchema = z.object({
 }).strict().refine(v => (['deleting', 'deleted'].includes(v.state)) === (v.metadata === null)
   && (v.metadata === null) === (v.deletion !== null)
   && (v.state !== "ready" || v.descriptor !== null)
+  && !(v.libraryOrigin && v.importStage)
   && (!v.importStage || v.state !== 'ready' || !!v.importedFrom)
   && (!v.importedFrom || !!v.importStage && v.importedFrom.current.source.section === 'files'
     && v.importedFrom.current.sourceHash === v.importStage.sourceHash && v.importedFrom.current.importedBy === v.importStage.actorUserId)
@@ -68,7 +69,7 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
   function envelope(row: FirestoreChatFileRow) {
     return { ...data.tags(row.scope), scopeTag: scopeTag(row.scope), assetId: row.id, state: row.state,
       ...(row.state === 'deleted' ? { retiredStorageEpoch: row.scope.storageEpoch } : {}),
-      createdAt: row.createdAt, updatedAt: row.updatedAt, messageId: row.messageId, cleanupState: row.deletion?.cleanup ?? (row.messageId === null && !(row.importedFrom && row.state === 'ready') ? 'unlinked' : null), cleanupAt: row.deletion?.nextCheckAt ?? null,
+      createdAt: row.createdAt, updatedAt: row.updatedAt, messageId: row.messageId, cleanupState: row.deletion?.cleanup ?? (row.messageId === null && !((row.libraryOrigin || row.importedFrom) && row.state === 'ready') ? 'unlinked' : null), cleanupAt: row.deletion?.nextCheckAt ?? null,
       ...data.seal("chat-file-asset", row.id, row.scope, firestoreChatFileRowSchema, row, row.version) };
   }
   function current(row: FirestoreChatFileRow) { if (["deleting", "deleted"].includes(row.state)) domainReject("chat_file_deleted", 410); }
@@ -92,16 +93,17 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
     if (prior) receipts.assertSame(b, prior, submission);
     return { prior, submission };
   }
-  async function prepareReservation(b: FirestoreAuthorityTransaction, raw: ChatFileReservation, importStage?: AttachmentImportStage) {
+  async function prepareReservation(b: FirestoreAuthorityTransaction, raw: ChatFileReservation, importStage?: AttachmentImportStage, actor?: FirestoreAuthorityTransaction) {
     const input = domainParse(chatFileReservationSchema, raw), { opId: id, ...metadata } = input;
-    const fingerprint = firestoreDomainHash(importStage ? ['chat-file-import-reserve', input, importStage] : ["chat-file-reserve", input]), createdAt = now();
+    const origin = actor ? libraryOrigin(b) : undefined;
+    const fingerprint = firestoreDomainHash(origin ? ['library-reserve', input, origin] : importStage ? ['chat-file-import-reserve', input, importStage] : ["chat-file-reserve", input]), createdAt = now();
     const childId = b.scope.childId;
       if (!await b.readChild(childId)) domainReject("not_found", 404);
-      const op = importStage ? null : await operation(b, id, '/api/children/' + childId + '/files', input);
+      const op = importStage ? null : await operation(actor ?? b, id, '/api/children/' + childId + '/files', origin ? { input, origin } : input);
       const existing = await b.transaction.get(ref(id));
       if (existing.exists) {
         const prior = open(existing, b.scope, id); if (prior.fingerprint !== fingerprint) domainReject("operation_conflict");
-        if (importStage) current(prior);
+        if (importStage || origin) current(prior);
         return { value: view(prior), commit() {} };
       }
       if (op?.prior) domainReject('operation_erased');
@@ -112,8 +114,8 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
       const change = await b.prepareChange(id, "chat", false);
       const row: FirestoreChatFileRow = { id, scope: { ...b.scope }, objectScope: { ...b.scope }, version: 1, createdAt,
         updatedAt: createdAt, fingerprint, metadata, state: "reserved", upload: null, descriptor: null, messageId: null, deletion: null,
-        ...(importStage ? { importStage } : {}) };
-      const saved = op ? receipts.prepareConfirmed(b, op.submission, { childId, changeSeq: change.changeSeq, statusCode: 201,
+        ...(origin ? { libraryOrigin: origin } : {}), ...(importStage ? { importStage } : {}) };
+      const saved = op ? receipts.prepareConfirmed(actor ?? b, op.submission, { childId: actor ? null : childId, changeSeq: change.changeSeq, statusCode: 201,
         result: { fileId: id, action: 'chat_file_reserve', accepted: true } }) : null;
       return { value: view(row), commit() { change.commit(); b.transaction.create(ref(id), envelope(row)); saved?.commit(); } };
   }
@@ -123,22 +125,23 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
   function prepareImportReservation(b: FirestoreAuthorityTransaction, raw: ChatFileReservation, stage: AttachmentImportStage) {
     return prepareReservation(b, raw, checkedAttachmentImportStage(b, stage));
   }
-  function uploadTransaction<T>(userId: string, childId: string, access: AttachmentImportAccess | undefined,
+  function uploadTransaction<T>(userId: string, childId: string, access: AttachmentUploadAccess | undefined,
     use: (b: FirestoreAuthorityTransaction) => Promise<T>) {
     const checked = (b: FirestoreAuthorityTransaction) => {
-      if (access) checkedAttachmentImportStage(b, access.stage);
+      if (access && 'stage' in access) checkedAttachmentImportStage(b, access.stage);
       return use(b);
     };
     return access?.selection ? withSharedAttachmentWrite(options, userId, childId, access.selection, checked)
       : authority.runTransaction(userId, childId, checked);
   }
-  function checkImportAccess(b: FirestoreAuthorityTransaction, row: FirestoreChatFileRow, access?: AttachmentImportAccess) {
-    if (access) {
+  function checkImportAccess(b: FirestoreAuthorityTransaction, row: FirestoreChatFileRow, access?: AttachmentUploadAccess) {
+    checkLibraryOrigin(b, row.libraryOrigin, access);
+    if (access && 'stage' in access) {
       if (!row.importStage) domainReject('operation_conflict');
       checkedAttachmentImportStage(b, access.stage, row.importStage);
     } else if (row.importStage && row.state !== 'ready') domainReject('chat_file_import_pending');
   }
-  async function finish(userId: string, childId: string, original: FirestoreChatFileRow, descriptor: ChatFileObjectDescriptor, access?: AttachmentImportAccess) {
+  async function finish(userId: string, childId: string, original: FirestoreChatFileRow, descriptor: ChatFileObjectDescriptor, access?: AttachmentUploadAccess) {
     const checked = checkedDescriptor(original, descriptor);
     return uploadTransaction(userId, childId, access, async b => {
       const row = await read(b, original.id); current(row);
@@ -163,7 +166,7 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
       tx.set(ref(row.id), envelope({ ...row, version: row.version + 1, upload: definitelyNotWritten ? null : { ...row.upload, unknown: true }, updatedAt: now() }));
     });
   }
-  async function upload(userId: string, childId: string, id: string, expectedVersion: number, base64: string, signal?: AbortSignal, access?: AttachmentImportAccess) {
+  async function upload(userId: string, childId: string, id: string, expectedVersion: number, base64: string, signal?: AbortSignal, access?: AttachmentUploadAccess) {
     domainParse(uuid, id); domainParse(z.number().int().min(1), expectedVersion);
     let bytes: Buffer;
     try { bytes = decodeChatFileBase64(base64); } catch { domainReject('invalid_chat_file', 400); }
@@ -256,7 +259,7 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
       if (!(await authority.readControl(tx)).enabled) return null;
       const row = open(await tx.get(ref(id)), scope, id);
       if (row.deletion) return row;
-      if (row.messageId || row.importedFrom && row.state === 'ready' || clock() < Date.parse(row.createdAt) + 86400_000) return null;
+      if (row.messageId || (row.libraryOrigin || row.importedFrom) && row.state === 'ready' || clock() < Date.parse(row.createdAt) + 86400_000) return null;
       const { bytes, sha256, mimeType } = row.metadata!;
       const intent: FirebaseErasureIntent = { type:'file-delete',scope:row.objectScope,assetId:id,operationId:randomUUID(),at:now() };
       const updated: FirestoreChatFileRow = { ...row,version:row.version+1,state:'deleting',metadata:null,updatedAt:now(),
@@ -309,7 +312,7 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
     if (!exists) return true;
     return (await cleanupDeleted(scope, id)).state === 'complete';
   }
-  async function reconcile(userId: string, childId: string, id: string, access?: AttachmentImportAccess) {
+  async function reconcile(userId: string, childId: string, id: string, access?: AttachmentUploadAccess) {
     const row = await uploadTransaction(userId, childId, access, async b => { const found = await read(b, id); current(found); checkImportAccess(b, found, access); return found; });
     if (row.state === "ready" || !row.upload) return view(row);
     const descriptor = await options.objects.inspect(row.objectScope, id);
@@ -391,8 +394,23 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
     },
     uploadImported: (userId: string, childId: string, id: string, expectedVersion: number, base64: string, stage: AttachmentImportStage,
       signal?: AbortSignal, selection?: SharedSelection) => upload(userId, childId, id, expectedVersion, base64, signal, { stage, selection }),
-    forSharedSpace: (selection: SharedSelection) => ({ ...readers(sharedAttachmentReads(options, selection)),
-    delete: (userId: string, childId: string, id: string, version: number, opId: string) => deleteChatFile(userId, childId, id, version, opId, selection) }), reserve, upload, reconcile, content, prepareLink, contentForMessage, readEvidence, delete: deleteChatFile, cleanupDeleted, expireUnlinked, eraseForScope,
+    forSharedSpace: (selection: SharedSelection) => {
+      const access = { library: true as const, selection };
+      const scoped = (value: ChatFileAttachment) => ({ ...value, messageId: null, sharedSpaceId: selection.spaceId });
+      return { ...readers(sharedAttachmentReads(options, selection)),
+        reserve: (userId: string, childId: string, input: ChatFileReservation) =>
+          withSharedAttachmentWrite(options, userId, childId, requireLibraryBasis(selection), async (source, actor) => {
+            const prepared = await prepareReservation(source, input, undefined, actor);
+            prepared.commit();
+            return scoped(prepared.value);
+          }),
+        upload: async (userId: string, childId: string, id: string, version: number, base64: string, signal?: AbortSignal) =>
+          scoped(await upload(userId, childId, id, version, base64, signal, access)),
+        reconcile: async (userId: string, childId: string, id: string) => scoped(await reconcile(userId, childId, id, access)),
+        delete: (userId: string, childId: string, id: string, version: number, opId: string) =>
+          deleteChatFile(userId, childId, id, version, opId, selection),
+      };
+    }, reserve, upload, reconcile, content, prepareLink, contentForMessage, readEvidence, delete: deleteChatFile, cleanupDeleted, expireUnlinked, eraseForScope,
     readMetadata: async (b: FirestoreAuthorityTransaction, id: string) => view(await read(b,id), b) };
 }
 export type FirestoreChatFilesStore = ReturnType<typeof createFirestoreChatFilesStore>;

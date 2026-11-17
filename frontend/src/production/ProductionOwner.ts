@@ -1,3 +1,4 @@
+import type { LibraryUploadReference } from './family-library-upload';
 import { createAvatarApi } from '../../../src/client/avatars-api.ts';
 import { createHandoverApi } from '../../../src/client/handover-api.ts';
 import { createFamilyDocumentsApi } from '../../../src/client/family-documents-api.ts';
@@ -55,6 +56,8 @@ export class ProductionOwner {
   readonly reauthenticateAdmin: (proof: ReauthenticationInput, signal: AbortSignal) => Promise<void>;
   readonly socialProviders: readonly SocialAuthProvider[];
   readonly queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 0, gcTime: 0 } } });
+  /** Operation references survive navigation and are cleared on identity change. */
+  readonly libraryUploads = new Map<string, LibraryUploadReference>();
   readonly draftOwner = createAssistantDraftOwner();
   readonly controller: RecordsController;
   readonly chatController: ChatController;
@@ -274,7 +277,7 @@ export class ProductionOwner {
       if (nextIdentity !== this.identity) {
         void this.queryClient.cancelQueries(); this.queryClient.removeQueries();
         for (const key of this.draftScopes.keys()) this.draftOwner.forget(key);
-        this.draftScopes.clear(); this.deniedChildren.clear();
+        this.draftScopes.clear(); this.deniedChildren.clear(); this.libraryUploads.clear();
         this.chatController.syncContext(null, raw.online, null); this.identity = nextIdentity;
       }
       this.accountOwner.syncContext(userId, raw.online, this.identity);
