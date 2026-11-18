@@ -14,7 +14,7 @@ import { agentAnswerSchema, agentBackgroundAnswerSchema } from "../src/shared/pr
 import type { AgentAnswer, AgentPresentation, AgentProposalValue } from "../src/shared/product-agent.ts";
 import type { KnowledgeEvidence, KnowledgeFilter, KnowledgeContextCursor } from "../src/shared/knowledge.ts";
 import { groundedRecordTime } from "./agent-record-time.ts";
-import { agentActionToolNames, type AgentDirectAction } from "../src/shared/agent-actions.ts";
+import { agentActionToolNames, type AgentActionReceipt, type AgentDirectAction } from "../src/shared/agent-actions.ts";
 import { accumulateKnowledgeRead } from "./knowledge-read-coverage.ts";
 import { knowledgeQueryAgeSchema } from "./knowledge-inputs.ts";
 import { assertPublicKnowledgeQuery } from "./knowledge-query-minimization.ts";
@@ -174,35 +174,68 @@ export function createProductAgentTools(options: {
   let proposedBatch:MixedTaskBatch|null=null;
   let selectedMemoryFacts: MemoryFact[] = [];
   let selectedVerifiedOperations: ChatDeliveryVerifiedOperation[] = [];
-  const executedActions = new Map<string, { recordKind?: string; summary?: string; eventTime?: string }>();
-  const recordedProposals = new Map<string, { proposalId: string; proposalRunId: string; proposalVersion: number; toolName: string; summary: string }>();
+  type DirectActionSummary = Omit<ChatDeliveryVerifiedOperation, "kind" | "id" | "tool" | "state" | "notification" | "confirmationQuestion">;
+  const executedActions = new Map<string, DirectActionSummary>();
+  const recordedProposals = new Map<string, {
+    proposalId: string; proposalRunId: string; proposalVersion: number; toolName: string; summary: string; dueAt?: string;
+  }>();
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;
   let serverReceiptText: string | null = null;
   let pendingMemoryProposalCount = 0;
   const selectedOfficialHelp = new Set<string>();
-  function summarizeDirectAction(action: AgentDirectAction): { recordKind?: string; summary: string; eventTime?: string } {
+  function summarizeDirectAction(action: AgentDirectAction, receipt: AgentActionReceipt): DirectActionSummary {
+    const resource = receipt.resource ? { ...receipt.resource } : undefined;
     if (action.kind === "save_record" || action.kind === "revise_record") {
-      const time = groundedRecordTime(action.details, [action.sourceQuote, ...(action.sourceMessages ?? []).map(item => item.quote)].join("\n")).eventTime.rawText;
-      return { recordKind: action.details.kind, summary: action.text.slice(0, 300), ...(time ? { eventTime: time } : {}) };
+      const grounded = groundedRecordTime(action.details, [action.sourceQuote, ...(action.sourceMessages ?? []).map(item => item.quote)].join("\n")).eventTime;
+      const time = grounded.rawText || grounded.at || "";
+      const quantity = receipt.quantityGrounding?.status === "removed" ? null : action.details.quantity;
+      return {
+        ...(resource ? { resource } : {}),
+        recordKind: action.details.kind,
+        summary: action.text,
+        ...(time ? { eventTime: time } : {}),
+        ...(grounded.at ? { eventAt: grounded.at } : {}),
+        ...(grounded.timeZone ? { eventTimeZone: grounded.timeZone } : {}),
+        ...(quantity !== undefined ? { quantity } : {}),
+        ...(receipt.quantityGrounding ? { quantityGroundingStatus: receipt.quantityGrounding.status } : {}),
+      };
     }
     if (action.kind === "save_private_note" || action.kind === "revise_private_note") {
-      return { summary: `${action.title}: ${action.text}`.slice(0, 300) };
+      return {
+        ...(resource ? { resource } : {}),
+        summary: `${action.title}: ${action.text}`,
+        actionDetailText: action.text,
+      };
     }
-    if (action.kind === "create_self_task") return { summary: `${action.title} (${action.dueAt})`.slice(0, 300) };
-    return { summary: `${action.action}: ${action.note}`.slice(0, 300) };
+    if (action.kind === "create_self_task") {
+      return {
+        ...(resource ? { resource } : {}),
+        summary: `${action.title} (${action.dueAt})`,
+        dueAt: action.dueAt,
+        eventTimeZone: action.timeZone,
+        ...(action.details.trim() ? { actionDetailText: action.details } : {}),
+      };
+    }
+    return {
+      ...(resource ? { resource } : {}),
+      summary: `${action.action}: ${action.note}`,
+      actionDetailText: action.note,
+      ...(action.dueAt ? { dueAt: action.dueAt } : {}),
+      ...(action.timeZone ? { eventTimeZone: action.timeZone } : {}),
+    };
   }
-  function summarizeProposal(value: AgentProposalValue): { toolName: string; summary: string } {
+  function summarizeProposal(value: AgentProposalValue): { toolName: string; summary: string; dueAt?: string } {
     switch (value.kind) {
-      case "memory_fact": return { toolName: "propose_fact", summary: value.content.slice(0, 300) };
-      case "memory_fact_revise": return { toolName: "propose_fact_revision", summary: value.content.slice(0, 300) };
-      case "memory_fact_deactivate": return { toolName: "propose_fact_deactivation", summary: value.reason.slice(0, 300) };
-      case "task_create": return { toolName: "propose_task", summary: `${value.values.title} (${value.values.dueAt})`.slice(0, 300) };
-      case "task_change": return { toolName: "propose_task_change", summary: `${value.change.action}: ${value.change.note}`.slice(0, 300) };
-      case "concern_create": return { toolName: "propose_concern", summary: value.values.title.slice(0, 300) };
+      case "memory_fact": return { toolName: "propose_fact", summary: value.content };
+      case "memory_fact_revise": return { toolName: "propose_fact_revision", summary: value.content };
+      case "memory_fact_deactivate": return { toolName: "propose_fact_deactivation", summary: value.reason };
+      case "task_create": return { toolName: "propose_task", summary: `${value.values.title} (${value.values.dueAt})`, dueAt: value.values.dueAt };
+      case "task_change": return { toolName: "propose_task_change", summary: `${value.change.action}: ${value.change.note}`, ...(value.change.action === "reschedule" ? { dueAt: value.change.dueAt } : {}) };
+      case "concern_create": return { toolName: "propose_concern", summary: value.values.title };
       case "concern_change": return { toolName: "propose_concern_change", summary: value.change.action };
       case "family_document_change": return { toolName: "propose_family_document_change", summary: value.documentId };
-      case "private_source_create": return { toolName: "propose_private_source", summary: value.input.sourceLabel.slice(0, 300) };
+      case "private_source_create": return { toolName: "propose_private_source", summary: value.input.sourceLabel };
       case "private_source_change": return { toolName: "propose_private_source_change", summary: value.inputId };
     }
   }
@@ -226,7 +259,7 @@ export function createProductAgentTools(options: {
     ...options.actions,
     async execute(targetScope, targetRunId, callId, action) {
       const receipt = await options.actions!.execute(targetScope, targetRunId, callId, action);
-      if (receipt) executedActions.set(receipt.id, summarizeDirectAction(action));
+      if (receipt) executedActions.set(receipt.id, summarizeDirectAction(action, receipt));
       return receipt;
     },
   } : undefined;
@@ -240,16 +273,45 @@ export function createProductAgentTools(options: {
       const receipts = await options.actions.receipts(scope.userId, scope.childId, runId);
       if (!await authorize() || !receipts) throw new AgentStopped("unauthorized");
       for (const receipt of receipts) {
-        const local = executedActions.get(receipt.id);
+        let local = executedActions.get(receipt.id);
+        if (receipt.resource?.kind === "care_record" && typeof options.actions.recordById === "function") {
+          const persisted = await options.actions.recordById(scope.userId, scope.childId, receipt.resource.id);
+          if (!await authorize()) throw new AgentStopped("unauthorized");
+          if (persisted && persisted.id === receipt.resource.id && persisted.version === receipt.resource.version) {
+            const eventTime = persisted.details.eventTime.rawText || persisted.details.eventTime.at || "";
+            local = {
+              ...local,
+              resource: { ...receipt.resource },
+              recordKind: persisted.details.kind,
+              summary: persisted.text,
+              ...(eventTime ? { eventTime } : {}),
+              ...(persisted.details.eventTime.at ? { eventAt: persisted.details.eventTime.at } : {}),
+              ...(persisted.details.eventTime.timeZone ? { eventTimeZone: persisted.details.eventTime.timeZone } : {}),
+              quantity: persisted.details.quantity,
+              ...(receipt.quantityGrounding ? { quantityGroundingStatus: receipt.quantityGrounding.status } : {}),
+            };
+          }
+        } else if (receipt.resource?.kind === "private_note" && typeof options.actions.noteById === "function") {
+          const persisted = await options.actions.noteById(scope.userId, scope.childId, receipt.resource.id);
+          if (!await authorize()) throw new AgentStopped("unauthorized");
+          if (persisted && persisted.id === receipt.resource.id && persisted.version === receipt.resource.version) {
+            local = {
+              ...local,
+              resource: { ...receipt.resource },
+              summary: `${persisted.title}: ${persisted.text}`,
+              actionDetailText: persisted.text,
+            };
+          }
+        }
         verified.push({
+          ...(local ?? {}),
           kind: "action_receipt",
           id: receipt.id,
           tool: agentActionToolNames[receipt.kind],
           state: receipt.state,
           notification: receipt.notification,
-          ...(local?.recordKind ? { recordKind: local.recordKind } : {}),
-          ...(local?.summary ? { summary: local.summary } : {}),
-          ...(local?.eventTime ? { eventTime: local.eventTime } : {}),
+          ...(receipt.resource && !local?.resource ? { resource: { ...receipt.resource } } : {}),
+          ...(receipt.quantityGrounding && !local?.quantityGroundingStatus ? { quantityGroundingStatus: receipt.quantityGrounding.status } : {}),
         });
       }
     }
@@ -267,6 +329,7 @@ export function createProductAgentTools(options: {
           tool: entry.toolName,
           state: "pending_confirmation",
           summary: entry.summary,
+          ...(entry.dueAt ? { dueAt: entry.dueAt } : {}),
           confirmationQuestion: questions[0],
         });
       }
@@ -376,12 +439,14 @@ export function createProductAgentTools(options: {
   const permitted = async () => authorize();
   function acceptPresentedAnswer(parsed: AgentAnswer) {
     const candidateDraft: ChatDeliveryDraft = {
+      ...(options.trustedUserMessage !== undefined ? { userRequest: options.trustedUserMessage } : {}),
       kind: parsed.kind,
       visibility: options.visibility === "family" ? "family" : "private",
       serverSubstitutedSourceText: false,
       ...(selectedVerifiedOperations.length ? { verifiedOperations: selectedVerifiedOperations.map(item => ({ ...item })) } : {}),
       paragraphs: parsed.paragraphs,
-      sources: [],
+      sources: [...new Set(parsed.paragraphs.flatMap(paragraph => paragraph.citationIds))]
+        .map(deliverySource).filter((source): source is ChatDeliverySource => source !== null),
       scope,
       ...(run.images?.references().length ? { images: run.images.references() } : {}),
       ...(run.voice ? { voice: run.voice } : {}),
@@ -515,6 +580,7 @@ export function createProductAgentTools(options: {
         }
         if (JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) throw new FamilyError(400, "knowledge_context_input_limit");
         for (const chunk of result.chunks) evidence.set(chunk.chunkId, { chunk, filter });
+        if (result.chunks.length > 0) deliveryReview.require("review");
         const progressSources = result.chunks
           .map(chunk => toAgentProgressSource(chunk, "found"))
           .filter((item): item is AgentProgressSource => item !== null)
@@ -533,6 +599,7 @@ export function createProductAgentTools(options: {
         for (const chunk of result.chunks) {
           evidence.set(chunk.chunkId, { chunk: accumulateKnowledgeRead(evidence.get(chunk.chunkId)?.chunk, chunk), filter: anchor.filter });
         }
+        if (result.chunks.length > 0) deliveryReview.require("review");
         const progressSources = result.chunks
           .map(chunk => toAgentProgressSource(evidence.get(chunk.chunkId)?.chunk ?? chunk, "read"))
           .filter((item): item is AgentProgressSource => item !== null)
@@ -643,6 +710,7 @@ export function createProductAgentTools(options: {
           run.images!.add({ image, authorize: () => options.photos!.authorizeImage(scope.userId, scope.childId, reference) });
         }
         if (!await permitted()) throw new AgentStopped('unauthorized');
+        deliveryReview.require("review");
         return { photo: reference, originalProvided: true, visibility: 'private', sourceKind: 'user_attachment' };
       }) });
   if (options.readChatFile && !options.background && options.visibility !== "family") tools.splice(tools.length - 1, 0, {
@@ -920,4 +988,6 @@ export function createProductAgentTools(options: {
     },
   };
 }
+
+
 

@@ -446,6 +446,9 @@ export function createProductAgent(options: {
               return AGENT_CONFIRMATION_PENDING_TEXT;
             }
           }
+          if (!rendered.value && reason === "model_limit" && _context.deliveryReview?.required && _context.budget.remainingModelCalls <= 1) {
+            throw new AgentStopped("delivery_review_budget");
+          }
           try {
             return await acceptReviewedDelivery(tools!, rendered, review, result, _context, () => publish("reviewing"));
           } catch (error) {
@@ -517,4 +520,5 @@ export function createProductAgent(options: {
   };
 }
 export type ProductAgent = ReturnType<typeof createProductAgent>;
+
 
