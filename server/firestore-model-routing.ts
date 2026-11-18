@@ -44,7 +44,7 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
     });
   }
   return {
-    settings, budgetAlerts: policy.budgetAlerts,
+    settings, budgetAlerts: policy.budgetAlerts, usage,
     async readInteractiveRunSeconds(tx: import("@google-cloud/firestore").Transaction, scope: FirestoreAuthorityTransaction['scope']) {
       const current = await policy.readPolicyIn(tx);
       const state = await settings.readIn({ transaction: tx, scope: { ...scope, childId: '00000000-0000-0000-0000-000000000000' } });

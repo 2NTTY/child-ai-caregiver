@@ -1,5 +1,7 @@
 import type { AttemptOutcome, TokenUsage, AiDailyUsage } from './ai-usage.ts';
 import type { ModelBillingSource } from '../src/shared/model-settings.ts';
+import type { ModelUsageActivity } from '../src/shared/admin.ts';
+export interface ModelAttemptActivity { activity: ModelUsageActivity; retry: boolean }
 
 /** Fixed by the trusted runtime after root admission, never supplied by HTTP/model input. */
 export interface DurableAiUsageRequest {
@@ -45,7 +47,7 @@ export type DurableAiUsageAdmission = { decision: 'execute' | 'lookup'; receipt:
   | { decision: 'quota_exceeded' };
 export interface DurableAiUsage {
   readonly billingSource: ModelBillingSource;
-  reserve(request: DurableAiUsageRequest, embeddingPurpose?: 'query_embedding' | 'corpus_maintenance'): Promise<DurableAiUsageAdmission>;
+  reserve(request: DurableAiUsageRequest, embeddingPurpose?: 'query_embedding' | 'corpus_maintenance', activity?: ModelAttemptActivity): Promise<DurableAiUsageAdmission>;
   /** Preparation only, by the newly admitted caller before its one provider dispatch. No quota changes. */
   prepareModelDispatch?(request: DurableAiUsageRequest, expectedFingerprint: string, nextFingerprint: string, preparationToken: string): Promise<DurableAiUsageReceipt>;
   read(request: DurableAiUsageRequest): Promise<DurableAiUsageReceipt | null>;

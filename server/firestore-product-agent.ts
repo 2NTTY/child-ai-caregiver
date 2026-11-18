@@ -22,7 +22,6 @@ import { createPrivateSummaryPartMaintenance } from './private-summary-part-main
 import { createFirestorePrivateSummaryWork, type SummaryWorkPolicyPort } from './firestore-private-summary-work.ts';
 import { randomUUID } from 'node:crypto';
 import { createPrivateSummaryTerminalVerifier, createPrivateSummaryFastNoDispatchVerifier } from './private-summary-terminal.ts';
-import { FirestoreAiUsage } from './firestore-ai-usage.ts';
 import { authorizePrivateSummaryFastEntry, readPrivateSummaryLegacyAdmission } from './firestore-private-summary-cutover.ts';
 import { FirestoreDomainData } from './firestore-domain-data.ts';
 import { createFirestoreAuthority } from './firestore-authority.ts';
@@ -93,7 +92,12 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
     return options.knowledge.continuationSources(b.transaction, ids);
   } });
   const nativeSessionService = new FirestoreSessionService({ ...options, namespace: options.namespace + '_adk' });
-  const rootBudget = new FirestoreRootBudget({ ...options, namespace: options.namespace + '_root_budget' });
+  const rootBudget = new FirestoreRootBudget({ ...options, namespace: options.namespace + '_root_budget',
+    recordToolAdmission: async (transaction, version, at, units) => {
+      const payer = version === 'platform:v1' ? 'platform' : version === 'personal:v1' ? 'personal' : null;
+      if (!payer) throw new AgentStopped('unavailable');
+      await routing.usage[payer].recordToolAdmission(transaction, at, units);
+    } });
   const admission = createFirestoreAgentAdmission(options);
   const highWatermarkMonitor = createHighWatermarkMonitor({
     recordWithPolicy: sample => routing.budgetAlerts.record(sample, options.sendMaintainerBudgetAlert),
@@ -158,10 +162,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
     chat: options.chat, memory: options.memory, summary: options.summary, tasks: options.online.tasks, documents: options.documents, sources: options.sources, concerns: options.concerns, growth: options.growth, contact: options.contact, knowledge });
   const transcribeVoice = voiceTranscripts && options.voices ? createVoiceTranscription({ store: voiceTranscripts, voices: options.voices, runtime }) : undefined;
   // Cold settlement reads the original billing source, not today's selected settings.
-  const summaryDaily = {
-    platform: new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: 'platform' }),
-    personal: new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: 'personal' }),
-  };
+  const summaryDaily = routing.usage;
   const summaryData = new FirestoreDomainData(options), summaryAuthority = createFirestoreAuthority(options);
   const summaryPolicy = options.summaryWorkPolicy ? { ...options.summaryWorkPolicy,
     readLegacyAdmission: (binding: Parameters<SummaryWorkPolicyPort['readLegacyAdmission']>[0], input: Parameters<SummaryWorkPolicyPort['readLegacyAdmission']>[1]) =>

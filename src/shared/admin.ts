@@ -55,7 +55,10 @@ export const adminReceiptSchema = z.object({ opId: z.uuid(), actorId: z.string()
 }).strict();
 export type AdminReceipt = z.infer<typeof adminReceiptSchema>;
 export interface AdminPage<T> { items: T[]; nextCursor: string | null }
+export const MODEL_USAGE_ACTIVITIES = ['generate', 'delegate', 'review', 'revise', 'summary', 'compact'] as const;
+export type ModelUsageActivity = typeof MODEL_USAGE_ACTIVITIES[number];
 export interface AdminUsageBreakdown {
+  activities?: Partial<Record<ModelUsageActivity | 'retry' | 'tool', number>>;
   model: number; queryEmbedding: number; documentEmbedding: number; otherEmbedding: number; unclassified: number;
   embeddingCharacters: number | null; embeddingCharacterReports: number;
 }

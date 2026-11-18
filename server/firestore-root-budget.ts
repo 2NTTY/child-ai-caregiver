@@ -83,6 +83,7 @@ function counter(attempt: BudgetAttempt): keyof RootBudgetLimits {
 function entrySnapshot(entry: Stored['attempts'][number]): BudgetAttemptSnapshot { return { ...entry.request, outcome: { ...entry.outcome }, ...(entry.preparedFingerprint ? { preparedFingerprint: entry.preparedFingerprint } : {}) }; }
 
 export interface FirestoreRootBudgetOptions {
+  recordToolAdmission?: (transaction: Transaction, billingVersion: string, admittedAt: number, units: number) => Promise<void>;
   /** Already configured trusted client; its lifecycle remains with the caller. */
   database: Firestore;
   cipher: StorageCipher;
@@ -105,12 +106,14 @@ export class FirestoreRootBudget implements DurableRootBudget {
   #projectId: string;
   #namespace: string;
   #clock: () => number;
-  constructor({ database, cipher, projectId, namespace, serverClock = Date.now }: FirestoreRootBudgetOptions) {
+  #recordToolAdmission?: FirestoreRootBudgetOptions['recordToolAdmission'];
+  constructor({ database, cipher, projectId, namespace, serverClock = Date.now, recordToolAdmission }: FirestoreRootBudgetOptions) {
     if (typeof database?.collection !== 'function' || typeof database.runTransaction !== 'function'
       || typeof cipher?.encrypt !== 'function' || typeof cipher.decrypt !== 'function'
       || typeof projectId !== 'string' || !projectId || projectId !== projectId.trim() || !projectId.isWellFormed() || Buffer.byteLength(projectId) > 256
       || typeof namespace !== 'string' || !/^[a-z][a-z0-9_]{0,60}$/.test(namespace) || typeof serverClock !== 'function') reject('invalid_configuration');
     this.#database = database; this.#cipher = cipher; this.#projectId = projectId; this.#namespace = namespace; this.#clock = serverClock;
+    this.#recordToolAdmission = recordToolAdmission;
   }
   #now(): number {
     const now = this.#clock(); if (!Number.isSafeInteger(now) || now < 0) reject('invalid_server_clock'); return now;
@@ -198,6 +201,7 @@ export class FirestoreRootBudget implements DurableRootBudget {
       const key = counter(request);
       if (state.used[key] + request.units > state.limits[key]) reject('budget_exhausted');
       if (state.attempts.length >= MAX_ROOT_BUDGET_ATTEMPTS) reject('attempt_capacity');
+      if (request.kind === 'tool_batch') await this.#recordToolAdmission?.(transaction, context.binding.billingVersion, now, request.units);
       const preparationToken = request.kind === 'model' ? randomBytes(32).toString('hex') : undefined;
       const entry: Stored['attempts'][number] = { request, outcome: { status: 'reserved' },
         ...(preparationToken ? { preparationTokenHash: hash(preparationToken) } : {}) };
