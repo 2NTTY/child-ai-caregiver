@@ -6599,3 +6599,12 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 ### 2026-11-18　再次正向合併最新 origin/master（`b70ebfb8`）保持 #634 可合併（Draft PR / HOLD MERGE）
 
 將最新 `origin/master`（`b70ebfb8`，含 `#607`、`#631`–`#637`）正向無改歷史合併至 `codex/search-help-entry`，僅依 append-only 順序整合 `WORKLOG.md` 與更新 `PLAN.md` 基線標註，並於最新 `HEAD` 重跑全量離線測試、型別檢查與 Edge Playwright DOM E2E 後更新 Draft PR `#634`。
+
+### 2026-11-19　補強遲發失敗來源預覽保留、Web／離線 UX 不變量驗證並將 #634 轉正為 Ready for Review
+
+1）**正向合併最新 `origin/master`（`03a46ead`）**：將最新主線（含 `#638`–`#644`）正向無改歷史合併至 `codex/search-help-entry`。
+2）**遲發失敗保留合格官方來源預覽（`src/client/chat-controller.ts`、`frontend/src/components/chat/OfficialHelpCards.tsx`、`frontend/src/screens/chatScreen.tsx`）**：修正 `performReply` / `verifyResolvedReplyCompleted` / `ProgressSourceCards` 與 `chatScreen.tsx` 狀態收斂：當 SSE 已串流合格官方來源卡後於生成或獨立安全核對階段發生 `503`／`stopped`／`unknown`／未完成失敗時，保留 `feedback.sources` 並顯示明確未審核草稿不作正式建議提示（`chat-progress-sources-retained-notice`）與恢復按鈕（`重試原訊息回覆`／`開始新訊息`）；一經回覆完成、切換孩子、開啟新訊息、`!chatWritesAllowed` 或遭遇 HTTP `403` 失去存取權（`forgetChild`）時立即清除，絕不殘留或誤將未核草稿升格為正式答案。
+3）**離線合約與 Edge Playwright Web DOM E2E 補強（`tests/official-help-entry.test.ts`、`scripts/ci/verify-search-help-entry-offline.sh`、`frontend/scripts/official-help-entry.browser.test.mjs`）**：
+   - 於 `tests/official-help-entry.test.ts`（6→7 cases，CI 表現更新為 `TEST_CASES=(7 7 44)` 共 58 項）補齊 `503` 來源保留、`!chatWritesAllowed` 與 `403` 清除、回覆完成清除、即時完整顯示已緩衝回覆（無打字機延遲）、`StatusAnnouncement` 不搶焦點及 `AgentRunView` 僅顯示映射工具標籤之合約測試。
+   - 於 `frontend/scripts/official-help-entry.browser.test.mjs`（3→4 cases）擴充 `E2E 4`，實測瀏覽器中 SSE 進度與失敗保留期間鍵盤焦點維持不變（`HELP_TOGGLE_LABEL`）、真實 HTTP `403` 撤權即時清卡、回覆完成即時整段顯示且無殘餘預覽，以及開啟「查看這則回覆的來源與候選」對話框時 `agent-run-view` 絕不暴露內部思維或原始工具參數。
+4）**統一 Ready for Review 與最終發布門檻口徑（`PLAN.md`）**：釐清離線 CI + 型別檢查 + Edge Web DOM E2E（4/4）即構成合併本 PR 至 `master` 之充分條件，將 `#634` 由 Draft 轉為 **Ready for Review**；Android/iOS 實體手機軟鍵盤、`PixelRatio.getFontScale()`、TalkBack/VoiceOver、原生打包與真實 Gemini／生產資料庫測試明確保留於最終發布前真機驗證門檻追蹤。
