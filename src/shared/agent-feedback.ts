@@ -12,6 +12,7 @@ export const OFFICIAL_HELP = {
 } as const;
 export const agentProgressSchema = z.object({ runId: z.uuid(), messageId: z.uuid(),
   phase: z.enum(['started', 'model', 'reading', 'searching', 'working', 'tool_finished', 'reviewing', 'help']),
+  sequence: z.number().int().positive().optional(),
   card: officialHelpIdSchema.optional(),
 }).strict().refine(event => (event.phase === 'help') === (event.card !== undefined));
 export type AgentProgress = z.infer<typeof agentProgressSchema>;
@@ -19,6 +20,91 @@ export const AGENT_PROGRESS_LABELS: Record<AgentProgress['phase'], string> = {
   started: '已開始處理', model: '正在整理下一步', reading: '正在讀取相關資料', searching: '正在查詢來源',
   working: '正在處理事項', tool_finished: '工具已返回結果，正在核對', reviewing: '正在獨立核對回覆', help: '請先查看官方提示；對話可繼續',
 };
+export type ReconciledAgentProgress = AgentProgress & { cards: OfficialHelpId[] };
+
+const AGENT_PROGRESS_PHASE_RANK: Record<AgentProgress['phase'], number> = {
+  started: 0,
+  model: 1,
+  help: 1,
+  working: 2,
+  searching: 2,
+  reading: 2,
+  tool_finished: 3,
+  reviewing: 4,
+};
+
+/**
+ * Converges duplicate or out-of-order SSE progress events for a single message run.
+ * Orders causally by sequence when present (so round-2 model/tool phases advance past tool_finished),
+ * keeps active phase while accumulating help cards, blocks mismatched runIds, and preserves
+ * monotonic phase-rank fallback for unsequenced events.
+ */
+export function reconcileAgentProgress(
+  previous: ReconciledAgentProgress | null | undefined,
+  incoming: AgentProgress,
+): ReconciledAgentProgress {
+  if (!previous || previous.messageId !== incoming.messageId) {
+    return {
+      ...incoming,
+      cards: incoming.card ? [incoming.card] : [],
+    };
+  }
+  if (previous.runId !== incoming.runId) {
+    return previous;
+  }
+  const cards = [...new Set([...previous.cards, ...(incoming.card ? [incoming.card] : [])])];
+  const sameCards = cards.length === previous.cards.length
+    && cards.every((card, index) => card === previous.cards[index]);
+  let phase: AgentProgress['phase'];
+  let sequence: number | undefined;
+  if (incoming.sequence !== undefined && previous.sequence !== undefined) {
+    if (incoming.sequence < previous.sequence) {
+      if (sameCards) return previous;
+      phase = previous.phase;
+      sequence = previous.sequence;
+    } else if (incoming.sequence === previous.sequence) {
+      sequence = previous.sequence;
+      if (incoming.phase === 'help' && previous.phase !== 'started') {
+        phase = previous.phase;
+      } else {
+        phase = AGENT_PROGRESS_PHASE_RANK[incoming.phase] < AGENT_PROGRESS_PHASE_RANK[previous.phase]
+          ? previous.phase
+          : incoming.phase;
+      }
+    } else {
+      sequence = incoming.sequence;
+      phase = incoming.phase === 'help' && previous.phase !== 'started'
+        ? previous.phase
+        : incoming.phase;
+    }
+  } else {
+    sequence = incoming.sequence ?? previous.sequence;
+    if (incoming.phase === 'help' && previous.phase !== 'started') {
+      phase = previous.phase;
+    } else {
+      phase = AGENT_PROGRESS_PHASE_RANK[incoming.phase] < AGENT_PROGRESS_PHASE_RANK[previous.phase]
+        ? previous.phase
+        : incoming.phase;
+    }
+  }
+  const resolvedCard = phase === 'help' ? (incoming.card ?? previous.card) : undefined;
+  if (
+    phase === previous.phase
+    && sequence === previous.sequence
+    && resolvedCard === previous.card
+    && sameCards
+  ) {
+    return previous;
+  }
+  return {
+    runId: incoming.runId,
+    messageId: incoming.messageId,
+    phase,
+    ...(sequence !== undefined ? { sequence } : {}),
+    ...(resolvedCard ? { card: resolvedCard } : {}),
+    cards,
+  };
+}
 export function officialHelpFromTools(tools: readonly { name: string; status: string; reference?: string }[]): OfficialHelpId[] {
   return [...new Set(tools.filter(tool => tool.name === 'show_official_help' && tool.status === 'succeeded')
     .flatMap(tool => { const id = officialHelpIdSchema.safeParse(tool.reference); return id.success ? [id.data] : []; }))];

@@ -345,8 +345,9 @@ export function createProductAgent(options: {
         return await isCurrentUser() ? original : null;
       }
       const shown = new Set<string>();
+      let sequence = 0;
       const publish = (phase: AgentProgress['phase'], card?: AgentProgress['card']) => {
-        try { onProgress?.({ runId: claim.runId, messageId, phase, ...(card ? { card } : {}) }); } catch { /* Observation cannot change execution. */ }
+        try { onProgress?.({ runId: claim.runId, messageId, phase, sequence: ++sequence, ...(card ? { card } : {}) }); } catch { /* Observation cannot change execution. */ }
       };
       publish('started');
       const recent = selectRecentConversation(page.messages, index, { upstreamHasEarlierMessages: page.nextCursor != null });
