@@ -85,7 +85,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **P4 已於 11 月 18 日恢復。** REQ-001 搜索示範保留以上入口，P4 第④組沿用現有檢索與引用接點。時效及即時來源後續按 C 擴展，完整背景同步、整本 PDF 處理及來源庫管理按 D 接續。P4 公共知識批量維運和其餘四組欠項保留原驗收門檻；恢復位置及證據見[接手清單](docs/P4_RESUME.md)。
 
-**REQ-005 驗收對照：**26 項場景、分支證據及 11 項待決事項見[收束紀錄](#req005-closeout01)。11 月 18 日真模型已找回最後更正的原句並通過獨立審核，正式站三個服務已同步更新至 `0a47c9b3`。
+**REQ-005 本輪已完成實作及可自行執行的驗收。** 正式 Web、API、worker 版本為 `c144104e`。真查詢、持久摘要、容量、雙 worker 政策及月結的證據，以及首宗真人告警與實費對帳的接手條件，見[原驗收表](#req005-closeout01)。
 
 **本輪成長依據閱讀修復：**[GR-F01](#gr-f01-profile-evidence-read) 已完成最小 client／閱讀文案候選、四整檔 33 案及完整 frontend／root 型別；server 原完整型別兩次程序失敗，仍為 NOT_PASSED。待整包獨立 review 與精確 head 必要 CI，未合併、未部署。
 
@@ -203,9 +203,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 11 月 19 日接手時，先按下表查看本輪五項交付。下方保留各候選版本當時的結果。
 
-公共知識維護採獨立貨幣預算。後端依原收據的出資方及用途分開聊天與維護金額，管理員可按 UTC 日分開設定。個人 key 使用者可在本人設定保存每日金額及查閱能綁定其身份的對帳小計。這些入口預設金額未設定，正式首宗告警、出資方金額及帳單仍按實際證據追蹤。[財務契約](docs/API.md#admin-usage-quota)
+管理員及個人密鑰持有人可分開設定一般使用與公共知識維護的日、月對帳預算。維護工作可使用平台憑證，或使用已同意資助維護的用戶密鑰。每筆用量保留原出資者、用途及 UTC 帳日。可核實的帳單及估價分列，未設定的金額保持空白。[財務契約](docs/API.md#admin-usage-quota)
 
-11 月 19 日，個人出資的公共知識維護及獨立次數守門已發布。API／worker 為 `d343a26d`，Web 為 `f694736b`。[原站收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44363247741)。月度對帳接回原 UTC 日帳，以出資者及用途分開查閱。
+正式 Web、API 及 worker 已更新至 `c144104e`，部署收據為 `r44368913799-1`。下表記錄本輪交付。歷史矩陣仍保留當時的測試範圍。[月度對帳發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44368913799)
 
 已用 Firestore Emulator 和正式個人供應商接線驗過整理、獨立審核、文件向量各一次。維護帳三筆，聊天及平台零筆。重送沿原收據，撤回授權後停止。供應商網絡由替身接管，實際費用仍待帳單。[重現驗證](tests/firestore-knowledge-maintenance-emulator.mjs)
 
@@ -214,7 +214,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 | 跨會話摘要與真查詢 | 真 Vertex 回答「青竹室」並引用更正原句。正式站單一合成孩子保存兩批短摘要，讀回零生成。長來源在獨立程序分兩段完成，重送零新增用量。[查詢](artifacts/verification/REQ005_REVIEWED_HISTORY_20261118.json) · [正式摘要](artifacts/verification/REQ005_SUMMARY_FIELD_20261118.json) · [分段](artifacts/verification/REQ005_SUMMARY_PILOT_20261118.json) | 正式試行出資已結束，其他家庭維持原政策。 |
 | 模型輸入預檢 | 對送給供應商的完整請求核對指令、工具、媒體及輸出預留。分開記錄實算、估算與未知，128k tokens 為軟目標。[派送前測試](tests/model-context-preflight.test.ts) | 媒體或相容端點缺精確計數時保留原精度。 |
 | 每輪與重試額度 | 64／256／32 可設定上限在原 root 帳本驗過重開、重試和還原。[容量驗收](tests/firestore-root-budget.test.ts) | 生產預設及歷史用量維持原值。 |
-| 每日用量、告警與財務 | 生成、工具、向量及角色活動分項可查。隔離管理員收件與重複確認已驗。正式政策 v3 下互動視窗為空，背景連續兩次貼線，兩者均未觸發。[收件](artifacts/verification/REQ005_MAINTAINER_INBOX_20261118.json) · [配額讀取](docs/API.md#admin-usage-quota) | 正式首宗維護者確認待自然事件。結算和出資預算各需原始依據。 |
+| 用量、告警與日／月對帳 | 管理員收件及重複確認已在隔離環境驗過。11 月 19 日香港時間 02:36 核對正式告警清單，當時為空。從正式 worker 讀取 2026 年 11 月截至 18 日（UTC）的平台月結，一般使用 7 次待對帳，公共維護 0 次，兩項均有 0 次已結算。兩項平台月預算均未設定。[告警收據](artifacts/verification/REQ005_MAINTAINER_INBOX_20261118.json) · [月結及配額接口](docs/API.md#admin-usage-quota) | 首宗自然告警出現後由維護者在管理後台確認。出資者設定實際預算、且供應商帳單可綁定原呼叫後，再核實可用餘額。本次觀測時，本站專案可見的 BigQuery 資料集為 0。 |
 | 成長分頁與政策切換 | 香港 Firestore 同時間 32 筆按 30＋2 續讀。Edge 已驗翻頁。兩個隔離 worker 驗過舊 run 收緊、新 run 取得新額度及重啟防重。[分頁](artifacts/verification/REQ005_GROWTH_PAGING_20261118.json) · [政策](artifacts/verification/REQ005_WORKER_ROLLOUT_20261118.json) | 真庫查詢、Web 互動及兩程序測試的環境分列於收據。 |
 
 11 月 19 日 00:28（香港），原站 API 讀回帳日 `2026-11-18`（UTC）的兩項 Google 觀測。`gemini-embedding-001` 是 100,000 RPM，`global` 地區所有模型共用的 predict 配額是 30,000 RPM。其他日期及個人用量均未帶入這兩個值。正式收件箱仍為空，本站專案可見 BigQuery 資料集為零，管理頁尚無可對應原嘗試的帳單。接手先看首宗正式告警；如收到對帳來源，再按原收據核對金額。[原站發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44344694283) · [管理接口](docs/API.md#admin-usage-quota)
