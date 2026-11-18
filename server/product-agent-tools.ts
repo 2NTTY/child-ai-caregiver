@@ -40,6 +40,16 @@ import { createAgentConcernTools } from "./agent-concern-tools.ts";
 import { createAgentWorkTools, prepareProposalConfirmation } from "./agent-work-tools.ts";
 import { AGENT_CONFIRMATION_PENDING_TEXT } from "./agent-work-tool-descriptions.ts";
 
+const historyQuoteParagraph = z.strictObject({ quoteHistory: z.string().min(1).max(80).describe('Copy this returned chat citation verbatim as the paragraph.') });
+const chatPresentationInput = z.strictObject({ kind: agentAnswerSchema.shape.kind, paragraphs:
+  z.array(z.union([agentAnswerSchema.shape.paragraphs.element, historyQuoteParagraph])).min(1).max(6) });
+class HistoryExcerptMismatch extends FamilyError {
+  readonly quotes: { text: string; citationIds: string[] }[];
+  constructor(quotes: HistoryExcerptMismatch['quotes']) {
+    super(400, 'history_excerpt_mismatch');
+    this.quotes = quotes;
+  }
+}
 function validateAnswerText(answer: { paragraphs: AgentAnswer["paragraphs"] }) {
   for (const paragraph of answer.paragraphs)
     if (/https?:\/\/|www\./iu.test(paragraph.text)) throw new FamilyError(400, "use_citation_ids");
@@ -139,6 +149,7 @@ export function createProductAgentTools(options: {
   background?: boolean;
   /** Authenticated current user message; required for compose review binding. */
   trustedUserMessage?: string;
+  currentMessageId?: string;
   /** Optional household/child display identifiers kept out of external search queries. */
   knownPrivateIdentifiers?: readonly string[];
 }) {
@@ -157,6 +168,8 @@ export function createProductAgentTools(options: {
   let selectedSources: ChatDeliverySource[] = [];
   const selectedEvidence=new Map<string,ChatDeliverySource>();
   const householdEvidence = new Map<string, { label: string; isCurrent: () => Promise<boolean> }>();
+  const precedingHistoryMatch = new Map<string, string>();
+  const historyQuoteHandles = new Map<string, string>();
   const registerHouseholdRead: RegisterHouseholdRead = (kind, item, reread) => {
     const citationId = `household-${kind}:${item.id}:${item.version}`;
     const sourceText = (value: typeof item) => JSON.stringify('title' in value
@@ -355,7 +368,10 @@ export function createProductAgentTools(options: {
   }
   function selectDeliverySources(value: AgentAnswer) {
     const sources: ChatDeliverySource[] = [], facts: MemoryFact[] = [];
-    for (const id of new Set(value.paragraphs.flatMap(paragraph => paragraph.citationIds))) {
+    const cited = value.paragraphs.flatMap(paragraph => paragraph.citationIds);
+    // The reviewer needs the actual preceding subject to interpret a subjectless reply.
+    // A chronological neighbour is context, never an automatic claim or a citation in the parent's answer.
+    for (const id of new Set(cited.flatMap(id => [id, ...(precedingHistoryMatch.has(id) ? [precedingHistoryMatch.get(id)!] : [])]))) {
       const source = deliverySource(id);
       if (source) sources.push(source);
     }
@@ -413,6 +429,10 @@ export function createProductAgentTools(options: {
     try { return { status: "succeeded", data: { result: await operation() } }; }
     catch (error) {
       if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
+      if (error instanceof HistoryExcerptMismatch) return { status: "rejected", data: {
+        code: error.code, quoteOptions: error.quotes.map(item => ({ quoteHistory: item.citationIds[0], text: item.text })),
+        nextAction: "從 quoteOptions 選能回答問題的原話。用 kind=private_reference 及 paragraphs=[{quoteHistory: 所選識別}]，Server 會代入原句再審核。"
+      } };
       const hasOfficialEvidence = Array.from(evidence.values()).some(item => item.chunk.classification === "official_guidance");
       if (error instanceof FamilyError && error.code === "invalid_citation") return { status: "rejected", data: { code: error.code,
         nextAction: !hasOfficialEvidence && selectedOfficialHelp.size > 0
@@ -468,7 +488,16 @@ export function createProductAgentTools(options: {
       const kind = paragraph.kind ?? parsed.kind;
       const official = options.reviewedGrowthPresentation || kind === "caregiving" || kind === "safety_help";
       if ((kind === "caregiving" || kind === "safety_help") && !paragraph.citationIds.some(id => evidence.get(id)?.chunk.classification === "official_guidance")) throw new FamilyError(400, "citation_required");
-      if (kind === "private_reference" && !paragraph.citationIds.some(id => privateSources?.evidence.has(id) || selectedEvidence.has(id)) && !run.images?.references().length && !run.voice) throw new FamilyError(400, "citation_required");
+      if (kind === "private_reference" && !paragraph.citationIds.some(id => privateSources?.evidence.has(id) || selectedEvidence.has(id)) && !run.images?.references().length && !run.voice) {
+        const quotes = [...historyQuoteHandles].slice(-6).flatMap(([handle, id]) => {
+          const source = selectedEvidence.get(id);
+          if (!source?.excerptComplete) return [];
+          const message = JSON.parse(source.excerpt) as { role: string; text: string };
+          return message.role === 'user' ? [{ text: message.text, citationIds: [handle] }] : [];
+        });
+        if (quotes.length) throw new HistoryExcerptMismatch(quotes);
+        throw new FamilyError(400, "citation_required");
+      }
       for (const id of paragraph.citationIds) {
         if (selectedEvidence.has(id) && !official) continue;
         if (privateSources?.evidence.has(id) && !options.reviewedGrowthPresentation) continue;
@@ -477,6 +506,17 @@ export function createProductAgentTools(options: {
       }
     }
     if (new Set(parsed.paragraphs.flatMap(paragraph => paragraph.citationIds)).size > 6) throw new FamilyError(400, "citation_limit");
+    // Give a text-only history answer a chance to repair its own citation before the terminal tool exits.
+    if (parsed.paragraphs.every(paragraph => (paragraph.kind ?? parsed.kind) === "private_reference") && !candidateDraft.voice && !candidateDraft.images?.length
+      && candidateDraft.sources.length && candidateDraft.sources.every(source => source.citationId.startsWith("chat:"))
+      && chatDeliveryPassNeedsSources(candidateDraft, deliveryReview)) {
+      const quotes = candidateDraft.sources.flatMap(source => {
+        if (!source.excerptComplete) return [];
+        const message = JSON.parse(source.excerpt) as { text: string };
+        return [{ text: message.text, citationIds: [source.citationId] }];
+      });
+      throw new HistoryExcerptMismatch(quotes);
+    }
   }
   function deliverySource(id: string): ChatDeliverySource | null {
     const selectedSource=selectedEvidence.get(id);
@@ -653,14 +693,29 @@ export function createProductAgentTools(options: {
         summaryText = args.text as string;
         return { staged: true, saved: false };
       }) },
-{ name: "present_answer", description: "提交顯示文字；必須於其他工具完成後的獨立下一輪單獨呼叫，勿與其他工具並列。kind=mixed 時每段必填 kind；citationIds 只接受本 run 有效 chunkId UUID 或私人 citationId，勿填求助卡 ID、URL 或記憶鍵。caregiving／safety_help 每段須帶真正相關的官方 chunkId（勿塞無關片段）；純記憶放 record_restatement（citationIds=[]）；純澄清、超出範圍拒答、限制說明及純操作（用 operation 或記錄回述；兼答指引時用 mixed）可無公共引用；明顯危險無片段時用 kind=operation、citationIds=[] 輸出「請先使用畫面上的緊急求助入口。」。acceptedForValidation 僅表程式受理；實質育兒安全內容仍經 Server 獨立審核。" + (options.background ? " 沒有有用回饋且未聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
+{ name: "present_answer", description: "提交顯示文字；必須於其他工具完成後的獨立下一輪單獨呼叫，勿與其他工具並列。kind=mixed 時每段必填 kind；citationIds 只接受本 run 有效 chunkId UUID 或私人 citationId，勿填求助卡 ID、URL 或記憶鍵。caregiving／safety_help 每段須帶真正相關的官方 chunkId（勿塞無關片段）；回覆舊對話時，kind=private_reference，原樣選句只需 paragraphs=[{quoteHistory: 歷史工具傳回的 H 編號}]；純記憶放 record_restatement（citationIds=[]）；純澄清、超出範圍拒答、限制說明及純操作（用 operation 或記錄回述；兼答指引時用 mixed）可無公共引用；明顯危險無片段時用 kind=operation、citationIds=[] 輸出「請先使用畫面上的緊急求助入口。」。acceptedForValidation 僅表程式受理；實質育兒安全內容仍經 Server 獨立審核。" + (options.background ? " 沒有有用回饋且未聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
         ? " 成長關注只選支持此關注的 chunkId，Server 只呈已核對原文，無可用片段時呈固定限制。" : ""),
       parameterErrorHints: () => [{ path: "paragraphs", reason: "invalid_parameters", expected: 'Use {kind, paragraphs:[{kind?, text, citationIds:[]}]}; kind is caregiving, safety_help, clarification, operation, record_restatement or private_reference; mixed requires a kind on each paragraph. Use actual chunkId values for advice, never URLs or source IDs. No extra fields.' }],
-      parameters: options.background ? agentBackgroundAnswerSchema : agentAnswerSchema, authorize: permitted, terminal: true,
+      parameters: options.background ? agentBackgroundAnswerSchema : options.visibility === 'family' || options.mixedTasks ? agentAnswerSchema : chatPresentationInput, authorize: permitted, terminal: true,
       execute: args => guard(async () => {
         // acceptedForValidation is programmatic acceptance only. It is not a semantic pass,
         // and generator fields such as approved or skipReview are not in this schema.
-        const parsed = options.background ? agentBackgroundAnswerSchema.parse(args) : agentAnswerSchema.parse(args);
+        let raw = args;
+        if (!options.background && options.visibility !== 'family' && !options.mixedTasks) {
+          const wire = chatPresentationInput.parse(args);
+          raw = { ...wire, paragraphs: wire.paragraphs.map(paragraph => {
+            if (!('quoteHistory' in paragraph)) {
+              if ((paragraph.kind ?? wire.kind) !== 'private_reference') return paragraph;
+              return { ...paragraph, citationIds: paragraph.citationIds.map(id => historyQuoteHandles.get(id) ?? id) };
+            }
+            const source = selectedEvidence.get(historyQuoteHandles.get(paragraph.quoteHistory) ?? paragraph.quoteHistory);
+            if (!['mixed', 'private_reference'].includes(wire.kind) || !source?.citationId.startsWith('chat:') ||
+              !source.excerptComplete || !householdEvidence.has(source.citationId)) throw new FamilyError(400, 'invalid_citation');
+            const original = JSON.parse(source.excerpt) as { text: string };
+            return { kind: 'private_reference', text: original.text, citationIds: [source.citationId] };
+          }) };
+        }
+        const parsed = options.background ? agentBackgroundAnswerSchema.parse(raw) : agentAnswerSchema.parse(raw);
         if (parsed.kind === "no_action" && contactReference) throw new FamilyError(400, "operation_result_required");
         // Durable personal-fact statements must persist a pending candidate first; chat delivery
         // must not stand in for propose_fact. Questions / read-backs are unaffected.
@@ -723,8 +778,9 @@ export function createProductAgentTools(options: {
       return result;
     }),
   });
-  if (options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentWorkTools(trackedStore, memory, run, permitted, noteConfirmedMemoryFacts, () => { pendingMemoryProposalCount += 1; }, (message, reread) => {
+  if (options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentWorkTools(trackedStore, memory, run, permitted, noteConfirmedMemoryFacts, () => { pendingMemoryProposalCount += 1; }, (message, reread, precedingMatch) => {
     const citationId = `chat:${message.id}:${message.offset}:${message.text.length}`;
+    if (precedingMatch && precedingMatch !== citationId) precedingHistoryMatch.set(citationId, precedingMatch);
     const source = (item: typeof message) => JSON.stringify({ role: item.role, createdAt: item.createdAt, text: item.text });
     const original = source(message);
     selectedEvidence.set(citationId, { citationId, version: message.contentVersion ?? String(message.version),
@@ -734,8 +790,13 @@ export function createProductAgentTools(options: {
       return !!current && current.id === message.id && current.childId === message.childId && current.version === message.version
         && current.contentVersion === message.contentVersion && source(current) === original;
     } });
-    return citationId;
-  }));
+    let handle = [...historyQuoteHandles].find(([, id]) => id === citationId)?.[0];
+    if (!handle) {
+      handle = 'H' + (historyQuoteHandles.size + 1);
+      historyQuoteHandles.set(handle, citationId);
+    }
+    return { citationId, quoteHistory: handle };
+  }, options.currentMessageId));
   if (trackedActions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(trackedActions, run, permitted)
     .filter(tool=>!options.ordinaryToolNames || options.ordinaryToolNames.includes(tool.name)));
   else if (options.actionReaders && options.visibility !== "family") tools.splice(tools.length - 1, 0,
@@ -901,7 +962,7 @@ export function createProductAgentTools(options: {
         return {text:serverReceiptText,citations:[],privateSourceCitations:[],retrievalMode:'not_used'};
       }
       const ids = [...new Set(answer.paragraphs.flatMap(p => p.citationIds))];
-      for (const id of ids) {
+      for (const id of new Set([...ids, ...selectedSources.map(source => source.citationId)])) {
         const household = householdEvidence.get(id);
         if (household && !await household.isCurrent()) throw new AgentStopped("delivery_review_incomplete");
       }

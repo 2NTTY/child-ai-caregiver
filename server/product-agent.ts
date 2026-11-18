@@ -404,7 +404,7 @@ export function createProductAgent(options: {
           earlierMessagesNotFullySummarized: context.truncated.messages },
           confirmationPolicy: options.actions ? "ordinary_instructions_with_current_preauthorization_otherwise_explicit_confirmation" : "explicit_selection_only",
           operationPolicy,
-          instructionPolicy: "只辦目前訊息所交代的事。早前的聊天供理解，沒有新交代便不補寫記錄或補報完成。若家長問之前講過甚麼，而當前視窗沒有答案，載入 history 查本人對話。搜尋結果的 followingMessages 是當時緊接的原話，可能省略主題；按意思核對更正。以舊對話作答用 private_reference，把原話的 citationId 填進該段 citationIds。若缺原文可用 read_history。"
+          instructionPolicy: "只辦目前訊息所交代的事。早前的聊天供理解，沒有新交代便不補寫記錄或補報完成。若家長問之前講過甚麼，而當前視窗沒有答案，載入 history 查本人對話。搜尋結果的 followingMessages 是當時緊接的原話，可能省略主題；按意思核對更正。若原句已能回答，present_answer 用 private_reference 並選 paragraphs=[{quoteHistory: 該句的 H 編號}]。需要另寫回答時，每段引用支持該段的原話。若缺原文可用 read_history。"
             + (options.actions ? " 本次明確交辦的日常記錄、私人交代或待辦按 operationPolicy 載入相應工具辦理。重要更改沿既有確認流程；只為影響執行的缺項追問。完成後按收據回報。" : ""),
           outputPolicy: "present_answer is required; all advice paragraphs require supporting official citation IDs; final text cannot execute actions" },
         // A bounded recent window is distinct from the coverage-tracked summary and confirmed facts.
@@ -413,7 +413,7 @@ export function createProductAgent(options: {
         tools: run => {
           tools = createProductAgentTools({
             ...options, includeDocuments: true, run, authorize,
-            trustedUserMessage: page.messages[index]!.text,
+            trustedUserMessage: page.messages[index]!.text, currentMessageId: messageId,
             onOfficialHelp: card => { if (!shown.has(card)) { shown.add(card); publish("help", { card }); } },
             onKnowledgeSources: (sources, stage) => { publish(stage === "read" ? "reading" : "searching", { sources }); },
           });
