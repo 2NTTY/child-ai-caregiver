@@ -12,6 +12,7 @@ export interface KnowledgePdfPage {
 }
 export interface KnowledgePdfResult {
   fileHash: string;
+  pagePdf?: Uint8Array;
   totalPages: number;
   startPage: number;
   pages: KnowledgePdfPage[];
@@ -25,6 +26,7 @@ export interface KnowledgePdfOptions {
   pageLimit?: number;
   expectedHash?: string;
   signal?: AbortSignal;
+  includePagePdf?: boolean;
 }
 
 export async function extractKnowledgePdf(data: Uint8Array, options: KnowledgePdfOptions = {}): Promise<KnowledgePdfResult> {
@@ -47,7 +49,7 @@ export async function extractKnowledgePdf(data: Uint8Array, options: KnowledgePd
 
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL("./knowledge-pdf-worker.ts", import.meta.url), {
-      workerData: { data: bytes, startPage, pageLimit },
+      workerData: { data: bytes, startPage, pageLimit, includePagePdf: options.includePagePdf === true },
       transferList: [bytes.buffer],
       resourceLimits: { maxOldGenerationSizeMb: 128, maxYoungGenerationSizeMb: 16, stackSizeMb: 4 },
       stdout: true,

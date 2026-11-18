@@ -1,3 +1,4 @@
+import { EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
 import { createHash, randomUUID } from "node:crypto";
 import { FieldValue, VectorValue, type Firestore, type Transaction } from "@google-cloud/firestore";
 import { z } from "zod";
@@ -103,7 +104,7 @@ const lexicalSchema = z.strictObject({ ...binding, sourceId, versionId: uuid, ve
   terms: z.record(hash, z.array(z.strictObject({ chunkId: uuid, score: z.number().int().positive().max(300) })).min(1).max(32)) });
 const cachedVectorSchema = z.strictObject({ ...binding, inputHash: hash, model: z.literal(KNOWLEDGE_EMBEDDING.model),
   dimensions: z.literal(KNOWLEDGE_EMBEDDING.dimensions), pipeline: z.literal(KNOWLEDGE_EMBEDDING.pipeline),
-  state: z.enum(["running", "ready", "unknown"]), attemptId: uuid, startedAt: date,
+  state: z.enum(["running", "ready", "unknown", "not_dispatched"]), attemptId: uuid, startedAt: date,
   embedding: z.custom<VectorValue>((value): value is VectorValue => value instanceof VectorValue).nullable(), vectorHash: hash.nullable() });
 const MAX_DOCUMENT_BYTES = 900 * 1024, MAX_TRANSACTION_BYTES = 8 * 1024 * 1024;
 const compareId = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
@@ -502,8 +503,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       const claimed = await database.runTransaction(async tx => {
         const saved = await readVector(tx, document.hash);
         if (saved?.state === "ready") return false;
-        if (saved) reject("knowledge_embedding_result_unknown");
-        tx.create(vectorRef(document.hash), { ...scope, inputHash: document.hash, ...KNOWLEDGE_EMBEDDING,
+        if (saved && saved.state !== "not_dispatched") reject("knowledge_embedding_result_unknown");
+        tx.set(vectorRef(document.hash), { ...scope, inputHash: document.hash, ...KNOWLEDGE_EMBEDDING,
           state: "running", attemptId, startedAt, embedding: null, vectorHash: null });
         return true;
       });
@@ -520,7 +521,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       } catch (error) {
         await database.runTransaction(async tx => {
           const saved = await readVector(tx, document.hash);
-          if (saved?.attemptId === attemptId && saved.state === "running") tx.set(vectorRef(document.hash), { ...saved, state: "unknown" });
+          if (saved?.attemptId === attemptId && saved.state === "running") tx.set(vectorRef(document.hash), { ...saved, state: error instanceof EmbeddingAdmissionDeferred ? "not_dispatched" : "unknown" });
         });
         throw error;
       }
@@ -627,6 +628,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (version.versionHash !== expectedHash) reject("knowledge_review_version_mismatch");
         if (expectedObservation && (expectedObservation.sourceId !== source.sourceId || expectedObservation.contentHash !== assessment.observationHash))
           reject("knowledge_observation_review_mismatch");
+        if (reviewer === "agent-knowledge-maintenance" && version.review?.assessment.decision === "hold")
+          return { status: "held" as const, reason: "operator_hold" };
         const observed = edition.observed;
         if (observed && (!observed.catalogMatches || (observed.watch.confirmedGone ?? observed.watch.lastStatus === "unavailable"))) reject("knowledge_observation_review_mismatch");
         if (options.audience !== "internal" && (internalKnowledgeSource(document.url) || observed?.watch.definition.audience === "internal_noncommercial")) reject("knowledge_source_internal_review_required", 403);

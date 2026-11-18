@@ -1,4 +1,3 @@
-import { NATIVE_PDF_READER_VERSION } from "./knowledge-pdf-output.ts";
 import { M03_INITIAL_WATCH_IDS } from '../src/shared/background-knowledge-maintenance.ts';
 import { backgroundKnowledgeOperationFingerprint } from './background-knowledge-maintenance.ts';
 import { createFirestoreKnowledgeMaintenance, knowledgeOperationId } from './firestore-knowledge-maintenance.ts';
@@ -37,7 +36,7 @@ export function createScheduledKnowledgeAgent(options: Omit<Parameters<typeof cr
         if (pin?.items.length !== 1) return { state: 'stopped' as const };
         // Polls and restarts resume the same version and payer. A semantic hold or unknown charge
         // cannot acquire fresh generation allowance simply because the next weekly slot opened.
-        operationFingerprint = firestoreDomainHash([NATIVE_PDF_READER_VERSION, watchId, revision, binding, observationHash(pin.items[0]!)]);
+        operationFingerprint = firestoreDomainHash(["knowledge-native-edition/1", watchId, revision, binding, observationHash(pin.items[0]!)]);
       }
       const result = await runner.start({ watchId, workerGeneration, operationFingerprint,
         publishMode: options.config.backgroundKnowledgeLivePublish ? 'live' : 'dry_run' }, signal, revision, recordedCheckId);

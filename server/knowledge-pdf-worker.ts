@@ -28,7 +28,7 @@ class LocalBinaryDataFactory {
 }
 
 async function extract(): Promise<Omit<KnowledgePdfResult, "fileHash">> {
-  const { data, startPage, pageLimit } = workerData as { data: Uint8Array; startPage: number; pageLimit: number };
+  const { data, startPage, pageLimit, includePagePdf } = workerData as { data: Uint8Array; startPage: number; pageLimit: number; includePagePdf?: boolean };
   const task = getDocument({
     data,
     stopAtErrors: true,
@@ -78,8 +78,13 @@ async function extract(): Promise<Omit<KnowledgePdfResult, "fileHash">> {
         page?.cleanup();
       }
     }
+    const pagePdf = includePagePdf ? await document.extractPages([{document:null,
+      includePages:Array.from({length:lastPage - startPage + 1},(_,i) => startPage - 1 + i)}]) : undefined;
+    if (includePagePdf && (!pagePdf || pagePdf.length === 0 || pagePdf.byteLength > 32 * 1024 * 1024))
+      throw Error("knowledge_pdf_invalid_size");
     await document.cleanup();
     return {
+      ...(pagePdf ? {pagePdf} : {}),
       extractionQuality: "requires_review",
       totalPages: document.numPages,
       startPage,
