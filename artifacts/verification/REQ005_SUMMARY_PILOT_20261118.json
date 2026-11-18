@@ -11,6 +11,20 @@
   "correctionReadBack": true,
   "revokedAccountRead": "denied",
   "productionCutover": false,
+  "multipartVerification": {
+    "command": "node scripts/verify-summary-pilot.mjs --multipart",
+    "namespace": "summary_9f1564978d0f4f0e92ea67db32b40fc2",
+    "workId": "e9d3984c-9b4a-4871-b6d8-bc0d198e2f1d",
+    "sourceUtf16Units": 9660,
+    "committedParts": 2,
+    "sameGrantAcrossWorkerRestarts": true,
+    "contiguousInputVerifiedByHash": true,
+    "sourceMessageCoveredOnCompletion": true,
+    "used": { "modelCalls": 2, "toolCalls": 2 },
+    "duplicatePartAdditionalGenerations": 0,
+    "coldContextReadAdditionalGenerations": 0,
+    "provider": "scripted"
+  },
   "coldChatVerification": {
     "namespace": "summary_1f5bcae36c11497aab91680004a73701",
     "entry": "product.agent.reply",

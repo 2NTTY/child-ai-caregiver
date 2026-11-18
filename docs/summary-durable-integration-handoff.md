@@ -7,7 +7,11 @@ API／worker 共用 `PRIVATE_SUMMARY_SPONSOR_JSON`。由營運設定指定一個
 
 先用本機 Agent 的 `demo-` 專案及它的 loopback Firestore Emulator 設定執行 `node scripts/verify-summary-pilot.mjs`。腳本建立獨立資料範圍，等舊程序退出，再執行 inventory 切換。兩批增量完成後，由新程序透過 `product.agent.reply` 發起聊天，在 scripted provider 核對每批的來源 ID 和文字。修訂一項已確認事實後再開新聊天，只保留仍有效的批次。撤權後讀取舊訊息也須在呼叫模型前停止。[實際收據](../artifacts/verification/REQ005_SUMMARY_PILOT_20261118.json)
 
-正式環境另需在 inventory 期間持續證明所有可寫舊格式的 worker 均已退出，核對當前授權、世代和索引，再逐個範圍啟用。單靠設定出資資料不會切換工作。這次隔離驗收使用 scripted provider，正式站仍沿現行寫入者。
+11 月 18 日正式試行在持有原站發布鎖後新建一個合成孩子，inventory 檢查期間持續核對容器身份及世代。原站 worker 經 Vertex 完成兩次短訊摘要。新程序讀回兩批原文關聯與更正，讀回未新增模型用量。出資只掛於本次程序，程序結束後原入口回報 `blocked:policy_missing`。原 VM 留存完整收據。其他孩子仍使用原寫入者。[正式試行收據及 SHA-256](../artifacts/verification/REQ005_SUMMARY_FIELD_20261118.json)
+
+若要切換已有聊天的家庭，先核對該家庭的出資範圍與當前授權。從 inventory 捕獲既有工作上界直至完成，每頁均需證明舊寫入者已失去派發權。新孩子的空 inventory 收據僅適用於該次新建範圍。
+
+本機可執行 `node scripts/verify-summary-pilot.mjs --multipart` 驗證較長的來源。一次隔離驗收將 9,660 個 UTF-16 單元分為兩段，每次從新程序接續同一工作和額度，逐段核對原文。重送第一段與讀回完整摘要均沒有新增生成。[分段接續收據](../artifacts/verification/REQ005_SUMMARY_PILOT_20261118.json)
 
 本文件只記 #410 後續修復與 #447 整合的接口選擇及啟用前置，不取代 API／資料契約或另建待辦。候選狀態、分項證據及最終驗收 gate 只見 [PLAN](../PLAN.md#req005-summary01)。基底已接 master `f0149b79e2f7f653f63559a237f53ee3b7a34b4c`。原 #447 head `dc1f16cfb39ac74fe5d4d13ef250b88fdf7ffc34` 保留追溯；替換前 head `c14cea1e1b9a65c7c22665ed1c5116632a8a7e6c` 僅 rebase，原四項 blocker 未修，本包改採下述單一 durable 方案。
 
@@ -29,8 +33,8 @@ API／worker 共用 `PRIVATE_SUMMARY_SPONSOR_JSON`。由營運設定指定一個
 
 ## 正式啟用及恢復邊界
 
-- production 尚缺可信累積 work-grant 政策數值，不從既有每 run／每日上限推算或自行填值。
-- [inventory](../server/firestore-private-summary-inventory.ts) 每頁須讀實際 authority，證明舊 writer 在捕獲固定上界之前已受 fencing，且至今沒有中斷。現時缺 production reader，空 scope 亦不能視作完成；`installed:true`、`control.paused` 或 inventory `complete` 本身不證明舊 binary 已失去派發權。缺原身份、跨世代或不完整 pointer 映射保持 unmapped，不自動補造授權。
+- 本次正式試行每份工作的出資上限為一次模型及兩次工具。日常家庭的累積 work-grant 仍須由出資方設定。
+- [inventory](../server/firestore-private-summary-inventory.ts) 每頁須讀實際 authority，證明舊 writer 在捕獲固定上界之前已受 fencing，且至今沒有中斷。11 月 18 日的一次性檢查涵蓋新建空範圍。已有歷史、曾中斷 inventory 或跨世代的家庭仍缺持續證明。原身份或 pointer 不完整時保留 unmapped。
 - [入口 gate](../server/firestore-private-summary-cutover.ts) 對已建立的 activation／inventory／blocked／restore_suspended 狀態保守拒絕；policy 消失不回退 legacy 新帳。只有從未啟用、沒有 retained durable 歷史的 scope 保留原完整 fast。
 - [restore](../server/firestore-restore-private-summary.ts) 在新 epoch 建立 `restore_suspended`，保留原 grant、usage、reservation 及未知結果；沒有 resume／transfer／grant renewal 授權，R0／R2 仍 blocked。
 - 本地 index comparator 通過不代表雲端索引 READY；合成 worker 全鏈通過亦不代表真 Firestore 競爭、模型品質、設備或正式啟用。正式政策、持續 fencing、索引及完整最終候選驗收未齊前，不得將本整合表述為用戶修復已上線。

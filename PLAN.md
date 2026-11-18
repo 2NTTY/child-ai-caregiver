@@ -97,7 +97,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **本輪 Agent 收據閱讀修復：**[AGENT-F01](#agent-f01-receipt-read) 已由 [PR #503](https://github.com/2NTTY/child-ai-caregiver/pull/503) 正常合併至 `4a9f6bd9`；精確 head 的兩次必要離線 CI 已成功。formal48 及原完整流程／設備缺口維持未驗，未部署。
 
-**本輪指定摘要修復：**#447 的持久摘要及 #635 的出資接線已隨 API／worker 發布。隔離環境已驗單一範圍，正式站沿用現行摘要。見[摘要啟用條件](#req005-summary01)及[發布收據](#req005-closeout01)。
+**本輪指定摘要修復：**#447 的持久摘要及 #635 的出資接線已隨 API／worker 發布。11 月 18 日在正式站的一個新合成孩子完成兩次真模型增量摘要，已結束試行出資。其餘家庭沿用現行摘要。見[摘要試行及啟用條件](#req005-summary01)。
 
 **單輪壓縮：**ADK 壓縮沿用原生門檻，時間或隔離範圍可能遮蔽未壓縮歷史時延後；runtime `appendEvent` 保證事件時間戳嚴格遞增，避免同毫秒／ADK pre-LLM timestamp 導致壓縮卡滯。單輪瞬態壓縮已於 `createProductAgent` 預設啟用；`#447` 持久跨輪摘要仍預設關閉／未啟用。[實作與驗證](#req005-compaction01)
 
@@ -180,11 +180,13 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **失敗／未驗：**最初缺依賴的 baseline／candidate server 同有 12 條診斷；補本地既有 lock 同版套件的只讀引用後完整通過，保留原失敗。舊六案仍是 4 PASS／2 既有 shallow harness fail，未改成全過；早期 mounted loader／轉譯順序／rAF／oracle 失敗亦保留。formal48 全部 NOT_RUN；三渠道、binding／contact、真模型、真家庭資料、全站／原生及部署不在此包。已合併但未部署、不稱已上線修復，不改其他包的未驗狀態。
 
 <a id="req005-summary01"></a>
-### REQ005-SUMMARY01：#447 持久摘要整合（隔離範圍已驗，正式站未啟用）
+### REQ005-SUMMARY01：#447 持久摘要整合（已完成單一正式範圍試行）
 
 2026-11-18 已接通正式工作所讀的帳戶背景授權、出資路由及每項工作的累積額度。一個獨立 Firestore Emulator 範圍完成舊寫入者切換、兩次增量、重啟後免生成讀回更正、撤權拒讀。模型使用 scripted provider。正式站擴大啟用前仍需指定出資範圍及連續的舊 worker 停用證明。[隔離收據](artifacts/verification/REQ005_SUMMARY_PILOT_20261118.json) · [啟用與交接](docs/summary-durable-integration-handoff.md#funded-pilot)
 
 另外沿正式聊天入口，在全新程序擷取送往模型的請求。兩批摘要帶有各自的來源訊息 ID。更正第二批依賴的事實後，下一個程序只送出仍有效的第一批。兩次聊天均直接復用已保存摘要；撤權後再開同一訊息，模型收到零個請求。
+
+同日香港時間 23:26 至 23:27，原站測試孩子的兩批短訊各耗一次 Vertex 生成。冷啟動讀回兩個原訊息 ID，最後一次更正為「青竹室」。出資隨測試程序結束，其他家庭維持原狀。正式站這次只走短訊路徑。[正式試行收據](artifacts/verification/REQ005_SUMMARY_FIELD_20261118.json)
 
 - **基線／來源：**候選已接 master `f0149b79e2f7f653f63559a237f53ee3b7a34b4c`，保留上游原件記憶／私人交代還原、知識傳送與既有 P4 能力。#410 已合併，本包是其後續修復。#447 原 head `dc1f16cfb39ac74fe5d4d13ef250b88fdf7ffc34` 保留追溯；替換前 head `c14cea1e1b9a65c7c22665ed1c5116632a8a7e6c` 經獨立核對只是 rebase，原四項 blocker 未修。本包採下述單一方案替換，驗收按封定基線分開記錄。
 - **唯一方案：**Firestore 長來源／repair 只沿 durable work、原 grant、lineage 及原帳續跑；不引入普通 `summarySave.part` 或第二套 `conversation-summary-progress` store。完整 prefix fast 與 SQL 原路徑保留，partial 不可冒充完整 coverage。完整 native request fitting、來源／授權重驗、終態先保存後 cleanup、sourcePeriod 與 expiry 均沿現有契約，接口見[整合交接](docs/summary-durable-integration-handoff.md)。
@@ -207,7 +209,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 預檢、可設上限、每日分項帳本及維護者收件箱已隨 #632、#633 合併。#635 已完成[單一隔離範圍的摘要切換](#req005-summary01)。32,000 字元配置下，助手按需取得工具，原有待辦修正與審核流程能在上限內完成。在啟用及停用管理政策的兩種配置均已核對。
 
-維護者收件箱已用本機管理員會話核對。背景用量觸及政策門檻後，管理 API 可讀到一宗新告警，重複確認返回相同收據，零模型及外發。[收件箱收據](artifacts/verification/REQ005_MAINTAINER_INBOX_20261118.json)。維護者在正式站看到「目前沒有用量告警」。首宗正式告警的確認收據、正式摘要啟用及供應商未提供的結算／配額各自待核。
+維護者收件箱已用本機管理員會話核對。背景用量觸及政策門檻後，管理 API 可讀到一宗新告警，重複確認返回相同收據，零模型及外發。[收件箱收據](artifacts/verification/REQ005_MAINTAINER_INBOX_20261118.json)。維護者在正式站看到「目前沒有用量告警」。首宗正式告警的確認收據及供應商未提供的結算／配額各自待核。
 
 11 月 18 日場景 23 續驗：下表記錄的兩個舊測試曾在 Vertex 補齊生成設定前量度封包。改用正式 payload builder 後，八項離線檢查通過。互動與 worker 分別接受配置的 64,000／32,000 字元，多一個字元便於扣額前停止。載入工具後也按完整封包保留下一步空間。[輸入邊界](tests/agent-input-limit.test.ts) · [工具空間](tests/agent-capability-reserve.test.ts)
 
