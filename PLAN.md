@@ -362,7 +362,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 - **對應需求**：REQ-001 §4.3 (`:178-184`)。
 - **治理狀態（Draft PR / HOLD MERGE — 已完成 Web DOM E2E，待實機與真機補助檢後轉 Ready）**：
-  - 依 `REQ-001 §4.3:184`，入口位置與觸發規則已實作完成並已正向合併最新 `origin/master`（`a3b6a24f`，含已合併之 `#600`、`#601`、`#602`、`#608`、`#630`），現以 **Draft PR（HOLD MERGE）** 提交審核與執行 Hosted 離線 CI。
+  - 依 `REQ-001 §4.3:184`，入口位置與觸發規則已實作完成並已正向合併最新 `origin/master`（`39f2f322`，含已合併之 `#600`、`#601`、`#602`、`#606`、`#608`、`#630`），現以 **Draft PR（HOLD MERGE）** 提交審核與執行 Hosted 離線 CI。
   - **已補強之 Web 實測範圍（Microsoft Edge Playwright DOM E2E）**：於匯出之 Expo Web `frontend/dist` 執行 `frontend/scripts/official-help-entry.browser.test.mjs`（3/3 通過，配對合成 `/api/**` 回應與 SSE 串流），涵蓋無孩子選擇時鍵盤 `Enter` 切換、ARIA `alert`／`button` 角色、桌機 `1440x900` 與手機 `390x844`／`360x640`／`320x720`、縮矮視窗 `390x420`／`360x380`、CSS 200% 放大文字，以及 `503`／停止回合保留與切換孩子隔離，零水平捲動、零元件重疊與零控制台錯誤。
   - **仍未覆蓋（HOLD MERGE 原因）**：桌面瀏覽器 CSS 縮放與縮矮視窗**不能代替** Android／iOS 實機軟鍵盤彈出與 insets、原生系統 `PixelRatio.getFontScale()`、真實螢幕閱讀器（TalkBack／VoiceOver）、真機原生打包或真實 Gemini／生產資料庫端對端驗證。
 - **定案設計與技術實作摘要**：
@@ -1516,4 +1516,4 @@ S01 的 coo-ai-agent、Baby Buddy、CareLoop、BreastfeedingTracker、UNICEF Beb
 | <a id="ac-s00-m09"></a>`ac-s00-m09` | [歷史原文](_archive/plans/P1-P2-20261018.md#ac-s00-m09) |
 
 
-
+- **官方來源檢索、適用核對與結構化引用（`codex/search-official-evidence`，基線 `origin/master` `f2d347cd`）：** 已推進離線契約與記憶體 Firestore 適用性驗證；提問側已收窄泛指共通詞（`正常`、`醫生`、`求診`、單獨`講嘢`／`食嘢`）並恢復「BB幾時可以食嘢？」對加固之召回，同時將「食藥／餵藥／藥水／10ml」及口語完成主張、多段私人來源核對與純結構句邊界納入交付審查；目前官方種子仍限五份（未覆蓋發燒／嘔吐／疫苗／腹瀉／尿布疹），另缺真模型評測與線上實行，尚待外部審核及合併批准。[離線驗證 workflow](.github/workflows/search-official-evidence-offline.yml) · [驗證腳本](scripts/ci/verify-search-official-evidence-offline.sh)
