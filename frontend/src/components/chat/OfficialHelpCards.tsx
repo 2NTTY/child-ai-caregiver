@@ -33,13 +33,16 @@ const DEFAULT_UNREVIEWED_NOTE = '已找到官方來源片段（尚待獨立核�
 export function ProgressSourceCards({
   sources,
   reviewing = false,
+  retainedAfterFailure = false,
 }: {
   sources: readonly AgentProgressSource[];
   reviewing?: boolean;
+  retainedAfterFailure?: boolean;
 }) {
   if (!sources.length) return null;
   return <View testID="chat-progress-sources" accessibilityLiveRegion="polite">
     <Text variant="labelSmall">{AGENT_PROGRESS_SOURCE_DISCLAIMER}</Text>
+    {retainedAfterFailure ? <Text testID="chat-progress-sources-retained-notice" variant="labelSmall">以下為本次檢索已讀取之合格官方來源預覽（正式回覆未完成或尚未通過核對）；未核草稿不會作正式建議顯示，請查看上方狀態或重新核對／重試。</Text> : null}
     {reviewing ? <Text testID="chat-progress-sources-reviewing" variant="labelSmall">{AGENT_PROGRESS_LABELS.reviewing}</Text> : null}
     {sources.map(source => {
       const dateText = formatProgressSourceDateText(source);

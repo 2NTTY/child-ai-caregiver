@@ -74,15 +74,55 @@ function startStaticDistServer() {
   });
 }
 
-function createSyntheticBackend({ hasChildren = true, failReplyWithHelpCard = false } = {}) {
+function createSyntheticBackend({ hasChildren = true, failReplyWithHelpCard = false, failReplyWithSourcesOnly = false, completeWithCitation = false, replyDelayMs = 0 } = {}) {
   const child1 = { id: CHILD_1_ID, workspaceId: WORKSPACE_ID, displayName: '小昕', createdAt: '2026-11-01T00:00:00.000Z', accessRole: 'owner' };
   const child2 = { id: CHILD_2_ID, workspaceId: WORKSPACE_ID, displayName: '阿樂', createdAt: '2026-11-01T00:00:00.000Z', accessRole: 'owner' };
   const messagesByChild = { [CHILD_1_ID]: [], [CHILD_2_ID]: [] };
   const replyStateByMsg = new Map();
-  const runStatusById = new Map();
+  const runDetailsById = new Map();
   let nextSeq = 1;
   let unroutedApi = [];
   let completeOnReload = false;
+  let revokeAccessOnNextRead = false;
+
+  const syntheticCitation = {
+    chunkId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    sourceId: 'fhs-solid-food',
+    versionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    versionHash: 'a'.repeat(64),
+    contentHash: 'b'.repeat(64),
+    key: 'starting-solids',
+    section: '引進固體食物的時間與質感',
+    sourceExcerpt: '未足四個月大的寶寶不應吃奶以外的食物',
+    text: '衞生署家庭健康服務指出，孩子約六個月時應開始加入固體食物。',
+    keywords: ['加固'],
+    applicability: { region: 'HK', ageBasis: 'actual', minAgeMonths: 0, maxAgeMonths: 12, topics: ['feeding'], conditions: [] },
+    url: 'https://www.fhs.gov.hk/tc_chi/health_info/child/30039.html',
+    title: '嬰幼兒飲食－引進固體食物過渡期',
+    publisher: '香港特別行政區政府衞生署家庭健康服務',
+    classification: 'official_guidance',
+    sourcePublishedAt: null,
+    sourceUpdatedAt: null,
+    sourceDateText: '02/2026 修訂',
+    validUntil: null,
+    fetchedAt: '2026-10-07T21:28:06.298Z',
+    checkedAt: '2026-10-07T21:28:06.298Z',
+    reviewState: 'reviewed',
+    applicabilityStatus: 'applicable',
+  };
+  const syntheticProgressSource = (stage) => ({
+    chunkId: syntheticCitation.chunkId,
+    sourceId: syntheticCitation.sourceId,
+    title: syntheticCitation.title,
+    section: syntheticCitation.section,
+    publisher: syntheticCitation.publisher,
+    url: syntheticCitation.url,
+    excerpt: syntheticCitation.sourceExcerpt,
+    fetchedAt: syntheticCitation.fetchedAt,
+    sourceUpdatedAt: null,
+    sourceDateText: syntheticCitation.sourceDateText,
+    stage,
+  });
 
   const profileFor = childId => ({
     profile: {
@@ -172,29 +212,67 @@ function createSyntheticBackend({ hasChildren = true, failReplyWithHelpCard = fa
       if (replyMatch) {
         const cid = decodeURIComponent(replyMatch[1]);
         const msgId = decodeURIComponent(replyMatch[2]);
+        if (revokeAccessOnNextRead) {
+          revokeAccessOnNextRead = false;
+          return json(403, { error: { code: 'not_found' } });
+        }
         if (m === 'GET') {
           return json(200, { reply: replyStateByMsg.get(msgId) ?? null });
         }
         if (m === 'POST') {
+          if (replyDelayMs > 0) await new Promise(done => setTimeout(done, replyDelayMs));
           const runId = `66666666-6666-4666-8666-${String(nextSeq++).padStart(12, '0')}`;
-          if (failReplyWithHelpCard) {
+          if (failReplyWithHelpCard || failReplyWithSourcesOnly) {
             replyStateByMsg.set(msgId, { messageId: msgId, runId, status: 'stopped', stopReason: 'error' });
-            runStatusById.set(runId, 'stopped');
-            const sse = [
-              `data: ${JSON.stringify({ type: 'progress', progress: { runId, messageId: msgId, phase: 'help', card: 'emergency-hk-v1' } })}\n\n`,
-              `data: ${JSON.stringify({ type: 'result', status: 503, body: { error: { code: 'ai_unavailable' } } })}\n\n`,
-            ].join('');
+            runDetailsById.set(runId, {
+              provenance: { packVersion: '0.1.60', recipeId: 'product-interactive', model: 'gemini-2.5-flash' },
+              runId, status: 'stopped', stopReason: 'error', text: '',
+              citations: [], retrievalMode: 'vector_keyword',
+              tools: [{ name: 'search_knowledge', status: 'succeeded' }],
+              counts: { modelCalls: 2, toolCalls: 1, queryEmbeddings: 1 }, proposals: [],
+            });
+            const sse = failReplyWithSourcesOnly
+              ? [
+                `data: ${JSON.stringify({ type: 'progress', progress: { runId, messageId: msgId, sequence: 1, phase: 'searching', sources: [syntheticProgressSource('found')] } })}\n\n`,
+                `data: ${JSON.stringify({ type: 'progress', progress: { runId, messageId: msgId, sequence: 2, phase: 'reading', sources: [syntheticProgressSource('read')] } })}\n\n`,
+                `data: ${JSON.stringify({ type: 'progress', progress: { runId, messageId: msgId, sequence: 3, phase: 'reviewing' } })}\n\n`,
+                `data: ${JSON.stringify({ type: 'result', status: 503, body: { error: { code: 'ai_unavailable' } } })}\n\n`,
+              ].join('')
+              : [
+                `data: ${JSON.stringify({ type: 'progress', progress: { runId, messageId: msgId, phase: 'help', card: 'emergency-hk-v1' } })}\n\n`,
+                `data: ${JSON.stringify({ type: 'result', status: 503, body: { error: { code: 'ai_unavailable' } } })}\n\n`,
+              ].join('');
             return route.fulfill({ status: 200, contentType: 'text/event-stream; charset=utf-8', body: sse });
           }
+          const replyText = completeWithCitation
+            ? '根據衞生署指引，約六個月大可開始引入固體食物。【1】'
+            : '已完成回覆。';
           replyStateByMsg.set(msgId, { messageId: msgId, runId, status: 'completed', stopReason: null });
-          runStatusById.set(runId, 'completed');
+          runDetailsById.set(runId, {
+            provenance: { packVersion: '0.1.60', recipeId: 'product-interactive', model: 'gemini-2.5-flash' },
+            runId, status: 'completed', stopReason: null, text: replyText,
+            citations: completeWithCitation ? [syntheticCitation] : [],
+            retrievalMode: completeWithCitation ? 'vector_keyword' : 'not_used',
+            tools: completeWithCitation
+              ? [{ name: 'search_knowledge', status: 'succeeded' }, { name: 'present_answer', status: 'succeeded' }]
+              : [{ name: 'present_answer', status: 'succeeded' }],
+            counts: { modelCalls: 2, toolCalls: completeWithCitation ? 2 : 1, queryEmbeddings: completeWithCitation ? 1 : 0 },
+            proposals: [],
+          });
           const modelMsg = {
             id: `77777777-7777-4777-8777-${String(nextSeq++).padStart(12, '0')}`,
             childId: cid, authorUserId: null, role: 'model', agentRunId: runId,
-            text: '已完成回覆。', inReplyTo: msgId, createdAt: new Date().toISOString(),
+            text: replyText, inReplyTo: msgId, createdAt: new Date().toISOString(),
           };
           messagesByChild[cid] = [...(messagesByChild[cid] ?? []), modelMsg];
-          const sse = `data: ${JSON.stringify({ type: 'result', status: 200, body: { message: modelMsg } })}\n\n`;
+          const sse = completeWithCitation
+            ? [
+              `data: ${JSON.stringify({ type: 'progress', progress: { runId, messageId: msgId, sequence: 1, phase: 'searching', sources: [syntheticProgressSource('found')] } })}\n\n`,
+              `data: ${JSON.stringify({ type: 'progress', progress: { runId, messageId: msgId, sequence: 2, phase: 'reading', sources: [syntheticProgressSource('read')] } })}\n\n`,
+              `data: ${JSON.stringify({ type: 'progress', progress: { runId, messageId: msgId, sequence: 3, phase: 'reviewing' } })}\n\n`,
+              `data: ${JSON.stringify({ type: 'result', status: 200, body: { message: modelMsg } })}\n\n`,
+            ].join('')
+            : `data: ${JSON.stringify({ type: 'result', status: 200, body: { message: modelMsg } })}\n\n`;
           return route.fulfill({ status: 200, contentType: 'text/event-stream; charset=utf-8', body: sse });
         }
       }
@@ -208,23 +286,40 @@ function createSyntheticBackend({ hasChildren = true, failReplyWithHelpCard = fa
         if (sub === 'care/search') return json(200, { records: [], nextCursor: null, scanned: 1, limit: 50 });
         if (sub === 'agent/pending') return json(200, { proposals: [], nextCursor: null });
         if (sub === 'agent/runs') return json(200, { runs: [] });
+        if (sub === 'agent/actions') return json(200, { receipts: [] });
         if (sub === 'agent/work') return json(200, { items: [], nextCursor: null, complete: true });
         if (sub === 'library') return json(200, { items: [], nextCursor: null, complete: true });
         if (sub.startsWith('agent/runs/')) {
           const rid = sub.slice('agent/runs/'.length);
-          return json(200, { result: { runId: rid, status: runStatusById.get(rid) ?? 'stopped' } });
+          const stored = runDetailsById.get(rid);
+          return json(200, {
+            result: stored ?? {
+              provenance: { packVersion: '0.1.60', recipeId: 'product-interactive', model: 'gemini-2.5-flash' },
+              runId: rid, status: 'stopped', stopReason: 'error', text: '', citations: [], retrievalMode: 'not_used',
+              tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 }, proposals: [],
+            },
+          });
         }
         if (sub === 'messages') {
+          if (revokeAccessOnNextRead) {
+            revokeAccessOnNextRead = false;
+            return json(403, { error: { code: 'not_found' } });
+          }
           if (completeOnReload && cid === CHILD_1_ID && messagesByChild[cid]?.length === 1) {
             const u = messagesByChild[cid][0];
             const prevState = replyStateByMsg.get(u.id);
             const runId = prevState?.runId ?? '66666666-6666-4666-8666-999999999999';
+            const replyText = '已完成回覆。';
             replyStateByMsg.set(u.id, { messageId: u.id, runId, status: 'completed', stopReason: null });
-            runStatusById.set(runId, 'completed');
+            runDetailsById.set(runId, {
+              provenance: { packVersion: '0.1.60', recipeId: 'product-interactive', model: 'gemini-2.5-flash' },
+              runId, status: 'completed', stopReason: null, text: replyText, citations: [], retrievalMode: 'not_used',
+              tools: [], counts: { modelCalls: 1, toolCalls: 0, queryEmbeddings: 0 }, proposals: [],
+            });
             messagesByChild[cid] = [u, {
               id: '77777777-7777-4777-8777-999999999999',
               childId: cid, authorUserId: null, role: 'model', agentRunId: runId,
-              text: '已完成回覆。', inReplyTo: u.id, createdAt: new Date().toISOString(),
+              text: replyText, inReplyTo: u.id, createdAt: new Date().toISOString(),
             }];
           }
           return json(200, { messages: messagesByChild[cid] ?? [], limit: 20, nextCursor: null });
@@ -267,6 +362,7 @@ function createSyntheticBackend({ hasChildren = true, failReplyWithHelpCard = fa
   return {
     install,
     enableCompleteOnReload() { completeOnReload = true; },
+    triggerAccessRevocation() { revokeAccessOnNextRead = true; },
     getUnroutedApi: () => [...unroutedApi],
   };
 }
@@ -470,5 +566,81 @@ test('E2E 3: Real send/SSE 503 help retention across stopped turn, child switch 
     assert.deepEqual(errors, [], `unexpected browser errors: ${JSON.stringify(errors)}`);
   } finally {
     await context.close();
+  }
+});
+
+test('E2E 4: Focus stays put on progress updates, retained official sources survive 503 and clear on completion/revocation, and buffered answers appear immediately with safe details', async () => {
+  // Part A: SSE progress updates never steal focus, 503 failure retains qualified ProgressSourceCards without draft text, and completion clears them
+  const failBackend = createSyntheticBackend({ hasChildren: true, failReplyWithSourcesOnly: true, replyDelayMs: 220 });
+  const { context: c1, page: p1, errors: e1 } = await openChatPage(browser, serverInfo.baseUrl, failBackend, { width: 390, height: 844 });
+  try {
+    const textbox = p1.getByRole('textbox', { name: '撰寫對話問題', exact: true });
+    await textbox.fill('BB幾時可以開始食固體食物？');
+    await p1.getByRole('button', { name: '送出', exact: true }).click();
+    const helpToggle = p1.getByRole('button', { name: HELP_TOGGLE_LABEL, exact: true });
+    await helpToggle.focus();
+
+    await p1.getByTestId('chat-progress-sources').waitFor({ timeout: 10000 });
+    await p1.getByTestId('chat-progress-sources-retained-notice').waitFor({ timeout: 10000 });
+    await p1.getByText('重試原訊息回覆', { exact: true }).waitFor({ timeout: 5000 });
+
+    const focusedDuringAndAfter = await p1.evaluate(() => document.activeElement?.getAttribute('aria-label'));
+    assert.equal(focusedDuringAndAfter, HELP_TOGGLE_LABEL, 'SSE progress updates and retained source cards must never steal keyboard focus');
+
+    const retainedText = await p1.getByTestId('chat-progress-sources').innerText();
+    assert.match(retainedText, /嬰幼兒飲食－引進固體食物過渡期/);
+    assert.match(retainedText, /未核草稿不會作正式建議顯示/);
+    assert.equal(await p1.getByRole('button', { name: '開始新訊息', exact: true }).count(), 1);
+
+    // Reload with completed reply clears retained ProgressSourceCards cleanly
+    failBackend.enableCompleteOnReload();
+    await p1.getByRole('button', { name: '選擇孩子，目前小昕', exact: true }).click();
+    await p1.getByRole('radio', { name: /阿樂/ }).click();
+    await p1.waitForFunction(() => document.querySelectorAll('[data-testid="chat-progress-sources"]').length === 0, undefined, { timeout: 10000 });
+    await p1.getByRole('button', { name: '選擇孩子，目前阿樂', exact: true }).click();
+    await p1.getByRole('radio', { name: /小昕/ }).click();
+    await p1.getByText('已完成回覆。', { exact: true }).waitFor({ timeout: 15000 });
+    assert.equal(await p1.getByTestId('chat-progress-sources').count(), 0);
+    assert.deepEqual(e1, [], `E2E 4 Part A errors: ${JSON.stringify(e1)}`);
+  } finally {
+    await c1.close();
+  }
+
+  // Part B: 403 revocation clears retained sources immediately in UI (expected 403 logged as response status)
+  const revokeBackend = createSyntheticBackend({ hasChildren: true, failReplyWithSourcesOnly: true });
+  const { context: c2, page: p2, errors: e2 } = await openChatPage(browser, serverInfo.baseUrl, revokeBackend, { width: 390, height: 844 });
+  try {
+    await p2.getByRole('textbox', { name: '撰寫對話問題', exact: true }).fill('BB飲食問題');
+    await p2.getByRole('button', { name: '送出', exact: true }).click();
+    await p2.getByTestId('chat-progress-sources-retained-notice').waitFor({ timeout: 10000 });
+    revokeBackend.triggerAccessRevocation();
+    await p2.getByRole('button', { name: '重試原訊息回覆', exact: true }).click();
+    await p2.waitForFunction(() => document.querySelectorAll('[data-testid="chat-progress-sources"]').length === 0, undefined, { timeout: 10000 });
+    assert.equal(await p2.getByRole('button', { name: '重試原訊息回覆', exact: true }).count(), 0);
+    assert.ok(e2.some(item => item.includes('http-403:')), `expected HTTP 403 revocation response, got ${JSON.stringify(e2)}`);
+    assert.deepEqual(e2.filter(item => !item.includes('403')), [], `unexpected errors in E2E 4 Part B: ${JSON.stringify(e2)}`);
+  } finally {
+    await c2.close();
+  }
+
+  // Part C: Buffered approved reply renders complete text immediately with zero typing animation, and details dialog never leaks internal thoughts/raw JSON args
+  const okBackend = createSyntheticBackend({ hasChildren: true, completeWithCitation: true });
+  const { context: c3, page: p3, errors: e3 } = await openChatPage(browser, serverInfo.baseUrl, okBackend, { width: 1440, height: 900 });
+  try {
+    const fullAnswer = '根據衞生署指引，約六個月大可開始引入固體食物。【1】';
+    await p3.getByRole('textbox', { name: '撰寫對話問題', exact: true }).fill('半歲BB幾時食固體？');
+    await p3.getByRole('button', { name: '送出', exact: true }).click();
+    await p3.getByText(fullAnswer, { exact: true }).waitFor({ timeout: 10000 });
+    assert.equal(await p3.getByTestId('chat-progress-sources').count(), 0, 'progress source preview clears after approved delivery');
+
+    await p3.getByRole('button', { name: '查看這則回覆的來源與候選', exact: true }).last().click();
+    const dialog = p3.getByRole('dialog');
+    await dialog.waitFor({ timeout: 10000 });
+    await p3.getByTestId('agent-run-view').waitFor({ timeout: 10000 });
+    const dialogText = await dialog.innerText();
+    assert.doesNotMatch(dialogText, /functionCall|thought|candidatesTokenCount|fhs-solid-food/i, 'details dialog must not expose internal thinking or raw tool payloads');
+    assert.deepEqual(e3, [], `E2E 4 Part C errors: ${JSON.stringify(e3)}`);
+  } finally {
+    await c3.close();
   }
 });

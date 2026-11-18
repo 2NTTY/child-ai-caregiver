@@ -382,7 +382,7 @@ export class ChatController {
         const fbId = this.state.feedback.messageId;
         const matchingReply = page.messages.find(item => item.role === "model" && item.inReplyTo === fbId);
         let hasCompletedReply = Boolean(matchingReply && !isIncompleteModelReplyText(matchingReply.text));
-        if (hasCompletedReply && this.state.feedback.cards.length > 0 && matchingReply) {
+        if (hasCompletedReply && (this.state.feedback.cards.length > 0 || this.state.feedback.sources.length > 0) && matchingReply) {
           if (this.state.remoteReply?.messageId === fbId && this.state.remoteReply.status !== "completed") {
             hasCompletedReply = false;
           } else {
@@ -555,8 +555,9 @@ export class ChatController {
         remoteReply: !completed && runId ? { messageId, runId, status: hintedRunStatus, stopReason: null } : null,
       };
     }
-    const hasPendingHelpCards = this.state.feedback?.messageId === messageId && this.state.feedback.cards.length > 0;
-    if (hasPendingHelpCards) {
+    const hasPendingFeedback = this.state.feedback?.messageId === messageId
+      && (this.state.feedback.cards.length > 0 || this.state.feedback.sources.length > 0);
+    if (hasPendingFeedback) {
       try {
         if (this.api.getOriginalReply) {
           const orig = await this.api.getOriginalReply(childId, messageId, scope.controller.signal, scope.userId);
@@ -622,7 +623,10 @@ export class ChatController {
         messages: outcome.runId
           ? messages.map(item => item.id === messageId && !item.agentRunId ? { ...item, agentRunId: outcome.runId! } : item)
           : messages,
-        replyError: outcome.completed ? null : "這次回覆未完成，沒有清除官方求助提示；請先查看提示或核對原結果。",
+        replyError: outcome.completed ? null
+          : this.state.feedback?.cards.length
+            ? "這次回覆未完成，沒有清除官方求助提示；請先查看提示或核對原結果。"
+            : "這次回覆未完成，已保留檢索到的官方來源預覽；未核草稿不作正式回覆，請查核原結果。",
         remoteReply: settledRemoteReply,
       });
       if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
@@ -703,7 +707,7 @@ export class ChatController {
         }
         const retainFeedback = !replyCompleted
           && this.state.feedback?.messageId === messageId
-          && this.state.feedback.cards.length > 0
+          && (this.state.feedback.cards.length > 0 || this.state.feedback.sources.length > 0)
           ? this.state.feedback
           : null;
         this.update({ busy: null, replyingMessageId: null, feedback: retainFeedback, remoteReply: settledRemoteReply });

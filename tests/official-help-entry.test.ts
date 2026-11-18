@@ -970,3 +970,246 @@ test('BND-2: non-emergency medicine queries show consult notice only while mixed
   assert.deepEqual(inspectUi('Can I book a non-emergency medicine review?'), { urgent: false, consult: true });
   assert.deepEqual(inspectUi('A non-emergency medicine question, but BB is unresponsive.'), { urgent: true, consult: false });
 });
+
+test('Late failure retains qualified progress sources without unreviewed drafts, clears on revocation/completion, renders buffered replies immediately, and hides internal thoughts/raw args', async () => {
+  const { randomUUID } = await import('node:crypto');
+  const { readFile } = await import('node:fs/promises');
+  const { toAgentProgressSource } = await import('../src/shared/agent-feedback.ts');
+
+  const userMsgId = randomUUID();
+  const modelMsgId = randomUUID();
+  const runId = randomUUID();
+  const childId = 'child-1';
+  const sourceItem = toAgentProgressSource({
+    chunkId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    sourceId: 'fhs-solid-food',
+    versionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    versionHash: 'a'.repeat(64),
+    contentHash: 'b'.repeat(64),
+    key: 'starting-solids',
+    section: '引進固體食物的時間與質感',
+    title: '嬰幼兒飲食－引進固體食物過渡期',
+    publisher: '香港特別行政區政府衞生署家庭健康服務',
+    url: 'https://www.fhs.gov.hk/tc_chi/health_info/child/30039.html',
+    classification: 'official_guidance',
+    sourcePublishedAt: null,
+    sourceUpdatedAt: null,
+    sourceDateText: '02/2026 修訂',
+    fetchedAt: '2026-10-07T21:28:06.298Z',
+    checkedAt: '2026-10-07T21:28:06.298Z',
+    reviewState: 'reviewed',
+    sourceExcerpt: '未足四個月大的寶寶不應吃奶以外的食物',
+    text: '衞生署家庭健康服務指出，孩子約六個月時應開始加入固體食物。',
+    keywords: ['加固'],
+    applicability: { region: 'HK', ageBasis: 'actual', minAgeMonths: 0, maxAgeMonths: 12, topics: ['feeding'], conditions: [] },
+    applicabilityStatus: 'applicable',
+  }, 'read')!;
+
+  let completeOnReload = false;
+  let denyNextReload = false;
+  let replyAttempted = false;
+  const userMessage = {
+    id: userMsgId,
+    childId,
+    authorUserId: 'parent-1',
+    role: 'user' as const,
+    text: '半歲BB準備好加固未？',
+    inReplyTo: null,
+    createdAt: '2026-11-19T00:00:00.000Z',
+  };
+  const completedReply = {
+    id: modelMsgId,
+    childId,
+    authorUserId: null,
+    role: 'model' as const,
+    agentRunId: runId,
+    text: '根據衞生署指引，約六個月大可開始引入固體食物。【1】',
+    inReplyTo: userMsgId,
+    createdAt: '2026-11-19T00:00:05.000Z',
+  };
+
+  let controller!: ChatController;
+  const failApi: ChatApi = {
+    async getSession() { return { id: 'parent-1', name: '家長', email: 'p@example.test' }; },
+    async listMessages() {
+      if (denyNextReload) throw new ChatApiError(403, 'forbidden');
+      return { messages: completeOnReload ? [userMessage, completedReply] : [userMessage], limit: 20, nextCursor: null };
+    },
+    async saveMessage() { return userMessage; },
+    async requestReply(_c, mid, _sig, _u, onProgress) {
+      replyAttempted = true;
+      onProgress?.({ runId, messageId: mid, sequence: 1, phase: 'searching', sources: [{ ...sourceItem, stage: 'found' }] });
+      onProgress?.({ runId, messageId: mid, sequence: 2, phase: 'reading', sources: [sourceItem] });
+      onProgress?.({ runId, messageId: mid, sequence: 3, phase: 'reviewing' });
+      throw new ChatApiError(503, undefined, 'ai_unavailable');
+    },
+    async getOriginalReply() {
+      if (!replyAttempted) return null;
+      return completeOnReload
+        ? { messageId: userMsgId, runId, status: 'completed', stopReason: null }
+        : { messageId: userMsgId, runId, status: 'stopped', stopReason: 'error' };
+    },
+    async getReplyState() {
+      return completeOnReload ? 'completed' : 'stopped';
+    },
+    async getStatus() { return true; },
+    async getUsage() { return { day: '2026-11-19', attempts: 0, inputTokens: 0, outputTokens: 0, cachedTokens: 0, unknownUsageAttempts: 0 }; },
+  };
+
+  controller = new ChatController(failApi, true);
+  const waitUntilSettled = async () => {
+    if (!controller.getSnapshot().loading && !controller.getSnapshot().busy) return;
+    await new Promise<void>(resolve => {
+      const off = controller.subscribe(() => {
+        const snap = controller.getSnapshot();
+        if (!snap.loading && !snap.busy) {
+          off();
+          resolve();
+        }
+      });
+    });
+  };
+  controller.syncContext('parent-1', true, childId);
+  await waitUntilSettled();
+  await controller.requestReply(userMsgId);
+
+  const afterFailure = controller.getSnapshot();
+  assert.equal(afterFailure.busy, null);
+  assert.equal(afterFailure.feedback?.sources.length, 1, 'controller must retain qualified official sources after late/review 503 failure');
+  assert.equal(afterFailure.feedback?.sources[0]?.stage, 'read');
+  assert.equal((afterFailure.feedback as any)?.draftText, undefined, 'retained progress must never expose unreviewed draft text');
+
+  // Render ChatPage after failure: retained ProgressSourceCards must stay visible with non-approved notice.
+  const jsxNode = (type: unknown, props: unknown) => ({ type, props });
+  const placeholder: Record<string, unknown> = {};
+  let currentControllerState = afterFailure;
+  let chatWritesAllowed = true;
+  let runnerRef: ReturnType<typeof renderWithHooks>;
+
+  const renderState = () => ({
+    model: { children: [{ id: childId, name: 'A' }], selectedChildId: childId },
+    actions: { refresh() {}, open() {} },
+    scopeKey: 'scope-retained-sources',
+    chatState: currentControllerState,
+    chatController: { loadOlderMessages: async () => {}, cancelReply: async () => {}, reloadMessages: async () => {} },
+    chatDraft: '',
+    setChatDraft() {},
+    agentAttachments: [],
+    composerFocusRequest: 0,
+    sendChat: async () => {},
+    requestChatReply: async () => {},
+    agentRuns: {},
+    agentModel: { readState: 'ready', run: null, pendingDecision: null },
+    voiceUpload: {},
+    fileUpload: {},
+    photoUpload: {},
+    agentPending: { state: 'idle', entries: [] },
+    authorization: { pending: false },
+    chatWritesAllowed,
+    readAgentPending() {},
+  });
+
+  const ChatPage = loadModule('frontend/src/screens/chatScreen.tsx', {
+    react: {
+      createContext: () => ({ Provider: 'Provider' }),
+      useContext: () => null,
+      useId: () => 'id-retained',
+      useState: (init: any) => runnerRef.hooks.useState(init),
+      useRef: (init: any) => runnerRef.hooks.useRef(init),
+      useLayoutEffect: () => runnerRef.hooks.useLayoutEffect(),
+      useEffect() {},
+      Fragment: 'Fragment',
+    },
+    'react/jsx-runtime': { jsx: jsxNode, jsxs: jsxNode, Fragment: 'Fragment' },
+    'expo-router': { useLocalSearchParams: () => ({}), usePathname: () => '/chat', useRouter: () => ({ push() {} }) },
+    'react-native': {
+      Platform: { OS: 'web' }, Pressable: 'Pressable', ScrollView: 'ScrollView',
+      StyleSheet: { create: (v: unknown) => v }, View: 'View',
+      useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }), Linking: { openURL: async () => {} },
+    },
+    'react-native-paper': { Text: 'Text', ActivityIndicator: 'ActivityIndicator' },
+    '../components/appearance/BackgroundSurface': { BackgroundSurface: 'BackgroundSurface', useCustomBackground: () => false },
+    '../production/ChatFileMessage': { ChatFileMessage: 'ChatFileMessage' },
+    '../production/VoiceMessage': { VoiceMessage: 'VoiceMessage' },
+    '../components/ui': { AppButton: 'AppButton', SectionCard: 'SectionCard' },
+    '../ui': { AppButton: 'AppButton', SectionCard: 'SectionCard' },
+    '../../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
+    '../components/AppDialog': { AppDialog: Object.assign('AppDialog', { Title: 'DialogTitle', Content: 'DialogContent', Actions: 'DialogActions' }) },
+    '../components/StatusAnnouncement': { StatusAnnouncement: 'StatusAnnouncement' },
+    '../components/agent/AgentComposer': { AgentComposer: 'AgentComposer' },
+    '../components/chat/ChatMessage': { ChatMessage: 'ChatMessage', ChatProgressIndicator: 'ChatProgressIndicator' },
+    '../components/chat/ChatTimeline': { ChatTimeline: 'ChatTimeline' },
+    '../components/chat/locateCitationSource': { locateCitationSource() {} },
+    '../components/chat/chat-presentation': { chatColors: placeholder, chatFont: 'synthetic', chatLayout: { maxWidth: 720, wideInset: 16, compactInset: 8, composerOverlap: 32 }, chatType: { body: {}, meta: {}, tool: {} } },
+    '../production/ProductionProvider': { useProduction: renderState },
+    '../production/AgentConversation': { AgentConversation: 'AgentConversation' },
+    '../production/ChatPhotoMessage': { ChatPhotoMessage: 'ChatPhotoMessage' },
+    '../production/NotificationChatTarget': { NotificationChatTarget: 'NotificationChatTarget' },
+    '../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
+    '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => (fn: () => void) => fn() },
+    '../agent-view-model': { proposalExpired: () => false, publicAnswerSources: () => undefined },
+    '../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
+  }).default;
+
+  runnerRef = renderWithHooks(() => jsxNode(ChatPage, {}));
+  let nodes = collectNodes(runnerRef.render());
+  assert.ok(nodes.some(n => n.props?.testID === 'chat-progress-sources'), 'retained ProgressSourceCards must render after failure');
+  assert.ok(nodes.some(n => n.props?.testID === 'chat-progress-sources-retained-notice'), 'retained failure banner must clarify draft is unapproved');
+
+  // If write permission is lost / revoked before reload, retained sources immediately hide.
+  chatWritesAllowed = false;
+  nodes = collectNodes(runnerRef.render());
+  assert.equal(nodes.some(n => n.props?.testID === 'chat-progress-sources'), false, 'revoked access must hide retained source cards');
+  chatWritesAllowed = true;
+
+  // Completion on reload clears retained sources completely.
+  completeOnReload = true;
+  await waitUntilSettled();
+  await controller.reloadMessages();
+  assert.equal(controller.getSnapshot().feedback, null, 'completed reply clears retained source feedback');
+
+  // Access revocation (403) clears any retained feedback & messages immediately.
+  completeOnReload = false;
+  replyAttempted = false;
+  await waitUntilSettled();
+  await controller.reloadMessages();
+  await controller.requestReply(userMsgId);
+  assert.equal(controller.getSnapshot().feedback?.sources.length, 1);
+  denyNextReload = true;
+  await controller.reloadMessages();
+  assert.equal(controller.getSnapshot().feedback, null, '403 revocation clears retained sources');
+  assert.equal(controller.getSnapshot().selectedChildId, null);
+  controller.dispose();
+
+  // Verify buffered approved answer renders full text immediately with no typewriter delay or focus steal,
+  // and details UI omits internal thinking / raw tool arguments.
+  const chatMsgSrc = await readFile(new URL('../frontend/src/components/chat/ChatMessage.tsx', import.meta.url), 'utf8');
+  const statusSrc = await readFile(new URL('../frontend/src/components/StatusAnnouncement.tsx', import.meta.url), 'utf8');
+  const runViewSrc = await readFile(new URL('../frontend/src/components/agent/AgentRunView.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(chatMsgSrc, /setInterval|setTimeout|MotionReveal/, 'approved ChatMessage must render buffered prose immediately without typing delay');
+  assert.doesNotMatch(statusSrc, /\.focus\(/, 'StatusAnnouncement must update live region without stealing focus');
+
+  const { ChatMessage } = loadModule('frontend/src/components/chat/ChatMessage.tsx', {
+    react: { useState: (v: unknown) => [v, () => {}], Fragment: 'Fragment' },
+    'react/jsx-runtime': { jsx: jsxNode, jsxs: jsxNode, Fragment: 'Fragment' },
+    'react-native': { Pressable: 'Pressable', StyleSheet: { create: (v: unknown) => v }, View: 'View' },
+    'react-native-paper': { Text: 'Text', ActivityIndicator: 'ActivityIndicator' },
+    '../../theme': { colors: placeholder, spacing: placeholder },
+    '../AppIcon': { AppIcon: 'AppIcon' },
+    '../ui': { AppButton: 'AppButton' },
+    '../StatusAnnouncement': { StatusAnnouncement: 'StatusAnnouncement' },
+    './AnswerSources': {
+      AnswerSources: ({ children }: any) => children,
+      CitationText: ({ children }: any) => jsxNode('Text', { children }),
+    },
+    './chat-presentation': { chatColors: placeholder, chatFont: 'synthetic', chatLayout: placeholder, chatType: placeholder },
+    '../../motion': { MotionDisclosure: 'MotionDisclosure' },
+    '../../motion/preferences': { useMotionPreferences: () => ({ enabled: false }) },
+    './chat-copy': { CHAT_ACTIVITY_LABELS: {}, CHAT_MESSAGE_COPY: {}, CHAT_PHASE_LABELS: {} },
+  });
+  const immediateTree = ChatMessage({
+    message: { id: modelMsgId, role: 'assistant', text: completedReply.text, phase: 'complete', sources: [] },
+  });
+  assert.ok(collectText(immediateTree).includes(completedReply.text), 'entire approved answer text must appear immediately');
+  assert.match(runViewSrc, /\{tool\.nameLabel\}/, 'AgentRunView shows only mapped tool labels, not raw arguments or internal thoughts');
+});

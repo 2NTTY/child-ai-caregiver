@@ -186,7 +186,9 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
       {replyRunning ? <AppButton label="停止回覆" variant="quiet" density="compact" loading={chat.cancelling}
         disabled={chat.cancelling || !chat.online} onPress={() => { void chatController.cancelReply(); }} /> : null}
     </View> : null}
-    {chat.busy === "reply" && chat.feedback?.sources.length ? <ProgressSourceCards sources={chat.feedback.sources} reviewing={chat.feedback.phase === "reviewing"} /> : null}
+    {(chat.busy === "reply" && chat.feedback?.sources.length) || (!chat.busy && childScopedChat && !chat.error && chatWritesAllowed && latestTurnIncomplete && scopedFeedback?.sources?.length && (!latestUserMessage || scopedFeedback.messageId === latestUserMessage.id))
+      ? <ProgressSourceCards sources={(chat.busy === "reply" ? chat.feedback : scopedFeedback)!.sources} reviewing={chat.busy === "reply" && chat.feedback?.phase === "reviewing"} retainedAfterFailure={chat.busy !== "reply"} />
+      : null}
     {chat.error ? <Text accessibilityRole="alert" style={styles.error}>{chat.error}</Text> : null}
     {draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim()) ? <Text accessibilityRole="alert" style={styles.warning}>{draft.notice}</Text> : null}
     {chat.replyError && (!(draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim())) || chat.replyError !== draft?.notice) ? <Text accessibilityRole="alert" style={styles.error}>{chat.replyError}</Text> : null}
