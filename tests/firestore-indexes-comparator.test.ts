@@ -31,6 +31,14 @@ test('growth report duplicate queries have the complete scoped ordered index', (
     && shape(entry) === shape(index(fields))), 'Growth report duplicate scan needs a deployable composite index');
 });
 
+test('growth attention cursor pagination query has the complete scoped descending composite index', () => {
+  const config = JSON.parse(readFileSync(new URL('../deploy/firebase/firestore.indexes.json', import.meta.url), 'utf8'));
+  const fields = ['workspaceTag', 'epochTag', 'userTag', 'childTag'].map(name => field(name));
+  fields.push(field('createdAt', 'DESCENDING'), field('attentionId', 'DESCENDING'));
+  assert.ok(config.indexes.some((entry: { collectionGroup: string }) => entry.collectionGroup === 'yuban_authority_growth_attention'
+    && shape(entry) === shape(index(fields))), 'Growth attention descending pagination requires a deployable composite index');
+});
+
 test('explicit document-id direction distinguishes bounded ascending pages from descending heads', () => {
   for (const scope of [['workspaceTag', 'epochTag', 'userTag', 'childTag'], ['workspaceTag', 'userTag', 'childTag']]) {
     const fields = scope.map(name => field(name));
@@ -70,4 +78,14 @@ test('comparator preserves query scope and field order while ignoring unrelated 
   assert.equal(shape(value), shape({ ...value, name: 'synthetic/index', state: 'READY' }));
   assert.notEqual(shape(value), shape({ ...value, queryScope: 'COLLECTION_GROUP' }));
   assert.notEqual(shape(value), shape(index([...value.fields].reverse())));
+});
+
+test('growth reading index and bounded migration have complete scoped composites', () => {
+  const config = JSON.parse(readFileSync(new URL('../deploy/firebase/firestore.indexes.json', import.meta.url), 'utf8'));
+  const scope = ['workspaceTag', 'epochTag', 'userTag', 'childTag'].map(name => field(name));
+  for (const fields of [
+    [...scope, field('readingBucket'), field('readingCreatedAt', 'DESCENDING'), field('attentionId', 'DESCENDING')],
+    [...scope, field('createdAt'), field('attentionId')],
+  ]) assert.ok(config.indexes.some((entry: { collectionGroup: string }) => entry.collectionGroup === 'yuban_authority_growth_attention'
+    && shape(entry) === shape(index(fields))), 'Both indexed reads and migration need deployable composites');
 });

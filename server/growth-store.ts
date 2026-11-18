@@ -12,7 +12,7 @@ import { createTaskStore, type TaskScheduling } from "./tasks.ts";
 import { createKnowledgeStore } from "./knowledge-store.ts";
 import { agentKnowledgeFilter } from "./product-agent-tools.ts";
 import { parseKnowledgeFilter } from "./knowledge-inputs.ts";
-import { GROWTH_CATALOG_REVISION, GROWTH_RULES, growthBasisChanged, growthInputs, growthProposals, nextGrowthCheck } from "./growth-rules.ts";
+import { GROWTH_CATALOG_REVISION, GROWTH_RULES, growthBasisChanged, growthInputs, growthProposals, nextGrowthCheck, selectGrowthHistoryWindow } from "./growth-rules.ts";
 import { appendOnlineChange } from "./online-change.ts";
 
 interface Row { id: string; child_id: string; topic_id: GrowthTopicId; version: number; state: GrowthAttention["state"]; payload_encrypted: string }
@@ -80,16 +80,16 @@ export function createGrowthStore(pool: Pool, cipher: StorageCipher, scheduling?
     const task = item.taskId ? await loaded.tasks.get(userId, item.childId, item.taskId) : null; loaded.borrowed.assertReleased();
     return { ...item, sourceAvailable: available, taskState: task?.occurrence.state ?? null };
   }
-  async function page(client: PoolClient, userId: string, childId: string, canManage: boolean, readOnly = false): Promise<GrowthPage> {
+  async function page(client: PoolClient, userId: string, childId: string, canManage: boolean, readOnly = false, options?: { historyCursor?: string | null }): Promise<GrowthPage> {
     const loaded = await load(client, userId, childId, false, readOnly), records = await all(client, childId);
     const states = (await client.query<TopicRow>("SELECT * FROM growth_topics WHERE child_id=$1", [childId])).rows;
-    const items: GrowthAttention[] = [], active = records.filter(value => ["proposed","snoozed"].includes(value.item.state));
-    const history = records.filter(value => !["proposed","snoozed"].includes(value.item.state)).reverse();
-    for (const { item } of [...active, ...history.slice(0, 30)]) items.push(await visible(item, loaded, userId));
+    const items: GrowthAttention[] = [];
+    const windowed = selectGrowthHistoryWindow(records, value => value.item, value => ["proposed","snoozed"].includes(value.item.state), options);
+    for (const { item } of windowed.selected) items.push(await visible(item, loaded, userId));
     const failure=(await client.query<{failures:number}>("SELECT failures FROM growth_checks WHERE child_id=$1",[childId])).rows[0];
     const taskPage = await loaded.tasks.list(userId, childId); loaded.borrowed.assertReleased();
     const workspace=(await client.query<{workspace_id:string}>("SELECT workspace_id FROM children WHERE id=$1",[childId])).rows[0];
-    return { authorityVersion:await authority(client,workspace.workspace_id), items, historyHasMore: history.length > 30, canManage, eligibleAssignees: taskPage?.eligibleAssignees ?? [],
+    return { authorityVersion:await authority(client,workspace.workspace_id), items, historyHasMore: windowed.historyHasMore, historyNextCursor: windowed.historyNextCursor, canManage, eligibleAssignees: taskPage?.eligibleAssignees ?? [],
       notices: [...(loaded.knowledgeNotice ? [loaded.knowledgeNotice] : growthProposals(loaded.context, loaded.sources, new Date()).notices),...(failure?.failures===3?["背景評估已達有限重試上限，需核查故障；沒有假稱已完成。"]:[])],
       topics: GROWTH_RULES.map(rule => { const state = states.find(value => value.topic_id === rule.id);
         return { id: rule.id, title: rule.title, version: state?.version ?? 1, disabled: state?.disabled ?? false, inputs: growthInputs(rule, loaded.context) }; }) };
@@ -110,7 +110,7 @@ export function createGrowthStore(pool: Pool, cipher: StorageCipher, scheduling?
         await client.query("UPDATE growth_checks SET failures=CASE WHEN catalog_revision=$2 THEN LEAST(3,failures+1) ELSE 1 END,next_check_at=CASE WHEN catalog_revision=$2 AND failures>=2 THEN NULL ELSE now()+interval '1 minute' END,catalog_revision=$2,last_failure_code='evaluation_failed' WHERE child_id=$1",[childId,GROWTH_CATALOG_REVISION]);
       });
     },
-    list(userId: string, childId: string) { return access(userId, childId, false, (client, _workspaceId, canManage) => page(client,userId,childId,canManage,true)); },
+    list(userId: string, childId: string, options?: { historyCursor?: string | null }) { return access(userId, childId, false, (client, _workspaceId, canManage) => page(client,userId,childId,canManage,true,options)); },
     async decide(userId: string, childId: string, id: string, raw: GrowthAction) {
       const input = growthActionSchema.parse(raw);
       return access(userId, childId, true, async (client, workspaceId) => {
