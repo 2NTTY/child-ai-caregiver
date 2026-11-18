@@ -345,7 +345,11 @@ export class AgentGatewayModel extends BaseLlm {
         preparedFingerprint = requestFingerprint;
       } else await budget.admitModel(this.options);
       if (daily && dailyRequest) {
-        const admission = await budget.wait(() => daily.adapter.reserve(dailyRequest!));
+        const activity = this.options.purpose === 'delivery_repair' ? 'revise'
+          : this.options.purpose === 'delivery_review' || this.options.purpose === 'compose_review' || this.options.purpose === 'knowledge_review' ? 'review'
+          : this.options.purpose === 'compose' ? 'delegate' : this.options.purpose === 'compaction' ? 'compact'
+          : this.options.purpose === 'summary' ? 'summary' : 'generate';
+        const admission = await budget.wait(() => daily.adapter.reserve(dailyRequest!, undefined, { activity, retry: retry > 0 }));
         if (admission.decision === "quota_exceeded") throw new AgentStopped("quota_exceeded");
         if (admission.decision !== "execute") throw new AgentStopped("unavailable");
         dailyPreparationToken = admission.preparationToken;

@@ -587,6 +587,7 @@ export function createAgentRuntime(options: {
           const providerInstructions = new WeakMap<NonNullable<LlmRequest["config"]>, string>();
           const modelAnchors = new WeakMap<LlmRequest, string>();
           const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames, audio, images: ids => images.inputs(ids),
+            ...(input.recipeId === 'memory-refresh' ? { purpose: 'summary' as const } : {}),
             ...(syncPolicy ? { syncPolicy } : {}),
             refreshPolicyConfig: async (request, modelCallAlreadyReserved = false) => {
               const previous = request.config ? providerInstructions.get(request.config) ?? currentInstruction : currentInstruction;
@@ -660,6 +661,7 @@ export function createAgentRuntime(options: {
           const compactionModel = !input.contextCompactors?.length && input.contextCompaction && !privateSummaryEnabled
             ? new AgentGatewayModel({
                 ...selected,
+                purpose: "compaction",
                 budget,
                 userId: scope.userId,
                 childId: scope.childId,

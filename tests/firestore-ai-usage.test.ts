@@ -6,6 +6,7 @@ import { DurableAiUsageError, type DurableAiUsageRecord, type DurableAiUsageRequ
 import { firestoreUsageFixture } from './helpers/firestore-ai-usage.ts';
 import { readFinancialEvidence } from '../server/ai-financial-evidence.ts';
 import { restoreFirestoreUsage } from '../server/firestore-restore-usage.ts';
+import { FirestoreRootBudget } from '../server/firestore-root-budget.ts';
 
 const now = Date.parse('2026-10-09T12:00:00Z');
 const request = (patch: Partial<DurableAiUsageRequest> = {}): DurableAiUsageRequest => ({ rootRunId: 'synthetic-root',
@@ -14,6 +15,36 @@ const request = (patch: Partial<DurableAiUsageRequest> = {}): DurableAiUsageRequ
   model: 'synthetic-model', deadlineAtMs: now + 90000, userLimit: 20, globalLimit: 100, ...patch });
 const known: DurableAiUsageRecord = { outcome: 'succeeded', inputTokens: 12, outputTokens: 3, cachedTokens: 4, durationMs: 25 };
 const code = (value: string) => (error: unknown) => error instanceof DurableAiUsageError && error.code === value;
+
+test('activity counters describe original admissions; a review retry counts once as a model attempt', async () => {
+  const f = firestoreUsageFixture(now), day = '2026-10-09';
+  const first = request(), retry = request({ attemptKey: 'trusted-retry' });
+  await f.service.reserve(first, undefined, { activity: 'delegate', retry: false });
+  await f.service.reserve(retry, undefined, { activity: 'review', retry: true });
+  await f.service.reserve(retry, undefined, { activity: 'review', retry: true });
+  const report = await f.service.getGlobal(day);
+  assert.equal(report.attempts, 2);
+  assert.deepEqual(report.breakdown.activities, { delegate: 1, review: 1, retry: 1 });
+});
+
+test('a tool batch and its daily count commit together; lookup after midnight incurs no provider charge', async () => {
+  const f = firestoreUsageFixture(now);
+  const root = new FirestoreRootBudget({ ...f.options, namespace: 'synthetic_root_budget',
+    recordToolAdmission: (tx, _payer, at, units) => f.service.recordToolAdmission(tx, at, units) });
+  const context = { generation: 1, binding: { rootRunId: 'r', ownerId: 'parent', workspaceId: 'home', childId: 'child',
+    authorizationVersion: 'a1', storageEpoch: 'e1', trigger: { kind: 'message' as const, reference: 'm1' },
+    workflowVersion: 'v1', promptPackVersion: 'p1', settingsVersion: 's1', billingVersion: 'platform:v1',
+    limits: { modelCalls: 1, toolCalls: 4, queryEmbeddings: 1 }, deadlineAtMs: now + 86400000 } };
+  const attempt = { kind: 'tool_batch' as const, key: 'tools', units: 3, fingerprint: agentBudgetFingerprint('tools') };
+  await root.open(context);
+  f.loseReply();
+  await assert.rejects(root.reserve(context, attempt));
+  f.setNow(now + 13 * 3600000);
+  assert.equal((await root.reserve(context, attempt)).decision, 'lookup');
+  assert.deepEqual((await f.service.getGlobal('2026-10-09')).breakdown.activities, { tool: 3 });
+  assert.equal((await f.service.getGlobal('2026-10-09')).attempts, 0);
+  assert.equal((await f.service.getGlobal('2026-10-10')).breakdown.activities, undefined);
+});
 
 test('admin reconciles original UTC-day receipts once with scoped financial evidence and keeps missing values unknown', async () => {
   const start = Date.parse('2026-10-09T23:59:59Z'), f = firestoreUsageFixture(start), day = '2026-10-09';

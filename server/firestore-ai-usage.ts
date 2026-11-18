@@ -2,6 +2,8 @@
 import { createHash, randomBytes } from 'node:crypto';
 import type { DocumentSnapshot, Firestore, Transaction } from '@google-cloud/firestore';
 import { z } from 'zod';
+import { MODEL_USAGE_ACTIVITIES } from '../src/shared/admin.ts';
+import type { ModelAttemptActivity } from './durable-ai-usage.ts';
 import { dailyFinance, dayFinancialEvidenceSchema, type DayFinancialEvidence } from './ai-financial-evidence.ts';
 import type { StorageCipher } from './storage-crypto.ts';
 import type { ModelBillingSource } from '../src/shared/model-settings.ts';
@@ -31,6 +33,7 @@ const attemptSchema = z.object({ request: requestSchema, billingSource: sourceSc
 // Missing dimensions are historical coverage gaps. Only observed reservations or reports add to them.
 const counterSchema = z.object({ attempts: integer, inputTokens: integer, outputTokens: integer, cachedTokens: integer, known: integer }).strict();
 const detailSchema = z.object({ model: integer.optional(), queryEmbedding: integer.optional(), documentEmbedding: integer.optional(), otherEmbedding: integer.optional(),
+  activities: z.partialRecord(z.enum([...MODEL_USAGE_ACTIVITIES, 'retry', 'tool']), integer).optional(),
   embeddingCharacters: integer.optional(), embeddingCharacterReports: integer.optional() }).strict();
 export const firestoreUsageRecoverySchemas = { attempt: attemptSchema, counter: counterSchema, detail: detailSchema };
 type Counter = z.infer<typeof counterSchema>;
@@ -140,10 +143,18 @@ export class FirestoreAiUsage implements DurableAiUsage {
     for (const key of ['attempts', 'known', 'inputTokens', 'outputTokens', 'cachedTokens'] as const)
       if (user[key] > global[key]) reject('counter_inconsistent');
   }
-  async reserve(input: DurableAiUsageRequest, embeddingPurpose?: 'query_embedding' | 'corpus_maintenance'): Promise<DurableAiUsageAdmission> {
+  async recordToolAdmission(transaction: Transaction, admittedAt: number, units: number) {
+    const detail = await this.#detail(transaction, this.#counterId(this.#day(admittedAt), null));
+    const activities = detail.value.activities ??= {};
+    activities.tool = (activities.tool ?? 0) + integer.min(1).parse(units);
+    detail.save();
+  }
+  async reserve(input: DurableAiUsageRequest, embeddingPurpose?: 'query_embedding' | 'corpus_maintenance', activity?: ModelAttemptActivity): Promise<DurableAiUsageAdmission> {
     const request = parse(requestSchema, input, 'invalid_request'), attemptId = this.#attemptId(request), attemptRef = this.#ref(attemptId);
     if (embeddingPurpose !== undefined && (request.kind !== 'embedding'
       || !['query_embedding', 'corpus_maintenance'].includes(embeddingPurpose))) reject('invalid_request');
+    if (activity && (request.kind === 'embedding' || !MODEL_USAGE_ACTIVITIES.includes(activity.activity)
+      || typeof activity.retry !== 'boolean')) reject('invalid_request');
     const dimension = request.kind !== 'embedding' ? 'model' : embeddingPurpose === 'query_embedding' ? 'queryEmbedding'
       : embeddingPurpose === 'corpus_maintenance' ? 'documentEmbedding' : 'otherEmbedding';
     return this.#database.runTransaction(async transaction => {
@@ -162,6 +173,11 @@ export class FirestoreAiUsage implements DurableAiUsage {
       if (global.attempts >= request.globalLimit || user.attempts >= request.userLimit) return { decision: 'quota_exceeded' };
       const detail = await this.#detail(transaction, globalId);
       detail.value[dimension] = (detail.value[dimension] ?? 0) + 1;
+      if (activity) {
+        const counts = detail.value.activities ??= {};
+        counts[activity.activity] = (counts[activity.activity] ?? 0) + 1;
+        if (activity.retry) counts.retry = (counts.retry ?? 0) + 1;
+      }
       global.attempts++; user.attempts++;
       const preparationToken = (request.kind ?? 'model') === 'model' ? randomBytes(32).toString('hex') : undefined;
       const state: SavedAttempt = { request, billingSource: this.#source, day, reservedAtMs: now, record: null,
@@ -264,6 +280,7 @@ export class FirestoreAiUsage implements DurableAiUsage {
       return { day, attempts: state.attempts, inputTokens: state.inputTokens, outputTokens: state.outputTokens,
         cachedTokens: state.cachedTokens, unknownUsageAttempts: state.attempts - state.known, billingSource: this.#source,
         breakdown: { model, queryEmbedding, documentEmbedding, otherEmbedding, unclassified,
+          ...(detail.activities ? { activities: detail.activities } : {}),
           embeddingCharacters: detail.embeddingCharacters ?? null, embeddingCharacterReports: detail.embeddingCharacterReports ?? 0 },
         finance: dailyFinance(this.#source, state.attempts, evidence, records) };
     }, { readOnly: true });

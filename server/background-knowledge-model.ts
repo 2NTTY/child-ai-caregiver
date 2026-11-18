@@ -130,7 +130,7 @@ export async function prepareKnowledgeMaintenance(input: {
     // applies its actual model/runtime capacity and the shared work budget.
     if (system.length + user.length > 64000) reject("knowledge_maintenance_input_limit");
     const attemptKey = `knowledge-${stage}:${knowledgeReviewHash({ system, user })}`;
-    const raw = await input.completeText({ system, user, attemptKey });
+    const raw = await input.completeText({ system, user, attemptKey, ...(stage === "review" ? { purpose: "knowledge_review" as const } : {}) });
     checkSignal(signal);
     if (raw.length > 128000) reject("knowledge_maintenance_output_limit");
     // Accept a complete JSON code block, never extract a guessed object from

@@ -52,7 +52,7 @@ export type AgentRunLimits = Readonly<{
   softBudgetRatio?: number;
 }>;
 /** Trusted Server call roles; never inferred from a prompt, tool argument or attempt key. */
-export type AgentModelPurpose = "delivery_review" | "delivery_repair" | "compose_review";
+export type AgentModelPurpose = "delivery_review" | "delivery_repair" | "compose_review" | "compose" | "summary" | "compaction" | "knowledge_review";
 /** Server-owned live obligation; a run may acquire review work after an ordinary tool step. */
 export type AgentReviewReserve = boolean | (() => boolean);
 function hasReviewReserve(value?: AgentReviewReserve): boolean {

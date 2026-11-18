@@ -34,7 +34,13 @@ export function restoreFirestoreUsage(options: FirestoreDomainOptions, snapshots
       const value = usage.detail.parse(open(row, format, aad)), old = records.get(row.path);
       const previous = old ? usage.detail.parse(open(old, format, aad)) : {};
       for (const key of Object.keys(previous) as (keyof typeof previous)[]) {
-        value[key] = Math.max(value[key] ?? 0, previous[key]!);
+        if (key === 'activities') {
+          const counts = value.activities ??= {};
+          for (const [name, count] of Object.entries(previous.activities ?? {})) {
+            const activity = name as keyof typeof counts;
+            counts[activity] = Math.max(counts[activity] ?? 0, count);
+          }
+        } else value[key] = Math.max(value[key] ?? 0, previous[key]!);
       }
       records.set(row.path, seal(row.path, format, aad, value));
       continue;

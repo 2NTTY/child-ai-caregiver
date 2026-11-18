@@ -1,0 +1,21 @@
+{
+  "projectId": "ai-caregivers-for-children",
+  "databaseId": "yuban-firebase-20261011",
+  "fixture": "0baf8146-839f-4558-ba4d-6f5e1285d055",
+  "equalTimestamps": 32,
+  "pageSizes": [30, 2],
+  "unique": 32,
+  "missing": 0,
+  "scope": "isolated-subcollections",
+  "route": "growth-api",
+  "client": "createGrowthApi",
+  "cleaned": true,
+  "web": {
+    "environment": "Local Expo Web, Firebase Auth and Firestore emulators",
+    "browser": "Edge",
+    "route": "/growth",
+    "action": "載入較早建議",
+    "beforeRouteFix": { "firstHttp": 200, "continuationHttp": 400, "visible": 30 },
+    "afterRouteFix": { "firstHttp": 200, "continuationHttp": 200, "initial": 30, "visibleUnique": 32, "remainingButtons": 0 }
+  }
+}
