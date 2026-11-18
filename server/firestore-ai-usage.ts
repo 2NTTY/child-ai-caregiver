@@ -6,12 +6,13 @@ import { MODEL_USAGE_ACTIVITIES } from '../src/shared/admin.ts';
 import type { ModelAttemptActivity } from './durable-ai-usage.ts';
 import { dailyFinance, dayFinancialEvidenceSchema, type DayFinancialEvidence } from './ai-financial-evidence.ts';
 import type { StorageCipher } from './storage-crypto.ts';
-import type { ModelBillingSource } from '../src/shared/model-settings.ts';
+import type { ModelBillingSource, ModelSettingsUsage } from '../src/shared/model-settings.ts';
 import { canonical, isRecord } from './firestore-session-codec.ts';
 import { DurableAiUsageError, type DurableAiUsage, type DurableAiUsageAdmission, type DurableAiUsageReceipt,
   type DurableAiUsageRecord, type DurableAiUsageRequest } from './durable-ai-usage.ts';
 
 const FORMAT = 'yuban-ai-daily-usage', VERSION = 1, MAX_BYTES = 16 * 1024;
+export const KNOWLEDGE_MAINTENANCE_PAYER = 'system:knowledge-maintenance';
 const id = z.string().min(1).refine(value => value.isWellFormed() && Buffer.byteLength(value, 'utf8') <= 256);
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const fingerprint = z.string().regex(/^[a-f0-9]{64}$/u);
@@ -257,6 +258,18 @@ export class FirestoreAiUsage implements DurableAiUsage {
       return receipt(state);
     });
   }
+  async #resolveInvoiceLines(transaction: Transaction, day: string, lines: DayFinancialEvidence['attempts']) {
+    return Promise.all(lines.map(async line => {
+      const attemptId = this.#attemptId(line), snapshot = await transaction.get(this.#ref(attemptId));
+      if (!snapshot.exists) reject('financial_binding_conflict');
+      const saved = this.#open(attemptId, snapshot, attemptSchema);
+      if (saved.billingSource !== this.#source || saved.day !== day || this.#day(saved.reservedAtMs) !== day
+        || saved.request.model !== line.model || saved.request.rootRunId !== line.rootRunId || saved.request.attemptKey !== line.attemptKey
+        || (line.ownerUserId !== undefined && line.ownerUserId !== saved.request.userId)
+        || (line.rate && (line.rate.kind === 'model') !== ((saved.request.kind ?? 'model') === 'model'))) reject('financial_binding_conflict');
+      return { line, userId: saved.request.userId, record: saved.record };
+    }));
+  }
   async getGlobal(input: string, rawEvidence?: DayFinancialEvidence) {
     const day = parse(daySchema, input, 'invalid_day');
     const evidence = rawEvidence && parse(dayFinancialEvidenceSchema, rawEvidence, 'invalid_financial_evidence');
@@ -264,15 +277,21 @@ export class FirestoreAiUsage implements DurableAiUsage {
     return this.#database.runTransaction(async transaction => {
       const id = this.#counterId(day, null), state = this.#counter(id, await transaction.get(this.#ref(id)));
       if (evidence && evidence.attempts.length > state.attempts) reject('financial_binding_conflict');
-      const records = await Promise.all((evidence?.attempts ?? []).map(async line => {
-        const attemptId = this.#attemptId(line), snapshot = await transaction.get(this.#ref(attemptId));
-        if (!snapshot.exists) reject('financial_binding_conflict');
-        const saved = this.#open(attemptId, snapshot, attemptSchema);
-        if (saved.billingSource !== this.#source || saved.day !== day || this.#day(saved.reservedAtMs) !== day
-          || saved.request.model !== line.model || saved.request.rootRunId !== line.rootRunId || saved.request.attemptKey !== line.attemptKey
-          || (line.rate && (line.rate.kind === 'model') !== ((saved.request.kind ?? 'model') === 'model'))) reject('financial_binding_conflict');
-        return saved.record;
-      }));
+      const lines = await this.#resolveInvoiceLines(transaction, day, evidence?.attempts ?? []);
+      let maintenanceAttempts = 0;
+      if (this.#source === 'platform') {
+        const maintenanceId = this.#counterId(day, KNOWLEDGE_MAINTENANCE_PAYER);
+        const maintenance = this.#counter(maintenanceId, await transaction.get(this.#ref(maintenanceId)));
+        this.#consistent(state, maintenance);
+        maintenanceAttempts = maintenance.attempts;
+      }
+      const projectFinance = (maintenance: boolean, attempts: number) => {
+        const selected = lines.filter(item => maintenance === (this.#source === 'platform' && item.userId === KNOWLEDGE_MAINTENANCE_PAYER));
+        if (selected.length > attempts) reject('financial_binding_conflict');
+        return dailyFinance(this.#source, attempts, evidence && { ...evidence, attempts: selected.map(item => item.line),
+          approvedDailyBudget: maintenance ? evidence.approvedMaintenanceBudget : evidence.approvedDailyBudget,
+          providerQuota: maintenance ? undefined : evidence.providerQuota }, selected.map(item => item.record));
+      };
       const { value: detail } = await this.#detail(transaction, id);
       const model = detail.model ?? 0, queryEmbedding = detail.queryEmbedding ?? 0, documentEmbedding = detail.documentEmbedding ?? 0,
         otherEmbedding = detail.otherEmbedding ?? 0, unclassified = state.attempts - model - queryEmbedding - documentEmbedding - otherEmbedding;
@@ -282,15 +301,24 @@ export class FirestoreAiUsage implements DurableAiUsage {
         breakdown: { model, queryEmbedding, documentEmbedding, otherEmbedding, unclassified,
           ...(detail.activities ? { activities: detail.activities } : {}),
           embeddingCharacters: detail.embeddingCharacters ?? null, embeddingCharacterReports: detail.embeddingCharacterReports ?? 0 },
-        finance: dailyFinance(this.#source, state.attempts, evidence, records) };
+        finance: projectFinance(false, state.attempts - maintenanceAttempts),
+        ...(this.#source === 'platform' ? { maintenanceFinance: projectFinance(true, maintenanceAttempts) } : {}) };
     }, { readOnly: true });
   }
-  async getForUser(input: string) {
+  async getForUser(input: string, financialEvidence?: readonly DayFinancialEvidence[]): Promise<ModelSettingsUsage & { billingSource: ModelBillingSource }> {
     const userId = parse(id, input, 'invalid_user');
     return this.#database.runTransaction(async transaction => {
       const day = this.#day(this.#now()), id = this.#counterId(day, userId), state = this.#counter(id, await transaction.get(this.#ref(id)));
-      return { day, attempts: state.attempts, inputTokens: state.inputTokens, outputTokens: state.outputTokens,
+      const usage = { day, attempts: state.attempts, inputTokens: state.inputTokens, outputTokens: state.outputTokens,
         cachedTokens: state.cachedTokens, unknownUsageAttempts: state.attempts - state.known, billingSource: this.#source };
+      if (financialEvidence === undefined || this.#source !== 'personal') return usage;
+      const evidence = financialEvidence.find(row => row.day === day && row.payer === 'personal');
+      const candidates = state.attempts === 0 ? [] : evidence?.attempts.filter(line => !line.ownerUserId || line.ownerUserId === userId) ?? [];
+      const lines = (await this.#resolveInvoiceLines(transaction, day, candidates)).filter(item => item.userId === userId);
+      if (lines.length > state.attempts) reject('financial_binding_conflict');
+      const { settlement, estimates, unestimatedAttempts, unsettledAttempts } = dailyFinance(this.#source, state.attempts,
+        evidence && { ...evidence, attempts: lines.map(item => item.line) }, lines.map(item => item.record));
+      return { ...usage, finance: { settlement, estimates, unestimatedAttempts, unsettledAttempts } };
     }, { readOnly: true });
   }
 }

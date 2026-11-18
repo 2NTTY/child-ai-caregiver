@@ -134,6 +134,47 @@ test('confirmed embedding pricing uses one stated unit and retains sub-micro amo
 });
 
 
+test('personal spending uses only receipts belonging to the signed-in payer and the original UTC day', async () => {
+  const f = firestoreUsageFixture(now);
+  const ledger = new FirestoreAiUsage({ ...f.options, billingSource: 'personal' });
+  const own = request(), other = request({ userId: 'other-owner', rootRunId: 'other-root' });
+  await ledger.reserve(own); await ledger.reserve(other);
+  const line = (attempt: typeof own, micros: number) => ({
+    ownerUserId: attempt.userId, rootRunId: attempt.rootRunId, attemptKey: attempt.attemptKey, model: attempt.model,
+    settlement: { reference: 'invoice/' + attempt.rootRunId, micros },
+  });
+  const evidence = { day: '2026-10-09', payer: 'personal' as const, currency: 'HKD', attempts: [line(own, 23), line(other, 98)] };
+  const finance = (await ledger.getForUser(own.userId, [evidence])).finance;
+  assert.deepEqual(finance?.settlement, { status: 'settled', currency: 'HKD', micros: '23', attempts: 1 });
+  assert.equal(finance?.unsettledAttempts, 0);
+  assert.doesNotMatch(JSON.stringify(finance), /other-owner|other-root|invoice/);
+  const legacy = evidence.attempts.map(({ ownerUserId, ...line }) => line);
+  assert.deepEqual((await ledger.getForUser(own.userId, [{ ...evidence, attempts: legacy }])).finance, finance);
+  await assert.rejects(ledger.getForUser(own.userId, [{ ...evidence, attempts: [{ ...line(other, 98), ownerUserId: own.userId }] }]));
+  f.setNow(now + 86400000);
+  assert.equal((await ledger.getForUser(own.userId, [evidence])).finance?.settlement.status, 'unknown');
+});
+
+test('public maintenance generation and embedding settle against an independent budget', async () => {
+  const f = firestoreUsageFixture(now), day = '2026-10-09';
+  const maintenance = request({ rootRunId: 'maintenance', userId: 'system:knowledge-maintenance' });
+  const embedding = { ...maintenance, kind: 'embedding' as const, attemptKey: 'embedding:1' };
+  const chat = request();
+  for (const item of [chat, maintenance, embedding]) await f.service.reserve(item);
+  const approval = { currency: 'HKD', micros: 100, approvedAt: day + 'T00:00:00Z', approvalReference: 'chat-cap' };
+  const evidence = { day, currency: 'HKD', payer: 'platform' as const, approvedDailyBudget: approval,
+    approvedMaintenanceBudget: { ...approval, micros: 30, approvalReference: 'maintenance-cap' },
+    attempts: [chat, maintenance, embedding].map((item, i) => ({ rootRunId: item.rootRunId, model: item.model, attemptKey: item.attemptKey,
+      settlement: { reference: 'line-' + i, micros: [5, 12, 7][i]! } })) };
+  const report = await f.service.getGlobal(day, evidence);
+  assert.equal(report.attempts, 3);
+  assert.deepEqual(report.finance.settlement, { status: 'settled', currency: 'HKD', micros: '5', attempts: 1 });
+  assert.deepEqual(report.maintenanceFinance?.settlement, { status: 'settled', currency: 'HKD', micros: '19', attempts: 2 });
+  assert.equal(report.maintenanceFinance?.approvedDailyBudget?.micros, 30);
+  assert.equal(report.finance.approvedDailyBudget?.micros, 100);
+  assert.equal(report.maintenanceFinance?.unsettledAttempts, 0);
+});
+
 test('one invoice line can settle only one original attempt across UTC days and payers', () => {
   function row(day: string, payer: 'platform' | 'personal', reference: string) {
     return { day, payer, currency: 'HKD', attempts: [{ rootRunId: day, attemptKey: payer,

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { AdminUsageFinance } from '../src/shared/admin.ts';
+import { approvedMoneyBudgetSchema, type AdminUsageFinance } from '../src/shared/admin.ts';
 import type { ModelBillingSource } from '../src/shared/model-settings.ts';
 import type { DurableAiUsageRecord } from './durable-ai-usage.ts';
 
@@ -19,7 +19,7 @@ const rate = z.discriminatedUnion('kind', [
     cachedInputMicrosPerMillion: count, outputMicrosPerMillion: count }).strict(),
   z.object({ kind: z.enum(['embedding_input_tokens', 'embedding_characters']), priceVersion: label, microsPerMillion: count }).strict(),
 ]);
-const lineSchema = z.object({ rootRunId: identifier, attemptKey: identifier, model: identifier, rate: rate.optional(),
+const lineSchema = z.object({ rootRunId: identifier, attemptKey: identifier, ownerUserId: identifier.optional(), model: identifier, rate: rate.optional(),
   settlement: z.object({ reference: label, micros: count }).strict().optional() }).strict().refine(row => row.rate || row.settlement);
 
 function invoiceReferences(attempts: readonly z.infer<typeof lineSchema>[]): string[] {
@@ -28,15 +28,14 @@ function invoiceReferences(attempts: readonly z.infer<typeof lineSchema>[]): str
 
 export const dayFinancialEvidenceSchema = z.object({ day: z.iso.date(), payer: z.enum(['platform', 'personal']),
   currency: currencyCode.optional(), attempts: z.array(lineSchema).max(100),
-  approvedDailyBudget: z.object({ currency: currencyCode, micros: count, approvalReference: label,
-    approvedAt: z.iso.datetime({ offset: true }) }).strict().optional(),
+  approvedDailyBudget: approvedMoneyBudgetSchema.optional(), approvedMaintenanceBudget: approvedMoneyBudgetSchema.optional(),
   providerQuota: z.array(quota).min(1).max(24).optional(),
 }).strict().refine(row => {
   const ids = row.attempts.map(line => JSON.stringify([line.rootRunId, line.attemptKey]));
   const invoiceLines = invoiceReferences(row.attempts);
   return (row.attempts.length === 0 || row.currency !== undefined)
-    && (!row.approvedDailyBudget || (row.payer === 'platform'
-      && new Date(row.approvedDailyBudget.approvedAt).toISOString().slice(0, 10) <= row.day))
+    && [row.approvedDailyBudget, row.approvedMaintenanceBudget].every(budget => !budget || (row.payer === 'platform'
+      && new Date(budget.approvedAt).toISOString().slice(0, 10) <= row.day))
     && new Set(ids).size === ids.length && new Set(invoiceLines).size === invoiceLines.length
     && (row.providerQuota ?? []).every(quota => new Date(quota.observedAt).toISOString().slice(0, 10) === row.day);
 });

@@ -2,9 +2,10 @@ import { apiError, jsonResponse } from "./workspace-api.ts";
 import { ModelSettingsError } from "./model-settings-contract.ts";
 import { parseModelSettingsCommand } from "./model-settings.ts";
 import type { ModelRouting } from "./model-routing.ts";
-import { MODEL_SETTINGS_MEDIA_TYPE, MODEL_SETTINGS_V3_MEDIA_TYPE, MODEL_SETTINGS_V4_MEDIA_TYPE, PERSONAL_MODEL, type ModelSettings, type PersonalModelCatalog, type PersonalModelProvider } from '../src/shared/model-settings.ts';
+import { MODEL_SETTINGS_MEDIA_TYPE, MODEL_SETTINGS_V3_MEDIA_TYPE, MODEL_SETTINGS_V4_MEDIA_TYPE, MODEL_SETTINGS_FINANCE_PREFERENCE, PERSONAL_MODEL, type ModelSettings, type ModelSettingsView, type PersonalModelCatalog, type PersonalModelProvider } from '../src/shared/model-settings.ts';
 
-type SettingsRouting = Pick<ModelRouting, 'view' | 'settings' | 'check'> & {
+type SettingsRouting = Pick<ModelRouting, 'settings' | 'check'> & {
+  view(userId: string, includePersonalFinance?: boolean): Promise<ModelSettingsView>;
   catalog?(userId: string, version: number, refresh: boolean, signal: AbortSignal, provider?: PersonalModelProvider): Promise<PersonalModelCatalog>;
 };
 const v3Fields = ['baseUrl', 'embeddingApiKey', 'removeEmbeddingKey'];
@@ -49,18 +50,23 @@ export async function handleModelSettingsRequest(request: Request, userId: strin
   if (request.headers.get("x-expected-user-id") !== userId) return apiError("session_changed", "登入身份已改變，請重新讀取。", 403);
   const url = new URL(request.url), path = url.pathname, accept = request.headers.get('accept');
   const v4 = accept === MODEL_SETTINGS_V4_MEDIA_TYPE;
+  const includeFinance = v4 && request.headers.get('prefer')?.split(',').some(value => value.trim() === MODEL_SETTINGS_FINANCE_PREFERENCE) === true;
   const v3 = v4 || accept === MODEL_SETTINGS_V3_MEDIA_TYPE, v2 = accept === MODEL_SETTINGS_MEDIA_TYPE, versioned = v2 || v3;
-  const publicSettings = (value: ModelSettings) => v4 ? value : v3 ? v3Settings(value) : v2 ? v2Settings(value) : legacySettings(value);
+  const publicSettings = (value: ModelSettings) => {
+    if (includeFinance) return value;
+    const { dailyMoneyBudget, ...compatible } = value;
+    return v4 ? compatible : v3 ? v3Settings(compatible) : v2 ? v2Settings(compatible) : legacySettings(compatible);
+  };
   try {
     const catalogProvider = url.searchParams.get('provider');
     if (url.search && !(versioned && request.method === 'GET' && path === '/api/ai/settings/models'
       && [...url.searchParams].length === 1 && (catalogProvider === 'gemini' || catalogProvider === 'vertex' || v3 && catalogProvider === 'openai-compatible')))
       throw new ModelSettingsError('invalid_input');
     if (request.method === "GET" && path === "/api/ai/settings") {
-      const view = await routing.view(userId);
+      const view = await routing.view(userId, includeFinance);
       if (versioned) return jsonResponse({ ...view, settings: publicSettings(view.settings) });
       const { effective, ...legacy } = view;
-      return jsonResponse({ ...legacy, settings: legacySettings(view.settings) });
+      return jsonResponse({ ...legacy, settings: publicSettings(view.settings) });
     }
     const operation = /^\/api\/ai\/settings\/operations\/([a-f0-9-]{36})$/i.exec(path);
     if (versioned && request.method === 'GET' && operation && routing.settings.getOperation) {
@@ -80,6 +86,7 @@ export async function handleModelSettingsRequest(request: Request, userId: strin
     try { input = await request.json(); } catch { throw new ModelSettingsError("invalid_input"); }
     if (path === "/api/ai/settings") {
       const command = parseModelSettingsCommand(input);
+      if (!includeFinance && Object.hasOwn(command, 'dailyMoneyBudget')) throw new ModelSettingsError('client_update_required', 409);
       if (!v4 && v4Fields.some(key => Object.hasOwn(command, key))) throw new ModelSettingsError('client_update_required', 409);
       if (!v3) {
         if (v3Fields.some(key => Object.hasOwn(command, key)) || command.provider === 'openai-compatible')

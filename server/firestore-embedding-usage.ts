@@ -1,4 +1,4 @@
-import { FirestoreAiUsage } from "./firestore-ai-usage.ts";
+import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER } from "./firestore-ai-usage.ts";
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { DurableAiUsageRequest } from "./durable-ai-usage.ts";
 import type { EmbeddingUsage } from "./embedding-gateway.ts";
@@ -14,7 +14,7 @@ export function createFirestoreOperatorEmbeddingUsage(options: FirestoreDomainOp
       if (current || ++sequence > 16 || !actor.actorId.startsWith("operator:") || Date.now() >= deadlineAtMs) throw new Error("knowledge_maintenance_scope_invalid");
       const key = knowledgeHash(actor), request: DurableAiUsageRequest = { kind: "embedding", rootRunId: actor.operationId,
         attemptKey: "operator-embedding:" + sequence, bindingFingerprint: key, requestFingerprint: knowledgeHash([actor, sequence]),
-        userId: actor.kind === "corpus_maintenance" ? "system:knowledge-maintenance" : actor.actorId,
+        userId: actor.kind === "corpus_maintenance" ? KNOWLEDGE_MAINTENANCE_PAYER : actor.actorId,
         childId: "00000000-0000-0000-0000-000000000000", model: KNOWLEDGE_EMBEDDING.model, deadlineAtMs, userLimit, globalLimit };
       const admitted = await usage.reserve(request, actor.kind);
       if (admitted.decision === "quota_exceeded") return false;

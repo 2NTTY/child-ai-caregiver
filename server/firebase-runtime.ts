@@ -210,7 +210,8 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     mutations.push(contact.mutation);
     const library = knowledge ? createFirestorePersonalLibrary({ authority, knowledge, cipher, projectId: config.projectId, namespace: config.namespace }) : undefined;
     const aiConfig = composition.local?.modelConfig ?? readAiConfig(env);
-    product = await createFirestoreProductAgent({ ...domain, config: aiConfig, platformProviders: composition.local?.providers, diagnostics: composition.local?.diagnostics, voices, files, photos, chat, care, summary, memory, online, documents, knowledge, sources, concerns, growth, contact,
+    const usageFinancialEvidence = () => readFinancialEvidence(env.AI_USAGE_RECONCILIATION_JSON);
+    product = await createFirestoreProductAgent({ ...domain, config: aiConfig, usageFinancialEvidence, platformProviders: composition.local?.providers, diagnostics: composition.local?.diagnostics, voices, files, photos, chat, care, summary, memory, online, documents, knowledge, sources, concerns, growth, contact,
       summarySponsor: parseSummarySponsor(env.PRIVATE_SUMMARY_SPONSOR_JSON),
       authorizeWorker: composition.worker ? async (b, reference, recipeId) => {
         if (!config.taskWorkerEnabled || !(await authority.readControl(b.transaction)).enabled) return false;
@@ -259,7 +260,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const configuredAdminUid = localAdminUid ?? readAdminUid(env);
     const knowledgeIndexes = knowledge ? createKnowledgeIndexBatches(domain, knowledge, tx => authority.readControl(tx), configuredAdminUid) : undefined;
     const knowledgeTransfers = knowledge ? createKnowledgeTransfers(domain, tx => authority.readControl(tx)) : undefined;
-    const admin = createFirestoreAdmin({ ...domain, usageFinancialEvidence: () => readFinancialEvidence(env.AI_USAGE_RECONCILIATION_JSON) },
+    const admin = createFirestoreAdmin({ ...domain, usageFinancialEvidence },
       aiConfig, knowledgeRefresh, knowledgeIndexes, knowledgeTransfers,
       knowledge && knowledgeTransfers ? createKnowledgeArchiveReceiver(knowledgeTransfers,knowledge) : undefined);
     const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: composition.worker && !composition.local ? null : configuredAdminUid, authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },

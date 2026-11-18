@@ -1,4 +1,5 @@
 import { createFirestoreAdmin } from './firestore-admin.ts';
+import type { DayFinancialEvidence } from './ai-financial-evidence.ts';
 import { AGENT_HIGH_WATERMARK_DEFAULTS } from '../src/shared/agent-run-limits.ts';
 import { z } from 'zod';
 import type { AiConfig } from './ai-config.ts';
@@ -30,7 +31,9 @@ export const requireDurableUsage = Object.freeze({ async reserve(): Promise<neve
 
 export type PlatformProviderFactory = (config: AiConfig) => Pick<ReturnType<typeof createPersonalModelProviders>, 'agent' | 'model' | 'embedding'>;
 
-export function createFirestoreModelRouting(options: FirestoreDomainOptions, config: AiConfig, platformProviders?: PlatformProviderFactory) {
+export function createFirestoreModelRouting(options: FirestoreDomainOptions & {
+  usageFinancialEvidence?: () => DayFinancialEvidence[] | undefined;
+}, config: AiConfig, platformProviders?: PlatformProviderFactory) {
   const settings = createFirestoreModelSettings(options), authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
   const usage = { platform: new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: 'platform' }),
     personal: new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: 'personal' }) };
@@ -70,12 +73,13 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       const state = await settings.readIn({ transaction: tx, scope: { ...scope, childId: '00000000-0000-0000-0000-000000000000' } });
       return resolvePersonalModelLimits(state, current).maxRunSeconds;
     },
-    async view(userId: string): Promise<ModelSettingsView> {
+    async view(userId: string, includePersonalFinance = false): Promise<ModelSettingsView> {
       const state = await settings.get(userId), current = await policy.readPolicy();
       return { settings: state, enabled: config.enabled, platformAvailable: config.enabled && current.enabled && Boolean(config.project),
         personalAvailable: config.enabled, personalGlobalLimit: current.personalDailyGlobalAttempts, agentInputCharacters: config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default,
         effective: resolvePersonalModelLimits(state, current, { role: 'interactive', applyAdminRoleOverride: true }),
-        usage: { platform: await usage.platform.getForUser(userId), personal: await usage.personal.getForUser(userId) } };
+        usage: { platform: await usage.platform.getForUser(userId),
+          personal: await usage.personal.getForUser(userId, includePersonalFinance ? options.usageFinancialEvidence?.() ?? [] : undefined) } };
     },
     async currentUsage(userId: string) {
       const state = await settings.get(userId); return usage[state.mode === 'personal' ? 'personal' : 'platform'].getForUser(userId);

@@ -7,7 +7,7 @@ import { createVertexEmbeddingProvider } from "./vertex-embedding.ts";
 import { createEmbeddingGateway } from "./embedding-gateway.ts";
 import { createFirestoreOperatorEmbeddingUsage } from "./firestore-embedding-usage.ts";
 import { createFirestoreAdmin } from "./firestore-admin.ts";
-import { FirestoreAiUsage } from "./firestore-ai-usage.ts";
+import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER as OPERATOR } from "./firestore-ai-usage.ts";
 import { FirestoreRootBudget } from "./firestore-root-budget.ts";
 import { requireDurableUsage, type PlatformProviderFactory } from "./firestore-model-routing.ts";
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
@@ -24,7 +24,6 @@ import type { SourceFetcher } from "./knowledge-refresh-types.ts";
 import type { RootBudgetContext } from "./durable-root-budget.ts";
 
 const NIL = "00000000-0000-0000-0000-000000000000";
-const OPERATOR = "system:knowledge-maintenance";
 function reject(code: string): never { throw new FirestoreKnowledgeWorkError(code); }
 function operationId(scope: string, fingerprint: string) {
   const id = knowledgeReviewHash([scope, fingerprint]);
