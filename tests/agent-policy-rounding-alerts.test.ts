@@ -521,6 +521,40 @@ test("createAgentRuntime enforces live policy tighten/revoke, reviewer role rati
   assert.equal(loopAlerts.length, 1);
   assert.equal(loopAlerts[0]?.loopDetected, true);
   assert.equal(loopAlerts[0]?.recommendedAction, "stop_loop_early");
+
+  // Unmonitored base runtime callers remain free to run >=3 identical tool steps within hard toolCalls/modelCalls limits.
+  let unmonitoredStep = 0;
+  let unmonitoredExecs = 0;
+  const unmonitoredRuntime = createAgentRuntime({
+    config,
+    usage: noopUsage,
+    provider: {
+      generate: async () => {
+        unmonitoredStep += 1;
+        if (unmonitoredStep <= 3) {
+          return {
+            content: { role: "model", parts: [{ functionCall: { id: randomUUID(), name: "read_step", args: { step: "same" } } }] },
+            finishReason: FinishReason.STOP,
+          };
+        }
+        return {
+          content: { role: "model", parts: [{ text: "Completed without monitor" }] },
+          finishReason: FinishReason.STOP,
+        };
+      },
+    },
+  });
+  const unmonitoredResult = await unmonitoredRuntime.run({
+    scope,
+    recipeId: "p1-chat",
+    trigger: { kind: "interactive", reference: "m4-unmonitored" },
+    messages: [{ role: "user", text: "Repeat within budget" }],
+    tools: [stepTool(() => { unmonitoredExecs += 1; })],
+    authorize: async () => true,
+  });
+  assert.equal(unmonitoredResult.status, "completed");
+  assert.equal(unmonitoredResult.text, "Completed without monitor");
+  assert.equal(unmonitoredExecs, 3);
 });
 
 test("createFirestoreProductAgent persists HighWatermarkMonitor samples across runs and fires alert", async () => {

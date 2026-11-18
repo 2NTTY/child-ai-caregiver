@@ -1,3 +1,4 @@
+import type { DocumentExportView } from "../../../../src/shared/document-export-view";
 import type { GrowthArchiveEntry, GrowthArchivePeriod, GrowthArchiveProjection, GrowthArchiveSnapshot, GrowthReportDomain, GrowthViewModel } from "../../growth-view-model";
 
 // Reading-only references into the authorized projection, never a second archive store.
@@ -80,7 +81,7 @@ export type GrowthReportExportRequest = {
   snapshotId: string; snapshotVersion: number; periodId: string | null;
   purpose: GrowthReportPurpose; includeSources: boolean; includeRevision: boolean;
 };
-export type GrowthReportExportResult = { state: "ready" | "error"; message: string };
+export type GrowthReportExportResult = { state: "ready" | "error"; message: string; preview?: DocumentExportView };
 // The reader owns this intent's lifetime; the adapter checks it before delivery.
 export type GrowthReportExportHandler = (request: GrowthReportExportRequest, isCurrent: () => boolean) => Promise<GrowthReportExportResult | undefined> | void;
 export function growthReportExportRequest(model: GrowthViewModel, item: ArchiveReadingItem, purpose: GrowthReportPurpose,

@@ -191,6 +191,8 @@ export interface AgentRunInput {
   scope: AgentScope;
   trigger: { kind: "interactive" | "worker"; reference: string };
   recipeId: string;
+  /** The mixed-chat route uses its own tool instructions under the existing durable chat claim. */
+  promptRecipeId?: "product-selected-children";
   messages: { role: "user" | "model"; text: string }[];
   /** One server-authorized original; no client URLs or arbitrary content parts. */
   image?: { mimeType: "image/jpeg" | "image/png"; data: string };
@@ -313,6 +315,8 @@ export function createAgentRuntime(options: {
       let committedSummaryEffect = false;
       let frozenSummaryCounts: RootBudgetLimits | undefined;
       let authorize = input.authorize;
+      const monitor = input.highWatermarkMonitor ?? fixedOptions.highWatermarkMonitor;
+      const alertHandler = input.onHighWatermarkAlert ?? fixedOptions.onHighWatermarkAlert;
       let repeatedLoopSignature: string | undefined;
       let loopStopped = false;
       try {
@@ -419,7 +423,7 @@ export function createAgentRuntime(options: {
             const key = JSON.stringify(ids);
             let pending = promptCache.get(key);
             if (!pending) {
-              pending = loadAgentPrompt(input.recipeId, "tool_cycle",
+              pending = loadAgentPrompt(input.promptRecipeId ?? input.recipeId, "tool_cycle",
                 input.availableInputs ?? ["run", "scope", "conversation", "capabilities"], capabilitySelection?.moduleIds(ids));
               promptCache.set(key, pending);
             }
@@ -458,20 +462,24 @@ export function createAgentRuntime(options: {
             parameters: tool.parameters.strict(), execute: async (args, context) => {
               budget.check();
               if (syncPolicy) await budget.wait(syncPolicy);
-              const callSignature = `${tool.name}:${agentBudgetFingerprint(args ?? {})}`;
-              if (callSignature === lastToolSignature) {
-                consecutiveToolRepeats += 1;
-              } else {
-                lastToolSignature = callSignature;
-                consecutiveToolRepeats = 1;
-              }
-              if (consecutiveToolRepeats >= AGENT_HIGH_WATERMARK_DEFAULTS.repeatedSignatureStreak) {
-                repeatedLoopSignature = callSignature;
-                loopStopped = true;
-                observer.recordToolRejection(tool.name, "execution", { status: "rejected", data: { code: "unknown" } });
-                const loopError = new AgentStopped("tool_limit");
-                toolFailure = loopError;
-                throw loopError;
+              // Enforce high-watermark repeated-signature early stop only when a highWatermarkMonitor is active
+              // so unmonitored base runtime runs still exercise full modelCalls/toolCalls hard bounds.
+              if (monitor) {
+                const callSignature = `${tool.name}:${agentBudgetFingerprint(args ?? {})}`;
+                if (callSignature === lastToolSignature) {
+                  consecutiveToolRepeats += 1;
+                } else {
+                  lastToolSignature = callSignature;
+                  consecutiveToolRepeats = 1;
+                }
+                if (consecutiveToolRepeats >= AGENT_HIGH_WATERMARK_DEFAULTS.repeatedSignatureStreak) {
+                  repeatedLoopSignature = callSignature;
+                  loopStopped = true;
+                  observer.recordToolRejection(tool.name, "execution", { status: "rejected", data: { code: "unknown" } });
+                  const loopError = new AgentStopped("tool_limit");
+                  toolFailure = loopError;
+                  throw loopError;
+                }
               }
               const embeddingKey = budget.durable && tool.name === "search_knowledge"
                 ? queryEmbeddingAttemptKey(context, scope, runId, tool.name, args) : undefined;
@@ -980,8 +988,6 @@ export function createAgentRuntime(options: {
         if (acquired) activeUsers.delete(scope.userId);
         if (lease.current) { try { await lease.current.release(); } catch { /* The fixed expiry still bounds capacity after unknown cleanup. */ } }
         result.counts = frozenSummaryCounts ?? budget.counts;
-        const monitor = input.highWatermarkMonitor ?? fixedOptions.highWatermarkMonitor;
-        const alertHandler = input.onHighWatermarkAlert ?? fixedOptions.onHighWatermarkAlert;
         if (monitor) {
           const runCategory = input.trigger.kind === "worker" ? "background" : "interactive";
           try {

@@ -39,9 +39,10 @@ function SourceDisclosure({sources, onRecord}: {sources: GrowthArchiveSource[]; 
   </View>)}</View>;
 }
 
-export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport, exportBusy, active = true, footerActions, footerDetails}: {
+export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport, onPreviewReport, exportBusy, active = true, footerActions, footerDetails}: {
   model: GrowthViewModel; wide: boolean; scrollRef: RefObject<ScrollView | null>; onRecord?: (id?: string) => void;
   onExportReport?: GrowthReportExportHandler;
+  onPreviewReport?: GrowthReportExportHandler;
   exportBusy?: boolean;
   active?: boolean;
   footerActions?: ReactNode; footerDetails?: ReactNode;
@@ -60,7 +61,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
   const [purpose, setPurpose] = useState<GrowthReportPurpose>("family");
   const [includeSources, setIncludeSources] = useState(true);
   const [includeRevision, setIncludeRevision] = useState(false);
-  const [exportFeedback, setExportFeedback] = useState<{ key: string; state: "pending" | GrowthReportExportResult["state"]; message: string } | null>(null);
+  const [exportFeedback, setExportFeedback] = useState<{ key: string; state: "pending" | GrowthReportExportResult["state"]; message: string; mode?: "file" | "preview"; preview?: GrowthReportExportResult["preview"] } | null>(null);
   const exportAttempt = useRef({ generation: 0, pending: false });
   const exportButton = useRef<View>(null), exportFeedbackRef = useRef<View>(null);
   const purposeControls = useRef(new Map<GrowthReportPurpose, View>());
@@ -136,8 +137,9 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
     if (!authorized || !sections.some(section => section.id === id)) return;
     setChapter(id); scrollTarget(sectionRefs.current.get(id));
   }
-  async function requestExport() {
-    if (exportBusy || exportAttempt.current.pending || !active || !onExportReport || !exportItem || !latest.current.exportOpen || latest.current.exportKey !== exportKey
+  async function requestExport(mode: "file" | "preview") {
+    const handler = mode === "preview" ? onPreviewReport : onExportReport;
+    if (exportBusy || exportAttempt.current.pending || !active || !handler || !exportItem || !latest.current.exportOpen || latest.current.exportKey !== exportKey
       || latest.current.contextKey !== contextKey || latest.current.model.page?.authorityVersion !== model.page?.authorityVersion) return;
     const request = growthReportExportRequest(latest.current.model, exportItem, purpose, includeSources, includeRevision);
     if (!request || !latest.current.model.online) return;
@@ -146,17 +148,17 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
     const isCurrent = () => generation === exportAttempt.current.generation && latest.current.active && latest.current.exportOpen
       && latest.current.exportIntentKey === exportIntentKey
       && !!growthReportExportRequest(latest.current.model, exportItem, purpose, includeSources, includeRevision);
-    setExportFeedback({ key: exportIntentKey, state: "pending", message: "正在核對這個版本並準備 PDF。" });
+    setExportFeedback({ key: exportIntentKey, state: "pending", mode, message: mode === "preview" ? "正在讀取所選版本的預覽。" : "正在核對這個版本並準備 PDF。" });
     // Move only the submitting control's focus before Paper disables it; never reclaim focus on settlement.
     if (Platform.OS === "web" && typeof document !== "undefined") {
       const button = exportButton.current as unknown as HTMLElement | null;
       if (button?.contains(document.activeElement)) (exportFeedbackRef.current as unknown as HTMLElement | null)?.focus({ preventScroll: true });
     }
     try {
-      const result = await onExportReport(request, isCurrent);
+      const result = await handler(request, isCurrent);
       if (isCurrent()) setExportFeedback(result ? { key: exportIntentKey, ...result } : null);
     } catch {
-      if (isCurrent()) setExportFeedback({ key: exportIntentKey, state: "error", message: "PDF 未能取得，沒有改用其他版本。請重新讀取並核對來源後再試。" });
+      if (isCurrent()) setExportFeedback({ key: exportIntentKey, state: "error", message: mode === "preview" ? "未能讀取所選版本的預覽。" : "PDF 未能取得，沒有改用其他版本。請重新讀取並核對來源後再試。" });
     } finally { if (isCurrent()) exportAttempt.current.pending = false; }
   }
   const visibleItems = filterArchiveItems(items, filter);
@@ -322,6 +324,21 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
           <AppCheckbox label="原始記錄與依據" checked={includeSources} onChange={value => {clearExportFeedback(); setIncludeSources(value);}} />
           <AppCheckbox label="本版更新說明" checked={includeRevision} onChange={value => {clearExportFeedback(); setIncludeRevision(value);}} />
         </View>
+        {onPreviewReport ? <AppButton label="預覽匯出內容" variant="secondary" disabled={preparingExport || !model.online || !exportItem}
+          onPress={() => requestExport("preview")} /> : null}
+        {feedback?.preview ? <View testID="growth-export-content-preview" style={s.stack}>
+          <Text accessibilityRole="header" style={s.title}>{feedback.preview.title}</Text>
+          <Text style={s.meta}>{feedback.preview.subtitle}</Text><Text style={s.meta}>{feedback.preview.metadata}</Text>
+          <Text style={s.meta}>{feedback.preview.coverageNote}</Text><Text selectable>{feedback.preview.summary}</Text>
+          {feedback.preview.sections.map((section, i) => <View key={i} style={s.smallStack}>
+            <Text accessibilityRole="header" style={s.title}>{section.title}</Text>
+            {section.items.map((line, j) => <Text key={j} selectable>{line}</Text>)}
+          </View>)}
+          {feedback.preview.changes ? <View style={s.smallStack}><Text style={s.title}>本版更新</Text>
+            {feedback.preview.changes.map((change, i) => <Text key={i} selectable>{change}</Text>)}</View> : null}
+          {feedback.preview.sources ? <View style={s.smallStack}><Text style={s.title}>原始資料及依據</Text>
+            {feedback.preview.sources.map((source, i) => <View key={i}><Text style={s.meta}>{source.label}</Text><Text selectable>{source.text}</Text></View>)}</View> : null}
+        </View> : null}
         {!onExportReport ? <View testID="growth-export-unavailable" style={a.exportNotice}>
           <Text style={s.body}>這台裝置目前無法匯出 PDF。</Text>
         </View> : null}
@@ -331,7 +348,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
         <Text style={feedback?.state === "error" ? s.warning : s.body}>{feedback?.message ?? ""}</Text>
       </View>
       <AppDialog.Actions><AppButton label="關閉" variant="secondary" onPress={closeExport} />
-        <AppButton ref={exportButton} label={preparingExport ? "正在準備 PDF…" : onExportReport ? exportActionLabel : "PDF 匯出暫不可用"} disabled={!canExport} onPress={requestExport} />
+        <AppButton ref={exportButton} label={preparingExport && feedback?.mode !== "preview" ? "正在準備 PDF…" : onExportReport ? exportActionLabel : "PDF 匯出暫不可用"} disabled={!canExport} onPress={() => requestExport("file")} />
       </AppDialog.Actions>
     </AppDialog>
   </View>;

@@ -16,6 +16,7 @@ import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { createFirestoreCareStore, firestoreCareSchema, firestoreProfileSchema } from './firestore-care.ts';
 import { createFirestoreOnlineStore } from './firestore-online.ts';
 import { createFirestoreMemoryStore, firestoreFactSchema, firestoreTopicSchema, firestoreSummarySchema } from './firestore-memory.ts';
+import { inspectOriginalChat, prepareOriginalChat } from './handover-original-chat.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
 import { createFirestoreConcernStore, concernTransferSchema } from './firestore-concerns.ts';
 import { assertClassImportAccess } from './firestore-class-handover.ts';
@@ -113,9 +114,11 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
     const topic = topicId ? await growth.readImportTopic(b, topicId) : null;
     const topicResourceId = topicId ? growthTopicResourceId(b.scope.childId, topicId) : null;
     if (topicResourceId && mapping && mapping.target.id !== topicResourceId) domainReject('import_mapping_binding', 500);
+    const originalChat = restoreOriginal && section === 'chat' && knownId ? await chat.readMessage(b,b.scope.childId,knownId) : null;
     const current = section === 'growth_attention' ? attention?.item ?? null
       : section === 'growth_topics' ? topic ? { ...topic, id: topicResourceId!, childId: b.scope.childId } : null
       : knownId && section === 'concerns' ? await concerns.head(b, knownId)
+      : restoreOriginal && section === 'chat' ? originalChat && { ...originalChat,version:1 }
       : mapping && (section === 'chat' || section === 'chat_imports') ? await chat.readImportedMessage(b, b.scope.childId, mapping.target.id)
       : section === 'profile' ? await care.readProfile(b)
       : attachmentState ? attachmentState.value
@@ -228,6 +231,17 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
           || !supportsOriginalSection(section) || raw.row.section !== section || sourceValue === null
           || section === 'private_sources' && raw.row.value.ownerUserId !== userId)
           domainReject('invalid_import_target', 403);
+        if (section === 'chat') {
+          const state = await inspectOriginalChat(data,b,raw.row);
+          const resource = { id:state.message.id,version:1 };
+          if (resolution.mode !== 'replace_current' || resolution.targetId !== state.message.id)
+            return finish('conflict','target_version_conflict',null);
+          if (state.state === 'unchanged') return finish('skipped','already_imported',resource);
+          if (state.localVersion !== resolution.expectedVersion) return finish('conflict','target_version_conflict',null);
+          if (state.state !== 'backup_newer' && state.state !== 'different') return finish('conflict',state.reason ?? 'original_unavailable',null);
+          const prepared = await prepareOriginalChat(data,b,state,opId,options.attachments);
+          return finish(state.state === 'different' ? 'updated' : 'created',null,resource,prepared);
+        }
         if (section === 'child_avatar') {
           const backup = handoverAttachmentSchemas.child_avatar.parse(raw.row.value);
           if (backup.target.kind !== 'child' || backup.target.childId !== target.childId) domainReject('invalid_import_target', 403);
