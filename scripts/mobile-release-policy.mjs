@@ -3,6 +3,16 @@ export function classifyChanges(paths) {
   const result = { web: false, android: false, ios: false, server: false, nativeInputs: false, review: [] };
   for (const path of paths) {
     if (/^(docs\/|artifacts\/|tests\/|licenses\/|\.agents\/)|\.(md|test\.[cm]?[jt]sx?)$/.test(path)) continue;
+    if (/^\.github\/workflows\/[^/]+-offline\.ya?ml$/.test(path)) continue;
+    if (['Dockerfile', '.dockerignore', '.github/workflows/site-release.yml'].includes(path)) {
+      result.web = result.server = true;
+      continue;
+    }
+    // Checkout attributes may change the bytes used by either native fingerprint.
+    if (path === '.gitattributes') {
+      result.web = result.android = result.ios = result.server = result.nativeInputs = true;
+      continue;
+    }
     if (/^(server\/|prompts\/|knowledge\/|deploy\/)/.test(path)) { result.server = true; continue; }
     if (/^(frontend\/scripts\/|frontend\/verification\/|scripts\/)/.test(path)) continue;
     if (path.startsWith('frontend/plugins/ios-share/') || path === 'frontend/plugins/with-ios-share-inbox.cjs') {

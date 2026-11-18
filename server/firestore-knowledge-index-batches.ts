@@ -1,3 +1,5 @@
+import { randomUUID, createHash } from 'node:crypto';
+import { indexGroupCreateSchema, indexGroupControlSchema, indexGroupTargetBytes, indexTargetLimit } from '../src/shared/admin-knowledge-index.ts';
 import type { DocumentSnapshot, Transaction } from '@google-cloud/firestore';
 import { z } from 'zod';
 import {
@@ -50,54 +52,135 @@ export function createKnowledgeIndexBatches(options: FirestoreDomainOptions, cor
     return ['unknown', 'stopped', 'failed', 'completed'].includes(work.state) || ['conflict', 'needs_attention'].includes(work.dispatch)
       ? { ...job, state: 'interrupted' as const } : job;
   }
-  async function command(actorId: string, id: string, action: 'create' | 'stop' | 'resume', raw: unknown) {
-    requireAdmin(actorId);
-    const input = action === 'create' ? domainParse(indexBatchCreateSchema, raw) : domainParse(indexBatchControlSchema, raw);
-    const signature = firestoreDomainHash([actorId, id, action, input]);
-    const receiptRef = data.ref(receipts, receiptKind, input.opId);
-    return db.runTransaction(async tx => {
-      const control = await readControl(tx);
-      const prior = await tx.get(receiptRef), stored = open(id, await tx.get(jobRef(id)));
-      if (prior.exists) {
-        const receipt = data.open(receiptKind, input.opId, SYSTEM, indexBatchReceiptSchema, prior);
-        if (receipt.fingerprint !== signature || receipt.actorId !== actorId || receipt.batchId !== id || receipt.opId !== input.opId)
-          domainReject('operation_conflict');
-        if (!stored) domainReject('knowledge_batch_missing', 503);
-        return { batch: indexBatchView(await effective(tx, stored, control)) };
-      }
-      let job: IndexBatch;
-      const now = timestamp();
-      if ('targets' in input) {
-        if (stored || id !== input.opId) domainReject('operation_conflict');
-        job = {
-          id, state: 'running', controlVersion: 1, recordVersion: 1, actorId, generation: control.generation, createdAt: now, updatedAt: now,
-          workId: '', lastDispatchRevision: 0, targets: input.targets.map(t => ({ ...t, state: 'pending', bucketsCompleted: 0, error: null }))
-        };
-      } else {
-        if (!stored) domainReject('knowledge_batch_not_found', 404);
-        const current = await effective(tx, stored, control);
-        if (input.expectedControlVersion !== current.controlVersion) domainReject('version_conflict');
-        if (action === 'stop' ? current.state !== 'running' : !['paused', 'interrupted'].includes(current.state)) domainReject('knowledge_batch_state');
-        job = {
-          ...current, actorId, generation: control.generation, controlVersion: current.controlVersion + 1, recordVersion: current.recordVersion + 1,
-          lastDispatchRevision: 0, updatedAt: now, state: action === 'stop' ? 'paused' : 'running'
-        };
-      }
-      if (job.state === 'running') {
-        if (!control.enabled) domainReject('knowledge_worker_paused');
-        const work = await prepareFirestoreBackgroundWork(data, tx, {
-          kind: jobKind, scope: SYSTEM, resourceId: id, basis: String(job.controlVersion),
-          generation: control.generation, authorizationVersion: firestoreDomainHash(actorId)
-        }, now);
-        job.workId = work.id; work.commit();
-      }
+  type Input = z.infer<typeof indexBatchCreateSchema> | z.infer<typeof indexBatchControlSchema>;
+  type Action = 'create'|'stop'|'resume';
+  async function prepareCommand(tx:Transaction, control:Awaited<ReturnType<Control>>,actorId:string,id:string,action:Action,input:Input,
+    group?:{fingerprint:string;parts:string[]}) {
+    const signature=group?.fingerprint ?? firestoreDomainHash([actorId,id,action,input]);
+    const receiptRef=data.ref(receipts,receiptKind,input.opId);
+    const prior = await tx.get(receiptRef), stored = open(id, await tx.get(jobRef(id)));
+    if (prior.exists) {
+      const receipt = data.open(receiptKind, input.opId, SYSTEM, indexBatchReceiptSchema, prior);
+      if (receipt.fingerprint !== signature || receipt.actorId !== actorId || receipt.batchId !== id || receipt.opId !== input.opId)
+        domainReject('operation_conflict');
+      if (!stored) domainReject('knowledge_batch_missing', 503);
+      return { job: await effective(tx,stored,control), commit() {} };
+    }
+    let job: IndexBatch;
+    const now = timestamp();
+    if ('targets' in input) {
+      if (stored || id !== input.opId) domainReject('operation_conflict');
+      job = {
+        id, state: 'running', controlVersion: 1, recordVersion: 1, actorId, generation: control.generation, createdAt: now, updatedAt: now,
+        workId: '', lastDispatchRevision: 0, targets: input.targets.map(t => ({ ...t, state: 'pending', bucketsCompleted: 0, error: null }))
+      };
+    } else {
+      if (!stored) domainReject('knowledge_batch_not_found', 404);
+      const current = await effective(tx, stored, control);
+      if (input.expectedControlVersion !== current.controlVersion) domainReject('version_conflict');
+      if (action === 'stop' ? current.state !== 'running' : !['paused', 'interrupted'].includes(current.state)) domainReject('knowledge_batch_state');
+      job = {
+        ...current, actorId, generation: control.generation, controlVersion: current.controlVersion + 1, recordVersion: current.recordVersion + 1,
+        lastDispatchRevision: 0, updatedAt: now, state: action === 'stop' ? 'paused' : 'running'
+      };
+    }
+    let commitWork: (()=>void) | undefined;
+    if (job.state === 'running') {
+      if (!control.enabled) domainReject('knowledge_worker_paused');
+      const work = await prepareFirestoreBackgroundWork(data, tx, {
+        kind: jobKind, scope: SYSTEM, resourceId: id, basis: String(job.controlVersion),
+        generation: control.generation, authorizationVersion: firestoreDomainHash(actorId)
+      }, now);
+      job.workId = work.id; commitWork=work.commit;
+    }
+    const receipt = { opId: input.opId, batchId: id, actorId, action, fingerprint: signature,
+      controlVersion: job.controlVersion, at: now, ...(group ? {parts:group.parts} : {}) };
+    return { job, commit() {
+      commitWork?.();
       save(tx, job);
-      const receipt = { opId: input.opId, batchId: id, actorId, action, fingerprint: signature, controlVersion: job.controlVersion, at: now };
-      tx.create(receiptRef, { ...data.tags(SYSTEM), ...data.seal(receiptKind, input.opId, SYSTEM, indexBatchReceiptSchema, receipt) });
-      return { batch: indexBatchView(job) };
+      tx.create(receiptRef, { ...data.tags(SYSTEM), ...data.seal(receiptKind,input.opId,SYSTEM,indexBatchReceiptSchema,receipt) });
+    }};
+  }
+  async function command(actorId:string,id:string,action:Action,raw:unknown) {
+    requireAdmin(actorId);
+    const input=action==='create' ? domainParse(indexBatchCreateSchema,raw) : domainParse(indexBatchControlSchema,raw);
+    return db.runTransaction(async tx=>{
+      const prepared=await prepareCommand(tx,await readControl(tx),actorId,id,action,input);
+      prepared.commit();
+      return {batch:indexBatchView(prepared.job)};
     });
   }
+
+  async function receipt(tx:Transaction,id:string) {
+    const row=await tx.get(data.ref(receipts,receiptKind,id));
+    return row.exists ? data.open(receiptKind,id,SYSTEM,indexBatchReceiptSchema,row) : null;
+  }
+  async function groupJobs(tx:Transaction,control:Awaited<ReturnType<Control>>,id:string) {
+    const root=await receipt(tx,id);
+    if (!root?.parts || root.opId!==id || root.actorId!==adminUid) return null;
+    return Promise.all(root.parts.map(async part=>{
+      const job=open(part,await tx.get(jobRef(part)));
+      if (!job || job.actorId!==root.actorId) domainReject('knowledge_batch_missing',503);
+      return effective(tx,job,control);
+    }));
+  }
+  function groupView(id:string,jobs:IndexBatch[]) {
+    const targetDigest=createHash('sha256').update(indexGroupTargetBytes(jobs.flatMap(job=>job.targets))).digest('hex');
+    return {id,targetDigest,parts:jobs.map(job=>({id:job.id,controlVersion:job.controlVersion,state:job.state,total:job.targets.length,
+      completed:job.targets.filter(t=>t.state==='completed').length,failed:job.targets.filter(t=>t.state==='failed').length}))};
+  }
   return {
+    async createGroup(actorId:string,raw:unknown) {
+      requireAdmin(actorId);
+      const input=domainParse(indexGroupCreateSchema,raw), id=input.opId;
+      const parts=Array.from({length:Math.ceil(input.targets.length/indexTargetLimit)},(_,i)=>i ? randomUUID() : id);
+      const fingerprint=firestoreDomainHash(['index-group-create',actorId,input]);
+      return db.runTransaction(async tx=>{
+        const control=await readControl(tx), prior=await receipt(tx,id);
+        if (prior) {
+          if (prior.fingerprint!==fingerprint || !prior.parts) domainReject('operation_conflict');
+          const jobs=await groupJobs(tx,control,id);
+          if (!jobs) domainReject('knowledge_batch_missing',503);
+          return {group:groupView(id,jobs)};
+        }
+        const work=await Promise.all(parts.map((part,i)=>prepareCommand(tx,control,actorId,part,'create',{
+          opId:part,targets:input.targets.slice(i*indexTargetLimit,(i+1)*indexTargetLimit),
+        },i===0 ? {parts,fingerprint} : undefined)));
+        for (const step of work) step.commit();
+        return {group:groupView(id,work.map(step=>step.job))};
+      });
+    },
+    async getGroup(rawId:string) {
+      const id=domainParse(z.uuid(),rawId);
+      return db.runTransaction(async tx=>{
+        const jobs=await groupJobs(tx,await readControl(tx),id);
+        return {group:jobs ? groupView(id,jobs) : null};
+      },{readOnly:true});
+    },
+    async controlGroup(actorId:string,rawId:string,action:'stop'|'resume',raw:unknown) {
+      requireAdmin(actorId);
+      const id=domainParse(z.uuid(),rawId), input=domainParse(indexGroupControlSchema,raw);
+      const fingerprint=firestoreDomainHash(['index-group-control',actorId,id,action,input]);
+      return db.runTransaction(async tx=>{
+        const control=await readControl(tx), jobs=await groupJobs(tx,control,id);
+        if (!jobs) domainReject('knowledge_batch_not_found',404);
+        const prior=await receipt(tx,input.opId);
+        if (prior) {
+          if (prior.fingerprint!==fingerprint) domainReject('operation_conflict');
+          return {group:groupView(id,jobs)};
+        }
+        if (input.versions.length!==jobs.length || jobs.some((job,i)=>job.controlVersion!==input.versions[i])) domainReject('version_conflict');
+        const updates=await Promise.all(jobs.map(async job=>{
+          const eligible=action==='stop' ? job.state==='running' : job.state==='paused' || job.state==='interrupted';
+          if (!eligible) return {job,commit(){}};
+          return prepareCommand(tx,control,actorId,job.id,action,{opId:randomUUID(),expectedControlVersion:job.controlVersion});
+        }));
+        for (const update of updates) update.commit();
+        const value={opId:input.opId,batchId:id,actorId,action,fingerprint,at:timestamp(),controlVersion:updates[0].job.controlVersion};
+        tx.create(data.ref(receipts,receiptKind,input.opId),{...data.tags(SYSTEM),...data.seal(receiptKind,input.opId,SYSTEM,indexBatchReceiptSchema,value)});
+        return {group:groupView(id,updates.map(update=>update.job))};
+      });
+    },
     versions(cursor: string | null) { return corpus.listVersions(cursor === null ? undefined : domainParse(z.uuid(), cursor)); },
     create(actorId: string, raw: unknown) { const input = domainParse(indexBatchCreateSchema, raw); return command(actorId, input.opId, 'create', input); },
     control(actorId: string, id: string, action: 'stop' | 'resume', raw: unknown) { return command(actorId, domainParse(z.uuid(), id), action, raw); },

@@ -31,7 +31,7 @@ export function originalRestoreResourceSection(module: HandoverImportModule,
   if (module === 'memory') { const parsed = originalMemorySectionSchema.safeParse(item?.resourceSection); return parsed.success ? parsed.data : null; }
   if (module === 'growth') { const parsed = originalGrowthSectionSchema.safeParse(item?.resourceSection); return parsed.success ? parsed.data : null; }
   if (module === 'sources') return 'private_sources';
-  return module === 'care' || module === 'profile' || module === 'tasks' || module === 'concerns' ? module : null;
+  return module === 'care' || module === 'profile' || module === 'tasks' || module === 'concerns' || module === 'chat' ? module : null;
 }
 export const hasOriginalChildAvatar = (preview: HandoverUploadView['preview'], childId: string) =>
   !!preview?.coverage.some(row => row.childId === childId && row.section === 'child_avatar' && row.items > 0);

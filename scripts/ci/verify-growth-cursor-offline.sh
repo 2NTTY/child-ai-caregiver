@@ -28,6 +28,7 @@ test "$("$NODE_BIN" --version)" = "v24.22.1"
 
 GUARD=frontend/scripts/family-cleanup-network-guard.mjs
 TEST_FILES=(
+  tests/firestore-care-cold-import.test.ts
   tests/growth-history-cursor.test.ts
   tests/growth-age-gate.test.ts
   tests/growth-policy.test.ts

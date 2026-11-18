@@ -353,14 +353,14 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
     const next: FirestoreVoiceRow = { ...row, state: 'ready', version: row.version + 1, importedFrom, updatedAt: now() };
     return { value: view(next), changeSeq: change.changeSeq, commit() { change.commit(); b.transaction.set(ref(id), envelope(next)); } };
   }
-  async function prepareLink(b: FirestoreAuthorityTransaction, id: string, expectedVersion: number, messageId: string) {
+  async function prepareLink(b: FirestoreAuthorityTransaction, id: string, expectedVersion: number, messageId: string, purpose?: 'restore') {
     const row = await read(b, id); current(row);
     if (row.state !== "ready" || !row.descriptor || row.messageId) domainReject("voice_not_available");
     if (row.version !== expectedVersion) domainReject("version_conflict");
     domainParse(uuid, messageId);
     const updated: FirestoreVoiceRow = { ...row, messageId, version: row.version + 1, updatedAt: now() };
     const voice = { id, version: updated.version, sha256: row.descriptor.sha256, mimeType: row.descriptor.mimeType, durationMs: row.descriptor.durationMs, bytes: row.descriptor.bytes };
-    const transcription = await prepareVoiceTranscription(data, b, voice, messageId);
+    const transcription = await prepareVoiceTranscription(data, b, voice, messageId, purpose);
     return { voice, commit() { b.transaction.set(ref(id), envelope(updated)); transcription(); } };
   }
   async function readEvidence(b: FirestoreAuthorityTransaction, messageId: string, reference: VoiceMessageReference) {

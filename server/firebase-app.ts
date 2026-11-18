@@ -256,14 +256,20 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (expected !== userId) throw new RequestError(expected ? 'identity_changed' : 'account_precondition_required',expected ? 409 : 428);
         const store=options.chat?.mixed;
         if (!store) throw new RequestError('mixed_chat_unavailable',503);
-        const match=/^\/api\/account\/mixed-chats(?:\/([a-f0-9-]+)(\/messages(?:\/([a-f0-9-]+)\/(reply|task-batch(?:\/advance)?|care-citations\/([1-6])))?)?)?$/u.exec(path);
+        const match=/^\/api\/account\/mixed-chats(?:\/([a-f0-9-]+)(\/messages(?:\/([a-f0-9-]+)\/(reply|task-batch(?:\/advance)?|care-citations\/([1-6])|material-citations\/(1[0-2]|[1-9])))?)?)?$/u.exec(path);
         if (!match) throw new RequestError('not_found',404);
         if ([match[1],match[3]].some(id=>id && !z.uuid().safeParse(id).success)) throw new RequestError('not_found',404);
         const cursor=new URL(request.url).searchParams.get('cursor');
         let result;
         if (match[1] && match[3]) {
           if (!options.product) throw new RequestError('agent_unavailable',503);
-          if (match[4]?.startsWith('care-citations/')) {
+          if (match[4]?.startsWith('material-citations/')) {
+            if (request.method!=='GET') throw new RequestError('method_not_allowed',405);
+            const params=new URL(request.url).searchParams, offsets=params.getAll('offset');
+            if ([...params.keys()].some(key=>key!=='offset') || offsets.length>1
+              || (offsets.length && !/^(0|[1-9][0-9]{0,8})$/u.test(offsets[0]))) throw new RequestError('invalid_input',400);
+            result={citation:await options.product.runs.mixedMaterialCitation(userId,match[1],match[3],Number(match[6]),offsets.length ? Number(offsets[0]) : undefined)};
+          } else if (match[4]?.startsWith('care-citations/')) {
             if (request.method!=='GET') throw new RequestError('method_not_allowed',405);
             if (new URL(request.url).search) throw new RequestError('invalid_input',400);
             result={citation:await options.product.runs.mixedCareCitation(userId,match[1],match[3],Number(match[5]))};
@@ -387,9 +393,15 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (!userId) throw new RequestError('unauthorized', 401);
         const isCurrentUser = async (expected: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expected;
         const url = new URL(request.url), spaceId = url.searchParams.get('spaceId');
-        if ([...url.searchParams.keys()].some(key => key !== 'spaceId') || url.searchParams.getAll('spaceId').length > 1
+        const allowed = request.method === 'GET' ? ['spaceId', 'limit', 'cursor'] : ['spaceId'];
+        const limit = url.searchParams.get('limit');
+        if ([...url.searchParams.keys()].some(key => !allowed.includes(key) || url.searchParams.getAll(key).length !== 1)
+          || limit !== null && !/^(?:[1-9]|[1-9][0-9]|100)$/u.test(limit)
           || spaceId !== null && !z.uuid().safeParse(spaceId).success) throw new RequestError('invalid_input', 400);
-        const concerns = spaceId ? options.concerns.forSharedSpace(spaceId) : options.concerns;
+        const concerns = spaceId ? options.concerns.forSharedSpace(spaceId, {
+          sharedActions: request.headers.get('x-concern-features') === 'shared-actions',
+          authorityVersion: request.headers.get('x-concern-authority') ?? undefined,
+        }) : options.concerns;
         const response = await handleConcernRequest(request, userId, concerns, isCurrentUser);
         if (!await isCurrentUser(userId)) throw new RequestError('identity_changed', 409);
         return uncached(response);

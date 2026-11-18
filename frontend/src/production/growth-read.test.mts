@@ -21,6 +21,33 @@ async function load(g = createGrowthApi("/api", fetcher({ page: growth() })), c 
   const promise = readGrowthPages(() => g.getPage(child, signal, user), () => c.getPage(child, signal, user), signal, line => lines.push(line), active);
   return { promise, lines };
 }
+test("shared concerns can be editable alongside read-only growth while still requiring the same authority", async () => {
+  const g = { ...growth(), canManage:false }, c = concerns(), signal = new AbortController().signal;
+  const gRead = () => createGrowthApi('/api',fetcher({page:g})).getPage(child,signal,user);
+  const cRead = (version:string) => () => createConcernsApi('/api',fetcher({page:{...c,authorityVersion:version}})).getPage(child,signal,user);
+  const [suggestions, followups] = await readGrowthPages(gRead,cRead(c.authorityVersion),signal,()=>{},undefined,true);
+  assert.equal(suggestions.canManage,false); assert.equal(followups.canManage,true);
+  await assert.rejects(readGrowthPages(gRead,cRead('changed'),signal,()=>{},undefined,true));
+});
+test("shared creation sends the original page authority and operation across an interrupted request", async () => {
+  const headers:Headers[] = [], posts:string[] = [], signal = new AbortController().signal;
+  const api = createConcernsApi('/api',async (_url, init) => {
+    headers.push(new Headers(init?.headers));
+    if (init?.method !== 'POST') return Response.json({page:concerns()});
+    posts.push(String(init.body));
+    return posts.length === 1 ? new Response(null,{status:503}) : Response.json({item:concern()});
+  },{spaceId:other},true);
+  const page = await api.getPage(child,signal,user);
+  const values = {title:'示範',reason:'留意',observation:'觀察',observedAt:'2026-10-07T00:00:00Z',
+    links:{recordId:null,taskId:null,attentionId:null},followUpAt:null};
+  await assert.rejects(api.create(child,values,signal,user,page.authorityVersion));
+  await api.getPage(child,signal,user);
+  await api.create(child,values,signal,user,page.authorityVersion);
+  assert.equal(headers[0].get('x-concern-features'),'shared-actions');
+  assert.equal(headers[1].get('x-concern-authority'),page.authorityVersion);
+  assert.equal(headers[3].get('x-concern-authority'),page.authorityVersion);
+  assert.equal(posts[1],posts[0]);
+});
 test("successful combined growth read emits no diagnostic", async () => { const { promise, lines } = await load(); await promise; assert.deepEqual(lines, []); });
 test("selected growth reads do not request unshared concerns", async () => {
   const value = growth(), lines: string[] = [];

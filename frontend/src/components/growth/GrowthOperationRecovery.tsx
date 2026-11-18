@@ -1,3 +1,4 @@
+import { growthModuleWritable } from "../../growth-view-model";
 import { View } from "react-native";
 import { Text } from "react-native-paper";
 import { growthTime } from "../../growth-view-model";
@@ -33,14 +34,16 @@ export function GrowthOperationRecovery({ model, actions, includeRefresh = false
   model: GrowthViewModel; actions: GrowthActions; includeRefresh?: boolean;
 }) {
   if (!model.pending || model.access === "lost") return null;
-  const retryDisabled = model.busy || !model.online || model.access !== "editable" || model.load !== "ready" || !model.page?.canManage
+  const kind = model.pending.attempt.kind;
+  const writable = growthModuleWritable(model.page, kind === 'topic' || kind === 'item' ? 'growth' : 'concerns');
+  const retryDisabled = model.busy || !model.online || model.access !== "editable" || model.load !== "ready" || !writable
     || !model.pending.reviewed || model.pending.reconfirm || !model.originalConsent;
   return <SectionCard testID="growth-pending">
     <SectionHeader density="compact" title={model.pending.reconfirm ? "這次提交未獲接受" : "原操作結果待核對"} icon="information-outline" />
     <GrowthOriginalRequest attempt={model.pending.attempt} />
     {includeRefresh ? <AppButton label={model.busy ? "正在讀取／提交…" : "重讀並核對原操作"} variant="quiet" disabled={model.busy || !model.online} onPress={actions.refresh} /> : null}
     <AppCheckbox label="我已核對並同意查回同一份原內容及版本" checked={model.originalConsent}
-      disabled={model.busy || !model.online || model.access !== "editable" || model.load !== "ready" || !model.page?.canManage || !model.pending.reviewed || model.pending.reconfirm}
+      disabled={model.busy || !model.online || model.access !== "editable" || model.load !== "ready" || !writable || !model.pending.reviewed || model.pending.reconfirm}
       onChange={actions.setOriginalConsent} />
     <AppButton label="明確查回原操作" disabled={retryDisabled} onPress={actions.retryOriginal} />
   </SectionCard>;

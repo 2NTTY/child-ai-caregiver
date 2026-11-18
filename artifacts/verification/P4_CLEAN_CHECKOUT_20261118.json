@@ -1,0 +1,56 @@
+{
+  "workPackage": "S17-W04/P4",
+  "dateHongKong": "2026-11-18",
+  "master": "2b238aaec1c446f937b78d2245b08d7b8de89a47",
+  "kind": "fresh Windows checkout, two separate Firebase Emulator identities, single computer",
+  "setup": {
+    "node": "24.19.0",
+    "npm": "11.17.0",
+    "java": "Temurin 21.0.13+9",
+    "install": "npm ci --prefer-offline --no-audit --no-fund",
+    "start": "npm run agent:local -- --no-model",
+    "environment": "Local model variables unset. Earlier attempts passed an empty LOCAL_MODEL_PROVIDER and the launcher rejected that value before starting.",
+    "dataProject": "demo-yuyf-c928adef",
+    "modelEnabled": false,
+    "externalDelivery": "local-inbox-not-sent"
+  },
+  "web": {
+    "homepageHttp": 200,
+    "metroBundleHttp": 200,
+    "metroContentType": "application/javascript; charset=UTF-8",
+    "metroBytes": 15462181
+  },
+  "independentClass": {
+    "before": 0,
+    "after": 1,
+    "teacherSpaceAttached": false,
+    "operationId": "46e1d9be-a107-415e-a6a1-a614d720c160",
+    "originalReceiptReadBack": true
+  },
+  "familyLibrary": {
+    "accounts": "Owner and invited viewer separately exchanged Firebase ID tokens for product sessions. The viewer's email was verified with the local emulator action code.",
+    "media": "One text file",
+    "bytes": 50,
+    "sha256": "c8525c5a15303e65a56258f6d93dd617e22b94300bbc35f34f5fb9cd39fe5563",
+    "fileId": "cde8c628-ba0c-4be9-8a89-da04ecb7280c",
+    "reservationReplayReturnedSameId": true,
+    "chatMessageId": null,
+    "viewerListCount": 1,
+    "viewerBytesMatched": true,
+    "httpAfterOwnerWithdrewShare": 403
+  },
+  "shutdown": {
+    "launcherExit": 0,
+    "loopbackStopped": true,
+    "checkpoint": [
+      "firestore",
+      "auth",
+      "storage"
+    ],
+    "trackedFilesChanged": 0
+  },
+  "outstanding": [
+    "A second team member independently following the runbook",
+    "Two physical devices on the released service, including teacher notification receipt"
+  ]
+}

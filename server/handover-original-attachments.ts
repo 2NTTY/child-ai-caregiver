@@ -46,5 +46,7 @@ export async function readOriginalAttachment(data: FirestoreDomainData, b: Fires
     bytes: row.descriptor.bytes, mimeType: row.descriptor.mimeType, importSourceHash: row.importedFrom?.current.sourceHash } : null;
   const retired = originalAttachmentRetired(section, row, scope, id);
   const deleted = retired && (section !== 'photos' || !(await b.transaction.get(data.ref('photo_cleanup', 'photo-cleanup', id))).exists);
-  return { value, version: row.version, deleted };
+  return { value, version: row.version, deleted,
+    messageId: 'messageId' in row ? row.messageId : null,
+    durationMs: row.descriptor && 'durationMs' in row.descriptor ? row.descriptor.durationMs : null };
 }

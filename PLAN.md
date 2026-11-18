@@ -97,7 +97,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **本輪指定摘要修復：**#447 已合併入 master（commit a162e65e），見 [REQ005-SUMMARY01](#req005-summary01)。單一候選已完成本地程式驗收，durable 摘要未啟用、未部署，正式啟用仍有前置；不改下列 P4 交付與未驗狀態。
 
-**單輪壓縮：**ADK 壓縮沿用原生門檻，時間或隔離範圍可能遮蔽未壓縮歷史時延後。本功能預設關閉。[實作與驗證](#req005-compaction01)
+**單輪壓縮：**ADK 壓縮沿用原生門檻，時間或隔離範圍可能遮蔽未壓縮歷史時延後；runtime `appendEvent` 保證事件時間戳嚴格遞增，避免同毫秒／ADK pre-LLM timestamp 導致壓縮卡滯。單輪瞬態壓縮已於 `createProductAgent` 預設啟用；`#447` 持久跨輪摘要仍預設關閉／未啟用。[實作與驗證](#req005-compaction01)
 
 **匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 的原生 runtime 指紋在本機與 EAS 不一致，本次未產出 APK。下次需要批量安裝時，先核對同一建置封包與依賴位置，再建置、驗簽及覆蓋安裝。[原建置紀錄](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)
 
@@ -312,10 +312,10 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。
 
 <a id="req005-compaction01"></a>
-### REQ005-COMPACTION01：REQ-005 §4.2 單輪對話上下文即時壓縮基準（庫代碼已驗收，未啟用）
+### REQ005-COMPACTION01：REQ-005 §4.2 單輪對話上下文即時壓縮整合（瞬態預設啟用；#447 持久摘要仍未啟用）
 
-- **基線／來源：**依循 `docs/REQUIREMENTS_BACKLOG.md` §4.2 原生 context compaction 規範；分支為 `codex/req005-inrun-compaction`。
-- **目標與邊界：**實作單輪對話運行期間的上下文即時壓縮（In-run transient context compaction）基礎庫能力。本包為底層 baseline，預設未啟用（0 production callers），不改變既有生產對話路徑，亦不取代 Firestore 跨會話記憶（REQ-005 §4.1）。
+- **基線／來源：**依循 `docs/REQUIREMENTS_BACKLOG.md` §4.2 原生 context compaction 規範；整合分支為 `codex/req005-compaction-integration`（承接 `codex/req005-inrun-compaction`）。
+- **目標與邊界：**實作單輪對話運行期間的上下文即時壓縮（In-run transient context compaction），並於 `createProductAgent` 預設啟用 `contextCompaction`（不改變既有持久 Firestore 跨會話記憶與 `#447` 未啟用狀態，REQ-005 §4.1 另案處理）。runtime `sessionService.appendEvent` 統一維持事件時間戳嚴格單調遞增，修復 ADK 2.1.0 pre-LLM timestamp 重用導致同毫秒事件誤觸延後的問題；直接呼叫 `createRunContextCompactor` 時仍保留原有時間邊界延後保護。
 - **核心不變量（Core Invariants）：**
   1. **純瞬態（Transient In-Run Only）：**壓縮摘要僅於單次 Agent run 記憶體事件流中生效，絕不持久化至 Firestore 或改寫持久 session 歷史。
   2. **工具調用原子性（Tool-Call Atomicity）：**基於 `@google/adk` 之 `TokenBasedContextCompactor`，以事件原子性計算保留起點，嚴禁切斷 `FunctionCall` 與對應 `FunctionResponse`。
@@ -994,7 +994,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 - 首批在現有 Web 管理後台按需顯示指定來源的註冊／停用狀態、最近成功檢查時間，以及可續讀的檢查紀錄。來源內容是否核准發布沿既有發布流程另行判斷。
 - 關鍵詞索引批次以已核准版本及 hash 固定目標。每頁在同一交易保存索引與進度，停止後保留逐項結果；恢復只接續未完成範圍。這項操作不會重新產生 embedding 或切換發布版本。
 - 主機操作者可按來源 ID／版本 hash 選擇已發布且可分享的版本匯出 ZIP。逐版草稿與收據同筆保存；停止後可從原批次續跑。相容向量須在接收方核准版本後才可用於發布。指令與限制見[維護入口](docs/P2_KNOWLEDGE.md#公共知識版本的批量移轉)。
-  - Web 管理入口接同一匯入台帳：分頁列出批次、按 ZIP 指紋找回舊批次、讀逐版收據與失敗位置，以目前 revision 停止或恢復接收工作。恢復後沿同一包接續；建立草稿、核准及公開發布各有自己的結果。
+  - Web 管理員可依交付指紋選擇 ZIP，上載後沿 CLI 的逐版草稿及收據接續。原站發布與容量驗收見 [P4 接手清單](docs/P4_RESUME.md)。同一匯入台帳分頁列出批次、按 ZIP 指紋找回舊批次、讀逐版收據與失敗位置，以目前 revision 停止或恢復接收工作。恢復後沿同一包接續；建立草稿、核准及公開發布各有自己的結果。
 - 保留大型管理頁、大規模導入／批量重建、進度／停止／恢復／失敗、效能、維運及知識資料遷移。已前移的官方 PDF、語義換版及必要發布維護不重做。
 - 公共知識包與 HANDOVER01 私人資料包分清；完整跨 Server 權威搬遷屬 P5，不取消 P4 知識資料導入／移轉能力。
 
@@ -1004,8 +1004,8 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 - 前置 S12-W01／S12-W04 的草稿／附件及受影響平台 adapter，不等所有 P3。
 - 保留系統分享及其餘既定平台接點、來源／確認／權限與失敗處理，接回現有草稿／附件，不另建業務副本。
 - Android 首包沿 Expo Sharing 原生 `getSharedPayloads`／config plugin 及 Router intent 接點；不用會自動解析網址的 resolver。文字／網址保留原文，照片／音訊／其他檔案沿現有本機副本與大小／格式檢查；只把用戶選中的項目加入目前個人孩子草稿，每則一份附件規則保持。登入、孩子切換、已有草稿、取消與遲到讀取要有明確狀態，不自動上載或觸發 Agent。
-- iOS 分享在來源 App 內保存至裝置，返回來源。使用者開啟育有方後選擇加入聊天草稿或把 ZIP 交給既有匯入入口。本機已生成 Xcode 工程並檢查收件、帳戶切換及清理。Swift 編譯、兩個 target 的簽署與 iPhone 系統分享仍待驗。
-- Android 收到第二份資料包時，可從分享頁返回目前的匯入工作，離頁取消或切換身份會保留原來的防護。畫面按已安裝版本顯示匯入上限。#482 已合併，隨下次需要使用的 APK 批量交付，實機待驗。iOS 套件已核對到專案生成，尚欠原生編譯及收件接線。[套件核對](docs/TECH_REUSE.md#s12-sharing-reuse)
+- iOS 分享在來源 App 內保存至裝置，返回來源。使用者開啟育有方後選擇加入聊天草稿或把 ZIP 交給既有匯入入口。本機已生成 Xcode 工程並檢查收件、帳戶切換及清理。正式 Swift 接收器已編譯成 iPhone arm64 物件。兩個 target 的簽署與 iPhone 系統分享仍待驗。[iPhone SDK 編譯收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44198716579/job/134446904604)。
+- Android 收到第二份資料包時，可從分享頁返回目前的匯入工作，離頁取消或切換身份會保留原來的防護。畫面按已安裝版本顯示匯入上限。#482 已合併。第 8 版 APK 的原生分享入口及 11 月 18 日相容 OTA 已核對，外部 App 分享到草稿／ZIP 待真機驗收。[Android 交付收據](artifacts/verification/P4_ANDROID_DELIVERY_20261118.json)。iOS 收件與草稿已接線；接收器編譯、App／extension 簽署及真機驗收分別追蹤。[套件核對](docs/TECH_REUSE.md#s12-sharing-reuse)
 - **2026-10-28 Android 首包：**本機接線、定向檢查及 Android JS 匯出完成，未建置／發布新版 APK。獨立 review 的原附件離頁保護、孩子 A→B→A 遲到讀取，以及 SDK 文字檔案解析均已修正；沿固定 Expo Sharing 加標準版本補丁，不重寫原生模組。必要失敗、型別限制及真機待驗見[證據](artifacts/verification/P4_ANDROID_SHARE_INPUT_20261028.json)。後續只補新 binary／外部 App 分享接收，不重驗既有附件保存；其餘 P4 可繼續。
 
 <a id="s07-w02"></a>
@@ -1017,7 +1017,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 - **P5 跨 Server：**前置 S06-W04 及本包 P4 契約；核身份、快取、附件、未完成操作及舊世代邊界，不再依賴 S08-W01。
 
 <a id="s14-w02"></a>
-#### S14-W02：報告與分析（P4，分期統計已發布，其餘待交付）
+#### S14-W02：報告與分析（P4，分期統計及同版預覽已發布，實機分享待驗）
 
 - 前置 P2-A05／現行報告與來源有效性接口；分享只等 S12-W02 對應 adapter，多孩分析只等 CLASS01 範圍，不以全部知識管理作前置。
 - 保留原生分享、雙端預覽、趨勢及非核心分析，使用可追溯資料、期間統計、變化與缺漏；不新增診斷、發展評分或排名。日常成長、季度／年度及同版 PDF 已前移。
@@ -1027,7 +1027,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 #### S15-W02：備份／恢復（P4／P5 父包，分項未完成）
 
 <a id="s15-w02-p4"></a>
-- **P4 集中服務：**前置現有 Firestore／Storage 備份、刪除日誌及工作世代接口。保留配對備份、保留期限、隔離災難恢復、刪除重放及保留新寫入回退，不等跨 Server 遷移或報告 UI。原真備份還原待驗維持原歸屬；用戶文檔包不替代此機制。
+- **P4 集中服務：**前置現有 Firestore／Storage 備份、刪除日誌及工作世代接口。保留配對備份、保留期限、隔離災難恢復、刪除重放及保留新寫入回退，不等跨 Server 遷移或報告 UI。[香港隔離還原紀錄](artifacts/verification/P4_CENTRAL_RECOVERY_20261118.json)已驗配對附件、刪除重放及回到保有新寫入的原來源。較早的失敗與其他包的還原待驗保留原歸屬。
 <a id="s15-w02-p5"></a>
 - **P5 跨 Server：**前置 S15-W01 及本包 P4 恢復契約；完成通用遷移／災備及不丟新寫入的 rollback，不復活已撤權身份或終態工作。
 
@@ -1060,15 +1060,15 @@ QR／短碼、已登入裝置批准配對及臨時電腦會話取消，不移至
 前置 S13-W03、S17-W05；核對資料、身份、附件、知識及工作，確認後切換權威，失敗不提早停用來源。和跨人獨立副本不同；處理 unknown、切單主，回退保存新寫入。
 
 <a id="s16-w04"></a>
-### S16-W04：P4／P5 驗收父包（未開始）
+### S16-W04：P4／P5 驗收父包（P4 進行中，P5 待啟動）
 
 <a id="s16-w04-p4"></a>
-- **P4 子包：**等 P4 各功能的相應交付，不等 P5；追溯原有效 REQ／AC 與 [AC-P4](SPEC.md#ac-p4-p5)。同批合成資料覆蓋登入／共享、班級批次、交接／備份往返及新增營運接點；保留有效故障範圍、復用已有證據。按下表已確認決定驗證；真 Agent 等 D 相應接口／自查，設備或本人操作留待驗。
+- **P4 子包：**等 P4 各功能的相應交付，不等 P5；逐項證據及待驗入口見 [P4 驗收索引](docs/P4_RESUME.md#p4-acceptance)。追溯原有效 REQ／AC 與 [AC-P4](SPEC.md#ac-p4-p5)。同批合成資料覆蓋登入／共享、班級批次、交接／備份往返及新增營運接點；保留有效故障範圍、復用已有證據。按下表已確認決定驗證；真 Agent 等 D 相應接口／自查，設備或本人操作留待驗。
 <a id="s16-w04-p5"></a>
 - **P5 子包：**等 P5 功能；按 [AC-P5](SPEC.md#ac-p5-01) 驗自選／自部署、搬遷／恢復、完整性、單主及保留新寫入的回退。P4 通過不代表本子包通過。
 
 <a id="s17-w04"></a>
-### S17-W04：P4／P5 交付父包（未開始）
+### S17-W04：P4／P5 交付父包（P4 進行中，P5 待啟動）
 
 <a id="s17-w04-p4"></a>
 - **P4 子包：**前置 S16-W04/P4；集中服務 Web／App、源碼／配置、知識、分享／分析、文檔包、備份恢復、許可、操作文件及證據，另一組員可重現。P3 APK／iOS 未驗仍未完成，Windows 不列本子包門檻。

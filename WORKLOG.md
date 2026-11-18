@@ -6015,6 +6015,16 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
   - `tests/growth-history-cursor.test.ts`、`tests/firestore-indexes-comparator.test.ts`、`scripts/ci/verify-growth-cursor-offline.sh`：補齊 `+08:00`/`.000Z`/`Z`/`-05:00` 混合與匯入回歸及降序索引契約測試，並納入離線 gate；先驗證兩項新斷言在修復前 `7e9145ae` 失敗（`32 !== 43` 與缺少索引失敗），修復後全部通過（含 `G1–G5` mutation 與 3x `tsc`）。
 - 限制（依 R2 §4.1 校準）：本變更只修復成長閱讀分頁與 cursor keyset 路徑對既有／新寫資料之排序及索引宣告；`all()`、匯入及背景 `evaluate()` 既有 500 筆上限仍保留未改，且雲端 Cloud Firestore 索引實際建立／`READY` 與 Hosted Actions 仍待獲授權 owner 操作。
 
+## 2026-11-16　REQ-005 PR-D 匯出 ZIP 去重對齊與穩定 revision 身份防衝突（R2 D01–D02）
+
+- 目標／需求：修復審計 R2 指出的 D01（`handover-export.ts` 只更新 `advanceResumableExportBatch` 狀態卻直接 yield 原始 `page`，使 ZIP JSON entries 與 `coverage` 仍出現重複項目）及 D02（history item identity 摻入 `pageOffset + index` 與位置 `anon-*`，繞過跨頁同 `(section, id, version)` 內容衝突檢查）。
+- 變更：
+  - `server/handover-export.ts`：
+    - 新增 `exportItemIdentity(section, childId, raw, payloadHash)`，按結構與 `handover-provenance.ts` 來源／版本語義擷取穩定識別鍵（`id`、growth `item.id`、task `task.id`、`yuyoufang-source-revision:1` provenance 複合鍵、`documentId+snapshotId`、`inputId`、`topicId`、媒體 ID、`target`、`childId`、singleton 或最後以 canonical `payloadHash` 作非位置 fallback），history/version 區段加上版本標籤，移除 `pageOffset + index` 與位置 `anon-*`。
+    - `pages` 在 `advanceResumableExportBatch` 驗證通過後，依同一去重集合（跨頁 `seenBeforePage` 與頁內 `seenInCurrentPage`）過濾重複項目再 yield，確保 ZIP 實際輸出項目與 manifest `coverage` 完全一致。
+  - `tests/handover-export.test.ts`：修正既有測試三處同一 `(id, version)` 不同內容的合成 fixture 重號（lines 56、59、148/161 改為合法不同版本號 `v1`/`v2` 與 head `v3`），並新增跨頁重複 head 去重、多版本 history 保留、以及 `memory_fact_history` 與無頂層 `id` 之 `growth_topic_history` 同版本跨頁內容衝突拒絕（`export_scope_changed`）測試（共 8 cases）；先確認新測試在修復前 `69629509` 失敗（`3 !== 2`），修復後全部通過。
+- 限制（依 R2 §4.2 校準）：`pages` 仍按每個 section 獨立建立 `ResumableExportState`（非跨重啟全局 manifest），且 `family-document-report-core.ts` 之 payload hash 檢查不取代原始 sealed-envelope 解密／live watermark／撤權或 Hosted Actions 驗證。
+
 ### 2026-11-16　REQ-005 PR-A R3 審核整改（A04 在途角色軟預算清除／調低即時更新 provider 指令、備份清單測試同步）
 
 依 `REQ005_COMPLETION_SPLIT_IMPLEMENTATION_AUDIT_R3.md`（A04）與備份清單測試審查於本地 forward-only 新提交修復（未 push、未開 PR）：
@@ -6067,6 +6077,13 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 
 ### Next Action
 - 跑 C 原完整離線 gate，與 A04 forward-only 合併至原始整合候選再驗證；不 push。
+
+## 2026-11-16　REQ-005 PR-D R3 審核整改（D03 task_history 移除可變 at 時間戳以對齊主鍵）
+
+- **目標／需求**：修復審計 R3 指出的 **D03**（`server/handover-export.ts` `exportItemIdentity()` 對 `task_history` 附加 `:at:${stringField(record, 'at')}`，使同 `[task.id, task.version]` 在兩頁帶不同 `at` 時間戳時繞過去重與跨頁內容衝突檢查）。
+- **變更**：
+  - [handover-export.ts](server/handover-export.ts)：移除 `exportItemIdentity()` 中 `task_history` 之 `:at:...` 後綴，改為單純對齊 Firestore `[task.id, task.version]`（或對應 provenance/payloadHash）主鍵。
+  - [handover-export.test.ts](tests/handover-export.test.ts)：新增 D03 回歸測試（7→8 cases），先驗證舊碼於跨頁相同 `(task.id, version)`、不同 `at` 與不同內容時漏判，修復後失敗關閉拋出 `export_scope_changed`（8/8 通過）。
 
 ### 2026-11-17　REQ005 PR-A：A04 準入及重試後動態政策指引修復
 

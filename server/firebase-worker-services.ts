@@ -38,6 +38,11 @@ export function createFirebaseWorkerServices(runtime: Awaited<ReturnType<typeof 
           const current = await runtime.currentAuth(job.scope.ownerUserId);
           return !current.disabled && current.emailVerified && !!current.email;
         };
+        if (job.kind === 'shared-concern') return runtime.concerns.processSharedFollowup(job, async actor => {
+          if (signal.aborted) throw signal.reason;
+          const identity = await runtime.currentAuth(actor);
+          return identity.userId === actor && !identity.disabled && identity.emailVerified && !!identity.email;
+        });
         if (!await validIdentity()) return { state: 'stopped' };
         if (job.kind === 'proactive-day') return authority.runTransaction(job.scope.ownerUserId,job.scope.childId,
           b => runtime.proactive.daily(b,job,new Date().toISOString()));
