@@ -14,7 +14,7 @@ import { SOURCE_WATCHES } from '../server/knowledge-source-catalog.ts';
 import { fetchLibraryArchive } from '../src/client/library-archive.ts';
 import { createKnowledgeArchiveReceiver } from '../server/admin-knowledge-archive.ts';
 import { createKnowledgeTransfers } from '../server/firestore-knowledge-transfers.ts';
-import { openKnowledgeArchive } from '../scripts/knowledge-transfer-zip.mjs';
+import { openKnowledgeArchive, writeKnowledgeArchive } from '../scripts/knowledge-transfer-zip.mjs';
 import { readPortableEdition } from '../scripts/knowledge-transfer-operations.mjs';
 import { FieldValue, VectorValue, type Firestore, type VectorQueryOptions } from "@google-cloud/firestore";
 import { createFirestoreKnowledgeStore, type FirestoreKnowledgeEmbedding } from "../server/firestore-knowledge.ts";
@@ -24,6 +24,9 @@ import { rankKnowledge } from "../server/knowledge-ranking.ts";
 import { KNOWLEDGE_EMBEDDING, type KnowledgeChunkInput, type KnowledgeFilter, type KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import { firestoreDomainFixture } from "./helpers/firestore-domain-memory.ts";
 import { createFirestoreKnowledgeRefresh } from "../server/firestore-knowledge-refresh.ts";
+import { avatarMemoryBucket } from './helpers/avatar-memory.ts';
+import { createKnowledgeSourceFetcher } from '../server/knowledge-source-fetch.ts';
+import { verifyPortableMethod } from '../server/knowledge-portable-series.ts';
 import { observationHash } from "../server/knowledge-observation.ts";
 import type { SourceFetchResult } from "../server/knowledge-refresh-types.ts";
 import { KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS, KNOWLEDGE_LEXICAL_PIPELINE } from "../server/knowledge-lexical-index.ts";
@@ -65,7 +68,10 @@ function fixture(sourceIds = ["synthetic-guidance"], audience?: "public" | "inte
     ? FieldValue.vector(value.syntheticVector) : Array.isArray(value) ? value.map(decode)
       : value && typeof value === "object" ? Object.fromEntries(Object.entries(value).map(([key, item]) => [key, decode(item)])) : value;
   const snapshot = (snap: any) => ({ ...snap, data: () => decode(snap.data()), get: (key: string) => decode(snap.get(key)) });
-  const wrap = (query: any): any => ({ ...query, where: (...args: any[]) => wrap(query.where(...args)),
+  const wrap = (query: any): any => ({ ...query, doc(id: string) {
+    const ref = query.doc(id);
+    return { ...ref, get: () => fake.database.runTransaction(tx => tx.get(ref)) };
+  }, where: (...args: any[]) => wrap(query.where(...args)),
     findNearest: (options: VectorQueryOptions) => ({ async get() {
       nearestCalls.push({ filters: structuredClone(query.filters), options });
       assert.equal(options.distanceMeasure, "COSINE"); assert.equal(options.distanceThreshold, 0.4); assert.equal(options.limit, 60);
@@ -329,7 +335,9 @@ test('the archived page-three FHS seed and its parser evidence round-trip throug
   const archive = await openKnowledgeArchive(path, exported.sha256); t.after(() => archive.close());
   const raw = await archive.readEdition(0) as Awaited<ReturnType<typeof src.knowledge.exportPublishedEdition>>;
   const portable = readPortableEdition(raw, archive.entries[0]!);
-  assert.deepEqual(portable.source, pdf); assert.equal(portable.library!.method!.reader.kind, 'pdf');
+  assert.deepEqual(portable.source, pdf);
+  const reader = portable.library!.method!.reader;
+  assert.equal(reader.kind, 'pdf'); assert.deepEqual([reader.startPage, reader.endPage], [3, 3]);
   assert.equal(portable.library!.method!.sample.excerptHash, knowledgeHash(pdf.chunks[0]!.sourceExcerpt));
   assert.equal(portable.library!.method!.sample.titleHash, knowledgeHash(observed.title));
   assert.deepEqual(portable.embeddings, embeddings(pdf));
@@ -359,6 +367,61 @@ test('the archived page-three FHS seed and its parser evidence round-trip throug
   const hit = (await dest.knowledge.candidates(filter, null, { query: 'iron' }))[0]!;
   assert.equal(hit.versionHash, first.hash); assert.equal(hit.series?.id, 'fhs-infant-feeding');
   assert.equal(hit.pageStart, 3); assert.equal(hit.extraction?.complete, false); assert.equal(hit.sourceExcerpt, pdf.chunks[0]!.sourceExcerpt);
+});
+
+test('a registered whole PDF carries its measured page range and independently verifiable sample in the ZIP', async t => {
+  const [{ createElement }, { Document, Page, Text, renderToBuffer }] = await Promise.all([import('react'), import('@react-pdf/renderer')]);
+  const quote = 'Fruit on the last physical page.';
+  const bytes = await renderToBuffer(createElement(Document, {}, createElement(Page, {}, createElement(Text, {}, 'First page of the test booklet.')),
+    createElement(Page, {}, createElement(Text, {}, quote))));
+  const id = 'fhs-feeding-booklet-en', watch = SOURCE_WATCHES.find(row => row.id === id)!;
+  assert.ok(watch.leafletPage && !watch.pdfPages);
+  const fetcher = createKnowledgeSourceFetcher({ async transport(url) {
+    if (url === watch.url) return { status: 'response', response: { status: 200, contentType: 'application/pdf', body: bytes } };
+    assert.equal(url, watch.leafletPage);
+    return { status: 'response', response: { status: 200, contentType: 'text/html',
+      body: Buffer.from('<main><h1>Whole booklet</h1><a href="14727.pdf">Read PDF</a></main>') } };
+  } });
+  function environment() {
+    const f = fixture([id]), bucketName = 'demo-portable-private';
+    const refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions: [watch], originalBucket: { bucketName, bucket: avatarMemoryBucket(bucketName).port },
+      async readControl() { return { enabled: true, generation: 'f3457654-6524-4c99-bf56-d26dfb9f4dbd' }; } });
+    return { f, store: createFirestoreKnowledgeStore({ ...f.options, observations: refresh.gate }), async observe() {
+      await refresh.register(id, 'fixture-operator');
+      const job = (await refresh.jobs())[0]!.data;
+      assert.equal((await refresh.process(job, crypto.randomUUID(), fetcher, new AbortController().signal)).status, 'changed');
+      return refresh.inspect(id);
+    } };
+  }
+  const producer = environment(), observed = await producer.observe(), doc = observed.document;
+  const sourceInput = { ...source(id), url: watch.url, termsUrl: watch.termsUrl, title: doc.title, publisher: watch.publisher, extraction: doc.extraction!,
+    chunks: [chunk('fruit', { sourceExcerpt: quote, originalText: quote, pageStart: 2, pageEnd: 2 })] };
+  const version = await producer.store.importSource(sourceInput);
+  for (let n = 0; n < 4; n++) if ((await producer.store.prepareSearch(version.versionId, version.hash)).complete) break;
+  await producer.store.review(version.versionId, version.hash, 'fixture-operator', { ...assessment(sourceInput), observationHash: observationHash(doc) });
+  await producer.store.publish(version.versionId, version.hash, embeddings(sourceInput));
+  const catalogItem = (await producer.store.catalog()).items.find(item => item.sourceId === id);
+  assert.ok(catalogItem?.methods?.includes('已登記 PDF 原件讀取'));
+  assert.equal(catalogItem?.coverage, '第 1–2 頁 / 共 2 頁');
+  const dir = await mkdtemp(join(tmpdir(), 'whole-booklet-')); t.after(() => rm(dir, { recursive: true, force: true }));
+  const path = join(dir, 'booklet.zip');
+  const bundle = await writeKnowledgeArchive(path, [{ sourceId: id, versionHash: version.hash }], row => producer.store.exportPublishedEdition(row.sourceId, row.versionHash));
+  const zip = await openKnowledgeArchive(path, bundle.sha256); t.after(() => zip.close());
+  const edition = readPortableEdition(await zip.readEdition(0), zip.entries[0]!);
+  const library = edition.library!;
+  assert.ok(library.method, 'The whole-booklet watch has no configured page window and still needs its verified PDF reader');
+  const reader = library.method.reader;
+  assert.equal(reader.kind, 'pdf'); assert.deepEqual([reader.startPage, reader.endPage], [1, 2]);
+  assert.equal(library.method.sample.excerptHash, knowledgeHash(quote));
+  const dest = environment();
+  const imported = await dest.store.importSource(edition.source, undefined, library);
+  const state = () => dest.f.records.get(dest.f.options.namespace + '_knowledge_versions/' + imported.versionId)!.imported.methodState;
+  assert.equal(state(), 'pending_local_check');
+  const local = await dest.observe();
+  await dest.store.importSource(edition.source, undefined, library);
+  assert.equal(state(), 'verified_locally');
+  assert.equal(verifyPortableMethod(library, edition.source, local, { ...local.document, pages: local.document.pages!.slice(1) }), 'pending_local_check');
+  assert.equal(verifyPortableMethod(library, edition.source, local, { ...local.document, extraction: { ...doc.extraction!, contentHash: '0'.repeat(64) } }), 'pending_local_check');
 });
 
 test('REQ-006 structural identifiers match exactly, excluded rows stay archived and detailed exceptions remain retrievable', async () => {
