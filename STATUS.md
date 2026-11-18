@@ -1,6 +1,6 @@
 # STATUS
 
-**2026-11-19 00:28 香港**　REQ-005 已在原站核實平台向量配額。API／worker `ae7663f1` 的管理用量服務讀回模型專屬與共用 predict 兩項觀測。首宗正式維護者確認及有帳單依據的實際結算仍待核。五項交付與各自的驗證環境已列入[原驗收表](PLAN.md#req005-closeout01)。[發布收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44344694283)
+**2026-11-19 香港**　[REQ-004／006／007](PLAN.md#agent-evidence) 已從同一版 master 開工，分別負責官方原件、多步引用與私人記憶。REQ-005 已完成可自行驗收的部分，真人告警與實費對帳仍見[原驗收表](PLAN.md#req005-closeout01)。
 
 **2026-11-18 07:49 香港**　P4 多孩查詢修正已發布。Web、API、worker 均為 `b17fa999`，站外版本與收據一致，網站健康。原版 APK 透過同一 API 使用這項修正。兩名所選孩子的記憶、真 Gemini 審核及引用原件已用隔離資料驗證，真機點讀仍待核。[原站收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44201248461) · [接手清單](docs/P4_RESUME.md#下次從哪開始)
 
