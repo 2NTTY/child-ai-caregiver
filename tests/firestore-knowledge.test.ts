@@ -424,6 +424,151 @@ test('a registered whole PDF carries its measured page range and independently v
   assert.equal(verifyPortableMethod(library, edition.source, local, { ...local.document, extraction: { ...doc.extraction!, contentHash: '0'.repeat(64) } }), 'pending_local_check');
 });
 
+test('a verified PDF range remains readable while a full edition of the same original awaits publication', async () => {
+  const [{ createElement }, { Document, Page, Text, renderToBuffer }] = await Promise.all([import('react'), import('@react-pdf/renderer')]);
+  const id = 'fhs-feeding-booklet-en', full = SOURCE_WATCHES.find(watch => watch.id === id)!;
+  const { leafletPage: _landing, ...base } = full, selected = { ...base, pdfPages: { startPage: 3, endPage: 3 } };
+  const quote = 'Original third page text.';
+  const bytes = await renderToBuffer(createElement(Document, {}, ...['First physical page of the original booklet.', 'Second physical page of the original booklet.', quote, 'Fourth physical page of the original booklet.'].map((text, i) =>
+    createElement(Page, { key: i }, createElement(Text, {}, text)))));
+  const f = fixture([id]), bucketName = 'demo-originals', bucket = avatarMemoryBucket(bucketName);
+  const options = { ...f.options, originalBucket: { bucketName, bucket: bucket.port },
+    async readControl() { return { enabled: true, generation: 'f3457654-6524-4c99-bf56-d26dfb9f4dbd' }; } };
+  const older = createFirestoreKnowledgeRefresh({ ...options, definitions: [selected] });
+  const expanded = createFirestoreKnowledgeRefresh({ ...options, definitions: [full] });
+  const cipher = createStorageCipher(Buffer.alloc(32, 42));
+  const oldStore = createFirestoreKnowledgeStore({ ...f.options, cipher, observations: older.gate });
+  const store = createFirestoreKnowledgeStore({ ...f.options, cipher, observations: expanded.gate });
+  function readOriginal(pdf: Buffer) {
+    return createKnowledgeSourceFetcher({ async transport(url) {
+      if (url === full.url) return { status: 'response', response: { status: 200, contentType: 'application/pdf', body: pdf } };
+      assert.equal(url, full.leafletPage);
+      return { status: 'response', response: { status: 200, contentType: 'text/html', body: Buffer.from('<main><h1>Booklet</h1><a href="14727.pdf">Read</a></main>') } };
+    } });
+  }
+  const fetcher = readOriginal(bytes);
+  async function observe(refresh: typeof expanded, read = fetcher) {
+    const job = (await refresh.jobs())[0]!.data, checkId = crypto.randomUUID();
+    await refresh.process(job, checkId, read, new AbortController().signal);
+    return { checkId, ...await refresh.inspect(id) };
+  }
+  await older.register(id, 'operator');
+  const original = await observe(older);
+  assert.ok(original.observation);
+  const sourceInput = { ...source(id), url: full.url, termsUrl: full.termsUrl, publisher: full.publisher,
+    extraction: original.document.extraction!, chunks: [chunk('old-page', { pageStart: 3, pageEnd: 3, originalText: quote, sourceExcerpt: quote })] };
+  const version = await oldStore.importSource(sourceInput);
+  for (let batch = 0; batch < 4; batch++) if ((await oldStore.prepareSearch(version.versionId, version.hash)).complete) break;
+  await oldStore.review(version.versionId, version.hash, 'reviewer', { ...assessment(sourceInput), observationHash: original.observation.contentHash });
+  await oldStore.publish(version.versionId, version.hash, embeddings(sourceInput));
+  const seriesId = (await oldStore.catalog()).items[0]!.series!.id;
+  for (const [owner, mode, enabled] of [['fixed-reader', 'fixed', true], ['subscriber', 'follow', true], ['opted-out', 'fixed', false]] as const) {
+    await f.database.runTransaction(tx => oldStore.saveLibraryPreference(tx, owner, {
+      seriesId, expectedRevision: 0, enabled, mode, editions: [{ sourceId: id, versionId: version.versionId }],
+    }));
+  }
+  const personalHits = async (user: string) => (await store.candidates(filter, null, { query: 'needle', libraryUserId: user })).map(hit => hit.versionId);
+
+  const oldVersion = structuredClone(f.records.get(f.options.namespace + '_knowledge_versions/' + version.versionId));
+  await expanded.register(id, 'operator');
+  const latest = await observe(expanded);
+  assert.ok(latest.observation && latest.document.extraction?.complete);
+  assert.deepEqual((await store.catalog()).items, []);
+  const request = { sourceId: id, versionId: version.versionId, versionHash: version.hash, pdfHash: sourceInput.extraction.contentHash,
+    observationHash: latest.observation.contentHash, checkId: latest.checkId, operator:'operator' } as const;
+  // Fork only the in-memory database to exercise independent operator transitions against the same immutable object.
+  function copyState() {
+    const copy = fixture([id]);
+    for (const [path, value] of f.records) copy.records.set(path, structuredClone(value));
+    const refresh = createFirestoreKnowledgeRefresh({ ...options, ...copy.options, definitions: [full] });
+    return { ...copy, refresh, knowledge: createFirestoreKnowledgeStore({ ...copy.options, observations: refresh.gate }) };
+  }
+  const ambiguous = copyState(), receiptPrefix = f.options.namespace + '_knowledge_checks/', otherJobId = crypto.randomUUID();
+  ambiguous.records.set(receiptPrefix + otherJobId, { ...ambiguous.records.get(receiptPrefix + latest.checkId), jobId: otherJobId, readMethod: 'different-parser' });
+  await assert.rejects(ambiguous.knowledge.recheckPdfRange(request, ambiguous.refresh.originals.readPdf), /knowledge_pdf_range_check_mismatch/);
+
+  const legacy = copyState(), watchPath = f.options.namespace + '_knowledge_watches/' + id;
+  delete legacy.records.get(watchPath)!.priorPdfRevision; // Registration created by the previous release.
+  await assert.rejects(legacy.knowledge.recheckPdfRange(request, legacy.refresh.originals.readPdf), /knowledge_pdf_range_check_mismatch/);
+  const legacyRequest = { ...request, confirmedLegacyExpansion: true };
+  await legacy.knowledge.recheckPdfRange(legacyRequest, legacy.refresh.originals.readPdf);
+  assert.equal((await legacy.knowledge.catalog()).items[0]?.versionId, version.versionId);
+  await legacy.refresh.disable(id);
+  await legacy.refresh.register(id,'operator');
+  const reenabled = await observe(legacy.refresh);
+  assert.deepEqual((await legacy.knowledge.catalog()).items, []);
+  await assert.rejects(legacy.knowledge.recheckPdfRange({ ...legacyRequest, checkId: reenabled.checkId }, legacy.refresh.originals.readPdf), /knowledge_pdf_range_check_mismatch/);
+  await assert.rejects(store.recheckPdfRange({ ...request, checkId: original.checkId }, expanded.originals.readPdf), /knowledge_pdf_range_check_mismatch/);
+  await store.recheckPdfRange(request, expanded.originals.readPdf);
+
+  const changed = copyState();
+  const edited = readOriginal(Buffer.concat([bytes, Buffer.from('\n% different original')]));
+  const different = await observe(changed.refresh, edited);
+  assert.deepEqual((await changed.knowledge.catalog()).items, []);
+  await assert.rejects(changed.knowledge.recheckPdfRange({ ...request, checkId: different.checkId, observationHash: different.observation!.contentHash,
+    pdfHash: different.document.extraction!.contentHash }, changed.refresh.originals.readPdf), /knowledge_pdf_range_unavailable/);
+
+  const wrongMethod = copyState();
+  const unexpected = await observe(wrongMethod.refresh, async (definition, signal) => {
+    const result = await fetcher(definition, signal);
+    return result.status === 'ok' ? { ...result, readMethod:'different-parser' } : result;
+  });
+  assert.deepEqual((await wrongMethod.knowledge.catalog()).items, []);
+  await assert.rejects(wrongMethod.knowledge.recheckPdfRange({ ...request, checkId: unexpected.checkId }, wrongMethod.refresh.originals.readPdf), /knowledge_pdf_range_check_mismatch/);
+  const failed = copyState(), failedJob = (await failed.refresh.jobs())[0]!.data;
+  await failed.refresh.process(failedJob, crypto.randomUUID(), async () => ({ status: 'failed', reason: 'network' }), new AbortController().signal);
+  assert.equal((await failed.knowledge.catalog()).items[0]?.versionId, version.versionId);
+  await failed.refresh.process(failedJob, crypto.randomUUID(), async () => ({ status: 'failed', reason: 'parse' }), new AbortController().signal);
+  assert.deepEqual((await failed.knowledge.catalog()).items, []);
+  await assert.rejects(failed.knowledge.recheckPdfRange(request, failed.refresh.originals.readPdf), /knowledge_pdf_range_check_mismatch/);
+  const withdrawn = copyState(), job = (await withdrawn.refresh.jobs())[0]!.data;
+  await withdrawn.refresh.process(job, crypto.randomUUID(), async () => ({status:'unavailable', httpStatus: 410 }), new AbortController().signal);
+  assert.deepEqual((await withdrawn.knowledge.catalog()).items, []);
+  const restored = await observe(withdrawn.refresh);
+  await assert.rejects(withdrawn.knowledge.recheckPdfRange({ ...legacyRequest, checkId: restored.checkId }, withdrawn.refresh.originals.readPdf), /knowledge_pdf_range_check_mismatch/);
+  const rights = createFirestoreKnowledgeRefresh({ ...options, definitions: [{ ...full, termsUrl:'https://www.fhs.gov.hk/changed-terms'}] });
+  const changedRights = createFirestoreKnowledgeStore({ ...f.options, observations: rights.gate });
+  assert.deepEqual((await changedRights.catalog()).items, []);
+  await assert.rejects(changedRights.recheckPdfRange(request, expanded.originals.readPdf), /knowledge_pdf_range_unavailable/);
+  const race = copyState();
+  await assert.rejects(race.knowledge.recheckPdfRange(request, async (sourceId, sha) => {
+    const original = await race.refresh.originals.readPdf(sourceId, sha);
+    await race.knowledge.disable(id,'Operator withdrawal during readback');
+    return original;
+  }), /knowledge_pdf_range_unavailable/);
+  assert.deepEqual((await race.knowledge.catalog()).items, []);
+  assert.deepEqual((await store.catalog()).items.map(row => row.versionHash), [version.hash]);
+  const hit = (await store.candidates(filter, null, { query:'needle' }))[0]!;
+  assert.equal(hit.versionId, version.versionId); assert.equal(hit.pageStart, 3); assert.equal(hit.pageEnd, 3);
+  assert.deepEqual(f.records.get(f.options.namespace + '_knowledge_versions/' + version.versionId), oldVersion);
+  await assert.rejects(store.publish(version.versionId, version.hash), /knowledge_observation_review_required/);
+
+  const repeated = await observe(expanded);
+  assert.deepEqual(await personalHits('fixed-reader'), [version.versionId]);
+  assert.deepEqual(await personalHits('subscriber'), [version.versionId]);
+  assert.deepEqual(await personalHits('opted-out'), []);
+  const newQuote = latest.document.pages![3]!.text;
+  const newInput = { ...sourceInput, extraction: latest.document.extraction!, title: latest.document.title,
+    chunks: [...sourceInput.chunks, chunk('full-only', { pageStart: 4, pageEnd: 4, originalText: newQuote, sourceExcerpt: newQuote })] };
+  const next = await store.importSource(newInput);
+  assert.deepEqual((await store.catalog()).items.map(row => row.versionId), [version.versionId]);
+  await assert.rejects(store.recheckPdfRange({ ...request, versionId: next.versionId, versionHash: next.hash }, expanded.originals.readPdf));
+  await store.review(next.versionId, next.hash,'reviewer', { ...assessment(newInput, { ...version, document: sourceInput }), observationHash: latest.observation.contentHash });
+  assert.deepEqual((await store.catalog()).items.map(row => row.versionId), [version.versionId]);
+  const late = copyState(), lateObservation = late.records.get(f.options.namespace + '_knowledge_observations/' + id)!;
+  delete lateObservation.pdfReadback;
+  await late.knowledge.recheckPdfRange({ ...request, checkId: repeated.checkId }, late.refresh.originals.readPdf);
+  assert.deepEqual((await late.knowledge.catalog()).items.map(row => row.versionId), [version.versionId]);
+  for (let batch = 0; batch < 4; batch++) if ((await store.prepareSearch(next.versionId, next.hash)).complete) break;
+  await store.publish(next.versionId, next.hash, embeddings(newInput));
+  assert.deepEqual((await store.catalog()).items.map(row => row.versionId), [next.versionId]);
+  assert.deepEqual((await store.candidates(filter, null, { query: 'needle' })).map(hit => hit.pageStart).sort(), [3, 4]);
+  assert.deepEqual(await personalHits('fixed-reader'), [version.versionId]);
+  assert.deepEqual(await personalHits('subscriber'), []);
+  assert.deepEqual(await personalHits('opted-out'), []);
+  assert.equal((await store.citedPdf(hit))?.sha256, request.pdfHash);
+});
+
 test('REQ-006 structural identifiers match exactly, excluded rows stay archived and detailed exceptions remain retrievable', async () => {
   const detailed = chunk('safety', { treatment: { kind: 'detailed', policyVersion: 1 } });
   const structured = chunk('batch', { text: 'Exact batch listing', originalText: 'Confirmed batch HK-640 on 2026-01-14.', treatment: {

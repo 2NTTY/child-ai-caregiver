@@ -11,8 +11,9 @@ const operationFlags = new Map([
   ["disable", operatorFlags],
   ["approve", [...operatorFlags, "--observation-hash", "--version", "--version-hash", "--source-and-terms-checked", "--assessment"]],
   ["check", [...operatorFlags, "--approved-source-check"]],
+  ["recheck-pdf-range", [...operatorFlags, "--source-and-terms-checked", "--version", "--version-hash", "--observation-hash", "--pdf-sha256", "--check-id", "--confirm-uninterrupted-registration"]],
 ]);
-const valueFlags = new Set(["--operator", "--observation-hash", "--version", "--version-hash", "--assessment"]);
+const valueFlags = new Set(["--operator", "--observation-hash", "--version", "--version-hash", "--assessment", "--pdf-sha256", "--check-id"]);
 const readOperations = new Set(["catalog", "list", "inspect"]);
 const idPattern = /^[a-z0-9][a-z0-9-]{0,79}$/;
 const hashPattern = /^[a-f0-9]{64}$/;
@@ -45,9 +46,10 @@ try {
   if (!readOperations.has(operation)) {
     if (!options.has("--operator-confirmed") || typeof operator !== "string"
       || !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$/.test(operator)) throw new Error("Operator confirmation and alias required");
-    if (allowed.some(flag => !options.has(flag))) throw new Error("Required review or approval missing");
+    if (allowed.some(flag => flag !== '--confirm-uninterrupted-registration' && !options.has(flag))) throw new Error("Required review or approval missing");
   }
-  if (operation === "approve" && (!hashPattern.test(options.get("--observation-hash"))
+  if (operation === 'recheck-pdf-range' && (!hashPattern.test(options.get('--pdf-sha256')) || !uuidPattern.test(options.get('--check-id')))) throw Error('Invalid PDF or check');
+  if ((operation === "approve" || operation === 'recheck-pdf-range') && (!hashPattern.test(options.get("--observation-hash"))
     || !hashPattern.test(options.get("--version-hash")) || !uuidPattern.test(options.get("--version")))) {
     throw new Error("Invalid observation hash, version or version hash");
   }
@@ -60,14 +62,20 @@ try {
     }
     const { serverStorageBackend } = await import("../server/firebase-config.ts");
     let store;
-    if (serverStorageBackend(process.env) === "firestore") {
+    const backend = serverStorageBackend(process.env);
+    if (operation === 'recheck-pdf-range' && backend !== 'firestore') throw Error('knowledge_firestore_required');
+    if (backend === "firestore") {
       const [{ openFirebasePersistence }, { createFirestoreKnowledgeRefresh }, { createFirestoreKnowledgeStore }] = await Promise.all([
         import("../server/firebase-persistence.ts"), import("../server/firestore-knowledge-refresh.ts"), import("../server/firestore-knowledge.ts")]);
       persistence = await openFirebasePersistence(process.env);
       const { database, cipher, config, authority } = persistence;
       const domain = { database, cipher, projectId: config.projectId, namespace: config.namespace };
       const refresh = createFirestoreKnowledgeRefresh({ ...domain, originalBucket: cloudKnowledgeOriginalBucket(config.projectId, config.photoBucket), definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
-      store = { ...refresh, async approve(sourceId, contentHash, versionId, versionHash, by, assessment) {
+      store = { ...refresh, async recheckPdfRange(request) {
+        if (!config.knowledgeSourceIds) throw Error('knowledge_source_not_configured');
+        const knowledge = createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, observations: refresh.gate });
+        return knowledge.recheckPdfRange(request, refresh.originals.readPdf);
+      }, async approve(sourceId, contentHash, versionId, versionHash, by, assessment) {
         if (!config.knowledgeSourceIds) throw new Error("knowledge_source_not_configured");
         const knowledge = createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, observations: refresh.gate, audience: "internal" });
         return knowledge.review(versionId, versionHash, by, assessment, { sourceId, contentHash });
@@ -86,6 +94,12 @@ try {
     if (operation === "disable") {
       await store.disable(target);
       console.log(JSON.stringify({ event: "knowledge_watch_disabled", watchId: target }));
+    }
+    if (operation === 'recheck-pdf-range') {
+      const result = await store.recheckPdfRange({ sourceId: target, versionId: options.get('--version'), versionHash: options.get('--version-hash'),
+        observationHash: options.get('--observation-hash'), pdfHash: options.get('--pdf-sha256'), checkId: options.get('--check-id'), operator,
+        confirmedLegacyExpansion: options.has('--confirm-uninterrupted-registration') });
+      console.log(JSON.stringify({ event: 'knowledge_published_pdf_range_rechecked', sourceId: target, ...result }));
     }
     if (operation === "approve") {
       const file = options.get("--assessment");
