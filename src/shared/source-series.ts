@@ -26,13 +26,14 @@ export const libraryArchiveSelectionSchema = z.strictObject({ seriesId: id,
 }).refine(value => new Set(value.editions.map(row => row.sourceId)).size === value.editions.length);
 export type LibraryArchiveSelection = z.infer<typeof libraryArchiveSelectionSchema>;
 
+export const librarySelectionMode = z.enum(['platform', 'fixed', 'follow']);
 export const libraryPreferenceChangeSchema = z.strictObject({
-  seriesId: id, imported: z.literal(true).optional(), adopt: z.boolean().optional(), expectedRevision: z.int().nonnegative(), enabled: z.boolean(), mode: z.enum(['fixed', 'follow']),
+  seriesId: id, imported: z.literal(true).optional(), adopt: z.boolean().optional(), expectedRevision: z.int().nonnegative(), enabled: z.boolean(), mode: librarySelectionMode,
   editions: z.array(z.strictObject({ sourceId: id, versionId: z.uuid().optional(), versionHash: z.string().regex(/^[a-f0-9]{64}$/u).optional() }).refine(row => !!row.versionId || !!row.versionHash)).min(1).max(100),
 }).refine(value => new Set(value.editions.map(item => item.sourceId)).size === value.editions.length);
 export type LibraryPreferenceChange = z.infer<typeof libraryPreferenceChangeSchema>;
 export const libraryPreferenceViewSchema = z.strictObject({
-  revision: z.int().nonnegative(), enabled: z.boolean(), mode: z.enum(['fixed', 'follow']),
+  revision: z.int().nonnegative(), enabled: z.boolean(), mode: librarySelectionMode,
   selectedVersionId: z.uuid().nullable(), selectedVersionHash: z.string().regex(/^[a-f0-9]{64}$/u).optional(), eligible: z.boolean(),
 });
 

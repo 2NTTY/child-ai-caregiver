@@ -4,7 +4,8 @@ import { libraryPreferenceViewSchema, sourceSeriesSchema } from './source-series
 
 const sourceId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/);
 const time = z.iso.datetime({ offset: true });
-export const librarySeriesMediaType = 'application/vnd.yuyoufang.library-series.v1+json';
+export const librarySeriesV1MediaType = 'application/vnd.yuyoufang.library-series.v1+json';
+export const librarySeriesMediaType = 'application/vnd.yuyoufang.library-series.v2+json';
 const legacyLibraryItem = z.object({
   sourceId, versionId: z.uuid(), title: z.string().min(1).max(300), publisher: z.string().min(1).max(160),
   url: z.url().refine(value => {
@@ -40,6 +41,11 @@ export function selectedLibraryEditions(items: readonly PersonalLibraryItem[]) {
     const versionHash = selection?.mode === 'fixed' && selection.revision > 0 ? selection.selectedVersionHash : item.versionHash;
     return versionHash ? [{ sourceId: item.sourceId, versionHash }] : [];
   }).sort((a, b) => a.sourceId.localeCompare(b.sourceId, 'en'));
+}
+
+export function librarySeriesV1Page(page: PersonalLibraryPage) {
+  return { ...page, items: page.items.map(item => item.preference?.mode === 'platform'
+    ? { ...item, preference: { ...item.preference, mode: 'follow' as const } } : item) };
 }
 
 // Existing app versions use strict item and page schemas. Only send fields they understand.

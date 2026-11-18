@@ -25,20 +25,34 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
       if (url.href !== expected) throw new Error("source_url_rejected");
       return url;
     };
-    let title: string | undefined, revision: string | null = null;
+    let readMethod: string | undefined, title: string | undefined, revision: string | null = null;
     if (definition.leafletPage) {
       const page = await transport(definition.leafletPage, exact(definition.leafletPage), signal, "text/html");
       if (page.status !== "response") return page;
       if (page.response.status === 404 || page.response.status === 410) return { status: "unavailable", httpStatus: page.response.status };
       if (page.response.status !== 200 || !/^text\/html(?:;|$)/i.test(page.response.contentType)) return { status: "failed", reason: "response" };
       const $ = load(page.response.body.toString("utf8"));
-      // The FHS template passes three string literals to leafletBlock. Never run remote JavaScript.
-      const matches = $("script:not([src])").map((_, el) => $(el).text().trim()).get()
-        .map(script => /^leafletBlock\(\s*"([^"\\]+)"\s*,\s*"([^"\\]+)"\s*,\s*"(\d+)"\s*\);?$/u.exec(script)).filter(match => match !== null);
-      const entry = matches[0];
-      if (matches.length !== 1 || !entry || entry[2] === "-1" || new URL(entry[3] + ".pdf", definition.leafletPage).href !== definition.url)
-        return { status: "failed", reason: "parse" };
-      title = entry[1]; revision = $("#content-rev-date").text().trim() || null;
+      // Recover a conventional direct link only within the registered leaflet landing page.
+      const scripts = $("script:not([src])").map((_, el) => $(el).text().trim()).get()
+        .filter(script => /^leafletBlock\s*\(/u.test(script));
+      if (scripts.length) {
+        const legacy = scripts.length === 1 && /^leafletBlock\(\s*"([^"\\]+)"\s*,\s*"([^"\\]+)"\s*,\s*"(\d+)"\s*\);?$/u.exec(scripts[0]!);
+        if (!legacy || legacy[2] === "-1" || new URL(legacy[3] + ".pdf", definition.leafletPage).href !== definition.url)
+          return { status: "failed", reason: "parse" };
+        title = legacy[1];
+        readMethod = "fhs-leaflet-block/1";
+      } else {
+        const region = $("#content, main, article").first();
+        const matches = region.find("a[href]").filter((_, a) => {
+          try { return new URL($(a).attr("href")!, definition.leafletPage).href === definition.url; }
+          catch { return false; }
+        });
+        const heading = region.find("h1,h2").first().text().trim();
+        if (matches.length !== 1 || !heading || !matches.text().trim()) return { status: "failed", reason: "parse" };
+        title = heading;
+        readMethod = "fhs-registered-pdf-anchor/1";
+      }
+      revision = $("#content-rev-date").text().trim() || null;
     }
     const fetched = await transport(definition.url, definition.leafletPage || definition.id === "chp-recent" ? exact(definition.url) : value => sourceFetchUrl(value, definition), signal,
       pdf ? "application/pdf" : definition.kind === "rss" ? "application/rss+xml, application/xml, text/xml" : "text/html",
@@ -55,15 +69,27 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
           const reader = adapters.pdfReader ?? extractKnowledgePdf;
           let batch = await reader(result.body, { startPage: 1, pageLimit: 8, signal });
           const { fileHash, totalPages } = batch;
-          if (totalPages > 32) return { status: "failed", reason: "parse" };
+          const windowed = (): Awaited<ReturnType<SourceFetcher>> => ({
+            status: "ok", readMethod, original: { mimeType: "application/pdf", bytes: result.body }, items: [{
+              url: definition.url, title: title!, text: "", nativeWindowMethod: "native-pdf-window/1",
+              sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: revision,
+              extraction: { format: "text_pdf", contentHash: fileHash, extractionQuality: "requires_review",
+                totalPages, pageStart: 1, pageEnd: totalPages, complete: false },
+            }],
+          });
+          if (!Number.isSafeInteger(totalPages) || totalPages < 1 || !batch.pages.length) return { status: "failed", reason: "parse" };
+          if (totalPages > 32 || batch.pages.some(p => p.status !== "text") || batch.pages.reduce((n, p) => n + p.text.length, 0) > 60000)
+            return windowed();
           const pages = [...batch.pages];
           while (batch.nextPage !== null) {
             batch = await reader(result.body, { startPage: pages.length + 1, pageLimit: 8, expectedHash: fileHash, signal });
             if (!batch.pages.length || batch.totalPages !== totalPages) return { status: "failed", reason: "parse" };
+            if (batch.pages.some(p=>p.status!=="text")) return windowed();
             pages.push(...batch.pages);
+            if (pages.reduce((sum,p)=>sum+p.text.length,0)>60000) return windowed();
           }
           if (pages.length !== totalPages || pages.some((p, i) => p.page !== i + 1)) return { status: "failed", reason: "parse" };
-          return { status: "ok", original: { mimeType: "application/pdf", bytes: result.body }, items: [{
+          return { status: "ok", readMethod, original: { mimeType: "application/pdf", bytes: result.body }, items: [{
             url: definition.url, title: title!, text: pages.map(p => p.text).join("\n\n"), pages,
             sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: revision,
             extraction: { format: "text_pdf", contentHash: fileHash, extractionQuality: "requires_review",

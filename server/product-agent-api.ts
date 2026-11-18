@@ -5,6 +5,7 @@ import { z } from "zod";
 import type { ProductAgent } from "./product-agent.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import type { ChatStore } from "./chat.ts";
+import type { ChatMessage } from "../src/shared/chat.ts";
 import { readAgentWorkSchema, historySearchSchema, historyReadSchema } from "../src/shared/agent-work.ts";
 import { agentDecisionSchema } from "../src/shared/product-agent.ts";
 import { FamilyError } from "./family-access.ts";
@@ -66,10 +67,14 @@ export async function handleProductAgentRequest(request: Request, userId: string
       const page = await options.chat.listForUser(userId, childId);
       if (!page) return apiError("not_found", "找不到可讀取的孩子。", 404);
       const old = page.messages.find(item => item.role === "model" && item.inReplyTo === messageId);
-      if (old) {
-        await options.store.bindConfirmationQuestion?.(userId, childId, old.id);
-        return await options.isCurrentUser(userId) ? jsonResponse({ message: old }) : apiError("unauthorized", "存取權已改變。", 401);
-      }
+      const deliverSaved = async (message: ChatMessage) => {
+        if (options.chat.getOriginalMessageForUser &&
+          !await options.chat.getOriginalMessageForUser(userId, childId, message.id, 'memory'))
+          return apiError("source_changed", "這則回覆的來源已變，請核對目前資料。", 409);
+        await options.store.bindConfirmationQuestion?.(userId, childId, message.id);
+        return await options.isCurrentUser(userId) ? jsonResponse({ message }) : apiError("unauthorized", "存取權已改變。", 401);
+      };
+      if (old) return await deliverSaved(old);
       const execute = async (publish?: (event: AgentProgress) => void): Promise<Response> => {
         const result = await options.agent.reply(userId, childId, messageId, () => options.isCurrentUser(userId), undefined, publish);
         if (!result) return apiError("not_found", "存取權或資料已改變，請重新讀取。", 404);
@@ -90,8 +95,7 @@ export async function handleProductAgentRequest(request: Request, userId: string
         const saved = await options.chat.createModelMessageForUser(userId, childId, messageId, text);
         const message = saved ?? (await options.chat.listForUser(userId, childId))?.messages.find(item => item.role === "model" && item.inReplyTo === messageId);
         if (!message || !await options.isCurrentUser(userId)) return apiError("ai_unavailable", "未能確認回覆保存，請重新讀取。", 503);
-        await options.store.bindConfirmationQuestion(userId, childId, message.id);
-        return jsonResponse({ message: { ...message, agentRunId: result.runId } });
+        return deliverSaved({ ...message, agentRunId: result.runId });
       };
       if (request.headers.get('accept')?.split(',').some(value => value.trim().split(';')[0] === 'text/event-stream'))
         return agentFeedbackStream(publish => execute(publish), () => options.isCurrentUser(userId));

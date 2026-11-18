@@ -12,8 +12,11 @@ import type { Pool } from "pg";
 import type { MemoryFact } from "../src/shared/memory.ts";
 
 test("only confirmed, current and unexpired facts are applicable", () => {
-  const base = { status: "confirmed" as const, sourceState: "current" as const, validUntil: null };
+  const base = { status: "confirmed" as const, sourceState: "current" as const, validUntil: null, confirmedBy: "parent", confirmedAt: "2025-01-01T00:00:00Z" };
   assert.equal(factIsApplicable(base), true);
+  assert.equal(factIsApplicable({ ...base, confirmedBy: null }), false);
+  assert.equal(factIsApplicable({ ...base, confirmedAt: null }), false);
+  assert.equal(factIsApplicable(base, Date.parse(base.confirmedAt) - 1), false);
   for (const status of ["candidate", "inactive"] as const) assert.equal(factIsApplicable({ ...base, status }), false);
   assert.equal(factIsApplicable({ ...base, sourceState: "changed" }), false);
   assert.equal(factIsApplicable({ ...base, validUntil: "2026-01-01T00:00:00Z" }, Date.parse("2026-01-01T00:00:00Z")), false);
@@ -176,8 +179,9 @@ test("an explicit tonight-to-tomorrow window keeps its expiry", () => {
   const now = Date.parse("2026-10-28T12:00:00.000Z");
   const until = "2026-10-29T00:00:00.000Z";
   assert.equal(sanitizeDurableMemoryFactValidUntil("BB 今晚不吃雞蛋，明早恢復", until, now), until);
-  assert.equal(factIsApplicable({ status: "confirmed", sourceState: "current", validUntil: until }, Date.parse(until) - 1), true);
-  assert.equal(factIsApplicable({ status: "confirmed", sourceState: "current", validUntil: until }, Date.parse(until)), false);
+  const fact = { status: "confirmed" as const, sourceState: "current" as const, validUntil: until, confirmedBy: "parent", confirmedAt: "2025-01-01T00:00:00Z" };
+  assert.equal(factIsApplicable(fact, Date.parse(until) - 1), true);
+  assert.equal(factIsApplicable(fact, Date.parse(until)), false);
 });
 
 async function proposalMemoryFixture(policyVersion = () => 0) {

@@ -236,7 +236,12 @@ try {
         assert.ok(page.nextCursor, 'The maintenance edition must be published and visible before spending a chat run');
         page = await agent.getLibrary(childId, signal, uid, page.nextCursor);
       }
-      bookletVersion = page.items.find(edition).versionId;
+      const item = page.items.find(edition);
+      assert.ok(item.preference?.enabled && item.preference.eligible,
+        'The test account must have access to this edition before spending a chat run');
+      if (item.preference.mode === 'fixed' && item.preference.selectedVersionId)
+        assert.equal(item.preference.selectedVersionId, item.versionId, 'The test account has pinned another booklet edition');
+      bookletVersion = item.versionId;
     }
     let document;
     if (mode === '--real-compose') document = await createFamilyDocumentsApi(origin, clientFetch).create(childId,

@@ -368,7 +368,8 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       parse(knowledgeChunkInputSchema, row.document);
       requireBinding((row.document.pageStart === undefined) === (row.document.pageEnd === undefined));
       if (row.document.pageStart !== undefined && row.document.pageEnd !== undefined)
-        requireBinding(row.document.pageStart <= row.document.pageEnd && typeof row.document.originalText === 'string');
+        requireBinding(row.document.pageStart <= row.document.pageEnd && (typeof row.document.originalText === "string"
+          || row.document.originalKind === "visual_page" && row.document.sourceExcerpt === ""));
       if (row.embedding === null) requireBinding([row.vectorHash, row.model, row.dimensions, row.pipeline].every(value => value === null));
       else {
         requireBinding(row.embedding instanceof VectorValue);

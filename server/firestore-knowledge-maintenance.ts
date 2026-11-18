@@ -1,3 +1,5 @@
+import { assembleKnowledgePdfWindows, planKnowledgePdfWindows, readKnowledgePdfWindow, PDF_WINDOW_METHOD, type WindowReading } from "./knowledge-pdf-windows.ts";
+import { extractKnowledgePdf } from "./knowledge-pdf.ts";
 import { EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
 import { focusedKnowledgeWorkId, prepareFocusedKnowledgePage } from "./knowledge-pdf-focus.ts";
 import { NATIVE_PDF_READER_VERSION } from "./knowledge-pdf-output.ts";
@@ -17,10 +19,10 @@ import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { FirestoreKnowledgeStore } from "./firestore-knowledge.ts";
 import { parseKnowledgeObservation, type createFirestoreKnowledgeRefresh } from "./firestore-knowledge-refresh.ts";
 import { createFirestoreKnowledgeWork, FirestoreKnowledgeWorkError } from "./firestore-knowledge-work.ts";
-import { createBackgroundKnowledgeMaintenanceRunner, type BackgroundKnowledgeCandidate } from "./background-knowledge-maintenance.ts";
+import { createBackgroundKnowledgeMaintenanceRunner, KnowledgeWindowPending, KnowledgeModelQuotaPending, type BackgroundKnowledgeCandidate } from "./background-knowledge-maintenance.ts";
 import { assertPreparedKnowledgePdfLayout, createModelKnowledgeReviewPort, type KnowledgeMaintenanceBaseline, type KnowledgePdfQuestion, type KnowledgePdfAcceptance } from "./background-knowledge-model.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
-import { embeddingDocument } from "./knowledge-inputs.ts";
+import { embeddingDocument, sourceVersionHash } from "./knowledge-inputs.ts";
 import { knowledgeReviewHash } from "./knowledge-review-assessment.ts";
 import { SOURCE_WATCHES } from "./knowledge-source-catalog.ts";
 import { GROWTH_RULES } from "./growth-rules.ts";
@@ -78,18 +80,39 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const daily = personal?.dailyUsage ?? platformDaily, payerId = sponsor?.userId ?? OPERATOR;
       const credentialBinding = sponsor && personal
         ? knowledgeReviewHash(['maintenance-sponsor/1', sponsor.userId, personal.settingsVersion]) : options.credentialBinding;
-      const limits = { modelCalls: Math.min(2, current.maxModelCalls, personal?.runLimits.modelCalls ?? 2),
+      const previous = await work.inspect(request);
+      if (definition.leafletPage && !recordedCheckId && !previous?.result && !previous?.receipt) {
+        const fetcher = base.backgroundKnowledgeLiveFetch ? options.fetch : options.fixtureFetch;
+        if (fetcher) {
+          const checkId = knowledgeOperationId("knowledge-observation/1", request.operationFingerprint);
+          const checked = await options.refresh.process(registration.data, checkId, fetcher, signal);
+          if (!["changed", "unchanged", "already_recorded", "failed", "unavailable"].includes(checked.status))
+            return { status: "rejected" as const, code: checked.status, published: false };
+          recordedCheckId = checkId;
+        }
+      }
+      const pinned = recordedCheckId && definition.leafletPage ? await options.refresh.resumeCheck(registration.data,recordedCheckId) : null;
+      const windowed = Boolean(previous?.windowed || (pinned?.status === "ok" && pinned.items[0]?.nativeWindowMethod === PDF_WINDOW_METHOD));
+      const modelAllowance = windowed ? current.maxModelCalls : 2;
+      const limits = { modelCalls: Math.min(modelAllowance, current.maxModelCalls, personal?.runLimits.modelCalls ?? modelAllowance),
         toolCalls: Math.min(8, current.maxToolCalls, personal?.runLimits.toolCalls ?? 8), queryEmbeddings: 1,
         deadlineMs: Math.min(300_000, current.maxRunSeconds * 1000, personal?.runLimits.deadlineMs ?? 300_000) };
       const config: AiConfig = { ...(personal?.config ?? { ...base, model: base.localModelOverride ?? current.model,
         dailyUserAttempts: current.dailyUserAttempts, dailyGlobalAttempts: current.dailyGlobalAttempts }),
         timeoutMs: Math.min(personal?.config.timeoutMs ?? base.timeoutMs, current.modelRequestSeconds * 1000), maxAttempts: 1, agentMaxRetries: 0 };
-      const configBinding = { config, limits, ...(definition.leafletPage ? { reader: NATIVE_PDF_READER_VERSION } : {}), policyVersion: current.version,
+      const configBinding = { config, limits, ...(definition.leafletPage ? { reader: windowed ? PDF_WINDOW_METHOD : NATIVE_PDF_READER_VERSION } : {}), policyVersion: current.version,
         credentialBinding, ...(options.pdfQuestion ? { pdfQuestion: options.pdfQuestion } : {}), promptPack: prompt.packVersion, watchRevision: registration.data.revision };
       const focus = options.focusedPage;
-      const configHash = knowledgeReviewHash({ ...configBinding, ...(focus ? { focus } : {}) });
+      const readerConfigHash = knowledgeReviewHash({ ...configBinding, ...(focus ? { focus } : {}) });
+      const publicationConfigHash = knowledgeReviewHash({ config, limits, policyVersion:current.version, credentialBinding,
+        watchRevision:registration.data.revision, question:options.pdfQuestion ?? null, focus:focus ?? null });
       if (focus && (!options.pdfQuestion || !recordedCheckId || !definition.leafletPage
         || (reusedOrganizationFrom ?? request.operationFingerprint) !== focusedKnowledgeWorkId(focus.priorWork, focus.priorVersionHash, options.pdfQuestion))) reject("knowledge_focus_binding_mismatch");
+      // A completed, sealed review may finish indexing after a prompt update under the identical publication grant.
+      const configHash = previous?.prepared && previous.publicationConfigHash === publicationConfigHash
+        ? previous.configHash : readerConfigHash;
+      if (previous?.configHash === configHash && previous.waitingForQuotaDay === new Date().toISOString().slice(0, 10))
+        return { status: "budget_exhausted" as const, code: previous.quotaPhase === "model" ? "knowledge_model_daily_admission" : "knowledge_embedding_daily_admission", published: false, budget: previous.budget };
       let budget: AgentBudget | undefined;
       let baseline: KnowledgeMaintenanceBaseline | null | undefined;
       const readBaseline = async () => {
@@ -103,9 +126,9 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const fetchThroughObservation = (fetcher: SourceFetcher): SourceFetcher => async (watch, abort) => {
         let fetched: Awaited<ReturnType<SourceFetcher>> | undefined;
         if (recordedCheckId) {
-          const pinned = await options.refresh.resumeCheck(registration.data, recordedCheckId);
-          if (!pinned) reject("knowledge_observation_superseded");
-          return pinned;
+          const recorded = pinned ?? await options.refresh.resumeCheck(registration.data, recordedCheckId);
+          if (!recorded) reject("knowledge_observation_superseded");
+          return recorded;
         }
         const checkId = knowledgeOperationId("knowledge-observation/1", request.operationFingerprint);
         const result = await options.refresh.process(registration.data, checkId,
@@ -135,21 +158,24 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         durable: {
           async bind(boundRequest, leaseToken) {
             const session = await work.bind(boundRequest, leaseToken, configHash,
-              { modelCalls: limits.modelCalls, deadlineMs: limits.deadlineMs, ...(definition.leafletPage ? {
+              { modelCalls: limits.modelCalls, deadlineMs: limits.deadlineMs, publicationConfigHash, ...(windowed ? { windowed:true as const } : {}), ...(definition.leafletPage ? {
                 maxUnits: 2 + Math.min(current.maxToolCalls, personal?.runLimits.toolCalls ?? current.maxToolCalls) } : {}) }, reusedOrganizationFrom);
             const authorize = async () => {
               if (signal.aborted || !await session.authorize()) return false;
               const latest = await policy.readPolicy();
               return sponsor ? Boolean(personal && latest.version === current.version && await sponsor.identityActive() && await personal.authorize())
-                : latest.enabled;
+                : latest.enabled && latest.version === current.version;
             };
             const providers = personal ? { agent: personal.provider, embedding: personal.maintenanceEmbedding! } : options.providers?.(config);
+            const quotaReader = windowed && personal
+              ? new FirestoreAiUsage({...options,namespace:options.namespace+"_ai_usage",billingSource:"personal"}) : platformDaily;
             let model: AgentGatewayModel | undefined;
             const completeText = async (input: Parameters<AgentGatewayModel["completeText"]>[0]) =>
               session.completeText({ system: input.system, user: input.user, attemptKey: input.attemptKey }, async () => {
-                if (!model) {
+                if (!model || windowed) {
+                  if (windowed) budget?.close();
                   const context: RootBudgetContext = { generation: 1, binding: {
-                    rootRunId: request.operationFingerprint, ownerId: payerId, workspaceId: NIL, childId: NIL,
+                    rootRunId: windowed ? knowledgeReviewHash([request.operationFingerprint,input.attemptKey]) : request.operationFingerprint, ownerId: payerId, workspaceId: NIL, childId: NIL,
                     authorizationVersion: registration.data.revision, storageEpoch: request.workerGeneration,
                     trigger: { kind: "knowledge-maintenance", reference: request.watchId },
                     workflowVersion: "knowledge-maintenance/1", promptPackVersion: prompt.packVersion,
@@ -166,7 +192,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                     durableDailyUsage: { adapter: daily, context } });
                 }
                 return model.completeText(input);
-              });
+              }, windowed ? tx=>quotaReader.modelCapacity(tx,payerId,config.dailyUserAttempts,config.dailyGlobalAttempts) : undefined);
             const reviewer = createModelKnowledgeReviewPort({ completeText, readPdf: options.refresh.originals.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, baseline: readBaseline, growthRules: GROWTH_RULES,
               async fetchedAt(candidate) {
                 const observed = await options.refresh.inspect(candidate.watchId);
@@ -180,6 +206,44 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                 async review(candidate, abort) {
                   const saved = await session.readPrepared(candidate);
                   if (saved) { assertPreparedKnowledgePdfLayout(saved, options.pdfQuestion, options.acceptance); return saved.review; }
+                  if (candidate.observed.nativeWindowMethod) {
+                    if (!windowed || focus) reject("knowledge_window_binding_changed");
+                    const baseline = await readBaseline(), extraction = candidate.observed.extraction!;
+                    if (baseline && (candidate.previousObservationHash !== baseline.observationHash ||
+                      sourceVersionHash(baseline.source) !== baseline.versionHash)) reject("knowledge_maintenance_baseline_mismatch");
+                    const plan = planKnowledgePdfWindows(extraction.totalPages!, limits.modelCalls);
+                    const readings: WindowReading[] = [];
+                    for (const [index, range] of plan.entries()) {
+                      let reading = await session.readWindow(index);
+                      if (!reading) {
+                        await session.reserveWorkUnit("pdf-window:" + index);
+                        const count = range.lastRead - range.firstRead + 1;
+                        const window = await work.readPdfWindow(candidate.watchId, extraction.contentHash, range.firstRead,
+                          count, options.refresh.originals, abort);
+                        if (window.descriptor.total !== extraction.totalPages) reject("knowledge_window_binding_changed");
+                        const textLayers = [];
+                        for (let startPage = 1; startPage <= count; startPage += 8) {
+                          const local = await extractKnowledgePdf(window.bytes, { startPage, pageLimit: 8,
+                            expectedHash: window.descriptor.contentHash, signal: abort });
+                          if (local.totalPages !== count) reject("knowledge_window_binding_changed");
+                          textLayers.push(...local.pages.map(p => ({ ...p, page: p.page + range.firstRead - 1 })));
+                        }
+                        reading = await readKnowledgePdfWindow({ range, candidate, baseline, sliceHash: window.descriptor.contentHash,
+                          bytes: window.bytes, textLayers, completeText, signal: abort });
+                        const hasNext = index < plan.length - 1;
+                        await session.saveWindow(index, reading, hasNext);
+                        if (hasNext) throw new KnowledgeWindowPending();
+                      }
+                      readings.push(reading);
+                    }
+                    const currentObservation = await options.refresh.inspect(candidate.watchId);
+                    if (currentObservation.observation?.contentHash !== candidate.observationHash) reject("knowledge_observation_changed");
+                    const prepared = assembleKnowledgePdfWindows({ candidate, baseline, windows: readings,
+                      fetchedAt: currentObservation.observation.fetchedAt, packVersion: prompt.packVersion,
+                      growthRules: GROWTH_RULES.filter(r => r.sourceId === candidate.watchId) });
+                    await session.savePrepared(candidate, prepared);
+                    return prepared.review;
+                  }
                   if (focus) {
                     const old = await work.inspect({ ...request, operationFingerprint: focus.priorWork });
                     const prior = old?.prepared, question = options.pdfQuestion!;
@@ -204,7 +268,8 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                 assertPreparedKnowledgePdfLayout(prepared, options.pdfQuestion, options.acceptance);
                 const imported = await options.knowledge.importSource(prepared.source);
                 const reviewed = await options.knowledge.review(imported.versionId, imported.hash, "agent-knowledge-maintenance",
-                  prepared.assessment, { sourceId: candidate.watchId, contentHash: candidate.observationHash });
+                  prepared.assessment, { sourceId: candidate.watchId, contentHash: candidate.observationHash,
+                    ...(windowed ? { verifyWindowedReview:session.verifyWindowedReview } : {}) });
                 if (reviewed.status !== "reviewed") return { published: false, code: reviewed.reason ?? "knowledge_review_held" };
                 let complete = false;
                 for (let batch = 0; batch < 4 && !complete; batch++) {
@@ -244,7 +309,13 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         },
       });
       try { return await runner.start(request, signal); }
-      finally { budget?.close(); }
+      catch (error) {
+        if (error instanceof KnowledgeModelQuotaPending) return {status:"budget_exhausted" as const,code:"knowledge_model_daily_admission",published:false};
+        if (error instanceof KnowledgeWindowPending) return { status:"in_progress" as const,code:"knowledge_window_pending",published:false };
+        if (error instanceof EmbeddingAdmissionDeferred)
+          return { status: "budget_exhausted" as const, code: "knowledge_embedding_daily_admission", published: false };
+        throw error;
+      } finally { budget?.close(); }
     },
   };
 }

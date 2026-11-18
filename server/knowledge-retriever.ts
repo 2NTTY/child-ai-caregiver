@@ -101,13 +101,15 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
             if (offset > original.length) throw new FamilyError(400, "knowledge_context_offset_invalid");
             const maxLength = Math.min(original.length - offset, 6000 - characters);
             const entry: KnowledgeContextChunk = { ...metadata, original: { text: "", offset, nextOffset: offset, totalCharacters: original.length,
-              coverage: originalText ? "chunk_original" : "excerpt_only" } };
+              coverage: originalText && !candidate.originalKind ? "chunk_original" : "excerpt_only" } };
             output.push(entry);
             const select = (length: number) => {
               entry.original.text = original.slice(offset, offset + length);
               entry.original.nextOffset = offset + length < original.length ? offset + length : null;
-              entry.readCoverage = { kind: "original_segment", complete: offset === 0 && entry.original.nextOffset === null,
-                offset, nextOffset: entry.original.nextOffset, totalCharacters: original.length };
+              entry.readCoverage = candidate.originalKind
+                ? { kind: "reviewed_text_and_excerpt", complete: false }
+                : { kind: "original_segment", complete: offset === 0 && entry.original.nextOffset === null,
+                  offset, nextOffset: entry.original.nextOffset, totalCharacters: original.length };
               nextCursor = entry.original.nextOffset === null
                 ? (queue[processed + 1] ? { versionId: anchor.versionId, anchorChunkId: anchor.chunkId, afterKey: candidate.key, chunkId: queue[processed + 1].chunkId, offset: 0 } : null)
                 : { versionId: anchor.versionId, anchorChunkId: anchor.chunkId, afterKey: candidate.key, chunkId: candidate.chunkId, offset: offset + length };
@@ -120,9 +122,7 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
               if (!output.length) throw new FamilyError(400, "knowledge_context_response_capacity");
               break;
             }
-            entry.readCoverage = { kind: "original_segment", complete: offset === 0 && entry.original.nextOffset === null,
-              offset, nextOffset: entry.original.nextOffset, totalCharacters: original.length };
-            loaded.set(candidate.chunkId, { ...metadata, text: entry.original.text, readCoverage: entry.readCoverage });
+            loaded.set(candidate.chunkId, { ...metadata, text: candidate.originalKind === "visual_page" ? candidate.text : entry.original.text, readCoverage: entry.readCoverage });
             characters += low; processed++;
             if (entry.original.nextOffset !== null) break;
           }

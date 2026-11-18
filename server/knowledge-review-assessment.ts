@@ -19,7 +19,7 @@ function canonical(value: unknown): unknown {
   return value;
 }
 export function knowledgeReviewHash(value: unknown): string { return knowledgeHash(canonical(value) ?? null); }
-const original = (chunk: KnowledgeChunkInput, quote: string | null) => quote !== null &&
+const original = (chunk: KnowledgeChunkInput, quote: string | null) => chunk.originalKind === "visual_page" ? quote === null : quote !== null &&
   [chunk.originalText, chunk.sourceExcerpt].some(text => text?.includes(quote));
 /** Validate recorded meaning against the actual compared editions; this is evidence, not a clinical guarantee. */
 export function validateKnowledgeAssessment(raw: unknown, current: KnowledgeSourceInput, compared: KnowledgeSourceInput | null): KnowledgeReviewAssessment {

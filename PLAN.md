@@ -59,7 +59,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="agent-evidence"></a>
 ### 助手原件、引用與私人記憶
 
-2026-11-19 從 `3b51b971` 並行接續[原有三項需求](docs/REQUIREMENTS_BACKLOG.md)。沿用 [REQ-005 已有的摘要、歷史、用量與恢復證據](#req005-closeout01)。三包開工時均待實作差異及正式驗收。
+2026-11-19 從 `3b51b971` 並行接續[原有三項需求](docs/REQUIREMENTS_BACKLOG.md)。沿用 [REQ-005 已有的摘要、歷史、用量與恢復證據](#req005-closeout01)。[官方原件收據](artifacts/verification/REQ004_NATIVE_PDF_CHP_20261119.json)保存全冊原件指紋、第 6 頁兩次獨立讀取及向量等待狀態。全冊發布、家長問答回到同一原頁、私人同義查詢的真模型結果及原站版本各自驗收。
 
 | 工作包 | 可獨立交付的結果 | 必要驗收 |
 |---|---|---|

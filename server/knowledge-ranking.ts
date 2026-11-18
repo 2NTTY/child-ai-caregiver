@@ -80,6 +80,19 @@ export function knowledgeTokens(text: string, question = false): Set<string> {
   return new Set([...knowledgeIndexTokens(text, question)].slice(0, 64));
 }
 
+/** Locate the actual wording of a subject in either register. Incidental verbs are not alternative subjects. */
+export function knowledgeTopicMatcher(query: string): (candidate: string) => string | undefined {
+  const normalized = query.normalize('NFKC').toLowerCase();
+  const groups = COLLOQUIAL_QUERY_EXPANSIONS.filter(([pattern, synonyms]) => pattern.test(normalized) || synonyms.some(term => normalized.includes(term)));
+  return candidate => {
+    const body = candidate.normalize('NFKC').toLowerCase();
+    for (const [pattern, synonyms] of groups) {
+      const anchor = body.match(pattern)?.[0] ?? synonyms.find(term => body.includes(term));
+      if (anchor) return anchor;
+    }
+  };
+}
+
 function matches(query: ReadonlySet<string>, text: string): number {
   const field = knowledgeTokens(text);
   let count = 0;

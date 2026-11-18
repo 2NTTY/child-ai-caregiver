@@ -7,6 +7,8 @@ import type { FirestoreChatStore } from './firestore-chat.ts';
 import type { FirestoreMemoryStore } from './firestore-memory.ts';
 import { domainParse, domainReject, firestoreDomainHash, FirestoreDomainError } from './firestore-domain-data.ts';
 import type { ImportedChatMessage } from '../src/shared/chat-imports.ts';
+import { knowledgeTopicMatcher } from './knowledge-ranking.ts';
+import type { MemoryFact } from '../src/shared/memory.ts';
 
 const cursorSchema = z.object({ userId: z.string(), childId: z.uuid(), epoch: z.uuid(), changeSeq: z.string(),
   kind: historySearchSchema.shape.kind, query: z.string(), createdFrom: z.string().optional(), createdBefore: z.string().optional(), createdAt: z.iso.datetime({ offset: true }), id: z.uuid() }).strict();
@@ -61,6 +63,9 @@ export function createFirestoreAgentHistory(options: {
   return {
     async searchHistory(userId: string, childId: string, raw: z.infer<typeof historySearchSchema>, includeNeighbors = false): Promise<AgentHistoryPage> {
       const input = domainParse(historySearchSchema, raw);
+      const normalizedQuery = input.query.toLocaleLowerCase('zh-HK');
+      // Expand only a current fact lookup. Original chat quotations and historical searches stay literal.
+      const matchFact = input.kind === 'memory_fact' && includeNeighbors && normalizedQuery.trim() ? knowledgeTopicMatcher(normalizedQuery) : null;
       let cursor: z.infer<typeof cursorSchema> | null = null;
       if (input.cursor !== null) {
         try {
@@ -89,6 +94,8 @@ export function createFirestoreAgentHistory(options: {
           const id = domainParse(z.uuid(), row.get(idField), 'history_binding', 500);
           const createdAt = domainParse(z.iso.datetime({ offset: true }), row.get('createdAt'), 'history_binding', 500);
           let text: string, version: number, role: 'user' | 'model' | null = null, contentVersion: string | undefined;
+          let factMatch: string | undefined;
+          let factState: Pick<MemoryFact, 'status' | 'sourceState' | 'applicable' | 'validUntil'> | undefined;
           if (input.kind === 'message') {
             const value = await options.chat.readMessage(b, childId, id);
             if (!value || value.createdAt !== createdAt) domainReject('history_binding', 500);
@@ -107,11 +114,16 @@ export function createFirestoreAgentHistory(options: {
             // History retains inactive facts explicitly; it does not promote them into current knowledge.
             text = '[' + value.status + '; ' + value.sourceState + '] ' + value.key + ': ' + value.content;
             version = value.version;
+            if (includeNeighbors) factState = { status: value.status, applicable: value.applicable, sourceState: value.sourceState, validUntil: value.validUntil };
+            if (matchFact && value.applicable) factMatch = matchFact(value.key + ' ' + value.content);
           }
           scanned++; last = { id, createdAt };
-          const index = text.toLocaleLowerCase('zh-HK').indexOf(input.query.toLocaleLowerCase('zh-HK'));
+          const searchable = text.toLocaleLowerCase('zh-HK');
+          const literalIndex = searchable.indexOf(normalizedQuery);
+          const index = literalIndex < 0 && factMatch ? searchable.normalize('NFKC').indexOf(factMatch) : literalIndex;
           const offset = Math.max(0, index - 80);
           if (index >= 0) matches.push({ id, kind: input.kind, version, createdAt, role, excerpt: text.slice(offset, offset + 400),
+            ...factState,
             ...(neighbors ? { excerptRange: { offset, totalCharacters: text.length, contentVersion }, followingMessages: neighbors.following() } : {}) });
           if (role) neighbors?.observe({ id, version, createdAt, role, text, contentVersion });
           if (matches.length === 10) break;
@@ -122,7 +134,7 @@ export function createFirestoreAgentHistory(options: {
           ...(input.createdBefore ? { createdBefore: input.createdBefore } : {}), ...last })).toString('base64url') : null };
       });
     },
-    async readHistory(userId: string, childId: string, raw: z.infer<typeof historyReadSchema>): Promise<AgentHistoryMessage | null> {
+    async readHistory(userId: string, childId: string, raw: z.infer<typeof historyReadSchema>, purpose?: 'memory'): Promise<AgentHistoryMessage | null> {
       const input = domainParse(historyReadSchema, raw);
       return authority.runTransaction(userId, childId, async b => {
         if (input.kind === 'imported_message') {
@@ -140,7 +152,7 @@ export function createFirestoreAgentHistory(options: {
             importedSource: { message: { id: original.id, childId: original.childId, authorUserId: original.authorUserId, inReplyTo: original.inReplyTo },
               provenance: value.importedFrom.current, attachment: value.attachment } };
         }
-        const message = await options.chat.readMessage(b, childId, input.messageId);
+        const message = await options.chat.readMessage(b, childId, input.messageId, purpose);
         if (!message) return null;
         const projected = await content(b, message);
         if (input.contentVersion && input.contentVersion !== projected.contentVersion

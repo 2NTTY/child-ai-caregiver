@@ -1,11 +1,12 @@
 import type { Pool } from "pg";
 import { z } from "zod";
-import { legacyLibraryPage, librarySeriesMediaType, type PersonalLibraryPage } from "../src/shared/personal-library.ts";
+import { legacyLibraryPage, librarySeriesMediaType, librarySeriesV1MediaType, librarySeriesV1Page, type PersonalLibraryPage } from "../src/shared/personal-library.ts";
 import { FamilyError, READ_ROLES, withChildAccess } from "./family-access.ts";
 import { FirestoreKnowledgeError } from './firestore-knowledge.ts';
 import { createKnowledgeStore } from "./knowledge-store.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
 import { apiError, jsonResponse } from "./workspace-api.ts";
+import { streamTemporaryZip, type TemporaryZip } from './zip-download.ts';
 
 import { libraryArchiveSelectionSchema, libraryPreferenceChangeSchema, type LibraryArchiveSelection, type LibraryPreferenceChange } from '../src/shared/source-series.ts';
 
@@ -44,7 +45,7 @@ export function createPersonalLibrary(pool: Pool, cipher: StorageCipher) {
   };
 }
 export type PersonalLibrary = ReturnType<typeof createPersonalLibrary> & {
-  exportArchive?(userId: string, childId: string, selection: LibraryArchiveSelection, signal: AbortSignal): Promise<{ bytes: Uint8Array<ArrayBuffer>; sha256: string }>;
+  exportArchive?(userId: string, childId: string, selection: LibraryArchiveSelection, signal: AbortSignal): Promise<TemporaryZip & { sha256: string }>;
   save?(userId: string, childId: string, change: LibraryPreferenceChange): Promise<{ revision: number }>;
 };
 export async function handlePersonalLibraryRequest(request: Request, userId: string | null, options: {
@@ -60,10 +61,10 @@ export async function handlePersonalLibraryRequest(request: Request, userId: str
     if (request.method === 'POST' && url.search === '?export=zip') {
       if (!options.library.exportArchive || !options.readJson) return apiError('library_unavailable', '此來源庫暫未提供可攜匯出。', 503);
       const selection = libraryArchiveSelectionSchema.parse(await options.readJson(request, 24 * 1024));
-      const { bytes, sha256 } = await options.library.exportArchive(userId, match[1].toLowerCase(), selection, request.signal);
-      if (!await options.isCurrentUser(userId)) throw new FamilyError(409, 'session_changed');
-      return new Response(bytes, { headers: { 'content-type': 'application/zip', 'content-length': String(bytes.byteLength),
-        'content-disposition': 'attachment; filename="' + selection.seriesId + '.zip"', 'x-archive-sha256': sha256, 'cache-control': 'private, no-store' } });
+      const file = await options.library.exportArchive(userId, match[1].toLowerCase(), selection, request.signal);
+      return await streamTemporaryZip(file, request.signal, async () => {
+        if (!await options.isCurrentUser(userId)) throw new FamilyError(409, 'session_changed');
+      }, 'attachment; filename="' + selection.seriesId + '.zip"', { 'x-archive-sha256': file.sha256 });
     }
     if (request.method === 'POST' && options.library.save && options.readJson) {
       if (url.search) throw new FamilyError(400, 'invalid_input');
@@ -78,9 +79,9 @@ export async function handlePersonalLibraryRequest(request: Request, userId: str
     const page = await options.library.page(userId, match[1].toLowerCase(), url.searchParams.get("cursor"));
     if (!await options.isCurrentUser(userId)) return apiError("session_changed", "登入帳號已改變。", 409);
     if (!page) return apiError("not_found", "沒有可讀取的參考目錄。", 404);
-    const extended = request.headers.get('accept') === librarySeriesMediaType;
-    const response = jsonResponse(extended ? page : legacyLibraryPage(page));
-    if (extended) response.headers.set('content-type', librarySeriesMediaType);
+    const format = request.headers.get('accept');
+    const response = jsonResponse(format === librarySeriesMediaType ? page : format === librarySeriesV1MediaType ? librarySeriesV1Page(page) : legacyLibraryPage(page));
+    if (format === librarySeriesMediaType || format === librarySeriesV1MediaType) response.headers.set('content-type', format);
     response.headers.append('vary', 'Accept');
     return response;
   } catch (error) {
