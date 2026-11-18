@@ -26,7 +26,7 @@ export function createPersonalModelProviders(config: AiConfig, apiKey: string, p
     : provider === 'gemini' ? google!.embedding : null;
   const unsupportedMetadata = async () => ({ status: 'unavailable' as const, reason: 'metadata_unsupported' as const });
   return { ...model,
-    agent: { async generate(request, signal) {
+    agent: { ...model.agent, async generate(request, signal) {
       try { return await model.agent.generate(request, signal); }
       catch (error) {
         if (error instanceof ApiError) throw personalProviderHttpError(error.status, error.message);

@@ -8,6 +8,9 @@ import type { ModelProvider } from './model-gateway.ts';
 import { postPersonalModel, type PersonalModelTransport } from './personal-model-transport.ts';
 import { providerConfigurationError } from './personal-provider-error.ts';
 
+import { compatibleContextPreflight } from './model-context-preflight.ts';
+import type { ModelInput } from './model-gateway.ts';
+
 type Message = Record<string, unknown>;
 const invalid = () => providerConfigurationError('model_response_invalid');
 function instruction(value: unknown): string {
@@ -76,7 +79,7 @@ function jsonSchema(value: unknown): unknown {
   return Object.fromEntries(Object.entries(value).map(([key, item]) => [key,
     key === 'type' && typeof item === 'string' ? item.toLowerCase() : jsonSchema(item)]));
 }
-export function compatibleRequest(request: LlmRequest, model: string, maxOutputTokens: number): Record<string, unknown> {
+export function compatibleRequest(request: LlmRequest, model: string, maxOutputTokens: number) {
   const declarations = (request.config?.tools ?? []).flatMap(tool => 'functionDeclarations' in tool ? tool.functionDeclarations ?? [] : []);
   const calling = request.config?.toolConfig?.functionCallingConfig;
   const allowed = calling?.allowedFunctionNames;
@@ -121,22 +124,28 @@ export function compatibleResponse(value: unknown): LlmResponse {
 
 export function createCompatibleProviders(config: AiConfig, apiKey: string, baseUrl: string,
   transport: PersonalModelTransport = postPersonalModel): { agent: AgentModelProvider; model: ModelProvider } {
+  const build = (request: LlmRequest, max = config.maxOutputTokens) =>
+    compatibleRequest(request, config.model, Math.min(max, config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive));
+  const plain = (input: ModelInput): LlmRequest => ({ model: config.model,
+    contents: input.messages.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
+    config: { systemInstruction: input.systemInstruction }, toolsDict: {}, liveConnectConfig: {} });
   const generate = async (request: LlmRequest, signal: AbortSignal, maxOutputTokens = config.maxOutputTokens) => {
     const boundedSignal = AbortSignal.any([signal, AbortSignal.timeout(config.timeoutMs)]);
     try {
       return compatibleResponse(await transport(baseUrl, apiKey,
-        compatibleRequest(request, config.model, Math.min(maxOutputTokens, config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive)), boundedSignal));
+        build(request, maxOutputTokens), boundedSignal));
     } catch (error) {
       if (!signal.aborted && boundedSignal.aborted) throw providerConfigurationError('model_http_408');
       throw error;
     }
   };
-  return { agent: { generate }, model: { async generate(input, options) {
-    const response = await generate({ model: config.model, contents: input.messages.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
-      config: { systemInstruction: input.systemInstruction }, toolsDict: {}, liveConnectConfig: {} }, options.signal, options.maxOutputTokens);
-    if (response.finishReason !== FinishReason.STOP || response.content?.parts?.some(p => p.functionCall)) throw invalid();
-    return { text: response.content?.parts?.filter(p => !p.thought).map(p => p.text ?? '').join('') ?? '',
-      usage: { inputTokens: response.usageMetadata?.promptTokenCount ?? null, outputTokens: response.usageMetadata?.candidatesTokenCount ?? null,
-        cachedTokens: response.usageMetadata?.cachedContentTokenCount ?? null } };
-  } } };
+  return { agent: { generate, preflight: request => compatibleContextPreflight(build(request)) }, model: {
+    preflight: (input, max) => compatibleContextPreflight(build(plain(input), max)),
+    async generate(input, options) {
+      const response = await generate(plain(input), options.signal, options.maxOutputTokens);
+      if (response.finishReason !== FinishReason.STOP || response.content?.parts?.some(p => p.functionCall)) throw invalid();
+      return { text: response.content?.parts?.filter(p => !p.thought).map(p => p.text ?? '').join('') ?? '',
+        usage: { inputTokens: response.usageMetadata?.promptTokenCount ?? null, outputTokens: response.usageMetadata?.candidatesTokenCount ?? null,
+          cachedTokens: response.usageMetadata?.cachedContentTokenCount ?? null } };
+    } } };
 }

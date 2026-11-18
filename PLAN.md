@@ -195,6 +195,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="req005-closeout01"></a>
 ### REQ005-CLOSEOUT01：REQ-005 驗收對照及整合紀錄
 
+11 月 18 日續驗：香港 Firestore 同時間的 32 筆合成資料按原游標分成 30／2，無遺漏或重複，已清除該隔離範圍。本機實際 Web 續頁曾因正式 HTTP 入口拒收游標而回 400；修正後 Edge 點「載入較早建議」顯示 32 筆且按鈕消失。[分頁收據](artifacts/verification/REQ005_GROWTH_PAGING_20261118.json) · [兩個 worker 收緊政策與重啟收據](artifacts/verification/REQ005_WORKER_ROLLOUT_20261118.json)
+
 - **基線／來源：** 候選分支 `codex/req005-closeout-validation` 接 master `2abe7aed60b192b253414f6464e3fd070cc377e7`，對應 [PR #514](https://github.com/2NTTY/child-ai-caregiver/pull/514)。
 - **文件治理落實規範聲明（`AGENTS.md#document-updates`）：** 依據專案「不增非必要獨立審計文件，以 `PLAN.md#active` 與 `STATUS.md` 為單一權威入口」之規範，本節完整納入 REQ-005 §9 全鏈收束核對清單、實施階段校準、官方 26 項驗收場景實測矩陣（忠實還原 REQUIREMENTS_BACKLOG.md 原文與單位）與 11 項官方未決清單；獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除（`git rm`）。
 - **11 月 11 日整合：**專案負責人已授權按原分支修正及合併。下列表格保留 11 月 8 日各候選 SHA 的證據與當日狀態。整合時另修正了模型看見的輸出上限（#510）、本人出資 run 的持久期限（#511）、301 至 900 秒的執行期限（#512）、關注與私人來源的前端續頁及所需索引（#513），以及 ADK 同時間事件和跨範圍摘要（#508）。逐項上線、真模型品質及可調軟預算仍需分別核對。

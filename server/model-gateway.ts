@@ -7,6 +7,8 @@ export interface ModelInput {
 }
 export interface ModelReply { text: string; usage: TokenUsage }
 export interface ModelProvider {
+  preflight?(input: ModelInput, maxOutputTokens: number, counted?: number): import('./model-context-preflight.ts').ContextPreflight;
+  countInput?(input: ModelInput, maxOutputTokens: number): Promise<number | undefined>;
   generate(input: ModelInput, options: { signal: AbortSignal; maxOutputTokens: number }): Promise<ModelReply>;
 }
 export class ProviderFailure extends Error {
@@ -55,6 +57,9 @@ export function createModelGateway(options: {
       try {
         for (let attempt = 1; attempt <= config.maxAttempts; attempt += 1) {
           if (!await authorize()) throw new AiFailure("unauthorized");
+          const counted = provider.countInput ? await provider.countInput(input, config.maxOutputTokens) : undefined;
+          if (provider.preflight?.(input, config.maxOutputTokens, counted).exceedsCapacity) throw new AiFailure("invalid_input");
+          if (provider.countInput && !await authorize()) throw new AiFailure("unauthorized");
           if (!await usage.reserve(userId, config.dailyUserAttempts, config.dailyGlobalAttempts)) {
             throw new AiFailure("ai_quota_exceeded");
           }
