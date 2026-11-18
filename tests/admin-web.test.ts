@@ -129,7 +129,19 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
   assert.equal(platformPolicySchema.parse({...legacyValues,version:0,updatedAt:null}).maxToolCalls,16);
   assert.equal((await http('operations', pause)).status, 200); assert.equal(await newer.authorize(), false);
   assert.equal((await admin.readPolicy()).maxToolCalls,9);assert.equal((await admin.readPolicy()).maxRunSeconds,180);
+  const observedAt = new Date().toISOString(), day = observedAt.slice(0, 10);
+  const quota = { project: options.projectId, provider: 'Vertex AI', model: 'gemini-embedding-001',
+    tier: 'global', source: 'synthetic provider observation', observedAt, unit: 'RPM', limit: 100 };
+  const observation = { day, observedAt, providerQuota: [quota] };
+  await admin.savePlatformQuotaObservation(observation);
+  await admin.savePlatformQuotaObservation(observation);
+  await assert.rejects(admin.savePlatformQuotaObservation({ ...observation, providerQuota: [{ ...quota, limit: 200 }] }),
+    { code: 'quota_observation_conflict' });
+  await assert.rejects(admin.savePlatformQuotaObservation({ ...observation, providerQuota: [{ ...quota, project: 'another-project' }] }),
+    { code: 'invalid_quota_observation' });
+  assert.equal((await admin.usage('2000-01-01')).platform.finance.providerQuota, null);
   const totals = await (await http('usage')).json(); assert.equal(totals.platform.attempts, 1); assert.equal(totals.platform.inputTokens, 10); assert.equal(totals.personal.attempts, 0);
+  assert.deepEqual(totals.platform.finance.providerQuota, [quota]); assert.equal(totals.personal.finance.providerQuota, null);
   assert.equal(totals.platform.breakdown.model, 1);
   assert.deepEqual(totals.platform.finance.settlement, { status: 'settled', micros: '0', currency: 'HKD', attempts: 1 });
   assert.equal(totals.personal.finance.settlement.status, 'unknown');

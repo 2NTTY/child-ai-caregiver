@@ -7,6 +7,12 @@ const count = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const currencyCode = z.string().regex(/^[A-Z]{3}$/u);
 const label = z.string().trim().min(1).max(128);
 const identifier = z.string().min(1).max(256);
+const quota = z.object({ provider: label, project: label, model: label, tier: label, source: label,
+  observedAt: z.iso.datetime({ offset: true }), unit: z.enum(['RPM', 'TPM', 'RPD']), limit: count }).strict();
+// A trusted operator can publish a dated platform observation without restarting the API.
+export const quotaSnapshotSchema = z.object({ day: z.iso.date(), observedAt: z.iso.datetime(),
+  providerQuota: z.array(quota).min(1).max(24) }).strict().refine(value =>
+  value.observedAt.slice(0, 10) === value.day && value.providerQuota.every(row => row.observedAt === value.observedAt));
 const rate = z.discriminatedUnion('kind', [
   // Only use this schedule when the provider prices precisely these reported units.
   z.object({ kind: z.literal('model'), priceVersion: label, uncachedInputMicrosPerMillion: count,
@@ -19,8 +25,7 @@ export const dayFinancialEvidenceSchema = z.object({ day: z.iso.date(), payer: z
   currency: currencyCode.optional(), attempts: z.array(lineSchema).max(100),
   approvedDailyBudget: z.object({ currency: currencyCode, micros: count, approvalReference: label,
     approvedAt: z.iso.datetime({ offset: true }) }).strict().optional(),
-  providerQuota: z.array(z.object({ provider: label, project: label, model: label, tier: label, source: label, observedAt: z.iso.datetime({ offset: true }),
-    unit: z.enum(['RPM', 'TPM', 'RPD']), limit: count }).strict()).min(1).max(24).optional(),
+  providerQuota: z.array(quota).min(1).max(24).optional(),
 }).strict().refine(row => {
   const ids = row.attempts.map(line => JSON.stringify([line.rootRunId, line.attemptKey]));
   const invoiceLines = row.attempts.flatMap(line => line.settlement ? [line.settlement.reference] : []);
