@@ -205,9 +205,13 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 預檢、可設上限、每日分項帳本及維護者收件箱已隨 #632、#633 合併。#635 已完成[單一隔離範圍的摘要切換](#req005-summary01)。32,000 字元配置下，助手按需取得工具，原有待辦修正與審核流程能在上限內完成。在啟用及停用管理政策的兩種配置均已核對。
 
-維護者收件箱已用本機管理員會話核對。背景用量觸及政策門檻後，管理 API 可讀到一宗新告警，重複確認返回相同收據，零模型及外發。[收件箱收據](artifacts/verification/REQ005_MAINTAINER_INBOX_20261118.json)。正式站維護者親自收件、正式摘要啟用及供應商未提供的結算／配額各自待核。
+維護者收件箱已用本機管理員會話核對。背景用量觸及政策門檻後，管理 API 可讀到一宗新告警，重複確認返回相同收據，零模型及外發。[收件箱收據](artifacts/verification/REQ005_MAINTAINER_INBOX_20261118.json)。維護者在正式站看到「目前沒有用量告警」。首宗正式告警的確認收據、正式摘要啟用及供應商未提供的結算／配額各自待核。
+
+11 月 18 日場景 23 續驗：下表記錄的兩個舊測試曾在 Vertex 補齊生成設定前量度封包。改用正式 payload builder 後，八項離線檢查通過。互動與 worker 分別接受配置的 64,000／32,000 字元，多一個字元便於扣額前停止。載入工具後也按完整封包保留下一步空間。[輸入邊界](tests/agent-input-limit.test.ts) · [工具空間](tests/agent-capability-reserve.test.ts)
 
 **正式發布**　11 月 18 日 22:01（香港），原站收據 `r44317583446-1` 確認 Web、API 及 worker 均執行 `0a47c9b36f1384610af413dec72dc226cda263a0`。站外讀取 `/site-version.json` 及 `/api/version` 取得相同版本，`/api/health` 回報 Firestore 正常。下次接手先看管理後台「助手用量告警」的實際收件紀錄；如要擴大摘要，再按[出資與切換手冊](docs/summary-durable-integration-handoff.md#funded-pilot)指定帳戶、範圍及出資上限。正式每日金額及供應商用量以營運核實值為準。[正式發布收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44317583446)
+
+管理後台 Web 已獨立更新至 `b70ebfb8`，用量與告警在預設分頁。API 與 worker 沿用上述版本。[管理後台發布收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44325595147)
 
 - **基線／來源：** 候選分支 `codex/req005-closeout-validation` 接 master `2abe7aed60b192b253414f6464e3fd070cc377e7`，對應 [PR #514](https://github.com/2NTTY/child-ai-caregiver/pull/514)。
 - **文件治理落實規範聲明（`AGENTS.md#document-updates`）：** 依據專案「不增非必要獨立審計文件，以 `PLAN.md#active` 與 `STATUS.md` 為單一權威入口」之規範，本節完整納入 REQ-005 §9 全鏈收束核對清單、實施階段校準、官方 26 項驗收場景實測矩陣（忠實還原 REQUIREMENTS_BACKLOG.md 原文與單位）與 11 項官方未決清單；獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除（`git rm`）。
