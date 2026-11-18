@@ -159,6 +159,10 @@ ADK BaseToolset 每步解析核心＋已載入群，metadata.capabilityCatalog �
 <a id="knowledge-a04-contract"></a>
 ### P2-A04 語義查詢、同版擴讀及新版核對
 
+已保存回答的 PDF 點讀使用 `GET /api/children/{childId}/agent/runs/{runId}/citations/{chunkId}/original` 及現有裝置會話。服務以原 run 找回當時的版本、片段和原始 PDF 雜湊，在讀取前後核權；成功回傳 `application/pdf`、實際位元組長度及 `private, no-store`。舊版沒有保存原件時，服務可向登記的發布機構讀取同址檔案並核對雜湊。缺少可讀版本回 404，位元組與原版不符回 409，暫時取源故障回 503。
+
+即時查詢標示 `acquisition=live`。服務可即場讀取已啟用的家庭健康服務網頁；配置 `dh-services` 後，亦可從衞生署公開目錄揀出相關服務、讀取原頁，即使該機構尚未入庫也能引用。查詢字句留在 Server，由 Server 核對來源授權及選取原文。聊天保留當次取得時間、原文位置、可識別的日期及獲准留存的節錄。單次查閱不產生訂閱或已發布版本。
+
 REQ-004／006 共用的原件定位以 `sourceId`、`versionId`、`chunkId`、版本及片段 hash 為準，沿用既有 `fetchedAt`、`usageScope`、頁段與 `readCoverage`。原件檔案的 hash、整理版本的 hash 和片段 hash 各自綁定實際內容。網頁及其連結的 PDF 分別保存取得時間與版本。引用第一步呈現該次已讀原文及適用條件，第二步按當前可見權限開啟當時的原件或明示該版本不可開啟。普通來源網址可能指向新版，無法證明舊版時只可標為發布機構的現行頁。已入庫與即時搜尋的來源類型應可區分；較早紀錄缺少的取得時間或版本保留未知。此為整合目標，當前交付狀態見[根計劃](../PLAN.md#agent-evidence)。
 
 - Agent 自行按多輪情境提出公共主題查詢，不解析思考文字或按最後一句關鍵詞開能力。`search_knowledge` 可帶查詢年齡假設及原話依據；Server 核對本人／孩子的使用者訊息或目前檔案版本。這只供找資料，不能寫成生日、確認事實或精確時程資格。原話／數值詮釋／未知精度分開；條件性命中須補問或明說適用條件。
