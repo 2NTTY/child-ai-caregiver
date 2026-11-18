@@ -13,6 +13,8 @@ export interface SourceWatchDefinition {
   title?: string;
   /** Fixed reviewed page window, at most eight pages. */
   pdfPages?: { startPage: number; endPage: number };
+  /** Discover this registered English leaflet and read the entire downloaded edition. */
+  leafletPage?: string;
   classification: "official_guidance" | "recent_information";
   publisher: string;
   termsUrl: string;
