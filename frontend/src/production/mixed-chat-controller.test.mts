@@ -79,7 +79,9 @@ test('mixed care citations reauthorize exact reviewed records and clear original
   const message={id:messageId,roomId,version:2,role:'user',text:'Compare care records',createdAt:at};
   const citation={citationId:careRecordCitationId(0,recordId,2),recordId,version:2,childId:childIds[0],childName:'First child',
     text:'Exact private care original',source:'Parent entry',eventTimeLabel:null};
-  let review={draftHash:hash,sourceVersions:[{citationId:careRecordCitationId(1,otherRecord,3),version:'3',contentHash:hash},
+  const materialId=randomUUID(), material={citationId:`material:document:1:${materialId}:2:5`,childId:childIds[1],childName:'Second child',
+    kind:'document',id:materialId,version:2,title:'準備單',source:'文件版本 2',text:'原文',offset:5,nextOffset:null};
+  let review={draftHash:hash,sourceVersions:[{citationId:material.citationId,version:'2',contentHash:hash},{citationId:careRecordCitationId(1,otherRecord,3),version:'3',contentHash:hash},
       {citationId:'care:'+hash,version:hash,contentHash:hash},{citationId:citation.citationId,version:'2',contentHash:hash}],
     scope:{userId:'parent',workspaceId:roomId,childId:roomId,authorizationVersion:'a',dataVersion:'d'},visibility:'private',decision:'pass',
     model:'test',promptVersion:'1',policyVersion:'test'};
@@ -91,6 +93,10 @@ test('mixed care citations reauthorize exact reviewed records and clear original
     assert.equal(init.method,'GET','Opening a care source never starts a model or writes');
     assert.equal(new Headers(init.headers).get('x-expected-user-id'),'parent');
     assert.equal(init.credentials,'include');assert.equal(init.cache,'no-store');
+    if(path.includes('/material-citations/')){
+      const offset=Number(new URL(input).searchParams.get('offset') ?? 5);
+      return Response.json({citation:{...material,offset,...mismatch}});
+    }
     if(path.includes('/care-citations/')){
       assert.equal(path,`/api/account/mixed-chats/${roomId}/messages/${messageId}/care-citations/1`);
       signal=init.signal;
@@ -102,6 +108,13 @@ test('mixed care citations reauthorize exact reviewed records and clear original
   });
   const owner=new MixedChatController(api);owner.syncContext('parent','parent:1',true,{kind:'personal'},'children');
   await owner.openRoom(roomId);assert.equal(typeof owner.readCareCitation,'function');
+  await owner.readMaterialCitation(messageId,1);
+  assert.deepEqual(owner.getSnapshot().careCitation.citation,material);
+  await owner.readMaterialCitation(messageId,1,0);
+  assert.equal(owner.getSnapshot().careCitation.citation.offset,0);
+  mismatch={childId:childIds[0]};await owner.readMaterialCitation(messageId,1);
+  assert.equal(owner.getSnapshot().careCitation.citation,null);
+  mismatch=null;
   const careReads=()=>requests.filter(([,path])=>path.includes('/care-citations/')).length;
   for(const ordinal of [0,3,1.5])await owner.readCareCitation(messageId,ordinal);
   assert.equal(careReads(),0,'Coverage and invalid ordinals do not become record links');

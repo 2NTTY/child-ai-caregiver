@@ -1,0 +1,50 @@
+{
+  "dateHongKong": "2026-11-18",
+  "scope": "P4-CLASS02. Production mixed-chat HTTP handler, Agent, read tools, Gemini delivery review and original citation route; isolated Firestore transaction fixture. Two selected fictional children and one unselected child.",
+  "model": "gemini-3.1-flash-lite",
+  "promptPack": "0.1.60",
+  "recipe": "product-selected-children",
+  "question": "聽日去旅行，怕執錯水樽。幫我睇返記低咗小松同小禾嘅水樽各自貼咗咩圖案？",
+  "findings": [
+    "Original recipe: the model selected unavailable single-child read_memory_facts. The run stopped at invalid_tool before any source was read.",
+    "Scoped recipe alone: the model selected the appropriate read tool, but an exact substring search for 水樽 圖案 missed the existing 水樽 facts. An early probe imposed its own five-call ceiling and provider retries included HTTP 429; that attempt did not verify delivery. A subsequent run using the original product budget also missed the facts."
+  ],
+  "verified": {
+    "state": "completed",
+    "review": "pass",
+    "providerRequests": 4,
+    "reportedPromptTokens": 32931,
+    "reportedCandidateTokens": 288,
+    "tools": [
+      "search_selected_materials",
+      "search_selected_materials",
+      "present_answer"
+    ],
+    "query": "水樽 圖案",
+    "answer": "根據記錄，小松的水樽貼了月亮貼紙，而小禾的水樽則貼了星星貼紙。祝你們聽日旅途愉快！ [孩子資料 1][孩子資料 2]",
+    "citedSources": 2,
+    "bothOriginalIdsAndRevisionsMatched": true,
+    "unselectedChildOmitted": true,
+    "sameRunRecoveredViaGet": true
+  },
+  "limits": [
+    "One memory question. The document branch, stale version and revoked sharing have scripted checks.",
+    "Originals were opened using the production HTTP handler locally. Live family sessions and physical-device taps remain pending. No notifications or production family data."
+  ],
+  "productionDelivery": {
+    "verifiedAtHongKong": "2026-11-18T07:49:28+08:00",
+    "receipt": "r44201248461-1",
+    "result": "deployed",
+    "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44201248461",
+    "apiWorkerWebRevision": "b17fa999717156d5f53ca98a52f026d8b1d958ab",
+    "apiAndWorkerDigest": "sha256:3602a4479808586cdef273834f9a5a74741f9dee4a0067c5c76a07ccc746a6c4",
+    "webDigest": "sha256:6728293b62ba62f767824fc79f5ebb4f372e22dd0e01bc6dc75caa60f4bc260a",
+    "publicChecks": {
+      "/api/health": "ok",
+      "/api/version": "matches apiWorkerWebRevision",
+      "/site-version.json": "matches apiWorkerWebRevision",
+      "/THIRD_PARTY_NOTICES.md": "matches Git blob 8857b781e9291c5b9f1193396790811190cdbc70",
+      "/licenses/manifest.json": "matches Git blob c8eec975822dbd98f866fbb91851f1c26a8bf152"
+    }
+  }
+}

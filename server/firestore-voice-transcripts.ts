@@ -26,7 +26,7 @@ function seal(data: FirestoreDomainData, row: z.infer<typeof firestoreVoiceTrans
     ...data.seal('voice-transcript',row.value.voice.id,row.scope,firestoreVoiceTranscriptSchema,row,row.value.version) };
 }
 /** Called while the original message and its one audio reference are still in their transaction. */
-export async function prepareVoiceTranscription(data: FirestoreDomainData, b: Binding, source: VoiceMessageReference, messageId: string) {
+export async function prepareVoiceTranscription(data: FirestoreDomainData, b: Binding, source: VoiceMessageReference, messageId: string, purpose?: 'restore') {
   const target = ref(data,source.id);
   const prior = await b.transaction.get(target);
   if (prior.exists) {
@@ -36,6 +36,7 @@ export async function prepareVoiceTranscription(data: FirestoreDomainData, b: Bi
     const next = { ...original, value: { ...original.value, voice: source, messageId, version: original.value.version + 1 } };
     return () => b.transaction.set(target, seal(data, next));
   }
+  if (purpose === 'restore') return () => {};
   const at = new Date().toISOString(), work = await prepareFirestoreBackgroundWork(data,b.transaction,
     { kind: 'voice-transcription',scope:b.scope,resourceId:source.id,basis:basis(source),generation:b.generation,authorizationVersion:b.authorizationVersion },
     new Date(Date.now()+120000).toISOString());

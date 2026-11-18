@@ -5,6 +5,7 @@ import { mixedChatCreateSchema, mixedChatAppendSchema, mixedChatRoomSchema, mixe
 import { productAgentResultSchema } from '../shared/product-agent-result.ts';
 import { mixedTaskBatchSchema, mixedBatchControlSchema, mixedBatchAdvanceSchema } from '../shared/mixed-task-batch.ts';
 import { mixedArchivedReplySchema } from '../shared/mixed-chat-transfer.ts';
+import { materialCitationPage } from '../shared/assistant-material-citation.ts';
 import { selectedCareCitationReplySchema } from '../shared/assistant-care-citation.ts';
 
 export class MixedChatApiError extends Error {
@@ -84,6 +85,12 @@ export function createMixedChatApi(baseUrl = '', fetcher: typeof fetch = fetch) 
     async reply(roomId: string, messageId: string, method: 'GET' | 'POST' | 'DELETE', userId: string, signal: AbortSignal) {
       const timeout = method === 'POST' ? (AGENT_RUN_LIMITS.deadlineSeconds.max + 30) * 1000 : undefined;
       return checked(resultReply, await request('/' + identifier(roomId) + '/messages/' + identifier(messageId) + '/reply', method, userId, signal, undefined, timeout)).result;
+    },
+    async materialCitation(roomId:string,messageId:string,ordinal:number,userId:string,signal:AbortSignal,offset?:number) {
+      if (!Number.isSafeInteger(ordinal) || ordinal<1 || ordinal>12 || offset!==undefined && (!Number.isSafeInteger(offset) || offset<0))
+        throw new MixedChatApiError(400,'invalid_input');
+      const path='/'+identifier(roomId)+'/messages/'+identifier(messageId)+'/material-citations/'+ordinal;
+      return checked(z.strictObject({citation:materialCitationPage}),await request(path+(offset===undefined ? '' : '?offset='+offset),'GET',userId,signal)).citation;
     },
     async careCitation(roomId: string, messageId: string, ordinal: number, userId: string, signal: AbortSignal) {
       if (!Number.isSafeInteger(ordinal) || ordinal < 1) throw new MixedChatApiError(400, 'invalid_input');

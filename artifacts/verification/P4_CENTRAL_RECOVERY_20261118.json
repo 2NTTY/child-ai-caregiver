@@ -1,0 +1,34 @@
+{
+  "scope": "S15-W02/P4. Native Firestore point-in-time export, encrypted Cloud Storage files, restore into an isolated named database, replay of a post-backup file deletion, and return to the original writer.",
+  "code": "9463f45294a5a64e22c2c705059604af6f07c382",
+  "location": "asia-east2",
+  "evidenceDateHK": "2026-11-18",
+  "namespace": "p4_dr_20261118",
+  "snapshotTime": "2026-11-17T22:23:00.000Z",
+  "exportOperation": "projects/ai-caregivers-for-children/databases/yuban-p4-dr-source-20261118/operations/ASBlMTcyYzhlMWIzOWEtNGIxYS0wYjg0LThlODUtNTE2ZjEwMzQkGnNlbmlsZXBpcAkKMxI",
+  "importOperation": "projects/ai-caregivers-for-children/databases/yuban-p4-dr-target-20261118/operations/AiBjOWRkNWIxZTc3NTMtNzgxOC1kNTk0LWNjMmItYTdmMjUxNzgkGnNlbmlsZXBpcAkKMxI",
+  "artifacts": {
+    "backupManifestCipherSha256": "84aae9e72a75e7f95c7a9199743316af750925cb5fad0a8f3b426fb37ae4652c",
+    "pausedTargetInventorySha256": "e66bdcd6945c606cb34c171631cd1861ef3ac17b0e3cad5bd81e1a56e7b21370"
+  },
+  "confirmed": {
+    "backupDocuments": 29,
+    "backupFiles": 2,
+    "restoredDocuments": 30,
+    "sameRestoreReplayed": true,
+    "survivingFile": "The target copy was in a new storage epoch and matched the original bytes.",
+    "deletedFile": "The restored row was a tombstone. The file was absent in the target epoch. On the original source the product rejected download and its normal cleanup removed the old object.",
+    "postBackupWrite": "A new synthetic task existed only in the source. The target stayed applied-paused. The original writer was reopened and the new task and surviving attachment read back.",
+    "cleanup": "Both temporary named databases and two private buckets were removed. The synthetic encryption key was removed. A final read confirmed the original production and historic restore database names remained."
+  },
+  "issuesObserved": [
+    "An import cycle prevented direct store initialization and was fixed in #620 before any seed writes.",
+    "The first requested retention was at the exact minimum. The operator rejected it before writing the file copies. The same native export was reused with one fixed timestamp 14.5 days ahead.",
+    "A removed file retains an encrypted cleanup descriptor in its tombstone. Physical removal and product read rejection were checked independently."
+  ],
+  "limits": [
+    "Synthetic fixtures only. No live families, production cutover or production data restoration.",
+    "New writes were preserved by returning to the original source. The earlier snapshot did not contain those writes.",
+    "Database deletion metadata and provider bills can outlive the drill. No claim about billing settlement."
+  ]
+}

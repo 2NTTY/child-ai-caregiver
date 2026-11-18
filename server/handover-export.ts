@@ -17,7 +17,7 @@ import { DatedPackageMedia, isAttachmentHead, isAttachmentSupplement, type Packa
 
 const contentSections = new Set(['photo_content', 'voice_content', 'file_content', 'child_avatar_content']);
 type PageQuery = { section: string; childId?: string; scopeVersion?: string; cursor?: string };
-export interface PackagePageOptions { includeSummaryPeriod?: boolean; documentFilter?: PackageDocumentFilter; documentPreviewPeriod?: HandoverHeader['selection']['period'] }
+export interface PackagePageOptions { includeOriginalChatPosition?: boolean; includeSummaryPeriod?: boolean; documentFilter?: PackageDocumentFilter; documentPreviewPeriod?: HandoverHeader['selection']['period'] }
 export interface HandoverExportSource {
   accountAvatarAvailable?: boolean;
   notificationPreferencesAvailable?: boolean;
@@ -173,7 +173,7 @@ function exportItemIdentity(section: string, childId: string | undefined, raw: u
     do {
       signal.throwIfAborted(); if (++pageCount > 10000) fail('package_size_exceeded');
       const page = await waitForHandoverStep(input.exporter.page(input.ownerUserId, { section, ...(childId ? { childId } : {}), scopeVersion, ...(cursor ? { cursor } : {}) }, mediaFilter,
-        { includeSummaryPeriod: section === 'summary_history' && Boolean(header.selection.period), documentFilter }), signal);
+        { ...(section === 'chat' && header.purpose === 'backup' ? { includeOriginalChatPosition:true } : {}), includeSummaryPeriod: section === 'summary_history' && Boolean(header.selection.period), documentFilter }), signal);
       if (page.scopeVersion !== scopeVersion || page.section !== section || page.complete !== (page.nextCursor === null)
         || page.nextCursor && page.nextCursor === cursor) fail('export_scope_changed');
       const batchItems = page.items.map(raw => {
