@@ -15,5 +15,22 @@
     726
   ],
   "excerptSha256": "532e0e0f924c47b0a001a4a49d22ef38562d52d7f3dc02937105c93fc1b5367c",
-  "models": 0
+  "models": 0,
+  "firstUseDirectory": {
+    "acquisition": "live",
+    "sourceId": "dh-services-shs",
+    "title": "學生健康服務",
+    "url": "https://www.dh.gov.hk/tc_chi/main/main_shs/main_shs.html",
+    "publisher": "香港特別行政區政府衞生署",
+    "terms": "https://www.dh.gov.hk/tc_chi/notices/notices.html",
+    "fetchedAt": "2026-11-18T20:18:28.380Z",
+    "contentHash": "f3e59327442959422b6ada70a5e0c93e7ec90a4332b2be7183bf122039a861d1",
+    "range": {
+      "start": 62,
+      "end": 86
+    },
+    "excerptHash": "a023bb3fc0b210fd06df34ea322383549bf8873f4144ef9f6f664c3b03c2d17e",
+    "documentsWritten": 0,
+    "providerCalls": 0
+  }
 }

@@ -13,6 +13,7 @@ import type { FirestoreKnowledgeObservation, FirestoreKnowledgeObservationPort }
 import type { CitedPdf, SavedCitationIdentity } from "./knowledge-cited-pdf.ts";
 
 import { SOURCE_WATCHES } from './knowledge-source-catalog.ts';
+import { healthServiceDirectory, serviceProfile } from './official-service-directory.ts';
 import { sourceSeries, type SourceSeries, type LibraryPreferenceChange } from '../src/shared/source-series.ts';
 import { createLibrarySelections, explicitlyDisabled, selectedEdition } from './knowledge-library-selection.ts';
 import { checkPortableSeries, portableSeries, portableSeriesSchema, verifyPortableMethod, type PortableSeries } from './knowledge-portable-series.ts';
@@ -366,8 +367,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       return { items, ...(registered.length ? { registered } : {}), nextSourceId: visible.length > 10 ? items.at(-1)!.sourceId : null };
     }, owner && selections ? { readOnly: false } : { readOnly: true });
   }
-  const livePage = (id: string) => allowed.has(id) ? SOURCE_WATCHES.find(watch => watch.id === id
-    && watch.kind === 'page' && watch.audience === 'public_noncommercial') : undefined;
+  const livePage = (id: string) => (allowed.has(healthServiceDirectory.id) && serviceProfile(id))
+    || (allowed.has(id) ? SOURCE_WATCHES.find(watch => watch.id === id && watch.kind === 'page' && watch.audience === 'public_noncommercial') : undefined);
   return {
     async mayReadLivePage(userId, id) {
       const registered = livePage(id);

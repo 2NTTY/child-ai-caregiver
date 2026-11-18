@@ -5,6 +5,8 @@ import type { SourceFetcher } from './knowledge-refresh-types.ts';
 import { SOURCE_WATCHES } from './knowledge-source-catalog.ts';
 import { fetchKnowledgeSource } from './knowledge-source-fetch.ts';
 import type { LiveSourceRead, LiveSourceReader } from './live-source-citation.ts';
+import { createServiceDirectory, healthServiceDirectory, serviceProfile } from './official-service-directory.ts';
+import type { fetchPublicSourceResponse } from './public-source-transport.ts';
 
 const sentences = new Intl.Segmenter('zh-HK', { granularity: 'sentence' });
 
@@ -29,19 +31,27 @@ function bestPassage(text: string, tokens: ReadonlySet<string>) {
 /** Live public pages are read from the installation's catalogue. Search terms never leave this process. */
 export function createOfficialLivePages(options: {
   sourceIds: readonly string[]; mayRead(sourceId: string): Promise<boolean>; fetchSource?: SourceFetcher;
+  directoryTransport?: typeof fetchPublicSourceResponse;
 }) {
   const watches = SOURCE_WATCHES.filter(watch => watch.kind === 'page' && watch.audience === 'public_noncommercial'
     && options.sourceIds.includes(watch.id));
   const fetchSource = options.fetchSource ?? fetchKnowledgeSource;
+  const directory = options.sourceIds.includes(healthServiceDirectory.id) ? createServiceDirectory(options.directoryTransport) : null;
   return {
-    classifications: [...new Set(watches.map(watch => watch.classification))],
+    classifications: [...new Set([...watches, ...(directory ? [healthServiceDirectory] : [])].map(watch => watch.classification))],
     async search(query: string, signal: AbortSignal, classification: KnowledgeClass) {
       signal.throwIfAborted();
       const tokens = knowledgeTokens(query, true);
       if (!tokens.size) return [];
-      const results = await Promise.all(watches.filter(watch => watch.classification === classification).map(async watch => {
+      let missedDirectory = false;
+      const matching = watches.filter(watch => watch.classification === classification);
+      if (directory && classification === healthServiceDirectory.classification && await options.mayRead(healthServiceDirectory.id)) {
+        try { matching.push(...await directory.discover(tokens, signal)); }
+        catch { signal.throwIfAborted(); missedDirectory = true; }
+      }
+      const results = await Promise.all(matching.map(async watch => {
         if (!await options.mayRead(watch.id)) return null;
-        const response = await fetchSource(watch, signal);
+        const response = await (directory && serviceProfile(watch.id) ? directory.read : fetchSource)(watch, signal);
         signal.throwIfAborted();
         if (response.status !== 'ok') return { unavailable: true } as const;
         const page = response.items.find(item => item.url === watch.url);
@@ -55,14 +65,16 @@ export function createOfficialLivePages(options: {
         return { score: passage.score, read };
       }));
       const hits = results.flatMap(item => item && 'read' in item && item.read ? [item] : []);
-      if (!hits.length && results.some(item => item && 'unavailable' in item))
+      if (!hits.length && (missedDirectory || results.some(item => item && 'unavailable' in item)))
         domainReject('live_source_unavailable', 503);
       return hits.sort((a, b) => b.score - a.score || a.read.documentId.localeCompare(b.read.documentId)).map(item => item.read);
     },
     async mayUse(citation: Pick<LiveSourceRead, 'documentId' | 'url' | 'publisher' | 'rights' | 'termsUrl' | 'classification'>, signal: AbortSignal) {
       signal.throwIfAborted();
-      const watch = watches.find(item => item.id === citation.documentId && item.url === citation.url);
-      return !!watch && watch.classification === citation.classification && watch.termsUrl === citation.termsUrl && watch.publisher === citation.publisher
+      const service = directory && citation.documentId !== healthServiceDirectory.id && serviceProfile(citation.documentId);
+      const watch = service || watches.find(item => item.id === citation.documentId);
+      return !!watch && watch.url === citation.url && watch.classification === citation.classification && watch.termsUrl === citation.termsUrl && watch.publisher === citation.publisher
+        && (!service || await options.mayRead(healthServiceDirectory.id))
         && citation.rights === 'retain_excerpt' && await options.mayRead(watch.id);
     },
   } satisfies LiveSourceReader;
