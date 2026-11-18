@@ -75,6 +75,16 @@ test('existing strict Android catalogue and new series-aware client read the sam
   const current = await client.getLibrary(scope.childId, new AbortController().signal, scope.ownerUserId);
   assert.equal(current.items[0]?.series?.id, item.series.id); assert.deepEqual(current.items[0]?.preference, item.preference);
   assert.deepEqual(current.registered, []);
+  const platform = { ...item.preference, mode: 'platform' as const, selectedVersionId: null, revision: 0 };
+  const defaultRoute = (req: Request) => handlePersonalLibraryRequest(req, scope.ownerUserId, { isCurrentUser: async () => true,
+    library: { async page() { return { items: [{ ...item, preference: platform }], complete: true, nextCursor: null }; } } });
+  const v1 = 'application/vnd.yuyoufang.library-series.v1+json';
+  const previous = await defaultRoute(new Request(baseUrl + path, { headers: { accept: v1, 'x-expected-user-id': scope.ownerUserId } }));
+  assert.equal(previous.headers.get('content-type'), v1);
+  const olderPreference = (await previous.json()).items[0].preference;
+  assert.equal(olderPreference.mode, 'follow'); assert.equal(olderPreference.revision, 0); assert.equal(olderPreference.selectedVersionId, null);
+  const latest = createProductAgentApi(baseUrl, (url, init) => defaultRoute(new Request(url, init)));
+  assert.deepEqual((await latest.getLibrary(scope.childId, new AbortController().signal, scope.ownerUserId)).items[0]?.preference, platform);
 });
 
 test('scope changes while reading the public catalogue do not return a stale success', async () => {

@@ -252,21 +252,21 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   }
   const isPublicEdition = (edition: Edition) => !internalKnowledgeSource(edition.document.url)
     && edition.observed?.watch.definition.audience !== 'internal_noncommercial';
-  async function readSelections(tx: Transaction, owner: string | undefined, editions: Edition[]) {
-    return owner && selections ? selections.prepare(tx, owner, editions.filter(isPublicEdition).map(selectionEdition)) : { rows: [], persist() {} };
+  function readSelections(tx: Transaction, owner?: string) {
+    return owner && selections ? selections.read(tx, owner) : [];
   }
   async function personalCorpus(tx: Transaction, owner?: string) {
-    const current = await corpus(tx), selection = await readSelections(tx, owner, current.editions), preferences = selection.rows;
+    const current = await corpus(tx), preferences = await readSelections(tx, owner);
+    if (!preferences.length) return { ...current, preferences };
     const editions: Edition[] = [];
     for (const active of current.editions) {
-      const choice = selectedEdition(isPublicEdition(active) ? preferences : [], selectionEdition(active));
+      const { view: choice, snapshotVersionId } = selectedEdition(isPublicEdition(active) ? preferences : [], selectionEdition(active));
       if (!choice.enabled) continue;
       if (choice.eligible) { editions.push(active); continue; }
-      if (choice.mode !== 'fixed' || !choice.selectedVersionId) continue;
-      const pinned = await metadata(tx, choice.selectedVersionId, active.source);
+      if (!snapshotVersionId) continue;
+      const pinned = await metadata(tx, snapshotVersionId, active.source);
       if (pinnedAllowed(pinned, active)) editions.push(pinned);
     }
-    selection.persist();
     return { sources: current.sources, editions, preferences };
   }
   function pinnedAllowed(pinned: Edition, active: Edition) {
@@ -294,10 +294,14 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   function selectionEdition(edition: Edition) {
     const doc = edition.document, series = sourceSeries(doc), extraction = doc.extraction;
     const conditions = edition.version.chunks.map(chunk => chunk.applicability ?? null);
-    return { sourceId: doc.sourceId, seriesId: series.id, versionId: edition.version.versionId,
-      scopeHash: knowledgeHash(canonical([series.institutionId, doc.url, doc.termsUrl, doc.classification,
-        edition.observed?.watch.definition ?? null, extraction?.format ?? null, extraction?.pageStart ?? null, extraction?.pageEnd ?? null,
-        [...new Set(conditions.map(value => canonical(value)))].sort()])) };
+    const watch = edition.observed?.watch.definition;
+    const scopeHash = (watchScope: unknown) => knowledgeHash(canonical([series.institutionId, doc.url, doc.termsUrl, doc.classification,
+      watchScope, extraction?.format ?? null, extraction?.pageStart ?? null, extraction?.pageEnd ?? null,
+      [...new Set(conditions.map(value => canonical(value)))].sort()]));
+    const identity = { sourceId: doc.sourceId, seriesId: series.id, versionId: edition.version.versionId };
+    if (!watch) return { ...identity, scopeHash: scopeHash(null) };
+    const { title: _title, publisher: _publisher, ...scope } = watch;
+    return { ...identity, scopeHash: scopeHash(scope), legacyScopeHash: scopeHash(watch) };
   }
   function bump(source: Source): Source { return { ...source, revision: (BigInt(source.revision) + 1n).toString() }; }
   function writeSearchPageIn(tx: Transaction, edition: Loaded, start: number, repair: boolean) {
@@ -331,12 +335,12 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   async function catalog(afterSourceId: string | null = null, owner?: string) {
     if (afterSourceId !== null && !sourceId.safeParse(afterSourceId).success) reject('knowledge_catalog_cursor_invalid', 400);
     return database.runTransaction(async tx => {
-      const current = await corpus(tx), selection = await readSelections(tx, owner, current.editions), preferences = selection.rows;
+      const current = await corpus(tx), preferences = await readSelections(tx, owner);
       const visible = current.editions.filter(edition => (afterSourceId === null || edition.source.sourceId > afterSourceId)
         && !internalKnowledgeSource(edition.document.url) && edition.observed?.watch.definition.audience !== 'internal_noncommercial');
       const items = await Promise.all(visible.slice(0, 10).map(async edition => {
         const { document, version, observed } = edition, extraction = document.extraction;
-        const preference = selectedEdition(preferences, selectionEdition(edition));
+        const { view: preference } = selectedEdition(preferences, selectionEdition(edition));
         const pinnedVersion = preference.selectedVersionId && preference.mode === 'fixed'
           ? preference.selectedVersionId === version.versionId ? edition : await metadata(tx, preference.selectedVersionId, edition.source) : null;
         if (!preference.eligible && preference.mode === 'fixed' && preference.selectedVersionId) {
@@ -364,11 +368,10 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         registered.push({ sourceId: id, series,
           publisher: watch.publisher, url: watch.url, kind: watch.kind, status: withdrawn ? 'withdrawn' : source || local?.observation ? 'pending' : 'registered',
           lastCheckedAt: local?.watch.lastAttemptAt ?? null, lastSuccessfulCheckAt: local?.observation?.lastSuccessfulCheckAt ?? null,
-          live: watch.kind === 'page' && !withdrawn && !explicitlyDisabled(preferences, series.id, id) });
+          live: watch.kind === 'page' && !withdrawn && !explicitlyDisabled(preferences, series.id) });
       }
-      selection.persist();
       return { items, ...(registered.length ? { registered } : {}), nextSourceId: visible.length > 10 ? items.at(-1)!.sourceId : null };
-    }, owner && selections ? { readOnly: false } : { readOnly: true });
+    }, { readOnly: true });
   }
   const livePage = (id: string) => (allowed.has(healthServiceDirectory.id) && serviceProfile(id))
     || (allowed.has(id) ? SOURCE_WATCHES.find(watch => watch.id === id && watch.kind === 'page' && watch.audience === 'public_noncommercial') : undefined);
@@ -384,7 +387,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const active = source?.activeVersionId && source.enabled ? await metadata(tx, source.activeVersionId, source) : null;
         const series = sourceSeries(active?.document ?? { sourceId: id, title: registered.title ?? id, url: registered.url });
         const rows = await selections.read(tx, userId);
-        return !explicitlyDisabled(rows, series.id, id);
+        return !explicitlyDisabled(rows, series.id);
       }, { readOnly: true });
     },
     async publishedLiveSeries(id, url) {
@@ -765,7 +768,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       if (!Number.isInteger(limit) || limit < 1) reject("knowledge_selection_invalid", 400);
       for (let attempt = 0; attempt < 2; attempt++) {
         const owner = selection.libraryUserId;
-        const readCorpus = () => database.runTransaction(tx => personalCorpus(tx, owner), owner && selections ? { readOnly: false } : { readOnly: true });
+        const readCorpus = () => database.runTransaction(tx => personalCorpus(tx, owner), { readOnly: true });
         const current = await readCorpus();
         const stillCurrent = async () => canonical(await readCorpus()) === canonical(current);
         const eligible = new Map<string, { edition: Edition; manifest: Version["chunks"][number] }>();

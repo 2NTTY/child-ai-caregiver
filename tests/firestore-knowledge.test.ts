@@ -122,7 +122,8 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
   const one = await f.publish(), old = await a.catalog(), original = (await store.candidates(filter, null))[0]!;
   const change = { seriesId: old.series!.id, expectedRevision: old.preference!.revision, enabled: true,
     editions: [{ sourceId: old.sourceId, versionId: one.versionId }] };
-  assert.equal(old.preference?.mode, 'fixed'); assert.equal(old.preference?.selectedVersionId, one.versionId);
+  assert.deepEqual(old.preference, { revision: 0, enabled: true, mode: 'platform', selectedVersionId: null, eligible: true });
+  await a.change({ ...change, mode: 'fixed', imported: true, editions: [{ sourceId: old.sourceId, versionHash: one.hash }] });
   await b.change({ ...change, expectedRevision: (await b.catalog()).preference!.revision, mode: 'follow' });
   const two = await f.publish({ ...one.document, title: 'Renamed selected guidance' }, one);
   assert.deepEqual(await a.search(), [one.versionId]); assert.deepEqual(await b.search(), [two.versionId]);
@@ -133,17 +134,59 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
   await a.change({ ...next, enabled: false, mode: 'fixed' });
   assert.deepEqual(await a.search(), []); assert.deepEqual(await b.search(), [two.versionId]);
   await assert.rejects(a.change({ ...next, enabled: true, mode: 'fixed' }), { status: 409 });
+  const disabled = await a.catalog();
+  assert.equal(disabled.preference!.selectedVersionId, one.versionId);
+  await a.change({ ...next, enabled: true, mode: 'fixed', expectedRevision: disabled.preference!.revision });
+  assert.deepEqual(await a.search(), [one.versionId], 'Toggling the card retains the selected older snapshot');
   const revision = (await a.catalog()).preference!.revision;
   const imported = { ...change, expectedRevision: revision, imported: true as const, mode: 'fixed' as const,
     editions: [{ sourceId: old.sourceId, versionHash: one.hash }] };
   await assert.rejects(a.change({ ...imported, editions: [{ sourceId: old.sourceId, versionHash: 'f'.repeat(64) }] }), { status: 409 });
   await a.change(imported);
   const widened = { ...two.document, chunks: [chunk('first', { applicability: { ...chunk('first').applicability, topics: ['care', 'new-scope'] } })] };
-  await f.publish(widened, two);
+  const wide = await f.publish(widened, two);
   assert.deepEqual(await b.search(), [], 'Following requires acceptance of a scope change');
   assert.deepEqual(await a.search(), [one.versionId]);
+  const pinned = await a.catalog();
+  await a.change({ ...next, mode: 'follow', adopt: true, expectedRevision: pinned.preference!.revision,
+    editions: [{ sourceId: old.sourceId, versionId: wide.versionId }] });
+  assert.deepEqual(await a.search(), [], 'Changing an imported snapshot to follow cannot accept expanded scope');
+  await a.change({ ...imported, expectedRevision: (await a.catalog()).preference!.revision });
+  await store.review(one.versionId, one.hash, 'synthetic-operator', { ...assessment(one.document, wide), decision: 'hold' });
+  assert.equal((await a.catalog()).preference!.eligible, false);
+  assert.deepEqual(await a.search(), [], 'A withdrawn snapshot cannot be served even with a valid successor');
+  await assert.rejects(a.change({ ...imported, expectedRevision: (await a.catalog()).preference!.revision }), { status: 409 });
+  const afterWithdrawal = await a.catalog();
+  await a.change({ ...next, mode: 'platform', expectedRevision: afterWithdrawal.preference!.revision,
+    editions: [{ sourceId: old.sourceId, versionId: wide.versionId }] });
+  assert.deepEqual(await a.search(), [wide.versionId], 'An explicit reset releases a stored fixed selection to the current platform publication');
   await store.disable(old.sourceId, 'Synthetic withdrawal');
   assert.deepEqual(await a.search(), []); assert.deepEqual(await b.search(), []);
+});
+
+test('ordinary catalogue and chat reads follow platform publications without writes or cross-series exclusions', async () => {
+  const f = fixture(['one', 'two', 'new-source']), store = createFirestoreKnowledgeStore({ ...f.options, cipher: createStorageCipher(Buffer.alloc(32, 19)) });
+  const read = async () => (await store.candidates(filter, null, { query: 'needle', libraryUserId: 'parent' })).map(hit => hit.versionId).sort();
+  const catalog = async () => (await store.catalogForUser('parent', null)).items;
+  const save = (change: import('../src/shared/source-series.ts').LibraryPreferenceChange) =>
+    f.database.runTransaction(tx => store.saveLibraryPreference(tx, 'parent', change));
+  const one = await f.publish(source('one')), two = await f.publish(source('two'));
+  const before = [...f.records.entries()];
+  assert.deepEqual(await read(), [one.versionId, two.versionId].sort());
+  const first = (await catalog())[0]!;
+  assert.deepEqual([...f.records.entries()], before, 'Reading the catalogue or an ordinary chat must not create a personal record');
+  const change = { seriesId: first.series!.id, expectedRevision: 0, mode: first.preference!.mode,
+    editions: [{ sourceId: first.sourceId, versionId: one.versionId }] };
+  await save({ ...change, enabled: false });
+  const newer = await f.publish({ ...two.document, title: 'Revised guidance' }, two);
+  const added = await f.publish(source('new-source'));
+  assert.deepEqual(await read(), [newer.versionId, added.versionId].sort());
+  const off = (await catalog()).find(item => item.sourceId === first.sourceId)!.preference!;
+  assert.equal(off.revision, 1); assert.equal(off.enabled, false);
+  await assert.rejects(save({ ...change, enabled: true }), { code: 'library_selection_changed' });
+  await save({ ...change, expectedRevision: off.revision, enabled: true, mode: off.mode });
+  const changed = await f.publish({ ...one.document, chunks: [chunk('first', { applicability: { ...chunk('first').applicability, topics: ['additional'] } })] }, one);
+  assert.deepEqual(await read(), [changed.versionId, newer.versionId, added.versionId].sort());
 });
 
 test('reviewed source versions rename an institution and split and merge a series without rebinding historical citations', async () => {
@@ -152,21 +195,74 @@ test('reviewed source versions rename an institution and split and merge a serie
   const first = await f.publish({ ...source('one'), series }), second = await f.publish({ ...source('two'), series });
   const original = (await clientStore.candidates(filter, null, { libraryUserId: 'reader' })).find(row => row.sourceId === 'two')!;
   assert.equal(original.series?.name, series.name);
+  const initial = (await clientStore.catalogForUser('reader', null)).items;
+  await f.database.runTransaction(tx => clientStore.saveLibraryPreference(tx, 'reader', {
+    seriesId: series.id, expectedRevision: initial[0]!.preference!.revision, mode: 'fixed', imported: true, enabled: true,
+    editions: initial.map(item => ({ sourceId: item.sourceId, versionHash: item.versionHash! })),
+  }));
+  const saveChoice = (change: import('../src/shared/source-series.ts').LibraryPreferenceChange) =>
+    f.database.runTransaction(tx => clientStore.saveLibraryPreference(tx, 'follower', change));
+  await saveChoice({ seriesId: series.id, expectedRevision: 0, mode: 'follow', enabled: true,
+    editions: initial.map(({ sourceId, versionId }) => ({ sourceId, versionId })) });
   const renamed = { ...series, name: 'Renamed series' }, publisher = 'Renamed institution';
   const one = await f.publish({ ...first.document, publisher, series: renamed }, first);
   const split = await f.publish({ ...second.document, publisher, series: { ...renamed, id: 'split-series', name: 'Split series' } }, second);
   const catalog = (await clientStore.catalogForUser('reader', null)).items;
   assert.deepEqual(catalog.map(row => [row.sourceId, row.series?.id, row.publisher]), [['one', series.id, publisher], ['two', 'split-series', publisher]]);
   assert.equal(catalog[1]!.preference?.eligible, false);
+  assert.equal(catalog[1]!.preference?.revision, 0, 'Controls use the destination series revision');
+  const ordinary = await clientStore.candidates(filter, null, { libraryUserId: 'ordinary' });
+  assert.ok(ordinary.some(item => item.versionId === split.versionId && item.series?.id === 'split-series'));
+  const followed = await clientStore.candidates(filter, null, { libraryUserId: 'follower' });
+  assert.deepEqual(followed.map(item => item.versionId), [one.versionId], 'Same-series rename follows but a move requires acceptance');
+  const splitCard = (await clientStore.catalogForUser('follower', null)).items[1]!;
+  const adoptSplit = { seriesId: splitCard.series!.id, expectedRevision: splitCard.preference!.revision,
+    enabled: true, mode: 'fixed' as const, adopt: true, editions: [{ sourceId: 'two', versionId: split.versionId }] };
+  await saveChoice(adoptSplit);
+  const originalCard = (await clientStore.catalogForUser('follower', null)).items[0]!;
+  const toggle = { seriesId: series.id, expectedRevision: originalCard.preference!.revision, enabled: false,
+    mode: 'follow' as const, editions: [{ sourceId: 'one', versionId: one.versionId }] };
+  await assert.rejects(saveChoice({ ...toggle, expectedRevision: 1 }), { code: 'library_selection_changed' });
+  await saveChoice(toggle);
+  assert.deepEqual((await clientStore.candidates(filter, null, { libraryUserId: 'follower' })).map(item => item.versionId), [split.versionId]);
   const restored = await f.publish({ ...split.document, series: renamed }, split);
   const joined = (await clientStore.catalogForUser('reader', null)).items;
   assert.deepEqual(joined.map(row => row.series?.id), [series.id, series.id]);
   assert.deepEqual(joined.map(row => row.versionId), [one.versionId, restored.versionId]);
+  const destination = (await clientStore.catalogForUser('follower', null)).items.map(row => row.preference!);
+  assert.ok(destination.every(row => !row.enabled && row.revision === toggle.expectedRevision + 1 && row.mode === 'follow'));
+  assert.deepEqual(await clientStore.candidates(filter, null, { libraryUserId: 'follower' }), []);
   const pinned = (await clientStore.candidates(filter, null, { libraryUserId: 'reader' })).find(row => row.sourceId === 'two')!;
   assert.equal(pinned.versionId, original.versionId); assert.equal(pinned.series?.name, 'Original series'); assert.equal(pinned.publisher, original.publisher);
   assert.throws(() => parseKnowledgeSource({ ...second.document, series: { ...series, institutionId: 'unrelated.example' } }));
   await assert.rejects(f.publish({ ...source('other-institution'), url: 'https://www.dh.gov.hk/other', series: { ...series, institutionId: 'www.dh.gov.hk' } }),
     { code: 'knowledge_series_institution_conflict' });
+});
+
+test('a registered series follows a reviewed publisher rename but requires acceptance of a different page selector', async () => {
+  const f = fixture(), cipher = createStorageCipher(Buffer.alloc(32, 9));
+  async function publishWatch(document: KnowledgeSourceInput, selector: string, prior: Parameters<typeof assessment>[1] = null) {
+    const definition = { id: document.sourceId, url: document.url, kind: 'page' as const, selector, title: document.title,
+      classification: document.classification, publisher: document.publisher, termsUrl: document.termsUrl, audience: 'public_noncommercial' as const };
+    const refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions: [definition],
+      async readControl() { return { enabled: true, generation: 'f3457654-6524-4c99-bf56-d26dfb9f4dbd' }; } });
+    const store = createFirestoreKnowledgeStore({ ...f.options, observations: refresh.gate, cipher });
+    await refresh.register(definition.id, 'operator');
+    const observed = { url: document.url, title: document.title, text: document.chunks[0]!.originalText!, sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null };
+    await refresh.process((await refresh.jobs())[0]!.data, crypto.randomUUID(), async () => ({ status: 'ok', items: [observed] }), new AbortController().signal);
+    const version = await store.importSource(document);
+    for (let i = 0; i < 4; i++) if ((await store.prepareSearch(version.versionId, version.hash)).complete) break;
+    await store.review(version.versionId, version.hash, 'operator', { ...assessment(document, prior), observationHash: observationHash(observed) });
+    await store.publish(version.versionId, version.hash, embeddings(document));
+    return { ...version, document, store };
+  }
+  const first = await publishWatch(source(), 'main');
+  await f.database.runTransaction(tx => first.store.saveLibraryPreference(tx, 'parent', { seriesId: first.document.sourceId, mode: 'follow',
+    enabled: true, expectedRevision: 0, editions: [{ sourceId: first.document.sourceId, versionId: first.versionId }] }));
+  const renamed = await publishWatch({ ...first.document, publisher: 'Renamed publisher', title: 'Renamed series' }, 'main', first);
+  assert.deepEqual((await renamed.store.candidates(filter, null, { libraryUserId: 'parent' })).map(hit => hit.versionId), [renamed.versionId]);
+  const widened = await publishWatch({ ...renamed.document, title: 'Broader page' }, 'body', renamed);
+  assert.deepEqual(await widened.store.candidates(filter, null, { libraryUserId: 'parent' }), []);
 });
 
 test('REQ-006 registered live pages check per-user opt-out and watch withdrawal without creating a subscription or requiring an index', async () => {
