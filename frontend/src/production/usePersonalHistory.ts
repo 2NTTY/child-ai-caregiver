@@ -120,11 +120,16 @@ export function usePersonalHistory(env: TaskKnowledgeEnvironment) {
       return { ...pages[pages.length - 1], items };
     }, !before);
   };
-  const readReferences = (more = false) => {
+  const readReferences = (more = false, change?: import('../../../src/shared/source-series').LibraryPreferenceChange) => {
     const before = latest.current.references.data, cursor = more ? referenceCursor.current : null;
     if (more && !cursor) return;
     const depth = more ? 1 : pageDepth.current.references;
     read("references", setReferences, async (signal, current) => {
+      if (change) {
+        if (!api.setLibraryPreference || !env.owner.canStartDomainWrite()) throw new Error('Library preference unavailable');
+        await api.setLibraryPreference(env.childId!, signal, env.userId!, change);
+        if (!current()) throw new Error('Library scope changed');
+      }
       const pages = await readPageWindow(depth, cursor, current,
         next => api.getLibrary(env.childId!, signal, env.userId!, next));
       const page = pages[pages.length - 1], catalog = new Map((more ? before?.catalog ?? [] : []).map(item => [item.sourceId, item]));
@@ -133,7 +138,7 @@ export function usePersonalHistory(env: TaskKnowledgeEnvironment) {
         referenceCursor.current = page.nextCursor;
         pageDepth.current.references = more ? pageDepth.current.references + pages.length : pages.length;
       }
-      return { audience: "public" as const, items: [], catalog: [...catalog.values()], hasMore: !page.complete };
+      return { audience: "public" as const, items: [], catalog: [...catalog.values()], registered: more ? before?.registered : pages[0]?.registered, hasMore: !page.complete };
     }, !before);
   };
   const searchHistory = (query: string, more = false) => {
@@ -216,6 +221,7 @@ export function usePersonalHistory(env: TaskKnowledgeEnvironment) {
       readMessage: (id: string) => readMessage(id), moreMessage: () => { const id = latest.current.message.data?.id; if (id) readMessage(id, true); },
       closeMessage, moreWork: () => readWork(true), loadNotifications: () => readNotifications(),
       moreNotifications: () => readNotifications(true), moreReferences: () => readReferences(true),
+      setLibraryPreference: (change: import('../../../src/shared/source-series').LibraryPreferenceChange) => readReferences(false, change),
     },
   };
 }

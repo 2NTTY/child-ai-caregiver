@@ -1,7 +1,7 @@
 import { agentStopDetailHint, agentStopMessage } from "../../../src/shared/agent-stop-message.ts";
 import type { AgentProposal, ProductAgentResult } from "../../../src/shared/product-agent.ts";
 import type { DocumentEdit } from "../../../src/shared/family-documents.ts";
-import type { KnowledgeEvidence } from "../../../src/shared/knowledge.ts";
+import { citedOriginalSpans, type KnowledgeEvidence } from "../../../src/shared/knowledge.ts";
 import type { AgentProposalView, AgentRunView } from "../agent-view-model.ts";
 import type { ChatCitationView } from "../chat-view-model.ts";
 
@@ -21,10 +21,26 @@ const toolNames: Record<string, string> = {
   read_contact_options: "讀取已授權聯絡選項", contact_caregiver: "記錄已授權聯絡請求", read_growth_concerns: "讀取成長關注",
 };
 const taskActions = { reschedule: "改期／轉派", complete: "記錄完成", cancel: "取消", resolve: "覆核終態" };
+export function projectLiveCitation(source: import('../../../src/shared/live-source-citation.ts').LiveSourceCitation): ChatCitationView {
+  return { id: source.id, sourceId: source.documentId, acquisition: 'live', seriesName: source.series?.name ?? source.publisher,
+    seriesId: source.series?.id, title: source.title, publisher: source.publisher, section: source.section ?? '原文未有段落標示',
+    pageStart: source.page ?? undefined, excerpt: source.excerpt ?? '只獲准保存原文位置。',
+    termsUrl: source.termsUrl, originalRange: String(source.range.start + 1) + '–' + source.range.end,
+    readSegments: source.excerpt ? [source.excerpt] : [], versionId: source.version ?? '', versionHash: source.contentHash,
+    checkedAt: '', fetchedAt: source.fetchedAt, lastSuccessfulCheckAt: null, sourceDate: source.sourceDate,
+    classification: source.classification, applicabilityLabel: source.conditions.join(' · ') || '來源未有提供',
+    internalOnly: false, validUntil: null, url: source.url };
+}
 export function projectAgentCitation(source: KnowledgeEvidence): ChatCitationView {
   const age = source.applicability;
+  const segments = citedOriginalSpans(source), quote = source.citedExcerpt ?? source.sourceExcerpt;
+  const excerpt = segments.some(part => part.includes(quote)) ? quote : segments[0]!.slice(0, 300);
   return {
-    id: source.chunkId, title: source.title, section: source.section, publisher: source.publisher, excerpt: source.sourceExcerpt,
+    sourceId: source.sourceId, seriesId: source.series?.id, seriesName: source.series?.name,
+    acquisition: 'library', pageStart: source.pageStart, pageEnd: source.pageEnd, savedPdf: source.extraction?.format === 'text_pdf',
+    termsUrl: source.termsUrl, originalRange: source.readCoverage?.ranges?.map(range => String(range.start + 1) + '–' + range.end).join('、'),
+    readSegments: segments,
+    id: source.chunkId, title: source.title, section: source.section, publisher: source.publisher, excerpt,
     classification: source.classification, versionId: source.versionId, versionHash: source.versionHash,
     checkedAt: source.checkedAt, fetchedAt: source.fetchedAt, lastSuccessfulCheckAt: source.lastSuccessfulCheckAt ?? null,
     sourceDate: [source.sourceDateText, source.sourcePublishedAt ? `發布：${source.sourcePublishedAt}` : null,
@@ -132,5 +148,5 @@ export function projectAgentRun(result: ProductAgentResult, childId: string, cre
     counts: result.countsKnown === false ? null : result.counts, retrievalMode: result.retrievalMode,
     tools: result.tools.map((tool, index) => ({ id: `${result.runId}:${index}`, nameLabel: toolNames[tool.name] ?? "其他工具",
       status: tool.status, savesCandidate: ["propose_task", "propose_task_change", "propose_fact","propose_private_source","propose_private_source_change","propose_concern","propose_concern_change"].includes(tool.name) })),
-    proposals: result.proposals.map(projectAgentProposal), citations: result.citations.map(projectAgentCitation),privateSourceCitations:result.privateSourceCitations };
+    proposals: result.proposals.map(projectAgentProposal), citations: [...result.citations.map(projectAgentCitation), ...(result.liveCitations ?? []).map(projectLiveCitation)],privateSourceCitations:result.privateSourceCitations };
 }

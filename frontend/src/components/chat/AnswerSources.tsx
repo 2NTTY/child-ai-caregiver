@@ -1,5 +1,6 @@
 import { createContext, Fragment, useContext, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type ScrollView as NativeScrollView, type StyleProp, type TextStyle } from "react-native";
+import { PreviewLink } from "../../preview/PreviewNavigationGuard";
+import { Linking, Platform, Pressable, StyleSheet, View, useWindowDimensions, type ScrollView as NativeScrollView, type StyleProp, type TextStyle } from "react-native";
 import { Text } from "react-native-paper";
 import type { ChatCitationView } from "../../chat-view-model";
 import { colors, spacing } from "../../theme";
@@ -19,9 +20,19 @@ const CitationContext = createContext<{ sources: readonly ChatCitationView[]; lo
 export type LocateAnswerSource = (target: View | null, horizontalScroll?: NativeScrollView | null, verticalTarget?: View | null) => void;
 const classificationLabels = CHAT_CLASSIFICATION_LABELS;
 function sourceTime(value: string | null): string {
-  return value === null ? CHAT_SOURCE_COPY.missingTime : Number.isFinite(Date.parse(value))
+  return !value ? CHAT_SOURCE_COPY.missingTime : Number.isFinite(Date.parse(value))
     ? `${new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}`
     : CHAT_SOURCE_COPY.invalidTime;
+}
+function websiteUrl(source: ChatCitationView): string | null {
+  try {
+    const url = new URL(source.url ?? '');
+    if (url.protocol !== 'https:' || url.username || url.password) return null;
+    if (!url.hash && source.pageStart) url.hash = 'page=' + source.pageStart;
+    else if (!url.hash && source.readSegments?.some(part => part.includes(source.excerpt)) && source.excerpt.trim())
+      url.hash = ':~:text=' + encodeURIComponent(source.excerpt.trim());
+    return url.href;
+  } catch { return null; }
 }
 function Detail({ label, value, technical = false }: { label: string; value: string; technical?: boolean }) {
   return <View style={styles.detail}><Text style={styles.meta}>{label}</Text><Text selectable style={technical ? styles.meta : styles.body}>{value}</Text></View>;
@@ -29,7 +40,7 @@ function Detail({ label, value, technical = false }: { label: string; value: str
 
 function CitationReference({ number, source, locate }: { number: number; source: ChatCitationView; locate(id: string, anchor: RefObject<View | null>): void }) {
   const anchor = useRef<View>(null);
-  return <CitationMarker ref={anchor} number={number} label={`查看引用【${number}】：${source.title}`} onPress={() => locate(source.id, anchor)} />;
+  return <CitationMarker ref={anchor} number={number} label={`查看引用【${number}】：${source.seriesName ?? source.title}`} onPress={() => locate(source.id, anchor)} />;
 }
 
 export function CitationText({ children, style, careCitationCount = 0, onOpenCareCitation, materialCount = 0, onOpenMaterial }: {
@@ -76,6 +87,8 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
   const selectionSerial = useRef(0);
   const [locatedId, setLocatedId] = useState<string | null>(null);
   const [origin, setOrigin] = useState<CitationOrigin | null>(null);
+  const [originalId, setOriginalId] = useState<string | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
   const [technicalOpen, setTechnicalOpen] = useState(false);
   const groupId = useId();
   const sourceRefs = useRef(new Map<string, View>());
@@ -86,7 +99,7 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
   const [tabWidth, setTabWidth] = useState(0);
   const [tabLayouts, setTabLayouts] = useState<Record<string, { x: number; width: number }>>({});
   const windowWidth = useWindowDimensions().width;
-  const sourceLayoutKey = JSON.stringify(sources.map(source => [source.id, source.title]));
+  const sourceLayoutKey = JSON.stringify(sources.map(source => [source.id, source.seriesName ?? source.title]));
   useLayoutEffect(() => {
     if (Platform.OS !== "web") return;
     const viewport = tabScrollRef.current?.getScrollableNode() as HTMLElement | null;
@@ -97,6 +110,7 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
   }, [windowWidth, sourceLayoutKey, tabWidth]);
   // Retain only an ID during collapse; the live collection controls data access.
   const selected = sources.find(source => source.id === (selectedId ?? presentedId));
+  const external = selected ? websiteUrl(selected) : null;
   const expanded = selectedId !== null && selected !== undefined;
   const markerId = sources.find(source => source.id === (selectedId ?? locatedId))?.id ?? null;
   const selection = markerId ? tabLayouts[markerId] : undefined;
@@ -136,12 +150,14 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
   function locate(id: string, anchor?: RefObject<View | null>) {
     setPanelTrigger(null); setAnimateSelection(false);
     setLocatedId(id);
+    setOriginalId(null); setLinkError(null);
     if (anchor?.current) setOrigin({ sourceId: id, anchor });
-    if (selectedId && selectedId !== id) { setSelectedId(id); setPresentedId(id); setTechnicalOpen(false); }
+    if (selectedId !== id) { setSelectedId(id); setPresentedId(id); setTechnicalOpen(false); }
     onLocateSource?.(sourceRefs.current.get(id) ?? null, tabScrollRef.current, panelRef.current);
   }
   function toggle(id: string) {
     const closing = selectedId === id;
+    setOriginalId(null); setLinkError(null);
     setAnimateSelection(true);
     setPanelTrigger(selectedId !== null && !closing ? ++selectionSerial.current : null);
     if (!closing) setPresentedId(id);
@@ -176,11 +192,11 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
               <Pressable accessibilityRole="button"
               ref={node => { if (node) sourceRefs.current.set(source.id, node); else sourceRefs.current.delete(source.id); }}
               onLayout={event => { const { x, width } = event.nativeEvent.layout; setTabLayouts(current => current[source.id]?.x === x && current[source.id]?.width === width ? current : { ...current, [source.id]: { x, width } }); }}
-              accessibilityLabel={`來源【${index + 1}】：${source.title}`} accessibilityState={{ expanded: selectedId === source.id }}
+              accessibilityLabel={`來源【${index + 1}】：${source.seriesName ?? source.title}${source.acquisition === 'live' ? ' · 即時搜尋' : ''}`} accessibilityState={{ expanded: selectedId === source.id }}
               aria-expanded={selectedId === source.id} aria-controls={`${groupId}-detail`} onPress={() => toggle(source.id)}
               style={({ pressed }) => [styles.tab, { maxWidth: Math.max(96, Math.min(280, (tabWidth || 224) - 8)) },
                 pressed && styles.pressed, !selection && markerId === source.id && styles.located, !selection && selectedId === source.id && styles.selectedTab]}>
-              <Text numberOfLines={1} style={styles.tabText}>【{index + 1}】{source.title}</Text>
+              <Text numberOfLines={1} style={[styles.tabText, source.acquisition === 'live' && styles.liveTab]}>【{index + 1}】{source.seriesName ?? source.title}{source.acquisition === 'live' ? ' · 即時搜尋' : ''}</Text>
               </Pressable>
             </Fragment>)}
             <MotionSelectionMarker x={selection?.x ?? 0} width={selection?.width ?? 0} selectionKey={`${groupId}:${markerId ?? "none"}`} enabled={animateSelection} color={selectedId ? chatColors.ink : chatColors.focus} />
@@ -194,6 +210,7 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
               <View style={styles.detail}><Text accessibilityRole="header" style={styles.sourceTitle}>{selected.title}</Text>
                 <Text style={styles.meta}>{selected.publisher} · {classificationLabels[selected.classification]}</Text></View>
               <Detail label={CHAT_SOURCE_COPY.section} value={selected.section} />
+              {selected.pageStart ? <Detail label="原文件頁碼" value={selected.pageEnd && selected.pageEnd !== selected.pageStart ? `第 ${selected.pageStart}–${selected.pageEnd} 頁` : `第 ${selected.pageStart} 頁`} /> : null}
               <View style={styles.quote}><Text selectable style={styles.quoteBody}>{selected.excerpt}</Text></View>
               {selected.classification === "synthetic" ? <Text style={styles.meta}>{CHAT_SOURCE_COPY.syntheticNotice}</Text> : null}
             </View>
@@ -204,9 +221,20 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
               <Detail label={CHAT_SOURCE_COPY.applicability} value={selected.applicabilityLabel} />
               <Detail label={CHAT_SOURCE_COPY.internalOnly} value={selected.internalOnly ? CHAT_SOURCE_COPY.internalYes : CHAT_SOURCE_COPY.internalNo} />
               <Text style={styles.meta}>{CHAT_SOURCE_COPY.snapshotDisclaimer}</Text>
-              {selected.url ? onOpenSource ? <AppButton label={CHAT_SOURCE_COPY.openSource} accessibilityLabel={`${CHAT_SOURCE_COPY.openSource}：${selected.title}`} variant="secondary"
-                onPress={() => onOpenSource(selected.id)} /> : <Text selectable style={styles.body}>{selected.url}</Text>
-                : <Text style={styles.meta}>{CHAT_SOURCE_COPY.noOpenableUrl}</Text>}
+              {selected.validUntil && Date.parse(selected.validUntil) <= Date.now() ? <Text style={styles.warning}>引用時的有效期已過。</Text> : null}
+              {selected.acquisition === 'live' ? <Detail label="本次取得時間" value={sourceTime(selected.fetchedAt)} /> : null}
+              <Detail label="引用版本" value={selected.versionId || '來源未有提供'} />
+              {selected.savedPdf && onOpenSource ? <AppButton label="查看當時 PDF" variant="secondary" onPress={() => onOpenSource(selected.id)} /> :
+                selected.readSegments?.some(part => part !== selected.excerpt) ? <AppButton label={originalId === selected.id ? '收起已讀段落' : '查看當時已讀段落'} expanded={originalId === selected.id}
+                  variant="secondary" onPress={() => setOriginalId(originalId === selected.id ? null : selected.id)} /> : null}
+              {originalId === selected.id ? selected.readSegments?.map((part, index) => <Text key={index} selectable style={styles.body}>{part}</Text>) : null}
+              {external ? <AppButton label="查看現行原網站" variant="quiet" onPress={() => {
+                void Linking.openURL(external).catch(() => setLinkError(selected.id));
+              }} /> : <Text style={styles.meta}>{CHAT_SOURCE_COPY.noOpenableUrl}</Text>}
+              {linkError === selected.id ? <Text style={styles.warning}>暫未能開啟原網站。</Text> : null}
+              {selected.seriesId ? <PreviewLink href={{ pathname: '/memory', params: { series: selected.seriesId } }}>
+                <Pressable accessibilityRole="link" style={styles.libraryLink}><Text style={styles.tabText}>查看來源庫</Text></Pressable>
+              </PreviewLink> : null}
             </View>
             <View style={[styles.technicalGroup, styles.dividedGroup]}>
               <Pressable accessibilityRole="button" accessibilityLabel={CHAT_SOURCE_COPY.technicalToggle} accessibilityState={{ expanded: technicalOpen }}
@@ -214,6 +242,8 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
                 <Text style={styles.technicalTitle}>{(technicalOpen ? CHAT_SOURCE_COPY.technicalClosePrefix : CHAT_SOURCE_COPY.technicalOpenPrefix) + CHAT_SOURCE_COPY.technicalToggle}</Text><AppIcon name={technicalOpen ? "chevron-up" : "chevron-down"} size={16} />
               </Pressable>
               <MotionDisclosure expanded={technicalOpen} scopeKey={`${groupId}:${selected.id}`}><View nativeID={`${groupId}-technical`} testID="source-detail-group" style={[styles.detailGroup, styles.technicalContents]}>
+                {selected.originalRange ? <Detail technical label="已讀原文位置（字元）" value={selected.originalRange} /> : null}
+                {selected.termsUrl ? <Detail technical label="來源使用條款" value={selected.termsUrl} /> : null}
                 <Detail technical label={CHAT_SOURCE_COPY.versionId} value={selected.versionId} />
                 <Detail technical label={CHAT_SOURCE_COPY.versionHash} value={selected.versionHash} />
                 <Detail technical label={CHAT_SOURCE_COPY.checkedAt} value={sourceTime(selected.checkedAt)} />
@@ -248,6 +278,8 @@ const styles = StyleSheet.create({
   separator: { width: 1, height: 20, backgroundColor: chatColors.line, flexShrink: 0 },
   tab: { minHeight: 48, paddingHorizontal: spacing.sm, justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent", minWidth: 0 },
   selectedTab: { borderBottomColor: chatColors.ink },
+  liveTab: { color: chatColors.focus },
+  libraryLink: { minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center' },
   tabText: { textDecorationLine: "underline", fontFamily: chatFont, color: chatColors.ink, ...chatType.tool, fontWeight: "600" },
   detailScroll: { height: 280, flexGrow: 0 }, details: { paddingVertical: spacing.sm, gap: spacing.md }, detail: { gap: spacing.xs, minWidth: 0 },
   detailGroup: { gap: spacing.sm, minWidth: 0 }, dividedGroup: { borderTopWidth: 1, borderTopColor: chatColors.line, paddingTop: spacing.md },
